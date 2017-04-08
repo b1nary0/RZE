@@ -10,7 +10,7 @@ public:
 	RZE_EngineCore();
 	~RZE_EngineCore();
 
-	std::weak_ptr<Win32Window> CreateWindow(const std::string& title, const int width, const int height);
+	std::weak_ptr<Win32Window> MakeWindow(const std::string& title, const int width, const int height);
 
 private:
 

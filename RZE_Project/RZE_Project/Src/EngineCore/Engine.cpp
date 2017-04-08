@@ -1,6 +1,6 @@
-#include "Engine.h"
+#include "StdAfx.h"
 
-#include <cstdio>
+#include "Engine.h"
 
 RZE_EngineCore::RZE_EngineCore()
 {
@@ -11,7 +11,7 @@ RZE_EngineCore::~RZE_EngineCore()
 {
 }
 
-std::weak_ptr<Win32Window> RZE_EngineCore::CreateWindow(const std::string& title, const int width, const int height)
+std::weak_ptr<Win32Window> RZE_EngineCore::MakeWindow(const std::string& title, const int width, const int height)
 {
 	return mWindowManager.MakeWindow(title, width, height);
 }

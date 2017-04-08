@@ -5,19 +5,21 @@
 [ TODO ] 
 
 @ Create engine class to drive initial setup
-
 @ Create basic window
-
 @ write basic message pump for window
+@ set up include dirs to avoid "../" usage
+@ probably set up a pch or some similar structure while its still easy to integrate
 
 
 
+! event system to properly pass events from window message pump to rest of engine
 
 * hook up better functionality to window message pump
 	* screen can't be moved properly, what is causing this?
-
+		* looks possibly like WM_MOVE not being dealt with -- blocked on events
+	
+* verify proper additional include directory setup
+	
 * Customize window creation (borderless, fullscren, etc) easily configurable
 
-* set up include dirs to avoid "../" usage
-
-* probably set up a pch or some similar structure while its still easy to integrate
+* Set up gcc to do cross-compiler testing

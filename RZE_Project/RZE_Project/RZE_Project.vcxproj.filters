@@ -25,6 +25,9 @@
     <Filter Include="Source Files\Utils\Math">
       <UniqueIdentifier>{bbb0cdea-4cfa-43a8-a7dd-84b4fbdbd2cc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\EngineCore\Events">
+      <UniqueIdentifier>{e8f13302-7f7c-472c-9f38-8673ec37ea73}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -51,6 +54,12 @@
     <ClCompile Include="Src\EngineCore\Utils\Conversions.cpp">
       <Filter>Source Files\Utils</Filter>
     </ClCompile>
+    <ClCompile Include="Src\StdAfx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\EngineCore\Events\EventHandler.cpp">
+      <Filter>Source Files\EngineCore\Events</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\EngineCore\Engine.h">
@@ -75,6 +84,18 @@
       <Filter>Source Files\Utils\Math</Filter>
     </ClInclude>
     <ClInclude Include="Src\EngineCore\Utils\Conversions.h">
+      <Filter>Source Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\StdAfx.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\EngineCore\Events\EventHandler.h">
+      <Filter>Source Files\EngineCore\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\EngineCore\Events\EventTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\EngineCore\Utils\PrimitiveDefs.h">
       <Filter>Source Files\Utils</Filter>
     </ClInclude>
   </ItemGroup>

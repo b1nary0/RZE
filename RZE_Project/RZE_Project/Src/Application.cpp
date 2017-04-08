@@ -1,3 +1,5 @@
+#include "StdAfx.h"
+
 #include "Application.h"
 
 #include "EngineCore/Engine.h"
@@ -18,5 +20,5 @@ void RZE_Application::Init()
 {
 	printf("RZE_Application::Init() called. \n");
 
-	mWindow = mEngineCore->CreateWindow("RZE_Application", 1280, 720);
+	mWindow = mEngineCore->MakeWindow("RZE_Application", 1280, 720);
 }

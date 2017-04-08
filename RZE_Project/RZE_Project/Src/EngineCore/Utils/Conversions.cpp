@@ -1,7 +1,6 @@
-#include "Conversions.h"
+#include "StdAfx.h"
 
-#include <locale>
-#include <codecvt>
+#include "Conversions.h"
 
 namespace Conversions
 {

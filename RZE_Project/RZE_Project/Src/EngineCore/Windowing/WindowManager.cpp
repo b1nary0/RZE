@@ -1,7 +1,6 @@
-#include "WindowManager.h"
+#include "StdAfx.h"
 
-// STL
-#include <assert.h>
+#include "WindowManager.h"
 
 #include "Win32Window.h"
 
