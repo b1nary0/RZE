@@ -13,10 +13,69 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\EngineCore">
+      <UniqueIdentifier>{f3b08193-8b1b-4462-a2c7-cfb1ce2d4514}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\EngineCore\Windowing">
+      <UniqueIdentifier>{1fbcf05c-ea5b-451f-82c6-66303bcef10e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Utils">
+      <UniqueIdentifier>{a24fb93a-44a7-40ff-8f44-0d590370dfcb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Utils\Math">
+      <UniqueIdentifier>{bbb0cdea-4cfa-43a8-a7dd-84b4fbdbd2cc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Src\Application.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\EngineCore\Windowing\WindowManager.cpp">
+      <Filter>Source Files\EngineCore\Windowing</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\EngineCore\Windowing\Win32Window.cpp">
+      <Filter>Source Files\EngineCore\Windowing</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\EngineCore\Utils\Math\Vector3D.cpp">
+      <Filter>Source Files\Utils\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\EngineCore\Utils\Math\Vector2D.cpp">
+      <Filter>Source Files\Utils\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\EngineCore\Engine.cpp">
+      <Filter>Source Files\EngineCore</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\EngineCore\Utils\Conversions.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Src\EngineCore\Engine.h">
+      <Filter>Source Files\EngineCore</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Application.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\EngineCore\Windowing\WindowManager.h">
+      <Filter>Source Files\EngineCore\Windowing</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\EngineCore\Windowing\Win32Window.h">
+      <Filter>Source Files\EngineCore\Windowing</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\EngineCore\Utils\Math\Math.h">
+      <Filter>Source Files\Utils\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\EngineCore\Utils\Math\Vector3D.h">
+      <Filter>Source Files\Utils\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\EngineCore\Utils\Math\Vector2D.h">
+      <Filter>Source Files\Utils\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\EngineCore\Utils\Conversions.h">
+      <Filter>Source Files\Utils</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

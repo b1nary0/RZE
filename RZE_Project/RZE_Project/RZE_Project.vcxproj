@@ -89,6 +89,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -147,6 +148,23 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Src\Application.cpp" />
+    <ClCompile Include="Src\EngineCore\Engine.cpp" />
+    <ClCompile Include="Src\EngineCore\Utils\Conversions.cpp" />
+    <ClCompile Include="Src\EngineCore\Utils\Math\Vector2D.cpp" />
+    <ClCompile Include="Src\EngineCore\Utils\Math\Vector3D.cpp" />
+    <ClCompile Include="Src\EngineCore\Windowing\Win32Window.cpp" />
+    <ClCompile Include="Src\EngineCore\Windowing\WindowManager.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Src\Application.h" />
+    <ClInclude Include="Src\EngineCore\Engine.h" />
+    <ClInclude Include="Src\EngineCore\Utils\Conversions.h" />
+    <ClInclude Include="Src\EngineCore\Utils\Math\Math.h" />
+    <ClInclude Include="Src\EngineCore\Utils\Math\Vector2D.h" />
+    <ClInclude Include="Src\EngineCore\Utils\Math\Vector3D.h" />
+    <ClInclude Include="Src\EngineCore\Windowing\Win32Window.h" />
+    <ClInclude Include="Src\EngineCore\Windowing\WindowManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
