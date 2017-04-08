@@ -3,6 +3,7 @@
 #include "WindowManager.h"
 
 #include "Win32Window.h"
+#include "EngineCore/Events/EventHandler.h"
 
 WindowManager::WindowManager()
 {
@@ -28,4 +29,17 @@ std::weak_ptr<Win32Window> WindowManager::MakeWindow(const std::string& title, c
 
 	mWindowList.push_back(std::shared_ptr<Win32Window>(window));
 	return mWindowList[windowID];
+}
+
+void WindowManager::SetEventHandler(std::weak_ptr<EventHandler> eventHandler)
+{
+	mEventHandler = eventHandler;
+}
+
+void WindowManager::ProcessWindowEvents()
+{
+	for (auto& window : mWindowList)
+	{
+		window->ProcessWindowMessages();
+	}
 }

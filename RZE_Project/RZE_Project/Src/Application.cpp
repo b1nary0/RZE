@@ -5,6 +5,7 @@
 #include "EngineCore/Engine.h"
 
 RZE_Application::RZE_Application()
+	: bIsRunning(false)
 {
 	mEngineCore = std::make_unique<RZE_EngineCore>();
 
@@ -14,6 +15,21 @@ RZE_Application::RZE_Application()
 RZE_Application::~RZE_Application()
 {
 
+}
+
+void RZE_Application::Start()
+{
+	bIsRunning = true;
+}
+
+bool RZE_Application::IsRunning() const
+{
+	return bIsRunning;
+}
+
+void RZE_Application::Update()
+{
+	mEngineCore->Update();
 }
 
 void RZE_Application::Init()

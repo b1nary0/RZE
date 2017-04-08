@@ -3,9 +3,13 @@
 #include "Win32Window.h"
 
 // RZE
+#include "WindowMessageAdaptor.h"
 #include "../Utils/Conversions.h"
 
 long __stdcall WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp);
+
+// Used to link WinProc messages with the window without having to static other class instances etc
+static WindowMessageAdaptor sWindowMessageAdaptor;
 
 struct OSWindowHandleData
 {
@@ -35,7 +39,7 @@ const Vector2D& Win32Window::GetDimensions() const
 void Win32Window::Create(const WindowCreationProtocol& creationProtocol)
 {
 	// Interface with WinAPI and create a window -- store useful information.
-	printf("[ Creating Win32Window ] Title : %s | ID: %i", mTitle.c_str(), mWindowID);
+	printf("[ Creating Win32Window ] Title : %s | ID: %i\n", mTitle.c_str(), mWindowID);
 
 	const std::wstring wStrTitle = Conversions::StringToWString(mTitle);
 
@@ -72,14 +76,35 @@ void Win32Window::Create(const WindowCreationProtocol& creationProtocol)
 		if (mOSWindowHandleData.mWindowHandle)
 		{
 			ShowWindow(mOSWindowHandleData.mWindowHandle, SW_SHOWDEFAULT); // @note SW_SHOWMAXIMIZED for borderless fullscreen. SW_SHOWDEFAULT default
-
-			MSG msg;
-			while (GetMessage(&msg, mOSWindowHandleData.mWindowHandle, 0, 0))
-			{
-				TranslateMessage(&msg);
-				DispatchMessage(&msg);
-			}
 		}
+	}
+}
+
+void Win32Window::ProcessWindowMessages()
+{
+	MSG msg;
+	if (PeekMessage(&msg, mOSWindowHandleData.mWindowHandle, 0, 0, PM_NOREMOVE))
+	{
+		GetMessage(&msg, mOSWindowHandleData.mWindowHandle, 0, 0);
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+
+	while (sWindowMessageAdaptor.HasMessage())
+	{
+		ProcessWindowMessage(sWindowMessageAdaptor.GetNextMessage());
+	}
+}
+
+void Win32Window::ProcessWindowMessage(const WindowMessageAdaptor::WindowMessageInfo& messageInfo)
+{
+	if (messageInfo.mMessageType == WindowMessageAdaptor::EMessageType::Window_Move)
+	{
+		
+	}
+	else if (messageInfo.mMessageType == WindowMessageAdaptor::EMessageType::Window_KeyDown)
+	{
+		printf("Key down! -> %c\n", static_cast<char>(messageInfo.wParam));
 	}
 }
 
@@ -103,12 +128,11 @@ long __stdcall WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp)
 		break;
 
 	case WM_KEYDOWN:
-		printf("Key down! -> %c\n", static_cast<char>(wp));
+		sWindowMessageAdaptor.PushMessage(WindowMessageAdaptor::EMessageType::Window_KeyDown, wp, lp);
 		return 0;
 		break;
 
 	case WM_KEYUP:
-		printf("Key up! -> %c\n", static_cast<char>(wp));
 		return 0;
 		break;
 
@@ -117,6 +141,7 @@ long __stdcall WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp)
 		break;
 
 	case WM_MOVE:
+		sWindowMessageAdaptor.PushMessage(WindowMessageAdaptor::EMessageType::Window_Move, (int)(short)LOWORD(wp), (int)(short)HIWORD(lp));
 		return 0;
 		break;
 

@@ -60,6 +60,9 @@
     <ClCompile Include="Src\EngineCore\Events\EventHandler.cpp">
       <Filter>Source Files\EngineCore\Events</Filter>
     </ClCompile>
+    <ClCompile Include="Src\EngineCore\Windowing\WindowMessageAdaptor.cpp">
+      <Filter>Source Files\EngineCore\Windowing</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\EngineCore\Engine.h">
@@ -92,11 +95,17 @@
     <ClInclude Include="Src\EngineCore\Events\EventHandler.h">
       <Filter>Source Files\EngineCore\Events</Filter>
     </ClInclude>
-    <ClInclude Include="Src\EngineCore\Events\EventTypes.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Src\EngineCore\Utils\PrimitiveDefs.h">
       <Filter>Source Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\EngineCore\Events\EventTypes.h">
+      <Filter>Source Files\EngineCore\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\EngineCore\Events\Events.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\EngineCore\Windowing\WindowMessageAdaptor.h">
+      <Filter>Source Files\EngineCore\Windowing</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

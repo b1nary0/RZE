@@ -20,3 +20,8 @@ void RZE_EngineCore::Init()
 {
 	printf("RZE_EngineCore::Init() called. \n");
 }
+
+void RZE_EngineCore::Update()
+{
+	mWindowManager.ProcessWindowEvents();
+}

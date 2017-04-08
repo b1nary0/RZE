@@ -157,12 +157,14 @@
     <ClCompile Include="Src\EngineCore\Utils\Math\Vector3D.cpp" />
     <ClCompile Include="Src\EngineCore\Windowing\Win32Window.cpp" />
     <ClCompile Include="Src\EngineCore\Windowing\WindowManager.cpp" />
+    <ClCompile Include="Src\EngineCore\Windowing\WindowMessageAdaptor.cpp" />
     <ClCompile Include="Src\StdAfx.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\Application.h" />
     <ClInclude Include="Src\EngineCore\Engine.h" />
     <ClInclude Include="Src\EngineCore\Events\EventHandler.h" />
+    <ClInclude Include="Src\EngineCore\Events\Events.h" />
     <ClInclude Include="Src\EngineCore\Events\EventTypes.h" />
     <ClInclude Include="Src\EngineCore\Utils\Conversions.h" />
     <ClInclude Include="Src\EngineCore\Utils\Math\Math.h" />
@@ -171,6 +173,7 @@
     <ClInclude Include="Src\EngineCore\Utils\PrimitiveDefs.h" />
     <ClInclude Include="Src\EngineCore\Windowing\Win32Window.h" />
     <ClInclude Include="Src\EngineCore\Windowing\WindowManager.h" />
+    <ClInclude Include="Src\EngineCore\Windowing\WindowMessageAdaptor.h" />
     <ClInclude Include="Src\StdAfx.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

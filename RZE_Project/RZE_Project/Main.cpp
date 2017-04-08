@@ -5,6 +5,12 @@
 int main(void)
 {
 	RZE_Application app;
+	app.Start();
+
+	while (app.IsRunning())
+	{
+		app.Update();
+	}
 
 	getchar();
 	return 0;

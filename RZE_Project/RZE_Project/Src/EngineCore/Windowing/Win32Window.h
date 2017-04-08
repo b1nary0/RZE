@@ -9,6 +9,7 @@
 #include <string>
 
 // RZE
+#include "WindowMessageAdaptor.h"
 #include "../Utils/Math/Vector2D.h"
 
 class Win32Window
@@ -40,6 +41,9 @@ protected:
 private:
 
 	void Create(const WindowCreationProtocol& creationProtocol);
+
+	void ProcessWindowMessages();
+	void ProcessWindowMessage(const WindowMessageAdaptor::WindowMessageInfo& messageInfo);
 
 	Win32Window(const WindowCreationProtocol& creationProtocol);
 	

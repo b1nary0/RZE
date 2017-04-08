@@ -17,7 +17,9 @@
 * hook up better functionality to window message pump
 	* screen can't be moved properly, what is causing this?
 		* looks possibly like WM_MOVE not being dealt with -- blocked on events
-	
+
+* update loop is weird... app updates, then app updates engine? weird.
+		
 * verify proper additional include directory setup
 	
 * Customize window creation (borderless, fullscren, etc) easily configurable

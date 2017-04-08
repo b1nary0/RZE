@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Events/EventHandler.h"
 #include "Windowing/WindowManager.h"
 
 class RZE_EngineCore
@@ -12,10 +13,12 @@ public:
 
 	std::weak_ptr<Win32Window> MakeWindow(const std::string& title, const int width, const int height);
 
+	void Update();
+
 private:
 
 	void Init();
-
+	
 	WindowManager mWindowManager;
-
+	EventHandler mEventHandler;
 };
