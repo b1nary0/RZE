@@ -10,9 +10,12 @@ public:
 	{
 		enum Value
 		{
+			Window_Move,
+			Window_Destroy,
+			Window_Close,
+			Window_Quit,
 			Window_KeyUp,
-			Window_KeyDown,
-			Window_Move
+			Window_KeyDown
 		};
 	};
 

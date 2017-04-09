@@ -40,6 +40,6 @@ void WindowManager::ProcessWindowEvents()
 {
 	for (auto& window : mWindowList)
 	{
-		window->ProcessWindowMessages();
+		window->ProcessWindowMessages(mEventHandler);
 	}
 }

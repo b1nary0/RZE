@@ -4,7 +4,8 @@
 
 // RZE
 #include "WindowMessageAdaptor.h"
-#include "../Utils/Conversions.h"
+#include "EngineCore/Events/EventHandler.h"
+#include "EngineCore/Utils/Conversions.h"
 
 long __stdcall WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp);
 
@@ -75,12 +76,12 @@ void Win32Window::Create(const WindowCreationProtocol& creationProtocol)
 
 		if (mOSWindowHandleData.mWindowHandle)
 		{
-			ShowWindow(mOSWindowHandleData.mWindowHandle, SW_SHOWDEFAULT); // @note SW_SHOWMAXIMIZED for borderless fullscreen. SW_SHOWDEFAULT default
+			ShowWindow(mOSWindowHandleData.mWindowHandle, SW_NORMAL); // @note SW_SHOWMAXIMIZED for borderless fullscreen. SW_SHOWDEFAULT default
 		}
 	}
 }
 
-void Win32Window::ProcessWindowMessages()
+void Win32Window::ProcessWindowMessages(std::weak_ptr<EventHandler> eventHandler)
 {
 	MSG msg;
 	if (PeekMessage(&msg, mOSWindowHandleData.mWindowHandle, 0, 0, PM_NOREMOVE))
@@ -98,13 +99,13 @@ void Win32Window::ProcessWindowMessages()
 
 void Win32Window::ProcessWindowMessage(const WindowMessageAdaptor::WindowMessageInfo& messageInfo)
 {
-	if (messageInfo.mMessageType == WindowMessageAdaptor::EMessageType::Window_Move)
-	{
-		
-	}
-	else if (messageInfo.mMessageType == WindowMessageAdaptor::EMessageType::Window_KeyDown)
+	if (messageInfo.mMessageType == WindowMessageAdaptor::EMessageType::Window_KeyDown)
 	{
 		printf("Key down! -> %c\n", static_cast<char>(messageInfo.wParam));
+	}
+	else if (messageInfo.mMessageType == WindowMessageAdaptor::EMessageType::Window_Destroy)
+	{
+		printf("Window set to destroy.\n");
 	}
 }
 
@@ -113,37 +114,20 @@ long __stdcall WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp)
 	// @unfinished - check for values of msg possibly needed
 	switch (msg)
 	{
-	case WM_ACTIVATE:
-		return 0;
-		break;
-
-	case WM_SYSCOMMAND:
-		return 0;
-		break;
-
-	case WM_CLOSE:
-		// @implementation - will need to pass a message through the engine to shut down properly here
-		PostQuitMessage(0);
-		return 0;
-		break;
-
 	case WM_KEYDOWN:
 		sWindowMessageAdaptor.PushMessage(WindowMessageAdaptor::EMessageType::Window_KeyDown, wp, lp);
 		return 0;
-		break;
 
 	case WM_KEYUP:
 		return 0;
-		break;
 
 	case WM_SIZE:
 		return 0;
-		break;
-
-	case WM_MOVE:
-		sWindowMessageAdaptor.PushMessage(WindowMessageAdaptor::EMessageType::Window_Move, (int)(short)LOWORD(wp), (int)(short)HIWORD(lp));
+		
+	case WM_DESTROY:
+		sWindowMessageAdaptor.PushMessage(WindowMessageAdaptor::EMessageType::Window_Destroy, wp, lp);
+		PostQuitMessage(0);
 		return 0;
-		break;
 
 	default:
 		return DefWindowProc(window, msg, wp, lp);

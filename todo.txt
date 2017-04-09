@@ -14,10 +14,13 @@
 
 ! event system to properly pass events from window message pump to rest of engine
 
-* hook up better functionality to window message pump
-	* screen can't be moved properly, what is causing this?
-		* looks possibly like WM_MOVE not being dealt with -- blocked on events
+* better understand message pump -- can avoid while (getmessage) are there ever multiple messages to resolve per frame?
 
+* hook up better functionality to window message pump
+	@ screen can't be moved properly, what is causing this? ( ended up being improperly handled WM_ACTIVATE )
+
+* think about multi-threading
+		
 * update loop is weird... app updates, then app updates engine? weird.
 		
 * verify proper additional include directory setup

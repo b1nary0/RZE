@@ -28,8 +28,6 @@ public:
 
 	void CreateWindowEvent();
 
-	EventHandler& Get();
-
 private:
 
 	std::queue<EventHandlingInfo> mEventQueue;

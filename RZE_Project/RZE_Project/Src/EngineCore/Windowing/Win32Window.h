@@ -12,6 +12,8 @@
 #include "WindowMessageAdaptor.h"
 #include "../Utils/Math/Vector2D.h"
 
+class EventHandler;
+
 class Win32Window
 {
 	friend class WindowManager;
@@ -42,7 +44,7 @@ private:
 
 	void Create(const WindowCreationProtocol& creationProtocol);
 
-	void ProcessWindowMessages();
+	void ProcessWindowMessages(std::weak_ptr<EventHandler> eventHandler);
 	void ProcessWindowMessage(const WindowMessageAdaptor::WindowMessageInfo& messageInfo);
 
 	Win32Window(const WindowCreationProtocol& creationProtocol);
