@@ -12,6 +12,5 @@ int main(void)
 		app.Update();
 	}
 
-	getchar();
 	return 0;
 }

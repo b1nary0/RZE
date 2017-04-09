@@ -23,5 +23,15 @@ void RZE_EngineCore::Init()
 
 void RZE_EngineCore::Update()
 {
-	mWindowManager.ProcessWindowEvents();
+	mWindowManager.ProcessWindowEvents(mEventHandler);
+}
+
+void RZE_EngineCore::ShutDown()
+{
+	printf("Shutting engine down...\n");
+}
+
+void RZE_EngineCore::RegisterForEvent(const UInt16 eventType, Functor<void, const Event&> callback)
+{
+	mEventHandler.RegisterForEvent(eventType, callback);
 }

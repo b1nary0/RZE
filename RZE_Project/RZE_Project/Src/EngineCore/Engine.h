@@ -15,6 +15,10 @@ public:
 
 	void Update();
 
+	void ShutDown();
+
+	void RegisterForEvent(const UInt16 eventType, Functor<void, const Event&> callback);
+
 private:
 
 	void Init();

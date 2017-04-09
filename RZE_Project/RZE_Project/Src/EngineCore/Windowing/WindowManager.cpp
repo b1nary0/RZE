@@ -31,15 +31,10 @@ std::weak_ptr<Win32Window> WindowManager::MakeWindow(const std::string& title, c
 	return mWindowList[windowID];
 }
 
-void WindowManager::SetEventHandler(std::weak_ptr<EventHandler> eventHandler)
-{
-	mEventHandler = eventHandler;
-}
-
-void WindowManager::ProcessWindowEvents()
+void WindowManager::ProcessWindowEvents(EventHandler& eventHandler)
 {
 	for (auto& window : mWindowList)
-	{
-		window->ProcessWindowMessages(mEventHandler);
+	{	
+		window->ProcessWindowMessages(eventHandler);
 	}
 }

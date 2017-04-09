@@ -44,8 +44,8 @@ private:
 
 	void Create(const WindowCreationProtocol& creationProtocol);
 
-	void ProcessWindowMessages(std::weak_ptr<EventHandler> eventHandler);
-	void ProcessWindowMessage(const WindowMessageAdaptor::WindowMessageInfo& messageInfo);
+	void ProcessWindowMessages(EventHandler& eventHandler);
+	void ProcessWindowMessage(const WindowMessageAdaptor::WindowMessageInfo& messageInfo, EventHandler& eventHandler);
 
 	Win32Window(const WindowCreationProtocol& creationProtocol);
 	

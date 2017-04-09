@@ -2,6 +2,8 @@
 
 #include <memory>
 
+#include "EngineCore/Events/Events.h"
+
 class RZE_Application
 {
 
@@ -19,6 +21,8 @@ public:
 protected:
 
 	void Init();
+
+	void RegisterEvents();
 
 	std::unique_ptr<class RZE_EngineCore> mEngineCore;
 

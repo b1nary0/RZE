@@ -90,7 +90,7 @@
       <SDLCheck>true</SDLCheck>
       <TreatWarningAsError>true</TreatWarningAsError>
       <PrecompiledHeaderFile>StdAfx.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>E:\Main\Documents\Dev\rze\git\RZE_Project\RZE_Project\Src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>F:\dev\rze\git\RZE_Project\RZE_Project\Src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -152,6 +152,7 @@
     <ClCompile Include="Src\Application.cpp" />
     <ClCompile Include="Src\EngineCore\Engine.cpp" />
     <ClCompile Include="Src\EngineCore\Events\EventHandler.cpp" />
+    <ClCompile Include="Src\EngineCore\Events\Events.cpp" />
     <ClCompile Include="Src\EngineCore\Utils\Conversions.cpp" />
     <ClCompile Include="Src\EngineCore\Utils\Math\Vector2D.cpp" />
     <ClCompile Include="Src\EngineCore\Utils\Math\Vector3D.cpp" />
@@ -167,6 +168,7 @@
     <ClInclude Include="Src\EngineCore\Events\Events.h" />
     <ClInclude Include="Src\EngineCore\Events\EventTypes.h" />
     <ClInclude Include="Src\EngineCore\Utils\Conversions.h" />
+    <ClInclude Include="Src\EngineCore\Utils\Functor.h" />
     <ClInclude Include="Src\EngineCore\Utils\Math\Math.h" />
     <ClInclude Include="Src\EngineCore\Utils\Math\Vector2D.h" />
     <ClInclude Include="Src\EngineCore\Utils\Math\Vector3D.h" />

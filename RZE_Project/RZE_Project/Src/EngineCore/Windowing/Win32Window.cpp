@@ -81,7 +81,7 @@ void Win32Window::Create(const WindowCreationProtocol& creationProtocol)
 	}
 }
 
-void Win32Window::ProcessWindowMessages(std::weak_ptr<EventHandler> eventHandler)
+void Win32Window::ProcessWindowMessages(EventHandler& eventHandler)
 {
 	MSG msg;
 	if (PeekMessage(&msg, mOSWindowHandleData.mWindowHandle, 0, 0, PM_NOREMOVE))
@@ -91,21 +91,22 @@ void Win32Window::ProcessWindowMessages(std::weak_ptr<EventHandler> eventHandler
 		DispatchMessage(&msg);
 	}
 
+	// @note may not need this if we don't need to process multiple messages from window per frame
 	while (sWindowMessageAdaptor.HasMessage())
 	{
-		ProcessWindowMessage(sWindowMessageAdaptor.GetNextMessage());
+		ProcessWindowMessage(sWindowMessageAdaptor.GetNextMessage(), eventHandler);
 	}
 }
 
-void Win32Window::ProcessWindowMessage(const WindowMessageAdaptor::WindowMessageInfo& messageInfo)
+void Win32Window::ProcessWindowMessage(const WindowMessageAdaptor::WindowMessageInfo& messageInfo, EventHandler& eventHandler)
 {
 	if (messageInfo.mMessageType == WindowMessageAdaptor::EMessageType::Window_KeyDown)
 	{
-		printf("Key down! -> %c\n", static_cast<char>(messageInfo.wParam));
 	}
 	else if (messageInfo.mMessageType == WindowMessageAdaptor::EMessageType::Window_Destroy)
 	{
 		printf("Window set to destroy.\n");
+		eventHandler.RegisterWindowEvent(WindowEvent(0, 1), true);
 	}
 }
 

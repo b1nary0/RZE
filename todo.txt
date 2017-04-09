@@ -12,6 +12,18 @@
 
 
 
+
+
+
+* pass message to engine to shut down
+
+
+
+
+
+
+
+
 ! event system to properly pass events from window message pump to rest of engine
 
 * better understand message pump -- can avoid while (getmessage) are there ever multiple messages to resolve per frame?
