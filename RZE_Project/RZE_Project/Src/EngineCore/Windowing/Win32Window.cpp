@@ -81,7 +81,7 @@ void Win32Window::Create(const WindowCreationProtocol& creationProtocol)
 	}
 }
 
-void Win32Window::ProcessWindowMessages(EventHandler& eventHandler)
+void Win32Window::CompileMessages(EventHandler& eventHandler)
 {
 	MSG msg;
 	if (PeekMessage(&msg, mOSWindowHandleData.mWindowHandle, 0, 0, PM_NOREMOVE))
@@ -94,11 +94,11 @@ void Win32Window::ProcessWindowMessages(EventHandler& eventHandler)
 	// @note may not need this if we don't need to process multiple messages from window per frame
 	while (sWindowMessageAdaptor.HasMessage())
 	{
-		ProcessWindowMessage(sWindowMessageAdaptor.GetNextMessage(), eventHandler);
+		ProcessMessage(sWindowMessageAdaptor.GetNextMessage(), eventHandler);
 	}
 }
 
-void Win32Window::ProcessWindowMessage(const WindowMessageAdaptor::WindowMessageInfo& messageInfo, EventHandler& eventHandler)
+void Win32Window::ProcessMessage(const WindowMessageAdaptor::WindowMessageInfo& messageInfo, EventHandler& eventHandler)
 {
 	if (messageInfo.mMessageType == WindowMessageAdaptor::EMessageType::Window_KeyDown)
 	{

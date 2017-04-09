@@ -21,9 +21,16 @@ void RZE_EngineCore::Init()
 	printf("RZE_EngineCore::Init() called. \n");
 }
 
+void RZE_EngineCore::CompileEvents()
+{
+	mWindowManager.CompileEvents(mEventHandler);
+}
+
 void RZE_EngineCore::Update()
 {
-	mWindowManager.ProcessWindowEvents(mEventHandler);
+	mEventHandler.ProcessEvents();
+
+	CompileEvents();
 }
 
 void RZE_EngineCore::ShutDown()

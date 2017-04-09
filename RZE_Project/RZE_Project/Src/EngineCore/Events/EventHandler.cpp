@@ -6,11 +6,6 @@ EventHandler::EventHandler()
 {
 }
 
-void EventHandler::CreateWindowEvent()
-{
-
-}
-
 void EventHandler::RegisterEventImmediate(const Event& event)
 {
 	std::vector<EventHandlingInfo> notifyList = mEventNotifyMap[event.mInfo.mEventType];
@@ -36,8 +31,29 @@ void EventHandler::RegisterWindowEvent(const WindowEvent& windowEvent, const boo
 
 void EventHandler::RegisterForEvent(const UInt16 eventType, Functor<void, const Event&> callback)
 {
+	Event event;
+	event.mInfo.mEventType = eventType;
+
 	EventHandlingInfo info;
+	info.mEvent = event;
 	info.mCallback = callback;
 
 	mEventNotifyMap[eventType].push_back(info);
+}
+
+void EventHandler::ProcessEvents()
+{
+	while (!mEventQueue.empty())
+	{
+		Event event = mEventQueue.front();
+		mEventQueue.pop();
+
+		std::vector<EventHandlingInfo> eventEntries = mEventNotifyMap[event.mInfo.mEventType];
+		for (auto& entry : eventEntries)
+		{
+			entry.mCallback(event);
+		}
+
+
+	}
 }

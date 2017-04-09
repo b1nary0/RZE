@@ -44,8 +44,8 @@ private:
 
 	void Create(const WindowCreationProtocol& creationProtocol);
 
-	void ProcessWindowMessages(EventHandler& eventHandler);
-	void ProcessWindowMessage(const WindowMessageAdaptor::WindowMessageInfo& messageInfo, EventHandler& eventHandler);
+	void CompileMessages(EventHandler& eventHandler);
+	void ProcessMessage(const WindowMessageAdaptor::WindowMessageInfo& messageInfo, EventHandler& eventHandler);
 
 	Win32Window(const WindowCreationProtocol& creationProtocol);
 	

@@ -17,7 +17,7 @@ public:
 
 	std::weak_ptr<Win32Window> MakeWindow(const std::string& title, const int width, const int height);
 
-	void ProcessWindowEvents(EventHandler& eventHandler);
+	void CompileEvents(EventHandler& eventHandler);
 
 private:
 	

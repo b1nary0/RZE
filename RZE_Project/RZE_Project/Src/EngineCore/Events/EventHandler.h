@@ -23,12 +23,12 @@ public:
 
 	EventHandler();
 
-	void CreateWindowEvent();
-
 	void RegisterEventImmediate(const Event& event);
-	void RegisterWindowEvent(const WindowEvent& windowEvent, const bool bFireImmediate);
+	void RegisterWindowEvent(const WindowEvent& windowEvent, const bool bFireImmediate = false);
 
 	void RegisterForEvent(const UInt16 eventType, Functor<void, const Event&> callback);
+
+	void ProcessEvents();
 
 private:
 

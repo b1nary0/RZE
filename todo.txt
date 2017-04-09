@@ -9,31 +9,32 @@
 @ write basic message pump for window
 @ set up include dirs to avoid "../" usage
 @ probably set up a pch or some similar structure while its still easy to integrate
+@ pass message to engine to shut down
+@ event system to properly pass events from window message pump to rest of engine
+
+
+
+
+
+* Couple engine and application like this:
+
+	-> Engine
+		-> Application
+	-> Engine can accept create application function
 
 
 
 
 
 
-* pass message to engine to shut down
 
-
-
-
-
-
-
-
-! event system to properly pass events from window message pump to rest of engine
+* update loop is weird... app updates, then app updates engine? weird.
 
 * better understand message pump -- can avoid while (getmessage) are there ever multiple messages to resolve per frame?
 
 * hook up better functionality to window message pump
-	@ screen can't be moved properly, what is causing this? ( ended up being improperly handled WM_ACTIVATE )
 
 * think about multi-threading
-		
-* update loop is weird... app updates, then app updates engine? weird.
 		
 * verify proper additional include directory setup
 	

@@ -22,7 +22,9 @@ public:
 private:
 
 	void Init();
-	
+
+	void CompileEvents();
+
 	WindowManager mWindowManager;
 	EventHandler mEventHandler;
 };
