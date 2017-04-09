@@ -12,9 +12,9 @@ public:
 		: mCallback(callback) {}
 
 	template <class... CallArgs>
-	void Call(CallArgs&&...args) const
+	TReturnType Call(CallArgs&&...args) const
 	{
-		mCallback(std::forward<CallArgs>(args)...);
+		return mCallback(std::forward<CallArgs>(args)...);
 	}
 
 	void Set(std::function<TReturnType(Args...)> callback)
@@ -22,9 +22,9 @@ public:
 		mCallback = callback;
 	}
 
-	void operator()(Args... args) const
+	TReturnType operator()(Args... args) const
 	{
-		Call(args...);
+		return Call(args...);
 	}
 
 private:

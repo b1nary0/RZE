@@ -9,3 +9,11 @@ namespace EEventType
 		Window
 	};
 }
+
+namespace EWindowEventType
+{
+	enum : UInt16
+	{
+		Window_Destroy
+	};
+}

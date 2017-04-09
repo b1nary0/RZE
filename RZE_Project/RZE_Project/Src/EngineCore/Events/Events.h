@@ -22,7 +22,7 @@ struct WindowEvent
 	friend struct Event;
 
 	WindowEvent() = default;
-	WindowEvent(const UInt16 eventType, const UInt16 eventSubType);
+	WindowEvent(const UInt16 eventSubType);
 
 	EventInfo mEventInfo;
 };

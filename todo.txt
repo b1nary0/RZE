@@ -11,16 +11,13 @@
 @ probably set up a pch or some similar structure while its still easy to integrate
 @ pass message to engine to shut down
 @ event system to properly pass events from window message pump to rest of engine
-
-
-
-
-
-* Couple engine and application like this:
+@ Couple engine and application like this:
 
 	-> Engine
 		-> Application
 	-> Engine can accept create application function
+@ update loop is weird... app updates, then app updates engine? weird.
+@ Actually create values for event (sub)types
 
 
 
@@ -28,7 +25,10 @@
 
 
 
-* update loop is weird... app updates, then app updates engine? weird.
+
+
+
+
 
 * better understand message pump -- can avoid while (getmessage) are there ever multiple messages to resolve per frame?
 

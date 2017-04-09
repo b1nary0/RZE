@@ -105,8 +105,7 @@ void Win32Window::ProcessMessage(const WindowMessageAdaptor::WindowMessageInfo& 
 	}
 	else if (messageInfo.mMessageType == WindowMessageAdaptor::EMessageType::Window_Destroy)
 	{
-		printf("Window set to destroy.\n");
-		eventHandler.RegisterWindowEvent(WindowEvent(0, 1), true);
+		eventHandler.RegisterWindowEvent(WindowEvent(EWindowEventType::Window_Destroy), true);
 	}
 }
 

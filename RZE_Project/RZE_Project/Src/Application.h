@@ -4,6 +4,8 @@
 
 #include "EngineCore/Events/Events.h"
 
+class EventHandler;
+
 class RZE_Application
 {
 
@@ -13,20 +15,16 @@ public:
 	~RZE_Application();
 
 	void Start();
+	void Update();
 
 	bool IsRunning() const;
 
-	void Update();
+	void RegisterEvents(EventHandler& eventHandler);
 
 protected:
 
 	void Init();
 
-	void RegisterEvents();
-
-	std::unique_ptr<class RZE_EngineCore> mEngineCore;
-
-	std::weak_ptr<class Win32Window> mWindow;
 
 	bool bIsRunning;
 };

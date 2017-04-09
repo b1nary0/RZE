@@ -1,16 +1,17 @@
 #include "StdAfx.h"
 
 #include "Src/Application.h"
+#include "Src/EngineCore/Engine.h"
 
 int main(void)
 {
-	RZE_Application app;
-	app.Start();
-
-	while (app.IsRunning())
+	Functor <std::unique_ptr<RZE_Application>> createApplicationFunctor([]() ->std::unique_ptr<RZE_Application>
 	{
-		app.Update();
-	}
+		return std::make_unique<RZE_Application>();
+	});
+
+	RZE_EngineCore rzeInstance;
+	rzeInstance.Run(createApplicationFunctor);
 
 	return 0;
 }
