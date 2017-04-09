@@ -12,3 +12,9 @@ EventInfo::EventInfo(const UInt16 eventType, const UInt16 eventSubType)
 	, mEventSubType(eventSubType)
 {
 }
+
+KeyEvent::KeyEvent(const UInt16 eventSubType, const UInt8 key)
+	: mEventInfo(EEventType::Key, eventSubType)
+	, mKey(key)
+{
+}

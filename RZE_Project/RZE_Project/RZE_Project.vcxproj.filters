@@ -28,6 +28,9 @@
     <Filter Include="Source Files\EngineCore\Events">
       <UniqueIdentifier>{e8f13302-7f7c-472c-9f38-8673ec37ea73}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\EngineCore\Input">
+      <UniqueIdentifier>{7c96c1b1-ba10-40f4-ab4c-850013c115f6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -65,6 +68,9 @@
     </ClCompile>
     <ClCompile Include="Src\EngineCore\Events\Events.cpp">
       <Filter>Source Files\EngineCore\Events</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\EngineCore\Input\InputHandler.cpp">
+      <Filter>Source Files\EngineCore\Input</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -112,6 +118,12 @@
     </ClInclude>
     <ClInclude Include="Src\EngineCore\Events\Events.h">
       <Filter>Source Files\EngineCore\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\EngineCore\Input\InputHandler.h">
+      <Filter>Source Files\EngineCore\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\EngineCore\Windowing\WinKeyCodes.h">
+      <Filter>Source Files\EngineCore\Windowing</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

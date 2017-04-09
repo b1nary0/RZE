@@ -4,16 +4,26 @@
 
 namespace EEventType
 {
-	enum : UInt16
+	enum Type : UInt16
 	{
-		Window
+		Window,
+		Key
 	};
 }
 
 namespace EWindowEventType
 {
-	enum : UInt16
+	enum Type : UInt16
 	{
 		Window_Destroy
+	};
+}
+
+namespace EKeyEventType
+{
+	enum Type : UInt16
+	{
+		Key_Pressed,
+		Key_Released
 	};
 }

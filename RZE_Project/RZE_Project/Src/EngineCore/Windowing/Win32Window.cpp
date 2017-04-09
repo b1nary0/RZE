@@ -6,6 +6,7 @@
 #include "WindowMessageAdaptor.h"
 #include "EngineCore/Events/EventHandler.h"
 #include "EngineCore/Utils/Conversions.h"
+#include "EngineCore/Windowing/WinKeyCodes.h"
 
 long __stdcall WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp);
 
@@ -102,10 +103,13 @@ void Win32Window::ProcessMessage(const WindowMessageAdaptor::WindowMessageInfo& 
 {
 	if (messageInfo.mMessageType == WindowMessageAdaptor::EMessageType::Window_KeyDown)
 	{
+		KeyEvent keyEvent(EKeyEventType::Key_Pressed, static_cast<UInt8>(messageInfo.wParam));
+		eventHandler.RegisterKeyEvent(keyEvent);
 	}
 	else if (messageInfo.mMessageType == WindowMessageAdaptor::EMessageType::Window_Destroy)
 	{
-		eventHandler.RegisterWindowEvent(WindowEvent(EWindowEventType::Window_Destroy), true);
+		WindowEvent windowEvent(EWindowEventType::Window_Destroy);
+		eventHandler.RegisterWindowEvent(windowEvent);
 	}
 }
 

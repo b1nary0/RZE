@@ -1,22 +1,6 @@
 [NOTES]
 
-EventSystem
-
-- event definition
-- event storage
-- event processing
-
-
-winproc generates message
-eventhandler generates window event
-event is stored in container
-events are processed in order every frame
-events are sent out
-
-event needs
-	type (window, engine, etc)
-	subtype (window::close, engine::shutdown, etc)
-	event info --- see union type super helpful
+-> event system is cumbersome and bulky. needs refactor at some point
 
 
 typedef struct tagWNDCLASSEX {

@@ -23,18 +23,20 @@
 
 
 
+* close application with escape key
 
 
 
 
-
-
+* asserts are a bit aggressive
 
 * better understand message pump -- can avoid while (getmessage) are there ever multiple messages to resolve per frame?
 
 * hook up better functionality to window message pump
 
 * think about multi-threading
+
+* hook up opengl
 		
 * verify proper additional include directory setup
 	

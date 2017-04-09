@@ -6,6 +6,18 @@ EventHandler::EventHandler()
 {
 }
 
+void EventHandler::RegisterEvent(const Event& event, const bool bFireImmediate)
+{
+	if (bFireImmediate)
+	{
+		RegisterEventImmediate(event);
+	}
+	else
+	{
+		mEventQueue.push(event);
+	}
+}
+
 void EventHandler::RegisterEventImmediate(const Event& event)
 {
 	std::vector<EventHandlingInfo> notifyList = mEventNotifyMap[event.mInfo.mEventType];
@@ -15,18 +27,18 @@ void EventHandler::RegisterEventImmediate(const Event& event)
 	}
 }
 
-void EventHandler::RegisterWindowEvent(const WindowEvent& windowEvent, const bool bFireImmediate)
+void EventHandler::RegisterWindowEvent(const WindowEvent& windowEvent, const bool bFireImmediate /*= false*/)
 {
 	Event event;
 	event.mWindowEvent = windowEvent;
+	RegisterEvent(event, bFireImmediate);
+}
 
-	if (bFireImmediate)
-	{
-		RegisterEventImmediate(event);
-	}
-	{
-		mEventQueue.push(event);
-	}
+void EventHandler::RegisterKeyEvent(const KeyEvent& keyEvent, const bool bFireImmediate /*= false*/)
+{
+	Event event;
+	event.mKeyEvent = keyEvent;
+	RegisterEvent(event, bFireImmediate);
 }
 
 void EventHandler::RegisterForEvent(const UInt16 eventType, Functor<void, const Event&> callback)
@@ -53,7 +65,5 @@ void EventHandler::ProcessEvents()
 		{
 			entry.mCallback(event);
 		}
-
-
 	}
 }

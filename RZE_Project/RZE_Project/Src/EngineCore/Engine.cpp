@@ -42,9 +42,10 @@ void RZE_EngineCore::Init()
 {
 	printf("RZE_EngineCore::Init() called. \n");
 	
-	RegisterEvents();
-
 	mMainWindow = MakeWindow("RZE_Application", 1280, 720);
+
+	RegisterEvents();
+	mInputHandler.RegisterEvents(mEventHandler);
 }
 
 void RZE_EngineCore::PostInit(Functor<std::unique_ptr<RZE_Application>> createApplicationCallback)

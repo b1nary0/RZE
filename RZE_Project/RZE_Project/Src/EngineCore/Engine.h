@@ -2,11 +2,11 @@
 
 #include "Application.h"
 #include "Events/EventHandler.h"
+#include "Input/InputHandler.h"
 #include "Windowing/WindowManager.h"
 
 class RZE_EngineCore
 {
-
 	static UInt8 sInstanceCount;
 
 public:
@@ -37,6 +37,7 @@ private:
 
 	WindowManager mWindowManager;
 	EventHandler mEventHandler;
+	InputHandler mInputHandler;
 
 	bool bShouldExit;
 };
