@@ -81,7 +81,7 @@ void RZE_EngineCore::RegisterWindowEvents()
 
 void RZE_EngineCore::RegisterInputEvents()
 {
-	Functor<void, UInt8> keyCallback([this](const UInt8 key)
+	Functor<void, UInt8> keyPressCallback([this](const UInt8 key)
 	{
 		if (key == Win32KeyCode::Escape)
 		{
@@ -89,7 +89,7 @@ void RZE_EngineCore::RegisterInputEvents()
 		}
 	});
 
-	mInputHandler.RegisterForEvent(0, keyCallback);
+	mInputHandler.RegisterForEvent(EKeyEventType::Key_Pressed, keyPressCallback);
 }
 
 void RZE_EngineCore::Update()

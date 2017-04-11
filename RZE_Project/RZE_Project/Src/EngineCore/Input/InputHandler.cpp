@@ -12,14 +12,11 @@ void InputHandler::RegisterEvents(EventHandler& eventHandler)
 	Functor<void, const Event&> keyInputCallback([this](const Event& event)
 	{
 		assert(event.mInfo.mEventType == EEventType::Key);
-		if (event.mKeyEvent.mEventInfo.mEventSubType == EKeyEventType::Key_Pressed)
-		{
-			KeyAction keyAction;
-			keyAction.mActionType = 0;
-			keyAction.mKey = event.mKeyEvent.mKey;
+		KeyAction keyAction;
+		keyAction.mActionType = event.mKeyEvent.mEventInfo.mEventSubType;
+		keyAction.mKey = event.mKeyEvent.mKey;
 
-			mKeyPresses.push(keyAction);
-		}
+		mKeyPresses.push(keyAction);
 	});
 
 	eventHandler.RegisterForEvent(EEventType::Key, keyInputCallback);
