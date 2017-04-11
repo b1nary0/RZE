@@ -123,6 +123,7 @@ long __stdcall WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp)
 		return 0;
 
 	case WM_KEYUP:
+		sWindowMessageAdaptor.PushMessage(WindowMessageAdaptor::EMessageType::Window_KeyUp, wp, lp);
 		return 0;
 
 	case WM_SIZE:
@@ -130,7 +131,6 @@ long __stdcall WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp)
 		
 	case WM_DESTROY:
 		sWindowMessageAdaptor.PushMessage(WindowMessageAdaptor::EMessageType::Window_Destroy, wp, lp);
-		PostQuitMessage(0);
 		return 0;
 
 	default:
