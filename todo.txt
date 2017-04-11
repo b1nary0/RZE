@@ -18,15 +18,23 @@
 	-> Engine can accept create application function
 @ update loop is weird... app updates, then app updates engine? weird.
 @ Actually create values for event (sub)types
+@ close application with escape key
 
 
 
 
 
-* close application with escape key
+
+! event system is cumbersome and bulky. needs refactor. 
+	! events themselves are extremely inextensible.
+	
+* structure InputHandler
+	* naive implementation for key processing. take another look.
 
 
 
+	
+	
 
 * asserts are a bit aggressive
 
@@ -35,6 +43,7 @@
 * hook up better functionality to window message pump
 
 * think about multi-threading
+
 
 * hook up opengl
 		

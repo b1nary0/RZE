@@ -2,6 +2,8 @@
 
 #include "Engine.h"
 
+#include "Windowing/WinKeyCodes.h"
+
 UInt8 RZE_EngineCore::sInstanceCount = 0;
 
 RZE_EngineCore::RZE_EngineCore()
@@ -44,7 +46,9 @@ void RZE_EngineCore::Init()
 	
 	mMainWindow = MakeWindow("RZE_Application", 1280, 720);
 
-	RegisterEvents();
+	RegisterWindowEvents();
+	RegisterInputEvents();
+
 	mInputHandler.RegisterEvents(mEventHandler);
 }
 
@@ -61,7 +65,7 @@ void RZE_EngineCore::CompileEvents()
 	mWindowManager.CompileEvents(mEventHandler);
 }
 
-void RZE_EngineCore::RegisterEvents()
+void RZE_EngineCore::RegisterWindowEvents()
 {
 	Functor<void, const Event&> windowCallback([this](const Event& event)
 	{
@@ -75,9 +79,23 @@ void RZE_EngineCore::RegisterEvents()
 	RegisterForEvent(EEventType::Window, windowCallback);
 }
 
+void RZE_EngineCore::RegisterInputEvents()
+{
+	Functor<void, UInt8> keyCallback([this](const UInt8 key)
+	{
+		if (key == Win32KeyCode::Escape)
+		{
+			this->bShouldExit = true;
+		}
+	});
+
+	mInputHandler.RegisterForEvent(0, keyCallback);
+}
+
 void RZE_EngineCore::Update()
 {
 	mEventHandler.ProcessEvents();
+	mInputHandler.ProcessEvents();
 
 	CompileEvents();
 }

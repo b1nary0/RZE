@@ -104,12 +104,12 @@ void Win32Window::ProcessMessage(const WindowMessageAdaptor::WindowMessageInfo& 
 	if (messageInfo.mMessageType == WindowMessageAdaptor::EMessageType::Window_KeyDown)
 	{
 		KeyEvent keyEvent(EKeyEventType::Key_Pressed, static_cast<UInt8>(messageInfo.wParam));
-		eventHandler.RegisterKeyEvent(keyEvent);
+		eventHandler.PostKeyEvent(keyEvent);
 	}
 	else if (messageInfo.mMessageType == WindowMessageAdaptor::EMessageType::Window_Destroy)
 	{
 		WindowEvent windowEvent(EWindowEventType::Window_Destroy);
-		eventHandler.RegisterWindowEvent(windowEvent);
+		eventHandler.PostWindowEvent(windowEvent);
 	}
 }
 

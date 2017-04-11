@@ -1,6 +1,8 @@
 [NOTES]
 
--> event system is cumbersome and bulky. needs refactor at some point
+InputHandler responsibilities
+	aggregate window input messages
+	disperse to interested parties
 
 
 typedef struct tagWNDCLASSEX {

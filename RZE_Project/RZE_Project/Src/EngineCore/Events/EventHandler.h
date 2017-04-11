@@ -23,10 +23,10 @@ public:
 
 	EventHandler();
 
-	void RegisterEventImmediate(const Event& event);
+	void PostEventImmediate(const Event& event);
 
-	void RegisterWindowEvent(const WindowEvent& windowEvent, const bool bFireImmediate = false);
-	void RegisterKeyEvent(const KeyEvent& keyEvent, const bool bFireImmediate = false);
+	void PostWindowEvent(const WindowEvent& windowEvent, const bool bFireImmediate = false);
+	void PostKeyEvent(const KeyEvent& keyEvent, const bool bFireImmediate = false);
 
 	void RegisterForEvent(const UInt16 eventType, Functor<void, const Event&> callback);
 
@@ -34,7 +34,7 @@ public:
 
 private:
 
-	void RegisterEvent(const Event& event, const bool bFireImmediate);
+	void PostEvent(const Event& event, const bool bFireImmediate);
 
 	std::queue<Event> mEventQueue;
 	std::map<UInt16, std::vector<EventHandlingInfo>> mEventNotifyMap;

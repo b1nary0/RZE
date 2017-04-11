@@ -6,11 +6,11 @@ EventHandler::EventHandler()
 {
 }
 
-void EventHandler::RegisterEvent(const Event& event, const bool bFireImmediate)
+void EventHandler::PostEvent(const Event& event, const bool bFireImmediate)
 {
 	if (bFireImmediate)
 	{
-		RegisterEventImmediate(event);
+		PostEventImmediate(event);
 	}
 	else
 	{
@@ -18,7 +18,7 @@ void EventHandler::RegisterEvent(const Event& event, const bool bFireImmediate)
 	}
 }
 
-void EventHandler::RegisterEventImmediate(const Event& event)
+void EventHandler::PostEventImmediate(const Event& event)
 {
 	std::vector<EventHandlingInfo> notifyList = mEventNotifyMap[event.mInfo.mEventType];
 	for (EventHandlingInfo& info : notifyList)
@@ -27,18 +27,18 @@ void EventHandler::RegisterEventImmediate(const Event& event)
 	}
 }
 
-void EventHandler::RegisterWindowEvent(const WindowEvent& windowEvent, const bool bFireImmediate /*= false*/)
+void EventHandler::PostWindowEvent(const WindowEvent& windowEvent, const bool bFireImmediate /*= false*/)
 {
 	Event event;
 	event.mWindowEvent = windowEvent;
-	RegisterEvent(event, bFireImmediate);
+	PostEvent(event, bFireImmediate);
 }
 
-void EventHandler::RegisterKeyEvent(const KeyEvent& keyEvent, const bool bFireImmediate /*= false*/)
+void EventHandler::PostKeyEvent(const KeyEvent& keyEvent, const bool bFireImmediate /*= false*/)
 {
 	Event event;
 	event.mKeyEvent = keyEvent;
-	RegisterEvent(event, bFireImmediate);
+	PostEvent(event, bFireImmediate);
 }
 
 void EventHandler::RegisterForEvent(const UInt16 eventType, Functor<void, const Event&> callback)

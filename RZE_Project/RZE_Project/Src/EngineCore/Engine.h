@@ -30,7 +30,8 @@ private:
 
 	void CompileEvents();
 
-	void RegisterEvents();
+	void RegisterWindowEvents();
+	void RegisterInputEvents();
 
 	std::unique_ptr<RZE_Application> mApplication;
 	std::weak_ptr<Win32Window> mMainWindow;
