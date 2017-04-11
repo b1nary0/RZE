@@ -106,6 +106,11 @@ void Win32Window::ProcessMessage(const WindowMessageAdaptor::WindowMessageInfo& 
 		KeyEvent keyEvent(EKeyEventType::Key_Pressed, static_cast<UInt8>(messageInfo.wParam));
 		eventHandler.PostKeyEvent(keyEvent);
 	}
+	else if (messageInfo.mMessageType == WindowMessageAdaptor::EMessageType::Window_KeyUp)
+	{
+		KeyEvent keyEvent(EKeyEventType::Key_Released, static_cast<UInt8>(messageInfo.wParam));
+		eventHandler.PostKeyEvent(keyEvent);
+	}
 	else if (messageInfo.mMessageType == WindowMessageAdaptor::EMessageType::Window_Destroy)
 	{
 		WindowEvent windowEvent(EWindowEventType::Window_Destroy);
