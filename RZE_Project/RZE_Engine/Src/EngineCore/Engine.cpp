@@ -2,6 +2,7 @@
 
 #include "Engine.h"
 
+#include "EngineCore/Debug/Debug.h"
 #include "Windowing/WinKeyCodes.h"
 
 UInt8 RZE_EngineCore::sInstanceCount = 0;
@@ -42,7 +43,7 @@ void RZE_EngineCore::Run(Functor<std::unique_ptr<RZE_Application>> createApplica
 
 void RZE_EngineCore::Init()
 {
-	printf("RZE_EngineCore::Init() called. \n");
+	LOG_CONSOLE("RZE_EngineCore::Init() called. \n");
 	
 	mMainWindow = MakeWindow("RZE_Application", 1280, 720);
 
@@ -54,7 +55,7 @@ void RZE_EngineCore::Init()
 
 void RZE_EngineCore::PostInit(Functor<std::unique_ptr<RZE_Application>> createApplicationCallback)
 {
-	printf("RZE_EngineCore::PostInit() called. \n");
+	LOG_CONSOLE("RZE_EngineCore::PostInit() called. \n");
 
 	mApplication = createApplicationCallback();
 	mApplication->RegisterEvents(mEventHandler);
@@ -102,7 +103,7 @@ void RZE_EngineCore::Update()
 
 void RZE_EngineCore::ShutDown()
 {
-	printf("Shutting engine down...\n");
+	LOG_CONSOLE("Shutting engine down...\n");
 }
 
 void RZE_EngineCore::RegisterForEvent(const UInt16 eventType, Functor<void, const Event&> callback)

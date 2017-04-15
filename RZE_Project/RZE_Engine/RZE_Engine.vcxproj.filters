@@ -31,6 +31,9 @@
     <Filter Include="Source Files\EngineCore\Input">
       <UniqueIdentifier>{7c96c1b1-ba10-40f4-ab4c-850013c115f6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\EngineCore\Debug">
+      <UniqueIdentifier>{fda1f300-df02-4277-a729-8017f125984c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -124,6 +127,9 @@
     </ClInclude>
     <ClInclude Include="Src\EngineCore\Windowing\WinKeyCodes.h">
       <Filter>Source Files\EngineCore\Windowing</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\EngineCore\Debug\Debug.h">
+      <Filter>Source Files\EngineCore\Debug</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

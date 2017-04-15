@@ -3,6 +3,7 @@
 #include "Application.h"
 
 #include "EngineCore/Engine.h"
+#include "EngineCore/Debug/Debug.h"
 
 RZE_Application::RZE_Application()
 	: bIsRunning(false)
@@ -31,7 +32,7 @@ void RZE_Application::Update()
 
 void RZE_Application::Init()
 {
-	printf("RZE_Application::Init() called. \n");
+	LOG_CONSOLE("RZE_Application::Init() called. \n");
 }
 
 void RZE_Application::RegisterEvents(EventHandler& eventHandler)

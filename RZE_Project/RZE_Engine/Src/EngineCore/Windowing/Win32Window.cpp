@@ -4,6 +4,7 @@
 
 // RZE
 #include "WindowMessageAdaptor.h"
+#include "EngineCore/Debug/Debug.h"
 #include "EngineCore/Events/EventHandler.h"
 #include "EngineCore/Utils/Conversions.h"
 #include "EngineCore/Windowing/WinKeyCodes.h"
@@ -41,7 +42,7 @@ const Vector2D& Win32Window::GetDimensions() const
 void Win32Window::Create(const WindowCreationProtocol& creationProtocol)
 {
 	// Interface with WinAPI and create a window -- store useful information.
-	printf("[ Creating Win32Window ] Title : %s | ID: %i\n", mTitle.c_str(), mWindowID);
+	LOG_CONSOLE_ARGS("[ Creating Win32Window ] Title : %s | ID: %i\n", mTitle.c_str(), mWindowID);
 
 	const std::wstring wStrTitle = Conversions::StringToWString(mTitle);
 
