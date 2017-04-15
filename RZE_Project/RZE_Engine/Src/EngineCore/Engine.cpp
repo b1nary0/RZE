@@ -2,7 +2,8 @@
 
 #include "Engine.h"
 
-#include "EngineCore/Debug/Debug.h"
+#include "Debug/Debug.h"
+
 #include "Windowing/WinKeyCodes.h"
 
 UInt8 RZE_EngineCore::sInstanceCount = 0;

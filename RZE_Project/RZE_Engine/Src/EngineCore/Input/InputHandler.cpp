@@ -1,7 +1,7 @@
 #include "StdAfx.h"
 
 #include "InputHandler.h"
-#include "EngineCore/Events/EventHandler.h"
+#include "Events/EventHandler.h"
 
 InputHandler::InputHandler()
 {

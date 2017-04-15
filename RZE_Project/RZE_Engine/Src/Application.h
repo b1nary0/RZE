@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "EngineCore/Events/Events.h"
+#include "Events/Events.h"
 
 class EventHandler;
 

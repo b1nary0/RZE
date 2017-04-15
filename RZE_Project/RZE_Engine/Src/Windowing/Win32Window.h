@@ -10,7 +10,7 @@
 
 // RZE
 #include "WindowMessageAdaptor.h"
-#include "../Utils/Math/Vector2D.h"
+#include "EngineCore/Utils/Math/Vector2D.h"
 
 class EventHandler;
 

@@ -16,22 +16,25 @@
     <Filter Include="Source Files\EngineCore">
       <UniqueIdentifier>{f3b08193-8b1b-4462-a2c7-cfb1ce2d4514}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\EngineCore\Windowing">
-      <UniqueIdentifier>{1fbcf05c-ea5b-451f-82c6-66303bcef10e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Utils">
       <UniqueIdentifier>{a24fb93a-44a7-40ff-8f44-0d590370dfcb}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\Utils\Math">
       <UniqueIdentifier>{bbb0cdea-4cfa-43a8-a7dd-84b4fbdbd2cc}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\EngineCore\Events">
-      <UniqueIdentifier>{e8f13302-7f7c-472c-9f38-8673ec37ea73}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\EngineCore\Input">
       <UniqueIdentifier>{7c96c1b1-ba10-40f4-ab4c-850013c115f6}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\EngineCore\Debug">
+    <Filter Include="Source Files\RenderCore">
+      <UniqueIdentifier>{9566b842-3b8a-47b5-93c2-09387175bd64}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Events">
+      <UniqueIdentifier>{e8f13302-7f7c-472c-9f38-8673ec37ea73}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Windowing">
+      <UniqueIdentifier>{1fbcf05c-ea5b-451f-82c6-66303bcef10e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Debug">
       <UniqueIdentifier>{fda1f300-df02-4277-a729-8017f125984c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -41,12 +44,6 @@
     </ClCompile>
     <ClCompile Include="Src\Application.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Src\EngineCore\Windowing\WindowManager.cpp">
-      <Filter>Source Files\EngineCore\Windowing</Filter>
-    </ClCompile>
-    <ClCompile Include="Src\EngineCore\Windowing\Win32Window.cpp">
-      <Filter>Source Files\EngineCore\Windowing</Filter>
     </ClCompile>
     <ClCompile Include="Src\EngineCore\Utils\Math\Vector3D.cpp">
       <Filter>Source Files\Utils\Math</Filter>
@@ -63,17 +60,23 @@
     <ClCompile Include="Src\StdAfx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Src\EngineCore\Events\EventHandler.cpp">
-      <Filter>Source Files\EngineCore\Events</Filter>
-    </ClCompile>
-    <ClCompile Include="Src\EngineCore\Windowing\WindowMessageAdaptor.cpp">
-      <Filter>Source Files\EngineCore\Windowing</Filter>
-    </ClCompile>
-    <ClCompile Include="Src\EngineCore\Events\Events.cpp">
-      <Filter>Source Files\EngineCore\Events</Filter>
-    </ClCompile>
     <ClCompile Include="Src\EngineCore\Input\InputHandler.cpp">
       <Filter>Source Files\EngineCore\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Events\EventHandler.cpp">
+      <Filter>Source Files\Events</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Events\Events.cpp">
+      <Filter>Source Files\Events</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Windowing\Win32Window.cpp">
+      <Filter>Source Files\Windowing</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Windowing\WindowManager.cpp">
+      <Filter>Source Files\Windowing</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Windowing\WindowMessageAdaptor.cpp">
+      <Filter>Source Files\Windowing</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -82,12 +85,6 @@
     </ClInclude>
     <ClInclude Include="Src\Application.h">
       <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\EngineCore\Windowing\WindowManager.h">
-      <Filter>Source Files\EngineCore\Windowing</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\EngineCore\Windowing\Win32Window.h">
-      <Filter>Source Files\EngineCore\Windowing</Filter>
     </ClInclude>
     <ClInclude Include="Src\EngineCore\Utils\Math\Math.h">
       <Filter>Source Files\Utils\Math</Filter>
@@ -104,32 +101,38 @@
     <ClInclude Include="Src\StdAfx.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="Src\EngineCore\Events\EventHandler.h">
-      <Filter>Source Files\EngineCore\Events</Filter>
-    </ClInclude>
     <ClInclude Include="Src\EngineCore\Utils\PrimitiveDefs.h">
       <Filter>Source Files\Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\EngineCore\Events\EventTypes.h">
-      <Filter>Source Files\EngineCore\Events</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\EngineCore\Windowing\WindowMessageAdaptor.h">
-      <Filter>Source Files\EngineCore\Windowing</Filter>
     </ClInclude>
     <ClInclude Include="Src\EngineCore\Utils\Functor.h">
       <Filter>Source Files\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="Src\EngineCore\Events\Events.h">
-      <Filter>Source Files\EngineCore\Events</Filter>
-    </ClInclude>
     <ClInclude Include="Src\EngineCore\Input\InputHandler.h">
       <Filter>Source Files\EngineCore\Input</Filter>
     </ClInclude>
-    <ClInclude Include="Src\EngineCore\Windowing\WinKeyCodes.h">
-      <Filter>Source Files\EngineCore\Windowing</Filter>
-    </ClInclude>
     <ClInclude Include="Src\EngineCore\Debug\Debug.h">
-      <Filter>Source Files\EngineCore\Debug</Filter>
+      <Filter>Source Files\Debug</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Events\EventHandler.h">
+      <Filter>Source Files\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Events\Events.h">
+      <Filter>Source Files\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Events\EventTypes.h">
+      <Filter>Source Files\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Windowing\Win32Window.h">
+      <Filter>Source Files\Windowing</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Windowing\WindowManager.h">
+      <Filter>Source Files\Windowing</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Windowing\WindowMessageAdaptor.h">
+      <Filter>Source Files\Windowing</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Windowing\WinKeyCodes.h">
+      <Filter>Source Files\Windowing</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

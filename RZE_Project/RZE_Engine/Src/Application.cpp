@@ -2,8 +2,9 @@
 
 #include "Application.h"
 
+#include "Debug/Debug.h"
+
 #include "EngineCore/Engine.h"
-#include "EngineCore/Debug/Debug.h"
 
 RZE_Application::RZE_Application()
 	: bIsRunning(false)

@@ -1,9 +1,9 @@
 #include "StdAfx.h"
 
-#include "WindowManager.h"
+#include "Windowing/WindowManager.h"
+#include "Windowing/Win32Window.h"
 
-#include "Win32Window.h"
-#include "EngineCore/Events/EventHandler.h"
+#include "Events/EventHandler.h"
 
 WindowManager::WindowManager()
 {

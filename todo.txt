@@ -25,30 +25,21 @@
 
 
 
-! event system is cumbersome and bulky. needs refactor. 
-	! events themselves are extremely inextensible.
 	
+! hook up opengl
+
+
+	
+	
+
+* event system is cumbersome and bulky. needs refactor. 
+	* events themselves are extremely inextensible.
 * structure InputHandler
 	* naive implementation for key processing. take another look.
-
-
-
-	
-	
-
 * asserts are a bit aggressive
-
 * better understand message pump -- can avoid while (getmessage) are there ever multiple messages to resolve per frame?
-
 * hook up better functionality to window message pump
-
 * think about multi-threading
-
-
-* hook up opengl
-		
 * verify proper additional include directory setup
-	
 * Customize window creation (borderless, fullscren, etc) easily configurable
-
 * Set up gcc to do cross-compiler testing

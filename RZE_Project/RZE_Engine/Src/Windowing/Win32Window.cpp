@@ -3,11 +3,14 @@
 #include "Win32Window.h"
 
 // RZE
-#include "WindowMessageAdaptor.h"
-#include "EngineCore/Debug/Debug.h"
-#include "EngineCore/Events/EventHandler.h"
+#include "Debug/Debug.h"
+
 #include "EngineCore/Utils/Conversions.h"
-#include "EngineCore/Windowing/WinKeyCodes.h"
+
+#include "Events/EventHandler.h"
+
+#include "Windowing/WindowMessageAdaptor.h"
+#include "Windowing/WinKeyCodes.h"
 
 long __stdcall WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp);
 
