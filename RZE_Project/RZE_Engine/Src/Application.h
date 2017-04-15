@@ -14,17 +14,16 @@ public:
 	RZE_Application();
 	~RZE_Application();
 
-	void Start();
-	void Update();
+	virtual void Start();
+	virtual void Update();
 
 	bool IsRunning() const;
 
-	void RegisterEvents(EventHandler& eventHandler);
+	virtual void RegisterEvents(EventHandler& eventHandler);
 
 protected:
 
-	void Init();
-
+	virtual void Init();
 
 	bool bIsRunning;
 };

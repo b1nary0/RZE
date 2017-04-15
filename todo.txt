@@ -36,6 +36,7 @@
 	* events themselves are extremely inextensible.
 * structure InputHandler
 	* naive implementation for key processing. take another look.
+* Engine config file/config file structure
 * asserts are a bit aggressive
 * better understand message pump -- can avoid while (getmessage) are there ever multiple messages to resolve per frame?
 * hook up better functionality to window message pump

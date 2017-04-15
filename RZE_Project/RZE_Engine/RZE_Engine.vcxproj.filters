@@ -39,9 +39,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Src\Application.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -77,6 +74,9 @@
     </ClCompile>
     <ClCompile Include="Src\Windowing\WindowMessageAdaptor.cpp">
       <Filter>Source Files\Windowing</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\RenderCore\Renderer.cpp">
+      <Filter>Source Files\RenderCore</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -133,6 +133,9 @@
     </ClInclude>
     <ClInclude Include="Src\Windowing\WinKeyCodes.h">
       <Filter>Source Files\Windowing</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\RenderCore\Renderer.h">
+      <Filter>Source Files\RenderCore</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
