@@ -3,6 +3,7 @@
 
 // WinAPI
 #include <Windows.h>
+#include <gl/GL.h>
 
 // std lib
 #include <assert.h>
@@ -24,4 +25,4 @@
 #include <vector>
 
 // RZE
-#include "EngineCore/Utils/PrimitiveDefs.h"
+#include "Utils/PrimitiveDefs.h"

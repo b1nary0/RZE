@@ -1,6 +1,6 @@
 #pragma once
 
-#include "EngineCore/Utils/Functor.h"
+#include "Utils/Functor.h"
 
 class EventHandler;
 

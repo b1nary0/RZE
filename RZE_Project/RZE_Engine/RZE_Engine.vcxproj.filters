@@ -42,17 +42,8 @@
     <ClCompile Include="Src\Application.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Src\EngineCore\Utils\Math\Vector3D.cpp">
-      <Filter>Source Files\Utils\Math</Filter>
-    </ClCompile>
-    <ClCompile Include="Src\EngineCore\Utils\Math\Vector2D.cpp">
-      <Filter>Source Files\Utils\Math</Filter>
-    </ClCompile>
     <ClCompile Include="Src\EngineCore\Engine.cpp">
       <Filter>Source Files\EngineCore</Filter>
-    </ClCompile>
-    <ClCompile Include="Src\EngineCore\Utils\Conversions.cpp">
-      <Filter>Source Files\Utils</Filter>
     </ClCompile>
     <ClCompile Include="Src\StdAfx.cpp">
       <Filter>Source Files</Filter>
@@ -78,6 +69,15 @@
     <ClCompile Include="Src\RenderCore\Renderer.cpp">
       <Filter>Source Files\RenderCore</Filter>
     </ClCompile>
+    <ClCompile Include="Src\Utils\Conversions.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Utils\Math\Vector2D.cpp">
+      <Filter>Source Files\Utils\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Utils\Math\Vector3D.cpp">
+      <Filter>Source Files\Utils\Math</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\EngineCore\Engine.h">
@@ -86,26 +86,8 @@
     <ClInclude Include="Src\Application.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="Src\EngineCore\Utils\Math\Math.h">
-      <Filter>Source Files\Utils\Math</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\EngineCore\Utils\Math\Vector3D.h">
-      <Filter>Source Files\Utils\Math</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\EngineCore\Utils\Math\Vector2D.h">
-      <Filter>Source Files\Utils\Math</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\EngineCore\Utils\Conversions.h">
-      <Filter>Source Files\Utils</Filter>
-    </ClInclude>
     <ClInclude Include="Src\StdAfx.h">
       <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\EngineCore\Utils\PrimitiveDefs.h">
-      <Filter>Source Files\Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\EngineCore\Utils\Functor.h">
-      <Filter>Source Files\Utils</Filter>
     </ClInclude>
     <ClInclude Include="Src\EngineCore\Input\InputHandler.h">
       <Filter>Source Files\EngineCore\Input</Filter>
@@ -136,6 +118,27 @@
     </ClInclude>
     <ClInclude Include="Src\RenderCore\Renderer.h">
       <Filter>Source Files\RenderCore</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Utils\Conversions.h">
+      <Filter>Source Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Utils\Functor.h">
+      <Filter>Source Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Utils\PrimitiveDefs.h">
+      <Filter>Source Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Utils\StringUtils.h">
+      <Filter>Source Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Utils\Math\Math.h">
+      <Filter>Source Files\Utils\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Utils\Math\Vector2D.h">
+      <Filter>Source Files\Utils\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Utils\Math\Vector3D.h">
+      <Filter>Source Files\Utils\Math</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

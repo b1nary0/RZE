@@ -1,6 +1,6 @@
 #pragma once
 
-#include "EngineCore/Utils/PrimitiveDefs.h"
+#include "Utils/PrimitiveDefs.h"
 
 namespace EEventType
 {

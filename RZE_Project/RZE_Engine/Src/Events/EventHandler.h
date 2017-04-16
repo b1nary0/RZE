@@ -6,7 +6,7 @@
 #include <map>
 
 #include "Events.h"
-#include "EngineCore/Utils/Functor.h"
+#include "Utils/Functor.h"
 
 class EventHandler
 {
