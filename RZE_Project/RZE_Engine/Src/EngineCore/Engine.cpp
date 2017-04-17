@@ -4,6 +4,7 @@
 
 #include "Debug/Debug.h"
 
+#include "Windowing/Win32Window.h"
 #include "Windowing/WinKeyCodes.h"
 
 UInt8 RZE_EngineCore::sInstanceCount = 0;
@@ -27,7 +28,15 @@ RZE_EngineCore::~RZE_EngineCore()
 
 std::weak_ptr<Win32Window> RZE_EngineCore::MakeWindow(const std::string& title, const int width, const int height)
 {
-	return mWindowManager.MakeWindow(title, width, height);
+	Win32Window::WindowCreationParams params;
+	params.windowTitle = title;
+	params.width = width;
+	params.height = height;
+	
+	Win32Window* window = new Win32Window(params);
+	mMainWindow = std::shared_ptr<Win32Window>(window);
+
+	return mMainWindow;
 }
 
 void RZE_EngineCore::Run(Functor<std::unique_ptr<RZE_Application>> createApplicationCallback)
@@ -46,7 +55,7 @@ void RZE_EngineCore::Init()
 {
 	LOG_CONSOLE("RZE_EngineCore::Init() called. \n");
 	
-	mMainWindow = MakeWindow("RZE_Application", 1280, 720);
+	MakeWindow("RZE_Application", 1280, 720);
 
 	RegisterWindowEvents();
 	RegisterInputEvents();
@@ -64,7 +73,7 @@ void RZE_EngineCore::PostInit(Functor<std::unique_ptr<RZE_Application>> createAp
 
 void RZE_EngineCore::CompileEvents()
 {
-	mWindowManager.CompileEvents(mEventHandler);
+	mMainWindow->CompileMessages(mEventHandler);
 }
 
 void RZE_EngineCore::RegisterWindowEvents()
@@ -110,4 +119,9 @@ void RZE_EngineCore::ShutDown()
 void RZE_EngineCore::RegisterForEvent(const UInt16 eventType, Functor<void, const Event&> callback)
 {
 	mEventHandler.RegisterForEvent(eventType, callback);
+}
+
+std::weak_ptr<Win32Window> RZE_EngineCore::GetMainWindow() const
+{
+	return mMainWindow;
 }

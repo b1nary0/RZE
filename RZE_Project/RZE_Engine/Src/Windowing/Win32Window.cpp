@@ -22,11 +22,10 @@ struct OSWindowHandleData
 	HWND mWindowHandle;
 };
 
-Win32Window::Win32Window(const WindowCreationProtocol& creationProtocol)
+Win32Window::Win32Window(const WindowCreationParams& creationProtocol)
 {
-	mTitle = creationProtocol.WindowTitle;
-	mDimensions = Vector2D(static_cast<float>(creationProtocol.Width), static_cast<float>(creationProtocol.Height));
-	mWindowID = creationProtocol.WindowID;
+	mTitle = creationProtocol.windowTitle;
+	mDimensions = Vector2D(static_cast<float>(creationProtocol.width), static_cast<float>(creationProtocol.height));
 
 	Create(creationProtocol);
 }
@@ -42,10 +41,10 @@ const Vector2D& Win32Window::GetDimensions() const
 	return mDimensions;
 }
 
-void Win32Window::Create(const WindowCreationProtocol& creationProtocol)
+void Win32Window::Create(const WindowCreationParams& creationProtocol)
 {
 	// Interface with WinAPI and create a window -- store useful information.
-	LOG_CONSOLE_ARGS("[ Creating Win32Window ] Title : %s | ID: %i\n", mTitle.c_str(), mWindowID);
+	LOG_CONSOLE_ARGS("[ Creating Win32Window ] Title : %s\n", mTitle.c_str());
 
 	const std::wstring wStrTitle = Conversions::StringToWString(mTitle);
 

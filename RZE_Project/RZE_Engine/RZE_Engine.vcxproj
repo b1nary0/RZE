@@ -160,7 +160,6 @@
     <ClCompile Include="Src\Utils\Math\Vector2D.cpp" />
     <ClCompile Include="Src\Utils\Math\Vector3D.cpp" />
     <ClCompile Include="Src\Windowing\Win32Window.cpp" />
-    <ClCompile Include="Src\Windowing\WindowManager.cpp" />
     <ClCompile Include="Src\Windowing\WindowMessageAdaptor.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -181,7 +180,6 @@
     <ClInclude Include="Src\Utils\PrimitiveDefs.h" />
     <ClInclude Include="Src\Utils\StringUtils.h" />
     <ClInclude Include="Src\Windowing\Win32Window.h" />
-    <ClInclude Include="Src\Windowing\WindowManager.h" />
     <ClInclude Include="Src\Windowing\WindowMessageAdaptor.h" />
     <ClInclude Include="Src\Windowing\WinKeyCodes.h" />
   </ItemGroup>

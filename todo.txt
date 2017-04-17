@@ -25,6 +25,7 @@
 
 
 
+! gonna need to make a better access point design for engine class, maybe a pass-through?
 	
 ! hook up opengl
 

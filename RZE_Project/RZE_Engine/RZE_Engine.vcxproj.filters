@@ -60,9 +60,6 @@
     <ClCompile Include="Src\Windowing\Win32Window.cpp">
       <Filter>Source Files\Windowing</Filter>
     </ClCompile>
-    <ClCompile Include="Src\Windowing\WindowManager.cpp">
-      <Filter>Source Files\Windowing</Filter>
-    </ClCompile>
     <ClCompile Include="Src\Windowing\WindowMessageAdaptor.cpp">
       <Filter>Source Files\Windowing</Filter>
     </ClCompile>
@@ -105,9 +102,6 @@
       <Filter>Source Files\Events</Filter>
     </ClInclude>
     <ClInclude Include="Src\Windowing\Win32Window.h">
-      <Filter>Source Files\Windowing</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\Windowing\WindowManager.h">
       <Filter>Source Files\Windowing</Filter>
     </ClInclude>
     <ClInclude Include="Src\Windowing\WindowMessageAdaptor.h">

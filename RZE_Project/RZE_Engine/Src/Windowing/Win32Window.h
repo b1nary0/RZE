@@ -16,17 +16,8 @@ class EventHandler;
 
 class Win32Window
 {
-	friend class WindowManager;
 
 private:
-
-	struct WindowCreationProtocol
-	{
-		std::string		WindowTitle;
-		int				WindowID{ -1 };
-		int				Width{ -1 };
-		int				Height{ -1 };
-	};
 
 	struct OSWindowHandleData
 	{
@@ -35,24 +26,31 @@ private:
 
 public:
 
+	struct WindowCreationParams
+	{
+		std::string		windowTitle;
+		int				width{ -1 };
+		int				height{ -1 };
+	};
+
+	Win32Window(const WindowCreationParams& creationProtocol);
+
 	const std::string& GetTitle() const;
 	const Vector2D& GetDimensions() const;
+
+	void CompileMessages(EventHandler& eventHandler);
 
 protected:
 
 private:
 
-	void Create(const WindowCreationProtocol& creationProtocol);
+	void Create(const WindowCreationParams& creationProtocol);
 
-	void CompileMessages(EventHandler& eventHandler);
 	void ProcessMessage(const WindowMessageAdaptor::WindowMessageInfo& messageInfo, EventHandler& eventHandler);
-
-	Win32Window(const WindowCreationProtocol& creationProtocol);
-	
+		
 	OSWindowHandleData mOSWindowHandleData;
-	WindowCreationProtocol mCreationData;
+	WindowCreationParams mCreationData;
 
-	int mWindowID;
 	std::string mTitle;
 	Vector2D mDimensions;
 };
