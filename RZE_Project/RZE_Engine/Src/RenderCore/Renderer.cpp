@@ -18,7 +18,8 @@ RZE_Renderer::~RZE_Renderer()
 void RZE_Renderer::Render()
 {
 	OpenGLRHI::Get().Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	SwapBuffers(mMainWindow->GetOSWindowHandleData().deviceContext);
+
+	mMainWindow->BufferSwap();
 }
 
 std::weak_ptr<Win32Window> RZE_Renderer::MakeWindow(const std::string& title, const int width, const int height)

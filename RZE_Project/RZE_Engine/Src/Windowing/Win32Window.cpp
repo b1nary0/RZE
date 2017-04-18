@@ -102,6 +102,11 @@ void Win32Window::CompileMessages(EventHandler& eventHandler)
 	}
 }
 
+void Win32Window::BufferSwap() const
+{
+	SwapBuffers(mOSWindowHandleData.deviceContext);
+}
+
 const Win32Window::OSWindowHandleData Win32Window::GetOSWindowHandleData() const
 {
 	return mOSWindowHandleData;
