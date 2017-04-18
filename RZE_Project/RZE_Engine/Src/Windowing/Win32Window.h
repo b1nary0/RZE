@@ -21,7 +21,10 @@ private:
 
 	struct OSWindowHandleData
 	{
-		HWND mWindowHandle;
+		HWND windowHandle;
+		HDC deviceContext;
+		HGLRC renderContext;
+		PIXELFORMATDESCRIPTOR pixelFormatDesc;
 	};
 
 public:
@@ -39,6 +42,8 @@ public:
 	const Vector2D& GetDimensions() const;
 
 	void CompileMessages(EventHandler& eventHandler);
+
+	const OSWindowHandleData GetOSWindowHandleData() const;
 
 protected:
 

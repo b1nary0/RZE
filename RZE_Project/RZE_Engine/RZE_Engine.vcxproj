@@ -97,6 +97,9 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <Lib>
+      <AdditionalDependencies>OpenGL32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -154,6 +157,7 @@
     <ClCompile Include="Src\EngineCore\Input\InputHandler.cpp" />
     <ClCompile Include="Src\Events\EventHandler.cpp" />
     <ClCompile Include="Src\Events\Events.cpp" />
+    <ClCompile Include="Src\RenderCore\HardwareInterface\OpenGLRHI.cpp" />
     <ClCompile Include="Src\RenderCore\Renderer.cpp" />
     <ClCompile Include="Src\StdAfx.cpp" />
     <ClCompile Include="Src\Utils\Conversions.cpp" />
@@ -170,7 +174,9 @@
     <ClInclude Include="Src\Events\EventHandler.h" />
     <ClInclude Include="Src\Events\Events.h" />
     <ClInclude Include="Src\Events\EventTypes.h" />
+    <ClInclude Include="Src\RenderCore\HardwareInterface\OpenGLRHI.h" />
     <ClInclude Include="Src\RenderCore\Renderer.h" />
+    <ClInclude Include="Src\RZE.h" />
     <ClInclude Include="Src\StdAfx.h" />
     <ClInclude Include="Src\Utils\Conversions.h" />
     <ClInclude Include="Src\Utils\Functor.h" />

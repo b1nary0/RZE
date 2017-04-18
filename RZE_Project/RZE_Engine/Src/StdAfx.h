@@ -4,6 +4,7 @@
 // WinAPI
 #include <Windows.h>
 #include <gl/GL.h>
+#include <gl/GLU.h>
 
 // std lib
 #include <assert.h>
@@ -25,4 +26,5 @@
 #include <vector>
 
 // RZE
+#include "RZE.h"
 #include "Utils/PrimitiveDefs.h"

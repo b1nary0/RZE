@@ -6,36 +6,36 @@
 
 #include "EngineCore/Engine.h"
 
-RZE_Application::RZE_Application()
+RZE_Game::RZE_Game()
 	: bIsRunning(false)
 {
 	Init();
 }
 
-RZE_Application::~RZE_Application()
+RZE_Game::~RZE_Game()
 {
 
 }
 
-void RZE_Application::Start()
+void RZE_Game::Start()
 {
 	bIsRunning = true;
 }
 
-bool RZE_Application::IsRunning() const
+bool RZE_Game::IsRunning() const
 {
 	return bIsRunning;
 }
 
-void RZE_Application::Update()
+void RZE_Game::Update()
 {
 }
 
-void RZE_Application::Init()
+void RZE_Game::Init()
 {
 	LOG_CONSOLE("RZE_Application::Init() called. \n");
 }
 
-void RZE_Application::RegisterEvents(EventHandler& eventHandler)
+void RZE_Game::RegisterEvents(EventHandler& eventHandler)
 {
 }

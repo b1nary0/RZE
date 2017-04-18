@@ -37,6 +37,9 @@
     <Filter Include="Source Files\Debug">
       <UniqueIdentifier>{fda1f300-df02-4277-a729-8017f125984c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\RenderCore\HardwareInterface">
+      <UniqueIdentifier>{275d7f2a-9495-453b-b922-930f868e3021}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Src\Application.cpp">
@@ -74,6 +77,9 @@
     </ClCompile>
     <ClCompile Include="Src\Utils\Math\Vector3D.cpp">
       <Filter>Source Files\Utils\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\RenderCore\HardwareInterface\OpenGLRHI.cpp">
+      <Filter>Source Files\RenderCore\HardwareInterface</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -133,6 +139,12 @@
     </ClInclude>
     <ClInclude Include="Src\Utils\Math\Vector3D.h">
       <Filter>Source Files\Utils\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\RZE.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\RenderCore\HardwareInterface\OpenGLRHI.h">
+      <Filter>Source Files\RenderCore\HardwareInterface</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

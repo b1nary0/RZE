@@ -10,6 +10,7 @@ public:
 	{
 		enum Value
 		{
+			Window_Create,
 			Window_Move,
 			Window_Destroy,
 			Window_Close,

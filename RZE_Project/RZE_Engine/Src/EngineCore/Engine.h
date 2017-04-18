@@ -3,19 +3,20 @@
 #include "Application.h"
 #include "Events/EventHandler.h"
 #include "Input/InputHandler.h"
+#include "RenderCore/Renderer.h"
 
 class Win32Window;
 
-class RZE_EngineCore
+class RZE_Engine
 {
 	static UInt8 sInstanceCount;
 
 public:
 
-	RZE_EngineCore();
-	~RZE_EngineCore();
+	RZE_Engine();
+	~RZE_Engine();
 	
-	void Run(Functor<std::unique_ptr<RZE_Application>> createApplicationCallback);
+	void Run(Functor<std::unique_ptr<RZE_Game>> createApplicationCallback);
 
 	void RegisterForEvent(const UInt16 eventType, Functor<void, const Event&> callback);
 
@@ -24,20 +25,19 @@ public:
 private:
 
 	void Init();
-	void PostInit(Functor<std::unique_ptr<RZE_Application>> createApplicationCallback);
+	void PostInit(Functor<std::unique_ptr<RZE_Game>> createApplicationCallback);
 	
 	void Update();
 	void ShutDown();
 
-	std::weak_ptr<Win32Window> MakeWindow(const std::string& title, const int width, const int height);
 	void CompileEvents();
 
 	void RegisterWindowEvents();
 	void RegisterInputEvents();
 
-	std::unique_ptr<RZE_Application> mApplication;
-	std::shared_ptr<Win32Window> mMainWindow;
+	std::unique_ptr<RZE_Game> mApplication;
 
+	RZE_Renderer mRenderer;
 	EventHandler mEventHandler;
 	InputHandler mInputHandler;
 

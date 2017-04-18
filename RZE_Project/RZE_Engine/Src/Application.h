@@ -7,13 +7,13 @@
 class EventHandler;
 class Win32Window;
 
-class RZE_Application
+class RZE_Game
 {
 
 public:
 
-	RZE_Application();
-	~RZE_Application();
+	RZE_Game();
+	~RZE_Game();
 
 	virtual void Start();
 	virtual void Update();

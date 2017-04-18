@@ -5,7 +5,7 @@
 #include "Debug/Debug.h"
 
 GameApp::GameApp()
-	: RZE_Application()
+	: RZE_Game()
 {
 }
 

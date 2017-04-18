@@ -15,6 +15,7 @@ namespace EWindowEventType
 {
 	enum Type : UInt16
 	{
+		Window_Create,
 		Window_Destroy
 	};
 }

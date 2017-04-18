@@ -7,9 +7,9 @@
 #include "Windowing/Win32Window.h"
 #include "Windowing/WinKeyCodes.h"
 
-UInt8 RZE_EngineCore::sInstanceCount = 0;
+UInt8 RZE_Engine::sInstanceCount = 0;
 
-RZE_EngineCore::RZE_EngineCore()
+RZE_Engine::RZE_Engine()
 	: bShouldExit(false)
 {
 	++sInstanceCount;
@@ -22,24 +22,11 @@ RZE_EngineCore::RZE_EngineCore()
 	Init();
 }
 
-RZE_EngineCore::~RZE_EngineCore()
+RZE_Engine::~RZE_Engine()
 {
 }
 
-std::weak_ptr<Win32Window> RZE_EngineCore::MakeWindow(const std::string& title, const int width, const int height)
-{
-	Win32Window::WindowCreationParams params;
-	params.windowTitle = title;
-	params.width = width;
-	params.height = height;
-	
-	Win32Window* window = new Win32Window(params);
-	mMainWindow = std::shared_ptr<Win32Window>(window);
-
-	return mMainWindow;
-}
-
-void RZE_EngineCore::Run(Functor<std::unique_ptr<RZE_Application>> createApplicationCallback)
+void RZE_Engine::Run(Functor<std::unique_ptr<RZE_Game>> createApplicationCallback)
 {
 	PostInit(createApplicationCallback);
 
@@ -51,11 +38,11 @@ void RZE_EngineCore::Run(Functor<std::unique_ptr<RZE_Application>> createApplica
 	}
 }
 
-void RZE_EngineCore::Init()
+void RZE_Engine::Init()
 {
 	LOG_CONSOLE("RZE_EngineCore::Init() called. \n");
-	
-	MakeWindow("RZE_Application", 1280, 720);
+
+	mRenderer.MakeWindow("RZE_Engine", 1280, 720);
 
 	RegisterWindowEvents();
 	RegisterInputEvents();
@@ -63,7 +50,7 @@ void RZE_EngineCore::Init()
 	mInputHandler.RegisterEvents(mEventHandler);
 }
 
-void RZE_EngineCore::PostInit(Functor<std::unique_ptr<RZE_Application>> createApplicationCallback)
+void RZE_Engine::PostInit(Functor<std::unique_ptr<RZE_Game>> createApplicationCallback)
 {
 	LOG_CONSOLE("RZE_EngineCore::PostInit() called. \n");
 
@@ -71,12 +58,20 @@ void RZE_EngineCore::PostInit(Functor<std::unique_ptr<RZE_Application>> createAp
 	mApplication->RegisterEvents(mEventHandler);
 }
 
-void RZE_EngineCore::CompileEvents()
+void RZE_Engine::CompileEvents()
 {
-	mMainWindow->CompileMessages(mEventHandler);
+	std::shared_ptr<Win32Window> mainWindow = mRenderer.GetMainWindow().lock();
+	if (mainWindow)
+	{
+		mainWindow->CompileMessages(mEventHandler);
+	}
+	else
+	{
+		assert(false && "Had trouble locking window from renderer. This is a problem.");
+	}
 }
 
-void RZE_EngineCore::RegisterWindowEvents()
+void RZE_Engine::RegisterWindowEvents()
 {
 	Functor<void, const Event&> windowCallback([this](const Event& event)
 	{
@@ -90,7 +85,7 @@ void RZE_EngineCore::RegisterWindowEvents()
 	RegisterForEvent(EEventType::Window, windowCallback);
 }
 
-void RZE_EngineCore::RegisterInputEvents()
+void RZE_Engine::RegisterInputEvents()
 {
 	Functor<void, UInt8> keyPressCallback([this](const UInt8 key)
 	{
@@ -103,25 +98,27 @@ void RZE_EngineCore::RegisterInputEvents()
 	mInputHandler.RegisterForEvent(EKeyEventType::Key_Pressed, keyPressCallback);
 }
 
-void RZE_EngineCore::Update()
+void RZE_Engine::Update()
 {
 	mEventHandler.ProcessEvents();
 	mInputHandler.ProcessEvents();
 
+	mRenderer.Render();
+
 	CompileEvents();
 }
 
-void RZE_EngineCore::ShutDown()
+void RZE_Engine::ShutDown()
 {
 	LOG_CONSOLE("Shutting engine down...\n");
 }
 
-void RZE_EngineCore::RegisterForEvent(const UInt16 eventType, Functor<void, const Event&> callback)
+void RZE_Engine::RegisterForEvent(const UInt16 eventType, Functor<void, const Event&> callback)
 {
 	mEventHandler.RegisterForEvent(eventType, callback);
 }
 
-std::weak_ptr<Win32Window> RZE_EngineCore::GetMainWindow() const
+std::weak_ptr<Win32Window> RZE_Engine::GetMainWindow() const
 {
-	return mMainWindow;
+	return mRenderer.GetMainWindow();
 }

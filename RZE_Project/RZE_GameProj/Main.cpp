@@ -1,16 +1,16 @@
-#include "EngineCore/Engine.h"
+#include "RZE.h"
 
 #include "Game/GameApp.h"
 
 int main(void)
 {
-	Functor<std::unique_ptr<RZE_Application>> appCreateFunc([]()
+	Functor<std::unique_ptr<RZE_Game>> appCreateFunc([]()
 	{
 		return std::make_unique<GameApp>();
 	});
 
-	RZE_EngineCore engine;
-	engine.Run(appCreateFunc);
+	GEngine = new RZE_Engine();
+	GEngine->Run(appCreateFunc);
 
 	return 0;
 }

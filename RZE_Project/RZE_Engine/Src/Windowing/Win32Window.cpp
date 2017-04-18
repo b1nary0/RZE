@@ -65,7 +65,7 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 
 	if (RegisterClassEx(&wc))
 	{
-		mOSWindowHandleData.mWindowHandle = CreateWindowEx(0,
+		mOSWindowHandleData.windowHandle = CreateWindowEx(0,
 			wStrTitle.c_str(),
 			wStrTitle.c_str(),
 			WS_OVERLAPPEDWINDOW, // @note WS_POPUP = borderless. WS_OVERLAPPEDWINDOW default
@@ -78,9 +78,9 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 			GetModuleHandle(0),
 			0);
 
-		if (mOSWindowHandleData.mWindowHandle)
+		if (mOSWindowHandleData.windowHandle)
 		{
-			ShowWindow(mOSWindowHandleData.mWindowHandle, SW_NORMAL); // @note SW_SHOWMAXIMIZED for borderless fullscreen. SW_SHOWDEFAULT default
+			ShowWindow(mOSWindowHandleData.windowHandle, SW_NORMAL); // @note SW_SHOWMAXIMIZED for borderless fullscreen. SW_SHOWDEFAULT default
 		}
 	}
 }
@@ -88,9 +88,9 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 void Win32Window::CompileMessages(EventHandler& eventHandler)
 {
 	MSG msg;
-	if (PeekMessage(&msg, mOSWindowHandleData.mWindowHandle, 0, 0, PM_NOREMOVE))
+	if (PeekMessage(&msg, mOSWindowHandleData.windowHandle, 0, 0, PM_NOREMOVE))
 	{
-		GetMessage(&msg, mOSWindowHandleData.mWindowHandle, 0, 0);
+		GetMessage(&msg, mOSWindowHandleData.windowHandle, 0, 0);
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
@@ -102,12 +102,48 @@ void Win32Window::CompileMessages(EventHandler& eventHandler)
 	}
 }
 
+const Win32Window::OSWindowHandleData Win32Window::GetOSWindowHandleData() const
+{
+	return mOSWindowHandleData;
+}
+
 void Win32Window::ProcessMessage(const WindowMessageAdaptor::WindowMessageInfo& messageInfo, EventHandler& eventHandler)
 {
 	if (messageInfo.mMessageType == WindowMessageAdaptor::EMessageType::Window_KeyDown)
 	{
 		KeyEvent keyEvent(EKeyEventType::Key_Pressed, static_cast<UInt8>(messageInfo.wParam));
 		eventHandler.PostKeyEvent(keyEvent);
+	}
+	else if (messageInfo.mMessageType == WindowMessageAdaptor::EMessageType::Window_Create)
+	{
+		mOSWindowHandleData.pixelFormatDesc =
+		{
+			sizeof(PIXELFORMATDESCRIPTOR),
+			1,
+			PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,    //Flags
+			PFD_TYPE_RGBA,            //The kind of framebuffer. RGBA or palette.
+			32,                        //Colordepth of the framebuffer.
+			0, 0, 0, 0, 0, 0,
+			0,
+			0,
+			0,
+			0, 0, 0, 0,
+			24,                        //Number of bits for the depthbuffer
+			8,                        //Number of bits for the stencilbuffer
+			0,                        //Number of Aux buffers in the framebuffer.
+			PFD_MAIN_PLANE,
+			0,
+			0, 0, 0
+		};
+
+		mOSWindowHandleData.deviceContext = GetDC(mOSWindowHandleData.windowHandle);
+
+		int  letWindowsChooseThisPixelFormat;
+		letWindowsChooseThisPixelFormat = ChoosePixelFormat(mOSWindowHandleData.deviceContext, &mOSWindowHandleData.pixelFormatDesc);
+		SetPixelFormat(mOSWindowHandleData.deviceContext, letWindowsChooseThisPixelFormat, &mOSWindowHandleData.pixelFormatDesc);
+
+		mOSWindowHandleData.renderContext = wglCreateContext(mOSWindowHandleData.deviceContext);
+		wglMakeCurrent(mOSWindowHandleData.deviceContext, mOSWindowHandleData.renderContext);
 	}
 	else if (messageInfo.mMessageType == WindowMessageAdaptor::EMessageType::Window_KeyUp)
 	{
@@ -126,22 +162,33 @@ long __stdcall WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp)
 	// @unfinished - check for values of msg possibly needed
 	switch (msg)
 	{
-	case WM_KEYDOWN:
-		sWindowMessageAdaptor.PushMessage(WindowMessageAdaptor::EMessageType::Window_KeyDown, wp, lp);
-		return 0;
+		case WM_CREATE:
+		{
+			sWindowMessageAdaptor.PushMessage(WindowMessageAdaptor::EMessageType::Window_Create, wp, lp);
+			return 0;
+		}
 
-	case WM_KEYUP:
-		sWindowMessageAdaptor.PushMessage(WindowMessageAdaptor::EMessageType::Window_KeyUp, wp, lp);
-		return 0;
+		case WM_KEYDOWN:
+		{
+			sWindowMessageAdaptor.PushMessage(WindowMessageAdaptor::EMessageType::Window_KeyDown, wp, lp);
+			return 0;
+		}
 
-	case WM_SIZE:
-		return 0;
-		
-	case WM_DESTROY:
-		sWindowMessageAdaptor.PushMessage(WindowMessageAdaptor::EMessageType::Window_Destroy, wp, lp);
-		return 0;
+		case WM_KEYUP:
+		{
+			sWindowMessageAdaptor.PushMessage(WindowMessageAdaptor::EMessageType::Window_KeyUp, wp, lp);
+			return 0;
+		}
+	
+		case WM_DESTROY:
+		{
+			sWindowMessageAdaptor.PushMessage(WindowMessageAdaptor::EMessageType::Window_Destroy, wp, lp);
+			return 0;
+		}
 
-	default:
-		return DefWindowProc(window, msg, wp, lp);
+		default:
+		{
+			return DefWindowProc(window, msg, wp, lp);
+		}
 	}
 }

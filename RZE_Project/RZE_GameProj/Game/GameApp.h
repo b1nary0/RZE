@@ -2,7 +2,7 @@
 
 #include "Application.h"
 
-class GameApp : public RZE_Application
+class GameApp : public RZE_Game
 {
 public:
 
