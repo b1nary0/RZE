@@ -11,7 +11,7 @@ public:
 		return instance;
 	}
 
-	void ClearColor(float r, float g, float b);
+	void ClearColor(float r, float g, float b, float a);
 	void Clear(const GLbitfield bitfield);
 
 private:

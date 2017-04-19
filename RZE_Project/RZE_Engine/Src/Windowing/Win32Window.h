@@ -19,13 +19,13 @@ class Win32Window
 
 private:
 
-	struct OSWindowHandleData
+	typedef struct OSWindowHandleData
 	{
 		HWND windowHandle;
 		HDC deviceContext;
 		HGLRC renderContext;
 		PIXELFORMATDESCRIPTOR pixelFormatDesc;
-	};
+	} OSWindowHandleData;
 
 public:
 

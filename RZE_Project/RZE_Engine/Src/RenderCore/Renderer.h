@@ -9,6 +9,8 @@ public:
 	RZE_Renderer();
 	~RZE_Renderer();
 
+	void TempInit();
+
 	void Render();
 
 	std::weak_ptr<Win32Window> MakeWindow(const std::string& title, const int width, const int height);

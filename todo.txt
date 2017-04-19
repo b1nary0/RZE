@@ -29,8 +29,9 @@
 	
 ! hook up opengl
 	@ set up ogl context
-	@ clear buffer to black
+	@ clear buffer to non-black
 	* GLEW
+	* will need to think about proper hardware abstraction..  opengl contexts, etc
 
 
 	

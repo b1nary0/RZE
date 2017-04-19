@@ -8,11 +8,16 @@
 
 RZE_Renderer::RZE_Renderer()
 {
-	OpenGLRHI::Get().ClearColor(0.0f, 0.0f, 0.0f);
 }
 
 RZE_Renderer::~RZE_Renderer()
 {
+}
+
+void RZE_Renderer::TempInit()
+{
+	OpenGLRHI::Get().ClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+	glViewport(0, 0, static_cast<GLsizei>(mMainWindow->GetDimensions().X()), static_cast<GLsizei>(mMainWindow->GetDimensions().Y()));
 }
 
 void RZE_Renderer::Render()

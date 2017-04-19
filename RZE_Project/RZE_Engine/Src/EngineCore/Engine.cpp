@@ -43,6 +43,7 @@ void RZE_Engine::Init()
 	LOG_CONSOLE("RZE_EngineCore::Init() called. \n");
 
 	mRenderer.MakeWindow("RZE_Engine", 1280, 720);
+	mRenderer.TempInit();
 
 	RegisterWindowEvents();
 	RegisterInputEvents();

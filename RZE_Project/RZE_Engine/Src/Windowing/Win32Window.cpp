@@ -17,10 +17,6 @@ long __stdcall WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp);
 // Used to link WinProc messages with the window without having to static other class instances etc
 static WindowMessageAdaptor sWindowMessageAdaptor;
 
-struct OSWindowHandleData
-{
-	HWND mWindowHandle;
-};
 
 Win32Window::Win32Window(const WindowCreationParams& creationProtocol)
 {
@@ -78,9 +74,59 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 			GetModuleHandle(0),
 			0);
 
+		mOSWindowHandleData.pixelFormatDesc =
+		{
+			sizeof(PIXELFORMATDESCRIPTOR),
+			1,
+			PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,    //Flags
+			PFD_TYPE_RGBA,            //The kind of framebuffer. RGBA or palette.
+			32,                        //Colordepth of the framebuffer.
+			0, 0, 0, 0, 0, 0,
+			0,
+			0,
+			0,
+			0, 0, 0, 0,
+			24,                        //Number of bits for the depthbuffer
+			8,                        //Number of bits for the stencilbuffer
+			0,                        //Number of Aux buffers in the framebuffer.
+			PFD_MAIN_PLANE,
+			0,
+			0, 0, 0
+		};
+
+		//@todo this needs to be abstracted out of the window somehow 
+
+		mOSWindowHandleData.deviceContext = GetDC(mOSWindowHandleData.windowHandle);
+		if (!mOSWindowHandleData.deviceContext)
+		{
+			assert(false);
+		}
+
+		int pixelFormat = ChoosePixelFormat(mOSWindowHandleData.deviceContext, &mOSWindowHandleData.pixelFormatDesc);
+		if (!pixelFormat)
+		{
+			assert(false);
+		}
+
+		if (!SetPixelFormat(mOSWindowHandleData.deviceContext, pixelFormat, &mOSWindowHandleData.pixelFormatDesc))
+		{
+			assert(false);
+		}
+
+		mOSWindowHandleData.renderContext = wglCreateContext(mOSWindowHandleData.deviceContext);
+		if (!mOSWindowHandleData.renderContext)
+		{
+			assert(false);
+		}
+
+		if (!wglMakeCurrent(mOSWindowHandleData.deviceContext, mOSWindowHandleData.renderContext))
+		{
+			assert(false);
+		}
+
 		if (mOSWindowHandleData.windowHandle)
 		{
-			ShowWindow(mOSWindowHandleData.windowHandle, SW_NORMAL); // @note SW_SHOWMAXIMIZED for borderless fullscreen. SW_SHOWDEFAULT default
+			ShowWindow(mOSWindowHandleData.windowHandle, SW_SHOW); // @note SW_SHOWMAXIMIZED for borderless fullscreen. SW_SHOWDEFAULT default
 		}
 	}
 }
@@ -121,34 +167,7 @@ void Win32Window::ProcessMessage(const WindowMessageAdaptor::WindowMessageInfo& 
 	}
 	else if (messageInfo.mMessageType == WindowMessageAdaptor::EMessageType::Window_Create)
 	{
-		mOSWindowHandleData.pixelFormatDesc =
-		{
-			sizeof(PIXELFORMATDESCRIPTOR),
-			1,
-			PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,    //Flags
-			PFD_TYPE_RGBA,            //The kind of framebuffer. RGBA or palette.
-			32,                        //Colordepth of the framebuffer.
-			0, 0, 0, 0, 0, 0,
-			0,
-			0,
-			0,
-			0, 0, 0, 0,
-			24,                        //Number of bits for the depthbuffer
-			8,                        //Number of bits for the stencilbuffer
-			0,                        //Number of Aux buffers in the framebuffer.
-			PFD_MAIN_PLANE,
-			0,
-			0, 0, 0
-		};
-
-		mOSWindowHandleData.deviceContext = GetDC(mOSWindowHandleData.windowHandle);
-
-		int  letWindowsChooseThisPixelFormat;
-		letWindowsChooseThisPixelFormat = ChoosePixelFormat(mOSWindowHandleData.deviceContext, &mOSWindowHandleData.pixelFormatDesc);
-		SetPixelFormat(mOSWindowHandleData.deviceContext, letWindowsChooseThisPixelFormat, &mOSWindowHandleData.pixelFormatDesc);
-
-		mOSWindowHandleData.renderContext = wglCreateContext(mOSWindowHandleData.deviceContext);
-		wglMakeCurrent(mOSWindowHandleData.deviceContext, mOSWindowHandleData.renderContext);
+		
 	}
 	else if (messageInfo.mMessageType == WindowMessageAdaptor::EMessageType::Window_KeyUp)
 	{
@@ -172,6 +191,12 @@ long __stdcall WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp)
 			sWindowMessageAdaptor.PushMessage(WindowMessageAdaptor::EMessageType::Window_Create, wp, lp);
 			return 0;
 		}
+	
+		case WM_DESTROY:
+		{
+			sWindowMessageAdaptor.PushMessage(WindowMessageAdaptor::EMessageType::Window_Destroy, wp, lp);
+			return 0;
+		}
 
 		case WM_KEYDOWN:
 		{
@@ -182,12 +207,6 @@ long __stdcall WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp)
 		case WM_KEYUP:
 		{
 			sWindowMessageAdaptor.PushMessage(WindowMessageAdaptor::EMessageType::Window_KeyUp, wp, lp);
-			return 0;
-		}
-	
-		case WM_DESTROY:
-		{
-			sWindowMessageAdaptor.PushMessage(WindowMessageAdaptor::EMessageType::Window_Destroy, wp, lp);
 			return 0;
 		}
 

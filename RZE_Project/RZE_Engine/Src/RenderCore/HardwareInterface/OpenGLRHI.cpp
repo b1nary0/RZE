@@ -10,9 +10,9 @@ OpenGLRHI::~OpenGLRHI()
 {
 }
 
-void OpenGLRHI::ClearColor(float r, float g, float b)
+void OpenGLRHI::ClearColor(float r, float g, float b, float a)
 {
-	glClearColor(r, g, b, 1.0f);
+	glClearColor(r, g, b, a);
 }
 
 void OpenGLRHI::Clear(const GLbitfield bitfield)
