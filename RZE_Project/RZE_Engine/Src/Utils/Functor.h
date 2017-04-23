@@ -27,6 +27,11 @@ public:
 		return Call(args...);
 	}
 
+	bool operator!=(nullptr_t)
+	{
+		return mCallback != nullptr;
+	}
+
 private:
 
 	std::function<TReturnType(Args...)> mCallback;

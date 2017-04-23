@@ -9,6 +9,8 @@ class Win32Window;
 
 class RZE_Game
 {
+	// @note maybe review this connection later
+	friend class RZE_Engine;
 
 public:
 
@@ -26,7 +28,16 @@ protected:
 
 	virtual void Init();
 
-	std::weak_ptr<Win32Window> mMainWindow;
+	void ShowWindow();
 
 	bool bIsRunning;
+
+	Win32Window* const GetWindow() const;
+
+private:
+
+	void SetWindow(Win32Window* const window);
+	void CompileEvents(EventHandler& eventHandler);
+
+	Win32Window* mWindow;
 };

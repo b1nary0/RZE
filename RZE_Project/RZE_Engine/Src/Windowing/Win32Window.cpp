@@ -28,7 +28,6 @@ Win32Window::Win32Window(const WindowCreationParams& creationProtocol)
 
 const std::string& Win32Window::GetTitle() const
 {
-	assert(!mTitle.empty() && "Returning empty window title!");
 	return mTitle;
 }
 
@@ -99,34 +98,29 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 		mOSWindowHandleData.deviceContext = GetDC(mOSWindowHandleData.windowHandle);
 		if (!mOSWindowHandleData.deviceContext)
 		{
-			assert(false);
+			AssertFalse();
 		}
 
 		int pixelFormat = ChoosePixelFormat(mOSWindowHandleData.deviceContext, &mOSWindowHandleData.pixelFormatDesc);
 		if (!pixelFormat)
 		{
-			assert(false);
+			AssertFalse();
 		}
 
 		if (!SetPixelFormat(mOSWindowHandleData.deviceContext, pixelFormat, &mOSWindowHandleData.pixelFormatDesc))
 		{
-			assert(false);
+			AssertFalse();
 		}
 
 		mOSWindowHandleData.renderContext = wglCreateContext(mOSWindowHandleData.deviceContext);
 		if (!mOSWindowHandleData.renderContext)
 		{
-			assert(false);
+			AssertFalse();
 		}
 
 		if (!wglMakeCurrent(mOSWindowHandleData.deviceContext, mOSWindowHandleData.renderContext))
 		{
-			assert(false);
-		}
-
-		if (mOSWindowHandleData.windowHandle)
-		{
-			ShowWindow(mOSWindowHandleData.windowHandle, SW_SHOW); // @note SW_SHOWMAXIMIZED for borderless fullscreen. SW_SHOWDEFAULT default
+			AssertFalse();
 		}
 	}
 }
@@ -148,12 +142,20 @@ void Win32Window::CompileMessages(EventHandler& eventHandler)
 	}
 }
 
+void Win32Window::Show()
+{
+	if (mOSWindowHandleData.windowHandle)
+	{
+		ShowWindow(mOSWindowHandleData.windowHandle, SW_SHOW); // @note SW_SHOWMAXIMIZED for borderless fullscreen. SW_SHOWDEFAULT default
+	}
+}
+
 void Win32Window::BufferSwap() const
 {
 	SwapBuffers(mOSWindowHandleData.deviceContext);
 }
 
-const Win32Window::OSWindowHandleData Win32Window::GetOSWindowHandleData() const
+const Win32Window::OSWindowHandleData& Win32Window::GetOSWindowHandleData() const
 {
 	return mOSWindowHandleData;
 }

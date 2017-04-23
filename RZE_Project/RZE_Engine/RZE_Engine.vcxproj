@@ -157,7 +157,7 @@
     <ClCompile Include="Src\EngineCore\Input\InputHandler.cpp" />
     <ClCompile Include="Src\Events\EventHandler.cpp" />
     <ClCompile Include="Src\Events\Events.cpp" />
-    <ClCompile Include="Src\RenderCore\HardwareInterface\OpenGLRHI.cpp" />
+    <ClCompile Include="Src\RenderCore\HardwareInterface\OpenGL.cpp" />
     <ClCompile Include="Src\RenderCore\Renderer.cpp" />
     <ClCompile Include="Src\StdAfx.cpp" />
     <ClCompile Include="Src\Utils\Conversions.cpp" />
@@ -168,15 +168,16 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\Application.h" />
-    <ClInclude Include="Src\EngineCore\Debug\Debug.h" />
+    <ClInclude Include="Src\Debug\Debug.h" />
     <ClInclude Include="Src\EngineCore\Engine.h" />
     <ClInclude Include="Src\EngineCore\Input\InputHandler.h" />
     <ClInclude Include="Src\Events\EventHandler.h" />
     <ClInclude Include="Src\Events\Events.h" />
     <ClInclude Include="Src\Events\EventTypes.h" />
-    <ClInclude Include="Src\RenderCore\HardwareInterface\OpenGLRHI.h" />
+    <ClInclude Include="Src\RenderCore\HardwareInterface\OpenGL.h" />
     <ClInclude Include="Src\RenderCore\Renderer.h" />
     <ClInclude Include="Src\RZE.h" />
+    <ClInclude Include="Src\RZE_Config.h" />
     <ClInclude Include="Src\StdAfx.h" />
     <ClInclude Include="Src\Utils\Conversions.h" />
     <ClInclude Include="Src\Utils\Functor.h" />

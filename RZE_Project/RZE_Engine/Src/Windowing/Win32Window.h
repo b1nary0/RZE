@@ -43,9 +43,11 @@ public:
 
 	void CompileMessages(EventHandler& eventHandler);
 
+	void Show();
+
 	void BufferSwap() const;
 
-	const OSWindowHandleData GetOSWindowHandleData() const;
+	const OSWindowHandleData& GetOSWindowHandleData() const;
 
 protected:
 

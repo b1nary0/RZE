@@ -16,26 +16,33 @@ public:
 	RZE_Engine();
 	~RZE_Engine();
 	
-	void Run(Functor<std::unique_ptr<RZE_Game>> createApplicationCallback);
+	void Run(Functor<RZE_Game* const> createApplicationCallback);
 
 	void RegisterForEvent(const UInt16 eventType, Functor<void, const Event&> callback);
 
-	std::weak_ptr<Win32Window> GetMainWindow() const;
+	// @todo does this have purpose here?
+	//Win32Window* const GetMainWindow() const;
 
 private:
 
 	void Init();
-	void PostInit(Functor<std::unique_ptr<RZE_Game>> createApplicationCallback);
+	void PostInit(Functor<RZE_Game* const> createApplicationCallback);
 	
 	void Update();
-	void ShutDown();
+	void BeginShutDown();
 
 	void CompileEvents();
 
 	void RegisterWindowEvents();
 	void RegisterInputEvents();
 
-	std::unique_ptr<RZE_Game> mApplication;
+	void CreateAndInitializeWindow();
+
+	void InitializeGame(Functor<RZE_Game* const> createGameCallback);
+
+	Win32Window* mMainWindow;
+
+	RZE_Game* mApplication;
 
 	RZE_Renderer mRenderer;
 	EventHandler mEventHandler;

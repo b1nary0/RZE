@@ -26,15 +26,17 @@
 
 
 
+* once and for all move window into application
+		* find a good way to propogate necessary information to and from window
+			-> e.g opengl context, etc
+
+
 	
 ! hook up opengl
 	@ set up ogl context
 	@ clear buffer to non-black
 	* GLEW
-	* will need to think about proper hardware abstraction..  opengl contexts, etc
-
-
-	
+	** will need to think about proper hardware abstraction..  opengl contexts, etc
 	
 
 * event system is cumbersome and bulky. needs refactor. 

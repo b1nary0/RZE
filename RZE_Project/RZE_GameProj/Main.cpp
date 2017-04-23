@@ -4,13 +4,14 @@
 
 int main(void)
 {
-	Functor<std::unique_ptr<RZE_Game>> appCreateFunc([]()
+	Functor<RZE_Game* const> appCreateFunc([]()
 	{
-		return std::make_unique<GameApp>();
+		return new GameApp();
 	});
 
 	GEngine = new RZE_Engine();
 	GEngine->Run(appCreateFunc);
 
+	//getchar();
 	return 0;
 }

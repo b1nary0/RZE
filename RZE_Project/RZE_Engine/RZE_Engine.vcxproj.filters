@@ -78,7 +78,7 @@
     <ClCompile Include="Src\Utils\Math\Vector3D.cpp">
       <Filter>Source Files\Utils\Math</Filter>
     </ClCompile>
-    <ClCompile Include="Src\RenderCore\HardwareInterface\OpenGLRHI.cpp">
+    <ClCompile Include="Src\RenderCore\HardwareInterface\OpenGL.cpp">
       <Filter>Source Files\RenderCore\HardwareInterface</Filter>
     </ClCompile>
   </ItemGroup>
@@ -94,9 +94,6 @@
     </ClInclude>
     <ClInclude Include="Src\EngineCore\Input\InputHandler.h">
       <Filter>Source Files\EngineCore\Input</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\EngineCore\Debug\Debug.h">
-      <Filter>Source Files\Debug</Filter>
     </ClInclude>
     <ClInclude Include="Src\Events\EventHandler.h">
       <Filter>Source Files\Events</Filter>
@@ -143,8 +140,14 @@
     <ClInclude Include="Src\RZE.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="Src\RenderCore\HardwareInterface\OpenGLRHI.h">
+    <ClInclude Include="Src\RenderCore\HardwareInterface\OpenGL.h">
       <Filter>Source Files\RenderCore\HardwareInterface</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Debug\Debug.h">
+      <Filter>Source Files\Debug</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\RZE_Config.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

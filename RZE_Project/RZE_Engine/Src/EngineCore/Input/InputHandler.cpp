@@ -11,7 +11,7 @@ void InputHandler::RegisterEvents(EventHandler& eventHandler)
 {
 	Functor<void, const Event&> keyInputCallback([this](const Event& event)
 	{
-		assert(event.mInfo.mEventType == EEventType::Key);
+		AssertEqual(event.mInfo.mEventType, EEventType::Key);
 		KeyAction keyAction;
 		keyAction.mActionType = event.mKeyEvent.mEventInfo.mEventSubType;
 		keyAction.mKey = event.mKeyEvent.mKey;

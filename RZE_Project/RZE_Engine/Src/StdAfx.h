@@ -26,5 +26,7 @@
 #include <vector>
 
 // RZE
+#include "RZE_Config.h"
 #include "RZE.h"
+#include "Debug/Debug.h"
 #include "Utils/PrimitiveDefs.h"
