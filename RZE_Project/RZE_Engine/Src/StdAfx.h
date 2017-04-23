@@ -3,7 +3,9 @@
 
 // WinAPI
 #include <Windows.h>
-#include <gl/GL.h>
+
+#define GLEW_STATIC
+#include <GL/glew.h>
 #include <gl/GLU.h>
 
 // std lib

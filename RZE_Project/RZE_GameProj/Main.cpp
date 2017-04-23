@@ -4,13 +4,13 @@
 
 int main(void)
 {
-	Functor<RZE_Game* const> appCreateFunc([]()
+	Functor<RZE_Game* const> gameCreateFunc([]()
 	{
 		return new GameApp();
 	});
 
 	GEngine = new RZE_Engine();
-	GEngine->Run(appCreateFunc);
+	GEngine->Run(gameCreateFunc);
 
 	//getchar();
 	return 0;

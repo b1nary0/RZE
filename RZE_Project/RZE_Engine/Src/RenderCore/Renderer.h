@@ -1,6 +1,6 @@
 #pragma once
 
-class OpenGLDriverInterface;
+class OpenGLRHI;
 class Win32Window;
 
 class RZE_Renderer
@@ -15,7 +15,5 @@ public:
 	void Init();
 
 private:
-
-	OpenGLDriverInterface* mOpenGLInterface;
 
 };

@@ -63,7 +63,7 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 		mOSWindowHandleData.windowHandle = CreateWindowEx(0,
 			wStrTitle.c_str(),
 			wStrTitle.c_str(),
-			WS_OVERLAPPEDWINDOW, // @note WS_POPUP = borderless. WS_OVERLAPPEDWINDOW default
+			WS_OVERLAPPEDWINDOW ^ (WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX), // @note WS_POPUP = borderless. WS_OVERLAPPEDWINDOW default
 			CW_USEDEFAULT,
 			CW_USEDEFAULT,
 			static_cast<int>(mDimensions.X()),
@@ -130,15 +130,40 @@ void Win32Window::CompileMessages(EventHandler& eventHandler)
 	MSG msg;
 	if (PeekMessage(&msg, mOSWindowHandleData.windowHandle, 0, 0, PM_NOREMOVE))
 	{
-		GetMessage(&msg, mOSWindowHandleData.windowHandle, 0, 0);
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
+		if (GetMessage(&msg, mOSWindowHandleData.windowHandle, 0, 0))
+		{
+			switch (msg.message)
+			{
+
+			case WM_KEYDOWN:
+			{
+				KeyEvent keyEvent(EKeyEventType::Key_Pressed, static_cast<UInt8>(msg.wParam));
+				eventHandler.PostKeyEvent(keyEvent);
+			}
+			break;
+
+			case WM_KEYUP:
+			{
+				KeyEvent keyEvent(EKeyEventType::Key_Released, static_cast<UInt8>(msg.wParam));
+				eventHandler.PostKeyEvent(keyEvent);
+			}
+			break;
+
+			default:
+			{
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
+			break;
+
+			}
+		}
 	}
 
 	// @note may not need this if we don't need to process multiple messages from window per frame
 	while (sWindowMessageAdaptor.HasMessage())
 	{
-		ProcessMessage(sWindowMessageAdaptor.GetNextMessage(), eventHandler);
+		ProcessWinProcMessage(sWindowMessageAdaptor.GetNextMessage(), eventHandler);
 	}
 }
 
@@ -160,23 +185,9 @@ const Win32Window::OSWindowHandleData& Win32Window::GetOSWindowHandleData() cons
 	return mOSWindowHandleData;
 }
 
-void Win32Window::ProcessMessage(const WindowMessageAdaptor::WindowMessageInfo& messageInfo, EventHandler& eventHandler)
+void Win32Window::ProcessWinProcMessage(const WindowMessageAdaptor::WindowMessageInfo& messageInfo, EventHandler& eventHandler)
 {
-	if (messageInfo.mMessageType == WindowMessageAdaptor::EMessageType::Window_KeyDown)
-	{
-		KeyEvent keyEvent(EKeyEventType::Key_Pressed, static_cast<UInt8>(messageInfo.wParam));
-		eventHandler.PostKeyEvent(keyEvent);
-	}
-	else if (messageInfo.mMessageType == WindowMessageAdaptor::EMessageType::Window_Create)
-	{
-		
-	}
-	else if (messageInfo.mMessageType == WindowMessageAdaptor::EMessageType::Window_KeyUp)
-	{
-		KeyEvent keyEvent(EKeyEventType::Key_Released, static_cast<UInt8>(messageInfo.wParam));
-		eventHandler.PostKeyEvent(keyEvent);
-	}
-	else if (messageInfo.mMessageType == WindowMessageAdaptor::EMessageType::Window_Destroy)
+	if (messageInfo.mMessageType == WindowMessageAdaptor::EMessageType::Window_Destroy)
 	{
 		WindowEvent windowEvent(EWindowEventType::Window_Destroy);
 		eventHandler.PostWindowEvent(windowEvent);
@@ -197,18 +208,6 @@ long __stdcall WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp)
 		case WM_DESTROY:
 		{
 			sWindowMessageAdaptor.PushMessage(WindowMessageAdaptor::EMessageType::Window_Destroy, wp, lp);
-			return 0;
-		}
-
-		case WM_KEYDOWN:
-		{
-			sWindowMessageAdaptor.PushMessage(WindowMessageAdaptor::EMessageType::Window_KeyDown, wp, lp);
-			return 0;
-		}
-
-		case WM_KEYUP:
-		{
-			sWindowMessageAdaptor.PushMessage(WindowMessageAdaptor::EMessageType::Window_KeyUp, wp, lp);
 			return 0;
 		}
 

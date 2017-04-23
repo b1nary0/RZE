@@ -55,7 +55,7 @@ private:
 
 	void Create(const WindowCreationParams& creationProtocol);
 
-	void ProcessMessage(const WindowMessageAdaptor::WindowMessageInfo& messageInfo, EventHandler& eventHandler);
+	void ProcessWinProcMessage(const WindowMessageAdaptor::WindowMessageInfo& messageInfo, EventHandler& eventHandler);
 		
 	OSWindowHandleData mOSWindowHandleData;
 	WindowCreationParams mCreationData;

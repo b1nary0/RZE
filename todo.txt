@@ -21,33 +21,43 @@
 @ close application with escape key
 @ gonna need to make a better access point design for engine class, maybe a pass-through?
 @ renderer own window? i think this is a good idea.
-
-
-
-
-
-* once and for all move window into application
-		* find a good way to propogate necessary information to and from window
-			-> e.g opengl context, etc
-
-
-	
-! hook up opengl
+@ hook up opengl
 	@ set up ogl context
 	@ clear buffer to non-black
-	* GLEW
-	** will need to think about proper hardware abstraction..  opengl contexts, etc
+@ move message pump out of winproc
+@ draw triangle to screen
+
+
+
+
+
+
+	
+	
+	
+	
+	
+! make a pass over the code to properly default initialize stuff
+	
+	
+	
+	
+	
+	
+	
 	
 
+	
+* find a good way to propogate necessary information to and from window
+	-> e.g opengl context, etc
+** will need to think about proper hardware abstraction..  opengl contexts, etc
+* GLEW
 * event system is cumbersome and bulky. needs refactor. 
 	* events themselves are extremely inextensible.
 * structure InputHandler
 	* naive implementation for key processing. take another look.
 * awkward static setup for engine access atm
 * Engine config file/config file structure
-* asserts are a bit aggressive
-* better understand message pump -- can avoid while (getmessage) are there ever multiple messages to resolve per frame?
-* hook up better functionality to window message pump
 * think about multi-threading
 * verify proper additional include directory setup
 * Customize window creation (borderless, fullscren, etc) easily configurable

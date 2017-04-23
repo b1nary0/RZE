@@ -10,6 +10,7 @@
 
 RZE_Game::RZE_Game()
 	: bIsRunning(false)
+	, mWindow(nullptr)
 {
 	Init();
 }

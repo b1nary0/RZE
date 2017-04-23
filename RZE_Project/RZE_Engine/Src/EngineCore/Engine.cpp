@@ -11,6 +11,7 @@ UInt8 RZE_Engine::sInstanceCount = 0;
 
 RZE_Engine::RZE_Engine()
 	: bShouldExit(false)
+	, mMainWindow(nullptr)
 {
 	++sInstanceCount;
 	AssertMsg(sInstanceCount == 1, "Trying to create second engine class, invalid operation. Exiting.");
@@ -24,12 +25,14 @@ RZE_Engine::RZE_Engine()
 
 RZE_Engine::~RZE_Engine()
 {
+	AssertNotNull(mMainWindow);
+	delete mMainWindow;
 }
 
-void RZE_Engine::Run(Functor<RZE_Game* const> createApplicationCallback)
+void RZE_Engine::Run(Functor<RZE_Game* const> createGameCallback)
 {
-	AssertNotNull(createApplicationCallback);
-	PostInit(createApplicationCallback);
+	AssertNotNull(createGameCallback);
+	PostInit(createGameCallback);
 
 	while (!bShouldExit)
 	{
@@ -119,9 +122,8 @@ void RZE_Engine::Update()
 
 	mApplication->Update();
 	mRenderer.Render();
-
 	// @todo maybe this can be done better
-	mApplication->GetWindow()->BufferSwap();
+	mMainWindow->BufferSwap();
 
 	CompileEvents();
 }
