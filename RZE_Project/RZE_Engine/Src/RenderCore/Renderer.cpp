@@ -15,7 +15,7 @@ RZE_Renderer::~RZE_Renderer()
 
 void RZE_Renderer::Render()
 {
-	OpenGLRHI::Get().Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	OpenGLRHI::Get().Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
 
 	float verts[9] = { -0.5f, -0.5f, 0.0f, 
 						0.5f, -0.5f, 0.0f, 
