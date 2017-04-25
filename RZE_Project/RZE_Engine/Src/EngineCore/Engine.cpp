@@ -136,9 +136,9 @@ void RZE_Engine::Update()
 
 	mApplication->Update();
 	mWorld->Update();
-	mRenderer.Render();
 
 	// @todo maybe this can be done better
+	mRenderer.Render();
 	mMainWindow->BufferSwap();
 }
 
