@@ -158,6 +158,7 @@
     <ClCompile Include="Src\EngineCore\Input\InputHandler.cpp" />
     <ClCompile Include="Src\Events\EventHandler.cpp" />
     <ClCompile Include="Src\Events\Events.cpp" />
+    <ClCompile Include="Src\Game\GameWorld.cpp" />
     <ClCompile Include="Src\RenderCore\HardwareInterface\OpenGL.cpp" />
     <ClCompile Include="Src\RenderCore\Renderer.cpp" />
     <ClCompile Include="Src\StdAfx.cpp" />
@@ -175,6 +176,7 @@
     <ClInclude Include="Src\Events\EventHandler.h" />
     <ClInclude Include="Src\Events\Events.h" />
     <ClInclude Include="Src\Events\EventTypes.h" />
+    <ClInclude Include="Src\Game\GameWorld.h" />
     <ClInclude Include="Src\RenderCore\HardwareInterface\OpenGL.h" />
     <ClInclude Include="Src\RenderCore\Renderer.h" />
     <ClInclude Include="Src\RZE.h" />

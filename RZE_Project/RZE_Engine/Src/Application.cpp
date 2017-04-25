@@ -38,7 +38,7 @@ void RZE_Game::Update()
 
 void RZE_Game::Init()
 {
-	LOG_CONSOLE("RZE_Application::Init() called. \n");
+	LOG_CONSOLE("RZE_Application::Init() called.");
 }
 
 void RZE_Game::ShowWindow()

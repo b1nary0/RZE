@@ -4,6 +4,8 @@
 
 #include "Debug/Debug.h"
 
+#include "Game/GameWorld.h"
+
 #include "Windowing/Win32Window.h"
 #include "Windowing/WinKeyCodes.h"
 
@@ -44,7 +46,7 @@ void RZE_Engine::Run(Functor<RZE_Game* const> createGameCallback)
 
 void RZE_Engine::Init()
 {
-	LOG_CONSOLE("RZE_EngineCore::Init() called. \n");
+	LOG_CONSOLE("RZE_EngineCore::Init() called.");
 
 	CreateAndInitializeWindow();
 
@@ -56,11 +58,22 @@ void RZE_Engine::Init()
 	mInputHandler.RegisterEvents(mEventHandler);
 }
 
+void RZE_Engine::InitWorld()
+{
+	LOG_CONSOLE_ANNOUNCE("Initializing Game World...");
+	// @note naieve at first
+	mWorld = new GameWorld();
+}
+
 void RZE_Engine::PostInit(Functor<RZE_Game* const> createApplicationCallback)
 {
-	LOG_CONSOLE("RZE_EngineCore::PostInit() called. \n");
+	LOG_CONSOLE("RZE_EngineCore::PostInit() called.");
 
-	InitializeGame(createApplicationCallback);
+	InitWorld();
+	AssertNotNull(mWorld);
+
+	InitGame(createApplicationCallback);
+	AssertNotNull(mApplication);
 }
 
 void RZE_Engine::CreateAndInitializeWindow()
@@ -74,7 +87,7 @@ void RZE_Engine::CreateAndInitializeWindow()
 	AssertNotNull(mMainWindow);
 }
 
-void RZE_Engine::InitializeGame(Functor<RZE_Game* const> createGameCallback)
+void RZE_Engine::InitGame(Functor<RZE_Game* const> createGameCallback)
 {
 	mApplication = createGameCallback();
 	mApplication->SetWindow(mMainWindow);
@@ -117,20 +130,21 @@ void RZE_Engine::RegisterInputEvents()
 
 void RZE_Engine::Update()
 {
+	CompileEvents();
 	mEventHandler.ProcessEvents();
 	mInputHandler.ProcessEvents();
 
 	mApplication->Update();
+	mWorld->Update();
 	mRenderer.Render();
+
 	// @todo maybe this can be done better
 	mMainWindow->BufferSwap();
-
-	CompileEvents();
 }
 
 void RZE_Engine::BeginShutDown()
 {
-	LOG_CONSOLE("Shutting engine down...\n");
+	LOG_CONSOLE("Shutting engine down...");
 }
 
 void RZE_Engine::RegisterForEvent(const UInt16 eventType, Functor<void, const Event&> callback)

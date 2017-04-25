@@ -247,6 +247,29 @@ struct OpenGLContext
 	HDC deviceContext;
 };
 
+class OpenGLVBO
+{
+public:
+	OpenGLVBO();
+	OpenGLVBO(const UInt32 count);
+	~OpenGLVBO();
+
+	void ClearAndRegenBufferCount(const UInt32 newCount);
+	void SetBufferTarget(const UInt32 newBufferTarget);
+	void SetBufferUsageMode(const UInt32 newBufferUsageMode);
+	void SetBufferData(const void* const data, const UInt32 size); // @api do we want to be this low level here?
+
+private:
+	void GenerateBuffers(const UInt32 count);
+	void BindBuffers(const UInt32 index);
+
+	// @todo make these EGLEnum::Value types
+	UInt32 mBufferUsageMode;
+	UInt32 mBufferTarget;
+	UInt32 mBufferCount;
+	UInt32 mBufferHandle;
+};
+
 class OpenGLRHI
 {
 public:
@@ -265,17 +288,18 @@ public:
 	void Clear(const UInt32 mask) const;
 
 	// Returns the array object  handle ID generated
-	void GenVertexArrays(UInt32* outObjectID, const UInt32 arrayCount) const;
+	void GenVertexArrays(const UInt32 arrayCount, UInt32* outBufferHandle) const;
 	void BindVertexArray(const UInt32 arrayObjectHandle) const;
 
-	void GenerateBuffer(UInt32* outBufferObjectHandle, UInt32 bufferCount) const;
+	void GenerateBuffer(UInt32 bufferCount, UInt32* outBufferHandle) const;
 	void BindBuffer(const UInt32 target, const UInt32 bufferObjectHandle) const;
+	void DeleteBuffer(UInt32 bufferCount, UInt32* bufferHandle);
 	void SetBufferData(const UInt32 target, const UInt32 size, const void* const data, const UInt32 bufferUsage) const;
 
 	void EnableVertexAttributeArray(const UInt32 index) const;
-	void VertexAttribPointer(const UInt32 index, const Int32 size, const UInt32 type, const bool normalized, const UInt32 stride, const void* const pointer);
+	void VertexAttribPointer(const UInt32 index, const Int32 size, const UInt32 type, const bool normalized, const UInt32 stride, const void* const pointer) const;
 
-	void DrawArrays(const UInt32 mode, const Int32 first, const UInt32 count);
+	void DrawArrays(const UInt32 mode, const Int32 first, const UInt32 count) const;
 
 private:
 

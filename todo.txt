@@ -33,11 +33,11 @@
 
 
 	
+* figure out this OpenGLVBO shit
+
+* LOG_ANNOUNCE
 	
-	
-	
-	
-! make a pass over the code to properly default initialize stuff
+* make OpenGLVBO fields their corresponding EGLEnum::Value 
 	
 	
 	

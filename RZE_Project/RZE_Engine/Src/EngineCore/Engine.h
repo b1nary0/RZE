@@ -6,6 +6,7 @@
 #include "RenderCore/Renderer.h"
 
 class Win32Window;
+class GameWorld;
 
 class RZE_Engine
 {
@@ -26,6 +27,7 @@ public:
 private:
 
 	void Init();
+	void InitWorld();
 	void PostInit(Functor<RZE_Game* const> createApplicationCallback);
 	
 	void Update();
@@ -38,12 +40,12 @@ private:
 
 	void CreateAndInitializeWindow();
 
-	void InitializeGame(Functor<RZE_Game* const> createGameCallback);
+	void InitGame(Functor<RZE_Game* const> createGameCallback);
+
+	GameWorld* mWorld;
 
 	Win32Window* mMainWindow;
-
 	RZE_Game* mApplication;
-
 	RZE_Renderer mRenderer;
 	EventHandler mEventHandler;
 	InputHandler mInputHandler;

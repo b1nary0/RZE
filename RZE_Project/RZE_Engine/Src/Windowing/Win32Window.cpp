@@ -39,7 +39,7 @@ const Vector2D& Win32Window::GetDimensions() const
 void Win32Window::Create(const WindowCreationParams& creationProtocol)
 {
 	// Interface with WinAPI and create a window -- store useful information.
-	LOG_CONSOLE_ARGS("[ Creating Win32Window ] Title : %s\n", mTitle.c_str());
+	LOG_CONSOLE_ANNOUNCE("[ Creating Win32Window ] Title : %s", mTitle.c_str());
 
 	const std::wstring wStrTitle = Conversions::StringToWString(mTitle);
 
