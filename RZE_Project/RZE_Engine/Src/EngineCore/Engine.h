@@ -21,6 +21,8 @@ public:
 
 	void RegisterForEvent(const UInt16 eventType, Functor<void, const Event&> callback);
 
+	GameWorld* const GetWorld() const;
+
 	// @todo does this have purpose here?
 	//Win32Window* const GetMainWindow() const;
 

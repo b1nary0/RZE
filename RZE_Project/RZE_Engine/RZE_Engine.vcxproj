@@ -160,6 +160,7 @@
     <ClCompile Include="Src\Events\Events.cpp" />
     <ClCompile Include="Src\Game\ECS\EntityAdmin.cpp" />
     <ClCompile Include="Src\Game\GameWorld.cpp" />
+    <ClCompile Include="Src\Game\Systems\RenderSystem.cpp" />
     <ClCompile Include="Src\RenderCore\HardwareInterface\OpenGL.cpp" />
     <ClCompile Include="Src\RenderCore\Renderer.cpp" />
     <ClCompile Include="Src\StdAfx.cpp" />
@@ -182,6 +183,7 @@
     <ClInclude Include="Src\Game\ECS\EntityComponent.h" />
     <ClInclude Include="Src\Game\ECS\EntitySystem.h" />
     <ClInclude Include="Src\Game\GameWorld.h" />
+    <ClInclude Include="Src\Game\Systems\RenderSystem.h" />
     <ClInclude Include="Src\RenderCore\HardwareInterface\OpenGL.h" />
     <ClInclude Include="Src\RenderCore\Renderer.h" />
     <ClInclude Include="Src\RZE.h" />

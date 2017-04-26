@@ -1,6 +1,6 @@
 #include "GameApp.h"
 
-#include "EngineCore/Engine.h"
+#include "RZE.h"
 
 #include "Debug/Debug.h"
 
@@ -24,4 +24,9 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
 	//});
 
 	//eventHandler.RegisterForEvent(EEventType::Key, keyEvent);
+}
+
+void GameApp::Update()
+{
+	RZE_Game::Update();
 }

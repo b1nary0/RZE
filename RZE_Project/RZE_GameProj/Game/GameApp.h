@@ -10,4 +10,6 @@ public:
 	virtual ~GameApp();
 
 	virtual void RegisterEvents(EventHandler& eventHandler) override;
+
+	virtual void Update() override;
 };

@@ -128,35 +128,32 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 void Win32Window::CompileMessages(EventHandler& eventHandler)
 {
 	MSG msg;
-	if (PeekMessage(&msg, mOSWindowHandleData.windowHandle, 0, 0, PM_NOREMOVE))
+	if (PeekMessage(&msg, mOSWindowHandleData.windowHandle, 0, 0, PM_REMOVE))
 	{
-		if (GetMessage(&msg, mOSWindowHandleData.windowHandle, 0, 0))
+		switch (msg.message)
 		{
-			switch (msg.message)
-			{
 
-			case WM_KEYDOWN:
-			{
-				KeyEvent keyEvent(EKeyEventType::Key_Pressed, static_cast<UInt8>(msg.wParam));
-				eventHandler.PostKeyEvent(keyEvent);
-			}
-			break;
+		case WM_KEYDOWN:
+		{
+			KeyEvent keyEvent(EKeyEventType::Key_Pressed, static_cast<UInt8>(msg.wParam));
+			eventHandler.PostKeyEvent(keyEvent);
+		}
+		break;
 
-			case WM_KEYUP:
-			{
-				KeyEvent keyEvent(EKeyEventType::Key_Released, static_cast<UInt8>(msg.wParam));
-				eventHandler.PostKeyEvent(keyEvent);
-			}
-			break;
+		case WM_KEYUP:
+		{
+			KeyEvent keyEvent(EKeyEventType::Key_Released, static_cast<UInt8>(msg.wParam));
+			eventHandler.PostKeyEvent(keyEvent);
+		}
+		break;
 
-			default:
-			{
-				TranslateMessage(&msg);
-				DispatchMessage(&msg);
-			}
-			break;
+		default:
+		{
+ 			TranslateMessage(&msg);
+ 			DispatchMessage(&msg);
+		}
+		break;
 
-			}
 		}
 	}
 

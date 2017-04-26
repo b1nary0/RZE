@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Debug/Debug.h"
+
 class IEntity;
 class IEntitySystem;
 
@@ -17,6 +19,14 @@ public:
 protected:
 	SystemList& InternalGetSystems() { return mSystems; }
 	EntityList& InternalGetEntities() { return mEntities; }
+
+	template <class TSystem>
+	void AddSystem()
+	{
+		TSystem* system = new TSystem();
+		AssertNotNull(system);
+		mSystems.push_back(system);
+	}
 
 private:
 	SystemList mSystems;

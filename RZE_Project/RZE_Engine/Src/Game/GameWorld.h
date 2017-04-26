@@ -7,7 +7,9 @@ class GameWorld : public IEntityAdmin
 
 public:
 	GameWorld();
-	~GameWorld();
+	virtual ~GameWorld();
+
+	void InitSystems();
 
 	virtual void Update() override;
 

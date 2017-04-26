@@ -63,6 +63,9 @@ void RZE_Engine::InitWorld()
 	LOG_CONSOLE_ANNOUNCE("Initializing Game World...");
 	// @note naieve at first
 	mWorld = new GameWorld();
+	AssertNotNull(mWorld);
+
+	mWorld->InitSystems();
 }
 
 void RZE_Engine::PostInit(Functor<RZE_Game* const> createApplicationCallback)
@@ -70,10 +73,7 @@ void RZE_Engine::PostInit(Functor<RZE_Game* const> createApplicationCallback)
 	LOG_CONSOLE("RZE_EngineCore::PostInit() called.");
 
 	InitWorld();
-	AssertNotNull(mWorld);
-
 	InitGame(createApplicationCallback);
-	AssertNotNull(mApplication);
 }
 
 void RZE_Engine::CreateAndInitializeWindow()
@@ -90,6 +90,8 @@ void RZE_Engine::CreateAndInitializeWindow()
 void RZE_Engine::InitGame(Functor<RZE_Game* const> createGameCallback)
 {
 	mApplication = createGameCallback();
+	AssertNotNull(mApplication);
+
 	mApplication->SetWindow(mMainWindow);
 	mApplication->Start();
 
@@ -150,4 +152,10 @@ void RZE_Engine::BeginShutDown()
 void RZE_Engine::RegisterForEvent(const UInt16 eventType, Functor<void, const Event&> callback)
 {
 	mEventHandler.RegisterForEvent(eventType, callback);
+}
+
+GameWorld* const RZE_Engine::GetWorld() const
+{
+	AssertNotNull(mWorld);
+	return mWorld;
 }
