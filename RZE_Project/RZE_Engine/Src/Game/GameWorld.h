@@ -1,17 +1,16 @@
 #pragma once
 
-class GameWorld
+#include "Game/ECS/EntityAdmin.h"
+
+class GameWorld : public IEntityAdmin
 {
-	// @todo take a look at this connection
-	friend class RZE_Engine;
 
 public:
 	GameWorld();
 	~GameWorld();
 
-	void Update();
+	virtual void Update() override;
 
 private:
-	// @implementation a list of systems to be updated and controlled
 
 };
