@@ -50,8 +50,6 @@ void RZE_Engine::Init()
 
 	CreateAndInitializeWindow();
 
-	mRenderer.Init();
-
 	RegisterWindowEvents();
 	RegisterInputEvents();
 
@@ -140,7 +138,6 @@ void RZE_Engine::Update()
 	mWorld->Update();
 
 	// @todo maybe this can be done better
-	mRenderer.Render();
 	mMainWindow->BufferSwap();
 }
 

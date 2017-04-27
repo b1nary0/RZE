@@ -75,9 +75,6 @@
     <ClCompile Include="Src\Windowing\WindowMessageAdaptor.cpp">
       <Filter>Source Files\Windowing</Filter>
     </ClCompile>
-    <ClCompile Include="Src\RenderCore\Renderer.cpp">
-      <Filter>Source Files\RenderCore</Filter>
-    </ClCompile>
     <ClCompile Include="Src\Utils\Conversions.cpp">
       <Filter>Source Files\Utils</Filter>
     </ClCompile>
@@ -130,9 +127,6 @@
     </ClInclude>
     <ClInclude Include="Src\Windowing\WinKeyCodes.h">
       <Filter>Source Files\Windowing</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\RenderCore\Renderer.h">
-      <Filter>Source Files\RenderCore</Filter>
     </ClInclude>
     <ClInclude Include="Src\Utils\Conversions.h">
       <Filter>Source Files\Utils</Filter>

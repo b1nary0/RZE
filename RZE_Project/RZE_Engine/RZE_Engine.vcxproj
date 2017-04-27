@@ -162,7 +162,6 @@
     <ClCompile Include="Src\Game\GameWorld.cpp" />
     <ClCompile Include="Src\Game\Systems\RenderSystem.cpp" />
     <ClCompile Include="Src\RenderCore\HardwareInterface\OpenGL.cpp" />
-    <ClCompile Include="Src\RenderCore\Renderer.cpp" />
     <ClCompile Include="Src\StdAfx.cpp" />
     <ClCompile Include="Src\Utils\Conversions.cpp" />
     <ClCompile Include="Src\Utils\Math\Vector2D.cpp" />
@@ -185,7 +184,6 @@
     <ClInclude Include="Src\Game\GameWorld.h" />
     <ClInclude Include="Src\Game\Systems\RenderSystem.h" />
     <ClInclude Include="Src\RenderCore\HardwareInterface\OpenGL.h" />
-    <ClInclude Include="Src\RenderCore\Renderer.h" />
     <ClInclude Include="Src\RZE.h" />
     <ClInclude Include="Src\RZE_Config.h" />
     <ClInclude Include="Src\StdAfx.h" />

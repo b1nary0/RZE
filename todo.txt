@@ -30,6 +30,7 @@
 @ LOG_ANNOUNCE
 @ CompileMessages(), particularly near GetMessage() is causing random and massive hangs.
 	-> This was being caused by GetMessage() blocking when no input, changed to PeekMessage and PM_REMOVE to solve the problem
+@ Render something via ECS->Rendering loop
 
 
 	
@@ -38,7 +39,6 @@
 	
 	
 
-! Render something via ECS->Rendering loop
 
 	
 * make OpenGLVBO fields their corresponding EGLEnum::Value 

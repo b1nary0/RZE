@@ -3,7 +3,6 @@
 #include "Application.h"
 #include "Events/EventHandler.h"
 #include "Input/InputHandler.h"
-#include "RenderCore/Renderer.h"
 
 class Win32Window;
 class GameWorld;
@@ -48,7 +47,6 @@ private:
 
 	Win32Window* mMainWindow;
 	RZE_Game* mApplication;
-	RZE_Renderer mRenderer;
 	EventHandler mEventHandler;
 	InputHandler mInputHandler;
 
