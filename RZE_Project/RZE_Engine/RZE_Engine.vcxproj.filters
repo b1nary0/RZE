@@ -96,6 +96,9 @@
     <ClCompile Include="Src\Game\Systems\RenderSystem.cpp">
       <Filter>Source Files\Game\Systems</Filter>
     </ClCompile>
+    <ClCompile Include="Src\Game\Systems\MovementSystem.cpp">
+      <Filter>Source Files\Game\Systems</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\EngineCore\Engine.h">
@@ -177,6 +180,9 @@
       <Filter>Source Files\Game\ECS</Filter>
     </ClInclude>
     <ClInclude Include="Src\Game\Systems\RenderSystem.h">
+      <Filter>Source Files\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Game\Systems\MovementSystem.h">
       <Filter>Source Files\Game\Systems</Filter>
     </ClInclude>
   </ItemGroup>

@@ -251,19 +251,18 @@ class OpenGLVBO
 {
 public:
 	OpenGLVBO();
-	OpenGLVBO(const UInt32 count);
+	//OpenGLVBO(const UInt32 count);
 	~OpenGLVBO();
 
 	void ClearAndRegenBufferCount(const UInt32 newCount);
 	void SetBufferTarget(const UInt32 newBufferTarget);
 	void SetBufferUsageMode(const UInt32 newBufferUsageMode);
-	void SetBufferData(const void* const data, const UInt32 size); // @api do we want to be this low level here?
+	void SetBufferData(const void* const data, const UInt32 size);
 
 private:
 	void GenerateBuffers(const UInt32 count);
 	void BindBuffers(const UInt32 index);
 
-	// @todo make these EGLEnum::Value types
 	UInt32 mBufferUsageMode;
 	UInt32 mBufferTarget;
 	UInt32 mBufferCount;

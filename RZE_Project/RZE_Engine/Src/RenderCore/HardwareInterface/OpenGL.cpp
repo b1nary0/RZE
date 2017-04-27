@@ -96,6 +96,16 @@ void OpenGLRHI::DrawArrays(const UInt32 mode, const Int32 first, const UInt32 co
 	glDrawArrays(mode, first, count);
 }
 
+
+
+//
+//	OPENGLVBO
+//
+
+
+
+
+
 OpenGLVBO::OpenGLVBO()
 	: mBufferCount(0)
 	, mBufferHandle(0)
@@ -106,20 +116,19 @@ OpenGLVBO::OpenGLVBO()
 	BindBuffers(0);
 }
 
-OpenGLVBO::OpenGLVBO(const UInt32 count)
-	: mBufferHandle(0)
-	, mBufferTarget(EGLBufferTarget::ArrayBuffer)
-	, mBufferUsageMode(EGLBufferUsage::StaticDraw)
-{
-	GenerateBuffers(count);
-	AssertExpr(false && "Deal with multi buffers properly first.");
-
-	OpenGLRHI::Get().DeleteBuffer(mBufferCount, &mBufferHandle);
-}
+// OpenGLVBO::OpenGLVBO(const UInt32 count)
+// 	: mBufferHandle(0)
+// 	, mBufferTarget(EGLBufferTarget::ArrayBuffer)
+// 	, mBufferUsageMode(EGLBufferUsage::StaticDraw)
+// {
+// 	GenerateBuffers(count);
+// 	AssertExpr(false && "Deal with multi buffers properly first.");
+// 
+// 	OpenGLRHI::Get().DeleteBuffer(mBufferCount, &mBufferHandle);
+// }
 
 OpenGLVBO::~OpenGLVBO()
 {
-
 }
 
 void OpenGLVBO::ClearAndRegenBufferCount(const UInt32 newCount)
@@ -127,7 +136,7 @@ void OpenGLVBO::ClearAndRegenBufferCount(const UInt32 newCount)
 	OpenGLRHI::Get().DeleteBuffer(mBufferCount, &mBufferHandle);
 
 	AssertExpr(newCount > 0);
-	OpenGLRHI::Get().GenerateBuffer(mBufferCount, &mBufferHandle);
+	OpenGLRHI::Get().GenerateBuffer(newCount, &mBufferHandle);
 }
 
 void OpenGLVBO::SetBufferTarget(const UInt32 newBufferTarget)
