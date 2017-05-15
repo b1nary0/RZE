@@ -9,21 +9,28 @@ class GameWorld;
 
 class RZE_Engine
 {
-	static UInt8 sInstanceCount;
+	static U8 sInstanceCount;
 
 public:
 
 	RZE_Engine();
 	~RZE_Engine();
-	
+
 	void Run(Functor<RZE_Game* const> createApplicationCallback);
 
-	void RegisterForEvent(const UInt16 eventType, Functor<void, const Event&> callback);
+	void RegisterForEvent(const U16 eventType, Functor<void, const Event&> callback);
 
 	GameWorld* const GetWorld() const;
 
-	// @todo does this have purpose here?
-	//Win32Window* const GetMainWindow() const;
+	static RZE_Engine* const Get()
+	{
+		if (!sInstance)
+		{
+			sInstance = new RZE_Engine();
+		}
+
+		return sInstance;
+	}
 
 private:
 
@@ -49,6 +56,8 @@ private:
 	RZE_Game* mApplication;
 	EventHandler mEventHandler;
 	InputHandler mInputHandler;
+
+	static RZE_Engine* sInstance;
 
 	bool bShouldExit;
 };

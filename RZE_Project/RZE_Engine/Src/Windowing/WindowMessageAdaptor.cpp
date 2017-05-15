@@ -15,7 +15,7 @@ WindowMessageAdaptor::WindowMessageInfo WindowMessageAdaptor::GetNextMessage()
 	return info;
 }
 
-void WindowMessageAdaptor::PushMessage(const EMessageType::Value messageType, UInt64 wParam, Int64 lParam)
+void WindowMessageAdaptor::PushMessage(const EMessageType::Value messageType, U64 wParam, Int64 lParam)
 {
 	WindowMessageInfo info;
 	info.mMessageType = messageType;

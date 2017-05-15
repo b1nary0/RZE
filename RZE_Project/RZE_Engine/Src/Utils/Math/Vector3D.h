@@ -1,8 +1,9 @@
 #pragma once
 
+#include <GLM/fwd.hpp>
+
 class Vector3D
 {
-
 public:
 
 	Vector3D();
@@ -13,9 +14,5 @@ public:
 	float Z() const;
 
 private:
-
-	float mX;
-	float mY;
-	float mZ;
-
+	glm::vec3 mVec;;
 };

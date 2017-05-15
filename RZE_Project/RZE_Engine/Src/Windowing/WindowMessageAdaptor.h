@@ -23,14 +23,14 @@ public:
 	struct WindowMessageInfo
 	{
 		EMessageType::Value		mMessageType;
-		UInt64					wParam;
+		U64					wParam;
 		Int64					lParam;
 	};
 
 	WindowMessageAdaptor();
 
 	WindowMessageInfo GetNextMessage();
-	void PushMessage(const EMessageType::Value messageType, UInt64 wParam, Int64 lParam);
+	void PushMessage(const EMessageType::Value messageType, U64 wParam, Int64 lParam);
 
 	bool HasMessage();
 

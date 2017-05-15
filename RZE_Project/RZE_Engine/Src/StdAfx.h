@@ -27,6 +27,9 @@
 #include <queue>
 #include <vector>
 
+// glm
+#include <GLM/glm.hpp>
+
 // RZE
 #include "RZE_Config.h"
 #include "RZE.h"

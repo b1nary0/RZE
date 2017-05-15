@@ -22,7 +22,7 @@ void InputHandler::RegisterEvents(EventHandler& eventHandler)
 	eventHandler.RegisterForEvent(EEventType::Key, keyInputCallback);
 }
 
-void InputHandler::RegisterForEvent(UInt16 action, Functor<void, UInt8> callback)
+void InputHandler::RegisterForEvent(U16 action, Functor<void, U8> callback)
 {
 	mNotifyMap[action].push_back(callback);
 }
@@ -34,7 +34,7 @@ void InputHandler::ProcessEvents()
 		KeyAction action = mKeyPresses.front();
 		mKeyPresses.pop();
 
-		std::vector<Functor<void, UInt8>> notifyEntries = mNotifyMap[action.mActionType];
+		std::vector<Functor<void, U8>> notifyEntries = mNotifyMap[action.mActionType];
 		for (auto& entry : notifyEntries)
 		{
 			entry(action.mKey);

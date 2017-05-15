@@ -15,13 +15,19 @@ GameWorld::~GameWorld()
 
 void GameWorld::InitSystems()
 {
-	AddSystem<RenderSystem>();
-	AddSystem<MovementSystem>();
+	AddSystem<RenderSystem>(this);
+	AddSystem<MovementSystem>(this);
+}
+
+IEntity* GameWorld::AddEntity(IEntity* const entity)
+{
+	InternalGetEntities().push_back(entity);
+	return InternalGetEntities().back();
 }
 
 void GameWorld::Update()
 {
-	for (auto& system : InternalGetSystems())
+	for (auto& system : GetSystems())
 	{
 		system->Update();
 	}

@@ -4,7 +4,7 @@
 
 namespace Win32KeyCode
 {
-	enum Type : UInt8
+	enum Type : U8
 	{
 		Add = 0x6B,
 		Attn = 0xF6,

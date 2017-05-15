@@ -9,7 +9,8 @@
 #include "Windowing/Win32Window.h"
 #include "Windowing/WinKeyCodes.h"
 
-UInt8 RZE_Engine::sInstanceCount = 0;
+RZE_Engine* RZE_Engine::sInstance = nullptr;
+U8 RZE_Engine::sInstanceCount = 0;
 
 RZE_Engine::RZE_Engine()
 	: bShouldExit(false)
@@ -117,7 +118,7 @@ void RZE_Engine::RegisterWindowEvents()
 
 void RZE_Engine::RegisterInputEvents()
 {
-	Functor<void, UInt8> keyPressCallback([this](const UInt8 key)
+	Functor<void, U8> keyPressCallback([this](const U8 key)
 	{
 		if (key == Win32KeyCode::Escape)
 		{
@@ -146,7 +147,7 @@ void RZE_Engine::BeginShutDown()
 	LOG_CONSOLE("Shutting engine down...");
 }
 
-void RZE_Engine::RegisterForEvent(const UInt16 eventType, Functor<void, const Event&> callback)
+void RZE_Engine::RegisterForEvent(const U16 eventType, Functor<void, const Event&> callback)
 {
 	mEventHandler.RegisterForEvent(eventType, callback);
 }

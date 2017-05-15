@@ -41,7 +41,7 @@ void EventHandler::PostKeyEvent(const KeyEvent& keyEvent, const bool bFireImmedi
 	PostEvent(event, bFireImmediate);
 }
 
-void EventHandler::RegisterForEvent(const UInt16 eventType, Functor<void, const Event&> callback)
+void EventHandler::RegisterForEvent(const U16 eventType, Functor<void, const Event&> callback)
 {
 	Event event;
 	event.mInfo.mEventType = eventType;

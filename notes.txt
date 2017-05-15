@@ -1,15 +1,5 @@
 [NOTES]
-
-* opengl will need a lot of work.
-
-
-* World will hold the ECS implementation, and pass the data to the engine layer to process... somehow
-	  
-InputHandler responsibilities
-	aggregate window input messages
-	disperse to interested parties
-
-	
+	  	
 typedef unsigned int GLenum;
 typedef unsigned char GLboolean;
 typedef unsigned int GLbitfield;

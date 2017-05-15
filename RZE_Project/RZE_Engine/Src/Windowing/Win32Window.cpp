@@ -135,14 +135,14 @@ void Win32Window::CompileMessages(EventHandler& eventHandler)
 
 		case WM_KEYDOWN:
 		{
-			KeyEvent keyEvent(EKeyEventType::Key_Pressed, static_cast<UInt8>(msg.wParam));
+			KeyEvent keyEvent(EKeyEventType::Key_Pressed, static_cast<U8>(msg.wParam));
 			eventHandler.PostKeyEvent(keyEvent);
 		}
 		break;
 
 		case WM_KEYUP:
 		{
-			KeyEvent keyEvent(EKeyEventType::Key_Released, static_cast<UInt8>(msg.wParam));
+			KeyEvent keyEvent(EKeyEventType::Key_Released, static_cast<U8>(msg.wParam));
 			eventHandler.PostKeyEvent(keyEvent);
 		}
 		break;

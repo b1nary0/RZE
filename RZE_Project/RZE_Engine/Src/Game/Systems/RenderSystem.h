@@ -5,7 +5,7 @@
 class RenderSystem : public IEntitySystem
 {
 public:
-	RenderSystem();
+	RenderSystem(IEntityAdmin* const admin);
 	virtual ~RenderSystem();
 
 	virtual void Update() override;

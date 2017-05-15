@@ -8,10 +8,10 @@ struct EventInfo
 	friend struct WindowEvent;
 	friend struct KeyEvent;
 
-	EventInfo(const UInt16 eventType, const UInt16 eventSubType);
+	EventInfo(const U16 eventType, const U16 eventSubType);
 
-	UInt16 mEventType;
-	UInt16 mEventSubType;
+	U16 mEventType;
+	U16 mEventSubType;
 
 private:
 
@@ -23,7 +23,7 @@ struct WindowEvent
 	friend struct Event;
 
 	WindowEvent() = default;
-	WindowEvent(const UInt16 eventSubType);
+	WindowEvent(const U16 eventSubType);
 
 	EventInfo mEventInfo;
 };
@@ -35,9 +35,9 @@ struct KeyEvent
 	EventInfo mEventInfo;
 
 	KeyEvent() = default;
-	KeyEvent(const UInt16 eventSubType, const UInt8 key);
+	KeyEvent(const U16 eventSubType, const U8 key);
 
-	UInt8 mKey;
+	U8 mKey;
 };
 
 struct Event

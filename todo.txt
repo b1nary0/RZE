@@ -32,22 +32,33 @@
 	-> This was being caused by GetMessage() blocking when no input, changed to PeekMessage and PM_REMOVE to solve the problem
 @ Render something via ECS->Rendering loop
 @ GLEW
+@ use gl types in RHI
 
-
-	
-	
-	
-	
-	
 
 
 	
 	
+* its time to reorganize what youre doing.
+	-> meaning: what is our list of priorities?
 	
 	
+* matrices
+	* MVP
 	
 
 	
+	
+	
+	
+	
+* organize and encapsulate entity
+	@ render the entity
+	* move the entity
+* transform class
+* is there memory leak already? wtf
+* proper ownership design and cleanup of entity system/admin
+* component filter + proper setup
+* transforms
 * find a good way to propogate necessary information to and from window
 	-> e.g opengl context, etc
 ** will need to think about proper hardware abstraction..  opengl contexts, etc

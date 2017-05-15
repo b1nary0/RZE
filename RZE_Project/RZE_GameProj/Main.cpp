@@ -9,7 +9,6 @@ int main(void)
 		return new GameApp();
 	});
 
-	GEngine = new RZE_Engine();
 	GEngine->Run(gameCreateFunc);
 
 	//getchar();

@@ -11,6 +11,8 @@ public:
 
 	void InitSystems();
 
+	virtual IEntity* AddEntity(IEntity* const entity);
+
 	virtual void Update() override;
 
 private:

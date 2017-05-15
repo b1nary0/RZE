@@ -1,10 +1,13 @@
 #include "StdAfx.h"
 
 #include "Game/Systems/RenderSystem.h"
+#include "Game/ECS/Entity.h"
+#include "Game/Components/RenderComponent.h"
 
 #include "RenderCore/HardwareInterface/OpenGL.h"
 
-RenderSystem::RenderSystem()
+RenderSystem::RenderSystem(IEntityAdmin* const admin)
+	: IEntitySystem(admin)
 {
 	OpenGLRHI::Get().Init();
 
@@ -18,23 +21,23 @@ RenderSystem::~RenderSystem()
 void RenderSystem::Update()
 {
 	const OpenGLRHI& openGL = OpenGLRHI::Get();
+	for (auto& entity : mAdmin->GetEntities())
+	{
+		const RenderComponent* component = static_cast<const RenderComponent* const>(entity->GetComponents()[0]);
 
-	openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
+		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
 
-	float verts[9] = { -0.5f, -0.5f, 0.0f,
-		0.5f, -0.5f, 0.0f,
-		0.0f, 0.5f, 0.0f };
+		GLuint vao;
+		openGL.GenVertexArrays(1, &vao);
+		openGL.BindVertexArray(vao);
 
-	GLuint vao;
-	openGL.GenVertexArrays(1, &vao);
-	openGL.BindVertexArray(vao);
+		// @implementation should we have this type of assumption?
+		OpenGLVBO vbo;
+		vbo.SetBufferData(component->GetVertexList().data(), sizeof(component->GetVertexList().data()) * component->GetVertexList().size());
 
-	// @implementation should we have this type of assumption?
-	OpenGLVBO vbo;
-	vbo.SetBufferData(verts, sizeof(verts));
+		openGL.EnableVertexAttributeArray(0);
+		openGL.VertexAttribPointer(0, 3, EGLDataType::Float, EGLBooleanValue::False, 0, 0);
 
-	openGL.EnableVertexAttributeArray(0);
-	openGL.VertexAttribPointer(0, 3, EGLDataType::Float, EGLBooleanValue::False, 0, 0);
-
-	openGL.DrawArrays(EGLDrawMode::Triangles, 0, 3);
+		openGL.DrawArrays(EGLDrawMode::Triangles, 0, 3);
+	}
 }

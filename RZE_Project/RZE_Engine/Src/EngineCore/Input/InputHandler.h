@@ -8,8 +8,8 @@ class InputHandler
 {
 	struct KeyAction
 	{
-		UInt8 mKey;
-		UInt16 mActionType;
+		U8 mKey;
+		U16 mActionType;
 	};
 
 public:
@@ -18,12 +18,12 @@ public:
 
 	void RegisterEvents(EventHandler& eventHandler);
 
-	void RegisterForEvent(UInt16 action, Functor<void, UInt8> callback);
+	void RegisterForEvent(U16 action, Functor<void, U8> callback);
 
 	void ProcessEvents();
 	
 private:
 
 	std::queue<KeyAction> mKeyPresses;
-	std::map<UInt16, std::vector<Functor<void, UInt8>>> mNotifyMap;
+	std::map<U16, std::vector<Functor<void, U8>>> mNotifyMap;
 };

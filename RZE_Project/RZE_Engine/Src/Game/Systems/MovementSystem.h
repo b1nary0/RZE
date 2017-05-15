@@ -5,7 +5,7 @@
 class MovementSystem : public IEntitySystem
 {
 public:
-	MovementSystem();
+	MovementSystem(IEntityAdmin* const admin);
 	virtual ~MovementSystem();
 
 	virtual void Update() override;;

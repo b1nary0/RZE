@@ -2,18 +2,18 @@
 
 #include "Events.h"
 
-WindowEvent::WindowEvent(const UInt16 eventSubType)
+WindowEvent::WindowEvent(const U16 eventSubType)
 	: mEventInfo(EEventType::Window, eventSubType)
 {
 }
 
-EventInfo::EventInfo(const UInt16 eventType, const UInt16 eventSubType)
+EventInfo::EventInfo(const U16 eventType, const U16 eventSubType)
 	: mEventType(eventType)
 	, mEventSubType(eventSubType)
 {
 }
 
-KeyEvent::KeyEvent(const UInt16 eventSubType, const UInt8 key)
+KeyEvent::KeyEvent(const U16 eventSubType, const U8 key)
 	: mEventInfo(EEventType::Key, eventSubType)
 	, mKey(key)
 {

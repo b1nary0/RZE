@@ -254,19 +254,19 @@ public:
 	//OpenGLVBO(const UInt32 count);
 	~OpenGLVBO();
 
-	void ClearAndRegenBufferCount(const UInt32 newCount);
-	void SetBufferTarget(const UInt32 newBufferTarget);
-	void SetBufferUsageMode(const UInt32 newBufferUsageMode);
-	void SetBufferData(const void* const data, const UInt32 size);
+	void ClearAndRegenBufferCount(const U32 newCount);
+	void SetBufferTarget(const U32 newBufferTarget);
+	void SetBufferUsageMode(const U32 newBufferUsageMode);
+	void SetBufferData(const void* const data, const U32 size);
 
 private:
-	void GenerateBuffers(const UInt32 count);
-	void BindBuffers(const UInt32 index);
+	void GenerateBuffers(const U32 count);
+	void BindBuffers(const U32 index);
 
-	UInt32 mBufferUsageMode;
-	UInt32 mBufferTarget;
-	UInt32 mBufferCount;
-	UInt32 mBufferHandle;
+	U32 mBufferUsageMode;
+	U32 mBufferTarget;
+	U32 mBufferCount;
+	U32 mBufferHandle;
 };
 
 class OpenGLRHI
@@ -283,22 +283,37 @@ public:
 
 	void Init();
 
-	void ClearColor(const Float32 red, const Float32 green, const Float32 blue, const Float32 alpha) const;
-	void Clear(const UInt32 mask) const;
+	void ClearColor(const GLfloat red, const  GLfloat green, const  GLfloat blue, const  GLfloat alpha) const;
+	void Clear(const GLuint mask) const;
 
 	// Returns the array object  handle ID generated
-	void GenVertexArrays(const UInt32 arrayCount, UInt32* outBufferHandle) const;
-	void BindVertexArray(const UInt32 arrayObjectHandle) const;
+	void GenVertexArrays(const GLuint arrayCount, GLuint* outBufferHandle) const;
+	void BindVertexArray(const GLuint arrayObjectHandle) const;
 
-	void GenerateBuffer(UInt32 bufferCount, UInt32* outBufferHandle) const;
-	void BindBuffer(const UInt32 target, const UInt32 bufferObjectHandle) const;
-	void DeleteBuffer(UInt32 bufferCount, UInt32* bufferHandle);
-	void SetBufferData(const UInt32 target, const UInt32 size, const void* const data, const UInt32 bufferUsage) const;
+	void GenerateBuffer(GLuint bufferCount, GLuint* outBufferHandle) const;
+	void BindBuffer(const GLuint target, const GLuint bufferObjectHandle) const;
+	void DeleteBuffer(GLuint bufferCount, GLuint* bufferHandle);
+	void SetBufferData(const GLuint target, const GLuint size, const void* const data, const GLuint bufferUsage) const;
 
-	void EnableVertexAttributeArray(const UInt32 index) const;
-	void VertexAttribPointer(const UInt32 index, const Int32 size, const UInt32 type, const bool normalized, const UInt32 stride, const void* const pointer) const;
+	void EnableVertexAttributeArray(const GLuint index) const;
+	void VertexAttribPointer(const GLuint index, const GLint size, const GLuint type, const GLboolean normalized, const GLuint stride, const void* const pointer) const;
 
-	void DrawArrays(const UInt32 mode, const Int32 first, const UInt32 count) const;
+	void DrawArrays(const GLuint mode, const GLint first, const GLuint count) const;
+
+	//
+	// Shaders
+	//
+	void CreateShaderProgram(GLuint& outProgramID) const;
+	void CreateShader(const GLuint shaderType, GLuint& outShaderID) const;
+	void CompileShader(const GLuint shaderID) const;
+	void AttachShader(const GLuint shaderProgramID, const GLuint shaderID) const;
+	void UseShaderProgram(const GLuint shaderProgramID) const;
+	void SetShaderSource(const GLuint shaderID, const GLuint count, const GLchar* sourceCode, const GLint* length) const;
+	void IsShader(const GLuint shaderID, GLboolean& outResult) const;
+	void IsShaderProgram(const GLuint shaderProgramID, GLboolean& outResult) const;
+	void LinkShaderProgram(const GLuint mShaderProgramID) const;
+	void GetProgramiv(const GLuint shaderProgramID, const EGLShaderProgramStatusParam::Value programStatusParam, GLint* programLinkStatus) const;
+	void UniformLocation(const GLuint shaderProgramID, const GLchar* uniformName, const GLint uniformLocation);
 
 private:
 
