@@ -9,8 +9,6 @@ class GameWorld;
 
 class RZE_Engine
 {
-	static U8 sInstanceCount;
-
 public:
 
 	RZE_Engine();

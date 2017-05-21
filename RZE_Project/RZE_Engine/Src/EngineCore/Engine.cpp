@@ -10,19 +10,11 @@
 #include "Windowing/WinKeyCodes.h"
 
 RZE_Engine* RZE_Engine::sInstance = nullptr;
-U8 RZE_Engine::sInstanceCount = 0;
 
 RZE_Engine::RZE_Engine()
 	: bShouldExit(false)
 	, mMainWindow(nullptr)
 {
-	++sInstanceCount;
-	AssertMsg(sInstanceCount == 1, "Trying to create second engine class, invalid operation. Exiting.");
-	if (sInstanceCount != 1)
-	{
-		exit(0);
-	}
-
 	Init();
 }
 
