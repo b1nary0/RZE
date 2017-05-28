@@ -33,7 +33,7 @@ void GameApp::Start()
 {
 	RZE_Game::Start();
 
-	IEntity* entity = GEngine->GetWorld()->AddEntity(new GameEntity());
+	GameEntity* entity = static_cast<GameEntity*>(GEngine->GetWorld()->AddEntity(new GameEntity()));
 	entity->AddComponent(new RenderComponent());
 	RenderComponent* const component = static_cast<RenderComponent* const>(entity->GetComponents()[0]);
 	

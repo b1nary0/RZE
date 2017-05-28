@@ -106,6 +106,11 @@ void OpenGLRHI::CreateShader(const GLuint shaderType, GLuint& outShaderID) const
 	outShaderID = glCreateShader(shaderType);
 }
 
+void OpenGLRHI::DeleteShader(const GLuint shaderID) const
+{
+	glDeleteShader(shaderID);
+}
+
 void OpenGLRHI::CompileShader(const GLuint shaderID) const
 {
 	glCompileShader(shaderID);
@@ -152,6 +157,11 @@ void OpenGLRHI::LinkShaderProgram(const GLuint mShaderProgramID) const
 void OpenGLRHI::GetProgramiv(const GLuint mShaderProgramID, const EGLShaderProgramStatusParam::Value programStatusParam, GLint* programLinkStatus) const
 {
 	glGetProgramiv(mShaderProgramID, programStatusParam, programLinkStatus);
+}
+
+void OpenGLRHI::GetShaderiv(const GLuint shaderID, const GLenum shaderStatusParam, GLint* const params)
+{
+	glGetShaderiv(shaderID, shaderStatusParam, params);
 }
 
 void OpenGLRHI::UniformLocation(const GLuint shaderProgramID, const GLchar* uniformName,  GLint outUniformLocation)

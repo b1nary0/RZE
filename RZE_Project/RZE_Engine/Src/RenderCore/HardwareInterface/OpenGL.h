@@ -305,6 +305,7 @@ public:
 	//
 	void CreateShaderProgram(GLuint& outProgramID) const;
 	void CreateShader(const GLuint shaderType, GLuint& outShaderID) const;
+	void DeleteShader(const GLuint shaderID) const;
 	void CompileShader(const GLuint shaderID) const;
 	void AttachShader(const GLuint shaderProgramID, const GLuint shaderID) const;
 	void UseShaderProgram(const GLuint shaderProgramID) const;
@@ -313,6 +314,7 @@ public:
 	void IsShaderProgram(const GLuint shaderProgramID, GLboolean& outResult) const;
 	void LinkShaderProgram(const GLuint mShaderProgramID) const;
 	void GetProgramiv(const GLuint shaderProgramID, const EGLShaderProgramStatusParam::Value programStatusParam, GLint* programLinkStatus) const;
+	void GetShaderiv(const GLuint shaderID, const GLenum shaderStatusParam, GLint* const params);
 	void UniformLocation(const GLuint shaderProgramID, const GLchar* uniformName, const GLint uniformLocation);
 
 private:

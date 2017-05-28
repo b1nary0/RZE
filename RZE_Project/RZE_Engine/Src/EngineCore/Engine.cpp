@@ -52,7 +52,7 @@ void RZE_Engine::Init()
 void RZE_Engine::InitWorld()
 {
 	LOG_CONSOLE_ANNOUNCE("Initializing Game World...");
-	// @note naieve at first
+	// @note naive at first
 	mWorld = new GameWorld();
 	AssertNotNull(mWorld);
 
@@ -70,7 +70,7 @@ void RZE_Engine::PostInit(Functor<RZE_Game* const> createApplicationCallback)
 void RZE_Engine::CreateAndInitializeWindow()
 {
 	Win32Window::WindowCreationParams params;
-	params.windowTitle = "test";
+	params.windowTitle = "RZE_Engine";
 	params.width = 1280;
 	params.height = 720;
 

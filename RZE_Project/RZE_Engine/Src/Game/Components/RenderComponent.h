@@ -19,8 +19,7 @@ public:
 	void SetShaderGroup(GFXShaderGroup* const shaderGroup);
 
 private:
-	
-	// @todo come back to this cause it probably shouldnt be a raw pointer
+	// @todo come back to this cause it probably shouldn't be a raw pointer
 	GFXShaderGroup* mShaderGroup;
 	std::vector<float> mVertexList;
 };
