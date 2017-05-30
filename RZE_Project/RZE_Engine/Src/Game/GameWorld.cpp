@@ -5,12 +5,18 @@
 #include "Game/Systems/MovementSystem.h"
 #include "Game/Systems/RenderSystem.h"
 
+#include <RenderCore/Renderer.h>
+
 GameWorld::GameWorld()
 {
 }
 
 GameWorld::~GameWorld()
 {
+	if (mRenderer)
+	{
+		delete mRenderer;
+	}
 }
 
 void GameWorld::InitSystems()
@@ -23,6 +29,18 @@ IEntity* GameWorld::AddEntity(IEntity* const entity)
 {
 	InternalGetEntities().push_back(entity);
 	return InternalGetEntities().back();
+}
+
+RZE_Renderer* const GameWorld::GetRenderer() const
+{
+	return mRenderer;
+}
+
+void GameWorld::Init()
+{
+	mRenderer = new RZE_Renderer();
+
+	InitSystems();
 }
 
 void GameWorld::Update()

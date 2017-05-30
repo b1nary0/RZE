@@ -11,6 +11,7 @@ public:
 	IEntitySystem(IEntityAdmin* admin)
 		: mAdmin(admin) {}
 
+	virtual void Init() = 0;
 	virtual void Update() = 0;
 
 	const ComponentList& GetComponents() { return mComponents; }

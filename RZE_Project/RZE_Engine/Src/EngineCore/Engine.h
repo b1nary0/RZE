@@ -14,9 +14,10 @@ public:
 	RZE_Engine();
 	~RZE_Engine();
 
-	void Run(Functor<RZE_Game* const> createApplicationCallback);
+	void Run(Functor<RZE_Game* const>& createApplicationCallback);
 
 	void RegisterForEvent(const U16 eventType, Functor<void, const Event&> callback);
+	void RegisterForInputEvent(const U16 eventType, Functor<void, U8> callback);
 
 	GameWorld* const GetWorld() const;
 
@@ -34,7 +35,7 @@ private:
 
 	void Init();
 	void InitWorld();
-	void PostInit(Functor<RZE_Game* const> createApplicationCallback);
+	void PostInit(Functor<RZE_Game* const>& createApplicationCallback);
 	
 	void Update();
 	void BeginShutDown();

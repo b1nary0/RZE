@@ -114,10 +114,13 @@
     <ClCompile Include="Src\RenderCore\Shaders\ShaderGroup.cpp">
       <Filter>Source Files\RenderCore\Techniques</Filter>
     </ClCompile>
-    <ClCompile Include="Src\Game\Components\RenderComponent.cpp">
+    <ClCompile Include="Src\Game\Components\TransformComponent.cpp">
       <Filter>Source Files\Game\Components</Filter>
     </ClCompile>
-    <ClCompile Include="Src\Game\Components\TransformComponent.cpp">
+    <ClCompile Include="Src\RenderCore\Renderer.cpp">
+      <Filter>Source Files\RenderCore</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Game\Components\MeshComponent.cpp">
       <Filter>Source Files\Game\Components</Filter>
     </ClCompile>
   </ItemGroup>
@@ -206,9 +209,6 @@
     <ClInclude Include="Src\Game\GameEntity.h">
       <Filter>Source Files\Game</Filter>
     </ClInclude>
-    <ClInclude Include="Src\Game\Components\RenderComponent.h">
-      <Filter>Source Files\Game\Components</Filter>
-    </ClInclude>
     <ClInclude Include="Src\RenderCore\Shaders\Shader.h">
       <Filter>Source Files\RenderCore\Techniques</Filter>
     </ClInclude>
@@ -220,6 +220,12 @@
     </ClInclude>
     <ClInclude Include="Src\Game\ECS\EntitySystem.h">
       <Filter>Source Files\Game\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\RenderCore\Renderer.h">
+      <Filter>Source Files\RenderCore</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Game\Components\MeshComponent.h">
+      <Filter>Source Files\Game\Components</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

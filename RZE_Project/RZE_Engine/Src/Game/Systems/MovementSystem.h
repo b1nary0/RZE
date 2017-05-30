@@ -8,5 +8,6 @@ public:
 	MovementSystem(IEntityAdmin* const admin);
 	virtual ~MovementSystem();
 
-	virtual void Update() override;;
+	virtual void Init() override;
+	virtual void Update() override;
 };

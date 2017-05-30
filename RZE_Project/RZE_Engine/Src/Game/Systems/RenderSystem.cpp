@@ -1,10 +1,11 @@
-#include "StdAfx.h"
+#include <StdAfx.h>
+#include <Game/Systems/RenderSystem.h>
 
-#include "Game/Systems/RenderSystem.h"
-#include "Game/ECS/Entity.h"
-#include "Game/Components/RenderComponent.h"
+#include <Game/ECS/Entity.h>
+#include <Game/Components/MeshComponent.h>
 
-#include "RenderCore/HardwareInterface/OpenGL.h"
+#include <RenderCore/Renderer.h>
+#include <RenderCore/HardwareInterface/OpenGL.h>
 
 RenderSystem::RenderSystem(IEntityAdmin* const admin)
 	: IEntitySystem(admin)
@@ -18,26 +19,28 @@ RenderSystem::~RenderSystem()
 {
 }
 
+void RenderSystem::Init()
+{
+}
+
 void RenderSystem::Update()
 {
-	const OpenGLRHI& openGL = OpenGLRHI::Get();
-	for (auto& entity : mAdmin->GetEntities())
+	RZE_Renderer* const renderer = mAdmin->GetRenderer();
+	if (renderer)
 	{
-		const RenderComponent* component = static_cast<const RenderComponent* const>(entity->GetComponents()[0]);
+		for (auto& entity : mAdmin->GetEntities())
+		{
+			MeshComponent* const meshComponent = static_cast<MeshComponent* const>(entity->GetComponents()[0]);
+			RZE_Renderer::RenderItemProtocol renderItem;
+			renderItem.VertexList = &(meshComponent->GetVertexList());
+			renderItem.ShaderGroup = meshComponent->GetShaderGroup();
 
-		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
+			if (renderer)
+			{
+				renderer->AddRenderItem(renderItem);
+			}
+		}
 
-		GLuint vao;
-		openGL.GenVertexArrays(1, &vao);
-		openGL.BindVertexArray(vao);
-
-		// @implementation should we have this type of assumption?
-		OpenGLVBO vbo;
-		vbo.SetBufferData(component->GetVertexList().data(), sizeof(component->GetVertexList().data()) * component->GetVertexList().size());
-
-		openGL.EnableVertexAttributeArray(0);
-		openGL.VertexAttribPointer(0, 3, EGLDataType::Float, EGLBooleanValue::False, 0, 0);
-
-		openGL.DrawArrays(EGLDrawMode::Triangles, 0, 3);
+		renderer->Render();
 	}
 }

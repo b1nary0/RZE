@@ -1,11 +1,11 @@
 #include "GameApp.h"
 
-#include "RZE.h"
+#include <RZE.h>
 
-#include "Debug/Debug.h"
+#include <Debug/Debug.h>
 
-#include "Game/GameEntity.h"
-#include "Game/Components/RenderComponent.h"
+#include <Game/GameEntity.h>
+#include <Game/Components/MeshComponent.h>
 
 GameApp::GameApp()
 	: RZE_Game()
@@ -34,14 +34,14 @@ void GameApp::Start()
 	RZE_Game::Start();
 
 	GameEntity* entity = static_cast<GameEntity*>(GEngine->GetWorld()->AddEntity(new GameEntity()));
-	entity->AddComponent(new RenderComponent());
-	RenderComponent* const component = static_cast<RenderComponent* const>(entity->GetComponents()[0]);
+	entity->AddComponent(new MeshComponent());
+	MeshComponent* const meshComponent = static_cast<MeshComponent* const>(entity->GetComponents()[0]);
 	
 	std::vector<float> vertices = { -0.5f, -0.25f, 0.0f,
 									0.5f, -0.5f, 0.0f,
 									0.0f, 0.5f, 0.0f };
 	
-	component->SetVertexList(vertices);
+	meshComponent->SetVertexList(vertices);
 }
 
 void GameApp::Update()

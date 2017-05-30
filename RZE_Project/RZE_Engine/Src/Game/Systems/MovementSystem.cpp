@@ -11,6 +11,11 @@ MovementSystem::~MovementSystem()
 {
 }
 
+void MovementSystem::Init()
+{
+
+}
+
 void MovementSystem::Update()
 {
 	for (auto& entity : mAdmin->GetEntities())

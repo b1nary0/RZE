@@ -24,7 +24,7 @@ RZE_Engine::~RZE_Engine()
 	delete mMainWindow;
 }
 
-void RZE_Engine::Run(Functor<RZE_Game* const> createGameCallback)
+void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 {
 	AssertNotNull(createGameCallback);
 	PostInit(createGameCallback);
@@ -56,10 +56,10 @@ void RZE_Engine::InitWorld()
 	mWorld = new GameWorld();
 	AssertNotNull(mWorld);
 
-	mWorld->InitSystems();
+	mWorld->Init();
 }
 
-void RZE_Engine::PostInit(Functor<RZE_Game* const> createApplicationCallback)
+void RZE_Engine::PostInit(Functor<RZE_Game* const>& createApplicationCallback)
 {
 	LOG_CONSOLE("RZE_EngineCore::PostInit() called.");
 
@@ -104,7 +104,6 @@ void RZE_Engine::RegisterWindowEvents()
 			this->bShouldExit = true;
 		}
 	});
-
 	RegisterForEvent(EEventType::Window, windowCallback);
 }
 
@@ -117,8 +116,7 @@ void RZE_Engine::RegisterInputEvents()
 			this->bShouldExit = true;
 		}
 	});
-
-	mInputHandler.RegisterForEvent(EKeyEventType::Key_Pressed, keyPressCallback);
+	RegisterForInputEvent(EKeyEventType::Key_Pressed, keyPressCallback);
 }
 
 void RZE_Engine::Update()
@@ -142,6 +140,11 @@ void RZE_Engine::BeginShutDown()
 void RZE_Engine::RegisterForEvent(const U16 eventType, Functor<void, const Event&> callback)
 {
 	mEventHandler.RegisterForEvent(eventType, callback);
+}
+
+void RZE_Engine::RegisterForInputEvent(const U16 eventType, Functor<void, U8> callback)
+{
+	mInputHandler.RegisterForEvent(eventType, callback);
 }
 
 GameWorld* const RZE_Engine::GetWorld() const
