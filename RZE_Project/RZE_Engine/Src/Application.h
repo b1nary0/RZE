@@ -19,6 +19,7 @@ public:
 
 	virtual void Start();
 	virtual void Update();
+	virtual void ShutDown();
 
 	bool IsRunning() const;
 

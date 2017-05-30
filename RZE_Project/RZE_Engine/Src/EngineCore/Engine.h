@@ -38,7 +38,9 @@ private:
 	void PostInit(Functor<RZE_Game* const>& createApplicationCallback);
 	
 	void Update();
+
 	void BeginShutDown();
+	void PostExit();
 
 	void CompileEvents();
 

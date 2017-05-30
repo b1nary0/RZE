@@ -9,12 +9,14 @@ class RZE_Renderer;
 
 class IEntityAdmin
 {
+protected:
 	typedef std::vector<IEntity*> EntityList;
 	typedef std::vector<IEntitySystem*> SystemList;
 
 public:
 	virtual void Init() = 0;
 	virtual void Update() = 0;
+	virtual void ShutDown() = 0;
 
 	virtual RZE_Renderer* const GetRenderer() const = 0;
 

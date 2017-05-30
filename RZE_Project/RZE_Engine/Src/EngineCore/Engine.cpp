@@ -101,7 +101,7 @@ void RZE_Engine::RegisterWindowEvents()
 		AssertEqual(event.mInfo.mEventType, EEventType::Window);
 		if (event.mWindowEvent.mEventInfo.mEventSubType == EWindowEventType::Window_Destroy)
 		{
-			this->bShouldExit = true;
+			PostExit();
 		}
 	});
 	RegisterForEvent(EEventType::Window, windowCallback);
@@ -113,7 +113,7 @@ void RZE_Engine::RegisterInputEvents()
 	{
 		if (key == Win32KeyCode::Escape)
 		{
-			this->bShouldExit = true;
+			PostExit();
 		}
 	});
 	RegisterForInputEvent(EKeyEventType::Key_Pressed, keyPressCallback);
@@ -135,6 +135,13 @@ void RZE_Engine::Update()
 void RZE_Engine::BeginShutDown()
 {
 	LOG_CONSOLE("Shutting engine down...");
+	mWorld->ShutDown();
+	mApplication->ShutDown();
+}
+
+void RZE_Engine::PostExit()
+{
+	bShouldExit = true;
 }
 
 void RZE_Engine::RegisterForEvent(const U16 eventType, Functor<void, const Event&> callback)

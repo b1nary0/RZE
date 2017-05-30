@@ -23,3 +23,7 @@ void MovementSystem::Update()
 
 	}
 }
+
+void MovementSystem::ShutDown()
+{
+}

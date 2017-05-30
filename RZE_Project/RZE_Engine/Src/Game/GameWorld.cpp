@@ -50,3 +50,14 @@ void GameWorld::Update()
 		system->Update();
 	}
 }
+
+void GameWorld::ShutDown()
+{
+	SystemList& systemList = InternalGetSystems();
+	std::reverse(systemList.begin(), systemList.end());
+
+	for (IEntitySystem* system : systemList)
+	{
+		system->ShutDown();
+	}
+}

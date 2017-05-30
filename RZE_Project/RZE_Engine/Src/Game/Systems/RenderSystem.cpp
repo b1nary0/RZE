@@ -44,3 +44,7 @@ void RenderSystem::Update()
 		renderer->Render();
 	}
 }
+
+void RenderSystem::ShutDown()
+{
+}
