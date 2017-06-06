@@ -10,8 +10,6 @@
 RenderSystem::RenderSystem(IEntityAdmin* const admin)
 	: IEntitySystem(admin)
 {
-	OpenGLRHI::Get().Init();
-
 	OpenGLRHI::Get().ClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 }
 

@@ -1,13 +1,15 @@
-#include "StdAfx.h"
+#include <StdAfx.h>
 
-#include "Engine.h"
+#include <EngineCore/Engine.h>
 
-#include "Debug/Debug.h"
+#include <Debug/Debug.h>
 
-#include "Game/GameWorld.h"
+#include <Game/GameWorld.h>
 
-#include "Windowing/Win32Window.h"
-#include "Windowing/WinKeyCodes.h"
+#include <RenderCore/HardwareInterface/OpenGL.h>
+
+#include <Windowing/Win32Window.h>
+#include <Windowing/WinKeyCodes.h>
 
 RZE_Engine* RZE_Engine::sInstance = nullptr;
 
@@ -40,8 +42,9 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 void RZE_Engine::Init()
 {
 	LOG_CONSOLE("RZE_EngineCore::Init() called.");
-
+	
 	CreateAndInitializeWindow();
+	OpenGLRHI::Get().Init();
 
 	RegisterWindowEvents();
 	RegisterInputEvents();

@@ -5,7 +5,6 @@
 #include <queue>
 #include <map>
 
-#include "Events.h"
 #include "Utils/Functor.h"
 
 class EventHandler

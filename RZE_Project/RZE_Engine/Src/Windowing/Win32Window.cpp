@@ -1,22 +1,21 @@
-#include "StdAfx.h"
+#include <StdAfx.h>
 
-#include "Win32Window.h"
+#include <Windowing/Win32Window.h>
 
 // RZE
-#include "Debug/Debug.h"
+#include <Debug/Debug.h>
 
-#include "Utils/Conversions.h"
+#include <Utils/Conversions.h>
 
-#include "Events/EventHandler.h"
+#include <Events/EventHandler.h>
 
-#include "Windowing/WindowMessageAdaptor.h"
-#include "Windowing/WinKeyCodes.h"
+#include <Windowing/WindowMessageAdaptor.h>
+#include <Windowing/WinKeyCodes.h>
 
 long __stdcall WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp);
 
 // Used to link WinProc messages with the window without having to static other class instances etc
 static WindowMessageAdaptor sWindowMessageAdaptor;
-
 
 Win32Window::Win32Window(const WindowCreationParams& creationProtocol)
 {

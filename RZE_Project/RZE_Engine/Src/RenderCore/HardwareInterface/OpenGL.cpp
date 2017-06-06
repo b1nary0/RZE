@@ -23,12 +23,12 @@ void OpenGLRHI::InitGLEW()
 	GLenum err = glewInit();
 	if (err == GLEW_OK)
 	{
-		LOG_CONSOLE("GLEW initialized successfully.");
+		LOG_CONSOLE_ANNOUNCE("GLEW initialized successfully.");
 	}
 	else
 	{
 		// @todo do something meaningful here
-		LOG_CONSOLE("GLEW did not initialize.");
+		LOG_CONSOLE_ANNOUNCE("GLEW did not initialize.");
 		AssertFalse();
 	}
 }

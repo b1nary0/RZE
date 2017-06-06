@@ -156,6 +156,7 @@
     <ClCompile Include="Src\Application.cpp" />
     <ClCompile Include="Src\EngineCore\Engine.cpp" />
     <ClCompile Include="Src\EngineCore\Input\InputHandler.cpp" />
+    <ClCompile Include="Src\EngineCore\Platform\File.cpp" />
     <ClCompile Include="Src\Events\EventHandler.cpp" />
     <ClCompile Include="Src\Events\Events.cpp" />
     <ClCompile Include="Src\Game\Components\MeshComponent.cpp" />
@@ -181,6 +182,7 @@
     <ClInclude Include="Src\Debug\Debug.h" />
     <ClInclude Include="Src\EngineCore\Engine.h" />
     <ClInclude Include="Src\EngineCore\Input\InputHandler.h" />
+    <ClInclude Include="Src\EngineCore\Platform\File.h" />
     <ClInclude Include="Src\Events\EventHandler.h" />
     <ClInclude Include="Src\Events\Events.h" />
     <ClInclude Include="Src\Events\EventTypes.h" />

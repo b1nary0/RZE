@@ -18,15 +18,14 @@ GameApp::~GameApp()
 
 void GameApp::RegisterEvents(EventHandler& eventHandler)
 {
-	//Functor<void, const Event&> keyEvent([this](const Event& evt)
-	//{
-	//	if (evt.mInfo.mEventType == EEventType::Key)
-	//	{
-	//		LOG_CONSOLE_ARGS("KeyPress: %c\n", static_cast<char>(evt.mKeyEvent.mKey));
-	//	}
-	//});
-
-	//eventHandler.RegisterForEvent(EEventType::Key, keyEvent);
+	Functor<void, const Event&> keyEvent([this](const Event& evt)
+	{
+		if (evt.mInfo.mEventType == EEventType::Key)
+		{
+			LOG_CONSOLE_ARGS("KeyPress: %c\n", static_cast<char>(evt.mKeyEvent.mKey));
+		}
+	});
+	eventHandler.RegisterForEvent(EEventType::Key, keyEvent);
 }
 
 void GameApp::Start()
@@ -36,7 +35,7 @@ void GameApp::Start()
 	GameEntity* entity = static_cast<GameEntity*>(GEngine->GetWorld()->AddEntity(new GameEntity()));
 	entity->AddComponent(new MeshComponent());
 	MeshComponent* const meshComponent = static_cast<MeshComponent* const>(entity->GetComponents()[0]);
-	
+		
 	std::vector<float> vertices = { -0.5f, -0.25f, 0.0f,
 									0.5f, -0.5f, 0.0f,
 									0.0f, 0.5f, 0.0f };

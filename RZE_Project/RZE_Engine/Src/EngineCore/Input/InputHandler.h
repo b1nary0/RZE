@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Utils/Functor.h"
+#include <Utils/Functor.h>
+#include <Utils/PrimitiveDefs.h>
 
 class EventHandler;
 
@@ -13,17 +14,14 @@ class InputHandler
 	};
 
 public:
-	
 	InputHandler();
 
 	void RegisterEvents(EventHandler& eventHandler);
-
 	void RegisterForEvent(U16 action, Functor<void, U8> callback);
 
 	void ProcessEvents();
-	
-private:
 
+private:
 	std::queue<KeyAction> mKeyPresses;
 	std::map<U16, std::vector<Functor<void, U8>>> mNotifyMap;
 };

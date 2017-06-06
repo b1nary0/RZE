@@ -55,6 +55,9 @@
     <Filter Include="Source Files\RenderCore\Techniques">
       <UniqueIdentifier>{73af9851-cfdf-450c-ad74-d45d4b8074e3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\EngineCore\Platform">
+      <UniqueIdentifier>{59ec563e-ba69-4806-b450-1499e7e0889c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Src\Application.cpp">
@@ -122,6 +125,9 @@
     </ClCompile>
     <ClCompile Include="Src\Game\Components\MeshComponent.cpp">
       <Filter>Source Files\Game\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\EngineCore\Platform\File.cpp">
+      <Filter>Source Files\EngineCore\Platform</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -226,6 +232,9 @@
     </ClInclude>
     <ClInclude Include="Src\Game\Components\MeshComponent.h">
       <Filter>Source Files\Game\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\EngineCore\Platform\File.h">
+      <Filter>Source Files\EngineCore\Platform</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
