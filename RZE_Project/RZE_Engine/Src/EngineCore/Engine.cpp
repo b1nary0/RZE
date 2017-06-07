@@ -124,7 +124,6 @@ void RZE_Engine::RegisterInputEvents()
 
 void RZE_Engine::Update()
 {
-	CompileEvents();
 	mEventHandler.ProcessEvents();
 	mInputHandler.ProcessEvents();
 
@@ -133,6 +132,8 @@ void RZE_Engine::Update()
 
 	// @todo maybe this can be done better
 	mMainWindow->BufferSwap();
+
+	CompileEvents();
 }
 
 void RZE_Engine::BeginShutDown()
