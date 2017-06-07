@@ -2,7 +2,7 @@
 
 #include <EngineCore/Engine.h>
 
-#include <Debug/Debug.h>
+#include <DebugUtils/Debug.h>
 
 #include <Game/GameWorld.h>
 

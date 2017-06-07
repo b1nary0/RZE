@@ -2,7 +2,7 @@
 
 #include "Application.h"
 
-#include "Debug/Debug.h"
+#include "DebugUtils/Debug.h"
 
 #include "EngineCore/Engine.h"
 

@@ -2,7 +2,7 @@
 
 #include <RZE.h>
 
-#include <Debug/Debug.h>
+#include <DebugUtils/Debug.h>
 
 #include <Game/GameEntity.h>
 #include <Game/Components/MeshComponent.h>

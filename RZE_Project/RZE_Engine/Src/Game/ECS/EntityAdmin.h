@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Debug/Debug.h"
+#include "DebugUtils/Debug.h"
 
 class IEntity;
 class IEntitySystem;

@@ -236,5 +236,8 @@
     <ClInclude Include="Src\EngineCore\Platform\File.h">
       <Filter>Source Files\EngineCore\Platform</Filter>
     </ClInclude>
+    <ClInclude Include="Src\EngineCore\ResourceHandler.h">
+      <Filter>Source Files\EngineCore</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

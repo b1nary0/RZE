@@ -3,7 +3,7 @@
 #include <Windowing/Win32Window.h>
 
 // RZE
-#include <Debug/Debug.h>
+#include <DebugUtils/Debug.h>
 
 #include <Utils/Conversions.h>
 

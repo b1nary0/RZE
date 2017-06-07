@@ -183,6 +183,7 @@
     <ClInclude Include="Src\EngineCore\Engine.h" />
     <ClInclude Include="Src\EngineCore\Input\InputHandler.h" />
     <ClInclude Include="Src\EngineCore\Platform\File.h" />
+    <ClInclude Include="Src\EngineCore\ResourceHandler.h" />
     <ClInclude Include="Src\Events\EventHandler.h" />
     <ClInclude Include="Src\Events\Events.h" />
     <ClInclude Include="Src\Events\EventTypes.h" />

@@ -33,5 +33,5 @@
 // RZE
 #include "RZE_Config.h"
 #include "RZE.h"
-#include "Debug/Debug.h"
+#include "DebugUtils/Debug.h"
 #include "Utils/PrimitiveDefs.h"
