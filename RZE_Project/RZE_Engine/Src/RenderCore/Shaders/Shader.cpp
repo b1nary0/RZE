@@ -8,6 +8,8 @@ GFXShader::GFXShader(const U32 shaderType, const std::string& shaderName, const 
 	: mShaderType(shaderType)
 	, mShaderName(shaderName)
 	, mSourceCode(sourceCode)
+	, mShaderID(0)
+	, bIsCreated(false)
 {
 }
 
@@ -43,10 +45,13 @@ const std::string& GFXShader::GetSourceCode()
 
 void GFXShader::Create()
 {
-	if (!mShaderID)
+	if (!bIsCreated)
 	{
-		AssertExpr(GetShaderType() != GFXShaderType::Invalid);
+		AssertExpr(GetShaderType() != EGFXShaderType::Invalid);
 		OpenGLRHI::Get().CreateShader(GetShaderType(), mShaderID);
+
+		//@todo:josh this may need better handling here... can CreateShader fail?
+		bIsCreated = true;
 	}
 }
 

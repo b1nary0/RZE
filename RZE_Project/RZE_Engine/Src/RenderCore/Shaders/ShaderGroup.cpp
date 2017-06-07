@@ -58,7 +58,13 @@ bool GFXShaderGroup::GenerateShaderProgram()
 		OpenGLRHI::Get().GetProgramiv(mShaderProgramID, EGLShaderProgramStatusParam::LinkStatus, &programLinkStatus);
 		if (!programLinkStatus)
 		{
-			LOG_CONSOLE_ARGS("Error linking shaders in shader group %s", mGroupName);
+			const int kLogLength = 512;
+			char errorLog[kLogLength]{};
+			int length;
+			OpenGLRHI::Get().GetProgramInfoLog(GetShaderProgramID(), kLogLength, &length, &errorLog[0]);
+
+			LOG_CONSOLE_ARGS("Error linking shaders in shader group [%s]", mGroupName.c_str());
+			LOG_CONSOLE_ARGS("Error: %s", std::string(errorLog).c_str());
 			return false;
 		}
 
@@ -66,6 +72,26 @@ bool GFXShaderGroup::GenerateShaderProgram()
 	}
 
 	return false;
+}
+
+U32 GFXShaderGroup::GetShaderProgramID() const
+{
+	return mShaderProgramID;
+}
+
+void GFXShaderGroup::Use()
+{
+	U8 bIsShaderProgram = false;
+	OpenGLRHI::Get().IsShaderProgram(GetShaderProgramID(), bIsShaderProgram);
+	
+	if (bIsShaderProgram)
+	{
+		OpenGLRHI::Get().UseShaderProgram(GetShaderProgramID());
+	}
+	else
+	{
+		LOG_CONSOLE_ARGS("Shader group [%s] has not been generated.", mGroupName.c_str());
+	}
 }
 
 void GFXShaderGroup::AttachShaders() const

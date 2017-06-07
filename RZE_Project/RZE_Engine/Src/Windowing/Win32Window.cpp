@@ -12,7 +12,7 @@
 #include <Windowing/WindowMessageAdaptor.h>
 #include <Windowing/WinKeyCodes.h>
 
-long __stdcall WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp);
+LRESULT CALLBACK WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp);
 
 // Used to link WinProc messages with the window without having to static other class instances etc
 static WindowMessageAdaptor sWindowMessageAdaptor;
@@ -190,7 +190,7 @@ void Win32Window::ProcessWinProcMessage(const WindowMessageAdaptor::WindowMessag
 	}
 }
 
-long __stdcall WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp)
+LRESULT CALLBACK WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp)
 {
 	// @unfinished - check for values of msg possibly needed
 	switch (msg)

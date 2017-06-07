@@ -1,15 +1,15 @@
 #pragma once
 
-namespace GFXShaderType
+namespace EGFXShaderType
 {
 	enum Value : U32
 	{
-		Invalid,
 		Vertex,
 		Fragment,
 		Geometry,
 		Tessellation,
-		Compute
+		Compute,
+		Invalid = UINT_MAX
 	};
 }
 
@@ -30,9 +30,10 @@ public:
 
 private:
 	bool bIsCompiled;
+	bool bIsCreated;
 
 	U32 mShaderType;
+	U32 mShaderID;
 	std::string mShaderName;
 	std::string mSourceCode;
-	U32 mShaderID;
 };

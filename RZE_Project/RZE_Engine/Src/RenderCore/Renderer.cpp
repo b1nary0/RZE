@@ -2,6 +2,7 @@
 #include <RenderCore/Renderer.h>
 
 #include <RenderCore/HardwareInterface/OpenGL.h>
+#include <RenderCore/Shaders/ShaderGroup.h>
 
 RZE_Renderer::RZE_Renderer()
 {
@@ -37,6 +38,11 @@ void RZE_Renderer::RenderSingleItem(const RenderItemProtocol& renderItem)
 
 	openGL.EnableVertexAttributeArray(0);
 	openGL.VertexAttribPointer(0, 3, EGLDataType::Float, EGLBooleanValue::False, 0, 0);
+
+	if (renderItem.ShaderGroup)
+	{
+		renderItem.ShaderGroup->Use();
+	}
 
 	openGL.DrawArrays(EGLDrawMode::Triangles, 0, 3);
 }

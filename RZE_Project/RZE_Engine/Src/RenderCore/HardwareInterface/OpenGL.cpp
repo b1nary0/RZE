@@ -159,14 +159,19 @@ void OpenGLRHI::GetProgramiv(const GLuint mShaderProgramID, const EGLShaderProgr
 	glGetProgramiv(mShaderProgramID, programStatusParam, programLinkStatus);
 }
 
-void OpenGLRHI::GetShaderiv(const GLuint shaderID, const GLenum shaderStatusParam, GLint* const params)
+void OpenGLRHI::GetShaderiv(const GLuint shaderID, const GLenum shaderStatusParam, GLint* const params) const
 {
 	glGetShaderiv(shaderID, shaderStatusParam, params);
 }
 
-void OpenGLRHI::UniformLocation(const GLuint shaderProgramID, const GLchar* uniformName,  GLint outUniformLocation)
+void OpenGLRHI::UniformLocation(const GLuint shaderProgramID, const GLchar* uniformName,  GLint outUniformLocation) const
 {
 	outUniformLocation = glGetUniformLocation(shaderProgramID, uniformName);
+}
+
+void OpenGLRHI::GetProgramInfoLog(const GLuint programID, const GLsizei maxLength, GLsizei* length, GLchar* infoLog) const
+{
+	glGetProgramInfoLog(programID, maxLength, length, infoLog);
 }
 
 //

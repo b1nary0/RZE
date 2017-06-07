@@ -13,4 +13,7 @@ public:
 
 	virtual void Start() override;
 	virtual void Update() override;
+
+private:
+	void CreateTestShaderStuff(class MeshComponent* const meshComponent);
 };

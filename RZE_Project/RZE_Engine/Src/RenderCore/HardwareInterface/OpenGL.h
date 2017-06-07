@@ -314,8 +314,10 @@ public:
 	void IsShaderProgram(const GLuint shaderProgramID, GLboolean& outResult) const;
 	void LinkShaderProgram(const GLuint mShaderProgramID) const;
 	void GetProgramiv(const GLuint shaderProgramID, const EGLShaderProgramStatusParam::Value programStatusParam, GLint* programLinkStatus) const;
-	void GetShaderiv(const GLuint shaderID, const GLenum shaderStatusParam, GLint* const params);
-	void UniformLocation(const GLuint shaderProgramID, const GLchar* uniformName, const GLint uniformLocation);
+	void GetShaderiv(const GLuint shaderID, const GLenum shaderStatusParam, GLint* const params) const;
+	void UniformLocation(const GLuint shaderProgramID, const GLchar* uniformName, const GLint uniformLocation) const;
+
+	void GetProgramInfoLog(const GLuint programID, const GLsizei maxLength, GLsizei* length, GLchar* infoLog) const;
 
 private:
 

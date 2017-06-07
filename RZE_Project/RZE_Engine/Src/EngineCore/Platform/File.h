@@ -97,13 +97,10 @@ public:
 private:
 
 	EFileOpenMode::Value mOpenState;
-
 	std::ofstream mFileStream;
 
 	std::string mFilePath;
-
 	std::string mData;
 
 	bool bIsOpen;
-
 };

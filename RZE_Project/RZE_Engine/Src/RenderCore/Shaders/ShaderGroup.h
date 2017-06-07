@@ -32,10 +32,15 @@ public:
 	bool AddShader(U32 shaderType, GFXShader* const shader);
 	bool AddUniform(const std::string& uniformName);
 	bool GenerateShaderProgram();
+
+	U32 GetShaderProgramID() const;
+
+	void Use();
+
+private:
 	void AttachShaders() const;
 	void LoadUniformValues();
 
-private:
 	U32 mNumShaders;
 	U32 mShaderProgramID;
 

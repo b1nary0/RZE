@@ -30,6 +30,7 @@ bool File::Open(EFileOpenMode::Value fileOpenMode)
 		if (!bIsOpen)
 		{
 			// #TODO Log error
+			LOG_CONSOLE_ARGS("File with path [%s] failed to open.", mFilePath.c_str());
 			return false;
 		}
 
