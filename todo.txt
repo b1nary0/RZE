@@ -45,7 +45,8 @@
 * Log file
 	
 * resource distribution w/ file path prefix
-	
+
+* renderer should be held by engine and loaned to game world. or game world should ask engine for it.
 * find out where the additional include directory stuff is saved
 * Engine.h issue with eventhandler.h needing to be before inputhandler.h
 * module system for loading/unloading etc
