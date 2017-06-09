@@ -15,5 +15,4 @@ public:
 	virtual void Update() override;
 
 private:
-	void CreateTestShaderStuff(class MeshComponent* const meshComponent);
 };

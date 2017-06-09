@@ -12,6 +12,8 @@ OpenGLRHI::~OpenGLRHI()
 
 void OpenGLRHI::Init()
 {
+	LOG_CONSOLE_ARGS("OpenGL version is %s", glGetString(GL_VERSION));
+
 	// @implementation these need to be read in via window attributes
 	glViewport(0, 0, 1280, 720);
 
@@ -20,6 +22,8 @@ void OpenGLRHI::Init()
 
 void OpenGLRHI::InitGLEW()
 {
+	glewExperimental = true;
+
 	GLenum err = glewInit();
 	if (err == GLEW_OK)
 	{

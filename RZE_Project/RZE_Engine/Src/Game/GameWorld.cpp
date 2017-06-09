@@ -23,6 +23,12 @@ void GameWorld::InitSystems()
 {
 	AddSystem<RenderSystem>(this);
 	AddSystem<MovementSystem>(this);
+
+	//@todo:josh this is dumb and purely just to get shit working. needs to be re-thought
+	for (auto& system : InternalGetSystems())
+	{
+		system->Init();
+	}
 }
 
 IEntity* GameWorld::AddEntity(IEntity* const entity)

@@ -7,5 +7,5 @@ uniform vec4 UFragColor;
 
 void main()
 {
-	OutFragmentColor = UFragColor;
+	OutFragmentColor = vec4(0, 255, 255, 1);//UFragColor;
 }

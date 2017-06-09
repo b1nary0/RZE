@@ -58,13 +58,15 @@ bool GFXShaderGroup::GenerateShaderProgram()
 		OpenGLRHI::Get().GetProgramiv(mShaderProgramID, EGLShaderProgramStatusParam::LinkStatus, &programLinkStatus);
 		if (!programLinkStatus)
 		{
-			const int kLogLength = 512;
-			char errorLog[kLogLength]{};
+			int kLogLength = 0;
+			OpenGLRHI::Get().GetProgramiv(mShaderProgramID, EGLShaderProgramStatusParam::InfoLogLength, &kLogLength);
+			std::vector<char> errorLog(kLogLength);
+
 			int length;
 			OpenGLRHI::Get().GetProgramInfoLog(GetShaderProgramID(), kLogLength, &length, &errorLog[0]);
 
 			LOG_CONSOLE_ARGS("Error linking shaders in shader group [%s]", mGroupName.c_str());
-			LOG_CONSOLE_ARGS("Error: %s", std::string(errorLog).c_str());
+			LOG_CONSOLE_ARGS("Error: %s", std::string(errorLog.data()).c_str());
 			return false;
 		}
 

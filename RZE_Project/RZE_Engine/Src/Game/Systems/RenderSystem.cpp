@@ -7,6 +7,9 @@
 #include <RenderCore/Renderer.h>
 #include <RenderCore/HardwareInterface/OpenGL.h>
 
+#include <RenderCore/Shaders/Shader.h>
+#include <RenderCore/Shaders/ShaderGroup.h>
+
 RenderSystem::RenderSystem(IEntityAdmin* const admin)
 	: IEntitySystem(admin)
 {
@@ -19,6 +22,7 @@ RenderSystem::~RenderSystem()
 
 void RenderSystem::Init()
 {
+	CreateTestShaderStuff();
 }
 
 void RenderSystem::Update()
@@ -29,6 +33,11 @@ void RenderSystem::Update()
 		for (auto& entity : mAdmin->GetEntities())
 		{
 			MeshComponent* const meshComponent = static_cast<MeshComponent* const>(entity->GetComponents()[0]);
+			if (!meshComponent->GetShaderGroup())
+			{
+				meshComponent->SetShaderGroup(mShaderGroup);
+			}
+
 			RZE_Renderer::RenderItemProtocol renderItem;
 			renderItem.VertexList = &(meshComponent->GetVertexList());
 			renderItem.ShaderGroup = meshComponent->GetShaderGroup();
@@ -45,4 +54,27 @@ void RenderSystem::Update()
 
 void RenderSystem::ShutDown()
 {
+}
+
+void RenderSystem::CreateTestShaderStuff()
+{
+	File vertShaderFile("./../RZE_Engine/Assets/Shaders/VertexShader.shader");
+	File fragShaderFile("./../RZE_Engine/Assets/Shaders/FragmentShader.shader");
+
+	AssertExpr(!vertShaderFile.Empty() && !fragShaderFile.Empty());
+	GFXShader* vertShader = new GFXShader(EGLShaderType::Vertex, "TestVertexShader", vertShaderFile.Content());
+	vertShader->Create();
+	vertShader->Compile();
+	GFXShader* fragShader = new GFXShader(EGLShaderType::Fragment, "TestFragShader", fragShaderFile.Content());
+	fragShader->Create();
+	fragShader->Compile();
+
+	mShaderGroup = new GFXShaderGroup("TestShaderGroup");
+	mShaderGroup->AddShader(EGFXShaderType::Vertex, vertShader);
+	mShaderGroup->AddShader(EGFXShaderType::Fragment, fragShader);
+
+	mShaderGroup->AddUniform("UModelViewProjection");
+	mShaderGroup->AddUniform("UFragColor");
+
+	mShaderGroup->GenerateShaderProgram();
 }
