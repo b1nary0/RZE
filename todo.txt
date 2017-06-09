@@ -46,6 +46,8 @@
 	
 * resource distribution w/ file path prefix
 
+* definitely want to deal with the enums and not U32
+* hide .c_str() from calls by taking the string and c_str() inside the func (opengl, LOG_CONSOLE stuff)
 * renderer should be held by engine and loaned to game world. or game world should ask engine for it.
 * find out where the additional include directory stuff is saved
 * Engine.h issue with eventhandler.h needing to be before inputhandler.h

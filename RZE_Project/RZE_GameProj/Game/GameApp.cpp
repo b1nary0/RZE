@@ -55,14 +55,14 @@ void GameApp::Update()
 
 void GameApp::CreateTestShaderStuff(MeshComponent* const meshComponent)
 {
-	File vertShaderFile("../Assets/Shaders/VertexShader.shader");
-	File fragShaderFile("../Assets/Shaders/FragmentShader.shader");
+	File vertShaderFile("./../RZE_Engine/Assets/Shaders/VertexShader.shader");
+	File fragShaderFile("./../RZE_Engine/Assets/Shaders/FragmentShader.shader");
 
 	AssertExpr(!vertShaderFile.Empty() && !fragShaderFile.Empty());
 	GFXShader* vertShader = new GFXShader(EGFXShaderType::Vertex, "TestVertexShader", vertShaderFile.Content());
 	vertShader->Create();
 	vertShader->Compile();
-	GFXShader* fragShader = new GFXShader(EGFXShaderType::Fragment, "TestFragShader", vertShaderFile.Content());
+	GFXShader* fragShader = new GFXShader(EGFXShaderType::Fragment, "TestFragShader", fragShaderFile.Content());
 	fragShader->Create();
 	fragShader->Compile();
 

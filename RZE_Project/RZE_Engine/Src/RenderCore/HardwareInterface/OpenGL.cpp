@@ -131,9 +131,7 @@ void OpenGLRHI::SetShaderSource(const GLuint shaderID, const GLuint count, const
 	GLboolean bIsValidShader = false;
 	IsShader(shaderID, bIsValidShader);
 
-	AssertExpr(bIsValidShader);
 	AssertExpr(count > 0);
-	AssertExpr(length > 0);
 	AssertNotNull(sourceCode);
 
 	glShaderSource(shaderID, count, &sourceCode, length);
@@ -172,6 +170,11 @@ void OpenGLRHI::UniformLocation(const GLuint shaderProgramID, const GLchar* unif
 void OpenGLRHI::GetProgramInfoLog(const GLuint programID, const GLsizei maxLength, GLsizei* length, GLchar* infoLog) const
 {
 	glGetProgramInfoLog(programID, maxLength, length, infoLog);
+}
+
+void OpenGLRHI::GetShaderInfoLog(GLuint shader, GLsizei maxLength, GLsizei* length, GLchar* infoLog) const
+{
+	glGetShaderInfoLog(shader, maxLength, length, infoLog);
 }
 
 //

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Utils/PrimitiveDefs.h"
 
@@ -318,6 +318,7 @@ public:
 	void UniformLocation(const GLuint shaderProgramID, const GLchar* uniformName, const GLint uniformLocation) const;
 
 	void GetProgramInfoLog(const GLuint programID, const GLsizei maxLength, GLsizei* length, GLchar* infoLog) const;
+	void GetShaderInfoLog(GLuint shader, GLsizei maxLength, GLsizei* length, GLchar* infoLog) const;
 
 private:
 

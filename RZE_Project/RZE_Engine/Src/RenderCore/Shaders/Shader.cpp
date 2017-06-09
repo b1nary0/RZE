@@ -10,6 +10,7 @@ GFXShader::GFXShader(const U32 shaderType, const std::string& shaderName, const 
 	, mSourceCode(sourceCode)
 	, mShaderID(0)
 	, bIsCreated(false)
+	, bIsCompiled(false)
 {
 }
 
@@ -60,15 +61,16 @@ bool GFXShader::Compile()
 	if (!bIsCompiled)
 	{
 		OpenGLRHI& openGL = OpenGLRHI::Get();
+
 		openGL.SetShaderSource(GetShaderID(), 1, GetSourceCode().c_str(), nullptr);
 		openGL.CompileShader(GetShaderID());
 
-		int CompileResult;
-		openGL.GetShaderiv(GetShaderID(), EGLShaderStatusParam::CompileStatus, &CompileResult);
+		int compileResult = -1;
+		openGL.GetShaderiv(GetShaderID(), EGLShaderStatusParam::CompileStatus, &compileResult);
 
-		if (!CompileResult)
+		if (compileResult < 0)
 		{
-			LOG_CONSOLE_ARGS("GFXShader::Compile - Error compiling [%s]", GetShaderName());
+			LOG_CONSOLE_ARGS("GFXShader::Compile - Error compiling [%s]", GetShaderName().c_str());
 		}
 		else
 		{
