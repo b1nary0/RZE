@@ -23,7 +23,13 @@ public:
 	const SystemList& GetSystems() { return mSystems; }
 	const EntityList& GetEntities() { return mEntities; }
 
-	virtual IEntity* AddEntity(IEntity* const entity) = 0;
+	template <class TEntity>
+	TEntity* AddEntity()
+	{
+		IEntity* const entity = new TEntity();
+		InternalGetEntities().push_back(entity);
+		return static_cast<TEntity*>(InternalGetEntities().back());
+	}
 
 protected:
 	SystemList& InternalGetSystems() { return mSystems; }

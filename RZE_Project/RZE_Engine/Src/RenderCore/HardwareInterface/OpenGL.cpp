@@ -166,7 +166,7 @@ void OpenGLRHI::GetShaderiv(const GLuint shaderID, const GLenum shaderStatusPara
 	glGetShaderiv(shaderID, shaderStatusParam, params);
 }
 
-void OpenGLRHI::UniformLocation(const GLuint shaderProgramID, const GLchar* uniformName,  GLint outUniformLocation) const
+void OpenGLRHI::UniformLocation(const GLuint shaderProgramID, const GLchar* uniformName, GLint& outUniformLocation) const
 {
 	outUniformLocation = glGetUniformLocation(shaderProgramID, uniformName);
 }
@@ -179,6 +179,16 @@ void OpenGLRHI::GetProgramInfoLog(const GLuint programID, const GLsizei maxLengt
 void OpenGLRHI::GetShaderInfoLog(GLuint shader, GLsizei maxLength, GLsizei* length, GLchar* infoLog) const
 {
 	glGetShaderInfoLog(shader, maxLength, length, infoLog);
+}
+
+void OpenGLRHI::SetUniformMat4x4(const GLint uniformLocation, const GLsizei count, const GLboolean transpose, const GLfloat* valuePtr) const
+{
+	glUniformMatrix4fv(uniformLocation, count, transpose, valuePtr);
+}
+
+void OpenGLRHI::SetUniformVec4D(const GLint uniformLocation, const float x, const float y, const float z, const float a) const
+{
+	glUniform4f(uniformLocation, x, y, z, a);
 }
 
 //

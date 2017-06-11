@@ -6,20 +6,39 @@
 
 RZE_Renderer::RZE_Renderer()
 {
+	SceneCameraProps cameraProps;
+	cameraProps.Position = Vector3D(0.0f, 0.0f, 0.0f);
+	cameraProps.Direction = Vector3D(0.0f, 0.0f, -1.0f);
+	cameraProps.UpDir = Vector3D(0.0f, 1.0f, 0.0f);
+	cameraProps.FOV = 45.0f;
+	cameraProps.AspectRatio = (1280.0f / 720.0f);
+	cameraProps.NearCull = 0.1f;
+	cameraProps.FarCull = 1000.0f;
 
+	mSceneCamera = new SceneCamera(cameraProps);
+	mSceneCamera->GenerateProjectionMat();
+	mSceneCamera->GenerateViewMat();
 }
 
 void RZE_Renderer::AddRenderItem(const RenderItemProtocol& itemProtocol)
 {
-	mRenderList.emplace_back(itemProtocol);
+	mRenderList.push(itemProtocol);
 }
 
 void RZE_Renderer::Render()
 {
-	for (RenderItemProtocol& itemProtocol : mRenderList)
+	while (!mRenderList.empty())
 	{
+		RenderItemProtocol& itemProtocol = mRenderList.front();
+		mRenderList.pop();
+
 		RenderSingleItem(itemProtocol);
 	}
+}
+
+SceneCamera& RZE_Renderer::GetSceneCamera()
+{
+	return *mSceneCamera;
 }
 
 void RZE_Renderer::RenderSingleItem(const RenderItemProtocol& renderItem)
@@ -41,6 +60,7 @@ void RZE_Renderer::RenderSingleItem(const RenderItemProtocol& renderItem)
 
 	if (renderItem.ShaderGroup)
 	{
+		renderItem.ShaderGroup->SetUniformMatrix4x4("UModelViewProjection", renderItem.ModelViewProjection);
 		renderItem.ShaderGroup->Use();
 	}
 

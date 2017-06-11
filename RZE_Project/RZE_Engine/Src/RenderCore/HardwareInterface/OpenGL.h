@@ -315,10 +315,13 @@ public:
 	void LinkShaderProgram(const GLuint mShaderProgramID) const;
 	void GetProgramiv(const GLuint shaderProgramID, const EGLShaderProgramStatusParam::Value programStatusParam, GLint* programLinkStatus) const;
 	void GetShaderiv(const GLuint shaderID, const GLenum shaderStatusParam, GLint* const params) const;
-	void UniformLocation(const GLuint shaderProgramID, const GLchar* uniformName, const GLint uniformLocation) const;
+	void UniformLocation(const GLuint shaderProgramID, const GLchar* uniformName, GLint& uniformLocation) const;
 
 	void GetProgramInfoLog(const GLuint programID, const GLsizei maxLength, GLsizei* length, GLchar* infoLog) const;
 	void GetShaderInfoLog(GLuint shader, GLsizei maxLength, GLsizei* length, GLchar* infoLog) const;
+
+	void SetUniformMat4x4(const GLint uniformLocation, const GLsizei count, const GLboolean transpose, const GLfloat* valuePtr) const;
+	void SetUniformVec4D(const GLint uniformLocation, const float x, const float y, const float z, const float a) const;
 
 private:
 

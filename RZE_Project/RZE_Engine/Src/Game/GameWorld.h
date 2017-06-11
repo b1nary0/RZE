@@ -11,9 +11,6 @@ public:
 	GameWorld();
 	virtual ~GameWorld();
 
-
-	virtual IEntity* AddEntity(IEntity* const entity);
-
 	virtual RZE_Renderer* const GetRenderer() const override;
 
 	virtual void Init() override;

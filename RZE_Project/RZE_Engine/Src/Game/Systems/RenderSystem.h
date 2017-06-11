@@ -20,5 +20,5 @@ private:
 	void CreateTestShaderStuff();
 
 	GFXShaderGroup* mShaderGroup;
-	RZE_Renderer* mRenderer;
+	//RZE_Renderer* mRenderer;
 };

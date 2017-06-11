@@ -11,10 +11,14 @@ class IEntity
 	typedef std::vector<IEntityComponent*> ComponentList;
 
 public:
+	~IEntity();
+
 	const ComponentList& GetComponents() { return mComponents; }
 
-	void AddComponent(IEntityComponent* const component)
+	template<class TComponent>
+	void AddComponent()
 	{
+		IEntityComponent* component = new TComponent();
 		mComponents.push_back(component);
 	}
 

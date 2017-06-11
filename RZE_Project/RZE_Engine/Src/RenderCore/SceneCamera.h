@@ -1,0 +1,39 @@
+#pragma once
+
+#include <Utils/Math/Matrix4x4.h>
+#include <Utils/Math/Vector3D.h>
+
+typedef struct SceneCameraProps
+{
+	Vector3D Position;
+	Vector3D Direction;
+	Vector3D UpDir;
+
+	float FOV;
+	float AspectRatio;
+	float NearCull;
+	float FarCull;
+} SceneCameraProps;
+
+class SceneCamera
+{
+public:
+	SceneCamera() = delete;
+	SceneCamera(const SceneCameraProps& cameraProps);
+
+	void GenerateProjectionMat();
+	void GenerateViewMat();
+
+	const Vector3D& GetPositionVec() const;
+	const Vector3D& GetDirectionVec() const;
+	const Vector3D& GetUpVec() const;
+
+	const Matrix4x4& GetProjectionMat() const;
+	const Matrix4x4& GetViewMat() const;
+
+private:
+	SceneCameraProps mCameraProps;
+
+	Matrix4x4 mProjectionMat;
+	Matrix4x4 mViewMat;
+};

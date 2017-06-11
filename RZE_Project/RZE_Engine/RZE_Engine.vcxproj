@@ -161,6 +161,7 @@
     <ClCompile Include="Src\Events\Events.cpp" />
     <ClCompile Include="Src\Game\Components\MeshComponent.cpp" />
     <ClCompile Include="Src\Game\Components\TransformComponent.cpp" />
+    <ClCompile Include="Src\Game\ECS\Entity.cpp" />
     <ClCompile Include="Src\Game\ECS\EntityAdmin.cpp" />
     <ClCompile Include="Src\Game\GameEntity.cpp" />
     <ClCompile Include="Src\Game\GameWorld.cpp" />
@@ -168,12 +169,17 @@
     <ClCompile Include="Src\Game\Systems\RenderSystem.cpp" />
     <ClCompile Include="Src\RenderCore\HardwareInterface\OpenGL.cpp" />
     <ClCompile Include="Src\RenderCore\Renderer.cpp" />
+    <ClCompile Include="Src\RenderCore\SceneCamera.cpp" />
     <ClCompile Include="Src\RenderCore\Shaders\Shader.cpp" />
     <ClCompile Include="Src\RenderCore\Shaders\ShaderGroup.cpp" />
     <ClCompile Include="Src\StdAfx.cpp" />
     <ClCompile Include="Src\Utils\Conversions.cpp" />
+    <ClCompile Include="Src\Utils\Math\Math.cpp" />
+    <ClCompile Include="Src\Utils\Math\Matrix4x4.cpp" />
+    <ClCompile Include="Src\Utils\Math\Quaternion.cpp" />
     <ClCompile Include="Src\Utils\Math\Vector2D.cpp" />
     <ClCompile Include="Src\Utils\Math\Vector3D.cpp" />
+    <ClCompile Include="Src\Utils\Math\Vector4D.cpp" />
     <ClCompile Include="Src\Windowing\Win32Window.cpp" />
     <ClCompile Include="Src\Windowing\WindowMessageAdaptor.cpp" />
   </ItemGroup>
@@ -199,6 +205,7 @@
     <ClInclude Include="Src\Game\Systems\RenderSystem.h" />
     <ClInclude Include="Src\RenderCore\HardwareInterface\OpenGL.h" />
     <ClInclude Include="Src\RenderCore\Renderer.h" />
+    <ClInclude Include="Src\RenderCore\SceneCamera.h" />
     <ClInclude Include="Src\RenderCore\Shaders\Shader.h" />
     <ClInclude Include="Src\RenderCore\Shaders\ShaderGroup.h" />
     <ClInclude Include="Src\RZE.h" />
@@ -207,8 +214,11 @@
     <ClInclude Include="Src\Utils\Conversions.h" />
     <ClInclude Include="Src\Utils\Functor.h" />
     <ClInclude Include="Src\Utils\Math\Math.h" />
+    <ClInclude Include="Src\Utils\Math\Matrix4x4.h" />
+    <ClInclude Include="Src\Utils\Math\Quaternion.h" />
     <ClInclude Include="Src\Utils\Math\Vector2D.h" />
     <ClInclude Include="Src\Utils\Math\Vector3D.h" />
+    <ClInclude Include="Src\Utils\Math\Vector4D.h" />
     <ClInclude Include="Src\Utils\PrimitiveDefs.h" />
     <ClInclude Include="Src\Utils\StringUtils.h" />
     <ClInclude Include="Src\Windowing\Win32Window.h" />

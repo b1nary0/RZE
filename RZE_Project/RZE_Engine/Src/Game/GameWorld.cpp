@@ -31,12 +31,6 @@ void GameWorld::InitSystems()
 	}
 }
 
-IEntity* GameWorld::AddEntity(IEntity* const entity)
-{
-	InternalGetEntities().push_back(entity);
-	return InternalGetEntities().back();
-}
-
 RZE_Renderer* const GameWorld::GetRenderer() const
 {
 	return mRenderer;

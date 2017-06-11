@@ -2,6 +2,8 @@
 
 #include <vector>
 
+#include <RenderCore/SceneCamera.h>
+
 class GFXShaderGroup;
 
 class RZE_Renderer
@@ -11,6 +13,7 @@ public:
 	{
 		std::vector<float>* VertexList;
 		GFXShaderGroup* ShaderGroup;
+		Matrix4x4 ModelViewProjection;
 	} RenderItemProtocol;
 
 public:
@@ -19,10 +22,13 @@ public:
 	void AddRenderItem(const RenderItemProtocol& itemProtocol);
 	void Render();
 
+	SceneCamera& GetSceneCamera();
+
 private:
 	void RenderSingleItem(const RenderItemProtocol& itemProtocol);
 
 private:
-	std::vector<RenderItemProtocol> mRenderList;
+	SceneCamera* mSceneCamera;
 
+	std::queue<RenderItemProtocol> mRenderList;
 };

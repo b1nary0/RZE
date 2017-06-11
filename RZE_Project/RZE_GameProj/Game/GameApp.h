@@ -2,6 +2,8 @@
 
 #include "Application.h"
 
+class GameEntity;
+
 class GameApp : public RZE_Game
 {
 public:
@@ -15,4 +17,7 @@ public:
 	virtual void Update() override;
 
 private:
+
+	GameEntity* testEntity;
+	GameEntity* testEntity2;
 };

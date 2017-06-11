@@ -3,12 +3,15 @@
 
 #include <Game/ECS/Entity.h>
 #include <Game/Components/MeshComponent.h>
+#include <Game/Components/TransformComponent.h>
 
 #include <RenderCore/Renderer.h>
 #include <RenderCore/HardwareInterface/OpenGL.h>
 
 #include <RenderCore/Shaders/Shader.h>
 #include <RenderCore/Shaders/ShaderGroup.h>
+
+#include <Utils/Math/Vector4D.h>
 
 RenderSystem::RenderSystem(IEntityAdmin* const admin)
 	: IEntitySystem(admin)
@@ -37,10 +40,21 @@ void RenderSystem::Update()
 			{
 				meshComponent->SetShaderGroup(mShaderGroup);
 			}
+			
+			TransformComponent* const transform = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
+			SceneCamera& renderCam = renderer->GetSceneCamera();
+
+			Matrix4x4 modelMat;
+			modelMat = modelMat.Translate(transform->GetPosition())
+				* modelMat.Rotate(transform->GetRotation().ToAngle(), transform->GetRotation().ToAxis())
+				* modelMat.Scale(transform->GetScale());
+
+			Matrix4x4 MVP = renderCam.GetProjectionMat() * renderCam.GetViewMat() * modelMat;
 
 			RZE_Renderer::RenderItemProtocol renderItem;
 			renderItem.VertexList = &(meshComponent->GetVertexList());
 			renderItem.ShaderGroup = meshComponent->GetShaderGroup();
+			renderItem.ModelViewProjection = MVP;
 
 			if (renderer)
 			{
@@ -65,6 +79,7 @@ void RenderSystem::CreateTestShaderStuff()
 	GFXShader* vertShader = new GFXShader(EGLShaderType::Vertex, "TestVertexShader", vertShaderFile.Content());
 	vertShader->Create();
 	vertShader->Compile();
+
 	GFXShader* fragShader = new GFXShader(EGLShaderType::Fragment, "TestFragShader", fragShaderFile.Content());
 	fragShader->Create();
 	fragShader->Compile();
@@ -77,4 +92,6 @@ void RenderSystem::CreateTestShaderStuff()
 	mShaderGroup->AddUniform("UFragColor");
 
 	mShaderGroup->GenerateShaderProgram();
+
+	mShaderGroup->SetUniformVector4D("UFragColor", Vector4D(255.0f, 0.0f, 0.0f, 1.0f));
 }

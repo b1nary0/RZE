@@ -1,6 +1,6 @@
 #pragma once
 
-#include <GLM/fwd.hpp>
+#include <GLM/vec3.hpp>
 
 class Vector3D
 {
@@ -13,6 +13,8 @@ public:
 	float Y() const;
 	float Z() const;
 
+	const glm::vec3 GetInternalVec() const;
+
 private:
-	glm::vec3 mVec;;
+	glm::vec3 mVec;
 };

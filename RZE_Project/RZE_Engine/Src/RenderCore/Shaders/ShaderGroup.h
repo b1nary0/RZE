@@ -7,6 +7,9 @@
 
 #include "Utils/PrimitiveDefs.h"
 
+class Matrix4x4;
+class Vector4D;
+
 class GFXShaderGroup
 {
 	typedef std::unordered_map<std::string, Int32> UniformMap;
@@ -31,6 +34,10 @@ public:
 	
 	bool AddShader(U32 shaderType, GFXShader* const shader);
 	bool AddUniform(const std::string& uniformName);
+
+	void SetUniformMatrix4x4(const std::string& uniformName, const Matrix4x4& mat);
+	void SetUniformVector4D(const std::string& uniformName, const Vector4D& vec);
+
 	bool GenerateShaderProgram();
 
 	U32 GetShaderProgramID() const;

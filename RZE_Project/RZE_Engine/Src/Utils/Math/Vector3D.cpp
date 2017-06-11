@@ -1,6 +1,5 @@
-#include "StdAfx.h"
-
-#include "Vector3D.h"
+#include <StdAfx.h>
+#include <Utils/Math/Vector3d.h>
 
 Vector3D::Vector3D()
 	: mVec(0.0f, 0.0f, 0.0f)
@@ -25,4 +24,9 @@ float Vector3D::Y() const
 float Vector3D::Z() const
 {
 	return mVec.z;
+}
+
+const glm::vec3 Vector3D::GetInternalVec() const
+{
+	return mVec;
 }

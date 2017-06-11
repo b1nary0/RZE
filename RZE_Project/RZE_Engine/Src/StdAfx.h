@@ -30,6 +30,9 @@
 
 // glm
 #include <GLM/glm.hpp>
+#include <GLM/common.hpp>
+#include <GLM/gtc/matrix_transform.hpp>
+#include <GLM/gtc/type_ptr.hpp>
 
 // RZE
 #include "RZE_Config.h"

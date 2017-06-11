@@ -32,6 +32,12 @@
 @ Render something via ECS->Rendering loop
 @ GLEW
 @ use gl types in RHI
+@ why is shader not work
+@ matrices
+@ make vector render list a queue
+
+
+
 
 
 
@@ -39,9 +45,13 @@
 	
 	
 	
+	
+	
+* gotta clean up components and entities in world/entities etc
+* whats with GLM/fwd.hpp and GLM/vec3.hpp thing? works for vec4...?
+* figure out issue with include for third party in game proj
+* move to 64bit?
 * move opengl error checking into opengl class somehow, its ugly in other classes (see shadergroup::generate)
-* matrices
-	* MVP
 * LOG_CONSOLE stuff needs to be formatted properly.
 	* Also, make a log class and just delegate to that instead of full on macro.. keep the macro but call log system
 * Log file
