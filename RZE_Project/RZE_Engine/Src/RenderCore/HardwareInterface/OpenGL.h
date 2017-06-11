@@ -258,7 +258,7 @@ public:
 	void SetBufferTarget(const U32 newBufferTarget);
 	void SetBufferUsageMode(const U32 newBufferUsageMode);
 	void SetBufferData(const void* const data, const U32 size);
-
+	
 private:
 	void GenerateBuffers(const U32 count);
 	void BindBuffers(const U32 index);

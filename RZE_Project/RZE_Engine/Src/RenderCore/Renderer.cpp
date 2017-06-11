@@ -41,22 +41,14 @@ SceneCamera& RZE_Renderer::GetSceneCamera()
 	return *mSceneCamera;
 }
 
-void RZE_Renderer::RenderSingleItem(const RenderItemProtocol& renderItem)
+void RZE_Renderer::RenderSingleItem(RenderItemProtocol& renderItem)
 {
 	const OpenGLRHI& openGL = OpenGLRHI::Get();
 
 	openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
 
-	GLuint vao;
-	openGL.GenVertexArrays(1, &vao);
-	openGL.BindVertexArray(vao);
-
 	// @implementation should we have this type of assumption?
-	OpenGLVBO vbo;
-	vbo.SetBufferData(renderItem.VertexList->data(), sizeof(renderItem.VertexList->data()) * renderItem.VertexList->size());
-
-	openGL.EnableVertexAttributeArray(0);
-	openGL.VertexAttribPointer(0, 3, EGLDataType::Float, EGLBooleanValue::False, 0, 0);
+	renderItem.VBO->SetBufferData(renderItem.VertexList->data(), sizeof(renderItem.VertexList->data()) * renderItem.VertexList->size());
 
 	if (renderItem.ShaderGroup)
 	{
@@ -64,5 +56,9 @@ void RZE_Renderer::RenderSingleItem(const RenderItemProtocol& renderItem)
 		renderItem.ShaderGroup->Use();
 	}
 
+	openGL.BindVertexArray(renderItem.VAO);
+	openGL.EnableVertexAttributeArray(0);
+	openGL.VertexAttribPointer(0, 3, EGLDataType::Float, EGLBooleanValue::False, 0, 0);
 	openGL.DrawArrays(EGLDrawMode::Triangles, 0, 3);
+	openGL.BindVertexArray(0);
 }

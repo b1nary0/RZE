@@ -2,6 +2,7 @@
 
 #include <vector>
 
+#include <RenderCore/HardwareInterface/OpenGL.h>
 #include <RenderCore/SceneCamera.h>
 
 class GFXShaderGroup;
@@ -14,6 +15,8 @@ public:
 		std::vector<float>* VertexList;
 		GFXShaderGroup* ShaderGroup;
 		Matrix4x4 ModelViewProjection;
+		U32 VAO;
+		OpenGLVBO* VBO;
 	} RenderItemProtocol;
 
 public:
@@ -25,7 +28,7 @@ public:
 	SceneCamera& GetSceneCamera();
 
 private:
-	void RenderSingleItem(const RenderItemProtocol& itemProtocol);
+	void RenderSingleItem(RenderItemProtocol& itemProtocol);
 
 private:
 	SceneCamera* mSceneCamera;

@@ -55,6 +55,8 @@ void RenderSystem::Update()
 			renderItem.VertexList = &(meshComponent->GetVertexList());
 			renderItem.ShaderGroup = meshComponent->GetShaderGroup();
 			renderItem.ModelViewProjection = MVP;
+			renderItem.VAO = meshComponent->GetVAO();
+			renderItem.VBO = meshComponent->GetVBO();
 
 			if (renderer)
 			{
