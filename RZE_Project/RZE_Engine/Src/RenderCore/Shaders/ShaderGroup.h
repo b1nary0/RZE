@@ -37,6 +37,7 @@ public:
 
 	void SetUniformMatrix4x4(const std::string& uniformName, const Matrix4x4& mat);
 	void SetUniformVector4D(const std::string& uniformName, const Vector4D& vec);
+	void SetUniformInt(const std::string& uniformName, int value);
 
 	bool GenerateShaderProgram();
 

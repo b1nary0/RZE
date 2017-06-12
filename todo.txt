@@ -42,6 +42,7 @@
 
 
 
+* there is some GPU memory shenanigans happening with multiple entities in scene....
 	
 	
 	

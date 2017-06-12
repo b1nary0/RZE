@@ -8,6 +8,8 @@
 #include <Game/Components/MeshComponent.h>
 #include <Game/Components/TransformComponent.h>
 
+#include <Windowing/WinKeyCodes.h>
+
 #include <RenderCore/Shaders/Shader.h>
 #include <RenderCore/Shaders/ShaderGroup.h>
 
@@ -26,7 +28,16 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
 	{
 		if (evt.mInfo.mEventType == EEventType::Key)
 		{
-			LOG_CONSOLE_ARGS("KeyPress: %c\n", static_cast<char>(evt.mKeyEvent.mKey));
+			if (evt.mKeyEvent.mKey == Win32KeyCode::Key_D)
+			{
+				TransformComponent* const transformComponent = static_cast<TransformComponent* const>(testEntity2->GetComponents()[1]);
+				transformComponent->SetPosition(transformComponent->GetPosition() + Vector3D(10.0f * (1.0f / 60.0f), 0.0f, 0.0f));
+			}
+			else if (evt.mKeyEvent.mKey == Win32KeyCode::Key_A)
+			{
+				TransformComponent* const transformComponent = static_cast<TransformComponent* const>(testEntity2->GetComponents()[1]);
+				transformComponent->SetPosition(transformComponent->GetPosition() + Vector3D(-10.0f * (1.0f / 60.0f), 0.0f, 0.0f));
+			}
 		}
 	});
 	eventHandler.RegisterForEvent(EEventType::Key, keyEvent);
@@ -49,23 +60,23 @@ void GameApp::Start()
 
 	testEntity->AddComponent<TransformComponent>();
 	TransformComponent* const transformComp = static_cast<TransformComponent* const>(testEntity->GetComponents()[1]);
-	transformComp->SetPosition(Vector3D(0.0f, 2.0f, -2.5f));
-	transformComp->SetRotation(Quaternion(Vector3D(0.0f, 0.0f, 25.0f)));
+	transformComp->SetPosition(Vector3D(-2.0f, 2.0f, -12.5f));
+	transformComp->SetRotation(Quaternion(Vector3D(0.0f, 0.0f, 0.0f)));
 
-	///////////////////////////////////////////////////
-
+	/////////////////////////////////////////////////
+	
 	testEntity2 = static_cast<GameEntity*>(GEngine->GetWorld()->AddEntity<GameEntity>());
 
 	testEntity2->AddComponent<MeshComponent>();
 	MeshComponent* const meshComponent2 = static_cast<MeshComponent* const>(testEntity2->GetComponents()[0]);
-	std::vector<float> vertices2 = { -0.5f, -0.5f, 0.0f,
+	std::vector<float> vertices2 = { -1.0f, -0.5f, 0.0f,
 		0.5f, -0.5f, 0.0f,
 		0.0f, 0.5f, 0.0f };
 	meshComponent2->SetVertexList(vertices2);
 
 	testEntity2->AddComponent<TransformComponent>();
 	TransformComponent* const transformComp2 = static_cast<TransformComponent* const>(testEntity2->GetComponents()[1]);
-	transformComp2->SetPosition(Vector3D(0.0f, -1.0f, -12.5f));
+	transformComp2->SetPosition(Vector3D(0.0f, -2.0f, -12.5f));
 	transformComp2->SetRotation(Quaternion(Vector3D(0.0f, 0.0f, 0.0f)));
 }
 
@@ -73,15 +84,15 @@ void GameApp::Update()
 {
 	RZE_Game::Update();
 
-	static float angle = 0;
-	angle += 1.0f / 60.0f;
-
-	TransformComponent* const transformComp = static_cast<TransformComponent* const>(testEntity->GetComponents()[1]);
-	transformComp->SetPosition(Vector3D(-2.0f, 0.0f, -angle));
-
-	/////////////////////////////////////////////////////
-
-	TransformComponent* const transformComp2 = static_cast<TransformComponent* const>(testEntity2->GetComponents()[1]);
-	transformComp2->SetPosition(Vector3D(2.0f, 0.0f, -angle));
-	transformComp2->SetRotation(Quaternion(Vector3D(0.0f, 0.0f, -angle)));
+// 	static float angle = 0;
+// 	angle += 1.0f / 60.0f;
+// 
+// 	TransformComponent* const transformComp = static_cast<TransformComponent* const>(testEntity->GetComponents()[1]);
+// 	transformComp->SetPosition(Vector3D(-2.0f, 0.0f, -angle));
+// 
+// 	/////////////////////////////////////////////////////
+// 
+// 	TransformComponent* const transformComp2 = static_cast<TransformComponent* const>(testEntity2->GetComponents()[1]);
+// 	transformComp2->SetPosition(Vector3D(2.0f, 0.0f, -angle));
+// 	transformComp2->SetRotation(Quaternion(Vector3D(0.0f, 0.0f, -angle)));
 }

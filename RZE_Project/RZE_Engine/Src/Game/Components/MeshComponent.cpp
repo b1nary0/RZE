@@ -6,9 +6,22 @@
 MeshComponent::MeshComponent()
 {
 	OpenGLRHI& RHI = OpenGLRHI::Get();
-	RHI.GenVertexArrays(1, &mVAO);
 
-	mVBO = new OpenGLVBO();
+	mVAO = new OpenGLVAO();
+	mVBO = new OpenGLVBO(mVAO);
+}
+
+MeshComponent::~MeshComponent()
+{
+	if (mVAO)
+	{
+		delete mVAO;
+	}
+
+	if (mVBO)
+	{
+		delete mVBO;
+	}
 }
 
 std::vector<float>& MeshComponent::GetVertexList()
@@ -19,6 +32,10 @@ std::vector<float>& MeshComponent::GetVertexList()
 void MeshComponent::SetVertexList(const std::vector<float>& vertexList)
 {
 	mVertexList = vertexList;
+	//@note:josh this should be temporary, once more code is put in place
+	//           to support mesh loading, this will end up happening at 
+	//           the right time.
+	mVBO->SetBufferData(mVertexList.data(), sizeof(mVertexList.data()) * mVertexList.size());
 }
 
 GFXShaderGroup* const MeshComponent::GetShaderGroup()
@@ -31,7 +48,7 @@ void MeshComponent::SetShaderGroup(GFXShaderGroup* const shaderGroup)
 	mShaderGroup = shaderGroup;
 }
 
-U32 MeshComponent::GetVAO() const
+OpenGLVAO* MeshComponent::GetVAO() const
 {
 	return mVAO;
 }

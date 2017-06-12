@@ -18,6 +18,8 @@ RZE_Renderer::RZE_Renderer()
 	mSceneCamera = new SceneCamera(cameraProps);
 	mSceneCamera->GenerateProjectionMat();
 	mSceneCamera->GenerateViewMat();
+
+	glEnable(EGLCapability::DepthTest);
 }
 
 void RZE_Renderer::AddRenderItem(const RenderItemProtocol& itemProtocol)
@@ -48,17 +50,15 @@ void RZE_Renderer::RenderSingleItem(RenderItemProtocol& renderItem)
 	openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
 
 	// @implementation should we have this type of assumption?
-	renderItem.VBO->SetBufferData(renderItem.VertexList->data(), sizeof(renderItem.VertexList->data()) * renderItem.VertexList->size());
-
 	if (renderItem.ShaderGroup)
 	{
-		renderItem.ShaderGroup->SetUniformMatrix4x4("UModelViewProjection", renderItem.ModelViewProjection);
 		renderItem.ShaderGroup->Use();
+		renderItem.ShaderGroup->SetUniformMatrix4x4("UModelViewProjection", renderItem.ModelViewProjection);
 	}
 
-	openGL.BindVertexArray(renderItem.VAO);
-	openGL.EnableVertexAttributeArray(0);
-	openGL.VertexAttribPointer(0, 3, EGLDataType::Float, EGLBooleanValue::False, 0, 0);
-	openGL.DrawArrays(EGLDrawMode::Triangles, 0, 3);
-	openGL.BindVertexArray(0);
+	renderItem.VAO->Bind();
+	
+	openGL.DrawArrays(EGLDrawMode::Triangles, 0, renderItem.VertexList->size());
+
+	renderItem.VAO->Unbind();
 }

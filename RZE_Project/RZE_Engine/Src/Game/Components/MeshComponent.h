@@ -3,12 +3,14 @@
 #include <Game/ECS/EntityComponent.h>
 
 class GFXShaderGroup;
+class OpenGLVAO;
 class OpenGLVBO;
 
 class MeshComponent : public IEntityComponent
 {
 public:
 	MeshComponent();
+	virtual ~MeshComponent();
 
 	std::vector<float>& GetVertexList();
 	void SetVertexList(const std::vector<float>& vertexList);
@@ -16,11 +18,11 @@ public:
 	GFXShaderGroup* const GetShaderGroup();
 	void SetShaderGroup(GFXShaderGroup* const shaderGroup);
 
-	U32 GetVAO() const;
+	OpenGLVAO* GetVAO() const;
 	OpenGLVBO* GetVBO();
 
 private:
-	U32 mVAO;
+	OpenGLVAO* mVAO;
 	OpenGLVBO* mVBO;
 
 	GFXShaderGroup* mShaderGroup;

@@ -33,6 +33,7 @@ void RenderSystem::Update()
 	RZE_Renderer* const renderer = mAdmin->GetRenderer();
 	if (renderer)
 	{
+		std::vector<IEntity*> entityList = mAdmin->GetEntities();
 		for (auto& entity : mAdmin->GetEntities())
 		{
 			MeshComponent* const meshComponent = static_cast<MeshComponent* const>(entity->GetComponents()[0]);
@@ -40,7 +41,7 @@ void RenderSystem::Update()
 			{
 				meshComponent->SetShaderGroup(mShaderGroup);
 			}
-			
+
 			TransformComponent* const transform = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
 			SceneCamera& renderCam = renderer->GetSceneCamera();
 
@@ -92,6 +93,7 @@ void RenderSystem::CreateTestShaderStuff()
 
 	mShaderGroup->AddUniform("UModelViewProjection");
 	mShaderGroup->AddUniform("UFragColor");
+	mShaderGroup->AddUniform("UTest");
 
 	mShaderGroup->GenerateShaderProgram();
 

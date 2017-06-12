@@ -15,7 +15,7 @@ public:
 		std::vector<float>* VertexList;
 		GFXShaderGroup* ShaderGroup;
 		Matrix4x4 ModelViewProjection;
-		U32 VAO;
+		OpenGLVAO* VAO;
 		OpenGLVBO* VBO;
 	} RenderItemProtocol;
 

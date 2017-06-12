@@ -73,6 +73,20 @@ void GFXShaderGroup::SetUniformVector4D(const std::string& uniformName, const Ve
 	}
 }
 
+void GFXShaderGroup::SetUniformInt(const std::string& uniformName, int value)
+{
+	const bool bUniformExists = mUniformMap.count(uniformName) == 1;
+	if (bUniformExists)
+	{
+		int uniformLocation = mUniformMap[uniformName];
+		OpenGLRHI::Get().SetUniformInt(uniformLocation, value);
+	}
+	else
+	{
+		LOG_CONSOLE_ARGS("Uniform [%s] on shader group [%s] does not exist or has not been handled.", uniformName.c_str(), mGroupName.c_str());
+	}
+}
+
 bool GFXShaderGroup::GenerateShaderProgram()
 {
 	// @todo pretty sure mNumShaders is not doing what I'm expecting here.. should be at least a specific SET of shaders?

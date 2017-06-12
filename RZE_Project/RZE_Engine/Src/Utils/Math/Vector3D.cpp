@@ -30,3 +30,9 @@ const glm::vec3 Vector3D::GetInternalVec() const
 {
 	return mVec;
 }
+
+Vector3D Vector3D::operator+(const Vector3D& rhs)
+{
+	glm::vec3 addVec = mVec + rhs.GetInternalVec();
+	return Vector3D(addVec.x, addVec.y, addVec.z);
+}

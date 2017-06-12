@@ -247,25 +247,38 @@ struct OpenGLContext
 	HDC deviceContext;
 };
 
+class OpenGLVAO
+{
+public:
+	OpenGLVAO();
+	~OpenGLVAO();
+
+	void Bind();
+	void Unbind();
+
+private:
+	void Generate();
+
+	U32 mBufferHandle;
+};
+
 class OpenGLVBO
 {
 public:
-	OpenGLVBO();
-	//OpenGLVBO(const UInt32 count);
+	OpenGLVBO(OpenGLVAO* parentBuf);
 	~OpenGLVBO();
 
-	void ClearAndRegenBufferCount(const U32 newCount);
 	void SetBufferTarget(const U32 newBufferTarget);
 	void SetBufferUsageMode(const U32 newBufferUsageMode);
 	void SetBufferData(const void* const data, const U32 size);
-	
+
+	void Bind();
+
 private:
-	void GenerateBuffers(const U32 count);
-	void BindBuffers(const U32 index);
+	void Generate();
 
 	U32 mBufferUsageMode;
 	U32 mBufferTarget;
-	U32 mBufferCount;
 	U32 mBufferHandle;
 };
 
@@ -320,6 +333,7 @@ public:
 	void GetProgramInfoLog(const GLuint programID, const GLsizei maxLength, GLsizei* length, GLchar* infoLog) const;
 	void GetShaderInfoLog(GLuint shader, GLsizei maxLength, GLsizei* length, GLchar* infoLog) const;
 
+	void SetUniformInt(const GLint uniformLocation, const int value) const;
 	void SetUniformMat4x4(const GLint uniformLocation, const GLsizei count, const GLboolean transpose, const GLfloat* valuePtr) const;
 	void SetUniformVec4D(const GLint uniformLocation, const float x, const float y, const float z, const float a) const;
 

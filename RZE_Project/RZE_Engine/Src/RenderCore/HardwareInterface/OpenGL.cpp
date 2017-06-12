@@ -181,6 +181,11 @@ void OpenGLRHI::GetShaderInfoLog(GLuint shader, GLsizei maxLength, GLsizei* leng
 	glGetShaderInfoLog(shader, maxLength, length, infoLog);
 }
 
+void OpenGLRHI::SetUniformInt(const GLint uniformLocation, const int value) const
+{
+	glUniform1i(uniformLocation, value);
+}
+
 void OpenGLRHI::SetUniformMat4x4(const GLint uniformLocation, const GLsizei count, const GLboolean transpose, const GLfloat* valuePtr) const
 {
 	glUniformMatrix4fv(uniformLocation, count, transpose, valuePtr);
@@ -195,37 +200,22 @@ void OpenGLRHI::SetUniformVec4D(const GLint uniformLocation, const float x, cons
 //	OPENGLVBO
 //
 
-OpenGLVBO::OpenGLVBO()
-	: mBufferCount(0)
-	, mBufferHandle(0)
+OpenGLVBO::OpenGLVBO(OpenGLVAO* parentBuf)
+	: mBufferHandle(0)
 	, mBufferTarget(EGLBufferTarget::ArrayBuffer)
 	, mBufferUsageMode(EGLBufferUsage::StaticDraw)
 {
-	GenerateBuffers(1);
-	BindBuffers(0);
-}
+	parentBuf->Bind();
+	Generate();
+	Bind();
+	OpenGLRHI::Get().EnableVertexAttributeArray(0);
+	OpenGLRHI::Get().VertexAttribPointer(0, 3, EGLDataType::Float, EGLBooleanValue::False, 0, 0);
 
-// OpenGLVBO::OpenGLVBO(const UInt32 count)
-// 	: mBufferHandle(0)
-// 	, mBufferTarget(EGLBufferTarget::ArrayBuffer)
-// 	, mBufferUsageMode(EGLBufferUsage::StaticDraw)
-// {
-// 	GenerateBuffers(count);
-// 	AssertExpr(false && "Deal with multi buffers properly first.");
-// 
-// 	OpenGLRHI::Get().DeleteBuffer(mBufferCount, &mBufferHandle);
-// }
+	parentBuf->Unbind();
+}
 
 OpenGLVBO::~OpenGLVBO()
 {
-}
-
-void OpenGLVBO::ClearAndRegenBufferCount(const U32 newCount)
-{
-	OpenGLRHI::Get().DeleteBuffer(mBufferCount, &mBufferHandle);
-
-	AssertExpr(newCount > 0);
-	OpenGLRHI::Get().GenerateBuffer(newCount, &mBufferHandle);
 }
 
 void OpenGLVBO::SetBufferTarget(const U32 newBufferTarget)
@@ -244,15 +234,40 @@ void OpenGLVBO::SetBufferData(const void* const data, const U32 size)
 	OpenGLRHI::Get().SetBufferData(mBufferTarget, size, data, mBufferUsageMode);
 }
 
-void OpenGLVBO::GenerateBuffers(const U32 count)
+void OpenGLVBO::Generate()
 {
-	AssertExpr(!mBufferHandle && count > 0);
-	OpenGLRHI::Get().GenerateBuffer(count, &mBufferHandle);
-
-	mBufferCount = count;
+	OpenGLRHI::Get().GenerateBuffer(1, &mBufferHandle);
 }
 
-void OpenGLVBO::BindBuffers(const U32 index)
+void OpenGLVBO::Bind()
 {
 	OpenGLRHI::Get().BindBuffer(mBufferTarget, mBufferHandle);
+}
+
+OpenGLVAO::OpenGLVAO()
+{
+	Generate();
+}
+
+//
+//	OPENGLVAO
+//
+OpenGLVAO::~OpenGLVAO()
+{
+
+}
+
+void OpenGLVAO::Bind()
+{
+	OpenGLRHI::Get().BindVertexArray(mBufferHandle);
+}
+
+void OpenGLVAO::Unbind()
+{
+	OpenGLRHI::Get().BindVertexArray(0);
+}
+
+void OpenGLVAO::Generate()
+{
+	OpenGLRHI::Get().GenVertexArrays(1, &mBufferHandle);
 }
