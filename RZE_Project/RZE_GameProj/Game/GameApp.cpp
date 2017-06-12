@@ -48,14 +48,14 @@ void GameApp::Start()
 	RZE_Game::Start();
 
 	// ALL TEST CODE
+	std::vector<float> vertices = { -0.5f, -0.5f, 0.0f,
+		0.5f, -0.5f, 0.0f,
+		0.0f, 0.5f, 0.0f };
 
 	testEntity = static_cast<GameEntity*>(GEngine->GetWorld()->AddEntity<GameEntity>());
 
 	testEntity->AddComponent<MeshComponent>();
 	MeshComponent* const meshComponent = static_cast<MeshComponent* const>(testEntity->GetComponents()[0]);
-	std::vector<float> vertices = { -0.5f, -0.5f, 0.0f,
-		0.5f, -0.5f, 0.0f,
-		0.0f, 0.5f, 0.0f };
 	meshComponent->SetVertexList(vertices);
 
 	testEntity->AddComponent<TransformComponent>();
@@ -69,10 +69,7 @@ void GameApp::Start()
 
 	testEntity2->AddComponent<MeshComponent>();
 	MeshComponent* const meshComponent2 = static_cast<MeshComponent* const>(testEntity2->GetComponents()[0]);
-	std::vector<float> vertices2 = { -1.0f, -0.5f, 0.0f,
-		0.5f, -0.5f, 0.0f,
-		0.0f, 0.5f, 0.0f };
-	meshComponent2->SetVertexList(vertices2);
+	meshComponent2->SetVertexList(vertices);
 
 	testEntity2->AddComponent<TransformComponent>();
 	TransformComponent* const transformComp2 = static_cast<TransformComponent* const>(testEntity2->GetComponents()[1]);
