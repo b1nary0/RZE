@@ -62,7 +62,7 @@ void GameApp::Start()
 		0.5f, -0.5f, 0.0f,
 		0.0f, 0.5f, 0.0f };
 
-	testEntity = static_cast<GameEntity*>(GEngine->GetWorld()->AddEntity<GameEntity>());
+	testEntity = GEngine->GetWorld()->AddEntity<GameEntity>();
 
 	testEntity->AddComponent<MeshComponent>();
 	MeshComponent* const meshComponent = static_cast<MeshComponent* const>(testEntity->GetComponents()[0]);
@@ -75,7 +75,7 @@ void GameApp::Start()
 
 	/////////////////////////////////////////////////
 	
-	testEntity2 = static_cast<GameEntity*>(GEngine->GetWorld()->AddEntity<GameEntity>());
+	testEntity2 = GEngine->GetWorld()->AddEntity<GameEntity>();
 
 	testEntity2->AddComponent<MeshComponent>();
 	MeshComponent* const meshComponent2 = static_cast<MeshComponent* const>(testEntity2->GetComponents()[0]);
