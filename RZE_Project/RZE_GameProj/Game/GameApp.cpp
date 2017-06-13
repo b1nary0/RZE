@@ -38,6 +38,16 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
 				TransformComponent* const transformComponent = static_cast<TransformComponent* const>(testEntity2->GetComponents()[1]);
 				transformComponent->SetPosition(transformComponent->GetPosition() + Vector3D(-10.0f * (1.0f / 60.0f), 0.0f, 0.0f));
 			}
+			else if (evt.mKeyEvent.mKey == Win32KeyCode::Key_W)
+			{
+				TransformComponent* const transformComponent = static_cast<TransformComponent* const>(testEntity2->GetComponents()[1]);
+				transformComponent->SetPosition(transformComponent->GetPosition() + Vector3D(0.0f, 10.0f * (1.0f / 60.0f), 0.0f));
+			}
+			else if (evt.mKeyEvent.mKey == Win32KeyCode::Key_S)
+			{
+				TransformComponent* const transformComponent = static_cast<TransformComponent* const>(testEntity2->GetComponents()[1]);
+				transformComponent->SetPosition(transformComponent->GetPosition() + Vector3D(0.0f, -10.0f * (1.0f / 60.0f), 0.0f));
+			}
 		}
 	});
 	eventHandler.RegisterForEvent(EEventType::Key, keyEvent);

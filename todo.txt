@@ -35,6 +35,10 @@
 @ why is shader not work
 @ matrices
 @ make vector render list a queue
+@ transform class
+@ organize and encapsulate entity
+	@ render the entity
+	@ move the entity
 
 
 
@@ -65,13 +69,8 @@
 * module system for loading/unloading etc
 * component filter + proper setup
 * proper shutdown foundation
-* organize and encapsulate entity
-	@ render the entity
-	* move the entity
-* transform class
 * is there memory leak already? wtf
 * proper ownership design and cleanup of entity system/admin
-* transforms
 * find a good way to propogate necessary information to and from window
 	-> e.g opengl context, etc
 ** will need to think about proper hardware abstraction..  opengl contexts, etc
