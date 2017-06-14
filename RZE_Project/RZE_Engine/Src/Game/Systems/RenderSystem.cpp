@@ -31,43 +31,42 @@ void RenderSystem::Init()
 void RenderSystem::Update()
 {
 	RZE_Renderer* const renderer = mAdmin->GetRenderer();
-	if (renderer)
+    AssertNotNull(renderer);
+
+	const std::vector<IEntity*>& entityList = mAdmin->GetEntities();
+	for (auto& entity : entityList)
 	{
-		const std::vector<IEntity*>& entityList = mAdmin->GetEntities();
-		for (auto& entity : entityList)
+		MeshComponent* const meshComponent = static_cast<MeshComponent* const>(entity->GetComponents()[0]);
+        // @todo:josh obviously this needs to go, but for now is test.
+		if (!meshComponent->GetShaderGroup())
 		{
-			MeshComponent* const meshComponent = static_cast<MeshComponent* const>(entity->GetComponents()[0]);
-            // @todo:josh obviously this needs to go, but for now is test.
-			if (!meshComponent->GetShaderGroup())
-			{
-				meshComponent->SetShaderGroup(mShaderGroup);
-			}
-
-			TransformComponent* const transform = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
-			SceneCamera& renderCam = renderer->GetSceneCamera();
-
-			Matrix4x4 modelMat;
-			modelMat = modelMat.Translate(transform->GetPosition())
-				* modelMat.Rotate(transform->GetRotation().ToAngle(), transform->GetRotation().ToAxis())
-				* modelMat.Scale(transform->GetScale());
-
-			Matrix4x4 MVP = renderCam.GetProjectionMat() * renderCam.GetViewMat() * modelMat;
-
-			RZE_Renderer::RenderItemProtocol renderItem;
-			renderItem.VertexList = &(meshComponent->GetVertexList());
-			renderItem.ShaderGroup = meshComponent->GetShaderGroup();
-			renderItem.ModelViewProjection = MVP;
-			renderItem.VAO = meshComponent->GetVAO();
-			renderItem.VBO = meshComponent->GetVBO();
-
-			if (renderer)
-			{
-				renderer->AddRenderItem(renderItem);
-			}
+			meshComponent->SetShaderGroup(mShaderGroup);
 		}
 
-		renderer->Render();
+		TransformComponent* const transform = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
+		SceneCamera& renderCam = renderer->GetSceneCamera();
+
+		Matrix4x4 modelMat;
+		modelMat = modelMat.Translate(transform->GetPosition())
+			* modelMat.Rotate(transform->GetRotation().ToAngle(), transform->GetRotation().ToAxis())
+			* modelMat.Scale(transform->GetScale());
+
+		Matrix4x4 MVP = renderCam.GetProjectionMat() * renderCam.GetViewMat() * modelMat;
+
+		RZE_Renderer::RenderItemProtocol renderItem;
+		renderItem.VertexList = &(meshComponent->GetVertexList());
+		renderItem.ShaderGroup = meshComponent->GetShaderGroup();
+		renderItem.ModelViewProjection = MVP;
+		renderItem.VAO = meshComponent->GetVAO();
+		renderItem.VBO = meshComponent->GetVBO();
+
+		if (renderer)
+		{
+			renderer->AddRenderItem(renderItem);
+		}
 	}
+
+	renderer->Render();
 }
 
 void RenderSystem::ShutDown()
