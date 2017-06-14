@@ -35,7 +35,9 @@ void MeshComponent::SetVertexList(const std::vector<float>& vertexList)
 	//@note:josh this should be temporary, once more code is put in place
 	//           to support mesh loading, this will end up happening at 
 	//           the right time.
+    mVAO->Bind();
 	mVBO->SetBufferData(mVertexList.data(), sizeof(mVertexList.data()) * mVertexList.size());
+    mVAO->Unbind();
 }
 
 GFXShaderGroup* const MeshComponent::GetShaderGroup()

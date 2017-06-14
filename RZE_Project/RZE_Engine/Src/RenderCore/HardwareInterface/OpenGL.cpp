@@ -206,6 +206,7 @@ OpenGLVBO::OpenGLVBO(OpenGLVAO* parentBuf)
 	, mBufferUsageMode(EGLBufferUsage::StaticDraw)
 {
 	parentBuf->Bind();
+
 	Generate();
 	Bind();
 	OpenGLRHI::Get().EnableVertexAttributeArray(0);

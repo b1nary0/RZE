@@ -70,7 +70,7 @@ void GameApp::Start()
 
 	testEntity->AddComponent<TransformComponent>();
 	TransformComponent* const transformComp = static_cast<TransformComponent* const>(testEntity->GetComponents()[1]);
-	transformComp->SetPosition(Vector3D(-2.0f, 2.0f, -12.5f));
+	transformComp->SetPosition(Vector3D(0.0f, 0.0f, -12.5f));
 	transformComp->SetRotation(Quaternion(Vector3D(0.0f, 0.0f, 0.0f)));
 
 	/////////////////////////////////////////////////

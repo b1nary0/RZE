@@ -33,8 +33,8 @@ void RenderSystem::Update()
 	RZE_Renderer* const renderer = mAdmin->GetRenderer();
 	if (renderer)
 	{
-		std::vector<IEntity*> entityList = mAdmin->GetEntities();
-		for (auto& entity : mAdmin->GetEntities())
+		const std::vector<IEntity*>& entityList = mAdmin->GetEntities();
+		for (auto& entity : entityList)
 		{
 			MeshComponent* const meshComponent = static_cast<MeshComponent* const>(entity->GetComponents()[0]);
 			if (!meshComponent->GetShaderGroup())
