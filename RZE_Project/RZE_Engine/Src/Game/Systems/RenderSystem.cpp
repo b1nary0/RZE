@@ -37,6 +37,7 @@ void RenderSystem::Update()
 		for (auto& entity : entityList)
 		{
 			MeshComponent* const meshComponent = static_cast<MeshComponent* const>(entity->GetComponents()[0]);
+            // @todo:josh obviously this needs to go, but for now is test.
 			if (!meshComponent->GetShaderGroup())
 			{
 				meshComponent->SetShaderGroup(mShaderGroup);
