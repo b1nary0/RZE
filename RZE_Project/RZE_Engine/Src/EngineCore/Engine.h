@@ -14,6 +14,8 @@ class Win32Window;
 
 class RZE_Engine
 {
+	static RZE_Engine* sInstance;
+
 public:
 
 	RZE_Engine();
@@ -65,7 +67,6 @@ private:
 	EventHandler mEventHandler;
 	InputHandler mInputHandler;
 
-	static RZE_Engine* sInstance;
 
 	bool bShouldExit;
 };
