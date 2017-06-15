@@ -1,7 +1,10 @@
 #pragma once
 
 #include <Application.h>
+
 #include <EngineCore/Platform/File.h>
+
+// @todo:josh this is where the weird include-before issue is
 #include <Events/EventHandler.h>
 #include <EngineCore/Input/InputHandler.h>
 
