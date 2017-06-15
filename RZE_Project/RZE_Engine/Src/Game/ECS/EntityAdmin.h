@@ -35,8 +35,10 @@ protected:
 	SystemList& InternalGetSystems() { return mSystems; }
 	EntityList& InternalGetEntities() { return mEntities; }
 
+	virtual void InternalSetRenderer(RZE_Renderer* const renderer) = 0;
+
 	template <class TSystem, typename... Args>
-	void AddSystem(Args... args)
+	void InternalAddSystem(Args... args)
 	{
 		TSystem* system = new TSystem(std::forward<Args>(args)...);
 		AssertNotNull(system);

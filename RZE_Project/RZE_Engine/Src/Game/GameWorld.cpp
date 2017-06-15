@@ -7,22 +7,19 @@
 
 #include <RenderCore/Renderer.h>
 
-GameWorld::GameWorld()
+GameWorld::GameWorld(RZE_Renderer* const renderer)
 {
+	InternalSetRenderer(renderer);
 }
 
 GameWorld::~GameWorld()
 {
-	if (mRenderer)
-	{
-		delete mRenderer;
-	}
 }
 
 void GameWorld::InitSystems()
 {
-	AddSystem<RenderSystem>(this);
-	AddSystem<MovementSystem>(this);
+	InternalAddSystem<RenderSystem>(this);
+	InternalAddSystem<MovementSystem>(this);
 
 	//@todo:josh this is dumb and purely just to get shit working. needs to be re-thought
 	for (auto& system : InternalGetSystems())
@@ -36,10 +33,13 @@ RZE_Renderer* const GameWorld::GetRenderer() const
 	return mRenderer;
 }
 
+void GameWorld::InternalSetRenderer(RZE_Renderer* const renderer)
+{
+	mRenderer = renderer;
+}
+
 void GameWorld::Init()
 {
-	mRenderer = new RZE_Renderer();
-
 	InitSystems();
 }
 

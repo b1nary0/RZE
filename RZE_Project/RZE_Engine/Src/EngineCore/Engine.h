@@ -5,8 +5,9 @@
 #include <Events/EventHandler.h>
 #include <EngineCore/Input/InputHandler.h>
 
-class Win32Window;
 class GameWorld;
+class RZE_Renderer;
+class Win32Window;
 
 class RZE_Engine
 {
@@ -52,10 +53,12 @@ private:
 
 	void InitGame(Functor<RZE_Game* const> createGameCallback);
 
+	RZE_Game* mApplication;
 	GameWorld* mWorld;
 
 	Win32Window* mMainWindow;
-	RZE_Game* mApplication;
+	RZE_Renderer* mRenderer;
+
 	EventHandler mEventHandler;
 	InputHandler mInputHandler;
 

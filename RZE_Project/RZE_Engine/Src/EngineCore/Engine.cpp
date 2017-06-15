@@ -6,6 +6,7 @@
 
 #include <Game/GameWorld.h>
 
+#include <RenderCore/Renderer.h>
 #include <RenderCore/HardwareInterface/OpenGL.h>
 
 #include <Windowing/Win32Window.h>
@@ -46,6 +47,8 @@ void RZE_Engine::Init()
 	CreateAndInitializeWindow();
 	OpenGLRHI::Get().Init();
 
+	mRenderer = new RZE_Renderer();
+
 	RegisterWindowEvents();
 	RegisterInputEvents();
 
@@ -55,8 +58,9 @@ void RZE_Engine::Init()
 void RZE_Engine::InitWorld()
 {
 	LOG_CONSOLE_ANNOUNCE("Initializing Game World...");
+
 	// @note naive at first
-	mWorld = new GameWorld();
+	mWorld = new GameWorld(mRenderer);
 	AssertNotNull(mWorld);
 
 	mWorld->Init();
@@ -130,6 +134,7 @@ void RZE_Engine::Update()
 	mApplication->Update();
 	mWorld->Update();
 
+	mRenderer->Render();
 	// @todo maybe this can be done better
 	mMainWindow->BufferSwap();
 

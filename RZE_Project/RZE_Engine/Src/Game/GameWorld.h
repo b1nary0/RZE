@@ -8,7 +8,7 @@ class GameWorld : public IEntityAdmin
 {
 
 public:
-	GameWorld();
+	GameWorld(RZE_Renderer* const renderer);
 	virtual ~GameWorld();
 
 	virtual RZE_Renderer* const GetRenderer() const override;
@@ -19,6 +19,8 @@ public:
 
 private:
 	void InitSystems();
+
+	virtual void InternalSetRenderer(RZE_Renderer* const renderer) override;
 
 private:
 	RZE_Renderer* mRenderer;

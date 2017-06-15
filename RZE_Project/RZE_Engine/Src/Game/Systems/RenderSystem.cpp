@@ -65,8 +65,6 @@ void RenderSystem::Update()
 			renderer->AddRenderItem(renderItem);
 		}
 	}
-
-	renderer->Render();
 }
 
 void RenderSystem::ShutDown()
