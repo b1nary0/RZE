@@ -29,6 +29,9 @@ void RZE_Renderer::AddRenderItem(const RenderItemProtocol& itemProtocol)
 
 void RZE_Renderer::Render()
 {
+    const OpenGLRHI& openGL = OpenGLRHI::Get();
+    openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
+
 	while (!mRenderList.empty())
 	{
 		RenderItemProtocol& itemProtocol = mRenderList.front();
@@ -45,10 +48,7 @@ SceneCamera& RZE_Renderer::GetSceneCamera()
 
 void RZE_Renderer::RenderSingleItem(RenderItemProtocol& renderItem)
 {
-	const OpenGLRHI& openGL = OpenGLRHI::Get();
-
-	openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
-
+    const OpenGLRHI& openGL = OpenGLRHI::Get();
 	// @implementation should we have this type of assumption?
 	if (renderItem.ShaderGroup)
 	{

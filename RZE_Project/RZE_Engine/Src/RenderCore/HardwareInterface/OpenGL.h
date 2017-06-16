@@ -260,6 +260,7 @@ private:
 	void Generate();
 
 	U32 mBufferHandle;
+
 };
 
 class OpenGLVBO

@@ -90,10 +90,7 @@ void RenderSystem::CreateTestShaderStuff()
 	mShaderGroup->AddShader(EGFXShaderType::Fragment, fragShader);
 
 	mShaderGroup->AddUniform("UModelViewProjection");
-	mShaderGroup->AddUniform("UFragColor");
-	mShaderGroup->AddUniform("UTest");
+	//mShaderGroup->AddUniform("UFragColor");
 
 	mShaderGroup->GenerateShaderProgram();
-
-	mShaderGroup->SetUniformVector4D("UFragColor", Vector4D(255.0f, 0.0f, 0.0f, 1.0f));
 }
