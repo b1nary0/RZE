@@ -9,22 +9,22 @@ class OpenGLVBO;
 class MeshComponent : public IEntityComponent
 {
 public:
-	MeshComponent();
-	virtual ~MeshComponent();
+    MeshComponent();
+    virtual ~MeshComponent();
 
-	std::vector<float>& GetVertexList();
-	void SetVertexList(const std::vector<float>& vertexList);
+    std::vector<float>& GetVertexList();
+    void SetVertexList(const std::vector<float>& vertexList);
 
-	GFXShaderGroup* const GetShaderGroup();
-	void SetShaderGroup(GFXShaderGroup* const shaderGroup);
+    GFXShaderGroup* const GetShaderGroup();
+    void SetShaderGroup(GFXShaderGroup* const shaderGroup);
 
-	OpenGLVAO* GetVAO() const;
-	OpenGLVBO* GetVBO();
+    OpenGLVAO* GetVAO() const;
+    OpenGLVBO* GetVBO();
 
 private:
-	OpenGLVAO* mVAO;
-	OpenGLVBO* mVBO;
+    OpenGLVAO* mVAO;
+    OpenGLVBO* mVBO;
 
-	GFXShaderGroup* mShaderGroup;
-	std::vector<float> mVertexList;
+    GFXShaderGroup* mShaderGroup;
+    std::vector<float> mVertexList;
 };

@@ -9,16 +9,16 @@ class GFXShaderGroup;
 class RenderSystem : public IEntitySystem
 {
 public:
-	RenderSystem(IEntityAdmin* const admin);
-	virtual ~RenderSystem();
+    RenderSystem(IEntityAdmin* const admin);
+    virtual ~RenderSystem();
 
-	virtual void Init() override;
-	virtual void Update() override;
-	virtual void ShutDown() override;
+    virtual void Init() override;
+    virtual void Update() override;
+    virtual void ShutDown() override;
 
 private:
-	void CreateTestShaderStuff();
+    void CreateTestShaderStuff();
 
-	GFXShaderGroup* mShaderGroup;
-	//RZE_Renderer* mRenderer;
+    GFXShaderGroup* mShaderGroup;
+    //RZE_Renderer* mRenderer;
 };
