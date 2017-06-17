@@ -19,7 +19,7 @@ RZE_Renderer::RZE_Renderer()
 	mSceneCamera->GenerateProjectionMat();
 	mSceneCamera->GenerateViewMat();
 
-	glEnable(EGLCapability::DepthTest);
+	OpenGLRHI::Get().EnableCapability(EGLCapability::DepthTest);
 }
 
 void RZE_Renderer::AddRenderItem(const RenderItemProtocol& itemProtocol)

@@ -28,26 +28,7 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
 	{
 		if (evt.mInfo.mEventType == EEventType::Key)
 		{
-			if (evt.mKeyEvent.mKey == Win32KeyCode::Key_D)
-			{
-				TransformComponent* const transformComponent = static_cast<TransformComponent* const>(testEntity2->GetComponents()[1]);
-				transformComponent->SetPosition(transformComponent->GetPosition() + Vector3D(10.0f * (1.0f / 60.0f), 0.0f, 0.0f));
-			}
-			else if (evt.mKeyEvent.mKey == Win32KeyCode::Key_A)
-			{
-				TransformComponent* const transformComponent = static_cast<TransformComponent* const>(testEntity2->GetComponents()[1]);
-				transformComponent->SetPosition(transformComponent->GetPosition() + Vector3D(-10.0f * (1.0f / 60.0f), 0.0f, 0.0f));
-			}
-			else if (evt.mKeyEvent.mKey == Win32KeyCode::Key_W)
-			{
-				TransformComponent* const transformComponent = static_cast<TransformComponent* const>(testEntity2->GetComponents()[1]);
-				transformComponent->SetPosition(transformComponent->GetPosition() + Vector3D(0.0f, 10.0f * (1.0f / 60.0f), 0.0f));
-			}
-			else if (evt.mKeyEvent.mKey == Win32KeyCode::Key_S)
-			{
-				TransformComponent* const transformComponent = static_cast<TransformComponent* const>(testEntity2->GetComponents()[1]);
-				transformComponent->SetPosition(transformComponent->GetPosition() + Vector3D(0.0f, -10.0f * (1.0f / 60.0f), 0.0f));
-			}
+			
 		}
 	});
 	eventHandler.RegisterForEvent(EEventType::Key, keyEvent);
@@ -72,19 +53,6 @@ void GameApp::Start()
 	TransformComponent* const transformComp = static_cast<TransformComponent* const>(testEntity->GetComponents()[1]);
 	transformComp->SetPosition(Vector3D(0.0f, 0.0f, -12.5f));
 	transformComp->SetRotation(Quaternion(Vector3D(0.0f, 0.0f, 0.0f)));
-
-	/////////////////////////////////////////////////
-	
-	testEntity2 = GEngine->GetWorld()->AddEntity<GameEntity>();
-
-	testEntity2->AddComponent<MeshComponent>();
-	MeshComponent* const meshComponent2 = static_cast<MeshComponent* const>(testEntity2->GetComponents()[0]);
-	meshComponent2->SetVertexList(vertices);
-
-	testEntity2->AddComponent<TransformComponent>();
-	TransformComponent* const transformComp2 = static_cast<TransformComponent* const>(testEntity2->GetComponents()[1]);
-	transformComp2->SetPosition(Vector3D(0.0f, -2.0f, -12.5f));
-	transformComp2->SetRotation(Quaternion(Vector3D(0.0f, 0.0f, 0.0f)));
 }
 
 void GameApp::Update()

@@ -206,9 +206,6 @@
     <ClInclude Include="Src\RenderCore\HardwareInterface\OpenGL.h">
       <Filter>Source Files\RenderCore\HardwareInterface</Filter>
     </ClInclude>
-    <ClInclude Include="Src\Debug\Debug.h">
-      <Filter>Source Files\Debug</Filter>
-    </ClInclude>
     <ClInclude Include="Src\RZE_Config.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -268,6 +265,9 @@
     </ClInclude>
     <ClInclude Include="Src\Utils\Math\Quaternion.h">
       <Filter>Source Files\Utils\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\DebugUtils\Debug.h">
+      <Filter>Source Files\Debug</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

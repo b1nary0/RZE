@@ -300,7 +300,11 @@ public:
 	void ClearColor(const GLfloat red, const  GLfloat green, const  GLfloat blue, const  GLfloat alpha) const;
 	void Clear(const GLuint mask) const;
 
-	// Returns the array object  handle ID generated
+    void EnableCapability(const GLuint capability);
+
+    //
+    // Buffers
+    //
 	void GenVertexArrays(const GLuint arrayCount, GLuint* outBufferHandle) const;
 	void BindVertexArray(const GLuint arrayObjectHandle) const;
 

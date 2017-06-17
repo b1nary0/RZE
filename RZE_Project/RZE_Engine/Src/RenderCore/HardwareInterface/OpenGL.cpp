@@ -40,11 +40,19 @@ void OpenGLRHI::InitGLEW()
 void OpenGLRHI::ClearColor(const GLfloat red, const GLfloat green, const GLfloat blue, const GLfloat alpha) const
 {
 	glClearColor(red, green, blue, alpha);
+    AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
 void OpenGLRHI::Clear(const GLuint mask) const
 {
 	glClear(mask);
+    AssertExpr(glGetError() == GL_NO_ERROR);
+}
+
+void OpenGLRHI::EnableCapability(const GLuint capability)
+{
+    glEnable(capability);
+    AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
 void OpenGLRHI::GenVertexArrays(const GLuint arrayCount, GLuint* outBufferHandle) const
