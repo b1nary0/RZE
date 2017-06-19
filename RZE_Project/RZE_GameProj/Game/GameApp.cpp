@@ -43,16 +43,22 @@ void GameApp::Start()
         0.5f, -0.5f, 0.0f,
         0.0f, 0.5f, 0.0f };
 
-    testEntity = GEngine->GetWorld()->AddEntity<GameEntity>();
+    const int numEntities = 4;
+    for (int entIdx = 0; entIdx < numEntities; ++entIdx)
+    {
+        GameEntity* testEntity = GEngine->GetWorld()->AddEntity<GameEntity>();
 
-    testEntity->AddComponent<MeshComponent>();
-    MeshComponent* const meshComponent = static_cast<MeshComponent* const>(testEntity->GetComponents()[0]);
-    meshComponent->SetVertexList(vertices);
+        testEntity->AddComponent<MeshComponent>();
+        MeshComponent* const meshComponent = static_cast<MeshComponent* const>(testEntity->GetComponents()[0]);
+        meshComponent->SetVertexList(vertices);
 
-    testEntity->AddComponent<TransformComponent>();
-    TransformComponent* const transformComp = static_cast<TransformComponent* const>(testEntity->GetComponents()[1]);
-    transformComp->SetPosition(Vector3D(0.0f, 0.0f, -12.5f));
-    transformComp->SetRotation(Quaternion(Vector3D(0.0f, 0.0f, 0.0f)));
+        testEntity->AddComponent<TransformComponent>();
+        TransformComponent* const transformComp = static_cast<TransformComponent* const>(testEntity->GetComponents()[1]);
+        transformComp->SetPosition(Vector3D(2.0f * entIdx, 0.0f, -12.5f));
+        transformComp->SetRotation(Quaternion(Vector3D(0.0f, 0.0f, 2.5f * entIdx)));
+
+        mEntities.push_back(testEntity);
+    }
 }
 
 void GameApp::Update()

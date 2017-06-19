@@ -1,6 +1,8 @@
 #pragma once
 
-#include "Application.h"
+#include <vector>
+
+#include <Application.h>
 
 class GameEntity;
 
@@ -17,7 +19,6 @@ public:
     virtual void Update() override;
 
 private:
+    std::vector<GameEntity*> mEntities;
 
-    GameEntity* testEntity;
-    GameEntity* testEntity2;
 };
