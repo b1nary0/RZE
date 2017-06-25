@@ -20,5 +20,4 @@ public:
 
 private:
     std::vector<GameEntity*> mEntities;
-
 };
