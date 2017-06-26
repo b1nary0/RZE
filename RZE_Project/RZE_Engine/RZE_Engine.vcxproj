@@ -186,6 +186,7 @@
   <ItemGroup>
     <ClInclude Include="Src\Application.h" />
     <ClInclude Include="Src\DebugUtils\Debug.h" />
+    <ClInclude Include="Src\EngineCore\ConfigStore.h" />
     <ClInclude Include="Src\EngineCore\Engine.h" />
     <ClInclude Include="Src\EngineCore\Input\InputHandler.h" />
     <ClInclude Include="Src\EngineCore\Platform\File.h" />

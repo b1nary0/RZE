@@ -66,7 +66,8 @@ void GameApp::Update()
     RZE_Game::Update();
 
     static float angle = 0;
-    angle += 1.0f / 60.0f;
+    const float speed = 2.0f;
+    angle += (1.0f / 60.0f) * speed;
 
     for (int i = 0; i < mEntities.size(); i++)
     {
