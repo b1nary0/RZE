@@ -15,6 +15,7 @@ public:
     std::vector<float>& GetVertexList();
     void SetVertexList(const std::vector<float>& vertexList);
 
+    // @todo this will be pulled out eventually and handled better.. or should be lol
     GFXShaderGroup* const GetShaderGroup();
     void SetShaderGroup(GFXShaderGroup* const shaderGroup);
 

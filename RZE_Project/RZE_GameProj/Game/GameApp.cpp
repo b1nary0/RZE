@@ -55,7 +55,7 @@ void GameApp::Start()
         testEntity->AddComponent<TransformComponent>();
         TransformComponent* const transformComp = static_cast<TransformComponent* const>(testEntity->GetComponents()[1]);
         transformComp->SetPosition(Vector3D(2.0f * entIdx, 0.0f, -12.5f));
-        transformComp->SetRotation(Quaternion(Vector3D(0.0f, 0.0f, -1.0f * entIdx)));
+        transformComp->SetRotation(Quaternion(Vector3D(0.0f, 0.0f, -0.5f * entIdx)));
 
         mEntities.push_back(testEntity);
     }
@@ -65,15 +65,13 @@ void GameApp::Update()
 {
     RZE_Game::Update();
 
-    // 	static float angle = 0;
-    // 	angle += 1.0f / 60.0f;
-    // 
-    // 	TransformComponent* const transformComp = static_cast<TransformComponent* const>(testEntity->GetComponents()[1]);
-    // 	transformComp->SetPosition(Vector3D(-2.0f, 0.0f, -angle));
-    // 
-    // 	/////////////////////////////////////////////////////
-    // 
-    // 	TransformComponent* const transformComp2 = static_cast<TransformComponent* const>(testEntity2->GetComponents()[1]);
-    // 	transformComp2->SetPosition(Vector3D(2.0f, 0.0f, -angle));
-    // 	transformComp2->SetRotation(Quaternion(Vector3D(0.0f, 0.0f, -angle)));
+    static float angle = 0;
+    angle += 1.0f / 60.0f;
+
+    for (int i = 0; i < mEntities.size(); i++)
+    {
+        GameEntity* const entity = mEntities[i];
+        TransformComponent* const transfComp = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
+        transfComp->SetRotation(Quaternion(Vector3D(0.0f, 0.0f, (i % 2 == 0) ? angle : -angle)));
+    }
 }
