@@ -66,10 +66,10 @@ void GameApp::Update()
     RZE_Game::Update();
 
     static float angle = 0;
-    const float speed = 2.0f;
+    const float speed = 3.0f;
     angle += (1.0f / 60.0f) * speed;
 
-    for (int i = 0; i < mEntities.size(); i++)
+    for (size_t i = 0; i < mEntities.size(); i++)
     {
         GameEntity* const entity = mEntities[i];
         TransformComponent* const transfComp = static_cast<TransformComponent* const>(entity->GetComponents()[1]);

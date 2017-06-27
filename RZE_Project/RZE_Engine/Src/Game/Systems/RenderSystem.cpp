@@ -90,7 +90,7 @@ void RenderSystem::CreateTestShaderStuff()
     mShaderGroup->AddShader(EGFXShaderType::Fragment, fragShader);
 
     mShaderGroup->AddUniform("UModelViewProjection");
-    //mShaderGroup->AddUniform("UFragColor");
+    mShaderGroup->AddUniform("UFragColor");
 
     mShaderGroup->GenerateShaderProgram();
 }

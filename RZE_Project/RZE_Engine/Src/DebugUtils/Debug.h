@@ -57,7 +57,7 @@
 
 #else
 
-#define AssertFalse();
+#define AssertFalse()
 #define AssertEqual(Value1, Value2)
 #define AssertNull(Value)
 #define AssertNotNull(Value)
