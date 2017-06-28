@@ -10,12 +10,12 @@ OpenGLRHI::~OpenGLRHI()
 {
 }
 
-void OpenGLRHI::Init()
+void OpenGLRHI::Init(const OpenGLCreationParams& creationParams)
 {
     LOG_CONSOLE_ARGS("OpenGL version is %s", glGetString(GL_VERSION));
 
     // @implementation these need to be read in via window attributes
-    glViewport(0, 0, 1280, 720);
+    glViewport(0, 0, creationParams.WindowWidth, creationParams.WindowHeight);
 
     InitGLEW();
 }

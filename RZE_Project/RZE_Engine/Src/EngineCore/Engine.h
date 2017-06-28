@@ -8,6 +8,8 @@
 #include <Events/EventHandler.h>
 #include <EngineCore/Input/InputHandler.h>
 
+class WindowSettings;
+class EngineConfig;
 class GameWorld;
 class RZE_Renderer;
 class Win32Window;
@@ -25,6 +27,8 @@ public:
 
 	void RegisterForEvent(const U16 eventType, Functor<void, const Event&> callback);
 	void RegisterForInputEvent(const U16 eventType, Functor<void, U8> callback);
+
+    WindowSettings& GetWindowSettings();
 
 	GameWorld* const GetWorld() const;
 
@@ -54,6 +58,7 @@ private:
 	void RegisterWindowEvents();
 	void RegisterInputEvents();
 
+    void LoadEngineConfig();
 	void CreateAndInitializeWindow();
 
 	void InitGame(Functor<RZE_Game* const> createGameCallback);
@@ -67,6 +72,7 @@ private:
 	EventHandler mEventHandler;
 	InputHandler mInputHandler;
 
+    EngineConfig* mEngineConfig;
 
 	bool bShouldExit;
 };

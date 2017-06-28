@@ -11,4 +11,10 @@ namespace Conversions
 		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 		return converter.from_bytes(string);
 	}
+
+    int IntFromString(const std::string& string)
+    {
+        return atoi(string.c_str());
+    }
+
 }

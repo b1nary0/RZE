@@ -1,5 +1,7 @@
 #pragma once
 
+#include <GLM/fwd.hpp>
+
 class Vector2D
 {
 public:
@@ -10,9 +12,12 @@ public:
 	float X() const;
 	float Y() const;
 
-private:
+    void SetX(float newX);
+    void SetY(float newY);
 
-	float mX;
-	float mY;
+    const glm::vec2& GetInernalVec();
+
+private:
+    glm::vec2 mVec;
 
 };

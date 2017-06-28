@@ -13,7 +13,11 @@ public:
 	float Y() const;
 	float Z() const;
 
-	const glm::vec3 GetInternalVec() const;
+    void SetX(float newX);
+    void SetY(float newY);
+    void SetZ(float newY);
+
+	const glm::vec3& GetInternalVec() const;
 
 	Vector3D operator+(const Vector3D& rhs);
 

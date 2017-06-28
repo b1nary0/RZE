@@ -58,6 +58,9 @@
     <Filter Include="Source Files\EngineCore\Platform">
       <UniqueIdentifier>{59ec563e-ba69-4806-b450-1499e7e0889c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\EngineCore\Config">
+      <UniqueIdentifier>{47f88397-0f12-4a50-ab9c-59b0abbf309d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Src\Application.cpp">
@@ -146,6 +149,12 @@
     </ClCompile>
     <ClCompile Include="Src\Game\ECS\Entity.cpp">
       <Filter>Source Files\Game\ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\EngineCore\Config\Config.cpp">
+      <Filter>Source Files\EngineCore\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\EngineCore\Config\EngineConfig.cpp">
+      <Filter>Source Files\EngineCore\Config</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -268,6 +277,15 @@
     </ClInclude>
     <ClInclude Include="Src\DebugUtils\Debug.h">
       <Filter>Source Files\Debug</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\EngineCore\Config\Config.h">
+      <Filter>Source Files\EngineCore\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\EngineCore\Platform\FilePath.h">
+      <Filter>Source Files\EngineCore\Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\EngineCore\Config\EngineConfig.h">
+      <Filter>Source Files\EngineCore\Config</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -26,7 +26,22 @@ float Vector3D::Z() const
 	return mVec.z;
 }
 
-const glm::vec3 Vector3D::GetInternalVec() const
+void Vector3D::SetX(float newX)
+{
+    mVec.x = newX;
+}
+
+void Vector3D::SetY(float newY)
+{
+    mVec.y = newY;
+}
+
+void Vector3D::SetZ(float newZ)
+{
+    mVec.z = newZ;
+}
+
+const glm::vec3& Vector3D::GetInternalVec() const
 {
 	return mVec;
 }

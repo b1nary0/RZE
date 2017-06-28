@@ -15,6 +15,11 @@ void File::SetFilePath(const std::string& path)
 	mFilePath = path;
 }
 
+const std::string& File::GetPath() const
+{
+    return mFilePath;
+}
+
 bool File::Open(EFileOpenMode::Value fileOpenMode)
 {
 	if (bIsOpen)

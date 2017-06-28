@@ -65,7 +65,7 @@ void GFXShaderGroup::SetUniformVector4D(const std::string& uniformName, const Ve
     if (bUniformExists)
     {
         int uniformLocation = mUniformMap[uniformName];
-        OpenGLRHI::Get().SetUniformVec4D(uniformLocation, vec.X(), vec.Y(), vec.Z(), vec.A());
+        OpenGLRHI::Get().SetUniformVec4D(uniformLocation, vec.X(), vec.Y(), vec.Z(), vec.W());
     }
     else
     {

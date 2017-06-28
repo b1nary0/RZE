@@ -28,15 +28,40 @@ float Vector4D::Z() const
 	return mVec.z;
 }
 
-float Vector4D::A() const
+float Vector4D::W() const
 {
-	return mVec.a;
+	return mVec.w;
 }
 
-void Vector4D::Set(const float x, const float y, const float z, const float a)
+void Vector4D::SetX(float newX)
+{
+    mVec.x = newX;
+}
+
+void Vector4D::SetY(float newY)
+{
+    mVec.y = newY;
+}
+
+void Vector4D::SetZ(float newZ)
+{
+    mVec.z = newZ;
+}
+
+void Vector4D::SetW(float newW)
+{
+    mVec.w = newW;
+}
+
+void Vector4D::Set(const float x, const float y, const float z, const float w)
 {
 	mVec.x = x;
 	mVec.y = y;
 	mVec.z = z;
-	mVec.a = a;
+	mVec.w = w;
+}
+
+const glm::vec4& Vector4D::GetInternalVec() const
+{
+    return mVec;
 }

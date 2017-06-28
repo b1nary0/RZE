@@ -1,6 +1,7 @@
 #include <StdAfx.h>
 
 #include <EngineCore/Engine.h>
+#include <EngineCore/Config/EngineConfig.h>
 
 #include <DebugUtils/Debug.h>
 
@@ -44,8 +45,17 @@ void RZE_Engine::Init()
 {
     LOG_CONSOLE("RZE_EngineCore::Init() called.");
 
+    LoadEngineConfig();
+
     CreateAndInitializeWindow();
-    OpenGLRHI::Get().Init();
+
+    {
+        OpenGLRHI::OpenGLCreationParams creationParams;
+        creationParams.WindowWidth = static_cast<int>(GetWindowSettings().GetDimensions().X());
+        creationParams.WindowHeight = static_cast<int>(GetWindowSettings().GetDimensions().Y());
+
+        OpenGLRHI::Get().Init(creationParams);
+    }
 
     mRenderer = new RZE_Renderer();
 
@@ -76,10 +86,12 @@ void RZE_Engine::PostInit(Functor<RZE_Game* const>& createApplicationCallback)
 
 void RZE_Engine::CreateAndInitializeWindow()
 {
+    WindowSettings& windowSettings = mEngineConfig->GetWindowSettings();
+
     Win32Window::WindowCreationParams params;
-    params.windowTitle = "RZE_Engine";
-    params.width = 1280;
-    params.height = 720;
+    params.windowTitle = windowSettings.GetTitle();
+    params.width = static_cast<int>(windowSettings.GetDimensions().X());
+    params.height = static_cast<int>(windowSettings.GetDimensions().Y());
 
     mMainWindow = new Win32Window(params);
     AssertNotNull(mMainWindow);
@@ -126,6 +138,17 @@ void RZE_Engine::RegisterInputEvents()
     RegisterForInputEvent(EKeyEventType::Key_Pressed, keyPressCallback);
 }
 
+void RZE_Engine::LoadEngineConfig()
+{
+    mEngineConfig = new EngineConfig();
+    mEngineConfig->Load("./../RZE_Engine/RZE/Config/Engine.ini");
+
+    if (mEngineConfig->Empty())
+    {
+        LOG_CONSOLE("Engine config could not load. Defaults were used.");
+    }
+}
+
 void RZE_Engine::Update()
 {
     mEventHandler.ProcessEvents();
@@ -161,6 +184,11 @@ void RZE_Engine::RegisterForEvent(const U16 eventType, Functor<void, const Event
 void RZE_Engine::RegisterForInputEvent(const U16 eventType, Functor<void, U8> callback)
 {
     mInputHandler.RegisterForEvent(eventType, callback);
+}
+
+WindowSettings& RZE_Engine::GetWindowSettings()
+{
+    return mEngineConfig->GetWindowSettings();
 }
 
 GameWorld* const RZE_Engine::GetWorld() const

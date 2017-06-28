@@ -154,6 +154,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Src\Application.cpp" />
+    <ClCompile Include="Src\EngineCore\Config\Config.cpp" />
+    <ClCompile Include="Src\EngineCore\Config\EngineConfig.cpp" />
     <ClCompile Include="Src\EngineCore\Engine.cpp" />
     <ClCompile Include="Src\EngineCore\Input\InputHandler.cpp" />
     <ClCompile Include="Src\EngineCore\Platform\File.cpp" />
@@ -186,9 +188,12 @@
   <ItemGroup>
     <ClInclude Include="Src\Application.h" />
     <ClInclude Include="Src\DebugUtils\Debug.h" />
+    <ClInclude Include="Src\EngineCore\Config\Config.h" />
+    <ClInclude Include="Src\EngineCore\Config\EngineConfig.h" />
     <ClInclude Include="Src\EngineCore\Engine.h" />
     <ClInclude Include="Src\EngineCore\Input\InputHandler.h" />
     <ClInclude Include="Src\EngineCore\Platform\File.h" />
+    <ClInclude Include="Src\EngineCore\Platform\FilePath.h" />
     <ClInclude Include="Src\EngineCore\ResourceHandler.h" />
     <ClInclude Include="Src\Events\EventHandler.h" />
     <ClInclude Include="Src\Events\Events.h" />

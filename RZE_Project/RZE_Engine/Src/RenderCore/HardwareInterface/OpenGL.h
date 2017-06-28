@@ -286,6 +286,12 @@ private:
 class OpenGLRHI
 {
 public:
+    struct OpenGLCreationParams
+    {
+        int WindowWidth;
+        int WindowHeight;
+    };
+
     OpenGLRHI();
     ~OpenGLRHI();
 
@@ -295,7 +301,7 @@ public:
         return instance;
     }
 
-    void Init();
+    void Init(const OpenGLCreationParams& creationParams);
 
     void ClearColor(const GLfloat red, const  GLfloat green, const  GLfloat blue, const  GLfloat alpha) const;
     void Clear(const GLuint mask) const;
