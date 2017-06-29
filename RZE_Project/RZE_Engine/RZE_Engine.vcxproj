@@ -169,6 +169,7 @@
     <ClCompile Include="Src\Game\GameWorld.cpp" />
     <ClCompile Include="Src\Game\Systems\MovementSystem.cpp" />
     <ClCompile Include="Src\Game\Systems\RenderSystem.cpp" />
+    <ClCompile Include="Src\RenderCore\Graphics\Mesh.cpp" />
     <ClCompile Include="Src\RenderCore\HardwareInterface\OpenGL.cpp" />
     <ClCompile Include="Src\RenderCore\Renderer.cpp" />
     <ClCompile Include="Src\RenderCore\SceneCamera.cpp" />
@@ -208,6 +209,7 @@
     <ClInclude Include="Src\Game\GameWorld.h" />
     <ClInclude Include="Src\Game\Systems\MovementSystem.h" />
     <ClInclude Include="Src\Game\Systems\RenderSystem.h" />
+    <ClInclude Include="Src\RenderCore\Graphics\Mesh.h" />
     <ClInclude Include="Src\RenderCore\HardwareInterface\OpenGL.h" />
     <ClInclude Include="Src\RenderCore\Renderer.h" />
     <ClInclude Include="Src\RenderCore\SceneCamera.h" />

@@ -2,6 +2,7 @@
 
 #include <Game/ECS/EntityComponent.h>
 
+class MeshData;
 class GFXShaderGroup;
 class OpenGLVAO;
 class OpenGLVBO;
@@ -25,6 +26,10 @@ public:
 private:
     OpenGLVAO* mVAO;
     OpenGLVBO* mVBO;
+
+    // @todo:josh temp pointer for now because we have some cyclical issues in headers
+    //            that needs to be worked out for now... 
+    MeshData* meshData;
 
     GFXShaderGroup* mShaderGroup;
     std::vector<float> mVertexList;

@@ -61,6 +61,9 @@
     <Filter Include="Source Files\EngineCore\Config">
       <UniqueIdentifier>{47f88397-0f12-4a50-ab9c-59b0abbf309d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\RenderCore\Graphics">
+      <UniqueIdentifier>{d9d10028-5694-477b-8ace-f54d8bd4bbb3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Src\Application.cpp">
@@ -155,6 +158,9 @@
     </ClCompile>
     <ClCompile Include="Src\EngineCore\Config\EngineConfig.cpp">
       <Filter>Source Files\EngineCore\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\RenderCore\Graphics\Mesh.cpp">
+      <Filter>Source Files\RenderCore\Graphics</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -286,6 +292,9 @@
     </ClInclude>
     <ClInclude Include="Src\EngineCore\Config\EngineConfig.h">
       <Filter>Source Files\EngineCore\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\RenderCore\Graphics\Mesh.h">
+      <Filter>Source Files\RenderCore\Graphics</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
