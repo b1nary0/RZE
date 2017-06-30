@@ -94,6 +94,7 @@ void OpenGLRHI::SetBufferData(const GLuint target, const GLuint size, const void
     AssertExpr(size > 0);
     // @note if this doesnt work check the const void* const signature because its possible under the hood it no likey
     glBufferData(target, size, data, bufferUsage);
+    glGetError();
     AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
@@ -114,6 +115,12 @@ void OpenGLRHI::DrawArrays(const GLuint mode, const GLint first, const GLuint co
 {
     AssertExpr(count > 0);
     glDrawArrays(mode, first, count);
+}
+
+void OpenGLRHI::DrawElements(const GLuint mode, const GLsizei count, GLenum type, const GLvoid* indices)
+{
+    AssertExpr(count > 0);
+    glDrawElements(mode, count, type, indices);
 }
 
 void OpenGLRHI::CreateShaderProgram(GLuint& outProgramID) const
@@ -244,17 +251,16 @@ void OpenGLRHI::SetUniformVec4D(const GLint uniformLocation, const float x, cons
 //
 
 OpenGLVBO::OpenGLVBO(OpenGLVAO* parentBuf)
-    : mBufferHandle(0)
-    , mBufferTarget(EGLBufferTarget::ArrayBuffer)
-    , mBufferUsageMode(EGLBufferUsage::StaticDraw)
+    : IGLBufferObject()
 {
+    mBufferTarget = EGLBufferTarget::ArrayBuffer;
+    mBufferUsageMode = EGLBufferUsage::StaticDraw;
+
     parentBuf->Bind();
 
     Generate();
     Bind();
-    OpenGLRHI::Get().EnableVertexAttributeArray(0);
-    OpenGLRHI::Get().VertexAttribPointer(0, 3, EGLDataType::Float, EGLBooleanValue::False, 0, 0);
-
+    
     parentBuf->Unbind();
 }
 
@@ -288,10 +294,20 @@ void OpenGLVBO::Bind()
     OpenGLRHI::Get().BindBuffer(mBufferTarget, mBufferHandle);
 }
 
+void OpenGLVBO::Unbind()
+{
+    OpenGLRHI::Get().BindBuffer(mBufferTarget, 0);
+}
+
+void OpenGLVBO::Destroy()
+{
+    OpenGLRHI::Get().DeleteBuffer(1, &mBufferHandle);
+}
+
 OpenGLVAO::OpenGLVAO()
+    : IGLBufferObject()
 {
     Generate();
-    Bind();
 }
 
 //
@@ -312,7 +328,67 @@ void OpenGLVAO::Unbind()
     OpenGLRHI::Get().BindVertexArray(0);
 }
 
+void OpenGLVAO::Destroy()
+{
+    OpenGLRHI::Get().DeleteBuffer(1, &mBufferHandle);
+}
+
 void OpenGLVAO::Generate()
 {
     OpenGLRHI::Get().GenVertexArrays(1, &mBufferHandle);
+}
+
+OpenGLEBO::OpenGLEBO(OpenGLVAO* parentBuf)
+    : IGLBufferObject()
+{
+    mBufferTarget = EGLBufferTarget::ElementArrayBuffer;
+    mBufferUsageMode = EGLBufferUsage::StaticDraw;
+
+    parentBuf->Bind();
+
+    Generate();
+    Bind();
+
+    parentBuf->Unbind();
+}
+
+OpenGLEBO::~OpenGLEBO()
+{
+    Unbind();
+}
+
+void OpenGLEBO::Bind()
+{
+    OpenGLRHI::Get().BindBuffer(EGLBufferTarget::ElementArrayBuffer, mBufferHandle);
+}
+
+void OpenGLEBO::Unbind()
+{
+    OpenGLRHI::Get().BindBuffer(EGLBufferTarget::ElementArrayBuffer, 0);
+}
+
+void OpenGLEBO::Destroy()
+{
+    OpenGLRHI::Get().DeleteBuffer(1, &mBufferHandle);
+}
+
+void OpenGLEBO::SetBufferTarget(const U32 newBufferTarget)
+{
+    mBufferTarget = newBufferTarget;
+}
+
+void OpenGLEBO::SetBufferData(const void* const data, const U32 size)
+{
+    AssertNotNull(data);
+    OpenGLRHI::Get().SetBufferData(mBufferTarget, size, data, mBufferUsageMode);
+}
+
+void OpenGLEBO::SetBufferUsageMode(const U32 newBufferUsageMode)
+{
+    mBufferUsageMode = newBufferUsageMode;
+}
+
+void OpenGLEBO::Generate()
+{
+    OpenGLRHI::Get().GenerateBuffer(1, &mBufferHandle);
 }

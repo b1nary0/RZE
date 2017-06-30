@@ -9,9 +9,6 @@ MeshComponent::MeshComponent()
 {
     OpenGLRHI& RHI = OpenGLRHI::Get();
 
-    mVAO = new OpenGLVAO();
-    mVBO = new OpenGLVBO(mVAO);
-
     const char* const meshFilePath = "./../RZE_Engine/Assets/3D/shuttle.obj";
     mMeshData = new MeshData();
     mMeshData->LoadFromFile(meshFilePath);
@@ -19,15 +16,6 @@ MeshComponent::MeshComponent()
 
 MeshComponent::~MeshComponent()
 {
-    if (mVAO)
-    {
-        delete mVAO;
-    }
-
-    if (mVBO)
-    {
-        delete mVBO;
-    }
 }
 
 std::vector<float>& MeshComponent::GetVertexList()
@@ -35,15 +23,9 @@ std::vector<float>& MeshComponent::GetVertexList()
     return mVertexList;
 }
 
-void MeshComponent::SetVertexList(const std::vector<float>& vertexList)
+void MeshComponent::SetMeshData(MeshData* const meshData)
 {
-    mVertexList = vertexList;
-    //@note:josh this should be temporary, once more code is put in place
-    //           to support mesh loading, this will end up happening at 
-    //           the right time.
-    mVAO->Bind();
-    mVBO->SetBufferData(mVertexList.data(), sizeof(mVertexList.data()) * mVertexList.size());
-    mVAO->Unbind();
+    mMeshData = meshData;
 }
 
 GFXShaderGroup* const MeshComponent::GetShaderGroup()
@@ -56,12 +38,7 @@ void MeshComponent::SetShaderGroup(GFXShaderGroup* const shaderGroup)
     mShaderGroup = shaderGroup;
 }
 
-OpenGLVAO* MeshComponent::GetVAO() const
+MeshData* const MeshComponent::GetMeshData() const
 {
-    return mVAO;
-}
-
-OpenGLVBO* MeshComponent::GetVBO()
-{
-    return mVBO;
+    return mMeshData;
 }

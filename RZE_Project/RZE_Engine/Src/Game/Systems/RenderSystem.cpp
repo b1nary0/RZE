@@ -54,11 +54,9 @@ void RenderSystem::Update()
         Matrix4x4 MVP = renderCam.GetProjectionMat() * renderCam.GetViewMat() * modelMat;
 
         RZE_Renderer::RenderItemProtocol renderItem;
-        renderItem.VertexList = &(meshComponent->GetVertexList());
-        renderItem.ShaderGroup = meshComponent->GetShaderGroup();
-        renderItem.ModelViewProjection = MVP;
-        renderItem.VAO = meshComponent->GetVAO();
-        renderItem.VBO = meshComponent->GetVBO();
+        renderItem.mShaderGroup = meshComponent->GetShaderGroup();
+        renderItem.mModelViewProjection = MVP;
+        renderItem.mMeshData = meshComponent->GetMeshData();
 
         if (renderer)
         {

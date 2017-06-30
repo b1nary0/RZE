@@ -247,40 +247,86 @@ struct OpenGLContext
     HDC deviceContext;
 };
 
-class OpenGLVAO
+class IGLBufferObject
+{
+public:
+    IGLBufferObject()
+        : mBufferHandle(0) {}
+    ~IGLBufferObject() = default;
+
+    U32 GetBufferHandle() const { return mBufferHandle; }
+
+    virtual void Bind() = 0;
+    virtual void Unbind() = 0;
+    virtual void Destroy() = 0;
+
+    virtual void SetBufferUsageMode(const U32 newBufferUsageMode) = 0;
+    virtual void SetBufferData(const void* const data, const U32 size) = 0;
+    virtual void SetBufferTarget(const U32 newBufferTarget) = 0;
+
+protected:
+    virtual void Generate() = 0;
+
+    U32 mBufferHandle;
+    U32 mBufferUsageMode;
+    U32 mBufferTarget;
+};
+
+class OpenGLVAO : public IGLBufferObject
 {
 public:
     OpenGLVAO();
     ~OpenGLVAO();
 
-    void Bind();
-    void Unbind();
+    virtual void Bind() override;
+    virtual void Unbind() override;
+    virtual void Destroy() override;
+
+    virtual void SetBufferUsageMode(const U32 newBufferUsageMode) override {}
+    virtual void SetBufferData(const void* const data, const U32 size) override {}
+    virtual void SetBufferTarget(const U32 newBufferTarget) override {}
 
 private:
-    void Generate();
-
-    U32 mBufferHandle;
-
+    virtual void Generate() override;
 };
 
-class OpenGLVBO
+class OpenGLVBO : public IGLBufferObject
 {
 public:
     OpenGLVBO(OpenGLVAO* parentBuf);
     ~OpenGLVBO();
 
-    void SetBufferTarget(const U32 newBufferTarget);
-    void SetBufferUsageMode(const U32 newBufferUsageMode);
-    void SetBufferData(const void* const data, const U32 size);
 
-    void Bind();
+    virtual void Bind() override;
+    virtual void Unbind() override;
+    virtual void Destroy() override;
+
+    void SetBufferTarget(const U32 newBufferTarget) override;
+    void SetBufferData(const void* const data, const U32 size) override;
+    void SetBufferUsageMode(const U32 newBufferUsageMode) override;
 
 private:
-    void Generate();
+    virtual void Generate() override;
 
-    U32 mBufferUsageMode;
-    U32 mBufferTarget;
-    U32 mBufferHandle;
+
+};
+
+class OpenGLEBO : public IGLBufferObject
+{
+public:
+    OpenGLEBO(OpenGLVAO* parentBuf);
+    ~OpenGLEBO();
+
+    virtual void Bind() override;
+    virtual void Unbind() override;
+    virtual void Destroy() override;
+
+    void SetBufferTarget(const U32 newBufferTarget) override;
+    void SetBufferData(const void* const data, const U32 size) override;
+    void SetBufferUsageMode(const U32 newBufferUsageMode) override;
+
+private:
+    virtual void Generate() override;
 };
 
 class OpenGLRHI
@@ -323,6 +369,7 @@ public:
     void VertexAttribPointer(const GLuint index, const GLint size, const GLuint type, const GLboolean normalized, const GLuint stride, const void* const pointer) const;
 
     void DrawArrays(const GLuint mode, const GLint first, const GLuint count) const;
+    void DrawElements(const GLuint mode, const GLsizei count, GLenum type, const GLvoid* indices);
 
     //
     // Shaders

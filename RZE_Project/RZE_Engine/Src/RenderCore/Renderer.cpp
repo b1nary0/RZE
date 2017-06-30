@@ -1,6 +1,7 @@
 #include <StdAfx.h>
 #include <RenderCore/Renderer.h>
 
+#include <RenderCore/Graphics/Mesh.h>
 #include <RenderCore/HardwareInterface/OpenGL.h>
 #include <RenderCore/Shaders/ShaderGroup.h>
 
@@ -50,15 +51,19 @@ void RZE_Renderer::RenderSingleItem(RenderItemProtocol& renderItem)
 {
     const OpenGLRHI& openGL = OpenGLRHI::Get();
     // @implementation should we have this type of assumption?
-    if (renderItem.ShaderGroup)
+    if (renderItem.mShaderGroup)
     {
-        renderItem.ShaderGroup->Use();
-        renderItem.ShaderGroup->SetUniformMatrix4x4("UModelViewProjection", renderItem.ModelViewProjection);
+        renderItem.mShaderGroup->Use();
+        renderItem.mShaderGroup->SetUniformMatrix4x4("UModelViewProjection", renderItem.mModelViewProjection);
     }
 
-    renderItem.VAO->Bind();
+    const std::vector<GFXMesh*> meshList = renderItem.mMeshData->GetMeshList();
+    for (auto& mesh : meshList)
+    {
+        mesh->GetVAO()->Bind();
 
-    openGL.DrawArrays(EGLDrawMode::Triangles, 0, renderItem.VertexList->size());
+        OpenGLRHI::Get().DrawElements(EGLDrawMode::Triangles, mesh->GetIndices().size(), EGLDataType::UnsignedInt, nullptr);
 
-    renderItem.VAO->Unbind();
+        mesh->GetVAO()->Unbind();
+    }
 }

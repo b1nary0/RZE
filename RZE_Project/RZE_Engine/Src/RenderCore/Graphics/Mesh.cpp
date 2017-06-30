@@ -1,16 +1,72 @@
 #include <StdAfx.h>
 #include <RenderCore/Graphics/Mesh.h>
 
+#include <RenderCore/HardwareInterface/OpenGL.h>
+
 #include <Assimp/Importer.hpp>
 #include <Assimp/postprocess.h>
 #include <Assimp/scene.h>
 
 GFXMesh::GFXMesh()
 {
+    mVAO = new OpenGLVAO();
+    mVBO = new OpenGLVBO(mVAO);
+    mEBO = new OpenGLEBO(mVAO);
 }
 
 GFXMesh::~GFXMesh()
 {
+    if (mVAO)
+    {
+        delete mVAO;
+    }
+
+    if (mVBO)
+    {
+        delete mVBO;
+    }
+
+    if (mEBO)
+    {
+        delete mEBO;
+    }
+}
+
+OpenGLVAO* GFXMesh::GetVAO() const
+{
+    return mVAO;
+}
+
+OpenGLVBO* GFXMesh::GetVBO()
+{
+    return mVBO;
+}
+
+OpenGLEBO* GFXMesh::GetEBO()
+{
+    return mEBO;
+}
+
+std::vector<GFXVertex> GFXMesh::GetVertexList()
+{
+    return mVertices;
+}
+
+std::vector<U32> GFXMesh::GetIndices()
+{
+    return mIndices;
+}
+
+void GFXMesh::OnLoadFinished()
+{
+    mVAO->Bind();
+    mVBO->SetBufferData(mVertices.data(), sizeof(GFXVertex) * mVertices.size());
+    mEBO->SetBufferData(mIndices.data(), sizeof(U32) * mIndices.size());
+
+    OpenGLRHI::Get().EnableVertexAttributeArray(0);
+    OpenGLRHI::Get().VertexAttribPointer(0, 3, EGLDataType::Float, EGLBooleanValue::False, sizeof(GFXVertex), 0);
+
+    mVAO->Unbind();
 }
 
 MeshData::MeshData()
@@ -48,6 +104,11 @@ void MeshData::LoadFromFile(const std::string& filePath)
         LOG_CONSOLE("Error reading meshes.");
         return;
     }
+}
+
+std::vector<GFXMesh*>& MeshData::GetMeshList()
+{
+    return mMeshList;
 }
 
 void MeshData::ProcessNode(const aiNode& node, const aiScene& scene)
@@ -93,4 +154,6 @@ void MeshData::ProcessMesh(const aiMesh& mesh, const aiScene& scene, GFXMesh& ou
             outMesh.mIndices.push_back(assimpFace.mIndices[indexIdx]);
         }
     }
+
+    outMesh.OnLoadFinished();
 }
