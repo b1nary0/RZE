@@ -13,6 +13,11 @@ Quaternion::Quaternion(const Vector3D& angles)
 {
 }
 
+Quaternion::Quaternion(const glm::quat& quat)
+{
+    mQuat = quat;
+}
+
 float Quaternion::ToAngle() const
 {
 	return glm::angle(mQuat);
@@ -24,7 +29,7 @@ Vector3D Quaternion::ToAxis() const
 	return Vector3D(axis.x, axis.y, axis.z);
 }
 
-const glm::quat& Quaternion::GetInternalQuat()
+const glm::quat& Quaternion::GetInternalQuat() const
 {
 	return mQuat;
 }
