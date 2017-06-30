@@ -29,7 +29,7 @@ private:
 
     // @todo:josh temp pointer for now because we have some cyclical issues in headers
     //            that needs to be worked out for now... 
-    MeshData* meshData;
+    MeshData* mMeshData;
 
     GFXShaderGroup* mShaderGroup;
     std::vector<float> mVertexList;

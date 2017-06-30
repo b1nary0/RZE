@@ -23,8 +23,31 @@ MeshData::~MeshData()
 
 void MeshData::LoadFromFile(const std::string& filePath)
 {
-    File file(filePath);
+    Assimp::Importer ModelImporter;
+    const aiScene* AssimpScene = ModelImporter.ReadFile(filePath,
+                                                            aiProcess_Triangulate 
+                                                        |   aiProcess_GenNormals);
 
+    bool bAssimpNotLoaded =
+        !AssimpScene ||
+        !AssimpScene->mRootNode ||
+        AssimpScene->mFlags == AI_SCENE_FLAGS_INCOMPLETE;
+
+    if (bAssimpNotLoaded)
+    {
+        // #TODO More informative error message.
+        LOG_CONSOLE("Failed to load Assimp.");
+        return;
+    }
+
+    ProcessNode(*AssimpScene->mRootNode, *AssimpScene);
+
+    if (mMeshList.size() != AssimpScene->mNumMeshes)
+    {
+        // #TODO More informative error message.
+        LOG_CONSOLE("Error reading meshes.");
+        return;
+    }
 }
 
 void MeshData::ProcessNode(const aiNode& node, const aiScene& scene)
