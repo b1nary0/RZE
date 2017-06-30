@@ -26,8 +26,8 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
 {
     static float angleX = 0.0f;
     static float angleY = 0.0f;
-    static float speedX = 2.5f;
-    static float speedY = 2.5f;
+    static float speedX = 4.0f;
+    static float speedY = 4.0f;
 
     Functor<void, const Event&> keyEvent([this](const Event& evt)
     {
@@ -51,18 +51,18 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
 
                 transformComp->SetRotation(Quaternion(Vector3D(angleX, angleY, 0.0f)));
             }
-            else if (evt.mKeyEvent.mKey == Win32KeyCode::Key_A)
+            else if (evt.mKeyEvent.mKey == Win32KeyCode::Key_D)
             {
-                angleY -= (1.0f / 60.0f) * speedY;
+                angleY += (1.0f / 60.0f) * speedY;
 
                 GameEntity* entity = mEntities[0];
                 TransformComponent* const transformComp = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
 
                 transformComp->SetRotation(Quaternion(Vector3D(angleX, angleY, 0.0f)));
             }
-            else if (evt.mKeyEvent.mKey == Win32KeyCode::Key_D)
+            else if (evt.mKeyEvent.mKey == Win32KeyCode::Key_A)
             {
-                angleY += (1.0f / 60.0f) * speedY;
+                angleY -= (1.0f / 60.0f) * speedY;
 
                 GameEntity* entity = mEntities[0];
                 TransformComponent* const transformComp = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
@@ -93,7 +93,7 @@ void GameApp::Start()
 
         testEntity->AddComponent<TransformComponent>();
         TransformComponent* const transformComp = static_cast<TransformComponent* const>(testEntity->GetComponents()[1]);
-        transformComp->SetPosition(Vector3D(0.0f, 0.0f, -50.0f));
+        transformComp->SetPosition(Vector3D(0.0f, 0.0f, -25.0f));
         transformComp->SetRotation(Quaternion(Vector3D(0.0f, 0.0f, 0.0f)));
 
         mEntities.push_back(testEntity);
