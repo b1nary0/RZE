@@ -79,9 +79,6 @@ void GameApp::Start()
     RZE_Game::Start();
 
     // ALL TEST CODE
-    std::vector<float> vertices = { -0.5f, -0.5f, 0.0f,
-        0.5f, -0.5f, 0.0f,
-        0.0f, 0.5f, 0.0f };
 
     const int numEntities = 1;
     for (int entIdx = 0; entIdx < numEntities; ++entIdx)
@@ -103,15 +100,4 @@ void GameApp::Start()
 void GameApp::Update()
 {
     RZE_Game::Update();
-
-//     static float angle = 0;
-//     const float speed = 1.0f;
-//     angle += (1.0f / 60.0f) * speed;
-// 
-//     for (size_t i = 0; i < mEntities.size(); i++)
-//     {
-//         GameEntity* const entity = mEntities[i];
-//         TransformComponent* const transfComp = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
-//         transfComp->SetRotation(Quaternion(Vector3D(0.0f, (i % 2 == 0) ? -angle : angle, (i % 2 == 0) ? angle : -angle)));
-//     }
 }

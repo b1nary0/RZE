@@ -41,13 +41,13 @@
 	@ move the entity
 @ there is some GPU memory shenanigans happening with multiple entities in scene....
 @ renderer should be held by engine and loaned to game world. or game world should ask engine for it.
+@ model loading
 
 
 
 
 
 
-! model loading
 * model loader class
 * resource manager/management
 
