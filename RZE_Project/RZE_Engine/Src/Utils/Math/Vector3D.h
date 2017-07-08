@@ -8,6 +8,7 @@ public:
 
 	Vector3D();
 	Vector3D(const float x, const float y, const float z);
+    Vector3D(const int x, const int y, const int z);
 
 	float X() const;
 	float Y() const;

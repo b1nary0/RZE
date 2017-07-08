@@ -32,7 +32,7 @@ void EngineConfig::LoadWindowSettings()
     width = Conversions::IntFromString(mINIParser.GetValue("WindowSettings", "WindowWidth", "1280"));
     height = Conversions::IntFromString(mINIParser.GetValue("WindowSettings", "WindowHeight", "768"));
 
-    mWindowSettings.mDimensions = Vector2D(static_cast<float>(width), static_cast<float>(height));
+    mWindowSettings.mDimensions = Vector2D(width, height);
     mWindowSettings.mTitle = mINIParser.GetValue("WindowSettings", "WindowTitle", "RZE_Engine");
 }
 

@@ -19,5 +19,6 @@ public:
     virtual void Update() override;
 
 private:
+    GameEntity* mLightEntity;
     std::vector<GameEntity*> mEntities;
 };

@@ -7,6 +7,7 @@
 #include <Game/GameEntity.h>
 #include <Game/Components/MeshComponent.h>
 #include <Game/Components/TransformComponent.h>
+#include <Game/Components/LightSourceComponent.h>
 
 #include <Windowing/WinKeyCodes.h>
 
@@ -95,6 +96,10 @@ void GameApp::Start()
 
         mEntities.push_back(testEntity);
     }
+
+//      mLightEntity = GEngine->GetWorld()->AddEntity<GameEntity>();
+//      mLightEntity->AddComponent<LightSourceComponent>();
+//      LightSourceComponent* const lightComponent = static_cast<LightSourceComponent* const>(mLightEntity->GetComponents()[0]);
 }
 
 void GameApp::Update()

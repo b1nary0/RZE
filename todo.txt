@@ -42,7 +42,8 @@
 @ there is some GPU memory shenanigans happening with multiple entities in scene....
 @ renderer should be held by engine and loaned to game world. or game world should ask engine for it.
 @ model loading
-
+@ rebuild assimp so the dll and lib dont have weirdly annotated names	
+@ take a look at all the casting back and forth in window stuff (config, window etc int to float and back)
 
 
 
@@ -55,9 +56,7 @@
 
 	
 	
-	
-* rebuild assimp so the dll and lib dont have weirdly annotated names	
-* take a look at all the casting back and forth in window stuff (config, window etc int to float and back)
+
 * gotta clean up components and entities in world/entities etc
 * whats with GLM/fwd.hpp and GLM/vec3.hpp thing? works for vec4...?
 * figure out issue with include for third party in game proj

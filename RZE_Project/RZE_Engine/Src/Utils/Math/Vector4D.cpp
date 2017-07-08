@@ -8,8 +8,13 @@ Vector4D::Vector4D()
 {
 }
 
-Vector4D::Vector4D(const float x, const float y, const float z, const float a)
-	: mVec(x, y, z, a)
+Vector4D::Vector4D(const float x, const float y, const float z, const float w)
+	: mVec(x, y, z, w)
+{
+}
+
+Vector4D::Vector4D(const int x, const int y, const int z, const int w)
+    : mVec(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z), static_cast<float>(w))
 {
 }
 

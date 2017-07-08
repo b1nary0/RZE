@@ -6,7 +6,8 @@ class Vector4D
 {
 public:
 	Vector4D();
-	Vector4D(const float x, const float y, const float z, const float a);
+	Vector4D(const float x, const float y, const float z, const float w);
+    Vector4D(const int x, const int y, const int z, const int w);
 
 	float X() const;
 	float Y() const;

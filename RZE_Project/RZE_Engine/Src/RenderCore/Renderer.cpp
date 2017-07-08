@@ -5,6 +5,8 @@
 #include <RenderCore/HardwareInterface/OpenGL.h>
 #include <RenderCore/Shaders/ShaderGroup.h>
 
+#include <Utils/Math/Vector4D.h>
+
 RZE_Renderer::RZE_Renderer()
 {
     SceneCameraProps cameraProps;
@@ -55,6 +57,7 @@ void RZE_Renderer::RenderSingleItem(RenderItemProtocol& renderItem)
     {
         renderItem.mShaderGroup->Use();
         renderItem.mShaderGroup->SetUniformMatrix4x4("UModelViewProjection", renderItem.mModelViewProjection);
+        renderItem.mShaderGroup->SetUniformVector4D("UFragColor", Vector4D(0.0f, 0.0f, 0.25f, 1.0f));
     }
 
     const std::vector<GFXMesh*> meshList = renderItem.mMeshData->GetMeshList();

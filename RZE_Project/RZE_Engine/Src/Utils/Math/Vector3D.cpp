@@ -11,6 +11,11 @@ Vector3D::Vector3D(const float x, const float y, const float z)
 {
 }
 
+Vector3D::Vector3D(const int x, const int y, const int z)
+    : mVec(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z))
+{
+}
+
 float Vector3D::X() const
 {
 	return mVec.x;
