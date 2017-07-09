@@ -51,8 +51,8 @@ void RZE_Engine::Init()
 
     {
         OpenGLRHI::OpenGLCreationParams creationParams;
-        creationParams.WindowWidth = static_cast<int>(GetWindowSettings().GetDimensions().X());
-        creationParams.WindowHeight = static_cast<int>(GetWindowSettings().GetDimensions().Y());
+        creationParams.WindowWidth = static_cast<int>(mMainWindow->GetDimensions().X());
+        creationParams.WindowHeight = static_cast<int>(mMainWindow->GetDimensions().Y());
 
         OpenGLRHI::Get().Init(creationParams);
     }
@@ -141,6 +141,7 @@ void RZE_Engine::RegisterInputEvents()
 void RZE_Engine::LoadEngineConfig()
 {
     mEngineConfig = new EngineConfig();
+    //#TODO the path here needs to be dealt with properly
     mEngineConfig->Load("./../RZE_Engine/RZE/Config/Engine.ini");
 
     if (mEngineConfig->Empty())

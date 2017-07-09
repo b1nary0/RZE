@@ -60,7 +60,7 @@ void RZE_Renderer::RenderSingleItem(RenderItemProtocol& renderItem)
         renderItem.mShaderGroup->SetUniformVector4D("UFragColor", Vector4D(0.0f, 0.0f, 0.25f, 1.0f));
     }
 
-    const std::vector<GFXMesh*> meshList = renderItem.mMeshData->GetMeshList();
+    const std::vector<GFXMesh*>& meshList = renderItem.mMeshData->GetMeshList();
     for (auto& mesh : meshList)
     {
         mesh->GetVAO()->Bind();

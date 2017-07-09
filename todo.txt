@@ -49,6 +49,7 @@
 
 
 
+* lightsourcecomponent
 * model loader class
 * resource manager/management
 

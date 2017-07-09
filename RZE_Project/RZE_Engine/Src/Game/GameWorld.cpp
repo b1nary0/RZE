@@ -45,6 +45,7 @@ void GameWorld::Init()
 
 void GameWorld::Update()
 {
+    //#TODO need to ensure update order here... for logic > rendering etc
 	for (auto& system : GetSystems())
 	{
 		system->Update();
