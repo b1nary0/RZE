@@ -16,9 +16,15 @@
 RZE_Engine* RZE_Engine::sInstance = nullptr;
 
 RZE_Engine::RZE_Engine()
-    : bShouldExit(false)
-    , mMainWindow(nullptr)
 {
+    mMainWindow         = nullptr;
+    mRenderer           = nullptr;
+    mWorld              = nullptr;
+    mEngineConfig       = nullptr;
+    mApplication        = nullptr;
+
+    bShouldExit         = false;
+
     Init();
 }
 

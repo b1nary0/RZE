@@ -10,8 +10,9 @@
 GFXMesh::GFXMesh()
 {
     mVAO = new OpenGLVAO();
-    mVBO = new OpenGLVBO(mVAO);
     mEBO = new OpenGLEBO(mVAO);
+
+    mVertexVBO = new OpenGLVBO(mVAO);
 }
 
 GFXMesh::~GFXMesh()
@@ -21,9 +22,9 @@ GFXMesh::~GFXMesh()
         delete mVAO;
     }
 
-    if (mVBO)
+    if (mVertexVBO)
     {
-        delete mVBO;
+        delete mVertexVBO;
     }
 
     if (mEBO)
@@ -37,10 +38,11 @@ OpenGLVAO* GFXMesh::GetVAO() const
     return mVAO;
 }
 
-OpenGLVBO* GFXMesh::GetVBO()
+OpenGLVBO* GFXMesh::GetVertexVBO()
 {
-    return mVBO;
+    return mVertexVBO;
 }
+
 
 OpenGLEBO* GFXMesh::GetEBO()
 {
@@ -59,10 +61,16 @@ std::vector<U32> GFXMesh::GetIndices()
 
 void GFXMesh::OnLoadFinished()
 {
+    for (size_t vertIdx = 0; vertIdx < mVertices.size(); vertIdx++)
+    {
+        mNormals.push_back(mVertices[vertIdx].Normal);
+    }
+
     mVAO->Bind();
-    mVBO->SetBufferData(mVertices.data(), sizeof(GFXVertex) * mVertices.size());
+    mVertexVBO->SetBufferData(mVertices.data(), sizeof(GFXVertex) * mVertices.size());
     mEBO->SetBufferData(mIndices.data(), sizeof(U32) * mIndices.size());
 
+    // vertices
     OpenGLRHI::Get().EnableVertexAttributeArray(0);
     OpenGLRHI::Get().VertexAttribPointer(0, 3, EGLDataType::Float, EGLBooleanValue::False, sizeof(GFXVertex), 0);
 

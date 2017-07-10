@@ -25,8 +25,9 @@ public:
     ~GFXMesh();
 
     OpenGLVAO* GetVAO() const;
-    OpenGLVBO* GetVBO();
     OpenGLEBO* GetEBO();
+    OpenGLVBO* GetVertexVBO();
+    OpenGLVBO* GetNormalVBO();
 
     std::vector<GFXVertex> GetVertexList();
     std::vector<U32> GetIndices();
@@ -35,10 +36,12 @@ private:
     void OnLoadFinished();
 
     OpenGLVAO* mVAO;
-    OpenGLVBO* mVBO;
+    OpenGLVBO* mVertexVBO;
+    OpenGLVBO* mNormalVBO;
     OpenGLEBO* mEBO;
 
     std::vector<GFXVertex> mVertices;
+    std::vector<Vector3D> mNormals;
     std::vector<U32> mIndices;
 };
 

@@ -48,16 +48,22 @@
 
 
 
+* lighting
+	* figure out normal situation
+		-> do i need another VBO or is it interlaced as the struct in Mesh.cpp?
+	* lightsourcecomponent	
 
-* lightsourcecomponent
+
+
+	
+*integrate editor stuff (at first just get something simple like running the code thru wxwidgets period)
+	-> likely take inspiration from Unreal's engine loop class structure
+	-> will need to have an editor version of the engine class (how deep?) and a standalone.
+	-> maybe inherit from base engine class and allow editor/game engines to do its own thing while keeping other stuff?
+
+
 * model loader class
 * resource manager/management
-
-
-
-	
-	
-
 * gotta clean up components and entities in world/entities etc
 * whats with GLM/fwd.hpp and GLM/vec3.hpp thing? works for vec4...?
 * figure out issue with include for third party in game proj
