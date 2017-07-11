@@ -74,6 +74,9 @@ void GFXMesh::OnLoadFinished()
     OpenGLRHI::Get().EnableVertexAttributeArray(0);
     OpenGLRHI::Get().VertexAttribPointer(0, 3, EGLDataType::Float, EGLBooleanValue::False, sizeof(GFXVertex), 0);
 
+    OpenGLRHI::Get().EnableVertexAttributeArray(1);
+    OpenGLRHI::Get().VertexAttribPointer(1, 3, EGLDataType::Float, EGLBooleanValue::False, sizeof(GFXVertex), 0);
+
     mVAO->Unbind();
 }
 
@@ -93,9 +96,9 @@ void MeshData::LoadFromFile(const std::string& filePath)
                                                         |   aiProcess_GenNormals);
 
     bool bAssimpNotLoaded =
-        !AssimpScene ||
-        !AssimpScene->mRootNode ||
-        AssimpScene->mFlags == AI_SCENE_FLAGS_INCOMPLETE;
+        !AssimpScene 
+        || !AssimpScene->mRootNode 
+        || AssimpScene->mFlags == AI_SCENE_FLAGS_INCOMPLETE;
 
     if (bAssimpNotLoaded)
     {

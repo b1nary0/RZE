@@ -1,11 +1,11 @@
 #version 330
 
-layout(location = 0) in vec3 Position;
-//layout(location = 1) in vec3 Normal;
+layout(location = 0) in vec3 VertexPosition;
+//layout(location = 1) in vec3 VertexNormal;
 
 uniform mat4 UModelViewProjection;
 
 void main()
 {
-	gl_Position = UModelViewProjection * vec4(Position, 1.0f);
+	gl_Position = UModelViewProjection * vec4(VertexPosition, 1.0f);
 }

@@ -38,9 +38,8 @@ void RZE_Renderer::Render()
     while (!mRenderList.empty())
     {
         RenderItemProtocol& itemProtocol = mRenderList.front();
-        mRenderList.pop();
-
         RenderSingleItem(itemProtocol);
+        mRenderList.pop();
     }
 }
 
