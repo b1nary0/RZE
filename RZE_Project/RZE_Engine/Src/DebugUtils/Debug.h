@@ -66,5 +66,6 @@
 
 #define LOG_CONSOLE
 #define LOG_CONSOLE_ARGS
+#define LOG_CONSOLE_ANNOUNCE
 
 #endif
