@@ -63,6 +63,7 @@ void RZE_Engine::Init()
         OpenGLRHI::Get().Init(creationParams);
     }
 
+    // #TODO this should be handled better. No need to create directly here. Take a look.
     mRenderer = new RZE_Renderer();
 
     RegisterWindowEvents();

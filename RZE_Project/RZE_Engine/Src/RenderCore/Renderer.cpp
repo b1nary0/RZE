@@ -45,6 +45,7 @@ void RZE_Renderer::Render()
 
 SceneCamera& RZE_Renderer::GetSceneCamera()
 {
+    AssertNotNull(mSceneCamera);
     return *mSceneCamera;
 }
 
