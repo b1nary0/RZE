@@ -81,7 +81,7 @@ void GameApp::Start()
 
     // ALL TEST CODE
 
-    const int numEntities = 1;
+    const int numEntities = 2;
     for (int entIdx = 0; entIdx < numEntities; ++entIdx)
     {
         GameEntity* testEntity = GEngine->GetWorld()->AddEntity<GameEntity>();
@@ -91,8 +91,9 @@ void GameApp::Start()
 
         testEntity->AddComponent<TransformComponent>();
         TransformComponent* const transformComp = static_cast<TransformComponent* const>(testEntity->GetComponents()[1]);
-        transformComp->SetPosition(Vector3D(0.0f, 0.0f, -25.0f));
+        transformComp->SetPosition(Vector3D(7.0f * entIdx, entIdx * 4.0f, -25.0f));
         transformComp->SetRotation(Quaternion(Vector3D(0.0f, 0.0f, 0.0f)));
+        transformComp->SetScale(Vector3D(0.5f, 0.5f, 0.5f));
 
         mEntities.push_back(testEntity);
     }
