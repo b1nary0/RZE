@@ -25,8 +25,12 @@ GameApp::~GameApp()
 
 void GameApp::RegisterEvents(EventHandler& eventHandler)
 {
-    static float angleX = 0.0f;
-    static float angleY = 0.0f;
+    static float angleX_1 = 0.0f;
+    static float angleY_1 = 0.0f;
+
+    static float angleX_2 = 0.0f;
+    static float angleY_2 = 0.0f;
+
     static float speedX = 4.0f;
     static float speedY = 4.0f;
 
@@ -36,39 +40,78 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
         {
             if (evt.mKeyEvent.mKey == Win32KeyCode::Key_W)
             {
-                angleX += (1.0f / 60.0f) * speedX;
+                angleX_1 += (1.0f / 60.0f) * speedX;
 
                 GameEntity* entity = mEntities[0];
                 TransformComponent* const transformComp = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
 
-                transformComp->SetRotation(Quaternion(Vector3D(angleX, angleY, 0.0f)));
+                transformComp->SetRotation(Quaternion(Vector3D(angleX_1, angleY_1, 0.0f)));
             }
             else if (evt.mKeyEvent.mKey == Win32KeyCode::Key_S)
             {
-                angleX -= (1.0f / 60.0f) * speedX;
+                angleX_1 -= (1.0f / 60.0f) * speedX;
 
                 GameEntity* entity = mEntities[0];
                 TransformComponent* const transformComp = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
 
-                transformComp->SetRotation(Quaternion(Vector3D(angleX, angleY, 0.0f)));
+                transformComp->SetRotation(Quaternion(Vector3D(angleX_1, angleY_1, 0.0f)));
             }
-            else if (evt.mKeyEvent.mKey == Win32KeyCode::Key_D)
+            
+            if (evt.mKeyEvent.mKey == Win32KeyCode::Key_D)
             {
-                angleY += (1.0f / 60.0f) * speedY;
+                angleY_1 += (1.0f / 60.0f) * speedY;
 
                 GameEntity* entity = mEntities[0];
                 TransformComponent* const transformComp = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
 
-                transformComp->SetRotation(Quaternion(Vector3D(angleX, angleY, 0.0f)));
+                transformComp->SetRotation(Quaternion(Vector3D(angleX_1, angleY_1, 0.0f)));
             }
             else if (evt.mKeyEvent.mKey == Win32KeyCode::Key_A)
             {
-                angleY -= (1.0f / 60.0f) * speedY;
+                angleY_1 -= (1.0f / 60.0f) * speedY;
 
                 GameEntity* entity = mEntities[0];
                 TransformComponent* const transformComp = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
 
-                transformComp->SetRotation(Quaternion(Vector3D(angleX, angleY, 0.0f)));
+                transformComp->SetRotation(Quaternion(Vector3D(angleX_1, angleY_1, 0.0f)));
+            }
+            
+            if (evt.mKeyEvent.mKey == Win32KeyCode::Up)
+            {
+                angleX_2 += (1.0f / 60.0f) * speedX;
+
+                GameEntity* entity = mEntities[1];
+                TransformComponent* const transformComp = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
+
+                transformComp->SetRotation(Quaternion(Vector3D(angleX_2, angleY_2, 0.0f)));
+            }
+            else if (evt.mKeyEvent.mKey == Win32KeyCode::Down)
+            {
+                angleX_2 -= (1.0f / 60.0f) * speedX;
+
+                GameEntity* entity = mEntities[1];
+                TransformComponent* const transformComp = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
+
+                transformComp->SetRotation(Quaternion(Vector3D(angleX_2, angleY_2, 0.0f)));
+            }
+            
+            if (evt.mKeyEvent.mKey == Win32KeyCode::LEFT)
+            {
+                angleY_2 += (1.0f / 60.0f) * speedY;
+
+                GameEntity* entity = mEntities[1];
+                TransformComponent* const transformComp = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
+
+                transformComp->SetRotation(Quaternion(Vector3D(angleX_2, angleY_2, 0.0f)));
+            }
+            else if (evt.mKeyEvent.mKey == Win32KeyCode::Right)
+            {
+                angleY_2 -= (1.0f / 60.0f) * speedY;
+
+                GameEntity* entity = mEntities[1];
+                TransformComponent* const transformComp = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
+
+                transformComp->SetRotation(Quaternion(Vector3D(angleX_2, angleY_2, 0.0f)));
             }
         }
     });
