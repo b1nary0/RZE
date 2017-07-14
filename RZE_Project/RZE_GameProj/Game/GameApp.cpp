@@ -38,6 +38,9 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
     {
         if (evt.mInfo.mEventType == EEventType::Key)
         {
+            //
+            // First ship
+            //
             if (evt.mKeyEvent.mKey == Win32KeyCode::Key_W)
             {
                 angleX_1 += (1.0f / 60.0f) * speedX;
@@ -76,6 +79,9 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
                 transformComp->SetRotation(Quaternion(Vector3D(angleX_1, angleY_1, 0.0f)));
             }
             
+            //
+            // Second ship
+            //
             if (evt.mKeyEvent.mKey == Win32KeyCode::Up)
             {
                 angleX_2 += (1.0f / 60.0f) * speedX;
