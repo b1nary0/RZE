@@ -1,6 +1,20 @@
 #include <StdAfx.h>
 #include <Game/Components/LightSourceComponent.h>
 
+LightSourceComponent::LightSourceComponent()
+{
+    SetName("LightSourceComponent");
+}
+
+LightSourceComponent::LightSourceComponent(const std::string& name)
+{
+    SetName(name);
+}
+
+LightSourceComponent::~LightSourceComponent()
+{
+}
+
 const Vector3D& LightSourceComponent::GetPosition() const
 {
     return mPosition;

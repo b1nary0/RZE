@@ -20,6 +20,9 @@ void main()
 	float diff = max(dot(normal, lightDir), 0.0);
 	vec3 diffuse = diff * ULightColor;
 	
+	//float testFloat = 0.0f;
+	//if (length(normal) < 1) testFloat = 100.0f;
+	
 	vec3 result = (ambient + diffuse) * UFragColor.xyz;
 	OutFragmentColor = vec4(result, 1.0f);
 }

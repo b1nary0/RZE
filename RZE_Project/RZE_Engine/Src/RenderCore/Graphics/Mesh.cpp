@@ -63,19 +63,32 @@ void GFXMesh::OnLoadFinished()
 {
     for (size_t vertIdx = 0; vertIdx < mVertices.size(); vertIdx++)
     {
+        mPositions.push_back(mVertices[vertIdx].Position);
         mNormals.push_back(mVertices[vertIdx].Normal);
     }
 
+    const GLsizeiptr verticesSize = mPositions.size() * sizeof(Vector3D);
+    const GLsizeiptr normalsSize = mNormals.size() * sizeof(Vector3D);
+    const GLsizeiptr totalSize = verticesSize + normalsSize;
+
+    const GLsizeiptr normalsStart = verticesSize;
+
+    const GLvoid* normalsStartPtr = reinterpret_cast<GLvoid*>(normalsStart);
+
     mVAO->Bind();
-    mVertexVBO->SetBufferData(mVertices.data(), sizeof(GFXVertex) * mVertices.size());
+    mVertexVBO->SetBufferData(nullptr, totalSize);
+    mVertexVBO->SetBufferSubData(mPositions.data(), 0, verticesSize);
+    mVertexVBO->SetBufferSubData(mNormals.data(), verticesSize, normalsSize);
+
     mEBO->SetBufferData(mIndices.data(), sizeof(U32) * mIndices.size());
 
     // vertices
     OpenGLRHI::Get().EnableVertexAttributeArray(0);
-    OpenGLRHI::Get().VertexAttribPointer(0, 3, EGLDataType::Float, EGLBooleanValue::False, sizeof(GFXVertex), 0);
+    OpenGLRHI::Get().VertexAttribPointer(0, 3, EGLDataType::Float, EGLBooleanValue::False, sizeof(Vector3D), nullptr);
 
+    // normals
     OpenGLRHI::Get().EnableVertexAttributeArray(1);
-    OpenGLRHI::Get().VertexAttribPointer(1, 3, EGLDataType::Float, EGLBooleanValue::False, sizeof(GFXVertex), 0);
+    OpenGLRHI::Get().VertexAttribPointer(1, 3, EGLDataType::Float, EGLBooleanValue::False, sizeof(Vector3D), normalsStartPtr);
 
     mVAO->Unbind();
 }

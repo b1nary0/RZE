@@ -7,16 +7,21 @@
 
 MeshComponent::MeshComponent()
 {
-    OpenGLRHI& RHI = OpenGLRHI::Get();
-
     const char* const meshFilePath = "./../RZE_Engine/Assets/3D/shuttle.obj";
+
+    SetName("MeshComponent");
+}
+
+MeshComponent::MeshComponent(const std::string& name)
+{
+    SetName(name);
 }
 
 MeshComponent::~MeshComponent()
 {
     if (mMeshData)
     {
-        delete mMeshData;
+       delete mMeshData;
     }
 }
 

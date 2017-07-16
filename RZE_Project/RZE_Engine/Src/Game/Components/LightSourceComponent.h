@@ -7,6 +7,10 @@
 class LightSourceComponent : public IEntityComponent
 {
 public:
+    LightSourceComponent();
+    LightSourceComponent(const std::string& name);
+    virtual ~LightSourceComponent();
+
     const Vector3D& GetPosition() const;
     void SetPosition(const Vector3D& newPosition);
 

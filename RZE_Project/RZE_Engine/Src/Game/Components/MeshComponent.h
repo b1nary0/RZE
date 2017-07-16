@@ -13,6 +13,7 @@ class MeshComponent : public IEntityComponent
 {
 public:
     MeshComponent();
+    MeshComponent(const std::string& name);
     virtual ~MeshComponent();
 
     std::vector<float>& GetVertexList();

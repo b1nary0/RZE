@@ -27,12 +27,12 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
 {
     static float angleX_1 = 0.0f;
     static float angleY_1 = 0.0f;
-
-    static float angleX_2 = 0.0f;
-    static float angleY_2 = 0.0f;
-
+    
     static float speedX = 4.0f;
     static float speedY = 4.0f;
+    static float speedZ = 4.0f;
+
+    static float deltaT = (1.0f / 60.0f);
 
     Functor<void, const Event&> keyEvent([this](const Event& evt)
     {
@@ -80,44 +80,54 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
             }
             
             //
-            // Second ship
+            // MainTestLight
             //
             if (evt.mKeyEvent.mKey == Win32KeyCode::Up)
             {
-                angleX_2 += (1.0f / 60.0f) * speedX;
+                TransformComponent* const transformComp = static_cast<TransformComponent* const>(mLightEntity->GetComponents()[1]);
 
-                GameEntity* entity = mEntities[1];
-                TransformComponent* const transformComp = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
+                Vector3D currPos = transformComp->GetPosition();
+                Vector3D newPos = currPos + Vector3D(0.0f, (2.0f * speedY) * deltaT, 0.0f);
 
-                transformComp->SetRotation(Quaternion(Vector3D(angleX_2, angleY_2, 0.0f)));
+                transformComp->SetPosition(newPos);
             }
             else if (evt.mKeyEvent.mKey == Win32KeyCode::Down)
             {
-                angleX_2 -= (1.0f / 60.0f) * speedX;
+                TransformComponent* const transformComp = static_cast<TransformComponent* const>(mLightEntity->GetComponents()[1]);
 
-                GameEntity* entity = mEntities[1];
-                TransformComponent* const transformComp = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
+                Vector3D currPos = transformComp->GetPosition();
+                Vector3D newPos = currPos + Vector3D(0.0f, (-2.0f * speedY) * deltaT, 0.0f);
 
-                transformComp->SetRotation(Quaternion(Vector3D(angleX_2, angleY_2, 0.0f)));
+                transformComp->SetPosition(newPos);
             }
             
             if (evt.mKeyEvent.mKey == Win32KeyCode::LEFT)
             {
-                angleY_2 += (1.0f / 60.0f) * speedY;
+                TransformComponent* const transformComp = static_cast<TransformComponent* const>(mLightEntity->GetComponents()[1]);
 
-                GameEntity* entity = mEntities[1];
-                TransformComponent* const transformComp = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
+                Vector3D currPos = transformComp->GetPosition();
+                Vector3D newPos = currPos + Vector3D((-2.0f * speedX) * deltaT, 0.0f, 0.0f);
 
-                transformComp->SetRotation(Quaternion(Vector3D(angleX_2, angleY_2, 0.0f)));
+                transformComp->SetPosition(newPos);
             }
             else if (evt.mKeyEvent.mKey == Win32KeyCode::Right)
             {
-                angleY_2 -= (1.0f / 60.0f) * speedY;
+                TransformComponent* const transformComp = static_cast<TransformComponent* const>(mLightEntity->GetComponents()[1]);
 
-                GameEntity* entity = mEntities[1];
-                TransformComponent* const transformComp = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
+                Vector3D currPos = transformComp->GetPosition();
+                Vector3D newPos = currPos + Vector3D((2.0f * speedX) * deltaT, 0.0f, 0.0f);
 
-                transformComp->SetRotation(Quaternion(Vector3D(angleX_2, angleY_2, 0.0f)));
+                transformComp->SetPosition(newPos);
+            }
+
+            if (evt.mKeyEvent.mKey == Win32KeyCode::Space)
+            {
+                TransformComponent* const transformComp = static_cast<TransformComponent* const>(mLightEntity->GetComponents()[1]);
+
+                Vector3D currPos = transformComp->GetPosition();
+                Vector3D newPos = currPos + Vector3D(0.0f, 0.0f, (2.0f * speedZ) * deltaT);
+
+                transformComp->SetPosition(newPos);
             }
         }
     });
@@ -167,8 +177,8 @@ void GameApp::Start()
     TransformComponent* const lightTransform = static_cast<TransformComponent* const>(mLightEntity->GetComponents()[1]);
     lightTransform->SetPosition(Vector3D(0.0f, 3.0f, -10.0f));
 
-    mLightEntity->AddComponent<LightSourceComponent>();
-    LightSourceComponent* const lightComponent = static_cast<LightSourceComponent* const>(mLightEntity->GetComponents()[0]);
+    mLightEntity->AddComponent<LightSourceComponent>("MainTestLight");
+    LightSourceComponent* const lightComponent = static_cast<LightSourceComponent* const>(mLightEntity->GetComponents()[2]);
     lightComponent->SetColor(Vector3D(1.0f, 1.0f, 1.0f));
     lightComponent->SetStrength(0.1f);
 }

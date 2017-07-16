@@ -27,7 +27,6 @@ public:
     OpenGLVAO* GetVAO() const;
     OpenGLEBO* GetEBO();
     OpenGLVBO* GetVertexVBO();
-    OpenGLVBO* GetNormalVBO();
 
     std::vector<GFXVertex> GetVertexList();
     std::vector<U32> GetIndices();
@@ -41,6 +40,7 @@ private:
     OpenGLEBO* mEBO;
 
     std::vector<GFXVertex> mVertices;
+    std::vector<Vector3D> mPositions;
     std::vector<Vector3D> mNormals;
     std::vector<U32> mIndices;
 };

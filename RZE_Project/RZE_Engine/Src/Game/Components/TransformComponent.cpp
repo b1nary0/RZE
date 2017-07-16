@@ -7,6 +7,16 @@ TransformComponent::TransformComponent()
 	, mScale(1.0f, 1.0f, 1.0f)
 	, mRotation(Vector3D())
 {
+    SetName("TransformComponent");
+}
+
+TransformComponent::TransformComponent(const std::string& name)
+{
+    SetName(name);
+}
+
+TransformComponent::~TransformComponent()
+{
 }
 
 Vector3D& TransformComponent::GetPosition()

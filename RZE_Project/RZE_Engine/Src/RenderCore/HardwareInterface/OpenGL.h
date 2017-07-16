@@ -262,6 +262,7 @@ public:
 
     virtual void SetBufferUsageMode(const U32 newBufferUsageMode) = 0;
     virtual void SetBufferData(const void* const data, const U32 size) = 0;
+    virtual void SetBufferSubData(const void* const data, const GLsizeiptr offset, const U32 size) = 0;
     virtual void SetBufferTarget(const U32 newBufferTarget) = 0;
 
 protected:
@@ -284,6 +285,7 @@ public:
 
     virtual void SetBufferUsageMode(const U32 newBufferUsageMode) override {}
     virtual void SetBufferData(const void* const data, const U32 size) override {}
+    virtual void SetBufferSubData(const void* const data, const GLsizeiptr offset, const U32 size) override {}
     virtual void SetBufferTarget(const U32 newBufferTarget) override {}
 
 private:
@@ -303,6 +305,7 @@ public:
 
     void SetBufferTarget(const U32 newBufferTarget) override;
     void SetBufferData(const void* const data, const U32 size) override;
+    void SetBufferSubData(const void* const data, const GLsizeiptr offset, const U32 size) override;
     void SetBufferUsageMode(const U32 newBufferUsageMode) override;
 
 private:
@@ -323,6 +326,7 @@ public:
 
     void SetBufferTarget(const U32 newBufferTarget) override;
     void SetBufferData(const void* const data, const U32 size) override;
+    void SetBufferSubData(const void* const data, const GLsizeiptr offset, const U32 size) override {}
     void SetBufferUsageMode(const U32 newBufferUsageMode) override;
 
 private:
@@ -369,6 +373,7 @@ public:
     void BindBuffer(const GLuint target, const GLuint bufferObjectHandle) const;
     void DeleteBuffer(GLuint bufferCount, GLuint* bufferHandle);
     void SetBufferData(const GLuint target, const GLuint size, const void* const data, const GLuint bufferUsage) const;
+    void SetBufferSubData(const GLenum target, const GLintptr offset, const GLsizeiptr size, const GLvoid* data) const;
 
     void EnableVertexAttributeArray(const GLuint index) const;
     void VertexAttribPointer(const GLuint index, const GLint size, const GLuint type, const GLboolean normalized, const GLuint stride, const void* const pointer) const;

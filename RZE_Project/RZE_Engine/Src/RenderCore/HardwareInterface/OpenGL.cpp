@@ -104,11 +104,15 @@ void OpenGLRHI::DeleteBuffer(GLuint bufferCount, GLuint* bufferHandle)
 
 void OpenGLRHI::SetBufferData(const GLuint target, const GLuint size, const void* const data, const GLuint bufferUsage) const
 {
-    AssertNotNull(data);
     AssertExpr(size > 0);
     // @note if this doesnt work check the const void* const signature because its possible under the hood it no likey
     glBufferData(target, size, data, bufferUsage);
-    glGetError();
+    AssertExpr(glGetError() == GL_NO_ERROR);
+}
+
+void OpenGLRHI::SetBufferSubData(const GLenum target, const GLintptr offset, const GLsizeiptr size, const GLvoid* data) const
+{
+    glBufferSubData(target, offset, size, data);
     AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
@@ -312,8 +316,12 @@ void OpenGLVBO::SetBufferUsageMode(const U32 newBufferUsageMode)
 
 void OpenGLVBO::SetBufferData(const void* const data, const U32 size)
 {
-    AssertNotNull(data);
     OpenGLRHI::Get().SetBufferData(mBufferTarget, size, data, mBufferUsageMode);
+}
+
+void OpenGLVBO::SetBufferSubData(const void* const data, const GLsizeiptr offset, const U32 size)
+{
+    OpenGLRHI::Get().SetBufferSubData(mBufferTarget, offset, size, data);
 }
 
 void OpenGLVBO::Generate()
@@ -411,7 +419,6 @@ void OpenGLEBO::SetBufferTarget(const U32 newBufferTarget)
 
 void OpenGLEBO::SetBufferData(const void* const data, const U32 size)
 {
-    AssertNotNull(data);
     OpenGLRHI::Get().SetBufferData(mBufferTarget, size, data, mBufferUsageMode);
 }
 

@@ -15,10 +15,10 @@ public:
 
 	const ComponentList& GetComponents() { return mComponents; }
 
-	template<class TComponent>
-	void AddComponent()
+	template<class TComponent, class... Args>
+	void AddComponent(Args... args)
 	{
-		IEntityComponent* component = new TComponent();
+		IEntityComponent* component = new TComponent(args...);
 		mComponents.push_back(component);
 	}
 
