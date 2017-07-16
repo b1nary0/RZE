@@ -225,7 +225,7 @@ void GameApp::CreateLampObjects(MeshData* const meshData)
 {
 
     //
-    // 1
+    // 1 - NW
     //
     GameEntity* lampEntity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
 
@@ -241,7 +241,7 @@ void GameApp::CreateLampObjects(MeshData* const meshData)
     mEntities.push_back(lampEntity);
 
     //
-    // 2
+    // 2 - NE
     //
     lampEntity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
 
@@ -257,7 +257,7 @@ void GameApp::CreateLampObjects(MeshData* const meshData)
     mEntities.push_back(lampEntity);
 
     //
-    // 3
+    // 3 - SW
     //
     lampEntity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
 
@@ -273,7 +273,7 @@ void GameApp::CreateLampObjects(MeshData* const meshData)
     mEntities.push_back(lampEntity);
 
     //
-    // 4
+    // 4 - SE
     //
     lampEntity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
 
