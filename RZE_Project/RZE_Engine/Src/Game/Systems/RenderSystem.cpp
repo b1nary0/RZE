@@ -2,6 +2,7 @@
 #include <Game/Systems/RenderSystem.h>
 
 #include <Game/ECS/Entity.h>
+#include <Game/Components/LightSourceComponent.h>
 #include <Game/Components/MeshComponent.h>
 #include <Game/Components/TransformComponent.h>
 
@@ -43,6 +44,12 @@ void RenderSystem::Update()
             meshComponent->SetShaderGroup(mShaderGroup);
         }
 
+        LightSourceComponent* lightComponent = nullptr;
+        if (entity->GetComponents().size() == 3)
+        {
+            lightComponent = static_cast<LightSourceComponent*>(entity->GetComponents()[2]);
+        }
+
         TransformComponent* const transform = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
         SceneCamera& renderCam = renderer->GetSceneCamera();
 
@@ -55,8 +62,20 @@ void RenderSystem::Update()
 
         RZE_Renderer::RenderItemProtocol renderItem;
         renderItem.mShaderGroup = meshComponent->GetShaderGroup();
-        renderItem.mModelViewProjection = MVP;
+        renderItem.mModelMat = modelMat;
+        renderItem.mProjectionMat = renderCam.GetProjectionMat();
+        renderItem.mViewMat = renderCam.GetViewMat();
         renderItem.mMeshData = meshComponent->GetMeshData();
+
+        if (lightComponent)
+        {
+            RZE_Renderer::LightItemProtocol lightItem;
+            lightItem.mLightColor = lightComponent->GetColor();
+            lightItem.mLightPos = lightComponent->GetPosition();
+            lightItem.mLightStrength = lightComponent->GetStrength();
+
+            renderer->AddLightItem(lightItem);
+        }
 
         if (renderer)
         {
@@ -87,8 +106,15 @@ void RenderSystem::CreateTestShaderStuff()
     mShaderGroup->AddShader(EGFXShaderType::Vertex, vertShader);
     mShaderGroup->AddShader(EGFXShaderType::Fragment, fragShader);
 
-    mShaderGroup->AddUniform("UModelViewProjection");
+    mShaderGroup->AddUniform("UModelMat");
+    mShaderGroup->AddUniform("UProjectionMat");
+    mShaderGroup->AddUniform("UViewMat");
     mShaderGroup->AddUniform("UFragColor");
+
+     mShaderGroup->AddUniform("ULightPosition");
+     mShaderGroup->AddUniform("UViewPosition");
+     mShaderGroup->AddUniform("ULightColor");
+     mShaderGroup->AddUniform("ULightStrength");
 
     mShaderGroup->GenerateShaderProgram();
 }

@@ -2,8 +2,8 @@
 
 #include <vector>
 
-#include <RenderCore/HardwareInterface/OpenGL.h>
 #include <RenderCore/SceneCamera.h>
+#include <RenderCore/HardwareInterface/OpenGL.h>
 
 class MeshData;
 class GFXShaderGroup;
@@ -13,15 +13,28 @@ class RZE_Renderer
 public:
     typedef struct RenderItemProtocol
     {
-        GFXShaderGroup* mShaderGroup;
-        Matrix4x4 mModelViewProjection;
-        MeshData* mMeshData;
+        RenderItemProtocol();
+
+        GFXShaderGroup*     mShaderGroup;
+        Matrix4x4           mModelMat;
+        Matrix4x4           mProjectionMat;
+        Matrix4x4           mViewMat;
+        MeshData*           mMeshData;
     } RenderItemProtocol;
+
+    typedef struct LightItemProtocol
+    {
+        Vector3D            mLightColor;
+        Vector3D            mLightPos;
+        float               mLightStrength;
+    } LightItemProtocol;
 
 public:
     RZE_Renderer();
 
     void AddRenderItem(const RenderItemProtocol& itemProtocol);
+    void AddLightItem(const LightItemProtocol& itemProtocol);
+
     void Render();
 
     SceneCamera& GetSceneCamera();
@@ -33,4 +46,5 @@ private:
     SceneCamera* mSceneCamera;
 
     std::queue<RenderItemProtocol> mRenderList;
+    std::vector<LightItemProtocol> mLightingList;
 };

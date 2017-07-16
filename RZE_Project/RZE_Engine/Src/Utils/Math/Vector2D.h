@@ -1,6 +1,6 @@
 #pragma once
 
-#include <GLM/fwd.hpp>
+#include <GLM/vec2.hpp>
 
 class Vector2D
 {

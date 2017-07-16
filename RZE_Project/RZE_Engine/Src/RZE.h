@@ -3,4 +3,4 @@
 #include "EngineCore/Engine.h"
 #include "Game/GameWorld.h"
 
-static RZE_Engine* GEngine = RZE_Engine::Get();
+//static RZE_Engine* GEngine = RZE_Engine::Get();

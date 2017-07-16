@@ -9,7 +9,7 @@ int main(void)
 		return new GameApp();
 	});
 
-	GEngine->Run(gameCreateFunc);
+    RZE_Engine::Get()->Run(gameCreateFunc);
 
 	//getchar();
 	return 0;

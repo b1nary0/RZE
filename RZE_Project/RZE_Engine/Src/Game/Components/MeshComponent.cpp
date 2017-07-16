@@ -10,8 +10,6 @@ MeshComponent::MeshComponent()
     OpenGLRHI& RHI = OpenGLRHI::Get();
 
     const char* const meshFilePath = "./../RZE_Engine/Assets/3D/shuttle.obj";
-    mMeshData = new MeshData();
-    mMeshData->LoadFromFile(meshFilePath);
 }
 
 MeshComponent::~MeshComponent()

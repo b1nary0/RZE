@@ -2,8 +2,6 @@
 
 #include "Game/ECS/EntitySystem.h"
 
-class RZE_Renderer;
-class MeshComponent;
 class GFXShaderGroup;
 
 class RenderSystem : public IEntitySystem
@@ -20,5 +18,4 @@ private:
     void CreateTestShaderStuff();
 
     GFXShaderGroup* mShaderGroup;
-    //RZE_Renderer* mRenderer;
 };

@@ -6,10 +6,10 @@
 
 // @todo:josh this is where the weird include-before issue is
 #include <Events/EventHandler.h>
+
+#include <EngineCore/Config/EngineConfig.h>
 #include <EngineCore/Input/InputHandler.h>
 
-class WindowSettings;
-class EngineConfig;
 class GameWorld;
 class RZE_Renderer;
 class Win32Window;
@@ -74,5 +74,6 @@ private:
 
     EngineConfig* mEngineConfig;
 
+    bool bIsInitialized;
 	bool bShouldExit;
 };

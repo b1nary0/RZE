@@ -355,6 +355,11 @@ public:
     void EnableCapability(const GLuint capability);
 
     //
+    // Helpers
+    //
+    void LogShaderInfo(const GLuint shaderProgramID);
+
+    //
     // Buffers
     //
     void GenVertexArrays(const GLuint arrayCount, GLuint* outBufferHandle) const;
@@ -383,7 +388,7 @@ public:
     void SetShaderSource(const GLuint shaderID, const GLuint count, const GLchar* sourceCode, const GLint* length) const;
     void IsShader(const GLuint shaderID, GLboolean& outResult) const;
     void IsShaderProgram(const GLuint shaderProgramID, GLboolean& outResult) const;
-    void LinkShaderProgram(const GLuint mShaderProgramID) const;
+    void LinkShaderProgram(const GLuint shaderProgramID) const;
     void GetProgramiv(const GLuint shaderProgramID, const EGLShaderProgramStatusParam::Value programStatusParam, GLint* programLinkStatus) const;
     void GetShaderiv(const GLuint shaderID, const GLenum shaderStatusParam, GLint* const params) const;
     void UniformLocation(const GLuint shaderProgramID, const GLchar* uniformName, GLint& uniformLocation) const;
@@ -392,7 +397,9 @@ public:
     void GetShaderInfoLog(GLuint shader, GLsizei maxLength, GLsizei* length, GLchar* infoLog) const;
 
     void SetUniformInt(const GLint uniformLocation, const int value) const;
+    void SetUniformFloat(const GLint uniformLocation, const float value) const;
     void SetUniformMat4x4(const GLint uniformLocation, const GLsizei count, const GLboolean transpose, const GLfloat* valuePtr) const;
+    VOID SetUniformVec3D(const GLint uniformLocation, const float x, const float y, const float z) const;
     void SetUniformVec4D(const GLint uniformLocation, const float x, const float y, const float z, const float a) const;
 
 private:

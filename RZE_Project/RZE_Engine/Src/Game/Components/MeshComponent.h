@@ -2,7 +2,8 @@
 
 #include <Game/ECS/EntityComponent.h>
 
-class MeshData;
+#include <RenderCore/Graphics/Mesh.h>
+
 class GFXShaderGroup;
 class OpenGLVAO;
 class OpenGLVBO;
@@ -15,13 +16,13 @@ public:
     virtual ~MeshComponent();
 
     std::vector<float>& GetVertexList();
-    void SetMeshData(MeshData* const meshData);
 
     // @todo this will be pulled out eventually and handled better.. or should be lol
     GFXShaderGroup* const GetShaderGroup();
     void SetShaderGroup(GFXShaderGroup* const shaderGroup);
 
     MeshData* const GetMeshData() const;
+    void SetMeshData(MeshData* const meshData);
 
 private:
 

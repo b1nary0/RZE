@@ -130,26 +130,45 @@ void GameApp::Start()
 
     // ALL TEST CODE
 
+    const char* const shuttleFilePath = "./../RZE_Engine/Assets/3D/shuttle.obj";
+    const char* const cubeFilePath = "./../RZE_Engine/Assets/3D/cube.obj";
+
+    MeshData* shuttleMesh = new MeshData();
+    shuttleMesh->LoadFromFile(shuttleFilePath);
+
+    MeshData* cubeMesh = new MeshData();
+    cubeMesh->LoadFromFile(cubeFilePath);
+
     const int numEntities = 2;
     for (int entIdx = 0; entIdx < numEntities; ++entIdx)
     {
-        GameEntity* testEntity = GEngine->GetWorld()->AddEntity<GameEntity>();
+        GameEntity* testEntity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
 
         testEntity->AddComponent<MeshComponent>();
         MeshComponent* const meshComponent = static_cast<MeshComponent* const>(testEntity->GetComponents()[0]);
+        meshComponent->SetMeshData(shuttleMesh);
 
         testEntity->AddComponent<TransformComponent>();
         TransformComponent* const transformComp = static_cast<TransformComponent* const>(testEntity->GetComponents()[1]);
-        transformComp->SetPosition(Vector3D(7.0f * entIdx, entIdx * 4.0f, -25.0f));
+        transformComp->SetPosition(Vector3D(entIdx * 7.0f, entIdx * 4.0f, -25.0f));
         transformComp->SetRotation(Quaternion(Vector3D(0.0f, 0.0f, 0.0f)));
         transformComp->SetScale(Vector3D(0.5f, 0.5f, 0.5f));
 
         mEntities.push_back(testEntity);
     }
 
-//      mLightEntity = GEngine->GetWorld()->AddEntity<GameEntity>();
-//      mLightEntity->AddComponent<LightSourceComponent>();
-//      LightSourceComponent* const lightComponent = static_cast<LightSourceComponent* const>(mLightEntity->GetComponents()[0]);
+    mLightEntity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
+
+    mLightEntity->AddComponent<MeshComponent>();
+    MeshComponent* const lightMesh = static_cast<MeshComponent* const>(mLightEntity->GetComponents()[0]);
+    lightMesh->SetMeshData(cubeMesh);
+
+    mLightEntity->AddComponent<TransformComponent>();
+    TransformComponent* const lightTransform = static_cast<TransformComponent* const>(mLightEntity->GetComponents()[1]);
+    lightTransform->SetPosition(Vector3D(0.0f, 3.0f, -10.0f));
+
+    mLightEntity->AddComponent<LightSourceComponent>();
+    LightSourceComponent* const lightComponent = static_cast<LightSourceComponent* const>(mLightEntity->GetComponents()[0]);
 }
 
 void GameApp::Update()

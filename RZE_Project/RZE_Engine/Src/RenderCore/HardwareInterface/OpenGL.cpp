@@ -55,6 +55,20 @@ void OpenGLRHI::EnableCapability(const GLuint capability)
     AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
+void OpenGLRHI::LogShaderInfo(const GLuint shaderProgramID)
+{
+    GLint length;
+    GetShaderiv(shaderProgramID, GL_INFO_LOG_LENGTH, &length);
+
+    GLchar* log = (GLchar*)malloc(length);
+    GetShaderInfoLog(shaderProgramID, length, &length, log);
+
+    if (length > 1)
+    {
+        LOG_CONSOLE_ARGS("%s", log);
+    }
+}
+
 void OpenGLRHI::GenVertexArrays(const GLuint arrayCount, GLuint* outBufferHandle) const
 {
     AssertExpr(arrayCount > 0);
@@ -183,9 +197,9 @@ void OpenGLRHI::IsShaderProgram(const GLuint shaderProgramID, GLboolean& outResu
     AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
-void OpenGLRHI::LinkShaderProgram(const GLuint mShaderProgramID) const
+void OpenGLRHI::LinkShaderProgram(const GLuint shaderProgramID) const
 {
-    glLinkProgram(mShaderProgramID);
+    glLinkProgram(shaderProgramID);
     AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
@@ -228,11 +242,29 @@ void OpenGLRHI::SetUniformInt(const GLint uniformLocation, const int value) cons
     }
 }
 
+void OpenGLRHI::SetUniformFloat(const GLint uniformLocation, const float value) const
+{
+    if (uniformLocation >= 0)
+    {
+        glUniform1f(uniformLocation, value);
+        AssertExpr(glGetError() == GL_NO_ERROR);
+    }
+}
+
 void OpenGLRHI::SetUniformMat4x4(const GLint uniformLocation, const GLsizei count, const GLboolean transpose, const GLfloat* valuePtr) const
 {
     if (uniformLocation >= 0)
     {
         glUniformMatrix4fv(uniformLocation, count, transpose, valuePtr);
+        AssertExpr(glGetError() == GL_NO_ERROR);
+    }
+}
+
+VOID OpenGLRHI::SetUniformVec3D(const GLint uniformLocation, const float x, const float y, const float z) const
+{
+    if (uniformLocation >= 0)
+    {
+        glUniform3f(uniformLocation, x, y, z);
         AssertExpr(glGetError() == GL_NO_ERROR);
     }
 }

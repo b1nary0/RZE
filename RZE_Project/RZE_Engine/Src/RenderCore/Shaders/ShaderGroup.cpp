@@ -4,6 +4,7 @@
 #include <RenderCore/HardwareInterface/OpenGL.h>
 
 #include <Utils/Math/Matrix4x4.h>
+#include <Utils/Math/Vector3D.h>
 #include <Utils/Math/Vector4D.h>
 
 GFXShaderGroup::GFXShaderGroup(const std::string& groupName)
@@ -59,6 +60,20 @@ void GFXShaderGroup::SetUniformMatrix4x4(const std::string& uniformName, const M
     }
 }
 
+void GFXShaderGroup::SetUniformVector3D(const std::string& uniformName, const Vector3D& vec)
+{
+    const bool bUniformExists = mUniformMap.count(uniformName) == 1;
+    if (bUniformExists)
+    {
+        int uniformLocation = mUniformMap[uniformName];
+        OpenGLRHI::Get().SetUniformVec3D(uniformLocation, vec.X(), vec.Y(), vec.Z());
+    }
+    else
+    {
+        LOG_CONSOLE_ARGS("Uniform [%s] on shader group [%s] does not exist or has not been handled.", uniformName.c_str(), mGroupName.c_str());
+    }
+}
+
 void GFXShaderGroup::SetUniformVector4D(const std::string& uniformName, const Vector4D& vec)
 {
     const bool bUniformExists = mUniformMap.count(uniformName) == 1;
@@ -80,6 +95,20 @@ void GFXShaderGroup::SetUniformInt(const std::string& uniformName, int value)
     {
         int uniformLocation = mUniformMap[uniformName];
         OpenGLRHI::Get().SetUniformInt(uniformLocation, value);
+    }
+    else
+    {
+        LOG_CONSOLE_ARGS("Uniform [%s] on shader group [%s] does not exist or has not been handled.", uniformName.c_str(), mGroupName.c_str());
+    }
+}
+
+void GFXShaderGroup::SetUniformFloat(const std::string& uniformName, float value)
+{
+    const bool bUniformExists = mUniformMap.count(uniformName) == 1;
+    if (bUniformExists)
+    {
+        int uniformLocation = mUniformMap[uniformName];
+        OpenGLRHI::Get().SetUniformFloat(uniformLocation, value);
     }
     else
     {

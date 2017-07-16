@@ -68,9 +68,10 @@ bool GFXShader::Compile()
 		int compileResult = -1;
 		openGL.GetShaderiv(GetShaderID(), EGLShaderStatusParam::CompileStatus, &compileResult);
 
-		if (compileResult < 0)
+		if (compileResult == EGLBooleanValue::False)
 		{
 			LOG_CONSOLE_ARGS("GFXShader::Compile - Error compiling [%s]", GetShaderName().c_str());
+            openGL.LogShaderInfo(mShaderID);
 		}
 		else
 		{

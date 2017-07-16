@@ -1,7 +1,6 @@
 #include <StdAfx.h>
 
 #include <EngineCore/Engine.h>
-#include <EngineCore/Config/EngineConfig.h>
 
 #include <DebugUtils/Debug.h>
 
@@ -24,8 +23,7 @@ RZE_Engine::RZE_Engine()
     mApplication        = nullptr;
 
     bShouldExit         = false;
-
-    Init();
+    bIsInitialized      = false;
 }
 
 RZE_Engine::~RZE_Engine()
@@ -36,15 +34,20 @@ RZE_Engine::~RZE_Engine()
 
 void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 {
-    AssertNotNull(createGameCallback);
-    PostInit(createGameCallback);
+    Init();
 
-    while (!bShouldExit)
+    if (bIsInitialized)
     {
-        Update();
-    }
+        AssertNotNull(createGameCallback);
+        PostInit(createGameCallback);
 
-    BeginShutDown();
+        while (!bShouldExit)
+        {
+            Update();
+        }
+
+        BeginShutDown();
+    }
 }
 
 void RZE_Engine::Init()
@@ -70,6 +73,8 @@ void RZE_Engine::Init()
     RegisterInputEvents();
 
     mInputHandler.RegisterEvents(mEventHandler);
+
+    bIsInitialized = true;
 }
 
 void RZE_Engine::InitWorld()
