@@ -12,8 +12,8 @@ RZE_Renderer::RZE_Renderer()
     WindowSettings& windowSettings = RZE_Engine::Get()->GetWindowSettings();
 
     SceneCameraProps cameraProps;
-    cameraProps.Position = Vector3D(0.0f, -4.0f, 10.0f); 
-    cameraProps.Direction = Vector3D(0.0f, 0.0f, -1.0f);
+    cameraProps.Position = Vector3D(0.0f, 5.0f, 10.0f); 
+    cameraProps.Direction = Vector3D(0.0f, -2.5f, -10.0f);
     cameraProps.UpDir = Vector3D(0.0f, 1.0f, 0.0f);
     cameraProps.FOV = 45.0f;
     cameraProps.AspectRatio = windowSettings.GetDimensions().X() / windowSettings.GetDimensions().Y();
@@ -70,7 +70,7 @@ void RZE_Renderer::RenderSingleItem(RenderItemProtocol& renderItem)
         renderItem.mShaderGroup->SetUniformMatrix4x4("UProjectionMat", renderItem.mProjectionMat);
         renderItem.mShaderGroup->SetUniformMatrix4x4("UViewMat", renderItem.mViewMat);
 
-        renderItem.mShaderGroup->SetUniformVector4D("UFragColor", Vector4D(0.0f, 0.0f, 1.0f, 1.0f));
+        renderItem.mShaderGroup->SetUniformVector4D("UFragColor", Vector4D(0.25f, 0.25f, 0.25f, 1.0f));
 
         for (auto& light : mLightingList)
         {

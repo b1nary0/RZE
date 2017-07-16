@@ -5,6 +5,7 @@
 #include <Application.h>
 
 class GameEntity;
+class MeshData;
 
 class GameApp : public RZE_Game
 {
@@ -19,6 +20,11 @@ public:
     virtual void Update() override;
 
 private:
+    void CreateLight(MeshData* const meshData);
+    void CreateGround(MeshData* const meshData);
+    void CreateMiniCooper(MeshData* const meshData);
+    void CreateLampObjects(MeshData* const meshData);
+
     GameEntity* mLightEntity;
     std::vector<GameEntity*> mEntities;
 };

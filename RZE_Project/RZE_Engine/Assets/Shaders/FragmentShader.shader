@@ -20,9 +20,12 @@ void main()
 	float diff = max(dot(normal, lightDir), 0.0);
 	vec3 diffuse = diff * ULightColor;
 	
-	//float testFloat = 0.0f;
-	//if (length(normal) < 1) testFloat = 100.0f;
+	float specularStrength = 0.75f;
+    vec3 viewDir = normalize(UViewPosition - FragPos);
+    vec3 reflectDir = reflect(-lightDir, normal);  
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 64);
+    vec3 specular = specularStrength * spec * ULightColor;  
 	
-	vec3 result = (ambient + diffuse) * UFragColor.xyz;
+	vec3 result = (ambient + diffuse + specular) * UFragColor.xyz;
 	OutFragmentColor = vec4(result, 1.0f);
 }
