@@ -1,6 +1,7 @@
 #version 330
 
-in vec4 FragmentColor;
+in vec3 Normal;
+in vec3 FragPos;
 
 out vec4 OutFragmentColor;
 
@@ -13,8 +14,12 @@ uniform vec4 UFragColor;
 
 void main()
 {
-	float ambientStrength = 0.1;
-	vec3 ambient = ambientStrength * ULightColor;
+	vec3 ambient = ULightStrength * ULightColor;
+	vec3 normal = normalize(Normal);
+	vec3 lightDir = normalize(ULightPosition - FragPos);
+	float diff = max(dot(normal, lightDir), 0.0);
+	vec3 diffuse = diff * ULightColor;
 	
-	OutFragmentColor = UFragColor;
+	vec3 result = (ambient + diffuse) * UFragColor.xyz;
+	OutFragmentColor = vec4(result, 1.0f);
 }

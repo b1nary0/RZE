@@ -48,6 +48,8 @@ void RZE_Renderer::Render()
         RenderSingleItem(itemProtocol);
         mRenderList.pop();
     }
+
+    mLightingList.clear();
 }
 
 SceneCamera& RZE_Renderer::GetSceneCamera()
@@ -62,12 +64,13 @@ void RZE_Renderer::RenderSingleItem(RenderItemProtocol& renderItem)
     // @implementation should we have this type of assumption?
     if (renderItem.mShaderGroup)
     {
-        renderItem.mShaderGroup->Use();
+        renderItem.mShaderGroup->Use();        
+        
         renderItem.mShaderGroup->SetUniformMatrix4x4("UModelMat", renderItem.mModelMat);
         renderItem.mShaderGroup->SetUniformMatrix4x4("UProjectionMat", renderItem.mProjectionMat);
         renderItem.mShaderGroup->SetUniformMatrix4x4("UViewMat", renderItem.mViewMat);
 
-        renderItem.mShaderGroup->SetUniformVector4D("UFragColor", Vector4D(0.0f, 0.0f, 0.25f, 1.0f));
+        renderItem.mShaderGroup->SetUniformVector4D("UFragColor", Vector4D(0.0f, 0.0f, 1.0f, 1.0f));
 
         for (auto& light : mLightingList)
         {

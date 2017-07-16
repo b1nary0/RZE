@@ -14,6 +14,10 @@ MeshComponent::MeshComponent()
 
 MeshComponent::~MeshComponent()
 {
+    if (mMeshData)
+    {
+        delete mMeshData;
+    }
 }
 
 std::vector<float>& MeshComponent::GetVertexList()

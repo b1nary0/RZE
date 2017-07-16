@@ -71,7 +71,7 @@ void RenderSystem::Update()
         {
             RZE_Renderer::LightItemProtocol lightItem;
             lightItem.mLightColor = lightComponent->GetColor();
-            lightItem.mLightPos = lightComponent->GetPosition();
+            lightItem.mLightPos = transform->GetPosition();
             lightItem.mLightStrength = lightComponent->GetStrength();
 
             renderer->AddLightItem(lightItem);
