@@ -11,9 +11,6 @@
 
 #include <Windowing/WinKeyCodes.h>
 
-#include <RenderCore/Shaders/Shader.h>
-#include <RenderCore/Shaders/ShaderGroup.h>
-
 GameApp::GameApp()
     : RZE_Game()
 {

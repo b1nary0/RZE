@@ -16,7 +16,7 @@ GFXShaderGroup::~GFXShaderGroup()
 {
 }
 
-bool GFXShaderGroup::AddShader(U32 shaderType, GFXShader* const shader)
+bool GFXShaderGroup::AddShader(EShaderIndex::T shaderType, GFXShader* const shader)
 {
     if (!mShaders[shaderType])
     {

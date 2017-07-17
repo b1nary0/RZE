@@ -4,7 +4,7 @@
 
 #include "RenderCore/Shaders/Shader.h"
 
-GFXShader::GFXShader(const U32 shaderType, const std::string& shaderName, const std::string& sourceCode)
+GFXShader::GFXShader(const EGLShaderType::T shaderType, const std::string& shaderName, const std::string& sourceCode)
 	: mShaderType(shaderType)
 	, mShaderName(shaderName)
 	, mSourceCode(sourceCode)
@@ -29,7 +29,7 @@ U32 GFXShader::GetShaderID() const
 	return mShaderID;
 }
 
-U32 GFXShader::GetShaderType() const
+EGLShaderType::T GFXShader::GetShaderType() const
 {
 	return mShaderType;
 }
@@ -48,7 +48,7 @@ void GFXShader::Create()
 {
 	if (!bIsCreated)
 	{
-		AssertExpr(GetShaderType() != EGFXShaderType::Invalid);
+		AssertExpr(GetShaderType() != EGLShaderType::Invalid);
 		OpenGLRHI::Get().CreateShader(GetShaderType(), mShaderID);
 
 		//@todo:josh this may need better handling here... can CreateShader fail?

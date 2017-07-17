@@ -58,7 +58,7 @@ void OpenGLRHI::EnableCapability(const GLuint capability)
 void OpenGLRHI::LogShaderInfo(const GLuint shaderProgramID)
 {
     GLint length;
-    GetShaderiv(shaderProgramID, GL_INFO_LOG_LENGTH, &length);
+    GetShaderiv(shaderProgramID, EGLShaderStatusParam::InfoLogLength, &length);
 
     GLchar* log = (GLchar*)malloc(length);
     GetShaderInfoLog(shaderProgramID, length, &length, log);
@@ -89,7 +89,7 @@ void OpenGLRHI::GenerateBuffer(GLuint bufferCount, GLuint* outBufferHandle) cons
     AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
-void OpenGLRHI::BindBuffer(const GLuint target, const GLuint bufferObjectHandle) const
+void OpenGLRHI::BindBuffer(const EGLBufferTarget::T target, const GLuint bufferObjectHandle) const
 {
     glBindBuffer(target, bufferObjectHandle);
     AssertExpr(glGetError() == GL_NO_ERROR);
@@ -102,7 +102,7 @@ void OpenGLRHI::DeleteBuffer(GLuint bufferCount, GLuint* bufferHandle)
     AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
-void OpenGLRHI::SetBufferData(const GLuint target, const GLuint size, const void* const data, const GLuint bufferUsage) const
+void OpenGLRHI::SetBufferData(const EGLBufferTarget::T target, const GLuint size, const void* const data, const EGLBufferUsage::T bufferUsage) const
 {
     AssertExpr(size > 0);
     // @note if this doesnt work check the const void* const signature because its possible under the hood it no likey
@@ -110,7 +110,7 @@ void OpenGLRHI::SetBufferData(const GLuint target, const GLuint size, const void
     AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
-void OpenGLRHI::SetBufferSubData(const GLenum target, const GLintptr offset, const GLsizeiptr size, const GLvoid* data) const
+void OpenGLRHI::SetBufferSubData(const EGLBufferTarget::T target, const GLintptr offset, const GLsizeiptr size, const GLvoid* data) const
 {
     glBufferSubData(target, offset, size, data);
     AssertExpr(glGetError() == GL_NO_ERROR);
@@ -122,20 +122,20 @@ void OpenGLRHI::EnableVertexAttributeArray(const GLuint index) const
     AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
-void OpenGLRHI::VertexAttribPointer(const GLuint index, const GLint size, const GLuint type, const GLboolean normalized, const GLuint stride, const void* const pointer) const
+void OpenGLRHI::VertexAttribPointer(const GLuint index, const GLint size, const EGLDataType::T type, const EGLBooleanValue::T normalized, const GLuint stride, const void* const pointer) const
 {
     AssertExpr(size > 0);
     glVertexAttribPointer(index, size, type, normalized, stride, pointer);
     AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
-void OpenGLRHI::DrawArrays(const GLuint mode, const GLint first, const GLuint count) const
+void OpenGLRHI::DrawArrays(const EGLDrawMode::T mode, const GLint first, const GLuint count) const
 {
     AssertExpr(count > 0);
     glDrawArrays(mode, first, count);
 }
 
-void OpenGLRHI::DrawElements(const GLuint mode, const GLsizei count, GLenum type, const GLvoid* indices)
+void OpenGLRHI::DrawElements(const EGLDrawMode::T mode, const GLsizei count, EGLDataType::T type, const GLvoid* indices)
 {
     AssertExpr(count > 0);
     glDrawElements(mode, count, type, indices);
@@ -147,7 +147,7 @@ void OpenGLRHI::CreateShaderProgram(GLuint& outProgramID) const
     AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
-void OpenGLRHI::CreateShader(const GLuint shaderType, GLuint& outShaderID) const
+void OpenGLRHI::CreateShader(const EGLShaderType::T shaderType, GLuint& outShaderID) const
 {
     outShaderID = glCreateShader(shaderType);
     AssertExpr(glGetError() == GL_NO_ERROR);
@@ -207,13 +207,13 @@ void OpenGLRHI::LinkShaderProgram(const GLuint shaderProgramID) const
     AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
-void OpenGLRHI::GetProgramiv(const GLuint mShaderProgramID, const EGLShaderProgramStatusParam::Value programStatusParam, GLint* programLinkStatus) const
+void OpenGLRHI::GetProgramiv(const GLuint mShaderProgramID, const EGLShaderProgramStatusParam::T programStatusParam, GLint* programLinkStatus) const
 {
     glGetProgramiv(mShaderProgramID, programStatusParam, programLinkStatus);
     AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
-void OpenGLRHI::GetShaderiv(const GLuint shaderID, const GLenum shaderStatusParam, GLint* const params) const
+void OpenGLRHI::GetShaderiv(const GLuint shaderID, const EGLShaderStatusParam::T shaderStatusParam, GLint* const params) const
 {
     glGetShaderiv(shaderID, shaderStatusParam, params);
     AssertExpr(glGetError() == GL_NO_ERROR);
@@ -304,12 +304,7 @@ OpenGLVBO::~OpenGLVBO()
 {
 }
 
-void OpenGLVBO::SetBufferTarget(const U32 newBufferTarget)
-{
-    mBufferTarget = newBufferTarget;
-}
-
-void OpenGLVBO::SetBufferUsageMode(const U32 newBufferUsageMode)
+void OpenGLVBO::SetBufferUsageMode(const EGLBufferUsage::T newBufferUsageMode)
 {
     mBufferUsageMode = newBufferUsageMode;
 }
@@ -355,7 +350,6 @@ OpenGLVAO::OpenGLVAO()
 //
 OpenGLVAO::~OpenGLVAO()
 {
-
 }
 
 void OpenGLVAO::Bind()
@@ -412,17 +406,12 @@ void OpenGLEBO::Destroy()
     OpenGLRHI::Get().DeleteBuffer(1, &mBufferHandle);
 }
 
-void OpenGLEBO::SetBufferTarget(const U32 newBufferTarget)
-{
-    mBufferTarget = newBufferTarget;
-}
-
 void OpenGLEBO::SetBufferData(const void* const data, const U32 size)
 {
     OpenGLRHI::Get().SetBufferData(mBufferTarget, size, data, mBufferUsageMode);
 }
 
-void OpenGLEBO::SetBufferUsageMode(const U32 newBufferUsageMode)
+void OpenGLEBO::SetBufferUsageMode(const EGLBufferUsage::T newBufferUsageMode)
 {
     mBufferUsageMode = newBufferUsageMode;
 }

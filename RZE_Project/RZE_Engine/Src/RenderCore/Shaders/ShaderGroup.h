@@ -21,7 +21,7 @@ public:
 	
 	struct EShaderIndex
 	{
-		enum Value : U32
+		enum T : U32
 		{
 			Vertex = 0,
 			Fragment = 1,
@@ -33,7 +33,7 @@ public:
 		};
 	};
 	
-	bool AddShader(U32 shaderType, GFXShader* const shader);
+	bool AddShader(EShaderIndex::T shaderType, GFXShader* const shader);
 	bool AddUniform(const std::string& uniformName);
 
 	void SetUniformInt(const std::string& uniformName, int value);

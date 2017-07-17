@@ -103,8 +103,8 @@ void RenderSystem::CreateTestShaderStuff()
     fragShader->Compile();
 
     mShaderGroup = new GFXShaderGroup("TestShaderGroup");
-    mShaderGroup->AddShader(EGFXShaderType::Vertex, vertShader);
-    mShaderGroup->AddShader(EGFXShaderType::Fragment, fragShader);
+    mShaderGroup->AddShader(GFXShaderGroup::EShaderIndex::Vertex, vertShader);
+    mShaderGroup->AddShader(GFXShaderGroup::EShaderIndex::Fragment, fragShader);
 
     mShaderGroup->AddUniform("UModelMat");
     mShaderGroup->AddUniform("UProjectionMat");

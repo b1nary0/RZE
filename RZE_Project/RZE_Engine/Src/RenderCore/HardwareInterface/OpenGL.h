@@ -2,18 +2,18 @@
 
 #include "Utils/PrimitiveDefs.h"
 
-struct EGLBooleanValue
+namespace EGLBooleanValue
 {
-    enum Value : GLboolean
+    enum T : GLboolean
     {
         True = GL_TRUE,
         False = GL_FALSE
     };
 };
 
-struct EGLBufferBit
+namespace EGLBufferBit
 {
-    enum Value : GLbitfield
+    enum T : GLbitfield
     {
         Accumulation = GL_ACCUM_BUFFER_BIT,
         Color = GL_COLOR_BUFFER_BIT,
@@ -22,9 +22,9 @@ struct EGLBufferBit
     };
 };
 
-struct EGLBufferTarget
+namespace EGLBufferTarget
 {
-    enum Value : GLenum
+    enum T : GLenum
     {
         ArrayBuffer = GL_ARRAY_BUFFER,
         AtomicCounterBuffer = GL_ATOMIC_COUNTER_BUFFER,
@@ -43,9 +43,9 @@ struct EGLBufferTarget
     };
 };
 
-struct EGLBufferUsage
+namespace EGLBufferUsage
 {
-    enum Value : GLenum
+    enum T : GLenum
     {
         StreamCopy = GL_STREAM_COPY,
         StreamDraw = GL_STREAM_DRAW,
@@ -61,9 +61,9 @@ struct EGLBufferUsage
     };
 };
 
-struct EGLCapability
+namespace EGLCapability
 {
-    enum Value : GLenum
+    enum T : GLenum
     {
         AlphaTest = GL_ALPHA_TEST,
         GenerateNormals = GL_AUTO_NORMAL,
@@ -141,9 +141,9 @@ struct EGLCapability
     };
 };
 
-struct EGLDataType
+namespace EGLDataType
 {
-    enum Value : GLenum
+    enum T : GLenum
     {
         Byte = GL_BYTE,
         Double = GL_DOUBLE,
@@ -158,9 +158,9 @@ struct EGLDataType
     };
 };
 
-struct EGLDrawMode
+namespace EGLDrawMode
 {
-    enum Value : GLenum
+    enum T : GLenum
     {
         Points = GL_POINTS,
 
@@ -179,9 +179,9 @@ struct EGLDrawMode
     };
 };
 
-struct EGLPolygonMode
+namespace EGLPolygonMode
 {
-    enum Value : GLenum
+    enum T : GLenum
     {
         Point = GL_POINT,
         Line = GL_LINE,
@@ -189,9 +189,9 @@ struct EGLPolygonMode
     };
 };
 
-struct EGLPolygonModeFace
+namespace EGLPolygonModeFace
 {
-    enum Value : GLenum
+    enum T : GLenum
     {
         Front = GL_FRONT,
         Back = GL_BACK,
@@ -199,22 +199,23 @@ struct EGLPolygonModeFace
     };
 };
 
-struct EGLShaderType
+namespace EGLShaderType
 {
-    enum Value : GLenum
+    enum T : GLenum
     {
         Compute = GL_COMPUTE_SHADER,
         Vertex = GL_VERTEX_SHADER,
         TessControl = GL_TESS_CONTROL_SHADER,
         TessEval = GL_TESS_EVALUATION_SHADER,
         Geometry = GL_GEOMETRY_SHADER,
-        Fragment = GL_FRAGMENT_SHADER
+        Fragment = GL_FRAGMENT_SHADER,
+        Invalid = 0
     };
 };
 
-struct EGLShaderProgramStatusParam
+namespace EGLShaderProgramStatusParam
 {
-    enum Value : GLenum
+    enum T : GLenum
     {
         DeleteStatus = GL_DELETE_STATUS,
         LinkStatus = GL_LINK_STATUS,
@@ -228,9 +229,9 @@ struct EGLShaderProgramStatusParam
     };
 };
 
-struct EGLShaderStatusParam
+namespace EGLShaderStatusParam
 {
-    enum Value : GLenum
+    enum T : GLenum
     {
         ShaderType = GL_SHADER_TYPE,
         DeleteStatus = GL_DELETE_STATUS,
@@ -260,17 +261,16 @@ public:
     virtual void Unbind() = 0;
     virtual void Destroy() = 0;
 
-    virtual void SetBufferUsageMode(const U32 newBufferUsageMode) = 0;
+    virtual void SetBufferUsageMode(const EGLBufferUsage::T newBufferUsageMode) = 0;
     virtual void SetBufferData(const void* const data, const U32 size) = 0;
     virtual void SetBufferSubData(const void* const data, const GLsizeiptr offset, const U32 size) = 0;
-    virtual void SetBufferTarget(const U32 newBufferTarget) = 0;
 
 protected:
     virtual void Generate() = 0;
 
     U32 mBufferHandle;
-    U32 mBufferUsageMode;
-    U32 mBufferTarget;
+    EGLBufferUsage::T mBufferUsageMode;
+    EGLBufferTarget::T mBufferTarget;
 };
 
 class OpenGLVAO : public IGLBufferObject
@@ -283,10 +283,9 @@ public:
     virtual void Unbind() override;
     virtual void Destroy() override;
 
-    virtual void SetBufferUsageMode(const U32 newBufferUsageMode) override {}
+    virtual void SetBufferUsageMode(const EGLBufferUsage::T newBufferUsageMode) override {}
     virtual void SetBufferData(const void* const data, const U32 size) override {}
     virtual void SetBufferSubData(const void* const data, const GLsizeiptr offset, const U32 size) override {}
-    virtual void SetBufferTarget(const U32 newBufferTarget) override {}
 
 private:
     virtual void Generate() override;
@@ -303,10 +302,9 @@ public:
     virtual void Unbind() override;
     virtual void Destroy() override;
 
-    void SetBufferTarget(const U32 newBufferTarget) override;
+    void SetBufferUsageMode(const EGLBufferUsage::T newBufferUsageMode) override;
     void SetBufferData(const void* const data, const U32 size) override;
     void SetBufferSubData(const void* const data, const GLsizeiptr offset, const U32 size) override;
-    void SetBufferUsageMode(const U32 newBufferUsageMode) override;
 
 private:
     virtual void Generate() override;
@@ -324,10 +322,9 @@ public:
     virtual void Unbind() override;
     virtual void Destroy() override;
 
-    void SetBufferTarget(const U32 newBufferTarget) override;
+    void SetBufferUsageMode(const EGLBufferUsage::T newBufferUsageMode) override;
     void SetBufferData(const void* const data, const U32 size) override;
     void SetBufferSubData(const void* const data, const GLsizeiptr offset, const U32 size) override {}
-    void SetBufferUsageMode(const U32 newBufferUsageMode) override;
 
 private:
     virtual void Generate() override;
@@ -370,22 +367,22 @@ public:
     void BindVertexArray(const GLuint arrayObjectHandle) const;
 
     void GenerateBuffer(GLuint bufferCount, GLuint* outBufferHandle) const;
-    void BindBuffer(const GLuint target, const GLuint bufferObjectHandle) const;
+    void BindBuffer(const EGLBufferTarget::T target, const GLuint bufferObjectHandle) const;
     void DeleteBuffer(GLuint bufferCount, GLuint* bufferHandle);
-    void SetBufferData(const GLuint target, const GLuint size, const void* const data, const GLuint bufferUsage) const;
-    void SetBufferSubData(const GLenum target, const GLintptr offset, const GLsizeiptr size, const GLvoid* data) const;
+    void SetBufferData(const EGLBufferTarget::T target, const GLuint size, const void* const data, const EGLBufferUsage::T bufferUsage) const;
+    void SetBufferSubData(const EGLBufferTarget::T target, const GLintptr offset, const GLsizeiptr size, const GLvoid* data) const;
 
     void EnableVertexAttributeArray(const GLuint index) const;
-    void VertexAttribPointer(const GLuint index, const GLint size, const GLuint type, const GLboolean normalized, const GLuint stride, const void* const pointer) const;
+    void VertexAttribPointer(const GLuint index, const GLint size, const EGLDataType::T type, const EGLBooleanValue::T normalized, const GLuint stride, const void* const pointer) const;
 
-    void DrawArrays(const GLuint mode, const GLint first, const GLuint count) const;
-    void DrawElements(const GLuint mode, const GLsizei count, GLenum type, const GLvoid* indices);
+    void DrawArrays(const EGLDrawMode::T mode, const GLint first, const GLuint count) const;
+    void DrawElements(const EGLDrawMode::T mode, const GLsizei count, EGLDataType::T type, const GLvoid* indices);
 
     //
     // Shaders
     //
     void CreateShaderProgram(GLuint& outProgramID) const;
-    void CreateShader(const GLuint shaderType, GLuint& outShaderID) const;
+    void CreateShader(const EGLShaderType::T shaderType, GLuint& outShaderID) const;
     void DeleteShader(const GLuint shaderID) const;
     void CompileShader(const GLuint shaderID) const;
     void AttachShader(const GLuint shaderProgramID, const GLuint shaderID) const;
@@ -394,12 +391,12 @@ public:
     void IsShader(const GLuint shaderID, GLboolean& outResult) const;
     void IsShaderProgram(const GLuint shaderProgramID, GLboolean& outResult) const;
     void LinkShaderProgram(const GLuint shaderProgramID) const;
-    void GetProgramiv(const GLuint shaderProgramID, const EGLShaderProgramStatusParam::Value programStatusParam, GLint* programLinkStatus) const;
-    void GetShaderiv(const GLuint shaderID, const GLenum shaderStatusParam, GLint* const params) const;
+    void GetProgramiv(const GLuint shaderProgramID, const EGLShaderProgramStatusParam::T programStatusParam, GLint* programLinkStatus) const;
+    void GetShaderiv(const GLuint shaderID, const EGLShaderStatusParam::T shaderStatusParam, GLint* const params) const;
     void UniformLocation(const GLuint shaderProgramID, const GLchar* uniformName, GLint& uniformLocation) const;
 
     void GetProgramInfoLog(const GLuint programID, const GLsizei maxLength, GLsizei* length, GLchar* infoLog) const;
-    void GetShaderInfoLog(GLuint shader, GLsizei maxLength, GLsizei* length, GLchar* infoLog) const;
+    void GetShaderInfoLog(U32 programID, GLsizei maxLength, GLsizei* length, GLchar* infoLog) const;
 
     void SetUniformInt(const GLint uniformLocation, const int value) const;
     void SetUniformFloat(const GLint uniformLocation, const float value) const;

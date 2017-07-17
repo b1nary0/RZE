@@ -1,8 +1,10 @@
 #pragma once
 
-namespace EGFXShaderType
+#include "RenderCore/HardwareInterface/OpenGL.h"
+
+namespace EGFXShaderIndex
 {
-	enum Value : U32
+	enum T : U32
 	{
 		Vertex,
 		Fragment,
@@ -17,11 +19,11 @@ class GFXShader
 {
 public:
 	GFXShader() = delete;
-	GFXShader(const U32 shaderType, const std::string& shaderName, const std::string& sourceCode);
+	GFXShader(const EGLShaderType::T shaderType, const std::string& shaderName, const std::string& sourceCode);
 	~GFXShader();
 
 	U32 GetShaderID() const;
-	U32 GetShaderType() const;
+    EGLShaderType::T GetShaderType() const;
 	const std::string& GetShaderName();
 	const std::string& GetSourceCode();
 
@@ -32,8 +34,8 @@ private:
 	bool bIsCompiled;
 	bool bIsCreated;
 
-	U32 mShaderType;
 	U32 mShaderID;
+    EGLShaderType::T mShaderType;
 	std::string mShaderName;
 	std::string mSourceCode;
 };
