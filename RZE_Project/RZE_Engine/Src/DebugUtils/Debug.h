@@ -4,7 +4,7 @@
 
 #include "Utils/StringUtils.h"
 
-#if DEBUG
+#if DEBUG == 1
 
 #define AssertFalse() assert(false);
 #define AssertEqual(Value1, Value2) assert(Value1 == Value2);
