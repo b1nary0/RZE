@@ -373,7 +373,7 @@ public:
     void SetBufferSubData(const EGLBufferTarget::T target, const GLintptr offset, const GLsizeiptr size, const GLvoid* data) const;
 
     void EnableVertexAttributeArray(const GLuint index) const;
-    void VertexAttribPointer(const GLuint index, const GLint size, const EGLDataType::T type, const EGLBooleanValue::T normalized, const GLuint stride, const void* const pointer) const;
+    void VertexAttribPointer(const GLuint index, const GLint size, const EGLDataType::T type, const GLboolean normalized, const GLuint stride, const void* const pointer) const;
 
     void DrawArrays(const EGLDrawMode::T mode, const GLint first, const GLuint count) const;
     void DrawElements(const EGLDrawMode::T mode, const GLsizei count, EGLDataType::T type, const GLvoid* indices);

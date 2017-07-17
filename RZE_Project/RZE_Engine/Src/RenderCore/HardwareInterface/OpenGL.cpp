@@ -122,7 +122,7 @@ void OpenGLRHI::EnableVertexAttributeArray(const GLuint index) const
     AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
-void OpenGLRHI::VertexAttribPointer(const GLuint index, const GLint size, const EGLDataType::T type, const EGLBooleanValue::T normalized, const GLuint stride, const void* const pointer) const
+void OpenGLRHI::VertexAttribPointer(const GLuint index, const GLint size, const EGLDataType::T type, const GLboolean normalized, const GLuint stride, const void* const pointer) const
 {
     AssertExpr(size > 0);
     glVertexAttribPointer(index, size, type, normalized, stride, pointer);
