@@ -1,5 +1,6 @@
 #include "GameApp.h"
 
+#include <RZE_Config.h>
 #include <RZE.h>
 
 #include <DebugUtils/Debug.h>
@@ -46,6 +47,8 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
                 TransformComponent* const transformComp = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
 
                 transformComp->SetRotation(Quaternion(Vector3D(angleX_1, angleY_1, 0.0f)));
+
+                LOG_CONSOLE_ARGS("Rotation X: [%f] Y: [%f] Z: [%f] W: [%f]", transformComp->GetRotation().GetInternalQuat().x, transformComp->GetRotation().GetInternalQuat().y, transformComp->GetRotation().GetInternalQuat().z, transformComp->GetRotation().GetInternalQuat().w);
             }
             else if (evt.mKeyEvent.mKey == Win32KeyCode::Key_S)
             {
@@ -55,6 +58,8 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
                 TransformComponent* const transformComp = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
 
                 transformComp->SetRotation(Quaternion(Vector3D(angleX_1, angleY_1, 0.0f)));
+
+                LOG_CONSOLE_ARGS("Rotation X: [%f] Y: [%f] Z: [%f] W: [%f]", transformComp->GetRotation().GetInternalQuat().x, transformComp->GetRotation().GetInternalQuat().y, transformComp->GetRotation().GetInternalQuat().z, transformComp->GetRotation().GetInternalQuat().w);
             }
             
             if (evt.mKeyEvent.mKey == Win32KeyCode::Key_D)
@@ -65,6 +70,8 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
                 TransformComponent* const transformComp = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
 
                 transformComp->SetRotation(Quaternion(Vector3D(angleX_1, angleY_1, 0.0f)));
+
+                LOG_CONSOLE_ARGS("Rotation X: [%f] Y: [%f] Z: [%f] W: [%f]", transformComp->GetRotation().GetInternalQuat().x, transformComp->GetRotation().GetInternalQuat().y, transformComp->GetRotation().GetInternalQuat().z, transformComp->GetRotation().GetInternalQuat().w);
             }
             else if (evt.mKeyEvent.mKey == Win32KeyCode::Key_A)
             {
@@ -74,6 +81,8 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
                 TransformComponent* const transformComp = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
 
                 transformComp->SetRotation(Quaternion(Vector3D(angleX_1, angleY_1, 0.0f)));
+
+                LOG_CONSOLE_ARGS("Rotation X: [%f] Y: [%f] Z: [%f] W: [%f]", transformComp->GetRotation().GetInternalQuat().x, transformComp->GetRotation().GetInternalQuat().y, transformComp->GetRotation().GetInternalQuat().z, transformComp->GetRotation().GetInternalQuat().w);
             }
             
             //
@@ -213,6 +222,7 @@ void GameApp::CreateMiniCooper(MeshData* const meshData)
     miniCooperEntity->AddComponent<TransformComponent>();
     TransformComponent* const transformComp = static_cast<TransformComponent* const>(miniCooperEntity->GetComponents()[1]);
     transformComp->SetPosition(Vector3D(0.0f, -4.5f, -10.0f));
+    transformComp->SetRotation(Quaternion(Vector3D(4.7f, 0.65f, 0.0f)));
     transformComp->SetScale(Vector3D(0.05f, 0.05f, 0.05f));
 
     mEntities.push_back(miniCooperEntity);
