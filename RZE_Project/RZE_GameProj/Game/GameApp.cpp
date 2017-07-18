@@ -37,55 +37,6 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
         if (evt.mInfo.mEventType == EEventType::Key)
         {
             //
-            // First ship
-            //
-            if (evt.mKeyEvent.mKey == Win32KeyCode::Key_W)
-            {
-                angleX_1 += (1.0f / 60.0f) * speedX;
-
-                GameEntity* entity = mEntities[2];
-                TransformComponent* const transformComp = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
-
-                transformComp->SetRotation(Quaternion(Vector3D(angleX_1, angleY_1, 0.0f)));
-
-                LOG_CONSOLE_ARGS("Rotation X: [%f] Y: [%f] Z: [%f] W: [%f]", transformComp->GetRotation().GetInternalQuat().x, transformComp->GetRotation().GetInternalQuat().y, transformComp->GetRotation().GetInternalQuat().z, transformComp->GetRotation().GetInternalQuat().w);
-            }
-            else if (evt.mKeyEvent.mKey == Win32KeyCode::Key_S)
-            {
-                angleX_1 -= (1.0f / 60.0f) * speedX;
-
-                GameEntity* entity = mEntities[2];
-                TransformComponent* const transformComp = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
-
-                transformComp->SetRotation(Quaternion(Vector3D(angleX_1, angleY_1, 0.0f)));
-
-                LOG_CONSOLE_ARGS("Rotation X: [%f] Y: [%f] Z: [%f] W: [%f]", transformComp->GetRotation().GetInternalQuat().x, transformComp->GetRotation().GetInternalQuat().y, transformComp->GetRotation().GetInternalQuat().z, transformComp->GetRotation().GetInternalQuat().w);
-            }
-            
-            if (evt.mKeyEvent.mKey == Win32KeyCode::Key_D)
-            {
-                angleY_1 += (1.0f / 60.0f) * speedY;
-
-                GameEntity* entity = mEntities[2];
-                TransformComponent* const transformComp = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
-
-                transformComp->SetRotation(Quaternion(Vector3D(angleX_1, angleY_1, 0.0f)));
-
-                LOG_CONSOLE_ARGS("Rotation X: [%f] Y: [%f] Z: [%f] W: [%f]", transformComp->GetRotation().GetInternalQuat().x, transformComp->GetRotation().GetInternalQuat().y, transformComp->GetRotation().GetInternalQuat().z, transformComp->GetRotation().GetInternalQuat().w);
-            }
-            else if (evt.mKeyEvent.mKey == Win32KeyCode::Key_A)
-            {
-                angleY_1 -= (1.0f / 60.0f) * speedY;
-
-                GameEntity* entity = mEntities[2];
-                TransformComponent* const transformComp = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
-
-                transformComp->SetRotation(Quaternion(Vector3D(angleX_1, angleY_1, 0.0f)));
-
-                LOG_CONSOLE_ARGS("Rotation X: [%f] Y: [%f] Z: [%f] W: [%f]", transformComp->GetRotation().GetInternalQuat().x, transformComp->GetRotation().GetInternalQuat().y, transformComp->GetRotation().GetInternalQuat().z, transformComp->GetRotation().GetInternalQuat().w);
-            }
-            
-            //
             // MainTestLight
             //
             if (evt.mKeyEvent.mKey == Win32KeyCode::Up)
@@ -93,7 +44,7 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
                 TransformComponent* const transformComp = static_cast<TransformComponent* const>(mLightEntity->GetComponents()[1]);
 
                 Vector3D currPos = transformComp->GetPosition();
-                Vector3D newPos = currPos + Vector3D(0.0f, (2.0f * speedY) * deltaT, 0.0f);
+                Vector3D newPos = currPos + Vector3D(0.0f, 0.0f, (-2.0f * speedY) * deltaT);
 
                 transformComp->SetPosition(newPos);
             }
@@ -102,7 +53,7 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
                 TransformComponent* const transformComp = static_cast<TransformComponent* const>(mLightEntity->GetComponents()[1]);
 
                 Vector3D currPos = transformComp->GetPosition();
-                Vector3D newPos = currPos + Vector3D(0.0f, (-2.0f * speedY) * deltaT, 0.0f);
+                Vector3D newPos = currPos + Vector3D(0.0f, 0.0f, (2.0f * speedY) * deltaT);
 
                 transformComp->SetPosition(newPos);
             }
@@ -126,12 +77,21 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
                 transformComp->SetPosition(newPos);
             }
 
-            if (evt.mKeyEvent.mKey == Win32KeyCode::Space)
+            if (evt.mKeyEvent.mKey == Win32KeyCode::OEM_Plus)
             {
                 TransformComponent* const transformComp = static_cast<TransformComponent* const>(mLightEntity->GetComponents()[1]);
 
                 Vector3D currPos = transformComp->GetPosition();
-                Vector3D newPos = currPos + Vector3D(0.0f, 0.0f, (2.0f * speedZ) * deltaT);
+                Vector3D newPos = currPos + Vector3D(0.0f, (2.0f * speedZ) * deltaT, 0.0f);
+
+                transformComp->SetPosition(newPos);
+            }
+            else if (evt.mKeyEvent.mKey == Win32KeyCode::OEM_Minus)
+            {
+                TransformComponent* const transformComp = static_cast<TransformComponent* const>(mLightEntity->GetComponents()[1]);
+
+                Vector3D currPos = transformComp->GetPosition();
+                Vector3D newPos = currPos + Vector3D(0.0f, (-2.0f * speedZ) * deltaT, 0.0f);
 
                 transformComp->SetPosition(newPos);
             }
