@@ -164,8 +164,7 @@ void RZE_Engine::LoadEngineConfig()
 
 void RZE_Engine::Update()
 {
-    mEventHandler.ProcessEvents();
-    mInputHandler.ProcessEvents();
+    CompileEvents();
 
     mApplication->Update();
     mWorld->Update();
@@ -174,7 +173,8 @@ void RZE_Engine::Update()
     // @todo maybe this can be done better
     mMainWindow->BufferSwap();
 
-    CompileEvents();
+    mEventHandler.ProcessEvents();
+    mInputHandler.ProcessEvents();
 }
 
 void RZE_Engine::BeginShutDown()
