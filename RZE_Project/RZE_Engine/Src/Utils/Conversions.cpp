@@ -17,4 +17,14 @@ namespace Conversions
         return atoi(string.c_str());
     }
 
+    std::string CreateResourceKeyFromPath(const std::string& string)
+    {
+        std::string resourceKey = string;
+        // TODO::Remove preceding periods.
+        std::replace(resourceKey.begin(), resourceKey.end(), '/', '.');
+        resourceKey.erase(resourceKey.find_last_of('.'), resourceKey.length());
+
+        return resourceKey;
+    }
+
 }

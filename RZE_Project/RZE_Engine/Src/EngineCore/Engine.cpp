@@ -208,3 +208,8 @@ GameWorld* const RZE_Engine::GetWorld() const
     AssertNotNull(mWorld);
     return mWorld;
 }
+
+ResourceHandler& RZE_Engine::GetResourceHandler()
+{
+    return mResourceHandler;
+}

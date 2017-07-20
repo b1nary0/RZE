@@ -9,6 +9,7 @@
 
 #include <EngineCore/Config/EngineConfig.h>
 #include <EngineCore/Input/InputHandler.h>
+#include <EngineCore/Resources/ResourceHandler.h>
 
 class GameWorld;
 class RZE_Renderer;
@@ -31,6 +32,8 @@ public:
     WindowSettings& GetWindowSettings();
 
 	GameWorld* const GetWorld() const;
+
+    ResourceHandler& GetResourceHandler();
 
 	static RZE_Engine* const Get()
 	{
@@ -69,6 +72,7 @@ private:
 	Win32Window* mMainWindow;
 	RZE_Renderer* mRenderer;
 
+    ResourceHandler mResourceHandler;
 	EventHandler mEventHandler;
 	InputHandler mInputHandler;
 

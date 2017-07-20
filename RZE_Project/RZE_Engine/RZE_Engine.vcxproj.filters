@@ -64,6 +64,9 @@
     <Filter Include="Source Files\RenderCore\Graphics">
       <UniqueIdentifier>{d9d10028-5694-477b-8ace-f54d8bd4bbb3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\EngineCore\Resources">
+      <UniqueIdentifier>{c6f37610-c5e3-4892-92cb-8ad1aa5c1d62}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Src\Application.cpp">
@@ -164,6 +167,9 @@
     </ClCompile>
     <ClCompile Include="Src\Game\Components\LightSourceComponent.cpp">
       <Filter>Source Files\Game\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\EngineCore\Resources\ResourceHandler.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -269,9 +275,6 @@
     <ClInclude Include="Src\EngineCore\Platform\File.h">
       <Filter>Source Files\EngineCore\Platform</Filter>
     </ClInclude>
-    <ClInclude Include="Src\EngineCore\ResourceHandler.h">
-      <Filter>Source Files\EngineCore</Filter>
-    </ClInclude>
     <ClInclude Include="Src\Utils\Math\Vector4D.h">
       <Filter>Source Files\Utils\Math</Filter>
     </ClInclude>
@@ -301,6 +304,12 @@
     </ClInclude>
     <ClInclude Include="Src\Game\Components\LightSourceComponent.h">
       <Filter>Source Files\Game\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\EngineCore\Resources\Resource.h">
+      <Filter>Source Files\EngineCore\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\EngineCore\Resources\ResourceHandler.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

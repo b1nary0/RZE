@@ -104,11 +104,14 @@ void GameApp::Start()
 {
     RZE_Game::Start();
 
+
     // ALL TEST CODE
 
     const char* const cubeFilePath = "./../RZE_Engine/Assets/3D/cube.obj";
     const char* const miniCooperFilePath = "./../RZE_Engine/Assets/3D/minicooper.obj";
     const char* const lampFilePath = "./../RZE_Engine/Assets/3D/Lamp.obj";
+
+    ResourceHandle cubeHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource(cubeFilePath);
 
     MeshData* cubeMesh = new MeshData();
     cubeMesh->LoadFromFile(cubeFilePath);
