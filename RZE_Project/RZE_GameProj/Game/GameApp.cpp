@@ -140,7 +140,7 @@ void GameApp::CreateLight(MeshData* const meshData)
 
     mLightEntity->AddComponent<TransformComponent>();
     TransformComponent* const lightTransform = static_cast<TransformComponent* const>(mLightEntity->GetComponents()[1]);
-    lightTransform->SetPosition(Vector3D(0.0f, 10.0f, -10.0f));
+    lightTransform->SetPosition(Vector3D(-8.0f, 15.0f, -2.0f));
 
     mLightEntity->AddComponent<LightSourceComponent>("MainTestLight");
     LightSourceComponent* const lightComponent = static_cast<LightSourceComponent* const>(mLightEntity->GetComponents()[2]);
@@ -192,7 +192,7 @@ void GameApp::CreateLampObjects(MeshData* const meshData)
 {
 
     //
-    // 1 - NW
+    // 1 - NE
     //
     GameEntity* lampEntity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
 
@@ -208,7 +208,7 @@ void GameApp::CreateLampObjects(MeshData* const meshData)
     mEntities.push_back(lampEntity);
 
     //
-    // 2 - NE
+    // 2 - NW
     //
     lampEntity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
 
@@ -224,7 +224,7 @@ void GameApp::CreateLampObjects(MeshData* const meshData)
     mEntities.push_back(lampEntity);
 
     //
-    // 3 - SW
+    // 3 - SE
     //
     lampEntity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
 
@@ -240,7 +240,7 @@ void GameApp::CreateLampObjects(MeshData* const meshData)
     mEntities.push_back(lampEntity);
 
     //
-    // 4 - SE
+    // 4 - SW
     //
     lampEntity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
 
