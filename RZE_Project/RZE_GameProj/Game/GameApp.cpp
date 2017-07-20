@@ -145,7 +145,7 @@ void GameApp::CreateLight(MeshData* const meshData)
     mLightEntity->AddComponent<LightSourceComponent>("MainTestLight");
     LightSourceComponent* const lightComponent = static_cast<LightSourceComponent* const>(mLightEntity->GetComponents()[2]);
     lightComponent->SetColor(Vector3D(1.0f, 1.0f, 1.0f));
-    lightComponent->SetStrength(0.5f);
+    lightComponent->SetStrength(0.65f);
 
     mEntities.push_back(mLightEntity);
 }
