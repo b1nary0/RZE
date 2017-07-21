@@ -111,20 +111,15 @@ void GameApp::Start()
     const char* const miniCooperFilePath = "./../RZE_Engine/Assets/3D/minicooper.obj";
     const char* const lampFilePath = "./../RZE_Engine/Assets/3D/Lamp.obj";
 
-    ResourceHandle cubeHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource(cubeFilePath);
+    ResourceHandle cubeMesh = RZE_Engine::Get()->GetResourceHandler().RequestResource<MeshData>(cubeFilePath);
+    ResourceHandle carMesh = RZE_Engine::Get()->GetResourceHandler().RequestResource<MeshData>(miniCooperFilePath);
+    ResourceHandle lampMesh = RZE_Engine::Get()->GetResourceHandler().RequestResource<MeshData>(lampFilePath);
 
-    MeshData* cubeMesh = new MeshData();
-    cubeMesh->LoadFromFile(cubeFilePath);
-
-    MeshData* miniCooperMesh = new MeshData();
-    miniCooperMesh->LoadFromFile(miniCooperFilePath);
-
-    MeshData* lampMesh = new MeshData();
-    lampMesh->LoadFromFile(lampFilePath);
+    ResourceHandle test = RZE_Engine::Get()->GetResourceHandler().RequestResource<MeshData>(lampFilePath);
 
     CreateLight(cubeMesh);
     CreateGround(cubeMesh);
-    CreateMiniCooper(miniCooperMesh);
+    CreateMiniCooper(carMesh);
     CreateLampObjects(lampMesh);
 }
 
@@ -133,13 +128,13 @@ void GameApp::Update()
     RZE_Game::Update();
 }
 
-void GameApp::CreateLight(MeshData* const meshData)
+void GameApp::CreateLight(const ResourceHandle& resourceHandle)
 {
     mLightEntity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
 
     mLightEntity->AddComponent<MeshComponent>();
     MeshComponent* const lightMesh = static_cast<MeshComponent* const>(mLightEntity->GetComponents()[0]);
-    lightMesh->SetMeshData(meshData);
+    lightMesh->SetResource(resourceHandle);
 
     mLightEntity->AddComponent<TransformComponent>();
     TransformComponent* const lightTransform = static_cast<TransformComponent* const>(mLightEntity->GetComponents()[1]);
@@ -153,7 +148,7 @@ void GameApp::CreateLight(MeshData* const meshData)
     mEntities.push_back(mLightEntity);
 }
 
-void GameApp::CreateGround(MeshData* const meshData)
+void GameApp::CreateGround(const ResourceHandle& resourceHandle)
 {
     const int numEntities = 1;
     for (int entIdx = 0; entIdx < numEntities; ++entIdx)
@@ -162,7 +157,7 @@ void GameApp::CreateGround(MeshData* const meshData)
 
         testEntity->AddComponent<MeshComponent>();
         MeshComponent* const meshComponent = static_cast<MeshComponent* const>(testEntity->GetComponents()[0]);
-        meshComponent->SetMeshData(meshData);
+        meshComponent->SetResource(resourceHandle);
 
         testEntity->AddComponent<TransformComponent>();
         TransformComponent* const transformComp = static_cast<TransformComponent* const>(testEntity->GetComponents()[1]);
@@ -174,13 +169,13 @@ void GameApp::CreateGround(MeshData* const meshData)
     }
 }
 
-void GameApp::CreateMiniCooper(MeshData* const meshData)
+void GameApp::CreateMiniCooper(const ResourceHandle& resourceHandle)
 {
     GameEntity* miniCooperEntity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
 
     miniCooperEntity->AddComponent<MeshComponent>("MiniCooperMesh");
     MeshComponent* const meshComponent = static_cast<MeshComponent* const>(miniCooperEntity->GetComponents()[0]);
-    meshComponent->SetMeshData(meshData);
+    meshComponent->SetResource(resourceHandle);
 
     miniCooperEntity->AddComponent<TransformComponent>();
     TransformComponent* const transformComp = static_cast<TransformComponent* const>(miniCooperEntity->GetComponents()[1]);
@@ -191,7 +186,7 @@ void GameApp::CreateMiniCooper(MeshData* const meshData)
     mEntities.push_back(miniCooperEntity);
 }
 
-void GameApp::CreateLampObjects(MeshData* const meshData)
+void GameApp::CreateLampObjects(const ResourceHandle& resourceHandle)
 {
 
     //
@@ -201,7 +196,7 @@ void GameApp::CreateLampObjects(MeshData* const meshData)
 
     lampEntity->AddComponent<MeshComponent>("LampMesh");
     MeshComponent* meshComponent = static_cast<MeshComponent*>(lampEntity->GetComponents()[0]);
-    meshComponent->SetMeshData(meshData);
+    meshComponent->SetResource(resourceHandle);
 
     lampEntity->AddComponent<TransformComponent>();
     TransformComponent* transformComp = static_cast<TransformComponent*>(lampEntity->GetComponents()[1]);
@@ -217,7 +212,7 @@ void GameApp::CreateLampObjects(MeshData* const meshData)
 
     lampEntity->AddComponent<MeshComponent>("LampMesh");
     meshComponent = static_cast<MeshComponent* const>(lampEntity->GetComponents()[0]);
-    meshComponent->SetMeshData(meshData);
+    meshComponent->SetResource(resourceHandle);
 
     lampEntity->AddComponent<TransformComponent>();
     transformComp = static_cast<TransformComponent* const>(lampEntity->GetComponents()[1]);
@@ -233,7 +228,7 @@ void GameApp::CreateLampObjects(MeshData* const meshData)
 
     lampEntity->AddComponent<MeshComponent>("LampMesh");
     meshComponent = static_cast<MeshComponent* const>(lampEntity->GetComponents()[0]);
-    meshComponent->SetMeshData(meshData);
+    meshComponent->SetResource(resourceHandle);
 
     lampEntity->AddComponent<TransformComponent>();
     transformComp = static_cast<TransformComponent* const>(lampEntity->GetComponents()[1]);
@@ -249,7 +244,7 @@ void GameApp::CreateLampObjects(MeshData* const meshData)
 
     lampEntity->AddComponent<MeshComponent>("LampMesh");
     meshComponent = static_cast<MeshComponent* const>(lampEntity->GetComponents()[0]);
-    meshComponent->SetMeshData(meshData);
+    meshComponent->SetResource(resourceHandle);
 
     lampEntity->AddComponent<TransformComponent>();
     transformComp = static_cast<TransformComponent* const>(lampEntity->GetComponents()[1]);

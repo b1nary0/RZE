@@ -169,7 +169,7 @@
       <Filter>Source Files\Game\Components</Filter>
     </ClCompile>
     <ClCompile Include="Src\EngineCore\Resources\ResourceHandler.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\EngineCore\Resources</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -309,7 +309,7 @@
       <Filter>Source Files\EngineCore\Resources</Filter>
     </ClInclude>
     <ClInclude Include="Src\EngineCore\Resources\ResourceHandler.h">
-      <Filter>Header Files</Filter>
+      <Filter>Source Files\EngineCore\Resources</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -101,7 +101,7 @@ MeshData::~MeshData()
 {
 }
 
-void MeshData::LoadFromFile(const std::string& filePath)
+bool MeshData::Load(const std::string& filePath)
 {
     Assimp::Importer ModelImporter;
     const aiScene* AssimpScene = ModelImporter.ReadFile(filePath,
@@ -117,7 +117,7 @@ void MeshData::LoadFromFile(const std::string& filePath)
     {
         // #TODO More informative error message.
         LOG_CONSOLE("Failed to load Assimp.");
-        return;
+        return false;
     }
 
     ProcessNode(*AssimpScene->mRootNode, *AssimpScene);
@@ -126,8 +126,10 @@ void MeshData::LoadFromFile(const std::string& filePath)
     {
         // #TODO More informative error message.
         LOG_CONSOLE("Error reading meshes.");
-        return;
+        return false;
     }
+
+    return true;
 }
 
 std::vector<GFXMesh*>& MeshData::GetMeshList()

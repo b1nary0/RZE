@@ -1,5 +1,7 @@
 #pragma once
 
+#include <EngineCore/Resources/ResourceHandler.h>
+
 #include <Game/ECS/EntityComponent.h>
 
 #include <RenderCore/Graphics/Mesh.h>
@@ -22,14 +24,14 @@ public:
     GFXShaderGroup* const GetShaderGroup();
     void SetShaderGroup(GFXShaderGroup* const shaderGroup);
 
-    MeshData* const GetMeshData() const;
-    void SetMeshData(MeshData* const meshData);
+    const ResourceHandle& GetResource() const;
+    void SetResource(const ResourceHandle& resourceHandle);
 
 private:
 
     // @todo:josh temp pointer for now because we have some cyclical issues in headers
     //            that needs to be worked out for now... 
-    MeshData* mMeshData;
+    ResourceHandle mResourceHandle;
 
     GFXShaderGroup* mShaderGroup;
     std::vector<float> mVertexList;

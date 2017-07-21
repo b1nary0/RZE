@@ -65,7 +65,7 @@ void RenderSystem::Update()
         renderItem.mModelMat = modelMat;
         renderItem.mProjectionMat = renderCam.GetProjectionMat();
         renderItem.mViewMat = renderCam.GetViewMat();
-        renderItem.mMeshData = meshComponent->GetMeshData();
+        renderItem.mMeshData = RZE_Engine::Get()->GetResourceHandler().GetResource<MeshData>(meshComponent->GetResource());
 
         if (lightComponent)
         {

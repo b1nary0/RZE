@@ -2,6 +2,8 @@
 
 #include <vector>
 
+#include <EngineCore/Resources/Resource.h>
+
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector3D.h>
 
@@ -48,13 +50,13 @@ private:
 struct aiMesh;
 struct aiNode;
 struct aiScene;
-class MeshData
+class MeshData : public IResource
 {
 public:
     MeshData();
     ~MeshData();
     
-    void LoadFromFile(const std::string& filePath);
+    virtual bool Load(const std::string& filePath);
 
     std::vector<GFXMesh*>& GetMeshList();
 

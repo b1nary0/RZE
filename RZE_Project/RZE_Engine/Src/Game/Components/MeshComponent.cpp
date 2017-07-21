@@ -17,10 +17,7 @@ MeshComponent::MeshComponent(const std::string& name)
 
 MeshComponent::~MeshComponent()
 {
-    if (mMeshData)
-    {
-       delete mMeshData;
-    }
+    // #TODO release resource here.
 }
 
 std::vector<float>& MeshComponent::GetVertexList()
@@ -28,9 +25,9 @@ std::vector<float>& MeshComponent::GetVertexList()
     return mVertexList;
 }
 
-void MeshComponent::SetMeshData(MeshData* const meshData)
+void MeshComponent::SetResource(const ResourceHandle& resourceHandle)
 {
-    mMeshData = meshData;
+    mResourceHandle = resourceHandle;
 }
 
 GFXShaderGroup* const MeshComponent::GetShaderGroup()
@@ -43,7 +40,7 @@ void MeshComponent::SetShaderGroup(GFXShaderGroup* const shaderGroup)
     mShaderGroup = shaderGroup;
 }
 
-MeshData* const MeshComponent::GetMeshData() const
+const ResourceHandle& MeshComponent::GetResource() const
 {
-    return mMeshData;
+    return mResourceHandle;
 }
