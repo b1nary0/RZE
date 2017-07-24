@@ -31,7 +31,52 @@ private:
 
 class ResourceHandler
 {
-    typedef std::pair<std::string, IResource*> ResourcePair;
+private:
+    class ResourceSource
+    {
+    public:
+        ResourceSource()
+        {
+            mReferenceCount = 0;
+            mResource = nullptr;
+        }
+
+        ResourceSource(IResource* resource)
+        {
+            mReferenceCount = 1;
+            mResource = resource;
+        }
+
+        ResourceSource(ResourceSource& rhs)
+        {
+            rhs.IncreaseRefCount();
+            mReferenceCount = rhs.mReferenceCount;
+            mResource = rhs.mResource;
+        }
+
+        void IncreaseRefCount() { ++mReferenceCount; }
+        void DecreaseRefCount() { --mReferenceCount; }
+
+        IResource* GetResource() { return mResource; }
+
+        bool IsReferenced() { return mReferenceCount != 0; }
+
+        void Destroy()
+        {
+            AssertNotNull(mResource);
+            AssertExpr(mReferenceCount == 0);
+
+            delete mResource;
+            mResource = nullptr;
+        }
+
+    private:
+        int mReferenceCount;
+        IResource* mResource;
+    };
+
+    typedef std::pair<std::string, ResourceSource> ResourcePair;
+
 
 public:
     ResourceHandler();
@@ -40,6 +85,8 @@ public:
     template <class ResourceT>
     ResourceHandle RequestResource(const std::string& resourcePath);
 
+    void ReleaseResource(ResourceHandle& resourceHandle);
+
     template <class ResourceT>
     ResourceT* GetResource(const ResourceHandle& resourceHandle);
 
@@ -47,7 +94,7 @@ private:
     template <class ResourceT>
     IResource* CreateAndLoadResource(const std::string& resourcePath);
 
-    std::unordered_map<std::string, IResource*> mResourceTable;
+    std::unordered_map<std::string, ResourceSource> mResourceTable;
 };
 
 // #TODO probably move this into an inl maybe?
@@ -59,10 +106,14 @@ ResourceHandle ResourceHandler::RequestResource(const std::string& resourcePath)
     if (iter == mResourceTable.end())
     {
         IResource* resource = CreateAndLoadResource<ResourceT>(resourcePath);
-        mResourceTable.insert(ResourcePair(resourceKey, resource));
-
+        ResourceSource resourceSource(resource);
+        
+        mResourceTable[resourceKey] = resourceSource;
         return ResourceHandle(resourceKey);
     }
+
+    ResourceSource& resourceSource= (*iter).second;
+    resourceSource.IncreaseRefCount();
 
     return ResourceHandle(resourceKey);
 }
@@ -73,7 +124,8 @@ ResourceT* ResourceHandler::GetResource(const ResourceHandle& resourceHandle)
     auto iter = mResourceTable.find(resourceHandle.GetID());
     if (iter != mResourceTable.end())
     {
-        return static_cast<ResourceT*>(mResourceTable.at(resourceHandle.GetID()));
+        ResourceSource& resourceSource = (*iter).second;
+        return static_cast<ResourceT*>(resourceSource.GetResource());
     }
 
     LOG_CONSOLE_ARGS("Resource with key [%s] does not exist. Request it first.", resourceHandle.GetID().c_str());

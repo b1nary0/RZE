@@ -115,8 +115,6 @@ void GameApp::Start()
     ResourceHandle carMesh = RZE_Engine::Get()->GetResourceHandler().RequestResource<MeshData>(miniCooperFilePath);
     ResourceHandle lampMesh = RZE_Engine::Get()->GetResourceHandler().RequestResource<MeshData>(lampFilePath);
 
-    ResourceHandle test = RZE_Engine::Get()->GetResourceHandler().RequestResource<MeshData>(lampFilePath);
-
     CreateLight(cubeMesh);
     CreateGround(cubeMesh);
     CreateMiniCooper(carMesh);
