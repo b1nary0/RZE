@@ -102,6 +102,8 @@ template <class ResourceT>
 ResourceHandle ResourceHandler::RequestResource(const std::string& resourcePath)
 {
     std::string resourceKey = Conversions::CreateResourceKeyFromPath(resourcePath);
+    LOG_CONSOLE_ARGS("Requesting resource [%s]", resourceKey.c_str());
+
     auto iter = mResourceTable.find(resourceKey);
     if (iter == mResourceTable.end())
     {

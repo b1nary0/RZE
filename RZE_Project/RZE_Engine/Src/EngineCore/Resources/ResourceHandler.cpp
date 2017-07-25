@@ -24,7 +24,7 @@ void ResourceHandler::ReleaseResource(ResourceHandle& resourceHandle)
     }
     else
     {
-        LOG_CONSOLE_ARGS("Attempting to release resource with key %s but it does not currently exist.", resourceHandle.GetID());
+        LOG_CONSOLE_ARGS("Attempting to release resource with key [%s] but it does not currently exist.", resourceHandle.GetID());
     }
 }
 
