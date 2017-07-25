@@ -69,6 +69,8 @@ void RZE_Engine::Init()
     // #TODO this should be handled better. No need to create directly here. Take a look.
     mRenderer = new RZE_Renderer();
 
+    mResourceHandler.Init();
+
     RegisterWindowEvents();
     RegisterInputEvents();
 

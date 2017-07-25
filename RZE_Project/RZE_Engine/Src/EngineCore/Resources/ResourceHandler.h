@@ -3,6 +3,7 @@
 #include <unordered_map>
 
 #include <EngineCore/Resources/Resource.h>
+#include <EngineCore/Platform/Memory/BlockAllocator.h>
 
 #include <Utils/Conversions.h>
 #include <DebugUtils/Debug.h>
@@ -82,6 +83,8 @@ public:
     ResourceHandler();
     ~ResourceHandler();
 
+    void Init();
+
     template <class ResourceT>
     ResourceHandle RequestResource(const std::string& resourcePath);
 
@@ -94,6 +97,7 @@ private:
     template <class ResourceT>
     IResource* CreateAndLoadResource(const std::string& resourcePath);
 
+    BlockAllocator mAllocator;
     std::unordered_map<std::string, ResourceSource> mResourceTable;
 };
 
@@ -137,7 +141,7 @@ ResourceT* ResourceHandler::GetResource(const ResourceHandle& resourceHandle)
 template <class ResourceT>
 IResource* ResourceHandler::CreateAndLoadResource(const std::string& resourcePath)
 {
-    IResource* resource = new ResourceT();
+    IResource* resource = new (mAllocator.Allocate(sizeof(ResourceT))) ResourceT;
     AssertNotNull(resource);
     resource->Load(resourcePath);
 

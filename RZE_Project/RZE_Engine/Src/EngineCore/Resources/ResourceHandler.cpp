@@ -9,6 +9,11 @@ ResourceHandler::~ResourceHandler()
 {
 }
 
+void ResourceHandler::Init()
+{
+    mAllocator.Init();
+}
+
 void ResourceHandler::ReleaseResource(ResourceHandle& resourceHandle)
 {
     auto iter = mResourceTable.find(resourceHandle.GetID());

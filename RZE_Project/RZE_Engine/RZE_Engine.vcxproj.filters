@@ -171,6 +171,9 @@
     <ClCompile Include="Src\EngineCore\Resources\ResourceHandler.cpp">
       <Filter>Source Files\EngineCore\Resources</Filter>
     </ClCompile>
+    <ClCompile Include="Src\EngineCore\Platform\Memory\BlockAllocator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\EngineCore\Engine.h">
@@ -310,6 +313,12 @@
     </ClInclude>
     <ClInclude Include="Src\EngineCore\Resources\ResourceHandler.h">
       <Filter>Source Files\EngineCore\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\EngineCore\Platform\Memory\Memory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\EngineCore\Platform\Memory\BlockAllocator.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
