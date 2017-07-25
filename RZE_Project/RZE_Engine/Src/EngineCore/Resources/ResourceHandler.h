@@ -112,7 +112,7 @@ ResourceHandle ResourceHandler::RequestResource(const std::string& resourcePath)
         return ResourceHandle(resourceKey);
     }
 
-    ResourceSource& resourceSource= (*iter).second;
+    ResourceSource& resourceSource = (*iter).second;
     resourceSource.IncreaseRefCount();
 
     return ResourceHandle(resourceKey);

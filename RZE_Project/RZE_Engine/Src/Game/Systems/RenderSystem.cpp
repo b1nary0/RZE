@@ -65,6 +65,7 @@ void RenderSystem::Update()
         renderItem.mModelMat = modelMat;
         renderItem.mProjectionMat = renderCam.GetProjectionMat();
         renderItem.mViewMat = renderCam.GetViewMat();
+        // #TODO find a better transfer point for the resource handler. Maybe pass in as an argument to constructor for renderer?
         renderItem.mMeshData = RZE_Engine::Get()->GetResourceHandler().GetResource<MeshData>(meshComponent->GetResource());
 
         if (lightComponent)
