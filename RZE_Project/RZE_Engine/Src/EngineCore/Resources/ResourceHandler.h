@@ -12,7 +12,6 @@ class ResourceHandle
 {
     friend class ResourceHandler;
 
-
 public:
     ResourceHandle() {}
 
@@ -141,7 +140,7 @@ ResourceT* ResourceHandler::GetResource(const ResourceHandle& resourceHandle)
 template <class ResourceT>
 IResource* ResourceHandler::CreateAndLoadResource(const std::string& resourcePath)
 {
-    IResource* resource = new (mAllocator.Allocate(sizeof(ResourceT))) ResourceT;
+    IResource* resource = new ResourceT();//new (mAllocator.Allocate(sizeof(ResourceT))) ResourceT;
     AssertNotNull(resource);
     resource->Load(resourcePath);
 

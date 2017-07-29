@@ -17,6 +17,11 @@ public:
     virtual void  Free(void* ptr) override;
 
 private:
+    struct BlockHeader
+    {
+
+    };
+
     struct MemoryBlock
     {
         U16 mSize;

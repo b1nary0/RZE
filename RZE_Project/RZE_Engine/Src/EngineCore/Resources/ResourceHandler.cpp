@@ -25,6 +25,7 @@ void ResourceHandler::ReleaseResource(ResourceHandle& resourceHandle)
         if (!resourceSource.IsReferenced())
         {
             resourceSource.Destroy();
+            mResourceTable.erase(iter);
         }
     }
     else

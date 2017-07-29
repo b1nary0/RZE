@@ -5,7 +5,7 @@
 #include <RenderCore/SceneCamera.h>
 #include <RenderCore/HardwareInterface/OpenGL.h>
 
-class MeshData;
+class MeshResource;
 class GFXShaderGroup;
 
 class RZE_Renderer
@@ -19,7 +19,7 @@ public:
         Matrix4x4           mModelMat;
         Matrix4x4           mProjectionMat;
         Matrix4x4           mViewMat;
-        MeshData*           mMeshData;
+        MeshResource*           mMeshData;
     } RenderItemProtocol;
 
     typedef struct LightItemProtocol

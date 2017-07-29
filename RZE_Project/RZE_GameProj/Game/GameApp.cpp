@@ -111,9 +111,9 @@ void GameApp::Start()
     const char* const miniCooperFilePath = "./../RZE_Engine/Assets/3D/MiniCooper.obj";
     const char* const lampFilePath = "./../RZE_Engine/Assets/3D/Lamp.obj";
 
-    ResourceHandle cubeMesh = RZE_Engine::Get()->GetResourceHandler().RequestResource<MeshData>(cubeFilePath);
-    ResourceHandle carMesh = RZE_Engine::Get()->GetResourceHandler().RequestResource<MeshData>(miniCooperFilePath);
-    ResourceHandle lampMesh = RZE_Engine::Get()->GetResourceHandler().RequestResource<MeshData>(lampFilePath);
+    ResourceHandle cubeMesh = RZE_Engine::Get()->GetResourceHandler().RequestResource<MeshResource>(cubeFilePath);
+    ResourceHandle carMesh = RZE_Engine::Get()->GetResourceHandler().RequestResource<MeshResource>(miniCooperFilePath);
+    ResourceHandle lampMesh = RZE_Engine::Get()->GetResourceHandler().RequestResource<MeshResource>(lampFilePath);
 
     CreateLight(cubeMesh);
     CreateGround(cubeMesh);

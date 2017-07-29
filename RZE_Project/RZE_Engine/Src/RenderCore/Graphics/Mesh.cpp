@@ -93,15 +93,15 @@ void GFXMesh::OnLoadFinished()
     mVAO->Unbind();
 }
 
-MeshData::MeshData()
+MeshResource::MeshResource()
 {
 }
 
-MeshData::~MeshData()
+MeshResource::~MeshResource()
 {
 }
 
-bool MeshData::Load(const std::string& filePath)
+bool MeshResource::Load(const std::string& filePath)
 {
     Assimp::Importer ModelImporter;
     const aiScene* AssimpScene = ModelImporter.ReadFile(filePath,
@@ -132,12 +132,12 @@ bool MeshData::Load(const std::string& filePath)
     return true;
 }
 
-std::vector<GFXMesh*>& MeshData::GetMeshList()
+std::vector<GFXMesh*>& MeshResource::GetMeshList()
 {
     return mMeshList;
 }
 
-void MeshData::ProcessNode(const aiNode& node, const aiScene& scene)
+void MeshResource::ProcessNode(const aiNode& node, const aiScene& scene)
 {
     for (U32 meshIdx = 0; meshIdx < node.mNumMeshes; meshIdx++)
     {
@@ -155,7 +155,7 @@ void MeshData::ProcessNode(const aiNode& node, const aiScene& scene)
     }
 }
 
-void MeshData::ProcessMesh(const aiMesh& mesh, const aiScene& scene, GFXMesh& outMesh)
+void MeshResource::ProcessMesh(const aiMesh& mesh, const aiScene& scene, GFXMesh& outMesh)
 {
     for (U32 vertexIdx = 0; vertexIdx < mesh.mNumVertices; vertexIdx++)
     {

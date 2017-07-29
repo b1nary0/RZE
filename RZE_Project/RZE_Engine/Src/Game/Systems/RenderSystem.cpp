@@ -66,7 +66,7 @@ void RenderSystem::Update()
         renderItem.mProjectionMat = renderCam.GetProjectionMat();
         renderItem.mViewMat = renderCam.GetViewMat();
         // #TODO find a better transfer point for the resource handler. Maybe pass in as an argument to constructor for renderer?
-        renderItem.mMeshData = RZE_Engine::Get()->GetResourceHandler().GetResource<MeshData>(meshComponent->GetResource());
+        renderItem.mMeshData = RZE_Engine::Get()->GetResourceHandler().GetResource<MeshResource>(meshComponent->GetResource());
 
         if (lightComponent)
         {
@@ -112,10 +112,10 @@ void RenderSystem::CreateTestShaderStuff()
     mShaderGroup->AddUniform("UViewMat");
     mShaderGroup->AddUniform("UFragColor");
 
-     mShaderGroup->AddUniform("ULightPosition");
-     mShaderGroup->AddUniform("UViewPosition");
-     mShaderGroup->AddUniform("ULightColor");
-     mShaderGroup->AddUniform("ULightStrength");
+    mShaderGroup->AddUniform("ULightPosition");
+    mShaderGroup->AddUniform("UViewPosition");
+    mShaderGroup->AddUniform("ULightColor");
+    mShaderGroup->AddUniform("ULightStrength");
 
     mShaderGroup->GenerateShaderProgram();
 }

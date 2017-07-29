@@ -20,7 +20,7 @@ class OpenGLEBO;
 
 class GFXMesh
 {
-    friend class MeshData;
+    friend class MeshResource;
 
 public:
     GFXMesh();
@@ -50,11 +50,11 @@ private:
 struct aiMesh;
 struct aiNode;
 struct aiScene;
-class MeshData : public IResource
+class MeshResource : public IResource
 {
 public:
-    MeshData();
-    ~MeshData();
+    MeshResource();
+    ~MeshResource();
     
     virtual bool Load(const std::string& filePath);
 

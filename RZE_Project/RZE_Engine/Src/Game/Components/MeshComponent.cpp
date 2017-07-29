@@ -17,7 +17,7 @@ MeshComponent::MeshComponent(const std::string& name)
 
 MeshComponent::~MeshComponent()
 {
-    // #TODO release resource here.
+    RZE_Engine::Get()->GetResourceHandler().ReleaseResource(mResourceHandle);
 }
 
 std::vector<float>& MeshComponent::GetVertexList()
