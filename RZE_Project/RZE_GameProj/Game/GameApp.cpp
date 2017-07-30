@@ -104,7 +104,6 @@ void GameApp::Start()
 {
     RZE_Game::Start();
 
-
     // ALL TEST CODE
 
     const char* const cubeFilePath = "./../RZE_Engine/Assets/3D/Cube.obj";

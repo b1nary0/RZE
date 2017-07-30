@@ -91,15 +91,17 @@ void RenderSystem::ShutDown()
 
 void RenderSystem::CreateTestShaderStuff()
 {
-    File vertShaderFile("./../RZE_Engine/Assets/Shaders/VertexShader.shader");
-    File fragShaderFile("./../RZE_Engine/Assets/Shaders/FragmentShader.shader");
+    const char* const vertShaderFilePath = "./../RZE_Engine/Assets/Shaders/VertexShader.shader";
+    const char* const fragShaderFilePath = "./../RZE_Engine/Assets/Shaders/FragmentShader.shader";
 
-    AssertExpr(!vertShaderFile.Empty() && !fragShaderFile.Empty());
-    GFXShader* vertShader = new GFXShader(EGLShaderType::Vertex, "TestVertexShader", vertShaderFile.Content());
+    ResourceHandle vertShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "TestVertexShader");
+    ResourceHandle fragShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "TestFragShader");
+
+    GFXShader* vertShader = RZE_Engine::Get()->GetResourceHandler().GetResource<GFXShader>(vertShaderHandle);
     vertShader->Create();
     vertShader->Compile();
 
-    GFXShader* fragShader = new GFXShader(EGLShaderType::Fragment, "TestFragShader", fragShaderFile.Content());
+    GFXShader* fragShader = RZE_Engine::Get()->GetResourceHandler().GetResource<GFXShader>(fragShaderHandle);
     fragShader->Create();
     fragShader->Compile();
 

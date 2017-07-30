@@ -56,7 +56,7 @@ public:
     MeshResource();
     ~MeshResource();
     
-    virtual bool Load(const std::string& filePath);
+    virtual bool Load(const std::string& filePath) override;
 
     std::vector<GFXMesh*>& GetMeshList();
 

@@ -5,8 +5,8 @@
 #include <EngineCore/Resources/Resource.h>
 #include <EngineCore/Platform/Memory/BlockAllocator.h>
 
-#include <Utils/Conversions.h>
 #include <DebugUtils/Debug.h>
+#include <Utils/Conversions.h>
 
 class ResourceHandle
 {
@@ -84,8 +84,8 @@ public:
 
     void Init();
 
-    template <class ResourceT>
-    ResourceHandle RequestResource(const std::string& resourcePath);
+    template <class ResourceT, class... Args>
+    ResourceHandle RequestResource(const std::string& resourcePath, Args... args);
 
     void ReleaseResource(ResourceHandle& resourceHandle);
 
@@ -93,16 +93,16 @@ public:
     ResourceT* GetResource(const ResourceHandle& resourceHandle);
 
 private:
-    template <class ResourceT>
-    IResource* CreateAndLoadResource(const std::string& resourcePath);
+    template <class ResourceT, class... Args>
+    IResource* CreateAndLoadResource(const std::string& resourcePath, Args&&... args);
 
     BlockAllocator mAllocator;
     std::unordered_map<std::string, ResourceSource> mResourceTable;
 };
 
 // #TODO probably move this into an inl maybe?
-template <class ResourceT>
-ResourceHandle ResourceHandler::RequestResource(const std::string& resourcePath)
+template <class ResourceT, class... Args>
+ResourceHandle ResourceHandler::RequestResource(const std::string& resourcePath, Args... args)
 {
     std::string resourceKey = Conversions::CreateResourceKeyFromPath(resourcePath);
     LOG_CONSOLE_ARGS("Requesting resource [%s]", resourceKey.c_str());
@@ -110,7 +110,7 @@ ResourceHandle ResourceHandler::RequestResource(const std::string& resourcePath)
     auto iter = mResourceTable.find(resourceKey);
     if (iter == mResourceTable.end())
     {
-        IResource* resource = CreateAndLoadResource<ResourceT>(resourcePath);
+        IResource* resource = CreateAndLoadResource<ResourceT>(resourcePath, args...);
         ResourceSource resourceSource(resource);
         
         mResourceTable[resourceKey] = resourceSource;
@@ -137,10 +137,10 @@ ResourceT* ResourceHandler::GetResource(const ResourceHandle& resourceHandle)
     return nullptr;
 }
 
-template <class ResourceT>
-IResource* ResourceHandler::CreateAndLoadResource(const std::string& resourcePath)
+template <class ResourceT, class... Args>
+IResource* ResourceHandler::CreateAndLoadResource(const std::string& resourcePath, Args&&... args)
 {
-    IResource* resource = new ResourceT();//new (mAllocator.Allocate(sizeof(ResourceT))) ResourceT;
+    IResource* resource = new ResourceT(args...);//new (mAllocator.Allocate(sizeof(ResourceT))) ResourceT;
     AssertNotNull(resource);
     resource->Load(resourcePath);
 

@@ -12,7 +12,7 @@ public:
 		: mCallback(callback) {}
 
 	template <class... CallArgs>
-	TReturnType Call(CallArgs&&...args) const
+	TReturnType Call(CallArgs&&... args) const
 	{
 		return mCallback(std::forward<CallArgs>(args)...);
 	}

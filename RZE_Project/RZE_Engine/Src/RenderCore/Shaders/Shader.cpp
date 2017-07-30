@@ -4,10 +4,9 @@
 
 #include "RenderCore/Shaders/Shader.h"
 
-GFXShader::GFXShader(const EGLShaderType::T shaderType, const std::string& shaderName, const std::string& sourceCode)
+GFXShader::GFXShader(const EGLShaderType::T shaderType, const std::string& shaderName)
 	: mShaderType(shaderType)
 	, mShaderName(shaderName)
-	, mSourceCode(sourceCode)
 	, mShaderID(0)
 	, bIsCreated(false)
 	, bIsCompiled(false)
@@ -22,6 +21,14 @@ GFXShader::~GFXShader()
 	{
 		OpenGLRHI::Get().DeleteShader(GetShaderID());
 	}
+}
+
+bool GFXShader::Load(const std::string& filePath)
+{
+    File shaderFile(filePath);
+    mSourceCode = shaderFile.Content();
+
+    return !shaderFile.Empty();
 }
 
 U32 GFXShader::GetShaderID() const
