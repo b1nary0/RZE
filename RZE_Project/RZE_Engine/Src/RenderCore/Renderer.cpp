@@ -84,11 +84,11 @@ void RZE_Renderer::RenderSingleItem(RenderItemProtocol& renderItem)
     const std::vector<GFXMesh*>& meshList = renderItem.mMeshData->GetMeshList();
     for (auto& mesh : meshList)
     {
-        mesh->GetVAO()->Bind();
+        mesh->GetVAO().Bind();
 
         OpenGLRHI::Get().DrawElements(EGLDrawMode::Triangles, mesh->GetIndices().size(), EGLDataType::UnsignedInt, nullptr);
 
-        mesh->GetVAO()->Unbind();
+        mesh->GetVAO().Unbind();
     }
 }
 

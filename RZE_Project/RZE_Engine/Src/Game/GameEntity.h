@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Game/ECS/Entity.h"
+#include <Game/ECS/Entity.h>
 
 class GameEntity : public IEntity
 {

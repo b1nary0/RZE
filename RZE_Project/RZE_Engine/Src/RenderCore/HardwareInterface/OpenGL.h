@@ -1,5 +1,8 @@
 ﻿#pragma once
 
+#define GLEW_STATIC
+#include <GL/glew.h>
+#include <GL/GL.h>
 #include "Utils/PrimitiveDefs.h"
 
 namespace EGLBooleanValue
@@ -257,6 +260,7 @@ public:
 
     U32 GetBufferHandle() const { return mBufferHandle; }
 
+    virtual void Init() = 0;
     virtual void Bind() = 0;
     virtual void Unbind() = 0;
     virtual void Destroy() = 0;
@@ -279,6 +283,7 @@ public:
     OpenGLVAO();
     ~OpenGLVAO();
 
+    virtual void Init() override;
     virtual void Bind() override;
     virtual void Unbind() override;
     virtual void Destroy() override;
@@ -294,10 +299,10 @@ private:
 class OpenGLVBO : public IGLBufferObject
 {
 public:
-    OpenGLVBO(OpenGLVAO* parentBuf);
+    OpenGLVBO();
     ~OpenGLVBO();
 
-
+    virtual void Init() override;
     virtual void Bind() override;
     virtual void Unbind() override;
     virtual void Destroy() override;
@@ -308,16 +313,15 @@ public:
 
 private:
     virtual void Generate() override;
-
-
 };
 
 class OpenGLEBO : public IGLBufferObject
 {
 public:
-    OpenGLEBO(OpenGLVAO* parentBuf);
+    OpenGLEBO();
     ~OpenGLEBO();
 
+    virtual void Init() override;
     virtual void Bind() override;
     virtual void Unbind() override;
     virtual void Destroy() override;

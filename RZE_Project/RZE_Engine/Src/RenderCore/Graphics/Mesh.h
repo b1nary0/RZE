@@ -4,6 +4,8 @@
 
 #include <EngineCore/Resources/Resource.h>
 
+#include <RenderCore/HardwareInterface/OpenGL.h>
+
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector3D.h>
 
@@ -14,10 +16,6 @@ struct GFXVertex
     Vector2D UVData;
 };
 
-class OpenGLVAO;
-class OpenGLVBO;
-class OpenGLEBO;
-
 class GFXMesh
 {
     friend class MeshResource;
@@ -26,9 +24,9 @@ public:
     GFXMesh();
     ~GFXMesh();
 
-    OpenGLVAO* GetVAO() const;
-    OpenGLEBO* GetEBO();
-    OpenGLVBO* GetVertexVBO();
+    OpenGLVAO& GetVAO();
+    OpenGLEBO& GetEBO();
+    OpenGLVBO& GetVertexVBO();
 
     std::vector<GFXVertex> GetVertexList();
     std::vector<U32> GetIndices();
@@ -36,10 +34,10 @@ public:
 private:
     void OnLoadFinished();
 
-    OpenGLVAO* mVAO;
-    OpenGLVBO* mVertexVBO;
-    OpenGLVBO* mNormalVBO;
-    OpenGLEBO* mEBO;
+    OpenGLVAO mVAO;
+    OpenGLVBO mVertexVBO;
+    OpenGLVBO mNormalVBO;
+    OpenGLEBO mEBO;
 
     std::vector<GFXVertex> mVertices;
     std::vector<Vector3D> mPositions;

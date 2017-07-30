@@ -4,11 +4,6 @@
 // WinAPI
 #include <Windows.h>
 
-// GL
-#define GLEW_STATIC
-#include <GL/glew.h>
-#include <gl/GLU.h>
-
 // std lib
 #include <assert.h>
 #include <codecvt>

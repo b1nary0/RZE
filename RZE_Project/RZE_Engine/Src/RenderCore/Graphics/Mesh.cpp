@@ -9,42 +9,34 @@
 
 GFXMesh::GFXMesh()
 {
-    mVAO = new OpenGLVAO();
-    mEBO = new OpenGLEBO(mVAO);
+    mVAO.Init();
+    mVAO.Bind();
 
-    mVertexVBO = new OpenGLVBO(mVAO);
+    mVertexVBO.Init();
+    mVertexVBO.Bind();
+
+    mNormalVBO.Init();
+    mNormalVBO.Bind();
+
+    mEBO.Init();
+    mEBO.Bind();
 }
 
 GFXMesh::~GFXMesh()
 {
-    if (mVAO)
-    {
-        delete mVAO;
-    }
-
-    if (mVertexVBO)
-    {
-        delete mVertexVBO;
-    }
-
-    if (mEBO)
-    {
-        delete mEBO;
-    }
 }
 
-OpenGLVAO* GFXMesh::GetVAO() const
+OpenGLVAO& GFXMesh::GetVAO()
 {
     return mVAO;
 }
 
-OpenGLVBO* GFXMesh::GetVertexVBO()
+OpenGLVBO& GFXMesh::GetVertexVBO()
 {
     return mVertexVBO;
 }
 
-
-OpenGLEBO* GFXMesh::GetEBO()
+OpenGLEBO& GFXMesh::GetEBO()
 {
     return mEBO;
 }
@@ -75,12 +67,12 @@ void GFXMesh::OnLoadFinished()
 
     const GLvoid* normalsStartPtr = reinterpret_cast<GLvoid*>(normalsStart);
 
-    mVAO->Bind();
-    mVertexVBO->SetBufferData(nullptr, totalSize);
-    mVertexVBO->SetBufferSubData(mPositions.data(), 0, verticesSize);
-    mVertexVBO->SetBufferSubData(mNormals.data(), verticesSize, normalsSize);
+    mVAO.Bind();
+    mVertexVBO.SetBufferData(nullptr, totalSize);
+    mVertexVBO.SetBufferSubData(mPositions.data(), 0, verticesSize);
+    mVertexVBO.SetBufferSubData(mNormals.data(), verticesSize, normalsSize);
 
-    mEBO->SetBufferData(mIndices.data(), sizeof(U32) * mIndices.size());
+    mEBO.SetBufferData(mIndices.data(), sizeof(U32) * mIndices.size());
 
     // vertices
     OpenGLRHI::Get().EnableVertexAttributeArray(0);
@@ -90,7 +82,7 @@ void GFXMesh::OnLoadFinished()
     OpenGLRHI::Get().EnableVertexAttributeArray(1);
     OpenGLRHI::Get().VertexAttribPointer(1, 3, EGLDataType::Float, EGLBooleanValue::False, sizeof(Vector3D), normalsStartPtr);
 
-    mVAO->Unbind();
+    mVAO.Unbind();
 }
 
 MeshResource::MeshResource()

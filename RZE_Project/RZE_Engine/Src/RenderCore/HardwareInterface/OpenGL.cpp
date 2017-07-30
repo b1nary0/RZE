@@ -286,22 +286,20 @@ void OpenGLRHI::SetUniformVec4D(const GLint uniformLocation, const float x, cons
 //	OPENGLVBO
 //
 
-OpenGLVBO::OpenGLVBO(OpenGLVAO* parentBuf)
+OpenGLVBO::OpenGLVBO()
     : IGLBufferObject()
 {
     mBufferTarget = EGLBufferTarget::ArrayBuffer;
     mBufferUsageMode = EGLBufferUsage::StaticDraw;
-
-    parentBuf->Bind();
-
-    Generate();
-    Bind();
-    
-    parentBuf->Unbind();
 }
 
 OpenGLVBO::~OpenGLVBO()
 {
+}
+
+void OpenGLVBO::Init()
+{
+    Generate();
 }
 
 void OpenGLVBO::SetBufferUsageMode(const EGLBufferUsage::T newBufferUsageMode)
@@ -342,7 +340,6 @@ void OpenGLVBO::Destroy()
 OpenGLVAO::OpenGLVAO()
     : IGLBufferObject()
 {
-    Generate();
 }
 
 //
@@ -350,6 +347,11 @@ OpenGLVAO::OpenGLVAO()
 //
 OpenGLVAO::~OpenGLVAO()
 {
+}
+
+void OpenGLVAO::Init()
+{
+    Generate();
 }
 
 void OpenGLVAO::Bind()
@@ -372,23 +374,21 @@ void OpenGLVAO::Generate()
     OpenGLRHI::Get().GenVertexArrays(1, &mBufferHandle);
 }
 
-OpenGLEBO::OpenGLEBO(OpenGLVAO* parentBuf)
+OpenGLEBO::OpenGLEBO()
     : IGLBufferObject()
 {
     mBufferTarget = EGLBufferTarget::ElementArrayBuffer;
     mBufferUsageMode = EGLBufferUsage::StaticDraw;
-
-    parentBuf->Bind();
-
-    Generate();
-    Bind();
-
-    parentBuf->Unbind();
 }
 
 OpenGLEBO::~OpenGLEBO()
 {
     Unbind();
+}
+
+void OpenGLEBO::Init()
+{
+    Generate();
 }
 
 void OpenGLEBO::Bind()

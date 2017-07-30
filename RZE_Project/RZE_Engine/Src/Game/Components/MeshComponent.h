@@ -4,12 +4,10 @@
 
 #include <Game/ECS/EntityComponent.h>
 
+#include <RenderCore/HardwareInterface/OpenGL.h>
 #include <RenderCore/Graphics/Mesh.h>
 
 class GFXShaderGroup;
-class OpenGLVAO;
-class OpenGLVBO;
-class OpenGLEBO;
 
 class MeshComponent : public IEntityComponent
 {
