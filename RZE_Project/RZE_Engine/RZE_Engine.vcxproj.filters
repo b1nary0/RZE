@@ -67,6 +67,9 @@
     <Filter Include="Source Files\EngineCore\Resources">
       <UniqueIdentifier>{c6f37610-c5e3-4892-92cb-8ad1aa5c1d62}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\EngineCore\Platform\Memory">
+      <UniqueIdentifier>{0d3774ec-c5db-4fed-b7ab-45710593c8ac}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Src\Application.cpp">
@@ -171,11 +174,11 @@
     <ClCompile Include="Src\EngineCore\Resources\ResourceHandler.cpp">
       <Filter>Source Files\EngineCore\Resources</Filter>
     </ClCompile>
-    <ClCompile Include="Src\EngineCore\Platform\Memory\BlockAllocator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Src\RenderCore\Graphics\Texture2D.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\RenderCore\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\EngineCore\Platform\Memory\BlockAllocator.cpp">
+      <Filter>Source Files\EngineCore\Platform\Memory</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -317,14 +320,14 @@
     <ClInclude Include="Src\EngineCore\Resources\ResourceHandler.h">
       <Filter>Source Files\EngineCore\Resources</Filter>
     </ClInclude>
+    <ClInclude Include="Src\RenderCore\Graphics\Texture2D.h">
+      <Filter>Source Files\RenderCore\Graphics</Filter>
+    </ClInclude>
     <ClInclude Include="Src\EngineCore\Platform\Memory\Memory.h">
-      <Filter>Header Files</Filter>
+      <Filter>Source Files\EngineCore\Platform\Memory</Filter>
     </ClInclude>
     <ClInclude Include="Src\EngineCore\Platform\Memory\BlockAllocator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\RenderCore\Graphics\Texture2D.h">
-      <Filter>Header Files</Filter>
+      <Filter>Source Files\EngineCore\Platform\Memory</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
