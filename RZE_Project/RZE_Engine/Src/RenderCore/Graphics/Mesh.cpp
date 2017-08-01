@@ -57,15 +57,19 @@ void GFXMesh::OnLoadFinished()
     {
         mPositions.push_back(mVertices[vertIdx].Position);
         mNormals.push_back(mVertices[vertIdx].Normal);
+        mUVCoords.push_back(mVertices[vertIdx].UVData);
     }
 
     const GLsizeiptr verticesSize = mPositions.size() * sizeof(Vector3D);
     const GLsizeiptr normalsSize = mNormals.size() * sizeof(Vector3D);
-    const GLsizeiptr totalSize = verticesSize + normalsSize;
+    const GLsizeiptr uvDataSize = mUVCoords.size() * sizeof(Vector3D);
+    const GLsizeiptr totalSize = verticesSize + normalsSize + uvDataSize;
 
     const GLsizeiptr normalsStart = verticesSize;
+    const GLsizeiptr uvDataStart = normalsSize + normalsSize;
 
     const GLvoid* normalsStartPtr = reinterpret_cast<GLvoid*>(normalsStart);
+    const GLvoid* uvDataStartPtr = reinterpret_cast<GLvoid*>(uvDataStart);
 
     mVAO.Bind();
     mVertexVBO.SetBufferData(nullptr, totalSize);
@@ -81,6 +85,10 @@ void GFXMesh::OnLoadFinished()
     // normals
     OpenGLRHI::Get().EnableVertexAttributeArray(1);
     OpenGLRHI::Get().VertexAttribPointer(1, 3, EGLDataType::Float, EGLBooleanValue::False, sizeof(Vector3D), normalsStartPtr);
+
+    // tex coords
+    OpenGLRHI::Get().EnableVertexAttributeArray(2);
+    OpenGLRHI::Get().VertexAttribPointer(2, 3, EGLDataType::Float, EGLBooleanValue::False, sizeof(Vector3D), uvDataStartPtr);
 
     mVAO.Unbind();
 }
@@ -108,7 +116,7 @@ bool MeshResource::Load(const std::string& filePath)
     if (bAssimpNotLoaded)
     {
         // #TODO More informative error message.
-        LOG_CONSOLE("Failed to load Assimp.");
+        LOG_CONSOLE_ARGS("Failed to load model from [%s].", filePath.c_str());
         return false;
     }
 
@@ -149,6 +157,7 @@ void MeshResource::ProcessNode(const aiNode& node, const aiScene& scene)
 
 void MeshResource::ProcessMesh(const aiMesh& mesh, const aiScene& scene, GFXMesh& outMesh)
 {
+    bool bHasTextureCoords = mesh.mTextureCoords[0] != nullptr;
     for (U32 vertexIdx = 0; vertexIdx < mesh.mNumVertices; vertexIdx++)
     {
         const aiVector3D& assimpVert = mesh.mVertices[vertexIdx];
@@ -160,6 +169,13 @@ void MeshResource::ProcessMesh(const aiMesh& mesh, const aiScene& scene, GFXMesh
         GFXVertex vertex;
         vertex.Position = vertPos;
         vertex.Normal = vertNormal;
+
+        if (bHasTextureCoords)
+        {
+            const aiVector3D& assimpUV = mesh.mTextureCoords[0][vertexIdx];
+            Vector3D vertUV(assimpUV.x, assimpUV.y, assimpUV.z);
+            vertex.UVData = vertUV;
+        }
 
         outMesh.mVertices.push_back(vertex);
     }

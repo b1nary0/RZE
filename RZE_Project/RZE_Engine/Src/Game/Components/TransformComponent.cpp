@@ -44,6 +44,11 @@ void TransformComponent::SetScale(const Vector3D& newScale)
 	mScale = newScale;
 }
 
+void TransformComponent::SetScale(float uniformScale)
+{
+    mScale = Vector3D(uniformScale, uniformScale, uniformScale);
+}
+
 void TransformComponent::SetRotation(const Quaternion& newRotation)
 {
 	mRotation = newRotation;

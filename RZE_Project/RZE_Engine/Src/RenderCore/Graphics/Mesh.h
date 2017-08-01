@@ -13,7 +13,7 @@ struct GFXVertex
 {
     Vector3D Position;
     Vector3D Normal;
-    Vector2D UVData;
+    Vector3D UVData;
 };
 
 class GFXMesh
@@ -42,6 +42,7 @@ private:
     std::vector<GFXVertex> mVertices;
     std::vector<Vector3D> mPositions;
     std::vector<Vector3D> mNormals;
+    std::vector<Vector3D> mUVCoords;
     std::vector<U32> mIndices;
 };
 

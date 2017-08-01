@@ -18,6 +18,7 @@ public:
 
 	void SetPosition(const Vector3D& newPosition);
 	void SetScale(const Vector3D& newScale);
+    void SetScale(float uniformScale);
 	void SetRotation(const Quaternion& newRotation);
 
 private:

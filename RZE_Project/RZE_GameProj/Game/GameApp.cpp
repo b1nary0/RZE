@@ -110,19 +110,38 @@ void GameApp::Start()
     const char* const miniCooperFilePath = "./../RZE_Engine/Assets/3D/MiniCooper.obj";
     const char* const lampFilePath = "./../RZE_Engine/Assets/3D/Lamp.obj";
 
+    const char* const quadMeshFilePath = "./../RZE_Engine/Assets/3D/Quad.obj";
+
     ResourceHandle cubeMesh = RZE_Engine::Get()->GetResourceHandler().RequestResource<MeshResource>(cubeFilePath);
-    ResourceHandle carMesh = RZE_Engine::Get()->GetResourceHandler().RequestResource<MeshResource>(miniCooperFilePath);
     ResourceHandle lampMesh = RZE_Engine::Get()->GetResourceHandler().RequestResource<MeshResource>(lampFilePath);
+
+    ResourceHandle quadMesh = RZE_Engine::Get()->GetResourceHandler().RequestResource<MeshResource>(quadMeshFilePath);
 
     CreateLight(cubeMesh);
     CreateGround(cubeMesh);
-    CreateMiniCooper(carMesh);
     CreateLampObjects(lampMesh);
+    CreateTextureQuad(quadMesh); 
 }
 
 void GameApp::Update()
 {
     RZE_Game::Update();
+}
+
+void GameApp::CreateTextureQuad(const ResourceHandle& resourceHandle)
+{
+    GameEntity* entity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
+
+    entity->AddComponent<MeshComponent>("TextureTestQuad");
+    MeshComponent* const meshComp = static_cast<MeshComponent* const>(entity->GetComponents()[0]);
+    meshComp->SetResource(resourceHandle);
+
+    entity->AddComponent<TransformComponent>();
+    TransformComponent* const transfComp = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
+    transfComp->SetPosition(Vector3D(0.0f, 2.0f, -3.0f));
+    transfComp->SetScale(Vector3D(4.0f, 3.0f, 0.0f));
+
+    mEntities.push_back(entity);
 }
 
 void GameApp::CreateLight(const ResourceHandle& resourceHandle)
@@ -164,23 +183,6 @@ void GameApp::CreateGround(const ResourceHandle& resourceHandle)
 
         mEntities.push_back(testEntity);
     }
-}
-
-void GameApp::CreateMiniCooper(const ResourceHandle& resourceHandle)
-{
-    GameEntity* miniCooperEntity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
-
-    miniCooperEntity->AddComponent<MeshComponent>("MiniCooperMesh");
-    MeshComponent* const meshComponent = static_cast<MeshComponent* const>(miniCooperEntity->GetComponents()[0]);
-    meshComponent->SetResource(resourceHandle);
-
-    miniCooperEntity->AddComponent<TransformComponent>();
-    TransformComponent* const transformComp = static_cast<TransformComponent* const>(miniCooperEntity->GetComponents()[1]);
-    transformComp->SetPosition(Vector3D(0.0f, -4.5f, -10.0f));
-    transformComp->SetRotation(Quaternion(Vector3D(4.7f, 0.65f, 0.0f)));
-    transformComp->SetScale(Vector3D(0.05f, 0.05f, 0.05f));
-
-    mEntities.push_back(miniCooperEntity);
 }
 
 void GameApp::CreateLampObjects(const ResourceHandle& resourceHandle)
