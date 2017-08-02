@@ -18,3 +18,11 @@ KeyEvent::KeyEvent(const U16 eventSubType, const U8 key)
 	, mKey(key)
 {
 }
+
+MouseEvent::MouseEvent(const U16 eventSubType, const U16 posX, const U16 posY)
+    : mEventInfo(EEventType::Mouse, eventSubType)
+    , mPosX(posX)
+    , mPosY(posY)
+{
+
+}

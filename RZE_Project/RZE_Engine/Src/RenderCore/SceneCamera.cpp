@@ -13,7 +13,7 @@ void SceneCamera::GenerateProjectionMat()
 
 void SceneCamera::GenerateViewMat()
 {
-	mViewMat = Matrix4x4::CreateViewMatrix(mCameraProps.Position, mCameraProps.Direction, mCameraProps.UpDir);
+	mViewMat = Matrix4x4::CreateViewMatrix(mCameraProps.Position, mCameraProps.Position + mCameraProps.FrontDir, mCameraProps.UpDir);
 }
 
 void SceneCamera::SetPosition(const Vector3D& newPos)

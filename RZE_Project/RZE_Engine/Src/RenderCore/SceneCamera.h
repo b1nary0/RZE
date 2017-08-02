@@ -8,6 +8,7 @@ typedef struct SceneCameraProps
 	Vector3D Position;
 	Vector3D Direction;
 	Vector3D UpDir;
+    Vector3D FrontDir;
 
 	float FOV;
 	float AspectRatio;

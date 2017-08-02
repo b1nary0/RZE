@@ -15,6 +15,7 @@ RZE_Renderer::RZE_Renderer()
     SceneCameraProps cameraProps;
     cameraProps.Position = Vector3D(0.0f, 5.0f, 10.0f); 
     cameraProps.Direction = Vector3D(0.0f, -2.5f, -10.0f);
+    cameraProps.FrontDir = Vector3D(0.0f, 0.0f, -1.0f);
     cameraProps.UpDir = Vector3D(0.0f, 1.0f, 0.0f);
     cameraProps.FOV = 45.0f;
     cameraProps.AspectRatio = windowSettings.GetDimensions().X() / windowSettings.GetDimensions().Y();

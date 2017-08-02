@@ -146,6 +146,13 @@ void Win32Window::CompileMessages(EventHandler& eventHandler)
         }
         break;
 
+        case WM_MOUSEMOVE:
+        {
+            MouseEvent mouseEvent(EMouseEventType::Mouse_Move, static_cast<U16>(GET_X_LPARAM(msg.lParam)), static_cast<U16>(GET_Y_LPARAM(msg.lParam)));
+            eventHandler.PostMouseEvent(mouseEvent);
+        }
+        break;
+
         default:
         {
             TranslateMessage(&msg);

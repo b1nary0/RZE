@@ -7,6 +7,7 @@ struct EventInfo
 	friend struct Event;
 	friend struct WindowEvent;
 	friend struct KeyEvent;
+    friend struct MouseEvent;
 
 	EventInfo(const U16 eventType, const U16 eventSubType);
 
@@ -40,6 +41,19 @@ struct KeyEvent
 	U8 mKey;
 };
 
+struct MouseEvent
+{
+    friend struct Event;
+
+    EventInfo mEventInfo;
+
+    MouseEvent() = default;
+    MouseEvent(const U16 eventSubType, const U16 posX, const U16 posY);
+
+    U16 mPosX;
+    U16 mPosY;
+};
+
 struct Event
 {
 	union
@@ -47,6 +61,7 @@ struct Event
 		EventInfo mInfo;
 		WindowEvent mWindowEvent;
 		KeyEvent mKeyEvent;
+        MouseEvent mMouseEvent;
 	};
 };
 

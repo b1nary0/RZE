@@ -3,6 +3,7 @@
 
 // WinAPI
 #include <Windows.h>
+#include <Windowsx.h>
 
 // std lib
 #include <assert.h>

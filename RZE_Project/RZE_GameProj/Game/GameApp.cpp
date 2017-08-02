@@ -132,6 +132,16 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
         }
     });
     eventHandler.RegisterForEvent(EEventType::Key, keyEvent);
+
+    Functor<void, const Event&> mouseEvent([this](const Event& event)
+    {
+        if (event.mInfo.mEventSubType == EMouseEventType::Mouse_Move)
+        {
+            U16 posX = event.mMouseEvent.mPosX;
+            U16 posY = event.mMouseEvent.mPosY;
+        }
+    });
+    eventHandler.RegisterForEvent(EEventType::Mouse, mouseEvent);
 }
 
 void GameApp::Start()
