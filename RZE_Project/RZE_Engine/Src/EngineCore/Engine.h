@@ -11,6 +11,8 @@
 #include <EngineCore/Input/InputHandler.h>
 #include <EngineCore/Resources/ResourceHandler.h>
 
+#include <RenderCore/SceneCamera.h>
+
 class GameWorld;
 class RZE_Renderer;
 class Win32Window;
@@ -28,6 +30,9 @@ public:
 
 	void RegisterForEvent(const U16 eventType, Functor<void, const Event&> callback);
 	void RegisterForInputEvent(const U16 eventType, Functor<void, U8> callback);
+
+    // #TODO(Josh) This should be revisited when the camera access/design changes
+    SceneCamera& GetSceneCamera();
 
     WindowSettings& GetWindowSettings();
 

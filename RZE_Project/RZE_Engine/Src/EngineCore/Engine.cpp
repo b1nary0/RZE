@@ -200,6 +200,12 @@ void RZE_Engine::RegisterForInputEvent(const U16 eventType, Functor<void, U8> ca
     mInputHandler.RegisterForEvent(eventType, callback);
 }
 
+SceneCamera& RZE_Engine::GetSceneCamera()
+{
+    AssertNotNull(mRenderer);
+    return mRenderer->GetSceneCamera();
+}
+
 WindowSettings& RZE_Engine::GetWindowSettings()
 {
     return mEngineConfig->GetWindowSettings();

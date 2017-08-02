@@ -24,6 +24,9 @@ public:
 	void GenerateProjectionMat();
 	void GenerateViewMat();
 
+    void SetPosition(const Vector3D& newPos);
+    void SetDirection(const Vector3D& newDir);
+
 	const Vector3D& GetPositionVec() const;
 	const Vector3D& GetDirectionVec() const;
 	const Vector3D& GetUpVec() const;

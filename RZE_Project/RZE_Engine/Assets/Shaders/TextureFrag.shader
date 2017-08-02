@@ -2,6 +2,7 @@
 
 in vec3 Normal;
 in vec3 FragPos;
+in vec2 UVCoord;
 
 out vec4 OutFragmentColor;
 
@@ -11,6 +12,8 @@ uniform vec3 ULightColor;
 uniform float ULightStrength;
 
 uniform vec4 UFragColor;
+
+uniform sampler2D UTexture2D;
 
 void main()
 {
@@ -23,10 +26,11 @@ void main()
     vec3 reflectDir = reflect(-lightDir, normal);  
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 64);
     
+	vec4 texVec = texture(UTexture2D, UVCoord);
 	vec3 ambient = ULightStrength * ULightColor;
 	vec3 diffuse = diff * ULightColor;
 	vec3 specular = specularStrength * spec * ULightColor;  
 	
-	vec3 result = (ambient + diffuse + specular) * UFragColor.xyz;
+	vec3 result = (ambient + specular + diffuse) * texVec.xyz;
 	OutFragmentColor = vec4(result, 1.0f);
 }

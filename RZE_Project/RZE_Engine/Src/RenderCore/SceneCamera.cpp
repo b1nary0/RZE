@@ -16,6 +16,16 @@ void SceneCamera::GenerateViewMat()
 	mViewMat = Matrix4x4::CreateViewMatrix(mCameraProps.Position, mCameraProps.Direction, mCameraProps.UpDir);
 }
 
+void SceneCamera::SetPosition(const Vector3D& newPos)
+{
+    mCameraProps.Position = newPos;
+}
+
+void SceneCamera::SetDirection(const Vector3D& newDir)
+{
+    mCameraProps.Direction = newDir;
+}
+
 const Vector3D& SceneCamera::GetPositionVec() const
 {
 	return mCameraProps.Position;

@@ -8,6 +8,8 @@ class GameEntity;
 class MeshData;
 class ResourceHandle;
 
+class GFXShaderGroup;
+
 class GameApp : public RZE_Game
 {
 public:
@@ -26,6 +28,13 @@ private:
     void CreateLampObjects(const ResourceHandle& resourceHandle);
     void CreateTextureQuad(const ResourceHandle& meshHandle, const ResourceHandle& textureHandle);
 
+    void CreateDefaultShader();
+    void CreateTextureShader();
+
     GameEntity* mLightEntity;
+
+    GFXShaderGroup* mDefaultShader;
+    GFXShaderGroup* mTextureShader;
+
     std::vector<GameEntity*> mEntities;
 };

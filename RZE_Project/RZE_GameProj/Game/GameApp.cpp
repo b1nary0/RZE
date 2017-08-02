@@ -12,6 +12,7 @@
 
 #include <RenderCore/Graphics/Mesh.h>
 #include <RenderCore/Graphics/Texture2D.h>
+#include <RenderCore/Shaders/ShaderGroup.h>
 
 #include <Windowing/WinKeyCodes.h>
 
@@ -98,6 +99,36 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
 
                 transformComp->SetPosition(newPos);
             }
+
+            if (evt.mKeyEvent.mKey == Win32KeyCode::Key_W)
+            {
+                SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
+                Vector3D newPos = sceneCam.GetPositionVec();
+                newPos = newPos + Vector3D(0.0f, 0.0f, (-5.0f * (1.0f / 60.0f)));
+                sceneCam.SetPosition(newPos);
+            }
+            else if (evt.mKeyEvent.mKey == Win32KeyCode::Key_S)
+            {
+                SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
+                Vector3D newPos = sceneCam.GetPositionVec();
+                newPos = newPos + Vector3D(0.0f, 0.0f, (5.0f * (1.0f / 60.0f)));
+                sceneCam.SetPosition(newPos);
+            }
+
+            if (evt.mKeyEvent.mKey == Win32KeyCode::Key_A)
+            {
+                SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
+                Vector3D newPos = sceneCam.GetPositionVec();
+                newPos = newPos + Vector3D((-5.0f * (1.0f / 60.0f)), 0.0f, 0.0f);
+                sceneCam.SetPosition(newPos);
+            }
+            else if (evt.mKeyEvent.mKey == Win32KeyCode::Key_D)
+            {
+                SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
+                Vector3D newPos = sceneCam.GetPositionVec();
+                newPos = newPos + Vector3D((5.0f * (1.0f / 60.0f)), 0.0f, 0.0f);
+                sceneCam.SetPosition(newPos);
+            }
         }
     });
     eventHandler.RegisterForEvent(EEventType::Key, keyEvent);
@@ -108,6 +139,9 @@ void GameApp::Start()
     RZE_Game::Start();
 
     // ALL TEST CODE
+
+    CreateDefaultShader();
+    CreateTextureShader();
 
     const char* const cubeFilePath = "./../RZE_Engine/Assets/3D/Cube.obj";
     const char* const miniCooperFilePath = "./../RZE_Engine/Assets/3D/MiniCooper.obj";
@@ -141,6 +175,7 @@ void GameApp::CreateTextureQuad(const ResourceHandle& meshHandle, const Resource
     MeshComponent* const meshComp = static_cast<MeshComponent* const>(entity->GetComponents()[0]);
     meshComp->SetMeshHandle(meshHandle);
     meshComp->SetTextureHandle(textureHandle);
+    meshComp->SetShaderGroup(mTextureShader);
 
     entity->AddComponent<TransformComponent>();
     TransformComponent* const transfComp = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
@@ -157,6 +192,7 @@ void GameApp::CreateLight(const ResourceHandle& resourceHandle)
     mLightEntity->AddComponent<MeshComponent>();
     MeshComponent* const lightMesh = static_cast<MeshComponent* const>(mLightEntity->GetComponents()[0]);
     lightMesh->SetMeshHandle(resourceHandle);
+    lightMesh->SetShaderGroup(mDefaultShader);
 
     mLightEntity->AddComponent<TransformComponent>();
     TransformComponent* const lightTransform = static_cast<TransformComponent* const>(mLightEntity->GetComponents()[1]);
@@ -164,8 +200,8 @@ void GameApp::CreateLight(const ResourceHandle& resourceHandle)
 
     mLightEntity->AddComponent<LightSourceComponent>("MainTestLight");
     LightSourceComponent* const lightComponent = static_cast<LightSourceComponent* const>(mLightEntity->GetComponents()[2]);
-    lightComponent->SetColor(Vector3D(1.0f, 0.5f, 1.0f));
-    lightComponent->SetStrength(2.0f);
+    lightComponent->SetColor(Vector3D(1.0f, 1.0f, 1.0f));
+    lightComponent->SetStrength(0.75f);
 
     mEntities.push_back(mLightEntity);
 }
@@ -180,6 +216,7 @@ void GameApp::CreateGround(const ResourceHandle& resourceHandle)
         testEntity->AddComponent<MeshComponent>();
         MeshComponent* const meshComponent = static_cast<MeshComponent* const>(testEntity->GetComponents()[0]);
         meshComponent->SetMeshHandle(resourceHandle);
+        meshComponent->SetShaderGroup(mDefaultShader);
 
         testEntity->AddComponent<TransformComponent>();
         TransformComponent* const transformComp = static_cast<TransformComponent* const>(testEntity->GetComponents()[1]);
@@ -202,6 +239,7 @@ void GameApp::CreateLampObjects(const ResourceHandle& resourceHandle)
     lampEntity->AddComponent<MeshComponent>("LampMesh");
     MeshComponent* meshComponent = static_cast<MeshComponent*>(lampEntity->GetComponents()[0]);
     meshComponent->SetMeshHandle(resourceHandle);
+    meshComponent->SetShaderGroup(mDefaultShader);
 
     lampEntity->AddComponent<TransformComponent>();
     TransformComponent* transformComp = static_cast<TransformComponent*>(lampEntity->GetComponents()[1]);
@@ -218,6 +256,7 @@ void GameApp::CreateLampObjects(const ResourceHandle& resourceHandle)
     lampEntity->AddComponent<MeshComponent>("LampMesh");
     meshComponent = static_cast<MeshComponent* const>(lampEntity->GetComponents()[0]);
     meshComponent->SetMeshHandle(resourceHandle);
+    meshComponent->SetShaderGroup(mDefaultShader);
 
     lampEntity->AddComponent<TransformComponent>();
     transformComp = static_cast<TransformComponent* const>(lampEntity->GetComponents()[1]);
@@ -234,6 +273,7 @@ void GameApp::CreateLampObjects(const ResourceHandle& resourceHandle)
     lampEntity->AddComponent<MeshComponent>("LampMesh");
     meshComponent = static_cast<MeshComponent* const>(lampEntity->GetComponents()[0]);
     meshComponent->SetMeshHandle(resourceHandle);
+    meshComponent->SetShaderGroup(mDefaultShader);
 
     lampEntity->AddComponent<TransformComponent>();
     transformComp = static_cast<TransformComponent* const>(lampEntity->GetComponents()[1]);
@@ -250,6 +290,7 @@ void GameApp::CreateLampObjects(const ResourceHandle& resourceHandle)
     lampEntity->AddComponent<MeshComponent>("LampMesh");
     meshComponent = static_cast<MeshComponent* const>(lampEntity->GetComponents()[0]);
     meshComponent->SetMeshHandle(resourceHandle);
+    meshComponent->SetShaderGroup(mDefaultShader);
 
     lampEntity->AddComponent<TransformComponent>();
     transformComp = static_cast<TransformComponent* const>(lampEntity->GetComponents()[1]);
@@ -257,4 +298,73 @@ void GameApp::CreateLampObjects(const ResourceHandle& resourceHandle)
     transformComp->SetScale(Vector3D(0.5f, 0.5f, 0.5f));
 
     mEntities.push_back(lampEntity);
+}
+
+void GameApp::CreateDefaultShader()
+{
+    const char* const vertShaderFilePath = "./../RZE_Engine/Assets/Shaders/VertexShader.shader";
+    const char* const fragShaderFilePath = "./../RZE_Engine/Assets/Shaders/FragmentShader.shader";
+
+    ResourceHandle vertShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "DefaultVertexShader");
+    ResourceHandle fragShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "DefaultFragShader");
+
+    GFXShader* vertShader = RZE_Engine::Get()->GetResourceHandler().GetResource<GFXShader>(vertShaderHandle);
+    vertShader->Create();
+    vertShader->Compile();
+
+    GFXShader* fragShader = RZE_Engine::Get()->GetResourceHandler().GetResource<GFXShader>(fragShaderHandle);
+    fragShader->Create();
+    fragShader->Compile();
+
+    mDefaultShader = new GFXShaderGroup("DefaultShader");
+    mDefaultShader->AddShader(GFXShaderGroup::EShaderIndex::Vertex, vertShader);
+    mDefaultShader->AddShader(GFXShaderGroup::EShaderIndex::Fragment, fragShader);
+
+    mDefaultShader->AddUniform("UModelMat");
+    mDefaultShader->AddUniform("UProjectionMat");
+    mDefaultShader->AddUniform("UViewMat");
+
+    mDefaultShader->AddUniform("ULightPosition");
+    mDefaultShader->AddUniform("UViewPosition");
+    mDefaultShader->AddUniform("ULightColor");
+    mDefaultShader->AddUniform("ULightStrength");
+
+    mDefaultShader->AddUniform("UFragColor");
+
+    mDefaultShader->GenerateShaderProgram();
+}
+
+void GameApp::CreateTextureShader()
+{
+    const char* const vertShaderFilePath = "./../RZE_Engine/Assets/Shaders/TextureVert.shader";
+    const char* const fragShaderFilePath = "./../RZE_Engine/Assets/Shaders/TextureFrag.shader";
+
+    ResourceHandle vertShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "TextureVertShader");
+    ResourceHandle fragShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "TextureFragShader");
+
+    GFXShader* vertShader = RZE_Engine::Get()->GetResourceHandler().GetResource<GFXShader>(vertShaderHandle);
+    vertShader->Create();
+    vertShader->Compile();
+
+    GFXShader* fragShader = RZE_Engine::Get()->GetResourceHandler().GetResource<GFXShader>(fragShaderHandle);
+    fragShader->Create();
+    fragShader->Compile();
+
+    mTextureShader = new GFXShaderGroup("TextureShader");
+    mTextureShader->AddShader(GFXShaderGroup::EShaderIndex::Vertex, vertShader);
+    mTextureShader->AddShader(GFXShaderGroup::EShaderIndex::Fragment, fragShader);
+
+    mTextureShader->AddUniform("UModelMat");
+    mTextureShader->AddUniform("UProjectionMat");
+    mTextureShader->AddUniform("UViewMat");
+
+    mTextureShader->AddUniform("ULightPosition");
+    mTextureShader->AddUniform("UViewPosition");
+    mTextureShader->AddUniform("ULightColor");
+    mTextureShader->AddUniform("ULightStrength");
+
+    mTextureShader->AddUniform("UFragColor");
+    //mTextureShader->AddUniform("UTexture2D");
+
+    mTextureShader->GenerateShaderProgram();
 }

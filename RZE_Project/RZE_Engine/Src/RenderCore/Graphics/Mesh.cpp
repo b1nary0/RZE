@@ -58,14 +58,13 @@ void GFXMesh::OnLoadFinished()
         mPositions.push_back(mVertices[vertIdx].Position);
         mNormals.push_back(mVertices[vertIdx].Normal);
 
-        if (vertIdx != 0 && vertIdx != 5)
-            mUVCoords.push_back(mVertices[vertIdx].UVData);
+        mUVCoords.push_back(mVertices[vertIdx].UVData);
     }
 
     const GLsizeiptr verticesSize = mPositions.size() * sizeof(Vector3D);
     const GLsizeiptr normalsSize = mNormals.size() * sizeof(Vector3D);
     const GLsizeiptr uvDataSize = mUVCoords.size() * sizeof(Vector2D);
-    const GLsizeiptr totalSize = verticesSize + normalsSize; //+ uvDataSize;
+    const GLsizeiptr totalSize = verticesSize + normalsSize + uvDataSize;
 
     const GLsizeiptr normalsStart = verticesSize;
     const GLsizeiptr uvDataStart = normalsStart + normalsSize;
@@ -76,7 +75,8 @@ void GFXMesh::OnLoadFinished()
     mVAO.Bind();
     mVertexVBO.SetBufferData(nullptr, totalSize);
     mVertexVBO.SetBufferSubData(mPositions.data(), 0, verticesSize);
-    mVertexVBO.SetBufferSubData(mNormals.data(), verticesSize, normalsSize);
+    mVertexVBO.SetBufferSubData(mNormals.data(), normalsStart, normalsSize);
+    mVertexVBO.SetBufferSubData(mUVCoords.data(), uvDataStart, uvDataSize);
 
     mEBO.SetBufferData(mIndices.data(), sizeof(U32) * mIndices.size());
 
