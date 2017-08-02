@@ -2,11 +2,11 @@
 
 layout(location = 0) in vec3 VertexPosition;
 layout(location = 1) in vec3 VertexNormal;
-layout(location = 2) in vec3 VertexUV;
+layout(location = 2) in vec2 VertexUV;
 
 out vec3 FragPos;
 out vec3 Normal;
-out vec3 UVCoord;
+out vec2 UVCoord;
 
 uniform mat4 UModelMat;
 uniform mat4 UProjectionMat;

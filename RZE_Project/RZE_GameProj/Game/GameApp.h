@@ -24,7 +24,7 @@ private:
     void CreateLight(const ResourceHandle& resourceHandle);
     void CreateGround(const ResourceHandle& resourceHandle);
     void CreateLampObjects(const ResourceHandle& resourceHandle);
-    void CreateTextureQuad(const ResourceHandle& resourceHandle);
+    void CreateTextureQuad(const ResourceHandle& meshHandle, const ResourceHandle& textureHandle);
 
     GameEntity* mLightEntity;
     std::vector<GameEntity*> mEntities;

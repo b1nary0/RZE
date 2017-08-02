@@ -9,6 +9,9 @@
 #include <RenderCore/Renderer.h>
 #include <RenderCore/HardwareInterface/OpenGL.h>
 
+#include <RenderCore/Graphics/Mesh.h>
+#include <RenderCore/Graphics/Texture2D.h>
+
 #include <RenderCore/Shaders/Shader.h>
 #include <RenderCore/Shaders/ShaderGroup.h>
 
@@ -66,8 +69,13 @@ void RenderSystem::Update()
         renderItem.mProjectionMat = renderCam.GetProjectionMat();
         renderItem.mViewMat = renderCam.GetViewMat();
         // #TODO find a better transfer point for the resource handler. Maybe pass in as an argument to constructor for renderer?
-        renderItem.mMeshData = RZE_Engine::Get()->GetResourceHandler().GetResource<MeshResource>(meshComponent->GetResource());
+        renderItem.mMeshData = RZE_Engine::Get()->GetResourceHandler().GetResource<MeshResource>(meshComponent->GetMeshHandle());
 
+        if (meshComponent->GetTextureHandle().IsValid())
+        {
+            renderItem.mTextureData = RZE_Engine::Get()->GetResourceHandler().GetResource<GFXTexture2D>(meshComponent->GetTextureHandle());
+        }
+        
         if (lightComponent)
         {
             RZE_Renderer::LightItemProtocol lightItem;
@@ -112,12 +120,14 @@ void RenderSystem::CreateTestShaderStuff()
     mShaderGroup->AddUniform("UModelMat");
     mShaderGroup->AddUniform("UProjectionMat");
     mShaderGroup->AddUniform("UViewMat");
-    mShaderGroup->AddUniform("UFragColor");
 
     mShaderGroup->AddUniform("ULightPosition");
     mShaderGroup->AddUniform("UViewPosition");
     mShaderGroup->AddUniform("ULightColor");
     mShaderGroup->AddUniform("ULightStrength");
+
+    mShaderGroup->AddUniform("UFragColor");
+    mShaderGroup->AddUniform("UTexture2D");
 
     mShaderGroup->GenerateShaderProgram();
 }

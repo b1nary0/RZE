@@ -57,16 +57,18 @@ void GFXMesh::OnLoadFinished()
     {
         mPositions.push_back(mVertices[vertIdx].Position);
         mNormals.push_back(mVertices[vertIdx].Normal);
-        mUVCoords.push_back(mVertices[vertIdx].UVData);
+
+        if (vertIdx != 0 && vertIdx != 5)
+            mUVCoords.push_back(mVertices[vertIdx].UVData);
     }
 
     const GLsizeiptr verticesSize = mPositions.size() * sizeof(Vector3D);
     const GLsizeiptr normalsSize = mNormals.size() * sizeof(Vector3D);
-    const GLsizeiptr uvDataSize = mUVCoords.size() * sizeof(Vector3D);
-    const GLsizeiptr totalSize = verticesSize + normalsSize + uvDataSize;
+    const GLsizeiptr uvDataSize = mUVCoords.size() * sizeof(Vector2D);
+    const GLsizeiptr totalSize = verticesSize + normalsSize; //+ uvDataSize;
 
     const GLsizeiptr normalsStart = verticesSize;
-    const GLsizeiptr uvDataStart = normalsSize + normalsSize;
+    const GLsizeiptr uvDataStart = normalsStart + normalsSize;
 
     const GLvoid* normalsStartPtr = reinterpret_cast<GLvoid*>(normalsStart);
     const GLvoid* uvDataStartPtr = reinterpret_cast<GLvoid*>(uvDataStart);
@@ -88,7 +90,7 @@ void GFXMesh::OnLoadFinished()
 
     // tex coords
     OpenGLRHI::Get().EnableVertexAttributeArray(2);
-    OpenGLRHI::Get().VertexAttribPointer(2, 3, EGLDataType::Float, EGLBooleanValue::False, sizeof(Vector3D), uvDataStartPtr);
+    OpenGLRHI::Get().VertexAttribPointer(2, 2, EGLDataType::Float, EGLBooleanValue::False, sizeof(Vector2D), uvDataStartPtr);
 
     mVAO.Unbind();
 }
@@ -173,7 +175,7 @@ void MeshResource::ProcessMesh(const aiMesh& mesh, const aiScene& scene, GFXMesh
         if (bHasTextureCoords)
         {
             const aiVector3D& assimpUV = mesh.mTextureCoords[0][vertexIdx];
-            Vector3D vertUV(assimpUV.x, assimpUV.y, assimpUV.z);
+            Vector2D vertUV(assimpUV.x, assimpUV.y);
             vertex.UVData = vertUV;
         }
 

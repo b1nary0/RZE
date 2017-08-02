@@ -39,7 +39,7 @@ ResourceHandle::ResourceHandle(const std::string& resourceID)
     mResourceID = resourceID;
 }
 
-bool ResourceHandle::IsValid()
+bool ResourceHandle::IsValid() const
 {
     return !mResourceID.empty();
 }

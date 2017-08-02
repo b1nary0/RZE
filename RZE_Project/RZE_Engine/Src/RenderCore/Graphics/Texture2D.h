@@ -12,7 +12,11 @@ public:
     GFXTexture2D();
     ~GFXTexture2D();
 
-    virtual bool Load(const std::string& filePath);
+    virtual bool Load(const std::string& filePath) override;
+
+    U32 GetTextureID();
+
+    Vector2D GetDimensions();
 
 private:
     U32 mTextureID;

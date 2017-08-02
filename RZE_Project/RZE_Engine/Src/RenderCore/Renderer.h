@@ -7,6 +7,7 @@
 
 class MeshResource;
 class GFXShaderGroup;
+class GFXTexture2D;
 
 class RZE_Renderer
 {
@@ -19,7 +20,8 @@ public:
         Matrix4x4           mModelMat;
         Matrix4x4           mProjectionMat;
         Matrix4x4           mViewMat;
-        MeshResource*           mMeshData;
+        MeshResource*       mMeshData;
+        GFXTexture2D*       mTextureData;
     } RenderItemProtocol;
 
     typedef struct LightItemProtocol

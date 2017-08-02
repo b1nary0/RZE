@@ -2,6 +2,7 @@
 #include <RenderCore/Renderer.h>
 
 #include <RenderCore/Graphics/Mesh.h>
+#include <RenderCore/Graphics/Texture2D.h>
 #include <RenderCore/HardwareInterface/OpenGL.h>
 #include <RenderCore/Shaders/ShaderGroup.h>
 
@@ -64,6 +65,12 @@ void RZE_Renderer::RenderSingleItem(RenderItemProtocol& renderItem)
     // @implementation should we have this type of assumption?
     if (renderItem.mShaderGroup)
     {
+        if (renderItem.mTextureData)
+        {
+            // #TODO replace with RHI call
+            glBindTexture(EGLCapability::Texture2D, renderItem.mTextureData->GetTextureID());
+        }
+
         renderItem.mShaderGroup->Use();        
         
         renderItem.mShaderGroup->SetUniformMatrix4x4("UModelMat", renderItem.mModelMat);
@@ -71,6 +78,7 @@ void RZE_Renderer::RenderSingleItem(RenderItemProtocol& renderItem)
         renderItem.mShaderGroup->SetUniformMatrix4x4("UViewMat", renderItem.mViewMat);
 
         renderItem.mShaderGroup->SetUniformVector4D("UFragColor", Vector4D(0.25f, 0.25f, 0.25f, 1.0f));
+
 
         for (auto& light : mLightingList)
         {
@@ -96,4 +104,5 @@ RZE_Renderer::RenderItemProtocol::RenderItemProtocol()
 {
     mShaderGroup        = nullptr;
     mMeshData           = nullptr;
+    mTextureData        = nullptr;
 }

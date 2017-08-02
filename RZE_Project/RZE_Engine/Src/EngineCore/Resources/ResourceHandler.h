@@ -15,7 +15,7 @@ class ResourceHandle
 public:
     ResourceHandle() {}
 
-    bool IsValid();
+    bool IsValid() const;
     const std::string& GetID() const;
 
     bool operator==(const ResourceHandle& rhs)

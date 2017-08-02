@@ -5,9 +5,9 @@
 #include <Game/ECS/EntityComponent.h>
 
 #include <RenderCore/HardwareInterface/OpenGL.h>
-#include <RenderCore/Graphics/Mesh.h>
 
 class GFXShaderGroup;
+class GFXTexture2D;
 
 class MeshComponent : public IEntityComponent
 {
@@ -22,15 +22,22 @@ public:
     GFXShaderGroup* const GetShaderGroup();
     void SetShaderGroup(GFXShaderGroup* const shaderGroup);
 
-    const ResourceHandle& GetResource() const;
-    void SetResource(const ResourceHandle& resourceHandle);
+    const ResourceHandle& GetMeshHandle() const;
+    void SetMeshHandle(const ResourceHandle& resourceHandle);
+
+    const ResourceHandle& GetTextureHandle() const;
+    void SetTextureHandle(const ResourceHandle& resourceHandle);
 
 private:
 
     // @todo:josh temp pointer for now because we have some cyclical issues in headers
     //            that needs to be worked out for now... 
-    ResourceHandle mResourceHandle;
+    ResourceHandle mMeshHandle;
+    // #TODO this will have to be abstracted better or some other way to deal with giving a mesh/model a texture period and
+    //       then offloading the actual type (1D, 2D, 3D) later.
+    ResourceHandle mTextureHandle;
 
     GFXShaderGroup* mShaderGroup;
+
     std::vector<float> mVertexList;
 };

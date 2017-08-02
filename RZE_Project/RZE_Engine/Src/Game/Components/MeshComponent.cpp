@@ -17,7 +17,7 @@ MeshComponent::MeshComponent(const std::string& name)
 
 MeshComponent::~MeshComponent()
 {
-    RZE_Engine::Get()->GetResourceHandler().ReleaseResource(mResourceHandle);
+    RZE_Engine::Get()->GetResourceHandler().ReleaseResource(mMeshHandle);
 }
 
 std::vector<float>& MeshComponent::GetVertexList()
@@ -25,9 +25,19 @@ std::vector<float>& MeshComponent::GetVertexList()
     return mVertexList;
 }
 
-void MeshComponent::SetResource(const ResourceHandle& resourceHandle)
+void MeshComponent::SetMeshHandle(const ResourceHandle& resourceHandle)
 {
-    mResourceHandle = resourceHandle;
+    mMeshHandle = resourceHandle;
+}
+
+const ResourceHandle& MeshComponent::GetTextureHandle() const
+{
+    return mTextureHandle;
+}
+
+void MeshComponent::SetTextureHandle(const ResourceHandle& resourceHandle)
+{
+    mTextureHandle = resourceHandle;
 }
 
 GFXShaderGroup* const MeshComponent::GetShaderGroup()
@@ -40,7 +50,7 @@ void MeshComponent::SetShaderGroup(GFXShaderGroup* const shaderGroup)
     mShaderGroup = shaderGroup;
 }
 
-const ResourceHandle& MeshComponent::GetResource() const
+const ResourceHandle& MeshComponent::GetMeshHandle() const
 {
-    return mResourceHandle;
+    return mMeshHandle;
 }
