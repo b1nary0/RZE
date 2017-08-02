@@ -157,7 +157,6 @@
     <ClCompile Include="Src\EngineCore\Config\Config.cpp" />
     <ClCompile Include="Src\EngineCore\Config\EngineConfig.cpp" />
     <ClCompile Include="Src\EngineCore\Engine.cpp" />
-    <ClCompile Include="Src\EngineCore\EngineConfig.cpp" />
     <ClCompile Include="Src\EngineCore\Input\InputHandler.cpp" />
     <ClCompile Include="Src\EngineCore\Platform\File.cpp" />
     <ClCompile Include="Src\EngineCore\Platform\Memory\BlockAllocator.cpp" />
@@ -197,7 +196,6 @@
     <ClInclude Include="Src\EngineCore\Config\Config.h" />
     <ClInclude Include="Src\EngineCore\Config\EngineConfig.h" />
     <ClInclude Include="Src\EngineCore\Engine.h" />
-    <ClInclude Include="Src\EngineCore\EngineConfig.h" />
     <ClInclude Include="Src\EngineCore\Input\InputHandler.h" />
     <ClInclude Include="Src\EngineCore\Platform\File.h" />
     <ClInclude Include="Src\EngineCore\Platform\FilePath.h" />
