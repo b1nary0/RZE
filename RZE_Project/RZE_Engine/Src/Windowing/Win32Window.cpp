@@ -42,6 +42,9 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 
     const std::wstring wStrTitle = Conversions::StringToWString(mTitle);
 
+    BYTE CursorMaskAND[] = { 0xFF };
+    BYTE CursorMaskXOR[] = { 0x00 };
+
     // @NOTE what do the properties that are set as 0 do?
     WNDCLASSEX wc;
     wc.cbSize = sizeof(WNDCLASSEX);
@@ -51,7 +54,7 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
     wc.cbWndExtra = 0;
     wc.hInstance = GetModuleHandle(nullptr);
     wc.hIcon = LoadIcon(0, IDI_APPLICATION); // @TODO fill this with proper customizable icon
-    wc.hCursor = LoadCursor(0, IDC_ARROW); // @TODO fill this with proper customizable cursor
+    wc.hCursor = CreateCursor(NULL, 0, 0, 1, 1, CursorMaskAND, CursorMaskXOR); // @TODO fill this with proper customizable cursor
     wc.hbrBackground = HBRUSH(COLOR_WINDOW + 1); // @NOTE what is this?
     wc.lpszMenuName = 0;
     wc.lpszClassName = wStrTitle.c_str(); // @NOTE does this represent what you think it represents?
@@ -150,6 +153,12 @@ void Win32Window::CompileMessages(EventHandler& eventHandler)
         {
             MouseEvent mouseEvent(EMouseEventType::Mouse_Move, static_cast<U16>(GET_X_LPARAM(msg.lParam)), static_cast<U16>(GET_Y_LPARAM(msg.lParam)));
             eventHandler.PostMouseEvent(mouseEvent);
+        }
+        break;
+
+        case WM_SETCURSOR:
+        {
+            SetCursor(NULL);
         }
         break;
 
