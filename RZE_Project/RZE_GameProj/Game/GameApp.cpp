@@ -129,6 +129,21 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
                 newPos = newPos + Vector3D((5.0f * (1.0f / 60.0f)), 0.0f, 0.0f);
                 sceneCam.SetPosition(newPos);
             }
+
+            if (evt.mKeyEvent.mKey == Win32KeyCode::Key_Q)
+            {
+                SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
+                Vector3D newPos = sceneCam.GetPositionVec();
+                newPos = newPos + Vector3D(0.0f, (5.0f * (1.0f / 60.0f)), 0.0f);
+                sceneCam.SetPosition(newPos);
+            }
+            else if (evt.mKeyEvent.mKey == Win32KeyCode::Key_E)
+            {
+                SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
+                Vector3D newPos = sceneCam.GetPositionVec();
+                newPos = newPos + Vector3D(0.0f, (-5.0f * (1.0f / 60.0f)), 0.0f);
+                sceneCam.SetPosition(newPos);
+            }
         }
     });
     eventHandler.RegisterForEvent(EEventType::Key, keyEvent);
