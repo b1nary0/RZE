@@ -18,6 +18,8 @@ public:
     void SetY(float newY);
     void SetZ(float newY);
 
+    void Normalize();
+
 	const glm::vec3& GetInternalVec() const;
 
 	Vector3D operator+(const Vector3D& rhs);

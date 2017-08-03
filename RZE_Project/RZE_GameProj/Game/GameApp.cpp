@@ -135,13 +135,46 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
 
     Functor<void, const Event&> mouseEvent([this](const Event& event)
     {
+        static float lastX = RZE_Engine::Get()->GetWindowSettings().GetDimensions().X() / 2;
+        static float lastY = RZE_Engine::Get()->GetWindowSettings().GetDimensions().Y() / 2;
+
+        static float pitch = 0;
+        static float yaw = 0;
+
+        static bool first = true;
+
+        const float sens = 0.5f;
+
         if (event.mInfo.mEventSubType == EMouseEventType::Mouse_Move)
         {
-            U16 posX = event.mMouseEvent.mPosX;
-            U16 posY = event.mMouseEvent.mPosY;
+            float posX = static_cast<float>(event.mMouseEvent.mPosX);
+            float posY = static_cast<float>(event.mMouseEvent.mPosY);
+
+            float xPosOffset = posX - lastX;
+            float yPosOffset = lastY - posY;
+
+            lastX = posX;
+            lastY = posY;
+
+            xPosOffset *= sens;
+            yPosOffset *= sens;
+
+            yaw += xPosOffset;
+            pitch += yPosOffset;
+
+//             pitch = (pitch > 89.0f) ? 89.0f : pitch;
+//             pitch = (pitch < -89.0f) ? -89.0f : pitch;
+
+            float newDirX = std::cos(glm::radians(pitch) * std::cos(glm::radians(yaw)));
+            float newDirY = std::sin(glm::radians(pitch));
+            float newDirZ = std::cos(glm::radians(pitch) * std::sin(glm::radians(yaw)));
+
+            Vector3D newDir(newDirX, newDirY, newDirZ);
+            newDir.Normalize();
+            RZE_Engine::Get()->GetSceneCamera().SetDirection(newDir);
         }
     });
-    eventHandler.RegisterForEvent(EEventType::Mouse, mouseEvent);
+    //eventHandler.RegisterForEvent(EEventType::Mouse, mouseEvent);
 }
 
 void GameApp::Start()

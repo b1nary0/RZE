@@ -23,7 +23,7 @@ void SceneCamera::SetPosition(const Vector3D& newPos)
 
 void SceneCamera::SetDirection(const Vector3D& newDir)
 {
-    mCameraProps.Direction = newDir;
+    mCameraProps.FrontDir = newDir;
 }
 
 const Vector3D& SceneCamera::GetPositionVec() const

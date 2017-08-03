@@ -46,6 +46,11 @@ void Vector3D::SetZ(float newZ)
     mVec.z = newZ;
 }
 
+void Vector3D::Normalize()
+{
+    mVec = glm::normalize(mVec);
+}
+
 const glm::vec3& Vector3D::GetInternalVec() const
 {
 	return mVec;

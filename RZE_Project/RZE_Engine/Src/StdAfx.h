@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <locale.h>
 #include <string>
+#include <math.h>
 
 // std io
 #include <cstdio>
