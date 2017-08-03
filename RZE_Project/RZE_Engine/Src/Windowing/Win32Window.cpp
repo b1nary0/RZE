@@ -25,6 +25,15 @@ Win32Window::Win32Window(const WindowCreationParams& creationProtocol)
     Create(creationProtocol);
 }
 
+void Win32Window::ResetCursorToCenter()
+{
+    RECT rcClip;
+    GetClientRect(mOSWindowHandleData.windowHandle, &rcClip);
+    MapWindowPoints(mOSWindowHandleData.windowHandle, GetParent(mOSWindowHandleData.windowHandle), (LPPOINT)(&rcClip), 1);
+    ClipCursor(&rcClip);
+    SetCursorPos(rcClip.left + static_cast<int>(mDimensions.X() / 2), rcClip.top + static_cast<int>(mDimensions.Y() / 2));
+}
+
 const std::string& Win32Window::GetTitle() const
 {
     return mTitle;
@@ -151,7 +160,7 @@ void Win32Window::CompileMessages(EventHandler& eventHandler)
 
         case WM_MOUSEMOVE:
         {
-            MouseEvent mouseEvent(EMouseEventType::Mouse_Move, static_cast<U16>(GET_X_LPARAM(msg.lParam)), static_cast<U16>(GET_Y_LPARAM(msg.lParam)));
+            MouseEvent mouseEvent(EMouseEventType::Mouse_Move, static_cast<U32>(GET_X_LPARAM(msg.lParam)), static_cast<U32>(GET_Y_LPARAM(msg.lParam)));
             eventHandler.PostMouseEvent(mouseEvent);
         }
         break;

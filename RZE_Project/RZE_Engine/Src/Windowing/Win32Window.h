@@ -9,8 +9,8 @@
 #include <string>
 
 // RZE
-#include "WindowMessageAdaptor.h"
-#include "Utils/Math/Vector2D.h"
+#include <Windowing/WindowMessageAdaptor.h>
+#include <Utils/Math/Vector2D.h>
 
 class EventHandler;
 
@@ -37,6 +37,8 @@ public:
 	};
 
 	Win32Window(const WindowCreationParams& creationProtocol);
+
+    void ResetCursorToCenter();
 
 	const std::string& GetTitle() const;
 	const Vector2D& GetDimensions() const;

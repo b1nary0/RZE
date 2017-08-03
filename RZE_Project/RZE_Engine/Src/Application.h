@@ -5,6 +5,8 @@
 
 #include <Events/Events.h>
 
+#include <Windowing/Win32Window.h>
+
 class EventHandler;
 class Win32Window;
 

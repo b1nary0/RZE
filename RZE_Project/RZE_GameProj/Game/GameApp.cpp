@@ -38,68 +38,13 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
 
     Functor<void, const Event&> keyEvent([this](const Event& evt)
     {
+        static float pitch = 0;
+        static float yaw = 0;
+
+        const float lookSpeed = 2.0f;
+
         if (evt.mInfo.mEventType == EEventType::Key)
         {
-            //
-            // MainTestLight
-            //
-            if (evt.mKeyEvent.mKey == Win32KeyCode::Up)
-            {
-                TransformComponent* const transformComp = static_cast<TransformComponent* const>(mLightEntity->GetComponents()[1]);
-
-                Vector3D currPos = transformComp->GetPosition();
-                Vector3D newPos = currPos + Vector3D(0.0f, 0.0f, (-2.0f * speedY) * deltaT);
-
-                transformComp->SetPosition(newPos);
-            }
-            else if (evt.mKeyEvent.mKey == Win32KeyCode::Down)
-            {
-                TransformComponent* const transformComp = static_cast<TransformComponent* const>(mLightEntity->GetComponents()[1]);
-
-                Vector3D currPos = transformComp->GetPosition();
-                Vector3D newPos = currPos + Vector3D(0.0f, 0.0f, (2.0f * speedY) * deltaT);
-
-                transformComp->SetPosition(newPos);
-            }
-            
-            if (evt.mKeyEvent.mKey == Win32KeyCode::LEFT)
-            {
-                TransformComponent* const transformComp = static_cast<TransformComponent* const>(mLightEntity->GetComponents()[1]);
-
-                Vector3D currPos = transformComp->GetPosition();
-                Vector3D newPos = currPos + Vector3D((-2.0f * speedX) * deltaT, 0.0f, 0.0f);
-
-                transformComp->SetPosition(newPos);
-            }
-            else if (evt.mKeyEvent.mKey == Win32KeyCode::Right)
-            {
-                TransformComponent* const transformComp = static_cast<TransformComponent* const>(mLightEntity->GetComponents()[1]);
-
-                Vector3D currPos = transformComp->GetPosition();
-                Vector3D newPos = currPos + Vector3D((2.0f * speedX) * deltaT, 0.0f, 0.0f);
-
-                transformComp->SetPosition(newPos);
-            }
-
-            if (evt.mKeyEvent.mKey == Win32KeyCode::OEM_Plus)
-            {
-                TransformComponent* const transformComp = static_cast<TransformComponent* const>(mLightEntity->GetComponents()[1]);
-
-                Vector3D currPos = transformComp->GetPosition();
-                Vector3D newPos = currPos + Vector3D(0.0f, (2.0f * speedZ) * deltaT, 0.0f);
-
-                transformComp->SetPosition(newPos);
-            }
-            else if (evt.mKeyEvent.mKey == Win32KeyCode::OEM_Minus)
-            {
-                TransformComponent* const transformComp = static_cast<TransformComponent* const>(mLightEntity->GetComponents()[1]);
-
-                Vector3D currPos = transformComp->GetPosition();
-                Vector3D newPos = currPos + Vector3D(0.0f, (-2.0f * speedZ) * deltaT, 0.0f);
-
-                transformComp->SetPosition(newPos);
-            }
-
             if (evt.mKeyEvent.mKey == Win32KeyCode::Key_W)
             {
                 SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
@@ -158,15 +103,21 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
 
         static bool first = true;
 
-        const float sens = 0.5f;
+        const float sens = 0.05f;
 
         if (event.mInfo.mEventSubType == EMouseEventType::Mouse_Move)
         {
+            GetWindow()->ResetCursorToCenter();
+
             float posX = static_cast<float>(event.mMouseEvent.mPosX);
             float posY = static_cast<float>(event.mMouseEvent.mPosY);
+            float halfWidth = GetWindow()->GetDimensions().X() / 2;
+            float halfHeight = GetWindow()->GetDimensions().Y() / 2;
 
-            float xPosOffset = posX - lastX;
-            float yPosOffset = lastY - posY;
+            LOG_CONSOLE_ARGS("POSX %f POSY %f HW %f HH %f", posX, posY, halfWidth, halfHeight);
+
+            float xPosOffset = posX - halfWidth;
+            float yPosOffset = halfHeight - posY;
 
             lastX = posX;
             lastY = posY;
@@ -180,16 +131,16 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
 //             pitch = (pitch > 89.0f) ? 89.0f : pitch;
 //             pitch = (pitch < -89.0f) ? -89.0f : pitch;
 
-            float newDirX = std::cos(glm::radians(pitch) * std::cos(glm::radians(yaw)));
+            float newDirX = std::cos(glm::radians(pitch)) * std::cos(glm::radians(yaw));
             float newDirY = std::sin(glm::radians(pitch));
-            float newDirZ = std::cos(glm::radians(pitch) * std::sin(glm::radians(yaw)));
+            float newDirZ = std::cos(glm::radians(pitch)) * std::sin(glm::radians(yaw));
 
             Vector3D newDir(newDirX, newDirY, newDirZ);
             newDir.Normalize();
             RZE_Engine::Get()->GetSceneCamera().SetDirection(newDir);
         }
     });
-    //eventHandler.RegisterForEvent(EEventType::Mouse, mouseEvent);
+    eventHandler.RegisterForEvent(EEventType::Mouse, mouseEvent);
 }
 
 void GameApp::Start()

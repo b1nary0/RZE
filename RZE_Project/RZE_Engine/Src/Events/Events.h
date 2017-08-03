@@ -48,10 +48,10 @@ struct MouseEvent
     EventInfo mEventInfo;
 
     MouseEvent() = default;
-    MouseEvent(const U16 eventSubType, const U16 posX, const U16 posY);
+    MouseEvent(const U16 eventSubType, const U32 posX, const U32 posY);
 
-    U16 mPosX;
-    U16 mPosY;
+    U32 mPosX;
+    U32 mPosY;
 };
 
 struct Event
