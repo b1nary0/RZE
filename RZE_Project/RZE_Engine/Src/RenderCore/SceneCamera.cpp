@@ -26,27 +26,27 @@ void SceneCamera::SetDirection(const Vector3D& newDir)
     mCameraProps.FrontDir = newDir;
 }
 
-const Vector3D& SceneCamera::GetPositionVec() const
+const Vector3D& SceneCamera::GetPositionVec()
 {
 	return mCameraProps.Position;
 }
 
-const Vector3D& SceneCamera::GetDirectionVec() const
+const Vector3D& SceneCamera::GetDirectionVec()
 {
 	return mCameraProps.FrontDir;
 }
 
-const Vector3D& SceneCamera::GetUpVec() const
+const Vector3D& SceneCamera::GetUpVec()
 {
 	return mCameraProps.UpDir;
 }
 
-const Matrix4x4& SceneCamera::GetProjectionMat() const
+const Matrix4x4& SceneCamera::GetProjectionMat()
 {
 	return mProjectionMat;
 }
 
-const Matrix4x4& SceneCamera::GetViewMat() const
+const Matrix4x4& SceneCamera::GetViewMat()
 {
 	return mViewMat;
 }

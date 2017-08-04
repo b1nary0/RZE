@@ -46,9 +46,16 @@ void Vector3D::SetZ(float newZ)
     mVec.z = newZ;
 }
 
-void Vector3D::Normalize()
+const Vector3D& Vector3D::Normalize()
 {
     mVec = glm::normalize(mVec);
+    return *this;
+}
+
+Vector3D Vector3D::Cross(const Vector3D& other) const
+{
+    glm::vec3 crossVec = glm::cross(mVec, other.GetInternalVec());
+    return Vector3D(crossVec.x, crossVec.y, crossVec.z);
 }
 
 const glm::vec3& Vector3D::GetInternalVec() const

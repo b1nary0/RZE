@@ -28,12 +28,12 @@ public:
     void SetPosition(const Vector3D& newPos);
     void SetDirection(const Vector3D& newDir);
 
-	const Vector3D& GetPositionVec() const;
-	const Vector3D& GetDirectionVec() const;
-	const Vector3D& GetUpVec() const;
+	const Vector3D& GetPositionVec();
+	const Vector3D& GetDirectionVec();
+	const Vector3D& GetUpVec();
 
-	const Matrix4x4& GetProjectionMat() const;
-	const Matrix4x4& GetViewMat() const;
+	const Matrix4x4& GetProjectionMat();
+	const Matrix4x4& GetViewMat();
 
 private:
 	SceneCameraProps mCameraProps;

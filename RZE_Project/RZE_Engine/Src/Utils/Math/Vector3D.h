@@ -18,7 +18,8 @@ public:
     void SetY(float newY);
     void SetZ(float newY);
 
-    void Normalize();
+    const Vector3D& Normalize();
+    Vector3D Cross(const Vector3D& other) const;
 
 	const glm::vec3& GetInternalVec() const;
 

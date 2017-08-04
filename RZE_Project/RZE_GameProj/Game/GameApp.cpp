@@ -39,8 +39,6 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
     static float pitch = 0;
     static float yaw = 0;
 
-    static Vector3D rightVec((5.0f * deltaT), 0.0f, 0.0f);
-    static Vector3D leftVec((-5.0f * deltaT), 0.0f, 0.0f);
     static Vector3D upVec(0.0f, (5.0f * deltaT), 0.0f);
     static Vector3D downVec(0.0f, (-5.0f * deltaT), 0.0f);
 
@@ -67,14 +65,14 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
             {
                 SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
                 Vector3D newPos = sceneCam.GetPositionVec();
-                newPos = newPos + leftVec;
+                newPos -= sceneCam.GetDirectionVec().Cross(sceneCam.GetUpVec()).Normalize() * (speedZ * deltaT);
                 sceneCam.SetPosition(newPos);
             }
             else if (evt.mKeyEvent.mKey == Win32KeyCode::Key_D)
             {
                 SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
                 Vector3D newPos = sceneCam.GetPositionVec();
-                newPos = newPos + rightVec;
+                newPos += sceneCam.GetDirectionVec().Cross(sceneCam.GetUpVec()).Normalize() * (speedZ * deltaT);
                 sceneCam.SetPosition(newPos);
             }
 
