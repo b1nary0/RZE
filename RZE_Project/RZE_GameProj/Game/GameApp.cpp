@@ -54,14 +54,14 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
             {
                 SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
                 Vector3D newPos = sceneCam.GetPositionVec();
-                newPos = newPos + sceneCam.GetDirectionVec() * (speedZ * deltaT);
+                newPos += sceneCam.GetDirectionVec() * (speedZ * deltaT);
                 sceneCam.SetPosition(newPos);
             }
             else if (evt.mKeyEvent.mKey == Win32KeyCode::Key_S)
             {
                 SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
                 Vector3D newPos = sceneCam.GetPositionVec();
-                newPos = newPos - sceneCam.GetDirectionVec() * (speedZ * deltaT);
+                newPos -= sceneCam.GetDirectionVec() * (speedZ * deltaT);
                 sceneCam.SetPosition(newPos);
             }
 
