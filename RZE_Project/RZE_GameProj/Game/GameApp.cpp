@@ -121,8 +121,8 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
             yaw += xPosOffset;
             pitch += yPosOffset;
 
-            pitch = (pitch > 89.0f) ? 89.0f : pitch;
-            pitch = (pitch < -89.0f) ? -89.0f : pitch;
+           // pitch = (pitch > 89.0f) ? 89.0f : pitch;
+            //pitch = (pitch < -89.0f) ? -89.0f : pitch;
 
             float newDirX = std::cos(glm::radians(pitch)) * std::cos(glm::radians(yaw));
             float newDirY = std::sin(glm::radians(pitch));
