@@ -69,7 +69,7 @@ void RZE_Renderer::RenderSingleItem(RenderItemProtocol& renderItem)
         if (renderItem.mTextureData)
         {
             // #TODO replace with RHI call
-            glBindTexture(EGLCapability::Texture2D, renderItem.mTextureData->GetTextureID());
+            openGL.BindTexture(EGLCapability::Texture2D, renderItem.mTextureData->GetTextureID());
         }
 
         renderItem.mShaderGroup->Use();        

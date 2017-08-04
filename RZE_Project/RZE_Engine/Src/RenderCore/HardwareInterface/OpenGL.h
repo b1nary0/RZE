@@ -408,6 +408,24 @@ public:
     VOID SetUniformVec3D(const GLint uniformLocation, const float x, const float y, const float z) const;
     void SetUniformVec4D(const GLint uniformLocation, const float x, const float y, const float z, const float a) const;
 
+    //
+    // Textures
+    //
+    void GenerateTexture(GLsizei numTextures, GLuint* textureID) const;
+    void BindTexture(GLenum target, GLuint textureID) const;
+    void SetTextureParami(GLenum target, GLenum paramName, GLint param);
+    void TextureImage2D(
+                            GLenum target,
+                            GLint level,
+                            GLint internalFormat,
+                            GLsizei width,
+                            GLsizei height,
+                            GLint border,
+                            GLenum format,
+                            GLenum type,
+                            const GLvoid* data
+                       );
+
 private:
 
     void InitGLEW();

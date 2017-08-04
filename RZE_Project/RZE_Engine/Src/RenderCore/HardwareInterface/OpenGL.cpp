@@ -282,6 +282,41 @@ void OpenGLRHI::SetUniformVec4D(const GLint uniformLocation, const float x, cons
     }
 }
 
+void OpenGLRHI::GenerateTexture(GLsizei numTextures, GLuint* textureID) const
+{
+    AssertExpr(numTextures > 0);
+    glGenTextures(numTextures, textureID);
+    AssertExpr(glGetError() == GL_NO_ERROR);
+}
+
+void OpenGLRHI::BindTexture(GLenum target, GLuint textureID) const
+{
+    glBindTexture(target, textureID);
+    AssertExpr(glGetError() == GL_NO_ERROR);
+}
+
+void OpenGLRHI::SetTextureParami(GLenum target, GLenum paramName, GLint param)
+{
+    glTexParameteri(target, paramName, param);
+    AssertExpr(glGetError() == GL_NO_ERROR);
+}
+
+void OpenGLRHI::TextureImage2D(
+                                    GLenum target, 
+                                    GLint level, 
+                                    GLint internalFormat, 
+                                    GLsizei width, 
+                                    GLsizei height, 
+                                    GLint border, 
+                                    GLenum format, 
+                                    GLenum type, 
+                                    const GLvoid* data
+                               )
+{
+    glTexImage2D(target, level, internalFormat, width, height, border, format, type, data);
+    AssertExpr(glGetError() == GL_NO_ERROR);
+}
+
 //
 //	OPENGLVBO
 //

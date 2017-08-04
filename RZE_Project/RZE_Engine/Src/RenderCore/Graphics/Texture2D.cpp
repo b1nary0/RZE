@@ -21,20 +21,22 @@ bool GFXTexture2D::Load(const std::string& filePath)
     U8* data = stbi_load(filePath.c_str(), &mWidth, &mHeight, &mChannels, 0);
     AssertNotNull(data);
 
-    // #TODO make the OpenGLRHI equivalents
+    OpenGLRHI& openGL = OpenGLRHI::Get();
+
     // #NOTE possibly generic texture class where the defining properties are the GL capability?
-    glGenTextures(1, &mTextureID);
-    glBindTexture(EGLCapability::Texture2D, mTextureID);
+    openGL.GenerateTexture(1, &mTextureID);
+    openGL.BindTexture(EGLCapability::Texture2D, mTextureID);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
+    openGL.SetTextureParami(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    openGL.SetTextureParami(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    openGL.SetTextureParami(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    openGL.SetTextureParami(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
     // #TODO enum in OpenGL.h for GL_RGB etc
-    glTexImage2D(EGLCapability::Texture2D, 0, GL_RGB, mWidth, mHeight, 0, GL_RGB, EGLDataType::UnsignedByte, data);
+    openGL.TextureImage2D(EGLCapability::Texture2D, 0, GL_RGB, mWidth, mHeight, 0, GL_RGB, EGLDataType::UnsignedByte, data);
 
-    glGenerateMipmap(EGLCapability::Texture2D);
+    // #TODO(Josh) deal with later
+    //glGenerateMipmap(EGLCapability::Texture2D);
 
     stbi_image_free(data);
 
