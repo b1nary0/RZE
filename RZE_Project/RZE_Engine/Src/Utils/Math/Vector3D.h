@@ -25,7 +25,10 @@ public:
 	Vector3D operator+(const Vector3D& rhs) const;
     void operator+=(const Vector3D& rhs);
 
+    Vector3D operator-(Vector3D& rhs) const;
+
     Vector3D operator*(const Vector3D& rhs) const;
+    Vector3D operator*(float scalar) const;
 
 private:
 	glm::vec3 mVec;

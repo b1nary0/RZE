@@ -67,9 +67,21 @@ void Vector3D::operator+=(const Vector3D& rhs)
     mVec += rhs.GetInternalVec();
 }
 
+Vector3D Vector3D::operator-(Vector3D& rhs) const
+{
+    glm::vec3 subVec = mVec - rhs.GetInternalVec();
+    return Vector3D(subVec.x, subVec.y, subVec.z);
+}
+
 Vector3D Vector3D::operator*(const Vector3D& rhs) const
 {
     glm::vec3 multVec = mVec * rhs.GetInternalVec();
+    return Vector3D(multVec.x, multVec.y, multVec.z);
+}
+
+Vector3D Vector3D::operator*(float scalar) const
+{
+    glm::vec3 multVec = mVec * scalar;
     return Vector3D(multVec.x, multVec.y, multVec.z);
 }
 

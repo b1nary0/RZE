@@ -32,7 +32,7 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
     
     static float speedX = 2.0f;
     static float speedY = 2.0f;
-    static float speedZ = 4.0f;
+    static float speedZ = 10.0f;
 
     static float deltaT = (1.0f / 60.0f);
 
@@ -54,14 +54,14 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
             {
                 SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
                 Vector3D newPos = sceneCam.GetPositionVec();
-                newPos = newPos + forwardVec;
+                newPos = newPos + sceneCam.GetDirectionVec() * (speedZ * deltaT);
                 sceneCam.SetPosition(newPos);
             }
             else if (evt.mKeyEvent.mKey == Win32KeyCode::Key_S)
             {
                 SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
                 Vector3D newPos = sceneCam.GetPositionVec();
-                newPos = newPos + backwardVec;
+                newPos = newPos - sceneCam.GetDirectionVec() * (speedZ * deltaT);
                 sceneCam.SetPosition(newPos);
             }
 

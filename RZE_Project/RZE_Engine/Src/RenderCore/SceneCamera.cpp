@@ -33,7 +33,7 @@ const Vector3D& SceneCamera::GetPositionVec() const
 
 const Vector3D& SceneCamera::GetDirectionVec() const
 {
-	return mCameraProps.Direction;
+	return mCameraProps.FrontDir;
 }
 
 const Vector3D& SceneCamera::GetUpVec() const
