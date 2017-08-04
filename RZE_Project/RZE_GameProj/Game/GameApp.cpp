@@ -41,8 +41,6 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
 
     static Vector3D rightVec((5.0f * deltaT), 0.0f, 0.0f);
     static Vector3D leftVec((-5.0f * deltaT), 0.0f, 0.0f);
-    static Vector3D forwardVec(0.0f, 0.0f, (-5.0f * deltaT));
-    static Vector3D backwardVec(0.0f, 0.0f, (5.0f * deltaT));
     static Vector3D upVec(0.0f, (5.0f * deltaT), 0.0f);
     static Vector3D downVec(0.0f, (-5.0f * deltaT), 0.0f);
 
