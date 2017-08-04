@@ -22,7 +22,10 @@ public:
 
 	const glm::vec3& GetInternalVec() const;
 
-	Vector3D operator+(const Vector3D& rhs);
+	Vector3D operator+(const Vector3D& rhs) const;
+    void operator+=(const Vector3D& rhs);
+
+    Vector3D operator*(const Vector3D& rhs) const;
 
 private:
 	glm::vec3 mVec;

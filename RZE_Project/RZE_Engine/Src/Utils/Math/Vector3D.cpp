@@ -56,8 +56,20 @@ const glm::vec3& Vector3D::GetInternalVec() const
 	return mVec;
 }
 
-Vector3D Vector3D::operator+(const Vector3D& rhs)
+Vector3D Vector3D::operator+(const Vector3D& rhs) const
 {
 	glm::vec3 addVec = mVec + rhs.GetInternalVec();
 	return Vector3D(addVec.x, addVec.y, addVec.z);
 }
+
+void Vector3D::operator+=(const Vector3D& rhs)
+{
+    mVec += rhs.GetInternalVec();
+}
+
+Vector3D Vector3D::operator*(const Vector3D& rhs) const
+{
+    glm::vec3 multVec = mVec * rhs.GetInternalVec();
+    return Vector3D(multVec.x, multVec.y, multVec.z);
+}
+

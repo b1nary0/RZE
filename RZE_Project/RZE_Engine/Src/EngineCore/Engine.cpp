@@ -167,8 +167,8 @@ void RZE_Engine::LoadEngineConfig()
 void RZE_Engine::Update()
 {
     CompileEvents();
-    mEventHandler.ProcessEvents();
     mInputHandler.ProcessEvents();
+    mEventHandler.ProcessEvents();
 
     mApplication->Update();
     mWorld->Update();
