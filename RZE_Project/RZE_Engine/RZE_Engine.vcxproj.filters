@@ -70,6 +70,9 @@
     <Filter Include="Source Files\EngineCore\Platform\Memory">
       <UniqueIdentifier>{0d3774ec-c5db-4fed-b7ab-45710593c8ac}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\RenderCore\Graphics\Fonts">
+      <UniqueIdentifier>{2886ce28-2336-4d77-a3d9-5de196ed1faf}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Src\Application.cpp">
@@ -179,6 +182,12 @@
     </ClCompile>
     <ClCompile Include="Src\EngineCore\Platform\Memory\BlockAllocator.cpp">
       <Filter>Source Files\EngineCore\Platform\Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\RenderCore\Graphics\Font\FontHandler.cpp">
+      <Filter>Source Files\RenderCore\Graphics\Fonts</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\RenderCore\Graphics\Font\Font.cpp">
+      <Filter>Source Files\RenderCore\Graphics\Fonts</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -328,6 +337,12 @@
     </ClInclude>
     <ClInclude Include="Src\EngineCore\Platform\Memory\BlockAllocator.h">
       <Filter>Source Files\EngineCore\Platform\Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\RenderCore\Graphics\Font\FontHandler.h">
+      <Filter>Source Files\RenderCore\Graphics\Fonts</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\RenderCore\Graphics\Font\Font.h">
+      <Filter>Source Files\RenderCore\Graphics\Fonts</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

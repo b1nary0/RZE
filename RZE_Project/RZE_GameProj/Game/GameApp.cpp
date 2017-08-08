@@ -32,7 +32,7 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
     
     static float speedX = 2.0f;
     static float speedY = 2.0f;
-    static float speedZ = 10.0f;
+    static float speedZ = 15.0f;
 
     static float deltaT = (1.0f / 60.0f);
 

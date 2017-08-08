@@ -2,6 +2,8 @@
 
 #include "Game/ECS/EntitySystem.h"
 
+#include <RenderCore/Graphics/Font/FontHandler.h>
+
 class GFXShaderGroup;
 
 class RenderSystem : public IEntitySystem
@@ -16,6 +18,8 @@ public:
 
 private:
     void CreateTestShaderStuff();
+
+    FontHandler mFontHandler;
 
     GFXShaderGroup* mShaderGroup;
 };

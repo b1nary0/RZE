@@ -31,6 +31,10 @@
  #include <GLM/gtc/matrix_transform.hpp>
  #include <GLM/gtc/type_ptr.hpp>
 
+// freetype
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
 // RZE
 #include "RZE_Config.h"
 #include "RZE.h"

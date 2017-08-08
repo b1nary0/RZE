@@ -91,7 +91,7 @@
       <SDLCheck>true</SDLCheck>
       <TreatWarningAsError>true</TreatWarningAsError>
       <PrecompiledHeaderFile>StdAfx.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\Include;$(ProjectDir)Src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\Include\FreeType;$(ProjectDir)ThirdParty\Include;$(ProjectDir)Src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -172,6 +172,8 @@
     <ClCompile Include="Src\Game\GameWorld.cpp" />
     <ClCompile Include="Src\Game\Systems\MovementSystem.cpp" />
     <ClCompile Include="Src\Game\Systems\RenderSystem.cpp" />
+    <ClCompile Include="Src\RenderCore\Graphics\Font\Font.cpp" />
+    <ClCompile Include="Src\RenderCore\Graphics\Font\FontHandler.cpp" />
     <ClCompile Include="Src\RenderCore\Graphics\Mesh.cpp" />
     <ClCompile Include="Src\RenderCore\Graphics\Texture2D.cpp" />
     <ClCompile Include="Src\RenderCore\HardwareInterface\OpenGL.cpp" />
@@ -217,6 +219,8 @@
     <ClInclude Include="Src\Game\GameWorld.h" />
     <ClInclude Include="Src\Game\Systems\MovementSystem.h" />
     <ClInclude Include="Src\Game\Systems\RenderSystem.h" />
+    <ClInclude Include="Src\RenderCore\Graphics\Font\Font.h" />
+    <ClInclude Include="Src\RenderCore\Graphics\Font\FontHandler.h" />
     <ClInclude Include="Src\RenderCore\Graphics\Mesh.h" />
     <ClInclude Include="Src\RenderCore\Graphics\Texture2D.h" />
     <ClInclude Include="Src\RenderCore\HardwareInterface\OpenGL.h" />
