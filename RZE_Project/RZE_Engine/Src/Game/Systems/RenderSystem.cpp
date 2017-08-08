@@ -5,6 +5,7 @@
 #include <Game/Components/LightSourceComponent.h>
 #include <Game/Components/MeshComponent.h>
 #include <Game/Components/TransformComponent.h>
+#include <Game/Components/FontRenderComponent.h>
 
 #include <RenderCore/Renderer.h>
 #include <RenderCore/HardwareInterface/OpenGL.h>

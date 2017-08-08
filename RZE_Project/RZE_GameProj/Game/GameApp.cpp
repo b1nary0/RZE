@@ -9,6 +9,7 @@
 #include <Game/Components/MeshComponent.h>
 #include <Game/Components/TransformComponent.h>
 #include <Game/Components/LightSourceComponent.h>
+#include <Game/Components/FontRenderComponent.h>
 
 #include <RenderCore/Graphics/Mesh.h>
 #include <RenderCore/Graphics/Texture2D.h>
@@ -181,6 +182,16 @@ void GameApp::CreateTextureQuad(const ResourceHandle& meshHandle, const Resource
     TransformComponent* const transfComp = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
     transfComp->SetPosition(Vector3D(0.0f, 2.0f, -3.0f));
     transfComp->SetScale(Vector3D(4.0f, 3.0f, 0.0f));
+
+    mEntities.push_back(entity);
+}
+
+void GameApp::CreateFontTest()
+{
+    GameEntity* entity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
+
+    entity->AddComponent<FontRenderComponent>("TestFontComponent");
+    FontRenderComponent* const meshComp = static_cast<FontRenderComponent* const>(entity->GetComponents()[0]);
 
     mEntities.push_back(entity);
 }

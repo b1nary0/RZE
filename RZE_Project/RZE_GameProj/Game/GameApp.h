@@ -27,6 +27,7 @@ private:
     void CreateGround(const ResourceHandle& resourceHandle);
     void CreateLampObjects(const ResourceHandle& resourceHandle);
     void CreateTextureQuad(const ResourceHandle& meshHandle, const ResourceHandle& textureHandle);
+    void CreateFontTest();
 
     void CreateDefaultShader();
     void CreateTextureShader();

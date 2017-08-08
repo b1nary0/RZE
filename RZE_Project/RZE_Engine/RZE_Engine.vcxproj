@@ -163,6 +163,7 @@
     <ClCompile Include="Src\EngineCore\Resources\ResourceHandler.cpp" />
     <ClCompile Include="Src\Events\EventHandler.cpp" />
     <ClCompile Include="Src\Events\Events.cpp" />
+    <ClCompile Include="Src\Game\Components\FontRenderComponent.cpp" />
     <ClCompile Include="Src\Game\Components\LightSourceComponent.cpp" />
     <ClCompile Include="Src\Game\Components\MeshComponent.cpp" />
     <ClCompile Include="Src\Game\Components\TransformComponent.cpp" />
@@ -208,6 +209,7 @@
     <ClInclude Include="Src\Events\EventHandler.h" />
     <ClInclude Include="Src\Events\Events.h" />
     <ClInclude Include="Src\Events\EventTypes.h" />
+    <ClInclude Include="Src\Game\Components\FontRenderComponent.h" />
     <ClInclude Include="Src\Game\Components\LightSourceComponent.h" />
     <ClInclude Include="Src\Game\Components\MeshComponent.h" />
     <ClInclude Include="Src\Game\Components\TransformComponent.h" />
