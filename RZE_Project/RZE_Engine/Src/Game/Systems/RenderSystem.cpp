@@ -30,7 +30,6 @@ RenderSystem::~RenderSystem()
 
 void RenderSystem::Init()
 {
-    CreateTestShaderStuff();
 }
 
 void RenderSystem::Update()
@@ -98,39 +97,4 @@ void RenderSystem::Update()
 
 void RenderSystem::ShutDown()
 {
-}
-
-void RenderSystem::CreateTestShaderStuff()
-{
-//     const char* const vertShaderFilePath = "./../RZE_Engine/Assets/Shaders/VertexShader.shader";
-//     const char* const fragShaderFilePath = "./../RZE_Engine/Assets/Shaders/FragmentShader.shader";
-// 
-//     ResourceHandle vertShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "TestVertexShader");
-//     ResourceHandle fragShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "TestFragShader");
-// 
-//     GFXShader* vertShader = RZE_Engine::Get()->GetResourceHandler().GetResource<GFXShader>(vertShaderHandle);
-//     vertShader->Create();
-//     vertShader->Compile();
-// 
-//     GFXShader* fragShader = RZE_Engine::Get()->GetResourceHandler().GetResource<GFXShader>(fragShaderHandle);
-//     fragShader->Create();
-//     fragShader->Compile();
-// 
-//     mShaderGroup = new GFXShaderGroup("TestShaderGroup");
-//     mShaderGroup->AddShader(GFXShaderGroup::EShaderIndex::Vertex, vertShader);
-//     mShaderGroup->AddShader(GFXShaderGroup::EShaderIndex::Fragment, fragShader);
-// 
-//     mShaderGroup->AddUniform("UModelMat");
-//     mShaderGroup->AddUniform("UProjectionMat");
-//     mShaderGroup->AddUniform("UViewMat");
-// 
-//     mShaderGroup->AddUniform("ULightPosition");
-//     mShaderGroup->AddUniform("UViewPosition");
-//     mShaderGroup->AddUniform("ULightColor");
-//     mShaderGroup->AddUniform("ULightStrength");
-// 
-//     mShaderGroup->AddUniform("UFragColor");
-//     mShaderGroup->AddUniform("UTexture2D");
-// 
-//     mShaderGroup->GenerateShaderProgram();
 }
