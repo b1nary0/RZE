@@ -42,6 +42,7 @@ private:
         IResource* GetResource() { return mResource; }
 
         bool IsReferenced() { return mReferenceCount != 0; }
+        bool IsValid() { return IsReferenced() && mResource; }
 
         void Destroy()
         {
