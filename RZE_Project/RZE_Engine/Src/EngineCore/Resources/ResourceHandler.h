@@ -8,29 +8,11 @@
 #include <DebugUtils/Debug.h>
 #include <Utils/Conversions.h>
 
-class ResourceHandle
-{
-    friend class ResourceHandler;
-
-public:
-    ResourceHandle() {}
-
-    bool IsValid() const;
-    const std::string& GetID() const;
-
-    bool operator==(const ResourceHandle& rhs)
-    {
-        rhs.mResourceID == mResourceID;
-    }
-
-private:
-    ResourceHandle(const std::string& resourceID);
-
-    std::string mResourceID;
-};
 
 class ResourceHandler
 {
+    friend class ResourceHandle;
+
 private:
     class ResourceSource
     {
@@ -100,6 +82,30 @@ private:
     std::unordered_map<std::string, ResourceSource> mResourceTable;
 };
 
+class ResourceHandle
+{
+    friend class ResourceHandler;
+
+public:
+    ResourceHandle();
+    ResourceHandle(const ResourceHandle& rhs);
+    ~ResourceHandle();
+
+    bool IsValid() const;
+    const std::string& GetID() const;
+
+    bool operator==(const ResourceHandle& rhs)
+    {
+        rhs.mResourceID == mResourceID;
+    }
+
+private:
+    ResourceHandle(const std::string& resourceID, ResourceHandler::ResourceSource* resourceSource);
+
+    std::string mResourceID;
+    ResourceHandler::ResourceSource* mResourceSource;
+};
+
 // #TODO probably move this into an inl maybe?
 template <class ResourceT, class... Args>
 ResourceHandle ResourceHandler::RequestResource(const std::string& resourcePath, Args... args)
@@ -114,13 +120,13 @@ ResourceHandle ResourceHandler::RequestResource(const std::string& resourcePath,
         ResourceSource resourceSource(resource);
         
         mResourceTable[resourceKey] = resourceSource;
-        return ResourceHandle(resourceKey);
+        return ResourceHandle(resourceKey, &mResourceTable[resourceKey]);
     }
 
     ResourceSource& resourceSource = (*iter).second;
     resourceSource.IncreaseRefCount();
 
-    return ResourceHandle(resourceKey);
+    return ResourceHandle(resourceKey, &resourceSource);
 }
 
 template <class ResourceT>

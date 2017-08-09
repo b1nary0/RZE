@@ -148,6 +148,8 @@ void GameApp::Start()
     const char* const quadMeshFilePath = "./../RZE_Engine/Assets/3D/Quad.obj";
     const char* const quadTextureFilePath = "./../RZE_Engine/Assets/2D/Container.jpg";
 
+    ResourceHandler& resourceHandler = RZE_Engine::Get()->GetResourceHandler();
+
     ResourceHandle cubeMesh = RZE_Engine::Get()->GetResourceHandler().RequestResource<MeshResource>(cubeFilePath);
     ResourceHandle lampMesh = RZE_Engine::Get()->GetResourceHandler().RequestResource<MeshResource>(lampFilePath);
 
@@ -340,6 +342,9 @@ void GameApp::CreateDefaultShader()
     mDefaultShader->AddUniform("UFragColor");
 
     mDefaultShader->GenerateShaderProgram();
+
+    RZE_Engine::Get()->GetResourceHandler().ReleaseResource(vertShaderHandle);
+    RZE_Engine::Get()->GetResourceHandler().ReleaseResource(fragShaderHandle);
 }
 
 void GameApp::CreateTextureShader()
@@ -375,4 +380,7 @@ void GameApp::CreateTextureShader()
     //mTextureShader->AddUniform("UTexture2D");
 
     mTextureShader->GenerateShaderProgram();
+
+    RZE_Engine::Get()->GetResourceHandler().ReleaseResource(vertShaderHandle);
+    RZE_Engine::Get()->GetResourceHandler().ReleaseResource(fragShaderHandle);
 }

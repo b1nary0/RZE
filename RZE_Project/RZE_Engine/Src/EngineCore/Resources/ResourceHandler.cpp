@@ -34,9 +34,31 @@ void ResourceHandler::ReleaseResource(ResourceHandle& resourceHandle)
     }
 }
 
-ResourceHandle::ResourceHandle(const std::string& resourceID)
+ResourceHandle::ResourceHandle()
+{
+    mResourceSource = nullptr;
+}
+
+ResourceHandle::ResourceHandle(const std::string& resourceID, ResourceHandler::ResourceSource* resourceSource)
 {
     mResourceID = resourceID;
+    mResourceSource = resourceSource;
+}
+
+ResourceHandle::ResourceHandle(const ResourceHandle& rhs)
+{
+    mResourceID = rhs.mResourceID;
+    mResourceSource = rhs.mResourceSource;
+
+    mResourceSource->IncreaseRefCount();
+}
+
+ResourceHandle::~ResourceHandle()
+{
+    if (mResourceSource)
+    {
+        mResourceSource->DecreaseRefCount();
+    }
 }
 
 bool ResourceHandle::IsValid() const
