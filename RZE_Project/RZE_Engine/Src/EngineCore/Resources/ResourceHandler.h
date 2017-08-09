@@ -94,10 +94,8 @@ public:
     bool IsValid() const;
     const std::string& GetID() const;
 
-    bool operator==(const ResourceHandle& rhs)
-    {
-        rhs.mResourceID == mResourceID;
-    }
+    bool operator==(const ResourceHandle& rhs);
+    void operator=(const ResourceHandle& rhs);
 
 private:
     ResourceHandle(const std::string& resourceID, ResourceHandler::ResourceSource* resourceSource);

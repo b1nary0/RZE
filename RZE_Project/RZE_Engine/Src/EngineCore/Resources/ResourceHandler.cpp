@@ -70,3 +70,16 @@ const std::string& ResourceHandle::GetID() const
 {
     return mResourceID;
 }
+
+void ResourceHandle::operator=(const ResourceHandle& rhs)
+{
+    mResourceID = rhs.mResourceID;
+    mResourceSource = rhs.mResourceSource;
+
+    mResourceSource->IncreaseRefCount();
+}
+
+bool ResourceHandle::operator==(const ResourceHandle& rhs)
+{
+    return rhs.mResourceID == mResourceID;
+}
