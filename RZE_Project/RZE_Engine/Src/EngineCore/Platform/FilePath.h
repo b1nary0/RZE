@@ -9,7 +9,8 @@
 class FilePath
 {
 public:
-    FilePath();
+    FilePath() = default;
+    explicit FilePath(const std::string& path);
     ~FilePath();
 
     const std::string& GetAbsolutePath() const;

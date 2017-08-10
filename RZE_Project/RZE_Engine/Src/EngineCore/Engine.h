@@ -10,6 +10,7 @@
 #include <EngineCore/Config/EngineConfig.h>
 #include <EngineCore/Input/InputHandler.h>
 #include <EngineCore/Resources/ResourceHandler.h>
+#include <RenderCore/Graphics/Font/FontHandler.h>
 
 #include <RenderCore/SceneCamera.h>
 
@@ -69,6 +70,8 @@ private:
     void LoadEngineConfig();
 	void CreateAndInitializeWindow();
 
+    void LoadFonts();
+
 	void InitGame(Functor<RZE_Game* const> createGameCallback);
 
 	RZE_Game* mApplication;
@@ -80,6 +83,7 @@ private:
     ResourceHandler mResourceHandler;
 	EventHandler mEventHandler;
 	InputHandler mInputHandler;
+    FontHandler mFontHandler;
 
     EngineConfig* mEngineConfig;
 

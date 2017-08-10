@@ -159,6 +159,7 @@
     <ClCompile Include="Src\EngineCore\Engine.cpp" />
     <ClCompile Include="Src\EngineCore\Input\InputHandler.cpp" />
     <ClCompile Include="Src\EngineCore\Platform\File.cpp" />
+    <ClCompile Include="Src\EngineCore\Platform\FilePath.cpp" />
     <ClCompile Include="Src\EngineCore\Platform\Memory\BlockAllocator.cpp" />
     <ClCompile Include="Src\EngineCore\Resources\ResourceHandler.cpp" />
     <ClCompile Include="Src\Events\EventHandler.cpp" />

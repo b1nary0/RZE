@@ -7,7 +7,8 @@
 
 GFXFont::GFXFont(const std::string& name, FontHandler* fontHandler)
 {
-
+    mName = name;
+    mFontHandler = fontHandler;
 }
 
 GFXFont::~GFXFont()
@@ -22,6 +23,8 @@ bool GFXFont::Load(const std::string& filePath)
         LOG_CONSOLE_ARGS("Issue loading font at [%s].", filePath.c_str());
         return false;
     }
+
+    LoadCharacters();
 
     return true;
 }
@@ -48,39 +51,39 @@ void GFXFont::LoadCharacters()
         {
             LOG_CONSOLE_ARGS("Could not load glyph for character [%c]", character);
             continue;
-
-            // #TODO(Josh) make this better. Will have to add some functionality to GFXTexture2D to support the width height stuff and buffer.
-            GLuint texture;
-            glGenTextures(1, &texture);
-            glBindTexture(GL_TEXTURE_2D, texture);
-            glTexImage2D(
-                GL_TEXTURE_2D,
-                0,
-                GL_RED,
-                mFace->glyph->bitmap.width,
-                mFace->glyph->bitmap.rows,
-                0,
-                GL_RED,
-                GL_UNSIGNED_BYTE,
-                mFace->glyph->bitmap.buffer
-            );
-
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            
-            int width = static_cast<int>(mFace->glyph->bitmap.width);
-            int height = static_cast<int>(mFace->glyph->bitmap.rows);
-
-            CharacterDescription charDesc;
-            charDesc.mTextureID = texture;
-            charDesc.mSize = Vector2D(width, height);
-            charDesc.mBearing = Vector2D(mFace->glyph->bitmap_left, mFace->glyph->bitmap_top);
-            charDesc.mAdvance = mFace->glyph->advance.x;
-
-            mCharacters[character] = charDesc;
         }
+        
+        // #TODO(Josh) make this better. Will have to add some functionality to GFXTexture2D to support the width height stuff and buffer.
+        GLuint texture;
+        glGenTextures(1, &texture);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            GL_RED,
+            mFace->glyph->bitmap.width,
+            mFace->glyph->bitmap.rows,
+            0,
+            GL_RED,
+            GL_UNSIGNED_BYTE,
+            mFace->glyph->bitmap.buffer
+        );
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            
+        int width = static_cast<int>(mFace->glyph->bitmap.width);
+        int height = static_cast<int>(mFace->glyph->bitmap.rows);
+
+        CharacterDescription charDesc;
+        charDesc.mTextureID = texture;
+        charDesc.mSize = Vector2D(width, height);
+        charDesc.mBearing = Vector2D(mFace->glyph->bitmap_left, mFace->glyph->bitmap_top);
+        charDesc.mAdvance = mFace->glyph->advance.x;
+
+        mCharacters[character] = charDesc;
     }
 
     FT_Done_Face(mFace);

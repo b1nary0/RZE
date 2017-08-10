@@ -32,6 +32,7 @@ private:
 
 private:
     int mSize;
+    std::string mName;
 
     FontHandler*            mFontHandler;
     FT_Face                 mFace;

@@ -192,6 +192,9 @@
     <ClCompile Include="Src\Game\Components\FontRenderComponent.cpp">
       <Filter>Source Files\Game\Components</Filter>
     </ClCompile>
+    <ClCompile Include="Src\EngineCore\Platform\FilePath.cpp">
+      <Filter>Source Files\EngineCore\Platform</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\EngineCore\Engine.h">

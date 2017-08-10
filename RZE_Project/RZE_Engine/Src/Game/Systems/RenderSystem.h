@@ -17,7 +17,5 @@ public:
     virtual void ShutDown() override;
 
 private:
-    FontHandler mFontHandler;
-
     GFXShaderGroup* mShaderGroup;
 };

@@ -69,6 +69,8 @@ void RZE_Engine::Init()
     // #TODO this should be handled better. No need to create directly here. Take a look.
     mRenderer = new RZE_Renderer();
 
+    LoadFonts();
+
     mResourceHandler.Init();
 
     RegisterWindowEvents();
@@ -109,6 +111,13 @@ void RZE_Engine::CreateAndInitializeWindow()
 
     mMainWindow = new Win32Window(params);
     AssertNotNull(mMainWindow);
+
+    mMainWindow->ResetCursorToCenter();
+}
+
+void RZE_Engine::LoadFonts()
+{
+    mFontHandler.LoadFont("Arial", "./../RZE_Engine/Assets/Fonts/Arial.ttf");
 }
 
 void RZE_Engine::InitGame(Functor<RZE_Game* const> createGameCallback)

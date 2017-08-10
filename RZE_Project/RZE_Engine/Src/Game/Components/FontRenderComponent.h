@@ -9,6 +9,10 @@ public:
     FontRenderComponent(const std::string& name);
     virtual ~FontRenderComponent();
     
+    void SetFont(const std::string& fontName);
+    void SetText(const std::string& text);
+
 private:
+    std::string mText;
 
 };

@@ -116,10 +116,17 @@ ResourceHandle ResourceHandler::RequestResource(const std::string& resourcePath,
     if (iter == mResourceTable.end())
     {
         IResource* resource = CreateAndLoadResource<ResourceT>(resourcePath, args...);
-        ResourceSource resourceSource(resource);
-        
-        mResourceTable[resourceKey] = resourceSource;
-        return ResourceHandle(resourceKey, &mResourceTable[resourceKey]);
+        if (resource)
+        {
+            ResourceSource resourceSource(resource);
+
+            mResourceTable[resourceKey] = resourceSource;
+            return ResourceHandle(resourceKey, &mResourceTable[resourceKey]);
+        }
+        else
+        {
+            return ResourceHandle("", nullptr);
+        }
     }
 
     ResourceSource& resourceSource = (*iter).second;
@@ -147,7 +154,10 @@ IResource* ResourceHandler::CreateAndLoadResource(const std::string& resourcePat
 {
     IResource* resource = new ResourceT(args...);//new (mAllocator.Allocate(sizeof(ResourceT))) ResourceT;
     AssertNotNull(resource);
-    resource->Load(resourcePath);
+    if (!resource->Load(resourcePath))
+    {
+        return nullptr;
+    }
 
     return resource;
 }

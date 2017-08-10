@@ -150,16 +150,16 @@ void GameApp::Start()
 
     ResourceHandler& resourceHandler = RZE_Engine::Get()->GetResourceHandler();
 
-    ResourceHandle cubeMesh = RZE_Engine::Get()->GetResourceHandler().RequestResource<MeshResource>(cubeFilePath);
-    ResourceHandle lampMesh = RZE_Engine::Get()->GetResourceHandler().RequestResource<MeshResource>(lampFilePath);
+    ResourceHandle cubeMesh = resourceHandler.RequestResource<MeshResource>(cubeFilePath);
+    ResourceHandle lampMesh = resourceHandler.RequestResource<MeshResource>(lampFilePath);
 
-    ResourceHandle quadMesh = RZE_Engine::Get()->GetResourceHandler().RequestResource<MeshResource>(quadMeshFilePath);
-    ResourceHandle quadTex = RZE_Engine::Get()->GetResourceHandler().RequestResource<GFXTexture2D>(quadTextureFilePath);
+    ResourceHandle quadMesh = resourceHandler.RequestResource<MeshResource>(quadMeshFilePath);
+    ResourceHandle quadTex = resourceHandler.RequestResource<GFXTexture2D>(quadTextureFilePath);
 
     CreateLight(cubeMesh);
     CreateGround(cubeMesh);
-    CreateLampObjects(lampMesh);
-    CreateTextureQuad(quadMesh, quadTex); 
+    //CreateLampObjects(lampMesh);
+    //CreateTextureQuad(quadMesh, quadTex); 
 }
 
 void GameApp::Update()
@@ -190,7 +190,7 @@ void GameApp::CreateFontTest()
     GameEntity* entity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
 
     entity->AddComponent<FontRenderComponent>("TestFontComponent");
-    FontRenderComponent* const meshComp = static_cast<FontRenderComponent* const>(entity->GetComponents()[0]);
+    FontRenderComponent* const fontComp = static_cast<FontRenderComponent* const>(entity->GetComponents()[0]);
 
     mEntities.push_back(entity);
 }
