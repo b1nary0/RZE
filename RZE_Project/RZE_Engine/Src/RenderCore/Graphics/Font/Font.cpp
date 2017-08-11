@@ -42,6 +42,8 @@ void GFXFont::InternalSetSize(int size)
 
 void GFXFont::LoadCharacters()
 {
+    SetSize(12);
+
     // #TODO(Josh) make opengl rhi call here and also give the enum an entry in opengl.h
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // #NOTE(Josh) if having issues, check this is set back to normal
 

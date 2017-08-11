@@ -159,7 +159,7 @@ void GameApp::Start()
     CreateLight(cubeMesh);
     CreateGround(cubeMesh);
     //CreateLampObjects(lampMesh);
-    //CreateTextureQuad(quadMesh, quadTex); 
+    CreateTextureQuad(quadMesh, quadTex); 
 }
 
 void GameApp::Update()
