@@ -67,6 +67,8 @@ public:
 
     void Init();
 
+    ResourceHandle GetEmptyResourceHandle();
+
     template <class ResourceT, class... Args>
     ResourceHandle RequestResource(const std::string& resourcePath, Args... args);
 
@@ -91,6 +93,8 @@ public:
     ResourceHandle();
     ResourceHandle(const ResourceHandle& rhs);
     ~ResourceHandle();
+
+    static ResourceHandle EmptyHandle() { return ResourceHandle("", nullptr); }
 
     bool IsValid() const;
     const std::string& GetID() const;

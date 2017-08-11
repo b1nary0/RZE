@@ -40,6 +40,7 @@ public:
 	GameWorld* const GetWorld() const;
 
     ResourceHandler& GetResourceHandler();
+    FontHandler&     GetFontHandler();
 
 	static RZE_Engine* const Get()
 	{

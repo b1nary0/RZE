@@ -192,6 +192,9 @@ void GameApp::CreateFontTest()
     entity->AddComponent<FontRenderComponent>("TestFontComponent");
     FontRenderComponent* const fontComp = static_cast<FontRenderComponent* const>(entity->GetComponents()[0]);
 
+    fontComp->SetFont(RZE_Engine::Get()->GetFontHandler().GetFont("Arial"));
+    fontComp->SetText("Hello, world!");
+
     mEntities.push_back(entity);
 }
 

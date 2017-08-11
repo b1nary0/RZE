@@ -230,3 +230,8 @@ ResourceHandler& RZE_Engine::GetResourceHandler()
 {
     return mResourceHandler;
 }
+
+FontHandler& RZE_Engine::GetFontHandler()
+{
+    return mFontHandler;
+}

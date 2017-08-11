@@ -8,6 +8,7 @@
 class MeshResource;
 class GFXShaderGroup;
 class GFXTexture2D;
+class GFXFont;
 
 class RZE_Renderer
 {
@@ -31,11 +32,20 @@ public:
         float               mLightStrength;
     } LightItemProtocol;
 
+    typedef struct FontItemProtocol
+    {
+        GFXFont*        mFont;
+        Matrix4x4       mProjectionMat;
+        std::string     mText;
+        GFXShaderGroup* mShaderGroup;
+    } FontItemProtocol;
+
 public:
     RZE_Renderer();
 
     void AddRenderItem(const RenderItemProtocol& itemProtocol);
     void AddLightItem(const LightItemProtocol& itemProtocol);
+    void AddFontItem(const FontItemProtocol& itemProtocol);
 
     void Render();
 
@@ -51,4 +61,6 @@ private:
 
     std::queue<RenderItemProtocol> mRenderList;
     std::vector<LightItemProtocol> mLightingList;
+    std::vector<FontItemProtocol>  mFontList;
+
 };

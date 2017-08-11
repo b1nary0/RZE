@@ -28,6 +28,17 @@ bool FontHandler::LoadFont(const std::string& name, const std::string& filePath)
     return false;
 }
 
+ResourceHandle FontHandler::GetFont(const std::string& name)
+{
+    auto iter = mFonts.find(name);
+    if (iter != mFonts.end())
+    {
+        return (*iter).second;
+    }
+    
+    return ResourceHandle::EmptyHandle();
+}
+
 FT_Library& FontHandler::GetLibrary()
 {
     return mFreeType;

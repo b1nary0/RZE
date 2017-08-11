@@ -39,6 +39,11 @@ void RZE_Renderer::AddLightItem(const LightItemProtocol& itemProtocol)
     mLightingList.push_back(itemProtocol);
 }
 
+void RZE_Renderer::AddFontItem(const FontItemProtocol& itemProtocol)
+{
+    mFontList.push_back(itemProtocol);
+}
+
 void RZE_Renderer::Render()
 {
     const OpenGLRHI& openGL = OpenGLRHI::Get();
@@ -54,6 +59,7 @@ void RZE_Renderer::Render()
     RenderUI();
 
     mLightingList.clear();
+    mFontList.clear();
 }
 
 SceneCamera& RZE_Renderer::GetSceneCamera()
@@ -106,6 +112,17 @@ void RZE_Renderer::RenderUI()
 {
     OpenGLRHI::Get().EnableCapability(EGLCapability::Blend);
     OpenGLRHI::Get().SetBlendFuncParams(EGLBlendFactor::SourceAlpha, EGLBlendFactor::OneMinusSourceAlpha);
+
+    for (auto& font : mFontList)
+    {
+        font.mShaderGroup->Use();
+        font.mShaderGroup->SetUniformMatrix4x4("UProjectionMat", font.mProjectionMat);
+        font.mShaderGroup->SetUniformVector3D("UTextColor", Vector3D(1.0f, 1.0f, 1.0f));
+
+        for (auto& c : font.mText)
+        {
+        }
+    }
 }
 
 RZE_Renderer::RenderItemProtocol::RenderItemProtocol()

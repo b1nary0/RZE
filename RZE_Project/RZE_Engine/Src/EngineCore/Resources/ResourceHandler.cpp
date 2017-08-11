@@ -14,6 +14,11 @@ void ResourceHandler::Init()
     mAllocator.Init();
 }
 
+ResourceHandle ResourceHandler::GetEmptyResourceHandle()
+{
+    return ResourceHandle("", nullptr);
+}
+
 void ResourceHandler::ReleaseResource(ResourceHandle& resourceHandle)
 {
     auto iter = mResourceTable.find(resourceHandle.GetID());

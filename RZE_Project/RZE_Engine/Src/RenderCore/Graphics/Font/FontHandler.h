@@ -16,6 +16,8 @@ public:
     ~FontHandler();
 
     bool LoadFont(const std::string& name, const std::string& filePath);
+    
+    ResourceHandle GetFont(const std::string& name);
 
     FT_Library& GetLibrary();
 

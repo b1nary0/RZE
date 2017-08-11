@@ -4,14 +4,34 @@
 
 #include <EngineCore/Resources/Resource.h>
 
+#include <RenderCore/HardwareInterface/OpenGL.h>
+
 class FontHandler;
 
 struct CharacterDescription
 {
+    CharacterDescription()
+    {
+        // Temporary for first pass
+        mVAO.Init();
+        mVAO.Bind();
+
+        mVBO.Init();
+        mVBO.Bind();
+
+        mVBO.SetBufferData(nullptr, sizeof(GLfloat) * 6 * 4);
+
+        OpenGLRHI::Get().EnableVertexAttributeArray(0);
+        OpenGLRHI::Get().VertexAttribPointer(0, 4, EGLDataType::Float, EGLBooleanValue::False, 4 * sizeof(GLfloat), 0);
+    }
+
     U32 mTextureID;
     U32 mAdvance;
     Vector2D mSize;
     Vector2D mBearing;
+
+    OpenGLVAO mVAO;
+    OpenGLVBO mVBO;
 };
 
 class GFXFont : public IResource
