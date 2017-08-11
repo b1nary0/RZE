@@ -120,6 +120,7 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
             yaw += xPosOffset;
             pitch += yPosOffset;
 
+            // #TODO(Josh) move glm::radians into somewhere more better.
             float newDirX = std::cos(glm::radians(pitch)) * std::cos(glm::radians(yaw));
             float newDirY = std::sin(glm::radians(pitch));
             float newDirZ = std::cos(glm::radians(pitch)) * std::sin(glm::radians(yaw));
