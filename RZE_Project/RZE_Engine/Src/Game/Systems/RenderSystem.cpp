@@ -49,6 +49,12 @@ void RenderSystem::Update()
             lightComponent = static_cast<LightSourceComponent*>(entity->GetComponents()[2]);
         }
 
+        FontRenderComponent* fontRenderComponent = nullptr;
+        if (entity->GetComponents()[0]->GetName() == "TestFontComponent")
+        {
+            fontRenderComponent = static_cast<FontRenderComponent*>(entity->GetComponents()[0]);
+        }
+
         TransformComponent* const transform = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
         SceneCamera& renderCam = renderer->GetSceneCamera();
         renderCam.GenerateProjectionMat();
@@ -66,26 +72,30 @@ void RenderSystem::Update()
         renderItem.mModelMat = modelMat;
         renderItem.mProjectionMat = renderCam.GetProjectionMat();
         renderItem.mViewMat = renderCam.GetViewMat();
-        // #TODO find a better transfer point for the resource handler. Maybe pass in as an argument to constructor for renderer?
-        renderItem.mMeshData = RZE_Engine::Get()->GetResourceHandler().GetResource<MeshResource>(meshComponent->GetMeshHandle());
 
-        if (meshComponent->GetTextureHandle().IsValid())
+        if (meshComponent)
         {
-            renderItem.mTextureData = RZE_Engine::Get()->GetResourceHandler().GetResource<GFXTexture2D>(meshComponent->GetTextureHandle());
+            // #TODO find a better transfer point for the resource handler. Maybe pass in as an argument to constructor for renderer?
+            renderItem.mMeshData = RZE_Engine::Get()->GetResourceHandler().GetResource<MeshResource>(meshComponent->GetMeshHandle());
+
+            if (meshComponent->GetTextureHandle().IsValid())
+            {
+                renderItem.mTextureData = RZE_Engine::Get()->GetResourceHandler().GetResource<GFXTexture2D>(meshComponent->GetTextureHandle());
+            }
         }
         
-        if (lightComponent)
-        {
-            RZE_Renderer::LightItemProtocol lightItem;
-            lightItem.mLightColor = lightComponent->GetColor();
-            lightItem.mLightPos = transform->GetPosition();
-            lightItem.mLightStrength = lightComponent->GetStrength();
-
-            renderer->AddLightItem(lightItem);
-        }
-
         if (renderer)
         {
+            if (lightComponent)
+            {
+                RZE_Renderer::LightItemProtocol lightItem;
+                lightItem.mLightColor = lightComponent->GetColor();
+                lightItem.mLightPos = transform->GetPosition();
+                lightItem.mLightStrength = lightComponent->GetStrength();
+
+                renderer->AddLightItem(lightItem);
+            }
+
             renderer->AddRenderItem(renderItem);
         }
     }
