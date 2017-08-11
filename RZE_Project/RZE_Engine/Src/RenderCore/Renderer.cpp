@@ -51,6 +51,8 @@ void RZE_Renderer::Render()
         mRenderList.pop();
     }
 
+    RenderUI();
+
     mLightingList.clear();
 }
 
@@ -80,7 +82,6 @@ void RZE_Renderer::RenderSingleItem(RenderItemProtocol& renderItem)
 
         renderItem.mShaderGroup->SetUniformVector4D("UFragColor", Vector4D(0.25f, 0.25f, 0.25f, 1.0f));
 
-
         for (auto& light : mLightingList)
         {
             renderItem.mShaderGroup->SetUniformVector3D("ULightPosition", light.mLightPos);
@@ -99,6 +100,12 @@ void RZE_Renderer::RenderSingleItem(RenderItemProtocol& renderItem)
 
         mesh->GetVAO().Unbind();
     }
+}
+
+void RZE_Renderer::RenderUI()
+{
+    OpenGLRHI::Get().EnableCapability(EGLCapability::Blend);
+    OpenGLRHI::Get().SetBlendFuncParams(EGLBlendFactor::SourceAlpha, EGLBlendFactor::OneMinusSourceAlpha);
 }
 
 RZE_Renderer::RenderItemProtocol::RenderItemProtocol()

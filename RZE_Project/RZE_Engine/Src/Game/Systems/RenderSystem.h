@@ -17,5 +17,7 @@ public:
     virtual void ShutDown() override;
 
 private:
-    GFXShaderGroup* mShaderGroup;
+    void LoadFontShader();
+
+    std::unordered_map<std::string, GFXShaderGroup*> mShaderGroups;
 };

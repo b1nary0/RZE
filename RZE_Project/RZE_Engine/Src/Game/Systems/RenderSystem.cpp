@@ -30,6 +30,7 @@ RenderSystem::~RenderSystem()
 
 void RenderSystem::Init()
 {
+    LoadFontShader();
 }
 
 void RenderSystem::Update()
@@ -41,12 +42,7 @@ void RenderSystem::Update()
     for (auto& entity : entityList)
     {
         MeshComponent* const meshComponent = static_cast<MeshComponent* const>(entity->GetComponents()[0]);
-        // @todo:josh obviously this needs to go, but for now is test.
-        if (!meshComponent->GetShaderGroup())
-        {
-            meshComponent->SetShaderGroup(mShaderGroup);
-        }
-
+        
         LightSourceComponent* lightComponent = nullptr;
         if (entity->GetComponents().size() == 3)
         {
@@ -97,4 +93,46 @@ void RenderSystem::Update()
 
 void RenderSystem::ShutDown()
 {
+}
+
+void RenderSystem::LoadFontShader()
+{
+    const char* const vertFilePath = "./../RZE_Engine/Assets/Shaders/FontVert.shader";
+    const char* const fragFilePath = "./../RZE_Engine/Assets/Shaders/FontFrag.shader";
+
+    ResourceHandler& resourceHandler = RZE_Engine::Get()->GetResourceHandler();
+
+    ResourceHandle vertShaderRes = resourceHandler.RequestResource<GFXShader>(
+                                                                                                                vertFilePath, 
+                                                                                                                EGLShaderType::Vertex, 
+                                                                                                                "FontVertShader"
+                                                                                                           );
+
+    ResourceHandle fragShaderRes = resourceHandler.RequestResource<GFXShader>(
+                                                                                                                fragFilePath,
+                                                                                                                EGLShaderType::Fragment,
+                                                                                                                "FontFragShader"
+                                                                                                           );
+
+    GFXShader* vertShader = resourceHandler.GetResource<GFXShader>(vertShaderRes);
+    vertShader->Create();
+    vertShader->Compile();
+
+    GFXShader* fragShader = resourceHandler.GetResource<GFXShader>(fragShaderRes);
+    fragShader->Create();
+    fragShader->Compile();
+
+    GFXShaderGroup* shaderGroup = new GFXShaderGroup("FontShader");
+    shaderGroup->AddShader(GFXShaderGroup::EShaderIndex::Vertex, vertShader);
+    shaderGroup->AddShader(GFXShaderGroup::EShaderIndex::Fragment, fragShader);
+
+    shaderGroup->AddUniform("UProjectionMat");
+    shaderGroup->AddUniform("UTextColor");
+
+    shaderGroup->GenerateShaderProgram();
+
+    resourceHandler.ReleaseResource(vertShaderRes);
+    resourceHandler.ReleaseResource(fragShaderRes);
+
+    mShaderGroups["FontShader"] = shaderGroup; 
 }

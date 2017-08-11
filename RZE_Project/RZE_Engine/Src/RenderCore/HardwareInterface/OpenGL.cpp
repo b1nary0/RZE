@@ -49,9 +49,15 @@ void OpenGLRHI::Clear(const GLuint mask) const
     AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
-void OpenGLRHI::EnableCapability(const GLuint capability)
+void OpenGLRHI::EnableCapability(const GLenum capability)
 {
     glEnable(capability);
+    AssertExpr(glGetError() == GL_NO_ERROR);
+}
+
+void OpenGLRHI::DisableCapability(const GLenum capability)
+{
+    glDisable(capability);
     AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
@@ -314,6 +320,12 @@ void OpenGLRHI::TextureImage2D(
                                )
 {
     glTexImage2D(target, level, internalFormat, width, height, border, format, type, data);
+    AssertExpr(glGetError() == GL_NO_ERROR);
+}
+
+void OpenGLRHI::SetBlendFuncParams(GLenum sourceFactor, GLenum destFactor)
+{
+    glBlendFunc(sourceFactor, destFactor);
     AssertExpr(glGetError() == GL_NO_ERROR);
 }
 

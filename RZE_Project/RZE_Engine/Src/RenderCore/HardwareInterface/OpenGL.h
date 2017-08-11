@@ -244,6 +244,15 @@ namespace EGLShaderStatusParam
     };
 };
 
+namespace EGLBlendFactor
+{
+    enum T : GLenum
+    {
+        SourceAlpha = GL_SRC_ALPHA,
+        OneMinusSourceAlpha = GL_ONE_MINUS_SRC_ALPHA
+    };
+}
+
 struct OpenGLContext
 {
     HWND windowHandle;
@@ -357,7 +366,8 @@ public:
     void ClearColor(const GLfloat red, const  GLfloat green, const  GLfloat blue, const  GLfloat alpha) const;
     void Clear(const GLuint mask) const;
 
-    void EnableCapability(const GLuint capability);
+    void EnableCapability(const GLenum capability);
+    void DisableCapability( const GLenum capability);
 
     //
     // Helpers
@@ -425,6 +435,8 @@ public:
                             GLenum type,
                             const GLvoid* data
                        );
+
+    void SetBlendFuncParams(GLenum sourceFactor, GLenum destFactor);
 
 private:
 
