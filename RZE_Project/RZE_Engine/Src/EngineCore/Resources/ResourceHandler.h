@@ -129,7 +129,7 @@ ResourceHandle ResourceHandler::RequestResource(const std::string& resourcePath,
         }
         else
         {
-            return ResourceHandle("", nullptr);
+            return ResourceHandle::EmptyHandle();
         }
     }
 
