@@ -16,6 +16,8 @@ class ResourceHandler
 private:
     class ResourceSource
     {
+		friend class ResourceHandler;
+
     public:
         ResourceSource()
         {
@@ -54,6 +56,16 @@ private:
         }
 
     private:
+		// Bypasses asserts needed for regular destruction, 
+		// as when we shut down there may be a positive reference count, but thats ok
+		// when we just want to shut the system down. We will log each issue in the console
+		// for reference when we call ShutDown() on ResourceHandler
+		void InternalDestroy()
+		{
+			delete mResource;
+			mResource = nullptr;
+		}
+
         int mReferenceCount;
         IResource* mResource;
     };
@@ -66,6 +78,7 @@ public:
     ~ResourceHandler();
 
     void Init();
+	void ShutDown();
 
     ResourceHandle GetEmptyResourceHandle();
 

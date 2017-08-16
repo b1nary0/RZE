@@ -190,8 +190,10 @@ void RZE_Engine::Update()
 void RZE_Engine::BeginShutDown()
 {
     LOG_CONSOLE("Shutting engine down...");
-    mWorld->ShutDown();
     mApplication->ShutDown();
+    mWorld->ShutDown();
+
+	mResourceHandler.ShutDown();
 }
 
 void RZE_Engine::PostExit()

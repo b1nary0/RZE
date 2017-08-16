@@ -14,6 +14,26 @@ void ResourceHandler::Init()
     mAllocator.Init();
 }
 
+void ResourceHandler::ShutDown()
+{
+	for (auto& resourcePair : mResourceTable)
+	{
+		ResourceSource& resourceSource = resourcePair.second;
+		if (resourceSource.IsValid())
+		{
+			// Just an informative log to notify that we had some referenced resources at the time
+			// ShutDown() was called. This is fine.
+			LOG_CONSOLE("ResourceHandler::ShutDown() encountered live resource.");
+		}
+
+		// We should always have a resource if it is in the resource table.
+		AssertNotNull(resourceSource.GetResource());
+		resourceSource.InternalDestroy();
+	}
+
+	mResourceTable.erase(mResourceTable.begin(), mResourceTable.end());
+}
+
 ResourceHandle ResourceHandler::GetEmptyResourceHandle()
 {
     return ResourceHandle("", nullptr);
