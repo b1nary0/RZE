@@ -195,6 +195,9 @@
     <ClCompile Include="Src\EngineCore\Platform\FilePath.cpp">
       <Filter>Source Files\EngineCore\Platform</Filter>
     </ClCompile>
+    <ClCompile Include="Src\Game\ECS\EntityComponent.cpp">
+      <Filter>Source Files\Game\ECS</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\EngineCore\Engine.h">

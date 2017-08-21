@@ -3,6 +3,13 @@
 
 #include <Game/ECS/EntityComponent.h>
 
+static U32 sNextEntityID = 0;
+
+IEntity::IEntity()
+{
+	mEntityID = sNextEntityID++;
+}
+
 IEntity::~IEntity()
 {
 	for (IEntityComponent* component : mComponents)

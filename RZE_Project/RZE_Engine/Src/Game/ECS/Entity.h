@@ -1,5 +1,6 @@
 #pragma once
 
+#include <bitset>
 #include <vector>
 
 #include "Utils/PrimitiveDefs.h"
@@ -11,6 +12,7 @@ class IEntity
 	typedef std::vector<IEntityComponent*> ComponentList;
 
 public:
+	IEntity();
 	~IEntity();
 
 	const ComponentList& GetComponents() { return mComponents; }
@@ -28,4 +30,7 @@ protected:
 private:
 	U32 mEntityID;
 	ComponentList mComponents;
+
+	// 128 bits of component glory
+	std::bitset<128> mComponentSet;
 };

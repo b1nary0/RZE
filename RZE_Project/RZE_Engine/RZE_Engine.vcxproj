@@ -170,6 +170,7 @@
     <ClCompile Include="Src\Game\Components\TransformComponent.cpp" />
     <ClCompile Include="Src\Game\ECS\Entity.cpp" />
     <ClCompile Include="Src\Game\ECS\EntityAdmin.cpp" />
+    <ClCompile Include="Src\Game\ECS\EntityComponent.cpp" />
     <ClCompile Include="Src\Game\GameEntity.cpp" />
     <ClCompile Include="Src\Game\GameWorld.cpp" />
     <ClCompile Include="Src\Game\Systems\MovementSystem.cpp" />

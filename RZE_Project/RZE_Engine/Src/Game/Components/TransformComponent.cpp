@@ -8,6 +8,7 @@ TransformComponent::TransformComponent()
 	, mRotation(Vector3D())
 {
     SetName("TransformComponent");
+	RegisterComponentID<TransformComponent>();
 }
 
 TransformComponent::TransformComponent(const std::string& name)

@@ -4,6 +4,8 @@
 LightSourceComponent::LightSourceComponent()
 {
     SetName("LightSourceComponent");
+
+	RegisterComponentID<LightSourceComponent>();
 }
 
 LightSourceComponent::LightSourceComponent(const std::string& name)

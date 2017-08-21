@@ -8,6 +8,8 @@
 MeshComponent::MeshComponent()
 {
     SetName("MeshComponent");
+
+	RegisterComponentID<MeshComponent>();
 }
 
 MeshComponent::MeshComponent(const std::string& name)
