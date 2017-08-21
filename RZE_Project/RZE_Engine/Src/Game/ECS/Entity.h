@@ -22,6 +22,7 @@ public:
 	{
 		IEntityComponent* component = new TComponent(args...);
 		mComponents.push_back(component);
+		mComponentSet[component->GetID()] = 1;
 	}
 
 protected:

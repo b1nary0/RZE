@@ -11,6 +11,8 @@ LightSourceComponent::LightSourceComponent()
 LightSourceComponent::LightSourceComponent(const std::string& name)
 {
     SetName(name);
+
+	RegisterComponentID<LightSourceComponent>();
 }
 
 LightSourceComponent::~LightSourceComponent()

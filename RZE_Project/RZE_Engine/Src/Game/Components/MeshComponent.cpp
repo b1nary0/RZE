@@ -15,6 +15,7 @@ MeshComponent::MeshComponent()
 MeshComponent::MeshComponent(const std::string& name)
 {
     SetName(name);
+	RegisterComponentID<MeshComponent>();
 }
 
 MeshComponent::~MeshComponent()

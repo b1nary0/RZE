@@ -14,6 +14,7 @@ TransformComponent::TransformComponent()
 TransformComponent::TransformComponent(const std::string& name)
 {
     SetName(name);
+	RegisterComponentID<TransformComponent>();
 }
 
 TransformComponent::~TransformComponent()

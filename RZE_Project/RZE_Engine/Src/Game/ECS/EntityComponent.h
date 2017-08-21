@@ -32,6 +32,8 @@ public:
 	inline const std::string& GetName() const { return mName; }
 	inline void SetName(const std::string& newName) { mName = newName; }
 
+	inline U32 GetID() const { return mComponentID; }
+
 protected:
 	template <class TComponentType>
 	void RegisterComponentID();

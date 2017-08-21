@@ -11,6 +11,7 @@ FontRenderComponent::FontRenderComponent()
 FontRenderComponent::FontRenderComponent(const std::string& name)
 {
     SetName(name);
+	RegisterComponentID<FontRenderComponent>();
 }
 
 FontRenderComponent::~FontRenderComponent()
