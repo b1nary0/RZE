@@ -26,7 +26,7 @@ public:
 	{
 		for (auto& entity : entities)
 		{
-			std::bitset<16> filtered = entity->mComponentSet & mFilterSet;
+			std::bitset<ENTITY_MAX_COMPONENTS> filtered = entity->mComponentSet & mFilterSet;
 			if (filtered.any())
 			{
 				outPassedEntities.push_back(entity);
@@ -38,7 +38,7 @@ public:
 	{
 		for (auto& entity : entities)
 		{
-			std::bitset<16> filtered = entity->mComponentSet & mFilterSet;
+			std::bitset<ENTITY_MAX_COMPONENTS> filtered = entity->mComponentSet & mFilterSet;
 			if (filtered == mFilterSet)
 			{
 				outPassedEntities.push_back(entity);
@@ -54,5 +54,5 @@ public:
 	}
 
 private:
-	std::bitset<16> mFilterSet;
+	std::bitset<ENTITY_MAX_COMPONENTS> mFilterSet;
 };

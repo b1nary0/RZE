@@ -5,6 +5,8 @@
 #include <DebugUtils/Debug.h>
 #include <Utils/PrimitiveDefs.h>
 
+#define ENTITY_MAX_COMPONENTS 16
+
 class IEntityComponent;
 
 class IEntity
@@ -75,5 +77,5 @@ private:
 
 	ComponentList mComponents;
 	// 16 bits of component glory
-	std::bitset<16> mComponentSet;
+	std::bitset<ENTITY_MAX_COMPONENTS> mComponentSet;
 };
