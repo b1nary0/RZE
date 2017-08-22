@@ -44,6 +44,8 @@ public:
 
     void                    SetSize(int size);
 
+	CharacterDescription& GetCharacterDesc(char c);
+
 private:
     void                    InternalSetSize(int size);
 

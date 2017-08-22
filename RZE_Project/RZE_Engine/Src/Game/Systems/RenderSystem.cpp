@@ -41,6 +41,10 @@ void RenderSystem::Update()
     RZE_Renderer* const renderer = mAdmin->GetRenderer();
     AssertNotNull(renderer);
 
+	SceneCamera& renderCam = renderer->GetSceneCamera();
+    renderCam.GenerateProjectionMat();
+    renderCam.GenerateViewMat();
+
     std::vector<IEntity*> mainList;
 	mRelevantComponents.FilterAnyOf(mAdmin->GetEntities(), mainList);
 
@@ -59,9 +63,6 @@ void RenderSystem::Update()
         MeshComponent* const meshComponent = entity->GetComponent<MeshComponent>();
 		TransformComponent* const transformComponent = entity->GetComponent<TransformComponent>();
         
-        SceneCamera& renderCam = renderer->GetSceneCamera();
-        renderCam.GenerateProjectionMat();
-        renderCam.GenerateViewMat();
 
         Matrix4x4 modelMat;
         modelMat.Translate(transformComponent->GetPosition());
@@ -102,7 +103,7 @@ void RenderSystem::Update()
 	for (auto& entity : lightEntities)
 	{
 		LightSourceComponent* lightComponent = entity->GetComponent<LightSourceComponent>();
-		TransformComponent* const transformComponent = entity->GetComponent<TransformComponent>();
+		TransformComponent* transformComponent = entity->GetComponent<TransformComponent>();
 
 		RZE_Renderer::LightItemProtocol lightItem;
 		lightItem.mLightColor = lightComponent->GetColor();
@@ -111,6 +112,30 @@ void RenderSystem::Update()
 
 		renderer->AddLightItem(lightItem);
 	}
+
+	//
+	// Font
+	//
+// 	EntityComponentFilter textPassCFilter;
+// 	textPassCFilter.AddFilterType<FontRenderComponent>();
+// 	textPassCFilter.AddFilterType<TransformComponent>();
+// 
+// 	std::vector<IEntity*> textPassEntities;
+// 	textPassCFilter.FilterAtLeast(mainList, textPassEntities);
+// 	for (auto& entity : textPassEntities)
+// 	{
+// 		FontRenderComponent* fontComponent = entity->GetComponent<FontRenderComponent>();
+// 		TransformComponent* transformComponent = entity->GetComponent<TransformComponent>();
+// 
+// 		RZE_Renderer::FontItemProtocol fontItem;
+// 		fontItem.mFont = RZE_Engine::Get()->GetResourceHandler().GetResource<GFXFont>(fontComponent->GetFont());
+// 		fontItem.mProjectionMat = renderCam.GetProjectionMat();
+// 		fontItem.mShaderGroup = mShaderGroups.at("FontShader");
+// 		fontItem.mText = fontComponent->GetText();
+// 		fontItem.mPosition = transformComponent->GetPosition();
+// 
+// 		renderer->AddFontItem(fontItem);
+// 	}
 }
 
 void RenderSystem::ShutDown()

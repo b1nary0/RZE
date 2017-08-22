@@ -35,6 +35,11 @@ void GFXFont::SetSize(int size)
     InternalSetSize(mSize);
 }
 
+CharacterDescription& GFXFont::GetCharacterDesc(char c)
+{
+	return mCharacters.at(static_cast<U8>(c));
+}
+
 void GFXFont::InternalSetSize(int size)
 {
     FT_Set_Pixel_Sizes(mFace, 0, size);

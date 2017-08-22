@@ -36,6 +36,7 @@ public:
     {
         GFXFont*        mFont;
         Matrix4x4       mProjectionMat;
+		Vector3D		mPosition;
         std::string     mText;
         GFXShaderGroup* mShaderGroup;
     } FontItemProtocol;
