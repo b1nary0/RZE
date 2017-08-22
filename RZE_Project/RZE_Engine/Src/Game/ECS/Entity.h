@@ -18,11 +18,37 @@ public:
 	const ComponentList& GetComponents() { return mComponents; }
 
 	template<class TComponent, class... Args>
-	void AddComponent(Args... args)
+	TComponent* AddComponent(Args... args)
 	{
 		IEntityComponent* component = new TComponent(args...);
-		mComponents.push_back(component);
-		mComponentSet[component->GetID()] = 1;
+
+		ComponentTypeID componentTypeID = component->GetID();
+		if (componentTypeID >= mComponents.size())
+		{
+			mComponents.resize(mComponents.size() * 2, nullptr);
+		}
+
+		mComponents[componentTypeID] = component;
+		mComponentSet[componentTypeID] = 1;
+
+		return static_cast<TComponent*>(component);
+	}
+
+	template<class TComponent>
+	TComponent* GetComponent()
+	{
+		TComponent* retComponent = nullptr;
+
+		ComponentTypeID componentTypeID = ComponentID<IEntityComponent>::GetComponentTypeID<TComponent>();
+		if (mComponentSet[componentTypeID])
+		{
+			AssertExpr(componentTypeID <= mComponents.size());
+			retComponent = static_cast<TComponent*>(mComponents[componentTypeID]);
+
+			return retComponent;
+		}
+
+		return retComponent;
 	}
 
 protected:
@@ -30,8 +56,8 @@ protected:
 
 private:
 	U32 mEntityID;
-	ComponentList mComponents;
 
+	ComponentList mComponents;
 	// 128 bits of component glory
 	std::bitset<128> mComponentSet;
 };

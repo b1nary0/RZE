@@ -170,14 +170,12 @@ void GameApp::CreateTextureQuad(const ResourceHandle& meshHandle, const Resource
 {
     GameEntity* entity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
 
-    entity->AddComponent<MeshComponent>("TextureTestQuad");
-    MeshComponent* const meshComp = static_cast<MeshComponent* const>(entity->GetComponents()[0]);
+    MeshComponent* const meshComp = entity->AddComponent<MeshComponent>("TextureTestQuad");
     meshComp->SetMeshHandle(meshHandle);
     meshComp->SetTextureHandle(textureHandle);
     meshComp->SetShaderGroup(mTextureShader);
 
-    entity->AddComponent<TransformComponent>();
-    TransformComponent* const transfComp = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
+    TransformComponent* const transfComp = entity->AddComponent<TransformComponent>();
     transfComp->SetPosition(Vector3D(0.0f, 2.0f, -3.0f));
     transfComp->SetScale(Vector3D(4.0f, 3.0f, 0.0f));
 
@@ -188,9 +186,7 @@ void GameApp::CreateFontTest()
 {
     GameEntity* entity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
 
-    entity->AddComponent<FontRenderComponent>("TestFontComponent");
-    FontRenderComponent* const fontComp = static_cast<FontRenderComponent* const>(entity->GetComponents()[0]);
-
+    FontRenderComponent* const fontComp = entity->AddComponent<FontRenderComponent>("TestFontComponent");
     fontComp->SetFont(RZE_Engine::Get()->GetFontHandler().GetFont("Arial"));
     fontComp->SetText("Hello, world!");
 
@@ -200,18 +196,15 @@ void GameApp::CreateFontTest()
 void GameApp::CreateLight(const ResourceHandle& resourceHandle)
 {
     mLightEntity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
-
-    mLightEntity->AddComponent<MeshComponent>();
-    MeshComponent* const lightMesh = static_cast<MeshComponent* const>(mLightEntity->GetComponents()[0]);
+    
+    MeshComponent* const lightMesh = mLightEntity->AddComponent<MeshComponent>();
     lightMesh->SetMeshHandle(resourceHandle);
     lightMesh->SetShaderGroup(mDefaultShader);
 
-    mLightEntity->AddComponent<TransformComponent>();
-    TransformComponent* const lightTransform = static_cast<TransformComponent* const>(mLightEntity->GetComponents()[1]);
+	TransformComponent* const lightTransform = mLightEntity->AddComponent<TransformComponent>();
     lightTransform->SetPosition(Vector3D(-8.0f, 15.0f, -2.0f));
 
-    mLightEntity->AddComponent<LightSourceComponent>("MainTestLight");
-    LightSourceComponent* const lightComponent = static_cast<LightSourceComponent* const>(mLightEntity->GetComponents()[2]);
+	LightSourceComponent* const lightComponent = mLightEntity->AddComponent<LightSourceComponent>("MainTestLight");
     lightComponent->SetColor(Vector3D(1.0f, 1.0f, 1.0f));
     lightComponent->SetStrength(0.75f);
 
@@ -220,24 +213,18 @@ void GameApp::CreateLight(const ResourceHandle& resourceHandle)
 
 void GameApp::CreateGround(const ResourceHandle& resourceHandle)
 {
-    const int numEntities = 1;
-    for (int entIdx = 0; entIdx < numEntities; ++entIdx)
-    {
-        GameEntity* testEntity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
+	GameEntity* groundEntity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
 
-        testEntity->AddComponent<MeshComponent>();
-        MeshComponent* const meshComponent = static_cast<MeshComponent* const>(testEntity->GetComponents()[0]);
-        meshComponent->SetMeshHandle(resourceHandle);
-        meshComponent->SetShaderGroup(mDefaultShader);
+	MeshComponent* const meshComponent = groundEntity->AddComponent<MeshComponent>();
+	meshComponent->SetMeshHandle(resourceHandle);
+	meshComponent->SetShaderGroup(mDefaultShader);
 
-        testEntity->AddComponent<TransformComponent>();
-        TransformComponent* const transformComp = static_cast<TransformComponent* const>(testEntity->GetComponents()[1]);
-        transformComp->SetPosition(Vector3D(-10.0f, -5.0f, -20.0f));
-        transformComp->SetRotation(Quaternion(Vector3D(0.0f, 0.0f, 0.0f)));
-        transformComp->SetScale(Vector3D(20.0f, 0.5f, 20.0f));
+	TransformComponent* const transformComp = groundEntity->AddComponent<TransformComponent>();
+	transformComp->SetPosition(Vector3D(-10.0f, -5.0f, -20.0f));
+	transformComp->SetRotation(Quaternion(Vector3D(0.0f, 0.0f, 0.0f)));
+	transformComp->SetScale(Vector3D(20.0f, 0.5f, 20.0f));
 
-        mEntities.push_back(testEntity);
-    }
+	mEntities.push_back(groundEntity);
 }
 
 void GameApp::CreateLampObjects(const ResourceHandle& resourceHandle)
@@ -248,13 +235,11 @@ void GameApp::CreateLampObjects(const ResourceHandle& resourceHandle)
     //
     GameEntity* lampEntity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
 
-    lampEntity->AddComponent<MeshComponent>("LampMesh");
-    MeshComponent* meshComponent = static_cast<MeshComponent*>(lampEntity->GetComponents()[0]);
+	MeshComponent* meshComponent = lampEntity->AddComponent<MeshComponent>("LampMesh");
     meshComponent->SetMeshHandle(resourceHandle);
     meshComponent->SetShaderGroup(mDefaultShader);
 
-    lampEntity->AddComponent<TransformComponent>();
-    TransformComponent* transformComp = static_cast<TransformComponent*>(lampEntity->GetComponents()[1]);
+	TransformComponent* transformComp = lampEntity->AddComponent<TransformComponent>();
     transformComp->SetPosition(Vector3D(-8.0f, -3.0f, -15.0f));
     transformComp->SetScale(Vector3D(0.5f, 0.5f, 0.5f));
 
@@ -265,13 +250,11 @@ void GameApp::CreateLampObjects(const ResourceHandle& resourceHandle)
     //
     lampEntity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
 
-    lampEntity->AddComponent<MeshComponent>("LampMesh");
-    meshComponent = static_cast<MeshComponent* const>(lampEntity->GetComponents()[0]);
+	meshComponent = lampEntity->AddComponent<MeshComponent>("LampMesh");
     meshComponent->SetMeshHandle(resourceHandle);
     meshComponent->SetShaderGroup(mDefaultShader);
 
-    lampEntity->AddComponent<TransformComponent>();
-    transformComp = static_cast<TransformComponent* const>(lampEntity->GetComponents()[1]);
+	transformComp = lampEntity->AddComponent<TransformComponent>("LampMesh");
     transformComp->SetPosition(Vector3D(8.0f, -3.0f, -15.0f));
     transformComp->SetScale(Vector3D(0.5f, 0.5f, 0.5f));
 
@@ -282,8 +265,7 @@ void GameApp::CreateLampObjects(const ResourceHandle& resourceHandle)
     //
     lampEntity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
 
-    lampEntity->AddComponent<MeshComponent>("LampMesh");
-    meshComponent = static_cast<MeshComponent* const>(lampEntity->GetComponents()[0]);
+	meshComponent = lampEntity->AddComponent<MeshComponent>("LampMesh");
     meshComponent->SetMeshHandle(resourceHandle);
     meshComponent->SetShaderGroup(mDefaultShader);
 
@@ -299,13 +281,11 @@ void GameApp::CreateLampObjects(const ResourceHandle& resourceHandle)
     //
     lampEntity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
 
-    lampEntity->AddComponent<MeshComponent>("LampMesh");
-    meshComponent = static_cast<MeshComponent* const>(lampEntity->GetComponents()[0]);
+	meshComponent = lampEntity->AddComponent<MeshComponent>("LampMesh");
     meshComponent->SetMeshHandle(resourceHandle);
     meshComponent->SetShaderGroup(mDefaultShader);
 
-    lampEntity->AddComponent<TransformComponent>();
-    transformComp = static_cast<TransformComponent* const>(lampEntity->GetComponents()[1]);
+	transformComp = lampEntity->AddComponent<TransformComponent>();
     transformComp->SetPosition(Vector3D(8.0f, -3.0f, -2.0f));
     transformComp->SetScale(Vector3D(0.5f, 0.5f, 0.5f));
 

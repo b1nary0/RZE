@@ -41,29 +41,19 @@ void RenderSystem::Update()
     const std::vector<IEntity*>& entityList = mAdmin->GetEntities();
     for (auto& entity : entityList)
     {
-        MeshComponent* const meshComponent = static_cast<MeshComponent* const>(entity->GetComponents()[0]);
+        MeshComponent* const meshComponent = entity->GetComponent<MeshComponent>();
+        LightSourceComponent* lightComponent = entity->GetComponent<LightSourceComponent>();
+        FontRenderComponent* fontComponent = entity->GetComponent<FontRenderComponent>();
+        TransformComponent* const transformComponent = entity->GetComponent<TransformComponent>();
         
-        LightSourceComponent* lightComponent = nullptr;
-        if (entity->GetComponents().size() == 3)
-        {
-            lightComponent = static_cast<LightSourceComponent*>(entity->GetComponents()[2]);
-        }
-
-        FontRenderComponent* fontRenderComponent = nullptr;
-        if (entity->GetComponents()[0]->GetName() == "TestFontComponent")
-        {
-            fontRenderComponent = static_cast<FontRenderComponent*>(entity->GetComponents()[0]);
-        }
-
-        TransformComponent* const transform = static_cast<TransformComponent* const>(entity->GetComponents()[1]);
         SceneCamera& renderCam = renderer->GetSceneCamera();
         renderCam.GenerateProjectionMat();
         renderCam.GenerateViewMat();
 
         Matrix4x4 modelMat;
-        modelMat.Translate(transform->GetPosition());
-        modelMat.Rotate(transform->GetRotation().ToAngle(), transform->GetRotation().ToAxis());
-        modelMat.Scale(transform->GetScale());
+        modelMat.Translate(transformComponent->GetPosition());
+        modelMat.Rotate(transformComponent->GetRotation().ToAngle(), transformComponent->GetRotation().ToAxis());
+        modelMat.Scale(transformComponent->GetScale());
 
         Matrix4x4 MVP = renderCam.GetProjectionMat() * renderCam.GetViewMat() * modelMat;
 
@@ -90,7 +80,7 @@ void RenderSystem::Update()
             {
                 RZE_Renderer::LightItemProtocol lightItem;
                 lightItem.mLightColor = lightComponent->GetColor();
-                lightItem.mLightPos = transform->GetPosition();
+                lightItem.mLightPos = transformComponent->GetPosition();
                 lightItem.mLightStrength = lightComponent->GetStrength();
 
                 renderer->AddLightItem(lightItem);
