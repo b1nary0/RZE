@@ -3,7 +3,8 @@
 #include <bitset>
 #include <vector>
 
-#include "Utils/PrimitiveDefs.h"
+#include <DebugUtils/Debug.h>
+#include <Utils/PrimitiveDefs.h>
 
 class IEntityComponent;
 
@@ -13,6 +14,7 @@ class IEntity
 
 public:
 	IEntity();
+	IEntity(const std::string& name);
 	~IEntity();
 
 	const ComponentList& GetComponents() { return mComponents; }
@@ -20,14 +22,18 @@ public:
 	template<class TComponent, class... Args>
 	TComponent* AddComponent(Args... args)
 	{
-		IEntityComponent* component = new TComponent(args...);
+		ComponentTypeID componentTypeID = ComponentID<IEntityComponent>::GetComponentTypeID<TComponent>();
+		if (mComponentSet[componentTypeID])
+		{
+			LOG_CONSOLE_ARGS("%s already exists on entity %s", STRINGIFY(TComponent), "Test");
+			return nullptr;
+		}
 
-		ComponentTypeID componentTypeID = component->GetID();
+		IEntityComponent* component = new TComponent(args...);
 		if (componentTypeID >= mComponents.size())
 		{
 			mComponents.resize(mComponents.size() * 2, nullptr);
 		}
-
 		mComponents[componentTypeID] = component;
 		mComponentSet[componentTypeID] = 1;
 
@@ -51,11 +57,17 @@ public:
 		return retComponent;
 	}
 
+	inline const std::string& GetName() { return mEntityName; }
+
 protected:
 	ComponentList& InternalGetComponents() { return mComponents; }
 
+	inline void SetName(const std::string& name) { mEntityName = name; }
+
 private:
 	U32 mEntityID;
+
+	std::string mEntityName;
 
 	ComponentList mComponents;
 	// 128 bits of component glory

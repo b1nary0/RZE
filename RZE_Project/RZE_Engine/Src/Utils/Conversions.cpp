@@ -12,30 +12,35 @@ namespace Conversions
 		return converter.from_bytes(string);
 	}
 
-    int IntFromString(const std::string& string)
-    {
-        return atoi(string.c_str());
-    }
+	int IntFromString(const std::string& string)
+	{
+		return atoi(string.c_str());
+	}
 
-    std::string CreateResourceKeyFromPath(const std::string& string)
-    {
-        // #TODO this is a naive approach, will have to find a better solution later.
-        std::string resourceKey = string;
+	std::string StringFromInt(int value)
+	{
+		return std::to_string(value);
+	}
 
-        resourceKey = resourceKey.substr(0, resourceKey.find_last_of('.'));
-        std::replace(resourceKey.begin(), resourceKey.end(), '/', ' ');
-        resourceKey.erase(std::remove(resourceKey.begin(), resourceKey.end(), '.'), resourceKey.end());
+	std::string CreateResourceKeyFromPath(const std::string& string)
+	{
+		// #TODO this is a naive approach, will have to find a better solution later.
+		std::string resourceKey = string;
 
-        char c = resourceKey.front();
-        while (c == ' ')
-        {
-            resourceKey.erase(resourceKey.begin());
-            c = resourceKey.front();
-        }
+		resourceKey = resourceKey.substr(0, resourceKey.find_last_of('.'));
+		std::replace(resourceKey.begin(), resourceKey.end(), '/', ' ');
+		resourceKey.erase(std::remove(resourceKey.begin(), resourceKey.end(), '.'), resourceKey.end());
 
-        std::replace(resourceKey.begin(), resourceKey.end(), ' ', '.');
+		char c = resourceKey.front();
+		while (c == ' ')
+		{
+			resourceKey.erase(resourceKey.begin());
+			c = resourceKey.front();
+		}
 
-        return resourceKey;
-    }
+		std::replace(resourceKey.begin(), resourceKey.end(), ' ', '.');
+
+		return resourceKey;
+	}
 
 }

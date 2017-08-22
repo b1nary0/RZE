@@ -197,7 +197,8 @@ void GameApp::CreateLight(const ResourceHandle& resourceHandle)
 {
     mLightEntity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
     
-    MeshComponent* const lightMesh = mLightEntity->AddComponent<MeshComponent>();
+	MeshComponent* lightMesh = mLightEntity->AddComponent<MeshComponent>();
+	lightMesh = mLightEntity->AddComponent<MeshComponent>();
     lightMesh->SetMeshHandle(resourceHandle);
     lightMesh->SetShaderGroup(mDefaultShader);
 

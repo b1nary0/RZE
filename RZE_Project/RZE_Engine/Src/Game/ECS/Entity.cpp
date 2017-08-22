@@ -13,6 +13,13 @@ IEntity::IEntity()
     // Maybe handle this with the ComponentStorage kind of thing.
     // Will probably have to run a better implementation later.
     mComponents.resize(64, nullptr);
+
+	SetName(std::string("Entity") + Conversions::StringFromInt(mEntityID));
+}
+
+IEntity::IEntity(const std::string& name)
+{
+	SetName(name);
 }
 
 IEntity::~IEntity()
