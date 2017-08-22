@@ -34,5 +34,4 @@ void IEntity::Init()
 	// Maybe handle this with the ComponentStorage kind of thing.
 	// Will probably have to run a better implementation later.
 	mComponents.resize(64, nullptr);
-
 }

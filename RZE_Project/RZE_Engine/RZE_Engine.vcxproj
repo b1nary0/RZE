@@ -218,6 +218,7 @@
     <ClInclude Include="Src\Game\ECS\Entity.h" />
     <ClInclude Include="Src\Game\ECS\EntityAdmin.h" />
     <ClInclude Include="Src\Game\ECS\EntityComponent.h" />
+    <ClInclude Include="Src\Game\ECS\EntityComponentFilter.h" />
     <ClInclude Include="Src\Game\ECS\EntitySystem.h" />
     <ClInclude Include="Src\Game\GameEntity.h" />
     <ClInclude Include="Src\Game\GameWorld.h" />

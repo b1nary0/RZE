@@ -2,6 +2,8 @@
 #include <Game/Systems/RenderSystem.h>
 
 #include <Game/ECS/Entity.h>
+#include <Game/ECS/EntityComponentFilter.h>
+
 #include <Game/Components/LightSourceComponent.h>
 #include <Game/Components/MeshComponent.h>
 #include <Game/Components/TransformComponent.h>
@@ -30,6 +32,7 @@ RenderSystem::~RenderSystem()
 
 void RenderSystem::Init()
 {
+	SetFilterTypes();
     LoadFontShader();
 }
 
@@ -38,13 +41,23 @@ void RenderSystem::Update()
     RZE_Renderer* const renderer = mAdmin->GetRenderer();
     AssertNotNull(renderer);
 
-    const std::vector<IEntity*>& entityList = mAdmin->GetEntities();
-    for (auto& entity : entityList)
+    std::vector<IEntity*> mainList;
+	mRelevantComponents.FilterAnyOf(mAdmin->GetEntities(), mainList);
+
+	//
+	// Rendered
+	//
+	EntityComponentFilter renderPassFilter;
+	renderPassFilter.AddFilterType<MeshComponent>();
+	renderPassFilter.AddFilterType<TransformComponent>();
+	
+	std::vector<IEntity*> renderPassEntities;
+	renderPassFilter.FilterAtLeast(mainList, renderPassEntities);
+
+    for (auto& entity : renderPassEntities)
     {
         MeshComponent* const meshComponent = entity->GetComponent<MeshComponent>();
-        LightSourceComponent* lightComponent = entity->GetComponent<LightSourceComponent>();
-        FontRenderComponent* fontComponent = entity->GetComponent<FontRenderComponent>();
-        TransformComponent* const transformComponent = entity->GetComponent<TransformComponent>();
+		TransformComponent* const transformComponent = entity->GetComponent<TransformComponent>();
         
         SceneCamera& renderCam = renderer->GetSceneCamera();
         renderCam.GenerateProjectionMat();
@@ -63,36 +76,52 @@ void RenderSystem::Update()
         renderItem.mProjectionMat = renderCam.GetProjectionMat();
         renderItem.mViewMat = renderCam.GetViewMat();
 
-        if (meshComponent)
-        {
-            // #TODO find a better transfer point for the resource handler. Maybe pass in as an argument to constructor for renderer?
-            renderItem.mMeshData = RZE_Engine::Get()->GetResourceHandler().GetResource<MeshResource>(meshComponent->GetMeshHandle());
+        // #TODO find a better transfer point for the resource handler. Maybe pass in as an argument to constructor for renderer?
+        renderItem.mMeshData = RZE_Engine::Get()->GetResourceHandler().GetResource<MeshResource>(meshComponent->GetMeshHandle());
 
-            if (meshComponent->GetTextureHandle().IsValid())
-            {
-                renderItem.mTextureData = RZE_Engine::Get()->GetResourceHandler().GetResource<GFXTexture2D>(meshComponent->GetTextureHandle());
-            }
+        if (meshComponent->GetTextureHandle().IsValid())
+        {
+            renderItem.mTextureData = RZE_Engine::Get()->GetResourceHandler().GetResource<GFXTexture2D>(meshComponent->GetTextureHandle());
         }
         
         if (renderer)
         {
-            if (lightComponent)
-            {
-                RZE_Renderer::LightItemProtocol lightItem;
-                lightItem.mLightColor = lightComponent->GetColor();
-                lightItem.mLightPos = transformComponent->GetPosition();
-                lightItem.mLightStrength = lightComponent->GetStrength();
-
-                renderer->AddLightItem(lightItem);
-            }
-
             renderer->AddRenderItem(renderItem);
         }
     }
+
+	//
+	// Lights
+	//
+	EntityComponentFilter lightPassCFilter;
+	lightPassCFilter.AddFilterType<TransformComponent>();
+	lightPassCFilter.AddFilterType<LightSourceComponent>();
+
+	std::vector<IEntity*> lightEntities;
+	lightPassCFilter.FilterAtLeast(mainList, lightEntities);
+	for (auto& entity : lightEntities)
+	{
+		LightSourceComponent* lightComponent = entity->GetComponent<LightSourceComponent>();
+		TransformComponent* const transformComponent = entity->GetComponent<TransformComponent>();
+
+		RZE_Renderer::LightItemProtocol lightItem;
+		lightItem.mLightColor = lightComponent->GetColor();
+		lightItem.mLightPos = transformComponent->GetPosition();
+		lightItem.mLightStrength = lightComponent->GetStrength();
+
+		renderer->AddLightItem(lightItem);
+	}
 }
 
 void RenderSystem::ShutDown()
 {
+}
+
+void RenderSystem::SetFilterTypes()
+{
+	mRelevantComponents.AddFilterType<MeshComponent>();
+	mRelevantComponents.AddFilterType<TransformComponent>();
+	mRelevantComponents.AddFilterType<LightSourceComponent>();
 }
 
 void RenderSystem::LoadFontShader()

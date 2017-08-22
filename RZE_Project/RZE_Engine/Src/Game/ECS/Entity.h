@@ -1,7 +1,6 @@
 #pragma once
 
 #include <bitset>
-#include <vector>
 
 #include <DebugUtils/Debug.h>
 #include <Utils/PrimitiveDefs.h>
@@ -10,6 +9,8 @@ class IEntityComponent;
 
 class IEntity
 {
+	friend class EntityComponentFilter;
+
 	typedef std::vector<IEntityComponent*> ComponentList;
 
 public:
@@ -25,7 +26,7 @@ public:
 		ComponentTypeID componentTypeID = ComponentID<IEntityComponent>::GetComponentTypeID<TComponent>();
 		if (mComponentSet[componentTypeID])
 		{
-			LOG_CONSOLE_ARGS("%s already exists on entity %s", STRINGIFY(TComponent), "Test");
+			LOG_CONSOLE_ARGS("Component already exists on entity %s", GetName().c_str());
 			return nullptr;
 		}
 
@@ -73,6 +74,6 @@ private:
 	std::string mEntityName;
 
 	ComponentList mComponents;
-	// 128 bits of component glory
-	std::bitset<128> mComponentSet;
+	// 16 bits of component glory
+	std::bitset<16> mComponentSet;
 };

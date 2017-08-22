@@ -197,14 +197,14 @@ void GameApp::CreateLight(const ResourceHandle& resourceHandle)
 {
     mLightEntity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
     
-	MeshComponent* lightMesh = mLightEntity->AddComponent<MeshComponent>();
-    lightMesh->SetMeshHandle(resourceHandle);
-    lightMesh->SetShaderGroup(mDefaultShader);
+// 	MeshComponent* lightMesh = mLightEntity->AddComponent<MeshComponent>();
+// 	lightMesh->SetMeshHandle(resourceHandle);
+// 	lightMesh->SetShaderGroup(mDefaultShader);
 
-	TransformComponent* const lightTransform = mLightEntity->AddComponent<TransformComponent>();
+	TransformComponent* lightTransform = mLightEntity->AddComponent<TransformComponent>();
     lightTransform->SetPosition(Vector3D(-8.0f, 15.0f, -2.0f));
 
-	LightSourceComponent* const lightComponent = mLightEntity->AddComponent<LightSourceComponent>("MainTestLight");
+	LightSourceComponent* lightComponent = mLightEntity->AddComponent<LightSourceComponent>("MainTestLight");
     lightComponent->SetColor(Vector3D(1.0f, 1.0f, 1.0f));
     lightComponent->SetStrength(0.75f);
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Game/ECS/EntitySystem.h"
+#include <Game/ECS/EntityComponentFilter.h>
 
 #include <RenderCore/Graphics/Font/FontHandler.h>
 
@@ -17,7 +18,11 @@ public:
     virtual void ShutDown() override;
 
 private:
+	void SetFilterTypes();
+
     void LoadFontShader();
+
+	EntityComponentFilter mRelevantComponents;
 
     std::unordered_map<std::string, GFXShaderGroup*> mShaderGroups;
 };
