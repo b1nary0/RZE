@@ -157,7 +157,7 @@ void GameApp::Start()
 
     CreateLight(cubeMesh);
     CreateGround(cubeMesh);
-    //CreateLampObjects(lampMesh);
+    CreateLampObjects(lampMesh);
     CreateTextureQuad(quadMesh, quadTex); 
 }
 
@@ -168,9 +168,9 @@ void GameApp::Update()
 
 void GameApp::CreateTextureQuad(const ResourceHandle& meshHandle, const ResourceHandle& textureHandle)
 {
-    GameEntity* entity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
+    GameEntity* entity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>("TextureQuad");
 
-    MeshComponent* const meshComp = entity->AddComponent<MeshComponent>("TextureTestQuad");
+    MeshComponent* const meshComp = entity->AddComponent<MeshComponent>();
     meshComp->SetMeshHandle(meshHandle);
     meshComp->SetTextureHandle(textureHandle);
     meshComp->SetShaderGroup(mTextureShader);
@@ -198,7 +198,6 @@ void GameApp::CreateLight(const ResourceHandle& resourceHandle)
     mLightEntity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
     
 	MeshComponent* lightMesh = mLightEntity->AddComponent<MeshComponent>();
-	lightMesh = mLightEntity->AddComponent<MeshComponent>();
     lightMesh->SetMeshHandle(resourceHandle);
     lightMesh->SetShaderGroup(mDefaultShader);
 

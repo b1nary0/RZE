@@ -65,6 +65,9 @@ protected:
 	inline void SetName(const std::string& name) { mEntityName = name; }
 
 private:
+	void Init();
+
+private:
 	U32 mEntityID;
 
 	std::string mEntityName;

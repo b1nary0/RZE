@@ -23,10 +23,10 @@ public:
 	const SystemList& GetSystems() { return mSystems; }
 	const EntityList& GetEntities() { return mEntities; }
 
-	template <class TEntity>
-	TEntity* AddEntity()
+	template <class TEntity, typename... Args>
+	TEntity* AddEntity(Args... args)
 	{
-		IEntity* const entity = new TEntity();
+		IEntity* const entity = new TEntity(std::forward<Args>(args)...);
 		InternalGetEntities().push_back(entity);
 		return static_cast<TEntity*>(InternalGetEntities().back());
 	}

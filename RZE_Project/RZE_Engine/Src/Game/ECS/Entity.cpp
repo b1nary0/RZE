@@ -9,17 +9,14 @@ IEntity::IEntity()
 {
 	mEntityID = sNextEntityID++;
 
-    // #TODO(Josh) 
-    // Maybe handle this with the ComponentStorage kind of thing.
-    // Will probably have to run a better implementation later.
-    mComponents.resize(64, nullptr);
-
 	SetName(std::string("Entity") + Conversions::StringFromInt(mEntityID));
+	Init();
 }
 
 IEntity::IEntity(const std::string& name)
 {
 	SetName(name);
+	Init();
 }
 
 IEntity::~IEntity()
@@ -29,4 +26,13 @@ IEntity::~IEntity()
 		delete component;
 		component = nullptr;
 	}
+}
+
+void IEntity::Init()
+{
+	// #TODO(Josh) 
+	// Maybe handle this with the ComponentStorage kind of thing.
+	// Will probably have to run a better implementation later.
+	mComponents.resize(64, nullptr);
+
 }

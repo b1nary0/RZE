@@ -6,6 +6,11 @@ GameEntity::GameEntity()
 {
 }
 
+GameEntity::GameEntity(const std::string& name)
+	: IEntity(name)
+{
+}
+
 GameEntity::~GameEntity()
 {
 }
