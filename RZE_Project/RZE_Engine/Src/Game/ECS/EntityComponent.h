@@ -5,23 +5,25 @@
 
 #include <Utils/PrimitiveDefs.h>
 
+typedef U32 ComponentTypeID;
+
 template <class TComponentBase>
 class ComponentID
 {
 public:
 	template <class TComponentType>
-	static U32 GetComponentTypeID()
+	static ComponentTypeID GetComponentTypeID()
 	{
-		static U32 id = sNextComponentID++;
+		static ComponentTypeID id = sNextComponentID++;
 		return id;
 	}
 
 private:
-	static U32 sNextComponentID;
+	static ComponentTypeID sNextComponentID;
 };
 
 template <class TBase>
-U32 ComponentID<TBase>::sNextComponentID = 0;
+ComponentTypeID ComponentID<TBase>::sNextComponentID = 0;
 
 class IEntityComponent
 {
