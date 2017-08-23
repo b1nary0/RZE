@@ -1,6 +1,7 @@
 #include <StdAfx.h>
 
 #include <EngineCore/Engine.h>
+#include <EngineCore/Platform/Timers/HiResTimer.h>
 
 #include <DebugUtils/Debug.h>
 
@@ -41,9 +42,25 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
         AssertNotNull(createGameCallback);
         PostInit(createGameCallback);
 
+		HiResTimer updateTimer;
+		HiResTimer renderTimer;
         while (!bShouldExit)
         {
-            Update();
+			updateTimer.Start();
+				Update();
+			updateTimer.Stop();
+
+			renderTimer.Start();
+				mRenderer->Render();
+				mMainWindow->BufferSwap(); // #TODO(Josh) Maybe this can be done better
+			renderTimer.Stop();
+
+			// Comment me to disable line logging of update ms.
+			SetConsoleCursorPosUpdateTimer_TEMP();
+			LOG_CONSOLE_ARGS("RZE_Engine::Update() took %f ms.", updateTimer.GetElapsed<float>());
+
+			SetConsoleCursorPosRenderTimer_TEMP();
+			LOG_CONSOLE_ARGS("RZE_Renderer::Render() took %f ms.", renderTimer.GetElapsed<float>());
         }
 
         BeginShutDown();
@@ -102,6 +119,9 @@ void RZE_Engine::PostInit(Functor<RZE_Game* const>& createApplicationCallback)
 
 void RZE_Engine::CreateAndInitializeWindow()
 {
+	// #TODO(Josh) Move this somewhere else and deal with it so the console ALWAYS shows up in a visible spot.
+	SetWindowPos(GetConsoleWindow(), 0, 1280, 720, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
+
     WindowSettings& windowSettings = mEngineConfig->GetWindowSettings();
 
     Win32Window::WindowCreationParams params;
@@ -129,6 +149,48 @@ void RZE_Engine::InitGame(Functor<RZE_Game* const> createGameCallback)
     mApplication->Start();
 
     mApplication->RegisterEvents(mEventHandler);
+}
+
+void RZE_Engine::SetConsoleCursorPosRenderTimer_TEMP()
+{
+	static bool bRetrievedCursorPos = false;
+	static SHORT curPosX = 0;
+	static SHORT curPosY = 0;
+
+	if (!bRetrievedCursorPos)
+	{
+		CONSOLE_SCREEN_BUFFER_INFO csbi;
+		GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
+
+		curPosX = csbi.dwCursorPosition.X;
+		curPosY = csbi.dwCursorPosition.Y;
+
+		bRetrievedCursorPos = true;
+	}
+
+	COORD coord = { curPosX, curPosY };
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+}
+
+void RZE_Engine::SetConsoleCursorPosUpdateTimer_TEMP()
+{
+	static bool bRetrievedCursorPos = false;
+	static SHORT curPosX = 0;
+	static SHORT curPosY = 0;
+
+	if (!bRetrievedCursorPos)
+	{
+		CONSOLE_SCREEN_BUFFER_INFO csbi;
+		GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
+
+		curPosX = csbi.dwCursorPosition.X;
+		curPosY = csbi.dwCursorPosition.Y;
+
+		bRetrievedCursorPos = true;
+	}
+
+	COORD coord = { curPosX, curPosY };
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 }
 
 void RZE_Engine::CompileEvents()
@@ -181,10 +243,6 @@ void RZE_Engine::Update()
 
     mApplication->Update();
     mWorld->Update();
-
-    mRenderer->Render();
-    // @todo maybe this can be done better
-    mMainWindow->BufferSwap();
 }
 
 void RZE_Engine::BeginShutDown()

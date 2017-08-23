@@ -161,6 +161,7 @@
     <ClCompile Include="Src\EngineCore\Platform\File.cpp" />
     <ClCompile Include="Src\EngineCore\Platform\FilePath.cpp" />
     <ClCompile Include="Src\EngineCore\Platform\Memory\BlockAllocator.cpp" />
+    <ClCompile Include="Src\EngineCore\Platform\Timers\HiResTimer.cpp" />
     <ClCompile Include="Src\EngineCore\Resources\ResourceHandler.cpp" />
     <ClCompile Include="Src\Events\EventHandler.cpp" />
     <ClCompile Include="Src\Events\Events.cpp" />
@@ -206,6 +207,7 @@
     <ClInclude Include="Src\EngineCore\Platform\FilePath.h" />
     <ClInclude Include="Src\EngineCore\Platform\Memory\BlockAllocator.h" />
     <ClInclude Include="Src\EngineCore\Platform\Memory\Memory.h" />
+    <ClInclude Include="Src\EngineCore\Platform\Timers\HiResTimer.h" />
     <ClInclude Include="Src\EngineCore\Resources\Resource.h" />
     <ClInclude Include="Src\EngineCore\Resources\ResourceHandler.h" />
     <ClInclude Include="Src\Events\EventHandler.h" />

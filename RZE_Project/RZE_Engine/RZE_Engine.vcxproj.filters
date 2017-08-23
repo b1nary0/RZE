@@ -73,6 +73,9 @@
     <Filter Include="Source Files\RenderCore\Graphics\Fonts">
       <UniqueIdentifier>{2886ce28-2336-4d77-a3d9-5de196ed1faf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\EngineCore\Platform\Timers">
+      <UniqueIdentifier>{379118e4-1ae8-4bd7-ab5a-c017a1d5db44}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Src\Application.cpp">
@@ -197,6 +200,9 @@
     </ClCompile>
     <ClCompile Include="Src\Game\ECS\EntityComponent.cpp">
       <Filter>Source Files\Game\ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\EngineCore\Platform\Timers\HiResTimer.cpp">
+      <Filter>Source Files\EngineCore\Platform\Timers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -358,6 +364,9 @@
     </ClInclude>
     <ClInclude Include="Src\Game\ECS\EntityComponentFilter.h">
       <Filter>Source Files\Game\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\EngineCore\Platform\Timers\HiResTimer.h">
+      <Filter>Source Files\EngineCore\Platform\Timers</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
