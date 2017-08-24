@@ -42,6 +42,8 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 		AssertNotNull(createGameCallback);
 		PostInit(createGameCallback);
 
+		static int frameCount = 0;
+
 		HiResTimer updateTimer;
 		HiResTimer renderTimer;
 		while (!bShouldExit)
@@ -55,12 +57,19 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 			mMainWindow->BufferSwap(); // #TODO(Josh) Maybe this can be done better
 			renderTimer.Stop();
 
-			// Comment me to disable line logging of update ms.
-			SetConsoleCursorPosUpdateTimer_TEMP();
-			LOG_CONSOLE_ARGS("RZE_Engine::Update() took %f ms.", updateTimer.GetElapsed<float>() * 1000);
+			++frameCount;
 
-			SetConsoleCursorPosRenderTimer_TEMP();
-			LOG_CONSOLE_ARGS("RZE_Renderer::Render() took %f ms.", renderTimer.GetElapsed<float>() * 1000);
+			if (frameCount > 25)
+			{
+				// Comment me to disable line logging of update ms.
+				SetConsoleCursorPosUpdateTimer_TEMP();
+				LOG_CONSOLE_ARGS("RZE_Engine::Update() took %f ms.", updateTimer.GetElapsed<float>() * 1000);
+
+				SetConsoleCursorPosRenderTimer_TEMP();
+				LOG_CONSOLE_ARGS("RZE_Renderer::Render() took %f ms.", renderTimer.GetElapsed<float>() * 1000);
+
+				frameCount = 0;
+			}
 		}
 
 		BeginShutDown();
