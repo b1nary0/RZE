@@ -5,7 +5,8 @@
 #include <DebugUtils/Debug.h>
 #include <Utils/PrimitiveDefs.h>
 
-#define ENTITY_MAX_COMPONENTS 16
+// 64 bits of component glory
+#define ENTITY_MAX_COMPONENTS 64
 
 class IEntityComponent;
 
@@ -76,6 +77,5 @@ private:
 	std::string mEntityName;
 
 	ComponentList mComponents;
-	// 16 bits of component glory
 	std::bitset<ENTITY_MAX_COMPONENTS> mComponentSet;
 };
