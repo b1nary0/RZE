@@ -58,6 +58,8 @@ private:
 	void Create(const WindowCreationParams& creationProtocol);
 
 	void ProcessWinProcMessage(const WindowMessageAdaptor::WindowMessageInfo& messageInfo, EventHandler& eventHandler);
+
+	void InternalSetWindowPosition(const Vector2D& pos);
 		
 	OSWindowHandleData mOSWindowHandleData;
 	WindowCreationParams mCreationData;

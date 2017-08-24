@@ -133,6 +133,8 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
         {
             AssertFalse();
         }
+
+		InternalSetWindowPosition(Vector2D(0, 0));
     }
 }
 
@@ -213,6 +215,11 @@ void Win32Window::ProcessWinProcMessage(const WindowMessageAdaptor::WindowMessag
         WindowEvent windowEvent(EWindowEventType::Window_Destroy);
         eventHandler.PostWindowEvent(windowEvent);
     }
+}
+
+void Win32Window::InternalSetWindowPosition(const Vector2D& pos)
+{
+	SetWindowPos(mOSWindowHandleData.windowHandle, 0, static_cast<int>(pos.X()), static_cast<int>(pos.Y()), 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 }
 
 LRESULT CALLBACK WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp)

@@ -17,42 +17,42 @@ RZE_Engine* RZE_Engine::sInstance = nullptr;
 
 RZE_Engine::RZE_Engine()
 {
-    mMainWindow         = nullptr;
-    mRenderer           = nullptr;
-    mWorld              = nullptr;
-    mEngineConfig       = nullptr;
-    mApplication        = nullptr;
+	mMainWindow = nullptr;
+	mRenderer = nullptr;
+	mWorld = nullptr;
+	mEngineConfig = nullptr;
+	mApplication = nullptr;
 
-    bShouldExit         = false;
-    bIsInitialized      = false;
+	bShouldExit = false;
+	bIsInitialized = false;
 }
 
 RZE_Engine::~RZE_Engine()
 {
-    AssertNotNull(mMainWindow);
-    delete mMainWindow;
+	AssertNotNull(mMainWindow);
+	delete mMainWindow;
 }
 
 void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 {
-    Init();
+	Init();
 
-    if (bIsInitialized)
-    {
-        AssertNotNull(createGameCallback);
-        PostInit(createGameCallback);
+	if (bIsInitialized)
+	{
+		AssertNotNull(createGameCallback);
+		PostInit(createGameCallback);
 
 		HiResTimer updateTimer;
 		HiResTimer renderTimer;
-        while (!bShouldExit)
-        {
+		while (!bShouldExit)
+		{
 			updateTimer.Start();
-				Update();
+			Update();
 			updateTimer.Stop();
 
 			renderTimer.Start();
-				mRenderer->Render();
-				mMainWindow->BufferSwap(); // #TODO(Josh) Maybe this can be done better
+			mRenderer->Render();
+			mMainWindow->BufferSwap(); // #TODO(Josh) Maybe this can be done better
 			renderTimer.Stop();
 
 			// Comment me to disable line logging of update ms.
@@ -61,94 +61,94 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 
 			SetConsoleCursorPosRenderTimer_TEMP();
 			LOG_CONSOLE_ARGS("RZE_Renderer::Render() took %f ms.", renderTimer.GetElapsed<float>());
-        }
+		}
 
-        BeginShutDown();
-    }
+		BeginShutDown();
+	}
 }
 
 void RZE_Engine::Init()
 {
-    LOG_CONSOLE("RZE_EngineCore::Init() called.");
+	LOG_CONSOLE("RZE_EngineCore::Init() called.");
 
-    LoadEngineConfig();
+	LoadEngineConfig();
 
-    CreateAndInitializeWindow();
+	CreateAndInitializeWindow();
 
-    {
-        OpenGLRHI::OpenGLCreationParams creationParams;
-        creationParams.WindowWidth = static_cast<int>(mMainWindow->GetDimensions().X());
-        creationParams.WindowHeight = static_cast<int>(mMainWindow->GetDimensions().Y());
+	{
+		OpenGLRHI::OpenGLCreationParams creationParams;
+		creationParams.WindowWidth = static_cast<int>(mMainWindow->GetDimensions().X());
+		creationParams.WindowHeight = static_cast<int>(mMainWindow->GetDimensions().Y());
 
-        OpenGLRHI::Get().Init(creationParams);
-    }
+		OpenGLRHI::Get().Init(creationParams);
+	}
 
-    // #TODO this should be handled better. No need to create directly here. Take a look.
-    mRenderer = new RZE_Renderer();
+	// #TODO this should be handled better. No need to create directly here. Take a look.
+	mRenderer = new RZE_Renderer();
 
-    LoadFonts();
+	LoadFonts();
 
-    mResourceHandler.Init();
+	mResourceHandler.Init();
 
-    RegisterWindowEvents();
-    RegisterInputEvents();
+	RegisterWindowEvents();
+	RegisterInputEvents();
 
-    mInputHandler.RegisterEvents(mEventHandler);
+	mInputHandler.RegisterEvents(mEventHandler);
 
-    bIsInitialized = true;
+	bIsInitialized = true;
 }
 
 void RZE_Engine::InitWorld()
 {
-    LOG_CONSOLE_ANNOUNCE("Initializing Game World...");
+	LOG_CONSOLE_ANNOUNCE("Initializing Game World...");
 
-    // @note naive at first
-    mWorld = new GameWorld(mRenderer);
-    AssertNotNull(mWorld);
+	// @note naive at first
+	mWorld = new GameWorld(mRenderer);
+	AssertNotNull(mWorld);
 
-    mWorld->Init();
+	mWorld->Init();
 }
 
 void RZE_Engine::PostInit(Functor<RZE_Game* const>& createApplicationCallback)
 {
-    LOG_CONSOLE("RZE_EngineCore::PostInit() called.");
+	LOG_CONSOLE("RZE_EngineCore::PostInit() called.");
 
-    InitWorld();
-    InitGame(createApplicationCallback);
+	InitWorld();
+	InitGame(createApplicationCallback);
 }
 
 void RZE_Engine::CreateAndInitializeWindow()
 {
 	// #TODO(Josh) Move this somewhere else and deal with it so the console ALWAYS shows up in a visible spot.
-	SetWindowPos(GetConsoleWindow(), 0, 1280, 720, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
+	SetWindowPos(GetConsoleWindow(), 0, 1280, 600, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
 
-    WindowSettings& windowSettings = mEngineConfig->GetWindowSettings();
+	WindowSettings& windowSettings = mEngineConfig->GetWindowSettings();
 
-    Win32Window::WindowCreationParams params;
-    params.windowTitle = windowSettings.GetTitle();
-    params.width = static_cast<int>(windowSettings.GetDimensions().X());
-    params.height = static_cast<int>(windowSettings.GetDimensions().Y());
+	Win32Window::WindowCreationParams params;
+	params.windowTitle = windowSettings.GetTitle();
+	params.width = static_cast<int>(windowSettings.GetDimensions().X());
+	params.height = static_cast<int>(windowSettings.GetDimensions().Y());
 
-    mMainWindow = new Win32Window(params);
-    AssertNotNull(mMainWindow);
+	mMainWindow = new Win32Window(params);
+	AssertNotNull(mMainWindow);
 
-    mMainWindow->ResetCursorToCenter();
+	mMainWindow->ResetCursorToCenter();
 }
 
 void RZE_Engine::LoadFonts()
 {
-    mFontHandler.LoadFont("Arial", "./../RZE_Engine/Assets/Fonts/Arial.ttf");
+	mFontHandler.LoadFont("Arial", "./../RZE_Engine/Assets/Fonts/Arial.ttf");
 }
 
 void RZE_Engine::InitGame(Functor<RZE_Game* const> createGameCallback)
 {
-    mApplication = createGameCallback();
-    AssertNotNull(mApplication);
+	mApplication = createGameCallback();
+	AssertNotNull(mApplication);
 
-    mApplication->SetWindow(mMainWindow);
-    mApplication->Start();
+	mApplication->SetWindow(mMainWindow);
+	mApplication->Start();
 
-    mApplication->RegisterEvents(mEventHandler);
+	mApplication->RegisterEvents(mEventHandler);
 }
 
 void RZE_Engine::SetConsoleCursorPosRenderTimer_TEMP()
@@ -195,103 +195,103 @@ void RZE_Engine::SetConsoleCursorPosUpdateTimer_TEMP()
 
 void RZE_Engine::CompileEvents()
 {
-    mApplication->CompileEvents(mEventHandler);
+	mApplication->CompileEvents(mEventHandler);
 }
 
 void RZE_Engine::RegisterWindowEvents()
 {
-    Functor<void, const Event&> windowCallback([this](const Event& event)
-    {
-        AssertEqual(event.mInfo.mEventType, EEventType::Window);
-        if (event.mWindowEvent.mEventInfo.mEventSubType == EWindowEventType::Window_Destroy)
-        {
-            PostExit();
-        }
-    });
-    RegisterForEvent(EEventType::Window, windowCallback);
+	Functor<void, const Event&> windowCallback([this](const Event& event)
+	{
+		AssertEqual(event.mInfo.mEventType, EEventType::Window);
+		if (event.mWindowEvent.mEventInfo.mEventSubType == EWindowEventType::Window_Destroy)
+		{
+			PostExit();
+		}
+	});
+	RegisterForEvent(EEventType::Window, windowCallback);
 }
 
 void RZE_Engine::RegisterInputEvents()
 {
-    Functor<void, U8> keyPressCallback([this](const U8 key)
-    {
-        if (key == Win32KeyCode::Escape)
-        {
-            PostExit();
-        }
-    });
-    RegisterForInputEvent(EKeyEventType::Key_Pressed, keyPressCallback);
+	Functor<void, U8> keyPressCallback([this](const U8 key)
+	{
+		if (key == Win32KeyCode::Escape)
+		{
+			PostExit();
+		}
+	});
+	RegisterForInputEvent(EKeyEventType::Key_Pressed, keyPressCallback);
 }
 
 void RZE_Engine::LoadEngineConfig()
 {
-    mEngineConfig = new EngineConfig();
-    //#TODO the path here needs to be dealt with properly
-    mEngineConfig->Load("./../RZE_Engine/RZE/Config/Engine.ini");
+	mEngineConfig = new EngineConfig();
+	//#TODO the path here needs to be dealt with properly
+	mEngineConfig->Load("./../RZE_Engine/RZE/Config/Engine.ini");
 
-    if (mEngineConfig->Empty())
-    {
-        LOG_CONSOLE("Engine config could not load. Defaults were used.");
-    }
+	if (mEngineConfig->Empty())
+	{
+		LOG_CONSOLE("Engine config could not load. Defaults were used.");
+	}
 }
 
 void RZE_Engine::Update()
 {
-    CompileEvents();
-    mInputHandler.ProcessEvents();
-    mEventHandler.ProcessEvents();
+	CompileEvents();
+	mInputHandler.ProcessEvents();
+	mEventHandler.ProcessEvents();
 
-    mApplication->Update();
-    mWorld->Update();
+	mApplication->Update();
+	mWorld->Update();
 }
 
 void RZE_Engine::BeginShutDown()
 {
-    LOG_CONSOLE("Shutting engine down...");
-    mApplication->ShutDown();
-    mWorld->ShutDown();
+	LOG_CONSOLE("Shutting engine down...");
+	mApplication->ShutDown();
+	mWorld->ShutDown();
 
 	mResourceHandler.ShutDown();
 }
 
 void RZE_Engine::PostExit()
 {
-    bShouldExit = true;
+	bShouldExit = true;
 }
 
 void RZE_Engine::RegisterForEvent(const U16 eventType, Functor<void, const Event&> callback)
 {
-    mEventHandler.RegisterForEvent(eventType, callback);
+	mEventHandler.RegisterForEvent(eventType, callback);
 }
 
 void RZE_Engine::RegisterForInputEvent(const U16 eventType, Functor<void, U8> callback)
 {
-    mInputHandler.RegisterForEvent(eventType, callback);
+	mInputHandler.RegisterForEvent(eventType, callback);
 }
 
 SceneCamera& RZE_Engine::GetSceneCamera()
 {
-    AssertNotNull(mRenderer);
-    return mRenderer->GetSceneCamera();
+	AssertNotNull(mRenderer);
+	return mRenderer->GetSceneCamera();
 }
 
 WindowSettings& RZE_Engine::GetWindowSettings()
 {
-    return mEngineConfig->GetWindowSettings();
+	return mEngineConfig->GetWindowSettings();
 }
 
 GameWorld* const RZE_Engine::GetWorld() const
 {
-    AssertNotNull(mWorld);
-    return mWorld;
+	AssertNotNull(mWorld);
+	return mWorld;
 }
 
 ResourceHandler& RZE_Engine::GetResourceHandler()
 {
-    return mResourceHandler;
+	return mResourceHandler;
 }
 
 FontHandler& RZE_Engine::GetFontHandler()
 {
-    return mFontHandler;
+	return mFontHandler;
 }
