@@ -57,10 +57,10 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 
 			// Comment me to disable line logging of update ms.
 			SetConsoleCursorPosUpdateTimer_TEMP();
-			LOG_CONSOLE_ARGS("RZE_Engine::Update() took %f ms.", updateTimer.GetElapsed<float>());
+			LOG_CONSOLE_ARGS("RZE_Engine::Update() took %f ms.", updateTimer.GetElapsed<float>() * 1000);
 
 			SetConsoleCursorPosRenderTimer_TEMP();
-			LOG_CONSOLE_ARGS("RZE_Renderer::Render() took %f ms.", renderTimer.GetElapsed<float>());
+			LOG_CONSOLE_ARGS("RZE_Renderer::Render() took %f ms.", renderTimer.GetElapsed<float>() * 1000);
 		}
 
 		BeginShutDown();
@@ -120,7 +120,7 @@ void RZE_Engine::PostInit(Functor<RZE_Game* const>& createApplicationCallback)
 void RZE_Engine::CreateAndInitializeWindow()
 {
 	// #TODO(Josh) Move this somewhere else and deal with it so the console ALWAYS shows up in a visible spot.
-	SetWindowPos(GetConsoleWindow(), 0, 1280, 600, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
+	SetWindowPos(GetConsoleWindow(), 0, 1024, 600, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
 
 	WindowSettings& windowSettings = mEngineConfig->GetWindowSettings();
 
