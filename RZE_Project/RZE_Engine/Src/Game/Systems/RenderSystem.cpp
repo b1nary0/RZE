@@ -21,9 +21,9 @@
 #include <Utils/Math/Vector4D.h>
 
 RenderSystem::RenderSystem(IEntityAdmin* const admin)
-    : IEntitySystem(admin)
+	: IEntitySystem(admin)
 {
-    OpenGLRHI::Get().ClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+	OpenGLRHI::Get().ClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 }
 
 RenderSystem::~RenderSystem()
@@ -33,19 +33,19 @@ RenderSystem::~RenderSystem()
 void RenderSystem::Init()
 {
 	SetFilterTypes();
-    LoadFontShader();
+	LoadFontShader();
 }
 
 void RenderSystem::Update()
 {
-    RZE_Renderer* const renderer = mAdmin->GetRenderer();
-    AssertNotNull(renderer);
+	RZE_Renderer* const renderer = mAdmin->GetRenderer();
+	AssertNotNull(renderer);
 
 	SceneCamera& renderCam = renderer->GetSceneCamera();
-    renderCam.GenerateProjectionMat();
-    renderCam.GenerateViewMat();
+	renderCam.GenerateProjectionMat();
+	renderCam.GenerateViewMat();
 
-    std::vector<IEntity*> mainList;
+	std::vector<IEntity*> mainList;
 	mRelevantComponents.FilterAnyOf(mAdmin->GetEntities(), mainList);
 
 	//
@@ -54,42 +54,42 @@ void RenderSystem::Update()
 	EntityComponentFilter renderPassFilter;
 	renderPassFilter.AddFilterType<MeshComponent>();
 	renderPassFilter.AddFilterType<TransformComponent>();
-	
+
 	std::vector<IEntity*> renderPassEntities;
 	renderPassFilter.FilterAtLeast(mainList, renderPassEntities);
 
-    for (auto& entity : renderPassEntities)
-    {
-        MeshComponent* const meshComponent = entity->GetComponent<MeshComponent>();
+	for (auto& entity : renderPassEntities)
+	{
+		MeshComponent* const meshComponent = entity->GetComponent<MeshComponent>();
 		TransformComponent* const transformComponent = entity->GetComponent<TransformComponent>();
-        
 
-        Matrix4x4 modelMat;
-        modelMat.Translate(transformComponent->GetPosition());
-        modelMat.Rotate(transformComponent->GetRotation().ToAngle(), transformComponent->GetRotation().ToAxis());
-        modelMat.Scale(transformComponent->GetScale());
 
-        Matrix4x4 MVP = renderCam.GetProjectionMat() * renderCam.GetViewMat() * modelMat;
+		Matrix4x4 modelMat;
+		modelMat.Translate(transformComponent->GetPosition());
+		modelMat.Rotate(transformComponent->GetRotation().ToAngle(), transformComponent->GetRotation().ToAxis());
+		modelMat.Scale(transformComponent->GetScale());
 
-        RZE_Renderer::RenderItemProtocol renderItem;
-        renderItem.mShaderGroup = meshComponent->GetShaderGroup();
-        renderItem.mModelMat = modelMat;
-        renderItem.mProjectionMat = renderCam.GetProjectionMat();
-        renderItem.mViewMat = renderCam.GetViewMat();
+		Matrix4x4 MVP = renderCam.GetProjectionMat() * renderCam.GetViewMat() * modelMat;
 
-        // #TODO find a better transfer point for the resource handler. Maybe pass in as an argument to constructor for renderer?
-        renderItem.mMeshData = RZE_Engine::Get()->GetResourceHandler().GetResource<MeshResource>(meshComponent->GetMeshHandle());
+		RZE_Renderer::RenderItemProtocol renderItem;
+		renderItem.mShaderGroup = meshComponent->GetShaderGroup();
+		renderItem.mModelMat = modelMat;
+		renderItem.mProjectionMat = renderCam.GetProjectionMat();
+		renderItem.mViewMat = renderCam.GetViewMat();
 
-        if (meshComponent->GetTextureHandle().IsValid())
-        {
-            renderItem.mTextureData = RZE_Engine::Get()->GetResourceHandler().GetResource<GFXTexture2D>(meshComponent->GetTextureHandle());
-        }
-        
-        if (renderer)
-        {
-            renderer->AddRenderItem(renderItem);
-        }
-    }
+		// #TODO find a better transfer point for the resource handler. Maybe pass in as an argument to constructor for renderer?
+		renderItem.mMeshData = RZE_Engine::Get()->GetResourceHandler().GetResource<MeshResource>(meshComponent->GetMeshHandle());
+
+		if (meshComponent->GetTextureHandle().IsValid())
+		{
+			renderItem.mTextureData = RZE_Engine::Get()->GetResourceHandler().GetResource<GFXTexture2D>(meshComponent->GetTextureHandle());
+		}
+
+		if (renderer)
+		{
+			renderer->AddRenderItem(renderItem);
+		}
+	}
 
 	//
 	// Lights
@@ -151,42 +151,42 @@ void RenderSystem::SetFilterTypes()
 
 void RenderSystem::LoadFontShader()
 {
-    const char* const vertFilePath = "./../RZE_Engine/Assets/Shaders/FontVert.shader";
-    const char* const fragFilePath = "./../RZE_Engine/Assets/Shaders/FontFrag.shader";
+	const char* const vertFilePath = "./../RZE_Engine/Assets/Shaders/FontVert.shader";
+	const char* const fragFilePath = "./../RZE_Engine/Assets/Shaders/FontFrag.shader";
 
-    ResourceHandler& resourceHandler = RZE_Engine::Get()->GetResourceHandler();
+	ResourceHandler& resourceHandler = RZE_Engine::Get()->GetResourceHandler();
 
-    ResourceHandle vertShaderRes = resourceHandler.RequestResource<GFXShader>(
-                                                                                                                vertFilePath, 
-                                                                                                                EGLShaderType::Vertex, 
-                                                                                                                "FontVertShader"
-                                                                                                           );
+	ResourceHandle vertShaderRes = resourceHandler.RequestResource<GFXShader>(
+		vertFilePath,
+		EGLShaderType::Vertex,
+		"FontVertShader"
+		);
 
-    ResourceHandle fragShaderRes = resourceHandler.RequestResource<GFXShader>(
-                                                                                                                fragFilePath,
-                                                                                                                EGLShaderType::Fragment,
-                                                                                                                "FontFragShader"
-                                                                                                           );
+	ResourceHandle fragShaderRes = resourceHandler.RequestResource<GFXShader>(
+		fragFilePath,
+		EGLShaderType::Fragment,
+		"FontFragShader"
+		);
 
-    GFXShader* vertShader = resourceHandler.GetResource<GFXShader>(vertShaderRes);
-    vertShader->Create();
-    vertShader->Compile();
+	GFXShader* vertShader = resourceHandler.GetResource<GFXShader>(vertShaderRes);
+	vertShader->Create();
+	vertShader->Compile();
 
-    GFXShader* fragShader = resourceHandler.GetResource<GFXShader>(fragShaderRes);
-    fragShader->Create();
-    fragShader->Compile();
+	GFXShader* fragShader = resourceHandler.GetResource<GFXShader>(fragShaderRes);
+	fragShader->Create();
+	fragShader->Compile();
 
-    GFXShaderGroup* shaderGroup = new GFXShaderGroup("FontShader");
-    shaderGroup->AddShader(GFXShaderGroup::EShaderIndex::Vertex, vertShader);
-    shaderGroup->AddShader(GFXShaderGroup::EShaderIndex::Fragment, fragShader);
+	GFXShaderGroup* shaderGroup = new GFXShaderGroup("FontShader");
+	shaderGroup->AddShader(GFXShaderGroup::EShaderIndex::Vertex, vertShader);
+	shaderGroup->AddShader(GFXShaderGroup::EShaderIndex::Fragment, fragShader);
 
-    shaderGroup->AddUniform("UProjectionMat");
-    shaderGroup->AddUniform("UTextColor");
+	shaderGroup->AddUniform("UProjectionMat");
+	shaderGroup->AddUniform("UTextColor");
 
-    shaderGroup->GenerateShaderProgram();
+	shaderGroup->GenerateShaderProgram();
 
-    resourceHandler.ReleaseResource(vertShaderRes);
-    resourceHandler.ReleaseResource(fragShaderRes);
+	resourceHandler.ReleaseResource(vertShaderRes);
+	resourceHandler.ReleaseResource(fragShaderRes);
 
-    mShaderGroups["FontShader"] = shaderGroup; 
+	mShaderGroups["FontShader"] = shaderGroup;
 }

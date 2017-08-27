@@ -10,6 +10,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RZE_GameProj", "RZE_GamePro
 		{05BB6A29-8F22-4BE8-A947-5174C607C1D8} = {05BB6A29-8F22-4BE8-A947-5174C607C1D8}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RZE_Editor", "RZE_Editor\RZE_Editor.vcxproj", "{546BE53B-3EFB-4533-84FA-19696EA6E87D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -34,6 +36,14 @@ Global
 		{B7BCF6C7-B6BE-47DD-994C-E457204D168C}.Release|x64.Build.0 = Release|x64
 		{B7BCF6C7-B6BE-47DD-994C-E457204D168C}.Release|x86.ActiveCfg = Release|Win32
 		{B7BCF6C7-B6BE-47DD-994C-E457204D168C}.Release|x86.Build.0 = Release|Win32
+		{546BE53B-3EFB-4533-84FA-19696EA6E87D}.Debug|x64.ActiveCfg = Debug|x64
+		{546BE53B-3EFB-4533-84FA-19696EA6E87D}.Debug|x64.Build.0 = Debug|x64
+		{546BE53B-3EFB-4533-84FA-19696EA6E87D}.Debug|x86.ActiveCfg = Debug|Win32
+		{546BE53B-3EFB-4533-84FA-19696EA6E87D}.Debug|x86.Build.0 = Debug|Win32
+		{546BE53B-3EFB-4533-84FA-19696EA6E87D}.Release|x64.ActiveCfg = Release|x64
+		{546BE53B-3EFB-4533-84FA-19696EA6E87D}.Release|x64.Build.0 = Release|x64
+		{546BE53B-3EFB-4533-84FA-19696EA6E87D}.Release|x86.ActiveCfg = Release|Win32
+		{546BE53B-3EFB-4533-84FA-19696EA6E87D}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
