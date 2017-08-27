@@ -33,6 +33,7 @@ wxIMPLEMENT_APP(MyApp);
 bool MyApp::OnInit()
 {
 	MyFrame *frame = new MyFrame();
+	frame->Maximize(true);
 	frame->Show(true);
 	return true;
 }
