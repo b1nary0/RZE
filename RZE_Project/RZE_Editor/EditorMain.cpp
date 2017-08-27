@@ -1,12 +1,43 @@
 // wxWidgets "Hello world" Program
 // For compilers that support precompilation, includes "wx/wx.h".
 #include <wx/wxprec.h>
+#include <wx/glcanvas.h>
 
 #ifndef WX_PRECOMP
 
 #include <WX/wx.h>
 
 #endif
+// 
+// class wxGLCanvasSubClass : public wxGLCanvas {
+// 	void Render();
+// public:
+// 	wxGLCanvasSubClass(wxFrame* parent);
+// 	void Paintit(wxPaintEvent& event);
+// protected:
+// 	DECLARE_EVENT_TABLE()
+// };
+// 
+// BEGIN_EVENT_TABLE(wxGLCanvasSubClass, wxGLCanvas)
+// EVT_PAINT(wxGLCanvasSubClass::Paintit)
+// END_EVENT_TABLE()
+// 
+// wxGLCanvasSubClass::wxGLCanvasSubClass(wxFrame *parent)
+// 	:wxGLCanvas(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, wxT("GLCanvas")) {
+// 	int argc = 1;
+// 	char* argv[1] = { wxString((wxTheApp->argv)[0]).char_str() };
+// 
+// 	/*
+// 	NOTE: this example uses GLUT in order to have a free teapot model
+// 	to display, to show 3D capabilities. GLUT, however, seems to cause problems
+// 	on some systems. If you meet problems, first try commenting out glutInit(),
+// 	then try comeenting out all glut code
+// 	*/
+// }
+// 
+// void wxGLCanvasSubClass::Paintit(wxPaintEvent& WXUNUSED(event)) {
+// 	Render();
+// }
 
 class MyApp : public wxApp
 {
@@ -46,13 +77,17 @@ MyFrame::MyFrame()
 		"Help string shown in status bar for this menu item");
 	menuFile->AppendSeparator();
 	menuFile->Append(wxID_EXIT);
+
 	wxMenu *menuHelp = new wxMenu;
 	menuHelp->Append(wxID_ABOUT);
+
 	wxMenuBar *menuBar = new wxMenuBar;
 	menuBar->Append(menuFile, "&File");
 	menuBar->Append(menuHelp, "&Help");
+
 	SetMenuBar(menuBar);
 	CreateStatusBar();
+
 	SetStatusText("Welcome to wxWidgets!");
 	Bind(wxEVT_MENU, &MyFrame::OnHello, this, ID_Hello);
 	Bind(wxEVT_MENU, &MyFrame::OnAbout, this, wxID_ABOUT);
