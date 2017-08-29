@@ -2,8 +2,10 @@
 
 // wxWidgets "Hello world" Program
 // For compilers that support precompilation, includes "wx/wx.h".
+#pragma warning(push, 0)
 #include <wx/wxprec.h>
 #include <wx/glcanvas.h>
+#pragma warning(pop)
 
 #ifndef WX_PRECOMP
 
@@ -11,23 +13,32 @@
 
 #endif
 
+#include <memory>
+
 enum
 {
 	ID_Hello = 1
-};
-
-class MyApp : public wxApp
-{
-public:
-	virtual bool OnInit();
 };
 
 class MyFrame : public wxFrame
 {
 public:
 	MyFrame();
+
 private:
 	void OnHello(wxCommandEvent& event);
 	void OnExit(wxCommandEvent& event);
 	void OnAbout(wxCommandEvent& event);
+};
+
+class MyApp : public wxApp
+{
+public:
+	virtual bool OnInit();
+	virtual int OnExit();
+
+	MyFrame& GetFrame();
+
+private:
+	std::unique_ptr<MyFrame> mFrame;
 };

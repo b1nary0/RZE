@@ -1,11 +1,28 @@
+#include <StdAfx.h>
+
 #include <Studio/Application.h>
 
 bool MyApp::OnInit()
 {
-	MyFrame *frame = new MyFrame();
-	frame->Maximize(true);
-	frame->Show(true);
+	mFrame = std::make_unique<MyFrame>();
+
+	mFrame->Maximize(true);
+	mFrame->Show(true);
+
 	return true;
+}
+
+int MyApp::OnExit()
+{
+	mFrame.release();
+
+	return 0;
+}
+
+MyFrame& MyApp::GetFrame()
+{
+	AssertNotNull(mFrame);
+	return *mFrame;
 }
 
 MyFrame::MyFrame()
@@ -27,7 +44,7 @@ MyFrame::MyFrame()
 	SetMenuBar(menuBar);
 	CreateStatusBar();
 
-	SetStatusText("Welcome to wxWidgets!");
+	SetStatusText("Welcome to RZE Studio!");
 	Bind(wxEVT_MENU, &MyFrame::OnHello, this, ID_Hello);
 	Bind(wxEVT_MENU, &MyFrame::OnAbout, this, wxID_ABOUT);
 	Bind(wxEVT_MENU, &MyFrame::OnExit, this, wxID_EXIT);
