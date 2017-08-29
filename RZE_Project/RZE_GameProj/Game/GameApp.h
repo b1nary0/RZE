@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include <Application.h>
+#include <EngineApp.h>
 
 class GameEntity;
 class MeshData;

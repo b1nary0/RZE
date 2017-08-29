@@ -1,10 +1,19 @@
 #include <StdAfx.h>
 
-#include <Studio/Application.h>
+#include <Studio/StudioApp.h>
 
 bool MyApp::OnInit()
 {
 	mFrame = std::make_unique<MyFrame>();
+	mEngineBridge = std::make_unique<RZE_Game>();
+
+	Functor<RZE_Game* const> appCreateFunc([this]()
+	{
+		AssertNotNull(mEngineBridge);
+		return mEngineBridge.get();
+	});
+
+	RZE_Engine::Get()->Run(appCreateFunc);
 
 	mFrame->Maximize(true);
 	mFrame->Show(true);

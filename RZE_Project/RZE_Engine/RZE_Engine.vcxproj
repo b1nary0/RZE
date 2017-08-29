@@ -153,7 +153,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Src\Application.cpp" />
+    <ClCompile Include="Src\EngineApp.cpp" />
     <ClCompile Include="Src\EngineCore\Config\Config.cpp" />
     <ClCompile Include="Src\EngineCore\Config\EngineConfig.cpp" />
     <ClCompile Include="Src\EngineCore\Engine.cpp" />
@@ -197,8 +197,8 @@
     <ClCompile Include="Src\Windowing\WindowMessageAdaptor.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Src\Application.h" />
     <ClInclude Include="Src\DebugUtils\Debug.h" />
+    <ClInclude Include="Src\EngineApp.h" />
     <ClInclude Include="Src\EngineCore\Config\Config.h" />
     <ClInclude Include="Src\EngineCore\Config\EngineConfig.h" />
     <ClInclude Include="Src\EngineCore\Engine.h" />

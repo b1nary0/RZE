@@ -1,4 +1,4 @@
-#include <Studio/Application.h>
+#include <Studio/StudioApp.h>
 
 // 
 // class wxGLCanvasSubClass : public wxGLCanvas {

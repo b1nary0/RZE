@@ -146,10 +146,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="EditorMain.cpp" />
-    <ClCompile Include="Src\Studio\Application.cpp" />
+    <ClCompile Include="Src\EditorBridge.cpp" />
+    <ClCompile Include="Src\Studio\StudioApp.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Src\Studio\Application.h" />
+    <ClInclude Include="Src\EngineBridge.h" />
+    <ClInclude Include="Src\Studio\StudioApp.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

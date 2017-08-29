@@ -78,9 +78,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Src\Application.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Src\EngineCore\Engine.cpp">
       <Filter>Source Files\EngineCore</Filter>
     </ClCompile>
@@ -204,13 +201,13 @@
     <ClCompile Include="Src\EngineCore\Platform\Timers\HiResTimer.cpp">
       <Filter>Source Files\EngineCore\Platform\Timers</Filter>
     </ClCompile>
+    <ClCompile Include="Src\EngineApp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\EngineCore\Engine.h">
       <Filter>Source Files\EngineCore</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\Application.h">
-      <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Src\StdAfx.h">
       <Filter>Source Files</Filter>
@@ -367,6 +364,9 @@
     </ClInclude>
     <ClInclude Include="Src\EngineCore\Platform\Timers\HiResTimer.h">
       <Filter>Source Files\EngineCore\Platform\Timers</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\EngineApp.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

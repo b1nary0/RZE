@@ -15,6 +15,8 @@
 
 #include <memory>
 
+#include <EngineApp.h>
+
 enum
 {
 	ID_Hello = 1
@@ -40,5 +42,7 @@ public:
 	MyFrame& GetFrame();
 
 private:
+	std::unique_ptr<RZE_Game> mEngineBridge;
+
 	std::unique_ptr<MyFrame> mFrame;
 };
