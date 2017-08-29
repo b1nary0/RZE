@@ -9,7 +9,7 @@ bool MyApp::OnInit()
 }
 
 MyFrame::MyFrame()
-	: wxFrame(NULL, wxID_ANY, "Hello World")
+	: wxFrame(NULL, wxID_ANY, "RZE Studio")
 {
 	wxMenu *menuFile = new wxMenu;
 	menuFile->Append(ID_Hello, "&Hello...\tCtrl-H",
