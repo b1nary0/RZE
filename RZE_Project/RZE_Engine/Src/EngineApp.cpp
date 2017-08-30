@@ -9,9 +9,10 @@
 #include "Windowing/Win32Window.h"
 
 RZE_Game::RZE_Game()
-	: bIsRunning(false)
-	, mWindow(nullptr)
+	: mWindow(nullptr)
 {
+	SetRunning(false);
+
 	Init();
 }
 
@@ -24,12 +25,7 @@ void RZE_Game::Start()
 {
 	ShowWindow();
 
-	bIsRunning = true;
-}
-
-bool RZE_Game::IsRunning() const
-{
-	return bIsRunning;
+	SetRunning(true);
 }
 
 void RZE_Game::Update()
