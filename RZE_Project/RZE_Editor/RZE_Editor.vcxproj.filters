@@ -18,13 +18,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="EditorMain.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Src\Studio\StudioApp.cpp">
       <Filter>Source Files\Studio</Filter>
     </ClCompile>
-    <ClCompile Include="Src\EditorBridge.cpp">
+    <ClCompile Include="Src\EditorMain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\EngineBridge.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
