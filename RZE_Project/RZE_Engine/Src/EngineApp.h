@@ -36,7 +36,6 @@ class RZE_Game : public RZE_Application
 	friend class RZE_Engine;
 
 public:
-
 	RZE_Game();
 	virtual ~RZE_Game();
 
@@ -44,7 +43,7 @@ public:
 	virtual void Update() override;
 	virtual void ShutDown() override;
 
-	virtual void RegisterEvents(EventHandler& eventHandler) {}
+	virtual void RegisterEvents(EventHandler& eventHandler);
 
 protected:
 
