@@ -289,10 +289,10 @@ WindowSettings& RZE_Engine::GetWindowSettings()
 	return mEngineConfig->GetWindowSettings();
 }
 
-GameWorld* const RZE_Engine::GetWorld() const
+GameWorld& RZE_Engine::GetWorld() const
 {
 	AssertNotNull(mWorld);
-	return mWorld;
+	return *mWorld;
 }
 
 ResourceHandler& RZE_Engine::GetResourceHandler()

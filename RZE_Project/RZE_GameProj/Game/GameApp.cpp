@@ -168,7 +168,7 @@ void GameApp::Update()
 
 void GameApp::CreateTextureQuad(const ResourceHandle& meshHandle, const ResourceHandle& textureHandle)
 {
-	GameEntity* entity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>("TextureQuad");
+	GameEntity* entity = RZE_Engine::Get()->GetWorld().AddEntity<GameEntity>("TextureQuad");
 
 	MeshComponent* const meshComp = entity->AddComponent<MeshComponent>();
 	meshComp->SetMeshHandle(meshHandle);
@@ -184,7 +184,7 @@ void GameApp::CreateTextureQuad(const ResourceHandle& meshHandle, const Resource
 
 void GameApp::CreateFontTest()
 {
-	GameEntity* entity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
+	GameEntity* entity = RZE_Engine::Get()->GetWorld().AddEntity<GameEntity>();
 
 	FontRenderComponent* const fontComp = entity->AddComponent<FontRenderComponent>("TestFontComponent");
 	fontComp->SetFont(RZE_Engine::Get()->GetFontHandler().GetFont("Arial"));
@@ -195,7 +195,7 @@ void GameApp::CreateFontTest()
 
 void GameApp::CreateLight(const ResourceHandle& resourceHandle)
 {
-	mLightEntity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
+	mLightEntity = RZE_Engine::Get()->GetWorld().AddEntity<GameEntity>();
 
 	// 	MeshComponent* lightMesh = mLightEntity->AddComponent<MeshComponent>();
 	// 	lightMesh->SetMeshHandle(resourceHandle);
@@ -213,7 +213,7 @@ void GameApp::CreateLight(const ResourceHandle& resourceHandle)
 
 void GameApp::CreateGround(const ResourceHandle& resourceHandle)
 {
-	GameEntity* groundEntity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
+	GameEntity* groundEntity = RZE_Engine::Get()->GetWorld().AddEntity<GameEntity>();
 
 	MeshComponent* const meshComponent = groundEntity->AddComponent<MeshComponent>();
 	meshComponent->SetMeshHandle(resourceHandle);
@@ -233,7 +233,7 @@ void GameApp::CreateLampObjects(const ResourceHandle& resourceHandle)
 	//
 	// 1 - NE
 	//
-	GameEntity* lampEntity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
+	GameEntity* lampEntity = RZE_Engine::Get()->GetWorld().AddEntity<GameEntity>();
 
 	MeshComponent* meshComponent = lampEntity->AddComponent<MeshComponent>("LampMesh");
 	meshComponent->SetMeshHandle(resourceHandle);
@@ -248,7 +248,7 @@ void GameApp::CreateLampObjects(const ResourceHandle& resourceHandle)
 	//
 	// 2 - NW
 	//
-	lampEntity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
+	lampEntity = RZE_Engine::Get()->GetWorld().AddEntity<GameEntity>();
 
 	meshComponent = lampEntity->AddComponent<MeshComponent>("LampMesh");
 	meshComponent->SetMeshHandle(resourceHandle);
@@ -263,7 +263,7 @@ void GameApp::CreateLampObjects(const ResourceHandle& resourceHandle)
 	//
 	// 3 - SE
 	//
-	lampEntity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
+	lampEntity = RZE_Engine::Get()->GetWorld().AddEntity<GameEntity>();
 
 	meshComponent = lampEntity->AddComponent<MeshComponent>("LampMesh");
 	meshComponent->SetMeshHandle(resourceHandle);
@@ -279,7 +279,7 @@ void GameApp::CreateLampObjects(const ResourceHandle& resourceHandle)
 	//
 	// 4 - SW
 	//
-	lampEntity = RZE_Engine::Get()->GetWorld()->AddEntity<GameEntity>();
+	lampEntity = RZE_Engine::Get()->GetWorld().AddEntity<GameEntity>();
 
 	meshComponent = lampEntity->AddComponent<MeshComponent>("LampMesh");
 	meshComponent->SetMeshHandle(resourceHandle);

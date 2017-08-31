@@ -32,15 +32,12 @@ public:
 	void RegisterForEvent(const U16 eventType, Functor<void, const Event&> callback);
 	void RegisterForInputEvent(const U16 eventType, Functor<void, U8> callback);
 
-    // #TODO(Josh) This should be revisited when the camera access/design changes
-    SceneCamera& GetSceneCamera();
-
-    WindowSettings& GetWindowSettings();
-
-	GameWorld* const GetWorld() const;
-
-    ResourceHandler& GetResourceHandler();
-    FontHandler&     GetFontHandler();
+	// #TODO(Josh) This should be revisited when the camera access/design changes
+	SceneCamera&		GetSceneCamera();
+	WindowSettings&		GetWindowSettings();
+	GameWorld&			GetWorld() const;
+	ResourceHandler&	GetResourceHandler();
+	FontHandler&		GetFontHandler();
 
 	static RZE_Engine* const Get()
 	{
@@ -57,7 +54,7 @@ private:
 	void Init();
 	void InitWorld();
 	void PostInit(Functor<RZE_Game* const>& createApplicationCallback);
-	
+
 	void Update();
 
 	void BeginShutDown();
@@ -68,10 +65,10 @@ private:
 	void RegisterWindowEvents();
 	void RegisterInputEvents();
 
-    void LoadEngineConfig();
+	void LoadEngineConfig();
 	void CreateAndInitializeWindow();
 
-    void LoadFonts();
+	void LoadFonts();
 
 	void InitGame(Functor<RZE_Game* const> createGameCallback);
 
@@ -86,13 +83,13 @@ private:
 	Win32Window* mMainWindow;
 	RZE_Renderer* mRenderer;
 
-    ResourceHandler mResourceHandler;
+	ResourceHandler mResourceHandler;
 	EventHandler mEventHandler;
 	InputHandler mInputHandler;
-    FontHandler mFontHandler;
+	FontHandler mFontHandler;
 
-    EngineConfig* mEngineConfig;
+	EngineConfig* mEngineConfig;
 
-    bool bIsInitialized;
+	bool bIsInitialized;
 	bool bShouldExit;
 };
