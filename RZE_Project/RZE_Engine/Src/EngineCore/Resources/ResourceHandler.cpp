@@ -16,20 +16,23 @@ void ResourceHandler::Init()
 
 void ResourceHandler::ShutDown()
 {
+	U32 liveResourceCount = 0;
 	for (auto& resourcePair : mResourceTable)
 	{
 		ResourceSource& resourceSource = resourcePair.second;
 		if (resourceSource.IsValid())
 		{
-			// Just an informative log to notify that we had some referenced resources at the time
-			// ShutDown() was called. This is fine.
-			LOG_CONSOLE("ResourceHandler::ShutDown() encountered live resource.");
+			++liveResourceCount;
 		}
 
 		// We should always have a resource if it is in the resource table.
 		AssertNotNull(resourceSource.GetResource());
 		resourceSource.InternalDestroy();
 	}
+
+	// Just an informative log to notify that we had some referenced resources at the time
+	// ShutDown() was called. This is fine.
+	LOG_CONSOLE_ARGS("ResourceHandler::ShutDown() encountered %u live resources.", liveResourceCount);
 
 	mResourceTable.erase(mResourceTable.begin(), mResourceTable.end());
 }
