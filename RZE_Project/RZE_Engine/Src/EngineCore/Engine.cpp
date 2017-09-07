@@ -74,6 +74,10 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 
 		BeginShutDown();
 	}
+	else
+	{
+		LOG_CONSOLE("Initialization Failed.");
+	}
 }
 
 void RZE_Engine::Init()
