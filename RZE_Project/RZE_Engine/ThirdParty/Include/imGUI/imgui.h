@@ -43,6 +43,9 @@
 #pragma clang diagnostic ignored "-Wold-style-cast"
 #endif
 
+// RZE_ADD
+#undef GetWindowFont
+
 // Forward declarations
 struct ImDrawChannel;               // Temporary storage for outputting drawing commands out of order, used by ImDrawList::ChannelsSplit()
 struct ImDrawCmd;                   // A single draw command within a parent ImDrawList (generally maps to 1 GPU draw call)
