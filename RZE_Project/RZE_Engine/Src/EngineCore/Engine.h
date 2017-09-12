@@ -61,6 +61,7 @@ private:
 	void Update();
 
 	void BeginShutDown();
+	void InternalShutDown();
 	void PostExit();
 
 	void CompileEvents();

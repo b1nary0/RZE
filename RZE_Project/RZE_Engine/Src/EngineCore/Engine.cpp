@@ -67,7 +67,7 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 				// Comment me to disable line logging of update ms.
 				//SetConsoleCursorPosUpdateTimer_TEMP();
 				//LOG_CONSOLE_ARGS("RZE_Engine::Update() took %f ms.", updateTimer.GetElapsed<float>() * 1000);
-				ImGui::Text("RZE_Engine::Update() took %f ms", updateTimer.GetElapsed<float>() * 1000);
+				ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "RZE_Engine::Update() took %f ms", updateTimer.GetElapsed<float>() * 1000);
 
 				//SetConsoleCursorPosRenderTimer_TEMP();
 				//LOG_CONSOLE_ARGS("RZE_Renderer::Render() took %f ms.", renderTimer.GetElapsed<float>() * 1000);
@@ -282,8 +282,26 @@ void RZE_Engine::BeginShutDown()
 	LOG_CONSOLE("Shutting engine down...");
 	mApplication->ShutDown();
 	mWorld->ShutDown();
-
 	mResourceHandler.ShutDown();
+
+	// #TODO(Josh) shut down renderer and window, etc
+
+	InternalShutDown();
+}
+
+void RZE_Engine::InternalShutDown()
+{
+	AssertNotNull(mRenderer);
+	AssertNotNull(mMainWindow);
+	AssertNotNull(mEngineConfig);
+	AssertNotNull(mApplication);
+	AssertNotNull(mWorld);
+
+	delete mRenderer;
+	delete mMainWindow;
+	delete mEngineConfig;
+	delete mApplication;
+	delete mWorld;
 }
 
 void RZE_Engine::PostExit()
