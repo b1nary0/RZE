@@ -47,6 +47,8 @@ void ResourceHandler::ReleaseResource(ResourceHandle& resourceHandle)
     auto iter = mResourceTable.find(resourceHandle.GetID());
     if (iter != mResourceTable.end())
     {
+		LOG_CONSOLE_ARGS("Releasing resource [%s]", resourceHandle.GetID().c_str());
+
         ResourceSource& resourceSource = (*iter).second;
         resourceSource.DecreaseRefCount();
 
