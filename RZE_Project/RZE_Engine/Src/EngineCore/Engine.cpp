@@ -13,6 +13,8 @@
 #include <Windowing/Win32Window.h>
 #include <Windowing/WinKeyCodes.h>
 
+#include <imGUI/imgui.h>
+
 RZE_Engine* RZE_Engine::sInstance = nullptr;
 
 RZE_Engine::RZE_Engine()
@@ -48,13 +50,14 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 		HiResTimer renderTimer;
 		while (!bShouldExit)
 		{
+			ImGui::NewFrame();
+
 			updateTimer.Start();
 			Update();
 			updateTimer.Stop();
 
 			renderTimer.Start();
 			mRenderer->Render();
-			mMainWindow->BufferSwap(); // #TODO(Josh) Maybe this can be done better
 			renderTimer.Stop();
 
 			++frameCount;
@@ -62,14 +65,18 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 			if (frameCount > 25)
 			{
 				// Comment me to disable line logging of update ms.
-				SetConsoleCursorPosUpdateTimer_TEMP();
-				LOG_CONSOLE_ARGS("RZE_Engine::Update() took %f ms.", updateTimer.GetElapsed<float>() * 1000);
+				//SetConsoleCursorPosUpdateTimer_TEMP();
+				//LOG_CONSOLE_ARGS("RZE_Engine::Update() took %f ms.", updateTimer.GetElapsed<float>() * 1000);
+				ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "RZE_Engine::Update() took %f ms", updateTimer.GetElapsed<float>() * 1000);
 
-				SetConsoleCursorPosRenderTimer_TEMP();
-				LOG_CONSOLE_ARGS("RZE_Renderer::Render() took %f ms.", renderTimer.GetElapsed<float>() * 1000);
+				//SetConsoleCursorPosRenderTimer_TEMP();
+				//LOG_CONSOLE_ARGS("RZE_Renderer::Render() took %f ms.", renderTimer.GetElapsed<float>() * 1000);
 
 				frameCount = 0;
 			}
+
+			ImGui::Render();
+			mMainWindow->BufferSwap(); // #TODO(Josh) Maybe this can be done better
 		}
 
 		BeginShutDown();
@@ -80,13 +87,25 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 	}
 }
 
+void RZE_Engine::InitImGUI()
+{
+	ImGuiIO& io = ImGui::GetIO();
+	io.DisplaySize.x = mMainWindow->GetDimensions().X();
+	io.DisplaySize.y = mMainWindow->GetDimensions().Y();
+
+	unsigned char* pixels;
+	int width, height;
+	io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
+}
+
 void RZE_Engine::Init()
 {
 	LOG_CONSOLE("RZE_EngineCore::Init() called.");
-
+	
 	LoadEngineConfig();
 
 	CreateAndInitializeWindow();
+	InitImGUI();
 
 	{
 		OpenGLRHI::OpenGLCreationParams creationParams;
@@ -263,8 +282,26 @@ void RZE_Engine::BeginShutDown()
 	LOG_CONSOLE("Shutting engine down...");
 	mApplication->ShutDown();
 	mWorld->ShutDown();
-
 	mResourceHandler.ShutDown();
+
+	// #TODO(Josh) shut down renderer and window, etc
+
+	InternalShutDown();
+}
+
+void RZE_Engine::InternalShutDown()
+{
+	AssertNotNull(mRenderer);
+	AssertNotNull(mMainWindow);
+	AssertNotNull(mEngineConfig);
+	AssertNotNull(mApplication);
+	AssertNotNull(mWorld);
+
+	delete mRenderer;
+	delete mMainWindow;
+	delete mEngineConfig;
+	delete mApplication;
+	delete mWorld;
 }
 
 void RZE_Engine::PostExit()
