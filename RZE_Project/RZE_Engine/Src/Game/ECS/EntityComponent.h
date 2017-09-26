@@ -43,7 +43,7 @@ protected:
 private:
 	static U32 sNextComponentID;
 
-	 U32 mComponentID;
+	U32 mComponentID;
 
 	std::string mName;
 };

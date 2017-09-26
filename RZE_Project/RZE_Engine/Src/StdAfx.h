@@ -26,10 +26,10 @@
 #include <vector>
 
 // glm
- #include <GLM/glm.hpp>
- #include <GLM/common.hpp>
- #include <GLM/gtc/matrix_transform.hpp>
- #include <GLM/gtc/type_ptr.hpp>
+#include <GLM/glm.hpp>
+#include <GLM/common.hpp>
+#include <GLM/gtc/matrix_transform.hpp>
+#include <GLM/gtc/type_ptr.hpp>
 
 // freetype
 #include <ft2build.h>

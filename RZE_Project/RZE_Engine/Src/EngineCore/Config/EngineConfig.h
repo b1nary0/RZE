@@ -6,33 +6,33 @@
 
 class WindowSettings
 {
-    friend class EngineConfig;
+	friend class EngineConfig;
 
 public:
-    WindowSettings();
-    ~WindowSettings();
+	WindowSettings();
+	~WindowSettings();
 
-    const Vector2D& GetDimensions() const;
-    const std::string& GetTitle() const;
+	const Vector2D& GetDimensions() const;
+	const std::string& GetTitle() const;
 
 private:
-    std::string mTitle;
-    Vector2D mDimensions;
+	std::string mTitle;
+	Vector2D mDimensions;
 };
 
 class EngineConfig : public Config
 {
 public:
-    EngineConfig();
-    ~EngineConfig();
+	EngineConfig();
+	~EngineConfig();
 
-    virtual void Load(const std::string& filePath) override;
+	virtual void Load(const std::string& filePath) override;
 
-    WindowSettings& GetWindowSettings();
-
-private:
-    void LoadWindowSettings();
+	WindowSettings& GetWindowSettings();
 
 private:
-    WindowSettings mWindowSettings;
+	void LoadWindowSettings();
+
+private:
+	WindowSettings mWindowSettings;
 };

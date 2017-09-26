@@ -7,16 +7,16 @@
 class Config
 {
 public:
-    Config();
-    ~Config();
+	Config();
+	~Config();
 
-    virtual void Load(const std::string& filePath) = 0;
+	virtual void Load(const std::string& filePath) = 0;
 
-    bool Empty();
+	bool Empty();
 
 protected:
-    void Read(const std::string& filePath);
+	void Read(const std::string& filePath);
 
-    File mINIFile;
-    CSimpleIniA mINIParser;
+	File mINIFile;
+	CSimpleIniA mINIParser;
 };

@@ -11,39 +11,39 @@
 
 struct GFXVertex
 {
-    Vector3D Position;
-    Vector3D Normal;
-    Vector2D UVData;
+	Vector3D Position;
+	Vector3D Normal;
+	Vector2D UVData;
 };
 
 class GFXMesh
 {
-    friend class MeshResource;
+	friend class MeshResource;
 
 public:
-    GFXMesh();
-    ~GFXMesh();
+	GFXMesh();
+	~GFXMesh();
 
-    OpenGLVAO& GetVAO();
-    OpenGLEBO& GetEBO();
-    OpenGLVBO& GetVertexVBO();
+	OpenGLVAO& GetVAO();
+	OpenGLEBO& GetEBO();
+	OpenGLVBO& GetVertexVBO();
 
-    std::vector<GFXVertex> GetVertexList();
-    std::vector<U32> GetIndices();
+	std::vector<GFXVertex> GetVertexList();
+	std::vector<U32> GetIndices();
 
 private:
-    void OnLoadFinished();
+	void OnLoadFinished();
 
-    OpenGLVAO mVAO;
-    OpenGLVBO mVertexVBO;
-    OpenGLVBO mNormalVBO;
-    OpenGLEBO mEBO;
+	OpenGLVAO mVAO;
+	OpenGLVBO mVertexVBO;
+	OpenGLVBO mNormalVBO;
+	OpenGLEBO mEBO;
 
-    std::vector<GFXVertex> mVertices;
-    std::vector<Vector3D> mPositions;
-    std::vector<Vector3D> mNormals;
-    std::vector<Vector2D> mUVCoords;
-    std::vector<U32> mIndices;
+	std::vector<GFXVertex> mVertices;
+	std::vector<Vector3D> mPositions;
+	std::vector<Vector3D> mNormals;
+	std::vector<Vector2D> mUVCoords;
+	std::vector<U32> mIndices;
 };
 
 struct aiMesh;
@@ -52,15 +52,15 @@ struct aiScene;
 class MeshResource : public IResource
 {
 public:
-    MeshResource();
-    ~MeshResource();
-    
-    virtual bool Load(const std::string& filePath) override;
+	MeshResource();
+	~MeshResource();
 
-    std::vector<GFXMesh*>& GetMeshList();
+	virtual bool Load(const std::string& filePath) override;
+
+	std::vector<GFXMesh*>& GetMeshList();
 
 private:
-    void ProcessNode(const aiNode& node, const aiScene& scene);
-    void ProcessMesh(const aiMesh& mesh, const aiScene& scene, GFXMesh& outMesh);
-    std::vector<GFXMesh*> mMeshList;
+	void ProcessNode(const aiNode& node, const aiScene& scene);
+	void ProcessMesh(const aiMesh& mesh, const aiScene& scene, GFXMesh& outMesh);
+	std::vector<GFXMesh*> mMeshList;
 };

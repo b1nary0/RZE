@@ -18,12 +18,12 @@ void SceneCamera::GenerateViewMat()
 
 void SceneCamera::SetPosition(const Vector3D& newPos)
 {
-    mCameraProps.Position = newPos;
+	mCameraProps.Position = newPos;
 }
 
 void SceneCamera::SetDirection(const Vector3D& newDir)
 {
-    mCameraProps.FrontDir = newDir;
+	mCameraProps.FrontDir = newDir;
 }
 
 const Vector3D& SceneCamera::GetPositionVec()

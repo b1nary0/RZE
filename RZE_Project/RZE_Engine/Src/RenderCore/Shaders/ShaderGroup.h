@@ -18,7 +18,7 @@ class GFXShaderGroup
 public:
 	GFXShaderGroup(const std::string& groupName);
 	~GFXShaderGroup();
-	
+
 	struct EShaderIndex
 	{
 		enum T : U32
@@ -32,13 +32,13 @@ public:
 			COUNT
 		};
 	};
-	
+
 	bool AddShader(EShaderIndex::T shaderType, GFXShader* const shader);
 	bool AddUniform(const std::string& uniformName);
 
 	void SetUniformInt(const std::string& uniformName, int value);
-    void SetUniformFloat(const std::string& uniformName, float value);
-    void SetUniformVector3D(const std::string& uniformName, const Vector3D& vec);
+	void SetUniformFloat(const std::string& uniformName, float value);
+	void SetUniformVector3D(const std::string& uniformName, const Vector3D& vec);
 	void SetUniformVector4D(const std::string& uniformName, const Vector4D& vec);
 	void SetUniformMatrix4x4(const std::string& uniformName, const Matrix4x4& mat);
 

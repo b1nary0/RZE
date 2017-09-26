@@ -38,7 +38,7 @@ public:
 
 	Win32Window(const WindowCreationParams& creationProtocol);
 
-    void ResetCursorToCenter();
+	void ResetCursorToCenter();
 
 	const std::string& GetTitle() const;
 	const Vector2D& GetDimensions() const;
@@ -60,7 +60,7 @@ private:
 	void ProcessWinProcMessage(const WindowMessageAdaptor::WindowMessageInfo& messageInfo, EventHandler& eventHandler);
 
 	void InternalSetWindowPosition(const Vector2D& pos);
-		
+
 	OSWindowHandleData mOSWindowHandleData;
 	WindowCreationParams mCreationData;
 

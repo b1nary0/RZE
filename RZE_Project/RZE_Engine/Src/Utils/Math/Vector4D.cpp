@@ -14,7 +14,7 @@ Vector4D::Vector4D(const float x, const float y, const float z, const float w)
 }
 
 Vector4D::Vector4D(const int x, const int y, const int z, const int w)
-    : mVec(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z), static_cast<float>(w))
+	: mVec(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z), static_cast<float>(w))
 {
 }
 
@@ -40,22 +40,22 @@ float Vector4D::W() const
 
 void Vector4D::SetX(float newX)
 {
-    mVec.x = newX;
+	mVec.x = newX;
 }
 
 void Vector4D::SetY(float newY)
 {
-    mVec.y = newY;
+	mVec.y = newY;
 }
 
 void Vector4D::SetZ(float newZ)
 {
-    mVec.z = newZ;
+	mVec.z = newZ;
 }
 
 void Vector4D::SetW(float newW)
 {
-    mVec.w = newW;
+	mVec.w = newW;
 }
 
 void Vector4D::Set(const float x, const float y, const float z, const float w)
@@ -68,5 +68,5 @@ void Vector4D::Set(const float x, const float y, const float z, const float w)
 
 const glm::vec4& Vector4D::GetInternalVec() const
 {
-    return mVec;
+	return mVec;
 }

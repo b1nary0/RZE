@@ -101,7 +101,7 @@ void RZE_Engine::InitImGUI()
 void RZE_Engine::Init()
 {
 	LOG_CONSOLE("RZE_EngineCore::Init() called.");
-	
+
 	LoadEngineConfig();
 
 	CreateAndInitializeWindow();

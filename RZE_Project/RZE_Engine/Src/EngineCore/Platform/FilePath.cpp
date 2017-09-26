@@ -4,7 +4,7 @@
 
 FilePath::FilePath(const std::string& path)
 {
-    mAbsolutePath = path;
+	mAbsolutePath = path;
 }
 
 FilePath::~FilePath()
@@ -13,11 +13,11 @@ FilePath::~FilePath()
 
 const std::string& FilePath::GetAbsolutePath() const
 {
-    return mAbsolutePath;
+	return mAbsolutePath;
 }
 
 const std::string& FilePath::GetRelativePath() const
 {
-    // #TODO(Josh) for now until we develop this class better
-    return mAbsolutePath;
+	// #TODO(Josh) for now until we develop this class better
+	return mAbsolutePath;
 }

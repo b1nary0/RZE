@@ -5,17 +5,17 @@
 class FontRenderComponent : public IEntityComponent
 {
 public:
-    FontRenderComponent();
-    FontRenderComponent(const std::string& name);
-    virtual ~FontRenderComponent();
-    
-    void SetFont(const ResourceHandle& fontResource);
-    void SetText(const std::string& text);
+	FontRenderComponent();
+	FontRenderComponent(const std::string& name);
+	virtual ~FontRenderComponent();
 
-    ResourceHandle GetFont();
-    const std::string& GetText();
+	void SetFont(const ResourceHandle& fontResource);
+	void SetText(const std::string& text);
+
+	ResourceHandle GetFont();
+	const std::string& GetText();
 
 private:
-    ResourceHandle mFontResource;
-    std::string mText;
+	ResourceHandle mFontResource;
+	std::string mText;
 };

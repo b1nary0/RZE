@@ -9,8 +9,8 @@ class TransformComponent : public IEntityComponent
 {
 public:
 	TransformComponent();
-    TransformComponent(const std::string& name);
-    virtual ~TransformComponent();
+	TransformComponent(const std::string& name);
+	virtual ~TransformComponent();
 
 	Vector3D& GetPosition();
 	Vector3D& GetScale();
@@ -18,7 +18,7 @@ public:
 
 	void SetPosition(const Vector3D& newPosition);
 	void SetScale(const Vector3D& newScale);
-    void SetScale(float uniformScale);
+	void SetScale(float uniformScale);
 	void SetRotation(const Quaternion& newRotation);
 
 private:

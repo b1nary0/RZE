@@ -8,7 +8,7 @@ namespace EEventType
 	{
 		Window,
 		Key,
-        Mouse
+		Mouse
 	};
 }
 
@@ -32,10 +32,10 @@ namespace EKeyEventType
 
 namespace EMouseEventType
 {
-    // #TODO(Josh) change the rest of these enums to use T instead of Type
-    enum T : U16
-    {
-        Mouse_Move,
-        Mouse_Click
-    };
+	// #TODO(Josh) change the rest of these enums to use T instead of Type
+	enum T : U16
+	{
+		Mouse_Move,
+		Mouse_Click
+	};
 }

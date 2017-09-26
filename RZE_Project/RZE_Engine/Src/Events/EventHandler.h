@@ -26,7 +26,7 @@ public:
 
 	void PostWindowEvent(const WindowEvent& windowEvent, const bool bFireImmediate = false);
 	void PostKeyEvent(const KeyEvent& keyEvent, const bool bFireImmediate = false);
-    void PostMouseEvent(const MouseEvent& mouseEvent, const bool bFireImmediate = false);
+	void PostMouseEvent(const MouseEvent& mouseEvent, const bool bFireImmediate = false);
 
 	void RegisterForEvent(const U16 eventType, Functor<void, const Event&> callback);
 

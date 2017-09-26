@@ -11,24 +11,24 @@ Config::~Config()
 
 bool Config::Empty()
 {
-    const bool bFileEmpty = mINIFile.Empty();
-    const bool bParserEmpty = mINIParser.IsEmpty();
+	const bool bFileEmpty = mINIFile.Empty();
+	const bool bParserEmpty = mINIParser.IsEmpty();
 
-    return bFileEmpty && bParserEmpty;
+	return bFileEmpty && bParserEmpty;
 }
 
 void Config::Read(const std::string& filePath)
 {
-    mINIFile.SetFilePath(filePath);
-    mINIFile.Read();
-    mINIFile.Close();
+	mINIFile.SetFilePath(filePath);
+	mINIFile.Read();
+	mINIFile.Close();
 
-    if (!mINIFile.Empty())
-    {
-        mINIParser.LoadData(mINIFile.Content());
-    }
-    else
-    {
-        LOG_CONSOLE_ARGS("Could not open file at path [%s]", mINIFile.GetPath().c_str());
-    }
+	if (!mINIFile.Empty())
+	{
+		mINIParser.LoadData(mINIFile.Content());
+	}
+	else
+	{
+		LOG_CONSOLE_ARGS("Could not open file at path [%s]", mINIFile.GetPath().c_str());
+	}
 }

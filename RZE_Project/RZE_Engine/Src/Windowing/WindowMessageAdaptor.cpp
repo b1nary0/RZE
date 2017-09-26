@@ -21,7 +21,7 @@ void WindowMessageAdaptor::PushMessage(const EMessageType::Value messageType, U6
 	info.mMessageType = messageType;
 	info.wParam = wParam;
 	info.lParam = lParam;
-	
+
 	mMessageQueue.push(info);
 }
 

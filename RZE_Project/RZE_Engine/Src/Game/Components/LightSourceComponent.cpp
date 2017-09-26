@@ -3,14 +3,14 @@
 
 LightSourceComponent::LightSourceComponent()
 {
-    SetName("LightSourceComponent");
+	SetName("LightSourceComponent");
 
 	RegisterComponentID<LightSourceComponent>();
 }
 
 LightSourceComponent::LightSourceComponent(const std::string& name)
 {
-    SetName(name);
+	SetName(name);
 
 	RegisterComponentID<LightSourceComponent>();
 }
@@ -21,31 +21,31 @@ LightSourceComponent::~LightSourceComponent()
 
 const Vector3D& LightSourceComponent::GetPosition() const
 {
-    return mPosition;
+	return mPosition;
 }
 
 void LightSourceComponent::SetPosition(const Vector3D& newPosition)
 {
-    mPosition = newPosition;
+	mPosition = newPosition;
 }
 
 
 const Vector3D& LightSourceComponent::GetColor() const
 {
-    return mColor;
+	return mColor;
 }
 
 void LightSourceComponent::SetColor(const Vector3D& newColor)
 {
-    mColor = newColor;
+	mColor = newColor;
 }
 
 float LightSourceComponent::GetStrength() const
 {
-    return mStrength;
+	return mStrength;
 }
 
 void LightSourceComponent::SetStrength(const float newStrength)
 {
-    mStrength = newStrength;
+	mStrength = newStrength;
 }

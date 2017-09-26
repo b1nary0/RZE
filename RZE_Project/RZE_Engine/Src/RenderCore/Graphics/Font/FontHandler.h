@@ -12,17 +12,17 @@
 class FontHandler
 {
 public:
-    FontHandler();
-    ~FontHandler();
+	FontHandler();
+	~FontHandler();
 
-    bool LoadFont(const std::string& name, const std::string& filePath);
-    
-    ResourceHandle GetFont(const std::string& name);
+	bool LoadFont(const std::string& name, const std::string& filePath);
 
-    FT_Library& GetLibrary();
+	ResourceHandle GetFont(const std::string& name);
+
+	FT_Library& GetLibrary();
 
 private:
-    FT_Library mFreeType;
+	FT_Library mFreeType;
 
-    std::unordered_map<std::string, ResourceHandle> mFonts;
+	std::unordered_map<std::string, ResourceHandle> mFonts;
 };

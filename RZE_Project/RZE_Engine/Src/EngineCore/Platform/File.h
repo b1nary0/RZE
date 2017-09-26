@@ -29,7 +29,7 @@ public:
 
 	// If setting file path manually, Read() must be called.
 	void SetFilePath(const std::string& path);
-    const std::string& GetPath() const;
+	const std::string& GetPath() const;
 
 	bool Open(EFileOpenMode::Value fileOpenMode);
 	void Close();
@@ -94,7 +94,7 @@ public:
 			Write(data);
 		}
 	}
-	
+
 private:
 
 	EFileOpenMode::Value mOpenState;

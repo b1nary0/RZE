@@ -15,7 +15,7 @@ public:
 	void Translate(const Vector3D& translation);
 	void Rotate(const float angle, const Vector3D& axis);
 	void Scale(const Vector3D& scale);
-	
+
 	const glm::mat4& GetInternalMat() const;
 	const float* GetValuePtr() const;
 

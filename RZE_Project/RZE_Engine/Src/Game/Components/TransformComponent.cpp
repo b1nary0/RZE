@@ -7,13 +7,13 @@ TransformComponent::TransformComponent()
 	, mScale(1.0f, 1.0f, 1.0f)
 	, mRotation(Vector3D())
 {
-    SetName("TransformComponent");
+	SetName("TransformComponent");
 	RegisterComponentID<TransformComponent>();
 }
 
 TransformComponent::TransformComponent(const std::string& name)
 {
-    SetName(name);
+	SetName(name);
 	RegisterComponentID<TransformComponent>();
 }
 
@@ -48,7 +48,7 @@ void TransformComponent::SetScale(const Vector3D& newScale)
 
 void TransformComponent::SetScale(float uniformScale)
 {
-    mScale = Vector3D(uniformScale, uniformScale, uniformScale);
+	mScale = Vector3D(uniformScale, uniformScale, uniformScale);
 }
 
 void TransformComponent::SetRotation(const Quaternion& newRotation)

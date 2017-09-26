@@ -25,10 +25,10 @@ GFXShader::~GFXShader()
 
 bool GFXShader::Load(const std::string& filePath)
 {
-    File shaderFile(filePath);
-    mSourceCode = shaderFile.Content();
+	File shaderFile(filePath);
+	mSourceCode = shaderFile.Content();
 
-    return !shaderFile.Empty();
+	return !shaderFile.Empty();
 }
 
 U32 GFXShader::GetShaderID() const
@@ -78,7 +78,7 @@ bool GFXShader::Compile()
 		if (compileResult == EGLBooleanValue::False)
 		{
 			LOG_CONSOLE_ARGS("GFXShader::Compile - Error compiling [%s]", GetShaderName().c_str());
-            openGL.LogShaderInfo(mShaderID);
+			openGL.LogShaderInfo(mShaderID);
 		}
 		else
 		{

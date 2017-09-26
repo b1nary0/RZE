@@ -3,17 +3,17 @@
 #include "Vector2D.h"
 
 Vector2D::Vector2D()
-    : mVec(0.0f)
+	: mVec(0.0f)
 {
 }
 
 Vector2D::Vector2D(const float x, const float y)
-    : mVec(x, y)
+	: mVec(x, y)
 {
 }
 
 Vector2D::Vector2D(const int x, const int y)
-    : mVec(static_cast<float>(x), static_cast<float>(y))
+	: mVec(static_cast<float>(x), static_cast<float>(y))
 {
 }
 
@@ -29,15 +29,15 @@ float Vector2D::Y() const
 
 void Vector2D::SetX(float newX)
 {
-    mVec.x = newX;
+	mVec.x = newX;
 }
 
 void Vector2D::SetY(float newY)
 {
-    mVec.y = newY;
+	mVec.y = newY;
 }
 
 const glm::vec2& Vector2D::GetInernalVec()
 {
-    return mVec;
+	return mVec;
 }

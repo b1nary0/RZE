@@ -43,9 +43,9 @@ void EventHandler::PostKeyEvent(const KeyEvent& keyEvent, const bool bFireImmedi
 
 void EventHandler::PostMouseEvent(const MouseEvent& mouseEvent, const bool bFireImmediate /*= false*/)
 {
-    Event event;
-    event.mMouseEvent = mouseEvent;
-    PostEvent(event, bFireImmediate);
+	Event event;
+	event.mMouseEvent = mouseEvent;
+	PostEvent(event, bFireImmediate);
 }
 
 void EventHandler::RegisterForEvent(const U16 eventType, Functor<void, const Event&> callback)

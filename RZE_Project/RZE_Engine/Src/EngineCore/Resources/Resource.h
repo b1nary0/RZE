@@ -3,7 +3,7 @@
 class IResource
 {
 public:
-    virtual bool Load(const std::string& filePath) = 0;
+	virtual bool Load(const std::string& filePath) = 0;
 
 protected:
 };

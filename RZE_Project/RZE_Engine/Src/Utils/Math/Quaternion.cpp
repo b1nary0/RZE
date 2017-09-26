@@ -9,7 +9,7 @@ Quaternion::Quaternion()
 }
 
 Quaternion::Quaternion(const float x, const float y, const float z, const float w)
-    : mQuat(x, y, z, w)
+	: mQuat(x, y, z, w)
 {
 }
 
@@ -20,7 +20,7 @@ Quaternion::Quaternion(const Vector3D& angles)
 
 Quaternion::Quaternion(const glm::quat& quat)
 {
-    mQuat = quat;
+	mQuat = quat;
 }
 
 float Quaternion::ToAngle() const

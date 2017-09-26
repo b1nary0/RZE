@@ -24,10 +24,10 @@ public:
 	GFXShader(const EGLShaderType::T shaderType, const std::string& shaderName);
 	~GFXShader();
 
-    virtual bool Load(const std::string& filePath) override;
+	virtual bool Load(const std::string& filePath) override;
 
 	U32 GetShaderID() const;
-    EGLShaderType::T GetShaderType() const;
+	EGLShaderType::T GetShaderType() const;
 	const std::string& GetShaderName();
 	const std::string& GetSourceCode();
 
@@ -39,7 +39,7 @@ private:
 	bool bIsCreated;
 
 	U32 mShaderID;
-    EGLShaderType::T mShaderType;
+	EGLShaderType::T mShaderType;
 	std::string mShaderName;
 	std::string mSourceCode;
 };

@@ -8,7 +8,7 @@ typedef struct SceneCameraProps
 	Vector3D Position;
 	Vector3D Direction;
 	Vector3D UpDir;
-    Vector3D FrontDir;
+	Vector3D FrontDir;
 
 	float FOV;
 	float AspectRatio;
@@ -25,8 +25,8 @@ public:
 	void GenerateProjectionMat();
 	void GenerateViewMat();
 
-    void SetPosition(const Vector3D& newPos);
-    void SetDirection(const Vector3D& newDir);
+	void SetPosition(const Vector3D& newPos);
+	void SetDirection(const Vector3D& newDir);
 
 	const Vector3D& GetPositionVec();
 	const Vector3D& GetDirectionVec();
