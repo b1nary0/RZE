@@ -62,18 +62,14 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 
 			++frameCount;
 
+			float updateTime = updateTimer.GetElapsed<float>() * 1000;
 			if (frameCount > 25)
 			{
-				// Comment me to disable line logging of update ms.
-				//SetConsoleCursorPosUpdateTimer_TEMP();
-				//LOG_CONSOLE_ARGS("RZE_Engine::Update() took %f ms.", updateTimer.GetElapsed<float>() * 1000);
-				ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "RZE_Engine::Update() took %f ms", updateTimer.GetElapsed<float>() * 1000);
-
-				//SetConsoleCursorPosRenderTimer_TEMP();
-				//LOG_CONSOLE_ARGS("RZE_Renderer::Render() took %f ms.", renderTimer.GetElapsed<float>() * 1000);
-
+				updateTime = updateTimer.GetElapsed<float>() * 1000;
 				frameCount = 0;
 			}
+
+			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "RZE_Engine::Update() took %f ms", updateTimer.GetElapsed<float>() * 1000);
 
 			ImGui::Render();
 			mMainWindow->BufferSwap(); // #TODO(Josh) Maybe this can be done better
@@ -181,48 +177,6 @@ void RZE_Engine::InitGame(Functor<RZE_Game* const> createGameCallback)
 	mApplication->Start();
 
 	mApplication->RegisterEvents(mEventHandler);
-}
-
-void RZE_Engine::SetConsoleCursorPosRenderTimer_TEMP()
-{
-	static bool bRetrievedCursorPos = false;
-	static SHORT curPosX = 0;
-	static SHORT curPosY = 0;
-
-	if (!bRetrievedCursorPos)
-	{
-		CONSOLE_SCREEN_BUFFER_INFO csbi;
-		GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
-
-		curPosX = csbi.dwCursorPosition.X;
-		curPosY = csbi.dwCursorPosition.Y;
-
-		bRetrievedCursorPos = true;
-	}
-
-	COORD coord = { curPosX, curPosY };
-	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
-}
-
-void RZE_Engine::SetConsoleCursorPosUpdateTimer_TEMP()
-{
-	static bool bRetrievedCursorPos = false;
-	static SHORT curPosX = 0;
-	static SHORT curPosY = 0;
-
-	if (!bRetrievedCursorPos)
-	{
-		CONSOLE_SCREEN_BUFFER_INFO csbi;
-		GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
-
-		curPosX = csbi.dwCursorPosition.X;
-		curPosY = csbi.dwCursorPosition.Y;
-
-		bRetrievedCursorPos = true;
-	}
-
-	COORD coord = { curPosX, curPosY };
-	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 }
 
 void RZE_Engine::CompileEvents()
