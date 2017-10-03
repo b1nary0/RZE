@@ -34,9 +34,6 @@
     <Filter Include="Source Files\Windowing">
       <UniqueIdentifier>{1fbcf05c-ea5b-451f-82c6-66303bcef10e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Debug">
-      <UniqueIdentifier>{fda1f300-df02-4277-a729-8017f125984c}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\RenderCore\HardwareInterface">
       <UniqueIdentifier>{275d7f2a-9495-453b-b922-930f868e3021}</UniqueIdentifier>
     </Filter>
@@ -75,6 +72,12 @@
     </Filter>
     <Filter Include="Source Files\EngineCore\Platform\Timers">
       <UniqueIdentifier>{379118e4-1ae8-4bd7-ab5a-c017a1d5db44}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\DebugUtils">
+      <UniqueIdentifier>{fda1f300-df02-4277-a729-8017f125984c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\DebugUtils\Services">
+      <UniqueIdentifier>{6e43ac89-557d-4e19-8461-4c7ac8f6d960}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -204,6 +207,9 @@
     <ClCompile Include="Src\EngineApp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Src\DebugUtils\DebugServices.cpp">
+      <Filter>Source Files\DebugUtils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\EngineCore\Engine.h">
@@ -318,7 +324,7 @@
       <Filter>Source Files\Utils\Math</Filter>
     </ClInclude>
     <ClInclude Include="Src\DebugUtils\Debug.h">
-      <Filter>Source Files\Debug</Filter>
+      <Filter>Source Files\DebugUtils</Filter>
     </ClInclude>
     <ClInclude Include="Src\EngineCore\Config\Config.h">
       <Filter>Source Files\EngineCore\Config</Filter>
@@ -367,6 +373,9 @@
     </ClInclude>
     <ClInclude Include="Src\EngineApp.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\DebugUtils\DebugServices.h">
+      <Filter>Source Files\DebugUtils</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -159,6 +159,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Src\DebugUtils\DebugServices.cpp" />
     <ClCompile Include="Src\EngineApp.cpp" />
     <ClCompile Include="Src\EngineCore\Config\Config.cpp" />
     <ClCompile Include="Src\EngineCore\Config\EngineConfig.cpp" />
@@ -204,6 +205,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\DebugUtils\Debug.h" />
+    <ClInclude Include="Src\DebugUtils\DebugServices.h" />
     <ClInclude Include="Src\EngineApp.h" />
     <ClInclude Include="Src\EngineCore\Config\Config.h" />
     <ClInclude Include="Src\EngineCore\Config\EngineConfig.h" />

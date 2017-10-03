@@ -75,12 +75,7 @@ private:
 	void LoadFonts();
 
 	void InitGame(Functor<RZE_Game* const> createGameCallback);
-
-	// The following is temporary only, until a proper solution is written up.
-	// Do not call this anywhere other than where it is singularly called now.
-	void		SetConsoleCursorPosUpdateTimer_TEMP();
-	void		SetConsoleCursorPosRenderTimer_TEMP();
-
+	
 	RZE_Game* mApplication;
 	GameWorld* mWorld;
 
