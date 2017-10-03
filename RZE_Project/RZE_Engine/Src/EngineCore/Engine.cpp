@@ -70,6 +70,7 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 			}
 
 			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "RZE_Engine::Update() took %f ms", updateTimer.GetElapsed<float>() * 1000);
+			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "RZE_Renderer::Render() took %f ms", renderTimer.GetElapsed<float>() * 1000);
 
 			ImGui::Render();
 			mMainWindow->BufferSwap(); // #TODO(Josh) Maybe this can be done better
