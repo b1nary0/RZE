@@ -63,7 +63,7 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 	wc.cbWndExtra = 0;
 	wc.hInstance = GetModuleHandle(nullptr);
 	wc.hIcon = LoadIcon(0, IDI_APPLICATION); // @TODO fill this with proper customizable icon
-	wc.hCursor = CreateCursor(NULL, 0, 0, 1, 1, CursorMaskAND, CursorMaskXOR); // @TODO fill this with proper customizable cursor
+	wc.hCursor = CreateCursor(NULL, 0, 0, 1, 1, CursorMaskAND, CursorMaskXOR); /* LoadCursor(NULL, IDC_ARROW); */ // @TODO fill this with proper customizable cursor
 	wc.hbrBackground = HBRUSH(COLOR_WINDOW + 1); // @NOTE what is this?
 	wc.lpszMenuName = 0;
 	wc.lpszClassName = wStrTitle.c_str(); // @NOTE does this represent what you think it represents?
