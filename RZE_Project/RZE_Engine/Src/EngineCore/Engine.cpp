@@ -68,9 +68,8 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 				updateTime = updateTimer.GetElapsed<float>() * 1000;
 				frameCount = 0;
 			}
-
-			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "RZE_Engine::Update() took %f ms", updateTimer.GetElapsed<float>() * 1000);
-			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "RZE_Renderer::Render() took %f ms", renderTimer.GetElapsed<float>() * 1000);
+			
+			mLogWindow.OnDraw();
 
 			ImGui::Render();
 			mMainWindow->BufferSwap(); // #TODO(Josh) Maybe this can be done better
@@ -142,6 +141,8 @@ void RZE_Engine::PostInit(Functor<RZE_Game* const>& createApplicationCallback)
 {
 	LOG_CONSOLE("RZE_EngineCore::PostInit() called.");
 
+	SetupLogWindow();
+
 	InitWorld();
 	InitGame(createApplicationCallback);
 }
@@ -180,6 +181,14 @@ void RZE_Engine::InitGame(Functor<RZE_Game* const> createGameCallback)
 	mApplication->RegisterEvents(mEventHandler);
 }
 
+void RZE_Engine::SetupLogWindow()
+{
+	const Vector2D& screenSize = mMainWindow->GetDimensions();
+
+	mLogWindow.SetSize(Vector2D(screenSize.X() * 0.5f, screenSize.Y() * 0.25f));
+	mLogWindow.SetPosition(Vector2D(10.0f, screenSize.Y() - (mLogWindow.GetSize().Y() + 10)));
+}
+
 void RZE_Engine::CompileEvents()
 {
 	mApplication->CompileEvents(mEventHandler);
@@ -206,6 +215,9 @@ void RZE_Engine::RegisterInputEvents()
 		{
 			PostExit();
 		}
+
+		char keyCast = (char)key;
+		mLogWindow.Add(std::string(1, keyCast));
 	});
 	RegisterForInputEvent(EKeyEventType::Key_Pressed, keyPressCallback);
 }

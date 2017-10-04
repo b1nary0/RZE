@@ -170,6 +170,8 @@
     <ClCompile Include="Src\EngineCore\Platform\Memory\BlockAllocator.cpp" />
     <ClCompile Include="Src\EngineCore\Platform\Timers\HiResTimer.cpp" />
     <ClCompile Include="Src\EngineCore\Resources\ResourceHandler.cpp" />
+    <ClCompile Include="Src\EngineUI\UIWindow.cpp" />
+    <ClCompile Include="Src\EngineUI\Windows\LogWindow.cpp" />
     <ClCompile Include="Src\Events\EventHandler.cpp" />
     <ClCompile Include="Src\Events\Events.cpp" />
     <ClCompile Include="Src\Game\Components\FontRenderComponent.cpp" />
@@ -218,6 +220,9 @@
     <ClInclude Include="Src\EngineCore\Platform\Timers\HiResTimer.h" />
     <ClInclude Include="Src\EngineCore\Resources\Resource.h" />
     <ClInclude Include="Src\EngineCore\Resources\ResourceHandler.h" />
+    <ClInclude Include="Src\EngineUI\UIElement.h" />
+    <ClInclude Include="Src\EngineUI\UIWindow.h" />
+    <ClInclude Include="Src\EngineUI\Windows\LogWindow.h" />
     <ClInclude Include="Src\Events\EventHandler.h" />
     <ClInclude Include="Src\Events\Events.h" />
     <ClInclude Include="Src\Events\EventTypes.h" />

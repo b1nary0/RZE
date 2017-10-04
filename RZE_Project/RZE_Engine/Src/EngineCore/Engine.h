@@ -4,6 +4,8 @@
 
 #include <EngineCore/Platform/File.h>
 
+#include <EngineUI/Windows/LogWindow.h>
+
 // @todo:josh this is where the weird include-before issue is
 #include <Events/EventHandler.h>
 
@@ -75,6 +77,10 @@ private:
 	void LoadFonts();
 
 	void InitGame(Functor<RZE_Game* const> createGameCallback);
+
+	// #TODO(Josh) Test
+	void SetupLogWindow();
+	////
 	
 	RZE_Game* mApplication;
 	GameWorld* mWorld;
@@ -86,6 +92,8 @@ private:
 	EventHandler mEventHandler;
 	InputHandler mInputHandler;
 	FontHandler mFontHandler;
+
+	LogWindow mLogWindow; // #TODO(Josh) This is temp for testing
 
 	EngineConfig* mEngineConfig;
 
