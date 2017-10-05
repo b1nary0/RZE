@@ -24,10 +24,12 @@ void LogWindow::OnDraw()
 	ImGui::SetNextWindowSize(ImVec2(GetSize().X(), GetSize().Y()));
 	ImGui::Begin(GetTitle().c_str());
 
-	for (auto& it = mItems.rbegin(); it != mItems.rend(); ++it)
+	for (size_t itemIdx = 0; itemIdx < mItems.size(); itemIdx++)
 	{
-		ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), (*it).c_str());
+		ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), mItems[itemIdx].mBody.c_str());
 	}
+
+	ImGui::SetScrollHere();
 
 	ImGui::End();
 }
@@ -42,8 +44,11 @@ int LogWindow::GetMaxItemCount()
 	return mMaxItems;
 }
 
-void LogWindow::Add(const std::string& item)
+void LogWindow::Add(const std::string& text, ELogPriorityType::T priority)
 {
+	LogInfoItem item;
+	item.mPriority = priority;
+	item.mBody = text;
 	// #TODO(Josh) Proper logic for item max overflow
 	mItems.push_back(item);
 }

@@ -6,6 +6,23 @@
 
 class LogWindow : public UIWindow
 {
+	struct ELogPriorityType
+	{
+		enum T
+		{
+			Debug,
+			Info,
+			Warning,
+			Error
+		};
+	};
+
+	struct LogInfoItem
+	{
+		ELogPriorityType::T mPriority;
+		std::string mBody;
+	};
+
 public:
 	LogWindow();
 	~LogWindow();
@@ -16,10 +33,10 @@ public:
 	void SetMaxItemCount(int newMaxItemCount);
 	int GetMaxItemCount();
 
-	void Add(const std::string& item);
+	void Add(const std::string& text, ELogPriorityType::T priority = ELogPriorityType::Info);
 
 private:
 	int mMaxItems;
 
-	std::vector<std::string> mItems;
+	std::vector<LogInfoItem> mItems;
 };
