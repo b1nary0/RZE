@@ -161,9 +161,18 @@ void Win32Window::CompileMessages(EventHandler& eventHandler)
 		break;
 
 		case WM_LBUTTONDOWN:
-			MouseEvent mouseEvent(EMouseEventType::Mouse_Click, 0, 0);
+		{
+			MouseEvent mouseEvent(EMouseEventType::Mouse_LClick, 0, 0);
 			eventHandler.PostMouseEvent(mouseEvent);
-			break;
+		}
+		break;
+
+		case WM_LBUTTONUP:
+		{
+			MouseEvent mouseEvent(EMouseEventType::Mouse_LRelease, 0, 0);
+			eventHandler.PostMouseEvent(mouseEvent);
+		}
+		break;
 
 		case WM_MOUSEMOVE:
 		{

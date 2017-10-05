@@ -36,6 +36,7 @@ namespace EMouseEventType
 	enum T : U16
 	{
 		Mouse_Move,
-		Mouse_Click
+		Mouse_LClick,
+		Mouse_LRelease
 	};
 }
