@@ -160,6 +160,11 @@ void Win32Window::CompileMessages(EventHandler& eventHandler)
 		}
 		break;
 
+		case WM_LBUTTONDOWN:
+			MouseEvent mouseEvent(EMouseEventType::Mouse_Click, 0, 0);
+			eventHandler.PostMouseEvent(mouseEvent);
+			break;
+
 		case WM_MOUSEMOVE:
 		{
 			MouseEvent mouseEvent(EMouseEventType::Mouse_Move, static_cast<U32>(GET_X_LPARAM(msg.lParam)), static_cast<U32>(GET_Y_LPARAM(msg.lParam)));
