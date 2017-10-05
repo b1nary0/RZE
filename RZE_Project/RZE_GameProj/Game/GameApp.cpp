@@ -106,6 +106,7 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
 
 			float posX = static_cast<float>(event.mMouseEvent.mPosX);
 			float posY = static_cast<float>(event.mMouseEvent.mPosY);
+
 			float halfWidth = GetWindow()->GetDimensions().X() / 2;
 			float halfHeight = GetWindow()->GetDimensions().Y() / 2;
 
@@ -136,7 +137,7 @@ void GameApp::Start()
 	RZE_Game::Start();
 
 	// ALL TEST CODE
-
+	
 	CreateDefaultShader();
 	CreateTextureShader();
 
@@ -196,10 +197,6 @@ void GameApp::CreateFontTest()
 void GameApp::CreateLight(const ResourceHandle& resourceHandle)
 {
 	mLightEntity = RZE_Engine::Get()->GetWorld().AddEntity<GameEntity>();
-
-	// 	MeshComponent* lightMesh = mLightEntity->AddComponent<MeshComponent>();
-	// 	lightMesh->SetMeshHandle(resourceHandle);
-	// 	lightMesh->SetShaderGroup(mDefaultShader);
 
 	TransformComponent* lightTransform = mLightEntity->AddComponent<TransformComponent>();
 	lightTransform->SetPosition(Vector3D(-8.0f, 15.0f, -2.0f));

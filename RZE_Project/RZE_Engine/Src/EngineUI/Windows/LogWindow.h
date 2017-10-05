@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vector>
+#include <deque>
 
 #include <EngineUI/UIWindow.h>
 
@@ -37,6 +37,8 @@ public:
 	void SetMaxItemCount(int newMaxItemCount);
 	int GetMaxItemCount();
 
+	int GetItemSize();
+
 	void Add(const std::string& text, ELogPriorityType::T priority = ELogPriorityType::Info);
 
 private:
@@ -45,5 +47,5 @@ private:
 private:
 	int mMaxItems;
 
-	std::vector<LogInfoItem> mItems;
+	std::deque<LogInfoItem> mItems;
 };

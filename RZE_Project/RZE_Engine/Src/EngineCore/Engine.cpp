@@ -68,8 +68,9 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 				updateTime = updateTimer.GetElapsed<float>() * 1000;
 				frameCount = 0;
 			}
-			
-			mLogWindow.OnDraw();
+
+			// #TODO(Josh) This is temp, should go away with the great UI->Data separation of 2017
+			DebugServices::Get().mLogWindow.OnDraw();
 
 			ImGui::Render();
 			mMainWindow->BufferSwap(); // #TODO(Josh) Maybe this can be done better
@@ -141,8 +142,6 @@ void RZE_Engine::PostInit(Functor<RZE_Game* const>& createApplicationCallback)
 {
 	LOG_CONSOLE("RZE_EngineCore::PostInit() called.");
 
-	SetupLogWindow();
-
 	InitWorld();
 	InitGame(createApplicationCallback);
 }
@@ -179,19 +178,6 @@ void RZE_Engine::InitGame(Functor<RZE_Game* const> createGameCallback)
 	mApplication->Start();
 
 	mApplication->RegisterEvents(mEventHandler);
-}
-
-void RZE_Engine::SetupLogWindow()
-{
-	const Vector2D& screenSize = mMainWindow->GetDimensions();
-
-	mLogWindow.SetSize(Vector2D(screenSize.X() * 0.5f, screenSize.Y() * 0.25f));
-	mLogWindow.SetPosition(Vector2D(10.0f, screenSize.Y() - (mLogWindow.GetSize().Y() + 10)));
-
-	mLogWindow.Add("Info");
-	mLogWindow.Add("Debug", LogWindow::ELogPriorityType::Debug);
-	mLogWindow.Add("Warning", LogWindow::ELogPriorityType::Warning);
-	mLogWindow.Add("Error", LogWindow::ELogPriorityType::Error);
 }
 
 void RZE_Engine::CompileEvents()

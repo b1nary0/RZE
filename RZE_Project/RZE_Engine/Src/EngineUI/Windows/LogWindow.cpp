@@ -7,6 +7,7 @@
 LogWindow::LogWindow()
 {
 	SetTitle("Log Window");
+	SetMaxItemCount(256);
 }
 
 LogWindow::~LogWindow()
@@ -15,7 +16,6 @@ LogWindow::~LogWindow()
 
 void LogWindow::OnCreate()
 {
-	mItems.reserve(mMaxItems);
 }
 
 void LogWindow::OnDraw()
@@ -46,12 +46,22 @@ int LogWindow::GetMaxItemCount()
 	return mMaxItems;
 }
 
+int LogWindow::GetItemSize()
+{
+	return mItems.size();
+}
+
 void LogWindow::Add(const std::string& text, ELogPriorityType::T priority)
 {
+	if (mItems.size() >= static_cast<size_t>(mMaxItems))
+	{
+		mItems.pop_front();
+	}
+
 	LogInfoItem item;
 	item.mPriority = priority;
 	item.mBody = text;
-	// #TODO(Josh) Proper logic for item max overflow
+
 	mItems.push_back(item);
 }
 
