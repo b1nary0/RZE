@@ -187,6 +187,11 @@ void RZE_Engine::SetupLogWindow()
 
 	mLogWindow.SetSize(Vector2D(screenSize.X() * 0.5f, screenSize.Y() * 0.25f));
 	mLogWindow.SetPosition(Vector2D(10.0f, screenSize.Y() - (mLogWindow.GetSize().Y() + 10)));
+
+	mLogWindow.Add("Info");
+	mLogWindow.Add("Debug", LogWindow::ELogPriorityType::Debug);
+	mLogWindow.Add("Warning", LogWindow::ELogPriorityType::Warning);
+	mLogWindow.Add("Error", LogWindow::ELogPriorityType::Error);
 }
 
 void RZE_Engine::CompileEvents()
@@ -215,9 +220,6 @@ void RZE_Engine::RegisterInputEvents()
 		{
 			PostExit();
 		}
-
-		char keyCast = (char)key;
-		mLogWindow.Add(std::string(1, keyCast));
 	});
 	RegisterForInputEvent(EKeyEventType::Key_Pressed, keyPressCallback);
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <GLM/fwd.hpp>
+#include <GLM/vec4.hpp>
 
 class Vector4D
 {

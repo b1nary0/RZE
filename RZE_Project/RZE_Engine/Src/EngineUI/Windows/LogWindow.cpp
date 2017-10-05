@@ -26,7 +26,9 @@ void LogWindow::OnDraw()
 
 	for (size_t itemIdx = 0; itemIdx < mItems.size(); itemIdx++)
 	{
-		ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), mItems[itemIdx].mBody.c_str());
+		const LogInfoItem& item = mItems[itemIdx];
+		Vector4D color = GetColorFromPriority(item.mPriority);
+		ImGui::TextColored(ImVec4(color.X(), color.Y(), color.Z(), color.W()), item.mBody.c_str());
 	}
 
 	ImGui::SetScrollHere();
@@ -51,4 +53,24 @@ void LogWindow::Add(const std::string& text, ELogPriorityType::T priority)
 	item.mBody = text;
 	// #TODO(Josh) Proper logic for item max overflow
 	mItems.push_back(item);
+}
+
+Vector4D LogWindow::GetColorFromPriority(ELogPriorityType::T priority)
+{
+	switch (priority)
+	{
+	case ELogPriorityType::Info:
+		return Vector4D(1.0f, 1.0f, 1.0f, 1.0f);
+
+	case ELogPriorityType::Warning:
+		return Vector4D(1.0f, 128.0f/255.0f, 0.0f, 1.0f);
+
+	case ELogPriorityType::Error:
+		return Vector4D(1.0f, 0.0f, 0.0f, 1.0f);
+		break;
+
+	case ELogPriorityType::Debug:
+	default:
+		return Vector4D(1.0f, 1.0f, 0.0f, 1.0f);
+	}
 }
