@@ -18,6 +18,7 @@
 
 #include <RenderCore/SceneCamera.h>
 
+class EditorEnvironment;
 class GameWorld;
 class RZE_Renderer;
 class Win32Window;
@@ -84,6 +85,7 @@ private:
 		
 	RZE_Game* mApplication;
 	GameWorld* mWorld;
+	EditorEnvironment* mEditorEnv;
 
 	Win32Window* mMainWindow;
 	RZE_Renderer* mRenderer;

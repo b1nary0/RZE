@@ -85,6 +85,9 @@
     <Filter Include="Source Files\EngineUI\Windows">
       <UniqueIdentifier>{f88888a6-be54-4483-bace-d00a70da02c7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Editor">
+      <UniqueIdentifier>{1064e46b-745f-4886-8ccf-1cf82e1889ca}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Src\EngineCore\Engine.cpp">
@@ -221,6 +224,9 @@
     </ClCompile>
     <ClCompile Include="Src\EngineUI\Windows\LogWindow.cpp">
       <Filter>Source Files\EngineUI\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Editor\EditorWorld.cpp">
+      <Filter>Source Files\Editor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -397,6 +403,9 @@
     </ClInclude>
     <ClInclude Include="Src\EngineUI\Windows\LogWindow.h">
       <Filter>Source Files\EngineUI\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Editor\EditorWorld.h">
+      <Filter>Source Files\Editor</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
