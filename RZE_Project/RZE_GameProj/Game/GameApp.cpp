@@ -129,7 +129,7 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
 			RZE_Engine::Get()->GetSceneCamera().SetDirection(newDir);
 		}
 	});
-	eventHandler.RegisterForEvent(EEventType::Mouse, mouseEvent);
+	//eventHandler.RegisterForEvent(EEventType::Mouse, mouseEvent);
 }
 
 void GameApp::Start()
@@ -138,6 +138,8 @@ void GameApp::Start()
 
 	// ALL TEST CODE
 	
+	RZE_Engine::Get()->SetCursorEnabled(true);
+
 	CreateDefaultShader();
 	CreateTextureShader();
 

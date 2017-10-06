@@ -38,6 +38,7 @@ public:
 
 	Win32Window(const WindowCreationParams& creationProtocol);
 
+	void SetCursorEnabled(bool enabled);
 	void ResetCursorToCenter();
 
 	const std::string& GetTitle() const;
@@ -66,4 +67,6 @@ private:
 
 	std::string mTitle;
 	Vector2D mDimensions;
+
+	bool bCursorEnabled;
 };

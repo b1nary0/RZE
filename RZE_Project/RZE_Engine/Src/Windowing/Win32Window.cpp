@@ -25,13 +25,21 @@ Win32Window::Win32Window(const WindowCreationParams& creationProtocol)
 	Create(creationProtocol);
 }
 
+void Win32Window::SetCursorEnabled(bool enabled)
+{
+	bCursorEnabled = enabled;
+}
+
 void Win32Window::ResetCursorToCenter()
 {
-	RECT rcClip;
-	GetClientRect(mOSWindowHandleData.windowHandle, &rcClip);
-	MapWindowPoints(mOSWindowHandleData.windowHandle, GetParent(mOSWindowHandleData.windowHandle), (LPPOINT)(&rcClip), 1);
-	ClipCursor(&rcClip);
-	SetCursorPos(rcClip.left + static_cast<int>(mDimensions.X() / 2), rcClip.top + static_cast<int>(mDimensions.Y() / 2));
+	if (!bCursorEnabled)
+	{
+		RECT rcClip;
+		GetClientRect(mOSWindowHandleData.windowHandle, &rcClip);
+		MapWindowPoints(mOSWindowHandleData.windowHandle, GetParent(mOSWindowHandleData.windowHandle), (LPPOINT)(&rcClip), 1);
+		ClipCursor(&rcClip);
+		SetCursorPos(rcClip.left + static_cast<int>(mDimensions.X() / 2), rcClip.top + static_cast<int>(mDimensions.Y() / 2));
+	}
 }
 
 const std::string& Win32Window::GetTitle() const
@@ -63,7 +71,7 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 	wc.cbWndExtra = 0;
 	wc.hInstance = GetModuleHandle(nullptr);
 	wc.hIcon = LoadIcon(0, IDI_APPLICATION); // @TODO fill this with proper customizable icon
-	wc.hCursor = CreateCursor(NULL, 0, 0, 1, 1, CursorMaskAND, CursorMaskXOR); /* LoadCursor(NULL, IDC_ARROW); */ // @TODO fill this with proper customizable cursor
+	wc.hCursor = /*CreateCursor(NULL, 0, 0, 1, 1, CursorMaskAND, CursorMaskXOR);*/ LoadCursor(NULL, IDC_ARROW);  // @TODO fill this with proper customizable cursor
 	wc.hbrBackground = HBRUSH(COLOR_WINDOW + 1); // @NOTE what is this?
 	wc.lpszMenuName = 0;
 	wc.lpszClassName = wStrTitle.c_str(); // @NOTE does this represent what you think it represents?
@@ -183,7 +191,10 @@ void Win32Window::CompileMessages(EventHandler& eventHandler)
 
 		case WM_SETCURSOR:
 		{
-			SetCursor(NULL);
+			if (!bCursorEnabled)
+			{
+				SetCursor(NULL);
+			}
 		}
 		break;
 

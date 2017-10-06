@@ -43,6 +43,8 @@ public:
 	ResourceHandler&	GetResourceHandler();
 	FontHandler&		GetFontHandler();
 
+	void SetCursorEnabled(bool enabled);
+
 	static RZE_Engine* const Get()
 	{
 		if (!sInstance)

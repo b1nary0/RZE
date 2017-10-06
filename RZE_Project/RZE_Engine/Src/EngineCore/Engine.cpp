@@ -300,3 +300,11 @@ FontHandler& RZE_Engine::GetFontHandler()
 {
 	return mFontHandler;
 }
+
+void RZE_Engine::SetCursorEnabled(bool enabled)
+{
+	if (mMainWindow)
+	{
+		mMainWindow->SetCursorEnabled(enabled);
+	}
+}
