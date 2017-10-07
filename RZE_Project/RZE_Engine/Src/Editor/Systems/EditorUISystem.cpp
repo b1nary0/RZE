@@ -20,7 +20,6 @@ void EditorUISystem::Init()
 
 void EditorUISystem::Update()
 {
-
 }
 
 void EditorUISystem::ShutDown()

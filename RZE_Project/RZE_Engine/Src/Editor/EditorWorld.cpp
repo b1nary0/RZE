@@ -1,6 +1,7 @@
 #include <StdAfx.h>
 
 #include <Editor/EditorWorld.h>
+#include <Editor/Systems/EditorUISystem.h>
 
 #include <Game/ECS/EntitySystem.h>
 
@@ -19,7 +20,7 @@ RZE_Renderer* const EditorWorld::GetRenderer() const
 
 void EditorWorld::Init()
 {
-
+	InternalAddSystem<EditorUISystem>(this);
 }
 
 void EditorWorld::Update()

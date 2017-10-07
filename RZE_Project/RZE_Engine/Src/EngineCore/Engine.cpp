@@ -30,6 +30,7 @@ RZE_Engine::RZE_Engine()
 
 	bShouldExit = false;
 	bIsInitialized = false;
+	bEditorEnabled = true; // #TODO(Josh) Better/more complete implementation
 }
 
 RZE_Engine::~RZE_Engine()
@@ -126,6 +127,11 @@ void RZE_Engine::Init()
 	RegisterInputEvents();
 
 	mInputHandler.RegisterEvents(mEventHandler);
+
+	if (bEditorEnabled)
+	{
+		InitEditorEnv();
+	}
 
 	bIsInitialized = true;
 }

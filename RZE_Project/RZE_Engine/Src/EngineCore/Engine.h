@@ -100,4 +100,5 @@ private:
 
 	bool bIsInitialized;
 	bool bShouldExit;
+	bool bEditorEnabled;
 };
