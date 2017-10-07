@@ -425,5 +425,8 @@
     <ClInclude Include="Src\Editor\Systems\EditorUISystem.h">
       <Filter>Source Files\Editor\Systems</Filter>
     </ClInclude>
+    <ClInclude Include="Src\Editor\Components\EditorUIComponent.h">
+      <Filter>Source Files\Editor\Components</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

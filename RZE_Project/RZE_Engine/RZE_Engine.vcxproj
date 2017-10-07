@@ -211,6 +211,7 @@
   <ItemGroup>
     <ClInclude Include="Src\DebugUtils\Debug.h" />
     <ClInclude Include="Src\DebugUtils\DebugServices.h" />
+    <ClInclude Include="Src\Editor\Components\EditorUIComponent.h" />
     <ClInclude Include="Src\Editor\EditorEnvironment.h" />
     <ClInclude Include="Src\Editor\EditorWorld.h" />
     <ClInclude Include="Src\Editor\Systems\EditorUISystem.h" />
