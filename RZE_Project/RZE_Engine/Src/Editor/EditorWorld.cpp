@@ -2,7 +2,7 @@
 
 #include <Editor/EditorWorld.h>
 
-EditorWorld::EditorWorld(RZE_Renderer* const renderer)
+EditorWorld::EditorWorld()
 {
 }
 

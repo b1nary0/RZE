@@ -3,6 +3,8 @@
 #include <EngineCore/Engine.h>
 #include <EngineCore/Platform/Timers/HiResTimer.h>
 
+#include <Editor/EditorEnvironment.h>
+
 #include <DebugUtils/Debug.h>
 
 #include <Game/GameWorld.h>
@@ -24,6 +26,7 @@ RZE_Engine::RZE_Engine()
 	mWorld = nullptr;
 	mEngineConfig = nullptr;
 	mApplication = nullptr;
+	mEditorEnv = nullptr;
 
 	bShouldExit = false;
 	bIsInitialized = false;
@@ -180,6 +183,13 @@ void RZE_Engine::InitGame(Functor<RZE_Game* const> createGameCallback)
 	mApplication->RegisterEvents(mEventHandler);
 }
 
+void RZE_Engine::InitEditorEnv()
+{
+	mEditorEnv = new EditorEnvironment();
+	AssertNotNull(mEditorEnv);
+	mEditorEnv->Init();
+}
+
 void RZE_Engine::CompileEvents()
 {
 	mApplication->CompileEvents(mEventHandler);
@@ -228,6 +238,7 @@ void RZE_Engine::Update()
 	mInputHandler.ProcessEvents();
 	mEventHandler.ProcessEvents();
 
+	mEditorEnv->Update();
 	mApplication->Update();
 	mWorld->Update();
 }
@@ -235,6 +246,7 @@ void RZE_Engine::Update()
 void RZE_Engine::BeginShutDown()
 {
 	LOG_CONSOLE("Shutting engine down...");
+	mEditorEnv->Shutdown();
 	mApplication->ShutDown();
 	mWorld->ShutDown();
 	mResourceHandler.ShutDown();
@@ -251,12 +263,14 @@ void RZE_Engine::InternalShutDown()
 	AssertNotNull(mEngineConfig);
 	AssertNotNull(mApplication);
 	AssertNotNull(mWorld);
+	AssertNotNull(mEditorEnv);
 
 	delete mRenderer;
 	delete mMainWindow;
 	delete mEngineConfig;
 	delete mApplication;
 	delete mWorld;
+	delete mEditorEnv;
 }
 
 void RZE_Engine::PostExit()

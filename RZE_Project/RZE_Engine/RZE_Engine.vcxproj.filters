@@ -228,6 +228,9 @@
     <ClCompile Include="Src\Editor\EditorWorld.cpp">
       <Filter>Source Files\Editor</Filter>
     </ClCompile>
+    <ClCompile Include="Src\Editor\EditorEnvironment.cpp">
+      <Filter>Source Files\Editor</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\EngineCore\Engine.h">
@@ -405,6 +408,9 @@
       <Filter>Source Files\EngineUI\Windows</Filter>
     </ClInclude>
     <ClInclude Include="Src\Editor\EditorWorld.h">
+      <Filter>Source Files\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Editor\EditorEnvironment.h">
       <Filter>Source Files\Editor</Filter>
     </ClInclude>
   </ItemGroup>

@@ -160,6 +160,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Src\DebugUtils\DebugServices.cpp" />
+    <ClCompile Include="Src\Editor\EditorEnvironment.cpp" />
     <ClCompile Include="Src\Editor\EditorWorld.cpp" />
     <ClCompile Include="Src\EngineApp.cpp" />
     <ClCompile Include="Src\EngineCore\Config\Config.cpp" />
@@ -209,6 +210,7 @@
   <ItemGroup>
     <ClInclude Include="Src\DebugUtils\Debug.h" />
     <ClInclude Include="Src\DebugUtils\DebugServices.h" />
+    <ClInclude Include="Src\Editor\EditorEnvironment.h" />
     <ClInclude Include="Src\Editor\EditorWorld.h" />
     <ClInclude Include="Src\EngineApp.h" />
     <ClInclude Include="Src\EngineCore\Config\Config.h" />

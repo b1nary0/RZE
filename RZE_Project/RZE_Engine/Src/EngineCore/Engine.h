@@ -82,7 +82,8 @@ private:
 	void LoadFonts();
 
 	void InitGame(Functor<RZE_Game* const> createGameCallback);
-		
+	void InitEditorEnv();	
+
 	RZE_Game* mApplication;
 	GameWorld* mWorld;
 	EditorEnvironment* mEditorEnv;
