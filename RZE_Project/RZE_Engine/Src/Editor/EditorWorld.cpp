@@ -2,6 +2,8 @@
 
 #include <Editor/EditorWorld.h>
 
+#include <Game/ECS/EntitySystem.h>
+
 EditorWorld::EditorWorld()
 {
 }
@@ -17,12 +19,18 @@ RZE_Renderer* const EditorWorld::GetRenderer() const
 
 void EditorWorld::Init()
 {
+
 }
 
 void EditorWorld::Update()
 {
+	for (auto& system : InternalGetSystems())
+	{
+		system->Update();
+	}
 }
 
 void EditorWorld::ShutDown()
 {
+
 }

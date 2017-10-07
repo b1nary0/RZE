@@ -162,6 +162,7 @@
     <ClCompile Include="Src\DebugUtils\DebugServices.cpp" />
     <ClCompile Include="Src\Editor\EditorEnvironment.cpp" />
     <ClCompile Include="Src\Editor\EditorWorld.cpp" />
+    <ClCompile Include="Src\Editor\Systems\EditorUISystem.cpp" />
     <ClCompile Include="Src\EngineApp.cpp" />
     <ClCompile Include="Src\EngineCore\Config\Config.cpp" />
     <ClCompile Include="Src\EngineCore\Config\EngineConfig.cpp" />
@@ -212,6 +213,7 @@
     <ClInclude Include="Src\DebugUtils\DebugServices.h" />
     <ClInclude Include="Src\Editor\EditorEnvironment.h" />
     <ClInclude Include="Src\Editor\EditorWorld.h" />
+    <ClInclude Include="Src\Editor\Systems\EditorUISystem.h" />
     <ClInclude Include="Src\EngineApp.h" />
     <ClInclude Include="Src\EngineCore\Config\Config.h" />
     <ClInclude Include="Src\EngineCore\Config\EngineConfig.h" />
