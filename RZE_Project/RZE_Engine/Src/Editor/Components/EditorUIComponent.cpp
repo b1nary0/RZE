@@ -4,11 +4,13 @@
 
 EditorUIComponent::EditorUIComponent()
 {
+	RegisterComponentID<EditorUIComponent>();
 	SetName("EditorUIComponent");
 }
 
 EditorUIComponent::EditorUIComponent(const std::string& name)
 {
+	RegisterComponentID<EditorUIComponent>();
 	SetName(name);
 }
 
