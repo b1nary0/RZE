@@ -27,6 +27,16 @@ public:
 
 	RZE_Engine();
 	~RZE_Engine();
+	
+	static RZE_Engine* const Get()
+	{
+		if (!sInstance)
+		{
+			sInstance = new RZE_Engine();
+		}
+
+		return sInstance;
+	}
 
 	void Run(Functor<RZE_Game* const>& createApplicationCallback);
 
@@ -42,16 +52,7 @@ public:
 
 	void SetCursorEnabled(bool enabled);
 
-	static RZE_Engine* const Get()
-	{
-		if (!sInstance)
-		{
-			sInstance = new RZE_Engine();
-		}
-
-		return sInstance;
-	}
-
+	void Log(const std::string& msg);
 private:
 
 	// #TODO(Josh) Compartmentalize this later.

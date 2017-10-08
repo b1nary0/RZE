@@ -34,6 +34,11 @@ void EditorEnvironment::Shutdown()
 	delete mWorld;
 }
 
+void EditorEnvironment::PostToLogWindow(const std::string& msg)
+{
+	mLogWindowEnt->GetComponent<EditorLogWindow>()->AddItem(msg);
+}
+
 void EditorEnvironment::InternalInit()
 {
 	mLogWindowEnt = mWorld->AddEntity<EditorEntity>();

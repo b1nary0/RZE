@@ -325,3 +325,11 @@ void RZE_Engine::SetCursorEnabled(bool enabled)
 		mMainWindow->SetCursorEnabled(enabled);
 	}
 }
+
+void RZE_Engine::Log(const std::string& msg)
+{
+	if (mEditorEnv)
+	{
+		mEditorEnv->PostToLogWindow(msg);
+	}
+}

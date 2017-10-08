@@ -89,6 +89,9 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
 				newPos = newPos + downVec;
 				sceneCam.SetPosition(newPos);
 			}
+
+			char key = static_cast<char>(evt.mKeyEvent.mKey);
+			RZE_Engine::Get()->Log(std::string(1, key));
 		}
 	});
 	eventHandler.RegisterForEvent(EEventType::Key, keyEvent);

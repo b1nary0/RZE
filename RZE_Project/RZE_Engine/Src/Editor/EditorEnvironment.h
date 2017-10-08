@@ -13,6 +13,8 @@ public:
 	void Update();
 	void Shutdown();
 
+	void PostToLogWindow(const std::string& msg);
+
 private:
 	void InternalInit();
 
