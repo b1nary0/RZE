@@ -79,12 +79,6 @@
     <Filter Include="Source Files\DebugUtils\Services">
       <UniqueIdentifier>{6e43ac89-557d-4e19-8461-4c7ac8f6d960}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\EngineUI">
-      <UniqueIdentifier>{30ffe8df-c1e8-44ab-9e08-659fb40b80b7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\EngineUI\Windows">
-      <UniqueIdentifier>{f88888a6-be54-4483-bace-d00a70da02c7}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Editor">
       <UniqueIdentifier>{1064e46b-745f-4886-8ccf-1cf82e1889ca}</UniqueIdentifier>
     </Filter>
@@ -224,12 +218,6 @@
     </ClCompile>
     <ClCompile Include="Src\DebugUtils\DebugServices.cpp">
       <Filter>Source Files\DebugUtils</Filter>
-    </ClCompile>
-    <ClCompile Include="Src\EngineUI\UIWindow.cpp">
-      <Filter>Source Files\EngineUI</Filter>
-    </ClCompile>
-    <ClCompile Include="Src\EngineUI\Windows\LogWindow.cpp">
-      <Filter>Source Files\EngineUI\Windows</Filter>
     </ClCompile>
     <ClCompile Include="Src\Editor\EditorWorld.cpp">
       <Filter>Source Files\Editor</Filter>
@@ -409,15 +397,6 @@
     </ClInclude>
     <ClInclude Include="Src\DebugUtils\DebugServices.h">
       <Filter>Source Files\DebugUtils</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\EngineUI\UIElement.h">
-      <Filter>Source Files\EngineUI</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\EngineUI\UIWindow.h">
-      <Filter>Source Files\EngineUI</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\EngineUI\Windows\LogWindow.h">
-      <Filter>Source Files\EngineUI\Windows</Filter>
     </ClInclude>
     <ClInclude Include="Src\Editor\EditorWorld.h">
       <Filter>Source Files\Editor</Filter>
