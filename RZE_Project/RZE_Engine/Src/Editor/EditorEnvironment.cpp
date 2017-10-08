@@ -6,7 +6,6 @@
 
 EditorEnvironment::EditorEnvironment()
 {
-
 }
 
 EditorEnvironment::~EditorEnvironment()
