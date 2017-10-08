@@ -21,6 +21,11 @@ RZE_Renderer* const EditorWorld::GetRenderer() const
 void EditorWorld::Init()
 {
 	InternalAddSystem<EditorUISystem>(this);
+
+	for (auto& system : InternalGetSystems())
+	{
+		system->Init();
+	}
 }
 
 void EditorWorld::Update()

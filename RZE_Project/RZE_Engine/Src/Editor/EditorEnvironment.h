@@ -13,5 +13,8 @@ public:
 	void Shutdown();
 
 private:
+	void InternalInit();
+
+private:
 	EditorWorld* mWorld;
 };

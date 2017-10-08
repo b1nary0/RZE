@@ -268,8 +268,7 @@ void GameApp::CreateLampObjects(const ResourceHandle& resourceHandle)
 	meshComponent->SetMeshHandle(resourceHandle);
 	meshComponent->SetShaderGroup(mDefaultShader);
 
-	lampEntity->AddComponent<TransformComponent>();
-	transformComp = static_cast<TransformComponent* const>(lampEntity->GetComponents()[1]);
+	transformComp = lampEntity->AddComponent<TransformComponent>();
 	transformComp->SetPosition(Vector3D(-8.0f, -3.0f, -2.0f));
 	transformComp->SetScale(Vector3D(0.5f, 0.5f, 0.5f));
 

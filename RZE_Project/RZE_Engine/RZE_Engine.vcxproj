@@ -160,6 +160,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Src\Editor\Components\EditorUIComponent.cpp" />
+    <ClCompile Include="Src\Editor\Components\Windows\EditorLogWindow.cpp" />
     <ClCompile Include="Src\Editor\EditorEnvironment.cpp" />
     <ClCompile Include="Src\Editor\EditorWorld.cpp" />
     <ClCompile Include="Src\Editor\Systems\EditorUISystem.cpp" />

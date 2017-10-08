@@ -231,6 +231,9 @@
     <ClCompile Include="Src\Editor\Components\EditorUIComponent.cpp">
       <Filter>Source Files\Editor\Components</Filter>
     </ClCompile>
+    <ClCompile Include="Src\Editor\Components\Windows\EditorLogWindow.cpp">
+      <Filter>Source Files\Editor\Components\Windows</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\EngineCore\Engine.h">
