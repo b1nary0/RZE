@@ -15,5 +15,7 @@ public:
 	virtual void ShutDown() override;
 
 private:
+	void InitImGUI();
+
 	EntityComponentFilter mRelevantComponents;
 };

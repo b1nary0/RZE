@@ -85,17 +85,6 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 	}
 }
 
-void RZE_Engine::InitImGUI()
-{
-	ImGuiIO& io = ImGui::GetIO();
-	io.DisplaySize.x = mMainWindow->GetDimensions().X();
-	io.DisplaySize.y = mMainWindow->GetDimensions().Y();
-
-	unsigned char* pixels;
-	int width, height;
-	io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
-}
-
 void RZE_Engine::Init()
 {
 	LOG_CONSOLE("RZE_EngineCore::Init() called.");
@@ -103,7 +92,6 @@ void RZE_Engine::Init()
 	LoadEngineConfig();
 
 	CreateAndInitializeWindow();
-	InitImGUI();
 
 	{
 		OpenGLRHI::OpenGLCreationParams creationParams;

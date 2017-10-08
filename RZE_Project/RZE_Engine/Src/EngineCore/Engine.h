@@ -55,9 +55,6 @@ public:
 	void Log(const std::string& msg);
 private:
 
-	// #TODO(Josh) Compartmentalize this later.
-	void InitImGUI();
-
 	void Init();
 	void InitWorld();
 	void PostInit(Functor<RZE_Game* const>& createApplicationCallback);
