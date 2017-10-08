@@ -1,6 +1,7 @@
 #pragma once
 
 class EditorWorld;
+class EditorEntity;
 
 class EditorEnvironment
 {
@@ -17,4 +18,6 @@ private:
 
 private:
 	EditorWorld* mWorld;
+
+	EditorEntity* mLogWindowEnt;
 };

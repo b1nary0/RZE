@@ -234,6 +234,9 @@
     <ClCompile Include="Src\Editor\Components\Windows\EditorLogWindow.cpp">
       <Filter>Source Files\Editor\Components\Windows</Filter>
     </ClCompile>
+    <ClCompile Include="Src\Editor\EditorEntity.cpp">
+      <Filter>Source Files\Editor</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\EngineCore\Engine.h">
@@ -412,6 +415,9 @@
     </ClInclude>
     <ClInclude Include="Src\Editor\Components\Windows\EditorLogWindow.h">
       <Filter>Source Files\Editor\Components\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Editor\EditorEntity.h">
+      <Filter>Source Files\Editor</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

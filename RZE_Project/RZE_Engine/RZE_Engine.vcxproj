@@ -161,6 +161,7 @@
   <ItemGroup>
     <ClCompile Include="Src\Editor\Components\EditorUIComponent.cpp" />
     <ClCompile Include="Src\Editor\Components\Windows\EditorLogWindow.cpp" />
+    <ClCompile Include="Src\Editor\EditorEntity.cpp" />
     <ClCompile Include="Src\Editor\EditorEnvironment.cpp" />
     <ClCompile Include="Src\Editor\EditorWorld.cpp" />
     <ClCompile Include="Src\Editor\Systems\EditorUISystem.cpp" />
@@ -211,6 +212,7 @@
     <ClInclude Include="Src\DebugUtils\Debug.h" />
     <ClInclude Include="Src\Editor\Components\EditorUIComponent.h" />
     <ClInclude Include="Src\Editor\Components\Windows\EditorLogWindow.h" />
+    <ClInclude Include="Src\Editor\EditorEntity.h" />
     <ClInclude Include="Src\Editor\EditorEnvironment.h" />
     <ClInclude Include="Src\Editor\EditorWorld.h" />
     <ClInclude Include="Src\Editor\Systems\EditorUISystem.h" />

@@ -2,10 +2,8 @@
 
 #include <Editor/EditorEnvironment.h>
 #include <Editor/EditorWorld.h>
+#include <Editor/EditorEntity.h>
 #include <Editor/Components/Windows/EditorLogWindow.h>
-
-// #TODO(Josh) Temp
-#include <Game/GameEntity.h>
 
 EditorEnvironment::EditorEnvironment()
 {
@@ -38,11 +36,11 @@ void EditorEnvironment::Shutdown()
 
 void EditorEnvironment::InternalInit()
 {
-	GameEntity* logEntity = mWorld->AddEntity<GameEntity>();
-	EditorLogWindow* logWindow = logEntity->AddComponent<EditorLogWindow>("Log Window");
+	mLogWindowEnt = mWorld->AddEntity<EditorEntity>();
+	EditorLogWindow* logWindow = mLogWindowEnt->AddComponent<EditorLogWindow>("Log Window");
 
 	const Vector2D& screenSize = RZE_Engine::Get()->GetWindowSettings().GetDimensions();
 
-	logWindow->SetDimensions(Vector2D(400, 200));
+	logWindow->SetDimensions(Vector2D(600, 250));
 	logWindow->SetPosition(Vector2D(10.0f, screenSize.Y() - (logWindow->GetDimensions().Y() + 10)));
 }
