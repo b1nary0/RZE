@@ -2,11 +2,7 @@
 
 #include <EngineApp.h>
 
-#include <DebugUtils/DebugServices.h>
-
 #include <EngineCore/Platform/File.h>
-
-#include <EngineUI/Windows/LogWindow.h>
 
 // @todo:josh this is where the weird include-before issue is
 #include <Events/EventHandler.h>

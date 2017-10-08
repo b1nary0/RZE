@@ -73,9 +73,6 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 				frameCount = 0;
 			}
 
-			// #TODO(Josh) This is temp, should go away with the great UI->Data separation of 2017
-			DebugServices::Get().mLogWindow.OnDraw();
-
 			ImGui::Render();
 			mMainWindow->BufferSwap(); // #TODO(Josh) Maybe this can be done better
 		}

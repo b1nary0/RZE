@@ -159,7 +159,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Src\DebugUtils\DebugServices.cpp" />
     <ClCompile Include="Src\Editor\Components\EditorUIComponent.cpp" />
     <ClCompile Include="Src\Editor\EditorEnvironment.cpp" />
     <ClCompile Include="Src\Editor\EditorWorld.cpp" />
@@ -209,7 +208,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\DebugUtils\Debug.h" />
-    <ClInclude Include="Src\DebugUtils\DebugServices.h" />
     <ClInclude Include="Src\Editor\Components\EditorUIComponent.h" />
     <ClInclude Include="Src\Editor\EditorEnvironment.h" />
     <ClInclude Include="Src\Editor\EditorWorld.h" />
