@@ -20,9 +20,5 @@ public:
 private:
 	void SetFilterTypes();
 
-	void LoadFontShader();
-
 	EntityComponentFilter mRelevantComponents;
-
-	std::unordered_map<std::string, GFXShaderGroup*> mShaderGroups;
 };
