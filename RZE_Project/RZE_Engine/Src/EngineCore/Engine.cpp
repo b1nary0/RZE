@@ -209,6 +209,19 @@ void RZE_Engine::RegisterInputEvents()
 		}
 	});
 	RegisterForInputEvent(EKeyEventType::Key_Pressed, keyPressCallback);
+
+	Functor<void, const Event&> mouseCallback([this](const Event& evt)
+	{
+		if (evt.mInfo.mEventSubType == EMouseEventType::Mouse_LClick)
+		{
+			Log("Left mouse button clicked.");
+		}
+		else if (evt.mInfo.mEventSubType == EMouseEventType::Mouse_LRelease)
+		{
+			Log("Left mouse button released.");
+		}
+	});
+	RegisterForEvent(EEventType::Mouse, mouseCallback);
 }
 
 void RZE_Engine::LoadEngineConfig()
