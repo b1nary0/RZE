@@ -344,52 +344,6 @@ void RZE_Renderer::RenderSingleItem(RenderItemProtocol& renderItem)
 	}
 }
 
-void RZE_Renderer::RenderUI()
-{
-	OpenGLRHI::Get().EnableCapability(EGLCapability::Blend);
-	OpenGLRHI::Get().SetBlendFuncParams(EGLBlendFactor::SourceAlpha, EGLBlendFactor::OneMinusSourceAlpha);
-
-	for (auto& font : mFontList)
-	{
-		const Vector3D& position = font.mPosition;
-
-		font.mShaderGroup->Use();
-		font.mShaderGroup->SetUniformMatrix4x4("UProjectionMat", font.mProjectionMat);
-		font.mShaderGroup->SetUniformVector3D("UTextColor", Vector3D(1.0f, 1.0f, 1.0f));
-
-		for (auto& c : font.mText)
-		{
-			CharacterDescription& charDesc = font.mFont->GetCharacterDesc(c);
-
-			GLfloat xPos = position.X() + charDesc.mBearing.X();
-			GLfloat yPos = position.Y() + charDesc.mBearing.Y();
-
-			GLfloat width = charDesc.mSize.X();
-			GLfloat height = charDesc.mSize.Y();
-
-			GLfloat vertices[6][4] = {
-				{ xPos,     yPos + height,   0.0, 0.0 },
-				{ xPos,     yPos,       0.0, 1.0 },
-				{ xPos + width, yPos,       1.0, 1.0 },
-
-				{ xPos,     yPos + height,   0.0, 0.0 },
-				{ xPos + width, yPos,       1.0, 1.0 },
-				{ xPos + width, yPos + height,   1.0, 0.0 }
-			};
-
-			charDesc.mVAO.Bind();
-			glBindTexture(GL_TEXTURE_2D, charDesc.mTextureID);
-			charDesc.mVBO.Bind();
-			charDesc.mVBO.SetBufferSubData(vertices, 0, sizeof(vertices));
-
-			glDrawArrays(GL_TRIANGLES, 0, 6);
-
-			charDesc.mVBO.Unbind();
-			charDesc.mVAO.Unbind();
-		}
-	}
-}
-
 RZE_Renderer::RenderItemProtocol::RenderItemProtocol()
 {
 	mShaderGroup = nullptr;

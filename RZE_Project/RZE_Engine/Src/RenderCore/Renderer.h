@@ -55,8 +55,6 @@ public:
 private:
 	void RenderSingleItem(RenderItemProtocol& itemProtocol);
 
-	void RenderUI();
-
 private:
 	SceneCamera* mSceneCamera;
 
