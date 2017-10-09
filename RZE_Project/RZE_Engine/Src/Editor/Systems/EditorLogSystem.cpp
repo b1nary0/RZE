@@ -27,27 +27,21 @@ void EditorLogSystem::Update()
 
 	for (auto& entity : mAdmin->GetEntities())
 	{
-		std::vector<IEntity*> entities;
-		mRelevantComponents.FilterEachOf(mAdmin->GetEntities(), entities);
+		EditorLogWindow* logWindow = entity->GetComponent<EditorLogWindow>();
+		AssertNotNull(logWindow);
 
-		for (auto& entity : entities)
+		ImGui::SetNextWindowPos(ImVec2(logWindow->GetPosition().X(), logWindow->GetPosition().Y()));
+		ImGui::SetNextWindowSize(ImVec2(logWindow->GetDimensions().X(), logWindow->GetDimensions().Y()));
+		ImGui::Begin(logWindow->GetName().c_str());
+
+		const std::deque<std::string>& items = logWindow->GetItems();
+		for (size_t itemIdx = 0; itemIdx < items.size(); itemIdx++)
 		{
-			EditorLogWindow* logWindow = entity->GetComponent<EditorLogWindow>();
-			AssertNotNull(logWindow);
-
-			ImGui::SetNextWindowPos(ImVec2(logWindow->GetPosition().X(), logWindow->GetPosition().Y()));
-			ImGui::SetNextWindowSize(ImVec2(logWindow->GetDimensions().X(), logWindow->GetDimensions().Y()));
-			ImGui::Begin(logWindow->GetName().c_str());
-
-			const std::deque<std::string>& items = logWindow->GetItems();
-			for (size_t itemIdx = 0; itemIdx < items.size(); itemIdx++)
-			{
-				ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), items[itemIdx].c_str());
-			}
-			ImGui::SetScrollHere();
-
-			ImGui::End();
+			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), items[itemIdx].c_str());
 		}
+		ImGui::SetScrollHere();
+
+		ImGui::End();
 	}
 }
 
