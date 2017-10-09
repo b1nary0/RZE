@@ -164,6 +164,7 @@
     <ClCompile Include="Src\Editor\EditorEntity.cpp" />
     <ClCompile Include="Src\Editor\EditorEnvironment.cpp" />
     <ClCompile Include="Src\Editor\EditorWorld.cpp" />
+    <ClCompile Include="Src\Editor\Systems\EditorLogSystem.cpp" />
     <ClCompile Include="Src\Editor\Systems\EditorUISystem.cpp" />
     <ClCompile Include="Src\EngineApp.cpp" />
     <ClCompile Include="Src\EngineCore\Config\Config.cpp" />
@@ -215,6 +216,7 @@
     <ClInclude Include="Src\Editor\EditorEntity.h" />
     <ClInclude Include="Src\Editor\EditorEnvironment.h" />
     <ClInclude Include="Src\Editor\EditorWorld.h" />
+    <ClInclude Include="Src\Editor\Systems\EditorLogSystem.h" />
     <ClInclude Include="Src\Editor\Systems\EditorUISystem.h" />
     <ClInclude Include="Src\EngineApp.h" />
     <ClInclude Include="Src\EngineCore\Config\Config.h" />

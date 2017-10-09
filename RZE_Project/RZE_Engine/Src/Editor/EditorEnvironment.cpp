@@ -3,6 +3,7 @@
 #include <Editor/EditorEnvironment.h>
 #include <Editor/EditorWorld.h>
 #include <Editor/EditorEntity.h>
+
 #include <Editor/Components/Windows/EditorLogWindow.h>
 
 EditorEnvironment::EditorEnvironment()

@@ -237,6 +237,9 @@
     <ClCompile Include="Src\Editor\EditorEntity.cpp">
       <Filter>Source Files\Editor</Filter>
     </ClCompile>
+    <ClCompile Include="Src\Editor\Systems\EditorLogSystem.cpp">
+      <Filter>Source Files\Editor\Systems</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\EngineCore\Engine.h">
@@ -418,6 +421,9 @@
     </ClInclude>
     <ClInclude Include="Src\Editor\EditorEntity.h">
       <Filter>Source Files\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Editor\Systems\EditorLogSystem.h">
+      <Filter>Source Files\Editor\Systems</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
