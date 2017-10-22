@@ -82,15 +82,6 @@
     <Filter Include="Source Files\Editor">
       <UniqueIdentifier>{1064e46b-745f-4886-8ccf-1cf82e1889ca}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Editor\Systems">
-      <UniqueIdentifier>{19fe02d3-ab87-495b-abf6-12f80deb6365}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Editor\Components">
-      <UniqueIdentifier>{aca6ddd0-0be4-4acc-affa-0737ffe274a5}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Editor\Components\Windows">
-      <UniqueIdentifier>{79201441-0504-4942-a48c-95f6fb856fe0}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Src\EngineCore\Engine.cpp">
@@ -218,27 +209,6 @@
     </ClCompile>
     <ClCompile Include="Src\EngineApp.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Src\Editor\EditorWorld.cpp">
-      <Filter>Source Files\Editor</Filter>
-    </ClCompile>
-    <ClCompile Include="Src\Editor\EditorEnvironment.cpp">
-      <Filter>Source Files\Editor</Filter>
-    </ClCompile>
-    <ClCompile Include="Src\Editor\Systems\EditorUISystem.cpp">
-      <Filter>Source Files\Editor\Systems</Filter>
-    </ClCompile>
-    <ClCompile Include="Src\Editor\Components\EditorUIComponent.cpp">
-      <Filter>Source Files\Editor\Components</Filter>
-    </ClCompile>
-    <ClCompile Include="Src\Editor\Components\Windows\EditorLogWindow.cpp">
-      <Filter>Source Files\Editor\Components\Windows</Filter>
-    </ClCompile>
-    <ClCompile Include="Src\Editor\EditorEntity.cpp">
-      <Filter>Source Files\Editor</Filter>
-    </ClCompile>
-    <ClCompile Include="Src\Editor\Systems\EditorLogSystem.cpp">
-      <Filter>Source Files\Editor\Systems</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -403,27 +373,6 @@
     </ClInclude>
     <ClInclude Include="Src\EngineApp.h">
       <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\Editor\EditorWorld.h">
-      <Filter>Source Files\Editor</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\Editor\EditorEnvironment.h">
-      <Filter>Source Files\Editor</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\Editor\Systems\EditorUISystem.h">
-      <Filter>Source Files\Editor\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\Editor\Components\EditorUIComponent.h">
-      <Filter>Source Files\Editor\Components</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\Editor\Components\Windows\EditorLogWindow.h">
-      <Filter>Source Files\Editor\Components\Windows</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\Editor\EditorEntity.h">
-      <Filter>Source Files\Editor</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\Editor\Systems\EditorLogSystem.h">
-      <Filter>Source Files\Editor\Systems</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

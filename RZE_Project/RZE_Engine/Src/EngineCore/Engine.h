@@ -14,7 +14,6 @@
 
 #include <RenderCore/SceneCamera.h>
 
-class EditorEnvironment;
 class GameWorld;
 class RZE_Renderer;
 class Win32Window;
@@ -52,7 +51,6 @@ public:
 
 	void SetCursorEnabled(bool enabled);
 
-	void Log(const std::string& msg);
 private:
 
 	void Init();
@@ -76,11 +74,9 @@ private:
 	void LoadFonts();
 
 	void InitGame(Functor<RZE_Game* const> createGameCallback);
-	void InitEditorEnv();	
 
 	RZE_Game* mApplication;
 	GameWorld* mWorld;
-	EditorEnvironment* mEditorEnv;
 
 	Win32Window* mMainWindow;
 	RZE_Renderer* mRenderer;
@@ -94,5 +90,4 @@ private:
 
 	bool bIsInitialized;
 	bool bShouldExit;
-	bool bEditorEnabled;
 };

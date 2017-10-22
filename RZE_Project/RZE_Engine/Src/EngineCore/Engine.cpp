@@ -3,8 +3,6 @@
 #include <EngineCore/Engine.h>
 #include <EngineCore/Platform/Timers/HiResTimer.h>
 
-#include <Editor/EditorEnvironment.h>
-
 #include <DebugUtils/Debug.h>
 
 #include <Game/GameWorld.h>
@@ -26,11 +24,9 @@ RZE_Engine::RZE_Engine()
 	mWorld = nullptr;
 	mEngineConfig = nullptr;
 	mApplication = nullptr;
-	mEditorEnv = nullptr;
 
 	bShouldExit = false;
 	bIsInitialized = false;
-	bEditorEnabled = true; // #TODO(Josh) Better/more complete implementation
 }
 
 RZE_Engine::~RZE_Engine()
@@ -54,7 +50,7 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 		HiResTimer renderTimer;
 		while (!bShouldExit)
 		{
-			ImGui::NewFrame();
+			//ImGui::NewFrame();
 
 			updateTimer.Start();
 			Update();
@@ -73,7 +69,7 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 				frameCount = 0;
 			}
 
-			ImGui::Render();
+			//ImGui::Render();
 			mMainWindow->BufferSwap(); // #TODO(Josh) Maybe this can be done better
 		}
 
@@ -112,11 +108,6 @@ void RZE_Engine::Init()
 	RegisterInputEvents();
 
 	mInputHandler.RegisterEvents(mEventHandler);
-
-	if (bEditorEnabled)
-	{
-		InitEditorEnv();
-	}
 
 	bIsInitialized = true;
 }
@@ -174,13 +165,6 @@ void RZE_Engine::InitGame(Functor<RZE_Game* const> createGameCallback)
 	mApplication->RegisterEvents(mEventHandler);
 }
 
-void RZE_Engine::InitEditorEnv()
-{
-	mEditorEnv = new EditorEnvironment();
-	AssertNotNull(mEditorEnv);
-	mEditorEnv->Init();
-}
-
 void RZE_Engine::CompileEvents()
 {
 	mApplication->CompileEvents(mEventHandler);
@@ -209,19 +193,6 @@ void RZE_Engine::RegisterInputEvents()
 		}
 	});
 	RegisterForInputEvent(EKeyEventType::Key_Pressed, keyPressCallback);
-
-	Functor<void, const Event&> mouseCallback([this](const Event& evt)
-	{
-		if (evt.mInfo.mEventSubType == EMouseEventType::Mouse_LClick)
-		{
-			Log("Left mouse button clicked.");
-		}
-		else if (evt.mInfo.mEventSubType == EMouseEventType::Mouse_LRelease)
-		{
-			Log("Left mouse button released.");
-		}
-	});
-	RegisterForEvent(EEventType::Mouse, mouseCallback);
 }
 
 void RZE_Engine::LoadEngineConfig()
@@ -242,7 +213,6 @@ void RZE_Engine::Update()
 	mInputHandler.ProcessEvents();
 	mEventHandler.ProcessEvents();
 
-	mEditorEnv->Update();
 	mApplication->Update();
 	mWorld->Update();
 }
@@ -250,7 +220,6 @@ void RZE_Engine::Update()
 void RZE_Engine::BeginShutDown()
 {
 	LOG_CONSOLE("Shutting engine down...");
-	mEditorEnv->Shutdown();
 	mApplication->ShutDown();
 	mWorld->ShutDown();
 	mResourceHandler.ShutDown();
@@ -267,14 +236,12 @@ void RZE_Engine::InternalShutDown()
 	AssertNotNull(mEngineConfig);
 	AssertNotNull(mApplication);
 	AssertNotNull(mWorld);
-	AssertNotNull(mEditorEnv);
 
 	delete mRenderer;
 	delete mMainWindow;
 	delete mEngineConfig;
 	delete mApplication;
 	delete mWorld;
-	delete mEditorEnv;
 }
 
 void RZE_Engine::PostExit()
@@ -327,10 +294,3 @@ void RZE_Engine::SetCursorEnabled(bool enabled)
 	}
 }
 
-void RZE_Engine::Log(const std::string& msg)
-{
-	if (mEditorEnv)
-	{
-		mEditorEnv->PostToLogWindow(msg);
-	}
-}
