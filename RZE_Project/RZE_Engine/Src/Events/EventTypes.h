@@ -4,7 +4,7 @@
 
 namespace EEventType
 {
-	enum Type : U16
+	enum T : U16
 	{
 		Window,
 		Key,
@@ -14,7 +14,7 @@ namespace EEventType
 
 namespace EWindowEventType
 {
-	enum Type : U16
+	enum T : U16
 	{
 		Window_Create,
 		Window_Destroy
@@ -23,7 +23,7 @@ namespace EWindowEventType
 
 namespace EKeyEventType
 {
-	enum Type : U16
+	enum T : U16
 	{
 		Key_Pressed,
 		Key_Released
@@ -32,7 +32,6 @@ namespace EKeyEventType
 
 namespace EMouseEventType
 {
-	// #TODO(Josh) change the rest of these enums to use T instead of Type
 	enum T : U16
 	{
 		Mouse_Move,

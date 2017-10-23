@@ -21,6 +21,9 @@ public:
 
 	void ProcessEvents();
 
+	void ProcessOSKeyboardEvent(EKeyEventType::T eventType, const U8 key);
+	void ProcessOSMouseEvent(EMouseEventType::T eventType, const Vector2D& pos);
+
 private:
 	std::queue<KeyAction> mKeyPresses;
 	std::map<U16, std::vector<Functor<void, U8>>> mNotifyMap;

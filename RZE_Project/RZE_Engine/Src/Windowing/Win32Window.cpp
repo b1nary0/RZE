@@ -147,7 +147,7 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 	}
 }
 
-void Win32Window::CompileInputMessages(InputHandler& eventHandler)
+void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 {
 	MSG msg;
 	if (PeekMessage(&msg, mOSWindowHandleData.windowHandle, 0, 0, PM_REMOVE))
@@ -157,14 +157,16 @@ void Win32Window::CompileInputMessages(InputHandler& eventHandler)
 
 		case WM_KEYDOWN:
 		{
-			KeyEvent keyEvent(EKeyEventType::Key_Pressed, static_cast<U8>(msg.wParam));
+			inputHandler.ProcessOSKeyboardEvent(EKeyEventType::Key_Pressed, static_cast<U8>(msg.wParam));
+			//KeyEvent keyEvent(EKeyEventType::Key_Pressed, static_cast<U8>(msg.wParam));
 			//eventHandler.PostKeyEvent(keyEvent);
 		}
 		break;
 
 		case WM_KEYUP:
 		{
-			KeyEvent keyEvent(EKeyEventType::Key_Released, static_cast<U8>(msg.wParam));
+			inputHandler.ProcessOSKeyboardEvent(EKeyEventType::Key_Released, static_cast<U8>(msg.wParam));
+			//KeyEvent keyEvent(EKeyEventType::Key_Released, static_cast<U8>(msg.wParam));
 			//eventHandler.PostKeyEvent(keyEvent);
 		}
 		break;
