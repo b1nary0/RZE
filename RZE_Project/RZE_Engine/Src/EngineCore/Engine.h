@@ -39,9 +39,6 @@ public:
 
 	void Run(Functor<RZE_Game* const>& createApplicationCallback);
 
-	void RegisterForEvent(const U16 eventType, Functor<void, const Event&> callback);
-	void RegisterForInputEvent(const U16 eventType, Functor<void, U8> callback);
-
 	// #TODO(Josh) This should be revisited when the camera access/design changes
 	SceneCamera&		GetSceneCamera();
 	WindowSettings&		GetWindowSettings();

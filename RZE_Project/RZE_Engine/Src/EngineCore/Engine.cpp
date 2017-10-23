@@ -167,7 +167,8 @@ void RZE_Engine::InitGame(Functor<RZE_Game* const> createGameCallback)
 
 void RZE_Engine::CompileEvents()
 {
-	mApplication->CompileEvents(mEventHandler);
+	mMainWindow->CompileInputMessages(mInputHandler);
+	mMainWindow->CompileWindowMessages(mEventHandler);
 }
 
 void RZE_Engine::RegisterWindowEvents()
@@ -180,7 +181,7 @@ void RZE_Engine::RegisterWindowEvents()
 			PostExit();
 		}
 	});
-	RegisterForEvent(EEventType::Window, windowCallback);
+	mEventHandler.RegisterForEvent(EEventType::Window, windowCallback);
 }
 
 void RZE_Engine::RegisterInputEvents()
@@ -192,7 +193,7 @@ void RZE_Engine::RegisterInputEvents()
 			PostExit();
 		}
 	});
-	RegisterForInputEvent(EKeyEventType::Key_Pressed, keyPressCallback);
+	mInputHandler.RegisterForEvent(EKeyEventType::Key_Pressed, keyPressCallback);
 }
 
 void RZE_Engine::LoadEngineConfig()
@@ -247,16 +248,6 @@ void RZE_Engine::InternalShutDown()
 void RZE_Engine::PostExit()
 {
 	bShouldExit = true;
-}
-
-void RZE_Engine::RegisterForEvent(const U16 eventType, Functor<void, const Event&> callback)
-{
-	mEventHandler.RegisterForEvent(eventType, callback);
-}
-
-void RZE_Engine::RegisterForInputEvent(const U16 eventType, Functor<void, U8> callback)
-{
-	mInputHandler.RegisterForEvent(eventType, callback);
 }
 
 SceneCamera& RZE_Engine::GetSceneCamera()

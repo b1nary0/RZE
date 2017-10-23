@@ -7,6 +7,7 @@
 
 #include <Utils/Conversions.h>
 
+#include <EngineCore/Input/InputHandler.h>
 #include <Events/EventHandler.h>
 
 #include <Windowing/WindowMessageAdaptor.h>
@@ -146,7 +147,7 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 	}
 }
 
-void Win32Window::CompileMessages(EventHandler& eventHandler)
+void Win32Window::CompileInputMessages(InputHandler& eventHandler)
 {
 	MSG msg;
 	if (PeekMessage(&msg, mOSWindowHandleData.windowHandle, 0, 0, PM_REMOVE))
@@ -157,35 +158,35 @@ void Win32Window::CompileMessages(EventHandler& eventHandler)
 		case WM_KEYDOWN:
 		{
 			KeyEvent keyEvent(EKeyEventType::Key_Pressed, static_cast<U8>(msg.wParam));
-			eventHandler.PostKeyEvent(keyEvent);
+			//eventHandler.PostKeyEvent(keyEvent);
 		}
 		break;
 
 		case WM_KEYUP:
 		{
 			KeyEvent keyEvent(EKeyEventType::Key_Released, static_cast<U8>(msg.wParam));
-			eventHandler.PostKeyEvent(keyEvent);
+			//eventHandler.PostKeyEvent(keyEvent);
 		}
 		break;
 
 		case WM_LBUTTONDOWN:
 		{
 			MouseEvent mouseEvent(EMouseEventType::Mouse_LClick, 0, 0);
-			eventHandler.PostMouseEvent(mouseEvent);
+			//eventHandler.PostMouseEvent(mouseEvent);
 		}
 		break;
 
 		case WM_LBUTTONUP:
 		{
 			MouseEvent mouseEvent(EMouseEventType::Mouse_LRelease, 0, 0);
-			eventHandler.PostMouseEvent(mouseEvent);
+			//eventHandler.PostMouseEvent(mouseEvent);
 		}
 		break;
 
 		case WM_MOUSEMOVE:
 		{
 			MouseEvent mouseEvent(EMouseEventType::Mouse_Move, static_cast<U32>(GET_X_LPARAM(msg.lParam)), static_cast<U32>(GET_Y_LPARAM(msg.lParam)));
-			eventHandler.PostMouseEvent(mouseEvent);
+			//eventHandler.PostMouseEvent(mouseEvent);
 		}
 		break;
 
@@ -207,7 +208,10 @@ void Win32Window::CompileMessages(EventHandler& eventHandler)
 
 		}
 	}
+}
 
+void Win32Window::CompileWindowMessages(EventHandler& eventHandler)
+{
 	// @note may not need this if we don't need to process multiple messages from window per frame
 	while (sWindowMessageAdaptor.HasMessage())
 	{
