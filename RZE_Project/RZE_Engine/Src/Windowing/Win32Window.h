@@ -13,6 +13,7 @@
 #include <Utils/Math/Vector2D.h>
 
 class EventHandler;
+class InputHandler;
 
 class Win32Window
 {
@@ -44,7 +45,11 @@ public:
 	const std::string& GetTitle() const;
 	const Vector2D& GetDimensions() const;
 
-	void CompileMessages(EventHandler& eventHandler);
+	// Compile input messages from Win32 api
+	void CompileInputMessages(InputHandler& inputHandler);
+
+	// Compile all other window messages from Win32 api
+	void CompileWindowMessages(EventHandler& eventHandler);
 
 	void Show();
 

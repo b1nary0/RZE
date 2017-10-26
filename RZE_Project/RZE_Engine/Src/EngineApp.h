@@ -55,7 +55,6 @@ private:
 	virtual void Init() override;
 
 	void SetWindow(Win32Window* const window);
-	void CompileEvents(EventHandler& eventHandler);
 
 	Win32Window* mWindow;
 };

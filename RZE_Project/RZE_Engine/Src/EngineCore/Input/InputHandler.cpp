@@ -41,3 +41,13 @@ void InputHandler::ProcessEvents()
 		}
 	}
 }
+
+void InputHandler::ProcessOSKeyboardEvent(EKeyEventType::T eventType, const U8 key)
+{
+
+}
+
+void InputHandler::ProcessOSMouseEvent(EMouseEventType::T eventType, const Vector2D& pos)
+{
+
+}

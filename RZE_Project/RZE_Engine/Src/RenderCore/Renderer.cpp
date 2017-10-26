@@ -245,7 +245,7 @@ RZE_Renderer::RZE_Renderer()
 	WindowSettings& windowSettings = RZE_Engine::Get()->GetWindowSettings();
 
 	SceneCameraProps cameraProps;
-	cameraProps.Position = Vector3D(0.0f, 5.0f, 10.0f);
+	cameraProps.Position = Vector3D(0.0f, 1.0f, 11.0f);
 	cameraProps.Direction = Vector3D(0.0f, -2.5f, -10.0f);
 	cameraProps.FrontDir = Vector3D(0.0f, 0.0f, -1.0f);
 	cameraProps.UpDir = Vector3D(0.0f, 1.0f, 0.0f);
