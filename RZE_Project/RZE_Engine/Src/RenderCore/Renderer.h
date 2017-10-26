@@ -50,6 +50,8 @@ public:
 
 	void Render();
 
+	void ResizeCanvas(const Vector2D& newSize);
+
 	SceneCamera& GetSceneCamera();
 
 private:

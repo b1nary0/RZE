@@ -369,6 +369,8 @@ public:
 	void EnableCapability(const GLenum capability);
 	void DisableCapability(const GLenum capability);
 
+	void Viewport(GLint posX, GLint posY, GLsizei sizeX, GLsizei sizeY);
+
 	//
 	// Helpers
 	//

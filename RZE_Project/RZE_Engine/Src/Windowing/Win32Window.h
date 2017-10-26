@@ -62,11 +62,14 @@ private:
 
 	void InternalSetWindowPosition(const Vector2D& pos);
 
+	void InternalSetWindowSize(const Vector2D& size);
+
 	OSWindowHandleData mOSWindowHandleData;
 	WindowCreationParams mCreationData;
 
 	std::string mTitle;
 	Vector2D mDimensions;
+	Vector2D mPos;
 
 	bool bCursorEnabled;
 };

@@ -61,6 +61,11 @@ void OpenGLRHI::DisableCapability(const GLenum capability)
 	AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
+void OpenGLRHI::Viewport(GLint posX, GLint posY, GLsizei sizeX, GLsizei sizeY)
+{
+	glViewport(posX, posY, sizeX, sizeY);
+}
+
 void OpenGLRHI::LogShaderInfo(const GLuint shaderProgramID)
 {
 	GLint length;

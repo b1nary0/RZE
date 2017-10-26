@@ -23,10 +23,13 @@ struct WindowEvent
 {
 	friend struct Event;
 
+	EventInfo mEventInfo;
+
 	WindowEvent() = default;
 	WindowEvent(const U16 eventSubType);
 
-	EventInfo mEventInfo;
+	U16 mSizeX;
+	U16 mSizeY;
 };
 
 struct KeyEvent
