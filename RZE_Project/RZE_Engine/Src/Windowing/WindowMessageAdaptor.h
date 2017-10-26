@@ -12,11 +12,10 @@ public:
 		{
 			Window_Create,
 			Window_Move,
+			Window_Resize,
 			Window_Destroy,
 			Window_Close,
 			Window_Quit,
-			Window_KeyUp,
-			Window_KeyDown
 		};
 	};
 

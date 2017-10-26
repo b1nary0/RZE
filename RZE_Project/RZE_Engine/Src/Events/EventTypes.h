@@ -17,7 +17,8 @@ namespace EWindowEventType
 	enum T : U16
 	{
 		Window_Create,
-		Window_Destroy
+		Window_Destroy,
+		Window_Resize
 	};
 }
 

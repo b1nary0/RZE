@@ -180,6 +180,12 @@ void RZE_Engine::RegisterWindowEvents()
 		{
 			PostExit();
 		}
+		else if (event.mWindowEvent.mEventInfo.mEventSubType == EWindowEventType::Window_Resize)
+		{
+			U16 width = event.mWindowEvent.mSizeX;
+			U16 height = event.mWindowEvent.mSizeY;
+			mRenderer->ResizeCanvas(Vector2D(width, height));
+		}
 	});
 	mEventHandler.RegisterForEvent(EEventType::Window, windowCallback);
 }

@@ -83,7 +83,7 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 		mOSWindowHandleData.windowHandle = CreateWindowEx(0,
 			wStrTitle.c_str(),
 			wStrTitle.c_str(),
-			WS_OVERLAPPEDWINDOW ^ (WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX), // @note WS_POPUP = borderless. WS_OVERLAPPEDWINDOW default
+			WS_OVERLAPPEDWINDOW ^ (WS_THICKFRAME | WS_MINIMIZEBOX), // @note WS_POPUP = borderless. WS_OVERLAPPEDWINDOW default
 			CW_USEDEFAULT,
 			CW_USEDEFAULT,
 			static_cast<int>(mDimensions.X()),
@@ -246,11 +246,32 @@ void Win32Window::ProcessWinProcMessage(const WindowMessageAdaptor::WindowMessag
 		WindowEvent windowEvent(EWindowEventType::Window_Destroy);
 		eventHandler.PostWindowEvent(windowEvent);
 	}
+	else if (messageInfo.mMessageType == WindowMessageAdaptor::EMessageType::Window_Resize)
+	{
+		WindowEvent windowEvent(EWindowEventType::Window_Resize);
+
+		RECT windowRect;
+		GetWindowRect(mOSWindowHandleData.windowHandle, &windowRect);
+		int width = windowRect.right - windowRect.top;
+		int height = windowRect.bottom - windowRect.top;
+
+		windowEvent.mSizeX = width;
+		windowEvent.mSizeY = height;
+
+		eventHandler.PostWindowEvent(windowEvent);
+	}
 }
 
 void Win32Window::InternalSetWindowPosition(const Vector2D& pos)
 {
-	SetWindowPos(mOSWindowHandleData.windowHandle, 0, static_cast<int>(pos.X()), static_cast<int>(pos.Y()), 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+	mPos = pos;
+	::SetWindowPos(mOSWindowHandleData.windowHandle, 0, static_cast<int>(mPos.X()), static_cast<int>(mPos.Y()), 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+}
+
+void Win32Window::InternalSetWindowSize(const Vector2D& size)
+{
+	mDimensions = size;
+	::SetWindowPos(mOSWindowHandleData.windowHandle, nullptr, static_cast<int>(mPos.X()), static_cast<int>(mPos.Y()), static_cast<int>(size.X()), static_cast<int>(size.Y()), SWP_NOSIZE | SWP_NOZORDER);
 }
 
 LRESULT CALLBACK WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp)
@@ -267,6 +288,14 @@ LRESULT CALLBACK WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp)
 	case WM_DESTROY:
 	{
 		sWindowMessageAdaptor.PushMessage(WindowMessageAdaptor::EMessageType::Window_Destroy, wp, lp);
+		return 0;
+	}
+
+	// #NOTE(Josh) This is fine for now, will make WM_SIZE it's own thing when necessary
+	case WM_SIZE:
+	case WM_SIZING:
+	{
+		sWindowMessageAdaptor.PushMessage(WindowMessageAdaptor::EMessageType::Window_Resize, wp, lp);
 		return 0;
 	}
 

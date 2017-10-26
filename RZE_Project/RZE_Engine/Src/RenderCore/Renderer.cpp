@@ -298,6 +298,11 @@ void RZE_Renderer::Render()
 	mFontList.clear();
 }
 
+void RZE_Renderer::ResizeCanvas(const Vector2D& newSize)
+{
+	OpenGLRHI::Get().Viewport(0, 0, static_cast<GLsizei>(newSize.X()), static_cast<GLsizei>(newSize.Y()));
+}
+
 SceneCamera& RZE_Renderer::GetSceneCamera()
 {
 	AssertNotNull(mSceneCamera);
