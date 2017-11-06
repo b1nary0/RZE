@@ -121,7 +121,7 @@ workspace "RZE"
 		kind "ConsoleApp"
 		language "C++"
 		targetdir (ProjectDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
-		targetname "RZE_Engine"
+		targetname "RZE_Game"
 		
 		filter "action:vs*"
 			pchheader = "StdAfx.h"
