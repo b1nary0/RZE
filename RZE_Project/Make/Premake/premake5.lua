@@ -8,17 +8,17 @@ workspace "RZE"
 	
 	-- Argument passed in when running premake5
 	if _ACTION ~= nill then 
-		ProjectAction = _ACTION;
+		ProjectAction = _ACTION
 	end
 	
 	-- Where the project files will be generated
-	location(RootDir .. "Project_" .. ProjectAction);
+	location(RootDir .. "Project_" .. ProjectAction)
 	
 	flags "FatalWarnings"
-	warnings "Extra";
+	warnings "Extra"
 	
-	filter "configurations:Debug"	defines { "DEBUG" } symbols "On";
-	filter "configurations:Release"	defines { "NDEBUG" } optimize "On";
+	filter "configurations:Debug"	defines { "DEBUG" } symbols "On"
+	filter "configurations:Release"	defines { "NDEBUG" } optimize "On"
 	
 	filter
 	{
@@ -52,13 +52,13 @@ workspace "RZE"
 	--
 	--
 	project "Engine"
-		local ProjectDir = RootDir .. "RZE_Engine/";
-		local SourceDir = ProjectDir .. "Src/";
+		local ProjectDir = RootDir .. "RZE_Engine/"
+		local SourceDir = ProjectDir .. "Src/"
 		
-		kind "ConsoleApp";
-		language "C++";
-		targetdir (ProjectDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}");
-		targetname "RZE_Engine";
+		kind "ConsoleApp"
+		language "C++"
+		targetdir (ProjectDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
+		targetname "RZE_Engine"
 		
 		files
 		{
@@ -68,7 +68,7 @@ workspace "RZE"
 			SourceDir .. "**.cpp"
 		};
 		
-		filter {};
+		filter {}
 		
 		 vpaths 
 		 {
