@@ -104,6 +104,70 @@ workspace "RZE"
 				SourceDir .. "**.c",
 				SourceDir .. "**.cpp"
 			}
+		 } 
+	
+	--
+	--
+	-- RZE_GAMEPROJ
+	--
+	--
+	 project "Game"
+		local EngineDir = RootDir .. "RZE_Engine/"
+		local ProjectDir = RootDir .. "RZE_GameProj/"
+		local SourceDir = ProjectDir
+		local IncludeDir = EngineDir .. "ThirdParty/Include/"
+		local LibDir = EngineDir .. "ThirdParty/Lib/x86/"
+		
+		kind "ConsoleApp"
+		language "C++"
+		targetdir (ProjectDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
+		targetname "RZE_Engine"
+		
+		filter "action:vs*"
+			pchheader = "StdAfx.h"
+			pchsource = "StdAfx.cpp"
+		
+		files
+		{
+			SourceDir .. "**.h",
+			SourceDir .. "**.hpp",
+			SourceDir .. "**.c",
+			SourceDir .. "**.cpp"
+		}
+		
+		includedirs
+		{
+			EngineDir .. "/Src",
+			IncludeDir,
+			IncludeDir .. "FreeType/"
+		}
+		
+		libdirs
+		{
+			LibDir,
+			EngineDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
+		}
+		links
+		{
+			"assimp",
+			"freetyped",
+			"glew32s",
+			"imgui",
+			"OpenGL32",
+			"RZE_Engine.lib"
+		}
+		
+		filter {}
+		
+		 vpaths 
+		 {
+			["Source Files/*"] = 
+			{ 
+				SourceDir .. "**.h",
+				SourceDir .. "**.hpp",
+				SourceDir .. "**.c",
+				SourceDir .. "**.cpp"
+			}
 		 }
 	 
 
