@@ -14,8 +14,7 @@ workspace "RZE"
 	-- Where the project files will be generated
 	location(RootDir .. "Project_" .. ProjectAction)
 	
-	flags "FatalWarnings"
-	warnings "Extra"
+	--flags "FatalWarnings"
 	
 	filter "configurations:Debug"	defines { "DEBUG" } symbols "On"
 	filter "configurations:Release"	defines { "NDEBUG" } optimize "On"
@@ -54,11 +53,17 @@ workspace "RZE"
 	project "Engine"
 		local ProjectDir = RootDir .. "RZE_Engine/"
 		local SourceDir = ProjectDir .. "Src/"
+		local IncludeDir = ProjectDir .. "ThirdParty/Include/"
+		local LibDir = ProjectDir .. "ThirdParty/Lib/x86/"
 		
-		kind "ConsoleApp"
+		kind "StaticLib"
 		language "C++"
 		targetdir (ProjectDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
 		targetname "RZE_Engine"
+		
+		filter "action:vs*"
+			pchheader = "StdAfx.h"
+			pchsource = "StdAfx.cpp"
 		
 		files
 		{
@@ -66,7 +71,27 @@ workspace "RZE"
 			SourceDir .. "**.hpp",
 			SourceDir .. "**.c",
 			SourceDir .. "**.cpp"
-		};
+		}
+		
+		includedirs
+		{
+			IncludeDir,
+			IncludeDir .. "FreeType/",
+			SourceDir
+		}
+		
+		libdirs
+		{
+			LibDir
+		}
+		links
+		{
+			"assimp",
+			"freetyped",
+			"glew32s",
+			"imgui",
+			"OpenGL32"
+		}
 		
 		filter {}
 		
@@ -80,7 +105,7 @@ workspace "RZE"
 				SourceDir .. "**.cpp"
 			}
 		 }
-
+	 
 
 
 
