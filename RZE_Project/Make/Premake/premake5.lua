@@ -12,7 +12,7 @@ workspace "RZE"
 	end
 	
 	-- Where the project files will be generated
-	location(RootDir .. "Project_" .. ProjectAction)
+	location(RootDir .. "_Project")
 	
 	--flags "FatalWarnings"
 	
