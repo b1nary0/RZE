@@ -50,11 +50,10 @@ public:
 		TComponent* retComponent = nullptr;
 
 		ComponentTypeID componentTypeID = ComponentID<IEntityComponent>::GetComponentTypeID<TComponent>();
+		AssertExpr(componentTypeID <= mComponents.size());
 		if (mComponentSet[componentTypeID])
 		{
-			AssertExpr(componentTypeID <= mComponents.size());
 			retComponent = static_cast<TComponent*>(mComponents[componentTypeID]);
-
 			return retComponent;
 		}
 

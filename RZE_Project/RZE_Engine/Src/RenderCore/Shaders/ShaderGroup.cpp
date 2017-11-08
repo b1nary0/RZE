@@ -9,7 +9,13 @@
 
 GFXShaderGroup::GFXShaderGroup(const std::string& groupName)
 	: mGroupName(groupName)
+	, mNumShaders(0)
+	, mShaderProgramID(0)
 {
+	for (int shaderIdx = 0; shaderIdx < EShaderIndex::COUNT; ++shaderIdx)
+	{
+		mShaders[shaderIdx] = 0;
+	}
 }
 
 GFXShaderGroup::~GFXShaderGroup()
