@@ -43,6 +43,8 @@ workspace "RZE"
 		"/ignore:4099"
 	};
 	
+	startproject "Game"
+	
 	filter {}
 	
 	--
