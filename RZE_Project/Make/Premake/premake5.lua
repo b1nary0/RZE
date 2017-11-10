@@ -64,12 +64,7 @@ workspace "RZE"
 		targetname "RZE_Engine"
 		
 		pchheader "StdAfx.h"
-		pchsource "RZE_Engine/Src/StdAfx.cpp"
-		
-		buildoptions
-		{
-			'/Yc"Stdafx.h" /Fp"obj\\x32\\Debug\\RZE_Engine.pch"'
-		}
+		pchsource "../../RZE_Engine/Src/StdAfx.cpp"
 		
 		files
 		{
