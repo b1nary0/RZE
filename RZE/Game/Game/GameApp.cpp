@@ -143,12 +143,12 @@ void GameApp::Start()
 	CreateDefaultShader();
 	CreateTextureShader();
 
-	const char* const cubeFilePath = "./../RZE_Engine/Assets/3D/Cube.obj";
-	const char* const miniCooperFilePath = "./../RZE_Engine/Assets/3D/MiniCooper.obj";
-	const char* const lampFilePath = "./../RZE_Engine/Assets/3D/Lamp.obj";
+	const char* const cubeFilePath = "./../Engine/Assets/3D/Cube.obj";
+	const char* const miniCooperFilePath = "./../Engine/Assets/3D/MiniCooper.obj";
+	const char* const lampFilePath = "./../Engine/Assets/3D/Lamp.obj";
 
-	const char* const quadMeshFilePath = "./../RZE_Engine/Assets/3D/Quad.obj";
-	const char* const quadTextureFilePath = "./../RZE_Engine/Assets/2D/Container.jpg";
+	const char* const quadMeshFilePath = "./../Engine/Assets/3D/Quad.obj";
+	const char* const quadTextureFilePath = "./../Engine/Assets/2D/Container.jpg";
 
 	ResourceHandler& resourceHandler = RZE_Engine::Get()->GetResourceHandler();
 
@@ -292,8 +292,8 @@ void GameApp::CreateLampObjects(const ResourceHandle& resourceHandle)
 
 void GameApp::CreateDefaultShader()
 {
-	const char* const vertShaderFilePath = "./../RZE_Engine/Assets/Shaders/VertexShader.shader";
-	const char* const fragShaderFilePath = "./../RZE_Engine/Assets/Shaders/FragmentShader.shader";
+	const char* const vertShaderFilePath = "./../Engine/Assets/Shaders/VertexShader.shader";
+	const char* const fragShaderFilePath = "./../Engine/Assets/Shaders/FragmentShader.shader";
 
 	ResourceHandle vertShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "DefaultVertexShader");
 	ResourceHandle fragShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "DefaultFragShader");
@@ -329,8 +329,8 @@ void GameApp::CreateDefaultShader()
 
 void GameApp::CreateTextureShader()
 {
-	const char* const vertShaderFilePath = "./../RZE_Engine/Assets/Shaders/TextureVert.shader";
-	const char* const fragShaderFilePath = "./../RZE_Engine/Assets/Shaders/TextureFrag.shader";
+	const char* const vertShaderFilePath = "./../Engine/Assets/Shaders/TextureVert.shader";
+	const char* const fragShaderFilePath = "./../Engine/Assets/Shaders/TextureFrag.shader";
 
 	ResourceHandle vertShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "TextureVertShader");
 	ResourceHandle fragShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "TextureFragShader");
