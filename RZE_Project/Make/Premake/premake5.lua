@@ -35,13 +35,15 @@ workspace "RZE"
 	}
 	flags
 	{
-		"MultiProcessorCompile",
+		--"MultiProcessorCompile",
 		"NoMinimalRebuild"
 	}
 	linkoptions
 	{
 		"/ignore:4099"
 	};
+	
+	startproject "Game"
 	
 	filter {}
 	
@@ -61,9 +63,8 @@ workspace "RZE"
 		targetdir (ProjectDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
 		targetname "RZE_Engine"
 		
-		filter "action:vs*"
-			pchheader = "StdAfx.h"
-			pchsource = "StdAfx.cpp"
+		pchheader "StdAfx.h"
+		pchsource "../../RZE_Engine/Src/StdAfx.cpp"
 		
 		files
 		{
@@ -122,6 +123,8 @@ workspace "RZE"
 		language "C++"
 		targetdir (ProjectDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
 		targetname "RZE_Game"
+		
+		dependson { "Engine" }
 		
 		filter "action:vs*"
 			pchheader = "StdAfx.h"
