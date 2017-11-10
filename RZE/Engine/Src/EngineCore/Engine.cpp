@@ -151,7 +151,7 @@ void RZE_Engine::CreateAndInitializeWindow()
 
 void RZE_Engine::LoadFonts()
 {
-	mFontHandler.LoadFont("Arial", "./../RZE_Engine/Assets/Fonts/Arial.ttf");
+	mFontHandler.LoadFont("Arial", "./../Engine/Assets/Fonts/Arial.ttf");
 }
 
 void RZE_Engine::InitGame(Functor<RZE_Game* const> createGameCallback)
@@ -205,7 +205,7 @@ void RZE_Engine::LoadEngineConfig()
 {
 	mEngineConfig = new EngineConfig();
 	//#TODO the path here needs to be dealt with properly
-	mEngineConfig->Load("./../RZE_Engine/RZE/Config/Engine.ini");
+	mEngineConfig->Load("./../Engine/RZE/Config/Engine.ini");
 
 	if (mEngineConfig->Empty())
 	{

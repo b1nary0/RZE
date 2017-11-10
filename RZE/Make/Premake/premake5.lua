@@ -7,7 +7,7 @@ workspace "RZE"
 	platforms { "x32" }
 	
 	-- Argument passed in when running premake5
-	if _ACTION ~= nill then 
+	if _ACTION ~= nil then 
 		ProjectAction = _ACTION
 	end
 	
@@ -35,7 +35,7 @@ workspace "RZE"
 	}
 	flags
 	{
-		--"MultiProcessorCompile",
+		"MultiProcessorCompile",
 		"NoMinimalRebuild"
 	}
 	linkoptions
@@ -53,7 +53,7 @@ workspace "RZE"
 	--
 	--
 	project "Engine"
-		local ProjectDir = RootDir .. "RZE_Engine/"
+		local ProjectDir = RootDir .. "Engine/"
 		local SourceDir = ProjectDir .. "Src/"
 		local IncludeDir = ProjectDir .. "ThirdParty/Include/"
 		local LibDir = ProjectDir .. "ThirdParty/Lib/x86/"
@@ -64,7 +64,7 @@ workspace "RZE"
 		targetname "RZE_Engine"
 		
 		pchheader "StdAfx.h"
-		pchsource "../../RZE_Engine/Src/StdAfx.cpp"
+		pchsource "../../Engine/Src/StdAfx.cpp"
 		
 		files
 		{
@@ -113,8 +113,8 @@ workspace "RZE"
 	--
 	--
 	 project "Game"
-		local EngineDir = RootDir .. "RZE_Engine/"
-		local ProjectDir = RootDir .. "RZE_GameProj/"
+		local EngineDir = RootDir .. "Engine/"
+		local ProjectDir = RootDir .. "Game/"
 		local SourceDir = ProjectDir
 		local IncludeDir = EngineDir .. "ThirdParty/Include/"
 		local LibDir = EngineDir .. "ThirdParty/Lib/x86/"
