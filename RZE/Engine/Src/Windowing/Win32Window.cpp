@@ -154,18 +154,18 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 	{
 		switch (msg.message)
 		{
-
+		case WM_SYSKEYDOWN:
 		case WM_KEYDOWN:
 		{
-			inputHandler.ProcessOSKeyboardEvent(EKeyEventType::Key_Pressed, static_cast<U8>(msg.wParam));
-			//KeyEvent keyEvent(EKeyEventType::Key_Pressed, static_cast<U8>(msg.wParam));
-			//eventHandler.PostKeyEvent(keyEvent);
+			const Int32 win32KeyCode = msg.wParam;
+			const bool bIsRepeat = (msg.lParam & 0x40000000) != 0;
+
+			inputHandler.OnKeyDown(win32KeyCode, bIsRepeat);
 		}
 		break;
 
 		case WM_KEYUP:
 		{
-			inputHandler.ProcessOSKeyboardEvent(EKeyEventType::Key_Released, static_cast<U8>(msg.wParam));
 			//KeyEvent keyEvent(EKeyEventType::Key_Released, static_cast<U8>(msg.wParam));
 			//eventHandler.PostKeyEvent(keyEvent);
 		}

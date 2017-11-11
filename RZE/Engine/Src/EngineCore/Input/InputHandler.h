@@ -9,8 +9,9 @@ class InputHandler
 {
 	struct KeyAction
 	{
-		U8 mKey;
-		U16 mActionType;
+		Int32 Key;
+		bool bIsDown;
+		bool bIsRepeat;
 	};
 
 public:
@@ -21,10 +22,9 @@ public:
 
 	void ProcessEvents();
 
-	void ProcessOSKeyboardEvent(EKeyEventType::T eventType, const U8 key);
-	void ProcessOSMouseEvent(EMouseEventType::T eventType, const Vector2D& pos);
+	void OnKeyDown(const Int32 key, bool bIsRepeat);
 
 private:
 	std::queue<KeyAction> mKeyPresses;
-	std::map<U16, std::vector<Functor<void, U8>>> mNotifyMap;
+	std::map<bool, std::vector<Functor<void, Int32>>> mNotifyMap;
 };
