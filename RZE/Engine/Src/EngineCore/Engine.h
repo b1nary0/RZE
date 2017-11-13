@@ -46,6 +46,8 @@ public:
 	ResourceHandler&	GetResourceHandler();
 	FontHandler&		GetFontHandler();
 
+	InputHandler&		TestGetInputHandler() { return mInputHandler; }
+
 	void SetCursorEnabled(bool enabled);
 
 private:

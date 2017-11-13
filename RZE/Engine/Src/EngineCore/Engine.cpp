@@ -108,8 +108,6 @@ void RZE_Engine::Init()
 	RegisterWindowEvents();
 	RegisterInputEvents();
 
-	mInputHandler.RegisterEvents(mEventHandler);
-
 	bIsInitialized = true;
 }
 
@@ -200,7 +198,6 @@ void RZE_Engine::RegisterInputEvents()
 			PostExit();
 		}
 	});
-	mInputHandler.RegisterForEvent(EKeyEventType::Key_Pressed, keyPressCallback);
 }
 
 void RZE_Engine::LoadEngineConfig()
@@ -218,7 +215,6 @@ void RZE_Engine::LoadEngineConfig()
 void RZE_Engine::Update()
 {
 	CompileEvents();
-	mInputHandler.ProcessEvents();
 	mEventHandler.ProcessEvents();
 
 	mApplication->Update();

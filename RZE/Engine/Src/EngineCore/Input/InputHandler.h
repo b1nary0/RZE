@@ -1,5 +1,7 @@
 #pragma once
 
+#include <unordered_map>
+
 #include <EngineCore/Input/InputCore.h>
 
 #include <Utils/Functor.h>
@@ -9,11 +11,15 @@ class EventHandler;
 
 class InputHandler
 {
-	struct KeyAction
+	struct ActionBinding
 	{
-		Int32 Key;
-		bool bIsDown;
-		bool bIsRepeat;
+		char* ActionName;
+		EButtonState::T ButtonState;
+	};
+
+	struct KeyboardActionBinding : public ActionBinding
+	{
+		Functor<void, const InputKey&> Func;
 	};
 
 public:
@@ -21,16 +27,13 @@ public:
 
 	void Initialize();
 
-	void RegisterEvents(EventHandler& eventHandler);
-	void RegisterForEvent(U16 action, Functor<void, U8> callback);
-
-	void ProcessEvents();
+	void TestBindAction(Int32 keyCode, EButtonState::T buttonState, Functor<void, const InputKey&> func);
 
 	void OnKeyDown(const Int32 key, bool bIsRepeat);
+	void OnKeyUp(const Int32 key, bool bIsRepeat);
 
 private:
 	std::vector<InputKey> mInputKeyRegistry;
 
-	std::queue<KeyAction> mKeyPresses;
-	std::map<bool, std::vector<Functor<void, Int32>>> mNotifyMap;
+	std::unordered_map<Int32, KeyboardActionBinding> mKeyboardBindings;
 };

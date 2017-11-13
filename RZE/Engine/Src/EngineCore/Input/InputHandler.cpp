@@ -17,28 +17,14 @@ void InputHandler::Initialize()
 	}
 }
 
-void InputHandler::RegisterEvents(EventHandler& eventHandler)
+void InputHandler::TestBindAction(Int32 keyCode, EButtonState::T buttonState, Functor<void, const InputKey&> func)
 {
-}
+	KeyboardActionBinding actionBinding;
+	actionBinding.ActionName = "Test";
+	actionBinding.ButtonState = buttonState;
+	actionBinding.Func = func;
 
-void InputHandler::RegisterForEvent(U16 action, Functor<void, U8> callback)
-{
-	//mNotifyMap[action].push_back(callback);
-}
-
-void InputHandler::ProcessEvents()
-{
-	while (!mKeyPresses.empty())
-	{
-		KeyAction action = mKeyPresses.front();
-		mKeyPresses.pop();
-
-		std::vector<Functor<void, Int32>> notifyEntries = mNotifyMap[action.bIsDown];
-		for (auto& entry : notifyEntries)
-		{
-			entry(action.Key);
-		}
-	}
+	mKeyboardBindings[keyCode] = actionBinding;
 }
 
 void InputHandler::OnKeyDown(const Int32 key, bool bIsRepeat)
@@ -51,5 +37,20 @@ void InputHandler::OnKeyDown(const Int32 key, bool bIsRepeat)
 	 * an intermediate?
 	 */
 
+	InputKey& inputKey = mInputKeyRegistry[key];
+	auto& bindingIt = mKeyboardBindings.find(inputKey.GetKeyCode());
+	if (bindingIt != mKeyboardBindings.end())
+	{
+		EButtonState::T buttonState = bIsRepeat ? EButtonState::ButtonState_Hold : EButtonState::ButtonState_Pressed;
+		KeyboardActionBinding& actionBinding = (*bindingIt).second;
+		if (actionBinding.ButtonState == buttonState)
+		{
+			actionBinding.Func(inputKey);
+		}
+	}
+}
+
+void InputHandler::OnKeyUp(const Int32 key, bool bIsRepeat)
+{
 	const InputKey& inputKey = mInputKeyRegistry[key];
 }
