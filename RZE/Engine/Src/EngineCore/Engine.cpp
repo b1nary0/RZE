@@ -103,6 +103,7 @@ void RZE_Engine::Init()
 	LoadFonts();
 
 	mResourceHandler.Init();
+	mInputHandler.Initialize();
 
 	RegisterWindowEvents();
 	RegisterInputEvents();

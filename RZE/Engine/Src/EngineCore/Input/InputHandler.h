@@ -1,5 +1,7 @@
 #pragma once
 
+#include <EngineCore/Input/InputCore.h>
+
 #include <Utils/Functor.h>
 #include <Utils/PrimitiveDefs.h>
 
@@ -17,6 +19,8 @@ class InputHandler
 public:
 	InputHandler();
 
+	void Initialize();
+
 	void RegisterEvents(EventHandler& eventHandler);
 	void RegisterForEvent(U16 action, Functor<void, U8> callback);
 
@@ -25,6 +29,8 @@ public:
 	void OnKeyDown(const Int32 key, bool bIsRepeat);
 
 private:
+	std::vector<InputKey> mInputKeyRegistry;
+
 	std::queue<KeyAction> mKeyPresses;
 	std::map<bool, std::vector<Functor<void, Int32>>> mNotifyMap;
 };

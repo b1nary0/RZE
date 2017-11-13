@@ -7,6 +7,16 @@ InputHandler::InputHandler()
 {
 }
 
+void InputHandler::Initialize()
+{
+	mInputKeyRegistry.reserve(MAX_KEYCODES_SUPPORTED);
+	for (U32 keyCodeIdx = 0; keyCodeIdx < MAX_KEYCODES_SUPPORTED; keyCodeIdx++)
+	{
+		// #TODO(Josh) Possibly do a better cast here -- maybe throw in a function too? Do some research
+		mInputKeyRegistry.emplace_back(static_cast<char>(keyCodeIdx), keyCodeIdx);
+	}
+}
+
 void InputHandler::RegisterEvents(EventHandler& eventHandler)
 {
 }
@@ -41,13 +51,5 @@ void InputHandler::OnKeyDown(const Int32 key, bool bIsRepeat)
 	 * an intermediate?
 	 */
 
-
-	// Temporary code until work out a better protocol for this... 
-	// This is more basically stubbing than anything.
-	KeyAction keyAction;
-	keyAction.Key = key;
-	keyAction.bIsDown = true;
-	keyAction.bIsRepeat = bIsRepeat;
-
-	mKeyPresses.push(keyAction);
+	const InputKey& inputKey = mInputKeyRegistry[key];
 }

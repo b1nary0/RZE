@@ -6,7 +6,7 @@
  * InputKey
  */
 
-InputKey::InputKey(const std::string& displayName, Int32 keyCode)
+InputKey::InputKey(const char displayName, Int32 keyCode)
 	: mDisplayName(displayName)
 	, mKeyCode(keyCode)
 {
