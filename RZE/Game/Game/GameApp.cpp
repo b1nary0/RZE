@@ -15,7 +15,14 @@
 #include <RenderCore/Graphics/Texture2D.h>
 #include <RenderCore/Shaders/ShaderGroup.h>
 
+#include <Utils/Math/Math.h>
+
 #include <Windowing/WinKeyCodes.h>
+
+// Test stuff -- this stuff will likely be removed at some point
+// or if it ends up being "permanent", implemented more sensibly.
+static Vector3D cameraStartPos = Vector3D(0.0f, 1.0f, 15.0f);
+static bool mIsCameraStartSequence = true;
 
 GameApp::GameApp()
 	: RZE_Game()
@@ -133,40 +140,50 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
 	
 	Functor<void, const InputKey&> forwardFunc([this](const InputKey& key)
 	{
-		AssertExpr(static_cast<char>(key.GetKeyCode()) == 'W');
-		SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
-		Vector3D newPos = sceneCam.GetPositionVec();
-		newPos += sceneCam.GetDirectionVec() * speed * deltaT;
-		sceneCam.SetPosition(newPos);
-
+		if (!mIsCameraStartSequence)
+		{
+			AssertExpr(static_cast<char>(key.GetKeyCode()) == 'W');
+			SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
+			Vector3D newPos = sceneCam.GetPositionVec();
+			newPos += sceneCam.GetDirectionVec() * speed * deltaT;
+			sceneCam.SetPosition(newPos);
+		}
 	});
 
 	Functor<void, const InputKey&> backwardFunc([this](const InputKey& key)
 	{
-		AssertExpr(static_cast<char>(key.GetKeyCode()) == 'S');
-		SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
-		Vector3D newPos = sceneCam.GetPositionVec();
-		newPos -= sceneCam.GetDirectionVec() * speed * deltaT;
-		sceneCam.SetPosition(newPos);
-
+		if (!mIsCameraStartSequence)
+		{
+			AssertExpr(static_cast<char>(key.GetKeyCode()) == 'S');
+			SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
+			Vector3D newPos = sceneCam.GetPositionVec();
+			newPos -= sceneCam.GetDirectionVec() * speed * deltaT;
+			sceneCam.SetPosition(newPos);
+		}
 	});
 
 	Functor<void, const InputKey&> leftFunc([this](const InputKey& key)
 	{
-		AssertExpr(static_cast<char>(key.GetKeyCode()) == 'A');
-		SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
-		Vector3D newPos = sceneCam.GetPositionVec();
-		newPos -= sceneCam.GetDirectionVec().Cross(sceneCam.GetUpVec()).Normalize() * speed * deltaT;
-		sceneCam.SetPosition(newPos);
+		if (!mIsCameraStartSequence)
+		{
+			AssertExpr(static_cast<char>(key.GetKeyCode()) == 'A');
+			SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
+			Vector3D newPos = sceneCam.GetPositionVec();
+			newPos -= sceneCam.GetDirectionVec().Cross(sceneCam.GetUpVec()).Normalize() * speed * deltaT;
+			sceneCam.SetPosition(newPos);
+		}
 	});
 
 	Functor<void, const InputKey&> rightFunc([this](const InputKey& key)
 	{
-		AssertExpr(static_cast<char>(key.GetKeyCode()) == 'D');
-		SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
-		Vector3D newPos = sceneCam.GetPositionVec();
-		newPos += sceneCam.GetDirectionVec().Cross(sceneCam.GetUpVec()).Normalize() * speed * deltaT;
-		sceneCam.SetPosition(newPos);
+		if (!mIsCameraStartSequence)
+		{
+			AssertExpr(static_cast<char>(key.GetKeyCode()) == 'D');
+			SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
+			Vector3D newPos = sceneCam.GetPositionVec();
+			newPos += sceneCam.GetDirectionVec().Cross(sceneCam.GetUpVec()).Normalize() * speed * deltaT;
+			sceneCam.SetPosition(newPos);
+		}
 	});
 
 	RZE_Engine::Get()->TestGetInputHandler().TestBindAction(static_cast<Int32>('W'), EButtonState::ButtonState_Hold, forwardFunc);
@@ -210,6 +227,16 @@ void GameApp::Start()
 void GameApp::Update()
 {
 	RZE_Game::Update();
+
+	const Vector3D& camPos = RZE_Engine::Get()->GetSceneCamera().GetPositionVec();
+	if (VectorUtils::DistanceSq(camPos, cameraStartPos) > 0.1f && mIsCameraStartSequence)
+	{
+		RZE_Engine::Get()->GetSceneCamera().SetPosition(VectorUtils::Lerp(camPos, cameraStartPos, 0.025f));
+	}
+	else if (mIsCameraStartSequence)
+	{
+		mIsCameraStartSequence = false;
+	}
 }
 
 void GameApp::CreateTextureQuad(const ResourceHandle& meshHandle, const ResourceHandle& textureHandle)

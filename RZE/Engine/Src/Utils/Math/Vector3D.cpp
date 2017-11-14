@@ -58,6 +58,11 @@ Vector3D Vector3D::Cross(const Vector3D& other) const
 	return Vector3D(crossVec.x, crossVec.y, crossVec.z);
 }
 
+float Vector3D::LengthSq()
+{
+	return mVec.x * mVec.x + mVec.y * mVec.y + mVec.z * mVec.z;
+}
+
 const glm::vec3& Vector3D::GetInternalVec() const
 {
 	return mVec;
@@ -74,7 +79,7 @@ void Vector3D::operator+=(const Vector3D& rhs)
 	mVec += rhs.GetInternalVec();
 }
 
-Vector3D Vector3D::operator-(Vector3D& rhs) const
+Vector3D Vector3D::operator-(const Vector3D& rhs) const
 {
 	glm::vec3 subVec = mVec - rhs.GetInternalVec();
 	return Vector3D(subVec.x, subVec.y, subVec.z);
@@ -95,5 +100,10 @@ Vector3D Vector3D::operator*(float scalar) const
 {
 	glm::vec3 multVec = mVec * scalar;
 	return Vector3D(multVec.x, multVec.y, multVec.z);
+}
+
+bool Vector3D::operator!=(const Vector3D& rhs) const
+{
+	return mVec != rhs.mVec;
 }
 

@@ -20,17 +20,20 @@ public:
 
 	const Vector3D& Normalize();
 	Vector3D Cross(const Vector3D& other) const;
+	float LengthSq();
 
 	const glm::vec3& GetInternalVec() const;
 
 	Vector3D operator+(const Vector3D& rhs) const;
 	void operator+=(const Vector3D& rhs);
 
-	Vector3D operator-(Vector3D& rhs) const;
+	Vector3D operator-(const Vector3D& rhs) const;
 	void operator-=(const Vector3D& rhs);
 
 	Vector3D operator*(const Vector3D& rhs) const;
 	Vector3D operator*(float scalar) const;
+
+	bool operator!=(const Vector3D& rhs) const;
 
 private:
 	glm::vec3 mVec;
