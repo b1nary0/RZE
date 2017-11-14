@@ -166,8 +166,8 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 
 		case WM_KEYUP:
 		{
-			//KeyEvent keyEvent(EKeyEventType::Key_Released, static_cast<U8>(msg.wParam));
-			//eventHandler.PostKeyEvent(keyEvent);
+			const Int32 win32KeyCode = msg.wParam;
+			inputHandler.OnKeyUp(win32KeyCode);
 		}
 		break;
 

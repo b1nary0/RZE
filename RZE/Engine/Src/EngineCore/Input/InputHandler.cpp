@@ -9,6 +9,8 @@ InputHandler::InputHandler()
 
 void InputHandler::Initialize()
 {
+	mKeyboardState.Reset();
+
 	mInputKeyRegistry.reserve(MAX_KEYCODES_SUPPORTED);
 	for (U32 keyCodeIdx = 0; keyCodeIdx < MAX_KEYCODES_SUPPORTED; keyCodeIdx++)
 	{
@@ -37,20 +39,32 @@ void InputHandler::OnKeyDown(const Int32 key, bool bIsRepeat)
 	 * an intermediate?
 	 */
 
-	InputKey& inputKey = mInputKeyRegistry[key];
+	mKeyboardState.PrevKeyStates[key] = mKeyboardState.CurKeyStates[key];
+	mKeyboardState.CurKeyStates[key] = true;
+
+ 	InputKey& inputKey = mInputKeyRegistry[key];
+	RaiseKeyEvent(inputKey);
+}
+
+void InputHandler::OnKeyUp(const Int32 key)
+{
+	mKeyboardState.PrevKeyStates[key] = mKeyboardState.CurKeyStates[key];
+	mKeyboardState.CurKeyStates[key] = false;
+
+	const InputKey& inputKey = mInputKeyRegistry[key];
+	RaiseKeyEvent(inputKey);
+}
+
+void InputHandler::RaiseKeyEvent(const InputKey& inputKey)
+{
 	auto& bindingIt = mKeyboardBindings.find(inputKey.GetKeyCode());
 	if (bindingIt != mKeyboardBindings.end())
 	{
-		EButtonState::T buttonState = bIsRepeat ? EButtonState::ButtonState_Hold : EButtonState::ButtonState_Pressed;
-		KeyboardActionBinding& actionBinding = (*bindingIt).second;
-		if (actionBinding.ButtonState == buttonState)
-		{
-			actionBinding.Func(inputKey);
-		}
+	 	EButtonState::T buttonState = mKeyboardState.GetButtonState(inputKey.GetKeyCode());
+	 	KeyboardActionBinding& actionBinding = (*bindingIt).second;
+	 	if (actionBinding.ButtonState == buttonState)
+	 	{
+	 		actionBinding.Func(inputKey);
+	 	}
 	}
-}
-
-void InputHandler::OnKeyUp(const Int32 key, bool bIsRepeat)
-{
-	const InputKey& inputKey = mInputKeyRegistry[key];
 }
