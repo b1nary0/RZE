@@ -52,36 +52,6 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
 // 	{
 // 		if (evt.mInfo.mEventType == EEventType::Key)
 // 		{
-// 			if (evt.mKeyEvent.mKey == Win32KeyCode::Key_W)
-// 			{
-// 				SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
-// 				Vector3D newPos = sceneCam.GetPositionVec();
-// 				newPos += sceneCam.GetDirectionVec() * speed * deltaT;
-// 				sceneCam.SetPosition(newPos);
-// 			}
-// 			else if (evt.mKeyEvent.mKey == Win32KeyCode::Key_S)
-// 			{
-// 				SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
-// 				Vector3D newPos = sceneCam.GetPositionVec();
-// 				newPos -= sceneCam.GetDirectionVec() * speed * deltaT;
-// 				sceneCam.SetPosition(newPos);
-// 			}
-// 
-// 			if (evt.mKeyEvent.mKey == Win32KeyCode::Key_A)
-// 			{
-// 				SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
-// 				Vector3D newPos = sceneCam.GetPositionVec();
-// 				newPos -= sceneCam.GetDirectionVec().Cross(sceneCam.GetUpVec()).Normalize() * speed * deltaT;
-// 				sceneCam.SetPosition(newPos);
-// 			}
-// 			else if (evt.mKeyEvent.mKey == Win32KeyCode::Key_D)
-// 			{
-// 				SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
-// 				Vector3D newPos = sceneCam.GetPositionVec();
-// 				newPos += sceneCam.GetDirectionVec().Cross(sceneCam.GetUpVec()).Normalize() * speed * deltaT;
-// 				sceneCam.SetPosition(newPos);
-// 			}
-// 
 // 			if (evt.mKeyEvent.mKey == Win32KeyCode::Key_Q)
 // 			{
 // 				SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
