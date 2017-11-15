@@ -68,8 +68,6 @@ void RenderSystem::Update()
 		modelMat.Rotate(transformComponent->GetRotation().ToAngle(), transformComponent->GetRotation().ToAxis());
 		modelMat.Scale(transformComponent->GetScale());
 
-		Matrix4x4 MVP = renderCam.GetProjectionMat() * renderCam.GetViewMat() * modelMat;
-
 		RZE_Renderer::RenderItemProtocol renderItem;
 		renderItem.mShaderGroup = meshComponent->GetShaderGroup();
 		renderItem.mModelMat = modelMat;

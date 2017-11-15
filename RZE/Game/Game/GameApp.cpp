@@ -201,7 +201,7 @@ void GameApp::Update()
 	const Vector3D& camPos = RZE_Engine::Get()->GetSceneCamera().GetPositionVec();
 	if (VectorUtils::DistanceSq(camPos, cameraStartPos) > 0.1f && mIsCameraStartSequence)
 	{
-		RZE_Engine::Get()->GetSceneCamera().SetPosition(VectorUtils::Lerp(camPos, cameraStartPos, 0.025f));
+		RZE_Engine::Get()->GetSceneCamera().SetPosition(VectorUtils::Lerp(camPos, cameraStartPos, 0.040f));
 	}
 	else if (mIsCameraStartSequence)
 	{
