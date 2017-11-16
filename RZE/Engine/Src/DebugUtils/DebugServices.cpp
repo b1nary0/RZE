@@ -3,7 +3,9 @@
 
 #include <imGUI/imgui.h>
 
-std::vector<DebugServices::LogEntry> DebugServices::mLogEntries;
+std::deque<DebugServices::LogEntry> DebugServices::mLogEntries;
+
+#define MAX_LOG_SIZE 10
 
 DebugServices::DebugServices()
 {
@@ -11,11 +13,19 @@ DebugServices::DebugServices()
 
 void DebugServices::AddLog(const std::string& text, const Vector3D& color)
 {
-	mLogEntries.emplace_back();
-
-	LogEntry& entry = mLogEntries.back();
+	LogEntry entry;
 	entry.Text = text;
 	entry.TextColor = color;
+
+	if (mLogEntries.size() < MAX_LOG_SIZE)
+	{
+		mLogEntries.push_back(entry);
+	}
+	else
+	{
+		mLogEntries.pop_front();
+		mLogEntries.push_back(entry);
+	}
 }
 
 void DebugServices::Initialize()
@@ -36,5 +46,5 @@ void DebugServices::RenderLog()
 		ImGui::TextColored(imColor, logItem.Text.c_str());
 	}
 
-	mLogEntries.clear();
+	ImGui::SetScrollHere();
 }

@@ -84,6 +84,7 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 
 			//DebugServices::AddLog(StringUtils::FormatString("Update Time: %f ms", updateTime), Vector3D(0.0f, 1.0f, 0.0f));
 
+
 			DebugServices::Display();
 
 			ImGui::End();
@@ -214,13 +215,15 @@ void RZE_Engine::RegisterWindowEvents()
 
 void RZE_Engine::RegisterInputEvents()
 {
-	Functor<void, U8> keyPressCallback([this](const U8 key)
+	Functor<void, const InputKey&> quitFunc([this](const InputKey& key)
 	{
-		if (key == Win32KeyCode::Escape)
+		if (key.GetKeyCode() == Win32KeyCode::Escape)
 		{
 			PostExit();
 		}
 	});
+
+	mInputHandler.TestBindAction(Win32KeyCode::Escape, EButtonState::ButtonState_Pressed, quitFunc);
 }
 
 void RZE_Engine::LoadEngineConfig()

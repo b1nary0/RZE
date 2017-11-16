@@ -112,7 +112,7 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
 	{
 		if (!mIsCameraStartSequence)
 		{
-			AssertExpr(static_cast<char>(key.GetKeyCode()) == 'W');
+			AssertExpr(key.GetKeyCode() == Win32KeyCode::Key_W);
 			SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
 			Vector3D newPos = sceneCam.GetPositionVec();
 			newPos += sceneCam.GetDirectionVec() * speed * deltaT;
@@ -124,7 +124,7 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
 	{
 		if (!mIsCameraStartSequence)
 		{
-			AssertExpr(static_cast<char>(key.GetKeyCode()) == 'S');
+			AssertExpr(key.GetKeyCode() == Win32KeyCode::Key_S);
 			SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
 			Vector3D newPos = sceneCam.GetPositionVec();
 			newPos -= sceneCam.GetDirectionVec() * speed * deltaT;
@@ -136,7 +136,7 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
 	{
 		if (!mIsCameraStartSequence)
 		{
-			AssertExpr(static_cast<char>(key.GetKeyCode()) == 'A');
+			AssertExpr(key.GetKeyCode() == Win32KeyCode::Key_A);
 			SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
 			Vector3D newPos = sceneCam.GetPositionVec();
 			newPos -= sceneCam.GetDirectionVec().Cross(sceneCam.GetUpVec()).Normalize() * speed * deltaT;
@@ -148,7 +148,7 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
 	{
 		if (!mIsCameraStartSequence)
 		{
-			AssertExpr(static_cast<char>(key.GetKeyCode()) == 'D');
+			AssertExpr(key.GetKeyCode() == Win32KeyCode::Key_D);
 			SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
 			Vector3D newPos = sceneCam.GetPositionVec();
 			newPos += sceneCam.GetDirectionVec().Cross(sceneCam.GetUpVec()).Normalize() * speed * deltaT;
@@ -156,10 +156,10 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
 		}
 	});
 
-	RZE_Engine::Get()->TestGetInputHandler().TestBindAction(static_cast<Int32>('W'), EButtonState::ButtonState_Hold, forwardFunc);
-	RZE_Engine::Get()->TestGetInputHandler().TestBindAction(static_cast<Int32>('S'), EButtonState::ButtonState_Hold, backwardFunc);
-	RZE_Engine::Get()->TestGetInputHandler().TestBindAction(static_cast<Int32>('A'), EButtonState::ButtonState_Hold, leftFunc);
-	RZE_Engine::Get()->TestGetInputHandler().TestBindAction(static_cast<Int32>('D'), EButtonState::ButtonState_Hold, rightFunc);
+	RZE_Engine::Get()->TestGetInputHandler().TestBindAction(Win32KeyCode::Key_W, EButtonState::ButtonState_Hold, forwardFunc);
+	RZE_Engine::Get()->TestGetInputHandler().TestBindAction(Win32KeyCode::Key_S, EButtonState::ButtonState_Hold, backwardFunc);
+	RZE_Engine::Get()->TestGetInputHandler().TestBindAction(Win32KeyCode::Key_A, EButtonState::ButtonState_Hold, leftFunc);
+	RZE_Engine::Get()->TestGetInputHandler().TestBindAction(Win32KeyCode::Key_D, EButtonState::ButtonState_Hold, rightFunc);
 }
 
 void GameApp::Start()
@@ -199,7 +199,7 @@ void GameApp::Update()
 	RZE_Game::Update();
 
 	const Vector3D& camPos = RZE_Engine::Get()->GetSceneCamera().GetPositionVec();
-	if (VectorUtils::DistanceSq(camPos, cameraStartPos) > 0.1f && mIsCameraStartSequence)
+	if (VectorUtils::DistanceSq(camPos, cameraStartPos) > 0.025f && mIsCameraStartSequence)
 	{
 		RZE_Engine::Get()->GetSceneCamera().SetPosition(VectorUtils::Lerp(camPos, cameraStartPos, 0.040f));
 	}

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include <vector>
+#include <deque>
 
 #include <Utils/Math/Vector3D.h>
 
@@ -26,5 +26,5 @@ private:
 	static void RenderLog();
 
 private:
-	static std::vector<LogEntry> mLogEntries;
+	static std::deque<LogEntry> mLogEntries;
 };
