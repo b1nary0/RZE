@@ -4,6 +4,7 @@
 #include <EngineCore/Platform/Timers/HiResTimer.h>
 
 #include <DebugUtils/Debug.h>
+#include <DebugUtils/DebugServices.h>
 
 #include <Game/GameWorld.h>
 
@@ -14,6 +15,17 @@
 #include <Windowing/WinKeyCodes.h>
 
 #include <imGUI/imgui.h>
+
+void TempInitImGui()
+{
+	ImGuiIO& io = ImGui::GetIO();
+	io.DisplaySize.x = RZE_Engine::Get()->GetWindowSettings().GetDimensions().X();
+	io.DisplaySize.y = RZE_Engine::Get()->GetWindowSettings().GetDimensions().Y();
+
+	unsigned char* pixels;
+	int width, height;
+	io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
+}
 
 RZE_Engine* RZE_Engine::sInstance = nullptr;
 
@@ -50,7 +62,8 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 		HiResTimer renderTimer;
 		while (!bShouldExit)
 		{
-			//ImGui::NewFrame();
+			ImGui::NewFrame();
+			ImGui::Begin("Main", nullptr, ImVec2(500, 200));
 
 			updateTimer.Start();
 			Update();
@@ -63,13 +76,18 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 			++frameCount;
 
 			float updateTime = updateTimer.GetElapsed<float>() * 1000;
-			if (frameCount > 25)
+			if (frameCount > 100)
 			{
 				updateTime = updateTimer.GetElapsed<float>() * 1000;
 				frameCount = 0;
 			}
 
-			//ImGui::Render();
+			//DebugServices::AddLog(StringUtils::FormatString("Update Time: %f ms", updateTime), Vector3D(0.0f, 1.0f, 0.0f));
+
+			DebugServices::Display();
+
+			ImGui::End();
+			ImGui::Render();
 			mMainWindow->BufferSwap(); // #TODO(Josh) Maybe this can be done better
 		}
 
@@ -101,6 +119,8 @@ void RZE_Engine::Init()
 
 		// #TODO this should be handled better. No need to create directly here. Take a look.
 		mRenderer = new RZE_Renderer();
+
+		TempInitImGui();
 
 		LoadFonts();
 

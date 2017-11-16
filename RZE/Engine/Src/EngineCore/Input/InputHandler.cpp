@@ -1,7 +1,11 @@
-#include "StdAfx.h"
+#include <StdAfx.h>
+#include <EngineCore/Input/InputHandler.h>
 
-#include "InputHandler.h"
-#include "Events/EventHandler.h"
+#include <DebugUtils/DebugServices.h>
+
+#include <EngineCore/Platform/Timers/HiResTimer.h>
+
+#include <Events/EventHandler.h>
 
 InputHandler::InputHandler()
 {
@@ -39,11 +43,18 @@ void InputHandler::OnKeyDown(const Int32 key, bool bIsRepeat)
 	 * an intermediate?
 	 */
 
+	HiResTimer raiseEventTimer;
+
 	mKeyboardState.PrevKeyStates[key] = mKeyboardState.CurKeyStates[key];
 	mKeyboardState.CurKeyStates[key] = true;
 
  	InputKey& inputKey = mInputKeyRegistry[key];
+
+	raiseEventTimer.Start();
 	RaiseKeyEvent(inputKey);
+	raiseEventTimer.Stop();
+
+	DebugServices::AddLog(StringUtils::FormatString("RaiseEvent() took %f ms", raiseEventTimer.GetElapsed<float>() * 1000.0f), Vector3D(0.0f, 1.0f, 0.0f));
 }
 
 void InputHandler::OnKeyUp(const Int32 key)
