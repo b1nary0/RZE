@@ -225,17 +225,6 @@ void GameApp::CreateTextureQuad(const ResourceHandle& meshHandle, const Resource
 	mEntities.push_back(entity);
 }
 
-void GameApp::CreateFontTest()
-{
-	GameEntity* entity = RZE_Engine::Get()->GetWorld().AddEntity<GameEntity>();
-
-	FontRenderComponent* const fontComp = entity->AddComponent<FontRenderComponent>("TestFontComponent");
-	fontComp->SetFont(RZE_Engine::Get()->GetFontHandler().GetFont("Arial"));
-	fontComp->SetText("Hello, world!");
-
-	mEntities.push_back(entity);
-}
-
 void GameApp::CreateLight(const ResourceHandle& resourceHandle)
 {
 	mLightEntity = RZE_Engine::Get()->GetWorld().AddEntity<GameEntity>();
