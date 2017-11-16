@@ -83,32 +83,35 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 
 void RZE_Engine::Init()
 {
-	LOG_CONSOLE("RZE_EngineCore::Init() called.");
-
-	LoadEngineConfig();
-
-	CreateAndInitializeWindow();
-
+	if (!IsInitialized())
 	{
-		OpenGLRHI::OpenGLCreationParams creationParams;
-		creationParams.WindowWidth = static_cast<int>(mMainWindow->GetDimensions().X());
-		creationParams.WindowHeight = static_cast<int>(mMainWindow->GetDimensions().Y());
+		LOG_CONSOLE("RZE_EngineCore::Init() called.");
 
-		OpenGLRHI::Get().Init(creationParams);
+		LoadEngineConfig();
+
+		CreateAndInitializeWindow();
+
+		{
+			OpenGLRHI::OpenGLCreationParams creationParams;
+			creationParams.WindowWidth = static_cast<int>(mMainWindow->GetDimensions().X());
+			creationParams.WindowHeight = static_cast<int>(mMainWindow->GetDimensions().Y());
+
+			OpenGLRHI::Get().Init(creationParams);
+		}
+
+		// #TODO this should be handled better. No need to create directly here. Take a look.
+		mRenderer = new RZE_Renderer();
+
+		LoadFonts();
+
+		mResourceHandler.Init();
+		mInputHandler.Initialize();
+
+		RegisterWindowEvents();
+		RegisterInputEvents();
+
+		bIsInitialized = true;
 	}
-
-	// #TODO this should be handled better. No need to create directly here. Take a look.
-	mRenderer = new RZE_Renderer();
-
-	LoadFonts();
-
-	mResourceHandler.Init();
-	mInputHandler.Initialize();
-
-	RegisterWindowEvents();
-	RegisterInputEvents();
-
-	bIsInitialized = true;
 }
 
 void RZE_Engine::InitWorld()

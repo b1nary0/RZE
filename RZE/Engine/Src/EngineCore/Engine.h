@@ -37,6 +37,8 @@ public:
 		return sInstance;
 	}
 
+	inline bool IsInitialized() { return bIsInitialized; }
+
 	void Run(Functor<RZE_Game* const>& createApplicationCallback);
 
 	// #TODO(Josh) This should be revisited when the camera access/design changes
