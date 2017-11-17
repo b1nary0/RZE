@@ -63,7 +63,6 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 		while (!bShouldExit)
 		{
 			ImGui::NewFrame();
-			ImGui::Begin("Main", nullptr, ImVec2(500, 200));
 
 			updateTimer.Start();
 			Update();
@@ -76,18 +75,17 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 			++frameCount;
 
 			float updateTime = updateTimer.GetElapsed<float>() * 1000;
-			if (frameCount > 100)
+			if (frameCount > 1000)
 			{
 				updateTime = updateTimer.GetElapsed<float>() * 1000;
 				frameCount = 0;
 			}
 
-			//DebugServices::AddLog(StringUtils::FormatString("Update Time: %f ms", updateTime), Vector3D(0.0f, 1.0f, 0.0f));
-
+			DebugServices::AddData(StringUtils::FormatString("Update Time: %f ms", updateTime), Vector3D(0.0f, 1.0f, 0.0f));
+			DebugServices::AddData(StringUtils::FormatString("Render Time: %f ms", renderTimer.GetElapsed<float>() * 1000.0f), Vector3D(0.0f, 1.0f, 0.0f));
 
 			DebugServices::Display();
 
-			ImGui::End();
 			ImGui::Render();
 			mMainWindow->BufferSwap(); // #TODO(Josh) Maybe this can be done better
 		}
