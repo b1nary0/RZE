@@ -39,6 +39,7 @@ RZE_Engine::RZE_Engine()
 
 	bShouldExit = false;
 	bIsInitialized = false;
+	bDisplayDebugServices = false;
 }
 
 RZE_Engine::~RZE_Engine()
