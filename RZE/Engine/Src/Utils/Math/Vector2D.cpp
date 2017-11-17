@@ -37,6 +37,12 @@ void Vector2D::SetY(float newY)
 	mVec.y = newY;
 }
 
+void Vector2D::SetXY(float newX, float newY)
+{
+	mVec.x = newX;
+	mVec.y = newY;
+}
+
 const glm::vec2& Vector2D::GetInernalVec()
 {
 	return mVec;

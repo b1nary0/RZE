@@ -6,6 +6,8 @@
 #include <EngineCore/Input/InputCore.h>
 
 #include <Utils/Functor.h>
+#include <Utils/Math/Vector2D.h>
+#include <Utils/Math/Vector3D.h>
 #include <Utils/PrimitiveDefs.h>
 
 class EventHandler;
@@ -35,6 +37,21 @@ class InputHandler
 		}
 	};
 
+	struct MouseState
+	{
+		std::bitset<MAX_MOUSE_BTN_SUPPORTED> CurMouseBtnStates;
+		std::bitset<MAX_MOUSE_BTN_SUPPORTED> PrevMouseBtnStates;
+
+		Vector2D CurPosition;
+		Vector2D PrevPosition;
+
+		void Reset()
+		{
+			CurMouseBtnStates.reset();
+			PrevMouseBtnStates.reset();
+		}
+	};
+
 	struct ActionBinding
 	{
 		char* ActionName;
@@ -46,6 +63,11 @@ class InputHandler
 		Functor<void, const InputKey&> Func;
 	};
 
+	struct AxisBinding
+	{
+		Vector3D axis;
+	};
+
 public:
 	InputHandler();
 
@@ -55,14 +77,18 @@ public:
 
 	void OnKeyDown(const Int32 key, bool bIsRepeat);
 	void OnKeyUp(const Int32 key);
+	void OnMouseMove(const Int32 xPos, const Int32 yPos);
 
 private:
 	void RaiseKeyEvent(const InputKey& inputKey);
+	void RaiseMouseEvent();
 
 private:
 	std::vector<InputKey> mInputKeyRegistry;
+
 	std::unordered_map<Int32, KeyboardActionBinding> mKeyboardBindings;
 
 private:
 	KeyboardState mKeyboardState;
+	MouseState mMouseState;
 };

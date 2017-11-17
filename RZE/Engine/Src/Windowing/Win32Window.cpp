@@ -187,8 +187,8 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 
 		case WM_MOUSEMOVE:
 		{
-			MouseEvent mouseEvent(EMouseEventType::Mouse_Move, static_cast<U32>(GET_X_LPARAM(msg.lParam)), static_cast<U32>(GET_Y_LPARAM(msg.lParam)));
-			//eventHandler.PostMouseEvent(mouseEvent);
+			const Int32 xPos = GET_X_LPARAM(msg.lParam);
+			const Int32 yPos = GET_Y_LPARAM(msg.lParam);
 		}
 		break;
 

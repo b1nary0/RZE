@@ -15,6 +15,7 @@ public:
 
 	void SetX(float newX);
 	void SetY(float newY);
+	void SetXY(float newX, float newY);
 
 	const glm::vec2& GetInernalVec();
 

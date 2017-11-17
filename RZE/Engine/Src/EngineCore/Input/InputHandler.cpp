@@ -59,6 +59,12 @@ void InputHandler::OnKeyUp(const Int32 key)
 	RaiseKeyEvent(inputKey);
 }
 
+void InputHandler::OnMouseMove(const Int32 xPos, const Int32 yPos)
+{
+	mMouseState.PrevPosition.SetXY(mMouseState.CurPosition.X(), mMouseState.CurPosition.Y());
+	mMouseState.CurPosition.SetXY(static_cast<float>(xPos), static_cast<float>(yPos));
+}
+
 void InputHandler::RaiseKeyEvent(const InputKey& inputKey)
 {
 	auto& bindingIt = mKeyboardBindings.find(inputKey.GetKeyCode());
@@ -71,4 +77,9 @@ void InputHandler::RaiseKeyEvent(const InputKey& inputKey)
 	 		actionBinding.Func(inputKey);
 	 	}
 	}
+}
+
+void InputHandler::RaiseMouseEvent()
+{
+	
 }

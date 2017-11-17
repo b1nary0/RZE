@@ -4,6 +4,7 @@
 #include <Utils/PrimitiveDefs.h>
 
 #define MAX_KEYCODES_SUPPORTED 256
+#define MAX_MOUSE_BTN_SUPPORTED 3
 
 namespace EButtonState
 {
