@@ -84,7 +84,10 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 			DebugServices::AddData(StringUtils::FormatString("Update Time: %f ms", updateTime), Vector3D(0.0f, 1.0f, 0.0f));
 			DebugServices::AddData(StringUtils::FormatString("Render Time: %f ms", renderTimer.GetElapsed<float>() * 1000.0f), Vector3D(0.0f, 1.0f, 0.0f));
 
-			DebugServices::Display(GetMainWindowSize());
+			if (ShouldDisplayDebugServices())
+			{
+				DebugServices::Display(GetMainWindowSize());
+			}
 
 			ImGui::Render();
 			mMainWindow->BufferSwap(); // #TODO(Josh) Maybe this can be done better
@@ -216,15 +219,20 @@ void RZE_Engine::RegisterWindowEvents()
 
 void RZE_Engine::RegisterInputEvents()
 {
-	Functor<void, const InputKey&> quitFunc([this](const InputKey& key)
+	Functor<void, const InputKey&> inputFunc([this](const InputKey& key)
 	{
 		if (key.GetKeyCode() == Win32KeyCode::Escape)
 		{
 			PostExit();
 		}
+		else if (key.GetKeyCode() == Win32KeyCode::F1)
+		{
+			SetDisplayDebugServices(!ShouldDisplayDebugServices());
+		}
 	});
 
-	mInputHandler.TestBindAction(Win32KeyCode::Escape, EButtonState::ButtonState_Pressed, quitFunc);
+	mInputHandler.TestBindAction(Win32KeyCode::Escape, EButtonState::ButtonState_Pressed, inputFunc);
+	mInputHandler.TestBindAction(Win32KeyCode::F1, EButtonState::ButtonState_Pressed, inputFunc);
 }
 
 void RZE_Engine::LoadEngineConfig()

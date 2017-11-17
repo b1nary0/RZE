@@ -78,6 +78,9 @@ private:
 
 	void InitGame(Functor<RZE_Game* const> createGameCallback);
 
+	inline void SetDisplayDebugServices(bool bShouldDisplay) { bDisplayDebugServices = bShouldDisplay; }
+	inline bool ShouldDisplayDebugServices() { return bDisplayDebugServices; }
+
 	RZE_Game* mApplication;
 	GameWorld* mWorld;
 
@@ -93,4 +96,5 @@ private:
 
 	bool bIsInitialized;
 	bool bShouldExit;
+	bool bDisplayDebugServices;
 };
