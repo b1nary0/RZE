@@ -38,15 +38,13 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
 // 	static float angleX_1 = 0.0f;
 // 	static float angleY_1 = 0.0f;
 // 
- 	static float speed = 25.0f;
-// 
- 	static float deltaT = (1.0f / 60.0f);
+
 // 
 // 	static float pitch = 0;
 // 	static float yaw = 0;
 // 
- 	static Vector3D upVec(0.0f, (speed * deltaT), 0.0f);
- 	static Vector3D downVec(0.0f, (-speed * deltaT), 0.0f);
+//  	static Vector3D upVec(0.0f, (speed * deltaT), 0.0f);
+//  	static Vector3D downVec(0.0f, (-speed * deltaT), 0.0f);
 // 
 // 	Functor<void, const Event&> keyEvent([this](const Event& evt)
 // 	{
@@ -111,6 +109,9 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
 
 void GameApp::RegisterInputEvents(InputHandler& inputHandler)
 {
+	static float speed = 25.0f;
+	static float deltaT = (1.0f / 60.0f);
+
 	Functor<void, const InputKey&> forwardFunc([this](const InputKey& key)
 	{
 		if (!mIsCameraStartSequence)

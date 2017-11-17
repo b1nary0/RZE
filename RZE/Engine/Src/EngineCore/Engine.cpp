@@ -189,6 +189,7 @@ void RZE_Engine::InitGame(Functor<RZE_Game* const> createGameCallback)
 	mApplication->Start();
 
 	mApplication->RegisterEvents(mEventHandler);
+	mApplication->RegisterInputEvents(mInputHandler);
 }
 
 void RZE_Engine::CompileEvents()
@@ -233,8 +234,6 @@ void RZE_Engine::RegisterInputEvents()
 
 	mInputHandler.BindAction(Win32KeyCode::Escape, EButtonState::ButtonState_Pressed, inputFunc);
 	mInputHandler.BindAction(Win32KeyCode::F1, EButtonState::ButtonState_Pressed, inputFunc);
-
-
 }
 
 void RZE_Engine::LoadEngineConfig()
