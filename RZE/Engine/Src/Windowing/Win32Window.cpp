@@ -189,6 +189,8 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 		{
 			const Int32 xPos = GET_X_LPARAM(msg.lParam);
 			const Int32 yPos = GET_Y_LPARAM(msg.lParam);
+
+			inputHandler.OnMouseMove(xPos, yPos);
 		}
 		break;
 

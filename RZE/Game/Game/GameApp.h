@@ -17,7 +17,6 @@ public:
 	GameApp();
 	virtual ~GameApp();
 
-	virtual void RegisterEvents(EventHandler& eventHandler) override;
 	virtual void RegisterInputEvents(InputHandler& inputHandler) override;
 
 	virtual void Start() override;

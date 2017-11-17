@@ -65,7 +65,10 @@ class InputHandler
 
 	struct AxisBinding
 	{
-		Vector3D axis;
+		EAxisBinding::T BindingType;
+		EAxisType::T AxisType;
+		Vector3D Axis;
+		Functor<void, const Vector3D&> Func;
 	};
 
 public:
@@ -74,6 +77,7 @@ public:
 	void Initialize();
 
 	void BindAction(Int32 keyCode, EButtonState::T buttonState, Functor<void, const InputKey&> func);
+	void BindAxis(EAxisBinding::T bindingType, EAxisType::T axisType, Functor<void, const Vector3D&> func);
 
 	void OnKeyDown(const Int32 key, bool bIsRepeat);
 	void OnKeyUp(const Int32 key);
@@ -81,12 +85,13 @@ public:
 
 private:
 	void RaiseKeyEvent(const InputKey& inputKey);
-	void RaiseMouseEvent();
+	void RaiseMouseAxisEvent(const Vector2D& axis);
 
 private:
 	std::vector<InputKey> mInputKeyRegistry;
 
 	std::unordered_map<Int32, KeyboardActionBinding> mKeyboardBindings;
+	std::unordered_map<EAxisBinding::T, std::vector<AxisBinding>> mAxisBindings;
 
 private:
 	KeyboardState mKeyboardState;

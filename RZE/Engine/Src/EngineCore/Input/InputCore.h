@@ -16,6 +16,24 @@ namespace EButtonState
 	};
 }
 
+namespace EAxisType
+{
+	enum T
+	{
+		AxisType_Vector,
+		AxisType_Float
+	};
+}
+
+// #TODO(Josh) Don't like this but iterate over later
+namespace EAxisBinding
+{
+	enum T
+	{
+		AxisBinding_Mouse
+	};
+}
+
 class InputKey
 {
 public:

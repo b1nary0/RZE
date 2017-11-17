@@ -4,6 +4,7 @@
 #include <RZE.h>
 
 #include <DebugUtils/Debug.h>
+#include <DebugUtils/DebugServices.h>
 
 #include <Game/GameEntity.h>
 #include <Game/Components/MeshComponent.h>
@@ -31,80 +32,6 @@ GameApp::GameApp()
 
 GameApp::~GameApp()
 {
-}
-
-void GameApp::RegisterEvents(EventHandler& eventHandler)
-{
-// 	static float angleX_1 = 0.0f;
-// 	static float angleY_1 = 0.0f;
-// 
-
-// 
-// 	static float pitch = 0;
-// 	static float yaw = 0;
-// 
-//  	static Vector3D upVec(0.0f, (speed * deltaT), 0.0f);
-//  	static Vector3D downVec(0.0f, (-speed * deltaT), 0.0f);
-// 
-// 	Functor<void, const Event&> keyEvent([this](const Event& evt)
-// 	{
-// 		if (evt.mInfo.mEventType == EEventType::Key)
-// 		{
-// 			if (evt.mKeyEvent.mKey == Win32KeyCode::Key_Q)
-// 			{
-// 				SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
-// 				Vector3D newPos = sceneCam.GetPositionVec();
-// 				newPos = newPos + upVec;
-// 				sceneCam.SetPosition(newPos);
-// 			}
-// 			else if (evt.mKeyEvent.mKey == Win32KeyCode::Key_E)
-// 			{
-// 				SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
-// 				Vector3D newPos = sceneCam.GetPositionVec();
-// 				newPos = newPos + downVec;
-// 				sceneCam.SetPosition(newPos);
-// 			}
-// 		}
-// 	});
-// 	eventHandler.RegisterForEvent(EEventType::Key, keyEvent);
-// 
-// 	Functor<void, const Event&> mouseEvent([this](const Event& event)
-// 	{
-// 		static float pitch = 0;
-// 		static float yaw = 0;
-// 
-// 		const float sens = 0.05f;
-// 
-// 		if (event.mInfo.mEventSubType == EMouseEventType::Mouse_Move)
-// 		{
-// 			GetWindow()->ResetCursorToCenter();
-// 
-// 			float posX = static_cast<float>(event.mMouseEvent.mPosX);
-// 			float posY = static_cast<float>(event.mMouseEvent.mPosY);
-// 
-// 			float halfWidth = GetWindow()->GetDimensions().X() / 2;
-// 			float halfHeight = GetWindow()->GetDimensions().Y() / 2;
-// 
-// 			float xPosOffset = posX - halfWidth;
-// 			float yPosOffset = halfHeight - posY;
-// 
-// 			xPosOffset *= sens;
-// 			yPosOffset *= sens;
-// 
-// 			yaw += xPosOffset;
-// 			pitch += yPosOffset;
-// 
-// 			// #TODO(Josh) move glm::radians into somewhere more better.
-// 			float newDirX = std::cos(glm::radians(pitch)) * std::cos(glm::radians(yaw));
-// 			float newDirY = std::sin(glm::radians(pitch));
-// 			float newDirZ = std::cos(glm::radians(pitch)) * std::sin(glm::radians(yaw));
-// 
-// 			Vector3D newDir(newDirX, newDirY, newDirZ);
-// 			newDir.Normalize();
-// 			RZE_Engine::Get()->GetSceneCamera().SetDirection(newDir);
-// 		}
-// 	});
-	//eventHandler.RegisterForEvent(EEventType::Mouse, mouseEvent);
 }
 
 void GameApp::RegisterInputEvents(InputHandler& inputHandler)
@@ -160,10 +87,47 @@ void GameApp::RegisterInputEvents(InputHandler& inputHandler)
 		}
 	});
 
+	Functor<void, const Vector3D&> mouseMoveFunc([this](const Vector3D& pos)
+	{
+		static float pitch = 0;
+		static float yaw = 0;
+		 
+		const float sens = 0.25f;
+		 
+		GetWindow()->ResetCursorToCenter();
+		 
+		float posX = static_cast<float>(pos.X());
+		float posY = static_cast<float>(pos.Y());
+		 
+		float halfWidth = GetWindow()->GetDimensions().X() / 2;
+		float halfHeight = GetWindow()->GetDimensions().Y() / 2;
+		 
+		float xPosOffset = posX - halfWidth;
+		float yPosOffset = halfHeight - posY;
+		 
+		xPosOffset *= sens;
+		yPosOffset *= sens;
+		 
+		yaw += xPosOffset;
+		pitch += yPosOffset;
+		 
+		// #TODO(Josh) move glm::radians into somewhere more better.
+		float newDirX = std::cos(glm::radians(pitch)) * std::cos(glm::radians(yaw));
+		float newDirY = std::sin(glm::radians(pitch));
+		float newDirZ = std::cos(glm::radians(pitch)) * std::sin(glm::radians(yaw));
+		 
+		Vector3D newDir(newDirX, newDirY, newDirZ);
+		newDir.Normalize();
+		RZE_Engine::Get()->GetSceneCamera().SetDirection(newDir);
+
+	});
+
 	inputHandler.BindAction(Win32KeyCode::Key_W, EButtonState::ButtonState_Hold, forwardFunc);
 	inputHandler.BindAction(Win32KeyCode::Key_S, EButtonState::ButtonState_Hold, backwardFunc);
 	inputHandler.BindAction(Win32KeyCode::Key_A, EButtonState::ButtonState_Hold, leftFunc);
 	inputHandler.BindAction(Win32KeyCode::Key_D, EButtonState::ButtonState_Hold, rightFunc);
+
+	//inputHandler.BindAxis(EAxisBinding::AxisBinding_Mouse, EAxisType::AxisType_Vector, mouseMoveFunc);
 }
 
 void GameApp::Start()
