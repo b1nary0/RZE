@@ -51,7 +51,7 @@ public:
 
 	void Initialize();
 
-	void TestBindAction(Int32 keyCode, EButtonState::T buttonState, Functor<void, const InputKey&> func);
+	void BindAction(Int32 keyCode, EButtonState::T buttonState, Functor<void, const InputKey&> func);
 
 	void OnKeyDown(const Int32 key, bool bIsRepeat);
 	void OnKeyUp(const Int32 key);

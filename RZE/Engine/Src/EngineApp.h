@@ -44,6 +44,7 @@ public:
 	virtual void ShutDown() override;
 
 	virtual void RegisterEvents(EventHandler& eventHandler);
+	virtual void RegisterInputEvents(InputHandler& inputHandler);
 
 protected:
 

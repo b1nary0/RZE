@@ -107,7 +107,10 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
 // 		}
 // 	});
 	//eventHandler.RegisterForEvent(EEventType::Mouse, mouseEvent);
-	
+}
+
+void GameApp::RegisterInputEvents(InputHandler& inputHandler)
+{
 	Functor<void, const InputKey&> forwardFunc([this](const InputKey& key)
 	{
 		if (!mIsCameraStartSequence)
@@ -156,10 +159,10 @@ void GameApp::RegisterEvents(EventHandler& eventHandler)
 		}
 	});
 
-	RZE_Engine::Get()->TestGetInputHandler().TestBindAction(Win32KeyCode::Key_W, EButtonState::ButtonState_Hold, forwardFunc);
-	RZE_Engine::Get()->TestGetInputHandler().TestBindAction(Win32KeyCode::Key_S, EButtonState::ButtonState_Hold, backwardFunc);
-	RZE_Engine::Get()->TestGetInputHandler().TestBindAction(Win32KeyCode::Key_A, EButtonState::ButtonState_Hold, leftFunc);
-	RZE_Engine::Get()->TestGetInputHandler().TestBindAction(Win32KeyCode::Key_D, EButtonState::ButtonState_Hold, rightFunc);
+	inputHandler.BindAction(Win32KeyCode::Key_W, EButtonState::ButtonState_Hold, forwardFunc);
+	inputHandler.BindAction(Win32KeyCode::Key_S, EButtonState::ButtonState_Hold, backwardFunc);
+	inputHandler.BindAction(Win32KeyCode::Key_A, EButtonState::ButtonState_Hold, leftFunc);
+	inputHandler.BindAction(Win32KeyCode::Key_D, EButtonState::ButtonState_Hold, rightFunc);
 }
 
 void GameApp::Start()

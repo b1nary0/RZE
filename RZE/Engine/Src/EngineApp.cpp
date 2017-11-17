@@ -61,3 +61,7 @@ Win32Window* const RZE_Game::GetWindow() const
 void RZE_Game::RegisterEvents(EventHandler& eventHandler)
 {
 }
+
+void RZE_Game::RegisterInputEvents(InputHandler& inputHandler)
+{
+}

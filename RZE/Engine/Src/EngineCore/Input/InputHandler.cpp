@@ -23,7 +23,7 @@ void InputHandler::Initialize()
 	}
 }
 
-void InputHandler::TestBindAction(Int32 keyCode, EButtonState::T buttonState, Functor<void, const InputKey&> func)
+void InputHandler::BindAction(Int32 keyCode, EButtonState::T buttonState, Functor<void, const InputKey&> func)
 {
 	KeyboardActionBinding actionBinding;
 	actionBinding.ActionName = "Test";

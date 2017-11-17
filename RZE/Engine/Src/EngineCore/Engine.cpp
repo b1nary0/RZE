@@ -231,8 +231,10 @@ void RZE_Engine::RegisterInputEvents()
 		}
 	});
 
-	mInputHandler.TestBindAction(Win32KeyCode::Escape, EButtonState::ButtonState_Pressed, inputFunc);
-	mInputHandler.TestBindAction(Win32KeyCode::F1, EButtonState::ButtonState_Pressed, inputFunc);
+	mInputHandler.BindAction(Win32KeyCode::Escape, EButtonState::ButtonState_Pressed, inputFunc);
+	mInputHandler.BindAction(Win32KeyCode::F1, EButtonState::ButtonState_Pressed, inputFunc);
+
+
 }
 
 void RZE_Engine::LoadEngineConfig()
