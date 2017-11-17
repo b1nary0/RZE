@@ -167,6 +167,8 @@ void RZE_Engine::CreateAndInitializeWindow()
 	mMainWindow = new Win32Window(params);
 	AssertNotNull(mMainWindow);
 
+	mMainWindow->RegisterEvents(mEventHandler);
+
 	mMainWindow->ResetCursorToCenter();
 }
 
@@ -206,6 +208,7 @@ void RZE_Engine::RegisterWindowEvents()
 			U16 width = event.mWindowEvent.mSizeX;
 			U16 height = event.mWindowEvent.mSizeY;
 			mRenderer->ResizeCanvas(Vector2D(width, height));
+			DebugServices::HandleScreenResize(Vector2D(width, height));
 		}
 	});
 	mEventHandler.RegisterForEvent(EEventType::Window, windowCallback);

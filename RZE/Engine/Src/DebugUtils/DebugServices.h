@@ -23,6 +23,8 @@ public:
 	static void Initialize();
 	static void Display();
 
+	static void HandleScreenResize(const Vector2D& windowSize);
+
 private:
 	static void RenderLog();
 	static void RenderData();

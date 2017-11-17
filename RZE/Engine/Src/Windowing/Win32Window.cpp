@@ -274,6 +274,17 @@ void Win32Window::InternalSetWindowSize(const Vector2D& size)
 	::SetWindowPos(mOSWindowHandleData.windowHandle, nullptr, static_cast<int>(mPos.X()), static_cast<int>(mPos.Y()), static_cast<int>(size.X()), static_cast<int>(size.Y()), SWP_NOSIZE | SWP_NOZORDER);
 }
 
+void Win32Window::RegisterEvents(EventHandler& eventHandler)
+{
+	Functor<void, const Event&> windowResizeCallback([this](const Event& evt)
+	{
+		mDimensions.SetX(evt.mWindowEvent.mSizeX);
+		mDimensions.SetY(evt.mWindowEvent.mSizeY);
+	});
+
+	eventHandler.RegisterForEvent(EEventType::Window, windowResizeCallback);
+}
+
 LRESULT CALLBACK WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp)
 {
 	// @unfinished - check for values of msg possibly needed

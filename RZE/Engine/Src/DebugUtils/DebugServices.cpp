@@ -51,6 +51,14 @@ void DebugServices::Display()
 	RenderData();
 }
 
+void DebugServices::HandleScreenResize(const Vector2D& windowSize)
+{
+	ImGuiIO& io = ImGui::GetIO();
+	
+	io.DisplaySize.x = windowSize.X();
+	io.DisplaySize.y = windowSize.Y();
+}
+
 void DebugServices::RenderLog()
 {
 	ImGui::Begin("Log", nullptr, ImVec2(500, 250));

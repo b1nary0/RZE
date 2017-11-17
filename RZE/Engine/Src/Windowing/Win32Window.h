@@ -57,6 +57,8 @@ public:
 
 	const OSWindowHandleData& GetOSWindowHandleData() const;
 
+	void RegisterEvents(EventHandler& eventHandler);
+
 protected:
 
 private:
@@ -68,6 +70,7 @@ private:
 	void InternalSetWindowPosition(const Vector2D& pos);
 
 	void InternalSetWindowSize(const Vector2D& size);
+
 
 	OSWindowHandleData mOSWindowHandleData;
 	WindowCreationParams mCreationData;
