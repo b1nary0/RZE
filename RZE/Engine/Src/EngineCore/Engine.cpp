@@ -307,6 +307,11 @@ FontHandler& RZE_Engine::GetFontHandler()
 	return mFontHandler;
 }
 
+const Vector2D& RZE_Engine::GetMainWindowSize() const
+{
+	return mMainWindow->GetDimensions();
+}
+
 void RZE_Engine::SetCursorEnabled(bool enabled)
 {
 	if (mMainWindow)

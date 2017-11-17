@@ -50,6 +50,8 @@ public:
 
 	InputHandler&		TestGetInputHandler() { return mInputHandler; }
 
+	const Vector2D& GetMainWindowSize() const;
+
 	void SetCursorEnabled(bool enabled);
 
 private:

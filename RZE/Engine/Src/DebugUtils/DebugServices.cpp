@@ -75,7 +75,7 @@ void DebugServices::RenderLog()
 
 void DebugServices::RenderData()
 {
-	ImGui::SetNextWindowPos(ImVec2(RZE_Engine::Get()->GetWindowSettings().GetDimensions().X() - 265, 50));
+	ImGui::SetNextWindowPos(ImVec2(RZE_Engine::Get()->GetMainWindowSize().X() - 280, 50));
 	ImGui::SetNextWindowSize(ImVec2(250, 100));
 	ImGui::Begin("Data");
 
