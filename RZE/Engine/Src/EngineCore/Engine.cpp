@@ -84,7 +84,7 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 			DebugServices::AddData(StringUtils::FormatString("Update Time: %f ms", updateTime), Vector3D(0.0f, 1.0f, 0.0f));
 			DebugServices::AddData(StringUtils::FormatString("Render Time: %f ms", renderTimer.GetElapsed<float>() * 1000.0f), Vector3D(0.0f, 1.0f, 0.0f));
 
-			DebugServices::Display();
+			DebugServices::Display(GetMainWindowSize());
 
 			ImGui::Render();
 			mMainWindow->BufferSwap(); // #TODO(Josh) Maybe this can be done better

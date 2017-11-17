@@ -3,8 +3,6 @@
 
 #include <imGUI/imgui.h>
 
-#include <EngineCore/Engine.h>
-
 std::deque<DebugServices::LogEntry> DebugServices::mLogEntries;
 std::vector<DebugServices::LogEntry> DebugServices::mDataEntries;
 
@@ -45,10 +43,10 @@ void DebugServices::Initialize()
 
 }
 
-void DebugServices::Display()
+void DebugServices::Display(const Vector2D& windowSize)
 {
-	RenderLog();
-	RenderData();
+	RenderLog(windowSize);
+	RenderData(windowSize);
 }
 
 void DebugServices::HandleScreenResize(const Vector2D& windowSize)
@@ -59,7 +57,7 @@ void DebugServices::HandleScreenResize(const Vector2D& windowSize)
 	io.DisplaySize.y = windowSize.Y();
 }
 
-void DebugServices::RenderLog()
+void DebugServices::RenderLog(const Vector2D& windowSize)
 {
 	ImGui::Begin("Log", nullptr, ImVec2(500, 250));
 
@@ -73,9 +71,9 @@ void DebugServices::RenderLog()
 	ImGui::End();
 }
 
-void DebugServices::RenderData()
+void DebugServices::RenderData(const Vector2D& windowSize)
 {
-	ImGui::SetNextWindowPos(ImVec2(RZE_Engine::Get()->GetMainWindowSize().X() - 280, 50));
+	ImGui::SetNextWindowPos(ImVec2(windowSize.X() - 280, 50));
 	ImGui::SetNextWindowSize(ImVec2(250, 100));
 	ImGui::Begin("Data");
 
