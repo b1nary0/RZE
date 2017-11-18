@@ -70,6 +70,8 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 
 		float prevFrameTime = 1.0f;
 		float curFrameTime = 1.0f;
+		float accumulator = 0.0f;
+		const float kMaxDeltaTime = 1/144.0f;
 
 		float updateTime = 0.0f;
 		float renderTime = 0.0f;
@@ -82,17 +84,22 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 		{
 			prevFrameTime = curFrameTime;
 			curFrameTime = frameTimer.GetElapsed<float>();
-
 			mDeltaTime = curFrameTime - prevFrameTime;
+			accumulator += mDeltaTime;
 
 			++mFrameCount;
 
 			ImGui::NewFrame();
 
 			{
-				updateTimer.Start();
-				Update();
-				updateTimer.Stop();
+				while (accumulator >= kMaxDeltaTime)
+				{
+					updateTimer.Start();
+					Update();
+					updateTimer.Stop();
+
+					accumulator = std::fmod(accumulator, kMaxDeltaTime);
+				}
 
 				renderTimer.Start();
 				mRenderer->Render();

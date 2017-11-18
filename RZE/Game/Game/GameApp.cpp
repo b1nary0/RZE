@@ -91,7 +91,7 @@ void GameApp::RegisterInputEvents(InputHandler& inputHandler)
 		static float pitch = 0;
 		static float yaw = 0;
 		 
-		const float sens = 0.25f;
+		const float sens = 0.075f;
 		 
 		GetWindow()->ResetCursorToCenter();
 		 
