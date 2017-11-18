@@ -16,7 +16,9 @@ public:
 	template <typename TCast>
 	TCast GetElapsed()
 	{
-		return duration_cast<duration<TCast>>(mElapsedTime).count();
+		high_resolution_clock::time_point endTime = high_resolution_clock::now();
+
+		return duration_cast<duration<TCast>>(endTime - mStartTime).count();
 	}
 
 private:

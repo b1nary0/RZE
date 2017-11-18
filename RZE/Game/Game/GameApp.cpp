@@ -36,8 +36,7 @@ GameApp::~GameApp()
 
 void GameApp::RegisterInputEvents(InputHandler& inputHandler)
 {
-	static float speed = 25.0f;
-	static float deltaT = (1.0f / 60.0f);
+	static float speed = 50.0f;
 
 	Functor<void, const InputKey&> forwardFunc([this](const InputKey& key)
 	{
@@ -46,7 +45,7 @@ void GameApp::RegisterInputEvents(InputHandler& inputHandler)
 			AssertExpr(key.GetKeyCode() == Win32KeyCode::Key_W);
 			SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
 			Vector3D newPos = sceneCam.GetPositionVec();
-			newPos += sceneCam.GetDirectionVec() * speed * deltaT;
+			newPos += sceneCam.GetDirectionVec() * speed * RZE_Engine::Get()->GetDeltaTime();
 			sceneCam.SetPosition(newPos);
 		}
 	});
@@ -58,7 +57,7 @@ void GameApp::RegisterInputEvents(InputHandler& inputHandler)
 			AssertExpr(key.GetKeyCode() == Win32KeyCode::Key_S);
 			SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
 			Vector3D newPos = sceneCam.GetPositionVec();
-			newPos -= sceneCam.GetDirectionVec() * speed * deltaT;
+			newPos -= sceneCam.GetDirectionVec() * speed * RZE_Engine::Get()->GetDeltaTime();
 			sceneCam.SetPosition(newPos);
 		}
 	});
@@ -70,7 +69,7 @@ void GameApp::RegisterInputEvents(InputHandler& inputHandler)
 			AssertExpr(key.GetKeyCode() == Win32KeyCode::Key_A);
 			SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
 			Vector3D newPos = sceneCam.GetPositionVec();
-			newPos -= sceneCam.GetDirectionVec().Cross(sceneCam.GetUpVec()).Normalize() * speed * deltaT;
+			newPos -= sceneCam.GetDirectionVec().Cross(sceneCam.GetUpVec()).Normalize() * speed * RZE_Engine::Get()->GetDeltaTime();
 			sceneCam.SetPosition(newPos);
 		}
 	});
@@ -82,7 +81,7 @@ void GameApp::RegisterInputEvents(InputHandler& inputHandler)
 			AssertExpr(key.GetKeyCode() == Win32KeyCode::Key_D);
 			SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
 			Vector3D newPos = sceneCam.GetPositionVec();
-			newPos += sceneCam.GetDirectionVec().Cross(sceneCam.GetUpVec()).Normalize() * speed * deltaT;
+			newPos += sceneCam.GetDirectionVec().Cross(sceneCam.GetUpVec()).Normalize() * speed * RZE_Engine::Get()->GetDeltaTime();
 			sceneCam.SetPosition(newPos);
 		}
 	});
@@ -169,7 +168,7 @@ void GameApp::Update()
 	const Vector3D& camPos = RZE_Engine::Get()->GetSceneCamera().GetPositionVec();
 	if (VectorUtils::DistanceSq(camPos, cameraStartPos) > 0.025f && mIsCameraStartSequence)
 	{
-		RZE_Engine::Get()->GetSceneCamera().SetPosition(VectorUtils::Lerp(camPos, cameraStartPos, 0.040f));
+		RZE_Engine::Get()->GetSceneCamera().SetPosition(VectorUtils::Lerp(camPos, cameraStartPos, RZE_Engine::Get()->GetDeltaTime()));
 	}
 	else if (mIsCameraStartSequence)
 	{

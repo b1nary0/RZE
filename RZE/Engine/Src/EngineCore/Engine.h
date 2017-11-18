@@ -2,6 +2,8 @@
 
 #include <EngineApp.h>
 
+#include <RZE_Config.h>
+
 #include <EngineCore/Platform/File.h>
 
 // @todo:josh this is where the weird include-before issue is
@@ -50,6 +52,8 @@ public:
 
 	const Vector2D& GetMainWindowSize() const;
 
+	inline float GetDeltaTime() const { return mDeltaTime; }
+
 	void SetCursorEnabled(bool enabled);
 
 private:
@@ -79,6 +83,9 @@ private:
 	inline void SetDisplayDebugServices(bool bShouldDisplay) { bDisplayDebugServices = bShouldDisplay; }
 	inline bool ShouldDisplayDebugServices() { return bDisplayDebugServices; }
 
+	float CalculateAvgFPS(float prevElapsed);
+
+private:
 	RZE_Game* mApplication;
 	GameWorld* mWorld;
 
@@ -91,6 +98,13 @@ private:
 	FontHandler mFontHandler;
 
 	EngineConfig* mEngineConfig;
+
+	// FPS calculation
+	int mFrameCount;
+	float mFPSSamples[MAX_FPS_SAMPLES];
+
+	// #TODO(Josh) Move this. Think about loop encapsulation and organization
+	float mDeltaTime;
 
 	bool bIsInitialized;
 	bool bShouldExit;

@@ -40,6 +40,13 @@ RZE_Engine::RZE_Engine()
 	bShouldExit = false;
 	bIsInitialized = false;
 	bDisplayDebugServices = false;
+
+	mFrameCount = 0;
+
+	for (int i = 0; i < MAX_FPS_SAMPLES; ++i)
+	{
+		mFPSSamples[i] = 0;
+	}
 }
 
 RZE_Engine::~RZE_Engine()
@@ -57,12 +64,23 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 		AssertNotNull(createGameCallback);
 		PostInit(createGameCallback);
 
-		static int frameCount = 0;
-
 		HiResTimer updateTimer;
 		HiResTimer renderTimer;
+		HiResTimer frameTimer;
+
+		float prevFrameTime = 1.0f;
+		float curFrameTime = 1.0f;
+
+		frameTimer.Start();
 		while (!bShouldExit)
 		{
+			prevFrameTime = curFrameTime;
+			curFrameTime = frameTimer.GetElapsed<float>();
+
+			mDeltaTime = curFrameTime - prevFrameTime;
+
+			++mFrameCount;
+
 			ImGui::NewFrame();
 
 			updateTimer.Start();
@@ -73,17 +91,13 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 			mRenderer->Render();
 			renderTimer.Stop();
 
-			++frameCount;
+			float fps = CalculateAvgFPS(mDeltaTime);
+			float updateTime = updateTimer.GetElapsed<float>() * 1000.0f;
+			float renderTime = renderTimer.GetElapsed<float>() * 1000.0f;
 
-			float updateTime = updateTimer.GetElapsed<float>() * 1000;
-			if (frameCount > 1000)
-			{
-				updateTime = updateTimer.GetElapsed<float>() * 1000;
-				frameCount = 0;
-			}
-
+			DebugServices::AddData(StringUtils::FormatString("FPS: %i", static_cast<int>(fps)), Vector3D(0.0f, 1.0f, 0.0f));
 			DebugServices::AddData(StringUtils::FormatString("Update Time: %f ms", updateTime), Vector3D(0.0f, 1.0f, 0.0f));
-			DebugServices::AddData(StringUtils::FormatString("Render Time: %f ms", renderTimer.GetElapsed<float>() * 1000.0f), Vector3D(0.0f, 1.0f, 0.0f));
+			DebugServices::AddData(StringUtils::FormatString("Render Time: %f ms", renderTime), Vector3D(0.0f, 1.0f, 0.0f));
 
 			if (ShouldDisplayDebugServices())
 			{
@@ -91,8 +105,10 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 			}
 
 			ImGui::Render();
+			
 			mMainWindow->BufferSwap(); // #TODO(Josh) Maybe this can be done better
 		}
+		frameTimer.Stop();
 
 		BeginShutDown();
 	}
@@ -191,6 +207,20 @@ void RZE_Engine::InitGame(Functor<RZE_Game* const> createGameCallback)
 
 	mApplication->RegisterEvents(mEventHandler);
 	mApplication->RegisterInputEvents(mInputHandler);
+}
+
+float RZE_Engine::CalculateAvgFPS(float prevElapsed)
+{
+	mFPSSamples[mFrameCount % MAX_FPS_SAMPLES] = 1.0f / prevElapsed;
+	float fps = 0.0f;
+	for (int frameSampleIdx = 0; frameSampleIdx < MAX_FPS_SAMPLES; frameSampleIdx++)
+	{
+		fps += mFPSSamples[frameSampleIdx];
+	}
+
+	fps /= MAX_FPS_SAMPLES;
+
+	return fps;
 }
 
 void RZE_Engine::CompileEvents()
