@@ -71,6 +71,12 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 		float prevFrameTime = 1.0f;
 		float curFrameTime = 1.0f;
 
+		float updateTime = 0.0f;
+		float renderTime = 0.0f;
+		float deltaTimeStat = 0.0f;
+		float fps = 0.0f;
+		bool bUpdateFrameStats = false;
+
 		frameTimer.Start();
 		while (!bShouldExit)
 		{
@@ -83,19 +89,27 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 
 			ImGui::NewFrame();
 
-			updateTimer.Start();
-			Update();
-			updateTimer.Stop();
+			{
+				updateTimer.Start();
+				Update();
+				updateTimer.Stop();
 
-			renderTimer.Start();
-			mRenderer->Render();
-			renderTimer.Stop();
+				renderTimer.Start();
+				mRenderer->Render();
+				renderTimer.Stop();
+			}
 
-			float fps = CalculateAvgFPS(mDeltaTime);
-			float updateTime = updateTimer.GetElapsed<float>() * 1000.0f;
-			float renderTime = renderTimer.GetElapsed<float>() * 1000.0f;
+			bUpdateFrameStats = mFrameCount % 5 == 0;
+			if (bUpdateFrameStats)
+			{
+				fps = CalculateAvgFPS(mDeltaTime);
+				updateTime = updateTimer.GetElapsed<float>() * 1000.0f;
+				renderTime = renderTimer.GetElapsed<float>() * 1000.0f;
+				deltaTimeStat = mDeltaTime;
+			}
 
 			DebugServices::AddData(StringUtils::FormatString("FPS: %i", static_cast<int>(fps)), Vector3D(0.0f, 1.0f, 0.0f));
+			DebugServices::AddData(StringUtils::FormatString("Frame Time: %f ms", deltaTimeStat * 1000.0f), Vector3D(0.0f, 1.0f, 0.0f));
 			DebugServices::AddData(StringUtils::FormatString("Update Time: %f ms", updateTime), Vector3D(0.0f, 1.0f, 0.0f));
 			DebugServices::AddData(StringUtils::FormatString("Render Time: %f ms", renderTime), Vector3D(0.0f, 1.0f, 0.0f));
 
