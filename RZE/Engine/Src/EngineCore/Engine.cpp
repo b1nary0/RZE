@@ -71,7 +71,7 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 		float prevFrameTime = 1.0f;
 		float curFrameTime = 1.0f;
 		float accumulator = 0.0f;
-		const float kMaxDeltaTime = 1/144.0f;
+		const float kMaxDeltaTime = 1/240.0f;
 
 		float updateTime = 0.0f;
 		float renderTime = 0.0f;
@@ -98,7 +98,7 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 					Update();
 					updateTimer.Stop();
 
-					accumulator = std::fmod(accumulator, kMaxDeltaTime);
+					accumulator -= kMaxDeltaTime;
 				}
 
 				renderTimer.Start();
@@ -112,11 +112,11 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 				fps = CalculateAvgFPS(mDeltaTime);
 				updateTime = updateTimer.GetElapsed<float>() * 1000.0f;
 				renderTime = renderTimer.GetElapsed<float>() * 1000.0f;
-				deltaTimeStat = mDeltaTime;
+				deltaTimeStat = mDeltaTime * 1000.0f;
 			}
 
 			DebugServices::AddData(StringUtils::FormatString("FPS: %i", static_cast<int>(fps)), Vector3D(0.0f, 1.0f, 0.0f));
-			DebugServices::AddData(StringUtils::FormatString("Frame Time: %f ms", deltaTimeStat * 1000.0f), Vector3D(0.0f, 1.0f, 0.0f));
+			DebugServices::AddData(StringUtils::FormatString("Frame Time: %f ms", deltaTimeStat), Vector3D(0.0f, 1.0f, 0.0f));
 			DebugServices::AddData(StringUtils::FormatString("Update Time: %f ms", updateTime), Vector3D(0.0f, 1.0f, 0.0f));
 			DebugServices::AddData(StringUtils::FormatString("Render Time: %f ms", renderTime), Vector3D(0.0f, 1.0f, 0.0f));
 
