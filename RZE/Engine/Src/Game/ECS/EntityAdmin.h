@@ -31,6 +31,12 @@ public:
 		return static_cast<TEntity*>(InternalGetEntities().back());
 	}
 
+	template <class TSystem, typename... Args>
+	void AddSystem(Args... args)
+	{
+		InternalAddSystem<TSystem>(args);
+	}
+
 protected:
 	SystemList& InternalGetSystems() { return mSystems; }
 	EntityList& InternalGetEntities() { return mEntities; }
