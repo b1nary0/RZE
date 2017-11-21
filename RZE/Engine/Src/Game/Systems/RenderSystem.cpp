@@ -37,6 +37,10 @@ void RenderSystem::Init()
 
 void RenderSystem::Update()
 {
+}
+
+void RenderSystem::Render()
+{
 	RZE_Renderer* const renderer = mAdmin->GetRenderer();
 	AssertNotNull(renderer);
 
@@ -109,6 +113,8 @@ void RenderSystem::Update()
 
 		renderer->AddLightItem(lightItem);
 	}
+
+	renderer->Render();
 }
 
 void RenderSystem::ShutDown()

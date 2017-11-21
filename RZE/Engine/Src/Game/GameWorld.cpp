@@ -19,7 +19,6 @@ GameWorld::~GameWorld()
 void GameWorld::InitSystems()
 {
 	InternalAddSystem<RenderSystem>(this);
-	InternalAddSystem<MovementSystem>(this);
 
 	//@todo:josh this is dumb and purely just to get shit working. needs to be re-thought
 	for (auto& system : InternalGetSystems())
@@ -49,6 +48,14 @@ void GameWorld::Update()
 	for (auto& system : GetSystems())
 	{
 		system->Update();
+	}
+}
+
+void GameWorld::Render()
+{
+	for (auto& system : GetSystems())
+	{
+		system->Render();
 	}
 }
 

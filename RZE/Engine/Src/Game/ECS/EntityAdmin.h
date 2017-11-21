@@ -16,6 +16,7 @@ protected:
 public:
 	virtual void Init() = 0;
 	virtual void Update() = 0;
+	virtual void Render() = 0;
 	virtual void ShutDown() = 0;
 
 	virtual RZE_Renderer* const GetRenderer() const = 0;
