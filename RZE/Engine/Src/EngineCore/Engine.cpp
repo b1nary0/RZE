@@ -71,7 +71,7 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 		float prevFrameTime = 1.0f;
 		float curFrameTime = 1.0f;
 		float accumulator = 0.0f;
-		const float kMaxDeltaTime = 1/120.0f;
+		const float kMaxDeltaTime = 1/240.0f;
 
 		float updateTime = 0.0f;
 		float renderTime = 0.0f;
@@ -102,7 +102,7 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 				}
 
 				renderTimer.Start();
-				mWorld->Render();
+				mRenderer->Render();
 				renderTimer.Stop();
 			}
 

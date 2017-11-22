@@ -13,7 +13,6 @@ public:
 
 	virtual void Init() = 0;
 	virtual void Update() = 0;
-	virtual void Render() {}
 	virtual void ShutDown() = 0;
 
 	const ComponentList& GetComponents() { return mComponents; }
