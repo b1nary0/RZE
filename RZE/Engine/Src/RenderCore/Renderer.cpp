@@ -265,7 +265,7 @@ RZE_Renderer::RZE_Renderer()
 
 void RZE_Renderer::AddRenderItem(const RenderItemProtocol& itemProtocol)
 {
-	mRenderList.push(itemProtocol);
+	mRenderList.push_back(itemProtocol);
 }
 
 void RZE_Renderer::AddLightItem(const LightItemProtocol& itemProtocol)
@@ -283,15 +283,18 @@ void RZE_Renderer::Render()
 	const OpenGLRHI& openGL = OpenGLRHI::Get();
 	openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
 
-	while (!mRenderList.empty())
+	for (auto& item : mRenderList)
 	{
-		RenderItemProtocol& itemProtocol = mRenderList.front();
-		RenderSingleItem(itemProtocol);
-		mRenderList.pop();
+		RenderSingleItem(item);
 	}
 
-	//RenderUI();
+// 	mLightingList.clear();
+// 	mFontList.clear();
+}
 
+void RZE_Renderer::ClearLists()
+{
+	mRenderList.clear();
 	mLightingList.clear();
 	mFontList.clear();
 }

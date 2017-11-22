@@ -40,6 +40,8 @@ void RenderSystem::Update()
 	RZE_Renderer* const renderer = mAdmin->GetRenderer();
 	AssertNotNull(renderer);
 
+	renderer->ClearLists();
+
 	SceneCamera& renderCam = renderer->GetSceneCamera();
 	renderCam.GenerateProjectionMat();
 	renderCam.GenerateViewMat();

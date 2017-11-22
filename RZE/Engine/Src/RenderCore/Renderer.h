@@ -50,6 +50,8 @@ public:
 
 	void Render();
 
+	void ClearLists();
+
 	void ResizeCanvas(const Vector2D& newSize);
 
 	SceneCamera& GetSceneCamera();
@@ -60,7 +62,7 @@ private:
 private:
 	SceneCamera* mSceneCamera;
 
-	std::queue<RenderItemProtocol> mRenderList;
+	std::vector<RenderItemProtocol> mRenderList;
 	std::vector<LightItemProtocol> mLightingList;
 	std::vector<FontItemProtocol>  mFontList;
 
