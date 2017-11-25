@@ -1,0 +1,17 @@
+Engine (RZE)
+	-> Subsystem Manager
+		-> Render System
+		-> Input System
+		-> GameObject System
+		
+	-> Asset Manager
+	
+Renderer (Diotima)
+
+Input (UNNAMED)
+
+Audio (UNNAMED)
+
+GameObject System (UNNAMED)
+
+Utils (UNNAMED)

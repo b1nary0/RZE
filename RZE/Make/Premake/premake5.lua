@@ -106,6 +106,68 @@ workspace "RZE"
 				SourceDir .. "**.cpp"
 			}
 		 } 
+		 
+		 --
+	--
+	-- DIOTIMA
+	--
+	--
+	 project "Diotima"
+		local EngineDir = RootDir .. "Engine/"
+		local ProjectDir = RootDir .. "Modules/Diotima/"
+		local SourceDir = ProjectDir .. "Src/"
+		local IncludeDir = EngineDir .. "ThirdParty/Include/"
+		local LibDir = EngineDir .. "ThirdParty/Lib/x86/"
+		
+		kind "StaticLib"
+		language "C++"
+		targetdir (ProjectDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
+		targetname "Diotima"
+		
+		dependson { "Engine" }
+		
+		filter "action:vs*"
+			pchheader = "StdAfx.h"
+			pchsource = "StdAfx.cpp"
+		
+		files
+		{
+			SourceDir .. "**.h",
+			SourceDir .. "**.hpp",
+			SourceDir .. "**.c",
+			SourceDir .. "**.cpp"
+		}
+		
+		includedirs
+		{
+			EngineDir .. "/Src",
+			IncludeDir
+		}
+		
+		libdirs
+		{
+			LibDir,
+			EngineDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
+		}
+		links
+		{
+			"glew32s",
+			"OpenGL32",
+			"RZE_Engine.lib"
+		}
+		
+		filter {}
+		
+		 vpaths 
+		 {
+			["Source Files/*"] = 
+			{ 
+				SourceDir .. "**.h",
+				SourceDir .. "**.hpp",
+				SourceDir .. "**.c",
+				SourceDir .. "**.cpp"
+			}
+		 }
 	
 	--
 	--
