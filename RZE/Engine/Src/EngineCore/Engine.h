@@ -9,6 +9,7 @@
 // @todo:josh this is where the weird include-before issue is
 #include <Events/EventHandler.h>
 
+#include <EngineCore/SubSystemHandler.h>
 #include <EngineCore/Config/EngineConfig.h>
 #include <EngineCore/Input/InputHandler.h>
 #include <EngineCore/Resources/ResourceHandler.h>
@@ -70,6 +71,7 @@ private:
 
 	void CompileEvents();
 
+	void RegisterSubSystems();
 	void RegisterWindowEvents();
 	void RegisterInputEvents();
 
@@ -84,6 +86,10 @@ private:
 	inline bool ShouldDisplayDebugServices() { return bDisplayDebugServices; }
 
 	float CalculateAvgFPS(float prevElapsed);
+
+// BigRevision changes
+private:
+	SubSystemHandler mSubSystemHandler;
 
 private:
 	RZE_Game* mApplication;

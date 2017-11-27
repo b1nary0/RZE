@@ -149,6 +149,8 @@ void RZE_Engine::Init()
 
 		CreateAndInitializeWindow();
 
+		mSubSystemHandler.InitializeSubSystems();
+
 		{
 			OpenGLRHI::OpenGLCreationParams creationParams;
 			creationParams.WindowWidth = static_cast<int>(mMainWindow->GetDimensions().X());
@@ -250,6 +252,10 @@ void RZE_Engine::CompileEvents()
 	mMainWindow->CompileWindowMessages(mEventHandler);
 }
 
+void RZE_Engine::RegisterSubSystems()
+{
+}
+
 void RZE_Engine::RegisterWindowEvents()
 {
 	Functor<void, const Event&> windowCallback([this](const Event& event)
@@ -305,6 +311,8 @@ void RZE_Engine::Update()
 	CompileEvents();
 	mEventHandler.ProcessEvents();
 
+	mSubSystemHandler.UpdateSubSystems();
+
 	mApplication->Update();
 	mWorld->Update();
 }
@@ -317,6 +325,7 @@ void RZE_Engine::BeginShutDown()
 	mResourceHandler.ShutDown();
 
 	// #TODO(Josh) shut down renderer and window, etc
+	mSubSystemHandler.ShutDownSubSystems();
 
 	InternalShutDown();
 }

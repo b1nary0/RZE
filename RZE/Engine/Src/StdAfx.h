@@ -1,5 +1,5 @@
 #pragma once
-#pragma message("*********** Compiling PCH... ***********")
+#pragma message("*********** Compiling Engine PCH... ***********")
 
 // WinAPI
 #include <Windows.h>
@@ -24,12 +24,6 @@
 #include <map>
 #include <queue>
 #include <vector>
-
-// glm
-#include <GLM/glm.hpp>
-#include <GLM/common.hpp>
-#include <GLM/gtc/matrix_transform.hpp>
-#include <GLM/gtc/type_ptr.hpp>
 
 // freetype
 #include <ft2build.h>

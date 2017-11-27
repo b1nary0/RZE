@@ -63,6 +63,8 @@ workspace "RZE"
 		targetdir (ProjectDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
 		targetname "RZE_Engine"
 		
+		dependson { "Utils" }
+		
 		pchheader "StdAfx.h"
 		pchsource "../../Engine/Src/StdAfx.cpp"
 		
@@ -78,12 +80,14 @@ workspace "RZE"
 		{
 			IncludeDir,
 			IncludeDir .. "FreeType/",
+			"../../Utils/Src/",
 			SourceDir
 		}
 		
 		libdirs
 		{
-			LibDir
+			LibDir,
+			("../../Utils/Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
 		}
 		links
 		{
@@ -91,7 +95,8 @@ workspace "RZE"
 			"freetyped",
 			"glew32s",
 			"imgui",
-			"OpenGL32"
+			"OpenGL32",
+			"RZE_Utils"
 		}
 		
 		filter {}
@@ -107,7 +112,7 @@ workspace "RZE"
 			}
 		 } 
 		 
-		 --
+	--
 	--
 	-- DIOTIMA
 	--
@@ -152,8 +157,6 @@ workspace "RZE"
 		}
 		links
 		{
-			"glew32s",
-			"OpenGL32",
 			"RZE_Engine.lib"
 		}
 		
@@ -172,6 +175,62 @@ workspace "RZE"
 	
 	--
 	--
+	-- RZE_Utils
+	--
+	--
+	project "Utils"
+		local EngineDir = RootDir .. "Engine/"
+		local ProjectDir = RootDir .. "Utils/"
+		local SourceDir = ProjectDir .. "Src/Utils/"
+		local IncludeDir = EngineDir .. "ThirdParty/Include/"
+		local LibDir = EngineDir .. "ThirdParty/Lib/x86/"
+		
+		kind "StaticLib"
+		language "C++"
+		targetdir (ProjectDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
+		targetname "RZE_Utils"
+		
+		pchheader = "StdAfx.h"
+		pchsource = (SourceDir .. "StdAfx.cpp")
+		
+		files
+		{
+			SourceDir .. "**.h",
+			SourceDir .. "**.hpp",
+			SourceDir .. "**.c",
+			SourceDir .. "**.cpp"
+		}
+		
+		includedirs
+		{
+			IncludeDir,
+			SourceDir
+		}
+		
+		libdirs
+		{
+			LibDir,
+			EngineDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
+		}
+		links
+		{
+		}
+		
+		filter {}
+		
+		 vpaths 
+		 {
+			["Source Files/*"] = 
+			{ 
+				SourceDir .. "**.h",
+				SourceDir .. "**.hpp",
+				SourceDir .. "**.c",
+				SourceDir .. "**.cpp"
+			}
+		 }
+		 
+	--
+	--
 	-- RZE_GAMEPROJ
 	--
 	--
@@ -187,7 +246,7 @@ workspace "RZE"
 		targetdir (ProjectDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
 		targetname "RZE_Game"
 		
-		dependson { "Engine" }
+		dependson { "Engine", "Utils"}
 		
 		filter "action:vs*"
 			pchheader = "StdAfx.h"
@@ -203,7 +262,8 @@ workspace "RZE"
 		
 		includedirs
 		{
-			EngineDir .. "/Src",
+			EngineDir .. "/Src/",
+			RootDir .. "/Utils/Src/Utils",
 			IncludeDir,
 			IncludeDir .. "FreeType/"
 		}
@@ -215,12 +275,8 @@ workspace "RZE"
 		}
 		links
 		{
-			"assimp",
-			"freetyped",
-			"glew32s",
-			"imgui",
-			"OpenGL32",
-			"RZE_Engine.lib"
+			"RZE_Engine",
+			"RZE_Utils"
 		}
 		
 		filter {}

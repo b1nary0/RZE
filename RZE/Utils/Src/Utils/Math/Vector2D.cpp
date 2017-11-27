@@ -1,6 +1,6 @@
-#include "StdAfx.h"
+#include <StdAfx.h>
 
-#include "Vector2D.h"
+#include <Math/Vector2D.h>
 
 Vector2D::Vector2D()
 	: mVec(0.0f)

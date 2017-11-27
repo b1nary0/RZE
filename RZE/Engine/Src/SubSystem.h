@@ -2,7 +2,7 @@
 
 class ISubSystem
 {
-	friend class RZE_Engine;
+	friend class SubSystemHandler;
 
 private:
 	virtual void Initialize() = 0;
