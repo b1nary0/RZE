@@ -1,5 +1,1 @@
 #pragma once
-
-namespace Diotima
-{
-}

@@ -141,6 +141,7 @@ workspace "RZE"
 		includedirs
 		{
 			EngineDir .. "/Src",
+			SourceDir,
 			IncludeDir
 		}
 		
