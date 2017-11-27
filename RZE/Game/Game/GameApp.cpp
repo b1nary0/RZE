@@ -178,21 +178,18 @@ void GameApp::Update()
 
 void GameApp::CreateTextureQuad(const ResourceHandle& meshHandle, const ResourceHandle& textureHandle)
 {
-	for (int i = 0; i < 50; ++i)
-	{
-		GameEntity* entity = RZE_Engine::Get()->GetWorld().AddEntity<GameEntity>("TextureQuad");
+	GameEntity* entity = RZE_Engine::Get()->GetWorld().AddEntity<GameEntity>("TextureQuad");
 
-		MeshComponent* const meshComp = entity->AddComponent<MeshComponent>();
-		meshComp->SetMeshHandle(meshHandle);
-		meshComp->SetTextureHandle(textureHandle);
-		meshComp->SetShaderGroup(mTextureShader);
+	MeshComponent* const meshComp = entity->AddComponent<MeshComponent>();
+	meshComp->SetMeshHandle(meshHandle);
+	meshComp->SetTextureHandle(textureHandle);
+	meshComp->SetShaderGroup(mTextureShader);
 
-		TransformComponent* const transfComp = entity->AddComponent<TransformComponent>();
-		transfComp->SetPosition(Vector3D(0.0f, 2.0f, -3.0f));
-		transfComp->SetScale(Vector3D(4.0f, 3.0f, 0.0f));
+	TransformComponent* const transfComp = entity->AddComponent<TransformComponent>();
+	transfComp->SetPosition(Vector3D(0.0f, 2.0f, -3.0f));
+	transfComp->SetScale(Vector3D(4.0f, 3.0f, 0.0f));
 
-		mEntities.push_back(entity);
-	}
+	mEntities.push_back(entity);
 }
 
 void GameApp::CreateLight(const ResourceHandle& resourceHandle)
