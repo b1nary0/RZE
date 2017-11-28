@@ -11,6 +11,6 @@ int main(void)
 
     RZE_Engine::Get()->Run(gameCreateFunc);
 
-	//getchar();
+	getchar();
 	return 0;
 }

@@ -6,6 +6,8 @@
 #include <DebugUtils/Debug.h>
 #include <DebugUtils/DebugServices.h>
 
+#include <Diotima/RenderSystem.h>
+
 #include <Game/GameWorld.h>
 
 #include <RenderCore/Renderer.h>
@@ -149,6 +151,8 @@ void RZE_Engine::Init()
 
 		CreateAndInitializeWindow();
 
+		RegisterSubSystems();
+
 		mSubSystemHandler.InitializeSubSystems();
 
 		{
@@ -254,6 +258,7 @@ void RZE_Engine::CompileEvents()
 
 void RZE_Engine::RegisterSubSystems()
 {
+	mSubSystemHandler.AddSubSystem<Diotima::RenderSystem>();
 }
 
 void RZE_Engine::RegisterWindowEvents()

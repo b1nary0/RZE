@@ -2,7 +2,9 @@
 
 #include <vector>
 
-#include <SubSystem.h>
+#include <DebugUtils/Debug.h>
+
+#include <Utils/Interfaces/SubSystem.h>
 
 class SubSystemHandler
 {
@@ -20,6 +22,8 @@ public:
 		ISubSystem* subsys = new TSubSystem(std::forward<Args>(args)...);
 		AssertNotNull(subsys);
 		mSubSystems.push_back(subsys);
+
+		return static_cast<TSubSystem*>(subsys);
 	}
 
 private:

@@ -1,4 +1,6 @@
-#include <RenderSystem.h>
+#include <Diotima/RenderSystem.h>
+
+#include <iostream>
 
 namespace Diotima
 {

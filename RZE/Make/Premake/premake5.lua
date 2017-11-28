@@ -64,7 +64,7 @@ workspace "RZE"
 		targetdir (RootDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
 		targetname "RZE_Engine"
 		
-		dependson { "Utils" }
+		dependson { "Diotima", "Utils" }
 		
 		pchheader "StdAfx.h"
 		pchsource "../../Engine/Src/StdAfx.cpp"
@@ -81,7 +81,8 @@ workspace "RZE"
 		{
 			IncludeDir,
 			IncludeDir .. "FreeType/",
-			"../../Utils/Src/",
+			RootDir .. "Utils/Src",
+			RootDir .. "Modules/Diotima/Src/",
 			SourceDir
 		}
 		
@@ -97,7 +98,8 @@ workspace "RZE"
 			"glew32s",
 			"imgui",
 			"OpenGL32",
-			"RZE_Utils"
+			"RZE_Utils",
+			"Diotima"
 		}
 		
 		filter {}
@@ -123,14 +125,15 @@ workspace "RZE"
 		local ProjectDir = RootDir .. "Modules/Diotima/"
 		local SourceDir = ProjectDir .. "Src/"
 		local IncludeDir = EngineDir .. "ThirdParty/Include/"
-		local LibDir = EngineDir .. "ThirdParty/Lib/x86/"
+		local LibDir = RootDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
+		local ThirdPartyLibDir = EngineDir .. "ThirdParty/Lib/x86/"
 		
 		kind "StaticLib"
 		language "C++"
 		targetdir (RootDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
 		targetname "Diotima"
 		
-		dependson { "Engine" }
+		dependson { "Utils" }
 		
 		filter "action:vs*"
 			pchheader = "StdAfx.h"
@@ -147,6 +150,7 @@ workspace "RZE"
 		includedirs
 		{
 			EngineDir .. "/Src",
+			RootDir .. "Utils/Src/",
 			SourceDir,
 			IncludeDir
 		}
@@ -154,11 +158,12 @@ workspace "RZE"
 		libdirs
 		{
 			LibDir,
-			RootDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
+			ThirdPartyLibDir
 		}
 		links
 		{
-			"RZE_Engine.lib"
+			"RZE_Engine",
+			"RZE_Utils"
 		}
 		
 		filter {}
@@ -247,7 +252,7 @@ workspace "RZE"
 		targetdir (RootDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
 		targetname "RZE_Game"
 		
-		dependson { "Engine", "Utils"}
+		dependson { "Engine", "Diotima", "Utils"}
 		
 		filter "action:vs*"
 			pchheader = "StdAfx.h"
@@ -277,7 +282,8 @@ workspace "RZE"
 		links
 		{
 			"RZE_Engine",
-			"RZE_Utils"
+			"RZE_Utils",
+			"Diotima"
 		}
 		
 		filter {}

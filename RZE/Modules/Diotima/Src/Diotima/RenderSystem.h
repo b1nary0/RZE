@@ -1,6 +1,6 @@
 #pragma once
 
-#include <SubSystem.h>
+#include <Utils/Interfaces/SubSystem.h>
 
 namespace Diotima
 {
