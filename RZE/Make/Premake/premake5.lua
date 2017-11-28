@@ -162,7 +162,6 @@ workspace "RZE"
 		}
 		links
 		{
-			"RZE_Engine",
 			"RZE_Utils"
 		}
 		
