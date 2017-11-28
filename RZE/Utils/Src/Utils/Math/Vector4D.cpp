@@ -1,5 +1,5 @@
-#include <StdAfx.h>
-#include <Math/Vector4D.h>
+#include <Utils/StdAfx.h>
+#include <Utils/Math/Vector4D.h>
 
 #include <GLM/vec4.hpp>
 

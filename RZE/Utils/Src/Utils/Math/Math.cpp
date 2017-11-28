@@ -1,5 +1,5 @@
-#include <StdAfx.h>
-#include <Math/Math.h>
+#include <Utils/StdAfx.h>
+#include <Utils/Math/Math.h>
 
 namespace VectorUtils
 {

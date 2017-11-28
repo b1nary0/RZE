@@ -1,5 +1,5 @@
-#include <StdAfx.h>
-#include <Math/Vector3d.h>
+#include <Utils/StdAfx.h>
+#include <Utils/Math/Vector3d.h>
 
 Vector3D::Vector3D()
 	: mVec(0.0f, 0.0f, 0.0f)

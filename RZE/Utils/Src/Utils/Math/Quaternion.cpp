@@ -1,7 +1,7 @@
-#include <StdAfx.h>
-#include <Math/Quaternion.h>
+#include <Utils/StdAfx.h>
+#include <Utils/Math/Quaternion.h>
 
-#include <Math/Vector3D.h>
+#include <Utils/Math/Vector3D.h>
 
 Quaternion::Quaternion()
 	: mQuat(Vector3D().GetInternalVec())
