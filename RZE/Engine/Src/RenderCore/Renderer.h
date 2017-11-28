@@ -46,7 +46,6 @@ public:
 
 	void AddRenderItem(const RenderItemProtocol& itemProtocol);
 	void AddLightItem(const LightItemProtocol& itemProtocol);
-	void AddFontItem(const FontItemProtocol& itemProtocol);
 
 	void Render();
 

@@ -273,11 +273,6 @@ void RZE_Renderer::AddLightItem(const LightItemProtocol& itemProtocol)
 	mLightingList.push_back(itemProtocol);
 }
 
-void RZE_Renderer::AddFontItem(const FontItemProtocol& itemProtocol)
-{
-	mFontList.push_back(itemProtocol);
-}
-
 void RZE_Renderer::Render()
 {
 	const OpenGLRHI& openGL = OpenGLRHI::Get();

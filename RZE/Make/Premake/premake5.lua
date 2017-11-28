@@ -195,8 +195,8 @@ workspace "RZE"
 		targetdir (RootDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
 		targetname "RZE_Utils"
 		
-		pchheader = "StdAfx.h"
-		pchsource = (SourceDir .. "StdAfx.cpp")
+		pchheader = "Utils/StdAfx.h"
+		pchsource = (SourceDir .. "Utils/StdAfx.cpp")
 		
 		files
 		{
