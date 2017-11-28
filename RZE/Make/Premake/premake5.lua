@@ -182,7 +182,7 @@ workspace "RZE"
 	project "Utils"
 		local EngineDir = RootDir .. "Engine/"
 		local ProjectDir = RootDir .. "Utils/"
-		local SourceDir = ProjectDir .. "Src/Utils/"
+		local SourceDir = ProjectDir .. "Src/"
 		local IncludeDir = EngineDir .. "ThirdParty/Include/"
 		local LibDir = EngineDir .. "ThirdParty/Lib/x86/"
 		
