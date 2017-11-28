@@ -16,7 +16,7 @@
 #include <RenderCore/Graphics/Texture2D.h>
 #include <RenderCore/Shaders/ShaderGroup.h>
 
-#include <Math/Math.h>
+#include <Utils/Math/Math.h>
 
 #include <Windowing/WinKeyCodes.h>
 

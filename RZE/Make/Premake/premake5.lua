@@ -56,11 +56,12 @@ workspace "RZE"
 		local ProjectDir = RootDir .. "Engine/"
 		local SourceDir = ProjectDir .. "Src/"
 		local IncludeDir = ProjectDir .. "ThirdParty/Include/"
-		local LibDir = ProjectDir .. "ThirdParty/Lib/x86/"
+		local LibDir = RootDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
+		local ThirdPartyLibDir = ProjectDir .. "ThirdParty/Lib/x86/"
 		
 		kind "StaticLib"
 		language "C++"
-		targetdir (ProjectDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
+		targetdir (RootDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
 		targetname "RZE_Engine"
 		
 		dependson { "Utils" }
@@ -87,7 +88,7 @@ workspace "RZE"
 		libdirs
 		{
 			LibDir,
-			("../../Utils/Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
+			ThirdPartyLibDir
 		}
 		links
 		{
@@ -126,7 +127,7 @@ workspace "RZE"
 		
 		kind "StaticLib"
 		language "C++"
-		targetdir (ProjectDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
+		targetdir (RootDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
 		targetname "Diotima"
 		
 		dependson { "Engine" }
@@ -153,7 +154,7 @@ workspace "RZE"
 		libdirs
 		{
 			LibDir,
-			EngineDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
+			RootDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
 		}
 		links
 		{
@@ -187,7 +188,7 @@ workspace "RZE"
 		
 		kind "StaticLib"
 		language "C++"
-		targetdir (ProjectDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
+		targetdir (RootDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
 		targetname "RZE_Utils"
 		
 		pchheader = "StdAfx.h"
@@ -210,7 +211,7 @@ workspace "RZE"
 		libdirs
 		{
 			LibDir,
-			EngineDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
+			RootDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
 		}
 		links
 		{
@@ -243,7 +244,7 @@ workspace "RZE"
 		
 		kind "ConsoleApp"
 		language "C++"
-		targetdir (ProjectDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
+		targetdir (RootDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
 		targetname "RZE_Game"
 		
 		dependson { "Engine", "Utils"}
@@ -263,7 +264,7 @@ workspace "RZE"
 		includedirs
 		{
 			EngineDir .. "/Src/",
-			RootDir .. "/Utils/Src/Utils",
+			RootDir .. "/Utils/Src/",
 			IncludeDir,
 			IncludeDir .. "FreeType/"
 		}
@@ -271,7 +272,7 @@ workspace "RZE"
 		libdirs
 		{
 			LibDir,
-			EngineDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
+			RootDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
 		}
 		links
 		{
