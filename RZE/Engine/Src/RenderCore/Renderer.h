@@ -64,5 +64,4 @@ private:
 	std::vector<RenderItemProtocol> mRenderList;
 	std::vector<LightItemProtocol> mLightingList;
 	std::vector<FontItemProtocol>  mFontList;
-
 };

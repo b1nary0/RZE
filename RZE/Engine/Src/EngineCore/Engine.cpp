@@ -258,7 +258,9 @@ void RZE_Engine::CompileEvents()
 
 void RZE_Engine::RegisterSubSystems()
 {
-	mSubSystemHandler.AddSubSystem<Diotima::RenderSystem>();
+	mRenderSystemId = mSubSystemHandler.AddSubSystem<Diotima::RenderSystem>();
+
+	Diotima::RenderSystem* renderSystem = mSubSystemHandler.GetSubSystemByIndex<Diotima::RenderSystem>(mRenderSystemId);
 }
 
 void RZE_Engine::RegisterWindowEvents()

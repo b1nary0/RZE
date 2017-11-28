@@ -112,6 +112,9 @@ private:
 	// #TODO(Josh) Move this. Think about loop encapsulation and organization
 	float mDeltaTime;
 
+	// This should be replaced by a more robust and friendly API but will do for now.
+	U32 mRenderSystemId;
+
 	bool bIsInitialized;
 	bool bShouldExit;
 	bool bDisplayDebugServices;

@@ -17,13 +17,20 @@ public:
 	void ShutDownSubSystems();
 
 	template<class TSubSystem, typename... Args>
-	TSubSystem* AddSubSystem(Args... args)
+	U32 AddSubSystem(Args... args)
 	{
 		ISubSystem* subsys = new TSubSystem(std::forward<Args>(args)...);
 		AssertNotNull(subsys);
 		mSubSystems.push_back(subsys);
 
-		return static_cast<TSubSystem*>(subsys);
+		return mSubSystems.size() - 1;
+	}
+
+	template<class TSubSystem>
+	TSubSystem* GetSubSystemByIndex(U32 index)
+	{
+		AssertExpr(index < mSubSystems.size());
+		return static_cast<TSubSystem*>(mSubSystems[index]);
 	}
 
 private:

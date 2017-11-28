@@ -1,5 +1,6 @@
 #pragma once
-#pragma message("*********** Compiling Utils PCH... ***********")
+// Commented until I get this working properly w/ premake
+//#pragma message("*********** Compiling Utils PCH... ***********")
 
 #include <functional>
 

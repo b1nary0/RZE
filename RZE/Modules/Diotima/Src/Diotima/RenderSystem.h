@@ -14,6 +14,5 @@ namespace Diotima
 		virtual void Initialize();
 		virtual void Update();
 		virtual void ShutDown();
-
 	};
 }
