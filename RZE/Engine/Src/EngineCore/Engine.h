@@ -4,7 +4,7 @@
 
 #include <RZE_Config.h>
 
-#include <EngineCore/Platform/File.h>
+#include <Utils/Platform/File.h>
 
 // @todo:josh this is where the weird include-before issue is
 #include <Events/EventHandler.h>
@@ -13,9 +13,8 @@
 #include <EngineCore/Config/EngineConfig.h>
 #include <EngineCore/Input/InputHandler.h>
 #include <EngineCore/Resources/ResourceHandler.h>
-#include <RenderCore/Graphics/Font/FontHandler.h>
 
-#include <RenderCore/SceneCamera.h>
+#include <Diotima/SceneCamera.h>
 
 class GameWorld;
 class RZE_Renderer;
@@ -44,12 +43,9 @@ public:
 
 	void Run(Functor<RZE_Game* const>& createApplicationCallback);
 
-	// #TODO(Josh) This should be revisited when the camera access/design changes
-	SceneCamera&		GetSceneCamera();
 	WindowSettings&		GetWindowSettings();
 	GameWorld&			GetWorld() const;
 	ResourceHandler&	GetResourceHandler();
-	FontHandler&		GetFontHandler();
 
 	const Vector2D& GetMainWindowSize() const;
 
@@ -78,8 +74,6 @@ private:
 	void LoadEngineConfig();
 	void CreateAndInitializeWindow();
 
-	void LoadFonts();
-
 	void InitGame(Functor<RZE_Game* const> createGameCallback);
 
 	inline void SetDisplayDebugServices(bool bShouldDisplay) { bDisplayDebugServices = bShouldDisplay; }
@@ -101,7 +95,6 @@ private:
 	ResourceHandler mResourceHandler;
 	EventHandler mEventHandler;
 	InputHandler mInputHandler;
-	FontHandler mFontHandler;
 
 	EngineConfig* mEngineConfig;
 

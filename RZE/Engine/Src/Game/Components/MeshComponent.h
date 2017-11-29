@@ -4,8 +4,6 @@
 
 #include <Game/ECS/EntityComponent.h>
 
-#include <RenderCore/HardwareInterface/OpenGL.h>
-
 class GFXShaderGroup;
 class GFXTexture2D;
 

@@ -5,11 +5,8 @@
 #include "Game/Systems/MovementSystem.h"
 #include "Game/Systems/RenderSystem.h"
 
-#include <RenderCore/Renderer.h>
-
-GameWorld::GameWorld(RZE_Renderer* const renderer)
+GameWorld::GameWorld()
 {
-	InternalSetRenderer(renderer);
 }
 
 GameWorld::~GameWorld()
@@ -18,7 +15,7 @@ GameWorld::~GameWorld()
 
 void GameWorld::InitSystems()
 {
-	InternalAddSystem<RenderSystem>(this);
+	//InternalAddSystem<RenderSystem>(this);
 	InternalAddSystem<MovementSystem>(this);
 
 	//@todo:josh this is dumb and purely just to get shit working. needs to be re-thought
@@ -26,16 +23,6 @@ void GameWorld::InitSystems()
 	{
 		system->Init();
 	}
-}
-
-RZE_Renderer* const GameWorld::GetRenderer() const
-{
-	return mRenderer;
-}
-
-void GameWorld::InternalSetRenderer(RZE_Renderer* const renderer)
-{
-	mRenderer = renderer;
 }
 
 void GameWorld::Init()

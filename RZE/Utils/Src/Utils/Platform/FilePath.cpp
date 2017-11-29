@@ -1,6 +1,6 @@
-#include <StdAfx.h>
+#include <Utils/StdAfx.h>
 
-#include <EngineCore/Platform/FilePath.h>
+#include <Utils/Platform/FilePath.h>
 
 FilePath::FilePath(const std::string& path)
 {

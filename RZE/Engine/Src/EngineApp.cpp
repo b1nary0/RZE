@@ -1,12 +1,11 @@
-#include "StdAfx.h"
+#include <StdAfx.h>
 
-#include "EngineApp.h"
+#include <EngineApp.h>
 
-#include "DebugUtils/Debug.h"
+#include <EngineCore/Engine.h>
+#include <Windowing/Win32Window.h>
 
-#include "EngineCore/Engine.h"
-
-#include "Windowing/Win32Window.h"
+#include <Utils/DebugUtils/Debug.h>
 
 RZE_Game::RZE_Game()
 	: mWindow(nullptr)

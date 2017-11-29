@@ -25,12 +25,8 @@
 #include <queue>
 #include <vector>
 
-// freetype
-#include <ft2build.h>
-#include FT_FREETYPE_H
-
 // RZE
 #include "RZE_Config.h"
 #include "RZE.h"
-#include "DebugUtils/Debug.h"
+#include "Utils/DebugUtils/Debug.h"
 #include "Utils/PrimitiveDefs.h"

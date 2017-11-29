@@ -2,11 +2,11 @@
 
 #include <unordered_map>
 
-#include <EngineCore/Resources/Resource.h>
 #include <EngineCore/Platform/Memory/BlockAllocator.h>
 
-#include <DebugUtils/Debug.h>
 #include <Utils/Conversions.h>
+#include <Utils/DebugUtils/Debug.h>
+#include <Utils/Interfaces/Resource.h>
 
 
 class ResourceHandler

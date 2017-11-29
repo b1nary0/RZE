@@ -1,6 +1,7 @@
 #pragma once
 
 #include <sstream>
+#include <assert.h>
 
 #include "Utils/StringUtils.h"
 

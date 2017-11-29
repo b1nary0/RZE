@@ -1,6 +1,6 @@
 #pragma once
 
-#include "DebugUtils/Debug.h"
+#include <Utils/DebugUtils/Debug.h>
 
 class IEntity;
 class IEntitySystem;
@@ -17,8 +17,6 @@ public:
 	virtual void Init() = 0;
 	virtual void Update() = 0;
 	virtual void ShutDown() = 0;
-
-	virtual RZE_Renderer* const GetRenderer() const = 0;
 
 	const SystemList& GetSystems() { return mSystems; }
 	const EntityList& GetEntities() { return mEntities; }
@@ -40,8 +38,6 @@ public:
 protected:
 	SystemList& InternalGetSystems() { return mSystems; }
 	EntityList& InternalGetEntities() { return mEntities; }
-
-	virtual void InternalSetRenderer(RZE_Renderer* const renderer) = 0;
 
 	template <class TSystem, typename... Args>
 	void InternalAddSystem(Args... args)

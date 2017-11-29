@@ -3,15 +3,15 @@
 #include <Windowing/Win32Window.h>
 
 // RZE
-#include <DebugUtils/Debug.h>
-
-#include <Utils/Conversions.h>
 
 #include <EngineCore/Input/InputHandler.h>
 #include <Events/EventHandler.h>
 
 #include <Windowing/WindowMessageAdaptor.h>
 #include <Windowing/WinKeyCodes.h>
+
+#include <Utils/DebugUtils/Debug.h>
+#include <Utils/Conversions.h>
 
 LRESULT CALLBACK WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp);
 

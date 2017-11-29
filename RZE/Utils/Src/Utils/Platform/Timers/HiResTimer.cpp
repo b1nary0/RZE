@@ -1,6 +1,6 @@
-#include <StdAfx.h>
+#include <Utils/StdAfx.h>
 
-#include <EngineCore/Platform/Timers/HiResTimer.h>
+#include <Utils/Platform/Timers/HiResTimer.h>
 
 HiResTimer::HiResTimer()
 {

@@ -3,7 +3,8 @@
 #define GLEW_STATIC
 #include <GL/glew.h>
 #include <GL/GL.h>
-#include "Utils/PrimitiveDefs.h"
+
+#include <Utils/PrimitiveDefs.h>
 
 namespace EGLBooleanValue
 {
@@ -417,7 +418,7 @@ public:
 	void SetUniformInt(const GLint uniformLocation, const int value) const;
 	void SetUniformFloat(const GLint uniformLocation, const float value) const;
 	void SetUniformMat4x4(const GLint uniformLocation, const GLsizei count, const GLboolean transpose, const GLfloat* valuePtr) const;
-	VOID SetUniformVec3D(const GLint uniformLocation, const float x, const float y, const float z) const;
+	void SetUniformVec3D(const GLint uniformLocation, const float x, const float y, const float z) const;
 	void SetUniformVec4D(const GLint uniformLocation, const float x, const float y, const float z, const float a) const;
 
 	//

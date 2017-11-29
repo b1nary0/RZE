@@ -1,5 +1,7 @@
-#include <StdAfx.h>
-#include <EngineCore/Platform/File.h>
+#include <Utils/StdAfx.h>
+#include <Utils/Platform/File.h>
+
+#include <Utils/DebugUtils/Debug.h>
 
 File::File(const std::string& filePath)
 	: mOpenState(EFileOpenMode::Closed)

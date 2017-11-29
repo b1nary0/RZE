@@ -1,5 +1,4 @@
-#include <StdAfx.h>
-#include <RenderCore/SceneCamera.h>
+#include <Diotima/SceneCamera.h>
 
 SceneCamera::SceneCamera(const SceneCameraProps& cameraProps)
 {

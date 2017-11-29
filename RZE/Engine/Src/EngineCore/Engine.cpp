@@ -1,22 +1,22 @@
 #include <StdAfx.h>
 
 #include <EngineCore/Engine.h>
-#include <EngineCore/Platform/Timers/HiResTimer.h>
 
-#include <DebugUtils/Debug.h>
-#include <DebugUtils/DebugServices.h>
+#include <imGUI/imgui.h>
 
 #include <Diotima/RenderSystem.h>
 
 #include <Game/GameWorld.h>
 
-#include <RenderCore/Renderer.h>
-#include <RenderCore/HardwareInterface/OpenGL.h>
+#include <Diotima/RenderSystem.h>
+#include <Diotima/Driver/OpenGL.h>
 
 #include <Windowing/Win32Window.h>
 #include <Windowing/WinKeyCodes.h>
 
-#include <imGUI/imgui.h>
+#include <Utils//Platform/Timers/HiResTimer.h>
+#include <Utils/DebugUtils/Debug.h>
+#include <DebugUtils/DebugServices.h>
 
 void TempInitImGui()
 {
@@ -102,10 +102,6 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 
 					accumulator -= kMaxDeltaTime;
 				}
-
-				renderTimer.Start();
-				mRenderer->Render();
-				renderTimer.Stop();
 			}
 
 			bUpdateFrameStats = mFrameCount % 5 == 0;
@@ -163,12 +159,7 @@ void RZE_Engine::Init()
 			OpenGLRHI::Get().Init(creationParams);
 		}
 
-		// #TODO this should be handled better. No need to create directly here. Take a look.
-		mRenderer = new RZE_Renderer();
-
 		TempInitImGui();
-
-		LoadFonts();
 
 		mResourceHandler.Init();
 		mInputHandler.Initialize();
@@ -185,7 +176,7 @@ void RZE_Engine::InitWorld()
 	LOG_CONSOLE_ANNOUNCE("Initializing Game World...");
 
 	// @note naive at first
-	mWorld = new GameWorld(mRenderer);
+	mWorld = new GameWorld();
 	AssertNotNull(mWorld);
 
 	mWorld->Init();
@@ -217,11 +208,6 @@ void RZE_Engine::CreateAndInitializeWindow()
 	mMainWindow->RegisterEvents(mEventHandler);
 
 	mMainWindow->ResetCursorToCenter();
-}
-
-void RZE_Engine::LoadFonts()
-{
-	mFontHandler.LoadFont("Arial", "./../Engine/Assets/Fonts/Arial.ttf");
 }
 
 void RZE_Engine::InitGame(Functor<RZE_Game* const> createGameCallback)
@@ -276,7 +262,6 @@ void RZE_Engine::RegisterWindowEvents()
 		{
 			U16 width = event.mWindowEvent.mSizeX;
 			U16 height = event.mWindowEvent.mSizeY;
-			mRenderer->ResizeCanvas(Vector2D(width, height));
 			DebugServices::HandleScreenResize(Vector2D(width, height));
 		}
 	});
@@ -357,12 +342,6 @@ void RZE_Engine::PostExit()
 	bShouldExit = true;
 }
 
-SceneCamera& RZE_Engine::GetSceneCamera()
-{
-	AssertNotNull(mRenderer);
-	return mRenderer->GetSceneCamera();
-}
-
 WindowSettings& RZE_Engine::GetWindowSettings()
 {
 	return mEngineConfig->GetWindowSettings();
@@ -377,11 +356,6 @@ GameWorld& RZE_Engine::GetWorld() const
 ResourceHandler& RZE_Engine::GetResourceHandler()
 {
 	return mResourceHandler;
-}
-
-FontHandler& RZE_Engine::GetFontHandler()
-{
-	return mFontHandler;
 }
 
 const Vector2D& RZE_Engine::GetMainWindowSize() const

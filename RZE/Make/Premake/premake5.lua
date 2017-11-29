@@ -94,7 +94,6 @@ workspace "RZE"
 		links
 		{
 			"assimp",
-			"freetyped",
 			"glew32s",
 			"imgui",
 			"OpenGL32",
@@ -162,6 +161,12 @@ workspace "RZE"
 		}
 		links
 		{
+			-- ThirdParty
+			"assimp",
+			"imgui",
+			"OpenGL32",
+			"glew32s",
+			-- RZE 
 			"RZE_Utils"
 		}
 		

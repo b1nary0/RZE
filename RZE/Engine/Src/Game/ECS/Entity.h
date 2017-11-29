@@ -2,7 +2,7 @@
 
 #include <bitset>
 
-#include <DebugUtils/Debug.h>
+#include <Utils/DebugUtils/Debug.h>
 #include <Utils/PrimitiveDefs.h>
 
 // 64 bits of component glory

@@ -1,9 +1,8 @@
 #include <StdAfx.h>
 #include <Game/Components/MeshComponent.h>
 
-#include <RenderCore/Graphics/Mesh.h>
-
-#include <RenderCore/HardwareInterface/OpenGL.h>
+#include <Diotima/Graphics/Mesh.h>
+#include <Diotima/Driver/OpenGL.h>
 
 MeshComponent::MeshComponent()
 {

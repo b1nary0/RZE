@@ -3,7 +3,7 @@
 
 #include <DebugUtils/DebugServices.h>
 
-#include <EngineCore/Platform/Timers/HiResTimer.h>
+#include <Utils/Platform/Timers/HiResTimer.h>
 
 #include <Events/EventHandler.h>
 
