@@ -4,6 +4,9 @@
 #include <GL/glew.h>
 #include <GL/GL.h>
 
+// #TODO(Josh) No. Move this.
+#include <Windows.h>
+
 #include <Utils/PrimitiveDefs.h>
 
 namespace EGLBooleanValue

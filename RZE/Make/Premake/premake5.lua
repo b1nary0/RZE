@@ -81,7 +81,7 @@ workspace "RZE"
 		{
 			IncludeDir,
 			IncludeDir .. "FreeType/",
-			RootDir .. "Utils/Src",
+			RootDir .. "Utils/Src/",
 			RootDir .. "Modules/Diotima/Src/",
 			SourceDir
 		}
@@ -274,8 +274,8 @@ workspace "RZE"
 		{
 			EngineDir .. "/Src/",
 			RootDir .. "/Utils/Src/",
-			IncludeDir,
-			IncludeDir .. "FreeType/"
+			RootDir .. "/Modules/Diotima/Src/",
+			IncludeDir
 		}
 		
 		libdirs

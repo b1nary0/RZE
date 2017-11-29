@@ -3,22 +3,24 @@
 #include <RZE_Config.h>
 #include <RZE.h>
 
-#include <DebugUtils/Debug.h>
-#include <DebugUtils/DebugServices.h>
-
 #include <Game/GameEntity.h>
 #include <Game/Components/MeshComponent.h>
 #include <Game/Components/TransformComponent.h>
 #include <Game/Components/LightSourceComponent.h>
 #include <Game/Components/FontRenderComponent.h>
 
-#include <RenderCore/Graphics/Mesh.h>
-#include <RenderCore/Graphics/Texture2D.h>
-#include <RenderCore/Shaders/ShaderGroup.h>
+#include <DebugUtils/DebugServices.h>
 
-#include <Utils/Math/Math.h>
+#include <Diotima/Graphics/Mesh.h>
+#include <Diotima/Graphics/Texture2D.h>
+#include <Diotima/Shaders/ShaderGroup.h>
 
 #include <Windowing/WinKeyCodes.h>
+
+#include <Utils/Math/Math.h>
+#include <Utils/DebugUtils/Debug.h>
+
+using namespace Diotima;
 
 // Test stuff -- this stuff will likely be removed at some point
 // or if it ends up being "permanent", implemented more sensibly.
