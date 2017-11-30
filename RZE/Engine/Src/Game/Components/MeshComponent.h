@@ -4,8 +4,11 @@
 
 #include <Game/ECS/EntityComponent.h>
 
-class GFXShaderGroup;
-class GFXTexture2D;
+namespace Diotima
+{
+	class GFXShaderGroup;
+	class GFXTexture2D;
+}
 
 class MeshComponent : public IEntityComponent
 {
@@ -17,8 +20,8 @@ public:
 	std::vector<float>& GetVertexList();
 
 	// @todo this will be pulled out eventually and handled better.. or should be lol
-	GFXShaderGroup* const GetShaderGroup();
-	void SetShaderGroup(GFXShaderGroup* const shaderGroup);
+	Diotima::GFXShaderGroup* const GetShaderGroup();
+	void SetShaderGroup(Diotima::GFXShaderGroup* const shaderGroup);
 
 	const ResourceHandle& GetMeshHandle() const;
 	void SetMeshHandle(const ResourceHandle& resourceHandle);
@@ -35,7 +38,7 @@ private:
 	//       then offloading the actual type (1D, 2D, 3D) later.
 	ResourceHandle mTextureHandle;
 
-	GFXShaderGroup* mShaderGroup;
+	Diotima::GFXShaderGroup* mShaderGroup;
 
 	std::vector<float> mVertexList;
 };

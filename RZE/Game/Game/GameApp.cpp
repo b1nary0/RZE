@@ -38,95 +38,95 @@ GameApp::~GameApp()
 
 void GameApp::RegisterInputEvents(InputHandler& inputHandler)
 {
-	static float speed = 50.0f;
-
-	Functor<void, const InputKey&> forwardFunc([this](const InputKey& key)
-	{
-		if (!mIsCameraStartSequence)
-		{
-			AssertExpr(key.GetKeyCode() == Win32KeyCode::Key_W);
-			SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
-			Vector3D newPos = sceneCam.GetPositionVec();
-			newPos += sceneCam.GetDirectionVec() * speed * RZE_Engine::Get()->GetDeltaTime();
-			sceneCam.SetPosition(newPos);
-		}
-	});
-
-	Functor<void, const InputKey&> backwardFunc([this](const InputKey& key)
-	{
-		if (!mIsCameraStartSequence)
-		{
-			AssertExpr(key.GetKeyCode() == Win32KeyCode::Key_S);
-			SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
-			Vector3D newPos = sceneCam.GetPositionVec();
-			newPos -= sceneCam.GetDirectionVec() * speed * RZE_Engine::Get()->GetDeltaTime();
-			sceneCam.SetPosition(newPos);
-		}
-	});
-
-	Functor<void, const InputKey&> leftFunc([this](const InputKey& key)
-	{
-		if (!mIsCameraStartSequence)
-		{
-			AssertExpr(key.GetKeyCode() == Win32KeyCode::Key_A);
-			SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
-			Vector3D newPos = sceneCam.GetPositionVec();
-			newPos -= sceneCam.GetDirectionVec().Cross(sceneCam.GetUpVec()).Normalize() * speed * RZE_Engine::Get()->GetDeltaTime();
-			sceneCam.SetPosition(newPos);
-		}
-	});
-
-	Functor<void, const InputKey&> rightFunc([this](const InputKey& key)
-	{
-		if (!mIsCameraStartSequence)
-		{
-			AssertExpr(key.GetKeyCode() == Win32KeyCode::Key_D);
-			SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
-			Vector3D newPos = sceneCam.GetPositionVec();
-			newPos += sceneCam.GetDirectionVec().Cross(sceneCam.GetUpVec()).Normalize() * speed * RZE_Engine::Get()->GetDeltaTime();
-			sceneCam.SetPosition(newPos);
-		}
-	});
-
-	Functor<void, const Vector3D&> mouseMoveFunc([this](const Vector3D& pos)
-	{
-		static float pitch = 0;
-		static float yaw = 0;
-		 
-		const float sens = 0.075f;
-		 
-		GetWindow()->ResetCursorToCenter();
-		 
-		float posX = static_cast<float>(pos.X());
-		float posY = static_cast<float>(pos.Y());
-		 
-		float halfWidth = GetWindow()->GetDimensions().X() / 2;
-		float halfHeight = GetWindow()->GetDimensions().Y() / 2;
-		 
-		float xPosOffset = posX - halfWidth;
-		float yPosOffset = halfHeight - posY;
-		 
-		xPosOffset *= sens;
-		yPosOffset *= sens;
-		 
-		yaw += xPosOffset;
-		pitch += yPosOffset;
-		 
-		// #TODO(Josh) move glm::radians into somewhere more better.
-		float newDirX = std::cos(glm::radians(pitch)) * std::cos(glm::radians(yaw));
-		float newDirY = std::sin(glm::radians(pitch));
-		float newDirZ = std::cos(glm::radians(pitch)) * std::sin(glm::radians(yaw));
-		 
-		Vector3D newDir(newDirX, newDirY, newDirZ);
-		newDir.Normalize();
-		RZE_Engine::Get()->GetSceneCamera().SetDirection(newDir);
-
-	});
-
-	inputHandler.BindAction(Win32KeyCode::Key_W, EButtonState::ButtonState_Hold, forwardFunc);
-	inputHandler.BindAction(Win32KeyCode::Key_S, EButtonState::ButtonState_Hold, backwardFunc);
-	inputHandler.BindAction(Win32KeyCode::Key_A, EButtonState::ButtonState_Hold, leftFunc);
-	inputHandler.BindAction(Win32KeyCode::Key_D, EButtonState::ButtonState_Hold, rightFunc);
+// 	static float speed = 50.0f;
+// 
+// 	Functor<void, const InputKey&> forwardFunc([this](const InputKey& key)
+// 	{
+// 		if (!mIsCameraStartSequence)
+// 		{
+// 			AssertExpr(key.GetKeyCode() == Win32KeyCode::Key_W);
+// 			SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
+// 			Vector3D newPos = sceneCam.GetPositionVec();
+// 			newPos += sceneCam.GetDirectionVec() * speed * RZE_Engine::Get()->GetDeltaTime();
+// 			sceneCam.SetPosition(newPos);
+// 		}
+// 	});
+// 
+// 	Functor<void, const InputKey&> backwardFunc([this](const InputKey& key)
+// 	{
+// 		if (!mIsCameraStartSequence)
+// 		{
+// 			AssertExpr(key.GetKeyCode() == Win32KeyCode::Key_S);
+// 			SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
+// 			Vector3D newPos = sceneCam.GetPositionVec();
+// 			newPos -= sceneCam.GetDirectionVec() * speed * RZE_Engine::Get()->GetDeltaTime();
+// 			sceneCam.SetPosition(newPos);
+// 		}
+// 	});
+// 
+// 	Functor<void, const InputKey&> leftFunc([this](const InputKey& key)
+// 	{
+// 		if (!mIsCameraStartSequence)
+// 		{
+// 			AssertExpr(key.GetKeyCode() == Win32KeyCode::Key_A);
+// 			SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
+// 			Vector3D newPos = sceneCam.GetPositionVec();
+// 			newPos -= sceneCam.GetDirectionVec().Cross(sceneCam.GetUpVec()).Normalize() * speed * RZE_Engine::Get()->GetDeltaTime();
+// 			sceneCam.SetPosition(newPos);
+// 		}
+// 	});
+// 
+// 	Functor<void, const InputKey&> rightFunc([this](const InputKey& key)
+// 	{
+// 		if (!mIsCameraStartSequence)
+// 		{
+// 			AssertExpr(key.GetKeyCode() == Win32KeyCode::Key_D);
+// 			SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
+// 			Vector3D newPos = sceneCam.GetPositionVec();
+// 			newPos += sceneCam.GetDirectionVec().Cross(sceneCam.GetUpVec()).Normalize() * speed * RZE_Engine::Get()->GetDeltaTime();
+// 			sceneCam.SetPosition(newPos);
+// 		}
+// 	});
+// 
+// 	Functor<void, const Vector3D&> mouseMoveFunc([this](const Vector3D& pos)
+// 	{
+// 		static float pitch = 0;
+// 		static float yaw = 0;
+// 		 
+// 		const float sens = 0.075f;
+// 		 
+// 		GetWindow()->ResetCursorToCenter();
+// 		 
+// 		float posX = static_cast<float>(pos.X());
+// 		float posY = static_cast<float>(pos.Y());
+// 		 
+// 		float halfWidth = GetWindow()->GetDimensions().X() / 2;
+// 		float halfHeight = GetWindow()->GetDimensions().Y() / 2;
+// 		 
+// 		float xPosOffset = posX - halfWidth;
+// 		float yPosOffset = halfHeight - posY;
+// 		 
+// 		xPosOffset *= sens;
+// 		yPosOffset *= sens;
+// 		 
+// 		yaw += xPosOffset;
+// 		pitch += yPosOffset;
+// 		 
+// 		// #TODO(Josh) move glm::radians into somewhere more better.
+// 		float newDirX = std::cos(glm::radians(pitch)) * std::cos(glm::radians(yaw));
+// 		float newDirY = std::sin(glm::radians(pitch));
+// 		float newDirZ = std::cos(glm::radians(pitch)) * std::sin(glm::radians(yaw));
+// 		 
+// 		Vector3D newDir(newDirX, newDirY, newDirZ);
+// 		newDir.Normalize();
+// 		RZE_Engine::Get()->GetSceneCamera().SetDirection(newDir);
+// 
+// 	});
+// 
+// 	inputHandler.BindAction(Win32KeyCode::Key_W, EButtonState::ButtonState_Hold, forwardFunc);
+// 	inputHandler.BindAction(Win32KeyCode::Key_S, EButtonState::ButtonState_Hold, backwardFunc);
+// 	inputHandler.BindAction(Win32KeyCode::Key_A, EButtonState::ButtonState_Hold, leftFunc);
+// 	inputHandler.BindAction(Win32KeyCode::Key_D, EButtonState::ButtonState_Hold, rightFunc);
 
 	//inputHandler.BindAxis(EAxisBinding::AxisBinding_Mouse, EAxisType::AxisType_Vector, mouseMoveFunc);
 }
@@ -167,15 +167,16 @@ void GameApp::Update()
 {
 	RZE_Game::Update();
 
-	const Vector3D& camPos = RZE_Engine::Get()->GetSceneCamera().GetPositionVec();
-	if (VectorUtils::DistanceSq(camPos, cameraStartPos) > 0.025f && mIsCameraStartSequence)
-	{
-		RZE_Engine::Get()->GetSceneCamera().SetPosition(VectorUtils::Lerp(camPos, cameraStartPos, RZE_Engine::Get()->GetDeltaTime()));
-	}
-	else if (mIsCameraStartSequence)
-	{
-		mIsCameraStartSequence = false;
-	}
+	// #TODO(Josh) Uncomment when scenecam is back
+// 	const Vector3D& camPos = RZE_Engine::Get()->GetSceneCamera().GetPositionVec();
+// 	if (VectorUtils::DistanceSq(camPos, cameraStartPos) > 0.025f && mIsCameraStartSequence)
+// 	{
+// 		RZE_Engine::Get()->GetSceneCamera().SetPosition(VectorUtils::Lerp(camPos, cameraStartPos, RZE_Engine::Get()->GetDeltaTime()));
+// 	}
+// 	else if (mIsCameraStartSequence)
+// 	{
+// 		mIsCameraStartSequence = false;
+// 	}
 }
 
 void GameApp::CreateTextureQuad(const ResourceHandle& meshHandle, const ResourceHandle& textureHandle)

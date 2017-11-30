@@ -42,12 +42,12 @@ void MeshComponent::SetTextureHandle(const ResourceHandle& resourceHandle)
 	mTextureHandle = resourceHandle;
 }
 
-GFXShaderGroup* const MeshComponent::GetShaderGroup()
+Diotima::GFXShaderGroup* const MeshComponent::GetShaderGroup()
 {
 	return mShaderGroup;
 }
 
-void MeshComponent::SetShaderGroup(GFXShaderGroup* const shaderGroup)
+void MeshComponent::SetShaderGroup(Diotima::GFXShaderGroup* const shaderGroup)
 {
 	mShaderGroup = shaderGroup;
 }

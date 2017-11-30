@@ -8,7 +8,10 @@ class GameEntity;
 class MeshData;
 class ResourceHandle;
 
-class GFXShaderGroup;
+namespace Diotima
+{
+	class GFXShaderGroup;
+}
 
 class GameApp : public RZE_Game
 {
@@ -33,8 +36,8 @@ private:
 
 	GameEntity* mLightEntity;
 
-	GFXShaderGroup* mDefaultShader;
-	GFXShaderGroup* mTextureShader;
+	Diotima::GFXShaderGroup* mDefaultShader;
+	Diotima::GFXShaderGroup* mTextureShader;
 
 	std::vector<GameEntity*> mEntities;
 };
