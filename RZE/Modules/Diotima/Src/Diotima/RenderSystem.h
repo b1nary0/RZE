@@ -47,6 +47,7 @@ namespace Diotima
 
 	// Constructors
 	public:
+		// #TODO(Josh) Remove the parameters here and work in a better event driven system?
 		RenderSystem();
 
 	// ISubSystem interface

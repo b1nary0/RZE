@@ -46,6 +46,7 @@ public:
 	WindowSettings&		GetWindowSettings();
 	GameWorld&			GetWorld() const;
 	ResourceHandler&	GetResourceHandler();
+	Diotima::SceneCamera& GetSceneCamera();
 
 	const Vector2D& GetMainWindowSize() const;
 

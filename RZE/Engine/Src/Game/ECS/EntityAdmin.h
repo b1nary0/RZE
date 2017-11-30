@@ -5,8 +5,6 @@
 class IEntity;
 class IEntitySystem;
 
-class RZE_Renderer;
-
 class IEntityAdmin
 {
 protected:

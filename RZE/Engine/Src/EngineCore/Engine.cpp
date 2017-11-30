@@ -151,14 +151,6 @@ void RZE_Engine::Init()
 
 		mSubSystemHandler.InitializeSubSystems();
 
-		{
-			OpenGLRHI::OpenGLCreationParams creationParams;
-			creationParams.WindowWidth = static_cast<int>(mMainWindow->GetDimensions().X());
-			creationParams.WindowHeight = static_cast<int>(mMainWindow->GetDimensions().Y());
-
-			OpenGLRHI::Get().Init(creationParams);
-		}
-
 		TempInitImGui();
 
 		mResourceHandler.Init();
@@ -245,8 +237,6 @@ void RZE_Engine::CompileEvents()
 void RZE_Engine::RegisterSubSystems()
 {
 	mRenderSystemId = mSubSystemHandler.AddSubSystem<Diotima::RenderSystem>();
-
-	Diotima::RenderSystem* renderSystem = mSubSystemHandler.GetSubSystemByIndex<Diotima::RenderSystem>(mRenderSystemId);
 }
 
 void RZE_Engine::RegisterWindowEvents()
@@ -324,13 +314,11 @@ void RZE_Engine::BeginShutDown()
 
 void RZE_Engine::InternalShutDown()
 {
-	AssertNotNull(mRenderer);
 	AssertNotNull(mMainWindow);
 	AssertNotNull(mEngineConfig);
 	AssertNotNull(mApplication);
 	AssertNotNull(mWorld);
 
-	delete mRenderer;
 	delete mMainWindow;
 	delete mEngineConfig;
 	delete mApplication;
@@ -356,6 +344,13 @@ GameWorld& RZE_Engine::GetWorld() const
 ResourceHandler& RZE_Engine::GetResourceHandler()
 {
 	return mResourceHandler;
+}
+
+Diotima::SceneCamera& RZE_Engine::GetSceneCamera()
+{
+	Diotima::RenderSystem* renderSystem = mSubSystemHandler.GetSubSystemByIndex<Diotima::RenderSystem>(mRenderSystemId);
+	AssertNotNull(renderSystem);
+	return renderSystem->GetSceneCamera();
 }
 
 const Vector2D& RZE_Engine::GetMainWindowSize() const

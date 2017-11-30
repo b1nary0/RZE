@@ -243,7 +243,33 @@ namespace Diotima
 {
 	RenderSystem::RenderSystem()
 	{
+		
+	}
+
+	void RenderSystem::AddRenderItem(const RenderItemProtocol& itemProtocol)
+	{
+		mRenderList.push_back(itemProtocol);
+	}
+
+	void RenderSystem::AddLightItem(const LightItemProtocol& itemProtocol)
+	{
+		mLightingList.push_back(itemProtocol);
+	}
+
+	void RenderSystem::Initialize()
+	{
+		// #TODO(Josh) The window should probably be in utils/renderer or something but not the engine 
 		WindowSettings& windowSettings = RZE_Engine::Get()->GetWindowSettings();
+
+		{
+			OpenGLRHI::OpenGLCreationParams creationParams;
+			creationParams.WindowWidth = static_cast<int>(windowSettings.GetDimensions().X());
+			creationParams.WindowHeight = static_cast<int>(windowSettings.GetDimensions().Y());
+
+			OpenGLRHI::Get().Init(creationParams);
+		}
+
+		OpenGLRHI::Get().ClearColor(0.0f, 0.0f, 1.0f, 1.0f);
 
 		SceneCameraProps cameraProps;	cameraProps.Direction = Vector3D(0.0f, -2.5f, -10.0f);
 		cameraProps.FrontDir = Vector3D(0.0f, 0.0f, -1.0f);
@@ -262,21 +288,6 @@ namespace Diotima
 		ImGuiIO& io = ImGui::GetIO();
 		ImGUICreateDeviceObjects();
 		io.RenderDrawListsFn = ImGUIRender;
-	}
-
-	void RenderSystem::AddRenderItem(const RenderItemProtocol& itemProtocol)
-	{
-		mRenderList.push_back(itemProtocol);
-	}
-
-	void RenderSystem::AddLightItem(const LightItemProtocol& itemProtocol)
-	{
-		mLightingList.push_back(itemProtocol);
-	}
-
-	void RenderSystem::Initialize()
-	{
-
 	}
 
 	void RenderSystem::Update()

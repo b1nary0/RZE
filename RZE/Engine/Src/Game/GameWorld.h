@@ -17,5 +17,4 @@ private:
 	void InitSystems();
 
 private:
-	RZE_Renderer* mRenderer;
 };
