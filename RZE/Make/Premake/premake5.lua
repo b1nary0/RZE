@@ -56,12 +56,12 @@ workspace "RZE"
 		local ProjectDir = RootDir .. "Engine/"
 		local SourceDir = ProjectDir .. "Src/"
 		local IncludeDir = ProjectDir .. "ThirdParty/Include/"
-		local LibDir = RootDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
+		local LibDir = RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
 		local ThirdPartyLibDir = ProjectDir .. "ThirdParty/Lib/x86/"
 		
 		kind "StaticLib"
 		language "C++"
-		targetdir (RootDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
+		targetdir (RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
 		targetname "RZE_Engine"
 		
 		dependson { "Diotima", "Utils" }
@@ -124,12 +124,12 @@ workspace "RZE"
 		local ProjectDir = RootDir .. "Modules/Diotima/"
 		local SourceDir = ProjectDir .. "Src/"
 		local IncludeDir = EngineDir .. "ThirdParty/Include/"
-		local LibDir = RootDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
+		local LibDir = RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
 		local ThirdPartyLibDir = EngineDir .. "ThirdParty/Lib/x86/"
 		
 		kind "StaticLib"
 		language "C++"
-		targetdir (RootDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
+		targetdir (RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
 		targetname "Diotima"
 		
 		dependson { "Utils" }
@@ -197,7 +197,7 @@ workspace "RZE"
 		
 		kind "StaticLib"
 		language "C++"
-		targetdir (RootDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
+		targetdir (RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
 		targetname "RZE_Utils"
 		
 		pchheader = "Utils/StdAfx.h"
@@ -220,7 +220,7 @@ workspace "RZE"
 		libdirs
 		{
 			LibDir,
-			RootDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
+			RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
 		}
 		links
 		{
@@ -253,7 +253,7 @@ workspace "RZE"
 		
 		kind "ConsoleApp"
 		language "C++"
-		targetdir (RootDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
+		targetdir (RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
 		targetname "RZE_Game"
 		
 		dependson { "Engine", "Diotima", "Utils"}
@@ -281,7 +281,7 @@ workspace "RZE"
 		libdirs
 		{
 			LibDir,
-			RootDir .. "Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
+			RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
 		}
 		links
 		{
