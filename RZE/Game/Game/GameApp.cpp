@@ -5,9 +5,9 @@
 
 #include <Game/GameEntity.h>
 #include <Game/GameWorld.h>
-#include <Game/Components/MeshComponent.h>
-#include <Game/Components/TransformComponent.h>
-#include <Game/Components/LightSourceComponent.h>
+#include <Components/MeshComponent.h>
+#include <Components/TransformComponent.h>
+#include <Components/LightSourceComponent.h>
 
 #include <DebugUtils/DebugServices.h>
 

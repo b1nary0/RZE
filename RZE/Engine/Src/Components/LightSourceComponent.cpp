@@ -1,5 +1,5 @@
 #include <StdAfx.h>
-#include <Game/Components/LightSourceComponent.h>
+#include <Components/LightSourceComponent.h>
 
 LightSourceComponent::LightSourceComponent()
 {
