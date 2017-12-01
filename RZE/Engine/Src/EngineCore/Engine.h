@@ -14,10 +14,16 @@
 #include <EngineCore/Input/InputHandler.h>
 #include <EngineCore/Resources/ResourceHandler.h>
 
+#include <Diotima/RenderSystem.h>
 #include <Diotima/SceneCamera.h>
 
 class GameWorld;
 class Win32Window;
+
+namespace Apollo
+{
+	class EntityComponentSystem;
+}
 
 class RZE_Engine
 {
@@ -46,6 +52,13 @@ public:
 	GameWorld&			GetWorld() const;
 	ResourceHandler&	GetResourceHandler();
 	Diotima::SceneCamera& GetSceneCamera();
+
+	Diotima::RenderSystem* GetRenderSystem()
+	{
+		return mSubSystemHandler.GetSubSystemByIndex<Diotima::RenderSystem>(mRenderSystemId);
+	}
+
+	Apollo::EntityComponentSystem* GetECS();
 
 	const Vector2D& GetMainWindowSize() const;
 

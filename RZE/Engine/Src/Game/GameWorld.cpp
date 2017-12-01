@@ -16,11 +16,11 @@
  	//@todo:josh this is dumb and purely just to get shit working. needs to be re-thought
  	for (auto& system : InternalGetSystems())
  	{
- 		system->Init();
+ 		system->Initialize();
  	}
  }
  
- void GameWorld::Init()
+ void GameWorld::Initialize()
  {
  	InitSystems();
  }
@@ -30,7 +30,7 @@
  	//#TODO need to ensure update order here... for logic > rendering etc
  	for (auto& system : GetSystems())
  	{
- 		system->Update();
+ 		system->Update(InternalGetEntities());
  	}
  }
  

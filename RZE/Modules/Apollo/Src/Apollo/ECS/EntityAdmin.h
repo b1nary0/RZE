@@ -10,11 +10,13 @@ class IEntitySystem;
 class IEntityAdmin
 {
 protected:
-	typedef std::vector<IEntity*> EntityList;
-	typedef std::vector<IEntitySystem*> SystemList;
 
 public:
-	virtual void Init() = 0;
+	typedef std::vector<IEntitySystem*> SystemList;
+	typedef std::vector<IEntity*> EntityList;
+
+public:
+	virtual void Initialize() = 0;
 	virtual void Update() = 0;
 	virtual void ShutDown() = 0;
 
@@ -32,7 +34,7 @@ public:
 	template <class TSystem, typename... Args>
 	void AddSystem(Args... args)
 	{
-		InternalAddSystem<TSystem>(args);
+		InternalAddSystem<TSystem>(args...);
 	}
 
 protected:

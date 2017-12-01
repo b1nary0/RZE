@@ -13,6 +13,8 @@
 
 #include <Game/GameWorld.h>
 
+#include <Systems/EntityRenderSystem.h>
+
 #include <Windowing/Win32Window.h>
 #include <Windowing/WinKeyCodes.h>
 
@@ -171,7 +173,7 @@ void RZE_Engine::InitWorld()
 	mWorld = new GameWorld();
 	AssertNotNull(mWorld);
 
-	mWorld->Init();
+	mWorld->Initialize();
 }
 
 void RZE_Engine::PostInit(Functor<RZE_Game* const>& createApplicationCallback)
@@ -238,6 +240,8 @@ void RZE_Engine::RegisterSubSystems()
 {
 	mECSId = mSubSystemHandler.AddSubSystem<Apollo::EntityComponentSystem>();
 	mRenderSystemId = mSubSystemHandler.AddSubSystem<Diotima::RenderSystem>();
+
+	GetECS()->AddSystem<EntityRenderSystem>();
 }
 
 void RZE_Engine::RegisterWindowEvents()
@@ -352,6 +356,11 @@ Diotima::SceneCamera& RZE_Engine::GetSceneCamera()
 	Diotima::RenderSystem* renderSystem = mSubSystemHandler.GetSubSystemByIndex<Diotima::RenderSystem>(mRenderSystemId);
 	AssertNotNull(renderSystem);
 	return renderSystem->GetSceneCamera();
+}
+
+Apollo::EntityComponentSystem* RZE_Engine::GetECS()
+{
+	return mSubSystemHandler.GetSubSystemByIndex<Apollo::EntityComponentSystem>(mECSId);
 }
 
 const Vector2D& RZE_Engine::GetMainWindowSize() const

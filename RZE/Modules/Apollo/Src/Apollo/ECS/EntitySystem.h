@@ -1,6 +1,7 @@
 #pragma once
 
-class IEntityAdmin;
+#include <Apollo/ECS/EntityAdmin.h>
+
 class IEntityComponent;
 
 class IEntitySystem
@@ -8,11 +9,10 @@ class IEntitySystem
 	typedef std::vector<IEntityComponent*> ComponentList;
 
 public:
-	IEntitySystem(IEntityAdmin* admin)
-		: mAdmin(admin) {}
+	IEntitySystem() {};
 
-	virtual void Init() = 0;
-	virtual void Update() = 0;
+	virtual void Initialize() = 0;
+	virtual void Update(IEntityAdmin::EntityList& entities) = 0;
 	virtual void ShutDown() = 0;
 
 	const ComponentList& GetComponents() { return mComponents; }
@@ -21,5 +21,4 @@ protected:
 	ComponentList& InternalGetComponents() { return mComponents; }
 
 	ComponentList mComponents;
-	IEntityAdmin* mAdmin;
 };

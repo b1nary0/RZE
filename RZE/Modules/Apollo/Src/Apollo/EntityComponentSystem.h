@@ -2,6 +2,8 @@
 
 #include <vector>
 
+#include <Apollo/ECS/EntityAdmin.h>
+
 #include <Utils/Interfaces/SubSystem.h>
 
 namespace Apollo
@@ -11,6 +13,15 @@ namespace Apollo
 	class EntityComponentSystem : public ISubSystem
 	{
 		typedef std::vector<IEntity*> EntityList;
+
+		class EntityAdminImpl : public IEntityAdmin
+		{
+		// IEntityAdmin interface
+		public:
+			virtual void Initialize();
+			virtual void Update();
+			virtual void ShutDown();
+		};
 
 	public:
 		EntityComponentSystem();
@@ -27,12 +38,16 @@ namespace Apollo
 		template<class TEntityType, typename... TArgs>
 		TEntityType* AddEntity(TArgs... args)
 		{
-			TEntityType* entity = new TEntityType(std::forward<TArgs>(args)...);
-			mEntities.push_back(entity);
-			return mEntities.back();
+			return mAdmin.AddEntity<TEntityType>(std::forward<TArgs>(args)...);
+		}
+
+		template <class TSystem, typename... TArgs>
+		void AddSystem(TArgs... args)
+		{
+			mAdmin.AddSystem<TSystem>(std::forward<TArgs>(args)...);
 		}
 
 	private:
-		EntityList mEntities;
+		EntityAdminImpl mAdmin;
 	};
 }

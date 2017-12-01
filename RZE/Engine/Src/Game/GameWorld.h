@@ -9,7 +9,7 @@
  	GameWorld();
  	virtual ~GameWorld();
  
- 	virtual void Init() override;
+ 	virtual void Initialize() override;
  	virtual void Update() override;
  	virtual void ShutDown() override;
  
