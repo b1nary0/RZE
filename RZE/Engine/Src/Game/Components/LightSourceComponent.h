@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Game/ECS/EntityComponent.h>
+#include <Apollo/ECS/EntityComponent.h>
 
 #include <Utils/Math/Vector3D.h>
 

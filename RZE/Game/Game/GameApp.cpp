@@ -4,10 +4,10 @@
 #include <RZE.h>
 
 #include <Game/GameEntity.h>
+#include <Game/GameWorld.h>
 #include <Game/Components/MeshComponent.h>
 #include <Game/Components/TransformComponent.h>
 #include <Game/Components/LightSourceComponent.h>
-#include <Game/Components/FontRenderComponent.h>
 
 #include <DebugUtils/DebugServices.h>
 

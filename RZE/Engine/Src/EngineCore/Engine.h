@@ -17,7 +17,6 @@
 #include <Diotima/SceneCamera.h>
 
 class GameWorld;
-class RZE_Renderer;
 class Win32Window;
 
 class RZE_Engine
@@ -91,7 +90,6 @@ private:
 	GameWorld* mWorld;
 
 	Win32Window* mMainWindow;
-	RZE_Renderer* mRenderer;
 
 	ResourceHandler mResourceHandler;
 	EventHandler mEventHandler;

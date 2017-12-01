@@ -1,6 +1,6 @@
-#include "StdAfx.h"
+#include <StdAfx.h>
 
-#include "Game/Systems/MovementSystem.h"
+#include <Game/Systems/MovementSystem.h>
 
 MovementSystem::MovementSystem(IEntityAdmin* const admin)
 	: IEntitySystem(admin)

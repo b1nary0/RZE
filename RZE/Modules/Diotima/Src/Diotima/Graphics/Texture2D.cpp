@@ -1,9 +1,10 @@
-#include <StdAfx.h>
-
-#include <Diotima/Driver/OpenGL.h>
 #include <Diotima/Graphics/Texture2D.h>
 
 #include <STB/stb_image.cpp>
+
+#include <Diotima/Driver/OpenGL.h>
+
+#include <Utils/DebugUtils/Debug.h>
 
 namespace Diotima
 {

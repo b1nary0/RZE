@@ -6,6 +6,7 @@
 #include <Diotima/Graphics/Texture2D.h>
 #include <Diotima/Shaders/ShaderGroup.h>
 
+//#include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Vector4D.h>
 
 #include <imGUI/imgui.h>
@@ -235,10 +236,9 @@ bool ImGUICreateDeviceObjects()
 
 	return true;
 }
-
 //
 // </Imgui Stuff>
-//
+
 namespace Diotima
 {
 	RenderSystem::RenderSystem()

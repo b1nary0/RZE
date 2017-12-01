@@ -1,6 +1,4 @@
-#include <StdAfx.h>
-
-#include <Game/ECS/EntityComponent.h>
+#include <Apollo/ECS/EntityComponent.h>
 
 IEntityComponent::IEntityComponent()
 {

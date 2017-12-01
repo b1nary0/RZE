@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bitset>
+#include <vector>
 
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/PrimitiveDefs.h>

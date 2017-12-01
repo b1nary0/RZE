@@ -1,8 +1,8 @@
-#include <StdAfx.h>
 #include <Diotima/Shaders/ShaderGroup.h>
 
 #include <Diotima/Driver/OpenGL.h>
 
+#include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector3D.h>
 #include <Utils/Math/Vector4D.h>

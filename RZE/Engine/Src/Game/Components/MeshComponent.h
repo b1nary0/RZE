@@ -2,7 +2,7 @@
 
 #include <EngineCore/Resources/ResourceHandler.h>
 
-#include <Game/ECS/EntityComponent.h>
+#include <Apollo/ECS/EntityComponent.h>
 
 namespace Diotima
 {

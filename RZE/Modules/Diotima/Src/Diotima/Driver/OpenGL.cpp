@@ -1,6 +1,6 @@
-#include "StdAfx.h"
+#include <Diotima/Driver/OpenGL.h>
 
-#include "OpenGL.h"
+#include <Utils/DebugUtils/Debug.h>
 
 OpenGLRHI::OpenGLRHI()
 {

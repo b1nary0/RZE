@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include <Utils/DebugUtils/Debug.h>
 
 class IEntity;

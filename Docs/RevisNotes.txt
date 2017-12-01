@@ -12,6 +12,6 @@ Input (UNNAMED)
 
 Audio (UNNAMED)
 
-GameObject System (UNNAMED)
+GameObject System (Apollo)
 
 Utils (UNNAMED)

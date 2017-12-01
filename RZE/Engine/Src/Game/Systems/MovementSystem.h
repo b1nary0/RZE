@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Game/ECS/EntitySystem.h"
+#include <Apollo/ECS/EntitySystem.h>
+#include <Apollo/ECS/EntityAdmin.h>
 
 class MovementSystem : public IEntitySystem
 {

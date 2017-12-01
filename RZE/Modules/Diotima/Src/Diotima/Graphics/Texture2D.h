@@ -2,8 +2,9 @@
 
 #include <string>
 
-#include <Utils/Interfaces/Resource.h>
 #include <Utils/PrimitiveDefs.h>
+#include <Utils/Interfaces/Resource.h>
+#include <Utils/Math/Vector2D.h>
 
 namespace Diotima
 {

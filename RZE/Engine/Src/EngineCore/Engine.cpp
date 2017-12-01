@@ -34,7 +34,6 @@ RZE_Engine* RZE_Engine::sInstance = nullptr;
 RZE_Engine::RZE_Engine()
 {
 	mMainWindow = nullptr;
-	mRenderer = nullptr;
 	mWorld = nullptr;
 	mEngineConfig = nullptr;
 	mApplication = nullptr;

@@ -1,7 +1,8 @@
-#include <StdAfx.h>
-#include <Game/ECS/Entity.h>
+#include <Apollo/ECS/Entity.h>
 
-#include <Game/ECS/EntityComponent.h>
+#include <Apollo/ECS/EntityComponent.h>
+
+#include <Utils/Conversions.h>
 
 static U32 sNextEntityID = 0;
 

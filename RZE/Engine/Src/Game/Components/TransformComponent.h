@@ -3,7 +3,7 @@
 #include <Utils/Math/Quaternion.h>
 #include <Utils/Math/Vector3D.h>
 
-#include "Game/ECS/EntityComponent.h"
+#include <Apollo/ECS/EntityComponent.h>
 
 class TransformComponent : public IEntityComponent
 {
