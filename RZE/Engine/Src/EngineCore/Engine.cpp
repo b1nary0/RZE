@@ -4,19 +4,20 @@
 
 #include <imGUI/imgui.h>
 
-#include <Diotima/RenderSystem.h>
+#include <Apollo/EntityComponentSystem.h>
 
-#include <Game/GameWorld.h>
+#include <DebugUtils/DebugServices.h>
 
 #include <Diotima/RenderSystem.h>
 #include <Diotima/Driver/OpenGL.h>
+
+#include <Game/GameWorld.h>
 
 #include <Windowing/Win32Window.h>
 #include <Windowing/WinKeyCodes.h>
 
 #include <Utils//Platform/Timers/HiResTimer.h>
 #include <Utils/DebugUtils/Debug.h>
-#include <DebugUtils/DebugServices.h>
 
 void TempInitImGui()
 {
@@ -235,6 +236,7 @@ void RZE_Engine::CompileEvents()
 
 void RZE_Engine::RegisterSubSystems()
 {
+	mECSId = mSubSystemHandler.AddSubSystem<Apollo::EntityComponentSystem>();
 	mRenderSystemId = mSubSystemHandler.AddSubSystem<Diotima::RenderSystem>();
 }
 

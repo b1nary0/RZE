@@ -1,6 +1,6 @@
 #include "StdAfx.h"
 
-#include "Game/Components/TransformComponent.h"
+#include <Components/TransformComponent.h>
 
 TransformComponent::TransformComponent()
 	: mPosition(0.0f, 0.0f, 0.0f)
