@@ -14,8 +14,7 @@
 #include <EngineCore/Input/InputHandler.h>
 #include <EngineCore/Resources/ResourceHandler.h>
 
-#include <Diotima/RenderSystem.h>
-#include <Diotima/SceneCamera.h>
+#include <Apollo/ComponentHandler.h>
 
 class GameWorld;
 class Win32Window;
@@ -50,6 +49,8 @@ public:
 
 	WindowSettings&		GetWindowSettings();
 	ResourceHandler&	GetResourceHandler();
+
+	Apollo::ComponentHandler&	GetComponentHandler() { return mComponentHandler; }
 
 private:
 
@@ -86,6 +87,7 @@ private:
 	ResourceHandler mResourceHandler;
 	EventHandler mEventHandler;
 	InputHandler mInputHandler;
+	Apollo::ComponentHandler mComponentHandler;
 
 	EngineConfig* mEngineConfig;
 

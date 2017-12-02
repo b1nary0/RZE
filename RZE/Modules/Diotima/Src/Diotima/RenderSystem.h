@@ -6,6 +6,7 @@
 #include <Diotima/Driver/OpenGL.h>
 
 #include <Utils/Interfaces/SubSystem.h>
+#include <Utils/Math/Vector2D.h>
 
 namespace Diotima
 {

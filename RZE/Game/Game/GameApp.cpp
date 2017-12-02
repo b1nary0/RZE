@@ -18,6 +18,10 @@
 #include <Utils/Math/Math.h>
 #include <Utils/DebugUtils/Debug.h>
 
+
+// TEST
+#include <Components/TransformComponent.h>
+
 using namespace Diotima;
 
 // Test stuff -- this stuff will likely be removed at some point
@@ -39,16 +43,22 @@ void GameApp::Start()
 	RZE_Game::Start();
 
 	// ALL TEST CODE
-	
+
+	Apollo::ComponentHandler& componentHandler = RZE_Engine::Get()->GetComponentHandler();
+	Apollo::EntityID entity = componentHandler.CreateEntity();
+
+	componentHandler.HasComponent<TransformComponent>(entity);
+
+
 // 	CreateDefaultShader();
 // 	CreateTextureShader();
 
-	const char* const cubeFilePath = "./../Engine/Assets/3D/Cube.obj";
-	const char* const miniCooperFilePath = "./../Engine/Assets/3D/MiniCooper.obj";
-	const char* const lampFilePath = "./../Engine/Assets/3D/Lamp.obj";
-
-	const char* const quadMeshFilePath = "./../Engine/Assets/3D/Quad.obj";
-	const char* const quadTextureFilePath = "./../Engine/Assets/2D/Container.jpg";
+// 	const char* const cubeFilePath = "./../Engine/Assets/3D/Cube.obj";
+// 	const char* const miniCooperFilePath = "./../Engine/Assets/3D/MiniCooper.obj";
+// 	const char* const lampFilePath = "./../Engine/Assets/3D/Lamp.obj";
+// 
+// 	const char* const quadMeshFilePath = "./../Engine/Assets/3D/Quad.obj";
+// 	const char* const quadTextureFilePath = "./../Engine/Assets/2D/Container.jpg";
 
 // 	ResourceHandler& resourceHandler = RZE_Engine::Get()->GetResourceHandler();
 // 
