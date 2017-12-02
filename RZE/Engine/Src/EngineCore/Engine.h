@@ -50,20 +50,6 @@ public:
 
 	WindowSettings&		GetWindowSettings();
 	ResourceHandler&	GetResourceHandler();
-	Diotima::SceneCamera& GetSceneCamera();
-
-	Diotima::RenderSystem* GetRenderSystem()
-	{
-		return mSubSystemHandler.GetSubSystemByIndex<Diotima::RenderSystem>(mRenderSystemId);
-	}
-
-	Apollo::EntityComponentSystem* GetECS();
-
-	const Vector2D& GetMainWindowSize() const;
-
-	inline float GetDeltaTime() const { return mDeltaTime; }
-
-	void SetCursorEnabled(bool enabled);
 
 private:
 
@@ -88,12 +74,6 @@ private:
 
 	void InitGame(Functor<RZE_Game* const> createGameCallback);
 
-	inline void SetDisplayDebugServices(bool bShouldDisplay) { bDisplayDebugServices = bShouldDisplay; }
-	inline bool ShouldDisplayDebugServices() { return bDisplayDebugServices; }
-
-	float CalculateAvgFPS(float prevElapsed);
-
-// BigRevision changes
 private:
 	SubSystemHandler mSubSystemHandler;
 
@@ -109,18 +89,6 @@ private:
 
 	EngineConfig* mEngineConfig;
 
-	// FPS calculation
-	int mFrameCount;
-	float mFPSSamples[MAX_FPS_SAMPLES];
-
-	// #TODO(Josh) Move this. Think about loop encapsulation and organization
-	float mDeltaTime;
-
-	// This should be replaced by a more robust and friendly API but will do for now.
-	U32 mRenderSystemId;
-	U32 mECSId;
-
 	bool bIsInitialized;
 	bool bShouldExit;
-	bool bDisplayDebugServices;
 };

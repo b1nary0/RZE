@@ -21,17 +21,6 @@
 #include <Utils//Platform/Timers/HiResTimer.h>
 #include <Utils/DebugUtils/Debug.h>
 
-void TempInitImGui()
-{
-	ImGuiIO& io = ImGui::GetIO();
-	io.DisplaySize.x = RZE_Engine::Get()->GetWindowSettings().GetDimensions().X();
-	io.DisplaySize.y = RZE_Engine::Get()->GetWindowSettings().GetDimensions().Y();
-
-	unsigned char* pixels;
-	int width, height;
-	io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
-}
-
 RZE_Engine* RZE_Engine::sInstance = nullptr;
 
 RZE_Engine::RZE_Engine()
@@ -43,14 +32,6 @@ RZE_Engine::RZE_Engine()
 
 	bShouldExit = false;
 	bIsInitialized = false;
-	bDisplayDebugServices = false;
-
-	mFrameCount = 0;
-
-	for (int i = 0; i < MAX_FPS_SAMPLES; ++i)
-	{
-		mFPSSamples[i] = 0;
-	}
 }
 
 RZE_Engine::~RZE_Engine()
@@ -68,65 +49,13 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 		AssertNotNull(createGameCallback);
 		PostInit(createGameCallback);
 
-		HiResTimer updateTimer;
-		HiResTimer frameTimer;
-
-		float prevFrameTime = 1.0f;
-		float curFrameTime = 1.0f;
-		float accumulator = 0.0f;
-		const float kMaxDeltaTime = 1/240.0f;
-
-		float updateTime = 0.0f;
-		float renderTime = 0.0f;
-		float deltaTimeStat = 0.0f;
-		float fps = 0.0f;
-		bool bUpdateFrameStats = false;
-
-		frameTimer.Start();
 		while (!bShouldExit)
 		{
-			prevFrameTime = curFrameTime;
-			curFrameTime = frameTimer.GetElapsed<float>();
-			mDeltaTime = curFrameTime - prevFrameTime;
-			accumulator += mDeltaTime;
-
-			++mFrameCount;
-
-			ImGui::NewFrame();
-
 			{
-				//while (accumulator >= kMaxDeltaTime)
-				{
-					updateTimer.Start();
-					Update();
-					updateTimer.Stop();
-
-					accumulator -= kMaxDeltaTime;
-				}
+				Update();
 			}
-
-			bUpdateFrameStats = mFrameCount % 5 == 0;
-			if (bUpdateFrameStats)
-			{
-				fps = CalculateAvgFPS(mDeltaTime);
-				updateTime = updateTimer.GetElapsed<float>() * 1000.0f;
-				deltaTimeStat = mDeltaTime * 1000.0f;
-			}
-
-			DebugServices::AddData(StringUtils::FormatString("FPS: %i", static_cast<int>(fps)), Vector3D(0.0f, 1.0f, 0.0f));
-			DebugServices::AddData(StringUtils::FormatString("Frame Time: %f ms", deltaTimeStat), Vector3D(0.0f, 1.0f, 0.0f));
-			DebugServices::AddData(StringUtils::FormatString("Update Time: %f ms", updateTime), Vector3D(0.0f, 1.0f, 0.0f));
-
-			if (ShouldDisplayDebugServices())
-			{
-				DebugServices::Display(GetMainWindowSize());
-			}
-
-			ImGui::Render();
-			
 			mMainWindow->BufferSwap(); // #TODO(Josh) Maybe this can be done better
 		}
-		frameTimer.Stop();
 
 		BeginShutDown();
 	}
@@ -149,9 +78,6 @@ void RZE_Engine::Init()
 		RegisterSubSystems();
 
 		mSubSystemHandler.InitializeSubSystems();
-
-		TempInitImGui();
-
 		mResourceHandler.Init();
 		mInputHandler.Initialize();
 
@@ -209,22 +135,7 @@ void RZE_Engine::InitGame(Functor<RZE_Game* const> createGameCallback)
 	mApplication->SetWindow(mMainWindow);
 	mApplication->Start();
 
-	mApplication->RegisterEvents(mEventHandler);
-	mApplication->RegisterInputEvents(mInputHandler);
-}
-
-float RZE_Engine::CalculateAvgFPS(float prevElapsed)
-{
-	mFPSSamples[mFrameCount % MAX_FPS_SAMPLES] = 1.0f / prevElapsed;
-	float fps = 0.0f;
-	for (int frameSampleIdx = 0; frameSampleIdx < MAX_FPS_SAMPLES; frameSampleIdx++)
-	{
-		fps += mFPSSamples[frameSampleIdx];
-	}
-
-	fps /= MAX_FPS_SAMPLES;
-
-	return fps;
+	//mApplication->RegisterInputEvents(mInputHandler);
 }
 
 void RZE_Engine::CompileEvents()
@@ -235,10 +146,6 @@ void RZE_Engine::CompileEvents()
 
 void RZE_Engine::RegisterSubSystems()
 {
-	mECSId = mSubSystemHandler.AddSubSystem<Apollo::EntityComponentSystem>();
-	mRenderSystemId = mSubSystemHandler.AddSubSystem<Diotima::RenderSystem>();
-
-	GetECS()->AddSystem<EntityRenderSystem>();
 }
 
 void RZE_Engine::RegisterWindowEvents()
@@ -267,10 +174,6 @@ void RZE_Engine::RegisterInputEvents()
 		if (key.GetKeyCode() == Win32KeyCode::Escape)
 		{
 			PostExit();
-		}
-		else if (key.GetKeyCode() == Win32KeyCode::F1)
-		{
-			SetDisplayDebugServices(!ShouldDisplayDebugServices());
 		}
 	});
 
@@ -341,29 +244,3 @@ ResourceHandler& RZE_Engine::GetResourceHandler()
 {
 	return mResourceHandler;
 }
-
-Diotima::SceneCamera& RZE_Engine::GetSceneCamera()
-{
-	Diotima::RenderSystem* renderSystem = mSubSystemHandler.GetSubSystemByIndex<Diotima::RenderSystem>(mRenderSystemId);
-	AssertNotNull(renderSystem);
-	return renderSystem->GetSceneCamera();
-}
-
-Apollo::EntityComponentSystem* RZE_Engine::GetECS()
-{
-	return mSubSystemHandler.GetSubSystemByIndex<Apollo::EntityComponentSystem>(mECSId);
-}
-
-const Vector2D& RZE_Engine::GetMainWindowSize() const
-{
-	return mMainWindow->GetDimensions();
-}
-
-void RZE_Engine::SetCursorEnabled(bool enabled)
-{
-	if (mMainWindow)
-	{
-		mMainWindow->SetCursorEnabled(enabled);
-	}
-}
-
