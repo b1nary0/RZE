@@ -50,13 +50,13 @@ void GameApp::Start()
 	const char* const quadMeshFilePath = "./../Engine/Assets/3D/Quad.obj";
 	const char* const quadTextureFilePath = "./../Engine/Assets/2D/Container.jpg";
 
-	ResourceHandler& resourceHandler = RZE_Engine::Get()->GetResourceHandler();
-
-	ResourceHandle cubeMesh = resourceHandler.RequestResource<MeshResource>(cubeFilePath);
-	ResourceHandle lampMesh = resourceHandler.RequestResource<MeshResource>(lampFilePath);
-
-	ResourceHandle quadMesh = resourceHandler.RequestResource<MeshResource>(quadMeshFilePath);
-	ResourceHandle quadTex = resourceHandler.RequestResource<GFXTexture2D>(quadTextureFilePath);
+// 	ResourceHandler& resourceHandler = RZE_Engine::Get()->GetResourceHandler();
+// 
+// 	ResourceHandle cubeMesh = resourceHandler.RequestResource<MeshResource>(cubeFilePath);
+// 	ResourceHandle lampMesh = resourceHandler.RequestResource<MeshResource>(lampFilePath);
+// 
+// 	ResourceHandle quadMesh = resourceHandler.RequestResource<MeshResource>(quadMeshFilePath);
+// 	ResourceHandle quadTex = resourceHandler.RequestResource<GFXTexture2D>(quadTextureFilePath);
 
 // 	CreateLight(cubeMesh);
 // 	CreateGround(cubeMesh);
