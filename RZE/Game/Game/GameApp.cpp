@@ -172,15 +172,15 @@ void GameApp::Update()
 	RZE_Game::Update();
 
 	// #TODO(Josh) Uncomment when scenecam is back
-// 	const Vector3D& camPos = RZE_Engine::Get()->GetSceneCamera().GetPositionVec();
-// 	if (VectorUtils::DistanceSq(camPos, cameraStartPos) > 0.025f && mIsCameraStartSequence)
-// 	{
-// 		RZE_Engine::Get()->GetSceneCamera().SetPosition(VectorUtils::Lerp(camPos, cameraStartPos, RZE_Engine::Get()->GetDeltaTime()));
-// 	}
-// 	else if (mIsCameraStartSequence)
-// 	{
-// 		mIsCameraStartSequence = false;
-// 	}
+	const Vector3D& camPos = RZE_Engine::Get()->GetSceneCamera().GetPositionVec();
+	if (VectorUtils::DistanceSq(camPos, cameraStartPos) > 0.025f && mIsCameraStartSequence)
+	{
+		RZE_Engine::Get()->GetSceneCamera().SetPosition(VectorUtils::Lerp(camPos, cameraStartPos, RZE_Engine::Get()->GetDeltaTime()));
+	}
+	else if (mIsCameraStartSequence)
+	{
+		mIsCameraStartSequence = false;
+	}
 }
 
 void GameApp::CreateTextureQuad(const ResourceHandle& meshHandle, const ResourceHandle& textureHandle)

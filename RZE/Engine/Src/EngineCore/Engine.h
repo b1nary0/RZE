@@ -49,7 +49,6 @@ public:
 	void Run(Functor<RZE_Game* const>& createApplicationCallback);
 
 	WindowSettings&		GetWindowSettings();
-	GameWorld&			GetWorld() const;
 	ResourceHandler&	GetResourceHandler();
 	Diotima::SceneCamera& GetSceneCamera();
 
