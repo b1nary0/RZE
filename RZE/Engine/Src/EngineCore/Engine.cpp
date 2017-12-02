@@ -95,7 +95,7 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 			ImGui::NewFrame();
 
 			{
-				while (accumulator >= kMaxDeltaTime)
+				//while (accumulator >= kMaxDeltaTime)
 				{
 					updateTimer.Start();
 					Update();
