@@ -3,13 +3,7 @@
 #include <RZE_Config.h>
 #include <RZE.h>
 
-#include <Game/GameEntity.h>
 #include <Game/GameWorld.h>
-#include <Components/MeshComponent.h>
-#include <Components/TransformComponent.h>
-#include <Components/LightSourceComponent.h>
-
-#include <Systems/EntityRenderSystem.h>
 
 #include <DebugUtils/DebugServices.h>
 

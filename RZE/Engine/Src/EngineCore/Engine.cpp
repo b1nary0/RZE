@@ -13,8 +13,6 @@
 
 #include <Game/GameWorld.h>
 
-#include <Systems/EntityRenderSystem.h>
-
 #include <Windowing/Win32Window.h>
 #include <Windowing/WinKeyCodes.h>
 

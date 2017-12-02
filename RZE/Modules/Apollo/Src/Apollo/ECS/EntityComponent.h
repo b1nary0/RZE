@@ -5,52 +5,47 @@
 
 #include <Utils/PrimitiveDefs.h>
 
-typedef U32 ComponentTypeID;
-
-template <class TComponentBase>
-class ComponentID
+namespace Apollo
 {
-public:
-	template <class TComponentType>
-	static ComponentTypeID GetComponentTypeID()
+	typedef U32 ComponentTypeID;
+
+	template <class TComponentBase>
+	class ComponentID
 	{
-		static ComponentTypeID id = sNextComponentID++;
-		return id;
-	}
+	public:
+		template <class TComponentType>
+		static ComponentTypeID GetComponentTypeID()
+		{
+			static ComponentTypeID id = sNextComponentID++;
+			return id;
+		}
 
-private:
-	static ComponentTypeID sNextComponentID;
-};
+	private:
+		static ComponentTypeID sNextComponentID;
+	};
 
-template <class TBase>
-ComponentTypeID ComponentID<TBase>::sNextComponentID = 0;
+	template <class TBase>
+	ComponentTypeID ComponentID<TBase>::sNextComponentID = 0;
 
-class IEntityComponent
-{
-public:
-	IEntityComponent();
-	~IEntityComponent();
+	template <typename TComponentType>
+	struct Component
+	{
+	public:
+		Component() {}
+		~Component() {}
 
-	inline const std::string& GetName() const { return mName; }
-	inline void SetName(const std::string& newName) { mName = newName; }
+		inline const std::string& GetName() const { return mName; }
+		inline void SetName(const std::string& newName) { mName = newName; }
 
-	inline U32 GetID() const { return mComponentID; }
+		static inline U32 GetID()
+		{
+			return ComponentID<Component>::GetComponentTypeID<TComponentType>();
+		}
 
-protected:
-	template <class TComponentType>
-	void RegisterComponentID();
+	private:
+		U32 mComponentID;
 
-private:
-	static U32 sNextComponentID;
-
-	U32 mComponentID;
-
-	std::string mName;
-};
-
-template <class TComponentType>
-void IEntityComponent::RegisterComponentID()
-{
-	mComponentID = ComponentID<IEntityComponent>::GetComponentTypeID<TComponentType>();
+		std::string mName;
+	};
 }
 

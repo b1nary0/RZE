@@ -1,9 +1,6 @@
 #include <Apollo/ECS/EntityComponent.h>
 
-IEntityComponent::IEntityComponent()
+namespace Apollo
 {
-}
 
-IEntityComponent::~IEntityComponent()
-{
 }
