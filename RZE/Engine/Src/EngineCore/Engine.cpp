@@ -69,7 +69,6 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 		PostInit(createGameCallback);
 
 		HiResTimer updateTimer;
-		HiResTimer renderTimer;
 		HiResTimer frameTimer;
 
 		float prevFrameTime = 1.0f;
@@ -111,14 +110,12 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 			{
 				fps = CalculateAvgFPS(mDeltaTime);
 				updateTime = updateTimer.GetElapsed<float>() * 1000.0f;
-				renderTime = renderTimer.GetElapsed<float>() * 1000.0f;
 				deltaTimeStat = mDeltaTime * 1000.0f;
 			}
 
 			DebugServices::AddData(StringUtils::FormatString("FPS: %i", static_cast<int>(fps)), Vector3D(0.0f, 1.0f, 0.0f));
 			DebugServices::AddData(StringUtils::FormatString("Frame Time: %f ms", deltaTimeStat), Vector3D(0.0f, 1.0f, 0.0f));
 			DebugServices::AddData(StringUtils::FormatString("Update Time: %f ms", updateTime), Vector3D(0.0f, 1.0f, 0.0f));
-			DebugServices::AddData(StringUtils::FormatString("Render Time: %f ms", renderTime), Vector3D(0.0f, 1.0f, 0.0f));
 
 			if (ShouldDisplayDebugServices())
 			{
@@ -338,12 +335,6 @@ void RZE_Engine::PostExit()
 WindowSettings& RZE_Engine::GetWindowSettings()
 {
 	return mEngineConfig->GetWindowSettings();
-}
-
-GameWorld& RZE_Engine::GetWorld() const
-{
-	AssertNotNull(mWorld);
-	return *mWorld;
 }
 
 ResourceHandler& RZE_Engine::GetResourceHandler()

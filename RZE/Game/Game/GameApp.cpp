@@ -42,55 +42,55 @@ GameApp::~GameApp()
 
 void GameApp::RegisterInputEvents(InputHandler& inputHandler)
 {
-// 	static float speed = 50.0f;
-// 
-// 	Functor<void, const InputKey&> forwardFunc([this](const InputKey& key)
-// 	{
-// 		if (!mIsCameraStartSequence)
-// 		{
-// 			AssertExpr(key.GetKeyCode() == Win32KeyCode::Key_W);
-// 			SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
-// 			Vector3D newPos = sceneCam.GetPositionVec();
-// 			newPos += sceneCam.GetDirectionVec() * speed * RZE_Engine::Get()->GetDeltaTime();
-// 			sceneCam.SetPosition(newPos);
-// 		}
-// 	});
-// 
-// 	Functor<void, const InputKey&> backwardFunc([this](const InputKey& key)
-// 	{
-// 		if (!mIsCameraStartSequence)
-// 		{
-// 			AssertExpr(key.GetKeyCode() == Win32KeyCode::Key_S);
-// 			SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
-// 			Vector3D newPos = sceneCam.GetPositionVec();
-// 			newPos -= sceneCam.GetDirectionVec() * speed * RZE_Engine::Get()->GetDeltaTime();
-// 			sceneCam.SetPosition(newPos);
-// 		}
-// 	});
-// 
-// 	Functor<void, const InputKey&> leftFunc([this](const InputKey& key)
-// 	{
-// 		if (!mIsCameraStartSequence)
-// 		{
-// 			AssertExpr(key.GetKeyCode() == Win32KeyCode::Key_A);
-// 			SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
-// 			Vector3D newPos = sceneCam.GetPositionVec();
-// 			newPos -= sceneCam.GetDirectionVec().Cross(sceneCam.GetUpVec()).Normalize() * speed * RZE_Engine::Get()->GetDeltaTime();
-// 			sceneCam.SetPosition(newPos);
-// 		}
-// 	});
-// 
-// 	Functor<void, const InputKey&> rightFunc([this](const InputKey& key)
-// 	{
-// 		if (!mIsCameraStartSequence)
-// 		{
-// 			AssertExpr(key.GetKeyCode() == Win32KeyCode::Key_D);
-// 			SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
-// 			Vector3D newPos = sceneCam.GetPositionVec();
-// 			newPos += sceneCam.GetDirectionVec().Cross(sceneCam.GetUpVec()).Normalize() * speed * RZE_Engine::Get()->GetDeltaTime();
-// 			sceneCam.SetPosition(newPos);
-// 		}
-// 	});
+	static float speed = 50.0f;
+
+	Functor<void, const InputKey&> forwardFunc([this](const InputKey& key)
+	{
+		if (!mIsCameraStartSequence)
+		{
+			AssertExpr(key.GetKeyCode() == Win32KeyCode::Key_W);
+			SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
+			Vector3D newPos = sceneCam.GetPositionVec();
+			newPos += sceneCam.GetDirectionVec() * speed * RZE_Engine::Get()->GetDeltaTime();
+			sceneCam.SetPosition(newPos);
+		}
+	});
+
+	Functor<void, const InputKey&> backwardFunc([this](const InputKey& key)
+	{
+		if (!mIsCameraStartSequence)
+		{
+			AssertExpr(key.GetKeyCode() == Win32KeyCode::Key_S);
+			SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
+			Vector3D newPos = sceneCam.GetPositionVec();
+			newPos -= sceneCam.GetDirectionVec() * speed * RZE_Engine::Get()->GetDeltaTime();
+			sceneCam.SetPosition(newPos);
+		}
+	});
+
+	Functor<void, const InputKey&> leftFunc([this](const InputKey& key)
+	{
+		if (!mIsCameraStartSequence)
+		{
+			AssertExpr(key.GetKeyCode() == Win32KeyCode::Key_A);
+			SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
+			Vector3D newPos = sceneCam.GetPositionVec();
+			newPos -= sceneCam.GetDirectionVec().Cross(sceneCam.GetUpVec()).Normalize() * speed * RZE_Engine::Get()->GetDeltaTime();
+			sceneCam.SetPosition(newPos);
+		}
+	});
+
+	Functor<void, const InputKey&> rightFunc([this](const InputKey& key)
+	{
+		if (!mIsCameraStartSequence)
+		{
+			AssertExpr(key.GetKeyCode() == Win32KeyCode::Key_D);
+			SceneCamera& sceneCam = RZE_Engine::Get()->GetSceneCamera();
+			Vector3D newPos = sceneCam.GetPositionVec();
+			newPos += sceneCam.GetDirectionVec().Cross(sceneCam.GetUpVec()).Normalize() * speed * RZE_Engine::Get()->GetDeltaTime();
+			sceneCam.SetPosition(newPos);
+		}
+	});
 // 
 // 	Functor<void, const Vector3D&> mouseMoveFunc([this](const Vector3D& pos)
 // 	{
@@ -127,10 +127,10 @@ void GameApp::RegisterInputEvents(InputHandler& inputHandler)
 // 
 // 	});
 // 
-// 	inputHandler.BindAction(Win32KeyCode::Key_W, EButtonState::ButtonState_Hold, forwardFunc);
-// 	inputHandler.BindAction(Win32KeyCode::Key_S, EButtonState::ButtonState_Hold, backwardFunc);
-// 	inputHandler.BindAction(Win32KeyCode::Key_A, EButtonState::ButtonState_Hold, leftFunc);
-// 	inputHandler.BindAction(Win32KeyCode::Key_D, EButtonState::ButtonState_Hold, rightFunc);
+ 	inputHandler.BindAction(Win32KeyCode::Key_W, EButtonState::ButtonState_Hold, forwardFunc);
+ 	inputHandler.BindAction(Win32KeyCode::Key_S, EButtonState::ButtonState_Hold, backwardFunc);
+ 	inputHandler.BindAction(Win32KeyCode::Key_A, EButtonState::ButtonState_Hold, leftFunc);
+ 	inputHandler.BindAction(Win32KeyCode::Key_D, EButtonState::ButtonState_Hold, rightFunc);
 
 	//inputHandler.BindAxis(EAxisBinding::AxisBinding_Mouse, EAxisType::AxisType_Vector, mouseMoveFunc);
 }
