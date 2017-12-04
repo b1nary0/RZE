@@ -62,6 +62,11 @@ namespace Apollo
 	template <typename TComponent>
 	bool ComponentHandler::HasComponent(EntityID entityID) const
 	{
+		if (entityID >= mCapacity)
+		{
+			return false;
+		}
+
 		const Entity& entity = mEntities[entityID];
 		return entity.mComponentSet[TComponent::GetID()];
 	}
