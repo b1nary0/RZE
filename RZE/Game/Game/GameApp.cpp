@@ -20,7 +20,7 @@
 
 
 // TEST
-#include <Components/TransformComponent.h>
+#include <ECS/Components/TransformComponent.h>
 
 using namespace Diotima;
 
