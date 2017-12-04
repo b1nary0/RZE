@@ -34,6 +34,19 @@ namespace Apollo
 		mCapacity = Resize(32);
 	}
 
+	void ComponentHandler::Update()
+	{
+		for (size_t idx = 0; idx < mSystems.size(); ++idx)
+		{
+			mSystems[idx]->Update(mEntities);
+		}
+	}
+
+	void ComponentHandler::ShutDown()
+	{
+
+	}
+
 	U32 ComponentHandler::TryResize()
 	{
 		if (mCapacity > mNextAvailEntityID)

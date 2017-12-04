@@ -1,6 +1,6 @@
 #include <Apollo/ECS/Entity.h>
 
-#include <Apollo/ECS/EntityComponent.h>
+namespace Apollo
+{
 
-#include <Utils/Conversions.h>
-
+}

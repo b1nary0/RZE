@@ -30,20 +30,10 @@ namespace Apollo
 
 	void EntityComponentSystem::EntityAdminImpl::Initialize()
 	{
-		InternalGetEntities().reserve(150);
-
-		for (auto& system : InternalGetSystems())
-		{
-			system->Initialize();
-		}
 	}
 
 	void EntityComponentSystem::EntityAdminImpl::Update()
 	{
-		for (auto& system : InternalGetSystems())
-		{
-			system->Update(InternalGetEntities());
-		}
 	}
 
 	void EntityComponentSystem::EntityAdminImpl::ShutDown()

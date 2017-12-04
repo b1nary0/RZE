@@ -1,24 +1,20 @@
 #pragma once
 
-#include <Apollo/ECS/EntityAdmin.h>
+#include <vector>
 
-class IEntityComponent;
+#include <Apollo/ECS/Entity.h>
 
-class IEntitySystem
+namespace Apollo
 {
-	typedef std::vector<IEntityComponent*> ComponentList;
+	struct Entity;
 
-public:
-	IEntitySystem() {};
+	class EntitySystem
+	{
+	public:
+		EntitySystem() {};
 
-	virtual void Initialize() = 0;
-	virtual void Update(IEntityAdmin::EntityList& entities) = 0;
-	virtual void ShutDown() = 0;
-
-	const ComponentList& GetComponents() { return mComponents; }
-
-protected:
-	ComponentList& InternalGetComponents() { return mComponents; }
-
-	ComponentList mComponents;
-};
+		virtual void Initialize() = 0;
+		virtual void Update(std::vector<Entity>& entities) = 0;
+		virtual void ShutDown() = 0;
+	};
+}

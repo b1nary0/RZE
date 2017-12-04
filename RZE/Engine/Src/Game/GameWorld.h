@@ -2,7 +2,7 @@
 
  #include <Apollo/ECS/EntityAdmin.h>
  
- class GameWorld : public IEntityAdmin
+ class GameWorld : public Apollo::EntityAdmin
  {
  
  public:

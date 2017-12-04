@@ -14,10 +14,10 @@
  void GameWorld::InitSystems()
  {
  	//@todo:josh this is dumb and purely just to get shit working. needs to be re-thought
- 	for (auto& system : InternalGetSystems())
- 	{
- 		system->Initialize();
- 	}
+//  	for (auto& system : InternalGetSystems())
+//  	{
+//  		system->Initialize();
+//  	}
  }
  
  void GameWorld::Initialize()
@@ -28,19 +28,19 @@
  void GameWorld::Update()
  {
  	//#TODO need to ensure update order here... for logic > rendering etc
- 	for (auto& system : GetSystems())
- 	{
- 		system->Update(InternalGetEntities());
- 	}
+//  	for (auto& system : GetSystems())
+//  	{
+//  		system->Update(InternalGetEntities());
+//  	}
  }
  
  void GameWorld::ShutDown()
  {
- 	SystemList& systemList = InternalGetSystems();
- 	std::reverse(systemList.begin(), systemList.end());
- 
- 	for (IEntitySystem* system : systemList)
- 	{
- 		system->ShutDown();
- 	}
+// 	 SystemList& systemList = InternalGetSystems();
+// 	 std::reverse(systemList.begin(), systemList.end());
+// 
+// 	 for (Apollo::EntitySystem* system : systemList)
+// 	 {
+// 		 system->ShutDown();
+// 	 }
  }

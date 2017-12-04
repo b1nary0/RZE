@@ -8,13 +8,13 @@
 
 namespace Apollo
 {
-	class IEntity;
+	struct Entity;
 
 	class EntityComponentSystem : public ISubSystem
 	{
-		typedef std::vector<IEntity*> EntityList;
+		typedef std::vector<Entity*> EntityList;
 
-		class EntityAdminImpl : public IEntityAdmin
+		class EntityAdminImpl : public EntityAdmin
 		{
 		// IEntityAdmin interface
 		public:

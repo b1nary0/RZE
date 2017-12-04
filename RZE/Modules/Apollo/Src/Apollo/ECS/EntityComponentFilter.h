@@ -11,7 +11,7 @@ public:
 	{
 	}
 
-	void FilterEachOf(const std::vector<IEntity*>& entities, std::vector<IEntity*>& outPassedEntities)
+	void FilterEachOf(const std::vector<Entity*>& entities, std::vector<Entity*>& outPassedEntities)
 	{
 		for (auto& entity : entities)
 		{
@@ -22,7 +22,7 @@ public:
 		}
 	}
 
-	void FilterAnyOf(const std::vector<IEntity*>& entities, std::vector<IEntity*>& outPassedEntities)
+	void FilterAnyOf(const std::vector<Entity*>& entities, std::vector<Entity*>& outPassedEntities)
 	{
 		for (auto& entity : entities)
 		{
@@ -34,7 +34,7 @@ public:
 		}
 	}
 
-	void FilterAtLeast(const std::vector<IEntity*>& entities, std::vector<IEntity*>& outPassedEntities)
+	void FilterAtLeast(const std::vector<Entity*>& entities, std::vector<Entity*>& outPassedEntities)
 	{
 		for (auto& entity : entities)
 		{

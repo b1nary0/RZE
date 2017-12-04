@@ -48,7 +48,10 @@ void GameApp::Start()
 	Apollo::EntityID entity = componentHandler.CreateEntity();
 
 	componentHandler.AddComponent<TransformComponent>(entity);
-	componentHandler.HasComponent<TransformComponent>(entity);
+	if (componentHandler.HasComponent<TransformComponent>(entity))
+	{
+		TransformComponent* const transfComp = componentHandler.GetComponent<TransformComponent>(entity);
+	}
 
 
 // 	CreateDefaultShader();
