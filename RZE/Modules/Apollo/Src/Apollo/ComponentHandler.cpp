@@ -13,6 +13,8 @@ namespace Apollo
 
 	EntityID ComponentHandler::CreateEntity()
 	{
+		TryResize();
+
 		EntityID id = mNextAvailEntityID++;
 		Entity& entity = mEntities[id];
 
@@ -54,7 +56,7 @@ namespace Apollo
 			return mCapacity;
 		}
 
-		U32 newCapacity = mCapacity * 2;
+		U32 newCapacity = mCapacity + mCapacity / 2;
 		return Resize(newCapacity);
 	}
 
@@ -63,7 +65,8 @@ namespace Apollo
 		mEntities.resize(newCapacity);
 
 		AssertExpr(mEntities.size() == newCapacity);
-		return mEntities.size();
+		mCapacity = mEntities.size();
+		return mCapacity;
 	}
 
 }

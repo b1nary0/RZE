@@ -2,14 +2,9 @@
 
 #include <EngineCore/Engine.h>
 
-#include <imGUI/imgui.h>
-
-#include <Apollo/EntityComponentSystem.h>
-
 #include <DebugUtils/DebugServices.h>
 
-#include <Diotima/RenderSystem.h>
-#include <Diotima/Driver/OpenGL.h>
+#include <ECS/Systems/RenderSystem.h>
 
 #include <Game/GameWorld.h>
 
@@ -18,6 +13,14 @@
 
 #include <Utils//Platform/Timers/HiResTimer.h>
 #include <Utils/DebugUtils/Debug.h>
+
+// External Libs
+#include <imGUI/imgui.h>
+
+#include <Apollo/EntityComponentSystem.h>
+
+#include <Diotima/RenderSystem.h>
+#include <Diotima/Driver/OpenGL.h>
 
 RZE_Engine* RZE_Engine::sInstance = nullptr;
 
@@ -144,6 +147,7 @@ void RZE_Engine::CompileEvents()
 
 void RZE_Engine::RegisterSubSystems()
 {
+	mComponentHandler.AddSystem<RenderSystem>();
 }
 
 void RZE_Engine::RegisterWindowEvents()
@@ -197,6 +201,8 @@ void RZE_Engine::Update()
 	mEventHandler.ProcessEvents();
 
 	mSubSystemHandler.UpdateSubSystems();
+
+	mComponentHandler.Update();
 
 	mApplication->Update();
 	mWorld->Update();

@@ -74,9 +74,10 @@ namespace Apollo
 	template <typename TSystemType, typename... TArgs>
 	TSystemType* ComponentHandler::AddSystem(TArgs... args)
 	{
-		mSystems.push_back(new TSystemType(std::forward<TArgs>(args)...));
-		mSystems.back()->Initialize();
-		return mSystems.back();
+		TSystemType* const system = new TSystemType(std::forward<TArgs>(args)...);
+		mSystems.push_back(system);
+		system->Initialize();
+		return system;
 	}
 
 	template <typename TComponentType, typename... TArgs>

@@ -4,55 +4,58 @@
 
 #include <Apollo/ECS/Entity.h>
 
-class EntityComponentFilter
+namespace Apollo
 {
-public:
-	EntityComponentFilter()
+	class EntityComponentFilter
 	{
-	}
-
-	void FilterEachOf(const std::vector<Entity*>& entities, std::vector<Entity*>& outPassedEntities)
-	{
-		for (auto& entity : entities)
+	public:
+		EntityComponentFilter()
 		{
-			if (entity->mComponentSet == mFilterSet)
+		}
+
+		void FilterEachOf(const std::vector<Entity>& entities, std::vector<Entity>& outPassedEntities)
+		{
+			for (auto& entity : entities)
 			{
-				outPassedEntities.push_back(entity);
+				if (entity.mComponentSet == mFilterSet)
+				{
+					outPassedEntities.push_back(entity);
+				}
 			}
 		}
-	}
 
-	void FilterAnyOf(const std::vector<Entity*>& entities, std::vector<Entity*>& outPassedEntities)
-	{
-		for (auto& entity : entities)
+		void FilterAnyOf(const std::vector<Entity>& entities, std::vector<Entity>& outPassedEntities)
 		{
-			std::bitset<ENTITY_MAX_COMPONENTS> filtered = entity->mComponentSet & mFilterSet;
-			if (filtered.any())
+			for (auto& entity : entities)
 			{
-				outPassedEntities.push_back(entity);
+				std::bitset<ENTITY_MAX_COMPONENTS> filtered = entity.mComponentSet & mFilterSet;
+				if (filtered.any())
+				{
+					outPassedEntities.push_back(entity);
+				}
 			}
 		}
-	}
 
-	void FilterAtLeast(const std::vector<Entity*>& entities, std::vector<Entity*>& outPassedEntities)
-	{
-		for (auto& entity : entities)
+		void FilterAtLeast(const std::vector<Entity>& entities, std::vector<Entity>& outPassedEntities)
 		{
-			std::bitset<ENTITY_MAX_COMPONENTS> filtered = entity->mComponentSet & mFilterSet;
-			if (filtered == mFilterSet)
+			for (auto& entity : entities)
 			{
-				outPassedEntities.push_back(entity);
+				std::bitset<ENTITY_MAX_COMPONENTS> filtered = entity.mComponentSet & mFilterSet;
+				if (filtered == mFilterSet)
+				{
+					outPassedEntities.push_back(entity);
+				}
 			}
 		}
-	}
 
-	template<class TComponent>
-	void AddFilterType()
-	{
-		ComponentTypeID componentTypeID = ComponentID<IEntityComponent>::GetComponentTypeID<TComponent>();
-		mFilterSet[componentTypeID] = 1;
-	}
+		template<class TComponent>
+		void AddFilterType()
+		{
+			ComponentTypeID componentTypeID = ComponentID<ComponentBase>::GetComponentTypeID<TComponent>();
+			mFilterSet[componentTypeID] = 1;
+		}
 
-private:
-	std::bitset<ENTITY_MAX_COMPONENTS> mFilterSet;
-};
+	private:
+		std::bitset<ENTITY_MAX_COMPONENTS> mFilterSet;
+	};
+}

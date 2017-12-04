@@ -44,13 +44,16 @@ void GameApp::Start()
 
 	// ALL TEST CODE
 
-	Apollo::ComponentHandler& componentHandler = RZE_Engine::Get()->GetComponentHandler();
-	Apollo::EntityID entity = componentHandler.CreateEntity();
-
-	componentHandler.AddComponent<TransformComponent>(entity);
-	if (componentHandler.HasComponent<TransformComponent>(entity))
+	// Leaving the for loop for testing purposes
+	for (int i = 0; i < 1; ++i)
 	{
-		TransformComponent* const transfComp = componentHandler.GetComponent<TransformComponent>(entity);
+		Apollo::ComponentHandler& componentHandler = RZE_Engine::Get()->GetComponentHandler();
+		Apollo::EntityID entity = componentHandler.CreateEntity();
+
+		if (i % 2 == 0)
+		{
+			componentHandler.AddComponent<TransformComponent>(entity);
+		}
 	}
 
 
