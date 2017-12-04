@@ -8,6 +8,7 @@
 #include <Apollo/ECS/EntitySystem.h>
 
 #include <Utils/PrimitiveDefs.h>
+#include <Utils/Functor.h>
 
 namespace Apollo
 {
@@ -16,10 +17,13 @@ namespace Apollo
 	class ComponentHandler
 	{
 	public:
+		typedef Functor<void, EntityID, ComponentHandler&> ComponentAddedFunc;
+
 		typedef std::vector<Entity> EntityList;
 		typedef std::vector<ComponentBase*> ComponentList;
 		typedef std::vector<EntitySystem*> SystemList;
 		typedef std::unordered_map<EntityID, ComponentList> EntityComponentMapping;
+		typedef std::unordered_map<ComponentID, std::vector<ComponentAddedFunc>> OnComponentAddedMap;
 
 	public:
 		ComponentHandler();
@@ -28,6 +32,9 @@ namespace Apollo
 		void Initialize();
 		void Update();
 		void ShutDown();
+
+		template <typename TComponentType>
+		void RegisterForComponentAddNotification(ComponentAddedFunc callback);
 
 	public:
 		EntityID CreateEntity();
@@ -57,6 +64,8 @@ namespace Apollo
 		EntityList mEntities;
 		EntityComponentMapping mEntityComponentMap;
 		SystemList mSystems;
+
+		OnComponentAddedMap mOnComponentAddedMap;
 	};
 
 	template <typename TComponent>
@@ -80,6 +89,13 @@ namespace Apollo
 		return system;
 	}
 
+	template <typename TComponentType>
+	void ComponentHandler::RegisterForComponentAddNotification(ComponentAddedFunc callback)
+	{
+		ComponentID componentID = TComponentType::GetID();
+		mOnComponentAddedMap[componentID].push_back(callback);
+	}
+
 	template <typename TComponentType, typename... TArgs>
 	TComponentType* ComponentHandler::AddComponent(EntityID entityID, TArgs... args)
 	{
@@ -88,12 +104,20 @@ namespace Apollo
 			return nullptr;
 		}
 
-		U32 componentID = TComponentType::GetID();
+		ComponentID componentID = TComponentType::GetID();
 
 		TComponentType* const newComp = new TComponentType(std::forward<TArgs>(args)...);
 		mEntityComponentMap[entityID][componentID] = newComp;
 
 		mEntities[entityID].mComponentSet[componentID] = true;
+
+		if (mOnComponentAddedMap.count(componentID))
+		{
+			for (auto& func : mOnComponentAddedMap[componentID])
+			{
+				func(entityID, *this);
+			}
+		}
 
 		return newComp;
 	}
@@ -106,7 +130,7 @@ namespace Apollo
 			return nullptr;
 		}
 
-		U32 componentID = TComponentType::GetID();
+		ComponentID componentID = TComponentType::GetID();
 		TComponentType* const component = static_cast<TComponentType*>(mEntityComponentMap[entityID][componentID]);
 		AssertNotNull(component && "We should not have passed the above HasComponent() check and recieved a null component");
 

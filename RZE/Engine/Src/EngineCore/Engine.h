@@ -16,6 +16,8 @@
 
 #include <Apollo/ComponentHandler.h>
 
+#include <Diotima/RenderSystem.h>
+
 class GameWorld;
 class Win32Window;
 
@@ -49,6 +51,9 @@ public:
 
 	WindowSettings&		GetWindowSettings();
 	ResourceHandler&	GetResourceHandler();
+
+	// #TODO(Josh) Totally test. This is not good.
+	Diotima::RenderSystem* GetRenderSystem();
 
 	Apollo::ComponentHandler&	GetComponentHandler() { return mComponentHandler; }
 

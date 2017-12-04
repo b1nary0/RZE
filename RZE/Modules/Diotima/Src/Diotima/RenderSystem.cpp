@@ -258,30 +258,32 @@ namespace Diotima
 
 	void RenderSystem::Initialize()
 	{
-		// #TODO(Josh) The window should probably be in utils/renderer or something but not the engine 
-// 		WindowSettings& windowSettings = RZE_Engine::Get()->GetWindowSettings();
-// 
-// 		{
-// 			OpenGLRHI::OpenGLCreationParams creationParams;
-// 			creationParams.WindowWidth = static_cast<int>(windowSettings.GetDimensions().X());
-// 			creationParams.WindowHeight = static_cast<int>(windowSettings.GetDimensions().Y());
-// 
-// 			OpenGLRHI::Get().Init(creationParams);
-// 		}
-// 
-// 		OpenGLRHI::Get().ClearColor(0.0f, 0.0f, 1.0f, 1.0f);
+		// #TODO(Josh) Really need to work this out before going much further.
+		Vector2D windowDims(1600, 900);
 
-// 		SceneCameraProps cameraProps;	cameraProps.Direction = Vector3D(0.0f, -2.5f, -10.0f);
-// 		cameraProps.FrontDir = Vector3D(0.0f, 0.0f, -1.0f);
-// 		cameraProps.UpDir = Vector3D(0.0f, 1.0f, 0.0f);
-// 		cameraProps.FOV = 45.0f;
-// 		cameraProps.AspectRatio = windowSettings.GetDimensions().X() / windowSettings.GetDimensions().Y();
-// 		cameraProps.NearCull = 0.1f;
-// 		cameraProps.FarCull = 1000.0f;
-// 
-// 		mSceneCamera = new SceneCamera(cameraProps);
-// 		mSceneCamera->GenerateProjectionMat();
-// 		mSceneCamera->GenerateViewMat();
+		{
+			OpenGLRHI::OpenGLCreationParams creationParams;
+			creationParams.WindowWidth = static_cast<int>(windowDims.X());
+			creationParams.WindowHeight = static_cast<int>(windowDims.Y());
+
+			OpenGLRHI::Get().Init(creationParams);
+		}
+
+		OpenGLRHI::Get().ClearColor(0.0f, 0.0f, 0.5f, 1.0f);
+
+		SceneCameraProps cameraProps;	
+		cameraProps.Direction = Vector3D(0.0f, -2.5f, -10.0f);
+		cameraProps.Position = Vector3D(0.0, 2.0f, 10.0f);
+		cameraProps.FrontDir = Vector3D(0.0f, 0.0f, -1.0f);
+		cameraProps.UpDir = Vector3D(0.0f, 1.0f, 0.0f);
+		cameraProps.FOV = 45.0f;
+		cameraProps.AspectRatio = windowDims.X() / windowDims.Y();
+		cameraProps.NearCull = 0.1f;
+		cameraProps.FarCull = 1000.0f;
+
+		mSceneCamera = new SceneCamera(cameraProps);
+		mSceneCamera->GenerateProjectionMat();
+		mSceneCamera->GenerateViewMat();
 // 
 		OpenGLRHI::Get().EnableCapability(EGLCapability::DepthTest);
 
@@ -300,8 +302,8 @@ namespace Diotima
 			RenderSingleItem(item);
 		}
 
-		// 	mLightingList.clear();
-		// 	mFontList.clear();
+		mLightingList.clear();
+		mFontList.clear();
 	}
 
 	void RenderSystem::ShutDown()

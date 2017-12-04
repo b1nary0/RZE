@@ -25,6 +25,6 @@ struct TransformComponent : public Apollo::Component<TransformComponent>
 	{}
 
 	Vector3D Position;
-	Vector3D Scale;
+	Vector3D Scale {1, 1, 1};
 	Quaternion Rotation;
 };

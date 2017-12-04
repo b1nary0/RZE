@@ -51,7 +51,7 @@ namespace Apollo
 		template<class TComponent>
 		void AddFilterType()
 		{
-			ComponentTypeID componentTypeID = ComponentID<ComponentBase>::GetComponentTypeID<TComponent>();
+			ComponentID componentTypeID = ComponentTypeID<ComponentBase>::GetComponentTypeID<TComponent>();
 			mFilterSet[componentTypeID] = 1;
 		}
 

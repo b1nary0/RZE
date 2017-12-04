@@ -20,6 +20,7 @@
 
 
 // TEST
+#include <ECS/Components/MeshComponent.h>
 #include <ECS/Components/TransformComponent.h>
 
 using namespace Diotima;
@@ -50,10 +51,8 @@ void GameApp::Start()
 		Apollo::ComponentHandler& componentHandler = RZE_Engine::Get()->GetComponentHandler();
 		Apollo::EntityID entity = componentHandler.CreateEntity();
 
-		if (i % 2 == 0)
-		{
-			componentHandler.AddComponent<TransformComponent>(entity);
-		}
+		componentHandler.AddComponent<MeshComponent>(entity, "./../Engine/Assets/3D/Cube.obj");
+		componentHandler.AddComponent<TransformComponent>(entity);
 	}
 
 
@@ -196,42 +195,7 @@ void GameApp::Update()
 // 	mEntities.push_back(lampEntity);
 // }
 // 
-// void GameApp::CreateDefaultShader()
-// {
-// 	const char* const vertShaderFilePath = "./../Engine/Assets/Shaders/VertexShader.shader";
-// 	const char* const fragShaderFilePath = "./../Engine/Assets/Shaders/FragmentShader.shader";
-// 
-// 	ResourceHandle vertShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "DefaultVertexShader");
-// 	ResourceHandle fragShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "DefaultFragShader");
-// 
-// 	GFXShader* vertShader = RZE_Engine::Get()->GetResourceHandler().GetResource<GFXShader>(vertShaderHandle);
-// 	vertShader->Create();
-// 	vertShader->Compile();
-// 
-// 	GFXShader* fragShader = RZE_Engine::Get()->GetResourceHandler().GetResource<GFXShader>(fragShaderHandle);
-// 	fragShader->Create();
-// 	fragShader->Compile();
-// 
-// 	mDefaultShader = new GFXShaderGroup("DefaultShader");
-// 	mDefaultShader->AddShader(GFXShaderGroup::EShaderIndex::Vertex, vertShader);
-// 	mDefaultShader->AddShader(GFXShaderGroup::EShaderIndex::Fragment, fragShader);
-// 
-// 	mDefaultShader->AddUniform("UModelMat");
-// 	mDefaultShader->AddUniform("UProjectionMat");
-// 	mDefaultShader->AddUniform("UViewMat");
-// 
-// 	mDefaultShader->AddUniform("ULightPosition");
-// 	mDefaultShader->AddUniform("UViewPosition");
-// 	mDefaultShader->AddUniform("ULightColor");
-// 	mDefaultShader->AddUniform("ULightStrength");
-// 
-// 	mDefaultShader->AddUniform("UFragColor");
-// 
-// 	mDefaultShader->GenerateShaderProgram();
-// 
-// 	RZE_Engine::Get()->GetResourceHandler().ReleaseResource(vertShaderHandle);
-// 	RZE_Engine::Get()->GetResourceHandler().ReleaseResource(fragShaderHandle);
-// }
+
 // 
 // void GameApp::CreateTextureShader()
 // {

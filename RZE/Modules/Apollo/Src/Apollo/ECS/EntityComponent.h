@@ -7,25 +7,25 @@
 
 namespace Apollo
 {
-	typedef U32 ComponentTypeID;
+	typedef U32 ComponentID;
 
 	template <class TComponentBase>
-	class ComponentID
+	class ComponentTypeID
 	{
 	public:
 		template <class TComponentType>
-		static ComponentTypeID GetComponentTypeID()
+		static ComponentID GetComponentTypeID()
 		{
-			static ComponentTypeID id = sNextComponentID++;
+			static ComponentID id = sNextComponentID++;
 			return id;
 		}
 
 	private:
-		static ComponentTypeID sNextComponentID;
+		static ComponentID sNextComponentID;
 	};
 
 	template <class TBase>
-	ComponentTypeID ComponentID<TBase>::sNextComponentID = 0;
+	ComponentID ComponentTypeID<TBase>::sNextComponentID = 0;
 
 	struct ComponentBase
 	{
@@ -44,7 +44,7 @@ namespace Apollo
 
 		static inline U32 GetID()
 		{
-			return ComponentID<Component>::GetComponentTypeID<TComponentType>();
+			return ComponentTypeID<ComponentBase>::GetComponentTypeID<TComponentType>();
 		}
 
 	private:
