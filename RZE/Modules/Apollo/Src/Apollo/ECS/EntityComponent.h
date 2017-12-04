@@ -27,15 +27,20 @@ namespace Apollo
 	template <class TBase>
 	ComponentTypeID ComponentID<TBase>::sNextComponentID = 0;
 
+	struct ComponentBase
+	{
+		inline const std::string& GetName() const { return mName; }
+		inline void SetName(const std::string& newName) { mName = newName; }
+
+		std::string mName;
+	};
+
 	template <typename TComponentType>
-	struct Component
+	struct Component : public ComponentBase
 	{
 	public:
 		Component() {}
 		~Component() {}
-
-		inline const std::string& GetName() const { return mName; }
-		inline void SetName(const std::string& newName) { mName = newName; }
 
 		static inline U32 GetID()
 		{
@@ -43,9 +48,6 @@ namespace Apollo
 		}
 
 	private:
-		U32 mComponentID;
-
-		std::string mName;
 	};
 }
 

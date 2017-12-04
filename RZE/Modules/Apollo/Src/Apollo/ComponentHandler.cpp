@@ -19,6 +19,8 @@ namespace Apollo
 		entity.mEntityID = id;
 		entity.mComponentSet.reset();
 
+		mEntityComponentMap[id].resize(ENTITY_MAX_COMPONENTS);
+
 		return id;
 	}
 

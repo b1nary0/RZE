@@ -47,6 +47,7 @@ void GameApp::Start()
 	Apollo::ComponentHandler& componentHandler = RZE_Engine::Get()->GetComponentHandler();
 	Apollo::EntityID entity = componentHandler.CreateEntity();
 
+	componentHandler.AddComponent<TransformComponent>(entity);
 	componentHandler.HasComponent<TransformComponent>(entity);
 
 

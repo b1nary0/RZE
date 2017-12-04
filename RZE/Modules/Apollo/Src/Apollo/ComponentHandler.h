@@ -15,23 +15,18 @@ namespace Apollo
 	class ComponentHandler
 	{
 		typedef std::vector<Entity> EntityList;
+		typedef std::vector<ComponentBase*> ComponentList;
+		typedef std::unordered_map<EntityID, ComponentList> EntityComponentMapping;
 	public:
 		ComponentHandler();
 
 		EntityID CreateEntity();
 
 		template <typename TComponentType, typename... TArgs>
-		TComponentType& AddComponent(TArgs... args)
-		{
-
-		}
+		TComponentType* AddComponent(EntityID entityID, TArgs... args);
 
 		template <typename TComponent>
-		bool HasComponent(EntityID entityID) const
-		{
-			const Entity& entity = mEntities[entityID];
-			return entity.mComponentSet[TComponent::GetID()];
-		}
+		bool HasComponent(EntityID entityID) const;
 
 		Entity& GetEntity(EntityID entityID);
 
@@ -47,5 +42,32 @@ namespace Apollo
 		EntityID mNextAvailEntityID;
 
 		EntityList mEntities;
+		EntityComponentMapping mEntityComponentMap;
 	};
+
+	template <typename TComponent>
+	bool ComponentHandler::HasComponent(EntityID entityID) const
+	{
+		const Entity& entity = mEntities[entityID];
+		return entity.mComponentSet[TComponent::GetID()];
+	}
+
+	template <typename TComponentType, typename... TArgs>
+	TComponentType* ComponentHandler::AddComponent(EntityID entityID, TArgs... args)
+	{
+		if (HasComponent<TComponentType>(entityID))
+		{
+			return nullptr;
+		}
+
+		U32 componentID = TComponentType::GetID();
+
+		TComponentType* newComp = new TComponentType(std::forward<TArgs>(args)...);
+		mEntityComponentMap[entityID][componentID] = newComp;
+
+		mEntities[entityID].mComponentSet[componentID] = true;
+
+		return newComp;
+	}
+
 }
