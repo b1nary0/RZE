@@ -40,8 +40,6 @@ namespace Apollo
 
 	void ComponentHandler::Update()
 	{
-		//HiResTimer timer;
-		//timer.Start();
 		for (size_t idx = 0; idx < mSystems.size(); ++idx)
 		{
 			EntitySystem* system = mSystems[idx];
@@ -53,17 +51,6 @@ namespace Apollo
 
 			system->Update(filteredEntities);
 		}
-		//timer.Stop();
-		
-// 		static bool test = true;
-// 		static int next = 0;
-// 		if (++next > 25) test = true;
-// 		if (test)
-// 		{
-// 			LOG_CONSOLE_ARGS("Filter took %f ms on %i entities.", timer.GetElapsed<float>() * 1000.0f, static_cast<int>(mEntities.size()));
-// 			test = false;
-// 			next = 0;
-// 		}
 	}
 
 	void ComponentHandler::ShutDown()

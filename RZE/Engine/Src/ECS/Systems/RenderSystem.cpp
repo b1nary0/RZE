@@ -46,8 +46,8 @@ void CreateDefaultShader()
 
 	defaultShader->GenerateShaderProgram();
 
-	//RZE_Engine::Get()->GetResourceHandler().ReleaseResource(vertShaderHandle);
-	//RZE_Engine::Get()->GetResourceHandler().ReleaseResource(fragShaderHandle);
+	RZE_Engine::Get()->GetResourceHandler().ReleaseResource(vertShaderHandle);
+	RZE_Engine::Get()->GetResourceHandler().ReleaseResource(fragShaderHandle);
 }
 
 RenderSystem::RenderSystem()
