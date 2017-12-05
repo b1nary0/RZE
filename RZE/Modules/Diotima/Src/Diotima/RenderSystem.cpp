@@ -243,17 +243,16 @@ namespace Diotima
 {
 	RenderSystem::RenderSystem()
 	{
-		
 	}
 
 	void RenderSystem::AddRenderItem(const RenderItemProtocol& itemProtocol)
 	{
-		mRenderList.push_back(itemProtocol);
+		mRenderList.emplace(std::move(itemProtocol));
 	}
 
 	void RenderSystem::AddLightItem(const LightItemProtocol& itemProtocol)
 	{
-		mLightingList.push_back(itemProtocol);
+		mLightingList.emplace_back(std::move(itemProtocol));
 	}
 
 	void RenderSystem::Initialize()
@@ -297,9 +296,10 @@ namespace Diotima
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
 		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
 
-		for (auto& item : mRenderList)
+		while (!mRenderList.empty())
 		{
-			RenderSingleItem(item);
+			RenderSingleItem(mRenderList.front());
+			mRenderList.pop();
 		}
 
 		ClearLists();
@@ -312,7 +312,6 @@ namespace Diotima
 
 	void RenderSystem::ClearLists()
 	{
-		mRenderList.clear();
 		mLightingList.clear();
 		mFontList.clear();
 	}
@@ -332,32 +331,32 @@ namespace Diotima
 	{
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
 		// @implementation should we have this type of assumption?
-		if (renderItem.mShaderGroup)
+		if (renderItem.ShaderGroup)
 		{
-			if (renderItem.mTextureData)
+			if (renderItem.TextureData)
 			{
 				// #TODO replace with RHI call
-				openGL.BindTexture(EGLCapability::Texture2D, renderItem.mTextureData->GetTextureID());
+				openGL.BindTexture(EGLCapability::Texture2D, renderItem.TextureData->GetTextureID());
 			}
 
-			renderItem.mShaderGroup->Use();
+			renderItem.ShaderGroup->Use();
 
-			renderItem.mShaderGroup->SetUniformMatrix4x4("UModelMat", renderItem.mModelMat);
-			renderItem.mShaderGroup->SetUniformMatrix4x4("UProjectionMat", renderItem.mProjectionMat);
-			renderItem.mShaderGroup->SetUniformMatrix4x4("UViewMat", renderItem.mViewMat);
+			renderItem.ShaderGroup->SetUniformMatrix4x4("UModelMat", renderItem.ModelMat);
+			renderItem.ShaderGroup->SetUniformMatrix4x4("UProjectionMat", renderItem.ProjectionMat);
+			renderItem.ShaderGroup->SetUniformMatrix4x4("UViewMat", renderItem.ViewMat);
 
-			renderItem.mShaderGroup->SetUniformVector4D("UFragColor", Vector4D(0.25f, 0.25f, 0.25f, 1.0f));
+			renderItem.ShaderGroup->SetUniformVector4D("UFragColor", Vector4D(0.25f, 0.25f, 0.25f, 1.0f));
 
 			for (auto& light : mLightingList)
 			{
-				renderItem.mShaderGroup->SetUniformVector3D("ULightPosition", light.mLightPos);
-				renderItem.mShaderGroup->SetUniformVector3D("UViewPosition", mSceneCamera->GetPositionVec());
-				renderItem.mShaderGroup->SetUniformVector3D("ULightColor", light.mLightColor);
-				renderItem.mShaderGroup->SetUniformFloat("ULightStrength", light.mLightStrength);
+				renderItem.ShaderGroup->SetUniformVector3D("ULightPosition", light.LightPos);
+				renderItem.ShaderGroup->SetUniformVector3D("UViewPosition", mSceneCamera->GetPositionVec());
+				renderItem.ShaderGroup->SetUniformVector3D("ULightColor", light.LightColor);
+				renderItem.ShaderGroup->SetUniformFloat("ULightStrength", light.LightStrength);
 			}
 		}
 
-		const std::vector<GFXMesh*>& meshList = renderItem.mMeshData->GetMeshList();
+		const std::vector<GFXMesh*>& meshList = renderItem.MeshData->GetMeshList();
 		for (auto& mesh : meshList)
 		{
 			mesh->GetVAO().Bind();
@@ -370,8 +369,8 @@ namespace Diotima
 
 	RenderSystem::RenderItemProtocol::RenderItemProtocol()
 	{
-		mShaderGroup = nullptr;
-		mMeshData = nullptr;
-		mTextureData = nullptr;
+		ShaderGroup = nullptr;
+		MeshData = nullptr;
+		TextureData = nullptr;
 	}
 }

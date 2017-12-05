@@ -3,7 +3,8 @@
 #include <sstream>
 #include <assert.h>
 
-#include "Utils/StringUtils.h"
+#include <Utils/StringUtils.h>
+#include <Utils/Platform/Timers/HiResTimer.h>
 
 #if DEBUG == 1
 
@@ -14,7 +15,7 @@
 #define AssertExpr(Expr) assert(Expr);
 #define AssertMsg(Expr, Msg) assert(Expr && Msg);
 
-#define LOG_CONSOLE(msg) 									\
+#define LOG_CONSOLE(Msg) 									\
 {															\
 	std::stringstream ss;									\
 	ss << "[@ ";											\
@@ -22,13 +23,13 @@
 	ss << ": ";												\
 	ss << __LINE__;											\
 	ss << "] ";												\
-	ss << msg;												\
+	ss << Msg;												\
 	ss << "\n";												\
 															\
 	printf_s(ss.str().c_str());								\
 }
 
-#define LOG_CONSOLE_ANNOUNCE(msg, ...) 						\
+#define LOG_CONSOLE_ANNOUNCE(Msg, ...) 						\
 {															\
 	std::stringstream ss;									\
 	ss << "[@ ";											\
@@ -36,13 +37,13 @@
 	ss << ": ";												\
 	ss << __LINE__;											\
 	ss << "] ";												\
-	ss << msg;												\
+	ss << Msg;												\
 	ss << "\n";												\
 															\
 	printf_s(ss.str().c_str(), __VA_ARGS__);				\
 }
 
-#define LOG_CONSOLE_ARGS(msg, ...)							\
+#define LOG_CONSOLE_ARGS(Msg, ...)							\
 {															\
 	std::stringstream ss;									\
 	ss << "[@ ";											\
@@ -50,11 +51,14 @@
 	ss << ": ";												\
 	ss << __LINE__;											\
 	ss << "] ";												\
-	ss << msg;											    \
+	ss << Msg;											    \
 	ss << "\n";												\
 															\
 	printf_s(ss.str().c_str(), __VA_ARGS__); 				\
 }											
+
+#define START_TIMED_BLOCK(Name)	\
+	ScopedHiResTimer timer(Name);\
 
 #else
 

@@ -2,6 +2,8 @@
 
 #include <Utils/Platform/Timers/HiResTimer.h>
 
+#include <Utils/DebugUtils/Debug.h>
+
 HiResTimer::HiResTimer()
 {
 
@@ -18,3 +20,19 @@ void HiResTimer::Stop()
 	mElapsedTime = duration_cast<duration<double>>(endTime - mStartTime);
 }
 
+ScopedHiResTimer::ScopedHiResTimer(const char* TimerName)
+	: Name(TimerName)
+{
+	Timer.Start();
+}
+
+ScopedHiResTimer::~ScopedHiResTimer()
+{
+	Timer.Stop();
+	Print();
+}
+
+void ScopedHiResTimer::Print()
+{
+	LOG_CONSOLE_ARGS("%s took %f ms to complete.", Name, Timer.GetElapsedMS<float>());
+}

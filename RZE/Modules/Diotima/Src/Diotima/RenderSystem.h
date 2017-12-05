@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <queue>
 
 #include <Diotima/SceneCamera.h>
 #include <Diotima/Driver/OpenGL.h>
@@ -22,28 +23,28 @@ namespace Diotima
 		{
 			RenderItemProtocol();
 
-			GFXShaderGroup*     mShaderGroup;
-			Matrix4x4           mModelMat;
-			Matrix4x4           mProjectionMat;
-			Matrix4x4           mViewMat;
-			MeshResource*       mMeshData;
-			GFXTexture2D*       mTextureData;
+			GFXShaderGroup*     ShaderGroup;
+			Matrix4x4           ModelMat;
+			Matrix4x4           ProjectionMat;
+			Matrix4x4           ViewMat;
+			MeshResource*       MeshData;
+			GFXTexture2D*       TextureData;
 		} RenderItemProtocol;
 
 		typedef struct LightItemProtocol
 		{
-			Vector3D            mLightColor;
-			Vector3D            mLightPos;
-			float               mLightStrength;
+			Vector3D            LightColor;
+			Vector3D            LightPos;
+			float               LightStrength;
 		} LightItemProtocol;
 
 		typedef struct FontItemProtocol
 		{
-			GFXFont*        mFont;
-			Matrix4x4       mProjectionMat;
-			Vector3D		mPosition;
-			std::string     mText;
-			GFXShaderGroup* mShaderGroup;
+			GFXFont*        Font;
+			Matrix4x4       ProjectionMat;
+			Vector3D		Position;
+			std::string     Text;
+			GFXShaderGroup* ShaderGroup;
 		} FontItemProtocol;
 
 	// Constructors
@@ -73,7 +74,7 @@ namespace Diotima
 	private:
 		SceneCamera* mSceneCamera;
 
-		std::vector<RenderItemProtocol> mRenderList;
+		std::queue<RenderItemProtocol> mRenderList;
 		std::vector<LightItemProtocol> mLightingList;
 		std::vector<FontItemProtocol>  mFontList;
 	};

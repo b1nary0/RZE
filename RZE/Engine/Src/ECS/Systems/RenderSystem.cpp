@@ -77,42 +77,27 @@ void RenderSystem::Initialize()
 
 void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 {
-	HiResTimer timer;
-	timer.Start();
-
 	Apollo::ComponentHandler& handler = RZE_Engine::Get()->GetComponentHandler();
 	for (auto& entity : entities)
 	{
-		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entity);
-		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
-
-		Diotima::RenderSystem* const renderSystem = RZE_Engine::Get()->GetRenderSystem();
-		Diotima::RenderSystem::RenderItemProtocol item;
-
-		Matrix4x4 modelMat;
-		modelMat.Translate(transfComp->Position);
-		modelMat.Rotate(transfComp->Rotation.ToAngle(), transfComp->Rotation.ToAxis());
-		modelMat.Scale(transfComp->Scale);
-
-		item.mMeshData = RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::MeshResource>(meshComp->Resource);
-		item.mModelMat = modelMat;
-		item.mProjectionMat = renderSystem->GetSceneCamera().GetProjectionMat();
-		item.mViewMat = renderSystem->GetSceneCamera().GetViewMat();
-		item.mShaderGroup = defaultShader;
-
-		renderSystem->AddRenderItem(item);
-	}
-
-	timer.Stop();
-
-	static bool bPrintTest = true;
-	static int next = 0;
-	if (++next > 25) bPrintTest = true;
-	if (bPrintTest)
-	{
-		LOG_CONSOLE_ARGS("RenderSystem::Update() took %f ms with %i entities.", timer.GetElapsed<float>() * 1000.0f, static_cast<int>(entities.size()));
-		bPrintTest = false;
-		next = 0;
+ 		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entity);
+ 		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
+ 
+ 		Diotima::RenderSystem* const renderSystem = RZE_Engine::Get()->GetRenderSystem();
+ 		Diotima::RenderSystem::RenderItemProtocol item;
+ 
+ 		Matrix4x4 modelMat;
+ 		modelMat.Translate(transfComp->Position);
+ 		modelMat.Rotate(transfComp->Rotation.ToAngle(), transfComp->Rotation.ToAxis());
+ 		modelMat.Scale(transfComp->Scale);
+ 
+ 		item.MeshData = RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::MeshResource>(meshComp->Resource);
+ 		item.ModelMat = modelMat;
+ 		item.ProjectionMat = renderSystem->GetSceneCamera().GetProjectionMat();
+ 		item.ViewMat = renderSystem->GetSceneCamera().GetViewMat();
+ 		item.ShaderGroup = defaultShader;
+ 
+ 		renderSystem->AddRenderItem(item);
 	}
 }
 

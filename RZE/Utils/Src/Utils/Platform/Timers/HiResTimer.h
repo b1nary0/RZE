@@ -11,7 +11,6 @@ public:
 
 	void Start();
 	void Stop();
-	void Reset();
 
 	template <typename TCast>
 	TCast GetElapsed()
@@ -21,7 +20,24 @@ public:
 		return duration_cast<duration<TCast>>(endTime - mStartTime).count();
 	}
 
+	template <typename TCast>
+	TCast GetElapsedMS()
+	{
+		return GetElapsed<TCast>() * 1000;
+	}
+
 private:
 	high_resolution_clock::time_point mStartTime;
 	duration<double> mElapsedTime;
+};
+
+struct ScopedHiResTimer
+{
+	ScopedHiResTimer(const char* TimerName);
+	~ScopedHiResTimer();
+
+	void Print();
+
+	HiResTimer Timer;
+	const char* Name;
 };
