@@ -9,6 +9,7 @@ public:
 
 public:
 	virtual void Initialize();
-	virtual void Update(std::vector<Apollo::Entity>& entities);
+	virtual void Update(std::vector<Apollo::EntityID>& entities);
 	virtual void ShutDown();
+
 };

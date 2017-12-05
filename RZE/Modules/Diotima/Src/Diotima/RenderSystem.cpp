@@ -302,8 +302,7 @@ namespace Diotima
 			RenderSingleItem(item);
 		}
 
-		mLightingList.clear();
-		mFontList.clear();
+		ClearLists();
 	}
 
 	void RenderSystem::ShutDown()

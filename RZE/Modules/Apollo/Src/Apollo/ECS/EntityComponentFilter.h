@@ -13,37 +13,37 @@ namespace Apollo
 		{
 		}
 
-		void FilterEachOf(const std::vector<Entity>& entities, std::vector<Entity>& outPassedEntities)
+		void FilterEachOf(const std::vector<Entity>& entities, std::vector<EntityID>& outPassedEntities) const
 		{
 			for (auto& entity : entities)
 			{
 				if (entity.mComponentSet == mFilterSet)
 				{
-					outPassedEntities.push_back(entity);
+					outPassedEntities.push_back(entity.mEntityID);
 				}
 			}
 		}
 
-		void FilterAnyOf(const std::vector<Entity>& entities, std::vector<Entity>& outPassedEntities)
+		void FilterAnyOf(const std::vector<Entity>& entities, std::vector<EntityID>& outPassedEntities) const
 		{
 			for (auto& entity : entities)
 			{
 				std::bitset<ENTITY_MAX_COMPONENTS> filtered = entity.mComponentSet & mFilterSet;
 				if (filtered.any())
 				{
-					outPassedEntities.push_back(entity);
+					outPassedEntities.push_back(entity.mEntityID);
 				}
 			}
 		}
 
-		void FilterAtLeast(const std::vector<Entity>& entities, std::vector<Entity>& outPassedEntities)
+		void FilterAtLeast(const std::vector<Entity>& entities, std::vector<EntityID>& outPassedEntities) const
 		{
 			for (auto& entity : entities)
 			{
 				std::bitset<ENTITY_MAX_COMPONENTS> filtered = entity.mComponentSet & mFilterSet;
 				if (filtered == mFilterSet)
 				{
-					outPassedEntities.push_back(entity);
+					outPassedEntities.push_back(entity.mEntityID);
 				}
 			}
 		}

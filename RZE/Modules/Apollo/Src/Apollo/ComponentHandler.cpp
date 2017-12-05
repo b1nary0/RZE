@@ -1,5 +1,7 @@
 #include <Apollo/ComponentHandler.h>
 
+#include <Utils/Platform/Timers/HiResTimer.h>
+
 namespace Apollo
 {
 	ComponentHandler::ComponentHandler()
@@ -38,10 +40,30 @@ namespace Apollo
 
 	void ComponentHandler::Update()
 	{
+		//HiResTimer timer;
+		//timer.Start();
 		for (size_t idx = 0; idx < mSystems.size(); ++idx)
 		{
-			mSystems[idx]->Update(mEntities);
+			EntitySystem* system = mSystems[idx];
+			
+			const EntityComponentFilter& filter = system->GetComponentFilter();
+			std::vector<EntityID> filteredEntities;
+
+			filter.FilterEachOf(mEntities, filteredEntities);
+
+			system->Update(filteredEntities);
 		}
+		//timer.Stop();
+		
+// 		static bool test = true;
+// 		static int next = 0;
+// 		if (++next > 25) test = true;
+// 		if (test)
+// 		{
+// 			LOG_CONSOLE_ARGS("Filter took %f ms on %i entities.", timer.GetElapsed<float>() * 1000.0f, static_cast<int>(mEntities.size()));
+// 			test = false;
+// 			next = 0;
+// 		}
 	}
 
 	void ComponentHandler::ShutDown()

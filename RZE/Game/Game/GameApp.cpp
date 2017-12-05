@@ -46,7 +46,7 @@ void GameApp::Start()
 	// ALL TEST CODE
 
 	// Leaving the for loop for testing purposes
-	for (int i = 0; i < 1; ++i)
+	for (int i = 0; i < 1024; ++i)
 	{
 		Apollo::ComponentHandler& componentHandler = RZE_Engine::Get()->GetComponentHandler();
 		Apollo::EntityID entity = componentHandler.CreateEntity();

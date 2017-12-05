@@ -12,45 +12,43 @@
 
 #include <Utils/Platform/Timers/HiResTimer.h>
 
-Apollo::EntityComponentFilter componentFilter;
-
 Diotima::GFXShaderGroup* defaultShader;
- void CreateDefaultShader()
- {
- 	const char* const vertShaderFilePath = "./../Engine/Assets/Shaders/VertexShader.shader";
- 	const char* const fragShaderFilePath = "./../Engine/Assets/Shaders/FragmentShader.shader";
- 
- 	ResourceHandle vertShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "DefaultVertexShader");
- 	ResourceHandle fragShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "DefaultFragShader");
- 
+void CreateDefaultShader()
+{
+	const char* const vertShaderFilePath = "./../Engine/Assets/Shaders/VertexShader.shader";
+	const char* const fragShaderFilePath = "./../Engine/Assets/Shaders/FragmentShader.shader";
+
+	ResourceHandle vertShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "DefaultVertexShader");
+	ResourceHandle fragShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "DefaultFragShader");
+
 	Diotima::GFXShader* vertShader = RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXShader>(vertShaderHandle);
- 	vertShader->Create();
- 	vertShader->Compile();
- 
+	vertShader->Create();
+	vertShader->Compile();
+
 	Diotima::GFXShader* fragShader = RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXShader>(fragShaderHandle);
- 	fragShader->Create();
- 	fragShader->Compile();
- 
- 	defaultShader = new Diotima::GFXShaderGroup("DefaultShader");
- 	defaultShader->AddShader(Diotima::GFXShaderGroup::EShaderIndex::Vertex, vertShader);
- 	defaultShader->AddShader(Diotima::GFXShaderGroup::EShaderIndex::Fragment, fragShader);
- 
- 	defaultShader->AddUniform("UModelMat");
- 	defaultShader->AddUniform("UProjectionMat");
- 	defaultShader->AddUniform("UViewMat");
- 
- 	defaultShader->AddUniform("ULightPosition");
- 	defaultShader->AddUniform("UViewPosition");
- 	defaultShader->AddUniform("ULightColor");
- 	defaultShader->AddUniform("ULightStrength");
- 
+	fragShader->Create();
+	fragShader->Compile();
+
+	defaultShader = new Diotima::GFXShaderGroup("DefaultShader");
+	defaultShader->AddShader(Diotima::GFXShaderGroup::EShaderIndex::Vertex, vertShader);
+	defaultShader->AddShader(Diotima::GFXShaderGroup::EShaderIndex::Fragment, fragShader);
+
+	defaultShader->AddUniform("UModelMat");
+	defaultShader->AddUniform("UProjectionMat");
+	defaultShader->AddUniform("UViewMat");
+
+	defaultShader->AddUniform("ULightPosition");
+	defaultShader->AddUniform("UViewPosition");
+	defaultShader->AddUniform("ULightColor");
+	defaultShader->AddUniform("ULightStrength");
+
 	defaultShader->AddUniform("UFragColor");
- 
+
 	defaultShader->GenerateShaderProgram();
- 
- 	//RZE_Engine::Get()->GetResourceHandler().ReleaseResource(vertShaderHandle);
- 	//RZE_Engine::Get()->GetResourceHandler().ReleaseResource(fragShaderHandle);
- }
+
+	//RZE_Engine::Get()->GetResourceHandler().ReleaseResource(vertShaderHandle);
+	//RZE_Engine::Get()->GetResourceHandler().ReleaseResource(fragShaderHandle);
+}
 
 RenderSystem::RenderSystem()
 {
@@ -63,8 +61,8 @@ void RenderSystem::Initialize()
 	Apollo::ComponentTypeID<Apollo::ComponentBase>::GetComponentTypeID<TransformComponent>();
 	Apollo::ComponentTypeID<Apollo::ComponentBase>::GetComponentTypeID<MeshComponent>();
 
-	componentFilter.AddFilterType<TransformComponent>();
-	componentFilter.AddFilterType<MeshComponent>();
+	InternalGetComponentFilter().AddFilterType<TransformComponent>();
+	InternalGetComponentFilter().AddFilterType<MeshComponent>();
 
 	Apollo::ComponentHandler::ComponentAddedFunc OnMeshComponentAdded([this](Apollo::EntityID entityID, Apollo::ComponentHandler& handler)
 	{
@@ -77,20 +75,16 @@ void RenderSystem::Initialize()
 	CreateDefaultShader();
 }
 
-void RenderSystem::Update(std::vector<Apollo::Entity>& entities)
+void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 {
-	HiResTimer entityFilterTimer;
-
-	entityFilterTimer.Start();
-		Apollo::ComponentHandler::EntityList relevantEntities;
-		componentFilter.FilterEachOf(entities, relevantEntities);
-	entityFilterTimer.Stop();
+	HiResTimer timer;
+	timer.Start();
 
 	Apollo::ComponentHandler& handler = RZE_Engine::Get()->GetComponentHandler();
-	for (auto& entity : relevantEntities)
+	for (auto& entity : entities)
 	{
-		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entity.mEntityID);
-		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity.mEntityID);
+		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entity);
+		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
 
 		Diotima::RenderSystem* const renderSystem = RZE_Engine::Get()->GetRenderSystem();
 		Diotima::RenderSystem::RenderItemProtocol item;
@@ -109,11 +103,16 @@ void RenderSystem::Update(std::vector<Apollo::Entity>& entities)
 		renderSystem->AddRenderItem(item);
 	}
 
+	timer.Stop();
+
 	static bool bPrintTest = true;
+	static int next = 0;
+	if (++next > 25) bPrintTest = true;
 	if (bPrintTest)
 	{
-		LOG_CONSOLE_ARGS("Entity Filter took %f ms with %i entities.", entityFilterTimer.GetElapsed<float>() * 1000.0f, static_cast<int>(entities.size()));
+		LOG_CONSOLE_ARGS("RenderSystem::Update() took %f ms with %i entities.", timer.GetElapsed<float>() * 1000.0f, static_cast<int>(entities.size()));
 		bPrintTest = false;
+		next = 0;
 	}
 }
 
