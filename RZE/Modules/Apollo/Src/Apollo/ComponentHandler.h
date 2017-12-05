@@ -52,6 +52,14 @@ namespace Apollo
 		template <typename TSystemType, typename... TArgs>
 		TSystemType* AddSystem(TArgs... args);
 
+	public:
+		// Look over these and maybe have a better grouping solution for components
+		template <typename TComponent>
+		void ForEach(Functor<void, EntityID> callback);
+
+		template <typename TComponent0, typename TComponent1>
+		void ForEach(Functor<void, EntityID> callback);
+
 	private:
 		U32 TryResize();
 		U32 Resize(U32 newCapacity);
@@ -87,6 +95,39 @@ namespace Apollo
 		mSystems.push_back(system);
 		system->Initialize();
 		return system;
+	}
+
+	template <typename TComponent>
+	void ComponentHandler::ForEach(Functor<void, EntityID> callback)
+	{
+		std::bitset<ENTITY_MAX_COMPONENTS> componentSet;
+		componentSet[TComponent::GetID()] = true;
+
+		for (auto& entity : mEntities)
+		{
+			std::bitset<ENTITY_MAX_COMPONENTS> filtered = entity.mComponentSet & componentSet;
+			if (filtered.any())
+			{
+				callback(entity.mEntityID);
+			}
+		}
+	}
+
+	template <typename TComponent0, typename TComponent1>
+	void ComponentHandler::ForEach(Functor<void, EntityID> callback)
+	{
+		std::bitset<ENTITY_MAX_COMPONENTS> componentSet;
+		componentSet[TComponent0::GetID()] = true;
+		componentSet[TComponent1::GetID()] = true;
+
+		for (auto& entity : mEntities)
+		{
+			std::bitset<ENTITY_MAX_COMPONENTS> filtered = entity.mComponentSet & componentSet;
+			if (filtered == componentSet)
+			{
+				callback(entity.mEntityID);
+			}
+		}
 	}
 
 	template <typename TComponentType>

@@ -20,6 +20,7 @@
 
 
 // TEST
+#include <ECS/Components/LightSourceComponent.h>
 #include <ECS/Components/MeshComponent.h>
 #include <ECS/Components/TransformComponent.h>
 
@@ -45,15 +46,20 @@ void GameApp::Start()
 
 	// ALL TEST CODE
 
+	Apollo::ComponentHandler& componentHandler = RZE_Engine::Get()->GetComponentHandler();
+
 	// Leaving the for loop for testing purposes
 	for (int i = 0; i < 1; ++i)
 	{
-		Apollo::ComponentHandler& componentHandler = RZE_Engine::Get()->GetComponentHandler();
 		Apollo::EntityID entity = componentHandler.CreateEntity();
 
 		componentHandler.AddComponent<MeshComponent>(entity, "./../Engine/Assets/3D/Cube.obj");
 		componentHandler.AddComponent<TransformComponent>(entity);
 	}
+
+	Apollo::EntityID entity = componentHandler.CreateEntity();
+	componentHandler.AddComponent<LightSourceComponent>(entity, Vector3D(1.0f, 0.0f, 0.0f), 1.0f);
+	componentHandler.AddComponent<TransformComponent>(entity, Vector3D(0.0f, 5.0f, 0.0f));
 
 
 // 	CreateDefaultShader();
@@ -101,19 +107,6 @@ void GameApp::Update()
 // 	mEntities.push_back(entity);
 // }
 // 
-// void GameApp::CreateLight(const ResourceHandle& resourceHandle)
-// {
-// 	mLightEntity = RZE_Engine::Get()->GetECS()->AddEntity<GameEntity>();
-// 
-// 	TransformComponent* lightTransform = mLightEntity->AddComponent<TransformComponent>();
-// 	lightTransform->SetPosition(Vector3D(-8.0f, 15.0f, -2.0f));
-// 
-// 	LightSourceComponent* lightComponent = mLightEntity->AddComponent<LightSourceComponent>("MainTestLight");
-// 	lightComponent->SetColor(Vector3D(1.0f, 1.0f, 1.0f));
-// 	lightComponent->SetStrength(0.75f);
-// 
-// 	mEntities.push_back(mLightEntity);
-// }
 // 
 // void GameApp::CreateGround(const ResourceHandle& resourceHandle)
 // {

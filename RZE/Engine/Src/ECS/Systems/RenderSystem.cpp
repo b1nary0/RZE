@@ -2,6 +2,7 @@
 
 #include <ECS/Systems/RenderSystem.h>
 
+#include <ECS/Components/LightSourceComponent.h>
 #include <ECS/Components/MeshComponent.h>
 #include <ECS/Components/TransformComponent.h>
 
@@ -77,28 +78,44 @@ void RenderSystem::Initialize()
 
 void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 {
-	Apollo::ComponentHandler& handler = RZE_Engine::Get()->GetComponentHandler();
+ 	Apollo::ComponentHandler& handler = RZE_Engine::Get()->GetComponentHandler();
+  	Diotima::RenderSystem* const renderSystem = RZE_Engine::Get()->GetRenderSystem();
+ 	
 	for (auto& entity : entities)
+ 	{
+  		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entity);
+  		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
+  
+  		Diotima::RenderSystem::RenderItemProtocol item;
+  
+  		Matrix4x4 modelMat;
+  		modelMat.Translate(transfComp->Position);
+  		modelMat.Rotate(transfComp->Rotation.ToAngle(), transfComp->Rotation.ToAxis());
+  		modelMat.Scale(transfComp->Scale);
+  
+  		item.MeshData = RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::MeshResource>(meshComp->Resource);
+  		item.ModelMat = modelMat;
+  		item.ProjectionMat = renderSystem->GetSceneCamera().GetProjectionMat();
+  		item.ViewMat = renderSystem->GetSceneCamera().GetViewMat();
+  		item.ShaderGroup = defaultShader;
+  
+  		renderSystem->AddRenderItem(item);
+ 	}
+
+	Functor<void, Apollo::EntityID> LightSourceFunc([this, &handler, &renderSystem](Apollo::EntityID entity)
 	{
- 		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entity);
- 		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
- 
- 		Diotima::RenderSystem* const renderSystem = RZE_Engine::Get()->GetRenderSystem();
- 		Diotima::RenderSystem::RenderItemProtocol item;
- 
- 		Matrix4x4 modelMat;
- 		modelMat.Translate(transfComp->Position);
- 		modelMat.Rotate(transfComp->Rotation.ToAngle(), transfComp->Rotation.ToAxis());
- 		modelMat.Scale(transfComp->Scale);
- 
- 		item.MeshData = RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::MeshResource>(meshComp->Resource);
- 		item.ModelMat = modelMat;
- 		item.ProjectionMat = renderSystem->GetSceneCamera().GetProjectionMat();
- 		item.ViewMat = renderSystem->GetSceneCamera().GetViewMat();
- 		item.ShaderGroup = defaultShader;
- 
- 		renderSystem->AddRenderItem(item);
-	}
+		LightSourceComponent* const lightComp = handler.GetComponent<LightSourceComponent>(entity);
+		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
+
+		Diotima::RenderSystem::LightItemProtocol item;
+		item.LightColor = lightComp->Color;
+		item.LightStrength = lightComp->Strength;
+		item.LightPos = transfComp->Position;
+
+		renderSystem->AddLightItem(item);
+	});
+
+	handler.ForEach<LightSourceComponent, TransformComponent>(LightSourceFunc);
 }
 
 void RenderSystem::ShutDown()
