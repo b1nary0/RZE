@@ -127,11 +127,11 @@ template <class ResourceT, class... Args>
 ResourceHandle ResourceHandler::RequestResource(const std::string& resourcePath, Args... args)
 {
 	std::string resourceKey = Conversions::CreateResourceKeyFromPath(resourcePath);
-	LOG_CONSOLE_ARGS("Requesting resource [%s]", resourceKey.c_str());
 
 	auto iter = mResourceTable.find(resourceKey);
 	if (iter == mResourceTable.end())
 	{
+		LOG_CONSOLE_ARGS("Creating resource [%s]", resourceKey.c_str());
 		IResource* resource = CreateAndLoadResource<ResourceT>(resourcePath, args...);
 		if (resource)
 		{
