@@ -19,7 +19,7 @@
 
 #include <Apollo/EntityComponentSystem.h>
 
-#include <Diotima/RenderSystem.h>
+#include <Diotima/Renderer.h>
 #include <Diotima/Driver/OpenGL.h>
 
 RZE_Engine* RZE_Engine::sInstance = nullptr;

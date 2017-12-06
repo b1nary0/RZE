@@ -1,5 +1,5 @@
 //#include <StdAfx.h>
-#include <Diotima/RenderSystem.h>
+#include <Diotima/Renderer.h>
 
 #include <Diotima/Driver/OpenGL.h>
 #include <Diotima/Graphics/Mesh.h>

@@ -16,7 +16,7 @@
 
 #include <Apollo/ComponentHandler.h>
 
-#include <Diotima/RenderSystem.h>
+#include <Diotima/Renderer.h>
 
 class GameWorld;
 class Win32Window;
