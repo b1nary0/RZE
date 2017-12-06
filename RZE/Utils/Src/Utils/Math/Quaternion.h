@@ -16,15 +16,11 @@ public:
 
 	const glm::quat& GetInternalQuat() const;
 
-	Quaternion operator+(const Quaternion& rhs)
-	{
-		return Quaternion(mQuat + rhs.GetInternalQuat());
-	}
+	Quaternion operator+(const Quaternion& rhs);
+	void operator+=(const Quaternion& rhs);
 
-	void operator+=(const Quaternion& rhs)
-	{
-		mQuat += rhs.GetInternalQuat();
-	}
+	Quaternion operator*(const Quaternion& rhs);
+	void operator*=(const Quaternion& rhs);
 
 private:
 	Quaternion(const glm::quat& quat);

@@ -4,6 +4,8 @@
 
 #include <Utils/Functor.h>
 
+struct CameraComponent;
+
 namespace Apollo
 {
 	class ComponentHandler;
@@ -18,4 +20,11 @@ public:
 	virtual void Initialize();
 	virtual void Update(std::vector<Apollo::EntityID>& entities);
 	virtual void ShutDown();
+
+	void RegisterForComponentNotifications();
+
+	void GenerateCameraMatrices();
+
+private:
+	CameraComponent* mMainCamera;
 };

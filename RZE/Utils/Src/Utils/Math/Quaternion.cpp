@@ -38,3 +38,23 @@ const glm::quat& Quaternion::GetInternalQuat() const
 {
 	return mQuat;
 }
+
+Quaternion Quaternion::operator+(const Quaternion& rhs)
+{
+	return Quaternion(mQuat + rhs.mQuat);
+}
+
+void Quaternion::operator+=(const Quaternion& rhs)
+{
+	mQuat += rhs.GetInternalQuat();
+}
+
+Quaternion Quaternion::operator*(const Quaternion& rhs)
+{
+	return Quaternion(mQuat * rhs.GetInternalQuat());
+}
+
+void Quaternion::operator*=(const Quaternion& rhs)
+{
+	mQuat *= rhs.GetInternalQuat();
+}

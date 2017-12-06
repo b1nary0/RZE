@@ -20,6 +20,7 @@
 
 
 // TEST
+#include <Ecs/Components/CameraComponent.h>
 #include <ECS/Components/LightSourceComponent.h>
 #include <ECS/Components/MeshComponent.h>
 #include <ECS/Components/TransformComponent.h>
@@ -57,7 +58,7 @@ void GameApp::Start()
 	{
 		Apollo::EntityID entity = componentHandler.CreateEntity();
 
-		componentHandler.AddComponent<MeshComponent>(entity, "./../Engine/Assets/3D/Cube.obj");
+		componentHandler.AddComponent<MeshComponent>(entity, "./../Engine/Assets/3D/Lamp.obj");
 		componentHandler.AddComponent<TransformComponent>(entity);
 	}
 
@@ -65,29 +66,23 @@ void GameApp::Start()
 	componentHandler.AddComponent<LightSourceComponent>(entity, Vector3D(1.0f, 0.0f, 0.0f), 1.0f);
 	componentHandler.AddComponent<TransformComponent>(entity, Vector3D(0.0f, 0.5f, 2.0f));
 
+	Apollo::EntityID camera = componentHandler.CreateEntity();
+	componentHandler.AddComponent<CameraComponent>(entity);
 
-// 	CreateDefaultShader();
-// 	CreateTextureShader();
+	// 	const char* const cubeFilePath = "./../Engine/Assets/3D/Cube.obj";
+	// 	const char* const miniCooperFilePath = "./../Engine/Assets/3D/MiniCooper.obj";
+	// 	const char* const lampFilePath = "./../Engine/Assets/3D/Lamp.obj";
+	// 
+	// 	const char* const quadMeshFilePath = "./../Engine/Assets/3D/Quad.obj";
+	// 	const char* const quadTextureFilePath = "./../Engine/Assets/2D/Container.jpg";
 
-// 	const char* const cubeFilePath = "./../Engine/Assets/3D/Cube.obj";
-// 	const char* const miniCooperFilePath = "./../Engine/Assets/3D/MiniCooper.obj";
-// 	const char* const lampFilePath = "./../Engine/Assets/3D/Lamp.obj";
-// 
-// 	const char* const quadMeshFilePath = "./../Engine/Assets/3D/Quad.obj";
-// 	const char* const quadTextureFilePath = "./../Engine/Assets/2D/Container.jpg";
-
-// 	ResourceHandler& resourceHandler = RZE_Engine::Get()->GetResourceHandler();
-// 
-// 	ResourceHandle cubeMesh = resourceHandler.RequestResource<MeshResource>(cubeFilePath);
-// 	ResourceHandle lampMesh = resourceHandler.RequestResource<MeshResource>(lampFilePath);
-// 
-// 	ResourceHandle quadMesh = resourceHandler.RequestResource<MeshResource>(quadMeshFilePath);
-// 	ResourceHandle quadTex = resourceHandler.RequestResource<GFXTexture2D>(quadTextureFilePath);
-
-// 	CreateLight(cubeMesh);
-// 	CreateGround(cubeMesh);
-// 	CreateLampObjects(lampMesh);
-// 	CreateTextureQuad(quadMesh, quadTex);
+	// 	ResourceHandler& resourceHandler = RZE_Engine::Get()->GetResourceHandler();
+	// 
+	// 	ResourceHandle cubeMesh = resourceHandler.RequestResource<MeshResource>(cubeFilePath);
+	// 	ResourceHandle lampMesh = resourceHandler.RequestResource<MeshResource>(lampFilePath);
+	// 
+	// 	ResourceHandle quadMesh = resourceHandler.RequestResource<MeshResource>(quadMeshFilePath);
+	// 	ResourceHandle quadTex = resourceHandler.RequestResource<GFXTexture2D>(quadTextureFilePath);
 }
 
 void GameApp::Update()
@@ -111,88 +106,7 @@ void GameApp::Update()
 // 	mEntities.push_back(entity);
 // }
 // 
-// 
-// void GameApp::CreateGround(const ResourceHandle& resourceHandle)
-// {
-// 	GameEntity* groundEntity = RZE_Engine::Get()->GetECS()->AddEntity<GameEntity>();
-// 
-// 	MeshComponent* const meshComponent = groundEntity->AddComponent<MeshComponent>();
-// 	meshComponent->SetMeshHandle(resourceHandle);
-// 	meshComponent->SetShaderGroup(mDefaultShader);
-// 
-// 	TransformComponent* const transformComp = groundEntity->AddComponent<TransformComponent>();
-// 	transformComp->SetPosition(Vector3D(-10.0f, -5.0f, -20.0f));
-// 	transformComp->SetRotation(Quaternion(Vector3D(0.0f, 0.0f, 0.0f)));
-// 	transformComp->SetScale(Vector3D(20.0f, 0.5f, 20.0f));
-// 
-// 	mEntities.push_back(groundEntity);
-// }
-// 
-// void GameApp::CreateLampObjects(const ResourceHandle& resourceHandle)
-// {
-// 
-// 	//
-// 	// 1 - NE
-// 	//
-// 	GameEntity* lampEntity = RZE_Engine::Get()->GetECS()->AddEntity<GameEntity>();
-// 
-// 	MeshComponent* meshComponent = lampEntity->AddComponent<MeshComponent>("LampMesh");
-// 	meshComponent->SetMeshHandle(resourceHandle);
-// 	meshComponent->SetShaderGroup(mDefaultShader);
-// 
-// 	TransformComponent* transformComp = lampEntity->AddComponent<TransformComponent>();
-// 	transformComp->SetPosition(Vector3D(-8.0f, -3.0f, -15.0f));
-// 	transformComp->SetScale(Vector3D(0.5f, 0.5f, 0.5f));
-// 
-// 	mEntities.push_back(lampEntity);
-// 
-// 	//
-// 	// 2 - NW
-// 	//
-// 	lampEntity = RZE_Engine::Get()->GetECS()->AddEntity<GameEntity>();
-// 
-// 	meshComponent = lampEntity->AddComponent<MeshComponent>("LampMesh");
-// 	meshComponent->SetMeshHandle(resourceHandle);
-// 	meshComponent->SetShaderGroup(mDefaultShader);
-// 
-// 	transformComp = lampEntity->AddComponent<TransformComponent>("LampMesh");
-// 	transformComp->SetPosition(Vector3D(8.0f, -3.0f, -15.0f));
-// 	transformComp->SetScale(Vector3D(0.5f, 0.5f, 0.5f));
-// 
-// 	mEntities.push_back(lampEntity);
-// 
-// 	//
-// 	// 3 - SE
-// 	//
-// 	lampEntity = RZE_Engine::Get()->GetECS()->AddEntity<GameEntity>();
-// 
-// 	meshComponent = lampEntity->AddComponent<MeshComponent>("LampMesh");
-// 	meshComponent->SetMeshHandle(resourceHandle);
-// 	meshComponent->SetShaderGroup(mDefaultShader);
-// 
-// 	transformComp = lampEntity->AddComponent<TransformComponent>();
-// 	transformComp->SetPosition(Vector3D(-8.0f, -3.0f, -2.0f));
-// 	transformComp->SetScale(Vector3D(0.5f, 0.5f, 0.5f));
-// 
-// 	mEntities.push_back(lampEntity);
-// 
-// 	//
-// 	// 4 - SW
-// 	//
-// 	lampEntity = RZE_Engine::Get()->GetECS()->AddEntity<GameEntity>();
-// 
-// 	meshComponent = lampEntity->AddComponent<MeshComponent>("LampMesh");
-// 	meshComponent->SetMeshHandle(resourceHandle);
-// 	meshComponent->SetShaderGroup(mDefaultShader);
-// 
-// 	transformComp = lampEntity->AddComponent<TransformComponent>();
-// 	transformComp->SetPosition(Vector3D(8.0f, -3.0f, -2.0f));
-// 	transformComp->SetScale(Vector3D(0.5f, 0.5f, 0.5f));
-// 
-// 	mEntities.push_back(lampEntity);
-// }
-// 
-
+//
 // 
 // void GameApp::CreateTextureShader()
 // {
