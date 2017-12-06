@@ -47,7 +47,7 @@ namespace Apollo
 			const EntityComponentFilter& filter = system->GetComponentFilter();
 			std::vector<EntityID> filteredEntities;
 
-			filter.FilterEachOf(mEntities, filteredEntities);
+			filter.FilterAtLeast(mEntities, filteredEntities);
 
 			system->Update(filteredEntities);
 		}

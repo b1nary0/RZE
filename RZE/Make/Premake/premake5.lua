@@ -340,6 +340,7 @@ workspace "RZE"
 		includedirs
 		{
 			IncludeDir,
+			ProjectDir,
 			EngineDir .. "/Src/",
 			RootDir .. "/Utils/Src/",
 			RootDir .. "/Modules/Diotima/Src/",

@@ -24,6 +24,8 @@
 #include <ECS/Components/MeshComponent.h>
 #include <ECS/Components/TransformComponent.h>
 
+#include <Game/Systems/RotateSystem.h>
+
 using namespace Diotima;
 
 // Test stuff -- this stuff will likely be removed at some point
@@ -48,6 +50,8 @@ void GameApp::Start()
 
 	Apollo::ComponentHandler& componentHandler = RZE_Engine::Get()->GetComponentHandler();
 
+	componentHandler.AddSystem<RotateSystem>();
+
 	// Leaving the for loop for testing purposes
 	for (int i = 0; i < 1; ++i)
 	{
@@ -59,7 +63,7 @@ void GameApp::Start()
 
 	Apollo::EntityID entity = componentHandler.CreateEntity();
 	componentHandler.AddComponent<LightSourceComponent>(entity, Vector3D(1.0f, 0.0f, 0.0f), 1.0f);
-	componentHandler.AddComponent<TransformComponent>(entity, Vector3D(0.0f, 5.0f, 0.0f));
+	componentHandler.AddComponent<TransformComponent>(entity, Vector3D(0.0f, 0.5f, 2.0f));
 
 
 // 	CreateDefaultShader();
