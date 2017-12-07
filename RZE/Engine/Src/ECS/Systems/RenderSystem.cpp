@@ -110,6 +110,7 @@ void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 		item.LightColor = lightComp->Color;
 		item.LightStrength = lightComp->Strength;
 		item.LightPos = transfComp->Position;
+		item.ViewPos = mMainCamera->Position;
 
 		renderSystem->AddLightItem(item);
 	});

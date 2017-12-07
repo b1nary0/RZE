@@ -257,33 +257,15 @@ namespace Diotima
 
 	void RenderSystem::Initialize()
 	{
-		// #TODO(Josh) Really need to work this out before going much further.
-		Vector2D windowDims(1600, 900);
-
 		{
 			OpenGLRHI::OpenGLCreationParams creationParams;
-			creationParams.WindowWidth = static_cast<int>(windowDims.X());
-			creationParams.WindowHeight = static_cast<int>(windowDims.Y());
-
+			creationParams.WindowHeight = 1024;
+			creationParams.WindowWidth = 768;
 			OpenGLRHI::Get().Init(creationParams);
 		}
 
-		OpenGLRHI::Get().ClearColor(0.0f, 0.0f, 0.5f, 1.0f);
+		OpenGLRHI::Get().ClearColor(0.25f, 0.25f, 0.25f, 1.0f);
 
-		SceneCameraProps cameraProps;	
-		cameraProps.Direction = Vector3D(0.0f, -2.5f, -10.0f);
-		cameraProps.Position = Vector3D(0.0, 2.0f, 10.0f);
-		cameraProps.FrontDir = Vector3D(0.0f, 0.0f, -1.0f);
-		cameraProps.UpDir = Vector3D(0.0f, 1.0f, 0.0f);
-		cameraProps.FOV = 45.0f;
-		cameraProps.AspectRatio = windowDims.X() / windowDims.Y();
-		cameraProps.NearCull = 0.1f;
-		cameraProps.FarCull = 1000.0f;
-
-		mSceneCamera = new SceneCamera(cameraProps);
-		mSceneCamera->GenerateProjectionMat();
-		mSceneCamera->GenerateViewMat();
-// 
 		OpenGLRHI::Get().EnableCapability(EGLCapability::DepthTest);
 
 		ImGuiIO& io = ImGui::GetIO();
@@ -307,7 +289,6 @@ namespace Diotima
 
 	void RenderSystem::ShutDown()
 	{
-
 	}
 
 	void RenderSystem::ClearLists()
@@ -319,12 +300,6 @@ namespace Diotima
 	void RenderSystem::ResizeCanvas(const Vector2D& newSize)
 	{
 		OpenGLRHI::Get().Viewport(0, 0, static_cast<GLsizei>(newSize.X()), static_cast<GLsizei>(newSize.Y()));
-	}
-
-	SceneCamera& RenderSystem::GetSceneCamera()
-	{
-		AssertNotNull(mSceneCamera);
-		return *mSceneCamera;
 	}
 
 	void RenderSystem::RenderSingleItem(RenderItemProtocol& renderItem)
@@ -350,7 +325,7 @@ namespace Diotima
 			for (auto& light : mLightingList)
 			{
 				renderItem.ShaderGroup->SetUniformVector3D("ULightPosition", light.LightPos);
-				renderItem.ShaderGroup->SetUniformVector3D("UViewPosition", mSceneCamera->GetPositionVec());
+				renderItem.ShaderGroup->SetUniformVector3D("UViewPosition", light.ViewPos);
 				renderItem.ShaderGroup->SetUniformVector3D("ULightColor", light.LightColor);
 				renderItem.ShaderGroup->SetUniformFloat("ULightStrength", light.LightStrength);
 			}

@@ -166,6 +166,7 @@ void RZE_Engine::RegisterWindowEvents()
 			U16 width = event.mWindowEvent.mSizeX;
 			U16 height = event.mWindowEvent.mSizeY;
 			DebugServices::HandleScreenResize(Vector2D(width, height));
+			GetRenderSystem()->ResizeCanvas(Vector2D(width, height));
 		}
 	});
 	mEventHandler.RegisterForEvent(EEventType::Window, windowCallback);

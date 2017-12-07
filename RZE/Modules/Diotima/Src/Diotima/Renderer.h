@@ -33,6 +33,7 @@ namespace Diotima
 
 		typedef struct LightItemProtocol
 		{
+			Vector3D			ViewPos;
 			Vector3D            LightColor;
 			Vector3D            LightPos;
 			float               LightStrength;
@@ -47,12 +48,12 @@ namespace Diotima
 			GFXShaderGroup* ShaderGroup;
 		} FontItemProtocol;
 
-	// Constructors
+		// Constructors
 	public:
 		// #TODO(Josh) Remove the parameters here and work in a better event driven system?
 		RenderSystem();
 
-	// ISubSystem interface
+		// ISubSystem interface
 	public:
 		virtual void Initialize();
 		virtual void Update();
