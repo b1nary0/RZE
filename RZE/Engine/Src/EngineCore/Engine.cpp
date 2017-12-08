@@ -1,24 +1,16 @@
 #include <StdAfx.h>
-
 #include <EngineCore/Engine.h>
-
-#include <DebugUtils/DebugServices.h>
 
 #include <ECS/Systems/RenderSystem.h>
 
 #include <Windowing/Win32Window.h>
 #include <Windowing/WinKeyCodes.h>
 
-#include <Utils//Platform/Timers/HiResTimer.h>
 #include <Utils/DebugUtils/Debug.h>
-
-// External Libs
-#include <imGUI/imgui.h>
 
 #include <Apollo/EntityComponentSystem.h>
 
 #include <Diotima/Renderer.h>
-#include <Diotima/Driver/OpenGL.h>
 
 RZE_Engine* RZE_Engine::sInstance = nullptr;
 
@@ -154,7 +146,6 @@ void RZE_Engine::RegisterWindowEvents()
 		{
 			U16 width = event.mWindowEvent.mSizeX;
 			U16 height = event.mWindowEvent.mSizeY;
-			DebugServices::HandleScreenResize(Vector2D(width, height));
 			GetRenderSystem()->ResizeCanvas(Vector2D(width, height));
 		}
 	});
