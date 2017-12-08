@@ -49,7 +49,8 @@ public:
 
 	void Run(Functor<RZE_Game* const>& createApplicationCallback);
 
-	WindowSettings&		GetWindowSettings();
+	const Vector2D& GetWindowSize() const;
+
 	ResourceHandler&	GetResourceHandler();
 
 	// #TODO(Josh) Totally test. This is not good.

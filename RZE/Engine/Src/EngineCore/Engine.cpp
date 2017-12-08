@@ -66,6 +66,12 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 	}
 }
 
+const Vector2D& RZE_Engine::GetWindowSize() const
+{
+	AssertNotNull(mMainWindow);
+	return mMainWindow->GetDimensions();
+}
+
 void RZE_Engine::Init()
 {
 	if (!IsInitialized())
@@ -240,11 +246,6 @@ void RZE_Engine::InternalShutDown()
 void RZE_Engine::PostExit()
 {
 	bShouldExit = true;
-}
-
-WindowSettings& RZE_Engine::GetWindowSettings()
-{
-	return mEngineConfig->GetWindowSettings();
 }
 
 ResourceHandler& RZE_Engine::GetResourceHandler()

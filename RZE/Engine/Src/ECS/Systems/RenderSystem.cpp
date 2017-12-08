@@ -141,7 +141,7 @@ void RenderSystem::RegisterForComponentNotifications()
 		mMainCamera->FarCull = 1000.0f;
 		mMainCamera->Forward = Vector3D(0.0f, 0.0f, -1.0f);
 		mMainCamera->UpDir = Vector3D(0.0f, 1.0f, 0.0f);
-		mMainCamera->AspectRatio = /*#TODO(Josh) :: Symptom of window issue here*/ 1600.0f / 900.0f;
+		mMainCamera->AspectRatio = RZE_Engine::Get()->GetWindowSize().X() / RZE_Engine::Get()->GetWindowSize().Y();
 	});
 	handler.RegisterForComponentAddNotification<CameraComponent>(OnCameraComponentAdded);
 }
