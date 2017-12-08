@@ -50,7 +50,7 @@ void GameApp::Start()
 
 	Apollo::ComponentHandler& componentHandler = RZE_Engine::Get()->GetComponentHandler();
 
-	//componentHandler.AddSystem<RotateSystem>();
+	componentHandler.AddSystem<RotateSystem>();
 
 	// Leaving the for loop for testing purposes
 	for (int i = 0; i < 1; ++i)
