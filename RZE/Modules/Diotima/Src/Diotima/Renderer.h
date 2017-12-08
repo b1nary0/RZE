@@ -16,7 +16,7 @@ namespace Diotima
 	class GFXTexture2D;
 	class GFXFont;
 
-	class RenderSystem : public ISubSystem
+	class Renderer : public ISubSystem
 	{
 	public:
 		typedef struct RenderItemProtocol
@@ -51,7 +51,7 @@ namespace Diotima
 		// Constructors
 	public:
 		// #TODO(Josh) Remove the parameters here and work in a better event driven system?
-		RenderSystem();
+		Renderer();
 
 		// ISubSystem interface
 	public:
@@ -66,9 +66,7 @@ namespace Diotima
 		void ClearLists();
 
 		void ResizeCanvas(const Vector2D& newSize);
-
-		SceneCamera& GetSceneCamera();
-
+		
 	private:
 		void RenderSingleItem(RenderItemProtocol& itemProtocol);
 

@@ -54,7 +54,7 @@ public:
 	ResourceHandler&	GetResourceHandler();
 
 	// #TODO(Josh) Totally test. This is not good.
-	Diotima::RenderSystem* GetRenderSystem();
+	Diotima::Renderer* GetRenderSystem();
 
 	Apollo::ComponentHandler&	GetComponentHandler() { return mComponentHandler; }
 

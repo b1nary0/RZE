@@ -241,21 +241,21 @@ bool ImGUICreateDeviceObjects()
 
 namespace Diotima
 {
-	RenderSystem::RenderSystem()
+	Renderer::Renderer()
 	{
 	}
 
-	void RenderSystem::AddRenderItem(const RenderItemProtocol& itemProtocol)
+	void Renderer::AddRenderItem(const RenderItemProtocol& itemProtocol)
 	{
 		mRenderList.emplace(std::move(itemProtocol));
 	}
 
-	void RenderSystem::AddLightItem(const LightItemProtocol& itemProtocol)
+	void Renderer::AddLightItem(const LightItemProtocol& itemProtocol)
 	{
 		mLightingList.emplace_back(std::move(itemProtocol));
 	}
 
-	void RenderSystem::Initialize()
+	void Renderer::Initialize()
 	{
 		{
 			OpenGLRHI::OpenGLCreationParams creationParams;
@@ -273,7 +273,7 @@ namespace Diotima
 		io.RenderDrawListsFn = ImGUIRender;
 	}
 
-	void RenderSystem::Update()
+	void Renderer::Update()
 	{
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
 		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
@@ -287,22 +287,22 @@ namespace Diotima
 		ClearLists();
 	}
 
-	void RenderSystem::ShutDown()
+	void Renderer::ShutDown()
 	{
 	}
 
-	void RenderSystem::ClearLists()
+	void Renderer::ClearLists()
 	{
 		mLightingList.clear();
 		mFontList.clear();
 	}
 
-	void RenderSystem::ResizeCanvas(const Vector2D& newSize)
+	void Renderer::ResizeCanvas(const Vector2D& newSize)
 	{
 		OpenGLRHI::Get().Viewport(0, 0, static_cast<GLsizei>(newSize.X()), static_cast<GLsizei>(newSize.Y()));
 	}
 
-	void RenderSystem::RenderSingleItem(RenderItemProtocol& renderItem)
+	void Renderer::RenderSingleItem(RenderItemProtocol& renderItem)
 	{
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
 		// @implementation should we have this type of assumption?
@@ -342,7 +342,7 @@ namespace Diotima
 		}
 	}
 
-	RenderSystem::RenderItemProtocol::RenderItemProtocol()
+	Renderer::RenderItemProtocol::RenderItemProtocol()
 	{
 		ShaderGroup = nullptr;
 		MeshData = nullptr;

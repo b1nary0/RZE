@@ -155,7 +155,7 @@ void RZE_Engine::CompileEvents()
 
 void RZE_Engine::RegisterSubSystems()
 {
-	mSubSystemHandler.AddSubSystem<Diotima::RenderSystem>();
+	mSubSystemHandler.AddSubSystem<Diotima::Renderer>();
 }
 
 void RZE_Engine::RegisterWindowEvents()
@@ -210,7 +210,6 @@ void RZE_Engine::Update()
 	mEventHandler.ProcessEvents();
 
 	mSubSystemHandler.UpdateSubSystems();
-
 	mComponentHandler.Update();
 
 	mApplication->Update();
@@ -253,7 +252,7 @@ ResourceHandler& RZE_Engine::GetResourceHandler()
 	return mResourceHandler;
 }
 
-Diotima::RenderSystem* RZE_Engine::GetRenderSystem()
+Diotima::Renderer* RZE_Engine::GetRenderSystem()
 {
-	return mSubSystemHandler.GetSubSystemByIndex<Diotima::RenderSystem>(0);
+	return mSubSystemHandler.GetSubSystemByIndex<Diotima::Renderer>(0);
 }

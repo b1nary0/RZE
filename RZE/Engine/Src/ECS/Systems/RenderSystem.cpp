@@ -76,7 +76,7 @@ void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 	AssertNotNull(mMainCamera);
 
  	Apollo::ComponentHandler& handler = RZE_Engine::Get()->GetComponentHandler();
-  	Diotima::RenderSystem* const renderSystem = RZE_Engine::Get()->GetRenderSystem();
+  	Diotima::Renderer* const renderSystem = RZE_Engine::Get()->GetRenderSystem();
  	
 	GenerateCameraMatrices();
 
@@ -85,7 +85,7 @@ void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
   		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entity);
   		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
   
-  		Diotima::RenderSystem::RenderItemProtocol item;
+  		Diotima::Renderer::RenderItemProtocol item;
   
   		Matrix4x4 modelMat;
   		modelMat.Translate(transfComp->Position);
@@ -106,7 +106,7 @@ void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 		LightSourceComponent* const lightComp = handler.GetComponent<LightSourceComponent>(entity);
 		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
 
-		Diotima::RenderSystem::LightItemProtocol item;
+		Diotima::Renderer::LightItemProtocol item;
 		item.LightColor = lightComp->Color;
 		item.LightStrength = lightComp->Strength;
 		item.LightPos = transfComp->Position;
