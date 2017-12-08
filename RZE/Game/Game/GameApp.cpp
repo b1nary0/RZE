@@ -3,8 +3,6 @@
 #include <RZE_Config.h>
 #include <RZE.h>
 
-#include <Game/GameWorld.h>
-
 #include <DebugUtils/DebugServices.h>
 
 #include <Apollo/EntityComponentSystem.h>
@@ -104,44 +102,4 @@ void GameApp::Update()
 // 	transfComp->SetScale(Vector3D(4.0f, 3.0f, 0.0f));
 // 
 // 	mEntities.push_back(entity);
-// }
-// 
-//
-// 
-// void GameApp::CreateTextureShader()
-// {
-// 	const char* const vertShaderFilePath = "./../Engine/Assets/Shaders/TextureVert.shader";
-// 	const char* const fragShaderFilePath = "./../Engine/Assets/Shaders/TextureFrag.shader";
-// 
-// 	ResourceHandle vertShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "TextureVertShader");
-// 	ResourceHandle fragShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "TextureFragShader");
-// 
-// 	GFXShader* vertShader = RZE_Engine::Get()->GetResourceHandler().GetResource<GFXShader>(vertShaderHandle);
-// 	vertShader->Create();
-// 	vertShader->Compile();
-// 
-// 	GFXShader* fragShader = RZE_Engine::Get()->GetResourceHandler().GetResource<GFXShader>(fragShaderHandle);
-// 	fragShader->Create();
-// 	fragShader->Compile();
-// 
-// 	mTextureShader = new GFXShaderGroup("TextureShader");
-// 	mTextureShader->AddShader(GFXShaderGroup::EShaderIndex::Vertex, vertShader);
-// 	mTextureShader->AddShader(GFXShaderGroup::EShaderIndex::Fragment, fragShader);
-// 
-// 	mTextureShader->AddUniform("UModelMat");
-// 	mTextureShader->AddUniform("UProjectionMat");
-// 	mTextureShader->AddUniform("UViewMat");
-// 
-// 	mTextureShader->AddUniform("ULightPosition");
-// 	mTextureShader->AddUniform("UViewPosition");
-// 	mTextureShader->AddUniform("ULightColor");
-// 	mTextureShader->AddUniform("ULightStrength");
-// 
-// 	mTextureShader->AddUniform("UFragColor");
-// 	//mTextureShader->AddUniform("UTexture2D");
-// 
-// 	mTextureShader->GenerateShaderProgram();
-// 
-// 	RZE_Engine::Get()->GetResourceHandler().ReleaseResource(vertShaderHandle);
-// 	RZE_Engine::Get()->GetResourceHandler().ReleaseResource(fragShaderHandle);
 // }

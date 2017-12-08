@@ -15,6 +15,7 @@
 #include <Utils/Platform/Timers/HiResTimer.h>
 
 Diotima::GFXShaderGroup* defaultShader;
+Diotima::GFXShaderGroup* textureShader;
 void CreateDefaultShader()
 {
 	const char* const vertShaderFilePath = "./../Engine/Assets/Shaders/VertexShader.shader";
@@ -52,6 +53,44 @@ void CreateDefaultShader()
 	RZE_Engine::Get()->GetResourceHandler().ReleaseResource(fragShaderHandle);
 }
 
+void CreateTextureShader()
+{
+	const char* const vertShaderFilePath = "./../Engine/Assets/Shaders/TextureVert.shader";
+	const char* const fragShaderFilePath = "./../Engine/Assets/Shaders/TextureFrag.shader";
+
+	ResourceHandle vertShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "TextureVertShader");
+	ResourceHandle fragShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "TextureFragShader");
+
+	Diotima::GFXShader* vertShader = RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXShader>(vertShaderHandle);
+	vertShader->Create();
+	vertShader->Compile();
+
+	Diotima::GFXShader* fragShader = RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXShader>(fragShaderHandle);
+	fragShader->Create();
+	fragShader->Compile();
+
+	textureShader = new Diotima::GFXShaderGroup("TextureShader");
+	textureShader->AddShader(Diotima::GFXShaderGroup::EShaderIndex::Vertex, vertShader);
+	textureShader->AddShader(Diotima::GFXShaderGroup::EShaderIndex::Fragment, fragShader);
+
+	textureShader->AddUniform("UModelMat");
+	textureShader->AddUniform("UProjectionMat");
+	textureShader->AddUniform("UViewMat");
+
+	textureShader->AddUniform("ULightPosition");
+	textureShader->AddUniform("UViewPosition");
+	textureShader->AddUniform("ULightColor");
+	textureShader->AddUniform("ULightStrength");
+
+	textureShader->AddUniform("UFragColor");
+	//mTextureShader->AddUniform("UTexture2D");
+
+	textureShader->GenerateShaderProgram();
+
+	RZE_Engine::Get()->GetResourceHandler().ReleaseResource(vertShaderHandle);
+	RZE_Engine::Get()->GetResourceHandler().ReleaseResource(fragShaderHandle);
+}
+
 RenderSystem::RenderSystem()
 {
 }
@@ -75,31 +114,31 @@ void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 {
 	AssertNotNull(mMainCamera);
 
- 	Apollo::ComponentHandler& handler = RZE_Engine::Get()->GetComponentHandler();
-  	Diotima::Renderer* const renderSystem = RZE_Engine::Get()->GetRenderSystem();
- 	
+	Apollo::ComponentHandler& handler = RZE_Engine::Get()->GetComponentHandler();
+	Diotima::Renderer* const renderSystem = RZE_Engine::Get()->GetRenderSystem();
+
 	GenerateCameraMatrices();
 
 	for (auto& entity : entities)
- 	{
-  		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entity);
-  		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
-  
-  		Diotima::Renderer::RenderItemProtocol item;
-  
-  		Matrix4x4 modelMat;
-  		modelMat.Translate(transfComp->Position);
-  		modelMat.Rotate(transfComp->Rotation.ToAngle(), transfComp->Rotation.ToAxis());
-  		modelMat.Scale(transfComp->Scale);
-  
-  		item.MeshData = RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::MeshResource>(meshComp->Resource);
-  		item.ModelMat = modelMat;
-  		item.ProjectionMat = mMainCamera->ProjectionMat;
-  		item.ViewMat = mMainCamera->ViewMat;
-  		item.ShaderGroup = defaultShader;
-  
-  		renderSystem->AddRenderItem(item);
- 	}
+	{
+		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entity);
+		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
+
+		Diotima::Renderer::RenderItemProtocol item;
+
+		Matrix4x4 modelMat;
+		modelMat.Translate(transfComp->Position);
+		modelMat.Rotate(transfComp->Rotation.ToAngle(), transfComp->Rotation.ToAxis());
+		modelMat.Scale(transfComp->Scale);
+
+		item.MeshData = RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::MeshResource>(meshComp->Resource);
+		item.ModelMat = modelMat;
+		item.ProjectionMat = mMainCamera->ProjectionMat;
+		item.ViewMat = mMainCamera->ViewMat;
+		item.ShaderGroup = defaultShader;
+
+		renderSystem->AddRenderItem(item);
+	}
 
 	Functor<void, Apollo::EntityID> LightSourceFunc([this, &handler, &renderSystem](Apollo::EntityID entity)
 	{
