@@ -310,7 +310,6 @@ namespace Diotima
 		{
 			if (renderItem.TextureData)
 			{
-				// #TODO replace with RHI call
 				openGL.BindTexture(EGLCapability::Texture2D, renderItem.TextureData->GetTextureID());
 			}
 

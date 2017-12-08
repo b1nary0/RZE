@@ -6,10 +6,12 @@
 #include <ECS/Components/LightSourceComponent.h>
 #include <ECS/Components/MeshComponent.h>
 #include <ECS/Components/TransformComponent.h>
+#include <ECS/Components/MaterialComponent.h>
 
 #include <Apollo/ECS/EntityComponentFilter.h>
 
 #include <Diotima/Graphics/Mesh.h>
+#include <Diotima/Graphics/Texture2D.h>
 #include <Diotima/Shaders/ShaderGroup.h>
 
 #include <Utils/Platform/Timers/HiResTimer.h>
@@ -48,9 +50,6 @@ void CreateDefaultShader()
 	defaultShader->AddUniform("UFragColor");
 
 	defaultShader->GenerateShaderProgram();
-
-	RZE_Engine::Get()->GetResourceHandler().ReleaseResource(vertShaderHandle);
-	RZE_Engine::Get()->GetResourceHandler().ReleaseResource(fragShaderHandle);
 }
 
 void CreateTextureShader()
@@ -83,12 +82,9 @@ void CreateTextureShader()
 	textureShader->AddUniform("ULightStrength");
 
 	textureShader->AddUniform("UFragColor");
-	//mTextureShader->AddUniform("UTexture2D");
+	//textureShader->AddUniform("UTexture2D");
 
 	textureShader->GenerateShaderProgram();
-
-	RZE_Engine::Get()->GetResourceHandler().ReleaseResource(vertShaderHandle);
-	RZE_Engine::Get()->GetResourceHandler().ReleaseResource(fragShaderHandle);
 }
 
 RenderSystem::RenderSystem()
@@ -101,6 +97,7 @@ void RenderSystem::Initialize()
 
 	Apollo::ComponentTypeID<Apollo::ComponentBase>::GetComponentTypeID<TransformComponent>();
 	Apollo::ComponentTypeID<Apollo::ComponentBase>::GetComponentTypeID<MeshComponent>();
+	Apollo::ComponentTypeID<Apollo::ComponentBase>::GetComponentTypeID<MaterialComponent>();
 
 	InternalGetComponentFilter().AddFilterType<TransformComponent>();
 	InternalGetComponentFilter().AddFilterType<MeshComponent>();
@@ -108,6 +105,7 @@ void RenderSystem::Initialize()
 	RegisterForComponentNotifications();
 
 	CreateDefaultShader();
+	CreateTextureShader();
 }
 
 void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
@@ -123,6 +121,7 @@ void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 	{
 		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entity);
 		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
+		MaterialComponent* const matComp = handler.GetComponent<MaterialComponent>(entity);
 
 		Diotima::Renderer::RenderItemProtocol item;
 
@@ -135,7 +134,12 @@ void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 		item.ModelMat = modelMat;
 		item.ProjectionMat = mMainCamera->ProjectionMat;
 		item.ViewMat = mMainCamera->ViewMat;
-		item.ShaderGroup = defaultShader;
+		item.ShaderGroup = matComp->ShaderGroup;
+
+		if (matComp->Texture.IsValid())
+		{
+			item.TextureData = RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXTexture2D>(matComp->Texture);
+		}
 
 		renderSystem->AddRenderItem(item);
 	}
@@ -174,7 +178,7 @@ void RenderSystem::RegisterForComponentNotifications()
 	Apollo::ComponentHandler::ComponentAddedFunc OnCameraComponentAdded([this](Apollo::EntityID entityID, Apollo::ComponentHandler& handler)
 	{
 		this->mMainCamera = handler.GetComponent<CameraComponent>(entityID);
-		mMainCamera->Position = Vector3D(0.0f, 5.0f, 20.0f);
+		mMainCamera->Position = Vector3D(0.0f, 0.0f, 10.0f);
 		mMainCamera->FOV = 45;
 		mMainCamera->NearCull = 0.1f;
 		mMainCamera->FarCull = 1000.0f;
@@ -183,6 +187,14 @@ void RenderSystem::RegisterForComponentNotifications()
 		mMainCamera->AspectRatio = RZE_Engine::Get()->GetWindowSize().X() / RZE_Engine::Get()->GetWindowSize().Y();
 	});
 	handler.RegisterForComponentAddNotification<CameraComponent>(OnCameraComponentAdded);
+
+	Apollo::ComponentHandler::ComponentAddedFunc OnMaterialComponentAdded([this](Apollo::EntityID entityID, Apollo::ComponentHandler& handler)
+	{
+		MaterialComponent* const matComp = handler.GetComponent<MaterialComponent>(entityID);
+		matComp->Texture = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(matComp->ResourcePath);
+		matComp->ShaderGroup = textureShader;
+	});
+	handler.RegisterForComponentAddNotification<MaterialComponent>(OnMaterialComponentAdded);
 }
 
 void RenderSystem::GenerateCameraMatrices()
