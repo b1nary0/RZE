@@ -128,8 +128,6 @@ void RZE_Engine::InitGame(Functor<RZE_Game* const> createGameCallback)
 
 	mApplication->SetWindow(mMainWindow);
 	mApplication->Start();
-
-	//mApplication->RegisterInputEvents(mInputHandler);
 }
 
 void RZE_Engine::CompileEvents()
