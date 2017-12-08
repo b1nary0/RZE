@@ -1,11 +1,5 @@
 #pragma once
 
-#include <memory>
-
-#include <Events/Events.h>
-
-#include <Windowing/Win32Window.h>
-
 class EventHandler;
 class Win32Window;
 
@@ -42,10 +36,7 @@ public:
 	virtual void Start() override;
 	virtual void Update() override;
 	virtual void ShutDown() override;
-
-	virtual void RegisterEvents(EventHandler& eventHandler);
-	virtual void RegisterInputEvents(InputHandler& inputHandler);
-
+	
 protected:
 
 	void ShowWindow();

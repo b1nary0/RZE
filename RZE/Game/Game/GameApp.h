@@ -1,7 +1,5 @@
 #pragma once
 
-#include <vector>
-
 #include <EngineApp.h>
 
 class ResourceHandle;
