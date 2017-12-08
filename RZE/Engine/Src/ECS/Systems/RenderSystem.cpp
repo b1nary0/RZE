@@ -14,17 +14,18 @@
 #include <Diotima/Graphics/Texture2D.h>
 #include <Diotima/Shaders/ShaderGroup.h>
 
+#include <Utils/Platform/FilePath.h>
 #include <Utils/Platform/Timers/HiResTimer.h>
 
 Diotima::GFXShaderGroup* defaultShader;
 Diotima::GFXShaderGroup* textureShader;
 void CreateDefaultShader()
 {
-	const char* const vertShaderFilePath = "./../Engine/Assets/Shaders/VertexShader.shader";
-	const char* const fragShaderFilePath = "./../Engine/Assets/Shaders/FragmentShader.shader";
+	const std::string vertShaderFilePath = FilePath("Engine/Assets/Shaders/VertexShader.shader").GetAbsolutePath();
+	const std::string fragShaderFilePath = FilePath("Engine/Assets/Shaders/FragmentShader.shader").GetAbsolutePath();
 
-	ResourceHandle vertShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "DefaultVertexShader");
-	ResourceHandle fragShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "DefaultFragShader");
+	ResourceHandle vertShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath.c_str(), EGLShaderType::Vertex, "DefaultVertexShader");
+	ResourceHandle fragShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath.c_str(), EGLShaderType::Fragment, "DefaultFragShader");
 
 	Diotima::GFXShader* vertShader = RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXShader>(vertShaderHandle);
 	vertShader->Create();
@@ -54,11 +55,11 @@ void CreateDefaultShader()
 
 void CreateTextureShader()
 {
-	const char* const vertShaderFilePath = "./../Engine/Assets/Shaders/TextureVert.shader";
-	const char* const fragShaderFilePath = "./../Engine/Assets/Shaders/TextureFrag.shader";
+	const std::string vertShaderFilePath = FilePath("Engine/Assets/Shaders/TextureVert.shader").GetAbsolutePath();
+	const std::string fragShaderFilePath = FilePath("Engine/Assets/Shaders/TextureFrag.shader").GetAbsolutePath();
 
-	ResourceHandle vertShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "TextureVertShader");
-	ResourceHandle fragShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "TextureFragShader");
+	ResourceHandle vertShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath.c_str(), EGLShaderType::Vertex, "TextureVertShader");
+	ResourceHandle fragShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath.c_str(), EGLShaderType::Fragment, "TextureFragShader");
 
 	Diotima::GFXShader* vertShader = RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXShader>(vertShaderHandle);
 	vertShader->Create();

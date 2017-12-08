@@ -13,9 +13,9 @@
 
 #include <Windowing/WinKeyCodes.h>
 
-#include <Utils/Math/Math.h>
 #include <Utils/DebugUtils/Debug.h>
-
+#include <Utils/Math/Math.h>
+#include <Utils/Platform/FilePath.h>
 
 // TEST
 #include <Ecs/Components/CameraComponent.h>
@@ -57,9 +57,9 @@ void GameApp::Start()
 	{
 		Apollo::EntityID entity = componentHandler.CreateEntity();
 
-		componentHandler.AddComponent<MeshComponent>(entity, "./../Engine/Assets/3D/Quad.obj");
+		componentHandler.AddComponent<MeshComponent>(entity, FilePath("Engine/Assets/3D/Quad.obj").GetAbsolutePath());
 		componentHandler.AddComponent<TransformComponent>(entity, Vector3D(), Quaternion(), Vector3D(4.0f, 3.0f, 0.0f));
-		componentHandler.AddComponent<MaterialComponent>(entity, "./../Engine/Assets/2D/Container.jpg");
+		componentHandler.AddComponent<MaterialComponent>(entity, FilePath("Engine/Assets/2D/Container.jpg").GetAbsolutePath());
 	}
 
 	Apollo::EntityID lightSource = componentHandler.CreateEntity();

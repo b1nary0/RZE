@@ -18,4 +18,5 @@ public:
 
 private:
 	std::string mAbsolutePath;
+	std::string mRelativePath;
 };
