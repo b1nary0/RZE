@@ -16,13 +16,6 @@
 
 #include <Game/Systems/RotateSystem.h>
 
-using namespace Diotima;
-
-// Test stuff -- this stuff will likely be removed at some point
-// or if it ends up being "permanent", implemented more sensibly.
-static Vector3D cameraStartPos = Vector3D(0.0f, 1.0f, 15.0f);
-static bool mIsCameraStartSequence = true;
-
 GameApp::GameApp()
 	: RZE_Game()
 {
