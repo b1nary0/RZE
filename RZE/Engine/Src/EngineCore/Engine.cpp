@@ -6,8 +6,6 @@
 
 #include <ECS/Systems/RenderSystem.h>
 
-#include <Game/GameWorld.h>
-
 #include <Windowing/Win32Window.h>
 #include <Windowing/WinKeyCodes.h>
 
@@ -27,7 +25,6 @@ RZE_Engine* RZE_Engine::sInstance = nullptr;
 RZE_Engine::RZE_Engine()
 {
 	mMainWindow = nullptr;
-	mWorld = nullptr;
 	mEngineConfig = nullptr;
 	mApplication = nullptr;
 
@@ -97,22 +94,10 @@ void RZE_Engine::Init()
 	}
 }
 
-void RZE_Engine::InitWorld()
-{
-	LOG_CONSOLE_ANNOUNCE("Initializing Game World...");
-
-	// @note naive at first
-	mWorld = new GameWorld();
-	AssertNotNull(mWorld);
-
-	mWorld->Initialize();
-}
-
 void RZE_Engine::PostInit(Functor<RZE_Game* const>& createApplicationCallback)
 {
 	LOG_CONSOLE("RZE_EngineCore::PostInit() called.");
 
-	InitWorld();
 	InitGame(createApplicationCallback);
 }
 
@@ -213,14 +198,12 @@ void RZE_Engine::Update()
 	mComponentHandler.Update();
 
 	mApplication->Update();
-	mWorld->Update();
 }
 
 void RZE_Engine::BeginShutDown()
 {
 	LOG_CONSOLE("Shutting engine down...");
 	mApplication->ShutDown();
-	mWorld->ShutDown();
 	mResourceHandler.ShutDown();
 
 	// #TODO(Josh) shut down renderer and window, etc
@@ -234,12 +217,10 @@ void RZE_Engine::InternalShutDown()
 	AssertNotNull(mMainWindow);
 	AssertNotNull(mEngineConfig);
 	AssertNotNull(mApplication);
-	AssertNotNull(mWorld);
 
 	delete mMainWindow;
 	delete mEngineConfig;
 	delete mApplication;
-	delete mWorld;
 }
 
 void RZE_Engine::PostExit()

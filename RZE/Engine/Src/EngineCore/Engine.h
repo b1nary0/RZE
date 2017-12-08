@@ -61,7 +61,6 @@ public:
 private:
 
 	void Init();
-	void InitWorld();
 	void PostInit(Functor<RZE_Game* const>& createApplicationCallback);
 
 	void Update();
@@ -86,7 +85,6 @@ private:
 
 private:
 	RZE_Game* mApplication;
-	GameWorld* mWorld;
 
 	Win32Window* mMainWindow;
 
