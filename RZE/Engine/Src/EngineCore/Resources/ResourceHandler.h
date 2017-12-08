@@ -7,7 +7,7 @@
 #include <Utils/Conversions.h>
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Interfaces/Resource.h>
-
+#include <Utils/Platform/FilePath.h>
 
 class ResourceHandler
 {
@@ -83,7 +83,7 @@ public:
 	ResourceHandle GetEmptyResourceHandle();
 
 	template <class ResourceT, class... Args>
-	ResourceHandle RequestResource(const std::string& resourcePath, Args... args);
+	ResourceHandle RequestResource(const FilePath& resourcePath, Args... args);
 
 	void ReleaseResource(ResourceHandle& resourceHandle);
 
@@ -92,7 +92,7 @@ public:
 
 private:
 	template <class ResourceT, class... Args>
-	IResource* CreateAndLoadResource(const std::string& resourcePath, Args&&... args);
+	IResource* CreateAndLoadResource(const FilePath& resourcePath, Args&&... args);
 
 	BlockAllocator mAllocator;
 	std::unordered_map<std::string, ResourceSource> mResourceTable;
@@ -124,9 +124,9 @@ private:
 
 // #TODO probably move this into an inl maybe?
 template <class ResourceT, class... Args>
-ResourceHandle ResourceHandler::RequestResource(const std::string& resourcePath, Args... args)
+ResourceHandle ResourceHandler::RequestResource(const FilePath& resourcePath, Args... args)
 {
-	std::string resourceKey = Conversions::CreateResourceKeyFromPath(resourcePath);
+	std::string resourceKey = Conversions::CreateResourceKeyFromPath(resourcePath.GetRelativePath());
 
 	auto iter = mResourceTable.find(resourceKey);
 	if (iter == mResourceTable.end())
@@ -167,11 +167,11 @@ ResourceT* ResourceHandler::GetResource(const ResourceHandle& resourceHandle)
 }
 
 template <class ResourceT, class... Args>
-IResource* ResourceHandler::CreateAndLoadResource(const std::string& resourcePath, Args&&... args)
+IResource* ResourceHandler::CreateAndLoadResource(const FilePath& resourcePath, Args&&... args)
 {
 	IResource* resource = new ResourceT(args...);//new (mAllocator.Allocate(sizeof(ResourceT))) ResourceT;
 	AssertNotNull(resource);
-	if (!resource->Load(resourcePath))
+	if (!resource->Load(resourcePath.GetAbsolutePath()))
 	{
 		return nullptr;
 	}

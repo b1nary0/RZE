@@ -4,13 +4,15 @@
 
 #include <Utils/Platform/File.h>
 
+class FilePath;
+
 class Config
 {
 public:
 	Config();
 	~Config();
 
-	virtual void Load(const std::string& filePath) = 0;
+	virtual void Load(const FilePath& filePath) = 0;
 
 	bool Empty();
 

@@ -6,11 +6,11 @@
 
 struct MeshComponent : Apollo::Component<MeshComponent>
 {
-	MeshComponent(const std::string& resourcePath)
+	MeshComponent(const FilePath& resourcePath)
 		: ResourcePath(resourcePath)
 	{}
 
-	const std::string ResourcePath;
+	FilePath ResourcePath;
 
 	ResourceHandle Resource;
 };

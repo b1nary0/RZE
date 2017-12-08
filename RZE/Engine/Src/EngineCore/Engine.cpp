@@ -177,9 +177,9 @@ void RZE_Engine::RegisterInputEvents()
 
 void RZE_Engine::LoadEngineConfig()
 {
+	// #TODO(Josh) This should probably be a resource? 
 	mEngineConfig = new EngineConfig();
-	//#TODO the path here needs to be dealt with properly
-	mEngineConfig->Load("./../Engine/RZE/Config/Engine.ini");
+	mEngineConfig->Load(FilePath("Engine/RZE/Config/Engine.ini"));
 
 	if (mEngineConfig->Empty())
 	{

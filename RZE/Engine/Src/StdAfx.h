@@ -29,4 +29,5 @@
 #include <RZE_Config.h>
 #include <RZE.h>
 #include <Utils/DebugUtils/Debug.h>
+#include <Utils/Platform/FilePath.h>
 #include <Utils/PrimitiveDefs.h>

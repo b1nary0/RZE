@@ -4,6 +4,8 @@
 
 #include <Utils/Math/Vector2D.h>
 
+class FilePath;
+
 class WindowSettings
 {
 	friend class EngineConfig;
@@ -26,7 +28,7 @@ public:
 	EngineConfig();
 	~EngineConfig();
 
-	virtual void Load(const std::string& filePath) override;
+	virtual void Load(const FilePath& filePath) override;
 
 	WindowSettings& GetWindowSettings();
 

@@ -57,9 +57,9 @@ void GameApp::Start()
 	{
 		Apollo::EntityID entity = componentHandler.CreateEntity();
 
-		componentHandler.AddComponent<MeshComponent>(entity, FilePath("Engine/Assets/3D/Quad.obj").GetAbsolutePath());
+		componentHandler.AddComponent<MeshComponent>(entity, FilePath("Engine/Assets/3D/Quad.obj"));
 		componentHandler.AddComponent<TransformComponent>(entity, Vector3D(), Quaternion(), Vector3D(4.0f, 3.0f, 0.0f));
-		componentHandler.AddComponent<MaterialComponent>(entity, FilePath("Engine/Assets/2D/Container.jpg").GetAbsolutePath());
+		componentHandler.AddComponent<MaterialComponent>(entity, FilePath("Engine/Assets/2D/Container.jpg"));
 	}
 
 	Apollo::EntityID lightSource = componentHandler.CreateEntity();

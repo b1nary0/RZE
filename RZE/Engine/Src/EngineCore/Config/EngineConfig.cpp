@@ -13,9 +13,9 @@ EngineConfig::~EngineConfig()
 
 }
 
-void EngineConfig::Load(const std::string& filePath)
+void EngineConfig::Load(const FilePath& filePath)
 {
-	Config::Read(filePath);
+	Config::Read(filePath.GetAbsolutePath());
 
 	LoadWindowSettings();
 }
