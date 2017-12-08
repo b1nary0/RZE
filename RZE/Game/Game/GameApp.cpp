@@ -68,6 +68,14 @@ void GameApp::Start()
 
 	Apollo::EntityID camera = componentHandler.CreateEntity();
 	componentHandler.AddComponent<CameraComponent>(camera);
+	CameraComponent* const camComp = componentHandler.GetComponent<CameraComponent>(camera);
+	camComp->Position = Vector3D(0.0f, 0.0f, 10.0f);
+	camComp->FOV = 45;
+	camComp->NearCull = 0.1f;
+	camComp->FarCull = 1000.0f;
+	camComp->Forward = Vector3D(0.0f, 0.0f, -1.0f);
+	camComp->UpDir = Vector3D(0.0f, 1.0f, 0.0f);
+	camComp->AspectRatio = RZE_Engine::Get()->GetWindowSize().X() / RZE_Engine::Get()->GetWindowSize().Y();
 }
 
 void GameApp::Update()

@@ -168,6 +168,10 @@ void RenderSystem::ShutDown()
 void RenderSystem::RegisterForComponentNotifications()
 {
 	Apollo::ComponentHandler& handler = RZE_Engine::Get()->GetComponentHandler();
+
+	//
+	// MeshComponent
+	//
 	Apollo::ComponentHandler::ComponentAddedFunc OnMeshComponentAdded([this](Apollo::EntityID entityID, Apollo::ComponentHandler& handler)
 	{
 		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entityID);
@@ -175,19 +179,18 @@ void RenderSystem::RegisterForComponentNotifications()
 	});
 	handler.RegisterForComponentAddNotification<MeshComponent>(OnMeshComponentAdded);
 
+	//
+	// CameraComponent
+	//
 	Apollo::ComponentHandler::ComponentAddedFunc OnCameraComponentAdded([this](Apollo::EntityID entityID, Apollo::ComponentHandler& handler)
 	{
 		this->mMainCamera = handler.GetComponent<CameraComponent>(entityID);
-		mMainCamera->Position = Vector3D(0.0f, 0.0f, 10.0f);
-		mMainCamera->FOV = 45;
-		mMainCamera->NearCull = 0.1f;
-		mMainCamera->FarCull = 1000.0f;
-		mMainCamera->Forward = Vector3D(0.0f, 0.0f, -1.0f);
-		mMainCamera->UpDir = Vector3D(0.0f, 1.0f, 0.0f);
-		mMainCamera->AspectRatio = RZE_Engine::Get()->GetWindowSize().X() / RZE_Engine::Get()->GetWindowSize().Y();
 	});
 	handler.RegisterForComponentAddNotification<CameraComponent>(OnCameraComponentAdded);
 
+	//
+	// MaterialComponent
+	//
 	Apollo::ComponentHandler::ComponentAddedFunc OnMaterialComponentAdded([this](Apollo::EntityID entityID, Apollo::ComponentHandler& handler)
 	{
 		MaterialComponent* const matComp = handler.GetComponent<MaterialComponent>(entityID);
