@@ -14,3 +14,8 @@ namespace VectorUtils
 		return result.LengthSq();
 	}
 }
+
+float MathUtils::ToRadians(float num)
+{
+	return num * (Pi / 180.0f);
+}

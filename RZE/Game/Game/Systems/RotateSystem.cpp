@@ -5,6 +5,8 @@
 #include <ECS/Components/TransformComponent.h>
 #include <ECS/Components/MeshComponent.h>
 
+#include <Utils/Math/Math.h>
+
 RotateSystem::RotateSystem()
 {
 }
@@ -18,7 +20,7 @@ void RotateSystem::Initialize()
 	InternalGetComponentFilter().AddFilterType<TransformComponent>();
 	InternalGetComponentFilter().AddFilterType<MeshComponent>();
 
-	mVelocity = Vector3D(0.0f, 0.005f, 0.0f);
+	mVelocity = Vector3D(0.0f, MathUtils::ToRadians(0.5f), 0.0f);
 }
 
 void RotateSystem::Update(std::vector<Apollo::EntityID>& entities)
