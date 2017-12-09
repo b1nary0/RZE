@@ -11,7 +11,7 @@ ResourceHandler::~ResourceHandler()
 
 void ResourceHandler::Init()
 {
-	mAllocator.Init();
+	//mAllocator.Init();
 }
 
 void ResourceHandler::ShutDown()

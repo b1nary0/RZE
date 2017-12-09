@@ -46,7 +46,7 @@ void GameApp::Start()
 	}
 
 	Apollo::EntityID lightSource = componentHandler.CreateEntity();
-	componentHandler.AddComponent<LightSourceComponent>(lightSource, Vector3D(1.0f, 1.0f, 1.0f), 1.0f);
+	componentHandler.AddComponent<LightSourceComponent>(lightSource, Vector3D(0.8f, 0.8f, 0.8f), 1.0f);
 	componentHandler.AddComponent<TransformComponent>(lightSource, Vector3D(0.0f, 0.5f, 2.0f));
 
 	Apollo::EntityID camera = componentHandler.CreateEntity();

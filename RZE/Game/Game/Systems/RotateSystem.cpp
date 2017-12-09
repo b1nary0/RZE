@@ -20,7 +20,7 @@ void RotateSystem::Initialize()
 	InternalGetComponentFilter().AddFilterType<TransformComponent>();
 	InternalGetComponentFilter().AddFilterType<MeshComponent>();
 
-	mVelocity = Vector3D(0.0f, MathUtils::ToRadians(0.5f), 0.0f);
+	mVelocity = Vector3D(0.0f, MathUtils::ToRadians(1.0f), 0.0f);
 }
 
 void RotateSystem::Update(std::vector<Apollo::EntityID>& entities)

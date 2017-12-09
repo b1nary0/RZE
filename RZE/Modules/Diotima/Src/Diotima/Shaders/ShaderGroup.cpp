@@ -56,10 +56,10 @@ namespace Diotima
 
 	void GFXShaderGroup::SetUniformMatrix4x4(const std::string& uniformName, const Matrix4x4& mat)
 	{
-		const bool bUniformExists = mUniformMap.count(uniformName) == 1;
-		if (bUniformExists)
+		auto& uniform = mUniformMap.find(uniformName);
+		if (uniform != mUniformMap.end())
 		{
-			int uniformLocation = mUniformMap[uniformName];
+			int uniformLocation = (*uniform).second;
 			OpenGLRHI::Get().SetUniformMat4x4(uniformLocation, 1, EGLBooleanValue::False, mat.GetValuePtr());
 		}
 		else
@@ -70,10 +70,10 @@ namespace Diotima
 
 	void GFXShaderGroup::SetUniformVector3D(const std::string& uniformName, const Vector3D& vec)
 	{
-		const bool bUniformExists = mUniformMap.count(uniformName) == 1;
-		if (bUniformExists)
+		auto& uniform = mUniformMap.find(uniformName);
+		if (uniform != mUniformMap.end())
 		{
-			int uniformLocation = mUniformMap[uniformName];
+			int uniformLocation = (*uniform).second;
 			OpenGLRHI::Get().SetUniformVec3D(uniformLocation, vec.X(), vec.Y(), vec.Z());
 		}
 		else
@@ -84,10 +84,10 @@ namespace Diotima
 
 	void GFXShaderGroup::SetUniformVector4D(const std::string& uniformName, const Vector4D& vec)
 	{
-		const bool bUniformExists = mUniformMap.count(uniformName) == 1;
-		if (bUniformExists)
+		auto& uniform = mUniformMap.find(uniformName);
+		if (uniform != mUniformMap.end())
 		{
-			int uniformLocation = mUniformMap[uniformName];
+			int uniformLocation = (*uniform).second;
 			OpenGLRHI::Get().SetUniformVec4D(uniformLocation, vec.X(), vec.Y(), vec.Z(), vec.W());
 		}
 		else
@@ -98,10 +98,10 @@ namespace Diotima
 
 	void GFXShaderGroup::SetUniformInt(const std::string& uniformName, int value)
 	{
-		const bool bUniformExists = mUniformMap.count(uniformName) == 1;
-		if (bUniformExists)
+		auto& uniform = mUniformMap.find(uniformName);
+		if (uniform != mUniformMap.end())
 		{
-			int uniformLocation = mUniformMap[uniformName];
+			int uniformLocation = (*uniform).second;
 			OpenGLRHI::Get().SetUniformInt(uniformLocation, value);
 		}
 		else
@@ -112,10 +112,10 @@ namespace Diotima
 
 	void GFXShaderGroup::SetUniformFloat(const std::string& uniformName, float value)
 	{
-		const bool bUniformExists = mUniformMap.count(uniformName) == 1;
-		if (bUniformExists)
+		auto& uniform = mUniformMap.find(uniformName);
+		if (uniform != mUniformMap.end())
 		{
-			int uniformLocation = mUniformMap[uniformName];
+			int uniformLocation = (*uniform).second;
 			OpenGLRHI::Get().SetUniformFloat(uniformLocation, value);
 		}
 		else

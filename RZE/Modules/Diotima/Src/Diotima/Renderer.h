@@ -75,6 +75,5 @@ namespace Diotima
 
 		std::queue<RenderItemProtocol> mRenderList;
 		std::vector<LightItemProtocol> mLightingList;
-		std::vector<FontItemProtocol>  mFontList;
 	};
 }

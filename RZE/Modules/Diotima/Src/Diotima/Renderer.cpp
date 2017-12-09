@@ -241,6 +241,8 @@ bool ImGUICreateDeviceObjects()
 
 namespace Diotima
 {
+	static Vector4D sDefaultFragColor(0.25f, 0.25f, 0.25f, 1.0f);
+
 	Renderer::Renderer()
 	{
 	}
@@ -276,6 +278,7 @@ namespace Diotima
 	void Renderer::Update()
 	{
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
+
 		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
 
 		while (!mRenderList.empty())
@@ -294,7 +297,6 @@ namespace Diotima
 	void Renderer::ClearLists()
 	{
 		mLightingList.clear();
-		mFontList.clear();
 	}
 
 	void Renderer::ResizeCanvas(const Vector2D& newSize)
@@ -313,13 +315,15 @@ namespace Diotima
 				openGL.BindTexture(EGLCapability::Texture2D, renderItem.TextureData->GetTextureID());
 			}
 
-			renderItem.ShaderGroup->Use();
+			{
+				renderItem.ShaderGroup->Use();
 
-			renderItem.ShaderGroup->SetUniformMatrix4x4("UModelMat", renderItem.ModelMat);
-			renderItem.ShaderGroup->SetUniformMatrix4x4("UProjectionMat", renderItem.ProjectionMat);
-			renderItem.ShaderGroup->SetUniformMatrix4x4("UViewMat", renderItem.ViewMat);
+				renderItem.ShaderGroup->SetUniformMatrix4x4("UModelMat", renderItem.ModelMat);
+				renderItem.ShaderGroup->SetUniformMatrix4x4("UProjectionMat", renderItem.ProjectionMat);
+				renderItem.ShaderGroup->SetUniformMatrix4x4("UViewMat", renderItem.ViewMat);
 
-			renderItem.ShaderGroup->SetUniformVector4D("UFragColor", Vector4D(0.25f, 0.25f, 0.25f, 1.0f));
+				renderItem.ShaderGroup->SetUniformVector4D("UFragColor", sDefaultFragColor);
+			}
 
 			for (auto& light : mLightingList)
 			{
