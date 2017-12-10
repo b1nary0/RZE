@@ -2,6 +2,7 @@
 #include <Diotima/Renderer.h>
 
 #include <Diotima/Driver/OpenGL.h>
+#include <Diotima/Graphics/Material.h>
 #include <Diotima/Graphics/Mesh.h>
 #include <Diotima/Graphics/Texture2D.h>
 #include <Diotima/Shaders/ShaderGroup.h>
@@ -241,15 +242,14 @@ bool ImGUICreateDeviceObjects()
 
 namespace Diotima
 {
-	static Vector4D sDefaultFragColor(0.25f, 0.25f, 0.25f, 1.0f);
-
 	Renderer::Renderer()
 	{
 	}
 
 	void Renderer::AddRenderItem(const RenderItemProtocol& itemProtocol)
 	{
-		mRenderList.emplace(std::move(itemProtocol));
+		mRenderMap[itemProtocol.Material].emplace(std::move(itemProtocol));
+		//mRenderList.emplace(std::move(itemProtocol));
 	}
 
 	void Renderer::AddLightItem(const LightItemProtocol& itemProtocol)
@@ -277,15 +277,40 @@ namespace Diotima
 
 	void Renderer::Update()
 	{
+		START_TIMED_BLOCK("Renderer::Update()");
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
 
 		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
 
-		while (!mRenderList.empty())
+		for (auto& entry : mRenderMap)
 		{
-			RenderSingleItem(mRenderList.front());
-			mRenderList.pop();
+			GFXMaterial* const mat = entry.first;
+			std::queue<RenderItemProtocol>& itemList = entry.second;
+
+			mat->Use();
+			mat->GetShaderGroup()->SetUniformMatrix4x4("UModelMat", mat->ModelMat);
+			mat->GetShaderGroup()->SetUniformMatrix4x4("UProjectionMat", mat->ProjectionMat);
+			mat->GetShaderGroup()->SetUniformMatrix4x4("UViewMat", mat->ViewMat);
+			
+			mat->GetShaderGroup()->SetUniformVector4D("UFragColor", mat->Color);
+
+			mat->GetShaderGroup()->SetUniformVector3D("ULightPosition", mat->LightPos);
+			mat->GetShaderGroup()->SetUniformVector3D("UViewPosition", mat->ViewPos);
+			mat->GetShaderGroup()->SetUniformVector3D("ULightColor", mat->LightColor);
+			mat->GetShaderGroup()->SetUniformFloat("ULightStrength", mat->LightStrength);
+
+			while (!itemList.empty())
+			{
+				RenderSingleItem(itemList.front());
+				itemList.pop();
+			}
 		}
+
+// 		while (!mRenderList.empty())
+// 		{
+// 			RenderSingleItem(mRenderList.front());
+// 			mRenderList.pop();
+// 		}
 
 		ClearLists();
 	}
@@ -307,32 +332,6 @@ namespace Diotima
 	void Renderer::RenderSingleItem(RenderItemProtocol& renderItem)
 	{
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
-		// @implementation should we have this type of assumption?
-		if (renderItem.ShaderGroup)
-		{
-			if (renderItem.TextureData)
-			{
-				openGL.BindTexture(EGLCapability::Texture2D, renderItem.TextureData->GetTextureID());
-			}
-
-			{
-				renderItem.ShaderGroup->Use();
-
-				renderItem.ShaderGroup->SetUniformMatrix4x4("UModelMat", renderItem.ModelMat);
-				renderItem.ShaderGroup->SetUniformMatrix4x4("UProjectionMat", renderItem.ProjectionMat);
-				renderItem.ShaderGroup->SetUniformMatrix4x4("UViewMat", renderItem.ViewMat);
-
-				renderItem.ShaderGroup->SetUniformVector4D("UFragColor", sDefaultFragColor);
-			}
-
-			for (auto& light : mLightingList)
-			{
-				renderItem.ShaderGroup->SetUniformVector3D("ULightPosition", light.LightPos);
-				renderItem.ShaderGroup->SetUniformVector3D("UViewPosition", light.ViewPos);
-				renderItem.ShaderGroup->SetUniformVector3D("ULightColor", light.LightColor);
-				renderItem.ShaderGroup->SetUniformFloat("ULightStrength", light.LightStrength);
-			}
-		}
 
 		const std::vector<GFXMesh*>& meshList = renderItem.MeshData->GetMeshList();
 		for (auto& mesh : meshList)
@@ -347,8 +346,6 @@ namespace Diotima
 
 	Renderer::RenderItemProtocol::RenderItemProtocol()
 	{
-		ShaderGroup = nullptr;
 		MeshData = nullptr;
-		TextureData = nullptr;
 	}
 }

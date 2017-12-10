@@ -1,10 +1,13 @@
 #pragma once
 
-#include <vector>
+#include <functional>
 #include <queue>
+#include <unordered_map>
+#include <vector>
 
 #include <Diotima/SceneCamera.h>
 #include <Diotima/Driver/OpenGL.h>
+#include <Diotima/Graphics/Material.h>
 
 #include <Utils/Interfaces/SubSystem.h>
 #include <Utils/Math/Vector2D.h>
@@ -12,10 +15,10 @@
 namespace Diotima
 {
 	class MeshResource;
+	class GFXMaterial;
 	class GFXShaderGroup;
 	class GFXTexture2D;
-	class GFXFont;
-
+	
 	class Renderer : public ISubSystem
 	{
 	public:
@@ -23,30 +26,17 @@ namespace Diotima
 		{
 			RenderItemProtocol();
 
-			GFXShaderGroup*     ShaderGroup;
+			GFXMaterial*		Material;
 			Matrix4x4           ModelMat;
 			Matrix4x4           ProjectionMat;
 			Matrix4x4           ViewMat;
 			MeshResource*       MeshData;
-			GFXTexture2D*       TextureData;
 		} RenderItemProtocol;
 
 		typedef struct LightItemProtocol
 		{
-			Vector3D			ViewPos;
-			Vector3D            LightColor;
-			Vector3D            LightPos;
-			float               LightStrength;
+			GFXMaterial* Material;
 		} LightItemProtocol;
-
-		typedef struct FontItemProtocol
-		{
-			GFXFont*        Font;
-			Matrix4x4       ProjectionMat;
-			Vector3D		Position;
-			std::string     Text;
-			GFXShaderGroup* ShaderGroup;
-		} FontItemProtocol;
 
 		// Constructors
 	public:
@@ -75,5 +65,17 @@ namespace Diotima
 
 		std::queue<RenderItemProtocol> mRenderList;
 		std::vector<LightItemProtocol> mLightingList;
+
+	// RenderRefactor changes
+	private:
+		struct MaterialCompare
+		{
+			size_t operator()(GFXMaterial* const& mat) const
+			{
+				return std::hash<std::string>{}(mat->mName);
+			}
+		};
+
+		std::unordered_map<GFXMaterial*, std::queue<RenderItemProtocol>, MaterialCompare> mRenderMap;
 	};
 }

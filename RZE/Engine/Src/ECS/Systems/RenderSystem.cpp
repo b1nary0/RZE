@@ -10,12 +10,15 @@
 
 #include <Apollo/ECS/EntityComponentFilter.h>
 
+#include <Diotima/Graphics/Material.h>
 #include <Diotima/Graphics/Mesh.h>
 #include <Diotima/Graphics/Texture2D.h>
 #include <Diotima/Shaders/ShaderGroup.h>
 
 #include <Utils/Platform/FilePath.h>
 #include <Utils/Platform/Timers/HiResTimer.h>
+
+static Vector4D sDefaultFragColor(0.25f, 0.25f, 0.25f, 1.0f);
 
 Diotima::GFXShaderGroup* defaultShader;
 Diotima::GFXShaderGroup* textureShader;
@@ -83,7 +86,6 @@ void CreateTextureShader()
 	textureShader->AddUniform("ULightStrength");
 
 	textureShader->AddUniform("UFragColor");
-	//textureShader->AddUniform("UTexture2D");
 
 	textureShader->GenerateShaderProgram();
 }
@@ -92,8 +94,11 @@ RenderSystem::RenderSystem()
 {
 }
 
+static Diotima::GFXMaterial material;
 void RenderSystem::Initialize()
 {
+	material.mName = "Test";
+
 	Apollo::ComponentHandler& componentHandler = RZE_Engine::Get()->GetComponentHandler();
 
 	Apollo::ComponentTypeID<Apollo::ComponentBase>::GetComponentTypeID<TransformComponent>();
@@ -108,6 +113,7 @@ void RenderSystem::Initialize()
 	CreateDefaultShader();
 	CreateTextureShader();
 }
+
 
 void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 {
@@ -135,12 +141,22 @@ void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 		item.ModelMat = modelMat;
 		item.ProjectionMat = mMainCamera->ProjectionMat;
 		item.ViewMat = mMainCamera->ViewMat;
-		item.ShaderGroup = matComp->ShaderGroup;
 
 		if (matComp->Texture.IsValid())
 		{
-			item.TextureData = RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXTexture2D>(matComp->Texture);
+			material.SetShaderGroup(textureShader);
+			material.SetTexture2D(RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXTexture2D>(matComp->Texture));
 		}
+		else
+		{
+			material.SetShaderGroup(defaultShader);
+		}
+		material.ModelMat = std::move(modelMat);
+		material.ProjectionMat = mMainCamera->ProjectionMat;
+		material.ViewMat = mMainCamera->ViewMat;
+		material.Color = sDefaultFragColor;
+		
+		item.Material = &material;
 
 		renderSystem->AddRenderItem(item);
 	}
@@ -151,11 +167,12 @@ void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
 
 		Diotima::Renderer::LightItemProtocol item;
-		item.LightColor = lightComp->Color;
-		item.LightStrength = lightComp->Strength;
-		item.LightPos = transfComp->Position;
-		item.ViewPos = mMainCamera->Position;
+		material.LightColor = lightComp->Color;
+		material.LightStrength = lightComp->Strength;
+		material.LightPos = transfComp->Position;
+		material.ViewPos = mMainCamera->Position;
 
+		item.Material = &material;
 		renderSystem->AddLightItem(item);
 	});
 

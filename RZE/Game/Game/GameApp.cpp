@@ -36,7 +36,7 @@ void GameApp::Start()
 	componentHandler.AddSystem<RotateSystem>();
 
 	// Leaving the for loop for testing purposes
-	for (int i = 0; i < 1; ++i)
+	for (int i = 0; i < 256; ++i)
 	{
 		Apollo::EntityID entity = componentHandler.CreateEntity();
 
