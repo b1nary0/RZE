@@ -33,8 +33,8 @@ namespace Diotima
 		OpenGLEBO& GetEBO();
 		OpenGLVBO& GetVertexVBO();
 
-		std::vector<GFXVertex> GetVertexList();
-		std::vector<U32> GetIndices();
+		const std::vector<GFXVertex>& GetVertexList() const;
+		const std::vector<U32>& GetIndices() const;
 
 	private:
 		void OnLoadFinished();

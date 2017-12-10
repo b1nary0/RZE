@@ -44,12 +44,12 @@ namespace Diotima
 		return mEBO;
 	}
 
-	std::vector<GFXVertex> GFXMesh::GetVertexList()
+	const std::vector<GFXVertex>& GFXMesh::GetVertexList() const
 	{
 		return mVertices;
 	}
 
-	std::vector<U32> GFXMesh::GetIndices()
+	const std::vector<U32>& GFXMesh::GetIndices() const
 	{
 		return mIndices;
 	}
