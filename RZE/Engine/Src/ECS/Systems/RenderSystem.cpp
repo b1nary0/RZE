@@ -212,8 +212,15 @@ void RenderSystem::RegisterForComponentNotifications()
 	Apollo::ComponentHandler::ComponentAddedFunc OnMaterialComponentAdded([this](Apollo::EntityID entityID, Apollo::ComponentHandler& handler)
 	{
 		MaterialComponent* const matComp = handler.GetComponent<MaterialComponent>(entityID);
-		matComp->Texture = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(matComp->ResourcePath);
-		matComp->ShaderGroup = textureShader;
+		if (matComp->ResourcePath.GetAbsolutePath() != "")
+		{
+			matComp->Texture = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(matComp->ResourcePath);
+			matComp->ShaderGroup = textureShader;
+		}
+		else
+		{
+			matComp->ShaderGroup = defaultShader;
+		}
 	});
 	handler.RegisterForComponentAddNotification<MaterialComponent>(OnMaterialComponentAdded);
 }
