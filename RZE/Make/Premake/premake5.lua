@@ -40,7 +40,9 @@ workspace "RZE"
 	}
 	linkoptions
 	{
-		"/ignore:4099"
+		"/ignore:4099",
+		"/ignore:4221",
+		"/ignore:4006"
 	};
 	
 	startproject "Game"

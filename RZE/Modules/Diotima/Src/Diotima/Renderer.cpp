@@ -277,7 +277,6 @@ namespace Diotima
 
 	void Renderer::Update()
 	{
-		START_TIMED_BLOCK("Renderer::Update()");
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
 
 		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
