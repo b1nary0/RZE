@@ -38,7 +38,7 @@ void Diotima::GFXMaterial::SetTexture2D(GFXTexture2D* const texture2D)
 	mTexture2D = texture2D;
 }
 
-void Diotima::GFXMaterial::Use()
+void Diotima::GFXMaterial::Use() const
 {
 	if (mTexture2D)
 	{

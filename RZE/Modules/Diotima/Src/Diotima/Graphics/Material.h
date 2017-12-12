@@ -23,7 +23,7 @@ namespace Diotima
 		void SetTexture2D(GFXTexture2D* const texture2D);
 
 	public:
-		void Use();
+		void Use() const;
 
 		Matrix4x4 ModelMat;
 		Matrix4x4 ViewMat;
