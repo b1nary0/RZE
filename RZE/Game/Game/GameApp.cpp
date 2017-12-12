@@ -8,6 +8,8 @@
 #include <Utils/Platform/FilePath.h>
 
 // TEST
+#include <Diotima/Graphics/Texture2D.h>
+
 #include <Ecs/Components/CameraComponent.h>
 #include <ECS/Components/LightSourceComponent.h>
 #include <ECS/Components/MeshComponent.h>
@@ -41,16 +43,28 @@ void GameApp::Start()
 
 	Apollo::ComponentHandler& componentHandler = RZE_Engine::Get()->GetComponentHandler();
 
-	componentHandler.AddSystem<RotateSystem>();
+	//componentHandler.AddSystem<RotateSystem>();
+
+	Apollo::EntityID bgEnt = componentHandler.CreateEntity();
+	componentHandler.AddComponent<MeshComponent>(bgEnt, FilePath("Engine/Assets/3D/Quad.obj"));
+	componentHandler.AddComponent<MaterialComponent>(bgEnt, FilePath("Engine/Assets/2D/Background.jpg"));
+
+	MaterialComponent* const matComp = componentHandler.GetComponent<MaterialComponent>(bgEnt);
+	Diotima::GFXTexture2D* const texture = RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXTexture2D>(matComp->Texture);
+	
+	Vector2D texDimensions = texture->GetDimensions();
+	Vector2D winDimensions = RZE_Engine::Get()->GetWindowSize();
+
+	componentHandler.AddComponent<TransformComponent>(bgEnt, Vector3D(0.0f, 0.0f, -10.0f), Quaternion(Vector3D(0.0f, MathUtils::ToRadians(180.0f), MathUtils::ToRadians(180.0f))), Vector3D(30.0, 20.0f, 0.0f));
 
 	// Leaving the for loop for testing purposes
 	for (int i = 0; i < 1; ++i)
 	{
-		Apollo::EntityID entity = componentHandler.CreateEntity();
-
-		componentHandler.AddComponent<MeshComponent>(entity, FilePath("Engine/Assets/3D/Quad.obj"));
-		componentHandler.AddComponent<TransformComponent>(entity, Vector3D(), Quaternion(), Vector3D(4.0f, 3.0f, 0.0f));
-		componentHandler.AddComponent<MaterialComponent>(entity, FilePath("Engine/Assets/2D/Container.jpg"));
+// 		Apollo::EntityID entity = componentHandler.CreateEntity();
+// 
+// 		componentHandler.AddComponent<MeshComponent>(entity, FilePath("Engine/Assets/3D/Quad.obj"));
+// 		componentHandler.AddComponent<TransformComponent>(entity, Vector3D(), Quaternion(), Vector3D(4.0f, 3.0f, 0.0f));
+// 		componentHandler.AddComponent<MaterialComponent>(entity, FilePath("Engine/Assets/2D/Container.jpg"));
 	}
 
 	Apollo::EntityID lightSource = componentHandler.CreateEntity();
