@@ -17,6 +17,11 @@ Vector2D::Vector2D(const int x, const int y)
 {
 }
 
+Vector2D::Vector2D(const float val)
+	: mVec(val, val)
+{
+}
+
 float Vector2D::X() const
 {
 	return mVec.x;

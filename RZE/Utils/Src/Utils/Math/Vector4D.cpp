@@ -3,6 +3,8 @@
 
 #include <GLM/vec4.hpp>
 
+Vector4D Vector4D::sDefaultVec;
+
 Vector4D::Vector4D()
 	: mVec(0.0f, 0.0f, 0.0f, 0.0f)
 {
@@ -15,6 +17,11 @@ Vector4D::Vector4D(const float x, const float y, const float z, const float w)
 
 Vector4D::Vector4D(const int x, const int y, const int z, const int w)
 	: mVec(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z), static_cast<float>(w))
+{
+}
+
+Vector4D::Vector4D(const float val)
+	: mVec(val, val, val, 1.0f)
 {
 }
 

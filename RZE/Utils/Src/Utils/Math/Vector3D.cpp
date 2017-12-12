@@ -16,6 +16,11 @@ Vector3D::Vector3D(const int x, const int y, const int z)
 {
 }
 
+Vector3D::Vector3D(const float val)
+	: mVec(val, val, val)
+{
+}
+
 float Vector3D::X() const
 {
 	return mVec.x;

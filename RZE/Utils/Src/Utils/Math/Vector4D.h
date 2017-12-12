@@ -6,8 +6,11 @@ class Vector4D
 {
 public:
 	Vector4D();
+	Vector4D(const float val);
 	Vector4D(const float x, const float y, const float z, const float w);
 	Vector4D(const int x, const int y, const int z, const int w);
+
+	inline static Vector4D& Default() { return sDefaultVec; }
 
 	float X() const;
 	float Y() const;
@@ -24,5 +27,6 @@ public:
 	const glm::vec4& GetInternalVec() const;
 
 private:
+	static Vector4D sDefaultVec;
 	glm::vec4 mVec;
 };
