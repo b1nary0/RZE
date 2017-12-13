@@ -52,9 +52,6 @@ void GameApp::Start()
 	MaterialComponent* const matComp = componentHandler.GetComponent<MaterialComponent>(bgEnt);
 	Diotima::GFXTexture2D* const texture = RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXTexture2D>(matComp->Texture);
 	
-	Vector2D texDimensions = texture->GetDimensions();
-	Vector2D winDimensions = RZE_Engine::Get()->GetWindowSize();
-
 	componentHandler.AddComponent<TransformComponent>(bgEnt, Vector3D(0.0f, 0.0f, -10.0f), Quaternion(Vector3D(0.0f, MathUtils::ToRadians(165.0f), MathUtils::ToRadians(180.0f))), Vector3D(30.0, 20.0f, 5.0f));
 
 	// Leaving the for loop for testing purposes
@@ -66,8 +63,6 @@ void GameApp::Start()
 		componentHandler.AddComponent<TransformComponent>(entity, Vector3D(), Quaternion(Vector3D(MathUtils::ToRadians(32.f))), Vector3D(4.0f, 3.0f, 0.f));
 		componentHandler.AddComponent<MaterialComponent>(entity, FilePath("Engine/Assets/2D/Container.jpg"));
 	}
-
-	ResourceHandle matHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXMaterial>(FilePath("Engine/Assets/Materials/Default.Material"));
 
 	Apollo::EntityID lightSource = componentHandler.CreateEntity();
 	componentHandler.AddComponent<LightSourceComponent>(lightSource, Vector3D(0.8f, 0.8f, 0.8f), 1.0f);
