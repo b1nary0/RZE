@@ -283,24 +283,29 @@ namespace Diotima
 
 		for (auto& entry : mRenderMap)
 		{
-			GFXMaterial* const mat = entry.first;
+			const GFXMaterial& mat = entry.first;
 			std::queue<RenderItemProtocol>& itemList = entry.second;
 
-			mat->Use();
-			mat->GetShaderGroup()->SetUniformMatrix4x4("UModelMat", mat->ModelMat);
-			mat->GetShaderGroup()->SetUniformMatrix4x4("UProjectionMat", mat->ProjectionMat);
-			mat->GetShaderGroup()->SetUniformMatrix4x4("UViewMat", mat->ViewMat);
-			
-			mat->GetShaderGroup()->SetUniformVector4D("UFragColor", mat->Color);
-
-			mat->GetShaderGroup()->SetUniformVector3D("ULightPosition", mat->LightPos);
-			mat->GetShaderGroup()->SetUniformVector3D("UViewPosition", mat->ViewPos);
-			mat->GetShaderGroup()->SetUniformVector3D("ULightColor", mat->LightColor);
-			mat->GetShaderGroup()->SetUniformFloat("ULightStrength", mat->LightStrength);
+			mat.Use();
+			mat.GetShaderGroup()->SetUniformMatrix4x4("UProjectionMat", camera.ProjectionMat);
+			mat.GetShaderGroup()->SetUniformMatrix4x4("UViewMat", camera.ViewMat);
+			   
+			mat.GetShaderGroup()->SetUniformVector4D("UFragColor", mat.Color);
+			 
+			for (auto& light : mLightingList)
+			{
+				mat.GetShaderGroup()->SetUniformVector3D("ULightPosition", light.Material.LightPos);
+				mat.GetShaderGroup()->SetUniformVector3D("UViewPosition", light.Material.ViewPos);
+				mat.GetShaderGroup()->SetUniformVector3D("ULightColor", light.Material.LightColor);
+				mat.GetShaderGroup()->SetUniformFloat("ULightStrength", light.Material.LightStrength);
+			}
 
 			while (!itemList.empty())
 			{
-				RenderSingleItem(itemList.front());
+				RenderItemProtocol& item = itemList.front();
+
+				mat.GetShaderGroup()->SetUniformMatrix4x4("UModelMat", item.ModelMat);
+				RenderSingleItem(item);
 				itemList.pop();
 			}
 		}
@@ -331,7 +336,6 @@ namespace Diotima
 	void Renderer::RenderSingleItem(RenderItemProtocol& renderItem)
 	{
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
-
 		const std::vector<GFXMesh*>& meshList = renderItem.MeshData->GetMeshList();
 		for (auto& mesh : meshList)
 		{

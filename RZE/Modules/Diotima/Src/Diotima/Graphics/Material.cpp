@@ -5,6 +5,9 @@
 #include <Diotima/Shaders/ShaderGroup.h>
 
 #include <Utils/DebugUtils/Debug.h>
+#include <Utils/Platform/File.h>
+
+#include <RapidJSON/document.h>
 
 Diotima::GFXMaterial::GFXMaterial()
 {
@@ -36,6 +39,16 @@ void Diotima::GFXMaterial::SetTexture2D(GFXTexture2D* const texture2D)
 {
 	AssertNotNull(texture2D);
 	mTexture2D = texture2D;
+}
+
+bool Diotima::GFXMaterial::Load(const std::string& filePath)
+{
+	File materialFile(filePath);
+
+	rapidjson::Document json;
+	json.Parse(materialFile.Content().c_str());
+
+	return true;
 }
 
 void Diotima::GFXMaterial::Use() const

@@ -26,7 +26,7 @@ namespace Diotima
 		{
 			RenderItemProtocol();
 
-			GFXMaterial*		Material;
+			GFXMaterial		Material;
 			Matrix4x4           ModelMat;
 			Matrix4x4           ProjectionMat;
 			Matrix4x4           ViewMat;
@@ -35,8 +35,20 @@ namespace Diotima
 
 		typedef struct LightItemProtocol
 		{
-			GFXMaterial* Material;
+			GFXMaterial Material;
 		} LightItemProtocol;
+
+		typedef struct CameraItemProtocol
+		{
+			Vector3D Position;
+			Matrix4x4 ProjectionMat;
+			Matrix4x4 ViewMat;
+
+			float FOV;
+			float AspectRatio;
+			float NearCull;
+			float FarCull;
+		} CameraItemProtocol;
 
 		// Constructors
 	public:
@@ -53,6 +65,8 @@ namespace Diotima
 		void AddRenderItem(const RenderItemProtocol& itemProtocol);
 		void AddLightItem(const LightItemProtocol& itemProtocol);
 
+		void SetCamera(const CameraItemProtocol& cameraItem) { camera = std::move(cameraItem); }
+
 		void ClearLists();
 
 		void ResizeCanvas(const Vector2D& newSize);
@@ -61,8 +75,7 @@ namespace Diotima
 		void RenderSingleItem(RenderItemProtocol& itemProtocol);
 
 	private:
-		SceneCamera* mSceneCamera;
-
+		CameraItemProtocol camera;
 		std::queue<RenderItemProtocol> mRenderList;
 		std::vector<LightItemProtocol> mLightingList;
 
@@ -70,12 +83,12 @@ namespace Diotima
 	private:
 		struct MaterialCompare
 		{
-			size_t operator()(GFXMaterial* const& mat) const
+			size_t operator()(const GFXMaterial& mat) const
 			{
-				return std::hash<std::string>{}(mat->mName);
+				return std::hash<std::string>{}(mat.mName);
 			}
 		};
 
-		std::unordered_map<GFXMaterial*, std::queue<RenderItemProtocol>, MaterialCompare> mRenderMap;
+		std::unordered_map<GFXMaterial, std::queue<RenderItemProtocol>, MaterialCompare> mRenderMap;
 	};
 }

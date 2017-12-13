@@ -94,11 +94,8 @@ RenderSystem::RenderSystem()
 {
 }
 
-static Diotima::GFXMaterial material;
 void RenderSystem::Initialize()
 {
-	material.mName = "Test";
-
 	Apollo::ComponentHandler& componentHandler = RZE_Engine::Get()->GetComponentHandler();
 
 	Apollo::ComponentTypeID<Apollo::ComponentBase>::GetComponentTypeID<TransformComponent>();
@@ -114,6 +111,7 @@ void RenderSystem::Initialize()
 	CreateTextureShader();
 }
 
+static Diotima::GFXMaterial material;
 
 void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 {
@@ -123,6 +121,11 @@ void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 	Diotima::Renderer* const renderSystem = RZE_Engine::Get()->GetRenderSystem();
 
 	GenerateCameraMatrices();
+
+	Diotima::Renderer::CameraItemProtocol camera;
+	camera.ProjectionMat = mMainCamera->ProjectionMat;
+	camera.ViewMat = mMainCamera->ViewMat;
+	renderSystem->SetCamera(camera);
 
 	for (auto& entity : entities)
 	{
@@ -142,7 +145,7 @@ void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 		item.ProjectionMat = mMainCamera->ProjectionMat;
 		item.ViewMat = mMainCamera->ViewMat;
 
-		if (matComp->Texture.IsValid())
+		if (matComp && matComp->Texture.IsValid())
 		{
 			material.SetShaderGroup(textureShader);
 			material.SetTexture2D(RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXTexture2D>(matComp->Texture));
@@ -151,13 +154,11 @@ void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 		{
 			material.SetShaderGroup(defaultShader);
 		}
-		material.ModelMat = std::move(modelMat);
-		material.ProjectionMat = mMainCamera->ProjectionMat;
-		material.ViewMat = mMainCamera->ViewMat;
+
 		material.Color = sDefaultFragColor;
 		
-		item.Material = &material;
-
+		material.mName = StringUtils::FormatString("Material%i", entity);
+		item.Material = material;
 		renderSystem->AddRenderItem(item);
 	}
 
@@ -172,7 +173,7 @@ void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 		material.LightPos = transfComp->Position;
 		material.ViewPos = mMainCamera->Position;
 
-		item.Material = &material;
+		item.Material = material;
 		renderSystem->AddLightItem(item);
 	});
 

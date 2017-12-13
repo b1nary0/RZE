@@ -6,12 +6,14 @@
 #include <Utils/Math/Vector3D.h>
 #include <Utils/Math/Vector4D.h>
 
+#include <Utils/Interfaces/Resource.h>
+
 namespace Diotima
 {
 	class GFXShaderGroup;
 	class GFXTexture2D;
 
-	class GFXMaterial
+	class GFXMaterial : public IResource
 	{
 	public:
 		GFXMaterial();
@@ -22,12 +24,13 @@ namespace Diotima
 		void SetShaderGroup(GFXShaderGroup* const shaderGroup);
 		void SetTexture2D(GFXTexture2D* const texture2D);
 
+	// IResource interface
+	public:
+		virtual bool Load(const std::string& filePath);
+
 	public:
 		void Use() const;
 
-		Matrix4x4 ModelMat;
-		Matrix4x4 ViewMat;
-		Matrix4x4 ProjectionMat;
 		Vector4D Color;
 
 		Vector3D			ViewPos;
@@ -44,13 +47,5 @@ namespace Diotima
 	private:
 		GFXShaderGroup* mShaderGroup;
 		GFXTexture2D* mTexture2D; // #NOTE(Josh) will probably move this out later? 2D vs 3D textures
-
-// 
-// 		"UModelMat", rend
-// 			"UProjectionMat",
-// 			"UViewMat", rende
-// 
-// 			"UFragColor", sDe
-
 	};
 }
