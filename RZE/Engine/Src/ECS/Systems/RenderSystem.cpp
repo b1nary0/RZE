@@ -92,6 +92,7 @@ void CreateTextureShader()
 
 RenderSystem::RenderSystem()
 {
+	mMainCamera = nullptr;
 }
 
 void RenderSystem::Initialize()
