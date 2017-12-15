@@ -26,16 +26,21 @@ namespace Diotima
 		{
 			RenderItemProtocol();
 
-			GFXMaterial		Material;
+			GFXShaderGroup*		Shader { nullptr };
+			GFXMaterial			Material;
+			GFXTexture2D*		Texture2D { nullptr };
 			Matrix4x4           ModelMat;
 			Matrix4x4           ProjectionMat;
 			Matrix4x4           ViewMat;
-			MeshResource*       MeshData;
+			MeshResource*       MeshData { nullptr };
 		} RenderItemProtocol;
 
 		typedef struct LightItemProtocol
 		{
-			GFXMaterial Material;
+			Vector3D	Position;
+			Vector3D	Color;
+			
+			float		Strength;
 		} LightItemProtocol;
 
 		typedef struct CameraItemProtocol
@@ -78,17 +83,5 @@ namespace Diotima
 		CameraItemProtocol camera;
 		std::queue<RenderItemProtocol> mRenderList;
 		std::vector<LightItemProtocol> mLightingList;
-
-	// RenderRefactor changes
-	private:
-		struct MaterialCompare
-		{
-			size_t operator()(const GFXMaterial& mat) const
-			{
-				return std::hash<std::string>{}(mat.mName);
-			}
-		};
-
-		std::unordered_map<GFXMaterial, std::queue<RenderItemProtocol>, MaterialCompare> mRenderMap;
 	};
 }

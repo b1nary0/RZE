@@ -16,9 +16,8 @@ namespace Diotima
 
 		virtual bool Load(const std::string& filePath) override;
 
-		U32 GetTextureID();
-
-		Vector2D GetDimensions();
+		U32			GetTextureID();
+		Vector2D	GetDimensions();
 
 	private:
 		U32 mTextureID;

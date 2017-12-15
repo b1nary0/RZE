@@ -18,7 +18,7 @@
 #include <Utils/Platform/FilePath.h>
 #include <Utils/Platform/Timers/HiResTimer.h>
 
-static Vector4D sDefaultFragColor(0.25f, 0.25f, 0.25f, 1.0f);
+static Vector4D sDefaultFragColor(1.0f, 0.25f, 0.25f, 1.0f);
 
 Diotima::GFXShaderGroup* defaultShader;
 Diotima::GFXShaderGroup* textureShader;
@@ -90,8 +90,6 @@ void RenderSystem::Initialize()
 	CreateTextureShader();
 }
 
-static Diotima::GFXMaterial material;
-
 void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 {
 	AssertNotNull(mMainCamera);
@@ -126,18 +124,19 @@ void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 
 		if (matComp && matComp->Texture.IsValid())
 		{
-			material.SetShaderGroup(textureShader);
-			material.SetTexture2D(RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXTexture2D>(matComp->Texture));
+			item.Shader = textureShader;
+			item.Texture2D = RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXTexture2D>(matComp->Texture);
 		}
 		else
 		{
-			material.SetShaderGroup(defaultShader);
+			item.Shader = defaultShader;
 		}
 
+		// #NOTE(Josh) For the time being, until I work a proper pipeline in
+		Diotima::GFXMaterial material;
 		material.Color = sDefaultFragColor;
-		
-		material.mName = StringUtils::FormatString("Material%i", entity);
 		item.Material = material;
+
 		renderSystem->AddRenderItem(item);
 	}
 
@@ -147,12 +146,10 @@ void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
 
 		Diotima::Renderer::LightItemProtocol item;
-		material.LightColor = lightComp->Color;
-		material.LightStrength = lightComp->Strength;
-		material.LightPos = transfComp->Position;
-		material.ViewPos = mMainCamera->Position;
+		item.Color = lightComp->Color;
+		item.Strength = lightComp->Strength;
+		item.Position = transfComp->Position;
 
-		item.Material = material;
 		renderSystem->AddLightItem(item);
 	});
 
@@ -192,14 +189,11 @@ void RenderSystem::RegisterForComponentNotifications()
 	Apollo::ComponentHandler::ComponentAddedFunc OnMaterialComponentAdded([this](Apollo::EntityID entityID, Apollo::ComponentHandler& handler)
 	{
 		MaterialComponent* const matComp = handler.GetComponent<MaterialComponent>(entityID);
-		if (matComp->ResourcePath.GetAbsolutePath() != "")
+		AssertNotNull(matComp);
+
+		if (!matComp->ResourcePath.GetAbsolutePath().empty())
 		{
 			matComp->Texture = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(matComp->ResourcePath);
-			matComp->ShaderGroup = textureShader;
-		}
-		else
-		{
-			matComp->ShaderGroup = defaultShader;
 		}
 	});
 	handler.RegisterForComponentAddNotification<MaterialComponent>(OnMaterialComponentAdded);

@@ -37,6 +37,7 @@ namespace Diotima
 
 		// #TODO enum in OpenGL.h for GL_RGB etc
 		openGL.TextureImage2D(EGLCapability::Texture2D, 0, GL_RGB, mWidth, mHeight, 0, GL_RGB, EGLDataType::UnsignedByte, data);
+		openGL.BindTexture(EGLCapability::Texture2D, 0);
 
 		// #TODO(Josh) deal with later
 		//glGenerateMipmap(EGLCapability::Texture2D);

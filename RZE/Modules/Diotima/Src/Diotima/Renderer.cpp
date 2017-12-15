@@ -248,8 +248,7 @@ namespace Diotima
 
 	void Renderer::AddRenderItem(const RenderItemProtocol& itemProtocol)
 	{
-		mRenderMap[itemProtocol.Material].emplace(std::move(itemProtocol));
-		//mRenderList.emplace(std::move(itemProtocol));
+		mRenderList.emplace(std::move(itemProtocol));
 	}
 
 	void Renderer::AddLightItem(const LightItemProtocol& itemProtocol)
@@ -280,34 +279,12 @@ namespace Diotima
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
 
 		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
-
-		for (auto& entry : mRenderMap)
+		
+		while (!mRenderList.empty())
 		{
-			const GFXMaterial& mat = entry.first;
-			std::queue<RenderItemProtocol>& itemList = entry.second;
-
-			mat.Use();
-			mat.GetShaderGroup()->SetUniformMatrix4x4("UProjectionMat", camera.ProjectionMat);
-			mat.GetShaderGroup()->SetUniformMatrix4x4("UViewMat", camera.ViewMat);
-			   
-			mat.GetShaderGroup()->SetUniformVector4D("UFragColor", mat.Color);
-			 
-			for (auto& light : mLightingList)
-			{
-				mat.GetShaderGroup()->SetUniformVector3D("ULightPosition", light.Material.LightPos);
-				mat.GetShaderGroup()->SetUniformVector3D("UViewPosition", light.Material.ViewPos);
-				mat.GetShaderGroup()->SetUniformVector3D("ULightColor", light.Material.LightColor);
-				mat.GetShaderGroup()->SetUniformFloat("ULightStrength", light.Material.LightStrength);
-			}
-
-			while (!itemList.empty())
-			{
-				RenderItemProtocol& item = itemList.front();
-
-				mat.GetShaderGroup()->SetUniformMatrix4x4("UModelMat", item.ModelMat);
-				RenderSingleItem(item);
-				itemList.pop();
-			}
+			RenderItemProtocol& item = mRenderList.front();
+			RenderSingleItem(item);
+			mRenderList.pop();
 		}
 
 // 		while (!mRenderList.empty())
@@ -336,6 +313,23 @@ namespace Diotima
 	void Renderer::RenderSingleItem(RenderItemProtocol& renderItem)
 	{
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
+
+		renderItem.Shader->Use();
+		renderItem.Shader->SetUniformMatrix4x4("UProjectionMat", camera.ProjectionMat);
+		renderItem.Shader->SetUniformMatrix4x4("UViewMat", camera.ViewMat);
+		renderItem.Shader->SetUniformVector4D("UFragColor", renderItem.Material.Color);
+		renderItem.Shader->SetUniformMatrix4x4("UModelMat", renderItem.ModelMat);
+
+		for (auto& light : mLightingList)
+		{
+			renderItem.Shader->SetUniformVector3D("ULightPosition", light.Position);
+			renderItem.Shader->SetUniformVector3D("UViewPosition", camera.Position);
+			renderItem.Shader->SetUniformVector3D("ULightColor", light.Color);
+			renderItem.Shader->SetUniformFloat("ULightStrength", light.Strength);
+		}
+
+		OpenGLRHI::Get().BindTexture(EGLCapability::Texture2D, renderItem.Texture2D->GetTextureID());
+
 		const std::vector<GFXMesh*>& meshList = renderItem.MeshData->GetMeshList();
 		for (auto& mesh : meshList)
 		{
@@ -345,6 +339,8 @@ namespace Diotima
 
 			mesh->GetVAO().Unbind();
 		}
+
+		OpenGLRHI::Get().BindTexture(EGLCapability::Texture2D, 0);
 	}
 
 	Renderer::RenderItemProtocol::RenderItemProtocol()

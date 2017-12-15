@@ -9,12 +9,11 @@
 struct MaterialComponent : public Apollo::Component<MaterialComponent>
 {
 	MaterialComponent() = default;
-	
+
 	MaterialComponent(const FilePath& resourcePath)
 		: ResourcePath(resourcePath)
 	{}
 
 	FilePath ResourcePath;
 	ResourceHandle Texture;
-	Diotima::GFXShaderGroup* ShaderGroup;
 };
