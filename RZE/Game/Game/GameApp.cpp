@@ -18,10 +18,6 @@
 
 #include <Game/Systems/RotateSystem.h>
 
-#include <Boost/uuid/uuid.hpp>
-#include <Boost/uuid/uuid_io.hpp>
-#include <Boost/uuid/uuid_generators.hpp>
-
 GameApp::GameApp()
 	: RZE_Game()
 {
@@ -37,10 +33,6 @@ void GameApp::Start()
 
 	// ALL TEST CODE
 
-// 	boost::uuids::uuid testUUID = boost::uuids::random_generator()();
-// 	std::string uuid = boost::uuids::to_string(testUUID);
-// 	LOG_CONSOLE(uuid.c_str());
-
 	Apollo::ComponentHandler& componentHandler = RZE_Engine::Get()->GetComponentHandler();
 
 	//componentHandler.AddSystem<RotateSystem>();
@@ -55,7 +47,7 @@ void GameApp::Start()
 	componentHandler.AddComponent<TransformComponent>(bgEnt, Vector3D(0.0f, 0.0f, -10.0f), Quaternion(Vector3D(0.0f, MathUtils::ToRadians(165.0f), MathUtils::ToRadians(180.0f))), Vector3D(30.0, 20.0f, 5.0f));
 
 	// Leaving the for loop for testing purposes
-	for (int i = 0; i < 1; ++i)
+	for (int i = 0; i < 256; ++i)
 	{
 		Apollo::EntityID entity = componentHandler.CreateEntity();
 

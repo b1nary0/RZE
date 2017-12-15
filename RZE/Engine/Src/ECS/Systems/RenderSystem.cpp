@@ -42,17 +42,6 @@ void CreateDefaultShader()
 	defaultShader->AddShader(Diotima::GFXShaderGroup::EShaderIndex::Vertex, vertShader);
 	defaultShader->AddShader(Diotima::GFXShaderGroup::EShaderIndex::Fragment, fragShader);
 
-	defaultShader->AddUniform("UModelMat");
-	defaultShader->AddUniform("UProjectionMat");
-	defaultShader->AddUniform("UViewMat");
-
-	defaultShader->AddUniform("ULightPosition");
-	defaultShader->AddUniform("UViewPosition");
-	defaultShader->AddUniform("ULightColor");
-	defaultShader->AddUniform("ULightStrength");
-
-	defaultShader->AddUniform("UFragColor");
-
 	defaultShader->GenerateShaderProgram();
 }
 
@@ -75,17 +64,6 @@ void CreateTextureShader()
 	textureShader = new Diotima::GFXShaderGroup("TextureShader");
 	textureShader->AddShader(Diotima::GFXShaderGroup::EShaderIndex::Vertex, vertShader);
 	textureShader->AddShader(Diotima::GFXShaderGroup::EShaderIndex::Fragment, fragShader);
-
-	textureShader->AddUniform("UModelMat");
-	textureShader->AddUniform("UProjectionMat");
-	textureShader->AddUniform("UViewMat");
-
-	textureShader->AddUniform("ULightPosition");
-	textureShader->AddUniform("UViewPosition");
-	textureShader->AddUniform("ULightColor");
-	textureShader->AddUniform("ULightStrength");
-
-	textureShader->AddUniform("UFragColor");
 
 	textureShader->GenerateShaderProgram();
 }

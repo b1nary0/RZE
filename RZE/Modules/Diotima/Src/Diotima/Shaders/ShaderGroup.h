@@ -36,7 +36,6 @@ namespace Diotima
 		};
 
 		bool AddShader(EShaderIndex::T shaderType, GFXShader* const shader);
-		bool AddUniform(const std::string& uniformName);
 
 		void SetUniformInt(const std::string& uniformName, int value);
 		void SetUniformFloat(const std::string& uniformName, float value);
@@ -52,14 +51,11 @@ namespace Diotima
 
 	private:
 		void AttachShaders() const;
-		void LoadUniformValues();
 
 		U32 mNumShaders;
 		U32 mShaderProgramID;
 
 		std::string mGroupName;
-
-		UniformMap mUniformMap;
 		GFXShader* mShaders[EShaderIndex::COUNT];
 	};
 }
