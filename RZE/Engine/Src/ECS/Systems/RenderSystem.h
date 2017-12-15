@@ -26,5 +26,6 @@ public:
 	void GenerateCameraMatrices();
 
 private:
+	Diotima::GLRenderTargetTexture mRenderTargetTexture;
 	CameraComponent* mMainCamera;
 };

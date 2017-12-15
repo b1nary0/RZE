@@ -49,13 +49,13 @@ void OpenGLRHI::Clear(const GLuint mask) const
 	AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
-void OpenGLRHI::EnableCapability(const GLenum capability)
+void OpenGLRHI::EnableCapability(const GLenum capability) const
 {
 	glEnable(capability);
 	AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
-void OpenGLRHI::DisableCapability(const GLenum capability)
+void OpenGLRHI::DisableCapability(const GLenum capability) const
 {
 	glDisable(capability);
 	AssertExpr(glGetError() == GL_NO_ERROR);

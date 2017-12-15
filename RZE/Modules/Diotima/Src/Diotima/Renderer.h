@@ -7,6 +7,7 @@
 
 #include <Diotima/SceneCamera.h>
 #include <Diotima/Driver/OpenGL.h>
+#include <Diotima/Driver/GLRenderTarget.h>
 #include <Diotima/Graphics/Material.h>
 
 #include <Utils/Interfaces/SubSystem.h>
@@ -72,14 +73,18 @@ namespace Diotima
 
 		void SetCamera(const CameraItemProtocol& cameraItem) { camera = std::move(cameraItem); }
 
-		void ClearLists();
-
 		void ResizeCanvas(const Vector2D& newSize);
+
+		void ClearLists();
 		
 	private:
 		void RenderSingleItem(RenderItemProtocol& itemProtocol);
 
+		void RenderToTexture_Test(RenderItemProtocol& itemProtocol);
+
 	private:
+		GLRenderTargetTexture mRenderTargetTexture;
+
 		CameraItemProtocol camera;
 		std::queue<RenderItemProtocol> mRenderList;
 		std::vector<LightItemProtocol> mLightingList;

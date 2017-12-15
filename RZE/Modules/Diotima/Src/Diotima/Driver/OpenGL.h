@@ -370,8 +370,8 @@ public:
 	void ClearColor(const GLfloat red, const  GLfloat green, const  GLfloat blue, const  GLfloat alpha) const;
 	void Clear(const GLuint mask) const;
 
-	void EnableCapability(const GLenum capability);
-	void DisableCapability(const GLenum capability);
+	void EnableCapability(const GLenum capability) const;
+	void DisableCapability(const GLenum capability) const;
 
 	void Viewport(GLint posX, GLint posY, GLsizei sizeX, GLsizei sizeY);
 

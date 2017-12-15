@@ -9,6 +9,7 @@
 
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Vector4D.h>
+#include <Utils/Platform/FilePath.h>
 
 #include <imGUI/imgui.h>
 
@@ -240,6 +241,29 @@ bool ImGUICreateDeviceObjects()
 //
 // </Imgui Stuff>
 
+Diotima::GFXShaderGroup* renderToTextureShader = nullptr;
+void CreateRenderToTextureShader()
+{
+	const FilePath vertShaderFilePath("Engine/Assets/Shaders/RenderToTextureVert.shader");
+	const FilePath fragShaderFilePath("Engine/Assets/Shaders/RenderToTextureFrag.shader");
+
+	Diotima::GFXShader* vertShader = new Diotima::GFXShader(EGLShaderType::Vertex, "RenderToTextureVertex");
+	vertShader->Load(vertShaderFilePath.GetAbsolutePath());
+	vertShader->Create();
+	vertShader->Compile();
+
+	Diotima::GFXShader* fragShader = new Diotima::GFXShader(EGLShaderType::Fragment, "RenderToTextureFragment");
+	fragShader->Load(fragShaderFilePath.GetAbsolutePath());
+	fragShader->Create();
+	fragShader->Compile();
+
+	renderToTextureShader = new Diotima::GFXShaderGroup("TextureShader");
+	renderToTextureShader->AddShader(Diotima::GFXShaderGroup::EShaderIndex::Vertex, vertShader);
+	renderToTextureShader->AddShader(Diotima::GFXShaderGroup::EShaderIndex::Fragment, fragShader);
+
+	renderToTextureShader->GenerateShaderProgram();
+}
+
 namespace Diotima
 {
 	Renderer::Renderer()
@@ -272,6 +296,9 @@ namespace Diotima
 		ImGuiIO& io = ImGui::GetIO();
 		ImGUICreateDeviceObjects();
 		io.RenderDrawListsFn = ImGUIRender;
+
+		CreateRenderToTextureShader();
+		mRenderTargetTexture.Initialize();
 	}
 
 	void Renderer::Update()
@@ -280,19 +307,25 @@ namespace Diotima
 
 		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
 		
+		std::queue<RenderItemProtocol> tmp = mRenderList;
+		mRenderTargetTexture.Bind();
+		while (!tmp.empty())
+		{
+			RenderItemProtocol& item = tmp.front();
+			RenderToTexture_Test(item);
+			tmp.pop();
+		}
+		mRenderTargetTexture.Unbind();
+
+		openGL.DisableCapability(EGLCapability::DepthTest);
+		openGL.Clear(EGLBufferBit::Depth);
 		while (!mRenderList.empty())
 		{
 			RenderItemProtocol& item = mRenderList.front();
 			RenderSingleItem(item);
 			mRenderList.pop();
 		}
-
-// 		while (!mRenderList.empty())
-// 		{
-// 			RenderSingleItem(mRenderList.front());
-// 			mRenderList.pop();
-// 		}
-
+		
 		ClearLists();
 	}
 
@@ -330,7 +363,7 @@ namespace Diotima
 		}
 
 		// #NOTE(Josh) Same here re: only once
-		OpenGLRHI::Get().BindTexture(EGLCapability::Texture2D, renderItem.Texture2D->GetTextureID());
+		OpenGLRHI::Get().BindTexture(EGLCapability::Texture2D, mRenderTargetTexture.GetTextureID());
 
 		const std::vector<GFXMesh*>& meshList = renderItem.MeshData->GetMeshList();
 		for (auto& mesh : meshList)
@@ -343,6 +376,34 @@ namespace Diotima
 		}
 
 		OpenGLRHI::Get().BindTexture(EGLCapability::Texture2D, 0);
+	}
+
+	void Renderer::RenderToTexture_Test(RenderItemProtocol& itemProtocol)
+	{
+		const OpenGLRHI& openGL = OpenGLRHI::Get();
+
+		renderToTextureShader->Use();
+		renderToTextureShader->SetUniformMatrix4x4("UProjectionMat", camera.ProjectionMat);
+		renderToTextureShader->SetUniformMatrix4x4("UViewMat", camera.ViewMat);
+		renderToTextureShader->SetUniformMatrix4x4("UModelMat", itemProtocol.ModelMat);
+
+		for (auto& light : mLightingList)
+		{
+			renderToTextureShader->SetUniformVector3D("ULightPosition", light.Position);
+			renderToTextureShader->SetUniformVector3D("UViewPosition", camera.Position);
+			renderToTextureShader->SetUniformVector3D("ULightColor", light.Color);
+			renderToTextureShader->SetUniformFloat("ULightStrength", light.Strength);
+		}
+
+		const std::vector<GFXMesh*>& meshList = itemProtocol.MeshData->GetMeshList();
+		for (auto& mesh : meshList)
+		{
+			mesh->GetVAO().Bind();
+
+			OpenGLRHI::Get().DrawElements(EGLDrawMode::Triangles, mesh->GetIndices().size(), EGLDataType::UnsignedInt, nullptr);
+
+			mesh->GetVAO().Unbind();
+		}
 	}
 
 	Renderer::RenderItemProtocol::RenderItemProtocol()
