@@ -47,7 +47,7 @@ void GameApp::Start()
 	componentHandler.AddComponent<TransformComponent>(bgEnt, Vector3D(0.0f, 0.0f, -10.0f), Quaternion(Vector3D(0.0f, MathUtils::ToRadians(165.0f), MathUtils::ToRadians(180.0f))), Vector3D(30.0, 20.0f, 5.0f));
 
 	// Leaving the for loop for testing purposes
-	for (int i = 0; i < 256; ++i)
+	for (int i = 0; i < 1; ++i)
 	{
 		Apollo::EntityID entity = componentHandler.CreateEntity();
 

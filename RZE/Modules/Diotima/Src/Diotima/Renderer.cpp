@@ -314,6 +314,7 @@ namespace Diotima
 	{
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
 
+		// #NOTE(Josh) Need to handle this via sorting to set only once.
 		renderItem.Shader->Use();
 		renderItem.Shader->SetUniformMatrix4x4("UProjectionMat", camera.ProjectionMat);
 		renderItem.Shader->SetUniformMatrix4x4("UViewMat", camera.ViewMat);
@@ -328,6 +329,7 @@ namespace Diotima
 			renderItem.Shader->SetUniformFloat("ULightStrength", light.Strength);
 		}
 
+		// #NOTE(Josh) Same here re: only once
 		OpenGLRHI::Get().BindTexture(EGLCapability::Texture2D, renderItem.Texture2D->GetTextureID());
 
 		const std::vector<GFXMesh*>& meshList = renderItem.MeshData->GetMeshList();
