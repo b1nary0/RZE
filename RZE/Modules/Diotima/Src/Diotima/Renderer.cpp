@@ -305,10 +305,11 @@ namespace Diotima
 	{
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
 
-		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
 		
 		std::queue<RenderItemProtocol> tmp = mRenderList;
 		mRenderTargetTexture.Bind();
+		openGL.ClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
 		while (!tmp.empty())
 		{
 			RenderItemProtocol& item = tmp.front();
@@ -317,8 +318,9 @@ namespace Diotima
 		}
 		mRenderTargetTexture.Unbind();
 
+		OpenGLRHI::Get().ClearColor(0.25f, 0.25f, 0.25f, 1.0f);
 		openGL.DisableCapability(EGLCapability::DepthTest);
-		openGL.Clear(EGLBufferBit::Depth);
+		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
 		while (!mRenderList.empty())
 		{
 			RenderItemProtocol& item = mRenderList.front();
@@ -395,6 +397,7 @@ namespace Diotima
 			renderToTextureShader->SetUniformFloat("ULightStrength", light.Strength);
 		}
 
+		openGL.BindTexture(GL_TEXTURE_2D, itemProtocol.Texture2D->GetTextureID());
 		const std::vector<GFXMesh*>& meshList = itemProtocol.MeshData->GetMeshList();
 		for (auto& mesh : meshList)
 		{
@@ -404,6 +407,7 @@ namespace Diotima
 
 			mesh->GetVAO().Unbind();
 		}
+		openGL.BindTexture(GL_TEXTURE_2D, 0);
 	}
 
 	Renderer::RenderItemProtocol::RenderItemProtocol()
