@@ -8,7 +8,7 @@
 
 #include <Utils/Math/Math.h>
 
-const float kSpeed = 1.5f;
+const float kSpeed = 2.0f;
 
 RotateSystem::RotateSystem()
 {

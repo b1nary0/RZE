@@ -308,20 +308,19 @@ namespace Diotima
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
 
 		
-		std::queue<RenderItemProtocol> tmp = mRenderList;
-		mRenderTargetTexture.Bind();
-		openGL.ClearColor(1.0f, 0.0f, 0.0f, 1.0f);
-		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
-		while (!tmp.empty())
-		{
-			RenderItemProtocol& item = tmp.front();
-			RenderToTexture_Test(item);
-			tmp.pop();
-		}
-		mRenderTargetTexture.Unbind();
-
-		OpenGLRHI::Get().ClearColor(0.25f, 0.25f, 0.25f, 1.0f);
-		openGL.DisableCapability(EGLCapability::DepthTest);
+// 		std::queue<RenderItemProtocol> tmp = mRenderList;
+// 		mRenderTargetTexture.Bind();
+// 		openGL.ClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+// 		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
+// 		while (!tmp.empty())
+// 		{
+// 			RenderItemProtocol& item = tmp.front();
+// 			RenderToTexture_Test(item);
+// 			tmp.pop();
+// 		}
+// 		mRenderTargetTexture.Unbind();
+// 
+// 		OpenGLRHI::Get().ClearColor(0.25f, 0.25f, 0.25f, 1.0f);
 		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
 		while (!mRenderList.empty())
 		{
@@ -367,7 +366,7 @@ namespace Diotima
 		}
 
 		// #NOTE(Josh) Same here re: only once
-		OpenGLRHI::Get().BindTexture(EGLCapability::Texture2D, mRenderTargetTexture.GetTextureID());
+		OpenGLRHI::Get().BindTexture(EGLCapability::Texture2D, renderItem.Texture2D->GetTextureID());
 
 		const std::vector<GFXMesh*>& meshList = renderItem.MeshData->GetMeshList();
 		for (auto& mesh : meshList)

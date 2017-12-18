@@ -51,8 +51,8 @@ void GameApp::Start()
 	{
 		Apollo::EntityID entity = componentHandler.CreateEntity();
 
-		componentHandler.AddComponent<MeshComponent>(entity, FilePath("Engine/Assets/3D/Quad.obj"));
-		componentHandler.AddComponent<TransformComponent>(entity, Vector3D(), Quaternion(), Vector3D(4.0f, 3.0f, 0.f));
+		componentHandler.AddComponent<MeshComponent>(entity, FilePath("Engine/Assets/3D/NanoSuit.obj"));
+		componentHandler.AddComponent<TransformComponent>(entity, Vector3D(), Quaternion(), Vector3D(0.5f));
 		componentHandler.AddComponent<MaterialComponent>(entity, FilePath("Engine/Assets/2D/Container.jpg"));
 	}
 
