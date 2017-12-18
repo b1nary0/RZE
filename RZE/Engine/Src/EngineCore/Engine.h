@@ -51,12 +51,16 @@ public:
 
 	const Vector2D& GetWindowSize() const;
 
-	ResourceHandler&	GetResourceHandler();
+	ResourceHandler&			GetResourceHandler();
+	Apollo::ComponentHandler&	GetComponentHandler() { return mComponentHandler; }
+	InputHandler&				GetInputHandler() { return mInputHandler; }
+
 
 	// #TODO(Josh) Totally test. This is not good.
 	Diotima::Renderer* GetRenderSystem();
+	inline float GetDeltaTime() const { return 1.0f / 60.0f; }
 
-	Apollo::ComponentHandler&	GetComponentHandler() { return mComponentHandler; }
+
 
 private:
 

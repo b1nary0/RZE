@@ -25,6 +25,9 @@ namespace Diotima
 		inline U32 GetWidth() const { return mWidth; }
 		inline U32 GetHeight() const { return mHeight; }
 
+		void SetWidth(U32 width) { mWidth = width; }
+		void SetHeight(U32 height) { mHeight = height; }
+
 	protected:
 		inline U32& InternalGetFrameBufferID() { return mFrameBufferID; }
 		inline U32& InternalGetDepthBufferID() { return mDepthBufferID; }

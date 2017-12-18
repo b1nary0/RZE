@@ -35,7 +35,7 @@ void GameApp::Start()
 
 	Apollo::ComponentHandler& componentHandler = RZE_Engine::Get()->GetComponentHandler();
 
-	//componentHandler.AddSystem<RotateSystem>();
+	componentHandler.AddSystem<RotateSystem>();
 
 	Apollo::EntityID bgEnt = componentHandler.CreateEntity();
 	componentHandler.AddComponent<MeshComponent>(bgEnt, FilePath("Engine/Assets/3D/Quad.obj"));
@@ -44,7 +44,7 @@ void GameApp::Start()
 	MaterialComponent* const matComp = componentHandler.GetComponent<MaterialComponent>(bgEnt);
 	Diotima::GFXTexture2D* const texture = RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXTexture2D>(matComp->Texture);
 	
-	componentHandler.AddComponent<TransformComponent>(bgEnt, Vector3D(0.0f, 0.0f, -10.0f), Quaternion(Vector3D(0.0f, MathUtils::ToRadians(165.0f), MathUtils::ToRadians(180.0f))), Vector3D(30.0, 20.0f, 5.0f));
+	componentHandler.AddComponent<TransformComponent>(bgEnt, Vector3D(0.0f, 0.0f, -10.0f), Quaternion(Vector3D(0.0f, MathUtils::ToRadians(180.0f), 0.0f)), Vector3D(30.0, 20.0f, 5.0f));
 
 	// Leaving the for loop for testing purposes
 	for (int i = 0; i < 1; ++i)
@@ -52,7 +52,7 @@ void GameApp::Start()
 		Apollo::EntityID entity = componentHandler.CreateEntity();
 
 		componentHandler.AddComponent<MeshComponent>(entity, FilePath("Engine/Assets/3D/Quad.obj"));
-		componentHandler.AddComponent<TransformComponent>(entity, Vector3D(), Quaternion(Vector3D(MathUtils::ToRadians(32.f))), Vector3D(4.0f, 3.0f, 0.f));
+		componentHandler.AddComponent<TransformComponent>(entity, Vector3D(), Quaternion(), Vector3D(4.0f, 3.0f, 0.f));
 		componentHandler.AddComponent<MaterialComponent>(entity, FilePath("Engine/Assets/2D/Container.jpg"));
 	}
 
@@ -63,7 +63,7 @@ void GameApp::Start()
 	Apollo::EntityID camera = componentHandler.CreateEntity();
 	componentHandler.AddComponent<CameraComponent>(camera);
 	CameraComponent* const camComp = componentHandler.GetComponent<CameraComponent>(camera);
-	camComp->Position = Vector3D(0.0f, 0.0f, 10.0f);
+	camComp->Position = Vector3D(0.0f, 0.0f, 8.0f);
 	camComp->FOV = 45;
 	camComp->NearCull = 0.1f;
 	camComp->FarCull = 1000.0f;

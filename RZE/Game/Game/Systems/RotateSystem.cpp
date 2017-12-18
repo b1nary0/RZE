@@ -2,10 +2,13 @@
 
 #include <RZE.h>
 
-#include <ECS/Components/TransformComponent.h>
-#include <ECS/Components/MeshComponent.h>
+#include <ECS/Components/CameraComponent.h>
+
+#include <Windowing/WinKeyCodes.h>
 
 #include <Utils/Math/Math.h>
+
+const float kSpeed = 1.5f;
 
 RotateSystem::RotateSystem()
 {
@@ -17,21 +20,70 @@ RotateSystem::~RotateSystem()
 
 void RotateSystem::Initialize()
 {
-	InternalGetComponentFilter().AddFilterType<TransformComponent>();
-	InternalGetComponentFilter().AddFilterType<MeshComponent>();
+	InternalGetComponentFilter().AddFilterType<CameraComponent>();
 
-	mVelocity = Vector3D(0.0f, MathUtils::ToRadians(1.0f), 0.0f);
+	Apollo::ComponentHandler& handler = RZE_Engine::Get()->GetComponentHandler();
+
+	Apollo::ComponentHandler::ComponentAddedFunc camCompAdded([this](Apollo::EntityID entityID, Apollo::ComponentHandler& handler)
+	{
+		CameraComponent* const camComp = handler.GetComponent<CameraComponent>(entityID);
+		AssertNotNull(camComp);
+		mMainCamera = camComp;
+	});
+	handler.RegisterForComponentAddNotification<CameraComponent>(camCompAdded);
+
+	BindInputs();
 }
 
 void RotateSystem::Update(std::vector<Apollo::EntityID>& entities)
 {
-	for (auto& entity : entities)
-	{
-		TransformComponent* const comp = RZE_Engine::Get()->GetComponentHandler().GetComponent<TransformComponent>(entity);
-		comp->Rotation *= Quaternion(mVelocity);
-	}
 }
 
 void RotateSystem::ShutDown()
 {
+}
+
+void RotateSystem::BindInputs()
+{
+	Functor<void, const InputKey&> keyFunc([this](const InputKey& key)
+	{
+		if (key.GetKeyCode() == Win32KeyCode::Key_W)
+		{
+			AssertNotNull(mMainCamera);
+			mMainCamera->Position += mMainCamera->Forward * kSpeed * RZE_Engine::Get()->GetDeltaTime();
+		}
+		else if (key.GetKeyCode() == Win32KeyCode::Key_S)
+		{
+			AssertNotNull(mMainCamera);
+			mMainCamera->Position -= mMainCamera->Forward * kSpeed * RZE_Engine::Get()->GetDeltaTime();
+		}
+
+		if (key.GetKeyCode() == Win32KeyCode::Key_A)
+		{
+			AssertNotNull(mMainCamera);
+			mMainCamera->Position -= mMainCamera->Forward.Cross(mMainCamera->UpDir).Normalize() * kSpeed * RZE_Engine::Get()->GetDeltaTime();
+		}
+		else if (key.GetKeyCode() == Win32KeyCode::Key_D)
+		{
+			AssertNotNull(mMainCamera);
+			mMainCamera->Position += mMainCamera->Forward.Cross(mMainCamera->UpDir).Normalize() * kSpeed * RZE_Engine::Get()->GetDeltaTime();
+		}
+
+		if (key.GetKeyCode() == Win32KeyCode::Key_Q)
+		{
+			AssertNotNull(mMainCamera);
+			mMainCamera->Position += mMainCamera->UpDir * kSpeed * RZE_Engine::Get()->GetDeltaTime();
+		}
+		else if (key.GetKeyCode() == Win32KeyCode::Key_E)
+		{
+			AssertNotNull(mMainCamera);
+			mMainCamera->Position -= mMainCamera->UpDir * kSpeed * RZE_Engine::Get()->GetDeltaTime();
+		}
+	});
+	RZE_Engine::Get()->GetInputHandler().BindAction(Win32KeyCode::Key_W, EButtonState::ButtonState_Hold, keyFunc);
+	RZE_Engine::Get()->GetInputHandler().BindAction(Win32KeyCode::Key_S, EButtonState::ButtonState_Hold, keyFunc);
+	RZE_Engine::Get()->GetInputHandler().BindAction(Win32KeyCode::Key_A, EButtonState::ButtonState_Hold, keyFunc);
+	RZE_Engine::Get()->GetInputHandler().BindAction(Win32KeyCode::Key_D, EButtonState::ButtonState_Hold, keyFunc);
+	RZE_Engine::Get()->GetInputHandler().BindAction(Win32KeyCode::Key_Q, EButtonState::ButtonState_Hold, keyFunc);
+	RZE_Engine::Get()->GetInputHandler().BindAction(Win32KeyCode::Key_E, EButtonState::ButtonState_Hold, keyFunc);
 }

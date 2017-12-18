@@ -298,6 +298,8 @@ namespace Diotima
 		io.RenderDrawListsFn = ImGUIRender;
 
 		CreateRenderToTextureShader();
+		mRenderTargetTexture.SetWidth(1200);
+		mRenderTargetTexture.SetHeight(700);
 		mRenderTargetTexture.Initialize();
 	}
 
