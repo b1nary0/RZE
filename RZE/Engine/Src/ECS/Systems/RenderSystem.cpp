@@ -10,8 +10,9 @@
 
 #include <Apollo/ECS/EntityComponentFilter.h>
 
+#include <Game/Model.h>
+
 #include <Diotima/Graphics/Material.h>
-#include <Diotima/Graphics/Mesh.h>
 #include <Diotima/Graphics/Texture2D.h>
 #include <Diotima/Shaders/ShaderGroup.h>
 
@@ -117,7 +118,7 @@ void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 		modelMat.Rotate(transfComp->Rotation.ToAngle(), transfComp->Rotation.ToAxis());
 		modelMat.Scale(transfComp->Scale);
 
-		item.MeshData = RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::MeshResource>(meshComp->Resource);
+		item.MeshData = &RZE_Engine::Get()->GetResourceHandler().GetResource<Model3D>(meshComp->Resource)->GetMeshList();
 		item.ModelMat = modelMat;
 		item.ProjectionMat = mMainCamera->ProjectionMat;
 		item.ViewMat = mMainCamera->ViewMat;
@@ -170,7 +171,7 @@ void RenderSystem::RegisterForComponentNotifications()
 	Apollo::ComponentHandler::ComponentAddedFunc OnMeshComponentAdded([this](Apollo::EntityID entityID, Apollo::ComponentHandler& handler)
 	{
 		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entityID);
-		meshComp->Resource = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::MeshResource>(meshComp->ResourcePath);
+		meshComp->Resource = RZE_Engine::Get()->GetResourceHandler().RequestResource<Model3D>(meshComp->ResourcePath);
 	});
 	handler.RegisterForComponentAddNotification<MeshComponent>(OnMeshComponentAdded);
 

@@ -15,7 +15,7 @@
 
 namespace Diotima
 {
-	class MeshResource;
+	class GFXMesh;
 	class GFXMaterial;
 	class GFXShaderGroup;
 	class GFXTexture2D;
@@ -27,13 +27,13 @@ namespace Diotima
 		{
 			RenderItemProtocol();
 
-			GFXShaderGroup*		Shader { nullptr };
-			GFXMaterial			Material;
-			GFXTexture2D*		Texture2D { nullptr };
-			Matrix4x4           ModelMat;
-			Matrix4x4           ProjectionMat;
-			Matrix4x4           ViewMat;
-			MeshResource*       MeshData { nullptr };
+			GFXShaderGroup*					Shader { nullptr };
+			GFXMaterial						Material;
+			GFXTexture2D*					Texture2D { nullptr };
+			Matrix4x4						ModelMat;
+			Matrix4x4						ProjectionMat;
+			Matrix4x4						ViewMat;
+			std::vector<GFXMesh*>*			MeshData { nullptr };
 		} RenderItemProtocol;
 
 		typedef struct LightItemProtocol

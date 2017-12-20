@@ -368,7 +368,7 @@ namespace Diotima
 		// #NOTE(Josh) Same here re: only once
 		OpenGLRHI::Get().BindTexture(EGLCapability::Texture2D, renderItem.Texture2D->GetTextureID());
 
-		const std::vector<GFXMesh*>& meshList = renderItem.MeshData->GetMeshList();
+		const std::vector<GFXMesh*>& meshList = *renderItem.MeshData;
 		for (auto& mesh : meshList)
 		{
 			mesh->GetVAO().Bind();
@@ -399,7 +399,7 @@ namespace Diotima
 		}
 
 		openGL.BindTexture(GL_TEXTURE_2D, itemProtocol.Texture2D->GetTextureID());
-		const std::vector<GFXMesh*>& meshList = itemProtocol.MeshData->GetMeshList();
+		const std::vector<GFXMesh*>& meshList = *itemProtocol.MeshData;
 		for (auto& mesh : meshList)
 		{
 			mesh->GetVAO().Bind();

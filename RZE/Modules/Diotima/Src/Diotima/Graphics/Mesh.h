@@ -36,9 +36,12 @@ namespace Diotima
 		const std::vector<GFXVertex>& GetVertexList() const;
 		const std::vector<U32>& GetIndices() const;
 
-	private:
+		void AddVertex(const GFXVertex& vertex);
+		void AddIndex(U32 index);
+
 		void OnLoadFinished();
 
+	private:
 		OpenGLVAO mVAO;
 		OpenGLVBO mVertexVBO;
 		OpenGLVBO mNormalVBO;
@@ -49,21 +52,5 @@ namespace Diotima
 		std::vector<Vector3D> mNormals;
 		std::vector<Vector2D> mUVCoords;
 		std::vector<U32> mIndices;
-	};
-
-	class MeshResource : public IResource
-	{
-	public:
-		MeshResource();
-		~MeshResource();
-
-		virtual bool Load(const std::string& filePath) override;
-
-		std::vector<GFXMesh*>& GetMeshList();
-
-	private:
-		void ProcessNode(const aiNode& node, const aiScene& scene);
-		void ProcessMesh(const aiMesh& mesh, const aiScene& scene, GFXMesh& outMesh);
-		std::vector<GFXMesh*> mMeshList;
 	};
 }
