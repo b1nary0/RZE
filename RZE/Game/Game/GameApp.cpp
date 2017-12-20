@@ -37,23 +37,21 @@ void GameApp::Start()
 
 	componentHandler.AddSystem<RotateSystem>();
 
-	Apollo::EntityID bgEnt = componentHandler.CreateEntity();
-	componentHandler.AddComponent<MeshComponent>(bgEnt, FilePath("Engine/Assets/3D/Quad.obj"));
-	componentHandler.AddComponent<MaterialComponent>(bgEnt, FilePath("Engine/Assets/2D/Background.jpg"));
+// 	Apollo::EntityID bgEnt = componentHandler.CreateEntity();
+// 	componentHandler.AddComponent<MeshComponent>(bgEnt, FilePath("Engine/Assets/3D/Quad.obj"));
+// 	componentHandler.AddComponent<MaterialComponent>(bgEnt, FilePath("Engine/Assets/2D/Background.jpg"));
 
-	MaterialComponent* const matComp = componentHandler.GetComponent<MaterialComponent>(bgEnt);
-	Diotima::GFXTexture2D* const texture = RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXTexture2D>(matComp->Texture);
+//	MaterialComponent* const matComp = componentHandler.GetComponent<MaterialComponent>(bgEnt);
 	
-	componentHandler.AddComponent<TransformComponent>(bgEnt, Vector3D(0.0f, 0.0f, -10.0f), Quaternion(Vector3D(0.0f, MathUtils::ToRadians(180.0f), 0.0f)), Vector3D(30.0, 20.0f, 5.0f));
+//	componentHandler.AddComponent<TransformComponent>(bgEnt, Vector3D(0.0f, 0.0f, -10.0f), Quaternion(Vector3D(0.0f, MathUtils::ToRadians(180.0f), 0.0f)), Vector3D(30.0, 20.0f, 5.0f));
 
 	// Leaving the for loop for testing purposes
 	for (int i = 0; i < 1; ++i)
 	{
 		Apollo::EntityID entity = componentHandler.CreateEntity();
 
-		componentHandler.AddComponent<MeshComponent>(entity, FilePath("Engine/Assets/3D/NanoSuit.obj"));
-		componentHandler.AddComponent<TransformComponent>(entity, Vector3D(), Quaternion(), Vector3D(0.5f));
-		componentHandler.AddComponent<MaterialComponent>(entity, FilePath("Engine/Assets/2D/Container.jpg"));
+		componentHandler.AddComponent<MeshComponent>(entity, FilePath("Engine/Assets/3D/Nanosuit/Nanosuit.obj"));
+		componentHandler.AddComponent<TransformComponent>(entity, Vector3D(0.0f, -5.0f, 0.0f), Quaternion(), Vector3D(0.5f));
 	}
 
 	Apollo::EntityID lightSource = componentHandler.CreateEntity();

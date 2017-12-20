@@ -6,6 +6,7 @@
 #include <Assimp/scene.h>
 
 #include <Diotima/Graphics/Mesh.h>
+#include <Diotima/Graphics/Texture2D.h>
 
 Model3D::Model3D()
 {
@@ -13,7 +14,10 @@ Model3D::Model3D()
 
 Model3D::~Model3D()
 {
-	// #TODO(Josh) Cleanup here. Mesh pointers, etc
+	for (size_t i = 0; i < mMeshList.size(); ++i)
+	{
+		delete mMeshList[i];
+	}
 }
 
 bool Model3D::Load(const std::string& filePath)
@@ -96,6 +100,48 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 		for (U32 indexIdx = 0; indexIdx < assimpFace.mNumIndices; indexIdx++)
 		{
 			outMesh.AddIndex(assimpFace.mIndices[indexIdx]);
+		}
+	}
+
+	if (mesh.mMaterialIndex >= 0)
+	{
+		aiMaterial* mat = scene.mMaterials[mesh.mMaterialIndex];
+		for (int i = 0; i < mat->GetTextureCount(aiTextureType_DIFFUSE); ++i)
+		{
+			aiString str;
+			mat->GetTexture(aiTextureType_DIFFUSE, i, &str);
+
+			std::string filePath = "Engine/Assets/3D/Nanosuit/";
+			filePath.append(str.C_Str());
+
+			ResourceHandle textureHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(FilePath(filePath));
+			if (textureHandle.IsValid())
+			{
+				mTextureHandles.emplace_back(textureHandle);
+			}
+			else
+			{
+				LOG_CONSOLE_ARGS("Could not load texture at [%s]", filePath.c_str());
+			}
+		}
+
+		for (int i = 0; i < mat->GetTextureCount(aiTextureType_SPECULAR); ++i)
+		{
+			aiString str;
+			mat->GetTexture(aiTextureType_SPECULAR, i, &str);
+
+			std::string filePath = "Engine/Assets/3D/Nanosuit/";
+			filePath.append(str.C_Str());
+
+			ResourceHandle textureHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(FilePath(filePath));
+			if (textureHandle.IsValid())
+			{
+				mTextureHandles.emplace_back(textureHandle);
+			}
+			else
+			{
+				LOG_CONSOLE_ARGS("Could not load texture at [%s]", filePath.c_str());
+			}
 		}
 	}
 

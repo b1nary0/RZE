@@ -25,9 +25,12 @@ public:
 
 public:
 	inline std::vector<Diotima::GFXMesh*>& GetMeshList() { return mMeshList; }
+	inline std::vector<ResourceHandle>& GetTextureHandles() { return mTextureHandles; }
 
 private:
 	void ProcessNode(const aiNode& node, const aiScene& scene);
 	void ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFXMesh& outMesh);
 	std::vector<Diotima::GFXMesh*> mMeshList;
+
+	std::vector<ResourceHandle> mTextureHandles;
 };

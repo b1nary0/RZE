@@ -366,7 +366,10 @@ namespace Diotima
 		}
 
 		// #NOTE(Josh) Same here re: only once
-		OpenGLRHI::Get().BindTexture(EGLCapability::Texture2D, renderItem.Texture2D->GetTextureID());
+		for (int i = 0; i < renderItem.Textures.size(); ++i)
+		{
+			openGL.BindTexture(EGLCapability::Texture2D, renderItem.Textures[i]);
+		}
 
 		const std::vector<GFXMesh*>& meshList = *renderItem.MeshData;
 		for (auto& mesh : meshList)
@@ -398,7 +401,8 @@ namespace Diotima
 			renderToTextureShader->SetUniformFloat("ULightStrength", light.Strength);
 		}
 
-		openGL.BindTexture(GL_TEXTURE_2D, itemProtocol.Texture2D->GetTextureID());
+
+
 		const std::vector<GFXMesh*>& meshList = *itemProtocol.MeshData;
 		for (auto& mesh : meshList)
 		{

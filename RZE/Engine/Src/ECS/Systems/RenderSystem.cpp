@@ -123,10 +123,18 @@ void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 		item.ProjectionMat = mMainCamera->ProjectionMat;
 		item.ViewMat = mMainCamera->ViewMat;
 
-		if (matComp && matComp->Texture.IsValid())
+		if (meshComp && meshComp->Resource.IsValid())
 		{
 			item.Shader = textureShader;
-			item.Texture2D = RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXTexture2D>(matComp->Texture);
+			Model3D* const model = RZE_Engine::Get()->GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
+			size_t numTextures = model->GetTextureHandles().size();
+			std::vector<U32> textures(numTextures);
+			for (int i = 0; i < numTextures; ++i)
+			{
+				textures.push_back(RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXTexture2D>(model->GetTextureHandles()[i])->GetTextureID());
+			}
+
+			item.Textures = std::move(textures);
 		}
 		else
 		{
