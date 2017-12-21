@@ -1,3 +1,3 @@
 @echo off
 
-"Make/Premake/premake5.exe" --file=Make/Premake/premake5.lua vs2015
+"Make/Premake/premake5.exe" --file=Make/Premake/premake5.lua vs2017
