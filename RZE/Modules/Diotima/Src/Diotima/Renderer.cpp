@@ -356,6 +356,8 @@ namespace Diotima
 		renderItem.Shader->SetUniformMatrix4x4("UViewMat", camera.ViewMat);
 		renderItem.Shader->SetUniformVector4D("UFragColor", renderItem.Material.Color);
 		renderItem.Shader->SetUniformMatrix4x4("UModelMat", renderItem.ModelMat);
+		renderItem.Shader->SetUniformInt("Material.Diffuse", 0);
+		renderItem.Shader->SetUniformInt("Material.Specular", 1);
 
 		for (auto& light : mLightingList)
 		{
@@ -365,20 +367,22 @@ namespace Diotima
 			renderItem.Shader->SetUniformFloat("ULightStrength", light.Strength);
 		}
 
-		// #NOTE(Josh) Same here re: only once
-		for (int i = 0; i < renderItem.Textures.size(); ++i)
-		{
-			openGL.BindTexture(EGLCapability::Texture2D, renderItem.Textures[i]);
-		}
-
 		const std::vector<GFXMesh*>& meshList = *renderItem.MeshData;
 		for (auto& mesh : meshList)
 		{
+			// #NOTE(Josh) Same here re: only once
+			for (int i = 0; i < mesh->GetTextures().size(); ++i)
+			{
+				openGL.BindTexture(EGLCapability::Texture2D, mesh->GetTextures()[i]->GetTextureID());
+			}
+
 			mesh->GetVAO().Bind();
 
 			OpenGLRHI::Get().DrawElements(EGLDrawMode::Triangles, mesh->GetIndices().size(), EGLDataType::UnsignedInt, nullptr);
 
 			mesh->GetVAO().Unbind();
+
+			openGL.BindTexture(EGLCapability::Texture2D, 0);
 		}
 
 		OpenGLRHI::Get().BindTexture(EGLCapability::Texture2D, 0);

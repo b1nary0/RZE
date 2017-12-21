@@ -19,7 +19,7 @@
 #include <Utils/Platform/FilePath.h>
 #include <Utils/Platform/Timers/HiResTimer.h>
 
-static Vector4D sDefaultFragColor(1.0f, 0.25f, 0.25f, 1.0f);
+static Vector4D sDefaultFragColor(0.25f, 0.25f, 0.25f, 1.0f);
 
 Diotima::GFXShaderGroup* defaultShader;
 Diotima::GFXShaderGroup* textureShader;
@@ -123,22 +123,26 @@ void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 		item.ProjectionMat = mMainCamera->ProjectionMat;
 		item.ViewMat = mMainCamera->ViewMat;
 
-		if (meshComp && meshComp->Resource.IsValid())
+		if (meshComp->Resource.IsValid())
 		{
 			item.Shader = textureShader;
+		
 			Model3D* const model = RZE_Engine::Get()->GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
 			size_t numTextures = model->GetTextureHandles().size();
-			std::vector<U32> textures(numTextures);
-			for (int i = 0; i < numTextures; ++i)
+			if (numTextures > 0)
 			{
-				textures.push_back(RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXTexture2D>(model->GetTextureHandles()[i])->GetTextureID());
-			}
+				std::vector<U32> textures(numTextures);
+				for (size_t i = 0; i < numTextures; ++i)
+				{
+					textures.push_back(RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXTexture2D>(model->GetTextureHandles()[i])->GetTextureID());
+				}
 
-			item.Textures = std::move(textures);
-		}
-		else
-		{
-			item.Shader = defaultShader;
+				item.Textures = std::move(textures);
+			}
+			else
+			{
+				item.Shader = defaultShader;
+			}
 		}
 
 		// #NOTE(Josh) For the time being, until I work a proper pipeline in

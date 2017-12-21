@@ -14,6 +14,8 @@ struct aiScene;
 
 namespace Diotima
 {
+	class GFXTexture2D;
+
 	struct GFXVertex
 	{
 		Vector3D Position;
@@ -35,9 +37,11 @@ namespace Diotima
 
 		const std::vector<GFXVertex>& GetVertexList() const;
 		const std::vector<U32>& GetIndices() const;
+		const std::vector<GFXTexture2D*> GetTextures() const;
 
 		void AddVertex(const GFXVertex& vertex);
 		void AddIndex(U32 index);
+		void AddTexture( GFXTexture2D* const texture);
 
 		void OnLoadFinished();
 
@@ -47,6 +51,7 @@ namespace Diotima
 		OpenGLVBO mNormalVBO;
 		OpenGLEBO mEBO;
 
+		std::vector<GFXTexture2D*> mTextures;
 		std::vector<GFXVertex> mVertices;
 		std::vector<Vector3D> mPositions;
 		std::vector<Vector3D> mNormals;

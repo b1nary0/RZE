@@ -45,6 +45,10 @@ void GameApp::Start()
 	
 //	componentHandler.AddComponent<TransformComponent>(bgEnt, Vector3D(0.0f, 0.0f, -10.0f), Quaternion(Vector3D(0.0f, MathUtils::ToRadians(180.0f), 0.0f)), Vector3D(30.0, 20.0f, 5.0f));
 
+	Apollo::EntityID floor = componentHandler.CreateEntity();
+	componentHandler.AddComponent<MeshComponent>(floor, FilePath("Engine/Assets/3D/Cube.obj"));
+	componentHandler.AddComponent<TransformComponent>(floor, Vector3D(-5.0f, -5.5f, -5.0f), Quaternion(), Vector3D(10.0f, 0.5f, 10.0f));
+
 	// Leaving the for loop for testing purposes
 	for (int i = 0; i < 1; ++i)
 	{
@@ -55,17 +59,17 @@ void GameApp::Start()
 	}
 
 	Apollo::EntityID lightSource = componentHandler.CreateEntity();
-	componentHandler.AddComponent<LightSourceComponent>(lightSource, Vector3D(0.8f, 0.8f, 0.8f), 1.0f);
+	componentHandler.AddComponent<LightSourceComponent>(lightSource, Vector3D(0.8f, 0.8f, 0.8f), 0.5f);
 	componentHandler.AddComponent<TransformComponent>(lightSource, Vector3D(0.0f, 0.5f, 2.0f));
 
 	Apollo::EntityID camera = componentHandler.CreateEntity();
 	componentHandler.AddComponent<CameraComponent>(camera);
 	CameraComponent* const camComp = componentHandler.GetComponent<CameraComponent>(camera);
-	camComp->Position = Vector3D(0.0f, 0.0f, 8.0f);
+	camComp->Position = Vector3D(-4.0f, 3.0f, 8.0f);
 	camComp->FOV = 45;
 	camComp->NearCull = 0.1f;
 	camComp->FarCull = 1000.0f;
-	camComp->Forward = Vector3D(0.0f, 0.0f, -1.0f);
+	camComp->Forward = Vector3D(0.5f, -0.5f, -1.0f);
 	camComp->UpDir = Vector3D(0.0f, 1.0f, 0.0f);
 	camComp->AspectRatio = RZE_Engine::Get()->GetWindowSize().X() / RZE_Engine::Get()->GetWindowSize().Y();
 }

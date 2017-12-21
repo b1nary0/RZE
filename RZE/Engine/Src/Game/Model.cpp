@@ -137,6 +137,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 			if (textureHandle.IsValid())
 			{
 				mTextureHandles.emplace_back(textureHandle);
+				outMesh.AddTexture(RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXTexture2D>(textureHandle));
 			}
 			else
 			{

@@ -5,6 +5,7 @@
 #include <Assimp/scene.h>
 
 #include <Diotima/Driver/OpenGL.h>
+#include <Diotima/Graphics/Texture2D.h>
 
 #include <Utils/DebugUtils/Debug.h>
 
@@ -52,6 +53,11 @@ namespace Diotima
 	const std::vector<U32>& GFXMesh::GetIndices() const
 	{
 		return mIndices;
+	}
+
+	const std::vector<GFXTexture2D*> GFXMesh::GetTextures() const
+	{
+		return mTextures;
 	}
 
 	void GFXMesh::AddVertex(const GFXVertex& vertex)
@@ -107,4 +113,10 @@ namespace Diotima
 	{
 		mIndices.push_back(index);
 	}
+
+	void GFXMesh::AddTexture(GFXTexture2D* const texture)
+	{
+		mTextures.push_back(texture);
+	}
+
 }
