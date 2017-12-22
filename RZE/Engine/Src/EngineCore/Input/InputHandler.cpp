@@ -33,7 +33,7 @@ void InputHandler::BindAction(Int32 keyCode, EButtonState::T buttonState, Functo
 	mKeyboardBindings[keyCode] = actionBinding;
 }
 
-void InputHandler::BindAxis(EAxisBinding::T bindingType, EAxisType::T axisType, Functor<void, const Vector3D&> func)
+void InputHandler::BindAxis(EAxisBinding::T bindingType, EAxisType::T axisType, Functor<void, const Vector3D&, float> func)
 {
 	std::vector<AxisBinding>& bindings = mAxisBindings[bindingType];
 	bindings.emplace_back();
@@ -75,7 +75,15 @@ void InputHandler::OnMouseMove(const Int32 xPos, const Int32 yPos)
 	mMouseState.PrevPosition.SetXY(mMouseState.CurPosition.X(), mMouseState.CurPosition.Y());
 	mMouseState.CurPosition.SetXY(static_cast<float>(xPos), static_cast<float>(yPos));
 
-	RaiseMouseAxisEvent(mMouseState.CurPosition);
+	RaiseMouseAxisEvent(mMouseState.CurPosition, 0.0f);
+}
+
+void InputHandler::OnMouseWheel(const Int32 value)
+{
+	mMouseState.PrevWheelVal = mMouseState.CurWheelVal;
+	mMouseState.CurWheelVal = value;
+
+	RaiseMouseAxisEvent(Vector2D(0.0f), mMouseState.CurWheelVal);
 }
 
 void InputHandler::RaiseKeyEvent(const InputKey& inputKey)
@@ -92,10 +100,10 @@ void InputHandler::RaiseKeyEvent(const InputKey& inputKey)
 	}
 }
 
-void InputHandler::RaiseMouseAxisEvent(const Vector2D& axis)
+void InputHandler::RaiseMouseAxisEvent(const Vector2D& axis, float wheel)
 {
 	for (auto& binding : mAxisBindings[EAxisBinding::AxisBinding_Mouse])
 	{
-		binding.Func(Vector3D(axis.X(), axis.Y(), 0.0f));
+		binding.Func(Vector3D(axis.X(), axis.Y(), 0.0f), wheel);
 	}
 }

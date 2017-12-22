@@ -9,6 +9,7 @@
 #include <Utils/Math/Math.h>
 
 const float kSpeed = 5.0f;
+const float kWheelSpeed = 10.0f;
 
 RotateSystem::RotateSystem()
 {
@@ -86,4 +87,17 @@ void RotateSystem::BindInputs()
 	RZE_Engine::Get()->GetInputHandler().BindAction(Win32KeyCode::Key_D, EButtonState::ButtonState_Hold, keyFunc);
 	RZE_Engine::Get()->GetInputHandler().BindAction(Win32KeyCode::Key_Q, EButtonState::ButtonState_Hold, keyFunc);
 	RZE_Engine::Get()->GetInputHandler().BindAction(Win32KeyCode::Key_E, EButtonState::ButtonState_Hold, keyFunc);
+
+	Functor<void, const Vector3D&, float> mouseFunc([this](const Vector3D& axis, float wheel)
+	{
+		if (wheel > 0)
+		{
+			mMainCamera->Position += mMainCamera->Forward * kWheelSpeed * RZE_Engine::Get()->GetDeltaTime();
+		}
+		else if (wheel < 0)
+		{
+			mMainCamera->Position -= mMainCamera->Forward * kWheelSpeed * RZE_Engine::Get()->GetDeltaTime();
+		}
+	});
+	RZE_Engine::Get()->GetInputHandler().BindAxis(EAxisBinding::AxisBinding_Mouse, EAxisType::AxisType_Vector, mouseFunc);
 }

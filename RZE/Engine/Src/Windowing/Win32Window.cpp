@@ -194,6 +194,13 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 		}
 		break;
 
+		case WM_MOUSEWHEEL:
+		{
+			Int32 delta = GET_WHEEL_DELTA_WPARAM(msg.wParam);
+			inputHandler.OnMouseWheel(delta);
+		}
+		break;
+
 		case WM_SETCURSOR:
 		{
 			if (!bCursorEnabled)
