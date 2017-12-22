@@ -131,10 +131,10 @@ void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 			size_t numTextures = model->GetTextureHandles().size();
 			if (numTextures > 0)
 			{
-				std::vector<U32> textures(numTextures);
+				std::vector<Diotima::GFXTexture2D*> textures(numTextures);
 				for (size_t i = 0; i < numTextures; ++i)
 				{
-					textures.push_back(RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXTexture2D>(model->GetTextureHandles()[i])->GetTextureID());
+					textures.push_back(RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXTexture2D>(model->GetTextureHandles()[i]));
 				}
 
 				item.Textures = std::move(textures);

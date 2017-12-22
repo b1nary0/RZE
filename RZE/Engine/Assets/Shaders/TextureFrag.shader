@@ -1,4 +1,4 @@
-#version 330
+#version 460
 
 in vec3 Normal;
 in vec3 FragPos;
@@ -6,25 +6,23 @@ in vec2 UVCoord;
 
 out vec4 OutFragmentColor;
 
-uniform vec3 ULightPosition;
-uniform vec3 UViewPosition;
-uniform vec3 ULightColor;
-uniform float ULightStrength;
-
-uniform vec4 UFragColor;
-
-uniform sampler2D UTexture2D;
-
 struct MaterialData
 {
-	sampler2D    Diffuse;
-	sampler2D	 Specular;
+	sampler2D    DiffuseTextures[12];
+	sampler2D	 SpecularTextures[12];
 	float		 Shininess;
 };
 
-uniform MaterialData Material;
+uniform vec3  ULightPosition;
+uniform vec3  UViewPosition;
+uniform vec3  ULightColor;
+uniform vec4  UFragColor;
+uniform float ULightStrength;
 
-float ambientStrength = 0.1f;
+uniform int DiffuseTextureCount;
+uniform int SpecularTextureCount;
+
+uniform MaterialData Material;
 
 void main()
 {
@@ -33,16 +31,13 @@ void main()
     vec3 viewDir = normalize(UViewPosition - FragPos);
 	vec3 halfwayDir = normalize(lightDir + viewDir);
 	
-	float diff = max(dot(normal, lightDir), 0.0);
-	vec4 texVec = texture(UTexture2D, UVCoord);
+	float diff = max(dot(normal, lightDir), 0.0f);
 	
-	float specularStrength = 0.75f;
-    float spec = pow(max(dot(viewDir, halfwayDir), 0.0), 32);
+    float spec = pow(max(dot(normal, halfwayDir), 0.0f), 8.0f);
     
-	vec3 ambient = ULightStrength * ULightColor * vec3(texture(Material.Diffuse, UVCoord));
-	vec3 diffuse = diff * ULightColor * vec3(texture(Material.Diffuse, UVCoord));
-	vec3 specular = specularStrength * spec * ULightColor;//vec3(texture(Material.Specular, UVCoord));  
+	vec3 diffuse = ULightColor * (diff *  vec3(texture(Material.SpecularTextures[1], UVCoord)));
+	vec3 specular = ULightStrength * (spec * vec3(texture(Material.DiffuseTextures[1], UVCoord)));  
 	
-	vec3 result = (ambient + specular + diffuse);
+	vec3 result = (specular + diffuse);
 	OutFragmentColor = vec4(result, 1.0f);
 }

@@ -8,9 +8,10 @@
 
 namespace Diotima
 {
-	GFXTexture2D::GFXTexture2D()
+	GFXTexture2D::GFXTexture2D(ETextureType::T textureType/* = ETextureType::Diffuse*/)
 		: IResource()
 		, mTextureID(0)
+		, mTextureType(textureType)
 	{
 	}
 
@@ -51,6 +52,11 @@ namespace Diotima
 	U32 GFXTexture2D::GetTextureID()
 	{
 		return mTextureID;
+	}
+
+	ETextureType::T GFXTexture2D::GetTextureType()
+	{
+		return mTextureType;
 	}
 
 	Vector2D GFXTexture2D::GetDimensions()

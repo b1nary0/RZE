@@ -1,8 +1,10 @@
 #pragma once
 
+#include <unordered_map>
 #include <vector>
 
 #include <Diotima/Driver/OpenGL.h>
+#include <Diotima/Graphics/Texture2D.h>
 
 #include <Utils/Interfaces/Resource.h>
 #include <Utils/Math/Vector2D.h>
@@ -27,6 +29,8 @@ namespace Diotima
 	{
 		friend class MeshResource;
 
+		typedef std::unordered_map<ETextureType::T, std::vector<GFXTexture2D*>> TextureMap;
+
 	public:
 		GFXMesh();
 		~GFXMesh();
@@ -37,11 +41,11 @@ namespace Diotima
 
 		const std::vector<GFXVertex>& GetVertexList() const;
 		const std::vector<U32>& GetIndices() const;
-		const std::vector<GFXTexture2D*> GetTextures() const;
+		const std::vector<GFXTexture2D*>& GetTextures(ETextureType::T textureType);
 
 		void AddVertex(const GFXVertex& vertex);
 		void AddIndex(U32 index);
-		void AddTexture( GFXTexture2D* const texture);
+		void AddTexture(GFXTexture2D* const texture);
 
 		void OnLoadFinished();
 
@@ -51,11 +55,14 @@ namespace Diotima
 		OpenGLVBO mNormalVBO;
 		OpenGLEBO mEBO;
 
-		std::vector<GFXTexture2D*> mTextures;
+		TextureMap mTextures;
 		std::vector<GFXVertex> mVertices;
 		std::vector<Vector3D> mPositions;
 		std::vector<Vector3D> mNormals;
 		std::vector<Vector2D> mUVCoords;
 		std::vector<U32> mIndices;
+
+		U32 mDiffuseTextureCount;
+		U32 mSpecularTextureCount;
 	};
 }

@@ -29,7 +29,7 @@ namespace Diotima
 
 			GFXShaderGroup*					Shader { nullptr };
 			GFXMaterial						Material;
-			std::vector<U32>				Textures;
+			std::vector<GFXTexture2D*>		Textures;
 			Matrix4x4						ModelMat;
 			Matrix4x4						ProjectionMat;
 			Matrix4x4						ViewMat;

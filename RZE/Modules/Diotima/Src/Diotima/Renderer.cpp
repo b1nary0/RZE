@@ -7,6 +7,7 @@
 #include <Diotima/Graphics/Texture2D.h>
 #include <Diotima/Shaders/ShaderGroup.h>
 
+#include <Utils/Conversions.h>
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Vector4D.h>
 #include <Utils/Platform/FilePath.h>
@@ -370,10 +371,25 @@ namespace Diotima
 		const std::vector<GFXMesh*>& meshList = *renderItem.MeshData;
 		for (auto& mesh : meshList)
 		{
+			const std::vector<GFXTexture2D*>& diffuseTextures = mesh->GetTextures(ETextureType::Diffuse);
+			const std::vector<GFXTexture2D*>& specularTextures = mesh->GetTextures(ETextureType::Specular);
+
+			renderItem.Shader->SetUniformInt("DiffuseTextureCount", static_cast<int>(diffuseTextures.size()));
+			renderItem.Shader->SetUniformInt("SpecularTextureCount", static_cast<int>(specularTextures.size()));
 			// #NOTE(Josh) Same here re: only once
-			for (int i = 0; i < mesh->GetTextures().size(); ++i)
+			int textureCount = 0;
+			for (size_t i = 0; i < diffuseTextures.size(); ++i, ++textureCount)
 			{
-				openGL.BindTexture(EGLCapability::Texture2D, mesh->GetTextures()[i]->GetTextureID());
+				renderItem.Shader->SetUniformInt("Material.DiffuseTextures[" + Conversions::StringFromInt(i) + "]", diffuseTextures[i]->GetTextureID());
+				glActiveTexture(GL_TEXTURE0 + textureCount);
+				openGL.BindTexture(EGLCapability::Texture2D, diffuseTextures[i]->GetTextureID());
+			}
+
+			for (size_t i = 0; i < specularTextures.size(); ++i, ++textureCount)
+			{
+				renderItem.Shader->SetUniformInt("Material.SpecularTextures[" + Conversions::StringFromInt(i) + "]", specularTextures[i]->GetTextureID());
+				glActiveTexture(GL_TEXTURE0 + textureCount);
+				openGL.BindTexture(EGLCapability::Texture2D, specularTextures[i]->GetTextureID());
 			}
 
 			mesh->GetVAO().Bind();

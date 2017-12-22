@@ -114,9 +114,10 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 			std::string filePath = "Engine/Assets/3D/Nanosuit/";
 			filePath.append(str.C_Str());
 
-			ResourceHandle textureHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(FilePath(filePath));
+			ResourceHandle textureHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(FilePath(filePath), Diotima::ETextureType::Diffuse);
 			if (textureHandle.IsValid())
 			{
+				outMesh.AddTexture(RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXTexture2D>(textureHandle));
 				mTextureHandles.emplace_back(textureHandle);
 			}
 			else
@@ -133,7 +134,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 			std::string filePath = "Engine/Assets/3D/Nanosuit/";
 			filePath.append(str.C_Str());
 
-			ResourceHandle textureHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(FilePath(filePath));
+			ResourceHandle textureHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(FilePath(filePath), Diotima::ETextureType::Specular);
 			if (textureHandle.IsValid())
 			{
 				mTextureHandles.emplace_back(textureHandle);
