@@ -39,50 +39,50 @@ namespace Diotima
 		}
 	}
 
-	void GFXShaderGroup::SetUniformMatrix4x4(const std::string& uniformName, const Matrix4x4& mat)
+	void GFXShaderGroup::SetUniformMatrix4x4(const char* uniformName, const Matrix4x4& mat)
 	{
 		Int32 uniformLocation = -1;
-		OpenGLRHI::Get().UniformLocation(GetShaderProgramID(), uniformName.c_str(), uniformLocation);
+		OpenGLRHI::Get().UniformLocation(GetShaderProgramID(), uniformName, uniformLocation);
 		if (uniformLocation >= 0)
 		{
 			OpenGLRHI::Get().SetUniformMat4x4(uniformLocation, 1, EGLBooleanValue::False, mat.GetValuePtr());
 		}
 	}
 
-	void GFXShaderGroup::SetUniformVector3D(const std::string& uniformName, const Vector3D& vec)
+	void GFXShaderGroup::SetUniformVector3D(const char* uniformName, const Vector3D& vec)
 	{
 		Int32 uniformLocation = -1;
-		OpenGLRHI::Get().UniformLocation(GetShaderProgramID(), uniformName.c_str(), uniformLocation);
+		OpenGLRHI::Get().UniformLocation(GetShaderProgramID(), uniformName, uniformLocation);
 		if (uniformLocation >= 0)
 		{
 			OpenGLRHI::Get().SetUniformVec3D(uniformLocation, vec.X(), vec.Y(), vec.Z());
 		}
 	}
 
-	void GFXShaderGroup::SetUniformVector4D(const std::string& uniformName, const Vector4D& vec)
+	void GFXShaderGroup::SetUniformVector4D(const char* uniformName, const Vector4D& vec)
 	{
 		Int32 uniformLocation = -1;
-		OpenGLRHI::Get().UniformLocation(GetShaderProgramID(), uniformName.c_str(), uniformLocation);
+		OpenGLRHI::Get().UniformLocation(GetShaderProgramID(), uniformName, uniformLocation);
 		if (uniformLocation >= 0)
 		{
 			OpenGLRHI::Get().SetUniformVec4D(uniformLocation, vec.X(), vec.Y(), vec.Z(), vec.W());
 		}
 	}
 
-	void GFXShaderGroup::SetUniformInt(const std::string& uniformName, int value)
+	void GFXShaderGroup::SetUniformInt(const char* uniformName, int value)
 	{
 		Int32 uniformLocation = -1;
-		OpenGLRHI::Get().UniformLocation(GetShaderProgramID(), uniformName.c_str(), uniformLocation);
+		OpenGLRHI::Get().UniformLocation(GetShaderProgramID(), uniformName, uniformLocation);
 		if (uniformLocation >= 0)
 		{
 			OpenGLRHI::Get().SetUniformInt(uniformLocation, value);
 		}
 	}
 
-	void GFXShaderGroup::SetUniformFloat(const std::string& uniformName, float value)
+	void GFXShaderGroup::SetUniformFloat(const char* uniformName, float value)
 	{
 		Int32 uniformLocation = -1;
-		OpenGLRHI::Get().UniformLocation(GetShaderProgramID(), uniformName.c_str(), uniformLocation);
+		OpenGLRHI::Get().UniformLocation(GetShaderProgramID(), uniformName, uniformLocation);
 		if (uniformLocation >= 0)
 		{
 			OpenGLRHI::Get().SetUniformFloat(uniformLocation, value);

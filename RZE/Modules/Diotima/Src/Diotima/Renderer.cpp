@@ -380,14 +380,14 @@ namespace Diotima
 			int textureCount = 0;
 			for (size_t i = 0; i < diffuseTextures.size(); ++i, ++textureCount)
 			{
-				renderItem.Shader->SetUniformInt("Material.DiffuseTextures[" + Conversions::StringFromInt(i) + "]", diffuseTextures[i]->GetTextureID());
+				renderItem.Shader->SetUniformInt(("Material.DiffuseTextures[" + Conversions::StringFromInt(i) + "]").c_str(), diffuseTextures[i]->GetTextureID());
 				glActiveTexture(GL_TEXTURE0 + textureCount);
 				openGL.BindTexture(EGLCapability::Texture2D, diffuseTextures[i]->GetTextureID());
 			}
 
 			for (size_t i = 0; i < specularTextures.size(); ++i, ++textureCount)
 			{
-				renderItem.Shader->SetUniformInt("Material.SpecularTextures[" + Conversions::StringFromInt(i) + "]", specularTextures[i]->GetTextureID());
+				renderItem.Shader->SetUniformInt(("Material.SpecularTextures[" + Conversions::StringFromInt(i) + "]").c_str(), specularTextures[i]->GetTextureID());
 				glActiveTexture(GL_TEXTURE0 + textureCount);
 				openGL.BindTexture(EGLCapability::Texture2D, specularTextures[i]->GetTextureID());
 			}
