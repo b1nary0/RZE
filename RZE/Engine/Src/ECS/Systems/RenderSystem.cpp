@@ -80,7 +80,6 @@ void RenderSystem::Initialize()
 
 	Apollo::ComponentTypeID<Apollo::ComponentBase>::GetComponentTypeID<TransformComponent>();
 	Apollo::ComponentTypeID<Apollo::ComponentBase>::GetComponentTypeID<MeshComponent>();
-	Apollo::ComponentTypeID<Apollo::ComponentBase>::GetComponentTypeID<MaterialComponent>();
 
 	InternalGetComponentFilter().AddFilterType<TransformComponent>();
 	InternalGetComponentFilter().AddFilterType<MeshComponent>();
@@ -107,63 +106,25 @@ void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 
 	for (auto& entity : entities)
 	{
-		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entity);
 		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
-		MaterialComponent* const matComp = handler.GetComponent<MaterialComponent>(entity);
 
-		Diotima::Renderer::RenderItemProtocol item;
+		Diotima::Renderer::RenderItemProtocol& item = renderSystem->GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
 
 		Matrix4x4 modelMat;
 		modelMat.Translate(transfComp->Position);
 		modelMat.Rotate(transfComp->Rotation.ToAngle(), transfComp->Rotation.ToAxis());
 		modelMat.Scale(transfComp->Scale);
 
-		item.MeshData = &RZE_Engine::Get()->GetResourceHandler().GetResource<Model3D>(meshComp->Resource)->GetMeshList();
 		item.ModelMat = modelMat;
-		item.ProjectionMat = mMainCamera->ProjectionMat;
-		item.ViewMat = mMainCamera->ViewMat;
-
-		if (meshComp->Resource.IsValid())
-		{
-			item.Shader = textureShader;
-		
-			Model3D* const model = RZE_Engine::Get()->GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
-			size_t numTextures = model->GetTextureHandles().size();
-			if (numTextures > 0)
-			{
-				std::vector<Diotima::GFXTexture2D*> textures(numTextures);
-				for (size_t i = 0; i < numTextures; ++i)
-				{
-					textures.push_back(RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXTexture2D>(model->GetTextureHandles()[i]));
-				}
-
-				item.Textures = std::move(textures);
-			}
-			else
-			{
-				item.Shader = defaultShader;
-			}
-		}
-
-		// #NOTE(Josh) For the time being, until I work a proper pipeline in
-		Diotima::GFXMaterial material;
-		material.Color = sDefaultFragColor;
-		item.Material = material;
-
-		renderSystem->AddRenderItem(item);
 	}
+
 
 	Functor<void, Apollo::EntityID> LightSourceFunc([this, &handler, &renderSystem](Apollo::EntityID entity)
 	{
-		LightSourceComponent* const lightComp = handler.GetComponent<LightSourceComponent>(entity);
 		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
 
-		Diotima::Renderer::LightItemProtocol item;
-		item.Color = lightComp->Color;
-		item.Strength = lightComp->Strength;
+		Diotima::Renderer::LightItemProtocol& item = renderSystem->GetLightProtocolByIdx(mLightItemEntityMap[entity]);
 		item.Position = transfComp->Position;
-
-		renderSystem->AddLightItem(item);
 	});
 
 	handler.ForEach<LightSourceComponent, TransformComponent>(LightSourceFunc);
@@ -184,8 +145,54 @@ void RenderSystem::RegisterForComponentNotifications()
 	{
 		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entityID);
 		meshComp->Resource = RZE_Engine::Get()->GetResourceHandler().RequestResource<Model3D>(meshComp->ResourcePath);
+
+		Model3D* const modelData = RZE_Engine::Get()->GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
+
+		Diotima::Renderer::RenderItemProtocol item;
+
+		item.MeshData = &modelData->GetMeshList();
+
+		if (meshComp->Resource.IsValid())
+		{
+			item.Shader = textureShader;
+
+			size_t numTextures = modelData->GetTextureHandles().size();
+			if (numTextures > 0)
+			{
+				std::vector<Diotima::GFXTexture2D*> textures(numTextures);
+				for (size_t i = 0; i < numTextures; ++i)
+				{
+					textures.push_back(RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXTexture2D>(modelData->GetTextureHandles()[i]));
+				}
+
+				item.Textures = std::move(textures);
+			}
+			else
+			{
+				item.Shader = defaultShader;
+			}
+		}
+
+		item.Material.Color = sDefaultFragColor;
+
+		Int32 itemIdx = RZE_Engine::Get()->GetRenderSystem()->AddRenderItem(item);
+		mRenderItemEntityMap[entityID] = itemIdx;
 	});
 	handler.RegisterForComponentAddNotification<MeshComponent>(OnMeshComponentAdded);
+
+	// LightSourceComponent
+	Apollo::ComponentHandler::ComponentAddedFunc OnLightSourceComponentAdded([this](Apollo::EntityID entityID, Apollo::ComponentHandler& handler)
+	{
+		LightSourceComponent* const lightComp = handler.GetComponent<LightSourceComponent>(entityID);
+
+		Diotima::Renderer::LightItemProtocol item;
+		item.Color = lightComp->Color;
+		item.Strength = lightComp->Strength;
+
+		Int32 itemIdx = RZE_Engine::Get()->GetRenderSystem()->AddLightItem(item);
+		mLightItemEntityMap[entityID] = itemIdx;
+	});
+	handler.RegisterForComponentAddNotification<LightSourceComponent>(OnLightSourceComponentAdded);
 
 	//
 	// CameraComponent
@@ -195,21 +202,6 @@ void RenderSystem::RegisterForComponentNotifications()
 		this->mMainCamera = handler.GetComponent<CameraComponent>(entityID);
 	});
 	handler.RegisterForComponentAddNotification<CameraComponent>(OnCameraComponentAdded);
-
-	//
-	// MaterialComponent
-	//
-	Apollo::ComponentHandler::ComponentAddedFunc OnMaterialComponentAdded([this](Apollo::EntityID entityID, Apollo::ComponentHandler& handler)
-	{
-		MaterialComponent* const matComp = handler.GetComponent<MaterialComponent>(entityID);
-		AssertNotNull(matComp);
-
-		if (!matComp->ResourcePath.GetAbsolutePath().empty())
-		{
-			matComp->Texture = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(matComp->ResourcePath);
-		}
-	});
-	handler.RegisterForComponentAddNotification<MaterialComponent>(OnMaterialComponentAdded);
 }
 
 void RenderSystem::GenerateCameraMatrices()

@@ -359,7 +359,7 @@ public:
 	OpenGLRHI();
 	~OpenGLRHI();
 
-	static OpenGLRHI& Get()
+	static inline OpenGLRHI& Get()
 	{
 		static OpenGLRHI instance;
 		return instance;

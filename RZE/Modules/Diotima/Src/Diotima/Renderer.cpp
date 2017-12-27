@@ -271,14 +271,16 @@ namespace Diotima
 	{
 	}
 
-	void Renderer::AddRenderItem(const RenderItemProtocol& itemProtocol)
+	Int32 Renderer::AddRenderItem(const RenderItemProtocol& itemProtocol)
 	{
-		mRenderList.emplace(std::move(itemProtocol));
+		mRenderList.emplace_back(std::move(itemProtocol));
+		return static_cast<Int32>(mRenderList.size() - 1);
 	}
 
-	void Renderer::AddLightItem(const LightItemProtocol& itemProtocol)
+	Int32 Renderer::AddLightItem(const LightItemProtocol& itemProtocol)
 	{
 		mLightingList.emplace_back(std::move(itemProtocol));
+		return static_cast<Int32>(mLightingList.size() - 1);
 	}
 
 	void Renderer::Initialize()
@@ -323,14 +325,10 @@ namespace Diotima
 // 
 // 		OpenGLRHI::Get().ClearColor(0.25f, 0.25f, 0.25f, 1.0f);
 		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
-		while (!mRenderList.empty())
+		for(auto& renderItem : mRenderList)
 		{
-			RenderItemProtocol& item = mRenderList.front();
-			RenderSingleItem(item);
-			mRenderList.pop();
+			RenderSingleItem(renderItem);
 		}
-		
-		ClearLists();
 	}
 
 	void Renderer::ShutDown()
@@ -339,7 +337,6 @@ namespace Diotima
 
 	void Renderer::ClearLists()
 	{
-		mLightingList.clear();
 	}
 
 	void Renderer::ResizeCanvas(const Vector2D& newSize)
@@ -371,23 +368,23 @@ namespace Diotima
 		const std::vector<GFXMesh*>& meshList = *renderItem.MeshData;
 		for (auto& mesh : meshList)
 		{
-			const std::vector<GFXTexture2D*>& diffuseTextures = mesh->GetTextures(ETextureType::Diffuse);
-			const std::vector<GFXTexture2D*>& specularTextures = mesh->GetTextures(ETextureType::Specular);
+			const std::vector<GFXTexture2D*>& diffuseTextures = mesh->GetDiffuseTextures();
+			const std::vector<GFXTexture2D*>& specularTextures = mesh->GetSpecularTextures();
 
 			renderItem.Shader->SetUniformInt("DiffuseTextureCount", static_cast<int>(diffuseTextures.size()));
 			renderItem.Shader->SetUniformInt("SpecularTextureCount", static_cast<int>(specularTextures.size()));
-			// #NOTE(Josh) Same here re: only once
+			
 			int textureCount = 0;
 			for (size_t i = 0; i < diffuseTextures.size(); ++i, ++textureCount)
 			{
-				renderItem.Shader->SetUniformInt(("Material.DiffuseTextures[" + Conversions::StringFromInt(i) + "]").c_str(), diffuseTextures[i]->GetTextureID());
+				renderItem.Shader->SetUniformInt(("Material.DiffuseTextures[0]"), diffuseTextures[i]->GetTextureID());
 				glActiveTexture(GL_TEXTURE0 + textureCount);
 				openGL.BindTexture(EGLCapability::Texture2D, diffuseTextures[i]->GetTextureID());
 			}
 
 			for (size_t i = 0; i < specularTextures.size(); ++i, ++textureCount)
 			{
-				renderItem.Shader->SetUniformInt(("Material.SpecularTextures[" + Conversions::StringFromInt(i) + "]").c_str(), specularTextures[i]->GetTextureID());
+				renderItem.Shader->SetUniformInt(("Material.SpecularTextures[0]"), specularTextures[i]->GetTextureID());
 				glActiveTexture(GL_TEXTURE0 + textureCount);
 				openGL.BindTexture(EGLCapability::Texture2D, specularTextures[i]->GetTextureID());
 			}

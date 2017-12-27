@@ -68,8 +68,10 @@ namespace Diotima
 		virtual void ShutDown();
 
 	public:
-		void AddRenderItem(const RenderItemProtocol& itemProtocol);
-		void AddLightItem(const LightItemProtocol& itemProtocol);
+		Int32 AddRenderItem(const RenderItemProtocol& itemProtocol);
+		inline RenderItemProtocol& GetItemProtocolByIdx(Int32 idx) { return mRenderList[idx]; }
+		Int32 AddLightItem(const LightItemProtocol& itemProtocol);
+		inline LightItemProtocol& GetLightProtocolByIdx(Int32 idx) { return mLightingList[idx]; }
 
 		void SetCamera(const CameraItemProtocol& cameraItem) { camera = std::move(cameraItem); }
 
@@ -86,7 +88,7 @@ namespace Diotima
 		GLRenderTargetTexture mRenderTargetTexture;
 
 		CameraItemProtocol camera;
-		std::queue<RenderItemProtocol> mRenderList;
+		std::vector<RenderItemProtocol> mRenderList;
 		std::vector<LightItemProtocol> mLightingList;
 	};
 }

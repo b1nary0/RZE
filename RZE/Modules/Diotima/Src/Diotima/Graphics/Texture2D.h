@@ -10,7 +10,7 @@ namespace Diotima
 {
 	namespace ETextureType
 	{
-		enum T
+		enum T : U32
 		{
 			Diffuse,
 			Specular

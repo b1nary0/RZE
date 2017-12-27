@@ -55,11 +55,6 @@ namespace Diotima
 		return mIndices;
 	}
 
-	const std::vector<GFXTexture2D*>& GFXMesh::GetTextures(ETextureType::T textureType)
-	{
-		return mTextures[textureType];
-	}
-
 	void GFXMesh::AddVertex(const GFXVertex& vertex)
 	{
 		mVertices.push_back(std::move(vertex));
@@ -116,7 +111,14 @@ namespace Diotima
 
 	void GFXMesh::AddTexture(GFXTexture2D* const texture)
 	{
-		mTextures[texture->GetTextureType()].push_back(texture);
+		if (texture->GetTextureType() == ETextureType::Diffuse)
+		{
+			mDiffuseTextures.emplace_back(texture);
+		}
+		else if (texture->GetTextureType() == ETextureType::Specular)
+		{
+			mDiffuseTextures.emplace_back(texture);
+		}
 	}
 
 }

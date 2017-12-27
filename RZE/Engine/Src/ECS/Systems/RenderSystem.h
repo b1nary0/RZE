@@ -26,6 +26,9 @@ public:
 	void GenerateCameraMatrices();
 
 private:
+	std::unordered_map<Apollo::EntityID, Int32> mRenderItemEntityMap;
+	std::unordered_map<Apollo::EntityID, Int32> mLightItemEntityMap;
+
 	Diotima::GLRenderTargetTexture mRenderTargetTexture;
 	CameraComponent* mMainCamera;
 };

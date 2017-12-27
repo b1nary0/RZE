@@ -29,7 +29,7 @@ namespace Diotima
 	{
 		friend class MeshResource;
 
-		typedef std::unordered_map<ETextureType::T, std::vector<GFXTexture2D*>> TextureMap;
+		typedef std::unordered_map<U32, std::vector<GFXTexture2D*>> TextureMap;
 
 	public:
 		GFXMesh();
@@ -41,7 +41,8 @@ namespace Diotima
 
 		const std::vector<GFXVertex>& GetVertexList() const;
 		const std::vector<U32>& GetIndices() const;
-		const std::vector<GFXTexture2D*>& GetTextures(ETextureType::T textureType);
+		const std::vector<GFXTexture2D*>& GetDiffuseTextures() { return mDiffuseTextures; }
+		const std::vector<GFXTexture2D*>& GetSpecularTextures() { return mSpecularTextures; }
 
 		void AddVertex(const GFXVertex& vertex);
 		void AddIndex(U32 index);
@@ -55,7 +56,9 @@ namespace Diotima
 		OpenGLVBO mNormalVBO;
 		OpenGLEBO mEBO;
 
-		TextureMap mTextures;
+		std::vector<GFXTexture2D*> mDiffuseTextures;
+		std::vector<GFXTexture2D*> mSpecularTextures;
+
 		std::vector<GFXVertex> mVertices;
 		std::vector<Vector3D> mPositions;
 		std::vector<Vector3D> mNormals;
