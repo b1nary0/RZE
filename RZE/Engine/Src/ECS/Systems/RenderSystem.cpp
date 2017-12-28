@@ -146,9 +146,7 @@ void RenderSystem::RegisterForComponentNotifications()
 		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entityID);
 		meshComp->Resource = RZE_Engine::Get()->GetResourceHandler().RequestResource<Model3D>(meshComp->ResourcePath);
 
-
 		Diotima::Renderer::RenderItemProtocol item;
-
 
 		if (meshComp->Resource.IsValid())
 		{
