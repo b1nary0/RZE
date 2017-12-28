@@ -146,14 +146,15 @@ void RenderSystem::RegisterForComponentNotifications()
 		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entityID);
 		meshComp->Resource = RZE_Engine::Get()->GetResourceHandler().RequestResource<Model3D>(meshComp->ResourcePath);
 
-		Model3D* const modelData = RZE_Engine::Get()->GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
 
 		Diotima::Renderer::RenderItemProtocol item;
 
-		item.MeshData = &modelData->GetMeshList();
 
 		if (meshComp->Resource.IsValid())
 		{
+			Model3D* const modelData = RZE_Engine::Get()->GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
+
+			item.MeshData = &modelData->GetMeshList();
 			item.Shader = textureShader;
 
 			size_t numTextures = modelData->GetTextureHandles().size();
@@ -164,7 +165,6 @@ void RenderSystem::RegisterForComponentNotifications()
 				{
 					textures.push_back(RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXTexture2D>(modelData->GetTextureHandles()[i]));
 				}
-
 				item.Textures = std::move(textures);
 			}
 			else
