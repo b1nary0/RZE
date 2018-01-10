@@ -106,7 +106,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 	if (mesh.mMaterialIndex >= 0)
 	{
 		aiMaterial* mat = scene.mMaterials[mesh.mMaterialIndex];
-		for (int i = 0; i < mat->GetTextureCount(aiTextureType_DIFFUSE); ++i)
+		for (unsigned int i = 0; i < mat->GetTextureCount(aiTextureType_DIFFUSE); ++i)
 		{
 			aiString str;
 			mat->GetTexture(aiTextureType_DIFFUSE, i, &str);
@@ -126,7 +126,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 			}
 		}
 
-		for (int i = 0; i < mat->GetTextureCount(aiTextureType_SPECULAR); ++i)
+		for (unsigned int i = 0; i < mat->GetTextureCount(aiTextureType_SPECULAR); ++i)
 		{
 			aiString str;
 			mat->GetTexture(aiTextureType_SPECULAR, i, &str);
