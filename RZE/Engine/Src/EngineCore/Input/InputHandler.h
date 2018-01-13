@@ -44,8 +44,8 @@ class InputHandler
 
 		Vector2D CurPosition;
 		Vector2D PrevPosition;
-		float CurWheelVal;
-		float PrevWheelVal;
+		Int32 CurWheelVal;
+		Int32 PrevWheelVal;
 
 		void Reset()
 		{
@@ -71,7 +71,7 @@ class InputHandler
 		EAxisType::T AxisType;
 		Vector3D Axis;
 		float Wheel;
-		Functor<void, const Vector3D&, float> Func;
+		Functor<void, const Vector3D&, Int32> Func;
 	};
 
 public:
@@ -80,7 +80,7 @@ public:
 	void Initialize();
 
 	void BindAction(Int32 keyCode, EButtonState::T buttonState, Functor<void, const InputKey&> func);
-	void BindAxis(EAxisBinding::T bindingType, EAxisType::T axisType, Functor<void, const Vector3D&, float> func);
+	void BindAxis(EAxisBinding::T bindingType, EAxisType::T axisType, Functor<void, const Vector3D&, Int32> func);
 
 	void OnKeyDown(const Int32 key, bool bIsRepeat);
 	void OnKeyUp(const Int32 key);
@@ -89,7 +89,7 @@ public:
 
 private:
 	void RaiseKeyEvent(const InputKey& inputKey);
-	void RaiseMouseAxisEvent(const Vector2D& axis, float wheel);
+	void RaiseMouseAxisEvent(const Vector2D& axis, Int32 wheel);
 
 private:
 	std::vector<InputKey> mInputKeyRegistry;

@@ -88,7 +88,7 @@ void RotateSystem::BindInputs()
 	RZE_Engine::Get()->GetInputHandler().BindAction(Win32KeyCode::Key_Q, EButtonState::ButtonState_Hold, keyFunc);
 	RZE_Engine::Get()->GetInputHandler().BindAction(Win32KeyCode::Key_E, EButtonState::ButtonState_Hold, keyFunc);
 
-	Functor<void, const Vector3D&, float> mouseFunc([this](const Vector3D& axis, float wheel)
+	Functor<void, const Vector3D&, Int32> mouseFunc([this](const Vector3D& axis, Int32 wheel)
 	{
 		if (wheel > 0)
 		{
