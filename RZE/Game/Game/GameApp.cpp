@@ -36,15 +36,7 @@ void GameApp::Start()
 	Apollo::ComponentHandler& componentHandler = RZE_Engine::Get()->GetComponentHandler();
 
 	componentHandler.AddSystem<RotateSystem>();
-
-// 	Apollo::EntityID bgEnt = componentHandler.CreateEntity();
-// 	componentHandler.AddComponent<MeshComponent>(bgEnt, FilePath("Engine/Assets/3D/Quad.obj"));
-// 	componentHandler.AddComponent<MaterialComponent>(bgEnt, FilePath("Engine/Assets/2D/Background.jpg"));
-
-//	MaterialComponent* const matComp = componentHandler.GetComponent<MaterialComponent>(bgEnt);
 	
-//	componentHandler.AddComponent<TransformComponent>(bgEnt, Vector3D(0.0f, 0.0f, -10.0f), Quaternion(Vector3D(0.0f, MathUtils::ToRadians(180.0f), 0.0f)), Vector3D(30.0, 20.0f, 5.0f));
-
 	Apollo::EntityID floor = componentHandler.CreateEntity();
 	componentHandler.AddComponent<MeshComponent>(floor, FilePath("Engine/Assets/3D/Cube.obj"));
 	componentHandler.AddComponent<TransformComponent>(floor, Vector3D(-5.0f, -5.5f, -5.0f), Quaternion(), Vector3D(10.0f, 0.5f, 10.0f));

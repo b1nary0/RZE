@@ -55,12 +55,9 @@ public:
 	Apollo::ComponentHandler&	GetComponentHandler() { return mComponentHandler; }
 	InputHandler&				GetInputHandler() { return mInputHandler; }
 
+	Diotima::Renderer* GetRenderer() const { return mRenderer; }
 
-	// #TODO(Josh) Totally test. This is not good.
-	Diotima::Renderer* GetRenderSystem();
 	inline float GetDeltaTime() const { return 1.0f / 60.0f; }
-
-
 
 private:
 
@@ -85,10 +82,9 @@ private:
 	void InitGame(Functor<RZE_Game* const> createGameCallback);
 
 private:
-	SubSystemHandler mSubSystemHandler;
-
-private:
 	RZE_Game* mApplication;
+
+	Diotima::Renderer* mRenderer;
 
 	Win32Window* mMainWindow;
 

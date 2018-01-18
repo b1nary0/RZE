@@ -19,6 +19,7 @@ RZE_Engine::RZE_Engine()
 	mMainWindow = nullptr;
 	mEngineConfig = nullptr;
 	mApplication = nullptr;
+	mRenderer = nullptr;
 
 	bShouldExit = false;
 	bIsInitialized = false;
@@ -43,6 +44,8 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 		{
 			{
 				Update();
+
+				mRenderer->Update();
 			}
 			mMainWindow->BufferSwap(); // #TODO(Josh) Maybe this can be done better
 		}
@@ -71,9 +74,9 @@ void RZE_Engine::Init()
 
 		CreateAndInitializeWindow();
 
-		RegisterSubSystems();
+		mRenderer = new Diotima::Renderer();
+		mRenderer->Initialize();
 
-		mSubSystemHandler.InitializeSubSystems();
 		mResourceHandler.Init();
 		mInputHandler.Initialize();
 
@@ -128,11 +131,6 @@ void RZE_Engine::CompileEvents()
 	mMainWindow->CompileWindowMessages(mEventHandler);
 }
 
-void RZE_Engine::RegisterSubSystems()
-{
-	mSubSystemHandler.AddSubSystem<Diotima::Renderer>();
-}
-
 void RZE_Engine::RegisterWindowEvents()
 {
 	Functor<void, const Event&> windowCallback([this](const Event& event)
@@ -146,7 +144,7 @@ void RZE_Engine::RegisterWindowEvents()
 		{
 			U16 width = event.mWindowEvent.mSizeX;
 			U16 height = event.mWindowEvent.mSizeY;
-			GetRenderSystem()->ResizeCanvas(Vector2D(width, height));
+			GetRenderer()->ResizeCanvas(Vector2D(width, height));
 		}
 	});
 	mEventHandler.RegisterForEvent(EEventType::Window, windowCallback);
@@ -183,7 +181,6 @@ void RZE_Engine::Update()
 	CompileEvents();
 	mEventHandler.ProcessEvents();
 
-	mSubSystemHandler.UpdateSubSystems();
 	mComponentHandler.Update();
 
 	mApplication->Update();
@@ -194,9 +191,6 @@ void RZE_Engine::BeginShutDown()
 	LOG_CONSOLE("Shutting engine down...");
 	mApplication->ShutDown();
 	mResourceHandler.ShutDown();
-
-	// #TODO(Josh) shut down renderer and window, etc
-	mSubSystemHandler.ShutDownSubSystems();
 
 	InternalShutDown();
 }
@@ -220,9 +214,4 @@ void RZE_Engine::PostExit()
 ResourceHandler& RZE_Engine::GetResourceHandler()
 {
 	return mResourceHandler;
-}
-
-Diotima::Renderer* RZE_Engine::GetRenderSystem()
-{
-	return mSubSystemHandler.GetSubSystemByIndex<Diotima::Renderer>(0);
 }

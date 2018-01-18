@@ -95,7 +95,7 @@ void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 	AssertNotNull(mMainCamera);
 
 	Apollo::ComponentHandler& handler = RZE_Engine::Get()->GetComponentHandler();
-	Diotima::Renderer* const renderSystem = RZE_Engine::Get()->GetRenderSystem();
+	Diotima::Renderer* const renderSystem = RZE_Engine::Get()->GetRenderer();
 
 	GenerateCameraMatrices();
 
@@ -173,7 +173,7 @@ void RenderSystem::RegisterForComponentNotifications()
 
 		item.Material.Color = sDefaultFragColor;
 
-		Int32 itemIdx = RZE_Engine::Get()->GetRenderSystem()->AddRenderItem(item);
+		Int32 itemIdx = RZE_Engine::Get()->GetRenderer()->AddRenderItem(item);
 		mRenderItemEntityMap[entityID] = itemIdx;
 	});
 	handler.RegisterForComponentAddNotification<MeshComponent>(OnMeshComponentAdded);
@@ -187,7 +187,7 @@ void RenderSystem::RegisterForComponentNotifications()
 		item.Color = lightComp->Color;
 		item.Strength = lightComp->Strength;
 
-		Int32 itemIdx = RZE_Engine::Get()->GetRenderSystem()->AddLightItem(item);
+		Int32 itemIdx = RZE_Engine::Get()->GetRenderer()->AddLightItem(item);
 		mLightItemEntityMap[entityID] = itemIdx;
 	});
 	handler.RegisterForComponentAddNotification<LightSourceComponent>(OnLightSourceComponentAdded);
