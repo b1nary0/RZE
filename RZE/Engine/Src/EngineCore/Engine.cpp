@@ -74,6 +74,9 @@ void RZE_Engine::Init()
 
 		CreateAndInitializeWindow();
 
+		RegisterWindowEvents();
+		RegisterInputEvents();
+
 		mRenderer = new Diotima::Renderer();
 		mRenderer->Initialize();
 
@@ -82,8 +85,8 @@ void RZE_Engine::Init()
 
 		mComponentHandler.AddSystem<RenderSystem>();
 
-		RegisterWindowEvents();
-		RegisterInputEvents();
+		mActiveScene = new GameScene();
+		mActiveScene->Initialize();
 
 		bIsInitialized = true;
 	}
@@ -94,6 +97,8 @@ void RZE_Engine::PostInit(Functor<RZE_Game* const>& createApplicationCallback)
 	LOG_CONSOLE("RZE_EngineCore::PostInit() called.");
 
 	InitGame(createApplicationCallback);
+
+	mActiveScene->Start();
 }
 
 void RZE_Engine::CreateAndInitializeWindow()
@@ -182,13 +187,15 @@ void RZE_Engine::Update()
 	mEventHandler.ProcessEvents();
 
 	mComponentHandler.Update();
-
 	mApplication->Update();
+	mActiveScene->Update();
 }
 
 void RZE_Engine::BeginShutDown()
 {
 	LOG_CONSOLE("Shutting engine down...");
+	
+	mActiveScene->Finish();
 	mApplication->ShutDown();
 	mResourceHandler.ShutDown();
 
@@ -200,10 +207,14 @@ void RZE_Engine::InternalShutDown()
 	AssertNotNull(mMainWindow);
 	AssertNotNull(mEngineConfig);
 	AssertNotNull(mApplication);
+	AssertNotNull(mRenderer);
+	AssertNotNull(mActiveScene);
 
 	delete mMainWindow;
 	delete mEngineConfig;
 	delete mApplication;
+	delete mRenderer;
+	delete mActiveScene;
 }
 
 void RZE_Engine::PostExit()

@@ -14,6 +14,8 @@
 #include <EngineCore/Input/InputHandler.h>
 #include <EngineCore/Resources/ResourceHandler.h>
 
+#include <Game/GameScene.h>
+
 #include <Apollo/ComponentHandler.h>
 
 #include <Diotima/Renderer.h>
@@ -57,6 +59,7 @@ public:
 
 	Diotima::Renderer* GetRenderer() const { return mRenderer; }
 
+	// #TODO(Josh) this needs to return an actual thing, just placeholder atm
 	inline float GetDeltaTime() const { return 1.0f / 60.0f; }
 
 private:
@@ -88,10 +91,13 @@ private:
 	ResourceHandler mResourceHandler;
 	EventHandler mEventHandler;
 	InputHandler mInputHandler;
+
 	Apollo::ComponentHandler mComponentHandler;
 	Diotima::Renderer* mRenderer;
 
 	EngineConfig* mEngineConfig;
+
+	GameScene* mActiveScene;
 
 	bool bIsInitialized;
 	bool bShouldExit;
