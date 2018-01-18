@@ -72,7 +72,6 @@ private:
 
 	void CompileEvents();
 
-	void RegisterSubSystems();
 	void RegisterWindowEvents();
 	void RegisterInputEvents();
 
@@ -84,14 +83,13 @@ private:
 private:
 	RZE_Game* mApplication;
 
-	Diotima::Renderer* mRenderer;
-
 	Win32Window* mMainWindow;
 
 	ResourceHandler mResourceHandler;
 	EventHandler mEventHandler;
 	InputHandler mInputHandler;
 	Apollo::ComponentHandler mComponentHandler;
+	Diotima::Renderer* mRenderer;
 
 	EngineConfig* mEngineConfig;
 
