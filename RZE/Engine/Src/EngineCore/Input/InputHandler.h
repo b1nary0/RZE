@@ -73,6 +73,11 @@ class InputHandler
 		float Wheel;
 		Functor<void, const Vector3D&, Int32> Func;
 	};
+	
+	struct MouseButtonBinding
+	{
+		// #TODO(Josh) Fill me
+	};
 
 public:
 	InputHandler();
@@ -84,18 +89,24 @@ public:
 
 	void OnKeyDown(const Int32 key, bool bIsRepeat);
 	void OnKeyUp(const Int32 key);
+
 	void OnMouseMove(const Int32 xPos, const Int32 yPos);
 	void OnMouseWheel(const Int32 value);
+	void OnMouseDown(const Int32 button, const Int32 xPos, const Int32 yPos);
+	void OnMouseUp(const Int32 button, const Int32 xPos, const Int32 yPos);
 
 private:
 	void RaiseKeyEvent(const InputKey& inputKey);
 	void RaiseMouseAxisEvent(const Vector2D& axis, Int32 wheel);
+	void RaiseMouseButtonEvent(const Int32 button, const Int32 xPos, const Int32 yPos);
 
 private:
 	std::vector<InputKey> mInputKeyRegistry;
 
 	std::unordered_map<Int32, KeyboardActionBinding> mKeyboardBindings;
 	std::unordered_map<EAxisBinding::T, std::vector<AxisBinding>> mAxisBindings;
+	// The below should change when I implement a proper mouse button enum. Just did this for quick test implementation
+	std::unordered_map <Int32, std::vector<MouseButtonBinding>> mMouseBtnBindings;
 
 private:
 	KeyboardState mKeyboardState;
