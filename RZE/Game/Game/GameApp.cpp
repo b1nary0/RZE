@@ -31,33 +31,32 @@ void GameApp::Start()
 {
 	RZE_Game::Start();
 
+	GameScene& scene = RZE_Engine::Get()->GetActiveScene();
+
 	// ALL TEST CODE
-
-	Apollo::ComponentHandler& componentHandler = RZE_Engine::Get()->GetComponentHandler();
-
-	componentHandler.AddSystem<RotateSystem>();
+	scene.GetEntityHandler().AddSystem<RotateSystem>();
 	
-	Apollo::EntityID floor = componentHandler.CreateEntity();
-	componentHandler.AddComponent<MeshComponent>(floor, FilePath("Engine/Assets/3D/Cube.obj"));
-	componentHandler.AddComponent<TransformComponent>(floor, Vector3D(-5.0f, -5.5f, -5.0f), Quaternion(), Vector3D(10.0f, 0.5f, 10.0f));
+	Apollo::EntityID floor = scene.GetEntityHandler().CreateEntity();
+	scene.GetEntityHandler().AddComponent<MeshComponent>(floor, FilePath("Engine/Assets/3D/Cube.obj"));
+	scene.GetEntityHandler().AddComponent<TransformComponent>(floor, Vector3D(-5.0f, -5.5f, -5.0f), Quaternion(), Vector3D(10.0f, 0.5f, 10.0f));
 
 	// Leaving the for loop for testing purposes
 	for (int i = 0; i < 1; ++i)
 	{
-		Apollo::EntityID entity = componentHandler.CreateEntity();
+		Apollo::EntityID entity = scene.GetEntityHandler().CreateEntity();
 
-		componentHandler.AddComponent<MeshComponent>(entity, FilePath("Engine/Assets/3D/Nanosuit/Nanosuit.obj"));
-		componentHandler.AddComponent<TransformComponent>(entity, Vector3D(0.0f, -5.0f, 0.0f), Quaternion(), Vector3D(0.5f));
+		scene.GetEntityHandler().AddComponent<MeshComponent>(entity, FilePath("Engine/Assets/3D/Nanosuit/Nanosuit.obj"));
+		scene.GetEntityHandler().AddComponent<TransformComponent>(entity, Vector3D(0.0f, -5.0f, 0.0f), Quaternion(), Vector3D(0.5f));
 	}
 
-	Apollo::EntityID lightSource = componentHandler.CreateEntity();
-	componentHandler.AddComponent<MeshComponent>(lightSource, FilePath("Engine/Assets/3D/Cube.obj"));
-	componentHandler.AddComponent<LightSourceComponent>(lightSource, Vector3D(0.8f, 0.8f, 0.8f), 1.5f);
-	componentHandler.AddComponent<TransformComponent>(lightSource, Vector3D(0.0f, 2.0f, 6.0f), Quaternion(), Vector3D(1.0f));
+	Apollo::EntityID lightSource = scene.GetEntityHandler().CreateEntity();
+	scene.GetEntityHandler().AddComponent<MeshComponent>(lightSource, FilePath("Engine/Assets/3D/Cube.obj"));
+	scene.GetEntityHandler().AddComponent<LightSourceComponent>(lightSource, Vector3D(0.8f, 0.8f, 0.8f), 1.5f);
+	scene.GetEntityHandler().AddComponent<TransformComponent>(lightSource, Vector3D(0.0f, 2.0f, 6.0f), Quaternion(), Vector3D(1.0f));
 
-	Apollo::EntityID camera = componentHandler.CreateEntity();
-	componentHandler.AddComponent<CameraComponent>(camera);
-	CameraComponent* const camComp = componentHandler.GetComponent<CameraComponent>(camera);
+	Apollo::EntityID camera = scene.GetEntityHandler().CreateEntity();
+	scene.GetEntityHandler().AddComponent<CameraComponent>(camera);
+	CameraComponent* const camComp = scene.GetEntityHandler().GetComponent<CameraComponent>(camera);
 	camComp->Position = Vector3D(-4.0f, 3.0f, 8.0f);
 	camComp->FOV = 45;
 	camComp->NearCull = 0.1f;

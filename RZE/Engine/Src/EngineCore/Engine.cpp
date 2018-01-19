@@ -83,8 +83,6 @@ void RZE_Engine::Init()
 		mResourceHandler.Init();
 		mInputHandler.Initialize();
 
-		mComponentHandler.AddSystem<RenderSystem>();
-
 		mActiveScene = new GameScene();
 		mActiveScene->Initialize();
 
@@ -186,7 +184,6 @@ void RZE_Engine::Update()
 	CompileEvents();
 	mEventHandler.ProcessEvents();
 
-	mComponentHandler.Update();
 	mApplication->Update();
 	mActiveScene->Update();
 }
@@ -225,4 +222,10 @@ void RZE_Engine::PostExit()
 ResourceHandler& RZE_Engine::GetResourceHandler()
 {
 	return mResourceHandler;
+}
+
+GameScene& RZE_Engine::GetActiveScene()
+{
+	AssertNotNull(mActiveScene);
+	return *mActiveScene;
 }

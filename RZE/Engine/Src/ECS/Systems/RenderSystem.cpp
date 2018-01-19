@@ -76,8 +76,6 @@ RenderSystem::RenderSystem()
 
 void RenderSystem::Initialize()
 {
-	Apollo::ComponentHandler& componentHandler = RZE_Engine::Get()->GetComponentHandler();
-
 	Apollo::ComponentTypeID<Apollo::ComponentBase>::GetComponentTypeID<TransformComponent>();
 	Apollo::ComponentTypeID<Apollo::ComponentBase>::GetComponentTypeID<MeshComponent>();
 
@@ -94,7 +92,7 @@ void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 {
 	AssertNotNull(mMainCamera);
 
-	Apollo::ComponentHandler& handler = RZE_Engine::Get()->GetComponentHandler();
+	Apollo::EntityHandler& handler = RZE_Engine::Get()->GetActiveScene().GetEntityHandler();
 	Diotima::Renderer* const renderSystem = RZE_Engine::Get()->GetRenderer();
 
 	GenerateCameraMatrices();
@@ -136,12 +134,12 @@ void RenderSystem::ShutDown()
 
 void RenderSystem::RegisterForComponentNotifications()
 {
-	Apollo::ComponentHandler& handler = RZE_Engine::Get()->GetComponentHandler();
+	Apollo::EntityHandler& handler = RZE_Engine::Get()->GetActiveScene().GetEntityHandler();
 
 	//
 	// MeshComponent
 	//
-	Apollo::ComponentHandler::ComponentAddedFunc OnMeshComponentAdded([this](Apollo::EntityID entityID, Apollo::ComponentHandler& handler)
+	Apollo::EntityHandler::ComponentAddedFunc OnMeshComponentAdded([this](Apollo::EntityID entityID, Apollo::EntityHandler& handler)
 	{
 		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entityID);
 		meshComp->Resource = RZE_Engine::Get()->GetResourceHandler().RequestResource<Model3D>(meshComp->ResourcePath);
@@ -179,7 +177,7 @@ void RenderSystem::RegisterForComponentNotifications()
 	handler.RegisterForComponentAddNotification<MeshComponent>(OnMeshComponentAdded);
 
 	// LightSourceComponent
-	Apollo::ComponentHandler::ComponentAddedFunc OnLightSourceComponentAdded([this](Apollo::EntityID entityID, Apollo::ComponentHandler& handler)
+	Apollo::EntityHandler::ComponentAddedFunc OnLightSourceComponentAdded([this](Apollo::EntityID entityID, Apollo::EntityHandler& handler)
 	{
 		LightSourceComponent* const lightComp = handler.GetComponent<LightSourceComponent>(entityID);
 
@@ -195,7 +193,7 @@ void RenderSystem::RegisterForComponentNotifications()
 	//
 	// CameraComponent
 	//
-	Apollo::ComponentHandler::ComponentAddedFunc OnCameraComponentAdded([this](Apollo::EntityID entityID, Apollo::ComponentHandler& handler)
+	Apollo::EntityHandler::ComponentAddedFunc OnCameraComponentAdded([this](Apollo::EntityID entityID, Apollo::EntityHandler& handler)
 	{
 		this->mMainCamera = handler.GetComponent<CameraComponent>(entityID);
 	});

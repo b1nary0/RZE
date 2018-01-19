@@ -23,9 +23,9 @@ void RotateSystem::Initialize()
 {
 	InternalGetComponentFilter().AddFilterType<CameraComponent>();
 
-	Apollo::ComponentHandler& handler = RZE_Engine::Get()->GetComponentHandler();
+	Apollo::EntityHandler& handler = RZE_Engine::Get()->GetActiveScene().GetEntityHandler();
 
-	Apollo::ComponentHandler::ComponentAddedFunc camCompAdded([this](Apollo::EntityID entityID, Apollo::ComponentHandler& handler)
+	Apollo::EntityHandler::ComponentAddedFunc camCompAdded([this](Apollo::EntityID entityID, Apollo::EntityHandler& handler)
 	{
 		CameraComponent* const camComp = handler.GetComponent<CameraComponent>(entityID);
 		AssertNotNull(camComp);

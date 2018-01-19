@@ -14,10 +14,10 @@ namespace Apollo
 {
 	typedef U32 EntityID;
 
-	class ComponentHandler
+	class EntityHandler
 	{
 	public:
-		typedef Functor<void, EntityID, ComponentHandler&> ComponentAddedFunc;
+		typedef Functor<void, EntityID, EntityHandler&> ComponentAddedFunc;
 
 		typedef std::vector<Entity> EntityList;
 		typedef std::vector<ComponentBase*> ComponentList;
@@ -26,7 +26,7 @@ namespace Apollo
 		typedef std::unordered_map<ComponentID, std::vector<ComponentAddedFunc>> OnComponentAddedMap;
 
 	public:
-		ComponentHandler();
+		EntityHandler();
 
 	public:
 		void Initialize();
@@ -77,7 +77,7 @@ namespace Apollo
 	};
 
 	template <typename TComponent>
-	bool ComponentHandler::HasComponent(EntityID entityID) const
+	bool EntityHandler::HasComponent(EntityID entityID) const
 	{
 		if (entityID >= mCapacity)
 		{
@@ -89,7 +89,7 @@ namespace Apollo
 	}
 
 	template <typename TSystemType, typename... TArgs>
-	TSystemType* ComponentHandler::AddSystem(TArgs... args)
+	TSystemType* EntityHandler::AddSystem(TArgs... args)
 	{
 		TSystemType* const system = new TSystemType(std::forward<TArgs>(args)...);
 		mSystems.push_back(system);
@@ -98,7 +98,7 @@ namespace Apollo
 	}
 
 	template <typename TComponent>
-	void ComponentHandler::ForEach(Functor<void, EntityID> callback)
+	void EntityHandler::ForEach(Functor<void, EntityID> callback)
 	{
 		std::bitset<ENTITY_MAX_COMPONENTS> componentSet;
 		componentSet[TComponent::GetID()] = true;
@@ -114,7 +114,7 @@ namespace Apollo
 	}
 
 	template <typename TComponent0, typename TComponent1>
-	void ComponentHandler::ForEach(Functor<void, EntityID> callback)
+	void EntityHandler::ForEach(Functor<void, EntityID> callback)
 	{
 		std::bitset<ENTITY_MAX_COMPONENTS> componentSet;
 		componentSet[TComponent0::GetID()] = true;
@@ -131,14 +131,14 @@ namespace Apollo
 	}
 
 	template <typename TComponentType>
-	void ComponentHandler::RegisterForComponentAddNotification(ComponentAddedFunc callback)
+	void EntityHandler::RegisterForComponentAddNotification(ComponentAddedFunc callback)
 	{
 		ComponentID componentID = TComponentType::GetID();
 		mOnComponentAddedMap[componentID].push_back(callback);
 	}
 
 	template <typename TComponentType, typename... TArgs>
-	TComponentType* ComponentHandler::AddComponent(EntityID entityID, TArgs... args)
+	TComponentType* EntityHandler::AddComponent(EntityID entityID, TArgs... args)
 	{
 		if (HasComponent<TComponentType>(entityID))
 		{
@@ -164,7 +164,7 @@ namespace Apollo
 	}
 
 	template <typename TComponentType>
-	TComponentType* ComponentHandler::GetComponent(EntityID entityID)
+	TComponentType* EntityHandler::GetComponent(EntityID entityID)
 	{
 		if (!HasComponent<TComponentType>(entityID))
 		{
