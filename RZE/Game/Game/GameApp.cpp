@@ -16,7 +16,7 @@
 #include <ECS/Components/TransformComponent.h>
 #include <ECS/Components/MaterialComponent.h>
 
-#include <Game/Systems/RotateSystem.h>
+#include <Game/Systems/WeirdTempInputSystem.h>
 
 GameApp::GameApp()
 	: RZE_Game()
@@ -34,7 +34,7 @@ void GameApp::Start()
 	GameScene& scene = RZE_Engine::Get()->GetActiveScene();
 
 	// ALL TEST CODE
-	scene.GetEntityHandler().AddSystem<RotateSystem>();
+	scene.GetEntityHandler().AddSystem<WeirdTempInputSystem>();
 	
 	Apollo::EntityID floor = scene.GetEntityHandler().CreateEntity();
 	scene.GetEntityHandler().AddComponent<MeshComponent>(floor, FilePath("Engine/Assets/3D/Cube.obj"));
