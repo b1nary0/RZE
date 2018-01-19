@@ -13,9 +13,9 @@ GameScene::~GameScene()
 
 void GameScene::Initialize()
 {
-	mComponentHandler.Initialize();
+	mEntityHandler.Initialize();
 
-	mComponentHandler.AddSystem<RenderSystem>();
+	mEntityHandler.AddSystem<RenderSystem>();
 }
 
 void GameScene::Start()
@@ -24,10 +24,10 @@ void GameScene::Start()
 
 void GameScene::Update()
 {
-	mComponentHandler.Update();
+	mEntityHandler.Update();
 }
 
 void GameScene::Finish()
 {
-	mComponentHandler.ShutDown();
+	mEntityHandler.ShutDown();
 }
