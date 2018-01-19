@@ -98,7 +98,8 @@ public:
 private:
 	void RaiseKeyEvent(const InputKey& inputKey);
 	void RaiseMouseAxisEvent(const Vector2D& axis, Int32 wheel);
-	void RaiseMouseButtonEvent(const Int32 button, const Int32 xPos, const Int32 yPos);
+	void RaiseMouseButtonDownEvent(const Int32 button, const Int32 xPos, const Int32 yPos);
+	void RaiseMouseButtonUpEvent(const Int32 button, const Int32 xPos, const Int32 yPos);
 
 private:
 	std::vector<InputKey> mInputKeyRegistry;

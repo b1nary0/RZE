@@ -90,12 +90,16 @@ void InputHandler::OnMouseDown(const Int32 button, const Int32 xPos, const Int32
 {
 	mMouseState.PrevMouseBtnStates[button] = mMouseState.CurMouseBtnStates[button];
 	mMouseState.CurMouseBtnStates[button] = true;
+
+	RaiseMouseButtonDownEvent(button, xPos, yPos);
 }
 
 void InputHandler::OnMouseUp(const Int32 button, const Int32 xPos, const Int32 yPos)
 {
 	mMouseState.PrevMouseBtnStates[button] = mMouseState.CurMouseBtnStates[button];
 	mMouseState.CurMouseBtnStates[button] = false;
+
+	RaiseMouseButtonUpEvent(button, xPos, yPos);
 }
 
 void InputHandler::RaiseKeyEvent(const InputKey& inputKey)
@@ -120,7 +124,12 @@ void InputHandler::RaiseMouseAxisEvent(const Vector2D& axis, Int32 wheel)
 	}
 }
 
-void InputHandler::RaiseMouseButtonEvent(const Int32 button, const Int32 xPos, const Int32 yPos)
+void InputHandler::RaiseMouseButtonDownEvent(const Int32 button, const Int32 xPos, const Int32 yPos)
+{
+
+}
+
+void InputHandler::RaiseMouseButtonUpEvent(const Int32 button, const Int32 xPos, const Int32 yPos)
 {
 
 }
