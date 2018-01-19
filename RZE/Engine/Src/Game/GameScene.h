@@ -13,10 +13,10 @@ public:
 	virtual void Update();
 	virtual void Finish();
 
-	Apollo::EntityHandler& GetEntityHandler() { return mComponentHandler; }
+	Apollo::EntityHandler& GetEntityHandler() { return mEntityHandler; }
 
 public:
 	void Initialize();
 
-	Apollo::EntityHandler mComponentHandler;
+	Apollo::EntityHandler mEntityHandler;
 };
