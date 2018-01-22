@@ -57,7 +57,7 @@ private:
 			PrevMouseBtnStates.reset();
 		}
 
-		EButtonState::T GetButtonState(EMouseButton::T button)
+		EButtonState::T GetButtonState(EMouseButton::T button) const
 		{
 			EButtonState::T buttonState = CurMouseBtnStates[button] ? EButtonState::ButtonState_Pressed : EButtonState::ButtonState_Released;
 			if (CurMouseBtnStates[button] && PrevMouseBtnStates[button])
@@ -118,6 +118,8 @@ public:
 	void OnMouseWheel(const Int32 value);
 	void OnMouseDown(const EMouseButton::T button, const Int32 xPos, const Int32 yPos);
 	void OnMouseUp(const EMouseButton::T button, const Int32 xPos, const Int32 yPos);
+
+	const MouseState& GetMouseState() { return mMouseState; }
 
 private:
 	void RaiseKeyEvent(const InputKey& inputKey);

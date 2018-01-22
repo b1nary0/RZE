@@ -48,7 +48,13 @@ void Vector2D::SetXY(float newX, float newY)
 	mVec.y = newY;
 }
 
-const glm::vec2& Vector2D::GetInernalVec()
+const glm::vec2& Vector2D::GetInternalVec() const
 {
 	return mVec;
+}
+
+Vector2D Vector2D::operator-(const Vector2D& other)
+{
+	glm::vec2 vec = GetInternalVec() - other.GetInternalVec();
+	return Vector2D(vec.x, vec.y);
 }
