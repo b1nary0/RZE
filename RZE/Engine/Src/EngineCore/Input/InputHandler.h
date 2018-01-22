@@ -29,7 +29,7 @@ private:
 			PrevKeyStates.reset();
 		}
 
-		EButtonState::T GetButtonState(Int32 key)
+		EButtonState::T GetButtonState(Int32 key) const
 		{
 			EButtonState::T buttonState = CurKeyStates[key] ? EButtonState::ButtonState_Pressed : EButtonState::ButtonState_Released;
 			if (CurKeyStates[key] && PrevKeyStates[key])
@@ -120,6 +120,7 @@ public:
 	void OnMouseUp(const EMouseButton::T button, const Int32 xPos, const Int32 yPos);
 
 	const MouseState& GetMouseState() { return mMouseState; }
+	const KeyboardState& GetKeyboardState() { return mKeyboardState; }
 
 private:
 	void RaiseKeyEvent(const InputKey& inputKey);
