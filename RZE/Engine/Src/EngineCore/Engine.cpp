@@ -19,6 +19,7 @@ RZE_Engine::RZE_Engine()
 	mMainWindow = nullptr;
 	mEngineConfig = nullptr;
 	mApplication = nullptr;
+	mRenderer = nullptr;
 
 	bShouldExit = false;
 	bIsInitialized = false;
@@ -43,6 +44,8 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 		{
 			{
 				Update();
+
+				mRenderer->Update();
 			}
 			mMainWindow->BufferSwap(); // #TODO(Josh) Maybe this can be done better
 		}
@@ -71,16 +74,17 @@ void RZE_Engine::Init()
 
 		CreateAndInitializeWindow();
 
-		RegisterSubSystems();
+		RegisterWindowEvents();
+		RegisterInputEvents();
 
-		mSubSystemHandler.InitializeSubSystems();
+		mRenderer = new Diotima::Renderer();
+		mRenderer->Initialize();
+
 		mResourceHandler.Init();
 		mInputHandler.Initialize();
 
-		mComponentHandler.AddSystem<RenderSystem>();
-
-		RegisterWindowEvents();
-		RegisterInputEvents();
+		mActiveScene = new GameScene();
+		mActiveScene->Initialize();
 
 		bIsInitialized = true;
 	}
@@ -91,6 +95,8 @@ void RZE_Engine::PostInit(Functor<RZE_Game* const>& createApplicationCallback)
 	LOG_CONSOLE("RZE_EngineCore::PostInit() called.");
 
 	InitGame(createApplicationCallback);
+
+	mActiveScene->Start();
 }
 
 void RZE_Engine::CreateAndInitializeWindow()
@@ -128,11 +134,6 @@ void RZE_Engine::CompileEvents()
 	mMainWindow->CompileWindowMessages(mEventHandler);
 }
 
-void RZE_Engine::RegisterSubSystems()
-{
-	mSubSystemHandler.AddSubSystem<Diotima::Renderer>();
-}
-
 void RZE_Engine::RegisterWindowEvents()
 {
 	Functor<void, const Event&> windowCallback([this](const Event& event)
@@ -146,7 +147,7 @@ void RZE_Engine::RegisterWindowEvents()
 		{
 			U16 width = event.mWindowEvent.mSizeX;
 			U16 height = event.mWindowEvent.mSizeY;
-			GetRenderSystem()->ResizeCanvas(Vector2D(width, height));
+			GetRenderer()->ResizeCanvas(Vector2D(width, height));
 		}
 	});
 	mEventHandler.RegisterForEvent(EEventType::Window, windowCallback);
@@ -183,20 +184,17 @@ void RZE_Engine::Update()
 	CompileEvents();
 	mEventHandler.ProcessEvents();
 
-	mSubSystemHandler.UpdateSubSystems();
-	mComponentHandler.Update();
-
 	mApplication->Update();
+	mActiveScene->Update();
 }
 
 void RZE_Engine::BeginShutDown()
 {
 	LOG_CONSOLE("Shutting engine down...");
+	
+	mActiveScene->Finish();
 	mApplication->ShutDown();
 	mResourceHandler.ShutDown();
-
-	// #TODO(Josh) shut down renderer and window, etc
-	mSubSystemHandler.ShutDownSubSystems();
 
 	InternalShutDown();
 }
@@ -206,10 +204,14 @@ void RZE_Engine::InternalShutDown()
 	AssertNotNull(mMainWindow);
 	AssertNotNull(mEngineConfig);
 	AssertNotNull(mApplication);
+	AssertNotNull(mRenderer);
+	AssertNotNull(mActiveScene);
 
 	delete mMainWindow;
 	delete mEngineConfig;
 	delete mApplication;
+	delete mRenderer;
+	delete mActiveScene;
 }
 
 void RZE_Engine::PostExit()
@@ -222,7 +224,8 @@ ResourceHandler& RZE_Engine::GetResourceHandler()
 	return mResourceHandler;
 }
 
-Diotima::Renderer* RZE_Engine::GetRenderSystem()
+GameScene& RZE_Engine::GetActiveScene()
 {
-	return mSubSystemHandler.GetSubSystemByIndex<Diotima::Renderer>(0);
+	AssertNotNull(mActiveScene);
+	return *mActiveScene;
 }

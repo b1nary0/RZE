@@ -14,7 +14,9 @@
 #include <EngineCore/Input/InputHandler.h>
 #include <EngineCore/Resources/ResourceHandler.h>
 
-#include <Apollo/ComponentHandler.h>
+#include <Game/GameScene.h>
+
+#include <Apollo/EntityHandler.h>
 
 #include <Diotima/Renderer.h>
 
@@ -52,15 +54,13 @@ public:
 	const Vector2D& GetWindowSize() const;
 
 	ResourceHandler&			GetResourceHandler();
-	Apollo::ComponentHandler&	GetComponentHandler() { return mComponentHandler; }
 	InputHandler&				GetInputHandler() { return mInputHandler; }
+	Diotima::Renderer* GetRenderer() const { return mRenderer; }
+	GameScene& GetActiveScene();
 
 
-	// #TODO(Josh) Totally test. This is not good.
-	Diotima::Renderer* GetRenderSystem();
+	// #TODO(Josh) this needs to return an actual thing, just placeholder atm
 	inline float GetDeltaTime() const { return 1.0f / 60.0f; }
-
-
 
 private:
 
@@ -75,7 +75,6 @@ private:
 
 	void CompileEvents();
 
-	void RegisterSubSystems();
 	void RegisterWindowEvents();
 	void RegisterInputEvents();
 
@@ -85,9 +84,6 @@ private:
 	void InitGame(Functor<RZE_Game* const> createGameCallback);
 
 private:
-	SubSystemHandler mSubSystemHandler;
-
-private:
 	RZE_Game* mApplication;
 
 	Win32Window* mMainWindow;
@@ -95,9 +91,12 @@ private:
 	ResourceHandler mResourceHandler;
 	EventHandler mEventHandler;
 	InputHandler mInputHandler;
-	Apollo::ComponentHandler mComponentHandler;
+
+	Diotima::Renderer* mRenderer;
 
 	EngineConfig* mEngineConfig;
+
+	GameScene* mActiveScene;
 
 	bool bIsInitialized;
 	bool bShouldExit;

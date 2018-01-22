@@ -173,15 +173,19 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 
 		case WM_LBUTTONDOWN:
 		{
-			MouseEvent mouseEvent(EMouseEventType::Mouse_LClick, 0, 0);
-			//eventHandler.PostMouseEvent(mouseEvent);
+			const Int32 xPos = GET_X_LPARAM(msg.lParam);
+			const Int32 yPos = GET_Y_LPARAM(msg.lParam);
+
+			inputHandler.OnMouseDown(EMouseButton::MouseButton_Left, xPos, yPos);
 		}
 		break;
 
 		case WM_LBUTTONUP:
 		{
-			MouseEvent mouseEvent(EMouseEventType::Mouse_LRelease, 0, 0);
-			//eventHandler.PostMouseEvent(mouseEvent);
+			const Int32 xPos = GET_X_LPARAM(msg.lParam);
+			const Int32 yPos = GET_Y_LPARAM(msg.lParam);
+
+			inputHandler.OnMouseUp(EMouseButton::MouseButton_Left, xPos, yPos);
 		}
 		break;
 

@@ -1,10 +1,10 @@
-#include <Apollo/ComponentHandler.h>
+#include <Apollo/EntityHandler.h>
 
 #include <Utils/Platform/Timers/HiResTimer.h>
 
 namespace Apollo
 {
-	ComponentHandler::ComponentHandler()
+	EntityHandler::EntityHandler()
 	{
 		mNextAvailEntityID = 0;
 		mCapacity = 0;
@@ -13,7 +13,7 @@ namespace Apollo
 		Initialize();
 	}
 
-	EntityID ComponentHandler::CreateEntity()
+	EntityID EntityHandler::CreateEntity()
 	{
 		TryResize();
 
@@ -28,17 +28,17 @@ namespace Apollo
 		return id;
 	}
 
-	Entity& ComponentHandler::GetEntity(EntityID entityID)
+	Entity& EntityHandler::GetEntity(EntityID entityID)
 	{
 		return mEntities[entityID];
 	}
 
-	void ComponentHandler::Initialize()
+	void EntityHandler::Initialize()
 	{
 		mCapacity = Resize(32);
 	}
 
-	void ComponentHandler::Update()
+	void EntityHandler::Update()
 	{
 		for (size_t idx = 0; idx < mSystems.size(); ++idx)
 		{
@@ -53,12 +53,12 @@ namespace Apollo
 		}
 	}
 
-	void ComponentHandler::ShutDown()
+	void EntityHandler::ShutDown()
 	{
 
 	}
 
-	U32 ComponentHandler::TryResize()
+	U32 EntityHandler::TryResize()
 	{
 		if (mCapacity > mNextAvailEntityID)
 		{
@@ -69,7 +69,7 @@ namespace Apollo
 		return Resize(newCapacity);
 	}
 
-	U32 ComponentHandler::Resize(U32 newCapacity)
+	U32 EntityHandler::Resize(U32 newCapacity)
 	{
 		mEntities.resize(newCapacity);
 
