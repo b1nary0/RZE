@@ -8,11 +8,21 @@
 
 namespace EButtonState
 {
-	enum T
+	enum T : Int32
 	{
 		ButtonState_Pressed,
 		ButtonState_Released,
 		ButtonState_Hold
+	};
+}
+
+namespace EMouseButton
+{
+	enum T : Int32
+	{
+		MouseButton_Left,
+		MouseButton_Middle,
+		MouseButton_Right
 	};
 }
 

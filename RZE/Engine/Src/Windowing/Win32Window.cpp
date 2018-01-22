@@ -176,7 +176,7 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 			const Int32 xPos = GET_X_LPARAM(msg.lParam);
 			const Int32 yPos = GET_Y_LPARAM(msg.lParam);
 
-			inputHandler.OnMouseDown(0, xPos, yPos);
+			inputHandler.OnMouseDown(EMouseButton::MouseButton_Left, xPos, yPos);
 		}
 		break;
 
@@ -185,7 +185,7 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 			const Int32 xPos = GET_X_LPARAM(msg.lParam);
 			const Int32 yPos = GET_Y_LPARAM(msg.lParam);
 
-			inputHandler.OnMouseUp(0, xPos, yPos);
+			inputHandler.OnMouseUp(EMouseButton::MouseButton_Left, xPos, yPos);
 		}
 		break;
 
