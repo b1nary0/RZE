@@ -101,9 +101,6 @@ void RZE_Engine::PostInit(Functor<RZE_Game* const>& createApplicationCallback)
 
 void RZE_Engine::CreateAndInitializeWindow()
 {
-	// #TODO(Josh) Move this somewhere else and deal with it so the console ALWAYS shows up in a visible spot.
-	SetWindowPos(GetConsoleWindow(), 0, 1024, 600, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
-
 	WindowSettings& windowSettings = mEngineConfig->GetWindowSettings();
 
 	Win32Window::WindowCreationParams params;

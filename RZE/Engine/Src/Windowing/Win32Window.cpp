@@ -144,6 +144,8 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 		}
 
 		InternalSetWindowPosition(Vector2D(0, 0));
+		// #NOTE(Josh) Gonna put this here for now instead of in Engine.cpp until it has a better home
+		SetWindowPos(GetConsoleWindow(), 0, 1024, 600, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
 	}
 }
 
