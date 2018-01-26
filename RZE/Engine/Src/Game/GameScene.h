@@ -15,8 +15,9 @@ public:
 
 	Apollo::EntityHandler& GetEntityHandler() { return mEntityHandler; }
 
-public:
 	void Initialize();
+
+private:
 
 	Apollo::EntityHandler mEntityHandler;
 };

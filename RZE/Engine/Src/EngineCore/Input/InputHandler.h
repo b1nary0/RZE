@@ -16,6 +16,7 @@ class InputHandler
 {
 public:
 	typedef Functor<void, const Int32, const Int32> MouseActionFunc;
+	typedef Functor<void, const InputKey&> KeyActionFunc;
 
 private:
 	struct KeyboardState
@@ -77,7 +78,7 @@ private:
 
 	struct KeyboardActionBinding : public ActionBinding
 	{
-		Functor<void, const InputKey&> Func;
+		KeyActionFunc Func;
 	};
 
 	struct AxisBinding
@@ -107,7 +108,7 @@ public:
 public:
 	void Initialize();
 
-	void BindAction(Int32 keyCode, EButtonState::T buttonState, Functor<void, const InputKey&> func);
+	void BindAction(Int32 keyCode, EButtonState::T buttonState, KeyActionFunc func);
 	void BindAxis(EAxisBinding::T bindingType, EAxisType::T axisType, Functor<void, const Vector3D&, Int32> func);
 	void BindMouseAction(EMouseButton::T button, EButtonState::T state, MouseActionFunc func);
 

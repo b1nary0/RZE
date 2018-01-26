@@ -1,7 +1,10 @@
 #pragma once
 
 #include <string>
+
 #include <Utils/PrimitiveDefs.h>
+
+#include <Windowing/WinKeyCodes.h>
 
 #define MAX_KEYCODES_SUPPORTED 256
 #define MAX_MOUSE_BTN_SUPPORTED 3

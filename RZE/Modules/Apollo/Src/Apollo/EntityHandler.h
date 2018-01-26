@@ -18,12 +18,15 @@ namespace Apollo
 	{
 	public:
 		typedef Functor<void, EntityID, EntityHandler&> ComponentAddedFunc;
+		typedef Functor<void, EntityID, EntityHandler&> ComponentRemovedFunc;
 
 		typedef std::vector<Entity> EntityList;
+		typedef std::vector<EntityID> EntityFreeList;
 		typedef std::vector<ComponentBase*> ComponentList;
 		typedef std::vector<EntitySystem*> SystemList;
 		typedef std::unordered_map<EntityID, ComponentList> EntityComponentMapping;
 		typedef std::unordered_map<ComponentID, std::vector<ComponentAddedFunc>> OnComponentAddedMap;
+		typedef std::unordered_map <ComponentID, std::vector<ComponentRemovedFunc>> OnComponentRemovedMap;
 
 	public:
 		EntityHandler();
@@ -33,11 +36,16 @@ namespace Apollo
 		void Update();
 		void ShutDown();
 
+	public:
 		template <typename TComponentType>
 		void RegisterForComponentAddNotification(ComponentAddedFunc callback);
 
+		template <typename TComponentType>
+		void RegisterForComponentRemovedNotification(ComponentRemovedFunc callback);
+
 	public:
 		EntityID CreateEntity();
+		void DestroyEntity(EntityID entityID);
 		Entity& GetEntity(EntityID entityID);
 
 		template <typename TComponentType, typename... TArgs>
@@ -64,16 +72,20 @@ namespace Apollo
 		U32 TryResize();
 		U32 Resize(U32 newCapacity);
 
+		void ResetEntity(EntityID newID);
+
 	private:
 		U32 mCapacity;
 		U32 mSize;
 		EntityID mNextAvailEntityID;
 
 		EntityList mEntities;
+		EntityFreeList mEntityFreeList;
 		EntityComponentMapping mEntityComponentMap;
 		SystemList mSystems;
 
 		OnComponentAddedMap mOnComponentAddedMap;
+		OnComponentRemovedMap mOnComponentRemovedMap;
 	};
 
 	template <typename TComponent>
@@ -135,6 +147,13 @@ namespace Apollo
 	{
 		ComponentID componentID = TComponentType::GetID();
 		mOnComponentAddedMap[componentID].push_back(callback);
+	}
+
+	template <typename TComponentType>
+	void EntityHandler::RegisterForComponentRemovedNotification(ComponentRemovedFunc callback)
+	{
+		ComponentID componentID = TComponentType::GetID();
+		mOnComponentRemovedMap[componentID].push_back(callback);
 	}
 
 	template <typename TComponentType, typename... TArgs>

@@ -55,8 +55,8 @@ public:
 
 	ResourceHandler&			GetResourceHandler();
 	InputHandler&				GetInputHandler() { return mInputHandler; }
-	Diotima::Renderer* GetRenderer() const { return mRenderer; }
-	GameScene& GetActiveScene();
+	Diotima::Renderer*			GetRenderer() const { return mRenderer; }
+	GameScene&					GetActiveScene();
 
 
 	// #TODO(Josh) this needs to return an actual thing, just placeholder atm
@@ -85,6 +85,7 @@ private:
 
 private:
 	RZE_Game* mApplication;
+	GameScene* mActiveScene;
 
 	Win32Window* mMainWindow;
 
@@ -95,8 +96,6 @@ private:
 	Diotima::Renderer* mRenderer;
 
 	EngineConfig* mEngineConfig;
-
-	GameScene* mActiveScene;
 
 	bool bIsInitialized;
 	bool bShouldExit;

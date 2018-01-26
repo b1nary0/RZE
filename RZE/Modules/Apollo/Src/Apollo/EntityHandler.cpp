@@ -15,17 +15,32 @@ namespace Apollo
 
 	EntityID EntityHandler::CreateEntity()
 	{
+		if (!mEntityFreeList.empty())
+		{
+			EntityID id = mEntityFreeList.back();
+			mEntityFreeList.pop_back();
+
+			ResetEntity(id);
+
+			return id;
+		}
+
 		TryResize();
-
 		EntityID id = mNextAvailEntityID++;
-		Entity& entity = mEntities[id];
-
-		entity.mEntityID = id;
-		entity.mComponentSet.reset();
-
-		mEntityComponentMap[id].resize(ENTITY_MAX_COMPONENTS);
+		ResetEntity(id);
 
 		return id;
+	}
+
+	void EntityHandler::DestroyEntity(EntityID entityID)
+	{
+		ComponentList components = mEntityComponentMap[entityID];
+		for (auto& component : components)
+		{
+			delete component;
+		}
+
+		mEntityFreeList.push_back(entityID);
 	}
 
 	Entity& EntityHandler::GetEntity(EntityID entityID)
@@ -76,6 +91,15 @@ namespace Apollo
 		AssertExpr(mEntities.size() == newCapacity);
 		mCapacity = mEntities.size();
 		return mCapacity;
+	}
+
+	void EntityHandler::ResetEntity(EntityID newID)
+	{
+		Entity& entity = mEntities[newID];
+		entity.mEntityID = newID;
+		entity.mComponentSet.reset();
+
+		mEntityComponentMap[newID].resize(ENTITY_MAX_COMPONENTS);
 	}
 
 }
