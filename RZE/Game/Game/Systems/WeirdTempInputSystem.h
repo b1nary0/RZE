@@ -4,11 +4,11 @@
 
 #include <Utils/Math/Vector3D.h>
 
-class RotateSystem : public Apollo::EntitySystem
+class WeirdTempInputSystem : public Apollo::EntitySystem
 {
 public:
-	RotateSystem();
-	virtual ~RotateSystem();
+	WeirdTempInputSystem();
+	virtual ~WeirdTempInputSystem();
 
 	// EntitySystem interface
 public:
@@ -22,4 +22,6 @@ private:
 private:
 	struct CameraComponent* mMainCamera;
 	Vector3D mVelocity;
+
+	bool bIsMouseDown;
 };

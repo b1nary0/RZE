@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Apollo/EntityHandler.h>
+
 class GameScene
 {
 public:
@@ -11,6 +13,11 @@ public:
 	virtual void Update();
 	virtual void Finish();
 
-public:
+	Apollo::EntityHandler& GetEntityHandler() { return mEntityHandler; }
+
 	void Initialize();
+
+private:
+
+	Apollo::EntityHandler mEntityHandler;
 };

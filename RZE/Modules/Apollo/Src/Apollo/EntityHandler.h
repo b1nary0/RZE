@@ -14,30 +14,38 @@ namespace Apollo
 {
 	typedef U32 EntityID;
 
-	class ComponentHandler
+	class EntityHandler
 	{
 	public:
-		typedef Functor<void, EntityID, ComponentHandler&> ComponentAddedFunc;
+		typedef Functor<void, EntityID, EntityHandler&> ComponentAddedFunc;
+		typedef Functor<void, EntityID, EntityHandler&> ComponentRemovedFunc;
 
 		typedef std::vector<Entity> EntityList;
+		typedef std::vector<EntityID> EntityFreeList;
 		typedef std::vector<ComponentBase*> ComponentList;
 		typedef std::vector<EntitySystem*> SystemList;
 		typedef std::unordered_map<EntityID, ComponentList> EntityComponentMapping;
 		typedef std::unordered_map<ComponentID, std::vector<ComponentAddedFunc>> OnComponentAddedMap;
+		typedef std::unordered_map <ComponentID, std::vector<ComponentRemovedFunc>> OnComponentRemovedMap;
 
 	public:
-		ComponentHandler();
+		EntityHandler();
 
 	public:
 		void Initialize();
 		void Update();
 		void ShutDown();
 
+	public:
 		template <typename TComponentType>
 		void RegisterForComponentAddNotification(ComponentAddedFunc callback);
 
+		template <typename TComponentType>
+		void RegisterForComponentRemovedNotification(ComponentRemovedFunc callback);
+
 	public:
 		EntityID CreateEntity();
+		void DestroyEntity(EntityID entityID);
 		Entity& GetEntity(EntityID entityID);
 
 		template <typename TComponentType, typename... TArgs>
@@ -64,20 +72,24 @@ namespace Apollo
 		U32 TryResize();
 		U32 Resize(U32 newCapacity);
 
+		void ResetEntity(EntityID newID);
+
 	private:
 		U32 mCapacity;
 		U32 mSize;
 		EntityID mNextAvailEntityID;
 
 		EntityList mEntities;
+		EntityFreeList mEntityFreeList;
 		EntityComponentMapping mEntityComponentMap;
 		SystemList mSystems;
 
 		OnComponentAddedMap mOnComponentAddedMap;
+		OnComponentRemovedMap mOnComponentRemovedMap;
 	};
 
 	template <typename TComponent>
-	bool ComponentHandler::HasComponent(EntityID entityID) const
+	bool EntityHandler::HasComponent(EntityID entityID) const
 	{
 		if (entityID >= mCapacity)
 		{
@@ -89,7 +101,7 @@ namespace Apollo
 	}
 
 	template <typename TSystemType, typename... TArgs>
-	TSystemType* ComponentHandler::AddSystem(TArgs... args)
+	TSystemType* EntityHandler::AddSystem(TArgs... args)
 	{
 		TSystemType* const system = new TSystemType(std::forward<TArgs>(args)...);
 		mSystems.push_back(system);
@@ -98,7 +110,7 @@ namespace Apollo
 	}
 
 	template <typename TComponent>
-	void ComponentHandler::ForEach(Functor<void, EntityID> callback)
+	void EntityHandler::ForEach(Functor<void, EntityID> callback)
 	{
 		std::bitset<ENTITY_MAX_COMPONENTS> componentSet;
 		componentSet[TComponent::GetID()] = true;
@@ -114,7 +126,7 @@ namespace Apollo
 	}
 
 	template <typename TComponent0, typename TComponent1>
-	void ComponentHandler::ForEach(Functor<void, EntityID> callback)
+	void EntityHandler::ForEach(Functor<void, EntityID> callback)
 	{
 		std::bitset<ENTITY_MAX_COMPONENTS> componentSet;
 		componentSet[TComponent0::GetID()] = true;
@@ -131,14 +143,21 @@ namespace Apollo
 	}
 
 	template <typename TComponentType>
-	void ComponentHandler::RegisterForComponentAddNotification(ComponentAddedFunc callback)
+	void EntityHandler::RegisterForComponentAddNotification(ComponentAddedFunc callback)
 	{
 		ComponentID componentID = TComponentType::GetID();
 		mOnComponentAddedMap[componentID].push_back(callback);
 	}
 
+	template <typename TComponentType>
+	void EntityHandler::RegisterForComponentRemovedNotification(ComponentRemovedFunc callback)
+	{
+		ComponentID componentID = TComponentType::GetID();
+		mOnComponentRemovedMap[componentID].push_back(callback);
+	}
+
 	template <typename TComponentType, typename... TArgs>
-	TComponentType* ComponentHandler::AddComponent(EntityID entityID, TArgs... args)
+	TComponentType* EntityHandler::AddComponent(EntityID entityID, TArgs... args)
 	{
 		if (HasComponent<TComponentType>(entityID))
 		{
@@ -164,7 +183,7 @@ namespace Apollo
 	}
 
 	template <typename TComponentType>
-	TComponentType* ComponentHandler::GetComponent(EntityID entityID)
+	TComponentType* EntityHandler::GetComponent(EntityID entityID)
 	{
 		if (!HasComponent<TComponentType>(entityID))
 		{

@@ -44,6 +44,11 @@ void InputHandler::BindAxis(EAxisBinding::T bindingType, EAxisType::T axisType, 
 	binding.Func = func;
 }
 
+void InputHandler::BindMouseAction(EMouseButton::T button, EButtonState::T state, MouseActionFunc func)
+{
+	mMouseBtnBindings[button].emplace_back(button, state, func);
+}
+
 void InputHandler::OnKeyDown(const Int32 key, bool bIsRepeat)
 {
 	/* 
@@ -86,12 +91,28 @@ void InputHandler::OnMouseWheel(const Int32 value)
 	RaiseMouseAxisEvent(Vector2D(0.0f), mMouseState.CurWheelVal);
 }
 
+void InputHandler::OnMouseDown(const EMouseButton::T button, const Int32 xPos, const Int32 yPos)
+{
+	mMouseState.PrevMouseBtnStates[button] = mMouseState.CurMouseBtnStates[button];
+	mMouseState.CurMouseBtnStates[button] = true;
+
+	RaiseMouseButtonDownEvent(button, xPos, yPos);
+}
+
+void InputHandler::OnMouseUp(const EMouseButton::T button, const Int32 xPos, const Int32 yPos)
+{
+	mMouseState.PrevMouseBtnStates[button] = mMouseState.CurMouseBtnStates[button];
+	mMouseState.CurMouseBtnStates[button] = false;
+
+	RaiseMouseButtonUpEvent(button, xPos, yPos);
+}
+
 void InputHandler::RaiseKeyEvent(const InputKey& inputKey)
 {
+	EButtonState::T buttonState = mKeyboardState.GetButtonState(inputKey.GetKeyCode());
 	auto& bindingIt = mKeyboardBindings.find(inputKey.GetKeyCode());
 	if (bindingIt != mKeyboardBindings.end())
 	{
-	 	EButtonState::T buttonState = mKeyboardState.GetButtonState(inputKey.GetKeyCode());
 	 	KeyboardActionBinding& actionBinding = (*bindingIt).second;
 	 	if (actionBinding.ButtonState == buttonState)
 	 	{
@@ -105,5 +126,27 @@ void InputHandler::RaiseMouseAxisEvent(const Vector2D& axis, Int32 wheel)
 	for (auto& binding : mAxisBindings[EAxisBinding::AxisBinding_Mouse])
 	{
 		binding.Func(Vector3D(axis.X(), axis.Y(), 0.0f), wheel);
+	}
+}
+
+void InputHandler::RaiseMouseButtonDownEvent(const EMouseButton::T button, const Int32 xPos, const Int32 yPos)
+{
+	for (auto& binding : mMouseBtnBindings[button])
+	{ 
+		if (binding.ButtonState == EButtonState::ButtonState_Pressed)
+		{
+			binding.Func(xPos, yPos);
+		}
+	}
+}
+
+void InputHandler::RaiseMouseButtonUpEvent(const EMouseButton::T button, const Int32 xPos, const Int32 yPos)
+{
+	for (auto& binding : mMouseBtnBindings[button])
+	{
+		if (binding.ButtonState == EButtonState::ButtonState_Released)
+		{
+			binding.Func(xPos, yPos);
+		}
 	}
 }

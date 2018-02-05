@@ -18,7 +18,9 @@ public:
 	void SetY(float newY);
 	void SetXY(float newX, float newY);
 
-	const glm::vec2& GetInernalVec();
+	const glm::vec2& GetInternalVec() const;
+
+	Vector2D operator-(const Vector2D& other);
 
 private:
 	glm::vec2 mVec;

@@ -1,18 +1,31 @@
 #pragma once
 
 #include <string>
+
 #include <Utils/PrimitiveDefs.h>
+
+#include <Windowing/WinKeyCodes.h>
 
 #define MAX_KEYCODES_SUPPORTED 256
 #define MAX_MOUSE_BTN_SUPPORTED 3
 
 namespace EButtonState
 {
-	enum T
+	enum T : Int32
 	{
 		ButtonState_Pressed,
 		ButtonState_Released,
 		ButtonState_Hold
+	};
+}
+
+namespace EMouseButton
+{
+	enum T : Int32
+	{
+		MouseButton_Left,
+		MouseButton_Middle,
+		MouseButton_Right
 	};
 }
 
