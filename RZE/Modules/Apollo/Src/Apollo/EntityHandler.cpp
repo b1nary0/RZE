@@ -34,18 +34,44 @@ namespace Apollo
 
 	void EntityHandler::DestroyEntity(EntityID entityID)
 	{
-		ComponentList components = mEntityComponentMap[entityID];
+		ComponentList& components = mEntityComponentMap[entityID];
 		for (auto& component : components)
 		{
+			if (!component)
+			{
+				continue;
+			}
+
+			RemoveComponent(entityID, component->id);
+
 			delete component;
+			component = nullptr;
 		}
 
 		mEntityFreeList.push_back(entityID);
+		ResetEntity(entityID);
 	}
 
 	Entity& EntityHandler::GetEntity(EntityID entityID)
 	{
 		return mEntities[entityID];
+	}
+
+	void EntityHandler::RemoveComponent(EntityID entityID, ComponentID componentID)
+	{
+		// This is done pre-delete so the things that want notification can access the data if needed.
+		// Multithreading may(will?) cause issues for this in the future I believe.
+		if (mOnComponentRemovedMap.count(componentID))
+		{
+			for (auto& func : mOnComponentRemovedMap[componentID])
+			{
+				func(entityID, *this);
+			}
+		}
+
+		mEntities[entityID].mComponentSet[componentID] = false;
+		delete mEntityComponentMap[entityID][componentID];
+		mEntityComponentMap[entityID][componentID] = nullptr;
 	}
 
 	void EntityHandler::Initialize()

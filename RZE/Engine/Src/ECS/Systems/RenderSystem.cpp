@@ -198,6 +198,14 @@ void RenderSystem::RegisterForComponentNotifications()
 		this->mMainCamera = handler.GetComponent<CameraComponent>(entityID);
 	});
 	handler.RegisterForComponentAddNotification<CameraComponent>(OnCameraComponentAdded);
+
+	Apollo::EntityHandler::ComponentRemovedFunc OnMeshComponentRemoved([this](Apollo::EntityID entityID, Apollo::EntityHandler& handler)
+	{
+		Int32 renderIndex = mRenderItemEntityMap[entityID];
+		RZE_Engine::Get()->GetRenderer()->RemoveRenderItem(renderIndex);
+		mRenderItemEntityMap[entityID] = -1;
+	});
+	handler.RegisterForComponentRemovedNotification<MeshComponent>(OnMeshComponentRemoved);
 }
 
 void RenderSystem::GenerateCameraMatrices()

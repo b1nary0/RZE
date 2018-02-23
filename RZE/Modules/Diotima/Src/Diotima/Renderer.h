@@ -34,6 +34,17 @@ namespace Diotima
 			Matrix4x4						ProjectionMat;
 			Matrix4x4						ViewMat;
 			std::vector<GFXMesh*>*			MeshData { nullptr };
+
+			bool bIsValid{ false };
+
+			void Invalidate()
+			{
+				MeshData = nullptr;
+				Textures.clear();
+
+				bIsValid = false;
+			}
+
 		} RenderItemProtocol;
 
 		typedef struct LightItemProtocol
@@ -69,6 +80,8 @@ namespace Diotima
 
 	public:
 		Int32 AddRenderItem(const RenderItemProtocol& itemProtocol);
+		void RemoveRenderItem(const U32 itemIdx);
+
 		inline RenderItemProtocol& GetItemProtocolByIdx(Int32 idx) { return mRenderList[idx]; }
 		Int32 AddLightItem(const LightItemProtocol& itemProtocol);
 		inline LightItemProtocol& GetLightProtocolByIdx(Int32 idx) { return mLightingList[idx]; }
@@ -90,5 +103,7 @@ namespace Diotima
 		CameraItemProtocol camera;
 		std::vector<RenderItemProtocol> mRenderList;
 		std::vector<LightItemProtocol> mLightingList;
+
+		std::queue<Int32> mFreeRenderListIndices;
 	};
 }
