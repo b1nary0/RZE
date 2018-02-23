@@ -273,8 +273,27 @@ namespace Diotima
 
 	Int32 Renderer::AddRenderItem(const RenderItemProtocol& itemProtocol)
 	{
+		if (!mFreeRenderListIndices.empty())
+		{
+			Int32 index = mFreeRenderListIndices.front();
+			mFreeRenderListIndices.pop();
+
+			mRenderList[index] = std::move(itemProtocol);
+			mRenderList[index].bIsValid = true;
+
+			return index;
+		}
+
 		mRenderList.emplace_back(std::move(itemProtocol));
+		mRenderList.back().bIsValid = true;
+
 		return static_cast<Int32>(mRenderList.size() - 1);
+	}
+
+	void Renderer::RemoveRenderItem(const U32 itemIdx)
+	{
+		mRenderList[itemIdx].Invalidate();
+		mFreeRenderListIndices.push(itemIdx);
 	}
 
 	Int32 Renderer::AddLightItem(const LightItemProtocol& itemProtocol)
@@ -327,7 +346,10 @@ namespace Diotima
 		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
 		for(auto& renderItem : mRenderList)
 		{
-			RenderSingleItem(renderItem);
+			if (renderItem.bIsValid)
+			{
+				RenderSingleItem(renderItem);
+			}
 		}
 	}
 
