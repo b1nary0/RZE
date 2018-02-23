@@ -142,6 +142,7 @@ void RenderSystem::RegisterForComponentNotifications()
 	Apollo::EntityHandler::ComponentAddedFunc OnMeshComponentAdded([this](Apollo::EntityID entityID, Apollo::EntityHandler& handler)
 	{
 		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entityID);
+		AssertNotNull(meshComp);
 		meshComp->Resource = RZE_Engine::Get()->GetResourceHandler().RequestResource<Model3D>(meshComp->ResourcePath);
 
 		Diotima::Renderer::RenderItemProtocol item;
@@ -201,6 +202,12 @@ void RenderSystem::RegisterForComponentNotifications()
 
 	Apollo::EntityHandler::ComponentRemovedFunc OnMeshComponentRemoved([this](Apollo::EntityID entityID, Apollo::EntityHandler& handler)
 	{
+		// #TODO(Josh) Is this the best way? Should the component hold logic to clean itself up or should it be entirely just data and the systems worry about cleanup?
+		MeshComponent* const meshComponent = handler.GetComponent<MeshComponent>(entityID);
+		AssertNotNull(meshComponent);
+
+		RZE_Engine::Get()->GetResourceHandler().ReleaseResource(meshComponent->Resource);
+
 		Int32 renderIndex = mRenderItemEntityMap[entityID];
 		RZE_Engine::Get()->GetRenderer()->RemoveRenderItem(renderIndex);
 		mRenderItemEntityMap[entityID] = -1;

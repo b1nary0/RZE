@@ -41,12 +41,13 @@ void GameApp::Start()
 	scene.GetEntityHandler().AddComponent<TransformComponent>(floor, Vector3D(-5.0f, -5.5f, -5.0f), Quaternion(), Vector3D(10.0f, 0.5f, 10.0f));
 
 	// Leaving the for loop for testing purposes
+	Apollo::EntityID nanosuit;
 	for (int i = 0; i < 1; ++i)
 	{
-		Apollo::EntityID entity = scene.GetEntityHandler().CreateEntity();
+		nanosuit = scene.GetEntityHandler().CreateEntity();
 
-		scene.GetEntityHandler().AddComponent<MeshComponent>(entity, FilePath("Engine/Assets/3D/Nanosuit/Nanosuit.obj"));
-		scene.GetEntityHandler().AddComponent<TransformComponent>(entity, Vector3D(0.0f, -5.0f, 0.0f), Quaternion(), Vector3D(0.5f));
+		scene.GetEntityHandler().AddComponent<MeshComponent>(nanosuit, FilePath("Engine/Assets/3D/Nanosuit/Nanosuit.obj"));
+		scene.GetEntityHandler().AddComponent<TransformComponent>(nanosuit, Vector3D(0.0f, -5.0f, 0.0f), Quaternion(), Vector3D(0.5f));
 	}
 
 	Apollo::EntityID lightSource = scene.GetEntityHandler().CreateEntity();
@@ -65,9 +66,9 @@ void GameApp::Start()
 	camComp->UpDir = Vector3D(0.0f, 1.0f, 0.0f);
 	camComp->AspectRatio = RZE_Engine::Get()->GetWindowSize().X() / RZE_Engine::Get()->GetWindowSize().Y();
 
-	InputHandler::KeyActionFunc tempKeyFunc([this, floor, &scene](const InputKey& key)
+	InputHandler::KeyActionFunc tempKeyFunc([this, nanosuit, &scene](const InputKey& key)
 	{
-		scene.GetEntityHandler().DestroyEntity(floor);
+		scene.GetEntityHandler().DestroyEntity(nanosuit);
 	});
 	RZE_Engine::Get()->GetInputHandler().BindAction(Win32KeyCode::Key_5, EButtonState::ButtonState_Pressed, tempKeyFunc);
 }
