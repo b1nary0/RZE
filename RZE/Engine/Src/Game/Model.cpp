@@ -18,6 +18,13 @@ Model3D::~Model3D()
 	{
 		delete mMeshList[i];
 	}
+
+	for (size_t idx = 0; idx < mTextureHandles.size(); ++idx)
+	{
+		RZE_Engine::Get()->GetResourceHandler().ReleaseResource(mTextureHandles[idx]);
+	}
+
+	mTextureHandles.clear();
 }
 
 bool Model3D::Load(const std::string& filePath)
