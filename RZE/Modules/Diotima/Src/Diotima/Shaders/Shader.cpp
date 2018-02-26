@@ -34,6 +34,16 @@ namespace Diotima
 		return !shaderFile.Empty();
 	}
 
+	void GFXShader::Release()
+	{
+		U8 bIsValidShader = 0;
+		OpenGLRHI::Get().IsShader(GetShaderID(), bIsValidShader);
+		if (bIsValidShader)
+		{
+			OpenGLRHI::Get().DeleteShader(GetShaderID());
+		}
+	}
+
 	U32 GFXShader::GetShaderID() const
 	{
 		return mShaderID;

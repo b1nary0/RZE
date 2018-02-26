@@ -22,6 +22,7 @@ public:
 
 public:
 	virtual bool Load(const std::string& filePath) override;
+	virtual void Release() override;
 
 public:
 	inline std::vector<Diotima::GFXMesh*>& GetMeshList() { return mMeshList; }

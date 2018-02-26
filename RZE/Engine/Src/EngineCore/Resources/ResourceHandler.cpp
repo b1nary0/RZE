@@ -27,6 +27,7 @@ void ResourceHandler::ShutDown()
 
 		// We should always have a resource if it is in the resource table.
 		AssertNotNull(resourceSource.GetResource());
+		resourceSource.GetResource()->Release();
 		resourceSource.InternalDestroy();
 	}
 
@@ -50,10 +51,11 @@ void ResourceHandler::ReleaseResource(ResourceHandle& resourceHandle)
 		ResourceSource& resourceSource = (*iter).second;
 		resourceSource.DecreaseRefCount();
 
-		if (!resourceSource.IsReferenced())
+		if (!resourceSource.IsReferenced() && resourceSource.GetResource())
 		{
 			LOG_CONSOLE_ARGS("Releasing resource [%s]", resourceHandle.GetID().c_str());
 
+			resourceSource.GetResource()->Release();
 			resourceSource.Destroy();
 			mResourceTable.erase(iter);
 		}

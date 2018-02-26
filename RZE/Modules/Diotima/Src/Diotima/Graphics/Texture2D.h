@@ -24,6 +24,7 @@ namespace Diotima
 		~GFXTexture2D();
 
 		virtual bool Load(const std::string& filePath) override;
+		virtual void Release() override;
 
 		U32				GetTextureID();
 		ETextureType::T	GetTextureType();

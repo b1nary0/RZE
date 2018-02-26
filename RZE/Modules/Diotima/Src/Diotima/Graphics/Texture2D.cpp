@@ -49,6 +49,11 @@ namespace Diotima
 		return true;
 	}
 
+	void GFXTexture2D::Release()
+	{
+		// #TODO(Josh) Fill this pls.
+	}
+
 	U32 GFXTexture2D::GetTextureID()
 	{
 		return mTextureID;
