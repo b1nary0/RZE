@@ -6,11 +6,7 @@
 namespace MathUtils
 {
 	const float Pi = 3.14159265359f;
-
-	inline float ToRadians(float num)
-	{
-		return num * (Pi / 180.0f);
-	}
+	const float ToRadians = Pi / 180.0f;
 }
 
 namespace VectorUtils

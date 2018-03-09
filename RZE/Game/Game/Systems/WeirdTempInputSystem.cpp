@@ -105,22 +105,20 @@ void WeirdTempInputSystem::BindInputs()
 		{
 			if (RZE_Engine::Get()->GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Left) == EButtonState::ButtonState_Pressed)
 			{
-				const float PI = 3.14159265359f;
-
 				if (prevPos.LengthSq() == 0)
 				{
 					prevPos = axis;
 				}
 
 				Vector3D diff = axis - prevPos;
-				diff = diff * 0.25f;
+				diff = diff * 0.15f; // #TODO(Josh) Move this to a better place (mouse sensitivity) -- config file
 				mPitchYawRoll += diff;
 
 
 				Vector3D lookDir = mMainCamera->Forward;
-				lookDir.SetX(std::cos(mPitchYawRoll.X() * (PI / 180.0f)) * std::cos(mPitchYawRoll.Y() * (PI / 180.0f)));
-				lookDir.SetY(std::sin(mPitchYawRoll.Y() * (PI / 180.0f)));
-				lookDir.SetZ(std::sin(mPitchYawRoll.X() * (PI / 180.0f)) * std::cos(mPitchYawRoll.Y() * (PI / 180.0f)));
+				lookDir.SetX(std::cos(mPitchYawRoll.X() * MathUtils::ToRadians) * std::cos(mPitchYawRoll.Y() * MathUtils::ToRadians));
+				lookDir.SetY(std::sin(mPitchYawRoll.Y() * MathUtils::ToRadians));
+				lookDir.SetZ(std::sin(mPitchYawRoll.X() * MathUtils::ToRadians) * std::cos(mPitchYawRoll.Y() * MathUtils::ToRadians));
 
 				lookDir.SetY(lookDir.Y() * -1);
 
