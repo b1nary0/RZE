@@ -2,6 +2,8 @@
 
 #include <GLM/vec3.hpp>
 
+class Matrix4x4;
+
 class Vector3D
 {
 public:
@@ -32,6 +34,7 @@ public:
 	void operator-=(const Vector3D& rhs);
 
 	Vector3D operator*(const Vector3D& rhs) const;
+	Vector3D operator*(const Matrix4x4& rhs) const;
 	Vector3D operator*(float scalar) const;
 
 	bool operator!=(const Vector3D& rhs) const;

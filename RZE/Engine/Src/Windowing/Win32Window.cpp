@@ -200,6 +200,24 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 		}
 		break;
 
+		case WM_MBUTTONDOWN:
+		{
+			const Int32 xPos = GET_X_LPARAM(msg.lParam);
+			const Int32 yPos = GET_Y_LPARAM(msg.lParam);
+
+			inputHandler.OnMouseDown(EMouseButton::MouseButton_Middle, xPos, yPos);
+		}
+		break;
+
+		case WM_MBUTTONUP:
+		{
+			const Int32 xPos = GET_X_LPARAM(msg.lParam);
+			const Int32 yPos = GET_Y_LPARAM(msg.lParam);
+
+			inputHandler.OnMouseUp(EMouseButton::MouseButton_Middle, xPos, yPos);
+		}
+		break;
+
 		case WM_MOUSEWHEEL:
 		{
 			Int32 delta = GET_WHEEL_DELTA_WPARAM(msg.wParam);
