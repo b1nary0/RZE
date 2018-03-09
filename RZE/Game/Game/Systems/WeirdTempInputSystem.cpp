@@ -105,26 +105,29 @@ void WeirdTempInputSystem::BindInputs()
 		{
 			if (RZE_Engine::Get()->GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Left) == EButtonState::ButtonState_Pressed)
 			{
+				const float PI = 3.14159265359f;
+
 				if (prevPos.LengthSq() == 0)
 				{
 					prevPos = axis;
 				}
 
-				if (RZE_Engine::Get()->GetInputHandler().GetKeyboardState().GetButtonState(Win32KeyCode::Key_F) == EButtonState::ButtonState_Hold)
-				{
-					Vector3D camPos = mMainCamera->Position;
+				Vector3D diff = axis - prevPos;
+				diff = diff * 0.25f;
+				mPitchYawRoll += diff;
 
-					Matrix4x4 translate;
-					translate.Translate(Vector3D());
-				}
-				else
-				{
-					Vector3D diff = axis - prevPos;
-					diff.SetY(diff.Y() * -1);
-					mMainCamera->Position -= (diff * RZE_Engine::Get()->GetDeltaTime());
 
-					prevPos = axis;
-				}
+				Vector3D lookDir = mMainCamera->Forward;
+				lookDir.SetX(std::cos(mPitchYawRoll.X() * (PI / 180.0f)) * std::cos(mPitchYawRoll.Y() * (PI / 180.0f)));
+				lookDir.SetY(std::sin(mPitchYawRoll.Y() * (PI / 180.0f)));
+				lookDir.SetZ(std::sin(mPitchYawRoll.X() * (PI / 180.0f)) * std::cos(mPitchYawRoll.Y() * (PI / 180.0f)));
+
+				lookDir.SetY(lookDir.Y() * -1);
+
+				mMainCamera->Forward = std::move(lookDir);
+
+				prevPos = axis;
+
 			}
 			else if (RZE_Engine::Get()->GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Left) == EButtonState::ButtonState_Released)
 			{

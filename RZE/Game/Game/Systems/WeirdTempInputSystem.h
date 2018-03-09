@@ -21,7 +21,8 @@ private:
 
 private:
 	struct CameraComponent* mMainCamera;
-	Vector3D mVelocity;
+	Vector3D mAxisSensitivity;
 
+	Vector3D mPitchYawRoll;
 	bool bIsMouseDown;
 };
