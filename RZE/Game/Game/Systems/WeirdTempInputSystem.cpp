@@ -111,7 +111,7 @@ void WeirdTempInputSystem::BindInputs()
 				}
 
 				Vector3D diff = axis - prevPos;
-				diff = diff * 0.15f; // #TODO(Josh) Move this to a better place (mouse sensitivity) -- config file
+				diff = diff * 0.1f; // #TODO(Josh) Move this to a better place (mouse sensitivity) -- config file
 				mPitchYawRoll += diff;
 
 
