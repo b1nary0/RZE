@@ -22,6 +22,9 @@ inline size_t Gigabytes(size_t val)
 class IAllocator
 {
 public:
+	IAllocator() = default;
+	virtual ~IAllocator() = default;
+
 	virtual void Init() = 0;
 
 	virtual void* Allocate(size_t size) = 0;

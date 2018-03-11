@@ -269,7 +269,7 @@ class IGLBufferObject
 public:
 	IGLBufferObject()
 		: mBufferHandle(0) {}
-	~IGLBufferObject() = default;
+	virtual ~IGLBufferObject() = default;
 
 	U32 GetBufferHandle() const { return mBufferHandle; }
 

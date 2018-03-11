@@ -3,8 +3,9 @@
 class IResource
 {
 public:
-	IResource() {}
-	virtual ~IResource() {}
+	IResource() = default;
+	virtual ~IResource() = default;
+
 	virtual bool Load(const std::string& filePath) = 0;
 	virtual void Release() = 0;
 
