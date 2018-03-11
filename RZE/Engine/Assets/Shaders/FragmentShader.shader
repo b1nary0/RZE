@@ -24,11 +24,12 @@ uniform vec3 ViewPos; // Cam pos
 void main()
 {
 	vec3 normal = normalize(Normal);
+	vec3 viewDir = normalize(ViewPos - FragPos);
+
 	vec3 lightMix;
 	for (int lightIdx = 0; lightIdx < UNumActiveLights; ++lightIdx)
 	{
 		vec3 lightDir = normalize(LightPositions[lightIdx] - FragPos);
-		vec3 viewDir = normalize(ViewPos - FragPos);
 		vec3 halfwayDir = normalize(lightDir + viewDir);
 
 		float diff = max(dot(normal, lightDir), 0.0f);

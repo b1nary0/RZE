@@ -42,8 +42,8 @@ void GameApp::Start()
 
 	Apollo::EntityID lightSource = scene.GetEntityHandler().CreateEntity();
 	scene.GetEntityHandler().AddComponent<MeshComponent>(lightSource, FilePath("Engine/Assets/3D/Cube.obj"));
-	scene.GetEntityHandler().AddComponent<LightSourceComponent>(lightSource, Vector3D(0.8f, 0.8f, 0.8f), 1.5f);
-	scene.GetEntityHandler().AddComponent<TransformComponent>(lightSource, Vector3D(0.0f, 2.0f, 6.0f), Quaternion(), Vector3D(1.0f));
+	scene.GetEntityHandler().AddComponent<LightSourceComponent>(lightSource, Vector3D(0.8f, 0.8f, 0.8f), 1.0f);
+	scene.GetEntityHandler().AddComponent<TransformComponent>(lightSource, Vector3D(0.0f, 10.0f, 8.0f), Quaternion(), Vector3D(1.0f));
 
 	Apollo::EntityID camera = scene.GetEntityHandler().CreateEntity();
 	scene.GetEntityHandler().AddComponent<CameraComponent>(camera);

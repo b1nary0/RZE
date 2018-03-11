@@ -39,10 +39,10 @@ void main()
 		vec3 halfwayDir = normalize(lightDir + viewDir);
 
 		float diff = max(dot(normal, lightDir), 0.0f);
-		float spec = pow(max(dot(viewDir, halfwayDir), 0.0f), 8.0f);
+		float spec = pow(max(dot(normal, halfwayDir), 0.0f), 8.0f);
 
-		vec3 diffuse = LightColors[lightIdx] * (diff * vec3(texture(Material.SpecularTextures[1], UVCoord)));
-		vec3 specular = LightStrengths[lightIdx] * (spec * vec3(texture(Material.DiffuseTextures[1], UVCoord)));
+		vec3 diffuse = LightColors[lightIdx] * (diff * vec3(texture(Material.DiffuseTextures[1], UVCoord)));
+		vec3 specular = LightStrengths[lightIdx] * (spec * vec3(texture(Material.SpecularTextures[1], UVCoord)));
 
 		vec3 result = diffuse + specular;
 
