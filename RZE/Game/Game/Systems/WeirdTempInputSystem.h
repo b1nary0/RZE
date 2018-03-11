@@ -2,6 +2,8 @@
 
 #include <Apollo/ECS/EntitySystem.h>
 
+
+#include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector3D.h>
 
 class WeirdTempInputSystem : public Apollo::EntitySystem
@@ -26,6 +28,7 @@ private:
 
 	// #TODO(Josh) This is test function 
 	void CreateEntities();
+	Vector3D ArcBallProjection(const Vector3D& vec);
 
 private:
 	struct CameraComponent* mMainCamera;

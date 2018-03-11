@@ -10,6 +10,7 @@ public:
 	Quaternion();
 	Quaternion(const float x, const float y, const float z, const float w);
 	Quaternion(const Vector3D& angles);
+	Quaternion(const Vector3D& a, const Vector3D& b);
 
 	float ToAngle() const;
 	Vector3D ToAxis() const;

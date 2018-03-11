@@ -146,18 +146,20 @@ void WeirdTempInputSystem::BindInputs()
 			}
 			else if (RZE_Engine::Get()->GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Middle) == EButtonState::ButtonState_Pressed)
 			{
-				// #TODO(Josh) Messin with some stuff https://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Tutorial_Arcball
-				Vector3D diff = axis - prevPos;
-				diff = diff * 0.1f; // #TODO(Josh) Move this to a better place (mouse sensitivity) -- config file
-				mPitchYawRoll += diff;
+				if (prevPos.LengthSq() == 0)
+				{
+					prevPos = axis;
+				}
 
-				const Vector2D& windowDims = RZE_Engine::Get()->GetWindowSize();
-				Vector3D ndc(axis.X() / windowDims.X(), axis.Y() / windowDims.Y(), 0.0f);
-				ndc.SetY(-ndc.Y());
-				ndc.SetZ(sqrt(1 - (windowDims.X() * windowDims.X() + windowDims.Y() * windowDims.Y())));
-				
-				mMainCamera->Position = (Vector3D() + (Quaternion(ndc * 0.000001f) * (mMainCamera->Position - Vector3D())));
+				// #TODO(Josh) Messin with some stuff https://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Tutorial_Arcball
+				Vector3D curArcBallProj = ArcBallProjection(axis);
+				Vector3D prevArcBallProj = ArcBallProjection(prevPos);
+				Quaternion rot(curArcBallProj, prevArcBallProj);
+
+				mMainCamera->Position = (Vector3D() + (rot * (mMainCamera->Position - Vector3D())));
 				mMainCamera->Forward = (Vector3D() - mMainCamera->Position).Normalize();
+
+				prevPos = axis;
 			}
 
 			if (RZE_Engine::Get()->GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Released
@@ -185,4 +187,22 @@ void WeirdTempInputSystem::CreateEntities()
 		scene.GetEntityHandler().AddComponent<MeshComponent>(mEntity1, FilePath("Engine/Assets/3D/Cube.obj"));
 		scene.GetEntityHandler().AddComponent<TransformComponent>(mEntity1, Vector3D(-4.0f, 2.0f, -6.0f), Quaternion(), Vector3D(1.0f));
 	}
+}
+
+Vector3D WeirdTempInputSystem::ArcBallProjection(const Vector3D& vec)
+{
+	const Vector2D& winDims = RZE_Engine::Get()->GetWindowSize();
+	float x = 1.0f * (vec.X() / winDims.X()) * 2.0f - 1.0f;
+	float y = 1.0f * (vec.Y() / winDims.Y()) * 2.0f - 1.0f;
+
+	y = -y;
+
+	float sq = x * x + y * y;
+	if (sq <= 1)
+	{
+		float z = sqrt(1 - sq);
+		return Vector3D(x, y, z);
+	}
+
+	return Vector3D(x, y, 0.0f).Normalize();
 }

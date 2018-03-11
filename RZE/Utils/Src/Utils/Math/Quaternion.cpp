@@ -23,6 +23,11 @@ Quaternion::Quaternion(const glm::quat& quat)
 	mQuat = quat;
 }
 
+Quaternion::Quaternion(const Vector3D& a, const Vector3D& b)
+	: mQuat(a.GetInternalVec(), b.GetInternalVec())
+{
+}
+
 float Quaternion::ToAngle() const
 {
 	return glm::angle(mQuat);
