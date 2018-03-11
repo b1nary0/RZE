@@ -111,6 +111,11 @@ void WeirdTempInputSystem::BindInputs()
 	static Vector3D prevPos;
 	Functor<void, const Vector3D&, Int32> mouseFunc([this](const Vector3D& axis, Int32 wheel)
 	{
+		if (prevPos.LengthSq() == 0)
+		{
+			prevPos = axis;
+		}
+
 		if (wheel > 0)
 		{
 			mMainCamera->Position += mMainCamera->Forward * kWheelSpeed * RZE_Engine::Get()->GetDeltaTime();
@@ -123,11 +128,6 @@ void WeirdTempInputSystem::BindInputs()
 		{
 			if (RZE_Engine::Get()->GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Pressed)
 			{
-				if (prevPos.LengthSq() == 0)
-				{
-					prevPos = axis;
-				}
-
 				Vector3D diff = axis - prevPos;
 				diff = diff * 0.1f; // #TODO(Josh) Move this to a better place (mouse sensitivity) -- config file
 				mPitchYawRoll += diff;
@@ -146,11 +146,6 @@ void WeirdTempInputSystem::BindInputs()
 			}
 			else if (RZE_Engine::Get()->GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Middle) == EButtonState::ButtonState_Pressed)
 			{
-				if (prevPos.LengthSq() == 0)
-				{
-					prevPos = axis;
-				}
-
 				// #TODO(Josh) Messin with some stuff https://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Tutorial_Arcball
 				Vector3D curArcBallProj = ArcBallProjection(axis);
 				Vector3D prevArcBallProj = ArcBallProjection(prevPos);
@@ -192,8 +187,8 @@ void WeirdTempInputSystem::CreateEntities()
 Vector3D WeirdTempInputSystem::ArcBallProjection(const Vector3D& vec)
 {
 	const Vector2D& winDims = RZE_Engine::Get()->GetWindowSize();
-	float x = 1.0f * (vec.X() / winDims.X()) * 2.0f - 1.0f;
-	float y = 1.0f * (vec.Y() / winDims.Y()) * 2.0f - 1.0f;
+	float x = 1.0f * vec.X() / winDims.X() * 2.0f - 1.0f;
+	float y = 1.0f * vec.Y() / winDims.Y() * 2.0f - 1.0f;
 
 	y = -y;
 

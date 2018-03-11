@@ -376,15 +376,21 @@ namespace Diotima
 		renderItem.Shader->SetUniformMatrix4x4("UViewMat", camera.ViewMat);
 		renderItem.Shader->SetUniformVector4D("UFragColor", renderItem.Material.Color);
 		renderItem.Shader->SetUniformMatrix4x4("UModelMat", renderItem.ModelMat);
+		
 		renderItem.Shader->SetUniformInt("Material.Diffuse", 0);
 		renderItem.Shader->SetUniformInt("Material.Specular", 1);
+		
+		renderItem.Shader->SetUniformInt("UNumActiveLights", mLightingList.size());
+		renderItem.Shader->SetUniformVector3D(std::string("ViewPos").c_str(), camera.Position);
 
-		for (auto& light : mLightingList)
+		for (size_t lightIdx = 0; lightIdx < mLightingList.size(); ++lightIdx)
 		{
-			renderItem.Shader->SetUniformVector3D("ULightPosition", light.Position);
-			renderItem.Shader->SetUniformVector3D("UViewPosition", camera.Position);
-			renderItem.Shader->SetUniformVector3D("ULightColor", light.Color);
-			renderItem.Shader->SetUniformFloat("ULightStrength", light.Strength);
+			const LightItemProtocol& lightItem = mLightingList[lightIdx];
+			std::string itemIdxStr = Conversions::StringFromInt(static_cast<int>(lightIdx));
+
+			renderItem.Shader->SetUniformVector3D(std::string("LightPositions[" + itemIdxStr + "]").c_str(), lightItem.Position);
+			renderItem.Shader->SetUniformVector3D(std::string("LightColors[" + itemIdxStr + "]").c_str(), lightItem.Color);
+			renderItem.Shader->SetUniformFloat(std::string("LightStrengths[" + itemIdxStr + "]").c_str(), lightItem.Strength);
 		}
 
 		const std::vector<GFXMesh*>& meshList = *renderItem.MeshData;
