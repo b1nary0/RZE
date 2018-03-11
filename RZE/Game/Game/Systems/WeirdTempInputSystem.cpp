@@ -9,7 +9,15 @@
 #include <Utils/Math/Math.h>
 #include <Utils/Math/Matrix4x4.h>
 
-const float kSpeed = 5.0f;
+
+
+// #TODO(Josh) Test includes for rotation entities
+#include <ECS/Components/MeshComponent.h>
+#include <ECS/Components/TransformComponent.h>
+
+
+
+const float kSpeed = 25.0f;
 const float kWheelSpeed = 10.0f;
 
 WeirdTempInputSystem::WeirdTempInputSystem()
@@ -32,14 +40,24 @@ void WeirdTempInputSystem::Initialize()
 		CameraComponent* const camComp = handler.GetComponent<CameraComponent>(entityID);
 		AssertNotNull(camComp);
 		mMainCamera = camComp;
+		mMainCamera->Forward.Normalize();
+		mMainCamera->UpDir.Normalize();
 	});
 	handler.RegisterForComponentAddNotification<CameraComponent>(camCompAdded);
 
+	CreateEntities();
 	BindInputs();
 }
 
 void WeirdTempInputSystem::Update(std::vector<Apollo::EntityID>& entities)
 {
+	Apollo::EntityHandler& handler = RZE_Engine::Get()->GetActiveScene().GetEntityHandler();
+	{
+		TransformComponent* const transfComp0 = handler.GetComponent<TransformComponent>(mEntity0);
+		TransformComponent* const transfComp1 = handler.GetComponent<TransformComponent>(mEntity1);
+		
+		transfComp0->Position = transfComp1->Position + (Quaternion(Vector3D(0.0f, 0.05f, 0.0f)) * (transfComp0->Position - transfComp1->Position));
+	}
 }
 
 void WeirdTempInputSystem::ShutDown()
@@ -103,7 +121,7 @@ void WeirdTempInputSystem::BindInputs()
 		}
 		else
 		{
-			if (RZE_Engine::Get()->GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Left) == EButtonState::ButtonState_Pressed)
+			if (RZE_Engine::Get()->GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Pressed)
 			{
 				if (prevPos.LengthSq() == 0)
 				{
@@ -113,9 +131,8 @@ void WeirdTempInputSystem::BindInputs()
 				Vector3D diff = axis - prevPos;
 				diff = diff * 0.1f; // #TODO(Josh) Move this to a better place (mouse sensitivity) -- config file
 				mPitchYawRoll += diff;
-
-
-				Vector3D lookDir = mMainCamera->Forward;
+				 
+				Vector3D lookDir;
 				lookDir.SetX(std::cos(mPitchYawRoll.X() * MathUtils::ToRadians) * std::cos(mPitchYawRoll.Y() * MathUtils::ToRadians));
 				lookDir.SetY(std::sin(mPitchYawRoll.Y() * MathUtils::ToRadians));
 				lookDir.SetZ(std::sin(mPitchYawRoll.X() * MathUtils::ToRadians) * std::cos(mPitchYawRoll.Y() * MathUtils::ToRadians));
@@ -127,11 +144,45 @@ void WeirdTempInputSystem::BindInputs()
 				prevPos = axis;
 
 			}
-			else if (RZE_Engine::Get()->GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Left) == EButtonState::ButtonState_Released)
+			else if (RZE_Engine::Get()->GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Middle) == EButtonState::ButtonState_Pressed)
+			{
+				// #TODO(Josh) Messin with some stuff https://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Tutorial_Arcball
+				Vector3D diff = axis - prevPos;
+				diff = diff * 0.1f; // #TODO(Josh) Move this to a better place (mouse sensitivity) -- config file
+				mPitchYawRoll += diff;
+
+				const Vector2D& windowDims = RZE_Engine::Get()->GetWindowSize();
+				Vector3D ndc(axis.X() / windowDims.X(), axis.Y() / windowDims.Y(), 0.0f);
+				ndc.SetY(-ndc.Y());
+				ndc.SetZ(sqrt(1 - (windowDims.X() * windowDims.X() + windowDims.Y() * windowDims.Y())));
+				
+				mMainCamera->Position = (Vector3D() + (Quaternion(ndc * 0.000001f) * (mMainCamera->Position - Vector3D())));
+				mMainCamera->Forward = (Vector3D() - mMainCamera->Position).Normalize();
+			}
+
+			if (RZE_Engine::Get()->GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Released
+				&& RZE_Engine::Get()->GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Middle) == EButtonState::ButtonState_Released && prevPos.LengthSq() > 0)
 			{
 				prevPos = Vector3D();
 			}
 		}
 	});
 	RZE_Engine::Get()->GetInputHandler().BindAxis(EAxisBinding::AxisBinding_Mouse, EAxisType::AxisType_Vector, mouseFunc);
+}
+
+void WeirdTempInputSystem::CreateEntities()
+{
+	GameScene& scene = RZE_Engine::Get()->GetActiveScene();
+	{
+		mEntity0 = scene.GetEntityHandler().CreateEntity();
+
+		scene.GetEntityHandler().AddComponent<MeshComponent>(mEntity0, FilePath("Engine/Assets/3D/Cube.obj"));
+		scene.GetEntityHandler().AddComponent<TransformComponent>(mEntity0, Vector3D(0.0f, 2.0f, -6.0f), Quaternion(), Vector3D(1.0f));
+	}
+	{
+		mEntity1 = scene.GetEntityHandler().CreateEntity();
+
+		scene.GetEntityHandler().AddComponent<MeshComponent>(mEntity1, FilePath("Engine/Assets/3D/Cube.obj"));
+		scene.GetEntityHandler().AddComponent<TransformComponent>(mEntity1, Vector3D(-4.0f, 2.0f, -6.0f), Quaternion(), Vector3D(1.0f));
+	}
 }

@@ -49,7 +49,7 @@ void Quaternion::operator+=(const Quaternion& rhs)
 	mQuat += rhs.GetInternalQuat();
 }
 
-Quaternion Quaternion::operator*(const Quaternion& rhs)
+Quaternion Quaternion::operator*(const Quaternion& rhs) const
 {
 	return Quaternion(mQuat * rhs.GetInternalQuat());
 }
@@ -57,4 +57,12 @@ Quaternion Quaternion::operator*(const Quaternion& rhs)
 void Quaternion::operator*=(const Quaternion& rhs)
 {
 	mQuat *= rhs.GetInternalQuat();
+}
+
+Vector3D Quaternion::operator*(const Vector3D& rhs) const
+{
+	glm::vec4 vec(rhs.GetInternalVec(), 1.0f);
+	vec = mQuat * vec;
+
+	return Vector3D(vec.x, vec.y, vec.z);
 }

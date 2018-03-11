@@ -19,7 +19,8 @@ public:
 	Quaternion operator+(const Quaternion& rhs);
 	void operator+=(const Quaternion& rhs);
 
-	Quaternion operator*(const Quaternion& rhs);
+	Quaternion operator*(const Quaternion& rhs) const;
+	Vector3D operator*(const Vector3D& rhs) const;
 	void operator*=(const Quaternion& rhs);
 
 private:
