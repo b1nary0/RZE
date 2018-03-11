@@ -32,10 +32,10 @@ void main()
 		vec3 halfwayDir = normalize(lightDir + viewDir);
 
 		float diff = max(dot(normal, lightDir), 0.0f);
-		float spec = pow(max(dot(normal, halfwayDir), 0.0f), 16.0f);
+		//float spec = pow(max(dot(viewDir, halfwayDir), 0.0f), 16.0f);
 
 		vec3 diffuse = LightColors[lightIdx] * diff;
-		vec3 specular = LightStrengths[lightIdx] * spec * LightColors[lightIdx];
+		vec3 specular = LightStrengths[lightIdx] * 0.005f * LightColors[lightIdx];
 
 		vec3 result = diffuse + specular;
 
