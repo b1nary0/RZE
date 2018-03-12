@@ -31,7 +31,7 @@ void main()
 {
 	vec3 normal = normalize(Normal);
 
-	vec3 lightMix;
+	vec3 lightMix = vec3(0f, 0f, 0f);
 	for (int lightIdx = 0; lightIdx < UNumActiveLights; ++lightIdx)
 	{
 		vec3 lightDir = normalize(LightPositions[lightIdx] - FragPos);
