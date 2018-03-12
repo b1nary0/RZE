@@ -151,8 +151,9 @@ void WeirdTempInputSystem::BindInputs()
 				Vector3D prevArcBallProj = ArcBallProjection(prevPos);
 				Quaternion rot(curArcBallProj, prevArcBallProj);
 
-				mMainCamera->Position = (Vector3D() + (rot * (mMainCamera->Position - Vector3D())));
-				mMainCamera->Forward = (Vector3D() - mMainCamera->Position).Normalize();
+				Vector3D orbitPoint = mMainCamera->Position + (mMainCamera->Forward * 5.0f);
+				mMainCamera->Position = (orbitPoint + (rot * (mMainCamera->Position - orbitPoint)));
+				mMainCamera->Forward = (orbitPoint - mMainCamera->Position).Normalize();
 
 				prevPos = axis;
 			}
