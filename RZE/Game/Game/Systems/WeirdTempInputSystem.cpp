@@ -21,7 +21,6 @@ const float kSpeed = 25.0f;
 const float kWheelSpeed = 10.0f;
 
 WeirdTempInputSystem::WeirdTempInputSystem()
-	: bIsMouseDown(false)
 {
 }
 
@@ -151,9 +150,13 @@ void WeirdTempInputSystem::BindInputs()
 				Vector3D prevArcBallProj = ArcBallProjection(prevPos);
 				Quaternion rot(curArcBallProj, prevArcBallProj);
 
-				Vector3D orbitPoint = mMainCamera->Position + (mMainCamera->Forward * 5.0f);
-				mMainCamera->Position = (orbitPoint + (rot * (mMainCamera->Position - orbitPoint)));
-				mMainCamera->Forward = (orbitPoint - mMainCamera->Position).Normalize();
+				if (mOrbitPoint.LengthSq() == 0.0f)
+				{
+					mOrbitPoint = mMainCamera->Position + (mMainCamera->Forward * 5.0f);
+				}
+				
+				mMainCamera->Position = (mOrbitPoint + (rot * (mMainCamera->Position - mOrbitPoint)));
+				mMainCamera->Forward = (mOrbitPoint - mMainCamera->Position).Normalize();
 
 				prevPos = axis;
 			}
@@ -162,6 +165,7 @@ void WeirdTempInputSystem::BindInputs()
 				&& RZE_Engine::Get()->GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Middle) == EButtonState::ButtonState_Released && prevPos.LengthSq() > 0)
 			{
 				prevPos = Vector3D();
+				mOrbitPoint = Vector3D();
 			}
 		}
 	});

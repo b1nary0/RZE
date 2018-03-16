@@ -32,12 +32,9 @@ private:
 
 private:
 	struct CameraComponent* mMainCamera;
-	Vector3D mAxisSensitivity;
-
-	Vector3D mPitchYawRoll;
-	bool bIsMouseDown;
-
 	
+	Vector3D mPitchYawRoll;
+	Vector3D mOrbitPoint;
 
 
 	// #TODO(Josh) Test entities for rotation stuff
