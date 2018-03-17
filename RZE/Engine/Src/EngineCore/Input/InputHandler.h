@@ -1,7 +1,8 @@
 #pragma once
 
-#include <unordered_map>
 #include <bitset>
+#include <queue>
+#include <unordered_map>
 
 #include <EngineCore/Input/InputCore.h>
 
@@ -70,14 +71,20 @@ private:
 		}
 	};
 
+	struct KeyboardAction
+	{
+		EButtonState::T State;
+		InputKey Key;
+	};
+
 	struct ActionBinding
 	{
 		char* ActionName;
-		EButtonState::T ButtonState;
 	};
 
 	struct KeyboardActionBinding : public ActionBinding
 	{
+		KeyboardAction Action;
 		KeyActionFunc Func;
 	};
 
@@ -90,6 +97,14 @@ private:
 		Functor<void, const Vector3D&, Int32> Func;
 	};
 	
+	struct MouseAction
+	{
+		Vector2D Position;
+		EMouseButton::T Button;
+		EButtonState::T State;
+		int Wheel;
+	};
+
 	struct MouseButtonBinding
 	{
 		MouseButtonBinding(EMouseButton::T button, EButtonState::T state, MouseActionFunc func)
@@ -107,6 +122,8 @@ public:
 
 public:
 	void Initialize();
+
+	void RaiseEvents();
 
 	void BindAction(Int32 keyCode, EButtonState::T buttonState, KeyActionFunc func);
 	void BindAxis(EAxisBinding::T bindingType, EAxisType::T axisType, Functor<void, const Vector3D&, Int32> func);
@@ -126,18 +143,26 @@ public:
 private:
 	void RaiseKeyEvent(const InputKey& inputKey);
 	void RaiseMouseAxisEvent(const Vector2D& axis, Int32 wheel);
-	void RaiseMouseButtonDownEvent(const EMouseButton::T button, const Int32 xPos, const Int32 yPos);
-	void RaiseMouseButtonUpEvent(const EMouseButton::T button, const Int32 xPos, const Int32 yPos);
+	void RaiseMouseButtonEvent(const EMouseButton::T button, const EButtonState::T state, const Int32 xPos, const Int32 yPos);
+
+	// Using declarations for easier reading of member variable types
+public:
+	using KeyboardBindingMap = std::unordered_map<Int32, KeyboardActionBinding>;
+	using AxisBindingMap = std::unordered_map<EAxisBinding::T, std::vector<AxisBinding>>;
+	using MouseBindingMap = std::unordered_map <EMouseButton::T, std::vector<MouseButtonBinding>>;
 
 private:
 	std::vector<InputKey> mInputKeyRegistry;
 
-	std::unordered_map<Int32, KeyboardActionBinding> mKeyboardBindings;
-	std::unordered_map<EAxisBinding::T, std::vector<AxisBinding>> mAxisBindings;
+	KeyboardBindingMap mKeyboardBindings;
+	AxisBindingMap mAxisBindings;
 	// The below should change when I implement a proper mouse button enum. Just did this for quick test implementation
-	std::unordered_map <EMouseButton::T, std::vector<MouseButtonBinding>> mMouseBtnBindings;
+	MouseBindingMap mMouseBtnBindings;
 
 private:
+	std::queue<KeyboardAction> mKeyActionQueue;
+	std::queue<MouseAction> mMouseActionQueue;
+
 	KeyboardState mKeyboardState;
 	MouseState mMouseState;
 };

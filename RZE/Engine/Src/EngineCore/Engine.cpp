@@ -74,6 +74,8 @@ void RZE_Engine::Init()
 
 		CreateAndInitializeWindow();
 
+		mInputHandler.Initialize();
+
 		RegisterWindowEvents();
 		RegisterInputEvents();
 
@@ -81,7 +83,6 @@ void RZE_Engine::Init()
 		mRenderer->Initialize();
 
 		mResourceHandler.Init();
-		mInputHandler.Initialize();
 
 		mActiveScene = new GameScene();
 		mActiveScene->Initialize();
@@ -180,6 +181,7 @@ void RZE_Engine::Update()
 {
 	CompileEvents();
 	mEventHandler.ProcessEvents();
+	mInputHandler.RaiseEvents();
 
 	mApplication->Update();
 	mActiveScene->Update();

@@ -25,7 +25,8 @@ namespace EMouseButton
 	{
 		MouseButton_Left,
 		MouseButton_Middle,
-		MouseButton_Right
+		MouseButton_Right,
+		MouseButton_Move
 	};
 }
 
@@ -50,12 +51,15 @@ namespace EAxisBinding
 class InputKey
 {
 public:
+	InputKey()
+		: mDisplayName(' ')
+		, mKeyCode(-1) {}
+
 	InputKey(const char displayName, Int32 keyCode);
 
 	Int32 GetKeyCode() const { return mKeyCode; }
 
-private:
-	InputKey();
+	inline bool IsValid() const { return mKeyCode >= 0 && mDisplayName != ' '; }
 
 private:
 	char mDisplayName;

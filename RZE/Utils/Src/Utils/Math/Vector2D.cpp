@@ -58,3 +58,8 @@ Vector2D Vector2D::operator-(const Vector2D& other)
 	glm::vec2 vec = GetInternalVec() - other.GetInternalVec();
 	return Vector2D(vec.x, vec.y);
 }
+
+bool Vector2D::operator!=(const Vector2D& rhs) const
+{
+	return GetInternalVec() != rhs.GetInternalVec();
+}

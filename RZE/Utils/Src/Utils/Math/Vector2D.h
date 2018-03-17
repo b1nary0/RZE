@@ -21,6 +21,8 @@ public:
 	const glm::vec2& GetInternalVec() const;
 
 	Vector2D operator-(const Vector2D& other);
+	
+	bool operator!=(const Vector2D& rhs) const;
 
 private:
 	glm::vec2 mVec;
