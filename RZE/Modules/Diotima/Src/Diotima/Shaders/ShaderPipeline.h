@@ -13,13 +13,13 @@ class Vector4D;
 
 namespace Diotima
 {
-	class GFXShaderGroup
+	class GFXShaderPipeline
 	{
 		typedef std::unordered_map<std::string, Int32> UniformMap;
 
 	public:
-		GFXShaderGroup(const std::string& groupName);
-		~GFXShaderGroup();
+		GFXShaderPipeline(const std::string& groupName);
+		~GFXShaderPipeline();
 
 		struct EShaderIndex
 		{

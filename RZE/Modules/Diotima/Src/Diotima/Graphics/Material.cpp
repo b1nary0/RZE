@@ -2,7 +2,6 @@
 
 #include <Diotima/Driver/OpenGL.h>
 #include <Diotima/Graphics/Texture2D.h>
-#include <Diotima/Shaders/ShaderGroup.h>
 
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Platform/File.h>

@@ -14,15 +14,15 @@
 
 #include <Diotima/Graphics/Material.h>
 #include <Diotima/Graphics/Texture2D.h>
-#include <Diotima/Shaders/ShaderGroup.h>
+#include <Diotima/Shaders/ShaderPipeline.h>
 
 #include <Utils/Platform/FilePath.h>
 #include <Utils/Platform/Timers/HiResTimer.h>
 
 static Vector4D sDefaultFragColor(0.25f, 0.25f, 0.25f, 1.0f);
 
-Diotima::GFXShaderGroup* defaultShader;
-Diotima::GFXShaderGroup* textureShader;
+Diotima::GFXShaderPipeline* defaultShader;
+Diotima::GFXShaderPipeline* textureShader;
 void CreateDefaultShader()
 {
 	const FilePath vertShaderFilePath("Engine/Assets/Shaders/VertexShader.shader");
@@ -39,9 +39,9 @@ void CreateDefaultShader()
 	fragShader->Create();
 	fragShader->Compile();
 
-	defaultShader = new Diotima::GFXShaderGroup("DefaultShader");
-	defaultShader->AddShader(Diotima::GFXShaderGroup::EShaderIndex::Vertex, vertShader);
-	defaultShader->AddShader(Diotima::GFXShaderGroup::EShaderIndex::Fragment, fragShader);
+	defaultShader = new Diotima::GFXShaderPipeline("DefaultShader");
+	defaultShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Vertex, vertShader);
+	defaultShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Fragment, fragShader);
 
 	defaultShader->GenerateShaderProgram();
 }
@@ -62,9 +62,9 @@ void CreateTextureShader()
 	fragShader->Create();
 	fragShader->Compile();
 
-	textureShader = new Diotima::GFXShaderGroup("TextureShader");
-	textureShader->AddShader(Diotima::GFXShaderGroup::EShaderIndex::Vertex, vertShader);
-	textureShader->AddShader(Diotima::GFXShaderGroup::EShaderIndex::Fragment, fragShader);
+	textureShader = new Diotima::GFXShaderPipeline("TextureShader");
+	textureShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Vertex, vertShader);
+	textureShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Fragment, fragShader);
 
 	textureShader->GenerateShaderProgram();
 }
