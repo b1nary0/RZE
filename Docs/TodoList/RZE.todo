@@ -1,8 +1,7 @@
 TODO:
-  ☐ Change InputHandler to cache raise and flush input bindings at one time at start of frame
-    ☐ Keep track of current frame input events
-    ☐ For every input event this frame, call the appropriate callback
-    ☐ Profile before and after
+  ✔ Change InputHandler to cache raise and flush input bindings at one time at start of frame @done(2018-03-17 02:08) @project(TODO)
+    ✔ Keep track of current frame input events @done(2018-03-17 02:08) @project(TODO)
+    ✔ For every input event this frame, call the appropriate callback @done(2018-03-17 02:08) @project(TODO)
 
   ☐ Change KeyboardActionBinding to not need KeyboardAction class (okay to duplicate data)
   ☐ Also EMouseButton when moving mouse.
@@ -17,26 +16,3 @@ TODO:
 
 NOTES:
   Why are we using Int32 for keybinding can/should we change this
-
-
-
-
-mKeyboardBindings
-mAxisBindings
-mMouseBtnBindings
-
-
-
-void InputHandler::RaiseKeyEvent(const InputKey& inputKey)
-{
-	EButtonState::T buttonState = mKeyboardState.GetButtonState(inputKey.GetKeyCode());
-	auto& bindingIt = mKeyboardBindings.find(inputKey.GetKeyCode());
-	if (bindingIt != mKeyboardBindings.end())
-	{
-	 	KeyboardActionBinding& actionBinding = (*bindingIt).second;
-	 	if (actionBinding.ButtonState == buttonState)
-	 	{
-	 		actionBinding.Func(inputKey);
-	 	}
-	}
-}
