@@ -54,8 +54,7 @@ void InputHandler::BindAction(Int32 keyCode, EButtonState::T buttonState, KeyAct
 	actionBinding.ActionName = "Test";
 	actionBinding.Func = func;
 
-	actionBinding.Action.Key = mInputKeyRegistry[keyCode];
-	actionBinding.Action.State = buttonState;
+	actionBinding.State = buttonState;
 
 	mKeyboardBindings[keyCode] = actionBinding;
 }
@@ -178,7 +177,7 @@ void InputHandler::RaiseKeyEvent(const InputKey& inputKey)
 	if (bindingIt != mKeyboardBindings.end())
 	{
 	 	KeyboardActionBinding& actionBinding = (*bindingIt).second;
-	 	if (actionBinding.Action.State == buttonState)
+	 	if (actionBinding.State == buttonState)
 	 	{
 	 		actionBinding.Func(inputKey);
 	 	}

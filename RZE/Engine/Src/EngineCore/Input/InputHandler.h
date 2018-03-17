@@ -84,7 +84,7 @@ private:
 
 	struct KeyboardActionBinding : public ActionBinding
 	{
-		KeyboardAction Action;
+		EButtonState::T State;
 		KeyActionFunc Func;
 	};
 
