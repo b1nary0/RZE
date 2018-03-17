@@ -5,7 +5,7 @@
 #include <Diotima/Graphics/Material.h>
 #include <Diotima/Graphics/Mesh.h>
 #include <Diotima/Graphics/Texture2D.h>
-#include <Diotima/Shaders/ShaderGroup.h>
+#include <Diotima/Shaders/ShaderPipeline.h>
 
 #include <Utils/Conversions.h>
 #include <Utils/DebugUtils/Debug.h>
@@ -242,7 +242,7 @@ bool ImGUICreateDeviceObjects()
 //
 // </Imgui Stuff>
 
-Diotima::GFXShaderGroup* renderToTextureShader = nullptr;
+Diotima::GFXShaderPipeline* renderToTextureShader = nullptr;
 void CreateRenderToTextureShader()
 {
 	const FilePath vertShaderFilePath("Engine/Assets/Shaders/RenderToTextureVert.shader");
@@ -258,9 +258,9 @@ void CreateRenderToTextureShader()
 	fragShader->Create();
 	fragShader->Compile();
 
-	renderToTextureShader = new Diotima::GFXShaderGroup("TextureShader");
-	renderToTextureShader->AddShader(Diotima::GFXShaderGroup::EShaderIndex::Vertex, vertShader);
-	renderToTextureShader->AddShader(Diotima::GFXShaderGroup::EShaderIndex::Fragment, fragShader);
+	renderToTextureShader = new Diotima::GFXShaderPipeline("TextureShader");
+	renderToTextureShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Vertex, vertShader);
+	renderToTextureShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Fragment, fragShader);
 
 	renderToTextureShader->GenerateShaderProgram();
 }
@@ -273,8 +273,27 @@ namespace Diotima
 
 	Int32 Renderer::AddRenderItem(const RenderItemProtocol& itemProtocol)
 	{
+		if (!mFreeRenderListIndices.empty())
+		{
+			Int32 index = mFreeRenderListIndices.front();
+			mFreeRenderListIndices.pop();
+
+			mRenderList[index] = std::move(itemProtocol);
+			mRenderList[index].bIsValid = true;
+
+			return index;
+		}
+
 		mRenderList.emplace_back(std::move(itemProtocol));
+		mRenderList.back().bIsValid = true;
+
 		return static_cast<Int32>(mRenderList.size() - 1);
+	}
+
+	void Renderer::RemoveRenderItem(const U32 itemIdx)
+	{
+		mRenderList[itemIdx].Invalidate();
+		mFreeRenderListIndices.push(itemIdx);
 	}
 
 	Int32 Renderer::AddLightItem(const LightItemProtocol& itemProtocol)
@@ -327,7 +346,10 @@ namespace Diotima
 		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
 		for(auto& renderItem : mRenderList)
 		{
-			RenderSingleItem(renderItem);
+			if (renderItem.bIsValid)
+			{
+				RenderSingleItem(renderItem);
+			}
 		}
 	}
 
@@ -354,15 +376,21 @@ namespace Diotima
 		renderItem.Shader->SetUniformMatrix4x4("UViewMat", camera.ViewMat);
 		renderItem.Shader->SetUniformVector4D("UFragColor", renderItem.Material.Color);
 		renderItem.Shader->SetUniformMatrix4x4("UModelMat", renderItem.ModelMat);
+		
 		renderItem.Shader->SetUniformInt("Material.Diffuse", 0);
 		renderItem.Shader->SetUniformInt("Material.Specular", 1);
+		
+		renderItem.Shader->SetUniformInt("UNumActiveLights", mLightingList.size());
+		renderItem.Shader->SetUniformVector3D(std::string("ViewPos").c_str(), camera.Position);
 
-		for (auto& light : mLightingList)
+		for (size_t lightIdx = 0; lightIdx < mLightingList.size(); ++lightIdx)
 		{
-			renderItem.Shader->SetUniformVector3D("ULightPosition", light.Position);
-			renderItem.Shader->SetUniformVector3D("UViewPosition", camera.Position);
-			renderItem.Shader->SetUniformVector3D("ULightColor", light.Color);
-			renderItem.Shader->SetUniformFloat("ULightStrength", light.Strength);
+			const LightItemProtocol& lightItem = mLightingList[lightIdx];
+			std::string itemIdxStr = Conversions::StringFromInt(static_cast<int>(lightIdx));
+
+			renderItem.Shader->SetUniformVector3D(std::string("LightPositions[" + itemIdxStr + "]").c_str(), lightItem.Position);
+			renderItem.Shader->SetUniformVector3D(std::string("LightColors[" + itemIdxStr + "]").c_str(), lightItem.Color);
+			renderItem.Shader->SetUniformFloat(std::string("LightStrengths[" + itemIdxStr + "]").c_str(), lightItem.Strength);
 		}
 
 		const std::vector<GFXMesh*>& meshList = *renderItem.MeshData;

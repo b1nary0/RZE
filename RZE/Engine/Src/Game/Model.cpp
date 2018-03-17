@@ -14,10 +14,6 @@ Model3D::Model3D()
 
 Model3D::~Model3D()
 {
-	for (size_t i = 0; i < mMeshList.size(); ++i)
-	{
-		delete mMeshList[i];
-	}
 }
 
 bool Model3D::Load(const std::string& filePath)
@@ -49,6 +45,21 @@ bool Model3D::Load(const std::string& filePath)
 	}
 
 	return true;
+}
+
+void Model3D::Release()
+{
+	for (size_t i = 0; i < mMeshList.size(); ++i)
+	{
+		delete mMeshList[i];
+	}
+
+	for (size_t idx = 0; idx < mTextureHandles.size(); ++idx)
+	{
+		RZE_Engine::Get()->GetResourceHandler().ReleaseResource(mTextureHandles[idx]);
+	}
+
+	mTextureHandles.clear();
 }
 
 void Model3D::ProcessNode(const aiNode& node, const aiScene& scene)

@@ -2,6 +2,10 @@
 
 #include <EngineApp.h>
 
+#include <Apollo/EntityHandler.h>
+
+#include <vector>
+
 class ResourceHandle;
 
 namespace Diotima
@@ -20,4 +24,5 @@ public:
 	virtual void Update() override;
 
 private:
+	std::vector<Apollo::EntityID> mNanosuits;
 };

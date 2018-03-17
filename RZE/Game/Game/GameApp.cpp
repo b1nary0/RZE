@@ -40,19 +40,10 @@ void GameApp::Start()
 	scene.GetEntityHandler().AddComponent<MeshComponent>(floor, FilePath("Engine/Assets/3D/Cube.obj"));
 	scene.GetEntityHandler().AddComponent<TransformComponent>(floor, Vector3D(-5.0f, -5.5f, -5.0f), Quaternion(), Vector3D(10.0f, 0.5f, 10.0f));
 
-	// Leaving the for loop for testing purposes
-	for (int i = 0; i < 1; ++i)
-	{
-		Apollo::EntityID entity = scene.GetEntityHandler().CreateEntity();
-
-		scene.GetEntityHandler().AddComponent<MeshComponent>(entity, FilePath("Engine/Assets/3D/Nanosuit/Nanosuit.obj"));
-		scene.GetEntityHandler().AddComponent<TransformComponent>(entity, Vector3D(0.0f, -5.0f, 0.0f), Quaternion(), Vector3D(0.5f));
-	}
-
 	Apollo::EntityID lightSource = scene.GetEntityHandler().CreateEntity();
 	scene.GetEntityHandler().AddComponent<MeshComponent>(lightSource, FilePath("Engine/Assets/3D/Cube.obj"));
-	scene.GetEntityHandler().AddComponent<LightSourceComponent>(lightSource, Vector3D(0.8f, 0.8f, 0.8f), 1.5f);
-	scene.GetEntityHandler().AddComponent<TransformComponent>(lightSource, Vector3D(0.0f, 2.0f, 6.0f), Quaternion(), Vector3D(1.0f));
+	scene.GetEntityHandler().AddComponent<LightSourceComponent>(lightSource, Vector3D(0.8f, 0.8f, 0.8f), 1.0f);
+	scene.GetEntityHandler().AddComponent<TransformComponent>(lightSource, Vector3D(0.0f, 10.0f, 8.0f), Quaternion(), Vector3D(1.0f));
 
 	Apollo::EntityID camera = scene.GetEntityHandler().CreateEntity();
 	scene.GetEntityHandler().AddComponent<CameraComponent>(camera);
@@ -65,11 +56,36 @@ void GameApp::Start()
 	camComp->UpDir = Vector3D(0.0f, 1.0f, 0.0f);
 	camComp->AspectRatio = RZE_Engine::Get()->GetWindowSize().X() / RZE_Engine::Get()->GetWindowSize().Y();
 
-	InputHandler::KeyActionFunc tempKeyFunc([this, floor, &scene](const InputKey& key)
+	InputHandler::KeyActionFunc tempKeyFunc([this, &scene](const InputKey& key)
 	{
-		scene.GetEntityHandler().DestroyEntity(floor);
+		static float nextXpos = 0.0f;
+
+		if (key.GetKeyCode() == Win32KeyCode::Key_5)
+		{
+			if (mNanosuits.size())
+			{
+				scene.GetEntityHandler().DestroyEntity(mNanosuits.back());
+				mNanosuits.erase(mNanosuits.end() - 1);
+
+				if (mNanosuits.size() == 0)
+				{
+					nextXpos = 0.0f;
+				}
+			}
+		}
+		else if (key.GetKeyCode() == Win32KeyCode::Key_6)
+		{
+			mNanosuits.emplace_back(scene.GetEntityHandler().CreateEntity());
+			Apollo::EntityID entity = mNanosuits.back();
+
+			scene.GetEntityHandler().AddComponent<MeshComponent>(entity, FilePath("Engine/Assets/3D/Nanosuit/Nanosuit.obj"));
+			scene.GetEntityHandler().AddComponent<TransformComponent>(entity, Vector3D(nextXpos, -5.0f, 0.0f), Quaternion(), Vector3D(0.5f));
+
+			nextXpos += 5.0f;
+		}
 	});
 	RZE_Engine::Get()->GetInputHandler().BindAction(Win32KeyCode::Key_5, EButtonState::ButtonState_Pressed, tempKeyFunc);
+	RZE_Engine::Get()->GetInputHandler().BindAction(Win32KeyCode::Key_6, EButtonState::ButtonState_Pressed, tempKeyFunc);
 }
 
 void GameApp::Update()

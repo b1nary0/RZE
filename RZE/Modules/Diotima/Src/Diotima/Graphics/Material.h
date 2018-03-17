@@ -19,6 +19,7 @@ namespace Diotima
 		// IResource interface
 	public:
 		virtual bool Load(const std::string& filePath);
+		virtual void Release() {} // Nothing to release atm
 
 	public:
 		Vector4D Color;

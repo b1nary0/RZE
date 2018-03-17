@@ -1,6 +1,9 @@
 #include <Utils/StdAfx.h>
 #include <Utils/Math/Vector3d.h>
 
+#include <Utils/Math/Vector2D.h>
+#include <Utils/Math/Matrix4x4.h>
+
 Vector3D::Vector3D()
 	: mVec(0.0f, 0.0f, 0.0f)
 {
@@ -18,6 +21,11 @@ Vector3D::Vector3D(const int x, const int y, const int z)
 
 Vector3D::Vector3D(const float val)
 	: mVec(val, val, val)
+{
+}
+
+Vector3D::Vector3D(const Vector2D& vec2D)
+	: mVec(vec2D.X(), vec2D.Y(), 0.0f)
 {
 }
 
@@ -105,6 +113,13 @@ Vector3D Vector3D::operator*(float scalar) const
 {
 	glm::vec3 multVec = mVec * scalar;
 	return Vector3D(multVec.x, multVec.y, multVec.z);
+}
+
+Vector3D Vector3D::operator*(const Matrix4x4& rhs) const
+{
+	glm::vec3 rotVec = glm::vec3(rhs.GetInternalMat() * glm::vec4(mVec, 1.0f));
+
+	return Vector3D(rotVec.x, rotVec.y, rotVec.z);
 }
 
 bool Vector3D::operator!=(const Vector3D& rhs) const

@@ -1,0 +1,18 @@
+TODO:
+  ✔ Change InputHandler to cache raise and flush input bindings at one time at start of frame @done(2018-03-17 02:08) @project(TODO)
+    ✔ Keep track of current frame input events @done(2018-03-17 02:08) @project(TODO)
+    ✔ For every input event this frame, call the appropriate callback @done(2018-03-17 02:08) @project(TODO)
+
+  ☐ Change KeyboardActionBinding to not need KeyboardAction class (okay to duplicate data)
+  ☐ Also EMouseButton when moving mouse.
+
+
+
+
+
+
+
+
+
+NOTES:
+  Why are we using Int32 for keybinding can/should we change this

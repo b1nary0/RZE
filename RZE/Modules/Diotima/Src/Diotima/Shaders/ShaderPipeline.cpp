@@ -1,4 +1,4 @@
-#include <Diotima/Shaders/ShaderGroup.h>
+#include <Diotima/Shaders/ShaderPipeline.h>
 
 #include <Diotima/Driver/OpenGL.h>
 
@@ -9,7 +9,7 @@
 
 namespace Diotima
 {
-	GFXShaderGroup::GFXShaderGroup(const std::string& groupName)
+	GFXShaderPipeline::GFXShaderPipeline(const std::string& groupName)
 		: mGroupName(groupName)
 		, mNumShaders(0)
 		, mShaderProgramID(0)
@@ -20,11 +20,11 @@ namespace Diotima
 		}
 	}
 
-	GFXShaderGroup::~GFXShaderGroup()
+	GFXShaderPipeline::~GFXShaderPipeline()
 	{
 	}
 
-	bool GFXShaderGroup::AddShader(EShaderIndex::T shaderType, GFXShader* const shader)
+	bool GFXShaderPipeline::AddShader(EShaderIndex::T shaderType, GFXShader* const shader)
 	{
 		if (!mShaders[shaderType])
 		{
@@ -39,7 +39,7 @@ namespace Diotima
 		}
 	}
 
-	void GFXShaderGroup::SetUniformMatrix4x4(const char* uniformName, const Matrix4x4& mat)
+	void GFXShaderPipeline::SetUniformMatrix4x4(const char* uniformName, const Matrix4x4& mat)
 	{
 		Int32 uniformLocation = -1;
 		OpenGLRHI::Get().UniformLocation(GetShaderProgramID(), uniformName, uniformLocation);
@@ -49,7 +49,7 @@ namespace Diotima
 		}
 	}
 
-	void GFXShaderGroup::SetUniformVector3D(const char* uniformName, const Vector3D& vec)
+	void GFXShaderPipeline::SetUniformVector3D(const char* uniformName, const Vector3D& vec)
 	{
 		Int32 uniformLocation = -1;
 		OpenGLRHI::Get().UniformLocation(GetShaderProgramID(), uniformName, uniformLocation);
@@ -59,7 +59,7 @@ namespace Diotima
 		}
 	}
 
-	void GFXShaderGroup::SetUniformVector4D(const char* uniformName, const Vector4D& vec)
+	void GFXShaderPipeline::SetUniformVector4D(const char* uniformName, const Vector4D& vec)
 	{
 		Int32 uniformLocation = -1;
 		OpenGLRHI::Get().UniformLocation(GetShaderProgramID(), uniformName, uniformLocation);
@@ -69,7 +69,7 @@ namespace Diotima
 		}
 	}
 
-	void GFXShaderGroup::SetUniformInt(const char* uniformName, int value)
+	void GFXShaderPipeline::SetUniformInt(const char* uniformName, int value)
 	{
 		Int32 uniformLocation = -1;
 		OpenGLRHI::Get().UniformLocation(GetShaderProgramID(), uniformName, uniformLocation);
@@ -79,7 +79,7 @@ namespace Diotima
 		}
 	}
 
-	void GFXShaderGroup::SetUniformFloat(const char* uniformName, float value)
+	void GFXShaderPipeline::SetUniformFloat(const char* uniformName, float value)
 	{
 		Int32 uniformLocation = -1;
 		OpenGLRHI::Get().UniformLocation(GetShaderProgramID(), uniformName, uniformLocation);
@@ -89,7 +89,7 @@ namespace Diotima
 		}
 	}
 
-	bool GFXShaderGroup::GenerateShaderProgram()
+	bool GFXShaderPipeline::GenerateShaderProgram()
 	{
 		// @todo pretty sure mNumShaders is not doing what I'm expecting here.. should be at least a specific SET of shaders?
 		if (!mShaderProgramID && mNumShaders >= 2)
@@ -120,12 +120,12 @@ namespace Diotima
 		return false;
 	}
 
-	U32 GFXShaderGroup::GetShaderProgramID() const
+	U32 GFXShaderPipeline::GetShaderProgramID() const
 	{
 		return mShaderProgramID;
 	}
 
-	void GFXShaderGroup::Use()
+	void GFXShaderPipeline::Use()
 	{
 		U8 bIsShaderProgram = false;
 		OpenGLRHI::Get().IsShaderProgram(GetShaderProgramID(), bIsShaderProgram);
@@ -140,7 +140,7 @@ namespace Diotima
 		}
 	}
 
-	void GFXShaderGroup::AttachShaders() const
+	void GFXShaderPipeline::AttachShaders() const
 	{
 		for (U32 shaderIdx = 0; shaderIdx < EShaderIndex::COUNT; ++shaderIdx)
 		{

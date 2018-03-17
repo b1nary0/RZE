@@ -173,6 +173,15 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 		}
 		break;
 
+		case WM_MOUSEMOVE:
+		{
+			const Int32 xPos = GET_X_LPARAM(msg.lParam);
+			const Int32 yPos = GET_Y_LPARAM(msg.lParam);
+
+			inputHandler.OnMouseMove(xPos, yPos);
+		}
+		break;
+
 		case WM_LBUTTONDOWN:
 		{
 			const Int32 xPos = GET_X_LPARAM(msg.lParam);
@@ -191,12 +200,39 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 		}
 		break;
 
-		case WM_MOUSEMOVE:
+		case WM_MBUTTONDOWN:
 		{
 			const Int32 xPos = GET_X_LPARAM(msg.lParam);
 			const Int32 yPos = GET_Y_LPARAM(msg.lParam);
 
-			inputHandler.OnMouseMove(xPos, yPos);
+			inputHandler.OnMouseDown(EMouseButton::MouseButton_Middle, xPos, yPos);
+		}
+		break;
+
+		case WM_MBUTTONUP:
+		{
+			const Int32 xPos = GET_X_LPARAM(msg.lParam);
+			const Int32 yPos = GET_Y_LPARAM(msg.lParam);
+
+			inputHandler.OnMouseUp(EMouseButton::MouseButton_Middle, xPos, yPos);
+		}
+		break;
+
+		case WM_RBUTTONDOWN:
+		{
+			const Int32 xPos = GET_X_LPARAM(msg.lParam);
+			const Int32 yPos = GET_Y_LPARAM(msg.lParam);
+
+			inputHandler.OnMouseDown(EMouseButton::MouseButton_Right, xPos, yPos);
+		}
+		break;
+
+		case WM_RBUTTONUP:
+		{
+			const Int32 xPos = GET_X_LPARAM(msg.lParam);
+			const Int32 yPos = GET_Y_LPARAM(msg.lParam);
+
+			inputHandler.OnMouseUp(EMouseButton::MouseButton_Right, xPos, yPos);
 		}
 		break;
 

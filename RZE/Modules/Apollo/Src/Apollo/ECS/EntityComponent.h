@@ -33,13 +33,18 @@ namespace Apollo
 		inline void SetName(const std::string& newName) { mName = newName; }
 
 		std::string mName;
+		U32 id; // Temp? Solution for removing components -- need to know which component by id to remove.
 	};
 
 	template <typename TComponentType>
 	struct Component : public ComponentBase
 	{
 	public:
-		Component() {}
+		Component()
+		{
+			id = GetID();
+		}
+
 		~Component() {}
 
 		static inline U32 GetID()
