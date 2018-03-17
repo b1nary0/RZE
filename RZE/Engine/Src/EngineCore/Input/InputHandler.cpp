@@ -3,8 +3,6 @@
 
 #include <DebugUtils/DebugServices.h>
 
-#include <Utils/Platform/Timers/HiResTimer.h>
-
 #include <Events/EventHandler.h>
 
 InputHandler::InputHandler()
@@ -45,7 +43,7 @@ void InputHandler::RaiseEvents()
 		}
 		else
 		{
-			RaiseMouseButtonEvent(action.Button, action.State, action.Position.X(), action.Position.Y());
+			RaiseMouseButtonEvent(action.Button, action.State, static_cast<Int32>(action.Position.X()), static_cast<Int32>(action.Position.Y()));
 		}
 	}
 }
