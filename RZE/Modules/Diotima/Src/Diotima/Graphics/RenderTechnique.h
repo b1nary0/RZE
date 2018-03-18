@@ -7,9 +7,12 @@ namespace Diotima
 
 	class GFXRenderTechnique
 	{
+	public:
+		GFXRenderTechnique();
+		GFXRenderTechnique(GFXShaderPipeline* const shaderPipeline, GFXMaterial* const material);
 
 	private:
-		GFXShaderPipeline* mShaderGroup;
+		GFXShaderPipeline* mShaderPipeline;
 		GFXMaterial* mMaterial;
 	};
 }

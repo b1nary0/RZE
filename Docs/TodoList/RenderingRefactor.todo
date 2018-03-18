@@ -1,11 +1,11 @@
 TODO:
-  ☐ [RenderScene] Take a look at RenderItemProtocol && LightItemProtocol and determine usefulness / new options
-  ☐ [RenderScene] Discern best place for scene graph -- RenderSystem should take visible objects and submit to renderer
-  ☐ [Renderer] Should have notion of RenderScene which is all the objects that have been determined to be within the players viewDir
-  ☐ [Renderer] Should do all render queue sorting etc
   ☐ [Renderer] Material
   ☐ [Renderer] Technique
   ☐ [Renderer] RenderPass
+  ☐ [Renderer] Should have notion of RenderScene which is all the objects that have been determined to be within the players viewDir
+  ☐ [Renderer] Should do all render queue sorting etc
+  ☐ [RenderScene] Take a look at RenderItemProtocol && LightItemProtocol and determine usefulness / new options
+  ☐ [RenderScene] Discern best place for scene graph -- RenderSystem should take visible objects and submit to renderer
 
 
 
