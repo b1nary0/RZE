@@ -3,9 +3,10 @@ TODO:
   ☐ [Renderer] Technique
   ☐ [Renderer] RenderPass
   ☐ [Renderer] Should have notion of RenderScene which is all the objects that have been determined to be within the players viewDir
-  ☐ [Renderer] Should do all render queue sorting etc
-  ☐ [RenderScene] Take a look at RenderItemProtocol && LightItemProtocol and determine usefulness / new options
-  ☐ [RenderScene] Discern best place for scene graph -- RenderSystem should take visible objects and submit to renderer
+  ☐ [Renderer] RenderScene should contain the "scene graph"
+  ☐ [Renderer] Should do all render queue sorting etc]
+  ☐ [RenderSystem] Take a look at RenderItemProtocol && LightItemProtocol and determine usefulness / new options
+  ☐ [RenderSystem] Spatial optimization
 
 
 
@@ -16,3 +17,10 @@ NOTES:
   Renderer takes all the data for a visible scene, agnostic to engine components  and works with it to generate
    all the buffers and render queues, concerns itself with passes and setting up techniques etc and doing final
    GPU submission
+
+
+
+Renderer needs to know about
+Shader
+Material
+Location
