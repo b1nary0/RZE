@@ -193,6 +193,7 @@ namespace Apollo
 		}
 
 		ComponentID componentID = TComponentType::GetID();
+		TComponentType* const component = static_cast<TComponentType*>(mEntityComponentMap[entityID][componentID]);
 		AssertNotNull(component && "We should not have passed the above HasComponent() check and recieved a null component");
 
 		return component;
