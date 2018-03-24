@@ -10,6 +10,11 @@
 #include <Utils/PrimitiveDefs.h>
 #include <Utils/Functor.h>
 
+#define APOLLO_REGISTER_COMPONENT(ComponentType)											\
+{																							\
+	Apollo::ComponentTypeID<Apollo::ComponentBase>::GetComponentTypeID<ComponentType>();	\
+}																							\
+
 namespace Apollo
 {
 	typedef U32 EntityID;
@@ -45,7 +50,9 @@ namespace Apollo
 
 	public:
 		EntityID CreateEntity();
+
 		void DestroyEntity(EntityID entityID);
+
 		Entity& GetEntity(EntityID entityID);
 
 		template <typename TComponentType, typename... TArgs>

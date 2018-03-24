@@ -1,6 +1,12 @@
 #include <StdAfx.h>
 #include <EngineCore/Engine.h>
 
+#include <ECS/Components/CameraComponent.h>
+#include <ECS/Components/LightSourceComponent.h>
+#include <ECS/Components/MaterialComponent.h>
+#include <ECS/Components/MeshComponent.h>
+#include <ECS/Components/TransformComponent.h>
+
 #include <ECS/Systems/RenderSystem.h>
 
 #include <Windowing/Win32Window.h>
@@ -9,7 +15,6 @@
 #include <Utils/DebugUtils/Debug.h>
 
 #include <Apollo/EntityComponentSystem.h>
-
 #include <Diotima/Renderer.h>
 
 RZE_Engine* RZE_Engine::sInstance = nullptr;
@@ -78,6 +83,7 @@ void RZE_Engine::Init()
 
 		RegisterWindowEvents();
 		RegisterInputEvents();
+		RegisterEngineComponentTypes();
 
 		mRenderer = new Diotima::Renderer();
 		mRenderer->Initialize();
@@ -163,6 +169,15 @@ void RZE_Engine::RegisterInputEvents()
 
 	mInputHandler.BindAction(Win32KeyCode::Escape, EButtonState::ButtonState_Pressed, inputFunc);
 	mInputHandler.BindAction(Win32KeyCode::F1, EButtonState::ButtonState_Pressed, inputFunc);
+}
+
+void RZE_Engine::RegisterEngineComponentTypes()
+{
+	APOLLO_REGISTER_COMPONENT(CameraComponent);
+	APOLLO_REGISTER_COMPONENT(LightSourceComponent);
+	APOLLO_REGISTER_COMPONENT(MaterialComponent);
+	APOLLO_REGISTER_COMPONENT(MeshComponent);
+	APOLLO_REGISTER_COMPONENT(TransformComponent);
 }
 
 void RZE_Engine::LoadEngineConfig()

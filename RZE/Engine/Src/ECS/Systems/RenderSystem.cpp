@@ -75,11 +75,7 @@ RenderSystem::RenderSystem()
 
 void RenderSystem::Initialize()
 {
-	Apollo::ComponentTypeID<Apollo::ComponentBase>::GetComponentTypeID<TransformComponent>();
-	Apollo::ComponentTypeID<Apollo::ComponentBase>::GetComponentTypeID<MeshComponent>();
-
 	InternalGetComponentFilter().AddFilterType<TransformComponent>();
-	InternalGetComponentFilter().AddFilterType<MeshComponent>();
 
 	RegisterForComponentNotifications();
 

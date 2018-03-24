@@ -77,6 +77,7 @@ private:
 
 	void RegisterWindowEvents();
 	void RegisterInputEvents();
+	void RegisterEngineComponentTypes();
 
 	void LoadEngineConfig();
 	void CreateAndInitializeWindow();
