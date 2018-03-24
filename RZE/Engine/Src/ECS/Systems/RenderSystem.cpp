@@ -204,7 +204,6 @@ void RenderSystem::RegisterForComponentNotifications()
 	//
 	Apollo::EntityHandler::ComponentAddedFunc OnCameraComponentAdded([this](Apollo::EntityID entityID, Apollo::EntityHandler& handler)
 	{
-		mMainCamera = entityID;
 		CameraComponent* const camComp = handler.GetComponent<CameraComponent>(entityID);
 		AssertNotNull(camComp);
 		camComp->bIsActiveCamera = true;

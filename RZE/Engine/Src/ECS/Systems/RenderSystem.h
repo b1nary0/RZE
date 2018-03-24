@@ -31,5 +31,4 @@ private:
 	std::unordered_map<Apollo::EntityID, Int32> mLightItemEntityMap;
 
 	Diotima::GLRenderTargetTexture mRenderTargetTexture;
-	Apollo::EntityID mMainCamera;
 };
