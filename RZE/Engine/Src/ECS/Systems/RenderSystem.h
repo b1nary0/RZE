@@ -5,6 +5,7 @@
 #include <Utils/Functor.h>
 
 struct CameraComponent;
+struct TransformComponent;
 
 namespace Apollo
 {
@@ -23,12 +24,12 @@ public:
 
 	void RegisterForComponentNotifications();
 
-	void GenerateCameraMatrices();
+	void GenerateCameraMatrices(CameraComponent* const cameraComponent, const TransformComponent* const transformComponent);
 
 private:
 	std::unordered_map<Apollo::EntityID, Int32> mRenderItemEntityMap;
 	std::unordered_map<Apollo::EntityID, Int32> mLightItemEntityMap;
 
 	Diotima::GLRenderTargetTexture mRenderTargetTexture;
-	CameraComponent* mMainCamera;
+	Apollo::EntityID mMainCamera;
 };

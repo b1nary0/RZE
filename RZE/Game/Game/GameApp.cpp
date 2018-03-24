@@ -47,8 +47,8 @@ void GameApp::Start()
 
 	Apollo::EntityID camera = scene.GetEntityHandler().CreateEntity();
 	scene.GetEntityHandler().AddComponent<CameraComponent>(camera);
+	scene.GetEntityHandler().AddComponent<TransformComponent>(camera, Vector3D(-4.0f, 3.0f, 8.0f), Quaternion(), Vector3D(1.0f));
 	CameraComponent* const camComp = scene.GetEntityHandler().GetComponent<CameraComponent>(camera);
-	camComp->Position = Vector3D(-4.0f, 3.0f, 8.0f);
 	camComp->FOV = 45;
 	camComp->NearCull = 0.1f;
 	camComp->FarCull = 1000.0f;
