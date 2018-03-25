@@ -7,7 +7,6 @@
 
 struct CameraComponent : public Apollo::Component<CameraComponent>
 {
-	Vector3D Position;
 	Vector3D LookAt;
 	Vector3D UpDir;
 	Vector3D Forward;
@@ -15,8 +14,10 @@ struct CameraComponent : public Apollo::Component<CameraComponent>
 	Matrix4x4 ProjectionMat;
 	Matrix4x4 ViewMat;
 
-	float FOV;
-	float AspectRatio;
-	float NearCull;
-	float FarCull;
+	float FOV { 0.0f };
+	float AspectRatio { 0.0f };
+	float NearCull { 0.0f };
+	float FarCull { 0.0f };
+
+	bool bIsActiveCamera { false };
 };

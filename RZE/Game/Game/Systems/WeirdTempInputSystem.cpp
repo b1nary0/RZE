@@ -36,11 +36,12 @@ void WeirdTempInputSystem::Initialize()
 
 	Apollo::EntityHandler::ComponentAddedFunc camCompAdded([this](Apollo::EntityID entityID, Apollo::EntityHandler& handler)
 	{
+		mMainCamera = entityID;
 		CameraComponent* const camComp = handler.GetComponent<CameraComponent>(entityID);
 		AssertNotNull(camComp);
-		mMainCamera = camComp;
-		mMainCamera->Forward.Normalize();
-		mMainCamera->UpDir.Normalize();
+
+		camComp->Forward.Normalize();
+		camComp->UpDir.Normalize();
 	});
 	handler.RegisterForComponentAddNotification<CameraComponent>(camCompAdded);
 
@@ -67,37 +68,36 @@ void WeirdTempInputSystem::BindInputs()
 {
 	Functor<void, const InputKey&> keyFunc([this](const InputKey& key)
 	{
+		TransformComponent* const transfComp = RZE_Engine::Get()->GetActiveScene().GetEntityHandler().GetComponent<TransformComponent>(mMainCamera);
+		CameraComponent* const camComp = RZE_Engine::Get()->GetActiveScene().GetEntityHandler().GetComponent<CameraComponent>(mMainCamera);
+		AssertNotNull(transfComp);
+		AssertNotNull(camComp);
+
 		if (key.GetKeyCode() == Win32KeyCode::Key_W)
 		{
-			AssertNotNull(mMainCamera);
-			mMainCamera->Position += mMainCamera->Forward * kSpeed * RZE_Engine::Get()->GetDeltaTime();
+			transfComp->Position += camComp->Forward * kSpeed * RZE_Engine::Get()->GetDeltaTime();
 		}
 		else if (key.GetKeyCode() == Win32KeyCode::Key_S)
 		{
-			AssertNotNull(mMainCamera);
-			mMainCamera->Position -= mMainCamera->Forward * kSpeed * RZE_Engine::Get()->GetDeltaTime();
+			transfComp->Position -= camComp->Forward * kSpeed * RZE_Engine::Get()->GetDeltaTime();
 		}
 
 		if (key.GetKeyCode() == Win32KeyCode::Key_A)
 		{
-			AssertNotNull(mMainCamera);
-			mMainCamera->Position -= mMainCamera->Forward.Cross(mMainCamera->UpDir).Normalize() * kSpeed * RZE_Engine::Get()->GetDeltaTime();
+			transfComp->Position -= camComp->Forward.Cross(camComp->UpDir).Normalize() * kSpeed * RZE_Engine::Get()->GetDeltaTime();
 		}
 		else if (key.GetKeyCode() == Win32KeyCode::Key_D)
 		{
-			AssertNotNull(mMainCamera);
-			mMainCamera->Position += mMainCamera->Forward.Cross(mMainCamera->UpDir).Normalize() * kSpeed * RZE_Engine::Get()->GetDeltaTime();
+			transfComp->Position += camComp->Forward.Cross(camComp->UpDir).Normalize() * kSpeed * RZE_Engine::Get()->GetDeltaTime();
 		}
 
 		if (key.GetKeyCode() == Win32KeyCode::Key_Q)
 		{
-			AssertNotNull(mMainCamera);
-			mMainCamera->Position += mMainCamera->UpDir * kSpeed * RZE_Engine::Get()->GetDeltaTime();
+			transfComp->Position += camComp->UpDir * kSpeed * RZE_Engine::Get()->GetDeltaTime();
 		}
 		else if (key.GetKeyCode() == Win32KeyCode::Key_E)
 		{
-			AssertNotNull(mMainCamera);
-			mMainCamera->Position -= mMainCamera->UpDir * kSpeed * RZE_Engine::Get()->GetDeltaTime();
+			transfComp->Position -= camComp->UpDir * kSpeed * RZE_Engine::Get()->GetDeltaTime();
 		}
 	});
 	RZE_Engine::Get()->GetInputHandler().BindAction(Win32KeyCode::Key_W, EButtonState::ButtonState_Hold, keyFunc);
@@ -110,6 +110,11 @@ void WeirdTempInputSystem::BindInputs()
 	static Vector3D prevPos;
 	Functor<void, const Vector3D&, Int32> mouseFunc([this](const Vector3D& axis, Int32 wheel)
 	{
+		TransformComponent* const transfComp = RZE_Engine::Get()->GetActiveScene().GetEntityHandler().GetComponent<TransformComponent>(mMainCamera);
+		CameraComponent* const camComp = RZE_Engine::Get()->GetActiveScene().GetEntityHandler().GetComponent<CameraComponent>(mMainCamera);
+		AssertNotNull(transfComp);
+		AssertNotNull(camComp);
+
 		if (prevPos.LengthSq() == 0)
 		{
 			prevPos = axis;
@@ -117,11 +122,11 @@ void WeirdTempInputSystem::BindInputs()
 
 		if (wheel > 0)
 		{
-			mMainCamera->Position += mMainCamera->Forward * kWheelSpeed * RZE_Engine::Get()->GetDeltaTime();
+			transfComp->Position += camComp->Forward * kWheelSpeed * RZE_Engine::Get()->GetDeltaTime();
 		}
 		else if (wheel < 0)
 		{
-			mMainCamera->Position -= mMainCamera->Forward * kWheelSpeed * RZE_Engine::Get()->GetDeltaTime();
+			transfComp->Position -= camComp->Forward * kWheelSpeed * RZE_Engine::Get()->GetDeltaTime();
 		}
 		else
 		{
@@ -138,7 +143,7 @@ void WeirdTempInputSystem::BindInputs()
 
 				lookDir.SetY(lookDir.Y() * -1);
 
-				mMainCamera->Forward = std::move(lookDir);
+				camComp->Forward = std::move(lookDir);
 
 				prevPos = axis;
 
@@ -152,11 +157,11 @@ void WeirdTempInputSystem::BindInputs()
 
 				if (mOrbitPoint.LengthSq() == 0.0f)
 				{
-					mOrbitPoint = mMainCamera->Position + (mMainCamera->Forward * 5.0f);
+					mOrbitPoint = transfComp->Position + (camComp->Forward * 5.0f);
 				}
 				
-				mMainCamera->Position = (mOrbitPoint + (rot * (mMainCamera->Position - mOrbitPoint)));
-				mMainCamera->Forward = (mOrbitPoint - mMainCamera->Position).Normalize();
+				transfComp->Position = (mOrbitPoint + (rot * (transfComp->Position - mOrbitPoint)));
+				camComp->Forward = (mOrbitPoint - transfComp->Position).Normalize();
 
 				prevPos = axis;
 			}
@@ -176,16 +181,16 @@ void WeirdTempInputSystem::CreateEntities()
 {
 	GameScene& scene = RZE_Engine::Get()->GetActiveScene();
 	{
-		mEntity0 = scene.GetEntityHandler().CreateEntity();
-
-		scene.GetEntityHandler().AddComponent<MeshComponent>(mEntity0, FilePath("Engine/Assets/3D/Cube.obj"));
-		scene.GetEntityHandler().AddComponent<TransformComponent>(mEntity0, Vector3D(0.0f, 2.0f, -6.0f), Quaternion(), Vector3D(1.0f));
+ 		mEntity0 = scene.GetEntityHandler().CreateEntity();
+ 
+ 		scene.GetEntityHandler().AddComponent<MeshComponent>(mEntity0, FilePath("Engine/Assets/3D/Cube.obj"));
+ 		scene.GetEntityHandler().AddComponent<TransformComponent>(mEntity0, Vector3D(0.0f, 2.0f, -6.0f), Quaternion(), Vector3D(1.0f));
 	}
 	{
-		mEntity1 = scene.GetEntityHandler().CreateEntity();
-
-		scene.GetEntityHandler().AddComponent<MeshComponent>(mEntity1, FilePath("Engine/Assets/3D/Cube.obj"));
-		scene.GetEntityHandler().AddComponent<TransformComponent>(mEntity1, Vector3D(-4.0f, 2.0f, -6.0f), Quaternion(), Vector3D(1.0f));
+ 		mEntity1 = scene.GetEntityHandler().CreateEntity();
+ 
+ 		scene.GetEntityHandler().AddComponent<MeshComponent>(mEntity1, FilePath("Engine/Assets/3D/Cube.obj"));
+ 		scene.GetEntityHandler().AddComponent<TransformComponent>(mEntity1, Vector3D(-4.0f, 2.0f, -6.0f), Quaternion(), Vector3D(1.0f));
 	}
 }
 

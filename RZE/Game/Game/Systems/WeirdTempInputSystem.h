@@ -31,7 +31,7 @@ private:
 	Vector3D ArcBallProjection(const Vector3D& vec);
 
 private:
-	struct CameraComponent* mMainCamera;
+	Apollo::EntityID mMainCamera;
 	
 	Vector3D mPitchYawRoll;
 	Vector3D mOrbitPoint;

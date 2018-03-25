@@ -71,14 +71,10 @@ void CreateTextureShader()
 
 RenderSystem::RenderSystem()
 {
-	mMainCamera = nullptr;
 }
 
 void RenderSystem::Initialize()
 {
-	Apollo::ComponentTypeID<Apollo::ComponentBase>::GetComponentTypeID<TransformComponent>();
-	Apollo::ComponentTypeID<Apollo::ComponentBase>::GetComponentTypeID<MeshComponent>();
-
 	InternalGetComponentFilter().AddFilterType<TransformComponent>();
 	InternalGetComponentFilter().AddFilterType<MeshComponent>();
 
@@ -90,17 +86,27 @@ void RenderSystem::Initialize()
 
 void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 {
-	AssertNotNull(mMainCamera);
-
 	Apollo::EntityHandler& handler = RZE_Engine::Get()->GetActiveScene().GetEntityHandler();
 	Diotima::Renderer* const renderSystem = RZE_Engine::Get()->GetRenderer();
 
-	GenerateCameraMatrices();
-
-	Diotima::Renderer::CameraItemProtocol camera;
-	camera.ProjectionMat = mMainCamera->ProjectionMat;
-	camera.ViewMat = mMainCamera->ViewMat;
-	renderSystem->SetCamera(camera);
+	Functor<void, Apollo::EntityID> CameraCompFunc([this, &handler, &renderSystem](Apollo::EntityID entity)
+	{
+		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
+		CameraComponent* const camComp = handler.GetComponent<CameraComponent>(entity);
+		AssertNotNull(transfComp);
+		AssertNotNull(camComp);
+		
+		if (camComp->bIsActiveCamera)
+		{
+			GenerateCameraMatrices(camComp, transfComp);
+			
+			Diotima::Renderer::CameraItemProtocol camera;
+			camera.ProjectionMat = camComp->ProjectionMat;
+			camera.ViewMat = camComp->ViewMat;
+			renderSystem->SetCamera(camera);
+		}
+	});
+	handler.ForEach<TransformComponent, CameraComponent>(CameraCompFunc);
 
 	for (auto& entity : entities)
 	{
@@ -115,7 +121,6 @@ void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 
 		item.ModelMat = modelMat;
 	}
-
 
 	Functor<void, Apollo::EntityID> LightSourceFunc([this, &handler, &renderSystem](Apollo::EntityID entity)
 	{
@@ -196,7 +201,9 @@ void RenderSystem::RegisterForComponentNotifications()
 	//
 	Apollo::EntityHandler::ComponentAddedFunc OnCameraComponentAdded([this](Apollo::EntityID entityID, Apollo::EntityHandler& handler)
 	{
-		this->mMainCamera = handler.GetComponent<CameraComponent>(entityID);
+		CameraComponent* const camComp = handler.GetComponent<CameraComponent>(entityID);
+		AssertNotNull(camComp);
+		camComp->bIsActiveCamera = true;
 	});
 	handler.RegisterForComponentAddNotification<CameraComponent>(OnCameraComponentAdded);
 
@@ -215,8 +222,8 @@ void RenderSystem::RegisterForComponentNotifications()
 	handler.RegisterForComponentRemovedNotification<MeshComponent>(OnMeshComponentRemoved);
 }
 
-void RenderSystem::GenerateCameraMatrices()
+void RenderSystem::GenerateCameraMatrices(CameraComponent* const cameraComponent, const TransformComponent* const transformComponent)
 {
-	mMainCamera->ProjectionMat = Matrix4x4::CreatePerspectiveMatrix(mMainCamera->FOV, mMainCamera->AspectRatio, mMainCamera->NearCull, mMainCamera->FarCull);
-	mMainCamera->ViewMat = Matrix4x4::CreateViewMatrix(mMainCamera->Position, mMainCamera->Position + mMainCamera->Forward, mMainCamera->UpDir);
+	cameraComponent->ProjectionMat = Matrix4x4::CreatePerspectiveMatrix(cameraComponent->FOV, cameraComponent->AspectRatio, cameraComponent->NearCull, cameraComponent->FarCull);
+	cameraComponent->ViewMat = Matrix4x4::CreateViewMatrix(transformComponent->Position, transformComponent->Position + cameraComponent->Forward, cameraComponent->UpDir);
 }

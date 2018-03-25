@@ -60,7 +60,7 @@ public:
 
 
 	// #TODO(Josh) this needs to return an actual thing, just placeholder atm
-	inline float GetDeltaTime() const { return 1.0f / 60.0f; }
+	inline double GetDeltaTime() const { return mDeltaTime; }
 
 private:
 
@@ -77,6 +77,7 @@ private:
 
 	void RegisterWindowEvents();
 	void RegisterInputEvents();
+	void RegisterEngineComponentTypes();
 
 	void LoadEngineConfig();
 	void CreateAndInitializeWindow();
@@ -96,6 +97,8 @@ private:
 	Diotima::Renderer* mRenderer;
 
 	EngineConfig* mEngineConfig;
+
+	double mDeltaTime	{ 0.0f };
 
 	bool bIsInitialized;
 	bool bShouldExit;
