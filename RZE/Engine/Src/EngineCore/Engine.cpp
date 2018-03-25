@@ -1,6 +1,10 @@
 #include <StdAfx.h>
 #include <EngineCore/Engine.h>
 
+#include <imGUI/imgui.h>
+
+#include <DebugUtils/DebugServices.h>
+
 #include <ECS/Components/CameraComponent.h>
 #include <ECS/Components/LightSourceComponent.h>
 #include <ECS/Components/MaterialComponent.h>
@@ -53,12 +57,17 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 			double newTime = programTimer.GetElapsed<double>();
 			double frameTime = newTime - currentTime;
 			currentTime = newTime;
+
+			ImGui::NewFrame();
+			DebugServices::AddData(StringUtils::FormatString("Frame Time: %f ms", static_cast<float>(mDeltaTime) * 1000.0f), Vector3D(1.0f, 1.0f, 0.0f));
 			{
 				mDeltaTime = frameTime;
 				Update();
 
 				mRenderer->Update();
+				DebugServices::Display(GetWindowSize());
 			}
+			ImGui::Render();
 			mMainWindow->BufferSwap(); // #TODO(Josh) Maybe this can be done better
 		}
 
@@ -85,6 +94,9 @@ void RZE_Engine::Init()
 		LoadEngineConfig();
 
 		CreateAndInitializeWindow();
+
+		DebugServices::Initialize();
+		DebugServices::HandleScreenResize(GetWindowSize());
 
 		mInputHandler.Initialize();
 
