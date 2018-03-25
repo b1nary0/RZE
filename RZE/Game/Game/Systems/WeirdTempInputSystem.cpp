@@ -181,16 +181,16 @@ void WeirdTempInputSystem::CreateEntities()
 {
 	GameScene& scene = RZE_Engine::Get()->GetActiveScene();
 	{
-		mEntity0 = scene.GetEntityHandler().CreateEntity();
-
-		scene.GetEntityHandler().AddComponent<MeshComponent>(mEntity0, FilePath("Engine/Assets/3D/Cube.obj"));
-		scene.GetEntityHandler().AddComponent<TransformComponent>(mEntity0, Vector3D(0.0f, 2.0f, -6.0f), Quaternion(), Vector3D(1.0f));
+ 		mEntity0 = scene.GetEntityHandler().CreateEntity();
+ 
+ 		scene.GetEntityHandler().AddComponent<MeshComponent>(mEntity0, FilePath("Engine/Assets/3D/Cube.obj"));
+ 		scene.GetEntityHandler().AddComponent<TransformComponent>(mEntity0, Vector3D(0.0f, 2.0f, -6.0f), Quaternion(), Vector3D(1.0f));
 	}
 	{
-		mEntity1 = scene.GetEntityHandler().CreateEntity();
-
-		scene.GetEntityHandler().AddComponent<MeshComponent>(mEntity1, FilePath("Engine/Assets/3D/Cube.obj"));
-		scene.GetEntityHandler().AddComponent<TransformComponent>(mEntity1, Vector3D(-4.0f, 2.0f, -6.0f), Quaternion(), Vector3D(1.0f));
+ 		mEntity1 = scene.GetEntityHandler().CreateEntity();
+ 
+ 		scene.GetEntityHandler().AddComponent<MeshComponent>(mEntity1, FilePath("Engine/Assets/3D/Cube.obj"));
+ 		scene.GetEntityHandler().AddComponent<TransformComponent>(mEntity1, Vector3D(-4.0f, 2.0f, -6.0f), Quaternion(), Vector3D(1.0f));
 	}
 }
 

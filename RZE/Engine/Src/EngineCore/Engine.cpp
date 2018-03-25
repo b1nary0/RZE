@@ -45,9 +45,16 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 		AssertNotNull(createGameCallback);
 		PostInit(createGameCallback);
 
+		HiResTimer programTimer;
+		programTimer.Start();
+		double currentTime = programTimer.GetElapsed<double>();
 		while (!bShouldExit)
 		{
+			double newTime = programTimer.GetElapsed<double>();
+			double frameTime = newTime - currentTime;
+			currentTime = newTime;
 			{
+				mDeltaTime = frameTime;
 				Update();
 
 				mRenderer->Update();

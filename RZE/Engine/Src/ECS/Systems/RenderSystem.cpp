@@ -76,6 +76,7 @@ RenderSystem::RenderSystem()
 void RenderSystem::Initialize()
 {
 	InternalGetComponentFilter().AddFilterType<TransformComponent>();
+	InternalGetComponentFilter().AddFilterType<MeshComponent>();
 
 	RegisterForComponentNotifications();
 
@@ -98,7 +99,7 @@ void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 		if (camComp->bIsActiveCamera)
 		{
 			GenerateCameraMatrices(camComp, transfComp);
-
+			
 			Diotima::Renderer::CameraItemProtocol camera;
 			camera.ProjectionMat = camComp->ProjectionMat;
 			camera.ViewMat = camComp->ViewMat;
