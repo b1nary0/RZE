@@ -31,3 +31,9 @@
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Platform/FilePath.h>
 #include <Utils/PrimitiveDefs.h>
+
+#ifdef DEBUG
+
+#include <DebugUtils/DebugServices.h>
+
+#endif

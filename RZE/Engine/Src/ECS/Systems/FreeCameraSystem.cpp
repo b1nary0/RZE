@@ -29,12 +29,13 @@ void FreeCameraSystem::Update(std::vector<Apollo::EntityID>& entities)
 	for (auto& entity : entities)
 	{
 		CameraComponent* const camComp = handler.GetComponent<CameraComponent>(entity);
-		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
 		AssertNotNull(camComp);
-		AssertNotNull(transfComp);
 
 		if (camComp->bIsActiveCamera)
 		{
+			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
+			AssertNotNull(transfComp);
+
 			KeyboardInput(*camComp, *transfComp);
 			MouseInput(*camComp, *transfComp);
 
