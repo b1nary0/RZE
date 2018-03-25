@@ -10,12 +10,13 @@
 // TEST
 #include <Diotima/Graphics/Texture2D.h>
 
-#include <Ecs/Components/CameraComponent.h>
+#include <ECS/Components/CameraComponent.h>
 #include <ECS/Components/LightSourceComponent.h>
 #include <ECS/Components/MeshComponent.h>
 #include <ECS/Components/TransformComponent.h>
 #include <ECS/Components/MaterialComponent.h>
 
+#include <ECS/Systems/FreeCameraSystem.h>
 #include <Game/Systems/WeirdTempInputSystem.h>
 
 GameApp::GameApp()
@@ -35,6 +36,7 @@ void GameApp::Start()
 
 	// ALL TEST CODE
 	scene.GetEntityHandler().AddSystem<WeirdTempInputSystem>();
+	scene.GetEntityHandler().AddSystem<FreeCameraSystem>();
 	
 	Apollo::EntityID floor = scene.GetEntityHandler().CreateEntity();
 	scene.GetEntityHandler().AddComponent<MeshComponent>(floor, FilePath("Engine/Assets/3D/Cube.obj"));
@@ -46,8 +48,8 @@ void GameApp::Start()
 	scene.GetEntityHandler().AddComponent<TransformComponent>(lightSource, Vector3D(0.0f, 10.0f, 8.0f), Quaternion(), Vector3D(1.0f));
 
 	Apollo::EntityID camera = scene.GetEntityHandler().CreateEntity();
+	scene.GetEntityHandler().AddComponent<TransformComponent>(camera, Vector3D(-4.0f, 15.0f, 50.0f), Quaternion(), Vector3D(1.0f));
 	scene.GetEntityHandler().AddComponent<CameraComponent>(camera);
-	scene.GetEntityHandler().AddComponent<TransformComponent>(camera, Vector3D(-4.0f, 3.0f, 8.0f), Quaternion(), Vector3D(1.0f));
 	CameraComponent* const camComp = scene.GetEntityHandler().GetComponent<CameraComponent>(camera);
 	camComp->FOV = 45;
 	camComp->NearCull = 0.1f;

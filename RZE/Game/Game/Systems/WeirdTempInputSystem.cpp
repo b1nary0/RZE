@@ -66,54 +66,11 @@ void WeirdTempInputSystem::ShutDown()
 
 void WeirdTempInputSystem::BindInputs()
 {
-	Functor<void, const InputKey&> keyFunc([this](const InputKey& key)
-	{
-		TransformComponent* const transfComp = RZE_Engine::Get()->GetActiveScene().GetEntityHandler().GetComponent<TransformComponent>(mMainCamera);
-		CameraComponent* const camComp = RZE_Engine::Get()->GetActiveScene().GetEntityHandler().GetComponent<CameraComponent>(mMainCamera);
-		AssertNotNull(transfComp);
-		AssertNotNull(camComp);
-
-		if (key.GetKeyCode() == Win32KeyCode::Key_W)
-		{
-			transfComp->Position += camComp->Forward * kSpeed * RZE_Engine::Get()->GetDeltaTime();
-		}
-		else if (key.GetKeyCode() == Win32KeyCode::Key_S)
-		{
-			transfComp->Position -= camComp->Forward * kSpeed * RZE_Engine::Get()->GetDeltaTime();
-		}
-
-		if (key.GetKeyCode() == Win32KeyCode::Key_A)
-		{
-			transfComp->Position -= camComp->Forward.Cross(camComp->UpDir).Normalize() * kSpeed * RZE_Engine::Get()->GetDeltaTime();
-		}
-		else if (key.GetKeyCode() == Win32KeyCode::Key_D)
-		{
-			transfComp->Position += camComp->Forward.Cross(camComp->UpDir).Normalize() * kSpeed * RZE_Engine::Get()->GetDeltaTime();
-		}
-
-		if (key.GetKeyCode() == Win32KeyCode::Key_Q)
-		{
-			transfComp->Position += camComp->UpDir * kSpeed * RZE_Engine::Get()->GetDeltaTime();
-		}
-		else if (key.GetKeyCode() == Win32KeyCode::Key_E)
-		{
-			transfComp->Position -= camComp->UpDir * kSpeed * RZE_Engine::Get()->GetDeltaTime();
-		}
-	});
-	RZE_Engine::Get()->GetInputHandler().BindAction(Win32KeyCode::Key_W, EButtonState::ButtonState_Hold, keyFunc);
-	RZE_Engine::Get()->GetInputHandler().BindAction(Win32KeyCode::Key_S, EButtonState::ButtonState_Hold, keyFunc);
-	RZE_Engine::Get()->GetInputHandler().BindAction(Win32KeyCode::Key_A, EButtonState::ButtonState_Hold, keyFunc);
-	RZE_Engine::Get()->GetInputHandler().BindAction(Win32KeyCode::Key_D, EButtonState::ButtonState_Hold, keyFunc);
-	RZE_Engine::Get()->GetInputHandler().BindAction(Win32KeyCode::Key_Q, EButtonState::ButtonState_Hold, keyFunc);
-	RZE_Engine::Get()->GetInputHandler().BindAction(Win32KeyCode::Key_E, EButtonState::ButtonState_Hold, keyFunc);
-
 	static Vector3D prevPos;
 	Functor<void, const Vector3D&, Int32> mouseFunc([this](const Vector3D& axis, Int32 wheel)
 	{
 		TransformComponent* const transfComp = RZE_Engine::Get()->GetActiveScene().GetEntityHandler().GetComponent<TransformComponent>(mMainCamera);
 		CameraComponent* const camComp = RZE_Engine::Get()->GetActiveScene().GetEntityHandler().GetComponent<CameraComponent>(mMainCamera);
-		AssertNotNull(transfComp);
-		AssertNotNull(camComp);
 
 		if (prevPos.LengthSq() == 0)
 		{
