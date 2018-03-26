@@ -58,10 +58,11 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 			double frameTime = newTime - currentTime;
 			currentTime = newTime;
 
-			ImGui::NewFrame();
 			DebugServices::AddData(StringUtils::FormatString("Frame Time: %f ms", static_cast<float>(mDeltaTime) * 1000.0f), Vector3D(1.0f, 1.0f, 0.0f));
 			{
 				mDeltaTime = frameTime;
+
+				PreUpdate();
 				Update();
 
 				mRenderer->Update();
@@ -124,6 +125,15 @@ void RZE_Engine::PostInit(Functor<RZE_Game* const>& createApplicationCallback)
 	InitGame(createApplicationCallback);
 
 	mActiveScene->Start();
+}
+
+void RZE_Engine::PreUpdate()
+{
+	CompileEvents();
+	mEventHandler.ProcessEvents();
+	mInputHandler.RaiseEvents();
+
+	ImGui::NewFrame();
 }
 
 void RZE_Engine::CreateAndInitializeWindow()
@@ -214,10 +224,6 @@ void RZE_Engine::LoadEngineConfig()
 
 void RZE_Engine::Update()
 {
-	CompileEvents();
-	mEventHandler.ProcessEvents();
-	mInputHandler.RaiseEvents();
-
 	mApplication->Update();
 	mActiveScene->Update();
 }

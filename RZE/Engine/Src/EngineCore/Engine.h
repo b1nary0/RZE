@@ -67,6 +67,7 @@ private:
 	void Init();
 	void PostInit(Functor<RZE_Game* const>& createApplicationCallback);
 
+	void PreUpdate(); // Set up anything the new frame will need
 	void Update();
 
 	void BeginShutDown();
