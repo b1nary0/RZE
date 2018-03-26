@@ -169,9 +169,9 @@ void RZE_Engine::RegisterWindowEvents()
 		}
 		else if (event.mWindowEvent.mEventInfo.mEventSubType == EWindowEventType::Window_Resize)
 		{
-			U16 width = event.mWindowEvent.mSizeX;
-			U16 height = event.mWindowEvent.mSizeY;
-			GetRenderer()->ResizeCanvas(Vector2D(width, height));
+			Vector2D newSize(event.mWindowEvent.mSizeX, event.mWindowEvent.mSizeY);
+			GetRenderer()->ResizeCanvas(newSize);
+			DebugServices::HandleScreenResize(newSize);
 		}
 	});
 	mEventHandler.RegisterForEvent(EEventType::Window, windowCallback);
