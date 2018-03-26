@@ -42,7 +42,7 @@ void FreeCameraSystem::Update(std::vector<Apollo::EntityID>& entities)
 			Vector3D dist = mMoveToPoint - transfComp->Position;
 			if (dist.LengthSq() > VectorUtils::kEpsilon * VectorUtils::kEpsilon)
 			{
-				transfComp->Position = VectorUtils::Lerp(transfComp->Position, mMoveToPoint, 3 * RZE_Engine::Get()->GetDeltaTime());
+				transfComp->Position = VectorUtils::Lerp(transfComp->Position, mMoveToPoint, static_cast<float>(3 * RZE_Engine::Get()->GetDeltaTime()));
 			}
 		}
 	}
