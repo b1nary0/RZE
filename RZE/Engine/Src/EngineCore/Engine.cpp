@@ -106,6 +106,7 @@ void RZE_Engine::Init()
 
 		mRenderer = new Diotima::Renderer();
 		mRenderer->Initialize();
+		mRenderer->EnableVsync(mEngineConfig->GetEngineSettings().IsVSyncEnabled());
 
 		mResourceHandler.Init();
 

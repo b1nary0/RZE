@@ -88,6 +88,7 @@ namespace Diotima
 
 		void SetCamera(const CameraItemProtocol& cameraItem) { camera = std::move(cameraItem); }
 
+		void EnableVsync(bool bEnable);
 		void ResizeCanvas(const Vector2D& newSize);
 
 		void ClearLists();

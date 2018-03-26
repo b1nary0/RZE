@@ -376,6 +376,11 @@ public:
 	void Viewport(GLint posX, GLint posY, GLsizei sizeX, GLsizei sizeY);
 
 	//
+	// Configuration
+	//
+	void SetSwapInterval(GLint val);
+
+	//
 	// Helpers
 	//
 	void LogShaderInfo(const GLuint shaderProgramID);

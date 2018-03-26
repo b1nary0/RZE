@@ -17,12 +17,23 @@ void EngineConfig::Load(const FilePath& filePath)
 {
 	Config::Read(filePath.GetAbsolutePath());
 
+	LoadEngineSettings();
 	LoadWindowSettings();
+}
+
+EngineSettings& EngineConfig::GetEngineSettings()
+{
+	return mEngineSettings;
 }
 
 WindowSettings& EngineConfig::GetWindowSettings()
 {
 	return mWindowSettings;
+}
+
+void EngineConfig::LoadEngineSettings()
+{
+	mEngineSettings.bEnableVsync = Conversions::IntFromString(mINIParser.GetValue("EngineSettings", "EnableVsync", 0)) > 0;
 }
 
 void EngineConfig::LoadWindowSettings()
@@ -52,4 +63,17 @@ const Vector2D& WindowSettings::GetDimensions() const
 const std::string& WindowSettings::GetTitle() const
 {
 	return mTitle;
+}
+
+EngineSettings::EngineSettings()
+{
+}
+
+EngineSettings::~EngineSettings()
+{
+}
+
+const bool EngineSettings::IsVSyncEnabled() const
+{
+	return bEnableVsync;
 }

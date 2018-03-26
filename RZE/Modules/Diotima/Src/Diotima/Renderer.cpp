@@ -361,6 +361,11 @@ namespace Diotima
 	{
 	}
 
+	void Renderer::EnableVsync(bool bEnabled)
+	{
+		OpenGLRHI::Get().SetSwapInterval(bEnabled ? 1 : 0);
+	}
+
 	void Renderer::ResizeCanvas(const Vector2D& newSize)
 	{
 		OpenGLRHI::Get().Viewport(0, 0, static_cast<GLsizei>(newSize.X()), static_cast<GLsizei>(newSize.Y()));
