@@ -276,7 +276,7 @@ void Win32Window::Show()
 {
 	if (mOSWindowHandleData.windowHandle)
 	{
-		ShowWindow(mOSWindowHandleData.windowHandle, SW_SHOW); // @note SW_SHOWMAXIMIZED for borderless fullscreen. SW_SHOWDEFAULT default
+		ShowWindow(mOSWindowHandleData.windowHandle, SW_MAXIMIZE); // @note SW_SHOWMAXIMIZED for borderless fullscreen. SW_SHOWDEFAULT default
 	}
 }
 
