@@ -17,7 +17,7 @@ namespace Diotima
 {
 	class GFXMesh;
 	class GFXMaterial;
-	class GFXShaderGroup;
+	class GFXShaderPipeline;
 	class GFXTexture2D;
 	
 	class Renderer : public ISubSystem
@@ -27,7 +27,7 @@ namespace Diotima
 		{
 			RenderItemProtocol();
 
-			GFXShaderGroup*					Shader { nullptr };
+			GFXShaderPipeline*					Shader { nullptr };
 			GFXMaterial						Material;
 			std::vector<GFXTexture2D*>		Textures;
 			Matrix4x4						ModelMat;
@@ -88,6 +88,7 @@ namespace Diotima
 
 		void SetCamera(const CameraItemProtocol& cameraItem) { camera = std::move(cameraItem); }
 
+		void EnableVsync(bool bEnable);
 		void ResizeCanvas(const Vector2D& newSize);
 
 		void ClearLists();

@@ -17,8 +17,8 @@ private:
 public:
 	DebugServices();
 
-	static void AddLog(const std::string& text, const Vector3D& color);
-	static void AddData(const std::string& text, const Vector3D& color);
+	static void AddLog(const std::string& text, const Vector3D& color = Vector3D(1.0f, 1.0f, 0.0f));
+	static void AddData(const std::string& text, const Vector3D& color = Vector3D(1.0f, 1.0f, 0.0f));
 
 	static void Initialize();
 	static void Display(const Vector2D& windowSize);
@@ -26,10 +26,10 @@ public:
 	static void HandleScreenResize(const Vector2D& windowSize);
 
 private:
-	static void RenderLog(const Vector2D& windowSize);
 	static void RenderData(const Vector2D& windowSize);
 
 private:
-	static std::deque<LogEntry> mLogEntries;
 	static std::vector<LogEntry> mDataEntries;
+
+	static RZE_Editor* sEditor;
 };

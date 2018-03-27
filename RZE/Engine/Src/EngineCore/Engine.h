@@ -20,6 +20,10 @@
 
 #include <Diotima/Renderer.h>
 
+#if EDITOR
+class RZE_Editor;
+#endif
+
 class GameWorld;
 class Win32Window;
 
@@ -60,13 +64,17 @@ public:
 
 
 	// #TODO(Josh) this needs to return an actual thing, just placeholder atm
-	inline float GetDeltaTime() const { return 1.0f / 60.0f; }
+	inline double GetDeltaTime() const { return mDeltaTime; }
+
+public:
+	void Log(const std::string& text, const Vector3D& color);
 
 private:
 
 	void Init();
 	void PostInit(Functor<RZE_Game* const>& createApplicationCallback);
 
+	void PreUpdate(); // Set up anything the new frame will need
 	void Update();
 
 	void BeginShutDown();
@@ -77,6 +85,7 @@ private:
 
 	void RegisterWindowEvents();
 	void RegisterInputEvents();
+	void RegisterEngineComponentTypes();
 
 	void LoadEngineConfig();
 	void CreateAndInitializeWindow();
@@ -96,6 +105,14 @@ private:
 	Diotima::Renderer* mRenderer;
 
 	EngineConfig* mEngineConfig;
+
+#if EDITOR
+	RZE_Editor* mEditor;
+#endif
+
+	// PODs
+private:
+	double mDeltaTime	{ 0.0f };
 
 	bool bIsInitialized;
 	bool bShouldExit;

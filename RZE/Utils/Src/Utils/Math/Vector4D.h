@@ -2,6 +2,8 @@
 
 #include <GLM/vec4.hpp>
 
+#include <Utils/StringUtils.h>
+
 class Vector4D
 {
 public:
@@ -25,6 +27,16 @@ public:
 	void Set(const float x, const float y, const float z, const float w);
 
 	const glm::vec4& GetInternalVec() const;
+
+	inline std::string ToString()
+	{
+		return std::move(StringUtils::FormatString("[X] %f [Y] %f [Z] %f [W] %f", X(), Y(), Z(), W()));
+	}
+
+	//
+	// Operators
+	//
+public:
 
 private:
 	static Vector4D sDefaultVec;

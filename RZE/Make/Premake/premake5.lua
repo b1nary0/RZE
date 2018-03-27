@@ -3,28 +3,28 @@ local ProjectAction = "UNDEFINED"
 
 workspace "RZE"
 	configurations { "Debug", "Release" }
-	
+
 	platforms { "x32" }
-	
+
 	-- Argument passed in when running premake5
-	if _ACTION ~= nil then 
+	if _ACTION ~= nil then
 		ProjectAction = _ACTION
 	end
-	
+
 	-- Where the project files will be generated
 	location(RootDir .. "_Project")
-	
+
 	--flags "FatalWarnings"
-	
+
 	filter "configurations:Debug"	defines { "DEBUG" } symbols "On"
 	filter "configurations:Release"	defines { "NDEBUG" } optimize "On"
-	
+
 	filter
 	{
 		"platforms:*32"
 	}
 	architecture "x86";
-	
+
 	--
 	-- Visual Studio
 	--
@@ -44,11 +44,11 @@ workspace "RZE"
 		"/ignore:4221",
 		"/ignore:4006"
 	};
-	
+
 	startproject "Game"
-	
+
 	filter {}
-	
+
 	--
 	--
 	-- RZE_ENGINE
@@ -60,17 +60,17 @@ workspace "RZE"
 		local IncludeDir = ProjectDir .. "ThirdParty/Include/"
 		local LibDir = RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
 		local ThirdPartyLibDir = ProjectDir .. "ThirdParty/Lib/x86/"
-		
+
 		kind "StaticLib"
 		language "C++"
 		targetdir (RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
 		targetname "RZE_Engine"
-		
-		dependson { "Apollo", "Diotima", "Utils" }
-		
+
+		dependson { "Apollo", "Diotima", "Externals", "Utils" }
+
 		pchheader "StdAfx.h"
 		pchsource "../../Engine/Src/StdAfx.cpp"
-		
+
 		files
 		{
 			SourceDir .. "**.h",
@@ -78,7 +78,7 @@ workspace "RZE"
 			SourceDir .. "**.c",
 			SourceDir .. "**.cpp"
 		}
-		
+
 		includedirs
 		{
 			IncludeDir,
@@ -87,7 +87,7 @@ workspace "RZE"
 			RootDir .. "Modules/Diotima/Src/",
 			RootDir .. "Modules/Apollo/Src/"
 		}
-		
+
 		libdirs
 		{
 			LibDir,
@@ -97,27 +97,27 @@ workspace "RZE"
 		{
 			"assimp",
 			"glew32s",
-			"imgui",
 			"OpenGL32",
 			-- RZE --
 			"RZE_Utils",
 			"Apollo",
-			"Diotima"
+			"Diotima",
+			"Externals"
 		}
-		
+
 		filter {}
-		
-		 vpaths 
+
+		 vpaths
 		 {
-			["Source Files/*"] = 
-			{ 
+			["Source Files/*"] =
+			{
 				SourceDir .. "**.h",
 				SourceDir .. "**.hpp",
 				SourceDir .. "**.c",
 				SourceDir .. "**.cpp"
 			}
-		 } 
-		 
+		 }
+
 	--
 	--
 	-- RZE_Utils
@@ -129,15 +129,15 @@ workspace "RZE"
 		local SourceDir = ProjectDir .. "Src/"
 		local IncludeDir = EngineDir .. "ThirdParty/Include/"
 		local LibDir = EngineDir .. "ThirdParty/Lib/x86/"
-		
+
 		kind "StaticLib"
 		language "C++"
 		targetdir (RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
 		targetname "RZE_Utils"
-		
+
 		pchheader = "Utils/StdAfx.h"
 		pchsource = (SourceDir .. "Utils/StdAfx.cpp")
-		
+
 		files
 		{
 			SourceDir .. "**.h",
@@ -145,13 +145,13 @@ workspace "RZE"
 			SourceDir .. "**.c",
 			SourceDir .. "**.cpp"
 		}
-		
+
 		includedirs
 		{
 			IncludeDir,
 			SourceDir
 		}
-		
+
 		libdirs
 		{
 			LibDir,
@@ -160,25 +160,25 @@ workspace "RZE"
 		links
 		{
 		}
-		
+
 		filter {}
-		
-		 vpaths 
+
+		 vpaths
 		 {
-			["Source Files/*"] = 
-			{ 
+			["Source Files/*"] =
+			{
 				SourceDir .. "**.h",
 				SourceDir .. "**.hpp",
 				SourceDir .. "**.c",
 				SourceDir .. "**.cpp"
 			}
 		 }
-		 
+
 	--
 	--
 	-- APOLLO
 	--
-	-- 
+	--
 	project "Apollo"
 		local EngineDir = RootDir .. "Engine/"
 		local ProjectDir = RootDir .. "Modules/Apollo/"
@@ -186,18 +186,18 @@ workspace "RZE"
 		local IncludeDir = EngineDir .. "ThirdParty/Include/"
 		local LibDir = RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
 		local ThirdPartyLibDir = EngineDir .. "ThirdParty/Lib/x86/"
-		
+
 		kind "StaticLib"
 		language "C++"
 		targetdir (RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
 		targetname "Apollo"
-		
+
 		dependson { "Utils" }
-		
+
 		filter "action:vs*"
 			pchheader = "StdAfx.h"
 			pchsource = "StdAfx.cpp"
-		
+
 		files
 		{
 			SourceDir .. "**.h",
@@ -205,7 +205,7 @@ workspace "RZE"
 			SourceDir .. "**.c",
 			SourceDir .. "**.cpp"
 		}
-		
+
 		includedirs
 		{
 			EngineDir .. "/Src",
@@ -213,7 +213,7 @@ workspace "RZE"
 			SourceDir,
 			IncludeDir
 		}
-		
+
 		libdirs
 		{
 			LibDir,
@@ -223,26 +223,25 @@ workspace "RZE"
 		{
 			-- ThirdParty
 			"assimp",
-			"imgui",
 			"OpenGL32",
 			"glew32s",
-			-- RZE 
+			-- RZE
 			"RZE_Utils"
 		}
-		
+
 		filter {}
-		
-		 vpaths 
+
+		 vpaths
 		 {
-			["Source Files/*"] = 
-			{ 
+			["Source Files/*"] =
+			{
 				SourceDir .. "**.h",
 				SourceDir .. "**.hpp",
 				SourceDir .. "**.c",
 				SourceDir .. "**.cpp"
 			}
 		 }
-	
+
 	--
 	--
 	-- DIOTIMA
@@ -255,18 +254,18 @@ workspace "RZE"
 		local IncludeDir = EngineDir .. "ThirdParty/Include/"
 		local LibDir = RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
 		local ThirdPartyLibDir = EngineDir .. "ThirdParty/Lib/x86/"
-		
+
 		kind "StaticLib"
 		language "C++"
 		targetdir (RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
 		targetname "Diotima"
-		
+
 		dependson { "Utils" }
-		
+
 		filter "action:vs*"
 			pchheader = "StdAfx.h"
 			pchsource = "StdAfx.cpp"
-		
+
 		files
 		{
 			SourceDir .. "**.h",
@@ -274,7 +273,7 @@ workspace "RZE"
 			SourceDir .. "**.c",
 			SourceDir .. "**.cpp"
 		}
-		
+
 		includedirs
 		{
 			EngineDir .. "/Src",
@@ -282,7 +281,7 @@ workspace "RZE"
 			SourceDir,
 			IncludeDir
 		}
-		
+
 		libdirs
 		{
 			LibDir,
@@ -292,26 +291,81 @@ workspace "RZE"
 		{
 			-- ThirdParty
 			"assimp",
-			"imgui",
 			"OpenGL32",
 			"glew32s",
-			-- RZE 
+			-- RZE
 			"RZE_Utils"
 		}
-		
+
 		filter {}
-		
-		 vpaths 
+
+		 vpaths
 		 {
-			["Source Files/*"] = 
-			{ 
+			["Source Files/*"] =
+			{
 				SourceDir .. "**.h",
 				SourceDir .. "**.hpp",
 				SourceDir .. "**.c",
 				SourceDir .. "**.cpp"
 			}
 		 }
-	
+
+		--
+	 	--
+	 	-- Externals
+	 	--
+	 	--
+	 	project "Externals"
+	 		local EngineDir = RootDir .. "Engine/"
+	 		local ProjectDir = RootDir .. "Externals/"
+	 		local SourceDir = ProjectDir .. "Src/"
+	 		local IncludeDir = EngineDir .. "ThirdParty/Include/"
+	 		local LibDir = EngineDir .. "ThirdParty/Lib/x86/"
+
+	 		kind "StaticLib"
+	 		language "C++"
+	 		targetdir (RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
+	 		targetname "Externals"
+
+	 		pchheader = "Utils/StdAfx.h"
+	 		pchsource = (SourceDir .. "Utils/StdAfx.cpp")
+
+	 		files
+	 		{
+	 			SourceDir .. "**.h",
+	 			SourceDir .. "**.hpp",
+	 			SourceDir .. "**.c",
+	 			SourceDir .. "**.cpp"
+	 		}
+
+	 		includedirs
+	 		{
+	 			IncludeDir,
+	 			SourceDir
+	 		}
+
+	 		libdirs
+	 		{
+	 			LibDir,
+	 			RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
+	 		}
+	 		links
+	 		{
+	 		}
+
+	 		filter {}
+
+	 		 vpaths
+	 		 {
+	 			["Source Files/*"] =
+	 			{
+	 				SourceDir .. "**.h",
+	 				SourceDir .. "**.hpp",
+	 				SourceDir .. "**.c",
+	 				SourceDir .. "**.cpp"
+	 			}
+	 		 }
+
 	--
 	--
 	-- RZE_GAMEPROJ
@@ -323,14 +377,14 @@ workspace "RZE"
 		local SourceDir = ProjectDir
 		local IncludeDir = EngineDir .. "ThirdParty/Include/"
 		local LibDir = EngineDir .. "ThirdParty/Lib/x86/"
-		
+
 		kind "ConsoleApp"
 		language "C++"
 		targetdir (RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
 		targetname "RZE_Game"
-		
+
 		dependson { "Engine", "Apollo", "Diotima", "Utils"}
-		
+
 		files
 		{
 			SourceDir .. "**.h",
@@ -338,7 +392,7 @@ workspace "RZE"
 			SourceDir .. "**.c",
 			SourceDir .. "**.cpp"
 		}
-		
+
 		includedirs
 		{
 			IncludeDir,
@@ -348,7 +402,7 @@ workspace "RZE"
 			RootDir .. "/Modules/Diotima/Src/",
 			RootDir .. "/Modules/Apollo/Src/"
 		}
-		
+
 		libdirs
 		{
 			LibDir,
@@ -359,38 +413,19 @@ workspace "RZE"
 			"RZE_Engine",
 			"RZE_Utils",
 			"Apollo",
-			"Diotima"
+			"Diotima",
+			"Externals"
 		}
-		
+
 		filter {}
-		
-		 vpaths 
+
+		 vpaths
 		 {
-			["Source Files/*"] = 
-			{ 
+			["Source Files/*"] =
+			{
 				SourceDir .. "**.h",
 				SourceDir .. "**.hpp",
 				SourceDir .. "**.c",
 				SourceDir .. "**.cpp"
 			}
 		 }
-	 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

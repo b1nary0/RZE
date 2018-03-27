@@ -1,7 +1,21 @@
 #include <StdAfx.h>
 #include <EngineCore/Engine.h>
 
+#include <imGUI/imgui.h>
+
+#include <DebugUtils/DebugServices.h>
+
+#include <ECS/Components/CameraComponent.h>
+#include <ECS/Components/LightSourceComponent.h>
+#include <ECS/Components/MaterialComponent.h>
+#include <ECS/Components/MeshComponent.h>
+#include <ECS/Components/TransformComponent.h>
+
 #include <ECS/Systems/RenderSystem.h>
+
+#if EDITOR
+#include <Editor/Editor.h>
+#endif
 
 #include <Windowing/Win32Window.h>
 #include <Windowing/WinKeyCodes.h>
@@ -9,7 +23,6 @@
 #include <Utils/DebugUtils/Debug.h>
 
 #include <Apollo/EntityComponentSystem.h>
-
 #include <Diotima/Renderer.h>
 
 RZE_Engine* RZE_Engine::sInstance = nullptr;
@@ -40,13 +53,30 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 		AssertNotNull(createGameCallback);
 		PostInit(createGameCallback);
 
+		HiResTimer programTimer;
+		programTimer.Start();
+		double currentTime = programTimer.GetElapsed<double>();
 		while (!bShouldExit)
 		{
+			double newTime = programTimer.GetElapsed<double>();
+			double frameTime = newTime - currentTime;
+			currentTime = newTime;
+
+			DebugServices::AddData(StringUtils::FormatString("Frame Time: %f ms", static_cast<float>(mDeltaTime) * 1000.0f), Vector3D(1.0f, 1.0f, 0.0f));
 			{
+				mDeltaTime = frameTime;
+
+				PreUpdate();
 				Update();
 
+#if EDITOR
+				mEditor->Display();
+#endif
+
 				mRenderer->Update();
+				DebugServices::Display(GetWindowSize());
 			}
+			ImGui::Render();
 			mMainWindow->BufferSwap(); // #TODO(Josh) Maybe this can be done better
 		}
 
@@ -74,14 +104,31 @@ void RZE_Engine::Init()
 
 		CreateAndInitializeWindow();
 
+
+		mInputHandler.Initialize();
+
 		RegisterWindowEvents();
 		RegisterInputEvents();
+		RegisterEngineComponentTypes();
+
+#if EDITOR
+		ImGui::SetCurrentContext(ImGui::CreateContext());
+#endif
 
 		mRenderer = new Diotima::Renderer();
 		mRenderer->Initialize();
+		mRenderer->EnableVsync(mEngineConfig->GetEngineSettings().IsVSyncEnabled());
 
 		mResourceHandler.Init();
-		mInputHandler.Initialize();
+
+
+		DebugServices::Initialize();
+		DebugServices::HandleScreenResize(GetWindowSize());
+
+#if EDITOR
+		mEditor = new RZE_Editor();
+		mEditor->Initialize();
+#endif
 
 		mActiveScene = new GameScene();
 		mActiveScene->Initialize();
@@ -97,6 +144,30 @@ void RZE_Engine::PostInit(Functor<RZE_Game* const>& createApplicationCallback)
 	InitGame(createApplicationCallback);
 
 	mActiveScene->Start();
+}
+
+void RZE_Engine::PreUpdate()
+{
+	CompileEvents();
+	mEventHandler.ProcessEvents();
+	mInputHandler.RaiseEvents();
+
+	{
+		ImGuiIO& io = ImGui::GetIO();
+
+		io.DeltaTime = static_cast<float>(mDeltaTime);
+
+		io.MousePos = ImVec2(GetInputHandler().GetMouseState().CurPosition.X(), GetInputHandler().GetMouseState().CurPosition.Y());
+
+		for (int i = 0; i < 3; ++i)
+		{
+			io.MouseDown[i] = GetInputHandler().GetMouseState().CurMouseBtnStates[i];
+		}
+
+
+		ImGui::GetStyle().FrameRounding = 0.0f;
+		ImGui::NewFrame();
+	}
 }
 
 void RZE_Engine::CreateAndInitializeWindow()
@@ -142,9 +213,9 @@ void RZE_Engine::RegisterWindowEvents()
 		}
 		else if (event.mWindowEvent.mEventInfo.mEventSubType == EWindowEventType::Window_Resize)
 		{
-			U16 width = event.mWindowEvent.mSizeX;
-			U16 height = event.mWindowEvent.mSizeY;
-			GetRenderer()->ResizeCanvas(Vector2D(width, height));
+			Vector2D newSize(event.mWindowEvent.mSizeX, event.mWindowEvent.mSizeY);
+			GetRenderer()->ResizeCanvas(newSize);
+			DebugServices::HandleScreenResize(newSize);
 		}
 	});
 	mEventHandler.RegisterForEvent(EEventType::Window, windowCallback);
@@ -158,10 +229,23 @@ void RZE_Engine::RegisterInputEvents()
 		{
 			PostExit();
 		}
+		else
+		{
+			RZE_Engine::Get()->Log("F1 pressed", Vector3D(1.0f, 1.0f, 0.0f));
+		}
 	});
 
 	mInputHandler.BindAction(Win32KeyCode::Escape, EButtonState::ButtonState_Pressed, inputFunc);
 	mInputHandler.BindAction(Win32KeyCode::F1, EButtonState::ButtonState_Pressed, inputFunc);
+}
+
+void RZE_Engine::RegisterEngineComponentTypes()
+{
+	APOLLO_REGISTER_COMPONENT(CameraComponent);
+	APOLLO_REGISTER_COMPONENT(LightSourceComponent);
+	APOLLO_REGISTER_COMPONENT(MaterialComponent);
+	APOLLO_REGISTER_COMPONENT(MeshComponent);
+	APOLLO_REGISTER_COMPONENT(TransformComponent);
 }
 
 void RZE_Engine::LoadEngineConfig()
@@ -178,9 +262,6 @@ void RZE_Engine::LoadEngineConfig()
 
 void RZE_Engine::Update()
 {
-	CompileEvents();
-	mEventHandler.ProcessEvents();
-
 	mApplication->Update();
 	mActiveScene->Update();
 }
@@ -226,3 +307,11 @@ GameScene& RZE_Engine::GetActiveScene()
 	AssertNotNull(mActiveScene);
 	return *mActiveScene;
 }
+
+void RZE_Engine::Log(const std::string& text, const Vector3D& color)
+{
+#if EDITOR
+	mEditor->GetLogWidget().AddEntry(text, color);
+#endif
+}
+

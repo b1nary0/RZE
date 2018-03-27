@@ -1,5 +1,11 @@
 #pragma once
 
+// NOTE(Josh):
+// When an allocator solution finally arrives, these will help locate where we are responsible for allocations.
+// Will need to retroactively attack this, and use this going forward.
+#define RZE_NEW new;
+#define RZE_DEL delete;
+
 inline size_t Kilobyes(size_t val)
 {
 	return val * 1024;

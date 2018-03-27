@@ -6,6 +6,21 @@
 
 class FilePath;
 
+class EngineSettings
+{
+	friend class EngineConfig;
+
+public:
+	EngineSettings();
+	~EngineSettings();
+
+public:
+	const bool IsVSyncEnabled() const;
+
+private:
+	bool bEnableVsync;
+};
+
 class WindowSettings
 {
 	friend class EngineConfig;
@@ -30,11 +45,14 @@ public:
 
 	virtual void Load(const FilePath& filePath) override;
 
+	EngineSettings& GetEngineSettings();
 	WindowSettings& GetWindowSettings();
 
 private:
+	void LoadEngineSettings();
 	void LoadWindowSettings();
 
 private:
+	EngineSettings mEngineSettings;
 	WindowSettings mWindowSettings;
 };

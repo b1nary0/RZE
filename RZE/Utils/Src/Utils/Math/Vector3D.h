@@ -2,13 +2,17 @@
 
 #include <GLM/vec3.hpp>
 
+#include <Utils/StringUtils.h>
+
 class Matrix4x4;
+class Vector2D;
 
 class Vector3D
 {
 public:
 
 	Vector3D();
+	Vector3D(const Vector2D& vec2D);
 	Vector3D(const float val);
 	Vector3D(const float x, const float y, const float z);
 	Vector3D(const int x, const int y, const int z);
@@ -27,6 +31,15 @@ public:
 
 	const glm::vec3& GetInternalVec() const;
 
+	inline std::string ToString()
+	{
+		return std::move(StringUtils::FormatString("[X] %f [Y] %f [Z] %f", X(), Y(), Z()));
+	}
+
+	//
+	// Operators
+	//
+public:
 	Vector3D operator+(const Vector3D& rhs) const;
 	void operator+=(const Vector3D& rhs);
 

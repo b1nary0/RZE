@@ -2,6 +2,8 @@
 
 #include <GLM/vec2.hpp>
 
+#include <Utils/StringUtils.h>
+
 class Vector2D
 {
 public:
@@ -20,7 +22,17 @@ public:
 
 	const glm::vec2& GetInternalVec() const;
 
+	inline std::string ToString()
+	{
+		return std::move(StringUtils::FormatString("[X] %f [Y] %f", X(), Y()));
+	}
+	
+	//
+	// Operators
+	//
+public:
 	Vector2D operator-(const Vector2D& other);
+	bool operator!=(const Vector2D& rhs) const;
 
 private:
 	glm::vec2 mVec;

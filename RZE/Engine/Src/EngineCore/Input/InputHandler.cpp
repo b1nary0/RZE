@@ -3,8 +3,6 @@
 
 #include <DebugUtils/DebugServices.h>
 
-#include <Utils/Platform/Timers/HiResTimer.h>
-
 #include <Events/EventHandler.h>
 
 InputHandler::InputHandler()
@@ -23,12 +21,40 @@ void InputHandler::Initialize()
 	}
 }
 
-void InputHandler::BindAction(Int32 keyCode, EButtonState::T buttonState, Functor<void, const InputKey&> func)
+void InputHandler::RaiseEvents()
+{
+	while (!mKeyActionQueue.empty())
+	{
+		KeyboardAction action = mKeyActionQueue.front();
+		mKeyActionQueue.pop();
+
+		AssertExpr(action.Key.IsValid());
+		RaiseKeyEvent(action.Key);
+	}
+
+	while (!mMouseActionQueue.empty())
+	{
+		MouseAction action = mMouseActionQueue.front();
+		mMouseActionQueue.pop();
+
+		if (action.Button == EMouseButton::MouseButton_Move)
+		{
+			RaiseMouseAxisEvent(action.Position, action.Wheel);
+		}
+		else
+		{
+			RaiseMouseButtonEvent(action.Button, action.State, static_cast<Int32>(action.Position.X()), static_cast<Int32>(action.Position.Y()));
+		}
+	}
+}
+
+void InputHandler::BindAction(Int32 keyCode, EButtonState::T buttonState, KeyActionFunc func)
 {
 	KeyboardActionBinding actionBinding;
 	actionBinding.ActionName = "Test";
-	actionBinding.ButtonState = buttonState;
 	actionBinding.Func = func;
+
+	actionBinding.State = buttonState;
 
 	mKeyboardBindings[keyCode] = actionBinding;
 }
@@ -63,7 +89,11 @@ void InputHandler::OnKeyDown(const Int32 key, bool bIsRepeat)
 	mKeyboardState.CurKeyStates[key] = true;
 
  	InputKey& inputKey = mInputKeyRegistry[key];
-	RaiseKeyEvent(inputKey);
+	KeyboardAction action;
+	action.Key = inputKey;
+	action.State = mKeyboardState.GetButtonState(key);
+
+	mKeyActionQueue.push(std::move(action));
 }
 
 void InputHandler::OnKeyUp(const Int32 key)
@@ -71,8 +101,12 @@ void InputHandler::OnKeyUp(const Int32 key)
 	mKeyboardState.PrevKeyStates[key] = mKeyboardState.CurKeyStates[key];
 	mKeyboardState.CurKeyStates[key] = false;
 
-	const InputKey& inputKey = mInputKeyRegistry[key];
-	RaiseKeyEvent(inputKey);
+	InputKey& inputKey = mInputKeyRegistry[key];
+	KeyboardAction action;
+	action.Key = inputKey;
+	action.State = mKeyboardState.GetButtonState(key);
+
+	mKeyActionQueue.push(std::move(action));
 }
 
 void InputHandler::OnMouseMove(const Int32 xPos, const Int32 yPos)
@@ -80,7 +114,16 @@ void InputHandler::OnMouseMove(const Int32 xPos, const Int32 yPos)
 	mMouseState.PrevPosition.SetXY(mMouseState.CurPosition.X(), mMouseState.CurPosition.Y());
 	mMouseState.CurPosition.SetXY(static_cast<float>(xPos), static_cast<float>(yPos));
 
-	RaiseMouseAxisEvent(mMouseState.CurPosition, 0);
+	MouseAction action;
+	action.Button = EMouseButton::MouseButton_Move;
+	action.Position = mMouseState.CurPosition;
+	action.State = EButtonState::ButtonState_Pressed;
+	action.Wheel = 0;
+
+	if (mMouseState.CurPosition != mMouseState.PrevPosition)
+	{
+		mMouseActionQueue.push(std::move(action));
+	}
 }
 
 void InputHandler::OnMouseWheel(const Int32 value)
@@ -88,7 +131,15 @@ void InputHandler::OnMouseWheel(const Int32 value)
 	mMouseState.PrevWheelVal = mMouseState.CurWheelVal;
 	mMouseState.CurWheelVal = value;
 
-	RaiseMouseAxisEvent(Vector2D(0.0f), mMouseState.CurWheelVal);
+	// This may give slightly incorrect values, 
+	// should keep an eye here to see if we should log the position coming in from windows for mouse wheels
+	MouseAction action;
+	action.Button = EMouseButton::MouseButton_Move;
+	action.State = EButtonState::ButtonState_Pressed;
+	action.Position = mMouseState.CurPosition;
+	action.Wheel = value;
+
+	mMouseActionQueue.push(std::move(action));
 }
 
 void InputHandler::OnMouseDown(const EMouseButton::T button, const Int32 xPos, const Int32 yPos)
@@ -96,7 +147,13 @@ void InputHandler::OnMouseDown(const EMouseButton::T button, const Int32 xPos, c
 	mMouseState.PrevMouseBtnStates[button] = mMouseState.CurMouseBtnStates[button];
 	mMouseState.CurMouseBtnStates[button] = true;
 
-	RaiseMouseButtonDownEvent(button, xPos, yPos);
+	MouseAction action;
+	action.Button = button;
+	action.State = mMouseState.GetButtonState(button);
+	action.Position = std::move(Vector2D(xPos, yPos));
+	action.Wheel = 0;
+
+	mMouseActionQueue.push(std::move(action));
 }
 
 void InputHandler::OnMouseUp(const EMouseButton::T button, const Int32 xPos, const Int32 yPos)
@@ -104,7 +161,13 @@ void InputHandler::OnMouseUp(const EMouseButton::T button, const Int32 xPos, con
 	mMouseState.PrevMouseBtnStates[button] = mMouseState.CurMouseBtnStates[button];
 	mMouseState.CurMouseBtnStates[button] = false;
 
-	RaiseMouseButtonUpEvent(button, xPos, yPos);
+	MouseAction action;
+	action.Button = button;
+	action.State = mMouseState.GetButtonState(button);
+	action.Position = std::move(Vector2D(xPos, yPos));
+	action.Wheel = 0;
+
+	mMouseActionQueue.push(std::move(action));
 }
 
 void InputHandler::RaiseKeyEvent(const InputKey& inputKey)
@@ -114,7 +177,7 @@ void InputHandler::RaiseKeyEvent(const InputKey& inputKey)
 	if (bindingIt != mKeyboardBindings.end())
 	{
 	 	KeyboardActionBinding& actionBinding = (*bindingIt).second;
-	 	if (actionBinding.ButtonState == buttonState)
+	 	if (actionBinding.State == buttonState)
 	 	{
 	 		actionBinding.Func(inputKey);
 	 	}
@@ -129,22 +192,11 @@ void InputHandler::RaiseMouseAxisEvent(const Vector2D& axis, Int32 wheel)
 	}
 }
 
-void InputHandler::RaiseMouseButtonDownEvent(const EMouseButton::T button, const Int32 xPos, const Int32 yPos)
+void InputHandler::RaiseMouseButtonEvent(const EMouseButton::T button, const EButtonState::T state, Int32 xPos, const Int32 yPos)
 {
 	for (auto& binding : mMouseBtnBindings[button])
 	{ 
-		if (binding.ButtonState == EButtonState::ButtonState_Pressed)
-		{
-			binding.Func(xPos, yPos);
-		}
-	}
-}
-
-void InputHandler::RaiseMouseButtonUpEvent(const EMouseButton::T button, const Int32 xPos, const Int32 yPos)
-{
-	for (auto& binding : mMouseBtnBindings[button])
-	{
-		if (binding.ButtonState == EButtonState::ButtonState_Released)
+		if (binding.ButtonState == state)
 		{
 			binding.Func(xPos, yPos);
 		}

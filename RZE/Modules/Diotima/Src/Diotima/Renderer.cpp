@@ -5,7 +5,7 @@
 #include <Diotima/Graphics/Material.h>
 #include <Diotima/Graphics/Mesh.h>
 #include <Diotima/Graphics/Texture2D.h>
-#include <Diotima/Shaders/ShaderGroup.h>
+#include <Diotima/Shaders/ShaderPipeline.h>
 
 #include <Utils/Conversions.h>
 #include <Utils/DebugUtils/Debug.h>
@@ -242,7 +242,7 @@ bool ImGUICreateDeviceObjects()
 //
 // </Imgui Stuff>
 
-Diotima::GFXShaderGroup* renderToTextureShader = nullptr;
+Diotima::GFXShaderPipeline* renderToTextureShader = nullptr;
 void CreateRenderToTextureShader()
 {
 	const FilePath vertShaderFilePath("Engine/Assets/Shaders/RenderToTextureVert.shader");
@@ -258,9 +258,9 @@ void CreateRenderToTextureShader()
 	fragShader->Create();
 	fragShader->Compile();
 
-	renderToTextureShader = new Diotima::GFXShaderGroup("TextureShader");
-	renderToTextureShader->AddShader(Diotima::GFXShaderGroup::EShaderIndex::Vertex, vertShader);
-	renderToTextureShader->AddShader(Diotima::GFXShaderGroup::EShaderIndex::Fragment, fragShader);
+	renderToTextureShader = new Diotima::GFXShaderPipeline("TextureShader");
+	renderToTextureShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Vertex, vertShader);
+	renderToTextureShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Fragment, fragShader);
 
 	renderToTextureShader->GenerateShaderProgram();
 }
@@ -359,6 +359,11 @@ namespace Diotima
 
 	void Renderer::ClearLists()
 	{
+	}
+
+	void Renderer::EnableVsync(bool bEnabled)
+	{
+		OpenGLRHI::Get().SetSwapInterval(bEnabled ? 1 : 0);
 	}
 
 	void Renderer::ResizeCanvas(const Vector2D& newSize)

@@ -10,13 +10,13 @@
 // TEST
 #include <Diotima/Graphics/Texture2D.h>
 
-#include <Ecs/Components/CameraComponent.h>
+#include <ECS/Components/CameraComponent.h>
 #include <ECS/Components/LightSourceComponent.h>
 #include <ECS/Components/MeshComponent.h>
 #include <ECS/Components/TransformComponent.h>
 #include <ECS/Components/MaterialComponent.h>
 
-#include <Game/Systems/WeirdTempInputSystem.h>
+#include <ECS/Systems/FreeCameraSystem.h>
 
 GameApp::GameApp()
 	: RZE_Game()
@@ -31,10 +31,12 @@ void GameApp::Start()
 {
 	RZE_Game::Start();
 
+	RZE_Engine::Get()->Log("Press 6 to load a model.", Vector3D(1.0f, 1.0f, 0.0f));
+
 	GameScene& scene = RZE_Engine::Get()->GetActiveScene();
 
 	// ALL TEST CODE
-	scene.GetEntityHandler().AddSystem<WeirdTempInputSystem>();
+	scene.GetEntityHandler().AddSystem<FreeCameraSystem>();
 	
 	Apollo::EntityID floor = scene.GetEntityHandler().CreateEntity();
 	scene.GetEntityHandler().AddComponent<MeshComponent>(floor, FilePath("Engine/Assets/3D/Cube.obj"));
@@ -46,9 +48,9 @@ void GameApp::Start()
 	scene.GetEntityHandler().AddComponent<TransformComponent>(lightSource, Vector3D(0.0f, 10.0f, 8.0f), Quaternion(), Vector3D(1.0f));
 
 	Apollo::EntityID camera = scene.GetEntityHandler().CreateEntity();
+	scene.GetEntityHandler().AddComponent<TransformComponent>(camera, Vector3D(-4.0f, 8.0f, 10.0f), Quaternion(), Vector3D(1.0f));
 	scene.GetEntityHandler().AddComponent<CameraComponent>(camera);
 	CameraComponent* const camComp = scene.GetEntityHandler().GetComponent<CameraComponent>(camera);
-	camComp->Position = Vector3D(-4.0f, 3.0f, 8.0f);
 	camComp->FOV = 45;
 	camComp->NearCull = 0.1f;
 	camComp->FarCull = 1000.0f;

@@ -1,6 +1,7 @@
 #include <Utils/StdAfx.h>
 #include <Utils/Math/Vector3d.h>
 
+#include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Matrix4x4.h>
 
 Vector3D::Vector3D()
@@ -20,6 +21,11 @@ Vector3D::Vector3D(const int x, const int y, const int z)
 
 Vector3D::Vector3D(const float val)
 	: mVec(val, val, val)
+{
+}
+
+Vector3D::Vector3D(const Vector2D& vec2D)
+	: mVec(vec2D.X(), vec2D.Y(), 0.0f)
 {
 }
 
