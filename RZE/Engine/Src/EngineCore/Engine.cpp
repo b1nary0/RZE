@@ -165,7 +165,7 @@ void RZE_Engine::PreUpdate()
 		}
 
 
-		ImGui::GetStyle().FrameRounding = 0.0f;
+		ImGui::GetStyle().WindowRounding = 2.f;
 		ImGui::NewFrame();
 	}
 }
