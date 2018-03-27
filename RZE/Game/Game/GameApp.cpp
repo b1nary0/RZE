@@ -31,6 +31,8 @@ void GameApp::Start()
 {
 	RZE_Game::Start();
 
+	RZE_Engine::Get()->Log("Press 6 to load a model.", Vector3D(1.0f, 1.0f, 0.0f));
+
 	GameScene& scene = RZE_Engine::Get()->GetActiveScene();
 
 	// ALL TEST CODE
