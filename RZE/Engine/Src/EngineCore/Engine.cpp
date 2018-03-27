@@ -133,7 +133,20 @@ void RZE_Engine::PreUpdate()
 	mEventHandler.ProcessEvents();
 	mInputHandler.RaiseEvents();
 
-	ImGui::NewFrame();
+	{
+		ImGuiIO& io = ImGui::GetIO();
+
+		io.DeltaTime = mDeltaTime;
+
+		io.MousePos = ImVec2(GetInputHandler().GetMouseState().CurPosition.X(), GetInputHandler().GetMouseState().CurPosition.Y());
+
+		for (int i = 0; i < 3; ++i)
+		{
+			io.MouseDown[i] = GetInputHandler().GetMouseState().CurMouseBtnStates[i];
+		}
+
+		ImGui::NewFrame();
+	}
 }
 
 void RZE_Engine::CreateAndInitializeWindow()
