@@ -20,7 +20,10 @@
 
 #include <Diotima/Renderer.h>
 
+#if EDITOR
 class RZE_Editor;
+#endif
+
 class GameWorld;
 class Win32Window;
 

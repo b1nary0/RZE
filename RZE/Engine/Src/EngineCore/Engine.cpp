@@ -13,7 +13,9 @@
 
 #include <ECS/Systems/RenderSystem.h>
 
+#if EDITOR
 #include <Editor/Editor.h>
+#endif
 
 #include <Windowing/Win32Window.h>
 #include <Windowing/WinKeyCodes.h>
@@ -147,7 +149,7 @@ void RZE_Engine::PreUpdate()
 	{
 		ImGuiIO& io = ImGui::GetIO();
 
-		io.DeltaTime = mDeltaTime;
+		io.DeltaTime = static_cast<float>(mDeltaTime);
 
 		io.MousePos = ImVec2(GetInputHandler().GetMouseState().CurPosition.X(), GetInputHandler().GetMouseState().CurPosition.Y());
 
