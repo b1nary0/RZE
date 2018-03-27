@@ -147,11 +147,10 @@ void RZE_Engine::PreUpdate()
 	mInputHandler.RaiseEvents();
 
 	{
-		// #TODO(Josh) This needs to move -- likely move all this stuff into editor
 		ImGuiIO& io = ImGui::GetIO();
 
 		io.DeltaTime = static_cast<float>(mDeltaTime);
-		
+
 		io.MousePos = ImVec2(GetInputHandler().GetMouseState().CurPosition.X(), GetInputHandler().GetMouseState().CurPosition.Y());
 
 		for (int i = 0; i < 3; ++i)
@@ -160,9 +159,6 @@ void RZE_Engine::PreUpdate()
 		}
 
 		ImGui::NewFrame();
-
-		ImGui::GetStyle().Alpha = 1.0f;
-		ImGui::GetStyle().FrameRounding = 0.0f;
 	}
 }
 
