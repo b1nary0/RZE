@@ -7,7 +7,9 @@ Vector3D LogWidget::mDefaultLogColor = Vector3D(1.0f, 1.0f, 0.0f);
 
 void LogWidget::Display()
 {
-	ImGui::Begin("Log", nullptr, ImVec2(500, 250));
+	const Vector2D& winSize = RZE_Engine::Get()->GetWindowSize();
+	ImGui::SetNextWindowPos(ImVec2(5.0f, winSize.Y() - 255));
+	ImGui::Begin("Log", nullptr, ImVec2(750, 250), -1.0f, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
 
 	for (auto& logItem : mLogEntries)
 	{

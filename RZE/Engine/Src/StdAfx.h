@@ -37,3 +37,7 @@
 #include <DebugUtils/DebugServices.h>
 
 #endif
+
+#if EDITOR
+#include <imGUI/imgui.h>
+#endif

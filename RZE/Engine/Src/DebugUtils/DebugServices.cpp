@@ -1,8 +1,6 @@
 #include <StdAfx.h>
 #include <DebugUtils/DebugServices.h>
 
-#include <imGUI/imgui.h>
-
 std::vector<DebugServices::LogEntry> DebugServices::mDataEntries;
 
 #define MAX_LOG_SIZE 10

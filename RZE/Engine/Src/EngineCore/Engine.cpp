@@ -120,6 +120,8 @@ void RZE_Engine::Init()
 		mResourceHandler.Init();
 
 #if EDITOR
+		ImGui::CreateContext();
+
 		mEditor = new RZE_Editor();
 		mEditor->Initialize();
 #endif
