@@ -104,8 +104,6 @@ void RZE_Engine::Init()
 
 		CreateAndInitializeWindow();
 
-		DebugServices::Initialize();
-		DebugServices::HandleScreenResize(GetWindowSize());
 
 		mInputHandler.Initialize();
 
@@ -113,15 +111,21 @@ void RZE_Engine::Init()
 		RegisterInputEvents();
 		RegisterEngineComponentTypes();
 
+#if EDITOR
+		ImGui::SetCurrentContext(ImGui::CreateContext());
+#endif
+
 		mRenderer = new Diotima::Renderer();
 		mRenderer->Initialize();
 		mRenderer->EnableVsync(mEngineConfig->GetEngineSettings().IsVSyncEnabled());
 
 		mResourceHandler.Init();
 
-#if EDITOR
-		ImGui::CreateContext();
 
+		DebugServices::Initialize();
+		DebugServices::HandleScreenResize(GetWindowSize());
+
+#if EDITOR
 		mEditor = new RZE_Editor();
 		mEditor->Initialize();
 #endif
@@ -160,6 +164,8 @@ void RZE_Engine::PreUpdate()
 			io.MouseDown[i] = GetInputHandler().GetMouseState().CurMouseBtnStates[i];
 		}
 
+
+		ImGui::GetStyle().FrameRounding = 0.0f;
 		ImGui::NewFrame();
 	}
 }
