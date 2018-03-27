@@ -18,6 +18,8 @@
 
 #include <ECS/Systems/FreeCameraSystem.h>
 
+#include <DebugUtils/DebugServices.h>
+
 GameApp::GameApp()
 	: RZE_Game()
 {
@@ -93,4 +95,6 @@ void GameApp::Start()
 void GameApp::Update()
 {
 	RZE_Game::Update();
+
+	DebugServices::AddData(StringUtils::FormatString("%i nanosuits.", mNanosuits.size()), Vector3D(1.0f, 1.0f, 0.0f));
 }

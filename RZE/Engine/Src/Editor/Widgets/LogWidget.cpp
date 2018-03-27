@@ -3,7 +3,7 @@
 
 Vector3D LogWidget::mDefaultLogColor = Vector3D(1.0f, 1.0f, 0.0f);
 
-#define MAX_LOG_SIZE 10
+#define MAX_LOG_SIZE 128
 
 void LogWidget::Display()
 {

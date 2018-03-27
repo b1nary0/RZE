@@ -31,7 +31,7 @@ public:
 
 	const glm::vec3& GetInternalVec() const;
 
-	inline std::string ToString()
+	inline std::string ToString() const
 	{
 		return std::move(StringUtils::FormatString("[X] %f [Y] %f [Z] %f", X(), Y(), Z()));
 	}

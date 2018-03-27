@@ -165,7 +165,9 @@ void RZE_Engine::PreUpdate()
 		}
 
 
-		ImGui::GetStyle().WindowRounding = 2.f;
+		ImGui::GetStyle().WindowRounding = 2.0f;
+		ImGui::GetStyle().ScrollbarRounding = 2.0f;
+		ImGui::GetStyle().ScrollbarSize = 18.0f;
 		ImGui::NewFrame();
 	}
 }
