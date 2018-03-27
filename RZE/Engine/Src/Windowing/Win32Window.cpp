@@ -302,7 +302,7 @@ void Win32Window::ProcessWinProcMessage(const WindowMessageAdaptor::WindowMessag
 		WindowEvent windowEvent(EWindowEventType::Window_Resize);
 
 		RECT windowRect;
-		GetWindowRect(mOSWindowHandleData.windowHandle, &windowRect);
+		GetClientRect(mOSWindowHandleData.windowHandle, &windowRect);
 		int width = windowRect.right - windowRect.top;
 		int height = windowRect.bottom - windowRect.top;
 

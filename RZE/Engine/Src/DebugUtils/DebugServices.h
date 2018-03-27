@@ -17,8 +17,8 @@ private:
 public:
 	DebugServices();
 
-	static void AddLog(const std::string& text, const Vector3D& color);
-	static void AddData(const std::string& text, const Vector3D& color);
+	static void AddLog(const std::string& text, const Vector3D& color = Vector3D(1.0f, 1.0f, 0.0f));
+	static void AddData(const std::string& text, const Vector3D& color = Vector3D(1.0f, 1.0f, 0.0f));
 
 	static void Initialize();
 	static void Display(const Vector2D& windowSize);
