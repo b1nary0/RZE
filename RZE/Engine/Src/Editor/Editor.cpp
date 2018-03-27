@@ -2,11 +2,11 @@
 
 #include <Editor/Editor.h>
 
-RZE_Editor::RZE_Editor()
+void RZE_Editor::Initialize()
 {
 }
 
-RZE_Editor::~RZE_Editor()
+void RZE_Editor::Display()
 {
+	mLogWidget.Display();
 }
-

@@ -20,6 +20,7 @@
 
 #include <Diotima/Renderer.h>
 
+class RZE_Editor;
 class GameWorld;
 class Win32Window;
 
@@ -62,6 +63,9 @@ public:
 	// #TODO(Josh) this needs to return an actual thing, just placeholder atm
 	inline double GetDeltaTime() const { return mDeltaTime; }
 
+public:
+	void Log(const std::string& text, const Vector3D& color);
+
 private:
 
 	void Init();
@@ -99,6 +103,12 @@ private:
 
 	EngineConfig* mEngineConfig;
 
+#if EDITOR
+	RZE_Editor* mEditor;
+#endif
+
+	// PODs
+private:
 	double mDeltaTime	{ 0.0f };
 
 	bool bIsInitialized;

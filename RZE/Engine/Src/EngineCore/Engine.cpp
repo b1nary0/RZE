@@ -13,6 +13,8 @@
 
 #include <ECS/Systems/RenderSystem.h>
 
+#include <Editor/Editor.h>
+
 #include <Windowing/Win32Window.h>
 #include <Windowing/WinKeyCodes.h>
 
@@ -65,6 +67,10 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 				PreUpdate();
 				Update();
 
+#if EDITOR
+				mEditor->Display();
+#endif
+
 				mRenderer->Update();
 				DebugServices::Display(GetWindowSize());
 			}
@@ -110,6 +116,11 @@ void RZE_Engine::Init()
 		mRenderer->EnableVsync(mEngineConfig->GetEngineSettings().IsVSyncEnabled());
 
 		mResourceHandler.Init();
+
+#if EDITOR
+		mEditor = new RZE_Editor();
+		mEditor->Initialize();
+#endif
 
 		mActiveScene = new GameScene();
 		mActiveScene->Initialize();
@@ -208,6 +219,10 @@ void RZE_Engine::RegisterInputEvents()
 		{
 			PostExit();
 		}
+		else
+		{
+			RZE_Engine::Get()->Log("F1 pressed", Vector3D(1.0f, 1.0f, 0.0f));
+		}
 	});
 
 	mInputHandler.BindAction(Win32KeyCode::Escape, EButtonState::ButtonState_Pressed, inputFunc);
@@ -282,3 +297,11 @@ GameScene& RZE_Engine::GetActiveScene()
 	AssertNotNull(mActiveScene);
 	return *mActiveScene;
 }
+
+void RZE_Engine::Log(const std::string& text, const Vector3D& color)
+{
+#if EDITOR
+	mEditor->GetLogWidget().AddEntry(text, color);
+#endif
+}
+

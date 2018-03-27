@@ -26,10 +26,10 @@ public:
 	static void HandleScreenResize(const Vector2D& windowSize);
 
 private:
-	static void RenderLog(const Vector2D& windowSize);
 	static void RenderData(const Vector2D& windowSize);
 
 private:
-	static std::deque<LogEntry> mLogEntries;
 	static std::vector<LogEntry> mDataEntries;
+
+	static RZE_Editor* sEditor;
 };
