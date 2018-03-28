@@ -73,8 +73,11 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 				mEditor->Display();
 #endif
 
+#if EDITOR
+				mRenderer->RenderToTexture(mEditor->GetGameViewWidget().GetRTT());
+#else
 				mRenderer->Update();
-
+#endif
 				DebugServices::Display(GetWindowSize());
 			}
 

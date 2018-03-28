@@ -89,29 +89,12 @@ namespace Diotima
 		OpenGLRHI::Get().EnableCapability(EGLCapability::DepthTest);
 
 		CreateRenderToTextureShader();
-		mRenderTargetTexture.SetWidth(1200);
-		mRenderTargetTexture.SetHeight(700);
-		mRenderTargetTexture.Initialize();
 	}
 
 	void Renderer::Update()
 	{
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
 
-		
-// 		std::queue<RenderItemProtocol> tmp = mRenderList;
-// 		mRenderTargetTexture.Bind();
-// 		openGL.ClearColor(1.0f, 0.0f, 0.0f, 1.0f);
-// 		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
-// 		while (!tmp.empty())
-// 		{
-// 			RenderItemProtocol& item = tmp.front();
-// 			RenderToTexture_Test(item);
-// 			tmp.pop();
-// 		}
-// 		mRenderTargetTexture.Unbind();
-// 
-// 		OpenGLRHI::Get().ClearColor(0.25f, 0.25f, 0.25f, 1.0f);
 		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
 		for(auto& renderItem : mRenderList)
 		{
@@ -126,6 +109,22 @@ namespace Diotima
 	{
 	}
 
+	void Renderer::RenderToTexture(RenderTargetTexture* texture)
+	{
+		const OpenGLRHI& openGL = OpenGLRHI::Get();
+
+		texture->Bind();
+		openGL.Viewport(0, 0, texture->GetWidth(), texture->GetHeight());
+		openGL.ClearColor(0.0f, 0.0f, 0.75f, 1.0f);
+		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
+		for (auto& renderItem : mRenderList)
+		{
+		 	RenderToTexture_Test(renderItem);
+		}
+		openGL.Viewport(0, 0, mCanvasSize.X(), mCanvasSize.Y());
+		texture->Unbind();
+	}
+
 	void Renderer::ClearLists()
 	{
 	}
@@ -137,6 +136,7 @@ namespace Diotima
 
 	void Renderer::ResizeCanvas(const Vector2D& newSize)
 	{
+		mCanvasSize = newSize;
 		OpenGLRHI::Get().Viewport(0, 0, static_cast<GLsizei>(newSize.X()), static_cast<GLsizei>(newSize.Y()));
 	}
 
@@ -219,8 +219,6 @@ namespace Diotima
 			renderToTextureShader->SetUniformVector3D("ULightColor", light.Color);
 			renderToTextureShader->SetUniformFloat("ULightStrength", light.Strength);
 		}
-
-
 
 		const std::vector<GFXMesh*>& meshList = *itemProtocol.MeshData;
 		for (auto& mesh : meshList)

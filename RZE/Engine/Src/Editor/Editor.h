@@ -1,7 +1,8 @@
 #pragma once
 
-#include <Editor/Widgets/MainMenuWidget.h>
+#include <Editor/Widgets/GameViewWidget.h>
 #include <Editor/Widgets/LogWidget.h>
+#include <Editor/Widgets/MainMenuWidget.h>
 
 class RZE_Editor
 {
@@ -12,6 +13,7 @@ public:
 	~RZE_Editor() = default;
 
 	LogWidget& GetLogWidget() { return mLog; }
+	GameViewWidget& GetGameViewWidget() { return mGameView; }
 
 	void Initialize();
 	void PreUpdate();
@@ -23,4 +25,5 @@ private:
 private:
 	MainMenuWidget mMainMenu;
 	LogWidget mLog;
+	GameViewWidget mGameView;
 };

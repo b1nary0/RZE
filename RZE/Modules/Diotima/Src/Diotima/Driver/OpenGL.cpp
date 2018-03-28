@@ -63,7 +63,7 @@ void OpenGLRHI::DisableCapability(const GLenum capability) const
 	AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
-void OpenGLRHI::Viewport(GLint posX, GLint posY, GLsizei sizeX, GLsizei sizeY)
+void OpenGLRHI::Viewport(GLint posX, GLint posY, GLsizei sizeX, GLsizei sizeY) const
 {
 	glViewport(posX, posY, sizeX, sizeY);
 }

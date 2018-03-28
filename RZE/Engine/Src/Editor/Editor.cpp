@@ -20,6 +20,10 @@ void RZE_Editor::Initialize()
 	io.RenderDrawListsFn = ImGUIRender;
 
 	SetupStyle();
+
+	mMainMenu.Initialize();
+	mLog.Initialize();
+	mGameView.Initialize();
 }
 
 void RZE_Editor::PreUpdate()
@@ -46,6 +50,7 @@ void RZE_Editor::Display()
 	{
 		mMainMenu.Display();
 		mLog.Display();
+		mGameView.Display();
 
 		//ImGui::End();
 	}
