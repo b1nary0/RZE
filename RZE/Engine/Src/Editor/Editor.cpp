@@ -63,6 +63,7 @@ void RZE_Editor::SetupStyle()
 	style.ScrollbarRounding = 2.0f;
 	style.ScrollbarSize = 18.0f;
 	style.Alpha = 1.0f;
+
 	style.Colors[ImGuiCol_Border] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
 	style.Colors[ImGuiCol_BorderShadow] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
 	style.Colors[ImGuiCol_HeaderHovered] = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);

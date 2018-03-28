@@ -38,6 +38,4 @@
 
 #endif
 
-#if EDITOR
 #include <imGUI/imgui.h>
-#endif

@@ -1,8 +1,6 @@
 #include <StdAfx.h>
 #include <EngineCore/Engine.h>
 
-#include <imGUI/imgui.h>
-
 #include <DebugUtils/DebugServices.h>
 
 #include <ECS/Components/CameraComponent.h>

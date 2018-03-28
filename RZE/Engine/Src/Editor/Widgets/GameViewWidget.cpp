@@ -26,11 +26,13 @@ void GameViewWidget::Initialize()
 
 void GameViewWidget::Display()
 {
-	ImGui::SetNextWindowSize(ImVec2(mRTT->GetWidth(), mRTT->GetHeight()));
-	if (ImGui::Begin("GameView"))
+	ImGui::SetNextWindowSize(ImVec2(mRTT->GetWidth(), mRTT->GetHeight() + 21)); // #TODO(Josh) why 21?
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(1.0f, 1.0f));
+	if (ImGui::Begin("GameView", NULL, ImGuiWindowFlags_NoResize))
 	{
-		ImGui::Image((void*)mRTT->GetTextureID(), ImVec2(mRTT->GetWidth(), mRTT->GetHeight()));
+		ImGui::Image((void*)mRTT->GetTextureID(), ImVec2(mRTT->GetWidth(), mRTT->GetHeight()), ImVec2(0, 1), ImVec2(1, 0));
 
 		ImGui::End();
 	}
+	ImGui::PopStyleVar();
 }

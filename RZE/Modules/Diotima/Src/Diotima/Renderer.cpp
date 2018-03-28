@@ -115,7 +115,6 @@ namespace Diotima
 
 		texture->Bind();
 		openGL.Viewport(0, 0, texture->GetWidth(), texture->GetHeight());
-		openGL.ClearColor(0.0f, 0.0f, 0.75f, 1.0f);
 		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
 		for (auto& renderItem : mRenderList)
 		{
