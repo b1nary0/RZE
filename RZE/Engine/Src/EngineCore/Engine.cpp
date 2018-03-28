@@ -253,7 +253,10 @@ void RZE_Engine::LoadEngineConfig()
 
 void RZE_Engine::Update()
 {
+#if !EDITOR
 	mApplication->Update();
+#endif
+
 	mActiveScene->Update();
 }
 
