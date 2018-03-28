@@ -116,9 +116,13 @@ namespace Diotima
 		texture->Bind();
 		openGL.Viewport(0, 0, texture->GetWidth(), texture->GetHeight());
 		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
+		renderToTextureShader->Use();
 		for (auto& renderItem : mRenderList)
 		{
-		 	RenderToTexture_Test(renderItem);
+			if (renderItem.bIsValid)
+			{
+				RenderSingleItem(renderItem);
+			}
 		}
 		openGL.Viewport(0, 0, mCanvasSize.X(), mCanvasSize.Y());
 		texture->Unbind();
@@ -198,8 +202,6 @@ namespace Diotima
 
 			openGL.BindTexture(EGLCapability::Texture2D, 0);
 		}
-
-		OpenGLRHI::Get().BindTexture(EGLCapability::Texture2D, 0);
 	}
 
 	void Renderer::RenderToTexture_Test(RenderItemProtocol& itemProtocol)
