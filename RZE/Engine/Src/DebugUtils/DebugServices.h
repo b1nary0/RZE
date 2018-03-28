@@ -17,7 +17,6 @@ private:
 public:
 	DebugServices();
 
-	static void AddLog(const std::string& text, const Vector3D& color = Vector3D(1.0f, 1.0f, 0.0f));
 	static void AddData(const std::string& text, const Vector3D& color = Vector3D(1.0f, 1.0f, 0.0f));
 
 	static void Initialize();
@@ -30,6 +29,4 @@ private:
 
 private:
 	static std::vector<LogEntry> mDataEntries;
-
-	static RZE_Editor* sEditor;
 };

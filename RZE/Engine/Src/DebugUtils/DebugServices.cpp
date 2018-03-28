@@ -30,14 +30,17 @@ void DebugServices::Display(const Vector2D& windowSize)
 
 void DebugServices::HandleScreenResize(const Vector2D& windowSize)
 {
+#if EDITOR
 	ImGuiIO& io = ImGui::GetIO();
 	
 	io.DisplaySize.x = windowSize.X();
 	io.DisplaySize.y = windowSize.Y();
+#endif
 }
 
 void DebugServices::RenderData(const Vector2D& windowSize)
 {
+#if EDITOR
 	ImGui::SetNextWindowPos(ImVec2(windowSize.X() - 280, 50));
 	ImGui::SetNextWindowSize(ImVec2(250, 100));
 	ImGui::Begin("Data");
@@ -50,4 +53,5 @@ void DebugServices::RenderData(const Vector2D& windowSize)
 	mDataEntries.clear();
 
 	ImGui::End();
+#endif
 }

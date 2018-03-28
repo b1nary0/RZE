@@ -373,7 +373,7 @@ public:
 	void EnableCapability(const GLenum capability) const;
 	void DisableCapability(const GLenum capability) const;
 
-	void Viewport(GLint posX, GLint posY, GLsizei sizeX, GLsizei sizeY);
+	void Viewport(GLint posX, GLint posY, GLsizei sizeX, GLsizei sizeY) const;
 
 	//
 	// Configuration

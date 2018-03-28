@@ -1,8 +1,6 @@
 #include <StdAfx.h>
 #include <EngineCore/Engine.h>
 
-#include <imGUI/imgui.h>
-
 #include <DebugUtils/DebugServices.h>
 
 #include <ECS/Components/CameraComponent.h>
@@ -73,10 +71,18 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 				mEditor->Display();
 #endif
 
+#if EDITOR
+				mRenderer->RenderToTexture(mEditor->GetGameViewWidget().GetRTT());
+#else
 				mRenderer->Update();
+#endif
 				DebugServices::Display(GetWindowSize());
 			}
+
+#if EDITOR
 			ImGui::Render();
+#endif
+
 			mMainWindow->BufferSwap(); // #TODO(Josh) Maybe this can be done better
 		}
 
@@ -112,7 +118,6 @@ void RZE_Engine::Init()
 		RegisterEngineComponentTypes();
 
 #if EDITOR
-		ImGui::SetCurrentContext(ImGui::CreateContext());
 #endif
 
 		mRenderer = new Diotima::Renderer();
@@ -121,14 +126,13 @@ void RZE_Engine::Init()
 
 		mResourceHandler.Init();
 
-
-		DebugServices::Initialize();
-		DebugServices::HandleScreenResize(GetWindowSize());
-
 #if EDITOR
 		mEditor = new RZE_Editor();
 		mEditor->Initialize();
 #endif
+
+		DebugServices::Initialize();
+		DebugServices::HandleScreenResize(GetWindowSize());
 
 		mActiveScene = new GameScene();
 		mActiveScene->Initialize();
@@ -152,22 +156,9 @@ void RZE_Engine::PreUpdate()
 	mEventHandler.ProcessEvents();
 	mInputHandler.RaiseEvents();
 
-	{
-		ImGuiIO& io = ImGui::GetIO();
-
-		io.DeltaTime = static_cast<float>(mDeltaTime);
-
-		io.MousePos = ImVec2(GetInputHandler().GetMouseState().CurPosition.X(), GetInputHandler().GetMouseState().CurPosition.Y());
-
-		for (int i = 0; i < 3; ++i)
-		{
-			io.MouseDown[i] = GetInputHandler().GetMouseState().CurMouseBtnStates[i];
-		}
-
-
-		ImGui::GetStyle().FrameRounding = 0.0f;
-		ImGui::NewFrame();
-	}
+#if EDITOR
+	mEditor->PreUpdate();
+#endif
 }
 
 void RZE_Engine::CreateAndInitializeWindow()

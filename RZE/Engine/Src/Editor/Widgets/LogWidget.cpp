@@ -3,12 +3,16 @@
 
 Vector3D LogWidget::mDefaultLogColor = Vector3D(1.0f, 1.0f, 0.0f);
 
-#define MAX_LOG_SIZE 10
+#define MAX_LOG_SIZE 128
+
+void LogWidget::Initialize()
+{
+}
 
 void LogWidget::Display()
 {
 	const Vector2D& winSize = RZE_Engine::Get()->GetWindowSize();
-	ImGui::SetNextWindowPos(ImVec2(5.0f, winSize.Y() - 255));
+	ImGui::SetNextWindowPos(ImVec2(0.f, winSize.Y() - 250));
 	ImGui::Begin("Log", nullptr, ImVec2(750, 250), -1.0f, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
 
 	for (auto& logItem : mLogEntries)

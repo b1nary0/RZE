@@ -27,13 +27,13 @@ namespace Diotima
 		{
 			RenderItemProtocol();
 
-			GFXShaderPipeline*					Shader { nullptr };
+			GFXShaderPipeline*					Shader{ nullptr };
 			GFXMaterial						Material;
 			std::vector<GFXTexture2D*>		Textures;
 			Matrix4x4						ModelMat;
 			Matrix4x4						ProjectionMat;
 			Matrix4x4						ViewMat;
-			std::vector<GFXMesh*>*			MeshData { nullptr };
+			std::vector<GFXMesh*>*			MeshData{ nullptr };
 
 			bool bIsValid{ false };
 
@@ -51,7 +51,7 @@ namespace Diotima
 		{
 			Vector3D	Position;
 			Vector3D	Color;
-			
+
 			float		Strength;
 		} LightItemProtocol;
 
@@ -79,6 +79,9 @@ namespace Diotima
 		virtual void ShutDown();
 
 	public:
+		void RenderToTexture(RenderTargetTexture* texture);
+
+	public:
 		Int32 AddRenderItem(const RenderItemProtocol& itemProtocol);
 		void RemoveRenderItem(const U32 itemIdx);
 
@@ -99,7 +102,7 @@ namespace Diotima
 		void RenderToTexture_Test(RenderItemProtocol& itemProtocol);
 
 	private:
-		GLRenderTargetTexture mRenderTargetTexture;
+		Vector2D mCanvasSize;
 
 		CameraItemProtocol camera;
 		std::vector<RenderItemProtocol> mRenderList;

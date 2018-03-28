@@ -28,7 +28,7 @@ public:
 
 	const glm::vec4& GetInternalVec() const;
 
-	inline std::string ToString()
+	inline std::string ToString() const
 	{
 		return std::move(StringUtils::FormatString("[X] %f [Y] %f [Z] %f [W] %f", X(), Y(), Z(), W()));
 	}
