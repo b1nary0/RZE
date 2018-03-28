@@ -40,8 +40,15 @@ void RZE_Editor::PreUpdate()
 
 void RZE_Editor::Display()
 {
-	mMainMenu.Display();
-	mLog.Display();
+// 	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+// 	ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+	//if (ImGui::Begin("MainWindow"))
+	{
+		mMainMenu.Display();
+		mLog.Display();
+
+		//ImGui::End();
+	}
 }
 
 void RZE_Editor::SetupStyle()
@@ -51,12 +58,15 @@ void RZE_Editor::SetupStyle()
 	style.ScrollbarRounding = 2.0f;
 	style.ScrollbarSize = 18.0f;
 	style.Alpha = 1.0f;
+	style.Colors[ImGuiCol_Border] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
 	style.Colors[ImGuiCol_BorderShadow] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
 	style.Colors[ImGuiCol_HeaderHovered] = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
 	style.Colors[ImGuiCol_MenuBarBg] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
 	style.Colors[ImGuiCol_ScrollbarBg] = ImVec4(0.15f, 0.15f, 0.15f, 1.0f);
 	style.Colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
-	style.Colors[ImGuiCol_TitleBg] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
+	style.Colors[ImGuiCol_TitleBg] = ImVec4(0.1f, 0.1f, 0.1f, 1.0f);
+	style.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
+	style.Colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
 	style.Colors[ImGuiCol_WindowBg] = ImVec4(0.1f, 0.1f, 0.1f, 1.0f);
 }
 
