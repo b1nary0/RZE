@@ -48,7 +48,7 @@ void RZE_Editor::Display()
 {
  	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
  	ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-	if (ImGui::Begin("MainWindow"))
+	if (ImGui::Begin("MainWindow", NULL, ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoNavFocus))
 	{
 		mMainMenu.Display();
 		mLog.Display();

@@ -26,13 +26,12 @@ void GameViewWidget::Initialize()
 
 void GameViewWidget::Display()
 {
-	ImGui::SetNextWindowSize(ImVec2(mRTT->GetWidth(), mRTT->GetHeight() + 21)); // #TODO(Josh) why 21?
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(1.0f, 1.0f));
-	if (ImGui::Begin("GameView", NULL, ImGuiWindowFlags_NoResize))
+	Vector2D size(static_cast<float>(mRTT->GetWidth()), static_cast<float>(mRTT->GetHeight()));
+	ImGui::SetNextWindowSize(ImVec2(size.X(), size.Y()));
+	if (ImGui::Begin("GameView", NULL, ImGuiWindowFlags_NoScrollbar)) // #TODO(Josh) Why does the window need scroll bar?
 	{
-		ImGui::Image((void*)mRTT->GetTextureID(), ImVec2(mRTT->GetWidth(), mRTT->GetHeight()), ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::Image((void*)mRTT->GetTextureID(), ImVec2(size.X(), size.Y()), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 
 		ImGui::End();
 	}
-	ImGui::PopStyleVar();
 }
