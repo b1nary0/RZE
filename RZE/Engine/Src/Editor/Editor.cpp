@@ -15,6 +15,8 @@ bool ImGUICreateDeviceObjects();
 
 void RZE_Editor::Initialize()
 {
+	ImGui::SetCurrentContext(ImGui::CreateContext());
+
 	ImGuiIO& io = ImGui::GetIO();
 	ImGUICreateDeviceObjects();
 	io.RenderDrawListsFn = ImGUIRender;

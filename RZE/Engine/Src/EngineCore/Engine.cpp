@@ -118,7 +118,6 @@ void RZE_Engine::Init()
 		RegisterEngineComponentTypes();
 
 #if EDITOR
-		ImGui::SetCurrentContext(ImGui::CreateContext());
 #endif
 
 		mRenderer = new Diotima::Renderer();
@@ -127,14 +126,13 @@ void RZE_Engine::Init()
 
 		mResourceHandler.Init();
 
-
-		DebugServices::Initialize();
-		DebugServices::HandleScreenResize(GetWindowSize());
-
 #if EDITOR
 		mEditor = new RZE_Editor();
 		mEditor->Initialize();
 #endif
+
+		DebugServices::Initialize();
+		DebugServices::HandleScreenResize(GetWindowSize());
 
 		mActiveScene = new GameScene();
 		mActiveScene->Initialize();
