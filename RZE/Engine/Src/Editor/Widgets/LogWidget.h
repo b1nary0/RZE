@@ -22,6 +22,7 @@ public:
 
 	// IEditorWidget interface
 public:
+	virtual void Initialize() override;
 	virtual void Display() override;
 
 public:

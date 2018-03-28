@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Editor/Widgets/MainMenuWidget.h>
 #include <Editor/Widgets/LogWidget.h>
 
 class RZE_Editor
@@ -10,11 +11,16 @@ public:
 	RZE_Editor() = default;
 	~RZE_Editor() = default;
 
-	LogWidget& GetLogWidget() { return mLogWidget; }
+	LogWidget& GetLogWidget() { return mLog; }
 
 	void Initialize();
+	void PreUpdate();
 	void Display();
 
 private:
-	LogWidget mLogWidget;
+	void SetupStyle();
+
+private:
+	MainMenuWidget mMainMenu;
+	LogWidget mLog;
 };

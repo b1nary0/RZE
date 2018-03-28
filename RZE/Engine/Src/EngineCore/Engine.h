@@ -65,6 +65,8 @@ public:
 
 	// #TODO(Josh) this needs to return an actual thing, just placeholder atm
 	inline double GetDeltaTime() const { return mDeltaTime; }
+	
+	void PostExit();
 
 public:
 	void Log(const std::string& text, const Vector3D& color);
@@ -79,7 +81,6 @@ private:
 
 	void BeginShutDown();
 	void InternalShutDown();
-	void PostExit();
 
 	void CompileEvents();
 

@@ -74,9 +74,14 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 #endif
 
 				mRenderer->Update();
+
 				DebugServices::Display(GetWindowSize());
 			}
+
+#if EDITOR
 			ImGui::Render();
+#endif
+
 			mMainWindow->BufferSwap(); // #TODO(Josh) Maybe this can be done better
 		}
 
@@ -152,24 +157,9 @@ void RZE_Engine::PreUpdate()
 	mEventHandler.ProcessEvents();
 	mInputHandler.RaiseEvents();
 
-	{
-		ImGuiIO& io = ImGui::GetIO();
-
-		io.DeltaTime = static_cast<float>(mDeltaTime);
-
-		io.MousePos = ImVec2(GetInputHandler().GetMouseState().CurPosition.X(), GetInputHandler().GetMouseState().CurPosition.Y());
-
-		for (int i = 0; i < 3; ++i)
-		{
-			io.MouseDown[i] = GetInputHandler().GetMouseState().CurMouseBtnStates[i];
-		}
-
-
-		ImGui::GetStyle().WindowRounding = 2.0f;
-		ImGui::GetStyle().ScrollbarRounding = 2.0f;
-		ImGui::GetStyle().ScrollbarSize = 18.0f;
-		ImGui::NewFrame();
-	}
+#if EDITOR
+	mEditor->PreUpdate();
+#endif
 }
 
 void RZE_Engine::CreateAndInitializeWindow()
