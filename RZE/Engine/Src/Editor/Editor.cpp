@@ -44,15 +44,15 @@ void RZE_Editor::PreUpdate()
 
 void RZE_Editor::Display()
 {
-// 	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-// 	ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-	//if (ImGui::Begin("MainWindow"))
+ 	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+ 	ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+	if (ImGui::Begin("MainWindow"))
 	{
 		mMainMenu.Display();
 		mLog.Display();
 		mGameView.Display();
 
-		//ImGui::End();
+		ImGui::End();
 	}
 }
 
