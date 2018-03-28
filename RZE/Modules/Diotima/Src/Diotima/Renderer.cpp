@@ -116,6 +116,7 @@ namespace Diotima
 		texture->Bind();
 		openGL.Viewport(0, 0, texture->GetWidth(), texture->GetHeight());
 		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
+		// #TODO(Josh) How does this interact with other shaders? Will this cause problems? What is the best way to achieve this in a robust manner?
 		renderToTextureShader->Use();
 		for (auto& renderItem : mRenderList)
 		{
