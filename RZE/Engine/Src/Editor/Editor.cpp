@@ -25,7 +25,7 @@ void RZE_Editor::Initialize()
 
 	mMainMenu.Initialize();
 	mLog.Initialize();
-	mGameView.Initialize();
+	mSceneView.Initialize();
 }
 
 void RZE_Editor::PreUpdate()
@@ -52,7 +52,7 @@ void RZE_Editor::Display()
 	{
 		mMainMenu.Display();
 		mLog.Display();
-		mGameView.Display();
+		mSceneView.Display();
 
 		ImGui::End();
 	}

@@ -13,7 +13,7 @@ public:
 	~RZE_Editor() = default;
 
 	LogWidget& GetLogWidget() { return mLog; }
-	SceneViewWidget& GetSceneViewWidget() { return mGameView; }
+	SceneViewWidget& GetSceneViewWidget() { return mSceneView; }
 
 	void Initialize();
 	void PreUpdate();
@@ -25,5 +25,5 @@ private:
 private:
 	MainMenuWidget mMainMenu;
 	LogWidget mLog;
-	SceneViewWidget mGameView;
+	SceneViewWidget mSceneView;
 };
