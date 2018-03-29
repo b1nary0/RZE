@@ -72,7 +72,7 @@ void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
 #endif
 
 #if EDITOR
-				mRenderer->RenderToTexture(mEditor->GetGameViewWidget().GetRTT());
+				mRenderer->RenderToTexture(mEditor->GetSceneViewWidget().GetRTT());
 #else
 				mRenderer->Update();
 #endif
@@ -110,16 +110,12 @@ void RZE_Engine::Init()
 
 		CreateAndInitializeWindow();
 
-
 		mInputHandler.Initialize();
 
 		RegisterWindowEvents();
 		RegisterInputEvents();
 		RegisterEngineComponentTypes();
-
-#if EDITOR
-#endif
-
+		
 		mRenderer = new Diotima::Renderer();
 		mRenderer->Initialize();
 		mRenderer->EnableVsync(mEngineConfig->GetEngineSettings().IsVSyncEnabled());

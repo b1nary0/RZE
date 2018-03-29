@@ -4,11 +4,11 @@
 
 #include <Diotima/Graphics/RenderTarget.h>
 
-class GameViewWidget : public IEditorWidget
+class SceneViewWidget : public IEditorWidget
 {
 public:
-	GameViewWidget();
-	virtual ~GameViewWidget();
+	SceneViewWidget();
+	virtual ~SceneViewWidget();
 
 	virtual void Initialize() override;
 	virtual void Display() override;
