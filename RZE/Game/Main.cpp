@@ -4,7 +4,7 @@
 
 int main(void)
 {
-	Functor<RZE_Game* const> gameCreateFunc([]()
+	Functor<RZE_Application* const> gameCreateFunc([]()
 	{
 		return new GameApp();
 	});

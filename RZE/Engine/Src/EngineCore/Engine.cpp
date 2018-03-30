@@ -42,14 +42,14 @@ RZE_Engine::~RZE_Engine()
 	delete mMainWindow;
 }
 
-void RZE_Engine::Run(Functor<RZE_Game* const>& createGameCallback)
+void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 {
 	Init();
 
 	if (bIsInitialized)
 	{
-		AssertNotNull(createGameCallback);
-		PostInit(createGameCallback);
+		AssertNotNull(createApplicationCallback);
+		PostInit(createApplicationCallback);
 
 		HiResTimer programTimer;
 		programTimer.Start();
@@ -137,7 +137,7 @@ void RZE_Engine::Init()
 	}
 }
 
-void RZE_Engine::PostInit(Functor<RZE_Game* const>& createApplicationCallback)
+void RZE_Engine::PostInit(Functor<RZE_Application* const>& createApplicationCallback)
 {
 	LOG_CONSOLE("RZE_EngineCore::PostInit() called.");
 
@@ -170,11 +170,9 @@ void RZE_Engine::CreateAndInitializeWindow()
 	AssertNotNull(mMainWindow);
 
 	mMainWindow->RegisterEvents(mEventHandler);
-
-	mMainWindow->ResetCursorToCenter();
 }
 
-void RZE_Engine::InitGame(Functor<RZE_Game* const> createGameCallback)
+void RZE_Engine::InitGame(Functor<RZE_Application* const> createGameCallback)
 {
 	mApplication = createGameCallback();
 	AssertNotNull(mApplication);

@@ -13,7 +13,7 @@ namespace Diotima
 	class GFXShaderGroup;
 }
 
-class GameApp : public RZE_Game
+class GameApp : public RZE_Application
 {
 public:
 

@@ -21,7 +21,7 @@
 #include <DebugUtils/DebugServices.h>
 
 GameApp::GameApp()
-	: RZE_Game()
+	: RZE_Application()
 {
 }
 
@@ -31,7 +31,7 @@ GameApp::~GameApp()
 
 void GameApp::Start()
 {
-	RZE_Game::Start();
+	RZE_Application::Start();
 
 	RZE_Engine::Get()->Log("Press 6 to load a model.", Vector3D(1.0f, 1.0f, 0.0f));
 
@@ -94,7 +94,7 @@ void GameApp::Start()
 
 void GameApp::Update()
 {
-	RZE_Game::Update();
+	RZE_Application::Update();
 
 	DebugServices::AddData(StringUtils::FormatString("%i nanosuits.", mNanosuits.size()), Vector3D(1.0f, 1.0f, 0.0f));
 }
