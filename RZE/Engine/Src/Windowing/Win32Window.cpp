@@ -276,7 +276,7 @@ void Win32Window::Show()
 {
 	if (mOSWindowHandleData.windowHandle)
 	{
-		ShowWindow(mOSWindowHandleData.windowHandle, SW_SHOW); // @note SW_SHOWMAXIMIZED for borderless fullscreen. SW_SHOWDEFAULT default
+		ShowWindow(mOSWindowHandleData.windowHandle, SW_MAXIMIZE); // @note SW_SHOWMAXIMIZED for borderless fullscreen. SW_SHOWDEFAULT default
 	}
 }
 
@@ -302,7 +302,7 @@ void Win32Window::ProcessWinProcMessage(const WindowMessageAdaptor::WindowMessag
 		WindowEvent windowEvent(EWindowEventType::Window_Resize);
 
 		RECT windowRect;
-		GetWindowRect(mOSWindowHandleData.windowHandle, &windowRect);
+		GetClientRect(mOSWindowHandleData.windowHandle, &windowRect);
 		int width = windowRect.right - windowRect.top;
 		int height = windowRect.bottom - windowRect.top;
 

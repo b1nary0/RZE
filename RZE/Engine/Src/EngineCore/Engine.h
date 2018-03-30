@@ -20,6 +20,10 @@
 
 #include <Diotima/Renderer.h>
 
+#if EDITOR
+class RZE_Editor;
+#endif
+
 class GameWorld;
 class Win32Window;
 
@@ -49,7 +53,7 @@ public:
 
 	inline bool IsInitialized() { return bIsInitialized; }
 
-	void Run(Functor<RZE_Game* const>& createApplicationCallback);
+	void Run(Functor<RZE_Application* const>& createApplicationCallback);
 
 	const Vector2D& GetWindowSize() const;
 
@@ -61,17 +65,22 @@ public:
 
 	// #TODO(Josh) this needs to return an actual thing, just placeholder atm
 	inline double GetDeltaTime() const { return mDeltaTime; }
+	
+	void PostExit();
+
+public:
+	void Log(const std::string& text, const Vector3D& color);
 
 private:
 
 	void Init();
-	void PostInit(Functor<RZE_Game* const>& createApplicationCallback);
+	void PostInit(Functor<RZE_Application* const>& createApplicationCallback);
 
+	void PreUpdate(); // Set up anything the new frame will need
 	void Update();
 
 	void BeginShutDown();
 	void InternalShutDown();
-	void PostExit();
 
 	void CompileEvents();
 
@@ -82,10 +91,10 @@ private:
 	void LoadEngineConfig();
 	void CreateAndInitializeWindow();
 
-	void InitGame(Functor<RZE_Game* const> createGameCallback);
+	void InitGame(Functor<RZE_Application* const> createGameCallback);
 
 private:
-	RZE_Game* mApplication;
+	RZE_Application* mApplication;
 	GameScene* mActiveScene;
 
 	Win32Window* mMainWindow;
@@ -98,6 +107,12 @@ private:
 
 	EngineConfig* mEngineConfig;
 
+#if EDITOR
+	RZE_Editor* mEditor;
+#endif
+
+	// PODs
+private:
 	double mDeltaTime	{ 0.0f };
 
 	bool bIsInitialized;

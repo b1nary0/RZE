@@ -2,6 +2,8 @@
 
 #include <Utils/DebugUtils/Debug.h>
 
+#include <GL/wglew.h>
+
 OpenGLRHI::OpenGLRHI()
 {
 }
@@ -61,9 +63,14 @@ void OpenGLRHI::DisableCapability(const GLenum capability) const
 	AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
-void OpenGLRHI::Viewport(GLint posX, GLint posY, GLsizei sizeX, GLsizei sizeY)
+void OpenGLRHI::Viewport(GLint posX, GLint posY, GLsizei sizeX, GLsizei sizeY) const
 {
 	glViewport(posX, posY, sizeX, sizeY);
+}
+
+void OpenGLRHI::SetSwapInterval(GLint val)
+{
+	wglSwapIntervalEXT(val);
 }
 
 void OpenGLRHI::LogShaderInfo(const GLuint shaderProgramID)
