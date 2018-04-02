@@ -1,5 +1,6 @@
-#include <StdAfx.h>
-#include <Editor/Widgets/MainMenuWidget.h>
+#include <Widgets/MainMenuWidget.h>
+
+#include <EngineApp.h>
 
 MainMenuWidget::MainMenuWidget()
 {
@@ -24,7 +25,7 @@ void MainMenuWidget::Display()
 		{
 			if (ImGui::MenuItem("Exit"))
 			{
-				RZE_Engine::Get()->PostExit();
+				RZE_Application::RZE().PostExit();
 			}
 
 			ImGui::EndMenu();

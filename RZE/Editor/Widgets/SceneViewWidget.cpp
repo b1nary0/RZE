@@ -1,5 +1,6 @@
-#include <StdAfx.h>
-#include <Editor/Widgets/SceneViewWidget.h>
+#include <Widgets/SceneViewWidget.h>
+
+#include <RZE.h>
 
 SceneViewWidget::SceneViewWidget()
 {

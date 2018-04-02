@@ -11,10 +11,6 @@
 
 #include <ECS/Systems/RenderSystem.h>
 
-#if EDITOR
-#include <Editor/Editor.h>
-#endif
-
 #include <Windowing/Win32Window.h>
 #include <Windowing/WinKeyCodes.h>
 
@@ -22,8 +18,6 @@
 
 #include <Apollo/EntityComponentSystem.h>
 #include <Diotima/Renderer.h>
-
-RZE_Engine* RZE_Engine::sInstance = nullptr;
 
 RZE_Engine::RZE_Engine()
 {
@@ -38,8 +32,6 @@ RZE_Engine::RZE_Engine()
 
 RZE_Engine::~RZE_Engine()
 {
-	AssertNotNull(mMainWindow);
-	delete mMainWindow;
 }
 
 void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
@@ -60,28 +52,24 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 			double frameTime = newTime - currentTime;
 			currentTime = newTime;
 
+			mDeltaTime = frameTime;
+			PreUpdate();
+			// #TODO(Josh) Need to work this out but for the moment we need to pre update and then start the imgui new frame for things like editor stealing imgui input etc
+			ImGui::NewFrame();
+
 			DebugServices::AddData(StringUtils::FormatString("Frame Time: %f ms", static_cast<float>(mDeltaTime) * 1000.0f), Vector3D(1.0f, 1.0f, 0.0f));
 			{
-				mDeltaTime = frameTime;
-
-				PreUpdate();
 				Update();
-
-#if EDITOR
-				mEditor->Display();
-#endif
-
-#if EDITOR
-				mRenderer->RenderToTexture(mEditor->GetSceneViewWidget().GetRTT());
-#else
-				mRenderer->Update();
-#endif
+				
 				DebugServices::Display(GetWindowSize());
-			}
 
-#if EDITOR
-			ImGui::Render();
-#endif
+				if (!mApplication->IsEditor())
+				{
+					mRenderer->Update();
+				}
+
+				ImGui::Render();
+			}
 
 			mMainWindow->BufferSwap(); // #TODO(Josh) Maybe this can be done better
 		}
@@ -113,7 +101,6 @@ void RZE_Engine::Init()
 		mInputHandler.Initialize();
 
 		RegisterWindowEvents();
-		RegisterInputEvents();
 		RegisterEngineComponentTypes();
 		
 		mRenderer = new Diotima::Renderer();
@@ -121,11 +108,6 @@ void RZE_Engine::Init()
 		mRenderer->EnableVsync(mEngineConfig->GetEngineSettings().IsVSyncEnabled());
 
 		mResourceHandler.Init();
-
-#if EDITOR
-		mEditor = new RZE_Editor();
-		mEditor->Initialize();
-#endif
 
 		DebugServices::Initialize();
 		DebugServices::HandleScreenResize(GetWindowSize());
@@ -141,7 +123,7 @@ void RZE_Engine::PostInit(Functor<RZE_Application* const>& createApplicationCall
 {
 	LOG_CONSOLE("RZE_EngineCore::PostInit() called.");
 
-	InitGame(createApplicationCallback);
+	InitializeApplication(createApplicationCallback);
 
 	mActiveScene->Start();
 }
@@ -151,10 +133,6 @@ void RZE_Engine::PreUpdate()
 	CompileEvents();
 	mEventHandler.ProcessEvents();
 	mInputHandler.RaiseEvents();
-
-#if EDITOR
-	mEditor->PreUpdate();
-#endif
 }
 
 void RZE_Engine::CreateAndInitializeWindow()
@@ -170,15 +148,18 @@ void RZE_Engine::CreateAndInitializeWindow()
 	AssertNotNull(mMainWindow);
 
 	mMainWindow->RegisterEvents(mEventHandler);
+
+	mMainWindow->Show();
 }
 
-void RZE_Engine::InitGame(Functor<RZE_Application* const> createGameCallback)
+void RZE_Engine::InitializeApplication(Functor<RZE_Application* const> createGameCallback)
 {
 	mApplication = createGameCallback();
 	AssertNotNull(mApplication);
 
+	mApplication->Initialize();
+	mApplication->RegisterInputEvents(mInputHandler);
 	mApplication->SetWindow(mMainWindow);
-	mApplication->Start();
 }
 
 void RZE_Engine::CompileEvents()
@@ -206,24 +187,6 @@ void RZE_Engine::RegisterWindowEvents()
 	mEventHandler.RegisterForEvent(EEventType::Window, windowCallback);
 }
 
-void RZE_Engine::RegisterInputEvents()
-{
-	Functor<void, const InputKey&> inputFunc([this](const InputKey& key)
-	{
-		if (key.GetKeyCode() == Win32KeyCode::Escape)
-		{
-			PostExit();
-		}
-		else
-		{
-			RZE_Engine::Get()->Log("F1 pressed", Vector3D(1.0f, 1.0f, 0.0f));
-		}
-	});
-
-	mInputHandler.BindAction(Win32KeyCode::Escape, EButtonState::ButtonState_Pressed, inputFunc);
-	mInputHandler.BindAction(Win32KeyCode::F1, EButtonState::ButtonState_Pressed, inputFunc);
-}
-
 void RZE_Engine::RegisterEngineComponentTypes()
 {
 	APOLLO_REGISTER_COMPONENT(CameraComponent);
@@ -247,11 +210,8 @@ void RZE_Engine::LoadEngineConfig()
 
 void RZE_Engine::Update()
 {
-#if !EDITOR
-	mApplication->Update();
-#endif
-
 	mActiveScene->Update();
+	mApplication->Update();
 }
 
 void RZE_Engine::BeginShutDown()
@@ -269,13 +229,11 @@ void RZE_Engine::InternalShutDown()
 {
 	AssertNotNull(mMainWindow);
 	AssertNotNull(mEngineConfig);
-	AssertNotNull(mApplication);
 	AssertNotNull(mRenderer);
 	AssertNotNull(mActiveScene);
 
 	delete mMainWindow;
 	delete mEngineConfig;
-	delete mApplication;
 	delete mRenderer;
 	delete mActiveScene;
 }
@@ -298,8 +256,5 @@ GameScene& RZE_Engine::GetActiveScene()
 
 void RZE_Engine::Log(const std::string& text, const Vector3D& color)
 {
-#if EDITOR
-	mEditor->GetLogWidget().AddEntry(text, color);
-#endif
 }
 

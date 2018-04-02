@@ -1,7 +1,5 @@
 #pragma once
 
-#include <EngineApp.h>
-
 #include <RZE_Config.h>
 
 #include <Utils/Platform/File.h>
@@ -20,9 +18,7 @@
 
 #include <Diotima/Renderer.h>
 
-#if EDITOR
-class RZE_Editor;
-#endif
+class RZE_Application;
 
 class GameWorld;
 class Win32Window;
@@ -34,22 +30,12 @@ namespace Apollo
 
 class RZE_Engine
 {
-	static RZE_Engine* sInstance;
+	friend class RZE_Editor;
 
 public:
 
 	RZE_Engine();
 	~RZE_Engine();
-	
-	static RZE_Engine* const Get()
-	{
-		if (!sInstance)
-		{
-			sInstance = new RZE_Engine();
-		}
-
-		return sInstance;
-	}
 
 	inline bool IsInitialized() { return bIsInitialized; }
 
@@ -85,13 +71,12 @@ private:
 	void CompileEvents();
 
 	void RegisterWindowEvents();
-	void RegisterInputEvents();
 	void RegisterEngineComponentTypes();
 
 	void LoadEngineConfig();
 	void CreateAndInitializeWindow();
 
-	void InitGame(Functor<RZE_Application* const> createGameCallback);
+	void InitializeApplication(Functor<RZE_Application* const> createGameCallback);
 
 private:
 	RZE_Application* mApplication;
@@ -106,11 +91,7 @@ private:
 	Diotima::Renderer* mRenderer;
 
 	EngineConfig* mEngineConfig;
-
-#if EDITOR
-	RZE_Editor* mEditor;
-#endif
-
+	
 	// PODs
 private:
 	double mDeltaTime	{ 0.0f };

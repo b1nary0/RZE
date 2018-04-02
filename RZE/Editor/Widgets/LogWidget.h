@@ -3,7 +3,7 @@
 #include <deque>
 #include <string>
 
-#include <Editor/Widgets/EditorWidget.h>
+#include <Widgets/EditorWidget.h>
 
 #include <Utils/Math/Vector3D.h>
 

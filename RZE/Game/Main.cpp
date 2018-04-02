@@ -4,12 +4,8 @@
 
 int main(void)
 {
-	Functor<RZE_Application* const> gameCreateFunc([]()
-	{
-		return new GameApp();
-	});
-
-    RZE_Engine::Get()->Run(gameCreateFunc);
+	GameApp gGameApp;
+	gGameApp.Start();
 
 	//getchar();
 	return 0;

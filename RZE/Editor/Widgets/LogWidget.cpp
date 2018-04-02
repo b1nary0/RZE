@@ -1,5 +1,6 @@
-#include <StdAfx.h>
-#include <Editor/Widgets/LogWidget.h>
+#include <Widgets/LogWidget.h>
+
+#include <EditorApp.h>
 
 Vector3D LogWidget::mDefaultLogColor = Vector3D(1.0f, 1.0f, 0.0f);
 
@@ -11,7 +12,7 @@ void LogWidget::Initialize()
 
 void LogWidget::Display()
 {
-	const Vector2D& winSize = RZE_Engine::Get()->GetWindowSize();
+	const Vector2D& winSize = RZE_Application::RZE().GetWindowSize();
 	ImGui::SetNextWindowPos(ImVec2(0.f, winSize.Y() - 250));
 	ImGui::Begin("Log", nullptr, ImVec2(750, 250), -1.0f, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
 

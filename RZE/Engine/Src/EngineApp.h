@@ -1,5 +1,7 @@
 #pragma once
 
+#include <RZE.h>
+
 class EventHandler;
 class Win32Window;
 
@@ -15,8 +17,15 @@ public:
 	virtual void Start();
 	virtual void Update();
 	virtual void ShutDown();
+
+	virtual void RegisterInputEvents(InputHandler& inputHandler);
+
+	virtual bool IsEditor() { return false; }
 	
+	static RZE_Engine& RZE() { return mEngine; };
+
 protected:
+	virtual void Initialize();
 
 	void SetRunning(bool bRunning);
 	void ShowWindow();
@@ -24,10 +33,10 @@ protected:
 	Win32Window* const GetWindow() const;
 
 private:
-	virtual void Init();
-
 	void SetWindow(Win32Window* const window);
 
 	Win32Window* mWindow;
 	bool bIsRunning;
+
+	static RZE_Engine mEngine;
 };

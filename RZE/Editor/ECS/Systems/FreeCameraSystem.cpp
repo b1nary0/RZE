@@ -25,7 +25,7 @@ void FreeCameraSystem::Initialize()
 
 void FreeCameraSystem::Update(std::vector<Apollo::EntityID>& entities)
 {
-	Apollo::EntityHandler& handler = RZE_Engine::Get()->GetActiveScene().GetEntityHandler();
+	Apollo::EntityHandler& handler = RZE_Application::RZE().GetActiveScene().GetEntityHandler();
 	for (auto& entity : entities)
 	{
 		CameraComponent* const camComp = handler.GetComponent<CameraComponent>(entity);
@@ -42,7 +42,7 @@ void FreeCameraSystem::Update(std::vector<Apollo::EntityID>& entities)
 			Vector3D dist = mMoveToPoint - transfComp->Position;
 			if (dist.LengthSq() > VectorUtils::kEpsilon * VectorUtils::kEpsilon)
 			{
-				transfComp->Position = VectorUtils::Lerp(transfComp->Position, mMoveToPoint, static_cast<float>(3 * RZE_Engine::Get()->GetDeltaTime()));
+				transfComp->Position = VectorUtils::Lerp(transfComp->Position, mMoveToPoint, static_cast<float>(3 * RZE_Application::RZE().GetDeltaTime()));
 			}
 		}
 	}
@@ -54,9 +54,9 @@ void FreeCameraSystem::ShutDown()
 
 void FreeCameraSystem::KeyboardInput(CameraComponent& camComp, TransformComponent& transfComp)
 {
-	InputHandler& inputHandler = RZE_Engine::Get()->GetInputHandler();
+	InputHandler& inputHandler = RZE_Application::RZE().GetInputHandler();
 
-	float dt = static_cast<float>(RZE_Engine::Get()->GetDeltaTime());
+	float dt = static_cast<float>(RZE_Application::RZE().GetDeltaTime());
 
 	if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_W])
 	{
@@ -88,14 +88,14 @@ void FreeCameraSystem::KeyboardInput(CameraComponent& camComp, TransformComponen
 
 void FreeCameraSystem::MouseInput(CameraComponent& camComp, TransformComponent& transfComp)
 {
-	InputHandler& inputHandler = RZE_Engine::Get()->GetInputHandler();
+	InputHandler& inputHandler = RZE_Application::RZE().GetInputHandler();
 
 	if (mMousePrevPos.LengthSq() == 0)
 	{
 		mMousePrevPos = inputHandler.GetMouseState().CurPosition;
 	}
 
-	if (RZE_Engine::Get()->GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Pressed)
+	if (RZE_Application::RZE().GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Pressed)
 	{
 		Vector3D curPos = inputHandler.GetMouseState().CurPosition;
 		Vector3D diff = curPos - mMousePrevPos;
@@ -114,7 +114,7 @@ void FreeCameraSystem::MouseInput(CameraComponent& camComp, TransformComponent& 
 		mMousePrevPos = curPos;
 	}
 
-// 	if (RZE_Engine::Get()->GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Middle) == EButtonState::ButtonState_Pressed)
+// 	if (RZE_Application::RZE().GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Middle) == EButtonState::ButtonState_Pressed)
 // 	{
 // 		Vector3D curPos = inputHandler.GetMouseState().CurPosition;
 // 
@@ -134,8 +134,8 @@ void FreeCameraSystem::MouseInput(CameraComponent& camComp, TransformComponent& 
 // 		mMousePrevPos = curPos;
 // 	}
 
-	if (RZE_Engine::Get()->GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Released
-		&& RZE_Engine::Get()->GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Middle) == EButtonState::ButtonState_Released && mMousePrevPos.LengthSq() > 0)
+	if (RZE_Application::RZE().GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Released
+		&& RZE_Application::RZE().GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Middle) == EButtonState::ButtonState_Released && mMousePrevPos.LengthSq() > 0)
 	{
 		mMousePrevPos = Vector3D();
 	}
@@ -160,12 +160,12 @@ void FreeCameraSystem::RegisterComponentAddedNotifications()
 			mMoveToPoint = transfComp->Position;
 		}
 	});
-	RZE_Engine::Get()->GetActiveScene().GetEntityHandler().RegisterForComponentAddNotification<CameraComponent>(camCompAdded);
+	RZE_Application::RZE().GetActiveScene().GetEntityHandler().RegisterForComponentAddNotification<CameraComponent>(camCompAdded);
 }
 
 Vector3D FreeCameraSystem::ArcBallProjection(const Vector3D& vec)
 {
-	const Vector2D& winDims = RZE_Engine::Get()->GetWindowSize();
+	const Vector2D& winDims = RZE_Application::RZE().GetWindowSize();
 	float x = 1.0f * vec.X() / winDims.X() * 2.0f - 1.0f;
 	float y = 1.0f * vec.Y() / winDims.Y() * 2.0f - 1.0f;
 

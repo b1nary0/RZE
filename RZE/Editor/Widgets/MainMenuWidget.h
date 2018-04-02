@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Editor/Widgets/EditorWidget.h>
+#include <Widgets/EditorWidget.h>
 
 class MainMenuWidget : public IEditorWidget
 {
