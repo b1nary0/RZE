@@ -11,7 +11,7 @@ void LogWidget::Initialize()
 
 void LogWidget::Display()
 {
-	const Vector2D& winSize = RZE_Engine::Get()->GetWindowSize();
+	const Vector2D& winSize = RZE_Application::RZE().GetWindowSize();
 	ImGui::SetNextWindowPos(ImVec2(0.f, winSize.Y() - 250));
 	ImGui::Begin("Log", nullptr, ImVec2(750, 250), -1.0f, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
 

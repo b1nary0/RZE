@@ -7,12 +7,12 @@
 
 #include <Utils/DebugUtils/Debug.h>
 
+RZE_Engine RZE_Application::mEngine;
+
 RZE_Application::RZE_Application()
 	: mWindow(nullptr)
 {
 	SetRunning(false);
-
-	Init();
 }
 
 RZE_Application::~RZE_Application()
@@ -22,9 +22,14 @@ RZE_Application::~RZE_Application()
 
 void RZE_Application::Start()
 {
-	ShowWindow();
-
 	SetRunning(true);
+
+	Functor<RZE_Application* const> engineHook([this]()
+	{
+		return this;
+	});
+
+	RZE().Run(engineHook);
 }
 
 void RZE_Application::Update()
@@ -35,7 +40,7 @@ void RZE_Application::ShutDown()
 {
 }
 
-void RZE_Application::Init()
+void RZE_Application::Initialize()
 {
 	LOG_CONSOLE("RZE_Application::Init() called.");
 }

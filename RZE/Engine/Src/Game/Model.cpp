@@ -56,7 +56,7 @@ void Model3D::Release()
 
 	for (size_t idx = 0; idx < mTextureHandles.size(); ++idx)
 	{
-		RZE_Engine::Get()->GetResourceHandler().ReleaseResource(mTextureHandles[idx]);
+		RZE_Application::RZE().GetResourceHandler().ReleaseResource(mTextureHandles[idx]);
 	}
 
 	mTextureHandles.clear();
@@ -125,10 +125,10 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 			std::string filePath = "Engine/Assets/3D/Nanosuit/";
 			filePath.append(str.C_Str());
 
-			ResourceHandle textureHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(FilePath(filePath), Diotima::ETextureType::Diffuse);
+			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(FilePath(filePath), Diotima::ETextureType::Diffuse);
 			if (textureHandle.IsValid())
 			{
-				outMesh.AddTexture(RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXTexture2D>(textureHandle));
+				outMesh.AddTexture(RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXTexture2D>(textureHandle));
 				mTextureHandles.emplace_back(textureHandle);
 			}
 			else
@@ -145,11 +145,11 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 			std::string filePath = "Engine/Assets/3D/Nanosuit/";
 			filePath.append(str.C_Str());
 
-			ResourceHandle textureHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(FilePath(filePath), Diotima::ETextureType::Specular);
+			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(FilePath(filePath), Diotima::ETextureType::Specular);
 			if (textureHandle.IsValid())
 			{
 				mTextureHandles.emplace_back(textureHandle);
-				outMesh.AddTexture(RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXTexture2D>(textureHandle));
+				outMesh.AddTexture(RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXTexture2D>(textureHandle));
 			}
 			else
 			{

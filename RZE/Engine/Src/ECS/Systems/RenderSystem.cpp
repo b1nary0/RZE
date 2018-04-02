@@ -28,14 +28,14 @@ void CreateDefaultShader()
 	const FilePath vertShaderFilePath("Engine/Assets/Shaders/VertexShader.shader");
 	const FilePath fragShaderFilePath("Engine/Assets/Shaders/FragmentShader.shader");
 
-	ResourceHandle vertShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "DefaultVertexShader");
-	ResourceHandle fragShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "DefaultFragShader");
+	ResourceHandle vertShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "DefaultVertexShader");
+	ResourceHandle fragShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "DefaultFragShader");
 
-	Diotima::GFXShader* vertShader = RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXShader>(vertShaderHandle);
+	Diotima::GFXShader* vertShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(vertShaderHandle);
 	vertShader->Create();
 	vertShader->Compile();
 
-	Diotima::GFXShader* fragShader = RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXShader>(fragShaderHandle);
+	Diotima::GFXShader* fragShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(fragShaderHandle);
 	fragShader->Create();
 	fragShader->Compile();
 
@@ -51,14 +51,14 @@ void CreateTextureShader()
 	const FilePath vertShaderFilePath("Engine/Assets/Shaders/TextureVert.shader");
 	const FilePath fragShaderFilePath("Engine/Assets/Shaders/TextureFrag.shader");
 
-	ResourceHandle vertShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "TextureVertShader");
-	ResourceHandle fragShaderHandle = RZE_Engine::Get()->GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "TextureFragShader");
+	ResourceHandle vertShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "TextureVertShader");
+	ResourceHandle fragShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "TextureFragShader");
 
-	Diotima::GFXShader* vertShader = RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXShader>(vertShaderHandle);
+	Diotima::GFXShader* vertShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(vertShaderHandle);
 	vertShader->Create();
 	vertShader->Compile();
 
-	Diotima::GFXShader* fragShader = RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXShader>(fragShaderHandle);
+	Diotima::GFXShader* fragShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(fragShaderHandle);
 	fragShader->Create();
 	fragShader->Compile();
 
@@ -86,8 +86,8 @@ void RenderSystem::Initialize()
 
 void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 {
-	Apollo::EntityHandler& handler = RZE_Engine::Get()->GetActiveScene().GetEntityHandler();
-	Diotima::Renderer* const renderSystem = RZE_Engine::Get()->GetRenderer();
+	Apollo::EntityHandler& handler = RZE_Application::RZE().GetActiveScene().GetEntityHandler();
+	Diotima::Renderer* const renderSystem = RZE_Application::RZE().GetRenderer();
 
 	Functor<void, Apollo::EntityID> CameraCompFunc([this, &handler, &renderSystem](Apollo::EntityID entity)
 	{
@@ -139,7 +139,7 @@ void RenderSystem::ShutDown()
 
 void RenderSystem::RegisterForComponentNotifications()
 {
-	Apollo::EntityHandler& handler = RZE_Engine::Get()->GetActiveScene().GetEntityHandler();
+	Apollo::EntityHandler& handler = RZE_Application::RZE().GetActiveScene().GetEntityHandler();
 
 	//
 	// MeshComponent
@@ -148,13 +148,13 @@ void RenderSystem::RegisterForComponentNotifications()
 	{
 		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entityID);
 		AssertNotNull(meshComp);
-		meshComp->Resource = RZE_Engine::Get()->GetResourceHandler().RequestResource<Model3D>(meshComp->ResourcePath);
+		meshComp->Resource = RZE_Application::RZE().GetResourceHandler().RequestResource<Model3D>(meshComp->ResourcePath);
 
 		Diotima::Renderer::RenderItemProtocol item;
 
 		if (meshComp->Resource.IsValid())
 		{
-			Model3D* const modelData = RZE_Engine::Get()->GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
+			Model3D* const modelData = RZE_Application::RZE().GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
 
 			item.MeshData = &modelData->GetMeshList();
 			item.Shader = textureShader;
@@ -165,7 +165,7 @@ void RenderSystem::RegisterForComponentNotifications()
 				std::vector<Diotima::GFXTexture2D*> textures(numTextures);
 				for (size_t i = 0; i < numTextures; ++i)
 				{
-					textures.push_back(RZE_Engine::Get()->GetResourceHandler().GetResource<Diotima::GFXTexture2D>(modelData->GetTextureHandles()[i]));
+					textures.push_back(RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXTexture2D>(modelData->GetTextureHandles()[i]));
 				}
 				item.Textures = std::move(textures);
 			}
@@ -177,7 +177,7 @@ void RenderSystem::RegisterForComponentNotifications()
 
 		item.Material.Color = sDefaultFragColor;
 
-		Int32 itemIdx = RZE_Engine::Get()->GetRenderer()->AddRenderItem(item);
+		Int32 itemIdx = RZE_Application::RZE().GetRenderer()->AddRenderItem(item);
 		mRenderItemEntityMap[entityID] = itemIdx;
 	});
 	handler.RegisterForComponentAddNotification<MeshComponent>(OnMeshComponentAdded);
@@ -191,7 +191,7 @@ void RenderSystem::RegisterForComponentNotifications()
 		item.Color = lightComp->Color;
 		item.Strength = lightComp->Strength;
 
-		Int32 itemIdx = RZE_Engine::Get()->GetRenderer()->AddLightItem(item);
+		Int32 itemIdx = RZE_Application::RZE().GetRenderer()->AddLightItem(item);
 		mLightItemEntityMap[entityID] = itemIdx;
 	});
 	handler.RegisterForComponentAddNotification<LightSourceComponent>(OnLightSourceComponentAdded);
@@ -213,10 +213,10 @@ void RenderSystem::RegisterForComponentNotifications()
 		MeshComponent* const meshComponent = handler.GetComponent<MeshComponent>(entityID);
 		AssertNotNull(meshComponent);
 
-		RZE_Engine::Get()->GetResourceHandler().ReleaseResource(meshComponent->Resource);
+		RZE_Application::RZE().GetResourceHandler().ReleaseResource(meshComponent->Resource);
 
 		Int32 renderIndex = mRenderItemEntityMap[entityID];
-		RZE_Engine::Get()->GetRenderer()->RemoveRenderItem(renderIndex);
+		RZE_Application::RZE().GetRenderer()->RemoveRenderItem(renderIndex);
 		mRenderItemEntityMap[entityID] = -1;
 	});
 	handler.RegisterForComponentRemovedNotification<MeshComponent>(OnMeshComponentRemoved);
