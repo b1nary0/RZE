@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <EditorApp.h>
 
 #include <Diotima/Graphics/Texture2D.h>

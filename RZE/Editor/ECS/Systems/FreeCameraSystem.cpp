@@ -1,6 +1,6 @@
-#include <StdAfx.h>
-
 #include <ECS/Systems/FreeCameraSystem.h>
+
+#include <EngineApp.h>
 
 #include <ECS/Components/CameraComponent.h>
 #include <ECS/Components/TransformComponent.h>
