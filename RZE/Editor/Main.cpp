@@ -1,6 +1,6 @@
 #include <RZE.h>
 
-#include <Editor/Editor.h>
+#include <Editor/EditorApp.h>
 
 int main(void)
 {
