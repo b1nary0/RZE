@@ -21,6 +21,7 @@ void RZE_Editor::Update()
 {
 	PreUpdate();
 
+	// #TODO(Josh) This should change when a proper render system pipeline is in place. For now, that'll do donkey.
 	RZE().GetRenderer()->RenderToTexture(GetSceneViewWidget().GetRTT());
 
 	Display();
