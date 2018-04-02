@@ -1,5 +1,6 @@
-#include <StdAfx.h>
-#include <Editor/Widgets/MainMenuWidget.h>
+#include <Widgets/MainMenuWidget.h>
+
+#include <EngineApp.h>
 
 MainMenuWidget::MainMenuWidget()
 {

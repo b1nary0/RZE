@@ -2,9 +2,9 @@
 
 #include <EngineApp.h>
 
-#include <Editor/Widgets/SceneViewWidget.h>
-#include <Editor/Widgets/LogWidget.h>
-#include <Editor/Widgets/MainMenuWidget.h>
+#include <Widgets/SceneViewWidget.h>
+#include <Widgets/LogWidget.h>
+#include <Widgets/MainMenuWidget.h>
 
 class RZE_Editor : RZE_Application
 {

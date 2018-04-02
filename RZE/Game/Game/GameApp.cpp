@@ -16,8 +16,6 @@
 #include <ECS/Components/TransformComponent.h>
 #include <ECS/Components/MaterialComponent.h>
 
-#include <ECS/Systems/FreeCameraSystem.h>
-
 #include <DebugUtils/DebugServices.h>
 
 GameApp::GameApp()
@@ -32,9 +30,6 @@ GameApp::~GameApp()
 void GameApp::Initialize()
 {
 	GameScene& scene = RZE_Application::RZE().GetActiveScene();
-
-	// ALL TEST CODE
-	scene.GetEntityHandler().AddSystem<FreeCameraSystem>();
 
 	Apollo::EntityID floor = scene.GetEntityHandler().CreateEntity();
 	scene.GetEntityHandler().AddComponent<MeshComponent>(floor, FilePath("Engine/Assets/3D/Cube.obj"));

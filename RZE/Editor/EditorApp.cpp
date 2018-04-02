@@ -1,5 +1,5 @@
 #include <StdAfx.h>
-#include <Editor/EditorApp.h>
+#include <EditorApp.h>
 
 #include <Diotima/Graphics/Texture2D.h>
 
