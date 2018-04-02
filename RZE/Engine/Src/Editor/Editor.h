@@ -1,10 +1,12 @@
 #pragma once
 
-#include <Editor/Widgets/GameViewWidget.h>
+#include <EngineApp.h>
+
+#include <Editor/Widgets/SceneViewWidget.h>
 #include <Editor/Widgets/LogWidget.h>
 #include <Editor/Widgets/MainMenuWidget.h>
 
-class RZE_Editor
+class RZE_Editor : RZE_Application
 {
 	friend class RZE_Engine;
 
@@ -12,18 +14,31 @@ public:
 	RZE_Editor() = default;
 	~RZE_Editor() = default;
 
-	LogWidget& GetLogWidget() { return mLog; }
-	GameViewWidget& GetGameViewWidget() { return mGameView; }
+	//
+	// RZE_Application interface
+	//
+public:
+	virtual void Start();
+	virtual void Initialize();
+	virtual void Update();
+	virtual void ShutDown();
 
-	void Initialize();
+public:
+	LogWidget & GetLogWidget() { return mLog; }
+	SceneViewWidget& GetSceneViewWidget() { return mSceneView; }
+
 	void PreUpdate();
 	void Display();
 
 private:
 	void SetupStyle();
 
+	void TestInitializeWhileNoSceneFile();
+
 private:
 	MainMenuWidget mMainMenu;
 	LogWidget mLog;
-	GameViewWidget mGameView;
+	SceneViewWidget mSceneView;
+
+	std::vector<Apollo::EntityID> mNanosuits;
 };

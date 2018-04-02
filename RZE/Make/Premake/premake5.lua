@@ -45,7 +45,7 @@ workspace "RZE"
 		"/ignore:4006"
 	};
 
-	startproject "Game"
+	startproject "Editor"
 
 	filter {}
 
@@ -382,6 +382,70 @@ workspace "RZE"
 		language "C++"
 		targetdir (RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
 		targetname "RZE_Game"
+
+		dependson { "Engine", "Apollo", "Diotima", "Utils"}
+
+		files
+		{
+			SourceDir .. "**.h",
+			SourceDir .. "**.hpp",
+			SourceDir .. "**.c",
+			SourceDir .. "**.cpp"
+		}
+
+		includedirs
+		{
+			IncludeDir,
+			ProjectDir,
+			EngineDir .. "/Src/",
+			RootDir .. "/Utils/Src/",
+			RootDir .. "/Modules/Diotima/Src/",
+			RootDir .. "/Modules/Apollo/Src/"
+		}
+
+		libdirs
+		{
+			LibDir,
+			RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
+		}
+		links
+		{
+			"RZE_Engine",
+			"RZE_Utils",
+			"Apollo",
+			"Diotima",
+			"Externals"
+		}
+
+		filter {}
+
+		 vpaths
+		 {
+			["Source Files/*"] =
+			{
+				SourceDir .. "**.h",
+				SourceDir .. "**.hpp",
+				SourceDir .. "**.c",
+				SourceDir .. "**.cpp"
+			}
+		 }
+
+	--
+	--
+	-- RZE_EDITORPROJ
+	--
+	--
+	 project "Editor"
+		local EngineDir = RootDir .. "Engine/"
+		local ProjectDir = RootDir .. "Editor/"
+		local SourceDir = ProjectDir
+		local IncludeDir = EngineDir .. "ThirdParty/Include/"
+		local LibDir = EngineDir .. "ThirdParty/Lib/x86/"
+
+		kind "ConsoleApp"
+		language "C++"
+		targetdir (RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
+		targetname "RZE_Editor"
 
 		dependson { "Engine", "Apollo", "Diotima", "Utils"}
 

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <EngineApp.h>
-
 #include <RZE_Config.h>
 
 #include <Utils/Platform/File.h>
@@ -24,6 +22,8 @@
 class RZE_Editor;
 #endif
 
+class RZE_Application;
+
 class GameWorld;
 class Win32Window;
 
@@ -34,26 +34,16 @@ namespace Apollo
 
 class RZE_Engine
 {
-	static RZE_Engine* sInstance;
+	friend class RZE_Editor;
 
 public:
 
 	RZE_Engine();
 	~RZE_Engine();
-	
-	static RZE_Engine* const Get()
-	{
-		if (!sInstance)
-		{
-			sInstance = new RZE_Engine();
-		}
-
-		return sInstance;
-	}
 
 	inline bool IsInitialized() { return bIsInitialized; }
 
-	void Run(Functor<RZE_Game* const>& createApplicationCallback);
+	void Run(Functor<RZE_Application* const>& createApplicationCallback);
 
 	const Vector2D& GetWindowSize() const;
 
@@ -74,7 +64,7 @@ public:
 private:
 
 	void Init();
-	void PostInit(Functor<RZE_Game* const>& createApplicationCallback);
+	void PostInit(Functor<RZE_Application* const>& createApplicationCallback);
 
 	void PreUpdate(); // Set up anything the new frame will need
 	void Update();
@@ -91,10 +81,10 @@ private:
 	void LoadEngineConfig();
 	void CreateAndInitializeWindow();
 
-	void InitGame(Functor<RZE_Game* const> createGameCallback);
+	void InitGame(Functor<RZE_Application* const> createGameCallback);
 
 private:
-	RZE_Game* mApplication;
+	RZE_Application* mApplication;
 	GameScene* mActiveScene;
 
 	Win32Window* mMainWindow;

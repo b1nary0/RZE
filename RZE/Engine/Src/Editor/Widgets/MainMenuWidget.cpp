@@ -24,7 +24,7 @@ void MainMenuWidget::Display()
 		{
 			if (ImGui::MenuItem("Exit"))
 			{
-				RZE_Engine::Get()->PostExit();
+				RZE_Application::RZE().PostExit();
 			}
 
 			ImGui::EndMenu();
