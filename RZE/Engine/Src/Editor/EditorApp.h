@@ -23,6 +23,8 @@ public:
 	virtual void Update();
 	virtual void ShutDown();
 
+	virtual bool IsEditor() override { return true; }
+
 public:
 	LogWidget & GetLogWidget() { return mLog; }
 	SceneViewWidget& GetSceneViewWidget() { return mSceneView; }

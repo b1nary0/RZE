@@ -17,6 +17,8 @@ public:
 	virtual void Start();
 	virtual void Update();
 	virtual void ShutDown();
+
+	virtual bool IsEditor() { return false; }
 	
 	static RZE_Engine& RZE() { return mEngine; };
 
