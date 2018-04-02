@@ -20,6 +20,7 @@ public:
 	GameApp();
 	virtual ~GameApp();
 
+	virtual void Initialize() override;
 	virtual void Start() override;
 	virtual void Update() override;
 

@@ -33,8 +33,12 @@ public:
 private:
 	void SetupStyle();
 
+	void TestInitializeWhileNoSceneFile();
+
 private:
 	MainMenuWidget mMainMenu;
 	LogWidget mLog;
 	SceneViewWidget mSceneView;
+
+	std::vector<Apollo::EntityID> mNanosuits;
 };
