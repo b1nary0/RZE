@@ -18,10 +18,6 @@
 
 #include <Diotima/Renderer.h>
 
-#if EDITOR
-class RZE_Editor;
-#endif
-
 class RZE_Application;
 
 class GameWorld;
@@ -96,11 +92,7 @@ private:
 	Diotima::Renderer* mRenderer;
 
 	EngineConfig* mEngineConfig;
-
-#if EDITOR
-	RZE_Editor* mEditor;
-#endif
-
+	
 	// PODs
 private:
 	double mDeltaTime	{ 0.0f };

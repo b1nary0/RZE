@@ -11,10 +11,6 @@
 
 #include <ECS/Systems/RenderSystem.h>
 
-#if EDITOR
-#include <Editor/Editor.h>
-#endif
-
 #include <Windowing/Win32Window.h>
 #include <Windowing/WinKeyCodes.h>
 
