@@ -71,13 +71,12 @@ private:
 	void CompileEvents();
 
 	void RegisterWindowEvents();
-	void RegisterInputEvents();
 	void RegisterEngineComponentTypes();
 
 	void LoadEngineConfig();
 	void CreateAndInitializeWindow();
 
-	void InitGame(Functor<RZE_Application* const> createGameCallback);
+	void InitializeApplication(Functor<RZE_Application* const> createGameCallback);
 
 private:
 	RZE_Application* mApplication;

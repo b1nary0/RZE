@@ -74,3 +74,15 @@ void GameApp::Update()
 
 	DebugServices::AddData(StringUtils::FormatString("%i nanosuits.", mNanosuits.size()), Vector3D(1.0f, 1.0f, 0.0f));
 }
+
+void GameApp::RegisterInputEvents(InputHandler& inputHandler)
+{
+	Functor<void, const InputKey&> keyFunc([this](const InputKey& key)
+	{
+		if (key.GetKeyCode() == Win32KeyCode::Escape)
+		{
+			RZE().PostExit();
+		}
+	});
+	inputHandler.BindAction(Win32KeyCode::Escape, EButtonState::ButtonState_Pressed, keyFunc);
+}

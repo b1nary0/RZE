@@ -18,6 +18,8 @@ public:
 	virtual void Update();
 	virtual void ShutDown();
 
+	virtual void RegisterInputEvents(InputHandler& inputHandler);
+
 	virtual bool IsEditor() { return false; }
 	
 	static RZE_Engine& RZE() { return mEngine; };

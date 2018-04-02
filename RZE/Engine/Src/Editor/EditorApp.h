@@ -23,6 +23,8 @@ public:
 	virtual void Update();
 	virtual void ShutDown();
 
+	virtual void RegisterInputEvents(InputHandler& inputHandler) override;
+
 	virtual bool IsEditor() override { return true; }
 
 public:

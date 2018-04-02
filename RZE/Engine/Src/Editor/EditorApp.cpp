@@ -32,6 +32,11 @@ void RZE_Editor::ShutDown()
 
 }
 
+void RZE_Editor::RegisterInputEvents(InputHandler& inputHandler)
+{
+
+}
+
 void RZE_Editor::Initialize()
 {
 	RZE_Application::Initialize();
