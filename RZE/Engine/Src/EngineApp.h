@@ -14,6 +14,7 @@ public:
 	RZE_Application();
 	virtual ~RZE_Application();
 
+public:
 	virtual void Start();
 	virtual void Update();
 	virtual void ShutDown();
