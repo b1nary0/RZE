@@ -1,0 +1,30 @@
+{
+  "entities":
+  {
+    "floor":
+    {
+      "components":
+      {
+        "TransformComponent":
+        {
+          "Position":
+          [
+            0, 0, 0
+          ],
+          "Scale":
+          [
+            4, 1, 1
+          ],
+          "Rotation":
+          [
+            0
+          ]
+        },
+        "MeshComponent":
+        {
+          "ResourcePath": "Engine/Assets/3D/Cube.obj"
+        }
+      }
+    }
+  }
+}

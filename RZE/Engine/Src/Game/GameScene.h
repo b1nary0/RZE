@@ -17,7 +17,8 @@ public:
 
 	void Initialize();
 
-private:
+	void Load(FilePath filePath);
 
+private:
 	Apollo::EntityHandler mEntityHandler;
 };
