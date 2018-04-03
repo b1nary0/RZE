@@ -23,6 +23,7 @@ public:
 	virtual void Update();
 	virtual void ShutDown();
 
+	virtual bool ProcessInput(const InputHandler& handler) override;
 	virtual void RegisterInputEvents(InputHandler& inputHandler) override;
 
 	virtual bool IsEditor() override { return true; }

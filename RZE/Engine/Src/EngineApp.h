@@ -18,6 +18,7 @@ public:
 	virtual void Update();
 	virtual void ShutDown();
 
+	virtual bool ProcessInput(const InputHandler& handler);
 	virtual void RegisterInputEvents(InputHandler& inputHandler);
 
 	virtual bool IsEditor() { return false; }

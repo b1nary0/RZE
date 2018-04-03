@@ -2,6 +2,8 @@
 
 #include <Utils/DebugUtils/Debug.h>
 
+#include <RZE.h>
+
 class IEditorWidget
 {
 public:
@@ -17,6 +19,12 @@ public:
 		mChildren.push_back(child);
 	}
 
+	inline bool IsFocused() { return bIsFocused; }
+	inline bool IsHovered() { return bIsHovered; }
+
 protected:
 	std::vector<IEditorWidget*> mChildren;
+
+	bool bIsFocused { false };
+	bool bIsHovered { false };
 };

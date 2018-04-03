@@ -31,6 +31,25 @@ void RZE_Editor::ShutDown()
 
 }
 
+bool RZE_Editor::ProcessInput(const InputHandler& handler)
+{
+	ImGuiIO& io = ImGui::GetIO();
+	io.DeltaTime = static_cast<float>(RZE_Application::RZE().GetDeltaTime());
+	io.MousePos = ImVec2(handler.GetMouseState().CurPosition.X(), handler.GetMouseState().CurPosition.Y());
+
+	for (int i = 0; i < 3; ++i)
+	{
+		io.MouseDown[i] = handler.GetMouseState().CurMouseBtnStates[i];
+	}
+
+	if (mSceneView.IsHovered())
+	{
+		return true;
+	}
+
+	return false;
+}
+
 void RZE_Editor::RegisterInputEvents(InputHandler& inputHandler)
 {
 
@@ -51,16 +70,6 @@ void RZE_Editor::Initialize()
 
 void RZE_Editor::PreUpdate()
 {
-	InputHandler& inputHandler = RZE_Application::RZE().GetInputHandler();
-
-	ImGuiIO& io = ImGui::GetIO();
-	io.DeltaTime = static_cast<float>(RZE_Application::RZE().GetDeltaTime());
-	io.MousePos = ImVec2(inputHandler.GetMouseState().CurPosition.X(), inputHandler.GetMouseState().CurPosition.Y());
-
-	for (int i = 0; i < 3; ++i)
-	{
-		io.MouseDown[i] = inputHandler.GetMouseState().CurMouseBtnStates[i];
-	}
 }
 
 void RZE_Editor::Display()

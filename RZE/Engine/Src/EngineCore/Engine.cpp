@@ -132,7 +132,15 @@ void RZE_Engine::PreUpdate()
 {
 	CompileEvents();
 	mEventHandler.ProcessEvents();
-	mInputHandler.RaiseEvents();
+
+	if (mApplication->ProcessInput(mInputHandler))
+	{
+		mInputHandler.RaiseEvents();
+	}
+	else
+	{
+		mInputHandler.Reset();
+	}
 }
 
 void RZE_Engine::CreateAndInitializeWindow()

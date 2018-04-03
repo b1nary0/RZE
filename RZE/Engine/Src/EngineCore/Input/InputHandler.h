@@ -137,8 +137,10 @@ public:
 	void OnMouseDown(const EMouseButton::T button, const Int32 xPos, const Int32 yPos);
 	void OnMouseUp(const EMouseButton::T button, const Int32 xPos, const Int32 yPos);
 
-	const MouseState& GetMouseState() { return mMouseState; }
-	const KeyboardState& GetKeyboardState() { return mKeyboardState; }
+	const MouseState& GetMouseState() const { return mMouseState; }
+	const KeyboardState& GetKeyboardState() const { return mKeyboardState; }
+
+	void Reset();
 
 private:
 	void RaiseKeyEvent(const InputKey& inputKey);
