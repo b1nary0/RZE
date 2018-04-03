@@ -1,9 +1,20 @@
 #pragma once
 
+#include <string>
+#include <vector>
+
 #include <Apollo/EntityHandler.h>
 
 class GameScene
 {
+public:
+	// #TODO(Josh) Temp. First passing it.
+	struct SceneEntryTemp
+	{
+		Apollo::EntityID ID;
+		std::string Name;
+	};
+
 public:
 	GameScene();
 	~GameScene();
@@ -19,6 +30,16 @@ public:
 
 	void Load(FilePath filePath);
 
+	const std::vector<SceneEntryTemp> GetSceneEntries() { return mEntityEntries; }
+
+private:
+	void AddToScene(Apollo::EntityID entityID, const std::string& name);
+
 private:
 	Apollo::EntityHandler mEntityHandler;
+
+private:
+	// #TODO(Josh) Temp, testing stuff
+	std::vector<SceneEntryTemp> mEntityEntries;
+
 };

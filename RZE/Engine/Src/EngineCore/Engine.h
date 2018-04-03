@@ -43,6 +43,8 @@ public:
 
 	const Vector2D& GetWindowSize() const;
 
+	// #TODO(Josh) Need to figure out this weird connection of accessing engine from application, and application from engine.
+	RZE_Application&			GetApplication();
 	ResourceHandler&			GetResourceHandler();
 	InputHandler&				GetInputHandler() { return mInputHandler; }
 	Diotima::Renderer*			GetRenderer() const { return mRenderer; }

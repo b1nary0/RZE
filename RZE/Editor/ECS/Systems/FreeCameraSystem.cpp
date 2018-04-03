@@ -39,11 +39,11 @@ void FreeCameraSystem::Update(std::vector<Apollo::EntityID>& entities)
 			KeyboardInput(*camComp, *transfComp);
 			MouseInput(*camComp, *transfComp);
 
-			Vector3D dist = mMoveToPoint - transfComp->Position;
-			if (dist.LengthSq() > VectorUtils::kEpsilon * VectorUtils::kEpsilon)
-			{
-				transfComp->Position = VectorUtils::Lerp(transfComp->Position, mMoveToPoint, static_cast<float>(3 * RZE_Application::RZE().GetDeltaTime()));
-			}
+ 			Vector3D dist = mMoveToPoint - transfComp->Position;
+ 			if (dist.LengthSq() > VectorUtils::kEpsilon * VectorUtils::kEpsilon)
+ 			{
+ 				transfComp->Position = VectorUtils::Lerp(transfComp->Position, mMoveToPoint, static_cast<float>(3 * RZE_Application::RZE().GetDeltaTime()));
+ 			}
 		}
 	}
 }
@@ -147,7 +147,7 @@ void FreeCameraSystem::RegisterComponentAddedNotifications()
 	{
 		//
 		// #TODO(Josh) This is broken. This assumes the TransformComponent is created __BEFORE__ the CameraComponent
-		// and obviously we cant guarantee this in any way. See GameApp.cpp.
+		// and obviously we cant guarantee this in any way..
 		// This is just written for now for stuff to work but when this system matures this should be fixed or reworked.
 		//
 

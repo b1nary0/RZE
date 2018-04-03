@@ -1,7 +1,10 @@
 #include <StdAfx.h>
 #include <Game/GameScene.h>
 
+#include <ECS/Components/CameraComponent.h>
+#include <ECS/Components/LightSourceComponent.h>
 #include <ECS/Components/MeshComponent.h>
+#include <ECS/Components/NameComponent.h>
 #include <ECS/Components/TransformComponent.h>
 #include <ECS/Systems/RenderSystem.h>
 
@@ -24,9 +27,6 @@ void GameScene::Initialize()
 	mEntityHandler.Initialize();
 
 	mEntityHandler.AddSystem<RenderSystem>();
-
-	// #TODO(Josh) Test
-	Load(FilePath("Engine/Assets/Scenes/Test.scene"));
 }
 
 void GameScene::Load(FilePath filePath)
@@ -38,19 +38,21 @@ void GameScene::Load(FilePath filePath)
 	rapidjson::Document sceneDoc;
 	sceneDoc.Parse(sceneFile.Content().c_str());
 
-	for (auto& entity = sceneDoc.MemberBegin(); entity != sceneDoc.MemberEnd(); ++entity)
+	rapidjson::Value::MemberIterator root = sceneDoc.FindMember("entities");
+	if (root != sceneDoc.MemberEnd())
 	{
-		Apollo::EntityID id = GetEntityHandler().CreateEntity();
-
-		rapidjson::Value& val = entity->value;
-		for (auto& member = val.MemberBegin(); member != val.MemberEnd(); ++member)
+		rapidjson::Value& rootVal = root->value;
+		for (auto& entity = rootVal.MemberBegin(); entity != rootVal.MemberEnd(); ++entity)
 		{
-			rapidjson::Value& comVal = member->value;
-			for (auto& component = comVal.MemberBegin(); component != comVal.MemberEnd(); ++component)
+			Apollo::EntityID id = GetEntityHandler().CreateEntity();
+			GetEntityHandler().AddComponent<NameComponent>(id, entity->name.GetString());
+
+			rapidjson::Value& val = entity->value;
+			for (auto& member = val.MemberBegin(); member != val.MemberEnd(); ++member)
 			{
-				rapidjson::Value& comValVal = component->value;
-				rapidjson::Value::MemberIterator comp = comValVal.FindMember("TransformComponent");
-				if (comp != comValVal.MemberEnd())
+				rapidjson::Value& comVal = member->value;
+				rapidjson::Value::MemberIterator comp = comVal.FindMember("TransformComponent");
+				if (comp != comVal.MemberEnd())
 				{
 					rapidjson::Value& memVal = comp->value;
 					Vector3D position(memVal["Position"][0].GetFloat(), memVal["Position"][1].GetFloat(), memVal["Position"][2].GetFloat());
@@ -59,15 +61,53 @@ void GameScene::Load(FilePath filePath)
 					GetEntityHandler().AddComponent<TransformComponent>(id, position, Quaternion(), scale);
 				}
 
-				comp = comValVal.FindMember("MeshComponent");
-				if (comp != comValVal.MemberEnd())
+				comp = comVal.FindMember("MeshComponent");
+				if (comp != comVal.MemberEnd())
 				{
 					rapidjson::Value& memVal = comp->value;
 					GetEntityHandler().AddComponent<MeshComponent>(id, FilePath(memVal["ResourcePath"].GetString()));
 				}
+
+				comp = comVal.FindMember("LightSourceComponent");
+				if (comp != comVal.MemberEnd())
+				{
+					rapidjson::Value& memVal = comp->value;
+					Vector3D color(memVal["Color"][0].GetFloat(), memVal["Color"][1].GetFloat(), memVal["Color"][2].GetFloat());
+					float strength = memVal["Strength"].GetFloat();
+
+					GetEntityHandler().AddComponent<LightSourceComponent>(id, color, strength);
+				}
+
+				comp = comVal.FindMember("CameraComponent");
+				if (comp != comVal.MemberEnd())
+				{
+					rapidjson::Value& memVal = comp->value;
+					
+					float fov = memVal["FOV"].GetFloat();
+					float nearCull = memVal["NearCull"].GetFloat();
+					float farCull = memVal["FarCull"].GetFloat();
+					Vector3D forward(memVal["Forward"][0].GetFloat(), memVal["Forward"][1].GetFloat(), memVal["Forward"][2].GetFloat());
+					Vector3D upDir(memVal["UpDir"][0].GetFloat(), memVal["UpDir"][1].GetFloat(), memVal["UpDir"][2].GetFloat());
+
+					CameraComponent* const camComp = GetEntityHandler().AddComponent<CameraComponent>(id);
+					camComp->FOV = fov;
+					camComp->NearCull = nearCull;
+					camComp->FarCull = farCull;
+					camComp->Forward = forward;
+					camComp->UpDir = upDir;
+				}
 			}
+
+			AddToScene(id, GetEntityHandler().GetComponent<NameComponent>(id)->Name);
 		}
 	}
+}
+
+void GameScene::AddToScene(Apollo::EntityID entityID, const std::string& name)
+{
+	mEntityEntries.emplace_back();
+	mEntityEntries.back().ID = entityID;
+	mEntityEntries.back().Name = name;
 }
 
 void GameScene::Start()

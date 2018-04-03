@@ -2,9 +2,10 @@
 
 #include <EngineApp.h>
 
-#include <Widgets/SceneViewWidget.h>
+#include <Widgets/HierarchyViewWidget.h>
 #include <Widgets/LogWidget.h>
 #include <Widgets/MainMenuWidget.h>
+#include <Widgets/SceneViewWidget.h>
 
 class RZE_Editor : RZE_Application
 {
@@ -38,11 +39,11 @@ public:
 private:
 	void SetupStyle();
 
-	void TestInitializeWhileNoSceneFile();
-
 private:
-	MainMenuWidget mMainMenu;
+	// #TODO(Josh) Need to remove this and have a more structured approach for these. (List of IEditorWidget, etc)
+	HierarchyViewWidget mHierarchyView;
 	LogWidget mLog;
+	MainMenuWidget mMainMenu;
 	SceneViewWidget mSceneView;
 
 	std::vector<Apollo::EntityID> mNanosuits;

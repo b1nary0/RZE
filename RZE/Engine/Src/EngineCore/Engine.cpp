@@ -7,6 +7,7 @@
 #include <ECS/Components/LightSourceComponent.h>
 #include <ECS/Components/MaterialComponent.h>
 #include <ECS/Components/MeshComponent.h>
+#include <ECS/Components/NameComponent.h>
 #include <ECS/Components/TransformComponent.h>
 
 #include <ECS/Systems/RenderSystem.h>
@@ -88,6 +89,12 @@ const Vector2D& RZE_Engine::GetWindowSize() const
 	return mMainWindow->GetDimensions();
 }
 
+RZE_Application& RZE_Engine::GetApplication()
+{
+	AssertNotNull(mApplication);
+	return *mApplication;
+}
+
 void RZE_Engine::Init()
 {
 	if (!IsInitialized())
@@ -125,6 +132,8 @@ void RZE_Engine::PostInit(Functor<RZE_Application* const>& createApplicationCall
 
 	InitializeApplication(createApplicationCallback);
 
+	// #TODO(Josh) Test
+	mActiveScene->Load(FilePath("Engine/Assets/Scenes/Test.scene"));
 	mActiveScene->Start();
 }
 
@@ -201,6 +210,7 @@ void RZE_Engine::RegisterEngineComponentTypes()
 	APOLLO_REGISTER_COMPONENT(LightSourceComponent);
 	APOLLO_REGISTER_COMPONENT(MaterialComponent);
 	APOLLO_REGISTER_COMPONENT(MeshComponent);
+	APOLLO_REGISTER_COMPONENT(NameComponent);
 	APOLLO_REGISTER_COMPONENT(TransformComponent);
 }
 
