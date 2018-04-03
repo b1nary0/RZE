@@ -16,8 +16,6 @@
 #include <ECS/Components/TransformComponent.h>
 #include <ECS/Components/MaterialComponent.h>
 
-#include <ECS/Systems/FreeCameraSystem.h>
-
 #include <DebugUtils/DebugServices.h>
 
 GameApp::GameApp()
@@ -32,9 +30,6 @@ GameApp::~GameApp()
 void GameApp::Initialize()
 {
 	GameScene& scene = RZE_Application::RZE().GetActiveScene();
-
-	// ALL TEST CODE
-	scene.GetEntityHandler().AddSystem<FreeCameraSystem>();
 
 	Apollo::EntityID floor = scene.GetEntityHandler().CreateEntity();
 	scene.GetEntityHandler().AddComponent<MeshComponent>(floor, FilePath("Engine/Assets/3D/Cube.obj"));
@@ -73,4 +68,16 @@ void GameApp::Update()
 	RZE_Application::Update();
 
 	DebugServices::AddData(StringUtils::FormatString("%i nanosuits.", mNanosuits.size()), Vector3D(1.0f, 1.0f, 0.0f));
+}
+
+void GameApp::RegisterInputEvents(InputHandler& inputHandler)
+{
+	Functor<void, const InputKey&> keyFunc([this](const InputKey& key)
+	{
+		if (key.GetKeyCode() == Win32KeyCode::Escape)
+		{
+			RZE().PostExit();
+		}
+	});
+	inputHandler.BindAction(Win32KeyCode::Escape, EButtonState::ButtonState_Pressed, keyFunc);
 }

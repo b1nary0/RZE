@@ -63,7 +63,11 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 				
 				DebugServices::Display(GetWindowSize());
 
-				mRenderer->Update();
+				if (!mApplication->IsEditor())
+				{
+					mRenderer->Update();
+				}
+
 				ImGui::Render();
 			}
 
@@ -97,7 +101,6 @@ void RZE_Engine::Init()
 		mInputHandler.Initialize();
 
 		RegisterWindowEvents();
-		RegisterInputEvents();
 		RegisterEngineComponentTypes();
 		
 		mRenderer = new Diotima::Renderer();
@@ -120,7 +123,7 @@ void RZE_Engine::PostInit(Functor<RZE_Application* const>& createApplicationCall
 {
 	LOG_CONSOLE("RZE_EngineCore::PostInit() called.");
 
-	InitGame(createApplicationCallback);
+	InitializeApplication(createApplicationCallback);
 
 	mActiveScene->Start();
 }
@@ -129,7 +132,15 @@ void RZE_Engine::PreUpdate()
 {
 	CompileEvents();
 	mEventHandler.ProcessEvents();
-	mInputHandler.RaiseEvents();
+
+	if (mApplication->ProcessInput(mInputHandler))
+	{
+		mInputHandler.RaiseEvents();
+	}
+	else
+	{
+		mInputHandler.Reset();
+	}
 }
 
 void RZE_Engine::CreateAndInitializeWindow()
@@ -149,13 +160,13 @@ void RZE_Engine::CreateAndInitializeWindow()
 	mMainWindow->Show();
 }
 
-void RZE_Engine::InitGame(Functor<RZE_Application* const> createGameCallback)
+void RZE_Engine::InitializeApplication(Functor<RZE_Application* const> createGameCallback)
 {
 	mApplication = createGameCallback();
 	AssertNotNull(mApplication);
 
 	mApplication->Initialize();
-
+	mApplication->RegisterInputEvents(mInputHandler);
 	mApplication->SetWindow(mMainWindow);
 }
 
@@ -182,24 +193,6 @@ void RZE_Engine::RegisterWindowEvents()
 		}
 	});
 	mEventHandler.RegisterForEvent(EEventType::Window, windowCallback);
-}
-
-void RZE_Engine::RegisterInputEvents()
-{
-	Functor<void, const InputKey&> inputFunc([this](const InputKey& key)
-	{
-		if (key.GetKeyCode() == Win32KeyCode::Escape)
-		{
-			PostExit();
-		}
-		else
-		{
-			RZE_Application::RZE().Log("F1 pressed", Vector3D(1.0f, 1.0f, 0.0f));
-		}
-	});
-
-	mInputHandler.BindAction(Win32KeyCode::Escape, EButtonState::ButtonState_Pressed, inputFunc);
-	mInputHandler.BindAction(Win32KeyCode::F1, EButtonState::ButtonState_Pressed, inputFunc);
 }
 
 void RZE_Engine::RegisterEngineComponentTypes()

@@ -1,5 +1,6 @@
-#include <StdAfx.h>
-#include <Editor/Widgets/LogWidget.h>
+#include <Widgets/LogWidget.h>
+
+#include <EditorApp.h>
 
 Vector3D LogWidget::mDefaultLogColor = Vector3D(1.0f, 1.0f, 0.0f);
 

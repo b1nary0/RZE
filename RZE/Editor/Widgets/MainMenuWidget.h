@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Editor/Widgets/EditorWidget.h>
+#include <Widgets/EditorWidget.h>
 
 class MainMenuWidget : public IEditorWidget
 {
@@ -12,4 +12,8 @@ public:
 public:
 	void Initialize() override;
 	void Display() override;
+
+private:
+	void DoFileMenu();
+	void DoSceneMenu();
 };

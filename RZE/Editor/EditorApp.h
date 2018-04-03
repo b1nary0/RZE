@@ -2,9 +2,9 @@
 
 #include <EngineApp.h>
 
-#include <Editor/Widgets/SceneViewWidget.h>
-#include <Editor/Widgets/LogWidget.h>
-#include <Editor/Widgets/MainMenuWidget.h>
+#include <Widgets/SceneViewWidget.h>
+#include <Widgets/LogWidget.h>
+#include <Widgets/MainMenuWidget.h>
 
 class RZE_Editor : RZE_Application
 {
@@ -22,6 +22,11 @@ public:
 	virtual void Initialize();
 	virtual void Update();
 	virtual void ShutDown();
+
+	virtual bool ProcessInput(const InputHandler& handler) override;
+	virtual void RegisterInputEvents(InputHandler& inputHandler) override;
+
+	virtual bool IsEditor() override { return true; }
 
 public:
 	LogWidget & GetLogWidget() { return mLog; }

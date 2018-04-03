@@ -1,5 +1,4 @@
 #include <StdAfx.h>
-
 #include <EngineApp.h>
 
 #include <EngineCore/Engine.h>
@@ -38,6 +37,16 @@ void RZE_Application::Update()
 
 void RZE_Application::ShutDown()
 {
+}
+
+bool RZE_Application::ProcessInput(const InputHandler& handler)
+{
+	return true;
+}
+
+void RZE_Application::RegisterInputEvents(InputHandler& inputHandler)
+{
+
 }
 
 void RZE_Application::Initialize()

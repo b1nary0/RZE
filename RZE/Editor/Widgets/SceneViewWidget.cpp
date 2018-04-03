@@ -1,5 +1,6 @@
-#include <StdAfx.h>
-#include <Editor/Widgets/SceneViewWidget.h>
+#include <Widgets/SceneViewWidget.h>
+
+#include <RZE.h>
 
 SceneViewWidget::SceneViewWidget()
 {
@@ -32,6 +33,9 @@ void SceneViewWidget::Display()
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 	if (ImGui::Begin("SceneView", NULL, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize)) // #TODO(Josh) Why does the window need scroll bar?
 	{
+		bIsFocused = ImGui::IsWindowFocused();
+		bIsHovered = ImGui::IsWindowHovered();
+
 		ImGui::Image((void*)mRTT->GetTextureID(), ImVec2(size.X(), size.Y()), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 
 		ImGui::End();
