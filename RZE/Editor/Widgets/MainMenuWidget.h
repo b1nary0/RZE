@@ -12,4 +12,8 @@ public:
 public:
 	void Initialize() override;
 	void Display() override;
+
+private:
+	void DoFileMenu();
+	void DoSceneMenu();
 };
