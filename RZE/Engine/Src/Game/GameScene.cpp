@@ -31,6 +31,11 @@ void GameScene::Initialize()
 
 void GameScene::Load(FilePath filePath)
 {
+	// #TODO(Josh) This whole function.
+	// - Load into memory via scene representation
+	// - Probably need to generate GUIDS for components on each machine (installation)
+	//		- Serialize these GUIDs as identifiers?
+	//
 	File sceneFile(filePath.GetAbsolutePath());
 	AssertExpr(sceneFile.IsValid());
 	sceneFile.Close();
@@ -83,7 +88,7 @@ void GameScene::Load(FilePath filePath)
 				{
 					rapidjson::Value& memVal = comp->value;
 					
-					float fov = memVal["FOV"].GetFloat();
+					float fov = memVal["FOV"].GetFloat(); 
 					float nearCull = memVal["NearCull"].GetFloat();
 					float farCull = memVal["FarCull"].GetFloat();
 					Vector3D forward(memVal["Forward"][0].GetFloat(), memVal["Forward"][1].GetFloat(), memVal["Forward"][2].GetFloat());
