@@ -32,6 +32,12 @@ void GameScene::Initialize()
 void GameScene::Load(FilePath filePath)
 {
 	// #TODO(Josh) This whole function.
+	// * Need to properly account for any additions to the engine/game component library here. *
+	// * Need to be able to read from the .scene and determine which components need to be added that could be from			*
+	// * either engine or game registration.																				*
+	// * One possible solution is to generate an id and save to a registry on disk and read that and create from that id	*
+	// * Could have issues with conflict resolution (file no longer shares in-memory id to compare against)					*
+	// * This problem is the largest one so far for scene creation from a file.												*
 	// - Load into memory via scene representation
 	// - Probably need to generate GUIDS for components on each machine (installation)
 	//		- Serialize these GUIDs as identifiers?
