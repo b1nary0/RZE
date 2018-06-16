@@ -51,7 +51,6 @@ public:
 	GameScene&					GetActiveScene();
 
 
-	// #TODO(Josh) this needs to return an actual thing, just placeholder atm
 	inline double GetDeltaTime() const { return mDeltaTime; }
 	
 	void PostExit();
