@@ -112,7 +112,7 @@ namespace Apollo
 	template <typename TSystemType, typename... TArgs>
 	TSystemType* EntityHandler::AddSystem(TArgs... args)
 	{
-		TSystemType* const system = new TSystemType(std::forward<TArgs>(args)...);
+		TSystemType* const system = new TSystemType(this, std::forward<TArgs>(args)...);
 		mSystems.push_back(system);
 		system->Initialize();
 		return system;

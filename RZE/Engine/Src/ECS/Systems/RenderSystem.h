@@ -15,7 +15,7 @@ namespace Apollo
 class RenderSystem : public Apollo::EntitySystem
 {
 public:
-	RenderSystem();
+	RenderSystem(Apollo::EntityHandler* const entityHandler);
 
 public:
 	virtual void Initialize();

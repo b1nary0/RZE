@@ -10,7 +10,7 @@ struct TransformComponent;
 class FreeCameraSystem : public Apollo::EntitySystem
 {
 public:
-	FreeCameraSystem();
+	FreeCameraSystem(Apollo::EntityHandler* const entityHandler);
 	virtual ~FreeCameraSystem();
 
 public:

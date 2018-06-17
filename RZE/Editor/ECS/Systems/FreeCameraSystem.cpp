@@ -7,7 +7,8 @@
 
 #include <Utils/Math/Math.h>
 
-FreeCameraSystem::FreeCameraSystem()
+FreeCameraSystem::FreeCameraSystem(Apollo::EntityHandler* const entityHandler)
+	: Apollo::EntitySystem(entityHandler)
 {
 }
 
@@ -25,7 +26,7 @@ void FreeCameraSystem::Initialize()
 
 void FreeCameraSystem::Update(std::vector<Apollo::EntityID>& entities)
 {
-	Apollo::EntityHandler& handler = RZE_Application::RZE().GetActiveScene().GetEntityHandler();
+	Apollo::EntityHandler& handler = InternalGetEntityHandler();
 	for (auto& entity : entities)
 	{
 		CameraComponent* const camComp = handler.GetComponent<CameraComponent>(entity);

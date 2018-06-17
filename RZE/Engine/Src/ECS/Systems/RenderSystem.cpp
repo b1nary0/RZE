@@ -1,5 +1,4 @@
 #include <StdAfx.h>
-
 #include <ECS/Systems/RenderSystem.h>
 
 #include <ECS/Components/CameraComponent.h>
@@ -69,8 +68,10 @@ void CreateTextureShader()
 	textureShader->GenerateShaderProgram();
 }
 
-RenderSystem::RenderSystem()
+RenderSystem::RenderSystem(Apollo::EntityHandler* const entityHandler)
+	: Apollo::EntitySystem(entityHandler)
 {
+
 }
 
 void RenderSystem::Initialize()
@@ -86,7 +87,7 @@ void RenderSystem::Initialize()
 
 void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 {
-	Apollo::EntityHandler& handler = RZE_Application::RZE().GetActiveScene().GetEntityHandler();
+	Apollo::EntityHandler& handler = InternalGetEntityHandler();
 	Diotima::Renderer* const renderSystem = RZE_Application::RZE().GetRenderer();
 
 	Functor<void, Apollo::EntityID> CameraCompFunc([this, &handler, &renderSystem](Apollo::EntityID entity)
@@ -139,7 +140,7 @@ void RenderSystem::ShutDown()
 
 void RenderSystem::RegisterForComponentNotifications()
 {
-	Apollo::EntityHandler& handler = RZE_Application::RZE().GetActiveScene().GetEntityHandler();
+	Apollo::EntityHandler& handler = InternalGetEntityHandler();
 
 	//
 	// MeshComponent
