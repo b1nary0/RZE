@@ -22,8 +22,8 @@ namespace Apollo
 	class EntityHandler
 	{
 	public:
-		typedef Functor<void, EntityID, EntityHandler&> ComponentAddedFunc;
-		typedef Functor<void, EntityID, EntityHandler&> ComponentRemovedFunc;
+		typedef Functor<void, EntityID> ComponentAddedFunc;
+		typedef Functor<void, EntityID> ComponentRemovedFunc;
 
 		typedef std::vector<Entity> EntityList;
 		typedef std::vector<EntityID> EntityFreeList;
@@ -184,7 +184,7 @@ namespace Apollo
 		{
 			for (auto& func : mOnComponentAddedMap[componentID])
 			{
-				func(entityID, *this);
+				func(entityID);
 			}
 		}
 
