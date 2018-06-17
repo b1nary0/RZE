@@ -22,8 +22,8 @@ namespace Apollo
 	class EntityHandler
 	{
 	public:
-		typedef Functor<void, EntityID, EntityHandler&> ComponentAddedFunc;
-		typedef Functor<void, EntityID, EntityHandler&> ComponentRemovedFunc;
+		typedef Functor<void, EntityID> ComponentAddedFunc;
+		typedef Functor<void, EntityID> ComponentRemovedFunc;
 
 		typedef std::vector<Entity> EntityList;
 		typedef std::vector<EntityID> EntityFreeList;
@@ -112,7 +112,7 @@ namespace Apollo
 	template <typename TSystemType, typename... TArgs>
 	TSystemType* EntityHandler::AddSystem(TArgs... args)
 	{
-		TSystemType* const system = new TSystemType(std::forward<TArgs>(args)...);
+		TSystemType* const system = new TSystemType(this, std::forward<TArgs>(args)...);
 		mSystems.push_back(system);
 		system->Initialize();
 		return system;
@@ -184,7 +184,7 @@ namespace Apollo
 		{
 			for (auto& func : mOnComponentAddedMap[componentID])
 			{
-				func(entityID, *this);
+				func(entityID);
 			}
 		}
 

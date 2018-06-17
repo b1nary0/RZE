@@ -1,13 +1,15 @@
-#include <StdAfx.h>
-
 #include <ECS/Systems/FreeCameraSystem.h>
 
+#include <EngineApp.h>
+
 #include <ECS/Components/CameraComponent.h>
+#include <ECS/Components/NameComponent.h>
 #include <ECS/Components/TransformComponent.h>
 
 #include <Utils/Math/Math.h>
 
-FreeCameraSystem::FreeCameraSystem()
+FreeCameraSystem::FreeCameraSystem(Apollo::EntityHandler* const entityHandler)
+	: Apollo::EntitySystem(entityHandler)
 {
 }
 
@@ -25,7 +27,7 @@ void FreeCameraSystem::Initialize()
 
 void FreeCameraSystem::Update(std::vector<Apollo::EntityID>& entities)
 {
-	Apollo::EntityHandler& handler = RZE_Application::RZE().GetActiveScene().GetEntityHandler();
+	Apollo::EntityHandler& handler = InternalGetEntityHandler();
 	for (auto& entity : entities)
 	{
 		CameraComponent* const camComp = handler.GetComponent<CameraComponent>(entity);
@@ -39,11 +41,11 @@ void FreeCameraSystem::Update(std::vector<Apollo::EntityID>& entities)
 			KeyboardInput(*camComp, *transfComp);
 			MouseInput(*camComp, *transfComp);
 
-			Vector3D dist = mMoveToPoint - transfComp->Position;
-			if (dist.LengthSq() > VectorUtils::kEpsilon * VectorUtils::kEpsilon)
-			{
-				transfComp->Position = VectorUtils::Lerp(transfComp->Position, mMoveToPoint, static_cast<float>(3 * RZE_Application::RZE().GetDeltaTime()));
-			}
+ 			Vector3D dist = mMoveToPoint - transfComp->Position;
+ 			if (dist.LengthSq() > VectorUtils::kEpsilon * VectorUtils::kEpsilon)
+ 			{
+ 				transfComp->Position = VectorUtils::Lerp(transfComp->Position, mMoveToPoint, static_cast<float>(3 * RZE_Application::RZE().GetDeltaTime()));
+ 			}
 		}
 	}
 }
@@ -143,24 +145,21 @@ void FreeCameraSystem::MouseInput(CameraComponent& camComp, TransformComponent& 
 
 void FreeCameraSystem::RegisterComponentAddedNotifications()
 {
-	Apollo::EntityHandler::ComponentAddedFunc camCompAdded([this](Apollo::EntityID entity, Apollo::EntityHandler& handler)
+	Apollo::EntityHandler::ComponentAddedFunc transfCompAdded([this](Apollo::EntityID entity)
 	{
-		//
-		// #TODO(Josh) This is broken. This assumes the TransformComponent is created __BEFORE__ the CameraComponent
-		// and obviously we cant guarantee this in any way. See GameApp.cpp.
-		// This is just written for now for stuff to work but when this system matures this should be fixed or reworked.
-		//
+		Apollo::EntityHandler& handler = InternalGetEntityHandler();
 
-		CameraComponent* const camComp = handler.GetComponent<CameraComponent>(entity);
+		NameComponent* const nameComp = handler.GetComponent<NameComponent>(entity);
 		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
 		AssertNotNull(transfComp);
+		AssertNotNull(nameComp);
 
-		if (camComp->bIsActiveCamera)
+		if (nameComp->Name == "Camera")
 		{
 			mMoveToPoint = transfComp->Position;
 		}
 	});
-	RZE_Application::RZE().GetActiveScene().GetEntityHandler().RegisterForComponentAddNotification<CameraComponent>(camCompAdded);
+	RZE_Application::RZE().GetActiveScene().GetEntityHandler().RegisterForComponentAddNotification<TransformComponent>(transfCompAdded);
 }
 
 Vector3D FreeCameraSystem::ArcBallProjection(const Vector3D& vec)

@@ -65,7 +65,7 @@ namespace Apollo
 		{
 			for (auto& func : mOnComponentRemovedMap[componentID])
 			{
-				func(entityID, *this);
+				func(entityID);
 			}
 		}
 

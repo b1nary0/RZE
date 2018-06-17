@@ -9,10 +9,18 @@ namespace Apollo
 {
 	struct Entity;
 
+	class EntityHandler;
+
 	class EntitySystem
 	{
+	private:
+		EntitySystem();
+
 	public:
-		EntitySystem() {};
+
+		EntitySystem(EntityHandler* const entityHandler)
+			: mEntityHandler(entityHandler)
+		{}
 
 		virtual void Initialize() = 0;
 		virtual void Update(std::vector<EntityID>& entities) = 0;
@@ -21,9 +29,16 @@ namespace Apollo
 		const EntityComponentFilter& GetComponentFilter() const { return mComponentFilter; }
 
 	protected:
+		EntityHandler& InternalGetEntityHandler()
+		{
+			AssertNotNull(mEntityHandler);
+			return *mEntityHandler;
+		}
+
 		EntityComponentFilter& InternalGetComponentFilter() { return mComponentFilter; }
 
 	private:
+		EntityHandler* mEntityHandler;
 		EntityComponentFilter mComponentFilter;
 	};
 }

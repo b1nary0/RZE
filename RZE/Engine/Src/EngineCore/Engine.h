@@ -43,13 +43,14 @@ public:
 
 	const Vector2D& GetWindowSize() const;
 
+	// #TODO(Josh) Need to figure out this weird connection of accessing engine from application, and application from engine.
+	RZE_Application&			GetApplication();
 	ResourceHandler&			GetResourceHandler();
 	InputHandler&				GetInputHandler() { return mInputHandler; }
 	Diotima::Renderer*			GetRenderer() const { return mRenderer; }
 	GameScene&					GetActiveScene();
 
 
-	// #TODO(Josh) this needs to return an actual thing, just placeholder atm
 	inline double GetDeltaTime() const { return mDeltaTime; }
 	
 	void PostExit();

@@ -21,6 +21,4 @@ public:
 
 	virtual void RegisterInputEvents(InputHandler& inputHandler) override;
 
-private:
-	std::vector<Apollo::EntityID> mNanosuits;
 };

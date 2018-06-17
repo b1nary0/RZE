@@ -1,5 +1,4 @@
 #include <StdAfx.h>
-
 #include <ECS/Systems/RenderSystem.h>
 
 #include <ECS/Components/CameraComponent.h>
@@ -69,8 +68,10 @@ void CreateTextureShader()
 	textureShader->GenerateShaderProgram();
 }
 
-RenderSystem::RenderSystem()
+RenderSystem::RenderSystem(Apollo::EntityHandler* const entityHandler)
+	: Apollo::EntitySystem(entityHandler)
 {
+
 }
 
 void RenderSystem::Initialize()
@@ -86,7 +87,7 @@ void RenderSystem::Initialize()
 
 void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
 {
-	Apollo::EntityHandler& handler = RZE_Application::RZE().GetActiveScene().GetEntityHandler();
+	Apollo::EntityHandler& handler = InternalGetEntityHandler();
 	Diotima::Renderer* const renderSystem = RZE_Application::RZE().GetRenderer();
 
 	Functor<void, Apollo::EntityID> CameraCompFunc([this, &handler, &renderSystem](Apollo::EntityID entity)
@@ -139,13 +140,15 @@ void RenderSystem::ShutDown()
 
 void RenderSystem::RegisterForComponentNotifications()
 {
-	Apollo::EntityHandler& handler = RZE_Application::RZE().GetActiveScene().GetEntityHandler();
+	Apollo::EntityHandler& handler = InternalGetEntityHandler();
 
 	//
 	// MeshComponent
 	//
-	Apollo::EntityHandler::ComponentAddedFunc OnMeshComponentAdded([this](Apollo::EntityID entityID, Apollo::EntityHandler& handler)
+	Apollo::EntityHandler::ComponentAddedFunc OnMeshComponentAdded([this](Apollo::EntityID entityID)
 	{
+		Apollo::EntityHandler& handler = InternalGetEntityHandler();
+
 		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entityID);
 		AssertNotNull(meshComp);
 		meshComp->Resource = RZE_Application::RZE().GetResourceHandler().RequestResource<Model3D>(meshComp->ResourcePath);
@@ -183,9 +186,12 @@ void RenderSystem::RegisterForComponentNotifications()
 	handler.RegisterForComponentAddNotification<MeshComponent>(OnMeshComponentAdded);
 
 	// LightSourceComponent
-	Apollo::EntityHandler::ComponentAddedFunc OnLightSourceComponentAdded([this](Apollo::EntityID entityID, Apollo::EntityHandler& handler)
+	Apollo::EntityHandler::ComponentAddedFunc OnLightSourceComponentAdded([this](Apollo::EntityID entityID)
 	{
+		Apollo::EntityHandler& handler = InternalGetEntityHandler();
+
 		LightSourceComponent* const lightComp = handler.GetComponent<LightSourceComponent>(entityID);
+		AssertNotNull(lightComp);
 
 		Diotima::Renderer::LightItemProtocol item;
 		item.Color = lightComp->Color;
@@ -199,17 +205,24 @@ void RenderSystem::RegisterForComponentNotifications()
 	//
 	// CameraComponent
 	//
-	Apollo::EntityHandler::ComponentAddedFunc OnCameraComponentAdded([this](Apollo::EntityID entityID, Apollo::EntityHandler& handler)
+	Apollo::EntityHandler::ComponentAddedFunc OnCameraComponentAdded([this](Apollo::EntityID entityID)
 	{
+		Apollo::EntityHandler& handler = InternalGetEntityHandler();
+
 		CameraComponent* const camComp = handler.GetComponent<CameraComponent>(entityID);
 		AssertNotNull(camComp);
+
 		camComp->bIsActiveCamera = true;
+		camComp->AspectRatio = RZE_Application::RZE().GetWindowSize().X() / RZE_Application::RZE().GetWindowSize().Y();
 	});
 	handler.RegisterForComponentAddNotification<CameraComponent>(OnCameraComponentAdded);
 
-	Apollo::EntityHandler::ComponentRemovedFunc OnMeshComponentRemoved([this](Apollo::EntityID entityID, Apollo::EntityHandler& handler)
+	Apollo::EntityHandler::ComponentRemovedFunc OnMeshComponentRemoved([this](Apollo::EntityID entityID)
 	{
+		Apollo::EntityHandler& handler = InternalGetEntityHandler();
+
 		// #TODO(Josh) Is this the best way? Should the component hold logic to clean itself up or should it be entirely just data and the systems worry about cleanup?
+		//					[Answer]  Current thoughts leave it this way, absolutely logic should be left to the systems. Impose a proper lifecycle protocol.
 		MeshComponent* const meshComponent = handler.GetComponent<MeshComponent>(entityID);
 		AssertNotNull(meshComponent);
 

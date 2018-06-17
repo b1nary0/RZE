@@ -2,13 +2,15 @@
 
 #include <Apollo/ECS/EntitySystem.h>
 
+#include <Utils/Math/Vector3D.h>
+
 struct CameraComponent;
 struct TransformComponent;
 
 class FreeCameraSystem : public Apollo::EntitySystem
 {
 public:
-	FreeCameraSystem();
+	FreeCameraSystem(Apollo::EntityHandler* const entityHandler);
 	virtual ~FreeCameraSystem();
 
 public:

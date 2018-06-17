@@ -14,15 +14,17 @@ public:
 	RZE_Application();
 	virtual ~RZE_Application();
 
+public:
 	virtual void Start();
 	virtual void Update();
 	virtual void ShutDown();
 
+	virtual bool ProcessInput(const InputHandler& handler);
 	virtual void RegisterInputEvents(InputHandler& inputHandler);
 
 	virtual bool IsEditor() { return false; }
-	
-	static RZE_Engine& RZE() { return mEngine; };
+
+	static RZE_Engine& RZE() { return mEngine; }
 
 protected:
 	virtual void Initialize();

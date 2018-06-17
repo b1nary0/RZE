@@ -170,6 +170,15 @@ void InputHandler::OnMouseUp(const EMouseButton::T button, const Int32 xPos, con
 	mMouseActionQueue.push(std::move(action));
 }
 
+void InputHandler::Reset()
+{
+	std::queue<MouseAction>().swap(mMouseActionQueue);
+	std::queue<KeyboardAction>().swap(mKeyActionQueue);
+
+	mMouseState.Reset();
+	mKeyboardState.Reset();
+}
+
 void InputHandler::RaiseKeyEvent(const InputKey& inputKey)
 {
 	EButtonState::T buttonState = mKeyboardState.GetButtonState(inputKey.GetKeyCode());

@@ -21,16 +21,45 @@ void MainMenuWidget::Display()
 {
 	if (ImGui::BeginMainMenuBar())
 	{
-		if (ImGui::BeginMenu("File"))
+		DoFileMenu();
+		DoSceneMenu();
+
+		ImGui::EndMainMenuBar();
+	}
+}
+
+void MainMenuWidget::DoFileMenu()
+{
+	if (ImGui::BeginMenu("File"))
+	{
+		if (ImGui::MenuItem("Exit"))
 		{
-			if (ImGui::MenuItem("Exit"))
+			RZE_Application::RZE().PostExit();
+		}
+
+		ImGui::EndMenu();
+	}
+}
+
+void MainMenuWidget::DoSceneMenu()
+{
+	if (ImGui::BeginMenu("Scene"))
+	{
+		if (ImGui::MenuItem("Add Entity"))
+		{
+
+		}
+
+		if (ImGui::BeginMenu("Add Component"))
+		{
+			if (ImGui::MenuItem("TestComponent"))
 			{
-				RZE_Application::RZE().PostExit();
+
 			}
 
 			ImGui::EndMenu();
 		}
 
-		ImGui::EndMainMenuBar();
+		ImGui::EndMenu();
 	}
 }
