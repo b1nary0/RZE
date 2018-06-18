@@ -14,6 +14,7 @@
 void RZE_Editor::Start()
 {
 	RZE_Application::Start();
+
 }
 
 void RZE_Editor::Update()
@@ -21,7 +22,8 @@ void RZE_Editor::Update()
 	PreUpdate();
 
 	// #TODO(Josh) This should change when a proper render system pipeline is in place. For now, that'll do donkey.
-	RZE().GetRenderer()->RenderToTexture(GetSceneViewWidget().GetRTT());
+	const SceneViewWidget& sceneView = GetWidget<SceneViewWidget>(EWidgetType_SceneView);
+	RZE().GetRenderer()->RenderToTexture(sceneView.GetRTT());
 
 	Display();
 }
@@ -42,7 +44,7 @@ bool RZE_Editor::ProcessInput(const InputHandler& handler)
 		io.MouseDown[i] = handler.GetMouseState().CurMouseBtnStates[i];
 	}
 
-	if (mSceneView.IsHovered())
+	if (GetWidget<SceneViewWidget>(EWidgetType_SceneView).IsHovered())
 	{
 		return true;
 	}
@@ -60,17 +62,14 @@ void RZE_Editor::Initialize()
 	RZE_Application::Initialize();
 
 	SetupStyle();
-
-	mMainMenu.Initialize();
-	mLog.Initialize();
-	mSceneView.Initialize();
-	mHierarchyView.Initialize();
+	SetupWidgets();
 
 	RZE().GetActiveScene().GetEntityHandler().AddSystem<FreeCameraSystem>();
 }
 
 void RZE_Editor::PreUpdate()
 {
+
 }
 
 void RZE_Editor::Display()
@@ -79,10 +78,10 @@ void RZE_Editor::Display()
  	ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
 	if (ImGui::Begin("MainWindow", NULL, ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoNavFocus))
 	{
-		mMainMenu.Display();
-		mLog.Display();
-		mSceneView.Display();
-		mHierarchyView.Display();
+		GetWidget<MainMenuWidget>(EWidgetType_MainMenu).Display();
+		GetWidget<LogWidget>(EWidgetType_Log).Display();
+		GetWidget<SceneViewWidget>(EWidgetType_SceneView).Display();
+		GetWidget<HierarchyViewWidget>(EWidgetType_HierarchyView).Display();
 
 		ImGui::End();
 	}
@@ -108,4 +107,17 @@ void RZE_Editor::SetupStyle()
 	style.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
 	style.Colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
 	style.Colors[ImGuiCol_WindowBg] = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
+}
+
+void RZE_Editor::SetupWidgets()
+{
+	AddWidget<SceneViewWidget>(EWidgetType_SceneView);
+	AddWidget<LogWidget>(EWidgetType_Log);
+	AddWidget<MainMenuWidget>(EWidgetType_MainMenu);
+	AddWidget<HierarchyViewWidget>(EWidgetType_HierarchyView);
+
+	GetWidget<MainMenuWidget>(EWidgetType_MainMenu).Initialize();
+	GetWidget<LogWidget>(EWidgetType_Log).Initialize();
+	GetWidget<SceneViewWidget>(EWidgetType_SceneView).Initialize();
+	GetWidget<HierarchyViewWidget>(EWidgetType_HierarchyView).Initialize();
 }

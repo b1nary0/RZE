@@ -14,7 +14,7 @@ public:
 	virtual void Display() override;
 
 public:
-	Diotima::RenderTargetTexture* GetRTT() { return mRTT; }
+	Diotima::RenderTargetTexture* GetRTT() const { return mRTT; }
 
 private:
 	Diotima::RenderTargetTexture* mRTT;

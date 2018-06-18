@@ -47,7 +47,6 @@ void MainMenuWidget::DoSceneMenu()
 	{
 		if (ImGui::MenuItem("Add Entity"))
 		{
-
 		}
 
 		if (ImGui::BeginMenu("Add Component"))
