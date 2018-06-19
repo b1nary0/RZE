@@ -107,8 +107,6 @@ void GameScene::Load(FilePath filePath)
 					camComp->UpDir = upDir;
 				}
 			}
-
-			AddToScene(id, GetEntityHandler().GetComponent<NameComponent>(id)->Name);
 		}
 	}
 }
@@ -118,6 +116,8 @@ Apollo::EntityID GameScene::CreateEntity(const std::string& name)
 	Apollo::EntityID newEnt = mEntityHandler.CreateEntity(name);
 	mEntityHandler.AddComponent<NameComponent>(newEnt, name);
 	mEntityHandler.AddComponent<TransformComponent>(newEnt);
+
+	AddToScene(newEnt, name);
 
 	return newEnt;
 }
