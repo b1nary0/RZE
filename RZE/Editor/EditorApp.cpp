@@ -78,10 +78,11 @@ void RZE_Editor::Display()
  	ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
 	if (ImGui::Begin("MainWindow", NULL, ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoNavFocus))
 	{
-		GetWidget<MainMenuWidget>(EWidgetType_MainMenu).Display();
-		GetWidget<LogWidget>(EWidgetType_Log).Display();
-		GetWidget<SceneViewWidget>(EWidgetType_SceneView).Display();
-		GetWidget<HierarchyViewWidget>(EWidgetType_HierarchyView).Display();
+		for (auto& keyval : mWidgetDict)
+		{
+			IEditorWidget& widget = *keyval.second;
+			widget.Display();
+		}
 
 		ImGui::End();
 	}
@@ -116,8 +117,9 @@ void RZE_Editor::SetupWidgets()
 	AddWidget<MainMenuWidget>(EWidgetType_MainMenu);
 	AddWidget<HierarchyViewWidget>(EWidgetType_HierarchyView);
 
-	GetWidget<MainMenuWidget>(EWidgetType_MainMenu).Initialize();
-	GetWidget<LogWidget>(EWidgetType_Log).Initialize();
-	GetWidget<SceneViewWidget>(EWidgetType_SceneView).Initialize();
-	GetWidget<HierarchyViewWidget>(EWidgetType_HierarchyView).Initialize();
+	for (auto& keyval : mWidgetDict)
+	{
+		IEditorWidget& widget = *keyval.second;
+		widget.Initialize();
+	}
 }
