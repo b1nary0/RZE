@@ -49,7 +49,7 @@ namespace Apollo
 		void RegisterForComponentRemovedNotification(ComponentRemovedFunc callback);
 
 	public:
-		EntityID CreateEntity();
+		EntityID CreateEntity(const std::string& name);
 
 		void DestroyEntity(EntityID entityID);
 
@@ -168,12 +168,12 @@ namespace Apollo
 	template <typename TComponentType, typename... TArgs>
 	TComponentType* EntityHandler::AddComponent(EntityID entityID, TArgs... args)
 	{
+		ComponentID componentID = TComponentType::GetID();
+
 		if (HasComponent<TComponentType>(entityID))
 		{
-			return nullptr;
+			RemoveComponent(entityID, componentID);
 		}
-
-		ComponentID componentID = TComponentType::GetID();
 
 		TComponentType* const newComp = new TComponentType(std::forward<TArgs>(args)...);
 		mEntityComponentMap[entityID][componentID] = newComp;

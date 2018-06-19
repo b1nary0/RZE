@@ -13,7 +13,7 @@ namespace Apollo
 		Initialize();
 	}
 
-	EntityID EntityHandler::CreateEntity()
+	EntityID EntityHandler::CreateEntity(const std::string& name)
 	{
 		if (!mEntityFreeList.empty())
 		{
@@ -59,6 +59,9 @@ namespace Apollo
 
 	void EntityHandler::RemoveComponent(EntityID entityID, ComponentID componentID)
 	{
+		Apollo::ComponentBase* const component = mEntityComponentMap[entityID][componentID];
+		AssertNotNull(component);
+
 		// This is done pre-delete so the things that want notification can access the data if needed.
 		// Multithreading may(will?) cause issues for this in the future I believe.
 		if (mOnComponentRemovedMap.count(componentID))
