@@ -170,6 +170,7 @@ namespace Apollo
 	{
 		ComponentID componentID = TComponentType::GetID();
 
+		//#TODO(Josh) Not sure how I feel about this
 		if (HasComponent<TComponentType>(entityID))
 		{
 			RemoveComponent(entityID, componentID);
@@ -180,9 +181,10 @@ namespace Apollo
 
 		mEntities[entityID].mComponentSet[componentID] = true;
 
-		if (mOnComponentAddedMap.count(componentID))
+		auto& it = mOnComponentAddedMap.find(componentID);
+		if (it != mOnComponentAddedMap.end())
 		{
-			for (auto& func : mOnComponentAddedMap[componentID])
+			for (auto& func : (*it).second)
 			{
 				func(entityID);
 			}

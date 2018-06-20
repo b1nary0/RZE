@@ -64,9 +64,10 @@ namespace Apollo
 
 		// This is done pre-delete so the things that want notification can access the data if needed.
 		// Multithreading may(will?) cause issues for this in the future I believe.
-		if (mOnComponentRemovedMap.count(componentID))
+		auto& it = mOnComponentRemovedMap.find(componentID);
+		if (it != mOnComponentRemovedMap.end())
 		{
-			for (auto& func : mOnComponentRemovedMap[componentID])
+			for (auto& func : (*it).second)
 			{
 				func(entityID);
 			}

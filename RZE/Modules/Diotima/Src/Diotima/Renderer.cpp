@@ -162,6 +162,8 @@ namespace Diotima
 
 	void Renderer::RenderSingleItem(RenderItemProtocol& renderItem)
 	{
+		// TODO(Josh)
+		// This whole function is a temporary implementation until an actual render pipeline is implemented.
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
 
 		// #NOTE(Josh) Need to handle this via sorting to set only once.
