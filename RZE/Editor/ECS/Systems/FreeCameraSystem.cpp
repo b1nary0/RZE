@@ -25,7 +25,7 @@ void FreeCameraSystem::Initialize()
 	RegisterComponentAddedNotifications();
 }
 
-void FreeCameraSystem::Update(std::vector<Apollo::EntityID>& entities)
+void FreeCameraSystem::Update(const std::vector<Apollo::EntityID>& entities)
 {
 	Apollo::EntityHandler& handler = InternalGetEntityHandler();
 	for (auto& entity : entities)

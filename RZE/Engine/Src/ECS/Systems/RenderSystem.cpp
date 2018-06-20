@@ -85,7 +85,7 @@ void RenderSystem::Initialize()
 	CreateTextureShader();
 }
 
-void RenderSystem::Update(std::vector<Apollo::EntityID>& entities)
+void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 {
 	Apollo::EntityHandler& handler = InternalGetEntityHandler();
 	Diotima::Renderer* const renderSystem = RZE_Application::RZE().GetRenderer();

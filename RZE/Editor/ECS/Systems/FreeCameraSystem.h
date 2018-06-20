@@ -15,7 +15,7 @@ public:
 
 public:
 	virtual void Initialize();
-	virtual void Update(std::vector<Apollo::EntityID>& entities);
+	virtual void Update(const std::vector<Apollo::EntityID>& entities);
 	virtual void ShutDown();
 
 private:

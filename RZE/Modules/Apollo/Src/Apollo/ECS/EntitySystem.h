@@ -23,7 +23,7 @@ namespace Apollo
 		{}
 
 		virtual void Initialize() = 0;
-		virtual void Update(std::vector<EntityID>& entities) = 0;
+		virtual void Update(const std::vector<Apollo::EntityID>& entities) = 0;
 		virtual void ShutDown() = 0;
 
 		const EntityComponentFilter& GetComponentFilter() const { return mComponentFilter; }
