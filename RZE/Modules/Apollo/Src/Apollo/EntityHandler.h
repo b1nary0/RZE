@@ -1,6 +1,7 @@
 #pragma once
 
 #include <unordered_map>
+#include <queue>
 #include <vector>
 
 #include <Apollo/ECS/Entity.h>
@@ -17,10 +18,19 @@
 
 namespace Apollo
 {
-	typedef U32 EntityID;
-
 	class EntityHandler
 	{
+	private:
+		struct ComponentIDQueueData
+		{
+			ComponentIDQueueData(ComponentID componentID, EntityID entityID)
+				: mComponentID(componentID)
+				, mEntityID(entityID) {}
+
+			ComponentID mComponentID;
+			EntityID	mEntityID;
+		};
+
 	public:
 		typedef Functor<void, EntityID> ComponentAddedFunc;
 		typedef Functor<void, EntityID> ComponentRemovedFunc;
@@ -32,6 +42,7 @@ namespace Apollo
 		typedef std::unordered_map<EntityID, ComponentList> EntityComponentMapping;
 		typedef std::unordered_map<ComponentID, std::vector<ComponentAddedFunc>> OnComponentAddedMap;
 		typedef std::unordered_map <ComponentID, std::vector<ComponentRemovedFunc>> OnComponentRemovedMap;
+		typedef std::queue<ComponentIDQueueData> ComponentIDQueue;
 
 	public:
 		EntityHandler();
@@ -82,6 +93,7 @@ namespace Apollo
 		U32 Resize(U32 newCapacity);
 
 		void ResetEntity(EntityID newID);
+		void FlushComponentIDQueues();
 
 	private:
 		U32 mCapacity;
@@ -95,6 +107,7 @@ namespace Apollo
 
 		OnComponentAddedMap mOnComponentAddedMap;
 		OnComponentRemovedMap mOnComponentRemovedMap;
+		ComponentIDQueue mComponentsAddedThisFrame;
 	};
 
 	template <typename TComponent>
@@ -181,14 +194,7 @@ namespace Apollo
 
 		mEntities[entityID].mComponentSet[componentID] = true;
 
-		auto& it = mOnComponentAddedMap.find(componentID);
-		if (it != mOnComponentAddedMap.end())
-		{
-			for (auto& func : (*it).second)
-			{
-				func(entityID);
-			}
-		}
+		mComponentsAddedThisFrame.emplace(componentID, entityID);
 
 		return newComp;
 	}

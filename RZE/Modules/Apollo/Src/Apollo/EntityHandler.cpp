@@ -85,6 +85,8 @@ namespace Apollo
 
 	void EntityHandler::Update()
 	{
+		FlushComponentIDQueues();
+
 		for (size_t idx = 0; idx < mSystems.size(); ++idx)
 		{
 			EntitySystem* system = mSystems[idx];
@@ -130,6 +132,24 @@ namespace Apollo
 		entity.mComponentSet.reset();
 
 		mEntityComponentMap[newID].resize(ENTITY_MAX_COMPONENTS);
+	}
+
+	void EntityHandler::FlushComponentIDQueues()
+	{
+		while (!mComponentsAddedThisFrame.empty())
+		{
+			ComponentIDQueueData data = mComponentsAddedThisFrame.front();
+			mComponentsAddedThisFrame.pop();
+
+			auto& it = mOnComponentAddedMap.find(data.mComponentID);
+			if (it != mOnComponentAddedMap.end())
+			{
+				for (auto& func : (*it).second)
+				{
+					func(data.mEntityID);
+				}
+			}
+		}
 	}
 
 }
