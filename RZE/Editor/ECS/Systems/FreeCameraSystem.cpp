@@ -25,7 +25,7 @@ void FreeCameraSystem::Initialize()
 	RegisterComponentAddedNotifications();
 }
 
-void FreeCameraSystem::Update(std::vector<Apollo::EntityID>& entities)
+void FreeCameraSystem::Update(const std::vector<Apollo::EntityID>& entities)
 {
 	Apollo::EntityHandler& handler = InternalGetEntityHandler();
 	for (auto& entity : entities)
@@ -145,10 +145,10 @@ void FreeCameraSystem::MouseInput(CameraComponent& camComp, TransformComponent& 
 
 void FreeCameraSystem::RegisterComponentAddedNotifications()
 {
-	Apollo::EntityHandler::ComponentAddedFunc transfCompAdded([this](Apollo::EntityID entity)
-	{
-		Apollo::EntityHandler& handler = InternalGetEntityHandler();
+	Apollo::EntityHandler& handler = InternalGetEntityHandler();
 
+	Apollo::EntityHandler::ComponentAddedFunc transfCompAdded([this, &handler](Apollo::EntityID entity)
+	{
 		NameComponent* const nameComp = handler.GetComponent<NameComponent>(entity);
 		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
 		AssertNotNull(transfComp);
@@ -159,7 +159,7 @@ void FreeCameraSystem::RegisterComponentAddedNotifications()
 			mMoveToPoint = transfComp->Position;
 		}
 	});
-	RZE_Application::RZE().GetActiveScene().GetEntityHandler().RegisterForComponentAddNotification<TransformComponent>(transfCompAdded);
+	handler.RegisterForComponentAddNotification<TransformComponent>(transfCompAdded);
 }
 
 Vector3D FreeCameraSystem::ArcBallProjection(const Vector3D& vec)

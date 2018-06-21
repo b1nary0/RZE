@@ -1,10 +1,10 @@
 #pragma once
 
-#include <string>
 #include <bitset>
+#include <string>
+#include <typeinfo>
 
 #include <Utils/PrimitiveDefs.h>
-
 namespace Apollo
 {
 	typedef U32 ComponentID;
@@ -14,10 +14,18 @@ namespace Apollo
 	{
 	public:
 		template <class TComponentType>
-		static ComponentID GetComponentTypeID()
+		static inline ComponentID GetComponentTypeID()
 		{
 			static ComponentID id = sNextComponentID++;
 			return id;
+		}
+
+		template <class TComponentType>
+		static inline const char* const GetComponentName()
+		{
+			static std::string componentName = typeid(TComponentType).name();
+			componentName = componentName.substr(componentName.find_first_of(' ') + 1, componentName.size());
+			return componentName.c_str();
 		}
 
 	private:
@@ -29,11 +37,8 @@ namespace Apollo
 
 	struct ComponentBase
 	{
-		inline const std::string& GetName() const { return mName; }
-		inline void SetName(const std::string& newName) { mName = newName; }
-
-		std::string mName;
 		U32 id; // Temp? Solution for removing components -- need to know which component by id to remove.
+		std::string Name;
 	};
 
 	template <typename TComponentType>
@@ -43,6 +48,7 @@ namespace Apollo
 		Component()
 		{
 			id = GetID();
+			Name = GetComponentName();
 		}
 
 		~Component() {}
@@ -50,6 +56,11 @@ namespace Apollo
 		static inline U32 GetID()
 		{
 			return ComponentTypeID<ComponentBase>::GetComponentTypeID<TComponentType>();
+		}
+
+		static inline const char* const GetComponentName()
+		{
+			return ComponentTypeID<ComponentBase>::GetComponentName<TComponentType>();
 		}
 
 	private:

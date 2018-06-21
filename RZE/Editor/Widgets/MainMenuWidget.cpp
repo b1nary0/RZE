@@ -47,7 +47,7 @@ void MainMenuWidget::DoSceneMenu()
 	{
 		if (ImGui::MenuItem("Add Entity"))
 		{
-
+			RZE_Application::RZE().GetActiveScene().CreateEntity("DefaultEntityName");
 		}
 
 		if (ImGui::BeginMenu("Add Component"))

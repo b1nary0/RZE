@@ -1,6 +1,7 @@
 #pragma once
 
 #include <unordered_map>
+#include <queue>
 #include <vector>
 
 #include <Apollo/ECS/Entity.h>
@@ -17,21 +18,32 @@
 
 namespace Apollo
 {
-	typedef U32 EntityID;
-
 	class EntityHandler
 	{
+	private:
+		struct ComponentIDQueueData
+		{
+			ComponentIDQueueData(ComponentID componentID, EntityID entityID)
+				: mComponentID(componentID)
+				, mEntityID(entityID) {}
+
+			ComponentID mComponentID;
+			EntityID	mEntityID;
+		};
+
 	public:
 		typedef Functor<void, EntityID> ComponentAddedFunc;
 		typedef Functor<void, EntityID> ComponentRemovedFunc;
 
-		typedef std::vector<Entity> EntityList;
-		typedef std::vector<EntityID> EntityFreeList;
-		typedef std::vector<ComponentBase*> ComponentList;
-		typedef std::vector<EntitySystem*> SystemList;
-		typedef std::unordered_map<EntityID, ComponentList> EntityComponentMapping;
-		typedef std::unordered_map<ComponentID, std::vector<ComponentAddedFunc>> OnComponentAddedMap;
-		typedef std::unordered_map <ComponentID, std::vector<ComponentRemovedFunc>> OnComponentRemovedMap;
+		typedef std::vector<Entity>														EntityList;
+		typedef std::vector<EntityID>													EntityFreeList;
+		typedef std::vector<ComponentBase*>												ComponentList;
+		typedef std::vector<EntitySystem*>												SystemList;
+		typedef std::vector<std::string>												ComponentNameList;
+		typedef std::unordered_map<EntityID, ComponentList>								EntityComponentMapping;
+		typedef std::unordered_map<ComponentID, std::vector<ComponentAddedFunc>>		OnComponentAddedMap;
+		typedef std::unordered_map <ComponentID, std::vector<ComponentRemovedFunc>>		OnComponentRemovedMap;
+		typedef std::queue<ComponentIDQueueData>										ComponentIDQueue;
 
 	public:
 		EntityHandler();
@@ -49,7 +61,7 @@ namespace Apollo
 		void RegisterForComponentRemovedNotification(ComponentRemovedFunc callback);
 
 	public:
-		EntityID CreateEntity();
+		EntityID CreateEntity(const std::string& name);
 
 		void DestroyEntity(EntityID entityID);
 
@@ -70,6 +82,8 @@ namespace Apollo
 		TSystemType* AddSystem(TArgs... args);
 
 	public:
+		void GetComponentNames(EntityID entityID, ComponentNameList& outComponentNames);
+
 		// Look over these and maybe have a better grouping solution for components
 		template <typename TComponent>
 		void ForEach(Functor<void, EntityID> callback);
@@ -82,6 +96,7 @@ namespace Apollo
 		U32 Resize(U32 newCapacity);
 
 		void ResetEntity(EntityID newID);
+		void FlushComponentIDQueues();
 
 	private:
 		U32 mCapacity;
@@ -95,6 +110,7 @@ namespace Apollo
 
 		OnComponentAddedMap mOnComponentAddedMap;
 		OnComponentRemovedMap mOnComponentRemovedMap;
+		ComponentIDQueue mComponentsAddedThisFrame;
 	};
 
 	template <typename TComponent>
@@ -168,25 +184,20 @@ namespace Apollo
 	template <typename TComponentType, typename... TArgs>
 	TComponentType* EntityHandler::AddComponent(EntityID entityID, TArgs... args)
 	{
+		ComponentID componentID = TComponentType::GetID();
+
+		//#TODO(Josh) Not sure how I feel about this
 		if (HasComponent<TComponentType>(entityID))
 		{
-			return nullptr;
+			RemoveComponent(entityID, componentID);
 		}
-
-		ComponentID componentID = TComponentType::GetID();
 
 		TComponentType* const newComp = new TComponentType(std::forward<TArgs>(args)...);
 		mEntityComponentMap[entityID][componentID] = newComp;
 
 		mEntities[entityID].mComponentSet[componentID] = true;
 
-		if (mOnComponentAddedMap.count(componentID))
-		{
-			for (auto& func : mOnComponentAddedMap[componentID])
-			{
-				func(entityID);
-			}
-		}
+		mComponentsAddedThisFrame.emplace(componentID, entityID);
 
 		return newComp;
 	}

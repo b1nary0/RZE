@@ -13,7 +13,7 @@ namespace Apollo
 		Initialize();
 	}
 
-	EntityID EntityHandler::CreateEntity()
+	EntityID EntityHandler::CreateEntity(const std::string& name)
 	{
 		if (!mEntityFreeList.empty())
 		{
@@ -59,11 +59,15 @@ namespace Apollo
 
 	void EntityHandler::RemoveComponent(EntityID entityID, ComponentID componentID)
 	{
+		Apollo::ComponentBase* const component = mEntityComponentMap[entityID][componentID];
+		AssertNotNull(component);
+
 		// This is done pre-delete so the things that want notification can access the data if needed.
 		// Multithreading may(will?) cause issues for this in the future I believe.
-		if (mOnComponentRemovedMap.count(componentID))
+		auto& it = mOnComponentRemovedMap.find(componentID);
+		if (it != mOnComponentRemovedMap.end())
 		{
-			for (auto& func : mOnComponentRemovedMap[componentID])
+			for (auto& func : (*it).second)
 			{
 				func(entityID);
 			}
@@ -74,6 +78,18 @@ namespace Apollo
 		mEntityComponentMap[entityID][componentID] = nullptr;
 	}
 
+	void EntityHandler::GetComponentNames(EntityID entityID, ComponentNameList& outComponentNames)
+	{
+		ComponentList components = mEntityComponentMap[entityID];
+		for (auto& component : components)
+		{
+			if (component != nullptr)
+			{
+				outComponentNames.emplace_back(component->Name);
+			}
+		}
+	}
+
 	void EntityHandler::Initialize()
 	{
 		mCapacity = Resize(32);
@@ -81,6 +97,8 @@ namespace Apollo
 
 	void EntityHandler::Update()
 	{
+		FlushComponentIDQueues();
+
 		for (size_t idx = 0; idx < mSystems.size(); ++idx)
 		{
 			EntitySystem* system = mSystems[idx];
@@ -126,6 +144,24 @@ namespace Apollo
 		entity.mComponentSet.reset();
 
 		mEntityComponentMap[newID].resize(ENTITY_MAX_COMPONENTS);
+	}
+
+	void EntityHandler::FlushComponentIDQueues()
+	{
+		while (!mComponentsAddedThisFrame.empty())
+		{
+			ComponentIDQueueData data = mComponentsAddedThisFrame.front();
+			mComponentsAddedThisFrame.pop();
+
+			auto& it = mOnComponentAddedMap.find(data.mComponentID);
+			if (it != mOnComponentAddedMap.end())
+			{
+				for (auto& func : (*it).second)
+				{
+					func(data.mEntityID);
+				}
+			}
+		}
 	}
 
 }

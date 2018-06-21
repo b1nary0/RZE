@@ -1,11 +1,14 @@
 #pragma once
-
 #include <EngineApp.h>
+
+#include <RZE_EditorConfig.h>
 
 #include <Widgets/HierarchyViewWidget.h>
 #include <Widgets/LogWidget.h>
 #include <Widgets/MainMenuWidget.h>
 #include <Widgets/SceneViewWidget.h>
+
+using namespace RZE_EditorConfig;
 
 class RZE_Editor : RZE_Application
 {
@@ -30,21 +33,37 @@ public:
 	virtual bool IsEditor() override { return true; }
 
 public:
-	LogWidget & GetLogWidget() { return mLog; }
-	SceneViewWidget& GetSceneViewWidget() { return mSceneView; }
-
 	void PreUpdate();
 	void Display();
 
 private:
+	//
+	// #IMPORTANT 06/17/18 :: 10:53PDT
+	//
+	// These signatures need to be rewritten without widgetType param,
+	// but to get working now, leaving it as is because the refactor will be easier within the function
+	//
+	template <typename TWidgetType>
+	TWidgetType& AddWidget(EWidgetType widgetType)
+	{
+		TWidgetType* widget = new TWidgetType();
+		mWidgetDict[widgetType] = widget;
+		return *widget;
+	}
+
+	template <typename TWidgetType>
+	TWidgetType& GetWidget(EWidgetType widgetType)
+	{
+		AssertNotNull(mWidgetDict[widgetType]);
+		TWidgetType* widget = static_cast<TWidgetType*>(mWidgetDict[widgetType]);
+		return *widget;
+	}
+
 	void SetupStyle();
+	void SetupWidgets();
 
 private:
-	// #TODO(Josh) Need to remove this and have a more structured approach for these. (List of IEditorWidget, etc)
-	HierarchyViewWidget mHierarchyView;
-	LogWidget mLog;
-	MainMenuWidget mMainMenu;
-	SceneViewWidget mSceneView;
+	std::unordered_map<EWidgetType, IEditorWidget*> mWidgetDict;
 
 	std::vector<Apollo::EntityID> mNanosuits;
 };

@@ -55,8 +55,7 @@ void GameScene::Load(FilePath filePath)
 		rapidjson::Value& rootVal = root->value;
 		for (auto& entity = rootVal.MemberBegin(); entity != rootVal.MemberEnd(); ++entity)
 		{
-			Apollo::EntityID id = GetEntityHandler().CreateEntity();
-			GetEntityHandler().AddComponent<NameComponent>(id, entity->name.GetString());
+			Apollo::EntityID id = CreateEntity(entity->name.GetString());
 
 			rapidjson::Value& val = entity->value;
 			for (auto& member = val.MemberBegin(); member != val.MemberEnd(); ++member)
@@ -108,10 +107,19 @@ void GameScene::Load(FilePath filePath)
 					camComp->UpDir = upDir;
 				}
 			}
-
-			AddToScene(id, GetEntityHandler().GetComponent<NameComponent>(id)->Name);
 		}
 	}
+}
+
+Apollo::EntityID GameScene::CreateEntity(const std::string& name)
+{
+	Apollo::EntityID newEnt = mEntityHandler.CreateEntity(name);
+	mEntityHandler.AddComponent<NameComponent>(newEnt, name);
+	mEntityHandler.AddComponent<TransformComponent>(newEnt);
+
+	AddToScene(newEnt, name);
+
+	return newEnt;
 }
 
 void GameScene::AddToScene(Apollo::EntityID entityID, const std::string& name)
