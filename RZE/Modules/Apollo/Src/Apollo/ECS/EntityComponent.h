@@ -24,7 +24,7 @@ namespace Apollo
 		static inline const char* const GetComponentName()
 		{
 			static std::string componentName = typeid(TComponentType).name();
-			componentName = componentName.substr(componentName.find_first_of(' ') + 1, componentName.size() - 1);
+			componentName = componentName.substr(componentName.find_first_of(' ') + 1, componentName.size());
 			return componentName.c_str();
 		}
 

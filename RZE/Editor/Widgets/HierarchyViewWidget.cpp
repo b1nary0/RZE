@@ -27,9 +27,14 @@ void HierarchyViewWidget::Display()
 		std::vector<GameScene::SceneEntryTemp> entities = RZE_Application::RZE().GetActiveScene().GetSceneEntries();
 		for (auto& entity : entities)
 		{
-			if (ImGui::TreeNode(entity.Name.c_str()))
+			if (ImGui::TreeNodeEx(entity.Name.c_str(), ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_Framed))
 			{
-
+				Apollo::EntityHandler::ComponentNameList componentNames;
+				RZE_Application::RZE().GetActiveScene().GetEntityHandler().GetComponentNames(entity.ID, componentNames);
+				for (auto& componentName : componentNames)
+				{
+					ImGui::Selectable(componentName.c_str());
+				}
 				ImGui::TreePop();
 			}
 		}

@@ -35,14 +35,15 @@ namespace Apollo
 		typedef Functor<void, EntityID> ComponentAddedFunc;
 		typedef Functor<void, EntityID> ComponentRemovedFunc;
 
-		typedef std::vector<Entity> EntityList;
-		typedef std::vector<EntityID> EntityFreeList;
-		typedef std::vector<ComponentBase*> ComponentList;
-		typedef std::vector<EntitySystem*> SystemList;
-		typedef std::unordered_map<EntityID, ComponentList> EntityComponentMapping;
-		typedef std::unordered_map<ComponentID, std::vector<ComponentAddedFunc>> OnComponentAddedMap;
-		typedef std::unordered_map <ComponentID, std::vector<ComponentRemovedFunc>> OnComponentRemovedMap;
-		typedef std::queue<ComponentIDQueueData> ComponentIDQueue;
+		typedef std::vector<Entity>														EntityList;
+		typedef std::vector<EntityID>													EntityFreeList;
+		typedef std::vector<ComponentBase*>												ComponentList;
+		typedef std::vector<EntitySystem*>												SystemList;
+		typedef std::vector<std::string>												ComponentNameList;
+		typedef std::unordered_map<EntityID, ComponentList>								EntityComponentMapping;
+		typedef std::unordered_map<ComponentID, std::vector<ComponentAddedFunc>>		OnComponentAddedMap;
+		typedef std::unordered_map <ComponentID, std::vector<ComponentRemovedFunc>>		OnComponentRemovedMap;
+		typedef std::queue<ComponentIDQueueData>										ComponentIDQueue;
 
 	public:
 		EntityHandler();
@@ -81,6 +82,8 @@ namespace Apollo
 		TSystemType* AddSystem(TArgs... args);
 
 	public:
+		void GetComponentNames(EntityID entityID, ComponentNameList& outComponentNames);
+
 		// Look over these and maybe have a better grouping solution for components
 		template <typename TComponent>
 		void ForEach(Functor<void, EntityID> callback);

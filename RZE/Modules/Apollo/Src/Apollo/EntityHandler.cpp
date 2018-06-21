@@ -78,6 +78,18 @@ namespace Apollo
 		mEntityComponentMap[entityID][componentID] = nullptr;
 	}
 
+	void EntityHandler::GetComponentNames(EntityID entityID, ComponentNameList& outComponentNames)
+	{
+		ComponentList components = mEntityComponentMap[entityID];
+		for (auto& component : components)
+		{
+			if (component != nullptr)
+			{
+				outComponentNames.emplace_back(component->Name);
+			}
+		}
+	}
+
 	void EntityHandler::Initialize()
 	{
 		mCapacity = Resize(32);
