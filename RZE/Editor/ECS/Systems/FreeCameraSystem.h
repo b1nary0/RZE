@@ -27,7 +27,7 @@ private:
 	Vector3D ArcBallProjection(const Vector3D& vec);
 
 private:
-	float mSpeed = 1.0f;
+	float mSpeed = 2.5f;
 	Vector3D mMoveToPoint;
 
 	// Keeping own version of previous position agnostic of the engine one because we only want to know
