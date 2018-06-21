@@ -10,7 +10,7 @@
 
 using namespace RZE_EditorConfig;
 
-class RZE_Editor : RZE_Application
+class RZE_Editor : public RZE_Application
 {
 	friend class RZE_Engine;
 
@@ -36,6 +36,15 @@ public:
 	void PreUpdate();
 	void Display();
 
+public:
+	template <typename TWidgetType>
+	TWidgetType& GetWidget(EWidgetType widgetType)
+	{
+		AssertNotNull(mWidgetDict[widgetType]);
+		TWidgetType* widget = static_cast<TWidgetType*>(mWidgetDict[widgetType]);
+		return *widget;
+	}
+
 private:
 	//
 	// #IMPORTANT 06/17/18 :: 10:53PDT
@@ -51,19 +60,9 @@ private:
 		return *widget;
 	}
 
-	template <typename TWidgetType>
-	TWidgetType& GetWidget(EWidgetType widgetType)
-	{
-		AssertNotNull(mWidgetDict[widgetType]);
-		TWidgetType* widget = static_cast<TWidgetType*>(mWidgetDict[widgetType]);
-		return *widget;
-	}
-
 	void SetupStyle();
 	void SetupWidgets();
 
 private:
 	std::unordered_map<EWidgetType, IEditorWidget*> mWidgetDict;
-
-	std::vector<Apollo::EntityID> mNanosuits;
 };

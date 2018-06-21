@@ -29,11 +29,14 @@ void HierarchyViewWidget::Display()
 		{
 			if (ImGui::TreeNodeEx(entity.Name.c_str(), ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_Framed))
 			{
-				Apollo::EntityHandler::ComponentNameList componentNames;
+				Apollo::EntityHandler::ComponentNameIDMap componentNames;
 				RZE_Application::RZE().GetActiveScene().GetEntityHandler().GetComponentNames(entity.ID, componentNames);
-				for (auto& componentName : componentNames)
+				for (const auto& keyval : componentNames)
 				{
-					ImGui::Selectable(componentName.c_str());
+					if (ImGui::Selectable(keyval.second.c_str()))
+					{
+						static_cast<RZE_Editor&>(RZE_Application::RZE().GetApplication()).GetWidget<LogWidget>(EWidgetType_Log).AddEntry(StringUtils::FormatString("ComponentID: %i", keyval.first));
+					}
 				}
 				ImGui::TreePop();
 			}
