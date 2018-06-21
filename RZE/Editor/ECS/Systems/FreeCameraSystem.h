@@ -28,6 +28,7 @@ private:
 
 private:
 	float mSpeed = 2.5f;
+	float mWheelZoomSpeed = 1.5f;
 	Vector3D mMoveToPoint;
 
 	// Keeping own version of previous position agnostic of the engine one because we only want to know

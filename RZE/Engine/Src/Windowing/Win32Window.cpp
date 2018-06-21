@@ -151,6 +151,12 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 
 void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 {
+	// #TODO(Josh) Fix this later. Need to reset mouse wheel.
+	if (inputHandler.GetMouseState().CurWheelVal != 0)
+	{
+		inputHandler.OnMouseWheel(0);
+	}
+
 	MSG msg;
 	if (PeekMessage(&msg, mOSWindowHandleData.windowHandle, 0, 0, PM_REMOVE))
 	{
