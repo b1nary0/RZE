@@ -85,7 +85,7 @@ namespace Apollo
 		{
 			if (component != nullptr)
 			{
-				outComponentNames.emplace(component->id, component->Name);
+				outComponentNames.emplace(component->id, component->ComponentName);
 			}
 		}
 	}
