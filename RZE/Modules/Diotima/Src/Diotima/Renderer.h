@@ -23,7 +23,7 @@ namespace Diotima
 	class Renderer : public ISubSystem
 	{
 	public:
-		typedef struct RenderItemProtocol
+		struct RenderItemProtocol
 		{
 			RenderItemProtocol();
 
@@ -45,17 +45,17 @@ namespace Diotima
 				bIsValid = false;
 			}
 
-		} RenderItemProtocol;
+		};
 
-		typedef struct LightItemProtocol
+		struct LightItemProtocol
 		{
 			Vector3D	Position;
 			Vector3D	Color;
 
 			float		Strength;
-		} LightItemProtocol;
+		};
 
-		typedef struct CameraItemProtocol
+		struct CameraItemProtocol
 		{
 			Vector3D Position;
 			Matrix4x4 ProjectionMat;
@@ -65,7 +65,7 @@ namespace Diotima
 			float AspectRatio;
 			float NearCull;
 			float FarCull;
-		} CameraItemProtocol;
+		};
 
 		// Constructors
 	public:

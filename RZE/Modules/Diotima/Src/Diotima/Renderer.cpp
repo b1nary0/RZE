@@ -185,9 +185,9 @@ namespace Diotima
 			std::string itemIdxStr = Conversions::StringFromInt(static_cast<int>(lightIdx));
 
 			// #TODO(Josh) These string constructions need to be refactored, too slow.
-			renderItem.Shader->SetUniformVector3D(std::string("LightPositions[" + itemIdxStr + "]").c_str(), lightItem.Position);
-			renderItem.Shader->SetUniformVector3D(std::string("LightColors[" + itemIdxStr + "]").c_str(), lightItem.Color);
-			renderItem.Shader->SetUniformFloat(std::string("LightStrengths[" + itemIdxStr + "]").c_str(), lightItem.Strength);
+			renderItem.Shader->SetUniformVector3D("LightPositions[0]", lightItem.Position);
+			renderItem.Shader->SetUniformVector3D("LightColors[0]", lightItem.Color);
+			renderItem.Shader->SetUniformFloat("LightStrengths[0]", lightItem.Strength);
 		}
 
 		const std::vector<GFXMesh*>& meshList = *renderItem.MeshData;
