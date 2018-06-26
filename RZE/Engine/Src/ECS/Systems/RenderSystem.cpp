@@ -144,10 +144,10 @@ void RenderSystem::RegisterForComponentNotifications()
 		AssertNotNull(meshComp);
 		meshComp->Resource = RZE_Application::RZE().GetResourceHandler().RequestResource<Model3D>(meshComp->ResourcePath);
 
-		Diotima::Renderer::RenderItemProtocol item;
-
 		if (meshComp->Resource.IsValid())
 		{
+			Diotima::Renderer::RenderItemProtocol item;
+
 			Model3D* const modelData = RZE_Application::RZE().GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
 
 			item.MeshData = &modelData->GetMeshList();
@@ -167,12 +167,13 @@ void RenderSystem::RegisterForComponentNotifications()
 			{
 				item.Shader = defaultShader;
 			}
+
+			item.Material.Color = sDefaultFragColor;
+
+			Int32 itemIdx = RZE_Application::RZE().GetRenderer()->AddRenderItem(item);
+			mRenderItemEntityMap[entityID] = itemIdx;
 		}
 
-		item.Material.Color = sDefaultFragColor;
-
-		Int32 itemIdx = RZE_Application::RZE().GetRenderer()->AddRenderItem(item);
-		mRenderItemEntityMap[entityID] = itemIdx;
 	});
 	handler.RegisterForComponentAddNotification<MeshComponent>(OnMeshComponentAdded);
 
