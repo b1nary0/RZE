@@ -2,7 +2,10 @@
 
 #include <Widgets/EditorWidget.h>
 
-#include <Diotima/Graphics/RenderTarget.h>
+namespace Diotima
+{
+	class RenderTargetTexture;
+}
 
 class SceneViewWidget : public IEditorWidget
 {

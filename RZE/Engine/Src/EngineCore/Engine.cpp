@@ -64,10 +64,7 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 				
 				DebugServices::Display(GetWindowSize());
 
-				if (!mApplication->IsEditor())
-				{
-					mRenderer->Update();
-				}
+				mRenderer->Update();
 
 				ImGui::Render();
 			}

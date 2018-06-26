@@ -17,6 +17,7 @@ namespace Diotima
 {
 	class GFXMesh;
 	class GFXMaterial;
+	class RenderTargetTexture;
 	class GFXShaderPipeline;
 	class GFXTexture2D;
 	
@@ -85,10 +86,11 @@ namespace Diotima
 		Int32 AddRenderItem(const RenderItemProtocol& itemProtocol);
 		void RemoveRenderItem(const U32 itemIdx);
 
-		inline RenderItemProtocol& GetItemProtocolByIdx(Int32 idx) { return mRenderList[idx]; }
 		Int32 AddLightItem(const LightItemProtocol& itemProtocol);
+		inline RenderItemProtocol& GetItemProtocolByIdx(Int32 idx) { return mRenderList[idx]; }
 		inline LightItemProtocol& GetLightProtocolByIdx(Int32 idx) { return mLightingList[idx]; }
 
+		void SetRenderTarget(RenderTargetTexture* renderTarget);
 		void SetCamera(const CameraItemProtocol& cameraItem) { camera = std::move(cameraItem); }
 
 		void EnableVsync(bool bEnable);
@@ -109,5 +111,7 @@ namespace Diotima
 		std::vector<LightItemProtocol> mLightingList;
 
 		std::queue<Int32> mFreeRenderListIndices;
+
+		RenderTargetTexture* mRenderTarget { nullptr };
 	};
 }

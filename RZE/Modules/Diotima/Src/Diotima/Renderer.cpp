@@ -4,6 +4,7 @@
 #include <Diotima/Driver/OpenGL.h>
 #include <Diotima/Graphics/Material.h>
 #include <Diotima/Graphics/Mesh.h>
+#include <Diotima/Graphics/RenderTarget.h>
 #include <Diotima/Graphics/Texture2D.h>
 #include <Diotima/Shaders/ShaderPipeline.h>
 
@@ -109,28 +110,12 @@ namespace Diotima
 
 	void Renderer::Update()
 	{
+		AssertNotNull(mRenderTarget);
+
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
 
-		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
-		for(auto& renderItem : mRenderList)
-		{
-			if (renderItem.bIsValid)
-			{
-				RenderSingleItem(renderItem);
-			}
-		}
-	}
-
-	void Renderer::ShutDown()
-	{
-	}
-
-	void Renderer::RenderToTexture(RenderTargetTexture* texture)
-	{
-		const OpenGLRHI& openGL = OpenGLRHI::Get();
-
-		texture->Bind();
-		openGL.Viewport(0, 0, texture->GetWidth(), texture->GetHeight());
+		mRenderTarget->Bind();
+		openGL.Viewport(0, 0, mRenderTarget->GetWidth(), mRenderTarget->GetHeight());
 		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
 		// #TODO(Josh) How does this interact with other shaders? Will this cause problems? What is the best way to achieve this in a robust manner?
 		renderToTextureShader->Use();
@@ -142,11 +127,26 @@ namespace Diotima
 			}
 		}
 		openGL.Viewport(0, 0, static_cast<GLint>(mCanvasSize.X()), static_cast<GLint>(mCanvasSize.Y()));
-		texture->Unbind();
+		mRenderTarget->Unbind();
+	}
+
+	void Renderer::ShutDown()
+	{
+	}
+
+	void Renderer::RenderToTexture(RenderTargetTexture* texture)
+	{
+		
 	}
 
 	void Renderer::ClearLists()
 	{
+	}
+
+	void Renderer::SetRenderTarget(RenderTargetTexture* renderTarget)
+	{
+		AssertNotNull(renderTarget);
+		mRenderTarget = renderTarget;
 	}
 
 	void Renderer::EnableVsync(bool bEnabled)

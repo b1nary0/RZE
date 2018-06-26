@@ -1,6 +1,6 @@
 #include <Widgets/SceneViewWidget.h>
 
-#include <RZE.h>
+#include <EditorApp.h>
 
 SceneViewWidget::SceneViewWidget()
 {
@@ -23,6 +23,8 @@ void SceneViewWidget::Initialize()
 	mRTT->SetHeight(720);
 
 	mRTT->Initialize();
+
+	RZE_Application::RZE().GetRenderer()->SetRenderTarget(mRTT);
 }
 
 void SceneViewWidget::Display()
