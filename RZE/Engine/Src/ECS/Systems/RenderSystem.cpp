@@ -90,24 +90,17 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 	Apollo::EntityHandler& handler = InternalGetEntityHandler();
 	Diotima::Renderer* const renderSystem = RZE_Application::RZE().GetRenderer();
 
-	Functor<void, Apollo::EntityID> CameraCompFunc([this, &handler, &renderSystem](Apollo::EntityID entity)
-	{
-		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
-		CameraComponent* const camComp = handler.GetComponent<CameraComponent>(entity);
-		AssertNotNull(transfComp);
-		AssertNotNull(camComp);
-		
-		if (camComp->bIsActiveCamera)
-		{
-			GenerateCameraMatrices(camComp, transfComp);
-			
-			Diotima::Renderer::CameraItemProtocol camera;
-			camera.ProjectionMat = camComp->ProjectionMat;
-			camera.ViewMat = camComp->ViewMat;
-			renderSystem->SetCamera(camera);
-		}
-	});
-	handler.ForEach<TransformComponent, CameraComponent>(CameraCompFunc);
+	TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(mMainCameraEntity);
+	CameraComponent* const camComp = handler.GetComponent<CameraComponent>(mMainCameraEntity);
+	AssertNotNull(transfComp);
+	AssertNotNull(camComp);
+
+	GenerateCameraMatrices(*camComp, *transfComp);
+
+	Diotima::Renderer::CameraItemProtocol camera;
+	camera.ProjectionMat = camComp->ProjectionMat;
+	camera.ViewMat = camComp->ViewMat;
+	renderSystem->SetCamera(camera);
 
 	for (auto& entity : entities)
 	{
@@ -206,7 +199,11 @@ void RenderSystem::RegisterForComponentNotifications()
 		CameraComponent* const camComp = handler.GetComponent<CameraComponent>(entityID);
 		AssertNotNull(camComp);
 
+		// #TODO(Josh) Will/should be removed when a better tracking system for main cameras exist. For now since we're only working with one camera
+		// for the forseeable future, its fine.
+		mMainCameraEntity = entityID;
 		camComp->bIsActiveCamera = true;
+
 		camComp->AspectRatio = RZE_Application::RZE().GetWindowSize().X() / RZE_Application::RZE().GetWindowSize().Y();
 	});
 	handler.RegisterForComponentAddNotification<CameraComponent>(OnCameraComponentAdded);
@@ -227,8 +224,8 @@ void RenderSystem::RegisterForComponentNotifications()
 	handler.RegisterForComponentRemovedNotification<MeshComponent>(OnMeshComponentRemoved);
 }
 
-void RenderSystem::GenerateCameraMatrices(CameraComponent* const cameraComponent, const TransformComponent* const transformComponent)
+void RenderSystem::GenerateCameraMatrices(CameraComponent& cameraComponent, const TransformComponent& transformComponent)
 {
-	cameraComponent->ProjectionMat = Matrix4x4::CreatePerspectiveMatrix(cameraComponent->FOV, cameraComponent->AspectRatio, cameraComponent->NearCull, cameraComponent->FarCull);
-	cameraComponent->ViewMat = Matrix4x4::CreateViewMatrix(transformComponent->Position, transformComponent->Position + cameraComponent->Forward, cameraComponent->UpDir);
+	cameraComponent.ProjectionMat = Matrix4x4::CreatePerspectiveMatrix(cameraComponent.FOV, cameraComponent.AspectRatio, cameraComponent.NearCull, cameraComponent.FarCull);
+	cameraComponent.ViewMat = Matrix4x4::CreateViewMatrix(transformComponent.Position, transformComponent.Position + cameraComponent.Forward, cameraComponent.UpDir);
 }
