@@ -173,7 +173,6 @@ void RenderSystem::RegisterForComponentNotifications()
 			Int32 itemIdx = RZE_Application::RZE().GetRenderer()->AddRenderItem(item);
 			mRenderItemEntityMap[entityID] = itemIdx;
 		}
-
 	});
 	handler.RegisterForComponentAddNotification<MeshComponent>(OnMeshComponentAdded);
 

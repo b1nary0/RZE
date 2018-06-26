@@ -4,6 +4,8 @@
 
 namespace Apollo
 {
+	EntityHandler::ComponentNameList EntityHandler::sComponentNameRegistry;
+
 	EntityHandler::EntityHandler()
 	{
 		mNextAvailEntityID = 0;
@@ -11,6 +13,20 @@ namespace Apollo
 		mSize = 0;
 
 		Initialize();
+	}
+
+	void EntityHandler::RegisterComponentName(const std::string& componentName)
+	{
+		auto& iter = std::find(sComponentNameRegistry.begin(), sComponentNameRegistry.end(), componentName);
+		if (iter == sComponentNameRegistry.end())
+		{
+			sComponentNameRegistry.emplace_back(componentName);
+		}
+	}
+
+	const Apollo::EntityHandler::ComponentNameList& EntityHandler::GetAllComponentNames()
+	{
+		return sComponentNameRegistry;
 	}
 
 	EntityID EntityHandler::CreateEntity(const std::string& name)
@@ -80,7 +96,7 @@ namespace Apollo
 
 	void EntityHandler::GetComponentNames(EntityID entityID, ComponentNameIDMap& outComponentNames)
 	{
-		ComponentList components = mEntityComponentMap[entityID];
+		const ComponentList& components = mEntityComponentMap[entityID];
 		for (auto& component : components)
 		{
 			if (component != nullptr)
