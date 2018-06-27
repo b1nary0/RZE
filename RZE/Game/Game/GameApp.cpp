@@ -29,7 +29,7 @@ GameApp::~GameApp()
 
 void GameApp::Initialize()
 {
-	
+	RZE_Application::Initialize();
 }
 
 void GameApp::Start()

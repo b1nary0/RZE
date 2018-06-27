@@ -5,6 +5,11 @@
 class EventHandler;
 class Win32Window;
 
+namespace Diotima
+{
+	class RenderTargetTexture;
+}
+
 class RZE_Application
 {
 	// @note maybe review this connection later
@@ -15,12 +20,14 @@ public:
 	virtual ~RZE_Application();
 
 public:
+	virtual void Run();
 	virtual void Start();
 	virtual void Update();
 	virtual void ShutDown();
 
 	virtual bool ProcessInput(const InputHandler& handler);
 	virtual void RegisterInputEvents(InputHandler& inputHandler);
+	virtual Diotima::RenderTarget* GetRenderTarget() const;
 
 	virtual bool IsEditor() { return false; }
 
@@ -37,6 +44,7 @@ protected:
 private:
 	void SetWindow(Win32Window* const window);
 
+	Diotima::RenderTarget* mRenderTarget{ nullptr };
 	Win32Window* mWindow;
 	bool bIsRunning;
 

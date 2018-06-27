@@ -5,7 +5,7 @@
 int main(void)
 {
 	GameApp gGameApp;
-	gGameApp.Start();
+	gGameApp.Run();
 
 	//getchar();
 	return 0;

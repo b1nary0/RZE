@@ -90,7 +90,7 @@ namespace Diotima
 		inline RenderItemProtocol& GetItemProtocolByIdx(Int32 idx) { return mRenderList[idx]; }
 		inline LightItemProtocol& GetLightProtocolByIdx(Int32 idx) { return mLightingList[idx]; }
 
-		void SetRenderTarget(RenderTargetTexture* renderTarget);
+		void SetRenderTarget(RenderTarget* renderTarget);
 		void SetCamera(const CameraItemProtocol& cameraItem) { camera = std::move(cameraItem); }
 
 		void EnableVsync(bool bEnable);
@@ -112,6 +112,6 @@ namespace Diotima
 
 		std::queue<Int32> mFreeRenderListIndices;
 
-		RenderTargetTexture* mRenderTarget { nullptr };
+		RenderTarget* mRenderTarget { nullptr };
 	};
 }

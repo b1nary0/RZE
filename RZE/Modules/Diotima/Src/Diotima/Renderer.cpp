@@ -143,7 +143,7 @@ namespace Diotima
 	{
 	}
 
-	void Renderer::SetRenderTarget(RenderTargetTexture* renderTarget)
+	void Renderer::SetRenderTarget(RenderTarget* renderTarget)
 	{
 		AssertNotNull(renderTarget);
 		mRenderTarget = renderTarget;

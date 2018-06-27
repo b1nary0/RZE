@@ -52,10 +52,10 @@ private:
 	// These signatures need to be rewritten without widgetType param,
 	// but to get working now, leaving it as is because the refactor will be easier within the function
 	//
-	template <typename TWidgetType>
-	TWidgetType& AddWidget(EWidgetType widgetType)
+	template <typename TWidgetType, class... Args>
+	TWidgetType& AddWidget(EWidgetType widgetType, Args&&... args)
 	{
-		TWidgetType* widget = new TWidgetType();
+		TWidgetType* widget = new TWidgetType(std::forward<Args>(args)...);
 		mWidgetDict[widgetType] = widget;
 		return *widget;
 	}

@@ -14,16 +14,13 @@
 void RZE_Editor::Start()
 {
 	RZE_Application::Start();
-
+	
+	SetupWidgets();
 }
 
 void RZE_Editor::Update()
 {
 	PreUpdate();
-
-	// #TODO(Josh) This should change when a proper render system pipeline is in place. For now, that'll do donkey.
-	const SceneViewWidget& sceneView = GetWidget<SceneViewWidget>(EWidgetType_SceneView);
-	RZE().GetRenderer()->RenderToTexture(sceneView.GetRTT());
 
 	Display();
 }
@@ -62,7 +59,6 @@ void RZE_Editor::Initialize()
 	RZE_Application::Initialize();
 
 	SetupStyle();
-	SetupWidgets();
 
 	RZE().GetActiveScene().GetEntityHandler().AddSystem<FreeCameraSystem>();
 }
@@ -119,7 +115,7 @@ void RZE_Editor::SetupStyle()
 
 void RZE_Editor::SetupWidgets()
 {
-	AddWidget<SceneViewWidget>(EWidgetType_SceneView);
+	AddWidget<SceneViewWidget>(EWidgetType_SceneView, GetRenderTarget());
 	AddWidget<LogWidget>(EWidgetType_Log);
 	AddWidget<MainMenuWidget>(EWidgetType_MainMenu);
 	AddWidget<HierarchyViewWidget>(EWidgetType_HierarchyView);
