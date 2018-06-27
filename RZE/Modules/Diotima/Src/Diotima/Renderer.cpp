@@ -115,6 +115,7 @@ namespace Diotima
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
 
 		mRenderTarget->Bind();
+		// #TODO(Josh) Can probably optimize this away nicely
 		openGL.Viewport(0, 0, mRenderTarget->GetWidth(), mRenderTarget->GetHeight());
 		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
 		// #TODO(Josh) How does this interact with other shaders? Will this cause problems? What is the best way to achieve this in a robust manner?

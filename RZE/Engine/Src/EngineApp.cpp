@@ -42,6 +42,8 @@ void RZE_Application::Update()
 
 void RZE_Application::ShutDown()
 {
+	AssertNotNull(mRenderTarget);
+	delete mRenderTarget;
 }
 
 bool RZE_Application::ProcessInput(const InputHandler& handler)

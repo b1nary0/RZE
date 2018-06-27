@@ -27,7 +27,7 @@ void RZE_Editor::Update()
 
 void RZE_Editor::ShutDown()
 {
-
+	RZE_Application::ShutDown();
 }
 
 bool RZE_Editor::ProcessInput(const InputHandler& handler)

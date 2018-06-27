@@ -42,6 +42,11 @@ void GameApp::Update()
 	RZE_Application::Update();
 }
 
+void GameApp::ShutDown()
+{
+	RZE_Application::ShutDown();
+}
+
 void GameApp::RegisterInputEvents(InputHandler& inputHandler)
 {
 	Functor<void, const InputKey&> keyFunc([this](const InputKey& key)
