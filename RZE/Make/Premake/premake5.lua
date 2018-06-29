@@ -244,6 +244,74 @@ workspace "RZE"
 
 	--
 	--
+	-- PERSEUS
+	--
+	--
+	project "Perseus"
+		local EngineDir = RootDir .. "Engine/"
+		local ProjectDir = RootDir .. "Modules/Perseus/"
+		local SourceDir = ProjectDir .. "Src/"
+		local IncludeDir = EngineDir .. "ThirdParty/Include/"
+		local LibDir = RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
+		local ThirdPartyLibDir = EngineDir .. "ThirdParty/Lib/x86/"
+
+		kind "StaticLib"
+		language "C++"
+		targetdir (RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
+		targetname "Perseus"
+
+		dependson { "Utils" }
+
+		filter "action:vs*"
+			pchheader = "StdAfx.h"
+			pchsource = "StdAfx.cpp"
+
+		files
+		{
+			SourceDir .. "**.h",
+			SourceDir .. "**.hpp",
+			SourceDir .. "**.c",
+			SourceDir .. "**.cpp"
+		}
+
+		includedirs
+		{
+			EngineDir .. "/Src",
+			RootDir .. "Utils/Src/",
+			SourceDir,
+			IncludeDir
+		}
+
+		libdirs
+		{
+			LibDir,
+			ThirdPartyLibDir
+		}
+		links
+		{
+			-- ThirdParty
+			"assimp",
+			"OpenGL32",
+			"glew32s",
+			-- RZE
+			"RZE_Utils"
+		}
+
+		filter {}
+
+		 vpaths
+		 {
+			["Source Files/*"] =
+			{
+				SourceDir .. "**.h",
+				SourceDir .. "**.hpp",
+				SourceDir .. "**.c",
+				SourceDir .. "**.cpp"
+			}
+		 }
+
+	--
+	--
 	-- DIOTIMA
 	--
 	--
