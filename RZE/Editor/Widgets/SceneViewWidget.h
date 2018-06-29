@@ -2,20 +2,23 @@
 
 #include <Widgets/EditorWidget.h>
 
-#include <Diotima/Graphics/RenderTarget.h>
+namespace Diotima
+{
+	class RenderTargetTexture;
+}
 
 class SceneViewWidget : public IEditorWidget
 {
 public:
-	SceneViewWidget();
+	SceneViewWidget(Diotima::RenderTarget* renderTarget);
 	virtual ~SceneViewWidget();
 
 	virtual void Initialize() override;
 	virtual void Display() override;
 
 public:
-	Diotima::RenderTargetTexture* GetRTT() const { return mRTT; }
+	Diotima::RenderTarget* GetRenderTarget() const { return pRTT; }
 
 private:
-	Diotima::RenderTargetTexture* mRTT;
+	Diotima::RenderTarget* pRTT;
 };

@@ -38,7 +38,7 @@ namespace Apollo
 	struct ComponentBase
 	{
 		U32 id; // Temp? Solution for removing components -- need to know which component by id to remove.
-		std::string Name;
+		std::string ComponentName;
 	};
 
 	template <typename TComponentType>
@@ -48,7 +48,7 @@ namespace Apollo
 		Component()
 		{
 			id = GetID();
-			Name = GetComponentName();
+			ComponentName = GetComponentName();
 		}
 
 		~Component() {}

@@ -4,6 +4,7 @@
 #include <Diotima/Driver/OpenGL.h>
 #include <Diotima/Graphics/Material.h>
 #include <Diotima/Graphics/Mesh.h>
+#include <Diotima/Graphics/RenderTarget.h>
 #include <Diotima/Graphics/Texture2D.h>
 #include <Diotima/Shaders/ShaderPipeline.h>
 
@@ -109,28 +110,13 @@ namespace Diotima
 
 	void Renderer::Update()
 	{
+		AssertNotNull(mRenderTarget);
+
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
 
-		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
-		for(auto& renderItem : mRenderList)
-		{
-			if (renderItem.bIsValid)
-			{
-				RenderSingleItem(renderItem);
-			}
-		}
-	}
-
-	void Renderer::ShutDown()
-	{
-	}
-
-	void Renderer::RenderToTexture(RenderTargetTexture* texture)
-	{
-		const OpenGLRHI& openGL = OpenGLRHI::Get();
-
-		texture->Bind();
-		openGL.Viewport(0, 0, texture->GetWidth(), texture->GetHeight());
+		mRenderTarget->Bind();
+		// #TODO(Josh) Can probably optimize this away nicely
+		openGL.Viewport(0, 0, mRenderTarget->GetWidth(), mRenderTarget->GetHeight());
 		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
 		// #TODO(Josh) How does this interact with other shaders? Will this cause problems? What is the best way to achieve this in a robust manner?
 		renderToTextureShader->Use();
@@ -142,11 +128,26 @@ namespace Diotima
 			}
 		}
 		openGL.Viewport(0, 0, static_cast<GLint>(mCanvasSize.X()), static_cast<GLint>(mCanvasSize.Y()));
-		texture->Unbind();
+		mRenderTarget->Unbind();
+	}
+
+	void Renderer::ShutDown()
+	{
+	}
+
+	void Renderer::RenderToTexture(RenderTargetTexture* texture)
+	{
+		
 	}
 
 	void Renderer::ClearLists()
 	{
+	}
+
+	void Renderer::SetRenderTarget(RenderTarget* renderTarget)
+	{
+		AssertNotNull(renderTarget);
+		mRenderTarget = renderTarget;
 	}
 
 	void Renderer::EnableVsync(bool bEnabled)
@@ -185,9 +186,9 @@ namespace Diotima
 			std::string itemIdxStr = Conversions::StringFromInt(static_cast<int>(lightIdx));
 
 			// #TODO(Josh) These string constructions need to be refactored, too slow.
-			renderItem.Shader->SetUniformVector3D(std::string("LightPositions[" + itemIdxStr + "]").c_str(), lightItem.Position);
-			renderItem.Shader->SetUniformVector3D(std::string("LightColors[" + itemIdxStr + "]").c_str(), lightItem.Color);
-			renderItem.Shader->SetUniformFloat(std::string("LightStrengths[" + itemIdxStr + "]").c_str(), lightItem.Strength);
+			renderItem.Shader->SetUniformVector3D("LightPositions[0]", lightItem.Position);
+			renderItem.Shader->SetUniformVector3D("LightColors[0]", lightItem.Color);
+			renderItem.Shader->SetUniformFloat("LightStrengths[0]", lightItem.Strength);
 		}
 
 		const std::vector<GFXMesh*>& meshList = *renderItem.MeshData;

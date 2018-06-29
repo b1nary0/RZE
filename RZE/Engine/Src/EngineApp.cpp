@@ -19,7 +19,7 @@ RZE_Application::~RZE_Application()
 
 }
 
-void RZE_Application::Start()
+void RZE_Application::Run()
 {
 	SetRunning(true);
 
@@ -31,12 +31,19 @@ void RZE_Application::Start()
 	RZE().Run(engineHook);
 }
 
+void RZE_Application::Start()
+{
+
+}
+
 void RZE_Application::Update()
 {
 }
 
 void RZE_Application::ShutDown()
 {
+	AssertNotNull(mRenderTarget);
+	delete mRenderTarget;
 }
 
 bool RZE_Application::ProcessInput(const InputHandler& handler)
@@ -49,9 +56,17 @@ void RZE_Application::RegisterInputEvents(InputHandler& inputHandler)
 
 }
 
+Diotima::RenderTarget* RZE_Application::GetRenderTarget() const
+{
+	return mRenderTarget;
+}
+
 void RZE_Application::Initialize()
 {
 	LOG_CONSOLE("RZE_Application::Init() called.");
+
+	// #TODO(Josh) With proper abstraction + platform tools, this should go away/become more versatile but for now just GL
+	mRenderTarget = new Diotima::GLRenderTargetTexture();
 }
 
 void RZE_Application::SetRunning(bool bRunning)

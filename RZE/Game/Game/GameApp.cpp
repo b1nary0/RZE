@@ -29,7 +29,7 @@ GameApp::~GameApp()
 
 void GameApp::Initialize()
 {
-	
+	RZE_Application::Initialize();
 }
 
 void GameApp::Start()
@@ -40,6 +40,11 @@ void GameApp::Start()
 void GameApp::Update()
 {
 	RZE_Application::Update();
+}
+
+void GameApp::ShutDown()
+{
+	RZE_Application::ShutDown();
 }
 
 void GameApp::RegisterInputEvents(InputHandler& inputHandler)

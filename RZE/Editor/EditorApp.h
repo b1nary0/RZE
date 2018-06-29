@@ -10,7 +10,7 @@
 
 using namespace RZE_EditorConfig;
 
-class RZE_Editor : RZE_Application
+class RZE_Editor : public RZE_Application
 {
 	friend class RZE_Engine;
 
@@ -36,21 +36,7 @@ public:
 	void PreUpdate();
 	void Display();
 
-private:
-	//
-	// #IMPORTANT 06/17/18 :: 10:53PDT
-	//
-	// These signatures need to be rewritten without widgetType param,
-	// but to get working now, leaving it as is because the refactor will be easier within the function
-	//
-	template <typename TWidgetType>
-	TWidgetType& AddWidget(EWidgetType widgetType)
-	{
-		TWidgetType* widget = new TWidgetType();
-		mWidgetDict[widgetType] = widget;
-		return *widget;
-	}
-
+public:
 	template <typename TWidgetType>
 	TWidgetType& GetWidget(EWidgetType widgetType)
 	{
@@ -59,11 +45,24 @@ private:
 		return *widget;
 	}
 
+private:
+	//
+	// #IMPORTANT 06/17/18 :: 10:53PDT
+	//
+	// These signatures need to be rewritten without widgetType param,
+	// but to get working now, leaving it as is because the refactor will be easier within the function
+	//
+	template <typename TWidgetType, class... Args>
+	TWidgetType& AddWidget(EWidgetType widgetType, Args&&... args)
+	{
+		TWidgetType* widget = new TWidgetType(std::forward<Args>(args)...);
+		mWidgetDict[widgetType] = widget;
+		return *widget;
+	}
+
 	void SetupStyle();
 	void SetupWidgets();
 
 private:
 	std::unordered_map<EWidgetType, IEditorWidget*> mWidgetDict;
-
-	std::vector<Apollo::EntityID> mNanosuits;
 };

@@ -5,7 +5,7 @@
 int main(void)
 {
 	RZE_Editor gEditor;
-	gEditor.Start();
+	gEditor.Run();
 
 	return 0;
 }

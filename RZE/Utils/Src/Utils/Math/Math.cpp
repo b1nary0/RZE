@@ -14,3 +14,13 @@ namespace VectorUtils
 		return result.LengthSq();
 	}
 }
+
+int MathUtils::Clamp(int value, int min, int max)
+{
+	return (value < min) ? min : (value > max) ? max : value;
+}
+
+float MathUtils::Clampf(float value, float min, float max)
+{
+	return (value < min) ? min : (value > max) ? max : value;
+}

@@ -1,5 +1,7 @@
 #include <ECS/Systems/FreeCameraSystem.h>
 
+#include <algorithm>
+
 #include <EngineApp.h>
 
 #include <ECS/Components/CameraComponent.h>
@@ -44,7 +46,7 @@ void FreeCameraSystem::Update(const std::vector<Apollo::EntityID>& entities)
  			Vector3D dist = mMoveToPoint - transfComp->Position;
  			if (dist.LengthSq() > VectorUtils::kEpsilon * VectorUtils::kEpsilon)
  			{
- 				transfComp->Position = VectorUtils::Lerp(transfComp->Position, mMoveToPoint, static_cast<float>(3 * RZE_Application::RZE().GetDeltaTime()));
+ 				transfComp->Position = VectorUtils::Lerp(transfComp->Position, mMoveToPoint, static_cast<float>(10 * RZE_Application::RZE().GetDeltaTime()));
  			}
 		}
 	}
@@ -80,11 +82,18 @@ void FreeCameraSystem::KeyboardInput(CameraComponent& camComp, TransformComponen
 
 	if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_Q])
 	{
-		mMoveToPoint = transfComp.Position + camComp.UpDir * mSpeed;
+		mMoveToPoint = transfComp.Position + camComp.Forward.Cross(camComp.UpDir).Cross(camComp.Forward) * mSpeed;
 	}
 	else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_E])
 	{
-		mMoveToPoint = transfComp.Position - camComp.UpDir * mSpeed;
+		mMoveToPoint = transfComp.Position - camComp.Forward.Cross(camComp.UpDir).Cross(camComp.Forward) * mSpeed;
+	}
+
+	Int32 wheelVal = RZE_Application::RZE().GetInputHandler().GetMouseState().CurWheelVal;
+	if (wheelVal != 0)
+	{
+		wheelVal = MathUtils::Clamp(wheelVal, -1, 1);
+		mMoveToPoint = transfComp.Position + (camComp.Forward * static_cast<float>(wheelVal)) * mWheelZoomSpeed;
 	}
 }
 

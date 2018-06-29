@@ -17,13 +17,14 @@ namespace Diotima
 {
 	class GFXMesh;
 	class GFXMaterial;
+	class RenderTargetTexture;
 	class GFXShaderPipeline;
 	class GFXTexture2D;
 	
 	class Renderer : public ISubSystem
 	{
 	public:
-		typedef struct RenderItemProtocol
+		struct RenderItemProtocol
 		{
 			RenderItemProtocol();
 
@@ -45,17 +46,17 @@ namespace Diotima
 				bIsValid = false;
 			}
 
-		} RenderItemProtocol;
+		};
 
-		typedef struct LightItemProtocol
+		struct LightItemProtocol
 		{
 			Vector3D	Position;
 			Vector3D	Color;
 
 			float		Strength;
-		} LightItemProtocol;
+		};
 
-		typedef struct CameraItemProtocol
+		struct CameraItemProtocol
 		{
 			Vector3D Position;
 			Matrix4x4 ProjectionMat;
@@ -65,7 +66,7 @@ namespace Diotima
 			float AspectRatio;
 			float NearCull;
 			float FarCull;
-		} CameraItemProtocol;
+		};
 
 		// Constructors
 	public:
@@ -85,10 +86,11 @@ namespace Diotima
 		Int32 AddRenderItem(const RenderItemProtocol& itemProtocol);
 		void RemoveRenderItem(const U32 itemIdx);
 
-		inline RenderItemProtocol& GetItemProtocolByIdx(Int32 idx) { return mRenderList[idx]; }
 		Int32 AddLightItem(const LightItemProtocol& itemProtocol);
+		inline RenderItemProtocol& GetItemProtocolByIdx(Int32 idx) { return mRenderList[idx]; }
 		inline LightItemProtocol& GetLightProtocolByIdx(Int32 idx) { return mLightingList[idx]; }
 
+		void SetRenderTarget(RenderTarget* renderTarget);
 		void SetCamera(const CameraItemProtocol& cameraItem) { camera = std::move(cameraItem); }
 
 		void EnableVsync(bool bEnable);
@@ -109,5 +111,7 @@ namespace Diotima
 		std::vector<LightItemProtocol> mLightingList;
 
 		std::queue<Int32> mFreeRenderListIndices;
+
+		RenderTarget* mRenderTarget { nullptr };
 	};
 }
