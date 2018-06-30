@@ -142,6 +142,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 			aiString str;
 			mat->GetTexture(aiTextureType_SPECULAR, i, &str);
 
+			// #TODO(Josh) Obviously this is not to be kept...
 			std::string filePath = "Engine/Assets/3D/Nanosuit/";
 			filePath.append(str.C_Str());
 
