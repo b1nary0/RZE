@@ -66,7 +66,7 @@ workspace "RZE"
 		targetdir (RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
 		targetname "RZE_Engine"
 
-		dependson { "Apollo", "Diotima", "Externals", "Utils" }
+		dependson { "Apollo", "Diotima", "Perseus", "Externals", "Utils" }
 
 		pchheader "StdAfx.h"
 		pchsource "../../Engine/Src/StdAfx.cpp"
@@ -84,8 +84,9 @@ workspace "RZE"
 			IncludeDir,
 			SourceDir,
 			RootDir .. "Utils/Src/",
+			RootDir .. "Modules/Apollo/Src/",
 			RootDir .. "Modules/Diotima/Src/",
-			RootDir .. "Modules/Apollo/Src/"
+			RootDir .. "Modules/Perseus/Src/"
 		}
 
 		libdirs
@@ -102,6 +103,7 @@ workspace "RZE"
 			"RZE_Utils",
 			"Apollo",
 			"Diotima",
+			"Perseus",
 			"Externals"
 		}
 
@@ -451,7 +453,7 @@ workspace "RZE"
 		targetdir (RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
 		targetname "RZE_Game"
 
-		dependson { "Engine", "Apollo", "Diotima", "Utils"}
+		dependson { "Engine", "Apollo", "Diotima", "Perseus", "Utils"}
 
 		files
 		{
@@ -467,8 +469,9 @@ workspace "RZE"
 			ProjectDir,
 			EngineDir .. "/Src/",
 			RootDir .. "/Utils/Src/",
+			RootDir .. "/Modules/Apollo/Src/",
 			RootDir .. "/Modules/Diotima/Src/",
-			RootDir .. "/Modules/Apollo/Src/"
+			RootDir .. "/Modules/Perseus/Src/",
 		}
 
 		libdirs
@@ -482,6 +485,7 @@ workspace "RZE"
 			"RZE_Utils",
 			"Apollo",
 			"Diotima",
+			"Perseus",
 			"Externals"
 		}
 
@@ -515,7 +519,7 @@ workspace "RZE"
 		targetdir (RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
 		targetname "RZE_Editor"
 
-		dependson { "Engine", "Apollo", "Diotima", "Utils"}
+		dependson { "Engine", "Apollo", "Diotima", "Perseus", "Utils"}
 
 		files
 		{
@@ -531,8 +535,9 @@ workspace "RZE"
 			ProjectDir,
 			EngineDir .. "/Src/",
 			RootDir .. "/Utils/Src/",
+			RootDir .. "/Modules/Apollo/Src/",
 			RootDir .. "/Modules/Diotima/Src/",
-			RootDir .. "/Modules/Apollo/Src/"
+			RootDir .. "/Modules/Perseus/Src/"
 		}
 
 		libdirs
@@ -546,6 +551,7 @@ workspace "RZE"
 			"RZE_Utils",
 			"Apollo",
 			"Diotima",
+			"Perseus",
 			"Externals"
 		}
 

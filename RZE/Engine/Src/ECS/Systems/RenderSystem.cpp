@@ -9,11 +9,13 @@
 
 #include <Apollo/ECS/EntityComponentFilter.h>
 
-#include <Game/Model.h>
-
 #include <Diotima/Graphics/Material.h>
 #include <Diotima/Graphics/Texture2D.h>
 #include <Diotima/Shaders/ShaderPipeline.h>
+
+#include <Perseus/JobSystem/JobScheduler.h>
+
+#include <Game/Model.h>
 
 #include <Utils/Platform/FilePath.h>
 #include <Utils/Platform/Timers/HiResTimer.h>
@@ -102,19 +104,23 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 	camera.ViewMat = camComp->ViewMat;
 	renderSystem->SetCamera(camera);
 
-	for (auto& entity : entities)
+	Perseus::Job::Task work([this, &handler, renderSystem, entities]()
 	{
-		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
+		for (auto& entity : entities)
+		{
+			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
+			Diotima::Renderer::RenderItemProtocol& item = renderSystem->GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
 
-		Diotima::Renderer::RenderItemProtocol& item = renderSystem->GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
+			Matrix4x4 modelMat;
+			modelMat.Translate(transfComp->Position);
+			modelMat.Rotate(transfComp->Rotation.ToAngle(), transfComp->Rotation.ToAxis());
+			modelMat.Scale(transfComp->Scale);
 
-		Matrix4x4 modelMat;
-		modelMat.Translate(transfComp->Position);
-		modelMat.Rotate(transfComp->Rotation.ToAngle(), transfComp->Rotation.ToAxis());
-		modelMat.Scale(transfComp->Scale);
-
-		item.ModelMat = modelMat;
-	}
+			item.ModelMat = modelMat;
+		}
+	});
+	Perseus::JobScheduler::Get().PushJob(work);
+	//Perseus::JobScheduler::Get().Wait();
 
 	Functor<void, Apollo::EntityID> LightSourceFunc([this, &handler, &renderSystem](Apollo::EntityID entity)
 	{
