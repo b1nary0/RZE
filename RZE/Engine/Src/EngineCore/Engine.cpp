@@ -18,7 +18,10 @@
 #include <Utils/DebugUtils/Debug.h>
 
 #include <Apollo/EntityComponentSystem.h>
+
 #include <Diotima/Renderer.h>
+
+#include <Perseus/JobSystem/JobScheduler.h>
 
 RZE_Engine::RZE_Engine()
 {
@@ -106,7 +109,10 @@ void RZE_Engine::Init()
 
 		RegisterWindowEvents();
 		RegisterEngineComponentTypes();
-		
+
+		// #Josh(TEST)
+		Perseus::JobScheduler::Get();
+
 		mRenderer = new Diotima::Renderer();
 		mRenderer->Initialize();
 		mRenderer->EnableVsync(mEngineConfig->GetEngineSettings().IsVSyncEnabled());
