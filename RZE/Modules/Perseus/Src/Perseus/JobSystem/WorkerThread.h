@@ -14,6 +14,7 @@ namespace Perseus
 		~WorkerThread();
 
 		void Initialize();
+		void Finish();
 		bool bIdle;
 
 	private:
@@ -21,6 +22,8 @@ namespace Perseus
 
 	private:
 		int mThreadID;
+
+		bool bRunning;
 
 		std::queue<Job> mJobQueue;
 		std::thread mThread;

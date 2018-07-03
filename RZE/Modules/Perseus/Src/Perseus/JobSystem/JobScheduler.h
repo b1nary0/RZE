@@ -18,7 +18,7 @@ namespace Perseus
 		static std::mutex JobMutex;
 	public:
 		JobScheduler();
-		~JobScheduler() = default;
+		~JobScheduler();
 
 		void PushJob(Job::Task task);
 		bool RequestJob(Job& outJob);

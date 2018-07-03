@@ -8,9 +8,18 @@ namespace Perseus
 
 	JobScheduler::JobScheduler()
 	{
+		int conc = std::thread::hardware_concurrency();
 		for (int i = 0; i < PERSEUS_MAX_WORKER_THREADS; ++i)
 		{
 			mWorkerThreads[i].Initialize();
+		}
+	}
+
+	JobScheduler::~JobScheduler()
+	{
+		for (int i = 0; i < PERSEUS_MAX_WORKER_THREADS; ++i)
+		{
+			mWorkerThreads[i].Finish();
 		}
 	}
 
