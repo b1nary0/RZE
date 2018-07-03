@@ -2,6 +2,8 @@
 
 #include <Utils/Platform/Timers/HiResTimer.h>
 
+#include <Perseus/JobSystem/JobScheduler.h>
+
 namespace Apollo
 {
 	EntityHandler::ComponentNameList EntityHandler::sComponentNameRegistry;
@@ -115,17 +117,21 @@ namespace Apollo
 	{
 		FlushComponentIDQueues();
 
-		for (size_t idx = 0; idx < mSystems.size(); ++idx)
+		Perseus::Job::Task work([this]()
 		{
-			EntitySystem* system = mSystems[idx];
-			
-			const EntityComponentFilter& filter = system->GetComponentFilter();
-			std::vector<EntityID> filteredEntities;
+			for (size_t idx = 0; idx < mSystems.size(); ++idx)
+			{
+				EntitySystem* system = mSystems[idx];
 
-			filter.FilterAtLeast(mEntities, filteredEntities);
+				const EntityComponentFilter& filter = system->GetComponentFilter();
+				std::vector<EntityID> filteredEntities;
 
-			system->Update(filteredEntities);
-		}
+				filter.FilterAtLeast(mEntities, filteredEntities);
+
+				system->Update(filteredEntities);
+			}
+		});
+		Perseus::JobScheduler::Get().PushJob(work);
 	}
 
 	void EntityHandler::ShutDown()
