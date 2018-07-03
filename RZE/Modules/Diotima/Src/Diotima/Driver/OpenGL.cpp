@@ -100,10 +100,24 @@ void OpenGLRHI::BindVertexArray(const GLuint arrayObjectHandle) const
 	AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
-void OpenGLRHI::GenerateBuffer(GLuint bufferCount, GLuint* outBufferHandle) const
+void OpenGLRHI::GenerateBuffer(GLsizei bufferCount, GLuint* outBufferHandle) const
 {
 	AssertExpr(bufferCount > 0);
 	glGenBuffers(bufferCount, outBufferHandle);
+	AssertExpr(glGetError() == GL_NO_ERROR);
+}
+
+void OpenGLRHI::GenerateFrameBuffer(GLsizei bufferCount, GLuint* outBufferHandle) const
+{
+	AssertExpr(bufferCount > 0);
+	glGenFramebuffers(bufferCount, outBufferHandle);
+	AssertExpr(glGetError() == GL_NO_ERROR);
+}
+
+void OpenGLRHI::GenerateRenderBuffer(GLsizei bufferCount, GLuint* outBufferHandle) const
+{
+	AssertExpr(bufferCount > 0);
+	glGenRenderbuffers(bufferCount, outBufferHandle);
 	AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
@@ -113,7 +127,19 @@ void OpenGLRHI::BindBuffer(const EGLBufferTarget::T target, const GLuint bufferO
 	AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
-void OpenGLRHI::DeleteBuffer(GLuint bufferCount, GLuint* bufferHandle)
+void OpenGLRHI::BindFramebuffer(const GLuint bufferObjectHandle) const
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, bufferObjectHandle);
+	AssertExpr(glGetError() == GL_NO_ERROR);
+}
+
+void OpenGLRHI::BindRenderbuffer(const GLint bufferObjectHandle) const
+{
+	glBindRenderbuffer(GL_RENDERBUFFER, bufferObjectHandle);
+	AssertExpr(glGetError() == GL_NO_ERROR);
+}
+
+void OpenGLRHI::DeleteBuffer(GLuint bufferCount, GLuint* bufferHandle) const
 {
 	AssertExpr(bufferCount > 0 && bufferHandle);
 	glDeleteBuffers(bufferCount, bufferHandle);
@@ -131,6 +157,26 @@ void OpenGLRHI::SetBufferData(const EGLBufferTarget::T target, const GLuint size
 void OpenGLRHI::SetBufferSubData(const EGLBufferTarget::T target, const GLintptr offset, const GLsizeiptr size, const GLvoid* data) const
 {
 	glBufferSubData(target, offset, size, data);
+	AssertExpr(glGetError() == GL_NO_ERROR);
+}
+
+void OpenGLRHI::SetFramebufferTexture2D(const EGLBufferTarget::T target, const EGLAttachmentPoint::T attachmentPoint, const EGLTextureTarget::T textureTarget, GLuint texture, GLint mipLevel) const
+{
+	AssertExpr(mipLevel >= 0);
+	glFramebufferTexture2D(target, attachmentPoint, textureTarget, texture, mipLevel);
+	AssertExpr(glGetError() == GL_NO_ERROR);
+}
+
+void OpenGLRHI::AllocateRenderbufferStorage(GLenum internalFormat, GLsizei width, GLsizei height) const
+{
+	AssertExpr(width > 0 || height > 0); // At least one of these needs to be > 0 for anything to make sense and shit to work
+	glRenderbufferStorage(GL_RENDERBUFFER, internalFormat, width, height);
+	AssertExpr(glGetError() == GL_NO_ERROR);
+}
+
+void OpenGLRHI::AttachRenderBufferToFrameBuffer(const EGLAttachmentPoint::T attachmentPoint, GLuint bufferObjectHandle)
+{
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachmentPoint, GL_RENDERBUFFER, bufferObjectHandle);
 	AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
@@ -153,7 +199,7 @@ void OpenGLRHI::DrawArrays(const EGLDrawMode::T mode, const GLint first, const G
 	glDrawArrays(mode, first, count);
 }
 
-void OpenGLRHI::DrawElements(const EGLDrawMode::T mode, const GLsizei count, EGLDataType::T type, const GLvoid* indices)
+void OpenGLRHI::DrawElements(const EGLDrawMode::T mode, const GLsizei count, EGLDataType::T type, const GLvoid* indices) const
 {
 	AssertExpr(count > 0);
 	glDrawElements(mode, count, type, indices);

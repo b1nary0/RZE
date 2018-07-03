@@ -9,6 +9,26 @@
 
 #include <Utils/PrimitiveDefs.h>
 
+namespace EGLAttachmentPoint
+{
+	enum T : GLenum
+	{
+		Color0 = GL_COLOR_ATTACHMENT0,
+		Depth = GL_DEPTH_ATTACHMENT,
+		Stencil = GL_STENCIL_ATTACHMENT,
+		DepthStencil = GL_DEPTH_STENCIL_ATTACHMENT
+	};
+}
+
+namespace EGLBlendFactor
+{
+	enum T : GLenum
+	{
+		SourceAlpha = GL_SRC_ALPHA,
+		OneMinusSourceAlpha = GL_ONE_MINUS_SRC_ALPHA
+	};
+}
+
 namespace EGLBooleanValue
 {
 	enum T : GLboolean
@@ -38,11 +58,15 @@ namespace EGLBufferTarget
 		CopyReadBuffer = GL_COPY_READ_BUFFER,
 		CopyWriteBuffer = GL_COPY_WRITE_BUFFER,
 		DispatchIndirectBuffer = GL_DISPATCH_INDIRECT_BUFFER,
+		DrawFramebuffer = GL_DRAW_FRAMEBUFFER,
 		DrawIndirectBuffer = GL_DRAW_INDIRECT_BUFFER,
 		ElementArrayBuffer = GL_ELEMENT_ARRAY_BUFFER,
+		FrameBuffer = GL_FRAMEBUFFER,
 		PixelPackBuffer = GL_PIXEL_PACK_BUFFER,
 		PixelUnpackBuffer = GL_PIXEL_UNPACK_BUFFER,
 		QueryBuffer = GL_QUERY_BUFFER,
+		ReadFramebuffer = GL_READ_FRAMEBUFFER,
+		Renderbuffer = GL_RENDERBUFFER,
 		ShaderStorageBuffer = GL_SHADER_STORAGE_BUFFER,
 		TextureBuffer = GL_TEXTURE_BUFFER,
 		TransformFeedbackBuffer = GL_TRANSFORM_FEEDBACK_BUFFER,
@@ -248,12 +272,17 @@ namespace EGLShaderStatusParam
 	};
 };
 
-namespace EGLBlendFactor
+namespace EGLTextureTarget
 {
 	enum T : GLenum
 	{
-		SourceAlpha = GL_SRC_ALPHA,
-		OneMinusSourceAlpha = GL_ONE_MINUS_SRC_ALPHA
+		Texture2D = GL_TEXTURE_2D,
+		CubeMapPositiveX = GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+		CubeMapNegativeX = GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+		CubeMapPositiveY = GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+		CubeMapNegativeY = GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+		CubeMapPositiveZ = GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
+		CubeMapNegativeZ = GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
 	};
 }
 
@@ -391,17 +420,34 @@ public:
 	void GenVertexArrays(const GLuint arrayCount, GLuint* outBufferHandle) const;
 	void BindVertexArray(const GLuint arrayObjectHandle) const;
 
-	void GenerateBuffer(GLuint bufferCount, GLuint* outBufferHandle) const;
+	void GenerateBuffer(GLsizei bufferCount, GLuint* outBufferHandle) const;
+	void GenerateFrameBuffer(GLsizei bufferCount, GLuint* outBufferHandle) const;
+	void GenerateRenderBuffer(GLsizei bufferCount, GLuint* outBufferHandle) const;
+
 	void BindBuffer(const EGLBufferTarget::T target, const GLuint bufferObjectHandle) const;
-	void DeleteBuffer(GLuint bufferCount, GLuint* bufferHandle);
+	void BindFramebuffer(const GLuint bufferObjectHandle) const;
+	void BindRenderbuffer(const GLint bufferObjectHandle) const;
+
+	void DeleteBuffer(GLuint bufferCount, GLuint* bufferHandle) const;
+
 	void SetBufferData(const EGLBufferTarget::T target, const GLuint size, const void* const data, const EGLBufferUsage::T bufferUsage) const;
 	void SetBufferSubData(const EGLBufferTarget::T target, const GLintptr offset, const GLsizeiptr size, const GLvoid* data) const;
+	void SetFramebufferTexture2D(const EGLBufferTarget::T target, const EGLAttachmentPoint::T attachmentPoint, const EGLTextureTarget::T textureTarget, GLuint texture, GLint mipLevel) const;
+	
+	void AllocateRenderbufferStorage(GLenum internalFormat, GLsizei width, GLsizei height) const;
+	void AttachRenderBufferToFrameBuffer(const EGLAttachmentPoint::T attachmentPoint, GLuint bufferObjectHandle);
 
+	//
+	//
+	//
 	void EnableVertexAttributeArray(const GLuint index) const;
 	void VertexAttribPointer(const GLuint index, const GLint size, const EGLDataType::T type, const GLboolean normalized, const GLuint stride, const void* const pointer) const;
 
+	//
+	// Submission
+	//
 	void DrawArrays(const EGLDrawMode::T mode, const GLint first, const GLuint count) const;
-	void DrawElements(const EGLDrawMode::T mode, const GLsizei count, EGLDataType::T type, const GLvoid* indices);
+	void DrawElements(const EGLDrawMode::T mode, const GLsizei count, EGLDataType::T type, const GLvoid* indices) const;
 
 	//
 	// Shaders
