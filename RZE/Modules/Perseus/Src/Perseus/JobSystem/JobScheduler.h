@@ -20,6 +20,10 @@ namespace Perseus
 		JobScheduler();
 		~JobScheduler();
 
+	public:
+		void ShutDown();
+
+	public:
 		void PushJob(Job::Task task);
 		bool RequestJob(Job& outJob);
 

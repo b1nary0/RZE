@@ -19,6 +19,14 @@ namespace Perseus
 	{
 		for (int i = 0; i < PERSEUS_MAX_WORKER_THREADS; ++i)
 		{
+			AssertExpr(!mWorkerThreads[i].IsRunning());
+		}
+	}
+
+	void JobScheduler::ShutDown()
+	{
+		for (int i = 0; i < PERSEUS_MAX_WORKER_THREADS; ++i)
+		{
 			mWorkerThreads[i].Finish();
 		}
 	}
@@ -50,7 +58,7 @@ namespace Perseus
 			int count = 0;
 			for (int i = 0; i < PERSEUS_MAX_WORKER_THREADS; ++i)
 			{
-				if (mWorkerThreads[i].bIdle)
+				if (mWorkerThreads[i].IsIdle())
 				{
 					++count;
 				}

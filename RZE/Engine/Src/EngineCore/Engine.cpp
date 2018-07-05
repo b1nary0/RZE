@@ -68,7 +68,6 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 				DebugServices::Display(GetWindowSize());
 
 				mRenderer->Update();
-
 				ImGui::Render();
 			}
 
@@ -248,6 +247,8 @@ void RZE_Engine::BeginShutDown()
 {
 	LOG_CONSOLE("Shutting engine down...");
 	
+	Perseus::JobScheduler::Get().ShutDown();
+
 	mActiveScene->Finish();
 	mApplication->ShutDown();
 	mResourceHandler.ShutDown();

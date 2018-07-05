@@ -50,6 +50,22 @@ void FreeCameraSystem::Update(const std::vector<Apollo::EntityID>& entities)
  			}
 		}
 	}
+
+	Functor<void, Apollo::EntityID> RotateThingsFunc([this, &handler](Apollo::EntityID entity)
+	{
+		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
+		NameComponent* const nameComp = handler.GetComponent<NameComponent>(entity);
+		
+		if (nameComp->Name == "Nanosuit")
+		{
+			transfComp->Rotation *= Quaternion(Vector3D(0.0f, -1.0f, 0.0f) * RZE_Application::RZE().GetDeltaTime());
+		}
+		else
+		{
+			transfComp->Rotation *= Quaternion(Vector3D(1.0f, 1.0f, 1.0f) * RZE_Application::RZE().GetDeltaTime());
+		}
+	});
+	handler.ForEach<TransformComponent>(RotateThingsFunc);
 }
 
 void FreeCameraSystem::ShutDown()

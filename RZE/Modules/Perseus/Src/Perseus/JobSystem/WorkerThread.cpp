@@ -7,7 +7,8 @@
 namespace Perseus
 {
 	WorkerThread::WorkerThread()
-		: bIdle(true)
+		: bActive(false)
+		, bIdle(true)
 		, bRunning(false)
 	{
 		static int count = 1;
@@ -26,15 +27,21 @@ namespace Perseus
 
 	void WorkerThread::Finish()
 	{
-		bRunning = false;
+		bActive = false;
 		mThread.join();
+		bRunning = false;
+	}
+
+	bool WorkerThread::IsIdle()
+	{
+		return bIdle;
 	}
 
 	void WorkerThread::ThreadSetup()
 	{
 		auto exec([this]()
 		{
-			while (bRunning)
+			while (bActive)
 			{
 				Job job;
 				if (JobScheduler::Get().RequestJob(job))
@@ -50,7 +57,14 @@ namespace Perseus
 			}
 		});
 
-		bRunning = true;
+		bActive = true;
 		mThread = std::thread(exec);
+		bRunning = true;
 	}
+
+	bool WorkerThread::IsRunning()
+	{
+		return bRunning;
+	}
+
 }

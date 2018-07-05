@@ -13,9 +13,13 @@ namespace Perseus
 		WorkerThread();
 		~WorkerThread();
 
+	public:
 		void Initialize();
 		void Finish();
-		bool bIdle;
+
+	public:
+		bool IsIdle();
+		bool IsRunning();
 
 	private:
 		void ThreadSetup();
@@ -23,7 +27,9 @@ namespace Perseus
 	private:
 		int mThreadID;
 
-		bool bRunning;
+		bool bIdle; // Sleeping, waiting for work
+		bool bRunning; // false when the thread is joined
+		bool bActive; // Thread is alive and either sleeping or working.
 
 		std::queue<Job> mJobQueue;
 		std::thread mThread;
