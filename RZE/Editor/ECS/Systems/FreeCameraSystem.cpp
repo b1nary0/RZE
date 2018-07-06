@@ -58,11 +58,11 @@ void FreeCameraSystem::Update(const std::vector<Apollo::EntityID>& entities)
 		
 		if (nameComp->Name == "Nanosuit")
 		{
-			transfComp->Rotation *= Quaternion(Vector3D(0.0f, -1.0f, 0.0f) * RZE_Application::RZE().GetDeltaTime());
+			transfComp->Rotation *= Quaternion(Vector3D(0.0f, -1.0f, 0.0f) * static_cast<float>(RZE_Application::RZE().GetDeltaTime()));
 		}
 		else
 		{
-			transfComp->Rotation *= Quaternion(Vector3D(1.0f, 1.0f, 1.0f) * RZE_Application::RZE().GetDeltaTime());
+			transfComp->Rotation *= Quaternion(Vector3D(1.0f, 1.0f, 1.0f) * static_cast<float>(RZE_Application::RZE().GetDeltaTime()));
 		}
 	});
 	handler.ForEach<TransformComponent>(RotateThingsFunc);
