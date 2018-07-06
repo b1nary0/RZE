@@ -135,15 +135,6 @@ namespace Diotima
 	{
 	}
 
-	void Renderer::RenderToTexture(RenderTargetTexture* texture)
-	{
-		
-	}
-
-	void Renderer::ClearLists()
-	{
-	}
-
 	void Renderer::SetRenderTarget(RenderTarget* renderTarget)
 	{
 		AssertNotNull(renderTarget);

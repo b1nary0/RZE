@@ -80,9 +80,6 @@ namespace Diotima
 		virtual void ShutDown();
 
 	public:
-		void RenderToTexture(RenderTargetTexture* texture);
-
-	public:
 		Int32 AddRenderItem(const RenderItemProtocol& itemProtocol);
 		void RemoveRenderItem(const U32 itemIdx);
 
@@ -95,8 +92,6 @@ namespace Diotima
 
 		void EnableVsync(bool bEnable);
 		void ResizeCanvas(const Vector2D& newSize);
-
-		void ClearLists();
 		
 	private:
 		void RenderSingleItem(RenderItemProtocol& itemProtocol);
