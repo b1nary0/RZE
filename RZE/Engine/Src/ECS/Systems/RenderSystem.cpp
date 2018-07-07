@@ -6,6 +6,7 @@
 #include <ECS/Components/MeshComponent.h>
 #include <ECS/Components/TransformComponent.h>
 #include <ECS/Components/MaterialComponent.h>
+#include <ECS/Components/NameComponent.h>
 
 #include <Apollo/ECS/EntityComponentFilter.h>
 
@@ -111,12 +112,14 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
 			Diotima::Renderer::RenderItemProtocol& item = renderSystem->GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
 
-			Matrix4x4 modelMat;
-			modelMat.Translate(transfComp->Position);
-			modelMat.Rotate(transfComp->Rotation.ToAngle(), transfComp->Rotation.ToAxis());
-			modelMat.Scale(transfComp->Scale);
+			const NameComponent* const nameComp = handler.GetComponent<NameComponent>(entity);
 
-			item.ModelMat = modelMat;
+// 			Matrix4x4 modelMat;
+// 			modelMat.Translate(transfComp->Position);
+// 			modelMat.Rotate(transfComp->Rotation.ToAngle(), transfComp->Rotation.ToAxis());
+// 			modelMat.Scale(transfComp->Scale);
+
+			item.ModelMat = transfComp->Transform;
 		}
 	});
 	Perseus::JobScheduler::Get().PushJob(work);
@@ -127,7 +130,7 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
 
 		Diotima::Renderer::LightItemProtocol& item = renderSystem->GetLightProtocolByIdx(mLightItemEntityMap[entity]);
-		item.Position = transfComp->Position;
+		item.Position = transfComp->Transform.GetPosition();
 	});
 
 	handler.ForEach<LightSourceComponent, TransformComponent>(LightSourceFunc);
@@ -233,5 +236,5 @@ void RenderSystem::RegisterForComponentNotifications()
 void RenderSystem::GenerateCameraMatrices(CameraComponent& cameraComponent, const TransformComponent& transformComponent)
 {
 	cameraComponent.ProjectionMat = Matrix4x4::CreatePerspectiveMatrix(cameraComponent.FOV, cameraComponent.AspectRatio, cameraComponent.NearCull, cameraComponent.FarCull);
-	cameraComponent.ViewMat = Matrix4x4::CreateViewMatrix(transformComponent.Position, transformComponent.Position + cameraComponent.Forward, cameraComponent.UpDir);
+	cameraComponent.ViewMat = Matrix4x4::CreateViewMatrix(transformComponent.Transform.GetPosition(), transformComponent.Transform.GetPosition() + cameraComponent.Forward, cameraComponent.UpDir);
 }

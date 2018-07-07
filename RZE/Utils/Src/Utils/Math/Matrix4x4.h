@@ -2,7 +2,8 @@
 
 #include <GLM/mat4x4.hpp>
 
-class Vector3D;
+#include <Utils/Math/Quaternion.h>
+#include <Utils/Math/Vector3D.h>
 
 class Matrix4x4
 {
@@ -15,6 +16,14 @@ public:
 	void Translate(const Vector3D& translation);
 	void Rotate(const float angle, const Vector3D& axis);
 	void Scale(const Vector3D& scale);
+
+	const Vector3D GetPosition() const;
+	const Quaternion GetRotation() const;
+	const Vector3D GetScale() const;
+
+	void SetPosition(const Vector3D& position);
+	void SetRotation(const Quaternion& rotation);
+	void SetScale(const Vector3D& scale);
 
 	const glm::mat4& GetInternalMat() const;
 	const float* GetValuePtr() const;
