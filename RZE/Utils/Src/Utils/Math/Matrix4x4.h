@@ -10,6 +10,8 @@ class Matrix4x4
 public:
 	Matrix4x4();
 
+	static Matrix4x4 CreateInPlace(const Vector3D& position, const Vector3D& scale, const Quaternion& rotation);
+
 	static Matrix4x4 CreateViewMatrix(const Vector3D& eyePos, const Vector3D& centerPos, const Vector3D& upDir);
 	static Matrix4x4 CreatePerspectiveMatrix(const float fov, const float aspectRatio, const float nearCull, const float farCull);
 

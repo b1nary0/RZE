@@ -110,16 +110,9 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 		for (auto& entity : entities)
 		{
 			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
+
 			Diotima::Renderer::RenderItemProtocol& item = renderSystem->GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
-
-			const NameComponent* const nameComp = handler.GetComponent<NameComponent>(entity);
-
-// 			Matrix4x4 modelMat;
-// 			modelMat.Translate(transfComp->Position);
-// 			modelMat.Rotate(transfComp->Rotation.ToAngle(), transfComp->Rotation.ToAxis());
-// 			modelMat.Scale(transfComp->Scale);
-
-			item.ModelMat = transfComp->Transform;
+			item.ModelMat =	Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
 		}
 	});
 	Perseus::JobScheduler::Get().PushJob(work);
@@ -130,7 +123,7 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
 
 		Diotima::Renderer::LightItemProtocol& item = renderSystem->GetLightProtocolByIdx(mLightItemEntityMap[entity]);
-		item.Position = transfComp->Transform.GetPosition();
+		item.Position = transfComp->Position;
 	});
 
 	handler.ForEach<LightSourceComponent, TransformComponent>(LightSourceFunc);
@@ -236,5 +229,5 @@ void RenderSystem::RegisterForComponentNotifications()
 void RenderSystem::GenerateCameraMatrices(CameraComponent& cameraComponent, const TransformComponent& transformComponent)
 {
 	cameraComponent.ProjectionMat = Matrix4x4::CreatePerspectiveMatrix(cameraComponent.FOV, cameraComponent.AspectRatio, cameraComponent.NearCull, cameraComponent.FarCull);
-	cameraComponent.ViewMat = Matrix4x4::CreateViewMatrix(transformComponent.Transform.GetPosition(), transformComponent.Transform.GetPosition() + cameraComponent.Forward, cameraComponent.UpDir);
+	cameraComponent.ViewMat = Matrix4x4::CreateViewMatrix(transformComponent.Position, transformComponent.Position + cameraComponent.Forward, cameraComponent.UpDir);
 }

@@ -32,8 +32,6 @@ namespace Diotima
 			GFXMaterial						Material;
 			std::vector<GFXTexture2D*>		Textures;
 			Matrix4x4						ModelMat;
-			Matrix4x4						ProjectionMat;
-			Matrix4x4						ViewMat;
 			std::vector<GFXMesh*>*			MeshData{ nullptr };
 
 			bool bIsValid{ false };

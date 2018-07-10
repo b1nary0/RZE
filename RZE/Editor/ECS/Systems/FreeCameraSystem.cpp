@@ -43,11 +43,11 @@ void FreeCameraSystem::Update(const std::vector<Apollo::EntityID>& entities)
 			KeyboardInput(*camComp, *transfComp);
 			MouseInput(*camComp, *transfComp);
 
- 			Vector3D dist = mMoveToPoint - transfComp->Transform.GetPosition();
+ 			Vector3D dist = mMoveToPoint - transfComp->Position;
  			if (dist.LengthSq() > VectorUtils::kEpsilon * VectorUtils::kEpsilon)
  			{
-				Vector3D lerpPos = VectorUtils::Lerp(transfComp->Transform.GetPosition(), mMoveToPoint, static_cast<float>(10 * RZE_Application::RZE().GetDeltaTime()));
- 				transfComp->Transform.SetPosition(lerpPos);
+				Vector3D lerpPos = VectorUtils::Lerp(transfComp->Position, mMoveToPoint, static_cast<float>(10 * RZE_Application::RZE().GetDeltaTime()));
+ 				transfComp->SetPosition(lerpPos);
  			}
 		}
 	}
@@ -59,11 +59,11 @@ void FreeCameraSystem::Update(const std::vector<Apollo::EntityID>& entities)
 		
 		if (nameComp->Name == "Nanosuit")
 		{
-			transfComp->Rotation *= Quaternion(Vector3D(0.0f, -1.0f, 0.0f) * static_cast<float>(RZE_Application::RZE().GetDeltaTime()));
+			transfComp->Rotate(Quaternion(Vector3D(0.0f, -1.0f, 0.0f)) * static_cast<float>(RZE_Application::RZE().GetDeltaTime()));
 		}
 		else
 		{
-			transfComp->Rotation *= Quaternion(Vector3D(1.0f, 1.0f, 1.0f) * static_cast<float>(RZE_Application::RZE().GetDeltaTime()));
+			transfComp->Rotate(Quaternion(Vector3D(1.0f, 1.0f, 1.0f) * static_cast<float>(RZE_Application::RZE().GetDeltaTime())));
 		}
 	});
 	handler.ForEach<TransformComponent>(RotateThingsFunc);
@@ -81,36 +81,36 @@ void FreeCameraSystem::KeyboardInput(CameraComponent& camComp, TransformComponen
 
 	if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_W])
 	{
-		mMoveToPoint = transfComp.Transform.GetPosition() + camComp.Forward * mSpeed;
+		mMoveToPoint = transfComp.Position + camComp.Forward * mSpeed;
 	}
 	else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_S])
 	{
-		mMoveToPoint = transfComp.Transform.GetPosition() - camComp.Forward * mSpeed;
+		mMoveToPoint = transfComp.Position - camComp.Forward * mSpeed;
 	}
 
 	if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_A])
 	{
-		mMoveToPoint = transfComp.Transform.GetPosition() - camComp.Forward.Cross(camComp.UpDir).Normalize() * mSpeed;
+		mMoveToPoint = transfComp.Position - camComp.Forward.Cross(camComp.UpDir).Normalize() * mSpeed;
 	}
 	else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_D])
 	{
-		mMoveToPoint = transfComp.Transform.GetPosition() + camComp.Forward.Cross(camComp.UpDir).Normalize() * mSpeed;
+		mMoveToPoint = transfComp.Position + camComp.Forward.Cross(camComp.UpDir).Normalize() * mSpeed;
 	}
 
 	if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_Q])
 	{
-		mMoveToPoint = transfComp.Transform.GetPosition() + camComp.Forward.Cross(camComp.UpDir).Cross(camComp.Forward) * mSpeed;
+		mMoveToPoint = transfComp.Position + camComp.Forward.Cross(camComp.UpDir).Cross(camComp.Forward) * mSpeed;
 	}
 	else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_E])
 	{
-		mMoveToPoint = transfComp.Transform.GetPosition() - camComp.Forward.Cross(camComp.UpDir).Cross(camComp.Forward) * mSpeed;
+		mMoveToPoint = transfComp.Position - camComp.Forward.Cross(camComp.UpDir).Cross(camComp.Forward) * mSpeed;
 	}
 
 	Int32 wheelVal = RZE_Application::RZE().GetInputHandler().GetMouseState().CurWheelVal;
 	if (wheelVal != 0)
 	{
 		wheelVal = MathUtils::Clamp(wheelVal, -1, 1);
-		mMoveToPoint = transfComp.Transform.GetPosition() + (camComp.Forward * static_cast<float>(wheelVal)) * mWheelZoomSpeed;
+		mMoveToPoint = transfComp.Position + (camComp.Forward * static_cast<float>(wheelVal)) * mWheelZoomSpeed;
 	}
 }
 
@@ -118,13 +118,13 @@ void FreeCameraSystem::MouseInput(CameraComponent& camComp, TransformComponent& 
 {
 	InputHandler& inputHandler = RZE_Application::RZE().GetInputHandler();
 
-	if (mMousePrevPos.LengthSq() == 0)
-	{
-		mMousePrevPos = inputHandler.GetMouseState().CurPosition;
-	}
-
 	if (RZE_Application::RZE().GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Pressed)
 	{
+		if (mMousePrevPos.LengthSq() == 0)
+		{
+			mMousePrevPos = inputHandler.GetMouseState().CurPosition;
+		}
+
 		Vector3D curPos = inputHandler.GetMouseState().CurPosition;
 		Vector3D diff = curPos - mMousePrevPos;
 		diff = diff * 0.1f; // #TODO(Josh) Move this to a better place (mouse sensitivity) -- config file
@@ -141,7 +141,6 @@ void FreeCameraSystem::MouseInput(CameraComponent& camComp, TransformComponent& 
 
 		mMousePrevPos = curPos;
 	}
-
 // 	if (RZE_Application::RZE().GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Middle) == EButtonState::ButtonState_Pressed)
 // 	{
 // 		Vector3D curPos = inputHandler.GetMouseState().CurPosition;
@@ -182,7 +181,7 @@ void FreeCameraSystem::RegisterComponentAddedNotifications()
 
 		if (nameComp->Name == "Camera")
 		{
-			mMoveToPoint = transfComp->Transform.GetPosition();
+			mMoveToPoint = transfComp->Position;
 		}
 	});
 	handler.RegisterForComponentAddNotification<TransformComponent>(transfCompAdded);
