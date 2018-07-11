@@ -7,6 +7,7 @@ namespace Perseus
 	std::mutex JobScheduler::JobMutex;
 
 	JobScheduler::JobScheduler()
+		: bShouldWait(false)
 	{
 		int conc = std::thread::hardware_concurrency();
 		for (int i = 0; i < PERSEUS_MAX_WORKER_THREADS; ++i)
@@ -53,20 +54,12 @@ namespace Perseus
 
 	void JobScheduler::Wait()
 	{
-		while (true)
+		bShouldWait = true;
+		while (bShouldWait)
 		{
-			int count = 0;
-			for (int i = 0; i < PERSEUS_MAX_WORKER_THREADS; ++i)
+			if (mJobQueue.empty())
 			{
-				if (mWorkerThreads[i].IsIdle())
-				{
-					++count;
-				}
-			}
-
-			if (count == PERSEUS_MAX_WORKER_THREADS)
-			{
-				break;
+				bShouldWait = false;
 			}
 		}
 	}

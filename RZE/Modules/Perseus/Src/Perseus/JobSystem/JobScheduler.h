@@ -44,6 +44,6 @@ namespace Perseus
 		WorkerThread mWorkerThreads[PERSEUS_MAX_WORKER_THREADS];
 		JobQueue mJobQueue;
 
-
+		bool bShouldWait;
 	};
 }

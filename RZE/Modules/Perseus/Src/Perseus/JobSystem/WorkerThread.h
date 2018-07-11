@@ -27,6 +27,7 @@ namespace Perseus
 	private:
 		int mThreadID;
 
+		// #TODO(Josh) These should be turned into an enum
 		bool bIdle; // Sleeping, waiting for work
 		bool bRunning; // false when the thread is joined
 		bool bActive; // Thread is alive and either sleeping or working.
