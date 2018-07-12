@@ -6,6 +6,7 @@
 #include <ECS/Components/MeshComponent.h>
 #include <ECS/Components/TransformComponent.h>
 #include <ECS/Components/MaterialComponent.h>
+#include <ECS/Components/NameComponent.h>
 
 #include <Apollo/ECS/EntityComponentFilter.h>
 
@@ -109,14 +110,9 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 		for (auto& entity : entities)
 		{
 			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
+
 			Diotima::Renderer::RenderItemProtocol& item = renderSystem->GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
-
-			Matrix4x4 modelMat;
-			modelMat.Translate(transfComp->Position);
-			modelMat.Rotate(transfComp->Rotation.ToAngle(), transfComp->Rotation.ToAxis());
-			modelMat.Scale(transfComp->Scale);
-
-			item.ModelMat = modelMat;
+			item.ModelMat =	Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
 		}
 	});
 	Perseus::JobScheduler::Get().PushJob(work);

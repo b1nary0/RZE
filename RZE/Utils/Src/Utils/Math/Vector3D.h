@@ -26,6 +26,7 @@ public:
 	void SetZ(float newY);
 
 	const Vector3D& Normalize();
+	Vector3D Normalized() const;
 	Vector3D Cross(const Vector3D& other) const;
 	float LengthSq();
 
@@ -51,6 +52,9 @@ public:
 	Vector3D operator*(float scalar) const;
 
 	bool operator!=(const Vector3D& rhs) const;
+
+private:
+	Vector3D(const glm::vec3& vec);
 
 private:
 	glm::vec3 mVec;

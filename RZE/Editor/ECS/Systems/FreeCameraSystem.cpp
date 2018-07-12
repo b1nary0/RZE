@@ -46,10 +46,27 @@ void FreeCameraSystem::Update(const std::vector<Apollo::EntityID>& entities)
  			Vector3D dist = mMoveToPoint - transfComp->Position;
  			if (dist.LengthSq() > VectorUtils::kEpsilon * VectorUtils::kEpsilon)
  			{
- 				transfComp->Position = VectorUtils::Lerp(transfComp->Position, mMoveToPoint, static_cast<float>(10 * RZE_Application::RZE().GetDeltaTime()));
+				Vector3D lerpPos = VectorUtils::Lerp(transfComp->Position, mMoveToPoint, static_cast<float>(10 * RZE_Application::RZE().GetDeltaTime()));
+ 				transfComp->SetPosition(lerpPos);
  			}
 		}
 	}
+
+	Functor<void, Apollo::EntityID> RotateThingsFunc([this, &handler](Apollo::EntityID entity)
+	{
+		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
+		NameComponent* const nameComp = handler.GetComponent<NameComponent>(entity);
+		
+		if (nameComp->Name == "Nanosuit")
+		{
+			transfComp->Rotate(Quaternion(Vector3D(0.0f, -1.0f, 0.0f) * static_cast<float>(RZE_Application::RZE().GetDeltaTime())));
+		}
+		else
+		{
+			transfComp->Rotate(Quaternion(Vector3D(1.0f, 1.0f, 1.0f) * static_cast<float>(RZE_Application::RZE().GetDeltaTime())));
+		}
+	});
+	handler.ForEach<TransformComponent>(RotateThingsFunc);
 }
 
 void FreeCameraSystem::ShutDown()
@@ -101,13 +118,13 @@ void FreeCameraSystem::MouseInput(CameraComponent& camComp, TransformComponent& 
 {
 	InputHandler& inputHandler = RZE_Application::RZE().GetInputHandler();
 
-	if (mMousePrevPos.LengthSq() == 0)
-	{
-		mMousePrevPos = inputHandler.GetMouseState().CurPosition;
-	}
-
 	if (RZE_Application::RZE().GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Pressed)
 	{
+		if (mMousePrevPos.LengthSq() == 0)
+		{
+			mMousePrevPos = inputHandler.GetMouseState().CurPosition;
+		}
+
 		Vector3D curPos = inputHandler.GetMouseState().CurPosition;
 		Vector3D diff = curPos - mMousePrevPos;
 		diff = diff * 0.1f; // #TODO(Josh) Move this to a better place (mouse sensitivity) -- config file
@@ -124,7 +141,6 @@ void FreeCameraSystem::MouseInput(CameraComponent& camComp, TransformComponent& 
 
 		mMousePrevPos = curPos;
 	}
-
 // 	if (RZE_Application::RZE().GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Middle) == EButtonState::ButtonState_Pressed)
 // 	{
 // 		Vector3D curPos = inputHandler.GetMouseState().CurPosition;

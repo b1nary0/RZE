@@ -29,6 +29,11 @@ Vector3D::Vector3D(const Vector2D& vec2D)
 {
 }
 
+Vector3D::Vector3D(const glm::vec3& vec)
+	: mVec(vec)
+{
+}
+
 float Vector3D::X() const
 {
 	return mVec.x;
@@ -63,6 +68,11 @@ const Vector3D& Vector3D::Normalize()
 {
 	mVec = glm::normalize(mVec);
 	return *this;
+}
+
+Vector3D Vector3D::Normalized() const
+{
+	return Vector3D(glm::normalize(mVec));
 }
 
 Vector3D Vector3D::Cross(const Vector3D& other) const

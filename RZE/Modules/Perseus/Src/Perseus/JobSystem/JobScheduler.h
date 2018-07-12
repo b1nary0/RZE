@@ -18,8 +18,12 @@ namespace Perseus
 		static std::mutex JobMutex;
 	public:
 		JobScheduler();
-		~JobScheduler() = default;
+		~JobScheduler();
 
+	public:
+		void ShutDown();
+
+	public:
 		void PushJob(Job::Task task);
 		bool RequestJob(Job& outJob);
 
@@ -40,6 +44,6 @@ namespace Perseus
 		WorkerThread mWorkerThreads[PERSEUS_MAX_WORKER_THREADS];
 		JobQueue mJobQueue;
 
-
+		bool bShouldWait;
 	};
 }
