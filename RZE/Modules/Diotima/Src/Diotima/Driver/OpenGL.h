@@ -394,7 +394,7 @@ public:
 		return instance;
 	}
 
-	void Init(const OpenGLCreationParams& creationParams);
+	void Init(const OpenGLCreationParams& creationParams) const;
 
 	void ClearColor(const GLfloat red, const  GLfloat green, const  GLfloat blue, const  GLfloat alpha) const;
 	void Clear(const GLuint mask) const;
@@ -407,12 +407,12 @@ public:
 	//
 	// Configuration
 	//
-	void SetSwapInterval(GLint val);
+	void SetSwapInterval(GLint val) const;
 
 	//
 	// Helpers
 	//
-	void LogShaderInfo(const GLuint shaderProgramID);
+	void LogShaderInfo(const GLuint shaderProgramID) const;
 
 	//
 	// Buffers
@@ -435,7 +435,7 @@ public:
 	void SetFramebufferTexture2D(const EGLBufferTarget::T target, const EGLAttachmentPoint::T attachmentPoint, const EGLTextureTarget::T textureTarget, GLuint texture, GLint mipLevel) const;
 	
 	void AllocateRenderbufferStorage(GLenum internalFormat, GLsizei width, GLsizei height) const;
-	void AttachRenderBufferToFrameBuffer(const EGLAttachmentPoint::T attachmentPoint, GLuint bufferObjectHandle);
+	void AttachRenderBufferToFrameBuffer(const EGLAttachmentPoint::T attachmentPoint, GLuint bufferObjectHandle) const;
 
 	//
 	//
@@ -480,7 +480,7 @@ public:
 	//
 	void GenerateTexture(GLsizei numTextures, GLuint* textureID) const;
 	void BindTexture(GLenum target, GLuint textureID) const;
-	void SetTextureParami(GLenum target, GLenum paramName, GLint param);
+	void SetTextureParami(GLenum target, GLenum paramName, GLint param) const;
 	void TextureImage2D(
 		GLenum target,
 		GLint level,
@@ -491,11 +491,11 @@ public:
 		GLenum format,
 		GLenum type,
 		const GLvoid* data
-	);
+	) const;
 
-	void SetBlendFuncParams(GLenum sourceFactor, GLenum destFactor);
+	void SetBlendFuncParams(GLenum sourceFactor, GLenum destFactor) const;
 
 private:
 
-	void InitGLEW();
+	void InitGLEW() const;
 };

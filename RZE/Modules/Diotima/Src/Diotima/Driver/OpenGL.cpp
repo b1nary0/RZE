@@ -12,7 +12,7 @@ OpenGLRHI::~OpenGLRHI()
 {
 }
 
-void OpenGLRHI::Init(const OpenGLCreationParams& creationParams)
+void OpenGLRHI::Init(const OpenGLCreationParams& creationParams) const
 {
 	LOG_CONSOLE_ARGS("OpenGL version is %s", glGetString(GL_VERSION));
 
@@ -22,7 +22,7 @@ void OpenGLRHI::Init(const OpenGLCreationParams& creationParams)
 	InitGLEW();
 }
 
-void OpenGLRHI::InitGLEW()
+void OpenGLRHI::InitGLEW() const
 {
 	glewExperimental = true;
 
@@ -68,12 +68,12 @@ void OpenGLRHI::Viewport(GLint posX, GLint posY, GLsizei sizeX, GLsizei sizeY) c
 	glViewport(posX, posY, sizeX, sizeY);
 }
 
-void OpenGLRHI::SetSwapInterval(GLint val)
+void OpenGLRHI::SetSwapInterval(GLint val) const
 {
 	wglSwapIntervalEXT(val);
 }
 
-void OpenGLRHI::LogShaderInfo(const GLuint shaderProgramID)
+void OpenGLRHI::LogShaderInfo(const GLuint shaderProgramID) const
 {
 	GLint length;
 	GetShaderiv(shaderProgramID, EGLShaderStatusParam::InfoLogLength, &length);
@@ -174,7 +174,7 @@ void OpenGLRHI::AllocateRenderbufferStorage(GLenum internalFormat, GLsizei width
 	AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
-void OpenGLRHI::AttachRenderBufferToFrameBuffer(const EGLAttachmentPoint::T attachmentPoint, GLuint bufferObjectHandle)
+void OpenGLRHI::AttachRenderBufferToFrameBuffer(const EGLAttachmentPoint::T attachmentPoint, GLuint bufferObjectHandle) const
 {
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachmentPoint, GL_RENDERBUFFER, bufferObjectHandle);
 	AssertExpr(glGetError() == GL_NO_ERROR);
@@ -359,7 +359,7 @@ void OpenGLRHI::BindTexture(GLenum target, GLuint textureID) const
 	AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
-void OpenGLRHI::SetTextureParami(GLenum target, GLenum paramName, GLint param)
+void OpenGLRHI::SetTextureParami(GLenum target, GLenum paramName, GLint param) const
 {
 	glTexParameteri(target, paramName, param);
 	AssertExpr(glGetError() == GL_NO_ERROR);
@@ -375,13 +375,13 @@ void OpenGLRHI::TextureImage2D(
 	GLenum format,
 	GLenum type,
 	const GLvoid* data
-)
+) const
 {
 	glTexImage2D(target, level, internalFormat, width, height, border, format, type, data);
 	AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
-void OpenGLRHI::SetBlendFuncParams(GLenum sourceFactor, GLenum destFactor)
+void OpenGLRHI::SetBlendFuncParams(GLenum sourceFactor, GLenum destFactor) const
 {
 	glBlendFunc(sourceFactor, destFactor);
 	AssertExpr(glGetError() == GL_NO_ERROR);
