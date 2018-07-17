@@ -172,7 +172,7 @@ namespace Apollo
 	{
 		while (!mComponentsAddedThisFrame.empty())
 		{
-			ComponentIDQueueData data = mComponentsAddedThisFrame.front();
+			const ComponentIDQueueData& data = mComponentsAddedThisFrame.front();
 			mComponentsAddedThisFrame.pop();
 
 			auto& it = mOnComponentAddedMap.find(data.mComponentID);
