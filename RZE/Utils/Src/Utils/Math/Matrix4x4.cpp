@@ -13,9 +13,6 @@ Matrix4x4::Matrix4x4(const glm::mat4& mat)
 	mMat = mat;
 }
 
-//
-// Thanks Phil
-//
 Matrix4x4 Matrix4x4::CreateInPlace(const Vector3D& position, const Vector3D& scale, const Quaternion& rotation)
 {
 	glm::mat4 matrix = glm::translate(glm::mat4(), position.GetInternalVec());
