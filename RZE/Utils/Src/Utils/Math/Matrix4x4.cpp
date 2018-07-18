@@ -13,37 +13,13 @@ Matrix4x4::Matrix4x4(const glm::mat4& mat)
 	mMat = mat;
 }
 
-//
-// Thanks Phil
-//
 Matrix4x4 Matrix4x4::CreateInPlace(const Vector3D& position, const Vector3D& scale, const Quaternion& rotation)
 {
-	const Vector3D axisNormalized = rotation.ToAxis().Normalized();
-	const float angle = rotation.ToAngle();
+	glm::mat4 matrix = glm::translate(glm::mat4(), position.GetInternalVec());
+	matrix = glm::rotate(matrix, rotation.ToAngle(), rotation.ToAxis().GetInternalVec());
+	matrix = glm::scale(matrix, scale.GetInternalVec());
 
-	const float cosine = std::cos(angle);
-	const float sine = std::sin(angle);
-	const Vector3D temp(axisNormalized * (1.f - cosine));
-
-	Matrix4x4 Matrix;
-	Matrix.mMat[0][0] = (cosine + temp.X() * axisNormalized.X()) * scale.X();
-	Matrix.mMat[0][1] = 0 + temp.X() * axisNormalized.Y() + sine * axisNormalized.Z();
-	Matrix.mMat[0][2] = 0 + temp.X() * axisNormalized.Z() - sine * axisNormalized.Y();
-	Matrix.mMat[0][3] = 0;
-
-	Matrix.mMat[1][0] = 0 + temp.Y() * axisNormalized.X() - sine * axisNormalized.Z();
-	Matrix.mMat[1][1] = (cosine + temp.Y() * axisNormalized.Y()) * scale.Y();
-	Matrix.mMat[1][2] = 0 + temp.Y() * axisNormalized.Z() + sine * axisNormalized.X();
-	Matrix.mMat[1][3] = 0;
-
-	Matrix.mMat[2][0] = 0 + temp.Z() * axisNormalized.X() + sine * axisNormalized.Y();
-	Matrix.mMat[2][1] = 0 + temp.Z() * axisNormalized.Y() - sine * axisNormalized.X();
-	Matrix.mMat[2][2] = (cosine + temp.Z() * axisNormalized.Z()) * scale.Z();
-	Matrix.mMat[2][3] = 0;
-
-	Matrix.mMat[3] = glm::vec4(position.GetInternalVec(), 1.0f);
-
-	return Matrix;
+	return Matrix4x4(matrix);
 }
 
 Matrix4x4 Matrix4x4::CreateViewMatrix(const Vector3D& eyePos, const Vector3D& centerPos, const Vector3D& upDir)
