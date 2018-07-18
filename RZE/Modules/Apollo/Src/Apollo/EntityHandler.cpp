@@ -117,21 +117,17 @@ namespace Apollo
 	{
 		FlushComponentIDQueues();
 
-		Perseus::Job::Task work([this]()
+		for (size_t idx = 0; idx < mSystems.size(); ++idx)
 		{
-			for (size_t idx = 0; idx < mSystems.size(); ++idx)
-			{
-				EntitySystem* system = mSystems[idx];
+			EntitySystem* system = mSystems[idx];
 
-				const EntityComponentFilter& filter = system->GetComponentFilter();
-				std::vector<EntityID> filteredEntities;
+			const EntityComponentFilter& filter = system->GetComponentFilter();
+			std::vector<EntityID> filteredEntities;
 
-				filter.FilterAtLeast(mEntities, filteredEntities);
+			filter.FilterAtLeast(mEntities, filteredEntities);
 
-				system->Update(filteredEntities);
-			}
-		});
-		Perseus::JobScheduler::Get().PushJob(work);
+			system->Update(filteredEntities);
+		}
 	}
 
 	void EntityHandler::ShutDown()
