@@ -107,7 +107,7 @@ void RZE_Engine::Init()
 		RegisterWindowEvents();
 		RegisterEngineComponentTypes();
 
-		// #Josh(TEST)
+		// #TODO(Pull this out into a more explicit initialization)
 		Perseus::JobScheduler::Get();
 
 		mRenderer = new Diotima::Renderer();
