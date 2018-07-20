@@ -4,7 +4,7 @@
 
 #include <Utils/Math/Vector3D.h>
 
-struct LightSourceComponent : public Apollo::Component<LightSourceComponent>
+struct LightSourceComponent final : public Apollo::Component<LightSourceComponent>
 {
 	LightSourceComponent()
 	{}

@@ -12,15 +12,15 @@ namespace Apollo
 	class ComponentHandler;
 }
 
-class RenderSystem : public Apollo::EntitySystem
+class RenderSystem final : public Apollo::EntitySystem
 {
 public:
 	RenderSystem(Apollo::EntityHandler* const entityHandler);
 
 public:
-	virtual void Initialize();
-	virtual void Update(const std::vector<Apollo::EntityID>& entities);
-	virtual void ShutDown();
+	virtual void Initialize() override;
+	virtual void Update(const std::vector<Apollo::EntityID>& entities) override;
+	virtual void ShutDown() override;
 
 private:
 	void RegisterForComponentNotifications();

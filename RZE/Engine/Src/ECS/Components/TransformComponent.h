@@ -6,7 +6,7 @@
 #include <Utils/Math/Quaternion.h>
 #include <Utils/Math/Vector3D.h>
 
-struct TransformComponent : public Apollo::Component<TransformComponent>
+struct TransformComponent final : public Apollo::Component<TransformComponent>
 {
 	TransformComponent() = default;
 	

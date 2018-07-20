@@ -17,8 +17,6 @@
 
 #include <Utils/DebugUtils/Debug.h>
 
-#include <Apollo/EntityComponentSystem.h>
-
 #include <Diotima/Renderer.h>
 
 #include <Perseus/JobSystem/JobScheduler.h>

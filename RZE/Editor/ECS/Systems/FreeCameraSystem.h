@@ -7,16 +7,16 @@
 struct CameraComponent;
 struct TransformComponent;
 
-class FreeCameraSystem : public Apollo::EntitySystem
+class FreeCameraSystem final : public Apollo::EntitySystem
 {
 public:
 	FreeCameraSystem(Apollo::EntityHandler* const entityHandler);
 	virtual ~FreeCameraSystem();
 
 public:
-	virtual void Initialize();
-	virtual void Update(const std::vector<Apollo::EntityID>& entities);
-	virtual void ShutDown();
+	virtual void Initialize() override;
+	virtual void Update(const std::vector<Apollo::EntityID>& entities) override;
+	virtual void ShutDown() override;
 
 private:
 	void KeyboardInput(CameraComponent& camComp, TransformComponent& transfComp);
