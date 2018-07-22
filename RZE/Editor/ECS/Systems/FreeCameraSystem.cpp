@@ -59,7 +59,7 @@ void FreeCameraSystem::Update(const std::vector<Apollo::EntityID>& entities)
  		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
  		
  		const float deltaT = static_cast<float>(RZE_Application::RZE().GetDeltaTime());
-  		transfComp->Rotate(Quaternion(Vector3D(0.0f, 1.0f, 0.0f) * deltaT));
+  		transfComp->Rotate(Quaternion(Vector3D(0.0f, 0.75f, 0.0f) * deltaT));
 	});
 	handler.ForEach<TransformComponent>(RotateThingsFunc);
 }

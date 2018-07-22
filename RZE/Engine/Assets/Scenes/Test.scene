@@ -7,7 +7,7 @@
         {
             "TransformComponent":
             {
-                "Position": [-25, 25, 40],
+                "Position": [0, 5, 15],
                 "Scale": [1, 1, 1],
                 "Rotation": [0, 0, 0]
             },
@@ -16,7 +16,7 @@
                 "FOV": 45,
                 "NearCull": 0.1,
                 "FarCull": 1000,
-                "Forward": [0.5, -0.5, -1.0],
+                "Forward": [0, 0, -1.0],
                 "UpDir":[0.0, 1.0, 0.0]
             }
         }
@@ -42,51 +42,19 @@
         }
       }
     },
-    "Floor":
-    {
-      "components":
-      {
-        "TransformComponent":
-        {
-          "Position": [2, 0, 4],
-          "Scale": [10, 0.5, 10],
-          "Rotation": [0, 0, 0]
-        },
-        "MeshComponent":
-        {
-          "ResourcePath": "Engine/Assets/3D/Cube.obj"
-        }
-      }
-	},
-	"RandomCube":
+	"Plane":
 	{
 	  "components":
 	  {
 		"TransformComponent":
 		{
-		  "Position": [5, 2, 0],
+		  "Position": [0, 0, 0],
 		  "Scale":[10, 10, 10],
 		  "Rotation":[0, 0, 0]
 		},
 		"MeshComponent":
 		{
-		  "ResourcePath": "Engine/Assets/3D/Cube.obj"
-		}
-	  }
-	},
-	"Nanosuit":
-	{
-	  "components":
-	  {
-		"TransformComponent":
-		{
-		  "Position": [-2, 2, -3],
-		  "Scale":[1, 1, 1],
-		  "Rotation":[0, 0, 0]
-		},
-		"MeshComponent":
-		{
-		  "ResourcePath": "Engine/Assets/3D/Nanosuit/Nanosuit.obj"
+		  "ResourcePath": "Engine/Assets/3D/FW190/FW190.obj"
 		}
 	  }
 	}

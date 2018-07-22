@@ -122,7 +122,8 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 			aiString str;
 			mat->GetTexture(aiTextureType_DIFFUSE, i, &str);
 
-			std::string filePath = "Engine/Assets/3D/Nanosuit/";
+			// #TODO(Josh::Store filepath in Model class [at least for time being] and form the right path here from the relative path)
+			std::string filePath = "Engine/Assets/3D/FW190/";
 			filePath.append(str.C_Str());
 
 			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(FilePath(filePath), Diotima::ETextureType::Diffuse);
