@@ -216,35 +216,6 @@ namespace Diotima
 		}
 	}
 
-	void Renderer::RenderToTexture_Test(RenderItemProtocol& itemProtocol)
-	{
-		const OpenGLRHI& openGL = OpenGLRHI::Get();
-
-		renderToTextureShader->Use();
-		renderToTextureShader->SetUniformMatrix4x4("UProjectionMat", camera.ProjectionMat);
-		renderToTextureShader->SetUniformMatrix4x4("UViewMat", camera.ViewMat);
-		renderToTextureShader->SetUniformMatrix4x4("UModelMat", itemProtocol.ModelMat);
-
-		for (auto& light : mLightingList)
-		{
-			renderToTextureShader->SetUniformVector3D("ULightPosition", light.Position);
-			renderToTextureShader->SetUniformVector3D("UViewPosition", camera.Position);
-			renderToTextureShader->SetUniformVector3D("ULightColor", light.Color);
-			renderToTextureShader->SetUniformFloat("ULightStrength", light.Strength);
-		}
-
-		const std::vector<GFXMesh*>& meshList = *itemProtocol.MeshData;
-		for (auto& mesh : meshList)
-		{
-			mesh->GetVAO().Bind();
-
-			OpenGLRHI::Get().DrawElements(EGLDrawMode::Triangles, mesh->GetIndices().size(), EGLDataType::UnsignedInt, nullptr);
-
-			mesh->GetVAO().Unbind();
-		}
-		openGL.BindTexture(GL_TEXTURE_2D, 0);
-	}
-
 	Renderer::RenderItemProtocol::RenderItemProtocol()
 	{
 		MeshData = nullptr;

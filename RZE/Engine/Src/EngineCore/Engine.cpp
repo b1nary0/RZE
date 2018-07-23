@@ -179,11 +179,11 @@ void RZE_Engine::InitializeApplication(Functor<RZE_Application* const> createGam
 	mApplication->SetWindow(mMainWindow);
 
 	const Vector2D& windowDims = mEngineConfig->GetWindowSettings().GetDimensions();
-	mApplication->GetRenderTarget()->SetWidth(static_cast<int>(windowDims.X()));
-	mApplication->GetRenderTarget()->SetHeight(static_cast<int>(windowDims.Y()));
+	mApplication->GetRenderTarget().SetWidth(static_cast<int>(windowDims.X()));
+	mApplication->GetRenderTarget().SetHeight(static_cast<int>(windowDims.Y()));
 
 	// #TODO(Josh) Investigate a better transfer point than this re: render target setting
-	mRenderer->SetRenderTarget(mApplication->GetRenderTarget());
+	mRenderer->SetRenderTarget(&mApplication->GetRenderTarget());
 
 	mApplication->Start();
 }
