@@ -17,8 +17,6 @@
 
 #include <Utils/DebugUtils/Debug.h>
 
-#include <Apollo/EntityComponentSystem.h>
-
 #include <Diotima/Renderer.h>
 
 #include <Perseus/JobSystem/JobScheduler.h>
@@ -109,7 +107,7 @@ void RZE_Engine::Init()
 		RegisterWindowEvents();
 		RegisterEngineComponentTypes();
 
-		// #Josh(TEST)
+		// #TODO(Pull this out into a more explicit initialization)
 		Perseus::JobScheduler::Get();
 
 		mRenderer = new Diotima::Renderer();

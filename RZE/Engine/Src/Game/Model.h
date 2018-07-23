@@ -21,7 +21,7 @@ public:
 	virtual ~Model3D();
 
 public:
-	virtual bool Load(const std::string& filePath) override;
+	virtual bool Load(const FilePath& filePath) override;
 	virtual void Release() override;
 
 public:
@@ -31,7 +31,12 @@ public:
 private:
 	void ProcessNode(const aiNode& node, const aiScene& scene);
 	void ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFXMesh& outMesh);
-	std::vector<Diotima::GFXMesh*> mMeshList;
 
+	FilePath GetTextureFilePath(const std::string& fileName);
+
+private:
+	FilePath mFilePath;
+
+	std::vector<Diotima::GFXMesh*> mMeshList;
 	std::vector<ResourceHandle> mTextureHandles;
 };

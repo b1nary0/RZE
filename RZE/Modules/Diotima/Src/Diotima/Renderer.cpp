@@ -30,12 +30,12 @@ void CreateRenderToTextureShader()
 	const FilePath fragShaderFilePath("Engine/Assets/Shaders/RenderToTextureFrag.shader");
 
 	Diotima::GFXShader* vertShader = new Diotima::GFXShader(EGLShaderType::Vertex, "RenderToTextureVertex");
-	vertShader->Load(vertShaderFilePath.GetAbsolutePath());
+	vertShader->Load(vertShaderFilePath);
 	vertShader->Create();
 	vertShader->Compile();
 
 	Diotima::GFXShader* fragShader = new Diotima::GFXShader(EGLShaderType::Fragment, "RenderToTextureFragment");
-	fragShader->Load(fragShaderFilePath.GetAbsolutePath());
+	fragShader->Load(fragShaderFilePath);
 	fragShader->Create();
 	fragShader->Compile();
 

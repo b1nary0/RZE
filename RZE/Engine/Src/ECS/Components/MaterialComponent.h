@@ -6,7 +6,7 @@
 
 #include <Diotima/Graphics/Material.h>
 
-struct MaterialComponent : public Apollo::Component<MaterialComponent>
+struct MaterialComponent final : public Apollo::Component<MaterialComponent>
 {
 	MaterialComponent() = default;
 

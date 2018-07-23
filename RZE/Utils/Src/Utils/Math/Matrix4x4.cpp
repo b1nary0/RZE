@@ -47,41 +47,6 @@ void Matrix4x4::Scale(const Vector3D& scale)
 	mMat = glm::scale(mMat, scale.GetInternalVec());
 }
 
-const Vector3D Matrix4x4::GetPosition() const
-{
-	return std::move(Vector3D(mMat[3][0], mMat[3][1], mMat[3][2]));
-}
-
-const Quaternion Matrix4x4::GetRotation() const
-{
-	return Quaternion(1.0f);
-}
-
-const Vector3D Matrix4x4::GetScale() const
-{
-	return Vector3D(1.0f);
-}
-
-void Matrix4x4::SetPosition(const Vector3D& position)
-{
- 	mMat[3][0] = position.X();
- 	mMat[3][1] = position.Y();
- 	mMat[3][2] = position.Z();
- 	mMat[3][3] = 1.0f;
-}
-
-void Matrix4x4::SetRotation(const Quaternion& rotation)
-{
-	Rotate(rotation.ToAngle(), rotation.ToAxis());
-}
-
-void Matrix4x4::SetScale(const Vector3D& scale)
-{
-	mMat[0][0] = scale.X();
-	mMat[1][1] = scale.Y();
-	mMat[2][2] = scale.Z();
-}
-
 const glm::mat4& Matrix4x4::GetInternalMat() const
 {
 	return mMat;

@@ -4,7 +4,7 @@
 
 #include <EngineCore/Resources/ResourceHandler.h>
 
-struct MeshComponent : Apollo::Component<MeshComponent>
+struct MeshComponent final : Apollo::Component<MeshComponent>
 {
 	MeshComponent(const FilePath& resourcePath)
 		: ResourcePath(resourcePath)
