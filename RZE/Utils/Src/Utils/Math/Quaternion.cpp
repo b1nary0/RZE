@@ -1,6 +1,7 @@
 #include <Utils/StdAfx.h>
 #include <Utils/Math/Quaternion.h>
 
+#include <Utils/Math/Math.h>
 #include <Utils/Math/Vector3D.h>
 
 Quaternion::Quaternion()
@@ -14,8 +15,9 @@ Quaternion::Quaternion(const float x, const float y, const float z, const float 
 }
 
 Quaternion::Quaternion(const Vector3D& angles)
-	: mQuat(angles.GetInternalVec())
 {
+	Vector3D anglesInRadians(angles.X() * MathUtils::ToRadians, angles.Y() * MathUtils::ToRadians, angles.Z() * MathUtils::ToRadians);
+	mQuat = anglesInRadians.GetInternalVec();
 }
 
 Quaternion::Quaternion(const glm::quat& quat)
