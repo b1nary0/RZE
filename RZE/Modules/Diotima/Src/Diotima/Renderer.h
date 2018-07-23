@@ -21,6 +21,7 @@ namespace Diotima
 	class GFXShaderPipeline;
 	class GFXTexture2D;
 	
+	// #TODO(Josh::Maybe not make this a subsystem and do away with the subsystem idea. Don't think I'm really using it)
 	class Renderer : public ISubSystem
 	{
 	public:
@@ -92,8 +93,6 @@ namespace Diotima
 		
 	private:
 		void RenderSingleItem(RenderItemProtocol& itemProtocol);
-
-		void RenderToTexture_Test(RenderItemProtocol& itemProtocol);
 
 	private:
 		Vector2D mCanvasSize;

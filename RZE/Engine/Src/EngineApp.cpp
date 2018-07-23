@@ -56,9 +56,10 @@ void RZE_Application::RegisterInputEvents(InputHandler& inputHandler)
 
 }
 
-Diotima::RenderTarget* RZE_Application::GetRenderTarget() const
+Diotima::RenderTarget& RZE_Application::GetRenderTarget() const
 {
-	return mRenderTarget;
+	AssertNotNull(mRenderTarget);
+	return *mRenderTarget;
 }
 
 void RZE_Application::Initialize()
