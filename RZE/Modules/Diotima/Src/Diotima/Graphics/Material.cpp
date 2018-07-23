@@ -18,7 +18,7 @@ namespace Diotima
 	{
 	}
 
-	bool Diotima::GFXMaterial::Load(const std::string& filePath)
+	bool Diotima::GFXMaterial::Load(const FilePath& filePath)
 	{
 		// 	File materialFile(filePath);
 		// 

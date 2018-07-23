@@ -36,3 +36,15 @@ const std::string& FilePath::GetRelativePath() const
 	// #TODO(Josh) for now until we develop this class better
 	return mRelativePath;
 }
+
+const std::string FilePath::GetAbsoluteDirectoryPath() const
+{
+	size_t substrCount = mAbsolutePath.find_last_of('/');
+	return mAbsolutePath.substr(0, substrCount + 1);
+}
+
+const std::string FilePath::GetRelativeDirectoryPath() const
+{
+	size_t substrCount = mRelativePath.find_last_of('/');
+	return mRelativePath.substr(0, substrCount + 1);
+}

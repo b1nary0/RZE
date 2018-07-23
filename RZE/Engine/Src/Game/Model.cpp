@@ -16,10 +16,12 @@ Model3D::~Model3D()
 {
 }
 
-bool Model3D::Load(const std::string& filePath)
+bool Model3D::Load(const FilePath& filePath)
 {
+	mFilePath = filePath;
+
 	Assimp::Importer ModelImporter;
-	const aiScene* AssimpScene = ModelImporter.ReadFile(filePath,
+	const aiScene* AssimpScene = ModelImporter.ReadFile(mFilePath.GetAbsolutePath(),
 		aiProcess_Triangulate
 		| aiProcess_GenNormals);
 
@@ -31,7 +33,7 @@ bool Model3D::Load(const std::string& filePath)
 	if (bAssimpNotLoaded)
 	{
 		// #TODO More informative error message.
-		LOG_CONSOLE_ARGS("Failed to load model from [%s].", filePath.c_str());
+		LOG_CONSOLE_ARGS("Failed to load model from [%s].", mFilePath.GetRelativePath().c_str());
 		return false;
 	}
 
@@ -122,11 +124,8 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 			aiString str;
 			mat->GetTexture(aiTextureType_DIFFUSE, i, &str);
 
-			// #TODO(Josh::Store filepath in Model class [at least for time being] and form the right path here from the relative path)
-			std::string filePath = "Engine/Assets/3D/FW190/";
-			filePath.append(str.C_Str());
-
-			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(FilePath(filePath), Diotima::ETextureType::Diffuse);
+			FilePath texturePath = GetTextureFilePath(str.C_Str());
+			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(texturePath, Diotima::ETextureType::Diffuse);
 			if (textureHandle.IsValid())
 			{
 				outMesh.AddTexture(RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXTexture2D>(textureHandle));
@@ -134,7 +133,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 			}
 			else
 			{
-				LOG_CONSOLE_ARGS("Could not load texture at [%s]", filePath.c_str());
+				LOG_CONSOLE_ARGS("Could not load texture at [%s]", texturePath.GetRelativePath().c_str());
 			}
 		}
 
@@ -143,11 +142,8 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 			aiString str;
 			mat->GetTexture(aiTextureType_SPECULAR, i, &str);
 
-			// #TODO(Josh) Obviously this is not to be kept...
-			std::string filePath = "Engine/Assets/3D/Nanosuit/";
-			filePath.append(str.C_Str());
-
-			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(FilePath(filePath), Diotima::ETextureType::Specular);
+			FilePath texturePath = GetTextureFilePath(str.C_Str());
+			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(texturePath, Diotima::ETextureType::Specular);
 			if (textureHandle.IsValid())
 			{
 				mTextureHandles.emplace_back(textureHandle);
@@ -155,10 +151,20 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 			}
 			else
 			{
-				LOG_CONSOLE_ARGS("Could not load texture at [%s]", filePath.c_str());
+				LOG_CONSOLE_ARGS("Could not load texture at [%s]", texturePath.GetRelativePath().c_str());
 			}
 		}
 	}
 
 	outMesh.OnLoadFinished();
+}
+
+// #TODO(Josh::Pull this out into a util function)
+FilePath Model3D::GetTextureFilePath(const std::string& fileName)
+{
+	// #TODO(Josh::We need to bake the texture folder structure here, or get on proper asset referencing system)
+	std::string path = mFilePath.GetRelativeDirectoryPath();
+	path.append(fileName);
+
+	return FilePath(path);
 }

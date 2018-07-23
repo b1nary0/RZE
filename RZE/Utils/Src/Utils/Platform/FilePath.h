@@ -16,6 +16,9 @@ public:
 	const std::string& GetAbsolutePath() const;
 	const std::string& GetRelativePath() const;
 
+	const std::string GetAbsoluteDirectoryPath() const;
+	const std::string GetRelativeDirectoryPath() const;
+
 private:
 	std::string mAbsolutePath;
 	std::string mRelativePath;

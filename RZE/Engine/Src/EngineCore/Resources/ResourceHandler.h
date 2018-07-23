@@ -171,7 +171,7 @@ IResource* ResourceHandler::CreateAndLoadResource(const FilePath& resourcePath, 
 {
 	IResource* resource = new ResourceT(args...);//new (mAllocator.Allocate(sizeof(ResourceT))) ResourceT;
 	AssertNotNull(resource);
-	if (!resource->Load(resourcePath.GetAbsolutePath()))
+	if (!resource->Load(resourcePath))
 	{
 		return nullptr;
 	}

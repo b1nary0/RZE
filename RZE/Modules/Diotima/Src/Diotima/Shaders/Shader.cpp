@@ -26,9 +26,9 @@ namespace Diotima
 		}
 	}
 
-	bool GFXShader::Load(const std::string& filePath)
+	bool GFXShader::Load(const FilePath& filePath)
 	{
-		File shaderFile(filePath);
+		File shaderFile(filePath.GetAbsolutePath());
 		mSourceCode = shaderFile.Content();
 
 		return !shaderFile.Empty();

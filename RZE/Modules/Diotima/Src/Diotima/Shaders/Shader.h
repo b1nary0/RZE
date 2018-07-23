@@ -28,7 +28,7 @@ namespace Diotima
 		GFXShader(const EGLShaderType::T shaderType, const std::string& shaderName);
 		~GFXShader();
 
-		virtual bool Load(const std::string& filePath) override;
+		virtual bool Load(const FilePath& filePath) override;
 		virtual void Release() override;
 
 		U32 GetShaderID() const;
