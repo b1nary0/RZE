@@ -20,7 +20,6 @@ namespace Diotima
 	class GFXShaderPipeline;
 	class GFXTexture2D;
 	
-	// #TODO(Josh::Maybe not make this a subsystem and do away with the subsystem idea. Don't think I'm really using it)
 	class Renderer
 	{
 	public:
