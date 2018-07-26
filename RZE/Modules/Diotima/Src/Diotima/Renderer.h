@@ -10,7 +10,6 @@
 #include <Diotima/Driver/GLRenderTarget.h>
 #include <Diotima/Graphics/Material.h>
 
-#include <Utils/Interfaces/SubSystem.h>
 #include <Utils/Math/Vector2D.h>
 
 namespace Diotima
@@ -22,7 +21,7 @@ namespace Diotima
 	class GFXTexture2D;
 	
 	// #TODO(Josh::Maybe not make this a subsystem and do away with the subsystem idea. Don't think I'm really using it)
-	class Renderer : public ISubSystem
+	class Renderer
 	{
 	public:
 		struct RenderItemProtocol
@@ -73,9 +72,9 @@ namespace Diotima
 
 		// ISubSystem interface
 	public:
-		virtual void Initialize();
-		virtual void Update();
-		virtual void ShutDown();
+		void Initialize();
+		void Update();
+		void ShutDown();
 
 	public:
 		Int32 AddRenderItem(const RenderItemProtocol& itemProtocol);

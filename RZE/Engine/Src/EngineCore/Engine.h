@@ -7,7 +7,6 @@
 // @todo:josh this is where the weird include-before issue is
 #include <Events/EventHandler.h>
 
-#include <EngineCore/SubSystemHandler.h>
 #include <EngineCore/Config/EngineConfig.h>
 #include <EngineCore/Input/InputHandler.h>
 #include <EngineCore/Resources/ResourceHandler.h>
