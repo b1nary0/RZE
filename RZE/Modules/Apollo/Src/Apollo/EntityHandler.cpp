@@ -2,8 +2,6 @@
 
 #include <Utils/Platform/Timers/HiResTimer.h>
 
-#include <Perseus/JobSystem/JobScheduler.h>
-
 namespace Apollo
 {
 	EntityHandler::ComponentNameList EntityHandler::sComponentNameRegistry;

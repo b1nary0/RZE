@@ -14,8 +14,6 @@
 #include <Diotima/Graphics/Texture2D.h>
 #include <Diotima/Shaders/ShaderPipeline.h>
 
-#include <Perseus/JobSystem/JobScheduler.h>
-
 #include <Game/Model.h>
 
 #include <Utils/Platform/FilePath.h>
@@ -91,7 +89,7 @@ void RenderSystem::Initialize()
 void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 {
 	Apollo::EntityHandler& handler = InternalGetEntityHandler();
-	Diotima::Renderer* const renderSystem = RZE_Application::RZE().GetRenderer();
+	Diotima::Renderer& renderer = RZE_Application::RZE().GetRenderer();
 
 	TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(mMainCameraEntity);
 	CameraComponent* const camComp = handler.GetComponent<CameraComponent>(mMainCameraEntity);
@@ -103,21 +101,21 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 	Diotima::Renderer::CameraItemProtocol camera;
 	camera.ProjectionMat = camComp->ProjectionMat;
 	camera.ViewMat = camComp->ViewMat;
-	renderSystem->SetCamera(camera);
+	renderer.SetCamera(camera);
 
 	for (auto& entity : entities)
 	{
 		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
 
-		Diotima::Renderer::RenderItemProtocol& item = renderSystem->GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
+		Diotima::Renderer::RenderItemProtocol& item = renderer.GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
 		item.ModelMat = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
 	}
 
-	Functor<void, Apollo::EntityID> LightSourceFunc([this, &handler, &renderSystem](Apollo::EntityID entity)
+	Functor<void, Apollo::EntityID> LightSourceFunc([this, &handler, &renderer](Apollo::EntityID entity)
 	{
 		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
 
-		Diotima::Renderer::LightItemProtocol& item = renderSystem->GetLightProtocolByIdx(mLightItemEntityMap[entity]);
+		Diotima::Renderer::LightItemProtocol& item = renderer.GetLightProtocolByIdx(mLightItemEntityMap[entity]);
 		item.Position = transfComp->Position;
 	});
 
@@ -167,7 +165,7 @@ void RenderSystem::RegisterForComponentNotifications()
 
 			item.Material.Color = sDefaultFragColor;
 
-			Int32 itemIdx = RZE_Application::RZE().GetRenderer()->AddRenderItem(item);
+			Int32 itemIdx = RZE_Application::RZE().GetRenderer().AddRenderItem(item);
 			mRenderItemEntityMap[entityID] = itemIdx;
 		}
 	});
@@ -183,7 +181,7 @@ void RenderSystem::RegisterForComponentNotifications()
 		item.Color = lightComp->Color;
 		item.Strength = lightComp->Strength;
 
-		Int32 itemIdx = RZE_Application::RZE().GetRenderer()->AddLightItem(item);
+		Int32 itemIdx = RZE_Application::RZE().GetRenderer().AddLightItem(item);
 		mLightItemEntityMap[entityID] = itemIdx;
 	});
 	handler.RegisterForComponentAddNotification<LightSourceComponent>(OnLightSourceComponentAdded);
@@ -215,7 +213,7 @@ void RenderSystem::RegisterForComponentNotifications()
 		RZE_Application::RZE().GetResourceHandler().ReleaseResource(meshComponent->Resource);
 
 		Int32 renderIndex = mRenderItemEntityMap[entityID];
-		RZE_Application::RZE().GetRenderer()->RemoveRenderItem(renderIndex);
+		RZE_Application::RZE().GetRenderer().RemoveRenderItem(renderIndex);
 		mRenderItemEntityMap[entityID] = -1;
 	});
 	handler.RegisterForComponentRemovedNotification<MeshComponent>(OnMeshComponentRemoved);

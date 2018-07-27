@@ -19,8 +19,6 @@
 
 #include <Diotima/Renderer.h>
 
-#include <Perseus/JobSystem/JobScheduler.h>
-
 RZE_Engine::RZE_Engine()
 {
 	mMainWindow = nullptr;
@@ -106,10 +104,7 @@ void RZE_Engine::Init()
 
 		RegisterWindowEvents();
 		RegisterEngineComponentTypes();
-
-		// #TODO(Pull this out into a more explicit initialization)
-		Perseus::JobScheduler::Get();
-
+		
 		mRenderer = new Diotima::Renderer();
 		mRenderer->Initialize();
 		mRenderer->EnableVsync(mEngineConfig->GetEngineSettings().IsVSyncEnabled());
@@ -206,7 +201,7 @@ void RZE_Engine::RegisterWindowEvents()
 		else if (event.mWindowEvent.mEventInfo.mEventSubType == EWindowEventType::Window_Resize)
 		{
 			Vector2D newSize(event.mWindowEvent.mSizeX, event.mWindowEvent.mSizeY);
-			GetRenderer()->ResizeCanvas(newSize);
+			GetRenderer().ResizeCanvas(newSize);
 			DebugServices::HandleScreenResize(newSize);
 		}
 	});
@@ -245,8 +240,6 @@ void RZE_Engine::BeginShutDown()
 {
 	LOG_CONSOLE("Shutting engine down...");
 	
-	Perseus::JobScheduler::Get().ShutDown();
-
 	mActiveScene->Finish();
 	mApplication->ShutDown();
 	mResourceHandler.ShutDown();
@@ -275,6 +268,17 @@ void RZE_Engine::PostExit()
 ResourceHandler& RZE_Engine::GetResourceHandler()
 {
 	return mResourceHandler;
+}
+
+InputHandler& RZE_Engine::GetInputHandler()
+{
+	return mInputHandler;
+}
+
+Diotima::Renderer& RZE_Engine::GetRenderer()
+{
+	AssertNotNull(mRenderer);
+	return *mRenderer;
 }
 
 GameScene& RZE_Engine::GetActiveScene()
