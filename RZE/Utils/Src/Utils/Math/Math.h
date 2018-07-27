@@ -5,9 +5,9 @@
 
 namespace MathUtils
 {
-	const float Pi = 3.14159265359f;
-	const float ToRadians = Pi / 180.0f;
-	const float ToDegrees = 180.0f / Pi;
+	constexpr float Pi = 3.14159265359f;
+	constexpr float ToRadians = Pi / 180.0f;
+	constexpr float ToDegrees = 180.0f / Pi;
 
 	int Clamp(int value, int min, int max);
 	float Clampf(float value, float min, float max);

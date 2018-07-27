@@ -7,7 +7,6 @@
 // @todo:josh this is where the weird include-before issue is
 #include <Events/EventHandler.h>
 
-#include <EngineCore/SubSystemHandler.h>
 #include <EngineCore/Config/EngineConfig.h>
 #include <EngineCore/Input/InputHandler.h>
 #include <EngineCore/Resources/ResourceHandler.h>
@@ -46,8 +45,8 @@ public:
 	// #TODO(Josh) Need to figure out this weird connection of accessing engine from application, and application from engine.
 	RZE_Application&			GetApplication();
 	ResourceHandler&			GetResourceHandler();
-	InputHandler&				GetInputHandler() { return mInputHandler; }
-	Diotima::Renderer*			GetRenderer() const { return mRenderer; }
+	InputHandler&				GetInputHandler();
+	Diotima::Renderer&			GetRenderer();
 	GameScene&					GetActiveScene();
 
 

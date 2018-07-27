@@ -115,7 +115,7 @@ void RZE_Editor::SetupStyle()
 
 void RZE_Editor::SetupWidgets()
 {
-	AddWidget<SceneViewWidget>(EWidgetType_SceneView, GetRenderTarget());
+	AddWidget<SceneViewWidget>(EWidgetType_SceneView, &GetRenderTarget());
 	AddWidget<LogWidget>(EWidgetType_Log);
 	AddWidget<MainMenuWidget>(EWidgetType_MainMenu);
 	AddWidget<HierarchyViewWidget>(EWidgetType_HierarchyView);

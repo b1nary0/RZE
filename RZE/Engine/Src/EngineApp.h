@@ -27,9 +27,10 @@ public:
 
 	virtual bool ProcessInput(const InputHandler& handler);
 	virtual void RegisterInputEvents(InputHandler& inputHandler);
-	virtual Diotima::RenderTarget* GetRenderTarget() const;
 
 	virtual bool IsEditor() { return false; }
+	// #TODO(Josh::Take a look at a better API for what this needs to be non-const for)
+	Diotima::RenderTarget& GetRenderTarget() const;
 
 	static RZE_Engine& RZE() { return mEngine; }
 

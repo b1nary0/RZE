@@ -10,7 +10,6 @@
 #include <Diotima/Driver/GLRenderTarget.h>
 #include <Diotima/Graphics/Material.h>
 
-#include <Utils/Interfaces/SubSystem.h>
 #include <Utils/Math/Vector2D.h>
 
 namespace Diotima
@@ -21,7 +20,7 @@ namespace Diotima
 	class GFXShaderPipeline;
 	class GFXTexture2D;
 	
-	class Renderer : public ISubSystem
+	class Renderer
 	{
 	public:
 		struct RenderItemProtocol
@@ -72,9 +71,9 @@ namespace Diotima
 
 		// ISubSystem interface
 	public:
-		virtual void Initialize();
-		virtual void Update();
-		virtual void ShutDown();
+		void Initialize();
+		void Update();
+		void ShutDown();
 
 	public:
 		Int32 AddRenderItem(const RenderItemProtocol& itemProtocol);
@@ -92,8 +91,6 @@ namespace Diotima
 		
 	private:
 		void RenderSingleItem(RenderItemProtocol& itemProtocol);
-
-		void RenderToTexture_Test(RenderItemProtocol& itemProtocol);
 
 	private:
 		Vector2D mCanvasSize;
