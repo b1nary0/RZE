@@ -2,6 +2,8 @@
 
 #include <RZE.h>
 
+#include <Windowing/Win32Window.h>
+
 class EventHandler;
 class Win32Window;
 
@@ -25,7 +27,9 @@ public:
 	virtual void Update();
 	virtual void ShutDown();
 
+	// Returning TRUE will fire callbacks registered with RZE. Returning FALSE steals input.
 	virtual bool ProcessInput(const InputHandler& handler);
+
 	virtual void RegisterInputEvents(InputHandler& inputHandler);
 
 	virtual bool IsEditor() { return false; }
@@ -36,6 +40,8 @@ public:
 
 protected:
 	virtual void Initialize();
+
+	Win32Window& InternalGetWindow();
 
 	void SetRunning(bool bRunning);
 	void ShowWindow();

@@ -42,6 +42,8 @@ public:
 	void SetCursorEnabled(bool enabled);
 	void ResetCursorToCenter();
 
+	void SetTitle(const std::string& title);
+
 	const std::string& GetTitle() const;
 	const Vector2D& GetDimensions() const;
 
