@@ -21,10 +21,13 @@
 
 static Vector4D sDefaultFragColor(0.25f, 0.25f, 0.25f, 1.0f);
 
+// Render helpers
+//-----------------------------------------
 Diotima::GFXShaderPipeline* defaultShader;
 Diotima::GFXShaderPipeline* textureShader;
 void CreateDefaultShader();
 void CreateTextureShader();
+//-----------------------------------------
 
 RenderSystem::RenderSystem(Apollo::EntityHandler* const entityHandler)
 	: Apollo::EntitySystem(entityHandler)
