@@ -43,6 +43,11 @@ void Win32Window::ResetCursorToCenter()
 	}
 }
 
+void Win32Window::SetTitle(const std::string& title)
+{
+	::SetWindowTextA(mOSWindowHandleData.windowHandle, (LPCSTR)title.c_str());
+}
+
 const std::string& Win32Window::GetTitle() const
 {
 	return mTitle;

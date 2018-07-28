@@ -15,6 +15,8 @@ void RZE_Editor::Start()
 {
 	RZE_Application::Start();
 	
+	InternalGetWindow().SetTitle("RZE Studio");
+
 	SetupWidgets();
 }
 

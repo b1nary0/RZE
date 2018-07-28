@@ -70,6 +70,12 @@ void RZE_Application::Initialize()
 	mRenderTarget = new Diotima::GLRenderTargetTexture();
 }
 
+Win32Window& RZE_Application::InternalGetWindow()
+{
+	AssertNotNull(mWindow);
+	return *mWindow;
+}
+
 void RZE_Application::SetRunning(bool bRunning)
 {
 	bIsRunning = bRunning;
