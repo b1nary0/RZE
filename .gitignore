@@ -292,3 +292,4 @@ __pycache__/
 
 RZE/_Project/imgui\.ini
 !Tools
+!RZE/Engine/ThirdParty
