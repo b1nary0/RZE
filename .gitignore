@@ -291,3 +291,5 @@ __pycache__/
 *.xsd.cs
 
 RZE/_Project/imgui\.ini
+!Tools
+!RZE/Engine/ThirdParty

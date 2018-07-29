@@ -21,53 +21,13 @@
 
 static Vector4D sDefaultFragColor(0.25f, 0.25f, 0.25f, 1.0f);
 
+// Render helpers
+//-----------------------------------------
 Diotima::GFXShaderPipeline* defaultShader;
 Diotima::GFXShaderPipeline* textureShader;
-void CreateDefaultShader()
-{
-	const FilePath vertShaderFilePath("Engine/Assets/Shaders/VertexShader.shader");
-	const FilePath fragShaderFilePath("Engine/Assets/Shaders/FragmentShader.shader");
-
-	ResourceHandle vertShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "DefaultVertexShader");
-	ResourceHandle fragShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "DefaultFragShader");
-
-	Diotima::GFXShader* vertShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(vertShaderHandle);
-	vertShader->Create();
-	vertShader->Compile();
-
-	Diotima::GFXShader* fragShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(fragShaderHandle);
-	fragShader->Create();
-	fragShader->Compile();
-
-	defaultShader = new Diotima::GFXShaderPipeline("DefaultShader");
-	defaultShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Vertex, vertShader);
-	defaultShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Fragment, fragShader);
-
-	defaultShader->GenerateShaderProgram();
-}
-
-void CreateTextureShader()
-{
-	const FilePath vertShaderFilePath("Engine/Assets/Shaders/TextureVert.shader");
-	const FilePath fragShaderFilePath("Engine/Assets/Shaders/TextureFrag.shader");
-
-	ResourceHandle vertShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "TextureVertShader");
-	ResourceHandle fragShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "TextureFragShader");
-
-	Diotima::GFXShader* vertShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(vertShaderHandle);
-	vertShader->Create();
-	vertShader->Compile();
-
-	Diotima::GFXShader* fragShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(fragShaderHandle);
-	fragShader->Create();
-	fragShader->Compile();
-
-	textureShader = new Diotima::GFXShaderPipeline("TextureShader");
-	textureShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Vertex, vertShader);
-	textureShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Fragment, fragShader);
-
-	textureShader->GenerateShaderProgram();
-}
+void CreateDefaultShader();
+void CreateTextureShader();
+//-----------------------------------------
 
 RenderSystem::RenderSystem(Apollo::EntityHandler* const entityHandler)
 	: Apollo::EntitySystem(entityHandler)
@@ -87,7 +47,7 @@ void RenderSystem::Initialize()
 }
 
 void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
-{
+{	BROFILER_CATEGORY("RenderSystem::Update", Profiler::Color::Yellow)
 	Apollo::EntityHandler& handler = InternalGetEntityHandler();
 	Diotima::Renderer& renderer = RZE_Application::RZE().GetRenderer();
 
@@ -223,4 +183,59 @@ void RenderSystem::GenerateCameraMatrices(CameraComponent& cameraComponent, cons
 {
 	cameraComponent.ProjectionMat = Matrix4x4::CreatePerspectiveMatrix(cameraComponent.FOV, cameraComponent.AspectRatio, cameraComponent.NearCull, cameraComponent.FarCull);
 	cameraComponent.ViewMat = Matrix4x4::CreateViewMatrix(transformComponent.Position, transformComponent.Position + cameraComponent.Forward, cameraComponent.UpDir);
+}
+
+
+
+// -------------------------------------------------------------------------------
+
+
+
+/////////////
+/////////// These are just dev helpers until the time of the great render comes along
+//////
+void CreateDefaultShader()
+{
+	const FilePath vertShaderFilePath("Engine/Assets/Shaders/VertexShader.shader");
+	const FilePath fragShaderFilePath("Engine/Assets/Shaders/FragmentShader.shader");
+
+	ResourceHandle vertShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "DefaultVertexShader");
+	ResourceHandle fragShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "DefaultFragShader");
+
+	Diotima::GFXShader* vertShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(vertShaderHandle);
+	vertShader->Create();
+	vertShader->Compile();
+
+	Diotima::GFXShader* fragShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(fragShaderHandle);
+	fragShader->Create();
+	fragShader->Compile();
+
+	defaultShader = new Diotima::GFXShaderPipeline("DefaultShader");
+	defaultShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Vertex, vertShader);
+	defaultShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Fragment, fragShader);
+
+	defaultShader->GenerateShaderProgram();
+}
+
+void CreateTextureShader()
+{
+	const FilePath vertShaderFilePath("Engine/Assets/Shaders/TextureVert.shader");
+	const FilePath fragShaderFilePath("Engine/Assets/Shaders/TextureFrag.shader");
+
+	ResourceHandle vertShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "TextureVertShader");
+	ResourceHandle fragShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "TextureFragShader");
+
+	Diotima::GFXShader* vertShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(vertShaderHandle);
+	vertShader->Create();
+	vertShader->Compile();
+
+	Diotima::GFXShader* fragShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(fragShaderHandle);
+	fragShader->Create();
+	fragShader->Compile();
+
+	textureShader = new Diotima::GFXShaderPipeline("TextureShader");
+	textureShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Vertex, vertShader);
+	textureShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Fragment, fragShader);
+
+	textureShader->GenerateShaderProgram();
 }

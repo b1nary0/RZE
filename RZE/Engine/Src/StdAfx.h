@@ -25,6 +25,9 @@
 #include <queue>
 #include <vector>
 
+// Brofiler
+#include <Brofiler/Brofiler.h>
+
 // RZE
 #include <RZE_Config.h>
 #include <RZE.h>
