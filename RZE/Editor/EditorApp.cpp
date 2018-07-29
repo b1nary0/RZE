@@ -1,5 +1,7 @@
 #include <EditorApp.h>
 
+#include <Brofiler/Brofiler.h>
+
 #include <Diotima/Graphics/Texture2D.h>
 
 #include <ECS/Components/CameraComponent.h>
@@ -71,7 +73,7 @@ void RZE_Editor::PreUpdate()
 }
 
 void RZE_Editor::Display()
-{
+{	BROFILER_CATEGORY("RZE_Editor::Display", Profiler::Color::LawnGreen)
  	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
  	ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
 	if (ImGui::Begin("MainWindow", NULL, ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoNavFocus))
