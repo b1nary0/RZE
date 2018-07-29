@@ -47,7 +47,7 @@ void RenderSystem::Initialize()
 }
 
 void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
-{
+{	BROFILER_CATEGORY("RenderSystem::Update", Profiler::Color::Yellow)
 	Apollo::EntityHandler& handler = InternalGetEntityHandler();
 	Diotima::Renderer& renderer = RZE_Application::RZE().GetRenderer();
 

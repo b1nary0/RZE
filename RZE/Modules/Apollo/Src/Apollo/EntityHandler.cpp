@@ -1,5 +1,7 @@
 #include <Apollo/EntityHandler.h>
 
+#include <Brofiler/Brofiler.h>
+
 #include <Utils/Platform/Timers/HiResTimer.h>
 
 namespace Apollo
@@ -112,7 +114,7 @@ namespace Apollo
 	}
 
 	void EntityHandler::Update()
-	{
+	{	BROFILER_CATEGORY("EntityHandler::Update", Profiler::Color::BlueViolet)
 		FlushComponentIDQueues();
 
 		for (size_t idx = 0; idx < mSystems.size(); ++idx)

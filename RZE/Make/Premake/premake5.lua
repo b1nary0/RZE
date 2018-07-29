@@ -99,6 +99,7 @@ workspace "RZE"
 			"assimp",
 			"glew32s",
 			"OpenGL32",
+			"ProfilerCore32",
 			-- RZE --
 			"RZE_Utils",
 			"Apollo",

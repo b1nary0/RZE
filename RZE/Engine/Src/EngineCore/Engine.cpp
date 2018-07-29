@@ -58,7 +58,7 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 			ImGui::NewFrame();
 
 			DebugServices::AddData(StringUtils::FormatString("Frame Time: %f ms", static_cast<float>(mDeltaTime) * 1000.0f), Vector3D(1.0f, 1.0f, 0.0f));
-			{
+			{	BROFILER_FRAME("Engine Thread");
 				Update();
 				
 				DebugServices::Display(GetWindowSize());
@@ -231,7 +231,7 @@ void RZE_Engine::LoadEngineConfig()
 }
 
 void RZE_Engine::Update()
-{
+{	BROFILER_CATEGORY("RZE_Engine::Update", Profiler::Color::Orchid)
 	mActiveScene->Update();
 	mApplication->Update();
 }
