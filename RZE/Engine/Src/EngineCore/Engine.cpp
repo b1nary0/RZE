@@ -45,12 +45,12 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 
 		HiResTimer programTimer;
 		programTimer.Start();
-		double elapsedTime = programTimer.GetElapsed<double>();
+		double prevTime = programTimer.GetElapsed<double>();
 		while (!bShouldExit)
 		{
-			double newTime = programTimer.GetElapsed<double>();
-			double frameTime = newTime - elapsedTime;
-			elapsedTime = newTime;
+			double currTime = programTimer.GetElapsed<double>();
+			double frameTime = currTime - prevTime;
+			prevTime = currTime;
 
 			mDeltaTime = frameTime;
 			PreUpdate();
