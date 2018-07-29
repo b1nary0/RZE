@@ -1,6 +1,8 @@
 //#include <StdAfx.h>
 #include <Diotima/Renderer.h>
 
+#include <Brofiler/Brofiler.h>
+
 #include <Diotima/Driver/OpenGL.h>
 #include <Diotima/Graphics/Material.h>
 #include <Diotima/Graphics/Mesh.h>
@@ -109,7 +111,7 @@ namespace Diotima
 	}
 
 	void Renderer::Update()
-	{
+	{	BROFILER_CATEGORY("Renderer::Update", Profiler::Color::Red)
 		AssertNotNull(mRenderTarget);
 
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
@@ -154,6 +156,7 @@ namespace Diotima
 
 	void Renderer::RenderSingleItem(RenderItemProtocol& renderItem)
 	{
+		BROFILER_CATEGORY("Renderer::RenderSingleItem", Profiler::Color::OrangeRed)
 		// TODO(Josh)
 		// This whole function is a temporary implementation until an actual render pipeline is implemented.
 		const OpenGLRHI& openGL = OpenGLRHI::Get();

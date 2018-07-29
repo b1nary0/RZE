@@ -2,6 +2,8 @@
 
 #include <algorithm>
 
+#include <Brofiler/Brofiler.h>
+
 #include <EngineApp.h>
 
 #include <ECS/Components/CameraComponent.h>
@@ -28,7 +30,7 @@ void FreeCameraSystem::Initialize()
 }
 
 void FreeCameraSystem::Update(const std::vector<Apollo::EntityID>& entities)
-{
+{	BROFILER_CATEGORY("FreeCameraSystem::Update", Profiler::Color::Yellow)
 	Apollo::EntityHandler& handler = InternalGetEntityHandler();
 	for (auto& entity : entities)
 	{
