@@ -120,15 +120,19 @@ namespace Diotima
 		// #TODO(Josh) Can probably optimize this away nicely
 		openGL.Viewport(0, 0, mRenderTarget->GetWidth(), mRenderTarget->GetHeight());
 		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
-		// #TODO(Josh) How does this interact with other shaders? Will this cause problems? What is the best way to achieve this in a robust manner?
-		renderToTextureShader->Use();
-		for (auto& renderItem : mRenderList)
-		{
-			if (renderItem.bIsValid)
+		
+		{	BROFILER_CATEGORY("Item Processing", Profiler::Color::DarkOrange)
+			// #TODO(Josh) How does this interact with other shaders? Will this cause problems? What is the best way to achieve this in a robust manner?
+			renderToTextureShader->Use();
+			for (auto& renderItem : mRenderList)
 			{
-				RenderSingleItem(renderItem);
+				if (renderItem.bIsValid)
+				{
+					RenderSingleItem(renderItem);
+				}
 			}
 		}
+
 		openGL.Viewport(0, 0, static_cast<GLint>(mCanvasSize.X()), static_cast<GLint>(mCanvasSize.Y()));
 		mRenderTarget->Unbind();
 	}
@@ -161,18 +165,20 @@ namespace Diotima
 		// This whole function is a temporary implementation until an actual render pipeline is implemented.
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
 
-		// #NOTE(Josh) Need to handle this via sorting to set only once.
-		renderItem.Shader->Use();
-		renderItem.Shader->SetUniformMatrix4x4("UProjectionMat", camera.ProjectionMat);
-		renderItem.Shader->SetUniformMatrix4x4("UViewMat", camera.ViewMat);
-		renderItem.Shader->SetUniformVector4D("UFragColor", renderItem.Material.Color);
-		renderItem.Shader->SetUniformMatrix4x4("UModelMat", renderItem.ModelMat);
-		
-		renderItem.Shader->SetUniformInt("Material.Diffuse", 0);
-		renderItem.Shader->SetUniformInt("Material.Specular", 1);
-		
-		renderItem.Shader->SetUniformInt("UNumActiveLights", mLightingList.size());
-		renderItem.Shader->SetUniformVector3D(std::string("ViewPos").c_str(), camera.Position);
+		{	BROFILER_CATEGORY("Shader Sets", Profiler::Color::OrangeRed)
+			// #NOTE(Josh) Need to handle this via sorting to set only once.
+			renderItem.Shader->Use();
+			renderItem.Shader->SetUniformMatrix4x4("UProjectionMat", camera.ProjectionMat);
+			renderItem.Shader->SetUniformMatrix4x4("UViewMat", camera.ViewMat);
+			renderItem.Shader->SetUniformVector4D("UFragColor", renderItem.Material.Color);
+			renderItem.Shader->SetUniformMatrix4x4("UModelMat", renderItem.ModelMat);
+
+			renderItem.Shader->SetUniformInt("Material.Diffuse", 0);
+			renderItem.Shader->SetUniformInt("Material.Specular", 1);
+
+			renderItem.Shader->SetUniformInt("UNumActiveLights", mLightingList.size());
+			renderItem.Shader->SetUniformVector3D(std::string("ViewPos").c_str(), camera.Position);
+		}
 
 		for (size_t lightIdx = 0; lightIdx < mLightingList.size(); ++lightIdx)
 		{
@@ -193,7 +199,7 @@ namespace Diotima
 
 			renderItem.Shader->SetUniformInt("DiffuseTextureCount", static_cast<int>(diffuseTextures.size()));
 			renderItem.Shader->SetUniformInt("SpecularTextureCount", static_cast<int>(specularTextures.size()));
-			
+
 			int textureCount = 0;
 			for (size_t i = 0; i < diffuseTextures.size(); ++i, ++textureCount)
 			{

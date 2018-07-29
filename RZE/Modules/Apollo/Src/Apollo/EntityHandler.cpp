@@ -124,7 +124,9 @@ namespace Apollo
 			const EntityComponentFilter& filter = system->GetComponentFilter();
 			std::vector<EntityID> filteredEntities;
 
-			filter.FilterAtLeast(mEntities, filteredEntities);
+			{	BROFILER_CATEGORY("Filtering Entity Components", Profiler::Color::CornflowerBlue)
+				filter.FilterAtLeast(mEntities, filteredEntities);
+			}
 
 			system->Update(filteredEntities);
 		}
