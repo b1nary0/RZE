@@ -207,7 +207,7 @@ namespace Diotima
 
 			for (size_t i = 0; i < specularTextures.size(); ++i, ++textureCount)
 			{
-				renderItem.Shader->SetUniformInt(("Material.SpecularTextures[0]"), specularTextures[i]->GetTextureID());
+				renderItem.Shader->SetUniformInt("Material.SpecularTextures[0]", specularTextures[i]->GetTextureID());
 				glActiveTexture(GL_TEXTURE0 + textureCount);
 				openGL.BindTexture(EGLCapability::Texture2D, specularTextures[i]->GetTextureID());
 			}
