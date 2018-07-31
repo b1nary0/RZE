@@ -19,6 +19,8 @@
 #include <Utils/Platform/FilePath.h>
 #include <Utils/Platform/Timers/HiResTimer.h>
 
+#include <Perseus/JobSystem/JobScheduler.h>
+
 static Vector4D sDefaultFragColor(0.25f, 0.25f, 0.25f, 1.0f);
 
 // Render helpers
@@ -62,7 +64,8 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 	camera.ProjectionMat = camComp->ProjectionMat;
 	camera.ViewMat = camComp->ViewMat;
 	renderer.SetCamera(camera);
-
+	Perseus::Job::Task work([this, entities, transfComp, &renderer, &handler]()
+	{
 	for (auto& entity : entities)
 	{
 		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
@@ -70,6 +73,8 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 		Diotima::Renderer::RenderItemProtocol& item = renderer.GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
 		item.ModelMat = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
 	}
+	});
+	Perseus::JobScheduler::Get().PushJob(work);
 
 	Functor<void, Apollo::EntityID> LightSourceFunc([this, &handler, &renderer](Apollo::EntityID entity)
 	{

@@ -1,6 +1,8 @@
 //#include <StdAfx.h>
 #include <Diotima/Renderer.h>
 
+#include <Brofiler/Brofiler.h>
+
 #include <Diotima/Driver/OpenGL.h>
 #include <Diotima/Graphics/Material.h>
 #include <Diotima/Graphics/Mesh.h>
@@ -109,7 +111,7 @@ namespace Diotima
 	}
 
 	void Renderer::Update()
-	{
+	{	BROFILER_CATEGORY("Renderer::Update", Profiler::Color::Red)
 		AssertNotNull(mRenderTarget);
 
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
@@ -118,15 +120,19 @@ namespace Diotima
 		// #TODO(Josh) Can probably optimize this away nicely
 		openGL.Viewport(0, 0, mRenderTarget->GetWidth(), mRenderTarget->GetHeight());
 		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
-		// #TODO(Josh) How does this interact with other shaders? Will this cause problems? What is the best way to achieve this in a robust manner?
+		
 		renderToTextureShader->Use();
-		for (auto& renderItem : mRenderList)
-		{
-			if (renderItem.bIsValid)
+		{	BROFILER_CATEGORY("Item Processing", Profiler::Color::DarkOrange)
+			// #TODO(Josh) How does this interact with other shaders? Will this cause problems? What is the best way to achieve this in a robust manner?
+			for (auto& renderItem : mRenderList)
 			{
-				RenderSingleItem(renderItem);
+				if (renderItem.bIsValid)
+				{
+					RenderSingleItem(renderItem);
+				}
 			}
 		}
+
 		openGL.Viewport(0, 0, static_cast<GLint>(mCanvasSize.X()), static_cast<GLint>(mCanvasSize.Y()));
 		mRenderTarget->Unbind();
 	}
@@ -164,10 +170,10 @@ namespace Diotima
 		renderItem.Shader->SetUniformMatrix4x4("UViewMat", camera.ViewMat);
 		renderItem.Shader->SetUniformVector4D("UFragColor", renderItem.Material.Color);
 		renderItem.Shader->SetUniformMatrix4x4("UModelMat", renderItem.ModelMat);
-		
+
 		renderItem.Shader->SetUniformInt("Material.Diffuse", 0);
 		renderItem.Shader->SetUniformInt("Material.Specular", 1);
-		
+
 		renderItem.Shader->SetUniformInt("UNumActiveLights", mLightingList.size());
 		renderItem.Shader->SetUniformVector3D(std::string("ViewPos").c_str(), camera.Position);
 
@@ -176,7 +182,6 @@ namespace Diotima
 			const LightItemProtocol& lightItem = mLightingList[lightIdx];
 			std::string itemIdxStr = Conversions::StringFromInt(static_cast<int>(lightIdx));
 
-			// #TODO(Josh) These string constructions need to be refactored, too slow.
 			renderItem.Shader->SetUniformVector3D("LightPositions[0]", lightItem.Position);
 			renderItem.Shader->SetUniformVector3D("LightColors[0]", lightItem.Color);
 			renderItem.Shader->SetUniformFloat("LightStrengths[0]", lightItem.Strength);
@@ -190,18 +195,18 @@ namespace Diotima
 
 			renderItem.Shader->SetUniformInt("DiffuseTextureCount", static_cast<int>(diffuseTextures.size()));
 			renderItem.Shader->SetUniformInt("SpecularTextureCount", static_cast<int>(specularTextures.size()));
-			
+
 			int textureCount = 0;
 			for (size_t i = 0; i < diffuseTextures.size(); ++i, ++textureCount)
 			{
-				renderItem.Shader->SetUniformInt(("Material.DiffuseTextures[0]"), diffuseTextures[i]->GetTextureID());
+				renderItem.Shader->SetUniformInt("Material.DiffuseTextures[0]", diffuseTextures[i]->GetTextureID());
 				glActiveTexture(GL_TEXTURE0 + textureCount);
 				openGL.BindTexture(EGLCapability::Texture2D, diffuseTextures[i]->GetTextureID());
 			}
 
 			for (size_t i = 0; i < specularTextures.size(); ++i, ++textureCount)
 			{
-				renderItem.Shader->SetUniformInt(("Material.SpecularTextures[0]"), specularTextures[i]->GetTextureID());
+				renderItem.Shader->SetUniformInt("Material.SpecularTextures[0]", specularTextures[i]->GetTextureID());
 				glActiveTexture(GL_TEXTURE0 + textureCount);
 				openGL.BindTexture(EGLCapability::Texture2D, specularTextures[i]->GetTextureID());
 			}

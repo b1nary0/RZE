@@ -32,6 +32,7 @@
 #include <RZE_Config.h>
 #include <RZE.h>
 #include <EngineApp.h>
+#include <Perseus/JobSystem/JobScheduler.h>
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Platform/FilePath.h>
 #include <Utils/PrimitiveDefs.h>

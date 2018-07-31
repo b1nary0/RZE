@@ -21,6 +21,7 @@ namespace Perseus
 		~JobScheduler();
 
 	public:
+		void Initialize();
 		void ShutDown();
 
 	public:

@@ -48,23 +48,27 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 		double prevTime = programTimer.GetElapsed<double>();
 		while (!bShouldExit)
 		{
+			BROFILER_FRAME("Engine Thread");
+
 			double currTime = programTimer.GetElapsed<double>();
 			double frameTime = currTime - prevTime;
 			prevTime = currTime;
 
 			mDeltaTime = frameTime;
-			PreUpdate();
-			// #TODO(Josh) Need to work this out but for the moment we need to pre update and then start the imgui new frame for things like editor stealing imgui input etc
-			ImGui::NewFrame();
 
-			DebugServices::AddData(StringUtils::FormatString("Frame Time: %f ms", static_cast<float>(mDeltaTime) * 1000.0f), Vector3D(1.0f, 1.0f, 0.0f));
-			{	BROFILER_FRAME("Engine Thread");
-				Update();
-				
-				DebugServices::Display(GetWindowSize());
+			{	BROFILER_CATEGORY("RZE_Engine::Run", Profiler::Color::Cyan)
+				// #TODO(Josh) Need to work this out but for the moment we need to pre update and then start the imgui new frame for things like editor stealing imgui input etc
+				PreUpdate();
 
-				mRenderer->Update();
-				ImGui::Render();
+				DebugServices::AddData(StringUtils::FormatString("Frame Time: %f ms", static_cast<float>(mDeltaTime) * 1000.0f), Vector3D(1.0f, 1.0f, 0.0f));
+				{
+					Update();
+
+					DebugServices::Display(GetWindowSize());
+
+					mRenderer->Update();
+					ImGui::Render();
+				}
 			}
 
 			mMainWindow->BufferSwap(); // #TODO(Josh) Maybe this can be done better
@@ -96,6 +100,8 @@ void RZE_Engine::Init()
 	{
 		LOG_CONSOLE("RZE_EngineCore::Init() called.");
 
+		Perseus::JobScheduler::Get().Initialize();
+
 		LoadEngineConfig();
 
 		CreateAndInitializeWindow();
@@ -104,12 +110,10 @@ void RZE_Engine::Init()
 
 		RegisterWindowEvents();
 		RegisterEngineComponentTypes();
-		
-		mRenderer = new Diotima::Renderer();
-		mRenderer->Initialize();
-		mRenderer->EnableVsync(mEngineConfig->GetEngineSettings().IsVSyncEnabled());
 
 		mResourceHandler.Init();
+
+		CreateAndInitializeRenderer();
 
 		DebugServices::Initialize();
 		DebugServices::HandleScreenResize(GetWindowSize());
@@ -133,7 +137,7 @@ void RZE_Engine::PostInit(Functor<RZE_Application* const>& createApplicationCall
 }
 
 void RZE_Engine::PreUpdate()
-{
+{	BROFILER_CATEGORY("RZE_Engine::PreUpdate", Profiler::Color::Purple)
 	CompileEvents();
 	mEventHandler.ProcessEvents();
 
@@ -145,6 +149,11 @@ void RZE_Engine::PreUpdate()
 	{
 		mInputHandler.Reset();
 	}
+
+	// #NOTE(Josh) This has to do with the lack of confidence in the placement of ImGUI and its role.
+	//				Should always happen at the end of the pre-update phase for now. Also want this here as
+	//				it's currently considered part of the pre-update profile.
+	ImGui::NewFrame();
 }
 
 void RZE_Engine::CreateAndInitializeWindow()
@@ -162,6 +171,14 @@ void RZE_Engine::CreateAndInitializeWindow()
 	mMainWindow->RegisterEvents(mEventHandler);
 
 	mMainWindow->Show();
+}
+
+void RZE_Engine::CreateAndInitializeRenderer()
+{
+	mRenderer = new Diotima::Renderer();
+
+	mRenderer->Initialize();
+	mRenderer->EnableVsync(mEngineConfig->GetEngineSettings().IsVSyncEnabled());
 }
 
 void RZE_Engine::InitializeApplication(Functor<RZE_Application* const> createGameCallback)
@@ -243,6 +260,8 @@ void RZE_Engine::BeginShutDown()
 	mActiveScene->Finish();
 	mApplication->ShutDown();
 	mResourceHandler.ShutDown();
+
+	Perseus::JobScheduler::Get().ShutDown();
 
 	InternalShutDown();
 }

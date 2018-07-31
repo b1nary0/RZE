@@ -19,8 +19,8 @@ public:
 		mChildren.push_back(child);
 	}
 
-	inline bool IsFocused() { return bIsFocused; }
-	inline bool IsHovered() { return bIsHovered; }
+	inline bool IsFocused() const { return bIsFocused; }
+	inline bool IsHovered() const { return bIsHovered; }
 
 protected:
 	std::vector<IEditorWidget*> mChildren;

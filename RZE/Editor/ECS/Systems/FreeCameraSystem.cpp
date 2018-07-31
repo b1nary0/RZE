@@ -2,12 +2,15 @@
 
 #include <algorithm>
 
+#include <Brofiler/Brofiler.h>
+
 #include <EngineApp.h>
 
 #include <ECS/Components/CameraComponent.h>
 #include <ECS/Components/NameComponent.h>
 #include <ECS/Components/TransformComponent.h>
 
+#include <DebugUtils/DebugServices.h>
 #include <Utils/Math/Math.h>
 
 FreeCameraSystem::FreeCameraSystem(Apollo::EntityHandler* const entityHandler)
@@ -29,6 +32,10 @@ void FreeCameraSystem::Initialize()
 
 void FreeCameraSystem::Update(const std::vector<Apollo::EntityID>& entities)
 {
+	BROFILER_CATEGORY("FreeCameraSystem::Update", Profiler::Color::Yellow);
+
+	DebugServices::AddData(StringUtils::FormatString("mSpeed: %f", mSpeed));
+
 	Apollo::EntityHandler& handler = InternalGetEntityHandler();
 	for (auto& entity : entities)
 	{
@@ -46,11 +53,12 @@ void FreeCameraSystem::Update(const std::vector<Apollo::EntityID>& entities)
  			Vector3D dist = mMoveToPoint - transfComp->Position;
  			if (dist.LengthSq() > VectorUtils::kEpsilon * VectorUtils::kEpsilon)
  			{
-				Vector3D lerpPos = VectorUtils::Lerp(transfComp->Position, mMoveToPoint, static_cast<float>(10 * RZE_Application::RZE().GetDeltaTime()));
+				Vector3D lerpPos = VectorUtils::Lerp(transfComp->Position, mMoveToPoint, static_cast<float>(8 * RZE_Application::RZE().GetDeltaTime()));
  				transfComp->SetPosition(lerpPos);
  			}
 		}
 	}
+
 }
 
 void FreeCameraSystem::ShutDown()
@@ -63,6 +71,21 @@ void FreeCameraSystem::KeyboardInput(CameraComponent& camComp, TransformComponen
 
 	float dt = static_cast<float>(RZE_Application::RZE().GetDeltaTime());
 
+	if (mSpeed > kMaxSpeed)
+	{
+		mSpeed = kMaxSpeed;
+	}
+	
+	if (!inputHandler.GetKeyboardState().IsIdle())
+	{
+		mSpeed += 1.5f * static_cast<float>(RZE_Application::RZE().GetDeltaTime());
+	}
+	else
+	{
+		mSpeed = 0.0f;
+	}
+
+	
 	if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_W])
 	{
 		mMoveToPoint = transfComp.Position + camComp.Forward * mSpeed;
@@ -71,8 +94,7 @@ void FreeCameraSystem::KeyboardInput(CameraComponent& camComp, TransformComponen
 	{
 		mMoveToPoint = transfComp.Position - camComp.Forward * mSpeed;
 	}
-
-	if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_A])
+	else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_A])
 	{
 		mMoveToPoint = transfComp.Position - camComp.Forward.Cross(camComp.UpDir).Normalize() * mSpeed;
 	}
@@ -80,8 +102,7 @@ void FreeCameraSystem::KeyboardInput(CameraComponent& camComp, TransformComponen
 	{
 		mMoveToPoint = transfComp.Position + camComp.Forward.Cross(camComp.UpDir).Normalize() * mSpeed;
 	}
-
-	if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_Q])
+	else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_Q])
 	{
 		mMoveToPoint = transfComp.Position + camComp.Forward.Cross(camComp.UpDir).Cross(camComp.Forward) * mSpeed;
 	}
