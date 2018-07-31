@@ -9,11 +9,7 @@ namespace Perseus
 	JobScheduler::JobScheduler()
 		: bShouldWait(false)
 	{
-		int conc = std::thread::hardware_concurrency();
-		for (int i = 0; i < PERSEUS_MAX_WORKER_THREADS; ++i)
-		{
-			mWorkerThreads[i].Initialize();
-		}
+
 	}
 
 	JobScheduler::~JobScheduler()
@@ -21,6 +17,15 @@ namespace Perseus
 		for (int i = 0; i < PERSEUS_MAX_WORKER_THREADS; ++i)
 		{
 			AssertExpr(!mWorkerThreads[i].IsRunning());
+		}
+	}
+
+	void JobScheduler::Initialize()
+	{
+		int conc = std::thread::hardware_concurrency();
+		for (int i = 0; i < PERSEUS_MAX_WORKER_THREADS; ++i)
+		{
+			mWorkerThreads[i].Initialize();
 		}
 	}
 

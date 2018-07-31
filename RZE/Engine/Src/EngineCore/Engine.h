@@ -75,6 +75,7 @@ private:
 
 	void LoadEngineConfig();
 	void CreateAndInitializeWindow();
+	void CreateAndInitializeRenderer();
 
 	void InitializeApplication(Functor<RZE_Application* const> createGameCallback);
 

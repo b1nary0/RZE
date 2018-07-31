@@ -333,7 +333,7 @@ workspace "RZE"
 		targetdir (RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
 		targetname "Diotima"
 
-		dependson { "Utils" }
+		dependson { "Perseus", "Utils" }
 
 		filter "action:vs*"
 			pchheader = "StdAfx.h"
@@ -351,6 +351,7 @@ workspace "RZE"
 		{
 			EngineDir .. "/Src",
 			RootDir .. "Utils/Src/",
+			RootDir .. "Modules/Perseus/Src/",
 			SourceDir,
 			IncludeDir
 		}
@@ -367,6 +368,7 @@ workspace "RZE"
 			"OpenGL32",
 			"glew32s",
 			-- RZE
+			"Perseus",
 			"RZE_Utils"
 		}
 

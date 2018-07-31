@@ -100,6 +100,8 @@ void RZE_Engine::Init()
 	{
 		LOG_CONSOLE("RZE_EngineCore::Init() called.");
 
+		Perseus::JobScheduler::Get().Initialize();
+
 		LoadEngineConfig();
 
 		CreateAndInitializeWindow();
@@ -108,12 +110,10 @@ void RZE_Engine::Init()
 
 		RegisterWindowEvents();
 		RegisterEngineComponentTypes();
-		
-		mRenderer = new Diotima::Renderer();
-		mRenderer->Initialize();
-		mRenderer->EnableVsync(mEngineConfig->GetEngineSettings().IsVSyncEnabled());
 
 		mResourceHandler.Init();
+
+		CreateAndInitializeRenderer();
 
 		DebugServices::Initialize();
 		DebugServices::HandleScreenResize(GetWindowSize());
@@ -171,6 +171,14 @@ void RZE_Engine::CreateAndInitializeWindow()
 	mMainWindow->RegisterEvents(mEventHandler);
 
 	mMainWindow->Show();
+}
+
+void RZE_Engine::CreateAndInitializeRenderer()
+{
+	mRenderer = new Diotima::Renderer();
+
+	mRenderer->Initialize();
+	mRenderer->EnableVsync(mEngineConfig->GetEngineSettings().IsVSyncEnabled());
 }
 
 void RZE_Engine::InitializeApplication(Functor<RZE_Application* const> createGameCallback)
@@ -252,6 +260,8 @@ void RZE_Engine::BeginShutDown()
 	mActiveScene->Finish();
 	mApplication->ShutDown();
 	mResourceHandler.ShutDown();
+
+	Perseus::JobScheduler::Get().ShutDown();
 
 	InternalShutDown();
 }

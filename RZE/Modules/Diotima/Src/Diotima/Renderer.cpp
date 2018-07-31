@@ -121,9 +121,9 @@ namespace Diotima
 		openGL.Viewport(0, 0, mRenderTarget->GetWidth(), mRenderTarget->GetHeight());
 		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
 		
+		renderToTextureShader->Use();
 		{	BROFILER_CATEGORY("Item Processing", Profiler::Color::DarkOrange)
 			// #TODO(Josh) How does this interact with other shaders? Will this cause problems? What is the best way to achieve this in a robust manner?
-			renderToTextureShader->Use();
 			for (auto& renderItem : mRenderList)
 			{
 				if (renderItem.bIsValid)
@@ -160,7 +160,6 @@ namespace Diotima
 
 	void Renderer::RenderSingleItem(RenderItemProtocol& renderItem)
 	{
-		BROFILER_CATEGORY("Renderer::RenderSingleItem", Profiler::Color::OrangeRed)
 		// TODO(Josh)
 		// This whole function is a temporary implementation until an actual render pipeline is implemented.
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
@@ -201,7 +200,7 @@ namespace Diotima
 			int textureCount = 0;
 			for (size_t i = 0; i < diffuseTextures.size(); ++i, ++textureCount)
 			{
-				renderItem.Shader->SetUniformInt(("Material.DiffuseTextures[0]"), diffuseTextures[i]->GetTextureID());
+				renderItem.Shader->SetUniformInt("Material.DiffuseTextures[0]", diffuseTextures[i]->GetTextureID());
 				glActiveTexture(GL_TEXTURE0 + textureCount);
 				openGL.BindTexture(EGLCapability::Texture2D, diffuseTextures[i]->GetTextureID());
 			}
