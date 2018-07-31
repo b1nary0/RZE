@@ -182,7 +182,6 @@ namespace Diotima
 			const LightItemProtocol& lightItem = mLightingList[lightIdx];
 			std::string itemIdxStr = Conversions::StringFromInt(static_cast<int>(lightIdx));
 
-			// #TODO(Josh) These string constructions need to be refactored, too slow.
 			renderItem.Shader->SetUniformVector3D("LightPositions[0]", lightItem.Position);
 			renderItem.Shader->SetUniformVector3D("LightColors[0]", lightItem.Color);
 			renderItem.Shader->SetUniformFloat("LightStrengths[0]", lightItem.Strength);

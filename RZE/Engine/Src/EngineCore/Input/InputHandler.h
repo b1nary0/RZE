@@ -41,6 +41,13 @@ private:
 
 			return buttonState;
 		}
+
+		// None pressed
+		bool IsIdle() const
+		{
+			std::bitset<MAX_KEYCODES_SUPPORTED> idleState(0);
+			return (CurKeyStates | idleState).none();
+		}
 	};
 
 	struct MouseState
@@ -68,6 +75,12 @@ private:
 			}
 
 			return buttonState;
+		}
+
+		bool IsIdle() const
+		{
+			std::bitset<MAX_MOUSE_BTN_SUPPORTED> idleState(0);
+			return (CurMouseBtnStates | idleState).none();
 		}
 	};
 

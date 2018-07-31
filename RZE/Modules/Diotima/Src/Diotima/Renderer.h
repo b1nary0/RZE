@@ -12,6 +12,19 @@
 
 #include <Utils/Math/Vector2D.h>
 
+
+
+
+// #TODO(Josh::Maybe start by thinking about just calling draw on a mesh, with all other things handled before
+//				i.e: Cull, Sort (by Material, Depth, etc), Merge?, build Command Buffer, submit)
+//				
+//				Build on this idea.
+
+
+
+
+
+
 namespace Diotima
 {
 	class GFXMesh;

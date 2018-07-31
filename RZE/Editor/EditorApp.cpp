@@ -45,7 +45,8 @@ bool RZE_Editor::ProcessInput(const InputHandler& handler)
 		io.MouseDown[i] = handler.GetMouseState().CurMouseBtnStates[i];
 	}
 
-	if (GetWidget<SceneViewWidget>(EWidgetType_SceneView).IsHovered())
+	const bool bSceneViewHovered = GetWidget<SceneViewWidget>(EWidgetType_SceneView).IsHovered();
+	if (bSceneViewHovered)
 	{
 		return true;
 	}
