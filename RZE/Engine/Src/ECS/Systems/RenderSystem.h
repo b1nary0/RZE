@@ -7,11 +7,6 @@
 struct CameraComponent;
 struct TransformComponent;
 
-namespace Apollo
-{
-	class ComponentHandler;
-}
-
 class RenderSystem final : public Apollo::EntitySystem
 {
 public:

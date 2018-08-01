@@ -18,6 +18,9 @@
 
 #include <DebugUtils/DebugServices.h>
 
+// GAME
+#include <Game/Systems/InteractiveSpawningSystem.h>
+
 GameApp::GameApp()
 	: RZE_Application()
 {
@@ -30,6 +33,8 @@ GameApp::~GameApp()
 void GameApp::Initialize()
 {
 	RZE_Application::Initialize();
+
+	RZE().GetActiveScene().GetEntityHandler().AddSystem<InteractiveSpawningSystem>();
 }
 
 void GameApp::Start()

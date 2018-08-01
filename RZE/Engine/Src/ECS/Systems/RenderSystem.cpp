@@ -76,6 +76,7 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 		}
 	});
 	Perseus::JobScheduler::Get().PushJob(work);
+	Perseus::JobScheduler::Get().Wait();
 
 	Functor<void, Apollo::EntityID> LightSourceFunc([this, &handler, &renderer](Apollo::EntityID entity)
 	{
