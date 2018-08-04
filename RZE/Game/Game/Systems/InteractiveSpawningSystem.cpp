@@ -19,7 +19,7 @@ static int sPossibleValues[8] =
 
 void InteractiveSpawningSystem::Initialize()
 {
-	srand(time(NULL));
+	srand(static_cast<unsigned int>(time(NULL)));
 }
 
 void InteractiveSpawningSystem::Update(const std::vector<Apollo::EntityID>& entities)
@@ -38,9 +38,8 @@ void InteractiveSpawningSystem::HackyInputThing()
 
 	InputHandler& inputHandler = RZE_Application::RZE().GetInputHandler();
 
-	if (inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Key_A) == EButtonState::ButtonState_Pressed
-	 || inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Key_S) == EButtonState::ButtonState_Pressed
-	 || inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Key_D) == EButtonState::ButtonState_Pressed)
+	if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_A] == EButtonState::ButtonState_Pressed
+		&& inputHandler.GetKeyboardState().PrevKeyStates[Win32KeyCode::Key_A] == EButtonState::ButtonState_Released)
 	{
 		Apollo::EntityID entity = RZE_Application::RZE().GetActiveScene().CreateEntity("SpawnedObject");
 		InternalGetEntityHandler().AddComponent<MeshComponent>(entity, FilePath(assetPaths[bSwapAsset]));
