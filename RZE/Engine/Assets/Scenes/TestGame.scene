@@ -1,0 +1,78 @@
+{
+  "entities":
+  {
+    "Camera":
+    {
+        "components":
+        {
+            "TransformComponent":
+            {
+                "Position": [0, 5, 15],
+                "Scale": [1, 1, 1],
+                "Rotation": [0, 0, 0]
+            },
+            "CameraComponent":
+            {
+                "FOV": 45,
+                "NearCull": 0.1,
+                "FarCull": 1000,
+                "Forward": [0, 0, -1.0],
+                "UpDir":[0.0, 1.0, 0.0]
+            }
+        }
+    },
+    "Directional Light":
+    {
+      "components":
+      {
+        "TransformComponent":
+        {
+          "Position":[0, 15, 5],
+          "Scale": [1, 1, 1],
+          "Rotation": [0, 0, 0]
+        },
+        "MeshComponent":
+        {
+          "ResourcePath": "Engine/Assets/3D/Cube.obj"
+        },
+        "LightSourceComponent":
+        {
+          "Color": [1, 1, 1],
+          "Strength": 1
+        }
+      }
+    },
+	"Wall":
+	{
+	  "components":
+	  {
+		"TransformComponent":
+		{
+		  "Position": [0, 0, 0],
+		  "Scale":[10, 10, 5],
+		  "Rotation":[0, 0, 0]
+		},
+		"MeshComponent":
+		{
+		  "ResourcePath": "Engine/Assets/3D/Cube.obj"
+		}
+	  }
+	},
+	"Plane":
+	{
+	  "components":
+	  {
+		"TransformComponent":
+		{
+		  "Position": [0, 0, 0],
+		  "Scale":[10, 10, 10],
+		  "Rotation":[0, -125, 0]
+		},
+		"MeshComponent":
+		{
+		  "ResourcePath": "Engine/Assets/3D/FW190/FW190.obj"
+		}
+	  }
+	}
+}
+}
