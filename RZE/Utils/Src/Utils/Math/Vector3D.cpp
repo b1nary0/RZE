@@ -132,6 +132,12 @@ Vector3D Vector3D::operator*(const Matrix4x4& rhs) const
 	return Vector3D(rotVec.x, rotVec.y, rotVec.z);
 }
 
+Vector3D Vector3D::operator/(const float scalar) const
+{
+	glm::vec3 retVec = mVec / scalar;
+	return Vector3D(retVec.x, retVec.y, retVec.z);
+}
+
 bool Vector3D::operator!=(const Vector3D& rhs) const
 {
 	return mVec != rhs.mVec;
