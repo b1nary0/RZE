@@ -37,6 +37,8 @@ public:
 private:
 	void AddToScene(Apollo::EntityID entityID, const std::string& name);
 
+	void Clear();
+
 private:
 	Apollo::EntityHandler mEntityHandler;
 
