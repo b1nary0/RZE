@@ -7,7 +7,7 @@
         {
             "TransformComponent":
             {
-                "Position": [0, 5, 15],
+                "Position": [0, 5, 30],
                 "Scale": [1, 1, 1],
                 "Rotation": [0, 0, 0]
             },
@@ -27,18 +27,14 @@
       {
         "TransformComponent":
         {
-          "Position":[0, 15, 5],
+          "Position":[0, 10, 5],
           "Scale": [1, 1, 1],
           "Rotation": [0, 0, 0]
-        },
-        "MeshComponent":
-        {
-          "ResourcePath": "Engine/Assets/3D/Cube.obj"
         },
         "LightSourceComponent":
         {
           "Color": [1, 1, 1],
-          "Strength": 1
+          "Strength": 0.1
         }
       }
     },
@@ -48,8 +44,8 @@
 	  {
 		"TransformComponent":
 		{
-		  "Position": [0, 0, 0],
-		  "Scale":[10, 10, 5],
+		  "Position": [-30, -0.75, -30],
+		  "Scale":[60, 1, 60],
 		  "Rotation":[0, 0, 0]
 		},
 		"MeshComponent":
@@ -65,7 +61,7 @@
 		"TransformComponent":
 		{
 		  "Position": [0, 0, 0],
-		  "Scale":[10, 10, 10],
+		  "Scale":[25, 25, 25],
 		  "Rotation":[0, -125, 0]
 		},
 		"MeshComponent":
