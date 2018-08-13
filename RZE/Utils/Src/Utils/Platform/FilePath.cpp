@@ -48,3 +48,8 @@ const std::string FilePath::GetRelativeDirectoryPath() const
 	size_t substrCount = mRelativePath.find_last_of('/');
 	return mRelativePath.substr(0, substrCount + 1);
 }
+
+bool FilePath::IsValid()
+{
+	return !mAbsolutePath.empty();
+}
