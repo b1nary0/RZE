@@ -42,6 +42,8 @@ void GameScene::Load(FilePath filePath)
 	// - Probably need to generate GUIDS for components on each machine (installation)
 	//		- Serialize these GUIDs as identifiers?
 	//
+	Clear();
+
 	File sceneFile(filePath.GetAbsolutePath());
 	AssertExpr(sceneFile.IsValid());
 	sceneFile.Close();
@@ -128,6 +130,18 @@ void GameScene::AddToScene(Apollo::EntityID entityID, const std::string& name)
 	mEntityEntries.emplace_back();
 	mEntityEntries.back().ID = entityID;
 	mEntityEntries.back().Name = name;
+}
+
+void GameScene::Clear()
+{
+	// #TODO(Josh::Remember to take a look at what SceneEntryTemp was needed for. Basically was a hack
+	//				to quickly let me represent the scene in data.
+	for (SceneEntryTemp sceneEntry : mEntityEntries)
+	{
+		// #TODO(Josh::Also probably have a function on EntityHandler that will clear it's data of the scene.
+		mEntityHandler.DestroyEntity(sceneEntry.ID);
+	}
+	mEntityEntries.clear();
 }
 
 void GameScene::Start()

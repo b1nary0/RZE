@@ -120,14 +120,10 @@ namespace Apollo
 		for (size_t idx = 0; idx < mSystems.size(); ++idx)
 		{
 			EntitySystem* system = mSystems[idx];
-
 			const EntityComponentFilter& filter = system->GetComponentFilter();
+
 			std::vector<EntityID> filteredEntities;
-
-			{	BROFILER_CATEGORY("Filtering Entity Components", Profiler::Color::CornflowerBlue)
-				filter.FilterAtLeast(mEntities, filteredEntities);
-			}
-
+			filter.FilterAtLeast(mEntities, filteredEntities);
 			system->Update(filteredEntities);
 		}
 	}

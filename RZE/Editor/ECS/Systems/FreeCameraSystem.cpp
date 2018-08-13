@@ -102,11 +102,11 @@ void FreeCameraSystem::KeyboardInput(CameraComponent& camComp, TransformComponen
 	{
 		mMoveToPoint = transfComp.Position + camComp.Forward.Cross(camComp.UpDir).Normalize() * mSpeed;
 	}
-	else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_Q])
+	else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_E])
 	{
 		mMoveToPoint = transfComp.Position + camComp.Forward.Cross(camComp.UpDir).Cross(camComp.Forward) * mSpeed;
 	}
-	else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_E])
+	else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_Q])
 	{
 		mMoveToPoint = transfComp.Position - camComp.Forward.Cross(camComp.UpDir).Cross(camComp.Forward) * mSpeed;
 	}

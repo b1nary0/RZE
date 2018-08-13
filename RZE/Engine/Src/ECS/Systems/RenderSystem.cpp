@@ -64,15 +64,16 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 	camera.ProjectionMat = camComp->ProjectionMat;
 	camera.ViewMat = camComp->ViewMat;
 	renderer.SetCamera(camera);
+
 	Perseus::Job::Task work([this, entities, transfComp, &renderer, &handler]()
 	{
-	for (auto& entity : entities)
-	{
-		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
+		for (auto& entity : entities)
+		{
+			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
 
-		Diotima::Renderer::RenderItemProtocol& item = renderer.GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
-		item.ModelMat = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
-	}
+			Diotima::Renderer::RenderItemProtocol& item = renderer.GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
+			item.ModelMat = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
+		}
 	});
 	Perseus::JobScheduler::Get().PushJob(work);
 

@@ -19,6 +19,8 @@ public:
 	const std::string GetAbsoluteDirectoryPath() const;
 	const std::string GetRelativeDirectoryPath() const;
 
+	bool IsValid();
+
 private:
 	std::string mAbsolutePath;
 	std::string mRelativePath;

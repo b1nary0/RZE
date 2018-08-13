@@ -18,6 +18,10 @@
 
 #include <DebugUtils/DebugServices.h>
 
+// GAME
+#include <Game/Systems/FirstPersonCameraSystem.h>
+#include <Game/Systems/InteractiveSpawningSystem.h>
+
 GameApp::GameApp()
 	: RZE_Application()
 {
@@ -30,6 +34,11 @@ GameApp::~GameApp()
 void GameApp::Initialize()
 {
 	RZE_Application::Initialize();
+
+	RZE().GetActiveScene().Load(FilePath("Engine/Assets/Scenes/TestGame.scene"));
+
+	//RZE().GetActiveScene().GetEntityHandler().AddSystem<InteractiveSpawningSystem>();
+	RZE().GetActiveScene().GetEntityHandler().AddSystem<FirstPersonCameraSystem>();
 }
 
 void GameApp::Start()

@@ -131,8 +131,6 @@ void RZE_Engine::PostInit(Functor<RZE_Application* const>& createApplicationCall
 
 	InitializeApplication(createApplicationCallback);
 
-	// #TODO(Josh) Test
-	mActiveScene->Load(FilePath("Engine/Assets/Scenes/Test.scene"));
 	mActiveScene->Start();
 }
 
