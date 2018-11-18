@@ -99,6 +99,7 @@ namespace Apollo
 	void EntityHandler::GetComponentNames(EntityID entityID, ComponentNameIDMap& outComponentNames)
 	{
 		const ComponentList& components = mEntityComponentMap[entityID];
+		outComponentNames.reserve(components.size());
 		for (auto& component : components)
 		{
 			if (component != nullptr)
