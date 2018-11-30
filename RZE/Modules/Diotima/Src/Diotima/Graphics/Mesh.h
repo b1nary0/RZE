@@ -27,8 +27,6 @@ namespace Diotima
 
 	class GFXMesh
 	{
-		friend class MeshResource;
-
 		typedef std::unordered_map<U32, std::vector<GFXTexture2D*>> TextureMap;
 
 	public:
