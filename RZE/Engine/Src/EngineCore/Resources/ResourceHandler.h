@@ -27,15 +27,8 @@ private:
 
 		ResourceSource(IResource* resource)
 		{
-			mReferenceCount = 1;
+			mReferenceCount = 0;
 			mResource = resource;
-		}
-
-		ResourceSource(ResourceSource& rhs)
-		{
-			rhs.IncreaseRefCount();
-			mReferenceCount = rhs.mReferenceCount;
-			mResource = rhs.mResource;
 		}
 
 		void IncreaseRefCount() { ++mReferenceCount; }
@@ -43,13 +36,13 @@ private:
 
 		IResource* GetResource() { return mResource; }
 
-		bool IsReferenced() { return mReferenceCount != 0; }
+		bool IsReferenced() { return mReferenceCount > 0; }
 		bool IsValid() { return IsReferenced() && mResource; }
 
 		void Destroy()
 		{
 			AssertNotNull(mResource);
-			AssertExpr(mReferenceCount == 0);
+			AssertExpr(mReferenceCount <= 0);
 
 			delete mResource;
 			mResource = nullptr;
@@ -94,7 +87,6 @@ private:
 	template <class ResourceT, class... Args>
 	IResource* CreateAndLoadResource(const FilePath& resourcePath, Args&&... args);
 
-	BlockAllocator mAllocator;
 	std::unordered_map<std::string, ResourceSource> mResourceTable;
 };
 
@@ -105,19 +97,22 @@ class ResourceHandle
 public:
 	ResourceHandle();
 	ResourceHandle(const ResourceHandle& rhs);
+	ResourceHandle(ResourceHandle&& rhs);
 	~ResourceHandle();
 
-	static ResourceHandle EmptyHandle() { return ResourceHandle("", nullptr); }
+	static ResourceHandle EmptyHandle(ResourceHandler* handler) { return ResourceHandle("", nullptr, handler); }
 
 	bool IsValid() const;
 	const std::string& GetID() const;
 
 	bool operator==(const ResourceHandle& rhs);
 	void operator=(const ResourceHandle& rhs);
+	void operator=(ResourceHandle&& rhs);
 
 private:
-	ResourceHandle(const std::string& resourceID, ResourceHandler::ResourceSource* resourceSource);
+	ResourceHandle(const std::string& resourceID, ResourceHandler::ResourceSource* resourceSource, ResourceHandler* handler);
 
+	ResourceHandler* mHandler;
 	std::string mResourceID;
 	ResourceHandler::ResourceSource* mResourceSource;
 };
@@ -138,18 +133,16 @@ ResourceHandle ResourceHandler::RequestResource(const FilePath& resourcePath, Ar
 			ResourceSource resourceSource(resource);
 
 			mResourceTable[resourceKey] = resourceSource;
-			return ResourceHandle(resourceKey, &mResourceTable[resourceKey]);
+			return ResourceHandle(resourceKey, &mResourceTable[resourceKey], this);
 		}
 		else
 		{
-			return ResourceHandle::EmptyHandle();
+			return ResourceHandle::EmptyHandle(this);
 		}
 	}
 
 	ResourceSource& resourceSource = (*iter).second;
-	resourceSource.IncreaseRefCount();
-
-	return ResourceHandle(resourceKey, &resourceSource);
+	return ResourceHandle(resourceKey, &resourceSource, this);
 }
 
 template <class ResourceT>

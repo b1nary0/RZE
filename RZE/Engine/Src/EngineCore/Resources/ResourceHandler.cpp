@@ -40,7 +40,7 @@ void ResourceHandler::ShutDown()
 
 ResourceHandle ResourceHandler::GetEmptyResourceHandle()
 {
-	return ResourceHandle("", nullptr);
+	return ResourceHandle("", nullptr, this);
 }
 
 void ResourceHandler::ReleaseResource(ResourceHandle& resourceHandle)
@@ -71,25 +71,46 @@ ResourceHandle::ResourceHandle()
 	mResourceSource = nullptr;
 }
 
-ResourceHandle::ResourceHandle(const std::string& resourceID, ResourceHandler::ResourceSource* resourceSource)
+ResourceHandle::ResourceHandle(const std::string& resourceID, ResourceHandler::ResourceSource* resourceSource, ResourceHandler* handler)
 {
+	mHandler = handler;
 	mResourceID = resourceID;
 	mResourceSource = resourceSource;
+
+	mResourceSource->IncreaseRefCount();
 }
 
 ResourceHandle::ResourceHandle(const ResourceHandle& rhs)
 {
 	mResourceID = rhs.mResourceID;
 	mResourceSource = rhs.mResourceSource;
+	mHandler = rhs.mHandler;
 
 	mResourceSource->IncreaseRefCount();
 }
 
+
+ResourceHandle::ResourceHandle(ResourceHandle&& rhs)
+{
+	mResourceID = rhs.mResourceID;
+	rhs.mResourceID = "";
+
+	mResourceSource = rhs.mResourceSource;
+	rhs.mResourceSource = nullptr;
+
+	mHandler = rhs.mHandler;
+	rhs.mHandler = nullptr;
+}
+
 ResourceHandle::~ResourceHandle()
 {
-	if (mResourceSource)
+	if (mResourceSource != nullptr)
 	{
 		mResourceSource->DecreaseRefCount();
+		if (!mResourceSource->IsReferenced() && mResourceSource->GetResource() != nullptr)
+		{
+			mHandler->ReleaseResource(*this);
+		}
 	}
 }
 
@@ -101,6 +122,19 @@ bool ResourceHandle::IsValid() const
 const std::string& ResourceHandle::GetID() const
 {
 	return mResourceID;
+}
+
+
+void ResourceHandle::operator=(ResourceHandle&& rhs)
+{
+	mResourceID = rhs.mResourceID;
+	rhs.mResourceID = "";
+
+	mResourceSource = rhs.mResourceSource;
+	rhs.mResourceSource = nullptr;
+
+	mHandler = rhs.mHandler;
+	rhs.mHandler = nullptr;
 }
 
 void ResourceHandle::operator=(const ResourceHandle& rhs)
