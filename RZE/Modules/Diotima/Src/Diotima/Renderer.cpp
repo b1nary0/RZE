@@ -52,6 +52,8 @@ namespace Diotima
 
 	void Renderer::RemoveRenderItem(const U32 itemIdx)
 	{
+		AssertExpr(itemIdx < mRenderList.size());
+
 		mRenderList[itemIdx].Invalidate();
 		mFreeRenderListIndices.push(itemIdx);
 	}
@@ -88,9 +90,9 @@ namespace Diotima
 	void Renderer::Update()
 	{
 		BROFILER_CATEGORY("Renderer::Update", Profiler::Color::Red)
-			//AssertNotNull(mRenderTarget);
+		//AssertNotNull(mRenderTarget);
 
-			const OpenGLRHI& openGL = OpenGLRHI::Get();
+		const OpenGLRHI& openGL = OpenGLRHI::Get();
 
 		if (mRenderTarget != nullptr)
 		{
@@ -160,7 +162,6 @@ namespace Diotima
 		for (size_t lightIdx = 0; lightIdx < mLightingList.size(); ++lightIdx)
 		{
 			const LightItemProtocol& lightItem = mLightingList[lightIdx];
-			std::string itemIdxStr = Conversions::StringFromInt(static_cast<int>(lightIdx));
 
 			renderItem.Shader->SetUniformVector3D("LightPositions[0]", lightItem.Position);
 			renderItem.Shader->SetUniformVector3D("LightColors[0]", lightItem.Color);
