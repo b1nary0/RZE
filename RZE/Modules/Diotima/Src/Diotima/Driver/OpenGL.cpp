@@ -2,8 +2,6 @@
 
 #include <Utils/DebugUtils/Debug.h>
 
-#include <GL/wglew.h>
-
 OpenGLRHI::OpenGLRHI()
 {
 }

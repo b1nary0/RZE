@@ -3,6 +3,7 @@
 #define GLEW_STATIC
 #include <GL/glew.h>
 #include <GL/GL.h>
+#include <GL/wglew.h>
 
 // #TODO(Josh) No. Move this.
 #include <Windows.h>

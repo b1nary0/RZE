@@ -123,29 +123,57 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 		mOSWindowHandleData.deviceContext = GetDC(mOSWindowHandleData.windowHandle);
 		if (!mOSWindowHandleData.deviceContext)
 		{
+			LOG_CONSOLE("<Failure retrieving device context>");
 			AssertFalse();
 		}
 
 		int pixelFormat = ChoosePixelFormat(mOSWindowHandleData.deviceContext, &mOSWindowHandleData.pixelFormatDesc);
 		if (!pixelFormat)
 		{
+			LOG_CONSOLE("<Failure choosing pixel format>");
 			AssertFalse();
 		}
 
 		if (!SetPixelFormat(mOSWindowHandleData.deviceContext, pixelFormat, &mOSWindowHandleData.pixelFormatDesc))
 		{
+			LOG_CONSOLE("<Failure setting pixel format>");
 			AssertFalse();
 		}
 
-		mOSWindowHandleData.renderContext = wglCreateContext(mOSWindowHandleData.deviceContext);
-		if (!mOSWindowHandleData.renderContext)
+		// #NOTE(Josh::Creating dummy context to access wgl functions)
+		HGLRC dummyContext = wglCreateContext(mOSWindowHandleData.deviceContext);
+		if (!dummyContext)
 		{
+			LOG_CONSOLE("<Failure creating dummy render context>");
 			AssertFalse();
 		}
 
-		if (!wglMakeCurrent(mOSWindowHandleData.deviceContext, mOSWindowHandleData.renderContext))
+		if (!wglMakeCurrent(mOSWindowHandleData.deviceContext, dummyContext))
 		{
+			LOG_CONSOLE("<Failure setting dummy render context current>");
 			AssertFalse();
+		}
+
+		PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = reinterpret_cast<PFNWGLCREATECONTEXTATTRIBSARBPROC>(wglGetProcAddress("wglCreateContextAttribsARB"));
+		if (wglCreateContextAttribsARB)
+		{
+			int attriblist[] = { WGL_CONTEXT_MAJOR_VERSION_ARB, 4, WGL_CONTEXT_MINOR_VERSION_ARB, 4, WGL_CONTEXT_FLAGS_ARB, 0, 0, 0 };
+			mOSWindowHandleData.renderContext = wglCreateContextAttribsARB(mOSWindowHandleData.deviceContext, 0, attriblist);
+			if (!mOSWindowHandleData.renderContext)
+			{
+				LOG_CONSOLE("<Failure creating real render context>");
+			}
+			else if (!wglMakeCurrent(mOSWindowHandleData.deviceContext, mOSWindowHandleData.renderContext))
+			{
+				LOG_CONSOLE("<Failure setting real render context as current>");
+				AssertFalse();
+			}
+
+			LOG_CONSOLE("<Deleting dummy context>");
+			if (!wglDeleteContext(dummyContext))
+			{
+				LOG_CONSOLE("<Failure deleting dummy context>");
+			}
 		}
 
 		InternalSetWindowPosition(Vector2D(0, 0));
