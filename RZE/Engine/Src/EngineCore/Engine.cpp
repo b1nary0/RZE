@@ -192,13 +192,12 @@ void RZE_Engine::InitializeApplication(Functor<RZE_Application* const> createGam
 	mApplication->GetRenderTarget().SetWidth(static_cast<int>(windowDims.X()));
 	mApplication->GetRenderTarget().SetHeight(static_cast<int>(windowDims.Y()));
 
-	if (!mApplication->IsEditor())
+	if (mApplication->IsEditor())
 	{
-		mApplication->GetRenderTarget().Initialize();
+		mRenderer->SetRenderTarget(&mApplication->GetRenderTarget());
 	}
 
 	// #TODO(Josh) Investigate a better transfer point than this re: render target setting
-	mRenderer->SetRenderTarget(&mApplication->GetRenderTarget());
 
 	mApplication->Start();
 }

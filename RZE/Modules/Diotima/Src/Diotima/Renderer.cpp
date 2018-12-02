@@ -112,16 +112,19 @@ namespace Diotima
 
 	void Renderer::Update()
 	{	BROFILER_CATEGORY("Renderer::Update", Profiler::Color::Red)
-		AssertNotNull(mRenderTarget);
+		//AssertNotNull(mRenderTarget);
 
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
 
-		mRenderTarget->Bind();
-		// #TODO(Josh) Can probably optimize this away nicely
-		openGL.Viewport(0, 0, mRenderTarget->GetWidth(), mRenderTarget->GetHeight());
-		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
+		if (mRenderTarget != nullptr)
+		{
+			mRenderTarget->Bind();
+			// #TODO(Josh) Can probably optimize this away nicely
+			openGL.Viewport(0, 0, mRenderTarget->GetWidth(), mRenderTarget->GetHeight());
+			//renderToTextureShader->Use();
+		}
 		
-		renderToTextureShader->Use();
+		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
 		{	BROFILER_CATEGORY("Item Processing", Profiler::Color::DarkOrange)
 			// #TODO(Josh) How does this interact with other shaders? Will this cause problems? What is the best way to achieve this in a robust manner?
 			for (auto& renderItem : mRenderList)
@@ -133,8 +136,11 @@ namespace Diotima
 			}
 		}
 
-		openGL.Viewport(0, 0, static_cast<GLint>(mCanvasSize.X()), static_cast<GLint>(mCanvasSize.Y()));
-		mRenderTarget->Unbind();
+		//openGL.Viewport(0, 0, static_cast<GLint>(mCanvasSize.X()), static_cast<GLint>(mCanvasSize.Y()));
+		if (mRenderTarget != nullptr)
+		{
+			mRenderTarget->Unbind();
+		}
 	}
 
 	void Renderer::ShutDown()
