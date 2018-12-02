@@ -111,10 +111,11 @@ namespace Diotima
 	}
 
 	void Renderer::Update()
-	{	BROFILER_CATEGORY("Renderer::Update", Profiler::Color::Red)
-		//AssertNotNull(mRenderTarget);
+	{
+		BROFILER_CATEGORY("Renderer::Update", Profiler::Color::Red)
+			//AssertNotNull(mRenderTarget);
 
-		const OpenGLRHI& openGL = OpenGLRHI::Get();
+			const OpenGLRHI& openGL = OpenGLRHI::Get();
 
 		if (mRenderTarget != nullptr)
 		{
@@ -123,7 +124,7 @@ namespace Diotima
 			openGL.Viewport(0, 0, mRenderTarget->GetWidth(), mRenderTarget->GetHeight());
 			//renderToTextureShader->Use();
 		}
-		
+
 		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
 		{	BROFILER_CATEGORY("Item Processing", Profiler::Color::DarkOrange)
 			// #TODO(Josh) How does this interact with other shaders? Will this cause problems? What is the best way to achieve this in a robust manner?
@@ -136,11 +137,11 @@ namespace Diotima
 			}
 		}
 
-		//openGL.Viewport(0, 0, static_cast<GLint>(mCanvasSize.X()), static_cast<GLint>(mCanvasSize.Y()));
 		if (mRenderTarget != nullptr)
 		{
 			mRenderTarget->Unbind();
 		}
+		openGL.Viewport(0, 0, static_cast<GLint>(mCanvasSize.X()), static_cast<GLint>(mCanvasSize.Y()));
 	}
 
 	void Renderer::ShutDown()
@@ -224,6 +225,28 @@ namespace Diotima
 			mesh->GetVAO().Unbind();
 
 			openGL.BindTexture(EGLCapability::Texture2D, 0);
+		}
+	}
+
+	void Renderer::RenderToTexture()
+	{
+		// #TODO(Josh::Fix this)
+		GLRenderTargetTexture* const renderTargetTexture = dynamic_cast<GLRenderTargetTexture* const>(mRenderTarget);
+		if (renderTargetTexture != nullptr)
+		{
+			const OpenGLRHI& openGL = OpenGLRHI::Get();
+			//openGL.Viewport(0, 0, renderTargetTexture->GetWidth(), renderTargetTexture->GetHeight());
+
+			//renderTargetTexture->Bind();
+// 			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+// 			glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTargetTexture->GetTextureID(), 0);
+// 			glBlitFramebuffer(0, 0, renderTargetTexture->GetWidth(), renderTargetTexture->GetHeight(), 0, 0, renderTargetTexture->GetWidth(), renderTargetTexture->GetHeight(), GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+			//renderTargetTexture->Unbind();
+		}
+		else
+		{
+			LOG_CONSOLE("<<< RENDER TARGET TEXTURE FAILED >>>");
 		}
 	}
 

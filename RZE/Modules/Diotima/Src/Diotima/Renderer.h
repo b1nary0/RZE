@@ -104,6 +104,7 @@ namespace Diotima
 		
 	private:
 		void RenderSingleItem(RenderItemProtocol& itemProtocol);
+		void RenderToTexture();
 
 	private:
 		Vector2D mCanvasSize;
