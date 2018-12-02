@@ -25,29 +25,6 @@ bool ImGUICreateDeviceObjects();
 // </ImGui>
 //
 
-Diotima::GFXShaderPipeline* renderToTextureShader = nullptr;
-void CreateRenderToTextureShader()
-{
-	const FilePath vertShaderFilePath("Engine/Assets/Shaders/RenderToTextureVert.shader");
-	const FilePath fragShaderFilePath("Engine/Assets/Shaders/RenderToTextureFrag.shader");
-
-	Diotima::GFXShader* vertShader = new Diotima::GFXShader(EGLShaderType::Vertex, "RenderToTextureVertex");
-	vertShader->Load(vertShaderFilePath);
-	vertShader->Create();
-	vertShader->Compile();
-
-	Diotima::GFXShader* fragShader = new Diotima::GFXShader(EGLShaderType::Fragment, "RenderToTextureFragment");
-	fragShader->Load(fragShaderFilePath);
-	fragShader->Create();
-	fragShader->Compile();
-
-	renderToTextureShader = new Diotima::GFXShaderPipeline("TextureShader");
-	renderToTextureShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Vertex, vertShader);
-	renderToTextureShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Fragment, fragShader);
-
-	renderToTextureShader->GenerateShaderProgram();
-}
-
 namespace Diotima
 {
 	Renderer::Renderer()
@@ -98,8 +75,6 @@ namespace Diotima
 
 		OpenGLRHI::Get().EnableCapability(EGLCapability::DepthTest);
 
-		CreateRenderToTextureShader();
-
 		// Meshing renderer with ImGui because of new application/engine relationship experimental but also because... why not, just make it with the renderer for the time being
 		{
 			ImGui::SetCurrentContext(ImGui::CreateContext());
@@ -122,12 +97,11 @@ namespace Diotima
 			mRenderTarget->Bind();
 			// #TODO(Josh) Can probably optimize this away nicely
 			openGL.Viewport(0, 0, mRenderTarget->GetWidth(), mRenderTarget->GetHeight());
-			//renderToTextureShader->Use();
 		}
 
 		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
 		{	BROFILER_CATEGORY("Item Processing", Profiler::Color::DarkOrange)
-			// #TODO(Josh) How does this interact with other shaders? Will this cause problems? What is the best way to achieve this in a robust manner?
+			mShaderPipeline->Use();
 			for (auto& renderItem : mRenderList)
 			{
 				if (renderItem.bIsValid)
@@ -172,7 +146,6 @@ namespace Diotima
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
 
 		// #NOTE(Josh) Need to handle this via sorting to set only once.
-		renderItem.Shader->Use();
 		renderItem.Shader->SetUniformMatrix4x4("UProjectionMat", camera.ProjectionMat);
 		renderItem.Shader->SetUniformMatrix4x4("UViewMat", camera.ViewMat);
 		renderItem.Shader->SetUniformVector4D("UFragColor", renderItem.Material.Color);

@@ -82,6 +82,8 @@ namespace Diotima
 	public:
 		Renderer();
 
+		GFXShaderPipeline* mShaderPipeline;
+
 		// ISubSystem interface
 	public:
 		void Initialize();
