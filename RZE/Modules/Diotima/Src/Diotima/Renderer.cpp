@@ -114,7 +114,7 @@ namespace Diotima
 		// #TODO(Josh::This will cause a double draw in editor. Need to find a better way to discern
 		//       what is to be done here. Game needs to blit to screen via the RTT framebuffer, but editor gets read
 		//       from the generated texture and then ImGUI gets drawn over everything.
-		RenderToTexture();
+		BlitToWindow();
 		// #NOTE(Josh::This is to reset the editor viewport so ImGUI draws to the whole screen and not the SceneViewWidget
 		//       size. This is a symptom of having better engine-agnostic context to the render target system)
 		openGL.Viewport(0, 0, static_cast<GLint>(mCanvasSize.X()), static_cast<GLint>(mCanvasSize.Y()));
@@ -201,7 +201,7 @@ namespace Diotima
 		}
 	}
 
-	void Renderer::RenderToTexture()
+	void Renderer::BlitToWindow()
 	{
 		if (mRenderTarget != nullptr)
 		{
