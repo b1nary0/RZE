@@ -25,8 +25,9 @@ namespace Diotima
 		inline U32 GetWidth() const { return mWidth; }
 		inline U32 GetHeight() const { return mHeight; }
 
-		void SetWidth(U32 width) { mWidth = width; }
-		void SetHeight(U32 height) { mHeight = height; }
+		// Returns true if dimensions actually changed -- to allow for current process of buffer resize
+		// #NOTE(Josh::May want to address this with better architecture later?)
+		bool SetDimensions(U32 width, U32 height);
 
 	protected:
 		inline U32& InternalGetFrameBufferID() { return mFrameBufferID; }

@@ -90,17 +90,13 @@ namespace Diotima
 	void Renderer::Update()
 	{
 		BROFILER_CATEGORY("Renderer::Update", Profiler::Color::Red)
-		//AssertNotNull(mRenderTarget);
+		AssertNotNull(mRenderTarget);
 
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
-
-		if (mRenderTarget != nullptr)
-		{
-			mRenderTarget->Bind();
-			// #TODO(Josh) Can probably optimize this away nicely
-			openGL.Viewport(0, 0, mRenderTarget->GetWidth(), mRenderTarget->GetHeight());
-		}
-
+		
+		mRenderTarget->Bind();
+		// #TODO(Josh) Can probably optimize this away nicely
+		openGL.Viewport(0, 0, mRenderTarget->GetWidth(), mRenderTarget->GetHeight());
 		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
 		{	BROFILER_CATEGORY("Item Processing", Profiler::Color::DarkOrange)
 			mShaderPipeline->Use();
@@ -112,11 +108,15 @@ namespace Diotima
 				}
 			}
 		}
+		mRenderTarget->Unbind();
 
-		if (mRenderTarget != nullptr)
-		{
-			mRenderTarget->Unbind();
-		}
+
+		// #TODO(Josh::This will cause a double draw in editor. Need to find a better way to discern
+		//       what is to be done here. Game needs to blit to screen via the RTT framebuffer, but editor gets read
+		//       from the generated texture and then ImGUI gets drawn over everything.
+		RenderToTexture();
+		// #NOTE(Josh::This is to reset the editor viewport so ImGUI draws to the whole screen and not the SceneViewWidget
+		//       size. This is a symptom of having better engine-agnostic context to the render target system)
 		openGL.Viewport(0, 0, static_cast<GLint>(mCanvasSize.X()), static_cast<GLint>(mCanvasSize.Y()));
 	}
 
@@ -138,7 +138,6 @@ namespace Diotima
 	void Renderer::ResizeCanvas(const Vector2D& newSize)
 	{
 		mCanvasSize = newSize;
-		OpenGLRHI::Get().Viewport(0, 0, static_cast<GLsizei>(newSize.X()), static_cast<GLsizei>(newSize.Y()));
 	}
 
 	void Renderer::RenderSingleItem(RenderItemProtocol& renderItem)
@@ -204,19 +203,19 @@ namespace Diotima
 
 	void Renderer::RenderToTexture()
 	{
-		// #TODO(Josh::Fix this)
-		GLRenderTargetTexture* const renderTargetTexture = dynamic_cast<GLRenderTargetTexture* const>(mRenderTarget);
-		if (renderTargetTexture != nullptr)
+		if (mRenderTarget != nullptr)
 		{
 			const OpenGLRHI& openGL = OpenGLRHI::Get();
-			//openGL.Viewport(0, 0, renderTargetTexture->GetWidth(), renderTargetTexture->GetHeight());
+			openGL.Viewport(0, 0, mRenderTarget->GetWidth(), mRenderTarget->GetHeight());
 
-			//renderTargetTexture->Bind();
-// 			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-// 			glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTargetTexture->GetTextureID(), 0);
-// 			glBlitFramebuffer(0, 0, renderTargetTexture->GetWidth(), renderTargetTexture->GetHeight(), 0, 0, renderTargetTexture->GetWidth(), renderTargetTexture->GetHeight(), GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
-			//renderTargetTexture->Unbind();
+			openGL.BindFramebuffer(EGLBufferTarget::DrawFramebuffer, 0);
+			openGL.BindFramebuffer(EGLBufferTarget::ReadFramebuffer, mRenderTarget->GetFrameBufferID());
+			// #TODO(Josh::Wrap these properly in OpenGLRHI)
+			glReadBuffer(GL_COLOR_ATTACHMENT0);
+			glBlitFramebuffer(
+				0, 0, static_cast<GLint>(mRenderTarget->GetWidth()), static_cast<GLint>(mRenderTarget->GetHeight()),
+				0, 0, static_cast<GLint>(mCanvasSize.X()), static_cast<GLint>(mCanvasSize.Y()), 
+				GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 		}
 		else
 		{

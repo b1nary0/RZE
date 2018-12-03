@@ -15,9 +15,7 @@ void SceneViewWidget::Initialize()
 {
 	AssertNotNull(pRTT);
 
-	pRTT->SetWidth(1280);
-	pRTT->SetHeight(720);
-
+	pRTT->SetDimensions(1280, 720);
 	pRTT->Initialize();
 }
 

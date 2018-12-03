@@ -189,15 +189,10 @@ void RZE_Engine::InitializeApplication(Functor<RZE_Application* const> createGam
 	mApplication->SetWindow(mMainWindow);
 
 	const Vector2D& windowDims = mEngineConfig->GetWindowSettings().GetDimensions();
-	mApplication->GetRenderTarget().SetWidth(static_cast<int>(windowDims.X()));
-	mApplication->GetRenderTarget().SetHeight(static_cast<int>(windowDims.Y()));
-
-	if (mApplication->IsEditor())
-	{
-		mRenderer->SetRenderTarget(&mApplication->GetRenderTarget());
-	}
+	mApplication->GetRenderTarget().SetDimensions(static_cast<U32>(windowDims.X()), static_cast<U32>(windowDims.Y()));
 
 	// #TODO(Josh) Investigate a better transfer point than this re: render target setting
+	mRenderer->SetRenderTarget(&mApplication->GetRenderTarget());
 
 	mApplication->Start();
 }
@@ -220,6 +215,11 @@ void RZE_Engine::RegisterWindowEvents()
 		else if (event.mWindowEvent.mEventInfo.mEventSubType == EWindowEventType::Window_Resize)
 		{
 			Vector2D newSize(event.mWindowEvent.mSizeX, event.mWindowEvent.mSizeY);
+			if (!mApplication->IsEditor())
+			{
+				mApplication->GetRenderTarget().SetDimensions(static_cast<U32>(newSize.X()), static_cast<U32>(newSize.Y()));
+				mApplication->GetRenderTarget().Initialize();
+			}
 			GetRenderer().ResizeCanvas(newSize);
 			DebugServices::HandleScreenResize(newSize);
 		}

@@ -22,6 +22,20 @@ namespace Diotima
 	{
 	}
 
+
+	bool RenderTarget::SetDimensions(U32 width, U32 height)
+	{
+		if (width != mWidth || height != mHeight)
+		{
+			mWidth = width;
+			mHeight = height;
+
+			return true;
+		}
+
+		return false;
+	}
+
 	RenderTargetTexture::RenderTargetTexture(U32 width, U32 height)
 		: RenderTarget(width, height)
 	{

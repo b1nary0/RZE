@@ -2,6 +2,21 @@
 
 #include <Utils/DebugUtils/Debug.h>
 
+void GLAPIENTRY
+MessageCB(GLenum source,
+	GLenum type,
+	GLuint id,
+	GLenum severity,
+	GLsizei length,
+	const GLchar* message,
+	const void* userParam)
+{
+	if (type == GL_DEBUG_OUTPUT)
+	{
+		LOG_CONSOLE(message);
+	}
+}
+
 OpenGLRHI::OpenGLRHI()
 {
 }
@@ -18,6 +33,9 @@ void OpenGLRHI::Init(const OpenGLCreationParams& creationParams) const
 	glViewport(0, 0, creationParams.WindowWidth, creationParams.WindowHeight);
 
 	InitGLEW();
+
+	glEnable(GL_DEBUG_OUTPUT);
+	glDebugMessageCallback(MessageCB, 0);
 }
 
 void OpenGLRHI::InitGLEW() const
@@ -125,10 +143,11 @@ void OpenGLRHI::BindBuffer(const EGLBufferTarget::T target, const GLuint bufferO
 	AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
-void OpenGLRHI::BindFramebuffer(const GLuint bufferObjectHandle) const
+void OpenGLRHI::BindFramebuffer(EGLBufferTarget::T bufferTarget, GLuint bufferObjectHandle) const
 {
-	glBindFramebuffer(GL_FRAMEBUFFER, bufferObjectHandle);
-	AssertExpr(glGetError() == GL_NO_ERROR);
+	glBindFramebuffer(bufferTarget, bufferObjectHandle);
+	GLenum errorCode = glGetError();
+	AssertExpr(errorCode == GL_NO_ERROR);
 }
 
 void OpenGLRHI::BindRenderbuffer(const GLint bufferObjectHandle) const
