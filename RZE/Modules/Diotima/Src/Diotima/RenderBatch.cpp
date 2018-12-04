@@ -10,6 +10,8 @@ namespace Diotima
 {
 	RenderBatch::RenderBatch()
 	{
+		mNumIndices = 0;
+
 		mVAO.Init();
 		mVAO.Bind();
 
