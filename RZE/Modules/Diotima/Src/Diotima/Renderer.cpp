@@ -166,6 +166,7 @@ namespace Diotima
 		// #TODO(Josh::Hardcore magic values here until I implement texture batch relationships)
 		if (renderItem.Textures.size() > 0)
 		{
+ 			mShaderPipeline->SetUniformInt("DiffuseTextureCount", static_cast<int>(1));
 			U32 numTexturesBound = 0;
 			for (auto& texture : renderItem.Textures)
 			{
