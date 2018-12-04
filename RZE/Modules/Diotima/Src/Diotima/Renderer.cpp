@@ -104,6 +104,10 @@ namespace Diotima
 		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
 		{	BROFILER_CATEGORY("Item Processing", Profiler::Color::DarkOrange)
 			mShaderPipeline->Use();
+			mShaderPipeline->SetUniformMatrix4x4("UProjectionMat", camera.ProjectionMat);
+			mShaderPipeline->SetUniformMatrix4x4("UViewMat", camera.ViewMat);
+			mShaderPipeline->SetUniformInt("UNumActiveLights", mLightingList.size());
+			mShaderPipeline->SetUniformVector3D(std::string("ViewPos").c_str(), camera.Position);
 			for (auto& renderItem : mRenderList)
 			{
 				if (renderItem.bIsValid)
@@ -151,16 +155,7 @@ namespace Diotima
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
 
 		// #NOTE(Josh) Need to handle this via sorting to set only once.
-		renderItem.Shader->SetUniformMatrix4x4("UProjectionMat", camera.ProjectionMat);
-		renderItem.Shader->SetUniformMatrix4x4("UViewMat", camera.ViewMat);
-		renderItem.Shader->SetUniformVector4D("UFragColor", renderItem.Material.Color);
 		renderItem.Shader->SetUniformMatrix4x4("UModelMat", renderItem.ModelMat);
-
-		renderItem.Shader->SetUniformInt("Material.Diffuse", 0);
-		renderItem.Shader->SetUniformInt("Material.Specular", 1);
-
-		renderItem.Shader->SetUniformInt("UNumActiveLights", mLightingList.size());
-		renderItem.Shader->SetUniformVector3D(std::string("ViewPos").c_str(), camera.Position);
 
 		for (size_t lightIdx = 0; lightIdx < mLightingList.size(); ++lightIdx)
 		{
