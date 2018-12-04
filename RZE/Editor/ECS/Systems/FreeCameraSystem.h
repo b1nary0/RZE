@@ -27,11 +27,8 @@ private:
 	Vector3D ArcBallProjection(const Vector3D& vec);
 
 private:
-	const float kMaxSpeed = 2.5f;
-
-	float mSpeed = 0.0f;
+	float mSpeed = 8.0f;
 	float mWheelZoomSpeed = 1.5f;
-	Vector3D mMoveToPoint;
 
 	// Keeping own version of previous position agnostic of the engine one because we only want to know
 	// the previous position as it relates to these calculations. Maybe there is a better way but this is now.

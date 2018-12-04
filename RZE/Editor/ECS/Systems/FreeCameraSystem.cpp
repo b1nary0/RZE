@@ -10,7 +10,6 @@
 #include <ECS/Components/NameComponent.h>
 #include <ECS/Components/TransformComponent.h>
 
-#include <DebugUtils/DebugServices.h>
 #include <Utils/Math/Math.h>
 
 FreeCameraSystem::FreeCameraSystem(Apollo::EntityHandler* const entityHandler)
@@ -34,8 +33,6 @@ void FreeCameraSystem::Update(const std::vector<Apollo::EntityID>& entities)
 {
 	BROFILER_CATEGORY("FreeCameraSystem::Update", Profiler::Color::Yellow);
 
-	DebugServices::AddData(StringUtils::FormatString("mSpeed: %f", mSpeed));
-
 	Apollo::EntityHandler& handler = InternalGetEntityHandler();
 	for (auto& entity : entities)
 	{
@@ -49,13 +46,6 @@ void FreeCameraSystem::Update(const std::vector<Apollo::EntityID>& entities)
 
 			KeyboardInput(*camComp, *transfComp);
 			MouseInput(*camComp, *transfComp);
-
- 			Vector3D dist = mMoveToPoint - transfComp->Position;
- 			if (dist.LengthSq() > VectorUtils::kEpsilon * VectorUtils::kEpsilon)
- 			{
-				Vector3D lerpPos = VectorUtils::Lerp(transfComp->Position, mMoveToPoint, static_cast<float>(8 * RZE_Application::RZE().GetDeltaTime()));
- 				transfComp->SetPosition(lerpPos);
- 			}
 		}
 	}
 
@@ -70,52 +60,37 @@ void FreeCameraSystem::KeyboardInput(CameraComponent& camComp, TransformComponen
 	InputHandler& inputHandler = RZE_Application::RZE().GetInputHandler();
 
 	float dt = static_cast<float>(RZE_Application::RZE().GetDeltaTime());
-
-	if (mSpeed > kMaxSpeed)
-	{
-		mSpeed = kMaxSpeed;
-	}
-	
-	if (!inputHandler.GetKeyboardState().IsIdle())
-	{
-		mSpeed += 1.5f * static_cast<float>(RZE_Application::RZE().GetDeltaTime());
-	}
-	else
-	{
-		mSpeed = 0.0f;
-	}
-
-	
+	float speedDelta = mSpeed * dt;
 	if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_W])
 	{
-		mMoveToPoint = transfComp.Position + camComp.Forward * mSpeed;
+		transfComp.Position += camComp.Forward * speedDelta;
 	}
 	else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_S])
 	{
-		mMoveToPoint = transfComp.Position - camComp.Forward * mSpeed;
+		transfComp.Position -= camComp.Forward * speedDelta;
 	}
 	else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_A])
 	{
-		mMoveToPoint = transfComp.Position - camComp.Forward.Cross(camComp.UpDir).Normalize() * mSpeed;
+		transfComp.Position -= camComp.Forward.Cross(camComp.UpDir).Normalize() * speedDelta;
 	}
 	else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_D])
 	{
-		mMoveToPoint = transfComp.Position + camComp.Forward.Cross(camComp.UpDir).Normalize() * mSpeed;
+		transfComp.Position += camComp.Forward.Cross(camComp.UpDir).Normalize() * speedDelta;
 	}
 	else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_E])
 	{
-		mMoveToPoint = transfComp.Position + camComp.Forward.Cross(camComp.UpDir).Cross(camComp.Forward) * mSpeed;
+		transfComp.Position += camComp.Forward.Cross(camComp.UpDir).Cross(camComp.Forward) * speedDelta;
 	}
 	else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_Q])
 	{
-		mMoveToPoint = transfComp.Position - camComp.Forward.Cross(camComp.UpDir).Cross(camComp.Forward) * mSpeed;
+		transfComp.Position -= camComp.Forward.Cross(camComp.UpDir).Cross(camComp.Forward) * speedDelta;
 	}
 
 	Int32 wheelVal = RZE_Application::RZE().GetInputHandler().GetMouseState().CurWheelVal;
 	if (wheelVal != 0)
 	{
 		wheelVal = MathUtils::Clamp(wheelVal, -1, 1);
-		transfComp.Position = mMoveToPoint = transfComp.Position + (camComp.Forward * static_cast<float>(wheelVal)) * mWheelZoomSpeed;
+		transfComp.Position = transfComp.Position + (camComp.Forward * static_cast<float>(wheelVal)) * mWheelZoomSpeed;
 	}
 }
 
@@ -175,21 +150,6 @@ void FreeCameraSystem::MouseInput(CameraComponent& camComp, TransformComponent& 
 
 void FreeCameraSystem::RegisterComponentAddedNotifications()
 {
-	Apollo::EntityHandler& handler = InternalGetEntityHandler();
-
-	Apollo::EntityHandler::ComponentAddedFunc transfCompAdded([this, &handler](Apollo::EntityID entity)
-	{
-		NameComponent* const nameComp = handler.GetComponent<NameComponent>(entity);
-		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
-		AssertNotNull(transfComp);
-		AssertNotNull(nameComp);
-
-		if (nameComp->Name == "Camera")
-		{
-			mMoveToPoint = transfComp->Position;
-		}
-	});
-	handler.RegisterForComponentAddNotification<TransformComponent>(transfCompAdded);
 }
 
 Vector3D FreeCameraSystem::ArcBallProjection(const Vector3D& vec)

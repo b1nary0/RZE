@@ -106,7 +106,7 @@ void RenderSystem::RegisterForComponentNotifications()
 	// MeshComponent
 	//
 	Apollo::EntityHandler::ComponentAddedFunc OnMeshComponentAdded([this, &handler](Apollo::EntityID entityID)
-	{
+	{	BROFILER_EVENT("RenderSystem::OnMeshComponentAdded");
 		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entityID);
 		AssertNotNull(meshComp);
 		meshComp->Resource = RZE_Application::RZE().GetResourceHandler().RequestResource<Model3D>(meshComp->ResourcePath);
@@ -120,13 +120,11 @@ void RenderSystem::RegisterForComponentNotifications()
 			size_t numTextures = modelData->GetTextureHandles().size();
 			if (numTextures > 0)
 			{
-				std::vector<Diotima::GFXTexture2D*> textures;
-				textures.reserve(numTextures);
+				item.Textures.reserve(numTextures);
 				for (size_t i = 0; i < numTextures; ++i)
 				{
-					textures.push_back(RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXTexture2D>(modelData->GetTextureHandles()[i]));
+					item.Textures.emplace_back(RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXTexture2D>(modelData->GetTextureHandles()[i]));
 				}
-				item.Textures = std::move(textures);
 			}
 			item.BatchData = modelData->GetRenderBatch();
 

@@ -19,6 +19,7 @@ Model3D::~Model3D()
 
 bool Model3D::Load(const FilePath& filePath)
 {
+	BROFILER_EVENT("Model3D::Load");
 	mFilePath = filePath;
 
 	Assimp::Importer ModelImporter;
