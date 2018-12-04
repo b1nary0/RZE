@@ -121,7 +121,7 @@ void RenderSystem::RegisterForComponentNotifications()
 			if (numTextures > 0)
 			{
 				std::vector<Diotima::GFXTexture2D*> textures;
-				textures.resize(numTextures);
+				textures.reserve(numTextures);
 				for (size_t i = 0; i < numTextures; ++i)
 				{
 					textures.push_back(RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXTexture2D>(modelData->GetTextureHandles()[i]));
