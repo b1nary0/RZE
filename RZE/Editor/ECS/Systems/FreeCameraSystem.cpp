@@ -115,7 +115,7 @@ void FreeCameraSystem::KeyboardInput(CameraComponent& camComp, TransformComponen
 	if (wheelVal != 0)
 	{
 		wheelVal = MathUtils::Clamp(wheelVal, -1, 1);
-		mMoveToPoint = transfComp.Position + (camComp.Forward * static_cast<float>(wheelVal)) * mWheelZoomSpeed;
+		transfComp.Position = mMoveToPoint = transfComp.Position + (camComp.Forward * static_cast<float>(wheelVal)) * mWheelZoomSpeed;
 	}
 }
 
