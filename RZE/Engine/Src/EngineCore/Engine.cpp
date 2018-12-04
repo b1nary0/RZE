@@ -3,6 +3,9 @@
 
 #include <DebugUtils/DebugServices.h>
 
+#include <Diotima/Renderer.h>
+#include <Diotima/Graphics/RenderTarget.h>
+
 #include <ECS/Components/CameraComponent.h>
 #include <ECS/Components/LightSourceComponent.h>
 #include <ECS/Components/MaterialComponent.h>
@@ -17,7 +20,6 @@
 
 #include <Utils/DebugUtils/Debug.h>
 
-#include <Diotima/Renderer.h>
 
 RZE_Engine::RZE_Engine()
 {

@@ -2,6 +2,8 @@
 
 #include <EditorApp.h>
 
+#include <Diotima/Graphics/RenderTarget.h>
+
 SceneViewWidget::SceneViewWidget(Diotima::RenderTarget* renderTarget)
 	: pRTT(renderTarget)
 {

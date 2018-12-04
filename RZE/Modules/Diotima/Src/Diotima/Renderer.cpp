@@ -1,8 +1,8 @@
-//#include <StdAfx.h>
 #include <Diotima/Renderer.h>
 
 #include <Brofiler/Brofiler.h>
 
+#include <Diotima/RenderBatch.h>
 #include <Diotima/Driver/OpenGL.h>
 #include <Diotima/Graphics/Material.h>
 #include <Diotima/Graphics/Mesh.h>
@@ -238,6 +238,16 @@ namespace Diotima
 	{
 		BatchData = nullptr;
 	}
+
+	void Renderer::RenderItemProtocol::Invalidate()
+	{
+		Textures.clear();
+		delete BatchData;
+		BatchData = nullptr;
+
+		bIsValid = false;
+	}
+
 }
 
 

@@ -1,18 +1,19 @@
 #include <StdAfx.h>
 #include <ECS/Systems/RenderSystem.h>
 
+#include <Apollo/ECS/EntityComponentFilter.h>
+
+#include <Diotima/RenderBatch.h>
+#include <Diotima/Graphics/Material.h>
+#include <Diotima/Graphics/Texture2D.h>
+#include <Diotima/Shaders/ShaderPipeline.h>
+
 #include <ECS/Components/CameraComponent.h>
 #include <ECS/Components/LightSourceComponent.h>
 #include <ECS/Components/MeshComponent.h>
 #include <ECS/Components/TransformComponent.h>
 #include <ECS/Components/MaterialComponent.h>
 #include <ECS/Components/NameComponent.h>
-
-#include <Apollo/ECS/EntityComponentFilter.h>
-
-#include <Diotima/Graphics/Material.h>
-#include <Diotima/Graphics/Texture2D.h>
-#include <Diotima/Shaders/ShaderPipeline.h>
 
 #include <Game/Model.h>
 
