@@ -168,10 +168,10 @@ namespace Diotima
 		mShaderPipeline->SetUniformInt("SpecularTextureCount", static_cast<int>(renderItem.Textures.size()));
 		if (renderItem.Textures.size() > 0)
 		{
-			mShaderPipeline->SetUniformInt("Material.DiffuseTextures[0]", renderItem.Textures[5]->GetTextureID());
-			mShaderPipeline->SetUniformInt("Material.SpecularTextures[0]", renderItem.Textures[5]->GetTextureID());
+			mShaderPipeline->SetUniformInt("Material.DiffuseTextures[0]", renderItem.Textures[0]->GetTextureID());
+			mShaderPipeline->SetUniformInt("Material.SpecularTextures[0]", renderItem.Textures[0]->GetTextureID());
 			glActiveTexture(GL_TEXTURE0);
-			openGL.BindTexture(EGLCapability::Texture2D, renderItem.Textures[5]->GetTextureID());
+			openGL.BindTexture(EGLCapability::Texture2D, renderItem.Textures[0]->GetTextureID());
 		}
 
 		renderItem.BatchData->mVAO.Bind();
