@@ -117,7 +117,7 @@ namespace Diotima
 		}
 		else if (texture->GetTextureType() == ETextureType::Specular)
 		{
-			mDiffuseTextures.emplace_back(texture);
+			mSpecularTextures.emplace_back(texture);
 		}
 	}
 

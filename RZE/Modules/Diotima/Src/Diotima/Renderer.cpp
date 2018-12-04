@@ -40,12 +40,16 @@ namespace Diotima
 
 			mRenderList[index] = std::move(itemProtocol);
 			mRenderList[index].bIsValid = true;
+			mRenderList[index].BatchData = new RenderBatch();
+			mRenderList[index].BatchData->Allocate(*mRenderList[index].MeshData);
 
 			return index;
 		}
 
 		mRenderList.emplace_back(std::move(itemProtocol));
 		mRenderList.back().bIsValid = true;
+		mRenderList.back().BatchData = new RenderBatch();
+		mRenderList.back().BatchData->Allocate(*mRenderList.back().MeshData);
 
 		return static_cast<Int32>(mRenderList.size() - 1);
 	}
@@ -167,38 +171,53 @@ namespace Diotima
 			renderItem.Shader->SetUniformFloat("LightStrengths[0]", lightItem.Strength);
 		}
 
-		const std::vector<GFXMesh*>& meshList = *renderItem.MeshData;
-		for (auto& mesh : meshList)
+// 		const std::vector<GFXMesh*>& meshList = *renderItem.MeshData;
+// 		for (auto& mesh : meshList)
+// 		{
+// 			const std::vector<GFXTexture2D*>& diffuseTextures = mesh->GetDiffuseTextures();
+// 			const std::vector<GFXTexture2D*>& specularTextures = mesh->GetSpecularTextures();
+// 
+// 			renderItem.Shader->SetUniformInt("DiffuseTextureCount", static_cast<int>(diffuseTextures.size()));
+// 			renderItem.Shader->SetUniformInt("SpecularTextureCount", static_cast<int>(specularTextures.size()));
+// 
+// 			int textureCount = 0;
+// 			for (size_t i = 0; i < diffuseTextures.size(); ++i, ++textureCount)
+// 			{
+// 				renderItem.Shader->SetUniformInt("Material.DiffuseTextures[0]", diffuseTextures[i]->GetTextureID());
+// 				glActiveTexture(GL_TEXTURE0 + textureCount);
+// 				openGL.BindTexture(EGLCapability::Texture2D, diffuseTextures[i]->GetTextureID());
+// 			}
+// 
+// 			for (size_t i = 0; i < specularTextures.size(); ++i, ++textureCount)
+// 			{
+// 				renderItem.Shader->SetUniformInt("Material.SpecularTextures[0]", specularTextures[i]->GetTextureID());
+// 				glActiveTexture(GL_TEXTURE0 + textureCount);
+// 				openGL.BindTexture(EGLCapability::Texture2D, specularTextures[i]->GetTextureID());
+// 			}
+// 
+// 			mesh->GetVAO().Bind();
+// 
+// 			OpenGLRHI::Get().DrawElements(EGLDrawMode::Triangles, mesh->GetIndices().size(), EGLDataType::UnsignedInt, nullptr);
+// 
+// 			mesh->GetVAO().Unbind();
+// 
+// 			openGL.BindTexture(EGLCapability::Texture2D, 0);
+// 		}
+
+		// #TODO(Josh::Hardcore magic values here until I implement texture batch relationships)
+		renderItem.Shader->SetUniformInt("DiffuseTextureCount", static_cast<int>(renderItem.Textures.size()));
+		renderItem.Shader->SetUniformInt("SpecularTextureCount", static_cast<int>(renderItem.Textures.size()));
+		if (renderItem.Textures.size() > 0)
 		{
-			const std::vector<GFXTexture2D*>& diffuseTextures = mesh->GetDiffuseTextures();
-			const std::vector<GFXTexture2D*>& specularTextures = mesh->GetSpecularTextures();
-
-			renderItem.Shader->SetUniformInt("DiffuseTextureCount", static_cast<int>(diffuseTextures.size()));
-			renderItem.Shader->SetUniformInt("SpecularTextureCount", static_cast<int>(specularTextures.size()));
-
-			int textureCount = 0;
-			for (size_t i = 0; i < diffuseTextures.size(); ++i, ++textureCount)
-			{
-				renderItem.Shader->SetUniformInt("Material.DiffuseTextures[0]", diffuseTextures[i]->GetTextureID());
-				glActiveTexture(GL_TEXTURE0 + textureCount);
-				openGL.BindTexture(EGLCapability::Texture2D, diffuseTextures[i]->GetTextureID());
-			}
-
-			for (size_t i = 0; i < specularTextures.size(); ++i, ++textureCount)
-			{
-				renderItem.Shader->SetUniformInt("Material.SpecularTextures[0]", specularTextures[i]->GetTextureID());
-				glActiveTexture(GL_TEXTURE0 + textureCount);
-				openGL.BindTexture(EGLCapability::Texture2D, specularTextures[i]->GetTextureID());
-			}
-
-			mesh->GetVAO().Bind();
-
-			OpenGLRHI::Get().DrawElements(EGLDrawMode::Triangles, mesh->GetIndices().size(), EGLDataType::UnsignedInt, nullptr);
-
-			mesh->GetVAO().Unbind();
-
-			openGL.BindTexture(EGLCapability::Texture2D, 0);
+			renderItem.Shader->SetUniformInt("Material.DiffuseTextures[0]", renderItem.Textures[5]->GetTextureID());
+			renderItem.Shader->SetUniformInt("Material.SpecularTextures[0]", renderItem.Textures[5]->GetTextureID());
+			glActiveTexture(GL_TEXTURE0);
+			openGL.BindTexture(EGLCapability::Texture2D, renderItem.Textures[5]->GetTextureID());
 		}
+
+		renderItem.BatchData->mVAO.Bind();
+		OpenGLRHI::Get().DrawElements(EGLDrawMode::Triangles, renderItem.BatchData->mNumIndices, EGLDataType::UnsignedInt, nullptr);
+		renderItem.BatchData->mVAO.Unbind();
 	}
 
 	void Renderer::BlitToWindow()

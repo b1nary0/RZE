@@ -41,6 +41,9 @@ namespace Diotima
 		const std::vector<U32>& GetIndices() const;
 		const std::vector<GFXTexture2D*>& GetDiffuseTextures() { return mDiffuseTextures; }
 		const std::vector<GFXTexture2D*>& GetSpecularTextures() { return mSpecularTextures; }
+		const std::vector<Vector3D>& GetPositions() const { return mPositions; }
+		const std::vector<Vector3D>& GetNormals() const { return mNormals; }
+		const std::vector<Vector2D>& GetUVCoords() const { return mUVCoords; }
 
 		void AddVertex(const GFXVertex& vertex);
 		void AddIndex(U32 index);
