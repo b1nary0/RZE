@@ -108,6 +108,16 @@ namespace Diotima
 			mShaderPipeline->SetUniformMatrix4x4("UViewMat", camera.ViewMat);
 			mShaderPipeline->SetUniformInt("UNumActiveLights", mLightingList.size());
 			mShaderPipeline->SetUniformVector3D(std::string("ViewPos").c_str(), camera.Position);
+
+			for (size_t lightIdx = 0; lightIdx < mLightingList.size(); ++lightIdx)
+			{
+				const LightItemProtocol& lightItem = mLightingList[lightIdx];
+
+				mShaderPipeline->SetUniformVector3D("LightPositions[0]", lightItem.Position);
+				mShaderPipeline->SetUniformVector3D("LightColors[0]", lightItem.Color);
+				mShaderPipeline->SetUniformFloat("LightStrengths[0]", lightItem.Strength);
+			}
+
 			for (auto& renderItem : mRenderList)
 			{
 				if (renderItem.bIsValid)
@@ -157,16 +167,22 @@ namespace Diotima
 		// #NOTE(Josh) Need to handle this via sorting to set only once.
 		renderItem.Shader->SetUniformMatrix4x4("UModelMat", renderItem.ModelMat);
 
-		for (size_t lightIdx = 0; lightIdx < mLightingList.size(); ++lightIdx)
+		// #TODO(Josh::Hardcore magic values here until I implement texture batch relationships)
+		renderItem.Shader->SetUniformInt("DiffuseTextureCount", static_cast<int>(renderItem.Textures.size()));
+		renderItem.Shader->SetUniformInt("SpecularTextureCount", static_cast<int>(renderItem.Textures.size()));
+		if (renderItem.Textures.size() > 0)
 		{
-			const LightItemProtocol& lightItem = mLightingList[lightIdx];
-
-			renderItem.Shader->SetUniformVector3D("LightPositions[0]", lightItem.Position);
-			renderItem.Shader->SetUniformVector3D("LightColors[0]", lightItem.Color);
-			renderItem.Shader->SetUniformFloat("LightStrengths[0]", lightItem.Strength);
+			renderItem.Shader->SetUniformInt("Material.DiffuseTextures[0]", renderItem.Textures[5]->GetTextureID());
+			renderItem.Shader->SetUniformInt("Material.SpecularTextures[0]", renderItem.Textures[5]->GetTextureID());
+			glActiveTexture(GL_TEXTURE0);
+			openGL.BindTexture(EGLCapability::Texture2D, renderItem.Textures[5]->GetTextureID());
 		}
 
-// 		const std::vector<GFXMesh*>& meshList = *renderItem.MeshData;
+		renderItem.BatchData->mVAO.Bind();
+		OpenGLRHI::Get().DrawElements(EGLDrawMode::Triangles, renderItem.BatchData->mNumIndices, EGLDataType::UnsignedInt, nullptr);
+		renderItem.BatchData->mVAO.Unbind();
+
+		// 		const std::vector<GFXMesh*>& meshList = *renderItem.MeshData;
 // 		for (auto& mesh : meshList)
 // 		{
 // 			const std::vector<GFXTexture2D*>& diffuseTextures = mesh->GetDiffuseTextures();
@@ -198,21 +214,6 @@ namespace Diotima
 // 
 // 			openGL.BindTexture(EGLCapability::Texture2D, 0);
 // 		}
-
-		// #TODO(Josh::Hardcore magic values here until I implement texture batch relationships)
-		renderItem.Shader->SetUniformInt("DiffuseTextureCount", static_cast<int>(renderItem.Textures.size()));
-		renderItem.Shader->SetUniformInt("SpecularTextureCount", static_cast<int>(renderItem.Textures.size()));
-		if (renderItem.Textures.size() > 0)
-		{
-			renderItem.Shader->SetUniformInt("Material.DiffuseTextures[0]", renderItem.Textures[5]->GetTextureID());
-			renderItem.Shader->SetUniformInt("Material.SpecularTextures[0]", renderItem.Textures[5]->GetTextureID());
-			glActiveTexture(GL_TEXTURE0);
-			openGL.BindTexture(EGLCapability::Texture2D, renderItem.Textures[5]->GetTextureID());
-		}
-
-		renderItem.BatchData->mVAO.Bind();
-		OpenGLRHI::Get().DrawElements(EGLDrawMode::Triangles, renderItem.BatchData->mNumIndices, EGLDataType::UnsignedInt, nullptr);
-		renderItem.BatchData->mVAO.Unbind();
 	}
 
 	void Renderer::BlitToWindow()
