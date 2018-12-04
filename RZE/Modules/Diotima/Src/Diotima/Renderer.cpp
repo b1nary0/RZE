@@ -40,16 +40,12 @@ namespace Diotima
 
 			mRenderList[index] = std::move(itemProtocol);
 			mRenderList[index].bIsValid = true;
-			mRenderList[index].BatchData = new RenderBatch();
-			mRenderList[index].BatchData->Allocate(*mRenderList[index].MeshData);
 
 			return index;
 		}
 
 		mRenderList.emplace_back(std::move(itemProtocol));
 		mRenderList.back().bIsValid = true;
-		mRenderList.back().BatchData = new RenderBatch();
-		mRenderList.back().BatchData->Allocate(*mRenderList.back().MeshData);
 
 		return static_cast<Int32>(mRenderList.size() - 1);
 	}
@@ -165,15 +161,15 @@ namespace Diotima
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
 
 		// #NOTE(Josh) Need to handle this via sorting to set only once.
-		renderItem.Shader->SetUniformMatrix4x4("UModelMat", renderItem.ModelMat);
+		mShaderPipeline->SetUniformMatrix4x4("UModelMat", renderItem.ModelMat);
 
 		// #TODO(Josh::Hardcore magic values here until I implement texture batch relationships)
-		renderItem.Shader->SetUniformInt("DiffuseTextureCount", static_cast<int>(renderItem.Textures.size()));
-		renderItem.Shader->SetUniformInt("SpecularTextureCount", static_cast<int>(renderItem.Textures.size()));
+		mShaderPipeline->SetUniformInt("DiffuseTextureCount", static_cast<int>(renderItem.Textures.size()));
+		mShaderPipeline->SetUniformInt("SpecularTextureCount", static_cast<int>(renderItem.Textures.size()));
 		if (renderItem.Textures.size() > 0)
 		{
-			renderItem.Shader->SetUniformInt("Material.DiffuseTextures[0]", renderItem.Textures[5]->GetTextureID());
-			renderItem.Shader->SetUniformInt("Material.SpecularTextures[0]", renderItem.Textures[5]->GetTextureID());
+			mShaderPipeline->SetUniformInt("Material.DiffuseTextures[0]", renderItem.Textures[5]->GetTextureID());
+			mShaderPipeline->SetUniformInt("Material.SpecularTextures[0]", renderItem.Textures[5]->GetTextureID());
 			glActiveTexture(GL_TEXTURE0);
 			openGL.BindTexture(EGLCapability::Texture2D, renderItem.Textures[5]->GetTextureID());
 		}
@@ -240,7 +236,7 @@ namespace Diotima
 
 	Renderer::RenderItemProtocol::RenderItemProtocol()
 	{
-		MeshData = nullptr;
+		BatchData = nullptr;
 	}
 }
 

@@ -123,19 +123,17 @@ namespace Diotima
 		{
 			RenderItemProtocol();
 
-			GFXShaderPipeline*					Shader{ nullptr };
-			GFXMaterial						Material;
 			std::vector<GFXTexture2D*>		Textures;
 			Matrix4x4						ModelMat;
-			std::vector<GFXMesh*>*			MeshData{ nullptr };
 			RenderBatch*					BatchData{ nullptr };
 
 			bool bIsValid{ false };
 
 			void Invalidate()
 			{
-				MeshData = nullptr;
 				Textures.clear();
+				delete BatchData;
+				BatchData = nullptr;
 
 				bIsValid = false;
 			}

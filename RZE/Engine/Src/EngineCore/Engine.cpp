@@ -67,11 +67,17 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 					DebugServices::Display(GetWindowSize());
 
 					mRenderer->Update();
-					ImGui::Render();
+					{
+						BROFILER_CATEGORY("ImGui::Render", Profiler::Color::Green);
+						ImGui::Render();
+					}
 				}
 			}
 
-			mMainWindow->BufferSwap(); // #TODO(Josh) Maybe this can be done better
+			{
+				BROFILER_CATEGORY("BufferSwap", Profiler::Color::Aquamarine);
+				mMainWindow->BufferSwap(); // #TODO(Josh) Maybe this can be done better
+			}
 		}
 
 		BeginShutDown();

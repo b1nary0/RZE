@@ -116,9 +116,6 @@ void RenderSystem::RegisterForComponentNotifications()
 
 			Model3D* const modelData = RZE_Application::RZE().GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
 
-			item.MeshData = &modelData->GetMeshList();
-			item.Shader = textureShader;
-
 			size_t numTextures = modelData->GetTextureHandles().size();
 			if (numTextures > 0)
 			{
@@ -129,8 +126,8 @@ void RenderSystem::RegisterForComponentNotifications()
 				}
 				item.Textures = std::move(textures);
 			}
-
-			item.Material.Color = sDefaultFragColor;
+			item.BatchData = new Diotima::RenderBatch();
+			item.BatchData->Allocate(modelData->GetMeshList());
 
 			Int32 itemIdx = RZE_Application::RZE().GetRenderer().AddRenderItem(item);
 			mRenderItemEntityMap[entityID] = itemIdx;
