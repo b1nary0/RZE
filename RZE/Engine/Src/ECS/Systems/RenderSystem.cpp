@@ -127,8 +127,7 @@ void RenderSystem::RegisterForComponentNotifications()
 				}
 				item.Textures = std::move(textures);
 			}
-			item.BatchData = new Diotima::RenderBatch();
-			item.BatchData->Allocate(modelData->GetMeshList());
+			item.BatchData = modelData->GetRenderBatch();
 
 			Int32 itemIdx = RZE_Application::RZE().GetRenderer().AddRenderItem(item);
 			mRenderItemEntityMap[entityID] = itemIdx;

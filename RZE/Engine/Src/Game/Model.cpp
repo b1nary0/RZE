@@ -5,6 +5,7 @@
 #include <Assimp/postprocess.h>
 #include <Assimp/scene.h>
 
+#include <Diotima/RenderBatch.h>
 #include <Diotima/Graphics/Mesh.h>
 #include <Diotima/Graphics/Texture2D.h>
 
@@ -46,6 +47,11 @@ bool Model3D::Load(const FilePath& filePath)
 		return false;
 	}
 
+	// #TODO(Josh::Request batch from renderer for now to keep it tracked in renderer and leased out.
+	//		 Eventually want to move to have another layer in between engine -> renderer classes)
+	mRenderBatch = std::make_unique<Diotima::RenderBatch>();
+	mRenderBatch->Allocate(mMeshList);
+
 	return true;
 }
 
@@ -57,6 +63,11 @@ void Model3D::Release()
 	}
 
  	mTextureHandles.clear();
+}
+
+Diotima::RenderBatch* Model3D::GetRenderBatch()
+{
+	return mRenderBatch.get();
 }
 
 void Model3D::ProcessNode(const aiNode& node, const aiScene& scene)
