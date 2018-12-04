@@ -164,14 +164,17 @@ namespace Diotima
 		mShaderPipeline->SetUniformMatrix4x4("UModelMat", renderItem.ModelMat);
 
 		// #TODO(Josh::Hardcore magic values here until I implement texture batch relationships)
-		mShaderPipeline->SetUniformInt("DiffuseTextureCount", static_cast<int>(renderItem.Textures.size()));
-		mShaderPipeline->SetUniformInt("SpecularTextureCount", static_cast<int>(renderItem.Textures.size()));
 		if (renderItem.Textures.size() > 0)
 		{
-			mShaderPipeline->SetUniformInt("Material.DiffuseTextures[0]", renderItem.Textures[0]->GetTextureID());
-			mShaderPipeline->SetUniformInt("Material.SpecularTextures[0]", renderItem.Textures[0]->GetTextureID());
-			glActiveTexture(GL_TEXTURE0);
-			openGL.BindTexture(EGLCapability::Texture2D, renderItem.Textures[0]->GetTextureID());
+			U32 numTexturesBound = 0;
+			for (auto& texture : renderItem.Textures)
+			{
+				mShaderPipeline->SetUniformInt("Material.DiffuseTextures[0]", renderItem.Textures[numTexturesBound]->GetTextureID());
+				mShaderPipeline->SetUniformInt("Material.SpecularTextures[0]", renderItem.Textures[numTexturesBound]->GetTextureID());
+				glActiveTexture(GL_TEXTURE0 + numTexturesBound);
+				openGL.BindTexture(EGLCapability::Texture2D, renderItem.Textures[numTexturesBound]->GetTextureID());
+				++numTexturesBound;
+			}
 		}
 
 		renderItem.BatchData->mVAO.Bind();
