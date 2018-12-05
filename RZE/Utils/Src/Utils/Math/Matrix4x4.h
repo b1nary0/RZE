@@ -4,6 +4,7 @@
 
 #include <Utils/Math/Quaternion.h>
 #include <Utils/Math/Vector3D.h>
+#include <Utils/Math/Vector4D.h>
 
 class Matrix4x4
 {
@@ -19,6 +20,8 @@ public:
 	void Rotate(const float angle, const Vector3D& axis);
 	void Scale(const Vector3D& scale);
 
+	Matrix4x4 Inverse() const;
+
 	const Vector3D GetPosition() const;
 	const Quaternion GetRotation() const;
 	const Vector3D GetScale() const;
@@ -31,6 +34,7 @@ public:
 	const float* GetValuePtr() const;
 
 	Matrix4x4 operator*(const Matrix4x4& rhs) const;
+	Vector4D operator*(const Vector4D& rhs) const;
 
 private:
 	Matrix4x4(const glm::mat4& mat);

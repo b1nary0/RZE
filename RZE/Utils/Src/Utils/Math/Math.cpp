@@ -1,8 +1,15 @@
 #include <Utils/StdAfx.h>
 #include <Utils/Math/Math.h>
 
+#include <Utils/Math/Matrix4x4.h>
+
 namespace VectorUtils
 {
+	float Dot(const Vector3D& a, const Vector3D& b)
+	{
+		return glm::dot(a.GetInternalVec(), b.GetInternalVec());
+	}
+
 	Vector3D Lerp(const Vector3D& from, const Vector3D& to, const float time)
 	{
 		return from * (1.0f - time) + to * time;

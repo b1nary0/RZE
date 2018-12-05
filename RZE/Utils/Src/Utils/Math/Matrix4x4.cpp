@@ -2,6 +2,8 @@
 #include <Utils/Math/Matrix4x4.h>
 
 #include <GLM/gtx/quaternion.hpp>
+#include <GLM/gtx/matrix_decompose.hpp>
+#include <GLM/gtx/matrix_decompose.hpp>
 
 Matrix4x4::Matrix4x4()
 {
@@ -47,6 +49,23 @@ void Matrix4x4::Scale(const Vector3D& scale)
 	mMat = glm::scale(mMat, scale.GetInternalVec());
 }
 
+Matrix4x4 Matrix4x4::Inverse() const
+{
+	return Matrix4x4(glm::inverse(mMat));
+}
+
+const Vector3D Matrix4x4::GetPosition() const
+{
+	glm::vec3 scale;
+	glm::quat rotation;
+	glm::vec3 translation;
+	glm::vec3 skew;
+	glm::vec4 perspective;
+	glm::decompose(GetInternalMat(), scale, rotation, translation, skew, perspective);
+
+	return Vector3D(translation.x, translation.y, translation.z);
+}
+
 const glm::mat4& Matrix4x4::GetInternalMat() const
 {
 	return mMat;
@@ -60,5 +79,11 @@ const float* Matrix4x4::GetValuePtr() const
 Matrix4x4 Matrix4x4::operator*(const Matrix4x4& rhs) const
 {
 	return Matrix4x4(mMat * rhs.mMat);
+}
+
+Vector4D Matrix4x4::operator*(const Vector4D& rhs) const
+{
+	glm::vec4 vec = GetInternalMat() * rhs.GetInternalVec();
+	return Vector4D(vec.x, vec.y, vec.z, vec.w);
 }
 

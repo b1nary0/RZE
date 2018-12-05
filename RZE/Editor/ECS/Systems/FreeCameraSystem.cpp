@@ -85,6 +85,10 @@ void FreeCameraSystem::KeyboardInput(CameraComponent& camComp, TransformComponen
 	{
 		transfComp.Position -= camComp.Forward.Cross(camComp.UpDir).Cross(camComp.Forward) * speedDelta;
 	}
+	else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_1])
+	{
+		// Focus object
+	}
 
 	Int32 wheelVal = RZE_Application::RZE().GetInputHandler().GetMouseState().CurWheelVal;
 	if (wheelVal != 0)
@@ -98,6 +102,8 @@ void FreeCameraSystem::MouseInput(CameraComponent& camComp, TransformComponent& 
 {
 	InputHandler& inputHandler = RZE_Application::RZE().GetInputHandler();
 
+	Vector3D curPos = inputHandler.GetMouseState().CurPosition;
+
 	if (RZE_Application::RZE().GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Pressed)
 	{
 		if (mMousePrevPos.LengthSq() == 0)
@@ -105,7 +111,6 @@ void FreeCameraSystem::MouseInput(CameraComponent& camComp, TransformComponent& 
 			mMousePrevPos = inputHandler.GetMouseState().CurPosition;
 		}
 
-		Vector3D curPos = inputHandler.GetMouseState().CurPosition;
 		Vector3D diff = curPos - mMousePrevPos;
 		diff = diff * 0.1f; // #TODO(Josh) Move this to a better place (mouse sensitivity) -- config file
 		mPitchYawRoll += diff;
@@ -121,30 +126,49 @@ void FreeCameraSystem::MouseInput(CameraComponent& camComp, TransformComponent& 
 
 		mMousePrevPos = curPos;
 	}
-// 	if (RZE_Application::RZE().GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Middle) == EButtonState::ButtonState_Pressed)
-// 	{
-// 		Vector3D curPos = inputHandler.GetMouseState().CurPosition;
-// 
-// 		// #TODO(Josh) Messin with some stuff https://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Tutorial_Arcball
-// 		Vector3D curArcBallProj = ArcBallProjection(curPos);
-// 		Vector3D prevArcBallProj = ArcBallProjection(mMousePrevPos);
-// 		Quaternion rot(curArcBallProj, prevArcBallProj);
-// 
-// 		if (mOrbitPoint.LengthSq() == 0.0f)
-// 		{
-// 			mOrbitPoint = transfComp.Position + (camComp.Forward * 5.0f);
-// 		}
-// 
-// 		mMoveToPoint =  (mOrbitPoint + (rot * (transfComp.Position - mOrbitPoint)));
-// 		camComp.Forward = (mOrbitPoint - transfComp.Position).Normalize();
-// 
-// 		mMousePrevPos = curPos;
-// 	}
+ 	if (RZE_Application::RZE().GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Middle) == EButtonState::ButtonState_Pressed)
+ 	{
+ 		if (mOrbitPoint.LengthSq() == 0.0f)
+ 		{
+ 			mOrbitPoint = transfComp.Position + (camComp.Forward * 5.0f);
+ 		}
+ 
+		if (mMousePrevPos != curPos)
+		{
+			int x = 0;
+			x = x + 2;
+		}
+  		// #TODO(Josh) Messin with some stuff https://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Tutorial_Arcball
+  		Vector3D prevArcBallProj = ArcBallProjection(mMousePrevPos);
+  		Vector3D curArcBallProj = ArcBallProjection(curPos);
+ 
+ 		float angle = std::acosf(std::min(1.0f, VectorUtils::Dot(prevArcBallProj, curArcBallProj)));
+ 		Vector3D axisCamCoords = mMousePrevPos.Cross(curPos);
+ 		Matrix4x4 transfMat = transfComp.GetAsMat4x4();
+ 		Matrix4x4 cameraToObject = transfMat.Inverse() * Matrix4x4::CreateInPlace(mOrbitPoint, Vector3D(1), Quaternion());
+ 		Vector4D axisObjCoord = cameraToObject * Vector4D(axisCamCoords.X(), axisCamCoords.Y(), axisCamCoords.Z(), 1.0f);
+ 		transfMat.Rotate(angle * MathUtils::ToDegrees, Vector3D(axisObjCoord.X(), axisObjCoord.Y(), axisObjCoord.Z()));
+ 		transfComp.Position = transfMat.GetPosition();
+		
+//   		Quaternion rot(curArcBallProj, prevArcBallProj);
+//   
+//   		if (mOrbitPoint.LengthSq() == 0.0f)
+//   		{
+//   			mOrbitPoint = transfComp.Position + (camComp.Forward * 5.0f);
+//   		}
+//   
+//   		transfComp.Position =  (mOrbitPoint + (rot * (transfComp.Position - mOrbitPoint)));
+//   		camComp.Forward = (mOrbitPoint - transfComp.Position).Normalize();
+ 	}
 
-	if (RZE_Application::RZE().GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Released
-		&& RZE_Application::RZE().GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Middle) == EButtonState::ButtonState_Released && mMousePrevPos.LengthSq() > 0)
+// 	if (RZE_Application::RZE().GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Released
+// 		&& RZE_Application::RZE().GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Middle) == EButtonState::ButtonState_Released && mMousePrevPos.LengthSq() > 0)
+// 	{
+// 		mMousePrevPos = Vector3D();
+// 	}
+// 	else
 	{
-		mMousePrevPos = Vector3D();
+		mMousePrevPos = curPos;
 	}
 }
 
@@ -155,17 +179,22 @@ void FreeCameraSystem::RegisterComponentAddedNotifications()
 Vector3D FreeCameraSystem::ArcBallProjection(const Vector3D& vec)
 {
 	const Vector2D& winDims = RZE_Application::RZE().GetWindowSize();
-	float x = 1.0f * vec.X() / winDims.X() * 2.0f - 1.0f;
-	float y = 1.0f * vec.Y() / winDims.Y() * 2.0f - 1.0f;
+	float x = 1.0f * (vec.X() / winDims.X() * 2.0f - 1.0f);
+	float y = 1.0f * (vec.Y() / winDims.Y() * 2.0f - 1.0f);
 
 	y = -y;
+
+	Vector3D result(x, y, 0.0f);
 
 	float sq = x * x + y * y;
 	if (sq <= 1)
 	{
-		float z = sqrt(1 - sq);
-		return Vector3D(x, y, z);
+		result.SetZ(sqrt(1 - sq));
+	}
+	else
+	{
+		result.Normalize();
 	}
 
-	return Vector3D(x, y, 0.0f).Normalize();
+	return result;
 }
