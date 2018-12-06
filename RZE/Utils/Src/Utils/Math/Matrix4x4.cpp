@@ -66,6 +66,19 @@ const Vector3D Matrix4x4::GetPosition() const
 	return Vector3D(translation.x, translation.y, translation.z);
 }
 
+
+const Quaternion Matrix4x4::GetRotation() const
+{
+	glm::vec3 scale;
+	glm::quat rotation;
+	glm::vec3 translation;
+	glm::vec3 skew;
+	glm::vec4 perspective;
+	glm::decompose(GetInternalMat(), scale, rotation, translation, skew, perspective);
+
+	return Quaternion(rotation.x, rotation.y, rotation.z, rotation.w);
+}
+
 const glm::mat4& Matrix4x4::GetInternalMat() const
 {
 	return mMat;
