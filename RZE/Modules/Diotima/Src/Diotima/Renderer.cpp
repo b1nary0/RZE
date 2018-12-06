@@ -160,7 +160,6 @@ namespace Diotima
 		// This whole function is a temporary implementation until an actual render pipeline is implemented.
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
 
-		// #NOTE(Josh) Need to handle this via sorting to set only once.
 		mShaderPipeline->SetUniformMatrix4x4("UModelMat", renderItem.ModelMat);
 
 		// #TODO(Josh::Hardcore magic values here until I implement texture batch relationships)
@@ -189,24 +188,17 @@ namespace Diotima
 
 	void Renderer::BlitToWindow()
 	{
-		if (mRenderTarget != nullptr)
-		{
-			const OpenGLRHI& openGL = OpenGLRHI::Get();
-			openGL.Viewport(0, 0, mRenderTarget->GetWidth(), mRenderTarget->GetHeight());
+		const OpenGLRHI& openGL = OpenGLRHI::Get();
+		openGL.Viewport(0, 0, mRenderTarget->GetWidth(), mRenderTarget->GetHeight());
 
-			openGL.BindFramebuffer(EGLBufferTarget::DrawFramebuffer, 0);
-			openGL.BindFramebuffer(EGLBufferTarget::ReadFramebuffer, mRenderTarget->GetFrameBufferID());
-			// #TODO(Josh::Wrap these properly in OpenGLRHI)
-			glReadBuffer(GL_COLOR_ATTACHMENT0);
-			glBlitFramebuffer(
-				0, 0, static_cast<GLint>(mRenderTarget->GetWidth()), static_cast<GLint>(mRenderTarget->GetHeight()),
-				0, 0, static_cast<GLint>(mCanvasSize.X()), static_cast<GLint>(mCanvasSize.Y()), 
-				GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-		}
-		else
-		{
-			LOG_CONSOLE("<<< RENDER TARGET TEXTURE FAILED >>>");
-		}
+		openGL.BindFramebuffer(EGLBufferTarget::DrawFramebuffer, 0);
+		openGL.BindFramebuffer(EGLBufferTarget::ReadFramebuffer, mRenderTarget->GetFrameBufferID());
+		// #TODO(Josh::Wrap these properly in OpenGLRHI)
+		glReadBuffer(GL_COLOR_ATTACHMENT0);
+		glBlitFramebuffer(
+			0, 0, static_cast<GLint>(mRenderTarget->GetWidth()), static_cast<GLint>(mRenderTarget->GetHeight()),
+			0, 0, static_cast<GLint>(mCanvasSize.X()), static_cast<GLint>(mCanvasSize.Y()), 
+			GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 	}
 
 	Renderer::RenderItemProtocol::RenderItemProtocol()
