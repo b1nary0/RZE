@@ -1,29 +1,34 @@
+function GetFullPath(pathStr)
+	local fullPath = debug.getinfo(1).source:match("@?(.*/)")
+	local endPos = string.find(fullPath, "Make")
+	fullPath = string.sub(fullPath, 0, endPos - 1)
+	fullPath = string.gsub(fullPath, "/", "\\")
+	
+	return fullPath .. "Engine\\"
+end
+
+local AbsoluteRootDir = GetFullPath()
 local RootDir = "../../"
 local ProjectAction = "UNDEFINED"
 
 workspace "RZE"
-	configurations { "Debug", "Release" }
-
-	platforms { "x32" }
-
 	-- Argument passed in when running premake5
 	if _ACTION ~= nil then
 		ProjectAction = _ACTION
 	end
 
+	configurations { "Debug", "Release" }
+
+	platforms { "x64" }
+	architecture "x64";
+	
+	startproject "Editor"
+	
 	-- Where the project files will be generated
 	location(RootDir .. "_Project")
 
-	--flags "FatalWarnings"
-
 	filter "configurations:Debug"	defines { "DEBUG" } symbols "On"
 	filter "configurations:Release"	defines { "NDEBUG" } optimize "On"
-
-	filter
-	{
-		"platforms:*32"
-	}
-	architecture "x86";
 
 	--
 	-- Visual Studio
@@ -45,8 +50,6 @@ workspace "RZE"
 		"/ignore:4006"
 	};
 
-	startproject "Editor"
-
 	filter {}
 
 	--
@@ -58,8 +61,9 @@ workspace "RZE"
 		local ProjectDir = RootDir .. "Engine/"
 		local SourceDir = ProjectDir .. "Src/"
 		local IncludeDir = ProjectDir .. "ThirdParty/Include/"
+		local BinaryDir = ProjectDir .. "ThirdPary/DLL/"
 		local LibDir = RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
-		local ThirdPartyLibDir = ProjectDir .. "ThirdParty/Lib/x86/"
+		local ThirdPartyLibDir = ProjectDir .. "ThirdParty/Lib/x64/"
 
 		kind "StaticLib"
 		language "C++"
@@ -96,10 +100,10 @@ workspace "RZE"
 		}
 		links
 		{
-			"assimp",
-			"glew32s",
 			"OpenGL32",
-			"ProfilerCore32",
+			"assimp64",
+			"glew64",
+			"ProfilerCore64",
 			-- RZE --
 			"RZE_Utils",
 			"Apollo",
@@ -108,6 +112,12 @@ workspace "RZE"
 			"Externals"
 		}
 
+		local command = "xcopy /y /d "
+		local outputDir = "$(ProjectDir)$(OutDir)"
+		postbuildcommands {
+			command .. AbsoluteRootDir .. "ThirdParty\\DLL\\x64 " .. outputDir
+		}
+		
 		filter {}
 
 		 vpaths
@@ -131,7 +141,7 @@ workspace "RZE"
 		local ProjectDir = RootDir .. "Utils/"
 		local SourceDir = ProjectDir .. "Src/"
 		local IncludeDir = EngineDir .. "ThirdParty/Include/"
-		local LibDir = EngineDir .. "ThirdParty/Lib/x86/"
+		local LibDir = EngineDir .. "ThirdParty/Lib/x64/"
 
 		kind "StaticLib"
 		language "C++"
@@ -188,7 +198,7 @@ workspace "RZE"
 		local SourceDir = ProjectDir .. "Src/"
 		local IncludeDir = EngineDir .. "ThirdParty/Include/"
 		local LibDir = RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
-		local ThirdPartyLibDir = EngineDir .. "ThirdParty/Lib/x86/"
+		local ThirdPartyLibDir = EngineDir .. "ThirdParty/Lib/x64/"
 
 		kind "StaticLib"
 		language "C++"
@@ -226,9 +236,10 @@ workspace "RZE"
 		links
 		{
 			-- ThirdParty
-			"assimp",
 			"OpenGL32",
-			"glew32s",
+			"assimp64",
+			"glew64",
+			"ProfilerCore64",
 			-- RZE
 			"Perseus",
 			"RZE_Utils"
@@ -258,7 +269,7 @@ workspace "RZE"
 		local SourceDir = ProjectDir .. "Src/"
 		local IncludeDir = EngineDir .. "ThirdParty/Include/"
 		local LibDir = RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
-		local ThirdPartyLibDir = EngineDir .. "ThirdParty/Lib/x86/"
+		local ThirdPartyLibDir = EngineDir .. "ThirdParty/Lib/x64/"
 
 		kind "StaticLib"
 		language "C++"
@@ -295,9 +306,10 @@ workspace "RZE"
 		links
 		{
 			-- ThirdParty
-			"assimp",
 			"OpenGL32",
-			"glew32s",
+			"assimp64",
+			"glew64",
+			"ProfilerCore64",
 			-- RZE
 			"RZE_Utils"
 		}
@@ -326,7 +338,7 @@ workspace "RZE"
 		local SourceDir = ProjectDir .. "Src/"
 		local IncludeDir = EngineDir .. "ThirdParty/Include/"
 		local LibDir = RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
-		local ThirdPartyLibDir = EngineDir .. "ThirdParty/Lib/x86/"
+		local ThirdPartyLibDir = EngineDir .. "ThirdParty/Lib/x64/"
 
 		kind "StaticLib"
 		language "C++"
@@ -364,9 +376,10 @@ workspace "RZE"
 		links
 		{
 			-- ThirdParty
-			"assimp",
 			"OpenGL32",
-			"glew32s",
+			"assimp64",
+			"glew64",
+			"ProfilerCore64",
 			-- RZE
 			"Perseus",
 			"RZE_Utils"
@@ -395,7 +408,7 @@ workspace "RZE"
 	 		local ProjectDir = RootDir .. "Externals/"
 	 		local SourceDir = ProjectDir .. "Src/"
 	 		local IncludeDir = EngineDir .. "ThirdParty/Include/"
-	 		local LibDir = EngineDir .. "ThirdParty/Lib/x86/"
+	 		local LibDir = EngineDir .. "ThirdParty/Lib/x64/"
 
 	 		kind "StaticLib"
 	 		language "C++"
@@ -451,7 +464,7 @@ workspace "RZE"
 		local ProjectDir = RootDir .. "Game/"
 		local SourceDir = ProjectDir
 		local IncludeDir = EngineDir .. "ThirdParty/Include/"
-		local LibDir = EngineDir .. "ThirdParty/Lib/x86/"
+		local LibDir = EngineDir .. "ThirdParty/Lib/x64/"
 
 		kind "ConsoleApp"
 		language "C++"
@@ -517,7 +530,7 @@ workspace "RZE"
 		local ProjectDir = RootDir .. "Editor/"
 		local SourceDir = ProjectDir
 		local IncludeDir = EngineDir .. "ThirdParty/Include/"
-		local LibDir = EngineDir .. "ThirdParty/Lib/x86/"
+		local LibDir = EngineDir .. "ThirdParty/Lib/x64/"
 
 		kind "ConsoleApp"
 		language "C++"
