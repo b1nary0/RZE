@@ -17,7 +17,6 @@ namespace Diotima
 	public:
 		OpenGLVAO mVAO;
 		OpenGLVBO mVertexVBO;
-		OpenGLVBO mNormalVBO;
 		OpenGLEBO mEBO;
 
 		U32 mNumIndices;
