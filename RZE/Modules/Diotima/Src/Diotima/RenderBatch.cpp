@@ -17,10 +17,7 @@ namespace Diotima
 
 		mVertexVBO.Init();
 		mVertexVBO.Bind();
-
-		mNormalVBO.Init();
-		mNormalVBO.Bind();
-
+		
 		mEBO.Init();
 		mEBO.Bind();
 	}
