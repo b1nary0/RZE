@@ -37,10 +37,11 @@ namespace Diotima
 			allIndices.insert(allIndices.end(), mesh->GetIndices().begin(), mesh->GetIndices().end());
 		}
 
-		const GLsizeiptr verticesSize = allPositions.size() * sizeof(Vector3D);
-		const GLsizeiptr normalsSize = allNormals.size() * sizeof(Vector3D);
-		const GLsizeiptr uvDataSize = allUVData.size() * sizeof(Vector2D);
-		const GLsizeiptr totalSize = verticesSize + normalsSize + uvDataSize;
+		const U32 verticesSize = static_cast<U32>(allPositions.size() * sizeof(Vector3D));
+		const U32 normalsSize = static_cast<U32>(allNormals.size() * sizeof(Vector3D));
+		const U32 uvDataSize = static_cast<U32>(allUVData.size() * sizeof(Vector2D));
+		const U32 totalSize = verticesSize + normalsSize + uvDataSize;
+		const U32 indexSize = static_cast<U32>(sizeof(U32) * allIndices.size());
 
 		const GLsizeiptr normalsStart = verticesSize;
 		const GLsizeiptr uvDataStart = normalsStart + normalsSize;
@@ -54,7 +55,7 @@ namespace Diotima
 		mVertexVBO.SetBufferSubData(allNormals.data(), normalsStart, normalsSize);
 		mVertexVBO.SetBufferSubData(allUVData.data(), uvDataStart, uvDataSize);
 
-		mEBO.SetBufferData(allIndices.data(), sizeof(U32) * allIndices.size());
+		mEBO.SetBufferData(allIndices.data(), indexSize);
 
 		// vertices
 		OpenGLRHI::Get().EnableVertexAttributeArray(0);
@@ -70,7 +71,7 @@ namespace Diotima
 
 		mVAO.Unbind();
 
-		mNumIndices = allIndices.size();
+		mNumIndices = static_cast<U32>(allIndices.size());
 	}
 
 }

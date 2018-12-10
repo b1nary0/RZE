@@ -102,7 +102,7 @@ namespace Diotima
 			mShaderPipeline->Use();
 			mShaderPipeline->SetUniformMatrix4x4("UProjectionMat", camera.ProjectionMat);
 			mShaderPipeline->SetUniformMatrix4x4("UViewMat", camera.ViewMat);
-			mShaderPipeline->SetUniformInt("UNumActiveLights", mLightingList.size());
+			mShaderPipeline->SetUniformInt("UNumActiveLights", static_cast<int>(mLightingList.size()));
 			mShaderPipeline->SetUniformVector3D(std::string("ViewPos").c_str(), camera.Position);
 
 			for (size_t lightIdx = 0; lightIdx < mLightingList.size(); ++lightIdx)
