@@ -4,14 +4,21 @@ function GetFullPath(pathStr)
 	fullPath = string.sub(fullPath, 0, endPos - 1)
 	fullPath = string.gsub(fullPath, "/", "\\")
 	
-	return fullPath .. "Engine\\"
+	return fullPath
 end
 
 local AbsoluteRootDir = GetFullPath()
 local RootDir = "../../"
+local IncludeDir = RootDir ..  "ThirdParty/Include/"
+local SourceFolder = "Src/"
+local LibDir = RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
+local ThirdPartyLibDir = RootDir .. "ThirdParty/Lib/x64/"
+
 local ProjectAction = "UNDEFINED"
 
 workspace "RZE"
+	filter {}
+	
 	-- Argument passed in when running premake5
 	if _ACTION ~= nil then
 		ProjectAction = _ACTION
@@ -48,9 +55,7 @@ workspace "RZE"
 		"/ignore:4099",
 		"/ignore:4221",
 		"/ignore:4006"
-	};
-
-	filter {}
+	}
 
 	--
 	--
@@ -59,15 +64,13 @@ workspace "RZE"
 	--
 	project "Engine"
 		local ProjectDir = RootDir .. "Engine/"
-		local SourceDir = ProjectDir .. "Src/"
-		local IncludeDir = ProjectDir .. "ThirdParty/Include/"
-		local BinaryDir = ProjectDir .. "ThirdPary/DLL/"
-		local LibDir = RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
-		local ThirdPartyLibDir = ProjectDir .. "ThirdParty/Lib/x64/"
+		local SourceDir = ProjectDir .. SourceFolder
 
+		filter {}
+		
 		kind "StaticLib"
 		language "C++"
-		targetdir (RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
+		targetdir (LibDir)
 		targetname "RZE_Engine"
 
 		dependson { "Apollo", "Diotima", "Perseus", "Externals", "Utils" }
@@ -118,10 +121,8 @@ workspace "RZE"
 			command .. AbsoluteRootDir .. "ThirdParty\\DLL\\x64 " .. outputDir
 		}
 		
-		filter {}
-
-		 vpaths
-		 {
+		vpaths
+		{
 			["Source Files/*"] =
 			{
 				SourceDir .. "**.h",
@@ -129,7 +130,7 @@ workspace "RZE"
 				SourceDir .. "**.c",
 				SourceDir .. "**.cpp"
 			}
-		 }
+		}
 
 	--
 	--
@@ -137,15 +138,14 @@ workspace "RZE"
 	--
 	--
 	project "Utils"
-		local EngineDir = RootDir .. "Engine/"
 		local ProjectDir = RootDir .. "Utils/"
-		local SourceDir = ProjectDir .. "Src/"
-		local IncludeDir = EngineDir .. "ThirdParty/Include/"
-		local LibDir = EngineDir .. "ThirdParty/Lib/x64/"
+		local SourceDir = ProjectDir .. SourceFolder
 
+		filter {}
+		
 		kind "StaticLib"
 		language "C++"
-		targetdir (RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
+		targetdir (LibDir)
 		targetname "RZE_Utils"
 
 		pchheader = "Utils/StdAfx.h"
@@ -168,16 +168,11 @@ workspace "RZE"
 		libdirs
 		{
 			LibDir,
-			RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
+			ThirdPartyLibDir,
 		}
-		links
+		
+		vpaths
 		{
-		}
-
-		filter {}
-
-		 vpaths
-		 {
 			["Source Files/*"] =
 			{
 				SourceDir .. "**.h",
@@ -185,7 +180,7 @@ workspace "RZE"
 				SourceDir .. "**.c",
 				SourceDir .. "**.cpp"
 			}
-		 }
+		}
 
 	--
 	--
@@ -193,16 +188,14 @@ workspace "RZE"
 	--
 	--
 	project "Apollo"
-		local EngineDir = RootDir .. "Engine/"
 		local ProjectDir = RootDir .. "Modules/Apollo/"
-		local SourceDir = ProjectDir .. "Src/"
-		local IncludeDir = EngineDir .. "ThirdParty/Include/"
-		local LibDir = RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
-		local ThirdPartyLibDir = EngineDir .. "ThirdParty/Lib/x64/"
+		local SourceDir = ProjectDir .. SourceFolder
 
+		filter {}
+		
 		kind "StaticLib"
 		language "C++"
-		targetdir (RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
+		targetdir (LibDir)
 		targetname "Apollo"
 
 		dependson { "Perseus", "Utils" }
@@ -223,7 +216,7 @@ workspace "RZE"
 		{
 			IncludeDir,
 			SourceDir,
-			EngineDir .. "/Src",
+			RootDir .. "Engine/Src",
 			RootDir .. "Utils/Src/",
 			RootDir .. "Modules/Perseus/Src/"
 		}
@@ -245,8 +238,6 @@ workspace "RZE"
 			"RZE_Utils"
 		}
 
-		filter {}
-
 		 vpaths
 		 {
 			["Source Files/*"] =
@@ -264,16 +255,14 @@ workspace "RZE"
 	--
 	--
 	project "Perseus"
-		local EngineDir = RootDir .. "Engine/"
 		local ProjectDir = RootDir .. "Modules/Perseus/"
-		local SourceDir = ProjectDir .. "Src/"
-		local IncludeDir = EngineDir .. "ThirdParty/Include/"
-		local LibDir = RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
-		local ThirdPartyLibDir = EngineDir .. "ThirdParty/Lib/x64/"
+		local SourceDir = ProjectDir .. SourceFolder
 
+		filter {}
+		
 		kind "StaticLib"
 		language "C++"
-		targetdir (RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
+		targetdir (LibDir)
 		targetname "Perseus"
 
 		dependson { "Utils" }
@@ -292,7 +281,7 @@ workspace "RZE"
 
 		includedirs
 		{
-			EngineDir .. "/Src",
+			RootDir .. "Engine/Src",
 			RootDir .. "Utils/Src/",
 			SourceDir,
 			IncludeDir
@@ -314,8 +303,6 @@ workspace "RZE"
 			"RZE_Utils"
 		}
 
-		filter {}
-
 		 vpaths
 		 {
 			["Source Files/*"] =
@@ -333,16 +320,14 @@ workspace "RZE"
 	--
 	--
 	 project "Diotima"
-		local EngineDir = RootDir .. "Engine/"
 		local ProjectDir = RootDir .. "Modules/Diotima/"
-		local SourceDir = ProjectDir .. "Src/"
-		local IncludeDir = EngineDir .. "ThirdParty/Include/"
-		local LibDir = RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
-		local ThirdPartyLibDir = EngineDir .. "ThirdParty/Lib/x64/"
+		local SourceDir = ProjectDir .. SourceFolder
 
+		filter {}
+		
 		kind "StaticLib"
 		language "C++"
-		targetdir (RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
+		targetdir (LibDir)
 		targetname "Diotima"
 
 		dependson { "Perseus", "Utils" }
@@ -361,7 +346,7 @@ workspace "RZE"
 
 		includedirs
 		{
-			EngineDir .. "/Src",
+			RootDir .. "Engine/Src",
 			RootDir .. "Utils/Src/",
 			RootDir .. "Modules/Perseus/Src/",
 			SourceDir,
@@ -385,8 +370,6 @@ workspace "RZE"
 			"RZE_Utils"
 		}
 
-		filter {}
-
 		 vpaths
 		 {
 			["Source Files/*"] =
@@ -404,15 +387,14 @@ workspace "RZE"
 	 	--
 	 	--
 	 	project "Externals"
-	 		local EngineDir = RootDir .. "Engine/"
 	 		local ProjectDir = RootDir .. "Externals/"
-	 		local SourceDir = ProjectDir .. "Src/"
-	 		local IncludeDir = EngineDir .. "ThirdParty/Include/"
-	 		local LibDir = EngineDir .. "ThirdParty/Lib/x64/"
+	 		local SourceDir = ProjectDir .. SourceFolder
 
+			filter {}
+			
 	 		kind "StaticLib"
 	 		language "C++"
-	 		targetdir (RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
+	 		targetdir (LibDir)
 	 		targetname "Externals"
 
 	 		pchheader = "Utils/StdAfx.h"
@@ -435,13 +417,8 @@ workspace "RZE"
 	 		libdirs
 	 		{
 	 			LibDir,
-	 			RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
+	 			ThirdPartyLibDir,
 	 		}
-	 		links
-	 		{
-	 		}
-
-	 		filter {}
 
 	 		 vpaths
 	 		 {
@@ -460,15 +437,12 @@ workspace "RZE"
 	--
 	--
 	 project "Game"
-		local EngineDir = RootDir .. "Engine/"
 		local ProjectDir = RootDir .. "Game/"
 		local SourceDir = ProjectDir
-		local IncludeDir = EngineDir .. "ThirdParty/Include/"
-		local LibDir = EngineDir .. "ThirdParty/Lib/x64/"
 
 		kind "ConsoleApp"
 		language "C++"
-		targetdir (RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
+		targetdir (LibDir)
 		targetname "RZE_Game"
 
 		dependson { "Engine", "Apollo", "Diotima", "Perseus", "Utils"}
@@ -484,18 +458,18 @@ workspace "RZE"
 		includedirs
 		{
 			IncludeDir,
-			ProjectDir,
-			EngineDir .. "/Src/",
-			RootDir .. "/Utils/Src/",
-			RootDir .. "/Modules/Apollo/Src/",
-			RootDir .. "/Modules/Diotima/Src/",
-			RootDir .. "/Modules/Perseus/Src/",
+			SourceDir,
+			RootDir .. "Engine/Src/",
+			RootDir .. "Utils/Src/",
+			RootDir .. "Modules/Apollo/Src/",
+			RootDir .. "Modules/Diotima/Src/",
+			RootDir .. "Modules/Perseus/Src/",
 		}
 
 		libdirs
 		{
 			LibDir,
-			RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
+			ThirdPartyLibDir,
 		}
 		links
 		{
@@ -526,15 +500,12 @@ workspace "RZE"
 	--
 	--
 	 project "Editor"
-		local EngineDir = RootDir .. "Engine/"
 		local ProjectDir = RootDir .. "Editor/"
 		local SourceDir = ProjectDir
-		local IncludeDir = EngineDir .. "ThirdParty/Include/"
-		local LibDir = EngineDir .. "ThirdParty/Lib/x64/"
 
 		kind "ConsoleApp"
 		language "C++"
-		targetdir (RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}")
+		targetdir (LibDir)
 		targetname "RZE_Editor"
 
 		dependson { "Engine", "Apollo", "Diotima", "Perseus", "Utils"}
@@ -550,18 +521,18 @@ workspace "RZE"
 		includedirs
 		{
 			IncludeDir,
-			ProjectDir,
-			EngineDir .. "/Src/",
-			RootDir .. "/Utils/Src/",
-			RootDir .. "/Modules/Apollo/Src/",
-			RootDir .. "/Modules/Diotima/Src/",
-			RootDir .. "/Modules/Perseus/Src/"
+			SourceDir,
+			RootDir .. "Engine/Src/",
+			RootDir .. "Utils/Src/",
+			RootDir .. "Modules/Apollo/Src/",
+			RootDir .. "Modules/Diotima/Src/",
+			RootDir .. "Modules/Perseus/Src/"
 		}
 
 		libdirs
 		{
 			LibDir,
-			RootDir .. "_Build/" .. "%{cfg.buildcfg}/" .. "%{cfg.platform}"
+			ThirdPartyLibDir
 		}
 		links
 		{
