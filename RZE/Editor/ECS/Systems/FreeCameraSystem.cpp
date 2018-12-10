@@ -102,7 +102,7 @@ void FreeCameraSystem::MouseInput(CameraComponent& camComp, TransformComponent& 
 {
 	InputHandler& inputHandler = RZE_Application::RZE().GetInputHandler();
 
-	const float deltaT = RZE_Application::RZE().GetDeltaTime();
+	const float deltaT = static_cast<float>(RZE_Application::RZE().GetDeltaTime());
 	Vector3D curPos = inputHandler.GetMouseState().CurPosition;
 
 	if (RZE_Application::RZE().GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Pressed)
