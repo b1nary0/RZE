@@ -21,7 +21,10 @@ void RZE_Editor::Start()
 
 	InternalGetWindow().SetTitle("RZE Studio");
 
+	SetupStyle();
 	SetupWidgets();
+
+	RZE().GetActiveScene().GetEntityHandler().AddSystem<FreeCameraSystem>();
 }
 
 void RZE_Editor::Update()
@@ -64,10 +67,6 @@ void RZE_Editor::RegisterInputEvents(InputHandler& inputHandler)
 void RZE_Editor::Initialize()
 {
 	RZE_Application::Initialize();
-
-	SetupStyle();
-
-	RZE().GetActiveScene().GetEntityHandler().AddSystem<FreeCameraSystem>();
 }
 
 void RZE_Editor::PreUpdate()

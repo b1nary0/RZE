@@ -56,12 +56,7 @@ void Model3D::Release()
 		delete mMeshList[i];
 	}
 
-	for (size_t idx = 0; idx < mTextureHandles.size(); ++idx)
-	{
-		RZE_Application::RZE().GetResourceHandler().ReleaseResource(mTextureHandles[idx]);
-	}
-
-	mTextureHandles.clear();
+ 	mTextureHandles.clear();
 }
 
 void Model3D::ProcessNode(const aiNode& node, const aiScene& scene)
@@ -129,7 +124,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 			if (textureHandle.IsValid())
 			{
 				outMesh.AddTexture(RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXTexture2D>(textureHandle));
-				mTextureHandles.emplace_back(textureHandle);
+				mTextureHandles.push_back(textureHandle);
 			}
 			else
 			{
