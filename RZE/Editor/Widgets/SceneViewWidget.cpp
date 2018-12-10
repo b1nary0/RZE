@@ -35,7 +35,7 @@ void SceneViewWidget::Display()
 		bIsFocused = ImGui::IsWindowFocused();
 		bIsHovered = ImGui::IsWindowHovered();
 
-		ImGui::Image((void*)renderTarget->GetTextureID(), ImVec2(size.X(), size.Y()), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+		ImGui::Image((void*)static_cast<U64>(renderTarget->GetTextureID()), ImVec2(size.X(), size.Y()), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 
 		ImGui::End();
 	}

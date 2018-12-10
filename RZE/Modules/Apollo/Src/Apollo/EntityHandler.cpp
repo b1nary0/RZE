@@ -152,7 +152,7 @@ namespace Apollo
 		mEntities.resize(newCapacity);
 
 		AssertExpr(mEntities.size() == newCapacity);
-		mCapacity = mEntities.size();
+		mCapacity = static_cast<U32>(mEntities.size());
 		return mCapacity;
 	}
 
