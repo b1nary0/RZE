@@ -49,12 +49,12 @@
 		"TransformComponent":
 		{
 		  "Position": [0, 0, 0],
-		  "Scale":[1, 1, 1],
+		  "Scale":[10, 10, 10],
 		  "Rotation":[0, -125, 0]
 		},
 		"MeshComponent":
 		{
-		  "ResourcePath": "Engine/Assets/3D/Nanosuit/Nanosuit.obj"
+		  "ResourcePath": "Engine/Assets/3D/FW190/FW190.obj"
 		}
 	  }
 	}
