@@ -169,10 +169,10 @@ namespace Diotima
 			U32 numTexturesBound = 0;
 			for (auto& texture : renderItem.Textures)
 			{
-				mShaderPipeline->SetUniformInt("Material.DiffuseTextures[0]", renderItem.Textures[numTexturesBound]->GetTextureID());
-				mShaderPipeline->SetUniformInt("Material.SpecularTextures[0]", renderItem.Textures[numTexturesBound]->GetTextureID());
+				mShaderPipeline->SetUniformInt("Material.DiffuseTextures[0]", texture->GetTextureID());
+				mShaderPipeline->SetUniformInt("Material.SpecularTextures[0]", texture->GetTextureID());
 				glActiveTexture(GL_TEXTURE0 + numTexturesBound);
-				openGL.BindTexture(EGLCapability::Texture2D, renderItem.Textures[numTexturesBound]->GetTextureID());
+				openGL.BindTexture(EGLCapability::Texture2D, texture->GetTextureID());
 				++numTexturesBound;
 			}
 		}
