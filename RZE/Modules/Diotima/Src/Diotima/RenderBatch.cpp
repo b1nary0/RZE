@@ -29,12 +29,18 @@ namespace Diotima
 		std::vector<Vector2D> allUVData;
 		std::vector<U32> allIndices;
 
+		size_t lastIndexSize = 0; // Used to offset the indices for indexed drawing for the batch
 		for (auto& mesh : meshes)
 		{
 			allPositions.insert(allPositions.end(), mesh->GetPositions().begin(), mesh->GetPositions().end());
 			allNormals.insert(allNormals.end(), mesh->GetNormals().begin(), mesh->GetNormals().end());
 			allUVData.insert(allUVData.end(), mesh->GetUVCoords().begin(), mesh->GetUVCoords().end());
-			allIndices.insert(allIndices.end(), mesh->GetIndices().begin(), mesh->GetIndices().end());
+
+			for (auto& index : mesh->GetIndices())
+			{
+				allIndices.emplace_back(index + lastIndexSize);
+			}
+			lastIndexSize += mesh->GetIndices().size();
 		}
 
 		const U32 verticesSize = static_cast<U32>(allPositions.size() * sizeof(Vector3D));

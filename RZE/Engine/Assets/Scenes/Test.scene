@@ -54,7 +54,7 @@
 		},
 		"MeshComponent":
 		{
-		  "ResourcePath": "Engine/Assets/3D/FW190/FW190.obj"
+		  "ResourcePath": "Engine/Assets/3D/Panzer/Panzer.obj"
 		}
 	  }
 	}
