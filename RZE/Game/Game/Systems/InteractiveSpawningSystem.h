@@ -2,6 +2,8 @@
 
 #include <Apollo/ECS/EntitySystem.h>
 
+struct TransformComponent;
+
 class InteractiveSpawningSystem : public Apollo::EntitySystem
 {
 public:
@@ -14,6 +16,5 @@ public:
 	virtual void ShutDown() override;
 
 private:
-	void HackyInputThing();
-
+	TransformComponent* mWalkerTransform { nullptr };
 };

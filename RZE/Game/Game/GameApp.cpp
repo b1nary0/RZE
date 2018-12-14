@@ -22,8 +22,6 @@
 #include <Game/Systems/FirstPersonCameraSystem.h>
 #include <Game/Systems/InteractiveSpawningSystem.h>
 
-#include <random>
-
 GameApp::GameApp()
 	: RZE_Application()
 {
@@ -39,23 +37,13 @@ void GameApp::Initialize()
 
 	RZE().GetActiveScene().Load(FilePath("Engine/Assets/Scenes/TestGame.scene"));
 
-	//RZE().GetActiveScene().GetEntityHandler().AddSystem<InteractiveSpawningSystem>();
+	RZE().GetActiveScene().GetEntityHandler().AddSystem<InteractiveSpawningSystem>();
 	RZE().GetActiveScene().GetEntityHandler().AddSystem<FirstPersonCameraSystem>();
 }
 
 void GameApp::Start()
 {
 	RZE_Application::Start();
-
-	srand(time(NULL));
-	for (int i = 0; i < 3000; ++i)
-	{
-		Apollo::EntityID entity = RZE_Application::RZE().GetActiveScene().CreateEntity("DefaultEntityName");
-		RZE_Application::RZE().GetActiveScene().GetEntityHandler().AddComponent<MeshComponent>(entity, FilePath("Engine/Assets/3D/FW190/FW190.obj"));
-
-		TransformComponent* const transf = RZE_Application::RZE().GetActiveScene().GetEntityHandler().GetComponent<TransformComponent>(entity);
-		transf->Position = Vector3D((rand() + 1) % 25, (rand() + 1) % 25, (rand() + 1) % 25);
-	}
 }
 
 void GameApp::Update()
