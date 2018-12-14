@@ -27,9 +27,8 @@ namespace Diotima
 		{
 			RenderItemProtocol();
 
-			std::vector<GFXTexture2D*>		Textures;
+			std::vector<GFXMesh*>			MeshData;
 			Matrix4x4						ModelMat;
-			RenderBatch*					BatchData{ nullptr };
 
 			bool bIsValid{ false };
 

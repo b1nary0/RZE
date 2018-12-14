@@ -33,6 +33,10 @@ namespace Diotima
 		GFXMesh();
 		~GFXMesh();
 
+		OpenGLVAO mVAO;
+		OpenGLVBO mVertexVBO;
+		OpenGLEBO mEBO;
+
 		const std::vector<U32>& GetIndices() const;
 		const std::vector<GFXTexture2D*>& GetDiffuseTextures() { return mDiffuseTextures; }
 		const std::vector<GFXTexture2D*>& GetSpecularTextures() { return mSpecularTextures; }

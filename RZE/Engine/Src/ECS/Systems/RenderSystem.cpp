@@ -27,6 +27,8 @@ static Vector4D sDefaultFragColor(0.25f, 0.25f, 0.25f, 1.0f);
 // Render helpers
 //-----------------------------------------
 Diotima::GFXShaderPipeline* textureShader;
+
+// #TODO(Josh::See below)
 //////////////////////////////////////////////////////////////////////////
 // This is a problem. Maybe these shouldnt be resources at this level and instead we have a resource that
 // is the entire shader pipeline attached to the material... Maybe can store these as a renderer-distributed thing.
@@ -117,16 +119,7 @@ void RenderSystem::RegisterForComponentNotifications()
 
 			Model3D* const modelData = RZE_Application::RZE().GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
 
-			size_t numTextures = modelData->GetTextureHandles().size();
-			if (numTextures > 0)
-			{
-				item.Textures.reserve(numTextures);
-				for (size_t i = 0; i < numTextures; ++i)
-				{
-					item.Textures.emplace_back(RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXTexture2D>(modelData->GetTextureHandles()[i]));
-				}
-			}
-			item.BatchData = modelData->GetRenderBatch();
+			item.MeshData = modelData->GetMeshList();
 
 			Int32 itemIdx = RZE_Application::RZE().GetRenderer().AddRenderItem(item);
 			mRenderItemEntityMap[entityID] = itemIdx;

@@ -161,29 +161,39 @@ namespace Diotima
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
 
 		mShaderPipeline->SetUniformMatrix4x4("UModelMat", renderItem.ModelMat);
-
-		// #TODO(Josh::Hardcore magic values here until I implement texture batch relationships)
-		if (renderItem.Textures.size() > 0)
+		for (auto& mesh : renderItem.MeshData)
 		{
-			mShaderPipeline->SetUniformInt("DiffuseTextureCount", static_cast<int>(1));
-			U32 numTexturesBound = 0;
-			for (auto& texture : renderItem.Textures)
+			// #TODO(Josh::Hardcore magic values here until I implement texture batch relationships)
+			bool bIsTextured = mesh->GetDiffuseTextures().size() > 0 || mesh->GetSpecularTextures().size() > 0;
+			if (bIsTextured)
 			{
-				mShaderPipeline->SetUniformInt("Material.DiffuseTextures[0]", texture->GetTextureID());
-				mShaderPipeline->SetUniformInt("Material.SpecularTextures[0]", texture->GetTextureID());
-				glActiveTexture(GL_TEXTURE0 + numTexturesBound);
-				openGL.BindTexture(EGLCapability::Texture2D, texture->GetTextureID());
-				++numTexturesBound;
-			}
-		}
-		else
-		{
-			mShaderPipeline->SetUniformInt("DiffuseTextureCount", static_cast<int>(0));
-		}
+				mShaderPipeline->SetUniformInt("IsTextured", static_cast<int>(bIsTextured));
+				if (mesh->GetDiffuseTextures().size() > 0)
+				{
+					for (auto& texture : mesh->GetDiffuseTextures())
+					{
+						mShaderPipeline->SetUniformInt("Material.DiffuseTexture", texture->GetTextureID());
+						glActiveTexture(GL_TEXTURE0);
+						openGL.BindTexture(EGLCapability::Texture2D, texture->GetTextureID());
+					}
+				}
 
-		renderItem.BatchData->mVAO.Bind();
-		OpenGLRHI::Get().DrawElements(EGLDrawMode::Triangles, renderItem.BatchData->mNumIndices, EGLDataType::UnsignedInt, nullptr);
-		renderItem.BatchData->mVAO.Unbind();
+				if (mesh->GetSpecularTextures().size() > 0)
+				{
+					for (auto& texture : mesh->GetSpecularTextures())
+					{
+						mShaderPipeline->SetUniformInt("Material.SpecularTexture", texture->GetTextureID());
+						glActiveTexture(GL_TEXTURE1);
+						openGL.BindTexture(EGLCapability::Texture2D, texture->GetTextureID());
+					}
+				}
+			}
+
+			mesh->mVAO.Bind();
+			mesh->mEBO.Bind();
+			OpenGLRHI::Get().DrawElements(EGLDrawMode::Triangles, mesh->GetIndices().size(), EGLDataType::UnsignedInt, nullptr);
+			mesh->mVAO.Unbind();
+		}
 	}
 
 	void Renderer::BlitToWindow()
@@ -203,15 +213,10 @@ namespace Diotima
 
 	Renderer::RenderItemProtocol::RenderItemProtocol()
 	{
-		BatchData = nullptr;
 	}
 
 	void Renderer::RenderItemProtocol::Invalidate()
 	{
-		Textures.clear();
-		delete BatchData;
-		BatchData = nullptr;
-
 		bIsValid = false;
 	}
 

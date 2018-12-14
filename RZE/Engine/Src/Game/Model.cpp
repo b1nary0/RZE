@@ -107,7 +107,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 		if (bHasTextureCoords)
 		{
 			const aiVector3D& assimpUV = mesh.mTextureCoords[0][vertexIdx];
-			Vector2D vertUV(assimpUV.x, assimpUV.y);
+			Vector2D vertUV(assimpUV.x, -assimpUV.y);
 			vertex.UVData = vertUV;
 		}
 

@@ -10,13 +10,12 @@ out vec4 OutFragmentColor;
 
 struct MaterialData
 {
-	sampler2D    DiffuseTextures[12];
-	sampler2D	 SpecularTextures[12];
+	sampler2D    DiffuseTexture;
+	sampler2D	 SpecularTexture;
 	float		 Shininess;
 };
 
-uniform int DiffuseTextureCount;
-uniform int SpecularTextureCount;
+uniform int IsTextured; // #TODO(Josh::This should be replaced by CPU-side sending the MISSING TEXTURE texture over)
 
 uniform MaterialData Material;
 
@@ -29,7 +28,7 @@ uniform vec3 ViewPos; // Cam pos
 
 void main()
 {
-	if (DiffuseTextureCount > 0 || SpecularTextureCount > 0)
+	if (IsTextured > 0)
 	{
 		vec3 normal = normalize(Normal);
 
@@ -43,8 +42,8 @@ void main()
 			float diff = max(dot(normal, lightDir), 0.0f);
 			float spec = pow(max(dot(normal, halfwayDir), 0.0f), 8.0f);
 
-			vec3 diffuse = LightColors[lightIdx] * (diff * vec3(texture(Material.DiffuseTextures[1], UVCoord)));
-			vec3 specular = LightStrengths[lightIdx] * (spec * vec3(texture(Material.SpecularTextures[1], UVCoord)));
+			vec3 diffuse = LightColors[lightIdx] * (diff * vec3(texture(Material.SpecularTexture, UVCoord)));
+			vec3 specular = LightStrengths[lightIdx] * (spec * vec3(texture(Material.SpecularTexture, UVCoord)));
 
 			vec3 result = diffuse + specular;
 
