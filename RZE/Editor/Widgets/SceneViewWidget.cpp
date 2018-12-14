@@ -2,6 +2,8 @@
 
 #include <EditorApp.h>
 
+#include <Diotima/Graphics/RenderTarget.h>
+
 SceneViewWidget::SceneViewWidget(Diotima::RenderTarget* renderTarget)
 	: pRTT(renderTarget)
 {
@@ -15,9 +17,7 @@ void SceneViewWidget::Initialize()
 {
 	AssertNotNull(pRTT);
 
-	pRTT->SetWidth(1280);
-	pRTT->SetHeight(720);
-
+	pRTT->SetDimensions(1280, 720);
 	pRTT->Initialize();
 }
 

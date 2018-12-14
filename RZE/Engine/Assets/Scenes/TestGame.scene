@@ -27,18 +27,18 @@
       {
         "TransformComponent":
         {
-          "Position":[0, 10, 5],
+          "Position":[0, 30, 20],
           "Scale": [1, 1, 1],
           "Rotation": [0, 0, 0]
         },
         "LightSourceComponent":
         {
           "Color": [1, 1, 1],
-          "Strength": 0.1
+          "Strength": 1
         }
       }
     },
-	"Wall":
+	"Floor":
 	{
 	  "components":
 	  {
@@ -54,19 +54,19 @@
 		}
 	  }
 	},
-	"Plane":
+	"MechWalker":
 	{
 	  "components":
 	  {
 		"TransformComponent":
 		{
 		  "Position": [0, 0, 0],
-		  "Scale":[25, 25, 25],
-		  "Rotation":[0, -125, 0]
+		  "Scale":[1, 1, 1],
+		  "Rotation":[0, 0, 0]
 		},
 		"MeshComponent":
 		{
-		  "ResourcePath": "Engine/Assets/3D/FW190/FW190.obj"
+		  "ResourcePath": "Engine/Assets/3D/NeckMechWalker/NeckMechWalker.obj"
 		}
 	  }
 	}

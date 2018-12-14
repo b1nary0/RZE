@@ -27,7 +27,7 @@
       {
         "TransformComponent":
         {
-          "Position":[0, 10, 0],
+          "Position":[0, 25, 15],
           "Scale": [1, 1, 1],
           "Rotation": [0, 0, 0]
         },
@@ -42,7 +42,7 @@
         }
       }
     },
-	"Plane":
+	"MechWalker":
 	{
 	  "components":
 	  {
@@ -50,11 +50,11 @@
 		{
 		  "Position": [0, 0, 0],
 		  "Scale":[1, 1, 1],
-		  "Rotation":[0, -125, 0]
+		  "Rotation":[0, 0, 0]
 		},
 		"MeshComponent":
 		{
-		  "ResourcePath": "Engine/Assets/3D/Nanosuit/Nanosuit.obj"
+		  "ResourcePath": "Engine/Assets/3D/NeckMechWalker/NeckMechWalker.obj"
 		}
 	  }
 	}
