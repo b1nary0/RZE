@@ -13,14 +13,12 @@ namespace Diotima
 {
 	GFXMesh::GFXMesh()
 	{
+		// #TODO(Josh::Move this into an Allocate() function or something - shoud be user/system initiated)
 		mVAO.Init();
 		mVAO.Bind();
 
 		mVertexVBO.Init();
 		mVertexVBO.Bind();
-
-		mNormalVBO.Init();
-		mNormalVBO.Bind();
 
 		mEBO.Init();
 		mEBO.Bind();
@@ -28,26 +26,6 @@ namespace Diotima
 
 	GFXMesh::~GFXMesh()
 	{
-	}
-
-	OpenGLVAO& GFXMesh::GetVAO()
-	{
-		return mVAO;
-	}
-
-	OpenGLVBO& GFXMesh::GetVertexVBO()
-	{
-		return mVertexVBO;
-	}
-
-	OpenGLEBO& GFXMesh::GetEBO()
-	{
-		return mEBO;
-	}
-
-	const std::vector<GFXVertex>& GFXMesh::GetVertexList() const
-	{
-		return mVertices;
 	}
 
 	const std::vector<U32>& GFXMesh::GetIndices() const
@@ -66,7 +44,6 @@ namespace Diotima
 		{
 			mPositions.push_back(mVertices[vertIdx].Position);
 			mNormals.push_back(mVertices[vertIdx].Normal);
-
 			mUVCoords.push_back(mVertices[vertIdx].UVData);
 		}
 
@@ -100,8 +77,6 @@ namespace Diotima
 		// tex coords
 		OpenGLRHI::Get().EnableVertexAttributeArray(2);
 		OpenGLRHI::Get().VertexAttribPointer(2, 2, EGLDataType::Float, EGLBooleanValue::False, sizeof(Vector2D), uvDataStartPtr);
-
-		mVAO.Unbind();
 	}
 
 	void GFXMesh::AddIndex(U32 index)
@@ -117,7 +92,7 @@ namespace Diotima
 		}
 		else if (texture->GetTextureType() == ETextureType::Specular)
 		{
-			mDiffuseTextures.emplace_back(texture);
+			mSpecularTextures.emplace_back(texture);
 		}
 	}
 

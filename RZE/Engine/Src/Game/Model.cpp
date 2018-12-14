@@ -5,6 +5,7 @@
 #include <Assimp/postprocess.h>
 #include <Assimp/scene.h>
 
+#include <Diotima/RenderBatch.h>
 #include <Diotima/Graphics/Mesh.h>
 #include <Diotima/Graphics/Texture2D.h>
 
@@ -18,6 +19,7 @@ Model3D::~Model3D()
 
 bool Model3D::Load(const FilePath& filePath)
 {
+	BROFILER_EVENT("Model3D::Load");
 	mFilePath = filePath;
 
 	Assimp::Importer ModelImporter;
@@ -46,6 +48,11 @@ bool Model3D::Load(const FilePath& filePath)
 		return false;
 	}
 
+	// #TODO(Josh::Request batch from renderer for now to keep it tracked in renderer and leased out.
+	//		 Eventually want to move to have another layer in between engine -> renderer classes)
+	mRenderBatch = std::make_unique<Diotima::RenderBatch>();
+	mRenderBatch->Allocate(mMeshList);
+
 	return true;
 }
 
@@ -57,6 +64,11 @@ void Model3D::Release()
 	}
 
  	mTextureHandles.clear();
+}
+
+Diotima::RenderBatch* Model3D::GetRenderBatch()
+{
+	return mRenderBatch.get();
 }
 
 void Model3D::ProcessNode(const aiNode& node, const aiScene& scene)
@@ -95,7 +107,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 		if (bHasTextureCoords)
 		{
 			const aiVector3D& assimpUV = mesh.mTextureCoords[0][vertexIdx];
-			Vector2D vertUV(assimpUV.x, assimpUV.y);
+			Vector2D vertUV(assimpUV.x, -assimpUV.y);
 			vertex.UVData = vertUV;
 		}
 

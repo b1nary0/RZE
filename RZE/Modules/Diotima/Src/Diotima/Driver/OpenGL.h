@@ -1,8 +1,9 @@
-﻿#pragma once
+#pragma once
 
 #define GLEW_STATIC
 #include <GL/glew.h>
 #include <GL/GL.h>
+#include <GL/wglew.h>
 
 // #TODO(Josh) No. Move this.
 #include <Windows.h>
@@ -425,7 +426,7 @@ public:
 	void GenerateRenderBuffer(GLsizei bufferCount, GLuint* outBufferHandle) const;
 
 	void BindBuffer(const EGLBufferTarget::T target, const GLuint bufferObjectHandle) const;
-	void BindFramebuffer(const GLuint bufferObjectHandle) const;
+	void BindFramebuffer(EGLBufferTarget::T bufferTarget, const GLuint bufferObjectHandle) const;
 	void BindRenderbuffer(const GLint bufferObjectHandle) const;
 
 	void DeleteBuffer(GLuint bufferCount, GLuint* bufferHandle) const;

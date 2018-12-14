@@ -1,8 +1,8 @@
-//#include <StdAfx.h>
 #include <Diotima/Renderer.h>
 
 #include <Brofiler/Brofiler.h>
 
+#include <Diotima/RenderBatch.h>
 #include <Diotima/Driver/OpenGL.h>
 #include <Diotima/Graphics/Material.h>
 #include <Diotima/Graphics/Mesh.h>
@@ -24,29 +24,6 @@ bool ImGUICreateFontsTexture();
 bool ImGUICreateDeviceObjects();
 // </ImGui>
 //
-
-Diotima::GFXShaderPipeline* renderToTextureShader = nullptr;
-void CreateRenderToTextureShader()
-{
-	const FilePath vertShaderFilePath("Engine/Assets/Shaders/RenderToTextureVert.shader");
-	const FilePath fragShaderFilePath("Engine/Assets/Shaders/RenderToTextureFrag.shader");
-
-	Diotima::GFXShader* vertShader = new Diotima::GFXShader(EGLShaderType::Vertex, "RenderToTextureVertex");
-	vertShader->Load(vertShaderFilePath);
-	vertShader->Create();
-	vertShader->Compile();
-
-	Diotima::GFXShader* fragShader = new Diotima::GFXShader(EGLShaderType::Fragment, "RenderToTextureFragment");
-	fragShader->Load(fragShaderFilePath);
-	fragShader->Create();
-	fragShader->Compile();
-
-	renderToTextureShader = new Diotima::GFXShaderPipeline("TextureShader");
-	renderToTextureShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Vertex, vertShader);
-	renderToTextureShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Fragment, fragShader);
-
-	renderToTextureShader->GenerateShaderProgram();
-}
 
 namespace Diotima
 {
@@ -75,6 +52,8 @@ namespace Diotima
 
 	void Renderer::RemoveRenderItem(const U32 itemIdx)
 	{
+		AssertExpr(itemIdx < mRenderList.size());
+
 		mRenderList[itemIdx].Invalidate();
 		mFreeRenderListIndices.push(itemIdx);
 	}
@@ -98,8 +77,6 @@ namespace Diotima
 
 		OpenGLRHI::Get().EnableCapability(EGLCapability::DepthTest);
 
-		CreateRenderToTextureShader();
-
 		// Meshing renderer with ImGui because of new application/engine relationship experimental but also because... why not, just make it with the renderer for the time being
 		{
 			ImGui::SetCurrentContext(ImGui::CreateContext());
@@ -111,19 +88,32 @@ namespace Diotima
 	}
 
 	void Renderer::Update()
-	{	BROFILER_CATEGORY("Renderer::Update", Profiler::Color::Red)
+	{
+		BROFILER_CATEGORY("Renderer::Update", Profiler::Color::Red)
 		AssertNotNull(mRenderTarget);
 
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
-
+		
 		mRenderTarget->Bind();
 		// #TODO(Josh) Can probably optimize this away nicely
 		openGL.Viewport(0, 0, mRenderTarget->GetWidth(), mRenderTarget->GetHeight());
 		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
-		
-		renderToTextureShader->Use();
 		{	BROFILER_CATEGORY("Item Processing", Profiler::Color::DarkOrange)
-			// #TODO(Josh) How does this interact with other shaders? Will this cause problems? What is the best way to achieve this in a robust manner?
+			mShaderPipeline->Use();
+			mShaderPipeline->SetUniformMatrix4x4("UProjectionMat", camera.ProjectionMat);
+			mShaderPipeline->SetUniformMatrix4x4("UViewMat", camera.ViewMat);
+			mShaderPipeline->SetUniformInt("UNumActiveLights", static_cast<int>(mLightingList.size()));
+			mShaderPipeline->SetUniformVector3D(std::string("ViewPos").c_str(), camera.Position);
+
+			for (size_t lightIdx = 0; lightIdx < mLightingList.size(); ++lightIdx)
+			{
+				const LightItemProtocol& lightItem = mLightingList[lightIdx];
+
+				mShaderPipeline->SetUniformVector3D("LightPositions[0]", lightItem.Position);
+				mShaderPipeline->SetUniformVector3D("LightColors[0]", lightItem.Color);
+				mShaderPipeline->SetUniformFloat("LightStrengths[0]", lightItem.Strength);
+			}
+
 			for (auto& renderItem : mRenderList)
 			{
 				if (renderItem.bIsValid)
@@ -132,9 +122,16 @@ namespace Diotima
 				}
 			}
 		}
-
-		openGL.Viewport(0, 0, static_cast<GLint>(mCanvasSize.X()), static_cast<GLint>(mCanvasSize.Y()));
 		mRenderTarget->Unbind();
+
+
+		// #TODO(Josh::This will cause a double draw in editor. Need to find a better way to discern
+		//       what is to be done here. Game needs to blit to screen via the RTT framebuffer, but editor gets read
+		//       from the generated texture and then ImGUI gets drawn over everything.
+		BlitToWindow();
+		// #NOTE(Josh::This is to reset the editor viewport so ImGUI draws to the whole screen and not the SceneViewWidget
+		//       size. This is a symptom of having better engine-agnostic context to the render target system)
+		openGL.Viewport(0, 0, static_cast<GLint>(mCanvasSize.X()), static_cast<GLint>(mCanvasSize.Y()));
 	}
 
 	void Renderer::ShutDown()
@@ -155,7 +152,6 @@ namespace Diotima
 	void Renderer::ResizeCanvas(const Vector2D& newSize)
 	{
 		mCanvasSize = newSize;
-		OpenGLRHI::Get().Viewport(0, 0, static_cast<GLsizei>(newSize.X()), static_cast<GLsizei>(newSize.Y()));
 	}
 
 	void Renderer::RenderSingleItem(RenderItemProtocol& renderItem)
@@ -164,67 +160,66 @@ namespace Diotima
 		// This whole function is a temporary implementation until an actual render pipeline is implemented.
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
 
-		// #NOTE(Josh) Need to handle this via sorting to set only once.
-		renderItem.Shader->Use();
-		renderItem.Shader->SetUniformMatrix4x4("UProjectionMat", camera.ProjectionMat);
-		renderItem.Shader->SetUniformMatrix4x4("UViewMat", camera.ViewMat);
-		renderItem.Shader->SetUniformVector4D("UFragColor", renderItem.Material.Color);
-		renderItem.Shader->SetUniformMatrix4x4("UModelMat", renderItem.ModelMat);
-
-		renderItem.Shader->SetUniformInt("Material.Diffuse", 0);
-		renderItem.Shader->SetUniformInt("Material.Specular", 1);
-
-		renderItem.Shader->SetUniformInt("UNumActiveLights", mLightingList.size());
-		renderItem.Shader->SetUniformVector3D(std::string("ViewPos").c_str(), camera.Position);
-
-		for (size_t lightIdx = 0; lightIdx < mLightingList.size(); ++lightIdx)
+		mShaderPipeline->SetUniformMatrix4x4("UModelMat", renderItem.ModelMat);
+		for (auto& mesh : renderItem.MeshData)
 		{
-			const LightItemProtocol& lightItem = mLightingList[lightIdx];
-			std::string itemIdxStr = Conversions::StringFromInt(static_cast<int>(lightIdx));
-
-			renderItem.Shader->SetUniformVector3D("LightPositions[0]", lightItem.Position);
-			renderItem.Shader->SetUniformVector3D("LightColors[0]", lightItem.Color);
-			renderItem.Shader->SetUniformFloat("LightStrengths[0]", lightItem.Strength);
-		}
-
-		const std::vector<GFXMesh*>& meshList = *renderItem.MeshData;
-		for (auto& mesh : meshList)
-		{
-			const std::vector<GFXTexture2D*>& diffuseTextures = mesh->GetDiffuseTextures();
-			const std::vector<GFXTexture2D*>& specularTextures = mesh->GetSpecularTextures();
-
-			renderItem.Shader->SetUniformInt("DiffuseTextureCount", static_cast<int>(diffuseTextures.size()));
-			renderItem.Shader->SetUniformInt("SpecularTextureCount", static_cast<int>(specularTextures.size()));
-
-			int textureCount = 0;
-			for (size_t i = 0; i < diffuseTextures.size(); ++i, ++textureCount)
+			// #TODO(Josh::Hardcore magic values here until I implement texture batch relationships)
+			bool bIsTextured = mesh->GetDiffuseTextures().size() > 0 || mesh->GetSpecularTextures().size() > 0;
+			mShaderPipeline->SetUniformInt("IsTextured", static_cast<int>(bIsTextured));
+			if (bIsTextured)
 			{
-				renderItem.Shader->SetUniformInt("Material.DiffuseTextures[0]", diffuseTextures[i]->GetTextureID());
-				glActiveTexture(GL_TEXTURE0 + textureCount);
-				openGL.BindTexture(EGLCapability::Texture2D, diffuseTextures[i]->GetTextureID());
+				if (mesh->GetDiffuseTextures().size() > 0)
+				{
+					for (auto& texture : mesh->GetDiffuseTextures())
+					{
+						mShaderPipeline->SetUniformInt("DiffuseTexture", texture->GetTextureID());
+						glActiveTexture(GL_TEXTURE0);
+						openGL.BindTexture(EGLCapability::Texture2D, texture->GetTextureID());
+					}
+				}
+
+//  				if (mesh->GetSpecularTextures().size() > 0)
+//  				{
+//  					for (auto& texture : mesh->GetSpecularTextures())
+//  					{
+//  						mShaderPipeline->SetUniformInt("SpecularTexture", texture->GetTextureID());
+//  						glActiveTexture(GL_TEXTURE1);
+//  						openGL.BindTexture(EGLCapability::Texture2D, texture->GetTextureID());
+//  					}
+//  				}
 			}
 
-			for (size_t i = 0; i < specularTextures.size(); ++i, ++textureCount)
-			{
-				renderItem.Shader->SetUniformInt("Material.SpecularTextures[0]", specularTextures[i]->GetTextureID());
-				glActiveTexture(GL_TEXTURE0 + textureCount);
-				openGL.BindTexture(EGLCapability::Texture2D, specularTextures[i]->GetTextureID());
-			}
-
-			mesh->GetVAO().Bind();
-
+			mesh->mVAO.Bind();
+			mesh->mEBO.Bind();
 			OpenGLRHI::Get().DrawElements(EGLDrawMode::Triangles, mesh->GetIndices().size(), EGLDataType::UnsignedInt, nullptr);
-
-			mesh->GetVAO().Unbind();
-
-			openGL.BindTexture(EGLCapability::Texture2D, 0);
+			mesh->mVAO.Unbind();
 		}
+	}
+
+	void Renderer::BlitToWindow()
+	{
+		const OpenGLRHI& openGL = OpenGLRHI::Get();
+		openGL.Viewport(0, 0, mRenderTarget->GetWidth(), mRenderTarget->GetHeight());
+
+		openGL.BindFramebuffer(EGLBufferTarget::DrawFramebuffer, 0);
+		openGL.BindFramebuffer(EGLBufferTarget::ReadFramebuffer, mRenderTarget->GetFrameBufferID());
+		// #TODO(Josh::Wrap these properly in OpenGLRHI)
+		glReadBuffer(GL_COLOR_ATTACHMENT0);
+		glBlitFramebuffer(
+			0, 0, static_cast<GLint>(mRenderTarget->GetWidth()), static_cast<GLint>(mRenderTarget->GetHeight()),
+			0, 0, static_cast<GLint>(mCanvasSize.X()), static_cast<GLint>(mCanvasSize.Y()), 
+			GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 	}
 
 	Renderer::RenderItemProtocol::RenderItemProtocol()
 	{
-		MeshData = nullptr;
 	}
+
+	void Renderer::RenderItemProtocol::Invalidate()
+	{
+		bIsValid = false;
+	}
+
 }
 
 

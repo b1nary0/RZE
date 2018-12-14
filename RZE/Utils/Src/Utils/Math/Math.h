@@ -17,6 +17,8 @@ namespace VectorUtils
 {
 	constexpr float kEpsilon = 0.00001f;
 
+	float Dot(const Vector3D& a, const Vector3D& b);
+
 	Vector3D	Lerp(const Vector3D& from, const Vector3D& to, const float factor);
 	float		DistanceSq(const Vector3D& from, const Vector3D& to);
 }

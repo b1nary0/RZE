@@ -1,18 +1,19 @@
 #include <StdAfx.h>
 #include <ECS/Systems/RenderSystem.h>
 
+#include <Apollo/ECS/EntityComponentFilter.h>
+
+#include <Diotima/RenderBatch.h>
+#include <Diotima/Graphics/Material.h>
+#include <Diotima/Graphics/Texture2D.h>
+#include <Diotima/Shaders/ShaderPipeline.h>
+
 #include <ECS/Components/CameraComponent.h>
 #include <ECS/Components/LightSourceComponent.h>
 #include <ECS/Components/MeshComponent.h>
 #include <ECS/Components/TransformComponent.h>
 #include <ECS/Components/MaterialComponent.h>
 #include <ECS/Components/NameComponent.h>
-
-#include <Apollo/ECS/EntityComponentFilter.h>
-
-#include <Diotima/Graphics/Material.h>
-#include <Diotima/Graphics/Texture2D.h>
-#include <Diotima/Shaders/ShaderPipeline.h>
 
 #include <Game/Model.h>
 
@@ -25,9 +26,15 @@ static Vector4D sDefaultFragColor(0.25f, 0.25f, 0.25f, 1.0f);
 
 // Render helpers
 //-----------------------------------------
-Diotima::GFXShaderPipeline* defaultShader;
 Diotima::GFXShaderPipeline* textureShader;
-void CreateDefaultShader();
+
+// #TODO(Josh::See below)
+//////////////////////////////////////////////////////////////////////////
+// This is a problem. Maybe these shouldnt be resources at this level and instead we have a resource that
+// is the entire shader pipeline attached to the material... Maybe can store these as a renderer-distributed thing.
+ResourceHandle texVertShaderHandle;
+ResourceHandle texFragShaderHandle;
+//////////////////////////////////////////////////////////////////////////
 void CreateTextureShader();
 //-----------------------------------------
 
@@ -44,8 +51,9 @@ void RenderSystem::Initialize()
 
 	RegisterForComponentNotifications();
 
-	CreateDefaultShader();
 	CreateTextureShader();
+
+	RZE_Application::RZE().GetRenderer().mShaderPipeline = textureShader;
 }
 
 void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
@@ -100,7 +108,7 @@ void RenderSystem::RegisterForComponentNotifications()
 	// MeshComponent
 	//
 	Apollo::EntityHandler::ComponentAddedFunc OnMeshComponentAdded([this, &handler](Apollo::EntityID entityID)
-	{
+	{	BROFILER_EVENT("RenderSystem::OnMeshComponentAdded");
 		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entityID);
 		AssertNotNull(meshComp);
 		meshComp->Resource = RZE_Application::RZE().GetResourceHandler().RequestResource<Model3D>(meshComp->ResourcePath);
@@ -111,25 +119,7 @@ void RenderSystem::RegisterForComponentNotifications()
 
 			Model3D* const modelData = RZE_Application::RZE().GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
 
-			item.MeshData = &modelData->GetMeshList();
-			item.Shader = textureShader;
-
-			size_t numTextures = modelData->GetTextureHandles().size();
-			if (numTextures > 0)
-			{
-				std::vector<Diotima::GFXTexture2D*> textures(numTextures);
-				for (size_t i = 0; i < numTextures; ++i)
-				{
-					textures.push_back(RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXTexture2D>(modelData->GetTextureHandles()[i]));
-				}
-				item.Textures = std::move(textures);
-			}
-			else
-			{
-				item.Shader = defaultShader;
-			}
-
-			item.Material.Color = sDefaultFragColor;
+			item.MeshData = modelData->GetMeshList();
 
 			Int32 itemIdx = RZE_Application::RZE().GetRenderer().AddRenderItem(item);
 			mRenderItemEntityMap[entityID] = itemIdx;
@@ -200,42 +190,19 @@ void RenderSystem::GenerateCameraMatrices(CameraComponent& cameraComponent, cons
 /////////////
 /////////// These are just dev helpers until the time of the great render comes along
 //////
-void CreateDefaultShader()
-{
-	const FilePath vertShaderFilePath("Engine/Assets/Shaders/VertexShader.shader");
-	const FilePath fragShaderFilePath("Engine/Assets/Shaders/FragmentShader.shader");
-
-	ResourceHandle vertShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "DefaultVertexShader");
-	ResourceHandle fragShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "DefaultFragShader");
-
-	Diotima::GFXShader* vertShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(vertShaderHandle);
-	vertShader->Create();
-	vertShader->Compile();
-
-	Diotima::GFXShader* fragShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(fragShaderHandle);
-	fragShader->Create();
-	fragShader->Compile();
-
-	defaultShader = new Diotima::GFXShaderPipeline("DefaultShader");
-	defaultShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Vertex, vertShader);
-	defaultShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Fragment, fragShader);
-
-	defaultShader->GenerateShaderProgram();
-}
-
 void CreateTextureShader()
 {
 	const FilePath vertShaderFilePath("Engine/Assets/Shaders/TextureVert.shader");
 	const FilePath fragShaderFilePath("Engine/Assets/Shaders/TextureFrag.shader");
 
-	ResourceHandle vertShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "TextureVertShader");
-	ResourceHandle fragShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "TextureFragShader");
+	texVertShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "TextureVertShader");
+	texFragShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "TextureFragShader");
 
-	Diotima::GFXShader* vertShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(vertShaderHandle);
+	Diotima::GFXShader* vertShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(texVertShaderHandle);
 	vertShader->Create();
 	vertShader->Compile();
 
-	Diotima::GFXShader* fragShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(fragShaderHandle);
+	Diotima::GFXShader* fragShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(texFragShaderHandle);
 	fragShader->Create();
 	fragShader->Compile();
 

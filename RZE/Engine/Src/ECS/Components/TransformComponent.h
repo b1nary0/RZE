@@ -46,6 +46,12 @@ struct TransformComponent final : public Apollo::Component<TransformComponent>
 		Scale = scale;
 	}
 
+	// Helpers
+	Matrix4x4 GetAsMat4x4() const
+	{
+		return Matrix4x4::CreateInPlace(Position, Scale, Rotation);
+	}
+
 	//
 	// Operations
 	//

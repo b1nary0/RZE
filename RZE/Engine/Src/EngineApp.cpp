@@ -1,7 +1,10 @@
 #include <StdAfx.h>
 #include <EngineApp.h>
 
+#include <Diotima/Driver/GLRenderTarget.h>
+
 #include <EngineCore/Engine.h>
+
 #include <Windowing/Win32Window.h>
 
 #include <Utils/DebugUtils/Debug.h>

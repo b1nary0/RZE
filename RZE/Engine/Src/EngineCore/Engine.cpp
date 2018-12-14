@@ -3,6 +3,9 @@
 
 #include <DebugUtils/DebugServices.h>
 
+#include <Diotima/Renderer.h>
+#include <Diotima/Graphics/RenderTarget.h>
+
 #include <ECS/Components/CameraComponent.h>
 #include <ECS/Components/LightSourceComponent.h>
 #include <ECS/Components/MaterialComponent.h>
@@ -17,7 +20,6 @@
 
 #include <Utils/DebugUtils/Debug.h>
 
-#include <Diotima/Renderer.h>
 
 RZE_Engine::RZE_Engine()
 {
@@ -67,11 +69,18 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 					DebugServices::Display(GetWindowSize());
 
 					mRenderer->Update();
-					ImGui::Render();
+
+					{
+						BROFILER_CATEGORY("ImGui::Render", Profiler::Color::Green);
+						ImGui::Render();
+					}
 				}
 			}
 
-			mMainWindow->BufferSwap(); // #TODO(Josh) Maybe this can be done better
+			{
+				BROFILER_CATEGORY("BufferSwap", Profiler::Color::Aquamarine);
+				mMainWindow->BufferSwap(); // #TODO(Josh) Maybe this can be done better
+			}
 		}
 
 		BeginShutDown();
@@ -189,8 +198,7 @@ void RZE_Engine::InitializeApplication(Functor<RZE_Application* const> createGam
 	mApplication->SetWindow(mMainWindow);
 
 	const Vector2D& windowDims = mEngineConfig->GetWindowSettings().GetDimensions();
-	mApplication->GetRenderTarget().SetWidth(static_cast<int>(windowDims.X()));
-	mApplication->GetRenderTarget().SetHeight(static_cast<int>(windowDims.Y()));
+	mApplication->GetRenderTarget().SetDimensions(static_cast<U32>(windowDims.X()), static_cast<U32>(windowDims.Y()));
 
 	// #TODO(Josh) Investigate a better transfer point than this re: render target setting
 	mRenderer->SetRenderTarget(&mApplication->GetRenderTarget());
@@ -216,6 +224,11 @@ void RZE_Engine::RegisterWindowEvents()
 		else if (event.mWindowEvent.mEventInfo.mEventSubType == EWindowEventType::Window_Resize)
 		{
 			Vector2D newSize(event.mWindowEvent.mSizeX, event.mWindowEvent.mSizeY);
+			if (!mApplication->IsEditor())
+			{
+				mApplication->GetRenderTarget().SetDimensions(static_cast<U32>(newSize.X()), static_cast<U32>(newSize.Y()));
+				mApplication->GetRenderTarget().Initialize();
+			}
 			GetRenderer().ResizeCanvas(newSize);
 			DebugServices::HandleScreenResize(newSize);
 		}

@@ -5,33 +5,20 @@
 #include <unordered_map>
 #include <vector>
 
-#include <Diotima/SceneCamera.h>
 #include <Diotima/Driver/OpenGL.h>
-#include <Diotima/Driver/GLRenderTarget.h>
-#include <Diotima/Graphics/Material.h>
 
+#include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector2D.h>
-
-
-
-
-// #TODO(Josh::Maybe start by thinking about just calling draw on a mesh, with all other things handled before
-//				i.e: Cull, Sort (by Material, Depth, etc), Merge?, build Command Buffer, submit)
-//				
-//				Build on this idea.
-
-
-
-
-
 
 namespace Diotima
 {
 	class GFXMesh;
 	class GFXMaterial;
-	class RenderTargetTexture;
 	class GFXShaderPipeline;
 	class GFXTexture2D;
+
+	class RenderBatch;
+	class RenderTarget;
 	
 	class Renderer
 	{
@@ -40,21 +27,12 @@ namespace Diotima
 		{
 			RenderItemProtocol();
 
-			GFXShaderPipeline*					Shader{ nullptr };
-			GFXMaterial						Material;
-			std::vector<GFXTexture2D*>		Textures;
+			std::vector<GFXMesh*>			MeshData;
 			Matrix4x4						ModelMat;
-			std::vector<GFXMesh*>*			MeshData{ nullptr };
 
 			bool bIsValid{ false };
 
-			void Invalidate()
-			{
-				MeshData = nullptr;
-				Textures.clear();
-
-				bIsValid = false;
-			}
+			void Invalidate();
 
 		};
 
@@ -82,6 +60,8 @@ namespace Diotima
 	public:
 		Renderer();
 
+		GFXShaderPipeline* mShaderPipeline;
+
 		// ISubSystem interface
 	public:
 		void Initialize();
@@ -104,6 +84,7 @@ namespace Diotima
 		
 	private:
 		void RenderSingleItem(RenderItemProtocol& itemProtocol);
+		void BlitToWindow();
 
 	private:
 		Vector2D mCanvasSize;
