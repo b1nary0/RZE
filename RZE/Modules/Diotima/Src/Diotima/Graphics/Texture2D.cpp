@@ -12,6 +12,9 @@ namespace Diotima
 		: IResource()
 		, mTextureID(0)
 		, mTextureType(textureType)
+		, mWidth(0)
+		, mHeight(0)
+		, mChannels(0)
 	{
 	}
 

@@ -70,7 +70,6 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 
 					mRenderer->Update();
 
-					if (GetApplication().IsEditor()) // #TODO(Josh::Another relic of this bad design)
 					{
 						BROFILER_CATEGORY("ImGui::Render", Profiler::Color::Green);
 						ImGui::Render();

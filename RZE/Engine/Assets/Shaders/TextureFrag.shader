@@ -8,16 +8,10 @@ in vec2 UVCoord;
 
 out vec4 OutFragmentColor;
 
-struct MaterialData
-{
-	sampler2D    DiffuseTexture;
-	sampler2D	 SpecularTexture;
-	float		 Shininess;
-};
+uniform sampler2D    DiffuseTexture;
+uniform sampler2D	 SpecularTexture;
 
 uniform int IsTextured; // #TODO(Josh::This should be replaced by CPU-side sending the MISSING TEXTURE texture over)
-
-uniform MaterialData Material;
 
 uniform vec3 LightPositions[MAX_LIGHT_SUPPORT];
 uniform vec3 LightColors[MAX_LIGHT_SUPPORT];
@@ -28,6 +22,10 @@ uniform vec3 ViewPos; // Cam pos
 
 void main()
 {
+	float ambientCoefficient = 0.5f;
+	
+	vec4 surfaceColour = texture(DiffuseTexture, UVCoord);
+	
 	if (IsTextured > 0)
 	{
 		vec3 normal = normalize(Normal);
@@ -35,22 +33,23 @@ void main()
 		vec3 lightMix = vec3(0f, 0f, 0f);
 		for (int lightIdx = 0; lightIdx < UNumActiveLights; ++lightIdx)
 		{
-			vec3 lightDir = normalize(LightPositions[lightIdx] - FragPos);
+			vec3 lightDir = normalize(LightPositions[lightIdx]);
 			vec3 viewDir = normalize(ViewPos - FragPos);
 			vec3 halfwayDir = normalize(lightDir + viewDir);
 
 			float diff = max(dot(normal, lightDir), 0.0f);
-			float spec = pow(max(dot(normal, halfwayDir), 0.0f), 8.0f);
+			float spec = max(dot(normal, halfwayDir), 0.0f);
 
-			vec3 diffuse = LightColors[lightIdx] * (diff * vec3(texture(Material.SpecularTexture, UVCoord)));
-			vec3 specular = LightStrengths[lightIdx] * (spec * vec3(texture(Material.SpecularTexture, UVCoord)));
+			vec3 ambient = ambientCoefficient * surfaceColour.rgb;
+			vec3 diffuse = ambient + (surfaceColour.rgb *LightColors[lightIdx] * LightStrengths[lightIdx] * diff);
+			vec3 specular = LightStrengths[lightIdx] * spec * vec3(texture(SpecularTexture, UVCoord));
 
 			vec3 result = diffuse + specular;
 
 			lightMix = lightMix + result;
 		}
 
-		OutFragmentColor = vec4(lightMix, 1.0f);
+		OutFragmentColor = vec4(lightMix, surfaceColour.a);
 	}
 	else
 	{
