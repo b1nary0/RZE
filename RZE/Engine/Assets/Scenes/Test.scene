@@ -27,7 +27,7 @@
       {
         "TransformComponent":
         {
-          "Position":[0, 30, 5],
+          "Position":[0, 25, 15],
           "Scale": [1, 1, 1],
           "Rotation": [0, 0, 0]
         },
@@ -42,35 +42,19 @@
         }
       }
     },
-	"Tank":
+	"MechWalker":
 	{
 	  "components":
 	  {
 		"TransformComponent":
 		{
-		  "Position": [0, 0, -5],
-		  "Scale":[10, 10, 10],
-		  "Rotation":[0, 125, 0]
+		  "Position": [0, 0, 0],
+		  "Scale":[1, 1, 1],
+		  "Rotation":[0, 0, 0]
 		},
 		"MeshComponent":
 		{
-		  "ResourcePath": "Engine/Assets/3D/Panzer/Panzer.obj"
-		}
-	  }
-	},
-	"Plane":
-	{
-	  "components":
-	  {
-		"TransformComponent":
-		{
-		  "Position": [-10, 0, -5],
-		  "Scale":[10, 10, 10],
-		  "Rotation":[0, -100, 0]
-		},
-		"MeshComponent":
-		{
-		  "ResourcePath": "Engine/Assets/3D/FW190/FW190.obj"
+		  "ResourcePath": "Engine/Assets/3D/NeckMechWalker/NeckMechWalker.obj"
 		}
 	  }
 	}

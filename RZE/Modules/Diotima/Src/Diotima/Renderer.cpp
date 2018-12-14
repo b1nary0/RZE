@@ -178,15 +178,15 @@ namespace Diotima
 					}
 				}
 
- 				if (mesh->GetSpecularTextures().size() > 0)
- 				{
- 					for (auto& texture : mesh->GetSpecularTextures())
- 					{
- 						mShaderPipeline->SetUniformInt("SpecularTexture", texture->GetTextureID());
- 						glActiveTexture(GL_TEXTURE1);
- 						openGL.BindTexture(EGLCapability::Texture2D, texture->GetTextureID());
- 					}
- 				}
+//  				if (mesh->GetSpecularTextures().size() > 0)
+//  				{
+//  					for (auto& texture : mesh->GetSpecularTextures())
+//  					{
+//  						mShaderPipeline->SetUniformInt("SpecularTexture", texture->GetTextureID());
+//  						glActiveTexture(GL_TEXTURE1);
+//  						openGL.BindTexture(EGLCapability::Texture2D, texture->GetTextureID());
+//  					}
+//  				}
 			}
 
 			mesh->mVAO.Bind();
