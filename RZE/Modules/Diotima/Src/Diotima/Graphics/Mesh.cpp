@@ -84,16 +84,9 @@ namespace Diotima
 		mIndices.push_back(index);
 	}
 
-	void GFXMesh::AddTexture(GFXTexture2D* const texture)
+	void GFXMesh::SetMaterial(GFXMaterial* material)
 	{
-		if (texture->GetTextureType() == ETextureType::Diffuse)
-		{
-			mDiffuseTextures.emplace_back(texture);
-		}
-		else if (texture->GetTextureType() == ETextureType::Specular)
-		{
-			mSpecularTextures.emplace_back(texture);
-		}
+		AssertNotNull(material);
+		mMaterial = material;
 	}
-
 }

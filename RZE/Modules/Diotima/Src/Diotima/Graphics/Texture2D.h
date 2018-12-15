@@ -8,6 +8,8 @@
 
 namespace Diotima
 {
+	const FilePath kDefaultDiffuseTexturePath{ "Engine/Assets/2D/NOASSET_Texture.png" };
+
 	namespace ETextureType
 	{
 		enum T : U32

@@ -16,6 +16,7 @@ struct aiScene;
 
 namespace Diotima
 {
+	class GFXMaterial;
 	class GFXTexture2D;
 
 	struct GFXVertex
@@ -27,8 +28,6 @@ namespace Diotima
 
 	class GFXMesh
 	{
-		typedef std::unordered_map<U32, std::vector<GFXTexture2D*>> TextureMap;
-
 	public:
 		GFXMesh();
 		~GFXMesh();
@@ -38,29 +37,24 @@ namespace Diotima
 		OpenGLEBO mEBO;
 
 		const std::vector<U32>& GetIndices() const;
-		const std::vector<GFXTexture2D*>& GetDiffuseTextures() { return mDiffuseTextures; }
-		const std::vector<GFXTexture2D*>& GetSpecularTextures() { return mSpecularTextures; }
+		const GFXMaterial& GetMaterial() { return *mMaterial; }
 		const std::vector<Vector3D>& GetPositions() const { return mPositions; }
 		const std::vector<Vector3D>& GetNormals() const { return mNormals; }
 		const std::vector<Vector2D>& GetUVCoords() const { return mUVCoords; }
 
 		void AddVertex(const GFXVertex& vertex);
 		void AddIndex(U32 index);
-		void AddTexture(GFXTexture2D* const texture);
+		void SetMaterial(GFXMaterial* material);
 
 		void OnLoadFinished();
 
 	private:
-		std::vector<GFXTexture2D*> mDiffuseTextures;
-		std::vector<GFXTexture2D*> mSpecularTextures;
+		GFXMaterial* mMaterial;
 
 		std::vector<GFXVertex> mVertices;
 		std::vector<Vector3D> mPositions;
 		std::vector<Vector3D> mNormals;
 		std::vector<Vector2D> mUVCoords;
 		std::vector<U32> mIndices;
-
-		U32 mDiffuseTextureCount;
-		U32 mSpecularTextureCount;
 	};
 }

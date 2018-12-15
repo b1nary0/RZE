@@ -1,27 +1,29 @@
 #pragma once
 
-#include <string>
+#include <vector>
 
-#include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector3D.h>
 #include <Utils/Math/Vector4D.h>
 
-#include <Utils/Interfaces/Resource.h>
-
 namespace Diotima
 {
-	class GFXMaterial : public IResource
+	class GFXTexture2D;
+
+	class GFXMaterial
 	{
 	public:
 		GFXMaterial();
 		~GFXMaterial();
 
-		// IResource interface
-	public:
-		virtual bool Load(const FilePath& filePath);
-		virtual void Release() {} // Nothing to release atm
+		// #TODO(Josh::Work out what should be exposed in this API)
+		void AddTexture(GFXTexture2D* texture);
+		bool IsTextured() const;
 
-	public:
-		Vector4D Color;
+		const std::vector<GFXTexture2D*>& GetDiffuseTextures() const { return mDiffuseTextures; }
+		const std::vector<GFXTexture2D*>& GetSpecularTextures() const { return mSpecularTextures; }
+
+	private:
+		std::vector<GFXTexture2D*> mDiffuseTextures;
+		std::vector<GFXTexture2D*> mSpecularTextures;
 	};
 }

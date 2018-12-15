@@ -27,7 +27,12 @@ namespace Diotima
 	{
 		// #TODO(Josh) This will need to be customized for different bit sizes... 24, 32 etc?
 		U8* data = stbi_load(filePath.GetAbsolutePath().c_str(), &mWidth, &mHeight, &mChannels, STBI_rgb);
-		AssertNotNull(data);
+		if (data == nullptr)
+		{
+			// Default texture
+			data = stbi_load(kDefaultDiffuseTexturePath.GetAbsolutePath().c_str(), &mWidth, &mHeight, &mChannels, STBI_rgb);
+			AssertNotNull(data);
+		}
 
 		OpenGLRHI& openGL = OpenGLRHI::Get();
 
