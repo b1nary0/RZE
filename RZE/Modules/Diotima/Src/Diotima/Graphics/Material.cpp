@@ -6,8 +6,6 @@
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Platform/File.h>
 
-//#include <RapidJSON/document.h>
-
 namespace Diotima
 {
 	Diotima::GFXMaterial::GFXMaterial()
@@ -18,13 +16,20 @@ namespace Diotima
 	{
 	}
 
-	bool Diotima::GFXMaterial::Load(const FilePath& filePath)
+	void GFXMaterial::AddTexture(GFXTexture2D* texture)
 	{
-		// 	File materialFile(filePath);
-		// 
-		// 	rapidjson::Document json;
-		// 	json.Parse(materialFile.Content().c_str());
+		if (texture->GetTextureType() == ETextureType::Diffuse)
+		{
+			mDiffuseTextures.emplace_back(texture);
+		}
+		else
+		{
+			mSpecularTextures.emplace_back(texture);
+		}
+	}
 
-		return true;
+	bool GFXMaterial::IsTextured() const
+	{
+		return !mDiffuseTextures.empty() || !mSpecularTextures.empty();
 	}
 }

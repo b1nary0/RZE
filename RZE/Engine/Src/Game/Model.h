@@ -12,7 +12,6 @@ struct aiScene;
 namespace Diotima
 {
 	class GFXMesh;
-	class RenderBatch;
 }
 
 class Model3D : public IResource
@@ -28,7 +27,6 @@ public:
 public:
 	inline std::vector<Diotima::GFXMesh*>& GetMeshList() { return mMeshList; }
 	inline std::vector<ResourceHandle>& GetTextureHandles() { return mTextureHandles; }
-	Diotima::RenderBatch* GetRenderBatch();
 
 private:
 	void ProcessNode(const aiNode& node, const aiScene& scene);
@@ -39,8 +37,8 @@ private:
 private:
 	FilePath mFilePath;
 
-	//#NOTE(Josh::This renderbatch concept needs to be split into a more decoupled design. This is good for now to get single batch multi object)
-	std::unique_ptr<Diotima::RenderBatch> mRenderBatch;
 	std::vector<Diotima::GFXMesh*> mMeshList;
+	
+	// Stored to keep references to the resource alive.
 	std::vector<ResourceHandle> mTextureHandles;
 };

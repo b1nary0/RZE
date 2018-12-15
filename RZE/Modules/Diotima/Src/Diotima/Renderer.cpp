@@ -164,30 +164,25 @@ namespace Diotima
 		for (auto& mesh : renderItem.MeshData)
 		{
 			// #TODO(Josh::Hardcore magic values here until I implement texture batch relationships)
-			bool bIsTextured = mesh->GetDiffuseTextures().size() > 0 || mesh->GetSpecularTextures().size() > 0;
-			mShaderPipeline->SetUniformInt("IsTextured", static_cast<int>(bIsTextured));
-			if (bIsTextured)
+			if (mesh->GetMaterial().GetDiffuseTextures().size() > 0)
 			{
-				if (mesh->GetDiffuseTextures().size() > 0)
+				for (auto& texture : mesh->GetMaterial().GetDiffuseTextures())
 				{
-					for (auto& texture : mesh->GetDiffuseTextures())
-					{
-						mShaderPipeline->SetUniformInt("DiffuseTexture", texture->GetTextureID());
-						glActiveTexture(GL_TEXTURE0);
-						openGL.BindTexture(EGLCapability::Texture2D, texture->GetTextureID());
-					}
+					mShaderPipeline->SetUniformInt("DiffuseTexture", texture->GetTextureID());
+					glActiveTexture(GL_TEXTURE0);
+					openGL.BindTexture(EGLCapability::Texture2D, texture->GetTextureID());
 				}
-
-//  				if (mesh->GetSpecularTextures().size() > 0)
-//  				{
-//  					for (auto& texture : mesh->GetSpecularTextures())
-//  					{
-//  						mShaderPipeline->SetUniformInt("SpecularTexture", texture->GetTextureID());
-//  						glActiveTexture(GL_TEXTURE1);
-//  						openGL.BindTexture(EGLCapability::Texture2D, texture->GetTextureID());
-//  					}
-//  				}
 			}
+
+//   			if (mesh->GetMaterial().GetSpecularTextures().size() > 0)
+//   			{
+//   				for (auto& texture : mesh->GetMaterial().GetSpecularTextures())
+//   				{
+//   					mShaderPipeline->SetUniformInt("SpecularTexture", texture->GetTextureID());
+//   					glActiveTexture(GL_TEXTURE1);
+//   					openGL.BindTexture(EGLCapability::Texture2D, texture->GetTextureID());
+//   				}
+//   			}
 
 			mesh->mVAO.Bind();
 			mesh->mEBO.Bind();
