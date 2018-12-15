@@ -5,7 +5,7 @@
 #include <Assimp/postprocess.h>
 #include <Assimp/scene.h>
 
-#include <Diotima/RenderBatch.h>
+#include <Diotima/Graphics/Material.h>
 #include <Diotima/Graphics/Mesh.h>
 #include <Diotima/Graphics/Texture2D.h>
 
@@ -48,11 +48,6 @@ bool Model3D::Load(const FilePath& filePath)
 		return false;
 	}
 
-	// #TODO(Josh::Request batch from renderer for now to keep it tracked in renderer and leased out.
-	//		 Eventually want to move to have another layer in between engine -> renderer classes)
-	mRenderBatch = std::make_unique<Diotima::RenderBatch>();
-	mRenderBatch->Allocate(mMeshList);
-
 	return true;
 }
 
@@ -64,11 +59,6 @@ void Model3D::Release()
 	}
 
  	mTextureHandles.clear();
-}
-
-Diotima::RenderBatch* Model3D::GetRenderBatch()
-{
-	return mRenderBatch.get();
 }
 
 void Model3D::ProcessNode(const aiNode& node, const aiScene& scene)
@@ -122,7 +112,9 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 			outMesh.AddIndex(assimpFace.mIndices[indexIdx]);
 		}
 	}
-
+	// #TODO(Josh::Not necessarily just here, but definitely need to have a layer between renderer and engine to represent these concepts
+		//             Essentially anything prefixed GFX should be renderer-only in the long run. Should get to this while Diotima scope is small)
+	Diotima::GFXMaterial* pMaterial = new Diotima::GFXMaterial();
 	if (mesh.mMaterialIndex >= 0)
 	{
 		aiMaterial* mat = scene.mMaterials[mesh.mMaterialIndex];
@@ -135,8 +127,10 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(texturePath, Diotima::ETextureType::Diffuse);
 			if (textureHandle.IsValid())
 			{
-				outMesh.AddTexture(RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXTexture2D>(textureHandle));
-				mTextureHandles.push_back(textureHandle);
+				Diotima::GFXTexture2D* texture = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXTexture2D>(textureHandle);
+				pMaterial->AddTexture(texture);
+
+				mTextureHandles.emplace_back(textureHandle);
 			}
 			else
 			{
@@ -153,15 +147,29 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(texturePath, Diotima::ETextureType::Specular);
 			if (textureHandle.IsValid())
 			{
+				Diotima::GFXTexture2D* texture = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXTexture2D>(textureHandle);
+				pMaterial->AddTexture(texture);
+
 				mTextureHandles.emplace_back(textureHandle);
-				outMesh.AddTexture(RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXTexture2D>(textureHandle));
 			}
 			else
 			{
 				LOG_CONSOLE_ARGS("Could not load texture at [%s]", texturePath.GetRelativePath().c_str());
 			}
 		}
+
 	}
+	if (!pMaterial->IsTextured())
+	{
+		LOG_CONSOLE_ARGS("Could not find texture for [%s] loading default material", mFilePath.GetRelativePath().c_str());
+
+		ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(Diotima::kDefaultDiffuseTexturePath, Diotima::ETextureType::Diffuse);
+		// #TODO(Josh::Potential bug here -- what happens if we then reconcile no texture at runtime? We would have to remove this from this list -- linear searches are bad
+		mTextureHandles.push_back(textureHandle);
+
+		pMaterial->AddTexture(RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXTexture2D>(textureHandle));
+	}
+	outMesh.SetMaterial(pMaterial);
 
 	outMesh.OnLoadFinished();
 }

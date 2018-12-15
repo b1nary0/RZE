@@ -115,10 +115,9 @@ void RenderSystem::RegisterForComponentNotifications()
 
 		if (meshComp->Resource.IsValid())
 		{
-			Diotima::Renderer::RenderItemProtocol item;
-
 			Model3D* const modelData = RZE_Application::RZE().GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
 
+			Diotima::Renderer::RenderItemProtocol item;
 			item.MeshData = modelData->GetMeshList();
 
 			Int32 itemIdx = RZE_Application::RZE().GetRenderer().AddRenderItem(item);
