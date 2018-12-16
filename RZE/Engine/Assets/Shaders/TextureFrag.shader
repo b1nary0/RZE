@@ -21,6 +21,8 @@ uniform int UNumActiveLights;
 uniform float UShininess;
 uniform float UOpacity;
 
+uniform int UIsNormalMapped;
+
 uniform vec3 ViewPos; // Cam pos
 
 vec3 CalculateBumpNormal()
@@ -57,7 +59,12 @@ void main()
 	vec4 specularSample = texture(SpecularTexture, UVCoord);
 	
 	float ambientCoefficient = 0.175f;
-	vec3 normal = CalculateBumpNormal();
+
+	vec3 normal;
+	if (UIsNormalMapped == 1)
+		normal = CalculateBumpNormal();
+	else
+		normal = normalize(Normal);
 	
 	vec3 lightMix = vec3(0f, 0f, 0f);
 	for (int lightIdx = 0; lightIdx < UNumActiveLights; ++lightIdx)

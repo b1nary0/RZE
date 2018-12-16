@@ -205,12 +205,17 @@ namespace Diotima
 
 			if (bHasNormals)
 			{
+				mShaderPipeline->SetUniformInt("UIsNormalMapped", 1);
 				openGL.SetTextureUnit(EGLTextureUnit::Texture2);
 				for (auto& texture : material.GetNormalMaps())
 				{
 					mShaderPipeline->SetUniformInt("NormalMap", 2);
 					openGL.BindTexture(EGLCapability::Texture2D, texture->GetTextureID());
 				}
+			}
+			else
+			{
+				mShaderPipeline->SetUniformInt("UIsNormalMapped", 0);
 			}
 
 			mesh->mVAO.Bind();
