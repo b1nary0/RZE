@@ -88,7 +88,7 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 		mOSWindowHandleData.windowHandle = CreateWindowEx(0,
 			wStrTitle.c_str(),
 			wStrTitle.c_str(),
-			WS_OVERLAPPEDWINDOW | (WS_THICKFRAME), // @note WS_POPUP = borderless. WS_OVERLAPPEDWINDOW default
+			WS_OVERLAPPEDWINDOW, // @note WS_POPUP = borderless. WS_OVERLAPPEDWINDOW default
 			CW_USEDEFAULT,
 			CW_USEDEFAULT,
 			static_cast<int>(mDimensions.X()),
@@ -315,7 +315,7 @@ void Win32Window::Show()
 {
 	if (mOSWindowHandleData.windowHandle)
 	{
-		ShowWindow(mOSWindowHandleData.windowHandle, SW_MAXIMIZE); // @note SW_SHOWMAXIMIZED for borderless fullscreen. SW_SHOWDEFAULT default
+		ShowWindow(mOSWindowHandleData.windowHandle, SW_SHOWNORMAL); // @note SW_SHOWMAXIMIZED for borderless fullscreen. SW_SHOWDEFAULT default
 	}
 }
 
