@@ -73,7 +73,7 @@ namespace Diotima
 			OpenGLRHI::Get().Init(creationParams);
 		}
 
-		OpenGLRHI::Get().ClearColor(0.25f, 0.25f, 0.25f, 1.0f);
+		OpenGLRHI::Get().ClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
 		OpenGLRHI::Get().EnableCapability(EGLCapability::DepthTest);
 
@@ -217,7 +217,7 @@ namespace Diotima
 			{
 				mShaderPipeline->SetUniformInt("UIsNormalMapped", 0);
 			}
-
+			
 			mesh->mVAO.Bind();
 			mesh->mEBO.Bind();
 			OpenGLRHI::Get().DrawElements(EGLDrawMode::Triangles, mesh->GetIndices().size(), EGLDataType::UnsignedInt, nullptr);
@@ -233,12 +233,14 @@ namespace Diotima
 		openGL.BindFramebuffer(EGLBufferTarget::DrawFramebuffer, 0);
 		openGL.BindFramebuffer(EGLBufferTarget::ReadFramebuffer, mRenderTarget->GetFrameBufferID());
 		// #TODO(Josh::Wrap these properly in OpenGLRHI)
-		glReadBuffer(GL_COLOR_ATTACHMENT0);
-		glBlitFramebuffer(
+		openGL.ReadBuffer(EGLAttachmentPoint::Color0);
+		openGL.BlitFramebuffer(
 			0, 0, static_cast<GLint>(mRenderTarget->GetWidth()), static_cast<GLint>(mRenderTarget->GetHeight()),
 			0, 0, static_cast<GLint>(mCanvasSize.X()), static_cast<GLint>(mCanvasSize.Y()), 
-			GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+			EGLBufferBit::Color | EGLBufferBit::Depth, GL_NEAREST);
 	}
+
+
 
 	Renderer::RenderItemProtocol::RenderItemProtocol()
 	{

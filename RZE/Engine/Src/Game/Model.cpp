@@ -201,6 +201,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 		}
 
 	}
+
 	if (!pMaterial->IsTextured())
 	{
 		LOG_CONSOLE_ARGS("Could not find texture for [%s] loading default material", mFilePath.GetRelativePath().c_str());
@@ -211,8 +212,8 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 
 		pMaterial->AddTexture(RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXTexture2D>(diffuseHandle));
 	}
-	outMesh.SetMaterial(pMaterial);
 
+	outMesh.SetMaterial(pMaterial);
 	outMesh.OnLoadFinished();
 }
 

@@ -453,6 +453,9 @@ public:
 	void BindFramebuffer(EGLBufferTarget::T bufferTarget, const GLuint bufferObjectHandle) const;
 	void BindRenderbuffer(const GLint bufferObjectHandle) const;
 
+	void ReadBuffer(EGLAttachmentPoint::T attachmentPoint) const;
+	void BlitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint destX0, GLint destY0, GLint destX1, GLint destY1, GLbitfield mask, GLenum filter) const;
+
 	void DeleteBuffer(GLuint bufferCount, GLuint* bufferHandle) const;
 
 	void SetBufferData(const EGLBufferTarget::T target, const GLuint size, const void* const data, const EGLBufferUsage::T bufferUsage) const;

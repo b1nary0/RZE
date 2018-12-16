@@ -42,6 +42,6 @@ namespace Diotima
 
 	bool GFXMaterial::IsTextured() const
 	{
-		return !mDiffuseTextures.empty() || !mSpecularTextures.empty();
+		return !mDiffuseTextures.empty();
 	}
 }

@@ -44,13 +44,13 @@
 	  {
 		"TransformComponent":
 		{
-		  "Position": [-30, -0.75, -30],
-		  "Scale":[60, 1, 60],
-		  "Rotation":[0, 0, 0]
+		  "Position": [0, 0, 0],
+		  "Scale":[10, 10, 2],
+		  "Rotation":[-90, 0, 0]
 		},
 		"MeshComponent":
 		{
-		  "ResourcePath": "Engine/Assets/3D/Cube.obj"
+		  "ResourcePath": "Engine/Assets/3D/Ground/Quad.obj"
 		}
 	  }
 	},

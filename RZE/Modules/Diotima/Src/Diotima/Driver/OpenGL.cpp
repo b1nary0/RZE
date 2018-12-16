@@ -156,6 +156,20 @@ void OpenGLRHI::BindRenderbuffer(const GLint bufferObjectHandle) const
 	AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
+
+void OpenGLRHI::ReadBuffer(EGLAttachmentPoint::T attachmentPoint) const
+{
+	glReadBuffer(attachmentPoint);
+	AssertExpr(glGetError() == GL_NO_ERROR);
+}
+
+
+void OpenGLRHI::BlitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint destX0, GLint destY0, GLint destX1, GLint destY1, GLbitfield mask, GLenum filter) const
+{
+	glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, destX0, destY0, destX1, destY1, mask, filter);
+	AssertExpr(glGetError() == GL_NO_ERROR);
+}
+
 void OpenGLRHI::DeleteBuffer(GLuint bufferCount, GLuint* bufferHandle) const
 {
 	AssertExpr(bufferCount > 0 && bufferHandle);
