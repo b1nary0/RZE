@@ -37,6 +37,17 @@ vec3 CalculateBumpNormal()
 	return newNormal;
 }
 
+float CalculateBlinnPhong(vec3 viewDir, vec3 lightDir, vec3 normal)
+{
+	float specular = 0.0;
+	
+	vec3 halfDirection = normalize(lightDir + viewDir);
+	float specAngle = max(0.0, dot(halfDirection, normal));
+	specular = pow(specAngle, 1.0);
+	
+	return specular;
+}
+
 void main()
 {
 	vec4 surfaceColour = texture(DiffuseTexture, UVCoord);
@@ -48,19 +59,17 @@ void main()
 	vec3 lightMix = vec3(0f, 0f, 0f);
 	for (int lightIdx = 0; lightIdx < UNumActiveLights; ++lightIdx)
 	{
-		vec3 surfaceToLight = normalize(LightPositions[lightIdx] - FragPos);
-		vec3 reflectVec = reflect(-surfaceToLight, normal);
-		vec3 surfaceToCamera = normalize(ViewPos - FragPos);
+		vec3 lightDir = normalize(LightPositions[lightIdx] - FragPos);
+		vec3 viewDir = normalize(ViewPos - FragPos);
 		
-		float cosAngle = max(0.0, dot(surfaceToCamera, reflectVec));
-		float specularCoefficient = pow(cosAngle, 0.25);
-		float diff = max(0.0f, dot(normal, surfaceToLight));
+		float diff = max(0.0f, dot(normal, lightDir));
+		float specular = CalculateBlinnPhong(viewDir, lightDir, normal);
 
-		vec3 ambient = ambientCoefficient * surfaceColour.rgb;
-		vec3 diffuse = ambient + (surfaceColour.rgb * LightColors[lightIdx] * LightStrengths[lightIdx] * diff);
-		vec3 specular = specularCoefficient * specularSample.xyz * LightStrengths[lightIdx];
+		vec3 ambientResult = ambientCoefficient * surfaceColour.rgb;
+		vec3 diffuseResult = ambientResult + (surfaceColour.rgb * LightColors[lightIdx] * LightStrengths[lightIdx] * diff);
+		vec3 specularResult = specular * specularSample.xyz * LightStrengths[lightIdx];
 
-		vec3 result = diffuse + specular;
+		vec3 result = diffuseResult + specularResult;
 
 		lightMix = lightMix + result;
 	}
