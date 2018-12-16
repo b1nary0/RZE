@@ -16,6 +16,8 @@
 #include <ECS/Components/TransformComponent.h>
 #include <ECS/Components/MaterialComponent.h>
 
+#include <ECS/Systems/FreeCameraSystem.h>
+
 #include <DebugUtils/DebugServices.h>
 
 // GAME
@@ -38,7 +40,7 @@ void GameApp::Initialize()
 	RZE().GetActiveScene().Load(FilePath("Engine/Assets/Scenes/TestGame.scene"));
 
 	RZE().GetActiveScene().GetEntityHandler().AddSystem<InteractiveSpawningSystem>();
-	RZE().GetActiveScene().GetEntityHandler().AddSystem<FirstPersonCameraSystem>();
+	RZE().GetActiveScene().GetEntityHandler().AddSystem<FreeCameraSystem>();
 }
 
 void GameApp::Start()

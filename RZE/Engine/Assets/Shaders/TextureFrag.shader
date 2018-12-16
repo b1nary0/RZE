@@ -23,7 +23,7 @@ void main()
 	vec4 surfaceColour = texture(SpecularTexture, UVCoord);
 	vec4 specularSample = texture(DiffuseTexture, UVCoord);
 	
-	float ambientCoefficient = 0.1f;
+	float ambientCoefficient = 0.175f;
 	vec3 normal = normalize(Normal);
 	
 	vec3 lightMix = vec3(0f, 0f, 0f);

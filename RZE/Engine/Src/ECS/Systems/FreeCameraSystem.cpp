@@ -1,3 +1,4 @@
+#include <StdAfx.h>
 #include <ECS/Systems/FreeCameraSystem.h>
 
 #include <algorithm>
