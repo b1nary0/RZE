@@ -173,15 +173,20 @@ namespace Diotima
 				openGL.BindTexture(EGLCapability::Texture2D, 0);
 			}
 
+			const GFXMaterial& material = mesh->GetMaterial();
+
 			// #TODO(Josh::Hardcore magic values here until I implement texture batch relationships)
-			bool bHasDiffuse = mesh->GetMaterial().GetDiffuseTextures().size() > 0;
-			bool bHasSpecular = mesh->GetMaterial().GetSpecularTextures().size() > 0;
-			bool bHasNormals = mesh->GetMaterial().GetNormalMaps().size() > 0;
+			bool bHasDiffuse = material.GetDiffuseTextures().size() > 0;
+			bool bHasSpecular = material.GetSpecularTextures().size() > 0;
+			bool bHasNormals = material.GetNormalMaps().size() > 0;
+
+			mShaderPipeline->SetUniformFloat("UShininess", material.Shininess);
+			mShaderPipeline->SetUniformFloat("UOpacity", material.Opacity);
 
 			if (bHasDiffuse)
 			{
 				openGL.SetTextureUnit(EGLTextureUnit::Texture0);
-				for (auto& texture : mesh->GetMaterial().GetDiffuseTextures())
+				for (auto& texture : material.GetDiffuseTextures())
 				{
 					mShaderPipeline->SetUniformInt("DiffuseTexture", 0);
 					openGL.BindTexture(EGLCapability::Texture2D, texture->GetTextureID());
@@ -191,7 +196,7 @@ namespace Diotima
 			if (bHasSpecular)
 			{
 				openGL.SetTextureUnit(EGLTextureUnit::Texture1);
-				for (auto& texture : mesh->GetMaterial().GetSpecularTextures())
+				for (auto& texture : material.GetSpecularTextures())
 				{
 					mShaderPipeline->SetUniformInt("SpecularTexture", 1);
 					openGL.BindTexture(EGLCapability::Texture2D, texture->GetTextureID());
@@ -201,7 +206,7 @@ namespace Diotima
 			if (bHasNormals)
 			{
 				openGL.SetTextureUnit(EGLTextureUnit::Texture2);
-				for (auto& texture : mesh->GetMaterial().GetNormalMaps())
+				for (auto& texture : material.GetNormalMaps())
 				{
 					mShaderPipeline->SetUniformInt("NormalMap", 2);
 					openGL.BindTexture(EGLCapability::Texture2D, texture->GetTextureID());

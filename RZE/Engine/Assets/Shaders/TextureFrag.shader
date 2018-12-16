@@ -18,6 +18,9 @@ uniform vec3 LightColors[MAX_LIGHT_SUPPORT];
 uniform float LightStrengths[MAX_LIGHT_SUPPORT];
 uniform int UNumActiveLights;
 
+uniform float UShininess;
+uniform float UOpacity;
+
 uniform vec3 ViewPos; // Cam pos
 
 vec3 CalculateBumpNormal()
@@ -43,7 +46,7 @@ float CalculateBlinnPhong(vec3 viewDir, vec3 lightDir, vec3 normal)
 	
 	vec3 halfDirection = normalize(lightDir + viewDir);
 	float specAngle = max(0.0, dot(halfDirection, normal));
-	specular = pow(specAngle, 1.0);
+	specular = pow(specAngle, UShininess);
 	
 	return specular;
 }
@@ -74,5 +77,5 @@ void main()
 		lightMix = lightMix + result;
 	}
 
-	OutFragmentColor = vec4(lightMix, surfaceColour.a);
+	OutFragmentColor = vec4(lightMix, UOpacity);
 }

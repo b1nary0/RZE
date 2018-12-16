@@ -25,7 +25,7 @@ bool Model3D::Load(const FilePath& filePath)
 	Assimp::Importer ModelImporter;
 	const aiScene* AssimpScene = ModelImporter.ReadFile(mFilePath.GetAbsolutePath(),
 		aiProcess_Triangulate
-		| aiProcess_GenNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+		| aiProcess_GenNormals /*| aiProcess_FlipUVs*/ | aiProcess_CalcTangentSpace);
 
 	bool bAssimpNotLoaded =
 		!AssimpScene
@@ -99,7 +99,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 		if (bHasTextureCoords)
 		{
 			const aiVector3D& assimpUV = mesh.mTextureCoords[0][vertexIdx];
-			Vector2D vertUV(assimpUV.x, assimpUV.y);
+			Vector2D vertUV(assimpUV.x, -assimpUV.y);
 			vertex.UVData = vertUV;
 		}
 
@@ -127,6 +127,19 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 	if (mesh.mMaterialIndex >= 0)
 	{
 		aiMaterial* mat = scene.mMaterials[mesh.mMaterialIndex];
+
+		float shininess = 0.0f;
+		if (mat->Get(AI_MATKEY_SHININESS, shininess) == AI_SUCCESS)
+		{
+			pMaterial->Shininess = shininess;
+		}
+
+		float opacity = 0.0f;
+		if (mat->Get(AI_MATKEY_OPACITY, opacity) == AI_SUCCESS)
+		{
+			pMaterial->Opacity = opacity;
+		}
+
 		for (unsigned int i = 0; i < mat->GetTextureCount(aiTextureType_DIFFUSE); ++i)
 		{
 			aiString str;
@@ -192,11 +205,11 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 	{
 		LOG_CONSOLE_ARGS("Could not find texture for [%s] loading default material", mFilePath.GetRelativePath().c_str());
 
-		ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(Diotima::kDefaultDiffuseTexturePath, Diotima::ETextureType::Diffuse);
+		ResourceHandle diffuseHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(Diotima::kDefaultDiffuseTexturePath, Diotima::ETextureType::Diffuse);
 		// #TODO(Josh::Potential bug here -- what happens if we then reconcile no texture at runtime? We would have to remove this from this list -- linear searches are bad
-		mTextureHandles.push_back(textureHandle);
+		mTextureHandles.push_back(diffuseHandle);
 
-		pMaterial->AddTexture(RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXTexture2D>(textureHandle));
+		pMaterial->AddTexture(RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXTexture2D>(diffuseHandle));
 	}
 	outMesh.SetMaterial(pMaterial);
 
