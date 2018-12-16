@@ -108,11 +108,6 @@ void FreeCameraSystem::MouseInput(CameraComponent& camComp, TransformComponent& 
 
 	if (RZE_Application::RZE().GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Pressed)
 	{
-		if (mMousePrevPos.LengthSq() == 0)
-		{
-			mMousePrevPos = inputHandler.GetMouseState().CurPosition;
-		}
-
 		Vector3D diff = curPos - mMousePrevPos;
 		diff = diff * 0.1f; // #TODO(Josh) Move this to a better place (mouse sensitivity) -- config file
 		mPitchYawRoll += diff;
