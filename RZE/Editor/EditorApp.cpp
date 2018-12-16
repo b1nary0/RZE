@@ -17,7 +17,7 @@ void RZE_Editor::Start()
 {
 	RZE_Application::Start();
 	
-	RZE().GetActiveScene().Load(FilePath("Engine/Assets/Scenes/Test.scene"));
+	RZE().GetActiveScene().Load(FilePath("Engine/Assets/Scenes/TestGame.scene"));
 
 	InternalGetWindow().SetTitle("RZE Studio");
 
