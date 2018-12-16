@@ -163,26 +163,50 @@ namespace Diotima
 		mShaderPipeline->SetUniformMatrix4x4("UModelMat", renderItem.ModelMat);
 		for (auto& mesh : renderItem.MeshData)
 		{
-			// #TODO(Josh::Hardcore magic values here until I implement texture batch relationships)
-			if (mesh->GetMaterial().GetDiffuseTextures().size() > 0)
 			{
+				// #NOTE(Josh::This should be temp -- replaced by proper state management? I dunno haven't thought about it.)
+				openGL.SetTextureUnit(EGLTextureUnit::Texture0);
+				openGL.BindTexture(EGLCapability::Texture2D, 0);
+				openGL.SetTextureUnit(EGLTextureUnit::Texture1);
+				openGL.BindTexture(EGLCapability::Texture2D, 0);
+				openGL.SetTextureUnit(EGLTextureUnit::Texture2);
+				openGL.BindTexture(EGLCapability::Texture2D, 0);
+			}
+
+			// #TODO(Josh::Hardcore magic values here until I implement texture batch relationships)
+			bool bHasDiffuse = mesh->GetMaterial().GetDiffuseTextures().size() > 0;
+			bool bHasSpecular = mesh->GetMaterial().GetSpecularTextures().size() > 0;
+			bool bHasNormals = mesh->GetMaterial().GetNormalMaps().size() > 0;
+
+			if (bHasDiffuse)
+			{
+				openGL.SetTextureUnit(EGLTextureUnit::Texture0);
 				for (auto& texture : mesh->GetMaterial().GetDiffuseTextures())
 				{
-					mShaderPipeline->SetUniformInt("DiffuseTexture", texture->GetTextureID());
-					glActiveTexture(GL_TEXTURE0);
+					mShaderPipeline->SetUniformInt("DiffuseTexture", 0);
 					openGL.BindTexture(EGLCapability::Texture2D, texture->GetTextureID());
 				}
 			}
 
-//   			if (mesh->GetMaterial().GetSpecularTextures().size() > 0)
-//   			{
-//   				for (auto& texture : mesh->GetMaterial().GetSpecularTextures())
-//   				{
-//   					mShaderPipeline->SetUniformInt("SpecularTexture", texture->GetTextureID());
-//   					glActiveTexture(GL_TEXTURE1);
-//   					openGL.BindTexture(EGLCapability::Texture2D, texture->GetTextureID());
-//   				}
-//   			}
+			if (bHasSpecular)
+			{
+				openGL.SetTextureUnit(EGLTextureUnit::Texture1);
+				for (auto& texture : mesh->GetMaterial().GetSpecularTextures())
+				{
+					mShaderPipeline->SetUniformInt("SpecularTexture", 1);
+					openGL.BindTexture(EGLCapability::Texture2D, texture->GetTextureID());
+				}
+			}
+
+			if (bHasNormals)
+			{
+				openGL.SetTextureUnit(EGLTextureUnit::Texture2);
+				for (auto& texture : mesh->GetMaterial().GetNormalMaps())
+				{
+					mShaderPipeline->SetUniformInt("NormalMap", 2);
+					openGL.BindTexture(EGLCapability::Texture2D, texture->GetTextureID());
+				}
+			}
 
 			mesh->mVAO.Bind();
 			mesh->mEBO.Bind();

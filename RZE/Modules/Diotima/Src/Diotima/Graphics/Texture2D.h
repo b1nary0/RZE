@@ -15,7 +15,8 @@ namespace Diotima
 		enum T : U32
 		{
 			Diffuse,
-			Specular
+			Specular,
+			Normal
 		};
 	}
 

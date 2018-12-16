@@ -45,23 +45,29 @@ namespace Diotima
 			mPositions.push_back(mVertices[vertIdx].Position);
 			mNormals.push_back(mVertices[vertIdx].Normal);
 			mUVCoords.push_back(mVertices[vertIdx].UVData);
+			mTangents.push_back(mVertices[vertIdx].Tangent);
 		}
 
 		const GLsizeiptr verticesSize = mPositions.size() * sizeof(Vector3D);
 		const GLsizeiptr normalsSize = mNormals.size() * sizeof(Vector3D);
+		const GLsizeiptr tangentSize = mTangents.size() * sizeof(Vector3D);
 		const GLsizeiptr uvDataSize = mUVCoords.size() * sizeof(Vector2D);
-		const GLsizeiptr totalSize = verticesSize + normalsSize + uvDataSize;
+
+		const GLsizeiptr totalSize = verticesSize + normalsSize + tangentSize + uvDataSize;
 
 		const GLsizeiptr normalsStart = verticesSize;
-		const GLsizeiptr uvDataStart = normalsStart + normalsSize;
+		const GLsizeiptr tangentStart = normalsStart + normalsSize;
+		const GLsizeiptr uvDataStart = tangentStart + tangentSize;
 
 		const GLvoid* normalsStartPtr = reinterpret_cast<GLvoid*>(normalsStart);
+		const GLvoid* tangentStartPtr = reinterpret_cast<GLvoid*>(tangentStart);
 		const GLvoid* uvDataStartPtr = reinterpret_cast<GLvoid*>(uvDataStart);
 
 		mVAO.Bind();
 		mVertexVBO.SetBufferData(nullptr, totalSize);
 		mVertexVBO.SetBufferSubData(mPositions.data(), 0, verticesSize);
 		mVertexVBO.SetBufferSubData(mNormals.data(), normalsStart, normalsSize);
+		mVertexVBO.SetBufferSubData(mTangents.data(), tangentStart, tangentSize);
 		mVertexVBO.SetBufferSubData(mUVCoords.data(), uvDataStart, uvDataSize);
 
 		mEBO.SetBufferData(mIndices.data(), sizeof(U32) * mIndices.size());
@@ -74,9 +80,13 @@ namespace Diotima
 		OpenGLRHI::Get().EnableVertexAttributeArray(1);
 		OpenGLRHI::Get().VertexAttribPointer(1, 3, EGLDataType::Float, EGLBooleanValue::False, sizeof(Vector3D), normalsStartPtr);
 
-		// tex coords
+		// tangents
 		OpenGLRHI::Get().EnableVertexAttributeArray(2);
-		OpenGLRHI::Get().VertexAttribPointer(2, 2, EGLDataType::Float, EGLBooleanValue::False, sizeof(Vector2D), uvDataStartPtr);
+		OpenGLRHI::Get().VertexAttribPointer(2, 3, EGLDataType::Float, EGLBooleanValue::False, sizeof(Vector3D), tangentStartPtr);
+
+		// tex coords
+		OpenGLRHI::Get().EnableVertexAttributeArray(3);
+		OpenGLRHI::Get().VertexAttribPointer(3, 2, EGLDataType::Float, EGLBooleanValue::False, sizeof(Vector2D), uvDataStartPtr);
 	}
 
 	void GFXMesh::AddIndex(U32 index)

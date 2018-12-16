@@ -23,6 +23,7 @@ namespace Diotima
 	{
 		Vector3D Position;
 		Vector3D Normal;
+		Vector3D Tangent;
 		Vector2D UVData;
 	};
 
@@ -52,9 +53,12 @@ namespace Diotima
 		GFXMaterial* mMaterial;
 
 		std::vector<GFXVertex> mVertices;
+
 		std::vector<Vector3D> mPositions;
 		std::vector<Vector3D> mNormals;
+		std::vector<Vector3D> mTangents;
 		std::vector<Vector2D> mUVCoords;
+
 		std::vector<U32> mIndices;
 	};
 }

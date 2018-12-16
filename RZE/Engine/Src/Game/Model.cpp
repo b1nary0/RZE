@@ -25,7 +25,7 @@ bool Model3D::Load(const FilePath& filePath)
 	Assimp::Importer ModelImporter;
 	const aiScene* AssimpScene = ModelImporter.ReadFile(mFilePath.GetAbsolutePath(),
 		aiProcess_Triangulate
-		| aiProcess_GenNormals);
+		| aiProcess_GenNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 
 	bool bAssimpNotLoaded =
 		!AssimpScene
@@ -82,6 +82,8 @@ void Model3D::ProcessNode(const aiNode& node, const aiScene& scene)
 void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFXMesh& outMesh)
 {
 	bool bHasTextureCoords = mesh.mTextureCoords[0] != nullptr;
+	bool bHasTangents = mesh.mTangents != nullptr;
+
 	for (U32 vertexIdx = 0; vertexIdx < mesh.mNumVertices; vertexIdx++)
 	{
 		const aiVector3D& assimpVert = mesh.mVertices[vertexIdx];
@@ -97,8 +99,15 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 		if (bHasTextureCoords)
 		{
 			const aiVector3D& assimpUV = mesh.mTextureCoords[0][vertexIdx];
-			Vector2D vertUV(assimpUV.x, -assimpUV.y);
+			Vector2D vertUV(assimpUV.x, assimpUV.y);
 			vertex.UVData = vertUV;
+		}
+
+		if (bHasTangents)
+		{
+			const aiVector3D& assimpTangent = mesh.mTangents[vertexIdx];
+			Vector3D vertTangent(assimpTangent.x, assimpTangent.y, assimpTangent.z);
+			vertex.Tangent = vertTangent;
 		}
 
 		outMesh.AddVertex(vertex);
@@ -145,6 +154,26 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 
 			FilePath texturePath = GetTextureFilePath(str.C_Str());
 			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(texturePath, Diotima::ETextureType::Specular);
+			if (textureHandle.IsValid())
+			{
+				Diotima::GFXTexture2D* texture = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXTexture2D>(textureHandle);
+				pMaterial->AddTexture(texture);
+
+				mTextureHandles.emplace_back(textureHandle);
+			}
+			else
+			{
+				LOG_CONSOLE_ARGS("Could not load texture at [%s]", texturePath.GetRelativePath().c_str());
+			}
+		}
+
+		for (size_t i = 0; i < mat->GetTextureCount(aiTextureType_NORMALS); ++i)
+		{
+			aiString str;
+			mat->GetTexture(aiTextureType_NORMALS, i, &str);
+
+			FilePath texturePath = GetTextureFilePath(str.C_Str());
+			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(texturePath, Diotima::ETextureType::Normal);
 			if (textureHandle.IsValid())
 			{
 				Diotima::GFXTexture2D* texture = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXTexture2D>(textureHandle);

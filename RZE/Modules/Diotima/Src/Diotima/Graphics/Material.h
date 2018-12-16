@@ -21,9 +21,11 @@ namespace Diotima
 
 		const std::vector<GFXTexture2D*>& GetDiffuseTextures() const { return mDiffuseTextures; }
 		const std::vector<GFXTexture2D*>& GetSpecularTextures() const { return mSpecularTextures; }
+		const std::vector<GFXTexture2D*>& GetNormalMaps() const { return mNormalMaps; }
 
 	private:
 		std::vector<GFXTexture2D*> mDiffuseTextures;
 		std::vector<GFXTexture2D*> mSpecularTextures;
+		std::vector<GFXTexture2D*> mNormalMaps;
 	};
 }

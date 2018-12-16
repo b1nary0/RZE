@@ -287,6 +287,30 @@ namespace EGLTextureTarget
 	};
 }
 
+namespace EGLTextureUnit
+{
+	enum T : GLenum
+	{
+		// Only doing 16 for now.
+		Texture0 = GL_TEXTURE0,
+		Texture1 = GL_TEXTURE1,
+		Texture2 = GL_TEXTURE2,
+		Texture3 = GL_TEXTURE3,
+		Texture4 = GL_TEXTURE4,
+		Texture5 = GL_TEXTURE5,
+		Texture6 = GL_TEXTURE6,
+		Texture7 = GL_TEXTURE7,
+		Texture8 = GL_TEXTURE8,
+		Texture9 = GL_TEXTURE9,
+		Texture10 = GL_TEXTURE10,
+		Texture11 = GL_TEXTURE11,
+		Texture12 = GL_TEXTURE12,
+		Texture13 = GL_TEXTURE13,
+		Texture14 = GL_TEXTURE14,
+		Texture15 = GL_TEXTURE15
+	};
+}
+
 struct OpenGLContext
 {
 	HWND windowHandle;
@@ -480,6 +504,7 @@ public:
 	// Textures
 	//
 	void GenerateTexture(GLsizei numTextures, GLuint* textureID) const;
+	void SetTextureUnit(GLenum textureUnit) const;
 	void BindTexture(GLenum target, GLuint textureID) const;
 	void SetTextureParami(GLenum target, GLenum paramName, GLint param) const;
 	void TextureImage2D(

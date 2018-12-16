@@ -18,13 +18,25 @@ namespace Diotima
 
 	void GFXMaterial::AddTexture(GFXTexture2D* texture)
 	{
-		if (texture->GetTextureType() == ETextureType::Diffuse)
+		switch (texture->GetTextureType())
+		{
+		case ETextureType::Diffuse:
 		{
 			mDiffuseTextures.emplace_back(texture);
 		}
-		else
+		break;
+
+		case ETextureType::Specular:
 		{
 			mSpecularTextures.emplace_back(texture);
+		}
+		break;
+
+		case ETextureType::Normal:
+		{
+			mNormalMaps.emplace_back(texture);
+		}
+		break;
 		}
 	}
 

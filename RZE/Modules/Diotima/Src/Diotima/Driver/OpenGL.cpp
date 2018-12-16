@@ -370,6 +370,13 @@ void OpenGLRHI::GenerateTexture(GLsizei numTextures, GLuint* textureID) const
 	AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
+
+void OpenGLRHI::SetTextureUnit(GLenum textureUnit) const
+{
+	glActiveTexture(textureUnit);
+	AssertExpr(glGetError() == GL_NO_ERROR);
+}
+
 void OpenGLRHI::BindTexture(GLenum target, GLuint textureID) const
 {
 	glBindTexture(target, textureID);
