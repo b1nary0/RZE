@@ -7,21 +7,23 @@ in vec3 FragPos;
 in vec3 Tangent;
 in vec2 UVCoord;
 
+in vec4 FragPosLightSpace;
+
 out vec4 OutFragmentColor;
 
 layout (binding=0) uniform sampler2D DiffuseTexture;
 layout (binding=1) uniform sampler2D SpecularTexture;
 layout (binding=2) uniform sampler2D NormalMap;
+layout (binding=3) uniform sampler2D DepthMap;
+
+uniform float UShininess;
+uniform float UOpacity;
+uniform int UIsNormalMapped;
 
 uniform vec3 LightPositions[MAX_LIGHT_SUPPORT];
 uniform vec3 LightColors[MAX_LIGHT_SUPPORT];
 uniform float LightStrengths[MAX_LIGHT_SUPPORT];
 uniform int UNumActiveLights;
-
-uniform float UShininess;
-uniform float UOpacity;
-
-uniform int UIsNormalMapped;
 
 uniform vec3 ViewPos; // Cam pos
 
@@ -53,6 +55,22 @@ float CalculateBlinnPhong(vec3 viewDir, vec3 lightDir, vec3 normal)
 	return specular;
 }
 
+float CalculateShadowFromDepthMap(vec3 normal, vec3 lightDir)
+{
+	float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.00005);
+	vec3 projectionCoords = FragPosLightSpace.xyz / FragPosLightSpace.w;
+	projectionCoords = projectionCoords * 0.5 + 0.5;
+	
+	float closestDepth = texture(DepthMap, projectionCoords.xy).w;
+	float currentDepth = projectionCoords.z;
+	float shadowResult = currentDepth - bias > closestDepth ? 1.0 : 0.0;
+	
+	if (projectionCoords.z > 1.0)
+		return 0.0;
+
+	return shadowResult;
+}
+
 void main()
 {
 	vec4 surfaceColour = texture(DiffuseTexture, UVCoord);
@@ -76,10 +94,11 @@ void main()
 		float specular = CalculateBlinnPhong(viewDir, lightDir, normal);
 
 		vec3 ambientResult = ambientCoefficient * surfaceColour.rgb;
-		vec3 diffuseResult = ambientResult + (surfaceColour.rgb * LightColors[lightIdx] * LightStrengths[lightIdx] * diff);
+		vec3 diffuseResult = (surfaceColour.rgb * LightColors[lightIdx] * LightStrengths[lightIdx] * diff);
 		vec3 specularResult = specular * specularSample.xyz * LightStrengths[lightIdx];
 
-		vec3 result = diffuseResult + specularResult;
+		float shadowCalc = CalculateShadowFromDepthMap(normal, lightDir);
+		vec3 result = (ambientResult + (1.0 - shadowCalc)) * diffuseResult + specularResult;
 
 		lightMix = lightMix + result;
 	}

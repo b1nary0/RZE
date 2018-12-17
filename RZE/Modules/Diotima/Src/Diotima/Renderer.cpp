@@ -74,7 +74,7 @@ namespace Diotima
 			OpenGLRHI::Get().Init(creationParams);
 		}
 
-		OpenGLRHI::Get().ClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+		OpenGLRHI::Get().ClearColor(0.05f, 0.05f, 0.05f, 1.0f);
 
 		OpenGLRHI::Get().EnableCapability(EGLCapability::DepthTest);
 
@@ -88,7 +88,7 @@ namespace Diotima
 		}
 
 		mDepthTexture = new GLRenderTargetDepthTexture();
-		mDepthTexture->SetDimensions(1024, 1024);
+		mDepthTexture->SetDimensions(4096, 4096);
 		mDepthTexture->Initialize();
 
 		mFinalRTT = new GLRenderTargetTextureMSAA();
@@ -104,9 +104,9 @@ namespace Diotima
 		AssertNotNull(mFinalRTT);
 
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
-		
-// 		SetCurrentRenderTarget(mDepthTexture);
-// 		DepthPass();
+
+		SetCurrentRenderTarget(mDepthTexture);
+		DepthPass();
 
 		SetCurrentRenderTarget(mFinalRTT);
 		ForwardPass();
@@ -151,7 +151,7 @@ namespace Diotima
 		mDepthPassShader->Use();
 
 		LightItemProtocol& lightItem = mLightingList.front();
-		Matrix4x4 orthoProj = Matrix4x4::CreateOrthoMatrix(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 100.0f);
+		Matrix4x4 orthoProj = Matrix4x4::CreateOrthoMatrix(-10.0f, 10.0f, -10.0f, 10.0f, 10.0f, 20.0f);
 		Matrix4x4 lightView = Matrix4x4::CreateViewMatrix(lightItem.Position, Vector3D(), Vector3D(0.0f, 1.0f, 0.0f));
 		Matrix4x4 lightSpaceMatrix = orthoProj * lightView;
 
@@ -177,6 +177,9 @@ namespace Diotima
 			mForwardShader->SetUniformInt("UNumActiveLights", static_cast<int>(mLightingList.size()));
 			mForwardShader->SetUniformVector3D(std::string("ViewPos").c_str(), camera.Position);
 
+			openGL.SetTextureUnit(GL_TEXTURE3);
+			openGL.BindTexture(EGLCapability::Texture2D, mDepthTexture->GetTextureID());
+
 			for (size_t lightIdx = 0; lightIdx < mLightingList.size(); ++lightIdx)
 			{
 				const LightItemProtocol& lightItem = mLightingList[lightIdx];
@@ -185,6 +188,13 @@ namespace Diotima
 				mForwardShader->SetUniformVector3D("LightColors[0]", lightItem.Color);
 				mForwardShader->SetUniformFloat("LightStrengths[0]", lightItem.Strength);
 			}
+
+			LightItemProtocol& lightItem = mLightingList.front();
+			Matrix4x4 orthoProj = Matrix4x4::CreateOrthoMatrix(-10.0f, 10.0f, -10.0f, 10.0f, 10.0f, 20.0f);
+			Matrix4x4 lightView = Matrix4x4::CreateViewMatrix(lightItem.Position, Vector3D(), Vector3D(0.0f, 1.0f, 0.0f));
+			Matrix4x4 lightSpaceMatrix = orthoProj * lightView;
+
+			mForwardShader->SetUniformMatrix4x4("ULightSpaceMat", lightSpaceMatrix);
 
 			RenderScene_Forward();
 		}

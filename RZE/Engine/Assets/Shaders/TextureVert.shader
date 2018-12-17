@@ -10,9 +10,12 @@ out vec3 Normal;
 out vec3 Tangent;
 out vec2 UVCoord;
 
+out vec4 FragPosLightSpace;
+
 uniform mat4 UModelMat;
 uniform mat4 UProjectionMat;
 uniform mat4 UViewMat;
+uniform mat4 ULightSpaceMat;
 
 void main()
 {
@@ -21,6 +24,8 @@ void main()
 	
 	Tangent = VertexTangent;
 	UVCoord = VertexUV;
+	
+	FragPosLightSpace = ULightSpaceMat * vec4(FragPos, 1.0);
 	
 	gl_Position = UProjectionMat * UViewMat * vec4(FragPos, 1.0f);
 }

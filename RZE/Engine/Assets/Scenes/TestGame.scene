@@ -27,7 +27,7 @@
       {
         "TransformComponent":
         {
-          "Position":[0, 30, 20],
+          "Position":[0, 3, 5],
           "Scale": [1, 1, 1],
           "Rotation": [0, 0, 0]
         },
@@ -45,7 +45,7 @@
 		"TransformComponent":
 		{
 		  "Position": [0, 0, 0],
-		  "Scale":[10, 10, 2],
+		  "Scale":[100, 100, 2],
 		  "Rotation":[-90, 0, 0]
 		},
 		"MeshComponent":

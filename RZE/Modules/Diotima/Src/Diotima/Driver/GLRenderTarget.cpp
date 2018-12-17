@@ -75,11 +75,14 @@ namespace Diotima
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
 		openGL.BindFramebuffer(EGLBufferTarget::FrameBuffer, GetFrameBufferID());
 		openGL.BindTexture(GL_TEXTURE_2D, GetTextureID());
-		openGL.TextureImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, GetWidth(), GetHeight(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+		openGL.TextureImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, GetWidth(), GetHeight(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 		openGL.SetTextureParami(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		openGL.SetTextureParami(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		openGL.SetTextureParami(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		openGL.SetTextureParami(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		openGL.SetTextureParami(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+		openGL.SetTextureParami(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+
+		float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
 		openGL.SetFramebufferTexture2D(EGLBufferTarget::FrameBuffer, EGLAttachmentPoint::Depth, EGLTextureTarget::Texture2D, GetTextureID(), 0);
 		glDrawBuffer(GL_NONE);
