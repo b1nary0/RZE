@@ -27,14 +27,14 @@
       {
         "TransformComponent":
         {
-          "Position":[0, 5, 5],
+          "Position":[0, 10, 5],
           "Scale": [1, 1, 1],
           "Rotation": [0, 0, 0]
         },
         "LightSourceComponent":
         {
           "Color": [1, 1, 1],
-          "Strength": 1
+          "Strength": 1.2
         }
       }
     },

@@ -11,9 +11,9 @@ void InteractiveSpawningSystem::Initialize()
 	Functor<void, Apollo::EntityID> onWalkerAdded([this](Apollo::EntityID entity)
 	{
 		const NameComponent* const nameComponent = InternalGetEntityHandler().GetComponent<NameComponent>(entity);
-		if (nameComponent->Name == "MechWalker" && mWalkerTransform == nullptr)
+		if (nameComponent->Name == "Directional Light" && mEntityTransform == nullptr)
 		{
-			mWalkerTransform = InternalGetEntityHandler().GetComponent<TransformComponent>(entity);
+			mEntityTransform = InternalGetEntityHandler().GetComponent<TransformComponent>(entity);
 		}
 	});
 	InternalGetEntityHandler().RegisterForComponentAddNotification<NameComponent>(onWalkerAdded);
@@ -22,9 +22,16 @@ void InteractiveSpawningSystem::Initialize()
 void InteractiveSpawningSystem::Update(const std::vector<Apollo::EntityID>& entities)
 {
 	float deltaT = RZE_Application::RZE().GetDeltaTime();
-	if (mWalkerTransform != nullptr)
+	static Vector3D velocity(0.75f, 0.0f, 0.0f);
+
+	if (mEntityTransform != nullptr)
 	{
-		mWalkerTransform->Rotate(Quaternion(Vector3D(0.0f, 25.0f, 0.0f) * deltaT));
+		if (mEntityTransform->Position.X() > 5.0f || mEntityTransform->Position.X() < -5.0f)
+		{
+			velocity *= -1;
+		}
+
+		mEntityTransform->Position += velocity * deltaT;
 	}
 }
 
