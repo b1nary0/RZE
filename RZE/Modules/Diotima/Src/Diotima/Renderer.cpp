@@ -135,6 +135,8 @@ namespace Diotima
 
 	void Renderer::ResizeCanvas(const Vector2D& newSize)
 	{
+		mFinalRTT->SetDimensions(newSize.X(), newSize.Y());
+		mFinalRTT->Initialize();
 		mCanvasSize = newSize;
 	}
 
@@ -308,7 +310,7 @@ namespace Diotima
 
 		openGL.BlitFramebuffer(
 			0, 0, static_cast<GLint>(currentRT->GetWidth()), static_cast<GLint>(currentRT->GetHeight()),
-			0, 0, static_cast<GLint>(currentRT->GetWidth()), static_cast<GLint>(currentRT->GetHeight()),
+			0, 0, static_cast<GLint>(mCanvasSize.X()), static_cast<GLint>(mCanvasSize.Y()),
 			EGLBufferBit::Color, GL_NEAREST);
 	}
 

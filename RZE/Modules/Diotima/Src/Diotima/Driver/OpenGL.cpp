@@ -29,9 +29,6 @@ void OpenGLRHI::Init(const OpenGLCreationParams& creationParams) const
 {
 	LOG_CONSOLE_ARGS("OpenGL version is %s", glGetString(GL_VERSION));
 
-	// @implementation these need to be read in via window attributes
-	glViewport(0, 0, creationParams.WindowWidth, creationParams.WindowHeight);
-
 	InitGLEW();
 
 	glEnable(GL_DEBUG_OUTPUT);
