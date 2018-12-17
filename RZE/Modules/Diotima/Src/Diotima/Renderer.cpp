@@ -110,7 +110,6 @@ namespace Diotima
 
 		SetCurrentRenderTarget(mFinalRTT);
 		ForwardPass();
-		//DrawQuad();
 
 		Submit();
 
@@ -357,13 +356,6 @@ namespace Diotima
 		mesh->mVAO.Unbind();
 	}
 	
-	void Renderer::DrawQuad()
-	{
-		float vertices[] = { -0.5f, -0.5f, 0.0f, 0.5f, -0.5f, 0.0f, 0.5f, 0.5f, 0.0f, -0.5f, 0.5f, 0.0f };
-		OpenGLRHI::Get().BindTexture(GL_TEXTURE_2D, mDepthTexture->GetTextureID());
-		OpenGLRHI::Get().DrawArrays(EGLDrawMode::Triangles, 0, 4);
-	}
-
 	void Renderer::SetCurrentRenderTarget(RenderTarget* renderTarget)
 	{
 		AssertNotNull(renderTarget);

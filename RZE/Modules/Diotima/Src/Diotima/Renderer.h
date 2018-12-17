@@ -101,8 +101,7 @@ namespace Diotima
 
 	private:
 		void DrawMesh(GFXMesh* mesh);
-		void DrawQuad();
-		
+
 		void BlitToWindow();
 		void BlitToTarget(const RenderTarget& target);
 
