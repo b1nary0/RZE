@@ -57,11 +57,11 @@ float CalculateBlinnPhong(vec3 viewDir, vec3 lightDir, vec3 normal)
 
 float CalculateShadowFromDepthMap(vec3 normal, vec3 lightDir)
 {
-	float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.00005);
+	float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
 	vec3 projectionCoords = FragPosLightSpace.xyz / FragPosLightSpace.w;
 	projectionCoords = projectionCoords * 0.5 + 0.5;
 	
-	float closestDepth = texture(DepthMap, projectionCoords.xy).w;
+	float closestDepth = texture(DepthMap, projectionCoords.xy).r;
 	float currentDepth = projectionCoords.z;
 	float shadowResult = currentDepth - bias > closestDepth ? 1.0 : 0.0;
 	

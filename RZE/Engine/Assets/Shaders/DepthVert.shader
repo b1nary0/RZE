@@ -7,6 +7,5 @@ uniform mat4 ULightSpaceMatrix;
 
 void main()
 {
-	vec3 vertexPosition = vec3(UModelMat * vec4(VertexPosition, 1.0f));
-	gl_Position = ULightSpaceMatrix * UModelMat * vec4(vertexPosition, 1.0f);
+	gl_Position = ULightSpaceMatrix * UModelMat * vec4(VertexPosition, 1.0f);
 }
