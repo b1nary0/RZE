@@ -227,11 +227,6 @@ void RZE_Engine::RegisterWindowEvents()
 		else if (event.mWindowEvent.mEventInfo.mEventSubType == EWindowEventType::Window_Resize)
 		{
 			Vector2D newSize(event.mWindowEvent.mSizeX, event.mWindowEvent.mSizeY);
-			if (!mApplication->IsEditor())
-			{
- 				mApplication->GetRenderTarget().SetDimensions(static_cast<U32>(newSize.X()), static_cast<U32>(newSize.Y()));
- 				mApplication->GetRenderTarget().Initialize();
-			}
 			GetRenderer().ResizeCanvas(newSize);
 			DebugServices::HandleScreenResize(newSize);
 		}
