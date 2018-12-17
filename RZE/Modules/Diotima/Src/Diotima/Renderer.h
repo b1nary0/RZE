@@ -104,6 +104,7 @@ namespace Diotima
 		void DrawQuad();
 		
 		void BlitToWindow();
+		void BlitToTarget(const RenderTarget& target);
 
 		void Submit();
 
@@ -116,9 +117,10 @@ namespace Diotima
 
 		std::queue<Int32> mFreeRenderListIndices;
 		
+		RenderTarget* mCustomRTT { nullptr };
 		RenderTarget* mCurrentRTT { nullptr };
-
 		RenderTarget* mFinalRTT { nullptr };
+
 		GLRenderTargetDepthTexture* mDepthTexture { nullptr };
 	};
 }

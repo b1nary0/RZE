@@ -198,10 +198,17 @@ void OpenGLRHI::SetFramebufferTexture2D(const EGLBufferTarget::T target, const E
 	AssertExpr(glGetError() == GL_NO_ERROR);
 }
 
-void OpenGLRHI::AllocateRenderbufferStorage(GLenum internalFormat, GLsizei width, GLsizei height) const
+void OpenGLRHI::AllocateRenderbufferStorage(GLenum internalFormat, GLsizei samples, GLsizei width, GLsizei height) const
 {
 	AssertExpr(width > 0 || height > 0); // At least one of these needs to be > 0 for anything to make sense and shit to work
-	glRenderbufferStorageMultisample(GL_RENDERBUFFER, 16, internalFormat, width, height);
+	if (samples > 1)
+	{
+		glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, internalFormat, width, height);
+	}
+	else
+	{
+		glRenderbufferStorage(GL_RENDERBUFFER, internalFormat, width, height);
+	}
 	AssertExpr(glGetError() == GL_NO_ERROR);
 }
 

@@ -91,6 +91,10 @@ namespace Diotima
 		mDepthTexture->SetDimensions(1024, 1024);
 		mDepthTexture->Initialize();
 
+		mFinalRTT = new GLRenderTargetTextureMSAA();
+		mFinalRTT->SetDimensions(1920, 1080);
+		mFinalRTT->Initialize();
+
 		glEnable(GL_MULTISAMPLE);
 	}
 
@@ -122,7 +126,7 @@ namespace Diotima
 	void Renderer::SetRenderTarget(RenderTarget* renderTarget)
 	{
 		AssertNotNull(renderTarget);
-		mFinalRTT = renderTarget;
+		mCustomRTT = renderTarget;
 	}
 
 	void Renderer::EnableVsync(bool bEnabled)
@@ -305,17 +309,44 @@ namespace Diotima
 
 		openGL.BlitFramebuffer(
 			0, 0, static_cast<GLint>(currentRT->GetWidth()), static_cast<GLint>(currentRT->GetHeight()),
-			0, 0, static_cast<GLint>(mCanvasSize.X()), static_cast<GLint>(mCanvasSize.Y()), 
+			0, 0, static_cast<GLint>(currentRT->GetWidth()), static_cast<GLint>(currentRT->GetHeight()),
 			EGLBufferBit::Color, GL_NEAREST);
+	}
+
+	void Renderer::BlitToTarget(const RenderTarget& target)
+	{
+		const OpenGLRHI& openGL = OpenGLRHI::Get();
+		RenderTarget* const currentRT = GetCurrentRenderTarget();
+
+		openGL.Viewport(0, 0, target.GetWidth(), target.GetHeight());
+
+		openGL.BindFramebuffer(EGLBufferTarget::DrawFramebuffer, target.GetFrameBufferID());
+		openGL.BindFramebuffer(EGLBufferTarget::ReadFramebuffer, currentRT->GetFrameBufferID());
+		openGL.ReadBuffer(EGLAttachmentPoint::Color0);
+		glDrawBuffer(GL_COLOR_ATTACHMENT0);
+
+		openGL.BlitFramebuffer(
+			0, 0, static_cast<GLint>(currentRT->GetWidth()), static_cast<GLint>(currentRT->GetHeight()),
+			0, 0, static_cast<GLint>(currentRT->GetWidth()), static_cast<GLint>(currentRT->GetHeight()),
+			EGLBufferBit::Color, GL_NEAREST);
+
+		openGL.BindFramebuffer(EGLBufferTarget::FrameBuffer, 0);
 	}
 
 	void Renderer::Submit()
 	{
+		// #NOTE(Josh::This function will become something entirely different eventually)
+
+		// #TODO(Josh::Maybe change this to a read/write locking system for the buffers)
 		SetCurrentRenderTarget(mFinalRTT);
-		// #TODO(Josh::This will cause a double draw in editor. Need to find a better way to discern
-		// what is to be done here. Game needs to blit to screen via the RTT framebuffer, but editor gets read
-		// from the generated texture and then ImGUI gets drawn over everything.
-		BlitToWindow();
+		if (mCustomRTT != nullptr)
+		{
+			BlitToTarget(*mCustomRTT);
+		}
+		else
+		{
+			BlitToWindow();
+		}
 	}
 
 	void Renderer::DrawMesh(GFXMesh* mesh)

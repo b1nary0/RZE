@@ -464,7 +464,7 @@ public:
 	void SetBufferSubData(const EGLBufferTarget::T target, const GLintptr offset, const GLsizeiptr size, const GLvoid* data) const;
 	void SetFramebufferTexture2D(const EGLBufferTarget::T target, const EGLAttachmentPoint::T attachmentPoint, const EGLTextureTarget::T textureTarget, GLuint texture, GLint mipLevel) const;
 	
-	void AllocateRenderbufferStorage(GLenum internalFormat, GLsizei width, GLsizei height) const;
+	void AllocateRenderbufferStorage(GLenum internalFormat, GLsizei samples, GLsizei width, GLsizei height) const;
 	void AttachRenderBufferToFrameBuffer(const EGLAttachmentPoint::T attachmentPoint, GLuint bufferObjectHandle) const;
 
 	//

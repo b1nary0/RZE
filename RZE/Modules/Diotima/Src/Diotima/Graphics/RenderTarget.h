@@ -18,9 +18,9 @@ namespace Diotima
 		virtual void Bind() {}
 		virtual void Unbind() {}
 
-		inline U32 GetFrameBufferID() { return mFrameBufferID; }
-		inline U32 GetDepthBufferID() { return mDepthBufferID; }
-		inline U32 GetColorBufferID() { return mColorBufferID; }
+		inline U32 GetFrameBufferID() const { return mFrameBufferID; }
+		inline U32 GetDepthBufferID() const { return mDepthBufferID; }
+		inline U32 GetColorBufferID() const { return mColorBufferID; }
 
 		inline U32 GetWidth() const { return mWidth; }
 		inline U32 GetHeight() const { return mHeight; }

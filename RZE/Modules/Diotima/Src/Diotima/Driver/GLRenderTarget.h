@@ -16,6 +16,18 @@ namespace Diotima
 		virtual void Unbind() override;
 	};
 
+	class GLRenderTargetTextureMSAA : public RenderTargetTexture
+	{
+	public:
+		GLRenderTargetTextureMSAA();
+		virtual ~GLRenderTargetTextureMSAA();
+
+	public:
+		virtual void Initialize() override;
+		virtual void Bind() override;
+		virtual void Unbind() override;
+	};
+
 	class GLRenderTargetDepthTexture : public GLRenderTargetTexture
 	{
 	public:

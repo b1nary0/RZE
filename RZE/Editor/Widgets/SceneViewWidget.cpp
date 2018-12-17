@@ -17,7 +17,7 @@ void SceneViewWidget::Initialize()
 {
 	AssertNotNull(pRTT);
 
-	pRTT->SetDimensions(1280, 720);
+	pRTT->SetDimensions(1920, 1080);
 	pRTT->Initialize();
 }
 
@@ -26,7 +26,7 @@ void SceneViewWidget::Display()
 	// #TODO(Josh) Don't know about this setup
 	Diotima::RenderTargetTexture* const renderTarget = static_cast<Diotima::RenderTargetTexture*>(pRTT);
 
-	Vector2D size(static_cast<float>(pRTT->GetWidth()), static_cast<float>(pRTT->GetHeight()));
+	Vector2D size(1280.0f, 720.0f);
 	ImGui::SetNextWindowSize(ImVec2(size.X(), size.Y() + 20)); // #TODO(Josh) Why +20?
 	ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x / 2, 20.0f), 0, ImVec2(0.5f, 0.0f)); // #TODO(Josh) Need to find solution for the magic numbers here (20.0f) which put this window below the main menu bar
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
