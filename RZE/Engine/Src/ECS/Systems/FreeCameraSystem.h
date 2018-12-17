@@ -27,6 +27,7 @@ private:
 	Vector3D ArcBallProjection(const Vector3D& vec);
 
 private:
+	const float kFullSpeed = 8.0f;
 	float mSpeed = 8.0f;
 	float mWheelZoomSpeed = 1.5f;
 

@@ -19,6 +19,8 @@ namespace Diotima
 
 	class RenderBatch;
 	class RenderTarget;
+
+	class GLRenderTargetDepthTexture;
 	
 	class Renderer
 	{
@@ -60,7 +62,8 @@ namespace Diotima
 	public:
 		Renderer();
 
-		GFXShaderPipeline* mShaderPipeline;
+		GFXShaderPipeline* mForwardShader;
+		GFXShaderPipeline* mDepthPassShader;
 
 		// ISubSystem interface
 	public:
@@ -82,9 +85,27 @@ namespace Diotima
 		void EnableVsync(bool bEnable);
 		void ResizeCanvas(const Vector2D& newSize);
 		
+		// The below will generally be replaced by a proper implementation
 	private:
-		void RenderSingleItem(RenderItemProtocol& itemProtocol);
+		void DepthPass();
+		void ForwardPass();
+
+		void RenderScene_Forward();
+		void RenderScene_Depth();
+
+		void RenderSingleItem_Forward(RenderItemProtocol& renderItem);
+		void RenderSingleItem_Depth(RenderItemProtocol& renderItem);
+
+		void SetCurrentRenderTarget(RenderTarget* renderTarget);
+		RenderTarget* GetCurrentRenderTarget() { return mCurrentRTT; }
+
+	private:
+		void DrawMesh(GFXMesh* mesh);
+		void DrawQuad();
+		
 		void BlitToWindow();
+
+		void Submit();
 
 	private:
 		Vector2D mCanvasSize;
@@ -94,7 +115,10 @@ namespace Diotima
 		std::vector<LightItemProtocol> mLightingList;
 
 		std::queue<Int32> mFreeRenderListIndices;
+		
+		RenderTarget* mCurrentRTT { nullptr };
 
-		RenderTarget* mRenderTarget { nullptr };
+		RenderTarget* mFinalRTT { nullptr };
+		GLRenderTargetDepthTexture* mDepthTexture { nullptr };
 	};
 }

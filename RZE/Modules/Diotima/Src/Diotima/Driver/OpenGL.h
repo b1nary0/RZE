@@ -14,6 +14,7 @@ namespace EGLAttachmentPoint
 {
 	enum T : GLenum
 	{
+		None = GL_NONE,
 		Color0 = GL_COLOR_ATTACHMENT0,
 		Depth = GL_DEPTH_ATTACHMENT,
 		Stencil = GL_STENCIL_ATTACHMENT,
@@ -278,6 +279,7 @@ namespace EGLTextureTarget
 	enum T : GLenum
 	{
 		Texture2D = GL_TEXTURE_2D,
+		Texture2DMultisample = GL_TEXTURE_2D_MULTISAMPLE,
 		CubeMapPositiveX = GL_TEXTURE_CUBE_MAP_POSITIVE_X,
 		CubeMapNegativeX = GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
 		CubeMapPositiveY = GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
@@ -413,7 +415,7 @@ public:
 	OpenGLRHI();
 	~OpenGLRHI();
 
-	static inline OpenGLRHI& Get()
+	static inline const OpenGLRHI& Get()
 	{
 		static OpenGLRHI instance;
 		return instance;

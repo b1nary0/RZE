@@ -32,11 +32,11 @@ vec3 CalculateBumpNormal()
 	tangent = normalize(Tangent - dot(Tangent, Normal) * Normal);
 	
 	vec3 biTangent = cross(Tangent, Normal);
-	vec3 BumpMapNormal = texture(NormalMap, UVCoord).rgb;
-	BumpMapNormal = 2.0 * BumpMapNormal - vec3(1.0, 1.0, 1.0);
+	vec3 bumpMapNormal = texture(NormalMap, UVCoord).rgb;
+	bumpMapNormal = 2.0 * bumpMapNormal - vec3(1.0, 1.0, 1.0);
 	
 	mat3 TBN = mat3(tangent, biTangent, Normal);
-	vec3 newNormal = TBN * BumpMapNormal;
+	vec3 newNormal = TBN * bumpMapNormal;
 	newNormal = normalize(newNormal);
 	
 	return newNormal;

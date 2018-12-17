@@ -11,7 +11,7 @@ MessageCB(GLenum source,
 	const GLchar* message,
 	const void* userParam)
 {
-	if (type == GL_DEBUG_OUTPUT)
+	if (type == GL_DEBUG_OUTPUT || type == GL_DEBUG_TYPE_ERROR)
 	{
 		LOG_CONSOLE(message);
 	}
@@ -201,7 +201,7 @@ void OpenGLRHI::SetFramebufferTexture2D(const EGLBufferTarget::T target, const E
 void OpenGLRHI::AllocateRenderbufferStorage(GLenum internalFormat, GLsizei width, GLsizei height) const
 {
 	AssertExpr(width > 0 || height > 0); // At least one of these needs to be > 0 for anything to make sense and shit to work
-	glRenderbufferStorage(GL_RENDERBUFFER, internalFormat, width, height);
+	glRenderbufferStorageMultisample(GL_RENDERBUFFER, 16, internalFormat, width, height);
 	AssertExpr(glGetError() == GL_NO_ERROR);
 }
 

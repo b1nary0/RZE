@@ -14,8 +14,8 @@ namespace Diotima
 	GFXMesh::GFXMesh()
 	{
 		// #TODO(Josh::Move this into an Allocate() function or something - shoud be user/system initiated)
-		mVAO.Init();
-		mVAO.Bind();
+ 		mVAO.Init();
+ 		mVAO.Bind();
 
 		mVertexVBO.Init();
 		mVertexVBO.Bind();

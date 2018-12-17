@@ -42,6 +42,16 @@ private:
 			return buttonState;
 		}
 
+		bool IsDownThisFrame(Int32 keyCode) const
+		{
+			return CurKeyStates[keyCode];
+		}
+
+		bool WasDownLastFrame(Int32 keyCode) const
+		{
+			return PrevKeyStates[keyCode];
+		}
+
 		// None pressed
 		bool IsIdle() const
 		{

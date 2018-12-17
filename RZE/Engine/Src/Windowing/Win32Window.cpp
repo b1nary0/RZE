@@ -157,7 +157,7 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 		PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = reinterpret_cast<PFNWGLCREATECONTEXTATTRIBSARBPROC>(wglGetProcAddress("wglCreateContextAttribsARB"));
 		if (wglCreateContextAttribsARB)
 		{
-			int attriblist[] = { WGL_CONTEXT_MAJOR_VERSION_ARB, 4, WGL_CONTEXT_MINOR_VERSION_ARB, 4, WGL_CONTEXT_FLAGS_ARB, 0, 0, 0 };
+			int attriblist[] = { WGL_CONTEXT_MAJOR_VERSION_ARB, 4, WGL_CONTEXT_MINOR_VERSION_ARB, 4, WGL_CONTEXT_FLAGS_ARB, 0, 0, WGL_SAMPLES_ARB, 16, 0 };
 			mOSWindowHandleData.renderContext = wglCreateContextAttribsARB(mOSWindowHandleData.deviceContext, 0, attriblist);
 			if (!mOSWindowHandleData.renderContext)
 			{

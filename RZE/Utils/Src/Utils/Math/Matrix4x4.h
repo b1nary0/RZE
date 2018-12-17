@@ -15,6 +15,7 @@ public:
 
 	static Matrix4x4 CreateViewMatrix(const Vector3D& eyePos, const Vector3D& centerPos, const Vector3D& upDir);
 	static Matrix4x4 CreatePerspectiveMatrix(const float fov, const float aspectRatio, const float nearCull, const float farCull);
+	static Matrix4x4 CreateOrthoMatrix(const float left, const float right, const float bottom, const float top, const float zNear, const float zFar);
 
 	void Translate(const Vector3D& translation);
 	void Rotate(const float angle, const Vector3D& axis);

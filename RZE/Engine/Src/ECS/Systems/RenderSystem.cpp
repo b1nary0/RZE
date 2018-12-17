@@ -26,7 +26,8 @@ static Vector4D sDefaultFragColor(0.25f, 0.25f, 0.25f, 1.0f);
 
 // Render helpers
 //-----------------------------------------
-Diotima::GFXShaderPipeline* textureShader;
+Diotima::GFXShaderPipeline* gForwardShader;
+Diotima::GFXShaderPipeline* gDepthPassShader;
 
 // #TODO(Josh::See below)
 //////////////////////////////////////////////////////////////////////////
@@ -34,8 +35,12 @@ Diotima::GFXShaderPipeline* textureShader;
 // is the entire shader pipeline attached to the material... Maybe can store these as a renderer-distributed thing.
 ResourceHandle texVertShaderHandle;
 ResourceHandle texFragShaderHandle;
+
+ResourceHandle depthPassVertShaderHandle;
+ResourceHandle depthPassFragShaderHandle;
 //////////////////////////////////////////////////////////////////////////
-void CreateTextureShader();
+void CreateForwardShader();
+void CreateDepthPassShader();
 //-----------------------------------------
 
 RenderSystem::RenderSystem(Apollo::EntityHandler* const entityHandler)
@@ -51,9 +56,11 @@ void RenderSystem::Initialize()
 
 	RegisterForComponentNotifications();
 
-	CreateTextureShader();
+	CreateForwardShader();
+	CreateDepthPassShader();
 
-	RZE_Application::RZE().GetRenderer().mShaderPipeline = textureShader;
+	RZE_Application::RZE().GetRenderer().mForwardShader = gForwardShader;
+	RZE_Application::RZE().GetRenderer().mDepthPassShader = gDepthPassShader;
 }
 
 void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
@@ -189,7 +196,7 @@ void RenderSystem::GenerateCameraMatrices(CameraComponent& cameraComponent, cons
 /////////////
 /////////// These are just dev helpers until the time of the great render comes along
 //////
-void CreateTextureShader()
+void CreateForwardShader()
 {
 	const FilePath vertShaderFilePath("Engine/Assets/Shaders/TextureVert.shader");
 	const FilePath fragShaderFilePath("Engine/Assets/Shaders/TextureFrag.shader");
@@ -205,9 +212,32 @@ void CreateTextureShader()
 	fragShader->Create();
 	fragShader->Compile();
 
-	textureShader = new Diotima::GFXShaderPipeline("TextureShader");
-	textureShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Vertex, vertShader);
-	textureShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Fragment, fragShader);
+	gForwardShader = new Diotima::GFXShaderPipeline("TextureShader");
+	gForwardShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Vertex, vertShader);
+	gForwardShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Fragment, fragShader);
 
-	textureShader->GenerateShaderProgram();
+	gForwardShader->GenerateShaderProgram();
+}
+
+void CreateDepthPassShader()
+{
+	const FilePath vertShaderFilePath("Engine/Assets/Shaders/DepthVert.shader");
+	const FilePath fragShaderFilePath("Engine/Assets/Shaders/EmptyFrag.shader");
+
+	depthPassVertShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "DepthPassVertShader");
+	depthPassFragShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "DepthPassFragShader");
+
+	Diotima::GFXShader* vertShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(depthPassVertShaderHandle);
+	vertShader->Create();
+	vertShader->Compile();
+
+	Diotima::GFXShader* fragShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(depthPassFragShaderHandle);
+	fragShader->Create();
+	fragShader->Compile();
+
+	gDepthPassShader = new Diotima::GFXShaderPipeline("DepthPassShaderPipeline");
+	gDepthPassShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Vertex, vertShader);
+	gDepthPassShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Fragment, fragShader);
+
+	gDepthPassShader->GenerateShaderProgram();
 }

@@ -4,6 +4,7 @@
 
 #include <Diotima/RenderBatch.h>
 #include <Diotima/Driver/OpenGL.h>
+#include <Diotima/Driver/GLRenderTarget.h>
 #include <Diotima/Graphics/Material.h>
 #include <Diotima/Graphics/Mesh.h>
 #include <Diotima/Graphics/RenderTarget.h>
@@ -85,50 +86,30 @@ namespace Diotima
 			ImGUICreateDeviceObjects();
 			io.RenderDrawListsFn = ImGUIRender;
 		}
+
+		mDepthTexture = new GLRenderTargetDepthTexture();
+		mDepthTexture->SetDimensions(1024, 1024);
+		mDepthTexture->Initialize();
+
+		glEnable(GL_MULTISAMPLE);
 	}
 
 	void Renderer::Update()
 	{
 		BROFILER_CATEGORY("Renderer::Update", Profiler::Color::Red)
-		AssertNotNull(mRenderTarget);
+		AssertNotNull(mFinalRTT);
 
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
 		
-		mRenderTarget->Bind();
-		// #TODO(Josh) Can probably optimize this away nicely
-		openGL.Viewport(0, 0, mRenderTarget->GetWidth(), mRenderTarget->GetHeight());
-		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
-		{	BROFILER_CATEGORY("Item Processing", Profiler::Color::DarkOrange)
-			mShaderPipeline->Use();
-			mShaderPipeline->SetUniformMatrix4x4("UProjectionMat", camera.ProjectionMat);
-			mShaderPipeline->SetUniformMatrix4x4("UViewMat", camera.ViewMat);
-			mShaderPipeline->SetUniformInt("UNumActiveLights", static_cast<int>(mLightingList.size()));
-			mShaderPipeline->SetUniformVector3D(std::string("ViewPos").c_str(), camera.Position);
+// 		SetCurrentRenderTarget(mDepthTexture);
+// 		DepthPass();
 
-			for (size_t lightIdx = 0; lightIdx < mLightingList.size(); ++lightIdx)
-			{
-				const LightItemProtocol& lightItem = mLightingList[lightIdx];
+		SetCurrentRenderTarget(mFinalRTT);
+		ForwardPass();
+		//DrawQuad();
 
-				mShaderPipeline->SetUniformVector3D("LightPositions[0]", lightItem.Position);
-				mShaderPipeline->SetUniformVector3D("LightColors[0]", lightItem.Color);
-				mShaderPipeline->SetUniformFloat("LightStrengths[0]", lightItem.Strength);
-			}
+		Submit();
 
-			for (auto& renderItem : mRenderList)
-			{
-				if (renderItem.bIsValid)
-				{
-					RenderSingleItem(renderItem);
-				}
-			}
-		}
-		mRenderTarget->Unbind();
-
-
-		// #TODO(Josh::This will cause a double draw in editor. Need to find a better way to discern
-		//       what is to be done here. Game needs to blit to screen via the RTT framebuffer, but editor gets read
-		//       from the generated texture and then ImGUI gets drawn over everything.
-		BlitToWindow();
 		// #NOTE(Josh::This is to reset the editor viewport so ImGUI draws to the whole screen and not the SceneViewWidget
 		//       size. This is a symptom of having better engine-agnostic context to the render target system)
 		openGL.Viewport(0, 0, static_cast<GLint>(mCanvasSize.X()), static_cast<GLint>(mCanvasSize.Y()));
@@ -141,7 +122,7 @@ namespace Diotima
 	void Renderer::SetRenderTarget(RenderTarget* renderTarget)
 	{
 		AssertNotNull(renderTarget);
-		mRenderTarget = renderTarget;
+		mFinalRTT = renderTarget;
 	}
 
 	void Renderer::EnableVsync(bool bEnabled)
@@ -154,13 +135,101 @@ namespace Diotima
 		mCanvasSize = newSize;
 	}
 
-	void Renderer::RenderSingleItem(RenderItemProtocol& renderItem)
+	void Renderer::DepthPass()
+	{	BROFILER_CATEGORY("DepthPass", Profiler::Color::YellowGreen);
+
+		const OpenGLRHI& openGL = OpenGLRHI::Get();
+
+		openGL.Viewport(0, 0, GetCurrentRenderTarget()->GetWidth(), GetCurrentRenderTarget()->GetHeight());
+		GetCurrentRenderTarget()->Bind();
+		
+		mDepthPassShader->Use();
+
+		LightItemProtocol& lightItem = mLightingList.front();
+		Matrix4x4 orthoProj = Matrix4x4::CreateOrthoMatrix(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 100.0f);
+		Matrix4x4 lightView = Matrix4x4::CreateViewMatrix(lightItem.Position, Vector3D(), Vector3D(0.0f, 1.0f, 0.0f));
+		Matrix4x4 lightSpaceMatrix = orthoProj * lightView;
+
+		mDepthPassShader->SetUniformMatrix4x4("ULightSpaceMatrix", lightSpaceMatrix);
+		
+		RenderScene_Depth();
+		GetCurrentRenderTarget()->Unbind();
+	}
+
+	void Renderer::ForwardPass()
+	{	BROFILER_CATEGORY("ForwardPass", Profiler::Color::Yellow);
+
+		const OpenGLRHI& openGL = OpenGLRHI::Get();
+
+		GetCurrentRenderTarget()->Bind();
+		// #TODO(Josh) Can probably optimize this away nicely
+		openGL.Viewport(0, 0, GetCurrentRenderTarget()->GetWidth(), GetCurrentRenderTarget()->GetHeight());
+		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
+		{	BROFILER_CATEGORY("Item Processing", Profiler::Color::DarkOrange)
+			mForwardShader->Use();
+			mForwardShader->SetUniformMatrix4x4("UProjectionMat", camera.ProjectionMat);
+			mForwardShader->SetUniformMatrix4x4("UViewMat", camera.ViewMat);
+			mForwardShader->SetUniformInt("UNumActiveLights", static_cast<int>(mLightingList.size()));
+			mForwardShader->SetUniformVector3D(std::string("ViewPos").c_str(), camera.Position);
+
+			for (size_t lightIdx = 0; lightIdx < mLightingList.size(); ++lightIdx)
+			{
+				const LightItemProtocol& lightItem = mLightingList[lightIdx];
+
+				mForwardShader->SetUniformVector3D("LightPositions[0]", lightItem.Position);
+				mForwardShader->SetUniformVector3D("LightColors[0]", lightItem.Color);
+				mForwardShader->SetUniformFloat("LightStrengths[0]", lightItem.Strength);
+			}
+
+			RenderScene_Forward();
+		}
+		GetCurrentRenderTarget()->Unbind();
+	}
+	
+	void Renderer::RenderScene_Depth()
+	{
+		BROFILER_CATEGORY("RenderScene_Depth", Profiler::Color::Red);
+		
+		const OpenGLRHI& openGL = OpenGLRHI::Get();
+		openGL.Clear(EGLBufferBit::Depth);
+
+		for (auto& renderItem : mRenderList)
+		{
+			if (renderItem.bIsValid)
+			{
+				RenderSingleItem_Depth(renderItem);
+			}
+		}
+	}
+
+	void Renderer::RenderScene_Forward()
+	{	BROFILER_CATEGORY("RenderScene_Forward", Profiler::Color::Red);
+		
+		for (auto& renderItem : mRenderList)
+		{
+			if (renderItem.bIsValid)
+			{
+				RenderSingleItem_Forward(renderItem);
+			}
+		}
+	}
+
+	void Renderer::RenderSingleItem_Depth(RenderItemProtocol& renderItem)
+	{ 
+		mDepthPassShader->SetUniformMatrix4x4("UModelMat", renderItem.ModelMat);
+		for (auto& mesh : renderItem.MeshData)
+		{
+			DrawMesh(mesh);
+		}
+	}
+
+	void Renderer::RenderSingleItem_Forward(RenderItemProtocol& renderItem)
 	{
 		// TODO(Josh)
 		// This whole function is a temporary implementation until an actual render pipeline is implemented.
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
 
-		mShaderPipeline->SetUniformMatrix4x4("UModelMat", renderItem.ModelMat);
+		mForwardShader->SetUniformMatrix4x4("UModelMat", renderItem.ModelMat);
 		for (auto& mesh : renderItem.MeshData)
 		{
 			{
@@ -180,15 +249,15 @@ namespace Diotima
 			bool bHasSpecular = material.GetSpecularTextures().size() > 0;
 			bool bHasNormals = material.GetNormalMaps().size() > 0;
 
-			mShaderPipeline->SetUniformFloat("UShininess", material.Shininess);
-			mShaderPipeline->SetUniformFloat("UOpacity", material.Opacity);
+			mForwardShader->SetUniformFloat("UShininess", material.Shininess);
+			mForwardShader->SetUniformFloat("UOpacity", material.Opacity);
 
 			if (bHasDiffuse)
 			{
 				openGL.SetTextureUnit(EGLTextureUnit::Texture0);
 				for (auto& texture : material.GetDiffuseTextures())
 				{
-					mShaderPipeline->SetUniformInt("DiffuseTexture", 0);
+					mForwardShader->SetUniformInt("DiffuseTexture", 0);
 					openGL.BindTexture(EGLCapability::Texture2D, texture->GetTextureID());
 				}
 			}
@@ -198,49 +267,77 @@ namespace Diotima
 				openGL.SetTextureUnit(EGLTextureUnit::Texture1);
 				for (auto& texture : material.GetSpecularTextures())
 				{
-					mShaderPipeline->SetUniformInt("SpecularTexture", 1);
+					mForwardShader->SetUniformInt("SpecularTexture", 1);
 					openGL.BindTexture(EGLCapability::Texture2D, texture->GetTextureID());
 				}
 			}
 
 			if (bHasNormals)
 			{
-				mShaderPipeline->SetUniformInt("UIsNormalMapped", 1);
+				mForwardShader->SetUniformInt("UIsNormalMapped", 1);
 				openGL.SetTextureUnit(EGLTextureUnit::Texture2);
 				for (auto& texture : material.GetNormalMaps())
 				{
-					mShaderPipeline->SetUniformInt("NormalMap", 2);
+					mForwardShader->SetUniformInt("NormalMap", 2);
 					openGL.BindTexture(EGLCapability::Texture2D, texture->GetTextureID());
 				}
 			}
 			else
 			{
-				mShaderPipeline->SetUniformInt("UIsNormalMapped", 0);
+				mForwardShader->SetUniformInt("UIsNormalMapped", 0);
 			}
 			
-			mesh->mVAO.Bind();
-			mesh->mEBO.Bind();
-			OpenGLRHI::Get().DrawElements(EGLDrawMode::Triangles, mesh->GetIndices().size(), EGLDataType::UnsignedInt, nullptr);
-			mesh->mVAO.Unbind();
+			DrawMesh(mesh);
 		}
 	}
 
 	void Renderer::BlitToWindow()
 	{
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
-		openGL.Viewport(0, 0, mRenderTarget->GetWidth(), mRenderTarget->GetHeight());
+		RenderTarget* const currentRT = GetCurrentRenderTarget();
+
+		openGL.Viewport(0, 0, currentRT->GetWidth(), currentRT->GetHeight());
 
 		openGL.BindFramebuffer(EGLBufferTarget::DrawFramebuffer, 0);
-		openGL.BindFramebuffer(EGLBufferTarget::ReadFramebuffer, mRenderTarget->GetFrameBufferID());
-		// #TODO(Josh::Wrap these properly in OpenGLRHI)
+		openGL.BindFramebuffer(EGLBufferTarget::ReadFramebuffer, currentRT->GetFrameBufferID());
+		//glDrawBuffer(GL_BACK);
 		openGL.ReadBuffer(EGLAttachmentPoint::Color0);
+
 		openGL.BlitFramebuffer(
-			0, 0, static_cast<GLint>(mRenderTarget->GetWidth()), static_cast<GLint>(mRenderTarget->GetHeight()),
+			0, 0, static_cast<GLint>(currentRT->GetWidth()), static_cast<GLint>(currentRT->GetHeight()),
 			0, 0, static_cast<GLint>(mCanvasSize.X()), static_cast<GLint>(mCanvasSize.Y()), 
-			EGLBufferBit::Color | EGLBufferBit::Depth, GL_NEAREST);
+			EGLBufferBit::Color, GL_NEAREST);
 	}
 
+	void Renderer::Submit()
+	{
+		SetCurrentRenderTarget(mFinalRTT);
+		// #TODO(Josh::This will cause a double draw in editor. Need to find a better way to discern
+		// what is to be done here. Game needs to blit to screen via the RTT framebuffer, but editor gets read
+		// from the generated texture and then ImGUI gets drawn over everything.
+		BlitToWindow();
+	}
 
+	void Renderer::DrawMesh(GFXMesh* mesh)
+	{
+		mesh->mVAO.Bind();
+		mesh->mEBO.Bind();
+		OpenGLRHI::Get().DrawElements(EGLDrawMode::Triangles, mesh->GetIndices().size(), EGLDataType::UnsignedInt, nullptr);
+		mesh->mVAO.Unbind();
+	}
+	
+	void Renderer::DrawQuad()
+	{
+		float vertices[] = { -0.5f, -0.5f, 0.0f, 0.5f, -0.5f, 0.0f, 0.5f, 0.5f, 0.0f, -0.5f, 0.5f, 0.0f };
+		OpenGLRHI::Get().BindTexture(GL_TEXTURE_2D, mDepthTexture->GetTextureID());
+		OpenGLRHI::Get().DrawArrays(EGLDrawMode::Triangles, 0, 4);
+	}
+
+	void Renderer::SetCurrentRenderTarget(RenderTarget* renderTarget)
+	{
+		AssertNotNull(renderTarget);
+		mCurrentRTT = renderTarget;
+	}
 
 	Renderer::RenderItemProtocol::RenderItemProtocol()
 	{

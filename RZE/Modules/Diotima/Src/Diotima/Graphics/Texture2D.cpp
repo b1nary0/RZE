@@ -34,7 +34,7 @@ namespace Diotima
 			AssertNotNull(data);
 		}
 
-		OpenGLRHI& openGL = OpenGLRHI::Get();
+		const OpenGLRHI& openGL = OpenGLRHI::Get();
 
 		// #NOTE possibly generic texture class where the defining properties are the GL capability?
 		openGL.GenerateTexture(1, &mTextureID);

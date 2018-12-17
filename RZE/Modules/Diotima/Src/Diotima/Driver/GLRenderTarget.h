@@ -11,12 +11,18 @@ namespace Diotima
 		virtual ~GLRenderTargetTexture();
 
 	public:
-
-		virtual void Initialize();
+		virtual void Initialize() override;
 		virtual void Bind() override;
 		virtual void Unbind() override;
+	};
 
-	private:
+	class GLRenderTargetDepthTexture : public GLRenderTargetTexture
+	{
+	public:
+		GLRenderTargetDepthTexture();
+		virtual ~GLRenderTargetDepthTexture();
 
+	public:
+		virtual void Initialize() override;
 	};
 }

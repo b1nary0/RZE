@@ -62,7 +62,8 @@ void FreeCameraSystem::KeyboardInput(CameraComponent& camComp, TransformComponen
 
 	float dt = static_cast<float>(RZE_Application::RZE().GetDeltaTime());
 	float speedDelta = mSpeed * dt;
-	if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_W])
+	if (inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Key_W) == EButtonState::ButtonState_Pressed
+		|| inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Key_W) == EButtonState::ButtonState_Hold)
 	{
 		transfComp.Position += camComp.Forward * speedDelta;
 	}
@@ -89,6 +90,15 @@ void FreeCameraSystem::KeyboardInput(CameraComponent& camComp, TransformComponen
 	else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_1])
 	{
 		// Focus object
+	}
+
+	if (inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Space) == EButtonState::ButtonState_Pressed)
+	{
+		mSpeed = kFullSpeed / 8.0f;
+	}
+	else if (!inputHandler.GetKeyboardState().IsDownThisFrame(Win32KeyCode::Space))
+	{
+		mSpeed = kFullSpeed;
 	}
 
 	Int32 wheelVal = RZE_Application::RZE().GetInputHandler().GetMouseState().CurWheelVal;
