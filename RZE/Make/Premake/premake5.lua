@@ -29,7 +29,7 @@ workspace "RZE"
 	platforms { "x64" }
 	architecture "x64";
 	
-	startproject "Editor"
+	startproject "Game"
 	
 	-- Where the project files will be generated
 	location(RootDir .. "_Project")
