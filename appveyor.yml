@@ -10,5 +10,6 @@ branches:
     - Sandbox
     - RenderRefactor
 before_build:
-  - cmd: ./RZE/GenerateSolution.bat
+  - cd RZE
+  - GenerateSolutions.bat
   - cd RZE/_Project
