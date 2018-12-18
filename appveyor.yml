@@ -10,5 +10,5 @@ branches:
     - Sandbox
     - RenderRefactor
 before_build:
-  - .GenerateSolution.bat
+  - ./GenerateSolution.bat
   - cd _Project
