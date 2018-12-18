@@ -12,4 +12,4 @@ branches:
 before_build:
   - cd RZE
   - GenerateSolutions.bat
-  - cd RZE/_Project
+  - cd _Project
