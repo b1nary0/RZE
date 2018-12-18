@@ -31,13 +31,13 @@ vec3 CalculateBumpNormal()
 {
 	vec3 normal = normalize(Normal);
 	vec3 tangent = normalize(Tangent);
-	tangent = normalize(Tangent - dot(Tangent, Normal) * Normal);
+	tangent = normalize(Tangent - dot(Tangent, normal) * normal);
 	
-	vec3 biTangent = cross(Tangent, Normal);
+	vec3 biTangent = cross(Tangent, normal);
 	vec3 bumpMapNormal = texture(NormalMap, UVCoord).rgb;
 	bumpMapNormal = 2.0 * bumpMapNormal - vec3(1.0, 1.0, 1.0);
 	
-	mat3 TBN = mat3(tangent, biTangent, Normal);
+	mat3 TBN = mat3(tangent, biTangent, normal);
 	vec3 newNormal = TBN * bumpMapNormal;
 	newNormal = normalize(newNormal);
 	
@@ -49,7 +49,7 @@ float CalculateBlinnPhong(vec3 viewDir, vec3 lightDir, vec3 normal)
 	float specular = 0.0;
 	
 	vec3 halfDirection = normalize(lightDir + viewDir);
-	float specAngle = max(0.0, dot(halfDirection, normal));
+	float specAngle = max(0.0, dot(halfDirection, reflect(-lightDir, normal)));
 	specular = pow(specAngle, UShininess);
 	
 	return specular;
@@ -95,7 +95,7 @@ void main()
 
 		vec3 ambientResult = ambientCoefficient * surfaceColour.rgb;
 		vec3 diffuseResult = (surfaceColour.rgb * LightColors[lightIdx] * LightStrengths[lightIdx] * diff);
-		vec3 specularResult = specular * specularSample.xyz * LightStrengths[lightIdx];
+		vec3 specularResult = specular * specularSample.rgb * LightStrengths[lightIdx] * LightColors[lightIdx];
 
 		float shadowCalc = CalculateShadowFromDepthMap(normal, lightDir);
 		vec3 result = (ambientResult + (1.0 - shadowCalc)) * diffuseResult + specularResult;

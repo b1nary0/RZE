@@ -161,6 +161,26 @@ namespace Diotima
 		GetCurrentRenderTarget()->Unbind();
 	}
 
+	// #TODO(Josh::Dirty hack to quickly test multiple lights with updated Renderer)
+	// This is to avoid building strings until a better shader pipeline API is implemented
+	// -- Begin Dity Hack
+	static char* sLightPositionMaterialNames[] =
+	{
+		"LightPositions[0]",
+		"LightPositions[1]"
+	};
+	static char* sLightColourMaterialNames[] =
+	{
+		"LightColors[0]",
+		"LightColors[1]"
+	};
+	static char* sLightStrengthMaterialNames[] =
+	{
+		"LightStrengths[0]",
+		"LightStrengths[1]"
+	};
+	// -- End Dirty Hack
+
 	void Renderer::ForwardPass()
 	{	BROFILER_CATEGORY("ForwardPass", Profiler::Color::Yellow);
 
@@ -170,7 +190,7 @@ namespace Diotima
 		// #TODO(Josh) Can probably optimize this away nicely
 		openGL.Viewport(0, 0, GetCurrentRenderTarget()->GetWidth(), GetCurrentRenderTarget()->GetHeight());
 		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
-		{	BROFILER_CATEGORY("Item Processing", Profiler::Color::DarkOrange)
+		{	
 			mForwardShader->Use();
 			mForwardShader->SetUniformMatrix4x4("UProjectionMat", camera.ProjectionMat);
 			mForwardShader->SetUniformMatrix4x4("UViewMat", camera.ViewMat);
@@ -184,9 +204,9 @@ namespace Diotima
 			{
 				const LightItemProtocol& lightItem = mLightingList[lightIdx];
 
-				mForwardShader->SetUniformVector3D("LightPositions[0]", lightItem.Position);
-				mForwardShader->SetUniformVector3D("LightColors[0]", lightItem.Color);
-				mForwardShader->SetUniformFloat("LightStrengths[0]", lightItem.Strength);
+				mForwardShader->SetUniformVector3D(sLightPositionMaterialNames[lightIdx], lightItem.Position);
+				mForwardShader->SetUniformVector3D(sLightColourMaterialNames[lightIdx], lightItem.Color);
+				mForwardShader->SetUniformFloat(sLightStrengthMaterialNames[lightIdx], lightItem.Strength);
 			}
 
 			LightItemProtocol& lightItem = mLightingList.front();
@@ -219,7 +239,6 @@ namespace Diotima
 
 	void Renderer::RenderScene_Forward()
 	{	BROFILER_CATEGORY("RenderScene_Forward", Profiler::Color::Red);
-		
 		for (auto& renderItem : mRenderList)
 		{
 			if (renderItem.bIsValid)
