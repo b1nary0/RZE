@@ -28,8 +28,8 @@ before_build:
   - cd _Project
   
 after_build:
-  - xcopy /y /d RZE/Engine/Assets _Artifacts
-  - xcopy /y /d RZE/_Build _Artifacts
+  - xcopy /y /d %APPVEYOR_BUILD_FOLDER%\RZE\Engine\Assets _Artifacts
+  - xcopy /y /d %APPVEYOR_BUILD_FOLDER%\RZE\_Build _Artifacts
   - 7z a RZE_Engine_Artifacts.zip RZE\_Artifacts
   
 artifacts:
