@@ -33,7 +33,7 @@ after_build:
   - cd ..
   - xcopy /y /d /s %APPVEYOR_BUILD_FOLDER%\RZE\Engine\Assets %APPVEYOR_BUILD_FOLDER%\RZE\_Artifacts
   - xcopy /y /d /s %APPVEYOR_BUILD_FOLDER%\RZE\_Build %APPVEYOR_BUILD_FOLDER%\RZE\_Artifacts
-  - 7z a %APPVEYOR_BUILD_FOLDER%\RZE_Engine_Artifacts.zip %APPVEYOR_BUILD_FOLDER%\RZE\_Artifacts
+  - 7z a %APPVEYOR_BUILD_FOLDER%\"RZE_Engine_$(appveyor_repo_branch)_$(appveyor_build_version).$(appveyor_build_number).zip" %APPVEYOR_BUILD_FOLDER%\RZE\_Artifacts
   
 artifacts:
-  - path: RZE_Engine_$(appveyor_repo_branch)_$(appveyor_build_number).zip
+  - path: RZE_Engine_$(appveyor_repo_branch)_$(appveyor_build_version).$(appveyor_build_number).zip
