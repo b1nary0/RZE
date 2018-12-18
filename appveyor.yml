@@ -21,3 +21,5 @@ before_build:
   
  artifacts:
   - path: RZE/_Build
+    name: RZE_Engine
+    type: zip
