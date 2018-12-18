@@ -19,7 +19,7 @@ before_build:
   - GenerateSolutions.bat
   - cd _Project
   
- artifacts:
+artifacts:
   - path: RZE/_Build
     name: RZE_Engine
     type: zip
