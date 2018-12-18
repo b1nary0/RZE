@@ -106,13 +106,17 @@ namespace Diotima
 
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
 
-		glCullFace(GL_FRONT);
-		SetCurrentRenderTarget(mDepthTexture);
-		DepthPass();
-		glCullFace(GL_BACK);
+		{
+			SetCurrentRenderTarget(mDepthTexture);
+			glCullFace(GL_FRONT);
+			DepthPass();
+			glCullFace(GL_BACK);
+		}
 
-		SetCurrentRenderTarget(mFinalRTT);
-		ForwardPass();
+		{
+			SetCurrentRenderTarget(mFinalRTT);
+			ForwardPass();
+		}
 
 		Submit();
 

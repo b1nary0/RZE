@@ -345,10 +345,16 @@ void Win32Window::ProcessWinProcMessage(const WindowMessageAdaptor::WindowMessag
 		int width = windowRect.right - windowRect.top;
 		int height = windowRect.bottom - windowRect.top;
 
-		windowEvent.mSizeX = width;
-		windowEvent.mSizeY = height;
-
-		eventHandler.PostWindowEvent(windowEvent);
+		if (width > 0 && height > 0)
+		{
+			windowEvent.mSizeX = width;
+			windowEvent.mSizeY = height;
+			eventHandler.PostWindowEvent(windowEvent);
+		}
+		else
+		{
+			LOG_CONSOLE("Setting 0 dimension window size. Could be minimized. Is this expected?");
+		}
 	}
 }
 
