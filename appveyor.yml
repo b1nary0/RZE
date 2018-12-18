@@ -18,6 +18,7 @@ configuration:
  
 install:
   - cd RZE
+  - mkdir _Artifacts
   - GenerateSolutions.bat
   - cd _Project
   
@@ -26,7 +27,11 @@ before_build:
   - GenerateSolutions.bat
   - cd _Project
   
+after_build:
+  - xcopy /y /d RZE/Engine/Assets _Artifacts
+  - xcopy /y /d RZE/_Build _Artifacts
+  - 7z a RZE_Engine_Artifacts.zip RZE\_Artifacts
+  
 artifacts:
-  - path: RZE/_Build
-    name: RZE_Engine
-    type: zip
+  - path: RZE/RZE_Engine_Artifacts.zip
+    name: RZE_Engine_Artifacts
