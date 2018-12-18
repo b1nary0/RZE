@@ -36,5 +36,4 @@ after_build:
   - 7z a %APPVEYOR_BUILD_FOLDER%\RZE_Engine_Artifacts.zip %APPVEYOR_BUILD_FOLDER%\RZE\_Artifacts
   
 artifacts:
-  - path: RZE_Engine_Artifacts.zip
-    name: "RZE_Engine_$(appveyor_repo_branch)_$(appveyor_build_number)"
+  - path: RZE_Engine_$(appveyor_repo_branch)_$(appveyor_build_number).zip
