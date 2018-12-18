@@ -37,4 +37,4 @@ after_build:
   
 artifacts:
   - path: RZE_Engine_Artifacts.zip
-    name: RZE_Engine_Artifacts_%APPVEYOR_REPO_BRANCH%_%APPVEYOR_BUILD_NUMBER%
+    name: "RZE_Engine_$(appveyor_repo_branch)_$(appveyor_build_number)"
