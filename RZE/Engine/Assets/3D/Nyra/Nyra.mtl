@@ -1,0 +1,91 @@
+# Blender MTL File: 'None'
+# Material Count: 7
+
+newmtl MatBody
+Ns 94.117647
+Ka 1.000000 1.000000 1.000000
+Kd 0.400000 0.400000 0.400000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd Nyra_TGAs\body_d.tga
+map_Ks Nyra_TGAs\body_s.tga
+map_Kn Nyra_TGAs\body_n.tga
+
+newmtl MatHead
+Ns 94.117647
+Ka 1.000000 1.000000 1.000000
+Kd 0.400000 0.400000 0.400000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd Nyra_TGAs\head_d.tga
+map_Ks Nyra_TGAs\head_s.tga
+map_Kn Nyra_TGAs\head_n.tga
+
+newmtl MatHead_body_d.tga
+Ns 94.117647
+Ka 1.000000 1.000000 1.000000
+Kd 0.400000 0.400000 0.400000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd Nyra_TGAs\body_d.tga
+map_Ks Nyra_TGAs\body_s.tga
+map_Kn Nyra_TGAs\body_n.tga
+
+newmtl MatHead_head_d.tga
+Ns 94.117647
+Ka 1.000000 1.000000 1.000000
+Kd 0.400000 0.400000 0.400000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd Nyra_TGAs\head_d.tga
+map_Ks Nyra_TGAs\head_s.tga
+map_Kn Nyra_TGAs\head_n.tga
+
+newmtl MatHead_head_tr.tga
+Ns 94.117647
+Ka 1.000000 1.000000 1.000000
+Kd 0.400000 0.400000 0.400000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd Nyra_TGAs\head_d.tga
+map_Ks Nyra_TGAs\head_s.tga
+map_Kn Nyra_TGAs\head_n.tga
+
+newmtl cornea
+Ns 229.411765
+Ka 0.188034 0.188034 0.188034
+Kd 0.000000 0.000000 0.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 0.119661
+illum 6
+map_Kd Nyra_TGAs\head_d.tga
+
+newmtl dx11Shader6
+Ns 94.117647
+Ka 1.000000 1.000000 1.000000
+Kd 0.400000 0.400000 0.400000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd Nyra_TGAs\head_d.tga
+map_Ks Nyra_TGAs\head_s.tga
+map_Kn Nyra_TGAs\head_n.tga

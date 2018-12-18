@@ -96,6 +96,7 @@ namespace Diotima
 		mFinalRTT->Initialize();
 
 		glEnable(GL_MULTISAMPLE);
+		glEnable(GL_CULL_FACE);
 	}
 
 	void Renderer::Update()
@@ -105,8 +106,10 @@ namespace Diotima
 
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
 
+		glCullFace(GL_FRONT);
 		SetCurrentRenderTarget(mDepthTexture);
 		DepthPass();
+		glCullFace(GL_BACK);
 
 		SetCurrentRenderTarget(mFinalRTT);
 		ForwardPass();
