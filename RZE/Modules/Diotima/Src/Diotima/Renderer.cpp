@@ -355,7 +355,7 @@ namespace Diotima
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
 		RenderTarget* const currentRT = GetCurrentRenderTarget();
 
-		openGL.Viewport(0, 0, target.GetWidth(), target.GetHeight());
+		openGL.Viewport(0, 0, currentRT->GetWidth(), currentRT->GetHeight());
 
 		openGL.BindFramebuffer(EGLBufferTarget::DrawFramebuffer, target.GetFrameBufferID());
 		openGL.BindFramebuffer(EGLBufferTarget::ReadFramebuffer, currentRT->GetFrameBufferID());

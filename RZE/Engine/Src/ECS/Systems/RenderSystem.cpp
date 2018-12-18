@@ -3,7 +3,7 @@
 
 #include <Apollo/ECS/EntityComponentFilter.h>
 
-#include <Diotima/RenderBatch.h>
+#include <Diotima/Graphics/RenderTarget.h>
 #include <Diotima/Graphics/Material.h>
 #include <Diotima/Graphics/Texture2D.h>
 #include <Diotima/Shaders/ShaderPipeline.h>
@@ -183,7 +183,7 @@ void RenderSystem::RegisterForComponentNotifications()
 
 void RenderSystem::GenerateCameraMatrices(CameraComponent& cameraComponent, const TransformComponent& transformComponent)
 {
-	cameraComponent.AspectRatio = RZE_Application::RZE().GetWindowSize().X() / RZE_Application::RZE().GetWindowSize().Y();
+	cameraComponent.AspectRatio = static_cast<float>(RZE_Application::RZE().GetApplication().GetRenderTarget().GetWidth()) / static_cast<float>(RZE_Application::RZE().GetApplication().GetRenderTarget().GetHeight());
 	cameraComponent.ProjectionMat = Matrix4x4::CreatePerspectiveMatrix(cameraComponent.FOV, cameraComponent.AspectRatio, cameraComponent.NearCull, cameraComponent.FarCull);
 	cameraComponent.ViewMat = Matrix4x4::CreateViewMatrix(transformComponent.Position, transformComponent.Position + cameraComponent.Forward, cameraComponent.UpDir);
 }
