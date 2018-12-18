@@ -5,7 +5,9 @@ build:
   project: RZE/_Project/RZE.sln
   parallel: true
   verbosity: minimal
-  
+ 
+shallow_clone: true
+ 
 branches:
   only:
     - master
@@ -30,7 +32,7 @@ before_build:
 after_build:
   - xcopy /y /d /s %APPVEYOR_BUILD_FOLDER%\RZE\Engine\Assets %APPVEYOR_BUILD_FOLDER%\RZE\_Artifacts
   - xcopy /y /d /s %APPVEYOR_BUILD_FOLDER%\RZE\_Build %APPVEYOR_BUILD_FOLDER%\RZE\_Artifacts
-  - 7z a RZE_Engine_Artifacts.zip RZE\_Artifacts
+  - 7z a RZE_Engine_Artifacts.zip %APPVEYOR_BUILD_FOLDER%\RZE\_Artifacts
   
 artifacts:
   - path: RZE/RZE_Engine_Artifacts.zip
