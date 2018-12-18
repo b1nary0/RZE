@@ -1,14 +1,14 @@
 version 0.0.{build}
 os Visual Studio 2017
-build
-  project RZE.sln
-  parallel true
-  verbosity normal
-branches
-  only
+build:
+  project: RZE.sln
+  parallel: true
+  verbosity: normal
+branches:
+  only:
     - master
     - Sandbox
     - RenderRefactor
-before_build
+before_build:
   - .GenerateSolution.bat
   - cd _Project
