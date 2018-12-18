@@ -1,14 +1,25 @@
-version 0.0.{build}
-os Visual Studio 2017
-build
-  project RZE.sln
-  parallel true
-  verbosity normal
-branches
-  only
+version: 0.0.{build}
+os: Visual Studio 2017
+build:
+  project: RZE/_Project/RZE.sln
+  parallel: true
+  verbosity: minimal
+branches:
+  only:
     - master
     - Sandbox
     - RenderRefactor
-before_build
-  - .GenerateSolution.bat
+install:
+  - cd RZE
+  - GenerateSolutions.bat
   - cd _Project
+  
+before_build:
+  - cd ..
+  - GenerateSolutions.bat
+  - cd _Project
+  
+artifacts:
+  - path: RZE/_Build
+    name: RZE_Engine
+    type: zip
