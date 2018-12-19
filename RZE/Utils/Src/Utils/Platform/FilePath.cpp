@@ -18,7 +18,7 @@ FilePath::FilePath(const std::string& path)
 	newpath = execPath.substr(0, pos);
 	
 	// #Josh(Temp fix until I get off my ass and make this better)
-	mAbsolutePath = std::string("E:/Dev/RZE/RZE/") + path;
+	mAbsolutePath = newpath + path;
 	mRelativePath = path;
 }
 
