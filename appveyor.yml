@@ -25,7 +25,7 @@ only_commits:
   message: /triggerbuild/
   
 before_build:
-  - RZE\GenerateSolutions.bat
+  - RZE/GenerateSolutions.bat
    
 after_build:
   - cd ..
