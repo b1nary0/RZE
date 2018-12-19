@@ -8,7 +8,7 @@
 
 namespace Diotima
 {
-	const FilePath kDefaultDiffuseTexturePath{ "Engine/Assets/2D/NOASSET_Texture.png" };
+	const FilePath kDefaultDiffuseTexturePath{ "Assets/2D/NOASSET_Texture.png" };
 
 	namespace ETextureType
 	{

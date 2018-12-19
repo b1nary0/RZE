@@ -38,7 +38,7 @@
         },
 		"MeshComponent":
 		{
-		  "ResourcePath": "Engine/Assets/3D/Cube.obj"
+		  "ResourcePath": "Assets/3D/Cube.obj"
 		}
       }
     },
@@ -54,7 +54,7 @@
 		},
 		"MeshComponent":
 		{
-		  "ResourcePath": "Engine/Assets/3D/Ground/Quad.obj"
+		  "ResourcePath": "Assets/3D/Ground/Quad.obj"
 		}
 	  }
 	},
@@ -70,7 +70,7 @@
 		},
 		"MeshComponent":
 		{
-		  "ResourcePath": "Engine/Assets/3D/Test/WallN/Quad.obj"
+		  "ResourcePath": "Assets/3D/Test/WallN/Quad.obj"
 		}
 	  }
 	},
@@ -86,7 +86,7 @@
 		},
 		"MeshComponent":
 		{
-		  "ResourcePath": "Engine/Assets/3D/Test/WallE/Quad.obj"
+		  "ResourcePath": "Assets/3D/Test/WallE/Quad.obj"
 		}
 	  }
 	},
@@ -102,7 +102,7 @@
 		},
 		"MeshComponent":
 		{
-		  "ResourcePath": "Engine/Assets/3D/Nyra/Nyra.obj"
+		  "ResourcePath": "Assets/3D/Nyra/Nyra.obj"
 		}
 	  }
 	}

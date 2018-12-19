@@ -56,7 +56,7 @@ void MainMenuWidget::DoSceneMenu()
 			for (int i = 0; i < 3000; ++i)
 			{
 				Apollo::EntityID entity = RZE_Application::RZE().GetActiveScene().CreateEntity("DefaultEntityName");
-				RZE_Application::RZE().GetActiveScene().GetEntityHandler().AddComponent<MeshComponent>(entity, FilePath("Engine/Assets/3D/FW190/FW190.obj"));
+				RZE_Application::RZE().GetActiveScene().GetEntityHandler().AddComponent<MeshComponent>(entity, FilePath("Assets/3D/FW190/FW190.obj"));
 
 				TransformComponent* const transf = RZE_Application::RZE().GetActiveScene().GetEntityHandler().GetComponent<TransformComponent>(entity);
 				transf->Position = Vector3D((rand() + 1) % 25, (rand() + 1) % 25, (rand() + 1) % 25);

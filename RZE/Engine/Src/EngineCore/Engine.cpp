@@ -248,7 +248,7 @@ void RZE_Engine::LoadEngineConfig()
 {
 	// #TODO(Josh) This should probably be a resource? 
 	mEngineConfig = new EngineConfig();
-	mEngineConfig->Load(FilePath("Engine/RZE/Config/Engine.ini"));
+	mEngineConfig->Load(FilePath("Config/Engine.ini"));
 
 	if (mEngineConfig->Empty())
 	{

@@ -12,10 +12,7 @@ FilePath::FilePath(const std::string& path)
 
 	std::replace(execPath.begin(), execPath.end(), '\\', '/');
 	size_t pos = execPath.find_last_of("\\/");
-	std::string newpath = execPath.substr(0, pos);
-
-	pos = newpath.find_last_of("RZE") + 2;
-	newpath = execPath.substr(0, pos);
+	std::string newpath = execPath.substr(0, pos + 1);
 	
 	// #Josh(Temp fix until I get off my ass and make this better)
 	mAbsolutePath = newpath + path;
