@@ -34,7 +34,6 @@ before_build:
 for:
  -
   configuration:
-   only:
     - Debug
     
   after_build:
