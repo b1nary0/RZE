@@ -119,8 +119,8 @@ workspace "RZE"
 		local outputDir = "$(ProjectDir)$(OutDir)"
 		postbuildcommands {
 			command .. AbsoluteRootDir .. "ThirdParty\\DLL\\x64 " .. outputDir,
-			command .. AbsoluteRootDir .. "Engine\\Assets " .. outputDir .. "Assets\\",
-			command .. AbsoluteRootDir .. "Engine\\Config " .. outputDir .. "Config\\"
+			command .. AbsoluteRootDir .. "Assets " .. outputDir .. "Assets\\",
+			command .. AbsoluteRootDir .. "Config " .. outputDir .. "Config\\"
 		}
 		
 		vpaths
