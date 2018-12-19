@@ -8,10 +8,10 @@ FilePath::FilePath(const std::string& path)
 {
 	char buffer[1024];
 	GetModuleFileNameA(NULL, buffer, 1024);
-	std::string execPath(buffer, 1024);
+	std::string execPath(buffer);
 
 	std::replace(execPath.begin(), execPath.end(), '\\', '/');
-	size_t pos = execPath.find_last_of("\\/");
+	size_t pos = execPath.find_last_of("\/");
 	std::string newpath = execPath.substr(0, pos + 1);
 	
 	mAbsolutePath = newpath + path;
