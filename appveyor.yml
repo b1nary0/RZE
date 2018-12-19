@@ -32,7 +32,8 @@ before_build:
   - cd _Project
  
 for:
- -configuration:
+ -
+  configuration:
    only:
     - Debug
     
