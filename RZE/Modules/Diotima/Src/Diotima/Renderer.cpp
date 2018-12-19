@@ -158,11 +158,7 @@ namespace Diotima
 		mDepthPassShader->Use();
 
 		LightItemProtocol& lightItem = mLightingList.front();
-		Matrix4x4 orthoProj = Matrix4x4::CreateOrthoMatrix(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 100.0f);
-		Matrix4x4 lightView = Matrix4x4::CreateViewMatrix(lightItem.Position, Vector3D(), Vector3D(0.0f, 1.0f, 0.0f));
-		Matrix4x4 lightSpaceMatrix = orthoProj * lightView;
-
-		mDepthPassShader->SetUniformMatrix4x4("ULightSpaceMatrix", lightSpaceMatrix);
+		mDepthPassShader->SetUniformMatrix4x4("ULightSpaceMatrix", lightItem.LightSpaceMatrix);
 		
 		RenderScene_Depth();
 		GetCurrentRenderTarget()->Unbind();
@@ -207,6 +203,8 @@ namespace Diotima
 			openGL.SetTextureUnit(GL_TEXTURE3);
 			openGL.BindTexture(EGLCapability::Texture2D, mDepthTexture->GetTextureID());
 
+			// Really only doing one light here, but will eventually do more. So if you see any
+			// assumptions, thats why.
 			for (size_t lightIdx = 0; lightIdx < mLightingList.size(); ++lightIdx)
 			{
 				const LightItemProtocol& lightItem = mLightingList[lightIdx];
@@ -214,14 +212,8 @@ namespace Diotima
 				mForwardShader->SetUniformVector3D(sLightPositionMaterialNames[lightIdx], lightItem.Position);
 				mForwardShader->SetUniformVector3D(sLightColourMaterialNames[lightIdx], lightItem.Color);
 				mForwardShader->SetUniformFloat(sLightStrengthMaterialNames[lightIdx], lightItem.Strength);
+				mForwardShader->SetUniformMatrix4x4("ULightSpaceMat", lightItem.LightSpaceMatrix);
 			}
-
-			LightItemProtocol& lightItem = mLightingList.front();
-			Matrix4x4 orthoProj = Matrix4x4::CreateOrthoMatrix(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 100.0f);
-			Matrix4x4 lightView = Matrix4x4::CreateViewMatrix(lightItem.Position, Vector3D(), Vector3D(0.0f, 1.0f, 0.0f));
-			Matrix4x4 lightSpaceMatrix = orthoProj * lightView;
-
-			mForwardShader->SetUniformMatrix4x4("ULightSpaceMat", lightSpaceMatrix);
 
 			RenderScene_Forward();
 		}
@@ -257,7 +249,7 @@ namespace Diotima
 
 	void Renderer::RenderSingleItem_Depth(RenderItemProtocol& renderItem)
 	{ 
-		mDepthPassShader->SetUniformMatrix4x4("UModelMat", renderItem.ModelMat);
+		mDepthPassShader->SetUniformMatrix4x4("UModelMat", renderItem.ModelMatrix);
 		for (auto& mesh : renderItem.MeshData)
 		{
 			DrawMesh(mesh);
@@ -270,7 +262,7 @@ namespace Diotima
 		// This whole function is a temporary implementation until an actual render pipeline is implemented.
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
 
-		mForwardShader->SetUniformMatrix4x4("UModelMat", renderItem.ModelMat);
+		mForwardShader->SetUniformMatrix4x4("UModelMat", renderItem.ModelMatrix);
 		for (auto& mesh : renderItem.MeshData)
 		{
 			{
@@ -337,7 +329,7 @@ namespace Diotima
 		const OpenGLRHI& openGL = OpenGLRHI::Get();
 		RenderTarget* const currentRT = GetCurrentRenderTarget();
 
-		openGL.Viewport(0, 0, currentRT->GetWidth(), currentRT->GetHeight());
+		//openGL.Viewport(0, 0, currentRT->GetWidth(), currentRT->GetHeight());
 
 		openGL.BindFramebuffer(EGLBufferTarget::DrawFramebuffer, 0);
 		openGL.BindFramebuffer(EGLBufferTarget::ReadFramebuffer, currentRT->GetFrameBufferID());
@@ -391,6 +383,7 @@ namespace Diotima
 		mesh->mVAO.Bind();
 		mesh->mEBO.Bind();
 		OpenGLRHI::Get().DrawElements(EGLDrawMode::Triangles, mesh->GetIndices().size(), EGLDataType::UnsignedInt, nullptr);
+		mesh->mEBO.Unbind();
 		mesh->mVAO.Unbind();
 	}
 	

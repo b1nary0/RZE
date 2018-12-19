@@ -87,7 +87,7 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
 
 			Diotima::Renderer::RenderItemProtocol& item = renderer.GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
-			item.ModelMat = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
+			item.ModelMatrix = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
 		}
 	}/*)*/;
 	//Perseus::JobScheduler::Get().PushJob(work);
@@ -95,11 +95,14 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 	Functor<void, Apollo::EntityID> LightSourceFunc([this, &handler, &renderer](Apollo::EntityID entity)
 	{
 		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
-
 		Diotima::Renderer::LightItemProtocol& item = renderer.GetLightProtocolByIdx(mLightItemEntityMap[entity]);
+
+		Matrix4x4 orthoProj = Matrix4x4::CreateOrthoMatrix(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 100.0f);
+		Matrix4x4 lightView = Matrix4x4::CreateViewMatrix(transfComp->Position, Vector3D(), Vector3D(0.0f, 1.0f, 0.0f));
+
+		item.LightSpaceMatrix = orthoProj * lightView;
 		item.Position = transfComp->Position;
 	});
-
 	handler.ForEach<LightSourceComponent, TransformComponent>(LightSourceFunc);
 }
 

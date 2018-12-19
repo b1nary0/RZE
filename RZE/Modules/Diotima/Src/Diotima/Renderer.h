@@ -30,7 +30,7 @@ namespace Diotima
 			RenderItemProtocol();
 
 			std::vector<GFXMesh*>			MeshData;
-			Matrix4x4						ModelMat;
+			Matrix4x4						ModelMatrix;
 
 			bool bIsValid{ false };
 
@@ -42,6 +42,7 @@ namespace Diotima
 		{
 			Vector3D	Position;
 			Vector3D	Color;
+			Matrix4x4	LightSpaceMatrix;
 
 			float		Strength;
 		};
