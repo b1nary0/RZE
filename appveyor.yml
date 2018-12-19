@@ -22,7 +22,7 @@ platform:
  - x64
   
 only_commits:
-  message: /_build_/
+  message: /[triggerbuild]/
   
 before_build:
   - cd RZE
