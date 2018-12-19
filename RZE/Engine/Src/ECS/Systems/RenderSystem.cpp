@@ -80,7 +80,7 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 	camera.ViewMat = camComp->ViewMat;
 	renderer.SetCamera(camera);
 	
-	Perseus::Job::Task work([this, entities, transfComp, &renderer, &handler]()
+	//Perseus::Job::Task work([this, entities, transfComp, &renderer, &handler]()
 	{
 		for (auto& entity : entities)
 		{
@@ -89,8 +89,8 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 			Diotima::Renderer::RenderItemProtocol& item = renderer.GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
 			item.ModelMat = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
 		}
-	});
-	Perseus::JobScheduler::Get().PushJob(work);
+	}/*)*/;
+	//Perseus::JobScheduler::Get().PushJob(work);
 
 	Functor<void, Apollo::EntityID> LightSourceFunc([this, &handler, &renderer](Apollo::EntityID entity)
 	{
