@@ -31,12 +31,12 @@ before_build:
   - GenerateSolutions.bat
   - cd _Project
  
- for:
-  -configuration:
-    only:
-     - Debug
+for:
+ -configuration:
+   only:
+    - Debug
     
-   after_build:
+  after_build:
    - xcopy /y /d %APPVEYOR_BUILD_FOLDER%\RZE\_Build\%CONFIGURATION%\%PLATFORM%\*.dll %APPVEYOR_BUILD_FOLDER%\RZE\_Artifacts
 after_build:
   - cd ..
