@@ -99,7 +99,7 @@ workspace "RZE"
 		libdirs
 		{
 			LibDir,
-			ThirdPartyLibDir 
+			ThirdPartyLibDir
 		}
 		links
 		{
