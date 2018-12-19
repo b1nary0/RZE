@@ -29,6 +29,7 @@ before_build:
 after_build:
   - cd ..
   - mkdir _Artifacts\Assets
+  - mkdir _Artifacts\Config
   - ps: if ($env:CONFIGURATION -eq "Debug") {xcopy /y /d $env:APPVEYOR_BUILD_FOLDER\RZE\_Build\$env:CONFIGURATION\$env:PLATFORM\*.pdb $env:APPVEYOR_BUILD_FOLDER\RZE\_Artifacts}
   - ps: if ($env:CONFIGURATION -eq "Debug") {xcopy /y /d $env:APPVEYOR_BUILD_FOLDER\RZE\_Build\$env:CONFIGURATION\$env:PLATFORM\*.lib $env:APPVEYOR_BUILD_FOLDER\RZE\_Artifacts}
   - xcopy /y /d /s %APPVEYOR_BUILD_FOLDER%\RZE\Engine\Assets %APPVEYOR_BUILD_FOLDER%\RZE\_Artifacts\Assets

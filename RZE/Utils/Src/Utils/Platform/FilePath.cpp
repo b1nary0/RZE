@@ -14,7 +14,6 @@ FilePath::FilePath(const std::string& path)
 	size_t pos = execPath.find_last_of("\\/");
 	std::string newpath = execPath.substr(0, pos + 1);
 	
-	// #Josh(Temp fix until I get off my ass and make this better)
 	mAbsolutePath = newpath + path;
 	mRelativePath = path;
 }
