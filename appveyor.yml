@@ -37,7 +37,8 @@ for:
     - Debug
     
   after_build:
-   - xcopy /y /d %APPVEYOR_BUILD_FOLDER%\RZE\_Build\%CONFIGURATION%\%PLATFORM%\*.dll %APPVEYOR_BUILD_FOLDER%\RZE\_Artifacts
+   - xcopy /y /d %APPVEYOR_BUILD_FOLDER%\RZE\_Build\%CONFIGURATION%\%PLATFORM%\*.pdb %APPVEYOR_BUILD_FOLDER%\RZE\_Artifacts
+   
 after_build:
   - cd ..
   - mkdir _Artifacts\Assets
