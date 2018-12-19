@@ -34,7 +34,7 @@ workspace "RZE"
 	-- Where the project files will be generated
 	location(RootDir .. "_Project")
 
-	filter "configurations:Debug"	defines { "DEBUG" } symbols "On" debugformat "c7"
+	filter "configurations:Debug"	defines { "DEBUG" } symbols "Full"
 	filter "configurations:Release"	defines { "NDEBUG" } optimize "On"
 
 	--
