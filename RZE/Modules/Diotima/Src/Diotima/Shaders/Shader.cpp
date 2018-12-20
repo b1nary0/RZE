@@ -1,4 +1,4 @@
-#include <Diotima/Driver/OpenGL.h>
+#include <Diotima/Driver/OpenGL/OpenGL.h>
 
 #include <Diotima/Shaders/Shader.h>
 

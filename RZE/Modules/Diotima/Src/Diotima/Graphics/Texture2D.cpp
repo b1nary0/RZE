@@ -2,7 +2,7 @@
 
 #include <STB/stb_image.cpp>
 
-#include <Diotima/Driver/OpenGL.h>
+#include <Diotima/Driver/OpenGL/OpenGL.h>
 
 #include <Utils/DebugUtils/Debug.h>
 

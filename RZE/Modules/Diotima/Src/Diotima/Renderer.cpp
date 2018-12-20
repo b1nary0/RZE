@@ -3,8 +3,8 @@
 #include <Brofiler/Brofiler.h>
 
 #include <Diotima/RenderBatch.h>
-#include <Diotima/Driver/OpenGL.h>
-#include <Diotima/Driver/GLRenderTarget.h>
+#include <Diotima/Driver/OpenGL/OpenGL.h>
+#include <Diotima/Driver/OpenGL/GLRenderTarget.h>
 #include <Diotima/Graphics/Material.h>
 #include <Diotima/Graphics/Mesh.h>
 #include <Diotima/Graphics/RenderTarget.h>

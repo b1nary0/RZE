@@ -1,6 +1,6 @@
 #include <Diotima/Graphics/Material.h>
 
-#include <Diotima/Driver/OpenGL.h>
+#include <Diotima/Driver/OpenGL/OpenGL.h>
 #include <Diotima/Graphics/Texture2D.h>
 
 #include <Utils/DebugUtils/Debug.h>

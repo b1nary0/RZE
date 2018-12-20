@@ -4,7 +4,7 @@
 #include <Assimp/postprocess.h>
 #include <Assimp/scene.h>
 
-#include <Diotima/Driver/OpenGL.h>
+#include <Diotima/Driver/OpenGL/OpenGL.h>
 #include <Diotima/Graphics/Texture2D.h>
 
 #include <Utils/DebugUtils/Debug.h>

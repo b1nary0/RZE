@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include <Diotima/Driver/OpenGL.h>
+#include <Diotima/Driver/OpenGL/OpenGL.h>
 #include <Diotima/Graphics/Texture2D.h>
 
 #include <Utils/Interfaces/Resource.h>

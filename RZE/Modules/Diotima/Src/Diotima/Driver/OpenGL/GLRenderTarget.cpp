@@ -1,6 +1,6 @@
-#include <Diotima/Driver/GLRenderTarget.h>
+#include <Diotima/Driver/OpenGL/GLRenderTarget.h>
 
-#include <Diotima/Driver/OpenGL.h>
+#include <Diotima/Driver/OpenGL/OpenGL.h>
 
 #include <Utils/DebugUtils/Debug.h>
 

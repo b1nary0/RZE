@@ -4,7 +4,7 @@
 
 #include <Utils/Interfaces/Resource.h>
 
-#include <Diotima/Driver/OpenGL.h>
+#include <Diotima/Driver/OpenGL/OpenGL.h>
 
 namespace Diotima
 {
