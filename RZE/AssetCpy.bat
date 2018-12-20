@@ -19,6 +19,6 @@ if exist %releaseExecPath% (
 	if not exist %releaseAssetPath% (mkdir %releaseAssetPath%)
 	if not exist %releaseConfigPath% (mkdir %releaseConfigPath%)
 	
-	xcopy /y /d /s Assets %releaseAssetPath%
-	xcopy /y /d /s Config %releaseConfigPath%
+	xcopy /y /d /s /f Assets %releaseAssetPath%
+	xcopy /y /d /s /f Config %releaseConfigPath%
 )
