@@ -29,6 +29,7 @@ before_build:
   - GenerateSolutions.bat
    
 after_build:
+  - cd RZE
   - AssetCpy.bat
   - mkdir _Artifacts
   - xcopy /y /d _Build\%CONFIGURATION%\%PLATFORM%\Assets _Artifacts
