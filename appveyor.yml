@@ -30,6 +30,7 @@ before_build:
    
 after_build:
   - AssetCpy.bat
+  - mkdir _Artifacts
   - xcopy /y /d _Build\%CONFIGURATION%\%PLATFORM%\Assets _Artifacts
   - xcopy /y /d _Build\%CONFIGURATION%\%PLATFORM%\Config _Artifacts
   - ps: if ($env:CONFIGURATION -eq "Debug") {xcopy /y /d $env:APPVEYOR_BUILD_FOLDER\RZE\_Build\$env:CONFIGURATION\$env:PLATFORM\*.pdb $env:APPVEYOR_BUILD_FOLDER\RZE\_Artifacts}
