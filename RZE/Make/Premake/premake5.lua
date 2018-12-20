@@ -118,9 +118,7 @@ workspace "RZE"
 		local command = "xcopy /y /d /s "
 		local outputDir = "$(ProjectDir)$(OutDir)"
 		postbuildcommands {
-			command .. AbsoluteRootDir .. "ThirdParty\\DLL\\x64 " .. outputDir,
-			command .. AbsoluteRootDir .. "Assets " .. outputDir .. "Assets\\",
-			command .. AbsoluteRootDir .. "Config " .. outputDir .. "Config\\"
+			command .. AbsoluteRootDir .. "ThirdParty\\DLL\\x64 " .. outputDir
 		}
 		
 		vpaths
