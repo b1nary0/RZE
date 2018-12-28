@@ -104,7 +104,7 @@ workspace "RZE"
 		links
 		{
 			"OpenGL32",
-			"assimp64",
+			"assimp",
 			"glew64",
 			"ProfilerCore64",
 			-- RZE --
@@ -230,7 +230,7 @@ workspace "RZE"
 		{
 			-- ThirdParty
 			"OpenGL32",
-			"assimp64",
+			"assimp",
 			"glew64",
 			"ProfilerCore64",
 			-- RZE
@@ -296,7 +296,7 @@ workspace "RZE"
 		{
 			-- ThirdParty
 			"OpenGL32",
-			"assimp64",
+			"assimp",
 			"glew64",
 			"ProfilerCore64",
 			-- RZE
@@ -362,7 +362,7 @@ workspace "RZE"
 		{
 			-- ThirdParty
 			"OpenGL32",
-			"assimp64",
+			"assimp",
 			"glew64",
 			"ProfilerCore64",
 			-- RZE
