@@ -33,9 +33,7 @@ namespace Diotima
 			Matrix4x4						ModelMatrix;
 
 			bool bIsValid{ false };
-
 			void Invalidate();
-
 		};
 
 		struct LightItemProtocol
