@@ -79,6 +79,8 @@ private:
 
 	void InitializeApplication(Functor<RZE_Application* const> createGameCallback);
 
+	float CalculateAverageFrametime();
+
 private:
 	RZE_Application* mApplication;
 	GameScene* mActiveScene;
@@ -95,8 +97,11 @@ private:
 	
 	// PODs
 private:
-	double mDeltaTime	{ 0.0f };
+	double mDeltaTime;
+	U64 mFrameCount;
 
 	bool bIsInitialized;
 	bool bShouldExit;
+
+	std::vector<float> mFrameSamples;
 };

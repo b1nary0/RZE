@@ -2,4 +2,4 @@
 
 #define DEBUG 1
 
-#define MAX_FPS_SAMPLES 8
+#define MAX_FRAMETIME_SAMPLES 64

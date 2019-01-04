@@ -20,16 +20,17 @@
 
 #include <Utils/DebugUtils/Debug.h>
 
-
 RZE_Engine::RZE_Engine()
+	: mMainWindow(nullptr)
+	, mEngineConfig(nullptr)
+	, mApplication(nullptr)
+	, mRenderer(nullptr)
+	, bShouldExit(false)
+	, bIsInitialized(false)
+	, mDeltaTime(0.0)
+	, mFrameCount(0)
 {
-	mMainWindow = nullptr;
-	mEngineConfig = nullptr;
-	mApplication = nullptr;
-	mRenderer = nullptr;
-
-	bShouldExit = false;
-	bIsInitialized = false;
+	mFrameSamples.resize(MAX_FRAMETIME_SAMPLES);
 }
 
 RZE_Engine::~RZE_Engine()
@@ -57,12 +58,15 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 			prevTime = currTime;
 
 			mDeltaTime = frameTime;
+			mFrameSamples[mFrameCount % MAX_FRAMETIME_SAMPLES] = mDeltaTime;
+
+			const float averageFrametime = CalculateAverageFrametime();
 
 			{	BROFILER_CATEGORY("RZE_Engine::Run", Profiler::Color::Cyan)
 				// #TODO(Josh) Need to work this out but for the moment we need to pre update and then start the imgui new frame for things like editor stealing imgui input etc
 				PreUpdate();
 
-				DebugServices::AddData(StringUtils::FormatString("Frame Time: %f ms", static_cast<float>(mDeltaTime) * 1000.0f), Vector3D(1.0f, 1.0f, 0.0f));
+				DebugServices::AddData(StringUtils::FormatString("Frame Time: %f ms", averageFrametime * 1000.0f), Vector3D(1.0f, 1.0f, 0.0f));
 				{
 					Update();
 
@@ -76,6 +80,8 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 					}
 				}
 			}
+
+			++mFrameCount;
 
 			{
 				BROFILER_CATEGORY("BufferSwap", Profiler::Color::Aquamarine);
@@ -207,6 +213,18 @@ void RZE_Engine::InitializeApplication(Functor<RZE_Application* const> createGam
 	}
 
 	mApplication->Start();
+}
+
+float RZE_Engine::CalculateAverageFrametime()
+{
+	float sum = 0.0f;
+	for (float frameSample : mFrameSamples)
+	{
+		sum += frameSample;
+	}
+
+	sum /= MAX_FRAMETIME_SAMPLES;
+	return sum;
 }
 
 void RZE_Engine::CompileEvents()
