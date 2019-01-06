@@ -88,12 +88,10 @@ namespace Diotima
 		}
 
 		mDepthTexture = new GLRenderTargetDepthTexture();
-		mDepthTexture->SetDimensions(4096, 4096);
+		mDepthTexture->SetDimensions(1024, 1024);
 		mDepthTexture->Initialize();
 
 		mFinalRTT = new GLRenderTargetTextureMSAA();
-		mFinalRTT->SetDimensions(1920, 1080);
-		mFinalRTT->Initialize();
 
 		glEnable(GL_MULTISAMPLE);
 		glEnable(GL_CULL_FACE);
@@ -142,9 +140,11 @@ namespace Diotima
 
 	void Renderer::ResizeCanvas(const Vector2D& newSize)
 	{
-		mFinalRTT->SetDimensions(newSize.X(), newSize.Y());
-		mFinalRTT->Initialize();
 		mCanvasSize = newSize;
+		mFinalRTT->SetDimensions(mCanvasSize.X(), mCanvasSize.Y());
+		mFinalRTT->Initialize();
+
+		LOG_CONSOLE_ARGS("New Canvas Size: %f x %f", mCanvasSize.X(), mCanvasSize.Y());
 	}
 
 	void Renderer::DepthPass()
