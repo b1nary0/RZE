@@ -29,7 +29,6 @@ before_build:
   - GenerateSolutions.bat
    
 after_build:
-  - AssetCpy.bat
   - mkdir _Artifacts
   - xcopy /y /d /s _Build\%CONFIGURATION%\%PLATFORM%\Assets _Artifacts\Assets\
   - xcopy /y /d /s _Build\%CONFIGURATION%\%PLATFORM%\Config _Artifacts\Config\

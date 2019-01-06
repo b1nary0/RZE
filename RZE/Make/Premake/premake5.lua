@@ -118,7 +118,8 @@ workspace "RZE"
 		local command = "xcopy /y /d /s "
 		local outputDir = "$(ProjectDir)$(OutDir)"
 		postbuildcommands {
-			command .. AbsoluteRootDir .. "ThirdParty\\DLL\\x64 " .. outputDir
+			command .. AbsoluteRootDir .. "ThirdParty\\DLL\\x64 " .. outputDir,
+			"start \"Copying Assets...\" /wait /D " .. AbsoluteRootDir .. " AssetCpy.bat"
 		}
 		
 		vpaths
