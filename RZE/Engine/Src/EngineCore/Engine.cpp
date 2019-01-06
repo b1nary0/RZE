@@ -69,11 +69,9 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 				DebugServices::AddData(StringUtils::FormatString("Frame Time: %f ms", averageFrametime * 1000.0f), Vector3D(1.0f, 1.0f, 0.0f));
 				{
 					Update();
-
-					DebugServices::Display(GetWindowSize());
-
 					mRenderer->Update();
 
+					DebugServices::Display(GetWindowSize());
 					{
 						BROFILER_CATEGORY("ImGui::Render", Profiler::Color::Green);
 						ImGui::Render();
