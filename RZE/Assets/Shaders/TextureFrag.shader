@@ -76,7 +76,7 @@ void main()
 	vec4 surfaceColour = texture(DiffuseTexture, UVCoord);
 	vec4 specularSample = texture(SpecularTexture, UVCoord);
 	
-	float ambientCoefficient = 0.175f;
+	float ambientCoefficient = 0.25f;
 
 	vec3 normal;
 	if (UIsNormalMapped == 1)
