@@ -29,10 +29,7 @@ namespace Apollo
 
 class RZE_Engine
 {
-	friend class RZE_Editor;
-
 public:
-
 	RZE_Engine();
 	~RZE_Engine();
 
