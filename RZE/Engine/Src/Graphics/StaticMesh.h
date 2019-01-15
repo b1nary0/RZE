@@ -5,10 +5,7 @@
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector3D.h>
 
-class Material
-{
-
-};
+class Material;
 
 struct MeshVertex
 {
@@ -36,8 +33,11 @@ public:
 	const std::vector<Vector2D>& GetUVCoords() const;
 
 	void OnLoadFinished();
+
 private:
 	Material* mMaterial;
+
+	std::vector<MeshVertex> mVertices;
 
 	std::vector<Vector3D> mPositions;
 	std::vector<Vector3D> mNormals;
