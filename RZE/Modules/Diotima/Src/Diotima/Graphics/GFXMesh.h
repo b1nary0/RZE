@@ -4,7 +4,7 @@
 #include <vector>
 
 #include <Diotima/Driver/OpenGL/OpenGL.h>
-#include <Diotima/Graphics/Texture2D.h>
+#include <Diotima/Graphics/GFXTexture2D.h>
 
 #include <Utils/Interfaces/Resource.h>
 #include <Utils/Math/Vector2D.h>

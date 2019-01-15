@@ -1,7 +1,7 @@
-#include <Diotima/Graphics/Material.h>
+#include <Diotima/Graphics/GFXMaterial.h>
 
 #include <Diotima/Driver/OpenGL/OpenGL.h>
-#include <Diotima/Graphics/Texture2D.h>
+#include <Diotima/Graphics/GFXTexture2D.h>
 
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Platform/File.h>

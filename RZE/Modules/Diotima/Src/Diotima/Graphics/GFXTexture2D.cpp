@@ -1,4 +1,4 @@
-#include <Diotima/Graphics/Texture2D.h>
+#include <Diotima/Graphics/GFXTexture2D.h>
 
 #include <STB/stb_image.cpp>
 

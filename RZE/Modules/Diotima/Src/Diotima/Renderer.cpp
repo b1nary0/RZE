@@ -5,10 +5,10 @@
 #include <Diotima/RenderBatch.h>
 #include <Diotima/Driver/OpenGL/OpenGL.h>
 #include <Diotima/Driver/OpenGL/GLRenderTarget.h>
-#include <Diotima/Graphics/Material.h>
-#include <Diotima/Graphics/Mesh.h>
+#include <Diotima/Graphics/GFXMaterial.h>
+#include <Diotima/Graphics/GFXMesh.h>
 #include <Diotima/Graphics/RenderTarget.h>
-#include <Diotima/Graphics/Texture2D.h>
+#include <Diotima/Graphics/GFXTexture2D.h>
 #include <Diotima/Shaders/ShaderPipeline.h>
 
 #include <Utils/Conversions.h>

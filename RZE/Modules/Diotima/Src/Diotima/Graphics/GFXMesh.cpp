@@ -1,11 +1,11 @@
-#include <Diotima/Graphics/Mesh.h>
+#include <Diotima/Graphics/GFXMesh.h>
 
 #include <Assimp/Importer.hpp>
 #include <Assimp/postprocess.h>
 #include <Assimp/scene.h>
 
 #include <Diotima/Driver/OpenGL/OpenGL.h>
-#include <Diotima/Graphics/Texture2D.h>
+#include <Diotima/Graphics/GFXTexture2D.h>
 
 #include <Utils/DebugUtils/Debug.h>
 

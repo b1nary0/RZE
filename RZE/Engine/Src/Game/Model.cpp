@@ -5,9 +5,9 @@
 #include <Assimp/postprocess.h>
 #include <Assimp/scene.h>
 
-#include <Diotima/Graphics/Material.h>
-#include <Diotima/Graphics/Mesh.h>
-#include <Diotima/Graphics/Texture2D.h>
+#include <Diotima/Graphics/GFXMaterial.h>
+#include <Diotima/Graphics/GFXMesh.h>
+#include <Diotima/Graphics/GFXTexture2D.h>
 
 Model3D::Model3D()
 {

@@ -4,7 +4,7 @@
 
 #include <EngineCore/Resources/ResourceHandler.h>
 
-#include <Diotima/Graphics/Material.h>
+#include <Diotima/Graphics/GFXMaterial.h>
 
 struct MaterialComponent final : public Apollo::Component<MaterialComponent>
 {

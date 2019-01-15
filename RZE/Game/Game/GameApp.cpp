@@ -8,7 +8,7 @@
 #include <Utils/Platform/FilePath.h>
 
 // TEST
-#include <Diotima/Graphics/Texture2D.h>
+#include <Diotima/Graphics/GFXTexture2D.h>
 
 #include <ECS/Components/CameraComponent.h>
 #include <ECS/Components/LightSourceComponent.h>
