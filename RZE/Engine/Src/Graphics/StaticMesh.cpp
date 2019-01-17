@@ -38,28 +38,11 @@ const std::vector<U32>& StaticMesh::GetIndices() const
 	return mIndices;
 }
 
-const std::vector<Vector3D>& StaticMesh::GetPositions() const
+const std::vector<MeshVertex>& StaticMesh::GetVertices()
 {
-	return mPositions;
-}
-
-const std::vector<Vector3D>& StaticMesh::GetNormals() const
-{
-	return mNormals;
-}
-
-const std::vector<Vector2D>& StaticMesh::GetUVCoords() const
-{
-	return mUVCoords;
+	return mVertices;
 }
 
 void StaticMesh::OnLoadFinished()
 {
-	for (size_t vertIdx = 0; vertIdx < mVertices.size(); vertIdx++)
-	{
-		mPositions.push_back(mVertices[vertIdx].Position);
-		mNormals.push_back(mVertices[vertIdx].Normal);
-		mUVCoords.push_back(mVertices[vertIdx].UVData);
-		mTangents.push_back(mVertices[vertIdx].Tangent);
-	}
 }

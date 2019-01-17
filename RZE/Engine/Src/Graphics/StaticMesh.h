@@ -28,9 +28,7 @@ public:
 
 	const Material& GetMaterial() const;
 	const std::vector<U32>& GetIndices() const;
-	const std::vector<Vector3D>& GetPositions() const;
-	const std::vector<Vector3D>& GetNormals() const;
-	const std::vector<Vector2D>& GetUVCoords() const;
+	const std::vector<MeshVertex>& GetVertices();
 
 	void OnLoadFinished();
 
@@ -38,11 +36,5 @@ private:
 	Material* mMaterial;
 
 	std::vector<MeshVertex> mVertices;
-
-	std::vector<Vector3D> mPositions;
-	std::vector<Vector3D> mNormals;
-	std::vector<Vector3D> mTangents;
-	std::vector<Vector2D> mUVCoords;
-
 	std::vector<U32> mIndices;
 };
