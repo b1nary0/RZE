@@ -29,12 +29,12 @@ workspace "RZE"
 	platforms { "x64" }
 	architecture "x64";
 	
-	startproject "Editor"
+	startproject "Game"
 	
 	-- Where the project files will be generated
 	location(RootDir .. "_Project")
 
-	filter "configurations:Debug"	defines { "DEBUG" } symbols "On"
+	filter "configurations:Debug"	defines { "DEBUG" } symbols "Full"
 	filter "configurations:Release"	defines { "NDEBUG" } optimize "On"
 
 	--
@@ -104,7 +104,7 @@ workspace "RZE"
 		links
 		{
 			"OpenGL32",
-			"assimp64",
+			"assimp",
 			"glew64",
 			"ProfilerCore64",
 			-- RZE --
@@ -115,10 +115,11 @@ workspace "RZE"
 			"Externals"
 		}
 
-		local command = "xcopy /y /d "
+		local command = "xcopy /y /d /s "
 		local outputDir = "$(ProjectDir)$(OutDir)"
 		postbuildcommands {
-			command .. AbsoluteRootDir .. "ThirdParty\\DLL\\x64 " .. outputDir
+			command .. AbsoluteRootDir .. "ThirdParty\\DLL\\x64 " .. outputDir,
+			"start \"Copying Assets...\" /wait /D " .. AbsoluteRootDir .. " AssetCpy.bat"
 		}
 		
 		vpaths
@@ -230,7 +231,7 @@ workspace "RZE"
 		{
 			-- ThirdParty
 			"OpenGL32",
-			"assimp64",
+			"assimp",
 			"glew64",
 			"ProfilerCore64",
 			-- RZE
@@ -296,7 +297,7 @@ workspace "RZE"
 		{
 			-- ThirdParty
 			"OpenGL32",
-			"assimp64",
+			"assimp",
 			"glew64",
 			"ProfilerCore64",
 			-- RZE
@@ -362,7 +363,7 @@ workspace "RZE"
 		{
 			-- ThirdParty
 			"OpenGL32",
-			"assimp64",
+			"assimp",
 			"glew64",
 			"ProfilerCore64",
 			-- RZE

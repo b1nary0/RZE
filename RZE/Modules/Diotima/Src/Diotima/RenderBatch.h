@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include <Diotima/Driver/OpenGL.h>
+#include <Diotima/Driver/OpenGL/OpenGL.h>
 namespace Diotima
 {
 	class GFXMesh;

@@ -8,13 +8,15 @@
 #include <Utils/Platform/FilePath.h>
 
 // TEST
-#include <Diotima/Graphics/Texture2D.h>
+#include <Diotima/Graphics/GFXTexture2D.h>
 
 #include <ECS/Components/CameraComponent.h>
 #include <ECS/Components/LightSourceComponent.h>
 #include <ECS/Components/MeshComponent.h>
 #include <ECS/Components/TransformComponent.h>
 #include <ECS/Components/MaterialComponent.h>
+
+#include <ECS/Systems/FreeCameraSystem.h>
 
 #include <DebugUtils/DebugServices.h>
 
@@ -35,10 +37,10 @@ void GameApp::Initialize()
 {
 	RZE_Application::Initialize();
 
-	RZE().GetActiveScene().Load(FilePath("Engine/Assets/Scenes/TestGame.scene"));
+	RZE().GetActiveScene().Load(FilePath("Assets/Scenes/TestGame.scene"));
 
-	RZE().GetActiveScene().GetEntityHandler().AddSystem<InteractiveSpawningSystem>();
-	RZE().GetActiveScene().GetEntityHandler().AddSystem<FirstPersonCameraSystem>();
+	//RZE().GetActiveScene().GetEntityHandler().AddSystem<InteractiveSpawningSystem>();
+	RZE().GetActiveScene().GetEntityHandler().AddSystem<FreeCameraSystem>();
 }
 
 void GameApp::Start()

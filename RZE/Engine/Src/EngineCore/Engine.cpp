@@ -20,16 +20,17 @@
 
 #include <Utils/DebugUtils/Debug.h>
 
-
 RZE_Engine::RZE_Engine()
+	: mMainWindow(nullptr)
+	, mEngineConfig(nullptr)
+	, mApplication(nullptr)
+	, mRenderer(nullptr)
+	, bShouldExit(false)
+	, bIsInitialized(false)
+	, mDeltaTime(0.0)
+	, mFrameCount(0)
 {
-	mMainWindow = nullptr;
-	mEngineConfig = nullptr;
-	mApplication = nullptr;
-	mRenderer = nullptr;
-
-	bShouldExit = false;
-	bIsInitialized = false;
+	mFrameSamples.resize(MAX_FRAMETIME_SAMPLES);
 }
 
 RZE_Engine::~RZE_Engine()
@@ -57,25 +58,28 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 			prevTime = currTime;
 
 			mDeltaTime = frameTime;
+			mFrameSamples[mFrameCount % MAX_FRAMETIME_SAMPLES] = mDeltaTime;
+
+			const float averageFrametime = CalculateAverageFrametime();
 
 			{	BROFILER_CATEGORY("RZE_Engine::Run", Profiler::Color::Cyan)
 				// #TODO(Josh) Need to work this out but for the moment we need to pre update and then start the imgui new frame for things like editor stealing imgui input etc
 				PreUpdate();
 
-				DebugServices::AddData(StringUtils::FormatString("Frame Time: %f ms", static_cast<float>(mDeltaTime) * 1000.0f), Vector3D(1.0f, 1.0f, 0.0f));
+				DebugServices::AddData(StringUtils::FormatString("Frame Time: %f ms", averageFrametime * 1000.0f), Vector3D(1.0f, 1.0f, 0.0f));
 				{
 					Update();
-
-					DebugServices::Display(GetWindowSize());
-
 					mRenderer->Update();
 
+					DebugServices::Display(GetWindowSize());
 					{
 						BROFILER_CATEGORY("ImGui::Render", Profiler::Color::Green);
 						ImGui::Render();
 					}
 				}
 			}
+
+			++mFrameCount;
 
 			{
 				BROFILER_CATEGORY("BufferSwap", Profiler::Color::Aquamarine);
@@ -200,10 +204,25 @@ void RZE_Engine::InitializeApplication(Functor<RZE_Application* const> createGam
 	const Vector2D& windowDims = mEngineConfig->GetWindowSettings().GetDimensions();
 	mApplication->GetRenderTarget().SetDimensions(static_cast<U32>(windowDims.X()), static_cast<U32>(windowDims.Y()));
 
-	// #TODO(Josh) Investigate a better transfer point than this re: render target setting
-	mRenderer->SetRenderTarget(&mApplication->GetRenderTarget());
+	if (mApplication->IsEditor())
+	{
+		// #TODO(Josh) Investigate a better transfer point than this re: render target setting
+		mRenderer->SetRenderTarget(&mApplication->GetRenderTarget());
+	}
 
 	mApplication->Start();
+}
+
+float RZE_Engine::CalculateAverageFrametime()
+{
+	float sum = 0.0f;
+	for (float frameSample : mFrameSamples)
+	{
+		sum += frameSample;
+	}
+
+	sum /= MAX_FRAMETIME_SAMPLES;
+	return sum;
 }
 
 void RZE_Engine::CompileEvents()
@@ -224,11 +243,6 @@ void RZE_Engine::RegisterWindowEvents()
 		else if (event.mWindowEvent.mEventInfo.mEventSubType == EWindowEventType::Window_Resize)
 		{
 			Vector2D newSize(event.mWindowEvent.mSizeX, event.mWindowEvent.mSizeY);
-			if (!mApplication->IsEditor())
-			{
-				mApplication->GetRenderTarget().SetDimensions(static_cast<U32>(newSize.X()), static_cast<U32>(newSize.Y()));
-				mApplication->GetRenderTarget().Initialize();
-			}
 			GetRenderer().ResizeCanvas(newSize);
 			DebugServices::HandleScreenResize(newSize);
 		}
@@ -250,7 +264,7 @@ void RZE_Engine::LoadEngineConfig()
 {
 	// #TODO(Josh) This should probably be a resource? 
 	mEngineConfig = new EngineConfig();
-	mEngineConfig->Load(FilePath("Engine/RZE/Config/Engine.ini"));
+	mEngineConfig->Load(FilePath("Config/Engine.ini"));
 
 	if (mEngineConfig->Empty())
 	{

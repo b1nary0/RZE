@@ -1,4 +1,4 @@
-#include <Diotima/Driver/OpenGL.h>
+#include <Diotima/Driver/OpenGL/OpenGL.h>
 
 #include <Diotima/Shaders/Shader.h>
 
@@ -80,7 +80,7 @@ namespace Diotima
 	{
 		if (!bIsCompiled)
 		{
-			OpenGLRHI& openGL = OpenGLRHI::Get();
+			const OpenGLRHI& openGL = OpenGLRHI::Get();
 
 			openGL.SetShaderSource(GetShaderID(), 1, GetSourceCode().c_str(), nullptr);
 			openGL.CompileShader(GetShaderID());

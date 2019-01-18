@@ -5,9 +5,9 @@
 #include <Assimp/postprocess.h>
 #include <Assimp/scene.h>
 
-#include <Diotima/Graphics/Material.h>
-#include <Diotima/Graphics/Mesh.h>
-#include <Diotima/Graphics/Texture2D.h>
+#include <Diotima/Graphics/GFXMaterial.h>
+#include <Diotima/Graphics/GFXMesh.h>
+#include <Diotima/Graphics/GFXTexture2D.h>
 
 Model3D::Model3D()
 {
@@ -25,7 +25,7 @@ bool Model3D::Load(const FilePath& filePath)
 	Assimp::Importer ModelImporter;
 	const aiScene* AssimpScene = ModelImporter.ReadFile(mFilePath.GetAbsolutePath(),
 		aiProcess_Triangulate
-		| aiProcess_GenNormals);
+		| aiProcess_GenNormals /*| aiProcess_FlipUVs*/ | aiProcess_CalcTangentSpace);
 
 	bool bAssimpNotLoaded =
 		!AssimpScene
@@ -82,6 +82,8 @@ void Model3D::ProcessNode(const aiNode& node, const aiScene& scene)
 void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFXMesh& outMesh)
 {
 	bool bHasTextureCoords = mesh.mTextureCoords[0] != nullptr;
+	bool bHasTangents = mesh.mTangents != nullptr;
+
 	for (U32 vertexIdx = 0; vertexIdx < mesh.mNumVertices; vertexIdx++)
 	{
 		const aiVector3D& assimpVert = mesh.mVertices[vertexIdx];
@@ -101,6 +103,13 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 			vertex.UVData = vertUV;
 		}
 
+		if (bHasTangents)
+		{
+			const aiVector3D& assimpTangent = mesh.mTangents[vertexIdx];
+			Vector3D vertTangent(assimpTangent.x, assimpTangent.y, assimpTangent.z);
+			vertex.Tangent = vertTangent;
+		}
+
 		outMesh.AddVertex(vertex);
 	}
 
@@ -118,6 +127,19 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 	if (mesh.mMaterialIndex >= 0)
 	{
 		aiMaterial* mat = scene.mMaterials[mesh.mMaterialIndex];
+
+		float shininess = 0.0f;
+		if (mat->Get(AI_MATKEY_SHININESS, shininess) == AI_SUCCESS)
+		{
+			pMaterial->Shininess = shininess;
+		}
+
+		float opacity = 0.0f;
+		if (mat->Get(AI_MATKEY_OPACITY, opacity) == AI_SUCCESS)
+		{
+			pMaterial->Opacity = opacity;
+		}
+
 		for (unsigned int i = 0; i < mat->GetTextureCount(aiTextureType_DIFFUSE); ++i)
 		{
 			aiString str;
@@ -158,19 +180,40 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 			}
 		}
 
+		for (size_t i = 0; i < mat->GetTextureCount(aiTextureType_NORMALS); ++i)
+		{
+			aiString str;
+			mat->GetTexture(aiTextureType_NORMALS, i, &str);
+
+			FilePath texturePath = GetTextureFilePath(str.C_Str());
+			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(texturePath, Diotima::ETextureType::Normal);
+			if (textureHandle.IsValid())
+			{
+				Diotima::GFXTexture2D* texture = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXTexture2D>(textureHandle);
+				pMaterial->AddTexture(texture);
+
+				mTextureHandles.emplace_back(textureHandle);
+			}
+			else
+			{
+				LOG_CONSOLE_ARGS("Could not load texture at [%s]", texturePath.GetRelativePath().c_str());
+			}
+		}
+
 	}
+
 	if (!pMaterial->IsTextured())
 	{
 		LOG_CONSOLE_ARGS("Could not find texture for [%s] loading default material", mFilePath.GetRelativePath().c_str());
 
-		ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(Diotima::kDefaultDiffuseTexturePath, Diotima::ETextureType::Diffuse);
+		ResourceHandle diffuseHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(Diotima::kDefaultDiffuseTexturePath, Diotima::ETextureType::Diffuse);
 		// #TODO(Josh::Potential bug here -- what happens if we then reconcile no texture at runtime? We would have to remove this from this list -- linear searches are bad
-		mTextureHandles.push_back(textureHandle);
+		mTextureHandles.push_back(diffuseHandle);
 
-		pMaterial->AddTexture(RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXTexture2D>(textureHandle));
+		pMaterial->AddTexture(RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXTexture2D>(diffuseHandle));
 	}
-	outMesh.SetMaterial(pMaterial);
 
+	outMesh.SetMaterial(pMaterial);
 	outMesh.OnLoadFinished();
 }
 

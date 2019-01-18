@@ -8,17 +8,13 @@ FilePath::FilePath(const std::string& path)
 {
 	char buffer[1024];
 	GetModuleFileNameA(NULL, buffer, 1024);
-	std::string execPath(buffer, 1024);
+	std::string execPath(buffer);
 
 	std::replace(execPath.begin(), execPath.end(), '\\', '/');
-	size_t pos = execPath.find_last_of("\\/");
-	std::string newpath = execPath.substr(0, pos);
-
-	pos = newpath.find_last_of("RZE") + 2;
-	newpath = execPath.substr(0, pos);
+	size_t pos = execPath.find_last_of("\/");
+	std::string newpath = execPath.substr(0, pos + 1);
 	
-	// #Josh(Temp fix until I get off my ass and make this better)
-	mAbsolutePath = std::string("E:/Dev/RZE/RZE/") + path;
+	mAbsolutePath = newpath + path;
 	mRelativePath = path;
 }
 

@@ -3,9 +3,9 @@
 
 #include <Apollo/ECS/EntityComponentFilter.h>
 
-#include <Diotima/RenderBatch.h>
-#include <Diotima/Graphics/Material.h>
-#include <Diotima/Graphics/Texture2D.h>
+#include <Diotima/Graphics/RenderTarget.h>
+#include <Diotima/Graphics/GFXMaterial.h>
+#include <Diotima/Graphics/GFXTexture2D.h>
 #include <Diotima/Shaders/ShaderPipeline.h>
 
 #include <ECS/Components/CameraComponent.h>
@@ -26,7 +26,8 @@ static Vector4D sDefaultFragColor(0.25f, 0.25f, 0.25f, 1.0f);
 
 // Render helpers
 //-----------------------------------------
-Diotima::GFXShaderPipeline* textureShader;
+Diotima::GFXShaderPipeline* gForwardShader;
+Diotima::GFXShaderPipeline* gDepthPassShader;
 
 // #TODO(Josh::See below)
 //////////////////////////////////////////////////////////////////////////
@@ -34,8 +35,12 @@ Diotima::GFXShaderPipeline* textureShader;
 // is the entire shader pipeline attached to the material... Maybe can store these as a renderer-distributed thing.
 ResourceHandle texVertShaderHandle;
 ResourceHandle texFragShaderHandle;
+
+ResourceHandle depthPassVertShaderHandle;
+ResourceHandle depthPassFragShaderHandle;
 //////////////////////////////////////////////////////////////////////////
-void CreateTextureShader();
+void CreateForwardShader();
+void CreateDepthPassShader();
 //-----------------------------------------
 
 RenderSystem::RenderSystem(Apollo::EntityHandler* const entityHandler)
@@ -51,9 +56,11 @@ void RenderSystem::Initialize()
 
 	RegisterForComponentNotifications();
 
-	CreateTextureShader();
+	CreateForwardShader();
+	CreateDepthPassShader();
 
-	RZE_Application::RZE().GetRenderer().mShaderPipeline = textureShader;
+	RZE_Application::RZE().GetRenderer().mForwardShader = gForwardShader;
+	RZE_Application::RZE().GetRenderer().mDepthPassShader = gDepthPassShader;
 }
 
 void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
@@ -72,27 +79,30 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 	camera.ProjectionMat = camComp->ProjectionMat;
 	camera.ViewMat = camComp->ViewMat;
 	renderer.SetCamera(camera);
-
-	Perseus::Job::Task work([this, entities, transfComp, &renderer, &handler]()
+	
+	//Perseus::Job::Task work([this, entities, transfComp, &renderer, &handler]()
 	{
 		for (auto& entity : entities)
 		{
 			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
 
 			Diotima::Renderer::RenderItemProtocol& item = renderer.GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
-			item.ModelMat = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
+			item.ModelMatrix = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
 		}
-	});
-	Perseus::JobScheduler::Get().PushJob(work);
+	}/*)*/;
+	//Perseus::JobScheduler::Get().PushJob(work);
 
 	Functor<void, Apollo::EntityID> LightSourceFunc([this, &handler, &renderer](Apollo::EntityID entity)
 	{
 		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
-
 		Diotima::Renderer::LightItemProtocol& item = renderer.GetLightProtocolByIdx(mLightItemEntityMap[entity]);
+
+		Matrix4x4 orthoProj = Matrix4x4::CreateOrthoMatrix(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 100.0f);
+		Matrix4x4 lightView = Matrix4x4::CreateViewMatrix(transfComp->Position, Vector3D(), Vector3D(0.0f, 1.0f, 0.0f));
+
+		item.LightSpaceMatrix = orthoProj * lightView;
 		item.Position = transfComp->Position;
 	});
-
 	handler.ForEach<LightSourceComponent, TransformComponent>(LightSourceFunc);
 }
 
@@ -176,6 +186,7 @@ void RenderSystem::RegisterForComponentNotifications()
 
 void RenderSystem::GenerateCameraMatrices(CameraComponent& cameraComponent, const TransformComponent& transformComponent)
 {
+	cameraComponent.AspectRatio = static_cast<float>(RZE_Application::RZE().GetApplication().GetRenderTarget().GetWidth()) / static_cast<float>(RZE_Application::RZE().GetApplication().GetRenderTarget().GetHeight());
 	cameraComponent.ProjectionMat = Matrix4x4::CreatePerspectiveMatrix(cameraComponent.FOV, cameraComponent.AspectRatio, cameraComponent.NearCull, cameraComponent.FarCull);
 	cameraComponent.ViewMat = Matrix4x4::CreateViewMatrix(transformComponent.Position, transformComponent.Position + cameraComponent.Forward, cameraComponent.UpDir);
 }
@@ -189,10 +200,10 @@ void RenderSystem::GenerateCameraMatrices(CameraComponent& cameraComponent, cons
 /////////////
 /////////// These are just dev helpers until the time of the great render comes along
 //////
-void CreateTextureShader()
+void CreateForwardShader()
 {
-	const FilePath vertShaderFilePath("Engine/Assets/Shaders/TextureVert.shader");
-	const FilePath fragShaderFilePath("Engine/Assets/Shaders/TextureFrag.shader");
+	const FilePath vertShaderFilePath("Assets/Shaders/TextureVert.shader");
+	const FilePath fragShaderFilePath("Assets/Shaders/TextureFrag.shader");
 
 	texVertShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "TextureVertShader");
 	texFragShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "TextureFragShader");
@@ -205,9 +216,32 @@ void CreateTextureShader()
 	fragShader->Create();
 	fragShader->Compile();
 
-	textureShader = new Diotima::GFXShaderPipeline("TextureShader");
-	textureShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Vertex, vertShader);
-	textureShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Fragment, fragShader);
+	gForwardShader = new Diotima::GFXShaderPipeline("TextureShader");
+	gForwardShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Vertex, vertShader);
+	gForwardShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Fragment, fragShader);
 
-	textureShader->GenerateShaderProgram();
+	gForwardShader->GenerateShaderProgram();
+}
+
+void CreateDepthPassShader()
+{
+	const FilePath vertShaderFilePath("Assets/Shaders/DepthVert.shader");
+	const FilePath fragShaderFilePath("Assets/Shaders/EmptyFrag.shader");
+
+	depthPassVertShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "DepthPassVertShader");
+	depthPassFragShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "DepthPassFragShader");
+
+	Diotima::GFXShader* vertShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(depthPassVertShaderHandle);
+	vertShader->Create();
+	vertShader->Compile();
+
+	Diotima::GFXShader* fragShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(depthPassFragShaderHandle);
+	fragShader->Create();
+	fragShader->Compile();
+
+	gDepthPassShader = new Diotima::GFXShaderPipeline("DepthPassShaderPipeline");
+	gDepthPassShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Vertex, vertShader);
+	gDepthPassShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Fragment, fragShader);
+
+	gDepthPassShader->GenerateShaderProgram();
 }

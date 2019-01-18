@@ -3,7 +3,8 @@
 
 #include <GLM/gtx/quaternion.hpp>
 #include <GLM/gtx/matrix_decompose.hpp>
-#include <GLM/gtx/matrix_decompose.hpp>
+
+#include <Utils/Math/Math.h>
 
 Matrix4x4::Matrix4x4()
 {
@@ -31,7 +32,12 @@ Matrix4x4 Matrix4x4::CreateViewMatrix(const Vector3D& eyePos, const Vector3D& ce
 
 Matrix4x4 Matrix4x4::CreatePerspectiveMatrix(const float fov, const float aspectRatio, const float nearCull, const float farCull)
 {
-	return Matrix4x4(glm::perspective(fov, aspectRatio, nearCull, farCull));
+	return Matrix4x4(glm::perspective(fov * MathUtils::ToRadians, aspectRatio, nearCull, farCull));
+}
+
+Matrix4x4 Matrix4x4::CreateOrthoMatrix(const float left, const float right, const float bottom, const float top, const float zNear, const float zFar)
+{
+	return Matrix4x4(glm::ortho(left, right, bottom, top, zNear, zFar));
 }
 
 void Matrix4x4::Translate(const Vector3D& translation)

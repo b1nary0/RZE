@@ -88,7 +88,7 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 		mOSWindowHandleData.windowHandle = CreateWindowEx(0,
 			wStrTitle.c_str(),
 			wStrTitle.c_str(),
-			WS_OVERLAPPEDWINDOW ^ (WS_THICKFRAME), // @note WS_POPUP = borderless. WS_OVERLAPPEDWINDOW default
+			WS_SYSMENU | WS_CAPTION, // @note WS_POPUP = borderless. WS_OVERLAPPEDWINDOW default
 			CW_USEDEFAULT,
 			CW_USEDEFAULT,
 			static_cast<int>(mDimensions.X()),
@@ -157,7 +157,7 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 		PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = reinterpret_cast<PFNWGLCREATECONTEXTATTRIBSARBPROC>(wglGetProcAddress("wglCreateContextAttribsARB"));
 		if (wglCreateContextAttribsARB)
 		{
-			int attriblist[] = { WGL_CONTEXT_MAJOR_VERSION_ARB, 4, WGL_CONTEXT_MINOR_VERSION_ARB, 4, WGL_CONTEXT_FLAGS_ARB, 0, 0, 0 };
+			int attriblist[] = { WGL_CONTEXT_MAJOR_VERSION_ARB, 4, WGL_CONTEXT_MINOR_VERSION_ARB, 4, WGL_CONTEXT_FLAGS_ARB, 0, 0, WGL_SAMPLES_ARB, 16, 0 };
 			mOSWindowHandleData.renderContext = wglCreateContextAttribsARB(mOSWindowHandleData.deviceContext, 0, attriblist);
 			if (!mOSWindowHandleData.renderContext)
 			{
@@ -315,7 +315,7 @@ void Win32Window::Show()
 {
 	if (mOSWindowHandleData.windowHandle)
 	{
-		ShowWindow(mOSWindowHandleData.windowHandle, SW_MAXIMIZE); // @note SW_SHOWMAXIMIZED for borderless fullscreen. SW_SHOWDEFAULT default
+		ShowWindow(mOSWindowHandleData.windowHandle, SW_SHOWNORMAL); // @note SW_SHOWMAXIMIZED for borderless fullscreen. SW_SHOWDEFAULT default
 	}
 }
 
@@ -345,10 +345,16 @@ void Win32Window::ProcessWinProcMessage(const WindowMessageAdaptor::WindowMessag
 		int width = windowRect.right - windowRect.top;
 		int height = windowRect.bottom - windowRect.top;
 
-		windowEvent.mSizeX = width;
-		windowEvent.mSizeY = height;
-
-		eventHandler.PostWindowEvent(windowEvent);
+		if (width > 0 && height > 0)
+		{
+			windowEvent.mSizeX = width;
+			windowEvent.mSizeY = height;
+			eventHandler.PostWindowEvent(windowEvent);
+		}
+		else
+		{
+			LOG_CONSOLE("Setting 0 dimension window size. Could be minimized. Is this expected?");
+		}
 	}
 }
 

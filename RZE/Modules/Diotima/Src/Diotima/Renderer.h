@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include <Diotima/Driver/OpenGL.h>
+#include <Diotima/Driver/OpenGL/OpenGL.h>
 
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector2D.h>
@@ -19,6 +19,8 @@ namespace Diotima
 
 	class RenderBatch;
 	class RenderTarget;
+
+	class GLRenderTargetDepthTexture;
 	
 	class Renderer
 	{
@@ -28,18 +30,17 @@ namespace Diotima
 			RenderItemProtocol();
 
 			std::vector<GFXMesh*>			MeshData;
-			Matrix4x4						ModelMat;
+			Matrix4x4						ModelMatrix;
 
 			bool bIsValid{ false };
-
 			void Invalidate();
-
 		};
 
 		struct LightItemProtocol
 		{
 			Vector3D	Position;
 			Vector3D	Color;
+			Matrix4x4	LightSpaceMatrix;
 
 			float		Strength;
 		};
@@ -60,7 +61,8 @@ namespace Diotima
 	public:
 		Renderer();
 
-		GFXShaderPipeline* mShaderPipeline;
+		GFXShaderPipeline* mForwardShader;
+		GFXShaderPipeline* mDepthPassShader;
 
 		// ISubSystem interface
 	public:
@@ -82,9 +84,27 @@ namespace Diotima
 		void EnableVsync(bool bEnable);
 		void ResizeCanvas(const Vector2D& newSize);
 		
+		// The below will generally be replaced by a proper implementation
 	private:
-		void RenderSingleItem(RenderItemProtocol& itemProtocol);
+		void DepthPass();
+		void ForwardPass();
+
+		void RenderScene_Forward();
+		void RenderScene_Depth();
+
+		void RenderSingleItem_Forward(RenderItemProtocol& renderItem);
+		void RenderSingleItem_Depth(RenderItemProtocol& renderItem);
+
+		void SetCurrentRenderTarget(RenderTarget* renderTarget);
+		RenderTarget* GetCurrentRenderTarget() { return mCurrentRTT; }
+
+	private:
+		void DrawMesh(GFXMesh* mesh);
+
 		void BlitToWindow();
+		void BlitToTarget(const RenderTarget& target);
+
+		void Submit();
 
 	private:
 		Vector2D mCanvasSize;
@@ -94,7 +114,11 @@ namespace Diotima
 		std::vector<LightItemProtocol> mLightingList;
 
 		std::queue<Int32> mFreeRenderListIndices;
+		
+		RenderTarget* mCustomRTT { nullptr };
+		RenderTarget* mCurrentRTT { nullptr };
+		RenderTarget* mFinalRTT { nullptr };
 
-		RenderTarget* mRenderTarget { nullptr };
+		GLRenderTargetDepthTexture* mDepthTexture { nullptr };
 	};
 }

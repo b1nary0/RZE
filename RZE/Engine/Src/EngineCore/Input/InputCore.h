@@ -59,7 +59,7 @@ public:
 
 	Int32 GetKeyCode() const { return mKeyCode; }
 
-	inline bool IsValid() const { return mKeyCode >= 0 && mDisplayName != ' '; }
+	inline bool IsValid() const { return mKeyCode >= 0; }
 
 private:
 	char mDisplayName;

@@ -4,6 +4,10 @@
 
 struct TransformComponent;
 
+
+//
+// Don't mind the name, this has just become a testing playground for shit lmao
+//
 class InteractiveSpawningSystem : public Apollo::EntitySystem
 {
 public:
@@ -16,5 +20,5 @@ public:
 	virtual void ShutDown() override;
 
 private:
-	TransformComponent* mWalkerTransform { nullptr };
+	TransformComponent* mEntityTransform { nullptr };
 };

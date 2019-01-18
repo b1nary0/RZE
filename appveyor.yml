@@ -1,25 +1,42 @@
 version: 0.0.{build}
 os: Visual Studio 2017
+
 build:
   project: RZE/_Project/RZE.sln
   parallel: true
   verbosity: minimal
+ 
+shallow_clone: false
+ 
 branches:
   only:
     - master
     - Sandbox
     - RenderRefactor
-install:
-  - cd RZE
-  - GenerateSolutions.bat
-  - cd _Project
+    
+configuration:
+ - Debug
+ - Release
+ 
+platform:
+ - x64
+  
+only_commits:
+  message: /triggerbuild/
   
 before_build:
-  - cd ..
+  - cd RZE
   - GenerateSolutions.bat
-  - cd _Project
+   
+after_build:
+  - mkdir _Artifacts
+  - xcopy /y /d /s _Build\%CONFIGURATION%\%PLATFORM%\Assets _Artifacts\Assets\
+  - xcopy /y /d /s _Build\%CONFIGURATION%\%PLATFORM%\Config _Artifacts\Config\
+  - ps: if ($env:CONFIGURATION -eq "Debug") {xcopy /y /d $env:APPVEYOR_BUILD_FOLDER\RZE\_Build\$env:CONFIGURATION\$env:PLATFORM\*.pdb $env:APPVEYOR_BUILD_FOLDER\RZE\_Artifacts}
+  - ps: if ($env:CONFIGURATION -eq "Debug") {xcopy /y /d $env:APPVEYOR_BUILD_FOLDER\RZE\_Build\$env:CONFIGURATION\$env:PLATFORM\*.lib $env:APPVEYOR_BUILD_FOLDER\RZE\_Artifacts}
+  - xcopy /y /d %APPVEYOR_BUILD_FOLDER%\RZE\_Build\%CONFIGURATION%\%PLATFORM%\*.dll %APPVEYOR_BUILD_FOLDER%\RZE\_Artifacts
+  - xcopy /y /d %APPVEYOR_BUILD_FOLDER%\RZE\_Build\%CONFIGURATION%\%PLATFORM%\*.exe %APPVEYOR_BUILD_FOLDER%\RZE\_Artifacts
+  - 7z a %APPVEYOR_BUILD_FOLDER%\RZE_Engine_%APPVEYOR_REPO_BRANCH%_%APPVEYOR_BUILD_VERSION%_%CONFIGURATION%.zip _Artifacts
   
 artifacts:
-  - path: RZE/_Build
-    name: RZE_Engine
-    type: zip
+  - path: RZE_Engine_$(appveyor_repo_branch)_$(appveyor_build_version)_$(configuration).zip

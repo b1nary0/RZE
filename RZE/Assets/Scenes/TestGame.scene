@@ -1,0 +1,110 @@
+{
+  "entities":
+  {
+    "Camera":
+    {
+        "components":
+        {
+            "TransformComponent":
+            {
+                "Position": [-5, 5, 5],
+                "Scale": [1, 1, 1],
+                "Rotation": [0, 0, 0]
+            },
+            "CameraComponent":
+            {
+                "FOV": 65,
+                "NearCull": 0.1,
+                "FarCull": 1000,
+                "Forward": [0, 0, -1.0],
+                "UpDir":[0.0, 1.0, 0.0]
+            }
+        }
+    },
+    "Directional Light":
+    {
+      "components":
+      {
+        "TransformComponent":
+        {
+          "Position":[-32, 20, 24],
+          "Scale": [1, 1, 1],
+          "Rotation": [0, 0, 0]
+        },
+        "LightSourceComponent":
+        {
+          "Color": [1.0, 0.85, 0.85],
+          "Strength": 1
+        },
+		"MeshComponent":
+		{
+		  "ResourcePath": "Assets/3D/Cube.obj"
+		}
+      }
+    },
+	"Floor":
+	{
+	  "components":
+	  {
+		"TransformComponent":
+		{
+		  "Position": [-10, 0, 0],
+		  "Scale":[16, 16, 1],
+		  "Rotation":[-90, 0, 0]
+		},
+		"MeshComponent":
+		{
+		  "ResourcePath": "Assets/3D/Ground/Quad.obj"
+		}
+	  }
+	},
+	"WallNorth":
+	{
+	  "components":
+	  {
+		"TransformComponent":
+		{
+		  "Position": [-10, 8, -8],
+		  "Scale":[16, 16, 1],
+		  "Rotation":[0, 0, 0]
+		},
+		"MeshComponent":
+		{
+		  "ResourcePath": "Assets/3D/Test/WallN/Quad.obj"
+		}
+	  }
+	},
+	"WallEast":
+	{
+	  "components":
+	  {
+		"TransformComponent":
+		{
+		  "Position": [-2, 8, 0],
+		  "Scale":[16, 16, 1],
+		  "Rotation":[0, -90, 0]
+		},
+		"MeshComponent":
+		{
+		  "ResourcePath": "Assets/3D/Test/WallE/Quad.obj"
+		}
+	  }
+	},
+	"MechWalker":
+	{
+	  "components":
+	  {
+		"TransformComponent":
+		{
+		  "Position": [-10, 0, 0],
+		  "Scale":[1, 1, 1],
+		  "Rotation":[0, -45, 0]
+		},
+		"MeshComponent":
+		{
+		  "ResourcePath": "Assets/3D/NeckMechWalker/NeckMechWalker.obj"
+		}
+	  }
+	}
+}
+}

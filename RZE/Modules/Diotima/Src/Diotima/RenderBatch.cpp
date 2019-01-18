@@ -1,6 +1,6 @@
 #include <Diotima/RenderBatch.h>
 
-#include <Diotima/Graphics/Mesh.h>
+#include <Diotima/Graphics/GFXMesh.h>
 
 #include <Utils/PrimitiveDefs.h>
 #include <Utils/Math/Vector2D.h>

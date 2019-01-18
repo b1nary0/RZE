@@ -1,6 +1,6 @@
 #include <Diotima/Shaders/ShaderPipeline.h>
 
-#include <Diotima/Driver/OpenGL.h>
+#include <Diotima/Driver/OpenGL/OpenGL.h>
 
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Matrix4x4.h>

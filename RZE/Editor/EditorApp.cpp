@@ -2,7 +2,7 @@
 
 #include <Brofiler/Brofiler.h>
 
-#include <Diotima/Graphics/Texture2D.h>
+#include <Diotima/Graphics/GFXTexture2D.h>
 
 #include <ECS/Components/CameraComponent.h>
 #include <ECS/Components/LightSourceComponent.h>
@@ -17,7 +17,7 @@ void RZE_Editor::Start()
 {
 	RZE_Application::Start();
 	
-	RZE().GetActiveScene().Load(FilePath("Engine/Assets/Scenes/Test.scene"));
+	RZE().GetActiveScene().Load(FilePath("Assets/Scenes/TestGame.scene"));
 
 	InternalGetWindow().SetTitle("RZE Studio");
 
