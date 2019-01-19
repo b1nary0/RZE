@@ -15,7 +15,7 @@
 #include <ECS/Components/MaterialComponent.h>
 #include <ECS/Components/NameComponent.h>
 
-#include <Game/Model.h>
+#include <Game/Model3D.h>
 
 #include <Utils/Platform/FilePath.h>
 #include <Utils/Platform/Timers/HiResTimer.h>

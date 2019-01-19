@@ -1,40 +1,20 @@
 #pragma once
 
+#include <Graphics/MeshGeometry.h>
+
 #include <Utils/PrimitiveDefs.h>
 
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector3D.h>
 
-class Material;
-
-struct MeshVertex
-{
-	Vector3D Position;
-	Vector3D Normal;
-	Vector3D Tangent;
-	Vector2D UVData;
-};
-
 class StaticMesh
 {
 public:
-	StaticMesh();
+	StaticMesh(const std::vector<MeshGeometry>& subMeshes);
 	~StaticMesh();
 
-	void AddVertex(const MeshVertex& vertex);
-	void AddIndex(U32 index);
-
-	void SetMaterial(Material* material);
-
-	const Material& GetMaterial() const;
-	const std::vector<U32>& GetIndices() const;
-	const std::vector<MeshVertex>& GetVertices();
-
-	void OnLoadFinished();
+	const std::vector<MeshGeometry>& GetSubMeshes();
 
 private:
-	Material* mMaterial;
-
-	std::vector<MeshVertex> mVertices;
-	std::vector<U32> mIndices;
+	std::vector<MeshGeometry> mSubMeshes;
 };

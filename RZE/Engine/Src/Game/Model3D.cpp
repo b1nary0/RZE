@@ -1,5 +1,5 @@
 #include <StdAfx.h>
-#include <Game/Model.h>
+#include <Game/Model3D.h>
 
 #include <Assimp/Importer.hpp>
 #include <Assimp/postprocess.h>
