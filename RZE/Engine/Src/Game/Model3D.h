@@ -1,7 +1,9 @@
 #pragma once
 
-#include <string>
 #include <memory.h>
+#include <string>
+
+#include <Graphics/StaticMesh.h>
 
 #include <Utils/Interfaces/Resource.h>
 
@@ -25,19 +27,19 @@ public:
 	virtual void Release() override;
 
 public:
-	inline std::vector<Diotima::GFXMesh*>& GetMeshList() { return mMeshList; }
+	inline const StaticMesh& GetStaticMesh() { return mMesh; }
 	inline std::vector<ResourceHandle>& GetTextureHandles() { return mTextureHandles; }
 
 private:
-	void ProcessNode(const aiNode& node, const aiScene& scene);
-	void ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFXMesh& outMesh);
+	void ProcessNode(const aiNode& node, const aiScene& scene, std::vector<MeshGeometry>& outMeshGeometry);
+	void ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry& outMesh);
 
 	FilePath GetTextureFilePath(const std::string& fileName);
 
 private:
 	FilePath mFilePath;
 
-	std::vector<Diotima::GFXMesh*> mMeshList;
+	StaticMesh mMesh;
 	
 	// Stored to keep references to the resource alive.
 	std::vector<ResourceHandle> mTextureHandles;

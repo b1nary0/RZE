@@ -3,6 +3,8 @@
 
 #include <STB/stb_image.cpp>
 
+FilePath Texture2D::kDefaultDiffuseTexturePath = FilePath("Assets/2D/NOASSET_Texture.png");
+
 Texture2D::Texture2D(ETextureType::T textureType)
 	: IResource()
 	, mData(nullptr)

@@ -13,6 +13,7 @@ public:
 	StaticMesh(const std::vector<MeshGeometry>& subMeshes);
 	~StaticMesh();
 
+	void SetMeshes(const std::vector<MeshGeometry>& meshGeometry);
 	const std::vector<MeshGeometry>& GetSubMeshes();
 
 private:

@@ -5,9 +5,10 @@
 #include <Assimp/postprocess.h>
 #include <Assimp/scene.h>
 
-#include <Diotima/Graphics/GFXMaterial.h>
+#include <Graphics/Material.h>
+#include <Graphics/Texture2D.h>
+
 #include <Diotima/Graphics/GFXMesh.h>
-#include <Diotima/Graphics/GFXTexture2D.h>
 
 Model3D::Model3D()
 {
@@ -39,9 +40,11 @@ bool Model3D::Load(const FilePath& filePath)
 		return false;
 	}
 
-	ProcessNode(*AssimpScene->mRootNode, *AssimpScene);
+	std::vector<MeshGeometry> meshGeometry;
+	meshGeometry.resize(AssimpScene->mNumMeshes);
+	ProcessNode(*AssimpScene->mRootNode, *AssimpScene, meshGeometry);
 
-	if (mMeshList.size() != AssimpScene->mNumMeshes)
+	if (mMesh.GetSubMeshes().size() != AssimpScene->mNumMeshes)
 	{
 		// #TODO More informative error message.
 		LOG_CONSOLE("Error reading meshes.");
@@ -53,24 +56,17 @@ bool Model3D::Load(const FilePath& filePath)
 
 void Model3D::Release()
 {
-	for (size_t i = 0; i < mMeshList.size(); ++i)
-	{
-		delete mMeshList[i];
-	}
-
  	mTextureHandles.clear();
 }
 
-void Model3D::ProcessNode(const aiNode& node, const aiScene& scene)
+void Model3D::ProcessNode(const aiNode& node, const aiScene& scene, std::vector<MeshGeometry>& outMeshGeometry)
 {
-	for (U32 meshIdx = 0; meshIdx < node.mNumMeshes; meshIdx++)
+	for (U32 meshIndex = 0; meshIndex < node.mNumMeshes; meshIndex++)
 	{
-		const unsigned int assimpMeshIdx = node.mMeshes[meshIdx];
+		const unsigned int assimpMeshIdx = node.mMeshes[meshIndex];
 		const aiMesh& assimpMesh = *scene.mMeshes[assimpMeshIdx];
 
-		Diotima::GFXMesh* Mesh = new Diotima::GFXMesh();
-		ProcessMesh(assimpMesh, scene, *Mesh);
-		mMeshList.push_back(Mesh);
+		ProcessMesh(assimpMesh, scene, outMeshGeometry[meshIndex]);
 	}
 
 	for (U32 childNodeIdx = 0; childNodeIdx < node.mNumChildren; childNodeIdx++)
@@ -79,7 +75,7 @@ void Model3D::ProcessNode(const aiNode& node, const aiScene& scene)
 	}
 }
 
-void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFXMesh& outMesh)
+void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry& outMesh)
 {
 	bool bHasTextureCoords = mesh.mTextureCoords[0] != nullptr;
 	bool bHasTangents = mesh.mTangents != nullptr;
@@ -92,7 +88,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 		Vector3D vertPos(assimpVert.x, assimpVert.y, assimpVert.z);
 		Vector3D vertNormal(assimpNormal.x, assimpNormal.y, assimpNormal.z);
 
-		Diotima::GFXVertex vertex;
+		MeshVertex vertex;
 		vertex.Position = vertPos;
 		vertex.Normal = vertNormal;
 
@@ -123,7 +119,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 	}
 	// #TODO(Josh::Not necessarily just here, but definitely need to have a layer between renderer and engine to represent these concepts
 		//             Essentially anything prefixed GFX should be renderer-only in the long run. Should get to this while Diotima scope is small)
-	Diotima::GFXMaterial* pMaterial = new Diotima::GFXMaterial();
+	Material* pMaterial = new Material();
 	if (mesh.mMaterialIndex >= 0)
 	{
 		aiMaterial* mat = scene.mMaterials[mesh.mMaterialIndex];
@@ -146,11 +142,11 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 			mat->GetTexture(aiTextureType_DIFFUSE, i, &str);
 
 			FilePath texturePath = GetTextureFilePath(str.C_Str());
-			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(texturePath, Diotima::ETextureType::Diffuse);
+			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Texture2D>(texturePath, ETextureType::Diffuse);
 			if (textureHandle.IsValid())
 			{
-				Diotima::GFXTexture2D* texture = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXTexture2D>(textureHandle);
-				pMaterial->AddTexture(texture);
+				Texture2D* texture = RZE_Application::RZE().GetResourceHandler().GetResource<Texture2D>(textureHandle);
+				pMaterial->SetDiffuse(texture);
 
 				mTextureHandles.emplace_back(textureHandle);
 			}
@@ -166,11 +162,11 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 			mat->GetTexture(aiTextureType_SPECULAR, i, &str);
 
 			FilePath texturePath = GetTextureFilePath(str.C_Str());
-			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(texturePath, Diotima::ETextureType::Specular);
+			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Texture2D>(texturePath, ETextureType::Specular);
 			if (textureHandle.IsValid())
 			{
-				Diotima::GFXTexture2D* texture = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXTexture2D>(textureHandle);
-				pMaterial->AddTexture(texture);
+				Texture2D* texture = RZE_Application::RZE().GetResourceHandler().GetResource<Texture2D>(textureHandle);
+				pMaterial->SetSpecular(texture);
 
 				mTextureHandles.emplace_back(textureHandle);
 			}
@@ -186,11 +182,11 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 			mat->GetTexture(aiTextureType_NORMALS, i, &str);
 
 			FilePath texturePath = GetTextureFilePath(str.C_Str());
-			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(texturePath, Diotima::ETextureType::Normal);
+			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Texture2D>(texturePath, ETextureType::Normal);
 			if (textureHandle.IsValid())
 			{
-				Diotima::GFXTexture2D* texture = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXTexture2D>(textureHandle);
-				pMaterial->AddTexture(texture);
+				Texture2D* texture = RZE_Application::RZE().GetResourceHandler().GetResource<Texture2D>(textureHandle);
+				pMaterial->SetNormal(texture);
 
 				mTextureHandles.emplace_back(textureHandle);
 			}
@@ -206,11 +202,11 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, Diotima::GFX
 	{
 		LOG_CONSOLE_ARGS("Could not find texture for [%s] loading default material", mFilePath.GetRelativePath().c_str());
 
-		ResourceHandle diffuseHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXTexture2D>(Diotima::kDefaultDiffuseTexturePath, Diotima::ETextureType::Diffuse);
+		ResourceHandle diffuseHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Texture2D>(Texture2D::kDefaultDiffuseTexturePath, ETextureType::Diffuse);
 		// #TODO(Josh::Potential bug here -- what happens if we then reconcile no texture at runtime? We would have to remove this from this list -- linear searches are bad
 		mTextureHandles.push_back(diffuseHandle);
 
-		pMaterial->AddTexture(RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXTexture2D>(diffuseHandle));
+		pMaterial->SetDiffuse(RZE_Application::RZE().GetResourceHandler().GetResource<Texture2D>(diffuseHandle));
 	}
 
 	outMesh.SetMaterial(pMaterial);

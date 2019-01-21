@@ -17,7 +17,7 @@ namespace ETextureType
 class Texture2D : public IResource
 {
 public:
-	const FilePath kDefaultDiffuseTexturePath{ "Assets/2D/NOASSET_Texture.png" };
+	static FilePath kDefaultDiffuseTexturePath;
 
 public:
 	Texture2D() = delete;
