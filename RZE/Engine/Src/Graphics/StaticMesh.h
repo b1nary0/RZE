@@ -10,7 +10,7 @@
 class StaticMesh
 {
 public:
-	StaticMesh(const std::vector<MeshGeometry>& subMeshes);
+	StaticMesh();
 	~StaticMesh();
 
 	void SetMeshes(const std::vector<MeshGeometry>& meshGeometry);

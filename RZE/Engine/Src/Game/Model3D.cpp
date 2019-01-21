@@ -71,7 +71,7 @@ void Model3D::ProcessNode(const aiNode& node, const aiScene& scene, std::vector<
 
 	for (U32 childNodeIdx = 0; childNodeIdx < node.mNumChildren; childNodeIdx++)
 	{
-		ProcessNode(*node.mChildren[childNodeIdx], scene);
+		ProcessNode(*node.mChildren[childNodeIdx], scene, outMeshGeometry);
 	}
 }
 

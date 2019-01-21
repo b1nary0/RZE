@@ -1,9 +1,8 @@
 #include <StdAfx.h>
 #include <Graphics/StaticMesh.h>
 
-StaticMesh::StaticMesh(const std::vector<MeshGeometry>& subMeshes)
+StaticMesh::StaticMesh()
 {
-	mSubMeshes = std::move(subMeshes);
 }
 
 StaticMesh::~StaticMesh()
