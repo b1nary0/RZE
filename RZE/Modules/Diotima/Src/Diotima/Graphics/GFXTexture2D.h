@@ -3,13 +3,10 @@
 #include <string>
 
 #include <Utils/PrimitiveDefs.h>
-#include <Utils/Interfaces/Resource.h>
 #include <Utils/Math/Vector2D.h>
 
 namespace Diotima
 {
-	const FilePath kDefaultDiffuseTexturePath{ "Assets/2D/NOASSET_Texture.png" };
-
 	namespace ETextureType
 	{
 		enum T : U32
@@ -20,14 +17,11 @@ namespace Diotima
 		};
 	}
 
-	class GFXTexture2D : public IResource
+	class GFXTexture2D
 	{
 	public:
 		GFXTexture2D(ETextureType::T textureType = ETextureType::Diffuse);
 		~GFXTexture2D();
-
-		virtual bool Load(const FilePath& filePath) override;
-		virtual void Release() override;
 
 		U32				GetTextureID();
 		ETextureType::T	GetTextureType();

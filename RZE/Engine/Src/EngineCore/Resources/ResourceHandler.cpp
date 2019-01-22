@@ -77,7 +77,11 @@ ResourceHandle::ResourceHandle(const std::string& resourceID, ResourceHandler::R
 	mResourceID = resourceID;
 	mResourceSource = resourceSource;
 
-	mResourceSource->IncreaseRefCount();
+	// #TODO(Josh::Quick fix for ::EmptyHandle but really this shouldn't happen. Revisit.)
+	if (resourceSource != nullptr)
+	{
+		mResourceSource->IncreaseRefCount();
+	}
 }
 
 ResourceHandle::ResourceHandle(const ResourceHandle& rhs)
