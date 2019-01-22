@@ -14,7 +14,7 @@ void StaticMesh::SetMeshes(const std::vector<MeshGeometry>& meshGeometry)
 	mSubMeshes = std::move(meshGeometry);
 }
 
-const std::vector<MeshGeometry>& StaticMesh::GetSubMeshes()
+const std::vector<MeshGeometry>& StaticMesh::GetSubMeshes() const
 {
 	return mSubMeshes;
 }

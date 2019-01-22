@@ -2,8 +2,6 @@
 
 #include <Brofiler/Brofiler.h>
 
-#include <Diotima/Graphics/GFXTexture2D.h>
-
 #include <ECS/Components/CameraComponent.h>
 #include <ECS/Components/LightSourceComponent.h>
 #include <ECS/Components/MeshComponent.h>

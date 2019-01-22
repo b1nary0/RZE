@@ -14,7 +14,7 @@ public:
 	~StaticMesh();
 
 	void SetMeshes(const std::vector<MeshGeometry>& meshGeometry);
-	const std::vector<MeshGeometry>& GetSubMeshes();
+	const std::vector<MeshGeometry>& GetSubMeshes() const;
 
 private:
 	std::vector<MeshGeometry> mSubMeshes;

@@ -3,6 +3,8 @@
 
 #include <Graphics/Material.h>
 
+#include <Diotima/Graphics/GFXMesh.h>
+
 MeshGeometry::MeshGeometry()
 {
 }
@@ -45,4 +47,14 @@ const std::vector<MeshVertex>& MeshGeometry::GetVertices()
 
 void MeshGeometry::OnLoadFinished()
 {
+	mGPUMesh = new Diotima::GFXMesh();
+
+	std::vector<void*> vertices;
+	vertices.reserve(mVertices.size());
+	for (MeshVertex& vertex : mVertices)
+	{
+		vertices.push_back(static_cast<void*>(&vertex));
+	}
+
+	mGPUMesh->Allocate(vertices, mIndices);
 }

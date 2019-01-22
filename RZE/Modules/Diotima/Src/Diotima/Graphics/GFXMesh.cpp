@@ -28,30 +28,30 @@ namespace Diotima
 	{
 	}
 
-	const std::vector<U32>& GFXMesh::GetIndices() const
+	void GFXMesh::Allocate(const std::vector<void*>& vertexData, const std::vector<U32>& indices)
 	{
-		return mIndices;
-	}
+		std::vector<Vector3D> positions;
+		std::vector<Vector3D> normals;
+		std::vector<Vector2D> uvCoords;
+		std::vector<Vector3D> tangents;
 
-	void GFXMesh::AddVertex(const GFXVertex& vertex)
-	{
-		mVertices.push_back(std::move(vertex));
-	}
-
-	void GFXMesh::OnLoadFinished()
-	{
-		for (size_t vertIdx = 0; vertIdx < mVertices.size(); vertIdx++)
+		positions.resize(vertexData.size());
+		normals.resize(vertexData.size());
+		uvCoords.resize(vertexData.size());
+		tangents.resize(vertexData.size());
+		for (size_t vertIndex = 0; vertIndex < vertexData.size(); vertIndex++)
 		{
-			mPositions.push_back(mVertices[vertIdx].Position);
-			mNormals.push_back(mVertices[vertIdx].Normal);
-			mUVCoords.push_back(mVertices[vertIdx].UVData);
-			mTangents.push_back(mVertices[vertIdx].Tangent);
+			GFXVertex* const vertex = static_cast<GFXVertex*>(vertexData[vertIndex]);
+			positions[vertIndex] = vertex->Position;
+			normals[vertIndex] = vertex->Normal;
+			uvCoords[vertIndex] - vertex->UVData;
+			tangents[vertIndex] = vertex->Tangent;
 		}
 
-		const GLsizeiptr verticesSize = mPositions.size() * sizeof(Vector3D);
-		const GLsizeiptr normalsSize = mNormals.size() * sizeof(Vector3D);
-		const GLsizeiptr tangentSize = mTangents.size() * sizeof(Vector3D);
-		const GLsizeiptr uvDataSize = mUVCoords.size() * sizeof(Vector2D);
+		const GLsizeiptr verticesSize = positions.size() * sizeof(Vector3D);
+		const GLsizeiptr normalsSize = normals.size() * sizeof(Vector3D);
+		const GLsizeiptr tangentSize = tangents.size() * sizeof(Vector3D);
+		const GLsizeiptr uvDataSize = uvCoords.size() * sizeof(Vector2D);
 
 		const GLsizeiptr totalSize = verticesSize + normalsSize + tangentSize + uvDataSize;
 
@@ -65,12 +65,12 @@ namespace Diotima
 
 		mVAO.Bind();
 		mVertexVBO.SetBufferData(nullptr, totalSize);
-		mVertexVBO.SetBufferSubData(mPositions.data(), 0, verticesSize);
-		mVertexVBO.SetBufferSubData(mNormals.data(), normalsStart, normalsSize);
-		mVertexVBO.SetBufferSubData(mTangents.data(), tangentStart, tangentSize);
-		mVertexVBO.SetBufferSubData(mUVCoords.data(), uvDataStart, uvDataSize);
+		mVertexVBO.SetBufferSubData(positions.data(), 0, verticesSize);
+		mVertexVBO.SetBufferSubData(normals.data(), normalsStart, normalsSize);
+		mVertexVBO.SetBufferSubData(tangents.data(), tangentStart, tangentSize);
+		mVertexVBO.SetBufferSubData(uvCoords.data(), uvDataStart, uvDataSize);
 
-		mEBO.SetBufferData(mIndices.data(), sizeof(U32) * mIndices.size());
+		mEBO.SetBufferData(indices.data(), sizeof(U32) * indices.size());
 
 		// vertices
 		OpenGLRHI::Get().EnableVertexAttributeArray(0);
@@ -87,16 +87,7 @@ namespace Diotima
 		// tex coords
 		OpenGLRHI::Get().EnableVertexAttributeArray(3);
 		OpenGLRHI::Get().VertexAttribPointer(3, 2, EGLDataType::Float, EGLBooleanValue::False, sizeof(Vector2D), uvDataStartPtr);
-	}
 
-	void GFXMesh::AddIndex(U32 index)
-	{
-		mIndices.push_back(index);
-	}
-
-	void GFXMesh::SetMaterial(GFXMaterial* material)
-	{
-		AssertNotNull(material);
-		mMaterial = material;
+		mNumIndices = indices.size();
 	}
 }

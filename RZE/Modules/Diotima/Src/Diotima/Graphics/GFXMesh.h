@@ -31,28 +31,17 @@ namespace Diotima
 		OpenGLVBO mVertexVBO;
 		OpenGLEBO mEBO;
 
-		const std::vector<U32>& GetIndices() const;
 		const GFXMaterial& GetMaterial() { return *mMaterial; }
-		const std::vector<Vector3D>& GetPositions() const { return mPositions; }
-		const std::vector<Vector3D>& GetNormals() const { return mNormals; }
-		const std::vector<Vector2D>& GetUVCoords() const { return mUVCoords; }
 
-		void AddVertex(const GFXVertex& vertex);
-		void AddIndex(U32 index);
-		void SetMaterial(GFXMaterial* material);
-
-		void OnLoadFinished();
+		// #TODO::#TEMPHACK(Josh::Mashing this in here to avoid sending in engine-side concept of vertex. They will share the same layout for now
+		//                        so until a proper command layer is implemented (soontm) this hack is going to keep things running for the greater good.
+		//                        This void* will come in from engine as MeshVertex and be cast to GFXVertex.)
+		void Allocate(const std::vector<void*>& vertexData, const std::vector<U32>& indices);
+		size_t GetIndexCount() const { return mNumIndices; }
 
 	private:
 		GFXMaterial* mMaterial;
 
-		std::vector<GFXVertex> mVertices;
-
-		std::vector<Vector3D> mPositions;
-		std::vector<Vector3D> mNormals;
-		std::vector<Vector3D> mTangents;
-		std::vector<Vector2D> mUVCoords;
-
-		std::vector<U32> mIndices;
+		size_t mNumIndices;
 	};
 }

@@ -5,7 +5,6 @@
 
 #include <Diotima/Graphics/RenderTarget.h>
 #include <Diotima/Graphics/GFXMaterial.h>
-#include <Diotima/Graphics/GFXTexture2D.h>
 #include <Diotima/Shaders/ShaderPipeline.h>
 
 #include <ECS/Components/CameraComponent.h>
@@ -127,8 +126,14 @@ void RenderSystem::RegisterForComponentNotifications()
 		{
 			Model3D* const modelData = RZE_Application::RZE().GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
 
+			std::vector<Diotima::GFXMesh*> gpuMeshes;
+			gpuMeshes.reserve(modelData->GetStaticMesh().GetSubMeshes().size());
+			for (const MeshGeometry& meshGeometry : modelData->GetStaticMesh().GetSubMeshes())
+			{
+				gpuMeshes.push_back(meshGeometry.GetGPUMesh());
+			}
 			Diotima::Renderer::RenderItemProtocol item;
-			item.MeshData = modelData->GetMeshList();
+			item.MeshData = std::move(gpuMeshes);
 
 			Int32 itemIdx = RZE_Application::RZE().GetRenderer().AddRenderItem(item);
 			mRenderItemEntityMap[entityID] = itemIdx;
