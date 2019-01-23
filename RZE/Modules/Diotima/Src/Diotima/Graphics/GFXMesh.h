@@ -32,6 +32,7 @@ namespace Diotima
 		OpenGLEBO mEBO;
 
 		const GFXMaterial& GetMaterial() { return *mMaterial; }
+		void SetMaterial(GFXMaterial* material);
 
 		// #TODO::#TEMPHACK(Josh::Mashing this in here to avoid sending in engine-side concept of vertex. They will share the same layout for now
 		//                        so until a proper command layer is implemented (soontm) this hack is going to keep things running for the greater good.

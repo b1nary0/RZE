@@ -29,6 +29,7 @@ public:
 	virtual void Release() final override;
 
 public:
+	U8* GetRawData() const { return mData; }
 	ETextureType::T GetTextureType() const;
 	Vector2D GetDimensions() const;
 

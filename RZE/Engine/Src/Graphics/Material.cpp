@@ -4,6 +4,9 @@
 #include <Graphics/Texture2D.h>
 
 Material::Material()
+	: mDiffuseMap(nullptr)
+	, mNormalMap(nullptr)
+	, mSpecularMap(nullptr)
 {
 }
 
@@ -45,6 +48,21 @@ const Texture2D& Material::GetNormal() const
 {
 	AssertNotNull(mNormalMap);
 	return *mNormalMap;
+}
+
+bool Material::HasDiffuse() const
+{
+	return mDiffuseMap != nullptr;
+}
+
+bool Material::HasSpecular() const
+{
+	return mSpecularMap != nullptr;
+}
+
+bool Material::HasNormal() const
+{
+	return mNormalMap != nullptr;
 }
 
 bool Material::IsTextured() const

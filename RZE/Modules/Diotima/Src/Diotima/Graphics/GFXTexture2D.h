@@ -20,7 +20,7 @@ namespace Diotima
 	class GFXTexture2D
 	{
 	public:
-		GFXTexture2D(ETextureType::T textureType = ETextureType::Diffuse);
+		GFXTexture2D(U8* data, Int32 width, Int32 height, Int32 channels, ETextureType::T textureType = ETextureType::Diffuse);
 		~GFXTexture2D();
 
 		U32				GetTextureID();

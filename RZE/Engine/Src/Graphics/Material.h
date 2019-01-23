@@ -18,6 +18,10 @@ public:
 	const Texture2D& GetSpecular() const;
 	const Texture2D& GetNormal() const;
 
+	bool HasDiffuse() const;
+	bool HasSpecular() const;
+	bool HasNormal() const;
+
 public:
 	bool IsTextured() const;
 

@@ -5,7 +5,12 @@
 
 #include <Diotima/Graphics/RenderTarget.h>
 #include <Diotima/Graphics/GFXMaterial.h>
+#include <Diotima/Graphics/GFXMesh.h>
+#include <Diotima/Graphics/GFXTexture2D.h>
 #include <Diotima/Shaders/ShaderPipeline.h>
+
+#include <Graphics/Material.h>
+#include <Graphics/Texture2D.h>
 
 #include <ECS/Components/CameraComponent.h>
 #include <ECS/Components/LightSourceComponent.h>
@@ -109,6 +114,33 @@ void RenderSystem::ShutDown()
 {
 }
 
+Diotima::GFXMaterial* TEMPHACK_ConvertMaterialToGPUMaterial(const Material& material)
+{
+	Diotima::GFXMaterial* pMaterial = new Diotima::GFXMaterial();
+	if (material.HasDiffuse())
+	{
+		const Texture2D& diffuse = material.GetDiffuse();
+		Diotima::GFXTexture2D* gpuTexture = new Diotima::GFXTexture2D(diffuse.GetRawData(), diffuse.GetDimensions().X(), diffuse.GetDimensions().Y(), 0, Diotima::ETextureType::Diffuse);
+		pMaterial->AddTexture(gpuTexture);
+	}
+
+	if (material.HasSpecular())
+	{
+		const Texture2D& specular = material.GetSpecular();
+		Diotima::GFXTexture2D* gpuTexture = new Diotima::GFXTexture2D(specular.GetRawData(), specular.GetDimensions().X(), specular.GetDimensions().Y(), 0, Diotima::ETextureType::Specular);
+		pMaterial->AddTexture(gpuTexture);
+	}
+
+	if (material.HasNormal())
+	{
+		const Texture2D& normal = material.GetNormal();
+		Diotima::GFXTexture2D* gpuTexture = new Diotima::GFXTexture2D(normal.GetRawData(), normal.GetDimensions().X(), normal.GetDimensions().Y(), 0, Diotima::ETextureType::Normal);
+		pMaterial->AddTexture(gpuTexture);
+	}
+
+	return pMaterial;
+}
+
 void RenderSystem::RegisterForComponentNotifications()
 {
 	Apollo::EntityHandler& handler = InternalGetEntityHandler();
@@ -131,6 +163,7 @@ void RenderSystem::RegisterForComponentNotifications()
 			for (const MeshGeometry& meshGeometry : modelData->GetStaticMesh().GetSubMeshes())
 			{
 				gpuMeshes.push_back(meshGeometry.GetGPUMesh());
+				gpuMeshes.back()->SetMaterial(TEMPHACK_ConvertMaterialToGPUMaterial(meshGeometry.GetMaterial()));
 			}
 			Diotima::Renderer::RenderItemProtocol item;
 			item.MeshData = std::move(gpuMeshes);

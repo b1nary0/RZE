@@ -28,6 +28,11 @@ namespace Diotima
 	{
 	}
 
+	void GFXMesh::SetMaterial(GFXMaterial* material)
+	{
+		mMaterial = material;
+	}
+
 	void GFXMesh::Allocate(const std::vector<void*>& vertexData, const std::vector<U32>& indices)
 	{
 		std::vector<Vector3D> positions;
@@ -35,17 +40,17 @@ namespace Diotima
 		std::vector<Vector2D> uvCoords;
 		std::vector<Vector3D> tangents;
 
-		positions.resize(vertexData.size());
-		normals.resize(vertexData.size());
-		uvCoords.resize(vertexData.size());
-		tangents.resize(vertexData.size());
+		positions.reserve(vertexData.size());
+		normals.reserve(vertexData.size());
+		uvCoords.reserve(vertexData.size());
+		tangents.reserve(vertexData.size());
 		for (size_t vertIndex = 0; vertIndex < vertexData.size(); vertIndex++)
 		{
 			GFXVertex* const vertex = static_cast<GFXVertex*>(vertexData[vertIndex]);
-			positions[vertIndex] = vertex->Position;
-			normals[vertIndex] = vertex->Normal;
-			uvCoords[vertIndex] - vertex->UVData;
-			tangents[vertIndex] = vertex->Tangent;
+			positions.emplace_back(vertex->Position);
+			normals.emplace_back(vertex->Normal);
+			uvCoords.emplace_back(vertex->UVData);
+			tangents.emplace_back(vertex->Tangent);
 		}
 
 		const GLsizeiptr verticesSize = positions.size() * sizeof(Vector3D);
