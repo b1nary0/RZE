@@ -41,9 +41,10 @@ bool Model3D::Load(const FilePath& filePath)
 	}
 
 	std::vector<MeshGeometry> meshGeometry;
-	meshGeometry.resize(AssimpScene->mNumMeshes);
+	meshGeometry.reserve(AssimpScene->mNumMeshes);
 	ProcessNode(*AssimpScene->mRootNode, *AssimpScene, meshGeometry);
 
+	mMesh.SetMeshes(meshGeometry);
 	if (mMesh.GetSubMeshes().size() != AssimpScene->mNumMeshes)
 	{
 		// #TODO More informative error message.
@@ -66,7 +67,8 @@ void Model3D::ProcessNode(const aiNode& node, const aiScene& scene, std::vector<
 		const unsigned int assimpMeshIdx = node.mMeshes[meshIndex];
 		const aiMesh& assimpMesh = *scene.mMeshes[assimpMeshIdx];
 
-		ProcessMesh(assimpMesh, scene, outMeshGeometry[meshIndex]);
+		outMeshGeometry.emplace_back();
+		ProcessMesh(assimpMesh, scene, outMeshGeometry.back());
 	}
 
 	for (U32 childNodeIdx = 0; childNodeIdx < node.mNumChildren; childNodeIdx++)
