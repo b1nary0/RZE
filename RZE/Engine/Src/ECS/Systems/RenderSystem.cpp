@@ -138,6 +138,9 @@ Diotima::GFXMaterial* TEMPHACK_ConvertMaterialToGPUMaterial(const Material& mate
 		pMaterial->AddTexture(gpuTexture);
 	}
 
+	pMaterial->Shininess = material.Shininess;
+	pMaterial->Opacity = material.Opacity;
+
 	return pMaterial;
 }
 
