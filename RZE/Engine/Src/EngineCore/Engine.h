@@ -54,6 +54,8 @@ public:
 public:
 	void Log(const std::string& text, const Vector3D& color);
 
+	void SetWindowSize(Vector2D newSize);
+
 private:
 
 	void Init();

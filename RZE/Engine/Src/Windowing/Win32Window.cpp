@@ -367,7 +367,7 @@ void Win32Window::InternalSetWindowPosition(const Vector2D& pos)
 void Win32Window::InternalSetWindowSize(const Vector2D& size)
 {
 	mDimensions = size;
-	::SetWindowPos(mOSWindowHandleData.windowHandle, nullptr, static_cast<int>(mPos.X()), static_cast<int>(mPos.Y()), static_cast<int>(size.X()), static_cast<int>(size.Y()), SWP_NOSIZE | SWP_NOZORDER);
+	::SetWindowPos(mOSWindowHandleData.windowHandle, nullptr, static_cast<int>(mPos.X()), static_cast<int>(mPos.Y()), static_cast<int>(size.X()), static_cast<int>(size.Y()), SWP_NOZORDER);
 }
 
 void Win32Window::RegisterEvents(EventHandler& eventHandler)
@@ -379,6 +379,12 @@ void Win32Window::RegisterEvents(EventHandler& eventHandler)
 	});
 
 	eventHandler.RegisterForEvent(EEventType::Window, windowResizeCallback);
+}
+
+
+void Win32Window::SetWindowSize(const Vector2D& newSize)
+{
+	InternalSetWindowSize(newSize);
 }
 
 LRESULT CALLBACK WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp)

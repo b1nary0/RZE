@@ -225,6 +225,13 @@ float RZE_Engine::CalculateAverageFrametime()
 	return sum;
 }
 
+
+void RZE_Engine::SetWindowSize(Vector2D newSize)
+{
+	AssertNotNull(mMainWindow);
+	mMainWindow->SetWindowSize(newSize);
+}
+
 void RZE_Engine::CompileEvents()
 {
 	mMainWindow->CompileInputMessages(mInputHandler);

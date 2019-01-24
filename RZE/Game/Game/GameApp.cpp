@@ -64,6 +64,21 @@ void GameApp::RegisterInputEvents(InputHandler& inputHandler)
 		{
 			RZE().PostExit();
 		}
+		else if (key.GetKeyCode() == Win32KeyCode::Numpad1)
+		{
+			RZE().SetWindowSize(Vector2D(1280, 720));
+		}
+		else if (key.GetKeyCode() == Win32KeyCode::Numpad2)
+		{
+			RZE().SetWindowSize(Vector2D(1600, 900));
+		}
+		else if (key.GetKeyCode() == Win32KeyCode::Numpad3)
+		{
+			RZE().SetWindowSize(Vector2D(1920, 1080));
+		}
 	});
 	inputHandler.BindAction(Win32KeyCode::Escape, EButtonState::ButtonState_Pressed, keyFunc);
+	inputHandler.BindAction(Win32KeyCode::Numpad1, EButtonState::ButtonState_Pressed, keyFunc);
+	inputHandler.BindAction(Win32KeyCode::Numpad2, EButtonState::ButtonState_Pressed, keyFunc);
+	inputHandler.BindAction(Win32KeyCode::Numpad3, EButtonState::ButtonState_Pressed, keyFunc);
 }

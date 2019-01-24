@@ -61,6 +61,8 @@ public:
 
 	void RegisterEvents(EventHandler& eventHandler);
 
+	void SetWindowSize(const Vector2D& newSize);
+
 protected:
 
 private:
