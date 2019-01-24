@@ -114,6 +114,7 @@ void RenderSystem::ShutDown()
 {
 }
 
+// #TODO(Josh::The concept of a render-side material seems faulty. Maybe set it up as a set of parameters for the shader/pass)
 Diotima::GFXMaterial* TEMPHACK_ConvertMaterialToGPUMaterial(const Material& material)
 {
 	Diotima::GFXMaterial* pMaterial = new Diotima::GFXMaterial();
