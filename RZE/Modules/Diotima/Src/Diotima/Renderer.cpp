@@ -381,9 +381,7 @@ namespace Diotima
 	void Renderer::DrawMesh(GFXMesh* mesh)
 	{
 		mesh->mVAO.Bind();
-		mesh->mEBO.Bind();
 		OpenGLRHI::Get().DrawElements(EGLDrawMode::Triangles, mesh->GetIndexCount(), EGLDataType::UnsignedInt, nullptr);
-		mesh->mEBO.Unbind();
 		mesh->mVAO.Unbind();
 	}
 	

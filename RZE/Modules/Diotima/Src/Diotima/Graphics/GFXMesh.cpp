@@ -22,6 +22,8 @@ namespace Diotima
 
 		mEBO.Init();
 		mEBO.Bind();
+
+		mVAO.Unbind();
 	}
 
 	GFXMesh::~GFXMesh()
@@ -93,6 +95,7 @@ namespace Diotima
 		OpenGLRHI::Get().EnableVertexAttributeArray(3);
 		OpenGLRHI::Get().VertexAttribPointer(3, 2, EGLDataType::Float, EGLBooleanValue::False, sizeof(Vector2D), uvDataStartPtr);
 
+		mVAO.Unbind();
 		mNumIndices = indices.size();
 	}
 }
