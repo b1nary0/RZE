@@ -35,6 +35,10 @@ bool Texture2D::Load(const FilePath& filePath)
 
 void Texture2D::Release()
 {
+	if (mData != nullptr)
+	{
+		delete mData;
+	}
 }
 
 ETextureType::T Texture2D::GetTextureType() const
