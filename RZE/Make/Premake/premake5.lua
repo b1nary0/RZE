@@ -68,6 +68,8 @@ workspace "RZE"
 
 		filter {}
 		
+		flags { "FatalCompileWarnings" }
+		
 		kind "StaticLib"
 		language "C++"
 		targetdir (LibDir)
@@ -77,7 +79,7 @@ workspace "RZE"
 
 		pchheader "StdAfx.h"
 		pchsource "../../Engine/Src/StdAfx.cpp"
-
+		
 		files
 		{
 			SourceDir .. "**.h",
@@ -144,6 +146,8 @@ workspace "RZE"
 
 		filter {}
 		
+		flags { "FatalCompileWarnings" }
+		
 		kind "StaticLib"
 		language "C++"
 		targetdir (LibDir)
@@ -193,6 +197,8 @@ workspace "RZE"
 		local SourceDir = ProjectDir .. SourceFolder
 
 		filter {}
+		
+		flags { "FatalCompileWarnings" }
 		
 		kind "StaticLib"
 		language "C++"
@@ -261,6 +267,8 @@ workspace "RZE"
 
 		filter {}
 		
+		flags { "FatalCompileWarnings" }
+		
 		kind "StaticLib"
 		language "C++"
 		targetdir (LibDir)
@@ -325,6 +333,8 @@ workspace "RZE"
 		local SourceDir = ProjectDir .. SourceFolder
 
 		filter {}
+		
+		flags { "FatalCompileWarnings" }
 		
 		kind "StaticLib"
 		language "C++"
@@ -441,6 +451,10 @@ workspace "RZE"
 		local ProjectDir = RootDir .. "Game/"
 		local SourceDir = ProjectDir
 
+		filter {}
+		
+		flags { "FatalCompileWarnings" }
+		
 		kind "ConsoleApp"
 		language "C++"
 		targetdir (LibDir)
@@ -482,8 +496,6 @@ workspace "RZE"
 			"Externals"
 		}
 
-		filter {}
-
 		 vpaths
 		 {
 			["Source Files/*"] =
@@ -504,6 +516,10 @@ workspace "RZE"
 		local ProjectDir = RootDir .. "Editor/"
 		local SourceDir = ProjectDir
 
+		filter {}
+		
+		flags { "FatalCompileWarnings" }
+		
 		kind "ConsoleApp"
 		language "C++"
 		targetdir (LibDir)
@@ -544,8 +560,6 @@ workspace "RZE"
 			"Perseus",
 			"Externals"
 		}
-
-		filter {}
 
 		 vpaths
 		 {
