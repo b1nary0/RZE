@@ -141,7 +141,7 @@ namespace Diotima
 	void Renderer::ResizeCanvas(const Vector2D& newSize)
 	{
 		mCanvasSize = newSize;
-		mFinalRTT->SetDimensions(mCanvasSize.X(), mCanvasSize.Y());
+		mFinalRTT->SetDimensions(static_cast<U32>(mCanvasSize.X()), static_cast<U32>(mCanvasSize.Y()));
 		mFinalRTT->Initialize();
 
 		LOG_CONSOLE_ARGS("New Canvas Size: %f x %f", mCanvasSize.X(), mCanvasSize.Y());
@@ -381,7 +381,7 @@ namespace Diotima
 	void Renderer::DrawMesh(GFXMesh* mesh)
 	{
 		mesh->mVAO.Bind();
-		OpenGLRHI::Get().DrawElements(EGLDrawMode::Triangles, mesh->GetIndexCount(), EGLDataType::UnsignedInt, nullptr);
+		OpenGLRHI::Get().DrawElements(EGLDrawMode::Triangles, static_cast<GLsizei>(mesh->GetIndexCount()), EGLDataType::UnsignedInt, nullptr);
 		mesh->mVAO.Unbind();
 	}
 	

@@ -71,13 +71,13 @@ namespace Diotima
 		const GLvoid* uvDataStartPtr = reinterpret_cast<GLvoid*>(uvDataStart);
 
 		mVAO.Bind();
-		mVertexVBO.SetBufferData(nullptr, totalSize);
-		mVertexVBO.SetBufferSubData(positions.data(), 0, verticesSize);
-		mVertexVBO.SetBufferSubData(normals.data(), normalsStart, normalsSize);
-		mVertexVBO.SetBufferSubData(tangents.data(), tangentStart, tangentSize);
-		mVertexVBO.SetBufferSubData(uvCoords.data(), uvDataStart, uvDataSize);
+		mVertexVBO.SetBufferData(nullptr, static_cast<U32>(totalSize));
+		mVertexVBO.SetBufferSubData(positions.data(), 0, static_cast<U32>(verticesSize));
+		mVertexVBO.SetBufferSubData(normals.data(), normalsStart, static_cast<U32>(normalsSize));
+		mVertexVBO.SetBufferSubData(tangents.data(), tangentStart, static_cast<U32>(tangentSize));
+		mVertexVBO.SetBufferSubData(uvCoords.data(), uvDataStart, static_cast<U32>(uvDataSize));
 
-		mEBO.SetBufferData(indices.data(), sizeof(U32) * indices.size());
+		mEBO.SetBufferData(indices.data(), static_cast<U32>(sizeof(U32) * indices.size()));
 
 		// vertices
 		OpenGLRHI::Get().EnableVertexAttributeArray(0);
