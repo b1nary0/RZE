@@ -52,7 +52,7 @@ void MainMenuWidget::DoSceneMenu()
 	{
 		if (ImGui::MenuItem("Add Entity"))
 		{
-			srand(time(NULL));
+			srand(static_cast<unsigned int>(time(NULL)));
 			for (int i = 0; i < 3000; ++i)
 			{
 				Apollo::EntityID entity = RZE_Application::RZE().GetActiveScene().CreateEntity("DefaultEntityName");
