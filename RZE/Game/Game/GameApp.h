@@ -2,10 +2,6 @@
 
 #include <EngineApp.h>
 
-#include <Apollo/EntityHandler.h>
-
-#include <vector>
-
 class ResourceHandle;
 
 class GameApp : public RZE_Application

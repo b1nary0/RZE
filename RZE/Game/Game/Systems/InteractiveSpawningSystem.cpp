@@ -21,7 +21,7 @@ void InteractiveSpawningSystem::Initialize()
 
 void InteractiveSpawningSystem::Update(const std::vector<Apollo::EntityID>& entities)
 {
-	float deltaT = RZE_Application::RZE().GetDeltaTime();
+	float deltaT = static_cast<float>(RZE_Application::RZE().GetDeltaTime());
 	static Vector3D velocity(0.75f, 0.0f, 0.0f);
 
 	if (mEntityTransform != nullptr)

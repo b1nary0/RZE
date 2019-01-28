@@ -1,6 +1,4 @@
-#include "RZE.h"
-
-#include "Game/GameApp.h"
+#include <Game/GameApp.h>
 
 int main(void)
 {
