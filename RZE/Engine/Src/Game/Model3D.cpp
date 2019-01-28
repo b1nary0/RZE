@@ -178,7 +178,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 			}
 		}
 
-		for (size_t i = 0; i < mat->GetTextureCount(aiTextureType_NORMALS); ++i)
+		for (unsigned int i = 0; i < mat->GetTextureCount(aiTextureType_NORMALS); ++i)
 		{
 			aiString str;
 			mat->GetTexture(aiTextureType_NORMALS, i, &str);

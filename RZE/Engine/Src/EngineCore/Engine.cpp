@@ -58,7 +58,7 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 			prevTime = currTime;
 
 			mDeltaTime = frameTime;
-			mFrameSamples[mFrameCount % MAX_FRAMETIME_SAMPLES] = mDeltaTime;
+			mFrameSamples[mFrameCount % MAX_FRAMETIME_SAMPLES] = static_cast<float>(mDeltaTime);
 
 			const float averageFrametime = CalculateAverageFrametime();
 
