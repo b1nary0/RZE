@@ -3,8 +3,7 @@
 #include <string>
 
 #include <Utils/Interfaces/Resource.h>
-
-#include <Diotima/Driver/OpenGL/OpenGL.h>
+#include <Utils/PrimitiveDefs.h>
 
 namespace Diotima
 {
@@ -25,14 +24,13 @@ namespace Diotima
 	{
 	public:
 		GFXShader() = delete;
-		GFXShader(const EGLShaderType::T shaderType, const std::string& shaderName);
+		GFXShader(const U32 shaderType, const std::string& shaderName);
 		~GFXShader();
 
 		virtual bool Load(const FilePath& filePath) override;
 		virtual void Release() override;
 
 		U32 GetShaderID() const;
-		EGLShaderType::T GetShaderType() const;
 		const std::string& GetShaderName();
 		const std::string& GetSourceCode();
 
@@ -44,7 +42,6 @@ namespace Diotima
 		bool bIsCreated;
 
 		U32 mShaderID;
-		EGLShaderType::T mShaderType;
 		std::string mShaderName;
 		std::string mSourceCode;
 	};

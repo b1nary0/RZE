@@ -5,10 +5,9 @@
 #include <unordered_map>
 #include <vector>
 
-#include <Diotima/Driver/OpenGL/OpenGL.h>
-
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector2D.h>
+#include <Utils/PrimitiveDefs.h>
 
 namespace Diotima
 {
@@ -20,11 +19,6 @@ namespace Diotima
 	class GFXMaterial;
 	class GFXShaderPipeline;
 	class GFXTexture2D;
-
-	class RenderBatch;
-	class RenderTarget;
-
-	class GLRenderTargetDepthTexture;
 
 	class Renderer
 	{
@@ -69,7 +63,6 @@ namespace Diotima
 		GFXShaderPipeline* mForwardShader;
 		GFXShaderPipeline* mDepthPassShader;
 
-		// ISubSystem interface
 	public:
 		void Initialize();
 		void Update();
@@ -85,34 +78,11 @@ namespace Diotima
 		inline RenderItemProtocol& GetItemProtocolByIdx(Int32 idx) { return mRenderList[idx]; }
 		inline LightItemProtocol& GetLightProtocolByIdx(Int32 idx) { return mLightingList[idx]; }
 
-		void SetRenderTarget(RenderTarget* renderTarget);
 		void SetCamera(const CameraItemProtocol& cameraItem) { camera = std::move(cameraItem); }
 
 		void EnableVsync(bool bEnable);
 		void ResizeCanvas(const Vector2D& newSize);
 		
-		// The below will generally be replaced by a proper implementation
-	private:
-		void DepthPass();
-		void ForwardPass();
-
-		void RenderScene_Forward();
-		void RenderScene_Depth();
-
-		void RenderSingleItem_Forward(RenderItemProtocol& renderItem);
-		void RenderSingleItem_Depth(RenderItemProtocol& renderItem);
-
-		void SetCurrentRenderTarget(RenderTarget* renderTarget);
-		RenderTarget* GetCurrentRenderTarget() { return mCurrentRTT; }
-
-	private:
-		void DrawMesh(GFXMesh* mesh);
-
-		void BlitToWindow();
-		void BlitToTarget(const RenderTarget& target);
-
-		void Submit();
-
 	private:
 		Vector2D mCanvasSize;
 
@@ -122,12 +92,6 @@ namespace Diotima
 
 		std::queue<Int32> mFreeRenderListIndices;
 		
-		RenderTarget* mCustomRTT { nullptr };
-		RenderTarget* mCurrentRTT { nullptr };
-		RenderTarget* mFinalRTT { nullptr };
-
-		GLRenderTargetDepthTexture* mDepthTexture { nullptr };
-
 		// DX12 Temp
 	private:
 		std::unique_ptr<IGFXDriverInterface> mDriverInterface;

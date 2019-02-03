@@ -65,17 +65,9 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 			{	BROFILER_CATEGORY("RZE_Engine::Run", Profiler::Color::Cyan)
 				// #TODO(Josh) Need to work this out but for the moment we need to pre update and then start the imgui new frame for things like editor stealing imgui input etc
 				PreUpdate();
-
-				DebugServices::AddData(StringUtils::FormatString("Frame Time: %f ms", averageFrametime * 1000.0f), Vector3D(1.0f, 1.0f, 0.0f));
 				{
 					Update();
 					mRenderer->Update();
-
-					DebugServices::Display(GetWindowSize());
-					{
-						BROFILER_CATEGORY("ImGui::Render", Profiler::Color::Green);
-						ImGui::Render();
-					}
 				}
 			}
 
@@ -128,9 +120,6 @@ void RZE_Engine::Init()
 
 		CreateAndInitializeRenderer();
 
-		DebugServices::Initialize();
-		DebugServices::HandleScreenResize(GetWindowSize());
-
 		mActiveScene = new GameScene();
 		mActiveScene->Initialize();
 
@@ -160,11 +149,6 @@ void RZE_Engine::PreUpdate()
 	{
 		mInputHandler.Reset();
 	}
-
-	// #NOTE(Josh) This has to do with the lack of confidence in the placement of ImGUI and its role.
-	//				Should always happen at the end of the pre-update phase for now. Also want this here as
-	//				it's currently considered part of the pre-update profile.
-	ImGui::NewFrame();
 }
 
 void RZE_Engine::CreateAndInitializeWindow()
@@ -200,15 +184,6 @@ void RZE_Engine::InitializeApplication(Functor<RZE_Application* const> createGam
 	mApplication->Initialize();
 	mApplication->RegisterInputEvents(mInputHandler);
 	mApplication->SetWindow(mMainWindow);
-
-	const Vector2D& windowDims = mEngineConfig->GetWindowSettings().GetDimensions();
-	mApplication->GetRenderTarget().SetDimensions(static_cast<U32>(windowDims.X()), static_cast<U32>(windowDims.Y()));
-
-	if (mApplication->IsEditor())
-	{
-		// #TODO(Josh) Investigate a better transfer point than this re: render target setting
-		mRenderer->SetRenderTarget(&mApplication->GetRenderTarget());
-	}
 
 	mApplication->Start();
 }
@@ -251,7 +226,6 @@ void RZE_Engine::RegisterWindowEvents()
 		{
 			Vector2D newSize(event.mWindowEvent.mSizeX, event.mWindowEvent.mSizeY);
 			GetRenderer().ResizeCanvas(newSize);
-			DebugServices::HandleScreenResize(newSize);
 		}
 	});
 	mEventHandler.RegisterForEvent(EEventType::Window, windowCallback);

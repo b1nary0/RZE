@@ -60,9 +60,6 @@ void RenderSystem::Initialize()
 
 	RegisterForComponentNotifications();
 
-	CreateForwardShader();
-	CreateDepthPassShader();
-
 	RZE_Application::RZE().GetRenderer().mForwardShader = gForwardShader;
 	RZE_Application::RZE().GetRenderer().mDepthPassShader = gDepthPassShader;
 }
@@ -228,7 +225,6 @@ void RenderSystem::RegisterForComponentNotifications()
 
 void RenderSystem::GenerateCameraMatrices(CameraComponent& cameraComponent, const TransformComponent& transformComponent)
 {
-	cameraComponent.AspectRatio = static_cast<float>(RZE_Application::RZE().GetApplication().GetRenderTarget().GetWidth()) / static_cast<float>(RZE_Application::RZE().GetApplication().GetRenderTarget().GetHeight());
 	cameraComponent.ProjectionMat = Matrix4x4::CreatePerspectiveMatrix(cameraComponent.FOV, cameraComponent.AspectRatio, cameraComponent.NearCull, cameraComponent.FarCull);
 	cameraComponent.ViewMat = Matrix4x4::CreateViewMatrix(transformComponent.Position, transformComponent.Position + cameraComponent.Forward, cameraComponent.UpDir);
 }
@@ -247,8 +243,8 @@ void CreateForwardShader()
 	const FilePath vertShaderFilePath("Assets/Shaders/TextureVert.shader");
 	const FilePath fragShaderFilePath("Assets/Shaders/TextureFrag.shader");
 
-	texVertShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "TextureVertShader");
-	texFragShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "TextureFragShader");
+	texVertShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath, 0, "TextureVertShader");
+	texFragShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath, 1, "TextureFragShader");
 
 	Diotima::GFXShader* vertShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(texVertShaderHandle);
 	vertShader->Create();
@@ -270,8 +266,8 @@ void CreateDepthPassShader()
 	const FilePath vertShaderFilePath("Assets/Shaders/DepthVert.shader");
 	const FilePath fragShaderFilePath("Assets/Shaders/EmptyFrag.shader");
 
-	depthPassVertShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "DepthPassVertShader");
-	depthPassFragShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "DepthPassFragShader");
+	depthPassVertShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath, 0, "DepthPassVertShader");
+	depthPassFragShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath, 1, "DepthPassFragShader");
 
 	Diotima::GFXShader* vertShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(depthPassVertShaderHandle);
 	vertShader->Create();

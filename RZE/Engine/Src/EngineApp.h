@@ -33,8 +33,6 @@ public:
 	virtual void RegisterInputEvents(InputHandler& inputHandler);
 
 	virtual bool IsEditor() { return false; }
-	// #TODO(Josh::Take a look at a better API for what this needs to be non-const for)
-	Diotima::RenderTarget& GetRenderTarget() const;
 
 	static RZE_Engine& RZE() { return mEngine; }
 
@@ -51,7 +49,6 @@ protected:
 private:
 	void SetWindow(Win32Window* const window);
 
-	Diotima::RenderTarget* mRenderTarget{ nullptr };
 	Win32Window* mWindow;
 	bool bIsRunning;
 
