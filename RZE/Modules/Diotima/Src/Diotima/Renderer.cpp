@@ -18,6 +18,9 @@
 
 #include <imGUI/imgui.h>
 
+// DX12 Branch Temp
+#include <Diotima/Driver/DX12/DX12GFXDriverInterface.h>
+
 //
 // <ImGui>
 void ImGUIRender(ImDrawData* drawData);
@@ -29,6 +32,11 @@ bool ImGUICreateDeviceObjects();
 namespace Diotima
 {
 	Renderer::Renderer()
+	{
+	}
+
+
+	Renderer::~Renderer()
 	{
 	}
 
@@ -67,6 +75,8 @@ namespace Diotima
 
 	void Renderer::Initialize()
 	{
+		DX12Initialize();
+
 		{
 			OpenGLRHI::OpenGLCreationParams creationParams;
 			creationParams.WindowHeight = 1024;
@@ -125,6 +135,12 @@ namespace Diotima
 
 	void Renderer::ShutDown()
 	{
+	}
+
+	void Renderer::DX12Initialize()
+	{
+		mDriverInterface = std::make_unique<DX12GFXDriverInterface>();
+		mDriverInterface->Initialize();
 	}
 
 	void Renderer::SetRenderTarget(RenderTarget* renderTarget)

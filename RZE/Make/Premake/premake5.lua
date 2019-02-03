@@ -112,6 +112,7 @@ workspace "RZE"
 			"assimp",
 			"glew64",
 			"ProfilerCore64",
+			"D3d12.lib",
 			-- RZE --
 			"RZE_Utils",
 			"Apollo",
@@ -243,6 +244,7 @@ workspace "RZE"
 			"assimp",
 			"glew64",
 			"ProfilerCore64",
+			"D3d12.lib",
 			-- RZE
 			"Perseus",
 			"RZE_Utils"
@@ -311,6 +313,7 @@ workspace "RZE"
 			"assimp",
 			"glew64",
 			"ProfilerCore64",
+			"D3d12.lib",
 			-- RZE
 			"RZE_Utils"
 		}
@@ -379,6 +382,7 @@ workspace "RZE"
 			"assimp",
 			"glew64",
 			"ProfilerCore64",
+			"D3d12.lib",
 			-- RZE
 			"Perseus",
 			"RZE_Utils"

@@ -12,6 +12,10 @@
 
 namespace Diotima
 {
+	// DX12 Temp
+	class IGFXDriverInterface;
+
+	/////////////////
 	class GFXMesh;
 	class GFXMaterial;
 	class GFXShaderPipeline;
@@ -21,7 +25,7 @@ namespace Diotima
 	class RenderTarget;
 
 	class GLRenderTargetDepthTexture;
-	
+
 	class Renderer
 	{
 	public:
@@ -60,6 +64,7 @@ namespace Diotima
 		// Constructors
 	public:
 		Renderer();
+		~Renderer();
 
 		GFXShaderPipeline* mForwardShader;
 		GFXShaderPipeline* mDepthPassShader;
@@ -69,6 +74,8 @@ namespace Diotima
 		void Initialize();
 		void Update();
 		void ShutDown();
+
+		void DX12Initialize();
 
 	public:
 		Int32 AddRenderItem(const RenderItemProtocol& itemProtocol);
@@ -120,5 +127,9 @@ namespace Diotima
 		RenderTarget* mFinalRTT { nullptr };
 
 		GLRenderTargetDepthTexture* mDepthTexture { nullptr };
+
+		// DX12 Temp
+	private:
+		std::unique_ptr<IGFXDriverInterface> mDriverInterface;
 	};
 }
