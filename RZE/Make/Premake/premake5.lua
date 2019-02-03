@@ -45,6 +45,9 @@ workspace "RZE"
 		"system:windows",
 		"action:vs*"
 	}
+	
+	systemversion "10.0.17763.0"
+	
 	flags
 	{
 		"MultiProcessorCompile",
