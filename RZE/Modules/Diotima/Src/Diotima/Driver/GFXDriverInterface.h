@@ -10,6 +10,8 @@
 // Ideally this will also help obfuscate the header includes.
 namespace Diotima
 {
+	class IGFXDevice;
+
 	class IGFXDriverInterface
 	{
 	public:

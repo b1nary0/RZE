@@ -113,6 +113,7 @@ workspace "RZE"
 			"glew64",
 			"ProfilerCore64",
 			"D3d12.lib",
+			"DXGI.lib",
 			-- RZE --
 			"RZE_Utils",
 			"Apollo",
@@ -244,6 +245,7 @@ workspace "RZE"
 			"glew64",
 			"ProfilerCore64",
 			"D3d12.lib",
+			"DXGI.lib",
 			-- RZE
 			"Perseus",
 			"RZE_Utils"
@@ -313,6 +315,7 @@ workspace "RZE"
 			"glew64",
 			"ProfilerCore64",
 			"D3d12.lib",
+			"DXGI.lib",
 			-- RZE
 			"RZE_Utils"
 		}
@@ -382,6 +385,7 @@ workspace "RZE"
 			"glew64",
 			"ProfilerCore64",
 			"D3d12.lib",
+			"DXGI.lib",
 			-- RZE
 			"Perseus",
 			"RZE_Utils"

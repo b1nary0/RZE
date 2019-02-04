@@ -2,8 +2,9 @@
 
 #include <wrl.h>
 #include <d3d12.h>
+#include <dxgi1_4.h>
 
-using namespace Microsoft::WRL;
+#include <Diotima/Driver/DX12/DX12GFXDevice.h>
 
 namespace Diotima
 {

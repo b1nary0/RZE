@@ -12,7 +12,8 @@
 namespace Diotima
 {
 	// DX12 Temp
-	class IGFXDriverInterface;
+	class IGFXDriverInterface; 
+	class IGFXDevice;
 
 	/////////////////
 	class GFXMesh;
@@ -70,6 +71,9 @@ namespace Diotima
 
 		void DX12Initialize();
 
+		// #TODO(Josh::Really really don't like this, fix later)
+		void SetWindow(void* handle) { mWindowHandle = handle; }
+
 	public:
 		Int32 AddRenderItem(const RenderItemProtocol& itemProtocol);
 		void RemoveRenderItem(const U32 itemIdx);
@@ -95,5 +99,8 @@ namespace Diotima
 		// DX12 Temp
 	private:
 		std::unique_ptr<IGFXDriverInterface> mDriverInterface;
+		std::unique_ptr<IGFXDevice> mDevice;
+
+		void* mWindowHandle;
 	};
 }

@@ -172,6 +172,7 @@ void RZE_Engine::CreateAndInitializeRenderer()
 {
 	mRenderer = new Diotima::Renderer();
 
+	mRenderer->SetWindow(mMainWindow->GetOSWindowHandleData().windowHandle);
 	mRenderer->Initialize();
 	mRenderer->EnableVsync(mEngineConfig->GetEngineSettings().IsVSyncEnabled());
 }

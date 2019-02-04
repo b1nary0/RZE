@@ -14,6 +14,7 @@
 
 // DX12 Branch Temp
 #include <Diotima/Driver/DX12/DX12GFXDriverInterface.h>
+#include <Diotima/Driver/DX12/DX12GFXDevice.h>
 
 namespace Diotima
 {
@@ -77,6 +78,10 @@ namespace Diotima
 	{
 		mDriverInterface = std::make_unique<DX12GFXDriverInterface>();
 		mDriverInterface->Initialize();
+
+		mDevice = std::make_unique<DX12GFXDevice>();
+		mDevice->SetWindow(mWindowHandle);
+		mDevice->Initialize();
 	}
 
 	void Renderer::EnableVsync(bool bEnabled)
