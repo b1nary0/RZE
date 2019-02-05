@@ -15,6 +15,8 @@ struct ID3D12CommandQueue;
 struct ID3D12CommandAllocator;
 struct ID3D12DescriptorHeap;
 struct ID3D12Resource;
+struct ID3D12RootSignature;
+struct ID3D12PipelineState;
 
 struct IDXGIFactory4;
 struct IDXGISwapChain3;
@@ -40,13 +42,19 @@ namespace Diotima
 		virtual void SetWindow(void* windowHandle) final override;
 
 	private:
+		void InitializeAssets();
+
+	private:
 		ComPtr<ID3D12Device> mDevice;
 		ComPtr<ID3D12CommandQueue> mCommandQueue;
 		ComPtr<ID3D12CommandAllocator> mCommandAllocator;
-		ComPtr<IDXGIFactory4> mFactory;
-		ComPtr<IDXGISwapChain3> mSwapChain;
 		ComPtr<ID3D12DescriptorHeap> mRTVDescriptorHeap;
 		ComPtr<ID3D12Resource> mRenderTargets[kBufferCount];
+		ComPtr<ID3D12RootSignature> mRootSignature;
+		ComPtr<ID3D12PipelineState> mPipelineState;
+
+		ComPtr<IDXGIFactory4> mFactory;
+		ComPtr<IDXGISwapChain3> mSwapChain;
 
 		int mCurrentFrame;
 		void* mWindowHandle;

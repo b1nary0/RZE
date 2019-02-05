@@ -114,6 +114,7 @@ workspace "RZE"
 			"ProfilerCore64",
 			"D3d12.lib",
 			"DXGI.lib",
+			"D3DCompiler.lib",
 			-- RZE --
 			"RZE_Utils",
 			"Apollo",
@@ -246,6 +247,7 @@ workspace "RZE"
 			"ProfilerCore64",
 			"D3d12.lib",
 			"DXGI.lib",
+			"D3DCompiler.lib",
 			-- RZE
 			"Perseus",
 			"RZE_Utils"
@@ -316,6 +318,7 @@ workspace "RZE"
 			"ProfilerCore64",
 			"D3d12.lib",
 			"DXGI.lib",
+			"D3DCompiler.lib",
 			-- RZE
 			"RZE_Utils"
 		}
@@ -386,6 +389,7 @@ workspace "RZE"
 			"ProfilerCore64",
 			"D3d12.lib",
 			"DXGI.lib",
+			"D3DCompiler.lib",
 			-- RZE
 			"Perseus",
 			"RZE_Utils"
