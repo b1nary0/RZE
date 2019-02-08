@@ -66,8 +66,8 @@ namespace Diotima
 
 	void Renderer::Update()
 	{
-		BROFILER_CATEGORY("Renderer::Update", Profiler::Color::Red)
-		
+		BROFILER_CATEGORY("Renderer::Update", Profiler::Color::Red);
+		static_cast<DX12GFXDevice*>(mDevice.get())->OnRender();
 	}
 
 	void Renderer::ShutDown()

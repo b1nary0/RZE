@@ -1,12 +1,11 @@
 #include <Diotima/Driver/DX12/DX12GFXDevice.h>
 
-#include <dxgi.h>
-#include <dxgi1_4.h>
+
 #include <D3DCompiler.h>
 
-#include <Diotima/Driver/DX12/d3dx12.h>
-
 #include <Utils/Conversions.h>
+#include <Utils/Math/Vector3D.h>
+#include <Utils/Math/Vector4D.h>
 #include <Utils/Platform/FilePath.h>
 
 namespace
@@ -114,11 +113,24 @@ namespace Diotima
 
 		mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mCommandAllocator));
 
+		InitializeAssets();
 	}
 
 	void DX12GFXDevice::SetWindow(void* windowHandle)
 	{
 		mWindowHandle = windowHandle;
+	}
+
+	void DX12GFXDevice::OnRender()
+	{
+		PopulateCommandList();
+
+		ID3D12CommandList* ppCommandLists[] = { mCommandList.Get() };
+		mCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+
+		mSwapChain->Present(1, 0);
+
+		WaitForPreviousFrame();
 	}
 
 	void DX12GFXDevice::InitializeAssets()
@@ -141,21 +153,21 @@ namespace Diotima
 			ComPtr<ID3DBlob> pixelShader;
 
 #if defined(_DEBUG)
-			U32 compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+			U32 compileFlags = 0;//D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 #else
 			U32 compileFlags = 0;
 #endif
 
-			FilePath vertexShaderFilePath;
-			FilePath pixelShaderFilePath;
+			FilePath vertexShaderFilePath("Assets/Shaders/D3DTest.VS");
+			FilePath pixelShaderFilePath("Assets/Shaders/D3DTest.PS");
 
-			D3DCompileFromFile(Conversions::StringToWString(vertexShaderFilePath.GetAbsolutePath()).c_str(), nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr);
+			HRESULT result = D3DCompileFromFile(Conversions::StringToWString(vertexShaderFilePath.GetAbsolutePath()).c_str(), nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr);
 			D3DCompileFromFile(Conversions::StringToWString(pixelShaderFilePath.GetAbsolutePath()).c_str(), nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr);
 
 			D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
 			{
 				{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-				{"COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+				{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 			};
 
 			D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
@@ -174,6 +186,105 @@ namespace Diotima
 			psoDesc.SampleDesc.Count = 1;
 			mDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mPipelineState));
 		}
+
+		mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mCommandAllocator.Get(), mPipelineState.Get(), IID_PPV_ARGS(&mCommandList));
+		mCommandList->Close();
+
+		// VERTEX BUFFER
+		{
+			struct Vertex
+			{
+				Vector3D position;
+				Vector4D color;
+			};
+
+			const float aspectRatio = static_cast<float>(kBufferWidth) / static_cast<float>(kBufferHeight);
+			Vertex triangleVertices[] =
+			{
+				{ { 0.0f, 0.25f * aspectRatio, 0.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
+				{ { 0.25f, -0.25f * aspectRatio, 0.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
+				{ { -0.25f, -0.25f * aspectRatio, 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } }
+			};
+
+			const U32 vertexBufferSize = sizeof(triangleVertices);
+
+			mDevice->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD), D3D12_HEAP_FLAG_NONE, &CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize), D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&mVertexBuffer));
+
+			// Copy to buffer
+			U8* pVertexDataBegin;
+			CD3DX12_RANGE readRange(0, 0);
+			mVertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin));
+			memcpy(pVertexDataBegin, triangleVertices, vertexBufferSize);
+			mVertexBuffer->Unmap(0, nullptr);
+
+			// Initialize vertex buffer view
+			mVertexBufferView = new D3D12_VERTEX_BUFFER_VIEW();
+			mVertexBufferView->BufferLocation = mVertexBuffer->GetGPUVirtualAddress();
+			mVertexBufferView->StrideInBytes = sizeof(Vertex);
+			mVertexBufferView->SizeInBytes = vertexBufferSize;
+		}
+
+		mViewport = new D3D12_VIEWPORT();
+		mViewport->Height = kBufferHeight;
+		mViewport->Width = kBufferWidth;
+		mViewport->TopLeftX = 0;
+		mViewport->TopLeftY = 0;
+		mViewport->MinDepth = 0.0f;
+		mViewport->MaxDepth = 1.0f;
+
+		mScissorRect.left = 0;
+		mScissorRect.top = 0;
+		mScissorRect.right = kBufferWidth;
+		mScissorRect.bottom = kBufferHeight;
+
+		// CREATE SYNC OBJECTS TO WAIT FOR DATA TO UPLOAD TO GPU
+		{
+			mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence));
+			mFenceValue = 1;
+
+			mFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+		}
+
+		WaitForPreviousFrame();
+	}
+
+	void DX12GFXDevice::PopulateCommandList()
+	{
+		mCommandAllocator->Reset();
+		mCommandList->Reset(mCommandAllocator.Get(), mPipelineState.Get());
+
+		mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
+		mCommandList->RSSetViewports(1, mViewport);
+		mCommandList->RSSetScissorRects(1, &mScissorRect);
+
+		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTargets[mCurrentFrame].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+
+		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mRTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), mCurrentFrame, mRTVDescriptorSize);
+		mCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+
+		const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
+		mCommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+		mCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		mCommandList->IASetVertexBuffers(0, 1, mVertexBufferView);
+		mCommandList->DrawInstanced(3, 1, 0, 0);
+
+		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTargets[mCurrentFrame].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+		mCommandList->Close();
+	}
+
+	void DX12GFXDevice::WaitForPreviousFrame()
+	{
+		const U64 fence = mFenceValue;
+		mCommandQueue->Signal(mFence.Get(), fence);
+		++mFenceValue;
+
+		if (mFence->GetCompletedValue() < fence)
+		{
+			mFence->SetEventOnCompletion(fence, mFenceEvent);
+			WaitForSingleObject(mFenceEvent, INFINITE);
+		}
+
+		mCurrentFrame = mSwapChain->GetCurrentBackBufferIndex();
 	}
 
 }
