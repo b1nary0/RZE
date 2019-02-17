@@ -43,7 +43,37 @@ bool Model3D::Load(const FilePath& filePath)
 	std::vector<MeshGeometry> meshGeometry;
 	meshGeometry.reserve(AssimpScene->mNumMeshes);
 	ProcessNode(*AssimpScene->mRootNode, *AssimpScene, meshGeometry);
+	
+	// #TODO(Josh::Describe data layout better. Build the infrastructure for it. Right now its Pos//Normal//UV//Tangent per vertex.
+	std::vector<float> vertexDataBuffer;
+	vertexDataBuffer.reserve(meshGeometry.size() * 11);
+	for (MeshGeometry geometery : meshGeometry)
+	{
+		for (MeshVertex vertex : geometery.GetVertices())
+		{
+			for (int index = 0; index < 3; ++index)
+			{
+				vertexDataBuffer.push_back(vertex.Position[index]);
+			}
 
+			for (int index = 0; index < 3; ++index)
+			{
+				vertexDataBuffer.push_back(vertex.Normal[index]);
+			}
+
+			for (int index = 0; index < 2; ++index)
+			{
+				vertexDataBuffer.push_back(vertex.UVData[index]);
+			}
+
+			for (int index = 0; index < 3; ++index)
+			{
+				vertexDataBuffer.push_back(vertex.Tangent[index]);
+			}
+		}
+	}
+
+	mMesh.Initialize(vertexDataBuffer);
 	mMesh.SetMeshes(meshGeometry);
 	if (mMesh.GetSubMeshes().size() != AssimpScene->mNumMeshes)
 	{

@@ -56,6 +56,8 @@ public:
 
 	bool operator!=(const Vector3D& rhs) const;
 
+	float operator[](int index) const;
+
 private:
 	Vector3D(const glm::vec3& vec);
 

@@ -132,8 +132,8 @@ namespace Diotima
 	{
 		PopulateCommandList();
 
-		ID3D12CommandList* ppCommandLists[] = { mCommandList.Get() };
-		mCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+ 		ID3D12CommandList* ppCommandLists[] = { mCommandList.Get() };
+ 		mCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
 		mSwapChain->Present(1, 0);
 
