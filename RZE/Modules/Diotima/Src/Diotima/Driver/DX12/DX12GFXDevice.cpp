@@ -4,6 +4,7 @@
 #include <D3DCompiler.h>
 
 #include <Utils/Conversions.h>
+#include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Vector3D.h>
 #include <Utils/Math/Vector4D.h>
 #include <Utils/Platform/FilePath.h>
@@ -26,6 +27,11 @@ namespace
 			// actual device yet.
 			if (SUCCEEDED(D3D12CreateDevice(pAdapter, D3D_FEATURE_LEVEL_11_0, _uuidof(ID3D12Device), nullptr)))
 			{
+				DXGI_ADAPTER_DESC adapterDesc;
+				pAdapter->GetDesc(&adapterDesc);
+
+				LOG_CONSOLE_ARGS("GPU: %ls", adapterDesc.Description);
+
 				*ppAdapter = pAdapter;
 				return;
 			}
@@ -65,6 +71,7 @@ namespace Diotima
 			// #TODO(Josh::Check for errors)
 			mDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&mCommandQueue));
 		}
+
 		// SWAP CHAIN
 		{
 			DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
