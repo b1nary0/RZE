@@ -1,4 +1,21 @@
-float4 VSMain(float3 pos : POSITION) : SV_POSITION // main is the default function name
+struct VS_IN
 {
-    return float4(pos, 1.0f);
+	float3 Position : POSITION;
+	float4 Color : COLOR;
+};
+
+struct VS_OUT
+{
+	float4 Color : COLOR;
+	float4 Position : SV_POSITION;
+};
+
+VS_OUT VSMain(VS_IN input) // main is the default function name
+{
+	VS_OUT output;
+	
+	output.Position = float4(input.Position, 1.0f);
+	output.Color = input.Color;
+	
+    return output;
 }

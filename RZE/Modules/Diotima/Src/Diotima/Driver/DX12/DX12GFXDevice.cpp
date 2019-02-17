@@ -153,7 +153,7 @@ namespace Diotima
 			ComPtr<ID3DBlob> pixelShader;
 
 #if defined(_DEBUG)
-			U32 compileFlags = 0;//D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+			U32 compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 #else
 			U32 compileFlags = 0;
 #endif
@@ -191,6 +191,7 @@ namespace Diotima
 		mCommandList->Close();
 
 		// VERTEX BUFFER
+		ComPtr<ID3D12Resource> uploadBuf;
 		{
 			struct Vertex
 			{
@@ -208,14 +209,40 @@ namespace Diotima
 
 			const U32 vertexBufferSize = sizeof(triangleVertices);
 
-			mDevice->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD), D3D12_HEAP_FLAG_NONE, &CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize), D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&mVertexBuffer));
+			mCommandList->Reset(mCommandAllocator.Get(), mPipelineState.Get());
+
+			HRESULT res = mDevice->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD), D3D12_HEAP_FLAG_NONE, &CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize), D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadBuf));
+			res = mDevice->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), D3D12_HEAP_FLAG_NONE, &CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize), D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&mVertexBuffer));
+
+			mCommandList->ResourceBarrier(1,
+				&CD3DX12_RESOURCE_BARRIER::Transition(mVertexBuffer.Get(),
+					D3D12_RESOURCE_STATE_COMMON,
+					D3D12_RESOURCE_STATE_COPY_DEST));
 
 			// Copy to buffer
 			U8* pVertexDataBegin;
 			CD3DX12_RANGE readRange(0, 0);
-			mVertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin));
+			uploadBuf->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin));
 			memcpy(pVertexDataBegin, triangleVertices, vertexBufferSize);
-			mVertexBuffer->Unmap(0, nullptr);
+			uploadBuf->Unmap(0, nullptr);
+
+			D3D12_SUBRESOURCE_DATA subResourceData = {};
+			subResourceData.pData = pVertexDataBegin;
+			subResourceData.RowPitch = vertexBufferSize;
+			subResourceData.SlicePitch = subResourceData.RowPitch;
+
+			UpdateSubresources<1>(mCommandList.Get(), mVertexBuffer.Get(), uploadBuf.Get(), 0, 0, 1, &subResourceData);
+			//mCommandList->CopyResource(mVertexBuffer.Get(), uploadBuf.Get());
+
+			mCommandList->ResourceBarrier(1,
+				&CD3DX12_RESOURCE_BARRIER::Transition(mVertexBuffer.Get(),
+					D3D12_RESOURCE_STATE_COPY_DEST,
+					D3D12_RESOURCE_STATE_GENERIC_READ));
+
+			mCommandList->Close();
+
+			ID3D12CommandList* ppCommandLists[] = { mCommandList.Get() };
+			mCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
 			// Initialize vertex buffer view
 			mVertexBufferView = new D3D12_VERTEX_BUFFER_VIEW();
@@ -275,7 +302,7 @@ namespace Diotima
 	void DX12GFXDevice::WaitForPreviousFrame()
 	{
 		const U64 fence = mFenceValue;
-		mCommandQueue->Signal(mFence.Get(), fence);
+		HRESULT res = mCommandQueue->Signal(mFence.Get(), fence);
 		++mFenceValue;
 
 		if (mFence->GetCompletedValue() < fence)

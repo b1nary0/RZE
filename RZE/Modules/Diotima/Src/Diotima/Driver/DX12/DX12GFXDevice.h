@@ -13,23 +13,6 @@
 
 using namespace Microsoft::WRL;
 
-// struct ID3D12Device;
-// struct ID3D12CommandQueue;
-// struct ID3D12CommandAllocator;
-// struct ID3D12DescriptorHeap;
-// struct ID3D12Resource;
-// struct ID3D12RootSignature;
-// struct ID3D12PipelineState;
-// struct ID3D12GraphicsCommandList;
-// struct ID3D12Fence;
-// 
-// struct IDXGIFactory4;
-// struct IDXGISwapChain3;
-// 
-// struct D3D12_VERTEX_BUFFER_VIEW;
-// struct D3D12_VIEWPORT;
-// struct D3D12_RECT;
-
 namespace Diotima
 {
 	// #TODO(Josh::Eventually move these into a more configurable/stateful place)

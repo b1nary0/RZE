@@ -1,4 +1,9 @@
-float4 PSMain(float4 color : COLOR) : SV_TARGET
+struct PS_IN
 {
-    return color;
+	float4 Color : COLOR;
+};
+
+float4 PSMain(PS_IN input) : SV_TARGET
+{
+    return input.Color;
 }
