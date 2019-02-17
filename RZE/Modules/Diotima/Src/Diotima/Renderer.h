@@ -99,7 +99,6 @@ namespace Diotima
 		// DX12 Temp
 	private:
 		std::unique_ptr<IGFXDriverInterface> mDriverInterface;
-		std::unique_ptr<IGFXDevice> mDevice;
 
 		void* mWindowHandle;
 	};

@@ -20,7 +20,7 @@ namespace Diotima
 	constexpr int kBufferWidth = 1920;
 	constexpr int kBufferHeight = 1080;
 
-	class DX12GFXDevice : public IGFXDevice
+	class DX12GFXDevice final : public IGFXDevice
 	{
 		friend class DX12GFXDriverInterface;
 
@@ -29,11 +29,14 @@ namespace Diotima
 		virtual ~DX12GFXDevice();
 
 	public:
-		virtual void Initialize() final override;
+		virtual void Initialize() override;
 		// #TODO(Josh::Really really don't like this, fix later)
-		virtual void SetWindow(void* windowHandle) final override;
+		virtual void SetWindow(void* windowHandle) override;
 
-		void OnRender();
+		virtual void Shutdown() override;
+
+	public:
+		void Present();
 
 	private:
 		void InitializeAssets();

@@ -121,7 +121,7 @@ namespace Diotima
 		mWindowHandle = windowHandle;
 	}
 
-	void DX12GFXDevice::OnRender()
+	void DX12GFXDevice::Present()
 	{
 		PopulateCommandList();
 
@@ -314,4 +314,9 @@ namespace Diotima
 		mCurrentFrame = mSwapChain->GetCurrentBackBufferIndex();
 	}
 
+	void DX12GFXDevice::Shutdown()
+	{
+		WaitForPreviousFrame();
+		CloseHandle(mFenceEvent);
+	}
 }

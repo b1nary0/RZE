@@ -67,21 +67,19 @@ namespace Diotima
 	void Renderer::Update()
 	{
 		BROFILER_CATEGORY("Renderer::Update", Profiler::Color::Red);
-		static_cast<DX12GFXDevice*>(mDevice.get())->OnRender();
+		mDriverInterface->Present();
 	}
 
 	void Renderer::ShutDown()
 	{
+		mDriverInterface->Shutdown();
 	}
 
 	void Renderer::DX12Initialize()
 	{
 		mDriverInterface = std::make_unique<DX12GFXDriverInterface>();
+		mDriverInterface->SetWindow(mWindowHandle);
 		mDriverInterface->Initialize();
-
-		mDevice = std::make_unique<DX12GFXDevice>();
-		mDevice->SetWindow(mWindowHandle);
-		mDevice->Initialize();
 	}
 
 	void Renderer::EnableVsync(bool bEnabled)

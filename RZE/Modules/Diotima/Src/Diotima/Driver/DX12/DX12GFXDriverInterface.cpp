@@ -6,6 +6,8 @@
 
 #include <Diotima/Driver/DX12/DX12GFXDevice.h>
 
+#include <Utils/DebugUtils/Debug.h>
+
 namespace Diotima
 {
 
@@ -18,6 +20,26 @@ namespace Diotima
  			debugController->EnableDebugLayer();
  		}
 #endif
+
+		mDevice = std::make_unique<DX12GFXDevice>();
+		mDevice->SetWindow(mWindowHandle);
+		mDevice->Initialize();
+	}
+
+	void DX12GFXDriverInterface::SetWindow(void* windowHandle)
+	{
+		AssertNotNull(windowHandle);
+		mWindowHandle = windowHandle;
+	}
+
+	void DX12GFXDriverInterface::Shutdown()
+	{
+		mDevice->Shutdown();
+	}
+
+	void DX12GFXDriverInterface::Present()
+	{
+		mDevice->Present();
 	}
 
 }
