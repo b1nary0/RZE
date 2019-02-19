@@ -2,16 +2,11 @@
 
 #include <memory>
 
-#include <wrl.h>
-#include <Diotima/Driver/DX12/d3dx12.h>
-#include <dxgi.h>
-#include <dxgi1_4.h>
+#include <Diotima/Driver/DX12/DX12.h>
 
 #include <Diotima/Driver/GFXDevice.h> 
 
 #include <Utils/PrimitiveDefs.h>
-
-using namespace Microsoft::WRL;
 
 namespace Diotima
 {
@@ -69,7 +64,6 @@ namespace Diotima
 		U32 mRTVDescriptorSize;
 
 		// Fence stuff
-		U32 mFrameIndex;
 		HANDLE mFenceEvent;
 		ComPtr<ID3D12Fence> mFence;
 		U64 mFenceValue;
