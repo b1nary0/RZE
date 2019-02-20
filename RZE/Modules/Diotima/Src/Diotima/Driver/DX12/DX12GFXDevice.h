@@ -10,6 +10,8 @@
 
 namespace Diotima
 {
+	class DX12GFXVertexBuffer;
+
 	// #TODO(Josh::Eventually move these into a more configurable/stateful place)
 	constexpr int kBufferCount = 2;
 	constexpr int kBufferWidth = 1920;
@@ -30,15 +32,21 @@ namespace Diotima
 
 		virtual void Shutdown() override;
 
+		virtual IGFXVertexBuffer* CreateBuffer(const std::vector<float>& data);
+
 	public:
 		void Present();
+
+		ID3D12Device* GetDevice();
+		ID3D12GraphicsCommandList* GetCommandList();
+		ID3D12CommandQueue* GetCommandQueue();
 
 	private:
 		void InitializeAssets();
 		void PopulateCommandList();
 		void WaitForPreviousFrame();
 
-
+		
 	private:
 		ComPtr<ID3D12Device> mDevice;
 		ComPtr<ID3D12CommandQueue> mCommandQueue;
@@ -67,5 +75,10 @@ namespace Diotima
 		HANDLE mFenceEvent;
 		ComPtr<ID3D12Fence> mFence;
 		U64 mFenceValue;
+
+		// NEW
+	private:
+		std::vector<std::unique_ptr<DX12GFXVertexBuffer>> mVertexBuffers;
+
 	};
 }

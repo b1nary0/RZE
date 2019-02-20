@@ -37,6 +37,7 @@ public:
 	// Operators
 	//
 public:
+	float operator[](int index) const;
 
 private:
 	static Vector4D sDefaultVec;

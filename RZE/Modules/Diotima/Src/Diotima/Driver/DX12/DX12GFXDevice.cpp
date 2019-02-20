@@ -1,7 +1,6 @@
 #include <Diotima/Driver/DX12/DX12GFXDevice.h>
 
-
-#include <D3DCompiler.h>
+#include <Diotima/Driver/DX12/DX12GFXVertexBuffer.h>
 
 #include <Utils/Conversions.h>
 #include <Utils/DebugUtils/Debug.h>
@@ -132,8 +131,8 @@ namespace Diotima
 	{
 		PopulateCommandList();
 
- 		ID3D12CommandList* ppCommandLists[] = { mCommandList.Get() };
- 		mCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+		ID3D12CommandList* ppCommandLists[] = { mCommandList.Get() };
+		mCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
 		mSwapChain->Present(1, 0);
 
@@ -198,7 +197,6 @@ namespace Diotima
 		mCommandList->Close();
 
 		// VERTEX BUFFER
-		ComPtr<ID3D12Resource> uploadBuf;
 		{
 			struct Vertex
 			{
@@ -214,48 +212,23 @@ namespace Diotima
 				{ { -0.25f, -0.25f * aspectRatio, 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } }
 			};
 
-			const U32 vertexBufferSize = sizeof(triangleVertices);
+			std::vector<float> data;
+			data.reserve(7 * 3);
+			for (int index = 0; index < _countof(triangleVertices); ++index)
+			{
+				for (int _index = 0; _index < 3; ++_index)
+				{
+					data.push_back(triangleVertices[index].position[_index]);
+				}
+
+				for (int _index = 0; _index < 4; ++_index)
+				{
+					data.push_back(triangleVertices[index].color[_index]);
+				}
+			}
 
 			mCommandList->Reset(mCommandAllocator.Get(), mPipelineState.Get());
-
-			HRESULT res = mDevice->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD), D3D12_HEAP_FLAG_NONE, &CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize), D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadBuf));
-			res = mDevice->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), D3D12_HEAP_FLAG_NONE, &CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize), D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&mVertexBuffer));
-
-			mCommandList->ResourceBarrier(1,
-				&CD3DX12_RESOURCE_BARRIER::Transition(mVertexBuffer.Get(),
-					D3D12_RESOURCE_STATE_COMMON,
-					D3D12_RESOURCE_STATE_COPY_DEST));
-
-			// Copy to buffer
-			U8* pVertexDataBegin;
-			CD3DX12_RANGE readRange(0, 0);
-			uploadBuf->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin));
-			memcpy(pVertexDataBegin, triangleVertices, vertexBufferSize);
-			uploadBuf->Unmap(0, nullptr);
-
-			D3D12_SUBRESOURCE_DATA subResourceData = {};
-			subResourceData.pData = pVertexDataBegin;
-			subResourceData.RowPitch = vertexBufferSize;
-			subResourceData.SlicePitch = subResourceData.RowPitch;
-
-			UpdateSubresources<1>(mCommandList.Get(), mVertexBuffer.Get(), uploadBuf.Get(), 0, 0, 1, &subResourceData);
-			//mCommandList->CopyResource(mVertexBuffer.Get(), uploadBuf.Get());
-
-			mCommandList->ResourceBarrier(1,
-				&CD3DX12_RESOURCE_BARRIER::Transition(mVertexBuffer.Get(),
-					D3D12_RESOURCE_STATE_COPY_DEST,
-					D3D12_RESOURCE_STATE_GENERIC_READ));
-
-			mCommandList->Close();
-
-			ID3D12CommandList* ppCommandLists[] = { mCommandList.Get() };
-			mCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-
-			// Initialize vertex buffer view
-			mVertexBufferView = new D3D12_VERTEX_BUFFER_VIEW();
-			mVertexBufferView->BufferLocation = mVertexBuffer->GetGPUVirtualAddress();
-			mVertexBufferView->StrideInBytes = sizeof(Vertex);
-			mVertexBufferView->SizeInBytes = vertexBufferSize;
+			CreateBuffer(data);
 		}
 
 		mViewport = new D3D12_VIEWPORT();
@@ -299,7 +272,7 @@ namespace Diotima
 		const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
 		mCommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 		mCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		mCommandList->IASetVertexBuffers(0, 1, mVertexBufferView);
+		mCommandList->IASetVertexBuffers(0, 1, mVertexBuffers.back()->GetBufferView());
 		mCommandList->DrawInstanced(3, 1, 0, 0);
 
 		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTargets[mCurrentFrame].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
@@ -326,4 +299,29 @@ namespace Diotima
 		WaitForPreviousFrame();
 		CloseHandle(mFenceEvent);
 	}
+
+	IGFXVertexBuffer* DX12GFXDevice::CreateBuffer(const std::vector<float>& data)
+	{
+		mVertexBuffers.push_back(std::make_unique<DX12GFXVertexBuffer>());
+		mVertexBuffers.back()->SetDevice(this);
+		mVertexBuffers.back()->Allocate(data);
+
+		return mVertexBuffers.back().get();
+	}
+
+	ID3D12Device* DX12GFXDevice::GetDevice()
+	{
+		return mDevice.Get();
+	}
+
+	ID3D12GraphicsCommandList* DX12GFXDevice::GetCommandList()
+	{
+		return mCommandList.Get();
+	}
+
+	ID3D12CommandQueue* DX12GFXDevice::GetCommandQueue()
+	{
+		return mCommandQueue.Get();
+	}
+
 }

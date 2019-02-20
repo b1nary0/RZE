@@ -77,3 +77,8 @@ const glm::vec4& Vector4D::GetInternalVec() const
 {
 	return mVec;
 }
+
+float Vector4D::operator[](int index) const
+{
+	return mVec[index];
+}

@@ -73,7 +73,7 @@ bool Model3D::Load(const FilePath& filePath)
 		}
 	}
 
-	mMesh.Initialize(vertexDataBuffer);
+	//mMesh.Initialize(vertexDataBuffer);
 	mMesh.SetMeshes(meshGeometry);
 	if (mMesh.GetSubMeshes().size() != AssimpScene->mNumMeshes)
 	{
