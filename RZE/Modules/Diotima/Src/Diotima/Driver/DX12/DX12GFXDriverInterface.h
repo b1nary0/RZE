@@ -16,9 +16,11 @@ namespace Diotima
 
 	public:
 		virtual void Initialize() override;
+		virtual void Present() override;
 		virtual void Shutdown() override;
 
-		virtual void Present() override;
+		virtual U32 CreateVertexBuffer(void* data, U32 numElements) override;
+		virtual U32 CreateIndexBuffer(void* data, U32 numElements) override;
 
 		void SetWindow(void* windowHandle) override;
 

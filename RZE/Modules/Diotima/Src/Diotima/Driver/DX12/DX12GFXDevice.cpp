@@ -1,6 +1,7 @@
 #include <Diotima/Driver/DX12/DX12GFXDevice.h>
 
 #include <Diotima/Driver/DX12/DX12GFXVertexBuffer.h>
+#include <Diotima/Driver/DX12/DX12GFXIndexBuffer.h>
 
 #include <Utils/Conversions.h>
 #include <Utils/DebugUtils/Debug.h>
@@ -173,7 +174,9 @@ namespace Diotima
 			D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
 			{
 				{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-				{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+				{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+				{"UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+				{"TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 			};
 
 			D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
@@ -195,41 +198,6 @@ namespace Diotima
 
 		mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mCommandAllocator.Get(), mPipelineState.Get(), IID_PPV_ARGS(&mCommandList));
 		mCommandList->Close();
-
-		// VERTEX BUFFER
-		{
-			struct Vertex
-			{
-				Vector3D position;
-				Vector4D color;
-			};
-
-			const float aspectRatio = static_cast<float>(kBufferWidth) / static_cast<float>(kBufferHeight);
-			Vertex triangleVertices[] =
-			{
-				{ { 0.0f, 0.25f * aspectRatio, 0.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
-				{ { 0.25f, -0.25f * aspectRatio, 0.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
-				{ { -0.25f, -0.25f * aspectRatio, 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } }
-			};
-
-			std::vector<float> data;
-			data.reserve(7 * 3);
-			for (int index = 0; index < _countof(triangleVertices); ++index)
-			{
-				for (int _index = 0; _index < 3; ++_index)
-				{
-					data.push_back(triangleVertices[index].position[_index]);
-				}
-
-				for (int _index = 0; _index < 4; ++_index)
-				{
-					data.push_back(triangleVertices[index].color[_index]);
-				}
-			}
-
-			mCommandList->Reset(mCommandAllocator.Get(), mPipelineState.Get());
-			CreateBuffer(data);
-		}
 
 		mViewport = new D3D12_VIEWPORT();
 		mViewport->Height = kBufferHeight;
@@ -273,7 +241,9 @@ namespace Diotima
 		mCommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 		mCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		mCommandList->IASetVertexBuffers(0, 1, mVertexBuffers.back()->GetBufferView());
-		mCommandList->DrawInstanced(3, 1, 0, 0);
+		mCommandList->IASetIndexBuffer(mIndexBuffers.back()->GetBufferView());
+		mCommandList->DrawInstanced(105844, 1, 0, 0);
+		//mCommandList->DrawIndexedInstanced(mIndexBuffers.back()->GetNumElements(), 1, 0, 0, 0);
 
 		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTargets[mCurrentFrame].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
 		mCommandList->Close();
@@ -300,13 +270,22 @@ namespace Diotima
 		CloseHandle(mFenceEvent);
 	}
 
-	IGFXVertexBuffer* DX12GFXDevice::CreateBuffer(const std::vector<float>& data)
+	U32 DX12GFXDevice::CreateVertexBuffer(void* data, U32 numElements)
 	{
 		mVertexBuffers.push_back(std::make_unique<DX12GFXVertexBuffer>());
 		mVertexBuffers.back()->SetDevice(this);
-		mVertexBuffers.back()->Allocate(data);
+		mVertexBuffers.back()->Allocate(data, numElements);
 
-		return mVertexBuffers.back().get();
+		return static_cast<U32>(mVertexBuffers.size() - 1);
+	}
+
+	U32 DX12GFXDevice::CreateIndexBuffer(void* data, U32 numElements)
+	{
+		mIndexBuffers.push_back(std::make_unique<DX12GFXIndexBuffer>());
+		mIndexBuffers.back()->SetDevice(this);
+		mIndexBuffers.back()->Allocate(data, numElements);
+
+		return static_cast<U32>(mIndexBuffers.size() - 1);
 	}
 
 	ID3D12Device* DX12GFXDevice::GetDevice()
@@ -322,6 +301,11 @@ namespace Diotima
 	ID3D12CommandQueue* DX12GFXDevice::GetCommandQueue()
 	{
 		return mCommandQueue.Get();
+	}
+
+	void DX12GFXDevice::ResetCommandList()
+	{
+		mCommandList->Reset(mCommandAllocator.Get(), mPipelineState.Get());
 	}
 
 }

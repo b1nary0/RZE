@@ -1,5 +1,9 @@
 #pragma once
 
+#include <vector>
+
+#include <Utils/PrimitiveDefs.h>
+
 //
 // GFXDriverInterface
 //
@@ -20,9 +24,11 @@ namespace Diotima
 
 	public:
 		virtual void Initialize() = 0;
+		virtual void Present() = 0;
 		virtual void Shutdown() = 0;
 
-		virtual void Present() = 0;
+		virtual U32 CreateVertexBuffer(void* data, U32 numElements) = 0;
+		virtual U32 CreateIndexBuffer(void* data, U32 numElements) = 0;
 
 		virtual void SetWindow(void* windowHandle) = 0;
 	};

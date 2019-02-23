@@ -21,6 +21,11 @@ namespace Diotima
 	class GFXShaderPipeline;
 	class GFXTexture2D;
 
+	enum class EBufferType
+	{
+		BufferType_Vertex
+	};
+
 	class Renderer
 	{
 	public:
@@ -69,10 +74,6 @@ namespace Diotima
 		void Update();
 		void ShutDown();
 
-		void DX12Initialize();
-
-		// #TODO(Josh::Really really don't like this, fix later)
-		void SetWindow(void* handle) { mWindowHandle = handle; }
 
 	public:
 		Int32 AddRenderItem(const RenderItemProtocol& itemProtocol);
@@ -82,10 +83,19 @@ namespace Diotima
 		inline RenderItemProtocol& GetItemProtocolByIdx(Int32 idx) { return mRenderList[idx]; }
 		inline LightItemProtocol& GetLightProtocolByIdx(Int32 idx) { return mLightingList[idx]; }
 
+		// #TODO(Josh::Really really don't like this, fix later)
+		void SetWindow(void* handle) { mWindowHandle = handle; }
 		void SetCamera(const CameraItemProtocol& cameraItem) { camera = std::move(cameraItem); }
 
 		void EnableVsync(bool bEnable);
 		void ResizeCanvas(const Vector2D& newSize);
+
+		// #TODO(Josh::Stand-ins for command infrastructure until DX12 rendering stabilized)
+		U32 CreateVertexBuffer(void* data, U32 numElements);
+		U32 CreateIndexBuffer(void* data, U32 numElements);
+
+	private:
+		void DX12Initialize();
 		
 	private:
 		Vector2D mCanvasSize;

@@ -1,5 +1,9 @@
 #pragma once
 
+#include <vector>
+
+#include <Utils/PrimitiveDefs.h>
+
 namespace Diotima
 {
 	class IGFXVertexBuffer;
@@ -15,6 +19,6 @@ namespace Diotima
 		virtual void SetWindow(void* windowHandle) = 0;
 		virtual void Shutdown() = 0;
 
-		virtual IGFXVertexBuffer* CreateBuffer(const std::vector<float>& data) = 0;
+		virtual U32 CreateVertexBuffer(void* data, U32 numElements) = 0;
 	};
 }

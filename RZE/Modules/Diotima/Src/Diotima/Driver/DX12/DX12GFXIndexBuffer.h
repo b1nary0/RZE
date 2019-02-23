@@ -8,11 +8,11 @@ namespace Diotima
 {
 	class DX12GFXDevice;
 
-	class DX12GFXVertexBuffer final : public IGFXVertexBuffer
+	class DX12GFXIndexBuffer final : public IGFXIndexBuffer
 	{
 	public:
-		DX12GFXVertexBuffer() = default;
-		virtual ~DX12GFXVertexBuffer() = default;
+		DX12GFXIndexBuffer() = default;
+		virtual ~DX12GFXIndexBuffer() = default;
 
 	public:
 		virtual void Allocate(void* data, U32 numElements) override;
@@ -20,7 +20,7 @@ namespace Diotima
 	public:
 		void SetDevice(DX12GFXDevice* device);
 
-		D3D12_VERTEX_BUFFER_VIEW* GetBufferView();
+		D3D12_INDEX_BUFFER_VIEW* GetBufferView();
 
 		U32 GetNumElements() const;
 
@@ -28,8 +28,8 @@ namespace Diotima
 		ComPtr<ID3D12Resource> mGPUBuffer;
 		ComPtr<ID3D12Resource> mUploadBuffer;
 
-		D3D12_VERTEX_BUFFER_VIEW* mGPUBufferView;
 		DX12GFXDevice* mDevice;
+		D3D12_INDEX_BUFFER_VIEW* mGPUBufferView;
 
 		U32 mNumElements;
 	};

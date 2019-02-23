@@ -1,12 +1,12 @@
 struct VS_IN
 {
 	float3 Position : POSITION;
-	float4 Color : COLOR;
+	float4 Color : NORMAL;
 };
 
 struct VS_OUT
 {
-	float4 Color : COLOR;
+	float4 Color : NORMAL;
 	float4 Position : SV_POSITION;
 };
 

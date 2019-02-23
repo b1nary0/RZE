@@ -94,6 +94,18 @@ namespace Diotima
 		LOG_CONSOLE_ARGS("New Canvas Size: %f x %f", mCanvasSize.X(), mCanvasSize.Y());
 	}
 
+
+	U32 Renderer::CreateVertexBuffer(void* data, U32 numElements)
+	{
+		return mDriverInterface->CreateVertexBuffer(data, numElements);
+	}
+
+
+	U32 Renderer::CreateIndexBuffer(void* data, U32 numElements)
+	{
+		return mDriverInterface->CreateIndexBuffer(data, numElements);
+	}
+
 	Renderer::RenderItemProtocol::RenderItemProtocol()
 	{
 	}

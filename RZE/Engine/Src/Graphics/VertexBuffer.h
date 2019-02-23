@@ -13,4 +13,5 @@ public:
 private:
 	// The CPU buffer for the mesh data
 	std::vector<float> mLocalBuffer;
+	U32 mGPUBufferHandle;
 };

@@ -35,7 +35,7 @@ void GameApp::Initialize()
 {
 	RZE_Application::Initialize();
 
-	RZE().GetActiveScene().Load(FilePath("Assets/Scenes/TestGame.scene"));
+	RZE().GetActiveScene().Load(FilePath("Assets/Scenes/Test.scene"));
 
 	//RZE().GetActiveScene().GetEntityHandler().AddSystem<InteractiveSpawningSystem>();
 	RZE().GetActiveScene().GetEntityHandler().AddSystem<FreeCameraSystem>();

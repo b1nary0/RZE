@@ -1,29 +1,13 @@
-#include <Diotima/Driver/DX12/DX12GFXVertexBuffer.h>
+#include <Diotima/Driver/DX12/DX12GFXIndexBuffer.h>
 
 #include <Diotima/Driver/DX12/DX12GFXDevice.h>
 
 #include <Utils/DebugUtils/Debug.h>
-#include <Utils/Math/Vector2D.h>
-#include <Utils/Math/Vector3D.h>
-#include <Utils/Math/Vector4D.h>
 
 namespace Diotima
 {
-	struct TempDataLayoutStructure
-	{
-		Vector3D position;
-		Vector3D normal;
-		Vector2D uv;
-		Vector3D tangents;
-	};
 
-	struct TempVertexDataLayout
-	{
-		Vector3D position;
-		Vector4D color;
-	};
-
-	void DX12GFXVertexBuffer::Allocate(void* data, U32 numElements)
+	void DX12GFXIndexBuffer::Allocate(void* data, U32 numElements)
 	{
 		mNumElements = numElements;
 
@@ -56,7 +40,6 @@ namespace Diotima
 
 
 		UpdateSubresources<1>(commandList, mGPUBuffer.Get(), mUploadBuffer.Get(), 0, 0, 1, &subResourceData);
-		//mCommandList->CopyResource(mVertexBuffer.Get(), uploadBuf.Get());
 
 		commandList->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(mGPUBuffer.Get(),
@@ -69,28 +52,28 @@ namespace Diotima
 		commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
 		// Initialize vertex buffer view
-		mGPUBufferView = new D3D12_VERTEX_BUFFER_VIEW();
+		mGPUBufferView = new D3D12_INDEX_BUFFER_VIEW();
+		mGPUBufferView->Format = DXGI_FORMAT_R32_UINT;
 		mGPUBufferView->BufferLocation = mGPUBuffer->GetGPUVirtualAddress();
-		mGPUBufferView->StrideInBytes = sizeof(TempDataLayoutStructure);
 		mGPUBufferView->SizeInBytes = static_cast<UINT>(bufferSize);
 
 		mDevice->WaitForPreviousFrame();
 	}
 
-	void DX12GFXVertexBuffer::SetDevice(DX12GFXDevice* device)
+	void DX12GFXIndexBuffer::SetDevice(DX12GFXDevice* device)
 	{
 		AssertNotNull(device);
 		mDevice = device;
 	}
 
-	D3D12_VERTEX_BUFFER_VIEW* DX12GFXVertexBuffer::GetBufferView()
-	{
-		return mGPUBufferView;
-	}
-
-	U32 DX12GFXVertexBuffer::GetNumElements() const
+	U32 DX12GFXIndexBuffer::GetNumElements() const
 	{
 		return mNumElements;
+	}
+
+	D3D12_INDEX_BUFFER_VIEW* DX12GFXIndexBuffer::GetBufferView()
+	{
+		return mGPUBufferView;
 	}
 
 }

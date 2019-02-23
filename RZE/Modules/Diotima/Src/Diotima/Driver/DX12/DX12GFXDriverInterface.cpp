@@ -42,4 +42,14 @@ namespace Diotima
 		mDevice->Present();
 	}
 
+	U32 DX12GFXDriverInterface::CreateVertexBuffer(void* data, U32 numElements)
+	{
+		return mDevice->CreateVertexBuffer(data, numElements);
+	}
+
+	U32 DX12GFXDriverInterface::CreateIndexBuffer(void* data, U32 numElements)
+	{
+		return mDevice->CreateIndexBuffer(data, numElements);
+	}
+
 }

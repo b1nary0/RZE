@@ -46,10 +46,14 @@ bool Model3D::Load(const FilePath& filePath)
 	
 	// #TODO(Josh::Describe data layout better. Build the infrastructure for it. Right now its Pos//Normal//UV//Tangent per vertex.
 	std::vector<float> vertexDataBuffer;
+	std::vector<U32> indexDataBuffer;
 	vertexDataBuffer.reserve(meshGeometry.size() * 11);
-	for (MeshGeometry geometery : meshGeometry)
+	indexDataBuffer.reserve(meshGeometry.size());
+	
+	U32 baseIndex = 0;
+	for (MeshGeometry geometry : meshGeometry)
 	{
-		for (MeshVertex vertex : geometery.GetVertices())
+		for (MeshVertex vertex : geometry.GetVertices())
 		{
 			for (int index = 0; index < 3; ++index)
 			{
@@ -71,9 +75,16 @@ bool Model3D::Load(const FilePath& filePath)
 				vertexDataBuffer.push_back(vertex.Tangent[index]);
 			}
 		}
+
+		for (U32 faceIndex : geometry.GetIndices())
+		{
+			indexDataBuffer.push_back(faceIndex + baseIndex);
+		}
+
+		baseIndex += static_cast<U32>(geometry.GetIndices().size());
 	}
 
-	//mMesh.Initialize(vertexDataBuffer);
+	mMesh.Initialize(vertexDataBuffer, indexDataBuffer);
 	mMesh.SetMeshes(meshGeometry);
 	if (mMesh.GetSubMeshes().size() != AssimpScene->mNumMeshes)
 	{

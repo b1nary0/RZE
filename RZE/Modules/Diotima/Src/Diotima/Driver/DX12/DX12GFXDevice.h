@@ -11,6 +11,7 @@
 namespace Diotima
 {
 	class DX12GFXVertexBuffer;
+	class DX12GFXIndexBuffer;
 
 	// #TODO(Josh::Eventually move these into a more configurable/stateful place)
 	constexpr int kBufferCount = 2;
@@ -32,7 +33,8 @@ namespace Diotima
 
 		virtual void Shutdown() override;
 
-		virtual IGFXVertexBuffer* CreateBuffer(const std::vector<float>& data);
+		virtual U32 CreateVertexBuffer(void* data, U32 numElements);
+		virtual U32 CreateIndexBuffer(void* data, U32 numElements);
 
 	public:
 		void Present();
@@ -41,12 +43,14 @@ namespace Diotima
 		ID3D12GraphicsCommandList* GetCommandList();
 		ID3D12CommandQueue* GetCommandQueue();
 
+		void ResetCommandList();
+
+		void WaitForPreviousFrame();
+
 	private:
 		void InitializeAssets();
 		void PopulateCommandList();
-		void WaitForPreviousFrame();
 
-		
 	private:
 		ComPtr<ID3D12Device> mDevice;
 		ComPtr<ID3D12CommandQueue> mCommandQueue;
@@ -79,6 +83,7 @@ namespace Diotima
 		// NEW
 	private:
 		std::vector<std::unique_ptr<DX12GFXVertexBuffer>> mVertexBuffers;
+		std::vector<std::unique_ptr<DX12GFXIndexBuffer>> mIndexBuffers;
 
 	};
 }
