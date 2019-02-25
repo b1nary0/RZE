@@ -25,7 +25,7 @@ bool Model3D::Load(const FilePath& filePath)
 
 	Assimp::Importer ModelImporter;
 	const aiScene* AssimpScene = ModelImporter.ReadFile(mFilePath.GetAbsolutePath(),
-		aiProcess_GenNormals);
+		aiProcess_GenNormals | aiProcess_CalcTangentSpace);
 
 	bool bAssimpNotLoaded =
 		!AssimpScene
@@ -251,7 +251,6 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 	}
 
 	outMesh.SetMaterial(pMaterial);
-	outMesh.OnLoadFinished();
 }
 
 // #TODO(Josh::Pull this out into a util function)
