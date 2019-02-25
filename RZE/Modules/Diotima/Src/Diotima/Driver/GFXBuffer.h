@@ -23,4 +23,13 @@ namespace Diotima
 
 		virtual void Allocate(void* data, U32 numElements) = 0;
 	};
+
+	class IGFXDepthStencilBuffer
+	{
+	public:
+		IGFXDepthStencilBuffer() = default;
+		virtual ~IGFXDepthStencilBuffer() = default;
+
+		virtual void Allocate() = 0;
+	};
 }

@@ -10,8 +10,9 @@
 
 namespace Diotima
 {
-	class DX12GFXVertexBuffer;
+	class DX12GFXDepthStencilBuffer;
 	class DX12GFXIndexBuffer;
+	class DX12GFXVertexBuffer;
 
 	// #TODO(Josh::Eventually move these into a more configurable/stateful place)
 	constexpr int kBufferCount = 2;
@@ -55,7 +56,6 @@ namespace Diotima
 
 	private:
 		void InitializeAssets();
-		void PopulateCommandList();
 
 	private:
 		ComPtr<ID3D12Device> mDevice;
@@ -88,6 +88,7 @@ namespace Diotima
 
 		// NEW
 	private:
+		std::unique_ptr<DX12GFXDepthStencilBuffer> mDepthStencilBuffer;
 		std::vector<std::unique_ptr<DX12GFXVertexBuffer>> mVertexBuffers;
 		std::vector<std::unique_ptr<DX12GFXIndexBuffer>> mIndexBuffers;
 

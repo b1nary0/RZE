@@ -1,7 +1,8 @@
 #include <Diotima/Driver/DX12/DX12GFXDevice.h>
 
-#include <Diotima/Driver/DX12/DX12GFXVertexBuffer.h>
+#include <Diotima/Driver/DX12/DX12GFXDepthStencilBuffer.h>
 #include <Diotima/Driver/DX12/DX12GFXIndexBuffer.h>
+#include <Diotima/Driver/DX12/DX12GFXVertexBuffer.h>
 
 #include <Utils/Conversions.h>
 #include <Utils/DebugUtils/Debug.h>
@@ -184,8 +185,8 @@ namespace Diotima
 			psoDesc.PS = { reinterpret_cast<U8*>(pixelShader->GetBufferPointer()), pixelShader->GetBufferSize() };
 			psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 			psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-			psoDesc.DepthStencilState.DepthEnable = FALSE;
-			psoDesc.DepthStencilState.StencilEnable = FALSE;
+			psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+			psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
 			psoDesc.SampleMask = UINT_MAX;
 			psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 			psoDesc.NumRenderTargets = 1;
@@ -218,33 +219,11 @@ namespace Diotima
 			mFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 		}
 
+		mDepthStencilBuffer = std::make_unique<DX12GFXDepthStencilBuffer>();
+		mDepthStencilBuffer->SetDevice(this);
+		mDepthStencilBuffer->Allocate();
+
 		WaitForPreviousFrame();
-	}
-
-	void DX12GFXDevice::PopulateCommandList()
-	{
-		mCommandAllocator->Reset();
-		mCommandList->Reset(mCommandAllocator.Get(), mPipelineState.Get());
-
-		mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
-		mCommandList->RSSetViewports(1, mViewport);
-		mCommandList->RSSetScissorRects(1, &mScissorRect);
-
-		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTargets[mCurrentFrame].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
-
-		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mRTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), mCurrentFrame, mRTVDescriptorSize);
-		mCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
-
-		const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
-		mCommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
-		mCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		mCommandList->IASetVertexBuffers(0, 1, mVertexBuffers.back()->GetBufferView());
-		mCommandList->IASetIndexBuffer(mIndexBuffers.back()->GetBufferView());
-		//mCommandList->DrawInstanced(105844, 1, 0, 0);
-		mCommandList->DrawIndexedInstanced(mIndexBuffers.back()->GetNumElements(), 1, 0, 0, 0);
-
-		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTargets[mCurrentFrame].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
-		mCommandList->Close();
 	}
 
 	void DX12GFXDevice::WaitForPreviousFrame()
@@ -332,8 +311,9 @@ namespace Diotima
 		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTargets[mCurrentFrame].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
 
 		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mRTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), mCurrentFrame, mRTVDescriptorSize);
-		mCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
-
+		CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(mDepthStencilBuffer->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
+		mCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+		
 		const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
 		mCommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 	}
