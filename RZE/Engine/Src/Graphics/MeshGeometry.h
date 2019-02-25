@@ -1,11 +1,15 @@
 #pragma once
 
+#include <memory>
+
 #include <Utils/PrimitiveDefs.h>
 
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector3D.h>
 
 class Material;
+class IndexBuffer;
+class VertexBuffer;
 
 struct MeshVertex
 {
@@ -21,6 +25,10 @@ public:
 	MeshGeometry();
 	~MeshGeometry();
 
+	MeshGeometry(MeshGeometry&) {};
+
+	void AllocateGPUData();
+
 	void AddVertex(const MeshVertex& vertex);
 	void AddIndex(U32 index);
 
@@ -30,7 +38,13 @@ public:
 	const std::vector<U32>& GetIndices() const;
 	const std::vector<MeshVertex>& GetVertices();
 
+	U32 GetVertexBuffer() const;
+	U32 GetIndexBuffer() const;
+
 private:
+	std::unique_ptr<VertexBuffer> mVertexBuffer;
+	std::unique_ptr<IndexBuffer> mIndexBuffer;
+
 	Material* mMaterial;
 
 	std::vector<MeshVertex> mVertices;

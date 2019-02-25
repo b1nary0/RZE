@@ -11,6 +11,8 @@
 
 #include <Graphics/Material.h>
 #include <Graphics/Texture2D.h>
+#include <Graphics/IndexBuffer.h>
+#include <Graphics/VertexBuffer.h>
 
 #include <ECS/Components/CameraComponent.h>
 #include <ECS/Components/LightSourceComponent.h>
@@ -160,8 +162,11 @@ void RenderSystem::RegisterForComponentNotifications()
 			Model3D* const modelData = RZE_Application::RZE().GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
 
 			Diotima::Renderer::RenderItemProtocol item;
-			item.mVertexBufferIndex = modelData->GetStaticMesh().GetVertexBuffer();
-			item.mIndexBufferIndex = modelData->GetStaticMesh().GetIndexBuffer();
+			for (const MeshGeometry& mesh : modelData->GetStaticMesh().mSubMeshes)
+			{
+				item.mVertexBufferIndex.push_back(mesh.GetVertexBuffer());
+				item.mIndexBufferIndex.push_back(mesh.GetIndexBuffer());
+			}
 
 			Int32 itemIdx = RZE_Application::RZE().GetRenderer().AddRenderItem(item);
 			mRenderItemEntityMap[entityID] = itemIdx;

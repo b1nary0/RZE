@@ -8,7 +8,8 @@
 #include <Graphics/Material.h>
 #include <Graphics/Texture2D.h>
 
-#include <Diotima/Graphics/GFXMesh.h>
+#include <Graphics/IndexBuffer.h>
+#include <Graphics/VertexBuffer.h>
 
 Model3D::Model3D()
 {
@@ -25,7 +26,7 @@ bool Model3D::Load(const FilePath& filePath)
 
 	Assimp::Importer ModelImporter;
 	const aiScene* AssimpScene = ModelImporter.ReadFile(mFilePath.GetAbsolutePath(),
-		aiProcess_GenNormals | aiProcess_CalcTangentSpace);
+		aiProcessPreset_TargetRealtime_Fast | aiProcess_ConvertToLeftHanded | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph);
 
 	bool bAssimpNotLoaded =
 		!AssimpScene
@@ -42,49 +43,10 @@ bool Model3D::Load(const FilePath& filePath)
 	std::vector<MeshGeometry> meshGeometry;
 	meshGeometry.reserve(AssimpScene->mNumMeshes);
 	ProcessNode(*AssimpScene->mRootNode, *AssimpScene, meshGeometry);
-	
-	// #TODO(Josh::Describe data layout better. Build the infrastructure for it. Right now its Pos//Normal//UV//Tangent per vertex.
-	std::vector<float> vertexDataBuffer;
-	std::vector<U32> indexDataBuffer;
-	vertexDataBuffer.reserve(meshGeometry.size() * 11);
-	indexDataBuffer.reserve(meshGeometry.size());
-	
-	U32 baseIndex = 0;
-	for (MeshGeometry geometry : meshGeometry)
-	{
-		for (MeshVertex vertex : geometry.GetVertices())
-		{
-			for (int index = 0; index < 3; ++index)
-			{
-				vertexDataBuffer.push_back(vertex.Position[index]);
-			}
 
-			for (int index = 0; index < 3; ++index)
-			{
-				vertexDataBuffer.push_back(vertex.Normal[index]);
-			}
-
-			for (int index = 0; index < 2; ++index)
-			{
-				vertexDataBuffer.push_back(vertex.UVData[index]);
-			}
-
-			for (int index = 0; index < 3; ++index)
-			{
-				vertexDataBuffer.push_back(vertex.Tangent[index]);
-			}
-		}
-
-		for (U32 faceIndex : geometry.GetIndices())
-		{
-			indexDataBuffer.push_back(faceIndex + baseIndex);
-		}
-
-		baseIndex += static_cast<U32>(geometry.GetIndices().size());
-	}
-
-	mMesh.Initialize(vertexDataBuffer, indexDataBuffer);
-	if (meshGeometry.size() != AssimpScene->mNumMeshes)
+	//mMesh.Initialize(vertexDataBuffer, indexDataBuffer);
+	mMesh.mSubMeshes = std::move(meshGeometry);
+	if (mMesh.mSubMeshes.size() != AssimpScene->mNumMeshes)
 	{
 		// #TODO More informative error message.
 		LOG_CONSOLE("Error reading meshes.");
@@ -251,6 +213,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 	}
 
 	outMesh.SetMaterial(pMaterial);
+	outMesh.AllocateGPUData();
 }
 
 // #TODO(Josh::Pull this out into a util function)

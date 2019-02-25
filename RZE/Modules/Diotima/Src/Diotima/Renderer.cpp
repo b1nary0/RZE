@@ -80,14 +80,17 @@ namespace Diotima
 
 			for (RenderItemProtocol& itemProtocol : mRenderList)
 			{
-				DX12GFXVertexBuffer* const vertexBuffer = device->GetVertexBuffer(itemProtocol.mVertexBufferIndex);
-				DX12GFXIndexBuffer* const indexBuffer = device->GetIndexBuffer(itemProtocol.mIndexBufferIndex);
+				for (U32 bufferIndex : itemProtocol.mVertexBufferIndex)
+				{
+					DX12GFXVertexBuffer* const vertexBuffer = device->GetVertexBuffer(bufferIndex);
+					DX12GFXIndexBuffer* const indexBuffer = device->GetIndexBuffer(bufferIndex);
 
-				commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-				commandList->IASetVertexBuffers(0, 1, vertexBuffer->GetBufferView());
-				commandList->IASetIndexBuffer(indexBuffer->GetBufferView());
+					commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+					commandList->IASetVertexBuffers(0, 1, vertexBuffer->GetBufferView());
+					commandList->IASetIndexBuffer(indexBuffer->GetBufferView());
+					commandList->DrawIndexedInstanced(indexBuffer->GetNumElements(), 1, 0, 0, 0);
+				}
 				//mCommandList->DrawInstanced(105844, 1, 0, 0);
-				commandList->DrawIndexedInstanced(indexBuffer->GetNumElements(), 1, 0, 0, 0);
 			}
 		}
 		device->EndFrame();

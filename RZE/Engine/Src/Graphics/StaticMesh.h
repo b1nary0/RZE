@@ -23,6 +23,8 @@ public:
 	U32 GetVertexBuffer() const;
 	U32 GetIndexBuffer() const;
 
+	std::vector<MeshGeometry> mSubMeshes;
+
 private:
 	std::unique_ptr<VertexBuffer> mVertexBuffer;
 	std::unique_ptr<IndexBuffer> mIndexBuffer;
