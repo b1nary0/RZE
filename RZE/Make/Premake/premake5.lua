@@ -46,7 +46,7 @@ workspace "RZE"
 		"action:vs*"
 	}
 	
-	systemversion "10.0.17763.0"
+	systemversion "10.0.14393.0"
 	
 	flags
 	{
