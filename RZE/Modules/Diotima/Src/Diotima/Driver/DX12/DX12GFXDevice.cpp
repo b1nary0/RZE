@@ -130,8 +130,6 @@ namespace Diotima
 
 	void DX12GFXDevice::Present()
 	{
-		PopulateCommandList();
-
 		ID3D12CommandList* ppCommandLists[] = { mCommandList.Get() };
 		mCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
