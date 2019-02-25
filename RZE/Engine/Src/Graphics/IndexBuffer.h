@@ -13,7 +13,14 @@ public:
 public:
 	void Initialize();
 
+	U32 GetGPUBufferIndex();
+
 private:
 	std::vector<U32> mLocalBuffer;
 	U32 mGPUBufferHandle;
 };
+
+inline U32 IndexBuffer::GetGPUBufferIndex()
+{
+	return mGPUBufferHandle;
+}

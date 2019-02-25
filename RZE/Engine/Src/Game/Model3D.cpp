@@ -25,8 +25,7 @@ bool Model3D::Load(const FilePath& filePath)
 
 	Assimp::Importer ModelImporter;
 	const aiScene* AssimpScene = ModelImporter.ReadFile(mFilePath.GetAbsolutePath(),
-		aiProcess_Triangulate
-		| aiProcess_GenNormals /*| aiProcess_FlipUVs*/ | aiProcess_CalcTangentSpace);
+		aiProcess_GenNormals);
 
 	bool bAssimpNotLoaded =
 		!AssimpScene
@@ -85,8 +84,7 @@ bool Model3D::Load(const FilePath& filePath)
 	}
 
 	mMesh.Initialize(vertexDataBuffer, indexDataBuffer);
-	mMesh.SetMeshes(meshGeometry);
-	if (mMesh.GetSubMeshes().size() != AssimpScene->mNumMeshes)
+	if (meshGeometry.size() != AssimpScene->mNumMeshes)
 	{
 		// #TODO More informative error message.
 		LOG_CONSOLE("Error reading meshes.");

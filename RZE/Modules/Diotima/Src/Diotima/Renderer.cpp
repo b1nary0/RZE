@@ -15,6 +15,8 @@
 // DX12 Branch Temp
 #include <Diotima/Driver/DX12/DX12GFXDriverInterface.h>
 #include <Diotima/Driver/DX12/DX12GFXDevice.h>
+#include <Diotima/Driver/DX12/DX12GFXIndexBuffer.h>
+#include <Diotima/Driver/DX12/DX12GFXVertexBuffer.h>
 
 namespace Diotima
 {
@@ -67,6 +69,29 @@ namespace Diotima
 	void Renderer::Update()
 	{
 		BROFILER_CATEGORY("Renderer::Update", Profiler::Color::Red);
+
+		DX12GFXDevice* const device = mDriverInterface->mDevice.get();
+		device->ResetCommandAllocator();
+		device->ResetCommandList();
+
+		device->BeginFrame();
+		{
+			ID3D12GraphicsCommandList* commandList = device->GetCommandList();
+
+			for (RenderItemProtocol& itemProtocol : mRenderList)
+			{
+				DX12GFXVertexBuffer* const vertexBuffer = device->GetVertexBuffer(itemProtocol.mVertexBufferIndex);
+				DX12GFXIndexBuffer* const indexBuffer = device->GetIndexBuffer(itemProtocol.mIndexBufferIndex);
+
+				commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+				commandList->IASetVertexBuffers(0, 1, vertexBuffer->GetBufferView());
+				commandList->IASetIndexBuffer(indexBuffer->GetBufferView());
+				//mCommandList->DrawInstanced(105844, 1, 0, 0);
+				commandList->DrawIndexedInstanced(indexBuffer->GetNumElements(), 1, 0, 0, 0);
+			}
+		}
+		device->EndFrame();
+
 		mDriverInterface->Present();
 	}
 

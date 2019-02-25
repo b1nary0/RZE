@@ -242,8 +242,8 @@ namespace Diotima
 		mCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		mCommandList->IASetVertexBuffers(0, 1, mVertexBuffers.back()->GetBufferView());
 		mCommandList->IASetIndexBuffer(mIndexBuffers.back()->GetBufferView());
-		mCommandList->DrawInstanced(105844, 1, 0, 0);
-		//mCommandList->DrawIndexedInstanced(mIndexBuffers.back()->GetNumElements(), 1, 0, 0, 0);
+		//mCommandList->DrawInstanced(105844, 1, 0, 0);
+		mCommandList->DrawIndexedInstanced(mIndexBuffers.back()->GetNumElements(), 1, 0, 0, 0);
 
 		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTargets[mCurrentFrame].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
 		mCommandList->Close();
@@ -306,6 +306,44 @@ namespace Diotima
 	void DX12GFXDevice::ResetCommandList()
 	{
 		mCommandList->Reset(mCommandAllocator.Get(), mPipelineState.Get());
+	}
+
+	Diotima::DX12GFXVertexBuffer* DX12GFXDevice::GetVertexBuffer(U32 index)
+	{
+		AssertExpr(index < mVertexBuffers.size());
+		return mVertexBuffers[index].get();
+	}
+
+	Diotima::DX12GFXIndexBuffer* DX12GFXDevice::GetIndexBuffer(U32 index)
+	{
+		AssertExpr(index < mIndexBuffers.size());
+		return mIndexBuffers[index].get();
+	}
+
+	void DX12GFXDevice::ResetCommandAllocator()
+	{
+		mCommandAllocator->Reset();
+	}
+
+	void DX12GFXDevice::BeginFrame()
+	{
+		mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
+		mCommandList->RSSetViewports(1, mViewport);
+		mCommandList->RSSetScissorRects(1, &mScissorRect);
+
+		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTargets[mCurrentFrame].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+
+		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mRTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), mCurrentFrame, mRTVDescriptorSize);
+		mCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+
+		const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
+		mCommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+	}
+
+	void DX12GFXDevice::EndFrame()
+	{
+		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTargets[mCurrentFrame].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+		mCommandList->Close();
 	}
 
 }

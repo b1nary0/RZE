@@ -12,9 +12,9 @@ namespace Diotima
 	struct TempDataLayoutStructure
 	{
 		Vector3D position;
-		Vector3D normal;
-		Vector2D uv;
-		Vector3D tangents;
+ 		Vector3D normal;
+ 		Vector2D uv;
+ 		Vector3D tangents;
 	};
 
 	struct TempVertexDataLayout
@@ -54,9 +54,8 @@ namespace Diotima
 		subResourceData.RowPitch = bufferSize;
 		subResourceData.SlicePitch = subResourceData.RowPitch;
 
-
-		UpdateSubresources<1>(commandList, mGPUBuffer.Get(), mUploadBuffer.Get(), 0, 0, 1, &subResourceData);
-		//mCommandList->CopyResource(mVertexBuffer.Get(), uploadBuf.Get());
+		//UpdateSubresources<1>(commandList, mGPUBuffer.Get(), mUploadBuffer.Get(), 0, 0, 1, &subResourceData);
+		commandList->CopyResource(mGPUBuffer.Get(), mUploadBuffer.Get());
 
 		commandList->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(mGPUBuffer.Get(),

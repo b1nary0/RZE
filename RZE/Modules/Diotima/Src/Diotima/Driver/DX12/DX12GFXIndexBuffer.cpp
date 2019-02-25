@@ -11,7 +11,7 @@ namespace Diotima
 	{
 		mNumElements = numElements;
 
-		size_t bufferSize = numElements * sizeof(float);
+		size_t bufferSize = numElements * sizeof(U32);
 		ID3D12Device* device = mDevice->GetDevice();
 		ID3D12GraphicsCommandList* commandList = mDevice->GetCommandList();
 		ID3D12CommandQueue* commandQueue = mDevice->GetCommandQueue();

@@ -37,13 +37,19 @@ namespace Diotima
 		virtual U32 CreateIndexBuffer(void* data, U32 numElements);
 
 	public:
+		void BeginFrame();
+		void EndFrame();
 		void Present();
 
 		ID3D12Device* GetDevice();
 		ID3D12GraphicsCommandList* GetCommandList();
 		ID3D12CommandQueue* GetCommandQueue();
 
+		DX12GFXVertexBuffer* GetVertexBuffer(U32 index);
+		DX12GFXIndexBuffer* GetIndexBuffer(U32 index);
+
 		void ResetCommandList();
+		void ResetCommandAllocator();
 
 		void WaitForPreviousFrame();
 

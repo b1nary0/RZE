@@ -12,8 +12,7 @@
 namespace Diotima
 {
 	// DX12 Temp
-	class IGFXDriverInterface; 
-	class IGFXDevice;
+	class DX12GFXDriverInterface;
 
 	/////////////////
 	class GFXMesh;
@@ -33,7 +32,8 @@ namespace Diotima
 		{
 			RenderItemProtocol();
 
-			std::vector<GFXMesh*>			MeshData;
+			U32								mVertexBufferIndex;
+			U32								mIndexBufferIndex;
 			Matrix4x4						ModelMatrix;
 
 			bool bIsValid{ false };
@@ -108,7 +108,7 @@ namespace Diotima
 		
 		// DX12 Temp
 	private:
-		std::unique_ptr<IGFXDriverInterface> mDriverInterface;
+		std::unique_ptr<DX12GFXDriverInterface> mDriverInterface;
 
 		void* mWindowHandle;
 	};

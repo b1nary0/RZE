@@ -83,13 +83,13 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 	
 	//Perseus::Job::Task work([this, entities, transfComp, &renderer, &handler]()
 	{
-		for (auto& entity : entities)
-		{
-			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
-
-			Diotima::Renderer::RenderItemProtocol& item = renderer.GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
-			item.ModelMatrix = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
-		}
+// 		for (auto& entity : entities)
+// 		{
+// 			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
+// 
+// 			Diotima::Renderer::RenderItemProtocol& item = renderer.GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
+// 			item.ModelMatrix = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
+// 		}
 	}/*)*/;
 	//Perseus::JobScheduler::Get().PushJob(work);
 
@@ -159,15 +159,9 @@ void RenderSystem::RegisterForComponentNotifications()
 		{
 			Model3D* const modelData = RZE_Application::RZE().GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
 
-			std::vector<Diotima::GFXMesh*> gpuMeshes;
-			gpuMeshes.reserve(modelData->GetStaticMesh().GetSubMeshes().size());
-			for (const MeshGeometry& meshGeometry : modelData->GetStaticMesh().GetSubMeshes())
-			{
-				gpuMeshes.push_back(meshGeometry.GetGPUMesh());
-				gpuMeshes.back()->SetMaterial(TEMPHACK_ConvertMaterialToGPUMaterial(meshGeometry.GetMaterial()));
-			}
 			Diotima::Renderer::RenderItemProtocol item;
-			item.MeshData = std::move(gpuMeshes);
+			item.mVertexBufferIndex = modelData->GetStaticMesh().GetVertexBuffer();
+			item.mIndexBufferIndex = modelData->GetStaticMesh().GetIndexBuffer();
 
 			Int32 itemIdx = RZE_Application::RZE().GetRenderer().AddRenderItem(item);
 			mRenderItemEntityMap[entityID] = itemIdx;

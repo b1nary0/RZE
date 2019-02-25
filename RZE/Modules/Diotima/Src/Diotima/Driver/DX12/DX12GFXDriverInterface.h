@@ -24,8 +24,9 @@ namespace Diotima
 
 		void SetWindow(void* windowHandle) override;
 
-	private:
 		std::unique_ptr<DX12GFXDevice> mDevice;
+
+	private:
 		void* mWindowHandle;
 	};
 }
