@@ -25,8 +25,6 @@ public:
 	MeshGeometry();
 	~MeshGeometry();
 
-	MeshGeometry(MeshGeometry&) {};
-
 	void AllocateGPUData();
 
 	void AddVertex(const MeshVertex& vertex);
@@ -42,8 +40,8 @@ public:
 	U32 GetIndexBuffer() const;
 
 private:
-	std::unique_ptr<VertexBuffer> mVertexBuffer;
-	std::unique_ptr<IndexBuffer> mIndexBuffer;
+	std::shared_ptr<VertexBuffer> mVertexBuffer;
+	std::shared_ptr<IndexBuffer> mIndexBuffer;
 
 	Material* mMaterial;
 

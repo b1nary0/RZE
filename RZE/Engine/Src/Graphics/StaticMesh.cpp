@@ -12,21 +12,12 @@ StaticMesh::~StaticMesh()
 {
 }
 
-void StaticMesh::Initialize(const std::vector<float>& meshData, const std::vector<U32>& indexData)
+void StaticMesh::Initialize(const std::vector<MeshGeometry>& meshGeometry)
 {
-	mVertexBuffer = std::make_unique<VertexBuffer>(meshData);
-	mVertexBuffer->Initialize();
-
-	mIndexBuffer = std::make_unique<IndexBuffer>(indexData);
-	mIndexBuffer->Initialize();
+	mSubMeshes = std::move(meshGeometry);
 }
 
-U32 StaticMesh::GetVertexBuffer() const
+const std::vector<MeshGeometry>& StaticMesh::GetSubMeshes() const
 {
-	return mVertexBuffer->GetGPUBufferIndex();
-}
-
-U32 StaticMesh::GetIndexBuffer() const
-{
-	return mIndexBuffer->GetGPUBufferIndex();
+	return mSubMeshes;
 }

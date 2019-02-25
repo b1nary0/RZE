@@ -162,10 +162,10 @@ void RenderSystem::RegisterForComponentNotifications()
 			Model3D* const modelData = RZE_Application::RZE().GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
 
 			Diotima::Renderer::RenderItemProtocol item;
-			for (const MeshGeometry& mesh : modelData->GetStaticMesh().mSubMeshes)
+			for (const MeshGeometry& mesh : modelData->GetStaticMesh().GetSubMeshes())
 			{
-				item.mVertexBufferIndex.push_back(mesh.GetVertexBuffer());
-				item.mIndexBufferIndex.push_back(mesh.GetIndexBuffer());
+				item.VertexBuffers.push_back(mesh.GetVertexBuffer());
+				item.IndexBuffers.push_back(mesh.GetIndexBuffer());
 			}
 
 			Int32 itemIdx = RZE_Application::RZE().GetRenderer().AddRenderItem(item);

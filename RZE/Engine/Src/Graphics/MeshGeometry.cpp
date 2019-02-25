@@ -41,10 +41,10 @@ void MeshGeometry::AllocateGPUData()
 		}
 	}
 
-	mVertexBuffer = std::make_unique<VertexBuffer>(vertexDataBuffer);
+	mVertexBuffer = std::make_shared<VertexBuffer>(vertexDataBuffer);
 	mVertexBuffer->Initialize();
 
-	mIndexBuffer = std::make_unique<IndexBuffer>(mIndices);
+	mIndexBuffer = std::make_shared<IndexBuffer>(mIndices);
 	mIndexBuffer->Initialize();
 }
 

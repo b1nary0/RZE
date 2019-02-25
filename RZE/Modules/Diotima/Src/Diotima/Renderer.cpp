@@ -80,10 +80,17 @@ namespace Diotima
 
 			for (RenderItemProtocol& itemProtocol : mRenderList)
 			{
-				for (U32 bufferIndex : itemProtocol.mVertexBufferIndex)
+				// #TODO(Josh::This should go away when a better architecture is implemented. For now we assume
+				//             everything is indexed and every mesh is 1:1 with their vert/index buffer count.)
+				AssertEqual(itemProtocol.VertexBuffers.size(), itemProtocol.IndexBuffers.size());
+
+				for (size_t index = 0; index < itemProtocol.VertexBuffers.size(); ++index)
 				{
-					DX12GFXVertexBuffer* const vertexBuffer = device->GetVertexBuffer(bufferIndex);
-					DX12GFXIndexBuffer* const indexBuffer = device->GetIndexBuffer(bufferIndex);
+					U32 vertexBufferIndex = itemProtocol.VertexBuffers[index];
+					U32 indexBufferIndex = itemProtocol.IndexBuffers[index];
+
+					DX12GFXVertexBuffer* const vertexBuffer = device->GetVertexBuffer(vertexBufferIndex);
+					DX12GFXIndexBuffer* const indexBuffer = device->GetIndexBuffer(indexBufferIndex);
 
 					commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 					commandList->IASetVertexBuffers(0, 1, vertexBuffer->GetBufferView());

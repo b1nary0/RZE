@@ -32,8 +32,10 @@ namespace Diotima
 		{
 			RenderItemProtocol();
 
-			std::vector<U32>								mVertexBufferIndex;
-			std::vector<U32>								mIndexBufferIndex;
+			// #TODO(Josh::This needs to be done better. Works for now, but will need resolving when stuff matures)
+			std::vector<U32>								VertexBuffers;
+			std::vector<U32>								IndexBuffers;
+
 			Matrix4x4						ModelMatrix;
 
 			bool bIsValid{ false };

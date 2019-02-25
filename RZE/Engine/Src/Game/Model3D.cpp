@@ -44,15 +44,14 @@ bool Model3D::Load(const FilePath& filePath)
 	meshGeometry.reserve(AssimpScene->mNumMeshes);
 	ProcessNode(*AssimpScene->mRootNode, *AssimpScene, meshGeometry);
 
-	//mMesh.Initialize(vertexDataBuffer, indexDataBuffer);
-	mMesh.mSubMeshes = std::move(meshGeometry);
-	if (mMesh.mSubMeshes.size() != AssimpScene->mNumMeshes)
+	if (meshGeometry.size() != AssimpScene->mNumMeshes)
 	{
 		// #TODO More informative error message.
 		LOG_CONSOLE("Error reading meshes.");
 		return false;
 	}
 
+	mMesh.Initialize(meshGeometry);
 	return true;
 }
 
