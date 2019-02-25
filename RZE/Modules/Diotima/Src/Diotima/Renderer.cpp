@@ -97,7 +97,6 @@ namespace Diotima
 					commandList->IASetIndexBuffer(indexBuffer->GetBufferView());
 					commandList->DrawIndexedInstanced(indexBuffer->GetNumElements(), 1, 0, 0, 0);
 				}
-				//mCommandList->DrawInstanced(105844, 1, 0, 0);
 			}
 		}
 		device->EndFrame();
