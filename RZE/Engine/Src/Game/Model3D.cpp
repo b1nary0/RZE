@@ -26,7 +26,7 @@ bool Model3D::Load(const FilePath& filePath)
 
 	Assimp::Importer ModelImporter;
 	const aiScene* AssimpScene = ModelImporter.ReadFile(mFilePath.GetAbsolutePath(),
-		aiProcessPreset_TargetRealtime_Fast | aiProcess_ConvertToLeftHanded | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph);
+		aiProcessPreset_TargetRealtime_Fast | aiProcess_ConvertToLeftHanded ^ aiProcess_FlipWindingOrder | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph);
 
 	bool bAssimpNotLoaded =
 		!AssimpScene
