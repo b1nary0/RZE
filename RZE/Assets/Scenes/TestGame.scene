@@ -7,7 +7,7 @@
         {
             "TransformComponent":
             {
-                "Position": [-5, 5, 5],
+                "Position": [-20, 5, 20],
                 "Scale": [1, 1, 1],
                 "Rotation": [0, 0, 0]
             },
@@ -16,7 +16,7 @@
                 "FOV": 65,
                 "NearCull": 0.1,
                 "FarCull": 1000,
-                "Forward": [0, 0, -1.0],
+                "Forward": [0.5, 0, -1.0],
                 "UpDir":[0.0, 1.0, 0.0]
             }
         }
@@ -50,7 +50,7 @@
 		{
 		  "Position": [-10, 0, 0],
 		  "Scale":[16, 16, 1],
-		  "Rotation":[-90, 0, 0]
+		  "Rotation":[90, 0, 0]
 		},
 		"MeshComponent":
 		{
@@ -66,7 +66,7 @@
 		{
 		  "Position": [-10, 8, -8],
 		  "Scale":[16, 16, 1],
-		  "Rotation":[0, 0, 0]
+		  "Rotation":[0, 180, 0]
 		},
 		"MeshComponent":
 		{
@@ -82,7 +82,7 @@
 		{
 		  "Position": [-2, 8, 0],
 		  "Scale":[16, 16, 1],
-		  "Rotation":[0, -90, 0]
+		  "Rotation":[0, 90, 0]
 		},
 		"MeshComponent":
 		{
