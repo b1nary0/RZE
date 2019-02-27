@@ -85,13 +85,13 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 	
 	//Perseus::Job::Task work([this, entities, transfComp, &renderer, &handler]()
 	{
-// 		for (auto& entity : entities)
-// 		{
-// 			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
-// 
-// 			Diotima::Renderer::RenderItemProtocol& item = renderer.GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
-// 			item.ModelMatrix = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
-// 		}
+ 		for (auto& entity : entities)
+ 		{
+ 			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
+ 
+ 			Diotima::Renderer::RenderItemProtocol& item = renderer.GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
+ 			item.ModelMatrix = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
+ 		}
 	}/*)*/;
 	//Perseus::JobScheduler::Get().PushJob(work);
 

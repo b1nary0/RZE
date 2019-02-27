@@ -84,6 +84,8 @@ namespace Diotima
 				//             everything is indexed and every mesh is 1:1 with their vert/index buffer count.)
 				AssertEqual(itemProtocol.VertexBuffers.size(), itemProtocol.IndexBuffers.size());
 
+				Matrix4x4 MVP = camera.ProjectionMat * camera.ViewMat * itemProtocol.ModelMatrix;
+
 				for (size_t index = 0; index < itemProtocol.VertexBuffers.size(); ++index)
 				{
 					U32 vertexBufferIndex = itemProtocol.VertexBuffers[index];
@@ -95,6 +97,7 @@ namespace Diotima
 					commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 					commandList->IASetVertexBuffers(0, 1, vertexBuffer->GetBufferView());
 					commandList->IASetIndexBuffer(indexBuffer->GetBufferView());
+					commandList->SetGraphicsRoot32BitConstants(0, 16, MVP.GetValuePtr(), 0);
 					commandList->DrawIndexedInstanced(indexBuffer->GetNumElements(), 1, 0, 0, 0);
 				}
 			}
