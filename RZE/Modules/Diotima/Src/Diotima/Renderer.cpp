@@ -103,7 +103,10 @@ namespace Diotima
 			}
 		}
 		device->EndFrame();
+	}
 
+	void Renderer::Render()
+	{
 		mDriverInterface->Present();
 	}
 

@@ -74,8 +74,8 @@ namespace Diotima
 	public:
 		void Initialize();
 		void Update();
+		void Render();
 		void ShutDown();
-
 
 	public:
 		Int32 AddRenderItem(const RenderItemProtocol& itemProtocol);
