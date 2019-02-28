@@ -37,7 +37,6 @@ namespace Diotima
 
 		CD3DX12_RANGE readRange(0, 0);
 		mUploadBuffer->Map(0, &readRange, reinterpret_cast<void**>(&mResource));
-		//SetData(data);
 	}
 
 	void DX12GFXConstantBuffer::SetDevice(DX12GFXDevice* device)
