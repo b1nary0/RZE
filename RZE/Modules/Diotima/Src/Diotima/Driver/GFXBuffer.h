@@ -32,4 +32,13 @@ namespace Diotima
 
 		virtual void Allocate() = 0;
 	};
+
+	class IGFXConstantBuffer
+	{
+	public:
+		IGFXConstantBuffer() = default;
+		virtual ~IGFXConstantBuffer() = default;
+
+		virtual void Allocate(void* data, U32 numElements) = 0;
+	};
 }
