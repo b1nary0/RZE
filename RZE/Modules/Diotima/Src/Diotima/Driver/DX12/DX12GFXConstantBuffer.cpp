@@ -19,7 +19,7 @@ namespace Diotima
 		mDevice->GetDevice()->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD), 
 			D3D12_HEAP_FLAG_NONE, 
-			&CD3DX12_RESOURCE_DESC::Buffer(sizeof(float) * numElements), 
+			&CD3DX12_RESOURCE_DESC::Buffer(1024 * 64), 
 			D3D12_RESOURCE_STATE_GENERIC_READ, 
 			nullptr, 
 			IID_PPV_ARGS(&mUploadBuffer));
@@ -34,8 +34,6 @@ namespace Diotima
 		cbvDesc.BufferLocation = mUploadBuffer->GetGPUVirtualAddress();
 		cbvDesc.SizeInBytes = ((sizeof(float) * numElements) + 255) & ~255;
 		mDevice->GetDevice()->CreateConstantBufferView(&cbvDesc, mDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-
-		ZeroMemory(&mResource, sizeof(float) * numElements);
 
 		CD3DX12_RANGE readRange(0, 0);
 		mUploadBuffer->Map(0, &readRange, reinterpret_cast<void**>(&mResource));
