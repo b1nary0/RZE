@@ -1,6 +1,7 @@
 #include <Diotima/Driver/DX12/DX12GFXDevice.h>
 
 #include <Diotima/Driver/DX12/DX12GFXDepthStencilBuffer.h>
+#include <Diotima/Driver/DX12/DX12GFXConstantBuffer.h>
 #include <Diotima/Driver/DX12/DX12GFXIndexBuffer.h>
 #include <Diotima/Driver/DX12/DX12GFXVertexBuffer.h>
 
@@ -141,10 +142,28 @@ namespace Diotima
 
 	void DX12GFXDevice::InitializeAssets()
 	{
+		mMVPConstantBuffer = std::make_unique<DX12GFXConstantBuffer>();
+		mMVPConstantBuffer->SetDevice(this);
+		mMVPConstantBuffer->Allocate(nullptr, 16);
+
 		// ROOT SIGNATURE
 		{
+			D3D12_DESCRIPTOR_RANGE1 descriptorTableRanges[1];
+			descriptorTableRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+			descriptorTableRanges[0].NumDescriptors = 1;
+			descriptorTableRanges[0].BaseShaderRegister = 0;
+			descriptorTableRanges[0].RegisterSpace = 0;
+			descriptorTableRanges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+			descriptorTableRanges[0].Flags = D3D12_DESCRIPTOR_RANGE_FLAG_NONE;
+
+			D3D12_ROOT_DESCRIPTOR_TABLE1 descriptorTable;
+			descriptorTable.NumDescriptorRanges = _countof(descriptorTableRanges);
+			descriptorTable.pDescriptorRanges = &descriptorTableRanges[0];
+
 			CD3DX12_ROOT_PARAMETER1 rootParameters[1];
-			rootParameters[0].InitAsConstants(sizeof(float) * 16, 0, 0, D3D12_SHADER_VISIBILITY_VERTEX);
+			rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+			rootParameters[0].DescriptorTable = descriptorTable;
+			rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 
 			CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
 			rootSignatureDesc.Init_1_1(_countof(rootParameters), rootParameters, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
@@ -319,6 +338,10 @@ namespace Diotima
 		mCommandList->RSSetViewports(1, mViewport);
 		mCommandList->RSSetScissorRects(1, &mScissorRect);
 
+		ID3D12DescriptorHeap* descriptorHeaps[] = { mMVPConstantBuffer->GetDescriptorHeap() };
+		mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+		mCommandList->SetGraphicsRootDescriptorTable(0, mMVPConstantBuffer->GetDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+
 		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTargets[mCurrentFrame].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
 
 		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mRTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), mCurrentFrame, mRTVDescriptorSize);
@@ -334,6 +357,11 @@ namespace Diotima
 	{
 		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTargets[mCurrentFrame].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
 		mCommandList->Close();
+	}
+
+	Diotima::DX12GFXConstantBuffer* DX12GFXDevice::GetMVPConstantBuffer()
+	{
+		return mMVPConstantBuffer.get();
 	}
 
 }

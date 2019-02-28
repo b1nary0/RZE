@@ -8,6 +8,10 @@
 namespace Diotima
 {
 
+	DX12GFXConstantBuffer::~DX12GFXConstantBuffer()
+	{
+	}
+
 	void DX12GFXConstantBuffer::Allocate(void* data, U32 numElements)
 	{
 		mNumElements = numElements;
@@ -31,12 +35,11 @@ namespace Diotima
 		cbvDesc.SizeInBytes = ((sizeof(float) * numElements) + 255) & ~255;
 		mDevice->GetDevice()->CreateConstantBufferView(&cbvDesc, mDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
-		mResource = new float[16];
-		ZeroMemory(&mResource, sizeof(float) * 4);
+		ZeroMemory(&mResource, sizeof(float) * numElements);
 
 		CD3DX12_RANGE readRange(0, 0);
 		mUploadBuffer->Map(0, &readRange, reinterpret_cast<void**>(&mResource));
-		SetData(data);
+		//SetData(data);
 	}
 
 	void DX12GFXConstantBuffer::SetDevice(DX12GFXDevice* device)
@@ -53,6 +56,11 @@ namespace Diotima
 	void DX12GFXConstantBuffer::SetData(void* data)
 	{
 		memcpy(mResource, data, sizeof(float) * mNumElements);
+	}
+
+	ID3D12DescriptorHeap* DX12GFXConstantBuffer::GetDescriptorHeap()
+	{
+		return mDescriptorHeap.Get();
 	}
 
 }

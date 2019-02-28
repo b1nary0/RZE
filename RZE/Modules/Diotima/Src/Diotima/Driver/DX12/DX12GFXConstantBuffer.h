@@ -12,13 +12,15 @@ namespace Diotima
 	{
 	public:
 		DX12GFXConstantBuffer() = default;
-		virtual ~DX12GFXConstantBuffer() = default;
+		virtual ~DX12GFXConstantBuffer();
 
 	public:
 		virtual void Allocate(void* data, U32 numElements) override;
 
 	public:
 		void SetDevice(DX12GFXDevice* device);
+
+		ID3D12DescriptorHeap* GetDescriptorHeap();
 
 		U32 GetNumElements() const;
 

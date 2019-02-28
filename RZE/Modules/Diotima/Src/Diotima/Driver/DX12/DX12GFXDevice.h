@@ -11,6 +11,7 @@
 namespace Diotima
 {
 	class DX12GFXDepthStencilBuffer;
+	class DX12GFXConstantBuffer;
 	class DX12GFXIndexBuffer;
 	class DX12GFXVertexBuffer;
 
@@ -48,6 +49,8 @@ namespace Diotima
 
 		DX12GFXVertexBuffer* GetVertexBuffer(U32 index);
 		DX12GFXIndexBuffer* GetIndexBuffer(U32 index);
+
+		DX12GFXConstantBuffer* GetMVPConstantBuffer();
 
 		void ResetCommandList();
 		void ResetCommandAllocator();
@@ -88,6 +91,7 @@ namespace Diotima
 
 		// NEW
 	private:
+		std::unique_ptr<DX12GFXConstantBuffer> mMVPConstantBuffer;
 		std::unique_ptr<DX12GFXDepthStencilBuffer> mDepthStencilBuffer;
 		std::vector<std::unique_ptr<DX12GFXVertexBuffer>> mVertexBuffers;
 		std::vector<std::unique_ptr<DX12GFXIndexBuffer>> mIndexBuffers;

@@ -15,6 +15,7 @@
 // DX12 Branch Temp
 #include <Diotima/Driver/DX12/DX12GFXDriverInterface.h>
 #include <Diotima/Driver/DX12/DX12GFXDevice.h>
+#include <Diotima/Driver/DX12/DX12GFXConstantBuffer.h>
 #include <Diotima/Driver/DX12/DX12GFXIndexBuffer.h>
 #include <Diotima/Driver/DX12/DX12GFXVertexBuffer.h>
 
@@ -77,6 +78,7 @@ namespace Diotima
 		device->BeginFrame();
 		{
 			ID3D12GraphicsCommandList* commandList = device->GetCommandList();
+			DX12GFXConstantBuffer* const MVPConstantBuffer = mDriverInterface->mDevice->GetMVPConstantBuffer();
 
 			for (RenderItemProtocol& itemProtocol : mRenderList)
 			{
@@ -85,6 +87,8 @@ namespace Diotima
 				AssertEqual(itemProtocol.VertexBuffers.size(), itemProtocol.IndexBuffers.size());
 
 				Matrix4x4 MVP = camera.ProjectionMat * camera.ViewMat * itemProtocol.ModelMatrix;
+
+				MVPConstantBuffer->SetData(const_cast<float*>(MVP.GetValuePtr()));
 
 				for (size_t index = 0; index < itemProtocol.VertexBuffers.size(); ++index)
 				{
@@ -97,7 +101,6 @@ namespace Diotima
 					commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 					commandList->IASetVertexBuffers(0, 1, vertexBuffer->GetBufferView());
 					commandList->IASetIndexBuffer(indexBuffer->GetBufferView());
-					commandList->SetGraphicsRoot32BitConstants(0, 16, MVP.GetValuePtr(), 0);
 					commandList->DrawIndexedInstanced(indexBuffer->GetNumElements(), 1, 0, 0, 0);
 				}
 			}
