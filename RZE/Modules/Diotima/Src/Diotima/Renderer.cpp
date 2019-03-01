@@ -80,6 +80,7 @@ namespace Diotima
 			ID3D12GraphicsCommandList* commandList = device->GetCommandList();
 			DX12GFXConstantBuffer* const MVPConstantBuffer = mDriverInterface->mDevice->GetMVPConstantBuffer();
 
+			U32 objectIndex = 0;
 			for (RenderItemProtocol& itemProtocol : mRenderList)
 			{
 				// #TODO(Josh::This should go away when a better architecture is implemented. For now we assume
@@ -87,8 +88,9 @@ namespace Diotima
 				AssertEqual(itemProtocol.VertexBuffers.size(), itemProtocol.IndexBuffers.size());
 
 				Matrix4x4 MVP = camera.ProjectionMat * camera.ViewMat * itemProtocol.ModelMatrix;
+				MVPConstantBuffer->SetData(const_cast<float*>(MVP.GetValuePtr()), objectIndex);
 
-				MVPConstantBuffer->SetData(const_cast<float*>(MVP.GetValuePtr()));
+				commandList->SetGraphicsRootConstantBufferView(0, MVPConstantBuffer->GetResource()->GetGPUVirtualAddress() + (((sizeof(float) * 16) + 255) & ~255) * objectIndex);
 
 				for (size_t index = 0; index < itemProtocol.VertexBuffers.size(); ++index)
 				{
@@ -103,6 +105,8 @@ namespace Diotima
 					commandList->IASetIndexBuffer(indexBuffer->GetBufferView());
 					commandList->DrawIndexedInstanced(indexBuffer->GetNumElements(), 1, 0, 0, 0);
 				}
+
+				++objectIndex;
 			}
 		}
 		device->EndFrame();

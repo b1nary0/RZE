@@ -21,10 +21,12 @@ namespace Diotima
 		void SetDevice(DX12GFXDevice* device);
 
 		ID3D12DescriptorHeap* GetDescriptorHeap();
+		ID3D12Resource* GetResource();
 
 		U32 GetNumElements() const;
 
-		void SetData(void* data);
+		// #TODO(Josh::Yeah so this is garbo -- this should be done with some internal structure per object that describes the buffers/views/etc - future work)
+		void SetData(void* data, U32 objectIndex);
 
 	private:
 		ComPtr<ID3D12Resource> mUploadBuffer;

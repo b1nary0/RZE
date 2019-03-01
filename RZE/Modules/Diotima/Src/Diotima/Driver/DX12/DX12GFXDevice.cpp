@@ -156,13 +156,14 @@ namespace Diotima
 			descriptorTableRanges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 			descriptorTableRanges[0].Flags = D3D12_DESCRIPTOR_RANGE_FLAG_NONE;
 
-			D3D12_ROOT_DESCRIPTOR_TABLE1 descriptorTable;
-			descriptorTable.NumDescriptorRanges = _countof(descriptorTableRanges);
-			descriptorTable.pDescriptorRanges = &descriptorTableRanges[0];
+			D3D12_ROOT_DESCRIPTOR1 descriptor;
+			descriptor.RegisterSpace = 0;
+			descriptor.ShaderRegister = 0;
+			descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_NONE;
 
 			CD3DX12_ROOT_PARAMETER1 rootParameters[1];
-			rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-			rootParameters[0].DescriptorTable = descriptorTable;
+			rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+			rootParameters[0].Descriptor = descriptor;
 			rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 
 			CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
@@ -172,6 +173,11 @@ namespace Diotima
 			ComPtr<ID3DBlob> error;
 
 			D3DX12SerializeVersionedRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1_1, &signature, &error);
+			if (error != nullptr)
+			{
+				OutputDebugStringA((char*)error->GetBufferPointer());
+			}
+
 			mDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&mRootSignature));
 		}
 
@@ -337,10 +343,6 @@ namespace Diotima
 		mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
 		mCommandList->RSSetViewports(1, mViewport);
 		mCommandList->RSSetScissorRects(1, &mScissorRect);
-
-		ID3D12DescriptorHeap* descriptorHeaps[] = { mMVPConstantBuffer->GetDescriptorHeap() };
-		mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-		mCommandList->SetGraphicsRootDescriptorTable(0, mMVPConstantBuffer->GetDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
 
 		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTargets[mCurrentFrame].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
 

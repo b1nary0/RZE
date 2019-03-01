@@ -24,17 +24,6 @@ namespace Diotima
 			nullptr, 
 			IID_PPV_ARGS(&mUploadBuffer));
 
-		D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-		heapDesc.NumDescriptors = 1;
-		heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		mDevice->GetDevice()->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&mDescriptorHeap));
-
-		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
-		cbvDesc.BufferLocation = mUploadBuffer->GetGPUVirtualAddress();
-		cbvDesc.SizeInBytes = ((sizeof(float) * numElements) + 255) & ~255;
-		mDevice->GetDevice()->CreateConstantBufferView(&cbvDesc, mDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-
 		CD3DX12_RANGE readRange(0, 0);
 		mUploadBuffer->Map(0, &readRange, reinterpret_cast<void**>(&mResource));
 	}
@@ -50,14 +39,19 @@ namespace Diotima
 		return mNumElements;
 	}
 
-	void DX12GFXConstantBuffer::SetData(void* data)
+	void DX12GFXConstantBuffer::SetData(void* data, U32 objectIndex)
 	{
-		memcpy(mResource, data, sizeof(float) * mNumElements);
+		memcpy(((U8*)mResource + (((sizeof(float) * mNumElements) + 255) & ~255) * objectIndex), data, sizeof(float) * mNumElements);
 	}
 
 	ID3D12DescriptorHeap* DX12GFXConstantBuffer::GetDescriptorHeap()
 	{
 		return mDescriptorHeap.Get();
+	}
+
+	ID3D12Resource* DX12GFXConstantBuffer::GetResource()
+	{
+		return mUploadBuffer.Get();
 	}
 
 }
