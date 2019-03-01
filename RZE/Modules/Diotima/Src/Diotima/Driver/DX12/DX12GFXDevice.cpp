@@ -147,39 +147,7 @@ namespace Diotima
 		mMVPConstantBuffer->Allocate(nullptr, 16);
 
 		// ROOT SIGNATURE
-		{
-			D3D12_DESCRIPTOR_RANGE1 descriptorTableRanges[1];
-			descriptorTableRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
-			descriptorTableRanges[0].NumDescriptors = 1;
-			descriptorTableRanges[0].BaseShaderRegister = 0;
-			descriptorTableRanges[0].RegisterSpace = 0;
-			descriptorTableRanges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-			descriptorTableRanges[0].Flags = D3D12_DESCRIPTOR_RANGE_FLAG_NONE;
-
-			D3D12_ROOT_DESCRIPTOR1 descriptor;
-			descriptor.RegisterSpace = 0;
-			descriptor.ShaderRegister = 0;
-			descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_NONE;
-
-			CD3DX12_ROOT_PARAMETER1 rootParameters[1];
-			rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-			rootParameters[0].Descriptor = descriptor;
-			rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
-
-			CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
-			rootSignatureDesc.Init_1_1(_countof(rootParameters), rootParameters, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
-
-			ComPtr<ID3DBlob> signature;
-			ComPtr<ID3DBlob> error;
-
-			D3DX12SerializeVersionedRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1_1, &signature, &error);
-			if (error != nullptr)
-			{
-				OutputDebugStringA((char*)error->GetBufferPointer());
-			}
-
-			mDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&mRootSignature));
-		}
+		CreateRootSignature();
 
 		// PIPELINE STATE
 		{
@@ -364,6 +332,64 @@ namespace Diotima
 	Diotima::DX12GFXConstantBuffer* DX12GFXDevice::GetMVPConstantBuffer()
 	{
 		return mMVPConstantBuffer.get();
+	}
+
+	void DX12GFXDevice::CreateRootSignature()
+	{
+		D3D12_DESCRIPTOR_RANGE1 descriptorTableRanges[1];
+		descriptorTableRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+		descriptorTableRanges[0].NumDescriptors = 1;
+		descriptorTableRanges[0].BaseShaderRegister = 0;
+		descriptorTableRanges[0].RegisterSpace = 0;
+		descriptorTableRanges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+		descriptorTableRanges[0].Flags = D3D12_DESCRIPTOR_RANGE_FLAG_NONE;
+
+		D3D12_ROOT_DESCRIPTOR_TABLE1 descriptorTable;
+		descriptorTable.NumDescriptorRanges = _countof(descriptorTableRanges);
+		descriptorTable.pDescriptorRanges = &descriptorTableRanges[0];
+
+		D3D12_ROOT_DESCRIPTOR1 descriptor;
+		descriptor.RegisterSpace = 0;
+		descriptor.ShaderRegister = 0;
+		descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_NONE;
+
+		CD3DX12_ROOT_PARAMETER1 rootParameters[2];
+		rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+		rootParameters[0].Descriptor = descriptor;
+		rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+
+		rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+		rootParameters[1].DescriptorTable = descriptorTable;
+		rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+		D3D12_STATIC_SAMPLER_DESC sampler = {};
+		sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+		sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+		sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+		sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+		sampler.MipLODBias = 0;
+		sampler.MaxAnisotropy = 0;
+		sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+		sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+		sampler.MinLOD = 0.0f;
+		sampler.MaxLOD = D3D12_FLOAT32_MAX;
+		sampler.ShaderRegister = 0;
+		sampler.RegisterSpace = 0;
+		sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+		CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
+		rootSignatureDesc.Init_1_1(_countof(rootParameters), rootParameters, 1, &sampler, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+		ComPtr<ID3DBlob> signature;
+		ComPtr<ID3DBlob> error;
+
+		D3DX12SerializeVersionedRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1_1, &signature, &error);
+		if (error != nullptr)
+		{
+			OutputDebugStringA((char*)error->GetBufferPointer());
+		}
+
+		mDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&mRootSignature));
 	}
 
 }

@@ -59,6 +59,7 @@ namespace Diotima
 
 	private:
 		void InitializeAssets();
+		void CreateRootSignature();
 
 	private:
 		ComPtr<ID3D12Device> mDevice;
