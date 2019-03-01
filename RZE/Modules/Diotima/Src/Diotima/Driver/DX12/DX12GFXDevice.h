@@ -74,11 +74,8 @@ namespace Diotima
 		ComPtr<IDXGIFactory4> mFactory;
 		ComPtr<IDXGISwapChain3> mSwapChain;
 
-		ComPtr<ID3D12Resource> mVertexBuffer;
-
 		D3D12_VIEWPORT* mViewport;
 		D3D12_RECT mScissorRect;
-		D3D12_VERTEX_BUFFER_VIEW* mVertexBufferView;
 
 		int mCurrentFrame;
 		void* mWindowHandle;
