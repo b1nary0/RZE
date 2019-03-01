@@ -41,4 +41,13 @@ namespace Diotima
 
 		virtual void Allocate(void* data, U32 numElements) = 0;
 	};
+
+	class IGFXTextureBuffer2D
+	{
+	public:
+		IGFXTextureBuffer2D() = default;
+		virtual ~IGFXTextureBuffer2D() = default;
+
+		virtual void Allocate(void* data, U32 width, U32 height) = 0;
+	};
 }
