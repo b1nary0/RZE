@@ -22,12 +22,17 @@ Texture2D::~Texture2D()
 bool Texture2D::Load(const FilePath& filePath)
 {
 	// #TODO(Josh) This will need to be customized for different bit sizes... 24, 32 etc?
-	mData = stbi_load(filePath.GetAbsolutePath().c_str(), &mWidth, &mHeight, &mChannels, STBI_rgb);
+	mData = stbi_load(filePath.GetAbsolutePath().c_str(), &mWidth, &mHeight, &mChannels, STBI_rgb_alpha);
 	if (mData == nullptr)
 	{
 		// Default texture
-		mData = stbi_load(kDefaultDiffuseTexturePath.GetAbsolutePath().c_str(), &mWidth, &mHeight, &mChannels, STBI_rgb);
+		mData = stbi_load(kDefaultDiffuseTexturePath.GetAbsolutePath().c_str(), &mWidth, &mHeight, &mChannels, STBI_rgb_alpha);
 		AssertNotNull(mData);
+	}
+
+	if (mData != nullptr)
+	{
+		mGPUBuffer = RZE_Application::RZE().GetRenderer().CreateTextureBuffer2D(mData, mWidth, mHeight);
 	}
 
 	return mData != nullptr;
@@ -49,4 +54,9 @@ ETextureType::T Texture2D::GetTextureType() const
 Vector2D Texture2D::GetDimensions() const
 {
 	return Vector2D(mWidth, mHeight);
+}
+
+U32 Texture2D::GetTextureBufferID() const
+{
+	return mGPUBuffer;
 }

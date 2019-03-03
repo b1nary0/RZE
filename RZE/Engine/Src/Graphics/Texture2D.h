@@ -33,6 +33,8 @@ public:
 	ETextureType::T GetTextureType() const;
 	Vector2D GetDimensions() const;
 
+	U32 GetTextureBufferID() const;
+
 private:
 	U8* mData;
 
@@ -41,4 +43,6 @@ private:
 	Int32 mWidth;
 	Int32 mHeight;
 	Int32 mChannels;
+
+	U32 mGPUBuffer;
 };

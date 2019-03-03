@@ -18,6 +18,7 @@
 #include <Diotima/Driver/DX12/DX12GFXConstantBuffer.h>
 #include <Diotima/Driver/DX12/DX12GFXIndexBuffer.h>
 #include <Diotima/Driver/DX12/DX12GFXVertexBuffer.h>
+#include <Diotima/Driver/DX12/DX12GFXTextureBuffer2D.h>
 
 namespace Diotima
 {
@@ -91,7 +92,7 @@ namespace Diotima
 				MVPConstantBuffer->SetData(const_cast<float*>(MVP.GetValuePtr()), objectIndex);
 
 				commandList->SetGraphicsRootConstantBufferView(0, MVPConstantBuffer->GetResource()->GetGPUVirtualAddress() + (((sizeof(float) * 16) + 255) & ~255) * objectIndex);
-
+				
 				for (size_t index = 0; index < itemProtocol.VertexBuffers.size(); ++index)
 				{
 					U32 vertexBufferIndex = itemProtocol.VertexBuffers[index];
@@ -99,6 +100,13 @@ namespace Diotima
 
 					DX12GFXVertexBuffer* const vertexBuffer = device->GetVertexBuffer(vertexBufferIndex);
 					DX12GFXIndexBuffer* const indexBuffer = device->GetIndexBuffer(indexBufferIndex);
+
+					// #TODO(Josh::Just diffuse for now to test)
+					DX12GFXTextureBuffer2D* const textureBuffer = device->GetTextureBuffer2D(itemProtocol.TextureBuffers[index]);
+					ID3D12DescriptorHeap* ppDescHeaps[] = { textureBuffer->GetDescriptorHeap() };
+					commandList->SetDescriptorHeaps(_countof(ppDescHeaps), ppDescHeaps);
+
+					commandList->SetGraphicsRootDescriptorTable(1, textureBuffer->GetDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
 
 					commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 					commandList->IASetVertexBuffers(0, 1, vertexBuffer->GetBufferView());
@@ -151,6 +159,12 @@ namespace Diotima
 	U32 Renderer::CreateIndexBuffer(void* data, U32 numElements)
 	{
 		return mDriverInterface->CreateIndexBuffer(data, numElements);
+	}
+
+
+	U32 Renderer::CreateTextureBuffer2D(void* data, U32 width, U32 height)
+	{
+		return mDriverInterface->CreateTextureBuffer2D(data, width, height);
 	}
 
 	Renderer::RenderItemProtocol::RenderItemProtocol()

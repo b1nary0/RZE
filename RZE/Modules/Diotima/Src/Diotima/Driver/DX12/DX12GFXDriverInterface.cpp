@@ -52,4 +52,9 @@ namespace Diotima
 		return mDevice->CreateIndexBuffer(data, numElements);
 	}
 
+	U32 DX12GFXDriverInterface::CreateTextureBuffer2D(void* data, U32 width, U32 height)
+	{
+		return mDevice->CreateTextureBuffer2D(data, width, height);
+	}
+
 }

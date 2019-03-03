@@ -4,6 +4,7 @@
 #include <Diotima/Driver/DX12/DX12GFXConstantBuffer.h>
 #include <Diotima/Driver/DX12/DX12GFXIndexBuffer.h>
 #include <Diotima/Driver/DX12/DX12GFXVertexBuffer.h>
+#include <Diotima/Driver/DX12/DX12GFXTextureBuffer2D.h>
 
 #include <Utils/Conversions.h>
 #include <Utils/DebugUtils/Debug.h>
@@ -269,6 +270,15 @@ namespace Diotima
 		return static_cast<U32>(mIndexBuffers.size() - 1);
 	}
 
+	U32 DX12GFXDevice::CreateTextureBuffer2D(void* data, U32 width, U32 height)
+	{
+		m2DTextureBuffers.push_back(std::make_unique<DX12GFXTextureBuffer2D>());
+		m2DTextureBuffers.back()->SetDevice(this);
+		m2DTextureBuffers.back()->Allocate(data, width, height);
+
+		return static_cast<U32>(m2DTextureBuffers.size() - 1);
+	}
+
 	ID3D12Device* DX12GFXDevice::GetDevice()
 	{
 		return mDevice.Get();
@@ -363,9 +373,9 @@ namespace Diotima
 		rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 		D3D12_STATIC_SAMPLER_DESC sampler = {};
-		sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
-		sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-		sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+		sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+		sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+		sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 		sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
 		sampler.MipLODBias = 0;
 		sampler.MaxAnisotropy = 0;
@@ -390,6 +400,11 @@ namespace Diotima
 		}
 
 		mDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&mRootSignature));
+	}
+
+	Diotima::DX12GFXTextureBuffer2D* DX12GFXDevice::GetTextureBuffer2D(U32 index)
+	{
+		return m2DTextureBuffers[index].get();
 	}
 
 }

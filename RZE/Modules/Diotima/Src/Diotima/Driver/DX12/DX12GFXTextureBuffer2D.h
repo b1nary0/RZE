@@ -19,9 +19,12 @@ namespace Diotima
 	public:
 		void SetDevice(DX12GFXDevice* device);
 
+		ID3D12DescriptorHeap* GetDescriptorHeap();
+
 	private:
 		DX12GFXDevice* mDevice;
 
+		ComPtr<ID3D12DescriptorHeap> mDescriptorHeap;
 		ComPtr<ID3D12Resource> mGPUBuffer;
 		ComPtr<ID3D12Resource> mUploadBuffer;
 	};

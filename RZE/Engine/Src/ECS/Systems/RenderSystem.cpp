@@ -166,8 +166,9 @@ void RenderSystem::RegisterForComponentNotifications()
 			{
 				item.VertexBuffers.push_back(mesh.GetVertexBuffer());
 				item.IndexBuffers.push_back(mesh.GetIndexBuffer());
-			}
 
+				item.TextureBuffers.push_back(mesh.GetMaterial().GetDiffuse().GetTextureBufferID());
+			}
 			Int32 itemIdx = RZE_Application::RZE().GetRenderer().AddRenderItem(item);
 			mRenderItemEntityMap[entityID] = itemIdx;
 		}

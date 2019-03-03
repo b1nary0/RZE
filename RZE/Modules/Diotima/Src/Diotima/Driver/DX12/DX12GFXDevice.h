@@ -14,6 +14,7 @@ namespace Diotima
 	class DX12GFXConstantBuffer;
 	class DX12GFXIndexBuffer;
 	class DX12GFXVertexBuffer;
+	class DX12GFXTextureBuffer2D;
 
 	// #TODO(Josh::Eventually move these into a more configurable/stateful place)
 	constexpr int kBufferCount = 2;
@@ -35,8 +36,9 @@ namespace Diotima
 
 		virtual void Shutdown() override;
 
-		virtual U32 CreateVertexBuffer(void* data, U32 numElements);
-		virtual U32 CreateIndexBuffer(void* data, U32 numElements);
+		virtual U32 CreateVertexBuffer(void* data, U32 numElements) override;
+		virtual U32 CreateIndexBuffer(void* data, U32 numElements) override;
+		virtual U32 CreateTextureBuffer2D(void* data, U32 width, U32 height) override;
 
 	public:
 		void BeginFrame();
@@ -49,6 +51,7 @@ namespace Diotima
 
 		DX12GFXVertexBuffer* GetVertexBuffer(U32 index);
 		DX12GFXIndexBuffer* GetIndexBuffer(U32 index);
+		DX12GFXTextureBuffer2D* GetTextureBuffer2D(U32 index);
 
 		DX12GFXConstantBuffer* GetMVPConstantBuffer();
 
@@ -91,8 +94,9 @@ namespace Diotima
 	private:
 		std::unique_ptr<DX12GFXConstantBuffer> mMVPConstantBuffer;
 		std::unique_ptr<DX12GFXDepthStencilBuffer> mDepthStencilBuffer;
+
 		std::vector<std::unique_ptr<DX12GFXVertexBuffer>> mVertexBuffers;
 		std::vector<std::unique_ptr<DX12GFXIndexBuffer>> mIndexBuffers;
-
+		std::vector <std::unique_ptr<DX12GFXTextureBuffer2D>> m2DTextureBuffers;
 	};
 }
