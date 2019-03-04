@@ -3,18 +3,12 @@
 struct PS_IN
 {
 	float4 Position : SV_POSITION;
+	float4 Normal : NORMAL;
 	float2 Color : UV;
 };
 
 Texture2D t1 : register(t0);
 SamplerState s1 : register(s0);
-
-/////
-///// STATIC LIGHT PROPERTIES
-/////
-float ambientCoeff = 0.25f;
-
-
 
 struct LIGHT_INPUT_DESC
 {
@@ -45,16 +39,30 @@ float CalculateBlinnPhong(float3 viewDir, float3 lightDir, float3 normal)
 	
 	float3 halfDir = normalize(lightDir + viewDir);
 	float specAngle = max(0.0f, dot(halfDir, reflect(-lightDir, normal)));
-	specular = pow(specAngle, 1.0f);
+	specular = pow(specAngle, 8.0f);
 	
 	return specular;
 }
 
 float4 PSMain(PS_IN input) : SV_TARGET
 {
+	float ambientCoeff = 0.25f;
+	
 	float4 diffSample = t1.Sample(s1, input.Color);
 	
-	float3 lightDir = normalize(lightDesc.Position - input.Position);
+	float3 normal = input.Normal;//normalize(input.Normal.rgb);
 	
-    return diffSample;
+	float3 lightDir = normalize(input.Position - lightDesc.Position);
+	float3 viewDir = normalize(input.Position - cameraDesc.Position);
+	
+	float diff = max(0.0f, dot(normal, lightDir));
+	float specular = CalculateBlinnPhong(viewDir, lightDir, normal);
+	
+	float3 ambientResult = ambientCoeff * diffSample.rgb;
+	float3 diffuseResult = (diffSample.rgb * lightDesc.Color.rgb * lightDesc.Strength * diff);
+	float3 specularResult = specular * lightDesc.Strength * lightDesc.Color.rgb;
+	
+	float3 result = ambientResult + diffuseResult + specularResult;
+	
+    return float4(result, 1.0f);
 }
