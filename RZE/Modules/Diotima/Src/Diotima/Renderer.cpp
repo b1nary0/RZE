@@ -198,7 +198,7 @@ namespace Diotima
 			mForwardShader->SetUniformMatrix4x4("UProjectionMat", camera.ProjectionMat);
 			mForwardShader->SetUniformMatrix4x4("UViewMat", camera.ViewMat);
 			mForwardShader->SetUniformInt("UNumActiveLights", static_cast<int>(mLightingList.size()));
-			mForwardShader->SetUniformVector3D(std::string("ViewPos").c_str(), camera.Position);
+			mForwardShader->SetUniformVector3D(std::string("ViewPos").c_str(), camera.ViewMat.GetPosition());
 
 			openGL.SetTextureUnit(GL_TEXTURE3);
 			openGL.BindTexture(EGLCapability::Texture2D, mDepthTexture->GetTextureID());
