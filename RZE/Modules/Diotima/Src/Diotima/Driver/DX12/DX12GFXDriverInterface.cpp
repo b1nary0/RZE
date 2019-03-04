@@ -57,4 +57,9 @@ namespace Diotima
 		return mDevice->CreateTextureBuffer2D(data, width, height);
 	}
 
+	U32 DX12GFXDriverInterface::CreateConstantBuffer(void* data, U32 size)
+	{
+		return mDevice->CreateConstantBuffer(data, size);
+	}
+
 }

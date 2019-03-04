@@ -1,6 +1,8 @@
 #include <Utils/StdAfx.h>
 #include <Utils/Math/Vector4D.h>
 
+#include <Utils/Math/Vector3D.h>
+
 #include <GLM/vec4.hpp>
 
 Vector4D Vector4D::sDefaultVec;
@@ -81,4 +83,9 @@ const glm::vec4& Vector4D::GetInternalVec() const
 float Vector4D::operator[](int index) const
 {
 	return mVec[index];
+}
+
+void Vector4D::operator=(const Vector3D& rhs)
+{
+	*this = Vector4D(rhs.X(), rhs.Y(), rhs.Z(), 1.0f);
 }

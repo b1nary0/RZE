@@ -143,10 +143,6 @@ namespace Diotima
 
 	void DX12GFXDevice::InitializeAssets()
 	{
-		mMVPConstantBuffer = std::make_unique<DX12GFXConstantBuffer>();
-		mMVPConstantBuffer->SetDevice(this);
-		mMVPConstantBuffer->Allocate(nullptr, 16);
-
 		// ROOT SIGNATURE
 		CreateRootSignature();
 
@@ -166,9 +162,13 @@ namespace Diotima
 
 			ComPtr<ID3DBlob> error;
 
-			HRESULT result = D3DCompileFromFile(Conversions::StringToWString(vertexShaderFilePath.GetAbsolutePath()).c_str(), nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, &error);
-			D3DCompileFromFile(Conversions::StringToWString(pixelShaderFilePath.GetAbsolutePath()).c_str(), nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr);
+			HRESULT result = D3DCompileFromFile(Conversions::StringToWString(vertexShaderFilePath.GetAbsolutePath()).c_str(), nullptr, nullptr, "VSMain", "vs_5_1", compileFlags, 0, &vertexShader, &error);
+			if (error)
+			{
+				OutputDebugStringA((char*)error->GetBufferPointer());
+			}
 
+			D3DCompileFromFile(Conversions::StringToWString(pixelShaderFilePath.GetAbsolutePath()).c_str(), nullptr, nullptr, "PSMain", "ps_5_1", compileFlags, 0, &pixelShader, &error);
 			if (error)
 			{
 				OutputDebugStringA((char*)error->GetBufferPointer());
@@ -279,6 +279,15 @@ namespace Diotima
 		return static_cast<U32>(m2DTextureBuffers.size() - 1);
 	}
 
+	U32 DX12GFXDevice::CreateConstantBuffer(void* data, U32 size)
+	{
+		mConstantBuffers.push_back(std::make_unique<DX12GFXConstantBuffer>());
+		mConstantBuffers.back()->SetDevice(this);
+		mConstantBuffers.back()->Allocate(data, size);
+
+		return static_cast<U32>(mConstantBuffers.size() - 1);
+	}
+
 	ID3D12Device* DX12GFXDevice::GetDevice()
 	{
 		return mDevice.Get();
@@ -339,11 +348,6 @@ namespace Diotima
 		mCommandList->Close();
 	}
 
-	Diotima::DX12GFXConstantBuffer* DX12GFXDevice::GetMVPConstantBuffer()
-	{
-		return mMVPConstantBuffer.get();
-	}
-
 	void DX12GFXDevice::CreateRootSignature()
 	{
 		D3D12_DESCRIPTOR_RANGE1 descriptorTableRanges[1];
@@ -358,19 +362,30 @@ namespace Diotima
 		descriptorTable.NumDescriptorRanges = _countof(descriptorTableRanges);
 		descriptorTable.pDescriptorRanges = &descriptorTableRanges[0];
 
-		D3D12_ROOT_DESCRIPTOR1 descriptor;
-		descriptor.RegisterSpace = 0;
-		descriptor.ShaderRegister = 0;
-		descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_NONE;
+		D3D12_ROOT_DESCRIPTOR1 mMVPConstBuffer;
+		mMVPConstBuffer.RegisterSpace = 0;
+		mMVPConstBuffer.ShaderRegister = 0;
+		mMVPConstBuffer.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_NONE;
 
-		CD3DX12_ROOT_PARAMETER1 rootParameters[2];
+		D3D12_ROOT_DESCRIPTOR1 mLightConstBuffer;
+		mLightConstBuffer.RegisterSpace = 1;
+		mLightConstBuffer.ShaderRegister = 0;
+		mLightConstBuffer.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_NONE;
+
+		CD3DX12_ROOT_PARAMETER1 rootParameters[4];
 		rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-		rootParameters[0].Descriptor = descriptor;
+		rootParameters[0].Descriptor = mMVPConstBuffer;
 		rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 
-		rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-		rootParameters[1].DescriptorTable = descriptorTable;
-		rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+		rootParameters[1].InitAsConstants(3, 0, 2, D3D12_SHADER_VISIBILITY_PIXEL);
+
+		rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+		rootParameters[2].Descriptor = mLightConstBuffer;
+		rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+		rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+		rootParameters[3].DescriptorTable = descriptorTable;
+		rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 		D3D12_STATIC_SAMPLER_DESC sampler = {};
 		sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
@@ -388,7 +403,7 @@ namespace Diotima
 		sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 		CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
-		rootSignatureDesc.Init_1_1(_countof(rootParameters), rootParameters, 1, &sampler, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+		rootSignatureDesc.Init_1_1(_countof(rootParameters), &rootParameters[0], 1, &sampler, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 		ComPtr<ID3DBlob> signature;
 		ComPtr<ID3DBlob> error;
@@ -399,12 +414,17 @@ namespace Diotima
 			OutputDebugStringA((char*)error->GetBufferPointer());
 		}
 
-		mDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&mRootSignature));
+		HRESULT res = mDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&mRootSignature));
 	}
 
 	Diotima::DX12GFXTextureBuffer2D* DX12GFXDevice::GetTextureBuffer2D(U32 index)
 	{
 		return m2DTextureBuffers[index].get();
+	}
+
+	Diotima::DX12GFXConstantBuffer* DX12GFXDevice::GetConstantBuffer(U32 index)
+	{
+		return mConstantBuffers[index].get();
 	}
 
 }

@@ -39,9 +39,9 @@ namespace Diotima
 		return mNumElements;
 	}
 
-	void DX12GFXConstantBuffer::SetData(void* data, U32 objectIndex)
+	void DX12GFXConstantBuffer::SetData(void* data, U32 size, U32 objectIndex)
 	{
-		memcpy(((U8*)mResource + (((sizeof(float) * mNumElements) + 255) & ~255) * objectIndex), data, sizeof(float) * mNumElements);
+		memcpy(((U8*)mResource + (((size * mNumElements) + 255) & ~255) * objectIndex), data, size * mNumElements);
 	}
 
 	ID3D12DescriptorHeap* DX12GFXConstantBuffer::GetDescriptorHeap()

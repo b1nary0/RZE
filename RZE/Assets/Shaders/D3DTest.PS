@@ -1,12 +1,60 @@
+#pragma pack_matrix( row_major )
+
 struct PS_IN
 {
+	float4 Position : SV_POSITION;
 	float2 Color : UV;
 };
 
 Texture2D t1 : register(t0);
 SamplerState s1 : register(s0);
 
+/////
+///// STATIC LIGHT PROPERTIES
+/////
+float ambientCoeff = 0.25f;
+
+
+
+struct LIGHT_INPUT_DESC
+{
+	float4 Position;
+	float4 Color;
+	matrix LightSpaceMat;
+	float Strength;
+};
+
+struct CAMERA_INPUT_DESC
+{
+	float3 Position;
+};
+
+cbuffer LightConstantBuffer : register(b0, space1)
+{
+	LIGHT_INPUT_DESC lightDesc;
+};
+
+cbuffer CameraRootConstant : register(b0, space2)
+{
+	CAMERA_INPUT_DESC cameraDesc;
+};
+
+float CalculateBlinnPhong(float3 viewDir, float3 lightDir, float3 normal)
+{
+	float specular = 0.0f;
+	
+	float3 halfDir = normalize(lightDir + viewDir);
+	float specAngle = max(0.0f, dot(halfDir, reflect(-lightDir, normal)));
+	specular = pow(specAngle, 1.0f);
+	
+	return specular;
+}
+
 float4 PSMain(PS_IN input) : SV_TARGET
 {
-    return t1.Sample(s1, input.Color);
+	float4 diffSample = t1.Sample(s1, input.Color);
+	
+	float3 lightDir = normalize(lightDesc.Position - input.Position);
+	
+    return diffSample;
 }

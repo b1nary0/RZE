@@ -45,10 +45,9 @@ namespace Diotima
 
 		struct LightItemProtocol
 		{
-			Vector3D	Position;
-			Vector3D	Color;
+			Vector4D	Position;
+			Vector4D	Color;
 			Matrix4x4	LightSpaceMatrix;
-
 			float		Strength;
 		};
 
@@ -112,6 +111,9 @@ namespace Diotima
 		
 		// DX12 Temp
 	private:
+		U32 mMVPConstantBuffer;
+		U32 mLightConstantBuffer;
+
 		std::unique_ptr<DX12GFXDriverInterface> mDriverInterface;
 
 		void* mWindowHandle;

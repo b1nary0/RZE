@@ -22,6 +22,7 @@ namespace Diotima
 		virtual U32 CreateVertexBuffer(void* data, U32 numElements) override;
 		virtual U32 CreateIndexBuffer(void* data, U32 numElements) override;
 		virtual U32 CreateTextureBuffer2D(void* data, U32 width, U32 height) override;
+		virtual U32 CreateConstantBuffer(void* data, U32 size) override;
 
 		void SetWindow(void* windowHandle) override;
 

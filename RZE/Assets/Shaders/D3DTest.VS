@@ -6,8 +6,8 @@ struct VS_IN
 
 struct VS_OUT
 {
-	float2 Color : UV;
 	float4 Position : SV_POSITION;
+	float2 Color : UV;
 };
 
 cbuffer MVPBuffer : register(b0)

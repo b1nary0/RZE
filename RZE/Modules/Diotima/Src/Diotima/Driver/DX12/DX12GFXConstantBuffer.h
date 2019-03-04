@@ -26,7 +26,7 @@ namespace Diotima
 		U32 GetNumElements() const;
 
 		// #TODO(Josh::Yeah so this is garbo -- this should be done with some internal structure per object that describes the buffers/views/etc - future work)
-		void SetData(void* data, U32 objectIndex);
+		void SetData(void* data, U32 size, U32 objectIndex);
 
 	private:
 		ComPtr<ID3D12Resource> mUploadBuffer;

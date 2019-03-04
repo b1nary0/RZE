@@ -33,7 +33,7 @@
         },
         "LightSourceComponent":
         {
-          "Color": [1.0, 0.85, 0.85],
+          "Color": [0.0, 0.85, 0.85],
           "Strength": 1
         },
 		"MeshComponent":

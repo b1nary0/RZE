@@ -39,6 +39,7 @@ namespace Diotima
 		virtual U32 CreateVertexBuffer(void* data, U32 numElements) override;
 		virtual U32 CreateIndexBuffer(void* data, U32 numElements) override;
 		virtual U32 CreateTextureBuffer2D(void* data, U32 width, U32 height) override;
+		virtual U32 CreateConstantBuffer(void* data, U32 size) override;
 
 	public:
 		void BeginFrame();
@@ -52,8 +53,7 @@ namespace Diotima
 		DX12GFXVertexBuffer* GetVertexBuffer(U32 index);
 		DX12GFXIndexBuffer* GetIndexBuffer(U32 index);
 		DX12GFXTextureBuffer2D* GetTextureBuffer2D(U32 index);
-
-		DX12GFXConstantBuffer* GetMVPConstantBuffer();
+		DX12GFXConstantBuffer* GetConstantBuffer(U32 index);
 
 		void ResetCommandList();
 		void ResetCommandAllocator();
@@ -66,16 +66,19 @@ namespace Diotima
 
 	private:
 		ComPtr<ID3D12Device> mDevice;
-		ComPtr<ID3D12CommandQueue> mCommandQueue;
-		ComPtr<ID3D12CommandAllocator> mCommandAllocator;
-		ComPtr<ID3D12DescriptorHeap> mRTVDescriptorHeap;
-		ComPtr<ID3D12Resource> mRenderTargets[kBufferCount];
-		ComPtr<ID3D12RootSignature> mRootSignature;
-		ComPtr<ID3D12PipelineState> mPipelineState;
-		ComPtr<ID3D12GraphicsCommandList> mCommandList;
 
 		ComPtr<IDXGIFactory4> mFactory;
 		ComPtr<IDXGISwapChain3> mSwapChain;
+
+		ComPtr<ID3D12CommandQueue> mCommandQueue;
+		ComPtr<ID3D12CommandAllocator> mCommandAllocator;
+		ComPtr<ID3D12GraphicsCommandList> mCommandList;
+		
+		ComPtr<ID3D12Resource> mRenderTargets[kBufferCount];
+		ComPtr<ID3D12DescriptorHeap> mRTVDescriptorHeap;
+		
+		ComPtr<ID3D12RootSignature> mRootSignature;
+		ComPtr<ID3D12PipelineState> mPipelineState;
 
 		D3D12_VIEWPORT* mViewport;
 		D3D12_RECT mScissorRect;
@@ -92,11 +95,11 @@ namespace Diotima
 
 		// NEW
 	private:
-		std::unique_ptr<DX12GFXConstantBuffer> mMVPConstantBuffer;
 		std::unique_ptr<DX12GFXDepthStencilBuffer> mDepthStencilBuffer;
 
 		std::vector<std::unique_ptr<DX12GFXVertexBuffer>> mVertexBuffers;
 		std::vector<std::unique_ptr<DX12GFXIndexBuffer>> mIndexBuffers;
+		std::vector<std::unique_ptr<DX12GFXConstantBuffer>> mConstantBuffers;
 		std::vector <std::unique_ptr<DX12GFXTextureBuffer2D>> m2DTextureBuffers;
 	};
 }

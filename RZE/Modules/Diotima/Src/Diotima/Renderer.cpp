@@ -79,7 +79,13 @@ namespace Diotima
 		device->BeginFrame();
 		{
 			ID3D12GraphicsCommandList* commandList = device->GetCommandList();
-			DX12GFXConstantBuffer* const MVPConstantBuffer = mDriverInterface->mDevice->GetMVPConstantBuffer();
+			DX12GFXConstantBuffer* const MVPConstantBuffer = mDriverInterface->mDevice->GetConstantBuffer(mMVPConstantBuffer);
+			DX12GFXConstantBuffer* const lightConstantBuffer = mDriverInterface->mDevice->GetConstantBuffer(mLightConstantBuffer);
+
+			lightConstantBuffer->SetData(mLightingList.data(), sizeof(LightItemProtocol), 0);
+			commandList->SetGraphicsRootConstantBufferView(2, lightConstantBuffer->GetResource()->GetGPUVirtualAddress());
+
+			commandList->SetGraphicsRoot32BitConstants(1, 3, &camera.Position.GetInternalVec(), 0);
 
 			U32 objectIndex = 0;
 			for (RenderItemProtocol& itemProtocol : mRenderList)
@@ -89,7 +95,7 @@ namespace Diotima
 				AssertEqual(itemProtocol.VertexBuffers.size(), itemProtocol.IndexBuffers.size());
 
 				Matrix4x4 MVP = camera.ProjectionMat * camera.ViewMat * itemProtocol.ModelMatrix;
-				MVPConstantBuffer->SetData(const_cast<float*>(MVP.GetValuePtr()), objectIndex);
+				MVPConstantBuffer->SetData(const_cast<float*>(MVP.GetValuePtr()), sizeof(float), objectIndex);
 
 				commandList->SetGraphicsRootConstantBufferView(0, MVPConstantBuffer->GetResource()->GetGPUVirtualAddress() + (((sizeof(float) * 16) + 255) & ~255) * objectIndex);
 				
@@ -106,7 +112,7 @@ namespace Diotima
 					ID3D12DescriptorHeap* ppDescHeaps[] = { textureBuffer->GetDescriptorHeap() };
 					commandList->SetDescriptorHeaps(_countof(ppDescHeaps), ppDescHeaps);
 
-					commandList->SetGraphicsRootDescriptorTable(1, textureBuffer->GetDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+					commandList->SetGraphicsRootDescriptorTable(3, textureBuffer->GetDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
 
 					commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 					commandList->IASetVertexBuffers(0, 1, vertexBuffer->GetBufferView());
@@ -135,6 +141,9 @@ namespace Diotima
 		mDriverInterface = std::make_unique<DX12GFXDriverInterface>();
 		mDriverInterface->SetWindow(mWindowHandle);
 		mDriverInterface->Initialize();
+
+		mMVPConstantBuffer = mDriverInterface->CreateConstantBuffer(nullptr, sizeof(Matrix4x4));
+		mLightConstantBuffer = mDriverInterface->CreateConstantBuffer(nullptr, 1);
 	}
 
 	void Renderer::EnableVsync(bool bEnabled)
