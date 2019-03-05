@@ -92,10 +92,6 @@ namespace Diotima
 			U32 objectIndex = 0;
 			for (RenderItemProtocol& itemProtocol : mRenderList)
 			{
-				// #TODO(Josh::This should go away when a better architecture is implemented. For now we assume
-				//             everything is indexed and every mesh is 1:1 with their vert/index buffer count.)
-				AssertEqual(itemProtocol.VertexBuffers.size(), itemProtocol.IndexBuffers.size());
-
 				Matrix4x4 MVP = camera.ProjectionMat * camera.ViewMat * itemProtocol.ModelMatrix;
 
 				const float* modelViewPtr = itemProtocol.ModelMatrix.Inverse().GetValuePtr();
@@ -108,20 +104,19 @@ namespace Diotima
 
 				commandList->SetGraphicsRootConstantBufferView(0, MVPConstantBuffer->GetResource()->GetGPUVirtualAddress() + (((sizeof(Matrix4x4) * 2) + 255) & ~255) * objectIndex);
 				
-				for (size_t index = 0; index < itemProtocol.VertexBuffers.size(); ++index)
+				for (size_t index = 0; index < itemProtocol.MeshData.size(); ++index)
 				{
-					U32 vertexBufferIndex = itemProtocol.VertexBuffers[index];
-					U32 indexBufferIndex = itemProtocol.IndexBuffers[index];
+					const RenderItemMeshData& meshData = itemProtocol.MeshData[index];
 
-					DX12GFXVertexBuffer* const vertexBuffer = device->GetVertexBuffer(vertexBufferIndex);
-					DX12GFXIndexBuffer* const indexBuffer = device->GetIndexBuffer(indexBufferIndex);
+					DX12GFXVertexBuffer* const vertexBuffer = device->GetVertexBuffer(meshData.VertexBuffer);
+					DX12GFXIndexBuffer* const indexBuffer = device->GetIndexBuffer(meshData.IndexBuffer);
 
 					// #TODO(Josh::Just diffuse for now to test)
-					DX12GFXTextureBuffer2D* const textureBuffer = device->GetTextureBuffer2D(itemProtocol.TextureBuffers[index]);
-					ID3D12DescriptorHeap* ppDescHeaps[] = { textureBuffer->GetDescriptorHeap() };
+					DX12GFXTextureBuffer2D* const diffuseBuffer = device->GetTextureBuffer2D(meshData.TextureBuffers[0]);
+					ID3D12DescriptorHeap* ppDescHeaps[] = { diffuseBuffer->GetDescriptorHeap() };
 					commandList->SetDescriptorHeaps(_countof(ppDescHeaps), ppDescHeaps);
 
-					commandList->SetGraphicsRootDescriptorTable(3, textureBuffer->GetDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+					commandList->SetGraphicsRootDescriptorTable(3, diffuseBuffer->GetDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
 
 					commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 					commandList->IASetVertexBuffers(0, 1, vertexBuffer->GetBufferView());
@@ -185,10 +180,6 @@ namespace Diotima
 	U32 Renderer::CreateTextureBuffer2D(void* data, U32 width, U32 height)
 	{
 		return mDriverInterface->CreateTextureBuffer2D(data, width, height);
-	}
-
-	Renderer::RenderItemProtocol::RenderItemProtocol()
-	{
 	}
 
 	void Renderer::RenderItemProtocol::Invalidate()

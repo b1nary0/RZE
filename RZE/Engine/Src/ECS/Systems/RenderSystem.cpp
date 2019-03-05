@@ -164,10 +164,24 @@ void RenderSystem::RegisterForComponentNotifications()
 			Diotima::Renderer::RenderItemProtocol item;
 			for (const MeshGeometry& mesh : modelData->GetStaticMesh().GetSubMeshes())
 			{
-				item.VertexBuffers.push_back(mesh.GetVertexBuffer());
-				item.IndexBuffers.push_back(mesh.GetIndexBuffer());
+				Diotima::Renderer::RenderItemMeshData meshData;
+				meshData.VertexBuffer = mesh.GetVertexBuffer();
+				meshData.IndexBuffer = mesh.GetIndexBuffer();
 
-				item.TextureBuffers.push_back(mesh.GetMaterial().GetDiffuse().GetTextureBufferID());
+				// Everything should have at least a default fallback diffuse texture
+				AssertExpr(mesh.GetMaterial().HasDiffuse());
+				meshData.TextureBuffers.push_back(mesh.GetMaterial().GetDiffuse().GetTextureBufferID());
+
+				if (mesh.GetMaterial().HasSpecular())
+				{
+					meshData.TextureBuffers.push_back(mesh.GetMaterial().GetSpecular().GetTextureBufferID());
+				}
+				if (mesh.GetMaterial().HasNormal())
+				{
+					meshData.TextureBuffers.push_back(mesh.GetMaterial().GetNormal().GetTextureBufferID());
+				}
+
+				item.MeshData.push_back(meshData);
 			}
 			Int32 itemIdx = RZE_Application::RZE().GetRenderer().AddRenderItem(item);
 			mRenderItemEntityMap[entityID] = itemIdx;

@@ -28,15 +28,17 @@ namespace Diotima
 	class Renderer
 	{
 	public:
+		struct RenderItemMeshData
+		{
+			U32 VertexBuffer;
+			U32 IndexBuffer;
+			std::vector<U32> TextureBuffers;
+		};
+
 		struct RenderItemProtocol
 		{
-			RenderItemProtocol();
-
 			// #TODO(Josh::This needs to be done better. Works for now, but will need resolving when stuff matures)
-			std::vector<U32>								VertexBuffers;
-			std::vector<U32>								IndexBuffers;
-			std::vector<U32>								TextureBuffers;
-
+			std::vector<RenderItemMeshData> MeshData;
 			Matrix4x4						ModelMatrix;
 
 			bool bIsValid{ false };
