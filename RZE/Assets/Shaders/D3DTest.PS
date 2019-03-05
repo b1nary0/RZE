@@ -3,7 +3,7 @@
 struct PS_IN
 {
 	float4 Position : SV_POSITION;
-	float4 Normal : NORMAL;
+	float3 Normal : NORMAL;
 	float2 Color : UV;
 };
 
@@ -39,7 +39,7 @@ float CalculateBlinnPhong(float3 viewDir, float3 lightDir, float3 normal)
 	
 	float3 halfDir = normalize(lightDir + viewDir);
 	float specAngle = max(0.0f, dot(halfDir, reflect(-lightDir, normal)));
-	specular = pow(specAngle, 8.0f);
+	specular = pow(specAngle, 4.0f);
 	
 	return specular;
 }
@@ -50,10 +50,10 @@ float4 PSMain(PS_IN input) : SV_TARGET
 	
 	float4 diffSample = t1.Sample(s1, input.Color);
 	
-	float3 normal = input.Normal;//normalize(input.Normal.rgb);
+	float3 normal = input.Normal.xyz;//normalize(input.Normal.rgb);
 	
-	float3 lightDir = normalize(input.Position - lightDesc.Position);
-	float3 viewDir = normalize(input.Position - cameraDesc.Position);
+	float3 lightDir = normalize(input.Position - lightDesc.Position).xyz;
+	float3 viewDir = normalize(input.Position - cameraDesc.Position).xyz;
 	
 	float diff = max(0.0f, dot(normal, lightDir));
 	float specular = CalculateBlinnPhong(viewDir, lightDir, normal);

@@ -87,6 +87,8 @@ namespace Diotima
 
 			commandList->SetGraphicsRoot32BitConstants(1, 3, &camera.Position.GetInternalVec(), 0);
 
+			void* wholePtr = malloc(sizeof(Matrix4x4) * 2);
+
 			U32 objectIndex = 0;
 			for (RenderItemProtocol& itemProtocol : mRenderList)
 			{
@@ -95,9 +97,16 @@ namespace Diotima
 				AssertEqual(itemProtocol.VertexBuffers.size(), itemProtocol.IndexBuffers.size());
 
 				Matrix4x4 MVP = camera.ProjectionMat * camera.ViewMat * itemProtocol.ModelMatrix;
-				MVPConstantBuffer->SetData(const_cast<float*>(MVP.GetValuePtr()), sizeof(float), objectIndex);
 
-				commandList->SetGraphicsRootConstantBufferView(0, MVPConstantBuffer->GetResource()->GetGPUVirtualAddress() + (((sizeof(float) * 16) + 255) & ~255) * objectIndex);
+				const float* modelViewPtr = itemProtocol.ModelMatrix.Inverse().GetValuePtr();
+				const float* MVPPtr = MVP.GetValuePtr();
+
+				memcpy(wholePtr, modelViewPtr, sizeof(Matrix4x4));
+				memcpy((U8*)wholePtr + sizeof(Matrix4x4), MVPPtr, sizeof(Matrix4x4));
+
+				MVPConstantBuffer->SetData(wholePtr, sizeof(Matrix4x4) * 2, objectIndex);
+
+				commandList->SetGraphicsRootConstantBufferView(0, MVPConstantBuffer->GetResource()->GetGPUVirtualAddress() + (((sizeof(Matrix4x4) * 2) + 255) & ~255) * objectIndex);
 				
 				for (size_t index = 0; index < itemProtocol.VertexBuffers.size(); ++index)
 				{
@@ -122,6 +131,8 @@ namespace Diotima
 
 				++objectIndex;
 			}
+
+			delete wholePtr;
 		}
 		device->EndFrame();
 	}
@@ -142,7 +153,7 @@ namespace Diotima
 		mDriverInterface->SetWindow(mWindowHandle);
 		mDriverInterface->Initialize();
 
-		mMVPConstantBuffer = mDriverInterface->CreateConstantBuffer(nullptr, sizeof(Matrix4x4));
+		mMVPConstantBuffer = mDriverInterface->CreateConstantBuffer(nullptr, 2);
 		mLightConstantBuffer = mDriverInterface->CreateConstantBuffer(nullptr, 1);
 	}
 

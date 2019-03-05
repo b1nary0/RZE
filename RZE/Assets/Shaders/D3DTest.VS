@@ -8,12 +8,13 @@ struct VS_IN
 struct VS_OUT
 {
 	float4 Position : SV_POSITION;
-	float4 Normal : NORMAL;
+	float3 Normal : NORMAL;
 	float2 Color : UV;
 };
 
 cbuffer MVPBuffer : register(b0)
 {
+	matrix ModelView;
 	matrix MVP;
 };
 
@@ -22,7 +23,7 @@ VS_OUT VSMain(VS_IN input) // main is the default function name
 	VS_OUT output;
 	
 	output.Position = mul(MVP, float4(input.Position, 1.0f));
-	output.Normal = float4(input.Normal, 1.0f);
+	output.Normal = normalize(mul(transpose(ModelView), input.Normal));
 	output.Color = input.Color;
 	
     return output;
