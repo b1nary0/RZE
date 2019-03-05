@@ -3,6 +3,7 @@
 
 #include <Diotima/Driver/DX12/DX12GFXDevice.h>
 
+#include <Utils/MemoryUtils.h>
 #include <Utils/DebugUtils/Debug.h>
 
 namespace Diotima
@@ -41,7 +42,7 @@ namespace Diotima
 
 	void DX12GFXConstantBuffer::SetData(void* data, U32 size, U32 objectIndex)
 	{
-		memcpy((U8*)mResource + (((size + 255) & ~255) * objectIndex), data, size);
+		memcpy((U8*)mResource + (MemoryUtils::AlignSize(size, 255) * objectIndex), data, size);
 	}
 
 	ID3D12DescriptorHeap* DX12GFXConstantBuffer::GetDescriptorHeap()
