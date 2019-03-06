@@ -214,6 +214,26 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 		pMaterial->SetDiffuse(RZE_Application::RZE().GetResourceHandler().GetResource<Texture2D>(diffuseHandle));
 	}
 
+	if (!pMaterial->HasSpecular())
+	{
+		LOG_CONSOLE_ARGS("Could not find specular texture for [%s] loading default specular texture", mFilePath.GetRelativePath().c_str());
+
+		ResourceHandle specularHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Texture2D>(Texture2D::kDefaultSpecularTexturePath, ETextureType::Specular);
+		mTextureHandles.push_back(specularHandle);
+
+		pMaterial->SetSpecular(RZE_Application::RZE().GetResourceHandler().GetResource<Texture2D>(specularHandle));
+	}
+
+	if (!pMaterial->HasNormal())
+	{
+		LOG_CONSOLE_ARGS("Could not find normal texture for [%s] loading default normal texture", mFilePath.GetRelativePath().c_str());
+
+		ResourceHandle normalHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Texture2D>(Texture2D::kDefaultNormalTexturePath, ETextureType::Normal);
+		mTextureHandles.push_back(normalHandle);
+
+		pMaterial->SetNormal(RZE_Application::RZE().GetResourceHandler().GetResource<Texture2D>(normalHandle));
+	}
+
 	outMesh.SetMaterial(pMaterial);
 	outMesh.AllocateGPUData();
 }

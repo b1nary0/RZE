@@ -18,6 +18,8 @@ class Texture2D : public IResource
 {
 public:
 	static FilePath kDefaultDiffuseTexturePath;
+	static FilePath kDefaultSpecularTexturePath;
+	static FilePath kDefaultNormalTexturePath;
 
 public:
 	Texture2D() = delete;
