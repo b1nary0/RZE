@@ -5,11 +5,10 @@ struct PS_IN
 	float4 Position : SV_POSITION;
 	float3 Normal : NORMAL;
 	float2 Color : UV;
+	float3 Tangent : TANGENT;
 };
 
-Texture2D textureDiffuse : register(t0);
-Texture2D textureSpecular : register(t1);
-Texture2D textureNormal : register(t2);
+Texture2D textures[3] : register(t0);
 
 SamplerState s1 : register(s0);
 
@@ -26,6 +25,12 @@ struct CAMERA_INPUT_DESC
 	float3 Position;
 };
 
+struct GENERIC_CONSTANT_DATA
+{
+	uint bHasSpecularMap;
+	uint bHasNormalMap;
+};
+
 cbuffer LightConstantBuffer : register(b0, space1)
 {
 	LIGHT_INPUT_DESC lightDesc;
@@ -36,24 +41,43 @@ cbuffer CameraRootConstant : register(b0, space2)
 	CAMERA_INPUT_DESC cameraDesc;
 };
 
+cbuffer GenericConstants : register(b0, space3)
+{
+	GENERIC_CONSTANT_DATA genericData;
+};
+
 float CalculateBlinnPhong(float3 viewDir, float3 lightDir, float3 normal)
 {
 	float specular = 0.0f;
 	
 	float3 halfDir = normalize(lightDir + viewDir);
 	float specAngle = max(0.0f, dot(halfDir, reflect(-lightDir, normal)));
-	specular = pow(specAngle, 2.0f);
+	specular = pow(specAngle, 8.0f);
 	
 	return specular;
+}
+
+float3 CalculateBumpNormal(float3 inNormal, float3 inTangent, float3 inBumpMapSample)
+{
+	float3 tangent = normalize(inTangent - dot(inTangent, inNormal) * inNormal);
+	float3 biTangent = cross(inTangent, inNormal);
+	float3 bumpMapNormal = 2.0f * inBumpMapSample - float3(1.0f, 1.0f, 1.0f);
+	
+	float3x3 TBN = float3x3(tangent, biTangent, inNormal);
+	float3 newNormal = normalize(mul(TBN, bumpMapNormal));
+	
+	return newNormal;
 }
 
 float4 PSMain(PS_IN input) : SV_TARGET
 {
 	float ambientCoeff = 0.25f;
 	
-	float4 diffSample = textureDiffuse.Sample(s1, input.Color);
+	float4 diffSample = textures[0].Sample(s1, input.Color);
+	float4 specularSample = textures[1].Sample(s1, input.Color);
+	float4 bumpSample = textures[2].Sample(s1, input.Color);
 	
-	float3 normal = input.Normal.xyz;//normalize(input.Normal.rgb);
+	float3 normal = CalculateBumpNormal(input.Normal, input.Tangent, bumpSample);//normalize(input.Normal.rgb);
 	
 	float3 lightDir = normalize(input.Position - lightDesc.Position).xyz;
 	float3 viewDir = normalize(input.Position - cameraDesc.Position).xyz;
@@ -63,9 +87,9 @@ float4 PSMain(PS_IN input) : SV_TARGET
 	
 	float3 ambientResult = ambientCoeff * diffSample.rgb;
 	float3 diffuseResult = (diffSample.rgb * lightDesc.Color.rgb * lightDesc.Strength * diff);
-	float3 specularResult = specular * lightDesc.Strength * lightDesc.Color.rgb;
+	float3 specularResult = specular * specularSample.rgb * lightDesc.Strength * lightDesc.Color.rgb;
 	
-	float3 result = ambientResult + diffuseResult + specularResult;
+	float3 result = diffuseResult + specularResult;
 	
     return float4(result, 1.0f);
 }

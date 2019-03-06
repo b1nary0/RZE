@@ -376,7 +376,12 @@ namespace Diotima
 		mLightConstBuffer.ShaderRegister = 0;
 		mLightConstBuffer.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_NONE;
 
-		CD3DX12_ROOT_PARAMETER1 rootParameters[4];
+		D3D12_ROOT_DESCRIPTOR1 mPixelShaderConstants;
+		mPixelShaderConstants.RegisterSpace = 3;
+		mPixelShaderConstants.ShaderRegister = 0;
+		mPixelShaderConstants.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_NONE;
+
+		CD3DX12_ROOT_PARAMETER1 rootParameters[5];
 		rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 		rootParameters[0].Descriptor = mMVPConstBuffer;
 		rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
@@ -390,6 +395,10 @@ namespace Diotima
 		rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 		rootParameters[3].DescriptorTable = descriptorTable;
 		rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+		rootParameters[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+		rootParameters[4].Descriptor = mPixelShaderConstants;
+		rootParameters[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 		D3D12_STATIC_SAMPLER_DESC sampler = {};
 		sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;

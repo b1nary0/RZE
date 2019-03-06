@@ -28,11 +28,28 @@ namespace Diotima
 	class Renderer
 	{
 	public:
+		enum class ETextureType
+		{
+			Diffuse,
+			Specular,
+			Normal
+		};
+
+		struct RenderItemTextureDesc
+		{
+			RenderItemTextureDesc(U32 textureBuffer, ETextureType textureType)
+				: TextureBuffer(textureBuffer)
+				, TextureType(textureType) {}
+
+			U32 TextureBuffer;
+			ETextureType TextureType;
+		};
+
 		struct RenderItemMeshData
 		{
 			U32 VertexBuffer;
 			U32 IndexBuffer;
-			std::vector<U32> TextureBuffers;
+			std::vector<RenderItemTextureDesc> TextureDescs;
 		};
 
 		struct RenderItemProtocol
@@ -115,6 +132,7 @@ namespace Diotima
 	private:
 		U32 mMVPConstantBuffer;
 		U32 mLightConstantBuffer;
+		U32 mPixelShaderConstantDataBuffer;
 
 		std::unique_ptr<DX12GFXDriverInterface> mDriverInterface;
 

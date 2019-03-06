@@ -171,15 +171,15 @@ void RenderSystem::RegisterForComponentNotifications()
 
 				// Everything should have at least a default fallback diffuse texture
 				AssertExpr(mesh.GetMaterial().HasDiffuse());
-				meshData.TextureBuffers.push_back(mesh.GetMaterial().GetDiffuse().GetTextureBufferID());
+				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetDiffuse().GetTextureBufferID(), Diotima::Renderer::ETextureType::Diffuse);
 
 				if (mesh.GetMaterial().HasSpecular())
 				{
-					meshData.TextureBuffers.push_back(mesh.GetMaterial().GetSpecular().GetTextureBufferID());
+					meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetSpecular().GetTextureBufferID(), Diotima::Renderer::ETextureType::Specular);
 				}
 				if (mesh.GetMaterial().HasNormal())
 				{
-					meshData.TextureBuffers.push_back(mesh.GetMaterial().GetNormal().GetTextureBufferID());
+					meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetNormal().GetTextureBufferID(), Diotima::Renderer::ETextureType::Normal);
 				}
 
 				item.MeshData.push_back(meshData);

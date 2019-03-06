@@ -81,14 +81,22 @@ namespace Diotima
 			ID3D12GraphicsCommandList* commandList = device->GetCommandList();
 			DX12GFXConstantBuffer* const MVPConstantBuffer = mDriverInterface->mDevice->GetConstantBuffer(mMVPConstantBuffer);
 			DX12GFXConstantBuffer* const lightConstantBuffer = mDriverInterface->mDevice->GetConstantBuffer(mLightConstantBuffer);
+			DX12GFXConstantBuffer* const pixelShaderConstantBuffer = mDriverInterface->mDevice->GetConstantBuffer(mPixelShaderConstantDataBuffer);
 
 			lightConstantBuffer->SetData(mLightingList.data(), sizeof(LightItemProtocol), 0);
 			commandList->SetGraphicsRootConstantBufferView(2, lightConstantBuffer->GetResource()->GetGPUVirtualAddress());
 
 			commandList->SetGraphicsRoot32BitConstants(1, 3, &camera.Position.GetInternalVec(), 0);
 
-			void* wholePtr = malloc(sizeof(Matrix4x4) * 2);
+			struct PixelShaderConstantData
+			{
+				U32 bHasNormalMap;
+				U32 bHasSpecularMap;
+			};
 
+			PixelShaderConstantData pixelShaderConstants;
+			
+			void* pMatrixConstantBufferData = malloc(sizeof(Matrix4x4) * 2);
 			U32 objectIndex = 0;
 			for (RenderItemProtocol& itemProtocol : mRenderList)
 			{
@@ -97,26 +105,44 @@ namespace Diotima
 				const float* modelViewPtr = itemProtocol.ModelMatrix.Inverse().GetValuePtr();
 				const float* MVPPtr = MVP.GetValuePtr();
 
-				memcpy(wholePtr, modelViewPtr, sizeof(Matrix4x4));
-				memcpy((U8*)wholePtr + sizeof(Matrix4x4), MVPPtr, sizeof(Matrix4x4));
+				memcpy(pMatrixConstantBufferData, modelViewPtr, sizeof(Matrix4x4));
+				memcpy((U8*)pMatrixConstantBufferData + sizeof(Matrix4x4), MVPPtr, sizeof(Matrix4x4));
 
-				MVPConstantBuffer->SetData(wholePtr, sizeof(Matrix4x4) * 2, objectIndex);
+				MVPConstantBuffer->SetData(pMatrixConstantBufferData, sizeof(Matrix4x4) * 2, objectIndex);
 
 				commandList->SetGraphicsRootConstantBufferView(0, MVPConstantBuffer->GetResource()->GetGPUVirtualAddress() + (((sizeof(Matrix4x4) * 2) + 255) & ~255) * objectIndex);
 				
 				for (size_t index = 0; index < itemProtocol.MeshData.size(); ++index)
 				{
 					const RenderItemMeshData& meshData = itemProtocol.MeshData[index];
-
+					
 					DX12GFXVertexBuffer* const vertexBuffer = device->GetVertexBuffer(meshData.VertexBuffer);
 					DX12GFXIndexBuffer* const indexBuffer = device->GetIndexBuffer(meshData.IndexBuffer);
 
-					// #TODO(Josh::Just diffuse for now to test)
-					DX12GFXTextureBuffer2D* const diffuseBuffer = device->GetTextureBuffer2D(meshData.TextureBuffers[0]);
-					
+					pixelShaderConstants.bHasNormalMap = false;
+					pixelShaderConstants.bHasSpecularMap = false;
+
+					// #TODO(Josh::Another hack to avoid writing a bunch of infrastructure right at this moment)
+					for (const RenderItemTextureDesc& textureDesc : meshData.TextureDescs)
+					{
+						if (textureDesc.TextureType == ETextureType::Specular)
+						{
+							pixelShaderConstants.bHasSpecularMap = true;
+						}
+						else if (textureDesc.TextureType == ETextureType::Normal)
+						{
+							pixelShaderConstants.bHasNormalMap = true;
+						}
+					}
+
+					pixelShaderConstantBuffer->SetData(&pixelShaderConstants, sizeof(PixelShaderConstantData), static_cast<U32>(index));
+					commandList->SetGraphicsRootConstantBufferView(4, pixelShaderConstantBuffer->GetResource()->GetGPUVirtualAddress() + ((sizeof(PixelShaderConstantData) + 255) & ~255) * index);
+
 					ID3D12DescriptorHeap* ppDescHeaps[] = { device->GetTextureHeap() };
 					commandList->SetDescriptorHeaps(_countof(ppDescHeaps), ppDescHeaps);
 
+					// #NOTE(Josh::Everything should have a default guaranteed diffuse map. For now it also marks the start of the descriptor table)
+					DX12GFXTextureBuffer2D* const diffuseBuffer = device->GetTextureBuffer2D(meshData.TextureDescs[0].TextureBuffer);
 					commandList->SetGraphicsRootDescriptorTable(3, diffuseBuffer->GetDescriptorHandleGPU());
 
 					commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -128,7 +154,7 @@ namespace Diotima
 				++objectIndex;
 			}
 
-			delete wholePtr;
+			delete pMatrixConstantBufferData;
 		}
 		device->EndFrame();
 	}
@@ -151,6 +177,7 @@ namespace Diotima
 
 		mMVPConstantBuffer = mDriverInterface->CreateConstantBuffer(nullptr, 2);
 		mLightConstantBuffer = mDriverInterface->CreateConstantBuffer(nullptr, 1);
+		mPixelShaderConstantDataBuffer = mDriverInterface->CreateConstantBuffer(nullptr, 1);
 	}
 
 	void Renderer::EnableVsync(bool bEnabled)
