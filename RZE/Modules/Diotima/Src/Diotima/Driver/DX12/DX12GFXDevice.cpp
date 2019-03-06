@@ -109,6 +109,10 @@ namespace Diotima
 			mDevice->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&mRTVDescriptorHeap));
 			mRTVDescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 		}
+
+		// TEXTURE HEAP
+		CreateTextureHeap();
+
 		// RENDER TARGETS (FRAMES)
 		{
 			CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mRTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
@@ -352,7 +356,7 @@ namespace Diotima
 	{
 		D3D12_DESCRIPTOR_RANGE1 descriptorTableRanges[1];
 		descriptorTableRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-		descriptorTableRanges[0].NumDescriptors = 1;
+		descriptorTableRanges[0].NumDescriptors = 3;
 		descriptorTableRanges[0].BaseShaderRegister = 0;
 		descriptorTableRanges[0].RegisterSpace = 0;
 		descriptorTableRanges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
@@ -425,6 +429,27 @@ namespace Diotima
 	Diotima::DX12GFXConstantBuffer* DX12GFXDevice::GetConstantBuffer(U32 index)
 	{
 		return mConstantBuffers[index].get();
+	}
+
+	void DX12GFXDevice::CreateTextureHeap()
+	{
+		D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
+		heapDesc.NumDescriptors = 32;
+		heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+		heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		mDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&mTextureHeap));
+
+		mCBVSRVUAVDescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	}
+
+	ID3D12DescriptorHeap* DX12GFXDevice::GetTextureHeap()
+	{
+		return mTextureHeap.Get();
+	}
+
+	U32 DX12GFXDevice::GetCBVSRVUAVDescriptorSize()
+	{
+		return mCBVSRVUAVDescriptorSize;
 	}
 
 }

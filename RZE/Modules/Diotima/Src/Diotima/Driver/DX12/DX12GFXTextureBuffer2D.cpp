@@ -4,6 +4,8 @@
 
 #include <Utils/DebugUtils/Debug.h>
 
+static U32 increment = 0;
+
 namespace Diotima
 {
 	void DX12GFXTextureBuffer2D::Allocate(void* data, U32 width, U32 height)
@@ -56,18 +58,21 @@ namespace Diotima
 		ID3D12CommandList* ppCommandLists[] = { commandList };
 		mDevice->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
-		D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-		heapDesc.NumDescriptors = 1;
-		heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		mDevice->GetDevice()->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&mDescriptorHeap));
-
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		srvDesc.Format = resourceDesc.Format;
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		srvDesc.Texture2D.MipLevels = 1;
-		mDevice->GetDevice()->CreateShaderResourceView(mGPUBuffer.Get(), &srvDesc, mDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+
+		mSRVCPUHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(mDevice->GetTextureHeap()->GetCPUDescriptorHandleForHeapStart());
+		mSRVCPUHandle.Offset(increment, mDevice->GetCBVSRVUAVDescriptorSize());
+
+		mSRVGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mDevice->GetTextureHeap()->GetGPUDescriptorHandleForHeapStart());
+		mSRVGPUHandle.Offset(increment, mDevice->GetCBVSRVUAVDescriptorSize());
+
+		mDevice->GetDevice()->CreateShaderResourceView(mGPUBuffer.Get(), &srvDesc, mSRVCPUHandle);
+
+		++increment;
 	}
 
 	void DX12GFXTextureBuffer2D::SetDevice(DX12GFXDevice* device)
@@ -79,6 +84,16 @@ namespace Diotima
 	ID3D12DescriptorHeap* DX12GFXTextureBuffer2D::GetDescriptorHeap()
 	{
 		return mDescriptorHeap.Get();
+	}
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE DX12GFXTextureBuffer2D::GetDescriptorHandleCPU()
+	{
+		return mSRVCPUHandle;
+	}
+
+	CD3DX12_GPU_DESCRIPTOR_HANDLE DX12GFXTextureBuffer2D::GetDescriptorHandleGPU()
+	{
+		return mSRVGPUHandle;
 	}
 
 }

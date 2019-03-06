@@ -7,7 +7,10 @@ struct PS_IN
 	float2 Color : UV;
 };
 
-Texture2D t1 : register(t0);
+Texture2D textureDiffuse : register(t0);
+Texture2D textureSpecular : register(t1);
+Texture2D textureNormal : register(t2);
+
 SamplerState s1 : register(s0);
 
 struct LIGHT_INPUT_DESC
@@ -48,7 +51,7 @@ float4 PSMain(PS_IN input) : SV_TARGET
 {
 	float ambientCoeff = 0.25f;
 	
-	float4 diffSample = t1.Sample(s1, input.Color);
+	float4 diffSample = textureDiffuse.Sample(s1, input.Color);
 	
 	float3 normal = input.Normal.xyz;//normalize(input.Normal.rgb);
 	

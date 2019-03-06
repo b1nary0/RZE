@@ -113,10 +113,11 @@ namespace Diotima
 
 					// #TODO(Josh::Just diffuse for now to test)
 					DX12GFXTextureBuffer2D* const diffuseBuffer = device->GetTextureBuffer2D(meshData.TextureBuffers[0]);
-					ID3D12DescriptorHeap* ppDescHeaps[] = { diffuseBuffer->GetDescriptorHeap() };
+					
+					ID3D12DescriptorHeap* ppDescHeaps[] = { device->GetTextureHeap() };
 					commandList->SetDescriptorHeaps(_countof(ppDescHeaps), ppDescHeaps);
 
-					commandList->SetGraphicsRootDescriptorTable(3, diffuseBuffer->GetDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+					commandList->SetGraphicsRootDescriptorTable(3, diffuseBuffer->GetDescriptorHandleGPU());
 
 					commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 					commandList->IASetVertexBuffers(0, 1, vertexBuffer->GetBufferView());

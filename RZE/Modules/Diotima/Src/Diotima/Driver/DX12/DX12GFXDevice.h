@@ -55,6 +55,10 @@ namespace Diotima
 		DX12GFXTextureBuffer2D* GetTextureBuffer2D(U32 index);
 		DX12GFXConstantBuffer* GetConstantBuffer(U32 index);
 
+		ID3D12DescriptorHeap* GetTextureHeap();
+
+		U32 GetCBVSRVUAVDescriptorSize();
+
 		void ResetCommandList();
 		void ResetCommandAllocator();
 
@@ -63,6 +67,8 @@ namespace Diotima
 	private:
 		void InitializeAssets();
 		void CreateRootSignature();
+
+		void CreateTextureHeap();
 
 	private:
 		ComPtr<ID3D12Device> mDevice;
@@ -75,7 +81,6 @@ namespace Diotima
 		ComPtr<ID3D12GraphicsCommandList> mCommandList;
 		
 		ComPtr<ID3D12Resource> mRenderTargets[kBufferCount];
-		ComPtr<ID3D12DescriptorHeap> mRTVDescriptorHeap;
 		
 		ComPtr<ID3D12RootSignature> mRootSignature;
 		ComPtr<ID3D12PipelineState> mPipelineState;
@@ -83,10 +88,14 @@ namespace Diotima
 		D3D12_VIEWPORT* mViewport;
 		D3D12_RECT mScissorRect;
 
+		ComPtr<ID3D12DescriptorHeap> mRTVDescriptorHeap;
+		ComPtr<ID3D12DescriptorHeap> mTextureHeap;
+
 		int mCurrentFrame;
 		void* mWindowHandle;
 
 		U32 mRTVDescriptorSize;
+		U32 mCBVSRVUAVDescriptorSize;
 
 		// Fence stuff
 		HANDLE mFenceEvent;
