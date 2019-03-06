@@ -6,6 +6,7 @@ struct PS_IN
 	float3 Normal : NORMAL;
 	float2 Color : UV;
 	float3 Tangent : TANGENT;
+	float3 FragPos : POSITION;
 };
 
 Texture2D textures[3] : register(t0);
@@ -52,7 +53,7 @@ float CalculateBlinnPhong(float3 viewDir, float3 lightDir, float3 normal)
 	
 	float3 halfDir = normalize(lightDir + viewDir);
 	float specAngle = max(0.0f, dot(halfDir, reflect(-lightDir, normal)));
-	specular = pow(specAngle, 8.0f);
+	specular = pow(specAngle, 16.0f);
 	
 	return specular;
 }
@@ -79,8 +80,8 @@ float4 PSMain(PS_IN input) : SV_TARGET
 	
 	float3 normal = CalculateBumpNormal(input.Normal, input.Tangent, bumpSample);//normalize(input.Normal.rgb);
 	
-	float3 lightDir = normalize(input.Position - lightDesc.Position).xyz;
-	float3 viewDir = normalize(input.Position - cameraDesc.Position).xyz;
+	float3 lightDir = normalize(lightDesc.Position - input.FragPos).xyz;
+	float3 viewDir = normalize(cameraDesc.Position - input.FragPos).xyz;
 	
 	float diff = max(0.0f, dot(normal, lightDir));
 	float specular = CalculateBlinnPhong(viewDir, lightDir, normal);
@@ -89,7 +90,7 @@ float4 PSMain(PS_IN input) : SV_TARGET
 	float3 diffuseResult = (diffSample.rgb * lightDesc.Color.rgb * lightDesc.Strength * diff);
 	float3 specularResult = specular * specularSample.rgb * lightDesc.Strength * lightDesc.Color.rgb;
 	
-	float3 result = diffuseResult + specularResult;
+	float3 result = ambientResult + diffuseResult + specularResult;
 	
     return float4(result, 1.0f);
 }
