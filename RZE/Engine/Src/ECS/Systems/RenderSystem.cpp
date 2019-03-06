@@ -81,6 +81,7 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 	Diotima::Renderer::CameraItemProtocol camera;
 	camera.ProjectionMat = camComp->ProjectionMat;
 	camera.ViewMat = camComp->ViewMat;
+	camera.Position = transfComp->Position;
 	renderer.SetCamera(camera);
 	
 	//Perseus::Job::Task work([this, entities, transfComp, &renderer, &handler]()
