@@ -45,11 +45,17 @@ namespace Diotima
 			ETextureType TextureType;
 		};
 
+		struct RenderItemMaterialDesc
+		{
+			float Shininess;
+		};
+
 		struct RenderItemMeshData
 		{
 			U32 VertexBuffer;
 			U32 IndexBuffer;
 			std::vector<RenderItemTextureDesc> TextureDescs;
+			RenderItemMaterialDesc Material;
 		};
 
 		struct RenderItemProtocol

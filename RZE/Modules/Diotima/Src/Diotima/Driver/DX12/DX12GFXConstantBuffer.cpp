@@ -40,7 +40,7 @@ namespace Diotima
 		return mNumElements;
 	}
 
-	void DX12GFXConstantBuffer::SetData(void* data, U32 size, U32 objectIndex)
+	void DX12GFXConstantBuffer::SetData(const void* data, U32 size, U32 objectIndex)
 	{
 		U32 alignedSize = MemoryUtils::AlignSize(size, 255);
 		memcpy((U8*)mResource + (alignedSize * objectIndex), data, size);

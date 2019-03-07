@@ -26,10 +26,9 @@ struct CAMERA_INPUT_DESC
 	float3 Position;
 };
 
-struct GENERIC_CONSTANT_DATA
+struct MATERIAL_DATA
 {
-	uint bHasSpecularMap;
-	uint bHasNormalMap;
+	float Shininess;
 };
 
 cbuffer LightConstantBuffer : register(b0, space1)
@@ -42,9 +41,9 @@ cbuffer CameraRootConstant : register(b0, space2)
 	CAMERA_INPUT_DESC cameraDesc;
 };
 
-cbuffer GenericConstants : register(b0, space3)
+cbuffer MaterialData : register(b0, space3)
 {
-	GENERIC_CONSTANT_DATA genericData;
+	MATERIAL_DATA materialData;
 };
 
 float CalculateBlinnPhong(float3 viewDir, float3 lightDir, float3 normal)
@@ -53,7 +52,7 @@ float CalculateBlinnPhong(float3 viewDir, float3 lightDir, float3 normal)
 	
 	float3 halfDir = normalize(lightDir + viewDir);
 	float specAngle = max(0.0f, dot(halfDir, reflect(-lightDir, normal)));
-	specular = pow(specAngle, 16.0f);
+	specular = pow(specAngle, materialData.Shininess);
 	
 	return specular;
 }

@@ -169,18 +169,15 @@ void RenderSystem::RegisterForComponentNotifications()
 				meshData.VertexBuffer = mesh.GetVertexBuffer();
 				meshData.IndexBuffer = mesh.GetIndexBuffer();
 
-				// Everything should have at least a default fallback diffuse texture
 				AssertExpr(mesh.GetMaterial().HasDiffuse());
 				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetDiffuse().GetTextureBufferID(), Diotima::Renderer::ETextureType::Diffuse);
+				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetSpecular().GetTextureBufferID(), Diotima::Renderer::ETextureType::Specular);
+				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetNormal().GetTextureBufferID(), Diotima::Renderer::ETextureType::Normal);
 
-				if (mesh.GetMaterial().HasSpecular())
-				{
-					meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetSpecular().GetTextureBufferID(), Diotima::Renderer::ETextureType::Specular);
-				}
-				if (mesh.GetMaterial().HasNormal())
-				{
-					meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetNormal().GetTextureBufferID(), Diotima::Renderer::ETextureType::Normal);
-				}
+				Diotima::Renderer::RenderItemMaterialDesc matDesc;
+				matDesc.Shininess = mesh.GetMaterial().Shininess;
+
+				meshData.Material = matDesc;
 
 				item.MeshData.push_back(meshData);
 			}

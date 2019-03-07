@@ -88,14 +88,6 @@ namespace Diotima
 
 			commandList->SetGraphicsRoot32BitConstants(1, 3, &camera.Position.GetInternalVec(), 0);
 
-			struct PixelShaderConstantData
-			{
-				U32 bHasNormalMap;
-				U32 bHasSpecularMap;
-			};
-
-			PixelShaderConstantData pixelShaderConstants;
-			
 			void* pMatrixConstantBufferData = malloc(sizeof(Matrix4x4) * 2);
 			U32 objectIndex = 0;
 			for (RenderItemProtocol& itemProtocol : mRenderList)
@@ -119,24 +111,8 @@ namespace Diotima
 					DX12GFXVertexBuffer* const vertexBuffer = device->GetVertexBuffer(meshData.VertexBuffer);
 					DX12GFXIndexBuffer* const indexBuffer = device->GetIndexBuffer(meshData.IndexBuffer);
 
-					pixelShaderConstants.bHasNormalMap = false;
-					pixelShaderConstants.bHasSpecularMap = false;
-
-					// #TODO(Josh::Another hack to avoid writing a bunch of infrastructure right at this moment)
-					for (const RenderItemTextureDesc& textureDesc : meshData.TextureDescs)
-					{
-						if (textureDesc.TextureType == ETextureType::Specular)
-						{
-							pixelShaderConstants.bHasSpecularMap = true;
-						}
-						else if (textureDesc.TextureType == ETextureType::Normal)
-						{
-							pixelShaderConstants.bHasNormalMap = true;
-						}
-					}
-
-					pixelShaderConstantBuffer->SetData(&pixelShaderConstants, sizeof(PixelShaderConstantData), static_cast<U32>(index));
-					commandList->SetGraphicsRootConstantBufferView(4, pixelShaderConstantBuffer->GetResource()->GetGPUVirtualAddress() + ((sizeof(PixelShaderConstantData) + 255) & ~255) * index);
+					pixelShaderConstantBuffer->SetData(&meshData.Material, sizeof(RenderItemMaterialDesc), static_cast<U32>(index));
+					commandList->SetGraphicsRootConstantBufferView(4, pixelShaderConstantBuffer->GetResource()->GetGPUVirtualAddress() + ((sizeof(RenderItemMaterialDesc) + 255) & ~255) * index);
 
 					ID3D12DescriptorHeap* ppDescHeaps[] = { device->GetTextureHeap() };
 					commandList->SetDescriptorHeaps(_countof(ppDescHeaps), ppDescHeaps);
