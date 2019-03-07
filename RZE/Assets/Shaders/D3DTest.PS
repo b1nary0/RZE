@@ -59,11 +59,14 @@ float CalculateBlinnPhong(float3 viewDir, float3 lightDir, float3 normal)
 
 float3 CalculateBumpNormal(float3 inNormal, float3 inTangent, float3 inBumpMapSample)
 {
-	float3 tangent = normalize(inTangent - dot(inTangent, inNormal) * inNormal);
-	float3 biTangent = cross(inTangent, inNormal);
+	float3 normal = normalize(inNormal);
+	float3 tangent = normalize(inTangent);
+	tangent = normalize(tangent - dot(tangent, normal) * normal);
+	
+	float3 biTangent = cross(tangent, normal);
 	float3 bumpMapNormal = 2.0f * inBumpMapSample - float3(1.0f, 1.0f, 1.0f);
 	
-	float3x3 TBN = float3x3(tangent, biTangent, inNormal);
+	float3x3 TBN = float3x3(tangent, biTangent, normal);
 	float3 newNormal = normalize(mul(TBN, bumpMapNormal));
 	
 	return newNormal;
@@ -77,7 +80,7 @@ float4 PSMain(PS_IN input) : SV_TARGET
 	float4 specularSample = textures[1].Sample(s1, input.Color);
 	float4 bumpSample = textures[2].Sample(s1, input.Color);
 	
-	float3 normal = CalculateBumpNormal(input.Normal, input.Tangent, bumpSample);//normalize(input.Normal.rgb);
+	float3 normal = CalculateBumpNormal(input.Normal, input.Tangent, bumpSample.rgb);//normalize(input.Normal.rgb);
 	
 	float3 lightDir = normalize(lightDesc.Position - input.FragPos).xyz;
 	float3 viewDir = normalize(cameraDesc.Position - input.FragPos).xyz;

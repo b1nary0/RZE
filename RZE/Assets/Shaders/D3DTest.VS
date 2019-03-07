@@ -17,8 +17,9 @@ struct VS_OUT
 
 cbuffer MVPBuffer : register(b0)
 {
-	matrix ModelView;
+	matrix ModelViewInv;
 	matrix MVP;
+	matrix ModelView;
 };
 
 VS_OUT VSMain(VS_IN input) // main is the default function name
@@ -28,7 +29,7 @@ VS_OUT VSMain(VS_IN input) // main is the default function name
 	float3 fragPos = mul(ModelView, float4(input.Position, 1.0f)).xyz;
 	
 	output.Position = mul(MVP, float4(input.Position, 1.0f));
-	output.Normal = normalize(mul(transpose(ModelView), input.Normal)).xyz;
+	output.Normal = mul(transpose(ModelViewInv), input.Normal).xyz;
 	output.Tangent = input.Tangent;
 	output.Color = input.Color;
 	output.FragPos = fragPos;
