@@ -15,8 +15,8 @@ SamplerState s1 : register(s0);
 
 struct LIGHT_INPUT_DESC
 {
-	float4 Position;
-	float4 Color;
+	float3 Position;
+	float3 Color;
 	matrix LightSpaceMat;
 	float Strength;
 };
@@ -59,14 +59,13 @@ float CalculateBlinnPhong(float3 viewDir, float3 lightDir, float3 normal)
 
 float3 CalculateBumpNormal(float3 inNormal, float3 inTangent, float3 inBumpMapSample)
 {
-	float3 normal = normalize(inNormal);
 	float3 tangent = normalize(inTangent);
-	tangent = normalize(tangent - dot(tangent, normal) * normal);
+	tangent = normalize(tangent - dot(tangent, inNormal) * inNormal);
 	
-	float3 biTangent = cross(tangent, normal);
+	float3 biTangent = cross(tangent, inNormal);
 	float3 bumpMapNormal = 2.0f * inBumpMapSample - float3(1.0f, 1.0f, 1.0f);
 	
-	float3x3 TBN = float3x3(tangent, biTangent, normal);
+	float3x3 TBN = float3x3(tangent, biTangent, inNormal);
 	float3 newNormal = normalize(mul(TBN, bumpMapNormal));
 	
 	return newNormal;
@@ -76,23 +75,25 @@ float4 PSMain(PS_IN input) : SV_TARGET
 {
 	float ambientCoeff = 0.25f;
 	
+	float3 normal = normalize(input.Normal);
+	
 	float4 diffSample = textures[0].Sample(s1, input.Color);
 	float4 specularSample = textures[1].Sample(s1, input.Color);
 	float4 bumpSample = textures[2].Sample(s1, input.Color);
 	
-	float3 normal = CalculateBumpNormal(input.Normal, input.Tangent, bumpSample.rgb);//normalize(input.Normal.rgb);
+	normal = CalculateBumpNormal(normal, input.Tangent, bumpSample.rgb);
 	
-	float3 lightDir = normalize(lightDesc.Position - input.FragPos).xyz;
-	float3 viewDir = normalize(cameraDesc.Position - input.FragPos).xyz;
+	float3 lightDir = normalize(lightDesc.Position - input.FragPos);
+	float3 viewDir = normalize(cameraDesc.Position - input.FragPos);
 	
-	float diff = max(0.0f, dot(normal, lightDir));
+	float diff = max(0.0f, saturate(dot(normal, lightDir)));
 	float specular = CalculateBlinnPhong(viewDir, lightDir, normal);
 	
 	float3 ambientResult = ambientCoeff * diffSample.rgb;
-	float3 diffuseResult = (diffSample.rgb * lightDesc.Color.rgb * lightDesc.Strength * diff);
+	float3 diffuseResult = (diffSample.rgb * lightDesc.Color.rgb * lightDesc.Strength);
 	float3 specularResult = specular * specularSample.rgb * lightDesc.Strength * lightDesc.Color.rgb;
 	
-	float3 result = ambientResult + diffuseResult + specularResult;
+	float3 result = ambientResult + (diffuseResult * diff) + specularResult;
 	
     return float4(result, 1.0f);
 }

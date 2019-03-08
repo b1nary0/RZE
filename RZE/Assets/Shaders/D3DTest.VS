@@ -17,9 +17,9 @@ struct VS_OUT
 
 cbuffer MVPBuffer : register(b0)
 {
-	matrix ModelViewInv;
-	matrix MVP;
 	matrix ModelView;
+	matrix ModelViewInv;
+	matrix CameraViewProjection;
 };
 
 VS_OUT VSMain(VS_IN input) // main is the default function name
@@ -28,8 +28,8 @@ VS_OUT VSMain(VS_IN input) // main is the default function name
 	
 	float3 fragPos = mul(ModelView, float4(input.Position, 1.0f)).xyz;
 	
-	output.Position = mul(MVP, float4(input.Position, 1.0f));
-	output.Normal = mul(transpose(ModelViewInv), input.Normal).xyz;
+	output.Position = mul(CameraViewProjection, float4(fragPos, 1.0f));
+	output.Normal = mul(transpose(ModelViewInv), float4(input.Normal, 1.0f)).xyz;
 	output.Tangent = input.Tangent;
 	output.Color = input.Color;
 	output.FragPos = fragPos;

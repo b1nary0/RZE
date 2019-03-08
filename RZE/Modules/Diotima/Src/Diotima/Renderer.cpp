@@ -88,19 +88,20 @@ namespace Diotima
 
 			commandList->SetGraphicsRoot32BitConstants(1, 3, &camera.Position.GetInternalVec(), 0);
 
+			Matrix4x4 camViewProjMat = camera.ProjectionMat * camera.ViewMat;
+
 			void* pMatrixConstantBufferData = malloc(sizeof(Matrix4x4) * 3);
 			U32 objectIndex = 0;
 			for (RenderItemProtocol& itemProtocol : mRenderList)
 			{
-				Matrix4x4 MVP = camera.ProjectionMat * camera.ViewMat * itemProtocol.ModelMatrix;
 
-				const float* modelViewInvPtr = itemProtocol.ModelMatrix.Inverse().GetValuePtr();
-				const float* MVPPtr = MVP.GetValuePtr();
 				const float* modelViewPtr = itemProtocol.ModelMatrix.GetValuePtr();
+				const float* modelViewInvPtr = itemProtocol.ModelMatrix.Inverse().GetValuePtr();
+				const float* camViewProjPtr = camViewProjMat.GetValuePtr();
 
-				memcpy(pMatrixConstantBufferData, modelViewInvPtr, sizeof(Matrix4x4));
-				memcpy((U8*)pMatrixConstantBufferData + sizeof(Matrix4x4), MVPPtr, sizeof(Matrix4x4));
-				memcpy((U8*)pMatrixConstantBufferData + sizeof(Matrix4x4) * 2, modelViewPtr, sizeof(Matrix4x4));
+				memcpy(pMatrixConstantBufferData, modelViewPtr, sizeof(Matrix4x4));
+				memcpy((U8*)pMatrixConstantBufferData + sizeof(Matrix4x4), modelViewInvPtr, sizeof(Matrix4x4));
+				memcpy((U8*)pMatrixConstantBufferData + sizeof(Matrix4x4) * 2, camViewProjPtr, sizeof(Matrix4x4));
 
 				MVPConstantBuffer->SetData(pMatrixConstantBufferData, sizeof(Matrix4x4) * 3, objectIndex);
 
