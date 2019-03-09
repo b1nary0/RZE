@@ -43,8 +43,6 @@ namespace Diotima
 
 		ID3D12CommandList* ppCommandLists[] = { mDevice->GetCommandList() };
 		mDevice->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-
-		mDevice->WaitForPreviousFrame();
 	}
 
 	void DX12GFXDepthStencilBuffer::SetDevice(DX12GFXDevice* device)

@@ -221,6 +221,10 @@ namespace Diotima
 		mScissorRect.right = kBufferWidth;
 		mScissorRect.bottom = kBufferHeight;
 
+		mDepthStencilBuffer = std::make_unique<DX12GFXDepthStencilBuffer>();
+		mDepthStencilBuffer->SetDevice(this);
+		mDepthStencilBuffer->Allocate();
+
 		// CREATE SYNC OBJECTS TO WAIT FOR DATA TO UPLOAD TO GPU
 		{
 			mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence));
@@ -228,10 +232,6 @@ namespace Diotima
 
 			mFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 		}
-
-		mDepthStencilBuffer = std::make_unique<DX12GFXDepthStencilBuffer>();
-		mDepthStencilBuffer->SetDevice(this);
-		mDepthStencilBuffer->Allocate();
 
 		WaitForPreviousFrame();
 	}
