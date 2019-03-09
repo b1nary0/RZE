@@ -125,6 +125,8 @@ namespace Diotima
 			}
 		}
 
+		InitializeMSAA();
+
 		mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mCommandAllocator));
 
 		InitializeAssets();
@@ -193,6 +195,7 @@ namespace Diotima
 			psoDesc.PS = { reinterpret_cast<U8*>(pixelShader->GetBufferPointer()), pixelShader->GetBufferSize() };
 			psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 			psoDesc.RasterizerState.FrontCounterClockwise = TRUE;
+			psoDesc.RasterizerState.MultisampleEnable = TRUE;
 			psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 			psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 			psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
@@ -336,9 +339,9 @@ namespace Diotima
 		mCommandList->RSSetViewports(1, mViewport);
 		mCommandList->RSSetScissorRects(1, &mScissorRect);
 
-		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTargets[mCurrentFrame].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mMSAARenderTarget.Get(), D3D12_RESOURCE_STATE_RESOLVE_SOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET));
 
-		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mRTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), mCurrentFrame, mRTVDescriptorSize);
+		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mMSAARTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), 0, mRTVDescriptorSize);
 		CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(mDepthStencilBuffer->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
 		mCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 		mCommandList->ClearDepthStencilView(mDepthStencilBuffer->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
@@ -349,7 +352,22 @@ namespace Diotima
 
 	void DX12GFXDevice::EndFrame()
 	{
-		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTargets[mCurrentFrame].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+		D3D12_RESOURCE_BARRIER barriers[2] =
+		{
+			CD3DX12_RESOURCE_BARRIER::Transition(
+				mMSAARenderTarget.Get(),
+				D3D12_RESOURCE_STATE_RENDER_TARGET,
+				D3D12_RESOURCE_STATE_RESOLVE_SOURCE),
+			CD3DX12_RESOURCE_BARRIER::Transition(
+				mRenderTargets[mCurrentFrame].Get(),
+				D3D12_RESOURCE_STATE_PRESENT,
+				D3D12_RESOURCE_STATE_RESOLVE_DEST)
+		};
+
+		mCommandList->ResourceBarrier(2, barriers);
+
+		mCommandList->ResolveSubresource(mRenderTargets[mCurrentFrame].Get(), 0, mMSAARenderTarget.Get(), 0, DXGI_FORMAT_R8G8B8A8_UNORM);
+
 		mCommandList->Close();
 	}
 
@@ -460,6 +478,38 @@ namespace Diotima
 	U32 DX12GFXDevice::GetCBVSRVUAVDescriptorSize()
 	{
 		return mCBVSRVUAVDescriptorSize;
+	}
+
+	void DX12GFXDevice::InitializeMSAA()
+	{
+		const int kSampleCount = 8;
+
+		// Create descriptor heaps for MSAA render target views and depth stencil views.
+		D3D12_DESCRIPTOR_HEAP_DESC rtvDescriptorHeapDesc = {};
+		rtvDescriptorHeapDesc.NumDescriptors = 1;
+		rtvDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+
+		mDevice->CreateDescriptorHeap(&rtvDescriptorHeapDesc, IID_PPV_ARGS(&mMSAARTVDescriptorHeap));
+
+		D3D12_RESOURCE_DESC msaaRTDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, kBufferWidth, kBufferHeight, 1, 1, kSampleCount);
+		msaaRTDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+
+		D3D12_CLEAR_VALUE msaaOptimizedClearValue = {};
+		msaaOptimizedClearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+		mDevice->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), 
+			D3D12_HEAP_FLAG_NONE, 
+			&msaaRTDesc, 
+			D3D12_RESOURCE_STATE_RESOLVE_SOURCE, 
+			&msaaOptimizedClearValue, 
+			IID_PPV_ARGS(&mMSAARenderTarget));
+
+		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+		rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMS;
+
+		mDevice->CreateRenderTargetView(mMSAARenderTarget.Get(), &rtvDesc, mMSAARTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 	}
 
 }

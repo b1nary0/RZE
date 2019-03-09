@@ -68,6 +68,7 @@ namespace Diotima
 		void InitializeAssets();
 		void CreateRootSignature();
 
+		void InitializeMSAA();
 		void CreateTextureHeap();
 
 	private:
@@ -81,7 +82,8 @@ namespace Diotima
 		ComPtr<ID3D12GraphicsCommandList> mCommandList;
 		
 		ComPtr<ID3D12Resource> mRenderTargets[kBufferCount];
-		
+		ComPtr<ID3D12Resource> mMSAARenderTarget;
+
 		ComPtr<ID3D12RootSignature> mRootSignature;
 		ComPtr<ID3D12PipelineState> mPipelineState;
 
@@ -89,6 +91,7 @@ namespace Diotima
 		D3D12_RECT mScissorRect;
 
 		ComPtr<ID3D12DescriptorHeap> mRTVDescriptorHeap;
+		ComPtr<ID3D12DescriptorHeap> mMSAARTVDescriptorHeap;
 		ComPtr<ID3D12DescriptorHeap> mTextureHeap;
 
 		int mCurrentFrame;
