@@ -47,6 +47,7 @@ namespace Diotima
 {
 
 	DX12GFXDevice::DX12GFXDevice()
+		: mSampleCount(1)
 	{
 	}
 
@@ -204,7 +205,7 @@ namespace Diotima
 			psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 			psoDesc.NumRenderTargets = 1;
 			psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-			psoDesc.SampleDesc.Count = 8;
+			psoDesc.SampleDesc.Count = mSampleCount;
 			mDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mPipelineState));
 		}
 
@@ -346,7 +347,7 @@ namespace Diotima
 		mCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 		mCommandList->ClearDepthStencilView(mDepthStencilBuffer->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 		
-		const float clearColor[] = { 0.05f, 0.05f, 0.05f, 1.0f };
+		const float clearColor[] = { 0.1f, 0.1f, 0.1f, 1.0f };
 		mCommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 	}
 
@@ -367,6 +368,11 @@ namespace Diotima
 		mCommandList->ResourceBarrier(2, barriers);
 
 		mCommandList->ResolveSubresource(mRenderTargets[mCurrentFrame].Get(), 0, mMSAARenderTarget.Get(), 0, DXGI_FORMAT_R8G8B8A8_UNORM);
+
+		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+			mRenderTargets[mCurrentFrame].Get(),
+			D3D12_RESOURCE_STATE_RESOLVE_DEST,
+			D3D12_RESOURCE_STATE_PRESENT));
 
 		mCommandList->Close();
 	}
@@ -420,12 +426,12 @@ namespace Diotima
 		rootParameters[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 		D3D12_STATIC_SAMPLER_DESC sampler = {};
-		sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+		sampler.Filter = D3D12_FILTER_ANISOTROPIC;
 		sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 		sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 		sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
 		sampler.MipLODBias = 0;
-		sampler.MaxAnisotropy = 0;
+		sampler.MaxAnisotropy = 16;
 		sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
 		sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
 		sampler.MinLOD = 0.0f;
@@ -482,8 +488,6 @@ namespace Diotima
 
 	void DX12GFXDevice::InitializeMSAA()
 	{
-		const int kSampleCount = 8;
-
 		// Create descriptor heaps for MSAA render target views and depth stencil views.
 		D3D12_DESCRIPTOR_HEAP_DESC rtvDescriptorHeapDesc = {};
 		rtvDescriptorHeapDesc.NumDescriptors = 1;
@@ -491,10 +495,10 @@ namespace Diotima
 
 		mDevice->CreateDescriptorHeap(&rtvDescriptorHeapDesc, IID_PPV_ARGS(&mMSAARTVDescriptorHeap));
 
-		D3D12_RESOURCE_DESC msaaRTDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, kBufferWidth, kBufferHeight, 1, 1, kSampleCount);
+		D3D12_RESOURCE_DESC msaaRTDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, kBufferWidth, kBufferHeight, 1, 1, mSampleCount);
 		msaaRTDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 
-		D3D12_CLEAR_VALUE msaaOptimizedClearValue = {};
+		D3D12_CLEAR_VALUE  msaaOptimizedClearValue = {};
 		msaaOptimizedClearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 
 		mDevice->CreateCommittedResource(
@@ -502,14 +506,25 @@ namespace Diotima
 			D3D12_HEAP_FLAG_NONE, 
 			&msaaRTDesc, 
 			D3D12_RESOURCE_STATE_RESOLVE_SOURCE, 
-			&msaaOptimizedClearValue, 
+			&msaaOptimizedClearValue,
 			IID_PPV_ARGS(&mMSAARenderTarget));
 
 		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
-		rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		rtvDesc.Format = DXGI_FORMAT_UNKNOWN;
 		rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMS;
 
 		mDevice->CreateRenderTargetView(mMSAARenderTarget.Get(), &rtvDesc, mMSAARTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+	}
+
+	void DX12GFXDevice::SetMSAASampleCount(U32 sampleCount)
+	{
+		AssertExpr(sampleCount > 1);
+		mSampleCount = sampleCount;
+	}
+
+	U32 DX12GFXDevice::GetMSAASampleCount()
+	{
+		return mSampleCount;
 	}
 
 }

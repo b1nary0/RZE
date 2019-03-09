@@ -154,6 +154,11 @@ namespace Diotima
 		mDriverInterface->SetWindow(mWindowHandle);
 		mDriverInterface->Initialize();
 
+		// #TODO(Josh::This is all kinds of messy. Accessing the device directly (remnants of hacks..) and having to pull
+		//             device initialization out from the driver interface due to MSAA sample count setting)
+		mDriverInterface->mDevice->SetMSAASampleCount(mMSAASampleCount);
+		mDriverInterface->mDevice->Initialize();
+
 		mMVPConstantBuffer = mDriverInterface->CreateConstantBuffer(nullptr, 2);
 		mLightConstantBuffer = mDriverInterface->CreateConstantBuffer(nullptr, 1);
 		mPixelShaderConstantDataBuffer = mDriverInterface->CreateConstantBuffer(nullptr, 1);
@@ -162,6 +167,11 @@ namespace Diotima
 	void Renderer::EnableVsync(bool bEnabled)
 	{
 		
+	}
+
+	void Renderer::SetMSAASampleCount(U32 sampleCount)
+	{
+		mMSAASampleCount = sampleCount;
 	}
 
 	void Renderer::ResizeCanvas(const Vector2D& newSize)

@@ -23,7 +23,6 @@ namespace Diotima
 
 		mDevice = std::make_unique<DX12GFXDevice>();
 		mDevice->SetWindow(mWindowHandle);
-		mDevice->Initialize();
 	}
 
 	void DX12GFXDriverInterface::SetWindow(void* windowHandle)

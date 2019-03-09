@@ -115,6 +115,8 @@ namespace Diotima
 		void SetCamera(const CameraItemProtocol& cameraItem) { camera = std::move(cameraItem); }
 
 		void EnableVsync(bool bEnable);
+		void SetMSAASampleCount(U32 sampleCount);
+
 		void ResizeCanvas(const Vector2D& newSize);
 
 		// #TODO(Josh::Stand-ins for command infrastructure until DX12 rendering stabilized)
@@ -134,6 +136,9 @@ namespace Diotima
 
 		std::queue<Int32> mFreeRenderListIndices;
 		
+		// #TODO(Josh::Need this duplicated here and in the Device because it needs to be set prior to initialization)
+		U32 mMSAASampleCount;
+
 		// DX12 Temp
 	private:
 		U32 mMVPConstantBuffer;

@@ -64,6 +64,9 @@ namespace Diotima
 
 		void WaitForPreviousFrame();
 
+		void SetMSAASampleCount(U32 sampleCount);
+		U32 GetMSAASampleCount();
+
 	private:
 		void InitializeAssets();
 		void CreateRootSignature();
@@ -113,5 +116,7 @@ namespace Diotima
 		std::vector<std::unique_ptr<DX12GFXIndexBuffer>> mIndexBuffers;
 		std::vector<std::unique_ptr<DX12GFXConstantBuffer>> mConstantBuffers;
 		std::vector <std::unique_ptr<DX12GFXTextureBuffer2D>> m2DTextureBuffers;
+
+		U32 mSampleCount;
 	};
 }
