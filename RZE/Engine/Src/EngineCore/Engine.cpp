@@ -63,7 +63,7 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 			const float averageFrametime = CalculateAverageFrametime();
 
 			{	BROFILER_CATEGORY("RZE_Engine::Run", Profiler::Color::Cyan)
-				// #TODO(Josh) Need to work this out but for the moment we need to pre update and then start the imgui new frame for things like editor stealing imgui input etc
+
 				PreUpdate();
 				{
 					Update();
