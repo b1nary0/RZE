@@ -45,8 +45,8 @@ void FreeCameraSystem::Update(const std::vector<Apollo::EntityID>& entities)
 			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
 			AssertNotNull(transfComp);
 
-			KeyboardInput(*camComp, *transfComp);
 			MouseInput(*camComp, *transfComp);
+			KeyboardInput(*camComp, *transfComp);
 		}
 	}
 
@@ -91,13 +91,6 @@ void FreeCameraSystem::KeyboardInput(CameraComponent& camComp, TransformComponen
 	{
 		// Focus object
 	}
-
-	Int32 wheelVal = RZE_Application::RZE().GetInputHandler().GetMouseState().CurWheelVal;
-	if (wheelVal != 0)
-	{
-		wheelVal = MathUtils::Clamp(wheelVal, -1, 1);
-		transfComp.Position = transfComp.Position + (camComp.Forward * static_cast<float>(wheelVal)) * mWheelZoomSpeed;
-	}
 }
 
 void FreeCameraSystem::MouseInput(CameraComponent& camComp, TransformComponent& transfComp)
@@ -106,6 +99,13 @@ void FreeCameraSystem::MouseInput(CameraComponent& camComp, TransformComponent& 
 
 	const float deltaT = static_cast<float>(RZE_Application::RZE().GetDeltaTime());
 	Vector3D curPos = inputHandler.GetMouseState().CurPosition;
+
+	Int32 wheelVal = RZE_Application::RZE().GetInputHandler().GetMouseState().CurWheelVal;
+	if (wheelVal != 0)
+	{
+		wheelVal = MathUtils::Clamp(wheelVal, -1, 1);
+		transfComp.Position = transfComp.Position + (camComp.Forward * static_cast<float>(wheelVal)) * mWheelZoomSpeed;
+	}
 
 	if (RZE_Application::RZE().GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Pressed)
 	{
