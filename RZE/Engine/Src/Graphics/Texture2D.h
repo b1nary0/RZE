@@ -18,6 +18,8 @@ class Texture2D : public IResource
 {
 public:
 	static FilePath kDefaultDiffuseTexturePath;
+	static FilePath kDefaultSpecularTexturePath;
+	static FilePath kDefaultNormalTexturePath;
 
 public:
 	Texture2D() = delete;
@@ -33,6 +35,8 @@ public:
 	ETextureType::T GetTextureType() const;
 	Vector2D GetDimensions() const;
 
+	U32 GetTextureBufferID() const;
+
 private:
 	U8* mData;
 
@@ -41,4 +45,6 @@ private:
 	Int32 mWidth;
 	Int32 mHeight;
 	Int32 mChannels;
+
+	U32 mGPUBuffer;
 };

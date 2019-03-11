@@ -2,7 +2,8 @@
 
 #include <vector>
 
-#include <Diotima/Driver/OpenGL/OpenGL.h>
+#include <Utils/PrimitiveDefs.h>
+
 namespace Diotima
 {
 	class GFXMesh;
@@ -15,10 +16,6 @@ namespace Diotima
 		void Allocate(const std::vector<GFXMesh*>& meshes);
 
 	public:
-		OpenGLVAO mVAO;
-		OpenGLVBO mVertexVBO;
-		OpenGLEBO mEBO;
-
 		U32 mNumIndices;
 	};
 }

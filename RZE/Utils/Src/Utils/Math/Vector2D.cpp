@@ -1,5 +1,6 @@
 #include <Utils/StdAfx.h>
 
+#include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Vector2D.h>
 
 Vector2D::Vector2D()
@@ -57,6 +58,12 @@ Vector2D Vector2D::operator-(const Vector2D& other)
 {
 	glm::vec2 vec = GetInternalVec() - other.GetInternalVec();
 	return Vector2D(vec.x, vec.y);
+}
+
+float Vector2D::operator[](int index) const
+{
+	AssertExpr(index < 2);
+	return mVec[index];
 }
 
 bool Vector2D::operator!=(const Vector2D& rhs) const
