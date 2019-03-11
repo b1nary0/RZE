@@ -66,10 +66,12 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 
 				PreUpdate();
 				{
+					BROFILER_CATEGORY("Update and Render", Profiler::Color::BurlyWood);
 					Update();
 					mRenderer->Update();
-					mRenderer->Render();
 				}
+
+				mRenderer->Render();
 			}
 
 			++mFrameCount;

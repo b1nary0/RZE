@@ -114,37 +114,6 @@ void RenderSystem::ShutDown()
 {
 }
 
-// #TODO(Josh::The concept of a render-side material seems faulty. Maybe set it up as a set of parameters for the shader/pass)
-Diotima::GFXMaterial* TEMPHACK_ConvertMaterialToGPUMaterial(const Material& material)
-{
-	Diotima::GFXMaterial* pMaterial = new Diotima::GFXMaterial();
-	if (material.HasDiffuse())
-	{
-		const Texture2D& diffuse = material.GetDiffuse();
-		Diotima::GFXTexture2D* gpuTexture = new Diotima::GFXTexture2D(diffuse.GetRawData(), static_cast<U32>(diffuse.GetDimensions().X()), static_cast<U32>(diffuse.GetDimensions().Y()), 0, Diotima::ETextureType::Diffuse);
-		pMaterial->AddTexture(gpuTexture);
-	}
-
-	if (material.HasSpecular())
-	{
-		const Texture2D& specular = material.GetSpecular();
-		Diotima::GFXTexture2D* gpuTexture = new Diotima::GFXTexture2D(specular.GetRawData(), static_cast<U32>(specular.GetDimensions().X()), static_cast<U32>(specular.GetDimensions().Y()), 0, Diotima::ETextureType::Specular);
-		pMaterial->AddTexture(gpuTexture);
-	}
-
-	if (material.HasNormal())
-	{
-		const Texture2D& normal = material.GetNormal();
-		Diotima::GFXTexture2D* gpuTexture = new Diotima::GFXTexture2D(normal.GetRawData(), static_cast<U32>(normal.GetDimensions().X()), static_cast<U32>(normal.GetDimensions().Y()), 0, Diotima::ETextureType::Normal);
-		pMaterial->AddTexture(gpuTexture);
-	}
-
-	pMaterial->Shininess = material.Shininess;
-	pMaterial->Opacity = material.Opacity;
-
-	return pMaterial;
-}
-
 void RenderSystem::RegisterForComponentNotifications()
 {
 	Apollo::EntityHandler& handler = InternalGetEntityHandler();
