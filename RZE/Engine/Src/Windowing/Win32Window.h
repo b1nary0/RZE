@@ -55,8 +55,6 @@ public:
 
 	void Show();
 
-	void BufferSwap() const;
-
 	const OSWindowHandleData& GetOSWindowHandleData() const;
 
 	void RegisterEvents(EventHandler& eventHandler);

@@ -75,11 +75,6 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 			}
 
 			++mFrameCount;
-
-			{
-				BROFILER_CATEGORY("BufferSwap", Profiler::Color::Aquamarine);
-				mMainWindow->BufferSwap(); // #TODO(Josh) Maybe this can be done better
-			}
 		}
 
 		BeginShutDown();
