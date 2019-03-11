@@ -92,15 +92,6 @@ void FreeCameraSystem::KeyboardInput(CameraComponent& camComp, TransformComponen
 		// Focus object
 	}
 
-	if (inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Space) == EButtonState::ButtonState_Pressed)
-	{
-		mSpeed = kFullSpeed / 8.0f;
-	}
-	else if (!inputHandler.GetKeyboardState().IsDownThisFrame(Win32KeyCode::Space))
-	{
-		mSpeed = kFullSpeed;
-	}
-
 	Int32 wheelVal = RZE_Application::RZE().GetInputHandler().GetMouseState().CurWheelVal;
 	if (wheelVal != 0)
 	{
