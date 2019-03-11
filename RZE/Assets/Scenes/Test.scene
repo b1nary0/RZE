@@ -7,7 +7,7 @@
         {
             "TransformComponent":
             {
-                "Position": [0, 5, 15],
+                "Position": [0, 2, 0],
                 "Scale": [1, 1, 1],
                 "Rotation": [0, 0, 0]
             },
@@ -31,10 +31,6 @@
           "Scale": [1, 1, 1],
           "Rotation": [0, 0, 0]
         },
-        "MeshComponent":
-        {
-          "ResourcePath": "Engine/Assets/3D/Cube.obj"
-        },
         "LightSourceComponent":
         {
           "Color": [1, 1, 1],
@@ -48,13 +44,13 @@
 	  {
 		"TransformComponent":
 		{
-		  "Position": [0, 0, 0],
+		  "Position": [0, 0, -20],
 		  "Scale":[1, 1, 1],
 		  "Rotation":[0, 0, 0]
 		},
 		"MeshComponent":
 		{
-		  "ResourcePath": "Engine/Assets/3D/NeckMechWalker/NeckMechWalker.obj"
+		  "ResourcePath": "Assets/3D/NeckMechWalker/NeckMechWalker.obj"
 		}
 	  }
 	}

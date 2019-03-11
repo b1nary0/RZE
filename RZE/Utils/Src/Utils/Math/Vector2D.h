@@ -31,8 +31,11 @@ public:
 	// Operators
 	//
 public:
+	// #TODO(Josh::Fill these out to the same standard as 2D/4D)
 	Vector2D operator-(const Vector2D& other);
 	bool operator!=(const Vector2D& rhs) const;
+
+	float operator[](int index) const;
 
 private:
 	glm::vec2 mVec;

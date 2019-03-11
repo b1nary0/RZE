@@ -87,9 +87,6 @@ void FirstPersonCameraSystem::DoInput(CameraComponent& camera, TransformComponen
 			newForward -= camera.Forward * mSpeed;
 		}
 
-		// #TODO(Josh::Improve this by using velocity vectors and operating on the relationship between the two
-		//				this will fix the slow A/D when not pressed with W/S/
-		//					Then add it to FreeCameraSystem for the editor
 		if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_A])
 		{
 			newStrafe -= camera.Forward.Cross(camera.UpDir).Normalize() / 2.0f * mSpeed;

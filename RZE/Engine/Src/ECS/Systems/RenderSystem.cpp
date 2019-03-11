@@ -11,6 +11,8 @@
 
 #include <Graphics/Material.h>
 #include <Graphics/Texture2D.h>
+#include <Graphics/IndexBuffer.h>
+#include <Graphics/VertexBuffer.h>
 
 #include <ECS/Components/CameraComponent.h>
 #include <ECS/Components/LightSourceComponent.h>
@@ -60,9 +62,6 @@ void RenderSystem::Initialize()
 
 	RegisterForComponentNotifications();
 
-	CreateForwardShader();
-	CreateDepthPassShader();
-
 	RZE_Application::RZE().GetRenderer().mForwardShader = gForwardShader;
 	RZE_Application::RZE().GetRenderer().mDepthPassShader = gDepthPassShader;
 }
@@ -82,17 +81,18 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 	Diotima::Renderer::CameraItemProtocol camera;
 	camera.ProjectionMat = camComp->ProjectionMat;
 	camera.ViewMat = camComp->ViewMat;
+	camera.Position = transfComp->Position;
 	renderer.SetCamera(camera);
 	
 	//Perseus::Job::Task work([this, entities, transfComp, &renderer, &handler]()
 	{
-		for (auto& entity : entities)
-		{
-			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
-
-			Diotima::Renderer::RenderItemProtocol& item = renderer.GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
-			item.ModelMatrix = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
-		}
+ 		for (auto& entity : entities)
+ 		{
+ 			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
+ 
+ 			Diotima::Renderer::RenderItemProtocol& item = renderer.GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
+ 			item.ModelMatrix = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
+ 		}
 	}/*)*/;
 	//Perseus::JobScheduler::Get().PushJob(work);
 
@@ -162,16 +162,25 @@ void RenderSystem::RegisterForComponentNotifications()
 		{
 			Model3D* const modelData = RZE_Application::RZE().GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
 
-			std::vector<Diotima::GFXMesh*> gpuMeshes;
-			gpuMeshes.reserve(modelData->GetStaticMesh().GetSubMeshes().size());
-			for (const MeshGeometry& meshGeometry : modelData->GetStaticMesh().GetSubMeshes())
-			{
-				gpuMeshes.push_back(meshGeometry.GetGPUMesh());
-				gpuMeshes.back()->SetMaterial(TEMPHACK_ConvertMaterialToGPUMaterial(meshGeometry.GetMaterial()));
-			}
 			Diotima::Renderer::RenderItemProtocol item;
-			item.MeshData = std::move(gpuMeshes);
+			for (const MeshGeometry& mesh : modelData->GetStaticMesh().GetSubMeshes())
+			{
+				Diotima::Renderer::RenderItemMeshData meshData;
+				meshData.VertexBuffer = mesh.GetVertexBuffer();
+				meshData.IndexBuffer = mesh.GetIndexBuffer();
 
+				AssertExpr(mesh.GetMaterial().HasDiffuse());
+				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetDiffuse().GetTextureBufferID(), Diotima::Renderer::ETextureType::Diffuse);
+				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetSpecular().GetTextureBufferID(), Diotima::Renderer::ETextureType::Specular);
+				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetNormal().GetTextureBufferID(), Diotima::Renderer::ETextureType::Normal);
+
+				Diotima::Renderer::RenderItemMaterialDesc matDesc;
+				matDesc.Shininess = mesh.GetMaterial().Shininess;
+
+				meshData.Material = matDesc;
+
+				item.MeshData.push_back(meshData);
+			}
 			Int32 itemIdx = RZE_Application::RZE().GetRenderer().AddRenderItem(item);
 			mRenderItemEntityMap[entityID] = itemIdx;
 		}
@@ -228,7 +237,6 @@ void RenderSystem::RegisterForComponentNotifications()
 
 void RenderSystem::GenerateCameraMatrices(CameraComponent& cameraComponent, const TransformComponent& transformComponent)
 {
-	cameraComponent.AspectRatio = static_cast<float>(RZE_Application::RZE().GetApplication().GetRenderTarget().GetWidth()) / static_cast<float>(RZE_Application::RZE().GetApplication().GetRenderTarget().GetHeight());
 	cameraComponent.ProjectionMat = Matrix4x4::CreatePerspectiveMatrix(cameraComponent.FOV, cameraComponent.AspectRatio, cameraComponent.NearCull, cameraComponent.FarCull);
 	cameraComponent.ViewMat = Matrix4x4::CreateViewMatrix(transformComponent.Position, transformComponent.Position + cameraComponent.Forward, cameraComponent.UpDir);
 }
@@ -247,8 +255,8 @@ void CreateForwardShader()
 	const FilePath vertShaderFilePath("Assets/Shaders/TextureVert.shader");
 	const FilePath fragShaderFilePath("Assets/Shaders/TextureFrag.shader");
 
-	texVertShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "TextureVertShader");
-	texFragShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "TextureFragShader");
+	texVertShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath, 0, "TextureVertShader");
+	texFragShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath, 1, "TextureFragShader");
 
 	Diotima::GFXShader* vertShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(texVertShaderHandle);
 	vertShader->Create();
@@ -270,8 +278,8 @@ void CreateDepthPassShader()
 	const FilePath vertShaderFilePath("Assets/Shaders/DepthVert.shader");
 	const FilePath fragShaderFilePath("Assets/Shaders/EmptyFrag.shader");
 
-	depthPassVertShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "DepthPassVertShader");
-	depthPassFragShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "DepthPassFragShader");
+	depthPassVertShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath, 0, "DepthPassVertShader");
+	depthPassFragShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath, 1, "DepthPassFragShader");
 
 	Diotima::GFXShader* vertShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(depthPassVertShaderHandle);
 	vertShader->Create();
