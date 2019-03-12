@@ -347,7 +347,7 @@ namespace Diotima
 		mCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 		mCommandList->ClearDepthStencilView(mDepthStencilBuffer->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 		
-		const float clearColor[] = { 0.1f, 0.1f, 0.1f, 1.0f };
+		const float clearColor[] = { 0.f, 0.f, 0.f, 0.0f };
 		mCommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 	}
 
