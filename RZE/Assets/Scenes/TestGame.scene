@@ -27,14 +27,14 @@
       {
         "TransformComponent":
         {
-          "Position":[-30, 20, 20],
+          "Position":[-15, 5, 5],
           "Scale": [1, 1, 1],
           "Rotation": [0, 0, 0]
         },
         "LightSourceComponent":
         {
           "Color": [0.95, 0.95, 0.85],
-          "Strength": 1
+          "Strength": 1.5
         },
 		"MeshComponent":
 		{
