@@ -68,12 +68,20 @@ namespace Diotima
 			void Invalidate();
 		};
 
+		enum ELightType : U32
+		{
+			Directional = 0,
+			Point
+		};
+
 		struct LightItemProtocol
 		{
 			Vector4D	Position;
 			Vector4D	Color;
 			Matrix4x4	LightSpaceMatrix;
 			float		Strength;
+			ELightType	LightType;
+			Vector2D	Padding;
 		};
 
 		struct CameraItemProtocol
@@ -127,6 +135,8 @@ namespace Diotima
 	private:
 		void DX12Initialize();
 		
+		void PrepareLights();
+
 	private:
 		Vector2D mCanvasSize;
 
@@ -143,7 +153,8 @@ namespace Diotima
 	private:
 		U32 mMVPConstantBuffer;
 		U32 mLightConstantBuffer;
-		U32 mPixelShaderConstantDataBuffer;
+		U32 mPerMeshPixelShaderConstants; // Per mesh data
+		U32 mPerFramePixelShaderConstants; // Per frame data
 
 		std::unique_ptr<DX12GFXDriverInterface> mDriverInterface;
 

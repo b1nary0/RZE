@@ -163,6 +163,7 @@ void RenderSystem::RegisterForComponentNotifications()
 		AssertNotNull(lightComp);
 
 		Diotima::Renderer::LightItemProtocol item;
+		item.LightType = static_cast<Diotima::Renderer::ELightType>(lightComp->LightType);
 		item.Color = lightComp->Color;
 		item.Strength = lightComp->Strength;
 

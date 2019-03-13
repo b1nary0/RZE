@@ -85,10 +85,12 @@ void GameScene::Load(FilePath filePath)
 				if (comp != comVal.MemberEnd())
 				{
 					rapidjson::Value& memVal = comp->value;
+
+					ELightType lightType = static_cast<ELightType>(memVal["LightType"].GetUint());
 					Vector3D color(memVal["Color"][0].GetFloat(), memVal["Color"][1].GetFloat(), memVal["Color"][2].GetFloat());
 					float strength = memVal["Strength"].GetFloat();
 
-					GetEntityHandler().AddComponent<LightSourceComponent>(id, color, strength);
+					GetEntityHandler().AddComponent<LightSourceComponent>(id, lightType, color, strength);
 				}
 
 				comp = comVal.FindMember("CameraComponent");

@@ -21,7 +21,29 @@
             }
         }
     },
-    "Directional Light":
+		"Point Light1":
+    {
+      "components":
+      {
+        "TransformComponent":
+        {
+          "Position":[-5, 5, 5],
+          "Scale": [1, 1, 1],
+          "Rotation": [0, 0, 0]
+        },
+        "LightSourceComponent":
+        {
+					"LightType": 1,
+          "Color": [0.95, 0.95, 0.85],
+          "Strength": 0.5
+        },
+		"MeshComponent":
+		{
+		  "ResourcePath": "Assets/3D/Cube.obj"
+		}
+      }
+    },
+		"Point Light2":
     {
       "components":
       {
@@ -33,8 +55,9 @@
         },
         "LightSourceComponent":
         {
+					"LightType": 1,
           "Color": [0.95, 0.95, 0.85],
-          "Strength": 1.5
+          "Strength": 1
         },
 		"MeshComponent":
 		{

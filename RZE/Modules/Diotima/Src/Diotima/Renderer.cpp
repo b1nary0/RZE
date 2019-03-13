@@ -76,15 +76,18 @@ namespace Diotima
 		device->ResetCommandAllocator();
 		device->ResetCommandList();
 
+		PrepareLights();
+
 		device->BeginFrame();
 		{
 			ID3D12GraphicsCommandList* commandList = device->GetCommandList();
 			DX12GFXConstantBuffer* const MVPConstantBuffer = mDriverInterface->mDevice->GetConstantBuffer(mMVPConstantBuffer);
 			DX12GFXConstantBuffer* const lightConstantBuffer = mDriverInterface->mDevice->GetConstantBuffer(mLightConstantBuffer);
-			DX12GFXConstantBuffer* const pixelShaderConstantBuffer = mDriverInterface->mDevice->GetConstantBuffer(mPixelShaderConstantDataBuffer);
+			DX12GFXConstantBuffer* const perMeshPixelShaderConstants = mDriverInterface->mDevice->GetConstantBuffer(mPerMeshPixelShaderConstants);
+			DX12GFXConstantBuffer* const perFramePixelShaderConstants = mDriverInterface->mDevice->GetConstantBuffer(mPerFramePixelShaderConstants);
 
-			lightConstantBuffer->SetData(mLightingList.data(), sizeof(LightItemProtocol), 0);
 			commandList->SetGraphicsRootConstantBufferView(2, lightConstantBuffer->GetResource()->GetGPUVirtualAddress());
+			commandList->SetGraphicsRootConstantBufferView(5, perFramePixelShaderConstants->GetResource()->GetGPUVirtualAddress());
 
 			commandList->SetGraphicsRoot32BitConstants(1, 3, &camera.Position.GetInternalVec(), 0);
 
@@ -114,8 +117,8 @@ namespace Diotima
 					DX12GFXVertexBuffer* const vertexBuffer = device->GetVertexBuffer(meshData.VertexBuffer);
 					DX12GFXIndexBuffer* const indexBuffer = device->GetIndexBuffer(meshData.IndexBuffer);
 
-					pixelShaderConstantBuffer->SetData(&meshData.Material, sizeof(RenderItemMaterialDesc), static_cast<U32>(index));
-					commandList->SetGraphicsRootConstantBufferView(4, pixelShaderConstantBuffer->GetResource()->GetGPUVirtualAddress() + ((sizeof(RenderItemMaterialDesc) + 255) & ~255) * index);
+					perMeshPixelShaderConstants->SetData(&meshData.Material, sizeof(RenderItemMaterialDesc), static_cast<U32>(index));
+					commandList->SetGraphicsRootConstantBufferView(4, perMeshPixelShaderConstants->GetResource()->GetGPUVirtualAddress() + ((sizeof(RenderItemMaterialDesc) + 255) & ~255) * index);
 
 					ID3D12DescriptorHeap* ppDescHeaps[] = { device->GetTextureHeap() };
 					commandList->SetDescriptorHeaps(_countof(ppDescHeaps), ppDescHeaps);
@@ -161,7 +164,34 @@ namespace Diotima
 
 		mMVPConstantBuffer = mDriverInterface->CreateConstantBuffer(nullptr, 2);
 		mLightConstantBuffer = mDriverInterface->CreateConstantBuffer(nullptr, 1);
-		mPixelShaderConstantDataBuffer = mDriverInterface->CreateConstantBuffer(nullptr, 1);
+		mPerMeshPixelShaderConstants = mDriverInterface->CreateConstantBuffer(nullptr, 1);
+		mPerFramePixelShaderConstants = mDriverInterface->CreateConstantBuffer(nullptr, 1);
+	}
+
+	void Renderer::PrepareLights()
+	{
+		std::vector<LightItemProtocol> directionalLights;
+		std::vector<LightItemProtocol> pointLights;
+
+		for (LightItemProtocol light : mLightingList)
+		{
+			if (light.LightType == ELightType::Directional)
+			{
+				directionalLights.push_back(light);
+			}
+			else
+			{
+				pointLights.push_back(light);
+			}
+		}
+
+		DX12GFXConstantBuffer* const lightConstantBuffer = mDriverInterface->mDevice->GetConstantBuffer(mLightConstantBuffer);
+		lightConstantBuffer->SetData(pointLights.data(), static_cast<U32>(sizeof(LightItemProtocol) * pointLights.size()), 0);
+		//lightConstantBuffer->SetData(directionalLights.data(), static_cast<U32>(sizeof(LightItemProtocol) * directionalLights.size()), 1);
+
+		DX12GFXConstantBuffer* const perFramePixelShaderConstants = mDriverInterface->mDevice->GetConstantBuffer(mPerFramePixelShaderConstants);
+		U32 lightCounts[2] = { static_cast<U32>(pointLights.size()), static_cast<U32>(directionalLights.size()) };
+		perFramePixelShaderConstants->SetData(lightCounts, sizeof(U32) * 2, 0);
 	}
 
 	void Renderer::EnableVsync(bool bEnabled)
