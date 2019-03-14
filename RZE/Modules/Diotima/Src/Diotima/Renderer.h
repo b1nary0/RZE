@@ -14,12 +14,6 @@ namespace Diotima
 	// DX12 Temp
 	class DX12GFXDriverInterface;
 
-	/////////////////
-	class GFXMesh;
-	class GFXMaterial;
-	class GFXShaderPipeline;
-	class GFXTexture2D;
-
 	enum class EBufferType
 	{
 		BufferType_Vertex
@@ -100,9 +94,6 @@ namespace Diotima
 	public:
 		Renderer();
 		~Renderer();
-
-		GFXShaderPipeline* mForwardShader;
-		GFXShaderPipeline* mDepthPassShader;
 
 	public:
 		void Initialize();

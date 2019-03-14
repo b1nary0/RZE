@@ -86,6 +86,9 @@ namespace Diotima
 			DX12GFXConstantBuffer* const perMeshPixelShaderConstants = mDriverInterface->mDevice->GetConstantBuffer(mPerMeshPixelShaderConstants);
 			DX12GFXConstantBuffer* const perFramePixelShaderConstants = mDriverInterface->mDevice->GetConstantBuffer(mPerFramePixelShaderConstants);
 
+			ID3D12DescriptorHeap* ppDescHeaps[] = { device->GetTextureHeap() };
+			commandList->SetDescriptorHeaps(_countof(ppDescHeaps), ppDescHeaps);
+
 			commandList->SetGraphicsRootConstantBufferView(2, lightConstantBuffer->GetResource()->GetGPUVirtualAddress());
 			commandList->SetGraphicsRootConstantBufferView(5, perFramePixelShaderConstants->GetResource()->GetGPUVirtualAddress());
 
@@ -97,7 +100,6 @@ namespace Diotima
 			U32 objectIndex = 0;
 			for (RenderItemProtocol& itemProtocol : mRenderList)
 			{
-
 				const float* modelViewPtr = itemProtocol.ModelMatrix.GetValuePtr();
 				const float* modelViewInvPtr = itemProtocol.ModelMatrix.Inverse().GetValuePtr();
 				const float* camViewProjPtr = camViewProjMat.GetValuePtr();
@@ -119,9 +121,6 @@ namespace Diotima
 
 					perMeshPixelShaderConstants->SetData(&meshData.Material, sizeof(RenderItemMaterialDesc), static_cast<U32>(index));
 					commandList->SetGraphicsRootConstantBufferView(4, perMeshPixelShaderConstants->GetResource()->GetGPUVirtualAddress() + ((sizeof(RenderItemMaterialDesc) + 255) & ~255) * index);
-
-					ID3D12DescriptorHeap* ppDescHeaps[] = { device->GetTextureHeap() };
-					commandList->SetDescriptorHeaps(_countof(ppDescHeaps), ppDescHeaps);
 
 					// #NOTE(Josh::Everything should have a default guaranteed diffuse map. For now it also marks the start of the descriptor table)
 					DX12GFXTextureBuffer2D* const diffuseBuffer = device->GetTextureBuffer2D(meshData.TextureDescs[0].TextureBuffer);
