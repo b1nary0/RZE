@@ -6,6 +6,7 @@
 #include <ECS/Components/MeshComponent.h>
 #include <ECS/Components/NameComponent.h>
 #include <ECS/Components/TransformComponent.h>
+#include <ECS/Systems/LifetimeSystem.h>
 #include <ECS/Systems/RenderSystem.h>
 
 #include <RapidJSON/document.h>
@@ -26,6 +27,8 @@ void GameScene::Initialize()
 {
 	mEntityHandler.Initialize();
 
+	// #TODO(Josh::This is the order of update. Need to make it so we can call these whenever)
+	mEntityHandler.AddSystem<LifetimeSystem>();
 	mEntityHandler.AddSystem<RenderSystem>();
 }
 

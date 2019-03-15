@@ -7,8 +7,7 @@
 struct MeshComponent final : Apollo::Component<MeshComponent>
 {
 	MeshComponent(const FilePath& resourcePath)
-		: ResourcePath(resourcePath)
-	{}
+		: ResourcePath(resourcePath) {}
 
 	FilePath ResourcePath;
 

@@ -164,8 +164,8 @@ namespace Diotima
 			U32 compileFlags = 0;
 #endif
 
-			FilePath vertexShaderFilePath("Assets/Shaders/D3DTest.VS");
-			FilePath pixelShaderFilePath("Assets/Shaders/D3DTest.PS");
+			FilePath vertexShaderFilePath("Assets/Shaders/D3DTest_VS.hlsl");
+			FilePath pixelShaderFilePath("Assets/Shaders/D3DTest_PS.hlsl");
 
 			ComPtr<ID3DBlob> error;
 
@@ -435,13 +435,13 @@ namespace Diotima
 		rootParameters[5].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 		D3D12_STATIC_SAMPLER_DESC sampler = {};
-		sampler.Filter = D3D12_FILTER_ANISOTROPIC;
+		sampler.Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
 		sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 		sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 		sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
 		sampler.MipLODBias = 0;
-		sampler.MaxAnisotropy = 16;
-		sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+		sampler.MaxAnisotropy = 0;
+		sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 		sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
 		sampler.MinLOD = 0.0f;
 		sampler.MaxLOD = D3D12_FLOAT32_MAX;

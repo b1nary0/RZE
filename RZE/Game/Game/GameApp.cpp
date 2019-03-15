@@ -21,6 +21,7 @@
 // GAME
 #include <Game/Systems/FirstPersonCameraSystem.h>
 #include <Game/Systems/InteractiveSpawningSystem.h>
+#include <Game/Systems/ProjectileSystem.h>
 
 GameApp::GameApp()
 	: RZE_Application()
@@ -39,6 +40,7 @@ void GameApp::Initialize()
 
 	//RZE().GetActiveScene().GetEntityHandler().AddSystem<InteractiveSpawningSystem>();
 	RZE().GetActiveScene().GetEntityHandler().AddSystem<FreeCameraSystem>();
+	RZE().GetActiveScene().GetEntityHandler().AddSystem<ProjectileSystem>();
 }
 
 void GameApp::Start()

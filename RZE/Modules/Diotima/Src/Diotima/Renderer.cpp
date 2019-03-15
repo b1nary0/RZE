@@ -100,6 +100,13 @@ namespace Diotima
 			U32 objectIndex = 0;
 			for (RenderItemProtocol& itemProtocol : mRenderList)
 			{
+				// #TODO(Josh::This needs to be removed -- an opaque handle should be leased out that will
+				//             get fixed up when we remove render items)
+				if (!itemProtocol.bIsValid)
+				{
+					continue;
+				}
+
 				const float* modelViewPtr = itemProtocol.ModelMatrix.GetValuePtr();
 				const float* modelViewInvPtr = itemProtocol.ModelMatrix.Inverse().GetValuePtr();
 				const float* camViewProjPtr = camViewProjMat.GetValuePtr();

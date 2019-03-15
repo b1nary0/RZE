@@ -57,7 +57,7 @@
         {
 					"LightType": 1,
           "Color": [0.95, 0.95, 0.85],
-          "Strength": 1
+          "Strength": 5
         },
 		"MeshComponent":
 		{

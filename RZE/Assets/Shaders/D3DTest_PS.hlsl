@@ -60,6 +60,10 @@ float CalculateBlinnPhong(float3 viewDir, float3 lightDir, float3 normal)
 	float3 halfDir = normalize(lightDir + viewDir);
 	float specAngle = max(0.0f, dot(halfDir, reflect(-lightDir, normal)));
 	specular = pow(specAngle, materialData.Shininess);
+
+	//float3 R = reflect(-lightDir, normal);
+	//float3 RdotV = max(0.0f, dot(R, viewDir)); 
+	//specular = pow(RdotV, materialData.Shininess);
 	
 	return specular;
 }
@@ -86,7 +90,7 @@ float CalcAttenuation(float dist, float falloffStart, float falloffEnd)
 float CalculatePointLight(float3 pixelPos, float3 lightPos, float3 normal, float3 toEye)
 {
 	float tempFalloffStart = 8.0f;
-	float tempFalloffEnd = 16.0f;
+	float tempFalloffEnd = 12.0f;
 	
 	float3 lightVec = lightPos - pixelPos;
 	float distance = length(lightVec);
@@ -134,10 +138,10 @@ float4 PSMain(PS_IN input) : SV_TARGET
 		float lightStrength = CalculatePointLight(input.FragPos, light.Position, normal, viewDir);
 		
 		float3 ambientResult = ambientCoeff * diffSample.rgb;
-		float3 diffuseResult = (diffSample.rgb * light.Color.rgb * lightStrength);
-		float3 specularResult = specular * specularSample.rgb * lightStrength * light.Color.rgb;
+		float3 diffuseResult = light.Color.rgb * lightStrength;
+		float3 specularResult = specular * lightStrength * light.Color.rgb;
 		
-		float3 result = ambientResult + (diffuseResult * diff) + specularResult;
+		float3 result = (diffSample.rgb * (ambientResult + diffuseResult)) + (specularResult * specularSample.rgb);
 		lightAccum += result;
 	}
 	
