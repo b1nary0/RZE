@@ -8,6 +8,7 @@
 #include <Diotima/Shaders/ShaderPipeline.h>
 
 #include <Utils/Conversions.h>
+#include <Utils/MemoryUtils.h>
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Vector4D.h>
 #include <Utils/Platform/FilePath.h>
@@ -117,7 +118,7 @@ namespace Diotima
 
 				MVPConstantBuffer->SetData(pMatrixConstantBufferData, sizeof(Matrix4x4) * 3, objectIndex);
 
-				commandList->SetGraphicsRootConstantBufferView(0, MVPConstantBuffer->GetResource()->GetGPUVirtualAddress() + (((sizeof(Matrix4x4) * 3) + 255) & ~255) * objectIndex);
+				commandList->SetGraphicsRootConstantBufferView(0, MVPConstantBuffer->GetResource()->GetGPUVirtualAddress() + (MemoryUtils::AlignSize(sizeof(Matrix4x4) * 3, 255) * objectIndex));
 				
 				for (size_t index = 0; index < itemProtocol.MeshData.size(); ++index)
 				{
@@ -127,7 +128,7 @@ namespace Diotima
 					DX12GFXIndexBuffer* const indexBuffer = device->GetIndexBuffer(meshData.IndexBuffer);
 
 					perMeshPixelShaderConstants->SetData(&meshData.Material, sizeof(RenderItemMaterialDesc), static_cast<U32>(index));
-					commandList->SetGraphicsRootConstantBufferView(4, perMeshPixelShaderConstants->GetResource()->GetGPUVirtualAddress() + ((sizeof(RenderItemMaterialDesc) + 255) & ~255) * index);
+					commandList->SetGraphicsRootConstantBufferView(4, perMeshPixelShaderConstants->GetResource()->GetGPUVirtualAddress() + (MemoryUtils::AlignSize(sizeof(RenderItemMaterialDesc), 255) * index));
 
 					// #NOTE(Josh::Everything should have a default guaranteed diffuse map. For now it also marks the start of the descriptor table)
 					DX12GFXTextureBuffer2D* const diffuseBuffer = device->GetTextureBuffer2D(meshData.TextureDescs[0].TextureBuffer);
