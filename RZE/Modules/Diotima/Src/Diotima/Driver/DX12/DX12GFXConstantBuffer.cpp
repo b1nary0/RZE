@@ -43,7 +43,7 @@ namespace Diotima
 	void DX12GFXConstantBuffer::SetData(const void* data, U32 size, U32 objectIndex)
 	{
 		U32 alignedSize = MemoryUtils::AlignSize(size, 255);
-		memcpy((U8*)mResource + (alignedSize * objectIndex), data, alignedSize);
+		memcpy((U8*)mResource + (alignedSize * objectIndex), data, size);
 	}
 
 	ID3D12DescriptorHeap* DX12GFXConstantBuffer::GetDescriptorHeap()

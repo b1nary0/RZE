@@ -126,8 +126,8 @@ namespace Diotima
 					DX12GFXVertexBuffer* const vertexBuffer = device->GetVertexBuffer(meshData.VertexBuffer);
 					DX12GFXIndexBuffer* const indexBuffer = device->GetIndexBuffer(meshData.IndexBuffer);
 
-					perMeshPixelShaderConstants->SetData(&meshData.Material, sizeof(RenderItemMaterialDesc), 0);
-					commandList->SetGraphicsRootConstantBufferView(4, perMeshPixelShaderConstants->GetResource()->GetGPUVirtualAddress());
+					perMeshPixelShaderConstants->SetData(&meshData.Material, sizeof(RenderItemMaterialDesc), static_cast<U32>(index));
+					commandList->SetGraphicsRootConstantBufferView(4, perMeshPixelShaderConstants->GetResource()->GetGPUVirtualAddress() + ((sizeof(RenderItemMaterialDesc) + 255) & ~255) * index);
 
 					// #NOTE(Josh::Everything should have a default guaranteed diffuse map. For now it also marks the start of the descriptor table)
 					DX12GFXTextureBuffer2D* const diffuseBuffer = device->GetTextureBuffer2D(meshData.TextureDescs[0].TextureBuffer);
