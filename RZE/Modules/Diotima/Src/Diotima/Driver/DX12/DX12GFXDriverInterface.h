@@ -7,6 +7,7 @@
 namespace Diotima
 {
 	class DX12GFXDevice;
+	class DX12GFXTextureBuffer2D;
 
 	class DX12GFXDriverInterface final : public IGFXDriverInterface
 	{
@@ -23,6 +24,9 @@ namespace Diotima
 		virtual U32 CreateIndexBuffer(void* data, U32 numElements) override;
 		virtual U32 CreateTextureBuffer2D(void* data, U32 width, U32 height) override;
 		virtual U32 CreateConstantBuffer(void* data, U32 size) override;
+
+		// #TODO(Josh::Tease this out later)
+		void GenerateMipsForTexture(DX12GFXTextureBuffer2D* texture);
 
 		void SetWindow(void* windowHandle) override;
 

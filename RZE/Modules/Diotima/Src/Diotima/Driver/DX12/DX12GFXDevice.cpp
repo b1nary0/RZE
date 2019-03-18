@@ -536,4 +536,16 @@ namespace Diotima
 		return mSampleCount;
 	}
 
+	void DX12GFXDevice::GenerateMipsForTexture(DX12GFXTextureBuffer2D* texture)
+	{
+
+	}
+
+	void DX12GFXDevice::InitializeMipGeneration()
+	{
+		// Need a PSO
+		// Need a root signature
+		// Need n UAVs for n mip levels
+	}
+
 }

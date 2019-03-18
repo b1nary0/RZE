@@ -67,12 +67,17 @@ namespace Diotima
 		void SetMSAASampleCount(U32 sampleCount);
 		U32 GetMSAASampleCount();
 
+		// #TODO(Josh::Tease this out later)
+		void GenerateMipsForTexture(DX12GFXTextureBuffer2D* texture);
+
 	private:
 		void InitializeAssets();
 		void CreateRootSignature();
 
 		void InitializeMSAA();
 		void CreateTextureHeap();
+
+		void InitializeMipGeneration();
 
 	private:
 		ComPtr<ID3D12Device> mDevice;

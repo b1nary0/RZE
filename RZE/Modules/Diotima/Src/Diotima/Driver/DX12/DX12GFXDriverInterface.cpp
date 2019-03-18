@@ -61,4 +61,9 @@ namespace Diotima
 		return mDevice->CreateConstantBuffer(data, size);
 	}
 
+	void DX12GFXDriverInterface::GenerateMipsForTexture(DX12GFXTextureBuffer2D* texture)
+	{
+
+	}
+
 }
