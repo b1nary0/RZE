@@ -591,7 +591,7 @@ namespace Diotima
 			OutputDebugStringA((char*)error->GetBufferPointer());
 		}
 
-		HRESULT res = mDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&mMipGenRootSig);
+		HRESULT res = mDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&mMipGenRootSig));
 	}
 
 	void DX12GFXDevice::CreateMipGenPSO()
