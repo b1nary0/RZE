@@ -8,6 +8,7 @@
 
 #include <Utils/Conversions.h>
 #include <Utils/DebugUtils/Debug.h>
+#include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector3D.h>
 #include <Utils/Math/Vector4D.h>
 #include <Utils/Platform/FilePath.h>
@@ -543,9 +544,50 @@ namespace Diotima
 
 	void DX12GFXDevice::InitializeMipGeneration()
 	{
-		// Need a PSO
 		// Need a root signature
+		CreateMipGenRootSignature();
+		// Need a PSO
+		CreateMipGenPSO();
+
 		// Need n UAVs for n mip levels
+	}
+
+	void DX12GFXDevice::CreateMipGenRootSignature()
+	{
+		CD3DX12_DESCRIPTOR_RANGE1 srcMip(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);
+		CD3DX12_DESCRIPTOR_RANGE1 outMip(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 4, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);
+
+		CD3DX12_ROOT_PARAMETER1 rootParams[3];
+
+		// #TODO(Josh::Move this out later)
+		struct alignas(16) GenerateMipsCB
+		{
+			uint32_t SrcMipLevel;    // Texture level of source mip
+			uint32_t NumMipLevels;	 // Number of OutMips to write: [1-4]
+			uint32_t SrcDimension;	 // Width and height of the source texture are even or odd.
+			//uint32_t IsSRGB;		 // Must apply gamma correction to sRGB textures.
+			Vector2D TexelSize;		 // 1.0 / OutMip1.Dimensions
+		};
+
+		rootParams[0].InitAsConstants(sizeof(GenerateMipsCB) / 4, 0);
+		rootParams[1].InitAsDescriptorTable(1, &srcMip);
+		rootParams[2].InitAsDescriptorTable(1, &outMip);
+
+		CD3DX12_STATIC_SAMPLER_DESC linearClampSampler(
+			0,
+			D3D12_FILTER_MIN_MAG_MIP_POINT,
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP
+		);
+
+		CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSigDesc(_countof(rootParams), rootParams, 1, &linearClampSampler);
+
+	}
+
+	void DX12GFXDevice::CreateMipGenPSO()
+	{
+
 	}
 
 }

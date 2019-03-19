@@ -78,6 +78,8 @@ namespace Diotima
 		void CreateTextureHeap();
 
 		void InitializeMipGeneration();
+		void CreateMipGenRootSignature();
+		void CreateMipGenPSO();
 
 	private:
 		ComPtr<ID3D12Device> mDevice;
@@ -94,6 +96,9 @@ namespace Diotima
 
 		ComPtr<ID3D12RootSignature> mRootSignature;
 		ComPtr<ID3D12PipelineState> mPipelineState;
+
+		ComPtr<ID3D12RootSignature> mMipGenRootSig;
+		ComPtr<ID3D12PipelineState> mMipGenPSO;
 
 		D3D12_VIEWPORT* mViewport;
 		D3D12_RECT mScissorRect;
