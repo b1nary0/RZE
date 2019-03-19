@@ -90,7 +90,7 @@ float CalcAttenuation(float dist, float falloffStart, float falloffEnd)
 float CalculatePointLight(float3 pixelPos, float3 lightPos, float3 normal, float3 toEye)
 {
 	float tempFalloffStart = 8.0f;
-	float tempFalloffEnd = 12.0f;
+	float tempFalloffEnd = 24.0f;
 	
 	float3 lightVec = lightPos - pixelPos;
 	float distance = length(lightVec);
