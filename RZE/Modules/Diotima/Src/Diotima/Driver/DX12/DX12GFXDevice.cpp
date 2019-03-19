@@ -582,7 +582,16 @@ namespace Diotima
 		);
 
 		CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSigDesc(_countof(rootParams), rootParams, 1, &linearClampSampler);
+		ComPtr<ID3DBlob> signature;
+		ComPtr<ID3DBlob> error;
 
+		D3DX12SerializeVersionedRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1_1, &signature, &error);
+		if (error != nullptr)
+		{
+			OutputDebugStringA((char*)error->GetBufferPointer());
+		}
+
+		HRESULT res = mDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&mMipGenRootSig);
 	}
 
 	void DX12GFXDevice::CreateMipGenPSO()
