@@ -596,7 +596,23 @@ namespace Diotima
 
 	void DX12GFXDevice::CreateMipGenPSO()
 	{
+		ComPtr<ID3DBlob> computeShader;
 
+#if defined(_DEBUG)
+		U32 compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+#else
+		U32 compileFlags = 0;
+#endif
+
+		FilePath computeShaderPath("Assets/Shaders/GenerateMips.hlsl");
+
+		ComPtr<ID3DBlob> error;
+
+		HRESULT result = D3DCompileFromFile(Conversions::StringToWString(computeShaderPath.GetAbsolutePath()).c_str(), nullptr, nullptr, "CSMain", "vs_5_1", compileFlags, 0, &computeShader, &error);
+		if (error)
+		{
+			OutputDebugStringA((char*)error->GetBufferPointer());
+		}
 	}
 
 }
