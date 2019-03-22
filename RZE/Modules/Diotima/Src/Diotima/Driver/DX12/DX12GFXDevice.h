@@ -78,6 +78,7 @@ namespace Diotima
 		void CreateTextureHeap();
 
 		void InitializeMipGeneration();
+		void CreateMipUAVHeap();
 		void CreateMipGenRootSignature();
 		void CreateMipGenPSO();
 
@@ -103,9 +104,12 @@ namespace Diotima
 		D3D12_VIEWPORT* mViewport;
 		D3D12_RECT mScissorRect;
 
+		// #TODO(Josh::I really don't feel like this is the intended best usage of this pattern.
+		//             Definitely a major part of the cleanup pass here.)
 		ComPtr<ID3D12DescriptorHeap> mRTVDescriptorHeap;
 		ComPtr<ID3D12DescriptorHeap> mMSAARTVDescriptorHeap;
 		ComPtr<ID3D12DescriptorHeap> mTextureHeap;
+		ComPtr<ID3D12DescriptorHeap> mMipUAVHeap;
 
 		int mCurrentFrame;
 		void* mWindowHandle;

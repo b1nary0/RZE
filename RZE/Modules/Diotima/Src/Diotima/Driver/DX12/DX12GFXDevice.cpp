@@ -127,6 +127,8 @@ namespace Diotima
 			}
 		}
 
+		InitializeMipGeneration();
+
 		InitializeMSAA();
 
 		mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mCommandAllocator));
@@ -544,6 +546,8 @@ namespace Diotima
 
 	void DX12GFXDevice::InitializeMipGeneration()
 	{
+		// Need a descriptor heap
+		CreateMipUAVHeap();
 		// Need a root signature
 		CreateMipGenRootSignature();
 		// Need a PSO
@@ -612,6 +616,35 @@ namespace Diotima
 		if (error)
 		{
 			OutputDebugStringA((char*)error->GetBufferPointer());
+		}
+	}
+
+	void DX12GFXDevice::CreateMipUAVHeap()
+	{
+		D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
+		heapDesc.NumDescriptors = 4;
+		heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+		heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		mDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&mMipUAVHeap));
+
+		// #TODO(Josh::Move this out of here and CreateTextureHeap() into some init function)
+		mCBVSRVUAVDescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+		for (UINT i = 0; i < 4; ++i)
+		{
+			D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+			uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+			uavDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+			uavDesc.Texture2D.MipSlice = i;
+			uavDesc.Texture2D.PlaneSlice = 0;
+
+			CD3DX12_CPU_DESCRIPTOR_HANDLE handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(mMipUAVHeap->GetCPUDescriptorHandleForHeapStart());
+			handle.Offset(i, mCBVSRVUAVDescriptorSize);
+
+			mDevice->CreateUnorderedAccessView(
+				nullptr, nullptr, &uavDesc,
+				handle
+			);
 		}
 	}
 
