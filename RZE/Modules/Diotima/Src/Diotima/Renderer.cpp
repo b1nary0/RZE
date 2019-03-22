@@ -2,11 +2,6 @@
 
 #include <Brofiler/Brofiler.h>
 
-#include <Diotima/Graphics/GFXMaterial.h>
-#include <Diotima/Graphics/GFXMesh.h>
-#include <Diotima/Graphics/GFXTexture2D.h>
-#include <Diotima/Shaders/ShaderPipeline.h>
-
 #include <Utils/Conversions.h>
 #include <Utils/MemoryUtils.h>
 #include <Utils/DebugUtils/Debug.h>

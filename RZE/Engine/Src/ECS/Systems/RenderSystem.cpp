@@ -3,12 +3,6 @@
 
 #include <Apollo/ECS/EntityComponentFilter.h>
 
-#include <Diotima/Graphics/RenderTarget.h>
-#include <Diotima/Graphics/GFXMaterial.h>
-#include <Diotima/Graphics/GFXMesh.h>
-#include <Diotima/Graphics/GFXTexture2D.h>
-#include <Diotima/Shaders/ShaderPipeline.h>
-
 #include <Graphics/Material.h>
 #include <Graphics/Texture2D.h>
 #include <Graphics/IndexBuffer.h>
