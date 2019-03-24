@@ -46,16 +46,6 @@ namespace
 	}
 }
 
-// #TODO(Josh::Move this out later)
-struct alignas(16) GenerateMipsCB
-{
-	uint32_t SrcMipLevel;    // Texture level of source mip
-	uint32_t NumMipLevels;	 // Number of OutMips to write: [1-4]
-	uint32_t SrcDimension;	 // Width and height of the source texture are even or odd.
-	//uint32_t IsSRGB;		 // Must apply gamma correction to sRGB textures.
-	Vector2D TexelSize;		 // 1.0 / OutMip1.Dimensions
-};
-
 namespace Diotima
 {
 
@@ -561,7 +551,9 @@ namespace Diotima
 
 		mCommandList->SetComputeRootSignature(mMipGenRootSig.Get());
 		mCommandList->SetPipelineState(mMipGenPSO.Get());
-		mCommandList->SetDescriptorHeaps(1, &mMipUAVHeap);
+
+		ID3D12DescriptorHeap* descriptorHeaps[] = { mMipUAVHeap.Get() };
+		mCommandList->SetDescriptorHeaps(1, descriptorHeaps);
 
 		CD3DX12_CPU_DESCRIPTOR_HANDLE currCPUHandle(mMipUAVHeap->GetCPUDescriptorHandleForHeapStart(), 0, mCBVSRVUAVDescriptorSize);
 		CD3DX12_GPU_DESCRIPTOR_HANDLE currGPUHandle(mMipUAVHeap->GetGPUDescriptorHandleForHeapStart(), 0, mCBVSRVUAVDescriptorSize);
@@ -569,7 +561,7 @@ namespace Diotima
 		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(texture->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
 		const D3D12_RESOURCE_DESC& srcTextureDesc = texture->GetResourceDesc();
-		for (U32 srcMipLevel = 0; srcMipLevel < srcTextureDesc.MipLevels; ++srcMipLevel)
+		for (U32 srcMipLevel = 0; srcMipLevel < srcTextureDesc.MipLevels - 1u; ++srcMipLevel)
 		{
 			U32 dstWidth = std::max<U32>(static_cast<U32>(srcTextureDesc.Width >> (srcMipLevel + 1)), 1);
 			U32 dstHeight = std::max<U32>(static_cast<U32>(srcTextureDesc.Height >> (srcMipLevel + 1)), 1);
@@ -600,10 +592,6 @@ namespace Diotima
 		}
 
 		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(texture->GetResource(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
-
-		mCommandList->Close();
-
-		ExecuteCommandList(mCommandList.Get());
 	}
 
 	void DX12GFXDevice::InitializeMipGeneration()
@@ -680,7 +668,7 @@ namespace Diotima
 	void DX12GFXDevice::CreateMipUAVHeap()
 	{
 		D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-		heapDesc.NumDescriptors = 4;
+		heapDesc.NumDescriptors = 6;
 		heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 		mDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&mMipUAVHeap));
@@ -688,7 +676,7 @@ namespace Diotima
 		// #TODO(Josh::Move this out of here and CreateTextureHeap() into some init function)
 		mCBVSRVUAVDescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-		for (UINT i = 0; i < 4; ++i)
+		for (UINT i = 0; i < 6; ++i)
 		{
 			D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 			uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
