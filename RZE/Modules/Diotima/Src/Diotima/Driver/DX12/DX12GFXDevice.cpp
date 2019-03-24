@@ -439,12 +439,12 @@ namespace Diotima
 		rootParameters[5].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 		D3D12_STATIC_SAMPLER_DESC sampler = {};
-		sampler.Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+		sampler.Filter = D3D12_FILTER_ANISOTROPIC;
 		sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 		sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 		sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
 		sampler.MipLODBias = 0;
-		sampler.MaxAnisotropy = 0;
+		sampler.MaxAnisotropy = 16;
 		sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 		sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
 		sampler.MinLOD = 0.0f;
@@ -561,7 +561,7 @@ namespace Diotima
 		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(texture->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
 		const D3D12_RESOURCE_DESC& srcTextureDesc = texture->GetResourceDesc();
-		for (U32 srcMipLevel = 0; srcMipLevel < srcTextureDesc.MipLevels - 1u; ++srcMipLevel)
+		for (U32 srcMipLevel = 0; srcMipLevel < 3; ++srcMipLevel)
 		{
 			U32 dstWidth = std::max<U32>(static_cast<U32>(srcTextureDesc.Width >> (srcMipLevel + 1)), 1);
 			U32 dstHeight = std::max<U32>(static_cast<U32>(srcTextureDesc.Height >> (srcMipLevel + 1)), 1);
@@ -570,6 +570,11 @@ namespace Diotima
 			srcSRVDesc.Texture2D.MipLevels = 1;
 			srcSRVDesc.Texture2D.MostDetailedMip = srcMipLevel;
 			mDevice->CreateShaderResourceView(texture->GetResource(), &srcSRVDesc, currCPUHandle);
+			currCPUHandle.Offset(1, mCBVSRVUAVDescriptorSize);
+
+			dstUAVDesc.Format = srcTextureDesc.Format;
+			dstUAVDesc.Texture2D.MipSlice = srcMipLevel + 1;
+			mDevice->CreateUnorderedAccessView(texture->GetResource(), nullptr, &dstUAVDesc, currCPUHandle);
 			currCPUHandle.Offset(1, mCBVSRVUAVDescriptorSize);
 
 			struct MipCBData
@@ -608,22 +613,24 @@ namespace Diotima
 
 	void DX12GFXDevice::CreateMipGenRootSignature()
 	{
-		CD3DX12_DESCRIPTOR_RANGE1 srcMip(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);
-		CD3DX12_DESCRIPTOR_RANGE1 outMip(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 4, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);
+		CD3DX12_DESCRIPTOR_RANGE1 srvRanges[2];
+		srvRanges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0);
+		srvRanges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0, 0);
 
 		CD3DX12_ROOT_PARAMETER1 rootParams[3];
-
 		rootParams[0].InitAsConstants(2, 0);
-		rootParams[1].InitAsDescriptorTable(1, &srcMip);
-		rootParams[2].InitAsDescriptorTable(1, &outMip);
+		rootParams[1].InitAsDescriptorTable(1, &srvRanges[0]);
+		rootParams[2].InitAsDescriptorTable(1, &srvRanges[1]);
 
 		CD3DX12_STATIC_SAMPLER_DESC linearClampSampler(
 			0,
-			D3D12_FILTER_MIN_MAG_MIP_POINT,
+			D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT,
 			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
 			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
 			D3D12_TEXTURE_ADDRESS_MODE_CLAMP
 		);
+
+		linearClampSampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
 
 		CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSigDesc(_countof(rootParams), rootParams, 1, &linearClampSampler);
 		ComPtr<ID3DBlob> signature;
@@ -668,7 +675,7 @@ namespace Diotima
 	void DX12GFXDevice::CreateMipUAVHeap()
 	{
 		D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-		heapDesc.NumDescriptors = 6;
+		heapDesc.NumDescriptors = 8;
 		heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 		mDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&mMipUAVHeap));
@@ -676,7 +683,7 @@ namespace Diotima
 		// #TODO(Josh::Move this out of here and CreateTextureHeap() into some init function)
 		mCBVSRVUAVDescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-		for (UINT i = 0; i < 6; ++i)
+		for (UINT i = 0; i < 8; ++i)
 		{
 			D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 			uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;

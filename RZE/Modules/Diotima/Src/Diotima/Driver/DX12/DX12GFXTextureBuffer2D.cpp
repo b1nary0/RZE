@@ -18,7 +18,7 @@ namespace Diotima
 		mResourceDesc.Width = width;
 		mResourceDesc.Height = height;
 		mResourceDesc.DepthOrArraySize = 1;
-		mResourceDesc.MipLevels = 3;
+		mResourceDesc.MipLevels = 4;
 		mResourceDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		mResourceDesc.SampleDesc.Count = 1;
 		mResourceDesc.SampleDesc.Quality = 0;
