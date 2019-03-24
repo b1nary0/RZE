@@ -558,7 +558,7 @@ namespace Diotima
 		CD3DX12_CPU_DESCRIPTOR_HANDLE currCPUHandle(mMipUAVHeap->GetCPUDescriptorHandleForHeapStart(), 0, mCBVSRVUAVDescriptorSize);
 		CD3DX12_GPU_DESCRIPTOR_HANDLE currGPUHandle(mMipUAVHeap->GetGPUDescriptorHandleForHeapStart(), 0, mCBVSRVUAVDescriptorSize);
 
-		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(texture->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(texture->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
 
 		const D3D12_RESOURCE_DESC& srcTextureDesc = texture->GetResourceDesc();
 		for (U32 srcMipLevel = 0; srcMipLevel < 3; ++srcMipLevel)
@@ -596,7 +596,7 @@ namespace Diotima
 			mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(texture->GetResource()));
 		}
 
-		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(texture->GetResource(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(texture->GetResource(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 	}
 
 	void DX12GFXDevice::InitializeMipGeneration()
@@ -615,7 +615,7 @@ namespace Diotima
 	{
 		CD3DX12_DESCRIPTOR_RANGE1 srvRanges[2];
 		srvRanges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0);
-		srvRanges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0, 0);
+		srvRanges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
 
 		CD3DX12_ROOT_PARAMETER1 rootParams[3];
 		rootParams[0].InitAsConstants(2, 0);
@@ -682,23 +682,6 @@ namespace Diotima
 
 		// #TODO(Josh::Move this out of here and CreateTextureHeap() into some init function)
 		mCBVSRVUAVDescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-		for (UINT i = 0; i < 8; ++i)
-		{
-			D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-			uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
-			uavDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-			uavDesc.Texture2D.MipSlice = i;
-			uavDesc.Texture2D.PlaneSlice = 0;
-
-			CD3DX12_CPU_DESCRIPTOR_HANDLE handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(mMipUAVHeap->GetCPUDescriptorHandleForHeapStart());
-			handle.Offset(i, mCBVSRVUAVDescriptorSize);
-
-			mDevice->CreateUnorderedAccessView(
-				nullptr, nullptr, &uavDesc,
-				handle
-			);
-		}
 	}
 
 	void DX12GFXDevice::ExecuteCommandList(ID3D12GraphicsCommandList* commandList)
