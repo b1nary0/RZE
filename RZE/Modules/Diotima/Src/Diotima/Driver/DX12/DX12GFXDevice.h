@@ -18,8 +18,8 @@ namespace Diotima
 
 	// #TODO(Josh::Eventually move these into a more configurable/stateful place)
 	constexpr int kBufferCount = 2;
-	constexpr int kBufferWidth = 1920;
-	constexpr int kBufferHeight = 1080;
+	constexpr int kBufferWidth = 3840;
+	constexpr int kBufferHeight = 2160;
 
 	class DX12GFXDevice final : public IGFXDevice
 	{
@@ -61,6 +61,8 @@ namespace Diotima
 
 		void ResetCommandList();
 		void ResetCommandAllocator();
+
+		void ExecuteCommandList(ID3D12GraphicsCommandList* commandList);
 
 		void WaitForPreviousFrame();
 

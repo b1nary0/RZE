@@ -13,6 +13,8 @@
 #include <Utils/Math/Vector4D.h>
 #include <Utils/Platform/FilePath.h>
 
+#include <algorithm>
+
 namespace
 {
 	void GetHardwareAdapter(IDXGIFactory4* pFactory, IDXGIAdapter1** ppAdapter)
@@ -43,6 +45,16 @@ namespace
 		}
 	}
 }
+
+// #TODO(Josh::Move this out later)
+struct alignas(16) GenerateMipsCB
+{
+	uint32_t SrcMipLevel;    // Texture level of source mip
+	uint32_t NumMipLevels;	 // Number of OutMips to write: [1-4]
+	uint32_t SrcDimension;	 // Width and height of the source texture are even or odd.
+	//uint32_t IsSRGB;		 // Must apply gamma correction to sRGB textures.
+	Vector2D TexelSize;		 // 1.0 / OutMip1.Dimensions
+};
 
 namespace Diotima
 {
@@ -127,11 +139,11 @@ namespace Diotima
 			}
 		}
 
-		InitializeMipGeneration();
-
 		InitializeMSAA();
 
 		mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mCommandAllocator));
+
+		InitializeMipGeneration();
 
 		InitializeAssets();
 	}
@@ -143,8 +155,7 @@ namespace Diotima
 
 	void DX12GFXDevice::Present()
 	{
-		ID3D12CommandList* ppCommandLists[] = { mCommandList.Get() };
-		mCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+		ExecuteCommandList(mCommandList.Get());
 
 		mSwapChain->Present(1, 0);
 
@@ -541,7 +552,58 @@ namespace Diotima
 
 	void DX12GFXDevice::GenerateMipsForTexture(DX12GFXTextureBuffer2D* texture)
 	{
+		D3D12_SHADER_RESOURCE_VIEW_DESC srcSRVDesc = {};
+		srcSRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srcSRVDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 
+		D3D12_UNORDERED_ACCESS_VIEW_DESC dstUAVDesc = {};
+		dstUAVDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+
+		mCommandList->SetComputeRootSignature(mMipGenRootSig.Get());
+		mCommandList->SetPipelineState(mMipGenPSO.Get());
+		mCommandList->SetDescriptorHeaps(1, &mMipUAVHeap);
+
+		CD3DX12_CPU_DESCRIPTOR_HANDLE currCPUHandle(mMipUAVHeap->GetCPUDescriptorHandleForHeapStart(), 0, mCBVSRVUAVDescriptorSize);
+		CD3DX12_GPU_DESCRIPTOR_HANDLE currGPUHandle(mMipUAVHeap->GetGPUDescriptorHandleForHeapStart(), 0, mCBVSRVUAVDescriptorSize);
+
+		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(texture->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+
+		const D3D12_RESOURCE_DESC& srcTextureDesc = texture->GetResourceDesc();
+		for (U32 srcMipLevel = 0; srcMipLevel < srcTextureDesc.MipLevels; ++srcMipLevel)
+		{
+			U32 dstWidth = std::max<U32>(static_cast<U32>(srcTextureDesc.Width >> (srcMipLevel + 1)), 1);
+			U32 dstHeight = std::max<U32>(static_cast<U32>(srcTextureDesc.Height >> (srcMipLevel + 1)), 1);
+
+			srcSRVDesc.Format = srcTextureDesc.Format;
+			srcSRVDesc.Texture2D.MipLevels = 1;
+			srcSRVDesc.Texture2D.MostDetailedMip = srcMipLevel;
+			mDevice->CreateShaderResourceView(texture->GetResource(), &srcSRVDesc, currCPUHandle);
+			currCPUHandle.Offset(1, mCBVSRVUAVDescriptorSize);
+
+			struct MipCBData
+			{
+				Vector2D TexelSize;
+			} mipCBData;
+
+			mipCBData.TexelSize.SetXY(1.0f / dstWidth, 1.0f / dstHeight);
+
+			mCommandList->SetComputeRoot32BitConstants(0, 2, &mipCBData, 0);
+
+			mCommandList->SetComputeRootDescriptorTable(1, currGPUHandle);
+			currGPUHandle.Offset(1, mCBVSRVUAVDescriptorSize);
+			mCommandList->SetComputeRootDescriptorTable(2, currGPUHandle);
+			currGPUHandle.Offset(1, mCBVSRVUAVDescriptorSize);
+
+			mCommandList->Dispatch(std::max<U32>(dstWidth / 8, 1u), std::max<U32>(dstHeight / 8, 1u), 1);
+
+			mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(texture->GetResource()));
+		}
+
+		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(texture->GetResource(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+
+		mCommandList->Close();
+
+		ExecuteCommandList(mCommandList.Get());
 	}
 
 	void DX12GFXDevice::InitializeMipGeneration()
@@ -563,17 +625,7 @@ namespace Diotima
 
 		CD3DX12_ROOT_PARAMETER1 rootParams[3];
 
-		// #TODO(Josh::Move this out later)
-		struct alignas(16) GenerateMipsCB
-		{
-			uint32_t SrcMipLevel;    // Texture level of source mip
-			uint32_t NumMipLevels;	 // Number of OutMips to write: [1-4]
-			uint32_t SrcDimension;	 // Width and height of the source texture are even or odd.
-			//uint32_t IsSRGB;		 // Must apply gamma correction to sRGB textures.
-			Vector2D TexelSize;		 // 1.0 / OutMip1.Dimensions
-		};
-
-		rootParams[0].InitAsConstants(sizeof(GenerateMipsCB) / 4, 0);
+		rootParams[0].InitAsConstants(2, 0);
 		rootParams[1].InitAsDescriptorTable(1, &srcMip);
 		rootParams[2].InitAsDescriptorTable(1, &outMip);
 
@@ -612,11 +664,17 @@ namespace Diotima
 
 		ComPtr<ID3DBlob> error;
 
-		HRESULT result = D3DCompileFromFile(Conversions::StringToWString(computeShaderPath.GetAbsolutePath()).c_str(), nullptr, nullptr, "CSMain", "vs_5_1", compileFlags, 0, &computeShader, &error);
+		HRESULT result = D3DCompileFromFile(Conversions::StringToWString(computeShaderPath.GetAbsolutePath()).c_str(), nullptr, nullptr, "CSMain", "cs_5_1", compileFlags, 0, &computeShader, &error);
 		if (error)
 		{
 			OutputDebugStringA((char*)error->GetBufferPointer());
 		}
+
+		D3D12_COMPUTE_PIPELINE_STATE_DESC computePSDesc = {};
+		computePSDesc.CS = { reinterpret_cast<U8*>(computeShader->GetBufferPointer()), computeShader->GetBufferSize() };
+		computePSDesc.pRootSignature = mMipGenRootSig.Get();
+
+		mDevice->CreateComputePipelineState(&computePSDesc, IID_PPV_ARGS(&mMipGenPSO));
 	}
 
 	void DX12GFXDevice::CreateMipUAVHeap()
@@ -646,6 +704,12 @@ namespace Diotima
 				handle
 			);
 		}
+	}
+
+	void DX12GFXDevice::ExecuteCommandList(ID3D12GraphicsCommandList* commandList)
+	{
+		ID3D12CommandList* ppCommandLists[] = { commandList };
+		mCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 	}
 
 }
