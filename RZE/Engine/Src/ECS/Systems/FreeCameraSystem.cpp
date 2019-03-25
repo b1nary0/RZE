@@ -28,8 +28,6 @@ void FreeCameraSystem::Initialize()
 	InternalGetComponentFilter().AddFilterType<TransformComponent>();
 
 	RegisterComponentAddedNotifications();
-
-	mMousePrevPos = Vector2D(800, 450);
 }
 
 void FreeCameraSystem::Update(const std::vector<Apollo::EntityID>& entities)
@@ -118,8 +116,8 @@ void FreeCameraSystem::MouseInput(CameraComponent& camComp, TransformComponent& 
 	InputHandler& inputHandler = RZE_Application::RZE().GetInputHandler();
 
 	const float deltaT = static_cast<float>(RZE_Application::RZE().GetDeltaTime());
-	Vector3D curPos = inputHandler.GetMouseState().CurPosition;
-
+	const Vector3D& curPos = inputHandler.GetMouseState().CurPosition;
+	
 	Int32 wheelVal = RZE_Application::RZE().GetInputHandler().GetMouseState().CurWheelVal;
 	if (wheelVal != 0)
 	{
@@ -129,13 +127,6 @@ void FreeCameraSystem::MouseInput(CameraComponent& camComp, TransformComponent& 
 
 	if (RZE_Application::RZE().GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Pressed)
 	{
-		static float firstMouse = true;
-		if (firstMouse)
-		{
-			mMousePrevPos = curPos;
-			firstMouse = false;
-		}
-
 		Vector3D diff = curPos - mMousePrevPos;
 
 		const float sensitivity = 0.1f;
@@ -150,7 +141,7 @@ void FreeCameraSystem::MouseInput(CameraComponent& camComp, TransformComponent& 
 		newForward.SetY(-std::sin(pitchInRadians));
 		newForward.SetZ(std::sin(yawInRadians) * std::cos(pitchInRadians));
 
-		camComp.Forward = std::move(newForward);
+		camComp.Forward = newForward;
 		camComp.Forward.Normalize();
 	}
 
