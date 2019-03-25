@@ -28,6 +28,8 @@ void FreeCameraSystem::Initialize()
 	InternalGetComponentFilter().AddFilterType<TransformComponent>();
 
 	RegisterComponentAddedNotifications();
+
+	mMousePrevPos = Vector2D(800, 450);
 }
 
 void FreeCameraSystem::Update(const std::vector<Apollo::EntityID>& entities)
@@ -128,17 +130,20 @@ void FreeCameraSystem::MouseInput(CameraComponent& camComp, TransformComponent& 
 	if (RZE_Application::RZE().GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Pressed)
 	{
 		Vector3D diff = curPos - mMousePrevPos;
-		diff = diff * 0.1f; // #TODO(Josh) Move this to a better place (mouse sensitivity) -- config file
+
+		const float sensitivity = 0.1f;
+		diff *= sensitivity;
 		mPitchYawRoll += diff;
 
-		Vector3D lookDir;
-		lookDir.SetX(std::cos(mPitchYawRoll.X() * MathUtils::ToRadians) * std::cos(mPitchYawRoll.Y() * MathUtils::ToRadians));
-		lookDir.SetY(std::sin(mPitchYawRoll.Y() * MathUtils::ToRadians));
-		lookDir.SetZ(std::sin(mPitchYawRoll.X() * MathUtils::ToRadians) * std::cos(mPitchYawRoll.Y() * MathUtils::ToRadians));
+		float pitchInRadians = mPitchYawRoll.X() * MathUtils::ToRadians;
+		float yawInRadians = mPitchYawRoll.Y() * MathUtils::ToRadians;
 
-		lookDir.SetY(lookDir.Y() * -1);
+		Vector3D newForward;
+		newForward.SetX(std::cos(pitchInRadians) * std::cos(yawInRadians));
+		newForward.SetY(-std::sin(yawInRadians));
+		newForward.SetZ(std::sin(pitchInRadians) * std::cos(yawInRadians));
 
-		camComp.Forward = std::move(lookDir);
+		camComp.Forward = std::move(newForward);
 		camComp.Forward.Normalize();
 	}
 
