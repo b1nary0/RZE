@@ -27,7 +27,7 @@
 				{
 					"TransformComponent":
 					{
-						"Position":[-4, 10, 4],
+						"Position":[0, 7.5, -15],
 						"Scale": [1, 1, 1],
 						"Rotation": [0, 0, 0]
 					},
@@ -35,7 +35,7 @@
 					{
 						"LightType": 1,
 						"Color": [0.95, 0.95, 0.85],
-						"Strength": 1.25
+						"Strength": 1.0
 					},
 					"MeshComponent":
 					{
@@ -43,13 +43,13 @@
 					}
 				}
 			},
-			"MechWalkerLight":
+			"NyraLight":
 			{
 				"components":
 				{
 					"TransformComponent":
 					{
-						"Position":[-4, 10, 4],
+						"Position":[-25, 7.5, -15],
 						"Scale": [1, 1, 1],
 						"Rotation": [0, 0, 0]
 					},
@@ -57,7 +57,7 @@
 					{
 						"LightType": 1,
 						"Color": [0.95, 0.95, 0.85],
-						"Strength": 1.25
+						"Strength": 1.0
 					},
 					"MeshComponent":
 					{
@@ -119,9 +119,9 @@
 			{
 				"TransformComponent":
 				{
-					"Position": [0, 0, 0],
+					"Position": [0, 0, -25],
 					"Scale":[1, 1, 1],
-					"Rotation":[0, -45, 0]
+					"Rotation":[0, 0, 0]
 				},
 				"MeshComponent":
 				{
@@ -129,19 +129,19 @@
 				}
 			}
 		},
-		"FW190":
+		"Nyra":
 		{
 			"components":
 			{
 				"TransformComponent":
 				{
-					"Position": [0, 0, 0],
-					"Scale":[1, 1, 1],
-					"Rotation":[0, -45, 0]
+					"Position": [-25, 0.5, -25],
+					"Scale":[0.25, 0.25, 0.25],
+					"Rotation":[0, 180, 0]
 				},
 				"MeshComponent":
 				{
-					"ResourcePath": "Assets/3D/FW190/FW190.obj"
+					"ResourcePath": "Assets/3D/Nyra/Nyra.obj"
 				}
 			}
 		}
