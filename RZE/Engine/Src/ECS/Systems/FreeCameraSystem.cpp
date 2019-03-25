@@ -129,19 +129,26 @@ void FreeCameraSystem::MouseInput(CameraComponent& camComp, TransformComponent& 
 
 	if (RZE_Application::RZE().GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Pressed)
 	{
+		static float firstMouse = true;
+		if (firstMouse)
+		{
+			mMousePrevPos = curPos;
+			firstMouse = false;
+		}
+
 		Vector3D diff = curPos - mMousePrevPos;
 
 		const float sensitivity = 0.1f;
 		diff *= sensitivity;
-		mPitchYawRoll += diff;
+		mYawPitchRoll += diff;
 
-		float pitchInRadians = mPitchYawRoll.X() * MathUtils::ToRadians;
-		float yawInRadians = mPitchYawRoll.Y() * MathUtils::ToRadians;
+		float yawInRadians = mYawPitchRoll.X() * MathUtils::ToRadians;
+		float pitchInRadians = mYawPitchRoll.Y() * MathUtils::ToRadians;
 
 		Vector3D newForward;
-		newForward.SetX(std::cos(pitchInRadians) * std::cos(yawInRadians));
-		newForward.SetY(-std::sin(yawInRadians));
-		newForward.SetZ(std::sin(pitchInRadians) * std::cos(yawInRadians));
+		newForward.SetX(std::cos(yawInRadians) * std::cos(pitchInRadians));
+		newForward.SetY(-std::sin(pitchInRadians));
+		newForward.SetZ(std::sin(yawInRadians) * std::cos(pitchInRadians));
 
 		camComp.Forward = std::move(newForward);
 		camComp.Forward.Normalize();
