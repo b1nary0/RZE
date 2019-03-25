@@ -1,0 +1,127 @@
+{
+  "entities":
+  {
+    "Camera":
+    {
+        "components":
+        {
+            "TransformComponent":
+            {
+                "Position": [-20, 5, 20],
+                "Scale": [1, 1, 1],
+                "Rotation": [0, 0, 0]
+            },
+            "CameraComponent":
+            {
+                "FOV": 65,
+                "NearCull": 0.01,
+                "FarCull": 1000,
+                "Forward": [0.5, 0, -1.0],
+                "UpDir":[0.0, 1.0, 0.0]
+            }
+        }
+    },
+		"Point Light1":
+    {
+      "components":
+      {
+        "TransformComponent":
+        {
+          "Position":[-15, 10, 5],
+          "Scale": [1, 1, 1],
+          "Rotation": [0, 0, 0]
+        },
+        "LightSourceComponent":
+        {
+					"LightType": 1,
+          "Color": [0.95, 0.95, 0.85],
+          "Strength": 1.25
+        },
+		"MeshComponent":
+		{
+		  "ResourcePath": "Assets/3D/Cube.obj"
+		}
+      }
+    },
+	"Floor":
+	{
+	  "components":
+	  {
+		"TransformComponent":
+		{
+		  "Position": [0, 0, 0],
+		  "Scale":[64, 64, 1],
+		  "Rotation":[90, 0, 0]
+		},
+		"MeshComponent":
+		{
+		  "ResourcePath": "Assets/3D/Ground/Quad.obj"
+		}
+	  }
+	},
+	"WallNorth":
+	{
+	  "components":
+	  {
+		"TransformComponent":
+		{
+		  "Position": [0, 16, -32],
+		  "Scale":[64, 32, 1],
+		  "Rotation":[0, 180, 0]
+		},
+		"MeshComponent":
+		{
+		  "ResourcePath": "Assets/3D/Test/WallN/Quad.obj"
+		}
+	  }
+	},
+	"WallEast":
+	{
+	  "components":
+	  {
+		"TransformComponent":
+		{
+		  "Position": [32, 16, 0],
+		  "Scale":[64, 32, 1],
+		  "Rotation":[0, 90, 0]
+		},
+		"MeshComponent":
+		{
+		  "ResourcePath": "Assets/3D/Test/WallE/Quad.obj"
+		}
+	  }
+	},
+	"MechWalker":
+	{
+	  "components":
+	  {
+		"TransformComponent":
+		{
+		  "Position": [-10, 0, 0],
+		  "Scale":[1, 1, 1],
+		  "Rotation":[0, -45, 0]
+		},
+		"MeshComponent":
+		{
+		  "ResourcePath": "Assets/3D/NeckMechWalker/NeckMechWalker.obj"
+		}
+	  }
+	},
+	"FW190":
+	{
+	  "components":
+	  {
+		"TransformComponent":
+		{
+		  "Position": [0, 0, 0],
+		  "Scale":[1, 1, 1],
+		  "Rotation":[0, -45, 0]
+		},
+		"MeshComponent":
+		{
+		  "ResourcePath": "Assets/3D/FW190/FW190.obj"
+		}
+	  }
+	}
+}
+}

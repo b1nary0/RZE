@@ -36,7 +36,9 @@ void GameApp::Initialize()
 {
 	RZE_Application::Initialize();
 
-	RZE().GetActiveScene().Load(FilePath("Assets/Scenes/TestGame.scene"));
+	// #TODO(Josh::Putting this comment here because too lazy to do it elsewhere. Hopefully I find it later:
+	//             -- Need to add at least commandline arg like -startscene or something)
+	RZE().GetActiveScene().Load(FilePath("Assets/Scenes/AssetTest.scene"));
 
 	//RZE().GetActiveScene().GetEntityHandler().AddSystem<InteractiveSpawningSystem>();
 	RZE().GetActiveScene().GetEntityHandler().AddSystem<FreeCameraSystem>();

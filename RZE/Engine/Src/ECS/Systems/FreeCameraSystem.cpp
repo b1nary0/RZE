@@ -94,11 +94,17 @@ void FreeCameraSystem::KeyboardInput(CameraComponent& camComp, TransformComponen
 		// Focus object
 	}
 
-	if (inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Space) == EButtonState::ButtonState_Pressed)
+	// #TODO(Josh::Support for special keys CTRL SHIFT etc)
+	if (inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Key_R) == EButtonState::ButtonState_Pressed)
+	{
+		mSpeed = kFullSpeed * 4.0f;
+	}
+	else if (inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Space) == EButtonState::ButtonState_Pressed)
 	{
 		mSpeed = kFullSpeed / 8.0f;
 	}
-	else if (!inputHandler.GetKeyboardState().IsDownThisFrame(Win32KeyCode::Space))
+	
+	if (!inputHandler.GetKeyboardState().IsDownThisFrame(Win32KeyCode::Space) && !inputHandler.GetKeyboardState().IsDownThisFrame(Win32KeyCode::Key_R))
 	{
 		mSpeed = kFullSpeed;
 	}
