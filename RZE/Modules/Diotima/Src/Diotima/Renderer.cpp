@@ -126,8 +126,6 @@ namespace Diotima
 					DX12GFXVertexBuffer* const vertexBuffer = mDevice->GetVertexBuffer(meshData.VertexBuffer);
 					DX12GFXIndexBuffer* const indexBuffer = mDevice->GetIndexBuffer(meshData.IndexBuffer);
 
-					// #TODO(Josh::This temp fix treats the offset as a 1D index for a 2D array where objectIndex : row and index : col
-					//             Is a safe assumption for now since Renderer::Update is brute force atm, but the great cleanup will get to this)
 					perMeshPixelShaderConstants->SetData(&meshData.Material, sizeof(RenderItemMaterialDesc), materialIndex_HACK);
 
 					{
