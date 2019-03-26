@@ -13,14 +13,15 @@ namespace Diotima
 	{
 	}
 
-	void DX12GFXConstantBuffer::Allocate(void* data, U32 numElements)
+	void DX12GFXConstantBuffer::Allocate(size_t memberSize, U32 maxMembers)
 	{
-		mNumElements = numElements;
+		const U32 alignedSize = MemoryUtils::AlignSize(memberSize, 255);
+		const U32 bufferSize = (alignedSize * maxMembers) * 64; // 64kb multiples
 
 		mDevice->GetDevice()->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD), 
 			D3D12_HEAP_FLAG_NONE, 
-			&CD3DX12_RESOURCE_DESC::Buffer(1024 * 64), 
+			&CD3DX12_RESOURCE_DESC::Buffer(bufferSize), 
 			D3D12_RESOURCE_STATE_GENERIC_READ, 
 			nullptr, 
 			IID_PPV_ARGS(&mUploadBuffer));
@@ -33,11 +34,6 @@ namespace Diotima
 	{
 		AssertNotNull(device);
 		mDevice = device;
-	}
-
-	U32 DX12GFXConstantBuffer::GetNumElements() const
-	{
-		return mNumElements;
 	}
 
 	void DX12GFXConstantBuffer::SetData(const void* data, U32 size, U32 objectIndex)

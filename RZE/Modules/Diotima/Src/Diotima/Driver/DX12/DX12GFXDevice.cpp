@@ -300,11 +300,11 @@ namespace Diotima
 		return static_cast<U32>(m2DTextureBuffers.size() - 1);
 	}
 
-	U32 DX12GFXDevice::CreateConstantBuffer(void* data, U32 size)
+	U32 DX12GFXDevice::CreateConstantBuffer(size_t memberSize, U32 maxMembers)
 	{
 		mConstantBuffers.push_back(std::make_unique<DX12GFXConstantBuffer>());
 		mConstantBuffers.back()->SetDevice(this);
-		mConstantBuffers.back()->Allocate(data, size);
+		mConstantBuffers.back()->Allocate(memberSize, maxMembers);
 
 		return static_cast<U32>(mConstantBuffers.size() - 1);
 	}
