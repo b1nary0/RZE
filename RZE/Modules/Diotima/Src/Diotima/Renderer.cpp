@@ -123,7 +123,7 @@ namespace Diotima
 					// #TODO(Josh::This temp fix treats the offset as a 1D index for a 2D array where objectIndex : row and index : col
 					//             Is a safe assumption for now since Renderer::Update is brute force atm, but the great cleanup will get to this)
 					U32 offset = objectIndex * itemProtocol.MeshData.size() + index;
-					perMeshPixelShaderConstants->SetData(&meshData.Material, sizeof(RenderItemMaterialDesc), static_cast<U32>(offset));
+					perMeshPixelShaderConstants->SetData(&meshData.Material, sizeof(RenderItemMaterialDesc), offset);
 					commandList->SetGraphicsRootConstantBufferView(4, perMeshPixelShaderConstants->GetResource()->GetGPUVirtualAddress() + (MemoryUtils::AlignSize(sizeof(RenderItemMaterialDesc), 255) * offset));
 
 					// #NOTE(Josh::Everything should have a default guaranteed diffuse map. For now it also marks the start of the descriptor table)
