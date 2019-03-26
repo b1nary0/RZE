@@ -16,7 +16,7 @@ namespace Diotima
 	void DX12GFXConstantBuffer::Allocate(size_t memberSize, U32 maxMembers)
 	{
 		const U32 alignedSize = MemoryUtils::AlignSize(memberSize, 255);
-		const U32 bufferSize = (alignedSize * maxMembers) * 64; // 64kb multiples
+		const U32 bufferSize = alignedSize * maxMembers;
 
 		mDevice->GetDevice()->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD), 
