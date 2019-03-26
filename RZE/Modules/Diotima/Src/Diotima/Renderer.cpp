@@ -92,6 +92,9 @@ namespace Diotima
 
 			void* pMatrixConstantBufferData = malloc(sizeof(Matrix4x4) * 3);
 			U32 objectIndex = 0;
+
+			// This will count the material instances to offset the constant buffer memory. Temporary.
+			U32 materialIndex_HACK = 0;
 			for (RenderItemProtocol& itemProtocol : mRenderList)
 			{
 				// #TODO(Josh::This needs to be removed -- an opaque handle should be leased out that will
@@ -122,9 +125,8 @@ namespace Diotima
 
 					// #TODO(Josh::This temp fix treats the offset as a 1D index for a 2D array where objectIndex : row and index : col
 					//             Is a safe assumption for now since Renderer::Update is brute force atm, but the great cleanup will get to this)
-					U32 offset = objectIndex * itemProtocol.MeshData.size() + index;
-					perMeshPixelShaderConstants->SetData(&meshData.Material, sizeof(RenderItemMaterialDesc), offset);
-					commandList->SetGraphicsRootConstantBufferView(4, perMeshPixelShaderConstants->GetResource()->GetGPUVirtualAddress() + (MemoryUtils::AlignSize(sizeof(RenderItemMaterialDesc), 255) * offset));
+					perMeshPixelShaderConstants->SetData(&meshData.Material, sizeof(RenderItemMaterialDesc), materialIndex_HACK);
+					commandList->SetGraphicsRootConstantBufferView(4, perMeshPixelShaderConstants->GetResource()->GetGPUVirtualAddress() + (MemoryUtils::AlignSize(sizeof(RenderItemMaterialDesc), 255) * materialIndex_HACK));
 
 					// #NOTE(Josh::Everything should have a default guaranteed diffuse map. For now it also marks the start of the descriptor table)
 					DX12GFXTextureBuffer2D* const diffuseBuffer = mDevice->GetTextureBuffer2D(meshData.TextureDescs[0].TextureBuffer);
@@ -134,6 +136,8 @@ namespace Diotima
 					commandList->IASetVertexBuffers(0, 1, vertexBuffer->GetBufferView());
 					commandList->IASetIndexBuffer(indexBuffer->GetBufferView());
 					commandList->DrawIndexedInstanced(indexBuffer->GetNumElements(), 1, 0, 0, 0);
+
+					++materialIndex_HACK;
 				}
 
 				++objectIndex;
