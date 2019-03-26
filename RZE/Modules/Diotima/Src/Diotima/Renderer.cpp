@@ -114,7 +114,10 @@ namespace Diotima
 
 				MVPConstantBuffer->SetData(pMatrixConstantBufferData, sizeof(Matrix4x4) * 3, objectIndex);
 
-				commandList->SetGraphicsRootConstantBufferView(0, MVPConstantBuffer->GetResource()->GetGPUVirtualAddress() + (MemoryUtils::AlignSize(sizeof(Matrix4x4) * 3, 255) * objectIndex));
+				{
+					U32 alignedOffset = MemoryUtils::AlignSize(sizeof(Matrix4x4) * 3, 255) * objectIndex;
+					commandList->SetGraphicsRootConstantBufferView(0, MVPConstantBuffer->GetResource()->GetGPUVirtualAddress() + alignedOffset);
+				}
 				
 				for (size_t index = 0; index < itemProtocol.MeshData.size(); ++index)
 				{
@@ -126,7 +129,11 @@ namespace Diotima
 					// #TODO(Josh::This temp fix treats the offset as a 1D index for a 2D array where objectIndex : row and index : col
 					//             Is a safe assumption for now since Renderer::Update is brute force atm, but the great cleanup will get to this)
 					perMeshPixelShaderConstants->SetData(&meshData.Material, sizeof(RenderItemMaterialDesc), materialIndex_HACK);
-					commandList->SetGraphicsRootConstantBufferView(4, perMeshPixelShaderConstants->GetResource()->GetGPUVirtualAddress() + (MemoryUtils::AlignSize(sizeof(RenderItemMaterialDesc), 255) * materialIndex_HACK));
+
+					{
+						U32 alignedOffset = MemoryUtils::AlignSize(sizeof(RenderItemMaterialDesc), 255) * materialIndex_HACK;
+						commandList->SetGraphicsRootConstantBufferView(4, perMeshPixelShaderConstants->GetResource()->GetGPUVirtualAddress() + alignedOffset);
+					}
 
 					// #NOTE(Josh::Everything should have a default guaranteed diffuse map. For now it also marks the start of the descriptor table)
 					DX12GFXTextureBuffer2D* const diffuseBuffer = mDevice->GetTextureBuffer2D(meshData.TextureDescs[0].TextureBuffer);
