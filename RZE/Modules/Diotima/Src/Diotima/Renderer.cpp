@@ -9,7 +9,6 @@
 #include <Utils/Platform/FilePath.h>
 
 // DX12 Branch Temp
-#include <Diotima/Driver/DX12/DX12GFXDriverInterface.h>
 #include <Diotima/Driver/DX12/DX12GFXDevice.h>
 #include <Diotima/Driver/DX12/DX12GFXConstantBuffer.h>
 #include <Diotima/Driver/DX12/DX12GFXIndexBuffer.h>
@@ -68,21 +67,20 @@ namespace Diotima
 	{
 		BROFILER_CATEGORY("Renderer::Update", Profiler::Color::Red);
 
-		DX12GFXDevice* const device = mDriverInterface->mDevice.get();
-		device->ResetCommandAllocator();
-		device->ResetCommandList();
+		mDevice->ResetCommandAllocator();
+		mDevice->ResetCommandList();
 
 		PrepareLights();
 
-		device->BeginFrame();
+		mDevice->BeginFrame();
 		{
-			ID3D12GraphicsCommandList* commandList = device->GetCommandList();
-			DX12GFXConstantBuffer* const MVPConstantBuffer = mDriverInterface->mDevice->GetConstantBuffer(mMVPConstantBuffer);
-			DX12GFXConstantBuffer* const lightConstantBuffer = mDriverInterface->mDevice->GetConstantBuffer(mLightConstantBuffer);
-			DX12GFXConstantBuffer* const perMeshPixelShaderConstants = mDriverInterface->mDevice->GetConstantBuffer(mPerMeshPixelShaderConstants);
-			DX12GFXConstantBuffer* const perFramePixelShaderConstants = mDriverInterface->mDevice->GetConstantBuffer(mPerFramePixelShaderConstants);
+			ID3D12GraphicsCommandList* commandList = mDevice->GetCommandList();
+			DX12GFXConstantBuffer* const MVPConstantBuffer = mDevice->GetConstantBuffer(mMVPConstantBuffer);
+			DX12GFXConstantBuffer* const lightConstantBuffer = mDevice->GetConstantBuffer(mLightConstantBuffer);
+			DX12GFXConstantBuffer* const perMeshPixelShaderConstants = mDevice->GetConstantBuffer(mPerMeshPixelShaderConstants);
+			DX12GFXConstantBuffer* const perFramePixelShaderConstants = mDevice->GetConstantBuffer(mPerFramePixelShaderConstants);
 
-			ID3D12DescriptorHeap* ppDescHeaps[] = { device->GetTextureHeap() };
+			ID3D12DescriptorHeap* ppDescHeaps[] = { mDevice->GetTextureHeap() };
 			commandList->SetDescriptorHeaps(_countof(ppDescHeaps), ppDescHeaps);
 
 			commandList->SetGraphicsRootConstantBufferView(2, lightConstantBuffer->GetResource()->GetGPUVirtualAddress());
@@ -119,14 +117,14 @@ namespace Diotima
 				{
 					const RenderItemMeshData& meshData = itemProtocol.MeshData[index];
 					
-					DX12GFXVertexBuffer* const vertexBuffer = device->GetVertexBuffer(meshData.VertexBuffer);
-					DX12GFXIndexBuffer* const indexBuffer = device->GetIndexBuffer(meshData.IndexBuffer);
+					DX12GFXVertexBuffer* const vertexBuffer = mDevice->GetVertexBuffer(meshData.VertexBuffer);
+					DX12GFXIndexBuffer* const indexBuffer = mDevice->GetIndexBuffer(meshData.IndexBuffer);
 
 					perMeshPixelShaderConstants->SetData(&meshData.Material, sizeof(RenderItemMaterialDesc), static_cast<U32>(index));
 					commandList->SetGraphicsRootConstantBufferView(4, perMeshPixelShaderConstants->GetResource()->GetGPUVirtualAddress() + (MemoryUtils::AlignSize(sizeof(RenderItemMaterialDesc), 255) * index));
 
 					// #NOTE(Josh::Everything should have a default guaranteed diffuse map. For now it also marks the start of the descriptor table)
-					DX12GFXTextureBuffer2D* const diffuseBuffer = device->GetTextureBuffer2D(meshData.TextureDescs[0].TextureBuffer);
+					DX12GFXTextureBuffer2D* const diffuseBuffer = mDevice->GetTextureBuffer2D(meshData.TextureDescs[0].TextureBuffer);
 					commandList->SetGraphicsRootDescriptorTable(3, diffuseBuffer->GetDescriptorHandleGPU());
 
 					commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -140,34 +138,30 @@ namespace Diotima
 
 			delete pMatrixConstantBufferData;
 		}
-		device->EndFrame();
+		mDevice->EndFrame();
 	}
 
 	void Renderer::Render()
 	{
-		mDriverInterface->Present();
+		mDevice->Present();
 	}
 
 	void Renderer::ShutDown()
 	{
-		mDriverInterface->Shutdown();
+		mDevice->Shutdown();
 	}
 
 	void Renderer::DX12Initialize()
 	{
-		mDriverInterface = std::make_unique<DX12GFXDriverInterface>();
-		mDriverInterface->SetWindow(mWindowHandle);
-		mDriverInterface->Initialize();
+		mDevice = std::make_unique<DX12GFXDevice>();
+		mDevice->SetWindow(mWindowHandle);
+		mDevice->SetMSAASampleCount(mMSAASampleCount);
+		mDevice->Initialize();
 
-		// #TODO(Josh::This is all kinds of messy. Accessing the device directly (remnants of hacks..) and having to pull
-		//             device initialization out from the driver interface due to MSAA sample count setting)
-		mDriverInterface->mDevice->SetMSAASampleCount(mMSAASampleCount);
-		mDriverInterface->mDevice->Initialize();
-
-		mMVPConstantBuffer = mDriverInterface->CreateConstantBuffer(nullptr, 2);
-		mLightConstantBuffer = mDriverInterface->CreateConstantBuffer(nullptr, 1);
-		mPerMeshPixelShaderConstants = mDriverInterface->CreateConstantBuffer(nullptr, 1);
-		mPerFramePixelShaderConstants = mDriverInterface->CreateConstantBuffer(nullptr, 1);
+		mMVPConstantBuffer = mDevice->CreateConstantBuffer(nullptr, 2);
+		mLightConstantBuffer = mDevice->CreateConstantBuffer(nullptr, 1);
+		mPerMeshPixelShaderConstants = mDevice->CreateConstantBuffer(nullptr, 1);
+		mPerFramePixelShaderConstants = mDevice->CreateConstantBuffer(nullptr, 1);
 	}
 
 	void Renderer::PrepareLights()
@@ -187,11 +181,11 @@ namespace Diotima
 			}
 		}
 
-		DX12GFXConstantBuffer* const lightConstantBuffer = mDriverInterface->mDevice->GetConstantBuffer(mLightConstantBuffer);
+		DX12GFXConstantBuffer* const lightConstantBuffer = mDevice->GetConstantBuffer(mLightConstantBuffer);
 		lightConstantBuffer->SetData(pointLights.data(), static_cast<U32>(sizeof(LightItemProtocol) * pointLights.size()), 0);
 		//lightConstantBuffer->SetData(directionalLights.data(), static_cast<U32>(sizeof(LightItemProtocol) * directionalLights.size()), 1);
 
-		DX12GFXConstantBuffer* const perFramePixelShaderConstants = mDriverInterface->mDevice->GetConstantBuffer(mPerFramePixelShaderConstants);
+		DX12GFXConstantBuffer* const perFramePixelShaderConstants = mDevice->GetConstantBuffer(mPerFramePixelShaderConstants);
 		U32 lightCounts[2] = { static_cast<U32>(pointLights.size()), static_cast<U32>(directionalLights.size()) };
 		perFramePixelShaderConstants->SetData(lightCounts, sizeof(U32) * 2, 0);
 	}
@@ -216,19 +210,19 @@ namespace Diotima
 
 	U32 Renderer::CreateVertexBuffer(void* data, U32 numElements)
 	{
-		return mDriverInterface->CreateVertexBuffer(data, numElements);
+		return mDevice->CreateVertexBuffer(data, numElements);
 	}
 
 
 	U32 Renderer::CreateIndexBuffer(void* data, U32 numElements)
 	{
-		return mDriverInterface->CreateIndexBuffer(data, numElements);
+		return mDevice->CreateIndexBuffer(data, numElements);
 	}
 
 
 	U32 Renderer::CreateTextureBuffer2D(void* data, U32 width, U32 height)
 	{
-		return mDriverInterface->CreateTextureBuffer2D(data, width, height);
+		return mDevice->CreateTextureBuffer2D(data, width, height);
 	}
 
 	void Renderer::RenderItemProtocol::Invalidate()

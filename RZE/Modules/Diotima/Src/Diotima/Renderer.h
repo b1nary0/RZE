@@ -12,7 +12,7 @@
 namespace Diotima
 {
 	// DX12 Temp
-	class DX12GFXDriverInterface;
+	class DX12GFXDevice;
 
 	enum class EBufferType
 	{
@@ -147,7 +147,7 @@ namespace Diotima
 		U32 mPerMeshPixelShaderConstants; // Per mesh data
 		U32 mPerFramePixelShaderConstants; // Per frame data
 
-		std::unique_ptr<DX12GFXDriverInterface> mDriverInterface;
+		std::unique_ptr<DX12GFXDevice> mDevice;
 
 		void* mWindowHandle;
 	};
