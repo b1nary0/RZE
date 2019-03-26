@@ -8,9 +8,12 @@
 
 #include <Utils/Conversions.h>
 #include <Utils/DebugUtils/Debug.h>
+#include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector3D.h>
 #include <Utils/Math/Vector4D.h>
 #include <Utils/Platform/FilePath.h>
+
+#include <algorithm>
 
 namespace
 {
@@ -57,6 +60,14 @@ namespace Diotima
 
 	void DX12GFXDevice::Initialize()
 	{
+#if defined(_DEBUG)
+		ComPtr<ID3D12Debug> debugController;
+		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
+		{
+			debugController->EnableDebugLayer();
+		}
+#endif
+
 		// #TODO(Josh::Check for errors)
 		CreateDXGIFactory1(IID_PPV_ARGS(&mFactory));
 
@@ -130,6 +141,8 @@ namespace Diotima
 
 		mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mCommandAllocator));
 
+		InitializeMipGeneration();
+
 		InitializeAssets();
 	}
 
@@ -140,8 +153,7 @@ namespace Diotima
 
 	void DX12GFXDevice::Present()
 	{
-		ID3D12CommandList* ppCommandLists[] = { mCommandList.Get() };
-		mCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+		ExecuteCommandList(mCommandList.Get());
 
 		mSwapChain->Present(1, 0);
 
@@ -164,8 +176,8 @@ namespace Diotima
 			U32 compileFlags = 0;
 #endif
 
-			FilePath vertexShaderFilePath("Assets/Shaders/D3DTest.VS");
-			FilePath pixelShaderFilePath("Assets/Shaders/D3DTest.PS");
+			FilePath vertexShaderFilePath("Assets/Shaders/D3DTest_VS.hlsl");
+			FilePath pixelShaderFilePath("Assets/Shaders/D3DTest_PS.hlsl");
 
 			ComPtr<ID3DBlob> error;
 
@@ -288,11 +300,11 @@ namespace Diotima
 		return static_cast<U32>(m2DTextureBuffers.size() - 1);
 	}
 
-	U32 DX12GFXDevice::CreateConstantBuffer(void* data, U32 size)
+	U32 DX12GFXDevice::CreateConstantBuffer(size_t memberSize, U32 maxMembers)
 	{
 		mConstantBuffers.push_back(std::make_unique<DX12GFXConstantBuffer>());
 		mConstantBuffers.back()->SetDevice(this);
-		mConstantBuffers.back()->Allocate(data, size);
+		mConstantBuffers.back()->Allocate(memberSize, maxMembers);
 
 		return static_cast<U32>(mConstantBuffers.size() - 1);
 	}
@@ -347,7 +359,7 @@ namespace Diotima
 		mCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 		mCommandList->ClearDepthStencilView(mDepthStencilBuffer->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 		
-		const float clearColor[] = { 0.1f, 0.1f, 0.1f, 1.0f };
+		const float clearColor[] = { 0.f, 0.f, 0.f, 0.0f };
 		mCommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 	}
 
@@ -401,12 +413,17 @@ namespace Diotima
 		mLightConstBuffer.ShaderRegister = 0;
 		mLightConstBuffer.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_NONE;
 
-		D3D12_ROOT_DESCRIPTOR1 mPixelShaderConstants;
-		mPixelShaderConstants.RegisterSpace = 3;
-		mPixelShaderConstants.ShaderRegister = 0;
-		mPixelShaderConstants.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_NONE;
+		D3D12_ROOT_DESCRIPTOR1 mPerMeshPixelShaderConstants;
+		mPerMeshPixelShaderConstants.RegisterSpace = 3;
+		mPerMeshPixelShaderConstants.ShaderRegister = 0;
+		mPerMeshPixelShaderConstants.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_NONE;
 
-		CD3DX12_ROOT_PARAMETER1 rootParameters[5];
+		D3D12_ROOT_DESCRIPTOR1 mPerFramePixelShaderConstants;
+		mPerFramePixelShaderConstants.RegisterSpace = 4;
+		mPerFramePixelShaderConstants.ShaderRegister = 0;
+		mPerFramePixelShaderConstants.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_NONE;
+
+		CD3DX12_ROOT_PARAMETER1 rootParameters[6];
 		rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 		rootParameters[0].Descriptor = mMVPConstBuffer;
 		rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
@@ -422,8 +439,12 @@ namespace Diotima
 		rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 		rootParameters[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-		rootParameters[4].Descriptor = mPixelShaderConstants;
+		rootParameters[4].Descriptor = mPerMeshPixelShaderConstants;
 		rootParameters[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+		rootParameters[5].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+		rootParameters[5].Descriptor = mPerFramePixelShaderConstants;
+		rootParameters[5].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 		D3D12_STATIC_SAMPLER_DESC sampler = {};
 		sampler.Filter = D3D12_FILTER_ANISOTROPIC;
@@ -432,7 +453,7 @@ namespace Diotima
 		sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
 		sampler.MipLODBias = 0;
 		sampler.MaxAnisotropy = 16;
-		sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+		sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 		sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
 		sampler.MinLOD = 0.0f;
 		sampler.MaxLOD = D3D12_FLOAT32_MAX;
@@ -525,6 +546,156 @@ namespace Diotima
 	U32 DX12GFXDevice::GetMSAASampleCount()
 	{
 		return mSampleCount;
+	}
+
+	void DX12GFXDevice::GenerateMipsForTexture(DX12GFXTextureBuffer2D* texture)
+	{
+		D3D12_SHADER_RESOURCE_VIEW_DESC srcSRVDesc = {};
+		srcSRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srcSRVDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+
+		D3D12_UNORDERED_ACCESS_VIEW_DESC dstUAVDesc = {};
+		dstUAVDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+
+		mCommandList->SetComputeRootSignature(mMipGenRootSig.Get());
+		mCommandList->SetPipelineState(mMipGenPSO.Get());
+
+		ID3D12DescriptorHeap* descriptorHeaps[] = { mMipUAVHeap.Get() };
+		mCommandList->SetDescriptorHeaps(1, descriptorHeaps);
+
+		CD3DX12_CPU_DESCRIPTOR_HANDLE currCPUHandle(mMipUAVHeap->GetCPUDescriptorHandleForHeapStart(), 0, mCBVSRVUAVDescriptorSize);
+		CD3DX12_GPU_DESCRIPTOR_HANDLE currGPUHandle(mMipUAVHeap->GetGPUDescriptorHandleForHeapStart(), 0, mCBVSRVUAVDescriptorSize);
+
+		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(texture->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
+
+		const D3D12_RESOURCE_DESC& srcTextureDesc = texture->GetResourceDesc();
+		for (U32 srcMipLevel = 0; srcMipLevel < 3; ++srcMipLevel)
+		{
+			U32 dstWidth = std::max<U32>(static_cast<U32>(srcTextureDesc.Width >> (srcMipLevel + 1)), 1);
+			U32 dstHeight = std::max<U32>(static_cast<U32>(srcTextureDesc.Height >> (srcMipLevel + 1)), 1);
+
+			srcSRVDesc.Format = srcTextureDesc.Format;
+			srcSRVDesc.Texture2D.MipLevels = 1;
+			srcSRVDesc.Texture2D.MostDetailedMip = srcMipLevel;
+			mDevice->CreateShaderResourceView(texture->GetResource(), &srcSRVDesc, currCPUHandle);
+			currCPUHandle.Offset(1, mCBVSRVUAVDescriptorSize);
+
+			dstUAVDesc.Format = srcTextureDesc.Format;
+			dstUAVDesc.Texture2D.MipSlice = srcMipLevel + 1;
+			mDevice->CreateUnorderedAccessView(texture->GetResource(), nullptr, &dstUAVDesc, currCPUHandle);
+			currCPUHandle.Offset(1, mCBVSRVUAVDescriptorSize);
+
+			struct MipCBData
+			{
+				Vector2D TexelSize;
+			} mipCBData;
+
+			mipCBData.TexelSize.SetXY(1.0f / dstWidth, 1.0f / dstHeight);
+
+			mCommandList->SetComputeRoot32BitConstants(0, 2, &mipCBData, 0);
+
+			mCommandList->SetComputeRootDescriptorTable(1, currGPUHandle);
+			currGPUHandle.Offset(1, mCBVSRVUAVDescriptorSize);
+			mCommandList->SetComputeRootDescriptorTable(2, currGPUHandle);
+			currGPUHandle.Offset(1, mCBVSRVUAVDescriptorSize);
+
+			mCommandList->Dispatch(std::max<U32>(dstWidth / 8, 1u), std::max<U32>(dstHeight / 8, 1u), 1);
+
+			mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(texture->GetResource()));
+		}
+
+		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(texture->GetResource(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+	}
+
+	void DX12GFXDevice::InitializeMipGeneration()
+	{
+		// Need a descriptor heap
+		CreateMipUAVHeap();
+		// Need a root signature
+		CreateMipGenRootSignature();
+		// Need a PSO
+		CreateMipGenPSO();
+
+		// Need n UAVs for n mip levels
+	}
+
+	void DX12GFXDevice::CreateMipGenRootSignature()
+	{
+		CD3DX12_DESCRIPTOR_RANGE1 srvRanges[2];
+		srvRanges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);
+		srvRanges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);
+
+		CD3DX12_ROOT_PARAMETER1 rootParams[3];
+		rootParams[0].InitAsConstants(2, 0);
+		rootParams[1].InitAsDescriptorTable(1, &srvRanges[0]);
+		rootParams[2].InitAsDescriptorTable(1, &srvRanges[1]);
+
+		CD3DX12_STATIC_SAMPLER_DESC linearClampSampler(
+			0,
+			D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT,
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP
+		);
+
+		linearClampSampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+
+		CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSigDesc(_countof(rootParams), rootParams, 1, &linearClampSampler);
+		ComPtr<ID3DBlob> signature;
+		ComPtr<ID3DBlob> error;
+
+		D3DX12SerializeVersionedRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1_1, &signature, &error);
+		if (error != nullptr)
+		{
+			OutputDebugStringA((char*)error->GetBufferPointer());
+		}
+
+		HRESULT res = mDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&mMipGenRootSig));
+	}
+
+	void DX12GFXDevice::CreateMipGenPSO()
+	{
+		ComPtr<ID3DBlob> computeShader;
+
+#if defined(_DEBUG)
+		U32 compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+#else
+		U32 compileFlags = 0;
+#endif
+
+		FilePath computeShaderPath("Assets/Shaders/GenerateMips.hlsl");
+
+		ComPtr<ID3DBlob> error;
+
+		HRESULT result = D3DCompileFromFile(Conversions::StringToWString(computeShaderPath.GetAbsolutePath()).c_str(), nullptr, nullptr, "CSMain", "cs_5_1", compileFlags, 0, &computeShader, &error);
+		if (error)
+		{
+			OutputDebugStringA((char*)error->GetBufferPointer());
+		}
+
+		D3D12_COMPUTE_PIPELINE_STATE_DESC computePSDesc = {};
+		computePSDesc.CS = { reinterpret_cast<U8*>(computeShader->GetBufferPointer()), computeShader->GetBufferSize() };
+		computePSDesc.pRootSignature = mMipGenRootSig.Get();
+
+		mDevice->CreateComputePipelineState(&computePSDesc, IID_PPV_ARGS(&mMipGenPSO));
+	}
+
+	void DX12GFXDevice::CreateMipUAVHeap()
+	{
+		D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
+		heapDesc.NumDescriptors = 8;
+		heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+		heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		mDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&mMipUAVHeap));
+
+		// #TODO(Josh::Move this out of here and CreateTextureHeap() into some init function)
+		mCBVSRVUAVDescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	}
+
+	void DX12GFXDevice::ExecuteCommandList(ID3D12GraphicsCommandList* commandList)
+	{
+		ID3D12CommandList* ppCommandLists[] = { commandList };
+		mCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 	}
 
 }

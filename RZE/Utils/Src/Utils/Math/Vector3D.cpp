@@ -138,6 +138,11 @@ void Vector3D::operator*=(float scalar)
 	mVec *= scalar;
 }
 
+void Vector3D::operator*=(const Vector3D& rhs)
+{
+	mVec *= rhs.GetInternalVec();
+}
+
 Vector3D Vector3D::operator/(const float scalar) const
 {
 	glm::vec3 retVec = mVec / scalar;
