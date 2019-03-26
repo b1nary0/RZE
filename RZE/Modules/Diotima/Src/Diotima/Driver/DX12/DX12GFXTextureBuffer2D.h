@@ -19,12 +19,17 @@ namespace Diotima
 	public:
 		void SetDevice(DX12GFXDevice* device);
 
+		ID3D12Resource* GetResource();
+		const D3D12_RESOURCE_DESC& GetResourceDesc();
+
 		ID3D12DescriptorHeap* GetDescriptorHeap();
 		CD3DX12_CPU_DESCRIPTOR_HANDLE GetDescriptorHandleCPU();
 		CD3DX12_GPU_DESCRIPTOR_HANDLE GetDescriptorHandleGPU();
 
 	private:
 		DX12GFXDevice* mDevice;
+
+		D3D12_RESOURCE_DESC mResourceDesc;
 
 		CD3DX12_CPU_DESCRIPTOR_HANDLE mSRVCPUHandle;
 		CD3DX12_GPU_DESCRIPTOR_HANDLE mSRVGPUHandle;

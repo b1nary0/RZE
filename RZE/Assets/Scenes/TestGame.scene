@@ -14,27 +14,28 @@
             "CameraComponent":
             {
                 "FOV": 65,
-                "NearCull": 0.1,
+                "NearCull": 0.01,
                 "FarCull": 1000,
                 "Forward": [0.5, 0, -1.0],
                 "UpDir":[0.0, 1.0, 0.0]
             }
         }
     },
-    "Directional Light":
+		"Point Light1":
     {
       "components":
       {
         "TransformComponent":
         {
-          "Position":[-30, 20, 20],
+          "Position":[-15, 10, 5],
           "Scale": [1, 1, 1],
           "Rotation": [0, 0, 0]
         },
         "LightSourceComponent":
         {
+					"LightType": 1,
           "Color": [0.95, 0.95, 0.85],
-          "Strength": 1
+          "Strength": 1.25
         },
 		"MeshComponent":
 		{

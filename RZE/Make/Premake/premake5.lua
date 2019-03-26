@@ -72,7 +72,8 @@ workspace "RZE"
 		filter {}
 		
 		flags { "FatalCompileWarnings" }
-		
+		disablewarnings { "4267" }
+
 		kind "StaticLib"
 		language "C++"
 		targetdir (LibDir)
@@ -152,7 +153,8 @@ workspace "RZE"
 		filter {}
 		
 		flags { "FatalCompileWarnings" }
-		
+		disablewarnings { "4267" }
+
 		kind "StaticLib"
 		language "C++"
 		targetdir (LibDir)
@@ -204,6 +206,7 @@ workspace "RZE"
 		filter {}
 		
 		flags { "FatalCompileWarnings" }
+		disablewarnings { "4267" }
 		
 		kind "StaticLib"
 		language "C++"
@@ -276,6 +279,7 @@ workspace "RZE"
 		filter {}
 		
 		flags { "FatalCompileWarnings" }
+		disablewarnings { "4267" }
 		
 		kind "StaticLib"
 		language "C++"
@@ -346,6 +350,7 @@ workspace "RZE"
 		filter {}
 		
 		flags { "FatalCompileWarnings" }
+		disablewarnings { "4267" }
 		
 		kind "StaticLib"
 		language "C++"
@@ -468,6 +473,7 @@ workspace "RZE"
 		filter {}
 		
 		flags { "FatalCompileWarnings" }
+		disablewarnings { "4267" }
 		
 		kind "ConsoleApp"
 		language "C++"

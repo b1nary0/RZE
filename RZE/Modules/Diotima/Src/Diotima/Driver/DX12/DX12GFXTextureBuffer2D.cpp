@@ -12,29 +12,29 @@ namespace Diotima
 	{
 		mDevice->ResetCommandList();
 
-		D3D12_RESOURCE_DESC resourceDesc = {};
-		resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-		resourceDesc.Alignment = 0;
-		resourceDesc.Width = width;
-		resourceDesc.Height = height;
-		resourceDesc.DepthOrArraySize = 1;
-		resourceDesc.MipLevels = 1;
-		resourceDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-		resourceDesc.SampleDesc.Count = 1;
-		resourceDesc.SampleDesc.Quality = 0;
-		resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-		resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+		mResourceDesc = {};
+		mResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+		mResourceDesc.Alignment = 0;
+		mResourceDesc.Width = width;
+		mResourceDesc.Height = height;
+		mResourceDesc.DepthOrArraySize = 1;
+		mResourceDesc.MipLevels = 4;
+		mResourceDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		mResourceDesc.SampleDesc.Count = 1;
+		mResourceDesc.SampleDesc.Quality = 0;
+		mResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+		mResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
 		mDevice->GetDevice()->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), 
 			D3D12_HEAP_FLAG_NONE, 
-			&resourceDesc, 
+			&mResourceDesc,
 			D3D12_RESOURCE_STATE_COPY_DEST, 
 			nullptr, 
 			IID_PPV_ARGS(&mGPUBuffer));
 
 		U64 uploadBufferRequiredSize = 0;
-		mDevice->GetDevice()->GetCopyableFootprints(&resourceDesc, 0, 1, 0, nullptr, nullptr, nullptr, &uploadBufferRequiredSize);
+		mDevice->GetDevice()->GetCopyableFootprints(&mResourceDesc, 0, 1, 0, nullptr, nullptr, nullptr, &uploadBufferRequiredSize);
 
 		mDevice->GetDevice()->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD), 
@@ -54,15 +54,17 @@ namespace Diotima
 
 		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mGPUBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 
+		mDevice->GenerateMipsForTexture(this);
+
 		commandList->Close();
-		ID3D12CommandList* ppCommandLists[] = { commandList };
-		mDevice->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+
+		mDevice->ExecuteCommandList(commandList);
 
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		srvDesc.Format = resourceDesc.Format;
+		srvDesc.Format = mResourceDesc.Format;
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-		srvDesc.Texture2D.MipLevels = 1;
+		srvDesc.Texture2D.MipLevels = 4;
 
 		mSRVCPUHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(mDevice->GetTextureHeap()->GetCPUDescriptorHandleForHeapStart());
 		mSRVCPUHandle.Offset(increment, mDevice->GetCBVSRVUAVDescriptorSize());
@@ -73,6 +75,7 @@ namespace Diotima
 		mDevice->GetDevice()->CreateShaderResourceView(mGPUBuffer.Get(), &srvDesc, mSRVCPUHandle);
 
 		++increment;
+
 	}
 
 	void DX12GFXTextureBuffer2D::SetDevice(DX12GFXDevice* device)
@@ -94,6 +97,16 @@ namespace Diotima
 	CD3DX12_GPU_DESCRIPTOR_HANDLE DX12GFXTextureBuffer2D::GetDescriptorHandleGPU()
 	{
 		return mSRVGPUHandle;
+	}
+
+	const D3D12_RESOURCE_DESC& DX12GFXTextureBuffer2D::GetResourceDesc()
+	{
+		return mResourceDesc;
+	}
+
+	ID3D12Resource* DX12GFXTextureBuffer2D::GetResource()
+	{
+		return mGPUBuffer.Get();
 	}
 
 }

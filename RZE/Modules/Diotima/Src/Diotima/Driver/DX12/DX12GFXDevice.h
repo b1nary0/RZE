@@ -18,8 +18,8 @@ namespace Diotima
 
 	// #TODO(Josh::Eventually move these into a more configurable/stateful place)
 	constexpr int kBufferCount = 2;
-	constexpr int kBufferWidth = 1920;
-	constexpr int kBufferHeight = 1080;
+	constexpr int kBufferWidth = 3840;
+	constexpr int kBufferHeight = 2160;
 
 	class DX12GFXDevice final : public IGFXDevice
 	{
@@ -39,7 +39,7 @@ namespace Diotima
 		virtual U32 CreateVertexBuffer(void* data, U32 numElements) override;
 		virtual U32 CreateIndexBuffer(void* data, U32 numElements) override;
 		virtual U32 CreateTextureBuffer2D(void* data, U32 width, U32 height) override;
-		virtual U32 CreateConstantBuffer(void* data, U32 size) override;
+		virtual U32 CreateConstantBuffer(size_t memberSize, U32 maxMembers) override;
 
 	public:
 		void BeginFrame();
@@ -62,10 +62,15 @@ namespace Diotima
 		void ResetCommandList();
 		void ResetCommandAllocator();
 
+		void ExecuteCommandList(ID3D12GraphicsCommandList* commandList);
+
 		void WaitForPreviousFrame();
 
 		void SetMSAASampleCount(U32 sampleCount);
 		U32 GetMSAASampleCount();
+
+		// #TODO(Josh::Tease this out later)
+		void GenerateMipsForTexture(DX12GFXTextureBuffer2D* texture);
 
 	private:
 		void InitializeAssets();
@@ -73,6 +78,11 @@ namespace Diotima
 
 		void InitializeMSAA();
 		void CreateTextureHeap();
+
+		void InitializeMipGeneration();
+		void CreateMipUAVHeap();
+		void CreateMipGenRootSignature();
+		void CreateMipGenPSO();
 
 	private:
 		ComPtr<ID3D12Device> mDevice;
@@ -90,12 +100,18 @@ namespace Diotima
 		ComPtr<ID3D12RootSignature> mRootSignature;
 		ComPtr<ID3D12PipelineState> mPipelineState;
 
+		ComPtr<ID3D12RootSignature> mMipGenRootSig;
+		ComPtr<ID3D12PipelineState> mMipGenPSO;
+
 		D3D12_VIEWPORT* mViewport;
 		D3D12_RECT mScissorRect;
 
+		// #TODO(Josh::I really don't feel like this is the intended best usage of this pattern.
+		//             Definitely a major part of the cleanup pass here.)
 		ComPtr<ID3D12DescriptorHeap> mRTVDescriptorHeap;
 		ComPtr<ID3D12DescriptorHeap> mMSAARTVDescriptorHeap;
 		ComPtr<ID3D12DescriptorHeap> mTextureHeap;
+		ComPtr<ID3D12DescriptorHeap> mMipUAVHeap;
 
 		int mCurrentFrame;
 		void* mWindowHandle;

@@ -48,8 +48,7 @@ namespace Diotima
 
 		commandList->Close();
 
-		ID3D12CommandList* ppCommandLists[] = { commandList };
-		commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+		mDevice->ExecuteCommandList(commandList);
 
 		// Initialize vertex buffer view
 		mGPUBufferView = new D3D12_INDEX_BUFFER_VIEW();
