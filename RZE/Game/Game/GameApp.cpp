@@ -43,7 +43,7 @@ void GameApp::Initialize()
 	//RZE().GetActiveScene().GetEntityHandler().AddSystem<InteractiveSpawningSystem>();
 	RZE().GetActiveScene().GetEntityHandler().AddSystem<FreeCameraSystem>();
 	// #TODO(Josh::Disabling until the constant buffer issue with material shininess is resolved)
-	//RZE().GetActiveScene().GetEntityHandler().AddSystem<ProjectileSystem>();
+	RZE().GetActiveScene().GetEntityHandler().AddSystem<ProjectileSystem>();
 }
 
 void GameApp::Start()
