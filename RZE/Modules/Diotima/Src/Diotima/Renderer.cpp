@@ -170,10 +170,10 @@ namespace Diotima
 		mDevice->SetMSAASampleCount(mMSAASampleCount);
 		mDevice->Initialize();
 
-		mMVPConstantBuffer = mDevice->CreateConstantBuffer(sizeof(Matrix4x4) * 3, 64);
+		mMVPConstantBuffer = mDevice->CreateConstantBuffer(sizeof(Matrix4x4) * 3, 1024);
 		mLightConstantBuffer = mDevice->CreateConstantBuffer(sizeof(LightItemProtocol), 64);
-		mPerMeshPixelShaderConstants = mDevice->CreateConstantBuffer(sizeof(RenderItemMaterialDesc), 64);
-		mPerFramePixelShaderConstants = mDevice->CreateConstantBuffer(sizeof(U32) * 2, 64);
+		mPerMeshPixelShaderConstants = mDevice->CreateConstantBuffer(sizeof(RenderItemMaterialDesc), 1024);
+		mPerFramePixelShaderConstants = mDevice->CreateConstantBuffer(sizeof(U32) * 2, 1024);
 	}
 
 	void Renderer::PrepareLights()
