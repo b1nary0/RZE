@@ -80,6 +80,9 @@ namespace Diotima
 			DX12GFXConstantBuffer* const perMeshPixelShaderConstants = mDevice->GetConstantBuffer(mPerMeshPixelShaderConstants);
 			DX12GFXConstantBuffer* const perFramePixelShaderConstants = mDevice->GetConstantBuffer(mPerFramePixelShaderConstants);
 
+			perMeshPixelShaderConstants->Reset();
+			MVPConstantBuffer->Reset();
+
 			ID3D12DescriptorHeap* ppDescHeaps[] = { mDevice->GetTextureHeap() };
 			commandList->SetDescriptorHeaps(_countof(ppDescHeaps), ppDescHeaps);
 
@@ -112,12 +115,8 @@ namespace Diotima
 				memcpy((U8*)pMatrixConstantBufferData + sizeof(Matrix4x4), modelViewInvPtr, sizeof(Matrix4x4));
 				memcpy((U8*)pMatrixConstantBufferData + sizeof(Matrix4x4) * 2, camViewProjPtr, sizeof(Matrix4x4));
 
-				MVPConstantBuffer->SetData(pMatrixConstantBufferData, sizeof(Matrix4x4) * 3, objectIndex);
-
-				{
-					U32 alignedOffset = MemoryUtils::AlignSize(sizeof(Matrix4x4) * 3, 255) * objectIndex;
-					commandList->SetGraphicsRootConstantBufferView(0, MVPConstantBuffer->GetResource()->GetGPUVirtualAddress() + alignedOffset);
-				}
+				CBAllocationData mvpAllocData = MVPConstantBuffer->AllocateMember(pMatrixConstantBufferData);
+				commandList->SetGraphicsRootConstantBufferView(0, mvpAllocData.GPUBaseAddr);
 				
 				for (size_t index = 0; index < itemProtocol.MeshData.size(); ++index)
 				{
@@ -126,12 +125,8 @@ namespace Diotima
 					DX12GFXVertexBuffer* const vertexBuffer = mDevice->GetVertexBuffer(meshData.VertexBuffer);
 					DX12GFXIndexBuffer* const indexBuffer = mDevice->GetIndexBuffer(meshData.IndexBuffer);
 
-					perMeshPixelShaderConstants->SetData(&meshData.Material, sizeof(RenderItemMaterialDesc), materialIndex_HACK);
-
-					{
-						U32 alignedOffset = MemoryUtils::AlignSize(sizeof(RenderItemMaterialDesc), 255) * materialIndex_HACK;
-						commandList->SetGraphicsRootConstantBufferView(4, perMeshPixelShaderConstants->GetResource()->GetGPUVirtualAddress() + alignedOffset);
-					}
+					CBAllocationData allocData = perMeshPixelShaderConstants->AllocateMember(&meshData.Material);
+					commandList->SetGraphicsRootConstantBufferView(4, allocData.GPUBaseAddr);
 
 					// #NOTE(Josh::Everything should have a default guaranteed diffuse map. For now it also marks the start of the descriptor table)
 					DX12GFXTextureBuffer2D* const diffuseBuffer = mDevice->GetTextureBuffer2D(meshData.TextureDescs[0].TextureBuffer);
