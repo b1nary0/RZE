@@ -68,12 +68,6 @@ namespace Diotima
 		mDevice = device;
 	}
 
-	void DX12GFXConstantBuffer::SetData(const void* data, U32 size, U32 objectIndex)
-	{
-		U32 alignedSize = MemoryUtils::AlignSize(size, 255);
-		memcpy(mResourceStart + (alignedSize * objectIndex), data, size);
-	}
-
 	ID3D12Resource* DX12GFXConstantBuffer::GetResource()
 	{
 		return mUploadBuffer.Get();

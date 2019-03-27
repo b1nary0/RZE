@@ -189,12 +189,18 @@ namespace Diotima
 		}
 
 		DX12GFXConstantBuffer* const lightConstantBuffer = mDevice->GetConstantBuffer(mLightConstantBuffer);
-		lightConstantBuffer->SetData(pointLights.data(), static_cast<U32>(sizeof(LightItemProtocol) * pointLights.size()), 0);
+		lightConstantBuffer->Reset();
+
+		for (LightItemProtocol& light : pointLights)
+		{
+			lightConstantBuffer->AllocateMember(&light);
+		}
 		//lightConstantBuffer->SetData(directionalLights.data(), static_cast<U32>(sizeof(LightItemProtocol) * directionalLights.size()), 1);
 
 		DX12GFXConstantBuffer* const perFramePixelShaderConstants = mDevice->GetConstantBuffer(mPerFramePixelShaderConstants);
+		perFramePixelShaderConstants->Reset();
 		U32 lightCounts[2] = { static_cast<U32>(pointLights.size()), static_cast<U32>(directionalLights.size()) };
-		perFramePixelShaderConstants->SetData(lightCounts, sizeof(U32) * 2, 0);
+		perFramePixelShaderConstants->AllocateMember(lightCounts);
 	}
 
 	void Renderer::EnableVsync(bool bEnabled)

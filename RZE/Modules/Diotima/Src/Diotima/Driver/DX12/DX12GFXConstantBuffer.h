@@ -32,9 +32,6 @@ namespace Diotima
 
 		ID3D12Resource* GetResource();
 
-		// #TODO(Josh::Yeah so this is garbo -- this should be done with some internal structure per object that describes the buffers/views/etc - future work)
-		void SetData(const void* data, U32 size, U32 objectIndex);
-
 	private:
 		DX12GFXDevice* mDevice;
 		
