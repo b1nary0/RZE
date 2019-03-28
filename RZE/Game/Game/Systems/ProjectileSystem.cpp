@@ -27,12 +27,12 @@ void ProjectileSystem::Initialize()
 		TransformComponent* const camTransComp = entityHandler.GetComponent<TransformComponent>(mCameraEntity);
 		AssertNotNull(camComp);
 
-		Vector3D velocity(5.0f);
+		Vector3D velocity(50.0f);
 		velocity *= camComp->Forward;
 
 		Apollo::EntityID projectileEntity = RZE_Application::RZE().GetActiveScene().CreateEntity("Projectile");
 		TransformComponent* const projectileTransform = entityHandler.GetComponent<TransformComponent>(projectileEntity);
-		projectileTransform->Position = camTransComp->Position;
+		projectileTransform->Position = camTransComp->Position - Vector3D(0.0f, 0.5f, 0.0f);
 		projectileTransform->Scale = Vector3D(0.25f, 0.25f, 0.25f);
 
 		entityHandler.AddComponent<MeshComponent>(projectileEntity, FilePath("Assets/3D/Cube.obj"));
