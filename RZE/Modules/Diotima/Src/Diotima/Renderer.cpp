@@ -94,10 +94,7 @@ namespace Diotima
 			Matrix4x4 camViewProjMat = camera.ProjectionMat * camera.ViewMat;
 
 			void* pMatrixConstantBufferData = malloc(sizeof(Matrix4x4) * 3);
-			U32 objectIndex = 0;
 
-			// This will count the material instances to offset the constant buffer memory. Temporary.
-			U32 materialIndex_HACK = 0;
 			for (RenderItemProtocol& itemProtocol : mRenderList)
 			{
 				// #TODO(Josh::This needs to be removed -- an opaque handle should be leased out that will
@@ -136,11 +133,7 @@ namespace Diotima
 					commandList->IASetVertexBuffers(0, 1, vertexBuffer->GetBufferView());
 					commandList->IASetIndexBuffer(indexBuffer->GetBufferView());
 					commandList->DrawIndexedInstanced(indexBuffer->GetNumElements(), 1, 0, 0, 0);
-
-					++materialIndex_HACK;
 				}
-
-				++objectIndex;
 			}
 
 			delete pMatrixConstantBufferData;
