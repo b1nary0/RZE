@@ -95,6 +95,19 @@ namespace Diotima
 			float FarCull;
 		};
 
+	private:
+		// #TODO(Josh::Temp idea: RenderItemProtocol describes the data to render in it's highest level, 
+		//             while RenderItemDrawCall contains all the buffer indirections to actually draw the item.
+		//             Will iterate on this idea.)
+		struct RenderItemDrawCall
+		{
+			U32 VertexBuffer;
+			U32 IndexBuffer;
+			U32 TextureSlot; // Serves as the base descriptor for a descriptor range. Right now is D/S/N per mesh
+			CBAllocationData MaterialSlot;
+			CBAllocationData MatrixSlot;
+		};
+
 		// Constructors
 	public:
 		Renderer();
@@ -111,7 +124,7 @@ namespace Diotima
 		void RemoveRenderItem(const U32 itemIdx);
 
 		Int32 AddLightItem(const LightItemProtocol& itemProtocol);
-		inline RenderItemProtocol& GetItemProtocolByIdx(Int32 idx) { return mRenderList[idx]; }
+		inline RenderItemProtocol& GetItemProtocolByIdx(Int32 idx) { return mRenderItems[idx]; }
 		inline LightItemProtocol& GetLightProtocolByIdx(Int32 idx) { return mLightingList[idx]; }
 
 		// #TODO(Josh::Really really don't like this, fix later)
@@ -132,7 +145,7 @@ namespace Diotima
 		void DX12Initialize();
 		
 		void PrepareLights();
-		void PrepareMaterials();
+		void PrepareDrawCalls();
 
 		// #TODO(Josh::Temporary - this should eventually be made into pre-filled commandlists by virtue
 		//             of a Renderer command submission protocol -- then parsed into underlying API calls.
@@ -143,7 +156,8 @@ namespace Diotima
 		Vector2D mCanvasSize;
 
 		CameraItemProtocol camera;
-		std::vector<RenderItemProtocol> mRenderList;
+		std::vector<RenderItemProtocol> mRenderItems;
+		std::vector<RenderItemDrawCall> mPerFrameDrawCalls;
 		std::vector<LightItemProtocol> mLightingList;
 
 		std::queue<Int32> mFreeRenderListIndices;
