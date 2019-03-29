@@ -78,10 +78,8 @@ namespace Diotima
 			ID3D12GraphicsCommandList* commandList = mDevice->GetCommandList();
 			DX12GFXConstantBuffer* const MVPConstantBuffer = mDevice->GetConstantBuffer(mMVPConstantBuffer);
 			DX12GFXConstantBuffer* const lightConstantBuffer = mDevice->GetConstantBuffer(mLightConstantBuffer);
-			DX12GFXConstantBuffer* const perMeshPixelShaderConstants = mDevice->GetConstantBuffer(mMaterialBuffer);
 			DX12GFXConstantBuffer* const perFramePixelShaderConstants = mDevice->GetConstantBuffer(mPerFramePixelShaderConstants);
 
-			perMeshPixelShaderConstants->Reset();
 			MVPConstantBuffer->Reset();
 
 			ID3D12DescriptorHeap* ppDescHeaps[] = { mDevice->GetTextureHeap() };
@@ -200,6 +198,8 @@ namespace Diotima
 	void Renderer::PrepareMaterials()
 	{
 		DX12GFXConstantBuffer* const materialBuffer = mDevice->GetConstantBuffer(mMaterialBuffer);
+		materialBuffer->Reset();
+
 		for (RenderItemProtocol& renderItem : mRenderList)
 		{
 			for (RenderItemMeshData& meshData : renderItem.MeshData)
