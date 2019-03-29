@@ -1,19 +1,13 @@
 #pragma once
 
 #include <Diotima/Driver/DX12/DX12.h>
+#include <Diotima/Driver/DX12/DX12AllocationData.h>
 
 #include <Utils/PrimitiveDefs.h>
 
 namespace Diotima
 {
 	class DX12GFXDevice;
-
-	// #TODO(Josh::If this ends up working well move this into a more generic header)
-	struct CBAllocationData
-	{
-		D3D12_GPU_VIRTUAL_ADDRESS GPUBaseAddr;
-		size_t SizeInBytes;
-	};
 
 	class DX12GFXConstantBuffer
 	{

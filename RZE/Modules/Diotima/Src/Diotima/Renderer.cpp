@@ -71,13 +71,14 @@ namespace Diotima
 		mDevice->ResetCommandList();
 
 		PrepareLights();
+		PrepareMaterials();
 
 		mDevice->BeginFrame();
 		{
 			ID3D12GraphicsCommandList* commandList = mDevice->GetCommandList();
 			DX12GFXConstantBuffer* const MVPConstantBuffer = mDevice->GetConstantBuffer(mMVPConstantBuffer);
 			DX12GFXConstantBuffer* const lightConstantBuffer = mDevice->GetConstantBuffer(mLightConstantBuffer);
-			DX12GFXConstantBuffer* const perMeshPixelShaderConstants = mDevice->GetConstantBuffer(mPerMeshPixelShaderConstants);
+			DX12GFXConstantBuffer* const perMeshPixelShaderConstants = mDevice->GetConstantBuffer(mMaterialBuffer);
 			DX12GFXConstantBuffer* const perFramePixelShaderConstants = mDevice->GetConstantBuffer(mPerFramePixelShaderConstants);
 
 			perMeshPixelShaderConstants->Reset();
@@ -122,8 +123,7 @@ namespace Diotima
 					DX12GFXVertexBuffer* const vertexBuffer = mDevice->GetVertexBuffer(meshData.VertexBuffer);
 					DX12GFXIndexBuffer* const indexBuffer = mDevice->GetIndexBuffer(meshData.IndexBuffer);
 
-					CBAllocationData allocData = perMeshPixelShaderConstants->AllocateMember(&meshData.Material);
-					commandList->SetGraphicsRootConstantBufferView(4, allocData.GPUBaseAddr);
+					commandList->SetGraphicsRootConstantBufferView(4, meshData.MaterialBufferAllocData.GPUBaseAddr);
 
 					// #NOTE(Josh::Everything should have a default guaranteed diffuse map. For now it also marks the start of the descriptor table)
 					DX12GFXTextureBuffer2D* const diffuseBuffer = mDevice->GetTextureBuffer2D(meshData.TextureDescs[0].TextureBuffer);
@@ -160,7 +160,7 @@ namespace Diotima
 
 		mMVPConstantBuffer = mDevice->CreateConstantBuffer(sizeof(Matrix4x4) * 3, 1024);
 		mLightConstantBuffer = mDevice->CreateConstantBuffer(sizeof(LightItemProtocol), 64);
-		mPerMeshPixelShaderConstants = mDevice->CreateConstantBuffer(sizeof(RenderItemMaterialDesc), 1024);
+		mMaterialBuffer = mDevice->CreateConstantBuffer(sizeof(RenderItemMaterialDesc), 1024);
 		mPerFramePixelShaderConstants = mDevice->CreateConstantBuffer(sizeof(U32) * 2, 1024);
 	}
 
@@ -194,6 +194,19 @@ namespace Diotima
 		perFramePixelShaderConstants->Reset();
 		U32 lightCounts[2] = { static_cast<U32>(pointLights.size()), static_cast<U32>(directionalLights.size()) };
 		perFramePixelShaderConstants->AllocateMember(lightCounts);
+	}
+
+
+	void Renderer::PrepareMaterials()
+	{
+		DX12GFXConstantBuffer* const materialBuffer = mDevice->GetConstantBuffer(mMaterialBuffer);
+		for (RenderItemProtocol& renderItem : mRenderList)
+		{
+			for (RenderItemMeshData& meshData : renderItem.MeshData)
+			{
+				meshData.MaterialBufferAllocData = materialBuffer->AllocateMember(&meshData.Material);
+			}
+		}
 	}
 
 	void Renderer::EnableVsync(bool bEnabled)

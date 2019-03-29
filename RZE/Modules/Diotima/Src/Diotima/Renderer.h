@@ -5,6 +5,9 @@
 #include <unordered_map>
 #include <vector>
 
+// #TODO(Josh::Really don't like this, change later)
+#include <Diotima/Driver/DX12/DX12AllocationData.h>
+
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector2D.h>
 #include <Utils/PrimitiveDefs.h>
@@ -50,6 +53,8 @@ namespace Diotima
 			U32 IndexBuffer;
 			std::vector<RenderItemTextureDesc> TextureDescs;
 			RenderItemMaterialDesc Material;
+			// #TODO(Josh::These members should be temporary. Need to find a better way to relate these to buffers)
+			CBAllocationData MaterialBufferAllocData;
 		};
 
 		struct RenderItemProtocol
@@ -127,6 +132,7 @@ namespace Diotima
 		void DX12Initialize();
 		
 		void PrepareLights();
+		void PrepareMaterials();
 
 	private:
 		Vector2D mCanvasSize;
@@ -144,7 +150,7 @@ namespace Diotima
 	private:
 		U32 mMVPConstantBuffer;
 		U32 mLightConstantBuffer;
-		U32 mPerMeshPixelShaderConstants; // Per mesh data
+		U32 mMaterialBuffer; // Per mesh data
 		U32 mPerFramePixelShaderConstants; // Per frame data
 
 		std::unique_ptr<DX12GFXDevice> mDevice;
