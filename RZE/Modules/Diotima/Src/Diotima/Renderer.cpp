@@ -67,76 +67,10 @@ namespace Diotima
 	{
 		BROFILER_CATEGORY("Renderer::Update", Profiler::Color::Red);
 
-		mDevice->ResetCommandAllocator();
-		mDevice->ResetCommandList();
-
 		PrepareLights();
 		PrepareMaterials();
 
-		mDevice->BeginFrame();
-		{
-			ID3D12GraphicsCommandList* commandList = mDevice->GetCommandList();
-			DX12GFXConstantBuffer* const MVPConstantBuffer = mDevice->GetConstantBuffer(mMVPConstantBuffer);
-			DX12GFXConstantBuffer* const lightConstantBuffer = mDevice->GetConstantBuffer(mLightConstantBuffer);
-			DX12GFXConstantBuffer* const perFramePixelShaderConstants = mDevice->GetConstantBuffer(mPerFramePixelShaderConstants);
-
-			MVPConstantBuffer->Reset();
-
-			ID3D12DescriptorHeap* ppDescHeaps[] = { mDevice->GetTextureHeap() };
-			commandList->SetDescriptorHeaps(_countof(ppDescHeaps), ppDescHeaps);
-
-			commandList->SetGraphicsRootConstantBufferView(2, lightConstantBuffer->GetResource()->GetGPUVirtualAddress());
-			commandList->SetGraphicsRootConstantBufferView(5, perFramePixelShaderConstants->GetResource()->GetGPUVirtualAddress());
-
-			commandList->SetGraphicsRoot32BitConstants(1, 3, &camera.Position.GetInternalVec(), 0);
-
-			Matrix4x4 camViewProjMat = camera.ProjectionMat * camera.ViewMat;
-
-			void* pMatrixConstantBufferData = malloc(sizeof(Matrix4x4) * 3);
-
-			for (RenderItemProtocol& itemProtocol : mRenderList)
-			{
-				// #TODO(Josh::This needs to be removed -- an opaque handle should be leased out that will
-				//             get fixed up when we remove render items)
-				if (!itemProtocol.bIsValid)
-				{
-					continue;
-				}
-
-				const float* modelViewPtr = itemProtocol.ModelMatrix.GetValuePtr();
-				const float* modelViewInvPtr = itemProtocol.ModelMatrix.Inverse().GetValuePtr();
-				const float* camViewProjPtr = camViewProjMat.GetValuePtr();
-
-				memcpy(pMatrixConstantBufferData, modelViewPtr, sizeof(Matrix4x4));
-				memcpy((U8*)pMatrixConstantBufferData + sizeof(Matrix4x4), modelViewInvPtr, sizeof(Matrix4x4));
-				memcpy((U8*)pMatrixConstantBufferData + sizeof(Matrix4x4) * 2, camViewProjPtr, sizeof(Matrix4x4));
-
-				CBAllocationData mvpAllocData = MVPConstantBuffer->AllocateMember(pMatrixConstantBufferData);
-				commandList->SetGraphicsRootConstantBufferView(0, mvpAllocData.GPUBaseAddr);
-				
-				for (size_t index = 0; index < itemProtocol.MeshData.size(); ++index)
-				{
-					const RenderItemMeshData& meshData = itemProtocol.MeshData[index];
-					
-					DX12GFXVertexBuffer* const vertexBuffer = mDevice->GetVertexBuffer(meshData.VertexBuffer);
-					DX12GFXIndexBuffer* const indexBuffer = mDevice->GetIndexBuffer(meshData.IndexBuffer);
-
-					commandList->SetGraphicsRootConstantBufferView(4, meshData.MaterialBufferAllocData.GPUBaseAddr);
-
-					// #NOTE(Josh::Everything should have a default guaranteed diffuse map. For now it also marks the start of the descriptor table)
-					DX12GFXTextureBuffer2D* const diffuseBuffer = mDevice->GetTextureBuffer2D(meshData.TextureDescs[0].TextureBuffer);
-					commandList->SetGraphicsRootDescriptorTable(3, diffuseBuffer->GetDescriptorHandleGPU());
-
-					commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-					commandList->IASetVertexBuffers(0, 1, vertexBuffer->GetBufferView());
-					commandList->IASetIndexBuffer(indexBuffer->GetBufferView());
-					commandList->DrawIndexedInstanced(indexBuffer->GetNumElements(), 1, 0, 0, 0);
-				}
-			}
-
-			delete pMatrixConstantBufferData;
-		}
-		mDevice->EndFrame();
+		BuildCommandList();
 	}
 
 	void Renderer::Render()
@@ -207,6 +141,78 @@ namespace Diotima
 				meshData.MaterialBufferAllocData = materialBuffer->AllocateMember(&meshData.Material);
 			}
 		}
+	}
+
+
+	void Renderer::BuildCommandList()
+	{
+		mDevice->ResetCommandAllocator();
+		mDevice->ResetCommandList();
+
+		mDevice->BeginFrame();
+		{
+			ID3D12GraphicsCommandList* commandList = mDevice->GetCommandList();
+			DX12GFXConstantBuffer* const MVPConstantBuffer = mDevice->GetConstantBuffer(mMVPConstantBuffer);
+			DX12GFXConstantBuffer* const lightConstantBuffer = mDevice->GetConstantBuffer(mLightConstantBuffer);
+			DX12GFXConstantBuffer* const perFramePixelShaderConstants = mDevice->GetConstantBuffer(mPerFramePixelShaderConstants);
+
+			MVPConstantBuffer->Reset();
+
+			ID3D12DescriptorHeap* ppDescHeaps[] = { mDevice->GetTextureHeap() };
+			commandList->SetDescriptorHeaps(_countof(ppDescHeaps), ppDescHeaps);
+
+			commandList->SetGraphicsRootConstantBufferView(2, lightConstantBuffer->GetResource()->GetGPUVirtualAddress());
+			commandList->SetGraphicsRootConstantBufferView(5, perFramePixelShaderConstants->GetResource()->GetGPUVirtualAddress());
+
+			commandList->SetGraphicsRoot32BitConstants(1, 3, &camera.Position.GetInternalVec(), 0);
+
+			Matrix4x4 camViewProjMat = camera.ProjectionMat * camera.ViewMat;
+
+			void* pMatrixConstantBufferData = malloc(sizeof(Matrix4x4) * 3);
+
+			for (RenderItemProtocol& itemProtocol : mRenderList)
+			{
+				// #TODO(Josh::This needs to be removed -- an opaque handle should be leased out that will
+				//             get fixed up when we remove render items)
+				if (!itemProtocol.bIsValid)
+				{
+					continue;
+				}
+
+				const float* modelViewPtr = itemProtocol.ModelMatrix.GetValuePtr();
+				const float* modelViewInvPtr = itemProtocol.ModelMatrix.Inverse().GetValuePtr();
+				const float* camViewProjPtr = camViewProjMat.GetValuePtr();
+
+				memcpy(pMatrixConstantBufferData, modelViewPtr, sizeof(Matrix4x4));
+				memcpy((U8*)pMatrixConstantBufferData + sizeof(Matrix4x4), modelViewInvPtr, sizeof(Matrix4x4));
+				memcpy((U8*)pMatrixConstantBufferData + sizeof(Matrix4x4) * 2, camViewProjPtr, sizeof(Matrix4x4));
+
+				CBAllocationData mvpAllocData = MVPConstantBuffer->AllocateMember(pMatrixConstantBufferData);
+				commandList->SetGraphicsRootConstantBufferView(0, mvpAllocData.GPUBaseAddr);
+
+				for (size_t index = 0; index < itemProtocol.MeshData.size(); ++index)
+				{
+					const RenderItemMeshData& meshData = itemProtocol.MeshData[index];
+
+					DX12GFXVertexBuffer* const vertexBuffer = mDevice->GetVertexBuffer(meshData.VertexBuffer);
+					DX12GFXIndexBuffer* const indexBuffer = mDevice->GetIndexBuffer(meshData.IndexBuffer);
+
+					commandList->SetGraphicsRootConstantBufferView(4, meshData.MaterialBufferAllocData.GPUBaseAddr);
+
+					// #NOTE(Josh::Everything should have a default guaranteed diffuse map. For now it also marks the start of the descriptor table)
+					DX12GFXTextureBuffer2D* const diffuseBuffer = mDevice->GetTextureBuffer2D(meshData.TextureDescs[0].TextureBuffer);
+					commandList->SetGraphicsRootDescriptorTable(3, diffuseBuffer->GetDescriptorHandleGPU());
+
+					commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+					commandList->IASetVertexBuffers(0, 1, vertexBuffer->GetBufferView());
+					commandList->IASetIndexBuffer(indexBuffer->GetBufferView());
+					commandList->DrawIndexedInstanced(indexBuffer->GetNumElements(), 1, 0, 0, 0);
+				}
+			}
+
+			delete pMatrixConstantBufferData;
+		}
+		mDevice->EndFrame();
 	}
 
 	void Renderer::EnableVsync(bool bEnabled)

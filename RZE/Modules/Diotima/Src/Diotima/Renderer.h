@@ -134,6 +134,11 @@ namespace Diotima
 		void PrepareLights();
 		void PrepareMaterials();
 
+		// #TODO(Josh::Temporary - this should eventually be made into pre-filled commandlists by virtue
+		//             of a Renderer command submission protocol -- then parsed into underlying API calls.
+		//             For now, just for organization purposes)
+		void BuildCommandList();
+
 	private:
 		Vector2D mCanvasSize;
 
