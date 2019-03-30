@@ -101,7 +101,7 @@ namespace Diotima
 		std::vector<LightItemProtocol> directionalLights;
 		std::vector<LightItemProtocol> pointLights;
 
-		for (LightItemProtocol light : mLightingList)
+		for (LightItemProtocol& light : mLightingList)
 		{
 			if (light.LightType == ELightType::Directional)
 			{
