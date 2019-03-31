@@ -357,7 +357,7 @@ workspace "RZE"
 		targetdir (LibDir)
 		targetname "Diotima"
 
-		dependson { "Perseus", "Utils" }
+		dependson { "Externals", "Perseus", "Utils" }
 
 		filter "action:vs*"
 			pchheader = "StdAfx.h"
@@ -397,7 +397,8 @@ workspace "RZE"
 			"D3DCompiler.lib",
 			-- RZE
 			"Perseus",
-			"RZE_Utils"
+			"RZE_Utils",
+			"Externals"
 		}
 
 		 vpaths
