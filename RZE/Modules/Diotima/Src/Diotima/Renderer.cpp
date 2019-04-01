@@ -159,6 +159,9 @@ namespace Diotima
 			// #TODO(Josh::Just copy pasta from before for now to get RenderItemDrawCall driving the Renderer::Update loop
 				//             Should find a better place for it.)
 			{
+				// Create and copy a buffer of matrices for a given item
+				// Camera matrix should not be here but will be moved 
+				// elsewhere when the frame design stabilizes
 				const float* modelViewPtr = renderItem.ModelMatrix.GetValuePtr();
 				const float* modelViewInvPtr = renderItem.ModelMatrix.Inverse().GetValuePtr();
 				const float* camViewProjPtr = camViewProjMat.GetValuePtr();
