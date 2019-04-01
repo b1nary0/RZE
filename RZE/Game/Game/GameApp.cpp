@@ -23,6 +23,8 @@
 #include <Game/Systems/InteractiveSpawningSystem.h>
 #include <Game/Systems/ProjectileSystem.h>
 
+#include <Game/Components/VelocityComponent.h>
+
 GameApp::GameApp()
 	: RZE_Application()
 {
@@ -35,6 +37,8 @@ GameApp::~GameApp()
 void GameApp::Initialize()
 {
 	RZE_Application::Initialize();
+
+	APOLLO_REGISTER_COMPONENT(VelocityComponent);
 
 	// #TODO(Josh::Putting this comment here because too lazy to do it elsewhere. Hopefully I find it later:
 	//             -- Need to add at least commandline arg like -startscene or something)

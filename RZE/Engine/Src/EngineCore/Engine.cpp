@@ -7,6 +7,7 @@
 #include <Diotima/Graphics/RenderTarget.h>
 
 #include <ECS/Components/CameraComponent.h>
+#include <ECS/Components/LifetimeComponent.h>
 #include <ECS/Components/LightSourceComponent.h>
 #include <ECS/Components/MaterialComponent.h>
 #include <ECS/Components/MeshComponent.h>
@@ -236,6 +237,7 @@ void RZE_Engine::RegisterEngineComponentTypes()
 {
 	APOLLO_REGISTER_COMPONENT(CameraComponent);
 	APOLLO_REGISTER_COMPONENT(LightSourceComponent);
+	APOLLO_REGISTER_COMPONENT(LifetimeComponent);
 	APOLLO_REGISTER_COMPONENT(MaterialComponent);
 	APOLLO_REGISTER_COMPONENT(MeshComponent);
 	APOLLO_REGISTER_COMPONENT(NameComponent);
