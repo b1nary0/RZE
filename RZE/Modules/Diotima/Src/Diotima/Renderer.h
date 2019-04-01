@@ -53,8 +53,6 @@ namespace Diotima
 			U32 IndexBuffer;
 			std::vector<RenderItemTextureDesc> TextureDescs;
 			RenderItemMaterialDesc Material;
-			// #TODO(Josh::These members should be temporary. Need to find a better way to relate these to buffers)
-			CBAllocationData MaterialBufferAllocData;
 		};
 
 		struct RenderItemProtocol
