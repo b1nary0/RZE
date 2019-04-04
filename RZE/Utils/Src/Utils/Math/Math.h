@@ -17,6 +17,7 @@ namespace MathUtils
 namespace VectorUtils
 {
 	constexpr float kEpsilon = 0.00001f;
+	constexpr float kEpsilonSq = kEpsilon * kEpsilon;
 
 	float Dot(const Vector3D& a, const Vector3D& b);
 

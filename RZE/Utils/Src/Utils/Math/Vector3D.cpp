@@ -1,6 +1,7 @@
 #include <Utils/StdAfx.h>
 #include <Utils/Math/Vector3d.h>
 
+#include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Matrix4x4.h>
 
@@ -137,10 +138,21 @@ void Vector3D::operator*=(float scalar)
 	mVec *= scalar;
 }
 
+void Vector3D::operator*=(const Vector3D& rhs)
+{
+	mVec *= rhs.GetInternalVec();
+}
+
 Vector3D Vector3D::operator/(const float scalar) const
 {
 	glm::vec3 retVec = mVec / scalar;
 	return Vector3D(retVec.x, retVec.y, retVec.z);
+}
+
+float Vector3D::operator[](int index) const
+{
+	AssertExpr(index < 3);
+	return mVec[index];
 }
 
 bool Vector3D::operator!=(const Vector3D& rhs) const

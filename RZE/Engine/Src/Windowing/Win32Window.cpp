@@ -140,42 +140,6 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 			AssertFalse();
 		}
 
-		// #NOTE(Josh::Creating dummy context to access wgl functions)
-		HGLRC dummyContext = wglCreateContext(mOSWindowHandleData.deviceContext);
-		if (!dummyContext)
-		{
-			LOG_CONSOLE("<Failure creating dummy render context>");
-			AssertFalse();
-		}
-
-		if (!wglMakeCurrent(mOSWindowHandleData.deviceContext, dummyContext))
-		{
-			LOG_CONSOLE("<Failure setting dummy render context current>");
-			AssertFalse();
-		}
-
-		PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = reinterpret_cast<PFNWGLCREATECONTEXTATTRIBSARBPROC>(wglGetProcAddress("wglCreateContextAttribsARB"));
-		if (wglCreateContextAttribsARB)
-		{
-			int attriblist[] = { WGL_CONTEXT_MAJOR_VERSION_ARB, 4, WGL_CONTEXT_MINOR_VERSION_ARB, 4, WGL_CONTEXT_FLAGS_ARB, 0, 0, WGL_SAMPLES_ARB, 16, 0 };
-			mOSWindowHandleData.renderContext = wglCreateContextAttribsARB(mOSWindowHandleData.deviceContext, 0, attriblist);
-			if (!mOSWindowHandleData.renderContext)
-			{
-				LOG_CONSOLE("<Failure creating real render context>");
-			}
-			else if (!wglMakeCurrent(mOSWindowHandleData.deviceContext, mOSWindowHandleData.renderContext))
-			{
-				LOG_CONSOLE("<Failure setting real render context as current>");
-				AssertFalse();
-			}
-
-			LOG_CONSOLE("<Deleting dummy context>");
-			if (!wglDeleteContext(dummyContext))
-			{
-				LOG_CONSOLE("<Failure deleting dummy context>");
-			}
-		}
-
 		InternalSetWindowPosition(Vector2D(0, 0));
 		// #NOTE(Josh) Gonna put this here for now instead of in Engine.cpp until it has a better home
 		SetWindowPos(GetConsoleWindow(), 0, 1024, 600, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
@@ -317,11 +281,6 @@ void Win32Window::Show()
 	{
 		ShowWindow(mOSWindowHandleData.windowHandle, SW_SHOWNORMAL); // @note SW_SHOWMAXIMIZED for borderless fullscreen. SW_SHOWDEFAULT default
 	}
-}
-
-void Win32Window::BufferSwap() const
-{
-	SwapBuffers(mOSWindowHandleData.deviceContext);
 }
 
 const Win32Window::OSWindowHandleData& Win32Window::GetOSWindowHandleData() const

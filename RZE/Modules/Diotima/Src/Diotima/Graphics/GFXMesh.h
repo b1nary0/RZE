@@ -3,11 +3,9 @@
 #include <unordered_map>
 #include <vector>
 
-#include <Diotima/Driver/OpenGL/OpenGL.h>
-
-#include <Utils/Interfaces/Resource.h>
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector3D.h>
+#include <Utils/PrimitiveDefs.h>
 
 namespace Diotima
 {
@@ -26,10 +24,6 @@ namespace Diotima
 	public:
 		GFXMesh();
 		~GFXMesh();
-
-		OpenGLVAO mVAO;
-		OpenGLVBO mVertexVBO;
-		OpenGLEBO mEBO;
 
 		const GFXMaterial& GetMaterial() { return *mMaterial; }
 		void SetMaterial(GFXMaterial* material);

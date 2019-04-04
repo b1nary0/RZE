@@ -51,10 +51,13 @@ public:
 	Vector3D operator*(const Matrix4x4& rhs) const;
 	Vector3D operator*(float scalar) const;
 	void operator*=(float scalar);
+	void operator*=(const Vector3D& rhs);
 
 	Vector3D operator/(const float scalar) const;
 
 	bool operator!=(const Vector3D& rhs) const;
+
+	float operator[](int index) const;
 
 private:
 	Vector3D(const glm::vec3& vec);

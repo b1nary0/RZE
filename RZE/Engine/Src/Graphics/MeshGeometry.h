@@ -1,11 +1,15 @@
 #pragma once
 
+#include <memory>
+
 #include <Utils/PrimitiveDefs.h>
 
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector3D.h>
 
 class Material;
+class IndexBuffer;
+class VertexBuffer;
 
 struct MeshVertex
 {
@@ -21,6 +25,8 @@ public:
 	MeshGeometry();
 	~MeshGeometry();
 
+	void AllocateGPUData();
+
 	void AddVertex(const MeshVertex& vertex);
 	void AddIndex(U32 index);
 
@@ -30,15 +36,14 @@ public:
 	const std::vector<U32>& GetIndices() const;
 	const std::vector<MeshVertex>& GetVertices();
 
-	Diotima::GFXMesh* GetGPUMesh() const { return mGPUMesh; }
-
-	void OnLoadFinished();
+	U32 GetVertexBuffer() const;
+	U32 GetIndexBuffer() const;
 
 private:
-	Material* mMaterial;
+	std::shared_ptr<VertexBuffer> mVertexBuffer;
+	std::shared_ptr<IndexBuffer> mIndexBuffer;
 
-	// #TODO(Josh::Temp until better implementation. Just to get things working, then will push this down again)
-	Diotima::GFXMesh* mGPUMesh;
+	Material* mMaterial;
 
 	std::vector<MeshVertex> mVertices;
 	std::vector<U32> mIndices;

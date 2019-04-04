@@ -34,6 +34,7 @@ WindowSettings& EngineConfig::GetWindowSettings()
 void EngineConfig::LoadEngineSettings()
 {
 	mEngineSettings.bEnableVsync = Conversions::IntFromString(mINIParser.GetValue("EngineSettings", "EnableVsync", 0)) > 0;
+	mEngineSettings.mMSAASampleCount = Conversions::IntFromString(mINIParser.GetValue("EngineSettings", "MSAASampleCount", "1"));
 }
 
 void EngineConfig::LoadWindowSettings()
@@ -73,7 +74,12 @@ EngineSettings::~EngineSettings()
 {
 }
 
-const bool EngineSettings::IsVSyncEnabled() const
+bool EngineSettings::IsVSyncEnabled() const
 {
 	return bEnableVsync;
+}
+
+U32 EngineSettings::GetMSAASampleCount() const
+{
+	return mMSAASampleCount;
 }

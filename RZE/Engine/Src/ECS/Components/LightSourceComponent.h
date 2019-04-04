@@ -4,6 +4,12 @@
 
 #include <Utils/Math/Vector3D.h>
 
+enum class ELightType
+{
+	Directional = 0,
+	Point
+};
+
 struct LightSourceComponent final : public Apollo::Component<LightSourceComponent>
 {
 	LightSourceComponent()
@@ -18,7 +24,13 @@ struct LightSourceComponent final : public Apollo::Component<LightSourceComponen
 		, Strength(strength)
 	{}
 
-	Vector3D Color;
+	LightSourceComponent(ELightType lightType, const Vector3D& color, float strength)
+		: LightType(lightType)
+		, Color(color)
+		, Strength(strength)
+	{}
 
+	ELightType LightType;
+	Vector3D Color;
 	float Strength { 1.0f };
 };

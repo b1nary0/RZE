@@ -3,14 +3,10 @@
 
 #include <Apollo/ECS/EntityComponentFilter.h>
 
-#include <Diotima/Graphics/RenderTarget.h>
-#include <Diotima/Graphics/GFXMaterial.h>
-#include <Diotima/Graphics/GFXMesh.h>
-#include <Diotima/Graphics/GFXTexture2D.h>
-#include <Diotima/Shaders/ShaderPipeline.h>
-
 #include <Graphics/Material.h>
 #include <Graphics/Texture2D.h>
+#include <Graphics/IndexBuffer.h>
+#include <Graphics/VertexBuffer.h>
 
 #include <ECS/Components/CameraComponent.h>
 #include <ECS/Components/LightSourceComponent.h>
@@ -28,25 +24,6 @@
 
 static Vector4D sDefaultFragColor(0.25f, 0.25f, 0.25f, 1.0f);
 
-// Render helpers
-//-----------------------------------------
-Diotima::GFXShaderPipeline* gForwardShader;
-Diotima::GFXShaderPipeline* gDepthPassShader;
-
-// #TODO(Josh::See below)
-//////////////////////////////////////////////////////////////////////////
-// This is a problem. Maybe these shouldnt be resources at this level and instead we have a resource that
-// is the entire shader pipeline attached to the material... Maybe can store these as a renderer-distributed thing.
-ResourceHandle texVertShaderHandle;
-ResourceHandle texFragShaderHandle;
-
-ResourceHandle depthPassVertShaderHandle;
-ResourceHandle depthPassFragShaderHandle;
-//////////////////////////////////////////////////////////////////////////
-void CreateForwardShader();
-void CreateDepthPassShader();
-//-----------------------------------------
-
 RenderSystem::RenderSystem(Apollo::EntityHandler* const entityHandler)
 	: Apollo::EntitySystem(entityHandler)
 {
@@ -59,12 +36,6 @@ void RenderSystem::Initialize()
 	InternalGetComponentFilter().AddFilterType<MeshComponent>();
 
 	RegisterForComponentNotifications();
-
-	CreateForwardShader();
-	CreateDepthPassShader();
-
-	RZE_Application::RZE().GetRenderer().mForwardShader = gForwardShader;
-	RZE_Application::RZE().GetRenderer().mDepthPassShader = gDepthPassShader;
 }
 
 void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
@@ -82,17 +53,18 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 	Diotima::Renderer::CameraItemProtocol camera;
 	camera.ProjectionMat = camComp->ProjectionMat;
 	camera.ViewMat = camComp->ViewMat;
+	camera.Position = transfComp->Position;
 	renderer.SetCamera(camera);
 	
 	//Perseus::Job::Task work([this, entities, transfComp, &renderer, &handler]()
 	{
-		for (auto& entity : entities)
-		{
-			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
-
-			Diotima::Renderer::RenderItemProtocol& item = renderer.GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
-			item.ModelMatrix = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
-		}
+ 		for (auto& entity : entities)
+ 		{
+ 			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
+ 
+ 			Diotima::Renderer::RenderItemProtocol& item = renderer.GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
+ 			item.ModelMatrix = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
+ 		}
 	}/*)*/;
 	//Perseus::JobScheduler::Get().PushJob(work);
 
@@ -114,37 +86,6 @@ void RenderSystem::ShutDown()
 {
 }
 
-// #TODO(Josh::The concept of a render-side material seems faulty. Maybe set it up as a set of parameters for the shader/pass)
-Diotima::GFXMaterial* TEMPHACK_ConvertMaterialToGPUMaterial(const Material& material)
-{
-	Diotima::GFXMaterial* pMaterial = new Diotima::GFXMaterial();
-	if (material.HasDiffuse())
-	{
-		const Texture2D& diffuse = material.GetDiffuse();
-		Diotima::GFXTexture2D* gpuTexture = new Diotima::GFXTexture2D(diffuse.GetRawData(), static_cast<U32>(diffuse.GetDimensions().X()), static_cast<U32>(diffuse.GetDimensions().Y()), 0, Diotima::ETextureType::Diffuse);
-		pMaterial->AddTexture(gpuTexture);
-	}
-
-	if (material.HasSpecular())
-	{
-		const Texture2D& specular = material.GetSpecular();
-		Diotima::GFXTexture2D* gpuTexture = new Diotima::GFXTexture2D(specular.GetRawData(), static_cast<U32>(specular.GetDimensions().X()), static_cast<U32>(specular.GetDimensions().Y()), 0, Diotima::ETextureType::Specular);
-		pMaterial->AddTexture(gpuTexture);
-	}
-
-	if (material.HasNormal())
-	{
-		const Texture2D& normal = material.GetNormal();
-		Diotima::GFXTexture2D* gpuTexture = new Diotima::GFXTexture2D(normal.GetRawData(), static_cast<U32>(normal.GetDimensions().X()), static_cast<U32>(normal.GetDimensions().Y()), 0, Diotima::ETextureType::Normal);
-		pMaterial->AddTexture(gpuTexture);
-	}
-
-	pMaterial->Shininess = material.Shininess;
-	pMaterial->Opacity = material.Opacity;
-
-	return pMaterial;
-}
-
 void RenderSystem::RegisterForComponentNotifications()
 {
 	Apollo::EntityHandler& handler = InternalGetEntityHandler();
@@ -162,16 +103,25 @@ void RenderSystem::RegisterForComponentNotifications()
 		{
 			Model3D* const modelData = RZE_Application::RZE().GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
 
-			std::vector<Diotima::GFXMesh*> gpuMeshes;
-			gpuMeshes.reserve(modelData->GetStaticMesh().GetSubMeshes().size());
-			for (const MeshGeometry& meshGeometry : modelData->GetStaticMesh().GetSubMeshes())
-			{
-				gpuMeshes.push_back(meshGeometry.GetGPUMesh());
-				gpuMeshes.back()->SetMaterial(TEMPHACK_ConvertMaterialToGPUMaterial(meshGeometry.GetMaterial()));
-			}
 			Diotima::Renderer::RenderItemProtocol item;
-			item.MeshData = std::move(gpuMeshes);
+			for (const MeshGeometry& mesh : modelData->GetStaticMesh().GetSubMeshes())
+			{
+				Diotima::Renderer::RenderItemMeshData meshData;
+				meshData.VertexBuffer = mesh.GetVertexBuffer();
+				meshData.IndexBuffer = mesh.GetIndexBuffer();
 
+				AssertExpr(mesh.GetMaterial().HasDiffuse());
+				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetDiffuse().GetTextureBufferID(), Diotima::Renderer::ETextureType::Diffuse);
+				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetSpecular().GetTextureBufferID(), Diotima::Renderer::ETextureType::Specular);
+				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetNormal().GetTextureBufferID(), Diotima::Renderer::ETextureType::Normal);
+
+				Diotima::Renderer::RenderItemMaterialDesc matDesc;
+				matDesc.Shininess = mesh.GetMaterial().Shininess;
+
+				meshData.Material = matDesc;
+
+				item.MeshData.push_back(meshData);
+			}
 			Int32 itemIdx = RZE_Application::RZE().GetRenderer().AddRenderItem(item);
 			mRenderItemEntityMap[entityID] = itemIdx;
 		}
@@ -185,6 +135,7 @@ void RenderSystem::RegisterForComponentNotifications()
 		AssertNotNull(lightComp);
 
 		Diotima::Renderer::LightItemProtocol item;
+		item.LightType = static_cast<Diotima::Renderer::ELightType>(lightComp->LightType);
 		item.Color = lightComp->Color;
 		item.Strength = lightComp->Strength;
 
@@ -228,62 +179,6 @@ void RenderSystem::RegisterForComponentNotifications()
 
 void RenderSystem::GenerateCameraMatrices(CameraComponent& cameraComponent, const TransformComponent& transformComponent)
 {
-	cameraComponent.AspectRatio = static_cast<float>(RZE_Application::RZE().GetApplication().GetRenderTarget().GetWidth()) / static_cast<float>(RZE_Application::RZE().GetApplication().GetRenderTarget().GetHeight());
 	cameraComponent.ProjectionMat = Matrix4x4::CreatePerspectiveMatrix(cameraComponent.FOV, cameraComponent.AspectRatio, cameraComponent.NearCull, cameraComponent.FarCull);
 	cameraComponent.ViewMat = Matrix4x4::CreateViewMatrix(transformComponent.Position, transformComponent.Position + cameraComponent.Forward, cameraComponent.UpDir);
-}
-
-
-
-// -------------------------------------------------------------------------------
-
-
-
-/////////////
-/////////// These are just dev helpers until the time of the great render comes along
-//////
-void CreateForwardShader()
-{
-	const FilePath vertShaderFilePath("Assets/Shaders/TextureVert.shader");
-	const FilePath fragShaderFilePath("Assets/Shaders/TextureFrag.shader");
-
-	texVertShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "TextureVertShader");
-	texFragShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "TextureFragShader");
-
-	Diotima::GFXShader* vertShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(texVertShaderHandle);
-	vertShader->Create();
-	vertShader->Compile();
-
-	Diotima::GFXShader* fragShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(texFragShaderHandle);
-	fragShader->Create();
-	fragShader->Compile();
-
-	gForwardShader = new Diotima::GFXShaderPipeline("TextureShader");
-	gForwardShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Vertex, vertShader);
-	gForwardShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Fragment, fragShader);
-
-	gForwardShader->GenerateShaderProgram();
-}
-
-void CreateDepthPassShader()
-{
-	const FilePath vertShaderFilePath("Assets/Shaders/DepthVert.shader");
-	const FilePath fragShaderFilePath("Assets/Shaders/EmptyFrag.shader");
-
-	depthPassVertShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "DepthPassVertShader");
-	depthPassFragShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "DepthPassFragShader");
-
-	Diotima::GFXShader* vertShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(depthPassVertShaderHandle);
-	vertShader->Create();
-	vertShader->Compile();
-
-	Diotima::GFXShader* fragShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(depthPassFragShaderHandle);
-	fragShader->Create();
-	fragShader->Compile();
-
-	gDepthPassShader = new Diotima::GFXShaderPipeline("DepthPassShaderPipeline");
-	gDepthPassShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Vertex, vertShader);
-	gDepthPassShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Fragment, fragShader);
-
-	gDepthPassShader->GenerateShaderProgram();
 }

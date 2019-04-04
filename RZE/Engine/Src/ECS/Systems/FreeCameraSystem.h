@@ -34,6 +34,6 @@ private:
 	// Keeping own version of previous position agnostic of the engine one because we only want to know
 	// the previous position as it relates to these calculations. Maybe there is a better way but this is now.
 	Vector3D mMousePrevPos;
-	Vector3D mPitchYawRoll;
+	Vector3D mYawPitchRoll;
 	Vector3D mOrbitPoint;
 };

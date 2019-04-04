@@ -6,6 +6,7 @@
 #include <ECS/Components/MeshComponent.h>
 #include <ECS/Components/NameComponent.h>
 #include <ECS/Components/TransformComponent.h>
+#include <ECS/Systems/LifetimeSystem.h>
 #include <ECS/Systems/RenderSystem.h>
 
 #include <RapidJSON/document.h>
@@ -26,6 +27,8 @@ void GameScene::Initialize()
 {
 	mEntityHandler.Initialize();
 
+	// #TODO(Josh::This is the order of update. Need to make it so we can call these whenever)
+	mEntityHandler.AddSystem<LifetimeSystem>();
 	mEntityHandler.AddSystem<RenderSystem>();
 }
 
@@ -85,10 +88,12 @@ void GameScene::Load(FilePath filePath)
 				if (comp != comVal.MemberEnd())
 				{
 					rapidjson::Value& memVal = comp->value;
+
+					ELightType lightType = static_cast<ELightType>(memVal["LightType"].GetUint());
 					Vector3D color(memVal["Color"][0].GetFloat(), memVal["Color"][1].GetFloat(), memVal["Color"][2].GetFloat());
 					float strength = memVal["Strength"].GetFloat();
 
-					GetEntityHandler().AddComponent<LightSourceComponent>(id, color, strength);
+					GetEntityHandler().AddComponent<LightSourceComponent>(id, lightType, color, strength);
 				}
 
 				comp = comVal.FindMember("CameraComponent");

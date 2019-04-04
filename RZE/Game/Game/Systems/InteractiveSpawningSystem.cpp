@@ -26,7 +26,7 @@ void InteractiveSpawningSystem::Update(const std::vector<Apollo::EntityID>& enti
 
 	if (mEntityTransform != nullptr)
 	{
-		if (mEntityTransform->Position.X() > 5.0f || mEntityTransform->Position.X() < -5.0f)
+		if (mEntityTransform->Position.X() > -5.0f || mEntityTransform->Position.X() < -20.0f)
 		{
 			velocity *= -1;
 		}

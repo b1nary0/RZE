@@ -2,6 +2,7 @@
 
 #include <EngineCore/Config/Config.h>
 
+#include <Utils/PrimitiveDefs.h>
 #include <Utils/Math/Vector2D.h>
 
 class FilePath;
@@ -15,10 +16,12 @@ public:
 	~EngineSettings();
 
 public:
-	const bool IsVSyncEnabled() const;
+	bool IsVSyncEnabled() const;
+	U32 GetMSAASampleCount() const;
 
 private:
 	bool bEnableVsync;
+	U32 mMSAASampleCount;
 };
 
 class WindowSettings
