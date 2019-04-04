@@ -15,6 +15,9 @@
 #include <Diotima/Driver/DX12/DX12GFXVertexBuffer.h>
 #include <Diotima/Driver/DX12/DX12GFXTextureBuffer2D.h>
 
+// #TODO(Josh::Temp)
+#define MAX_LIGHTS 128
+
 namespace Diotima
 {
 	Renderer::Renderer()
@@ -91,7 +94,7 @@ namespace Diotima
 		mDevice->Initialize();
 
 		mMVPConstantBuffer = mDevice->CreateConstantBuffer(sizeof(Matrix4x4) * 3, 1024);
-		mLightConstantBuffer = mDevice->CreateConstantBuffer(sizeof(LightItemProtocol), 64);
+		mLightConstantBuffer = mDevice->CreateConstantBuffer(sizeof(LightItemProtocol) * MAX_LIGHTS, 1);
 		mMaterialBuffer = mDevice->CreateConstantBuffer(sizeof(RenderItemMaterialDesc), 1024);
 		mPerFramePixelShaderConstants = mDevice->CreateConstantBuffer(sizeof(U32) * 2, 1024);
 	}
@@ -116,10 +119,7 @@ namespace Diotima
 		DX12GFXConstantBuffer* const lightConstantBuffer = mDevice->GetConstantBuffer(mLightConstantBuffer);
 		lightConstantBuffer->Reset();
 
-		for (LightItemProtocol& light : pointLights)
-		{
-			lightConstantBuffer->AllocateMember(&light);
-		}
+		lightConstantBuffer->AllocateMember(pointLights.data());
 		//lightConstantBuffer->SetData(directionalLights.data(), static_cast<U32>(sizeof(LightItemProtocol) * directionalLights.size()), 1);
 
 		DX12GFXConstantBuffer* const perFramePixelShaderConstants = mDevice->GetConstantBuffer(mPerFramePixelShaderConstants);
