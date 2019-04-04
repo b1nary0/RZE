@@ -14,8 +14,6 @@
 #include <ECS/Components/NameComponent.h>
 #include <ECS/Components/TransformComponent.h>
 
-#include <ECS/Systems/RenderSystem.h>
-
 #include <Windowing/Win32Window.h>
 #include <Windowing/WinKeyCodes.h>
 
