@@ -56,17 +56,38 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 	camera.Position = transfComp->Position;
 	renderer.SetCamera(camera);
 	
-	//Perseus::Job::Task work([this, entities, transfComp, &renderer, &handler]()
+	size_t jobSize = entities.size() / 2;
+	std::vector<Apollo::EntityID> workItems0;
+	workItems0.reserve(jobSize);
+	std::copy(entities.begin(), entities.begin() + jobSize, std::back_inserter(workItems0));
+	Perseus::Job::Task work0([this, workItems0, &renderer, &handler]()
 	{
- 		for (auto& entity : entities)
+ 		for (auto& entity : workItems0)
  		{
  			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
  
  			Diotima::Renderer::RenderItemProtocol& item = renderer.GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
  			item.ModelMatrix = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
  		}
-	}/*)*/;
-	//Perseus::JobScheduler::Get().PushJob(work);
+	});
+
+	std::vector<Apollo::EntityID> workItems1;
+	workItems1.reserve(jobSize);
+	std::copy(entities.begin() + jobSize, entities.end(), std::back_inserter(workItems1));
+	Perseus::Job::Task work1([this, workItems1, &renderer, &handler]()
+	{
+		for (auto& entity : workItems1)
+		{
+			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
+
+			Diotima::Renderer::RenderItemProtocol& item = renderer.GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
+			item.ModelMatrix = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
+		}
+	});
+
+	Perseus::JobScheduler::Get().PushJob(work0);
+	Perseus::JobScheduler::Get().PushJob(work1);
+	Perseus::JobScheduler::Get().Wait();
 
 	Functor<void, Apollo::EntityID> LightSourceFunc([this, &handler, &renderer](Apollo::EntityID entity)
 	{

@@ -2,6 +2,8 @@
 
 #include <Brofiler/Brofiler.h>
 
+#include <Perseus/JobSystem/JobScheduler.h>
+
 #include <Utils/Conversions.h>
 #include <Utils/MemoryUtils.h>
 #include <Utils/DebugUtils/Debug.h>
@@ -93,10 +95,10 @@ namespace Diotima
 		mDevice->SetMSAASampleCount(mMSAASampleCount);
 		mDevice->Initialize();
 
-		mMVPConstantBuffer = mDevice->CreateConstantBuffer(sizeof(Matrix4x4) * 3, 1024);
+		mMVPConstantBuffer = mDevice->CreateConstantBuffer(sizeof(Matrix4x4) * 3, 65536);
 		mLightConstantBuffer = mDevice->CreateConstantBuffer(sizeof(LightItemProtocol) * MAX_LIGHTS, 1);
-		mMaterialBuffer = mDevice->CreateConstantBuffer(sizeof(RenderItemMaterialDesc), 1024);
-		mPerFramePixelShaderConstants = mDevice->CreateConstantBuffer(sizeof(U32) * 2, 1024);
+		mMaterialBuffer = mDevice->CreateConstantBuffer(sizeof(RenderItemMaterialDesc), 65536);
+		mPerFramePixelShaderConstants = mDevice->CreateConstantBuffer(sizeof(U32) * 2, 1);
 	}
 
 	void Renderer::PrepareLights()
