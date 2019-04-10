@@ -46,6 +46,10 @@ namespace Diotima
 		U32 alignedSize = MemoryUtils::AlignSize(mMemberSize, 255);
 		AssertExpr(mCurrAddr + alignedSize <= mResourceEnd);
 
+		// #TODO(Josh::I'm missing something here. This will write to an illegal address, but only
+		//             sometimes - after the program has shutdown and restarted quickly. If you wait
+		//             a little bit, it's fine. Also, when I check mResourceStart frame by frame, the
+		//             address is different.. why?)
 		memcpy(mCurrAddr, data, mMemberSize);
 		mCurrAddr = mCurrAddr + alignedSize;
 		++mNumAllocations;
