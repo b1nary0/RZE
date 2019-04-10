@@ -44,7 +44,7 @@ namespace Diotima
 	CBAllocationData DX12GFXConstantBuffer::AllocateMember(const void* data)
 	{
 		U32 alignedSize = MemoryUtils::AlignSize(mMemberSize, 255);
-		AssertExpr(mCurrAddr + (alignedSize - 1) < mResourceEnd);
+		AssertExpr(mCurrAddr + alignedSize <= mResourceEnd);
 
 		memcpy(mCurrAddr, data, mMemberSize);
 		mCurrAddr = mCurrAddr + alignedSize;
