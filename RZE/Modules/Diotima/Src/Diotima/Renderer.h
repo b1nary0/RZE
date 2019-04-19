@@ -68,7 +68,8 @@ namespace Diotima
 		enum ELightType : U32
 		{
 			Directional = 0,
-			Point
+			Point,
+			Count
 		};
 
 		struct LightItemProtocol
@@ -156,7 +157,9 @@ namespace Diotima
 		CameraItemProtocol camera;
 		std::vector<RenderItemProtocol> mRenderItems;
 		std::vector<RenderItemDrawCall> mPerFrameDrawCalls;
+
 		std::vector<LightItemProtocol> mLightingList;
+		U32 mLightCounts[ELightType::Count] { 0 };
 
 		std::queue<Int32> mFreeRenderListIndices;
 		

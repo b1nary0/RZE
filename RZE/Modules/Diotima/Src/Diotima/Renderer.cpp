@@ -24,6 +24,7 @@ namespace Diotima
 {
 	Renderer::Renderer()
 	{
+		mLightingList.reserve(MAX_LIGHTS);
 	}
 
 	Renderer::~Renderer()
@@ -60,6 +61,8 @@ namespace Diotima
 	Int32 Renderer::AddLightItem(const LightItemProtocol& itemProtocol)
 	{
 		mLightingList.emplace_back(std::move(itemProtocol));
+
+		++mLightCounts[itemProtocol.LightType];
 		return static_cast<Int32>(mLightingList.size() - 1);
 	}
 
@@ -103,30 +106,19 @@ namespace Diotima
 
 	void Renderer::PrepareLights()
 	{
-		std::vector<LightItemProtocol> directionalLights;
-		std::vector<LightItemProtocol> pointLights;
-
-		for (LightItemProtocol& light : mLightingList)
+		std::sort(mLightingList.begin(), mLightingList.end(), [](const LightItemProtocol& light0, const LightItemProtocol& light1)
 		{
-			if (light.LightType == ELightType::Directional)
-			{
-				directionalLights.push_back(light);
-			}
-			else
-			{
-				pointLights.push_back(light);
-			}
-		}
+			return light0.LightType > light1.LightType;
+		});
 
 		DX12GFXConstantBuffer* const lightConstantBuffer = mDevice->GetConstantBuffer(mLightConstantBuffer);
 		lightConstantBuffer->Reset();
 
-		lightConstantBuffer->AllocateMember(pointLights.data());
-		//lightConstantBuffer->SetData(directionalLights.data(), static_cast<U32>(sizeof(LightItemProtocol) * directionalLights.size()), 1);
+		lightConstantBuffer->AllocateMember(mLightingList.data());
 
 		DX12GFXConstantBuffer* const perFramePixelShaderConstants = mDevice->GetConstantBuffer(mPerFramePixelShaderConstants);
 		perFramePixelShaderConstants->Reset();
-		U32 lightCounts[2] = { static_cast<U32>(pointLights.size()), static_cast<U32>(directionalLights.size()) };
+		U32 lightCounts[2] = { mLightCounts[ELightType::Point], mLightCounts[ELightType::Directional] };
 		perFramePixelShaderConstants->AllocateMember(lightCounts);
 	}
 
