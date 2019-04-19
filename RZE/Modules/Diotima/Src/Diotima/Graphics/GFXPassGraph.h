@@ -2,7 +2,7 @@
 
 namespace Diotima
 {
-	// GFXPassGraph is the systemic representation of GFXRenderPass.
+	// GFXPassGraph is the systemic implementation of GFXRenderPass.
 	// It provides the API to compile, prepare, and execute the frame graph,
 	// ?? ultimately culminating in the final frame output ??
 	class GFXPassGraph

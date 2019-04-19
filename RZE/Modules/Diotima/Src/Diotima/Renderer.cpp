@@ -112,13 +112,14 @@ namespace Diotima
 		});
 
 		DX12GFXConstantBuffer* const lightConstantBuffer = mDevice->GetConstantBuffer(mLightConstantBuffer);
+		DX12GFXConstantBuffer* const perFramePixelShaderConstants = mDevice->GetConstantBuffer(mPerFramePixelShaderConstants);
+		
 		lightConstantBuffer->Reset();
+		perFramePixelShaderConstants->Reset();
+
+		U32 lightCounts[2] = { mLightCounts[ELightType::Point], mLightCounts[ELightType::Directional] };
 
 		lightConstantBuffer->AllocateMember(mLightingList.data());
-
-		DX12GFXConstantBuffer* const perFramePixelShaderConstants = mDevice->GetConstantBuffer(mPerFramePixelShaderConstants);
-		perFramePixelShaderConstants->Reset();
-		U32 lightCounts[2] = { mLightCounts[ELightType::Point], mLightCounts[ELightType::Directional] };
 		perFramePixelShaderConstants->AllocateMember(lightCounts);
 	}
 

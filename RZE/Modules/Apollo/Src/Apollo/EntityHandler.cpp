@@ -92,7 +92,7 @@ namespace Apollo
 		}
 
 		mEntities[entityID].mComponentSet[componentID] = false;
-		delete mEntityComponentMap[entityID][componentID];
+		delete component;
 		mEntityComponentMap[entityID][componentID] = nullptr;
 	}
 
