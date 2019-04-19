@@ -17,6 +17,8 @@ namespace Diotima
 	// DX12 Temp
 	class DX12GFXDevice;
 
+	class GFXPassGraph;
+
 	enum class EBufferType
 	{
 		BufferType_Vertex
@@ -152,14 +154,14 @@ namespace Diotima
 		void BuildCommandList();
 
 	private:
+		CameraItemProtocol camera;
 		Vector2D mCanvasSize;
 
-		CameraItemProtocol camera;
-		std::vector<RenderItemProtocol> mRenderItems;
-		std::vector<RenderItemDrawCall> mPerFrameDrawCalls;
+		U32 mLightCounts[ELightType::Count] { 0 };
 
 		std::vector<LightItemProtocol> mLightingList;
-		U32 mLightCounts[ELightType::Count] { 0 };
+		std::vector<RenderItemProtocol> mRenderItems;
+		std::vector<RenderItemDrawCall> mPerFrameDrawCalls;
 
 		std::queue<Int32> mFreeRenderListIndices;
 		
@@ -173,6 +175,8 @@ namespace Diotima
 		U32 mMaterialBuffer; // Per mesh data
 		U32 mPerFramePixelShaderConstants; // Per frame data
 
+		std::unique_ptr<GFXPassGraph> mPassGraph;
+		
 		std::unique_ptr<DX12GFXDevice> mDevice;
 
 		void* mWindowHandle;

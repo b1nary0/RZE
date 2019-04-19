@@ -2,6 +2,8 @@
 
 #include <Brofiler/Brofiler.h>
 
+#include <Diotima/Graphics/GFXPassGraph.h>
+
 #include <Perseus/JobSystem/JobScheduler.h>
 
 #include <Utils/Conversions.h>
@@ -23,6 +25,7 @@
 namespace Diotima
 {
 	Renderer::Renderer()
+		: mPassGraph(std::make_unique<GFXPassGraph>())
 	{
 		mLightingList.reserve(MAX_LIGHTS);
 	}

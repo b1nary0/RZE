@@ -11,6 +11,10 @@ namespace Diotima
 		GFXPassGraph() = default;
 		~GFXPassGraph() = default;
 
+		// #TODO(Execute will set up the frame environment and 
+		//       should return the final render target, the result of n GFXRenderPasses.)
+		void Execute();
+
 	private:
 		// #TODO(Josh::Need a resource tracking/managing backing for the input/output resources
 		//             which implies that we need to represent the concept of a GPU resource as
