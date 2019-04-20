@@ -22,6 +22,6 @@ public:
 	bool IsValid();
 
 private:
-	std::string mAbsolutePath;
 	std::string mRelativePath;
+	std::string mAbsolutePath;
 };

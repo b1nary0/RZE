@@ -489,7 +489,7 @@ namespace Diotima
 	void DX12GFXDevice::CreateTextureHeap()
 	{
 		D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-		heapDesc.NumDescriptors = 32;
+		heapDesc.NumDescriptors = 128;
 		heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 		mDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&mTextureHeap));

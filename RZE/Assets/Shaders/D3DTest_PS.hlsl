@@ -34,7 +34,7 @@ struct MATERIAL_DATA
 
 cbuffer LightConstantBuffer : register(b0, space1)
 {
-	LIGHT_INPUT_DESC point_lights[2];
+	LIGHT_INPUT_DESC lights[128];
 };
 
 cbuffer CameraRootConstant : register(b0, space2)
@@ -87,7 +87,7 @@ float CalcAttenuation(float dist, float falloffStart, float falloffEnd)
 	return saturate((falloffEnd - dist) / (falloffEnd - falloffStart));
 }
 
-float CalculatePointLight(float3 pixelPos, float3 lightPos, float3 normal, float3 toEye)
+float CalculatePointLight(float3 pixelPos, float3 lightPos, float3 normal, float3 toEye, float1 strength)
 {
 	float tempFalloffStart = 8.0f;
 	float tempFalloffEnd = 24.0f;
@@ -103,7 +103,7 @@ float CalculatePointLight(float3 pixelPos, float3 lightPos, float3 normal, float
 	lightVec = normalize(lightVec);
 	
 	float ndotl = max(dot(lightVec, normal), 0.0f);
-	float3 lightStrength = point_lights[0].Strength * ndotl;
+	float3 lightStrength = strength * ndotl;
 	
 	float att = CalcAttenuation(distance, tempFalloffStart, tempFalloffEnd);
 	lightStrength *= att;
@@ -127,7 +127,7 @@ float4 PSMain(PS_IN input) : SV_TARGET
 	float3 lightAccum;
 	for (uint pointLightIndex = 0; pointLightIndex < PointLightCount; ++pointLightIndex)
 	{
-		LIGHT_INPUT_DESC light = point_lights[pointLightIndex];
+		LIGHT_INPUT_DESC light = lights[pointLightIndex];
 
 		float3 lightDir = normalize(light.Position - input.FragPos);
 		float3 viewDir = normalize(cameraDesc.Position - input.FragPos);
@@ -135,7 +135,27 @@ float4 PSMain(PS_IN input) : SV_TARGET
 		float diff = max(0.0f, saturate(dot(normal, lightDir)));
 		float specular = CalculateBlinnPhong(viewDir, lightDir, normal);
 		
-		float lightStrength = CalculatePointLight(input.FragPos, light.Position, normal, viewDir);
+		float lightStrength = CalculatePointLight(input.FragPos, light.Position, normal, viewDir, light.Strength);
+		
+		float3 ambientResult = ambientCoeff * diffSample.rgb;
+		float3 diffuseResult = light.Color.rgb * lightStrength;
+		float3 specularResult = specular * lightStrength * light.Color.rgb;
+		
+		float3 result = (diffSample.rgb * (ambientResult + diffuseResult)) + (specularResult * specularSample.rgb);
+		lightAccum += result;
+	}
+
+	for (uint directionalLightIndex = PointLightCount; directionalLightIndex < DirectionalLightCount; ++directionalLightIndex)
+	{
+		LIGHT_INPUT_DESC light = lights[directionalLightIndex];
+
+		float3 lightDir = normalize(light.Position - input.FragPos);
+		float3 viewDir = normalize(cameraDesc.Position - input.FragPos);
+		
+		float diff = max(0.0f, saturate(dot(normal, lightDir)));
+		float specular = CalculateBlinnPhong(viewDir, lightDir, normal);
+		
+		float lightStrength = light.Strength;
 		
 		float3 ambientResult = ambientCoeff * diffSample.rgb;
 		float3 diffuseResult = light.Color.rgb * lightStrength;
