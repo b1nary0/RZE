@@ -76,7 +76,7 @@ float3 CalculateBumpNormal(float3 inNormal, float3 inTangent, float3 inBumpMapSa
 	tangent = normalize(tangent - dot(tangent, inNormal) * inNormal);
 	
 	float3 biTangent = cross(tangent, inNormal);
-	float3 bumpMapNormal = (16.0f * inBumpMapSample) - 1.0f;
+	float3 bumpMapNormal = (2.0f * inBumpMapSample) - 1.0f;
 	
 	float3x3 TBN = float3x3(tangent, biTangent, inNormal);
 	float3 newNormal = normalize(mul(bumpMapNormal, TBN));
