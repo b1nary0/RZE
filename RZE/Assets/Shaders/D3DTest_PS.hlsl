@@ -115,7 +115,7 @@ float CalculatePointLight(float3 pixelPos, float3 lightPos, float3 normal, float
 
 float4 PSMain(PS_IN input) : SV_TARGET
 {
-	float ambientCoeff = 0.075f;
+	float ambientCoeff = 0.2f;
 	
 	float3 normal = normalize(input.Normal);
 	float3 tangent = normalize(input.Tangent);
