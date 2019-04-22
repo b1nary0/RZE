@@ -6,8 +6,8 @@
 
 namespace Diotima
 {
-	constexpr U32 kWidth = 3840;
-	constexpr U32 kHeight = 2160;
+	constexpr U32 kWidth = 1920;
+	constexpr U32 kHeight = 1080;
 
 	void DX12GFXDepthStencilBuffer::Allocate()
 	{
