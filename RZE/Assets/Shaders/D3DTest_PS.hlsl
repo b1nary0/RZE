@@ -8,7 +8,9 @@ struct PS_IN
 	float3 FragPos : POSITION;
 };
 
-Texture2D textures[3] : register(t0);
+Texture2D diffuse : register(t0);
+Texture2D specular : register(t1);
+Texture2D bump : register(t2);
 
 SamplerState s1 : register(s0);
 
@@ -74,7 +76,7 @@ float3 CalculateBumpNormal(float3 inNormal, float3 inTangent, float3 inBumpMapSa
 	tangent = normalize(tangent - dot(tangent, inNormal) * inNormal);
 	
 	float3 biTangent = cross(tangent, inNormal);
-	float3 bumpMapNormal = (2.0f * inBumpMapSample) - 1.0f;
+	float3 bumpMapNormal = (16.0f * inBumpMapSample) - 1.0f;
 	
 	float3x3 TBN = float3x3(tangent, biTangent, inNormal);
 	float3 newNormal = normalize(mul(bumpMapNormal, TBN));
@@ -118,9 +120,9 @@ float4 PSMain(PS_IN input) : SV_TARGET
 	float3 normal = normalize(input.Normal);
 	float3 tangent = normalize(input.Tangent);
 	
-	float4 diffSample = textures[0].Sample(s1, input.Color);
-	float4 specularSample = textures[1].Sample(s1, input.Color);
-	float4 bumpSample = textures[2].Sample(s1, input.Color);
+	float4 diffSample = diffuse.Sample(s1, input.Color);
+	float4 specularSample = specular.Sample(s1, input.Color);
+	float4 bumpSample = bump.Sample(s1, input.Color);
 	
 	normal = CalculateBumpNormal(normal, tangent, bumpSample.rgb);
 	

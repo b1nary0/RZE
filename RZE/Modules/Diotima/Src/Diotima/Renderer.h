@@ -104,7 +104,9 @@ namespace Diotima
 		{
 			U32 VertexBuffer;
 			U32 IndexBuffer;
-			U32 TextureSlot; // Serves as the base descriptor for a descriptor range. Right now is D/S/N per mesh
+			U32 TextureSlot0; // Serves as the base descriptor for a descriptor range. Right now is D/S/N per mesh
+			U32 TextureSlot1;
+			U32 TextureSlot2;
 			CBAllocationData MaterialSlot;
 			CBAllocationData MatrixSlot;
 		};

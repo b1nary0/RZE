@@ -85,6 +85,10 @@ namespace Diotima
 		void CreateMipGenPSO();
 
 	private:
+#if defined(_DEBUG)
+		ComPtr<ID3D12Debug> mDebugController;
+#endif
+
 		ComPtr<ID3D12Device> mDevice;
 
 		ComPtr<IDXGIFactory4> mFactory;

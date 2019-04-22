@@ -61,10 +61,9 @@ namespace Diotima
 	void DX12GFXDevice::Initialize()
 	{
 #if defined(_DEBUG)
-		ComPtr<ID3D12Debug> debugController;
-		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
+		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&mDebugController))))
 		{
-			debugController->EnableDebugLayer();
+			mDebugController->EnableDebugLayer();
 		}
 #endif
 
@@ -391,18 +390,6 @@ namespace Diotima
 
 	void DX12GFXDevice::CreateRootSignature()
 	{
-		D3D12_DESCRIPTOR_RANGE1 descriptorTableRanges[1];
-		descriptorTableRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-		descriptorTableRanges[0].NumDescriptors = 3;
-		descriptorTableRanges[0].BaseShaderRegister = 0;
-		descriptorTableRanges[0].RegisterSpace = 0;
-		descriptorTableRanges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-		descriptorTableRanges[0].Flags = D3D12_DESCRIPTOR_RANGE_FLAG_NONE;
-
-		D3D12_ROOT_DESCRIPTOR_TABLE1 descriptorTable;
-		descriptorTable.NumDescriptorRanges = _countof(descriptorTableRanges);
-		descriptorTable.pDescriptorRanges = &descriptorTableRanges[0];
-
 		D3D12_ROOT_DESCRIPTOR1 mMVPConstBuffer;
 		mMVPConstBuffer.RegisterSpace = 0;
 		mMVPConstBuffer.ShaderRegister = 0;
@@ -423,7 +410,43 @@ namespace Diotima
 		mPerFramePixelShaderConstants.ShaderRegister = 0;
 		mPerFramePixelShaderConstants.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_NONE;
 
-		CD3DX12_ROOT_PARAMETER1 rootParameters[6];
+		D3D12_DESCRIPTOR_RANGE1 diffuseRange[1];
+		diffuseRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+		diffuseRange[0].NumDescriptors = 1;
+		diffuseRange[0].BaseShaderRegister = 0;
+		diffuseRange[0].RegisterSpace = 0;
+		diffuseRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+		diffuseRange[0].Flags = D3D12_DESCRIPTOR_RANGE_FLAG_NONE;
+
+		D3D12_ROOT_DESCRIPTOR_TABLE1 diffuseTable;
+		diffuseTable.NumDescriptorRanges = _countof(diffuseRange);
+		diffuseTable.pDescriptorRanges = &diffuseRange[0];
+		
+		D3D12_DESCRIPTOR_RANGE1 specularRange[1];
+		specularRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+		specularRange[0].NumDescriptors = 1;
+		specularRange[0].BaseShaderRegister = 1;
+		specularRange[0].RegisterSpace = 0;
+		specularRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+		specularRange[0].Flags = D3D12_DESCRIPTOR_RANGE_FLAG_NONE;
+
+		D3D12_ROOT_DESCRIPTOR_TABLE1 specularTable;
+		specularTable.NumDescriptorRanges = _countof(specularRange);
+		specularTable.pDescriptorRanges = &specularRange[0];
+
+		D3D12_DESCRIPTOR_RANGE1 bumpRange[1];
+		bumpRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+		bumpRange[0].NumDescriptors = 1;
+		bumpRange[0].BaseShaderRegister = 2;
+		bumpRange[0].RegisterSpace = 0;
+		bumpRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+		bumpRange[0].Flags = D3D12_DESCRIPTOR_RANGE_FLAG_NONE;
+
+		D3D12_ROOT_DESCRIPTOR_TABLE1 bumpTable;
+		bumpTable.NumDescriptorRanges = _countof(bumpRange);
+		bumpTable.pDescriptorRanges = &bumpRange[0];
+
+		CD3DX12_ROOT_PARAMETER1 rootParameters[8];
 		rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 		rootParameters[0].Descriptor = mMVPConstBuffer;
 		rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
@@ -435,7 +458,7 @@ namespace Diotima
 		rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 		rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-		rootParameters[3].DescriptorTable = descriptorTable;
+		rootParameters[3].DescriptorTable = diffuseTable;
 		rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 		rootParameters[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
@@ -445,6 +468,14 @@ namespace Diotima
 		rootParameters[5].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 		rootParameters[5].Descriptor = mPerFramePixelShaderConstants;
 		rootParameters[5].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+		rootParameters[6].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+		rootParameters[6].DescriptorTable = specularTable;
+		rootParameters[6].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+		rootParameters[7].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+		rootParameters[7].DescriptorTable = bumpTable;
+		rootParameters[7].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 		D3D12_STATIC_SAMPLER_DESC sampler = {};
 		sampler.Filter = D3D12_FILTER_ANISOTROPIC;

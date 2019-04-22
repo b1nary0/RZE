@@ -179,7 +179,11 @@ namespace Diotima
 				// #TODO(Josh::Eventually the material system will handle this itself and hold a buffer of pre-allocated materials
 				//             and we will somehow "lease" it for the draw call)
 				drawCall.MaterialSlot = materialBuffer->AllocateMember(&meshData.Material);
-				drawCall.TextureSlot = meshData.TextureDescs[0].TextureBuffer; // Currently [0] is diffuse, but this should be iterated to be more robust.
+
+				drawCall.TextureSlot0 = meshData.TextureDescs[0].TextureBuffer; // This should be iterated on to be more robust.
+				drawCall.TextureSlot1 = meshData.TextureDescs[1].TextureBuffer; // This should be iterated on to be more robust.
+				drawCall.TextureSlot2 = meshData.TextureDescs[2].TextureBuffer; // This should be iterated on to be more robust.
+
 				drawCall.MatrixSlot = matrixSlot;
 
 				mPerFrameDrawCalls.push_back(std::move(drawCall));
@@ -214,8 +218,13 @@ namespace Diotima
 				commandList->SetGraphicsRootConstantBufferView(4, drawCall.MaterialSlot.GPUBaseAddr);
 
 				// #NOTE(Josh::Everything should have a default guaranteed diffuse map. For now it also marks the start of the descriptor table)
-				DX12GFXTextureBuffer2D* const diffuseBuffer = mDevice->GetTextureBuffer2D(drawCall.TextureSlot);
-				commandList->SetGraphicsRootDescriptorTable(3, diffuseBuffer->GetDescriptorHandleGPU());
+				DX12GFXTextureBuffer2D* const diffuse = mDevice->GetTextureBuffer2D(drawCall.TextureSlot0);
+				DX12GFXTextureBuffer2D* const specular = mDevice->GetTextureBuffer2D(drawCall.TextureSlot1);
+				DX12GFXTextureBuffer2D* const bump = mDevice->GetTextureBuffer2D(drawCall.TextureSlot2);
+
+				commandList->SetGraphicsRootDescriptorTable(3, diffuse->GetDescriptorHandleGPU());
+				commandList->SetGraphicsRootDescriptorTable(6, specular->GetDescriptorHandleGPU());
+				commandList->SetGraphicsRootDescriptorTable(7, bump->GetDescriptorHandleGPU());
 
 				DX12GFXVertexBuffer* const vertexBuffer = mDevice->GetVertexBuffer(drawCall.VertexBuffer);
 				DX12GFXIndexBuffer* const indexBuffer = mDevice->GetIndexBuffer(drawCall.IndexBuffer);
