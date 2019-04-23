@@ -109,6 +109,8 @@ namespace Diotima
 
 	void Renderer::PrepareLights()
 	{
+		OPTICK_EVENT();
+
 		std::sort(mLightingList.begin(), mLightingList.end(), [](const LightItemProtocol& light0, const LightItemProtocol& light1)
 		{
 			return light0.LightType > light1.LightType;
@@ -196,6 +198,8 @@ namespace Diotima
 
 	void Renderer::BuildCommandList()
 	{
+		OPTICK_EVENT();
+
 		mDevice->ResetCommandAllocator();
 		mDevice->ResetCommandList();
 
