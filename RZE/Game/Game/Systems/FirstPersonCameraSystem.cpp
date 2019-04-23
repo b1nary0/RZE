@@ -1,12 +1,12 @@
-#include <StdAfx.h>
 #include <Game/Systems/FirstPersonCameraSystem.h>
-
 
 #include <ECS/Components/CameraComponent.h>
 #include <ECS/Components/NameComponent.h>
 #include <ECS/Components/TransformComponent.h>
 
 #include <Utils/Math/Math.h>
+
+#include <Game/GameApp.h>
 
 FirstPersonCameraSystem::FirstPersonCameraSystem(Apollo::EntityHandler* const entityHandler)
 	: Apollo::EntitySystem(entityHandler)

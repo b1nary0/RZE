@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Game/Systems/ProjectileSystem.h>
 
 #include <ECS/Components/CameraComponent.h>
@@ -9,6 +8,8 @@
 #include <Game/Components/VelocityComponent.h>
 
 #include <Game/Model3D.h>
+
+#include <Game/GameApp.h>
 
 void ProjectileSystem::Initialize()
 {

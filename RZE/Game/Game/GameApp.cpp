@@ -1,6 +1,5 @@
 #include "GameApp.h"
 
-#include <RZE_Config.h>
 #include <RZE.h>
 
 #include <Utils/DebugUtils/Debug.h>

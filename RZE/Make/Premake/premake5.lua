@@ -160,9 +160,6 @@ workspace "RZE"
 		targetdir (LibDir)
 		targetname "RZE_Utils"
 
-		pchheader = "Utils/StdAfx.h"
-		pchsource = (SourceDir .. "Utils/StdAfx.cpp")
-
 		files
 		{
 			SourceDir .. "**.h",
@@ -214,10 +211,6 @@ workspace "RZE"
 		targetname "Apollo"
 
 		dependson { "Perseus", "Utils" }
-
-		filter "action:vs*"
-			pchheader = "StdAfx.h"
-			pchsource = "StdAfx.cpp"
 
 		files
 		{
@@ -288,10 +281,6 @@ workspace "RZE"
 
 		dependson { "Utils" }
 
-		filter "action:vs*"
-			pchheader = "StdAfx.h"
-			pchsource = "StdAfx.cpp"
-
 		files
 		{
 			SourceDir .. "**.h",
@@ -359,10 +348,6 @@ workspace "RZE"
 
 		dependson { "Externals", "Perseus", "Utils" }
 
-		filter "action:vs*"
-			pchheader = "StdAfx.h"
-			pchsource = "StdAfx.cpp"
-
 		files
 		{
 			SourceDir .. "**.h",
@@ -427,9 +412,6 @@ workspace "RZE"
 	 		language "C++"
 	 		targetdir (LibDir)
 	 		targetname "Externals"
-
-	 		pchheader = "Utils/StdAfx.h"
-	 		pchsource = (SourceDir .. "Utils/StdAfx.cpp")
 
 	 		files
 	 		{

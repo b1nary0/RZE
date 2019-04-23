@@ -1,8 +1,9 @@
-#include <StdAfx.h>
 #include <Game/Systems/InteractiveSpawningSystem.h>
 
 #include <ECS/Components/NameComponent.h>
 #include <ECS/Components/TransformComponent.h>
+
+#include <Game/GameApp.h>
 
 #include <random>
 
