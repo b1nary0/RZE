@@ -4,6 +4,8 @@
 
 #include <Utils/Functor.h>
 
+#include <Optick/optick.h>
+
 namespace Perseus
 {
 	WorkerThread::WorkerThread()
@@ -41,6 +43,7 @@ namespace Perseus
 	{
 		auto exec([this]()
 		{
+			OPTICK_THREAD("Worker Thread");
 			while (bActive)
 			{
 				Job job;

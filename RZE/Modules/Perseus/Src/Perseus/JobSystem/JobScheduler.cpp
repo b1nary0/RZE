@@ -45,6 +45,8 @@ namespace Perseus
 
 	bool JobScheduler::RequestJob(Job& outJob)
 	{
+		// #TODO(Have each thread have a queue and send it to whoever is free at the moment
+		//       instead of one queue because we're losing time to a locked mutex)
 		std::unique_lock<std::mutex> lock(JobMutex, std::defer_lock);
 		if (lock.try_lock() && !mJobQueue.empty())
 		{

@@ -39,7 +39,9 @@ void RenderSystem::Initialize()
 }
 
 void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
-{	BROFILER_CATEGORY("RenderSystem::Update", Profiler::Color::Yellow)
+{
+	OPTICK_EVENT();
+
 	Apollo::EntityHandler& handler = InternalGetEntityHandler();
 	Diotima::Renderer& renderer = RZE_Application::RZE().GetRenderer();
 
@@ -62,6 +64,7 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 	std::copy(entities.begin(), entities.begin() + jobSize, std::back_inserter(workItems0));
 	Perseus::Job::Task work0([this, workItems0, &renderer, &handler]()
 	{
+		OPTICK_EVENT("RenderSystem Matrix Update 0");
  		for (auto& entity : workItems0)
  		{
  			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
@@ -76,6 +79,7 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 	std::copy(entities.begin() + jobSize, entities.end(), std::back_inserter(workItems1));
 	Perseus::Job::Task work1([this, workItems1, &renderer, &handler]()
 	{
+		OPTICK_EVENT("RenderSystem Matrix Update 1");
 		for (auto& entity : workItems1)
 		{
 			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
@@ -115,7 +119,9 @@ void RenderSystem::RegisterForComponentNotifications()
 	// MeshComponent
 	//
 	Apollo::EntityHandler::ComponentAddedFunc OnMeshComponentAdded([this, &handler](Apollo::EntityID entityID)
-	{	BROFILER_EVENT("RenderSystem::OnMeshComponentAdded");
+	{	
+		OPTICK_EVENT("RenderSystem::OnMeshComponentAdded");
+
 		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entityID);
 		AssertNotNull(meshComp);
 		meshComp->Resource = RZE_Application::RZE().GetResourceHandler().RequestResource<Model3D>(meshComp->ResourcePath);

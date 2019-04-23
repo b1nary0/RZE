@@ -154,7 +154,9 @@ void GameScene::Start()
 }
 
 void GameScene::Update()
-{	BROFILER_CATEGORY("GameScene::Update", Profiler::Color::Blue)
+{
+	OPTICK_EVENT();
+
 	mEntityHandler.Update();
 }
 

@@ -1,6 +1,6 @@
 #include <Diotima/Renderer.h>
 
-#include <Brofiler/Brofiler.h>
+#include <Optick/optick.h>
 
 #include <Diotima/Graphics/GFXPassGraph.h>
 
@@ -76,7 +76,7 @@ namespace Diotima
 
 	void Renderer::Update()
 	{
-		BROFILER_CATEGORY("Renderer::Update", Profiler::Color::Red);
+		OPTICK_EVENT();
 
 		PrepareLights();
 		PrepareDrawCalls();
@@ -128,7 +128,8 @@ namespace Diotima
 
 	void Renderer::PrepareDrawCalls()
 	{
-		BROFILER_CATEGORY("Renderer::PrepareDrawCalls", Profiler::Color::Red);
+		OPTICK_EVENT();
+
 		if (mPerFrameDrawCalls.capacity() < mRenderItems.size())
 		{
 			mPerFrameDrawCalls.reserve(mRenderItems.size());

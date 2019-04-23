@@ -3,7 +3,7 @@
 
 #include <algorithm>
 
-#include <Brofiler/Brofiler.h>
+#include <Optick/optick.h>
 
 #include <EngineApp.h>
 
@@ -32,7 +32,7 @@ void FreeCameraSystem::Initialize()
 
 void FreeCameraSystem::Update(const std::vector<Apollo::EntityID>& entities)
 {
-	BROFILER_CATEGORY("FreeCameraSystem::Update", Profiler::Color::Yellow);
+	OPTICK_EVENT();
 
 	Apollo::EntityHandler& handler = InternalGetEntityHandler();
 	for (auto& entity : entities)

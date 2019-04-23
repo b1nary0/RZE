@@ -52,7 +52,7 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 		double prevTime = programTimer.GetElapsed<double>();
 		while (!bShouldExit)
 		{
-			BROFILER_FRAME("Engine Thread");
+			OPTICK_FRAME("Main");
 
 			double currTime = programTimer.GetElapsed<double>();
 			double frameTime = currTime - prevTime;
@@ -63,11 +63,13 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 
 			const float averageFrametime = CalculateAverageFrametime();
 
-			{	BROFILER_CATEGORY("RZE_Engine::Run", Profiler::Color::Cyan)
+			{	
+				OPTICK_EVENT("RZE_Engine::Run");
 
 				PreUpdate();
 				{
-					BROFILER_CATEGORY("Update and Render", Profiler::Color::BurlyWood);
+					OPTICK_EVENT("Update and Render");
+
 					Update();
 					mRenderer->Update();
 				}
@@ -136,7 +138,9 @@ void RZE_Engine::PostInit(Functor<RZE_Application* const>& createApplicationCall
 }
 
 void RZE_Engine::PreUpdate()
-{	BROFILER_CATEGORY("RZE_Engine::PreUpdate", Profiler::Color::Purple)
+{	
+	OPTICK_EVENT();
+
 	CompileEvents();
 	mEventHandler.ProcessEvents();
 
@@ -257,7 +261,9 @@ void RZE_Engine::LoadEngineConfig()
 }
 
 void RZE_Engine::Update()
-{	BROFILER_CATEGORY("RZE_Engine::Update", Profiler::Color::Orchid)
+{
+	OPTICK_EVENT();
+
 	mActiveScene->Update();
 	mApplication->Update();
 }
