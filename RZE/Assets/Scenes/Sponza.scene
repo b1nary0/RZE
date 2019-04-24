@@ -13,7 +13,7 @@
                 },
                 "CameraComponent":
                 {
-                    "FOV": 45,
+                    "FOV": 60,
                     "NearCull": 0.1,
                     "FarCull": 1000,
                     "Forward": [0, 0, -1.0],
@@ -36,6 +36,28 @@
                     "LightType": 0,
                     "Color": [1, 1, 1],
                     "Strength": 0.5
+                }
+            }
+        },
+        "PointLight":
+        {
+            "components":
+            {
+                "TransformComponent":
+                {
+                    "Position": [24, 7, 11],
+                    "Scale": [1, 1, 1],
+                    "Rotation": [0, 0, 0]
+                },
+                "LightSourceComponent":
+                {
+                    "LightType": 1,
+                    "Color": [1, 0, 0],
+                    "Strength": 2.0
+                },
+                "MeshComponent":
+                {
+                    "ResourcePath": "Assets/3D/Cube.obj"
                 }
             }
         },

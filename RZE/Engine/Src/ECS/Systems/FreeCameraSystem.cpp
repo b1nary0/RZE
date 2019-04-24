@@ -47,6 +47,8 @@ void FreeCameraSystem::Update(const std::vector<Apollo::EntityID>& entities)
 
 			MouseInput(*camComp, *transfComp);
 			KeyboardInput(*camComp, *transfComp);
+
+			//LOG_CONSOLE_ARGS("CameraPos: %s", transfComp->Position.ToString().c_str());
 		}
 	}
 
