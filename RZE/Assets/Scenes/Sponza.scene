@@ -13,7 +13,7 @@
                 },
                 "CameraComponent":
                 {
-                    "FOV": 60,
+                    "FOV": 50,
                     "NearCull": 0.1,
                     "FarCull": 1000,
                     "Forward": [0, 0, -1.0],
