@@ -131,6 +131,24 @@ float4 PSMain(PS_IN input) : SV_TARGET
 
 	float3 lightAccum;
 	uint lightIndex = 0;
+	for (uint directionalLight = 0; directionalLight < DirectionalLightCount; ++directionalLight, ++lightIndex)
+	{
+		LIGHT_INPUT_DESC light = lights[lightIndex];
+
+		float3 lightDir = normalize(light.Position - input.FragPos);
+		
+		float diff = max(0.0f, saturate(dot(normal, lightDir)));
+		float specular = CalculateBlinnPhong(viewDir, lightDir, normal);
+		
+		float lightStrength = light.Strength;
+		
+		float3 diffuseResult = light.Color.rgb * lightStrength;
+		float3 specularResult = specular * lightStrength * light.Color.rgb;
+		
+		float3 result = (diffSample.rgb * (ambientResult + diffuseResult)) + (specularResult * specularSample.rgb);
+		lightAccum += result;
+	}
+
 	for (uint pointLight = 0; pointLight < PointLightCount; ++pointLight, ++lightIndex)
 	{
 		LIGHT_INPUT_DESC light = lights[lightIndex];
@@ -149,23 +167,5 @@ float4 PSMain(PS_IN input) : SV_TARGET
 		lightAccum += result;
 	}
 
-	for (uint directionalLight = 0; directionalLight < DirectionalLightCount; ++directionalLight, ++lightIndex)
-	{
-		LIGHT_INPUT_DESC light = lights[lightIndex];
-
-		float3 lightDir = normalize(light.Position - input.FragPos);
-		
-		float diff = max(0.0f, saturate(dot(normal, lightDir)));
-		float specular = CalculateBlinnPhong(viewDir, lightDir, normal);
-		
-		float lightStrength = light.Strength;
-		
-		float3 diffuseResult = light.Color.rgb * lightStrength;
-		float3 specularResult = specular * lightStrength * light.Color.rgb;
-		
-		float3 result = (diffSample.rgb * (ambientResult + diffuseResult)) + (specularResult * specularSample.rgb);
-		lightAccum += result;
-	}
-	
     return float4(lightAccum, 1.0f);
 }

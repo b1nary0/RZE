@@ -113,7 +113,7 @@ namespace Diotima
 
 		std::sort(mLightingList.begin(), mLightingList.end(), [](const LightItemProtocol& light0, const LightItemProtocol& light1)
 		{
-			return light0.LightType > light1.LightType;
+			return light0.LightType < light1.LightType;
 		});
 
 		U32 lightCounts[2] = { mLightCounts[ELightType::Point], mLightCounts[ELightType::Directional] };
