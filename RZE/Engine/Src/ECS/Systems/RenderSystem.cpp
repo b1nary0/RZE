@@ -95,7 +95,9 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 
 	Functor<void, Apollo::EntityID> LightSourceFunc([this, &handler, &renderer](Apollo::EntityID entity)
 	{
+		LightSourceComponent* const lightComp = handler.GetComponent<LightSourceComponent>(entity);
 		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
+
 		Diotima::Renderer::LightItemProtocol& item = renderer.GetLightProtocolByIdx(mLightItemEntityMap[entity]);
 
 		Matrix4x4 orthoProj = Matrix4x4::CreateOrthoMatrix(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 100.0f);
@@ -103,6 +105,7 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 
 		item.LightSpaceMatrix = orthoProj * lightView;
 		item.Position = transfComp->Position;
+		item.Strength = lightComp->Strength;
 	});
 	handler.ForEach<LightSourceComponent, TransformComponent>(LightSourceFunc);
 }
