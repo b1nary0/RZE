@@ -11,6 +11,8 @@
 
 #include <Game/GameApp.h>
 
+#include <Optick/optick.h>
+
 void ProjectileSystem::Initialize()
 {
 	InternalGetComponentFilter().AddFilterType<TransformComponent>();
@@ -54,6 +56,8 @@ void ProjectileSystem::Initialize()
 
 void ProjectileSystem::Update(const std::vector<Apollo::EntityID>& entities)
 {
+	OPTICK_EVENT();
+
 	Apollo::EntityHandler& entityHandler = InternalGetEntityHandler();
 	for (Apollo::EntityID entity : entities)
 	{

@@ -8,6 +8,8 @@
 
 #include <Game/GameApp.h>
 
+#include <Optick/optick.h>
+
 FirstPersonCameraSystem::FirstPersonCameraSystem(Apollo::EntityHandler* const entityHandler)
 	: Apollo::EntitySystem(entityHandler)
 {
@@ -26,6 +28,8 @@ void FirstPersonCameraSystem::Initialize()
 
 void FirstPersonCameraSystem::Update(const std::vector<Apollo::EntityID>& entities)
 {
+	OPTICK_EVENT();
+
 	for (Apollo::EntityID entity : entities)
 	{
 		CameraComponent* const camera = InternalGetEntityHandler().GetComponent<CameraComponent>(entity);
