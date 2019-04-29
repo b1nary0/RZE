@@ -37,15 +37,13 @@ namespace Diotima
 	{
 	public:
 		GFXRenderPass() = default;
-		~GFXRenderPass() = default;
+		virtual ~GFXRenderPass() = default;
 
 	public:
-		void Execute() {}
+		virtual void Initialize() = 0;
+		virtual void Execute() = 0;
 
 	private:
-		// Technique
-		GFXRenderTechnique mTechnique;
-
 		RenderPassInput* mInput;
 		RenderPassOutput* mOutput;
 	};

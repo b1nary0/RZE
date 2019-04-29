@@ -76,6 +76,14 @@ namespace Diotima
 		// #TODO(Josh::Check for errors)
 		D3D12CreateDevice(hardwareAdapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&mDevice));
 
+		// CREATE SYNC OBJECTS TO WAIT FOR DATA TO UPLOAD TO GPU
+		{
+			HRESULT result = mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence));
+			mFenceValue = 1;
+
+			mFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+		}
+
 		// COMMAND QUEUE
 		{
 			D3D12_COMMAND_QUEUE_DESC queueDesc = {};
@@ -136,13 +144,15 @@ namespace Diotima
 			}
 		}
 
+		{
+			// CREATE COMMAND ALLOCATORS
+			mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mCommandAllocator));
+			mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mResourceCommandAllocator));
+		}
+
 		InitializeMSAA();
 
-		mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mCommandAllocator));
-
 		InitializeMipGeneration();
-
-		InitializeAssets();
 	}
 
 	void DX12GFXDevice::SetWindow(void* windowHandle)
@@ -152,101 +162,7 @@ namespace Diotima
 
 	void DX12GFXDevice::Present()
 	{
-		ExecuteCommandList(mCommandList.Get());
-
 		mSwapChain->Present(1, 0);
-
-		WaitForPreviousFrame();
-	}
-
-	void DX12GFXDevice::InitializeAssets()
-	{
-		// ROOT SIGNATURE
-		CreateRootSignature();
-
-		// PIPELINE STATE
-		{
-			ComPtr<ID3DBlob> vertexShader;
-			ComPtr<ID3DBlob> pixelShader;
-
-#if defined(_DEBUG)
-			U32 compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-#else
-			U32 compileFlags = 0;
-#endif
-
-			FilePath vertexShaderFilePath("Assets/Shaders/D3DTest_VS.hlsl");
-			FilePath pixelShaderFilePath("Assets/Shaders/D3DTest_PS.hlsl");
-
-			ComPtr<ID3DBlob> error;
-
-			HRESULT result = D3DCompileFromFile(Conversions::StringToWString(vertexShaderFilePath.GetAbsolutePath()).c_str(), nullptr, nullptr, "VSMain", "vs_5_1", compileFlags, 0, &vertexShader, &error);
-			if (error)
-			{
-				OutputDebugStringA((char*)error->GetBufferPointer());
-			}
-
-			D3DCompileFromFile(Conversions::StringToWString(pixelShaderFilePath.GetAbsolutePath()).c_str(), nullptr, nullptr, "PSMain", "ps_5_1", compileFlags, 0, &pixelShader, &error);
-			if (error)
-			{
-				OutputDebugStringA((char*)error->GetBufferPointer());
-			}
-
-			D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
-			{
-				{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-				{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-				{"UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-				{"TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
-			};
-
-			D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-			psoDesc.InputLayout = { inputElementDescs, _countof(inputElementDescs) };
-			psoDesc.pRootSignature = mRootSignature.Get();
-			psoDesc.VS = { reinterpret_cast<U8*>(vertexShader->GetBufferPointer()), vertexShader->GetBufferSize() };
-			psoDesc.PS = { reinterpret_cast<U8*>(pixelShader->GetBufferPointer()), pixelShader->GetBufferSize() };
-			psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-			psoDesc.RasterizerState.FrontCounterClockwise = TRUE;
-			psoDesc.RasterizerState.MultisampleEnable = TRUE;
-			psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-			psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-			psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
-			psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
-			psoDesc.SampleMask = UINT_MAX;
-			psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-			psoDesc.NumRenderTargets = 1;
-			psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-			psoDesc.SampleDesc.Count = mSampleCount;
-			mDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mPipelineState));
-		}
-
-		mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mCommandAllocator.Get(), mPipelineState.Get(), IID_PPV_ARGS(&mCommandList));
-		mCommandList->Close();
-
-		mViewport = new D3D12_VIEWPORT();
-		mViewport->Height = kBufferHeight;
-		mViewport->Width = kBufferWidth;
-		mViewport->TopLeftX = 0;
-		mViewport->TopLeftY = 0;
-		mViewport->MinDepth = 0.0f;
-		mViewport->MaxDepth = 1.0f;
-
-		mScissorRect.left = 0;
-		mScissorRect.top = 0;
-		mScissorRect.right = kBufferWidth;
-		mScissorRect.bottom = kBufferHeight;
-
-		mDepthStencilBuffer = std::make_unique<DX12GFXDepthStencilBuffer>();
-		mDepthStencilBuffer->SetDevice(this);
-		mDepthStencilBuffer->Allocate();
-
-		// CREATE SYNC OBJECTS TO WAIT FOR DATA TO UPLOAD TO GPU
-		{
-			mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence));
-			mFenceValue = 1;
-
-			mFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-		}
 
 		WaitForPreviousFrame();
 	}
@@ -313,19 +229,9 @@ namespace Diotima
 		return mDevice.Get();
 	}
 
-	ID3D12GraphicsCommandList* DX12GFXDevice::GetCommandList()
-	{
-		return mCommandList.Get();
-	}
-
 	ID3D12CommandQueue* DX12GFXDevice::GetCommandQueue()
 	{
 		return mCommandQueue.Get();
-	}
-
-	void DX12GFXDevice::ResetCommandList()
-	{
-		mCommandList->Reset(mCommandAllocator.Get(), mPipelineState.Get());
 	}
 
 	Diotima::DX12GFXVertexBuffer* DX12GFXDevice::GetVertexBuffer(U32 index)
@@ -343,168 +249,6 @@ namespace Diotima
 	void DX12GFXDevice::ResetCommandAllocator()
 	{
 		mCommandAllocator->Reset();
-	}
-
-	void DX12GFXDevice::BeginFrame()
-	{
-		mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
-		mCommandList->RSSetViewports(1, mViewport);
-		mCommandList->RSSetScissorRects(1, &mScissorRect);
-
-		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mMSAARenderTarget.Get(), D3D12_RESOURCE_STATE_RESOLVE_SOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET));
-
-		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mMSAARTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), 0, mRTVDescriptorSize);
-		CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(mDepthStencilBuffer->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
-		mCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
-		mCommandList->ClearDepthStencilView(mDepthStencilBuffer->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
-		
-		const float clearColor[] = { 0.f, 0.f, 0.f, 0.0f };
-		mCommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
-	}
-
-	void DX12GFXDevice::EndFrame()
-	{
-		D3D12_RESOURCE_BARRIER barriers[2] =
-		{
-			CD3DX12_RESOURCE_BARRIER::Transition(
-				mMSAARenderTarget.Get(),
-				D3D12_RESOURCE_STATE_RENDER_TARGET,
-				D3D12_RESOURCE_STATE_RESOLVE_SOURCE),
-			CD3DX12_RESOURCE_BARRIER::Transition(
-				mRenderTargets[mCurrentFrame].Get(),
-				D3D12_RESOURCE_STATE_PRESENT,
-				D3D12_RESOURCE_STATE_RESOLVE_DEST)
-		};
-
-		mCommandList->ResourceBarrier(2, barriers);
-
-		mCommandList->ResolveSubresource(mRenderTargets[mCurrentFrame].Get(), 0, mMSAARenderTarget.Get(), 0, DXGI_FORMAT_R8G8B8A8_UNORM);
-
-		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-			mRenderTargets[mCurrentFrame].Get(),
-			D3D12_RESOURCE_STATE_RESOLVE_DEST,
-			D3D12_RESOURCE_STATE_PRESENT));
-
-		mCommandList->Close();
-	}
-
-	void DX12GFXDevice::CreateRootSignature()
-	{
-		D3D12_ROOT_DESCRIPTOR1 mMVPConstBuffer;
-		mMVPConstBuffer.RegisterSpace = 0;
-		mMVPConstBuffer.ShaderRegister = 0;
-		mMVPConstBuffer.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_NONE;
-
-		D3D12_ROOT_DESCRIPTOR1 mLightConstBuffer;
-		mLightConstBuffer.RegisterSpace = 1;
-		mLightConstBuffer.ShaderRegister = 0;
-		mLightConstBuffer.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_NONE;
-
-		D3D12_ROOT_DESCRIPTOR1 mPerMeshPixelShaderConstants;
-		mPerMeshPixelShaderConstants.RegisterSpace = 3;
-		mPerMeshPixelShaderConstants.ShaderRegister = 0;
-		mPerMeshPixelShaderConstants.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_NONE;
-
-		D3D12_ROOT_DESCRIPTOR1 mPerFramePixelShaderConstants;
-		mPerFramePixelShaderConstants.RegisterSpace = 4;
-		mPerFramePixelShaderConstants.ShaderRegister = 0;
-		mPerFramePixelShaderConstants.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_NONE;
-
-		D3D12_DESCRIPTOR_RANGE1 diffuseRange[1];
-		diffuseRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-		diffuseRange[0].NumDescriptors = 1;
-		diffuseRange[0].BaseShaderRegister = 0;
-		diffuseRange[0].RegisterSpace = 0;
-		diffuseRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-		diffuseRange[0].Flags = D3D12_DESCRIPTOR_RANGE_FLAG_NONE;
-
-		D3D12_ROOT_DESCRIPTOR_TABLE1 diffuseTable;
-		diffuseTable.NumDescriptorRanges = _countof(diffuseRange);
-		diffuseTable.pDescriptorRanges = &diffuseRange[0];
-		
-		D3D12_DESCRIPTOR_RANGE1 specularRange[1];
-		specularRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-		specularRange[0].NumDescriptors = 1;
-		specularRange[0].BaseShaderRegister = 1;
-		specularRange[0].RegisterSpace = 0;
-		specularRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-		specularRange[0].Flags = D3D12_DESCRIPTOR_RANGE_FLAG_NONE;
-
-		D3D12_ROOT_DESCRIPTOR_TABLE1 specularTable;
-		specularTable.NumDescriptorRanges = _countof(specularRange);
-		specularTable.pDescriptorRanges = &specularRange[0];
-
-		D3D12_DESCRIPTOR_RANGE1 bumpRange[1];
-		bumpRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-		bumpRange[0].NumDescriptors = 1;
-		bumpRange[0].BaseShaderRegister = 2;
-		bumpRange[0].RegisterSpace = 0;
-		bumpRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-		bumpRange[0].Flags = D3D12_DESCRIPTOR_RANGE_FLAG_NONE;
-
-		D3D12_ROOT_DESCRIPTOR_TABLE1 bumpTable;
-		bumpTable.NumDescriptorRanges = _countof(bumpRange);
-		bumpTable.pDescriptorRanges = &bumpRange[0];
-
-		CD3DX12_ROOT_PARAMETER1 rootParameters[8];
-		rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-		rootParameters[0].Descriptor = mMVPConstBuffer;
-		rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
-
-		rootParameters[1].InitAsConstants(3, 0, 2, D3D12_SHADER_VISIBILITY_PIXEL);
-
-		rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-		rootParameters[2].Descriptor = mLightConstBuffer;
-		rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
-		rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-		rootParameters[3].DescriptorTable = diffuseTable;
-		rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
-		rootParameters[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-		rootParameters[4].Descriptor = mPerMeshPixelShaderConstants;
-		rootParameters[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
-		rootParameters[5].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-		rootParameters[5].Descriptor = mPerFramePixelShaderConstants;
-		rootParameters[5].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
-		rootParameters[6].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-		rootParameters[6].DescriptorTable = specularTable;
-		rootParameters[6].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
-		rootParameters[7].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-		rootParameters[7].DescriptorTable = bumpTable;
-		rootParameters[7].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
-		D3D12_STATIC_SAMPLER_DESC sampler = {};
-		sampler.Filter = D3D12_FILTER_ANISOTROPIC;
-		sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-		sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-		sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-		sampler.MipLODBias = 0;
-		sampler.MaxAnisotropy = 16;
-		sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
-		sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
-		sampler.MinLOD = 0.0f;
-		sampler.MaxLOD = D3D12_FLOAT32_MAX;
-		sampler.ShaderRegister = 0;
-		sampler.RegisterSpace = 0;
-		sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
-		CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
-		rootSignatureDesc.Init_1_1(_countof(rootParameters), &rootParameters[0], 1, &sampler, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
-
-		ComPtr<ID3DBlob> signature;
-		ComPtr<ID3DBlob> error;
-
-		D3DX12SerializeVersionedRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1_1, &signature, &error);
-		if (error != nullptr)
-		{
-			OutputDebugStringA((char*)error->GetBufferPointer());
-		}
-
-		HRESULT res = mDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&mRootSignature));
 	}
 
 	Diotima::DX12GFXTextureBuffer2D* DX12GFXDevice::GetTextureBuffer2D(U32 index)
@@ -588,16 +332,18 @@ namespace Diotima
 		D3D12_UNORDERED_ACCESS_VIEW_DESC dstUAVDesc = {};
 		dstUAVDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
 
-		mCommandList->SetComputeRootSignature(mMipGenRootSig.Get());
-		mCommandList->SetPipelineState(mMipGenPSO.Get());
+		ID3D12GraphicsCommandList* commandList = GetGraphicsCommandList(CreateGraphicsCommandList(GetResourceCommandAllocator(), nullptr));
+
+		commandList->SetComputeRootSignature(mMipGenRootSig.Get());
+		commandList->SetPipelineState(mMipGenPSO.Get());
 
 		ID3D12DescriptorHeap* descriptorHeaps[] = { mMipUAVHeap.Get() };
-		mCommandList->SetDescriptorHeaps(1, descriptorHeaps);
+		commandList->SetDescriptorHeaps(1, descriptorHeaps);
 
 		CD3DX12_CPU_DESCRIPTOR_HANDLE currCPUHandle(mMipUAVHeap->GetCPUDescriptorHandleForHeapStart(), 0, mCBVSRVUAVDescriptorSize);
 		CD3DX12_GPU_DESCRIPTOR_HANDLE currGPUHandle(mMipUAVHeap->GetGPUDescriptorHandleForHeapStart(), 0, mCBVSRVUAVDescriptorSize);
 
-		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(texture->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
+		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(texture->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
 
 		const D3D12_RESOURCE_DESC& srcTextureDesc = texture->GetResourceDesc();
 		for (U32 srcMipLevel = 0; srcMipLevel < 3; ++srcMipLevel)
@@ -623,19 +369,21 @@ namespace Diotima
 
 			mipCBData.TexelSize.SetXY(1.0f / dstWidth, 1.0f / dstHeight);
 
-			mCommandList->SetComputeRoot32BitConstants(0, 2, &mipCBData, 0);
+			commandList->SetComputeRoot32BitConstants(0, 2, &mipCBData, 0);
 
-			mCommandList->SetComputeRootDescriptorTable(1, currGPUHandle);
+			commandList->SetComputeRootDescriptorTable(1, currGPUHandle);
 			currGPUHandle.Offset(1, mCBVSRVUAVDescriptorSize);
-			mCommandList->SetComputeRootDescriptorTable(2, currGPUHandle);
+			commandList->SetComputeRootDescriptorTable(2, currGPUHandle);
 			currGPUHandle.Offset(1, mCBVSRVUAVDescriptorSize);
 
-			mCommandList->Dispatch(std::max<U32>(dstWidth / 8, 1u), std::max<U32>(dstHeight / 8, 1u), 1);
+			commandList->Dispatch(std::max<U32>(dstWidth / 8, 1u), std::max<U32>(dstHeight / 8, 1u), 1);
 
-			mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(texture->GetResource()));
+			commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(texture->GetResource()));
 		}
 
-		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(texture->GetResource(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(texture->GetResource(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+
+		ExecuteCommandList(commandList);
 	}
 
 	void DX12GFXDevice::InitializeMipGeneration()
@@ -725,8 +473,74 @@ namespace Diotima
 
 	void DX12GFXDevice::ExecuteCommandList(ID3D12GraphicsCommandList* commandList)
 	{
+		commandList->Close();
+
 		ID3D12CommandList* ppCommandLists[] = { commandList };
 		mCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+
+		WaitForPreviousFrame();
+	}
+
+	ID3D12CommandAllocator* DX12GFXDevice::GetCommandAllocator()
+	{
+		return mCommandAllocator.Get();
+	}
+
+	U32 DX12GFXDevice::CreateGraphicsCommandList(ID3D12CommandAllocator* allocator, ID3D12PipelineState* pipelineState)
+	{
+		ComPtr<ID3D12GraphicsCommandList> commandList;
+		HRESULT result = mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, allocator, pipelineState, IID_PPV_ARGS(&commandList));
+
+		U32 retID = mGraphicsCommandLists.size();
+		mGraphicsCommandLists.push_back(commandList);
+
+		return retID;
+	}
+
+	ID3D12GraphicsCommandList* DX12GFXDevice::GetGraphicsCommandList(U32 index)
+	{
+		AssertExpr(index < mGraphicsCommandLists.size());
+		return mGraphicsCommandLists[index].Get();
+	}
+
+	ID3D12CommandAllocator* DX12GFXDevice::GetResourceCommandAllocator()
+	{
+		return mResourceCommandAllocator.Get();
+	}
+
+	void DX12GFXDevice::ResetResourceCommandAllocator()
+	{
+		mResourceCommandAllocator->Reset();
+	}
+
+	ID3D12DescriptorHeap* DX12GFXDevice::GetRenderTargetHeap()
+	{
+		return mRTVDescriptorHeap.Get();
+	}
+
+	U32 DX12GFXDevice::GetRTVDescriptorSize()
+	{
+		return mRTVDescriptorSize;
+	}
+
+	int DX12GFXDevice::GetCurrentFrame()
+	{
+		return mCurrentFrame;
+	}
+
+	ID3D12Resource* DX12GFXDevice::GetCurrentFrameRenderTarget()
+	{
+		return mRenderTargets[mCurrentFrame].Get();
+	}
+
+	ID3D12Resource* DX12GFXDevice::GetMSAARenderTarget()
+	{
+		return mMSAARenderTarget.Get();
+	}
+
+	ID3D12DescriptorHeap* DX12GFXDevice::GetMSAARTVHeap()
+	{
+		return mMSAARTVDescriptorHeap.Get();
 	}
 
 }

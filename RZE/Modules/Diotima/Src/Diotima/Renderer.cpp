@@ -19,9 +19,6 @@
 #include <Diotima/Driver/DX12/DX12GFXVertexBuffer.h>
 #include <Diotima/Driver/DX12/DX12GFXTextureBuffer2D.h>
 
-// #TODO(Josh::Temp)
-#define MAX_LIGHTS 128
-
 namespace Diotima
 {
 	Renderer::Renderer()
@@ -72,16 +69,22 @@ namespace Diotima
 	void Renderer::Initialize()
 	{
 		DX12Initialize();
+
+		mPassGraph->Build(this);
 	}
 
 	void Renderer::Update()
 	{
 		OPTICK_EVENT();
 
-		PrepareLights();
+		mDevice->ResetCommandAllocator();
+		mDevice->ResetResourceCommandAllocator();
+
 		PrepareDrawCalls();
 
-		BuildCommandList();
+		{
+			mPassGraph->Execute();
+		}
 	}
 
 	void Renderer::Render()
@@ -94,6 +97,26 @@ namespace Diotima
 		mDevice->Shutdown();
 	}
 
+	const std::vector<Renderer::RenderItemDrawCall>& Renderer::GetDrawCalls()
+	{
+		return mPerFrameDrawCalls;
+	}
+
+	const std::vector<Renderer::LightItemProtocol>& Renderer::GetLights()
+	{
+		return mLightingList;
+	}
+
+	const U32* Renderer::GetLightCounts()
+	{
+		return mLightCounts;
+	}
+
+	const Diotima::Renderer::CameraItemProtocol& Renderer::GetCamera()
+	{
+		return camera;
+	}
+
 	void Renderer::DX12Initialize()
 	{
 		mDevice = std::make_unique<DX12GFXDevice>();
@@ -102,30 +125,7 @@ namespace Diotima
 		mDevice->Initialize();
 
 		mMVPConstantBuffer = mDevice->CreateConstantBuffer(sizeof(Matrix4x4) * 3, 65536);
-		mLightConstantBuffer = mDevice->CreateConstantBuffer(sizeof(LightItemProtocol) * MAX_LIGHTS, 1);
 		mMaterialBuffer = mDevice->CreateConstantBuffer(sizeof(RenderItemMaterialDesc), 65536);
-		mPerFramePixelShaderConstants = mDevice->CreateConstantBuffer(sizeof(U32) * 2, 1);
-	}
-
-	void Renderer::PrepareLights()
-	{
-		OPTICK_EVENT();
-
-		std::sort(mLightingList.begin(), mLightingList.end(), [](const LightItemProtocol& light0, const LightItemProtocol& light1)
-		{
-			return light0.LightType < light1.LightType;
-		});
-
-		U32 lightCounts[2] = { mLightCounts[ELightType::Point], mLightCounts[ELightType::Directional] };
-
-		DX12GFXConstantBuffer* const lightConstantBuffer = mDevice->GetConstantBuffer(mLightConstantBuffer);
-		DX12GFXConstantBuffer* const perFramePixelShaderConstants = mDevice->GetConstantBuffer(mPerFramePixelShaderConstants);
-		
-		lightConstantBuffer->Reset();
-		perFramePixelShaderConstants->Reset();
-
-		lightConstantBuffer->AllocateMember(mLightingList.data());
-		perFramePixelShaderConstants->AllocateMember(lightCounts);
 	}
 
 	void Renderer::PrepareDrawCalls()
@@ -194,53 +194,6 @@ namespace Diotima
 		}
 
 		delete pMatrixConstantBufferData;
-	}
-
-	void Renderer::BuildCommandList()
-	{
-		OPTICK_EVENT();
-
-		mDevice->ResetCommandAllocator();
-		mDevice->ResetCommandList();
-
-		mDevice->BeginFrame();
-		{
-			ID3D12GraphicsCommandList* commandList = mDevice->GetCommandList();
-			DX12GFXConstantBuffer* const lightConstantBuffer = mDevice->GetConstantBuffer(mLightConstantBuffer);
-			DX12GFXConstantBuffer* const perFramePixelShaderConstants = mDevice->GetConstantBuffer(mPerFramePixelShaderConstants);
-
-			ID3D12DescriptorHeap* ppDescHeaps[] = { mDevice->GetTextureHeap() };
-			commandList->SetDescriptorHeaps(_countof(ppDescHeaps), ppDescHeaps);
-
-			commandList->SetGraphicsRootConstantBufferView(2, lightConstantBuffer->GetResource()->GetGPUVirtualAddress());
-			commandList->SetGraphicsRootConstantBufferView(5, perFramePixelShaderConstants->GetResource()->GetGPUVirtualAddress());
-
-			commandList->SetGraphicsRoot32BitConstants(1, 3, &camera.Position.GetInternalVec(), 0);
-
-			for (RenderItemDrawCall& drawCall : mPerFrameDrawCalls)
-			{
-				commandList->SetGraphicsRootConstantBufferView(0, drawCall.MatrixSlot.GPUBaseAddr);
-				commandList->SetGraphicsRootConstantBufferView(4, drawCall.MaterialSlot.GPUBaseAddr);
-
-				// #NOTE(Josh::Everything should have a default guaranteed diffuse map. For now it also marks the start of the descriptor table)
-				DX12GFXTextureBuffer2D* const diffuse = mDevice->GetTextureBuffer2D(drawCall.TextureSlot0);
-				DX12GFXTextureBuffer2D* const specular = mDevice->GetTextureBuffer2D(drawCall.TextureSlot1);
-				DX12GFXTextureBuffer2D* const bump = mDevice->GetTextureBuffer2D(drawCall.TextureSlot2);
-
-				commandList->SetGraphicsRootDescriptorTable(3, diffuse->GetDescriptorHandleGPU());
-				commandList->SetGraphicsRootDescriptorTable(6, specular->GetDescriptorHandleGPU());
-				commandList->SetGraphicsRootDescriptorTable(7, bump->GetDescriptorHandleGPU());
-
-				DX12GFXVertexBuffer* const vertexBuffer = mDevice->GetVertexBuffer(drawCall.VertexBuffer);
-				DX12GFXIndexBuffer* const indexBuffer = mDevice->GetIndexBuffer(drawCall.IndexBuffer);
-
-				commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-				commandList->IASetVertexBuffers(0, 1, vertexBuffer->GetBufferView());
-				commandList->IASetIndexBuffer(indexBuffer->GetBufferView());
-				commandList->DrawIndexedInstanced(indexBuffer->GetNumElements(), 1, 0, 0, 0);
-			}
-		}
-		mDevice->EndFrame();
 	}
 
 	void Renderer::EnableVsync(bool bEnabled)

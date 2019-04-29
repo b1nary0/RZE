@@ -29,13 +29,11 @@ namespace Diotima
 
 		size_t bufferSize = numElements * sizeof(float);
 		ID3D12Device* device = mDevice->GetDevice();
-		ID3D12GraphicsCommandList* commandList = mDevice->GetCommandList();
-		ID3D12CommandQueue* commandQueue = mDevice->GetCommandQueue();
 
 		HRESULT res = device->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD), D3D12_HEAP_FLAG_NONE, &CD3DX12_RESOURCE_DESC::Buffer(bufferSize), D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&mUploadBuffer));
 		res = device->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), D3D12_HEAP_FLAG_NONE, &CD3DX12_RESOURCE_DESC::Buffer(bufferSize), D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&mGPUBuffer));
 
-		mDevice->ResetCommandList();
+		ID3D12GraphicsCommandList* commandList = mDevice->GetGraphicsCommandList(mDevice->CreateGraphicsCommandList(mDevice->GetResourceCommandAllocator(), nullptr));
 
 		commandList->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(mGPUBuffer.Get(),
@@ -61,8 +59,6 @@ namespace Diotima
 			&CD3DX12_RESOURCE_BARRIER::Transition(mGPUBuffer.Get(),
 				D3D12_RESOURCE_STATE_COPY_DEST,
 				D3D12_RESOURCE_STATE_GENERIC_READ));
-
-		commandList->Close();
 
 		mDevice->ExecuteCommandList(commandList);
 

@@ -11,8 +11,6 @@ namespace Diotima
 
 	void DX12GFXDepthStencilBuffer::Allocate()
 	{
-		mDevice->ResetCommandList();
-
 		D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
 		dsvHeapDesc.NumDescriptors = 1;
 		dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
@@ -38,10 +36,6 @@ namespace Diotima
 		mDevice->GetDevice()->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&mDescriptorHeap));
 
 		mDevice->GetDevice()->CreateDepthStencilView(mGPUBuffer.Get(), &depthStencilDesc, mDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-
-		mDevice->GetCommandList()->Close();
-
-		mDevice->ExecuteCommandList(mDevice->GetCommandList());
 	}
 
 	void DX12GFXDepthStencilBuffer::SetDevice(DX12GFXDevice* device)

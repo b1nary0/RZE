@@ -12,6 +12,9 @@
 #include <Utils/Math/Vector2D.h>
 #include <Utils/PrimitiveDefs.h>
 
+// #TODO(Josh::Temp)
+#define MAX_LIGHTS 128
+
 namespace Diotima
 {
 	// DX12 Temp
@@ -26,6 +29,9 @@ namespace Diotima
 
 	class Renderer
 	{
+		// #TODO(Temp for refactor, for access to RenderItemDrawCall)
+		friend class ForwardPass;
+
 	public:
 		enum class ETextureType
 		{
@@ -145,15 +151,14 @@ namespace Diotima
 		U32 CreateTextureBuffer2D(void* data, U32 width, U32 height);
 
 	private:
+		const std::vector<RenderItemDrawCall>& GetDrawCalls();
+		const std::vector<LightItemProtocol>& GetLights();
+		const U32* GetLightCounts();
+		const CameraItemProtocol& GetCamera();
+
 		void DX12Initialize();
 		
-		void PrepareLights();
 		void PrepareDrawCalls();
-
-		// #TODO(Josh::Temporary - this should eventually be made into pre-filled commandlists by virtue
-		//             of a Renderer command submission protocol -- then parsed into underlying API calls.
-		//             For now, just for organization purposes)
-		void BuildCommandList();
 
 	private:
 		CameraItemProtocol camera;
@@ -173,9 +178,7 @@ namespace Diotima
 		// DX12 Temp
 	private:
 		U32 mMVPConstantBuffer;
-		U32 mLightConstantBuffer;
 		U32 mMaterialBuffer; // Per mesh data
-		U32 mPerFramePixelShaderConstants; // Per frame data
 
 		std::unique_ptr<GFXPassGraph> mPassGraph;
 		
