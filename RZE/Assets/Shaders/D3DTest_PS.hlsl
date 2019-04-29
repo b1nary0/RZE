@@ -51,8 +51,8 @@ cbuffer MaterialData : register(b0, space3)
 
 cbuffer GlobalConstants : register(b0, space4)
 {
-	uint PointLightCount;
 	uint DirectionalLightCount;
+	uint PointLightCount;
 };
 
 float CalculateBlinnPhong(float3 viewDir, float3 lightDir, float3 normal)
