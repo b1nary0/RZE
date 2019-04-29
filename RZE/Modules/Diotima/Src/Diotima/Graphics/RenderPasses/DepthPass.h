@@ -11,12 +11,12 @@ namespace Diotima
 	class DX12GFXDevice;
 	class DX12GFXDepthStencilBuffer;
 
-	class ForwardPass : public GFXRenderPass
+	class DepthPass : public GFXRenderPass
 	{
 	public:
 		// #TODO(device parameter should eventually be a context (cmd list of its own)
-		ForwardPass();
-		virtual ~ForwardPass() = default;
+		DepthPass();
+		virtual ~DepthPass() = default;
 
 	public:
 		void Initialize() override;
@@ -26,14 +26,14 @@ namespace Diotima
 		void SetRenderer(Renderer* renderer);
 		void SetDevice(DX12GFXDevice* device);
 
-		void PrepareLights(const std::vector<Renderer::LightItemProtocol>& lights, const U32* lightCounts);
-
 	private:
 		void CreateRootSignature();
 		void CreatePipelineState();
 
 		void Begin(ID3D12GraphicsCommandList* commandList);
 		void End(ID3D12GraphicsCommandList* commandList);
+
+		void PrepareLights(const std::vector<Renderer::LightItemProtocol>& lights);
 
 	private:
 		DX12GFXDevice* mDevice;
@@ -48,7 +48,7 @@ namespace Diotima
 		ComPtr<ID3D12PipelineState> mPipelineState;
 
 		U32 mLightConstantBuffer;
-		U32 mPerFramePixelShaderConstants; // Per frame data
+		U32 mWorldMatrixBuffer;
 
 		U32 mCommandList;
 	};

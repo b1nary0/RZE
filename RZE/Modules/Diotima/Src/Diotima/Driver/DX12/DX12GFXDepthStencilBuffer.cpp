@@ -49,4 +49,9 @@ namespace Diotima
 		return mDescriptorHeap.Get();
 	}
 
+	ID3D12Resource* DX12GFXDepthStencilBuffer::GetResource()
+	{
+		return mGPUBuffer.Get();
+	}
+
 }

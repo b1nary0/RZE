@@ -31,6 +31,7 @@ namespace Diotima
 	{
 		// #TODO(Temp for refactor, for access to RenderItemDrawCall)
 		friend class ForwardPass;
+		friend class DepthPass;
 
 	public:
 		enum class ETextureType

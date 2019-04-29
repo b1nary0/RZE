@@ -74,7 +74,10 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 					mRenderer->Update();
 				}
 
-				mRenderer->Render();
+				{
+					OPTICK_EVENT("GPU Submission");
+					mRenderer->Render();
+				}
 			}
 
 			++mFrameCount;

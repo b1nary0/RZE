@@ -2,6 +2,7 @@
 
 #include <Diotima/Renderer.h>
 #include <Diotima/Graphics/RenderPasses/ForwardPass.h>
+#include <Diotima/Graphics/RenderPasses/DepthPass.h>
 
 #include <Utils/DebugUtils/Debug.h>
 
@@ -22,11 +23,18 @@ namespace Diotima
 	{
 		OPTICK_EVENT();
 
+		std::unique_ptr<DepthPass> depthPass = std::make_unique<DepthPass>();
+		depthPass->SetRenderer(renderer);
+		depthPass->Initialize();
+
+		mRenderPasses.push_back(std::move(depthPass));
+
 		std::unique_ptr<ForwardPass> forwardPass = std::make_unique<ForwardPass>();
 		forwardPass->SetRenderer(renderer);
 		forwardPass->Initialize();
 
 		mRenderPasses.push_back(std::move(forwardPass));
+		
 	}
 
 	void GFXPassGraph::Execute()

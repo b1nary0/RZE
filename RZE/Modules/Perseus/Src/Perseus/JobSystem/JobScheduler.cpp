@@ -1,5 +1,6 @@
 #include <Perseus/JobSystem/JobScheduler.h>
 
+#include <Utils/PrimitiveDefs.h>
 #include <Utils/DebugUtils/Debug.h>
 
 namespace Perseus
@@ -66,7 +67,19 @@ namespace Perseus
 		{
 			if (mJobQueue.empty())
 			{
-				bShouldWait = false;
+				U32 idleThreads = 0;
+				for (U32 workerIndex = 0; workerIndex < PERSEUS_MAX_WORKER_THREADS; ++workerIndex)
+				{
+					if (mWorkerThreads[workerIndex].IsIdle())
+					{
+						++idleThreads;
+					}
+				}
+
+				if (idleThreads == PERSEUS_MAX_WORKER_THREADS)
+				{
+					bShouldWait = false;
+				}
 			}
 		}
 	}

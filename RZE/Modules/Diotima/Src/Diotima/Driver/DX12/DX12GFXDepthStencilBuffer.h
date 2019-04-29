@@ -17,6 +17,7 @@ namespace Diotima
 		virtual void Allocate() override;
 
 	public:
+		ID3D12Resource* GetResource();
 
 		ID3D12DescriptorHeap* GetDescriptorHeap();
 
