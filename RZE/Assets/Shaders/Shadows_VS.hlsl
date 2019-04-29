@@ -13,7 +13,7 @@ struct VS_OUT
 
 cbuffer LightSpaceBuffer : register(b0)
 {
-	matrix LightSpaceMatrix;
+	float4x4 LightSpaceMatrix;
 };
 
 cbuffer MVPBuffer : register(b0, space1)

@@ -235,7 +235,7 @@ namespace Diotima
 		lightConstantBuffer->Reset();
 
 		AssertMsg(lights.size() == 1, "First pass shadows only support one light");
-		lightConstantBuffer->AllocateMember(lights.data());
+		lightConstantBuffer->AllocateMember(&lights[0].LightSpaceMatrix);
 	}
 
 }
