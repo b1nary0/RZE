@@ -114,6 +114,24 @@ float CalculatePointLight(float3 pixelPos, float3 lightPos, float3 normal, float
 	return lightStrength;
 }
 
+float CalculateShadowFromDepthMap(LIGHT_INPUT_DESC light, float3 fragPos, float3 normal, float3 lightDir)
+{
+	float4 fragPosLightSpace = mul(light.LightSpaceMat, float4(fragPos, 1.0f));
+
+	float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.05);
+	float3 projectionCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+	projectionCoords = projectionCoords * 0.5 + 0.5;
+	
+	float closestDepth = shadows.Sample(s1, projectionCoords.xy).r;
+	float currentDepth = projectionCoords.z;
+	float shadowResult = currentDepth - bias > closestDepth ? 1.0 : 0.0;
+	
+	if (projectionCoords.z > 1.0)
+		return 0.0;
+
+	return shadowResult;
+}
+
 float4 PSMain(PS_IN input) : SV_TARGET
 {
 	float ambientCoeff = 0.2f;
@@ -146,7 +164,9 @@ float4 PSMain(PS_IN input) : SV_TARGET
 		float3 diffuseResult = light.Color.rgb * lightStrength;
 		float3 specularResult = specular * lightStrength * light.Color.rgb;
 		
-		float3 result = (diffSample.rgb * (ambientResult + diffuseResult)) + (specularResult * specularSample.rgb);
+		float shadow = 1.0f;//CalculateShadowFromDepthMap(light, input.FragPos, normal, lightDir);
+
+		float3 result = (diffSample.rgb * ((ambientResult + diffuseResult) + 1.0f - shadow) + (specularResult * specularSample.rgb));
 		lightAccum += result;
 	}
 

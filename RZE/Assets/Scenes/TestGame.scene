@@ -33,14 +33,10 @@
         },
         "LightSourceComponent":
         {
-					"LightType": 1,
+					"LightType": 0,
           "Color": [0.95, 0.95, 0.85],
-          "Strength": 1.25
-        },
-		"MeshComponent":
-		{
-		  "ResourcePath": "Assets/3D/Cube.obj"
-		}
+          "Strength": 0.75
+        }
       }
     },
 	"Floor":
