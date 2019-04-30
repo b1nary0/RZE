@@ -47,14 +47,35 @@ namespace Diotima
 		mDepthStencilBuffer->Allocate();
 
 		mCommandList = mDevice->CreateGraphicsCommandList(mDevice->GetCommandAllocator(), nullptr);
-
 		ID3D12GraphicsCommandList* commandList = mDevice->GetGraphicsCommandList(mCommandList);
- 		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
- 			mDepthStencilBuffer.get()->GetResource(),
- 			D3D12_RESOURCE_STATE_DEPTH_WRITE,
- 			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
- 
- 		mDevice->ExecuteCommandList(commandList);
+
+		mDevice->GetDevice()->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R32_TYPELESS, kBufferWidth, kBufferHeight, 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL),
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+			nullptr,
+			IID_PPV_ARGS(&mDepthTexture));
+
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.Texture2D.MipLevels = 1;
+
+		mDepthTexGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mDevice->GetTextureHeap()->GetGPUDescriptorHandleForHeapStart());
+		mDepthTexGPUHandle.Offset(512, mDevice->GetCBVSRVUAVDescriptorSize());
+
+		mDepthTexCPUHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(mDevice->GetTextureHeap()->GetCPUDescriptorHandleForHeapStart());
+		mDepthTexCPUHandle.Offset(512, mDevice->GetCBVSRVUAVDescriptorSize());
+
+		mDevice->GetDevice()->CreateShaderResourceView(mDepthTexture.Get(), &srvDesc, mDepthTexCPUHandle);
+
+		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+			mDepthStencilBuffer->GetResource(),
+			D3D12_RESOURCE_STATE_DEPTH_WRITE,
+			D3D12_RESOURCE_STATE_RESOLVE_SOURCE));
+
+		mDevice->ExecuteCommandList(commandList);
 
 		mLightConstantBuffer = mDevice->CreateConstantBuffer(sizeof(Matrix4x4), 1);
 		mWorldMatrixBuffer = mDevice->CreateConstantBuffer(sizeof(Matrix4x4), 1);
@@ -68,8 +89,8 @@ namespace Diotima
 		commandList->SetGraphicsRootSignature(mRootSignature.Get());
 
 		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-			mDepthStencilBuffer.get()->GetResource(),
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+			mDepthStencilBuffer->GetResource(),
+			D3D12_RESOURCE_STATE_RESOLVE_SOURCE,
 			D3D12_RESOURCE_STATE_DEPTH_WRITE));
 
 		CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(mDepthStencilBuffer->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
@@ -113,9 +134,25 @@ namespace Diotima
 
 	void DepthPass::End(ID3D12GraphicsCommandList* commandList)
 	{
+		D3D12_RESOURCE_BARRIER barriers[2] =
+		{
+			CD3DX12_RESOURCE_BARRIER::Transition(
+				mDepthStencilBuffer->GetResource(),
+				D3D12_RESOURCE_STATE_DEPTH_WRITE,
+				D3D12_RESOURCE_STATE_RESOLVE_SOURCE),
+			CD3DX12_RESOURCE_BARRIER::Transition(
+				mDepthTexture.Get(),
+				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+				D3D12_RESOURCE_STATE_RESOLVE_DEST)
+		};
+
+		commandList->ResourceBarrier(2, barriers);
+
+		commandList->ResolveSubresource(mDepthTexture.Get(), 0, mDepthStencilBuffer->GetResource(), 0, DXGI_FORMAT_R32_FLOAT);
+
 		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-			mDepthStencilBuffer->GetResource(),
-			D3D12_RESOURCE_STATE_DEPTH_WRITE,
+			mDepthTexture.Get(),
+			D3D12_RESOURCE_STATE_RESOLVE_DEST,
 			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 
 		mDevice->ExecuteCommandList(commandList);
@@ -234,8 +271,16 @@ namespace Diotima
 
 		lightConstantBuffer->Reset();
 
-		AssertMsg(lights.size() == 1, "First pass shadows only support one light");
+		AssertMsg(lights.size() == 1, "First pass shadows only support one light"); 
 		lightConstantBuffer->AllocateMember(&lights[0].LightSpaceMatrix);
+	}
+
+	CD3DX12_GPU_DESCRIPTOR_HANDLE DepthPass::GetResourceGPUHandle(U64& handle)
+	{
+		mDepthTexGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mDevice->GetTextureHeap()->GetGPUDescriptorHandleForHeapStart());
+		mDepthTexGPUHandle.Offset(512, mDevice->GetCBVSRVUAVDescriptorSize());
+
+		return mDepthTexGPUHandle;
 	}
 
 }

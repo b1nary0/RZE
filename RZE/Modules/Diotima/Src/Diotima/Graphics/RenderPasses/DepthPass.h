@@ -35,6 +35,8 @@ namespace Diotima
 
 		void PrepareLights(const std::vector<Renderer::LightItemProtocol>& lights);
 
+		CD3DX12_GPU_DESCRIPTOR_HANDLE GetResourceGPUHandle(U64& handle) override;
+
 	private:
 		DX12GFXDevice* mDevice;
 		Renderer* mRenderer;
@@ -43,6 +45,10 @@ namespace Diotima
 		D3D12_RECT mScissorRect;
 
 		std::unique_ptr<DX12GFXDepthStencilBuffer> mDepthStencilBuffer;
+
+		ComPtr<ID3D12Resource> mDepthTexture;
+		CD3DX12_CPU_DESCRIPTOR_HANDLE mDepthTexCPUHandle;
+		CD3DX12_GPU_DESCRIPTOR_HANDLE mDepthTexGPUHandle;
 
 		ComPtr<ID3D12RootSignature> mRootSignature;
 		ComPtr<ID3D12PipelineState> mPipelineState;

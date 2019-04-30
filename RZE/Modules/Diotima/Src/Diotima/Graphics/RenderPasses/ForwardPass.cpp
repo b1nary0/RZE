@@ -100,6 +100,8 @@ namespace Diotima
 
 			commandList->SetGraphicsRoot32BitConstants(1, 3, &camera.Position.GetInternalVec(), 0);
 
+			commandList->SetGraphicsRootDescriptorTable(8, mInputResourceHandle);
+
 			const std::vector<Renderer::RenderItemDrawCall>& drawCalls = mRenderer->GetDrawCalls();
 			for (const Renderer::RenderItemDrawCall& drawCall : drawCalls)
 			{
@@ -125,6 +127,11 @@ namespace Diotima
 			}
 		}
 		End(commandList);
+	}
+
+	void ForwardPass::SetResourceGPUHandle(CD3DX12_GPU_DESCRIPTOR_HANDLE handle)
+	{
+		mInputResourceHandle = handle;
 	}
 
 	void ForwardPass::End(ID3D12GraphicsCommandList* commandList)
@@ -226,7 +233,19 @@ namespace Diotima
 		bumpTable.NumDescriptorRanges = _countof(bumpRange);
 		bumpTable.pDescriptorRanges = &bumpRange[0];
 
-		CD3DX12_ROOT_PARAMETER1 rootParameters[8];
+		D3D12_DESCRIPTOR_RANGE1 shadowsRange[1];
+		shadowsRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+		shadowsRange[0].NumDescriptors = 1;
+		shadowsRange[0].BaseShaderRegister = 3;
+		shadowsRange[0].RegisterSpace = 0;
+		shadowsRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+		shadowsRange[0].Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE;
+
+		D3D12_ROOT_DESCRIPTOR_TABLE1 shadowsTable;
+		shadowsTable.NumDescriptorRanges = _countof(shadowsRange);
+		shadowsTable.pDescriptorRanges = &shadowsRange[0];
+
+		CD3DX12_ROOT_PARAMETER1 rootParameters[9];
 		rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 		rootParameters[0].Descriptor = mMVPConstBuffer;
 		rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
@@ -256,6 +275,10 @@ namespace Diotima
 		rootParameters[7].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 		rootParameters[7].DescriptorTable = bumpTable;
 		rootParameters[7].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+		rootParameters[8].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+		rootParameters[8].DescriptorTable = shadowsTable;
+		rootParameters[8].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 		D3D12_STATIC_SAMPLER_DESC sampler = {};
 		sampler.Filter = D3D12_FILTER_ANISOTROPIC;

@@ -11,6 +11,7 @@ struct PS_IN
 Texture2D diffuse : register(t0);
 Texture2D specular : register(t1);
 Texture2D bump : register(t2);
+Texture2D shadows : register(t3);
 
 SamplerState s1 : register(s0);
 

@@ -22,6 +22,9 @@ namespace Diotima
 		void Initialize() override;
 		void Execute() override;
 
+		void SetResourceGPUHandle(CD3DX12_GPU_DESCRIPTOR_HANDLE handle) override;
+
+	public:
 		// #TODO(Temp. Final architecture won't need this)
 		void SetRenderer(Renderer* renderer);
 		void SetDevice(DX12GFXDevice* device);
@@ -46,6 +49,8 @@ namespace Diotima
 
 		ComPtr<ID3D12RootSignature> mRootSignature;
 		ComPtr<ID3D12PipelineState> mPipelineState;
+
+		CD3DX12_GPU_DESCRIPTOR_HANDLE mInputResourceHandle;
 
 		U32 mLightConstantBuffer;
 		U32 mPerFramePixelShaderConstants; // Per frame data

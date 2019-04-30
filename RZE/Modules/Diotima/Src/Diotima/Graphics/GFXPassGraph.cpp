@@ -43,9 +43,13 @@ namespace Diotima
 
 		AssertMsg(mRenderPasses.size() > 0, "Must always have at least one render pass.");
 
+		CD3DX12_GPU_DESCRIPTOR_HANDLE prevHandle;
 		for (auto& renderPass : mRenderPasses)
 		{
+			renderPass->SetResourceGPUHandle(prevHandle);
 			renderPass->Execute();
+			U64 temp = 0;
+			prevHandle = renderPass->GetResourceGPUHandle(temp);
 		}
 	}
 

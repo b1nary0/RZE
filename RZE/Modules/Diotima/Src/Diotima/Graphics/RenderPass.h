@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Diotima/Graphics/RenderTechnique.h>
+#include <Diotima/Driver/DX12/DX12.h>
 
 #include <Utils/PrimitiveDefs.h>
 
@@ -42,6 +42,9 @@ namespace Diotima
 	public:
 		virtual void Initialize() = 0;
 		virtual void Execute() = 0;
+
+		virtual CD3DX12_GPU_DESCRIPTOR_HANDLE GetResourceGPUHandle(U64& handle) { return CD3DX12_GPU_DESCRIPTOR_HANDLE(); };
+		virtual void SetResourceGPUHandle(CD3DX12_GPU_DESCRIPTOR_HANDLE handle) {};
 
 	private:
 		RenderPassInput* mInput;
