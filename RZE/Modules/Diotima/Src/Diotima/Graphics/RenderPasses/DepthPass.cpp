@@ -63,10 +63,10 @@ namespace Diotima
 		srvDesc.Texture2D.MipLevels = 1;
 
 		mDepthTexGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mDevice->GetTextureHeap()->GetGPUDescriptorHandleForHeapStart());
-		mDepthTexGPUHandle.Offset(512, mDevice->GetCBVSRVUAVDescriptorSize());
+		mDepthTexGPUHandle.Offset(600, mDevice->GetCBVSRVUAVDescriptorSize());
 
 		mDepthTexCPUHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(mDevice->GetTextureHeap()->GetCPUDescriptorHandleForHeapStart());
-		mDepthTexCPUHandle.Offset(512, mDevice->GetCBVSRVUAVDescriptorSize());
+		mDepthTexCPUHandle.Offset(600, mDevice->GetCBVSRVUAVDescriptorSize());
 
 		mDevice->GetDevice()->CreateShaderResourceView(mDepthTexture.Get(), &srvDesc, mDepthTexCPUHandle);
 
@@ -278,7 +278,7 @@ namespace Diotima
 	CD3DX12_GPU_DESCRIPTOR_HANDLE DepthPass::GetResourceGPUHandle(U64& handle)
 	{
 		mDepthTexGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mDevice->GetTextureHeap()->GetGPUDescriptorHandleForHeapStart());
-		mDepthTexGPUHandle.Offset(512, mDevice->GetCBVSRVUAVDescriptorSize());
+		mDepthTexGPUHandle.Offset(600, mDevice->GetCBVSRVUAVDescriptorSize());
 
 		return mDepthTexGPUHandle;
 	}
