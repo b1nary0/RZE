@@ -100,7 +100,7 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 
 		Diotima::Renderer::LightItemProtocol& item = renderer.GetLightProtocolByIdx(mLightItemEntityMap[entity]);
 
-		Matrix4x4 orthoProj = Matrix4x4::CreateOrthoMatrix(-10.0f, 10.0f, -10.0f, 10.0f, -25.0f, 25.0f);
+		Matrix4x4 orthoProj = Matrix4x4::CreateOrthoMatrix(-10.0f, 10.0f, -10.0f, 10.0f, -50.0f, 25.0f);
 		Matrix4x4 lightView = Matrix4x4::CreateViewMatrix(transfComp->Position, Vector3D(), Vector3D(0.0f, 1.0f, 0.0f));
 
 		item.LightSpaceMatrix = orthoProj * lightView;
