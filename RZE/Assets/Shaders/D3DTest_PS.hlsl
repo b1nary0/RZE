@@ -118,8 +118,9 @@ float CalculateShadowFromDepthMap(LIGHT_INPUT_DESC light, float3 fragPos, float3
 {
 	float4 fragPosLightSpace = mul(light.LightSpaceMat, float4(fragPos, 1.0f));
 
-	float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.05);
+	float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.25);
 	float3 projectionCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+	projectionCoords.y *= -1;
 	projectionCoords = projectionCoords * 0.5 + 0.5;
 	
 	float closestDepth = shadows.Sample(s1, projectionCoords.xy).r;
@@ -164,7 +165,7 @@ float4 PSMain(PS_IN input) : SV_TARGET
 		float3 diffuseResult = light.Color.rgb * lightStrength;
 		float3 specularResult = specular * lightStrength * light.Color.rgb;
 		
-		float shadow = 1.0f;//CalculateShadowFromDepthMap(light, input.FragPos, normal, lightDir);
+		float shadow = CalculateShadowFromDepthMap(light, input.FragPos, normal, lightDir);
 
 		float3 result = (diffSample.rgb * ((ambientResult + diffuseResult) + 1.0f - shadow) + (specularResult * specularSample.rgb));
 		lightAccum += result;
