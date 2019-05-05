@@ -43,7 +43,7 @@ namespace Diotima
 		virtual void Initialize() = 0;
 		virtual void Execute() = 0;
 
-		virtual CD3DX12_GPU_DESCRIPTOR_HANDLE GetResourceGPUHandle(U64& handle) { return CD3DX12_GPU_DESCRIPTOR_HANDLE(); };
+		virtual CD3DX12_GPU_DESCRIPTOR_HANDLE GetResourceGPUHandle() { return CD3DX12_GPU_DESCRIPTOR_HANDLE(); };
 		virtual void SetResourceGPUHandle(CD3DX12_GPU_DESCRIPTOR_HANDLE handle) {};
 
 	private:

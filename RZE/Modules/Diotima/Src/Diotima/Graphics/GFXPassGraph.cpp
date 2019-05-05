@@ -47,8 +47,7 @@ namespace Diotima
 		{
 			renderPass->SetResourceGPUHandle(prevHandle);
 			renderPass->Execute();
-			U64 temp = 0;
-			prevHandle = renderPass->GetResourceGPUHandle(temp);
+			prevHandle = renderPass->GetResourceGPUHandle();
 		}
 	}
 

@@ -35,7 +35,7 @@ namespace Diotima
 
 		void PrepareLights(const std::vector<Renderer::LightItemProtocol>& lights);
 
-		CD3DX12_GPU_DESCRIPTOR_HANDLE GetResourceGPUHandle(U64& handle) override;
+		CD3DX12_GPU_DESCRIPTOR_HANDLE GetResourceGPUHandle() override;
 
 	private:
 		DX12GFXDevice* mDevice;

@@ -275,7 +275,7 @@ namespace Diotima
 		lightConstantBuffer->AllocateMember(&lights[0].LightSpaceMatrix);
 	}
 
-	CD3DX12_GPU_DESCRIPTOR_HANDLE DepthPass::GetResourceGPUHandle(U64& handle)
+	CD3DX12_GPU_DESCRIPTOR_HANDLE DepthPass::GetResourceGPUHandle()
 	{
 		mDepthTexGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mDevice->GetTextureHeap()->GetGPUDescriptorHandleForHeapStart());
 		mDepthTexGPUHandle.Offset(600, mDevice->GetCBVSRVUAVDescriptorSize());
