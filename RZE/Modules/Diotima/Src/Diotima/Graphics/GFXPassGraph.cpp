@@ -37,8 +37,8 @@ namespace Diotima
 		forwardPass->Initialize();
 
 		mRenderPasses.push_back(std::move(depthPass));
-		//mRenderPasses.push_back(std::move(imguiPass));
 		mRenderPasses.push_back(std::move(forwardPass));
+		//mRenderPasses.push_back(std::move(imguiPass));
 	}
 
 	void GFXPassGraph::Execute()
