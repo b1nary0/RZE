@@ -19,6 +19,9 @@
 #include <Diotima/Driver/DX12/DX12GFXVertexBuffer.h>
 #include <Diotima/Driver/DX12/DX12GFXTextureBuffer2D.h>
 
+#include <ImGui/imgui.h>
+#include <ImGui/imgui_impl_dx12.h>
+
 namespace Diotima
 {
 	Renderer::Renderer()
@@ -70,6 +73,10 @@ namespace Diotima
 	{
 		DX12Initialize();
 
+		ImGui::CreateContext();
+		ImGui::GetIO().DisplaySize.x = 1920;
+		ImGui::GetIO().DisplaySize.y = 1080;
+
 		mPassGraph->Build(this);
 	}
 
@@ -94,6 +101,8 @@ namespace Diotima
 
 	void Renderer::ShutDown()
 	{
+		ImGui_ImplDX12_Shutdown();
+
 		mDevice->Shutdown();
 	}
 

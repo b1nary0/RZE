@@ -21,6 +21,11 @@
 
 #include <Utils/DebugUtils/Debug.h>
 
+#ifdef WITH_IMGUI
+#include <ImGui/imgui.h>
+#include <ImGui/imgui_impl_dx12.h>
+#endif
+
 RZE_Engine::RZE_Engine()
 	: mMainWindow(nullptr)
 	, mEngineConfig(nullptr)
@@ -69,6 +74,13 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 				PreUpdate();
 				{
 					OPTICK_EVENT("Update and Render");
+
+#ifdef WITH_IMGUI
+					ImGui_ImplDX12_NewFrame();
+					ImGui::NewFrame();
+
+					ImGui::ShowDemoWindow();
+#endif
 
 					Update();
 					mRenderer->Update();
