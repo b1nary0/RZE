@@ -51,7 +51,7 @@ namespace Diotima
 		ID3D12GraphicsCommandList* const commandList = mDevice->GetGraphicsCommandList(mCommandList);
 		commandList->Reset(mDevice->GetCommandAllocator(), nullptr);
 
-		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mDevice->GetRenderTargetHeap()->GetCPUDescriptorHandleForHeapStart(), 0, mDevice->GetRTVDescriptorSize());
+		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mDevice->GetRenderTargetHeap()->GetCPUDescriptorHandleForHeapStart(), mDevice->GetCurrentFrame(), mDevice->GetRTVDescriptorSize());
 		const float clearColor[] = { 0.f, 0.f, 0.f, 0.f };
 
 		D3D12_RESOURCE_BARRIER barrier = {};
