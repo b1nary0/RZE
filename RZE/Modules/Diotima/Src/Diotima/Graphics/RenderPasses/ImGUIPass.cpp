@@ -63,7 +63,6 @@ namespace Diotima
 		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
 		commandList->ResourceBarrier(1, &barrier);
-		commandList->ClearRenderTargetView(rtvHandle, (float*)&clearColor, 0, NULL);
 		commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, NULL);
 
 		ID3D12DescriptorHeap* ppDescHeaps[] = { mTextureHeap };
