@@ -74,8 +74,8 @@ namespace Diotima
 		DX12Initialize();
 
 		ImGui::CreateContext();
-		ImGui::GetIO().DisplaySize.x = 1920;
-		ImGui::GetIO().DisplaySize.y = 1080;
+		ImGui::GetIO().DisplaySize.x = 1584;
+		ImGui::GetIO().DisplaySize.y = 861;
 
 		mPassGraph->Build(this);
 	}
