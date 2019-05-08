@@ -22,7 +22,9 @@ namespace Diotima
 		ID3D12DescriptorHeap* GetTextureHeap();
 
 		void SetDevice(DX12GFXDevice* device);
-		
+
+		void SetSize(int newWidth, int newHeight);
+
 		CD3DX12_CPU_DESCRIPTOR_HANDLE mSRVCPUHandle;
 		CD3DX12_GPU_DESCRIPTOR_HANDLE mSRVGPUHandle;
 	private:
@@ -33,5 +35,8 @@ namespace Diotima
 		ComPtr<ID3D12Resource> mGPUBuffer;
 		ComPtr<ID3D12DescriptorHeap>  mDescriptorHeap;
 		ComPtr<ID3D12DescriptorHeap> mTextureHeap;
+
+		int mWidth;
+		int mHeight;
 	};
 }

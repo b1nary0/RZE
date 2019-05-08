@@ -150,7 +150,7 @@ namespace Diotima
 			mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mResourceCommandAllocator));
 		}
 
-		InitializeMSAA();
+		InitializeMSAA(kBufferWidth, kBufferHeight);
 
 		InitializeMipGeneration();
 	}
@@ -282,7 +282,7 @@ namespace Diotima
 		return mCBVSRVUAVDescriptorSize;
 	}
 
-	void DX12GFXDevice::InitializeMSAA()
+	void DX12GFXDevice::InitializeMSAA(int width, int height)
 	{
 		// Create descriptor heaps for MSAA render target views and depth stencil views.
 		D3D12_DESCRIPTOR_HEAP_DESC rtvDescriptorHeapDesc = {};
@@ -291,7 +291,7 @@ namespace Diotima
 
 		mDevice->CreateDescriptorHeap(&rtvDescriptorHeapDesc, IID_PPV_ARGS(&mMSAARTVDescriptorHeap));
 
-		D3D12_RESOURCE_DESC msaaRTDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, kBufferWidth, kBufferHeight, 1, 1, mSampleCount);
+		D3D12_RESOURCE_DESC msaaRTDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, width, height, 1, 1, mSampleCount);
 		msaaRTDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 
 		D3D12_CLEAR_VALUE  msaaOptimizedClearValue = {};
@@ -541,6 +541,35 @@ namespace Diotima
 	ID3D12DescriptorHeap* DX12GFXDevice::GetMSAARTVHeap()
 	{
 		return mMSAARTVDescriptorHeap.Get();
+	}
+
+	void DX12GFXDevice::HandleWindowResize(int newWidth, int newHeight)
+	{
+		for (int bufferIndex = 0; bufferIndex < kBufferCount; ++bufferIndex)
+		{
+			mRenderTargets[bufferIndex].Reset();
+		}
+
+		DXGI_SWAP_CHAIN_DESC swapChainDesc;
+		mSwapChain->GetDesc(&swapChainDesc);
+
+		mSwapChain->ResizeBuffers(kBufferCount, newWidth, newHeight, swapChainDesc.BufferDesc.Format, swapChainDesc.Flags);
+
+		// RENDER TARGETS (FRAMES)
+		{
+			CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mRTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+
+			for (U32 frameIndex = 0; frameIndex < kBufferCount; ++frameIndex)
+			{
+				mSwapChain->GetBuffer(frameIndex, IID_PPV_ARGS(&mRenderTargets[frameIndex]));
+				mDevice->CreateRenderTargetView(mRenderTargets[frameIndex].Get(), nullptr, rtvHandle);
+				rtvHandle.Offset(1, mRTVDescriptorSize);
+			}
+		}
+
+		mMSAARenderTarget.Reset();
+		mMSAARTVDescriptorHeap.Reset();
+		InitializeMSAA(newWidth, newHeight);
 	}
 
 }

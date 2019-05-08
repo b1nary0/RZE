@@ -145,6 +145,7 @@ namespace Diotima
 		void EnableVsync(bool bEnable);
 		void SetMSAASampleCount(U32 sampleCount);
 
+		const Vector2D& GetCanvasSize();
 		void ResizeCanvas(const Vector2D& newSize);
 
 		// #TODO(Josh::Stand-ins for command infrastructure until DX12 rendering stabilized)

@@ -14,8 +14,10 @@ namespace Diotima
 		virtual ~ImGUIPass();
 
 	public:
-		void Initialize() override;
+		void Initialize(int width, int height) override;
 		void Execute() override;
+
+		void OnWindowResize(int newWidth, int newHeight) override;
 
 		void SetRenderer(Renderer* renderer);
 		void SetDevice(DX12GFXDevice* device);

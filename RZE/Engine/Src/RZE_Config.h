@@ -4,4 +4,4 @@
 
 #define MAX_FRAMETIME_SAMPLES 16
 
-//#define WITH_IMGUI
+#define WITH_IMGUI

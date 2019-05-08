@@ -24,21 +24,24 @@ namespace Diotima
 	{
 		OPTICK_EVENT();
 
+		int width = static_cast<int>(renderer->GetCanvasSize().X());
+		int height = static_cast<int>(renderer->GetCanvasSize().Y());
+
 		std::unique_ptr<DepthPass> depthPass = std::make_unique<DepthPass>();
 		depthPass->SetRenderer(renderer);
-		depthPass->Initialize();
+		depthPass->Initialize(width, height);
 
 		std::unique_ptr<ImGUIPass> imguiPass = std::make_unique<ImGUIPass>();
 		imguiPass->SetRenderer(renderer);
-		imguiPass->Initialize();
+		imguiPass->Initialize(width, height);
 
 		std::unique_ptr<ForwardPass> forwardPass = std::make_unique<ForwardPass>();
 		forwardPass->SetRenderer(renderer);
-		forwardPass->Initialize();
+		forwardPass->Initialize(width, height);
 
 		mRenderPasses.push_back(std::move(depthPass));
 		mRenderPasses.push_back(std::move(forwardPass));
-		//mRenderPasses.push_back(std::move(imguiPass));
+		mRenderPasses.push_back(std::move(imguiPass));
 	}
 
 	void GFXPassGraph::Execute()
@@ -53,6 +56,14 @@ namespace Diotima
 			renderPass->SetResourceGPUHandle(prevHandle);
 			renderPass->Execute();
 			prevHandle = renderPass->GetResourceGPUHandle();
+		}
+	}
+
+	void GFXPassGraph::OnWindowResize(int newWidth, int newHeight)
+	{
+		for (std::unique_ptr<GFXRenderPass>& pass : mRenderPasses)
+		{
+			pass->OnWindowResize(newWidth, newHeight);
 		}
 	}
 

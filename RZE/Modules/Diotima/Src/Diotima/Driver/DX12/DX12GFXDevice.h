@@ -82,8 +82,10 @@ namespace Diotima
 		// #TODO(Josh::Tease this out later)
 		void GenerateMipsForTexture(DX12GFXTextureBuffer2D* texture);
 
+		void HandleWindowResize(int newWidth, int newHeight);
+
 	private:
-		void InitializeMSAA();
+		void InitializeMSAA(int width, int height);
 		void CreateTextureHeap();
 
 		void InitializeMipGeneration();

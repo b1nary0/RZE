@@ -20,7 +20,11 @@ namespace Diotima
 	{
 	}
 
-	void DepthPass::Initialize()
+	DepthPass::~DepthPass()
+	{
+	}
+
+	void DepthPass::Initialize(int width, int height)
 	{
 		OPTICK_EVENT();
 
@@ -30,8 +34,8 @@ namespace Diotima
 		CreatePipelineState();
 
 		mViewport = new D3D12_VIEWPORT();
-		mViewport->Height = kBufferHeight;
-		mViewport->Width = kBufferWidth;
+		mViewport->Width = static_cast<float>(width);
+		mViewport->Height = static_cast<float>(height);
 		mViewport->TopLeftX = 0;
 		mViewport->TopLeftY = 0;
 		mViewport->MinDepth = 0.0f;
@@ -39,11 +43,12 @@ namespace Diotima
 
 		mScissorRect.left = 0;
 		mScissorRect.top = 0;
-		mScissorRect.right = kBufferWidth;
-		mScissorRect.bottom = kBufferHeight;
+		mScissorRect.right = width;
+		mScissorRect.bottom = height;
 
 		mDepthStencilBuffer = std::make_unique<DX12GFXDepthStencilBuffer>();
 		mDepthStencilBuffer->SetDevice(mDevice);
+		mDepthStencilBuffer->SetSize(width, height);
 		mDepthStencilBuffer->Allocate();
 
 		mCommandList = mDevice->CreateGraphicsCommandList(mDevice->GetCommandAllocator(), nullptr);
@@ -51,7 +56,7 @@ namespace Diotima
 
 		mDevice->GetDevice()->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R32_TYPELESS, kBufferWidth, kBufferHeight, 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL),
+			&CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R32_TYPELESS, width, height, 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL),
 			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
 			nullptr,
 			IID_PPV_ARGS(&mDepthTexture));

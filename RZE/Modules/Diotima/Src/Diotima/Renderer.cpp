@@ -71,11 +71,9 @@ namespace Diotima
 
 	void Renderer::Initialize()
 	{
-		DX12Initialize();
+		mCanvasSize.SetXY(1600, 900);
 
-		ImGui::CreateContext();
-		ImGui::GetIO().DisplaySize.x = 1584;
-		ImGui::GetIO().DisplaySize.y = 861;
+		DX12Initialize();
 
 		mPassGraph->Build(this);
 	}
@@ -91,6 +89,12 @@ namespace Diotima
 
 		{
 			mPassGraph->Execute();
+		}
+
+		HRESULT res = mDevice->GetDevice()->GetDeviceRemovedReason();
+		if (res != S_OK)
+		{
+			AssertFalse();
 		}
 	}
 
@@ -215,9 +219,22 @@ namespace Diotima
 		mMSAASampleCount = sampleCount;
 	}
 
+
+	const Vector2D& Renderer::GetCanvasSize()
+	{
+		return mCanvasSize;
+	}
+
 	void Renderer::ResizeCanvas(const Vector2D& newSize)
 	{
 		mCanvasSize = newSize;
+
+		int width = static_cast<int>(newSize.X());
+		int height = static_cast<int>(newSize.Y());
+
+		mDevice->HandleWindowResize(width, height);
+
+		mPassGraph->OnWindowResize(width, height);
 
 		LOG_CONSOLE_ARGS("New Canvas Size: %f x %f", mCanvasSize.X(), mCanvasSize.Y());
 	}

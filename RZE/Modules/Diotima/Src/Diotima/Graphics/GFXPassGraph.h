@@ -24,6 +24,7 @@ namespace Diotima
 		//       should return the final render target, the result of n GFXRenderPasses.)
 		void Execute();
 
+		void OnWindowResize(int newWidth, int newHeight);
 
 	private:
 		std::vector<std::unique_ptr<GFXRenderPass>> mRenderPasses;

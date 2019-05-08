@@ -40,11 +40,13 @@ namespace Diotima
 		virtual ~GFXRenderPass() = default;
 
 	public:
-		virtual void Initialize() = 0;
+		virtual void Initialize(int width, int height) = 0;
 		virtual void Execute() = 0;
 
 		virtual CD3DX12_GPU_DESCRIPTOR_HANDLE GetResourceGPUHandle() { return CD3DX12_GPU_DESCRIPTOR_HANDLE(); };
 		virtual void SetResourceGPUHandle(CD3DX12_GPU_DESCRIPTOR_HANDLE handle) {};
+
+		virtual void OnWindowResize(int newWidth, int newHeight) = 0;
 
 	private:
 		RenderPassInput* mInput;

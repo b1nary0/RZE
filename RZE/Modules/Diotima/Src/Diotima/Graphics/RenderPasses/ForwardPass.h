@@ -11,16 +11,18 @@ namespace Diotima
 	class DX12GFXDevice;
 	class DX12GFXDepthStencilBuffer;
 
-	class ForwardPass : public GFXRenderPass
+	class ForwardPass final : public GFXRenderPass
 	{
 	public:
 		// #TODO(device parameter should eventually be a context (cmd list of its own)
 		ForwardPass();
-		virtual ~ForwardPass() = default;
+		virtual ~ForwardPass();
 
 	public:
-		void Initialize() override;
+		void Initialize(int width, int height) override;
 		void Execute() override;
+
+		void OnWindowResize(int newWidth, int newHeight) override;
 
 		void SetResourceGPUHandle(CD3DX12_GPU_DESCRIPTOR_HANDLE handle) override;
 

@@ -11,6 +11,8 @@ namespace Diotima
 
 	void DX12GFXDepthStencilBuffer::Allocate()
 	{
+		AssertExpr(mWidth != 0 && mHeight != 0);
+
 		D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
 		dsvHeapDesc.NumDescriptors = 1;
 		dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
@@ -38,7 +40,7 @@ namespace Diotima
 
 		mDevice->GetDevice()->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R32_TYPELESS, kWidth, kHeight, 1, 1, mDevice->GetMSAASampleCount(), 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL),
+			&CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R32_TYPELESS, mWidth, mHeight, 1, 1, mDevice->GetMSAASampleCount(), 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL),
 			D3D12_RESOURCE_STATE_DEPTH_WRITE,
 			&depthOptimizedClearValue,
 			IID_PPV_ARGS(&mGPUBuffer));
@@ -76,6 +78,14 @@ namespace Diotima
 	ID3D12DescriptorHeap* DX12GFXDepthStencilBuffer::GetTextureHeap()
 	{
 		return mTextureHeap.Get();
+	}
+
+	void DX12GFXDepthStencilBuffer::SetSize(int newWidth, int newHeight)
+	{
+		AssertExpr(newWidth != 0 && newHeight != 0);
+
+		mWidth = newWidth;
+		mHeight = newHeight;
 	}
 
 }

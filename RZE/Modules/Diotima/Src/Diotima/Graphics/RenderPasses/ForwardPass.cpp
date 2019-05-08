@@ -21,8 +21,12 @@ namespace Diotima
 	{
 	}
 
-	void ForwardPass::Initialize()
+	ForwardPass::~ForwardPass()
 	{
+	}
+
+	void ForwardPass::Initialize(int width, int height)
+{
 		OPTICK_EVENT();
 
 		SetDevice(mRenderer->mDevice.get());
@@ -31,8 +35,8 @@ namespace Diotima
 		CreatePipelineState();
 
 		mViewport = new D3D12_VIEWPORT();
-		mViewport->Height = kBufferHeight;
-		mViewport->Width = kBufferWidth;
+		mViewport->Width = static_cast<float>(width);
+		mViewport->Height = static_cast<float>(height);
 		mViewport->TopLeftX = 0;
 		mViewport->TopLeftY = 0;
 		mViewport->MinDepth = 0.0f;
@@ -40,11 +44,12 @@ namespace Diotima
 
 		mScissorRect.left = 0;
 		mScissorRect.top = 0;
-		mScissorRect.right = kBufferWidth;
-		mScissorRect.bottom = kBufferHeight;
+		mScissorRect.right = width;
+		mScissorRect.bottom = height;
 
 		mDepthStencilBuffer = std::make_unique<DX12GFXDepthStencilBuffer>();
 		mDepthStencilBuffer->SetDevice(mDevice);
+		mDepthStencilBuffer->SetSize(width, height);
 		mDepthStencilBuffer->Allocate();
 
 		//WaitForPreviousFrame();
@@ -378,6 +383,28 @@ namespace Diotima
 
 		lightConstantBuffer->AllocateMember(lights.data());
 		perFramePixelShaderConstants->AllocateMember(lightCounts);
+	}
+
+	void ForwardPass::OnWindowResize(int newWidth, int newHeight)
+	{
+		mDepthStencilBuffer.release();
+
+		mDepthStencilBuffer = std::make_unique<DX12GFXDepthStencilBuffer>();
+		mDepthStencilBuffer->SetSize(newWidth, newHeight);
+		mDepthStencilBuffer->SetDevice(mDevice);
+		mDepthStencilBuffer->Allocate();
+
+		mViewport->Width = static_cast<float>(newWidth);
+		mViewport->Height = static_cast<float>(newHeight);
+		mViewport->TopLeftX = 0;
+		mViewport->TopLeftY = 0;
+		mViewport->MinDepth = 0.0f;
+		mViewport->MaxDepth = 1.0f;
+
+		mScissorRect.left = 0;
+		mScissorRect.top = 0;
+		mScissorRect.right = newWidth;
+		mScissorRect.bottom = newHeight;
 	}
 
 }

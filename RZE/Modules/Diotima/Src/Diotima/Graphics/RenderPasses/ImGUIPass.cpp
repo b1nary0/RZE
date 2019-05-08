@@ -20,7 +20,7 @@ namespace Diotima
 	{
 	}
 
-	void ImGUIPass::Initialize()
+	void ImGUIPass::Initialize(int width, int height)
 	{
 		SetDevice(mRenderer->mDevice.get());
 		mCommandList = mDevice->CreateGraphicsCommandList(mDevice->GetCommandAllocator(), nullptr);
@@ -32,12 +32,16 @@ namespace Diotima
 		srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		mDevice->GetDevice()->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mTextureHeap));
 
+		ImGui::CreateContext();
+
 		ImGui_ImplDX12_Init(
 			mDevice->GetDevice(),
 			2,
 			DXGI_FORMAT_R8G8B8A8_UNORM,
 			mTextureHeap->GetCPUDescriptorHandleForHeapStart(),
 			mTextureHeap->GetGPUDescriptorHandleForHeapStart());
+
+		OnWindowResize(width, height);
 	}
 
 	void ImGUIPass::Begin()
@@ -75,6 +79,12 @@ namespace Diotima
 		commandList->ResourceBarrier(1, &barrier);
 
 		mDevice->ExecuteCommandList(commandList);
+	}
+
+	void ImGUIPass::OnWindowResize(int newWidth, int newHeight)
+	{
+		ImGui::GetIO().DisplaySize.x = static_cast<float>(newWidth);
+		ImGui::GetIO().DisplaySize.y = static_cast<float>(newHeight);
 	}
 
 	void ImGUIPass::End()
