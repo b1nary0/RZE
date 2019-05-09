@@ -137,7 +137,7 @@ float CalculateShadowFromDepthMap(LIGHT_INPUT_DESC light, float3 fragPos, float3
 
 float4 PSMain(PS_IN input) : SV_TARGET
 {
-	float ambientCoeff = 0.4f;
+	float ambientCoeff = 0.65f;
 	
 	float3 normal = normalize(input.Normal);
 	float3 tangent = normalize(input.Tangent);

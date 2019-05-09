@@ -1,5 +1,7 @@
 #include <EditorApp.h>
 
+#include <ImGui/imgui.h>
+
 EditorApp::EditorApp()
 {
 }
@@ -19,6 +21,7 @@ void EditorApp::Start()
 
 void EditorApp::Update()
 {
+	ImGui::Text("WOLOLOLO");
 }
 
 void EditorApp::ShutDown()

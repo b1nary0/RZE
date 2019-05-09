@@ -34,8 +34,12 @@ workspace "RZE"
 	-- Where the project files will be generated
 	location(RootDir .. "_Project")
 
-	filter "configurations:Debug"	defines { "DEBUG" } symbols "Full"
-	filter "configurations:Release"	defines { "NDEBUG" } optimize "On"
+	filter "configurations:Debug"	
+		defines { "DEBUG" } 
+		symbols "Full"
+	filter "configurations:Release"	
+		defines { "NDEBUG" } 
+		optimize "On"
 
 	--
 	-- Visual Studio

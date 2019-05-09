@@ -273,14 +273,11 @@ void RZE_Engine::RegisterWindowEvents()
 
 void RZE_Engine::RegisterKeyEvents()
 {
-	Functor<void, const InputKey&> keyFunc([this](const InputKey& key)
-	{
-		if (key.GetKeyCode() == Win32KeyCode::F4)
-		{
-			bEnableEditor = !bEnableEditor;
-		}
-	});
-	GetInputHandler().BindAction(Win32KeyCode::F4, EButtonState::ButtonState_Pressed, keyFunc);
+// 	Functor<void, const InputKey&> keyFunc([this](const InputKey& key)
+// 	{
+// 		
+// 	});
+// 	GetInputHandler().BindAction(Win32KeyCode::, EButtonState::ButtonState_Pressed, keyFunc);
 }
 
 void RZE_Engine::RegisterEngineComponentTypes()
