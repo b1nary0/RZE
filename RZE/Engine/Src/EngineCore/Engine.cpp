@@ -33,6 +33,7 @@ RZE_Engine::RZE_Engine()
 	, mRenderer(nullptr)
 	, bShouldExit(false)
 	, bIsInitialized(false)
+	, bEnableEditor(false)
 	, mDeltaTime(0.0)
 	, mFrameCount(0)
 {
@@ -79,7 +80,10 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 					ImGui_ImplDX12_NewFrame();
 					ImGui::NewFrame();
 
-					ImGui::ShowDemoWindow();
+					if (bEnableEditor)
+					{
+						ImGui::ShowDemoWindow();
+					}
 #endif
 
 					Update();
@@ -146,6 +150,8 @@ void RZE_Engine::Init()
 void RZE_Engine::PostInit(Functor<RZE_Application* const>& createApplicationCallback)
 {
 	LOG_CONSOLE("RZE_EngineCore::PostInit() called.");
+
+	RegisterKeyEvents();
 
 	InitializeApplication(createApplicationCallback);
 
@@ -263,6 +269,18 @@ void RZE_Engine::RegisterWindowEvents()
 		}
 	});
 	mEventHandler.RegisterForEvent(EEventType::Window, windowCallback);
+}
+
+void RZE_Engine::RegisterKeyEvents()
+{
+	Functor<void, const InputKey&> keyFunc([this](const InputKey& key)
+	{
+		if (key.GetKeyCode() == Win32KeyCode::F4)
+		{
+			bEnableEditor = !bEnableEditor;
+		}
+	});
+	GetInputHandler().BindAction(Win32KeyCode::F4, EButtonState::ButtonState_Pressed, keyFunc);
 }
 
 void RZE_Engine::RegisterEngineComponentTypes()

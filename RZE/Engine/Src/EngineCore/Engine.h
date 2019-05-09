@@ -70,6 +70,7 @@ private:
 	void CompileEvents();
 
 	void RegisterWindowEvents();
+	void RegisterKeyEvents();
 	void RegisterEngineComponentTypes();
 
 	void LoadEngineConfig();
@@ -101,6 +102,8 @@ private:
 
 	bool bIsInitialized;
 	bool bShouldExit;
+
+	bool bEnableEditor;
 
 	std::vector<float> mFrameSamples;
 };
