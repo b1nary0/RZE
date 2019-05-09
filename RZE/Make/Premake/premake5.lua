@@ -508,3 +508,68 @@ workspace "RZE"
 				SourceDir .. "**.cpp"
 			}
 		 }
+
+	--
+	--
+	-- RZE_EDITOR
+	--
+	--
+	project "Editor"
+	local ProjectDir = RootDir .. "Editor/"
+	local SourceDir = ProjectDir .. SourceFolder
+
+	filter {}
+	
+	flags { "FatalCompileWarnings" }
+	disablewarnings { "4267" }
+	
+	kind "ConsoleApp"
+	language "C++"
+	targetdir (LibDir)
+	targetname "RZE_Editor"
+
+	dependson { "Engine", "Apollo", "Diotima", "Perseus", "Utils"}
+
+	files
+	{
+		SourceDir .. "**.h",
+		SourceDir .. "**.hpp",
+		SourceDir .. "**.c",
+		SourceDir .. "**.cpp"
+	}
+
+	includedirs
+	{
+		IncludeDir,
+		SourceDir,
+		RootDir .. "Engine/Src/",
+		RootDir .. "Utils/Src/",
+		RootDir .. "Modules/Apollo/Src/",
+		RootDir .. "Modules/Diotima/Src/",
+		RootDir .. "Modules/Perseus/Src/",
+	}
+
+	libdirs
+	{
+		LibDir,
+		ThirdPartyLibDir,
+	}
+	links
+	{
+		"RZE_Engine",
+		"RZE_Utils",
+		"Apollo",
+		"Diotima",
+		"Perseus"
+	}
+
+	 vpaths
+	 {
+		["Source Files/*"] =
+		{
+			SourceDir .. "**.h",
+			SourceDir .. "**.hpp",
+			SourceDir .. "**.c",
+			SourceDir .. "**.cpp"
+		}
+	 }
