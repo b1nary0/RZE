@@ -30,6 +30,7 @@ void EditorApp::Start()
 void EditorApp::Update()
 {
 	static bool bShowDemoWindow = false;
+	static bool bShowSceneWindow = false;
 
 	ImGui::PushFont(consolas);
 	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.5f, 5.0f));
@@ -46,13 +47,13 @@ void EditorApp::Update()
 
 		if (ImGui::BeginMenu("Windows"))
 		{
-			if (ImGui::BeginMenu("Scene"))
+			if (ImGui::MenuItem("Scene"))
 			{
-				if (ImGui::MenuItem("Create Entity"))
+				if (ImGui::Begin("Scene"))
 				{
-
+					bShowSceneWindow = true;
 				}
-				ImGui::EndMenu();
+				ImGui::End();
 			}
 			ImGui::EndMenu();
 		}
@@ -73,6 +74,15 @@ void EditorApp::Update()
 	if (bShowDemoWindow)
 	{
 		ImGui::ShowDemoWindow();
+	}
+
+	if (bShowSceneWindow)
+	{
+		if (ImGui::Begin("Scene"), &bShowSceneWindow)
+		{
+			
+		}
+		ImGui::End();
 	}
 
 	ImGui::PopFont();
