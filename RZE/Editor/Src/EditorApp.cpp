@@ -21,10 +21,17 @@ void EditorApp::Start()
 
 void EditorApp::Update()
 {
-	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5.0f, 5.0f));
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.5f, 5.0f));
 	if (ImGui::BeginMainMenuBar())
 	{
-		ImGui::MenuItem("Test");
+		if (ImGui::BeginMenu("File"))
+		{
+			if (ImGui::MenuItem("Exit"))
+			{
+				RZE().PostExit();
+			}
+			ImGui::EndMenu();
+		}
 		ImGui::EndMainMenuBar();
 	}
 	ImGui::PopStyleVar();
