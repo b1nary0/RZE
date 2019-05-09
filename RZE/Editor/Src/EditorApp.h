@@ -5,7 +5,6 @@
 class EditorApp : public RZE_Application
 {
 public:
-
 	EditorApp();
 	virtual ~EditorApp();
 
@@ -16,4 +15,6 @@ public:
 
 	virtual void RegisterInputEvents(InputHandler& inputHandler) override;
 
+private:
+	std::bitset<32> mWindowBits; // Enable/Disable showing certain panels
 };
