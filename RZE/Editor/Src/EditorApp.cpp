@@ -21,6 +21,7 @@ void EditorApp::Start()
 
 void EditorApp::Update()
 {
+	static bool bShowDemoWindow = false;
 	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.5f, 5.0f));
 	if (ImGui::BeginMainMenuBar())
 	{
@@ -32,9 +33,24 @@ void EditorApp::Update()
 			}
 			ImGui::EndMenu();
 		}
+
+		if (ImGui::BeginMenu("Help"))
+		{
+			if (ImGui::MenuItem("Show ImGui Demo Window"))
+			{
+				bShowDemoWindow = !bShowDemoWindow;
+			}
+
+			ImGui::EndMenu();
+		}
 		ImGui::EndMainMenuBar();
 	}
 	ImGui::PopStyleVar();
+
+	if (bShowDemoWindow)
+	{
+		ImGui::ShowDemoWindow();
+	}
 }
 
 void EditorApp::ShutDown()
