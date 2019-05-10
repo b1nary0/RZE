@@ -46,15 +46,15 @@ void EditorApp::Update()
 			ImGui::EndMenu();
 		}
 
-		if (ImGui::BeginMenu("Windows"))
+		if (ImGui::BeginMenu("View"))
 		{
-			if (ImGui::MenuItem("Scene"))
+			if (ImGui::BeginMenu("Windows"))
 			{
-				if (ImGui::Begin("Scene"))
+				if (ImGui::MenuItem("Scene"))
 				{
 					bShowSceneWindow = true;
 				}
-				ImGui::End();
+				ImGui::EndMenu();
 			}
 
 			ImGui::EndMenu();
@@ -76,6 +76,22 @@ void EditorApp::Update()
 
 	if (ImGui::BeginPopupContextVoid())
 	{
+		if (ImGui::BeginMenu("View"))
+		{
+			if (ImGui::BeginMenu("Windows"))
+			{
+				if (ImGui::MenuItem("Scene"))
+				{
+					bShowSceneWindow = true;
+				}
+				ImGui::EndMenu();
+			}
+
+			ImGui::EndMenu();
+		}
+
+		ImGui::Separator();
+
 		if (ImGui::MenuItem("Create Entity"))
 		{
 
