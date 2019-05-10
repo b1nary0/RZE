@@ -24,6 +24,8 @@ public:
 
 private:
 	void DisplayMenuBar();
+	void HandleGeneralContextMenu();
+	void ResolvePanelState();
 
 private:
 	PanelStates mPanelStates;

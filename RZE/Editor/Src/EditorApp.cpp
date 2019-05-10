@@ -32,47 +32,9 @@ void EditorApp::Update()
 	ImGui::PushFont(ubuntu);
 
 	DisplayMenuBar();
+	HandleGeneralContextMenu();
 
-	if (ImGui::BeginPopupContextVoid())
-	{
-		if (ImGui::BeginMenu("View"))
-		{
-			if (ImGui::BeginMenu("Windows"))
-			{
-				if (ImGui::MenuItem("Scene"))
-				{
-					mPanelStates.bScenePanelEnabled = true;
-				}
-				ImGui::EndMenu();
-			}
-
-			ImGui::EndMenu();
-		}
-
-		ImGui::Separator();
-
-		if (ImGui::MenuItem("Create Entity"))
-		{
-
-		}
-
-		ImGui::EndPopup();
-	}
-
-	if (mPanelStates.bDemoPanelEnabled)
-	{
-		ImGui::ShowDemoWindow(&mPanelStates.bDemoPanelEnabled);
-	}
-
-	if (mPanelStates.bScenePanelEnabled)
-	{
-		if (ImGui::Begin("Scene", &mPanelStates.bScenePanelEnabled))
-		{
-			
-		}
-		ImGui::End();
-	}
-
+	ResolvePanelState();
 	ImGui::PopFont();
 }
 
@@ -126,4 +88,50 @@ void EditorApp::DisplayMenuBar()
 		ImGui::EndMainMenuBar();
 	}
 	ImGui::PopStyleVar();
+}
+
+void EditorApp::HandleGeneralContextMenu()
+{
+	if (ImGui::BeginPopupContextVoid())
+	{
+		if (ImGui::BeginMenu("View"))
+		{
+			if (ImGui::BeginMenu("Windows"))
+			{
+				if (ImGui::MenuItem("Scene"))
+				{
+					mPanelStates.bScenePanelEnabled = true;
+				}
+				ImGui::EndMenu();
+			}
+
+			ImGui::EndMenu();
+		}
+
+		ImGui::Separator();
+
+		if (ImGui::MenuItem("Create Entity"))
+		{
+
+		}
+
+		ImGui::EndPopup();
+	}
+}
+
+void EditorApp::ResolvePanelState()
+{
+	if (mPanelStates.bDemoPanelEnabled)
+	{
+		ImGui::ShowDemoWindow(&mPanelStates.bDemoPanelEnabled);
+	}
+
+	if (mPanelStates.bScenePanelEnabled)
+	{
+		if (ImGui::Begin("Scene", &mPanelStates.bScenePanelEnabled))
+		{
+
+		}
+		ImGui::End();
+	}
 }
