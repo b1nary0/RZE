@@ -4,6 +4,13 @@
 
 class EditorApp : public RZE_Application
 {
+private:
+	struct PanelStates
+	{
+		bool bDemoPanelEnabled{ false };
+		bool bScenePanelEnabled{ false };
+	};
+
 public:
 	EditorApp();
 	virtual ~EditorApp();
@@ -16,5 +23,8 @@ public:
 	virtual void RegisterInputEvents(InputHandler& inputHandler) override;
 
 private:
-	std::bitset<32> mWindowBits; // Enable/Disable showing certain panels
+	void DisplayMenuBar();
+
+private:
+	PanelStates mPanelStates;
 };

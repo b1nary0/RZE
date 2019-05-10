@@ -29,10 +29,63 @@ void EditorApp::Start()
 
 void EditorApp::Update()
 {
-	static bool bShowDemoWindow = false;
-	static bool bShowSceneWindow = false;
-
 	ImGui::PushFont(ubuntu);
+
+	DisplayMenuBar();
+
+	if (ImGui::BeginPopupContextVoid())
+	{
+		if (ImGui::BeginMenu("View"))
+		{
+			if (ImGui::BeginMenu("Windows"))
+			{
+				if (ImGui::MenuItem("Scene"))
+				{
+					mPanelStates.bScenePanelEnabled = true;
+				}
+				ImGui::EndMenu();
+			}
+
+			ImGui::EndMenu();
+		}
+
+		ImGui::Separator();
+
+		if (ImGui::MenuItem("Create Entity"))
+		{
+
+		}
+
+		ImGui::EndPopup();
+	}
+
+	if (mPanelStates.bDemoPanelEnabled)
+	{
+		ImGui::ShowDemoWindow(&mPanelStates.bDemoPanelEnabled);
+	}
+
+	if (mPanelStates.bScenePanelEnabled)
+	{
+		if (ImGui::Begin("Scene", &mPanelStates.bScenePanelEnabled))
+		{
+			
+		}
+		ImGui::End();
+	}
+
+	ImGui::PopFont();
+}
+
+void EditorApp::ShutDown()
+{
+}
+
+void EditorApp::RegisterInputEvents(InputHandler& inputHandler)
+{
+}
+
+void EditorApp::DisplayMenuBar()
+{
 	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.5f, 5.0f));
 	if (ImGui::BeginMainMenuBar())
 	{
@@ -52,7 +105,7 @@ void EditorApp::Update()
 			{
 				if (ImGui::MenuItem("Scene"))
 				{
-					bShowSceneWindow = true;
+					mPanelStates.bScenePanelEnabled = true;
 				}
 				ImGui::EndMenu();
 			}
@@ -64,7 +117,7 @@ void EditorApp::Update()
 		{
 			if (ImGui::MenuItem("Show ImGui Demo Window"))
 			{
-				bShowDemoWindow = !bShowDemoWindow;
+				mPanelStates.bDemoPanelEnabled = true;
 			}
 
 			ImGui::EndMenu();
@@ -73,54 +126,4 @@ void EditorApp::Update()
 		ImGui::EndMainMenuBar();
 	}
 	ImGui::PopStyleVar();
-
-	if (ImGui::BeginPopupContextVoid())
-	{
-		if (ImGui::BeginMenu("View"))
-		{
-			if (ImGui::BeginMenu("Windows"))
-			{
-				if (ImGui::MenuItem("Scene"))
-				{
-					bShowSceneWindow = true;
-				}
-				ImGui::EndMenu();
-			}
-
-			ImGui::EndMenu();
-		}
-
-		ImGui::Separator();
-
-		if (ImGui::MenuItem("Create Entity"))
-		{
-
-		}
-
-		ImGui::EndPopup();
-	}
-
-	if (bShowDemoWindow)
-	{
-		ImGui::ShowDemoWindow();
-	}
-
-	if (bShowSceneWindow)
-	{
-		if (ImGui::Begin("Scene", &bShowSceneWindow))
-		{
-			
-		}
-		ImGui::End();
-	}
-
-	ImGui::PopFont();
-}
-
-void EditorApp::ShutDown()
-{
-}
-
-void EditorApp::RegisterInputEvents(InputHandler& inputHandler)
-{
 }
