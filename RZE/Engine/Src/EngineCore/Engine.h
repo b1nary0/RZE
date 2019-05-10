@@ -103,7 +103,5 @@ private:
 	bool bIsInitialized;
 	bool bShouldExit;
 
-	bool bEnableEditor;
-
 	std::vector<float> mFrameSamples;
 };

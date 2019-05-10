@@ -21,10 +21,8 @@
 
 #include <Utils/DebugUtils/Debug.h>
 
-#ifdef WITH_IMGUI
 #include <ImGui/imgui.h>
 #include <ImGui/imgui_impl_dx12.h>
-#endif
 
 RZE_Engine::RZE_Engine()
 	: mMainWindow(nullptr)
@@ -33,7 +31,6 @@ RZE_Engine::RZE_Engine()
 	, mRenderer(nullptr)
 	, bShouldExit(false)
 	, bIsInitialized(false)
-	, bEnableEditor(false)
 	, mDeltaTime(0.0)
 	, mFrameCount(0)
 {
@@ -76,15 +73,8 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 				{
 					OPTICK_EVENT("Update and Render");
 
-#ifdef WITH_IMGUI
 					ImGui_ImplDX12_NewFrame();
 					ImGui::NewFrame();
-
-					if (bEnableEditor)
-					{
-						ImGui::ShowDemoWindow();
-					}
-#endif
 
 					Update();
 					mRenderer->Update();
@@ -167,7 +157,6 @@ void RZE_Engine::PreUpdate()
 
 	if (mApplication->ProcessInput(mInputHandler))
 	{
-#ifdef WITH_IMGUI
 		ImGuiIO& io = ImGui::GetIO();
 
 		const Vector2D& mousePos = GetInputHandler().GetMouseState().CurPosition;
@@ -179,7 +168,7 @@ void RZE_Engine::PreUpdate()
 		{
 			io.MouseDown[mouseBtn] = GetInputHandler().GetMouseState().CurMouseBtnStates[mouseBtn];
 		}
-#endif
+
 		mInputHandler.RaiseEvents();
 	}
 	else

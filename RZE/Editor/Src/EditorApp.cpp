@@ -15,7 +15,6 @@ namespace Editor
 	static ImFont* ubuntu = nullptr;
 	void EditorApp::Initialize()
 	{
-		RZE().GetActiveScene().Load(FilePath("Assets/Scenes/TestGame.scene"));
 		GetWindow()->SetWindowSize(Vector2D(1920.0f, 1080.0f));
 
 		LoadFonts();
@@ -24,6 +23,7 @@ namespace Editor
 
 	void EditorApp::Start()
 	{
+		RZE().GetActiveScene().Load(FilePath("Assets/Scenes/TestGame.scene"));
 	}
 
 	void EditorApp::Update()
@@ -151,6 +151,14 @@ namespace Editor
 	{
 		ImGuiStyle& style = ImGui::GetStyle();
 		style.FrameRounding = 0.0f;
+		style.WindowRounding = 0.0f;
+
+		style.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.25f, 0.25f, 0.25f, 1.0f);
+		style.Colors[ImGuiCol_TitleBg] = ImVec4(0.30f, 0.30f, 0.30f, 1.0f);
+		
+		style.Colors[ImGuiCol_Header] = ImVec4(0.15f, 0.15f, 0.15f, 1.0f);
+		style.Colors[ImGuiCol_HeaderActive] = ImVec4(0.25f, 0.25f, 0.25f, 1.0f);
+		style.Colors[ImGuiCol_HeaderHovered] = ImVec4(0.30f, 0.30f, 0.30f, 1.0f);
 	}
 
 }
