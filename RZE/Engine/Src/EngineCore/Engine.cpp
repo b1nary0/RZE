@@ -65,6 +65,13 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 			mFrameSamples[mFrameCount % MAX_FRAMETIME_SAMPLES] = static_cast<float>(mDeltaTime);
 
 			const float averageFrametime = CalculateAverageFrametime();
+			const float averageFPS = 1.0f / averageFrametime;
+
+			static float frameTimeBuffer[MAX_FRAMETIME_SAMPLES];
+			for (int idx = 0; idx < MAX_FRAMETIME_SAMPLES; ++idx)
+			{
+				frameTimeBuffer[idx] = mFrameSamples[idx] * 1000.0f;
+			}
 
 			{	
 				OPTICK_EVENT("RZE_Engine::Run");
@@ -75,6 +82,15 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 
 					ImGui_ImplDX12_NewFrame();
 					ImGui::NewFrame();
+
+// 					ImGui::PlotLines(
+// 						StringUtils::FormatString("Frame Avg: %iFPS %fms", (int)averageFPS, averageFrametime * 1000.0f).c_str(),
+// 						frameTimeBuffer, 
+// 						MAX_FRAMETIME_SAMPLES, 
+// 						0, 
+// 						nullptr, 
+// 						0.0f, 1.5f * (averageFrametime * 1000.0f), 
+// 						ImVec2(80.0f, 45.0f));
 
 					Update();
 					mRenderer->Update();
