@@ -4,6 +4,8 @@
 
 #include <UI/ScenePanel.h>
 
+struct ImFont;
+
 namespace Editor
 {
 	class EditorApp : public RZE_Application
@@ -31,9 +33,14 @@ namespace Editor
 		void HandleGeneralContextMenu();
 		void ResolvePanelState();
 
+		void LoadFonts();
+		void StyleSetup();
+
 	private:
 		PanelStates mPanelStates;
 
 		ScenePanel mScenePanel;
+
+		std::unordered_map<std::string, ImFont*> mFontMapping;
 	};
 }

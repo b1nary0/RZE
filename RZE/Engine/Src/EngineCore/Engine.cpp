@@ -221,9 +221,9 @@ void RZE_Engine::InitializeApplication(Functor<RZE_Application* const> createGam
 	mApplication = createGameCallback();
 	AssertNotNull(mApplication);
 
+	mApplication->SetWindow(mMainWindow);
 	mApplication->Initialize();
 	mApplication->RegisterInputEvents(mInputHandler);
-	mApplication->SetWindow(mMainWindow);
 
 	mApplication->Start();
 }

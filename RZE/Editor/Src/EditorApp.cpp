@@ -16,13 +16,10 @@ namespace Editor
 	void EditorApp::Initialize()
 	{
 		RZE().GetActiveScene().Load(FilePath("Assets/Scenes/TestGame.scene"));
+		GetWindow()->SetWindowSize(Vector2D(1920.0f, 1080.0f));
 
-		ImGuiIO& io = ImGui::GetIO();
-		io.Fonts->AddFontDefault();
-		FilePath ubuntuPath("Assets/Fonts/Ubuntu-Medium.ttf");
-
-		ubuntu = io.Fonts->AddFontFromFileTTF(ubuntuPath.GetAbsolutePath().c_str(), 15);
-		io.Fonts->Build();
+		LoadFonts();
+		StyleSetup();
 	}
 
 	void EditorApp::Start()
@@ -31,7 +28,7 @@ namespace Editor
 
 	void EditorApp::Update()
 	{
-		ImGui::PushFont(ubuntu);
+		ImGui::PushFont(mFontMapping.at("ubuntu_medium"));
 
 		DisplayMenuBar();
 		HandleGeneralContextMenu();
@@ -102,7 +99,7 @@ namespace Editor
 				{
 					if (ImGui::MenuItem("Scene"))
 					{
-						mScenePanel.Enable()
+						mScenePanel.Enable();
 					}
 					ImGui::EndMenu();
 				}
@@ -133,4 +130,27 @@ namespace Editor
 			mScenePanel.Display();
 		}
 	}
+
+	void EditorApp::LoadFonts()
+	{
+		ImGuiIO& io = ImGui::GetIO();
+		io.Fonts->AddFontDefault();
+
+		FilePath ubuntuPath("Assets/Fonts/Ubuntu-Medium.ttf");
+		FilePath arialPath("Assets/Fonts/Arial.ttf");
+		FilePath consolasPath("Assets/Fonts/Consolas.ttf");
+
+		mFontMapping.insert({"ubuntu_medium", io.Fonts->AddFontFromFileTTF(ubuntuPath.GetAbsolutePath().c_str(), 15)});
+		mFontMapping.insert({"arial", io.Fonts->AddFontFromFileTTF(arialPath.GetAbsolutePath().c_str(), 15)});
+		mFontMapping.insert({"consolas", io.Fonts->AddFontFromFileTTF(consolasPath.GetAbsolutePath().c_str(), 15)});
+
+		io.Fonts->Build();
+	}
+
+	void EditorApp::StyleSetup()
+	{
+		ImGuiStyle& style = ImGui::GetStyle();
+		style.FrameRounding = 0.0f;
+	}
+
 }

@@ -32,7 +32,7 @@ public:
 
 	Apollo::EntityID CreateEntity(const std::string& name);
 
-	const std::vector<SceneEntryTemp> GetSceneEntries() { return mEntityEntries; }
+	const std::vector<SceneEntryTemp>& GetSceneEntries() { return mEntityEntries; }
 
 private:
 	void AddToScene(Apollo::EntityID entityID, const std::string& name);
