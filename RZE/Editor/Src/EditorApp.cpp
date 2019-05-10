@@ -2,136 +2,135 @@
 
 #include <ImGui/imgui.h>
 
-EditorApp::EditorApp()
+namespace Editor
 {
-}
-
-EditorApp::~EditorApp()
-{
-}
-
-static ImFont* ubuntu = nullptr;
-void EditorApp::Initialize()
-{
-	RZE().GetActiveScene().Load(FilePath("Assets/Scenes/TestGame.scene"));
-
-	ImGuiIO& io = ImGui::GetIO();
-	io.Fonts->AddFontDefault();
-	FilePath ubuntuPath("Assets/Fonts/Ubuntu-Medium.ttf");
-
-	ubuntu = io.Fonts->AddFontFromFileTTF(ubuntuPath.GetAbsolutePath().c_str(), 15);
-	io.Fonts->Build();
-}
-
-void EditorApp::Start()
-{
-}
-
-void EditorApp::Update()
-{
-	ImGui::PushFont(ubuntu);
-
-	DisplayMenuBar();
-	HandleGeneralContextMenu();
-
-	ResolvePanelState();
-	ImGui::PopFont();
-}
-
-void EditorApp::ShutDown()
-{
-}
-
-void EditorApp::RegisterInputEvents(InputHandler& inputHandler)
-{
-}
-
-void EditorApp::DisplayMenuBar()
-{
-	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.5f, 5.0f));
-	if (ImGui::BeginMainMenuBar())
+	EditorApp::EditorApp()
 	{
-		if (ImGui::BeginMenu("File"))
-		{
-			if (ImGui::MenuItem("Exit"))
-			{
-				RZE().PostExit();
-			}
+	}
 
-			ImGui::EndMenu();
-		}
+	EditorApp::~EditorApp()
+	{
+	}
 
-		if (ImGui::BeginMenu("View"))
+	static ImFont* ubuntu = nullptr;
+	void EditorApp::Initialize()
+	{
+		RZE().GetActiveScene().Load(FilePath("Assets/Scenes/TestGame.scene"));
+
+		ImGuiIO& io = ImGui::GetIO();
+		io.Fonts->AddFontDefault();
+		FilePath ubuntuPath("Assets/Fonts/Ubuntu-Medium.ttf");
+
+		ubuntu = io.Fonts->AddFontFromFileTTF(ubuntuPath.GetAbsolutePath().c_str(), 15);
+		io.Fonts->Build();
+	}
+
+	void EditorApp::Start()
+	{
+	}
+
+	void EditorApp::Update()
+	{
+		ImGui::PushFont(ubuntu);
+
+		DisplayMenuBar();
+		HandleGeneralContextMenu();
+
+		ResolvePanelState();
+		ImGui::PopFont();
+	}
+
+	void EditorApp::ShutDown()
+	{
+	}
+
+	void EditorApp::RegisterInputEvents(InputHandler& inputHandler)
+	{
+	}
+
+	void EditorApp::DisplayMenuBar()
+	{
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.5f, 5.0f));
+		if (ImGui::BeginMainMenuBar())
 		{
-			if (ImGui::BeginMenu("Windows"))
+			if (ImGui::BeginMenu("File"))
 			{
-				if (ImGui::MenuItem("Scene"))
+				if (ImGui::MenuItem("Exit"))
 				{
-					mPanelStates.bScenePanelEnabled = true;
+					RZE().PostExit();
 				}
+
 				ImGui::EndMenu();
 			}
 
-			ImGui::EndMenu();
-		}
-
-		if (ImGui::BeginMenu("Help"))
-		{
-			if (ImGui::MenuItem("Show ImGui Demo Window"))
+			if (ImGui::BeginMenu("View"))
 			{
-				mPanelStates.bDemoPanelEnabled = true;
-			}
-
-			ImGui::EndMenu();
-		}
-
-		ImGui::EndMainMenuBar();
-	}
-	ImGui::PopStyleVar();
-}
-
-void EditorApp::HandleGeneralContextMenu()
-{
-	if (ImGui::BeginPopupContextVoid())
-	{
-		if (ImGui::BeginMenu("View"))
-		{
-			if (ImGui::BeginMenu("Windows"))
-			{
-				if (ImGui::MenuItem("Scene"))
+				if (ImGui::BeginMenu("Windows"))
 				{
-					mPanelStates.bScenePanelEnabled = true;
+					if (ImGui::MenuItem("Scene"))
+					{
+						mScenePanel.Enable();
+					}
+					ImGui::EndMenu();
 				}
+
 				ImGui::EndMenu();
 			}
 
-			ImGui::EndMenu();
+			if (ImGui::BeginMenu("Help"))
+			{
+				if (ImGui::MenuItem("Show ImGui Demo Window"))
+				{
+					mPanelStates.bDemoPanelEnabled = true;
+				}
+
+				ImGui::EndMenu();
+			}
+
+			ImGui::EndMainMenuBar();
 		}
-
-		ImGui::Separator();
-
-		if (ImGui::MenuItem("Create Entity"))
-		{
-
-		}
-
-		ImGui::EndPopup();
-	}
-}
-
-void EditorApp::ResolvePanelState()
-{
-	if (mPanelStates.bDemoPanelEnabled)
-	{
-		ImGui::ShowDemoWindow(&mPanelStates.bDemoPanelEnabled);
+		ImGui::PopStyleVar();
 	}
 
-	if (mPanelStates.bScenePanelEnabled)
+	void EditorApp::HandleGeneralContextMenu()
 	{
-		if (ImGui::Begin("Scene", &mPanelStates.bScenePanelEnabled))
+		if (ImGui::BeginPopupContextVoid())
 		{
+			if (ImGui::BeginMenu("View"))
+			{
+				if (ImGui::BeginMenu("Windows"))
+				{
+					if (ImGui::MenuItem("Scene"))
+					{
+						mScenePanel.Enable()
+					}
+					ImGui::EndMenu();
+				}
 
+				ImGui::EndMenu();
+			}
+
+			ImGui::Separator();
+
+			if (ImGui::MenuItem("Create Entity"))
+			{
+
+			}
+
+			ImGui::EndPopup();
 		}
-		ImGui::End();
+	}
+
+	void EditorApp::ResolvePanelState()
+	{
+		if (mPanelStates.bDemoPanelEnabled)
+		{
+			ImGui::ShowDemoWindow(&mPanelStates.bDemoPanelEnabled);
+		}
+
+		if (mScenePanel.IsEnabled())
+		{
+			mScenePanel.Display();
+		}
 	}
 }

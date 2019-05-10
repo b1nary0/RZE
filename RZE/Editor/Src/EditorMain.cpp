@@ -2,7 +2,7 @@
 
 int main(void)
 {
-	EditorApp editor;
+	Editor::EditorApp editor;
 	editor.Run();
 
 	return 0;
