@@ -10,16 +10,16 @@ EditorApp::~EditorApp()
 {
 }
 
-static ImFont* consolas = nullptr;
+static ImFont* ubuntu = nullptr;
 void EditorApp::Initialize()
 {
 	RZE().GetActiveScene().Load(FilePath("Assets/Scenes/TestGame.scene"));
 
 	ImGuiIO& io = ImGui::GetIO();
 	io.Fonts->AddFontDefault();
-	FilePath consolasPath("Assets/Fonts/Consolas.ttf");
+	FilePath ubuntuPath("Assets/Fonts/Ubuntu-Medium.ttf");
 
-	consolas = io.Fonts->AddFontFromFileTTF(consolasPath.GetAbsolutePath().c_str(), 14);
+	ubuntu = io.Fonts->AddFontFromFileTTF(ubuntuPath.GetAbsolutePath().c_str(), 15);
 	io.Fonts->Build();
 }
 
@@ -32,7 +32,7 @@ void EditorApp::Update()
 	static bool bShowDemoWindow = false;
 	static bool bShowSceneWindow = false;
 
-	ImGui::PushFont(consolas);
+	ImGui::PushFont(ubuntu);
 	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.5f, 5.0f));
 	if (ImGui::BeginMainMenuBar())
 	{
@@ -42,6 +42,7 @@ void EditorApp::Update()
 			{
 				RZE().PostExit();
 			}
+
 			ImGui::EndMenu();
 		}
 
@@ -55,6 +56,7 @@ void EditorApp::Update()
 				}
 				ImGui::End();
 			}
+
 			ImGui::EndMenu();
 		}
 
@@ -67,9 +69,20 @@ void EditorApp::Update()
 
 			ImGui::EndMenu();
 		}
+
 		ImGui::EndMainMenuBar();
 	}
 	ImGui::PopStyleVar();
+
+	if (ImGui::BeginPopupContextVoid())
+	{
+		if (ImGui::MenuItem("Create Entity"))
+		{
+
+		}
+
+		ImGui::EndPopup();
+	}
 
 	if (bShowDemoWindow)
 	{
@@ -78,7 +91,7 @@ void EditorApp::Update()
 
 	if (bShowSceneWindow)
 	{
-		if (ImGui::Begin("Scene"), &bShowSceneWindow)
+		if (ImGui::Begin("Scene", &bShowSceneWindow))
 		{
 			
 		}
