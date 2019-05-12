@@ -10,8 +10,6 @@ namespace Diotima
 {
 	void DX12GFXTextureBuffer2D::Allocate(void* data, U32 width, U32 height)
 	{
-		mDevice->ResetCommandList();
-
 		mResourceDesc = {};
 		mResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 		mResourceDesc.Alignment = 0;
@@ -49,16 +47,15 @@ namespace Diotima
 		textureData.RowPitch = (32 * width) / 8;
 		textureData.SlicePitch = textureData.RowPitch * height;
 
-		ID3D12GraphicsCommandList* const commandList = mDevice->GetCommandList();
+		ID3D12GraphicsCommandList* commandList = mDevice->GetGraphicsCommandList(mDevice->CreateGraphicsCommandList(mDevice->GetResourceCommandAllocator(), nullptr));
+
 		UpdateSubresources(commandList, mGPUBuffer.Get(), mUploadBuffer.Get(), 0, 0, 1, &textureData);
 
 		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mGPUBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 
-		mDevice->GenerateMipsForTexture(this);
-
-		commandList->Close();
-
 		mDevice->ExecuteCommandList(commandList);
+
+		mDevice->GenerateMipsForTexture(this);
 
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -75,7 +72,6 @@ namespace Diotima
 		mDevice->GetDevice()->CreateShaderResourceView(mGPUBuffer.Get(), &srvDesc, mSRVCPUHandle);
 
 		++increment;
-
 	}
 
 	void DX12GFXTextureBuffer2D::SetDevice(DX12GFXDevice* device)

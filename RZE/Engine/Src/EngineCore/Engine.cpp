@@ -7,6 +7,7 @@
 #include <Diotima/Graphics/RenderTarget.h>
 
 #include <ECS/Components/CameraComponent.h>
+#include <ECS/Components/LifetimeComponent.h>
 #include <ECS/Components/LightSourceComponent.h>
 #include <ECS/Components/MaterialComponent.h>
 #include <ECS/Components/MeshComponent.h>
@@ -19,6 +20,9 @@
 #include <Windowing/WinKeyCodes.h>
 
 #include <Utils/DebugUtils/Debug.h>
+
+#include <ImGui/imgui.h>
+#include <ImGui/imgui_impl_dx12.h>
 
 RZE_Engine::RZE_Engine()
 	: mMainWindow(nullptr)
@@ -51,7 +55,7 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 		double prevTime = programTimer.GetElapsed<double>();
 		while (!bShouldExit)
 		{
-			BROFILER_FRAME("Engine Thread");
+			OPTICK_FRAME("Main");
 
 			double currTime = programTimer.GetElapsed<double>();
 			double frameTime = currTime - prevTime;
@@ -61,17 +65,41 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 			mFrameSamples[mFrameCount % MAX_FRAMETIME_SAMPLES] = static_cast<float>(mDeltaTime);
 
 			const float averageFrametime = CalculateAverageFrametime();
+			const float averageFPS = 1.0f / averageFrametime;
 
-			{	BROFILER_CATEGORY("RZE_Engine::Run", Profiler::Color::Cyan)
+			static float frameTimeBuffer[MAX_FRAMETIME_SAMPLES];
+			for (int idx = 0; idx < MAX_FRAMETIME_SAMPLES; ++idx)
+			{
+				frameTimeBuffer[idx] = mFrameSamples[idx] * 1000.0f;
+			}
+
+			{	
+				OPTICK_EVENT("RZE_Engine::Run");
 
 				PreUpdate();
 				{
-					BROFILER_CATEGORY("Update and Render", Profiler::Color::BurlyWood);
+					OPTICK_EVENT("Update and Render");
+
+					ImGui_ImplDX12_NewFrame();
+					ImGui::NewFrame();
+
+// 					ImGui::PlotLines(
+// 						StringUtils::FormatString("Frame Avg: %iFPS %fms", (int)averageFPS, averageFrametime * 1000.0f).c_str(),
+// 						frameTimeBuffer, 
+// 						MAX_FRAMETIME_SAMPLES, 
+// 						0, 
+// 						nullptr, 
+// 						0.0f, 1.5f * (averageFrametime * 1000.0f), 
+// 						ImVec2(80.0f, 45.0f));
+
 					Update();
 					mRenderer->Update();
 				}
 
-				mRenderer->Render();
+				{
+					OPTICK_EVENT("GPU Submission");
+					mRenderer->Render();
+				}
 			}
 
 			++mFrameCount;
@@ -129,18 +157,34 @@ void RZE_Engine::PostInit(Functor<RZE_Application* const>& createApplicationCall
 {
 	LOG_CONSOLE("RZE_EngineCore::PostInit() called.");
 
+	RegisterKeyEvents();
+
 	InitializeApplication(createApplicationCallback);
 
 	mActiveScene->Start();
 }
 
 void RZE_Engine::PreUpdate()
-{	BROFILER_CATEGORY("RZE_Engine::PreUpdate", Profiler::Color::Purple)
+{	
+	OPTICK_EVENT();
+
 	CompileEvents();
 	mEventHandler.ProcessEvents();
 
 	if (mApplication->ProcessInput(mInputHandler))
 	{
+		ImGuiIO& io = ImGui::GetIO();
+
+		const Vector2D& mousePos = GetInputHandler().GetMouseState().CurPosition;
+		const Vector2D& prevMousePos = GetInputHandler().GetMouseState().PrevPosition;
+		io.MousePos = ImVec2(mousePos.X(), mousePos.Y());
+		io.MousePosPrev = ImVec2(prevMousePos.X(), prevMousePos.Y());
+
+		for (U32 mouseBtn = 0; mouseBtn < 3; ++mouseBtn)
+		{
+			io.MouseDown[mouseBtn] = GetInputHandler().GetMouseState().CurMouseBtnStates[mouseBtn];
+		}
+
 		mInputHandler.RaiseEvents();
 	}
 	else
@@ -182,9 +226,9 @@ void RZE_Engine::InitializeApplication(Functor<RZE_Application* const> createGam
 	mApplication = createGameCallback();
 	AssertNotNull(mApplication);
 
+	mApplication->SetWindow(mMainWindow);
 	mApplication->Initialize();
 	mApplication->RegisterInputEvents(mInputHandler);
-	mApplication->SetWindow(mMainWindow);
 
 	mApplication->Start();
 }
@@ -232,10 +276,20 @@ void RZE_Engine::RegisterWindowEvents()
 	mEventHandler.RegisterForEvent(EEventType::Window, windowCallback);
 }
 
+void RZE_Engine::RegisterKeyEvents()
+{
+// 	Functor<void, const InputKey&> keyFunc([this](const InputKey& key)
+// 	{
+// 		
+// 	});
+// 	GetInputHandler().BindAction(Win32KeyCode::, EButtonState::ButtonState_Pressed, keyFunc);
+}
+
 void RZE_Engine::RegisterEngineComponentTypes()
 {
 	APOLLO_REGISTER_COMPONENT(CameraComponent);
 	APOLLO_REGISTER_COMPONENT(LightSourceComponent);
+	APOLLO_REGISTER_COMPONENT(LifetimeComponent);
 	APOLLO_REGISTER_COMPONENT(MaterialComponent);
 	APOLLO_REGISTER_COMPONENT(MeshComponent);
 	APOLLO_REGISTER_COMPONENT(NameComponent);
@@ -255,7 +309,9 @@ void RZE_Engine::LoadEngineConfig()
 }
 
 void RZE_Engine::Update()
-{	BROFILER_CATEGORY("RZE_Engine::Update", Profiler::Color::Orchid)
+{
+	OPTICK_EVENT();
+
 	mActiveScene->Update();
 	mApplication->Update();
 }

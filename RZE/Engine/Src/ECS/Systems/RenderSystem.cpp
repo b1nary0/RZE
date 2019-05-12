@@ -39,7 +39,9 @@ void RenderSystem::Initialize()
 }
 
 void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
-{	BROFILER_CATEGORY("RenderSystem::Update", Profiler::Color::Yellow)
+{
+	OPTICK_EVENT();
+
 	Apollo::EntityHandler& handler = InternalGetEntityHandler();
 	Diotima::Renderer& renderer = RZE_Application::RZE().GetRenderer();
 
@@ -56,28 +58,54 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 	camera.Position = transfComp->Position;
 	renderer.SetCamera(camera);
 	
-	//Perseus::Job::Task work([this, entities, transfComp, &renderer, &handler]()
+	size_t jobSize = entities.size() / 2;
+	std::vector<Apollo::EntityID> workItems0;
+	workItems0.reserve(jobSize);
+	std::copy(entities.begin(), entities.begin() + jobSize, std::back_inserter(workItems0));
+	Perseus::Job::Task work0([this, workItems0, &renderer, &handler]()
 	{
- 		for (auto& entity : entities)
+		OPTICK_EVENT("RenderSystem Matrix Update 0");
+ 		for (auto& entity : workItems0)
  		{
  			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
  
  			Diotima::Renderer::RenderItemProtocol& item = renderer.GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
  			item.ModelMatrix = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
  		}
-	}/*)*/;
-	//Perseus::JobScheduler::Get().PushJob(work);
+	});
+
+	std::vector<Apollo::EntityID> workItems1;
+	workItems1.reserve(jobSize);
+	std::copy(entities.begin() + jobSize, entities.end(), std::back_inserter(workItems1));
+	Perseus::Job::Task work1([this, workItems1, &renderer, &handler]()
+	{
+		OPTICK_EVENT("RenderSystem Matrix Update 1");
+		for (auto& entity : workItems1)
+		{
+			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
+
+			Diotima::Renderer::RenderItemProtocol& item = renderer.GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
+			item.ModelMatrix = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
+		}
+	});
+
+	Perseus::JobScheduler::Get().PushJob(work0);
+	Perseus::JobScheduler::Get().PushJob(work1);
+	Perseus::JobScheduler::Get().Wait();
 
 	Functor<void, Apollo::EntityID> LightSourceFunc([this, &handler, &renderer](Apollo::EntityID entity)
 	{
+		LightSourceComponent* const lightComp = handler.GetComponent<LightSourceComponent>(entity);
 		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
+
 		Diotima::Renderer::LightItemProtocol& item = renderer.GetLightProtocolByIdx(mLightItemEntityMap[entity]);
 
-		Matrix4x4 orthoProj = Matrix4x4::CreateOrthoMatrix(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 100.0f);
+		Matrix4x4 orthoProj = Matrix4x4::CreateOrthoMatrix(-10.0f, 10.0f, -10.0f, 10.0f, -50.0f, 25.0f);
 		Matrix4x4 lightView = Matrix4x4::CreateViewMatrix(transfComp->Position, Vector3D(), Vector3D(0.0f, 1.0f, 0.0f));
 
 		item.LightSpaceMatrix = orthoProj * lightView;
 		item.Position = transfComp->Position;
+		item.Strength = lightComp->Strength;
 	});
 	handler.ForEach<LightSourceComponent, TransformComponent>(LightSourceFunc);
 }
@@ -94,7 +122,9 @@ void RenderSystem::RegisterForComponentNotifications()
 	// MeshComponent
 	//
 	Apollo::EntityHandler::ComponentAddedFunc OnMeshComponentAdded([this, &handler](Apollo::EntityID entityID)
-	{	BROFILER_EVENT("RenderSystem::OnMeshComponentAdded");
+	{	
+		OPTICK_EVENT("RenderSystem::OnMeshComponentAdded");
+
 		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entityID);
 		AssertNotNull(meshComp);
 		meshComp->Resource = RZE_Application::RZE().GetResourceHandler().RequestResource<Model3D>(meshComp->ResourcePath);

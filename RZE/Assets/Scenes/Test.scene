@@ -7,50 +7,55 @@
         {
             "TransformComponent":
             {
-                "Position": [0, 2, 0],
+                "Position": [-12, 5.2, 8],
                 "Scale": [1, 1, 1],
                 "Rotation": [0, 0, 0]
             },
             "CameraComponent":
             {
-                "FOV": 45,
-                "NearCull": 0.1,
+                "FOV": 65,
+                "NearCull": 0.01,
                 "FarCull": 1000,
-                "Forward": [0, 0, -1.0],
+                "Forward": [0.57, -0.18, -0.8],
                 "UpDir":[0.0, 1.0, 0.0]
             }
         }
     },
-    "Directional Light":
+		"Point Light1":
     {
       "components":
       {
         "TransformComponent":
         {
-          "Position":[0, 10, 10],
+          "Position":[-15, 10, 5],
           "Scale": [1, 1, 1],
           "Rotation": [0, 0, 0]
         },
         "LightSourceComponent":
         {
-          "Color": [1, 1, 1],
-          "Strength": 1
-        }
+					"LightType": 1,
+          "Color": [0.95, 0.95, 0.85],
+          "Strength": 1.25
+        },
+		"MeshComponent":
+		{
+		  "ResourcePath": "Assets/3D/Cube.obj"
+		}
       }
     },
-	"MechWalker":
+	"WallNorth":
 	{
 	  "components":
 	  {
 		"TransformComponent":
 		{
-		  "Position": [0, 0, -20],
-		  "Scale":[1, 1, 1],
-		  "Rotation":[0, 0, 0]
+		  "Position": [-10, 8, -8],
+		  "Scale":[16, 16, 1],
+		  "Rotation":[0, 180, 0]
 		},
 		"MeshComponent":
 		{
-		  "ResourcePath": "Assets/3D/NeckMechWalker/NeckMechWalker.obj"
+		  "ResourcePath": "Assets/3D/Test/WallN/Quad.obj"
 		}
 	  }
 	}

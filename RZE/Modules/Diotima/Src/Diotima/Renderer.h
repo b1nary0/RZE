@@ -5,14 +5,22 @@
 #include <unordered_map>
 #include <vector>
 
+// #TODO(Josh::Really don't like this, change later)
+#include <Diotima/Driver/DX12/DX12AllocationData.h>
+
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector2D.h>
 #include <Utils/PrimitiveDefs.h>
+
+// #TODO(Josh::Temp)
+#define MAX_LIGHTS 128
 
 namespace Diotima
 {
 	// DX12 Temp
 	class DX12GFXDevice;
+
+	class GFXPassGraph;
 
 	enum class EBufferType
 	{
@@ -21,6 +29,11 @@ namespace Diotima
 
 	class Renderer
 	{
+		// #TODO(Temp for refactor, for access to RenderItemDrawCall)
+		friend class ForwardPass;
+		friend class DepthPass;
+		friend class ImGUIPass;
+
 	public:
 		enum class ETextureType
 		{
@@ -65,7 +78,8 @@ namespace Diotima
 		enum ELightType : U32
 		{
 			Directional = 0,
-			Point
+			Point,
+			Count
 		};
 
 		struct LightItemProtocol
@@ -90,6 +104,21 @@ namespace Diotima
 			float FarCull;
 		};
 
+	private:
+		// #TODO(Josh::Temp idea: RenderItemProtocol describes the data to render in it's highest level, 
+		//             while RenderItemDrawCall contains all the buffer indirections to actually draw the item.
+		//             Will iterate on this idea.)
+		struct RenderItemDrawCall
+		{
+			U32 VertexBuffer;
+			U32 IndexBuffer;
+			U32 TextureSlot0; // Serves as the base descriptor for a descriptor range. Right now is D/S/N per mesh
+			U32 TextureSlot1;
+			U32 TextureSlot2;
+			CBAllocationData MaterialSlot;
+			CBAllocationData MatrixSlot;
+		};
+
 		// Constructors
 	public:
 		Renderer();
@@ -106,7 +135,7 @@ namespace Diotima
 		void RemoveRenderItem(const U32 itemIdx);
 
 		Int32 AddLightItem(const LightItemProtocol& itemProtocol);
-		inline RenderItemProtocol& GetItemProtocolByIdx(Int32 idx) { return mRenderList[idx]; }
+		inline RenderItemProtocol& GetItemProtocolByIdx(Int32 idx) { return mRenderItems[idx]; }
 		inline LightItemProtocol& GetLightProtocolByIdx(Int32 idx) { return mLightingList[idx]; }
 
 		// #TODO(Josh::Really really don't like this, fix later)
@@ -116,6 +145,7 @@ namespace Diotima
 		void EnableVsync(bool bEnable);
 		void SetMSAASampleCount(U32 sampleCount);
 
+		const Vector2D& GetCanvasSize();
 		void ResizeCanvas(const Vector2D& newSize);
 
 		// #TODO(Josh::Stand-ins for command infrastructure until DX12 rendering stabilized)
@@ -124,16 +154,24 @@ namespace Diotima
 		U32 CreateTextureBuffer2D(void* data, U32 width, U32 height);
 
 	private:
+		const std::vector<RenderItemDrawCall>& GetDrawCalls();
+		const std::vector<LightItemProtocol>& GetLights();
+		const U32* GetLightCounts();
+		const CameraItemProtocol& GetCamera();
+
 		void DX12Initialize();
 		
-		void PrepareLights();
+		void PrepareDrawCalls();
 
 	private:
+		CameraItemProtocol camera;
 		Vector2D mCanvasSize;
 
-		CameraItemProtocol camera;
-		std::vector<RenderItemProtocol> mRenderList;
+		U32 mLightCounts[ELightType::Count] { 0 };
+
 		std::vector<LightItemProtocol> mLightingList;
+		std::vector<RenderItemProtocol> mRenderItems;
+		std::vector<RenderItemDrawCall> mPerFrameDrawCalls;
 
 		std::queue<Int32> mFreeRenderListIndices;
 		
@@ -143,10 +181,10 @@ namespace Diotima
 		// DX12 Temp
 	private:
 		U32 mMVPConstantBuffer;
-		U32 mLightConstantBuffer;
-		U32 mPerMeshPixelShaderConstants; // Per mesh data
-		U32 mPerFramePixelShaderConstants; // Per frame data
+		U32 mMaterialBuffer; // Per mesh data
 
+		std::unique_ptr<GFXPassGraph> mPassGraph;
+		
 		std::unique_ptr<DX12GFXDevice> mDevice;
 
 		void* mWindowHandle;

@@ -70,6 +70,7 @@ private:
 	void CompileEvents();
 
 	void RegisterWindowEvents();
+	void RegisterKeyEvents();
 	void RegisterEngineComponentTypes();
 
 	void LoadEngineConfig();

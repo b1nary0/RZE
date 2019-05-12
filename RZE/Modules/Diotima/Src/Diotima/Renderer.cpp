@@ -1,6 +1,10 @@
 #include <Diotima/Renderer.h>
 
-#include <Brofiler/Brofiler.h>
+#include <Optick/optick.h>
+
+#include <Diotima/Graphics/GFXPassGraph.h>
+
+#include <Perseus/JobSystem/JobScheduler.h>
 
 #include <Utils/Conversions.h>
 #include <Utils/MemoryUtils.h>
@@ -15,10 +19,15 @@
 #include <Diotima/Driver/DX12/DX12GFXVertexBuffer.h>
 #include <Diotima/Driver/DX12/DX12GFXTextureBuffer2D.h>
 
+#include <ImGui/imgui.h>
+#include <ImGui/imgui_impl_dx12.h>
+
 namespace Diotima
 {
 	Renderer::Renderer()
+		: mPassGraph(std::make_unique<GFXPassGraph>())
 	{
+		mLightingList.reserve(MAX_LIGHTS);
 	}
 
 	Renderer::~Renderer()
@@ -32,125 +41,61 @@ namespace Diotima
 			Int32 index = mFreeRenderListIndices.front();
 			mFreeRenderListIndices.pop();
 
-			mRenderList[index] = std::move(itemProtocol);
-			mRenderList[index].bIsValid = true;
+			mRenderItems[index] = std::move(itemProtocol);
+			mRenderItems[index].bIsValid = true;
 
 			return index;
 		}
 
-		mRenderList.emplace_back(std::move(itemProtocol));
-		mRenderList.back().bIsValid = true;
+		mRenderItems.emplace_back(std::move(itemProtocol));
+		mRenderItems.back().bIsValid = true;
 
-		return static_cast<Int32>(mRenderList.size() - 1);
+		return static_cast<Int32>(mRenderItems.size() - 1);
 	}
 
 	void Renderer::RemoveRenderItem(const U32 itemIdx)
 	{
-		AssertExpr(itemIdx < mRenderList.size());
+		AssertExpr(itemIdx < mRenderItems.size());
 
-		mRenderList[itemIdx].Invalidate();
+		mRenderItems[itemIdx].Invalidate();
 		mFreeRenderListIndices.push(itemIdx);
 	}
 
 	Int32 Renderer::AddLightItem(const LightItemProtocol& itemProtocol)
 	{
 		mLightingList.emplace_back(std::move(itemProtocol));
+
+		++mLightCounts[itemProtocol.LightType];
 		return static_cast<Int32>(mLightingList.size() - 1);
 	}
 
 	void Renderer::Initialize()
 	{
+		mCanvasSize.SetXY(1600, 900);
+
 		DX12Initialize();
+
+		mPassGraph->Build(this);
 	}
 
 	void Renderer::Update()
 	{
-		BROFILER_CATEGORY("Renderer::Update", Profiler::Color::Red);
+		OPTICK_EVENT();
 
 		mDevice->ResetCommandAllocator();
-		mDevice->ResetCommandList();
+		mDevice->ResetResourceCommandAllocator();
 
-		PrepareLights();
+		PrepareDrawCalls();
 
-		mDevice->BeginFrame();
 		{
-			ID3D12GraphicsCommandList* commandList = mDevice->GetCommandList();
-			DX12GFXConstantBuffer* const MVPConstantBuffer = mDevice->GetConstantBuffer(mMVPConstantBuffer);
-			DX12GFXConstantBuffer* const lightConstantBuffer = mDevice->GetConstantBuffer(mLightConstantBuffer);
-			DX12GFXConstantBuffer* const perMeshPixelShaderConstants = mDevice->GetConstantBuffer(mPerMeshPixelShaderConstants);
-			DX12GFXConstantBuffer* const perFramePixelShaderConstants = mDevice->GetConstantBuffer(mPerFramePixelShaderConstants);
-
-			ID3D12DescriptorHeap* ppDescHeaps[] = { mDevice->GetTextureHeap() };
-			commandList->SetDescriptorHeaps(_countof(ppDescHeaps), ppDescHeaps);
-
-			commandList->SetGraphicsRootConstantBufferView(2, lightConstantBuffer->GetResource()->GetGPUVirtualAddress());
-			commandList->SetGraphicsRootConstantBufferView(5, perFramePixelShaderConstants->GetResource()->GetGPUVirtualAddress());
-
-			commandList->SetGraphicsRoot32BitConstants(1, 3, &camera.Position.GetInternalVec(), 0);
-
-			Matrix4x4 camViewProjMat = camera.ProjectionMat * camera.ViewMat;
-
-			void* pMatrixConstantBufferData = malloc(sizeof(Matrix4x4) * 3);
-			U32 objectIndex = 0;
-
-			// This will count the material instances to offset the constant buffer memory. Temporary.
-			U32 materialIndex_HACK = 0;
-			for (RenderItemProtocol& itemProtocol : mRenderList)
-			{
-				// #TODO(Josh::This needs to be removed -- an opaque handle should be leased out that will
-				//             get fixed up when we remove render items)
-				if (!itemProtocol.bIsValid)
-				{
-					continue;
-				}
-
-				const float* modelViewPtr = itemProtocol.ModelMatrix.GetValuePtr();
-				const float* modelViewInvPtr = itemProtocol.ModelMatrix.Inverse().GetValuePtr();
-				const float* camViewProjPtr = camViewProjMat.GetValuePtr();
-
-				memcpy(pMatrixConstantBufferData, modelViewPtr, sizeof(Matrix4x4));
-				memcpy((U8*)pMatrixConstantBufferData + sizeof(Matrix4x4), modelViewInvPtr, sizeof(Matrix4x4));
-				memcpy((U8*)pMatrixConstantBufferData + sizeof(Matrix4x4) * 2, camViewProjPtr, sizeof(Matrix4x4));
-
-				MVPConstantBuffer->SetData(pMatrixConstantBufferData, sizeof(Matrix4x4) * 3, objectIndex);
-
-				{
-					U32 alignedOffset = MemoryUtils::AlignSize(sizeof(Matrix4x4) * 3, 255) * objectIndex;
-					commandList->SetGraphicsRootConstantBufferView(0, MVPConstantBuffer->GetResource()->GetGPUVirtualAddress() + alignedOffset);
-				}
-				
-				for (size_t index = 0; index < itemProtocol.MeshData.size(); ++index)
-				{
-					const RenderItemMeshData& meshData = itemProtocol.MeshData[index];
-					
-					DX12GFXVertexBuffer* const vertexBuffer = mDevice->GetVertexBuffer(meshData.VertexBuffer);
-					DX12GFXIndexBuffer* const indexBuffer = mDevice->GetIndexBuffer(meshData.IndexBuffer);
-
-					perMeshPixelShaderConstants->SetData(&meshData.Material, sizeof(RenderItemMaterialDesc), materialIndex_HACK);
-
-					{
-						U32 alignedOffset = MemoryUtils::AlignSize(sizeof(RenderItemMaterialDesc), 255) * materialIndex_HACK;
-						commandList->SetGraphicsRootConstantBufferView(4, perMeshPixelShaderConstants->GetResource()->GetGPUVirtualAddress() + alignedOffset);
-					}
-
-					// #NOTE(Josh::Everything should have a default guaranteed diffuse map. For now it also marks the start of the descriptor table)
-					DX12GFXTextureBuffer2D* const diffuseBuffer = mDevice->GetTextureBuffer2D(meshData.TextureDescs[0].TextureBuffer);
-					commandList->SetGraphicsRootDescriptorTable(3, diffuseBuffer->GetDescriptorHandleGPU());
-
-					commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-					commandList->IASetVertexBuffers(0, 1, vertexBuffer->GetBufferView());
-					commandList->IASetIndexBuffer(indexBuffer->GetBufferView());
-					commandList->DrawIndexedInstanced(indexBuffer->GetNumElements(), 1, 0, 0, 0);
-
-					++materialIndex_HACK;
-				}
-
-				++objectIndex;
-			}
-
-			delete pMatrixConstantBufferData;
+			mPassGraph->Execute();
 		}
-		mDevice->EndFrame();
+
+		HRESULT res = mDevice->GetDevice()->GetDeviceRemovedReason();
+		if (res != S_OK)
+		{
+			AssertFalse();
+		}
 	}
 
 	void Renderer::Render()
@@ -160,7 +105,29 @@ namespace Diotima
 
 	void Renderer::ShutDown()
 	{
+		ImGui_ImplDX12_Shutdown();
+
 		mDevice->Shutdown();
+	}
+
+	const std::vector<Renderer::RenderItemDrawCall>& Renderer::GetDrawCalls()
+	{
+		return mPerFrameDrawCalls;
+	}
+
+	const std::vector<Renderer::LightItemProtocol>& Renderer::GetLights()
+	{
+		return mLightingList;
+	}
+
+	const U32* Renderer::GetLightCounts()
+	{
+		return mLightCounts;
+	}
+
+	const Diotima::Renderer::CameraItemProtocol& Renderer::GetCamera()
+	{
+		return camera;
 	}
 
 	void Renderer::DX12Initialize()
@@ -170,36 +137,76 @@ namespace Diotima
 		mDevice->SetMSAASampleCount(mMSAASampleCount);
 		mDevice->Initialize();
 
-		mMVPConstantBuffer = mDevice->CreateConstantBuffer(sizeof(Matrix4x4) * 3, 64);
-		mLightConstantBuffer = mDevice->CreateConstantBuffer(sizeof(LightItemProtocol), 64);
-		mPerMeshPixelShaderConstants = mDevice->CreateConstantBuffer(sizeof(RenderItemMaterialDesc), 64);
-		mPerFramePixelShaderConstants = mDevice->CreateConstantBuffer(sizeof(U32) * 2, 64);
+		mMVPConstantBuffer = mDevice->CreateConstantBuffer(sizeof(Matrix4x4) * 3, 65536);
+		mMaterialBuffer = mDevice->CreateConstantBuffer(sizeof(RenderItemMaterialDesc), 65536);
 	}
 
-	void Renderer::PrepareLights()
+	void Renderer::PrepareDrawCalls()
 	{
-		std::vector<LightItemProtocol> directionalLights;
-		std::vector<LightItemProtocol> pointLights;
+		OPTICK_EVENT();
 
-		for (LightItemProtocol light : mLightingList)
+		if (mPerFrameDrawCalls.capacity() < mRenderItems.size())
 		{
-			if (light.LightType == ELightType::Directional)
+			mPerFrameDrawCalls.reserve(mRenderItems.size());
+		}
+
+		Matrix4x4 camViewProjMat = camera.ProjectionMat * camera.ViewMat;
+		void* pMatrixConstantBufferData = malloc(sizeof(Matrix4x4) * 3);
+
+		DX12GFXConstantBuffer* const materialBuffer = mDevice->GetConstantBuffer(mMaterialBuffer);
+		DX12GFXConstantBuffer* const matrixBuffer = mDevice->GetConstantBuffer(mMVPConstantBuffer);
+
+		matrixBuffer->Reset();
+		materialBuffer->Reset();
+
+		mPerFrameDrawCalls.clear();
+		for (RenderItemProtocol& renderItem : mRenderItems)
+		{
+			// #TODO(Josh::This needs to be removed -- an opaque handle should be leased out that will
+			//             get fixed up when we remove render items)
+			if (!renderItem.bIsValid)
 			{
-				directionalLights.push_back(light);
+				continue;
 			}
-			else
+
+			CBAllocationData matrixSlot;
+			// #TODO(Josh::Just copy pasta from before for now to get RenderItemDrawCall driving the Renderer::Update loop
+				//             Should find a better place for it.)
 			{
-				pointLights.push_back(light);
+				// Create and copy a buffer of matrices for a given item
+				// Camera matrix should not be here but will be moved 
+				// elsewhere when the frame design stabilizes
+				const float* modelViewPtr = renderItem.ModelMatrix.GetValuePtr();
+				const float* modelViewInvPtr = renderItem.ModelMatrix.Inverse().GetValuePtr();
+				const float* camViewProjPtr = camViewProjMat.GetValuePtr();
+
+				memcpy(pMatrixConstantBufferData, modelViewPtr, sizeof(Matrix4x4));
+				memcpy((U8*)pMatrixConstantBufferData + sizeof(Matrix4x4), modelViewInvPtr, sizeof(Matrix4x4));
+				memcpy((U8*)pMatrixConstantBufferData + sizeof(Matrix4x4) * 2, camViewProjPtr, sizeof(Matrix4x4));
+
+				matrixSlot = matrixBuffer->AllocateMember(pMatrixConstantBufferData);
+			}
+
+			for (RenderItemMeshData& meshData : renderItem.MeshData)
+			{
+				RenderItemDrawCall drawCall;
+				drawCall.VertexBuffer = meshData.VertexBuffer;
+				drawCall.IndexBuffer = meshData.IndexBuffer;
+				// #TODO(Josh::Eventually the material system will handle this itself and hold a buffer of pre-allocated materials
+				//             and we will somehow "lease" it for the draw call)
+				drawCall.MaterialSlot = materialBuffer->AllocateMember(&meshData.Material);
+
+				drawCall.TextureSlot0 = meshData.TextureDescs[0].TextureBuffer; // This should be iterated on to be more robust.
+				drawCall.TextureSlot1 = meshData.TextureDescs[1].TextureBuffer; // This should be iterated on to be more robust.
+				drawCall.TextureSlot2 = meshData.TextureDescs[2].TextureBuffer; // This should be iterated on to be more robust.
+
+				drawCall.MatrixSlot = matrixSlot;
+
+				mPerFrameDrawCalls.push_back(std::move(drawCall));
 			}
 		}
 
-		DX12GFXConstantBuffer* const lightConstantBuffer = mDevice->GetConstantBuffer(mLightConstantBuffer);
-		lightConstantBuffer->SetData(pointLights.data(), static_cast<U32>(sizeof(LightItemProtocol) * pointLights.size()), 0);
-		//lightConstantBuffer->SetData(directionalLights.data(), static_cast<U32>(sizeof(LightItemProtocol) * directionalLights.size()), 1);
-
-		DX12GFXConstantBuffer* const perFramePixelShaderConstants = mDevice->GetConstantBuffer(mPerFramePixelShaderConstants);
-		U32 lightCounts[2] = { static_cast<U32>(pointLights.size()), static_cast<U32>(directionalLights.size()) };
-		perFramePixelShaderConstants->SetData(lightCounts, sizeof(U32) * 2, 0);
+		delete pMatrixConstantBufferData;
 	}
 
 	void Renderer::EnableVsync(bool bEnabled)
@@ -212,25 +219,35 @@ namespace Diotima
 		mMSAASampleCount = sampleCount;
 	}
 
+
+	const Vector2D& Renderer::GetCanvasSize()
+	{
+		return mCanvasSize;
+	}
+
 	void Renderer::ResizeCanvas(const Vector2D& newSize)
 	{
 		mCanvasSize = newSize;
 
+		int width = static_cast<int>(newSize.X());
+		int height = static_cast<int>(newSize.Y());
+
+		mDevice->HandleWindowResize(width, height);
+
+		mPassGraph->OnWindowResize(width, height);
+
 		LOG_CONSOLE_ARGS("New Canvas Size: %f x %f", mCanvasSize.X(), mCanvasSize.Y());
 	}
-
 
 	U32 Renderer::CreateVertexBuffer(void* data, U32 numElements)
 	{
 		return mDevice->CreateVertexBuffer(data, numElements);
 	}
 
-
 	U32 Renderer::CreateIndexBuffer(void* data, U32 numElements)
 	{
 		return mDevice->CreateIndexBuffer(data, numElements);
 	}
-
 
 	U32 Renderer::CreateTextureBuffer2D(void* data, U32 width, U32 height)
 	{

@@ -24,8 +24,8 @@ namespace EMouseButton
 	enum T : Int32
 	{
 		MouseButton_Left,
-		MouseButton_Middle,
 		MouseButton_Right,
+		MouseButton_Middle,
 		MouseButton_Move
 	};
 }

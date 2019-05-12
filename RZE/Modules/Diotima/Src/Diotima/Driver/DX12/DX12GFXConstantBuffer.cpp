@@ -9,6 +9,11 @@
 namespace Diotima
 {
 
+	DX12GFXConstantBuffer::DX12GFXConstantBuffer()
+		: mNumAllocations(0)
+	{
+	}
+
 	DX12GFXConstantBuffer::~DX12GFXConstantBuffer()
 	{
 	}
@@ -17,6 +22,9 @@ namespace Diotima
 	{
 		const U32 alignedSize = MemoryUtils::AlignSize(memberSize, 255);
 		const U32 bufferSize = alignedSize * maxMembers;
+
+		mMemberSize = memberSize;
+		mBufferSize = bufferSize;
 
 		mDevice->GetDevice()->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD), 
@@ -27,24 +35,37 @@ namespace Diotima
 			IID_PPV_ARGS(&mUploadBuffer));
 
 		CD3DX12_RANGE readRange(0, 0);
-		mUploadBuffer->Map(0, &readRange, reinterpret_cast<void**>(&mResource));
+		mUploadBuffer->Map(0, &readRange, reinterpret_cast<void**>(&mResourceStart));
+
+		mCurrAddr = mResourceStart;
+		mResourceEnd = mResourceStart + mBufferSize;
+	}
+
+	CBAllocationData DX12GFXConstantBuffer::AllocateMember(const void* data)
+	{
+		U32 alignedSize = MemoryUtils::AlignSize(mMemberSize, 255);
+		AssertExpr(mCurrAddr + alignedSize <= mResourceEnd);
+
+		memcpy(mCurrAddr, data, mMemberSize);
+		mCurrAddr = mCurrAddr + alignedSize;
+		++mNumAllocations;
+
+		CBAllocationData allocData;
+		allocData.GPUBaseAddr = mUploadBuffer->GetGPUVirtualAddress() + ((mNumAllocations - 1) * alignedSize);
+		allocData.SizeInBytes = alignedSize;
+		return allocData;
+	}
+
+	void DX12GFXConstantBuffer::Reset()
+	{
+		mNumAllocations = 0;
+		mCurrAddr = mResourceStart;
 	}
 
 	void DX12GFXConstantBuffer::SetDevice(DX12GFXDevice* device)
 	{
 		AssertNotNull(device);
 		mDevice = device;
-	}
-
-	void DX12GFXConstantBuffer::SetData(const void* data, U32 size, U32 objectIndex)
-	{
-		U32 alignedSize = MemoryUtils::AlignSize(size, 255);
-		memcpy((U8*)mResource + (alignedSize * objectIndex), data, size);
-	}
-
-	ID3D12DescriptorHeap* DX12GFXConstantBuffer::GetDescriptorHeap()
-	{
-		return mDescriptorHeap.Get();
 	}
 
 	ID3D12Resource* DX12GFXConstantBuffer::GetResource()

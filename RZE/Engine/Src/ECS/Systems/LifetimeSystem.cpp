@@ -10,6 +10,8 @@ void LifetimeSystem::Initialize()
 
 void LifetimeSystem::Update(const std::vector<Apollo::EntityID>& entities)
 {
+	OPTICK_EVENT();
+
 	for (Apollo::EntityID entity : entities)
 	{
 		LifetimeComponent* const component = InternalGetEntityHandler().GetComponent<LifetimeComponent>(entity);
