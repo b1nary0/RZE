@@ -1,6 +1,7 @@
 #include <EditorApp.h>
 
 #include <ImGui/imgui.h>
+#include <Optick/optick.h>
 
 namespace Editor
 {
@@ -30,6 +31,8 @@ namespace Editor
 
 	void EditorApp::Update()
 	{
+		OPTICK_EVENT();
+
 		ImGui::PushFont(mFontMapping.at("ubuntu_medium"));
 
 		DisplayMenuBar();
