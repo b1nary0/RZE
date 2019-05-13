@@ -1,4 +1,4 @@
-#include <UI/ScenePanel.h>
+#include <UI/Panels/ScenePanel.h>
 
 #include <EditorApp.h>
 
@@ -23,18 +23,28 @@ namespace Editor
 			const std::vector<GameScene::SceneEntryTemp> entities = RZE_Application::RZE().GetActiveScene().GetSceneEntries();
 			for (const GameScene::SceneEntryTemp& entry : entities)
 			{
-				if (ImGui::TreeNode(entry.Name.c_str()))
+				if (ImGui::Selectable(entry.Name.c_str()))
 				{
-					Apollo::EntityHandler::ComponentNameIDMap componentNames;
-					RZE_Application::RZE().GetActiveScene().GetEntityHandler().GetComponentNames(entry.ID, componentNames);
-					for (auto& pair : componentNames)
-					{
-						if (ImGui::Selectable(pair.second.c_str()))
-						{
+					Apollo::EntityHandler::ComponentNameIDMap componentMap;
+					RZE_Application::RZE().GetActiveScene().GetEntityHandler().GetComponentNames(entry.ID, componentMap);
 
-						}
+					mSelectedComponents.clear();
+					for (auto& pair : componentMap)
+					{
+						mSelectedComponents.push_back(pair.second);
 					}
-					ImGui::TreePop();
+				}
+			}
+		}
+		ImGui::End();
+
+		if (ImGui::Begin("Component View"))
+		{
+			for (auto& componentName : mSelectedComponents)
+			{
+				if (ImGui::Selectable(componentName.c_str()))
+				{
+
 				}
 			}
 		}

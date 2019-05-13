@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+#include <vector>
+
 namespace Editor
 {
 	class ScenePanel
@@ -17,5 +20,7 @@ namespace Editor
 
 	private:
 		bool bEnabled;
+
+		std::vector<std::string> mSelectedComponents;
 	};
 }

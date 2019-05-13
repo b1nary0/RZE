@@ -17,6 +17,8 @@ namespace Editor
 	{
 		GetWindow()->SetWindowSize(Vector2D(1920.0f, 1080.0f));
 
+		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
 		LoadFonts();
 		StyleSetup();
 	}

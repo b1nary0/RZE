@@ -2,7 +2,7 @@
 
 #include <EngineApp.h>
 
-#include <UI/ScenePanel.h>
+#include <UI/Panels/ScenePanel.h>
 
 struct ImFont;
 
