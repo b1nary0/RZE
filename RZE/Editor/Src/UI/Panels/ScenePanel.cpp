@@ -23,7 +23,7 @@ namespace Editor
 	{
 		if (ImGui::Begin("Scene", &bEnabled))
 		{
-			const std::vector<GameScene::SceneEntryTemp> entities = RZE_Application::RZE().GetActiveScene().GetSceneEntries();
+			const std::vector<GameScene::SceneEntryTemp>& entities = RZE_Application::RZE().GetActiveScene().GetSceneEntries();
 			for (const GameScene::SceneEntryTemp& entry : entities)
 			{
 				if (ImGui::Selectable(entry.Name.c_str()))
