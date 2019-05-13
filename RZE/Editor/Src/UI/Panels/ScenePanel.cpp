@@ -71,7 +71,7 @@ namespace Editor
 
 		if (ImGui::Begin("Component View"))
 		{
-			if (mSelectedItem != nullptr)
+			if (HasSelectedEntity())
 			{
 				Apollo::EntityHandler::ComponentNameIDMap componentMap;
 				RZE_Application::RZE().GetActiveScene().GetEntityHandler().GetComponentNames(mSelectedItem->EntityID, componentMap);
