@@ -2,6 +2,8 @@
 
 #include <EditorApp.h>
 
+#include <Utils/DebugUtils/Debug.h>
+
 #include <ImGui/imgui.h>
 
 namespace Editor
@@ -33,6 +35,35 @@ namespace Editor
 
 					mSelectedItem = new EntityItem();
 					mSelectedItem->EntityID = entry.ID;
+				}
+
+				if (HasSelectedEntity() && GetSelectedEntityID() == entry.ID)
+				{
+					if (ImGui::BeginPopupContextItem(entry.Name.c_str()))
+					{
+						ImGui::Text(entry.Name.c_str());
+						ImGui::Separator();
+
+						if (ImGui::BeginMenu("Add Component"))
+						{
+							const std::vector<std::string>& componentTypeNames = RZE_Application::RZE().GetActiveScene().GetEntityHandler().GetAllComponentNames();
+							for (const std::string& componentTypeName : componentTypeNames)
+							{
+								if (ImGui::MenuItem(componentTypeName.c_str()))
+								{
+								}
+							}
+
+							ImGui::EndMenu();
+						}
+
+						if (ImGui::MenuItem("Delete"))
+						{
+							RZE_Application::RZE().GetActiveScene().DestroyEntity(mSelectedItem->EntityID);
+						}
+
+						ImGui::EndPopup();
+					}
 				}
 			}
 		}
@@ -70,6 +101,17 @@ namespace Editor
 	bool ScenePanel::IsEnabled()
 	{
 		return bEnabled;
+	}
+
+	bool ScenePanel::HasSelectedEntity()
+	{
+		return mSelectedItem != nullptr;
+	}
+
+	U32 ScenePanel::GetSelectedEntityID()
+	{
+		AssertNotNull(mSelectedItem);
+		return mSelectedItem->EntityID;
 	}
 
 }

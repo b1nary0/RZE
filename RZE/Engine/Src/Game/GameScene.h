@@ -31,6 +31,7 @@ public:
 	void Load(FilePath filePath);
 
 	Apollo::EntityID CreateEntity(const std::string& name);
+	void DestroyEntity(Apollo::EntityID entity);
 
 	const std::vector<SceneEntryTemp>& GetSceneEntries() { return mEntityEntries; }
 

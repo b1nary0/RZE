@@ -130,6 +130,21 @@ Apollo::EntityID GameScene::CreateEntity(const std::string& name)
 	return newEnt;
 }
 
+void GameScene::DestroyEntity(Apollo::EntityID entity)
+{
+	mEntityHandler.DestroyEntity(entity);
+
+	auto it = std::remove_if(mEntityEntries.begin(), mEntityEntries.end(), [&entity](SceneEntryTemp& entry)
+	{
+		return entry.ID == entity;
+	});
+
+	if (it != mEntityEntries.end())
+	{
+		mEntityEntries.erase(it);
+	}
+}
+
 void GameScene::AddToScene(Apollo::EntityID entityID, const std::string& name)
 {
 	mEntityEntries.emplace_back();

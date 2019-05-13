@@ -116,7 +116,7 @@ namespace Editor
 
 			if (ImGui::MenuItem("Create Entity"))
 			{
-
+				RZE_Application::RZE().GetActiveScene().CreateEntity("TestEntity");
 			}
 
 			ImGui::EndPopup();

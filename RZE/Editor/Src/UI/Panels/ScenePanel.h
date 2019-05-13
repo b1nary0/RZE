@@ -25,6 +25,9 @@ namespace Editor
 		void Disable();
 		bool IsEnabled();
 
+		bool HasSelectedEntity();
+		U32 GetSelectedEntityID();
+
 	private:
 		bool bEnabled;
 
