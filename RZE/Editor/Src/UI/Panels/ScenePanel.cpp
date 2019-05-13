@@ -9,6 +9,7 @@ namespace Editor
 
 	ScenePanel::ScenePanel()
 		: bEnabled(false)
+		, mSelectedItem(nullptr)
 	{
 	}
 
@@ -25,14 +26,13 @@ namespace Editor
 			{
 				if (ImGui::Selectable(entry.Name.c_str()))
 				{
-					Apollo::EntityHandler::ComponentNameIDMap componentMap;
-					RZE_Application::RZE().GetActiveScene().GetEntityHandler().GetComponentNames(entry.ID, componentMap);
-
-					mSelectedComponents.clear();
-					for (auto& pair : componentMap)
+					if (mSelectedItem != nullptr)
 					{
-						mSelectedComponents.push_back(pair.second);
+						delete mSelectedItem;
 					}
+
+					mSelectedItem = new EntityItem();
+					mSelectedItem->EntityID = entry.ID;
 				}
 			}
 		}
@@ -40,11 +40,17 @@ namespace Editor
 
 		if (ImGui::Begin("Component View"))
 		{
-			for (auto& componentName : mSelectedComponents)
+			if (mSelectedItem != nullptr)
 			{
-				if (ImGui::Selectable(componentName.c_str()))
-				{
+				Apollo::EntityHandler::ComponentNameIDMap componentMap;
+				RZE_Application::RZE().GetActiveScene().GetEntityHandler().GetComponentNames(mSelectedItem->EntityID, componentMap);
 
+				for (auto& pair : componentMap)
+				{
+					if (ImGui::Selectable(pair.second.c_str()))
+					{
+
+					}
 				}
 			}
 		}

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Utils/PrimitiveDefs.h>
+
 #include <string>
 #include <vector>
 
@@ -7,6 +9,11 @@ namespace Editor
 {
 	class ScenePanel
 	{
+		struct EntityItem
+		{
+			U32 EntityID;
+		};
+
 	public:
 		ScenePanel();
 		~ScenePanel();
@@ -22,5 +29,7 @@ namespace Editor
 		bool bEnabled;
 
 		std::vector<std::string> mSelectedComponents;
+
+		EntityItem* mSelectedItem;
 	};
 }
