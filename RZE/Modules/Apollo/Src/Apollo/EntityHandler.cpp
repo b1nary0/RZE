@@ -6,7 +6,8 @@
 
 namespace Apollo
 {
-	EntityHandler::ComponentNameList EntityHandler::sComponentNameRegistry;
+	EntityHandler::ComponentNameIDMap EntityHandler::sComponentTypeRegistry;
+	EntityHandler::ComponentFactoryMap EntityHandler::sComponentFactories;
 
 	EntityHandler::EntityHandler()
 	{
@@ -17,18 +18,19 @@ namespace Apollo
 		Initialize();
 	}
 
-	void EntityHandler::RegisterComponentName(const std::string& componentName)
+	void EntityHandler::RegisterComponentType(ComponentID componentID, const std::string& componentName)
 	{
-		auto& iter = std::find(sComponentNameRegistry.begin(), sComponentNameRegistry.end(), componentName);
-		if (iter == sComponentNameRegistry.end())
-		{
-			sComponentNameRegistry.emplace_back(componentName);
-		}
+		sComponentTypeRegistry.insert({componentID, componentName});
 	}
 
-	const Apollo::EntityHandler::ComponentNameList& EntityHandler::GetAllComponentNames()
+	void EntityHandler::AddComponentFactory(ComponentID componentID, const Functor<ComponentBase*>& factoryFunc)
 	{
-		return sComponentNameRegistry;
+		sComponentFactories.insert({componentID, factoryFunc});
+	}
+
+	const Apollo::EntityHandler::ComponentNameIDMap& EntityHandler::GetAllComponentTypes()
+	{
+		return sComponentTypeRegistry;
 	}
 
 	EntityID EntityHandler::CreateEntity(const std::string& name)
@@ -75,6 +77,18 @@ namespace Apollo
 		return mEntities[entityID];
 	}
 
+	Apollo::ComponentBase* EntityHandler::AddComponentByID(EntityID entityID, ComponentID componentID)
+	{
+		ComponentBase* const newComp = sComponentFactories.at(componentID)();
+		mEntityComponentMap[entityID][componentID] = newComp;
+
+		mEntities[entityID].mComponentSet[componentID] = true;
+
+		mComponentsAddedThisFrame.emplace(componentID, entityID);
+
+		return newComp;
+	}
+
 	void EntityHandler::RemoveComponent(EntityID entityID, ComponentID componentID)
 	{
 		Apollo::ComponentBase* const component = mEntityComponentMap[entityID][componentID];
@@ -107,6 +121,21 @@ namespace Apollo
 				outComponentNames.emplace(component->id, component->ComponentName);
 			}
 		}
+	}
+
+	Apollo::ComponentID EntityHandler::GetComponentIDFromTypeName(const std::string& typeNameStr)
+	{
+		// #TODO(Josh::Map iteration, not nice)
+		for (auto& pair : sComponentTypeRegistry)
+		{
+			if (pair.second == typeNameStr)
+			{
+				return pair.first;
+			}
+		}
+
+		AssertFalse();
+		return 0;
 	}
 
 	void EntityHandler::Initialize()

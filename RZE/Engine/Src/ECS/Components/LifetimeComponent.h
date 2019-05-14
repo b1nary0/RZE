@@ -4,7 +4,7 @@
 
 struct LifetimeComponent : Apollo::Component<LifetimeComponent>
 {
-	LifetimeComponent() = delete;
+	LifetimeComponent() {};
 	LifetimeComponent(float lifetimeMS)
 		: LifetimeMS(lifetimeMS) {}
 

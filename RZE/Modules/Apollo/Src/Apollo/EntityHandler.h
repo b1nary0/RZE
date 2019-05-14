@@ -14,7 +14,8 @@
 #define APOLLO_REGISTER_COMPONENT(ComponentType)											\
 {																							\
 	Apollo::ComponentTypeID<Apollo::ComponentBase>::GetComponentTypeID<ComponentType>();	\
-	Apollo::EntityHandler::RegisterComponentName(#ComponentType);							\
+	Apollo::EntityHandler::RegisterComponentType(ComponentType::GetID(), #ComponentType);							\
+	Apollo::EntityHandler::AddComponentFactory(ComponentType::GetID(), Functor<Apollo::ComponentBase*>([]() { return new ComponentType();}));\
 }																							\
 
 namespace Apollo
@@ -40,12 +41,12 @@ namespace Apollo
 		typedef std::vector<EntityID>													EntityFreeList;
 		typedef std::vector<ComponentBase*>												ComponentList;
 		typedef std::vector<EntitySystem*>												SystemList;
-		typedef std::vector<std::string>												ComponentNameList;
 		typedef std::unordered_map<ComponentID, std::string>							ComponentNameIDMap;
 		typedef std::unordered_map<EntityID, ComponentList>								EntityComponentMapping;
 		typedef std::unordered_map<ComponentID, std::vector<ComponentAddedFunc>>		OnComponentAddedMap;
 		typedef std::unordered_map <ComponentID, std::vector<ComponentRemovedFunc>>		OnComponentRemovedMap;
 		typedef std::queue<ComponentIDQueueData>										ComponentIDQueue;
+		typedef std::unordered_map<ComponentID, Functor<ComponentBase*>>				ComponentFactoryMap;
 
 	public:
 		EntityHandler();
@@ -64,8 +65,9 @@ namespace Apollo
 
 	public:
 		// #TODO(Josh) I don't like this, should have a better place for this type of behaviour/necessity
-		static void RegisterComponentName(const std::string& componentName);
-		static const ComponentNameList& GetAllComponentNames();
+		static void RegisterComponentType(ComponentID componentID, const std::string& componentName);
+		static void AddComponentFactory(ComponentID componentID, const Functor<ComponentBase*>& factoryFunc);
+		static const ComponentNameIDMap& GetAllComponentTypes();
 
 	public:
 		EntityID CreateEntity(const std::string& name);
@@ -76,6 +78,8 @@ namespace Apollo
 
 		template <typename TComponentType, typename... TArgs>
 		TComponentType* AddComponent(EntityID entityID, TArgs... args);
+
+		ComponentBase* AddComponentByID(EntityID entityID, ComponentID componentID);
 
 		void RemoveComponent(EntityID entityID, ComponentID componentID);
 
@@ -90,6 +94,7 @@ namespace Apollo
 
 	public:
 		void GetComponentNames(EntityID entityID, ComponentNameIDMap& outComponentNames);
+		ComponentID GetComponentIDFromTypeName(const std::string& typeNameStr);
 
 		// Look over these and maybe have a better grouping solution for components
 		template <typename TComponent>
@@ -106,7 +111,8 @@ namespace Apollo
 		void FlushComponentIDQueues();
 
 	private:
-		static ComponentNameList sComponentNameRegistry;
+		static ComponentNameIDMap sComponentTypeRegistry;
+		static ComponentFactoryMap sComponentFactories;
 
 	private:
 		U32 mCapacity;

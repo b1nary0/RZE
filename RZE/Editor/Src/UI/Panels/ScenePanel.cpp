@@ -46,11 +46,13 @@ namespace Editor
 
 						if (ImGui::BeginMenu("Add Component"))
 						{
-							const std::vector<std::string>& componentTypeNames = RZE_Application::RZE().GetActiveScene().GetEntityHandler().GetAllComponentNames();
-							for (const std::string& componentTypeName : componentTypeNames)
+							const Apollo::EntityHandler::ComponentNameIDMap& componentTypeNames = RZE_Application::RZE().GetActiveScene().GetEntityHandler().GetAllComponentTypes();
+							for (auto& pair : componentTypeNames)
 							{
-								if (ImGui::MenuItem(componentTypeName.c_str()))
+								if (ImGui::MenuItem(pair.second.c_str()))
 								{
+									Apollo::ComponentID componentID = RZE_Application::RZE().GetActiveScene().GetEntityHandler().GetComponentIDFromTypeName(pair.second);
+									RZE_Application::RZE().GetActiveScene().GetEntityHandler().AddComponentByID(mSelectedItem->EntityID, componentID);
 								}
 							}
 
