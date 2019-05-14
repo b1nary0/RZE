@@ -9,5 +9,5 @@ void TransformComponent::OnEditorInspect()
 	float* values = const_cast<float*>(&Position.GetInternalVec().x);
 
 	ImGui::Text("Position");
-	ImGui::DragFloat3("", values, 0.0025f);
+	ImGui::DragFloat3("", values, 0.005f);
 }
