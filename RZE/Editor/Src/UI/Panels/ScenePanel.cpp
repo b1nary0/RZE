@@ -81,7 +81,9 @@ namespace Editor
 				for (Apollo::ComponentBase* component : entityComponents)
 				{
 					ImGui::Text(component->ComponentName.c_str());
+					ImGui::Separator();
 					component->OnEditorInspect();
+					ImGui::Separator();
 				}
 			}
 		}
