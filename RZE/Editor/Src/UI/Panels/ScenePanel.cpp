@@ -51,7 +51,7 @@ namespace Editor
 							{
 								if (ImGui::MenuItem(pair.second.c_str()))
 								{
-									Apollo::ComponentID componentID = RZE_Application::RZE().GetActiveScene().GetEntityHandler().GetComponentIDFromTypeName(pair.second);
+									Apollo::ComponentID componentID = pair.first;
 									RZE_Application::RZE().GetActiveScene().GetEntityHandler().AddComponentByID(mSelectedItem->EntityID, componentID);
 								}
 							}
