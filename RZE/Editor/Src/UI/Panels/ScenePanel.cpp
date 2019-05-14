@@ -29,7 +29,7 @@ namespace Editor
 				bool bSelectedCurrent = mSelectedItem != nullptr && mSelectedItem->EntityID == entry.ID;
 				if (ImGui::Selectable(entry.Name.c_str(), &bSelectedCurrent))
 				{
-					if (mSelectedItem != nullptr)
+					if (mSelectedItem != nullptr && mSelectedItem->EntityID != entry.ID)
 					{
 						delete mSelectedItem;
 					}
