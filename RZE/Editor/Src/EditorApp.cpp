@@ -29,7 +29,6 @@ namespace Editor
 	void EditorApp::Start()
 	{
 		RZE().GetActiveScene().Load(FilePath("Assets/Scenes/TestGame.scene"));
-		RZE().GetActiveScene().GetEntityHandler().AddSystem<FreeCameraSystem>();
 	}
 
 	void EditorApp::Update()
