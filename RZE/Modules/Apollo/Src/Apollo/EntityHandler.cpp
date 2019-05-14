@@ -110,6 +110,18 @@ namespace Apollo
 		mEntityComponentMap[entityID][componentID] = nullptr;
 	}
 
+	void EntityHandler::GetAllComponents(EntityID entityID, ComponentList& outComponents)
+	{
+		for (ComponentBase* component : mEntityComponentMap[entityID])
+		{
+			// #NOTE(A quirk of how we store component data)
+			if (component != nullptr)
+			{
+				outComponents.push_back(component);
+			}
+		}
+	}
+
 	void EntityHandler::GetComponentNames(EntityID entityID, ComponentNameIDMap& outComponentNames)
 	{
 		const ComponentList& components = mEntityComponentMap[entityID];

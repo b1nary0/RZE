@@ -75,15 +75,13 @@ namespace Editor
 		{
 			if (HasSelectedEntity())
 			{
-				Apollo::EntityHandler::ComponentNameIDMap componentMap;
-				RZE_Application::RZE().GetActiveScene().GetEntityHandler().GetComponentNames(mSelectedItem->EntityID, componentMap);
+				Apollo::EntityHandler::ComponentList entityComponents;
+				RZE_Application::RZE().GetActiveScene().GetEntityHandler().GetAllComponents(mSelectedItem->EntityID, entityComponents);
 
-				for (auto& pair : componentMap)
+				for (Apollo::ComponentBase* component : entityComponents)
 				{
-					if (ImGui::Selectable(pair.second.c_str()))
-					{
-
-					}
+					ImGui::Text(component->ComponentName.c_str());
+					component->OnEditorInspect();
 				}
 			}
 		}

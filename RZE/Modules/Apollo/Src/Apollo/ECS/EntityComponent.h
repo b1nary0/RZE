@@ -39,6 +39,8 @@ namespace Apollo
 	{
 		U32 id; // Temp? Solution for removing components -- need to know which component by id to remove.
 		std::string ComponentName;
+
+		virtual void OnEditorInspect() {}
 	};
 
 	template <typename TComponentType>

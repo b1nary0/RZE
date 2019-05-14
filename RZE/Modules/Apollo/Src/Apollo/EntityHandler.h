@@ -79,9 +79,6 @@ namespace Apollo
 		template <typename TComponentType, typename... TArgs>
 		TComponentType* AddComponent(EntityID entityID, TArgs... args);
 
-		ComponentBase* AddComponentByID(EntityID entityID, ComponentID componentID);
-
-		void RemoveComponent(EntityID entityID, ComponentID componentID);
 
 		template <typename TComponentType>
 		TComponentType* GetComponent(EntityID entityID);
@@ -92,16 +89,19 @@ namespace Apollo
 		template <typename TSystemType, typename... TArgs>
 		TSystemType* AddSystem(TArgs... args);
 
-	public:
-		void GetComponentNames(EntityID entityID, ComponentNameIDMap& outComponentNames);
-		ComponentID GetComponentIDFromTypeName(const std::string& typeNameStr);
-
 		// Look over these and maybe have a better grouping solution for components
 		template <typename TComponent>
 		void ForEach(Functor<void, EntityID> callback);
 
 		template <typename TComponent0, typename TComponent1>
 		void ForEach(Functor<void, EntityID> callback);
+
+	public:
+		void GetAllComponents(EntityID entityID, ComponentList& outComponents);
+		void GetComponentNames(EntityID entityID, ComponentNameIDMap& outComponentNames);
+		ComponentID GetComponentIDFromTypeName(const std::string& typeNameStr);
+		ComponentBase* AddComponentByID(EntityID entityID, ComponentID componentID);
+		void RemoveComponent(EntityID entityID, ComponentID componentID);
 
 	private:
 		U32 TryResize();
