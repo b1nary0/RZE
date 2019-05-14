@@ -26,7 +26,8 @@ namespace Editor
 			const std::vector<GameScene::SceneEntryTemp>& entities = RZE_Application::RZE().GetActiveScene().GetSceneEntries();
 			for (const GameScene::SceneEntryTemp& entry : entities)
 			{
-				if (ImGui::Selectable(entry.Name.c_str()))
+				bool bSelectedCurrent = mSelectedItem != nullptr && mSelectedItem->EntityID == entry.ID;
+				if (ImGui::Selectable(entry.Name.c_str(), &bSelectedCurrent))
 				{
 					if (mSelectedItem != nullptr)
 					{
