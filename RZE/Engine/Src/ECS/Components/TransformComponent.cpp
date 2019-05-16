@@ -11,9 +11,9 @@ void TransformComponent::OnEditorInspect()
 	float* scaleValues = const_cast<float*>(&Scale.GetInternalVec().x);
 
 	ImGui::Text("Position");
-	ImGui::DragFloat3("##transfcomp_position", positionValues, 0.005f);
+	ImGui::InputFloat3("##transfcomp_position", positionValues, 2);
 	ImGui::Text("Rotation");
-	ImGui::DragFloat3("##transfcomp_rotation", rotationValues, 0.005f);
+	ImGui::InputFloat3("##transfcomp_rotation", rotationValues, 2);
 	ImGui::Text("Scale");
-	ImGui::DragFloat3("##transfcomp_scale", scaleValues, 0.005f);
+	ImGui::InputFloat3("##transfcomp_scale", scaleValues, 2);
 }

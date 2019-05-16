@@ -160,8 +160,6 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 		switch (msg.message)
 		{
 		case WM_CHAR:
-		case WM_SYSKEYDOWN:
-		case WM_KEYDOWN:
 		{
 			const Int32 win32KeyCode = static_cast<Int32>(msg.wParam);
 			const bool bIsRepeat = (msg.lParam & 0x40000000) != 0;
@@ -172,7 +170,7 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 
 		case WM_KEYUP:
 		{
-			const Int32 win32KeyCode = static_cast<Int32>(msg.wParam);
+			const Int32 win32KeyCode = static_cast<Int32>(::MapVirtualKeyA(static_cast<UINT>(msg.wParam), 2));
 			inputHandler.OnKeyUp(win32KeyCode);
 		}
 		break;
