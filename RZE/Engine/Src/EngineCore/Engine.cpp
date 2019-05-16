@@ -93,6 +93,8 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 // 						ImVec2(80.0f, 45.0f));
 
 					Update();
+
+					ImGui::EndFrame();
 					mRenderer->Update();
 				}
 
@@ -174,15 +176,16 @@ void RZE_Engine::PreUpdate()
 	if (mApplication->ProcessInput(mInputHandler))
 	{
 		ImGuiIO& io = ImGui::GetIO();
+		InputHandler& inputHandler = GetInputHandler();
 
-		const Vector2D& mousePos = GetInputHandler().GetMouseState().CurPosition;
-		const Vector2D& prevMousePos = GetInputHandler().GetMouseState().PrevPosition;
+		const Vector2D& mousePos = inputHandler.GetMouseState().CurPosition;
+		const Vector2D& prevMousePos = inputHandler.GetMouseState().PrevPosition;
 		io.MousePos = ImVec2(mousePos.X(), mousePos.Y());
 		io.MousePosPrev = ImVec2(prevMousePos.X(), prevMousePos.Y());
 
 		for (U32 mouseBtn = 0; mouseBtn < 3; ++mouseBtn)
 		{
-			io.MouseDown[mouseBtn] = GetInputHandler().GetMouseState().CurMouseBtnStates[mouseBtn];
+			io.MouseDown[mouseBtn] = inputHandler.GetMouseState().CurMouseBtnStates[mouseBtn];
 		}
 
 		mInputHandler.RaiseEvents();
@@ -190,7 +193,7 @@ void RZE_Engine::PreUpdate()
 	else
 	{
 		mInputHandler.Reset();
-	}
+	} 
 }
 
 void RZE_Engine::CreateAndInitializeWindow()
@@ -278,11 +281,20 @@ void RZE_Engine::RegisterWindowEvents()
 
 void RZE_Engine::RegisterKeyEvents()
 {
-// 	Functor<void, const InputKey&> keyFunc([this](const InputKey& key)
-// 	{
-// 		
-// 	});
-// 	GetInputHandler().BindAction(Win32KeyCode::, EButtonState::ButtonState_Pressed, keyFunc);
+	Functor<void, const InputKey&> keyFunc([this](const InputKey& key)
+	{
+		if (ImGui::GetIO().WantCaptureKeyboard)
+		{
+			ImGui::GetIO().AddInputCharacter(key.GetKeyCode());
+		}
+	});
+	
+	for (U8 keyIndex = Win32KeyCode::Key_0; keyIndex < Win32KeyCode::Key_Z; ++keyIndex)
+	{
+		GetInputHandler().BindAction(keyIndex, EButtonState::ButtonState_Pressed, keyFunc);
+	}
+
+	GetInputHandler().BindAction(Win32KeyCode::Space, EButtonState::ButtonState_Pressed, keyFunc);
 }
 
 void RZE_Engine::RegisterEngineComponentTypes()

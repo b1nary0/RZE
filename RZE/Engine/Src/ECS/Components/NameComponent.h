@@ -9,5 +9,7 @@ public:
 	NameComponent(const std::string& name)
 		: Name(name) {}
 
+	void OnEditorInspect() override;
+
 	std::string Name;
 };

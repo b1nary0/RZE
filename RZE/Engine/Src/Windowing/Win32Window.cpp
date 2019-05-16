@@ -159,6 +159,7 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 	{
 		switch (msg.message)
 		{
+		case WM_CHAR:
 		case WM_SYSKEYDOWN:
 		case WM_KEYDOWN:
 		{
