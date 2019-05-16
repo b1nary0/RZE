@@ -281,27 +281,6 @@ void RZE_Engine::RegisterWindowEvents()
 
 void RZE_Engine::RegisterKeyEvents()
 {
-	Functor<void, const InputKey&> keyFunc([this](const InputKey& key)
-	{
-		if (ImGui::GetIO().WantCaptureKeyboard)
-		{
-			ImGui::GetIO().AddInputCharacter(key.GetKeyCode());
-		}
-	});
-	
-	for (U8 keyIndex = 'a'; keyIndex < 'z'; ++keyIndex)
-	{
-		GetInputHandler().BindAction(keyIndex, EButtonState::ButtonState_Pressed, keyFunc);
-	}
-
-	for (U8 keyIndex = '0'; keyIndex < 'Z'; ++keyIndex)
-	{
-		GetInputHandler().BindAction(keyIndex, EButtonState::ButtonState_Pressed, keyFunc);
-	}
-
-	GetInputHandler().BindAction(Win32KeyCode::Space, EButtonState::ButtonState_Pressed, keyFunc);
-	GetInputHandler().BindAction('.', EButtonState::ButtonState_Pressed, keyFunc);
-	GetInputHandler().BindAction('-', EButtonState::ButtonState_Pressed, keyFunc);
 }
 
 void RZE_Engine::RegisterEngineComponentTypes()

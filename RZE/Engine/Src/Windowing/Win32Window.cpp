@@ -13,6 +13,9 @@
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Conversions.h>
 
+// #TODO(Super test, just to get things working. Will need to handle this with an event OnTextInput or something)
+#include <imGUI/imgui.h>
+
 LRESULT CALLBACK WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp);
 
 // Used to link WinProc messages with the window without having to static other class instances etc
@@ -159,12 +162,26 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 	{
 		switch (msg.message)
 		{
+		case WM_CHAR:
+		{
+			if (ImGui::GetIO().WantCaptureKeyboard)
+			{
+				ImGui::GetIO().AddInputCharacter(static_cast<ImWchar>(msg.wParam));
+			}
+		}
+		break;
+
 		case WM_KEYDOWN:
 		{
 			const Int32 win32KeyCode = static_cast<Int32>(msg.wParam);
 			const bool bIsRepeat = (msg.lParam & 0x40000000) != 0;
 
-			inputHandler.OnKeyDown(::MapVirtualKeyA(win32KeyCode, 2), bIsRepeat);
+			Int32 key = ::MapVirtualKeyA(win32KeyCode, 2);
+			if (key != 0)
+			{
+				inputHandler.OnKeyDown(key, bIsRepeat);
+				TranslateMessage(&msg);
+			}
 		}
 		break;
 
