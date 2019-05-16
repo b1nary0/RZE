@@ -177,7 +177,7 @@ public:
 	using MouseBindingMap = std::unordered_map <EMouseButton::T, std::vector<MouseButtonBinding>>;
 
 private:
-	std::vector<InputKey> mInputKeyRegistry;
+	std::unordered_map<U8, InputKey> mInputKeyRegistry;
 
 	KeyboardBindingMap mKeyboardBindings;
 	AxisBindingMap mAxisBindings;

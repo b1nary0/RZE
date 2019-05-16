@@ -159,12 +159,12 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 	{
 		switch (msg.message)
 		{
-		case WM_CHAR:
+		case WM_KEYDOWN:
 		{
 			const Int32 win32KeyCode = static_cast<Int32>(msg.wParam);
 			const bool bIsRepeat = (msg.lParam & 0x40000000) != 0;
 
-			inputHandler.OnKeyDown(win32KeyCode, bIsRepeat);
+			inputHandler.OnKeyDown(::MapVirtualKeyA(win32KeyCode, 2), bIsRepeat);
 		}
 		break;
 

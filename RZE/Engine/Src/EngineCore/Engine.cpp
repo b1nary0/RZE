@@ -289,14 +289,19 @@ void RZE_Engine::RegisterKeyEvents()
 		}
 	});
 	
-	for (U8 keyIndex = Win32KeyCode::Key_0; keyIndex < Win32KeyCode::Key_Z; ++keyIndex)
+	for (U8 keyIndex = 'a'; keyIndex < 'z'; ++keyIndex)
+	{
+		GetInputHandler().BindAction(keyIndex, EButtonState::ButtonState_Pressed, keyFunc);
+	}
+
+	for (U8 keyIndex = '0'; keyIndex < 'Z'; ++keyIndex)
 	{
 		GetInputHandler().BindAction(keyIndex, EButtonState::ButtonState_Pressed, keyFunc);
 	}
 
 	GetInputHandler().BindAction(Win32KeyCode::Space, EButtonState::ButtonState_Pressed, keyFunc);
-	GetInputHandler().BindAction(Win32KeyCode::Delete, EButtonState::ButtonState_Pressed, keyFunc);
-	GetInputHandler().BindAction(45 /*-*/, EButtonState::ButtonState_Pressed, keyFunc);
+	GetInputHandler().BindAction('.', EButtonState::ButtonState_Pressed, keyFunc);
+	GetInputHandler().BindAction('-', EButtonState::ButtonState_Pressed, keyFunc);
 }
 
 void RZE_Engine::RegisterEngineComponentTypes()
