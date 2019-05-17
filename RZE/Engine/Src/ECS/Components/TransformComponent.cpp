@@ -7,7 +7,7 @@
 void TransformComponent::OnEditorInspect(Apollo::EntityID entityID)
 {
 	float* positionValues = const_cast<float*>(&Position.GetInternalVec().x);
-	float* rotationValues = const_cast<float*>(&Rotation.GetInternalQuat().x);
+	float* rotationValues = const_cast<float*>(&Rotation.GetInternalVec().x);
 	float* scaleValues = const_cast<float*>(&Scale.GetInternalVec().x);
 
 	ImGui::Text("Position");

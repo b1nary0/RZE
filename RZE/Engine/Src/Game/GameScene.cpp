@@ -72,7 +72,7 @@ void GameScene::Load(FilePath filePath)
 					rapidjson::Value& memVal = comp->value;
 					Vector3D position(memVal["Position"][0].GetFloat(), memVal["Position"][1].GetFloat(), memVal["Position"][2].GetFloat());
 					Vector3D scale(memVal["Scale"][0].GetFloat(), memVal["Scale"][1].GetFloat(), memVal["Scale"][2].GetFloat());
-					Quaternion rotation(Vector3D(memVal["Rotation"][0].GetFloat(), memVal["Rotation"][1].GetFloat(), memVal["Rotation"][2].GetFloat()));
+					Vector3D rotation(memVal["Rotation"][0].GetFloat(), memVal["Rotation"][1].GetFloat(), memVal["Rotation"][2].GetFloat());
 
 					GetEntityHandler().AddComponent<TransformComponent>(id, position, rotation, scale);
 				}
