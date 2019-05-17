@@ -4,6 +4,8 @@
 #include <string>
 #include <typeinfo>
 
+#include <Apollo/ECS/Entity.h>
+
 #include <Utils/PrimitiveDefs.h>
 namespace Apollo
 {
@@ -40,7 +42,7 @@ namespace Apollo
 		U32 id; // Temp? Solution for removing components -- need to know which component by id to remove.
 		std::string ComponentName;
 
-		virtual void OnEditorInspect() {}
+		virtual void OnEditorInspect(Apollo::EntityID entityID) {}
 	};
 
 	template <typename TComponentType>

@@ -83,7 +83,7 @@ namespace Editor
 				{
 					ImGui::Text(component->ComponentName.c_str());
 					ImGui::Separator();
-					component->OnEditorInspect();
+					component->OnEditorInspect(mSelectedItem->EntityID);
 					ImGui::Separator();
 				}
 			}

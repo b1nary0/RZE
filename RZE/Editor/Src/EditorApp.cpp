@@ -119,7 +119,13 @@ namespace Editor
 
 			if (ImGui::MenuItem("Create Entity"))
 			{
-				RZE_Application::RZE().GetActiveScene().CreateEntity("TestEntity");
+				// #TODO(Do this better)
+				static int sGenericEntityCount = 0;
+
+				std::string newEntityStr = StringUtils::FormatString("Entity%i", sGenericEntityCount);
+				RZE_Application::RZE().GetActiveScene().CreateEntity(newEntityStr);
+
+				++sGenericEntityCount;
 			}
 
 			ImGui::EndPopup();

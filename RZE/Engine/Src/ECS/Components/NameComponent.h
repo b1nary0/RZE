@@ -9,7 +9,7 @@ public:
 	NameComponent(const std::string& name)
 		: Name(name) {}
 
-	void OnEditorInspect() override;
+	void OnEditorInspect(Apollo::EntityID entityID) override;
 
 	std::string Name;
 };

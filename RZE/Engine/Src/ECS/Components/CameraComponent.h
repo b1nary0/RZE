@@ -21,5 +21,5 @@ struct CameraComponent final : public Apollo::Component<CameraComponent>
 
 	bool bIsActiveCamera { false };
 
-	void OnEditorInspect() override;
+	void OnEditorInspect(Apollo::EntityID entityID) override;
 };

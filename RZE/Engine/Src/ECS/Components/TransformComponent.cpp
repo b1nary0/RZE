@@ -4,7 +4,7 @@
 
 #include <ImGui/imgui.h>
 
-void TransformComponent::OnEditorInspect()
+void TransformComponent::OnEditorInspect(Apollo::EntityID entityID)
 {
 	float* positionValues = const_cast<float*>(&Position.GetInternalVec().x);
 	float* rotationValues = const_cast<float*>(&Rotation.GetInternalQuat().x);

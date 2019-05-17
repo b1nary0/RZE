@@ -1,7 +1,7 @@
 #include <StdAfx.h>
 #include <ECS/Components/CameraComponent.h>
 
-void CameraComponent::OnEditorInspect()
+void CameraComponent::OnEditorInspect(Apollo::EntityID entityID)
 {
 	ImGui::Checkbox("Main Camera", &bIsActiveCamera);
 	ImGui::Text("Field Of View");

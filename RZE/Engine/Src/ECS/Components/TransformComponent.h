@@ -60,7 +60,7 @@ struct TransformComponent final : public Apollo::Component<TransformComponent>
 		Rotation *= rotation;
 	}
 
-	void OnEditorInspect() override;
+	void OnEditorInspect(Apollo::EntityID entityID) override;
 
 	Vector3D	Position;
  	Vector3D	Scale {1, 1, 1};

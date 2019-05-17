@@ -1,7 +1,7 @@
 #include <StdAfx.h>
 #include <ECS/Components/NameComponent.h>
 
-void NameComponent::OnEditorInspect()
+void NameComponent::OnEditorInspect(Apollo::EntityID entityID)
 {
 	char name[256];
 	memcpy(name, Name.c_str(), 256);

@@ -61,6 +61,8 @@ public:
 
 	void SetWindowSize(const Vector2D& newSize);
 
+	FilePath ShowOpenFilePrompt();
+
 protected:
 
 private:

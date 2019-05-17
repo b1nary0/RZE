@@ -13,6 +13,8 @@ struct MeshComponent final : Apollo::Component<MeshComponent>
 
 	MeshComponent(const FilePath& resourcePath)
 		: ResourcePath(resourcePath) {}
+	
+	void OnEditorInspect(Apollo::EntityID entityID) override;
 
 	FilePath ResourcePath;
 

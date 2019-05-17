@@ -205,6 +205,47 @@ void RenderSystem::RegisterForComponentNotifications()
 		mRenderItemEntityMap[entityID] = -1;
 	});
 	handler.RegisterForComponentRemovedNotification<MeshComponent>(OnMeshComponentRemoved);
+
+	//#TODO(Should make a function that does the common work here since this is exactly the same for added mesh except we modify existing RenderItem instead of creating one)
+	Apollo::EntityHandler::ComponentModifiedFunc OnMeshComponentModified([this, &handler](Apollo::EntityID entityID)
+	{
+		OPTICK_EVENT("RenderSystem::OnMeshComponentAdded");
+
+		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entityID);
+		AssertNotNull(meshComp);
+		// #TODO(Doing this here because ResourceHandle lifetime is buggy (copies/moves/etc))
+		RZE_Application::RZE().GetResourceHandler().ReleaseResource(meshComp->Resource);
+		meshComp->Resource = RZE_Application::RZE().GetResourceHandler().RequestResource<Model3D>(meshComp->ResourcePath);
+
+		if (meshComp->Resource.IsValid())
+		{
+			Int32 renderIndex = mRenderItemEntityMap[entityID];
+			Diotima::Renderer::RenderItemProtocol& renderItem = RZE_Application::RZE().GetRenderer().GetItemProtocolByIdx(renderIndex);
+			renderItem.MeshData.clear();
+
+			Model3D* const modelData = RZE_Application::RZE().GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
+
+			for (const MeshGeometry& mesh : modelData->GetStaticMesh().GetSubMeshes())
+			{
+				Diotima::Renderer::RenderItemMeshData meshData;
+				meshData.VertexBuffer = mesh.GetVertexBuffer();
+				meshData.IndexBuffer = mesh.GetIndexBuffer();
+
+				AssertExpr(mesh.GetMaterial().HasDiffuse());
+				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetDiffuse().GetTextureBufferID(), Diotima::Renderer::ETextureType::Diffuse);
+				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetSpecular().GetTextureBufferID(), Diotima::Renderer::ETextureType::Specular);
+				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetNormal().GetTextureBufferID(), Diotima::Renderer::ETextureType::Normal);
+
+				Diotima::Renderer::RenderItemMaterialDesc matDesc;
+				matDesc.Shininess = mesh.GetMaterial().Shininess;
+
+				meshData.Material = matDesc;
+
+				renderItem.MeshData.push_back(meshData);
+			}
+		}
+	});
+	handler.RegisterForComponentModifiedNotification<MeshComponent>(OnMeshComponentModified);
 }
 
 void RenderSystem::GenerateCameraMatrices(CameraComponent& cameraComponent, const TransformComponent& transformComponent)

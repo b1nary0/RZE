@@ -13,6 +13,8 @@
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Conversions.h>
 
+#include <stdlib.h>
+
 // #TODO(Super test, just to get things working. Will need to handle this with an event OnTextInput or something)
 #include <imGUI/imgui.h>
 
@@ -360,6 +362,42 @@ void Win32Window::RegisterEvents(EventHandler& eventHandler)
 void Win32Window::SetWindowSize(const Vector2D& newSize)
 {
 	InternalSetWindowSize(newSize);
+}
+
+FilePath Win32Window::ShowOpenFilePrompt()
+{
+	//make sure this is commented out in all code (usually stdafx.h)
+		// #define WIN32_LEAN_AND_MEAN 
+	OPENFILENAME ofn;       // common dialog box structure
+	TCHAR szFile[512] = { 0 };       // if using TCHAR macros
+
+	// Initialize OPENFILENAME
+	ZeroMemory(&ofn, sizeof(ofn));
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hwndOwner = mOSWindowHandleData.windowHandle;
+	ofn.lpstrFile = szFile;
+	ofn.nMaxFile = sizeof(szFile);
+	ofn.lpstrFilter = (LPWSTR)"All\0*.*\0Text\0*.TXT\0";
+	ofn.nFilterIndex = 1;
+	ofn.lpstrFileTitle = NULL;
+	ofn.nMaxFileTitle = 0;
+	ofn.lpstrInitialDir = NULL;
+	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+	if (GetOpenFileName(&ofn) == TRUE)
+	{
+		char test[512];
+		size_t converted = 0;
+		wcstombs_s(&converted, test, ofn.lpstrFile, 512);
+
+		std::string path(test);
+		size_t index = path.find("Assets\\");
+		path = path.substr(index, path.size());
+
+		return FilePath(path);
+	}
+
+	return FilePath();
 }
 
 LRESULT CALLBACK WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp)

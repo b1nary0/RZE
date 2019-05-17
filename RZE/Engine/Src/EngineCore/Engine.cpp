@@ -367,6 +367,12 @@ GameScene& RZE_Engine::GetActiveScene()
 	return *mActiveScene;
 }
 
+FilePath RZE_Engine::ShowOpenFilePrompt()
+{
+	AssertNotNull(mMainWindow);
+	return mMainWindow->ShowOpenFilePrompt();
+}
+
 void RZE_Engine::Log(const std::string& text, const Vector3D& color)
 {
 }

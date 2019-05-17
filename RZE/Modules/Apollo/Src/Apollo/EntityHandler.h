@@ -36,6 +36,7 @@ namespace Apollo
 	public:
 		typedef Functor<void, EntityID> ComponentAddedFunc;
 		typedef Functor<void, EntityID> ComponentRemovedFunc;
+		typedef Functor<void, EntityID> ComponentModifiedFunc;
 
 		typedef std::vector<Entity>														EntityList;
 		typedef std::vector<EntityID>													EntityFreeList;
@@ -45,6 +46,7 @@ namespace Apollo
 		typedef std::unordered_map<EntityID, ComponentList>								EntityComponentMapping;
 		typedef std::unordered_map<ComponentID, std::vector<ComponentAddedFunc>>		OnComponentAddedMap;
 		typedef std::unordered_map <ComponentID, std::vector<ComponentRemovedFunc>>		OnComponentRemovedMap;
+		typedef std::unordered_map <ComponentID, std::vector<ComponentModifiedFunc>>	OnComponentModifiedMap;
 		typedef std::queue<ComponentIDQueueData>										ComponentIDQueue;
 		typedef std::unordered_map<ComponentID, Functor<ComponentBase*>>				ComponentFactoryMap;
 
@@ -63,6 +65,9 @@ namespace Apollo
 		template <typename TComponentType>
 		void RegisterForComponentRemovedNotification(ComponentRemovedFunc callback);
 
+		template <typename TComponenType>
+		void RegisterForComponentModifiedNotification(ComponentModifiedFunc callback);
+
 	public:
 		// #TODO(Josh) I don't like this, should have a better place for this type of behaviour/necessity
 		static void RegisterComponentType(ComponentID componentID, const std::string& componentName);
@@ -78,13 +83,15 @@ namespace Apollo
 
 		template <typename TComponentType, typename... TArgs>
 		TComponentType* AddComponent(EntityID entityID, TArgs... args);
-
-
+		
 		template <typename TComponentType>
 		TComponentType* GetComponent(EntityID entityID);
 
 		template <typename TComponent>
 		bool HasComponent(EntityID entityID) const;
+
+		template <typename TComponent>
+		void OnComponentModified(EntityID entityID);
 
 		template <typename TSystemType, typename... TArgs>
 		TSystemType* AddSystem(TArgs... args);
@@ -126,6 +133,7 @@ namespace Apollo
 
 		OnComponentAddedMap mOnComponentAddedMap;
 		OnComponentRemovedMap mOnComponentRemovedMap;
+		OnComponentModifiedMap mOnComponentModifiedMap;
 		ComponentIDQueue mComponentsAddedThisFrame;
 	};
 
@@ -139,6 +147,19 @@ namespace Apollo
 
 		const Entity& entity = mEntities[entityID];
 		return entity.mComponentSet[TComponent::GetID()];
+	}
+
+	template <typename TComponent>
+	void EntityHandler::OnComponentModified(EntityID entityID)
+	{
+		auto& it = mOnComponentModifiedMap.find(TComponent::GetID());
+		if (it != mOnComponentModifiedMap.end())
+		{
+			for (auto& func : (*it).second)
+			{
+				func(entityID);
+			}
+		}
 	}
 
 	template <typename TSystemType, typename... TArgs>
@@ -195,6 +216,13 @@ namespace Apollo
 	{
 		ComponentID componentID = TComponentType::GetID();
 		mOnComponentRemovedMap[componentID].push_back(callback);
+	}
+
+	template <typename TComponentType>
+	void EntityHandler::RegisterForComponentModifiedNotification(ComponentModifiedFunc callback)
+	{
+		ComponentID componentID = TComponentType::GetID();
+		mOnComponentModifiedMap[componentID].push_back(callback);
 	}
 
 	template <typename TComponentType, typename... TArgs>
