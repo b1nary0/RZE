@@ -47,7 +47,9 @@ void GameScene::Load(FilePath filePath)
 	//
 	Clear();
 
-	File sceneFile(filePath.GetAbsolutePath());
+	mCurrentScenePath = filePath;
+
+	File sceneFile(mCurrentScenePath.GetAbsolutePath());
 	AssertExpr(sceneFile.IsValid());
 	sceneFile.Close();
 

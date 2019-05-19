@@ -158,39 +158,6 @@ void RenderSystem::RegisterForComponentNotifications()
 	});
 	handler.RegisterForComponentAddNotification<MeshComponent>(OnMeshComponentAdded);
 
-	// LightSourceComponent
-	Apollo::EntityHandler::ComponentAddedFunc OnLightSourceComponentAdded([this, &handler](Apollo::EntityID entityID)
-	{
-		LightSourceComponent* const lightComp = handler.GetComponent<LightSourceComponent>(entityID);
-		AssertNotNull(lightComp);
-
-		Diotima::Renderer::LightItemProtocol item;
-		item.LightType = static_cast<Diotima::Renderer::ELightType>(lightComp->LightType);
-		item.Color = lightComp->Color;
-		item.Strength = lightComp->Strength;
-
-		Int32 itemIdx = RZE_Application::RZE().GetRenderer().AddLightItem(item);
-		mLightItemEntityMap[entityID] = itemIdx;
-	});
-	handler.RegisterForComponentAddNotification<LightSourceComponent>(OnLightSourceComponentAdded);
-
-	//
-	// CameraComponent
-	//
-	Apollo::EntityHandler::ComponentAddedFunc OnCameraComponentAdded([this, &handler](Apollo::EntityID entityID)
-	{
-		CameraComponent* const camComp = handler.GetComponent<CameraComponent>(entityID);
-		AssertNotNull(camComp);
-
-		// #TODO(Josh) Will/should be removed when a better tracking system for main cameras exist. For now since we're only working with one camera
-		// for the forseeable future, its fine.
-		mMainCameraEntity = entityID;
-		camComp->bIsActiveCamera = true;
-
-		camComp->AspectRatio = RZE_Application::RZE().GetWindowSize().X() / RZE_Application::RZE().GetWindowSize().Y();
-	});
-	handler.RegisterForComponentAddNotification<CameraComponent>(OnCameraComponentAdded);
-
 	Apollo::EntityHandler::ComponentRemovedFunc OnMeshComponentRemoved([this, &handler](Apollo::EntityID entityID)
 	{
 		// #TODO(Josh) Is this the best way? Should the component hold logic to clean itself up or should it be entirely just data and the systems worry about cleanup?
@@ -209,7 +176,7 @@ void RenderSystem::RegisterForComponentNotifications()
 	//#TODO(Should make a function that does the common work here since this is exactly the same for added mesh except we modify existing RenderItem instead of creating one)
 	Apollo::EntityHandler::ComponentModifiedFunc OnMeshComponentModified([this, &handler](Apollo::EntityID entityID)
 	{
-		OPTICK_EVENT("RenderSystem::OnMeshComponentAdded");
+		OPTICK_EVENT("RenderSystem::OnMeshComponentModified");
 
 		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entityID);
 		AssertNotNull(meshComp);
@@ -246,6 +213,47 @@ void RenderSystem::RegisterForComponentNotifications()
 		}
 	});
 	handler.RegisterForComponentModifiedNotification<MeshComponent>(OnMeshComponentModified);
+
+	// LightSourceComponent
+	Apollo::EntityHandler::ComponentAddedFunc OnLightSourceComponentAdded([this, &handler](Apollo::EntityID entityID)
+	{
+		LightSourceComponent* const lightComp = handler.GetComponent<LightSourceComponent>(entityID);
+		AssertNotNull(lightComp);
+
+		Diotima::Renderer::LightItemProtocol item;
+		item.LightType = static_cast<Diotima::Renderer::ELightType>(lightComp->LightType);
+		item.Color = lightComp->Color;
+		item.Strength = lightComp->Strength;
+
+		Int32 itemIdx = RZE_Application::RZE().GetRenderer().AddLightItem(item);
+		mLightItemEntityMap[entityID] = itemIdx;
+	});
+	handler.RegisterForComponentAddNotification<LightSourceComponent>(OnLightSourceComponentAdded);
+
+	Apollo::EntityHandler::ComponentRemovedFunc OnLightSourceComponentRemoved([this, &handler](Apollo::EntityID entityID)
+	{
+		Int32 lightIndex = mLightItemEntityMap[entityID];
+		RZE_Application::RZE().GetRenderer().RemoveLightItem(lightIndex);
+		mLightItemEntityMap[entityID] = -1;
+	});
+	handler.RegisterForComponentRemovedNotification<LightSourceComponent>(OnLightSourceComponentRemoved);
+
+	//
+	// CameraComponent
+	//
+	Apollo::EntityHandler::ComponentAddedFunc OnCameraComponentAdded([this, &handler](Apollo::EntityID entityID)
+	{
+		CameraComponent* const camComp = handler.GetComponent<CameraComponent>(entityID);
+		AssertNotNull(camComp);
+
+		// #TODO(Josh) Will/should be removed when a better tracking system for main cameras exist. For now since we're only working with one camera
+		// for the forseeable future, its fine.
+		mMainCameraEntity = entityID;
+		camComp->bIsActiveCamera = true;
+
+		camComp->AspectRatio = RZE_Application::RZE().GetWindowSize().X() / RZE_Application::RZE().GetWindowSize().Y();
+	});
+	handler.RegisterForComponentAddNotification<CameraComponent>(OnCameraComponentAdded);
 }
 
 void RenderSystem::GenerateCameraMatrices(CameraComponent& cameraComponent, const TransformComponent& transformComponent)

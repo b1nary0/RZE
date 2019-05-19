@@ -60,6 +60,20 @@ namespace Editor
 		{
 			if (ImGui::BeginMenu("File"))
 			{
+				if (ImGui::MenuItem("Load Scene..."))
+				{
+					FilePath newScenePath = RZE_Application::RZE().ShowOpenFilePrompt();
+					if (newScenePath.IsValid())
+					{
+						RZE_Application::RZE().GetActiveScene().Load(newScenePath);
+					}
+				}
+
+				if (ImGui::MenuItem("Save Scene"))
+				{
+
+				}
+
 				if (ImGui::MenuItem("Exit"))
 				{
 					RZE().PostExit();

@@ -44,7 +44,7 @@ private:
 	Apollo::EntityHandler mEntityHandler;
 
 private:
-	// #TODO(Josh) Temp, testing stuff
-	std::vector<SceneEntryTemp> mEntityEntries;
+	FilePath mCurrentScenePath;
 
+	std::vector<SceneEntryTemp> mEntityEntries;
 };

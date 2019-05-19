@@ -135,6 +135,8 @@ namespace Diotima
 		void RemoveRenderItem(const U32 itemIdx);
 
 		Int32 AddLightItem(const LightItemProtocol& itemProtocol);
+		void RemoveLightItem(const U32 itemIdx);
+
 		inline RenderItemProtocol& GetItemProtocolByIdx(Int32 idx) { return mRenderItems[idx]; }
 		inline LightItemProtocol& GetLightProtocolByIdx(Int32 idx) { return mLightingList[idx]; }
 

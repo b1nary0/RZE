@@ -310,8 +310,8 @@ void RZE_Engine::Update()
 {
 	OPTICK_EVENT();
 
-	mActiveScene->Update();
 	mApplication->Update();
+	mActiveScene->Update();
 }
 
 void RZE_Engine::BeginShutDown()

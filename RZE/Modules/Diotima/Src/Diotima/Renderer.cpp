@@ -69,6 +69,15 @@ namespace Diotima
 		return static_cast<Int32>(mLightingList.size() - 1);
 	}
 
+	void Renderer::RemoveLightItem(const U32 itemIdx)
+	{
+		AssertExpr(itemIdx < mLightingList.size());
+
+		auto iter = mLightingList.begin() + itemIdx;
+		--mLightCounts[iter->LightType];
+		mLightingList.erase(iter);
+	}
+
 	void Renderer::Initialize()
 	{
 		mCanvasSize.SetXY(1600, 900);

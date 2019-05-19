@@ -10,10 +10,14 @@ void TransformComponent::OnEditorInspect(Apollo::EntityID entityID)
 	float* rotationValues = const_cast<float*>(&Rotation.GetInternalVec().x);
 	float* scaleValues = const_cast<float*>(&Scale.GetInternalVec().x);
 
+
+	// #TODO(Modify DragFloat3 to only register on mouse movement to avoid falloff when dragging)
+
+
 	ImGui::Text("Position");
-	ImGui::InputFloat3("##transfcomp_position", positionValues, 2);
+	ImGui::DragFloat3("##transfcomp_position", positionValues, 0.005f);
 	ImGui::Text("Rotation");
-	ImGui::InputFloat3("##transfcomp_rotation", rotationValues, 2);
+	ImGui::DragFloat3("##transfcomp_rotation", rotationValues, 0.05f);
 	ImGui::Text("Scale");
-	ImGui::InputFloat3("##transfcomp_scale", scaleValues, 2);
+	ImGui::DragFloat3("##transfcomp_scale", scaleValues, 0.005f);
 }
