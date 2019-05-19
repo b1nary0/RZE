@@ -28,6 +28,7 @@ public:
 
 	void Initialize();
 
+	void NewScene();
 	void Load(FilePath filePath);
 
 	Apollo::EntityID CreateEntity(const std::string& name);

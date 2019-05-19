@@ -60,12 +60,17 @@ namespace Editor
 		{
 			if (ImGui::BeginMenu("File"))
 			{
+				if (ImGui::MenuItem("New Scene..."))
+				{
+					RZE().GetActiveScene().NewScene();
+				}
+
 				if (ImGui::MenuItem("Load Scene..."))
 				{
 					FilePath newScenePath = RZE_Application::RZE().ShowOpenFilePrompt();
 					if (newScenePath.IsValid())
 					{
-						RZE_Application::RZE().GetActiveScene().Load(newScenePath);
+						RZE().GetActiveScene().Load(newScenePath);
 					}
 				}
 
@@ -137,7 +142,7 @@ namespace Editor
 				static int sGenericEntityCount = 0;
 
 				std::string newEntityStr = StringUtils::FormatString("Entity%i", sGenericEntityCount);
-				RZE_Application::RZE().GetActiveScene().CreateEntity(newEntityStr);
+				RZE().GetActiveScene().CreateEntity(newEntityStr);
 
 				++sGenericEntityCount;
 			}

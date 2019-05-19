@@ -32,6 +32,11 @@ void GameScene::Initialize()
 	mEntityHandler.AddSystem<RenderSystem>();
 }
 
+void GameScene::NewScene()
+{
+	Load(FilePath("Assets/Scenes/Default.scene"));
+}
+
 void GameScene::Load(FilePath filePath)
 {
 	// #TODO(Josh) This whole function.
