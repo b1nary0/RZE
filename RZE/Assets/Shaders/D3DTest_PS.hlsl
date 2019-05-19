@@ -60,13 +60,13 @@ float CalculateBlinnPhong(float3 viewDir, float3 lightDir, float3 normal)
 {
 	float specular = 0.0f;
 	
-	float3 halfDir = normalize(lightDir + viewDir);
-	float specAngle = max(0.0f, dot(halfDir, reflect(-lightDir, normal)));
-	specular = pow(specAngle, materialData.Shininess);
+	//float3 halfDir = normalize(lightDir + viewDir);
+	//float specAngle = max(0.0f, dot(halfDir, reflect(-lightDir, normal)));
+	//specular = pow(specAngle, materialData.Shininess);
 
-	//float3 R = reflect(-lightDir, normal);
-	//float3 RdotV = max(0.0f, dot(R, viewDir)); 
-	//specular = pow(RdotV, materialData.Shininess);
+	float3 R = reflect(-lightDir, normal);
+	float3 RdotV = max(0.0f, dot(R, viewDir)); 
+	specular = pow(RdotV, materialData.Shininess);
 	
 	return specular;
 }
