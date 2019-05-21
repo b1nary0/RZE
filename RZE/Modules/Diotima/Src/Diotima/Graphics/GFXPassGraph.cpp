@@ -29,7 +29,7 @@ namespace Diotima
 
 		std::unique_ptr<DepthPass> depthPass = std::make_unique<DepthPass>();
 		depthPass->SetRenderer(renderer);
-		depthPass->Initialize(width, height);
+		depthPass->Initialize(2046, 2046);
 
 		std::unique_ptr<ImGUIPass> imguiPass = std::make_unique<ImGUIPass>();
 		imguiPass->SetRenderer(renderer);
