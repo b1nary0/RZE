@@ -2,7 +2,7 @@
 #include <ECS/Components/LightSourceComponent.h>
 
 // #TODO(Temp for now)
-static std::vector<const char*> kLightTypeNames = { "Directional", "Point" };
+static std::vector<const char*> kLightTypeNames = { "Directional", "Point !! Not Implemented W/ Shadows" };
 static int kCurrentIndex = 0;
 
 void LightSourceComponent::OnEditorInspect(Apollo::EntityID entityID)
