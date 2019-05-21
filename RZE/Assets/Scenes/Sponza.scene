@@ -39,28 +39,6 @@
                 }
             }
         },
-        "PointLight":
-        {
-            "components":
-            {
-                "TransformComponent":
-                {
-                    "Position": [24, 7, 11],
-                    "Scale": [1, 1, 1],
-                    "Rotation": [0, 0, 0]
-                },
-                "LightSourceComponent":
-                {
-                    "LightType": 1,
-                    "Color": [1, 0.8, 0],
-                    "Strength": 1.0
-                },
-                "MeshComponent":
-                {
-                    "ResourcePath": "Assets/3D/Cube.obj"
-                }
-            }
-        },
         "Sponza":
         {
             "components":

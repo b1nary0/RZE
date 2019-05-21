@@ -178,10 +178,10 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 			const Int32 win32KeyCode = static_cast<Int32>(msg.wParam);
 			const bool bIsRepeat = (msg.lParam & 0x40000000) != 0;
 
-			Int32 key = ::MapVirtualKeyA(win32KeyCode, 2);
+			inputHandler.OnKeyDown(win32KeyCode, bIsRepeat);
+			Int32 key = ::MapVirtualKeyA(win32KeyCode, MAPVK_VK_TO_CHAR);
 			if (key != 0)
 			{
-				inputHandler.OnKeyDown(key, bIsRepeat);
 				TranslateMessage(&msg);
 			}
 		}
@@ -189,7 +189,7 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 
 		case WM_KEYUP:
 		{
-			const Int32 win32KeyCode = static_cast<Int32>(::MapVirtualKeyA(static_cast<UINT>(msg.wParam), 2));
+			const Int32 win32KeyCode = static_cast<Int32>(msg.wParam);
 			inputHandler.OnKeyUp(win32KeyCode);
 		}
 		break;

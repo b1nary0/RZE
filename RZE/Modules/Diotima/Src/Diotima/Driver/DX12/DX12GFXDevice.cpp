@@ -162,7 +162,7 @@ namespace Diotima
 
 	void DX12GFXDevice::Present()
 	{
-		mSwapChain->Present(0, 0);
+		mSwapChain->Present(1, 0);
 
 		WaitForPreviousFrame();
 	}

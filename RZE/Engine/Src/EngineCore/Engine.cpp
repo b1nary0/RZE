@@ -188,6 +188,13 @@ void RZE_Engine::PreUpdate()
 			io.MouseDown[mouseBtn] = inputHandler.GetMouseState().CurMouseBtnStates[mouseBtn];
 		}
 
+		for (int key = 0; key < MAX_KEYCODES_SUPPORTED; ++key)
+		{
+			io.KeysDown[key] = inputHandler.GetKeyboardState().IsDownThisFrame(key);
+		}
+
+		io.KeyCtrl = inputHandler.GetKeyboardState().IsDownThisFrame(Win32KeyCode::Control);
+
 		mInputHandler.RaiseEvents();
 	}
 	else
@@ -281,6 +288,8 @@ void RZE_Engine::RegisterWindowEvents()
 
 void RZE_Engine::RegisterKeyEvents()
 {
+	ImGuiIO& io = ImGui::GetIO();
+	io.KeyMap[ImGuiKey_Enter] = Win32KeyCode::Return;
 }
 
 void RZE_Engine::RegisterEngineComponentTypes()

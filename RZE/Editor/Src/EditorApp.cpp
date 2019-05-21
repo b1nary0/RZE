@@ -111,6 +111,21 @@ namespace Editor
 				ImGui::EndMenu();
 			}
 
+			ImGui::Separator();
+			static int frameCount = 0;
+			static float frametime = 0.0f;
+			if (frameCount > 15)
+			{
+				frametime = static_cast<float>(RZE().GetDeltaTime());
+				frameCount = 0;
+			}
+			else
+			{
+				++frameCount;
+			}
+
+			ImGui::Text("%.1f ms", frametime * 1000.0f);
+
 			ImGui::EndMainMenuBar();
 		}
 		ImGui::PopStyleVar();
