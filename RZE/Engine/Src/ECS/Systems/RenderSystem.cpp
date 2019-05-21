@@ -104,8 +104,10 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 		Matrix4x4 lightView = Matrix4x4::CreateViewMatrix(transfComp->Position, Vector3D(), Vector3D(0.0f, 1.0f, 0.0f));
 
 		item.LightSpaceMatrix = orthoProj * lightView;
-		item.Position = transfComp->Position;
+		item.Color = lightComp->Color;
 		item.Strength = lightComp->Strength;
+		item.LightType = static_cast<Diotima::Renderer::ELightType>(lightComp->LightType);
+		item.Position = transfComp->Position;
 	});
 	handler.ForEach<LightSourceComponent, TransformComponent>(LightSourceFunc);
 }

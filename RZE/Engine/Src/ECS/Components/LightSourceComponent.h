@@ -13,15 +13,27 @@ enum class ELightType
 struct LightSourceComponent final : public Apollo::Component<LightSourceComponent>
 {
 	LightSourceComponent()
+		: Color(Vector3D(1.0f, 1.0f, 1.0f))
+		, Strength(1.0f)
+		, LightType(ELightType::Directional)
 	{}
 
 	LightSourceComponent(const Vector3D& color)
 		: Color(color)
+		, Strength(1.0f)
+		, LightType(ELightType::Directional)
 	{}
 
 	LightSourceComponent(const Vector3D& color, float strength)
 		: Color(color)
 		, Strength(strength)
+		, LightType(ELightType::Directional)
+	{}
+
+	LightSourceComponent(const Vector3D& color, float strength, ELightType lightType)
+		: Color(color)
+		, Strength(strength)
+		, LightType(lightType)
 	{}
 
 	LightSourceComponent(ELightType lightType, const Vector3D& color, float strength)
@@ -29,6 +41,8 @@ struct LightSourceComponent final : public Apollo::Component<LightSourceComponen
 		, Color(color)
 		, Strength(strength)
 	{}
+
+	void OnEditorInspect(Apollo::EntityID entityID) override;
 
 	ELightType LightType;
 	Vector3D Color;

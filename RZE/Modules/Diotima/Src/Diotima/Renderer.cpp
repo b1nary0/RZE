@@ -215,7 +215,7 @@ namespace Diotima
 			}
 		}
 
-		delete pMatrixConstantBufferData;
+		free(pMatrixConstantBufferData);
 	}
 
 	void Renderer::EnableVsync(bool bEnabled)

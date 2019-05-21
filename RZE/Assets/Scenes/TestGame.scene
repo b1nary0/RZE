@@ -21,7 +21,7 @@
             }
         }
     },
-		"Point Light1":
+		"Directional Light":
     {
       "components":
       {
