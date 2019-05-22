@@ -94,7 +94,6 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 
 					Update();
 
-					ImGui::EndFrame();
 					mRenderer->Update();
 				}
 
