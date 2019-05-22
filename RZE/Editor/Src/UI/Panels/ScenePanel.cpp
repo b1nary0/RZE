@@ -81,7 +81,11 @@ namespace Editor
 
 				for (Apollo::ComponentBase* component : entityComponents)
 				{
-					ImGui::Text(component->ComponentName.c_str());
+					EditorApp* editorApp = static_cast<EditorApp*>(&RZE_Application::RZE().GetApplication());
+
+					editorApp->SetFont("ubuntu_medium");
+					ImGui::TextColored(ImVec4(0.65f, 0.65f, 1.0f, 1.0f), "[ %s ]", component->ComponentName.c_str());
+					editorApp->SetFont("ubuntu_regular");
 					ImGui::Separator();
 					component->OnEditorInspect(mSelectedItem->EntityID);
 					ImGui::Separator();

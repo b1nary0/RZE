@@ -28,6 +28,9 @@ namespace Editor
 
 		virtual void RegisterInputEvents(InputHandler& inputHandler) override;
 
+	public:
+		void SetFont(const char* fontName);
+
 	private:
 		void DisplayMenuBar();
 		void HandleGeneralContextMenu();

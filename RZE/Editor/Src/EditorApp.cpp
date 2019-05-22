@@ -53,6 +53,12 @@ namespace Editor
 	{
 	}
 
+	void EditorApp::SetFont(const char* fontName)
+	{
+		ImGui::PopFont();
+		ImGui::PushFont(mFontMapping.at(fontName));
+	}
+
 	void EditorApp::DisplayMenuBar()
 	{
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.5f, 5.0f));
