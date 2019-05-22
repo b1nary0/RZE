@@ -36,7 +36,7 @@ namespace Editor
 	{
 		OPTICK_EVENT();
 
-		ImGui::PushFont(mFontMapping.at("ubuntu_medium"));
+		ImGui::PushFont(mFontMapping.at("ubuntu_regular"));
 
 		DisplayMenuBar();
 		HandleGeneralContextMenu();
@@ -184,11 +184,13 @@ namespace Editor
 		ImGuiIO& io = ImGui::GetIO();
 		io.Fonts->AddFontDefault();
 
-		FilePath ubuntuPath("Assets/Fonts/Ubuntu-Medium.ttf");
+		FilePath ubuntuRegularPath("Assets/Fonts/Ubuntu-Regular.ttf");
+		FilePath ubuntuMediumPath("Assets/Fonts/Ubuntu-Medium.ttf");
 		FilePath arialPath("Assets/Fonts/Arial.ttf");
 		FilePath consolasPath("Assets/Fonts/Consolas.ttf");
 
-		mFontMapping.insert({"ubuntu_medium", io.Fonts->AddFontFromFileTTF(ubuntuPath.GetAbsolutePath().c_str(), 14)});
+		mFontMapping.insert({"ubuntu_medium", io.Fonts->AddFontFromFileTTF(ubuntuMediumPath.GetAbsolutePath().c_str(), 16)});
+		mFontMapping.insert({"ubuntu_regular", io.Fonts->AddFontFromFileTTF(ubuntuRegularPath.GetAbsolutePath().c_str(), 14)});
 		mFontMapping.insert({"arial", io.Fonts->AddFontFromFileTTF(arialPath.GetAbsolutePath().c_str(), 15)});
 		mFontMapping.insert({"consolas", io.Fonts->AddFontFromFileTTF(consolasPath.GetAbsolutePath().c_str(), 15)});
 
