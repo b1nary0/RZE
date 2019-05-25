@@ -21,5 +21,5 @@ void LightSourceComponent::OnEditorInspect(Apollo::EntityID entityID)
 	ImGui::DragFloat3("##lightsourcecomponent_color", colorValues, 0.0025f, 0.0f, 1.0f, "%.2f");
 
 	ImGui::Text("Strength");
-	ImGui::InputFloat("##lightsourcecomponent_strength", &Strength, 0.05f, 0.05f, "%.2f", ImGuiInputTextFlags_EnterReturnsTrue);
+	ImGui::InputFloat("##lightsourcecomponent_strength", &Strength, 0.005f, 0.05f, "%.2f", ImGuiInputTextFlags_EnterReturnsTrue);
 }
