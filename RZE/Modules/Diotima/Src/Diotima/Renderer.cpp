@@ -97,6 +97,8 @@ namespace Diotima
 		PrepareDrawCalls();
 
 		{
+			// #TODO(Eventually this should be moved out of here and into the engine level.
+			//       Then the render side just deals with the generated commands.)
 			mPassGraph->Execute();
 		}
 
