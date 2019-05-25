@@ -10,7 +10,7 @@ void MeshComponent::OnEditorInspect(Apollo::EntityID entityID)
 		if (path.IsValid())
 		{
 			ResourcePath = FilePath(path);
+			RZE_Application::RZE().GetActiveScene().GetEntityHandler().OnComponentModified<MeshComponent>(entityID);
 		}
-		RZE_Application::RZE().GetActiveScene().GetEntityHandler().OnComponentModified<MeshComponent>(entityID);
 	}
 }
