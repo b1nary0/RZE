@@ -15,13 +15,13 @@ struct TransformComponent final : public Apollo::Component<TransformComponent>
 		SetPosition(position);
 	}
 
-	TransformComponent(const Vector3D& position, const Quaternion& rotation)
+	TransformComponent(const Vector3D& position, const Vector3D& rotation)
 	{
 		SetPosition(position);
 		SetRotation(rotation);
 	}
 
-	TransformComponent(const Vector3D& position, const Quaternion& rotation, const Vector3D& scale)
+	TransformComponent(const Vector3D& position, const Vector3D& rotation, const Vector3D& scale)
 	{
 		SetPosition(position);
 		SetRotation(rotation);
@@ -36,7 +36,7 @@ struct TransformComponent final : public Apollo::Component<TransformComponent>
 		Position = position;
 	}
 
-	void SetRotation(const Quaternion& rotation)
+	void SetRotation(const Vector3D& rotation)
 	{
 		Rotation = rotation;
 	}
@@ -55,12 +55,14 @@ struct TransformComponent final : public Apollo::Component<TransformComponent>
 	//
 	// Operations
 	//
-	void Rotate(const Quaternion& rotation)
+	void Rotate(const Vector3D& rotation)
 	{
-		Rotation *= rotation;
+		Rotation += rotation;
 	}
+
+	void OnEditorInspect(Apollo::EntityID entityID) override;
 
 	Vector3D	Position;
  	Vector3D	Scale {1, 1, 1};
-	Quaternion	Rotation;
+	Vector3D	Rotation;
 };

@@ -34,8 +34,12 @@ workspace "RZE"
 	-- Where the project files will be generated
 	location(RootDir .. "_Project")
 
-	filter "configurations:Debug"	defines { "DEBUG" } symbols "Full"
-	filter "configurations:Release"	defines { "NDEBUG" } optimize "On"
+	filter "configurations:Debug"	
+		defines { "DEBUG" } 
+		symbols "Full"
+	filter "configurations:Release"	
+		defines { "NDEBUG" } 
+		optimize "On"
 
 	--
 	-- Visual Studio
@@ -45,6 +49,9 @@ workspace "RZE"
 		"system:windows",
 		"action:vs*"
 	}
+	
+	systemversion "10.0.14393.0"
+	
 	flags
 	{
 		"MultiProcessorCompile",
@@ -69,13 +76,14 @@ workspace "RZE"
 		filter {}
 		
 		flags { "FatalCompileWarnings" }
-		
+		disablewarnings { "4267" }
+
 		kind "StaticLib"
 		language "C++"
 		targetdir (LibDir)
 		targetname "RZE_Engine"
 
-		dependson { "Apollo", "Diotima", "Perseus", "Externals", "Utils" }
+		dependson { "Apollo", "Diotima", "Perseus", "Utils" }
 
 		pchheader "StdAfx.h"
 		pchsource "../../Engine/Src/StdAfx.cpp"
@@ -108,13 +116,15 @@ workspace "RZE"
 			"OpenGL32",
 			"assimp",
 			"glew64",
-			"ProfilerCore64",
+			"OptickCore",
+			"D3d12.lib",
+			"DXGI.lib",
+			"D3DCompiler.lib",
 			-- RZE --
 			"RZE_Utils",
 			"Apollo",
 			"Diotima",
-			"Perseus",
-			"Externals"
+			"Perseus"
 		}
 
 		local command = "xcopy /y /d /s "
@@ -147,14 +157,12 @@ workspace "RZE"
 		filter {}
 		
 		flags { "FatalCompileWarnings" }
-		
+		disablewarnings { "4267" }
+
 		kind "StaticLib"
 		language "C++"
 		targetdir (LibDir)
 		targetname "RZE_Utils"
-
-		pchheader = "Utils/StdAfx.h"
-		pchsource = (SourceDir .. "Utils/StdAfx.cpp")
 
 		files
 		{
@@ -199,6 +207,7 @@ workspace "RZE"
 		filter {}
 		
 		flags { "FatalCompileWarnings" }
+		disablewarnings { "4267" }
 		
 		kind "StaticLib"
 		language "C++"
@@ -206,10 +215,6 @@ workspace "RZE"
 		targetname "Apollo"
 
 		dependson { "Perseus", "Utils" }
-
-		filter "action:vs*"
-			pchheader = "StdAfx.h"
-			pchsource = "StdAfx.cpp"
 
 		files
 		{
@@ -239,7 +244,10 @@ workspace "RZE"
 			"OpenGL32",
 			"assimp",
 			"glew64",
-			"ProfilerCore64",
+			"OptickCore",
+			"D3d12.lib",
+			"DXGI.lib",
+			"D3DCompiler.lib",
 			-- RZE
 			"Perseus",
 			"RZE_Utils"
@@ -268,6 +276,7 @@ workspace "RZE"
 		filter {}
 		
 		flags { "FatalCompileWarnings" }
+		disablewarnings { "4267" }
 		
 		kind "StaticLib"
 		language "C++"
@@ -275,10 +284,6 @@ workspace "RZE"
 		targetname "Perseus"
 
 		dependson { "Utils" }
-
-		filter "action:vs*"
-			pchheader = "StdAfx.h"
-			pchsource = "StdAfx.cpp"
 
 		files
 		{
@@ -307,7 +312,10 @@ workspace "RZE"
 			"OpenGL32",
 			"assimp",
 			"glew64",
-			"ProfilerCore64",
+			"OptickCore",
+			"D3d12.lib",
+			"DXGI.lib",
+			"D3DCompiler.lib",
 			-- RZE
 			"RZE_Utils"
 		}
@@ -335,17 +343,14 @@ workspace "RZE"
 		filter {}
 		
 		flags { "FatalCompileWarnings" }
+		disablewarnings { "4267" }
 		
 		kind "StaticLib"
 		language "C++"
 		targetdir (LibDir)
 		targetname "Diotima"
 
-		dependson { "Perseus", "Utils" }
-
-		filter "action:vs*"
-			pchheader = "StdAfx.h"
-			pchsource = "StdAfx.cpp"
+		dependson { "Externals", "Perseus", "Utils" }
 
 		files
 		{
@@ -375,10 +380,14 @@ workspace "RZE"
 			"OpenGL32",
 			"assimp",
 			"glew64",
-			"ProfilerCore64",
+			"OptickCore",
+			"D3d12.lib",
+			"DXGI.lib",
+			"D3DCompiler.lib",
 			-- RZE
 			"Perseus",
-			"RZE_Utils"
+			"RZE_Utils",
+			"Externals"
 		}
 
 		 vpaths
@@ -407,9 +416,6 @@ workspace "RZE"
 	 		language "C++"
 	 		targetdir (LibDir)
 	 		targetname "Externals"
-
-	 		pchheader = "Utils/StdAfx.h"
-	 		pchsource = (SourceDir .. "Utils/StdAfx.cpp")
 
 	 		files
 	 		{
@@ -454,6 +460,7 @@ workspace "RZE"
 		filter {}
 		
 		flags { "FatalCompileWarnings" }
+		disablewarnings { "4267" }
 		
 		kind "ConsoleApp"
 		language "C++"
@@ -492,8 +499,7 @@ workspace "RZE"
 			"RZE_Utils",
 			"Apollo",
 			"Diotima",
-			"Perseus",
-			"Externals"
+			"Perseus"
 		}
 
 		 vpaths
@@ -509,65 +515,65 @@ workspace "RZE"
 
 	--
 	--
-	-- RZE_EDITORPROJ
+	-- RZE_EDITOR
 	--
 	--
-	 project "Editor"
-		local ProjectDir = RootDir .. "Editor/"
-		local SourceDir = ProjectDir
+	project "Editor"
+	local ProjectDir = RootDir .. "Editor/"
+	local SourceDir = ProjectDir .. SourceFolder
 
-		filter {}
-		
-		flags { "FatalCompileWarnings" }
-		
-		kind "ConsoleApp"
-		language "C++"
-		targetdir (LibDir)
-		targetname "RZE_Editor"
+	filter {}
+	
+	flags { "FatalCompileWarnings" }
+	disablewarnings { "4267" }
+	
+	kind "ConsoleApp"
+	language "C++"
+	targetdir (LibDir)
+	targetname "RZE_Editor"
 
-		dependson { "Engine", "Apollo", "Diotima", "Perseus", "Utils"}
+	dependson { "Engine", "Apollo", "Diotima", "Perseus", "Utils"}
 
-		files
+	files
+	{
+		SourceDir .. "**.h",
+		SourceDir .. "**.hpp",
+		SourceDir .. "**.c",
+		SourceDir .. "**.cpp"
+	}
+
+	includedirs
+	{
+		IncludeDir,
+		SourceDir,
+		RootDir .. "Engine/Src/",
+		RootDir .. "Utils/Src/",
+		RootDir .. "Modules/Apollo/Src/",
+		RootDir .. "Modules/Diotima/Src/",
+		RootDir .. "Modules/Perseus/Src/",
+	}
+
+	libdirs
+	{
+		LibDir,
+		ThirdPartyLibDir,
+	}
+	links
+	{
+		"RZE_Engine",
+		"RZE_Utils",
+		"Apollo",
+		"Diotima",
+		"Perseus"
+	}
+
+	 vpaths
+	 {
+		["Source Files/*"] =
 		{
 			SourceDir .. "**.h",
 			SourceDir .. "**.hpp",
 			SourceDir .. "**.c",
 			SourceDir .. "**.cpp"
 		}
-
-		includedirs
-		{
-			IncludeDir,
-			SourceDir,
-			RootDir .. "Engine/Src/",
-			RootDir .. "Utils/Src/",
-			RootDir .. "Modules/Apollo/Src/",
-			RootDir .. "Modules/Diotima/Src/",
-			RootDir .. "Modules/Perseus/Src/"
-		}
-
-		libdirs
-		{
-			LibDir,
-			ThirdPartyLibDir
-		}
-		links
-		{
-			"RZE_Engine",
-			"RZE_Utils",
-			"Apollo",
-			"Diotima",
-			"Perseus",
-			"Externals"
-		}
-
-		 vpaths
-		 {
-			["Source Files/*"] =
-			{
-				SourceDir .. "**.h",
-				SourceDir .. "**.hpp",
-				SourceDir .. "**.c",
-				SourceDir .. "**.cpp"
-			}
-		 }
+	 }

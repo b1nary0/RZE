@@ -16,10 +16,11 @@ Matrix4x4::Matrix4x4(const glm::mat4& mat)
 	mMat = mat;
 }
 
-Matrix4x4 Matrix4x4::CreateInPlace(const Vector3D& position, const Vector3D& scale, const Quaternion& rotation)
+Matrix4x4 Matrix4x4::CreateInPlace(const Vector3D& position, const Vector3D& scale, const Vector3D& rotation)
 {
+	Quaternion quatRot(rotation);
 	glm::mat4 matrix = glm::translate(glm::mat4(), position.GetInternalVec());
-	matrix = glm::rotate(matrix, rotation.ToAngle(), rotation.ToAxis().GetInternalVec());
+	matrix = glm::rotate(matrix, quatRot.ToAngle(), quatRot.ToAxis().GetInternalVec());
 	matrix = glm::scale(matrix, scale.GetInternalVec());
 
 	return Matrix4x4(matrix);

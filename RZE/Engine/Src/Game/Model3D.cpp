@@ -8,7 +8,8 @@
 #include <Graphics/Material.h>
 #include <Graphics/Texture2D.h>
 
-#include <Diotima/Graphics/GFXMesh.h>
+#include <Graphics/IndexBuffer.h>
+#include <Graphics/VertexBuffer.h>
 
 Model3D::Model3D()
 {
@@ -20,13 +21,15 @@ Model3D::~Model3D()
 
 bool Model3D::Load(const FilePath& filePath)
 {
-	BROFILER_EVENT("Model3D::Load");
+	OPTICK_EVENT("Model3D::Load");
 	mFilePath = filePath;
 
 	Assimp::Importer ModelImporter;
 	const aiScene* AssimpScene = ModelImporter.ReadFile(mFilePath.GetAbsolutePath(),
-		aiProcess_Triangulate
-		| aiProcess_GenNormals /*| aiProcess_FlipUVs*/ | aiProcess_CalcTangentSpace);
+		aiProcessPreset_TargetRealtime_Fast | 
+		aiProcess_ConvertToLeftHanded | 
+		aiProcess_OptimizeMeshes | 
+		aiProcess_OptimizeGraph);
 
 	bool bAssimpNotLoaded =
 		!AssimpScene
@@ -44,14 +47,14 @@ bool Model3D::Load(const FilePath& filePath)
 	meshGeometry.reserve(AssimpScene->mNumMeshes);
 	ProcessNode(*AssimpScene->mRootNode, *AssimpScene, meshGeometry);
 
-	mMesh.SetMeshes(meshGeometry);
-	if (mMesh.GetSubMeshes().size() != AssimpScene->mNumMeshes)
+	if (meshGeometry.size() != AssimpScene->mNumMeshes)
 	{
 		// #TODO More informative error message.
 		LOG_CONSOLE("Error reading meshes.");
 		return false;
 	}
 
+	mMesh.Initialize(meshGeometry);
 	return true;
 }
 
@@ -97,7 +100,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 		if (bHasTextureCoords)
 		{
 			const aiVector3D& assimpUV = mesh.mTextureCoords[0][vertexIdx];
-			Vector2D vertUV(assimpUV.x, -assimpUV.y);
+			Vector2D vertUV(assimpUV.x, assimpUV.y);
 			vertex.UVData = vertUV;
 		}
 
@@ -211,8 +214,28 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 		pMaterial->SetDiffuse(RZE_Application::RZE().GetResourceHandler().GetResource<Texture2D>(diffuseHandle));
 	}
 
+	if (!pMaterial->HasSpecular())
+	{
+		LOG_CONSOLE_ARGS("Could not find specular texture for [%s] loading default specular texture", mFilePath.GetRelativePath().c_str());
+
+		ResourceHandle specularHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Texture2D>(Texture2D::kDefaultSpecularTexturePath, ETextureType::Specular);
+		mTextureHandles.push_back(specularHandle);
+
+		pMaterial->SetSpecular(RZE_Application::RZE().GetResourceHandler().GetResource<Texture2D>(specularHandle));
+	}
+
+	if (!pMaterial->HasNormal())
+	{
+		LOG_CONSOLE_ARGS("Could not find normal texture for [%s] loading default normal texture", mFilePath.GetRelativePath().c_str());
+
+		ResourceHandle normalHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Texture2D>(Texture2D::kDefaultNormalTexturePath, ETextureType::Normal);
+		mTextureHandles.push_back(normalHandle);
+
+		pMaterial->SetNormal(RZE_Application::RZE().GetResourceHandler().GetResource<Texture2D>(normalHandle));
+	}
+
 	outMesh.SetMaterial(pMaterial);
-	outMesh.OnLoadFinished();
+	outMesh.AllocateGPUData();
 }
 
 // #TODO(Josh::Pull this out into a util function)

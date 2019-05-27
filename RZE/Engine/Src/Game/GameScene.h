@@ -28,11 +28,13 @@ public:
 
 	void Initialize();
 
+	void NewScene();
 	void Load(FilePath filePath);
 
 	Apollo::EntityID CreateEntity(const std::string& name);
+	void DestroyEntity(Apollo::EntityID entity);
 
-	const std::vector<SceneEntryTemp> GetSceneEntries() { return mEntityEntries; }
+	const std::vector<SceneEntryTemp>& GetSceneEntries() { return mEntityEntries; }
 
 private:
 	void AddToScene(Apollo::EntityID entityID, const std::string& name);
@@ -43,7 +45,7 @@ private:
 	Apollo::EntityHandler mEntityHandler;
 
 private:
-	// #TODO(Josh) Temp, testing stuff
-	std::vector<SceneEntryTemp> mEntityEntries;
+	FilePath mCurrentScenePath;
 
+	std::vector<SceneEntryTemp> mEntityEntries;
 };

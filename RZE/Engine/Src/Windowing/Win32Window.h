@@ -55,13 +55,13 @@ public:
 
 	void Show();
 
-	void BufferSwap() const;
-
 	const OSWindowHandleData& GetOSWindowHandleData() const;
 
 	void RegisterEvents(EventHandler& eventHandler);
 
 	void SetWindowSize(const Vector2D& newSize);
+
+	FilePath ShowOpenFilePrompt();
 
 protected:
 

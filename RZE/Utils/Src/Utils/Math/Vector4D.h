@@ -4,6 +4,8 @@
 
 #include <Utils/StringUtils.h>
 
+class Vector3D;
+
 class Vector4D
 {
 public:
@@ -37,6 +39,8 @@ public:
 	// Operators
 	//
 public:
+	float operator[](int index) const;
+	void operator=(const Vector3D& rhs);
 
 private:
 	static Vector4D sDefaultVec;

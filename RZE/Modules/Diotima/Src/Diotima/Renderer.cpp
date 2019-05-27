@@ -1,34 +1,36 @@
 #include <Diotima/Renderer.h>
 
-#include <Brofiler/Brofiler.h>
+#include <Optick/optick.h>
 
-#include <Diotima/RenderBatch.h>
-#include <Diotima/Driver/OpenGL/OpenGL.h>
-#include <Diotima/Driver/OpenGL/GLRenderTarget.h>
-#include <Diotima/Graphics/GFXMaterial.h>
-#include <Diotima/Graphics/GFXMesh.h>
-#include <Diotima/Graphics/RenderTarget.h>
-#include <Diotima/Graphics/GFXTexture2D.h>
-#include <Diotima/Shaders/ShaderPipeline.h>
+#include <Diotima/Graphics/GFXPassGraph.h>
+
+#include <Perseus/JobSystem/JobScheduler.h>
 
 #include <Utils/Conversions.h>
+#include <Utils/MemoryUtils.h>
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Vector4D.h>
 #include <Utils/Platform/FilePath.h>
 
-#include <imGUI/imgui.h>
+// DX12 Branch Temp
+#include <Diotima/Driver/DX12/DX12GFXDevice.h>
+#include <Diotima/Driver/DX12/DX12GFXConstantBuffer.h>
+#include <Diotima/Driver/DX12/DX12GFXIndexBuffer.h>
+#include <Diotima/Driver/DX12/DX12GFXVertexBuffer.h>
+#include <Diotima/Driver/DX12/DX12GFXTextureBuffer2D.h>
 
-//
-// <ImGui>
-void ImGUIRender(ImDrawData* drawData);
-bool ImGUICreateFontsTexture();
-bool ImGUICreateDeviceObjects();
-// </ImGui>
-//
+#include <ImGui/imgui.h>
+#include <ImGui/imgui_impl_dx12.h>
 
 namespace Diotima
 {
 	Renderer::Renderer()
+		: mPassGraph(std::make_unique<GFXPassGraph>())
+	{
+		mLightingList.reserve(MAX_LIGHTS);
+	}
+
+	Renderer::~Renderer()
 	{
 	}
 
@@ -39,360 +41,228 @@ namespace Diotima
 			Int32 index = mFreeRenderListIndices.front();
 			mFreeRenderListIndices.pop();
 
-			mRenderList[index] = std::move(itemProtocol);
-			mRenderList[index].bIsValid = true;
+			mRenderItems[index] = std::move(itemProtocol);
+			mRenderItems[index].bIsValid = true;
 
 			return index;
 		}
 
-		mRenderList.emplace_back(std::move(itemProtocol));
-		mRenderList.back().bIsValid = true;
+		mRenderItems.emplace_back(std::move(itemProtocol));
+		mRenderItems.back().bIsValid = true;
 
-		return static_cast<Int32>(mRenderList.size() - 1);
+		return static_cast<Int32>(mRenderItems.size() - 1);
 	}
 
 	void Renderer::RemoveRenderItem(const U32 itemIdx)
 	{
-		AssertExpr(itemIdx < mRenderList.size());
+		AssertExpr(itemIdx < mRenderItems.size());
 
-		mRenderList[itemIdx].Invalidate();
+		mRenderItems[itemIdx].Invalidate();
 		mFreeRenderListIndices.push(itemIdx);
 	}
 
 	Int32 Renderer::AddLightItem(const LightItemProtocol& itemProtocol)
 	{
 		mLightingList.emplace_back(std::move(itemProtocol));
+
+		++mLightCounts[itemProtocol.LightType];
 		return static_cast<Int32>(mLightingList.size() - 1);
+	}
+
+	void Renderer::RemoveLightItem(const U32 itemIdx)
+	{
+		AssertExpr(itemIdx < mLightingList.size());
+
+		auto iter = mLightingList.begin() + itemIdx;
+		--mLightCounts[iter->LightType];
+		mLightingList.erase(iter);
 	}
 
 	void Renderer::Initialize()
 	{
-		{
-			OpenGLRHI::OpenGLCreationParams creationParams;
-			creationParams.WindowHeight = 1024;
-			creationParams.WindowWidth = 768;
-			OpenGLRHI::Get().Init(creationParams);
-		}
+		mCanvasSize.SetXY(1600, 900);
 
-		OpenGLRHI::Get().ClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+		DX12Initialize();
 
-		OpenGLRHI::Get().EnableCapability(EGLCapability::DepthTest);
-
-		// Meshing renderer with ImGui because of new application/engine relationship experimental but also because... why not, just make it with the renderer for the time being
-		{
-			ImGui::SetCurrentContext(ImGui::CreateContext());
-
-			ImGuiIO& io = ImGui::GetIO();
-			ImGUICreateDeviceObjects();
-			io.RenderDrawListsFn = ImGUIRender;
-		}
-
-		mDepthTexture = new GLRenderTargetDepthTexture();
-		mDepthTexture->SetDimensions(1024, 1024);
-		mDepthTexture->Initialize();
-
-		mFinalRTT = new GLRenderTargetTextureMSAA();
-
-		glEnable(GL_MULTISAMPLE);
-		glEnable(GL_CULL_FACE);
+		mPassGraph->Build(this);
 	}
 
 	void Renderer::Update()
 	{
-		BROFILER_CATEGORY("Renderer::Update", Profiler::Color::Red)
-		AssertNotNull(mFinalRTT);
+		OPTICK_EVENT();
 
-		const OpenGLRHI& openGL = OpenGLRHI::Get();
+		mDevice->ResetCommandAllocator();
+		mDevice->ResetResourceCommandAllocator();
 
-		{
-			SetCurrentRenderTarget(mDepthTexture);
-			glCullFace(GL_FRONT);
-			DepthPass();
-			glCullFace(GL_BACK);
-		}
+		PrepareDrawCalls();
 
 		{
-			SetCurrentRenderTarget(mFinalRTT);
-			ForwardPass();
+			// #TODO(Eventually this should be moved out of here and into the engine level.
+			//       Then the render side just deals with the generated commands.)
+			mPassGraph->Execute();
 		}
 
-		Submit();
+		HRESULT res = mDevice->GetDevice()->GetDeviceRemovedReason();
+		if (res != S_OK)
+		{
+			AssertFalse();
+		}
+	}
 
-		// #NOTE(Josh::This is to reset the editor viewport so ImGUI draws to the whole screen and not the SceneViewWidget
-		//       size. This is a symptom of having better engine-agnostic context to the render target system)
-		openGL.Viewport(0, 0, static_cast<GLint>(mCanvasSize.X()), static_cast<GLint>(mCanvasSize.Y()));
+	void Renderer::Render()
+	{
+		mDevice->Present();
 	}
 
 	void Renderer::ShutDown()
 	{
+		ImGui_ImplDX12_Shutdown();
+
+		mDevice->Shutdown();
 	}
 
-	void Renderer::SetRenderTarget(RenderTarget* renderTarget)
+	const std::vector<Renderer::RenderItemDrawCall>& Renderer::GetDrawCalls()
 	{
-		AssertNotNull(renderTarget);
-		mCustomRTT = renderTarget;
+		return mPerFrameDrawCalls;
+	}
+
+	const std::vector<Renderer::LightItemProtocol>& Renderer::GetLights()
+	{
+		return mLightingList;
+	}
+
+	const U32* Renderer::GetLightCounts()
+	{
+		return mLightCounts;
+	}
+
+	const Diotima::Renderer::CameraItemProtocol& Renderer::GetCamera()
+	{
+		return camera;
+	}
+
+	void Renderer::DX12Initialize()
+	{
+		mDevice = std::make_unique<DX12GFXDevice>();
+		mDevice->SetWindow(mWindowHandle);
+		mDevice->SetMSAASampleCount(mMSAASampleCount);
+		mDevice->Initialize();
+
+		mMVPConstantBuffer = mDevice->CreateConstantBuffer(sizeof(Matrix4x4) * 3, 65536);
+		mMaterialBuffer = mDevice->CreateConstantBuffer(sizeof(RenderItemMaterialDesc), 65536);
+	}
+
+	void Renderer::PrepareDrawCalls()
+	{
+		OPTICK_EVENT();
+
+		if (mPerFrameDrawCalls.capacity() < mRenderItems.size())
+		{
+			mPerFrameDrawCalls.reserve(mRenderItems.size());
+		}
+
+		Matrix4x4 camViewProjMat = camera.ProjectionMat * camera.ViewMat;
+		void* pMatrixConstantBufferData = malloc(sizeof(Matrix4x4) * 3);
+
+		DX12GFXConstantBuffer* const materialBuffer = mDevice->GetConstantBuffer(mMaterialBuffer);
+		DX12GFXConstantBuffer* const matrixBuffer = mDevice->GetConstantBuffer(mMVPConstantBuffer);
+
+		matrixBuffer->Reset();
+		materialBuffer->Reset();
+
+		mPerFrameDrawCalls.clear();
+		for (RenderItemProtocol& renderItem : mRenderItems)
+		{
+			// #TODO(Josh::This needs to be removed -- an opaque handle should be leased out that will
+			//             get fixed up when we remove render items)
+			if (!renderItem.bIsValid)
+			{
+				continue;
+			}
+
+			CBAllocationData matrixSlot;
+			// #TODO(Josh::Just copy pasta from before for now to get RenderItemDrawCall driving the Renderer::Update loop
+				//             Should find a better place for it.)
+			{
+				// Create and copy a buffer of matrices for a given item
+				// Camera matrix should not be here but will be moved 
+				// elsewhere when the frame design stabilizes
+				const float* modelViewPtr = renderItem.ModelMatrix.GetValuePtr();
+				const float* modelViewInvPtr = renderItem.ModelMatrix.Inverse().GetValuePtr();
+				const float* camViewProjPtr = camViewProjMat.GetValuePtr();
+
+				memcpy(pMatrixConstantBufferData, modelViewPtr, sizeof(Matrix4x4));
+				memcpy((U8*)pMatrixConstantBufferData + sizeof(Matrix4x4), modelViewInvPtr, sizeof(Matrix4x4));
+				memcpy((U8*)pMatrixConstantBufferData + sizeof(Matrix4x4) * 2, camViewProjPtr, sizeof(Matrix4x4));
+
+				matrixSlot = matrixBuffer->AllocateMember(pMatrixConstantBufferData);
+			}
+
+			for (RenderItemMeshData& meshData : renderItem.MeshData)
+			{
+				RenderItemDrawCall drawCall;
+				drawCall.VertexBuffer = meshData.VertexBuffer;
+				drawCall.IndexBuffer = meshData.IndexBuffer;
+				// #TODO(Josh::Eventually the material system will handle this itself and hold a buffer of pre-allocated materials
+				//             and we will somehow "lease" it for the draw call)
+				drawCall.MaterialSlot = materialBuffer->AllocateMember(&meshData.Material);
+
+				drawCall.TextureSlot0 = meshData.TextureDescs[0].TextureBuffer; // This should be iterated on to be more robust.
+				drawCall.TextureSlot1 = meshData.TextureDescs[1].TextureBuffer; // This should be iterated on to be more robust.
+				drawCall.TextureSlot2 = meshData.TextureDescs[2].TextureBuffer; // This should be iterated on to be more robust.
+
+				drawCall.MatrixSlot = matrixSlot;
+
+				mPerFrameDrawCalls.push_back(std::move(drawCall));
+			}
+		}
+
+		free(pMatrixConstantBufferData);
 	}
 
 	void Renderer::EnableVsync(bool bEnabled)
 	{
-		OpenGLRHI::Get().SetSwapInterval(bEnabled ? 1 : 0);
+		
+	}
+
+	void Renderer::SetMSAASampleCount(U32 sampleCount)
+	{
+		mMSAASampleCount = sampleCount;
+	}
+
+
+	const Vector2D& Renderer::GetCanvasSize()
+	{
+		return mCanvasSize;
 	}
 
 	void Renderer::ResizeCanvas(const Vector2D& newSize)
 	{
 		mCanvasSize = newSize;
-		mFinalRTT->SetDimensions(static_cast<U32>(mCanvasSize.X()), static_cast<U32>(mCanvasSize.Y()));
-		mFinalRTT->Initialize();
+
+		int width = static_cast<int>(newSize.X());
+		int height = static_cast<int>(newSize.Y());
+
+		mDevice->HandleWindowResize(width, height);
+
+		mPassGraph->OnWindowResize(width, height);
 
 		LOG_CONSOLE_ARGS("New Canvas Size: %f x %f", mCanvasSize.X(), mCanvasSize.Y());
 	}
 
-	void Renderer::DepthPass()
-	{	BROFILER_CATEGORY("DepthPass", Profiler::Color::YellowGreen);
-
-		const OpenGLRHI& openGL = OpenGLRHI::Get();
-
-		openGL.Viewport(0, 0, GetCurrentRenderTarget()->GetWidth(), GetCurrentRenderTarget()->GetHeight());
-		GetCurrentRenderTarget()->Bind();
-		
-		mDepthPassShader->Use();
-
-		LightItemProtocol& lightItem = mLightingList.front();
-		mDepthPassShader->SetUniformMatrix4x4("ULightSpaceMatrix", lightItem.LightSpaceMatrix);
-		
-		RenderScene_Depth();
-		GetCurrentRenderTarget()->Unbind();
+	U32 Renderer::CreateVertexBuffer(void* data, U32 numElements)
+	{
+		return mDevice->CreateVertexBuffer(data, numElements);
 	}
 
-	// #TODO(Josh::Dirty hack to quickly test multiple lights with updated Renderer)
-	// This is to avoid building strings until a better shader pipeline API is implemented
-	// -- Begin Dity Hack
-	static char* sLightPositionMaterialNames[] =
+	U32 Renderer::CreateIndexBuffer(void* data, U32 numElements)
 	{
-		"LightPositions[0]",
-		"LightPositions[1]"
-	};
-	static char* sLightColourMaterialNames[] =
-	{
-		"LightColors[0]",
-		"LightColors[1]"
-	};
-	static char* sLightStrengthMaterialNames[] =
-	{
-		"LightStrengths[0]",
-		"LightStrengths[1]"
-	};
-	// -- End Dirty Hack
-
-	void Renderer::ForwardPass()
-	{	BROFILER_CATEGORY("ForwardPass", Profiler::Color::Yellow);
-
-		const OpenGLRHI& openGL = OpenGLRHI::Get();
-
-		GetCurrentRenderTarget()->Bind();
-		// #TODO(Josh) Can probably optimize this away nicely
-		openGL.Viewport(0, 0, GetCurrentRenderTarget()->GetWidth(), GetCurrentRenderTarget()->GetHeight());
-		openGL.Clear(EGLBufferBit::Color | EGLBufferBit::Depth);
-		{	
-			mForwardShader->Use();
-			mForwardShader->SetUniformMatrix4x4("UProjectionMat", camera.ProjectionMat);
-			mForwardShader->SetUniformMatrix4x4("UViewMat", camera.ViewMat);
-			mForwardShader->SetUniformInt("UNumActiveLights", static_cast<int>(mLightingList.size()));
-			mForwardShader->SetUniformVector3D(std::string("ViewPos").c_str(), camera.Position);
-
-			openGL.SetTextureUnit(GL_TEXTURE3);
-			openGL.BindTexture(EGLCapability::Texture2D, mDepthTexture->GetTextureID());
-
-			// Really only doing one light here, but will eventually do more. So if you see any
-			// assumptions, thats why.
-			for (size_t lightIdx = 0; lightIdx < mLightingList.size(); ++lightIdx)
-			{
-				const LightItemProtocol& lightItem = mLightingList[lightIdx];
-
-				mForwardShader->SetUniformVector3D(sLightPositionMaterialNames[lightIdx], lightItem.Position);
-				mForwardShader->SetUniformVector3D(sLightColourMaterialNames[lightIdx], lightItem.Color);
-				mForwardShader->SetUniformFloat(sLightStrengthMaterialNames[lightIdx], lightItem.Strength);
-				mForwardShader->SetUniformMatrix4x4("ULightSpaceMat", lightItem.LightSpaceMatrix);
-			}
-
-			RenderScene_Forward();
-		}
-		GetCurrentRenderTarget()->Unbind();
-	}
-	
-	void Renderer::RenderScene_Depth()
-	{
-		BROFILER_CATEGORY("RenderScene_Depth", Profiler::Color::Red);
-		
-		const OpenGLRHI& openGL = OpenGLRHI::Get();
-		openGL.Clear(EGLBufferBit::Depth);
-
-		for (auto& renderItem : mRenderList)
-		{
-			if (renderItem.bIsValid)
-			{
-				RenderSingleItem_Depth(renderItem);
-			}
-		}
+		return mDevice->CreateIndexBuffer(data, numElements);
 	}
 
-	void Renderer::RenderScene_Forward()
-	{	BROFILER_CATEGORY("RenderScene_Forward", Profiler::Color::Red);
-		for (auto& renderItem : mRenderList)
-		{
-			if (renderItem.bIsValid)
-			{
-				RenderSingleItem_Forward(renderItem);
-			}
-		}
-	}
-
-	void Renderer::RenderSingleItem_Depth(RenderItemProtocol& renderItem)
-	{ 
-		mDepthPassShader->SetUniformMatrix4x4("UModelMat", renderItem.ModelMatrix);
-		for (auto& mesh : renderItem.MeshData)
-		{
-			DrawMesh(mesh);
-		}
-	}
-
-	void Renderer::RenderSingleItem_Forward(RenderItemProtocol& renderItem)
+	U32 Renderer::CreateTextureBuffer2D(void* data, U32 width, U32 height)
 	{
-		// TODO(Josh)
-		// This whole function is a temporary implementation until an actual render pipeline is implemented.
-		const OpenGLRHI& openGL = OpenGLRHI::Get();
-
-		mForwardShader->SetUniformMatrix4x4("UModelMat", renderItem.ModelMatrix);
-		for (auto& mesh : renderItem.MeshData)
-		{
-			{
-				// #NOTE(Josh::This should be temp -- replaced by proper state management? I dunno haven't thought about it.)
-				openGL.SetTextureUnit(EGLTextureUnit::Texture0);
-				openGL.BindTexture(EGLCapability::Texture2D, 0);
-				openGL.SetTextureUnit(EGLTextureUnit::Texture1);
-				openGL.BindTexture(EGLCapability::Texture2D, 0);
-				openGL.SetTextureUnit(EGLTextureUnit::Texture2);
-				openGL.BindTexture(EGLCapability::Texture2D, 0);
-			}
-
-			const GFXMaterial& material = mesh->GetMaterial();
-
-			// #TODO(Josh::Hardcore magic values here until I implement texture batch relationships)
-			bool bHasDiffuse = material.GetDiffuseTextures().size() > 0;
-			bool bHasSpecular = material.GetSpecularTextures().size() > 0;
-			bool bHasNormals = material.GetNormalMaps().size() > 0;
-
-			mForwardShader->SetUniformFloat("UShininess", material.Shininess);
-			mForwardShader->SetUniformFloat("UOpacity", material.Opacity);
-
-			if (bHasDiffuse)
-			{
-				openGL.SetTextureUnit(EGLTextureUnit::Texture0);
-				for (auto& texture : material.GetDiffuseTextures())
-				{
-					mForwardShader->SetUniformInt("DiffuseTexture", 0);
-					openGL.BindTexture(EGLCapability::Texture2D, texture->GetTextureID());
-				}
-			}
-
-			if (bHasSpecular)
-			{
-				openGL.SetTextureUnit(EGLTextureUnit::Texture1);
-				for (auto& texture : material.GetSpecularTextures())
-				{
-					mForwardShader->SetUniformInt("SpecularTexture", 1);
-					openGL.BindTexture(EGLCapability::Texture2D, texture->GetTextureID());
-				}
-			}
-
-			if (bHasNormals)
-			{
-				mForwardShader->SetUniformInt("UIsNormalMapped", 1);
-				openGL.SetTextureUnit(EGLTextureUnit::Texture2);
-				for (auto& texture : material.GetNormalMaps())
-				{
-					mForwardShader->SetUniformInt("NormalMap", 2);
-					openGL.BindTexture(EGLCapability::Texture2D, texture->GetTextureID());
-				}
-			}
-			else
-			{
-				mForwardShader->SetUniformInt("UIsNormalMapped", 0);
-			}
-			
-			DrawMesh(mesh);
-		}
-	}
-
-	void Renderer::BlitToWindow()
-	{
-		const OpenGLRHI& openGL = OpenGLRHI::Get();
-		RenderTarget* const currentRT = GetCurrentRenderTarget();
-
-		//openGL.Viewport(0, 0, currentRT->GetWidth(), currentRT->GetHeight());
-
-		openGL.BindFramebuffer(EGLBufferTarget::DrawFramebuffer, 0);
-		openGL.BindFramebuffer(EGLBufferTarget::ReadFramebuffer, currentRT->GetFrameBufferID());
-		//glDrawBuffer(GL_BACK);
-		openGL.ReadBuffer(EGLAttachmentPoint::Color0);
-
-		openGL.BlitFramebuffer(
-			0, 0, static_cast<GLint>(currentRT->GetWidth()), static_cast<GLint>(currentRT->GetHeight()),
-			0, 0, static_cast<GLint>(mCanvasSize.X()), static_cast<GLint>(mCanvasSize.Y()),
-			EGLBufferBit::Color, GL_NEAREST);
-	}
-
-	void Renderer::BlitToTarget(const RenderTarget& target)
-	{
-		const OpenGLRHI& openGL = OpenGLRHI::Get();
-		RenderTarget* const currentRT = GetCurrentRenderTarget();
-
-		openGL.Viewport(0, 0, currentRT->GetWidth(), currentRT->GetHeight());
-
-		openGL.BindFramebuffer(EGLBufferTarget::DrawFramebuffer, target.GetFrameBufferID());
-		openGL.BindFramebuffer(EGLBufferTarget::ReadFramebuffer, currentRT->GetFrameBufferID());
-		openGL.ReadBuffer(EGLAttachmentPoint::Color0);
-		glDrawBuffer(GL_COLOR_ATTACHMENT0);
-
-		openGL.BlitFramebuffer(
-			0, 0, static_cast<GLint>(currentRT->GetWidth()), static_cast<GLint>(currentRT->GetHeight()),
-			0, 0, static_cast<GLint>(currentRT->GetWidth()), static_cast<GLint>(currentRT->GetHeight()),
-			EGLBufferBit::Color, GL_NEAREST);
-
-		openGL.BindFramebuffer(EGLBufferTarget::FrameBuffer, 0);
-	}
-
-	void Renderer::Submit()
-	{
-		// #NOTE(Josh::This function will become something entirely different eventually)
-
-		// #TODO(Josh::Maybe change this to a read/write locking system for the buffers)
-		SetCurrentRenderTarget(mFinalRTT);
-		if (mCustomRTT != nullptr)
-		{
-			BlitToTarget(*mCustomRTT);
-		}
-		else
-		{
-			BlitToWindow();
-		}
-	}
-
-	void Renderer::DrawMesh(GFXMesh* mesh)
-	{
-		mesh->mVAO.Bind();
-		OpenGLRHI::Get().DrawElements(EGLDrawMode::Triangles, static_cast<GLsizei>(mesh->GetIndexCount()), EGLDataType::UnsignedInt, nullptr);
-		mesh->mVAO.Unbind();
-	}
-	
-	void Renderer::SetCurrentRenderTarget(RenderTarget* renderTarget)
-	{
-		AssertNotNull(renderTarget);
-		mCurrentRTT = renderTarget;
-	}
-
-	Renderer::RenderItemProtocol::RenderItemProtocol()
-	{
+		return mDevice->CreateTextureBuffer2D(data, width, height);
 	}
 
 	void Renderer::RenderItemProtocol::Invalidate()
@@ -401,239 +271,3 @@ namespace Diotima
 	}
 
 }
-
-
-
-
-
-
-
-
-//
-// <Imgui Stuff>
-//
-// #TODO(Josh) Move this to a more sane place
-// This is basically just here until I figure out the best place to put this -- cause the renderer doesnt really know about editor or no editor.
-
-static GLuint gFontTexture = 0;
-
-static int gShaderHandle = 0;
-static int gVertHandle = 0;
-static int gFragHandle = 0;
-
-static int gAttribLocationTex = 0;
-static int gAttribLocationProjMtx = 0;
-static int gAttribLocationPosition = 0;
-static int gAttribLocationUV = 0;
-static int gAttribLocationColor = 0;
-
-static unsigned int gVBOHandle = 0;
-static unsigned int gVAOHandle = 0;
-static unsigned int gElementsHandle = 0;
-
-void ImGUIRender(ImDrawData* drawData)
-{
-	ImGuiIO& io = ImGui::GetIO();
-	int fbWidth = (int)(io.DisplaySize.x * io.DisplayFramebufferScale.x);
-	int fbHeight = (int)(io.DisplaySize.y * io.DisplayFramebufferScale.y);
-	if (fbWidth == 0 || fbHeight == 0)
-		return;
-	drawData->ScaleClipRects(io.DisplayFramebufferScale);
-
-	// Backup GL state
-	GLenum last_active_texture; glGetIntegerv(GL_ACTIVE_TEXTURE, (GLint*)&last_active_texture);
-	glActiveTexture(GL_TEXTURE0);
-	GLint last_program; glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
-	GLint last_texture; glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
-	GLint last_sampler; glGetIntegerv(GL_SAMPLER_BINDING, &last_sampler);
-	GLint last_array_buffer; glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &last_array_buffer);
-	GLint last_element_array_buffer; glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &last_element_array_buffer);
-	GLint last_vertex_array; glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &last_vertex_array);
-	GLint last_polygon_mode[2]; glGetIntegerv(GL_POLYGON_MODE, last_polygon_mode);
-	GLint last_viewport[4]; glGetIntegerv(GL_VIEWPORT, last_viewport);
-	GLint last_scissor_box[4]; glGetIntegerv(GL_SCISSOR_BOX, last_scissor_box);
-	GLenum last_blend_src_rgb; glGetIntegerv(GL_BLEND_SRC_RGB, (GLint*)&last_blend_src_rgb);
-	GLenum last_blend_dst_rgb; glGetIntegerv(GL_BLEND_DST_RGB, (GLint*)&last_blend_dst_rgb);
-	GLenum last_blend_src_alpha; glGetIntegerv(GL_BLEND_SRC_ALPHA, (GLint*)&last_blend_src_alpha);
-	GLenum last_blend_dst_alpha; glGetIntegerv(GL_BLEND_DST_ALPHA, (GLint*)&last_blend_dst_alpha);
-	GLenum last_blend_equation_rgb; glGetIntegerv(GL_BLEND_EQUATION_RGB, (GLint*)&last_blend_equation_rgb);
-	GLenum last_blend_equation_alpha; glGetIntegerv(GL_BLEND_EQUATION_ALPHA, (GLint*)&last_blend_equation_alpha);
-	GLboolean last_enable_blend = glIsEnabled(GL_BLEND);
-	GLboolean last_enable_cull_face = glIsEnabled(GL_CULL_FACE);
-	GLboolean last_enable_depth_test = glIsEnabled(GL_DEPTH_TEST);
-	GLboolean last_enable_scissor_test = glIsEnabled(GL_SCISSOR_TEST);
-
-	// Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled, polygon fill
-	glEnable(GL_BLEND);
-	glBlendEquation(GL_FUNC_ADD);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDisable(GL_CULL_FACE);
-	glDisable(GL_DEPTH_TEST);
-	glEnable(GL_SCISSOR_TEST);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-	const float ortho_projection[4][4] =
-	{
-		{ 2.0f / io.DisplaySize.x, 0.0f,                   0.0f, 0.0f },
-	{ 0.0f,                  2.0f / -io.DisplaySize.y, 0.0f, 0.0f },
-	{ 0.0f,                  0.0f,                  -1.0f, 0.0f },
-	{ -1.0f,                  1.0f,                   0.0f, 1.0f },
-	};
-
-	glUseProgram(gShaderHandle);
-	glUniform1i(gAttribLocationTex, 0);
-	glUniformMatrix4fv(gAttribLocationProjMtx, 1, GL_FALSE, &ortho_projection[0][0]);
-	glBindVertexArray(gVAOHandle);
-	glBindSampler(0, 0); // Rely on combined texture/sampler state.
-
-	for (int n = 0; n < drawData->CmdListsCount; n++)
-	{
-		const ImDrawList* cmd_list = drawData->CmdLists[n];
-		const ImDrawIdx* idx_buffer_offset = 0;
-
-		glBindBuffer(GL_ARRAY_BUFFER, gVBOHandle);
-		glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)cmd_list->VtxBuffer.Size * sizeof(ImDrawVert), (const GLvoid*)cmd_list->VtxBuffer.Data, GL_STREAM_DRAW);
-
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gElementsHandle);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx), (const GLvoid*)cmd_list->IdxBuffer.Data, GL_STREAM_DRAW);
-
-		for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
-		{
-			const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[cmd_i];
-			if (pcmd->UserCallback)
-			{
-				pcmd->UserCallback(cmd_list, pcmd);
-			}
-			else
-			{
-				glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)pcmd->TextureId);
-				glScissor((int)pcmd->ClipRect.x, (int)(fbHeight - pcmd->ClipRect.w), (int)(pcmd->ClipRect.z - pcmd->ClipRect.x), (int)(pcmd->ClipRect.w - pcmd->ClipRect.y));
-				glDrawElements(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, idx_buffer_offset);
-			}
-			idx_buffer_offset += pcmd->ElemCount;
-		}
-	}
-
-	// Restore modified GL state
-	glUseProgram(last_program);
-	glBindTexture(GL_TEXTURE_2D, last_texture);
-	glBindSampler(0, last_sampler);
-	glActiveTexture(last_active_texture);
-	glBindVertexArray(last_vertex_array);
-	glBindBuffer(GL_ARRAY_BUFFER, last_array_buffer);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, last_element_array_buffer);
-	glBlendEquationSeparate(last_blend_equation_rgb, last_blend_equation_alpha);
-	glBlendFuncSeparate(last_blend_src_rgb, last_blend_dst_rgb, last_blend_src_alpha, last_blend_dst_alpha);
-	if (last_enable_blend) glEnable(GL_BLEND); else glDisable(GL_BLEND);
-	if (last_enable_cull_face) glEnable(GL_CULL_FACE); else glDisable(GL_CULL_FACE);
-	if (last_enable_depth_test) glEnable(GL_DEPTH_TEST); else glDisable(GL_DEPTH_TEST);
-	if (last_enable_scissor_test) glEnable(GL_SCISSOR_TEST); else glDisable(GL_SCISSOR_TEST);
-	glPolygonMode(GL_FRONT_AND_BACK, last_polygon_mode[0]);
-	glViewport(last_viewport[0], last_viewport[1], (GLsizei)last_viewport[2], (GLsizei)last_viewport[3]);
-	glScissor(last_scissor_box[0], last_scissor_box[1], (GLsizei)last_scissor_box[2], (GLsizei)last_scissor_box[3]);
-}
-
-bool ImGUICreateFontsTexture()
-{
-	// Build texture atlas
-	ImGuiIO& io = ImGui::GetIO();
-	unsigned char* pixels;
-	int width, height;
-	io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);   // Load as RGBA 32-bits (75% of the memory is wasted, but default font is so small) because it is more likely to be compatible with user's existing shaders. If your ImTextureId represent a higher-level concept than just a GL texture id, consider calling GetTexDataAsAlpha8() instead to save on GPU memory.
-
-															  // Upload texture to graphics system
-	GLint last_texture;
-	glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
-	glGenTextures(1, &gFontTexture);
-	glBindTexture(GL_TEXTURE_2D, gFontTexture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-
-	// Store our identifier
-	io.Fonts->TexID = (void *)(intptr_t)gFontTexture;
-
-	// Restore state
-	glBindTexture(GL_TEXTURE_2D, last_texture);
-
-	return true;
-}
-
-bool ImGUICreateDeviceObjects()
-{
-	// Backup GL state
-	GLint last_texture, last_array_buffer, last_vertex_array;
-	glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
-	glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &last_array_buffer);
-	glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &last_vertex_array);
-
-	const GLchar *vertex_shader =
-		"#version 330\n"
-		"uniform mat4 ProjMtx;\n"
-		"in vec2 Position;\n"
-		"in vec2 UV;\n"
-		"in vec4 Color;\n"
-		"out vec2 Frag_UV;\n"
-		"out vec4 Frag_Color;\n"
-		"void main()\n"
-		"{\n"
-		"	Frag_UV = UV;\n"
-		"	Frag_Color = Color;\n"
-		"	gl_Position = ProjMtx * vec4(Position.xy,0,1);\n"
-		"}\n";
-
-	const GLchar* fragment_shader =
-		"#version 330\n"
-		"uniform sampler2D Texture;\n"
-		"in vec2 Frag_UV;\n"
-		"in vec4 Frag_Color;\n"
-		"out vec4 Out_Color;\n"
-		"void main()\n"
-		"{\n"
-		"	Out_Color = Frag_Color * texture( Texture, Frag_UV.st);\n"
-		"}\n";
-
-	gShaderHandle = glCreateProgram();
-	gVertHandle = glCreateShader(GL_VERTEX_SHADER);
-	gFragHandle = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(gVertHandle, 1, &vertex_shader, 0);
-	glShaderSource(gFragHandle, 1, &fragment_shader, 0);
-	glCompileShader(gVertHandle);
-	glCompileShader(gFragHandle);
-	glAttachShader(gShaderHandle, gVertHandle);
-	glAttachShader(gShaderHandle, gFragHandle);
-	glLinkProgram(gShaderHandle);
-
-	gAttribLocationTex = glGetUniformLocation(gShaderHandle, "Texture");
-	gAttribLocationProjMtx = glGetUniformLocation(gShaderHandle, "ProjMtx");
-	gAttribLocationPosition = glGetAttribLocation(gShaderHandle, "Position");
-	gAttribLocationUV = glGetAttribLocation(gShaderHandle, "UV");
-	gAttribLocationColor = glGetAttribLocation(gShaderHandle, "Color");
-
-	glGenBuffers(1, &gVBOHandle);
-	glGenBuffers(1, &gElementsHandle);
-
-	glGenVertexArrays(1, &gVAOHandle);
-	glBindVertexArray(gVAOHandle);
-	glBindBuffer(GL_ARRAY_BUFFER, gVBOHandle);
-	glEnableVertexAttribArray(gAttribLocationPosition);
-	glEnableVertexAttribArray(gAttribLocationUV);
-	glEnableVertexAttribArray(gAttribLocationColor);
-
-#define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
-	glVertexAttribPointer(gAttribLocationPosition, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, pos));
-	glVertexAttribPointer(gAttribLocationUV, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv));
-	glVertexAttribPointer(gAttribLocationColor, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, col));
-#undef OFFSETOF
-
-	ImGUICreateFontsTexture();
-
-	// Restore modified GL state
-	glBindTexture(GL_TEXTURE_2D, last_texture);
-	glBindBuffer(GL_ARRAY_BUFFER, last_array_buffer);
-	glBindVertexArray(last_vertex_array);
-
-	return true;
-}
-//
-// </Imgui Stuff>

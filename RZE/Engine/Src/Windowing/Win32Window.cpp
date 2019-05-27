@@ -13,6 +13,11 @@
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Conversions.h>
 
+#include <stdlib.h>
+
+// #TODO(Super test, just to get things working. Will need to handle this with an event OnTextInput or something)
+#include <imGUI/imgui.h>
+
 LRESULT CALLBACK WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp);
 
 // Used to link WinProc messages with the window without having to static other class instances etc
@@ -140,42 +145,6 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 			AssertFalse();
 		}
 
-		// #NOTE(Josh::Creating dummy context to access wgl functions)
-		HGLRC dummyContext = wglCreateContext(mOSWindowHandleData.deviceContext);
-		if (!dummyContext)
-		{
-			LOG_CONSOLE("<Failure creating dummy render context>");
-			AssertFalse();
-		}
-
-		if (!wglMakeCurrent(mOSWindowHandleData.deviceContext, dummyContext))
-		{
-			LOG_CONSOLE("<Failure setting dummy render context current>");
-			AssertFalse();
-		}
-
-		PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = reinterpret_cast<PFNWGLCREATECONTEXTATTRIBSARBPROC>(wglGetProcAddress("wglCreateContextAttribsARB"));
-		if (wglCreateContextAttribsARB)
-		{
-			int attriblist[] = { WGL_CONTEXT_MAJOR_VERSION_ARB, 4, WGL_CONTEXT_MINOR_VERSION_ARB, 4, WGL_CONTEXT_FLAGS_ARB, 0, 0, WGL_SAMPLES_ARB, 16, 0 };
-			mOSWindowHandleData.renderContext = wglCreateContextAttribsARB(mOSWindowHandleData.deviceContext, 0, attriblist);
-			if (!mOSWindowHandleData.renderContext)
-			{
-				LOG_CONSOLE("<Failure creating real render context>");
-			}
-			else if (!wglMakeCurrent(mOSWindowHandleData.deviceContext, mOSWindowHandleData.renderContext))
-			{
-				LOG_CONSOLE("<Failure setting real render context as current>");
-				AssertFalse();
-			}
-
-			LOG_CONSOLE("<Deleting dummy context>");
-			if (!wglDeleteContext(dummyContext))
-			{
-				LOG_CONSOLE("<Failure deleting dummy context>");
-			}
-		}
-
 		InternalSetWindowPosition(Vector2D(0, 0));
 		// #NOTE(Josh) Gonna put this here for now instead of in Engine.cpp until it has a better home
 		SetWindowPos(GetConsoleWindow(), 0, 1024, 600, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
@@ -195,13 +164,26 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 	{
 		switch (msg.message)
 		{
-		case WM_SYSKEYDOWN:
+		case WM_CHAR:
+		{
+			if (ImGui::GetIO().WantCaptureKeyboard)
+			{
+				ImGui::GetIO().AddInputCharacter(static_cast<ImWchar>(msg.wParam));
+			}
+		}
+		break;
+
 		case WM_KEYDOWN:
 		{
 			const Int32 win32KeyCode = static_cast<Int32>(msg.wParam);
 			const bool bIsRepeat = (msg.lParam & 0x40000000) != 0;
 
 			inputHandler.OnKeyDown(win32KeyCode, bIsRepeat);
+			Int32 key = ::MapVirtualKeyA(win32KeyCode, MAPVK_VK_TO_CHAR);
+			if (key != 0)
+			{
+				TranslateMessage(&msg);
+			}
 		}
 		break;
 
@@ -319,11 +301,6 @@ void Win32Window::Show()
 	}
 }
 
-void Win32Window::BufferSwap() const
-{
-	SwapBuffers(mOSWindowHandleData.deviceContext);
-}
-
 const Win32Window::OSWindowHandleData& Win32Window::GetOSWindowHandleData() const
 {
 	return mOSWindowHandleData;
@@ -385,6 +362,42 @@ void Win32Window::RegisterEvents(EventHandler& eventHandler)
 void Win32Window::SetWindowSize(const Vector2D& newSize)
 {
 	InternalSetWindowSize(newSize);
+}
+
+FilePath Win32Window::ShowOpenFilePrompt()
+{
+	//make sure this is commented out in all code (usually stdafx.h)
+		// #define WIN32_LEAN_AND_MEAN 
+	OPENFILENAME ofn;       // common dialog box structure
+	TCHAR szFile[512] = { 0 };       // if using TCHAR macros
+
+	// Initialize OPENFILENAME
+	ZeroMemory(&ofn, sizeof(ofn));
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hwndOwner = mOSWindowHandleData.windowHandle;
+	ofn.lpstrFile = szFile;
+	ofn.nMaxFile = sizeof(szFile);
+	ofn.lpstrFilter = (LPWSTR)"All\0*.*\0Text\0*.TXT\0";
+	ofn.nFilterIndex = 1;
+	ofn.lpstrFileTitle = NULL;
+	ofn.nMaxFileTitle = 0;
+	ofn.lpstrInitialDir = NULL;
+	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+	if (GetOpenFileName(&ofn) == TRUE)
+	{
+		char test[512];
+		size_t converted = 0;
+		wcstombs_s(&converted, test, ofn.lpstrFile, 512);
+
+		std::string path(test);
+		size_t index = path.find("Assets\\");
+		path = path.substr(index, path.size());
+
+		return FilePath(path);
+	}
+
+	return FilePath();
 }
 
 LRESULT CALLBACK WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp)

@@ -3,14 +3,10 @@
 
 #include <Apollo/ECS/EntityComponentFilter.h>
 
-#include <Diotima/Graphics/RenderTarget.h>
-#include <Diotima/Graphics/GFXMaterial.h>
-#include <Diotima/Graphics/GFXMesh.h>
-#include <Diotima/Graphics/GFXTexture2D.h>
-#include <Diotima/Shaders/ShaderPipeline.h>
-
 #include <Graphics/Material.h>
 #include <Graphics/Texture2D.h>
+#include <Graphics/IndexBuffer.h>
+#include <Graphics/VertexBuffer.h>
 
 #include <ECS/Components/CameraComponent.h>
 #include <ECS/Components/LightSourceComponent.h>
@@ -28,25 +24,6 @@
 
 static Vector4D sDefaultFragColor(0.25f, 0.25f, 0.25f, 1.0f);
 
-// Render helpers
-//-----------------------------------------
-Diotima::GFXShaderPipeline* gForwardShader;
-Diotima::GFXShaderPipeline* gDepthPassShader;
-
-// #TODO(Josh::See below)
-//////////////////////////////////////////////////////////////////////////
-// This is a problem. Maybe these shouldnt be resources at this level and instead we have a resource that
-// is the entire shader pipeline attached to the material... Maybe can store these as a renderer-distributed thing.
-ResourceHandle texVertShaderHandle;
-ResourceHandle texFragShaderHandle;
-
-ResourceHandle depthPassVertShaderHandle;
-ResourceHandle depthPassFragShaderHandle;
-//////////////////////////////////////////////////////////////////////////
-void CreateForwardShader();
-void CreateDepthPassShader();
-//-----------------------------------------
-
 RenderSystem::RenderSystem(Apollo::EntityHandler* const entityHandler)
 	: Apollo::EntitySystem(entityHandler)
 {
@@ -59,16 +36,12 @@ void RenderSystem::Initialize()
 	InternalGetComponentFilter().AddFilterType<MeshComponent>();
 
 	RegisterForComponentNotifications();
-
-	CreateForwardShader();
-	CreateDepthPassShader();
-
-	RZE_Application::RZE().GetRenderer().mForwardShader = gForwardShader;
-	RZE_Application::RZE().GetRenderer().mDepthPassShader = gDepthPassShader;
 }
 
 void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
-{	BROFILER_CATEGORY("RenderSystem::Update", Profiler::Color::Yellow)
+{
+	OPTICK_EVENT();
+
 	Apollo::EntityHandler& handler = InternalGetEntityHandler();
 	Diotima::Renderer& renderer = RZE_Application::RZE().GetRenderer();
 
@@ -82,29 +55,58 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 	Diotima::Renderer::CameraItemProtocol camera;
 	camera.ProjectionMat = camComp->ProjectionMat;
 	camera.ViewMat = camComp->ViewMat;
+	camera.Position = transfComp->Position;
 	renderer.SetCamera(camera);
 	
-	//Perseus::Job::Task work([this, entities, transfComp, &renderer, &handler]()
+	size_t jobSize = entities.size() / 2;
+	std::vector<Apollo::EntityID> workItems0;
+	workItems0.reserve(jobSize);
+	std::copy(entities.begin(), entities.begin() + jobSize, std::back_inserter(workItems0));
+	Perseus::Job::Task work0([this, workItems0, &renderer, &handler]()
 	{
-		for (auto& entity : entities)
+		OPTICK_EVENT("RenderSystem Matrix Update 0");
+ 		for (auto& entity : workItems0)
+ 		{
+ 			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
+ 
+ 			Diotima::Renderer::RenderItemProtocol& item = renderer.GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
+ 			item.ModelMatrix = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
+ 		}
+	});
+
+	std::vector<Apollo::EntityID> workItems1;
+	workItems1.reserve(jobSize);
+	std::copy(entities.begin() + jobSize, entities.end(), std::back_inserter(workItems1));
+	Perseus::Job::Task work1([this, workItems1, &renderer, &handler]()
+	{
+		OPTICK_EVENT("RenderSystem Matrix Update 1");
+		for (auto& entity : workItems1)
 		{
 			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
 
 			Diotima::Renderer::RenderItemProtocol& item = renderer.GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
 			item.ModelMatrix = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
 		}
-	}/*)*/;
-	//Perseus::JobScheduler::Get().PushJob(work);
+	});
+
+	Perseus::JobScheduler::Get().PushJob(work0);
+	Perseus::JobScheduler::Get().PushJob(work1);
+	Perseus::JobScheduler::Get().Wait();
 
 	Functor<void, Apollo::EntityID> LightSourceFunc([this, &handler, &renderer](Apollo::EntityID entity)
 	{
+		LightSourceComponent* const lightComp = handler.GetComponent<LightSourceComponent>(entity);
 		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
+
 		Diotima::Renderer::LightItemProtocol& item = renderer.GetLightProtocolByIdx(mLightItemEntityMap[entity]);
 
-		Matrix4x4 orthoProj = Matrix4x4::CreateOrthoMatrix(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 100.0f);
+		Matrix4x4 orthoProj = Matrix4x4::CreateOrthoMatrix(-10.0f, 10.0f, -10.0f, 10.0f, -50.0f, 50.0f);
 		Matrix4x4 lightView = Matrix4x4::CreateViewMatrix(transfComp->Position, Vector3D(), Vector3D(0.0f, 1.0f, 0.0f));
 
 		item.LightSpaceMatrix = orthoProj * lightView;
+		item.Color = lightComp->Color;
+		item.Strength = lightComp->Strength;
+		item.LightType = static_cast<Diotima::Renderer::ELightType>(lightComp->LightType);
 		item.Position = transfComp->Position;
 	});
 	handler.ForEach<LightSourceComponent, TransformComponent>(LightSourceFunc);
@@ -112,37 +114,6 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 
 void RenderSystem::ShutDown()
 {
-}
-
-// #TODO(Josh::The concept of a render-side material seems faulty. Maybe set it up as a set of parameters for the shader/pass)
-Diotima::GFXMaterial* TEMPHACK_ConvertMaterialToGPUMaterial(const Material& material)
-{
-	Diotima::GFXMaterial* pMaterial = new Diotima::GFXMaterial();
-	if (material.HasDiffuse())
-	{
-		const Texture2D& diffuse = material.GetDiffuse();
-		Diotima::GFXTexture2D* gpuTexture = new Diotima::GFXTexture2D(diffuse.GetRawData(), static_cast<U32>(diffuse.GetDimensions().X()), static_cast<U32>(diffuse.GetDimensions().Y()), 0, Diotima::ETextureType::Diffuse);
-		pMaterial->AddTexture(gpuTexture);
-	}
-
-	if (material.HasSpecular())
-	{
-		const Texture2D& specular = material.GetSpecular();
-		Diotima::GFXTexture2D* gpuTexture = new Diotima::GFXTexture2D(specular.GetRawData(), static_cast<U32>(specular.GetDimensions().X()), static_cast<U32>(specular.GetDimensions().Y()), 0, Diotima::ETextureType::Specular);
-		pMaterial->AddTexture(gpuTexture);
-	}
-
-	if (material.HasNormal())
-	{
-		const Texture2D& normal = material.GetNormal();
-		Diotima::GFXTexture2D* gpuTexture = new Diotima::GFXTexture2D(normal.GetRawData(), static_cast<U32>(normal.GetDimensions().X()), static_cast<U32>(normal.GetDimensions().Y()), 0, Diotima::ETextureType::Normal);
-		pMaterial->AddTexture(gpuTexture);
-	}
-
-	pMaterial->Shininess = material.Shininess;
-	pMaterial->Opacity = material.Opacity;
-
-	return pMaterial;
 }
 
 void RenderSystem::RegisterForComponentNotifications()
@@ -153,7 +124,9 @@ void RenderSystem::RegisterForComponentNotifications()
 	// MeshComponent
 	//
 	Apollo::EntityHandler::ComponentAddedFunc OnMeshComponentAdded([this, &handler](Apollo::EntityID entityID)
-	{	BROFILER_EVENT("RenderSystem::OnMeshComponentAdded");
+	{	
+		OPTICK_EVENT("RenderSystem::OnMeshComponentAdded");
+
 		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entityID);
 		AssertNotNull(meshComp);
 		meshComp->Resource = RZE_Application::RZE().GetResourceHandler().RequestResource<Model3D>(meshComp->ResourcePath);
@@ -162,21 +135,86 @@ void RenderSystem::RegisterForComponentNotifications()
 		{
 			Model3D* const modelData = RZE_Application::RZE().GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
 
-			std::vector<Diotima::GFXMesh*> gpuMeshes;
-			gpuMeshes.reserve(modelData->GetStaticMesh().GetSubMeshes().size());
-			for (const MeshGeometry& meshGeometry : modelData->GetStaticMesh().GetSubMeshes())
-			{
-				gpuMeshes.push_back(meshGeometry.GetGPUMesh());
-				gpuMeshes.back()->SetMaterial(TEMPHACK_ConvertMaterialToGPUMaterial(meshGeometry.GetMaterial()));
-			}
 			Diotima::Renderer::RenderItemProtocol item;
-			item.MeshData = std::move(gpuMeshes);
+			for (const MeshGeometry& mesh : modelData->GetStaticMesh().GetSubMeshes())
+			{
+				Diotima::Renderer::RenderItemMeshData meshData;
+				meshData.VertexBuffer = mesh.GetVertexBuffer();
+				meshData.IndexBuffer = mesh.GetIndexBuffer();
 
+				AssertExpr(mesh.GetMaterial().HasDiffuse());
+				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetDiffuse().GetTextureBufferID(), Diotima::Renderer::ETextureType::Diffuse);
+				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetSpecular().GetTextureBufferID(), Diotima::Renderer::ETextureType::Specular);
+				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetNormal().GetTextureBufferID(), Diotima::Renderer::ETextureType::Normal);
+
+				Diotima::Renderer::RenderItemMaterialDesc matDesc;
+				matDesc.Shininess = mesh.GetMaterial().Shininess;
+
+				meshData.Material = matDesc;
+
+				item.MeshData.push_back(meshData);
+			}
 			Int32 itemIdx = RZE_Application::RZE().GetRenderer().AddRenderItem(item);
 			mRenderItemEntityMap[entityID] = itemIdx;
 		}
 	});
 	handler.RegisterForComponentAddNotification<MeshComponent>(OnMeshComponentAdded);
+
+	Apollo::EntityHandler::ComponentRemovedFunc OnMeshComponentRemoved([this, &handler](Apollo::EntityID entityID)
+	{
+		// #TODO(Josh) Is this the best way? Should the component hold logic to clean itself up or should it be entirely just data and the systems worry about cleanup?
+		//					[Answer]  Current thoughts leave it this way, absolutely logic should be left to the systems. Impose a proper lifecycle protocol.
+		MeshComponent* const meshComponent = handler.GetComponent<MeshComponent>(entityID);
+		AssertNotNull(meshComponent);
+
+		RZE_Application::RZE().GetResourceHandler().ReleaseResource(meshComponent->Resource);
+
+		Int32 renderIndex = mRenderItemEntityMap[entityID];
+		RZE_Application::RZE().GetRenderer().RemoveRenderItem(renderIndex);
+		mRenderItemEntityMap[entityID] = -1;
+	});
+	handler.RegisterForComponentRemovedNotification<MeshComponent>(OnMeshComponentRemoved);
+
+	//#TODO(Should make a function that does the common work here since this is exactly the same for added mesh except we modify existing RenderItem instead of creating one)
+	Apollo::EntityHandler::ComponentModifiedFunc OnMeshComponentModified([this, &handler](Apollo::EntityID entityID)
+	{
+		OPTICK_EVENT("RenderSystem::OnMeshComponentModified");
+
+		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entityID);
+		AssertNotNull(meshComp);
+		// #TODO(Doing this here because ResourceHandle lifetime is buggy (copies/moves/etc))
+		RZE_Application::RZE().GetResourceHandler().ReleaseResource(meshComp->Resource);
+		meshComp->Resource = RZE_Application::RZE().GetResourceHandler().RequestResource<Model3D>(meshComp->ResourcePath);
+
+		if (meshComp->Resource.IsValid())
+		{
+			Int32 renderIndex = mRenderItemEntityMap[entityID];
+			Diotima::Renderer::RenderItemProtocol& renderItem = RZE_Application::RZE().GetRenderer().GetItemProtocolByIdx(renderIndex);
+			renderItem.MeshData.clear();
+
+			Model3D* const modelData = RZE_Application::RZE().GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
+
+			for (const MeshGeometry& mesh : modelData->GetStaticMesh().GetSubMeshes())
+			{
+				Diotima::Renderer::RenderItemMeshData meshData;
+				meshData.VertexBuffer = mesh.GetVertexBuffer();
+				meshData.IndexBuffer = mesh.GetIndexBuffer();
+
+				AssertExpr(mesh.GetMaterial().HasDiffuse());
+				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetDiffuse().GetTextureBufferID(), Diotima::Renderer::ETextureType::Diffuse);
+				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetSpecular().GetTextureBufferID(), Diotima::Renderer::ETextureType::Specular);
+				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetNormal().GetTextureBufferID(), Diotima::Renderer::ETextureType::Normal);
+
+				Diotima::Renderer::RenderItemMaterialDesc matDesc;
+				matDesc.Shininess = mesh.GetMaterial().Shininess;
+
+				meshData.Material = matDesc;
+
+				renderItem.MeshData.push_back(meshData);
+			}
+		}
+	});
+	handler.RegisterForComponentModifiedNotification<MeshComponent>(OnMeshComponentModified);
 
 	// LightSourceComponent
 	Apollo::EntityHandler::ComponentAddedFunc OnLightSourceComponentAdded([this, &handler](Apollo::EntityID entityID)
@@ -185,6 +223,7 @@ void RenderSystem::RegisterForComponentNotifications()
 		AssertNotNull(lightComp);
 
 		Diotima::Renderer::LightItemProtocol item;
+		item.LightType = static_cast<Diotima::Renderer::ELightType>(lightComp->LightType);
 		item.Color = lightComp->Color;
 		item.Strength = lightComp->Strength;
 
@@ -192,6 +231,14 @@ void RenderSystem::RegisterForComponentNotifications()
 		mLightItemEntityMap[entityID] = itemIdx;
 	});
 	handler.RegisterForComponentAddNotification<LightSourceComponent>(OnLightSourceComponentAdded);
+
+	Apollo::EntityHandler::ComponentRemovedFunc OnLightSourceComponentRemoved([this, &handler](Apollo::EntityID entityID)
+	{
+		Int32 lightIndex = mLightItemEntityMap[entityID];
+		RZE_Application::RZE().GetRenderer().RemoveLightItem(lightIndex);
+		mLightItemEntityMap[entityID] = -1;
+	});
+	handler.RegisterForComponentRemovedNotification<LightSourceComponent>(OnLightSourceComponentRemoved);
 
 	//
 	// CameraComponent
@@ -209,81 +256,10 @@ void RenderSystem::RegisterForComponentNotifications()
 		camComp->AspectRatio = RZE_Application::RZE().GetWindowSize().X() / RZE_Application::RZE().GetWindowSize().Y();
 	});
 	handler.RegisterForComponentAddNotification<CameraComponent>(OnCameraComponentAdded);
-
-	Apollo::EntityHandler::ComponentRemovedFunc OnMeshComponentRemoved([this, &handler](Apollo::EntityID entityID)
-	{
-		// #TODO(Josh) Is this the best way? Should the component hold logic to clean itself up or should it be entirely just data and the systems worry about cleanup?
-		//					[Answer]  Current thoughts leave it this way, absolutely logic should be left to the systems. Impose a proper lifecycle protocol.
-		MeshComponent* const meshComponent = handler.GetComponent<MeshComponent>(entityID);
-		AssertNotNull(meshComponent);
-
-		RZE_Application::RZE().GetResourceHandler().ReleaseResource(meshComponent->Resource);
-
-		Int32 renderIndex = mRenderItemEntityMap[entityID];
-		RZE_Application::RZE().GetRenderer().RemoveRenderItem(renderIndex);
-		mRenderItemEntityMap[entityID] = -1;
-	});
-	handler.RegisterForComponentRemovedNotification<MeshComponent>(OnMeshComponentRemoved);
 }
 
 void RenderSystem::GenerateCameraMatrices(CameraComponent& cameraComponent, const TransformComponent& transformComponent)
 {
-	cameraComponent.AspectRatio = static_cast<float>(RZE_Application::RZE().GetApplication().GetRenderTarget().GetWidth()) / static_cast<float>(RZE_Application::RZE().GetApplication().GetRenderTarget().GetHeight());
 	cameraComponent.ProjectionMat = Matrix4x4::CreatePerspectiveMatrix(cameraComponent.FOV, cameraComponent.AspectRatio, cameraComponent.NearCull, cameraComponent.FarCull);
 	cameraComponent.ViewMat = Matrix4x4::CreateViewMatrix(transformComponent.Position, transformComponent.Position + cameraComponent.Forward, cameraComponent.UpDir);
-}
-
-
-
-// -------------------------------------------------------------------------------
-
-
-
-/////////////
-/////////// These are just dev helpers until the time of the great render comes along
-//////
-void CreateForwardShader()
-{
-	const FilePath vertShaderFilePath("Assets/Shaders/TextureVert.shader");
-	const FilePath fragShaderFilePath("Assets/Shaders/TextureFrag.shader");
-
-	texVertShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "TextureVertShader");
-	texFragShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "TextureFragShader");
-
-	Diotima::GFXShader* vertShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(texVertShaderHandle);
-	vertShader->Create();
-	vertShader->Compile();
-
-	Diotima::GFXShader* fragShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(texFragShaderHandle);
-	fragShader->Create();
-	fragShader->Compile();
-
-	gForwardShader = new Diotima::GFXShaderPipeline("TextureShader");
-	gForwardShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Vertex, vertShader);
-	gForwardShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Fragment, fragShader);
-
-	gForwardShader->GenerateShaderProgram();
-}
-
-void CreateDepthPassShader()
-{
-	const FilePath vertShaderFilePath("Assets/Shaders/DepthVert.shader");
-	const FilePath fragShaderFilePath("Assets/Shaders/EmptyFrag.shader");
-
-	depthPassVertShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(vertShaderFilePath, EGLShaderType::Vertex, "DepthPassVertShader");
-	depthPassFragShaderHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Diotima::GFXShader>(fragShaderFilePath, EGLShaderType::Fragment, "DepthPassFragShader");
-
-	Diotima::GFXShader* vertShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(depthPassVertShaderHandle);
-	vertShader->Create();
-	vertShader->Compile();
-
-	Diotima::GFXShader* fragShader = RZE_Application::RZE().GetResourceHandler().GetResource<Diotima::GFXShader>(depthPassFragShaderHandle);
-	fragShader->Create();
-	fragShader->Compile();
-
-	gDepthPassShader = new Diotima::GFXShaderPipeline("DepthPassShaderPipeline");
-	gDepthPassShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Vertex, vertShader);
-	gDepthPassShader->AddShader(Diotima::GFXShaderPipeline::EShaderIndex::Fragment, fragShader);
-
-	gDepthPassShader->GenerateShaderProgram();
 }

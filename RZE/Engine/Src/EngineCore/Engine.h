@@ -46,6 +46,8 @@ public:
 	Diotima::Renderer&			GetRenderer();
 	GameScene&					GetActiveScene();
 
+	// #TODO(Should probably put the window in the app..)
+	FilePath ShowOpenFilePrompt();
 
 	inline double GetDeltaTime() const { return mDeltaTime; }
 	
@@ -70,6 +72,7 @@ private:
 	void CompileEvents();
 
 	void RegisterWindowEvents();
+	void RegisterKeyEvents();
 	void RegisterEngineComponentTypes();
 
 	void LoadEngineConfig();

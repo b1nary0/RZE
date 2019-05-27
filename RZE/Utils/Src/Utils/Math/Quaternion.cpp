@@ -16,7 +16,7 @@ Quaternion::Quaternion(const float x, const float y, const float z, const float 
 
 Quaternion::Quaternion(const Vector3D& angles)
 {
-	Vector3D anglesInRadians(angles.X() * MathUtils::ToRadians, angles.Y() * MathUtils::ToRadians, angles.Z() * MathUtils::ToRadians);
+	Vector3D anglesInRadians = angles * MathUtils::ToRadians;
 	mQuat = anglesInRadians.GetInternalVec();
 }
 

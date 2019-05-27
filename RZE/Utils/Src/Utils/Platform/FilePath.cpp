@@ -13,9 +13,13 @@ FilePath::FilePath(const std::string& path)
 	std::replace(execPath.begin(), execPath.end(), '\\', '/');
 	size_t pos = execPath.find_last_of('/');
 	std::string newpath = execPath.substr(0, pos + 1);
+
+	// #TODO(This is just for std::replace, but should be dealt with later)
+	std::string pathCpy = path;
+	std::replace(pathCpy.begin(), pathCpy.end(), '\\', '/');
 	
-	mAbsolutePath = newpath + path;
-	mRelativePath = path;
+	mAbsolutePath = newpath + pathCpy;
+	mRelativePath = pathCpy;
 }
 
 FilePath::~FilePath()
@@ -47,5 +51,6 @@ const std::string FilePath::GetRelativeDirectoryPath() const
 
 bool FilePath::IsValid()
 {
+	// #TODO(This is an absolutely stupid but still relevant condition)
 	return !mAbsolutePath.empty();
 }

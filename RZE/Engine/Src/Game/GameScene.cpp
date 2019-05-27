@@ -6,6 +6,7 @@
 #include <ECS/Components/MeshComponent.h>
 #include <ECS/Components/NameComponent.h>
 #include <ECS/Components/TransformComponent.h>
+#include <ECS/Systems/LifetimeSystem.h>
 #include <ECS/Systems/RenderSystem.h>
 
 #include <RapidJSON/document.h>
@@ -26,7 +27,14 @@ void GameScene::Initialize()
 {
 	mEntityHandler.Initialize();
 
+	// #TODO(Josh::This is the order of update. Need to make it so we can call these whenever)
+	mEntityHandler.AddSystem<LifetimeSystem>();
 	mEntityHandler.AddSystem<RenderSystem>();
+}
+
+void GameScene::NewScene()
+{
+	Load(FilePath("Assets/Scenes/Default.scene"));
 }
 
 void GameScene::Load(FilePath filePath)
@@ -44,7 +52,9 @@ void GameScene::Load(FilePath filePath)
 	//
 	Clear();
 
-	File sceneFile(filePath.GetAbsolutePath());
+	mCurrentScenePath = filePath;
+
+	File sceneFile(mCurrentScenePath.GetAbsolutePath());
 	AssertExpr(sceneFile.IsValid());
 	sceneFile.Close();
 
@@ -69,7 +79,7 @@ void GameScene::Load(FilePath filePath)
 					rapidjson::Value& memVal = comp->value;
 					Vector3D position(memVal["Position"][0].GetFloat(), memVal["Position"][1].GetFloat(), memVal["Position"][2].GetFloat());
 					Vector3D scale(memVal["Scale"][0].GetFloat(), memVal["Scale"][1].GetFloat(), memVal["Scale"][2].GetFloat());
-					Quaternion rotation(Vector3D(memVal["Rotation"][0].GetFloat(), memVal["Rotation"][1].GetFloat(), memVal["Rotation"][2].GetFloat()));
+					Vector3D rotation(memVal["Rotation"][0].GetFloat(), memVal["Rotation"][1].GetFloat(), memVal["Rotation"][2].GetFloat());
 
 					GetEntityHandler().AddComponent<TransformComponent>(id, position, rotation, scale);
 				}
@@ -85,10 +95,12 @@ void GameScene::Load(FilePath filePath)
 				if (comp != comVal.MemberEnd())
 				{
 					rapidjson::Value& memVal = comp->value;
+
+					ELightType lightType = static_cast<ELightType>(memVal["LightType"].GetUint());
 					Vector3D color(memVal["Color"][0].GetFloat(), memVal["Color"][1].GetFloat(), memVal["Color"][2].GetFloat());
 					float strength = memVal["Strength"].GetFloat();
 
-					GetEntityHandler().AddComponent<LightSourceComponent>(id, color, strength);
+					GetEntityHandler().AddComponent<LightSourceComponent>(id, lightType, color, strength);
 				}
 
 				comp = comVal.FindMember("CameraComponent");
@@ -125,6 +137,21 @@ Apollo::EntityID GameScene::CreateEntity(const std::string& name)
 	return newEnt;
 }
 
+void GameScene::DestroyEntity(Apollo::EntityID entity)
+{
+	mEntityHandler.DestroyEntity(entity);
+
+	auto it = std::remove_if(mEntityEntries.begin(), mEntityEntries.end(), [&entity](SceneEntryTemp& entry)
+	{
+		return entry.ID == entity;
+	});
+
+	if (it != mEntityEntries.end())
+	{
+		mEntityEntries.erase(it);
+	}
+}
+
 void GameScene::AddToScene(Apollo::EntityID entityID, const std::string& name)
 {
 	mEntityEntries.emplace_back();
@@ -149,7 +176,9 @@ void GameScene::Start()
 }
 
 void GameScene::Update()
-{	BROFILER_CATEGORY("GameScene::Update", Profiler::Color::Blue)
+{
+	OPTICK_EVENT();
+
 	mEntityHandler.Update();
 }
 

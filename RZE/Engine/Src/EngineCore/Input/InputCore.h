@@ -24,8 +24,8 @@ namespace EMouseButton
 	enum T : Int32
 	{
 		MouseButton_Left,
-		MouseButton_Middle,
 		MouseButton_Right,
+		MouseButton_Middle,
 		MouseButton_Move
 	};
 }
@@ -55,13 +55,13 @@ public:
 		: mDisplayName(' ')
 		, mKeyCode(-1) {}
 
-	InputKey(const char displayName, Int32 keyCode);
+	InputKey(U8 displayName, Int32 keyCode);
 
 	Int32 GetKeyCode() const { return mKeyCode; }
 
 	inline bool IsValid() const { return mKeyCode >= 0; }
 
 private:
-	char mDisplayName;
+	U8 mDisplayName;
 	Int32 mKeyCode;
 };
