@@ -8,6 +8,7 @@
 namespace Editor
 {
 	EditorApp::EditorApp()
+		: bUIDisabled(false)
 	{
 	}
 
@@ -36,13 +37,16 @@ namespace Editor
 	{
 		OPTICK_EVENT();
 
-		ImGui::PushFont(mFontMapping.at("ubuntu_regular"));
+		if (!UIDisabled())
+		{
+			ImGui::PushFont(mFontMapping.at("ubuntu_regular"));
 
-		DisplayMenuBar();
-		HandleGeneralContextMenu();
+			DisplayMenuBar();
+			HandleGeneralContextMenu();
 
-		ResolvePanelState();
-		ImGui::PopFont();
+			ResolvePanelState();
+			ImGui::PopFont();
+		}
 	}
 
 	void EditorApp::ShutDown()
@@ -51,6 +55,14 @@ namespace Editor
 
 	void EditorApp::RegisterInputEvents(InputHandler& inputHandler)
 	{
+		Functor<void, const InputKey&> keyFunc([this](const InputKey & key)
+		{
+			if (key.GetKeyCode() == Win32KeyCode::F1)
+			{
+				DisableUI(!bUIDisabled);
+			}
+		});
+		inputHandler.BindAction(Win32KeyCode::F1, EButtonState::ButtonState_Pressed, keyFunc);
 	}
 
 	void EditorApp::SetFont(const char* fontName)
@@ -215,6 +227,16 @@ namespace Editor
 		style.Colors[ImGuiCol_Header] = ImVec4(0.25f, 0.25f, 0.25f, 1.0f);
 		style.Colors[ImGuiCol_HeaderActive] = ImVec4(0.3f, 0.3f, 0.3f, 1.0f);
 		style.Colors[ImGuiCol_HeaderHovered] = ImVec4(0.3f, 0.3f, 0.3f, 1.0f);
+	}
+
+	void EditorApp::DisableUI(bool enable)
+	{
+		bUIDisabled = enable;
+	}
+
+	bool EditorApp::UIDisabled()
+	{
+		return bUIDisabled;
 	}
 
 }

@@ -55,7 +55,6 @@ bool RZE_Application::ProcessInput(const InputHandler& handler)
 
 void RZE_Application::RegisterInputEvents(InputHandler& inputHandler)
 {
-
 }
 
 void RZE_Application::Initialize()

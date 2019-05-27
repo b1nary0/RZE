@@ -39,11 +39,16 @@ namespace Editor
 		void LoadFonts();
 		void StyleSetup();
 
+		void DisableUI(bool enable);
+		bool UIDisabled();
+
 	private:
 		PanelStates mPanelStates;
 
 		ScenePanel mScenePanel;
 
 		std::unordered_map<std::string, ImFont*> mFontMapping;
+
+		bool bUIDisabled;
 	};
 }
