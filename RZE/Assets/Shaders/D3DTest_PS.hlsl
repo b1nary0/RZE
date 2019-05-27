@@ -168,6 +168,7 @@ float4 PSMain(PS_IN input) : SV_TARGET
 		float3 specularResult = specular * lightStrength * light.Color.rgb;
 		
 		float shadow = CalculateShadowFromDepthMap(light, input.FragPos, normal, lightDir);
+		specularResult *= 1.0f - shadow;
 
 		float3 result = (diffSample.rgb * ((ambientResult + diffuseResult * (1.0f - shadow))) + (specularResult * specularSample.rgb));
 		lightAccum += result;
