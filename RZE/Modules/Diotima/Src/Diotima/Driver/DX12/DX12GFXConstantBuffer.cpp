@@ -56,6 +56,14 @@ namespace Diotima
 		return allocData;
 	}
 
+	CBAllocationData DX12GFXConstantBuffer::GetBufferStart()
+	{
+		CBAllocationData allocData;
+		allocData.GPUBaseAddr = mUploadBuffer->GetGPUVirtualAddress();
+		allocData.SizeInBytes = mBufferSize;
+		return allocData;
+	}
+
 	void DX12GFXConstantBuffer::Reset()
 	{
 		mNumAllocations = 0;

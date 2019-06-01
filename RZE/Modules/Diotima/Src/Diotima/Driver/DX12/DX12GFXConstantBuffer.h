@@ -19,6 +19,8 @@ namespace Diotima
 		void Allocate(size_t memberSize, U32 maxMembers);
 		CBAllocationData AllocateMember(const void* data);
 
+		CBAllocationData GetBufferStart();
+
 		void Reset();
 
 	public:
