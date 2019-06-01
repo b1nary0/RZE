@@ -222,7 +222,7 @@ namespace Diotima
 
 	void Renderer::EnableVsync(bool bEnabled)
 	{
-		
+		mDevice->SetSyncInterval(static_cast<U32>(bEnabled));
 	}
 
 	void Renderer::SetMSAASampleCount(U32 sampleCount)

@@ -76,6 +76,8 @@ namespace Diotima
 
 		void WaitForPreviousFrame();
 
+		void SetSyncInterval(U32 syncInterval);
+
 		void SetMSAASampleCount(U32 sampleCount);
 		U32 GetMSAASampleCount();
 
@@ -141,5 +143,6 @@ namespace Diotima
 		std::vector<ComPtr<ID3D12GraphicsCommandList>> mGraphicsCommandLists;
 
 		U32 mSampleCount;
+		U32 mSyncInterval;
 	};
 }

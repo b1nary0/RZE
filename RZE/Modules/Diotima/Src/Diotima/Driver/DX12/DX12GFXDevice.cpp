@@ -162,7 +162,7 @@ namespace Diotima
 
 	void DX12GFXDevice::Present()
 	{
-		mSwapChain->Present(1, 0);
+		mSwapChain->Present(mSyncInterval, 0);
 
 		WaitForPreviousFrame();
 	}
@@ -570,6 +570,11 @@ namespace Diotima
 		mMSAARenderTarget.Reset();
 		mMSAARTVDescriptorHeap.Reset();
 		InitializeMSAA(newWidth, newHeight);
+	}
+
+	void DX12GFXDevice::SetSyncInterval(U32 syncInterval)
+	{
+		mSyncInterval = syncInterval;
 	}
 
 }
