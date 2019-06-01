@@ -94,13 +94,13 @@ namespace Diotima
 			const U32* lightCounts = mRenderer->GetLightCounts();
 			PrepareLights(lights, lightCounts);
 
-			CBAllocationData lighBufferStart = mDevice->GetConstantBuffer(mLightConstantBuffer)->GetBufferStart();
+			CBAllocationData lightBufferStart = mDevice->GetConstantBuffer(mLightConstantBuffer)->GetBufferStart();
 			CBAllocationData perFrameShaderBufferStart = mDevice->GetConstantBuffer(mPerFramePixelShaderConstants)->GetBufferStart();
 
 			ID3D12DescriptorHeap* ppDescHeaps[] = { mDevice->GetTextureHeap() };
 			commandList->SetDescriptorHeaps(_countof(ppDescHeaps), ppDescHeaps);
 
-			commandList->SetGraphicsRootConstantBufferView(2, lighBufferStart.GPUBaseAddr);
+			commandList->SetGraphicsRootConstantBufferView(2, lightBufferStart.GPUBaseAddr);
 			commandList->SetGraphicsRootConstantBufferView(5, perFrameShaderBufferStart.GPUBaseAddr);
 
 			commandList->SetGraphicsRoot32BitConstants(1, 3, &camera.Position.GetInternalVec(), 0);
