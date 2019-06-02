@@ -26,6 +26,7 @@ static Vector4D sDefaultFragColor(0.25f, 0.25f, 0.25f, 1.0f);
 
 RenderSystem::RenderSystem(Apollo::EntityHandler* const entityHandler)
 	: Apollo::EntitySystem(entityHandler)
+	, mMainCameraEntity(Apollo::kInvalidEntityID)
 {
 
 }
@@ -248,14 +249,41 @@ void RenderSystem::RegisterForComponentNotifications()
 		CameraComponent* const camComp = handler.GetComponent<CameraComponent>(entityID);
 		AssertNotNull(camComp);
 
-		// #TODO(Josh) Will/should be removed when a better tracking system for main cameras exist. For now since we're only working with one camera
-		// for the forseeable future, its fine.
+		if (mMainCameraEntity != Apollo::kInvalidEntityID)
+		{
+			CameraComponent* const currentCamera = handler.GetComponent<CameraComponent>(mMainCameraEntity);
+			AssertNotNull(currentCamera);
+
+			currentCamera->bIsActiveCamera = false;
+		}
+
+		// #NOTE(For now, the last camera added becomes the main camera.)
 		mMainCameraEntity = entityID;
 		camComp->bIsActiveCamera = true;
 
 		camComp->AspectRatio = RZE_Application::RZE().GetWindowSize().X() / RZE_Application::RZE().GetWindowSize().Y();
 	});
 	handler.RegisterForComponentAddNotification<CameraComponent>(OnCameraComponentAdded);
+
+	Apollo::EntityHandler::ComponentModifiedFunc OnCameraComponentModified([this, &handler](Apollo::EntityID entityID)
+	{
+		CameraComponent* const camComp = handler.GetComponent<CameraComponent>(entityID);
+		AssertNotNull(camComp);
+
+		if (camComp->bIsActiveCamera)
+		{
+			if (mMainCameraEntity != Apollo::kInvalidEntityID)
+			{
+				CameraComponent* const currentCamera = handler.GetComponent<CameraComponent>(mMainCameraEntity);
+				AssertNotNull(currentCamera);
+
+				currentCamera->bIsActiveCamera = false;
+			}
+
+			mMainCameraEntity = entityID;
+		}
+	});
+	handler.RegisterForComponentModifiedNotification<CameraComponent>(OnCameraComponentModified);
 }
 
 void RenderSystem::GenerateCameraMatrices(CameraComponent& cameraComponent, const TransformComponent& transformComponent)

@@ -11,7 +11,7 @@ namespace Apollo
 
 	EntityHandler::EntityHandler()
 	{
-		mNextAvailEntityID = 0;
+		mNextAvailEntityID = 1;
 		mCapacity = 0;
 		mSize = 0;
 

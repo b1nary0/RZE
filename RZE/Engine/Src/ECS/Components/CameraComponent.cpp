@@ -4,6 +4,12 @@
 void CameraComponent::OnEditorInspect(Apollo::EntityID entityID)
 {
 	ImGui::Checkbox("Main Camera", &bIsActiveCamera);
+
+	if (ImGui::IsItemEdited())
+	{
+		RZE_Application::RZE().GetActiveScene().GetEntityHandler().OnComponentModified<CameraComponent>(entityID);
+	}
+
 	ImGui::Text("Field Of View");
 	ImGui::InputFloat("##cameracomponent_fov", &FOV, 0.05f, 0.5f, "%.2f", ImGuiInputTextFlags_EnterReturnsTrue);
 	

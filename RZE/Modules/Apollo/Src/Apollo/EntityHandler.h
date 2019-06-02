@@ -20,6 +20,8 @@
 
 namespace Apollo
 {
+	const U32 kInvalidEntityID = 0;
+
 	class EntityHandler
 	{
 	private:
