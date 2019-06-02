@@ -164,13 +164,13 @@ float4 PSMain(PS_IN input) : SV_TARGET
 		
 		float lightStrength = light.Strength;
 		
-		float3 diffuseResult = light.Color.rgb * lightStrength;
+		float3 diffuseResult = light.Color.rgb * lightStrength * diffSample.rgb;
 		float3 specularResult = specular * lightStrength * light.Color.rgb;
 		
 		float shadow = CalculateShadowFromDepthMap(light, input.FragPos, normal, lightDir);
 		specularResult *= 1.0f - shadow;
 
-		float3 result = (diffSample.rgb * (ambientResult + (diffuseResult * (1.0f - shadow))) + (specularResult * specularSample.rgb));
+		float3 result = (ambientResult + (diffuseResult * (1.0f - shadow))) + (specularResult * specularSample.rgb);
 		lightAccum += result;
 	}
 
@@ -185,10 +185,10 @@ float4 PSMain(PS_IN input) : SV_TARGET
 		
 		float lightStrength = CalculatePointLight(input.FragPos, light.Position, normal, viewDir, light.Strength);
 		
-		float3 diffuseResult = light.Color.rgb * lightStrength;
+		float3 diffuseResult = light.Color.rgb * lightStrength * diffSample.rgb;
 		float3 specularResult = specular * lightStrength * light.Color.rgb;
 		
-		float3 result = (diffSample.rgb * (ambientResult + diffuseResult)) + (specularResult * specularSample.rgb);
+		float3 result = (ambientResult + (diffuseResult * (1.0f - shadow))) + (specularResult * specularSample.rgb);
 		lightAccum += result;
 	}
 
