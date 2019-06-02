@@ -289,5 +289,5 @@ void RenderSystem::RegisterForComponentNotifications()
 void RenderSystem::GenerateCameraMatrices(CameraComponent& cameraComponent, const TransformComponent& transformComponent)
 {
 	cameraComponent.ProjectionMat = Matrix4x4::CreatePerspectiveMatrix(cameraComponent.FOV, cameraComponent.AspectRatio, cameraComponent.NearCull, cameraComponent.FarCull);
-	cameraComponent.ViewMat = Matrix4x4::CreateViewMatrix(transformComponent.Position, transformComponent.Position + cameraComponent.Forward, cameraComponent.UpDir);
+	cameraComponent.ViewMat = Matrix4x4::CreateViewMatrix(transformComponent.Position, cameraComponent.Forward, cameraComponent.UpDir);
 }
