@@ -284,6 +284,15 @@ void RenderSystem::RegisterForComponentNotifications()
 		}
 	});
 	handler.RegisterForComponentModifiedNotification<CameraComponent>(OnCameraComponentModified);
+
+	Apollo::EntityHandler::ComponentModifiedFunc OnCameraComponentRemoved([this, &handler](Apollo::EntityID entityID)
+	{
+		if (mMainCameraEntity == entityID)
+		{
+			mMainCameraEntity = Apollo::kInvalidEntityID;
+		}
+	});
+	handler.RegisterForComponentRemovedNotification<CameraComponent>(OnCameraComponentRemoved);
 }
 
 void RenderSystem::GenerateCameraMatrices(CameraComponent& cameraComponent, const TransformComponent& transformComponent)
