@@ -188,7 +188,7 @@ float4 PSMain(PS_IN input) : SV_TARGET
 		float3 diffuseResult = light.Color.rgb * lightStrength * diffSample.rgb;
 		float3 specularResult = specular * lightStrength * light.Color.rgb;
 		
-		float3 result = (ambientResult + (diffuseResult * (1.0f - shadow))) + (specularResult * specularSample.rgb);
+		float3 result = (ambientResult + diffuseResult) + (specularResult * specularSample.rgb);
 		lightAccum += result;
 	}
 
