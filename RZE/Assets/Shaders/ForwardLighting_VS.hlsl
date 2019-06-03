@@ -29,8 +29,8 @@ VS_OUT VSMain(VS_IN input) // main is the default function name
 	float3 fragPos = mul(ModelView, float4(input.Position, 1.0f)).xyz;
 	
 	output.Position = mul(CameraViewProjection, float4(fragPos, 1.0f));
-	output.Normal = mul(transpose(ModelViewInv), float4(input.Normal, 1.0f));
-	output.Tangent = mul(ModelView, input.Tangent);
+	output.Normal = mul(transpose(ModelViewInv), float4(input.Normal, 1.0f)).xyz;
+	output.Tangent = mul(ModelView, float4(input.Tangent, 1.0f)).xyz;
 	output.Color = input.Color;
 	output.FragPos = fragPos;
 	
