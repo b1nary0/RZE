@@ -326,8 +326,8 @@ namespace Diotima
 		U32 compileFlags = 0;
 #endif
 
-		FilePath vertexShaderFilePath("Assets/Shaders/D3DTest_VS.hlsl");
-		FilePath pixelShaderFilePath("Assets/Shaders/D3DTest_PS.hlsl");
+		FilePath vertexShaderFilePath("Assets/Shaders/ForwardLighting_VS.hlsl");
+		FilePath pixelShaderFilePath("Assets/Shaders/ForwardLighting_PS.hlsl");
 
 		ComPtr<ID3DBlob> error;
 
