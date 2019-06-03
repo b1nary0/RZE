@@ -137,7 +137,7 @@ float CalculateShadowFromDepthMap(LIGHT_INPUT_DESC light, float3 fragPos, float3
 
 float4 PSMain(PS_IN input) : SV_TARGET
 {
-	float ambientCoeff = 0.65f;
+	float ambientCoeff = 0.35f;
 	
 	float3 normal = normalize(input.Normal);
 	float3 tangent = normalize(input.Tangent);
@@ -165,12 +165,12 @@ float4 PSMain(PS_IN input) : SV_TARGET
 		float lightStrength = light.Strength;
 		
 		float3 diffuseResult = light.Color.rgb * lightStrength * diffSample.rgb;
-		float3 specularResult = specular * lightStrength * light.Color.rgb;
+		float3 specularResult = specular * lightStrength * light.Color.rgb * specularSample.rgb;
 		
 		float shadow = CalculateShadowFromDepthMap(light, input.FragPos, normal, lightDir);
 		specularResult *= 1.0f - shadow;
 
-		float3 result = (ambientResult + (diffuseResult * (1.0f - shadow))) + (specularResult * specularSample.rgb);
+		float3 result = (ambientResult + (diffuseResult * (1.0f - shadow))) + (specularResult);
 		lightAccum += result;
 	}
 
