@@ -8,6 +8,8 @@
 // #TODO(Josh::Really don't like this, change later)
 #include <Diotima/Driver/DX12/DX12AllocationData.h>
 
+#include <Diotima/RenderCommands.h>
+
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector2D.h>
 #include <Utils/PrimitiveDefs.h>
@@ -150,7 +152,14 @@ namespace Diotima
 		const Vector2D& GetCanvasSize();
 		void ResizeCanvas(const Vector2D& newSize);
 
-		// #TODO(Josh::Stand-ins for command infrastructure until DX12 rendering stabilized)
+	public:
+		U32 QueueCreateVertexBufferCommand(void* data, U32 numElements);
+		U32 QueueCreateIndexBufferCommand(void* data, U32 numElements);
+		U32 QueueCreateTextureCommand(ECreateTextureBufferType bufferType, void* data, U32 width, U32 height);
+
+		void ProcessCommands();
+
+	private:
 		U32 CreateVertexBuffer(void* data, U32 numElements);
 		U32 CreateIndexBuffer(void* data, U32 numElements);
 		U32 CreateTextureBuffer2D(void* data, U32 width, U32 height);
@@ -179,6 +188,11 @@ namespace Diotima
 		
 		// #TODO(Josh::Need this duplicated here and in the Device because it needs to be set prior to initialization)
 		U32 mMSAASampleCount;
+
+	private:
+		std::vector<CreateBufferRenderCommand> mVertexBufferCommandQueue;
+		std::vector<CreateBufferRenderCommand> mIndexBufferCommandQueue;
+		std::vector<CreateTextureBufferRenderCommand> mTextureBufferCommandQueue;
 
 		// DX12 Temp
 	private:

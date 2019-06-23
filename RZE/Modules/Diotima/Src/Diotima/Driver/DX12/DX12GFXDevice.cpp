@@ -577,4 +577,19 @@ namespace Diotima
 		mSyncInterval = syncInterval;
 	}
 
+	U32 DX12GFXDevice::GetVertexBufferCount() const
+	{
+		return mVertexBuffers.size();
+	}
+
+	U32 DX12GFXDevice::GetIndexBufferCount() const
+	{
+		return mIndexBuffers.size();
+	}
+
+	U32 DX12GFXDevice::GetTextureBufferCount() const
+	{
+		return m2DTextureBuffers.size();
+	}
+
 }

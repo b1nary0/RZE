@@ -43,6 +43,10 @@ namespace Diotima
 
 		U32 CreateGraphicsCommandList(ID3D12CommandAllocator* allocator, ID3D12PipelineState* pipelineState);
 
+		U32 GetVertexBufferCount() const;
+		U32 GetIndexBufferCount() const;
+		U32 GetTextureBufferCount() const;
+
 	public:
 		void Present();
 

@@ -94,6 +94,8 @@ namespace Diotima
 		mDevice->ResetCommandAllocator();
 		mDevice->ResetResourceCommandAllocator();
 
+		ProcessCommands();
+
 		PrepareDrawCalls();
 
 		{
@@ -229,8 +231,7 @@ namespace Diotima
 	{
 		mMSAASampleCount = sampleCount;
 	}
-
-
+	
 	const Vector2D& Renderer::GetCanvasSize()
 	{
 		return mCanvasSize;
@@ -263,6 +264,70 @@ namespace Diotima
 	U32 Renderer::CreateTextureBuffer2D(void* data, U32 width, U32 height)
 	{
 		return mDevice->CreateTextureBuffer2D(data, width, height);
+	}
+
+	U32 Renderer::QueueCreateVertexBufferCommand(void* data, U32 numElements)
+	{
+		CreateBufferRenderCommand command;
+		command.BufferType = ECreateBufferType::Vertex;
+		command.Data = data;
+		command.NumElements = numElements;
+		mVertexBufferCommandQueue.push_back(std::move(command));
+
+		return mDevice->GetVertexBufferCount() + mVertexBufferCommandQueue.size() - 1;
+	}
+
+	U32 Renderer::QueueCreateIndexBufferCommand(void* data, U32 numElements)
+	{
+		CreateBufferRenderCommand command;
+		command.BufferType = ECreateBufferType::Index;
+		command.Data = data;
+		command.NumElements = numElements;
+		mIndexBufferCommandQueue.push_back(std::move(command));
+
+		return mDevice->GetVertexBufferCount() + mIndexBufferCommandQueue.size() - 1;
+	}
+
+	U32 Renderer::QueueCreateTextureCommand(ECreateTextureBufferType bufferType, void* data, U32 width, U32 height)
+	{
+		CreateTextureBufferRenderCommand command;
+		command.BufferType = bufferType;
+		command.Data = data;
+		command.Width = width;
+		command.Height = height;
+		mTextureBufferCommandQueue.push_back(std::move(command));
+
+		return mDevice->GetTextureBufferCount() + mTextureBufferCommandQueue.size() - 1;
+	}
+
+	void Renderer::ProcessCommands()
+	{
+		for (auto& command : mVertexBufferCommandQueue)
+		{
+			CreateVertexBuffer(command.Data, command.NumElements);
+		}
+		mVertexBufferCommandQueue.clear();
+
+		for (auto& command : mIndexBufferCommandQueue)
+		{
+			CreateIndexBuffer(command.Data, command.NumElements);
+		}
+		mIndexBufferCommandQueue.clear();
+
+		for (auto& command : mTextureBufferCommandQueue) 
+		{
+			switch (command.BufferType)
+			{
+			case ECreateTextureBufferType::Texture2D:
+				CreateTextureBuffer2D(command.Data, command.Width, command.Height);
+				break;
+
+			default:
+				AssertFalse();
+				break;
+			}
+		}
+		mTextureBufferCommandQueue.clear();
 	}
 
 	void Renderer::RenderItemProtocol::Invalidate()
