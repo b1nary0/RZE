@@ -274,6 +274,7 @@ namespace Diotima
 		command.NumElements = numElements;
 		mVertexBufferCommandQueue.push_back(std::move(command));
 
+		// #TODO(This is shit, fix later)
 		return mDevice->GetVertexBufferCount() + mVertexBufferCommandQueue.size() - 1;
 	}
 
@@ -285,6 +286,7 @@ namespace Diotima
 		command.NumElements = numElements;
 		mIndexBufferCommandQueue.push_back(std::move(command));
 
+		// #TODO(This is shit, fix later)
 		return mDevice->GetVertexBufferCount() + mIndexBufferCommandQueue.size() - 1;
 	}
 
