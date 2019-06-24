@@ -299,11 +299,14 @@ namespace Diotima
 		command.Height = height;
 		mTextureBufferCommandQueue.push_back(std::move(command));
 
+		// #TODO(This is shit, fix later)
 		return mDevice->GetTextureBufferCount() + mTextureBufferCommandQueue.size() - 1;
 	}
 
 	void Renderer::ProcessCommands()
 	{
+		OPTICK_EVENT();
+
 		for (auto& command : mVertexBufferCommandQueue)
 		{
 			CreateVertexBuffer(command.Data, command.NumElements);
