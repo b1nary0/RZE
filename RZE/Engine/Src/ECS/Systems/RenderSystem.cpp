@@ -70,8 +70,9 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
  		{
  			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
  
- 			Diotima::Renderer::RenderItemProtocol& item = renderer.GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
- 			item.ModelMatrix = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
+ 			U32 renderItemIndex = mRenderItemEntityMap[entity];
+ 			Matrix4x4 worldMatrix = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
+			renderer.QueueUpdateRenderItem(renderItemIndex, worldMatrix);
  		}
 	});
 
@@ -85,8 +86,9 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 		{
 			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
 
-			Diotima::Renderer::RenderItemProtocol& item = renderer.GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
-			item.ModelMatrix = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
+			U32 renderItemIndex = mRenderItemEntityMap[entity];
+			Matrix4x4 worldMatrix = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
+			renderer.QueueUpdateRenderItem(renderItemIndex, worldMatrix);
 		}
 	});
 

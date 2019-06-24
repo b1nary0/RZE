@@ -2,6 +2,8 @@
 
 #include <Utils/PrimitiveDefs.h>
 
+#include <Utils/Math/Matrix4x4.h>
+
 namespace Diotima
 {
 	enum class ECreateBufferType
@@ -41,6 +43,12 @@ namespace Diotima
 		void* Data;
 		U32 Width;
 		U32 Height;
+	};
+
+	struct UpdateRenderItemWorldMatrixCommand
+	{
+		U32 RenderItemID;
+		Matrix4x4 WorldMtx;
 	};
 
 }

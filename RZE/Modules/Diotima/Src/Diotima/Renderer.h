@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <mutex>
 #include <queue>
 #include <unordered_map>
 #include <vector>
@@ -157,6 +158,8 @@ namespace Diotima
 		U32 QueueCreateIndexBufferCommand(void* data, U32 numElements);
 		U32 QueueCreateTextureCommand(ECreateTextureBufferType bufferType, void* data, U32 width, U32 height);
 
+		void QueueUpdateRenderItem(U32 itemID, const Matrix4x4& worldMtx);
+
 		void ProcessCommands();
 
 	private:
@@ -193,6 +196,7 @@ namespace Diotima
 		std::vector<CreateBufferRenderCommand> mVertexBufferCommandQueue;
 		std::vector<CreateBufferRenderCommand> mIndexBufferCommandQueue;
 		std::vector<CreateTextureBufferRenderCommand> mTextureBufferCommandQueue;
+		std::vector<UpdateRenderItemWorldMatrixCommand> mUpdateRenderItemWorldMatrixCommandQueue;
 
 		// DX12 Temp
 	private:
@@ -204,5 +208,11 @@ namespace Diotima
 		std::unique_ptr<DX12GFXDevice> mDevice;
 
 		void* mWindowHandle;
+
+	private:
+		std::mutex mVertexBufferCommandMutex;
+		std::mutex mIndexBufferCommandMutex;
+		std::mutex mTextureBufferCommandMutex;
+		std::mutex mUpdateRenderItemWorldMatrixCommandMutex;
 	};
 }

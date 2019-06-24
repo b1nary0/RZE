@@ -268,6 +268,8 @@ namespace Diotima
 
 	U32 Renderer::QueueCreateVertexBufferCommand(void* data, U32 numElements)
 	{
+		std::lock_guard<std::mutex> lock(mVertexBufferCommandMutex);
+
 		CreateBufferRenderCommand command;
 		command.BufferType = ECreateBufferType::Vertex;
 		command.Data = data;
@@ -280,6 +282,8 @@ namespace Diotima
 
 	U32 Renderer::QueueCreateIndexBufferCommand(void* data, U32 numElements)
 	{
+		std::lock_guard<std::mutex> lock(mIndexBufferCommandMutex);
+
 		CreateBufferRenderCommand command;
 		command.BufferType = ECreateBufferType::Index;
 		command.Data = data;
@@ -292,6 +296,8 @@ namespace Diotima
 
 	U32 Renderer::QueueCreateTextureCommand(ECreateTextureBufferType bufferType, void* data, U32 width, U32 height)
 	{
+		std::lock_guard<std::mutex> lock(mTextureBufferCommandMutex);
+
 		CreateTextureBufferRenderCommand command;
 		command.BufferType = bufferType;
 		command.Data = data;
@@ -303,36 +309,73 @@ namespace Diotima
 		return mDevice->GetTextureBufferCount() + mTextureBufferCommandQueue.size() - 1;
 	}
 
+
+	void Renderer::QueueUpdateRenderItem(U32 itemID, const Matrix4x4& worldMtx)
+	{
+		std::lock_guard<std::mutex> lock(mUpdateRenderItemWorldMatrixCommandMutex);
+
+		UpdateRenderItemWorldMatrixCommand command;
+		command.RenderItemID = itemID;
+		command.WorldMtx = worldMtx;
+
+		mUpdateRenderItemWorldMatrixCommandQueue.push_back(std::move(command));
+	}
+
 	void Renderer::ProcessCommands()
 	{
 		OPTICK_EVENT();
 
-		for (auto& command : mVertexBufferCommandQueue)
 		{
-			CreateVertexBuffer(command.Data, command.NumElements);
-		}
-		mVertexBufferCommandQueue.clear();
-
-		for (auto& command : mIndexBufferCommandQueue)
-		{
-			CreateIndexBuffer(command.Data, command.NumElements);
-		}
-		mIndexBufferCommandQueue.clear();
-
-		for (auto& command : mTextureBufferCommandQueue) 
-		{
-			switch (command.BufferType)
+			OPTICK_EVENT("Process CreateVertexBuffer commands");
+			std::lock_guard<std::mutex> lock(mVertexBufferCommandMutex);
+			for (auto& command : mVertexBufferCommandQueue)
 			{
-			case ECreateTextureBufferType::Texture2D:
-				CreateTextureBuffer2D(command.Data, command.Width, command.Height);
-				break;
-
-			default:
-				AssertFalse();
-				break;
+				CreateVertexBuffer(command.Data, command.NumElements);
 			}
+			mVertexBufferCommandQueue.clear();
 		}
-		mTextureBufferCommandQueue.clear();
+
+		{
+			OPTICK_EVENT("Process CreateIndexBuffer commands");
+			std::lock_guard<std::mutex> lock(mIndexBufferCommandMutex);
+			for (auto& command : mIndexBufferCommandQueue)
+			{
+				CreateIndexBuffer(command.Data, command.NumElements);
+			}
+			mIndexBufferCommandQueue.clear();
+		}
+
+		{
+			OPTICK_EVENT("Process CreateTextureBuffer commands");
+			std::lock_guard<std::mutex> lock(mTextureBufferCommandMutex);
+			for (auto& command : mTextureBufferCommandQueue)
+			{
+				switch (command.BufferType)
+				{
+				case ECreateTextureBufferType::Texture2D:
+					CreateTextureBuffer2D(command.Data, command.Width, command.Height);
+					break;
+
+				default:
+					AssertFalse();
+					break;
+				}
+			}
+			mTextureBufferCommandQueue.clear();
+		}
+
+		{
+			OPTICK_EVENT("Process UpdateRenderItemWorldMatrix commands");
+			std::lock_guard<std::mutex> lock(mUpdateRenderItemWorldMatrixCommandMutex);
+			for (auto& command : mUpdateRenderItemWorldMatrixCommandQueue)
+			{
+				RenderItemProtocol& renderItem = mRenderItems[command.RenderItemID];
+				AssertExpr(renderItem.bIsValid);
+
+				renderItem.ModelMatrix = command.WorldMtx;
+			}
+			mUpdateRenderItemWorldMatrixCommandQueue.clear();
+		}
 	}
 
 	void Renderer::RenderItemProtocol::Invalidate()
