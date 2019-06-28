@@ -19,7 +19,7 @@ namespace Editor
 	static ImFont* ubuntu = nullptr;
 	void EditorApp::Initialize()
 	{
-		GetWindow()->SetWindowSize(Vector2D(1920.0f, 1080.0f));
+		GetWindow()->SetWindowSize(Vector2D(1600.0f, 900.0f));
 
 		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 		ImGui::GetIO().KeyRepeatDelay = 0.5f;
