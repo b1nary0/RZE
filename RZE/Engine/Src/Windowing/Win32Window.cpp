@@ -93,7 +93,7 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 		mOSWindowHandleData.windowHandle = CreateWindowEx(0,
 			wStrTitle.c_str(),
 			wStrTitle.c_str(),
-			WS_SYSMENU | WS_CAPTION | WS_OVERLAPPEDWINDOW ^ WS_SIZEBOX, // @note WS_POPUP = borderless. WS_OVERLAPPEDWINDOW default
+			WS_OVERLAPPEDWINDOW ^ WS_SIZEBOX, // @note WS_POPUP = borderless. WS_OVERLAPPEDWINDOW default
 			CW_USEDEFAULT,
 			CW_USEDEFAULT,
 			static_cast<int>(mDimensions.X()),
