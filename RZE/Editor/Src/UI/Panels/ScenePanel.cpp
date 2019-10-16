@@ -17,6 +17,11 @@ namespace Editor
 
 	ScenePanel::~ScenePanel()
 	{
+		if (mSelectedItem != nullptr)
+		{
+			delete mSelectedItem;
+			mSelectedItem = nullptr;
+		}
 	}
 
 	void ScenePanel::Display()
@@ -32,6 +37,7 @@ namespace Editor
 					if (mSelectedItem != nullptr && mSelectedItem->EntityID != entry.ID)
 					{
 						delete mSelectedItem;
+						mSelectedItem = nullptr;
 					}
 
 					mSelectedItem = new EntityItem();

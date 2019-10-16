@@ -94,14 +94,14 @@ namespace Diotima
 			const U32* lightCounts = mRenderer->GetLightCounts();
 			PrepareLights(lights, lightCounts);
 
-			DX12GFXConstantBuffer* const lightConstantBuffer = mDevice->GetConstantBuffer(mLightConstantBuffer);
-			DX12GFXConstantBuffer* const perFramePixelShaderConstants = mDevice->GetConstantBuffer(mPerFramePixelShaderConstants);
+			CBAllocationData lightBufferStart = mDevice->GetConstantBuffer(mLightConstantBuffer)->GetBufferStart();
+			CBAllocationData perFrameShaderBufferStart = mDevice->GetConstantBuffer(mPerFramePixelShaderConstants)->GetBufferStart();
 
 			ID3D12DescriptorHeap* ppDescHeaps[] = { mDevice->GetTextureHeap() };
 			commandList->SetDescriptorHeaps(_countof(ppDescHeaps), ppDescHeaps);
 
-			commandList->SetGraphicsRootConstantBufferView(2, lightConstantBuffer->GetResource()->GetGPUVirtualAddress());
-			commandList->SetGraphicsRootConstantBufferView(5, perFramePixelShaderConstants->GetResource()->GetGPUVirtualAddress());
+			commandList->SetGraphicsRootConstantBufferView(2, lightBufferStart.GPUBaseAddr);
+			commandList->SetGraphicsRootConstantBufferView(5, perFrameShaderBufferStart.GPUBaseAddr);
 
 			commandList->SetGraphicsRoot32BitConstants(1, 3, &camera.Position.GetInternalVec(), 0);
 
@@ -326,8 +326,8 @@ namespace Diotima
 		U32 compileFlags = 0;
 #endif
 
-		FilePath vertexShaderFilePath("Assets/Shaders/D3DTest_VS.hlsl");
-		FilePath pixelShaderFilePath("Assets/Shaders/D3DTest_PS.hlsl");
+		FilePath vertexShaderFilePath("Assets/Shaders/ForwardLighting_VS.hlsl");
+		FilePath pixelShaderFilePath("Assets/Shaders/ForwardLighting_PS.hlsl");
 
 		ComPtr<ID3DBlob> error;
 

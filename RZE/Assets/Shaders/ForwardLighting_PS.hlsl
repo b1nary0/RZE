@@ -60,12 +60,12 @@ float CalculateBlinnPhong(float3 viewDir, float3 lightDir, float3 normal)
 {
 	float specular = 0.0f;
 	
-	//float3 halfDir = normalize(lightDir + viewDir);
-	//float specAngle = max(0.0f, dot(halfDir, reflect(-lightDir, normal)));
-	//specular = pow(specAngle, materialData.Shininess);
+	// float3 halfDir = normalize(lightDir + viewDir);
+	// float specAngle = max(0.0f, dot(halfDir, reflect(-lightDir, normal)));
+	// specular = pow(specAngle, materialData.Shininess);
 
 	float3 R = reflect(-lightDir, normal);
-	float3 RdotV = max(0.0f, dot(R, viewDir)); 
+	float RdotV = max(0.0f, dot(R, viewDir)); 
 	specular = pow(RdotV, materialData.Shininess);
 	
 	return specular;
@@ -106,7 +106,7 @@ float CalculatePointLight(float3 pixelPos, float3 lightPos, float3 normal, float
 	lightVec = normalize(lightVec);
 	
 	float ndotl = max(dot(lightVec, normal), 0.0f);
-	float3 lightStrength = strength * ndotl;
+	float lightStrength = strength * ndotl;
 	
 	float att = CalcAttenuation(distance, tempFalloffStart, tempFalloffEnd);
 	lightStrength *= att;
@@ -137,7 +137,7 @@ float CalculateShadowFromDepthMap(LIGHT_INPUT_DESC light, float3 fragPos, float3
 
 float4 PSMain(PS_IN input) : SV_TARGET
 {
-	float ambientCoeff = 0.65f;
+	float ambientCoeff = 0.45f;
 	
 	float3 normal = normalize(input.Normal);
 	float3 tangent = normalize(input.Tangent);
@@ -157,20 +157,20 @@ float4 PSMain(PS_IN input) : SV_TARGET
 	{
 		LIGHT_INPUT_DESC light = lights[lightIndex];
 
-		float3 lightDir = normalize(light.Position - input.FragPos);
+		float3 lightDir = normalize(light.Position.xyz - input.FragPos);
 		
 		float diff = max(0.0f, saturate(dot(normal, lightDir)));
 		float specular = CalculateBlinnPhong(viewDir, lightDir, normal);
 		
 		float lightStrength = light.Strength;
 		
-		float3 diffuseResult = light.Color.rgb * lightStrength;
-		float3 specularResult = specular * lightStrength * light.Color.rgb;
+		float3 diffuseResult = light.Color.rgb * lightStrength * diffSample.rgb;
+		float3 specularResult = specular * lightStrength * light.Color.rgb * specularSample.rgb;
 		
 		float shadow = CalculateShadowFromDepthMap(light, input.FragPos, normal, lightDir);
 		specularResult *= 1.0f - shadow;
 
-		float3 result = (diffSample.rgb * ((ambientResult + diffuseResult * (1.0f - shadow))) + (specularResult * specularSample.rgb));
+		float3 result = (ambientResult + (diffuseResult * (1.0f - shadow))) + (specularResult * 0.5f);
 		lightAccum += result;
 	}
 
@@ -178,17 +178,17 @@ float4 PSMain(PS_IN input) : SV_TARGET
 	{
 		LIGHT_INPUT_DESC light = lights[lightIndex];
 
-		float3 lightDir = normalize(light.Position - input.FragPos);
+		float3 lightDir = normalize(light.Position.xyz - input.FragPos);
 		
 		float diff = max(0.0f, saturate(dot(normal, lightDir)));
 		float specular = CalculateBlinnPhong(viewDir, lightDir, normal);
 		
-		float lightStrength = CalculatePointLight(input.FragPos, light.Position, normal, viewDir, light.Strength);
+		float lightStrength = CalculatePointLight(input.FragPos, light.Position.xyz, normal, viewDir, light.Strength);
 		
-		float3 diffuseResult = light.Color.rgb * lightStrength;
+		float3 diffuseResult = light.Color.rgb * lightStrength * diffSample.rgb;
 		float3 specularResult = specular * lightStrength * light.Color.rgb;
 		
-		float3 result = (diffSample.rgb * (ambientResult + diffuseResult)) + (specularResult * specularSample.rgb);
+		float3 result = (ambientResult + diffuseResult) + (specularResult * specularSample.rgb);
 		lightAccum += result;
 	}
 

@@ -26,6 +26,7 @@ static Vector4D sDefaultFragColor(0.25f, 0.25f, 0.25f, 1.0f);
 
 RenderSystem::RenderSystem(Apollo::EntityHandler* const entityHandler)
 	: Apollo::EntitySystem(entityHandler)
+	, mMainCameraEntity(Apollo::kInvalidEntityID)
 {
 
 }
@@ -69,8 +70,9 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
  		{
  			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
  
- 			Diotima::Renderer::RenderItemProtocol& item = renderer.GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
- 			item.ModelMatrix = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
+ 			U32 renderItemIndex = mRenderItemEntityMap[entity];
+ 			Matrix4x4 worldMatrix = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
+			renderer.QueueUpdateRenderItem(renderItemIndex, worldMatrix);
  		}
 	});
 
@@ -84,8 +86,9 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 		{
 			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
 
-			Diotima::Renderer::RenderItemProtocol& item = renderer.GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
-			item.ModelMatrix = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
+			U32 renderItemIndex = mRenderItemEntityMap[entity];
+			Matrix4x4 worldMatrix = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
+			renderer.QueueUpdateRenderItem(renderItemIndex, worldMatrix);
 		}
 	});
 
@@ -248,18 +251,54 @@ void RenderSystem::RegisterForComponentNotifications()
 		CameraComponent* const camComp = handler.GetComponent<CameraComponent>(entityID);
 		AssertNotNull(camComp);
 
-		// #TODO(Josh) Will/should be removed when a better tracking system for main cameras exist. For now since we're only working with one camera
-		// for the forseeable future, its fine.
+		if (mMainCameraEntity != Apollo::kInvalidEntityID)
+		{
+			CameraComponent* const currentCamera = handler.GetComponent<CameraComponent>(mMainCameraEntity);
+			AssertNotNull(currentCamera);
+
+			currentCamera->bIsActiveCamera = false;
+		}
+
+		// #NOTE(For now, the last camera added becomes the main camera.)
 		mMainCameraEntity = entityID;
 		camComp->bIsActiveCamera = true;
 
 		camComp->AspectRatio = RZE_Application::RZE().GetWindowSize().X() / RZE_Application::RZE().GetWindowSize().Y();
 	});
 	handler.RegisterForComponentAddNotification<CameraComponent>(OnCameraComponentAdded);
+
+	Apollo::EntityHandler::ComponentModifiedFunc OnCameraComponentModified([this, &handler](Apollo::EntityID entityID)
+	{
+		CameraComponent* const camComp = handler.GetComponent<CameraComponent>(entityID);
+		AssertNotNull(camComp);
+
+		if (camComp->bIsActiveCamera)
+		{
+			if (mMainCameraEntity != Apollo::kInvalidEntityID)
+			{
+				CameraComponent* const currentCamera = handler.GetComponent<CameraComponent>(mMainCameraEntity);
+				AssertNotNull(currentCamera);
+
+				currentCamera->bIsActiveCamera = false;
+			}
+
+			mMainCameraEntity = entityID;
+		}
+	});
+	handler.RegisterForComponentModifiedNotification<CameraComponent>(OnCameraComponentModified);
+
+	Apollo::EntityHandler::ComponentModifiedFunc OnCameraComponentRemoved([this, &handler](Apollo::EntityID entityID)
+	{
+		if (mMainCameraEntity == entityID)
+		{
+			mMainCameraEntity = Apollo::kInvalidEntityID;
+		}
+	});
+	handler.RegisterForComponentRemovedNotification<CameraComponent>(OnCameraComponentRemoved);
 }
 
 void RenderSystem::GenerateCameraMatrices(CameraComponent& cameraComponent, const TransformComponent& transformComponent)
 {
 	cameraComponent.ProjectionMat = Matrix4x4::CreatePerspectiveMatrix(cameraComponent.FOV, cameraComponent.AspectRatio, cameraComponent.NearCull, cameraComponent.FarCull);
-	cameraComponent.ViewMat = Matrix4x4::CreateViewMatrix(transformComponent.Position, transformComponent.Position + cameraComponent.Forward, cameraComponent.UpDir);
+	cameraComponent.ViewMat = Matrix4x4::CreateViewMatrix(transformComponent.Position, cameraComponent.Forward, cameraComponent.UpDir);
 }

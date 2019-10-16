@@ -26,6 +26,7 @@ namespace Diotima
 {
 	Renderer::Renderer()
 		: mPassGraph(std::make_unique<GFXPassGraph>())
+		, mMatrixConstantBuffer(nullptr)
 	{
 		mLightingList.reserve(MAX_LIGHTS);
 	}
@@ -82,6 +83,8 @@ namespace Diotima
 	{
 		mCanvasSize.SetXY(1600, 900);
 
+		mMatrixConstantBuffer = malloc(sizeof(Matrix4x4) * 3);
+
 		DX12Initialize();
 
 		mPassGraph->Build(this);
@@ -93,6 +96,8 @@ namespace Diotima
 
 		mDevice->ResetCommandAllocator();
 		mDevice->ResetResourceCommandAllocator();
+
+		ProcessCommands();
 
 		PrepareDrawCalls();
 
@@ -116,6 +121,8 @@ namespace Diotima
 
 	void Renderer::ShutDown()
 	{
+		free(mMatrixConstantBuffer);
+
 		ImGui_ImplDX12_Shutdown();
 
 		mDevice->Shutdown();
@@ -162,7 +169,6 @@ namespace Diotima
 		}
 
 		Matrix4x4 camViewProjMat = camera.ProjectionMat * camera.ViewMat;
-		void* pMatrixConstantBufferData = malloc(sizeof(Matrix4x4) * 3);
 
 		DX12GFXConstantBuffer* const materialBuffer = mDevice->GetConstantBuffer(mMaterialBuffer);
 		DX12GFXConstantBuffer* const matrixBuffer = mDevice->GetConstantBuffer(mMVPConstantBuffer);
@@ -191,11 +197,11 @@ namespace Diotima
 				const float* modelViewInvPtr = renderItem.ModelMatrix.Inverse().GetValuePtr();
 				const float* camViewProjPtr = camViewProjMat.GetValuePtr();
 
-				memcpy(pMatrixConstantBufferData, modelViewPtr, sizeof(Matrix4x4));
-				memcpy((U8*)pMatrixConstantBufferData + sizeof(Matrix4x4), modelViewInvPtr, sizeof(Matrix4x4));
-				memcpy((U8*)pMatrixConstantBufferData + sizeof(Matrix4x4) * 2, camViewProjPtr, sizeof(Matrix4x4));
+				memcpy(mMatrixConstantBuffer, modelViewPtr, sizeof(Matrix4x4));
+				memcpy((U8*)mMatrixConstantBuffer + sizeof(Matrix4x4), modelViewInvPtr, sizeof(Matrix4x4));
+				memcpy((U8*)mMatrixConstantBuffer + sizeof(Matrix4x4) * 2, camViewProjPtr, sizeof(Matrix4x4));
 
-				matrixSlot = matrixBuffer->AllocateMember(pMatrixConstantBufferData);
+				matrixSlot = matrixBuffer->AllocateMember(mMatrixConstantBuffer);
 			}
 
 			for (RenderItemMeshData& meshData : renderItem.MeshData)
@@ -216,21 +222,18 @@ namespace Diotima
 				mPerFrameDrawCalls.push_back(std::move(drawCall));
 			}
 		}
-
-		free(pMatrixConstantBufferData);
 	}
 
 	void Renderer::EnableVsync(bool bEnabled)
 	{
-		
+		mDevice->SetSyncInterval(static_cast<U32>(bEnabled));
 	}
 
 	void Renderer::SetMSAASampleCount(U32 sampleCount)
 	{
 		mMSAASampleCount = sampleCount;
 	}
-
-
+	
 	const Vector2D& Renderer::GetCanvasSize()
 	{
 		return mCanvasSize;
@@ -263,6 +266,118 @@ namespace Diotima
 	U32 Renderer::CreateTextureBuffer2D(void* data, U32 width, U32 height)
 	{
 		return mDevice->CreateTextureBuffer2D(data, width, height);
+	}
+
+	U32 Renderer::QueueCreateVertexBufferCommand(void* data, U32 numElements)
+	{
+		std::lock_guard<std::mutex> lock(mVertexBufferCommandMutex);
+
+		CreateBufferRenderCommand command;
+		command.BufferType = ECreateBufferType::Vertex;
+		command.Data = data;
+		command.NumElements = numElements;
+		mVertexBufferCommandQueue.push_back(std::move(command));
+
+		// #TODO(This is shit, fix later)
+		return mDevice->GetVertexBufferCount() + mVertexBufferCommandQueue.size() - 1;
+	}
+
+	U32 Renderer::QueueCreateIndexBufferCommand(void* data, U32 numElements)
+	{
+		std::lock_guard<std::mutex> lock(mIndexBufferCommandMutex);
+
+		CreateBufferRenderCommand command;
+		command.BufferType = ECreateBufferType::Index;
+		command.Data = data;
+		command.NumElements = numElements;
+		mIndexBufferCommandQueue.push_back(std::move(command));
+
+		// #TODO(This is shit, fix later)
+		return mDevice->GetVertexBufferCount() + mIndexBufferCommandQueue.size() - 1;
+	}
+
+	U32 Renderer::QueueCreateTextureCommand(ECreateTextureBufferType bufferType, void* data, U32 width, U32 height)
+	{
+		std::lock_guard<std::mutex> lock(mTextureBufferCommandMutex);
+
+		CreateTextureBufferRenderCommand command;
+		command.BufferType = bufferType;
+		command.Data = data;
+		command.Width = width;
+		command.Height = height;
+		mTextureBufferCommandQueue.push_back(std::move(command));
+
+		// #TODO(This is shit, fix later)
+		return mDevice->GetTextureBufferCount() + mTextureBufferCommandQueue.size() - 1;
+	}
+
+
+	void Renderer::QueueUpdateRenderItem(U32 itemID, const Matrix4x4& worldMtx)
+	{
+		std::lock_guard<std::mutex> lock(mUpdateRenderItemWorldMatrixCommandMutex);
+
+		UpdateRenderItemWorldMatrixCommand command;
+		command.RenderItemID = itemID;
+		command.WorldMtx = worldMtx;
+
+		mUpdateRenderItemWorldMatrixCommandQueue.push_back(std::move(command));
+	}
+
+	void Renderer::ProcessCommands()
+	{
+		OPTICK_EVENT();
+
+		{
+			OPTICK_EVENT("Process CreateVertexBuffer commands");
+			std::lock_guard<std::mutex> lock(mVertexBufferCommandMutex);
+			for (auto& command : mVertexBufferCommandQueue)
+			{
+				CreateVertexBuffer(command.Data, command.NumElements);
+			}
+			mVertexBufferCommandQueue.clear();
+		}
+
+		{
+			OPTICK_EVENT("Process CreateIndexBuffer commands");
+			std::lock_guard<std::mutex> lock(mIndexBufferCommandMutex);
+			for (auto& command : mIndexBufferCommandQueue)
+			{
+				CreateIndexBuffer(command.Data, command.NumElements);
+			}
+			mIndexBufferCommandQueue.clear();
+		}
+
+		{
+			OPTICK_EVENT("Process CreateTextureBuffer commands");
+			std::lock_guard<std::mutex> lock(mTextureBufferCommandMutex);
+			for (auto& command : mTextureBufferCommandQueue)
+			{
+				switch (command.BufferType)
+				{
+				case ECreateTextureBufferType::Texture2D:
+					CreateTextureBuffer2D(command.Data, command.Width, command.Height);
+					break;
+
+				default:
+					AssertFalse();
+					break;
+				}
+			}
+			mTextureBufferCommandQueue.clear();
+		}
+
+		{
+			OPTICK_EVENT("Process UpdateRenderItemWorldMatrix commands");
+			std::lock_guard<std::mutex> lock(mUpdateRenderItemWorldMatrixCommandMutex);
+			for (auto& command : mUpdateRenderItemWorldMatrixCommandQueue)
+			{
+				RenderItemProtocol& renderItem = mRenderItems[command.RenderItemID];
+				AssertExpr(renderItem.bIsValid);
+
+				renderItem.ModelMatrix = command.WorldMtx;
+			}
+			mUpdateRenderItemWorldMatrixCommandQueue.clear();
+		}
 	}
 
 	void Renderer::RenderItemProtocol::Invalidate()

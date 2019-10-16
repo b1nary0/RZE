@@ -43,6 +43,10 @@ namespace Diotima
 
 		U32 CreateGraphicsCommandList(ID3D12CommandAllocator* allocator, ID3D12PipelineState* pipelineState);
 
+		U32 GetVertexBufferCount() const;
+		U32 GetIndexBufferCount() const;
+		U32 GetTextureBufferCount() const;
+
 	public:
 		void Present();
 
@@ -75,6 +79,8 @@ namespace Diotima
 		void ExecuteCommandList(ID3D12GraphicsCommandList* commandList);
 
 		void WaitForPreviousFrame();
+
+		void SetSyncInterval(U32 syncInterval);
 
 		void SetMSAASampleCount(U32 sampleCount);
 		U32 GetMSAASampleCount();
@@ -141,5 +147,6 @@ namespace Diotima
 		std::vector<ComPtr<ID3D12GraphicsCommandList>> mGraphicsCommandLists;
 
 		U32 mSampleCount;
+		U32 mSyncInterval;
 	};
 }

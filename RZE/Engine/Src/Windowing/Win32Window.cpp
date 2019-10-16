@@ -93,7 +93,7 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 		mOSWindowHandleData.windowHandle = CreateWindowEx(0,
 			wStrTitle.c_str(),
 			wStrTitle.c_str(),
-			WS_SYSMENU | WS_CAPTION, // @note WS_POPUP = borderless. WS_OVERLAPPEDWINDOW default
+			WS_OVERLAPPEDWINDOW ^ WS_SIZEBOX, // @note WS_POPUP = borderless. WS_OVERLAPPEDWINDOW default
 			CW_USEDEFAULT,
 			CW_USEDEFAULT,
 			static_cast<int>(mDimensions.X()),
@@ -147,7 +147,7 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 
 		InternalSetWindowPosition(Vector2D(0, 0));
 		// #NOTE(Josh) Gonna put this here for now instead of in Engine.cpp until it has a better home
-		SetWindowPos(GetConsoleWindow(), 0, 1024, 600, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
+		SetWindowPos(GetConsoleWindow(), 0, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
 	}
 }
 
