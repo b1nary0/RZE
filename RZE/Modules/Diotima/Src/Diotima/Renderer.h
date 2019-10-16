@@ -209,6 +209,8 @@ namespace Diotima
 
 		void* mWindowHandle;
 
+		void* mMatrixConstantBuffer;
+
 	private:
 		std::mutex mVertexBufferCommandMutex;
 		std::mutex mIndexBufferCommandMutex;

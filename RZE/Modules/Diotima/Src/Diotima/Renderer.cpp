@@ -26,6 +26,7 @@ namespace Diotima
 {
 	Renderer::Renderer()
 		: mPassGraph(std::make_unique<GFXPassGraph>())
+		, mMatrixConstantBuffer(nullptr)
 	{
 		mLightingList.reserve(MAX_LIGHTS);
 	}
@@ -82,6 +83,8 @@ namespace Diotima
 	{
 		mCanvasSize.SetXY(1600, 900);
 
+		mMatrixConstantBuffer = malloc(sizeof(Matrix4x4) * 3);
+
 		DX12Initialize();
 
 		mPassGraph->Build(this);
@@ -118,6 +121,8 @@ namespace Diotima
 
 	void Renderer::ShutDown()
 	{
+		free(mMatrixConstantBuffer);
+
 		ImGui_ImplDX12_Shutdown();
 
 		mDevice->Shutdown();
@@ -164,7 +169,6 @@ namespace Diotima
 		}
 
 		Matrix4x4 camViewProjMat = camera.ProjectionMat * camera.ViewMat;
-		void* pMatrixConstantBufferData = malloc(sizeof(Matrix4x4) * 3);
 
 		DX12GFXConstantBuffer* const materialBuffer = mDevice->GetConstantBuffer(mMaterialBuffer);
 		DX12GFXConstantBuffer* const matrixBuffer = mDevice->GetConstantBuffer(mMVPConstantBuffer);
@@ -193,11 +197,11 @@ namespace Diotima
 				const float* modelViewInvPtr = renderItem.ModelMatrix.Inverse().GetValuePtr();
 				const float* camViewProjPtr = camViewProjMat.GetValuePtr();
 
-				memcpy(pMatrixConstantBufferData, modelViewPtr, sizeof(Matrix4x4));
-				memcpy((U8*)pMatrixConstantBufferData + sizeof(Matrix4x4), modelViewInvPtr, sizeof(Matrix4x4));
-				memcpy((U8*)pMatrixConstantBufferData + sizeof(Matrix4x4) * 2, camViewProjPtr, sizeof(Matrix4x4));
+				memcpy(mMatrixConstantBuffer, modelViewPtr, sizeof(Matrix4x4));
+				memcpy((U8*)mMatrixConstantBuffer + sizeof(Matrix4x4), modelViewInvPtr, sizeof(Matrix4x4));
+				memcpy((U8*)mMatrixConstantBuffer + sizeof(Matrix4x4) * 2, camViewProjPtr, sizeof(Matrix4x4));
 
-				matrixSlot = matrixBuffer->AllocateMember(pMatrixConstantBufferData);
+				matrixSlot = matrixBuffer->AllocateMember(mMatrixConstantBuffer);
 			}
 
 			for (RenderItemMeshData& meshData : renderItem.MeshData)
@@ -218,8 +222,6 @@ namespace Diotima
 				mPerFrameDrawCalls.push_back(std::move(drawCall));
 			}
 		}
-
-		free(pMatrixConstantBufferData);
 	}
 
 	void Renderer::EnableVsync(bool bEnabled)
