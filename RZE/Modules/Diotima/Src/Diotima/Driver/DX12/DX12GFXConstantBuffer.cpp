@@ -11,6 +11,9 @@ namespace Diotima
 
 	DX12GFXConstantBuffer::DX12GFXConstantBuffer()
 		: mNumAllocations(0)
+		, mResourceStart(nullptr)
+		, mResourceEnd(nullptr)
+		, mCurrAddr(nullptr)
 	{
 	}
 
@@ -20,6 +23,13 @@ namespace Diotima
 
 	void DX12GFXConstantBuffer::Allocate(size_t memberSize, U32 maxMembers)
 	{
+		if (mResourceStart != nullptr)
+		{
+			Reset();
+			delete mResourceStart;
+			mResourceStart = nullptr;
+		}
+
 		const U32 alignedSize = MemoryUtils::AlignSize(memberSize, 255);
 		const U32 bufferSize = alignedSize * maxMembers;
 
