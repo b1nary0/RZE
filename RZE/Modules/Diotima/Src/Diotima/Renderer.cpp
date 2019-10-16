@@ -222,6 +222,8 @@ namespace Diotima
 				mPerFrameDrawCalls.push_back(std::move(drawCall));
 			}
 		}
+
+		memset(mMatrixConstantBuffer, 0, sizeof(Matrix4x4) * 3);
 	}
 
 	void Renderer::EnableVsync(bool bEnabled)
