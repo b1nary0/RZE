@@ -50,7 +50,8 @@ workspace "RZE"
 		"action:vs*"
 	}
 	
-	systemversion "10.0.14393.0"
+	systemversion "10.0.18362.0"
+	toolset "v142"
 	
 	flags
 	{
