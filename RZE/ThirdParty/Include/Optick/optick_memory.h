@@ -1,3 +1,25 @@
+// The MIT License(MIT)
+//
+// Copyright(c) 2019 Vadim Slyusarev
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files(the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions :
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
 #pragma once
 
 #include "optick_common.h"
@@ -29,7 +51,8 @@ namespace Optick
 		static std::atomic<uint64_t> memAllocated;
 
 		static void* (*allocate)(size_t);
-		static void  (*deallocate)(void* p);
+		static void  (*deallocate)(void*);
+		static void  (*initThread)(void);
 	public:
 		static OPTICK_INLINE void* Alloc(size_t size)
 		{
@@ -88,10 +111,17 @@ namespace Optick
 			}
 		}
 
-		static void SetAllocator(void* (*allocateFn)(size_t), void(*deallocateFn)(void*))
+		static void SetAllocator(AllocateFn allocateFn, DeallocateFn deallocateFn, InitThreadCb initThreadCb)
 		{
 			allocate = allocateFn;
 			deallocate = deallocateFn;
+			initThread = initThreadCb;
+		}
+
+		static void InitThread()
+		{
+			if (initThread != nullptr)
+				initThread();
 		}
 
 		template<typename T> 
@@ -128,11 +158,13 @@ namespace Optick
 	using ostringstream = std::basic_ostringstream<char, std::char_traits<char>, Memory::Allocator<char>>;
 	using stringstream = std::basic_stringstream<char, std::char_traits<char>, Memory::Allocator<char>>;
 
+	using fstream = std::basic_fstream<char, std::char_traits<char>>;
+
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	template<class T, uint32 SIZE>
 	struct MemoryChunk
 	{
-		OPTICK_ALIGN_CACHE T data[SIZE];
+		T data[SIZE];
 		MemoryChunk* next;
 		MemoryChunk* prev;
 
@@ -258,6 +290,11 @@ namespace Optick
 			return nullptr;
 		}
 
+		OPTICK_INLINE T* Front()
+		{
+			return !IsEmpty() ? &root->data[0] : nullptr;
+		}
+
 		OPTICK_INLINE size_t Size() const
 		{
 			if (root == nullptr)
@@ -328,7 +365,7 @@ namespace Optick
 				return *this;
 			}
 			reference operator*() { return (reference)chunkPtr->data[chunkIndex]; }
-			const pointer operator->() { return &chunkPtr->data[chunkIndex]; }
+			pointer operator->() { return &chunkPtr->data[chunkIndex]; }
 			bool operator==(const self_type& rhs) { return (chunkPtr == rhs.chunkPtr) && (chunkIndex == rhs.chunkIndex); }
 			bool operator!=(const self_type& rhs) { return (chunkPtr != rhs.chunkPtr) || (chunkIndex != rhs.chunkIndex); }
 		private:
@@ -338,7 +375,7 @@ namespace Optick
 
 		const_iterator begin() const
 		{
-			return const_iterator(root, 0);
+			return const_iterator(root, root ? 0 : SIZE);
 		}
 
 		const_iterator end() const
@@ -411,6 +448,11 @@ namespace Optick
 		T* Add(const T& val, bool allowOverlap = true)
 		{
 			return static_cast<T*>(Add(&val, sizeof(T), allowOverlap));
+		}
+
+		void Clear(bool preserveMemory)
+		{
+			MemoryPool<uint8, CHUNK_SIZE>::Clear(preserveMemory);
 		}
 	};
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

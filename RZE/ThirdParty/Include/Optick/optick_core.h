@@ -1,3 +1,25 @@
+// The MIT License(MIT)
+//
+// Copyright(c) 2019 Vadim Slyusarev
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files(the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions :
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
 #pragma once
 #include "optick.config.h"
 
@@ -74,6 +96,11 @@ struct ScopeData
 	vector<EventData> categories;
 	vector<EventData> events;
 
+	ScopeData()
+	{
+		ResetHeader();
+	}
+
 	void AddEvent(const EventData& data)
 	{
 		events.push_back(data);
@@ -85,10 +112,12 @@ struct ScopeData
 
 	void InitRootEvent(const EventData& data)
 	{
-		header.event = data;
+		header.event.start = std::min(data.start, header.event.start);
+		header.event.finish = std::max(data.finish, header.event.finish);
 		AddEvent(data);
 	}
 
+	void ResetHeader();
 	void Send();
 	void Clear();
 };
@@ -181,6 +210,8 @@ public:
 
 	const EventDescriptionList& GetEvents() const;
 
+	void Shutdown();
+
 	friend OutputDataStream& operator << (OutputDataStream& stream, const EventDescriptionBoard& ob);
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -233,7 +264,8 @@ struct EventStorage
 
 		while (pushPopEventStackIndex)
 		{
-			pushPopEventStack[--pushPopEventStackIndex] = nullptr;
+			if (--pushPopEventStackIndex < pushPopEventStack.size())
+				pushPopEventStack[pushPopEventStackIndex] = nullptr;
 		}
 	}
 
@@ -391,10 +423,34 @@ struct CaptureStatus
 		ERR_TRACER_ACCESS_DENIED = 2,
 		ERR_TRACER_FAILED = 3,
         ERR_TRACER_INVALID_PASSWORD = 4,
+		ERR_TRACER_NOT_IMPLEMENTED = 5,
     };
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+struct FrameData : public EventData 
+{
+	uint64_t threadID;
+	FrameData() : threadID(INVALID_THREAD_ID) {}
+};
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+typedef MemoryPool<FrameData, 128> FrameBuffer;
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+struct FrameStorage
+{
+	const EventDescription* m_Description;
+	FrameBuffer m_Frames;
+	std::atomic<uint32_t> m_FrameNumber;
 
+	void Clear(bool preserveMemory = true)
+	{
+		m_Frames.Clear(preserveMemory);
+	}
+
+	FrameStorage() : m_Description(nullptr) {}
+};
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class Core
 {
 	std::recursive_mutex coreLock;
@@ -405,15 +461,13 @@ class Core
 
 	int64 progressReportedLastTimestampMS;
 
-	vector<EventTime> frames;
+	array<FrameStorage, FrameType::COUNT> frames;
 	uint32 boardNumber;
 
 	CallstackCollector callstackCollector;
 	SwitchContextCollector switchContextCollector;
 
 	vector<std::pair<string, string>> summary;
-
-	std::atomic<uint32_t> frameNumber;
 
 	struct Attachment
 	{
@@ -429,21 +483,19 @@ class Core
 	vector<ProcessDescription> processDescs;
 	vector<ThreadDescription> threadDescs;
 
-	array<const EventDescription*, FrameType::COUNT> frameDescriptions;
-
 	State::Type currentState;
 	State::Type pendingState;
 
 	CaptureSettings settings;
 
 	void UpdateEvents();
-	uint32_t Update();
 	bool UpdateState();
+
+	uint32_t BeginUpdateFrame(FrameType::Type frame, int64_t timestamp, uint64_t threadID);
+	uint32_t EndUpdateFrame(FrameType::Type frame, int64_t timestamp, uint64_t threadID);
 
 	Core();
 	~Core();
-
-	static Core notThreadSafeInstance;
 
 	void DumpCapturingProgress();
 	void SendHandshakeResponse(CaptureStatus::Type status);
@@ -462,6 +514,7 @@ class Core
 public:
 	void Activate(Mode::Type mode);
 	volatile Mode::Type currentMode;
+	volatile Mode::Type previousMode;
 
 	// Active Frame (is used as buffer)
 	static OPTICK_THREAD_LOCAL EventStorage* storage;
@@ -504,6 +557,7 @@ public:
 
 	// Serialize and send current profiling progress
 	void DumpProgress(const char* message = "");
+	void DumpProgressFormatted(const char* format, ...);
 
 	// Too much time from last report
 	bool IsTimeToReportProgress() const;
@@ -551,16 +605,23 @@ public:
 	bool SetSettings(const CaptureSettings& settings);
 
 	// Current Frame Number (since the game started)
-	uint32_t GetCurrentFrame() const { return frameNumber; }
+	uint32_t GetCurrentFrame(FrameType::Type frameType) const { return frames[frameType].m_FrameNumber; }
 
 	// Returns Frame Description
 	const EventDescription* GetFrameDescription(FrameType::Type frame) const;
 
+	// Main Update Function
+	void Update();
+
+	// Full Destruction
+	void Shutdown();
+
+	// Frame Flip functions
+	static uint32_t BeginFrame(FrameType::Type frame, int64_t timestamp, uint64_t threadID) { return Get().BeginUpdateFrame(frame, timestamp, threadID); }
+	static uint32_t EndFrame(FrameType::Type frame, int64_t timestamp, uint64_t threadID) { return Get().EndUpdateFrame(frame, timestamp, threadID); }
+
 	// NOT Thread Safe singleton (performance)
 	static Core& Get();
-
-	// Main Update Function
-	static uint32_t NextFrame() { return Get().Update(); }
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }

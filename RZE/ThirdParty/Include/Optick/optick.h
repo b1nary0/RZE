@@ -1,3 +1,25 @@
+// The MIT License(MIT)
+//
+// Copyright(c) 2019 Vadim Slyusarev
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files(the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions :
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
 #pragma once
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Config
@@ -6,6 +28,7 @@
 
 #if USE_OPTICK
 #include <stdint.h>
+#include <stddef.h>
 
 #if defined(__clang__) || defined(__GNUC__)
 #	define OPTICK_GCC (1)
@@ -13,13 +36,13 @@
 #		define OPTICK_OSX (1)
 #	elif defined(__linux__)
 #		define OPTICK_LINUX (1)
-#	elif defined(__ORBIS__)
-#		define OPTICK_PS4 (1)
+#	elif defined(__FreeBSD__)
+#		define OPTICK_FREEBSD (1)
 #	endif
 #elif defined(_MSC_VER)
 #	define OPTICK_MSVC (1)
 #	if defined(_DURANGO)
-#		define OPTICK_XBOX (1)
+#		define OPTICK_PC (0)
 #	else
 #		define OPTICK_PC (1)
 #endif
@@ -42,10 +65,10 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // EXPORTS 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#ifdef OPTICK_EXPORTS
+#if defined(OPTICK_EXPORTS) && defined(OPTICK_MSVC)
 #define OPTICK_API __declspec(dllexport)
 #else
-#define OPTICK_API //__declspec(dllimport)
+#define OPTICK_API 
 #endif
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define OPTICK_CONCAT_IMPL(x, y) x##y
@@ -69,6 +92,8 @@ OPTICK_DEFINE_HANDLE(VkCommandBuffer);
 
 // D3D12 Forward Declarations
 struct ID3D12CommandList;
+struct ID3D12Device;
+struct ID3D12CommandQueue;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 namespace Optick
@@ -267,7 +292,7 @@ namespace Optick
 		};
 	};
 
-	#define OPTICK_MAKE_CATEGORY(filter, color) (((uint64_t)(1ull) << (filter + 32)) | (uint64_t)color)
+	#define OPTICK_MAKE_CATEGORY(filter, color) ((Optick::Category::Type)(((uint64_t)(1ull) << (filter + 32)) | (uint64_t)color))
 
 	struct Category
 	{
@@ -324,35 +349,64 @@ struct Mode
 {
 	enum Type
 	{
+		// OFF
 		OFF = 0x0,
+		// Collect Categories (top-level events)
 		INSTRUMENTATION_CATEGORIES = (1 << 0),
+		// Collect Events
 		INSTRUMENTATION_EVENTS = (1 << 1),
+		// Collect Events + Categories
 		INSTRUMENTATION = (INSTRUMENTATION_CATEGORIES | INSTRUMENTATION_EVENTS),
+		// Legacy (keep for compatibility reasons)
 		SAMPLING = (1 << 2),
+		// Collect Data Tags
 		TAGS = (1 << 3),
+		// Enable Autosampling Events (automatic callstacks)
 		AUTOSAMPLING = (1 << 4),
+		// Enable Switch-Contexts Events
 		SWITCH_CONTEXT = (1 << 5),
+		// Collect I/O Events
 		IO = (1 << 6),
+		// Collect GPU Events
 		GPU = (1 << 7),
 		END_SCREENSHOT = (1 << 8),
 		RESERVED_0 = (1 << 9),
 		RESERVED_1 = (1 << 10),
+		// Collect HW Events
 		HW_COUNTERS = (1 << 11),
+		// Collect Events in Live mode
 		LIVE = (1 << 12),
 		RESERVED_2 = (1 << 13),
 		RESERVED_3 = (1 << 14),
 		RESERVED_4 = (1 << 15),
+		// Collect System Calls
 		SYS_CALLS = (1 << 16),
+		// Collect Events from Other Processes
 		OTHER_PROCESSES = (1 << 17),
+		// Automation
+		NOGUI = (1 << 18),
 
 		TRACER = AUTOSAMPLING | SWITCH_CONTEXT | SYS_CALLS,
 		DEFAULT = INSTRUMENTATION | TAGS | AUTOSAMPLING | SWITCH_CONTEXT | IO | GPU | SYS_CALLS | OTHER_PROCESSES,
 	};
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+struct FrameType
+{
+	enum Type
+	{
+		CPU,
+		GPU,
+		Render,
+		COUNT,
+	};
+};
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 OPTICK_API int64_t GetHighPrecisionTime();
 OPTICK_API int64_t GetHighPrecisionFrequency();
-OPTICK_API uint32_t NextFrame();
+OPTICK_API void Update();
+OPTICK_API uint32_t BeginFrame(FrameType::Type type = FrameType::CPU, int64_t timestamp = -1, uint64_t threadID = (uint64_t)-1);
+OPTICK_API uint32_t EndFrame(FrameType::Type type = FrameType::CPU, int64_t timestamp = -1, uint64_t threadID = (uint64_t)-1);
 OPTICK_API bool IsActive(Mode::Type mode = Mode::INSTRUMENTATION_EVENTS);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 struct EventStorage;
@@ -373,6 +427,7 @@ struct ThreadMask
 		GPU		= 1 << 1,
 		IO		= 1 << 2,
 		Idle	= 1 << 3,
+		Render  = 1 << 4,
 	};
 };
 
@@ -443,6 +498,7 @@ struct EventTime
 
 	OPTICK_INLINE void Start() { start  = Optick::GetHighPrecisionTime(); }
 	OPTICK_INLINE void Stop() 	{ finish = Optick::GetHighPrecisionTime(); }
+	OPTICK_INLINE bool IsValid() const { return start < finish && start != INVALID_TIMESTAMP && finish != INVALID_TIMESTAMP;  }
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 struct EventData : public EventTime
@@ -483,13 +539,15 @@ struct TagData
 	T data;
 	TagData() {}
 	TagData(const EventDescription& desc, T d) : description(&desc), timestamp(Optick::GetHighPrecisionTime()), data(d) {}
+	TagData(const EventDescription& desc, T d, int64_t t) : description(&desc), timestamp(t), data(d) {}
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 struct OPTICK_API EventDescription
 {
-	// HOT  \\
-	// Have to place "hot" variables at the beginning of the class (here will be some padding)
-	// COLD //
+	enum Flags : uint8_t
+	{
+		IS_CUSTOM_NAME = 1 << 0,
+	};
 
 	const char* name;
 	const char* file;
@@ -497,7 +555,7 @@ struct OPTICK_API EventDescription
 	uint32_t index;
 	uint32_t color;
 	uint32_t filter;
-	float budget;
+	uint8_t flags;
 
 	static EventDescription* Create(const char* eventName, const char* fileName, const unsigned long fileLine, const unsigned long eventColor = Color::Null, const unsigned long filter = 0);
 	static EventDescription* CreateShared(const char* eventName, const char* fileName = nullptr, const unsigned long fileLine = 0, const unsigned long eventColor = Color::Null, const unsigned long filter = 0);
@@ -538,7 +596,10 @@ struct OPTICK_API Event
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 OPTICK_INLINE Optick::EventDescription* CreateDescription(const char* functionName, const char* fileName, int fileLine, const char* eventName = nullptr, const ::Optick::Category::Type category = ::Optick::Category::None)
 {
-	return ::Optick::EventDescription::Create(eventName != nullptr ? eventName : functionName, fileName, (unsigned long)fileLine, ::Optick::Category::GetColor(category), ::Optick::Category::GetMask(category));
+	::Optick::EventDescription* desc = ::Optick::EventDescription::Create(eventName != nullptr ? eventName : functionName, fileName, (unsigned long)fileLine, ::Optick::Category::GetColor(category), ::Optick::Category::GetMask(category));
+	if (eventName == nullptr)
+		desc->flags &= ~::Optick::EventDescription::IS_CUSTOM_NAME;
+	return desc;
 }
 OPTICK_INLINE Optick::EventDescription* CreateDescription(const char* functionName, const char* fileName, int fileLine, const ::Optick::Category::Type category)
 {
@@ -619,8 +680,8 @@ struct OPTICK_API GPUContext
 	GPUContext(void* c = nullptr, GPUQueueType q = GPU_QUEUE_GRAPHICS, int n = 0) : cmdBuffer(c), queue(q), node(n) {}
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-OPTICK_API void InitGpuD3D12(void* device, void** cmdQueues, uint32_t numQueues);
-OPTICK_API void InitGpuVulkan(void* vkDevices, void* vkPhysicalDevices, void* vkQueues, uint32_t* cmdQueuesFamily, uint32_t numQueues);
+OPTICK_API void InitGpuD3D12(ID3D12Device* device, ID3D12CommandQueue** cmdQueues, uint32_t numQueues);
+OPTICK_API void InitGpuVulkan(VkDevice* vkDevices, VkPhysicalDevice* vkPhysicalDevices, VkQueue* vkQueues, uint32_t* cmdQueuesFamily, uint32_t numQueues);
 OPTICK_API void GpuFlip(void* swapChain);
 OPTICK_API GPUContext SetGpuContext(GPUContext context);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -644,18 +705,28 @@ struct OPTICK_API GPUContextScope
 	}
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-struct FrameType
-{
-	enum Type
-	{
-		CPU,
-		GPU,
-		Render,
-		COUNT,
-	};
-};
+OPTICK_API const EventDescription* GetFrameDescription(FrameType::Type frame = FrameType::CPU);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-OPTICK_API const EventDescription* GetFrameDescription(FrameType::Type frame);
+typedef void* (*AllocateFn)(size_t);
+typedef void  (*DeallocateFn)(void*);
+typedef void  (*InitThreadCb)(void);
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+OPTICK_API void SetAllocator(AllocateFn allocateFn, DeallocateFn deallocateFn, InitThreadCb initThreadCb);
+OPTICK_API void Shutdown();
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+typedef void(*CaptureSaveChunkCb)(const char*,size_t);
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+OPTICK_API bool StartCapture(Mode::Type mode = Mode::DEFAULT, int samplingFrequency = 1000, bool force = true);
+OPTICK_API bool StopCapture(bool force = true);
+OPTICK_API bool SaveCapture(CaptureSaveChunkCb dataCb, bool force = true);
+OPTICK_API bool SaveCapture(const char* path, bool force = true);
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+struct OptickApp
+{
+	const char* m_Name;
+	OptickApp(const char* name) : m_Name(name) { StartCapture(); }
+	~OptickApp() { StopCapture(); SaveCapture(m_Name); }
+};
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
 
@@ -682,7 +753,7 @@ OPTICK_API const EventDescription* GetFrameDescription(FrameType::Type frame);
 //		Optick captures full name of the function including name space and arguments.
 //		Full name is usually shortened in the Optick GUI in order to highlight the most important bits.
 #define OPTICK_EVENT(...)	 static ::Optick::EventDescription* OPTICK_CONCAT(autogen_description_, __LINE__) = nullptr; \
-							 if (OPTICK_CONCAT(autogen_description_, __LINE__) == nullptr) OPTICK_CONCAT(autogen_description_, __LINE__) = ::Optick::CreateDescription(OPTICK_FUNC, __FILE__, __LINE__  OPTICK_VA_ARGS(__VA_ARGS__)); \
+							 if (OPTICK_CONCAT(autogen_description_, __LINE__) == nullptr) OPTICK_CONCAT(autogen_description_, __LINE__) = ::Optick::CreateDescription(OPTICK_FUNC, __FILE__, __LINE__, ##__VA_ARGS__); \
 							 ::Optick::Event OPTICK_CONCAT(autogen_event_, __LINE__)( *(OPTICK_CONCAT(autogen_description_, __LINE__)) ); 
 
 // Backward compatibility with previous versions of Optick
@@ -715,11 +786,16 @@ OPTICK_API const EventDescription* GetFrameDescription(FrameType::Type frame);
 //			OPTICK_FRAME("MainThread");
 //			... code ...
 //		}
-#define OPTICK_FRAME(FRAME_NAME)	static ::Optick::ThreadScope mainThreadScope(FRAME_NAME);		\
-									OPTICK_UNUSED(mainThreadScope);									\
-									uint32_t frameNumber = ::Optick::NextFrame();					\
-									::Optick::Event OPTICK_CONCAT(autogen_event_, __LINE__)(*::Optick::GetFrameDescription(::Optick::FrameType::CPU)); \
-									OPTICK_TAG("Frame", frameNumber);
+#define OPTICK_FRAME(FRAME_NAME, ...)	static ::Optick::ThreadScope mainThreadScope(FRAME_NAME);		\
+										OPTICK_UNUSED(mainThreadScope);									\
+										::Optick::EndFrame(__VA_ARGS__);								\
+										::Optick::Update();												\
+										uint32_t frameNumber = ::Optick::BeginFrame(__VA_ARGS__);		\
+										::Optick::Event OPTICK_CONCAT(autogen_event_, __LINE__)(*::Optick::GetFrameDescription(__VA_ARGS__)); \
+										OPTICK_TAG("Frame", frameNumber);
+
+#define OPTICK_UPDATE()					::Optick::Update();
+#define OPTICK_FRAME_FLIP(...)			::Optick::EndFrame(__VA_ARGS__); ::Optick::BeginFrame(__VA_ARGS__);
 
 
 // Thread registration macro.
@@ -738,7 +814,7 @@ OPTICK_API const EventDescription* GetFrameDescription(FrameType::Type frame);
 
 // Thread registration macros.
 // Useful for integration with custom job-managers.
-#define OPTICK_START_THREAD(FRAME_NAME) ::Optick::RegisterThread(FRAME_NAME);
+#define OPTICK_START_THREAD(THREAD_NAME) ::Optick::RegisterThread(THREAD_NAME);
 #define OPTICK_STOP_THREAD() ::Optick::UnRegisterThread(false);
 
 // Attaches a custom data-tag.
@@ -825,8 +901,24 @@ OPTICK_API const EventDescription* GetFrameDescription(FrameType::Type frame);
 #define OPTICK_SET_STATE_CHANGED_CALLBACK(CALLBACK)			::Optick::SetStateChangedCallback(CALLBACK);
 
 
+// Registers custom memory allocator within Optick core
+// Example:
+//		OPTICK_SET_MEMORY_ALLOCATOR([](size_t size) -> void* { return operator new(size); }, [](void* p) { operator delete(p); }, nullptr);
+// Params:
+//		INIT_THREAD_CALLBACK - callback for internal Optick threads (useful if you need to setup some TLS variables related to the memory allocator for your thread)
+// Notes:
+//		Should be called before the first call to OPTICK_FRAME
+//		Allocation and deallocation functions should be thread-safe - Optick doesn't do any synchronization for these calls
+#define OPTICK_SET_MEMORY_ALLOCATOR(ALLOCATE_FUNCTION, DEALLOCATE_FUNCTION, INIT_THREAD_CALLBACK)				::Optick::SetAllocator(ALLOCATE_FUNCTION, DEALLOCATE_FUNCTION, INIT_THREAD_CALLBACK);
+
+// Shutdown
+// Clears all the internal buffers allocated by Optick
+// Notes:
+//		You shouldn't call any Optick functions after shutting down the system (it might lead to the undefined behaviour)
+#define OPTICK_SHUTDOWN()																						::Optick::Shutdown();
+
 // GPU events
-#define OPTICK_GPU_INIT_D3D12(DEVICE, CMD_QUEUES, NUM_CMD_QUEUS)			::Optick::InitGpuD3D12(DEVICE, CMD_QUEUES, NUM_CMD_QUEUS);
+#define OPTICK_GPU_INIT_D3D12(DEVICE, CMD_QUEUES, NUM_CMD_QUEUS)												::Optick::InitGpuD3D12(DEVICE, CMD_QUEUES, NUM_CMD_QUEUS);
 #define OPTICK_GPU_INIT_VULKAN(DEVICES, PHYSICAL_DEVICES, CMD_QUEUES, CMD_QUEUES_FAMILY, NUM_CMD_QUEUS)			::Optick::InitGpuVulkan(DEVICES, PHYSICAL_DEVICES, CMD_QUEUES, CMD_QUEUES_FAMILY, NUM_CMD_QUEUS);
 
 // Setup GPU context:
@@ -846,12 +938,47 @@ OPTICK_API const EventDescription* GetFrameDescription(FrameType::Type frame);
 
 #define OPTICK_GPU_FLIP(SWAP_CHAIN)		::Optick::GpuFlip(SWAP_CHAIN);
 
+/////////////////////////////////////////////////////////////////////////////////
+// [Automation][Startup]
+/////////////////////////////////////////////////////////////////////////////////
+
+// Starts a new capture
+// Params:
+//		[Optional] Mode::Type mode /*= Mode::DEFAULT*/
+//		[Optional] int samplingFrequency /*= 1000*/
+#define OPTICK_START_CAPTURE(...)				::Optick::StartCapture(__VA_ARGS__);
+
+// Stops a new capture (Keeps data intact in the local buffers)
+#define OPTICK_STOP_CAPTURE(...)				::Optick::StopCapture(__VA_ARGS__);
+
+// Saves capture
+// Params:
+//		const char* FilePath - path to the capture
+// or
+//		CaptureSaveChunkCb dataCb - callback for saving chunks of data
+// Example:
+//		OPTICK_SAVE_CAPTURE("ConsoleApp.opt");
+#define OPTICK_SAVE_CAPTURE(...)				::Optick::SaveCapture(__VA_ARGS__);
+
+// Generate a capture for the whole scope
+// Params:
+//		NAME - name of the application
+// Examples:
+//		int main() {
+//			OPTICK_APP("MyGame"); //Optick will automatically save a capture in the working directory with the name "MyGame(2019-09-08.14-30-19).opt"	
+//			...
+//		}
+#define OPTICK_APP(NAME)			OPTICK_THREAD(NAME); \
+									::Optick::OptickApp _optickApp(NAME); \
+									OPTICK_UNUSED(_optickApp);
+
+
 #else
 #define OPTICK_EVENT(...)
-#define OPTICK_CATEGORY(NAME, COLOR)
+#define OPTICK_CATEGORY(NAME, CATEGORY)
 #define OPTICK_FRAME(NAME)
-#define OPTICK_THREAD(FRAME_NAME)
-#define OPTICK_START_THREAD(FRAME_NAME)
+#define OPTICK_THREAD(THREAD_NAME)
+#define OPTICK_START_THREAD(THREAD_NAME)
 #define OPTICK_STOP_THREAD()
 #define OPTICK_TAG(NAME, DATA)
 #define OPTICK_EVENT_DYNAMIC(NAME)	
@@ -864,9 +991,17 @@ OPTICK_API const EventDescription* GetFrameDescription(FrameType::Type frame);
 #define OPTICK_STORAGE_PUSH(STORAGE, DESCRIPTION, CPU_TIMESTAMP_START)
 #define OPTICK_STORAGE_POP(STORAGE, CPU_TIMESTAMP_FINISH)				
 #define OPTICK_SET_STATE_CHANGED_CALLBACK(CALLBACK)
+#define OPTICK_SET_MEMORY_ALLOCATOR(ALLOCATE_FUNCTION, DEALLOCATE_FUNCTION)	
+#define OPTICK_SHUTDOWN()
 #define OPTICK_GPU_INIT_D3D12(DEVICE, CMD_QUEUES, NUM_CMD_QUEUS)
 #define OPTICK_GPU_INIT_VULKAN(DEVICES, PHYSICAL_DEVICES, CMD_QUEUES, CMD_QUEUES_FAMILY, NUM_CMD_QUEUS)
 #define OPTICK_GPU_CONTEXT(...)
 #define OPTICK_GPU_EVENT(NAME)
 #define OPTICK_GPU_FLIP(SWAP_CHAIN)
+#define OPTICK_UPDATE()
+#define OPTICK_FRAME_FLIP(...)
+#define OPTICK_START_CAPTURE(...)
+#define OPTICK_STOP_CAPTURE()
+#define OPTICK_SAVE_CAPTURE(...)
+#define OPTICK_APP(NAME)
 #endif
