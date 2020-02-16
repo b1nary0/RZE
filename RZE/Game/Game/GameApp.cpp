@@ -21,6 +21,7 @@
 #include <Game/Systems/FirstPersonCameraSystem.h>
 #include <Game/Systems/InteractiveSpawningSystem.h>
 #include <Game/Systems/ProjectileSystem.h>
+#include <Game/Systems/TestbedSystem.h>
 
 #include <Game/Components/VelocityComponent.h>
 
@@ -44,6 +45,7 @@ void GameApp::Initialize()
 	RZE().GetActiveScene().Load(FilePath("Assets/Scenes/TestGame.scene"));
 
 	//RZE().GetActiveScene().GetEntityHandler().AddSystem<InteractiveSpawningSystem>();
+	RZE().GetActiveScene().GetEntityHandler().AddSystem<TestbedSystem>();
 	RZE().GetActiveScene().GetEntityHandler().AddSystem<FreeCameraSystem>();
 	RZE().GetActiveScene().GetEntityHandler().AddSystem<ProjectileSystem>();
 }
