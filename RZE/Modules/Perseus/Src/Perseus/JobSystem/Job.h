@@ -25,6 +25,7 @@ namespace Perseus
 		void operator=(const Job& other)
 		{
 			mTask = other.mTask;
+			mOnFinished = other.mOnFinished;
 		}
 
 	private:
