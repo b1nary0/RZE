@@ -45,6 +45,7 @@ void Texture2D::Release()
 	if (mData != nullptr)
 	{
 		delete mData;
+		mData = nullptr;
 	}
 }
 
