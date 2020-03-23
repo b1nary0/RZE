@@ -144,6 +144,16 @@ namespace Diotima
 			}
 		}
 
+		// Last capture resource
+		D3D12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, kBufferWidth, kBufferHeight, 1, 1);
+		GetDevice()->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			D3D12_HEAP_FLAG_NONE,
+			&resourceDesc,
+			D3D12_RESOURCE_STATE_COMMON,
+			nullptr,
+			IID_PPV_ARGS(&mLastFrameRTCapture));
+
 		{
 			// CREATE COMMAND ALLOCATORS
 			mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mCommandAllocator));
@@ -155,6 +165,52 @@ namespace Diotima
 		InitializeMipGeneration();
 	}
 
+	void DX12GFXDevice::CaptureFrame()
+	{
+		ID3D12GraphicsCommandList* commandList = GetGraphicsCommandList(CreateGraphicsCommandList(GetResourceCommandAllocator(), nullptr));
+
+		D3D12_RESOURCE_BARRIER inBarriers[2] =
+		{
+			CD3DX12_RESOURCE_BARRIER::Transition(mLastFrameRTCapture.Get(),
+				D3D12_RESOURCE_STATE_COMMON,
+				D3D12_RESOURCE_STATE_COPY_DEST),
+				CD3DX12_RESOURCE_BARRIER::Transition(GetCurrentFrameRenderTarget(),
+				D3D12_RESOURCE_STATE_PRESENT,
+				D3D12_RESOURCE_STATE_COPY_SOURCE)
+		};
+
+		commandList->ResourceBarrier(2, inBarriers);
+
+		commandList->CopyResource(mLastFrameRTCapture.Get(), GetCurrentFrameRenderTarget());
+
+		//// Copy to buffer
+		//U8* pVertexDataBegin;
+		//CD3DX12_RANGE readRange(0, 0);
+		//mUploadBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin));
+		//memcpy(pVertexDataBegin, data, bufferSize);
+		//mUploadBuffer->Unmap(0, nullptr);
+
+		//D3D12_SUBRESOURCE_DATA subResourceData = {};
+		//subResourceData.pData = pVertexDataBegin;
+		//subResourceData.RowPitch = bufferSize;
+		//subResourceData.SlicePitch = subResourceData.RowPitch;
+
+		//UpdateSubresources<1>(commandList, mGPUBuffer.Get(), mUploadBuffer.Get(), 0, 0, 1, &subResourceData);
+
+		D3D12_RESOURCE_BARRIER outBarriers[2] =
+		{
+			CD3DX12_RESOURCE_BARRIER::Transition(mLastFrameRTCapture.Get(),
+				D3D12_RESOURCE_STATE_COPY_DEST,
+				D3D12_RESOURCE_STATE_COMMON),
+				CD3DX12_RESOURCE_BARRIER::Transition(GetCurrentFrameRenderTarget(),
+				D3D12_RESOURCE_STATE_COPY_SOURCE,
+				D3D12_RESOURCE_STATE_PRESENT)
+		};
+		commandList->ResourceBarrier(2, outBarriers);
+
+		ExecuteCommandList(commandList);
+	}
+
 	void DX12GFXDevice::SetWindow(void* windowHandle)
 	{
 		mWindowHandle = windowHandle;
@@ -162,8 +218,8 @@ namespace Diotima
 
 	void DX12GFXDevice::Present()
 	{
+		//CaptureFrame();
 		mSwapChain->Present(mSyncInterval, 0);
-
 		WaitForPreviousFrame();
 	}
 

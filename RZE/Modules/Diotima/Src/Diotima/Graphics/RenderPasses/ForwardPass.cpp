@@ -134,11 +134,6 @@ namespace Diotima
 		End(commandList);
 	}
 
-	void ForwardPass::SetResourceGPUHandle(CD3DX12_GPU_DESCRIPTOR_HANDLE handle)
-	{
-		mInputResourceHandle = handle;
-	}
-
 	void ForwardPass::End(ID3D12GraphicsCommandList* commandList)
 	{
 		ID3D12Resource* currentFrameRenderTarget = mDevice->GetCurrentFrameRenderTarget();
@@ -165,6 +160,11 @@ namespace Diotima
 			D3D12_RESOURCE_STATE_PRESENT));
 
 		mDevice->ExecuteCommandList(commandList);
+	}
+
+	void ForwardPass::SetResourceGPUHandle(CD3DX12_GPU_DESCRIPTOR_HANDLE handle)
+	{
+		mInputResourceHandle = handle;
 	}
 
 	void ForwardPass::SetRenderer(Renderer* renderer)

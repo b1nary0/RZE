@@ -99,6 +99,9 @@ namespace Diotima
 		void CreateMipGenRootSignature();
 		void CreateMipGenPSO();
 
+		// #NOTE(This is temporary to test with qt. Will be removed later)
+		void CaptureFrame();
+
 	private:
 #if defined(_DEBUG)
 		ComPtr<ID3D12Debug> mDebugController;
@@ -115,6 +118,11 @@ namespace Diotima
 		
 		ComPtr<ID3D12Resource> mRenderTargets[kBufferCount];
 		ComPtr<ID3D12Resource> mMSAARenderTarget;
+
+		// #NOTE(Josh::This is from testing out how to get the texture data from a rendered frame
+		//             to use in QT. The need to write this code is what is going to likely trigger
+		//             a rewrite into DX11 to avoid all the overhead tasks for now.)
+		ComPtr<ID3D12Resource> mLastFrameRTCapture;
 
 		ComPtr<ID3D12RootSignature> mMipGenRootSig;
 		ComPtr<ID3D12PipelineState> mMipGenPSO;
