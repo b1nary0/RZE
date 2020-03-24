@@ -22,7 +22,7 @@ namespace Diotima
 
 	void ImGUIPass::Initialize(int width, int height)
 	{
-		SetDevice(mRenderer->mDevice.get());
+		SetDevice(mRenderer->mDX12Device.get());
 		mCommandList = mDevice->CreateGraphicsCommandList(mDevice->GetCommandAllocator(), nullptr);
 		mDevice->GetGraphicsCommandList(mCommandList)->Close();
 

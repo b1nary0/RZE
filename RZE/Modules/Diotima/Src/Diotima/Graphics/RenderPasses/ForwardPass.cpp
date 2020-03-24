@@ -29,7 +29,7 @@ namespace Diotima
 {
 		OPTICK_EVENT();
 
-		SetDevice(mRenderer->mDevice.get());
+		SetDevice(mRenderer->mDX12Device.get());
 
 		CreateRootSignature();
 		CreatePipelineState();

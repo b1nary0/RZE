@@ -22,6 +22,7 @@ namespace Diotima
 {
 	// DX12 Temp
 	class DX12GFXDevice;
+	class DX11GFXDevice;
 
 	class GFXPassGraph;
 
@@ -205,7 +206,10 @@ namespace Diotima
 
 		std::unique_ptr<GFXPassGraph> mPassGraph;
 		
-		std::unique_ptr<DX12GFXDevice> mDevice;
+		std::unique_ptr<DX11GFXDevice> mDevice;
+
+		// temp to get build going due to dependencies in places
+		std::unique_ptr<DX12GFXDevice> mDX12Device;
 
 		void* mWindowHandle;
 

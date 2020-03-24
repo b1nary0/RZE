@@ -119,6 +119,7 @@ workspace "RZE"
 			"glew64",
 			"OptickCore",
 			"D3d12.lib",
+			"d3d11.lib",
 			"DXGI.lib",
 			"D3DCompiler.lib",
 			-- RZE --
@@ -247,6 +248,7 @@ workspace "RZE"
 			"glew64",
 			"OptickCore",
 			"D3d12.lib",
+			"d3d11.lib",
 			"DXGI.lib",
 			"D3DCompiler.lib",
 			-- RZE
@@ -315,6 +317,7 @@ workspace "RZE"
 			"glew64",
 			"OptickCore",
 			"D3d12.lib",
+			"d3d11.lib",
 			"DXGI.lib",
 			"D3DCompiler.lib",
 			-- RZE
@@ -383,6 +386,7 @@ workspace "RZE"
 			"glew64",
 			"OptickCore",
 			"D3d12.lib",
+			"d3d11.lib",
 			"DXGI.lib",
 			"D3DCompiler.lib",
 			-- RZE

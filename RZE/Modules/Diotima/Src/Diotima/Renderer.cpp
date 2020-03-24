@@ -12,6 +12,9 @@
 #include <Utils/Math/Vector4D.h>
 #include <Utils/Platform/FilePath.h>
 
+// DX11
+#include <Diotima/Driver/DX11/DX11GFXDevice.h>
+
 // DX12 Branch Temp
 #include <Diotima/Driver/DX12/DX12GFXDevice.h>
 #include <Diotima/Driver/DX12/DX12GFXConstantBuffer.h>
@@ -83,35 +86,38 @@ namespace Diotima
 	{
 		mCanvasSize.SetXY(1600, 900);
 
-		mMatrixConstantBuffer = malloc(sizeof(Matrix4x4) * 3);
+		//mMatrixConstantBuffer = malloc(sizeof(Matrix4x4) * 3);
 
-		DX12Initialize();
+		//DX12Initialize();
+		mDevice = std::make_unique<DX11GFXDevice>();
+		mDevice->SetWindow(mWindowHandle);
+		mDevice->Initialize();
 
-		mPassGraph->Build(this);
+		//mPassGraph->Build(this);
 	}
 
 	void Renderer::Update()
 	{
 		OPTICK_EVENT();
 
-		mDevice->ResetCommandAllocator();
-		mDevice->ResetResourceCommandAllocator();
+		//mDevice->ResetCommandAllocator();
+		//mDevice->ResetResourceCommandAllocator();
 
-		ProcessCommands();
+		//ProcessCommands();
 
-		PrepareDrawCalls();
+		//PrepareDrawCalls();
 
 		{
 			// #TODO(Eventually this should be moved out of here and into the engine level.
 			//       Then the render side just deals with the generated commands.)
-			mPassGraph->Execute();
+			//mPassGraph->Execute();
 		}
 
-		HRESULT res = mDevice->GetDevice()->GetDeviceRemovedReason();
-		if (res != S_OK)
-		{
-			AssertFalse();
-		}
+// 		HRESULT res = mDevice->GetDevice()->GetDeviceRemovedReason();
+// 		if (res != S_OK)
+// 		{
+// 			AssertFalse();
+// 		}
 	}
 
 	void Renderer::Render()
@@ -121,7 +127,7 @@ namespace Diotima
 
 	void Renderer::ShutDown()
 	{
-		free(mMatrixConstantBuffer);
+		//free(mMatrixConstantBuffer);
 
 		ImGui_ImplDX12_Shutdown();
 
@@ -150,13 +156,13 @@ namespace Diotima
 
 	void Renderer::DX12Initialize()
 	{
-		mDevice = std::make_unique<DX12GFXDevice>();
-		mDevice->SetWindow(mWindowHandle);
-		mDevice->SetMSAASampleCount(mMSAASampleCount);
-		mDevice->Initialize();
+		mDX12Device = std::make_unique<DX12GFXDevice>();
+		mDX12Device->SetWindow(mWindowHandle);
+		mDX12Device->SetMSAASampleCount(mMSAASampleCount);
+		mDX12Device->Initialize();
 
-		mMVPConstantBuffer = mDevice->CreateConstantBuffer(sizeof(Matrix4x4) * 3, 65536);
-		mMaterialBuffer = mDevice->CreateConstantBuffer(sizeof(RenderItemMaterialDesc), 65536);
+		mMVPConstantBuffer = mDX12Device->CreateConstantBuffer(sizeof(Matrix4x4) * 3, 65536);
+		mMaterialBuffer = mDX12Device->CreateConstantBuffer(sizeof(RenderItemMaterialDesc), 65536);
 	}
 
 	void Renderer::PrepareDrawCalls()
@@ -170,8 +176,8 @@ namespace Diotima
 
 		Matrix4x4 camViewProjMat = camera.ProjectionMat * camera.ViewMat;
 
-		DX12GFXConstantBuffer* const materialBuffer = mDevice->GetConstantBuffer(mMaterialBuffer);
-		DX12GFXConstantBuffer* const matrixBuffer = mDevice->GetConstantBuffer(mMVPConstantBuffer);
+		DX12GFXConstantBuffer* const materialBuffer = mDX12Device->GetConstantBuffer(mMaterialBuffer);
+		DX12GFXConstantBuffer* const matrixBuffer = mDX12Device->GetConstantBuffer(mMVPConstantBuffer);
 
 		matrixBuffer->Reset();
 		materialBuffer->Reset();
@@ -228,7 +234,7 @@ namespace Diotima
 
 	void Renderer::EnableVsync(bool bEnabled)
 	{
-		mDevice->SetSyncInterval(static_cast<U32>(bEnabled));
+		//mDevice->SetSyncInterval(static_cast<U32>(bEnabled));
 	}
 
 	void Renderer::SetMSAASampleCount(U32 sampleCount)
@@ -248,7 +254,7 @@ namespace Diotima
 		int width = static_cast<int>(newSize.X());
 		int height = static_cast<int>(newSize.Y());
 
-		mDevice->HandleWindowResize(width, height);
+		mDX12Device->HandleWindowResize(width, height);
 
 		mPassGraph->OnWindowResize(width, height);
 
@@ -281,7 +287,7 @@ namespace Diotima
 		mVertexBufferCommandQueue.push_back(std::move(command));
 
 		// #TODO(This is shit, fix later)
-		return mDevice->GetVertexBufferCount() + mVertexBufferCommandQueue.size() - 1;
+		return mDX12Device->GetVertexBufferCount() + mVertexBufferCommandQueue.size() - 1;
 	}
 
 	U32 Renderer::QueueCreateIndexBufferCommand(void* data, U32 numElements)
@@ -295,7 +301,7 @@ namespace Diotima
 		mIndexBufferCommandQueue.push_back(std::move(command));
 
 		// #TODO(This is shit, fix later)
-		return mDevice->GetVertexBufferCount() + mIndexBufferCommandQueue.size() - 1;
+		return mDX12Device->GetVertexBufferCount() + mIndexBufferCommandQueue.size() - 1;
 	}
 
 	U32 Renderer::QueueCreateTextureCommand(ECreateTextureBufferType bufferType, void* data, U32 width, U32 height)
@@ -310,7 +316,7 @@ namespace Diotima
 		mTextureBufferCommandQueue.push_back(std::move(command));
 
 		// #TODO(This is shit, fix later)
-		return mDevice->GetTextureBufferCount() + mTextureBufferCommandQueue.size() - 1;
+		return mDX12Device->GetTextureBufferCount() + mTextureBufferCommandQueue.size() - 1;
 	}
 
 
