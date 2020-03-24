@@ -2,6 +2,8 @@
 
 #include <Diotima/Driver/GFXDevice.h>
 
+#include <memory>
+
 struct ID3D11Device;
 struct ID3D11DeviceContext;
 struct IDXGISwapChain;
@@ -18,6 +20,10 @@ struct ID3D11Texture2D;
 
 namespace Diotima
 {
+	class DX11GFXVertexBuffer;
+	class DX11GFXIndexBuffer;
+	class DX11GFXConstantBuffer;
+
 	class DX11GFXDevice : public IGFXDevice
 	{
 	public:
@@ -31,10 +37,13 @@ namespace Diotima
 		void SetWindow(void* windowHandle) override;
 		void Shutdown() override;
 
-		U32 CreateVertexBuffer(void* data, U32 numElements) override;
-		U32 CreateIndexBuffer(void* data, U32 numElements) override;
+		U32 CreateVertexBuffer(void* data, size_t size, U32 count) override;
+		U32 CreateIndexBuffer(void* data, size_t size, U32 count) override;
 		U32 CreateTextureBuffer2D(void* data, U32 width, U32 height) override;
 		U32 CreateConstantBuffer(size_t memberSize, U32 maxMembers) override;
+
+		DX11GFXVertexBuffer* GetVertexBuffer(U32 bufferID);
+		DX11GFXIndexBuffer* GetIndexBuffer(U32 bufferID);
 
 	public:
 		ID3D11Device& GetHardwareDevice();
@@ -49,9 +58,9 @@ namespace Diotima
 		void* mWindowHandle;
 
 	private:
-		std::vector<ID3D11Buffer*> mVertexBuffers;
-		std::vector<ID3D11Buffer*> mIndexBuffers;
-		std::vector<ID3D11Buffer*> mConstantBuffers;
+		std::vector<std::unique_ptr<DX11GFXVertexBuffer>> mVertexBuffers;
+ 		std::vector<std::unique_ptr<DX11GFXIndexBuffer>> mIndexBuffers;
+// 		std::vector<std::unique_ptr<DX11GFXConstantBuffer>> mConstantBuffers;
 
 	// temp for testing will move after
 	private:

@@ -8,24 +8,21 @@ namespace Diotima
 {
 	class DX11GFXDevice;
 
-	class DX11GFXVertexBuffer : public IGFXVertexBuffer
+	class DX11GFXIndexBuffer : public IGFXIndexBuffer
 	{
 	public:
-		DX11GFXVertexBuffer() = default;
-		~DX11GFXVertexBuffer() = default;
+		DX11GFXIndexBuffer() = default;
+		~DX11GFXIndexBuffer() = default;
 
-		// IGFXVertexBuffer interface
+	// IGFXIndexBuffer interface
 	public:
 		virtual void Allocate(void* data, size_t size, U32 count) override;
 
 	public:
-		ID3D11Buffer& GetHardwareBuffer();
 		void SetDevice(DX11GFXDevice* device);
+		ID3D11Buffer& GetHardwareBuffer();
 
 	private:
-		U32 mStride;
-		U32 mOffset;
-
 		DX11GFXDevice* mDevice;
 		ID3D11Buffer* mBuf;
 	};

@@ -2,6 +2,9 @@
 
 #include <Diotima/Driver/DX11/DX11.h>
 
+#include <Diotima/Driver/DX11/DX11GFXVertexBuffer.h>
+#include <Diotima/Driver/DX11/DX11GFXIndexBuffer.h>
+
 #include <Utils/Conversions.h>
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Vector3D.h>
@@ -99,14 +102,22 @@ namespace Diotima
 		mDepthStencilTex->Release();
 	}
 
-	U32 DX11GFXDevice::CreateVertexBuffer(void* data, U32 numElements)
+	U32 DX11GFXDevice::CreateVertexBuffer(void* data, size_t size, U32 count)
 	{
-		return 0;
+		mVertexBuffers.push_back(std::make_unique<DX11GFXVertexBuffer>());
+		mVertexBuffers.back()->SetDevice(this);
+		mVertexBuffers.back()->Allocate(data, size, count);
+
+		return static_cast<U32>(mVertexBuffers.size() - 1);
 	}
 
-	U32 DX11GFXDevice::CreateIndexBuffer(void* data, U32 numElements)
+	U32 DX11GFXDevice::CreateIndexBuffer(void* data, size_t size, U32 count)
 	{
-		return 0;
+		mIndexBuffers.push_back(std::make_unique<DX11GFXIndexBuffer>());
+		mIndexBuffers.back()->SetDevice(this);
+		mIndexBuffers.back()->Allocate(data, size, count);
+
+		return static_cast<U32>(mIndexBuffers.size() - 1);
 	}
 
 	U32 DX11GFXDevice::CreateTextureBuffer2D(void* data, U32 width, U32 height)
@@ -117,6 +128,18 @@ namespace Diotima
 	U32 DX11GFXDevice::CreateConstantBuffer(size_t memberSize, U32 maxMembers)
 	{
 		return 0;
+	}
+
+	DX11GFXVertexBuffer* DX11GFXDevice::GetVertexBuffer(U32 bufferID)
+	{
+		AssertExpr(mVertexBuffers.size() > bufferID);
+		return mVertexBuffers[bufferID].get();
+	}
+
+	Diotima::DX11GFXIndexBuffer* DX11GFXDevice::GetIndexBuffer(U32 bufferID)
+	{
+		AssertExpr(mIndexBuffers.size() > bufferID);
+		return mIndexBuffers[bufferID].get();
 	}
 
 	ID3D11Device& DX11GFXDevice::GetHardwareDevice()
@@ -157,18 +180,33 @@ namespace Diotima
 			mDeviceContext->PSSetShader(mPixelShader, 0, 0);
 		}
 
-		struct VertexData
+		// Vertex buffer
 		{
-			Vector3D Position;
-			Vector4D Color;
-		};
-		VertexData vertices[4] =
-		{
-			{ Vector3D(-0.5f, -0.5f, 0.5f), Vector4D(1.0f, 0.0f, 0.0f, 1.0f) },
-			{ Vector3D(-0.5f, 0.5f, 0.5f), Vector4D(0.0f, 1.0f, 0.0f, 1.0f) },
-			{ Vector3D(0.5f, 0.5f, 0.5f), Vector4D(0.0f, 0.0f, 1.0f, 1.0f) },
-			{ Vector3D(0.5f, -0.5f, 0.5f), Vector4D(0.0f, 1.0f, 0.0f, 1.0f) }
-		};
+			struct VertexData
+			{
+				Vector3D Position;
+				Vector4D Color;
+			};
+			VertexData vertices[4] =
+			{
+				{ Vector3D(-0.5f, -0.5f, 0.5f), Vector4D(1.0f, 0.0f, 0.0f, 1.0f) },
+				{ Vector3D(-0.5f, 0.5f, 0.5f), Vector4D(0.0f, 1.0f, 0.0f, 1.0f) },
+				{ Vector3D(0.5f, 0.5f, 0.5f), Vector4D(0.0f, 0.0f, 1.0f, 1.0f) },
+				{ Vector3D(0.5f, -0.5f, 0.5f), Vector4D(0.0f, 1.0f, 0.0f, 1.0f) }
+			};
+
+			U32 vertexBufferID = CreateVertexBuffer(vertices, sizeof(VertexData), 4);
+
+			ID3D11Buffer* vertBuf = &GetVertexBuffer(vertexBufferID)->GetHardwareBuffer();
+			UINT stride = sizeof(VertexData);
+			UINT offset = 0;
+			mDeviceContext->IASetVertexBuffers(0, 1, &vertBuf, &stride, &offset);
+
+			hr = mDevice->CreateInputLayout(layout, numElements, mVSBlob->GetBufferPointer(), mVSBlob->GetBufferSize(), &mVertexLayout);
+
+			mDeviceContext->IASetInputLayout(mVertexLayout);
+			mDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		}
 
 		// Index buffer
 		{
@@ -177,48 +215,9 @@ namespace Diotima
 						0, 2, 3,
 			};
 
-			D3D11_BUFFER_DESC indexBufferDesc;
-			ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
-
-			indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-			indexBufferDesc.ByteWidth = sizeof(DWORD) * 2 * 3;
-			indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-			indexBufferDesc.CPUAccessFlags = 0;
-			indexBufferDesc.MiscFlags = 0;
-
-			D3D11_SUBRESOURCE_DATA indexBufferData;
-			ZeroMemory(&indexBufferData, sizeof(indexBufferData));
-
-			indexBufferData.pSysMem = indices;
-			mDevice->CreateBuffer(&indexBufferDesc, &indexBufferData, &mSquareIndexBuf);
-			mDeviceContext->IASetIndexBuffer(mSquareIndexBuf, DXGI_FORMAT_R32_UINT, 0);
-		}
-
-		// Vertex buffer
-		{
-			D3D11_BUFFER_DESC vertexBufferDesc;
-			ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
-
-			vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-			vertexBufferDesc.ByteWidth = sizeof(VertexData) * 4;
-			vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-			vertexBufferDesc.CPUAccessFlags = 0;
-			vertexBufferDesc.MiscFlags = 0;
-
-			D3D11_SUBRESOURCE_DATA vertexBufferData;
-			ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
-
-			vertexBufferData.pSysMem = vertices;
-			hr = mDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &mSquareVertBuf);
-
-			UINT stride = sizeof(VertexData);
-			UINT offset = 0;
-			mDeviceContext->IASetVertexBuffers(0, 1, &mSquareVertBuf, &stride, &offset);
-
-			hr = mDevice->CreateInputLayout(layout, numElements, mVSBlob->GetBufferPointer(), mVSBlob->GetBufferSize(), &mVertexLayout);
-
-			mDeviceContext->IASetInputLayout(mVertexLayout);
-			mDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			U32 indexBufferID = CreateIndexBuffer(indices, sizeof(DWORD) * 2 * 3, 1);
+			ID3D11Buffer* indexBuf = &GetIndexBuffer(indexBufferID)->GetHardwareBuffer();
+			mDeviceContext->IASetIndexBuffer(indexBuf, DXGI_FORMAT_R32_UINT, 0);
 		}
 
 		// Viewport

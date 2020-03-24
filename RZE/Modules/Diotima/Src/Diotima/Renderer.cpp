@@ -14,6 +14,10 @@
 
 // DX11
 #include <Diotima/Driver/DX11/DX11GFXDevice.h>
+// #TODO(What makes this needed here? unique_ptr complains re: destructor visibility
+//       is it necessary otherwise?)
+#include <Diotima/Driver/DX11/DX11GFXVertexBuffer.h>
+#include <Diotima/Driver/DX11/DX11GFXIndexBuffer.h>
 
 // DX12 Branch Temp
 #include <Diotima/Driver/DX12/DX12GFXDevice.h>
@@ -217,13 +221,13 @@ namespace Diotima
 				drawCall.IndexBuffer = meshData.IndexBuffer;
 				// #TODO(Josh::Eventually the material system will handle this itself and hold a buffer of pre-allocated materials
 				//             and we will somehow "lease" it for the draw call)
-				drawCall.MaterialSlot = materialBuffer->AllocateMember(&meshData.Material);
+// 				drawCall.MaterialSlot = materialBuffer->AllocateMember(&meshData.Material);
+// 
+// 				drawCall.TextureSlot0 = meshData.TextureDescs[0].TextureBuffer; // This should be iterated on to be more robust.
+// 				drawCall.TextureSlot1 = meshData.TextureDescs[1].TextureBuffer; // This should be iterated on to be more robust.
+// 				drawCall.TextureSlot2 = meshData.TextureDescs[2].TextureBuffer; // This should be iterated on to be more robust.
 
-				drawCall.TextureSlot0 = meshData.TextureDescs[0].TextureBuffer; // This should be iterated on to be more robust.
-				drawCall.TextureSlot1 = meshData.TextureDescs[1].TextureBuffer; // This should be iterated on to be more robust.
-				drawCall.TextureSlot2 = meshData.TextureDescs[2].TextureBuffer; // This should be iterated on to be more robust.
-
-				drawCall.MatrixSlot = matrixSlot;
+				//drawCall.MatrixSlot = matrixSlot;
 
 				mPerFrameDrawCalls.push_back(std::move(drawCall));
 			}
@@ -261,14 +265,14 @@ namespace Diotima
 		LOG_CONSOLE_ARGS("New Canvas Size: %f x %f", mCanvasSize.X(), mCanvasSize.Y());
 	}
 
-	U32 Renderer::CreateVertexBuffer(void* data, U32 numElements)
+	U32 Renderer::CreateVertexBuffer(void* data, size_t size, U32 count)
 	{
-		return mDevice->CreateVertexBuffer(data, numElements);
+		return mDevice->CreateVertexBuffer(data, size, count);
 	}
 
-	U32 Renderer::CreateIndexBuffer(void* data, U32 numElements)
+	U32 Renderer::CreateIndexBuffer(void* data, size_t size, U32 count)
 	{
-		return mDevice->CreateIndexBuffer(data, numElements);
+		return mDevice->CreateIndexBuffer(data, size, count);
 	}
 
 	U32 Renderer::CreateTextureBuffer2D(void* data, U32 width, U32 height)
@@ -276,14 +280,14 @@ namespace Diotima
 		return mDevice->CreateTextureBuffer2D(data, width, height);
 	}
 
-	U32 Renderer::QueueCreateVertexBufferCommand(void* data, U32 numElements)
+	U32 Renderer::QueueCreateVertexBufferCommand(void* data, size_t size, U32 count)
 	{
 		std::lock_guard<std::mutex> lock(mVertexBufferCommandMutex);
 
 		CreateBufferRenderCommand command;
 		command.BufferType = ECreateBufferType::Vertex;
 		command.Data = data;
-		command.NumElements = numElements;
+		command.Count = count;
 		mVertexBufferCommandQueue.push_back(std::move(command));
 
 		// #TODO(This is shit, fix later)
@@ -297,7 +301,7 @@ namespace Diotima
 		CreateBufferRenderCommand command;
 		command.BufferType = ECreateBufferType::Index;
 		command.Data = data;
-		command.NumElements = numElements;
+		command.Count = numElements;
 		mIndexBufferCommandQueue.push_back(std::move(command));
 
 		// #TODO(This is shit, fix later)
@@ -340,7 +344,7 @@ namespace Diotima
 			std::lock_guard<std::mutex> lock(mVertexBufferCommandMutex);
 			for (auto& command : mVertexBufferCommandQueue)
 			{
-				CreateVertexBuffer(command.Data, command.NumElements);
+				CreateVertexBuffer(command.Data, command.Size, command.Count);
 			}
 			mVertexBufferCommandQueue.clear();
 		}
@@ -350,7 +354,7 @@ namespace Diotima
 			std::lock_guard<std::mutex> lock(mIndexBufferCommandMutex);
 			for (auto& command : mIndexBufferCommandQueue)
 			{
-				CreateIndexBuffer(command.Data, command.NumElements);
+				CreateIndexBuffer(command.Data, command.Size, command.Count);
 			}
 			mIndexBufferCommandQueue.clear();
 		}

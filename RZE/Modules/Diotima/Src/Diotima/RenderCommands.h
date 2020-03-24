@@ -24,11 +24,12 @@ namespace Diotima
 		CreateBufferRenderCommand()
 			: BufferType(ECreateBufferType::Invalid)
 			, Data(nullptr)
-			, NumElements(0) {}
+			, Count(0) {}
 
 		ECreateBufferType BufferType;
 		void* Data;
-		U32 NumElements;
+		size_t Size;
+		U32 Count;
 	};
 
 	struct CreateTextureBufferRenderCommand

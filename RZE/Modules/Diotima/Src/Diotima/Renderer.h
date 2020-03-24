@@ -156,7 +156,7 @@ namespace Diotima
 		void ResizeCanvas(const Vector2D& newSize);
 
 	public:
-		U32 QueueCreateVertexBufferCommand(void* data, U32 numElements);
+		U32 QueueCreateVertexBufferCommand(void* data, size_t size, U32 count);
 		U32 QueueCreateIndexBufferCommand(void* data, U32 numElements);
 		U32 QueueCreateTextureCommand(ECreateTextureBufferType bufferType, void* data, U32 width, U32 height);
 
@@ -165,8 +165,8 @@ namespace Diotima
 		void ProcessCommands();
 
 	private:
-		U32 CreateVertexBuffer(void* data, U32 numElements);
-		U32 CreateIndexBuffer(void* data, U32 numElements);
+		U32 CreateVertexBuffer(void* data, size_t size, U32 count);
+		U32 CreateIndexBuffer(void* data, size_t size, U32 count);
 		U32 CreateTextureBuffer2D(void* data, U32 width, U32 height);
 
 	private:
