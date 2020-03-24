@@ -36,6 +36,10 @@ namespace Diotima
 		U32 CreateTextureBuffer2D(void* data, U32 width, U32 height) override;
 		U32 CreateConstantBuffer(size_t memberSize, U32 maxMembers) override;
 
+	public:
+		ID3D11Device& GetHardwareDevice();
+		ID3D11DeviceContext& GetDeviceContext();
+
 	private:
 		IDXGISwapChain* mSwapChain;
 		ID3D11Device* mDevice;
@@ -43,6 +47,11 @@ namespace Diotima
 		ID3D11RenderTargetView* mRenderTargetView;
 
 		void* mWindowHandle;
+
+	private:
+		std::vector<ID3D11Buffer*> mVertexBuffers;
+		std::vector<ID3D11Buffer*> mIndexBuffers;
+		std::vector<ID3D11Buffer*> mConstantBuffers;
 
 	// temp for testing will move after
 	private:

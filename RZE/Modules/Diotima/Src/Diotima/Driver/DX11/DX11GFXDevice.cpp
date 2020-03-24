@@ -3,6 +3,7 @@
 #include <Diotima/Driver/DX11/DX11.h>
 
 #include <Utils/Conversions.h>
+#include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Vector3D.h>
 #include <Utils/Math/Vector4D.h>
 #include <Utils/Platform/FilePath.h>
@@ -116,6 +117,18 @@ namespace Diotima
 	U32 DX11GFXDevice::CreateConstantBuffer(size_t memberSize, U32 maxMembers)
 	{
 		return 0;
+	}
+
+	ID3D11Device& DX11GFXDevice::GetHardwareDevice()
+	{
+		AssertNotNull(mDevice);
+		return *mDevice;
+	}
+
+	ID3D11DeviceContext& DX11GFXDevice::GetDeviceContext()
+	{
+		AssertNotNull(mDeviceContext);
+		return *mDeviceContext;
 	}
 
 	D3D11_INPUT_ELEMENT_DESC layout[] =

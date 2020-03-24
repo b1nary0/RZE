@@ -170,7 +170,10 @@ namespace Apollo
 			filteredEntities.reserve(mEntities.size());
 			filter.FilterAtLeast(mEntities, filteredEntities);
 
-			system->Update(filteredEntities);
+			if (!filteredEntities.empty())
+			{
+				system->Update(filteredEntities);
+			}
 		}
 	}
 

@@ -65,6 +65,7 @@ namespace Diotima
 		{
 			U32 VertexBuffer;
 			U32 IndexBuffer;
+			U32 ConstantBuffer;
 			std::vector<RenderItemTextureDesc> TextureDescs;
 			RenderItemMaterialDesc Material;
 		};
