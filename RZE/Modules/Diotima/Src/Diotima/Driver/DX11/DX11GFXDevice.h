@@ -13,6 +13,8 @@ struct ID3D11PixelShader;
 struct ID3D10Blob;
 struct ID3D10Blob;
 struct ID3D11InputLayout;
+struct ID3D11DepthStencilView;
+struct ID3D11Texture2D;
 
 namespace Diotima
 {
@@ -46,11 +48,15 @@ namespace Diotima
 	private:
 		void SetupSceneStuff();
 
-		ID3D11Buffer* mTriVertBuf;
+		ID3D11Buffer* mSquareVertBuf;
+		ID3D11Buffer* mSquareIndexBuf;
 		ID3D11VertexShader* mVertexShader;
 		ID3D11PixelShader* mPixelShader;
 		ID3D10Blob* mVSBlob;
 		ID3D10Blob* mPSBlob;
 		ID3D11InputLayout* mVertexLayout;
+
+		ID3D11DepthStencilView* mDepthStencilView;
+		ID3D11Texture2D* mDepthStencilTex;
 	};
 }
