@@ -6,9 +6,6 @@
 #include <unordered_map>
 #include <vector>
 
-// #TODO(Josh::Really don't like this, change later)
-#include <Diotima/Driver/DX12/DX12AllocationData.h>
-
 #include <Diotima/RenderCommands.h>
 
 #include <Utils/Math/Matrix4x4.h>
@@ -22,8 +19,6 @@ struct ID3D11InputLayout;
 
 namespace Diotima
 {
-	// DX12 Temp
-	class DX12GFXDevice;
 	class DX11GFXDevice;
 
 	class GFXPassGraph;
@@ -120,11 +115,6 @@ namespace Diotima
 			U32 VertexBuffer;
 			U32 IndexBuffer;
 			U32 ConstantBuffer;
-			U32 TextureSlot0; // Serves as the base descriptor for a descriptor range. Right now is D/S/N per mesh
-			U32 TextureSlot1;
-			U32 TextureSlot2;
-			CBAllocationData MaterialSlot;
-			CBAllocationData MatrixSlot;
 		};
 
 		// Constructors
@@ -178,8 +168,6 @@ namespace Diotima
 		const U32* GetLightCounts();
 		const CameraItemProtocol& GetCamera();
 
-		void DX12Initialize();
-		
 		void PrepareDrawCalls();
 
 	private:
@@ -212,12 +200,7 @@ namespace Diotima
 		
 		std::unique_ptr<DX11GFXDevice> mDevice;
 
-		// temp to get build going due to dependencies in places
-		std::unique_ptr<DX12GFXDevice> mDX12Device;
-
 		void* mWindowHandle;
-
-		void* mMatrixConstantBuffer;
 
 		ID3D11InputLayout* mVertexLayout;
 

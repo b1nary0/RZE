@@ -21,13 +21,6 @@
 #include <Diotima/Driver/DX11/DX11GFXIndexBuffer.h>
 #include <Diotima/Driver/DX11/DX11GFXConstantBuffer.h>
 
-// DX12 Branch Temp
-#include <Diotima/Driver/DX12/DX12GFXDevice.h>
-#include <Diotima/Driver/DX12/DX12GFXConstantBuffer.h>
-#include <Diotima/Driver/DX12/DX12GFXIndexBuffer.h>
-#include <Diotima/Driver/DX12/DX12GFXVertexBuffer.h>
-#include <Diotima/Driver/DX12/DX12GFXTextureBuffer2D.h>
-
 #include <ImGui/imgui.h>
 #include <ImGui/imgui_impl_dx12.h>
 
@@ -42,7 +35,6 @@ namespace Diotima
 
 	Renderer::Renderer()
 		: mPassGraph(std::make_unique<GFXPassGraph>())
-		, mMatrixConstantBuffer(nullptr)
 	{
 		mLightingList.reserve(MAX_LIGHTS);
 	}
@@ -101,9 +93,6 @@ namespace Diotima
 	{
 		mCanvasSize.SetXY(1600, 900);
 
-		//mMatrixConstantBuffer = malloc(sizeof(Matrix4x4) * 3);
-
-		//DX12Initialize();
 		mDevice = std::make_unique<DX11GFXDevice>();
 		mDevice->SetWindow(mWindowHandle);
 		mDevice->Initialize();
@@ -182,8 +171,6 @@ namespace Diotima
 
 	void Renderer::ShutDown()
 	{
-		//free(mMatrixConstantBuffer);
-
 		ImGui_ImplDX12_Shutdown();
 
 		mDevice->Shutdown();
@@ -207,17 +194,6 @@ namespace Diotima
 	const Diotima::Renderer::CameraItemProtocol& Renderer::GetCamera()
 	{
 		return camera;
-	}
-
-	void Renderer::DX12Initialize()
-	{
-		mDX12Device = std::make_unique<DX12GFXDevice>();
-		mDX12Device->SetWindow(mWindowHandle);
-		mDX12Device->SetMSAASampleCount(mMSAASampleCount);
-		mDX12Device->Initialize();
-
-		//mMVPConstantBuffer = mDX12Device->CreateConstantBuffer(sizeof(Matrix4x4) * 3, 65536);
-		mMaterialBuffer = mDX12Device->CreateConstantBuffer(sizeof(RenderItemMaterialDesc), 65536);
 	}
 
 	void Renderer::PrepareDrawCalls()
@@ -293,7 +269,7 @@ namespace Diotima
 		int width = static_cast<int>(newSize.X());
 		int height = static_cast<int>(newSize.Y());
 
-		mDX12Device->HandleWindowResize(width, height);
+		//mDX12Device->HandleWindowResize(width, height);
 
 		mPassGraph->OnWindowResize(width, height);
 
@@ -357,7 +333,7 @@ namespace Diotima
 		mTextureBufferCommandQueue.push_back(std::move(command));
 
 		// #TODO(This is shit, fix later)
-		return mDX12Device->GetTextureBufferCount() + mTextureBufferCommandQueue.size() - 1;
+		return 0;
 	}
 
 
