@@ -18,6 +18,8 @@
 // #TODO(Josh::Temp)
 #define MAX_LIGHTS 128
 
+struct ID3D11InputLayout;
+
 namespace Diotima
 {
 	// DX12 Temp
@@ -65,7 +67,6 @@ namespace Diotima
 		{
 			U32 VertexBuffer;
 			U32 IndexBuffer;
-			U32 ConstantBuffer;
 			std::vector<RenderItemTextureDesc> TextureDescs;
 			RenderItemMaterialDesc Material;
 		};
@@ -75,6 +76,7 @@ namespace Diotima
 			// #TODO(Josh::This needs to be done better. Works for now, but will need resolving when stuff matures)
 			std::vector<RenderItemMeshData> MeshData;
 			Matrix4x4						ModelMatrix;
+			U32								ConstantBuffer;
 
 			bool bIsValid{ false };
 			void Invalidate();
@@ -117,6 +119,7 @@ namespace Diotima
 		{
 			U32 VertexBuffer;
 			U32 IndexBuffer;
+			U32 ConstantBuffer;
 			U32 TextureSlot0; // Serves as the base descriptor for a descriptor range. Right now is D/S/N per mesh
 			U32 TextureSlot1;
 			U32 TextureSlot2;
@@ -157,7 +160,7 @@ namespace Diotima
 
 	public:
 		U32 QueueCreateVertexBufferCommand(void* data, size_t size, U32 count);
-		U32 QueueCreateIndexBufferCommand(void* data, U32 numElements);
+		U32 QueueCreateIndexBufferCommand(void* data, size_t size, U32 count);
 		U32 QueueCreateTextureCommand(ECreateTextureBufferType bufferType, void* data, U32 width, U32 height);
 
 		void QueueUpdateRenderItem(U32 itemID, const Matrix4x4& worldMtx);
@@ -202,7 +205,7 @@ namespace Diotima
 
 		// DX12 Temp
 	private:
-		U32 mMVPConstantBuffer;
+		U32 mViewProjBuf;
 		U32 mMaterialBuffer; // Per mesh data
 
 		std::unique_ptr<GFXPassGraph> mPassGraph;
@@ -215,6 +218,8 @@ namespace Diotima
 		void* mWindowHandle;
 
 		void* mMatrixConstantBuffer;
+
+		ID3D11InputLayout* mVertexLayout;
 
 	private:
 		std::mutex mVertexBufferCommandMutex;

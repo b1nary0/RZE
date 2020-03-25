@@ -44,23 +44,35 @@ namespace Diotima
 
 		DX11GFXVertexBuffer* GetVertexBuffer(U32 bufferID);
 		DX11GFXIndexBuffer* GetIndexBuffer(U32 bufferID);
+		DX11GFXConstantBuffer* GetConstantBuffer(U32 bufferID);
+
+		U32 GetVertexBufferCount() const;
+		U32 GetIndexBufferCount() const;
+		U32 GetConstantBufferCount() const;
 
 	public:
 		ID3D11Device& GetHardwareDevice();
 		ID3D11DeviceContext& GetDeviceContext();
 
+	// Temp access, these will move somewhere else.
+	public:
+		ID3D10Blob* mVSBlob;
+		ID3D10Blob* mPSBlob;
+
+		ID3D11DepthStencilView* mDepthStencilView;
+		ID3D11RenderTargetView* mRenderTargetView;
+
 	private:
 		IDXGISwapChain* mSwapChain;
 		ID3D11Device* mDevice;
 		ID3D11DeviceContext* mDeviceContext;
-		ID3D11RenderTargetView* mRenderTargetView;
 
 		void* mWindowHandle;
 
 	private:
 		std::vector<std::unique_ptr<DX11GFXVertexBuffer>> mVertexBuffers;
  		std::vector<std::unique_ptr<DX11GFXIndexBuffer>> mIndexBuffers;
-// 		std::vector<std::unique_ptr<DX11GFXConstantBuffer>> mConstantBuffers;
+ 		std::vector<std::unique_ptr<DX11GFXConstantBuffer>> mConstantBuffers;
 
 	// temp for testing will move after
 	private:
@@ -70,11 +82,7 @@ namespace Diotima
 		ID3D11Buffer* mSquareIndexBuf;
 		ID3D11VertexShader* mVertexShader;
 		ID3D11PixelShader* mPixelShader;
-		ID3D10Blob* mVSBlob;
-		ID3D10Blob* mPSBlob;
-		ID3D11InputLayout* mVertexLayout;
 
-		ID3D11DepthStencilView* mDepthStencilView;
 		ID3D11Texture2D* mDepthStencilTex;
 	};
 }

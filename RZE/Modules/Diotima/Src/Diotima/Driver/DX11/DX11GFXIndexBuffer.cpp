@@ -11,6 +11,8 @@ namespace Diotima
 
 	void DX11GFXIndexBuffer::Allocate(void* data, size_t size, U32 count)
 	{
+		mIndexCount = count;
+
 		D3D11_BUFFER_DESC indexBufferDesc;
 		ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
 
@@ -40,6 +42,11 @@ namespace Diotima
 	{
 		AssertNotNull(mBuf);
 		return *mBuf;
+	}
+
+	U32 DX11GFXIndexBuffer::GetIndexCount()
+	{
+		return mIndexCount;
 	}
 
 }

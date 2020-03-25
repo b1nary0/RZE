@@ -4,6 +4,7 @@
 
 #include <Diotima/Driver/DX11/DX11GFXVertexBuffer.h>
 #include <Diotima/Driver/DX11/DX11GFXIndexBuffer.h>
+#include <Diotima/Driver/DX11/DX11GFXConstantBuffer.h>
 
 #include <Utils/Conversions.h>
 #include <Utils/DebugUtils/Debug.h>
@@ -97,7 +98,6 @@ namespace Diotima
 		mPixelShader->Release();
 		mVSBlob->Release();
 		mPSBlob->Release();
-		mVertexLayout->Release();
 		mDepthStencilView->Release();
 		mDepthStencilTex->Release();
 	}
@@ -127,7 +127,11 @@ namespace Diotima
 
 	U32 DX11GFXDevice::CreateConstantBuffer(size_t memberSize, U32 maxMembers)
 	{
-		return 0;
+		mConstantBuffers.push_back(std::make_unique<DX11GFXConstantBuffer>());
+		mConstantBuffers.back()->SetDevice(this);
+		mConstantBuffers.back()->Allocate(memberSize, maxMembers);
+
+		return static_cast<U32>(mConstantBuffers.size() - 1);
 	}
 
 	DX11GFXVertexBuffer* DX11GFXDevice::GetVertexBuffer(U32 bufferID)
@@ -142,6 +146,27 @@ namespace Diotima
 		return mIndexBuffers[bufferID].get();
 	}
 
+	Diotima::DX11GFXConstantBuffer* DX11GFXDevice::GetConstantBuffer(U32 bufferID)
+	{
+		AssertExpr(mConstantBuffers.size() > bufferID);
+		return mConstantBuffers[bufferID].get();
+	}
+
+	U32 DX11GFXDevice::GetVertexBufferCount() const
+	{
+		return mVertexBuffers.size();
+	}
+
+	U32 DX11GFXDevice::GetIndexBufferCount() const
+	{
+		return mVertexBuffers.size();
+	}
+
+	U32 DX11GFXDevice::GetConstantBufferCount() const
+	{
+		return mVertexBuffers.size();
+	}
+
 	ID3D11Device& DX11GFXDevice::GetHardwareDevice()
 	{
 		AssertNotNull(mDevice);
@@ -153,13 +178,6 @@ namespace Diotima
 		AssertNotNull(mDeviceContext);
 		return *mDeviceContext;
 	}
-
-	D3D11_INPUT_ELEMENT_DESC layout[] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-	};
-	UINT numElements = ARRAYSIZE(layout);
 
 	void DX11GFXDevice::SetupSceneStuff()
 	{
@@ -180,46 +198,6 @@ namespace Diotima
 			mDeviceContext->PSSetShader(mPixelShader, 0, 0);
 		}
 
-		// Vertex buffer
-		{
-			struct VertexData
-			{
-				Vector3D Position;
-				Vector4D Color;
-			};
-			VertexData vertices[4] =
-			{
-				{ Vector3D(-0.5f, -0.5f, 0.5f), Vector4D(1.0f, 0.0f, 0.0f, 1.0f) },
-				{ Vector3D(-0.5f, 0.5f, 0.5f), Vector4D(0.0f, 1.0f, 0.0f, 1.0f) },
-				{ Vector3D(0.5f, 0.5f, 0.5f), Vector4D(0.0f, 0.0f, 1.0f, 1.0f) },
-				{ Vector3D(0.5f, -0.5f, 0.5f), Vector4D(0.0f, 1.0f, 0.0f, 1.0f) }
-			};
-
-			U32 vertexBufferID = CreateVertexBuffer(vertices, sizeof(VertexData), 4);
-
-			ID3D11Buffer* vertBuf = &GetVertexBuffer(vertexBufferID)->GetHardwareBuffer();
-			UINT stride = sizeof(VertexData);
-			UINT offset = 0;
-			mDeviceContext->IASetVertexBuffers(0, 1, &vertBuf, &stride, &offset);
-
-			hr = mDevice->CreateInputLayout(layout, numElements, mVSBlob->GetBufferPointer(), mVSBlob->GetBufferSize(), &mVertexLayout);
-
-			mDeviceContext->IASetInputLayout(mVertexLayout);
-			mDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		}
-
-		// Index buffer
-		{
-			DWORD indices[] = {
-						0, 1, 2,
-						0, 2, 3,
-			};
-
-			U32 indexBufferID = CreateIndexBuffer(indices, sizeof(DWORD) * 2 * 3, 1);
-			ID3D11Buffer* indexBuf = &GetIndexBuffer(indexBufferID)->GetHardwareBuffer();
-			mDeviceContext->IASetIndexBuffer(indexBuf, DXGI_FORMAT_R32_UINT, 0);
-		}
-
 		// Viewport
 		{
 			D3D11_VIEWPORT viewport;
@@ -238,12 +216,6 @@ namespace Diotima
 
 	void DX11GFXDevice::Present()
 	{
-		FLOAT rgba[4] = { 0.5f, 0.5f, 1.0f, 1.0f };
-		mDeviceContext->ClearDepthStencilView(mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-		mDeviceContext->ClearRenderTargetView(mRenderTargetView, rgba);
-
-		mDeviceContext->DrawIndexed(6, 0, 0);
-
 		mSwapChain->Present(0, 0);
 	}
 

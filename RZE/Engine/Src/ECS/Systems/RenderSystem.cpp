@@ -145,15 +145,15 @@ void RenderSystem::RegisterForComponentNotifications()
 				meshData.VertexBuffer = mesh.GetVertexBuffer();
 				meshData.IndexBuffer = mesh.GetIndexBuffer();
 
-				AssertExpr(mesh.GetMaterial().HasDiffuse());
-				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetDiffuse().GetTextureBufferID(), Diotima::Renderer::ETextureType::Diffuse);
-				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetSpecular().GetTextureBufferID(), Diotima::Renderer::ETextureType::Specular);
-				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetNormal().GetTextureBufferID(), Diotima::Renderer::ETextureType::Normal);
-
-				Diotima::Renderer::RenderItemMaterialDesc matDesc;
-				matDesc.Shininess = mesh.GetMaterial().Shininess;
-
-				meshData.Material = matDesc;
+// 				AssertExpr(mesh.GetMaterial().HasDiffuse());
+// 				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetDiffuse().GetTextureBufferID(), Diotima::Renderer::ETextureType::Diffuse);
+// 				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetSpecular().GetTextureBufferID(), Diotima::Renderer::ETextureType::Specular);
+// 				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetNormal().GetTextureBufferID(), Diotima::Renderer::ETextureType::Normal);
+// 
+// 				Diotima::Renderer::RenderItemMaterialDesc matDesc;
+// 				matDesc.Shininess = mesh.GetMaterial().Shininess;
+// 
+// 				meshData.Material = matDesc;
 
 				item.MeshData.push_back(meshData);
 			}
@@ -203,15 +203,15 @@ void RenderSystem::RegisterForComponentNotifications()
 				meshData.VertexBuffer = mesh.GetVertexBuffer();
 				meshData.IndexBuffer = mesh.GetIndexBuffer();
 
-				AssertExpr(mesh.GetMaterial().HasDiffuse());
-				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetDiffuse().GetTextureBufferID(), Diotima::Renderer::ETextureType::Diffuse);
-				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetSpecular().GetTextureBufferID(), Diotima::Renderer::ETextureType::Specular);
-				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetNormal().GetTextureBufferID(), Diotima::Renderer::ETextureType::Normal);
+// 				AssertExpr(mesh.GetMaterial().HasDiffuse());
+// 				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetDiffuse().GetTextureBufferID(), Diotima::Renderer::ETextureType::Diffuse);
+// 				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetSpecular().GetTextureBufferID(), Diotima::Renderer::ETextureType::Specular);
+// 				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetNormal().GetTextureBufferID(), Diotima::Renderer::ETextureType::Normal);
 
-				Diotima::Renderer::RenderItemMaterialDesc matDesc;
-				matDesc.Shininess = mesh.GetMaterial().Shininess;
-
-				meshData.Material = matDesc;
+// 				Diotima::Renderer::RenderItemMaterialDesc matDesc;
+// 				matDesc.Shininess = mesh.GetMaterial().Shininess;
+// 
+// 				meshData.Material = matDesc;
 
 				renderItem.MeshData.push_back(meshData);
 			}

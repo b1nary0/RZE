@@ -14,10 +14,12 @@
 
 // DX11
 #include <Diotima/Driver/DX11/DX11GFXDevice.h>
+#include <Diotima/Driver/DX11/DX11.h>
 // #TODO(What makes this needed here? unique_ptr complains re: destructor visibility
 //       is it necessary otherwise?)
 #include <Diotima/Driver/DX11/DX11GFXVertexBuffer.h>
 #include <Diotima/Driver/DX11/DX11GFXIndexBuffer.h>
+#include <Diotima/Driver/DX11/DX11GFXConstantBuffer.h>
 
 // DX12 Branch Temp
 #include <Diotima/Driver/DX12/DX12GFXDevice.h>
@@ -31,6 +33,13 @@
 
 namespace Diotima
 {
+	D3D11_INPUT_ELEMENT_DESC k_vertLayout[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+	};
+	UINT numLayoutElements = ARRAYSIZE(k_vertLayout);
+
 	Renderer::Renderer()
 		: mPassGraph(std::make_unique<GFXPassGraph>())
 		, mMatrixConstantBuffer(nullptr)
@@ -51,12 +60,14 @@ namespace Diotima
 
 			mRenderItems[index] = std::move(itemProtocol);
 			mRenderItems[index].bIsValid = true;
+			mRenderItems[index].ConstantBuffer = mDevice->CreateConstantBuffer(sizeof(Matrix4x4), 1);
 
 			return index;
 		}
 
 		mRenderItems.emplace_back(std::move(itemProtocol));
 		mRenderItems.back().bIsValid = true;
+		mRenderItems.back().ConstantBuffer = mDevice->CreateConstantBuffer(sizeof(Matrix4x4), 1);
 
 		return static_cast<Int32>(mRenderItems.size() - 1);
 	}
@@ -97,6 +108,10 @@ namespace Diotima
 		mDevice->SetWindow(mWindowHandle);
 		mDevice->Initialize();
 
+		mViewProjBuf = mDevice->CreateConstantBuffer(sizeof(Matrix4x4), 1);
+
+		HRESULT hr;
+		hr = mDevice->GetHardwareDevice().CreateInputLayout(k_vertLayout, numLayoutElements, mDevice->mVSBlob->GetBufferPointer(), mDevice->mVSBlob->GetBufferSize(), &mVertexLayout);
 		//mPassGraph->Build(this);
 	}
 
@@ -104,12 +119,9 @@ namespace Diotima
 	{
 		OPTICK_EVENT();
 
-		//mDevice->ResetCommandAllocator();
-		//mDevice->ResetResourceCommandAllocator();
+		ProcessCommands();
 
-		//ProcessCommands();
-
-		//PrepareDrawCalls();
+		PrepareDrawCalls();
 
 		{
 			// #TODO(Eventually this should be moved out of here and into the engine level.
@@ -122,6 +134,45 @@ namespace Diotima
 // 		{
 // 			AssertFalse();
 // 		}
+
+		FLOAT rgba[4] = { 0.5f, 0.5f, 1.0f, 1.0f };
+		ID3D11DeviceContext& deviceContext = mDevice->GetDeviceContext();
+		deviceContext.ClearDepthStencilView(mDevice->mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+		deviceContext.ClearRenderTargetView(mDevice->mRenderTargetView, rgba);
+
+		DX11GFXConstantBuffer* viewProjBuf = mDevice->GetConstantBuffer(mViewProjBuf);
+		ID3D11Buffer* vpbHardwareBuf = &viewProjBuf->GetHardwareBuffer();
+		mDevice->GetDeviceContext().VSSetConstantBuffers(0, 1, &vpbHardwareBuf);
+		for (RenderItemDrawCall& drawCall : mPerFrameDrawCalls)
+		{
+			// try to draw something
+			mDevice->GetDeviceContext().IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+			DX11GFXConstantBuffer* modelMatBuf = mDevice->GetConstantBuffer(drawCall.ConstantBuffer);
+			ID3D11Buffer* hwModelMatBuf = &modelMatBuf->GetHardwareBuffer();
+			deviceContext.VSSetConstantBuffers(1, 1, &hwModelMatBuf);
+
+			ID3D11Buffer* vertBuf = &mDevice->GetVertexBuffer(drawCall.VertexBuffer)->GetHardwareBuffer();
+			
+			struct TempDataLayoutStructure
+			{
+				Vector3D position;
+// 				Vector3D normal;
+// 				Vector2D uv;
+// 				Vector3D tangents;
+			};
+			UINT stride = sizeof(TempDataLayoutStructure);
+			UINT offset = 0;
+			mDevice->GetDeviceContext().IASetVertexBuffers(0, 1, &vertBuf, &stride, &offset);
+
+			mDevice->GetDeviceContext().IASetInputLayout(mVertexLayout);
+
+			// Index buffer
+			DX11GFXIndexBuffer* indexBuf = mDevice->GetIndexBuffer(drawCall.IndexBuffer);
+			mDevice->GetDeviceContext().IASetIndexBuffer(&indexBuf->GetHardwareBuffer(), DXGI_FORMAT_R32_UINT, 0);
+
+			deviceContext.DrawIndexed(indexBuf->GetIndexCount(), 0, 0);
+		}
 	}
 
 	void Renderer::Render()
@@ -165,7 +216,7 @@ namespace Diotima
 		mDX12Device->SetMSAASampleCount(mMSAASampleCount);
 		mDX12Device->Initialize();
 
-		mMVPConstantBuffer = mDX12Device->CreateConstantBuffer(sizeof(Matrix4x4) * 3, 65536);
+		//mMVPConstantBuffer = mDX12Device->CreateConstantBuffer(sizeof(Matrix4x4) * 3, 65536);
 		mMaterialBuffer = mDX12Device->CreateConstantBuffer(sizeof(RenderItemMaterialDesc), 65536);
 	}
 
@@ -179,12 +230,8 @@ namespace Diotima
 		}
 
 		Matrix4x4 camViewProjMat = camera.ProjectionMat * camera.ViewMat;
-
-		DX12GFXConstantBuffer* const materialBuffer = mDX12Device->GetConstantBuffer(mMaterialBuffer);
-		DX12GFXConstantBuffer* const matrixBuffer = mDX12Device->GetConstantBuffer(mMVPConstantBuffer);
-
-		matrixBuffer->Reset();
-		materialBuffer->Reset();
+		DX11GFXConstantBuffer* viewProjBuf = mDevice->GetConstantBuffer(mViewProjBuf);
+		viewProjBuf->UpdateSubresources(&camViewProjMat);
 
 		mPerFrameDrawCalls.clear();
 		for (RenderItemProtocol& renderItem : mRenderItems)
@@ -196,29 +243,17 @@ namespace Diotima
 				continue;
 			}
 
-			CBAllocationData matrixSlot;
-			// #TODO(Josh::Just copy pasta from before for now to get RenderItemDrawCall driving the Renderer::Update loop
-				//             Should find a better place for it.)
-			{
-				// Create and copy a buffer of matrices for a given item
-				// Camera matrix should not be here but will be moved 
-				// elsewhere when the frame design stabilizes
-				const float* modelViewPtr = renderItem.ModelMatrix.GetValuePtr();
-				const float* modelViewInvPtr = renderItem.ModelMatrix.Inverse().GetValuePtr();
-				const float* camViewProjPtr = camViewProjMat.GetValuePtr();
-
-				memcpy(mMatrixConstantBuffer, modelViewPtr, sizeof(Matrix4x4));
-				memcpy((U8*)mMatrixConstantBuffer + sizeof(Matrix4x4), modelViewInvPtr, sizeof(Matrix4x4));
-				memcpy((U8*)mMatrixConstantBuffer + sizeof(Matrix4x4) * 2, camViewProjPtr, sizeof(Matrix4x4));
-
-				matrixSlot = matrixBuffer->AllocateMember(mMatrixConstantBuffer);
-			}
+			DX11GFXConstantBuffer* constBuf = mDevice->GetConstantBuffer(renderItem.ConstantBuffer);
+			constBuf->UpdateSubresources(&renderItem.ModelMatrix);
 
 			for (RenderItemMeshData& meshData : renderItem.MeshData)
 			{
 				RenderItemDrawCall drawCall;
 				drawCall.VertexBuffer = meshData.VertexBuffer;
 				drawCall.IndexBuffer = meshData.IndexBuffer;
+				// #TODO(Deal with this later. This is the same for all meshes of renderItem)
+				drawCall.ConstantBuffer = renderItem.ConstantBuffer;
+
 				// #TODO(Josh::Eventually the material system will handle this itself and hold a buffer of pre-allocated materials
 				//             and we will somehow "lease" it for the draw call)
 // 				drawCall.MaterialSlot = materialBuffer->AllocateMember(&meshData.Material);
@@ -233,7 +268,7 @@ namespace Diotima
 			}
 		}
 
-		memset(mMatrixConstantBuffer, 0, sizeof(Matrix4x4) * 3);
+		//memset(mMatrixConstantBuffer, 0, sizeof(Matrix4x4) * 3);
 	}
 
 	void Renderer::EnableVsync(bool bEnabled)
@@ -287,25 +322,27 @@ namespace Diotima
 		CreateBufferRenderCommand command;
 		command.BufferType = ECreateBufferType::Vertex;
 		command.Data = data;
+		command.Size = size;
 		command.Count = count;
 		mVertexBufferCommandQueue.push_back(std::move(command));
 
 		// #TODO(This is shit, fix later)
-		return mDX12Device->GetVertexBufferCount() + mVertexBufferCommandQueue.size() - 1;
+		return mDevice->GetVertexBufferCount() + mVertexBufferCommandQueue.size() - 1;
 	}
 
-	U32 Renderer::QueueCreateIndexBufferCommand(void* data, U32 numElements)
+	U32 Renderer::QueueCreateIndexBufferCommand(void* data, size_t size, U32 count)
 	{
 		std::lock_guard<std::mutex> lock(mIndexBufferCommandMutex);
 
 		CreateBufferRenderCommand command;
 		command.BufferType = ECreateBufferType::Index;
 		command.Data = data;
-		command.Count = numElements;
+		command.Size = size;
+		command.Count = count;
 		mIndexBufferCommandQueue.push_back(std::move(command));
 
 		// #TODO(This is shit, fix later)
-		return mDX12Device->GetVertexBufferCount() + mIndexBufferCommandQueue.size() - 1;
+		return mDevice->GetVertexBufferCount() + mIndexBufferCommandQueue.size() - 1;
 	}
 
 	U32 Renderer::QueueCreateTextureCommand(ECreateTextureBufferType bufferType, void* data, U32 width, U32 height)

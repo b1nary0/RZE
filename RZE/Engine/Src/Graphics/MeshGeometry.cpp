@@ -25,20 +25,20 @@ void MeshGeometry::AllocateGPUData()
 			vertexDataBuffer.push_back(vertex.Position[index]);
 		}
 
-		for (int index = 0; index < 3; ++index)
-		{
-			vertexDataBuffer.push_back(vertex.Normal[index]);
-		}
-
-		for (int index = 0; index < 2; ++index)
-		{
-			vertexDataBuffer.push_back(vertex.UVData[index]);
-		}
-
-		for (int index = 0; index < 3; ++index)
-		{
-			vertexDataBuffer.push_back(vertex.Tangent[index]);
-		}
+// 		for (int index = 0; index < 3; ++index)
+// 		{
+// 			vertexDataBuffer.push_back(vertex.Normal[index]);
+// 		}
+// 
+// 		for (int index = 0; index < 2; ++index)
+// 		{
+// 			vertexDataBuffer.push_back(vertex.UVData[index]);
+// 		}
+// 
+// 		for (int index = 0; index < 3; ++index)
+// 		{
+// 			vertexDataBuffer.push_back(vertex.Tangent[index]);
+// 		}
 	}
 
 	mVertexBuffer = std::make_shared<VertexBuffer>(vertexDataBuffer);

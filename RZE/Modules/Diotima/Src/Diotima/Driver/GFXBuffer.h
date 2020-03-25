@@ -39,7 +39,7 @@ namespace Diotima
 		IGFXConstantBuffer() = default;
 		virtual ~IGFXConstantBuffer() = default;
 
-		virtual void Allocate(void* data, U32 numElements) = 0;
+		virtual void Allocate(size_t size, U32 count) = 0;
 	};
 
 	class IGFXTextureBuffer2D
