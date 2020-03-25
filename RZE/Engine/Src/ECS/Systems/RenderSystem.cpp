@@ -72,7 +72,7 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
  
  			U32 renderItemIndex = mRenderItemEntityMap[entity];
 			Matrix4x4 worldMatrix = transfComp->GetAsMat4x4();
-			//renderer.QueueUpdateRenderItem(renderItemIndex, worldMatrix);
+			renderer.QueueUpdateRenderItem(renderItemIndex, worldMatrix);
  		}
 	});
 
@@ -88,7 +88,7 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 
 			U32 renderItemIndex = mRenderItemEntityMap[entity];
 			Matrix4x4 worldMatrix = transfComp->GetAsMat4x4();
-			//renderer.QueueUpdateRenderItem(renderItemIndex, worldMatrix);
+			renderer.QueueUpdateRenderItem(renderItemIndex, worldMatrix);
 		}
 	});
 

@@ -47,7 +47,7 @@
 		{
 		  "Position": [-10, 0, 0],
 		  "Scale":[16, 16, 1],
-		  "Rotation":[90, 0, 0]
+		  "Rotation":[-90, 0, 0]
 		},
 		"MeshComponent":
 		{
@@ -63,7 +63,7 @@
 		{
 		  "Position": [-10, 8, -8],
 		  "Scale":[16, 16, 1],
-		  "Rotation":[0, 180, 0]
+		  "Rotation":[0, 0, 0]
 		},
 		"MeshComponent":
 		{
@@ -79,7 +79,7 @@
 		{
 		  "Position": [-2, 8, 0],
 		  "Scale":[16, 16, 1],
-		  "Rotation":[0, 90, 0]
+		  "Rotation":[0, -90, 0]
 		},
 		"MeshComponent":
 		{
