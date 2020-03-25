@@ -122,6 +122,7 @@ workspace "RZE"
 			"d3d11.lib",
 			"DXGI.lib",
 			"D3DCompiler.lib",
+			"DirectXTK",
 			-- RZE --
 			"RZE_Utils",
 			"Apollo",
@@ -251,6 +252,7 @@ workspace "RZE"
 			"d3d11.lib",
 			"DXGI.lib",
 			"D3DCompiler.lib",
+			"DirectXTK",
 			-- RZE
 			"Perseus",
 			"RZE_Utils"
@@ -320,6 +322,7 @@ workspace "RZE"
 			"d3d11.lib",
 			"DXGI.lib",
 			"D3DCompiler.lib",
+			"DirectXTK",
 			-- RZE
 			"RZE_Utils"
 		}
@@ -389,6 +392,7 @@ workspace "RZE"
 			"d3d11.lib",
 			"DXGI.lib",
 			"D3DCompiler.lib",
+			"DirectXTK",
 			-- RZE
 			"Perseus",
 			"RZE_Utils",
