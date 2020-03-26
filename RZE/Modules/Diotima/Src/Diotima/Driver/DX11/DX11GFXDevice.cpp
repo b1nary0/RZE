@@ -15,8 +15,8 @@
 
 namespace Diotima
 {
-	const int kInitialWidth = 1024;
-	const int kInitialHeight = 768;
+	const int kInitialWidth = 1600;
+	const int kInitialHeight = 900;
 
 	void DX11GFXDevice::Initialize()
 	{
