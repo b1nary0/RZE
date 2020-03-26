@@ -62,6 +62,7 @@ namespace Diotima
 		{
 			U32 VertexBuffer;
 			U32 IndexBuffer;
+			U32 MaterialBuffer;
 			std::vector<RenderItemTextureDesc> TextureDescs;
 			RenderItemMaterialDesc Material;
 		};
@@ -72,6 +73,7 @@ namespace Diotima
 			std::vector<RenderItemMeshData> MeshData;
 			Matrix4x4						ModelMatrix;
 			U32								ConstantBuffer;
+			std::vector<U32>				MaterialBuffers; // #TODO(Definitely need to rework stuff with DX11 now. This should change.)
 
 			bool bIsValid{ false };
 			void Invalidate();
@@ -115,6 +117,7 @@ namespace Diotima
 			U32 VertexBuffer;
 			U32 IndexBuffer;
 			U32 ConstantBuffer;
+			U32 MaterialDataBuffer;
 			U32 TextureSlot0;
 			U32 TextureSlot1;
 			U32 TextureSlot2;

@@ -50,6 +50,14 @@ namespace Diotima
 	Int32 Renderer::AddRenderItem(const RenderItemProtocol& itemProtocol)
 	{
 		U32 constantBufferID = mDevice->CreateConstantBuffer(sizeof(Matrix4x4), 2);
+
+		std::vector<U32> meshMaterialBuffers;
+		meshMaterialBuffers.reserve(itemProtocol.MeshData.size());
+		for (size_t index = 0; index < itemProtocol.MeshData.size(); ++index)
+		{
+			meshMaterialBuffers.push_back(mDevice->CreateConstantBuffer(MemoryUtils::AlignSize(sizeof(RenderItemMaterialDesc), 15), 1));
+		}
+
 		if (!mFreeRenderListIndices.empty())
 		{
 			Int32 index = mFreeRenderListIndices.front();
@@ -58,6 +66,7 @@ namespace Diotima
 			mRenderItems[index] = std::move(itemProtocol);
 			mRenderItems[index].bIsValid = true;
 			mRenderItems[index].ConstantBuffer = constantBufferID;
+			mRenderItems[index].MaterialBuffers = std::move(meshMaterialBuffers);
 
 			return index;
 		}
@@ -65,6 +74,7 @@ namespace Diotima
 		mRenderItems.emplace_back(std::move(itemProtocol));
 		mRenderItems.back().bIsValid = true;
 		mRenderItems.back().ConstantBuffer = constantBufferID;
+		mRenderItems.back().MaterialBuffers = std::move(meshMaterialBuffers);
 
 		return static_cast<Int32>(mRenderItems.size() - 1);
 	}
@@ -127,20 +137,14 @@ namespace Diotima
 			//mPassGraph->Execute();
 		}
 
-// 		HRESULT res = mDevice->GetDevice()->GetDeviceRemovedReason();
-// 		if (res != S_OK)
-// 		{
-// 			AssertFalse();
-// 		}
-
-		FLOAT rgba[4] = { 0.5f, 0.5f, 1.0f, 1.0f };
+		FLOAT rgba[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		ID3D11DeviceContext& deviceContext = mDevice->GetDeviceContext();
 		deviceContext.ClearDepthStencilView(mDevice->mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 		deviceContext.ClearRenderTargetView(mDevice->mRenderTargetView, rgba);
 
 		DX11GFXConstantBuffer* viewProjBuf = mDevice->GetConstantBuffer(mViewProjBuf);
 		ID3D11Buffer* vpbHardwareBuf = &viewProjBuf->GetHardwareBuffer();
-		mDevice->GetDeviceContext().VSSetConstantBuffers(0, 1, &vpbHardwareBuf);
+		deviceContext.VSSetConstantBuffers(0, 1, &vpbHardwareBuf);
 
 		DX11GFXConstantBuffer* lightBuf = mDevice->GetConstantBuffer(mLightBuf);
 		ID3D11Buffer* hwLightBuf = &lightBuf->GetHardwareBuffer();
@@ -150,7 +154,7 @@ namespace Diotima
 		ID3D11Buffer* hwCamDataBuf = &camDataBuf->GetHardwareBuffer();
 		deviceContext.PSSetConstantBuffers(1, 1, &hwCamDataBuf);
 		
-		for (RenderItemDrawCall& drawCall : mPerFrameDrawCalls)
+		for (const RenderItemDrawCall& drawCall : mPerFrameDrawCalls)
 		{
 			// try to draw something
 			mDevice->GetDeviceContext().IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -158,6 +162,10 @@ namespace Diotima
 			DX11GFXConstantBuffer* modelMatBuf = mDevice->GetConstantBuffer(drawCall.ConstantBuffer);
 			ID3D11Buffer* hwModelMatBuf = &modelMatBuf->GetHardwareBuffer();
 			deviceContext.VSSetConstantBuffers(1, 1, &hwModelMatBuf);
+
+			DX11GFXConstantBuffer* materialBuf = mDevice->GetConstantBuffer(drawCall.MaterialDataBuffer);
+			ID3D11Buffer* hwMaterialBuf = &materialBuf->GetHardwareBuffer();
+			deviceContext.PSSetConstantBuffers(2, 1, &hwMaterialBuf);
 
 			ID3D11Buffer* vertBuf = &mDevice->GetVertexBuffer(drawCall.VertexBuffer)->GetHardwareBuffer();
 			
@@ -262,8 +270,10 @@ namespace Diotima
 			DX11GFXConstantBuffer* constBuf = mDevice->GetConstantBuffer(renderItem.ConstantBuffer);
 			constBuf->UpdateSubresources(tmpMatrixBuf);
 
-			for (RenderItemMeshData& meshData : renderItem.MeshData)
+			for (size_t index = 0; index < renderItem.MeshData.size(); ++index)
 			{
+				RenderItemMeshData& meshData = renderItem.MeshData[index];
+
 				RenderItemDrawCall drawCall;
 				drawCall.VertexBuffer = meshData.VertexBuffer;
 				drawCall.IndexBuffer = meshData.IndexBuffer;
@@ -273,6 +283,12 @@ namespace Diotima
  				drawCall.TextureSlot0 = meshData.TextureDescs[0].TextureBuffer; // This should be iterated on to be more robust.
  				drawCall.TextureSlot1 = meshData.TextureDescs[1].TextureBuffer; // This should be iterated on to be more robust.
  				drawCall.TextureSlot2 = meshData.TextureDescs[2].TextureBuffer; // This should be iterated on to be more robust.
+
+				// #HACK(This should be a 1:1... Just until I completely rework the data layout for render items.)
+				drawCall.MaterialDataBuffer = renderItem.MaterialBuffers[index];
+
+				DX11GFXConstantBuffer* materialBuf = mDevice->GetConstantBuffer(drawCall.MaterialDataBuffer);
+				materialBuf->UpdateSubresources(&meshData.Material);
 
 				mPerFrameDrawCalls.push_back(std::move(drawCall));
 			}

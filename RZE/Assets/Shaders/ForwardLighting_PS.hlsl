@@ -32,6 +32,11 @@ struct CAMERA_INPUT_DESC
 	float3 Position;
 };
 
+struct MATERIAL_INPUT_DESC
+{
+	float Shininess;
+};
+
 cbuffer LightConstantBuffer : register(b0)
 {
 	LIGHT_INPUT_DESC sceneLight;
@@ -40,6 +45,11 @@ cbuffer LightConstantBuffer : register(b0)
 cbuffer CameraRootConstant : register(b1)
 {
 	CAMERA_INPUT_DESC cameraDesc;
+};
+
+cbuffer MaterialConstantBuffer : register(b2)
+{
+	MATERIAL_INPUT_DESC materialData;
 };
 
 float CalculateBlinnPhong(float3 viewDir, float3 lightDir, float3 normal)
@@ -52,7 +62,7 @@ float CalculateBlinnPhong(float3 viewDir, float3 lightDir, float3 normal)
 
 	float3 R = reflect(-lightDir, normal);
 	float RdotV = max(0.0f, dot(R, viewDir)); 
-	specular = pow(RdotV, 0.5f);
+	specular = pow(RdotV, materialData.Shininess);
 	
 	return specular;
 }
@@ -145,7 +155,7 @@ float4 PSMain(PS_IN input) : SV_TARGET
 
 		float3 lightDir = normalize(light.Position.xyz - input.FragPos);
 		
-		float diff = max(0.0f, saturate(dot(normal, lightDir)));
+		float diff = max(0.0f, saturate(dot(lightDir, normal)));
 		float specular = CalculateBlinnPhong(viewDir, lightDir, normal);
 		
 		float lightStrength = light.Strength;
