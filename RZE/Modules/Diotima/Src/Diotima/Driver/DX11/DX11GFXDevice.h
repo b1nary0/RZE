@@ -23,6 +23,7 @@ namespace Diotima
 	class DX11GFXVertexBuffer;
 	class DX11GFXIndexBuffer;
 	class DX11GFXConstantBuffer;
+	class DX11GFXTextureBuffer2D;
 
 	class DX11GFXDevice : public IGFXDevice
 	{
@@ -45,10 +46,12 @@ namespace Diotima
 		DX11GFXVertexBuffer* GetVertexBuffer(U32 bufferID);
 		DX11GFXIndexBuffer* GetIndexBuffer(U32 bufferID);
 		DX11GFXConstantBuffer* GetConstantBuffer(U32 bufferID);
+		DX11GFXTextureBuffer2D* GetTextureBuffer2D(U32 bufferID);
 
 		U32 GetVertexBufferCount() const;
 		U32 GetIndexBufferCount() const;
 		U32 GetConstantBufferCount() const;
+		U32 GetTextureBufferCount() const;
 
 	public:
 		ID3D11Device& GetHardwareDevice();
@@ -73,6 +76,7 @@ namespace Diotima
 		std::vector<std::unique_ptr<DX11GFXVertexBuffer>> mVertexBuffers;
  		std::vector<std::unique_ptr<DX11GFXIndexBuffer>> mIndexBuffers;
  		std::vector<std::unique_ptr<DX11GFXConstantBuffer>> mConstantBuffers;
+		std::vector<std::unique_ptr<DX11GFXTextureBuffer2D>> mTexture2DBuffers;
 
 	// temp for testing will move after
 	private:

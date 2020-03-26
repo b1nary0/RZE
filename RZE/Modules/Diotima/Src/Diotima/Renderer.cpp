@@ -20,16 +20,18 @@
 #include <Diotima/Driver/DX11/DX11GFXVertexBuffer.h>
 #include <Diotima/Driver/DX11/DX11GFXIndexBuffer.h>
 #include <Diotima/Driver/DX11/DX11GFXConstantBuffer.h>
+#include <Diotima/Driver/DX11/DX11GFXTextureBuffer2D.h>
 
 #include <ImGui/imgui.h>
-#include <ImGui/imgui_impl_dx12.h>
+
+#include <array>
 
 namespace Diotima
 {
 	D3D11_INPUT_ELEMENT_DESC k_vertLayout[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 	};
 	UINT numLayoutElements = ARRAYSIZE(k_vertLayout);
 
@@ -146,8 +148,8 @@ namespace Diotima
 			struct TempDataLayoutStructure
 			{
 				Vector3D position;
+ 				Vector2D uv;
 // 				Vector3D normal;
-// 				Vector2D uv;
 // 				Vector3D tangents;
 			};
 			UINT stride = sizeof(TempDataLayoutStructure);
@@ -160,6 +162,20 @@ namespace Diotima
 			DX11GFXIndexBuffer* indexBuf = mDevice->GetIndexBuffer(drawCall.IndexBuffer);
 			mDevice->GetDeviceContext().IASetIndexBuffer(&indexBuf->GetHardwareBuffer(), DXGI_FORMAT_R32_UINT, 0);
 
+			std::array<DX11GFXTextureBuffer2D*, 3> textureArray = {
+				mDevice->GetTextureBuffer2D(drawCall.TextureSlot0),
+				mDevice->GetTextureBuffer2D(drawCall.TextureSlot1),
+				mDevice->GetTextureBuffer2D(drawCall.TextureSlot2)
+			};
+
+			for (size_t texBufIdx = 0; texBufIdx < textureArray.size(); ++texBufIdx)
+			{
+				ID3D11ShaderResourceView* resourceView = &textureArray[texBufIdx]->GetResourceView();
+				ID3D11SamplerState* samplerState = &textureArray[texBufIdx]->GetSamplerState();
+				deviceContext.PSSetShaderResources(texBufIdx, 1, &resourceView);
+				deviceContext.PSSetSamplers(texBufIdx, 1, &samplerState);
+			}
+
 			deviceContext.DrawIndexed(indexBuf->GetIndexCount(), 0, 0);
 		}
 	}
@@ -171,7 +187,7 @@ namespace Diotima
 
 	void Renderer::ShutDown()
 	{
-		ImGui_ImplDX12_Shutdown();
+		//ImGui_ImplDX12_Shutdown();
 
 		mDevice->Shutdown();
 	}
@@ -234,9 +250,9 @@ namespace Diotima
 				//             and we will somehow "lease" it for the draw call)
 // 				drawCall.MaterialSlot = materialBuffer->AllocateMember(&meshData.Material);
 // 
-// 				drawCall.TextureSlot0 = meshData.TextureDescs[0].TextureBuffer; // This should be iterated on to be more robust.
-// 				drawCall.TextureSlot1 = meshData.TextureDescs[1].TextureBuffer; // This should be iterated on to be more robust.
-// 				drawCall.TextureSlot2 = meshData.TextureDescs[2].TextureBuffer; // This should be iterated on to be more robust.
+ 				drawCall.TextureSlot0 = meshData.TextureDescs[0].TextureBuffer; // This should be iterated on to be more robust.
+ 				drawCall.TextureSlot1 = meshData.TextureDescs[1].TextureBuffer; // This should be iterated on to be more robust.
+ 				drawCall.TextureSlot2 = meshData.TextureDescs[2].TextureBuffer; // This should be iterated on to be more robust.
 
 				//drawCall.MatrixSlot = matrixSlot;
 
@@ -333,7 +349,7 @@ namespace Diotima
 		mTextureBufferCommandQueue.push_back(std::move(command));
 
 		// #TODO(This is shit, fix later)
-		return 0;
+		return mDevice->GetTextureBufferCount() + mTextureBufferCommandQueue.size() - 1;
 	}
 
 

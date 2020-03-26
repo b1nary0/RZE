@@ -115,6 +115,9 @@ namespace Diotima
 			U32 VertexBuffer;
 			U32 IndexBuffer;
 			U32 ConstantBuffer;
+			U32 TextureSlot0;
+			U32 TextureSlot1;
+			U32 TextureSlot2;
 		};
 
 		// Constructors

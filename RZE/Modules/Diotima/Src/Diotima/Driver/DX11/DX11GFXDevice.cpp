@@ -5,6 +5,7 @@
 #include <Diotima/Driver/DX11/DX11GFXVertexBuffer.h>
 #include <Diotima/Driver/DX11/DX11GFXIndexBuffer.h>
 #include <Diotima/Driver/DX11/DX11GFXConstantBuffer.h>
+#include <Diotima/Driver/DX11/DX11GFXTextureBuffer2D.h>
 
 #include <Utils/Conversions.h>
 #include <Utils/DebugUtils/Debug.h>
@@ -122,7 +123,11 @@ namespace Diotima
 
 	U32 DX11GFXDevice::CreateTextureBuffer2D(void* data, U32 width, U32 height)
 	{
-		return 0;
+		mTexture2DBuffers.push_back(std::make_unique<DX11GFXTextureBuffer2D>());
+		mTexture2DBuffers.back()->SetDevice(this);
+		mTexture2DBuffers.back()->Allocate(data, width, height);
+
+		return static_cast<U32>(mTexture2DBuffers.size() - 1);
 	}
 
 	U32 DX11GFXDevice::CreateConstantBuffer(size_t memberSize, U32 maxMembers)
@@ -152,6 +157,12 @@ namespace Diotima
 		return mConstantBuffers[bufferID].get();
 	}
 
+	Diotima::DX11GFXTextureBuffer2D* DX11GFXDevice::GetTextureBuffer2D(U32 bufferID)
+	{
+		AssertExpr(mTexture2DBuffers.size() > bufferID);
+		return mTexture2DBuffers[bufferID].get();
+	}
+
 	U32 DX11GFXDevice::GetVertexBufferCount() const
 	{
 		return mVertexBuffers.size();
@@ -165,6 +176,11 @@ namespace Diotima
 	U32 DX11GFXDevice::GetConstantBufferCount() const
 	{
 		return mVertexBuffers.size();
+	}
+
+	U32 DX11GFXDevice::GetTextureBufferCount() const
+	{
+		return mTexture2DBuffers.size();
 	}
 
 	ID3D11Device& DX11GFXDevice::GetHardwareDevice()
