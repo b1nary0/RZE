@@ -119,8 +119,10 @@ workspace "RZE"
 			"glew64",
 			"OptickCore",
 			"D3d12.lib",
+			"d3d11.lib",
 			"DXGI.lib",
 			"D3DCompiler.lib",
+			"DirectXTK",
 			-- RZE --
 			"RZE_Utils",
 			"Apollo",
@@ -247,8 +249,10 @@ workspace "RZE"
 			"glew64",
 			"OptickCore",
 			"D3d12.lib",
+			"d3d11.lib",
 			"DXGI.lib",
 			"D3DCompiler.lib",
+			"DirectXTK",
 			-- RZE
 			"Perseus",
 			"RZE_Utils"
@@ -315,8 +319,10 @@ workspace "RZE"
 			"glew64",
 			"OptickCore",
 			"D3d12.lib",
+			"d3d11.lib",
 			"DXGI.lib",
 			"D3DCompiler.lib",
+			"DirectXTK",
 			-- RZE
 			"RZE_Utils"
 		}
@@ -383,8 +389,10 @@ workspace "RZE"
 			"glew64",
 			"OptickCore",
 			"D3d12.lib",
+			"d3d11.lib",
 			"DXGI.lib",
 			"D3DCompiler.lib",
+			"DirectXTK",
 			-- RZE
 			"Perseus",
 			"RZE_Utils",

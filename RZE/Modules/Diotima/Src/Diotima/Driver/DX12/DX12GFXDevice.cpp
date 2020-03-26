@@ -244,20 +244,20 @@ namespace Diotima
 		CloseHandle(mFenceEvent);
 	}
 
-	U32 DX12GFXDevice::CreateVertexBuffer(void* data, U32 numElements)
+	U32 DX12GFXDevice::CreateVertexBuffer(void* data, size_t size, U32 count)
 	{
 		mVertexBuffers.push_back(std::make_unique<DX12GFXVertexBuffer>());
 		mVertexBuffers.back()->SetDevice(this);
-		mVertexBuffers.back()->Allocate(data, numElements);
+		mVertexBuffers.back()->Allocate(data, size, count);
 
 		return static_cast<U32>(mVertexBuffers.size() - 1);
 	}
 
-	U32 DX12GFXDevice::CreateIndexBuffer(void* data, U32 numElements)
+	U32 DX12GFXDevice::CreateIndexBuffer(void* data, size_t size, U32 count)
 	{
 		mIndexBuffers.push_back(std::make_unique<DX12GFXIndexBuffer>());
 		mIndexBuffers.back()->SetDevice(this);
-		mIndexBuffers.back()->Allocate(data, numElements);
+		mIndexBuffers.back()->Allocate(data, size, count);
 
 		return static_cast<U32>(mIndexBuffers.size() - 1);
 	}

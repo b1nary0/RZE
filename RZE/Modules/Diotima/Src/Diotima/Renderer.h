@@ -6,9 +6,6 @@
 #include <unordered_map>
 #include <vector>
 
-// #TODO(Josh::Really don't like this, change later)
-#include <Diotima/Driver/DX12/DX12AllocationData.h>
-
 #include <Diotima/RenderCommands.h>
 
 #include <Utils/Math/Matrix4x4.h>
@@ -18,10 +15,11 @@
 // #TODO(Josh::Temp)
 #define MAX_LIGHTS 128
 
+struct ID3D11InputLayout;
+
 namespace Diotima
 {
-	// DX12 Temp
-	class DX12GFXDevice;
+	class DX11GFXDevice;
 
 	class GFXPassGraph;
 
@@ -64,6 +62,7 @@ namespace Diotima
 		{
 			U32 VertexBuffer;
 			U32 IndexBuffer;
+			U32 MaterialBuffer;
 			std::vector<RenderItemTextureDesc> TextureDescs;
 			RenderItemMaterialDesc Material;
 		};
@@ -73,6 +72,8 @@ namespace Diotima
 			// #TODO(Josh::This needs to be done better. Works for now, but will need resolving when stuff matures)
 			std::vector<RenderItemMeshData> MeshData;
 			Matrix4x4						ModelMatrix;
+			U32								ConstantBuffer;
+			std::vector<U32>				MaterialBuffers; // #TODO(Definitely need to rework stuff with DX11 now. This should change.)
 
 			bool bIsValid{ false };
 			void Invalidate();
@@ -115,11 +116,11 @@ namespace Diotima
 		{
 			U32 VertexBuffer;
 			U32 IndexBuffer;
-			U32 TextureSlot0; // Serves as the base descriptor for a descriptor range. Right now is D/S/N per mesh
+			U32 ConstantBuffer;
+			U32 MaterialDataBuffer;
+			U32 TextureSlot0;
 			U32 TextureSlot1;
 			U32 TextureSlot2;
-			CBAllocationData MaterialSlot;
-			CBAllocationData MatrixSlot;
 		};
 
 		// Constructors
@@ -154,8 +155,8 @@ namespace Diotima
 		void ResizeCanvas(const Vector2D& newSize);
 
 	public:
-		U32 QueueCreateVertexBufferCommand(void* data, U32 numElements);
-		U32 QueueCreateIndexBufferCommand(void* data, U32 numElements);
+		U32 QueueCreateVertexBufferCommand(void* data, size_t size, U32 count);
+		U32 QueueCreateIndexBufferCommand(void* data, size_t size, U32 count);
 		U32 QueueCreateTextureCommand(ECreateTextureBufferType bufferType, void* data, U32 width, U32 height);
 
 		void QueueUpdateRenderItem(U32 itemID, const Matrix4x4& worldMtx);
@@ -163,8 +164,8 @@ namespace Diotima
 		void ProcessCommands();
 
 	private:
-		U32 CreateVertexBuffer(void* data, U32 numElements);
-		U32 CreateIndexBuffer(void* data, U32 numElements);
+		U32 CreateVertexBuffer(void* data, size_t size, U32 count);
+		U32 CreateIndexBuffer(void* data, size_t size, U32 count);
 		U32 CreateTextureBuffer2D(void* data, U32 width, U32 height);
 
 	private:
@@ -173,8 +174,6 @@ namespace Diotima
 		const U32* GetLightCounts();
 		const CameraItemProtocol& GetCamera();
 
-		void DX12Initialize();
-		
 		void PrepareDrawCalls();
 
 	private:
@@ -200,16 +199,17 @@ namespace Diotima
 
 		// DX12 Temp
 	private:
-		U32 mMVPConstantBuffer;
-		U32 mMaterialBuffer; // Per mesh data
+		U32 mViewProjBuf;
+		U32 mLightBuf;
+		U32 mCameraDataBuf;
 
 		std::unique_ptr<GFXPassGraph> mPassGraph;
 		
-		std::unique_ptr<DX12GFXDevice> mDevice;
+		std::unique_ptr<DX11GFXDevice> mDevice;
 
 		void* mWindowHandle;
 
-		void* mMatrixConstantBuffer;
+		ID3D11InputLayout* mVertexLayout;
 
 	private:
 		std::mutex mVertexBufferCommandMutex;

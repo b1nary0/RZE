@@ -29,36 +29,36 @@ namespace Diotima
 {
 		OPTICK_EVENT();
 
-		SetDevice(mRenderer->mDevice.get());
-
-		CreateRootSignature();
-		CreatePipelineState();
-
-		mViewport = new D3D12_VIEWPORT();
-		mViewport->Width = static_cast<float>(width);
-		mViewport->Height = static_cast<float>(height);
-		mViewport->TopLeftX = 0;
-		mViewport->TopLeftY = 0;
-		mViewport->MinDepth = 0.0f;
-		mViewport->MaxDepth = 1.0f;
-
-		mScissorRect.left = 0;
-		mScissorRect.top = 0;
-		mScissorRect.right = width;
-		mScissorRect.bottom = height;
-
-		mDepthStencilBuffer = std::make_unique<DX12GFXDepthStencilBuffer>();
-		mDepthStencilBuffer->SetDevice(mDevice);
-		mDepthStencilBuffer->SetSize(width, height);
-		mDepthStencilBuffer->Allocate();
-
-		//WaitForPreviousFrame();
-
-		mCommandList = mDevice->CreateGraphicsCommandList(mDevice->GetCommandAllocator(), nullptr);
-		mDevice->GetGraphicsCommandList(mCommandList)->Close();
-
-		mLightConstantBuffer = mDevice->CreateConstantBuffer(sizeof(Renderer::LightItemProtocol) * MAX_LIGHTS, 1);
-		mPerFramePixelShaderConstants = mDevice->CreateConstantBuffer(sizeof(U32) * 2, 1);
+ 		//SetDevice(mRenderer->mDX12Device.get());
+ 
+ 		CreateRootSignature();
+ 		CreatePipelineState();
+ 
+ 		mViewport = new D3D12_VIEWPORT();
+ 		mViewport->Width = static_cast<float>(width);
+ 		mViewport->Height = static_cast<float>(height);
+ 		mViewport->TopLeftX = 0;
+ 		mViewport->TopLeftY = 0;
+ 		mViewport->MinDepth = 0.0f;
+ 		mViewport->MaxDepth = 1.0f;
+ 
+ 		mScissorRect.left = 0;
+ 		mScissorRect.top = 0;
+ 		mScissorRect.right = width;
+ 		mScissorRect.bottom = height;
+ 
+ 		mDepthStencilBuffer = std::make_unique<DX12GFXDepthStencilBuffer>();
+ 		mDepthStencilBuffer->SetDevice(mDevice);
+ 		mDepthStencilBuffer->SetSize(width, height);
+ 		mDepthStencilBuffer->Allocate();
+ 
+ 		//WaitForPreviousFrame();
+ 
+ 		mCommandList = mDevice->CreateGraphicsCommandList(mDevice->GetCommandAllocator(), nullptr);
+ 		mDevice->GetGraphicsCommandList(mCommandList)->Close();
+ 
+ 		mLightConstantBuffer = mDevice->CreateConstantBuffer(sizeof(Renderer::LightItemProtocol) * MAX_LIGHTS, 1);
+ 		mPerFramePixelShaderConstants = mDevice->CreateConstantBuffer(sizeof(U32) * 2, 1);
 	}
 
 	void ForwardPass::Begin(ID3D12GraphicsCommandList* commandList)
@@ -110,17 +110,17 @@ namespace Diotima
 			const std::vector<Renderer::RenderItemDrawCall>& drawCalls = mRenderer->GetDrawCalls();
 			for (const Renderer::RenderItemDrawCall& drawCall : drawCalls)
 			{
-				commandList->SetGraphicsRootConstantBufferView(0, drawCall.MatrixSlot.GPUBaseAddr);
-				commandList->SetGraphicsRootConstantBufferView(4, drawCall.MaterialSlot.GPUBaseAddr);
+// 				commandList->SetGraphicsRootConstantBufferView(0, drawCall.MatrixSlot.GPUBaseAddr);
+// 				commandList->SetGraphicsRootConstantBufferView(4, drawCall.MaterialSlot.GPUBaseAddr);
 
 				// #NOTE(Josh::Everything should have a default guaranteed diffuse map. For now it also marks the start of the descriptor table)
-				DX12GFXTextureBuffer2D* const diffuse = mDevice->GetTextureBuffer2D(drawCall.TextureSlot0);
-				DX12GFXTextureBuffer2D* const specular = mDevice->GetTextureBuffer2D(drawCall.TextureSlot1);
-				DX12GFXTextureBuffer2D* const bump = mDevice->GetTextureBuffer2D(drawCall.TextureSlot2);
+// 				DX12GFXTextureBuffer2D* const diffuse = mDevice->GetTextureBuffer2D(drawCall.TextureSlot0);
+// 				DX12GFXTextureBuffer2D* const specular = mDevice->GetTextureBuffer2D(drawCall.TextureSlot1);
+// 				DX12GFXTextureBuffer2D* const bump = mDevice->GetTextureBuffer2D(drawCall.TextureSlot2);
 
-				commandList->SetGraphicsRootDescriptorTable(3, diffuse->GetDescriptorHandleGPU());
-				commandList->SetGraphicsRootDescriptorTable(6, specular->GetDescriptorHandleGPU());
-				commandList->SetGraphicsRootDescriptorTable(7, bump->GetDescriptorHandleGPU());
+// 				commandList->SetGraphicsRootDescriptorTable(3, diffuse->GetDescriptorHandleGPU());
+// 				commandList->SetGraphicsRootDescriptorTable(6, specular->GetDescriptorHandleGPU());
+// 				commandList->SetGraphicsRootDescriptorTable(7, bump->GetDescriptorHandleGPU());
 
 				DX12GFXVertexBuffer* const vertexBuffer = mDevice->GetVertexBuffer(drawCall.VertexBuffer);
 				DX12GFXIndexBuffer* const indexBuffer = mDevice->GetIndexBuffer(drawCall.IndexBuffer);

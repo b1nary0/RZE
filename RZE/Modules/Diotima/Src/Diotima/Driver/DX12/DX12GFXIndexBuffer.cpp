@@ -7,11 +7,11 @@
 namespace Diotima
 {
 
-	void DX12GFXIndexBuffer::Allocate(void* data, U32 numElements)
+	void DX12GFXIndexBuffer::Allocate(void* data, size_t size, U32 count)
 	{
-		mNumElements = numElements;
+		mNumElements = count;
 
-		size_t bufferSize = numElements * sizeof(U32);
+		size_t bufferSize = mNumElements * sizeof(U32);
 		ID3D12Device* device = mDevice->GetDevice();
 
 		HRESULT res = device->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD), D3D12_HEAP_FLAG_NONE, &CD3DX12_RESOURCE_DESC::Buffer(bufferSize), D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&mUploadBuffer));
