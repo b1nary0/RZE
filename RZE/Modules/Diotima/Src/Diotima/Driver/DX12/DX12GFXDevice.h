@@ -36,8 +36,8 @@ namespace Diotima
 
 		virtual void Shutdown() override;
 
-		U32 CreateVertexBuffer(void* data, U32 numElements) override;
-		U32 CreateIndexBuffer(void* data, U32 numElements) override;
+		U32 CreateVertexBuffer(void* data, size_t size, U32 count) override;
+		U32 CreateIndexBuffer(void* data, size_t size, U32 count) override;
 		U32 CreateTextureBuffer2D(void* data, U32 width, U32 height) override;
 		U32 CreateConstantBuffer(size_t memberSize, U32 maxMembers) override;
 

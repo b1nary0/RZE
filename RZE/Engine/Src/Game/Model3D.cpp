@@ -27,7 +27,8 @@ bool Model3D::Load(const FilePath& filePath)
 	Assimp::Importer ModelImporter;
 	const aiScene* AssimpScene = ModelImporter.ReadFile(mFilePath.GetAbsolutePath(),
 		aiProcessPreset_TargetRealtime_Fast | 
-		aiProcess_ConvertToLeftHanded | 
+		// #TODO(Is this negation of aiProces_FlipWindingOrder even legal? does it have any consequences?)
+		(aiProcess_ConvertToLeftHanded ^ aiProcess_FlipWindingOrder) | 
 		aiProcess_OptimizeMeshes | 
 		aiProcess_OptimizeGraph);
 

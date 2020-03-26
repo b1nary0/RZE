@@ -80,8 +80,8 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 				{
 					OPTICK_EVENT("Update and Render");
 
-					ImGui_ImplDX12_NewFrame();
-					ImGui::NewFrame();
+// 					ImGui_ImplDX12_NewFrame();
+// 					ImGui::NewFrame();
 
 // 					ImGui::PlotLines(
 // 						StringUtils::FormatString("Frame Avg: %iFPS %fms", (int)averageFPS, averageFrametime * 1000.0f).c_str(),
@@ -174,25 +174,25 @@ void RZE_Engine::PreUpdate()
 
 	if (mApplication->ProcessInput(mInputHandler))
 	{
-		ImGuiIO& io = ImGui::GetIO();
+		/*ImGuiIO& io = ImGui::GetIO();*/
 		InputHandler& inputHandler = GetInputHandler();
 
 		const Vector2D& mousePos = inputHandler.GetMouseState().CurPosition;
 		const Vector2D& prevMousePos = inputHandler.GetMouseState().PrevPosition;
-		io.MousePos = ImVec2(mousePos.X(), mousePos.Y());
-		io.MousePosPrev = ImVec2(prevMousePos.X(), prevMousePos.Y());
-
-		for (U32 mouseBtn = 0; mouseBtn < 3; ++mouseBtn)
-		{
-			io.MouseDown[mouseBtn] = inputHandler.GetMouseState().CurMouseBtnStates[mouseBtn];
-		}
-
-		for (int key = 0; key < MAX_KEYCODES_SUPPORTED; ++key)
-		{
-			io.KeysDown[key] = inputHandler.GetKeyboardState().IsDownThisFrame(key);
-		}
-
-		io.KeyCtrl = inputHandler.GetKeyboardState().IsDownThisFrame(Win32KeyCode::Control);
+// 		io.MousePos = ImVec2(mousePos.X(), mousePos.Y());
+// 		io.MousePosPrev = ImVec2(prevMousePos.X(), prevMousePos.Y());
+// 
+// 		for (U32 mouseBtn = 0; mouseBtn < 3; ++mouseBtn)
+// 		{
+// 			io.MouseDown[mouseBtn] = inputHandler.GetMouseState().CurMouseBtnStates[mouseBtn];
+// 		}
+// 
+// 		for (int key = 0; key < MAX_KEYCODES_SUPPORTED; ++key)
+// 		{
+// 			io.KeysDown[key] = inputHandler.GetKeyboardState().IsDownThisFrame(key);
+// 		}
+// 
+// 		io.KeyCtrl = inputHandler.GetKeyboardState().IsDownThisFrame(Win32KeyCode::Control);
 
 		mInputHandler.RaiseEvents();
 	}
@@ -279,7 +279,7 @@ void RZE_Engine::RegisterWindowEvents()
 		else if (event.mWindowEvent.mEventInfo.mEventSubType == EWindowEventType::Window_Resize)
 		{
 			Vector2D newSize(event.mWindowEvent.mSizeX, event.mWindowEvent.mSizeY);
-			GetRenderer().ResizeCanvas(newSize);
+			//GetRenderer().ResizeCanvas(newSize);
 		}
 	});
 	mEventHandler.RegisterForEvent(EEventType::Window, windowCallback);
@@ -287,8 +287,8 @@ void RZE_Engine::RegisterWindowEvents()
 
 void RZE_Engine::RegisterKeyEvents()
 {
-	ImGuiIO& io = ImGui::GetIO();
-	io.KeyMap[ImGuiKey_Enter] = Win32KeyCode::Return;
+// 	ImGuiIO& io = ImGui::GetIO();
+// 	io.KeyMap[ImGuiKey_Enter] = Win32KeyCode::Return;
 }
 
 void RZE_Engine::RegisterEngineComponentTypes()

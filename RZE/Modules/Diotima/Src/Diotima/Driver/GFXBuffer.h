@@ -12,7 +12,7 @@ namespace Diotima
 		IGFXVertexBuffer() = default;
 		virtual ~IGFXVertexBuffer() = default;
 
-		virtual void Allocate(void* data, U32 numElements) = 0;
+		virtual void Allocate(void* data, size_t size, U32 count) = 0;
 	};
 
 	class IGFXIndexBuffer
@@ -21,7 +21,7 @@ namespace Diotima
 		IGFXIndexBuffer() = default;
 		virtual ~IGFXIndexBuffer() = default;
 
-		virtual void Allocate(void* data, U32 numElements) = 0;
+		virtual void Allocate(void* data, size_t size, U32 count) = 0;
 	};
 
 	class IGFXDepthStencilBuffer
@@ -39,7 +39,7 @@ namespace Diotima
 		IGFXConstantBuffer() = default;
 		virtual ~IGFXConstantBuffer() = default;
 
-		virtual void Allocate(void* data, U32 numElements) = 0;
+		virtual void Allocate(size_t size, U32 count) = 0;
 	};
 
 	class IGFXTextureBuffer2D

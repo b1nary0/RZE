@@ -15,7 +15,7 @@ namespace Diotima
 		virtual ~DX12GFXVertexBuffer() = default;
 
 	public:
-		virtual void Allocate(void* data, U32 numElements) override;
+		virtual void Allocate(void* data, size_t size, U32 count) override;
 
 	public:
 		void SetDevice(DX12GFXDevice* device);

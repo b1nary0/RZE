@@ -28,7 +28,7 @@ namespace Diotima
 	{
 		OPTICK_EVENT();
 
-		SetDevice(mRenderer->mDevice.get());
+		//SetDevice(mRenderer->mDX12Device.get());
 
 		CreateRootSignature();
 		CreatePipelineState();
@@ -123,7 +123,7 @@ namespace Diotima
 			const std::vector<Renderer::RenderItemDrawCall>& drawCalls = mRenderer->GetDrawCalls();
 			for (const Renderer::RenderItemDrawCall& drawCall : drawCalls)
 			{
-				commandList->SetGraphicsRootConstantBufferView(1, drawCall.MatrixSlot.GPUBaseAddr);
+				//commandList->SetGraphicsRootConstantBufferView(1, drawCall.MatrixSlot.GPUBaseAddr);
 
 				DX12GFXVertexBuffer* const vertexBuffer = mDevice->GetVertexBuffer(drawCall.VertexBuffer);
 				DX12GFXIndexBuffer* const indexBuffer = mDevice->GetIndexBuffer(drawCall.IndexBuffer);
