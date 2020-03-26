@@ -201,11 +201,47 @@ namespace Diotima
 
 		// Shaders
 		{
-			FilePath vertexShaderPath("Assets/Shaders/Vertex_d3d11.hlsl");
-			FilePath pixelShaderPath("Assets/Shaders/Pixel_d3d11.hlsl");
+			FilePath vertexShaderPath("Assets/Shaders/ForwardLighting_VS.hlsl");
+			FilePath pixelShaderPath("Assets/Shaders/ForwardLighting_PS.hlsl");
 
-			hr = D3DCompileFromFile(Conversions::StringToWString(vertexShaderPath.GetAbsolutePath()).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VS", "vs_5_0", 0, 0, &mVSBlob, 0);
-			hr = D3DCompileFromFile(Conversions::StringToWString(vertexShaderPath.GetAbsolutePath()).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "PS", "ps_5_0", 0, 0, &mPSBlob, 0);
+			ID3D10Blob* error;
+			hr = D3DCompileFromFile(Conversions::StringToWString(vertexShaderPath.GetAbsolutePath()).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VSMain", "vs_5_0", 0, 0, &mVSBlob, &error);
+
+			if (error)
+			{
+				char const* message =
+					static_cast<char const*>(error->GetBufferPointer());
+
+				// Write the warning to the output window when the program is
+				// executing through the Microsoft Visual Studio IDE.
+				size_t const length = strlen(message);
+				std::wstring output = L"";
+				for (size_t i = 0; i < length; ++i)
+				{
+					output += static_cast<wchar_t>(message[i]);
+				}
+				output += L'\n';
+				OutputDebugString(output.c_str());
+			}
+
+			hr = D3DCompileFromFile(Conversions::StringToWString(pixelShaderPath.GetAbsolutePath()).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "PSMain", "ps_5_0", 0, 0, &mPSBlob, &error);
+
+			if (error)
+			{
+				char const* message =
+					static_cast<char const*>(error->GetBufferPointer());
+
+				// Write the warning to the output window when the program is
+				// executing through the Microsoft Visual Studio IDE.
+				size_t const length = strlen(message);
+				std::wstring output = L"";
+				for (size_t i = 0; i < length; ++i)
+				{
+					output += static_cast<wchar_t>(message[i]);
+				}
+				output += L'\n';
+				OutputDebugString(output.c_str());
+			}
 
 			hr = mDevice->CreateVertexShader(mVSBlob->GetBufferPointer(), mVSBlob->GetBufferSize(), nullptr, &mVertexShader);
 			hr = mDevice->CreatePixelShader(mPSBlob->GetBufferPointer(), mPSBlob->GetBufferSize(), nullptr, &mPixelShader);

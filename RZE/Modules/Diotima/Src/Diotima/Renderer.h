@@ -197,7 +197,8 @@ namespace Diotima
 		// DX12 Temp
 	private:
 		U32 mViewProjBuf;
-		U32 mMaterialBuffer; // Per mesh data
+		U32 mLightBuf;
+		U32 mCameraDataBuf;
 
 		std::unique_ptr<GFXPassGraph> mPassGraph;
 		

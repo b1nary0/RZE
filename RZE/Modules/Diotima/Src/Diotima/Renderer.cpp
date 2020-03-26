@@ -31,7 +31,9 @@ namespace Diotima
 	D3D11_INPUT_ELEMENT_DESC k_vertLayout[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 	};
 	UINT numLayoutElements = ARRAYSIZE(k_vertLayout);
 
@@ -47,6 +49,7 @@ namespace Diotima
 
 	Int32 Renderer::AddRenderItem(const RenderItemProtocol& itemProtocol)
 	{
+		U32 constantBufferID = mDevice->CreateConstantBuffer(sizeof(Matrix4x4), 2);
 		if (!mFreeRenderListIndices.empty())
 		{
 			Int32 index = mFreeRenderListIndices.front();
@@ -54,14 +57,14 @@ namespace Diotima
 
 			mRenderItems[index] = std::move(itemProtocol);
 			mRenderItems[index].bIsValid = true;
-			mRenderItems[index].ConstantBuffer = mDevice->CreateConstantBuffer(sizeof(Matrix4x4), 1);
+			mRenderItems[index].ConstantBuffer = constantBufferID;
 
 			return index;
 		}
 
 		mRenderItems.emplace_back(std::move(itemProtocol));
 		mRenderItems.back().bIsValid = true;
-		mRenderItems.back().ConstantBuffer = mDevice->CreateConstantBuffer(sizeof(Matrix4x4), 1);
+		mRenderItems.back().ConstantBuffer = constantBufferID;
 
 		return static_cast<Int32>(mRenderItems.size() - 1);
 	}
@@ -72,6 +75,8 @@ namespace Diotima
 
 		mRenderItems[itemIdx].Invalidate();
 		mFreeRenderListIndices.push(itemIdx);
+
+		// #TODO(Return constant buffer for render item here)
 	}
 
 	Int32 Renderer::AddLightItem(const LightItemProtocol& itemProtocol)
@@ -100,6 +105,8 @@ namespace Diotima
 		mDevice->Initialize();
 
 		mViewProjBuf = mDevice->CreateConstantBuffer(sizeof(Matrix4x4), 1);
+		mLightBuf = mDevice->CreateConstantBuffer(sizeof(LightItemProtocol), 1);
+		mCameraDataBuf = mDevice->CreateConstantBuffer(MemoryUtils::AlignSize(sizeof(Vector3D), 15), 1);
 
 		HRESULT hr;
 		hr = mDevice->GetHardwareDevice().CreateInputLayout(k_vertLayout, numLayoutElements, mDevice->mVSBlob->GetBufferPointer(), mDevice->mVSBlob->GetBufferSize(), &mVertexLayout);
@@ -134,6 +141,15 @@ namespace Diotima
 		DX11GFXConstantBuffer* viewProjBuf = mDevice->GetConstantBuffer(mViewProjBuf);
 		ID3D11Buffer* vpbHardwareBuf = &viewProjBuf->GetHardwareBuffer();
 		mDevice->GetDeviceContext().VSSetConstantBuffers(0, 1, &vpbHardwareBuf);
+
+		DX11GFXConstantBuffer* lightBuf = mDevice->GetConstantBuffer(mLightBuf);
+		ID3D11Buffer* hwLightBuf = &lightBuf->GetHardwareBuffer();
+		deviceContext.PSSetConstantBuffers(0, 1, &hwLightBuf);
+
+		DX11GFXConstantBuffer* camDataBuf = mDevice->GetConstantBuffer(mCameraDataBuf);
+		ID3D11Buffer* hwCamDataBuf = &camDataBuf->GetHardwareBuffer();
+		deviceContext.PSSetConstantBuffers(1, 1, &hwCamDataBuf);
+		
 		for (RenderItemDrawCall& drawCall : mPerFrameDrawCalls)
 		{
 			// try to draw something
@@ -148,9 +164,9 @@ namespace Diotima
 			struct TempDataLayoutStructure
 			{
 				Vector3D position;
+ 				Vector3D normal;
  				Vector2D uv;
-// 				Vector3D normal;
-// 				Vector3D tangents;
+ 				Vector3D tangents;
 			};
 			UINT stride = sizeof(TempDataLayoutStructure);
 			UINT offset = 0;
@@ -187,8 +203,6 @@ namespace Diotima
 
 	void Renderer::ShutDown()
 	{
-		//ImGui_ImplDX12_Shutdown();
-
 		mDevice->Shutdown();
 	}
 
@@ -225,7 +239,15 @@ namespace Diotima
 		DX11GFXConstantBuffer* viewProjBuf = mDevice->GetConstantBuffer(mViewProjBuf);
 		viewProjBuf->UpdateSubresources(&camViewProjMat);
 
+		DX11GFXConstantBuffer* lightBuf = mDevice->GetConstantBuffer(mLightBuf);
+		AssertExpr(!mLightingList.empty());
+		lightBuf->UpdateSubresources(&mLightingList[0]);
+
+		DX11GFXConstantBuffer* camDataBuf = mDevice->GetConstantBuffer(mCameraDataBuf);
+		camDataBuf->UpdateSubresources(&camera.Position);
+
 		mPerFrameDrawCalls.clear();
+		void* tmpMatrixBuf = malloc(sizeof(Matrix4x4) * 2);
 		for (RenderItemProtocol& renderItem : mRenderItems)
 		{
 			// #TODO(Josh::This needs to be removed -- an opaque handle should be leased out that will
@@ -235,8 +257,10 @@ namespace Diotima
 				continue;
 			}
 
+			memcpy(tmpMatrixBuf, renderItem.ModelMatrix.GetValuePtr(), sizeof(Matrix4x4));
+			memcpy((U8*)tmpMatrixBuf + sizeof(Matrix4x4), renderItem.ModelMatrix.Inverse().GetValuePtr(), sizeof(Matrix4x4));
 			DX11GFXConstantBuffer* constBuf = mDevice->GetConstantBuffer(renderItem.ConstantBuffer);
-			constBuf->UpdateSubresources(&renderItem.ModelMatrix);
+			constBuf->UpdateSubresources(tmpMatrixBuf);
 
 			for (RenderItemMeshData& meshData : renderItem.MeshData)
 			{
@@ -246,21 +270,13 @@ namespace Diotima
 				// #TODO(Deal with this later. This is the same for all meshes of renderItem)
 				drawCall.ConstantBuffer = renderItem.ConstantBuffer;
 
-				// #TODO(Josh::Eventually the material system will handle this itself and hold a buffer of pre-allocated materials
-				//             and we will somehow "lease" it for the draw call)
-// 				drawCall.MaterialSlot = materialBuffer->AllocateMember(&meshData.Material);
-// 
  				drawCall.TextureSlot0 = meshData.TextureDescs[0].TextureBuffer; // This should be iterated on to be more robust.
  				drawCall.TextureSlot1 = meshData.TextureDescs[1].TextureBuffer; // This should be iterated on to be more robust.
  				drawCall.TextureSlot2 = meshData.TextureDescs[2].TextureBuffer; // This should be iterated on to be more robust.
 
-				//drawCall.MatrixSlot = matrixSlot;
-
 				mPerFrameDrawCalls.push_back(std::move(drawCall));
 			}
 		}
-
-		//memset(mMatrixConstantBuffer, 0, sizeof(Matrix4x4) * 3);
 	}
 
 	void Renderer::EnableVsync(bool bEnabled)
