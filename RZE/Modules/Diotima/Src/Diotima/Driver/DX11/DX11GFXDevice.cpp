@@ -45,7 +45,7 @@ namespace Diotima
 		swapChainDesc.Windowed = true;
 		swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 
-		hr = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, NULL, NULL, NULL, D3D11_SDK_VERSION, &swapChainDesc, &mSwapChain, &mDevice, NULL, &mDeviceContext);
+		hr = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, D3D11_CREATE_DEVICE_DEBUG, NULL, NULL, D3D11_SDK_VERSION, &swapChainDesc, &mSwapChain, &mDevice, NULL, &mDeviceContext);
 		
 		ID3D11Texture2D* backBufferTexture;
 		hr = mSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&backBufferTexture);
@@ -76,6 +76,17 @@ namespace Diotima
 			mDevice->CreateDepthStencilView(mDepthStencilTex, NULL, &mDepthStencilView);
 
 			mDeviceContext->OMSetRenderTargets(1, &mRenderTargetView, mDepthStencilView);
+		}
+
+		// Raster state
+		{
+			D3D11_RASTERIZER_DESC rasterDesc;
+			ZeroMemory(&rasterDesc, sizeof(rasterDesc));
+			rasterDesc.FillMode = D3D11_FILL_SOLID;
+			rasterDesc.CullMode = D3D11_CULL_BACK;
+			rasterDesc.MultisampleEnable = true;
+
+			mDevice->CreateRasterizerState(&rasterDesc, &mRasterState);
 		}
 
 		SetupSceneStuff();

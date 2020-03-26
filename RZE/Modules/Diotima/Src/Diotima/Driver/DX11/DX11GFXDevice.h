@@ -8,6 +8,7 @@ struct ID3D11Device;
 struct ID3D11DeviceContext;
 struct IDXGISwapChain;
 struct ID3D11RenderTargetView;
+struct ID3D11RasterizerState;
 
 struct ID3D11Buffer;
 struct ID3D11VertexShader;
@@ -64,6 +65,8 @@ namespace Diotima
 
 		ID3D11DepthStencilView* mDepthStencilView;
 		ID3D11RenderTargetView* mRenderTargetView;
+
+		ID3D11RasterizerState* mRasterState;
 
 	private:
 		IDXGISwapChain* mSwapChain;
