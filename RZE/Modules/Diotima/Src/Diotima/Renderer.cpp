@@ -142,6 +142,8 @@ namespace Diotima
 		deviceContext.ClearDepthStencilView(mDevice->mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 		deviceContext.ClearRenderTargetView(mDevice->mRenderTargetView, rgba);
 
+		deviceContext.RSSetState(mDevice->mRasterState);
+
 		DX11GFXConstantBuffer* viewProjBuf = mDevice->GetConstantBuffer(mViewProjBuf);
 		ID3D11Buffer* vpbHardwareBuf = &viewProjBuf->GetHardwareBuffer();
 		deviceContext.VSSetConstantBuffers(0, 1, &vpbHardwareBuf);

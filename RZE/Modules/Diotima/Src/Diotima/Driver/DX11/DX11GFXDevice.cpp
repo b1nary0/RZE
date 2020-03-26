@@ -37,8 +37,8 @@ namespace Diotima
 		ZeroMemory(&swapChainDesc, sizeof(DXGI_SWAP_CHAIN_DESC));
 
 		swapChainDesc.BufferDesc = bufferDesc;
-		swapChainDesc.SampleDesc.Count = 1;
-		swapChainDesc.SampleDesc.Quality = 0;
+		swapChainDesc.SampleDesc.Count = 4;
+		swapChainDesc.SampleDesc.Quality = 2;
 		swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 		swapChainDesc.BufferCount = 1;
 		swapChainDesc.OutputWindow = reinterpret_cast<HWND>(mWindowHandle);
@@ -65,8 +65,8 @@ namespace Diotima
 			depthStencilDesc.MipLevels = 1;
 			depthStencilDesc.ArraySize = 1;
 			depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-			depthStencilDesc.SampleDesc.Count = 1;
-			depthStencilDesc.SampleDesc.Quality = 0;
+			depthStencilDesc.SampleDesc.Count = 4;
+			depthStencilDesc.SampleDesc.Quality = 2;
 			depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
 			depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 			depthStencilDesc.CPUAccessFlags = 0;
