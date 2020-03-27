@@ -23,6 +23,7 @@
 #include <Diotima/Driver/DX11/DX11GFXTextureBuffer2D.h>
 
 #include <ImGui/imgui.h>
+#include <ImGui/imgui_impl_dx11.h>
 
 #include <array>
 
@@ -113,6 +114,9 @@ namespace Diotima
 		mDevice = std::make_unique<DX11GFXDevice>();
 		mDevice->SetWindow(mWindowHandle);
 		mDevice->Initialize();
+
+		ImGui::CreateContext();
+		ImGui_ImplDX11_Init(&mDevice->GetHardwareDevice(), &mDevice->GetDeviceContext());
 
 		mViewProjBuf = mDevice->CreateConstantBuffer(sizeof(Matrix4x4), 1);
 		mLightBuf = mDevice->CreateConstantBuffer(sizeof(LightItemProtocol), 1);
@@ -208,11 +212,13 @@ namespace Diotima
 
 	void Renderer::Render()
 	{
+		ImGui::Render();
 		mDevice->Present();
 	}
 
 	void Renderer::ShutDown()
 	{
+		ImGui_ImplDX11_Shutdown();
 		mDevice->Shutdown();
 	}
 
@@ -319,9 +325,10 @@ namespace Diotima
 		int width = static_cast<int>(newSize.X());
 		int height = static_cast<int>(newSize.Y());
 
-		//mDX12Device->HandleWindowResize(width, height);
+		ImGui::GetIO().DisplaySize.x = static_cast<float>(width);
+		ImGui::GetIO().DisplaySize.y = static_cast<float>(height);
 
-		mPassGraph->OnWindowResize(width, height);
+		//mPassGraph->OnWindowResize(width, height);
 
 		LOG_CONSOLE_ARGS("New Canvas Size: %f x %f", mCanvasSize.X(), mCanvasSize.Y());
 	}
