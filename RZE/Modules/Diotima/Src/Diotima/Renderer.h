@@ -199,17 +199,11 @@ namespace Diotima
 
 		// DX12 Temp
 	private:
-		U32 mViewProjBuf;
-		U32 mLightBuf;
-		U32 mCameraDataBuf;
-
 		std::unique_ptr<GFXPassGraph> mPassGraph;
 		
 		std::unique_ptr<DX11GFXDevice> mDevice;
 
 		void* mWindowHandle;
-
-		ID3D11InputLayout* mVertexLayout;
 
 	private:
 		std::mutex mVertexBufferCommandMutex;

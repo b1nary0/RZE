@@ -29,15 +29,10 @@ namespace Diotima
 		void SetDevice(DX12GFXDevice* device);
 
 	private:
-		void CreateRootSignature();
-		void CreatePipelineState();
-
-		void Begin(ID3D12GraphicsCommandList* commandList);
-		void End(ID3D12GraphicsCommandList* commandList);
+		void Begin();
+		void End();
 
 		void PrepareLights(const std::vector<Renderer::LightItemProtocol>& lights);
-
-		CD3DX12_GPU_DESCRIPTOR_HANDLE GetResourceGPUHandle() override;
 
 	private:
 		DX12GFXDevice* mDevice;

@@ -30,14 +30,6 @@
 
 namespace Diotima
 {
-	D3D11_INPUT_ELEMENT_DESC k_vertLayout[] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-	};
-	UINT numLayoutElements = ARRAYSIZE(k_vertLayout);
 
 	Renderer::Renderer()
 		: mPassGraph(std::make_unique<GFXPassGraph>())
@@ -120,13 +112,8 @@ namespace Diotima
 		ImGui_ImplWin32_Init(mWindowHandle);
 		ImGui_ImplDX11_Init(&mDevice->GetHardwareDevice(), &mDevice->GetDeviceContext());
 
-		mViewProjBuf = mDevice->CreateConstantBuffer(sizeof(Matrix4x4), 1);
-		mLightBuf = mDevice->CreateConstantBuffer(sizeof(LightItemProtocol), 1);
-		mCameraDataBuf = mDevice->CreateConstantBuffer(MemoryUtils::AlignSize(sizeof(Vector3D), 15), 1);
 
-		HRESULT hr;
-		hr = mDevice->GetHardwareDevice().CreateInputLayout(k_vertLayout, numLayoutElements, mDevice->mVSBlob->GetBufferPointer(), mDevice->mVSBlob->GetBufferSize(), &mVertexLayout);
-		//mPassGraph->Build(this);
+		mPassGraph->Build(this);
 	}
 
 	void Renderer::Update()
@@ -140,75 +127,7 @@ namespace Diotima
 		{
 			// #TODO(Eventually this should be moved out of here and into the engine level.
 			//       Then the render side just deals with the generated commands.)
-			//mPassGraph->Execute();
-		}
-
-		FLOAT rgba[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-		ID3D11DeviceContext& deviceContext = mDevice->GetDeviceContext();
-		deviceContext.ClearDepthStencilView(mDevice->mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-		deviceContext.ClearRenderTargetView(mDevice->mRenderTargetView, rgba);
-
-		deviceContext.RSSetState(mDevice->mRasterState);
-
-		DX11GFXConstantBuffer* viewProjBuf = mDevice->GetConstantBuffer(mViewProjBuf);
-		ID3D11Buffer* vpbHardwareBuf = &viewProjBuf->GetHardwareBuffer();
-		deviceContext.VSSetConstantBuffers(0, 1, &vpbHardwareBuf);
-
-		DX11GFXConstantBuffer* lightBuf = mDevice->GetConstantBuffer(mLightBuf);
-		ID3D11Buffer* hwLightBuf = &lightBuf->GetHardwareBuffer();
-		deviceContext.PSSetConstantBuffers(0, 1, &hwLightBuf);
-
-		DX11GFXConstantBuffer* camDataBuf = mDevice->GetConstantBuffer(mCameraDataBuf);
-		ID3D11Buffer* hwCamDataBuf = &camDataBuf->GetHardwareBuffer();
-		deviceContext.PSSetConstantBuffers(1, 1, &hwCamDataBuf);
-		
-		for (const RenderItemDrawCall& drawCall : mPerFrameDrawCalls)
-		{
-			// try to draw something
-			mDevice->GetDeviceContext().IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-			DX11GFXConstantBuffer* modelMatBuf = mDevice->GetConstantBuffer(drawCall.ConstantBuffer);
-			ID3D11Buffer* hwModelMatBuf = &modelMatBuf->GetHardwareBuffer();
-			deviceContext.VSSetConstantBuffers(1, 1, &hwModelMatBuf);
-
-			DX11GFXConstantBuffer* materialBuf = mDevice->GetConstantBuffer(drawCall.MaterialDataBuffer);
-			ID3D11Buffer* hwMaterialBuf = &materialBuf->GetHardwareBuffer();
-			deviceContext.PSSetConstantBuffers(2, 1, &hwMaterialBuf);
-
-			ID3D11Buffer* vertBuf = &mDevice->GetVertexBuffer(drawCall.VertexBuffer)->GetHardwareBuffer();
-			
-			struct TempDataLayoutStructure
-			{
-				Vector3D position;
- 				Vector3D normal;
- 				Vector2D uv;
- 				Vector3D tangents;
-			};
-			UINT stride = sizeof(TempDataLayoutStructure);
-			UINT offset = 0;
-			mDevice->GetDeviceContext().IASetVertexBuffers(0, 1, &vertBuf, &stride, &offset);
-
-			mDevice->GetDeviceContext().IASetInputLayout(mVertexLayout);
-
-			// Index buffer
-			DX11GFXIndexBuffer* indexBuf = mDevice->GetIndexBuffer(drawCall.IndexBuffer);
-			mDevice->GetDeviceContext().IASetIndexBuffer(&indexBuf->GetHardwareBuffer(), DXGI_FORMAT_R32_UINT, 0);
-
-			std::array<DX11GFXTextureBuffer2D*, 3> textureArray = {
-				mDevice->GetTextureBuffer2D(drawCall.TextureSlot0),
-				mDevice->GetTextureBuffer2D(drawCall.TextureSlot1),
-				mDevice->GetTextureBuffer2D(drawCall.TextureSlot2)
-			};
-
-			for (size_t texBufIdx = 0; texBufIdx < textureArray.size(); ++texBufIdx)
-			{
-				ID3D11ShaderResourceView* resourceView = &textureArray[texBufIdx]->GetResourceView();
-				ID3D11SamplerState* samplerState = &textureArray[texBufIdx]->GetSamplerState();
-				deviceContext.PSSetShaderResources(texBufIdx, 1, &resourceView);
-				deviceContext.PSSetSamplers(texBufIdx, 1, &samplerState);
-			}
-
-			deviceContext.DrawIndexed(indexBuf->GetIndexCount(), 0, 0);
+			mPassGraph->Execute();
 		}
 	}
 
@@ -254,17 +173,6 @@ namespace Diotima
 		{
 			mPerFrameDrawCalls.reserve(mRenderItems.size());
 		}
-
-		Matrix4x4 camViewProjMat = camera.ProjectionMat * camera.ViewMat;
-		DX11GFXConstantBuffer* viewProjBuf = mDevice->GetConstantBuffer(mViewProjBuf);
-		viewProjBuf->UpdateSubresources(&camViewProjMat);
-
-		DX11GFXConstantBuffer* lightBuf = mDevice->GetConstantBuffer(mLightBuf);
-		AssertExpr(!mLightingList.empty());
-		lightBuf->UpdateSubresources(&mLightingList[0]);
-
-		DX11GFXConstantBuffer* camDataBuf = mDevice->GetConstantBuffer(mCameraDataBuf);
-		camDataBuf->UpdateSubresources(&camera.Position);
 
 		mPerFrameDrawCalls.clear();
 		void* tmpMatrixBuf = malloc(sizeof(Matrix4x4) * 2);
@@ -332,7 +240,7 @@ namespace Diotima
 		ImGui::GetIO().DisplaySize.x = static_cast<float>(width);
 		ImGui::GetIO().DisplaySize.y = static_cast<float>(height);
 
-		//mPassGraph->OnWindowResize(width, height);
+		mPassGraph->OnWindowResize(width, height);
 
 		LOG_CONSOLE_ARGS("New Canvas Size: %f x %f", mCanvasSize.X(), mCanvasSize.Y());
 	}

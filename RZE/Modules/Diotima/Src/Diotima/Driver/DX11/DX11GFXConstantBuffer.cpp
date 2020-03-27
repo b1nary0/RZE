@@ -36,7 +36,7 @@ namespace Diotima
 		return *mBuf;
 	}
 
-	void DX11GFXConstantBuffer::UpdateSubresources(void* data)
+	void DX11GFXConstantBuffer::UpdateSubresources(const void* data)
 	{
 		mDevice->GetDeviceContext().UpdateSubresource(mBuf, 0, NULL, data, 0, 0);
 	}

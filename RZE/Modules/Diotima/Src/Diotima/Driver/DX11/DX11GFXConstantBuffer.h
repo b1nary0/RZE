@@ -22,7 +22,7 @@ namespace Diotima
 		void SetDevice(DX11GFXDevice* device);
 		ID3D11Buffer& GetHardwareBuffer();
 
-		void UpdateSubresources(void* data);
+		void UpdateSubresources(const void* data);
 
 	private:
 		DX11GFXDevice* mDevice;
