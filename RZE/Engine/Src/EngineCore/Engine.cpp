@@ -23,6 +23,7 @@
 
 #include <ImGui/imgui.h>
 #include <ImGui/imgui_impl_dx11.h>
+#include <ImGui/imgui_impl_win32.h>
 
 RZE_Engine::RZE_Engine()
 	: mMainWindow(nullptr)
@@ -81,6 +82,7 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 					OPTICK_EVENT("Update and Render");
 
  					ImGui_ImplDX11_NewFrame();
+					ImGui_ImplWin32_NewFrame();
  					ImGui::NewFrame();
 
 // 					ImGui::PlotLines(
@@ -95,6 +97,8 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 					Update();
 
 					mRenderer->Update();
+
+					ImGui::EndFrame();
 				}
 
 				{
@@ -228,9 +232,6 @@ void RZE_Engine::CreateAndInitializeRenderer()
 	mRenderer->SetMSAASampleCount(mEngineConfig->GetEngineSettings().GetMSAASampleCount());
 	mRenderer->Initialize();
 	mRenderer->EnableVsync(mEngineConfig->GetEngineSettings().IsVSyncEnabled());
-
-	ImGui::GetIO().DisplaySize.x = static_cast<float>(1600);
-	ImGui::GetIO().DisplaySize.y = static_cast<float>(900);
 }
 
 void RZE_Engine::InitializeApplication(Functor<RZE_Application* const> createGameCallback)
@@ -282,7 +283,7 @@ void RZE_Engine::RegisterWindowEvents()
 		else if (event.mWindowEvent.mEventInfo.mEventSubType == EWindowEventType::Window_Resize)
 		{
 			Vector2D newSize(event.mWindowEvent.mSizeX, event.mWindowEvent.mSizeY);
-			//GetRenderer().ResizeCanvas(newSize);
+			GetRenderer().ResizeCanvas(newSize);
 		}
 	});
 	mEventHandler.RegisterForEvent(EEventType::Window, windowCallback);

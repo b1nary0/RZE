@@ -24,6 +24,7 @@
 
 #include <ImGui/imgui.h>
 #include <ImGui/imgui_impl_dx11.h>
+#include <ImGui/imgui_impl_win32.h>
 
 #include <array>
 
@@ -116,6 +117,7 @@ namespace Diotima
 		mDevice->Initialize();
 
 		ImGui::CreateContext();
+		ImGui_ImplWin32_Init(mWindowHandle);
 		ImGui_ImplDX11_Init(&mDevice->GetHardwareDevice(), &mDevice->GetDeviceContext());
 
 		mViewProjBuf = mDevice->CreateConstantBuffer(sizeof(Matrix4x4), 1);
@@ -213,6 +215,8 @@ namespace Diotima
 	void Renderer::Render()
 	{
 		ImGui::Render();
+		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
 		mDevice->Present();
 	}
 
