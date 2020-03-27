@@ -1,8 +1,6 @@
 #include <StdAfx.h>
 #include <EngineApp.h>
 
-#include <Diotima/Driver/OpenGL/GLRenderTarget.h>
-
 #include <EngineCore/Engine.h>
 
 #include <Windowing/Win32Window.h>
