@@ -9,8 +9,7 @@
 
 #include <Utils/Conversions.h>
 #include <Utils/DebugUtils/Debug.h>
-#include <Utils/Math/Vector3D.h>
-#include <Utils/Math/Vector4D.h>
+#include <Utils/Math/Vector2D.h>
 #include <Utils/Platform/FilePath.h>
 
 namespace Diotima
@@ -172,6 +171,54 @@ namespace Diotima
 	{
 		AssertExpr(mTexture2DBuffers.size() > bufferID);
 		return mTexture2DBuffers[bufferID].get();
+	}
+
+	void DX11GFXDevice::HandleWindowResize(const Vector2D& newSize)
+	{
+		GetDeviceContext().OMSetRenderTargets(0, 0, 0);
+		mRenderTargetView->Release();
+
+		UINT newWidth = static_cast<UINT>(newSize.X());
+		UINT newHeight = static_cast<UINT>(newSize.Y());
+
+		HRESULT hr = mSwapChain->ResizeBuffers(0, newWidth, newHeight, DXGI_FORMAT_UNKNOWN, 0);
+
+		ID3D11Texture2D* pBuffer;
+		hr = mSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pBuffer);
+		hr = mDevice->CreateRenderTargetView(pBuffer, NULL, &mRenderTargetView);
+		pBuffer->Release();
+
+		mDepthStencilView->Release();
+		mDepthStencilTex->Release();
+
+		D3D11_TEXTURE2D_DESC depthStencilDesc;
+		ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
+
+		depthStencilDesc.Width = newWidth;
+		depthStencilDesc.Height = newHeight;
+		depthStencilDesc.MipLevels = 1;
+		depthStencilDesc.ArraySize = 1;
+		depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		depthStencilDesc.SampleDesc.Count = 4;
+		depthStencilDesc.SampleDesc.Quality = 2;
+		depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
+		depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+		depthStencilDesc.CPUAccessFlags = 0;
+		depthStencilDesc.MiscFlags = 0;
+
+		mDevice->CreateTexture2D(&depthStencilDesc, NULL, &mDepthStencilTex);
+		mDevice->CreateDepthStencilView(mDepthStencilTex, NULL, &mDepthStencilView);
+
+		GetDeviceContext().OMSetRenderTargets(1, &mRenderTargetView, mDepthStencilView);
+
+		D3D11_VIEWPORT viewport;
+		viewport.Width = (FLOAT)newWidth;
+		viewport.Height = (FLOAT)newHeight;
+		viewport.MinDepth = 0.0f;
+		viewport.MaxDepth = 1.0f;
+		viewport.TopLeftX = 0;
+		viewport.TopLeftY = 0;
+		GetDeviceContext().RSSetViewports(1, &viewport);
 	}
 
 	U32 DX11GFXDevice::GetVertexBufferCount() const

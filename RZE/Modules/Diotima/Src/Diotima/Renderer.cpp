@@ -121,7 +121,6 @@ namespace Diotima
 		OPTICK_EVENT();
 
 		ProcessCommands();
-
 		PrepareDrawCalls();
 
 		{
@@ -240,6 +239,7 @@ namespace Diotima
 		ImGui::GetIO().DisplaySize.x = static_cast<float>(width);
 		ImGui::GetIO().DisplaySize.y = static_cast<float>(height);
 
+		mDevice->HandleWindowResize(newSize);
 		mPassGraph->OnWindowResize(width, height);
 
 		LOG_CONSOLE_ARGS("New Canvas Size: %f x %f", mCanvasSize.X(), mCanvasSize.Y());

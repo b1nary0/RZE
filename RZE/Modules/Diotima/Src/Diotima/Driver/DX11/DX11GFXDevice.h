@@ -19,6 +19,8 @@ struct ID3D11InputLayout;
 struct ID3D11DepthStencilView;
 struct ID3D11Texture2D;
 
+class Vector2D;
+
 namespace Diotima
 {
 	class DX11GFXVertexBuffer;
@@ -39,24 +41,28 @@ namespace Diotima
 		void SetWindow(void* windowHandle) override;
 		void Shutdown() override;
 
+	public:
 		U32 CreateVertexBuffer(void* data, size_t size, U32 count) override;
 		U32 CreateIndexBuffer(void* data, size_t size, U32 count) override;
 		U32 CreateTextureBuffer2D(void* data, U32 width, U32 height) override;
 		U32 CreateConstantBuffer(size_t memberSize, U32 maxMembers) override;
 
-		DX11GFXVertexBuffer* GetVertexBuffer(U32 bufferID);
-		DX11GFXIndexBuffer* GetIndexBuffer(U32 bufferID);
-		DX11GFXConstantBuffer* GetConstantBuffer(U32 bufferID);
-		DX11GFXTextureBuffer2D* GetTextureBuffer2D(U32 bufferID);
+	public:
+		ID3D11Device& GetHardwareDevice();
+		ID3D11DeviceContext& GetDeviceContext();
 
 		U32 GetVertexBufferCount() const;
 		U32 GetIndexBufferCount() const;
 		U32 GetConstantBufferCount() const;
 		U32 GetTextureBufferCount() const;
 
+		DX11GFXVertexBuffer* GetVertexBuffer(U32 bufferID);
+		DX11GFXIndexBuffer* GetIndexBuffer(U32 bufferID);
+		DX11GFXConstantBuffer* GetConstantBuffer(U32 bufferID);
+		DX11GFXTextureBuffer2D* GetTextureBuffer2D(U32 bufferID);
+
 	public:
-		ID3D11Device& GetHardwareDevice();
-		ID3D11DeviceContext& GetDeviceContext();
+		void HandleWindowResize(const Vector2D& newSize);
 
 	// Temp access, these will move somewhere else.
 	public:
@@ -69,9 +75,10 @@ namespace Diotima
 		ID3D11RasterizerState* mRasterState;
 
 	private:
-		IDXGISwapChain* mSwapChain;
 		ID3D11Device* mDevice;
 		ID3D11DeviceContext* mDeviceContext;
+
+		IDXGISwapChain* mSwapChain;
 
 		void* mWindowHandle;
 
