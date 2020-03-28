@@ -48,10 +48,11 @@ protected:
 
 	Win32Window* const GetWindow() const;
 
+	std::unique_ptr<Diotima::RenderTargetTexture> mRenderTarget;
+
 private:
 	void SetWindow(Win32Window* const window);
 
-	std::unique_ptr<Diotima::RenderTargetTexture> mRenderTarget;
 
 	Win32Window* mWindow;
 	bool bIsRunning;

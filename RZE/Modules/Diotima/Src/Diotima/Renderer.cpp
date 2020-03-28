@@ -35,6 +35,7 @@ namespace Diotima
 
 	Renderer::Renderer()
 		: mPassGraph(std::make_unique<GFXPassGraph>())
+		, mRenderTarget(nullptr)
 	{
 		mLightingList.reserve(MAX_LIGHTS);
 	}
@@ -133,8 +134,16 @@ namespace Diotima
 
 	void Renderer::Render()
 	{
-		DX11GFXTextureBuffer2D* renderTargetTexture = mDevice->GetTextureBuffer2D(mRenderTarget->GetTextureID());
-		mDevice->SendTextureToBackBuffer(renderTargetTexture);
+		if (mRenderTarget != nullptr)
+		{
+			ID3D11RenderTargetView* nullViews[] = { nullptr };
+			mDevice->GetDeviceContext().OMSetRenderTargets(ARRAYSIZE(nullViews), nullViews, nullptr);
+
+			mDevice->GetDeviceContext().OMSetRenderTargets(1, &mDevice->mRenderTargetView, mDevice->mDepthStencilView);
+
+			FLOAT rgba[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+			mDevice->GetDeviceContext().ClearRenderTargetView(mDevice->mRenderTargetView, rgba);
+		}
 
 		ImGui::Render();
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
@@ -261,10 +270,9 @@ namespace Diotima
 		mRenderTarget = renderTarget;
 	}
 
-	Diotima::RenderTargetTexture& Renderer::GetRenderTarget()
+	Diotima::RenderTargetTexture* Renderer::GetRenderTarget()
 	{
-		AssertNotNull(mRenderTarget);
-		return *mRenderTarget;
+		return mRenderTarget;
 	}
 
 	U32 Renderer::CreateVertexBuffer(void* data, size_t size, U32 count)

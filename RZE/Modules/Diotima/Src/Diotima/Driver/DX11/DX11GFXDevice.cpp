@@ -362,8 +362,8 @@ namespace Diotima
 			D3D11_TEXTURE2D_DESC depthStencilDesc;
 			ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
 
-			depthStencilDesc.Width = kInitialWidth;
-			depthStencilDesc.Height = kInitialHeight;
+			depthStencilDesc.Width = 1024;
+			depthStencilDesc.Height = 576;
 			depthStencilDesc.MipLevels = 1;
 			depthStencilDesc.ArraySize = 1;
 			depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;

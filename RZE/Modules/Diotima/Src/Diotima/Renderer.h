@@ -158,7 +158,9 @@ namespace Diotima
 		// This sets the render target for the entire pipeline. We essentially render to this
 		// and then send it to the back buffer. Will be reworked at some point.
 		void SetRenderTarget(RenderTargetTexture* renderTarget);
-		RenderTargetTexture& GetRenderTarget();
+		// Can return null for now to determine if we want to write directly to the backbuffer.
+		// Will fix later since we should be able to have a more robust system WRT RTTs.
+		RenderTargetTexture* GetRenderTarget();
 
 	public:
 		U32 QueueCreateVertexBufferCommand(void* data, size_t size, U32 count);

@@ -2,6 +2,11 @@
 
 #include <ECS/Systems/FreeCameraSystem.h>
 
+// Needed for call to RZE().GetRenderer().GetDriverDevice()
+// Should remove ASAP.
+#include <Diotima/Driver/DX11/DX11GFXDevice.h>
+#include <Diotima/Graphics/RenderTarget.h>
+
 #include <ImGui/imgui.h>
 #include <Optick/optick.h>
 
@@ -20,6 +25,10 @@ namespace Editor
 	void EditorApp::Initialize()
 	{
 		RZE_Application::Initialize();
+
+		mRenderTarget = std::make_unique<Diotima::RenderTargetTexture>(1024, 576);
+		mRenderTarget->Initialize(&RZE().GetRenderer().GetDriverDevice());
+		RZE().GetRenderer().SetRenderTarget(mRenderTarget.get());
 
 		GetWindow()->SetWindowSize(Vector2D(1600.0f, 900.0f));
 

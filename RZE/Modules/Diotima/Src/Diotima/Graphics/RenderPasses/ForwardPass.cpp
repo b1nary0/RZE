@@ -131,14 +131,24 @@ namespace Diotima
 			FLOAT rgba[4] = { 0.0f, 0.0f, 1.0f, 1.0f };
 			ID3D11DeviceContext& deviceContext = mDevice->GetDeviceContext();
 
-			RenderTargetTexture& renderTarget = mRenderer->GetRenderTarget();
-			DX11GFXTextureBuffer2D* rtBuf = mDevice->GetTextureBuffer2D(renderTarget.GetTextureID());
-			ID3D11RenderTargetView* hwRTV = &rtBuf->GetTargetView();
+			RenderTargetTexture* renderTarget = mRenderer->GetRenderTarget();
+			if (renderTarget != nullptr)
+			{
+				DX11GFXTextureBuffer2D* rtBuf = mDevice->GetTextureBuffer2D(renderTarget->GetTextureID());
+				ID3D11RenderTargetView* hwRTV = &rtBuf->GetTargetView();
 
-			deviceContext.OMSetRenderTargets(1, &hwRTV, mDevice->mRenderTargetDSV);
+				deviceContext.OMSetRenderTargets(1, &hwRTV, mDevice->mRenderTargetDSV);
 
-			deviceContext.ClearDepthStencilView(mDevice->mRenderTargetDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-			deviceContext.ClearRenderTargetView(hwRTV, rgba);
+				deviceContext.ClearDepthStencilView(mDevice->mRenderTargetDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+				deviceContext.ClearRenderTargetView(hwRTV, rgba);
+			}
+			else
+			{
+				deviceContext.OMSetRenderTargets(1, &mDevice->mRenderTargetView, mDevice->mDepthStencilView);
+
+				deviceContext.ClearDepthStencilView(mDevice->mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+				deviceContext.ClearRenderTargetView(mDevice->mRenderTargetView, rgba);
+			}
 
  			deviceContext.RSSetState(mDevice->mRasterState);
  
@@ -212,7 +222,6 @@ namespace Diotima
 
 	void ForwardPass::End()
 	{
-		
 	}
 
 	void ForwardPass::SetRenderer(Renderer* renderer)
