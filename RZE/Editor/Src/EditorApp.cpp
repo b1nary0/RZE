@@ -197,6 +197,8 @@ namespace Editor
 		{
 			mScenePanel.Display();
 		}
+
+		mSceneViewPanel.Display();
 	}
 
 	void EditorApp::LoadFonts()

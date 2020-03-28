@@ -6,10 +6,10 @@
 struct ID3D11Texture2D;
 struct ID3D11RenderTargetView;
 
-
 namespace Diotima
 {
 	class DX11GFXDevice;
+	class DX11GFXTextureBuffer2D;
 
 	class RenderTargetTexture
 	{
@@ -22,6 +22,10 @@ namespace Diotima
 		void Initialize(DX11GFXDevice* device);
 
 		U32 GetTextureID() const;
+		DX11GFXTextureBuffer2D& GetGFXTexture();
+
+		U32 GetWidth() const;
+		U32 GetHeight() const;
 
 	private:
 		U32 mWidth;
@@ -29,5 +33,6 @@ namespace Diotima
 
 	private:
 		U32 mTextureID;
+		DX11GFXTextureBuffer2D* mGFXTexture;
 	};
 }

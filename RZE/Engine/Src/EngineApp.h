@@ -34,6 +34,8 @@ public:
 
 	virtual void RegisterInputEvents(InputHandler& inputHandler);
 
+	Diotima::RenderTargetTexture* GetRTT();
+
 	static RZE_Engine& RZE() { return mEngine; }
 
 protected:

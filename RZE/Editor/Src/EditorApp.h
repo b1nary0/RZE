@@ -3,6 +3,7 @@
 #include <EngineApp.h>
 
 #include <UI/Panels/ScenePanel.h>
+#include <UI/Panels/SceneViewPanel.h>
 
 struct ImFont;
 
@@ -46,6 +47,7 @@ namespace Editor
 		PanelStates mPanelStates;
 
 		ScenePanel mScenePanel;
+		SceneViewPanel mSceneViewPanel;
 
 		std::unordered_map<std::string, ImFont*> mFontMapping;
 

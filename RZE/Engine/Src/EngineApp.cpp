@@ -62,8 +62,7 @@ void RZE_Application::RegisterInputEvents(InputHandler& inputHandler)
 void RZE_Application::Initialize()
 {
 	LOG_CONSOLE("RZE_Application::Init() called.");
-
-	mRenderTarget = std::make_unique<Diotima::RenderTargetTexture>(1584, 861);
+	mRenderTarget = std::make_unique<Diotima::RenderTargetTexture>(1024, 576);
 	mRenderTarget->Initialize(&RZE().GetRenderer().GetDriverDevice());
 
 	RZE().GetRenderer().SetRenderTarget(mRenderTarget.get());
@@ -95,4 +94,10 @@ void RZE_Application::SetWindow(Win32Window* const window)
 Win32Window* const RZE_Application::GetWindow() const
 {
 	return mWindow;
+}
+
+Diotima::RenderTargetTexture* RZE_Application::GetRTT()
+{
+	AssertNotNull(mRenderTarget);
+	return mRenderTarget.get();
 }
