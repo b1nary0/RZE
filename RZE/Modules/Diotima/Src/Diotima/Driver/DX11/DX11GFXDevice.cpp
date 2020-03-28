@@ -361,11 +361,6 @@ namespace Diotima
 				float v;
 			};
 
-// 			{-1.f, 1.f, 0.f},
-// 			{ -1.f,-1.f,0.f }
-// 			{1.f, 1.f, 0.f},
-// 			{ 1.f,-1.f,0.f },
-
 			Vertex v[] =
 			{
 				{-1.0f, -1.0f, 0.0f, 0.0f, 1.0f}, // TL
