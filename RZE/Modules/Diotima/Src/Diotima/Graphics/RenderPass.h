@@ -1,7 +1,5 @@
 #pragma once
 
-#include <Diotima/Driver/DX12/DX12.h>
-
 #include <Utils/PrimitiveDefs.h>
 
 #include <vector>

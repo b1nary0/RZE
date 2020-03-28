@@ -24,6 +24,12 @@ namespace Diotima
 		hr = mDevice->GetHardwareDevice().CreateBuffer(&bufferDesc, NULL, &mBuf);
 	}
 
+	void DX11GFXConstantBuffer::Release()
+	{
+		AssertNotNull(mBuf);
+		mBuf->Release();
+	}
+
 	void DX11GFXConstantBuffer::SetDevice(DX11GFXDevice* device)
 	{
 		AssertNotNull(device);

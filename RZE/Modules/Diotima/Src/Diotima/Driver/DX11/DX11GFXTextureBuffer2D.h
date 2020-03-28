@@ -20,6 +20,7 @@ namespace Diotima
 	// IGFXTextureBuffer2D interface
 	public:
 		virtual void Allocate(void* data, U32 width, U32 height) override;
+		virtual void Release() override;
 
 	public:
 		// #TODO(Hack asf)

@@ -17,6 +17,7 @@ namespace Diotima
 	// IGFXConstantBuffer interface
 	public:
 		virtual void Allocate(size_t size, U32 count) override;
+		virtual void Release() override;
 
 	public:
 		void SetDevice(DX11GFXDevice* device);

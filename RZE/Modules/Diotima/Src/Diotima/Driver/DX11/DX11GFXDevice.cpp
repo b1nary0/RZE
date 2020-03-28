@@ -114,6 +114,30 @@ namespace Diotima
 		mSquareIndexBuf->Release();
 		mDepthStencilView->Release();
 		mDepthStencilTex->Release();
+
+		for (auto& vertexBuf : mVertexBuffers)
+		{
+			vertexBuf->Release();
+			vertexBuf.reset();
+		}
+
+		for (auto& indexBuf : mIndexBuffers)
+		{
+			indexBuf->Release();
+			indexBuf.reset();
+		}
+
+		for (auto& constantBuf : mConstantBuffers)
+		{
+			constantBuf->Release();
+			constantBuf.reset();
+		}
+
+		for (auto& t2dBuf : mTexture2DBuffers)
+		{
+			t2dBuf->Release();
+			t2dBuf.reset();
+		}
 	}
 
 	U32 DX11GFXDevice::CreateVertexBuffer(void* data, size_t size, U32 count)

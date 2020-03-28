@@ -1,10 +1,6 @@
 #include <Diotima/Graphics/RenderPasses/DepthPass.h>
 
-#include <Diotima/Driver/DX12/DX12GFXDevice.h>
-#include <Diotima/Driver/DX12/DX12GFXConstantBuffer.h>
-#include <Diotima/Driver/DX12/DX12GFXDepthStencilBuffer.h>
-#include <Diotima/Driver/DX12/DX12GFXIndexBuffer.h>
-#include <Diotima/Driver/DX12/DX12GFXVertexBuffer.h>
+#include <Diotima/Driver/DX11/DX11GFXDevice.h>
 
 #include <Utils/Conversions.h>
 #include <Utils/DebugUtils/Debug.h>
@@ -47,7 +43,7 @@ namespace Diotima
 		mRenderer = renderer;
 	}
 
-	void DepthPass::SetDevice(DX12GFXDevice* device)
+	void DepthPass::SetDevice(DX11GFXDevice* device)
 	{
 		AssertNotNull(device);
 		AssertExpr(mDevice == nullptr);
@@ -59,12 +55,12 @@ namespace Diotima
 	{
 		//OPTICK_EVENT();
 
-		DX12GFXConstantBuffer* const lightConstantBuffer = mDevice->GetConstantBuffer(mLightConstantBuffer);
-
-		lightConstantBuffer->Reset();
-
-		AssertMsg(lights.size() == 1, "First pass shadows only support one light"); 
-		lightConstantBuffer->AllocateMember(&lights[0].LightSpaceMatrix);
+// 		DX12GFXConstantBuffer* const lightConstantBuffer = mDevice->GetConstantBuffer(mLightConstantBuffer);
+// 
+// 		lightConstantBuffer->Reset();
+// 
+// 		AssertMsg(lights.size() == 1, "First pass shadows only support one light"); 
+// 		lightConstantBuffer->AllocateMember(&lights[0].LightSpaceMatrix);
 	}
 
 }

@@ -64,6 +64,19 @@ namespace Diotima
 		mDevice->GetDeviceContext().GenerateMips(mResourceView);
 	}
 
+	void DX11GFXTextureBuffer2D::Release()
+	{
+		AssertNotNull(mResource);
+		AssertNotNull(mResourceView);
+		AssertNotNull(mRTV);
+		AssertNotNull(mSamplerState);
+
+		mResource->Release();
+		mResourceView->Release();
+		mRTV->Release();
+		mSamplerState->Release();
+	}
+
 	void DX11GFXTextureBuffer2D::SetIsRenderTarget()
 	{
 		bIsRenderTarget = true;

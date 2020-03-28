@@ -32,6 +32,12 @@ namespace Diotima
 		AssertExpr(hr == S_OK);
 	}
 
+	void DX11GFXIndexBuffer::Release()
+	{
+		AssertNotNull(mBuf);
+		mBuf->Release();
+	}
+
 	void DX11GFXIndexBuffer::SetDevice(DX11GFXDevice* device)
 	{
 		AssertNotNull(device);

@@ -29,6 +29,12 @@ namespace Diotima
 		AssertExpr(hr == S_OK);
 	}
 
+	void DX11GFXVertexBuffer::Release()
+	{
+		AssertNotNull(mBuf);
+		mBuf->Release();
+	}
+
 	ID3D11Buffer& DX11GFXVertexBuffer::GetHardwareBuffer()
 	{
 		AssertNotNull(mBuf);
