@@ -1,9 +1,13 @@
 #include <StdAfx.h>
 #include <EngineApp.h>
 
+
 #include <EngineCore/Engine.h>
 
 #include <Windowing/Win32Window.h>
+
+#include <Diotima/Driver/DX11/DX11GFXDevice.h>
+#include <Diotima/Graphics/RenderTarget.h>
 
 #include <Utils/DebugUtils/Debug.h>
 
@@ -34,7 +38,7 @@ void RZE_Application::Run()
 
 void RZE_Application::Start()
 {
-
+	
 }
 
 void RZE_Application::Update()
@@ -59,6 +63,10 @@ void RZE_Application::Initialize()
 {
 	LOG_CONSOLE("RZE_Application::Init() called.");
 
+	mRenderTarget = std::make_unique<Diotima::RenderTargetTexture>(1584, 861);
+	mRenderTarget->Initialize(&RZE().GetRenderer().GetDriverDevice());
+
+	RZE().GetRenderer().SetRenderTarget(mRenderTarget.get());
 }
 
 Win32Window& RZE_Application::InternalGetWindow()

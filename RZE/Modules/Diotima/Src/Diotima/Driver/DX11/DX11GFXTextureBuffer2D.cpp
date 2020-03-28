@@ -26,7 +26,7 @@ namespace Diotima
 		ZeroMemory(&textureDesc, sizeof(textureDesc));
 		textureDesc.Height = height;
 		textureDesc.Width = width;
-		textureDesc.MipLevels = 0;
+		textureDesc.MipLevels = 1;
 		textureDesc.ArraySize = 1;
 		textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		textureDesc.SampleDesc.Count = 1;
@@ -39,8 +39,11 @@ namespace Diotima
 		HRESULT hr = mDevice->GetHardwareDevice().CreateTexture2D(&textureDesc, NULL, &mResource);
 		AssertExpr(hr == S_OK);
 
-		U32 rowPitch = (32 * width) / 8;
-		mDevice->GetDeviceContext().UpdateSubresource(mResource, 0, NULL, data, rowPitch, 0);
+		if (data != nullptr)
+		{
+			U32 rowPitch = (32 * width) / 8;
+			mDevice->GetDeviceContext().UpdateSubresource(mResource, 0, NULL, data, rowPitch, 0);
+		}
 
 		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
 		ZeroMemory(&srvDesc, sizeof(srvDesc));
@@ -49,10 +52,21 @@ namespace Diotima
 		srvDesc.Texture2D.MostDetailedMip = 0;
 		srvDesc.Texture2D.MipLevels = -1;
 
+		D3D11_RENDER_TARGET_VIEW_DESC rtvDesc;
+		rtvDesc.Format = textureDesc.Format;
+		rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+		rtvDesc.Texture2D.MipSlice = 0;
+
+		hr = mDevice->GetHardwareDevice().CreateRenderTargetView(mResource, &rtvDesc, &mRTV);
 		hr = mDevice->GetHardwareDevice().CreateShaderResourceView(mResource, &srvDesc, &mResourceView);
 		AssertExpr(hr == S_OK);
 
 		mDevice->GetDeviceContext().GenerateMips(mResourceView);
+	}
+
+	void DX11GFXTextureBuffer2D::SetIsRenderTarget()
+	{
+		bIsRenderTarget = true;
 	}
 
 	void DX11GFXTextureBuffer2D::SetDevice(DX11GFXDevice* device)
@@ -65,6 +79,12 @@ namespace Diotima
 	{
 		AssertNotNull(mResourceView);
 		return *mResourceView;
+	}
+
+	ID3D11RenderTargetView& DX11GFXTextureBuffer2D::GetTargetView()
+	{
+		AssertNotNull(mRTV);
+		return *mRTV;
 	}
 
 	ID3D11SamplerState& DX11GFXTextureBuffer2D::GetSamplerState()

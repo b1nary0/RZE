@@ -17,6 +17,13 @@ namespace Diotima
 	const int kInitialWidth = 1600;
 	const int kInitialHeight = 900;
 
+	D3D11_INPUT_ELEMENT_DESC k_RTTVertLayout[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+	};
+	UINT layoutElementCount = ARRAYSIZE(k_RTTVertLayout);
+
 	void DX11GFXDevice::Initialize()
 	{
 		HRESULT hr;
@@ -105,10 +112,6 @@ namespace Diotima
 		// temp remove later
 		mSquareVertBuf->Release();
 		mSquareIndexBuf->Release();
-		mVertexShader->Release();
-		mPixelShader->Release();
-		mVSBlob->Release();
-		mPSBlob->Release();
 		mDepthStencilView->Release();
 		mDepthStencilTex->Release();
 	}
@@ -129,6 +132,16 @@ namespace Diotima
 		mIndexBuffers.back()->Allocate(data, size, count);
 
 		return static_cast<U32>(mIndexBuffers.size() - 1);
+	}
+
+	U32 DX11GFXDevice::CreateRenderTarget2D(U32 width, U32 height)
+	{
+		mTexture2DBuffers.push_back(std::make_unique<DX11GFXTextureBuffer2D>());
+		mTexture2DBuffers.back()->SetDevice(this);
+		mTexture2DBuffers.back()->SetIsRenderTarget();
+		mTexture2DBuffers.back()->Allocate(nullptr, width, height);
+
+		return static_cast<U32>(mTexture2DBuffers.size() - 1);
 	}
 
 	U32 DX11GFXDevice::CreateTextureBuffer2D(void* data, U32 width, U32 height)
@@ -173,6 +186,39 @@ namespace Diotima
 		return mTexture2DBuffers[bufferID].get();
 	}
 
+	void DX11GFXDevice::SendTextureToBackBuffer(DX11GFXTextureBuffer2D* texture)
+	{
+		FLOAT rgba[4] = { 1.0f, 1.0f, 0.0f, 1.0f };
+		mDeviceContext->OMSetRenderTargets(1, &mRenderTargetView, mDepthStencilView);
+		mDeviceContext->ClearRenderTargetView(mRenderTargetView, rgba);
+		mDeviceContext->ClearDepthStencilView(mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+		mDeviceContext->VSSetShader(mVSRenderTarget, 0, 0);
+		mDeviceContext->PSSetShader(mPSRenderTarget, 0, 0);
+
+		DX11GFXVertexBuffer* vb = GetVertexBuffer(mRenderTargetVB);
+		ID3D11Buffer* hwvb = &vb->GetHardwareBuffer();
+
+		UINT stride = sizeof(float) * 5;
+		UINT offset = 0;
+		mDeviceContext->IASetVertexBuffers(0, 1, &hwvb, &stride, &offset);
+
+		DX11GFXIndexBuffer* ib = GetIndexBuffer(mRenderTargetIB);
+		mDeviceContext->IASetIndexBuffer(&ib->GetHardwareBuffer(), DXGI_FORMAT_R32_UINT, 0);
+
+		mDeviceContext->IASetInputLayout(mRTTVertLayout);
+
+		ID3D11ShaderResourceView* texSRV = &texture->GetResourceView();
+		ID3D11SamplerState* texSamplerState = &texture->GetSamplerState();
+		mDeviceContext->PSSetShaderResources(0, 1, &texSRV);
+		mDeviceContext->PSSetSamplers(0, 1, &texSamplerState);
+
+		mDeviceContext->DrawIndexed(6, 0, 0);
+
+		ID3D11ShaderResourceView* const pSRV[1] = { NULL };
+		mDeviceContext->PSSetShaderResources(0, 1, pSRV);
+	}
+
 	void DX11GFXDevice::HandleWindowResize(const Vector2D& newSize)
 	{
 		GetDeviceContext().OMSetRenderTargets(0, 0, 0);
@@ -208,8 +254,6 @@ namespace Diotima
 
 		mDevice->CreateTexture2D(&depthStencilDesc, NULL, &mDepthStencilTex);
 		mDevice->CreateDepthStencilView(mDepthStencilTex, NULL, &mDepthStencilView);
-
-		GetDeviceContext().OMSetRenderTargets(1, &mRenderTargetView, mDepthStencilView);
 
 		D3D11_VIEWPORT viewport;
 		viewport.Width = (FLOAT)newWidth;
@@ -256,14 +300,13 @@ namespace Diotima
 	void DX11GFXDevice::SetupSceneStuff()
 	{
 		HRESULT hr;
+		ID3D10Blob* error;
 
-		// Shaders
+		// RenderTarget stuff
 		{
-			FilePath vertexShaderPath("Assets/Shaders/ForwardLighting_VS.hlsl");
-			FilePath pixelShaderPath("Assets/Shaders/ForwardLighting_PS.hlsl");
-
-			ID3D10Blob* error;
-			hr = D3DCompileFromFile(Conversions::StringToWString(vertexShaderPath.GetAbsolutePath()).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VSMain", "vs_5_0", 0, 0, &mVSBlob, &error);
+			FilePath pixelShaderPath("Assets/Shaders/RenderTargetBasic.hlsl");
+			hr = D3DCompileFromFile(Conversions::StringToWString(pixelShaderPath.GetAbsolutePath()).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VS", "vs_5_0", 0, 0, &mRenderTargetVSBlob, &error);
+			hr = D3DCompileFromFile(Conversions::StringToWString(pixelShaderPath.GetAbsolutePath()).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "PS", "ps_5_0", 0, 0, &mRenderTargetPSBlob, &error);
 
 			if (error)
 			{
@@ -282,30 +325,57 @@ namespace Diotima
 				OutputDebugString(output.c_str());
 			}
 
-			hr = D3DCompileFromFile(Conversions::StringToWString(pixelShaderPath.GetAbsolutePath()).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "PSMain", "ps_5_0", 0, 0, &mPSBlob, &error);
+			hr = mDevice->CreateVertexShader(mRenderTargetVSBlob->GetBufferPointer(), mRenderTargetVSBlob->GetBufferSize(), nullptr, &mVSRenderTarget);
+			hr = mDevice->CreatePixelShader(mRenderTargetPSBlob->GetBufferPointer(), mRenderTargetPSBlob->GetBufferSize(), nullptr, &mPSRenderTarget);
 
-			if (error)
+			struct Vertex
 			{
-				char const* message =
-					static_cast<char const*>(error->GetBufferPointer());
+				float x;
+				float y;
+				float z;
+				float u;
+				float v;
+			};
 
-				// Write the warning to the output window when the program is
-				// executing through the Microsoft Visual Studio IDE.
-				size_t const length = strlen(message);
-				std::wstring output = L"";
-				for (size_t i = 0; i < length; ++i)
-				{
-					output += static_cast<wchar_t>(message[i]);
-				}
-				output += L'\n';
-				OutputDebugString(output.c_str());
-			}
+// 			{-1.f, 1.f, 0.f},
+// 			{ -1.f,-1.f,0.f }
+// 			{1.f, 1.f, 0.f},
+// 			{ 1.f,-1.f,0.f },
 
-			hr = mDevice->CreateVertexShader(mVSBlob->GetBufferPointer(), mVSBlob->GetBufferSize(), nullptr, &mVertexShader);
-			hr = mDevice->CreatePixelShader(mPSBlob->GetBufferPointer(), mPSBlob->GetBufferSize(), nullptr, &mPixelShader);
+			Vertex v[] =
+			{
+				{-1.0f, -1.0f, 0.0f, 0.0f, 1.0f}, // TL
+				{-1.0f, 1.0f, 0.0f, 0.0f, 0.0f},  // BL
+				{1.0f, 1.0f, 0.0f, 1.0f, 0.0f}, // BR
+				{1.0f, -1.0f, 0.0f, 1.0f, 1.0f} // TR
+			};
 
-			mDeviceContext->VSSetShader(mVertexShader, 0, 0);
-			mDeviceContext->PSSetShader(mPixelShader, 0, 0);
+			DWORD indices[] = {
+				0, 1, 2,
+				0, 2, 3,
+			};
+			mRenderTargetVB = CreateVertexBuffer(v, sizeof(Vertex) * 4, 1);
+			mRenderTargetIB = CreateIndexBuffer(indices, sizeof(DWORD) * 4 * 8, 1);
+
+			hr = mDevice->CreateInputLayout(k_RTTVertLayout, layoutElementCount, mRenderTargetVSBlob->GetBufferPointer(), mRenderTargetVSBlob->GetBufferSize(), &mRTTVertLayout);
+
+			D3D11_TEXTURE2D_DESC depthStencilDesc;
+			ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
+
+			depthStencilDesc.Width = kInitialWidth;
+			depthStencilDesc.Height = kInitialHeight;
+			depthStencilDesc.MipLevels = 1;
+			depthStencilDesc.ArraySize = 1;
+			depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+			depthStencilDesc.SampleDesc.Count = 1;
+			depthStencilDesc.SampleDesc.Quality = 0;
+			depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
+			depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+			depthStencilDesc.CPUAccessFlags = 0;
+			depthStencilDesc.MiscFlags = 0;
+
+			mDevice->CreateTexture2D(&depthStencilDesc, NULL, &mRenderTargetDepthTex);
+			mDevice->CreateDepthStencilView(mRenderTargetDepthTex, NULL, &mRenderTargetDSV);
 		}
 
 		// Viewport

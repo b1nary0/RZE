@@ -21,6 +21,8 @@
 #include <Diotima/Driver/DX11/DX11GFXIndexBuffer.h>
 #include <Diotima/Driver/DX11/DX11GFXConstantBuffer.h>
 #include <Diotima/Driver/DX11/DX11GFXTextureBuffer2D.h>
+#include <Diotima/Graphics/RenderTarget.h>
+
 
 #include <ImGui/imgui.h>
 #include <ImGui/imgui_impl_dx11.h>
@@ -112,7 +114,6 @@ namespace Diotima
 		ImGui_ImplWin32_Init(mWindowHandle);
 		ImGui_ImplDX11_Init(&mDevice->GetHardwareDevice(), &mDevice->GetDeviceContext());
 
-
 		mPassGraph->Build(this);
 	}
 
@@ -132,6 +133,9 @@ namespace Diotima
 
 	void Renderer::Render()
 	{
+		DX11GFXTextureBuffer2D* renderTargetTexture = mDevice->GetTextureBuffer2D(mRenderTarget->GetTextureID());
+		mDevice->SendTextureToBackBuffer(renderTargetTexture);
+
 		ImGui::Render();
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
@@ -214,6 +218,12 @@ namespace Diotima
 		}
 	}
 
+	Diotima::DX11GFXDevice& Renderer::GetDriverDevice()
+	{
+		AssertNotNull(mDevice);
+		return *mDevice;
+	}
+
 	void Renderer::EnableVsync(bool bEnabled)
 	{
 		//mDevice->SetSyncInterval(static_cast<U32>(bEnabled));
@@ -243,6 +253,18 @@ namespace Diotima
 		mPassGraph->OnWindowResize(width, height);
 
 		LOG_CONSOLE_ARGS("New Canvas Size: %f x %f", mCanvasSize.X(), mCanvasSize.Y());
+	}
+
+	void Renderer::SetRenderTarget(RenderTargetTexture* renderTarget)
+	{
+		AssertNotNull(renderTarget);
+		mRenderTarget = renderTarget;
+	}
+
+	Diotima::RenderTargetTexture& Renderer::GetRenderTarget()
+	{
+		AssertNotNull(mRenderTarget);
+		return *mRenderTarget;
 	}
 
 	U32 Renderer::CreateVertexBuffer(void* data, size_t size, U32 count)

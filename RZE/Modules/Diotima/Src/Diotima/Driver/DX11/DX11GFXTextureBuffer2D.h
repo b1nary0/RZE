@@ -5,6 +5,7 @@
 struct ID3D11SamplerState;
 struct ID3D11Texture2D;
 struct ID3D11ShaderResourceView;
+struct ID3D11RenderTargetView;;
 
 namespace Diotima
 {
@@ -21,8 +22,13 @@ namespace Diotima
 		virtual void Allocate(void* data, U32 width, U32 height) override;
 
 	public:
+		// #TODO(Hack asf)
+		void SetIsRenderTarget();
+
+	public:
 		void SetDevice(DX11GFXDevice* device);
 		ID3D11ShaderResourceView& GetResourceView();
+		ID3D11RenderTargetView& GetTargetView();
 		ID3D11SamplerState& GetSamplerState();
 
 	private:
@@ -30,7 +36,10 @@ namespace Diotima
 
 		ID3D11Texture2D* mResource;
 		ID3D11ShaderResourceView* mResourceView;
+		ID3D11RenderTargetView* mRTV;
 		ID3D11SamplerState* mSamplerState;
+
+		bool bIsRenderTarget;
 	};
 
 }

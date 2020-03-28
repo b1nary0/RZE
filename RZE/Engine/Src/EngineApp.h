@@ -4,6 +4,8 @@
 
 #include <Windowing/Win32Window.h>
 
+#include <memory>
+
 class EventHandler;
 class Win32Window;
 
@@ -46,6 +48,8 @@ protected:
 
 private:
 	void SetWindow(Win32Window* const window);
+
+	std::unique_ptr<Diotima::RenderTargetTexture> mRenderTarget;
 
 	Win32Window* mWindow;
 	bool bIsRunning;

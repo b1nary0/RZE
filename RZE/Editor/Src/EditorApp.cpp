@@ -19,6 +19,8 @@ namespace Editor
 	static ImFont* ubuntu = nullptr;
 	void EditorApp::Initialize()
 	{
+		RZE_Application::Initialize();
+
 		GetWindow()->SetWindowSize(Vector2D(1600.0f, 900.0f));
 
 		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;

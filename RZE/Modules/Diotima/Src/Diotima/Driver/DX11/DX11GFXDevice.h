@@ -45,6 +45,7 @@ namespace Diotima
 		U32 CreateVertexBuffer(void* data, size_t size, U32 count) override;
 		U32 CreateIndexBuffer(void* data, size_t size, U32 count) override;
 		U32 CreateTextureBuffer2D(void* data, U32 width, U32 height) override;
+		U32 CreateRenderTarget2D(U32 width, U32 height);
 		U32 CreateConstantBuffer(size_t memberSize, U32 maxMembers) override;
 
 	public:
@@ -62,17 +63,31 @@ namespace Diotima
 		DX11GFXTextureBuffer2D* GetTextureBuffer2D(U32 bufferID);
 
 	public:
+		void SendTextureToBackBuffer(DX11GFXTextureBuffer2D* texture);
+
+	public:
 		void HandleWindowResize(const Vector2D& newSize);
 
 	// Temp access, these will move somewhere else.
 	public:
-		ID3D10Blob* mVSBlob;
-		ID3D10Blob* mPSBlob;
-
 		ID3D11DepthStencilView* mDepthStencilView;
 		ID3D11RenderTargetView* mRenderTargetView;
 
 		ID3D11RasterizerState* mRasterState;
+
+		ID3D11DepthStencilView* mRenderTargetDSV;
+
+	// Render target stuff
+	private:
+		ID3D10Blob* mRenderTargetPSBlob;
+		ID3D10Blob* mRenderTargetVSBlob;
+		ID3D11VertexShader* mVSRenderTarget;
+		ID3D11PixelShader* mPSRenderTarget;
+		ID3D11InputLayout* mRTTVertLayout;
+		ID3D11Texture2D* mRenderTargetDepthTex;
+
+		U32 mRenderTargetVB;
+		U32 mRenderTargetIB;
 
 	private:
 		ID3D11Device* mDevice;
@@ -94,8 +109,6 @@ namespace Diotima
 
 		ID3D11Buffer* mSquareVertBuf;
 		ID3D11Buffer* mSquareIndexBuf;
-		ID3D11VertexShader* mVertexShader;
-		ID3D11PixelShader* mPixelShader;
 
 		ID3D11Texture2D* mDepthStencilTex;
 	};

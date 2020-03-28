@@ -4,9 +4,10 @@
 
 #include <Diotima/Renderer.h>
 
-#include <Diotima/Driver/DX12/DX12.h>
-
 struct ID3D11InputLayout;
+struct ID3D10Blob;
+struct ID3D11PixelShader;
+struct ID3D11VertexShader;
 
 namespace Diotima
 {
@@ -39,6 +40,11 @@ namespace Diotima
 	private:
 		DX11GFXDevice* mDevice;
 		Renderer* mRenderer;
+
+		ID3D10Blob* mVSBlob;
+		ID3D10Blob* mPSBlob;
+		ID3D11VertexShader* mVertexShader;
+		ID3D11PixelShader* mPixelShader;
 
 		ID3D11InputLayout* mVertexLayout;
 

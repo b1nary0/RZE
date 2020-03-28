@@ -22,6 +22,7 @@ namespace Diotima
 	class DX11GFXDevice;
 
 	class GFXPassGraph;
+	class RenderTargetTexture;
 
 	enum class EBufferType
 	{
@@ -154,6 +155,11 @@ namespace Diotima
 		const Vector2D& GetCanvasSize();
 		void ResizeCanvas(const Vector2D& newSize);
 
+		// This sets the render target for the entire pipeline. We essentially render to this
+		// and then send it to the back buffer. Will be reworked at some point.
+		void SetRenderTarget(RenderTargetTexture* renderTarget);
+		RenderTargetTexture& GetRenderTarget();
+
 	public:
 		U32 QueueCreateVertexBufferCommand(void* data, size_t size, U32 count);
 		U32 QueueCreateIndexBufferCommand(void* data, size_t size, U32 count);
@@ -162,6 +168,8 @@ namespace Diotima
 		void QueueUpdateRenderItem(U32 itemID, const Matrix4x4& worldMtx);
 
 		void ProcessCommands();
+
+		DX11GFXDevice& GetDriverDevice();
 
 	private:
 		U32 CreateVertexBuffer(void* data, size_t size, U32 count);
@@ -190,6 +198,8 @@ namespace Diotima
 		
 		// #TODO(Josh::Need this duplicated here and in the Device because it needs to be set prior to initialization)
 		U32 mMSAASampleCount;
+
+		RenderTargetTexture* mRenderTarget;
 
 	private:
 		std::vector<CreateBufferRenderCommand> mVertexBufferCommandQueue;
