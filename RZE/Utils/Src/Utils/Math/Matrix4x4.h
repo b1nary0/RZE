@@ -34,6 +34,7 @@ public:
 	const glm::mat4& GetInternalMat() const;
 	const float* GetValuePtr() const;
 
+	bool operator!=(const Matrix4x4& rhs) const;
 	Matrix4x4 operator*(const Matrix4x4& rhs) const;
 	Vector4D operator*(const Vector4D& rhs) const;
 

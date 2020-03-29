@@ -187,7 +187,7 @@ namespace Diotima
 		}
 
 		mPerFrameDrawCalls.clear();
-		void* tmpMatrixBuf = malloc(sizeof(Matrix4x4) * 2);
+		
 		for (RenderItemProtocol& renderItem : mRenderItems)
 		{
 			// #TODO(Josh::This needs to be removed -- an opaque handle should be leased out that will
@@ -196,11 +196,6 @@ namespace Diotima
 			{
 				continue;
 			}
-
-			memcpy(tmpMatrixBuf, renderItem.ModelMatrix.GetValuePtr(), sizeof(Matrix4x4));
-			memcpy((U8*)tmpMatrixBuf + sizeof(Matrix4x4), renderItem.ModelMatrix.Inverse().GetValuePtr(), sizeof(Matrix4x4));
-			DX11GFXConstantBuffer* constBuf = mDevice->GetConstantBuffer(renderItem.ConstantBuffer);
-			constBuf->UpdateSubresources(tmpMatrixBuf);
 
 			for (size_t index = 0; index < renderItem.MeshData.size(); ++index)
 			{
@@ -398,7 +393,18 @@ namespace Diotima
 				RenderItemProtocol& renderItem = mRenderItems[command.RenderItemID];
 				AssertExpr(renderItem.bIsValid);
 
-				renderItem.ModelMatrix = command.WorldMtx;
+				// Doing this check here for now because its the easiest place to have access to the old and new matrices.
+				// Should architect it so this can be done before we even calculate anything.
+				if (command.WorldMtx != renderItem.ModelMatrix)
+				{
+					renderItem.ModelMatrix = command.WorldMtx;
+
+					void* tmpMatrixBuf = malloc(sizeof(Matrix4x4) * 2);
+					memcpy(tmpMatrixBuf, renderItem.ModelMatrix.GetValuePtr(), sizeof(Matrix4x4));
+					memcpy((U8*)tmpMatrixBuf + sizeof(Matrix4x4), renderItem.ModelMatrix.Inverse().GetValuePtr(), sizeof(Matrix4x4));
+					DX11GFXConstantBuffer* constBuf = mDevice->GetConstantBuffer(renderItem.ConstantBuffer);
+					constBuf->UpdateSubresources(tmpMatrixBuf);
+				}
 			}
 			mUpdateRenderItemWorldMatrixCommandQueue.clear();
 		}

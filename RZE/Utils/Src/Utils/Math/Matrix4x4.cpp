@@ -86,6 +86,18 @@ const Quaternion Matrix4x4::GetRotation() const
 	return Quaternion(rotation.x, rotation.y, rotation.z, rotation.w);
 }
 
+const Vector3D Matrix4x4::GetScale() const
+{
+	glm::vec3 scale;
+	glm::quat rotation;
+	glm::vec3 translation;
+	glm::vec3 skew;
+	glm::vec4 perspective;
+	glm::decompose(GetInternalMat(), scale, rotation, translation, skew, perspective);
+
+	return Vector3D(scale.x, scale.y, scale.z);
+}
+
 const glm::mat4& Matrix4x4::GetInternalMat() const
 {
 	return mMat;
@@ -94,6 +106,25 @@ const glm::mat4& Matrix4x4::GetInternalMat() const
 const float* Matrix4x4::GetValuePtr() const
 {
 	return glm::value_ptr(mMat);
+}
+
+bool Matrix4x4::operator!=(const Matrix4x4& rhs) const
+{
+	glm::mat4 rhsInternalMat = rhs.GetInternalMat();
+	bool bEqual = true;
+	for (int i = 0; i < 4; ++i)
+	{
+		for (int j = 0; j < 4; ++j)
+		{
+			if (mMat[i][j] != rhsInternalMat[i][j])
+			{
+				bEqual = false;
+				break;
+			}
+		}
+	}
+
+	return !bEqual;
 }
 
 Matrix4x4 Matrix4x4::operator*(const Matrix4x4& rhs) const
