@@ -141,6 +141,15 @@ namespace Diotima
 
 				deviceContext.ClearDepthStencilView(mDevice->mRenderTargetDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 				deviceContext.ClearRenderTargetView(hwRTV, rgba);
+
+				D3D11_VIEWPORT viewport;
+				viewport.Width = (FLOAT)renderTarget->GetWidth();
+				viewport.Height = (FLOAT)renderTarget->GetHeight();
+				viewport.MinDepth = 0.0f;
+				viewport.MaxDepth = 1.0f;
+				viewport.TopLeftX = 0.0f;
+				viewport.TopLeftY = 0.0f;
+				deviceContext.RSSetViewports(1, &viewport);
 			}
 			else
 			{

@@ -62,7 +62,6 @@ void RZE_Application::RegisterInputEvents(InputHandler& inputHandler)
 void RZE_Application::Initialize()
 {
 	LOG_CONSOLE("RZE_Application::Init() called.");
-
 }
 
 Win32Window& RZE_Application::InternalGetWindow()
