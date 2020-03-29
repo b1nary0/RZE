@@ -22,10 +22,11 @@ namespace Diotima
 		sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 		mDevice->GetHardwareDevice().CreateSamplerState(&sampDesc, &mSamplerState);
 
-		D3D11_TEXTURE2D_DESC textureDesc;
-		ZeroMemory(&textureDesc, sizeof(textureDesc));
 		if (params.bIsDepthTexture)
 		{
+			D3D11_TEXTURE2D_DESC textureDesc;
+			ZeroMemory(&textureDesc, sizeof(textureDesc));
+
 			textureDesc.Width = params.Width;
 			textureDesc.Height = params.Height;
 			textureDesc.MipLevels = 1;
@@ -40,26 +41,14 @@ namespace Diotima
 
 			HRESULT hr = mDevice->GetHardwareDevice().CreateTexture2D(&textureDesc, NULL, &mResource);
 			AssertExpr(hr == S_OK);
-
-			D3D11_TEXTURE2D_DESC depthStencilDesc;
-			ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
-
-			depthStencilDesc.Width = params.Width;
-			depthStencilDesc.Height = params.Height;
-			depthStencilDesc.MipLevels = 1;
-			depthStencilDesc.ArraySize = 1;
-			depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-			depthStencilDesc.SampleDesc.Count = 1;
-			depthStencilDesc.SampleDesc.Quality = 0;
-			depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
-			depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-			depthStencilDesc.CPUAccessFlags = 0;
-			depthStencilDesc.MiscFlags = 0;
-
-			mDevice->GetHardwareDevice().CreateDepthStencilView(mResource, NULL, &mDSV);
+			hr = mDevice->GetHardwareDevice().CreateDepthStencilView(mResource, NULL, &mDSV);
+			AssertExpr(hr == S_OK);
 		}
 		else
 		{
+			D3D11_TEXTURE2D_DESC textureDesc;
+			ZeroMemory(&textureDesc, sizeof(textureDesc));
+
 			textureDesc.Width = params.Width;
 			textureDesc.Height = params.Height;
 			textureDesc.MipLevels = params.MipLevels;
@@ -82,7 +71,7 @@ namespace Diotima
 			srvDesc.Format = textureDesc.Format;
 			srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 			srvDesc.Texture2D.MostDetailedMip = params.MostDetailedMip;
-			srvDesc.Texture2D.MipLevels = params.MipLevels;
+			srvDesc.Texture2D.MipLevels = (params.MipLevels == 0) ? -1 : params.MipLevels;
 
 			D3D11_RENDER_TARGET_VIEW_DESC rtvDesc;
 			rtvDesc.Format = textureDesc.Format;
@@ -92,16 +81,18 @@ namespace Diotima
 			HRESULT hr = mDevice->GetHardwareDevice().CreateTexture2D(&textureDesc, NULL, &mResource);
 			AssertExpr(hr == S_OK);
 
+			if (data != nullptr)
+			{
+				U32 rowPitch = (32 * params.Width) / 8;
+				mDevice->GetDeviceContext().UpdateSubresource(mResource, 0, NULL, data, rowPitch, 0);
+			}
+
 			hr = mDevice->GetHardwareDevice().CreateRenderTargetView(mResource, &rtvDesc, &mRTV);
+			AssertExpr(hr == S_OK);
 			hr = mDevice->GetHardwareDevice().CreateShaderResourceView(mResource, &srvDesc, &mSRV);
+			AssertExpr(hr == S_OK);
 
 			mDevice->GetDeviceContext().GenerateMips(mSRV);
-		}
-
-		if (data != nullptr)
-		{
-			U32 rowPitch = (32 * params.Width) / 8;
-			mDevice->GetDeviceContext().UpdateSubresource(mResource, 0, NULL, data, rowPitch, 0);
 		}
 	}
 

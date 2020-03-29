@@ -288,7 +288,7 @@ namespace Diotima
 		params.bIsShaderResource = true;
 		params.Height = height;
 		params.Width = width;
-		params.MipLevels = 1;
+		params.MipLevels = 0;
 		params.MostDetailedMip = 0;
 		params.SampleCount = 1;
 		params.SampleQuality = 0;
