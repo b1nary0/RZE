@@ -44,7 +44,7 @@ namespace Diotima
 	public:
 		U32 CreateVertexBuffer(void* data, size_t size, U32 count) override;
 		U32 CreateIndexBuffer(void* data, size_t size, U32 count) override;
-		U32 CreateTextureBuffer2D(void* data, U32 width, U32 height) override;
+		U32 CreateTextureBuffer2D(void* data, const GFXTextureBufferParams& params) override;
 		U32 CreateRenderTarget2D(U32 width, U32 height);
 		U32 CreateConstantBuffer(size_t memberSize, U32 maxMembers) override;
 
@@ -75,8 +75,6 @@ namespace Diotima
 
 		ID3D11RasterizerState* mRasterState;
 
-		ID3D11DepthStencilView* mRenderTargetDSV;
-
 	// Render target stuff
 	private:
 		ID3D10Blob* mRenderTargetPSBlob;
@@ -84,7 +82,6 @@ namespace Diotima
 		ID3D11VertexShader* mVSRenderTarget;
 		ID3D11PixelShader* mPSRenderTarget;
 		ID3D11InputLayout* mRTTVertLayout;
-		ID3D11Texture2D* mRenderTargetDepthTex;
 
 		U32 mRenderTargetVB;
 		U32 mRenderTargetIB;

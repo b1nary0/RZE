@@ -134,12 +134,13 @@ namespace Diotima
 			RenderTargetTexture* renderTarget = mRenderer->GetRenderTarget();
 			if (renderTarget != nullptr)
 			{
-				DX11GFXTextureBuffer2D* rtBuf = mDevice->GetTextureBuffer2D(renderTarget->GetTextureID());
+				DX11GFXTextureBuffer2D* rtBuf = &renderTarget->GetGFXTexture();
+				DX11GFXTextureBuffer2D* depthBuf = &renderTarget->GetDepthTexture();
 				ID3D11RenderTargetView* hwRTV = &rtBuf->GetTargetView();
 
-				deviceContext.OMSetRenderTargets(1, &hwRTV, mDevice->mRenderTargetDSV);
+				deviceContext.OMSetRenderTargets(1, &hwRTV, &depthBuf->GetDepthView());
 
-				deviceContext.ClearDepthStencilView(mDevice->mRenderTargetDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+				deviceContext.ClearDepthStencilView(&depthBuf->GetDepthView(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 				deviceContext.ClearRenderTargetView(hwRTV, rgba);
 
 				D3D11_VIEWPORT viewport;

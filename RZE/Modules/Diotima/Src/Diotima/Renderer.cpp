@@ -282,7 +282,17 @@ namespace Diotima
 
 	U32 Renderer::CreateTextureBuffer2D(void* data, U32 width, U32 height)
 	{
-		return mDevice->CreateTextureBuffer2D(data, width, height);
+		// This is temp here, should be passed in or something.
+		GFXTextureBufferParams params = { 0 };
+		params.bIsRenderTarget = true;
+		params.bIsShaderResource = true;
+		params.Height = height;
+		params.Width = width;
+		params.MipLevels = 1;
+		params.MostDetailedMip = 0;
+		params.SampleCount = 1;
+		params.SampleQuality = 0;
+		return mDevice->CreateTextureBuffer2D(data, params);
 	}
 
 	U32 Renderer::QueueCreateVertexBufferCommand(void* data, size_t size, U32 count)

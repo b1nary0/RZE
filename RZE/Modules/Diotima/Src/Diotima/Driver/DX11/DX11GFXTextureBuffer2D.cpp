@@ -9,7 +9,7 @@
 namespace Diotima
 {
 
-	void DX11GFXTextureBuffer2D::Allocate(void* data, U32 width, U32 height)
+	void DX11GFXTextureBuffer2D::Allocate(void* data, const GFXTextureBufferParams& params)
 	{
 		D3D11_SAMPLER_DESC sampDesc;
 		ZeroMemory(&sampDesc, sizeof(sampDesc));
@@ -24,55 +24,96 @@ namespace Diotima
 
 		D3D11_TEXTURE2D_DESC textureDesc;
 		ZeroMemory(&textureDesc, sizeof(textureDesc));
-		textureDesc.Height = height;
-		textureDesc.Width = width;
-		textureDesc.MipLevels = 1;
-		textureDesc.ArraySize = 1;
-		textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-		textureDesc.SampleDesc.Count = 1;
-		textureDesc.SampleDesc.Quality = 0;
-		textureDesc.Usage = D3D11_USAGE_DEFAULT;
-		textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
-		textureDesc.CPUAccessFlags = 0;
-		textureDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
+		if (params.bIsDepthTexture)
+		{
+			textureDesc.Width = params.Width;
+			textureDesc.Height = params.Height;
+			textureDesc.MipLevels = 1;
+			textureDesc.ArraySize = 1;
+			textureDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+			textureDesc.SampleDesc.Count = 1;
+			textureDesc.SampleDesc.Quality = 0;
+			textureDesc.Usage = D3D11_USAGE_DEFAULT;
+			textureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+			textureDesc.CPUAccessFlags = 0;
+			textureDesc.MiscFlags = 0;
 
-		HRESULT hr = mDevice->GetHardwareDevice().CreateTexture2D(&textureDesc, NULL, &mResource);
-		AssertExpr(hr == S_OK);
+			HRESULT hr = mDevice->GetHardwareDevice().CreateTexture2D(&textureDesc, NULL, &mResource);
+			AssertExpr(hr == S_OK);
+
+			D3D11_TEXTURE2D_DESC depthStencilDesc;
+			ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
+
+			depthStencilDesc.Width = params.Width;
+			depthStencilDesc.Height = params.Height;
+			depthStencilDesc.MipLevels = 1;
+			depthStencilDesc.ArraySize = 1;
+			depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+			depthStencilDesc.SampleDesc.Count = 1;
+			depthStencilDesc.SampleDesc.Quality = 0;
+			depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
+			depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+			depthStencilDesc.CPUAccessFlags = 0;
+			depthStencilDesc.MiscFlags = 0;
+
+			mDevice->GetHardwareDevice().CreateDepthStencilView(mResource, NULL, &mDSV);
+		}
+		else
+		{
+			textureDesc.Width = params.Width;
+			textureDesc.Height = params.Height;
+			textureDesc.MipLevels = params.MipLevels;
+			textureDesc.ArraySize = 1;
+			textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+			textureDesc.SampleDesc.Count = params.SampleCount;
+			textureDesc.SampleDesc.Quality = params.SampleQuality;
+			textureDesc.Usage = D3D11_USAGE_DEFAULT;
+
+			UINT bindFlags = 0;
+			if (params.bIsShaderResource) bindFlags = (bindFlags | D3D11_BIND_SHADER_RESOURCE);
+			if (params.bIsRenderTarget) bindFlags = (bindFlags | D3D11_BIND_RENDER_TARGET);
+
+			textureDesc.BindFlags = bindFlags;
+			textureDesc.CPUAccessFlags = 0;
+			textureDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
+
+			D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+			ZeroMemory(&srvDesc, sizeof(srvDesc));
+			srvDesc.Format = textureDesc.Format;
+			srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+			srvDesc.Texture2D.MostDetailedMip = params.MostDetailedMip;
+			srvDesc.Texture2D.MipLevels = params.MipLevels;
+
+			D3D11_RENDER_TARGET_VIEW_DESC rtvDesc;
+			rtvDesc.Format = textureDesc.Format;
+			rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+			rtvDesc.Texture2D.MipSlice = 0;
+
+			HRESULT hr = mDevice->GetHardwareDevice().CreateTexture2D(&textureDesc, NULL, &mResource);
+			AssertExpr(hr == S_OK);
+
+			hr = mDevice->GetHardwareDevice().CreateRenderTargetView(mResource, &rtvDesc, &mRTV);
+			hr = mDevice->GetHardwareDevice().CreateShaderResourceView(mResource, &srvDesc, &mSRV);
+
+			mDevice->GetDeviceContext().GenerateMips(mSRV);
+		}
 
 		if (data != nullptr)
 		{
-			U32 rowPitch = (32 * width) / 8;
+			U32 rowPitch = (32 * params.Width) / 8;
 			mDevice->GetDeviceContext().UpdateSubresource(mResource, 0, NULL, data, rowPitch, 0);
 		}
-
-		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
-		ZeroMemory(&srvDesc, sizeof(srvDesc));
-		srvDesc.Format = textureDesc.Format;
-		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-		srvDesc.Texture2D.MostDetailedMip = 0;
-		srvDesc.Texture2D.MipLevels = -1;
-
-		D3D11_RENDER_TARGET_VIEW_DESC rtvDesc;
-		rtvDesc.Format = textureDesc.Format;
-		rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-		rtvDesc.Texture2D.MipSlice = 0;
-
-		hr = mDevice->GetHardwareDevice().CreateRenderTargetView(mResource, &rtvDesc, &mRTV);
-		hr = mDevice->GetHardwareDevice().CreateShaderResourceView(mResource, &srvDesc, &mResourceView);
-		AssertExpr(hr == S_OK);
-
-		mDevice->GetDeviceContext().GenerateMips(mResourceView);
 	}
 
 	void DX11GFXTextureBuffer2D::Release()
 	{
 		AssertNotNull(mResource);
-		AssertNotNull(mResourceView);
+		AssertNotNull(mSRV);
 		AssertNotNull(mRTV);
 		AssertNotNull(mSamplerState);
 
 		mResource->Release();
-		mResourceView->Release();
+		mSRV->Release();
 		mRTV->Release();
 		mSamplerState->Release();
 	}
@@ -90,14 +131,20 @@ namespace Diotima
 
 	ID3D11ShaderResourceView& DX11GFXTextureBuffer2D::GetResourceView()
 	{
-		AssertNotNull(mResourceView);
-		return *mResourceView;
+		AssertNotNull(mSRV);
+		return *mSRV;
 	}
 
 	ID3D11RenderTargetView& DX11GFXTextureBuffer2D::GetTargetView()
 	{
 		AssertNotNull(mRTV);
 		return *mRTV;
+	}
+
+	ID3D11DepthStencilView& DX11GFXTextureBuffer2D::GetDepthView()
+	{
+		AssertNotNull(mDSV);
+		return *mDSV;
 	}
 
 	ID3D11SamplerState& DX11GFXTextureBuffer2D::GetSamplerState()

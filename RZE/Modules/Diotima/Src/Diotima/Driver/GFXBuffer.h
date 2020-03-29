@@ -6,6 +6,24 @@
 
 namespace Diotima
 {
+	// This isn't the complete answer to this atm, but will do for now
+	// to solve the problems at hand.. I fear I am leaving things
+	// too late, but what needs to get done will get done.
+	struct GFXTextureBufferParams
+	{
+		U32 Width;
+		U32 Height;
+		U32 SampleCount;
+		U32 SampleQuality;
+		U32 MipLevels;
+		U32 MostDetailedMip;
+		//U32 Format;
+		//U32 Usage;
+		bool bIsShaderResource;
+		bool bIsRenderTarget;
+		bool bIsDepthTexture;
+	};
+
 	class IGFXVertexBuffer
 	{
 	public:
@@ -52,7 +70,7 @@ namespace Diotima
 		IGFXTextureBuffer2D() = default;
 		virtual ~IGFXTextureBuffer2D() = default;
 
-		virtual void Allocate(void* data, U32 width, U32 height) = 0;
+		virtual void Allocate(void* data, const GFXTextureBufferParams& params) = 0;
 		virtual void Release() = 0;
 	};
 }

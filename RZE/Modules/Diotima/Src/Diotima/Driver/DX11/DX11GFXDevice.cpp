@@ -163,16 +163,27 @@ namespace Diotima
 		mTexture2DBuffers.push_back(std::make_unique<DX11GFXTextureBuffer2D>());
 		mTexture2DBuffers.back()->SetDevice(this);
 		mTexture2DBuffers.back()->SetIsRenderTarget();
-		mTexture2DBuffers.back()->Allocate(nullptr, width, height);
+
+		GFXTextureBufferParams params = { 0 };
+		params.bIsRenderTarget = true;
+		params.bIsShaderResource = true;
+		params.Height = height;
+		params.Width = width;
+		params.MipLevels = 1;
+		params.MostDetailedMip = 0;
+		params.SampleCount = 1;
+		params.SampleQuality = 0;
+
+		mTexture2DBuffers.back()->Allocate(nullptr, params);
 
 		return static_cast<U32>(mTexture2DBuffers.size() - 1);
 	}
 
-	U32 DX11GFXDevice::CreateTextureBuffer2D(void* data, U32 width, U32 height)
+	U32 DX11GFXDevice::CreateTextureBuffer2D(void* data, const GFXTextureBufferParams& params)
 	{
 		mTexture2DBuffers.push_back(std::make_unique<DX11GFXTextureBuffer2D>());
 		mTexture2DBuffers.back()->SetDevice(this);
-		mTexture2DBuffers.back()->Allocate(data, width, height);
+		mTexture2DBuffers.back()->Allocate(data, params);
 
 		return static_cast<U32>(mTexture2DBuffers.size() - 1);
 	}
@@ -377,24 +388,6 @@ namespace Diotima
 			mRenderTargetIB = CreateIndexBuffer(indices, sizeof(DWORD) * 4 * 8, 1);
 
 			hr = mDevice->CreateInputLayout(k_RTTVertLayout, layoutElementCount, mRenderTargetVSBlob->GetBufferPointer(), mRenderTargetVSBlob->GetBufferSize(), &mRTTVertLayout);
-
-			D3D11_TEXTURE2D_DESC depthStencilDesc;
-			ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
-
-			depthStencilDesc.Width = 1024;
-			depthStencilDesc.Height = 576;
-			depthStencilDesc.MipLevels = 1;
-			depthStencilDesc.ArraySize = 1;
-			depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-			depthStencilDesc.SampleDesc.Count = 1;
-			depthStencilDesc.SampleDesc.Quality = 0;
-			depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
-			depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-			depthStencilDesc.CPUAccessFlags = 0;
-			depthStencilDesc.MiscFlags = 0;
-
-			mDevice->CreateTexture2D(&depthStencilDesc, NULL, &mRenderTargetDepthTex);
-			mDevice->CreateDepthStencilView(mRenderTargetDepthTex, NULL, &mRenderTargetDSV);
 		}
 
 		// Viewport
