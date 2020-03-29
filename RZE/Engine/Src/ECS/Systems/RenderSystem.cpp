@@ -22,6 +22,9 @@
 
 #include <Perseus/JobSystem/JobScheduler.h>
 
+#include <Diotima/Driver/DX11/DX11GFXDevice.h>
+#include <Utils/MemoryUtils.h>
+
 static Vector4D sDefaultFragColor(0.25f, 0.25f, 0.25f, 1.0f);
 
 RenderSystem::RenderSystem(Apollo::EntityHandler* const entityHandler)
@@ -212,9 +215,21 @@ void RenderSystem::RegisterForComponentNotifications()
  				matDesc.Shininess = mesh.GetMaterial().Shininess;
  
  				meshData.Material = matDesc;
-
+				
 				renderItem.MeshData.push_back(meshData);
 			}
+
+			// This is bad, make a modifyrenderitem function on Diotima::Renderer where this can be done
+			Diotima::DX11GFXDevice& device = RZE_Application::RZE().GetRenderer().GetDriverDevice();
+
+			std::vector<U32> meshMaterialBuffers;
+			meshMaterialBuffers.reserve(renderItem.MeshData.size());
+			for (size_t index = 0; index < renderItem.MeshData.size(); ++index)
+			{
+				meshMaterialBuffers.push_back(device.CreateConstantBuffer(MemoryUtils::AlignSize(sizeof(Diotima::Renderer::RenderItemMaterialDesc), 15), 1));
+			}
+
+			renderItem.MaterialBuffers = std::move(meshMaterialBuffers);
 		}
 	});
 	handler.RegisterForComponentModifiedNotification<MeshComponent>(OnMeshComponentModified);
