@@ -8,6 +8,8 @@
 #include <Diotima/Graphics/RenderTarget.h>
 
 #include <ImGui/imgui.h>
+#include <imGUI/imgui_impl_dx11.h>
+#include <imGUI/imgui_impl_win32.h>
 #include <Optick/optick.h>
 
 namespace Editor
@@ -32,6 +34,7 @@ namespace Editor
 
 		GetWindow()->SetWindowSize(Vector2D(1600.0f, 900.0f));
 		GetWindow()->SetTitle("RZEStudio");
+		GetWindow()->Maximize();
 
 		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 		ImGui::GetIO().KeyRepeatDelay = 0.5f;

@@ -364,6 +364,11 @@ void Win32Window::SetWindowSize(const Vector2D& newSize)
 	InternalSetWindowSize(newSize);
 }
 
+void Win32Window::Maximize()
+{
+	ShowWindow(mOSWindowHandleData.windowHandle, SW_MAXIMIZE);
+}
+
 FilePath Win32Window::ShowOpenFilePrompt()
 {
 	//make sure this is commented out in all code (usually stdafx.h)
