@@ -50,6 +50,12 @@ namespace Editor
 			const std::vector<GameScene::SceneEntryTemp>& entities = RZE_Application::RZE().GetActiveScene().GetSceneEntries();
 			for (const GameScene::SceneEntryTemp& entry : entities)
 			{
+				if (ImGui::IsAnyMouseDown() && (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) && HasSelectedEntity())
+				{
+					delete mSelectedItem;
+					mSelectedItem = nullptr;
+				}
+
 				bool bSelectedCurrent = mSelectedItem != nullptr && mSelectedItem->EntityID == entry.ID;
 				if (ImGui::Selectable(entry.Name.c_str(), &bSelectedCurrent))
 				{
@@ -61,12 +67,6 @@ namespace Editor
 
 					mSelectedItem = new EntityItem();
 					mSelectedItem->EntityID = entry.ID;
-				}
-
-				if (ImGui::IsAnyMouseDown() && (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) && HasSelectedEntity())
-				{
-					delete mSelectedItem;
-					mSelectedItem = nullptr;
 				}
 
 				if (HasSelectedEntity() && GetSelectedEntityID() == entry.ID)
