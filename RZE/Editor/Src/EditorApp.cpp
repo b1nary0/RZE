@@ -31,6 +31,7 @@ namespace Editor
 		RZE().GetRenderer().SetRenderTarget(mRenderTarget.get());
 
 		GetWindow()->SetWindowSize(Vector2D(1600.0f, 900.0f));
+		GetWindow()->SetTitle("RZEStudio");
 
 		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 		ImGui::GetIO().KeyRepeatDelay = 0.5f;
@@ -44,6 +45,7 @@ namespace Editor
 	void EditorApp::Start()
 	{
 		RZE().GetActiveScene().Load(FilePath("Assets/Scenes/TestGame.scene"));
+
 	}
 
 	void EditorApp::Update()
@@ -52,13 +54,29 @@ namespace Editor
 
 		if (!UIDisabled())
 		{
-			ImGui::PushFont(mFontMapping.at("ubuntu_regular"));
+			ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking;
+			window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+			window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
-			DisplayMenuBar();
-			HandleGeneralContextMenu();
+			Vector2D windowDims = GetWindow()->GetDimensions();
+			ImGui::SetNextWindowSize(ImVec2(windowDims.X(), windowDims.Y()));
 
-			ResolvePanelState();
-			ImGui::PopFont();
+			bool show = true;
+			if (ImGui::Begin("DockSpace Demo", &show, window_flags))
+			{
+				ImGuiID dockspace_id = ImGui::GetID("MyDockspace");
+				ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
+				ImGui::DockSpace(dockspace_id, ImVec2(windowDims.X(), windowDims.Y()), dockspace_flags);
+
+				ImGui::PushFont(mFontMapping.at("consolas"));
+
+				DisplayMenuBar();
+				HandleGeneralContextMenu();
+
+				ResolvePanelState();
+				ImGui::PopFont();
+			}
+			ImGui::End();
 		}
 	}
 
@@ -199,15 +217,9 @@ namespace Editor
 
 	void EditorApp::ResolvePanelState()
 	{
-		if (mPanelStates.bDemoPanelEnabled)
-		{
-			ImGui::ShowDemoWindow(&mPanelStates.bDemoPanelEnabled);
-		}
+		ImGui::ShowDemoWindow(&mPanelStates.bDemoPanelEnabled);
 
-		if (mScenePanel.IsEnabled())
-		{
-			mScenePanel.Display();
-		}
+		mScenePanel.Display();
 
 		mSceneViewPanel.Display();
 	}
@@ -225,7 +237,7 @@ namespace Editor
 		mFontMapping.insert({"ubuntu_medium", io.Fonts->AddFontFromFileTTF(ubuntuMediumPath.GetAbsolutePath().c_str(), 16)});
 		mFontMapping.insert({"ubuntu_regular", io.Fonts->AddFontFromFileTTF(ubuntuRegularPath.GetAbsolutePath().c_str(), 14)});
 		mFontMapping.insert({"arial", io.Fonts->AddFontFromFileTTF(arialPath.GetAbsolutePath().c_str(), 15)});
-		mFontMapping.insert({"consolas", io.Fonts->AddFontFromFileTTF(consolasPath.GetAbsolutePath().c_str(), 15)});
+		mFontMapping.insert({"consolas", io.Fonts->AddFontFromFileTTF(consolasPath.GetAbsolutePath().c_str(), 14)});
 
 		io.Fonts->Build();
 	}
