@@ -48,7 +48,6 @@ namespace Editor
 	void EditorApp::Start()
 	{
 		RZE().GetActiveScene().Load(FilePath("Assets/Scenes/TestGame.scene"));
-
 	}
 
 	void EditorApp::Update()
@@ -74,7 +73,7 @@ namespace Editor
 				ImGui::PushFont(mFontMapping.at("consolas"));
 
 				DisplayMenuBar();
-				HandleGeneralContextMenu();
+				//HandleGeneralContextMenu();
 
 				ResolvePanelState();
 				ImGui::PopFont();
@@ -185,7 +184,7 @@ namespace Editor
 
 	void EditorApp::HandleGeneralContextMenu()
 	{
-		if (ImGui::BeginPopupContextVoid())
+		if (ImGui::BeginPopupContextWindow("Scene"))
 		{
 			if (ImGui::BeginMenu("View"))
 			{

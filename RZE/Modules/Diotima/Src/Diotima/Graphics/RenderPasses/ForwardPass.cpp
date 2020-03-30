@@ -128,7 +128,7 @@ namespace Diotima
 
 		Begin();
 		{
-			FLOAT rgba[4] = { 0.0f, 0.0f, 1.0f, 1.0f };
+			FLOAT rgba[4] = { 0.35f, 0.35f, 0.5f, 1.0f };
 			ID3D11DeviceContext& deviceContext = mDevice->GetDeviceContext();
 
 			RenderTargetTexture* renderTarget = mRenderer->GetRenderTarget();

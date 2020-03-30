@@ -28,6 +28,25 @@ namespace Editor
 	{
 		if (ImGui::Begin("Scene", &bEnabled))
 		{
+			if (!HasSelectedEntity())
+			{
+				if (ImGui::BeginPopupContextWindow("SceneMenu"))
+				{
+					if (ImGui::MenuItem("Create Entity"))
+					{
+						// #TODO(Do this better)
+						static int sGenericEntityCount = 0;
+
+						std::string newEntityStr = StringUtils::FormatString("Entity%i", sGenericEntityCount);
+						RZE_Application::RZE().GetActiveScene().CreateEntity(newEntityStr);
+
+						++sGenericEntityCount;
+					}
+
+					ImGui::EndMenu();
+				}
+			}
+
 			const std::vector<GameScene::SceneEntryTemp>& entities = RZE_Application::RZE().GetActiveScene().GetSceneEntries();
 			for (const GameScene::SceneEntryTemp& entry : entities)
 			{
@@ -42,6 +61,12 @@ namespace Editor
 
 					mSelectedItem = new EntityItem();
 					mSelectedItem->EntityID = entry.ID;
+				}
+
+				if (ImGui::IsAnyMouseDown() && (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) && HasSelectedEntity())
+				{
+					delete mSelectedItem;
+					mSelectedItem = nullptr;
 				}
 
 				if (HasSelectedEntity() && GetSelectedEntityID() == entry.ID)
