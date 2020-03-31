@@ -175,6 +175,11 @@ void GameScene::Start()
 {
 }
 
+void GameScene::PreUpdate()
+{
+	mEntityHandler.PreUpdate();
+}
+
 void GameScene::Update()
 {
 	OPTICK_EVENT();

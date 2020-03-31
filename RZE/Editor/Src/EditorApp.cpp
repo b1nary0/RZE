@@ -28,13 +28,13 @@ namespace Editor
 	{
 		RZE_Application::Initialize();
 
-		mRenderTarget = std::make_unique<Diotima::RenderTargetTexture>(1024, 576);
-		mRenderTarget->Initialize(&RZE().GetRenderer().GetDriverDevice());
-		RZE().GetRenderer().SetRenderTarget(mRenderTarget.get());
-
-		GetWindow()->SetWindowSize(Vector2D(1600.0f, 900.0f));
 		GetWindow()->SetTitle("RZEStudio");
 		GetWindow()->Maximize();
+
+		const Vector2D& windowDims = GetWindow()->GetDimensions();
+		mRenderTarget = std::make_unique<Diotima::RenderTargetTexture>(static_cast<U32>(windowDims.X()), static_cast<U32>(windowDims.Y()));
+		mRenderTarget->Initialize(&RZE().GetRenderer().GetDriverDevice());
+		RZE().GetRenderer().SetRenderTarget(mRenderTarget.get());
 
 		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 		ImGui::GetIO().KeyRepeatDelay = 0.5f;

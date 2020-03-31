@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Utils/Math/Vector2D.h>
+
 namespace Editor
 {
 
@@ -11,6 +13,9 @@ namespace Editor
 
 	public:
 		void Display();
+
+	private:
+		Vector2D mDimensions;
 	};
 
 }

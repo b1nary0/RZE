@@ -155,6 +155,9 @@ namespace Diotima
 		const Vector2D& GetCanvasSize();
 		void ResizeCanvas(const Vector2D& newSize);
 
+		void SetViewportSize(const Vector2D& newSize);
+		const Vector2D& GetViewportSize();
+
 		// This sets the render target for the entire pipeline. We essentially render to this
 		// and then send it to the back buffer. Will be reworked at some point.
 		void SetRenderTarget(RenderTargetTexture* renderTarget);
@@ -211,11 +214,12 @@ namespace Diotima
 
 		// DX12 Temp
 	private:
+		std::unique_ptr<DX11GFXDevice> mDevice;
 		std::unique_ptr<GFXPassGraph> mPassGraph;
 		
-		std::unique_ptr<DX11GFXDevice> mDevice;
-
 		void* mWindowHandle;
+
+		Vector2D mViewportDimensions;
 
 	private:
 		std::mutex mVertexBufferCommandMutex;

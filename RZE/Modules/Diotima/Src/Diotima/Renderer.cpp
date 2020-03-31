@@ -259,6 +259,16 @@ namespace Diotima
 		LOG_CONSOLE_ARGS("New Canvas Size: %f x %f", mCanvasSize.X(), mCanvasSize.Y());
 	}
 
+	void Renderer::SetViewportSize(const Vector2D& newSize)
+	{
+		mViewportDimensions = newSize;
+	}
+
+	const Vector2D& Renderer::GetViewportSize()
+	{
+		return mViewportDimensions;
+	}
+
 	void Renderer::SetRenderTarget(RenderTargetTexture* renderTarget)
 	{
 		AssertNotNull(renderTarget);

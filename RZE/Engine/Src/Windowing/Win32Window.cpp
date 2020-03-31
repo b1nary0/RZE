@@ -367,6 +367,15 @@ void Win32Window::SetWindowSize(const Vector2D& newSize)
 void Win32Window::Maximize()
 {
 	ShowWindow(mOSWindowHandleData.windowHandle, SW_MAXIMIZE);
+
+	// Hack for the time being since when we call Maximize() we haven't tracked the window's size and
+	// the way the code is set up we won't get the event to update it by the time we need it (it's delayed until
+	// Engine::PreUpdate
+	RECT windowRect;
+	GetClientRect(mOSWindowHandleData.windowHandle, &windowRect);
+	int width = windowRect.right - windowRect.top;
+	int height = windowRect.bottom - windowRect.top;
+	mDimensions.SetXY(static_cast<float>(width), static_cast<float>(height));
 }
 
 FilePath Win32Window::ShowOpenFilePrompt()

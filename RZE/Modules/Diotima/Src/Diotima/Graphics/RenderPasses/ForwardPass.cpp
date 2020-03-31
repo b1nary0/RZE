@@ -143,9 +143,10 @@ namespace Diotima
 				deviceContext.ClearDepthStencilView(&depthBuf->GetDepthView(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 				deviceContext.ClearRenderTargetView(hwRTV, rgba);
 
+				const Vector2D& viewportDims = mRenderer->GetViewportSize();
 				D3D11_VIEWPORT viewport;
-				viewport.Width = (FLOAT)renderTarget->GetWidth();
-				viewport.Height = (FLOAT)renderTarget->GetHeight();
+				viewport.Width = viewportDims.X();
+				viewport.Height = viewportDims.Y();
 				viewport.MinDepth = 0.0f;
 				viewport.MaxDepth = 1.0f;
 				viewport.TopLeftX = 0.0f;

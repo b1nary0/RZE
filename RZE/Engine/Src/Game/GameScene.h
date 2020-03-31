@@ -21,6 +21,7 @@ public:
 
 public:
 	virtual void Start();
+	virtual void PreUpdate();
 	virtual void Update();
 	virtual void Finish();
 
