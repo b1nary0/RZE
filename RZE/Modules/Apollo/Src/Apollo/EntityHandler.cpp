@@ -155,15 +155,11 @@ namespace Apollo
 		mCapacity = Resize(32);
 	}
 
-	void EntityHandler::PreUpdate()
-	{
-		FlushComponentIDQueues();
-	}
-
 	void EntityHandler::Update()
 	{	
 		OPTICK_EVENT();
 
+		FlushComponentIDQueues();
 		for (size_t idx = 0; idx < mSystems.size(); ++idx)
 		{
 			EntitySystem* system = mSystems[idx];

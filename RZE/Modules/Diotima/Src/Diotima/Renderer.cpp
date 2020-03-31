@@ -415,7 +415,8 @@ namespace Diotima
 
 				// Doing this check here for now because its the easiest place to have access to the old and new matrices.
 				// Should architect it so this can be done before we even calculate anything.
-				if (command.WorldMtx != renderItem.ModelMatrix)
+				// #TODO(This caused the item to not show up when it's brand new because the matrices will not be different.. fix.)
+				//if (command.WorldMtx != renderItem.ModelMatrix)
 				{
 					renderItem.ModelMatrix = command.WorldMtx;
 

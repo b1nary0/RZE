@@ -57,7 +57,6 @@ namespace Apollo
 
 	public:
 		void Initialize();
-		void PreUpdate();
 		void Update();
 		void ShutDown();
 

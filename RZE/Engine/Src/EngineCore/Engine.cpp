@@ -176,10 +176,6 @@ void RZE_Engine::PreUpdate()
 	CompileEvents();
 	mEventHandler.ProcessEvents();
 
-	// #HACK(?) to flush the component added queues so this the changes
-	// are available for the whole frame.
-	GetActiveScene().PreUpdate();
-
 	if (mApplication->ProcessInput(mInputHandler))
 	{
 		ImGuiIO& io = ImGui::GetIO();
