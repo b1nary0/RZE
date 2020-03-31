@@ -70,7 +70,7 @@ namespace Editor
 				ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
 				ImGui::DockSpace(dockspace_id, ImVec2(windowDims.X(), windowDims.Y()), dockspace_flags);
 
-				ImGui::PushFont(mFontMapping.at("consolas"));
+				ImGui::PushFont(mFontMapping.at("liberation_bold"));
 
 				DisplayMenuBar();
 				//HandleGeneralContextMenu();
@@ -235,11 +235,13 @@ namespace Editor
 		FilePath ubuntuMediumPath("Assets/Fonts/Ubuntu-Medium.ttf");
 		FilePath arialPath("Assets/Fonts/Arial.ttf");
 		FilePath consolasPath("Assets/Fonts/Consolas.ttf");
+		FilePath liberationRegularPath("Assets/Fonts/LiberationMono-Bold.ttf");
 
 		mFontMapping.insert({"ubuntu_medium", io.Fonts->AddFontFromFileTTF(ubuntuMediumPath.GetAbsolutePath().c_str(), 16)});
 		mFontMapping.insert({"ubuntu_regular", io.Fonts->AddFontFromFileTTF(ubuntuRegularPath.GetAbsolutePath().c_str(), 14)});
 		mFontMapping.insert({"arial", io.Fonts->AddFontFromFileTTF(arialPath.GetAbsolutePath().c_str(), 15)});
 		mFontMapping.insert({"consolas", io.Fonts->AddFontFromFileTTF(consolasPath.GetAbsolutePath().c_str(), 14)});
+		mFontMapping.insert({ "liberation_bold", io.Fonts->AddFontFromFileTTF(liberationRegularPath.GetAbsolutePath().c_str(), 15) });
 
 		io.Fonts->Build();
 	}
