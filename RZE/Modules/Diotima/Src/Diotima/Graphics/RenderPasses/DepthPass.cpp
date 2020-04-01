@@ -129,8 +129,8 @@ namespace Diotima
 		deviceContext.IASetInputLayout(mVertexLayout);
 
 		D3D11_VIEWPORT viewport;
-		viewport.Width = 4096;
-		viewport.Height = 4096;
+		viewport.Width = 4098;
+		viewport.Height = 4098;
 		viewport.MinDepth = 0.0f;
 		viewport.MaxDepth = 1.0f;
 		viewport.TopLeftX = 0.0f;
