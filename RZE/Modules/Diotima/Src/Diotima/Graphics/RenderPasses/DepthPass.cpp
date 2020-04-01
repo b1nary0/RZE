@@ -140,6 +140,8 @@ namespace Diotima
 
 	void DepthPass::Execute()
 	{
+		OPTICK_EVENT();
+
 		Begin();
 		{
 			ID3D11DeviceContext& deviceContext = mDevice->GetDeviceContext();
