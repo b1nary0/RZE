@@ -16,11 +16,10 @@ cbuffer LightSpaceBuffer : register(b0)
 	float4x4 LightSpaceMatrix;
 };
 
-cbuffer MVPBuffer : register(b0, space1)
+cbuffer MVPBuffer : register(b1)
 {
 	matrix ModelView;
 	matrix ModelViewInv;
-	matrix CameraViewProjection;
 };
 
 VS_OUT VSMain(VS_IN input) // main is the default function name

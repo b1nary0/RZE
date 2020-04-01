@@ -19,7 +19,7 @@
 
 #include <array>
 
-namespace Diotima
+namespace
 {
 	D3D11_INPUT_ELEMENT_DESC k_vertLayout[] =
 	{
@@ -29,6 +29,10 @@ namespace Diotima
 		{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 	};
 	UINT numLayoutElements = ARRAYSIZE(k_vertLayout);
+}
+
+namespace Diotima
+{
 
 	ForwardPass::ForwardPass()
 		: mDevice(nullptr)
@@ -132,6 +136,7 @@ namespace Diotima
 			ID3D11DeviceContext& deviceContext = mDevice->GetDeviceContext();
 
 			RenderTargetTexture* renderTarget = mRenderer->GetRenderTarget();
+			// #TODO(Move this into Begin())
 			if (renderTarget != nullptr)
 			{
 				DX11GFXTextureBuffer2D* rtBuf = &renderTarget->GetGFXTexture();
@@ -159,6 +164,15 @@ namespace Diotima
 
 				deviceContext.ClearDepthStencilView(mDevice->mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 				deviceContext.ClearRenderTargetView(mDevice->mRenderTargetView, rgba);
+
+				D3D11_VIEWPORT viewport;
+				viewport.Width = mRenderer->GetCanvasSize().X();
+				viewport.Height = mRenderer->GetCanvasSize().Y();
+				viewport.MinDepth = 0.0f;
+				viewport.MaxDepth = 1.0f;
+				viewport.TopLeftX = 0.0f;
+				viewport.TopLeftY = 0.0f;
+				deviceContext.RSSetViewports(1, &viewport);
 			}
 
  			deviceContext.RSSetState(mDevice->mRasterState);
@@ -178,9 +192,13 @@ namespace Diotima
  			ID3D11Buffer* hwCamDataBuf = &camDataBuf->GetHardwareBuffer();
  			deviceContext.PSSetConstantBuffers(1, 1, &hwCamDataBuf);
  
- 			mDevice->GetDeviceContext().IASetInputLayout(mVertexLayout);
+ 			deviceContext.IASetInputLayout(mVertexLayout);
  
- 			const std::vector<Renderer::RenderItemDrawCall> drawCalls = mRenderer->GetDrawCalls();
+			DX11GFXTextureBuffer2D* const shadowMap = mDevice->GetTextureBuffer2D(mShadowMapBufferID);
+			ID3D11ShaderResourceView* shadowSRV = &shadowMap->GetResourceView();
+			deviceContext.PSSetShaderResources(3, 1, &shadowSRV);
+
+ 			const std::vector<Renderer::RenderItemDrawCall>& drawCalls = mRenderer->GetDrawCalls();
  			for (const Renderer::RenderItemDrawCall& drawCall : drawCalls)
  			{
  				// try to draw something
@@ -276,6 +294,11 @@ namespace Diotima
 // 		mScissorRect.top = 0;
 // 		mScissorRect.right = newWidth;
 // 		mScissorRect.bottom = newHeight;
+	}
+
+	void ForwardPass::SetInputBuffer(U32 bufferID)
+	{
+		mShadowMapBufferID = bufferID;
 	}
 
 }

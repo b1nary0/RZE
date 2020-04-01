@@ -21,10 +21,11 @@ namespace Diotima
 		virtual ~ForwardPass();
 
 	public:
-		void Initialize(int width, int height) override;
-		void Execute() override;
-
-		void OnWindowResize(int newWidth, int newHeight) override;
+		virtual void Initialize(int width, int height) override;
+		virtual void Execute() override;
+		virtual void OnWindowResize(int newWidth, int newHeight) override;
+		virtual void SetInputBuffer(U32 bufferID) override;
+		virtual U32 GetOutputBuffer() override { return std::numeric_limits<U32>::max(); }
 
 	public:
 		// #TODO(Temp. Final architecture won't need this)
@@ -51,6 +52,8 @@ namespace Diotima
 		U32 mViewProjBuf;
 		U32 mLightBuf;
 		U32 mCameraDataBuf;
+
+		U32 mShadowMapBufferID;
 	};
 
 }

@@ -11,7 +11,7 @@ struct PS_IN
 Texture2D diffuse : register(t0);
 Texture2D specular : register(t1);
 Texture2D bump : register(t2);
-//Texture2D shadows : register(t3);
+Texture2D shadows : register(t3);
 
 SamplerState diffSampler : register(s0);
 SamplerState specSampler : register(s1);
@@ -110,26 +110,26 @@ float CalculatePointLight(float3 pixelPos, float3 lightPos, float3 normal, float
 	return lightStrength;
 }
 
-// float CalculateShadowFromDepthMap(LIGHT_INPUT_DESC light, float3 fragPos, float3 normal, float3 lightDir)
-// {
-	// float4 fragPosLightSpace = mul(light.LightSpaceMat, float4(fragPos, 1.0f));
+float CalculateShadowFromDepthMap(LIGHT_INPUT_DESC light, float3 fragPos, float3 normal, float3 lightDir)
+{
+	float4 fragPosLightSpace = mul(light.LightSpaceMat, float4(fragPos, 1.0f));
 
-	// float bias = 0.001f;//max(0.05 * (1.0 - dot(normal, lightDir)), 0.25);
-	// float3 projectionCoords;
-	// projectionCoords.x = fragPosLightSpace.x / fragPosLightSpace.w / 2.0f + 0.5f;
-	// projectionCoords.y = fragPosLightSpace.y / fragPosLightSpace.w / 2.0f + 0.5f;
+	float bias = 0.001f;//max(0.05 * (1.0 - dot(normal, lightDir)), 0.25);
+	float3 projectionCoords;
+	projectionCoords.x = fragPosLightSpace.x / fragPosLightSpace.w / 2.0f + 0.5f;
+	projectionCoords.y = fragPosLightSpace.y / fragPosLightSpace.w / 2.0f + 0.5f;
 
-	// if (saturate(projectionCoords.x) == projectionCoords.x && saturate(projectionCoords.y) == projectionCoords.y)
-	// {
-		// projectionCoords.y *= -1;
-		// float closestDepth = shadows.Sample(s1, projectionCoords.xy).r;
-		// float currentDepth = fragPosLightSpace.z / fragPosLightSpace.w;
-		// float shadowResult = currentDepth - bias > closestDepth ? 1.0 : 0.0;	
-		// return shadowResult;
-	// }
+	if (saturate(projectionCoords.x) == projectionCoords.x && saturate(projectionCoords.y) == projectionCoords.y)
+	{
+		projectionCoords.y *= -1;
+		float closestDepth = shadows.Sample(diffSampler, projectionCoords.xy).r;
+		float currentDepth = fragPosLightSpace.z / fragPosLightSpace.w;
+		float shadowResult = currentDepth - bias > closestDepth ? 1.0 : 0.0;	
+		return shadowResult;
+	}
 	
-	// return 0.0;
-// }
+	return 0.0;
+}
 
 float4 PSMain(PS_IN input) : SV_TARGET
 {
@@ -163,7 +163,7 @@ float4 PSMain(PS_IN input) : SV_TARGET
 		float3 diffuseResult = light.Color.rgb * lightStrength * diffSample.rgb;
 		float3 specularResult = specular * lightStrength * light.Color.rgb * specularSample.rgb;
 		
-		float shadow = 0.0f;//CalculateShadowFromDepthMap(light, input.FragPos, normal, lightDir);
+		float shadow = CalculateShadowFromDepthMap(light, input.FragPos, normal, lightDir);
 		specularResult *= 1.0f - shadow;
 
 		float3 result = (ambientResult + (diffuseResult * (1.0f - shadow))) + (specularResult * 0.5f);

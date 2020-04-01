@@ -43,6 +43,11 @@ namespace Diotima
 
 		virtual void OnWindowResize(int newWidth, int newHeight) = 0;
 
+		virtual U32 GetOutputBuffer() = 0;
+
+		// #TODO(This is temporary until the RenderPass architecture matures to use RenderPassInput structure)
+		virtual void SetInputBuffer(U32 bufferID) = 0;
+
 	private:
 		RenderPassInput* mInput;
 		RenderPassOutput* mOutput;

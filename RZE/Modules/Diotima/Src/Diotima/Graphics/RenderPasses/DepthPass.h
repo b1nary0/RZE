@@ -4,9 +4,15 @@
 
 #include <Diotima/Renderer.h>
 
+struct ID3D10Blob;
+struct ID3D11VertexShader;
+struct ID3D11PixelShader;
+struct ID3D11InputLayout;
+
 namespace Diotima
 {
 	class DX11GFXDevice;
+	class DX11GFXTextureBuffer2D;
 
 	class DepthPass final : public GFXRenderPass
 	{
@@ -16,10 +22,12 @@ namespace Diotima
 		virtual ~DepthPass();
 
 	public:
-		void Initialize(int width, int height) override;
-		void Execute() override;
+		virtual void Initialize(int width, int height) override;
+		virtual void Execute() override;
+		virtual void OnWindowResize(int newWidth, int newHeight) override {}
+		virtual void SetInputBuffer(U32 bufferID) override {}
+		virtual U32 GetOutputBuffer() override;
 
-		void OnWindowResize(int newWidth, int newHeight) override {}
 
 		// #TODO(Temp. Final architecture won't need this)
 		void SetRenderer(Renderer* renderer);
@@ -35,8 +43,18 @@ namespace Diotima
 		DX11GFXDevice* mDevice;
 		Renderer* mRenderer;
 
-		U32 mLightConstantBuffer;
-		U32 mWorldMatrixBuffer;
+		ID3D10Blob* mVSBlob;
+		ID3D10Blob* mPSBlob;
+		ID3D11VertexShader* mVertexShader;
+		ID3D11PixelShader* mPixelShader;
+
+		ID3D11InputLayout* mVertexLayout;
+
+		DX11GFXTextureBuffer2D* mOutputTexture;
+
+		U32 mOutputTextureID;
+		U32 mViewProjBuf;
+		U32 mLightBuf;
 	};
 
 }

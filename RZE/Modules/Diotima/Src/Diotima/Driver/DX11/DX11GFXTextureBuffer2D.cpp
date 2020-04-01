@@ -31,18 +31,37 @@ namespace Diotima
 			textureDesc.Height = params.Height;
 			textureDesc.MipLevels = 1;
 			textureDesc.ArraySize = 1;
-			textureDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+			textureDesc.Format = (params.bIsShaderResource) ? DXGI_FORMAT_R24G8_TYPELESS : DXGI_FORMAT_D24_UNORM_S8_UINT;
 			textureDesc.SampleDesc.Count = 1;
 			textureDesc.SampleDesc.Quality = 0;
 			textureDesc.Usage = D3D11_USAGE_DEFAULT;
-			textureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+			textureDesc.BindFlags = (params.bIsShaderResource) ? D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE : D3D11_BIND_DEPTH_STENCIL;
 			textureDesc.CPUAccessFlags = 0;
 			textureDesc.MiscFlags = 0;
 
 			HRESULT hr = mDevice->GetHardwareDevice().CreateTexture2D(&textureDesc, NULL, &mResource);
 			AssertExpr(hr == S_OK);
-			hr = mDevice->GetHardwareDevice().CreateDepthStencilView(mResource, NULL, &mDSV);
+
+			D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
+			ZeroMemory(&depthStencilViewDesc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
+			depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+			depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+			depthStencilViewDesc.Texture2D.MipSlice = 0;
+			hr = mDevice->GetHardwareDevice().CreateDepthStencilView(mResource, &depthStencilViewDesc, &mDSV);
 			AssertExpr(hr == S_OK);
+
+			if (params.bIsShaderResource)
+			{
+				D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+				ZeroMemory(&srvDesc, sizeof(srvDesc));
+				srvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+				srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+				srvDesc.Texture2D.MostDetailedMip = params.MostDetailedMip;
+				srvDesc.Texture2D.MipLevels = (params.MipLevels == 0) ? -1 : params.MipLevels;
+
+				hr = mDevice->GetHardwareDevice().CreateShaderResourceView(mResource, &srvDesc, &mSRV);
+				AssertExpr(hr == S_OK);
+			}
 		}
 		else
 		{
