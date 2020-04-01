@@ -7,7 +7,7 @@ FilePath Texture2D::kDefaultDiffuseTexturePath = FilePath("Assets/2D/NOASSET_Tex
 FilePath Texture2D::kDefaultSpecularTexturePath = FilePath("Assets/2D/NOASSET_TextureSpecular.png");
 FilePath Texture2D::kDefaultNormalTexturePath = FilePath("Assets/2D/NOASSET_TextureNormal.png");
 
-Texture2D::Texture2D(ETextureType::T textureType)
+Texture2D::Texture2D(ETextureType textureType)
 	: IResource()
 	, mData(nullptr)
 	, mTextureType(textureType)
@@ -49,7 +49,7 @@ void Texture2D::Release()
 	}
 }
 
-ETextureType::T Texture2D::GetTextureType() const
+Texture2D::ETextureType Texture2D::GetTextureType() const
 {
 	return mTextureType;
 }
