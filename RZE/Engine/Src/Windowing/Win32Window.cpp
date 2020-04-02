@@ -166,10 +166,10 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 		{
 		case WM_CHAR:
 		{
-//  			if (ImGui::GetIO().WantCaptureKeyboard)
-//  			{
-//  				ImGui::GetIO().AddInputCharacter(static_cast<ImWchar>(msg.wParam));
-//  			}
+  			if (ImGui::GetIO().WantCaptureKeyboard)
+  			{
+  				ImGui::GetIO().AddInputCharacter(static_cast<unsigned int>(msg.wParam));
+  			}
 		}
 		break;
 
