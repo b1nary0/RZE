@@ -19,6 +19,9 @@ namespace Editor
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 		if (ImGui::Begin("SceneView", (bool*)1, ImGuiWindowFlags_NoScrollbar)) // #TODO(Josh) Why does the window need scroll bar?
 		{
+			bIsFocused = ImGui::IsWindowFocused();
+			bIsHovered = ImGui::IsWindowHovered();
+
 			ImVec2 viewportDims = ImGui::GetWindowSize();
 			if (viewportDims.x != mDimensions.X() || viewportDims.y != mDimensions.Y())
 			{

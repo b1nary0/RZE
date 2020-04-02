@@ -178,26 +178,6 @@ void RZE_Engine::PreUpdate()
 
 	if (mApplication->ProcessInput(mInputHandler))
 	{
-		ImGuiIO& io = ImGui::GetIO();
-		InputHandler& inputHandler = GetInputHandler();
-
-		const Vector2D& mousePos = inputHandler.GetMouseState().CurPosition;
-		const Vector2D& prevMousePos = inputHandler.GetMouseState().PrevPosition;
-		io.MousePos = ImVec2(mousePos.X(), mousePos.Y());
-		io.MousePosPrev = ImVec2(prevMousePos.X(), prevMousePos.Y());
-
-		for (U32 mouseBtn = 0; mouseBtn < 3; ++mouseBtn)
-		{
-			io.MouseDown[mouseBtn] = inputHandler.GetMouseState().CurMouseBtnStates[mouseBtn];
-		}
-
-		for (int key = 0; key < MAX_KEYCODES_SUPPORTED; ++key)
-		{
-			io.KeysDown[key] = inputHandler.GetKeyboardState().IsDownThisFrame(key);
-		}
-
-		io.KeyCtrl = inputHandler.GetKeyboardState().IsDownThisFrame(Win32KeyCode::Control);
-
 		mInputHandler.RaiseEvents();
 	}
 	else

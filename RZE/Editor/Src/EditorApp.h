@@ -28,6 +28,7 @@ namespace Editor
 		virtual void ShutDown() override;
 
 		virtual void RegisterInputEvents(InputHandler& inputHandler) override;
+		virtual bool ProcessInput(const InputHandler& handler) override;
 
 	public:
 		void SetFont(const char* fontName);

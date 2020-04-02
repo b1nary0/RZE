@@ -2,6 +2,8 @@
 
 #include <EditorApp.h>
 
+#include <ECS/Components/NameComponent.h>
+
 #include <Utils/DebugUtils/Debug.h>
 
 #include <ImGui/imgui.h>
@@ -57,7 +59,9 @@ namespace Editor
 				}
 
 				bool bSelectedCurrent = mSelectedItem != nullptr && mSelectedItem->EntityID == entry.ID;
-				if (ImGui::Selectable(entry.Name.c_str(), &bSelectedCurrent))
+				NameComponent* const nameComponent = RZE_Application::RZE().GetActiveScene().GetEntityHandler().GetComponent<NameComponent>(entry.ID);
+				AssertNotNull(nameComponent);
+				if (ImGui::Selectable(nameComponent->Name.c_str(), &bSelectedCurrent))
 				{
 					if (mSelectedItem != nullptr && mSelectedItem->EntityID != entry.ID)
 					{

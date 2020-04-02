@@ -98,6 +98,30 @@ namespace Editor
 		inputHandler.BindAction(Win32KeyCode::F1, EButtonState::ButtonState_Pressed, keyFunc);
 	}
 
+	bool EditorApp::ProcessInput(const InputHandler& handler)
+	{
+		ImGuiIO& io = ImGui::GetIO();
+
+		const Vector2D& mousePos = handler.GetMouseState().CurPosition;
+		const Vector2D& prevMousePos = handler.GetMouseState().PrevPosition;
+		io.MousePos = ImVec2(mousePos.X(), mousePos.Y());
+		io.MousePosPrev = ImVec2(prevMousePos.X(), prevMousePos.Y());
+
+		for (U32 mouseBtn = 0; mouseBtn < 3; ++mouseBtn)
+		{
+			io.MouseDown[mouseBtn] = handler.GetMouseState().CurMouseBtnStates[mouseBtn];
+		}
+
+		for (int key = 0; key < MAX_KEYCODES_SUPPORTED; ++key)
+		{
+			io.KeysDown[key] = handler.GetKeyboardState().IsDownThisFrame(key);
+		}
+
+		io.KeyCtrl = handler.GetKeyboardState().IsDownThisFrame(Win32KeyCode::Control);
+
+		return mSceneViewPanel.IsHovered() && mSceneViewPanel.IsFocused();
+	}
+
 	void EditorApp::SetFont(const char* fontName)
 	{
 		ImGui::PopFont();
