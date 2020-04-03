@@ -102,24 +102,24 @@ namespace Editor
 	{
 		ImGuiIO& io = ImGui::GetIO();
 
-		const Vector2D& mousePos = handler.GetMouseState().CurPosition;
-		const Vector2D& prevMousePos = handler.GetMouseState().PrevPosition;
+		const Vector2D& mousePos = handler.GetProxyMouseState().CurPosition;
+		const Vector2D& prevMousePos = handler.GetProxyMouseState().PrevPosition;
 		io.MousePos = ImVec2(mousePos.X(), mousePos.Y());
 		io.MousePosPrev = ImVec2(prevMousePos.X(), prevMousePos.Y());
 
 		for (U32 mouseBtn = 0; mouseBtn < 3; ++mouseBtn)
 		{
-			io.MouseDown[mouseBtn] = handler.GetMouseState().CurMouseBtnStates[mouseBtn];
+			io.MouseDown[mouseBtn] = handler.GetProxyMouseState().CurMouseBtnStates[mouseBtn];
 		}
 
 		for (int key = 0; key < MAX_KEYCODES_SUPPORTED; ++key)
 		{
-			io.KeysDown[key] = handler.GetKeyboardState().IsDownThisFrame(key);
+			io.KeysDown[key] = handler.GetProxyKeyboardState().IsDownThisFrame(key);
 		}
 
-		io.KeyCtrl = handler.GetKeyboardState().IsDownThisFrame(Win32KeyCode::Control);
+		io.KeyCtrl = handler.GetProxyKeyboardState().IsDownThisFrame(Win32KeyCode::Control);
 
-		return mSceneViewPanel.IsHovered() && mSceneViewPanel.IsFocused();
+		return mSceneViewPanel.IsHovered();
 	}
 
 	void EditorApp::SetFont(const char* fontName)
