@@ -217,7 +217,7 @@ namespace Diotima
 				DX11GFXConstantBuffer* materialBuf = mDevice->GetConstantBuffer(drawCall.MaterialDataBuffer);
 				materialBuf->UpdateSubresources(&meshData.Material);
 
-				mPerFrameDrawCalls.push_back(std::move(drawCall));
+				mPerFrameDrawCalls.emplace_back(std::move(drawCall));
 			}
 		}
 	}
@@ -231,11 +231,6 @@ namespace Diotima
 	void Renderer::EnableVsync(bool bEnabled)
 	{
 		//mDevice->SetSyncInterval(static_cast<U32>(bEnabled));
-	}
-
-	void Renderer::SetMSAASampleCount(U32 sampleCount)
-	{
-		mMSAASampleCount = sampleCount;
 	}
 	
 	const Vector2D& Renderer::GetCanvasSize()

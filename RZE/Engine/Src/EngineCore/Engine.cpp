@@ -209,7 +209,6 @@ void RZE_Engine::CreateAndInitializeRenderer()
 
 	mRenderer->SetWindow(mMainWindow->GetOSWindowHandleData().windowHandle);
 
-	mRenderer->SetMSAASampleCount(mEngineConfig->GetEngineSettings().GetMSAASampleCount());
 	mRenderer->Initialize();
 	mRenderer->EnableVsync(mEngineConfig->GetEngineSettings().IsVSyncEnabled());
 }

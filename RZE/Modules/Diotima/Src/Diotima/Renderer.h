@@ -150,7 +150,6 @@ namespace Diotima
 		void SetCamera(const CameraItemProtocol& cameraItem) { camera = std::move(cameraItem); }
 
 		void EnableVsync(bool bEnable);
-		void SetMSAASampleCount(U32 sampleCount);
 
 		const Vector2D& GetCanvasSize();
 		void ResizeCanvas(const Vector2D& newSize);
@@ -200,9 +199,6 @@ namespace Diotima
 		std::vector<RenderItemDrawCall> mPerFrameDrawCalls;
 
 		std::queue<Int32> mFreeRenderListIndices;
-		
-		// #TODO(Josh::Need this duplicated here and in the Device because it needs to be set prior to initialization)
-		U32 mMSAASampleCount;
 
 		RenderTargetTexture* mRenderTarget;
 
