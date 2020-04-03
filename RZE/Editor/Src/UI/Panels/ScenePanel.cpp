@@ -60,8 +60,9 @@ namespace Editor
 
 				bool bSelectedCurrent = mSelectedItem != nullptr && mSelectedItem->EntityID == entry.ID;
 				NameComponent* const nameComponent = RZE_Application::RZE().GetActiveScene().GetEntityHandler().GetComponent<NameComponent>(entry.ID);
+				const std::string& entityName = nameComponent->Name;
 				AssertNotNull(nameComponent);
-				if (ImGui::Selectable(nameComponent->Name.c_str(), &bSelectedCurrent))
+				if (ImGui::Selectable(entityName.c_str(), &bSelectedCurrent))
 				{
 					if (mSelectedItem != nullptr && mSelectedItem->EntityID != entry.ID)
 					{
@@ -75,9 +76,9 @@ namespace Editor
 
 				if (HasSelectedEntity() && GetSelectedEntityID() == entry.ID)
 				{
-					if (ImGui::BeginPopupContextItem(entry.Name.c_str()))
+					if (ImGui::BeginPopupContextItem(entityName.c_str()))
 					{
-						ImGui::Text(entry.Name.c_str());
+						ImGui::Text(entityName.c_str());
 						ImGui::Separator();
 
 						if (ImGui::BeginMenu("Add Component"))
