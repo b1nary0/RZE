@@ -249,11 +249,6 @@ namespace Diotima
 
 	void ForwardPass::End()
 	{
-		// #TODO
-		// Do a better cleanup pass.
-		ID3D11DeviceContext& deviceContext = mDevice->GetDeviceContext();
-		ID3D11ShaderResourceView* nullViews[] = { nullptr };
-		deviceContext.PSSetShaderResources(3, ARRAYSIZE(nullViews), nullViews);
 	}
 
 	void ForwardPass::SetRenderer(Renderer* renderer)
