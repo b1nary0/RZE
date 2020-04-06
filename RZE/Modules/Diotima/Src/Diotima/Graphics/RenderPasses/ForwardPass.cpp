@@ -117,13 +117,75 @@ namespace Diotima
 		PrepareLights(lights);
 
 		const Renderer::CameraItemProtocol& camera = mRenderer->GetCamera();
+		ID3D11DeviceContext& deviceContext = mDevice->GetDeviceContext();
+
+		deviceContext.RSSetState(mDevice->mRasterState);
+
+		deviceContext.VSSetShader(mVertexShader, 0, 0);
+		deviceContext.PSSetShader(mPixelShader, 0, 0);
 
 		Matrix4x4 camViewProjMat = camera.ProjectionMat * camera.ViewMat;
 		DX11GFXConstantBuffer* viewProjBuf = mDevice->GetConstantBuffer(mViewProjBuf);
+		ID3D11Buffer* vpbHardwareBuf = &viewProjBuf->GetHardwareBuffer();
 		viewProjBuf->UpdateSubresources(&camViewProjMat);
+		deviceContext.VSSetConstantBuffers(0, 1, &vpbHardwareBuf);
+
+		DX11GFXConstantBuffer* lightBuf = mDevice->GetConstantBuffer(mLightBuf);
+		ID3D11Buffer* hwLightBuf = &lightBuf->GetHardwareBuffer();
+		deviceContext.PSSetConstantBuffers(0, 1, &hwLightBuf);
 
 		DX11GFXConstantBuffer* camDataBuf = mDevice->GetConstantBuffer(mCameraDataBuf);
+		ID3D11Buffer* hwCamDataBuf = &camDataBuf->GetHardwareBuffer();
 		camDataBuf->UpdateSubresources(&camera.Position);
+		deviceContext.PSSetConstantBuffers(1, 1, &hwCamDataBuf);
+
+		FLOAT rgba[4] = { 0.35f, 0.35f, 0.5f, 1.0f };
+		
+		RenderTargetTexture* renderTarget = mRenderer->GetRenderTarget();
+		// #TODO(Move this into Begin())
+		if (renderTarget != nullptr)
+		{
+			DX11GFXTextureBuffer2D* rtBuf = &renderTarget->GetGFXTexture();
+			DX11GFXTextureBuffer2D* depthBuf = &renderTarget->GetDepthTexture();
+			ID3D11RenderTargetView* hwRTV = &rtBuf->GetTargetView();
+
+			deviceContext.OMSetRenderTargets(1, &hwRTV, &depthBuf->GetDepthView());
+
+			deviceContext.ClearDepthStencilView(&depthBuf->GetDepthView(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+			deviceContext.ClearRenderTargetView(hwRTV, rgba);
+
+			const Vector2D& viewportDims = mRenderer->GetViewportSize();
+			D3D11_VIEWPORT viewport;
+			viewport.Width = viewportDims.X();
+			viewport.Height = viewportDims.Y();
+			viewport.MinDepth = 0.0f;
+			viewport.MaxDepth = 1.0f;
+			viewport.TopLeftX = 0.0f;
+			viewport.TopLeftY = 0.0f;
+			deviceContext.RSSetViewports(1, &viewport);
+		}
+		else
+		{
+			deviceContext.OMSetRenderTargets(1, &mDevice->mRenderTargetView, mDevice->mDepthStencilView);
+
+			deviceContext.ClearDepthStencilView(mDevice->mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+			deviceContext.ClearRenderTargetView(mDevice->mRenderTargetView, rgba);
+
+			D3D11_VIEWPORT viewport;
+			viewport.Width = mRenderer->GetCanvasSize().X();
+			viewport.Height = mRenderer->GetCanvasSize().Y();
+			viewport.MinDepth = 0.0f;
+			viewport.MaxDepth = 1.0f;
+			viewport.TopLeftX = 0.0f;
+			viewport.TopLeftY = 0.0f;
+			deviceContext.RSSetViewports(1, &viewport);
+		}
+
+		deviceContext.IASetInputLayout(mVertexLayout);
+
+		DX11GFXTextureBuffer2D* const shadowMap = mDevice->GetTextureBuffer2D(mShadowMapBufferID);
+		ID3D11ShaderResourceView* shadowSRV = &shadowMap->GetResourceView();
+		deviceContext.PSSetShaderResources(3, 1, &shadowSRV);
 	}
 
 	void ForwardPass::Execute()
@@ -132,71 +194,7 @@ namespace Diotima
 
 		Begin();
 		{
-			FLOAT rgba[4] = { 0.35f, 0.35f, 0.5f, 1.0f };
 			ID3D11DeviceContext& deviceContext = mDevice->GetDeviceContext();
-
-			RenderTargetTexture* renderTarget = mRenderer->GetRenderTarget();
-			// #TODO(Move this into Begin())
-			if (renderTarget != nullptr)
-			{
-				DX11GFXTextureBuffer2D* rtBuf = &renderTarget->GetGFXTexture();
-				DX11GFXTextureBuffer2D* depthBuf = &renderTarget->GetDepthTexture();
-				ID3D11RenderTargetView* hwRTV = &rtBuf->GetTargetView();
-
-				deviceContext.OMSetRenderTargets(1, &hwRTV, &depthBuf->GetDepthView());
-
-				deviceContext.ClearDepthStencilView(&depthBuf->GetDepthView(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-				deviceContext.ClearRenderTargetView(hwRTV, rgba);
-
-				const Vector2D& viewportDims = mRenderer->GetViewportSize();
-				D3D11_VIEWPORT viewport;
-				viewport.Width = viewportDims.X();
-				viewport.Height = viewportDims.Y();
-				viewport.MinDepth = 0.0f;
-				viewport.MaxDepth = 1.0f;
-				viewport.TopLeftX = 0.0f;
-				viewport.TopLeftY = 0.0f;
-				deviceContext.RSSetViewports(1, &viewport);
-			}
-			else
-			{
-				deviceContext.OMSetRenderTargets(1, &mDevice->mRenderTargetView, mDevice->mDepthStencilView);
-
-				deviceContext.ClearDepthStencilView(mDevice->mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-				deviceContext.ClearRenderTargetView(mDevice->mRenderTargetView, rgba);
-
-				D3D11_VIEWPORT viewport;
-				viewport.Width = mRenderer->GetCanvasSize().X();
-				viewport.Height = mRenderer->GetCanvasSize().Y();
-				viewport.MinDepth = 0.0f;
-				viewport.MaxDepth = 1.0f;
-				viewport.TopLeftX = 0.0f;
-				viewport.TopLeftY = 0.0f;
-				deviceContext.RSSetViewports(1, &viewport);
-			}
-
- 			deviceContext.RSSetState(mDevice->mRasterState);
- 
- 			deviceContext.VSSetShader(mVertexShader, 0, 0);
- 			deviceContext.PSSetShader(mPixelShader, 0, 0);
- 
- 			DX11GFXConstantBuffer* viewProjBuf = mDevice->GetConstantBuffer(mViewProjBuf);
- 			ID3D11Buffer* vpbHardwareBuf = &viewProjBuf->GetHardwareBuffer();
- 			deviceContext.VSSetConstantBuffers(0, 1, &vpbHardwareBuf);
- 
- 			DX11GFXConstantBuffer* lightBuf = mDevice->GetConstantBuffer(mLightBuf);
- 			ID3D11Buffer* hwLightBuf = &lightBuf->GetHardwareBuffer();
- 			deviceContext.PSSetConstantBuffers(0, 1, &hwLightBuf);
- 
- 			DX11GFXConstantBuffer* camDataBuf = mDevice->GetConstantBuffer(mCameraDataBuf);
- 			ID3D11Buffer* hwCamDataBuf = &camDataBuf->GetHardwareBuffer();
- 			deviceContext.PSSetConstantBuffers(1, 1, &hwCamDataBuf);
- 
- 			deviceContext.IASetInputLayout(mVertexLayout);
- 
-			DX11GFXTextureBuffer2D* const shadowMap = mDevice->GetTextureBuffer2D(mShadowMapBufferID);
-			ID3D11ShaderResourceView* shadowSRV = &shadowMap->GetResourceView();
-			deviceContext.PSSetShaderResources(3, 1, &shadowSRV);
 
  			const std::vector<Renderer::RenderItemDrawCall>& drawCalls = mRenderer->GetDrawCalls();
  			for (const Renderer::RenderItemDrawCall& drawCall : drawCalls)
