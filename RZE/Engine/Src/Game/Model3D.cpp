@@ -122,8 +122,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 			outMesh.AddIndex(assimpFace.mIndices[indexIdx]);
 		}
 	}
-	// #TODO(Josh::Not necessarily just here, but definitely need to have a layer between renderer and engine to represent these concepts
-		//             Essentially anything prefixed GFX should be renderer-only in the long run. Should get to this while Diotima scope is small)
+	
 	Material* pMaterial = new Material();
 	if (mesh.mMaterialIndex >= 0)
 	{

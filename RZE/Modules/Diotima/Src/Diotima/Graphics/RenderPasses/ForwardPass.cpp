@@ -142,7 +142,6 @@ namespace Diotima
 		FLOAT rgba[4] = { 0.35f, 0.35f, 0.5f, 1.0f };
 		
 		RenderTargetTexture* renderTarget = mRenderer->GetRenderTarget();
-		// #TODO(Move this into Begin())
 		if (renderTarget != nullptr)
 		{
 			DX11GFXTextureBuffer2D* rtBuf = &renderTarget->GetGFXTexture();
