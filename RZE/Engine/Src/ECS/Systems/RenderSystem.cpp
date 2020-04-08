@@ -184,7 +184,10 @@ void RenderSystem::RegisterForComponentNotifications()
 	//#TODO(Should make a function that does the common work here since this is exactly the same for added mesh except we modify existing RenderItem instead of creating one)
 	Apollo::EntityHandler::ComponentModifiedFunc OnMeshComponentModified([this, &handler](Apollo::EntityID entityID)
 	{
-		// #TODO(There is a leak in this function. We don't clean up the old stuff (material buffers, etc). Fix this.)
+		// #TODO
+		// There is a leak in this function. We don't clean up the old stuff (material buffers, etc). Fix this.
+		// Best fix is probably moving away from internal usage of U32 buffer indexes to store buffer references.
+		// Just use straight pointers atm.
 		OPTICK_EVENT("RenderSystem::OnMeshComponentModified");
 
 		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entityID);
