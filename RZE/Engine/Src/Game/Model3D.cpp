@@ -51,7 +51,7 @@ bool Model3D::Load(const FilePath& filePath)
 	if (meshGeometry.size() != AssimpScene->mNumMeshes)
 	{
 		// #TODO More informative error message.
-		LOG_CONSOLE("Error reading meshes.");
+		LOG_CONSOLE_ARGS("Error reading meshes from [%s].", mFilePath.GetRelativePath().c_str());
 		return false;
 	}
 
