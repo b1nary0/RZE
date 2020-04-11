@@ -230,7 +230,7 @@ namespace Diotima
 
 	void Renderer::EnableVsync(bool bEnabled)
 	{
-		//mDevice->SetSyncInterval(static_cast<U32>(bEnabled));
+		mDevice->SetSyncInterval(static_cast<U32>(bEnabled));
 	}
 	
 	const Vector2D& Renderer::GetCanvasSize()

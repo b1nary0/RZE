@@ -221,6 +221,11 @@ namespace Diotima
 		return mTexture2DBuffers[bufferID].get();
 	}
 
+	void DX11GFXDevice::SetSyncInterval(U32 interval)
+	{
+		mSyncInterval = interval;
+	}
+
 	void DX11GFXDevice::SendTextureToBackBuffer(DX11GFXTextureBuffer2D* texture)
 	{
 		FLOAT rgba[4] = { 1.0f, 1.0f, 0.0f, 1.0f };
@@ -408,7 +413,7 @@ namespace Diotima
 
 	void DX11GFXDevice::Present()
 	{
-		mSwapChain->Present(0, 0);
+		mSwapChain->Present(mSyncInterval, 0);
 	}
 
 }

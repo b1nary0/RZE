@@ -36,10 +36,10 @@ namespace Diotima
 
 	// IGFXDevice interface
 	public:
-		void Initialize() override;
-		void Present() override;
-		void SetWindow(void* windowHandle) override;
-		void Shutdown() override;
+		virtual void Initialize() override;
+		virtual void Present() override;
+		virtual void SetWindow(void* windowHandle) override;
+		virtual void Shutdown() override;
 
 	public:
 		U32 CreateVertexBuffer(void* data, size_t size, U32 count) override;
@@ -63,6 +63,7 @@ namespace Diotima
 		DX11GFXTextureBuffer2D* GetTextureBuffer2D(U32 bufferID);
 
 	public:
+		void SetSyncInterval(U32 interval);
 		void SendTextureToBackBuffer(DX11GFXTextureBuffer2D* texture);
 
 	public:
@@ -93,6 +94,7 @@ namespace Diotima
 		IDXGISwapChain* mSwapChain;
 
 		void* mWindowHandle;
+		U32 mSyncInterval = 0;
 
 	private:
 		std::vector<std::unique_ptr<DX11GFXVertexBuffer>> mVertexBuffers;
