@@ -139,7 +139,7 @@ namespace Diotima
 		camDataBuf->UpdateSubresources(&camera.Position);
 		deviceContext.PSSetConstantBuffers(1, 1, &hwCamDataBuf);
 
-		FLOAT rgba[4] = { 0.35f, 0.35f, 0.5f, 1.0f };
+		FLOAT rgba[4] = { 0.35f, 0.35f, 0.35f, 1.0f };
 		
 		RenderTargetTexture* renderTarget = mRenderer->GetRenderTarget();
 		if (renderTarget != nullptr)
