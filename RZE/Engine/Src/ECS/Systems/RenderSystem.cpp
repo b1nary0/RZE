@@ -61,31 +61,10 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 	camera.ViewMat = camComp->ViewMat;
 	camera.Position = transfComp->Position;
 	renderer.SetCamera(camera);
-	
-	size_t jobSize = entities.size() / 2;
-	std::vector<Apollo::EntityID> workItems0;
-	workItems0.reserve(jobSize);
-	std::copy(entities.begin(), entities.begin() + jobSize, std::back_inserter(workItems0));
-	Perseus::Job::Task work0([this, workItems0, &renderer, &handler]()
-	{
-		OPTICK_EVENT("RenderSystem Matrix Update 0");
- 		for (auto& entity : workItems0)
- 		{
- 			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
- 
- 			U32 renderItemIndex = mRenderItemEntityMap[entity];
-			Matrix4x4 worldMatrix = transfComp->GetAsMat4x4();
-			renderer.QueueUpdateRenderItem(renderItemIndex, worldMatrix);
- 		}
-	});
 
-	std::vector<Apollo::EntityID> workItems1;
-	workItems1.reserve(jobSize);
-	std::copy(entities.begin() + jobSize, entities.end(), std::back_inserter(workItems1));
-	Perseus::Job::Task work1([this, workItems1, &renderer, &handler]()
 	{
-		OPTICK_EVENT("RenderSystem Matrix Update 1");
-		for (auto& entity : workItems1)
+		OPTICK_EVENT("Single Thread Matrix Update");
+		for (auto& entity : entities)
 		{
 			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
 
@@ -93,11 +72,7 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 			Matrix4x4 worldMatrix = transfComp->GetAsMat4x4();
 			renderer.QueueUpdateRenderItem(renderItemIndex, worldMatrix);
 		}
-	});
-
-	Perseus::JobScheduler::Get().PushJob(work0);
-	Perseus::JobScheduler::Get().PushJob(work1);
-	Perseus::JobScheduler::Get().Wait();
+	}
 
 	Functor<void, Apollo::EntityID> LightSourceFunc([this, &handler, &renderer](Apollo::EntityID entity)
 	{
