@@ -28,3 +28,39 @@ void TransformComponent::Load(const rapidjson::Value& data)
 	Scale = Vector3D(data["Scale"][0].GetFloat(), data["Scale"][1].GetFloat(), data["Scale"][2].GetFloat());
 	Rotation = Vector3D(data["Rotation"][0].GetFloat(), data["Rotation"][1].GetFloat(), data["Rotation"][2].GetFloat());
 }
+
+void TransformComponent::Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer)
+{
+	writer.String("TransformComponent");
+	writer.StartObject();
+	{
+		{
+			writer.Key("Position");
+			writer.StartArray();
+			for (int i = 0; i < 3; ++i)
+			{
+				writer.Double(static_cast<float>(Position[i]));
+			}
+			writer.EndArray();
+		}
+		{
+			writer.Key("Scale");
+			writer.StartArray();
+			for (int i = 0; i < 3; ++i)
+			{
+				writer.Double(static_cast<float>(Scale[i]));
+			}
+			writer.EndArray();
+		}
+		{
+			writer.Key("Rotation");
+			writer.StartArray();
+			for (int i = 0; i < 3; ++i)
+			{
+				writer.Double(static_cast<float>(Rotation[i]));
+			}
+			writer.EndArray();
+		}
+	}
+	writer.EndObject();
+}

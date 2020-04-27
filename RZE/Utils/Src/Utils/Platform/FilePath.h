@@ -11,6 +11,11 @@ class FilePath
 public:
 	FilePath() = default;
 	explicit FilePath(const std::string& path);
+	// #TODO
+	// Hacky constructor to read from non-runtime asset paths
+	// until the FilePath infrastructure understands different directory
+	// contexts.
+	FilePath(const std::string& path, const bool isCustomPath);
 	~FilePath();
 
 	const std::string& GetAbsolutePath() const;
@@ -19,7 +24,7 @@ public:
 	const std::string GetAbsoluteDirectoryPath() const;
 	const std::string GetRelativeDirectoryPath() const;
 
-	bool IsValid();
+	bool IsValid() const;
 
 private:
 	std::string mRelativePath;

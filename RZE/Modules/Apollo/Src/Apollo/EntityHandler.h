@@ -89,6 +89,8 @@ namespace Apollo
 		template <typename TComponentType>
 		TComponentType* GetComponent(EntityID entityID);
 
+		ComponentBase* GetComponentByID(EntityID entityID, ComponentID componentID);
+
 		template <typename TComponent>
 		bool HasComponent(EntityID entityID) const;
 

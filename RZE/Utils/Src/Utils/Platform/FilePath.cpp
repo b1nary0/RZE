@@ -22,6 +22,16 @@ FilePath::FilePath(const std::string& path)
 	mRelativePath = pathCpy;
 }
 
+FilePath::FilePath(const std::string& path, const bool isCustomPath)
+{
+	// #TODO
+	// WARNING:
+	// This constructor is temporary only, any use other than what it was made for will
+	// likely break. Just didn't have time to go down this rabbit hole at the moment.
+	mRelativePath = path;
+	mAbsolutePath = path;
+}
+
 FilePath::~FilePath()
 {
 }
@@ -49,7 +59,7 @@ const std::string FilePath::GetRelativeDirectoryPath() const
 	return mRelativePath.substr(0, substrCount + 1);
 }
 
-bool FilePath::IsValid()
+bool FilePath::IsValid() const
 {
 	// #TODO(This is an absolutely stupid but still relevant condition)
 	return !mAbsolutePath.empty();

@@ -15,7 +15,10 @@ EngineConfig::~EngineConfig()
 
 void EngineConfig::Load(const FilePath& filePath)
 {
-	Config::Read(filePath.GetAbsolutePath());
+	// #TODO
+	// This function should take a FilePath to avoid having to understand
+	// the context of what type of path is expected.
+	Config::Read(filePath.GetRelativePath());
 
 	LoadEngineSettings();
 	LoadWindowSettings();

@@ -151,7 +151,11 @@ namespace Editor
 
 				if (ImGui::MenuItem("Save Scene"))
 				{
-
+					// #TODO
+					// This will save to TestGame.scene for now as a hack just to see this stuff work.
+					// Will break a bunch of other stuff but I intend to fix this all immediately next.
+					// Gives save testbed for the interim.
+					RZE().GetActiveScene().Save(FilePath());
 				}
 
 				if (ImGui::MenuItem("Exit"))

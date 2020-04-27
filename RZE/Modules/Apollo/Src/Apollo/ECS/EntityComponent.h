@@ -11,6 +11,7 @@
 // This is ugly here but next step toward better saving.
 // Will (should) go away when I stop being lazy
 #include <RapidJSON/document.h>
+#include <RapidJSON/prettywriter.h>
 
 namespace Apollo
 {
@@ -49,6 +50,7 @@ namespace Apollo
 
 		virtual void OnEditorInspect(Apollo::EntityID entityID) {}
 
+		virtual void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) {}
 		virtual void Load(const rapidjson::Value& data) {}
 	};
 

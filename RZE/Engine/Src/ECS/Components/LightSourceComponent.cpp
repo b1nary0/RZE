@@ -30,3 +30,27 @@ void LightSourceComponent::Load(const rapidjson::Value& data)
 	Color = Vector3D(data["Color"][0].GetFloat(), data["Color"][1].GetFloat(), data["Color"][2].GetFloat());
 	Strength = data["Strength"].GetFloat();
 }
+
+void LightSourceComponent::Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer)
+{
+	writer.String("LightSourceComponent");
+	writer.StartObject();
+	{
+		writer.Key("LightType");
+		writer.Uint(static_cast<U32>(LightType));
+
+		writer.Key("Color");
+		writer.StartArray();
+		{
+			for (int i = 0; i < 3; ++i)
+			{
+				writer.Double(static_cast<float>(Color[i]));
+			}
+		}
+		writer.EndArray();
+
+		writer.Key("Strength");
+		writer.Double(static_cast<double>(Strength));
+	}
+	writer.EndObject();
+}

@@ -60,8 +60,9 @@ struct TransformComponent final : public Apollo::Component<TransformComponent>
 		Rotation += rotation;
 	}
 
-	void OnEditorInspect(Apollo::EntityID entityID) override;
-	void Load(const rapidjson::Value& data) override;
+	virtual void OnEditorInspect(Apollo::EntityID entityID) override;
+	virtual void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer);
+	virtual void Load(const rapidjson::Value& data) override;
 
 	Vector3D	Position;
  	Vector3D	Scale {1, 1, 1};

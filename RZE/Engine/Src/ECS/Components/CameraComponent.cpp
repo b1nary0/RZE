@@ -31,3 +31,40 @@ void CameraComponent::Load(const rapidjson::Value& data)
 	Forward = Vector3D(data["Forward"][0].GetFloat(), data["Forward"][1].GetFloat(), data["Forward"][2].GetFloat());
 	UpDir = Vector3D(data["UpDir"][0].GetFloat(), data["UpDir"][1].GetFloat(), data["UpDir"][2].GetFloat());
 }
+
+void CameraComponent::Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer)
+{
+	writer.String("CameraComponent");
+	writer.StartObject();
+	{
+		writer.Key("FOV");
+		writer.Double(static_cast<double>(FOV));
+
+		writer.Key("NearCull");
+		writer.Double(static_cast<double>(NearCull));
+
+		writer.Key("FarCull");
+		writer.Double(static_cast<double>(FarCull));
+
+		writer.Key("Forward");
+		writer.StartArray();
+		{
+			for (int i = 0; i < 3; ++i)
+			{
+				writer.Double(static_cast<float>(Forward[i]));
+			}
+		}
+		writer.EndArray();
+
+		writer.Key("UpDir");
+		writer.StartArray();
+		{
+			for (int i = 0; i < 3; ++i)
+			{
+				writer.Double(static_cast<float>(UpDir[i]));
+			}
+		}
+		writer.EndArray();
+	}
+	writer.EndObject();
+}

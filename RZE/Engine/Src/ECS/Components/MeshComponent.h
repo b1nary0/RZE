@@ -15,6 +15,8 @@ struct MeshComponent final : Apollo::Component<MeshComponent>
 		: ResourcePath(resourcePath) {}
 	
 	virtual void OnEditorInspect(Apollo::EntityID entityID) override;
+
+	virtual void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override;
 	virtual void Load(const rapidjson::Value& data) override;
 
 	FilePath ResourcePath;

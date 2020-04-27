@@ -11,6 +11,7 @@
 
 #include <RapidJSON/document.h>
 #include <RapidJSON/writer.h>
+#include <RapidJSON/prettywriter.h>
 #include <RapidJSON/stringbuffer.h>
 
 #include <Utils/Math/Quaternion.h>
@@ -37,13 +38,63 @@ void GameScene::NewScene()
 	Load(FilePath("Assets/Scenes/Default.scene"));
 }
 
+void GameScene::Save(FilePath filePath)
+{
+	rapidjson::StringBuffer buf;
+	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buf);
+
+	writer.StartObject();
+	{
+		writer.String("entities");
+		writer.StartObject();
+		{
+			for (const SceneEntryTemp& entry : mEntityEntries)
+			{
+
+				Apollo::EntityHandler::ComponentNameIDMap compMap;
+				mEntityHandler.GetComponentNames(entry.ID, compMap);
+
+				// We know everything has a name component, so just save the only thing they should have...
+				// A name.
+				const NameComponent* const nameComponent = mEntityHandler.GetComponent<NameComponent>(entry.ID);
+				AssertNotNull(nameComponent);
+
+				writer.String(nameComponent->Name.c_str());
+				writer.StartObject();
+				{
+					writer.String("components");
+					writer.StartObject();
+					{
+						for (auto& dataPair : compMap)
+						{
+							Apollo::ComponentBase* component = mEntityHandler.GetComponentByID(entry.ID, dataPair.first);
+							component->Save(writer);
+						}
+					}
+					writer.EndObject();
+				}
+				writer.EndObject();
+			}
+		}
+
+		writer.EndObject();
+	}
+	writer.EndObject();
+
+	File sceneFile(FilePath("C:\\dev\\RZE\\RZE\\Assets\\Scenes\\TestGame.scene", true))/*mCurrentScenePath.GetAbsolutePath())*/;
+	sceneFile.Open(File::EFileOpenMode::Write);
+	sceneFile.Write(buf.GetString());
+	AssertExpr(sceneFile.IsValid());
+	sceneFile.Close();
+}
+
 void GameScene::Load(FilePath filePath)
 {
 	Clear();
 
 	mCurrentScenePath = filePath;
 
-	File sceneFile(mCurrentScenePath.GetAbsolutePath());
+	File sceneFile(mCurrentScenePath.GetRelativePath());
 	AssertExpr(sceneFile.IsValid());
 	sceneFile.Close();
 
