@@ -45,8 +45,8 @@ void GameApp::Initialize()
 	RZE().GetActiveScene().Load(FilePath("Assets/Scenes/TestGame.scene"));
 
 	//RZE().GetActiveScene().GetEntityHandler().AddSystem<InteractiveSpawningSystem>();
-// 	RZE().GetActiveScene().GetEntityHandler().AddSystem<TestbedSystem>();
- 	RZE().GetActiveScene().GetEntityHandler().AddSystem<FreeCameraSystem>();
+ 	//RZE().GetActiveScene().GetEntityHandler().AddSystem<TestbedSystem>();
+ 	RZE().GetActiveScene().GetEntityHandler().AddSystem<FirstPersonCameraSystem>();
 // 	RZE().GetActiveScene().GetEntityHandler().AddSystem<ProjectileSystem>();
 }
 

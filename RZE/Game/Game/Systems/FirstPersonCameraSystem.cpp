@@ -40,7 +40,7 @@ void FirstPersonCameraSystem::Update(const std::vector<Apollo::EntityID>& entiti
 		Vector3D dist = mMoveToPoint - transform->Position;
 		if (dist.LengthSq() > VectorUtils::kEpsilon * VectorUtils::kEpsilon)
 		{
-			Vector3D lerpPos = VectorUtils::Lerp(transform->Position, mMoveToPoint, static_cast<float>(8 * RZE_Application::RZE().GetDeltaTime()));
+			Vector3D lerpPos = VectorUtils::Lerp(transform->Position, mMoveToPoint, static_cast<float>(16 * RZE_Application::RZE().GetDeltaTime()));
 			transform->SetPosition(lerpPos);
 		}
 	}

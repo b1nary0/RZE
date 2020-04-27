@@ -25,6 +25,6 @@ private:
 	void DoInput(CameraComponent& camera, TransformComponent& transform);
 
 private:
-	float mSpeed = 3.0f;
+	float mSpeed = 2.0f;
 	Vector3D mMoveToPoint;
 };
