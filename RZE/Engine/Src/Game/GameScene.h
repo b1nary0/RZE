@@ -30,6 +30,7 @@ public:
 
 	void NewScene();
 	void Load(FilePath filePath);
+	void NewLoad(FilePath filepath);
 
 	Apollo::EntityID CreateEntity(const std::string& name);
 	void DestroyEntity(Apollo::EntityID entity);

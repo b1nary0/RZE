@@ -7,6 +7,11 @@
 #include <Apollo/ECS/Entity.h>
 
 #include <Utils/PrimitiveDefs.h>
+
+// This is ugly here but next step toward better saving.
+// Will (should) go away when I stop being lazy
+#include <RapidJSON/document.h>
+
 namespace Apollo
 {
 	typedef U32 ComponentID;
@@ -43,6 +48,8 @@ namespace Apollo
 		std::string ComponentName;
 
 		virtual void OnEditorInspect(Apollo::EntityID entityID) {}
+
+		virtual void Load(const rapidjson::Value& data) {}
 	};
 
 	template <typename TComponentType>

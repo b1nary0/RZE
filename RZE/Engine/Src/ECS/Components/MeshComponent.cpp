@@ -14,3 +14,8 @@ void MeshComponent::OnEditorInspect(Apollo::EntityID entityID)
 		}
 	}
 }
+
+void MeshComponent::Load(const rapidjson::Value& data)
+{
+	ResourcePath = FilePath(data["ResourcePath"].GetString());
+}

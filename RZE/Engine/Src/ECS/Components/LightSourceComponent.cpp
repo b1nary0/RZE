@@ -23,3 +23,10 @@ void LightSourceComponent::OnEditorInspect(Apollo::EntityID entityID)
 	ImGui::Text("Strength");
 	ImGui::InputFloat("##lightsourcecomponent_strength", &Strength, 0.005f, 0.05f, "%.2f", ImGuiInputTextFlags_EnterReturnsTrue);
 }
+
+void LightSourceComponent::Load(const rapidjson::Value& data)
+{
+	LightType = static_cast<ELightType>(data["LightType"].GetUint());
+	Color = Vector3D(data["Color"][0].GetFloat(), data["Color"][1].GetFloat(), data["Color"][2].GetFloat());
+	Strength = data["Strength"].GetFloat();
+}

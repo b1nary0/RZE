@@ -22,3 +22,12 @@ void CameraComponent::OnEditorInspect(Apollo::EntityID entityID)
 	ImGui::Text("Look At");
 	ImGui::DragFloat3("##cameracomponent_forwarddir", forwardDirValues, 0.005f, -100.0f, 100.0f);
 }
+
+void CameraComponent::Load(const rapidjson::Value& data)
+{
+	FOV = data["FOV"].GetFloat();
+	NearCull = data["NearCull"].GetFloat();
+	FarCull = data["FarCull"].GetFloat();
+	Forward = Vector3D(data["Forward"][0].GetFloat(), data["Forward"][1].GetFloat(), data["Forward"][2].GetFloat());
+	UpDir = Vector3D(data["UpDir"][0].GetFloat(), data["UpDir"][1].GetFloat(), data["UpDir"][2].GetFloat());
+}

@@ -42,7 +42,8 @@ struct LightSourceComponent final : public Apollo::Component<LightSourceComponen
 		, Strength(strength)
 	{}
 
-	void OnEditorInspect(Apollo::EntityID entityID) override;
+	virtual void OnEditorInspect(Apollo::EntityID entityID) override;
+	virtual void Load(const rapidjson::Value& data) override;
 
 	ELightType LightType;
 	Vector3D Color;

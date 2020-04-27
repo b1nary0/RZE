@@ -21,3 +21,10 @@ void TransformComponent::OnEditorInspect(Apollo::EntityID entityID)
 	ImGui::Text("Scale");
 	ImGui::DragFloat3("##transfcomp_scale", scaleValues, 0.005f);
 }
+
+void TransformComponent::Load(const rapidjson::Value& data)
+{
+	Position = Vector3D(data["Position"][0].GetFloat(), data["Position"][1].GetFloat(), data["Position"][2].GetFloat());
+	Scale = Vector3D(data["Scale"][0].GetFloat(), data["Scale"][1].GetFloat(), data["Scale"][2].GetFloat());
+	Rotation = Vector3D(data["Rotation"][0].GetFloat(), data["Rotation"][1].GetFloat(), data["Rotation"][2].GetFloat());
+}

@@ -39,17 +39,6 @@ void GameScene::NewScene()
 
 void GameScene::Load(FilePath filePath)
 {
-	// #TODO(Josh) This whole function.
-	// * Need to properly account for any additions to the engine/game component library here. *
-	// * Need to be able to read from the .scene and determine which components need to be added that could be from			*
-	// * either engine or game registration.																				*
-	// * One possible solution is to generate an id and save to a registry on disk and read that and create from that id	*
-	// * Could have issues with conflict resolution (file no longer shares in-memory id to compare against)					*
-	// * This problem is the largest one so far for scene creation from a file.												*
-	// - Load into memory via scene representation
-	// - Probably need to generate GUIDS for components on each machine (installation)
-	//		- Serialize these GUIDs as identifiers?
-	//
 	Clear();
 
 	mCurrentScenePath = filePath;
@@ -64,62 +53,31 @@ void GameScene::Load(FilePath filePath)
 	rapidjson::Value::MemberIterator root = sceneDoc.FindMember("entities");
 	if (root != sceneDoc.MemberEnd())
 	{
+		//
+		// Entity
+		//
 		rapidjson::Value& rootVal = root->value;
 		for (auto& entity = rootVal.MemberBegin(); entity != rootVal.MemberEnd(); ++entity)
 		{
 			Apollo::EntityID id = CreateEntity(entity->name.GetString());
 
+			//
+			// Components
+			//
+			const Apollo::EntityHandler::ComponentNameIDMap& componentInfo = mEntityHandler.GetAllComponentTypes();
+			// ComponentBegin
 			rapidjson::Value& val = entity->value;
 			for (auto& member = val.MemberBegin(); member != val.MemberEnd(); ++member)
 			{
-				rapidjson::Value& comVal = member->value;
-				rapidjson::Value::MemberIterator comp = comVal.FindMember("TransformComponent");
-				if (comp != comVal.MemberEnd())
+				rapidjson::Value& compVal = member->value;
+				for (auto& dataPair : componentInfo)
 				{
-					rapidjson::Value& memVal = comp->value;
-					Vector3D position(memVal["Position"][0].GetFloat(), memVal["Position"][1].GetFloat(), memVal["Position"][2].GetFloat());
-					Vector3D scale(memVal["Scale"][0].GetFloat(), memVal["Scale"][1].GetFloat(), memVal["Scale"][2].GetFloat());
-					Vector3D rotation(memVal["Rotation"][0].GetFloat(), memVal["Rotation"][1].GetFloat(), memVal["Rotation"][2].GetFloat());
-
-					GetEntityHandler().AddComponent<TransformComponent>(id, position, rotation, scale);
-				}
-
-				comp = comVal.FindMember("MeshComponent");
-				if (comp != comVal.MemberEnd())
-				{
-					rapidjson::Value& memVal = comp->value;
-					GetEntityHandler().AddComponent<MeshComponent>(id, FilePath(memVal["ResourcePath"].GetString()));
-				}
-
-				comp = comVal.FindMember("LightSourceComponent");
-				if (comp != comVal.MemberEnd())
-				{
-					rapidjson::Value& memVal = comp->value;
-
-					ELightType lightType = static_cast<ELightType>(memVal["LightType"].GetUint());
-					Vector3D color(memVal["Color"][0].GetFloat(), memVal["Color"][1].GetFloat(), memVal["Color"][2].GetFloat());
-					float strength = memVal["Strength"].GetFloat();
-
-					GetEntityHandler().AddComponent<LightSourceComponent>(id, lightType, color, strength);
-				}
-
-				comp = comVal.FindMember("CameraComponent");
-				if (comp != comVal.MemberEnd())
-				{
-					rapidjson::Value& memVal = comp->value;
-					
-					float fov = memVal["FOV"].GetFloat(); 
-					float nearCull = memVal["NearCull"].GetFloat();
-					float farCull = memVal["FarCull"].GetFloat();
-					Vector3D forward(memVal["Forward"][0].GetFloat(), memVal["Forward"][1].GetFloat(), memVal["Forward"][2].GetFloat());
-					Vector3D upDir(memVal["UpDir"][0].GetFloat(), memVal["UpDir"][1].GetFloat(), memVal["UpDir"][2].GetFloat());
-
-					CameraComponent* const camComp = GetEntityHandler().AddComponent<CameraComponent>(id);
-					camComp->FOV = fov;
-					camComp->NearCull = nearCull;
-					camComp->FarCull = farCull;
-					camComp->Forward = forward;
-					camComp->UpDir = upDir;
+					rapidjson::Value::MemberIterator compData = compVal.FindMember(dataPair.second.c_str());
+					if (compData != compVal.MemberEnd())
+					{
+						Apollo::ComponentBase* component = mEntityHandler.AddComponentByID(id, dataPair.first);
+						component->Load(compData->value);
+					}
 				}
 			}
 		}
