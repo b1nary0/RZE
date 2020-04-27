@@ -38,20 +38,20 @@ void CameraComponent::Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& wri
 	writer.StartObject();
 	{
 		writer.Key("FOV");
-		writer.Double(static_cast<double>(FOV));
+		writer.Double(FOV);
 
 		writer.Key("NearCull");
-		writer.Double(static_cast<double>(NearCull));
+		writer.Double(NearCull);
 
 		writer.Key("FarCull");
-		writer.Double(static_cast<double>(FarCull));
+		writer.Double(FarCull);
 
 		writer.Key("Forward");
 		writer.StartArray();
 		{
 			for (int i = 0; i < 3; ++i)
 			{
-				writer.Double(static_cast<float>(Forward[i]));
+				writer.Double(Forward[i]);
 			}
 		}
 		writer.EndArray();
@@ -61,7 +61,7 @@ void CameraComponent::Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& wri
 		{
 			for (int i = 0; i < 3; ++i)
 			{
-				writer.Double(static_cast<float>(UpDir[i]));
+				writer.Double(UpDir[i]);
 			}
 		}
 		writer.EndArray();

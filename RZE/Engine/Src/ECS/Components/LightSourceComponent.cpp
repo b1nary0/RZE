@@ -44,13 +44,13 @@ void LightSourceComponent::Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>
 		{
 			for (int i = 0; i < 3; ++i)
 			{
-				writer.Double(static_cast<float>(Color[i]));
+				writer.Double(Color[i]);
 			}
 		}
 		writer.EndArray();
 
 		writer.Key("Strength");
-		writer.Double(static_cast<double>(Strength));
+		writer.Double(Strength);
 	}
 	writer.EndObject();
 }

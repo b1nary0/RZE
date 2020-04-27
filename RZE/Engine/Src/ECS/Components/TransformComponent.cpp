@@ -39,7 +39,7 @@ void TransformComponent::Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& 
 			writer.StartArray();
 			for (int i = 0; i < 3; ++i)
 			{
-				writer.Double(static_cast<float>(Position[i]));
+				writer.Double(Position[i]);
 			}
 			writer.EndArray();
 		}
@@ -48,7 +48,7 @@ void TransformComponent::Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& 
 			writer.StartArray();
 			for (int i = 0; i < 3; ++i)
 			{
-				writer.Double(static_cast<float>(Scale[i]));
+				writer.Double(Scale[i]);
 			}
 			writer.EndArray();
 		}
@@ -57,7 +57,7 @@ void TransformComponent::Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& 
 			writer.StartArray();
 			for (int i = 0; i < 3; ++i)
 			{
-				writer.Double(static_cast<float>(Rotation[i]));
+				writer.Double(Rotation[i]);
 			}
 			writer.EndArray();
 		}
