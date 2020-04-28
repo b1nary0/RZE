@@ -8,8 +8,6 @@ set releaseExecPath=%~dp0_Build\Release\x64\
 set releaseAssetPath=%~dp0_Build\Release\x64\Assets
 set releaseConfigPath=%~dp0_Build\Release\x64\Config
 
-echo %debugExecPath%
-
 if exist %debugExecPath% (
 	if not exist %debugAssetPath% (mkdir %debugAssetPath%)
 	if not exist %debugConfigPath% (mkdir %debugConfigPath%)

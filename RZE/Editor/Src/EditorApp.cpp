@@ -16,6 +16,8 @@
 #include <imGUI/imgui_impl_win32.h>
 #include <Optick/optick.h>
 
+#include <stdio.h>
+
 namespace Editor
 {
 	EditorApp::EditorApp()
@@ -168,9 +170,11 @@ namespace Editor
 				{
 					Perseus::Job::Task gameTask = []()
 					{
+						FilePath buildGameBat("BuildGame.bat");
 						FilePath assetCpyPath("AssetCpy.bat");
 						FilePath gamePath("_Build\\Debug\\x64\\RZE_Game.exe");
 
+						system(buildGameBat.GetAbsolutePath().c_str());
 						system(assetCpyPath.GetAbsolutePath().c_str());
 						system(gamePath.GetAbsolutePath().c_str());
 					};
