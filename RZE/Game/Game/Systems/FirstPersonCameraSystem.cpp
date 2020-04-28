@@ -64,6 +64,7 @@ void FirstPersonCameraSystem::RegisterForComponentNotifications()
 
 		if (nameComp->Name == "Camera")
 		{
+			mCamera = entity;
 			mMoveToPoint = transfComp->Position;
 		}
 	});
@@ -101,5 +102,34 @@ void FirstPersonCameraSystem::DoInput(CameraComponent& camera, TransformComponen
 		}
 
 		mMoveToPoint = transform.Position + (newForward + newStrafe);
+	}
+
+	{
+		// Mouse input 
+
+		const float deltaT = static_cast<float>(RZE_Application::RZE().GetDeltaTime());
+		const Vector3D& curPos = inputHandler.GetMouseState().CurPosition;
+
+		CameraComponent& camComp = *InternalGetEntityHandler().GetComponent<CameraComponent>(mCamera);
+		const TransformComponent& transfComp = *InternalGetEntityHandler().GetComponent<TransformComponent>(mCamera);
+
+		Vector3D diff = curPos - mMousePrevPos;
+
+		const float sensitivity = 0.1f;
+		diff *= sensitivity;
+		mYawPitchRoll += diff;
+
+		float yawInRadians = mYawPitchRoll.X() * MathUtils::ToRadians;
+		float pitchInRadians = mYawPitchRoll.Y() * MathUtils::ToRadians;
+
+		Vector3D newForward;
+		newForward.SetX(std::cos(yawInRadians) * std::cos(pitchInRadians));
+		newForward.SetY(-std::sin(pitchInRadians));
+		newForward.SetZ(std::sin(yawInRadians) * std::cos(pitchInRadians));
+
+		camComp.Forward = newForward;
+		camComp.Forward.Normalize();
+
+		mMousePrevPos = curPos;
 	}
 }

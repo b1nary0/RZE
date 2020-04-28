@@ -27,4 +27,7 @@ private:
 private:
 	float mSpeed = 2.0f;
 	Vector3D mMoveToPoint;
+	Vector3D mMousePrevPos;
+	Vector3D mYawPitchRoll;
+	Apollo::EntityID mCamera;
 };
