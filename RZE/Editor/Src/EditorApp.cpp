@@ -28,6 +28,10 @@ namespace Editor
 	{
 		RZE_Application::Initialize();
 
+		// #TODO
+		// Should probably bake this into RZE::Application
+		FilePath::SetDirectoryContext(EDirectoryContext::Tools);
+
 		GetWindow()->SetTitle("RZEStudio");
 		GetWindow()->Maximize();
 

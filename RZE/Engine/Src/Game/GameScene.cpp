@@ -81,7 +81,7 @@ void GameScene::Save(FilePath filePath)
 	}
 	writer.EndObject();
 
-	File sceneFile(FilePath("C:\\dev\\RZE\\RZE\\Assets\\Scenes\\TestGame.scene", true))/*mCurrentScenePath.GetAbsolutePath())*/;
+	File sceneFile(mCurrentScenePath);
 	sceneFile.Open(File::EFileOpenMode::Write);
 	sceneFile.Write(buf.GetString());
 	AssertExpr(sceneFile.IsValid());
@@ -94,7 +94,7 @@ void GameScene::Load(FilePath filePath)
 
 	mCurrentScenePath = filePath;
 
-	File sceneFile(mCurrentScenePath.GetRelativePath());
+	File sceneFile(mCurrentScenePath);
 	AssertExpr(sceneFile.IsValid());
 	sceneFile.Close();
 

@@ -6,6 +6,12 @@
 // @implementation: will do this later, leaving as idea.
 //
 
+enum class EDirectoryContext
+{
+	Runtime,
+	Tools
+};
+
 class FilePath
 {
 public:
@@ -25,6 +31,8 @@ public:
 	const std::string GetRelativeDirectoryPath() const;
 
 	bool IsValid() const;
+
+	static void SetDirectoryContext(EDirectoryContext context);
 
 private:
 	std::string mRelativePath;

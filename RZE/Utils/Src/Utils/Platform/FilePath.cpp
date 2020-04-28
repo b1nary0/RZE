@@ -1,25 +1,48 @@
 #include <Utils/StdAfx.h>
 
+#include <Utils/DebugUtils/Debug.h>
 #include <Utils/Platform/FilePath.h>
 
 #include <Windows.h>
+
+// #TODO
+// Ideally this isn't on the FilePath but instead part of the broader
+// system. For now though it's the most relevant place.
+EDirectoryContext gDirectoryContext = EDirectoryContext::Runtime;
 
 FilePath::FilePath(const std::string& path)
 {
 	char buffer[1024];
 	GetModuleFileNameA(NULL, buffer, 1024);
 	std::string execPath(buffer);
-
 	std::replace(execPath.begin(), execPath.end(), '\\', '/');
-	size_t pos = execPath.find_last_of('/');
-	std::string newpath = execPath.substr(0, pos + 1);
 
-	// #TODO(This is just for std::replace, but should be dealt with later)
-	std::string pathCpy = path;
-	std::replace(pathCpy.begin(), pathCpy.end(), '\\', '/');
-	
-	mAbsolutePath = newpath + pathCpy;
-	mRelativePath = pathCpy;
+	if (gDirectoryContext == EDirectoryContext::Tools)
+	{
+		size_t pos = execPath.find("RZE/RZE");
+		AssertMsg(pos != std::string::npos, "Directory structure invalid.");
+
+		// #NOTE
+		// Magic number 8 is giving us everything to RZE/RZE/ so we can tack on the 
+		// relative given path.
+		std::string newpath = execPath.substr(0, pos + 8);
+		std::string pathCpy = path;
+		std::replace(pathCpy.begin(), pathCpy.end(), '\\', '/');
+		
+		mAbsolutePath = newpath + pathCpy;
+		mRelativePath = pathCpy;
+	}
+	else
+	{
+		size_t pos = execPath.find_last_of('/');
+		std::string newpath = execPath.substr(0, pos + 1);
+
+		// #TODO(This is just for std::replace, but should be dealt with later)
+		std::string pathCpy = path;
+		std::replace(pathCpy.begin(), pathCpy.end(), '\\', '/');
+		mAbsolutePath = newpath + pathCpy;
+		mRelativePath = pathCpy;
+	}
 }
 
 FilePath::FilePath(const std::string& path, const bool isCustomPath)
@@ -63,4 +86,9 @@ bool FilePath::IsValid() const
 {
 	// #TODO(This is an absolutely stupid but still relevant condition)
 	return !mAbsolutePath.empty();
+}
+
+void FilePath::SetDirectoryContext(EDirectoryContext context)
+{
+	gDirectoryContext = context;
 }
