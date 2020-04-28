@@ -7,6 +7,10 @@
 #include <Diotima/Driver/DX11/DX11GFXDevice.h>
 #include <Diotima/Graphics/RenderTarget.h>
 
+#include <Perseus/JobSystem/JobScheduler.h>
+
+#include <Utils/Platform/FilePath.h>
+
 #include <ImGui/imgui.h>
 #include <imGUI/imgui_impl_dx11.h>
 #include <imGUI/imgui_impl_win32.h>
@@ -143,7 +147,6 @@ namespace Editor
 				{
 					RZE().GetActiveScene().NewScene();
 				}
-
 				if (ImGui::MenuItem("Load Scene..."))
 				{
 					FilePath newScenePath = RZE_Application::RZE().ShowOpenFilePrompt();
@@ -152,7 +155,6 @@ namespace Editor
 						RZE().GetActiveScene().Load(newScenePath);
 					}
 				}
-
 				if (ImGui::MenuItem("Save Scene"))
 				{
 					// #TODO
@@ -161,7 +163,21 @@ namespace Editor
 					// Gives save testbed for the interim.
 					RZE().GetActiveScene().Save(FilePath());
 				}
+				ImGui::Separator();
+				if (ImGui::MenuItem("Launch Game..."))
+				{
+					Perseus::Job::Task gameTask = []()
+					{
+						FilePath assetCpyPath("AssetCpy.bat");
+						FilePath gamePath("_Build\\Debug\\x64\\RZE_Game.exe");
 
+						system(assetCpyPath.GetAbsolutePath().c_str());
+						system(gamePath.GetAbsolutePath().c_str());
+					};
+					Perseus::JobScheduler::Get().PushJob(gameTask);
+
+				}
+				ImGui::Separator();
 				if (ImGui::MenuItem("Exit"))
 				{
 					RZE().PostExit();
