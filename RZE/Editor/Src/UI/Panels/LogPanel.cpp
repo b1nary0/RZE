@@ -8,7 +8,7 @@
 
 namespace Editor
 {
-
+	static bool gShouldSetScroll = false;
 	void LogPanel::Display()
 	{
 		ImGui::Begin("Log", nullptr, ImGuiWindowFlags_NoCollapse);
@@ -19,7 +19,12 @@ namespace Editor
 			ImGui::TextColored(imColor, logItem.Text.c_str());
 		}
 
-		ImGui::SetScrollHere();
+		if (gShouldSetScroll)
+		{
+			ImGui::SetScrollHere();
+			gShouldSetScroll = false;
+		}
+
 		ImGui::End();
 
 	}
@@ -39,6 +44,8 @@ namespace Editor
 			entry.Text = msg;
 			mEntries.push_back(entry);
 		}
+
+		gShouldSetScroll = true;
 	}
 
 }

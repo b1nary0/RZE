@@ -123,7 +123,7 @@ namespace Editor
 		}
 
 		io.KeyCtrl = handler.GetProxyKeyboardState().IsDownThisFrame(Win32KeyCode::Control);
-		//io.MouseWheel += static_cast<float>(handler.GetProxyMouseState().CurWheelVal);
+		//io.MouseWheel = static_cast<float>(handler.GetProxyMouseState().CurWheelVal);
 
 		return mSceneViewPanel.IsHovered();
 	}
@@ -194,31 +194,31 @@ namespace Editor
 						// #TODO
 						// Make function to do this stuff
 						{
-							char buffer[2048];
 							FILE* pipe = nullptr;
 							pipe = _popen(buildGameBat.GetAbsolutePath().c_str(), "rt");
+							char buffer[2048];
 							while (fgets(buffer, 2048, pipe))
 							{
 								Log(buffer);
 							}
 						}
 						{
-							char buffer[2048];
 							FILE* pipe = nullptr;
 							pipe = _popen(assetCpyPath.GetAbsolutePath().c_str(), "rt");
+							char buffer[2048];
 							while (fgets(buffer, 2048, pipe))
 							{
 								Log(buffer);
 							}
 						}
 						{
-							char buffer[2048];
 							FILE* pipe = nullptr;
 							pipe = _popen(gamePath.GetAbsolutePath().c_str(), "rt");
-							while (fgets(buffer, 2048, pipe))
-							{
-								Log(buffer);
-							}
+//							char buffer[2048];
+// 							while (fgets(buffer, 2048, pipe))
+// 							{
+// 								Log(buffer);
+// 							}
 						}
 					};
 					Perseus::JobScheduler::Get().PushJob(gameTask);
