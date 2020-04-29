@@ -71,22 +71,17 @@ namespace Editor
 			window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
 			Vector2D windowDims = GetWindow()->GetDimensions();
-			ImGui::SetNextWindowSize(ImVec2(windowDims.X(), windowDims.Y()));
+			//ImGui::SetNextWindowSize(ImVec2(windowDims.X(), windowDims.Y()));
 
 			bool show = true;
+			DisplayMenuBar();
 			if (ImGui::Begin("DockSpace Demo", &show, window_flags))
 			{
 				ImGuiID dockspace_id = ImGui::GetID("MyDockspace");
 				ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
 				ImGui::DockSpace(dockspace_id, ImVec2(windowDims.X(), windowDims.Y()), dockspace_flags);
 
-				ImGui::PushFont(mFontMapping.at("liberation_bold"));
-
-				DisplayMenuBar();
-				//HandleGeneralContextMenu();
-
 				ResolvePanelState();
-				ImGui::PopFont();
 			}
 			ImGui::End();
 		}
@@ -128,6 +123,7 @@ namespace Editor
 		}
 
 		io.KeyCtrl = handler.GetProxyKeyboardState().IsDownThisFrame(Win32KeyCode::Control);
+		//io.MouseWheel += static_cast<float>(handler.GetProxyMouseState().CurWheelVal);
 
 		return mSceneViewPanel.IsHovered();
 	}
@@ -136,6 +132,11 @@ namespace Editor
 	{
 		ImGui::PopFont();
 		ImGui::PushFont(mFontMapping.at(fontName));
+	}
+
+	void EditorApp::Log(const std::string& msg)
+	{
+		mLogPanel.AddEntry(msg);
 	}
 
 	void EditorApp::DisplayMenuBar()
@@ -166,17 +167,59 @@ namespace Editor
 					RZE().GetActiveScene().Save(FilePath());
 				}
 				ImGui::Separator();
+				if (ImGui::MenuItem("Build Game..."))
+				{
+					Log("Building Game...");
+					Perseus::Job::Task buildTask = [this]()
+					{
+						char buffer[2048];
+						FILE* pipe = nullptr;
+						static FilePath buildGameBat("BuildGame.bat");
+						pipe = _popen(buildGameBat.GetAbsolutePath().c_str(), "rt");
+						while (fgets(buffer, 2048, pipe))
+						{
+							Log(buffer);
+						}
+					};
+					Perseus::JobScheduler::Get().PushJob(buildTask);
+				}
 				if (ImGui::MenuItem("Launch Game..."))
 				{
-					Perseus::Job::Task gameTask = []()
+					Perseus::Job::Task gameTask = [this]()
 					{
-						FilePath buildGameBat("BuildGame.bat");
-						FilePath assetCpyPath("AssetCpy.bat");
-						FilePath gamePath("_Build\\Debug\\x64\\RZE_Game.exe");
+						static FilePath buildGameBat("BuildGame.bat");
+						static FilePath assetCpyPath("AssetCpy.bat");
+						static FilePath gamePath("_Build\\Debug\\x64\\RZE_Game.exe");
 
-						system(buildGameBat.GetAbsolutePath().c_str());
-						system(assetCpyPath.GetAbsolutePath().c_str());
-						system(gamePath.GetAbsolutePath().c_str());
+						// #TODO
+						// Make function to do this stuff
+						{
+							char buffer[2048];
+							FILE* pipe = nullptr;
+							pipe = _popen(buildGameBat.GetAbsolutePath().c_str(), "rt");
+							while (fgets(buffer, 2048, pipe))
+							{
+								Log(buffer);
+							}
+						}
+						{
+							char buffer[2048];
+							FILE* pipe = nullptr;
+							pipe = _popen(assetCpyPath.GetAbsolutePath().c_str(), "rt");
+							while (fgets(buffer, 2048, pipe))
+							{
+								Log(buffer);
+							}
+						}
+						{
+							char buffer[2048];
+							FILE* pipe = nullptr;
+							pipe = _popen(gamePath.GetAbsolutePath().c_str(), "rt");
+							while (fgets(buffer, 2048, pipe))
+							{
+								Log(buffer);
+							}
+						}
 					};
 					Perseus::JobScheduler::Get().PushJob(gameTask);
 
@@ -271,11 +314,16 @@ namespace Editor
 
 	void EditorApp::ResolvePanelState()
 	{
-		ImGui::ShowDemoWindow(&mPanelStates.bDemoPanelEnabled);
+		if (mPanelStates.bDemoPanelEnabled)
+		{
+			ImGui::ShowDemoWindow(nullptr);
+		}
 
 		mScenePanel.Display();
 
 		mSceneViewPanel.Display();
+
+		mLogPanel.Display();
 	}
 
 	void EditorApp::LoadFonts()
