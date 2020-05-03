@@ -18,14 +18,5 @@ namespace Editor
 
 	public:
 		void AddEntry(const std::string& msg);
-
-	private:
-		struct LogEntry
-		{
-			std::string Text;
-		};
-
-		std::deque<LogEntry> mEntries;
-		U8 mEntryCount;
 	};
 }

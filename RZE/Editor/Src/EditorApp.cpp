@@ -11,6 +11,8 @@
 
 #include <Utils/Platform/FilePath.h>
 
+#include <DebugUtils/DebugServices.h>
+
 #include <ImGui/imgui.h>
 #include <imGUI/imgui_impl_dx11.h>
 #include <imGUI/imgui_impl_win32.h>
@@ -169,7 +171,7 @@ namespace Editor
 				ImGui::Separator();
 				if (ImGui::MenuItem("Build Game..."))
 				{
-					Log("Building Game...");
+					DebugServices::Get().Trace(LogChannel::Build, "Building Game...");
 					Perseus::Job::Task buildTask = [this]()
 					{
 						char buffer[2048];
@@ -199,7 +201,7 @@ namespace Editor
 							char buffer[2048];
 							while (fgets(buffer, 2048, pipe))
 							{
-								Log(buffer);
+								DebugServices::Get().Trace(LogChannel::Build, buffer);
 							}
 						}
 						{
@@ -208,17 +210,12 @@ namespace Editor
 							char buffer[2048];
 							while (fgets(buffer, 2048, pipe))
 							{
-								Log(buffer);
+								DebugServices::Get().Trace(LogChannel::Build, buffer);
 							}
 						}
 						{
 							FILE* pipe = nullptr;
 							pipe = _popen(gamePath.GetAbsolutePath().c_str(), "rt");
-//							char buffer[2048];
-// 							while (fgets(buffer, 2048, pipe))
-// 							{
-// 								Log(buffer);
-// 							}
 						}
 					};
 					Perseus::JobScheduler::Get().PushJob(gameTask);

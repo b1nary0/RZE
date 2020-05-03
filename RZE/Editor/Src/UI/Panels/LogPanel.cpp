@@ -2,6 +2,8 @@
 
 #include <EditorApp.h>
 
+#include <DebugUtils/DebugServices.h>
+
 #include <imGUI/imgui.h>
 
 #define MAX_LOG_SIZE 256
@@ -13,9 +15,10 @@ namespace Editor
 	{
 		ImGui::Begin("Log", nullptr, ImGuiWindowFlags_NoCollapse);
 
-		for (auto& logItem : mEntries)
+		const std::vector<DebugServices::LogEntry> logEntries = DebugServices::Get().GetLogEntries();
+		for (auto& logItem : logEntries)
 		{
-			ImVec4 imColor(1.0f, 1.0f, 1.0f, 1.0f);
+			ImVec4 imColor(logItem.TextColor.X(), logItem.TextColor.Y(), logItem.TextColor.Z(), 1.0f);
 			ImGui::TextColored(imColor, logItem.Text.c_str());
 		}
 
@@ -26,26 +29,11 @@ namespace Editor
 		}
 
 		ImGui::End();
-
 	}
 
 	void LogPanel::AddEntry(const std::string& msg)
 	{
-		LogEntry entry;
-		entry.Text = msg;
-		if (mEntries.size() < MAX_LOG_SIZE)
-		{
-			mEntries.push_back(entry);
-		}
-		else
-		{
-			mEntries.pop_front();
-
-			entry.Text = msg;
-			mEntries.push_back(entry);
-		}
-
+		DebugServices::Get().Trace(LogChannel::Info, msg);
 		gShouldSetScroll = true;
 	}
-
 }
