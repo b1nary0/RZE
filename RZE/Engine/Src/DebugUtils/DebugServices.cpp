@@ -3,6 +3,11 @@
 
 #define MAX_LOG_SIZE 10
 
+U16 GetLogChannelIndex(LogChannel channel)
+{
+	return std::underlying_type<LogChannel>::type(channel);
+}
+
 DebugServices::DebugServices()
 {
 }
@@ -48,9 +53,9 @@ const std::vector<DebugServices::LogEntry>& DebugServices::GetLogEntries()
 
 void DebugServices::Initialize()
 {
-	U16 buildChannelIndex = std::underlying_type<LogChannel>::type(LogChannel::Build);
-	U16 debugChannelIndex = std::underlying_type<LogChannel>::type(LogChannel::Debug);
-	U16 infoChannelIndex = std::underlying_type<LogChannel>::type(LogChannel::Info);
+	U16 buildChannelIndex = GetLogChannelIndex(LogChannel::Build);
+	U16 debugChannelIndex = GetLogChannelIndex(LogChannel::Debug);
+	U16 infoChannelIndex = GetLogChannelIndex(LogChannel::Info);
 
 	mChannelColours[buildChannelIndex][0] = 0.75f;
 	mChannelColours[buildChannelIndex][1] = 0.75f;

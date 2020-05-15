@@ -12,6 +12,7 @@ enum class LogChannel
 	Debug,
 	Build
 };
+
 constexpr int ChannelCount = 3;
 
 class DebugServices
