@@ -73,10 +73,10 @@ namespace Editor
 			window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
 			Vector2D windowDims = GetWindow()->GetDimensions();
-			//ImGui::SetNextWindowSize(ImVec2(windowDims.X(), windowDims.Y()));
 
 			bool show = true;
 			DisplayMenuBar();
+			ImGui::SetNextWindowSize(ImVec2(windowDims.X(), windowDims.Y()));
 			if (ImGui::Begin("DockSpace Demo", &show, window_flags))
 			{
 				ImGuiID dockspace_id = ImGui::GetID("MyDockspace");
