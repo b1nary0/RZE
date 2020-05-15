@@ -23,7 +23,7 @@ void DebugServices::AddData(const std::string& text, const Vector3D& color)
 
 void DebugServices::Trace(LogChannel channel, const std::string& text)
 {
-	size_t channelIndex = std::underlying_type<LogChannel>::type(channel);
+	size_t channelIndex = GetLogChannelIndex(channel);
 	{
 		std::lock_guard<std::mutex> guard(mChannelLookupsMutex);
 
