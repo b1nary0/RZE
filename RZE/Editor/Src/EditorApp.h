@@ -44,9 +44,6 @@ namespace Editor
 		void LoadFonts();
 		void StyleSetup();
 
-		void DisableUI(bool enable);
-		bool UIDisabled();
-
 	private:
 		PanelStates mPanelStates;
 
@@ -56,6 +53,5 @@ namespace Editor
 
 		std::unordered_map<std::string, ImFont*> mFontMapping;
 
-		bool bUIDisabled;
 	};
 }

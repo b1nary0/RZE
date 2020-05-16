@@ -23,7 +23,6 @@
 namespace Editor
 {
 	EditorApp::EditorApp()
-		: bUIDisabled(false)
 	{
 	}
 
@@ -66,27 +65,24 @@ namespace Editor
 	{
 		OPTICK_EVENT();
 
-		if (!UIDisabled())
+		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking;
+		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+		window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+
+		Vector2D windowDims = GetWindow()->GetDimensions();
+
+		bool show = true;
+		DisplayMenuBar();
+		ImGui::SetNextWindowSize(ImVec2(windowDims.X(), windowDims.Y()));
+		if (ImGui::Begin("DockSpace Demo", &show, window_flags))
 		{
-			ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking;
-			window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-			window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+			ImGuiID dockspace_id = ImGui::GetID("MyDockspace");
+			ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
+			ImGui::DockSpace(dockspace_id, ImVec2(windowDims.X(), windowDims.Y()), dockspace_flags);
 
-			Vector2D windowDims = GetWindow()->GetDimensions();
-
-			bool show = true;
-			DisplayMenuBar();
-			ImGui::SetNextWindowSize(ImVec2(windowDims.X(), windowDims.Y()));
-			if (ImGui::Begin("DockSpace Demo", &show, window_flags))
-			{
-				ImGuiID dockspace_id = ImGui::GetID("MyDockspace");
-				ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
-				ImGui::DockSpace(dockspace_id, ImVec2(windowDims.X(), windowDims.Y()), dockspace_flags);
-
-				ResolvePanelState();
-			}
-			ImGui::End();
+			ResolvePanelState();
 		}
+		ImGui::End();
 	}
 
 	void EditorApp::ShutDown()
@@ -95,14 +91,6 @@ namespace Editor
 
 	void EditorApp::RegisterInputEvents(InputHandler& inputHandler)
 	{
-		Functor<void, const InputKey&> keyFunc([this](const InputKey & key)
-		{
-			if (key.GetKeyCode() == Win32KeyCode::F1)
-			{
-				DisableUI(!bUIDisabled);
-			}
-		});
-		inputHandler.BindAction(Win32KeyCode::F1, EButtonState::ButtonState_Pressed, keyFunc);
 	}
 
 	bool EditorApp::ProcessInput(const InputHandler& handler)
@@ -399,16 +387,6 @@ namespace Editor
 		style.Colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
 		style.Colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
 		style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
-	}
-
-	void EditorApp::DisableUI(bool enable)
-	{
-		bUIDisabled = enable;
-	}
-
-	bool EditorApp::UIDisabled()
-	{
-		return bUIDisabled;
 	}
 
 }
