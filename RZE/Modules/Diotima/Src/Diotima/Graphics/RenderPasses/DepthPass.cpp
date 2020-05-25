@@ -120,7 +120,7 @@ namespace Diotima
 		deviceContext.OMSetRenderTargets(1, nullViews, &mOutputTexture->GetDepthView());
 		deviceContext.ClearDepthStencilView(&mOutputTexture->GetDepthView(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 		deviceContext.VSSetShader(mVertexShader, 0, 0);
-		deviceContext.PSSetShader(mPixelShader, 0, 0);
+		deviceContext.PSSetShader(NULL, NULL, NULL);
 
 		DX11GFXConstantBuffer* const lightBuf = mDevice->GetConstantBuffer(mLightBuf);
 		ID3D11Buffer* hwBuf = &lightBuf->GetHardwareBuffer();
