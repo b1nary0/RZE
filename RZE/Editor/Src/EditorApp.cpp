@@ -71,6 +71,7 @@ namespace Editor
 
 		Vector2D windowDims = GetWindow()->GetDimensions();
 
+		ImGui::PushFont(mFontMapping.at("din_bold"));
 		bool show = true;
 		DisplayMenuBar();
 		ImGui::SetNextWindowSize(ImVec2(windowDims.X(), windowDims.Y()));
@@ -82,6 +83,7 @@ namespace Editor
 
 			ResolvePanelState();
 		}
+		ImGui::PopFont();
 		ImGui::End();
 	}
 
@@ -321,12 +323,14 @@ namespace Editor
 		FilePath arialPath("Assets/Fonts/Arial.ttf");
 		FilePath consolasPath("Assets/Fonts/Consolas.ttf");
 		FilePath liberationRegularPath("Assets/Fonts/LiberationMono-Bold.ttf");
+		FilePath dinBoldPath("Assets/Fonts/D-DIN-Bold.otf");
 
 		mFontMapping.insert({"ubuntu_medium", io.Fonts->AddFontFromFileTTF(ubuntuMediumPath.GetAbsolutePath().c_str(), 16)});
 		mFontMapping.insert({"ubuntu_regular", io.Fonts->AddFontFromFileTTF(ubuntuRegularPath.GetAbsolutePath().c_str(), 14)});
 		mFontMapping.insert({"arial", io.Fonts->AddFontFromFileTTF(arialPath.GetAbsolutePath().c_str(), 15)});
 		mFontMapping.insert({"consolas", io.Fonts->AddFontFromFileTTF(consolasPath.GetAbsolutePath().c_str(), 14)});
 		mFontMapping.insert({ "liberation_bold", io.Fonts->AddFontFromFileTTF(liberationRegularPath.GetAbsolutePath().c_str(), 15) });
+		mFontMapping.insert({ "din_bold", io.Fonts->AddFontFromFileTTF(dinBoldPath.GetAbsolutePath().c_str(), 14) });
 
 		io.Fonts->Build();
 	}
