@@ -53,5 +53,6 @@ namespace Editor
 
 		std::unordered_map<std::string, ImFont*> mFontMapping;
 
+		const float kMenuBarHeight = 24.f;
 	};
 }
