@@ -63,6 +63,7 @@ void FreeCameraSystem::KeyboardInput(CameraComponent& camComp, TransformComponen
 	InputHandler& inputHandler = RZE_Application::RZE().GetInputHandler();
 
 	float dt = static_cast<float>(RZE_Application::RZE().GetDeltaTime());
+
 	float speedDelta = mSpeed * dt;
 
 	// TODO(Josh::The extra condition here for hold is because of the frame delay for ::Hold. Should fix eventually.)
@@ -77,7 +78,8 @@ void FreeCameraSystem::KeyboardInput(CameraComponent& camComp, TransformComponen
 		{
 			transfComp.Position -= camComp.Forward * speedDelta;
 		}
-		else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_A])
+
+		if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_A])
 		{
 			transfComp.Position -= camComp.Forward.Cross(camComp.UpDir).Normalize() * speedDelta;
 		}
@@ -85,7 +87,8 @@ void FreeCameraSystem::KeyboardInput(CameraComponent& camComp, TransformComponen
 		{
 			transfComp.Position += camComp.Forward.Cross(camComp.UpDir).Normalize() * speedDelta;
 		}
-		else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_E])
+
+		if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_E])
 		{
 			transfComp.Position += camComp.Forward.Cross(camComp.UpDir).Cross(camComp.Forward) * speedDelta;
 		}
@@ -93,7 +96,13 @@ void FreeCameraSystem::KeyboardInput(CameraComponent& camComp, TransformComponen
 		{
 			transfComp.Position -= camComp.Forward.Cross(camComp.UpDir).Cross(camComp.Forward) * speedDelta;
 		}
-		else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_1])
+
+		if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Space])
+		{
+			transfComp.Position += Vector3D(0.f, 1.f, 0.f) * speedDelta;
+		}
+		
+		if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_1])
 		{
 			// Focus object
 		}

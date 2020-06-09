@@ -72,10 +72,14 @@ namespace Editor
 		Vector2D windowDims = GetWindow()->GetDimensions();
 
 		ImGui::PushFont(mFontMapping.at("din_bold"));
-		bool show = true;
 		DisplayMenuBar();
 		ImGui::SetNextWindowSize(ImVec2(windowDims.X(), windowDims.Y()));
-		if (ImGui::Begin("DockSpace Demo", &show, window_flags))
+		ImGui::SetNextWindowPos(ImVec2(0.f, kMenuBarHeight));
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
+		bool show = true;
+		ImGui::Begin("DockSpace Demo", &show, window_flags);
+		ImGui::PopStyleVar(1);
 		{
 			ImGuiID dockspace_id = ImGui::GetID("MyDockspace");
 			ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
