@@ -403,6 +403,7 @@ namespace Diotima
 		{
 			OPTICK_EVENT("Process UpdateRenderItemWorldMatrix commands");
 			std::lock_guard<std::mutex> lock(mUpdateRenderItemWorldMatrixCommandMutex);
+			void* tmpMatrixBuf = malloc(sizeof(Matrix4x4) * 2);
 			for (auto& command : mUpdateRenderItemWorldMatrixCommandQueue)
 			{
 				RenderItemProtocol& renderItem = mRenderItems[command.RenderItemID];
@@ -415,7 +416,6 @@ namespace Diotima
 				{
 					renderItem.ModelMatrix = command.WorldMtx;
 
-					void* tmpMatrixBuf = malloc(sizeof(Matrix4x4) * 2);
 					memcpy(tmpMatrixBuf, renderItem.ModelMatrix.GetValuePtr(), sizeof(Matrix4x4));
 					memcpy((U8*)tmpMatrixBuf + sizeof(Matrix4x4), renderItem.ModelMatrix.Inverse().GetValuePtr(), sizeof(Matrix4x4));
 					DX11GFXConstantBuffer* constBuf = mDevice->GetConstantBuffer(renderItem.ConstantBuffer);
@@ -423,6 +423,7 @@ namespace Diotima
 				}
 			}
 			mUpdateRenderItemWorldMatrixCommandQueue.clear();
+			free(tmpMatrixBuf);
 		}
 	}
 
