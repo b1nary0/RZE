@@ -56,13 +56,13 @@ float CalculateBlinnPhong(float3 viewDir, float3 lightDir, float3 normal)
 {
 	float specular = 0.0f;
 	
-	// float3 halfDir = normalize(lightDir + viewDir);
-	// float specAngle = max(0.0f, dot(halfDir, reflect(-lightDir, normal)));
-	// specular = pow(specAngle, materialData.Shininess);
+	 float3 halfDir = normalize(lightDir + viewDir);
+	 float specAngle = max(0.0f, dot(halfDir, reflect(-lightDir, normal)));
+	 specular = pow(specAngle, materialData.Shininess);
 
-	float3 R = reflect(-lightDir, normal);
-	float RdotV = max(0.0f, dot(R, viewDir)); 
-	specular = pow(RdotV, materialData.Shininess);
+	//float3 R = reflect(-lightDir, normal);
+	//float RdotV = max(0.0f, dot(R, viewDir)); 
+	//specular = pow(RdotV, materialData.Shininess);
 	
 	return specular;
 }
@@ -144,7 +144,7 @@ float4 PSMain(PS_IN input) : SV_TARGET
 	
 	normal = CalculateBumpNormal(normal, tangent, bumpSample.rgb);
 	
-	float3 viewDir = normalize(cameraDesc.Position - input.FragPos);
+	float3 viewDir = normalize(input.FragPos - cameraDesc.Position);
 	float3 ambientResult = ambientCoeff * diffSample.rgb;
 
 	float3 lightAccum = 0.0f;
@@ -153,7 +153,7 @@ float4 PSMain(PS_IN input) : SV_TARGET
 	{
 		LIGHT_INPUT_DESC light = sceneLight;
 
-		float3 lightDir = normalize(light.Position.xyz - input.FragPos);
+		float3 lightDir = normalize(input.FragPos - light.Position.xyz);
 		
 		float diff = max(0.0f, saturate(dot(lightDir, normal)));
 		float specular = CalculateBlinnPhong(viewDir, lightDir, normal);
