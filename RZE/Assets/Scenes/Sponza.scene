@@ -1,57 +1,92 @@
 {
-  "entities":
-  {
-        "Camera":
-        {
-            "components":
-            {
-                "TransformComponent":
-                {
-                    "Position": [0, 2, 0],
-                    "Scale": [1, 1, 1],
-                    "Rotation": [0, 0, 0]
+    "entities": {
+        "Camera": {
+            "components": {
+                "CameraComponent": {
+                    "FOV": 50.0,
+                    "NearCull": 0.10000000149011612,
+                    "FarCull": 1000.0,
+                    "Forward": [
+                        -0.9029576182365418,
+                        -0.34038811922073367,
+                        -0.26230406761169436
+                    ],
+                    "UpDir": [
+                        0.0,
+                        1.0,
+                        0.0
+                    ]
                 },
-                "CameraComponent":
-                {
-                    "FOV": 50,
-                    "NearCull": 0.1,
-                    "FarCull": 1000,
-                    "Forward": [0, 0, -1.0],
-                    "UpDir":[0.0, 1.0, 0.0]
+                "TransformComponent": {
+                    "Position": [
+                        5.109292030334473,
+                        3.336409568786621,
+                        1.0114034414291382
+                    ],
+                    "Scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "Rotation": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
                 }
             }
         },
-        "DirectionalLight":
-        {
-            "components":
-            {
-                "TransformComponent":
-                {
-                    "Position": [5, 20, 5],
-                    "Scale": [0, 0, 0],
-                    "Rotation": [0, 0, 0]
-                },
-                "LightSourceComponent":
-                {
+        "DirectionalLight": {
+            "components": {
+                "LightSourceComponent": {
                     "LightType": 0,
-                    "Color": [1, 1, 1],
+                    "Color": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
                     "Strength": 0.25
+                },
+                "TransformComponent": {
+                    "Position": [
+                        0.3700000047683716,
+                        32.755001068115237,
+                        1.5299999713897706
+                    ],
+                    "Scale": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Rotation": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
                 }
             }
         },
-        "Sponza":
-        {
-            "components":
-            {
-                "TransformComponent":
-                {
-                    "Position": [0, 0, 0],
-                    "Scale": [0.05, 0.05, 0.05],
-                    "Rotation": [0, 0, 0]
-                },
-                "MeshComponent":
-                {
+        "Sponza": {
+            "components": {
+                "MeshComponent": {
                     "ResourcePath": "Assets/3D/Sponza/sponza.obj"
+                },
+                "TransformComponent": {
+                    "Position": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.004999999888241291,
+                        0.004999999888241291,
+                        0.004999999888241291
+                    ],
+                    "Rotation": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
                 }
             }
         }
