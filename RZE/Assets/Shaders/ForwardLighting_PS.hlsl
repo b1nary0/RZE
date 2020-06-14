@@ -57,7 +57,7 @@ float CalculateBlinnPhong(float3 viewDir, float3 lightDir, float3 normal)
 	float specular = 0.0f;
 	
 	 float3 halfDir = normalize(lightDir + viewDir);
-	 float specAngle = max(0.0f, dot(halfDir, reflect(-lightDir, normal)));
+	 float specAngle = max(0.0f, dot(reflect(-lightDir, normal), halfDir));
 	 specular = pow(specAngle, materialData.Shininess);
 
 	//float3 R = reflect(-lightDir, normal);
@@ -155,7 +155,7 @@ float4 PSMain(PS_IN input) : SV_TARGET
 
 		float3 lightDir = normalize(input.FragPos - light.Position.xyz);
 		
-		float diff = max(0.0f, saturate(dot(lightDir, normal)));
+		float diff = max(0.0f, saturate(dot(normal, lightDir)));
 		float specular = CalculateBlinnPhong(viewDir, lightDir, normal);
 		
 		float lightStrength = light.Strength;
