@@ -96,11 +96,6 @@ void FreeCameraSystem::KeyboardInput(CameraComponent& camComp, TransformComponen
 		{
 			transfComp.Position -= camComp.Forward.Cross(camComp.UpDir).Cross(camComp.Forward) * speedDelta;
 		}
-
-		if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Space])
-		{
-			transfComp.Position += Vector3D(0.f, 1.f, 0.f) * speedDelta;
-		}
 		
 		if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_1])
 		{
