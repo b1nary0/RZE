@@ -67,7 +67,7 @@ void FreeCameraSystem::KeyboardInput(CameraComponent& camComp, TransformComponen
 	float speedDelta = mSpeed * dt;
 
 	// TODO(Josh::The extra condition here for hold is because of the frame delay for ::Hold. Should fix eventually.)
-	if (RZE_Application::RZE().GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Pressed)
+	if (inputHandler.GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Pressed)
 	{
 		if (inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Key_W) == EButtonState::ButtonState_Pressed
 			|| inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Key_W) == EButtonState::ButtonState_Hold)
