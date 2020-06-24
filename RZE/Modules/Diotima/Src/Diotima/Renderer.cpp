@@ -60,18 +60,20 @@ namespace Diotima
 			Int32 index = mFreeRenderListIndices.front();
 			mFreeRenderListIndices.pop();
 
-			mRenderItems[index] = std::move(itemProtocol);
-			mRenderItems[index].bIsValid = true;
-			mRenderItems[index].ConstantBuffer = constantBufferID;
-			mRenderItems[index].MaterialBuffers = std::move(meshMaterialBuffers);
+			RenderItemProtocol& renderProtocol = mRenderItems[index];
+			renderProtocol = std::move(itemProtocol);
+			renderProtocol.bIsValid = true;
+			renderProtocol.ConstantBuffer = constantBufferID;
+			renderProtocol.MaterialBuffers = std::move(meshMaterialBuffers);
 
 			return index;
 		}
 
 		mRenderItems.emplace_back(std::move(itemProtocol));
-		mRenderItems.back().bIsValid = true;
-		mRenderItems.back().ConstantBuffer = constantBufferID;
-		mRenderItems.back().MaterialBuffers = std::move(meshMaterialBuffers);
+		RenderItemProtocol& renderProtocol = mRenderItems.back();
+		renderProtocol.bIsValid = true;
+		renderProtocol.ConstantBuffer = constantBufferID;
+		renderProtocol.MaterialBuffers = std::move(meshMaterialBuffers);
 
 		return static_cast<Int32>(mRenderItems.size() - 1);
 	}
