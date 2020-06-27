@@ -77,6 +77,13 @@ namespace Apollo
 		return mEntities[entityID];
 	}
 
+	Apollo::ComponentBase* EntityHandler::GetComponentByID(EntityID entityID, ComponentID componentID)
+	{
+		ComponentBase* component = mEntityComponentMap[entityID][componentID];
+		AssertNotNull(component);
+		return component;
+	}
+
 	Apollo::ComponentBase* EntityHandler::AddComponentByID(EntityID entityID, ComponentID componentID)
 	{
 		ComponentBase* const newComp = sComponentFactories.at(componentID)();

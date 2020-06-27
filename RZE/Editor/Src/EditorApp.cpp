@@ -7,15 +7,22 @@
 #include <Diotima/Driver/DX11/DX11GFXDevice.h>
 #include <Diotima/Graphics/RenderTarget.h>
 
+#include <Perseus/JobSystem/JobScheduler.h>
+
+#include <Utils/Platform/FilePath.h>
+
+#include <DebugUtils/DebugServices.h>
+
 #include <ImGui/imgui.h>
 #include <imGUI/imgui_impl_dx11.h>
 #include <imGUI/imgui_impl_win32.h>
 #include <Optick/optick.h>
 
+#include <stdio.h>
+
 namespace Editor
 {
 	EditorApp::EditorApp()
-		: bUIDisabled(false)
 	{
 	}
 
@@ -27,6 +34,10 @@ namespace Editor
 	void EditorApp::Initialize()
 	{
 		RZE_Application::Initialize();
+
+		// #TODO
+		// Should probably bake this into RZE::Application
+		FilePath::SetDirectoryContext(EDirectoryContext::Tools);
 
 		GetWindow()->SetTitle("RZEStudio");
 		GetWindow()->Maximize();
@@ -54,32 +65,30 @@ namespace Editor
 	{
 		OPTICK_EVENT();
 
-		if (!UIDisabled())
+		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking;
+		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+		window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+
+		Vector2D windowDims = GetWindow()->GetDimensions();
+
+		ImGui::PushFont(mFontMapping.at("din_bold"));
+		DisplayMenuBar();
+		ImGui::SetNextWindowSize(ImVec2(windowDims.X(), windowDims.Y()));
+		ImGui::SetNextWindowPos(ImVec2(0.f, kMenuBarHeight));
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
+		bool show = true;
+		ImGui::Begin("DockSpace Demo", &show, window_flags);
+		ImGui::PopStyleVar(1);
 		{
-			ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking;
-			window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-			window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+			ImGuiID dockspace_id = ImGui::GetID("MyDockspace");
+			ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
+			ImGui::DockSpace(dockspace_id, ImVec2(windowDims.X(), windowDims.Y()), dockspace_flags);
 
-			Vector2D windowDims = GetWindow()->GetDimensions();
-			ImGui::SetNextWindowSize(ImVec2(windowDims.X(), windowDims.Y()));
-
-			bool show = true;
-			if (ImGui::Begin("DockSpace Demo", &show, window_flags))
-			{
-				ImGuiID dockspace_id = ImGui::GetID("MyDockspace");
-				ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
-				ImGui::DockSpace(dockspace_id, ImVec2(windowDims.X(), windowDims.Y()), dockspace_flags);
-
-				ImGui::PushFont(mFontMapping.at("liberation_bold"));
-
-				DisplayMenuBar();
-				//HandleGeneralContextMenu();
-
-				ResolvePanelState();
-				ImGui::PopFont();
-			}
-			ImGui::End();
+			ResolvePanelState();
 		}
+		ImGui::PopFont();
+		ImGui::End();
 	}
 
 	void EditorApp::ShutDown()
@@ -88,14 +97,6 @@ namespace Editor
 
 	void EditorApp::RegisterInputEvents(InputHandler& inputHandler)
 	{
-		Functor<void, const InputKey&> keyFunc([this](const InputKey & key)
-		{
-			if (key.GetKeyCode() == Win32KeyCode::F1)
-			{
-				DisableUI(!bUIDisabled);
-			}
-		});
-		inputHandler.BindAction(Win32KeyCode::F1, EButtonState::ButtonState_Pressed, keyFunc);
 	}
 
 	bool EditorApp::ProcessInput(const InputHandler& handler)
@@ -118,6 +119,7 @@ namespace Editor
 		}
 
 		io.KeyCtrl = handler.GetProxyKeyboardState().IsDownThisFrame(Win32KeyCode::Control);
+		//io.MouseWheel = static_cast<float>(handler.GetProxyMouseState().CurWheelVal);
 
 		return mSceneViewPanel.IsHovered();
 	}
@@ -126,6 +128,11 @@ namespace Editor
 	{
 		ImGui::PopFont();
 		ImGui::PushFont(mFontMapping.at(fontName));
+	}
+
+	void EditorApp::Log(const std::string& msg)
+	{
+		mLogPanel.AddEntry(msg);
 	}
 
 	void EditorApp::DisplayMenuBar()
@@ -139,7 +146,6 @@ namespace Editor
 				{
 					RZE().GetActiveScene().NewScene();
 				}
-
 				if (ImGui::MenuItem("Load Scene..."))
 				{
 					FilePath newScenePath = RZE_Application::RZE().ShowOpenFilePrompt();
@@ -148,12 +154,68 @@ namespace Editor
 						RZE().GetActiveScene().Load(newScenePath);
 					}
 				}
-
 				if (ImGui::MenuItem("Save Scene"))
 				{
+					// #TODO
+					// This will save to TestGame.scene for now as a hack just to see this stuff work.
+					// Will break a bunch of other stuff but I intend to fix this all immediately next.
+					// Gives save testbed for the interim.
+					RZE().GetActiveScene().Save(FilePath());
+				}
+				ImGui::Separator();
+				if (ImGui::MenuItem("Build Game..."))
+				{
+					DebugServices::Get().Trace(LogChannel::Build, "Building Game...");
+					Perseus::Job::Task buildTask = [this]()
+					{
+						char buffer[2048];
+						FILE* pipe = nullptr;
+						static FilePath buildGameBat("BuildGame.bat");
+						pipe = _popen(buildGameBat.GetAbsolutePath().c_str(), "rt");
+						while (fgets(buffer, 2048, pipe))
+						{
+							Log(buffer);
+						}
+					};
+					Perseus::JobScheduler::Get().PushJob(buildTask);
+				}
+				if (ImGui::MenuItem("Launch Game..."))
+				{
+					Perseus::Job::Task gameTask = [this]()
+					{
+						static FilePath buildGameBat("BuildGame.bat");
+						static FilePath assetCpyPath("AssetCpy.bat");
+						static FilePath gamePath("_Build\\Debug\\x64\\RZE_Game.exe");
+
+						// #TODO
+						// Make function to do this stuff
+						{
+							FILE* pipe = nullptr;
+							pipe = _popen(buildGameBat.GetAbsolutePath().c_str(), "rt");
+							char buffer[2048];
+							while (fgets(buffer, 2048, pipe))
+							{
+								DebugServices::Get().Trace(LogChannel::Build, buffer);
+							}
+						}
+						{
+							FILE* pipe = nullptr;
+							pipe = _popen(assetCpyPath.GetAbsolutePath().c_str(), "rt");
+							char buffer[2048];
+							while (fgets(buffer, 2048, pipe))
+							{
+								DebugServices::Get().Trace(LogChannel::Build, buffer);
+							}
+						}
+						{
+							FILE* pipe = nullptr;
+							pipe = _popen(gamePath.GetAbsolutePath().c_str(), "rt");
+						}
+					};
+					Perseus::JobScheduler::Get().PushJob(gameTask);
 
 				}
-
+				ImGui::Separator();
 				if (ImGui::MenuItem("Exit"))
 				{
 					RZE().PostExit();
@@ -243,11 +305,16 @@ namespace Editor
 
 	void EditorApp::ResolvePanelState()
 	{
-		ImGui::ShowDemoWindow(&mPanelStates.bDemoPanelEnabled);
+		if (mPanelStates.bDemoPanelEnabled)
+		{
+			ImGui::ShowDemoWindow(nullptr);
+		}
 
 		mScenePanel.Display();
 
 		mSceneViewPanel.Display();
+
+		mLogPanel.Display();
 	}
 
 	void EditorApp::LoadFonts()
@@ -260,12 +327,14 @@ namespace Editor
 		FilePath arialPath("Assets/Fonts/Arial.ttf");
 		FilePath consolasPath("Assets/Fonts/Consolas.ttf");
 		FilePath liberationRegularPath("Assets/Fonts/LiberationMono-Bold.ttf");
+		FilePath dinBoldPath("Assets/Fonts/D-DIN-Bold.otf");
 
 		mFontMapping.insert({"ubuntu_medium", io.Fonts->AddFontFromFileTTF(ubuntuMediumPath.GetAbsolutePath().c_str(), 16)});
 		mFontMapping.insert({"ubuntu_regular", io.Fonts->AddFontFromFileTTF(ubuntuRegularPath.GetAbsolutePath().c_str(), 14)});
 		mFontMapping.insert({"arial", io.Fonts->AddFontFromFileTTF(arialPath.GetAbsolutePath().c_str(), 15)});
 		mFontMapping.insert({"consolas", io.Fonts->AddFontFromFileTTF(consolasPath.GetAbsolutePath().c_str(), 14)});
 		mFontMapping.insert({ "liberation_bold", io.Fonts->AddFontFromFileTTF(liberationRegularPath.GetAbsolutePath().c_str(), 15) });
+		mFontMapping.insert({ "din_bold", io.Fonts->AddFontFromFileTTF(dinBoldPath.GetAbsolutePath().c_str(), 14) });
 
 		io.Fonts->Build();
 	}
@@ -326,16 +395,6 @@ namespace Editor
 		style.Colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
 		style.Colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
 		style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
-	}
-
-	void EditorApp::DisableUI(bool enable)
-	{
-		bUIDisabled = enable;
-	}
-
-	bool EditorApp::UIDisabled()
-	{
-		return bUIDisabled;
 	}
 
 }

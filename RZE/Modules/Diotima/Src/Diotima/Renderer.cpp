@@ -60,18 +60,20 @@ namespace Diotima
 			Int32 index = mFreeRenderListIndices.front();
 			mFreeRenderListIndices.pop();
 
-			mRenderItems[index] = std::move(itemProtocol);
-			mRenderItems[index].bIsValid = true;
-			mRenderItems[index].ConstantBuffer = constantBufferID;
-			mRenderItems[index].MaterialBuffers = std::move(meshMaterialBuffers);
+			RenderItemProtocol& renderProtocol = mRenderItems[index];
+			renderProtocol = std::move(itemProtocol);
+			renderProtocol.bIsValid = true;
+			renderProtocol.ConstantBuffer = constantBufferID;
+			renderProtocol.MaterialBuffers = std::move(meshMaterialBuffers);
 
 			return index;
 		}
 
 		mRenderItems.emplace_back(std::move(itemProtocol));
-		mRenderItems.back().bIsValid = true;
-		mRenderItems.back().ConstantBuffer = constantBufferID;
-		mRenderItems.back().MaterialBuffers = std::move(meshMaterialBuffers);
+		RenderItemProtocol& renderProtocol = mRenderItems.back();
+		renderProtocol.bIsValid = true;
+		renderProtocol.ConstantBuffer = constantBufferID;
+		renderProtocol.MaterialBuffers = std::move(meshMaterialBuffers);
 
 		return static_cast<Int32>(mRenderItems.size() - 1);
 	}
@@ -403,6 +405,7 @@ namespace Diotima
 		{
 			OPTICK_EVENT("Process UpdateRenderItemWorldMatrix commands");
 			std::lock_guard<std::mutex> lock(mUpdateRenderItemWorldMatrixCommandMutex);
+			void* tmpMatrixBuf = malloc(sizeof(Matrix4x4) * 2);
 			for (auto& command : mUpdateRenderItemWorldMatrixCommandQueue)
 			{
 				RenderItemProtocol& renderItem = mRenderItems[command.RenderItemID];
@@ -415,7 +418,6 @@ namespace Diotima
 				{
 					renderItem.ModelMatrix = command.WorldMtx;
 
-					void* tmpMatrixBuf = malloc(sizeof(Matrix4x4) * 2);
 					memcpy(tmpMatrixBuf, renderItem.ModelMatrix.GetValuePtr(), sizeof(Matrix4x4));
 					memcpy((U8*)tmpMatrixBuf + sizeof(Matrix4x4), renderItem.ModelMatrix.Inverse().GetValuePtr(), sizeof(Matrix4x4));
 					DX11GFXConstantBuffer* constBuf = mDevice->GetConstantBuffer(renderItem.ConstantBuffer);
@@ -423,6 +425,7 @@ namespace Diotima
 				}
 			}
 			mUpdateRenderItemWorldMatrixCommandQueue.clear();
+			free(tmpMatrixBuf);
 		}
 	}
 

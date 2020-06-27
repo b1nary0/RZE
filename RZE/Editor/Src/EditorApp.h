@@ -2,6 +2,7 @@
 
 #include <EngineApp.h>
 
+#include <UI/Panels/LogPanel.h>
 #include <UI/Panels/ScenePanel.h>
 #include <UI/Panels/SceneViewPanel.h>
 
@@ -33,6 +34,8 @@ namespace Editor
 	public:
 		void SetFont(const char* fontName);
 
+		void Log(const std::string& msg);
+
 	private:
 		void DisplayMenuBar();
 		void HandleGeneralContextMenu();
@@ -41,17 +44,15 @@ namespace Editor
 		void LoadFonts();
 		void StyleSetup();
 
-		void DisableUI(bool enable);
-		bool UIDisabled();
-
 	private:
 		PanelStates mPanelStates;
 
+		LogPanel mLogPanel;
 		ScenePanel mScenePanel;
 		SceneViewPanel mSceneViewPanel;
 
 		std::unordered_map<std::string, ImFont*> mFontMapping;
 
-		bool bUIDisabled;
+		const float kMenuBarHeight = 24.f;
 	};
 }

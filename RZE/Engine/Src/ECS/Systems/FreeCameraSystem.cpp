@@ -63,37 +63,44 @@ void FreeCameraSystem::KeyboardInput(CameraComponent& camComp, TransformComponen
 	InputHandler& inputHandler = RZE_Application::RZE().GetInputHandler();
 
 	float dt = static_cast<float>(RZE_Application::RZE().GetDeltaTime());
+
 	float speedDelta = mSpeed * dt;
 
 	// TODO(Josh::The extra condition here for hold is because of the frame delay for ::Hold. Should fix eventually.)
-	if (inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Key_W) == EButtonState::ButtonState_Pressed
-		|| inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Key_W) == EButtonState::ButtonState_Hold)
+	if (inputHandler.GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Pressed)
 	{
-		transfComp.Position += camComp.Forward * speedDelta;
-	}
-	else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_S])
-	{
-		transfComp.Position -= camComp.Forward * speedDelta;
-	}
-	else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_A])
-	{
-		transfComp.Position -= camComp.Forward.Cross(camComp.UpDir).Normalize() * speedDelta;
-	}
-	else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_D])
-	{
-		transfComp.Position += camComp.Forward.Cross(camComp.UpDir).Normalize() * speedDelta;
-	}
-	else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_E])
-	{
-		transfComp.Position += camComp.Forward.Cross(camComp.UpDir).Cross(camComp.Forward) * speedDelta;
-	}
-	else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_Q])
-	{
-		transfComp.Position -= camComp.Forward.Cross(camComp.UpDir).Cross(camComp.Forward) * speedDelta;
-	}
-	else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_1])
-	{
-		// Focus object
+		if (inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Key_W) == EButtonState::ButtonState_Pressed
+			|| inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Key_W) == EButtonState::ButtonState_Hold)
+		{
+			transfComp.Position += camComp.Forward * speedDelta;
+		}
+		else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_S])
+		{
+			transfComp.Position -= camComp.Forward * speedDelta;
+		}
+
+		if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_A])
+		{
+			transfComp.Position -= camComp.Forward.Cross(camComp.UpDir).Normalize() * speedDelta;
+		}
+		else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_D])
+		{
+			transfComp.Position += camComp.Forward.Cross(camComp.UpDir).Normalize() * speedDelta;
+		}
+
+		if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_E])
+		{
+			transfComp.Position += camComp.Forward.Cross(camComp.UpDir).Cross(camComp.Forward) * speedDelta;
+		}
+		else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_Q])
+		{
+			transfComp.Position -= camComp.Forward.Cross(camComp.UpDir).Cross(camComp.Forward) * speedDelta;
+		}
+		
+		if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_1])
+		{
+			// Focus object
+		}
 	}
 
 	// #TODO(Josh::Support for special keys CTRL SHIFT etc)
@@ -126,14 +133,14 @@ void FreeCameraSystem::MouseInput(CameraComponent& camComp, TransformComponent& 
 	const float deltaT = static_cast<float>(RZE_Application::RZE().GetDeltaTime());
 	const Vector3D& curPos = inputHandler.GetMouseState().CurPosition;
 	
-	Int32 wheelVal = RZE_Application::RZE().GetInputHandler().GetMouseState().CurWheelVal;
+	Int32 wheelVal = inputHandler.GetMouseState().CurWheelVal;
 	if (wheelVal != 0)
 	{
 		wheelVal = MathUtils::Clamp(wheelVal, -1, 1);
 		transfComp.Position = transfComp.Position + (camComp.Forward * static_cast<float>(wheelVal)) * mWheelZoomSpeed;
 	}
 
-	if (RZE_Application::RZE().GetInputHandler().GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Pressed)
+	if (inputHandler.GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Pressed)
 	{
 		Vector3D diff = curPos - mMousePrevPos;
 

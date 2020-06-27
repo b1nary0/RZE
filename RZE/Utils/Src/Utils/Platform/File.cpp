@@ -7,17 +7,25 @@ File::File(const std::string& filePath)
 	: mOpenState(EFileOpenMode::Closed)
 	, bIsOpen(false)
 {
-	mFilePath = filePath;
+	// #TODO
+	// Standardize FilePath in the API
+	mFilePath = FilePath(filePath);
 
+	Read();
+}
+
+File::File(const FilePath& filePath)
+{
+	mFilePath = filePath;
 	Read();
 }
 
 void File::SetFilePath(const std::string& path)
 {
-	mFilePath = path;
+	mFilePath = FilePath(path);
 }
 
-const std::string& File::GetPath() const
+const FilePath& File::GetPath() const
 {
 	return mFilePath;
 }
@@ -31,13 +39,13 @@ bool File::Open(EFileOpenMode::Value fileOpenMode)
 
 	if (IsValid())
 	{
-		mFileStream.open(mFilePath.c_str(), fileOpenMode);
+		mFileStream.open(mFilePath.GetAbsolutePath().c_str(), fileOpenMode);
 
 		bIsOpen = mFileStream.is_open();
 		if (!bIsOpen)
 		{
 			// #TODO Log error
-			LOG_CONSOLE_ARGS("File with path [%s] failed to open.", mFilePath.c_str());
+			LOG_CONSOLE_ARGS("File with path [%s] failed to open.", mFilePath.GetRelativePath().c_str());
 			return false;
 		}
 
@@ -73,6 +81,7 @@ bool File::Read()
 			std::stringstream stringStream;
 			stringStream << mFileStream.rdbuf();
 			mData = stringStream.str();
+			Close();
 		}
 		else
 		{
@@ -87,9 +96,7 @@ bool File::IsValid() const
 {
 	// #FIXME - We should probably do some more checks on the string itself to 
 	//			ensure that it's an actual filepath, but for now this is fine.
-	bool bIsValid = !mFilePath.empty();
-
-	return bIsValid;
+	return mFilePath.IsValid();
 }
 
 bool File::Empty() const

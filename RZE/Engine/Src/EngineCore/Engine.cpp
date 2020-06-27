@@ -136,6 +136,8 @@ void RZE_Engine::Init()
 	{
 		LOG_CONSOLE("RZE_EngineCore::Init() called.");
 
+		DebugServices::Get().Initialize();
+
 		Perseus::JobScheduler::Get().Initialize();
 
 		LoadEngineConfig();

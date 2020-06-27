@@ -22,3 +22,49 @@ void CameraComponent::OnEditorInspect(Apollo::EntityID entityID)
 	ImGui::Text("Look At");
 	ImGui::DragFloat3("##cameracomponent_forwarddir", forwardDirValues, 0.005f, -100.0f, 100.0f);
 }
+
+void CameraComponent::Load(const rapidjson::Value& data)
+{
+	FOV = data["FOV"].GetFloat();
+	NearCull = data["NearCull"].GetFloat();
+	FarCull = data["FarCull"].GetFloat();
+	Forward = Vector3D(data["Forward"][0].GetFloat(), data["Forward"][1].GetFloat(), data["Forward"][2].GetFloat());
+	UpDir = Vector3D(data["UpDir"][0].GetFloat(), data["UpDir"][1].GetFloat(), data["UpDir"][2].GetFloat());
+}
+
+void CameraComponent::Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer)
+{
+	writer.String("CameraComponent");
+	writer.StartObject();
+	{
+		writer.Key("FOV");
+		writer.Double(FOV);
+
+		writer.Key("NearCull");
+		writer.Double(NearCull);
+
+		writer.Key("FarCull");
+		writer.Double(FarCull);
+
+		writer.Key("Forward");
+		writer.StartArray();
+		{
+			for (int i = 0; i < 3; ++i)
+			{
+				writer.Double(Forward[i]);
+			}
+		}
+		writer.EndArray();
+
+		writer.Key("UpDir");
+		writer.StartArray();
+		{
+			for (int i = 0; i < 3; ++i)
+			{
+				writer.Double(UpDir[i]);
+			}
+		}
+		writer.EndArray();
+	}
+	writer.EndObject();
+}

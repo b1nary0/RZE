@@ -1,9 +1,12 @@
 #include <StdAfx.h>
 #include <DebugUtils/DebugServices.h>
 
-std::vector<DebugServices::LogEntry> DebugServices::mDataEntries;
-
 #define MAX_LOG_SIZE 10
+
+U16 GetLogChannelIndex(LogChannel channel)
+{
+	return std::underlying_type<LogChannel>::type(channel);
+}
 
 DebugServices::DebugServices()
 {
@@ -18,36 +21,51 @@ void DebugServices::AddData(const std::string& text, const Vector3D& color)
 	entry.TextColor = color;
 }
 
+void DebugServices::Trace(LogChannel channel, const std::string& text)
+{
+	size_t channelIndex = GetLogChannelIndex(channel);
+	{
+		std::lock_guard<std::mutex> guard(mChannelLookupsMutex);
+
+		mChannelLookups[channelIndex].emplace_back();
+		mChannelLookups[channelIndex].back() = mDataEntries.size();
+	}
+	{
+		std::lock_guard<std::mutex> guard(mDataEntriesMutex);
+
+		mDataEntries.emplace_back();
+		LogEntry& entry = mDataEntries.back();
+
+		entry.Text = text;
+
+		entry.TextColor = Vector3D(
+			mChannelColours[channelIndex][0],
+			mChannelColours[channelIndex][1],
+			mChannelColours[channelIndex][2]);
+	}
+}
+
+const std::vector<DebugServices::LogEntry>& DebugServices::GetLogEntries()
+{
+	std::lock_guard<std::mutex> guard(mDataEntriesMutex);
+	return mDataEntries;
+}
+
 void DebugServices::Initialize()
 {
+	U16 buildChannelIndex = GetLogChannelIndex(LogChannel::Build);
+	U16 debugChannelIndex = GetLogChannelIndex(LogChannel::Debug);
+	U16 infoChannelIndex = GetLogChannelIndex(LogChannel::Info);
 
-}
+	mChannelColours[buildChannelIndex][0] = 0.75f;
+	mChannelColours[buildChannelIndex][1] = 0.75f;
+	mChannelColours[buildChannelIndex][2] = 0.75f;
 
-void DebugServices::Display(const Vector2D& windowSize)
-{
-	RenderData(windowSize);
-}
+	mChannelColours[debugChannelIndex][0] = 255.0f;
+	mChannelColours[debugChannelIndex][1] = 255.0f;
+	mChannelColours[debugChannelIndex][2] = 1.0f;
 
-void DebugServices::HandleScreenResize(const Vector2D& windowSize)
-{
-	ImGuiIO& io = ImGui::GetIO();
-	
-	io.DisplaySize.x = windowSize.X();
-	io.DisplaySize.y = windowSize.Y();
-}
-
-void DebugServices::RenderData(const Vector2D& windowSize)
-{
-	ImGui::SetNextWindowPos(ImVec2(windowSize.X() - 280, 50));
-	ImGui::SetNextWindowSize(ImVec2(250, 100));
-	ImGui::Begin("Data");
-
-	for (auto& dataItem : mDataEntries)
-	{
-		ImVec4 imColor(dataItem.TextColor.X(), dataItem.TextColor.Y(), dataItem.TextColor.Z(), 1.0f);
-		ImGui::TextColored(imColor, dataItem.Text.c_str());
-	}
-	mDataEntries.clear();
-
-	ImGui::End();
+	mChannelColours[infoChannelIndex][2] = 1.0f;
+	mChannelColours[infoChannelIndex][2] = 1.0f;
+	mChannelColours[infoChannelIndex][2] = 1.0f;
 }

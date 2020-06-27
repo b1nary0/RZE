@@ -1,13 +1,23 @@
 #pragma once
 
-#include <string>
 #include <deque>
+#include <string>
+#include <vector>
 
 #include <Utils/Math/Vector3D.h>
 
+enum class LogChannel
+{
+	Info,
+	Debug,
+	Build
+};
+
+constexpr int ChannelCount = 3;
+
 class DebugServices
 {
-private:
+public:
 	struct LogEntry
 	{
 		Vector3D TextColor;
@@ -17,16 +27,31 @@ private:
 public:
 	DebugServices();
 
-	static void AddData(const std::string& text, const Vector3D& color = Vector3D(1.0f, 1.0f, 0.0f));
+	static DebugServices& Get()
+	{
+		static DebugServices instance;
+		return instance;
+	}
 
-	static void Initialize();
-	static void Display(const Vector2D& windowSize);
+	void Initialize();
+	void AddData(const std::string& text, const Vector3D& color = Vector3D(1.0f, 1.0f, 0.0f));
+	void Trace(LogChannel channel, const std::string& text);
 
-	static void HandleScreenResize(const Vector2D& windowSize);
+public:
+	const std::vector<LogEntry>& GetLogEntries();
 
 private:
-	static void RenderData(const Vector2D& windowSize);
+	// #NOTE
+	// Index into mChannelLookup is LogChannel enum. std::vector represents which entry in mDataEntries
+	// is posted to this channel.
+	std::vector<U16> mChannelLookups[ChannelCount];
+	std::vector<LogEntry> mDataEntries;
 
-private:
-	static std::vector<LogEntry> mDataEntries;
+	std::mutex mEntryAddMutex;
+	std::mutex mDataEntriesMutex;
+	std::mutex mChannelLookupsMutex;
+
+	// #NOTE
+	// If LogChannel::Build is tracing, mChannelColours[Build][0] is the r component of the trace colour.
+	float mChannelColours[ChannelCount][3];
 };
