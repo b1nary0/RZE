@@ -148,8 +148,8 @@ float4 PSMain(PS_IN input) : SV_TARGET
 	float specularValue = CalculateBlinnPhong(viewDir, lightDir, normal);
 	
 	float3 ambientResult = ambientCoeff * float3(1, 1, 1);
-	float3 specularResult = specularValue * float3(1, 1, 1) * sceneLight.Strength;
-	float3 diffuseResult = float3(0.25f, 0.25f, 0.25f) * sceneLight.Color.rgb * sceneLight.Strength;
+	float3 specularResult = specularValue * float3(1, 1, 1);
+	float3 diffuseResult = float3(0.25f, 0.25f, 0.25f);
 		
 	if (materialData.IsTextured)
 	{
@@ -163,16 +163,20 @@ float4 PSMain(PS_IN input) : SV_TARGET
 		diffuseResult = diffSample * diffSample.rgb;
 		ambientResult = ambientResult * diffSample.rgb;
 	}
-	
-	// What is this meant to be? Seems to have been forgotten..
-	//float diff = max(0.0f, saturate(dot(normal, lightDir)));
-	//diffuseResult = diffuseResult * diff;
+	else
+	{
+		// What is this meant to be? Seems to have been forgotten..
+		//float diff = max(0.0f, saturate(dot(normal, lightDir)));
+		//diffuseResult = diffuseResult * diff;
+	}
 	
 	float shadow = CalculateShadowFromDepthMap(sceneLight, input.FragPos, normal, lightDir);
 	specularResult *= 1.0f - shadow;
 
+	diffuseResult = diffuseResult * sceneLight.Color * sceneLight.Strength;
+	
 	float3 result = (ambientResult + (diffuseResult * (1.0f - shadow))) + (specularResult * 0.5f);
-	float4 realResult = float4(result, 1.0f) * sceneLight.Color;
+	float4 realResult = float4(result, 1.0f);
 
     return realResult;
 }
