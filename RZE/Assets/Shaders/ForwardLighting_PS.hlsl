@@ -158,7 +158,7 @@ float4 PSMain(PS_IN input) : SV_TARGET
 		normal = CalculateBumpNormal(normal, tangent, bumpSample.rgb);
 	
 		float specularValue = CalculateBlinnPhong(viewDir, lightDir, normal);
-		specularResult = specularSample.rgb * specularValue;
+		specularResult = specularResult * specularSample.rgb * specularValue;
 		diffuseResult = diffSample * diffSample.rgb;
 		ambientResult = ambientResult * diffSample.rgb;
 	}
