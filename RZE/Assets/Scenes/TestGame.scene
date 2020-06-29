@@ -7,9 +7,9 @@
                     "NearCull": 0.009999999776482582,
                     "FarCull": 1000.0,
                     "Forward": [
-                        0.5126435160636902,
-                        -0.39394330978393557,
-                        -0.7628927230834961
+                        0.4020277261734009,
+                        -0.36650192737579348,
+                        -0.8390769362449646
                     ],
                     "UpDir": [
                         0.0,
@@ -19,9 +19,9 @@
                 },
                 "TransformComponent": {
                     "Position": [
-                        -15.708478927612305,
-                        8.3269624710083,
-                        9.279289245605469
+                        -14.407085418701172,
+                        6.681452751159668,
+                        9.40050983428955
                     ],
                     "Scale": [
                         1.0,
@@ -78,61 +78,13 @@
                         0.0
                     ],
                     "Scale": [
-                        16.0,
-                        16.0,
-                        1.0
+                        32.0,
+                        32.0,
+                        32.0
                     ],
                     "Rotation": [
                         90.0,
                         0.0,
-                        0.0
-                    ]
-                }
-            }
-        },
-        "WallNorth": {
-            "components": {
-                "MeshComponent": {
-                    "ResourcePath": "Assets/3D/Test/WallN/Quad.obj"
-                },
-                "TransformComponent": {
-                    "Position": [
-                        -10.0,
-                        8.0,
-                        -8.0
-                    ],
-                    "Scale": [
-                        16.0,
-                        16.0,
-                        1.0
-                    ],
-                    "Rotation": [
-                        0.0,
-                        180.0,
-                        0.0
-                    ]
-                }
-            }
-        },
-        "WallEast": {
-            "components": {
-                "MeshComponent": {
-                    "ResourcePath": "Assets/3D/Test/WallE/Quad.obj"
-                },
-                "TransformComponent": {
-                    "Position": [
-                        -2.0,
-                        8.0,
-                        0.0
-                    ],
-                    "Scale": [
-                        16.0,
-                        16.0,
-                        1.0
-                    ],
-                    "Rotation": [
-                        0.0,
-                        90.0,
                         0.0
                     ]
                 }
