@@ -116,6 +116,8 @@ namespace Diotima
 		//             Will iterate on this idea.)
 		struct RenderItemDrawCall
 		{
+			// #TODO
+			// IsTextured is not sufficient. Need to know (or infer) whether we have specular or normals as well. RIP.
 			bool IsTextured;
 			U32 VertexBuffer;
 			U32 IndexBuffer;
