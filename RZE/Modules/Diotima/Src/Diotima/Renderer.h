@@ -56,6 +56,7 @@ namespace Diotima
 
 		struct RenderItemMaterialDesc
 		{
+			bool IsTextured;
 			float Shininess;
 		};
 

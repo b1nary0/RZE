@@ -34,6 +34,7 @@ struct CAMERA_INPUT_DESC
 
 struct MATERIAL_INPUT_DESC
 {
+	bool IsTextured;
 	float Shininess;
 };
 
@@ -133,42 +134,45 @@ float CalculateShadowFromDepthMap(LIGHT_INPUT_DESC light, float3 fragPos, float3
 
 float4 PSMain(PS_IN input) : SV_TARGET
 {
-	float ambientCoeff = 0.45f;
+	float ambientCoeff = 0.5f;
 	
 	float3 normal = normalize(input.Normal);
 	float3 tangent = normalize(input.Tangent);
 	
-	float4 diffSample = diffuse.Sample(diffSampler, input.Color);
-	float4 specularSample = specular.Sample(specSampler, input.Color);
-	float4 bumpSample = bump.Sample(bumpSampler, input.Color);
-	
-	normal = CalculateBumpNormal(normal, tangent, bumpSample.rgb);
-	
+	float3 lightDir = normalize(input.FragPos - sceneLight.Position.xyz);
 	float3 viewDir = normalize(input.FragPos - cameraDesc.Position);
-	float3 ambientResult = ambientCoeff * diffSample.rgb;
-
+	
 	float3 lightAccum = 0.0f;
 	uint lightIndex = 0;
-	for (uint directionalLight = 0; directionalLight < 1; ++directionalLight)
+	
+	float specularValue = CalculateBlinnPhong(viewDir, lightDir, normal);
+	
+	float3 ambientResult = ambientCoeff * float3(1, 1, 1);
+	float3 specularResult = specularValue * float3(1, 1, 1) * sceneLight.Strength;
+	float3 diffuseResult = float3(0.25f, 0.25f, 0.25f) * sceneLight.Color.rgb * sceneLight.Strength;
+		
+	if (materialData.IsTextured)
 	{
-		LIGHT_INPUT_DESC light = sceneLight;
-
-		float3 lightDir = normalize(input.FragPos - light.Position.xyz);
+		float4 diffSample = diffuse.Sample(diffSampler, input.Color);
+		float4 specularSample = specular.Sample(specSampler, input.Color);
+		float4 bumpSample = bump.Sample(bumpSampler, input.Color);
 		
-		float diff = max(0.0f, saturate(dot(normal, lightDir)));
-		float specular = CalculateBlinnPhong(viewDir, lightDir, normal);
-		
-		float lightStrength = light.Strength;
-		
-		float3 diffuseResult = light.Color.rgb * lightStrength * diffSample.rgb;
-		float3 specularResult = specular * lightStrength * light.Color.rgb * specularSample.rgb;
-		
-		float shadow = CalculateShadowFromDepthMap(light, input.FragPos, normal, lightDir);
-		specularResult *= 1.0f - shadow;
-
-		float3 result = (ambientResult + (diffuseResult * (1.0f - shadow))) + (specularResult * 0.5f);
-		lightAccum += result;
+		normal = CalculateBumpNormal(normal, tangent, bumpSample.rgb);
+				
+		specularResult = specularResult * specularSample.rgb;
+		diffuseResult = diffSample * diffSample.rgb;
+		ambientResult = ambientResult * diffSample.rgb;
 	}
+	
+	// What is this meant to be? Seems to have been forgotten..
+	//float diff = max(0.0f, saturate(dot(normal, lightDir)));
+	//diffuseResult = diffuseResult * diff;
+	
+	float shadow = CalculateShadowFromDepthMap(sceneLight, input.FragPos, normal, lightDir);
+	specularResult *= 1.0f - shadow;
 
-    return float4(lightAccum, 1.0f);
+	float3 result = (ambientResult + (diffuseResult * (1.0f - shadow))) + (specularResult * 0.5f);
+	float4 realResult = float4(result, 1.0f) * sceneLight.Color;
+
+    return realResult;
 }

@@ -209,9 +209,12 @@ namespace Diotima
 				// #TODO(Deal with this later. This is the same for all meshes of renderItem)
 				drawCall.ConstantBuffer = renderItem.ConstantBuffer;
 
- 				drawCall.TextureSlot0 = meshData.TextureDescs[0].TextureBuffer; // This should be iterated on to be more robust.
- 				drawCall.TextureSlot1 = meshData.TextureDescs[1].TextureBuffer; // This should be iterated on to be more robust.
- 				drawCall.TextureSlot2 = meshData.TextureDescs[2].TextureBuffer; // This should be iterated on to be more robust.
+				if (meshData.Material.IsTextured)
+				{
+					drawCall.TextureSlot0 = meshData.TextureDescs[0].TextureBuffer; // This should be iterated on to be more robust.
+					drawCall.TextureSlot1 = meshData.TextureDescs[1].TextureBuffer; // This should be iterated on to be more robust.
+					drawCall.TextureSlot2 = meshData.TextureDescs[2].TextureBuffer; // This should be iterated on to be more robust.
+				}
 
 				// #HACK(This should be a 1:1... Just until I completely rework the data layout for render items.)
 				drawCall.MaterialDataBuffer = renderItem.MaterialBuffers[index];
