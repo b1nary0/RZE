@@ -145,10 +145,8 @@ float4 PSMain(PS_IN input) : SV_TARGET
 	float3 lightAccum = 0.0f;
 	uint lightIndex = 0;
 	
-	float specularValue = CalculateBlinnPhong(viewDir, lightDir, normal);
-	
-	float3 ambientResult = ambientCoeff * float3(1, 1, 1);
-	float3 specularResult = specularValue * float3(1, 1, 1);
+	float3 ambientResult = ambientCoeff * float3(1.0f, 1.0f, 1.0f);
+	float3 specularResult = float3(1.0f, 1.0f, 1.0f);
 	float3 diffuseResult = float3(0.25f, 0.25f, 0.25f);
 		
 	if (materialData.IsTextured)
@@ -156,10 +154,11 @@ float4 PSMain(PS_IN input) : SV_TARGET
 		float4 diffSample = diffuse.Sample(diffSampler, input.Color);
 		float4 specularSample = specular.Sample(specSampler, input.Color);
 		float4 bumpSample = bump.Sample(bumpSampler, input.Color);
-		
+	
 		normal = CalculateBumpNormal(normal, tangent, bumpSample.rgb);
-				
-		specularResult = specularResult * specularSample.rgb;
+	
+		float specularValue = CalculateBlinnPhong(viewDir, lightDir, normal);
+		specularResult = specularSample.rgb * specularValue;
 		diffuseResult = diffSample * diffSample.rgb;
 		ambientResult = ambientResult * diffSample.rgb;
 	}
@@ -168,12 +167,18 @@ float4 PSMain(PS_IN input) : SV_TARGET
 		// What is this meant to be? Seems to have been forgotten..
 		//float diff = max(0.0f, saturate(dot(normal, lightDir)));
 		//diffuseResult = diffuseResult * diff;
+		
+		// Done here because of availability of mesh normal vs bump normal
+		// in current code
+		float specularValue = CalculateBlinnPhong(viewDir, lightDir, normal);
+		specularResult = specularResult * specularValue;
 	}
 	
 	float shadow = CalculateShadowFromDepthMap(sceneLight, input.FragPos, normal, lightDir);
 	specularResult *= 1.0f - shadow;
 
 	diffuseResult = diffuseResult * sceneLight.Color * sceneLight.Strength;
+	specularResult = specularResult * sceneLight.Strength * sceneLight.Color;
 	
 	float3 result = (ambientResult + (diffuseResult * (1.0f - shadow))) + (specularResult * 0.5f);
 	float4 realResult = float4(result, 1.0f);
