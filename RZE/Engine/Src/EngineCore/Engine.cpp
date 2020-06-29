@@ -83,15 +83,6 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 					ImGui_ImplWin32_NewFrame();
  					ImGui::NewFrame();
 
-// 					ImGui::PlotLines(
-// 						StringUtils::FormatString("Frame Avg: %iFPS %fms", (int)averageFPS, averageFrametime * 1000.0f).c_str(),
-// 						frameTimeBuffer, 
-// 						MAX_FRAMETIME_SAMPLES, 
-// 						0, 
-// 						nullptr, 
-// 						0.0f, 1.5f * (averageFrametime * 1000.0f), 
-// 						ImVec2(80.0f, 45.0f));
-
 					Update();
 
 					mRenderer->Update();
