@@ -21,13 +21,14 @@ Model3D::~Model3D()
 
 bool Model3D::Load(const FilePath& filePath)
 {
-	BROFILER_EVENT("Model3D::Load");
+	OPTICK_EVENT("Model3D::Load");
 	mFilePath = filePath;
 
 	Assimp::Importer ModelImporter;
 	const aiScene* AssimpScene = ModelImporter.ReadFile(mFilePath.GetAbsolutePath(),
 		aiProcessPreset_TargetRealtime_Fast | 
-		aiProcess_ConvertToLeftHanded | 
+		// #TODO(Is this negation of aiProces_FlipWindingOrder even legal? does it have any consequences?)
+		(aiProcess_ConvertToLeftHanded ^ aiProcess_FlipWindingOrder) | 
 		aiProcess_OptimizeMeshes | 
 		aiProcess_OptimizeGraph);
 
@@ -49,8 +50,7 @@ bool Model3D::Load(const FilePath& filePath)
 
 	if (meshGeometry.size() != AssimpScene->mNumMeshes)
 	{
-		// #TODO More informative error message.
-		LOG_CONSOLE("Error reading meshes.");
+		LOG_CONSOLE_ARGS("Error reading meshes from [%s].", mFilePath.GetRelativePath().c_str());
 		return false;
 	}
 
@@ -122,8 +122,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 			outMesh.AddIndex(assimpFace.mIndices[indexIdx]);
 		}
 	}
-	// #TODO(Josh::Not necessarily just here, but definitely need to have a layer between renderer and engine to represent these concepts
-		//             Essentially anything prefixed GFX should be renderer-only in the long run. Should get to this while Diotima scope is small)
+	
 	Material* pMaterial = new Material();
 	if (mesh.mMaterialIndex >= 0)
 	{
@@ -147,7 +146,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 			mat->GetTexture(aiTextureType_DIFFUSE, i, &str);
 
 			FilePath texturePath = GetTextureFilePath(str.C_Str());
-			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Texture2D>(texturePath, ETextureType::Diffuse);
+			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Texture2D>(texturePath, Texture2D::ETextureType::Diffuse);
 			if (textureHandle.IsValid())
 			{
 				Texture2D* texture = RZE_Application::RZE().GetResourceHandler().GetResource<Texture2D>(textureHandle);
@@ -167,7 +166,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 			mat->GetTexture(aiTextureType_SPECULAR, i, &str);
 
 			FilePath texturePath = GetTextureFilePath(str.C_Str());
-			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Texture2D>(texturePath, ETextureType::Specular);
+			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Texture2D>(texturePath, Texture2D::ETextureType::Specular);
 			if (textureHandle.IsValid())
 			{
 				Texture2D* texture = RZE_Application::RZE().GetResourceHandler().GetResource<Texture2D>(textureHandle);
@@ -187,7 +186,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 			mat->GetTexture(aiTextureType_NORMALS, i, &str);
 
 			FilePath texturePath = GetTextureFilePath(str.C_Str());
-			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Texture2D>(texturePath, ETextureType::Normal);
+			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Texture2D>(texturePath, Texture2D::ETextureType::Normal);
 			if (textureHandle.IsValid())
 			{
 				Texture2D* texture = RZE_Application::RZE().GetResourceHandler().GetResource<Texture2D>(textureHandle);
@@ -207,7 +206,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 	{
 		LOG_CONSOLE_ARGS("Could not find texture for [%s] loading default material", mFilePath.GetRelativePath().c_str());
 
-		ResourceHandle diffuseHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Texture2D>(Texture2D::kDefaultDiffuseTexturePath, ETextureType::Diffuse);
+		ResourceHandle diffuseHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Texture2D>(Texture2D::kDefaultDiffuseTexturePath, Texture2D::ETextureType::Diffuse);
 		// #TODO(Josh::Potential bug here -- what happens if we then reconcile no texture at runtime? We would have to remove this from this list -- linear searches are bad
 		mTextureHandles.push_back(diffuseHandle);
 
@@ -218,7 +217,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 	{
 		LOG_CONSOLE_ARGS("Could not find specular texture for [%s] loading default specular texture", mFilePath.GetRelativePath().c_str());
 
-		ResourceHandle specularHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Texture2D>(Texture2D::kDefaultSpecularTexturePath, ETextureType::Specular);
+		ResourceHandle specularHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Texture2D>(Texture2D::kDefaultSpecularTexturePath, Texture2D::ETextureType::Specular);
 		mTextureHandles.push_back(specularHandle);
 
 		pMaterial->SetSpecular(RZE_Application::RZE().GetResourceHandler().GetResource<Texture2D>(specularHandle));
@@ -228,7 +227,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 	{
 		LOG_CONSOLE_ARGS("Could not find normal texture for [%s] loading default normal texture", mFilePath.GetRelativePath().c_str());
 
-		ResourceHandle normalHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Texture2D>(Texture2D::kDefaultNormalTexturePath, ETextureType::Normal);
+		ResourceHandle normalHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Texture2D>(Texture2D::kDefaultNormalTexturePath, Texture2D::ETextureType::Normal);
 		mTextureHandles.push_back(normalHandle);
 
 		pMaterial->SetNormal(RZE_Application::RZE().GetResourceHandler().GetResource<Texture2D>(normalHandle));

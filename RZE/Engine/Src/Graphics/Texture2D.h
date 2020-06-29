@@ -4,18 +4,24 @@
 
 #include <Utils/Interfaces/Resource.h>
 
-namespace ETextureType
+
+class Texture2D : public IResource
 {
-	enum T : U32
+	// Types
+public:
+	enum class ETextureType : U32
 	{
 		Diffuse,
 		Specular,
 		Normal
 	};
-}
 
-class Texture2D : public IResource
-{
+	struct TextureProperties
+	{
+		ETextureType Type;
+
+	};
+
 public:
 	static FilePath kDefaultDiffuseTexturePath;
 	static FilePath kDefaultSpecularTexturePath;
@@ -23,7 +29,7 @@ public:
 
 public:
 	Texture2D() = delete;
-	Texture2D(ETextureType::T textureType);
+	Texture2D(ETextureType textureType);
 	virtual ~Texture2D();
 
 public:
@@ -32,7 +38,7 @@ public:
 
 public:
 	U8* GetRawData() const { return mData; }
-	ETextureType::T GetTextureType() const;
+	ETextureType GetTextureType() const;
 	Vector2D GetDimensions() const;
 
 	U32 GetTextureBufferID() const;
@@ -40,7 +46,7 @@ public:
 private:
 	U8* mData;
 
-	ETextureType::T mTextureType;
+	ETextureType mTextureType;
 
 	Int32 mWidth;
 	Int32 mHeight;

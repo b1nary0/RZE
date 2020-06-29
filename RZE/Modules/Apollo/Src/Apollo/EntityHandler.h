@@ -14,11 +14,14 @@
 #define APOLLO_REGISTER_COMPONENT(ComponentType)											\
 {																							\
 	Apollo::ComponentTypeID<Apollo::ComponentBase>::GetComponentTypeID<ComponentType>();	\
-	Apollo::EntityHandler::RegisterComponentName(#ComponentType);							\
+	Apollo::EntityHandler::RegisterComponentType(ComponentType::GetID(), #ComponentType);							\
+	Apollo::EntityHandler::AddComponentFactory(ComponentType::GetID(), Functor<Apollo::ComponentBase*>([]() { return new ComponentType();}));\
 }																							\
 
 namespace Apollo
 {
+	const U32 kInvalidEntityID = 0;
+
 	class EntityHandler
 	{
 	private:
@@ -35,17 +38,19 @@ namespace Apollo
 	public:
 		typedef Functor<void, EntityID> ComponentAddedFunc;
 		typedef Functor<void, EntityID> ComponentRemovedFunc;
+		typedef Functor<void, EntityID> ComponentModifiedFunc;
 
 		typedef std::vector<Entity>														EntityList;
 		typedef std::vector<EntityID>													EntityFreeList;
 		typedef std::vector<ComponentBase*>												ComponentList;
 		typedef std::vector<EntitySystem*>												SystemList;
-		typedef std::vector<std::string>												ComponentNameList;
 		typedef std::unordered_map<ComponentID, std::string>							ComponentNameIDMap;
 		typedef std::unordered_map<EntityID, ComponentList>								EntityComponentMapping;
 		typedef std::unordered_map<ComponentID, std::vector<ComponentAddedFunc>>		OnComponentAddedMap;
 		typedef std::unordered_map <ComponentID, std::vector<ComponentRemovedFunc>>		OnComponentRemovedMap;
+		typedef std::unordered_map <ComponentID, std::vector<ComponentModifiedFunc>>	OnComponentModifiedMap;
 		typedef std::queue<ComponentIDQueueData>										ComponentIDQueue;
+		typedef std::unordered_map<ComponentID, Functor<ComponentBase*>>				ComponentFactoryMap;
 
 	public:
 		EntityHandler();
@@ -62,10 +67,14 @@ namespace Apollo
 		template <typename TComponentType>
 		void RegisterForComponentRemovedNotification(ComponentRemovedFunc callback);
 
+		template <typename TComponenType>
+		void RegisterForComponentModifiedNotification(ComponentModifiedFunc callback);
+
 	public:
 		// #TODO(Josh) I don't like this, should have a better place for this type of behaviour/necessity
-		static void RegisterComponentName(const std::string& componentName);
-		static const ComponentNameList& GetAllComponentNames();
+		static void RegisterComponentType(ComponentID componentID, const std::string& componentName);
+		static void AddComponentFactory(ComponentID componentID, const Functor<ComponentBase*>& factoryFunc);
+		static const ComponentNameIDMap& GetAllComponentTypes();
 
 	public:
 		EntityID CreateEntity(const std::string& name);
@@ -76,20 +85,20 @@ namespace Apollo
 
 		template <typename TComponentType, typename... TArgs>
 		TComponentType* AddComponent(EntityID entityID, TArgs... args);
-
-		void RemoveComponent(EntityID entityID, ComponentID componentID);
-
+		
 		template <typename TComponentType>
 		TComponentType* GetComponent(EntityID entityID);
+
+		ComponentBase* GetComponentByID(EntityID entityID, ComponentID componentID);
 
 		template <typename TComponent>
 		bool HasComponent(EntityID entityID) const;
 
+		template <typename TComponent>
+		void OnComponentModified(EntityID entityID);
+
 		template <typename TSystemType, typename... TArgs>
 		TSystemType* AddSystem(TArgs... args);
-
-	public:
-		void GetComponentNames(EntityID entityID, ComponentNameIDMap& outComponentNames);
 
 		// Look over these and maybe have a better grouping solution for components
 		template <typename TComponent>
@@ -97,6 +106,13 @@ namespace Apollo
 
 		template <typename TComponent0, typename TComponent1>
 		void ForEach(Functor<void, EntityID> callback);
+
+	public:
+		void GetAllComponents(EntityID entityID, ComponentList& outComponents);
+		void GetComponentNames(EntityID entityID, ComponentNameIDMap& outComponentNames);
+		ComponentID GetComponentIDFromTypeName(const std::string& typeNameStr);
+		ComponentBase* AddComponentByID(EntityID entityID, ComponentID componentID);
+		void RemoveComponent(EntityID entityID, ComponentID componentID);
 
 	private:
 		U32 TryResize();
@@ -106,7 +122,8 @@ namespace Apollo
 		void FlushComponentIDQueues();
 
 	private:
-		static ComponentNameList sComponentNameRegistry;
+		static ComponentNameIDMap sComponentTypeRegistry;
+		static ComponentFactoryMap sComponentFactories;
 
 	private:
 		U32 mCapacity;
@@ -120,6 +137,7 @@ namespace Apollo
 
 		OnComponentAddedMap mOnComponentAddedMap;
 		OnComponentRemovedMap mOnComponentRemovedMap;
+		OnComponentModifiedMap mOnComponentModifiedMap;
 		ComponentIDQueue mComponentsAddedThisFrame;
 	};
 
@@ -133,6 +151,19 @@ namespace Apollo
 
 		const Entity& entity = mEntities[entityID];
 		return entity.mComponentSet[TComponent::GetID()];
+	}
+
+	template <typename TComponent>
+	void EntityHandler::OnComponentModified(EntityID entityID)
+	{
+		auto& it = mOnComponentModifiedMap.find(TComponent::GetID());
+		if (it != mOnComponentModifiedMap.end())
+		{
+			for (auto& func : (*it).second)
+			{
+				func(entityID);
+			}
+		}
 	}
 
 	template <typename TSystemType, typename... TArgs>
@@ -189,6 +220,13 @@ namespace Apollo
 	{
 		ComponentID componentID = TComponentType::GetID();
 		mOnComponentRemovedMap[componentID].push_back(callback);
+	}
+
+	template <typename TComponentType>
+	void EntityHandler::RegisterForComponentModifiedNotification(ComponentModifiedFunc callback)
+	{
+		ComponentID componentID = TComponentType::GetID();
+		mOnComponentModifiedMap[componentID].push_back(callback);
 	}
 
 	template <typename TComponentType, typename... TArgs>

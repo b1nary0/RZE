@@ -1,34 +1,36 @@
 #include <Apollo/EntityHandler.h>
 
-#include <Brofiler/Brofiler.h>
+#include <Optick/optick.h>
 
 #include <Utils/Platform/Timers/HiResTimer.h>
 
 namespace Apollo
 {
-	EntityHandler::ComponentNameList EntityHandler::sComponentNameRegistry;
+	EntityHandler::ComponentNameIDMap EntityHandler::sComponentTypeRegistry;
+	EntityHandler::ComponentFactoryMap EntityHandler::sComponentFactories;
 
 	EntityHandler::EntityHandler()
 	{
-		mNextAvailEntityID = 0;
+		mNextAvailEntityID = 1;
 		mCapacity = 0;
 		mSize = 0;
 
 		Initialize();
 	}
 
-	void EntityHandler::RegisterComponentName(const std::string& componentName)
+	void EntityHandler::RegisterComponentType(ComponentID componentID, const std::string& componentName)
 	{
-		auto& iter = std::find(sComponentNameRegistry.begin(), sComponentNameRegistry.end(), componentName);
-		if (iter == sComponentNameRegistry.end())
-		{
-			sComponentNameRegistry.emplace_back(componentName);
-		}
+		sComponentTypeRegistry.insert({componentID, componentName});
 	}
 
-	const Apollo::EntityHandler::ComponentNameList& EntityHandler::GetAllComponentNames()
+	void EntityHandler::AddComponentFactory(ComponentID componentID, const Functor<ComponentBase*>& factoryFunc)
 	{
-		return sComponentNameRegistry;
+		sComponentFactories.insert({componentID, factoryFunc});
+	}
+
+	const Apollo::EntityHandler::ComponentNameIDMap& EntityHandler::GetAllComponentTypes()
+	{
+		return sComponentTypeRegistry;
 	}
 
 	EntityID EntityHandler::CreateEntity(const std::string& name)
@@ -75,6 +77,25 @@ namespace Apollo
 		return mEntities[entityID];
 	}
 
+	Apollo::ComponentBase* EntityHandler::GetComponentByID(EntityID entityID, ComponentID componentID)
+	{
+		ComponentBase* component = mEntityComponentMap[entityID][componentID];
+		AssertNotNull(component);
+		return component;
+	}
+
+	Apollo::ComponentBase* EntityHandler::AddComponentByID(EntityID entityID, ComponentID componentID)
+	{
+		ComponentBase* const newComp = sComponentFactories.at(componentID)();
+		mEntityComponentMap[entityID][componentID] = newComp;
+
+		mEntities[entityID].mComponentSet[componentID] = true;
+
+		mComponentsAddedThisFrame.emplace(componentID, entityID);
+
+		return newComp;
+	}
+
 	void EntityHandler::RemoveComponent(EntityID entityID, ComponentID componentID)
 	{
 		Apollo::ComponentBase* const component = mEntityComponentMap[entityID][componentID];
@@ -92,8 +113,20 @@ namespace Apollo
 		}
 
 		mEntities[entityID].mComponentSet[componentID] = false;
-		delete mEntityComponentMap[entityID][componentID];
+		delete component;
 		mEntityComponentMap[entityID][componentID] = nullptr;
+	}
+
+	void EntityHandler::GetAllComponents(EntityID entityID, ComponentList& outComponents)
+	{
+		for (ComponentBase* component : mEntityComponentMap[entityID])
+		{
+			// #NOTE(A quirk of how we store component data)
+			if (component != nullptr)
+			{
+				outComponents.push_back(component);
+			}
+		}
 	}
 
 	void EntityHandler::GetComponentNames(EntityID entityID, ComponentNameIDMap& outComponentNames)
@@ -109,15 +142,31 @@ namespace Apollo
 		}
 	}
 
+	Apollo::ComponentID EntityHandler::GetComponentIDFromTypeName(const std::string& typeNameStr)
+	{
+		// #TODO(Josh::Map iteration, not nice)
+		for (auto& pair : sComponentTypeRegistry)
+		{
+			if (pair.second == typeNameStr)
+			{
+				return pair.first;
+			}
+		}
+
+		AssertFalse();
+		return 0;
+	}
+
 	void EntityHandler::Initialize()
 	{
 		mCapacity = Resize(32);
 	}
 
 	void EntityHandler::Update()
-	{	BROFILER_CATEGORY("EntityHandler::Update", Profiler::Color::BlueViolet)
-		FlushComponentIDQueues();
+	{	
+		OPTICK_EVENT();
 
+		FlushComponentIDQueues();
 		for (size_t idx = 0; idx < mSystems.size(); ++idx)
 		{
 			EntitySystem* system = mSystems[idx];
@@ -127,7 +176,10 @@ namespace Apollo
 			filteredEntities.reserve(mEntities.size());
 			filter.FilterAtLeast(mEntities, filteredEntities);
 
-			system->Update(filteredEntities);
+			if (!filteredEntities.empty())
+			{
+				system->Update(filteredEntities);
+			}
 		}
 	}
 

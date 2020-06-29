@@ -22,10 +22,14 @@
 
 #include <Perseus/JobSystem/JobScheduler.h>
 
+#include <Diotima/Driver/DX11/DX11GFXDevice.h>
+#include <Utils/MemoryUtils.h>
+
 static Vector4D sDefaultFragColor(0.25f, 0.25f, 0.25f, 1.0f);
 
 RenderSystem::RenderSystem(Apollo::EntityHandler* const entityHandler)
 	: Apollo::EntitySystem(entityHandler)
+	, mMainCameraEntity(Apollo::kInvalidEntityID)
 {
 
 }
@@ -39,7 +43,9 @@ void RenderSystem::Initialize()
 }
 
 void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
-{	BROFILER_CATEGORY("RenderSystem::Update", Profiler::Color::Yellow)
+{
+	OPTICK_EVENT();
+
 	Apollo::EntityHandler& handler = InternalGetEntityHandler();
 	Diotima::Renderer& renderer = RZE_Application::RZE().GetRenderer();
 
@@ -55,28 +61,33 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 	camera.ViewMat = camComp->ViewMat;
 	camera.Position = transfComp->Position;
 	renderer.SetCamera(camera);
-	
-	//Perseus::Job::Task work([this, entities, transfComp, &renderer, &handler]()
+
 	{
- 		for (auto& entity : entities)
- 		{
- 			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
- 
- 			Diotima::Renderer::RenderItemProtocol& item = renderer.GetItemProtocolByIdx(mRenderItemEntityMap[entity]);
- 			item.ModelMatrix = Matrix4x4::CreateInPlace(transfComp->Position, transfComp->Scale, transfComp->Rotation);
- 		}
-	}/*)*/;
-	//Perseus::JobScheduler::Get().PushJob(work);
+		OPTICK_EVENT("Single Thread Matrix Update");
+		for (auto& entity : entities)
+		{
+			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
+
+			U32 renderItemIndex = mRenderItemEntityMap[entity];
+			Matrix4x4 worldMatrix = transfComp->GetAsMat4x4();
+			renderer.QueueUpdateRenderItem(renderItemIndex, worldMatrix);
+		}
+	}
 
 	Functor<void, Apollo::EntityID> LightSourceFunc([this, &handler, &renderer](Apollo::EntityID entity)
 	{
+		LightSourceComponent* const lightComp = handler.GetComponent<LightSourceComponent>(entity);
 		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
+
 		Diotima::Renderer::LightItemProtocol& item = renderer.GetLightProtocolByIdx(mLightItemEntityMap[entity]);
 
-		Matrix4x4 orthoProj = Matrix4x4::CreateOrthoMatrix(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 100.0f);
+		Matrix4x4 orthoProj = Matrix4x4::CreateOrthoMatrix(-25.0f, 25.0f, -25.0f, 25.0f, -100.0f, 100.0f);
 		Matrix4x4 lightView = Matrix4x4::CreateViewMatrix(transfComp->Position, Vector3D(), Vector3D(0.0f, 1.0f, 0.0f));
 
 		item.LightSpaceMatrix = orthoProj * lightView;
+		item.Color = lightComp->Color;
+		item.Strength = lightComp->Strength;
+		item.LightType = static_cast<Diotima::Renderer::ELightType>(lightComp->LightType);
 		item.Position = transfComp->Position;
 	});
 	handler.ForEach<LightSourceComponent, TransformComponent>(LightSourceFunc);
@@ -94,7 +105,9 @@ void RenderSystem::RegisterForComponentNotifications()
 	// MeshComponent
 	//
 	Apollo::EntityHandler::ComponentAddedFunc OnMeshComponentAdded([this, &handler](Apollo::EntityID entityID)
-	{	BROFILER_EVENT("RenderSystem::OnMeshComponentAdded");
+	{	
+		OPTICK_EVENT("RenderSystem::OnMeshComponentAdded");
+
 		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entityID);
 		AssertNotNull(meshComp);
 		meshComp->Resource = RZE_Application::RZE().GetResourceHandler().RequestResource<Model3D>(meshComp->ResourcePath);
@@ -110,15 +123,15 @@ void RenderSystem::RegisterForComponentNotifications()
 				meshData.VertexBuffer = mesh.GetVertexBuffer();
 				meshData.IndexBuffer = mesh.GetIndexBuffer();
 
-				AssertExpr(mesh.GetMaterial().HasDiffuse());
-				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetDiffuse().GetTextureBufferID(), Diotima::Renderer::ETextureType::Diffuse);
-				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetSpecular().GetTextureBufferID(), Diotima::Renderer::ETextureType::Specular);
-				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetNormal().GetTextureBufferID(), Diotima::Renderer::ETextureType::Normal);
-
-				Diotima::Renderer::RenderItemMaterialDesc matDesc;
-				matDesc.Shininess = mesh.GetMaterial().Shininess;
-
-				meshData.Material = matDesc;
+ 				AssertExpr(mesh.GetMaterial().HasDiffuse());
+ 				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetDiffuse().GetTextureBufferID(), Diotima::Renderer::ETextureType::Diffuse);
+ 				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetSpecular().GetTextureBufferID(), Diotima::Renderer::ETextureType::Specular);
+ 				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetNormal().GetTextureBufferID(), Diotima::Renderer::ETextureType::Normal);
+ 
+ 				Diotima::Renderer::RenderItemMaterialDesc matDesc;
+ 				matDesc.Shininess = mesh.GetMaterial().Shininess;
+ 
+ 				meshData.Material = matDesc;
 
 				item.MeshData.push_back(meshData);
 			}
@@ -127,6 +140,78 @@ void RenderSystem::RegisterForComponentNotifications()
 		}
 	});
 	handler.RegisterForComponentAddNotification<MeshComponent>(OnMeshComponentAdded);
+
+	Apollo::EntityHandler::ComponentRemovedFunc OnMeshComponentRemoved([this, &handler](Apollo::EntityID entityID)
+	{
+		// #TODO(Josh) Is this the best way? Should the component hold logic to clean itself up or should it be entirely just data and the systems worry about cleanup?
+		//					[Answer]  Current thoughts leave it this way, absolutely logic should be left to the systems. Impose a proper lifecycle protocol.
+		MeshComponent* const meshComponent = handler.GetComponent<MeshComponent>(entityID);
+		AssertNotNull(meshComponent);
+
+		RZE_Application::RZE().GetResourceHandler().ReleaseResource(meshComponent->Resource);
+
+		Int32 renderIndex = mRenderItemEntityMap[entityID];
+		RZE_Application::RZE().GetRenderer().RemoveRenderItem(renderIndex);
+		mRenderItemEntityMap[entityID] = -1;
+	});
+	handler.RegisterForComponentRemovedNotification<MeshComponent>(OnMeshComponentRemoved);
+
+	//#TODO(Should make a function that does the common work here since this is exactly the same for added mesh except we modify existing RenderItem instead of creating one)
+	Apollo::EntityHandler::ComponentModifiedFunc OnMeshComponentModified([this, &handler](Apollo::EntityID entityID)
+	{
+		// #TODO
+		// There is a leak in this function. We don't clean up the old stuff (material buffers, etc). Fix this.
+		// Best fix is probably moving away from internal usage of U32 buffer indexes to store buffer references.
+		// Just use straight pointers atm.
+		OPTICK_EVENT("RenderSystem::OnMeshComponentModified");
+
+		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entityID);
+		AssertNotNull(meshComp);
+		// #TODO(Doing this here because ResourceHandle lifetime is buggy (copies/moves/etc))
+		RZE_Application::RZE().GetResourceHandler().ReleaseResource(meshComp->Resource);
+		meshComp->Resource = RZE_Application::RZE().GetResourceHandler().RequestResource<Model3D>(meshComp->ResourcePath);
+
+		if (meshComp->Resource.IsValid())
+		{
+			Int32 renderIndex = mRenderItemEntityMap[entityID];
+			Diotima::Renderer::RenderItemProtocol& renderItem = RZE_Application::RZE().GetRenderer().GetItemProtocolByIdx(renderIndex);
+			renderItem.MeshData.clear();
+
+			Model3D* const modelData = RZE_Application::RZE().GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
+
+			for (const MeshGeometry& mesh : modelData->GetStaticMesh().GetSubMeshes())
+			{
+				Diotima::Renderer::RenderItemMeshData meshData;
+				meshData.VertexBuffer = mesh.GetVertexBuffer();
+				meshData.IndexBuffer = mesh.GetIndexBuffer();
+
+ 				AssertExpr(mesh.GetMaterial().HasDiffuse());
+ 				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetDiffuse().GetTextureBufferID(), Diotima::Renderer::ETextureType::Diffuse);
+ 				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetSpecular().GetTextureBufferID(), Diotima::Renderer::ETextureType::Specular);
+ 				meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetNormal().GetTextureBufferID(), Diotima::Renderer::ETextureType::Normal);
+
+ 				Diotima::Renderer::RenderItemMaterialDesc matDesc;
+ 				matDesc.Shininess = mesh.GetMaterial().Shininess;
+ 
+ 				meshData.Material = matDesc;
+				
+				renderItem.MeshData.push_back(meshData);
+			}
+
+			// This is bad, make a modifyrenderitem function on Diotima::Renderer where this can be done
+			Diotima::DX11GFXDevice& device = RZE_Application::RZE().GetRenderer().GetDriverDevice();
+
+			std::vector<U32> meshMaterialBuffers;
+			meshMaterialBuffers.reserve(renderItem.MeshData.size());
+			for (size_t index = 0; index < renderItem.MeshData.size(); ++index)
+			{
+				meshMaterialBuffers.push_back(device.CreateConstantBuffer(MemoryUtils::AlignSize(sizeof(Diotima::Renderer::RenderItemMaterialDesc), 15), 1));
+			}
+
+			renderItem.MaterialBuffers = std::move(meshMaterialBuffers);
+		}
+	});
+	handler.RegisterForComponentModifiedNotification<MeshComponent>(OnMeshComponentModified);
 
 	// LightSourceComponent
 	Apollo::EntityHandler::ComponentAddedFunc OnLightSourceComponentAdded([this, &handler](Apollo::EntityID entityID)
@@ -144,6 +229,14 @@ void RenderSystem::RegisterForComponentNotifications()
 	});
 	handler.RegisterForComponentAddNotification<LightSourceComponent>(OnLightSourceComponentAdded);
 
+	Apollo::EntityHandler::ComponentRemovedFunc OnLightSourceComponentRemoved([this, &handler](Apollo::EntityID entityID)
+	{
+		Int32 lightIndex = mLightItemEntityMap[entityID];
+		RZE_Application::RZE().GetRenderer().RemoveLightItem(lightIndex);
+		mLightItemEntityMap[entityID] = -1;
+	});
+	handler.RegisterForComponentRemovedNotification<LightSourceComponent>(OnLightSourceComponentRemoved);
+
 	//
 	// CameraComponent
 	//
@@ -152,8 +245,15 @@ void RenderSystem::RegisterForComponentNotifications()
 		CameraComponent* const camComp = handler.GetComponent<CameraComponent>(entityID);
 		AssertNotNull(camComp);
 
-		// #TODO(Josh) Will/should be removed when a better tracking system for main cameras exist. For now since we're only working with one camera
-		// for the forseeable future, its fine.
+		if (mMainCameraEntity != Apollo::kInvalidEntityID)
+		{
+			CameraComponent* const currentCamera = handler.GetComponent<CameraComponent>(mMainCameraEntity);
+			AssertNotNull(currentCamera);
+
+			currentCamera->bIsActiveCamera = false;
+		}
+
+		// #NOTE(For now, the last camera added becomes the main camera.)
 		mMainCameraEntity = entityID;
 		camComp->bIsActiveCamera = true;
 
@@ -161,20 +261,34 @@ void RenderSystem::RegisterForComponentNotifications()
 	});
 	handler.RegisterForComponentAddNotification<CameraComponent>(OnCameraComponentAdded);
 
-	Apollo::EntityHandler::ComponentRemovedFunc OnMeshComponentRemoved([this, &handler](Apollo::EntityID entityID)
+	Apollo::EntityHandler::ComponentModifiedFunc OnCameraComponentModified([this, &handler](Apollo::EntityID entityID)
 	{
-		// #TODO(Josh) Is this the best way? Should the component hold logic to clean itself up or should it be entirely just data and the systems worry about cleanup?
-		//					[Answer]  Current thoughts leave it this way, absolutely logic should be left to the systems. Impose a proper lifecycle protocol.
-		MeshComponent* const meshComponent = handler.GetComponent<MeshComponent>(entityID);
-		AssertNotNull(meshComponent);
+		CameraComponent* const camComp = handler.GetComponent<CameraComponent>(entityID);
+		AssertNotNull(camComp);
 
-		RZE_Application::RZE().GetResourceHandler().ReleaseResource(meshComponent->Resource);
+		if (camComp->bIsActiveCamera)
+		{
+			if (mMainCameraEntity != Apollo::kInvalidEntityID)
+			{
+				CameraComponent* const currentCamera = handler.GetComponent<CameraComponent>(mMainCameraEntity);
+				AssertNotNull(currentCamera);
 
-		Int32 renderIndex = mRenderItemEntityMap[entityID];
-		RZE_Application::RZE().GetRenderer().RemoveRenderItem(renderIndex);
-		mRenderItemEntityMap[entityID] = -1;
+				currentCamera->bIsActiveCamera = false;
+			}
+
+			mMainCameraEntity = entityID;
+		}
 	});
-	handler.RegisterForComponentRemovedNotification<MeshComponent>(OnMeshComponentRemoved);
+	handler.RegisterForComponentModifiedNotification<CameraComponent>(OnCameraComponentModified);
+
+	Apollo::EntityHandler::ComponentModifiedFunc OnCameraComponentRemoved([this, &handler](Apollo::EntityID entityID)
+	{
+		if (mMainCameraEntity == entityID)
+		{
+			mMainCameraEntity = Apollo::kInvalidEntityID;
+		}
+	});
+	handler.RegisterForComponentRemovedNotification<CameraComponent>(OnCameraComponentRemoved);
 }
 
 void RenderSystem::GenerateCameraMatrices(CameraComponent& cameraComponent, const TransformComponent& transformComponent)

@@ -26,7 +26,5 @@ private:
 	std::unordered_map<Apollo::EntityID, Int32> mRenderItemEntityMap;
 	std::unordered_map<Apollo::EntityID, Int32> mLightItemEntityMap;
 
-	// #TODO(Josh) Need a way to determine when the main camera switches. Storing this for now to avoid unnecessary
-	// component finds for each possible camera while only working with one for the forseeable future.
 	Apollo::EntityID mMainCameraEntity;
 };

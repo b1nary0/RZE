@@ -19,6 +19,10 @@
 
 #include <Utils/DebugUtils/Debug.h>
 
+#include <ImGui/imgui.h>
+#include <ImGui/imgui_impl_dx11.h>
+#include <ImGui/imgui_impl_win32.h>
+
 RZE_Engine::RZE_Engine()
 	: mMainWindow(nullptr)
 	, mEngineConfig(nullptr)
@@ -50,7 +54,7 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 		double prevTime = programTimer.GetElapsed<double>();
 		while (!bShouldExit)
 		{
-			BROFILER_FRAME("Engine Thread");
+			OPTICK_FRAME("Main");
 
 			double currTime = programTimer.GetElapsed<double>();
 			double frameTime = currTime - prevTime;
@@ -60,17 +64,45 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 			mFrameSamples[mFrameCount % MAX_FRAMETIME_SAMPLES] = static_cast<float>(mDeltaTime);
 
 			const float averageFrametime = CalculateAverageFrametime();
+			const float averageFPS = 1.0f / averageFrametime;
 
-			{	BROFILER_CATEGORY("RZE_Engine::Run", Profiler::Color::Cyan)
+			static float frameTimeBuffer[MAX_FRAMETIME_SAMPLES];
+			for (int idx = 0; idx < MAX_FRAMETIME_SAMPLES; ++idx)
+			{
+				frameTimeBuffer[idx] = mFrameSamples[idx] * 1000.0f;
+			}
+
+			{	
+				OPTICK_EVENT("RZE_Engine::Run");
 
 				PreUpdate();
 				{
-					BROFILER_CATEGORY("Update and Render", Profiler::Color::BurlyWood);
+					OPTICK_EVENT("Update and Render");
+
+ 					ImGui_ImplDX11_NewFrame();
+					ImGui_ImplWin32_NewFrame();
+ 					ImGui::NewFrame();
+
+// 					ImGui::PlotLines(
+// 						StringUtils::FormatString("Frame Avg: %iFPS %fms", (int)averageFPS, averageFrametime * 1000.0f).c_str(),
+// 						frameTimeBuffer, 
+// 						MAX_FRAMETIME_SAMPLES, 
+// 						0, 
+// 						nullptr, 
+// 						0.0f, 1.5f * (averageFrametime * 1000.0f), 
+// 						ImVec2(80.0f, 45.0f));
+
 					Update();
+
 					mRenderer->Update();
+
+					ImGui::EndFrame();
 				}
 
-				mRenderer->Render();
+				{
+					OPTICK_EVENT("GPU Submission");
+					mRenderer->Render();
+				}
 			}
 
 			++mFrameCount;
@@ -102,6 +134,8 @@ void RZE_Engine::Init()
 	{
 		LOG_CONSOLE("RZE_EngineCore::Init() called.");
 
+		DebugServices::Get().Initialize();
+
 		Perseus::JobScheduler::Get().Initialize();
 
 		LoadEngineConfig();
@@ -128,13 +162,17 @@ void RZE_Engine::PostInit(Functor<RZE_Application* const>& createApplicationCall
 {
 	LOG_CONSOLE("RZE_EngineCore::PostInit() called.");
 
+	RegisterKeyEvents();
+
 	InitializeApplication(createApplicationCallback);
 
 	mActiveScene->Start();
 }
 
 void RZE_Engine::PreUpdate()
-{	BROFILER_CATEGORY("RZE_Engine::PreUpdate", Profiler::Color::Purple)
+{	
+	OPTICK_EVENT();
+
 	CompileEvents();
 	mEventHandler.ProcessEvents();
 
@@ -145,7 +183,7 @@ void RZE_Engine::PreUpdate()
 	else
 	{
 		mInputHandler.Reset();
-	}
+	} 
 }
 
 void RZE_Engine::CreateAndInitializeWindow()
@@ -171,7 +209,6 @@ void RZE_Engine::CreateAndInitializeRenderer()
 
 	mRenderer->SetWindow(mMainWindow->GetOSWindowHandleData().windowHandle);
 
-	mRenderer->SetMSAASampleCount(mEngineConfig->GetEngineSettings().GetMSAASampleCount());
 	mRenderer->Initialize();
 	mRenderer->EnableVsync(mEngineConfig->GetEngineSettings().IsVSyncEnabled());
 }
@@ -181,9 +218,9 @@ void RZE_Engine::InitializeApplication(Functor<RZE_Application* const> createGam
 	mApplication = createGameCallback();
 	AssertNotNull(mApplication);
 
+	mApplication->SetWindow(mMainWindow);
 	mApplication->Initialize();
 	mApplication->RegisterInputEvents(mInputHandler);
-	mApplication->SetWindow(mMainWindow);
 
 	mApplication->Start();
 }
@@ -231,6 +268,12 @@ void RZE_Engine::RegisterWindowEvents()
 	mEventHandler.RegisterForEvent(EEventType::Window, windowCallback);
 }
 
+void RZE_Engine::RegisterKeyEvents()
+{
+ 	ImGuiIO& io = ImGui::GetIO();
+ 	io.KeyMap[ImGuiKey_Enter] = Win32KeyCode::Return;
+}
+
 void RZE_Engine::RegisterEngineComponentTypes()
 {
 	APOLLO_REGISTER_COMPONENT(CameraComponent);
@@ -255,9 +298,11 @@ void RZE_Engine::LoadEngineConfig()
 }
 
 void RZE_Engine::Update()
-{	BROFILER_CATEGORY("RZE_Engine::Update", Profiler::Color::Orchid)
-	mActiveScene->Update();
+{
+	OPTICK_EVENT();
+
 	mApplication->Update();
+	mActiveScene->Update();
 }
 
 void RZE_Engine::BeginShutDown()
@@ -311,6 +356,12 @@ GameScene& RZE_Engine::GetActiveScene()
 {
 	AssertNotNull(mActiveScene);
 	return *mActiveScene;
+}
+
+FilePath RZE_Engine::ShowOpenFilePrompt()
+{
+	AssertNotNull(mMainWindow);
+	return mMainWindow->ShowOpenFilePrompt();
 }
 
 void RZE_Engine::Log(const std::string& text, const Vector3D& color)

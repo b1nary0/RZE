@@ -25,8 +25,8 @@
 #include <queue>
 #include <vector>
 
-// Brofiler
-#include <Brofiler/Brofiler.h>
+// Optick
+#include <Optick/optick.h>
 
 // RZE
 #include <RZE_Config.h>

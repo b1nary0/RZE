@@ -1,0 +1,1 @@
+msbuild %~dp0_Project\Game.vcxproj -property:Configuration=Debug -property:Platform=x64

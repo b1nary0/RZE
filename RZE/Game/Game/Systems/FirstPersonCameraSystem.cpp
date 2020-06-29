@@ -1,12 +1,14 @@
-#include <StdAfx.h>
 #include <Game/Systems/FirstPersonCameraSystem.h>
-
 
 #include <ECS/Components/CameraComponent.h>
 #include <ECS/Components/NameComponent.h>
 #include <ECS/Components/TransformComponent.h>
 
 #include <Utils/Math/Math.h>
+
+#include <Game/GameApp.h>
+
+#include <Optick/optick.h>
 
 FirstPersonCameraSystem::FirstPersonCameraSystem(Apollo::EntityHandler* const entityHandler)
 	: Apollo::EntitySystem(entityHandler)
@@ -26,6 +28,8 @@ void FirstPersonCameraSystem::Initialize()
 
 void FirstPersonCameraSystem::Update(const std::vector<Apollo::EntityID>& entities)
 {
+	OPTICK_EVENT();
+
 	for (Apollo::EntityID entity : entities)
 	{
 		CameraComponent* const camera = InternalGetEntityHandler().GetComponent<CameraComponent>(entity);
@@ -36,7 +40,7 @@ void FirstPersonCameraSystem::Update(const std::vector<Apollo::EntityID>& entiti
 		Vector3D dist = mMoveToPoint - transform->Position;
 		if (dist.LengthSq() > VectorUtils::kEpsilon * VectorUtils::kEpsilon)
 		{
-			Vector3D lerpPos = VectorUtils::Lerp(transform->Position, mMoveToPoint, static_cast<float>(8 * RZE_Application::RZE().GetDeltaTime()));
+			Vector3D lerpPos = VectorUtils::Lerp(transform->Position, mMoveToPoint, static_cast<float>(16 * RZE_Application::RZE().GetDeltaTime()));
 			transform->SetPosition(lerpPos);
 		}
 	}
@@ -60,6 +64,7 @@ void FirstPersonCameraSystem::RegisterForComponentNotifications()
 
 		if (nameComp->Name == "Camera")
 		{
+			mCamera = entity;
 			mMoveToPoint = transfComp->Position;
 		}
 	});
@@ -97,5 +102,34 @@ void FirstPersonCameraSystem::DoInput(CameraComponent& camera, TransformComponen
 		}
 
 		mMoveToPoint = transform.Position + (newForward + newStrafe);
+	}
+
+	{
+		// Mouse input 
+
+		const float deltaT = static_cast<float>(RZE_Application::RZE().GetDeltaTime());
+		const Vector3D& curPos = inputHandler.GetMouseState().CurPosition;
+
+		CameraComponent& camComp = *InternalGetEntityHandler().GetComponent<CameraComponent>(mCamera);
+		const TransformComponent& transfComp = *InternalGetEntityHandler().GetComponent<TransformComponent>(mCamera);
+
+		Vector3D diff = curPos - mMousePrevPos;
+
+		const float sensitivity = 0.1f;
+		diff *= sensitivity;
+		mYawPitchRoll += diff;
+
+		float yawInRadians = mYawPitchRoll.X() * MathUtils::ToRadians;
+		float pitchInRadians = mYawPitchRoll.Y() * MathUtils::ToRadians;
+
+		Vector3D newForward;
+		newForward.SetX(std::cos(yawInRadians) * std::cos(pitchInRadians));
+		newForward.SetY(-std::sin(pitchInRadians));
+		newForward.SetZ(std::sin(yawInRadians) * std::cos(pitchInRadians));
+
+		camComp.Forward = newForward;
+		camComp.Forward.Normalize();
+
+		mMousePrevPos = curPos;
 	}
 }

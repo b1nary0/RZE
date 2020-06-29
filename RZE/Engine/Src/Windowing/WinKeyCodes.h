@@ -6,9 +6,10 @@ namespace Win32KeyCode
 {
 	enum Type : U8
 	{
+		Control = 0x11,
 		Add = 0x6B,
 		Attn = 0xF6,
-		Back = 0x08,
+		Backspace = 0x8,
 		Cancel = 0x03,
 		Clear = 0x0C,
 		CRSel = 0xF7,
@@ -104,7 +105,7 @@ namespace Win32KeyCode
 		Packet = 0xE7,
 		Play = 0xFA,
 		Processkey = 0xE5,
-		Return = 0x0D,
+		Return = 0xD,
 		Select = 0x29,
 		Separator = 0x6C,
 		Space = 0x20,

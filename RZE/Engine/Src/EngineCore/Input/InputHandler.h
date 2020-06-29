@@ -163,6 +163,13 @@ public:
 	const MouseState& GetMouseState() const { return mMouseState; }
 	const KeyboardState& GetKeyboardState() const { return mKeyboardState; }
 
+	// #NOTE
+	// Don't use these two functions unless you need to _always_ know the state
+	// and don't want anything controlling your access to it. These will go away eventually
+	// so don't rely on them either.
+	const MouseState& GetProxyMouseState() const { return mProxyMouseState; }
+	const KeyboardState& GetProxyKeyboardState() const { return mProxyKeyboardState; }
+
 	void Reset();
 
 private:
@@ -177,7 +184,7 @@ public:
 	using MouseBindingMap = std::unordered_map <EMouseButton::T, std::vector<MouseButtonBinding>>;
 
 private:
-	std::vector<InputKey> mInputKeyRegistry;
+	std::unordered_map<U8, InputKey> mInputKeyRegistry;
 
 	KeyboardBindingMap mKeyboardBindings;
 	AxisBindingMap mAxisBindings;
@@ -187,6 +194,14 @@ private:
 private:
 	std::queue<KeyboardAction> mKeyActionQueue;
 	std::queue<MouseAction> mMouseActionQueue;
+
+	// #HACK
+	// This is implemented this way to continue tracking inputs from the OS
+	// but decide when to actually release them to the client (e.g when the editor 
+	// wants to deny input to the rest of the app). Eventually this should be implemented
+	// better.
+	KeyboardState mProxyKeyboardState;
+	MouseState mProxyMouseState;
 
 	KeyboardState mKeyboardState;
 	MouseState mMouseState;

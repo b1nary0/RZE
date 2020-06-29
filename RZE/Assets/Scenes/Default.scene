@@ -1,0 +1,43 @@
+{
+  "entities":
+  {
+    "Camera":
+    {
+        "components":
+        {
+            "TransformComponent":
+            {
+                "Position": [0, 5, -10],
+                "Scale": [1, 1, 1],
+                "Rotation": [0, 0, 0]
+            },
+            "CameraComponent":
+            {
+                "FOV": 65,
+                "NearCull": 0.01,
+                "FarCull": 1000,
+                "Forward": [0, 0, 1.0],
+                "UpDir":[0.0, 1.0, 0.0]
+            }
+        }
+    },
+		"DirectionalLight":
+    {
+      "components":
+      {
+        "TransformComponent":
+        {
+          "Position":[0, 10, -15],
+          "Scale": [1, 1, 1],
+          "Rotation": [0, 0, 0]
+        },
+        "LightSourceComponent":
+        {
+					"LightType": 0,
+          "Color": [0.95, 0.95, 0.85],
+          "Strength": 1.25
+        }
+      }
+    }
+  }
+}

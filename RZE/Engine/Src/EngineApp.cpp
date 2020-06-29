@@ -1,11 +1,13 @@
 #include <StdAfx.h>
 #include <EngineApp.h>
 
-#include <Diotima/Driver/OpenGL/GLRenderTarget.h>
 
 #include <EngineCore/Engine.h>
 
 #include <Windowing/Win32Window.h>
+
+#include <Diotima/Driver/DX11/DX11GFXDevice.h>
+#include <Diotima/Graphics/RenderTarget.h>
 
 #include <Utils/DebugUtils/Debug.h>
 
@@ -36,7 +38,7 @@ void RZE_Application::Run()
 
 void RZE_Application::Start()
 {
-
+	
 }
 
 void RZE_Application::Update()
@@ -55,13 +57,11 @@ bool RZE_Application::ProcessInput(const InputHandler& handler)
 
 void RZE_Application::RegisterInputEvents(InputHandler& inputHandler)
 {
-
 }
 
 void RZE_Application::Initialize()
 {
 	LOG_CONSOLE("RZE_Application::Init() called.");
-
 }
 
 Win32Window& RZE_Application::InternalGetWindow()
@@ -90,4 +90,10 @@ void RZE_Application::SetWindow(Win32Window* const window)
 Win32Window* const RZE_Application::GetWindow() const
 {
 	return mWindow;
+}
+
+Diotima::RenderTargetTexture* RZE_Application::GetRTT()
+{
+	AssertNotNull(mRenderTarget);
+	return mRenderTarget.get();
 }

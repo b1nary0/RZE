@@ -1,21 +1,28 @@
 #pragma once
 
 #include <functional>
+#include <mutex>
 #include <queue>
 #include <unordered_map>
 #include <vector>
 
-// #TODO(Josh::Really don't like this, change later)
-#include <Diotima/Driver/DX12/DX12AllocationData.h>
+#include <Diotima/RenderCommands.h>
 
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector2D.h>
 #include <Utils/PrimitiveDefs.h>
 
+// #TODO(Josh::Temp)
+#define MAX_LIGHTS 128
+
+struct ID3D11InputLayout;
+
 namespace Diotima
 {
-	// DX12 Temp
-	class DX12GFXDevice;
+	class DX11GFXDevice;
+
+	class GFXPassGraph;
+	class RenderTargetTexture;
 
 	enum class EBufferType
 	{
@@ -24,6 +31,11 @@ namespace Diotima
 
 	class Renderer
 	{
+		// #TODO(Temp for refactor, for access to RenderItemDrawCall)
+		friend class ForwardPass;
+		friend class DepthPass;
+		friend class ImGUIPass;
+
 	public:
 		enum class ETextureType
 		{
@@ -51,6 +63,7 @@ namespace Diotima
 		{
 			U32 VertexBuffer;
 			U32 IndexBuffer;
+			U32 MaterialBuffer;
 			std::vector<RenderItemTextureDesc> TextureDescs;
 			RenderItemMaterialDesc Material;
 		};
@@ -60,6 +73,8 @@ namespace Diotima
 			// #TODO(Josh::This needs to be done better. Works for now, but will need resolving when stuff matures)
 			std::vector<RenderItemMeshData> MeshData;
 			Matrix4x4						ModelMatrix;
+			U32								ConstantBuffer;
+			std::vector<U32>				MaterialBuffers; // #TODO(Definitely need to rework stuff with DX11 now. This should change.)
 
 			bool bIsValid{ false };
 			void Invalidate();
@@ -68,7 +83,8 @@ namespace Diotima
 		enum ELightType : U32
 		{
 			Directional = 0,
-			Point
+			Point,
+			Count
 		};
 
 		struct LightItemProtocol
@@ -101,9 +117,11 @@ namespace Diotima
 		{
 			U32 VertexBuffer;
 			U32 IndexBuffer;
-			U32 TextureSlot; // Serves as the base descriptor for a descriptor range. Right now is D/S/N per mesh
-			CBAllocationData MaterialSlot;
-			CBAllocationData MatrixSlot;
+			U32 ConstantBuffer;
+			U32 MaterialDataBuffer;
+			U32 TextureSlot0;
+			U32 TextureSlot1;
+			U32 TextureSlot2;
 		};
 
 		// Constructors
@@ -122,6 +140,8 @@ namespace Diotima
 		void RemoveRenderItem(const U32 itemIdx);
 
 		Int32 AddLightItem(const LightItemProtocol& itemProtocol);
+		void RemoveLightItem(const U32 itemIdx);
+
 		inline RenderItemProtocol& GetItemProtocolByIdx(Int32 idx) { return mRenderItems[idx]; }
 		inline LightItemProtocol& GetLightProtocolByIdx(Int32 idx) { return mLightingList[idx]; }
 
@@ -130,48 +150,77 @@ namespace Diotima
 		void SetCamera(const CameraItemProtocol& cameraItem) { camera = std::move(cameraItem); }
 
 		void EnableVsync(bool bEnable);
-		void SetMSAASampleCount(U32 sampleCount);
 
+		const Vector2D& GetCanvasSize();
 		void ResizeCanvas(const Vector2D& newSize);
 
-		// #TODO(Josh::Stand-ins for command infrastructure until DX12 rendering stabilized)
-		U32 CreateVertexBuffer(void* data, U32 numElements);
-		U32 CreateIndexBuffer(void* data, U32 numElements);
+		void SetViewportSize(const Vector2D& newSize);
+		const Vector2D& GetViewportSize();
+
+		// This sets the render target for the entire pipeline. We essentially render to this
+		// and then send it to the back buffer. Will be reworked at some point.
+		void SetRenderTarget(RenderTargetTexture* renderTarget);
+		// Can return null for now to determine if we want to write directly to the backbuffer.
+		// Will fix later since we should be able to have a more robust system WRT RTTs.
+		RenderTargetTexture* GetRenderTarget();
+
+	public:
+		U32 QueueCreateVertexBufferCommand(void* data, size_t size, U32 count);
+		U32 QueueCreateIndexBufferCommand(void* data, size_t size, U32 count);
+		U32 QueueCreateTextureCommand(ECreateTextureBufferType bufferType, void* data, U32 width, U32 height);
+
+		void QueueUpdateRenderItem(U32 itemID, const Matrix4x4& worldMtx);
+
+		void ProcessCommands();
+
+		DX11GFXDevice& GetDriverDevice();
+
+	private:
+		U32 CreateVertexBuffer(void* data, size_t size, U32 count);
+		U32 CreateIndexBuffer(void* data, size_t size, U32 count);
 		U32 CreateTextureBuffer2D(void* data, U32 width, U32 height);
 
 	private:
-		void DX12Initialize();
-		
-		void PrepareLights();
+		const std::vector<RenderItemDrawCall>& GetDrawCalls();
+		const std::vector<LightItemProtocol>& GetLights();
+		const U32* GetLightCounts();
+		const CameraItemProtocol& GetCamera();
+
 		void PrepareDrawCalls();
 
-		// #TODO(Josh::Temporary - this should eventually be made into pre-filled commandlists by virtue
-		//             of a Renderer command submission protocol -- then parsed into underlying API calls.
-		//             For now, just for organization purposes)
-		void BuildCommandList();
-
 	private:
+		CameraItemProtocol camera;
 		Vector2D mCanvasSize;
 
-		CameraItemProtocol camera;
+		U32 mLightCounts[ELightType::Count] { 0 };
+
+		std::vector<LightItemProtocol> mLightingList;
 		std::vector<RenderItemProtocol> mRenderItems;
 		std::vector<RenderItemDrawCall> mPerFrameDrawCalls;
-		std::vector<LightItemProtocol> mLightingList;
 
 		std::queue<Int32> mFreeRenderListIndices;
-		
-		// #TODO(Josh::Need this duplicated here and in the Device because it needs to be set prior to initialization)
-		U32 mMSAASampleCount;
+
+		RenderTargetTexture* mRenderTarget;
+
+	private:
+		std::vector<CreateBufferRenderCommand> mVertexBufferCommandQueue;
+		std::vector<CreateBufferRenderCommand> mIndexBufferCommandQueue;
+		std::vector<CreateTextureBufferRenderCommand> mTextureBufferCommandQueue;
+		std::vector<UpdateRenderItemWorldMatrixCommand> mUpdateRenderItemWorldMatrixCommandQueue;
 
 		// DX12 Temp
 	private:
-		U32 mMVPConstantBuffer;
-		U32 mLightConstantBuffer;
-		U32 mMaterialBuffer; // Per mesh data
-		U32 mPerFramePixelShaderConstants; // Per frame data
-
-		std::unique_ptr<DX12GFXDevice> mDevice;
-
+		std::unique_ptr<DX11GFXDevice> mDevice;
+		std::unique_ptr<GFXPassGraph> mPassGraph;
+		
 		void* mWindowHandle;
+
+		Vector2D mViewportDimensions;
+
+	private:
+		std::mutex mVertexBufferCommandMutex;
+		std::mutex mIndexBufferCommandMutex;
+		std::mutex mTextureBufferCommandMutex;
+		std::mutex mUpdateRenderItemWorldMatrixCommandMutex;
 	};
 }

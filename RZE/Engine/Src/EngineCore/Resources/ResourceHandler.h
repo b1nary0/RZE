@@ -117,7 +117,6 @@ private:
 	ResourceHandler::ResourceSource* mResourceSource;
 };
 
-// #TODO probably move this into an inl maybe?
 template <class ResourceT, class... Args>
 ResourceHandle ResourceHandler::RequestResource(const FilePath& resourcePath, Args... args)
 {

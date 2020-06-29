@@ -7,21 +7,21 @@
         {
             "TransformComponent":
             {
-                "Position": [-12, 5.2, 8],
+                "Position": [-22.434, 14.73, 14.419],
                 "Scale": [1, 1, 1],
                 "Rotation": [0, 0, 0]
             },
             "CameraComponent":
             {
-                "FOV": 65,
+                "FOV": 80,
                 "NearCull": 0.01,
                 "FarCull": 1000,
-                "Forward": [0.57, -0.18, -0.8],
+                "Forward": [0.616, -0.456, -0.643],
                 "UpDir":[0.0, 1.0, 0.0]
             }
         }
     },
-		"Point Light1":
+		"Directional Light":
     {
       "components":
       {
@@ -33,14 +33,10 @@
         },
         "LightSourceComponent":
         {
-					"LightType": 1,
+					"LightType": 0,
           "Color": [0.95, 0.95, 0.85],
-          "Strength": 1.25
-        },
-		"MeshComponent":
-		{
-		  "ResourcePath": "Assets/3D/Cube.obj"
-		}
+          "Strength": 0.75
+        }
       }
     },
 	"Floor":

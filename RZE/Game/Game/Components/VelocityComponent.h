@@ -6,7 +6,7 @@
 
 struct VelocityComponent : public Apollo::Component<VelocityComponent>
 {
-	VelocityComponent() = delete;
+	VelocityComponent() {}
 	VelocityComponent(const Vector3D& velocity)
 		: Velocity(velocity) {}
 

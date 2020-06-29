@@ -1,6 +1,5 @@
 #include "GameApp.h"
 
-#include <RZE_Config.h>
 #include <RZE.h>
 
 #include <Utils/DebugUtils/Debug.h>
@@ -22,6 +21,7 @@
 #include <Game/Systems/FirstPersonCameraSystem.h>
 #include <Game/Systems/InteractiveSpawningSystem.h>
 #include <Game/Systems/ProjectileSystem.h>
+#include <Game/Systems/TestbedSystem.h>
 
 #include <Game/Components/VelocityComponent.h>
 
@@ -45,8 +45,8 @@ void GameApp::Initialize()
 	RZE().GetActiveScene().Load(FilePath("Assets/Scenes/TestGame.scene"));
 
 	//RZE().GetActiveScene().GetEntityHandler().AddSystem<InteractiveSpawningSystem>();
-	RZE().GetActiveScene().GetEntityHandler().AddSystem<FreeCameraSystem>();
-	// #TODO(Josh::Disabling until the constant buffer issue with material shininess is resolved)
+	//RZE().GetActiveScene().GetEntityHandler().AddSystem<TestbedSystem>();
+	RZE().GetActiveScene().GetEntityHandler().AddSystem<FirstPersonCameraSystem>();
 	RZE().GetActiveScene().GetEntityHandler().AddSystem<ProjectileSystem>();
 }
 
@@ -85,9 +85,19 @@ void GameApp::RegisterInputEvents(InputHandler& inputHandler)
 		{
 			RZE().SetWindowSize(Vector2D(1920, 1080));
 		}
+
+		if (key.GetKeyCode() == Win32KeyCode::Key_K)
+		{
+			for (U32 entityCount = 0; entityCount < 3000; ++entityCount)
+			{
+				Apollo::EntityID entity = RZE().GetActiveScene().CreateEntity("Entity");
+				RZE().GetActiveScene().GetEntityHandler().AddComponent<MeshComponent>(entity, FilePath("Assets/3D/FW190/FW190.obj"));
+			}
+		}
 	});
 	inputHandler.BindAction(Win32KeyCode::Escape, EButtonState::ButtonState_Pressed, keyFunc);
 	inputHandler.BindAction(Win32KeyCode::F1, EButtonState::ButtonState_Pressed, keyFunc);
 	inputHandler.BindAction(Win32KeyCode::F2, EButtonState::ButtonState_Pressed, keyFunc);
 	inputHandler.BindAction(Win32KeyCode::F3, EButtonState::ButtonState_Pressed, keyFunc);
+	inputHandler.BindAction(Win32KeyCode::Key_K, EButtonState::ButtonState_Pressed, keyFunc);
 }

@@ -7,7 +7,7 @@ FilePath Texture2D::kDefaultDiffuseTexturePath = FilePath("Assets/2D/NOASSET_Tex
 FilePath Texture2D::kDefaultSpecularTexturePath = FilePath("Assets/2D/NOASSET_TextureSpecular.png");
 FilePath Texture2D::kDefaultNormalTexturePath = FilePath("Assets/2D/NOASSET_TextureNormal.png");
 
-Texture2D::Texture2D(ETextureType::T textureType)
+Texture2D::Texture2D(ETextureType textureType)
 	: IResource()
 	, mData(nullptr)
 	, mTextureType(textureType)
@@ -34,7 +34,7 @@ bool Texture2D::Load(const FilePath& filePath)
 
 	if (mData != nullptr)
 	{
-		mGPUBuffer = RZE_Application::RZE().GetRenderer().CreateTextureBuffer2D(mData, mWidth, mHeight);
+		mGPUBuffer = RZE_Application::RZE().GetRenderer().QueueCreateTextureCommand(Diotima::ECreateTextureBufferType::Texture2D, mData, mWidth, mHeight);
 	}
 
 	return mData != nullptr;
@@ -45,10 +45,11 @@ void Texture2D::Release()
 	if (mData != nullptr)
 	{
 		delete mData;
+		mData = nullptr;
 	}
 }
 
-ETextureType::T Texture2D::GetTextureType() const
+Texture2D::ETextureType Texture2D::GetTextureType() const
 {
 	return mTextureType;
 }

@@ -16,19 +16,19 @@ Material::~Material()
 
 void Material::SetDiffuse(Texture2D* texture)
 {
-	AssertExpr(texture != nullptr && texture->GetTextureType() == ETextureType::Diffuse);
+	AssertExpr(texture != nullptr && texture->GetTextureType() == Texture2D::ETextureType::Diffuse);
 	mDiffuseMap = texture;
 }
 
 void Material::SetSpecular(Texture2D* texture)
 {
-	AssertExpr(texture != nullptr && texture->GetTextureType() == ETextureType::Specular);
+	AssertExpr(texture != nullptr && texture->GetTextureType() == Texture2D::ETextureType::Specular);
 	mSpecularMap = texture;
 }
 
 void Material::SetNormal(Texture2D* texture)
 {
-	AssertExpr(texture != nullptr && texture->GetTextureType() == ETextureType::Normal);
+	AssertExpr(texture != nullptr && texture->GetTextureType() == Texture2D::ETextureType::Normal);
 	mNormalMap = texture;
 }
 

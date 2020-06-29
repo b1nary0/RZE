@@ -1,6 +1,8 @@
 #pragma once
 
-#include <Apollo./ECS/EntitySystem.h>
+#include <Apollo/ECS/EntitySystem.h>
+
+#include <EngineCore/Resources/ResourceHandler.h>
 
 class ProjectileSystem : public Apollo::EntitySystem
 {
@@ -15,4 +17,6 @@ public:
 
 private:
 	Apollo::EntityID mCameraEntity;
+
+	ResourceHandle mProjectileResource;
 };

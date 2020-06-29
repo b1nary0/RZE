@@ -4,6 +4,8 @@
 
 #include <Windowing/Win32Window.h>
 
+#include <memory>
+
 class EventHandler;
 class Win32Window;
 
@@ -32,6 +34,8 @@ public:
 
 	virtual void RegisterInputEvents(InputHandler& inputHandler);
 
+	Diotima::RenderTargetTexture* GetRTT();
+
 	static RZE_Engine& RZE() { return mEngine; }
 
 protected:
@@ -44,8 +48,11 @@ protected:
 
 	Win32Window* const GetWindow() const;
 
+	std::unique_ptr<Diotima::RenderTargetTexture> mRenderTarget;
+
 private:
 	void SetWindow(Win32Window* const window);
+
 
 	Win32Window* mWindow;
 	bool bIsRunning;

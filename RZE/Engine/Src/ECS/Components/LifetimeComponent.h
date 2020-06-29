@@ -4,9 +4,11 @@
 
 struct LifetimeComponent : Apollo::Component<LifetimeComponent>
 {
-	LifetimeComponent() = delete;
+	LifetimeComponent() {};
 	LifetimeComponent(float lifetimeMS)
 		: LifetimeMS(lifetimeMS) {}
 
-	float LifetimeMS;
+	virtual void OnEditorInspect(Apollo::EntityID entityID);
+
+	float LifetimeMS = 100000;
 };
