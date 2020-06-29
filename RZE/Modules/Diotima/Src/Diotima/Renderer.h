@@ -116,6 +116,7 @@ namespace Diotima
 		//             Will iterate on this idea.)
 		struct RenderItemDrawCall
 		{
+			bool IsTextured;
 			U32 VertexBuffer;
 			U32 IndexBuffer;
 			U32 ConstantBuffer;

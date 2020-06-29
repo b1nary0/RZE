@@ -209,6 +209,7 @@ namespace Diotima
 				// #TODO(Deal with this later. This is the same for all meshes of renderItem)
 				drawCall.ConstantBuffer = renderItem.ConstantBuffer;
 
+				drawCall.IsTextured = meshData.Material.IsTextured;
 				if (meshData.Material.IsTextured)
 				{
 					drawCall.TextureSlot0 = meshData.TextureDescs[0].TextureBuffer; // This should be iterated on to be more robust.

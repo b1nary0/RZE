@@ -226,19 +226,22 @@ namespace Diotima
  				DX11GFXIndexBuffer* indexBuf = mDevice->GetIndexBuffer(drawCall.IndexBuffer);
  				mDevice->GetDeviceContext().IASetIndexBuffer(&indexBuf->GetHardwareBuffer(), DXGI_FORMAT_R32_UINT, 0);
  
- 				std::array<DX11GFXTextureBuffer2D*, 3> textureArray = {
- 					mDevice->GetTextureBuffer2D(drawCall.TextureSlot0),
- 					mDevice->GetTextureBuffer2D(drawCall.TextureSlot1),
- 					mDevice->GetTextureBuffer2D(drawCall.TextureSlot2)
- 				};
- 
- 				for (size_t texBufIdx = 0; texBufIdx < textureArray.size(); ++texBufIdx)
- 				{
- 					ID3D11ShaderResourceView* resourceView = &textureArray[texBufIdx]->GetResourceView();
- 					ID3D11SamplerState* samplerState = &textureArray[texBufIdx]->GetSamplerState();
- 					deviceContext.PSSetShaderResources(texBufIdx, 1, &resourceView);
- 					deviceContext.PSSetSamplers(texBufIdx, 1, &samplerState);
- 				}
+				if (drawCall.IsTextured)
+				{
+					std::array<DX11GFXTextureBuffer2D*, 3> textureArray = {
+										mDevice->GetTextureBuffer2D(drawCall.TextureSlot0),
+										mDevice->GetTextureBuffer2D(drawCall.TextureSlot1),
+										mDevice->GetTextureBuffer2D(drawCall.TextureSlot2)
+					};
+
+					for (size_t texBufIdx = 0; texBufIdx < textureArray.size(); ++texBufIdx)
+					{
+						ID3D11ShaderResourceView* resourceView = &textureArray[texBufIdx]->GetResourceView();
+						ID3D11SamplerState* samplerState = &textureArray[texBufIdx]->GetSamplerState();
+						deviceContext.PSSetShaderResources(texBufIdx, 1, &resourceView);
+						deviceContext.PSSetSamplers(texBufIdx, 1, &samplerState);
+					}
+				}
  
  				deviceContext.DrawIndexed(indexBuf->GetIndexCount(), 0, 0);
  			}
