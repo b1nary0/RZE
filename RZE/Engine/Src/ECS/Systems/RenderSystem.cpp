@@ -206,6 +206,7 @@ void RenderSystem::RegisterForComponentNotifications()
 				renderItem.MeshData.push_back(meshData);
 			}
 
+			// #TODO
 			// This is bad, make a modifyrenderitem function on Diotima::Renderer where this can be done
 			Diotima::DX11GFXDevice& device = RZE_Application::RZE().GetRenderer().GetDriverDevice();
 
