@@ -160,6 +160,7 @@ void FreeCameraSystem::MouseInput(CameraComponent& camComp, TransformComponent& 
 		newForward.SetY(-std::sin(pitchInRadians));
 		newForward.SetZ(std::sin(yawInRadians) * std::cos(pitchInRadians));
 
+		camComp.Forward = newForward;
 		camComp.Forward.Normalize();
 	}
 
