@@ -13,6 +13,10 @@
 
 #include <Utils/Math/Math.h>
 
+
+//#TODO
+// The code in this system is terrible.
+
 FreeCameraSystem::FreeCameraSystem(Apollo::EntityHandler* const entityHandler)
 	: Apollo::EntitySystem(entityHandler)
 {
@@ -156,7 +160,6 @@ void FreeCameraSystem::MouseInput(CameraComponent& camComp, TransformComponent& 
 		newForward.SetY(-std::sin(pitchInRadians));
 		newForward.SetZ(std::sin(yawInRadians) * std::cos(pitchInRadians));
 
-		camComp.Forward = newForward;
 		camComp.Forward.Normalize();
 	}
 
