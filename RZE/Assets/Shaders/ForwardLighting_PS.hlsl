@@ -115,7 +115,7 @@ float CalculateShadowFromDepthMap(LIGHT_INPUT_DESC light, float3 fragPos, float3
 {
 	float4 fragPosLightSpace = mul(light.LightSpaceMat, float4(fragPos, 1.0f));
 
-	float bias = 0.001f;//max(0.05 * (1.0 - dot(normal, lightDir)), 0.25);
+	float bias = 0.001f;//max(0.05 * (1.0 - dot(lightDir, normal)), 0.25);
 	float3 projectionCoords;
 	projectionCoords.x = fragPosLightSpace.x / fragPosLightSpace.w / 2.0f + 0.5f;
 	projectionCoords.y = fragPosLightSpace.y / fragPosLightSpace.w / 2.0f + 0.5f;
@@ -165,7 +165,7 @@ float4 PSMain(PS_IN input) : SV_TARGET
 	else
 	{
 		// What is this meant to be? Seems to have been forgotten..
-		//float diff = max(0.0f, saturate(dot(normal, lightDir)));
+		//float diff = max(0.0f, saturate(dot(lightDir, lightDir)));
 		//diffuseResult = diffuseResult * diff;
 		
 		// Done here because of availability of mesh normal vs bump normal
