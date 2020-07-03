@@ -2,7 +2,7 @@
 
 #include <Diotima/Graphics/RenderPass.h>
 
-#include <Diotima/Renderer.h>
+#include <Diotima/LegacyRenderer.h>
 
 struct ID3D10Blob;
 struct ID3D11VertexShader;
@@ -30,18 +30,18 @@ namespace Diotima
 
 
 		// #TODO(Temp. Final architecture won't need this)
-		void SetRenderer(Renderer* renderer);
+		void SetRenderer(LegacyRenderer* renderer);
 		void SetDevice(DX11GFXDevice* device);
 
 	private:
 		void Begin();
 		void End();
 
-		void PrepareLights(const std::vector<Renderer::LightItemProtocol>& lights);
+		void PrepareLights(const std::vector<LegacyRenderer::LightItemProtocol>& lights);
 
 	private:
 		DX11GFXDevice* mDevice;
-		Renderer* mRenderer;
+		LegacyRenderer* mRenderer;
 
 		ID3D10Blob* mVSBlob;
 		ID3D10Blob* mPSBlob;

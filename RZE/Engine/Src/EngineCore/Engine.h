@@ -15,7 +15,7 @@
 
 #include <Apollo/EntityHandler.h>
 
-#include <Diotima/Renderer.h>
+#include <Diotima/LegacyRenderer.h>
 
 class RZE_Application;
 
@@ -43,7 +43,7 @@ public:
 	RZE_Application&			GetApplication();
 	ResourceHandler&			GetResourceHandler();
 	InputHandler&				GetInputHandler();
-	Diotima::Renderer&			GetRenderer();
+	Diotima::LegacyRenderer&			GetRenderer();
 	GameScene&					GetActiveScene();
 
 	// #TODO(Should probably put the window in the app..)
@@ -93,7 +93,7 @@ private:
 	EventHandler mEventHandler;
 	InputHandler mInputHandler;
 
-	Diotima::Renderer* mRenderer;
+	Diotima::LegacyRenderer* mRenderer;
 
 	EngineConfig* mEngineConfig;
 	

@@ -6,7 +6,7 @@
 namespace Diotima
 {
 	class GFXRenderPass;
-	class Renderer;
+	class LegacyRenderer;
 
 	// GFXPassGraph is the systemic implementation of GFXRenderPass.
 	// It provides the API to compile, prepare, and execute the frame graph,
@@ -18,7 +18,7 @@ namespace Diotima
 		GFXPassGraph();
 		~GFXPassGraph();
 
-		void Build(Renderer* renderer);
+		void Build(LegacyRenderer* renderer);
 		
 		// #TODO(Execute will set up the frame environment and 
 		//       should return the final render target, the result of n GFXRenderPasses.)

@@ -1,5 +1,5 @@
 #include <StdAfx.h>
-#include <ECS/Systems/RenderSystem.h>
+#include <ECS/Systems/LegacyRenderSystem.h>
 
 #include <Apollo/ECS/EntityComponentFilter.h>
 
@@ -27,14 +27,14 @@
 
 static Vector4D sDefaultFragColor(0.25f, 0.25f, 0.25f, 1.0f);
 
-RenderSystem::RenderSystem(Apollo::EntityHandler* const entityHandler)
+LegacyRenderSystem::LegacyRenderSystem(Apollo::EntityHandler* const entityHandler)
 	: Apollo::EntitySystem(entityHandler)
 	, mMainCameraEntity(Apollo::kInvalidEntityID)
 {
 
 }
 
-void RenderSystem::Initialize()
+void LegacyRenderSystem::Initialize()
 {
 	InternalGetComponentFilter().AddFilterType<TransformComponent>();
 	InternalGetComponentFilter().AddFilterType<MeshComponent>();
@@ -42,12 +42,12 @@ void RenderSystem::Initialize()
 	RegisterForComponentNotifications();
 }
 
-void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
+void LegacyRenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 {
 	OPTICK_EVENT();
 
 	Apollo::EntityHandler& handler = InternalGetEntityHandler();
-	Diotima::Renderer& renderer = RZE_Application::RZE().GetRenderer();
+	Diotima::LegacyRenderer& renderer = RZE_Application::RZE().GetRenderer();
 
 	TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(mMainCameraEntity);
 	CameraComponent* const camComp = handler.GetComponent<CameraComponent>(mMainCameraEntity);
@@ -56,7 +56,7 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 
 	GenerateCameraMatrices(*camComp, *transfComp);
 
-	Diotima::Renderer::CameraItemProtocol camera;
+	Diotima::LegacyRenderer::CameraItemProtocol camera;
 	camera.ProjectionMat = camComp->ProjectionMat;
 	camera.ViewMat = camComp->ViewMat;
 	camera.Position = transfComp->Position;
@@ -79,7 +79,7 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 		LightSourceComponent* const lightComp = handler.GetComponent<LightSourceComponent>(entity);
 		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
 
-		Diotima::Renderer::LightItemProtocol& item = renderer.GetLightProtocolByIdx(mLightItemEntityMap[entity]);
+		Diotima::LegacyRenderer::LightItemProtocol& item = renderer.GetLightProtocolByIdx(mLightItemEntityMap[entity]);
 
 		Matrix4x4 orthoProj = Matrix4x4::CreateOrthoMatrix(-25.0f, 25.0f, -25.0f, 25.0f, -100.0f, 100.0f);
 		Matrix4x4 lightView = Matrix4x4::CreateViewMatrix(transfComp->Position, Vector3D(), Vector3D(0.0f, 1.0f, 0.0f));
@@ -87,17 +87,17 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 		item.LightSpaceMatrix = orthoProj * lightView;
 		item.Color = lightComp->Color;
 		item.Strength = lightComp->Strength;
-		item.LightType = static_cast<Diotima::Renderer::ELightType>(lightComp->LightType);
+		item.LightType = static_cast<Diotima::LegacyRenderer::ELightType>(lightComp->LightType);
 		item.Position = transfComp->Position;
 	});
 	handler.ForEach<LightSourceComponent, TransformComponent>(LightSourceFunc);
 }
 
-void RenderSystem::ShutDown()
+void LegacyRenderSystem::ShutDown()
 {
 }
 
-void RenderSystem::RegisterForComponentNotifications()
+void LegacyRenderSystem::RegisterForComponentNotifications()
 {
 	Apollo::EntityHandler& handler = InternalGetEntityHandler();
 
@@ -116,22 +116,22 @@ void RenderSystem::RegisterForComponentNotifications()
 		{
 			Model3D* const modelData = RZE_Application::RZE().GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
 
-			Diotima::Renderer::RenderItemProtocol item;
+			Diotima::LegacyRenderer::RenderItemProtocol item;
 			for (const MeshGeometry& mesh : modelData->GetStaticMesh().GetSubMeshes())
 			{
-				Diotima::Renderer::RenderItemMeshData meshData;
+				Diotima::LegacyRenderer::RenderItemMeshData meshData;
 				meshData.VertexBuffer = mesh.GetVertexBuffer();
 				meshData.IndexBuffer = mesh.GetIndexBuffer();
 
 				const bool bIsTextured = mesh.GetMaterial().IsTextured();
 				if (bIsTextured)
 				{
-					meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetDiffuse().GetTextureBufferID(), Diotima::Renderer::ETextureType::Diffuse);
-					meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetSpecular().GetTextureBufferID(), Diotima::Renderer::ETextureType::Specular);
-					meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetNormal().GetTextureBufferID(), Diotima::Renderer::ETextureType::Normal);
+					meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetDiffuse().GetTextureBufferID(), Diotima::LegacyRenderer::ETextureType::Diffuse);
+					meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetSpecular().GetTextureBufferID(), Diotima::LegacyRenderer::ETextureType::Specular);
+					meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetNormal().GetTextureBufferID(), Diotima::LegacyRenderer::ETextureType::Normal);
 				}
  
- 				Diotima::Renderer::RenderItemMaterialDesc matDesc;
+ 				Diotima::LegacyRenderer::RenderItemMaterialDesc matDesc;
  				matDesc.Shininess = mesh.GetMaterial().Shininess;
 				matDesc.IsTextured = bIsTextured;
  
@@ -178,26 +178,26 @@ void RenderSystem::RegisterForComponentNotifications()
 		if (meshComp->Resource.IsValid())
 		{
 			Int32 renderIndex = mRenderItemEntityMap[entityID];
-			Diotima::Renderer::RenderItemProtocol& renderItem = RZE_Application::RZE().GetRenderer().GetItemProtocolByIdx(renderIndex);
+			Diotima::LegacyRenderer::RenderItemProtocol& renderItem = RZE_Application::RZE().GetRenderer().GetItemProtocolByIdx(renderIndex);
 			renderItem.MeshData.clear();
 
 			Model3D* const modelData = RZE_Application::RZE().GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
 
 			for (const MeshGeometry& mesh : modelData->GetStaticMesh().GetSubMeshes())
 			{
-				Diotima::Renderer::RenderItemMeshData meshData;
+				Diotima::LegacyRenderer::RenderItemMeshData meshData;
 				meshData.VertexBuffer = mesh.GetVertexBuffer();
 				meshData.IndexBuffer = mesh.GetIndexBuffer();
 
 				const bool bIsTextured = mesh.GetMaterial().IsTextured();
 				if (bIsTextured)
 				{
-					meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetDiffuse().GetTextureBufferID(), Diotima::Renderer::ETextureType::Diffuse);
-					meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetSpecular().GetTextureBufferID(), Diotima::Renderer::ETextureType::Specular);
-					meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetNormal().GetTextureBufferID(), Diotima::Renderer::ETextureType::Normal);
+					meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetDiffuse().GetTextureBufferID(), Diotima::LegacyRenderer::ETextureType::Diffuse);
+					meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetSpecular().GetTextureBufferID(), Diotima::LegacyRenderer::ETextureType::Specular);
+					meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetNormal().GetTextureBufferID(), Diotima::LegacyRenderer::ETextureType::Normal);
 				}
 
- 				Diotima::Renderer::RenderItemMaterialDesc matDesc;
+ 				Diotima::LegacyRenderer::RenderItemMaterialDesc matDesc;
  				matDesc.Shininess = mesh.GetMaterial().Shininess;
 				matDesc.IsTextured = mesh.GetMaterial().IsTextured();
  
@@ -214,7 +214,7 @@ void RenderSystem::RegisterForComponentNotifications()
 			meshMaterialBuffers.reserve(renderItem.MeshData.size());
 			for (size_t index = 0; index < renderItem.MeshData.size(); ++index)
 			{
-				meshMaterialBuffers.push_back(device.CreateConstantBuffer(MemoryUtils::AlignSize(sizeof(Diotima::Renderer::RenderItemMaterialDesc), 15), 1));
+				meshMaterialBuffers.push_back(device.CreateConstantBuffer(MemoryUtils::AlignSize(sizeof(Diotima::LegacyRenderer::RenderItemMaterialDesc), 15), 1));
 			}
 
 			renderItem.MaterialBuffers = std::move(meshMaterialBuffers);
@@ -228,8 +228,8 @@ void RenderSystem::RegisterForComponentNotifications()
 		LightSourceComponent* const lightComp = handler.GetComponent<LightSourceComponent>(entityID);
 		AssertNotNull(lightComp);
 
-		Diotima::Renderer::LightItemProtocol item;
-		item.LightType = static_cast<Diotima::Renderer::ELightType>(lightComp->LightType);
+		Diotima::LegacyRenderer::LightItemProtocol item;
+		item.LightType = static_cast<Diotima::LegacyRenderer::ELightType>(lightComp->LightType);
 		item.Color = lightComp->Color;
 		item.Strength = lightComp->Strength;
 
@@ -300,7 +300,7 @@ void RenderSystem::RegisterForComponentNotifications()
 	handler.RegisterForComponentRemovedNotification<CameraComponent>(OnCameraComponentRemoved);
 }
 
-void RenderSystem::GenerateCameraMatrices(CameraComponent& cameraComponent, const TransformComponent& transformComponent)
+void LegacyRenderSystem::GenerateCameraMatrices(CameraComponent& cameraComponent, const TransformComponent& transformComponent)
 {
 	cameraComponent.ProjectionMat = Matrix4x4::CreatePerspectiveMatrix(cameraComponent.FOV, cameraComponent.AspectRatio, cameraComponent.NearCull, cameraComponent.FarCull);
 	cameraComponent.ViewMat = Matrix4x4::CreateViewMatrix(transformComponent.Position, transformComponent.Position + cameraComponent.Forward, cameraComponent.UpDir);

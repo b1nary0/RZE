@@ -93,7 +93,7 @@ namespace Diotima
 		hr = mDevice->GetHardwareDevice().CreateInputLayout(k_vertLayout, numLayoutElements, mVSBlob->GetBufferPointer(), mVSBlob->GetBufferSize(), &mVertexLayout);
 
 		mViewProjBuf = mDevice->CreateConstantBuffer(sizeof(Matrix4x4), 1);
-		mLightBuf = mDevice->CreateConstantBuffer(sizeof(Renderer::LightItemProtocol), 1);
+		mLightBuf = mDevice->CreateConstantBuffer(sizeof(LegacyRenderer::LightItemProtocol), 1);
 
 
 		GFXTextureBufferParams params;
@@ -112,7 +112,7 @@ namespace Diotima
 
 	void DepthPass::Begin()
 	{
-		const std::vector<Renderer::LightItemProtocol>& lights = mRenderer->GetLights();
+		const std::vector<LegacyRenderer::LightItemProtocol>& lights = mRenderer->GetLights();
 		PrepareLights(lights);
 
 		ID3D11DeviceContext& deviceContext = mDevice->GetDeviceContext();
@@ -145,8 +145,8 @@ namespace Diotima
 		Begin();
 		{
 			ID3D11DeviceContext& deviceContext = mDevice->GetDeviceContext();
-			const std::vector<Renderer::RenderItemDrawCall>& drawCalls = mRenderer->GetDrawCalls();
-			for (const Renderer::RenderItemDrawCall& drawCall : drawCalls)
+			const std::vector<LegacyRenderer::RenderItemDrawCall>& drawCalls = mRenderer->GetDrawCalls();
+			for (const LegacyRenderer::RenderItemDrawCall& drawCall : drawCalls)
 			{
 				DX11GFXVertexBuffer* const vertBuf = mDevice->GetVertexBuffer(drawCall.VertexBuffer);
 				DX11GFXIndexBuffer* const indexBuf = mDevice->GetIndexBuffer(drawCall.IndexBuffer);
@@ -182,7 +182,7 @@ namespace Diotima
 	
 	}
 
-	void DepthPass::SetRenderer(Renderer* renderer)
+	void DepthPass::SetRenderer(LegacyRenderer* renderer)
 	{
 		mRenderer = renderer;
 	}
@@ -195,12 +195,13 @@ namespace Diotima
 		mDevice = device;
 	}
 
-	void DepthPass::PrepareLights(const std::vector<Renderer::LightItemProtocol>& lights)
+	void DepthPass::PrepareLights(const std::vector<LegacyRenderer::LightItemProtocol>& lights)
 	{
 		//OPTICK_EVENT();
  		DX11GFXConstantBuffer* const lightBuf = mDevice->GetConstantBuffer(mLightBuf);
  
- 		AssertMsg(lights.size() == 1, "First pass shadows only support one light"); 
+ 		AssertMsg(lights.size() <= 1, "First pass shadows only support one light"); 
+		if (!lights.empty())
 		lightBuf->UpdateSubresources(&lights[0].LightSpaceMatrix);
 	}
 

@@ -1,6 +1,6 @@
 #include <Diotima/Graphics/GFXPassGraph.h>
 
-#include <Diotima/Renderer.h>
+#include <Diotima/LegacyRenderer.h>
 #include <Diotima/Graphics/RenderPasses/ForwardPass.h>
 #include <Diotima/Graphics/RenderPasses/DepthPass.h>
 
@@ -19,7 +19,7 @@ namespace Diotima
 	{
 	}
 
-	void GFXPassGraph::Build(Renderer* renderer)
+	void GFXPassGraph::Build(LegacyRenderer* renderer)
 	{
 		OPTICK_EVENT();
 

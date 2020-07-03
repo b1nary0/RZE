@@ -3,7 +3,7 @@
 
 #include <DebugUtils/DebugServices.h>
 
-#include <Diotima/Renderer.h>
+#include <Diotima/LegacyRenderer.h>
 #include <Diotima/Graphics/RenderTarget.h>
 
 #include <ECS/Components/CameraComponent.h>
@@ -196,7 +196,7 @@ void RZE_Engine::CreateAndInitializeWindow()
 
 void RZE_Engine::CreateAndInitializeRenderer()
 {
-	mRenderer = new Diotima::Renderer();
+	mRenderer = new Diotima::LegacyRenderer();
 
 	mRenderer->SetWindow(mMainWindow->GetOSWindowHandleData().windowHandle);
 
@@ -337,7 +337,7 @@ InputHandler& RZE_Engine::GetInputHandler()
 	return mInputHandler;
 }
 
-Diotima::Renderer& RZE_Engine::GetRenderer()
+Diotima::LegacyRenderer& RZE_Engine::GetRenderer()
 {
 	AssertNotNull(mRenderer);
 	return *mRenderer;

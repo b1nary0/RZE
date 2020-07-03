@@ -19,6 +19,7 @@ struct ID3D11InputLayout;
 
 namespace Diotima
 {
+
 	class DX11GFXDevice;
 
 	class GFXPassGraph;
@@ -29,7 +30,7 @@ namespace Diotima
 		BufferType_Vertex
 	};
 
-	class Renderer
+	class LegacyRenderer
 	{
 		// #TODO(Temp for refactor, for access to RenderItemDrawCall)
 		friend class ForwardPass;
@@ -130,8 +131,8 @@ namespace Diotima
 
 		// Constructors
 	public:
-		Renderer();
-		~Renderer();
+		LegacyRenderer();
+		~LegacyRenderer();
 
 	public:
 		void Initialize();

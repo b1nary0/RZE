@@ -7,10 +7,10 @@
 struct CameraComponent;
 struct TransformComponent;
 
-class RenderSystem final : public Apollo::EntitySystem
+class LegacyRenderSystem final : public Apollo::EntitySystem
 {
 public:
-	RenderSystem(Apollo::EntityHandler* const entityHandler);
+	LegacyRenderSystem(Apollo::EntityHandler* const entityHandler);
 
 public:
 	virtual void Initialize() override;

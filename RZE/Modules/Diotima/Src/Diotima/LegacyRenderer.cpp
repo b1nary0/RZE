@@ -1,4 +1,4 @@
-#include <Diotima/Renderer.h>
+#include <Diotima/LegacyRenderer.h>
 
 #include <Optick/optick.h>
 
@@ -33,18 +33,18 @@
 namespace Diotima
 {
 
-	Renderer::Renderer()
+	LegacyRenderer::LegacyRenderer()
 		: mPassGraph(std::make_unique<GFXPassGraph>())
 		, mRenderTarget(nullptr)
 	{
 		mLightingList.reserve(MAX_LIGHTS);
 	}
 
-	Renderer::~Renderer()
+	LegacyRenderer::~LegacyRenderer()
 	{
 	}
 
-	Int32 Renderer::AddRenderItem(const RenderItemProtocol& itemProtocol)
+	Int32 LegacyRenderer::AddRenderItem(const RenderItemProtocol& itemProtocol)
 	{
 		U32 constantBufferID = mDevice->CreateConstantBuffer(sizeof(Matrix4x4), 2);
 
@@ -78,7 +78,7 @@ namespace Diotima
 		return static_cast<Int32>(mRenderItems.size() - 1);
 	}
 
-	void Renderer::RemoveRenderItem(const U32 itemIdx)
+	void LegacyRenderer::RemoveRenderItem(const U32 itemIdx)
 	{
 		AssertExpr(itemIdx < mRenderItems.size());
 
@@ -88,7 +88,7 @@ namespace Diotima
 		// #TODO(Return constant buffer for render item here)
 	}
 
-	Int32 Renderer::AddLightItem(const LightItemProtocol& itemProtocol)
+	Int32 LegacyRenderer::AddLightItem(const LightItemProtocol& itemProtocol)
 	{
 		mLightingList.emplace_back(std::move(itemProtocol));
 
@@ -96,7 +96,7 @@ namespace Diotima
 		return static_cast<Int32>(mLightingList.size() - 1);
 	}
 
-	void Renderer::RemoveLightItem(const U32 itemIdx)
+	void LegacyRenderer::RemoveLightItem(const U32 itemIdx)
 	{
 		AssertExpr(itemIdx < mLightingList.size());
 
@@ -105,7 +105,7 @@ namespace Diotima
 		mLightingList.erase(iter);
 	}
 
-	void Renderer::Initialize()
+	void LegacyRenderer::Initialize()
 	{
 		mCanvasSize.SetXY(1600, 900);
 
@@ -120,7 +120,7 @@ namespace Diotima
 		mPassGraph->Build(this);
 	}
 
-	void Renderer::Update()
+	void LegacyRenderer::Update()
 	{
 		OPTICK_EVENT();
 
@@ -134,7 +134,7 @@ namespace Diotima
 		}
 	}
 
-	void Renderer::Render()
+	void LegacyRenderer::Render()
 	{
 		if (mRenderTarget != nullptr)
 		{
@@ -153,33 +153,33 @@ namespace Diotima
 		mDevice->Present();
 	}
 
-	void Renderer::ShutDown()
+	void LegacyRenderer::ShutDown()
 	{
 		ImGui_ImplDX11_Shutdown();
 		mDevice->Shutdown();
 	}
 
-	const std::vector<Renderer::RenderItemDrawCall>& Renderer::GetDrawCalls()
+	const std::vector<LegacyRenderer::RenderItemDrawCall>& LegacyRenderer::GetDrawCalls()
 	{
 		return mPerFrameDrawCalls;
 	}
 
-	const std::vector<Renderer::LightItemProtocol>& Renderer::GetLights()
+	const std::vector<LegacyRenderer::LightItemProtocol>& LegacyRenderer::GetLights()
 	{
 		return mLightingList;
 	}
 
-	const U32* Renderer::GetLightCounts()
+	const U32* LegacyRenderer::GetLightCounts()
 	{
 		return mLightCounts;
 	}
 
-	const Diotima::Renderer::CameraItemProtocol& Renderer::GetCamera()
+	const Diotima::LegacyRenderer::CameraItemProtocol& LegacyRenderer::GetCamera()
 	{
 		return camera;
 	}
 
-	void Renderer::PrepareDrawCalls()
+	void LegacyRenderer::PrepareDrawCalls()
 	{
 		OPTICK_EVENT();
 
@@ -228,23 +228,23 @@ namespace Diotima
 		}
 	}
 
-	Diotima::DX11GFXDevice& Renderer::GetDriverDevice()
+	Diotima::DX11GFXDevice& LegacyRenderer::GetDriverDevice()
 	{
 		AssertNotNull(mDevice);
 		return *mDevice;
 	}
 
-	void Renderer::EnableVsync(bool bEnabled)
+	void LegacyRenderer::EnableVsync(bool bEnabled)
 	{
 		mDevice->SetSyncInterval(static_cast<U32>(bEnabled));
 	}
 	
-	const Vector2D& Renderer::GetCanvasSize()
+	const Vector2D& LegacyRenderer::GetCanvasSize()
 	{
 		return mCanvasSize;
 	}
 
-	void Renderer::ResizeCanvas(const Vector2D& newSize)
+	void LegacyRenderer::ResizeCanvas(const Vector2D& newSize)
 	{
 		mCanvasSize = newSize;
 
@@ -260,38 +260,38 @@ namespace Diotima
 		LOG_CONSOLE_ARGS("New Canvas Size: %f x %f", mCanvasSize.X(), mCanvasSize.Y());
 	}
 
-	void Renderer::SetViewportSize(const Vector2D& newSize)
+	void LegacyRenderer::SetViewportSize(const Vector2D& newSize)
 	{
 		mViewportDimensions = newSize;
 	}
 
-	const Vector2D& Renderer::GetViewportSize()
+	const Vector2D& LegacyRenderer::GetViewportSize()
 	{
 		return mViewportDimensions;
 	}
 
-	void Renderer::SetRenderTarget(RenderTargetTexture* renderTarget)
+	void LegacyRenderer::SetRenderTarget(RenderTargetTexture* renderTarget)
 	{
 		AssertNotNull(renderTarget);
 		mRenderTarget = renderTarget;
 	}
 
-	Diotima::RenderTargetTexture* Renderer::GetRenderTarget()
+	Diotima::RenderTargetTexture* LegacyRenderer::GetRenderTarget()
 	{
 		return mRenderTarget;
 	}
 
-	U32 Renderer::CreateVertexBuffer(void* data, size_t size, U32 count)
+	U32 LegacyRenderer::CreateVertexBuffer(void* data, size_t size, U32 count)
 	{
 		return mDevice->CreateVertexBuffer(data, size, count);
 	}
 
-	U32 Renderer::CreateIndexBuffer(void* data, size_t size, U32 count)
+	U32 LegacyRenderer::CreateIndexBuffer(void* data, size_t size, U32 count)
 	{
 		return mDevice->CreateIndexBuffer(data, size, count);
 	}
 
-	U32 Renderer::CreateTextureBuffer2D(void* data, U32 width, U32 height)
+	U32 LegacyRenderer::CreateTextureBuffer2D(void* data, U32 width, U32 height)
 	{
 		// This is temp here, should be passed in or something.
 		GFXTextureBufferParams params = { 0 };
@@ -306,7 +306,7 @@ namespace Diotima
 		return mDevice->CreateTextureBuffer2D(data, params);
 	}
 
-	U32 Renderer::QueueCreateVertexBufferCommand(void* data, size_t size, U32 count)
+	U32 LegacyRenderer::QueueCreateVertexBufferCommand(void* data, size_t size, U32 count)
 	{
 		std::lock_guard<std::mutex> lock(mVertexBufferCommandMutex);
 
@@ -321,7 +321,7 @@ namespace Diotima
 		return mDevice->GetVertexBufferCount() + mVertexBufferCommandQueue.size() - 1;
 	}
 
-	U32 Renderer::QueueCreateIndexBufferCommand(void* data, size_t size, U32 count)
+	U32 LegacyRenderer::QueueCreateIndexBufferCommand(void* data, size_t size, U32 count)
 	{
 		std::lock_guard<std::mutex> lock(mIndexBufferCommandMutex);
 
@@ -336,7 +336,7 @@ namespace Diotima
 		return mDevice->GetVertexBufferCount() + mIndexBufferCommandQueue.size() - 1;
 	}
 
-	U32 Renderer::QueueCreateTextureCommand(ECreateTextureBufferType bufferType, void* data, U32 width, U32 height)
+	U32 LegacyRenderer::QueueCreateTextureCommand(ECreateTextureBufferType bufferType, void* data, U32 width, U32 height)
 	{
 		std::lock_guard<std::mutex> lock(mTextureBufferCommandMutex);
 
@@ -352,7 +352,7 @@ namespace Diotima
 	}
 
 
-	void Renderer::QueueUpdateRenderItem(U32 itemID, const Matrix4x4& worldMtx)
+	void LegacyRenderer::QueueUpdateRenderItem(U32 itemID, const Matrix4x4& worldMtx)
 	{
 		std::lock_guard<std::mutex> lock(mUpdateRenderItemWorldMatrixCommandMutex);
 
@@ -363,7 +363,7 @@ namespace Diotima
 		mUpdateRenderItemWorldMatrixCommandQueue.push_back(std::move(command));
 	}
 
-	void Renderer::ProcessCommands()
+	void LegacyRenderer::ProcessCommands()
 	{
 		OPTICK_EVENT();
 
@@ -433,7 +433,7 @@ namespace Diotima
 		}
 	}
 
-	void Renderer::RenderItemProtocol::Invalidate()
+	void LegacyRenderer::RenderItemProtocol::Invalidate()
 	{
 		bIsValid = false;
 	}

@@ -55,7 +55,7 @@ namespace Diotima
 		SetDevice(mRenderer->mDevice.get());
 
 		mViewProjBuf = mDevice->CreateConstantBuffer(sizeof(Matrix4x4), 1);
-		mLightBuf = mDevice->CreateConstantBuffer(sizeof(Renderer::LightItemProtocol), 1);
+		mLightBuf = mDevice->CreateConstantBuffer(sizeof(LegacyRenderer::LightItemProtocol), 1);
 		mCameraDataBuf = mDevice->CreateConstantBuffer(MemoryUtils::AlignSize(sizeof(Vector3D), 15), 1);
 
 		// Shaders
@@ -113,10 +113,10 @@ namespace Diotima
 
 	void ForwardPass::Begin()
 	{
-		const std::vector<Renderer::LightItemProtocol>& lights = mRenderer->GetLights();
+		const std::vector<LegacyRenderer::LightItemProtocol>& lights = mRenderer->GetLights();
 		PrepareLights(lights);
 
-		const Renderer::CameraItemProtocol& camera = mRenderer->GetCamera();
+		const LegacyRenderer::CameraItemProtocol& camera = mRenderer->GetCamera();
 		ID3D11DeviceContext& deviceContext = mDevice->GetDeviceContext();
 
 		deviceContext.RSSetState(mDevice->mRasterState);
@@ -195,8 +195,8 @@ namespace Diotima
 		{
 			ID3D11DeviceContext& deviceContext = mDevice->GetDeviceContext();
 
- 			const std::vector<Renderer::RenderItemDrawCall>& drawCalls = mRenderer->GetDrawCalls();
- 			for (const Renderer::RenderItemDrawCall& drawCall : drawCalls)
+ 			const std::vector<LegacyRenderer::RenderItemDrawCall>& drawCalls = mRenderer->GetDrawCalls();
+ 			for (const LegacyRenderer::RenderItemDrawCall& drawCall : drawCalls)
  			{
  				// try to draw something
  				mDevice->GetDeviceContext().IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -258,7 +258,7 @@ namespace Diotima
 		deviceContext.PSSetShaderResources(3, ARRAYSIZE(nullViews), nullViews);
 	}
 
-	void ForwardPass::SetRenderer(Renderer* renderer)
+	void ForwardPass::SetRenderer(LegacyRenderer* renderer)
 	{
 		mRenderer = renderer;
 	}
@@ -271,7 +271,7 @@ namespace Diotima
 		mDevice = device;
 	}
 
-	void ForwardPass::PrepareLights(const std::vector<Renderer::LightItemProtocol>& lights)
+	void ForwardPass::PrepareLights(const std::vector<LegacyRenderer::LightItemProtocol>& lights)
 	{
 		//OPTICK_EVENT();
 
