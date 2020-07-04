@@ -151,6 +151,8 @@ namespace Diotima
 		inline LightItemProtocol& GetLightProtocolByIdx(Int32 idx) { return mLightingList[idx]; }
 
 		// #TODO(Josh::Really really don't like this, fix later)
+		// #TODO
+		// Take with new renderer
 		void SetWindow(void* handle) { mWindowHandle = handle; }
 		void SetCamera(const CameraItemProtocol& cameraItem) { camera = std::move(cameraItem); }
 

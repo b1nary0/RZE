@@ -105,6 +105,8 @@ namespace Diotima
 		mLightingList.erase(iter);
 	}
 
+	// #TODO
+	// Take with new Renderer
 	void LegacyRenderer::Initialize()
 	{
 		mCanvasSize.SetXY(1600, 900);
@@ -228,12 +230,16 @@ namespace Diotima
 		}
 	}
 
+	// #TODO
+	// Take with new renderer - only used in hacky RenderTarget code in EditorApp
 	Diotima::DX11GFXDevice& LegacyRenderer::GetDriverDevice()
 	{
 		AssertNotNull(mDevice);
 		return *mDevice;
 	}
 
+	// #TODO
+	// Take with new Renderer
 	void LegacyRenderer::EnableVsync(bool bEnabled)
 	{
 		mDevice->SetSyncInterval(static_cast<U32>(bEnabled));
@@ -244,6 +250,8 @@ namespace Diotima
 		return mCanvasSize;
 	}
 
+	// #TODO
+	// Take with new renderer
 	void LegacyRenderer::ResizeCanvas(const Vector2D& newSize)
 	{
 		mCanvasSize = newSize;
@@ -260,6 +268,8 @@ namespace Diotima
 		LOG_CONSOLE_ARGS("New Canvas Size: %f x %f", mCanvasSize.X(), mCanvasSize.Y());
 	}
 
+	// #TODO
+	// Take with new renderer - only used in hacky RenderTarget code in EditorApp
 	void LegacyRenderer::SetViewportSize(const Vector2D& newSize)
 	{
 		mViewportDimensions = newSize;
@@ -270,6 +280,8 @@ namespace Diotima
 		return mViewportDimensions;
 	}
 
+	// #TODO
+	// Take with new renderer - only used in hacky RenderTarget code in EditorApp
 	void LegacyRenderer::SetRenderTarget(RenderTargetTexture* renderTarget)
 	{
 		AssertNotNull(renderTarget);
@@ -306,6 +318,8 @@ namespace Diotima
 		return mDevice->CreateTextureBuffer2D(data, params);
 	}
 
+	// #TODO
+	// Take with new renderer (neutered)
 	U32 LegacyRenderer::QueueCreateVertexBufferCommand(void* data, size_t size, U32 count)
 	{
 		std::lock_guard<std::mutex> lock(mVertexBufferCommandMutex);
