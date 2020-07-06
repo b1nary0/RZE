@@ -11,11 +11,6 @@ struct aiMesh;
 struct aiNode;
 struct aiScene;
 
-namespace Diotima
-{
-	class GFXMesh;
-}
-
 class Model3D : public IResource
 {
 public:
