@@ -73,9 +73,6 @@ namespace Diotima
 		U32 CreateTextureBuffer2D(void* data, U32 width, U32 height);
 
 	private:
-		void PrepareDrawCalls();
-
-	private:
 		Vector2D mCanvasSize;
 
 		std::queue<Int32> mFreeRenderListIndices;
