@@ -54,6 +54,7 @@ namespace Diotima
 		U32 VertexBuffer;
 		U32 IndexBuffer;
 		U32 TextureBuffer;
+		U32 ConstantBuffer;
 		Matrix4x4 Transform;
 	};
 
@@ -124,7 +125,6 @@ namespace Diotima
 		// DX12 Temp
 	private:
 		std::unique_ptr<DX11GFXDevice> mDevice;
-		std::unique_ptr<GFXPassGraph> mPassGraph;
 		
 		void* mWindowHandle;
 

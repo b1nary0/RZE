@@ -34,8 +34,7 @@ namespace Diotima
 {
 
 	Renderer::Renderer()
-		: mPassGraph(std::make_unique<GFXPassGraph>())
-		, mRenderTarget(nullptr)
+		: mRenderTarget(nullptr)
 	{
 	}
 
@@ -54,8 +53,6 @@ namespace Diotima
 		ImGui::CreateContext();
 		ImGui_ImplWin32_Init(mWindowHandle);
 		ImGui_ImplDX11_Init(&mDevice->GetHardwareDevice(), &mDevice->GetDeviceContext());
-
-		//mPassGraph->Build(this);
 	}
 
 	void Renderer::Update()
@@ -63,12 +60,6 @@ namespace Diotima
 		OPTICK_EVENT();
 
 		ProcessCommands();
-
-		{
-			// #TODO(Eventually this should be moved out of here and into the engine level.
-			//       Then the render side just deals with the generated commands.)
-			mPassGraph->Execute();
-		}
 	}
 
 	void Renderer::Render()
@@ -125,7 +116,6 @@ namespace Diotima
 		ImGui::GetIO().DisplaySize.y = static_cast<float>(height);
 
 		mDevice->HandleWindowResize(newSize);
-		mPassGraph->OnWindowResize(width, height);
 
 		LOG_CONSOLE_ARGS("New Canvas Size: %f x %f", mCanvasSize.X(), mCanvasSize.Y());
 	}
@@ -220,7 +210,6 @@ namespace Diotima
 		// #TODO(This is shit, fix later)
 		return mDevice->GetTextureBufferCount() + mTextureBufferCommandQueue.size() - 1;
 	}
-
 
 	void Renderer::QueueUpdateRenderItem(U32 itemID, const Matrix4x4& worldMtx)
 	{

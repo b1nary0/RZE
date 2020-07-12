@@ -14,6 +14,10 @@ namespace Diotima
 	{
 	}
 
+	// #TODO
+	// This function is bad. Shouldn't need to directly access the device.
+	// Should just ask the Renderer to allocate the necessary structure to represent
+	// this render target.
 	void RenderTargetTexture::Initialize(DX11GFXDevice* device)
 	{
 		GFXTextureBufferParams depthTextureParams = { 0 };
