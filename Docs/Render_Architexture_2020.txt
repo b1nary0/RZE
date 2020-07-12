@@ -1,0 +1,47 @@
+SceneObject contains info re: object data + state
+	TextureBuffers
+	GeometryBuffers, etc
+	ShaderProgram
+	DriverState
+	
+	=========
+	
+StaticMesh
+	MeshGeometry...
+		?Material
+		?Texture2D
+			GPUHandle
+		MeshVertex...
+		U32... (Indices)
+		VertexBuffer
+			GPUHandle
+		IndexBuffer
+			GPUHandle
+		RenderObjectHandle
+		
+RenderObject
+	MaterialData
+	TextureGPUHandle
+	VertexBufferGPUHandle
+	IndexBufferGPUHandle
+	Transform
+	
+============
+	
+
+Game/Engine Features
+	Organizes and manages the "what, why and how" of visual data.
+	Pass Graph, etc in Engine, works out render work to submit
+Diotima::Renderer	
+	Super low level, relatively thin wrapper against the GPU. Essentially organizes the data that needs to be uploaded to the GPU so that when it is time to draw, it has what it needs. Submits to the GPU.
+Driver API (Buffers, State, etc)	
+	Graphics state
+	Buffer allocation
+	Driver debugging
+	Validation
+	
+	
+	
+	
+	
+	
