@@ -21,6 +21,42 @@ namespace Diotima
 	class GFXPassGraph;
 	class RenderTargetTexture;
 
+	// #TODO
+	// This is just here as a reminder to figure this out.
+	// This is how the driver state needs to be set to draw an item.
+	// Might be a good idea to investigate using the opt-in/out defaults system.
+	// If something hasn't been overridden or excluded, it will use a default state.
+	// Then there is no state leakage because everything just sets what it needs.
+	struct GraphicsState
+	{
+
+	};
+
+	// Essentially a direct copy into a constant buffer. All this data is consumed by the GPU
+	// for lighting etc
+	struct MaterialData
+	{
+		float Shininess;
+	};
+
+	// Bundle of data that is necessary for each draw call.
+	// #TODO
+	// These will need to be wrapped or otherwise sorted properly by some higher-level design.
+	// This is simply the data for any item with geometry. When and how this data is used is determined
+	// elsewhere. The U32 handles should be designed such that 0 means no data. 
+	// For now, each item will need a Vertex and Index buffer, but should be easily extensible
+	// to support other types of data construction or use.
+	struct RenderData
+	{
+		// This GraphicsState may not need to live on RenderData.
+		GraphicsState DriverState;
+		MaterialData Material;
+		U32 VertexBuffer;
+		U32 IndexBuffer;
+		U32 TextureBuffer;
+		Matrix4x4 Transform;
+	};
+
 	class Renderer
 	{
 		// Constructors
