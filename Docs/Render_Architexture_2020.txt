@@ -1,11 +1,3 @@
-SceneObject contains info re: object data + state
-	TextureBuffers
-	GeometryBuffers, etc
-	ShaderProgram
-	DriverState
-	
-	=========
-	
 StaticMesh
 	MeshGeometry...
 		?Material
@@ -20,10 +12,12 @@ StaticMesh
 		RenderObjectHandle
 		
 RenderObject
+	GraphicsState
 	MaterialData
 	TextureGPUHandle
 	VertexBufferGPUHandle
 	IndexBufferGPUHandle
+	ConstantBufferGPUHandle
 	Transform
 	
 ============
