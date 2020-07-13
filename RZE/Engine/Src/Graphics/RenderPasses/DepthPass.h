@@ -13,7 +13,6 @@ public:
 	virtual void Initialize(int width, int height) override;
 	virtual void Execute() override;
 	virtual void OnWindowResize(int newWidth, int newHeight) override {}
-	virtual void SetInputBuffer(U32 bufferID) override {}
 
 private:
 	void Begin();

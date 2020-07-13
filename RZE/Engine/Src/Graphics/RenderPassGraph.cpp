@@ -40,9 +40,9 @@ void RenderPassGraph::Execute()
 	U32 previousPassOutput = std::numeric_limits<U32>::max();
 	for (auto& renderPass : mRenderPasses)
 	{
-		renderPass->SetInputBuffer(previousPassOutput);
+		//renderPass->SetInputBuffer(previousPassOutput);
 		renderPass->Execute();
-		previousPassOutput = renderPass->GetOutputBuffer();
+		//previousPassOutput = renderPass->GetOutputBuffer();
 	}
 }
 
