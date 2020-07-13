@@ -6,7 +6,7 @@
 class RenderPass;
 class LegacyRenderer;
 
-// GFXPassGraph is the systemic implementation of GFXRenderPass.
+// RenderPassGraph is the systemic implementation of RenderPass.
 // It provides the API to compile, prepare, and execute the frame graph,
 // ?? ultimately culminating in the final frame output ??
 class RenderPassGraph
