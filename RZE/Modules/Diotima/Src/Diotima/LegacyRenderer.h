@@ -33,8 +33,8 @@ namespace Diotima
 	class LegacyRenderer
 	{
 		// #TODO(Temp for refactor, for access to RenderItemDrawCall)
-		friend class ForwardPass;
-		friend class DepthPass;
+		friend class ForwardPass_OLD;
+		friend class DepthPass_OLD;
 		friend class ImGUIPass;
 
 	public:

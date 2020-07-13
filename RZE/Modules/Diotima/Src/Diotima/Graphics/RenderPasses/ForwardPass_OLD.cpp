@@ -1,4 +1,4 @@
-#include <Diotima/Graphics/RenderPasses/ForwardPass.h>
+#include <Diotima/Graphics/RenderPasses/ForwardPass_OLD.h>
 
 #include <Diotima/Driver/DX11/DX11GFXDevice.h>
 #include <Diotima/Driver/DX11/DX11GFXConstantBuffer.h>
@@ -34,12 +34,12 @@ namespace
 namespace Diotima
 {
 
-	ForwardPass::ForwardPass()
+	ForwardPass_OLD::ForwardPass_OLD()
 		: mDevice(nullptr)
 	{
 	}
 
-	ForwardPass::~ForwardPass()
+	ForwardPass_OLD::~ForwardPass_OLD()
 	{
 		// #TODO(Move these and make a proper shutdown/release procedure for GFXRenderPass)
 		mVertexShader->Release();
@@ -48,7 +48,7 @@ namespace Diotima
 		mPSBlob->Release();
 	}
 
-	void ForwardPass::Initialize(int width, int height)
+	void ForwardPass_OLD::Initialize(int width, int height)
 	{
 		OPTICK_EVENT();
 
@@ -111,7 +111,7 @@ namespace Diotima
 		hr = mDevice->GetHardwareDevice().CreateInputLayout(k_vertLayout, numLayoutElements, mVSBlob->GetBufferPointer(), mVSBlob->GetBufferSize(), &mVertexLayout);
 	}
 
-	void ForwardPass::Begin()
+	void ForwardPass_OLD::Begin()
 	{
 		const std::vector<LegacyRenderer::LightItemProtocol>& lights = mRenderer->GetLights();
 		PrepareLights(lights);
@@ -187,7 +187,7 @@ namespace Diotima
 		deviceContext.PSSetShaderResources(3, 1, &shadowSRV);
 	}
 
-	void ForwardPass::Execute()
+	void ForwardPass_OLD::Execute()
 	{
 		OPTICK_EVENT();
 
@@ -249,7 +249,7 @@ namespace Diotima
 		End();
 	}
 
-	void ForwardPass::End()
+	void ForwardPass_OLD::End()
 	{
 		// #TODO
 		// Do a better cleanup pass.
@@ -258,12 +258,12 @@ namespace Diotima
 		deviceContext.PSSetShaderResources(3, ARRAYSIZE(nullViews), nullViews);
 	}
 
-	void ForwardPass::SetRenderer(LegacyRenderer* renderer)
+	void ForwardPass_OLD::SetRenderer(LegacyRenderer* renderer)
 	{
 		mRenderer = renderer;
 	}
 
-	void ForwardPass::SetDevice(DX11GFXDevice* device)
+	void ForwardPass_OLD::SetDevice(DX11GFXDevice* device)
 	{
 		AssertNotNull(device);
 		AssertExpr(mDevice == nullptr);
@@ -271,7 +271,7 @@ namespace Diotima
 		mDevice = device;
 	}
 
-	void ForwardPass::PrepareLights(const std::vector<LegacyRenderer::LightItemProtocol>& lights)
+	void ForwardPass_OLD::PrepareLights(const std::vector<LegacyRenderer::LightItemProtocol>& lights)
 	{
 		//OPTICK_EVENT();
 
@@ -279,7 +279,7 @@ namespace Diotima
 		lightBuf->UpdateSubresources(lights.data());
 	}
 
-	void ForwardPass::OnWindowResize(int newWidth, int newHeight)
+	void ForwardPass_OLD::OnWindowResize(int newWidth, int newHeight)
 	{
 // 		mDepthStencilBuffer.release();
 // 
@@ -301,7 +301,7 @@ namespace Diotima
 // 		mScissorRect.bottom = newHeight;
 	}
 
-	void ForwardPass::SetInputBuffer(U32 bufferID)
+	void ForwardPass_OLD::SetInputBuffer(U32 bufferID)
 	{
 		mShadowMapBufferID = bufferID;
 	}

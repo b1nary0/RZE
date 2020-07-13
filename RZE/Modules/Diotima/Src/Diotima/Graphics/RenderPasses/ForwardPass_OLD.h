@@ -13,12 +13,12 @@ namespace Diotima
 {
 	class DX11GFXDevice;
 
-	class ForwardPass final : public GFXRenderPass
+	class ForwardPass_OLD final : public GFXRenderPass
 	{
 	public:
 		// #TODO(device parameter should eventually be a context (cmd list of its own)
-		ForwardPass();
-		virtual ~ForwardPass();
+		ForwardPass_OLD();
+		virtual ~ForwardPass_OLD();
 
 	public:
 		virtual void Initialize(int width, int height) override;

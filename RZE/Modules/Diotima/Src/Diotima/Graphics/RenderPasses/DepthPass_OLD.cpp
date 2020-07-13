@@ -1,4 +1,4 @@
-#include <Diotima/Graphics/RenderPasses/DepthPass.h>
+#include <Diotima/Graphics/RenderPasses/DepthPass_OLD.h>
 
 #include <Diotima/Driver/DX11/DX11GFXDevice.h>
 #include <Diotima/Driver/DX11/DX11GFXVertexBuffer.h>
@@ -27,16 +27,16 @@ namespace
 
 namespace Diotima
 {
-	DepthPass::DepthPass()
+	DepthPass_OLD::DepthPass_OLD()
 		: mDevice(nullptr)
 	{
 	}
 
-	DepthPass::~DepthPass()
+	DepthPass_OLD::~DepthPass_OLD()
 	{
 	}
 
-	void DepthPass::Initialize(int width, int height)
+	void DepthPass_OLD::Initialize(int width, int height)
 	{
 		SetDevice(&mRenderer->GetDriverDevice());
 
@@ -110,7 +110,7 @@ namespace Diotima
 		mOutputTexture = mDevice->GetTextureBuffer2D(mOutputTextureID);
 	}
 
-	void DepthPass::Begin()
+	void DepthPass_OLD::Begin()
 	{
 		const std::vector<LegacyRenderer::LightItemProtocol>& lights = mRenderer->GetLights();
 		PrepareLights(lights);
@@ -138,7 +138,7 @@ namespace Diotima
 		deviceContext.RSSetViewports(1, &viewport);
 	}
 
-	void DepthPass::Execute()
+	void DepthPass_OLD::Execute()
 	{
 		OPTICK_EVENT();
 
@@ -177,17 +177,17 @@ namespace Diotima
 		End();
 	}
 
-	void DepthPass::End()
+	void DepthPass_OLD::End()
 	{
 	
 	}
 
-	void DepthPass::SetRenderer(LegacyRenderer* renderer)
+	void DepthPass_OLD::SetRenderer(LegacyRenderer* renderer)
 	{
 		mRenderer = renderer;
 	}
 
-	void DepthPass::SetDevice(DX11GFXDevice* device)
+	void DepthPass_OLD::SetDevice(DX11GFXDevice* device)
 	{
 		AssertNotNull(device);
 		AssertExpr(mDevice == nullptr);
@@ -195,7 +195,7 @@ namespace Diotima
 		mDevice = device;
 	}
 
-	void DepthPass::PrepareLights(const std::vector<LegacyRenderer::LightItemProtocol>& lights)
+	void DepthPass_OLD::PrepareLights(const std::vector<LegacyRenderer::LightItemProtocol>& lights)
 	{
 		//OPTICK_EVENT();
  		DX11GFXConstantBuffer* const lightBuf = mDevice->GetConstantBuffer(mLightBuf);
@@ -205,7 +205,7 @@ namespace Diotima
 		lightBuf->UpdateSubresources(&lights[0].LightSpaceMatrix);
 	}
 
-	U32 DepthPass::GetOutputBuffer()
+	U32 DepthPass_OLD::GetOutputBuffer()
 	{
 		return mOutputTextureID;
 	}

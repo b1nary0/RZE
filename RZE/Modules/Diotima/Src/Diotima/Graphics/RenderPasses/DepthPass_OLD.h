@@ -14,12 +14,12 @@ namespace Diotima
 	class DX11GFXDevice;
 	class DX11GFXTextureBuffer2D;
 
-	class DepthPass final : public GFXRenderPass
+	class DepthPass_OLD final : public GFXRenderPass
 	{
 	public:
 		// #TODO(device parameter should eventually be a context (cmd list of its own)
-		DepthPass();
-		virtual ~DepthPass();
+		DepthPass_OLD();
+		virtual ~DepthPass_OLD();
 
 	public:
 		virtual void Initialize(int width, int height) override;
