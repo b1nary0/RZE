@@ -14,7 +14,6 @@ public:
 	virtual void Execute() override;
 	virtual void OnWindowResize(int newWidth, int newHeight) override {}
 	virtual void SetInputBuffer(U32 bufferID) override {}
-	virtual U32 GetOutputBuffer() override;
 
 private:
 	void Begin();
