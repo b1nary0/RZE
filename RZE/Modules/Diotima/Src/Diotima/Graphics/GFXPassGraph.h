@@ -3,6 +3,11 @@
 #include <memory>
 #include <vector>
 
+// #TODO
+// This needs to be moved out of Diotima into Engine/Graphics.
+// This is an engine concept that was put into the Renderer
+// just as a exercise in writting really fast quick code without thinking.
+
 namespace Diotima
 {
 	class GFXRenderPass;

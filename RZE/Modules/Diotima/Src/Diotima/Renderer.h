@@ -48,13 +48,11 @@ namespace Diotima
 	// to support other types of data construction or use.
 	struct RenderData
 	{
-		// This GraphicsState may not need to live on RenderData.
-		GraphicsState DriverState;
-		MaterialData Material;
 		U32 VertexBuffer;
 		U32 IndexBuffer;
 		U32 TextureBuffer;
 		U32 ConstantBuffer;
+		MaterialData Material;
 		Matrix4x4 Transform;
 	};
 
