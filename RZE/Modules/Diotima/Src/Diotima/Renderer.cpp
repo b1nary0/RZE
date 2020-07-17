@@ -87,12 +87,6 @@ namespace Diotima
 		mDevice->Shutdown();
 	}
 
-	Diotima::DX11GFXDevice& Renderer::GetDriverDevice()
-	{
-		AssertNotNull(mDevice);
-		return *mDevice;
-	}
-
 	void Renderer::EnableVsync(bool bEnabled)
 	{
 		mDevice->SetSyncInterval(static_cast<U32>(bEnabled));
@@ -132,19 +126,6 @@ namespace Diotima
 		return mViewportDimensions;
 	}
 
-	// #TODO
-	// Take with new renderer - only used in hacky RenderTarget code in EditorApp
-	void Renderer::SetRenderTarget(RenderTargetTexture* renderTarget)
-	{
-		AssertNotNull(renderTarget);
-		mRenderTarget = renderTarget;
-	}
-
-	Diotima::RenderTargetTexture* Renderer::GetRenderTarget()
-	{
-		return mRenderTarget;
-	}
-
 	U32 Renderer::CreateVertexBuffer(void* data, size_t size, U32 count)
 	{
 		return mDevice->CreateVertexBuffer(data, size, count);
@@ -170,106 +151,33 @@ namespace Diotima
 		return mDevice->CreateTextureBuffer2D(data, params);
 	}
 
-	// #TODO
-	// Take with new renderer (neutered)
-	U32 Renderer::QueueCreateVertexBufferCommand(void* data, size_t size, U32 count)
+
+	Diotima::RenderObjectHandle Renderer::CreateRenderObject()
 	{
-		CreateBufferRenderCommand command;
-		command.BufferType = ECreateBufferType::Vertex;
-		command.Data = data;
-		command.Size = size;
-		command.Count = count;
-		mVertexBufferCommandQueue.push_back(std::move(command));
+		RenderObjectHandle objectHandle;
 
-		// #TODO(This is shit, fix later)
-		return mDevice->GetVertexBufferCount() + mVertexBufferCommandQueue.size() - 1;
-	}
+		if (!mFreeRenderObjectIndices.empty())
+		{
+			U32 freeIndex = mFreeRenderObjectIndices.front();
+			mFreeRenderObjectIndices.pop();
+			objectHandle.Value = freeIndex;
 
-	U32 Renderer::QueueCreateIndexBufferCommand(void* data, size_t size, U32 count)
-	{
-		CreateBufferRenderCommand command;
-		command.BufferType = ECreateBufferType::Index;
-		command.Data = data;
-		command.Size = size;
-		command.Count = count;
-		mIndexBufferCommandQueue.push_back(std::move(command));
+			RenderObject& renderObject = mRenderObjects[freeIndex];
+			renderObject = {};
 
-		// #TODO(This is shit, fix later)
-		return mDevice->GetVertexBufferCount() + mIndexBufferCommandQueue.size() - 1;
-	}
+			return objectHandle;
+		}
 
-	U32 Renderer::QueueCreateTextureCommand(ECreateTextureBufferType bufferType, void* data, U32 width, U32 height)
-	{
-		CreateTextureBufferRenderCommand command;
-		command.BufferType = bufferType;
-		command.Data = data;
-		command.Width = width;
-		command.Height = height;
-		mTextureBufferCommandQueue.push_back(std::move(command));
+		objectHandle.Value = mRenderObjects.size();
+		mRenderObjects.emplace_back();
 
-		// #TODO(This is shit, fix later)
-		return mDevice->GetTextureBufferCount() + mTextureBufferCommandQueue.size() - 1;
-	}
-
-	void Renderer::QueueUpdateRenderItem(U32 itemID, const Matrix4x4& worldMtx)
-	{
-		UpdateRenderItemWorldMatrixCommand command;
-		command.RenderItemID = itemID;
-		command.WorldMtx = worldMtx;
-
-		mUpdateRenderItemWorldMatrixCommandQueue.push_back(std::move(command));
+		return objectHandle;
 	}
 
 	void Renderer::ProcessCommands()
 	{
 		OPTICK_EVENT();
-
-		{
-			OPTICK_EVENT("Process CreateVertexBuffer commands");
-			for (auto& command : mVertexBufferCommandQueue)
-			{
-				CreateVertexBuffer(command.Data, command.Size, command.Count);
-			}
-			mVertexBufferCommandQueue.clear();
-		}
-
-		{
-			OPTICK_EVENT("Process CreateIndexBuffer commands");
-			for (auto& command : mIndexBufferCommandQueue)
-			{
-				CreateIndexBuffer(command.Data, command.Size, command.Count);
-			}
-			mIndexBufferCommandQueue.clear();
-		}
-
-		{
-			OPTICK_EVENT("Process CreateTextureBuffer commands");
-			for (auto& command : mTextureBufferCommandQueue)
-			{
-				switch (command.BufferType)
-				{
-				case ECreateTextureBufferType::Texture2D:
-					CreateTextureBuffer2D(command.Data, command.Width, command.Height);
-					break;
-
-				default:
-					AssertFalse();
-					break;
-				}
-			}
-			mTextureBufferCommandQueue.clear();
-		}
-
-		{
-			OPTICK_EVENT("Process UpdateRenderItemWorldMatrix commands");
-			void* tmpMatrixBuf = malloc(sizeof(Matrix4x4) * 2);
-			for (auto& command : mUpdateRenderItemWorldMatrixCommandQueue)
-			{
-				
-			}
-			mUpdateRenderItemWorldMatrixCommandQueue.clear();
-			free(tmpMatrixBuf);
-		}
+		
 	}
 
 }

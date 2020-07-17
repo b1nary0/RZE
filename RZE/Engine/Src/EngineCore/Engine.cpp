@@ -27,6 +27,7 @@ RZE_Engine::RZE_Engine()
 	: mMainWindow(nullptr)
 	, mEngineConfig(nullptr)
 	, mApplication(nullptr)
+	, mLegacyRenderer(nullptr)
 	, mRenderer(nullptr)
 	, bShouldExit(false)
 	, bIsInitialized(false)
@@ -85,14 +86,14 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 
 					Update();
 
-					mRenderer->Update();
+					mLegacyRenderer->Update();
 
 					ImGui::EndFrame();
 				}
 
 				{
 					OPTICK_EVENT("GPU Submission");
-					mRenderer->Render();
+					mLegacyRenderer->Render();
 				}
 			}
 
@@ -196,12 +197,14 @@ void RZE_Engine::CreateAndInitializeWindow()
 
 void RZE_Engine::CreateAndInitializeRenderer()
 {
-	mRenderer = new Diotima::LegacyRenderer();
+	mLegacyRenderer = new Diotima::LegacyRenderer();
 
-	mRenderer->SetWindow(mMainWindow->GetOSWindowHandleData().windowHandle);
+	mLegacyRenderer->SetWindow(mMainWindow->GetOSWindowHandleData().windowHandle);
 
-	mRenderer->Initialize();
-	mRenderer->EnableVsync(mEngineConfig->GetEngineSettings().IsVSyncEnabled());
+	mLegacyRenderer->Initialize();
+	mLegacyRenderer->EnableVsync(mEngineConfig->GetEngineSettings().IsVSyncEnabled());
+
+	mRenderer = new Diotima::Renderer();
 }
 
 void RZE_Engine::InitializeApplication(Functor<RZE_Application* const> createGameCallback)
@@ -253,7 +256,7 @@ void RZE_Engine::RegisterWindowEvents()
 		else if (event.mWindowEvent.mEventInfo.mEventSubType == EWindowEventType::Window_Resize)
 		{
 			Vector2D newSize(event.mWindowEvent.mSizeX, event.mWindowEvent.mSizeY);
-			GetRenderer().ResizeCanvas(newSize);
+			GetLegacyRenderer().ResizeCanvas(newSize);
 		}
 	});
 	mEventHandler.RegisterForEvent(EEventType::Window, windowCallback);
@@ -313,12 +316,12 @@ void RZE_Engine::InternalShutDown()
 {
 	AssertNotNull(mMainWindow);
 	AssertNotNull(mEngineConfig);
-	AssertNotNull(mRenderer);
+	AssertNotNull(mLegacyRenderer);
 	AssertNotNull(mActiveScene);
 
 	delete mMainWindow;
 	delete mEngineConfig;
-	delete mRenderer;
+	delete mLegacyRenderer;
 	delete mActiveScene;
 }
 
@@ -337,10 +340,15 @@ InputHandler& RZE_Engine::GetInputHandler()
 	return mInputHandler;
 }
 
-Diotima::LegacyRenderer& RZE_Engine::GetRenderer()
+Diotima::Renderer& RZE_Engine::GetRenderer()
 {
-	AssertNotNull(mRenderer);
 	return *mRenderer;
+}
+
+Diotima::LegacyRenderer& RZE_Engine::GetLegacyRenderer()
+{
+	AssertNotNull(mLegacyRenderer);
+	return *mLegacyRenderer;
 }
 
 GameScene& RZE_Engine::GetActiveScene()

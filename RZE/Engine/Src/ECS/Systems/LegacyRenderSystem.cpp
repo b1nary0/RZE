@@ -47,7 +47,7 @@ void LegacyRenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 	OPTICK_EVENT();
 
 	Apollo::EntityHandler& handler = InternalGetEntityHandler();
-	Diotima::LegacyRenderer& renderer = RZE_Application::RZE().GetRenderer();
+	Diotima::LegacyRenderer& renderer = RZE_Application::RZE().GetLegacyRenderer();
 
 	TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(mMainCameraEntity);
 	CameraComponent* const camComp = handler.GetComponent<CameraComponent>(mMainCameraEntity);
@@ -139,7 +139,7 @@ void LegacyRenderSystem::RegisterForComponentNotifications()
 
 				item.MeshData.push_back(meshData);
 			}
-			Int32 itemIdx = RZE_Application::RZE().GetRenderer().AddRenderItem(item);
+			Int32 itemIdx = RZE_Application::RZE().GetLegacyRenderer().AddRenderItem(item);
 			mRenderItemEntityMap[entityID] = itemIdx;
 		}
 	});
@@ -155,7 +155,7 @@ void LegacyRenderSystem::RegisterForComponentNotifications()
 		RZE_Application::RZE().GetResourceHandler().ReleaseResource(meshComponent->Resource);
 
 		Int32 renderIndex = mRenderItemEntityMap[entityID];
-		RZE_Application::RZE().GetRenderer().RemoveRenderItem(renderIndex);
+		RZE_Application::RZE().GetLegacyRenderer().RemoveRenderItem(renderIndex);
 		mRenderItemEntityMap[entityID] = -1;
 	});
 	handler.RegisterForComponentRemovedNotification<MeshComponent>(OnMeshComponentRemoved);
@@ -178,7 +178,7 @@ void LegacyRenderSystem::RegisterForComponentNotifications()
 		if (meshComp->Resource.IsValid())
 		{
 			Int32 renderIndex = mRenderItemEntityMap[entityID];
-			Diotima::LegacyRenderer::RenderItemProtocol& renderItem = RZE_Application::RZE().GetRenderer().GetItemProtocolByIdx(renderIndex);
+			Diotima::LegacyRenderer::RenderItemProtocol& renderItem = RZE_Application::RZE().GetLegacyRenderer().GetItemProtocolByIdx(renderIndex);
 			renderItem.MeshData.clear();
 
 			Model3D* const modelData = RZE_Application::RZE().GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
@@ -208,7 +208,7 @@ void LegacyRenderSystem::RegisterForComponentNotifications()
 
 			// #TODO
 			// This is bad, make a modifyrenderitem function on Diotima::Renderer where this can be done
-			Diotima::DX11GFXDevice& device = RZE_Application::RZE().GetRenderer().GetDriverDevice();
+			Diotima::DX11GFXDevice& device = RZE_Application::RZE().GetLegacyRenderer().GetDriverDevice();
 
 			std::vector<U32> meshMaterialBuffers;
 			meshMaterialBuffers.reserve(renderItem.MeshData.size());
@@ -233,7 +233,7 @@ void LegacyRenderSystem::RegisterForComponentNotifications()
 		item.Color = lightComp->Color;
 		item.Strength = lightComp->Strength;
 
-		Int32 itemIdx = RZE_Application::RZE().GetRenderer().AddLightItem(item);
+		Int32 itemIdx = RZE_Application::RZE().GetLegacyRenderer().AddLightItem(item);
 		mLightItemEntityMap[entityID] = itemIdx;
 	});
 	handler.RegisterForComponentAddNotification<LightSourceComponent>(OnLightSourceComponentAdded);
@@ -241,7 +241,7 @@ void LegacyRenderSystem::RegisterForComponentNotifications()
 	Apollo::EntityHandler::ComponentRemovedFunc OnLightSourceComponentRemoved([this, &handler](Apollo::EntityID entityID)
 	{
 		Int32 lightIndex = mLightItemEntityMap[entityID];
-		RZE_Application::RZE().GetRenderer().RemoveLightItem(lightIndex);
+		RZE_Application::RZE().GetLegacyRenderer().RemoveLightItem(lightIndex);
 		mLightItemEntityMap[entityID] = -1;
 	});
 	handler.RegisterForComponentRemovedNotification<LightSourceComponent>(OnLightSourceComponentRemoved);

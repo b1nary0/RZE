@@ -8,6 +8,6 @@ IndexBuffer::IndexBuffer(const std::vector<U32>& indexData)
 
 void IndexBuffer::Initialize()
 {
-	mGPUBufferHandle = RZE_Application::RZE().GetRenderer().QueueCreateIndexBufferCommand(static_cast<void*>(mLocalBuffer.data()), sizeof(U32), static_cast<U32>(mLocalBuffer.size()));
+	mGPUBufferHandle = RZE_Application::RZE().GetLegacyRenderer().QueueCreateIndexBufferCommand(static_cast<void*>(mLocalBuffer.data()), sizeof(U32), static_cast<U32>(mLocalBuffer.size()));
 }
 

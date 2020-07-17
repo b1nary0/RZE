@@ -46,14 +46,19 @@ namespace Diotima
 	// elsewhere. The U32 handles should be designed such that 0 means no data. 
 	// For now, each item will need a Vertex and Index buffer, but should be easily extensible
 	// to support other types of data construction or use.
-	struct RenderData
+	struct RenderObject
 	{
-		U32 VertexBuffer;
-		U32 IndexBuffer;
-		U32 TextureBuffer;
-		U32 ConstantBuffer;
+		U32 VertexBuffer = 0;
+		U32 IndexBuffer = 0;
+		U32 TextureBuffer = 0;
+		U32 ConstantBuffer = 0;
 		MaterialData Material;
 		Matrix4x4 Transform;
+	};
+
+	struct RenderObjectHandle
+	{
+		U32 Value;
 	};
 
 	class Renderer
@@ -72,8 +77,6 @@ namespace Diotima
 	public:
 		
 		// #TODO(Josh::Really really don't like this, fix later)
-		// #TODO
-		// Take with new renderer
 		void SetWindow(void* handle) { mWindowHandle = handle; }
 
 		void EnableVsync(bool bEnable);
@@ -84,48 +87,28 @@ namespace Diotima
 		void SetViewportSize(const Vector2D& newSize);
 		const Vector2D& GetViewportSize();
 
-		// This sets the render target for the entire pipeline. We essentially render to this
-		// and then send it to the back buffer. Will be reworked at some point.
-		void SetRenderTarget(RenderTargetTexture* renderTarget);
-		// Can return null for now to determine if we want to write directly to the backbuffer.
-		// Will fix later since we should be able to have a more robust system WRT RTTs.
-		RenderTargetTexture* GetRenderTarget();
-
-	public:
-		U32 QueueCreateVertexBufferCommand(void* data, size_t size, U32 count);
-		U32 QueueCreateIndexBufferCommand(void* data, size_t size, U32 count);
-		U32 QueueCreateTextureCommand(ECreateTextureBufferType bufferType, void* data, U32 width, U32 height);
-
-		void QueueUpdateRenderItem(U32 itemID, const Matrix4x4& worldMtx);
-
 		void ProcessCommands();
 
-		DX11GFXDevice& GetDriverDevice();
-
-	private:
+		// #TODO
+		// private later
 		U32 CreateVertexBuffer(void* data, size_t size, U32 count);
 		U32 CreateIndexBuffer(void* data, size_t size, U32 count);
 		U32 CreateTextureBuffer2D(void* data, U32 width, U32 height);
 
+		RenderObjectHandle CreateRenderObject();
+
 	private:
+		// #TODO
+		// Eventually needs to sort on key.
+		std::vector<RenderObject> mRenderObjects;
+		std::queue<U32> mFreeRenderObjectIndices;
+
 		Vector2D mCanvasSize;
-
-		std::queue<Int32> mFreeRenderListIndices;
-
 		RenderTargetTexture* mRenderTarget;
 
 	private:
-		std::vector<CreateBufferRenderCommand> mVertexBufferCommandQueue;
-		std::vector<CreateBufferRenderCommand> mIndexBufferCommandQueue;
-		std::vector<CreateTextureBufferRenderCommand> mTextureBufferCommandQueue;
-		std::vector<UpdateRenderItemWorldMatrixCommand> mUpdateRenderItemWorldMatrixCommandQueue;
-
-		// DX12 Temp
-	private:
-		std::unique_ptr<DX11GFXDevice> mDevice;
-		
 		void* mWindowHandle;
-
+		std::unique_ptr<DX11GFXDevice> mDevice;
 		Vector2D mViewportDimensions;
 	};
 }

@@ -16,6 +16,7 @@
 #include <Apollo/EntityHandler.h>
 
 #include <Diotima/LegacyRenderer.h>
+#include <Diotima/Renderer.h>
 
 class RZE_Application;
 
@@ -41,9 +42,12 @@ public:
 
 	// #TODO(Josh) Need to figure out this weird connection of accessing engine from application, and application from engine.
 	RZE_Application&			GetApplication();
+	// #TODO
+	// All of these gets might be best to hide behind a cpp. Or static engine in CPP memory with accessor in h.
 	ResourceHandler&			GetResourceHandler();
 	InputHandler&				GetInputHandler();
-	Diotima::LegacyRenderer&			GetRenderer();
+	Diotima::Renderer&			GetRenderer();
+	Diotima::LegacyRenderer&	GetLegacyRenderer();
 	GameScene&					GetActiveScene();
 
 	// #TODO(Should probably put the window in the app..)
@@ -93,7 +97,8 @@ private:
 	EventHandler mEventHandler;
 	InputHandler mInputHandler;
 
-	Diotima::LegacyRenderer* mRenderer;
+	Diotima::LegacyRenderer* mLegacyRenderer;
+	Diotima::Renderer* mRenderer;
 
 	EngineConfig* mEngineConfig;
 	
