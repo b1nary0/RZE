@@ -25,7 +25,7 @@ RenderObject
 
 Game/Engine Features
 	Organizes and manages the "what, why and how" of visual data.
-	Pass Graph, etc in Engine, works out render work to submit
+	Pass Graph, etc in Engine, works out render work to submit, in what order.
 Diotima::Renderer	
 	Super low level, relatively thin wrapper against the GPU. Essentially organizes the data that needs to be uploaded to the GPU so that when it is time to draw, it has what it needs. Submits to the GPU.
 Driver API (Buffers, State, etc)	
@@ -35,7 +35,7 @@ Driver API (Buffers, State, etc)
 	Validation
 	
 	
-	
+Should build the render data every frame - hold buffer state?
 	
 	
 	
