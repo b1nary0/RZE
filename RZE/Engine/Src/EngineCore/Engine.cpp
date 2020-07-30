@@ -216,6 +216,10 @@ void RZE_Engine::InitializeApplication(Functor<RZE_Application* const> createGam
 	mApplication->Initialize();
 	mApplication->RegisterInputEvents(mInputHandler);
 
+	// #IDEA
+	// Move this out and controlled in another manner. At this point
+	// we instead just initialize the application,and start it much later 
+	// explicitly in RZE_Engine::Initialize or something
 	mApplication->Start();
 }
 
