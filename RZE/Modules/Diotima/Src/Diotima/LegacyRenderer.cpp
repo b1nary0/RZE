@@ -32,16 +32,23 @@
 
 namespace Diotima
 {
+	static void* gCPUMatrixBuf = nullptr;
 
 	LegacyRenderer::LegacyRenderer()
 		: mPassGraph(std::make_unique<GFXPassGraph>())
 		, mRenderTarget(nullptr)
 	{
 		mLightingList.reserve(MAX_LIGHTS);
+
+		// Creating two renderers, stomping static data.
+		AssertNull(gCPUMatrixBuf);
+		gCPUMatrixBuf = malloc(sizeof(Matrix4x4) * 2);
 	}
 
 	LegacyRenderer::~LegacyRenderer()
 	{
+		AssertNotNull(gCPUMatrixBuf && "Something bad went wrong here.");
+		free(gCPUMatrixBuf);
 	}
 
 	Int32 LegacyRenderer::AddRenderItem(const RenderItemProtocol& itemProtocol)
@@ -423,7 +430,7 @@ namespace Diotima
 		{
 			OPTICK_EVENT("Process UpdateRenderItemWorldMatrix commands");
 			std::lock_guard<std::mutex> lock(mUpdateRenderItemWorldMatrixCommandMutex);
-			void* tmpMatrixBuf = malloc(sizeof(Matrix4x4) * 2);
+			
 			for (auto& command : mUpdateRenderItemWorldMatrixCommandQueue)
 			{
 				RenderItemProtocol& renderItem = mRenderItems[command.RenderItemID];
@@ -434,16 +441,16 @@ namespace Diotima
 				// #TODO(This caused the item to not show up when it's brand new because the matrices will not be different.. fix.)
 				//if (command.WorldMtx != renderItem.ModelMatrix)
 				{
-					renderItem.ModelMatrix = command.WorldMtx;
+					renderItem.ModelMatrix = std::move(command.WorldMtx);
 
-					memcpy(tmpMatrixBuf, renderItem.ModelMatrix.GetValuePtr(), sizeof(Matrix4x4));
-					memcpy((U8*)tmpMatrixBuf + sizeof(Matrix4x4), renderItem.ModelMatrix.Inverse().GetValuePtr(), sizeof(Matrix4x4));
+					memcpy(gCPUMatrixBuf, renderItem.ModelMatrix.GetValuePtr(), sizeof(Matrix4x4));
+					memcpy((U8*)gCPUMatrixBuf + sizeof(Matrix4x4), renderItem.ModelMatrix.Inverse().GetValuePtr(), sizeof(Matrix4x4));
 					DX11GFXConstantBuffer* constBuf = mDevice->GetConstantBuffer(renderItem.ConstantBuffer);
-					constBuf->UpdateSubresources(tmpMatrixBuf);
+					constBuf->UpdateSubresources(gCPUMatrixBuf);
 				}
 			}
 			mUpdateRenderItemWorldMatrixCommandQueue.clear();
-			free(tmpMatrixBuf);
+			
 		}
 	}
 
