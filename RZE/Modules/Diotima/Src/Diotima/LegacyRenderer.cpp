@@ -47,7 +47,8 @@ namespace Diotima
 
 	LegacyRenderer::~LegacyRenderer()
 	{
-		AssertNotNull(gCPUMatrixBuf && "Something bad went wrong here.");
+		// Something bad went wrong here.
+		AssertNotNull(gCPUMatrixBuf);
 		free(gCPUMatrixBuf);
 	}
 
