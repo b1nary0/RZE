@@ -65,7 +65,7 @@ void DebugServices::Initialize()
 	mChannelColours[debugChannelIndex][1] = 255.0f;
 	mChannelColours[debugChannelIndex][2] = 1.0f;
 
-	mChannelColours[infoChannelIndex][2] = 1.0f;
-	mChannelColours[infoChannelIndex][2] = 1.0f;
+	mChannelColours[infoChannelIndex][0] = 1.0f;
+	mChannelColours[infoChannelIndex][1] = 1.0f;
 	mChannelColours[infoChannelIndex][2] = 1.0f;
 }
