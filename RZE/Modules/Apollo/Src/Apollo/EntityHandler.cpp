@@ -63,9 +63,6 @@ namespace Apollo
 			}
 
 			RemoveComponent(entityID, component->id);
-
-			delete component;
-			component = nullptr;
 		}
 
 		mEntityFreeList.push_back(entityID);
