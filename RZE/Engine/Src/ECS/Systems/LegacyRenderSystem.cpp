@@ -116,6 +116,9 @@ void LegacyRenderSystem::RegisterForComponentNotifications()
 		{
 			Model3D* const modelData = RZE_Application::RZE().GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
 
+			// #NOTE_RENDER_REFACTOR
+			// This is the entry point into the Renderer so this is the code that needs to be turned into something more intuitive.
+			// Our uses here should dictate the API into the Renderer (in terms of data needed, etc).
 			Diotima::LegacyRenderer::RenderItemProtocol item;
 			for (const MeshGeometry& mesh : modelData->GetStaticMesh().GetSubMeshes())
 			{

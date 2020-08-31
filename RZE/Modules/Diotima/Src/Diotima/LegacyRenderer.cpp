@@ -157,8 +157,11 @@ namespace Diotima
 			mDevice->GetDeviceContext().ClearRenderTargetView(mDevice->mRenderTargetView, rgba);
 		}
 
-		ImGui::Render();
-		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+		{
+			OPTICK_EVENT("ImGui::Render");
+			ImGui::Render();
+			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+		}
 
 		mDevice->Present();
 	}
@@ -264,14 +267,11 @@ namespace Diotima
 	{
 		mCanvasSize = newSize;
 
-		int width = static_cast<int>(newSize.X());
-		int height = static_cast<int>(newSize.Y());
-
-		ImGui::GetIO().DisplaySize.x = static_cast<float>(width);
-		ImGui::GetIO().DisplaySize.y = static_cast<float>(height);
+		ImGui::GetIO().DisplaySize.x = static_cast<float>(mCanvasSize.X());
+		ImGui::GetIO().DisplaySize.y = static_cast<float>(mCanvasSize.Y());
 
 		mDevice->HandleWindowResize(newSize);
-		mPassGraph->OnWindowResize(width, height);
+		mPassGraph->OnWindowResize(static_cast<int>(mCanvasSize.X()), static_cast<int>(mCanvasSize.Y()));
 
 		LOG_CONSOLE_ARGS("New Canvas Size: %f x %f", mCanvasSize.X(), mCanvasSize.Y());
 	}
