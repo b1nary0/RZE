@@ -20,7 +20,7 @@ void ProjectileSystem::Initialize()
 
 	Apollo::EntityHandler& entityHandler = InternalGetEntityHandler();
 
-	mProjectileResource = RZE_Application::RZE().GetResourceHandler().RequestResource<Model3D>(FilePath("Assets/3D/NeckMechWalker/NeckMechWalker.obj"));
+	mProjectileResource = RZE_Application::RZE().GetResourceHandler().LoadResource<Model3D>(FilePath("Assets/3D/NeckMechWalker/NeckMechWalker.obj"));
 	AssertExpr(mProjectileResource.IsValid());
 
 	Apollo::EntityHandler::ComponentAddedFunc onCameraAdded([this](Apollo::EntityID entity)

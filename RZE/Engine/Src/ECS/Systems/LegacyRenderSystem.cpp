@@ -110,7 +110,7 @@ void LegacyRenderSystem::RegisterForComponentNotifications()
 
 		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entityID);
 		AssertNotNull(meshComp);
-		meshComp->Resource = RZE_Application::RZE().GetResourceHandler().RequestResource<Model3D>(meshComp->ResourcePath);
+		meshComp->Resource = RZE_Application::RZE().GetResourceHandler().LoadResource<Model3D>(meshComp->ResourcePath);
 
 		if (meshComp->Resource.IsValid())
 		{
@@ -173,7 +173,7 @@ void LegacyRenderSystem::RegisterForComponentNotifications()
 		AssertNotNull(meshComp);
 		// #TODO(Doing this here because ResourceHandle lifetime is buggy (copies/moves/etc))
 		RZE_Application::RZE().GetResourceHandler().ReleaseResource(meshComp->Resource);
-		meshComp->Resource = RZE_Application::RZE().GetResourceHandler().RequestResource<Model3D>(meshComp->ResourcePath);
+		meshComp->Resource = RZE_Application::RZE().GetResourceHandler().LoadResource<Model3D>(meshComp->ResourcePath);
 
 		if (meshComp->Resource.IsValid())
 		{
