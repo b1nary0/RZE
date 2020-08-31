@@ -103,11 +103,8 @@ namespace Diotima
 	{
 		mCanvasSize = newSize;
 
-		int width = static_cast<int>(newSize.X());
-		int height = static_cast<int>(newSize.Y());
-
-		ImGui::GetIO().DisplaySize.x = static_cast<float>(width);
-		ImGui::GetIO().DisplaySize.y = static_cast<float>(height);
+		ImGui::GetIO().DisplaySize.x = static_cast<float>(mCanvasSize.X());
+		ImGui::GetIO().DisplaySize.y = static_cast<float>(mCanvasSize.Y());
 
 		mDevice->HandleWindowResize(newSize);
 
