@@ -134,7 +134,6 @@ void FreeCameraSystem::MouseInput(CameraComponent& camComp, TransformComponent& 
 {
 	InputHandler& inputHandler = RZE_Application::RZE().GetInputHandler();
 
-	const float deltaT = static_cast<float>(RZE_Application::RZE().GetDeltaTime());
 	const Vector3D& curPos = inputHandler.GetMouseState().CurPosition;
 	
 	Int32 wheelVal = inputHandler.GetMouseState().CurWheelVal;

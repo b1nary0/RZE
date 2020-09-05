@@ -57,11 +57,15 @@ namespace Diotima
 		swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 
 		hr = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, D3D11_CREATE_DEVICE_DEBUG, NULL, NULL, D3D11_SDK_VERSION, &swapChainDesc, &mSwapChain, &mDevice, NULL, &mDeviceContext);
+		AssertExpr(hr == S_OK);
 		
 		ID3D11Texture2D* backBufferTexture;
 		hr = mSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&backBufferTexture);
+		AssertExpr(hr == S_OK);
 
 		hr = mDevice->CreateRenderTargetView(backBufferTexture, NULL, &mRenderTargetView);
+		AssertExpr(hr == S_OK);
+
 		backBufferTexture->Release();
 
 		mDeviceContext->OMSetRenderTargets(1, &mRenderTargetView, NULL);
@@ -359,7 +363,9 @@ namespace Diotima
 		{
 			FilePath pixelShaderPath("Assets/Shaders/RenderTargetBasic.hlsl");
 			hr = D3DCompileFromFile(Conversions::StringToWString(pixelShaderPath.GetAbsolutePath()).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VS", "vs_5_0", 0, 0, &mRenderTargetVSBlob, &error);
+			AssertExpr(hr == S_OK);
 			hr = D3DCompileFromFile(Conversions::StringToWString(pixelShaderPath.GetAbsolutePath()).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "PS", "ps_5_0", 0, 0, &mRenderTargetPSBlob, &error);
+			AssertExpr(hr == S_OK);
 
 			if (error)
 			{
@@ -379,7 +385,9 @@ namespace Diotima
 			}
 
 			hr = mDevice->CreateVertexShader(mRenderTargetVSBlob->GetBufferPointer(), mRenderTargetVSBlob->GetBufferSize(), nullptr, &mVSRenderTarget);
+			AssertExpr(hr == S_OK);
 			hr = mDevice->CreatePixelShader(mRenderTargetPSBlob->GetBufferPointer(), mRenderTargetPSBlob->GetBufferSize(), nullptr, &mPSRenderTarget);
+			AssertExpr(hr == S_OK);
 
 			struct Vertex
 			{
@@ -406,6 +414,7 @@ namespace Diotima
 			mRenderTargetIB = CreateIndexBuffer(indices, sizeof(DWORD) * 4 * 8, 1);
 
 			hr = mDevice->CreateInputLayout(k_RTTVertLayout, layoutElementCount, mRenderTargetVSBlob->GetBufferPointer(), mRenderTargetVSBlob->GetBufferSize(), &mRTTVertLayout);
+			AssertExpr(hr == S_OK);
 		}
 
 		// Viewport

@@ -23,7 +23,6 @@ namespace Perseus
 
 	void JobScheduler::Initialize()
 	{
-		int conc = std::thread::hardware_concurrency();
 		for (int i = 0; i < PERSEUS_MAX_WORKER_THREADS; ++i)
 		{
 			mWorkerThreads[i].Initialize();

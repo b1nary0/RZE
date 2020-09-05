@@ -20,8 +20,8 @@ namespace Diotima
 		bufferDesc.CPUAccessFlags = 0;
 		bufferDesc.MiscFlags = 0;
 
-		HRESULT hr;
-		hr = mDevice->GetHardwareDevice().CreateBuffer(&bufferDesc, NULL, &mBuf);
+		HRESULT hr = mDevice->GetHardwareDevice().CreateBuffer(&bufferDesc, NULL, &mBuf);
+		AssertExpr(hr == S_OK);
 	}
 
 	void DX11GFXConstantBuffer::Release()
