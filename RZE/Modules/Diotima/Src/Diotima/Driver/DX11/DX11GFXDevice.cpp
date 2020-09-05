@@ -17,6 +17,11 @@ namespace Diotima
 	const int kInitialWidth = 1600;
 	const int kInitialHeight = 900;
 
+	// #TODO
+	// See if there's a better place for this. Just putting this here
+	// out of laziness
+	constexpr Int32 kInvalidBufferID = -1;
+
 	D3D11_INPUT_ELEMENT_DESC k_RTTVertLayout[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -197,27 +202,35 @@ namespace Diotima
 		return static_cast<U32>(mConstantBuffers.size() - 1);
 	}
 
-	DX11GFXVertexBuffer* DX11GFXDevice::GetVertexBuffer(U32 bufferID)
+	DX11GFXVertexBuffer* DX11GFXDevice::GetVertexBuffer(Int32 bufferID)
 	{
+		AssertExpr(bufferID != kInvalidBufferID);
 		AssertExpr(mVertexBuffers.size() > bufferID);
+
 		return mVertexBuffers[bufferID].get();
 	}
 
-	Diotima::DX11GFXIndexBuffer* DX11GFXDevice::GetIndexBuffer(U32 bufferID)
+	Diotima::DX11GFXIndexBuffer* DX11GFXDevice::GetIndexBuffer(Int32 bufferID)
 	{
+		AssertExpr(bufferID != kInvalidBufferID);
 		AssertExpr(mIndexBuffers.size() > bufferID);
+
 		return mIndexBuffers[bufferID].get();
 	}
 
-	Diotima::DX11GFXConstantBuffer* DX11GFXDevice::GetConstantBuffer(U32 bufferID)
+	Diotima::DX11GFXConstantBuffer* DX11GFXDevice::GetConstantBuffer(Int32 bufferID)
 	{
+		AssertExpr(bufferID != kInvalidBufferID);
 		AssertExpr(mConstantBuffers.size() > bufferID);
+
 		return mConstantBuffers[bufferID].get();
 	}
 
-	Diotima::DX11GFXTextureBuffer2D* DX11GFXDevice::GetTextureBuffer2D(U32 bufferID)
+	Diotima::DX11GFXTextureBuffer2D* DX11GFXDevice::GetTextureBuffer2D(Int32 bufferID)
 	{
+		AssertExpr(bufferID != kInvalidBufferID);
 		AssertExpr(mTexture2DBuffers.size() > bufferID);
+
 		return mTexture2DBuffers[bufferID].get();
 	}
 

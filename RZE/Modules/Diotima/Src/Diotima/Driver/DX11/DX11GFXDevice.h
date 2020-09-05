@@ -57,10 +57,10 @@ namespace Diotima
 		U32 GetConstantBufferCount() const;
 		U32 GetTextureBufferCount() const;
 
-		DX11GFXVertexBuffer* GetVertexBuffer(U32 bufferID);
-		DX11GFXIndexBuffer* GetIndexBuffer(U32 bufferID);
-		DX11GFXConstantBuffer* GetConstantBuffer(U32 bufferID);
-		DX11GFXTextureBuffer2D* GetTextureBuffer2D(U32 bufferID);
+		DX11GFXVertexBuffer* GetVertexBuffer(Int32 bufferID);
+		DX11GFXIndexBuffer* GetIndexBuffer(Int32 bufferID);
+		DX11GFXConstantBuffer* GetConstantBuffer(Int32 bufferID);
+		DX11GFXTextureBuffer2D* GetTextureBuffer2D(Int32 bufferID);
 
 	public:
 		void SetSyncInterval(U32 interval);
