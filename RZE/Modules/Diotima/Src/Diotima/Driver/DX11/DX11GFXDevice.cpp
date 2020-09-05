@@ -17,6 +17,11 @@ namespace Diotima
 	const int kInitialWidth = 1600;
 	const int kInitialHeight = 900;
 
+	// #TODO
+	// See if there's a better place for this. Just putting this here
+	// out of laziness
+	constexpr Int32 kInvalidBufferID = -1;
+
 	D3D11_INPUT_ELEMENT_DESC k_RTTVertLayout[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -52,11 +57,15 @@ namespace Diotima
 		swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 
 		hr = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, D3D11_CREATE_DEVICE_DEBUG, NULL, NULL, D3D11_SDK_VERSION, &swapChainDesc, &mSwapChain, &mDevice, NULL, &mDeviceContext);
+		AssertExpr(hr == S_OK);
 		
 		ID3D11Texture2D* backBufferTexture;
 		hr = mSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&backBufferTexture);
+		AssertExpr(hr == S_OK);
 
 		hr = mDevice->CreateRenderTargetView(backBufferTexture, NULL, &mRenderTargetView);
+		AssertExpr(hr == S_OK);
+
 		backBufferTexture->Release();
 
 		mDeviceContext->OMSetRenderTargets(1, &mRenderTargetView, NULL);
@@ -197,27 +206,35 @@ namespace Diotima
 		return static_cast<U32>(mConstantBuffers.size() - 1);
 	}
 
-	DX11GFXVertexBuffer* DX11GFXDevice::GetVertexBuffer(U32 bufferID)
+	DX11GFXVertexBuffer* DX11GFXDevice::GetVertexBuffer(Int32 bufferID)
 	{
+		AssertExpr(bufferID != kInvalidBufferID);
 		AssertExpr(mVertexBuffers.size() > bufferID);
+
 		return mVertexBuffers[bufferID].get();
 	}
 
-	Diotima::DX11GFXIndexBuffer* DX11GFXDevice::GetIndexBuffer(U32 bufferID)
+	Diotima::DX11GFXIndexBuffer* DX11GFXDevice::GetIndexBuffer(Int32 bufferID)
 	{
+		AssertExpr(bufferID != kInvalidBufferID);
 		AssertExpr(mIndexBuffers.size() > bufferID);
+
 		return mIndexBuffers[bufferID].get();
 	}
 
-	Diotima::DX11GFXConstantBuffer* DX11GFXDevice::GetConstantBuffer(U32 bufferID)
+	Diotima::DX11GFXConstantBuffer* DX11GFXDevice::GetConstantBuffer(Int32 bufferID)
 	{
+		AssertExpr(bufferID != kInvalidBufferID);
 		AssertExpr(mConstantBuffers.size() > bufferID);
+
 		return mConstantBuffers[bufferID].get();
 	}
 
-	Diotima::DX11GFXTextureBuffer2D* DX11GFXDevice::GetTextureBuffer2D(U32 bufferID)
+	Diotima::DX11GFXTextureBuffer2D* DX11GFXDevice::GetTextureBuffer2D(Int32 bufferID)
 	{
+		AssertExpr(bufferID != kInvalidBufferID);
 		AssertExpr(mTexture2DBuffers.size() > bufferID);
+
 		return mTexture2DBuffers[bufferID].get();
 	}
 
@@ -346,7 +363,9 @@ namespace Diotima
 		{
 			FilePath pixelShaderPath("Assets/Shaders/RenderTargetBasic.hlsl");
 			hr = D3DCompileFromFile(Conversions::StringToWString(pixelShaderPath.GetAbsolutePath()).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VS", "vs_5_0", 0, 0, &mRenderTargetVSBlob, &error);
+			AssertExpr(hr == S_OK);
 			hr = D3DCompileFromFile(Conversions::StringToWString(pixelShaderPath.GetAbsolutePath()).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "PS", "ps_5_0", 0, 0, &mRenderTargetPSBlob, &error);
+			AssertExpr(hr == S_OK);
 
 			if (error)
 			{
@@ -366,7 +385,9 @@ namespace Diotima
 			}
 
 			hr = mDevice->CreateVertexShader(mRenderTargetVSBlob->GetBufferPointer(), mRenderTargetVSBlob->GetBufferSize(), nullptr, &mVSRenderTarget);
+			AssertExpr(hr == S_OK);
 			hr = mDevice->CreatePixelShader(mRenderTargetPSBlob->GetBufferPointer(), mRenderTargetPSBlob->GetBufferSize(), nullptr, &mPSRenderTarget);
+			AssertExpr(hr == S_OK);
 
 			struct Vertex
 			{
@@ -393,6 +414,7 @@ namespace Diotima
 			mRenderTargetIB = CreateIndexBuffer(indices, sizeof(DWORD) * 4 * 8, 1);
 
 			hr = mDevice->CreateInputLayout(k_RTTVertLayout, layoutElementCount, mRenderTargetVSBlob->GetBufferPointer(), mRenderTargetVSBlob->GetBufferSize(), &mRTTVertLayout);
+			AssertExpr(hr == S_OK);
 		}
 
 		// Viewport

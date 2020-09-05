@@ -70,8 +70,8 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 
 	const std::wstring wStrTitle = Conversions::StringToWString(mTitle);
 
-	BYTE CursorMaskAND[] = { 0xFF };
-	BYTE CursorMaskXOR[] = { 0x00 };
+	//BYTE CursorMaskAND[] = { 0xFF };
+	//BYTE CursorMaskXOR[] = { 0x00 };
 
 	// @NOTE what do the properties that are set as 0 do?
 	WNDCLASSEX wc;

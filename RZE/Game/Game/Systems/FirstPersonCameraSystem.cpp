@@ -75,8 +75,6 @@ void FirstPersonCameraSystem::DoInput(CameraComponent& camera, TransformComponen
 {
 	const InputHandler& inputHandler = RZE_Application::RZE().GetInputHandler();
 
-	const float dt = static_cast<float>(RZE_Application::RZE().GetDeltaTime());
-
 	if (!inputHandler.GetKeyboardState().IsIdle())
 	{
 		Vector3D newForward;
@@ -106,8 +104,6 @@ void FirstPersonCameraSystem::DoInput(CameraComponent& camera, TransformComponen
 
 	{
 		// Mouse input 
-
-		const float deltaT = static_cast<float>(RZE_Application::RZE().GetDeltaTime());
 		const Vector3D& curPos = inputHandler.GetMouseState().CurPosition;
 
 		CameraComponent& camComp = *InternalGetEntityHandler().GetComponent<CameraComponent>(mCamera);
