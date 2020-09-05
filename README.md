@@ -1,5 +1,5 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/1e7ff76592894b2799776314e66f1f4d)](https://app.codacy.com/manual/b1nary0/RZE?utm_source=github.com&utm_medium=referral&utm_content=b1nary0/RZE&utm_campaign=Badge_Grade_Dashboard)
-[![Build status](https://ci.appveyor.com/api/projects/status/i6wnj4dj41mu3d0s?svg=true)](https://ci.appveyor.com/project/b1nary0/rze)
+[![Build status](https://ci.appveyor.com/api/projects/status/s4c8yvwa7ftsc3fs?svg=true)](https://ci.appveyor.com/project/b1nary0/rze-47y3i)
 =====
 
 A personal project so I can have something to work on and experiment with during my off time.
