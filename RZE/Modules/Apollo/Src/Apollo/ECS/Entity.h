@@ -13,10 +13,12 @@ namespace Apollo
 {
 	typedef U32 EntityID;
 
+	const EntityID kInvalidEntityID = 0;
+
 	typedef std::bitset<ENTITY_MAX_COMPONENTS> ComponentBitset;
 	struct Entity
 	{
-		U32 mEntityID;
+		EntityID mEntityID;
 		ComponentBitset mComponentSet;
 	};
 }

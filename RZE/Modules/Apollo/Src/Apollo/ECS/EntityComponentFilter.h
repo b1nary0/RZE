@@ -17,6 +17,15 @@ namespace Apollo
 		{
 			for (auto& entity : entities)
 			{
+				// #NOTE 
+				// Quick optim here, better solution can be less hacky.
+				// We allocate more than we need for entities at intervals,
+				// so some of the entities are invalid.
+				if (entity.mEntityID == Apollo::kInvalidEntityID)
+				{
+					continue;
+				}
+
 				if (entity.mComponentSet == mFilterSet)
 				{
 					outPassedEntities.push_back(entity.mEntityID);
@@ -28,6 +37,15 @@ namespace Apollo
 		{
 			for (auto& entity : entities)
 			{
+				// #NOTE 
+				// Quick optim here, better solution can be less hacky.
+				// We allocate more than we need for entities at intervals,
+				// so some of the entities are invalid.
+				if (entity.mEntityID == Apollo::kInvalidEntityID)
+				{
+					continue;
+				}
+
 				std::bitset<ENTITY_MAX_COMPONENTS> filtered = entity.mComponentSet & mFilterSet;
 				if (filtered.any())
 				{
@@ -40,6 +58,15 @@ namespace Apollo
 		{
 			for (auto& entity : entities)
 			{
+				// #NOTE 
+				// Quick optim here, better solution can be less hacky.
+				// We allocate more than we need for entities at intervals,
+				// so some of the entities are invalid.
+				if (entity.mEntityID == Apollo::kInvalidEntityID)
+				{
+					continue;
+				}
+
 				std::bitset<ENTITY_MAX_COMPONENTS> filtered = entity.mComponentSet & mFilterSet;
 				if (filtered == mFilterSet)
 				{
