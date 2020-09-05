@@ -123,17 +123,17 @@ namespace Diotima
 		return mViewportDimensions;
 	}
 
-	U32 Renderer::CreateVertexBuffer(void* data, size_t size, U32 count)
+	Int32 Renderer::CreateVertexBuffer(void* data, size_t size, U32 count)
 	{
 		return mDevice->CreateVertexBuffer(data, size, count);
 	}
 
-	U32 Renderer::CreateIndexBuffer(void* data, size_t size, U32 count)
+	Int32 Renderer::CreateIndexBuffer(void* data, size_t size, U32 count)
 	{
 		return mDevice->CreateIndexBuffer(data, size, count);
 	}
 
-	U32 Renderer::CreateTextureBuffer2D(void* data, U32 width, U32 height)
+	Int32 Renderer::CreateTextureBuffer2D(void* data, U32 width, U32 height)
 	{
 		// This is temp here, should be passed in or something.
 		GFXTextureBufferParams params = { 0 };

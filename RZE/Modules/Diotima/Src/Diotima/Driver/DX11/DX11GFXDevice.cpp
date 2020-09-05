@@ -140,7 +140,7 @@ namespace Diotima
 		}
 	}
 
-	U32 DX11GFXDevice::CreateVertexBuffer(void* data, size_t size, U32 count)
+	Int32 DX11GFXDevice::CreateVertexBuffer(void* data, size_t size, U32 count)
 	{
 		mVertexBuffers.push_back(std::make_unique<DX11GFXVertexBuffer>());
 		mVertexBuffers.back()->SetDevice(this);
@@ -149,7 +149,7 @@ namespace Diotima
 		return static_cast<U32>(mVertexBuffers.size() - 1);
 	}
 
-	U32 DX11GFXDevice::CreateIndexBuffer(void* data, size_t size, U32 count)
+	Int32 DX11GFXDevice::CreateIndexBuffer(void* data, size_t size, U32 count)
 	{
 		mIndexBuffers.push_back(std::make_unique<DX11GFXIndexBuffer>());
 		mIndexBuffers.back()->SetDevice(this);
@@ -158,7 +158,7 @@ namespace Diotima
 		return static_cast<U32>(mIndexBuffers.size() - 1);
 	}
 
-	U32 DX11GFXDevice::CreateRenderTarget2D(U32 width, U32 height)
+	Int32 DX11GFXDevice::CreateRenderTarget2D(U32 width, U32 height)
 	{
 		mTexture2DBuffers.push_back(std::make_unique<DX11GFXTextureBuffer2D>());
 		mTexture2DBuffers.back()->SetDevice(this);
@@ -179,7 +179,7 @@ namespace Diotima
 		return static_cast<U32>(mTexture2DBuffers.size() - 1);
 	}
 
-	U32 DX11GFXDevice::CreateTextureBuffer2D(void* data, const GFXTextureBufferParams& params)
+	Int32 DX11GFXDevice::CreateTextureBuffer2D(void* data, const GFXTextureBufferParams& params)
 	{
 		mTexture2DBuffers.push_back(std::make_unique<DX11GFXTextureBuffer2D>());
 		mTexture2DBuffers.back()->SetDevice(this);
@@ -188,7 +188,7 @@ namespace Diotima
 		return static_cast<U32>(mTexture2DBuffers.size() - 1);
 	}
 
-	U32 DX11GFXDevice::CreateConstantBuffer(size_t memberSize, U32 maxMembers)
+	Int32 DX11GFXDevice::CreateConstantBuffer(size_t memberSize, U32 maxMembers)
 	{
 		mConstantBuffers.push_back(std::make_unique<DX11GFXConstantBuffer>());
 		mConstantBuffers.back()->SetDevice(this);

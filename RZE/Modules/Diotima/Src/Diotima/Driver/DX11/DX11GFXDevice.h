@@ -42,11 +42,11 @@ namespace Diotima
 		virtual void Shutdown() override;
 
 	public:
-		U32 CreateVertexBuffer(void* data, size_t size, U32 count) override;
-		U32 CreateIndexBuffer(void* data, size_t size, U32 count) override;
-		U32 CreateTextureBuffer2D(void* data, const GFXTextureBufferParams& params) override;
-		U32 CreateRenderTarget2D(U32 width, U32 height);
-		U32 CreateConstantBuffer(size_t memberSize, U32 maxMembers) override;
+		Int32 CreateVertexBuffer(void* data, size_t size, U32 count) override;
+		Int32 CreateIndexBuffer(void* data, size_t size, U32 count) override;
+		Int32 CreateTextureBuffer2D(void* data, const GFXTextureBufferParams& params) override;
+		Int32 CreateRenderTarget2D(U32 width, U32 height);
+		Int32 CreateConstantBuffer(size_t memberSize, U32 maxMembers) override;
 
 	public:
 		ID3D11Device& GetHardwareDevice();

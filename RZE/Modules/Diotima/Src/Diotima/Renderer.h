@@ -43,15 +43,15 @@ namespace Diotima
 	// #TODO
 	// These will need to be wrapped or otherwise sorted properly by some higher-level design.
 	// This is simply the data for any item with geometry. When and how this data is used is determined
-	// elsewhere. The U32 handles should be designed such that 0 means no data. 
+	// elsewhere. The Int32 handles should be designed such that -1 means no data. 
 	// For now, each item will need a Vertex and Index buffer, but should be easily extensible
 	// to support other types of data construction or use.
 	struct RenderObject
 	{
-		U32 VertexBuffer = 0;
-		U32 IndexBuffer = 0;
-		U32 TextureBuffer = 0;
-		U32 ConstantBuffer = 0;
+		Int32 VertexBuffer = -1;
+		Int32 IndexBuffer = -1;
+		Int32 TextureBuffer = -1;
+		Int32 ConstantBuffer = -1;
 		MaterialData Material;
 		Matrix4x4 Transform;
 	};
@@ -91,9 +91,9 @@ namespace Diotima
 
 		// #TODO
 		// private later
-		U32 CreateVertexBuffer(void* data, size_t size, U32 count);
-		U32 CreateIndexBuffer(void* data, size_t size, U32 count);
-		U32 CreateTextureBuffer2D(void* data, U32 width, U32 height);
+		Int32 CreateVertexBuffer(void* data, size_t size, U32 count);
+		Int32 CreateIndexBuffer(void* data, size_t size, U32 count);
+		Int32 CreateTextureBuffer2D(void* data, U32 width, U32 height);
 
 		RenderObjectHandle CreateRenderObject();
 
