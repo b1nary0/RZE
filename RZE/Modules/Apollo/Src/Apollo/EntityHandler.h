@@ -20,8 +20,6 @@
 
 namespace Apollo
 {
-	const U32 kInvalidEntityID = 0;
-
 	class EntityHandler
 	{
 	private:
@@ -36,6 +34,27 @@ namespace Apollo
 		};
 
 	public:
+		// #TODO
+		// Write delegate for these (and similar types)
+		// 	template <Args>
+		// 	struct Event
+		// 	{
+		// 		void operator+=(const EventBinding<Args>& other)
+		// 		{
+		// 			Bindings.push_back(other);
+		// 		}
+		// 		std::vector<EventBinding<Args>> Bindings;
+		// 	};
+		// 
+		// 	template <Args>
+		// 	struct EventDelegate
+		// 	{
+		//		Functor<Args> Functor;
+		// 	};
+		// Event OnComponentAdded;
+		// EventDelegate delegate = []() { return true; }
+		// entityHandler.OnComponentAdded += delegate;
+
 		typedef Functor<void, EntityID> ComponentAddedFunc;
 		typedef Functor<void, EntityID> ComponentRemovedFunc;
 		typedef Functor<void, EntityID> ComponentModifiedFunc;

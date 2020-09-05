@@ -21,10 +21,4 @@ private:
 	void RegisterForComponentNotifications();
 
 	void GenerateCameraMatrices(CameraComponent& cameraComponent, const TransformComponent& transformComponent);
-
-private:
-	std::unordered_map<Apollo::EntityID, Int32> mRenderItemEntityMap;
-	std::unordered_map<Apollo::EntityID, Int32> mLightItemEntityMap;
-
-	Apollo::EntityID mMainCameraEntity;
 };

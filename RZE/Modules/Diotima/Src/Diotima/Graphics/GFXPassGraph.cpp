@@ -1,8 +1,8 @@
 #include <Diotima/Graphics/GFXPassGraph.h>
 
-#include <Diotima/Renderer.h>
-#include <Diotima/Graphics/RenderPasses/ForwardPass.h>
-#include <Diotima/Graphics/RenderPasses/DepthPass.h>
+#include <Diotima/LegacyRenderer.h>
+#include <Diotima/Graphics/RenderPasses/ForwardPass_OLD.h>
+#include <Diotima/Graphics/RenderPasses/DepthPass_OLD.h>
 
 #include <Utils/DebugUtils/Debug.h>
 
@@ -19,18 +19,18 @@ namespace Diotima
 	{
 	}
 
-	void GFXPassGraph::Build(Renderer* renderer)
+	void GFXPassGraph::Build(LegacyRenderer* renderer)
 	{
 		OPTICK_EVENT();
 
 		int width = static_cast<int>(renderer->GetCanvasSize().X());
 		int height = static_cast<int>(renderer->GetCanvasSize().Y());
 
- 		std::unique_ptr<DepthPass> depthPass = std::make_unique<DepthPass>();
+ 		std::unique_ptr<DepthPass_OLD> depthPass = std::make_unique<DepthPass_OLD>();
  		depthPass->SetRenderer(renderer);
  		depthPass->Initialize(4098, 4098);
 
-		std::unique_ptr<ForwardPass> forwardPass = std::make_unique<ForwardPass>();
+		std::unique_ptr<ForwardPass_OLD> forwardPass = std::make_unique<ForwardPass_OLD>();
 		forwardPass->SetRenderer(renderer);
 		forwardPass->Initialize(width, height);
 

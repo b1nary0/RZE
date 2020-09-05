@@ -44,10 +44,11 @@ void GameApp::Initialize()
 	//             -- Need to add at least commandline arg like -startscene or something)
 	RZE().GetActiveScene().Load(FilePath("Assets/Scenes/TestGame.scene"));
 
-	//RZE().GetActiveScene().GetEntityHandler().AddSystem<InteractiveSpawningSystem>();
-	//RZE().GetActiveScene().GetEntityHandler().AddSystem<TestbedSystem>();
-	RZE().GetActiveScene().GetEntityHandler().AddSystem<FirstPersonCameraSystem>();
-	RZE().GetActiveScene().GetEntityHandler().AddSystem<ProjectileSystem>();
+	Apollo::EntityHandler& entityHandler = RZE().GetActiveScene().GetEntityHandler();
+	//entityHandler.AddSystem<InteractiveSpawningSystem>();
+	//entityHandler.AddSystem<TestbedSystem>();
+	entityHandler.AddSystem<FirstPersonCameraSystem>();
+	entityHandler.AddSystem<ProjectileSystem>();
 }
 
 void GameApp::Start()

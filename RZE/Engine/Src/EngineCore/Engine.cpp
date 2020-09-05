@@ -3,7 +3,7 @@
 
 #include <DebugUtils/DebugServices.h>
 
-#include <Diotima/Renderer.h>
+#include <Diotima/LegacyRenderer.h>
 #include <Diotima/Graphics/RenderTarget.h>
 
 #include <ECS/Components/CameraComponent.h>
@@ -13,8 +13,6 @@
 #include <ECS/Components/MeshComponent.h>
 #include <ECS/Components/NameComponent.h>
 #include <ECS/Components/TransformComponent.h>
-
-#include <ECS/Systems/RenderSystem.h>
 
 #include <Windowing/Win32Window.h>
 #include <Windowing/WinKeyCodes.h>
@@ -29,6 +27,7 @@ RZE_Engine::RZE_Engine()
 	: mMainWindow(nullptr)
 	, mEngineConfig(nullptr)
 	, mApplication(nullptr)
+	, mLegacyRenderer(nullptr)
 	, mRenderer(nullptr)
 	, bShouldExit(false)
 	, bIsInitialized(false)
@@ -85,25 +84,16 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 					ImGui_ImplWin32_NewFrame();
  					ImGui::NewFrame();
 
-// 					ImGui::PlotLines(
-// 						StringUtils::FormatString("Frame Avg: %iFPS %fms", (int)averageFPS, averageFrametime * 1000.0f).c_str(),
-// 						frameTimeBuffer, 
-// 						MAX_FRAMETIME_SAMPLES, 
-// 						0, 
-// 						nullptr, 
-// 						0.0f, 1.5f * (averageFrametime * 1000.0f), 
-// 						ImVec2(80.0f, 45.0f));
-
 					Update();
 
-					mRenderer->Update();
+					mLegacyRenderer->Update();
 
 					ImGui::EndFrame();
 				}
 
 				{
 					OPTICK_EVENT("GPU Submission");
-					mRenderer->Render();
+					mLegacyRenderer->Render();
 				}
 			}
 
@@ -207,12 +197,14 @@ void RZE_Engine::CreateAndInitializeWindow()
 
 void RZE_Engine::CreateAndInitializeRenderer()
 {
+	mLegacyRenderer = new Diotima::LegacyRenderer();
+
+	mLegacyRenderer->SetWindow(mMainWindow->GetOSWindowHandleData().windowHandle);
+
+	mLegacyRenderer->Initialize();
+	mLegacyRenderer->EnableVsync(mEngineConfig->GetEngineSettings().IsVSyncEnabled());
+
 	mRenderer = new Diotima::Renderer();
-
-	mRenderer->SetWindow(mMainWindow->GetOSWindowHandleData().windowHandle);
-
-	mRenderer->Initialize();
-	mRenderer->EnableVsync(mEngineConfig->GetEngineSettings().IsVSyncEnabled());
 }
 
 void RZE_Engine::InitializeApplication(Functor<RZE_Application* const> createGameCallback)
@@ -224,6 +216,10 @@ void RZE_Engine::InitializeApplication(Functor<RZE_Application* const> createGam
 	mApplication->Initialize();
 	mApplication->RegisterInputEvents(mInputHandler);
 
+	// #IDEA
+	// Move this out and controlled in another manner. At this point
+	// we instead just initialize the application,and start it much later 
+	// explicitly in RZE_Engine::Initialize or something
 	mApplication->Start();
 }
 
@@ -264,7 +260,7 @@ void RZE_Engine::RegisterWindowEvents()
 		else if (event.mWindowEvent.mEventInfo.mEventSubType == EWindowEventType::Window_Resize)
 		{
 			Vector2D newSize(event.mWindowEvent.mSizeX, event.mWindowEvent.mSizeY);
-			GetRenderer().ResizeCanvas(newSize);
+			GetLegacyRenderer().ResizeCanvas(newSize);
 		}
 	});
 	mEventHandler.RegisterForEvent(EEventType::Window, windowCallback);
@@ -324,12 +320,12 @@ void RZE_Engine::InternalShutDown()
 {
 	AssertNotNull(mMainWindow);
 	AssertNotNull(mEngineConfig);
-	AssertNotNull(mRenderer);
+	AssertNotNull(mLegacyRenderer);
 	AssertNotNull(mActiveScene);
 
 	delete mMainWindow;
 	delete mEngineConfig;
-	delete mRenderer;
+	delete mLegacyRenderer;
 	delete mActiveScene;
 }
 
@@ -350,8 +346,13 @@ InputHandler& RZE_Engine::GetInputHandler()
 
 Diotima::Renderer& RZE_Engine::GetRenderer()
 {
-	AssertNotNull(mRenderer);
 	return *mRenderer;
+}
+
+Diotima::LegacyRenderer& RZE_Engine::GetLegacyRenderer()
+{
+	AssertNotNull(mLegacyRenderer);
+	return *mLegacyRenderer;
 }
 
 GameScene& RZE_Engine::GetActiveScene()

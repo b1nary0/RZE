@@ -21,9 +21,6 @@ configuration:
 platform:
  - x64
   
-only_commits:
-  message: /triggerbuild/
-  
 before_build:
   - cd RZE
   - GenerateSolutions.bat

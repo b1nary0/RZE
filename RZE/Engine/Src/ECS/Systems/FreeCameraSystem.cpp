@@ -13,6 +13,10 @@
 
 #include <Utils/Math/Math.h>
 
+
+//#TODO
+// The code in this system is terrible.
+
 FreeCameraSystem::FreeCameraSystem(Apollo::EntityHandler* const entityHandler)
 	: Apollo::EntitySystem(entityHandler)
 {

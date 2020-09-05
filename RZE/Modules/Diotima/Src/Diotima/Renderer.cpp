@@ -34,75 +34,12 @@ namespace Diotima
 {
 
 	Renderer::Renderer()
-		: mPassGraph(std::make_unique<GFXPassGraph>())
-		, mRenderTarget(nullptr)
+		: mRenderTarget(nullptr)
 	{
-		mLightingList.reserve(MAX_LIGHTS);
 	}
 
 	Renderer::~Renderer()
 	{
-	}
-
-	Int32 Renderer::AddRenderItem(const RenderItemProtocol& itemProtocol)
-	{
-		U32 constantBufferID = mDevice->CreateConstantBuffer(sizeof(Matrix4x4), 2);
-
-		std::vector<U32> meshMaterialBuffers;
-		meshMaterialBuffers.reserve(itemProtocol.MeshData.size());
-		for (size_t index = 0; index < itemProtocol.MeshData.size(); ++index)
-		{
-			meshMaterialBuffers.push_back(mDevice->CreateConstantBuffer(MemoryUtils::AlignSize(sizeof(RenderItemMaterialDesc), 15), 1));
-		}
-
-		if (!mFreeRenderListIndices.empty())
-		{
-			Int32 index = mFreeRenderListIndices.front();
-			mFreeRenderListIndices.pop();
-
-			RenderItemProtocol& renderProtocol = mRenderItems[index];
-			renderProtocol = std::move(itemProtocol);
-			renderProtocol.bIsValid = true;
-			renderProtocol.ConstantBuffer = constantBufferID;
-			renderProtocol.MaterialBuffers = std::move(meshMaterialBuffers);
-
-			return index;
-		}
-
-		mRenderItems.emplace_back(std::move(itemProtocol));
-		RenderItemProtocol& renderProtocol = mRenderItems.back();
-		renderProtocol.bIsValid = true;
-		renderProtocol.ConstantBuffer = constantBufferID;
-		renderProtocol.MaterialBuffers = std::move(meshMaterialBuffers);
-
-		return static_cast<Int32>(mRenderItems.size() - 1);
-	}
-
-	void Renderer::RemoveRenderItem(const U32 itemIdx)
-	{
-		AssertExpr(itemIdx < mRenderItems.size());
-
-		mRenderItems[itemIdx].Invalidate();
-		mFreeRenderListIndices.push(itemIdx);
-
-		// #TODO(Return constant buffer for render item here)
-	}
-
-	Int32 Renderer::AddLightItem(const LightItemProtocol& itemProtocol)
-	{
-		mLightingList.emplace_back(std::move(itemProtocol));
-
-		++mLightCounts[itemProtocol.LightType];
-		return static_cast<Int32>(mLightingList.size() - 1);
-	}
-
-	void Renderer::RemoveLightItem(const U32 itemIdx)
-	{
-		AssertExpr(itemIdx < mLightingList.size());
-
-		auto iter = mLightingList.begin() + itemIdx;
-		--mLightCounts[iter->LightType];
-		mLightingList.erase(iter);
 	}
 
 	void Renderer::Initialize()
@@ -116,8 +53,6 @@ namespace Diotima
 		ImGui::CreateContext();
 		ImGui_ImplWin32_Init(mWindowHandle);
 		ImGui_ImplDX11_Init(&mDevice->GetHardwareDevice(), &mDevice->GetDeviceContext());
-
-		mPassGraph->Build(this);
 	}
 
 	void Renderer::Update()
@@ -125,13 +60,6 @@ namespace Diotima
 		OPTICK_EVENT();
 
 		ProcessCommands();
-		PrepareDrawCalls();
-
-		{
-			// #TODO(Eventually this should be moved out of here and into the engine level.
-			//       Then the render side just deals with the generated commands.)
-			mPassGraph->Execute();
-		}
 	}
 
 	void Renderer::Render()
@@ -159,77 +87,6 @@ namespace Diotima
 		mDevice->Shutdown();
 	}
 
-	const std::vector<Renderer::RenderItemDrawCall>& Renderer::GetDrawCalls()
-	{
-		return mPerFrameDrawCalls;
-	}
-
-	const std::vector<Renderer::LightItemProtocol>& Renderer::GetLights()
-	{
-		return mLightingList;
-	}
-
-	const U32* Renderer::GetLightCounts()
-	{
-		return mLightCounts;
-	}
-
-	const Diotima::Renderer::CameraItemProtocol& Renderer::GetCamera()
-	{
-		return camera;
-	}
-
-	void Renderer::PrepareDrawCalls()
-	{
-		OPTICK_EVENT();
-
-		if (mPerFrameDrawCalls.capacity() < mRenderItems.size())
-		{
-			mPerFrameDrawCalls.reserve(mRenderItems.size());
-		}
-
-		mPerFrameDrawCalls.clear();
-		
-		for (RenderItemProtocol& renderItem : mRenderItems)
-		{
-			// #TODO(Josh::This needs to be removed -- an opaque handle should be leased out that will
-			//             get fixed up when we remove render items)
-			if (!renderItem.bIsValid)
-			{
-				continue;
-			}
-
-			for (size_t index = 0; index < renderItem.MeshData.size(); ++index)
-			{
-				RenderItemMeshData& meshData = renderItem.MeshData[index];
-
-				RenderItemDrawCall drawCall;
-				drawCall.VertexBuffer = meshData.VertexBuffer;
-				drawCall.IndexBuffer = meshData.IndexBuffer;
-				// #TODO(Deal with this later. This is the same for all meshes of renderItem)
-				drawCall.ConstantBuffer = renderItem.ConstantBuffer;
-
- 				drawCall.TextureSlot0 = meshData.TextureDescs[0].TextureBuffer; // This should be iterated on to be more robust.
- 				drawCall.TextureSlot1 = meshData.TextureDescs[1].TextureBuffer; // This should be iterated on to be more robust.
- 				drawCall.TextureSlot2 = meshData.TextureDescs[2].TextureBuffer; // This should be iterated on to be more robust.
-
-				// #HACK(This should be a 1:1... Just until I completely rework the data layout for render items.)
-				drawCall.MaterialDataBuffer = renderItem.MaterialBuffers[index];
-
-				DX11GFXConstantBuffer* materialBuf = mDevice->GetConstantBuffer(drawCall.MaterialDataBuffer);
-				materialBuf->UpdateSubresources(&meshData.Material);
-
-				mPerFrameDrawCalls.emplace_back(std::move(drawCall));
-			}
-		}
-	}
-
-	Diotima::DX11GFXDevice& Renderer::GetDriverDevice()
-	{
-		AssertNotNull(mDevice);
-		return *mDevice;
-	}
-
 	void Renderer::EnableVsync(bool bEnabled)
 	{
 		mDevice->SetSyncInterval(static_cast<U32>(bEnabled));
@@ -240,22 +97,22 @@ namespace Diotima
 		return mCanvasSize;
 	}
 
+	// #TODO
+	// Take with new renderer
 	void Renderer::ResizeCanvas(const Vector2D& newSize)
 	{
 		mCanvasSize = newSize;
 
-		int width = static_cast<int>(newSize.X());
-		int height = static_cast<int>(newSize.Y());
-
-		ImGui::GetIO().DisplaySize.x = static_cast<float>(width);
-		ImGui::GetIO().DisplaySize.y = static_cast<float>(height);
+		ImGui::GetIO().DisplaySize.x = static_cast<float>(mCanvasSize.X());
+		ImGui::GetIO().DisplaySize.y = static_cast<float>(mCanvasSize.Y());
 
 		mDevice->HandleWindowResize(newSize);
-		mPassGraph->OnWindowResize(width, height);
 
 		LOG_CONSOLE_ARGS("New Canvas Size: %f x %f", mCanvasSize.X(), mCanvasSize.Y());
 	}
 
+	// #TODO
+	// Take with new renderer - only used in hacky RenderTarget code in EditorApp
 	void Renderer::SetViewportSize(const Vector2D& newSize)
 	{
 		mViewportDimensions = newSize;
@@ -266,28 +123,17 @@ namespace Diotima
 		return mViewportDimensions;
 	}
 
-	void Renderer::SetRenderTarget(RenderTargetTexture* renderTarget)
-	{
-		AssertNotNull(renderTarget);
-		mRenderTarget = renderTarget;
-	}
-
-	Diotima::RenderTargetTexture* Renderer::GetRenderTarget()
-	{
-		return mRenderTarget;
-	}
-
-	U32 Renderer::CreateVertexBuffer(void* data, size_t size, U32 count)
+	Int32 Renderer::CreateVertexBuffer(void* data, size_t size, U32 count)
 	{
 		return mDevice->CreateVertexBuffer(data, size, count);
 	}
 
-	U32 Renderer::CreateIndexBuffer(void* data, size_t size, U32 count)
+	Int32 Renderer::CreateIndexBuffer(void* data, size_t size, U32 count)
 	{
 		return mDevice->CreateIndexBuffer(data, size, count);
 	}
 
-	U32 Renderer::CreateTextureBuffer2D(void* data, U32 width, U32 height)
+	Int32 Renderer::CreateTextureBuffer2D(void* data, U32 width, U32 height)
 	{
 		// This is temp here, should be passed in or something.
 		GFXTextureBufferParams params = { 0 };
@@ -302,136 +148,33 @@ namespace Diotima
 		return mDevice->CreateTextureBuffer2D(data, params);
 	}
 
-	U32 Renderer::QueueCreateVertexBufferCommand(void* data, size_t size, U32 count)
+
+	Diotima::RenderObjectHandle Renderer::CreateRenderObject()
 	{
-		std::lock_guard<std::mutex> lock(mVertexBufferCommandMutex);
+		RenderObjectHandle objectHandle;
 
-		CreateBufferRenderCommand command;
-		command.BufferType = ECreateBufferType::Vertex;
-		command.Data = data;
-		command.Size = size;
-		command.Count = count;
-		mVertexBufferCommandQueue.push_back(std::move(command));
+		if (!mFreeRenderObjectIndices.empty())
+		{
+			U32 freeIndex = mFreeRenderObjectIndices.front();
+			mFreeRenderObjectIndices.pop();
+			objectHandle.Value = freeIndex;
 
-		// #TODO(This is shit, fix later)
-		return mDevice->GetVertexBufferCount() + mVertexBufferCommandQueue.size() - 1;
-	}
+			RenderObject& renderObject = mRenderObjects[freeIndex];
+			renderObject = {};
 
-	U32 Renderer::QueueCreateIndexBufferCommand(void* data, size_t size, U32 count)
-	{
-		std::lock_guard<std::mutex> lock(mIndexBufferCommandMutex);
+			return objectHandle;
+		}
 
-		CreateBufferRenderCommand command;
-		command.BufferType = ECreateBufferType::Index;
-		command.Data = data;
-		command.Size = size;
-		command.Count = count;
-		mIndexBufferCommandQueue.push_back(std::move(command));
+		objectHandle.Value = mRenderObjects.size();
+		mRenderObjects.emplace_back();
 
-		// #TODO(This is shit, fix later)
-		return mDevice->GetVertexBufferCount() + mIndexBufferCommandQueue.size() - 1;
-	}
-
-	U32 Renderer::QueueCreateTextureCommand(ECreateTextureBufferType bufferType, void* data, U32 width, U32 height)
-	{
-		std::lock_guard<std::mutex> lock(mTextureBufferCommandMutex);
-
-		CreateTextureBufferRenderCommand command;
-		command.BufferType = bufferType;
-		command.Data = data;
-		command.Width = width;
-		command.Height = height;
-		mTextureBufferCommandQueue.push_back(std::move(command));
-
-		// #TODO(This is shit, fix later)
-		return mDevice->GetTextureBufferCount() + mTextureBufferCommandQueue.size() - 1;
-	}
-
-
-	void Renderer::QueueUpdateRenderItem(U32 itemID, const Matrix4x4& worldMtx)
-	{
-		std::lock_guard<std::mutex> lock(mUpdateRenderItemWorldMatrixCommandMutex);
-
-		UpdateRenderItemWorldMatrixCommand command;
-		command.RenderItemID = itemID;
-		command.WorldMtx = worldMtx;
-
-		mUpdateRenderItemWorldMatrixCommandQueue.push_back(std::move(command));
+		return objectHandle;
 	}
 
 	void Renderer::ProcessCommands()
 	{
 		OPTICK_EVENT();
-
-		{
-			OPTICK_EVENT("Process CreateVertexBuffer commands");
-			std::lock_guard<std::mutex> lock(mVertexBufferCommandMutex);
-			for (auto& command : mVertexBufferCommandQueue)
-			{
-				CreateVertexBuffer(command.Data, command.Size, command.Count);
-			}
-			mVertexBufferCommandQueue.clear();
-		}
-
-		{
-			OPTICK_EVENT("Process CreateIndexBuffer commands");
-			std::lock_guard<std::mutex> lock(mIndexBufferCommandMutex);
-			for (auto& command : mIndexBufferCommandQueue)
-			{
-				CreateIndexBuffer(command.Data, command.Size, command.Count);
-			}
-			mIndexBufferCommandQueue.clear();
-		}
-
-		{
-			OPTICK_EVENT("Process CreateTextureBuffer commands");
-			std::lock_guard<std::mutex> lock(mTextureBufferCommandMutex);
-			for (auto& command : mTextureBufferCommandQueue)
-			{
-				switch (command.BufferType)
-				{
-				case ECreateTextureBufferType::Texture2D:
-					CreateTextureBuffer2D(command.Data, command.Width, command.Height);
-					break;
-
-				default:
-					AssertFalse();
-					break;
-				}
-			}
-			mTextureBufferCommandQueue.clear();
-		}
-
-		{
-			OPTICK_EVENT("Process UpdateRenderItemWorldMatrix commands");
-			std::lock_guard<std::mutex> lock(mUpdateRenderItemWorldMatrixCommandMutex);
-			void* tmpMatrixBuf = malloc(sizeof(Matrix4x4) * 2);
-			for (auto& command : mUpdateRenderItemWorldMatrixCommandQueue)
-			{
-				RenderItemProtocol& renderItem = mRenderItems[command.RenderItemID];
-				AssertExpr(renderItem.bIsValid);
-
-				// Doing this check here for now because its the easiest place to have access to the old and new matrices.
-				// Should architect it so this can be done before we even calculate anything.
-				// #TODO(This caused the item to not show up when it's brand new because the matrices will not be different.. fix.)
-				//if (command.WorldMtx != renderItem.ModelMatrix)
-				{
-					renderItem.ModelMatrix = command.WorldMtx;
-
-					memcpy(tmpMatrixBuf, renderItem.ModelMatrix.GetValuePtr(), sizeof(Matrix4x4));
-					memcpy((U8*)tmpMatrixBuf + sizeof(Matrix4x4), renderItem.ModelMatrix.Inverse().GetValuePtr(), sizeof(Matrix4x4));
-					DX11GFXConstantBuffer* constBuf = mDevice->GetConstantBuffer(renderItem.ConstantBuffer);
-					constBuf->UpdateSubresources(tmpMatrixBuf);
-				}
-			}
-			mUpdateRenderItemWorldMatrixCommandQueue.clear();
-			free(tmpMatrixBuf);
-		}
-	}
-
-	void Renderer::RenderItemProtocol::Invalidate()
-	{
-		bIsValid = false;
+		
 	}
 
 }

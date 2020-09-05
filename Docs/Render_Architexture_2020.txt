@@ -1,0 +1,41 @@
+StaticMesh
+	MeshGeometry...
+		?Material
+		?Texture2D
+			GPUHandle
+		MeshVertex...
+		U32... (Indices)
+		VertexBuffer
+			GPUHandle
+		IndexBuffer
+			GPUHandle
+		RenderObjectHandle
+		
+RenderObject
+	GraphicsState
+	MaterialData
+	TextureGPUHandle
+	VertexBufferGPUHandle
+	IndexBufferGPUHandle
+	ConstantBufferGPUHandle
+	Transform
+	
+============
+	
+
+Game/Engine Features
+	Organizes and manages the "what, why and how" of visual data.
+	Pass Graph, etc in Engine, works out render work to submit, in what order.
+Diotima::Renderer	
+	Super low level, relatively thin wrapper against the GPU. Essentially organizes the data that needs to be uploaded to the GPU so that when it is time to draw, it has what it needs. Submits to the GPU.
+Driver API (Buffers, State, etc)	
+	Graphics state
+	Buffer allocation
+	Driver debugging
+	Validation
+	
+	
+Should build the render data every frame - hold buffer state?
+	
+	
+	

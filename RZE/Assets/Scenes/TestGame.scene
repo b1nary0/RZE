@@ -1,107 +1,214 @@
 {
-  "entities":
-  {
-    "Camera":
-    {
-        "components":
-        {
-            "TransformComponent":
-            {
-                "Position": [-22.434, 14.73, 14.419],
-                "Scale": [1, 1, 1],
-                "Rotation": [0, 0, 0]
-            },
-            "CameraComponent":
-            {
-                "FOV": 80,
-                "NearCull": 0.01,
-                "FarCull": 1000,
-                "Forward": [0.616, -0.456, -0.643],
-                "UpDir":[0.0, 1.0, 0.0]
+    "entities": {
+        "Camera": {
+            "components": {
+                "CameraComponent": {
+                    "FOV": 59.999698638916019,
+                    "NearCull": 0.009999999776482582,
+                    "FarCull": 1000.0,
+                    "Forward": [
+                        0.1513715237379074,
+                        -0.35020744800567629,
+                        -0.9243600964546204
+                    ],
+                    "UpDir": [
+                        0.0,
+                        1.0,
+                        0.0
+                    ]
+                },
+                "TransformComponent": {
+                    "Position": [
+                        -16.810935974121095,
+                        12.776829719543457,
+                        29.719512939453126
+                    ],
+                    "Scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "Rotation": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                }
+            }
+        },
+        "Directional Light": {
+            "components": {
+                "LightSourceComponent": {
+                    "LightType": 0,
+                    "Color": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "Strength": 1.0049997568130494
+                },
+                "TransformComponent": {
+                    "Position": [
+                        -15.300000190734864,
+                        19.665000915527345,
+                        9.279999732971192
+                    ],
+                    "Scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "Rotation": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                }
+            }
+        },
+        "Floor": {
+            "components": {
+                "MeshComponent": {
+                    "ResourcePath": "Assets/3D/Ground/Quad.obj"
+                },
+                "TransformComponent": {
+                    "Position": [
+                        -10.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        32.0,
+                        32.0,
+                        32.0
+                    ],
+                    "Rotation": [
+                        90.0,
+                        0.0,
+                        0.0
+                    ]
+                }
+            }
+        },
+        "Bomber": {
+            "components": {
+                "MeshComponent": {
+                    "ResourcePath": "Assets/3D/FW190/FW190.obj"
+                },
+                "TransformComponent": {
+                    "Position": [
+                        -8.75,
+                        0.0,
+                        2.0950000286102297
+                    ],
+                    "Scale": [
+                        15.0,
+                        15.0,
+                        15.0
+                    ],
+                    "Rotation": [
+                        0.0,
+                        -32.70000076293945,
+                        0.0
+                    ]
+                }
+            }
+        },
+        "NeckMechWalker": {
+            "components": {
+                "MeshComponent": {
+                    "ResourcePath": "Assets/3D/NeckMechWalker/NeckMechWalker.obj"
+                },
+                "TransformComponent": {
+                    "Position": [
+                        -1.7699999809265137,
+                        0.0,
+                        -8.34000015258789
+                    ],
+                    "Scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "Rotation": [
+                        0.0,
+                        -44.349998474121097,
+                        0.0
+                    ]
+                }
+            }
+        },
+        "Nanosuit": {
+            "components": {
+                "MeshComponent": {
+                    "ResourcePath": "Assets/3D/Nanosuit/Nanosuit.obj"
+                },
+                "TransformComponent": {
+                    "Position": [
+                        -2.2049999237060549,
+                        0.0,
+                        13.524999618530274
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Rotation": [
+                        0.0,
+                        97.4000015258789,
+                        0.0
+                    ]
+                }
+            }
+        },
+        "Nyra": {
+            "components": {
+                "MeshComponent": {
+                    "ResourcePath": "Assets/3D/Nyra/Nyra.obj"
+                },
+                "TransformComponent": {
+                    "Position": [
+                        -22.1299991607666,
+                        0.5400000214576721,
+                        -6.335000038146973
+                    ],
+                    "Scale": [
+                        0.20000000298023225,
+                        0.20000000298023225,
+                        0.20000000298023225
+                    ],
+                    "Rotation": [
+                        0.0,
+                        159.6999969482422,
+                        0.0
+                    ]
+                }
+            }
+        },
+        "Panzer": {
+            "components": {
+                "MeshComponent": {
+                    "ResourcePath": "Assets/3D/Panzer/Panzer.obj"
+                },
+                "TransformComponent": {
+                    "Position": [
+                        -18.989999771118165,
+                        0.0,
+                        8.329999923706055
+                    ],
+                    "Scale": [
+                        15.0,
+                        15.0,
+                        15.0
+                    ],
+                    "Rotation": [
+                        0.0,
+                        43.900001525878909,
+                        0.0
+                    ]
+                }
             }
         }
-    },
-		"Directional Light":
-    {
-      "components":
-      {
-        "TransformComponent":
-        {
-          "Position":[-15, 10, 5],
-          "Scale": [1, 1, 1],
-          "Rotation": [0, 0, 0]
-        },
-        "LightSourceComponent":
-        {
-					"LightType": 0,
-          "Color": [0.95, 0.95, 0.85],
-          "Strength": 0.75
-        }
-      }
-    },
-	"Floor":
-	{
-	  "components":
-	  {
-		"TransformComponent":
-		{
-		  "Position": [-10, 0, 0],
-		  "Scale":[16, 16, 1],
-		  "Rotation":[90, 0, 0]
-		},
-		"MeshComponent":
-		{
-		  "ResourcePath": "Assets/3D/Ground/Quad.obj"
-		}
-	  }
-	},
-	"WallNorth":
-	{
-	  "components":
-	  {
-		"TransformComponent":
-		{
-		  "Position": [-10, 8, -8],
-		  "Scale":[16, 16, 1],
-		  "Rotation":[0, 180, 0]
-		},
-		"MeshComponent":
-		{
-		  "ResourcePath": "Assets/3D/Test/WallN/Quad.obj"
-		}
-	  }
-	},
-	"WallEast":
-	{
-	  "components":
-	  {
-		"TransformComponent":
-		{
-		  "Position": [-2, 8, 0],
-		  "Scale":[16, 16, 1],
-		  "Rotation":[0, 90, 0]
-		},
-		"MeshComponent":
-		{
-		  "ResourcePath": "Assets/3D/Test/WallE/Quad.obj"
-		}
-	  }
-	},
-	"MechWalker":
-	{
-	  "components":
-	  {
-		"TransformComponent":
-		{
-		  "Position": [-10, 0, 0],
-		  "Scale":[1, 1, 1],
-		  "Rotation":[0, -45, 0]
-		},
-		"MeshComponent":
-		{
-		  "ResourcePath": "Assets/3D/NeckMechWalker/NeckMechWalker.obj"
-		}
-	  }
-	}
-}
+    }
 }

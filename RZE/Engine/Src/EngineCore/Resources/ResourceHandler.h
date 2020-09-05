@@ -76,7 +76,7 @@ public:
 	ResourceHandle GetEmptyResourceHandle();
 
 	template <class ResourceT, class... Args>
-	ResourceHandle RequestResource(const FilePath& resourcePath, Args... args);
+	ResourceHandle LoadResource(const FilePath& resourcePath, Args... args);
 
 	void ReleaseResource(ResourceHandle& resourceHandle);
 
@@ -118,7 +118,7 @@ private:
 };
 
 template <class ResourceT, class... Args>
-ResourceHandle ResourceHandler::RequestResource(const FilePath& resourcePath, Args... args)
+ResourceHandle ResourceHandler::LoadResource(const FilePath& resourcePath, Args... args)
 {
 	std::string resourceKey = Conversions::CreateResourceKeyFromPath(resourcePath.GetRelativePath());
 

@@ -146,7 +146,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 			mat->GetTexture(aiTextureType_DIFFUSE, i, &str);
 
 			FilePath texturePath = GetTextureFilePath(str.C_Str());
-			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Texture2D>(texturePath, Texture2D::ETextureType::Diffuse);
+			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().LoadResource<Texture2D>(texturePath, Texture2D::ETextureType::Diffuse);
 			if (textureHandle.IsValid())
 			{
 				Texture2D* texture = RZE_Application::RZE().GetResourceHandler().GetResource<Texture2D>(textureHandle);
@@ -166,7 +166,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 			mat->GetTexture(aiTextureType_SPECULAR, i, &str);
 
 			FilePath texturePath = GetTextureFilePath(str.C_Str());
-			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Texture2D>(texturePath, Texture2D::ETextureType::Specular);
+			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().LoadResource<Texture2D>(texturePath, Texture2D::ETextureType::Specular);
 			if (textureHandle.IsValid())
 			{
 				Texture2D* texture = RZE_Application::RZE().GetResourceHandler().GetResource<Texture2D>(textureHandle);
@@ -186,7 +186,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 			mat->GetTexture(aiTextureType_NORMALS, i, &str);
 
 			FilePath texturePath = GetTextureFilePath(str.C_Str());
-			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Texture2D>(texturePath, Texture2D::ETextureType::Normal);
+			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().LoadResource<Texture2D>(texturePath, Texture2D::ETextureType::Normal);
 			if (textureHandle.IsValid())
 			{
 				Texture2D* texture = RZE_Application::RZE().GetResourceHandler().GetResource<Texture2D>(textureHandle);
@@ -200,37 +200,25 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 			}
 		}
 
-	}
+		if (!pMaterial->HasSpecular())
+		{
+			LOG_CONSOLE_ARGS("Could not find specular texture for [%s] loading default specular texture", mFilePath.GetRelativePath().c_str());
 
-	if (!pMaterial->IsTextured())
-	{
-		LOG_CONSOLE_ARGS("Could not find texture for [%s] loading default material", mFilePath.GetRelativePath().c_str());
+			ResourceHandle specularHandle = RZE_Application::RZE().GetResourceHandler().LoadResource<Texture2D>(Texture2D::kDefaultSpecularTexturePath, Texture2D::ETextureType::Specular);
+			mTextureHandles.push_back(specularHandle);
 
-		ResourceHandle diffuseHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Texture2D>(Texture2D::kDefaultDiffuseTexturePath, Texture2D::ETextureType::Diffuse);
-		// #TODO(Josh::Potential bug here -- what happens if we then reconcile no texture at runtime? We would have to remove this from this list -- linear searches are bad
-		mTextureHandles.push_back(diffuseHandle);
+			pMaterial->SetSpecular(RZE_Application::RZE().GetResourceHandler().GetResource<Texture2D>(specularHandle));
+		}
 
-		pMaterial->SetDiffuse(RZE_Application::RZE().GetResourceHandler().GetResource<Texture2D>(diffuseHandle));
-	}
+		if (!pMaterial->HasNormal())
+		{
+			LOG_CONSOLE_ARGS("Could not find normal texture for [%s] loading default normal texture", mFilePath.GetRelativePath().c_str());
 
-	if (!pMaterial->HasSpecular())
-	{
-		LOG_CONSOLE_ARGS("Could not find specular texture for [%s] loading default specular texture", mFilePath.GetRelativePath().c_str());
+			ResourceHandle normalHandle = RZE_Application::RZE().GetResourceHandler().LoadResource<Texture2D>(Texture2D::kDefaultNormalTexturePath, Texture2D::ETextureType::Normal);
+			mTextureHandles.push_back(normalHandle);
 
-		ResourceHandle specularHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Texture2D>(Texture2D::kDefaultSpecularTexturePath, Texture2D::ETextureType::Specular);
-		mTextureHandles.push_back(specularHandle);
-
-		pMaterial->SetSpecular(RZE_Application::RZE().GetResourceHandler().GetResource<Texture2D>(specularHandle));
-	}
-
-	if (!pMaterial->HasNormal())
-	{
-		LOG_CONSOLE_ARGS("Could not find normal texture for [%s] loading default normal texture", mFilePath.GetRelativePath().c_str());
-
-		ResourceHandle normalHandle = RZE_Application::RZE().GetResourceHandler().RequestResource<Texture2D>(Texture2D::kDefaultNormalTexturePath, Texture2D::ETextureType::Normal);
-		mTextureHandles.push_back(normalHandle);
-
-		pMaterial->SetNormal(RZE_Application::RZE().GetResourceHandler().GetResource<Texture2D>(normalHandle));
+			pMaterial->SetNormal(RZE_Application::RZE().GetResourceHandler().GetResource<Texture2D>(normalHandle));
+		}
 	}
 
 	outMesh.SetMaterial(pMaterial);
