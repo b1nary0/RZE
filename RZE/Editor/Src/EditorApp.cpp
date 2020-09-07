@@ -144,13 +144,16 @@ namespace Editor
 			{
 				if (ImGui::MenuItem("New Scene..."))
 				{
+					RZE().GetActiveScene().Unload();
 					RZE().GetActiveScene().NewScene();
 				}
 				if (ImGui::MenuItem("Load Scene..."))
 				{
+
 					FilePath newScenePath = RZE_Application::RZE().ShowOpenFilePrompt();
 					if (newScenePath.IsValid())
 					{
+						RZE().GetActiveScene().Unload();
 						RZE().GetActiveScene().Load(newScenePath);
 					}
 				}
