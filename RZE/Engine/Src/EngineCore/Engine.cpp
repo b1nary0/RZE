@@ -6,14 +6,6 @@
 #include <Diotima/LegacyRenderer.h>
 #include <Diotima/Graphics/RenderTarget.h>
 
-#include <ECS/Components/CameraComponent.h>
-#include <ECS/Components/LifetimeComponent.h>
-#include <ECS/Components/LightSourceComponent.h>
-#include <ECS/Components/MaterialComponent.h>
-#include <ECS/Components/MeshComponent.h>
-#include <ECS/Components/NameComponent.h>
-#include <ECS/Components/TransformComponent.h>
-
 #include <Windowing/Win32Window.h>
 #include <Windowing/WinKeyCodes.h>
 
@@ -136,7 +128,6 @@ void RZE_Engine::Init()
 		mInputHandler.Initialize();
 
 		RegisterWindowEvents();
-		RegisterEngineComponentTypes();
 
 		mResourceHandler.Init();
 
@@ -269,17 +260,6 @@ void RZE_Engine::RegisterKeyEvents()
 {
  	ImGuiIO& io = ImGui::GetIO();
  	io.KeyMap[ImGuiKey_Enter] = Win32KeyCode::Return;
-}
-
-void RZE_Engine::RegisterEngineComponentTypes()
-{
-	APOLLO_REGISTER_COMPONENT(CameraComponent);
-	APOLLO_REGISTER_COMPONENT(LightSourceComponent);
-	APOLLO_REGISTER_COMPONENT(LifetimeComponent);
-	APOLLO_REGISTER_COMPONENT(MaterialComponent);
-	APOLLO_REGISTER_COMPONENT(MeshComponent);
-	APOLLO_REGISTER_COMPONENT(NameComponent);
-	APOLLO_REGISTER_COMPONENT(TransformComponent);
 }
 
 void RZE_Engine::LoadEngineConfig()
