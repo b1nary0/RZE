@@ -135,6 +135,11 @@ void GameScene::Load(FilePath filePath)
 	}
 }
 
+void GameScene::Unload()
+{
+	Clear();
+}
+
 Apollo::EntityID GameScene::CreateEntity(const std::string& name)
 {
 	Apollo::EntityID newEnt = mEntityHandler.CreateEntity(name);
