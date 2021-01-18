@@ -32,6 +32,8 @@ public:
 	// Returning TRUE will fire callbacks registered with RZE. Returning FALSE steals input.
 	virtual bool ProcessInput(const InputHandler& handler);
 
+	virtual void ParseArguments(const char* arguments, int count);
+
 	virtual void RegisterInputEvents(InputHandler& inputHandler);
 
 	Diotima::RenderTargetTexture* GetRTT();

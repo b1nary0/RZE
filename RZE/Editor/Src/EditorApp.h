@@ -28,6 +28,7 @@ namespace Editor
 		virtual void Update() override;
 		virtual void ShutDown() override;
 
+		virtual void ParseArguments(const char* arguments, int count);
 		virtual void RegisterInputEvents(InputHandler& inputHandler) override;
 		virtual bool ProcessInput(const InputHandler& handler) override;
 

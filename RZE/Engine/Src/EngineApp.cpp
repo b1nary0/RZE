@@ -112,3 +112,7 @@ Diotima::RenderTargetTexture* RZE_Application::GetRTT()
 	AssertNotNull(mRenderTarget);
 	return mRenderTarget.get();
 }
+
+void RZE_Application::ParseArguments(const char* arguments, int count)
+{
+}

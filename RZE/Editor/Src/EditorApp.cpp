@@ -400,4 +400,7 @@ namespace Editor
 		style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
 	}
 
+	void EditorApp::ParseArguments(const char* arguments, int count)
+	{
+	}
 }
