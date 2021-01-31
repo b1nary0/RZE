@@ -142,9 +142,6 @@ float4 PSMain(PS_IN input) : SV_TARGET
 	float3 lightDir = normalize(input.FragPos - sceneLight.Position.xyz);
 	float3 viewDir = normalize(input.FragPos - cameraDesc.Position);
 	
-	float3 lightAccum = 0.0f;
-	uint lightIndex = 0;
-	
 	float3 ambientResult = ambientCoeff * float3(1.0f, 1.0f, 1.0f);
 	float3 specularResult = float3(1.0f, 1.0f, 1.0f);
 	float3 diffuseResult = float3(0.25f, 0.25f, 0.25f);
