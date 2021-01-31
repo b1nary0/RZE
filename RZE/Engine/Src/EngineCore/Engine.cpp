@@ -77,14 +77,15 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 
 					Update();
 
-					mLegacyRenderer->Update();
+					//mLegacyRenderer->Update();
+					mRenderer->Update();
 
 					ImGui::EndFrame();
 				}
 
 				{
 					OPTICK_EVENT("GPU Submission");
-					mLegacyRenderer->Render();
+					//mLegacyRenderer->Render();
 				}
 			}
 

@@ -52,13 +52,17 @@ namespace Diotima
 		Int32 IndexBuffer = -1;
 		Int32 TextureBuffer = -1;
 		Int32 ConstantBuffer = -1;
+		Int32 MaterialBuffer = -1;
 		MaterialData Material;
 		Matrix4x4 Transform;
 	};
 
+	// #NOTE_RENDER_REFACTOR
+	// Look into API design that allows this handle to actually be a proxy, interfacing with the 
+	// command API of the renderer.
 	struct RenderObjectHandle
 	{
-		U32 Value;
+		Int32 Value;
 	};
 
 	class Renderer
@@ -96,6 +100,12 @@ namespace Diotima
 		Int32 CreateTextureBuffer2D(void* data, U32 width, U32 height);
 
 		RenderObjectHandle CreateRenderObject();
+
+		void SetVertexBuffer(const RenderObjectHandle& handle, U32 buffer);
+		void SetIndexBuffer(const RenderObjectHandle& handle, U32 buffer);
+
+	private:
+		void FwdPassShim(const std::vector<Diotima::RenderObject>& renderObjects);
 
 	private:
 		// #TODO

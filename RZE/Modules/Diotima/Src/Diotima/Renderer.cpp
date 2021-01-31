@@ -8,8 +8,8 @@
 
 #include <Utils/Conversions.h>
 #include <Utils/MemoryUtils.h>
-#include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Vector4D.h>
+#include <Utils/DebugUtils/Debug.h>
 #include <Utils/Platform/FilePath.h>
 
 // DX11
@@ -32,6 +32,62 @@
 
 namespace Diotima
 {
+
+	void Renderer::FwdPassShim(const std::vector<Diotima::RenderObject>& renderObjects)
+	{
+		ID3D11DeviceContext& deviceContext = mDevice->GetDeviceContext();
+		for (const Diotima::RenderObject& renderObject : renderObjects)
+		{
+			// try to draw something
+			mDevice->GetDeviceContext().IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+			DX11GFXConstantBuffer* modelMatBuf = mDevice->GetConstantBuffer(renderObject.ConstantBuffer);
+			ID3D11Buffer* hwModelMatBuf = &modelMatBuf->GetHardwareBuffer();
+			deviceContext.VSSetConstantBuffers(1, 1, &hwModelMatBuf);
+
+			DX11GFXConstantBuffer* materialBuf = mDevice->GetConstantBuffer(renderObject.MaterialBuffer);
+			ID3D11Buffer* hwMaterialBuf = &materialBuf->GetHardwareBuffer();
+			deviceContext.PSSetConstantBuffers(2, 1, &hwMaterialBuf);
+
+			ID3D11Buffer* vertBuf = &mDevice->GetVertexBuffer(renderObject.VertexBuffer)->GetHardwareBuffer();
+
+			struct TempDataLayoutStructure
+			{
+				Vector3D position;
+				Vector3D normal;
+				Vector2D uv;
+				Vector3D tangents;
+			};
+			UINT stride = sizeof(TempDataLayoutStructure);
+			UINT offset = 0;
+			mDevice->GetDeviceContext().IASetVertexBuffers(0, 1, &vertBuf, &stride, &offset);
+
+			// Index buffer
+			DX11GFXIndexBuffer* indexBuf = mDevice->GetIndexBuffer(renderObject.IndexBuffer);
+			mDevice->GetDeviceContext().IASetIndexBuffer(&indexBuf->GetHardwareBuffer(), DXGI_FORMAT_R32_UINT, 0);
+
+#pragma region TEXTURES
+// 			if (drawCall.IsTextured)
+// 			{
+// 				std::array<DX11GFXTextureBuffer2D*, 3> textureArray = {
+// 									mDevice->GetTextureBuffer2D(drawCall.TextureSlot0),
+// 									mDevice->GetTextureBuffer2D(drawCall.TextureSlot1),
+// 									mDevice->GetTextureBuffer2D(drawCall.TextureSlot2)
+// 				};
+// 
+// 				for (size_t texBufIdx = 0; texBufIdx < textureArray.size(); ++texBufIdx)
+// 				{
+// 					ID3D11ShaderResourceView* resourceView = &textureArray[texBufIdx]->GetResourceView();
+// 					ID3D11SamplerState* samplerState = &textureArray[texBufIdx]->GetSamplerState();
+// 					deviceContext.PSSetShaderResources(texBufIdx, 1, &resourceView);
+// 					deviceContext.PSSetSamplers(texBufIdx, 1, &samplerState);
+// 				}
+// 			}
+#pragma endregion
+
+			deviceContext.DrawIndexed(indexBuf->GetIndexCount(), 0, 0);
+		}
+	}
 
 	Renderer::Renderer()
 		: mRenderTarget(nullptr)
@@ -60,6 +116,8 @@ namespace Diotima
 		OPTICK_EVENT();
 
 		ProcessCommands();
+
+		
 	}
 
 	void Renderer::Render()
@@ -169,6 +227,18 @@ namespace Diotima
 		mRenderObjects.emplace_back();
 
 		return objectHandle;
+	}
+
+	void Renderer::SetVertexBuffer(const RenderObjectHandle& handle, U32 buffer)
+	{
+		AssertMsg(handle.Value >= 0, "Invalid RenderObjectHandle.");
+		mRenderObjects[handle.Value].VertexBuffer = buffer;
+	}
+
+	void Renderer::SetIndexBuffer(const RenderObjectHandle& handle, U32 buffer)
+	{
+		AssertMsg(handle.Value >= 0, "Invalid RenderObjectHandle.");
+		mRenderObjects[handle.Value].IndexBuffer = buffer;
 	}
 
 	void Renderer::ProcessCommands()
