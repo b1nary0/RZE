@@ -57,7 +57,7 @@ namespace Diotima
 
 		struct RenderItemMaterialDesc
 		{
-			bool IsTextured;
+			U32 IsTextured;
 			float Shininess;
 		};
 
@@ -119,7 +119,7 @@ namespace Diotima
 		{
 			// #TODO
 			// IsTextured is not sufficient. Need to know (or infer) whether we have specular or normals as well. RIP.
-			bool IsTextured;
+			U32 IsTextured;
 			U32 VertexBuffer;
 			U32 IndexBuffer;
 			U32 ConstantBuffer;

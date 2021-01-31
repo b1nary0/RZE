@@ -136,7 +136,7 @@ void LegacyRenderSystem::RegisterForComponentNotifications()
  
  				Diotima::LegacyRenderer::RenderItemMaterialDesc matDesc;
  				matDesc.Shininess = mesh.GetMaterial().Shininess;
-				matDesc.IsTextured = bIsTextured;
+				matDesc.IsTextured = static_cast<U32>(bIsTextured);
  
 				meshData.Material = std::move(matDesc);
 
@@ -202,7 +202,7 @@ void LegacyRenderSystem::RegisterForComponentNotifications()
 
  				Diotima::LegacyRenderer::RenderItemMaterialDesc matDesc;
  				matDesc.Shininess = mesh.GetMaterial().Shininess;
-				matDesc.IsTextured = mesh.GetMaterial().IsTextured();
+				matDesc.IsTextured = static_cast<U32>(mesh.GetMaterial().IsTextured());
  
  				meshData.Material = std::move(matDesc);
 				
