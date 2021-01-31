@@ -56,7 +56,7 @@ namespace Diotima
 
 		mViewProjBuf = mDevice->CreateConstantBuffer(sizeof(Matrix4x4), 1);
 		mLightBuf = mDevice->CreateConstantBuffer(sizeof(LegacyRenderer::LightItemProtocol), 1);
-		mCameraDataBuf = mDevice->CreateConstantBuffer(MemoryUtils::AlignSize(sizeof(Vector3D), 15), 1);
+		mCameraDataBuf = mDevice->CreateConstantBuffer(MemoryUtils::AlignSize(sizeof(Vector3D), 16), 1);
 
 		// Shaders
 		{

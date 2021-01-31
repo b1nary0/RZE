@@ -60,7 +60,7 @@ namespace Diotima
 		meshMaterialBuffers.reserve(itemProtocol.MeshData.size());
 		for (size_t index = 0; index < itemProtocol.MeshData.size(); ++index)
 		{
-			meshMaterialBuffers.push_back(mDevice->CreateConstantBuffer(MemoryUtils::AlignSize(sizeof(RenderItemMaterialDesc), 15), 1));
+			meshMaterialBuffers.push_back(mDevice->CreateConstantBuffer(MemoryUtils::AlignSize(sizeof(RenderItemMaterialDesc), 16), 1));
 		}
 
 		if (!mFreeRenderListIndices.empty())

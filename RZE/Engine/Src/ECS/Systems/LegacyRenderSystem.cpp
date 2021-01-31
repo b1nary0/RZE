@@ -217,7 +217,7 @@ void LegacyRenderSystem::RegisterForComponentNotifications()
 			meshMaterialBuffers.reserve(renderItem.MeshData.size());
 			for (size_t index = 0; index < renderItem.MeshData.size(); ++index)
 			{
-				meshMaterialBuffers.push_back(device.CreateConstantBuffer(MemoryUtils::AlignSize(sizeof(Diotima::LegacyRenderer::RenderItemMaterialDesc), 15), 1));
+				meshMaterialBuffers.push_back(device.CreateConstantBuffer(MemoryUtils::AlignSize(sizeof(Diotima::LegacyRenderer::RenderItemMaterialDesc), 16), 1));
 			}
 
 			renderItem.MaterialBuffers = std::move(meshMaterialBuffers);
