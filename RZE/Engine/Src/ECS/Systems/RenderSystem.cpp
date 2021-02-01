@@ -68,8 +68,6 @@ void RenderSystem::RegisterForComponentNotifications()
 				{
 					// Decompose and register with Renderer
 					Diotima::RenderObjectHandle renderObjectHandle = mRenderer->CreateRenderObject();
-					mRenderer->SetVertexBuffer(renderObjectHandle, mesh.GetVertexBuffer());
-					mRenderer->SetIndexBuffer(renderObjectHandle, mesh.GetIndexBuffer());
 
 					// Operate on the handle
 					// RenderObjectHandle is the proxy to a RenderObject which describes an entire rendered entity.
