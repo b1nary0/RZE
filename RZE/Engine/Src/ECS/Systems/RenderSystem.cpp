@@ -30,8 +30,6 @@ void RenderSystem::Initialize()
 	InternalGetComponentFilter().AddFilterType<TransformComponent>();
 	InternalGetComponentFilter().AddFilterType<MeshComponent>();
 
-	mRenderer = &RZE_Application::RZE().GetRenderer();
-
 	RegisterForComponentNotifications();
 }
 
@@ -55,25 +53,6 @@ void RenderSystem::RegisterForComponentNotifications()
 		Apollo::EntityHandler::ComponentAddedFunc OnMeshComponentAdded([this, &handler](Apollo::EntityID entityID)
 		{
 			OPTICK_EVENT("RenderSystem::OnMeshComponentAdded");
-
-			MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entityID);
-			AssertNotNull(meshComp);
-			meshComp->Resource = RZE_Application::RZE().GetResourceHandler().LoadResource<Model3D>(meshComp->ResourcePath);
-
-			if (meshComp->Resource.IsValid())
-			{
-				Model3D* const modelData = RZE_Application::RZE().GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
-
-				for (const MeshGeometry& mesh : modelData->GetStaticMesh().GetSubMeshes())
-				{
-					// Decompose and register with Renderer
-					Diotima::RenderObjectHandle renderObjectHandle = mRenderer->CreateRenderObject();
-
-					// Operate on the handle
-					// RenderObjectHandle is the proxy to a RenderObject which describes an entire rendered entity.
-					// All atomic render operations are performed at the RenderObject level.
-				}
-			}
 		});
 		handler.RegisterForComponentAddNotification<MeshComponent>(OnMeshComponentAdded);
 
@@ -98,13 +77,11 @@ void RenderSystem::RegisterForComponentNotifications()
 	{
 		Apollo::EntityHandler::ComponentAddedFunc OnLightSourceComponentAdded([this, &handler](Apollo::EntityID entityID)
 		{
-				// IMPLEMENT
 		});
 		handler.RegisterForComponentAddNotification<LightSourceComponent>(OnLightSourceComponentAdded);
 
 		Apollo::EntityHandler::ComponentRemovedFunc OnLightSourceComponentRemoved([this, &handler](Apollo::EntityID entityID)
 		{
-				// IMPLEMENT
 		});
 		handler.RegisterForComponentRemovedNotification<LightSourceComponent>(OnLightSourceComponentRemoved);
 	}
@@ -115,19 +92,16 @@ void RenderSystem::RegisterForComponentNotifications()
 	{
 		Apollo::EntityHandler::ComponentAddedFunc OnCameraComponentAdded([this, &handler](Apollo::EntityID entityID)
 		{
-				// IMPLEMENT
 		});
 		handler.RegisterForComponentAddNotification<CameraComponent>(OnCameraComponentAdded);
 
 		Apollo::EntityHandler::ComponentModifiedFunc OnCameraComponentModified([this, &handler](Apollo::EntityID entityID)
 		{
-				// IMPLEMENT
 		});
 		handler.RegisterForComponentModifiedNotification<CameraComponent>(OnCameraComponentModified);
 
 		Apollo::EntityHandler::ComponentModifiedFunc OnCameraComponentRemoved([this, &handler](Apollo::EntityID entityID)
 		{
-				// IMPLEMENT
 		});
 		handler.RegisterForComponentRemovedNotification<CameraComponent>(OnCameraComponentRemoved);
 	}
