@@ -40,15 +40,19 @@ void GameApp::Initialize()
 
 	APOLLO_REGISTER_COMPONENT(VelocityComponent);
 
+	// #TODO #BIGBUG
+	// This function doesn't get called on reload of a scene. Maybe this should be set in the scene itself (the systems, etc)
+	// If we load something that _isnt_ the scene below during runtime, EntitySystem::Initialize isnt called.
+
 	// #TODO(Josh::Putting this comment here because too lazy to do it elsewhere. Hopefully I find it later:
 	//             -- Need to add at least commandline arg like -startscene or something)
-	RZE().GetActiveScene().Load(FilePath("Assets/Scenes/TestGame.scene"));
+	RZE().GetActiveScene().Load(FilePath("Assets/Scenes/PlaneFlight.scene"));
 
 	Apollo::EntityHandler& entityHandler = RZE().GetActiveScene().GetEntityHandler();
 	//entityHandler.AddSystem<InteractiveSpawningSystem>();
-	//entityHandler.AddSystem<TestbedSystem>();
-	entityHandler.AddSystem<FirstPersonCameraSystem>();
-	entityHandler.AddSystem<ProjectileSystem>();
+	entityHandler.AddSystem<TestbedSystem>();
+	entityHandler.AddSystem<FreeCameraSystem>();
+	//entityHandler.AddSystem<ProjectileSystem>();
 }
 
 void GameApp::Start()
