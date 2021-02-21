@@ -45,6 +45,7 @@ namespace Editor
 		void LoadFonts();
 		void StyleSetup();
 
+		void AddFilePathToWindowTitle(const std::string& path);
 		void RunAssetCpy();
 
 	private:

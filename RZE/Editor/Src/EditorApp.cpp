@@ -79,7 +79,10 @@ namespace Editor
 		// For now, it's always false here because we always load into TestGame.scene
 		gEditorState.IsNewScene = false;
 
-		RZE().GetActiveScene().Load(FilePath("Assets/Scenes/TestGame.scene"));
+		FilePath scenePath("Assets/Scenes/TestGame.scene");
+		RZE().GetActiveScene().Load(scenePath);
+
+		AddFilePathToWindowTitle(scenePath.GetRelativePath());
 	}
 
 	void EditorApp::Update()
@@ -183,6 +186,7 @@ namespace Editor
 						// We should work mostly with relative paths, and resolve to absolute only when dealing with
 						// lower-level clients of the API
 						RZE().GetActiveScene().Load(FilePath(newScenePath.GetRelativePath()));
+						AddFilePathToWindowTitle(newScenePath.GetRelativePath());
 					}
 				}
 				if (ImGui::MenuItem("Save Scene"))
@@ -229,7 +233,6 @@ namespace Editor
 					Perseus::Job::Task gameTask = [this]()
 					{
 						static FilePath buildGameBat("BuildGame.bat");
-						static FilePath assetCpyPath("AssetCpy.bat");
 						static FilePath gamePath("_Build\\Debug\\x64\\RZE_Game.exe");
 
 						// #TODO
@@ -244,13 +247,7 @@ namespace Editor
 							}
 						}
 						{
-							FILE* pipe = nullptr;
-							pipe = _popen(assetCpyPath.GetAbsolutePath().c_str(), "rt");
-							char buffer[2048];
-							while (fgets(buffer, 2048, pipe))
-							{
-								DebugServices::Get().Trace(LogChannel::Build, buffer);
-							}
+							RunAssetCpy();
 						}
 						{
 							FILE* pipe = nullptr;
@@ -440,6 +437,14 @@ namespace Editor
 		style.Colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
 		style.Colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
 		style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
+	}
+
+	void EditorApp::AddFilePathToWindowTitle(const std::string& path)
+	{
+		std::ostringstream ss;
+		ss << "RZEStudio - ";
+		ss << path;
+		GetWindow()->SetTitle(ss.str());
 	}
 
 	void EditorApp::RunAssetCpy()
