@@ -198,11 +198,13 @@ namespace Editor
 						{
 							RZE().GetActiveScene().Save(newScenePath);
 							gEditorState.IsNewScene = false;
+							RunAssetCpy();
 						}
 					}
 					else
 					{
 						RZE().GetActiveScene().Save(FilePath());
+						RunAssetCpy();
 					}
 				}
 				ImGui::Separator();
@@ -438,6 +440,20 @@ namespace Editor
 		style.Colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
 		style.Colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
 		style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
+	}
+
+	void EditorApp::RunAssetCpy()
+	{
+		static FilePath assetCpyPath("AssetCpy.bat");
+		{
+			FILE* pipe = nullptr;
+			pipe = _popen(assetCpyPath.GetAbsolutePath().c_str(), "rt");
+			char buffer[2048];
+			while (fgets(buffer, 2048, pipe))
+			{
+				DebugServices::Get().Trace(LogChannel::Build, buffer);
+			}
+		}
 	}
 
 	void EditorApp::ParseArguments(const char* arguments, int count)

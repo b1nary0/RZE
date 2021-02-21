@@ -24,7 +24,7 @@ void TestbedSystem::Initialize()
 void TestbedSystem::Update(const std::vector<Apollo::EntityID>& entities)
 {
 	const Vector3D kMaxDistances(0.0f, 0.0f, 10.0f);
-	const float kMoveSpeed = 2.0f;
+	const float kMoveSpeed = 4.0f;
 
 	GameScene& gameScene = RZE_Application::RZE().GetActiveScene();
 	const float kDeltaT = static_cast<float>(RZE_Application::RZE().GetDeltaTime());

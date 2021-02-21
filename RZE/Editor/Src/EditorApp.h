@@ -45,6 +45,8 @@ namespace Editor
 		void LoadFonts();
 		void StyleSetup();
 
+		void RunAssetCpy();
+
 	private:
 		PanelStates mPanelStates;
 
