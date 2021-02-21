@@ -20,8 +20,21 @@
 
 #include <stdio.h>
 
+namespace
+{
+	// #TODO
+	// Uber temp struct here to represent editor state.
+	// Needs to move out eventually into something not bad.
+	struct EditorState
+	{
+		bool IsNewScene = true;
+	};
+}
+
 namespace Editor
 {
+	static EditorState gEditorState;
+
 	EditorApp::EditorApp()
 	{
 	}
@@ -58,6 +71,14 @@ namespace Editor
 
 	void EditorApp::Start()
 	{
+		// #TODO
+		// Need to write some code that better defines loading into the last scene that was loaded
+		// when the editor closed. This is the difference between fresh (I've loaded into a new scene but havent saved)
+		// and "stale" (I closed the editor within a scene and it needs to be loaded for UX reasons).
+		// #NOTE
+		// For now, it's always false here because we always load into TestGame.scene
+		gEditorState.IsNewScene = false;
+
 		RZE().GetActiveScene().Load(FilePath("Assets/Scenes/TestGame.scene"));
 	}
 
@@ -144,26 +165,45 @@ namespace Editor
 			{
 				if (ImGui::MenuItem("New Scene..."))
 				{
+					gEditorState.IsNewScene = true;
+
 					RZE().GetActiveScene().Unload();
 					RZE().GetActiveScene().NewScene();
 				}
 				if (ImGui::MenuItem("Load Scene..."))
 				{
-
 					FilePath newScenePath = RZE_Application::RZE().ShowOpenFilePrompt();
 					if (newScenePath.IsValid())
 					{
 						RZE().GetActiveScene().Unload();
-						RZE().GetActiveScene().Load(newScenePath);
+						// #TODO
+						// Having to re-construct a FilePath like this seems weird.
+						// Investigate. 
+						// #NOTE
+						// We should work mostly with relative paths, and resolve to absolute only when dealing with
+						// lower-level clients of the API
+						RZE().GetActiveScene().Load(FilePath(newScenePath.GetRelativePath()));
 					}
 				}
 				if (ImGui::MenuItem("Save Scene"))
 				{
-					// #TODO
-					// This will save to TestGame.scene for now as a hack just to see this stuff work.
-					// Will break a bunch of other stuff but I intend to fix this all immediately next.
-					// Gives save testbed for the interim.
-					RZE().GetActiveScene().Save(FilePath());
+					if (gEditorState.IsNewScene)
+					{
+						// #TODO
+						// Using ShowOpenFilePrompt() here requires that you create the file
+						// from within the open file prompt. This is a quick way to implement this feature,
+						// but we need to fix this to use a new file prompt.
+						FilePath newScenePath = RZE_Application::RZE().ShowOpenFilePrompt();
+						if (newScenePath.IsValid())
+						{
+							RZE().GetActiveScene().Save(newScenePath);
+							gEditorState.IsNewScene = false;
+						}
+					}
+					else
+					{
+						RZE().GetActiveScene().Save(FilePath());
+					}
 				}
 				ImGui::Separator();
 				if (ImGui::MenuItem("Build Game..."))

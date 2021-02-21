@@ -96,7 +96,7 @@ bool File::IsValid() const
 {
 	// #FIXME - We should probably do some more checks on the string itself to 
 	//			ensure that it's an actual filepath, but for now this is fine.
-	return mFilePath.IsValid();
+	return mFilePath.IsValid() /*&& !Empty()*/;
 }
 
 bool File::Empty() const

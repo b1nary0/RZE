@@ -80,8 +80,18 @@ void GameScene::Save(FilePath filePath)
 		writer.EndObject();
 	}
 	writer.EndObject();
+	
+	File sceneFile;
+	if (filePath.IsValid())
+	{
+		sceneFile.SetFilePath(filePath.GetRelativePath());
+		mCurrentScenePath = filePath;
+	}
+	else
+	{
+		sceneFile.SetFilePath(mCurrentScenePath.GetRelativePath());
+	}
 
-	File sceneFile(mCurrentScenePath);
 	sceneFile.Open(File::EFileOpenMode::Write);
 	sceneFile.Write(buf.GetString());
 	AssertExpr(sceneFile.IsValid());
