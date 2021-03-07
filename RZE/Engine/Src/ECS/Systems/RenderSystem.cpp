@@ -53,6 +53,8 @@ void RenderSystem::RegisterForComponentNotifications()
 		Apollo::EntityHandler::ComponentAddedFunc OnMeshComponentAdded([this, &handler](Apollo::EntityID entityID)
 		{
 			OPTICK_EVENT("RenderSystem::OnMeshComponentAdded");
+			// We've detected a MeshComponent was created. Create a render object
+			// and fill it with the data required to properly render the mesh resource.
 		});
 		handler.RegisterForComponentAddNotification<MeshComponent>(OnMeshComponentAdded);
 

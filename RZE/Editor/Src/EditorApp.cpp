@@ -43,7 +43,6 @@ namespace Editor
 	{
 	}
 
-	static ImFont* ubuntu = nullptr;
 	void EditorApp::Initialize()
 	{
 		RZE_Application::Initialize();
