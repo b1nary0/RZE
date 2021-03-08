@@ -2,6 +2,11 @@
 
 class Texture2D;
 
+// [newrenderer]
+// This class (well, material/shader system in general...) needs a lot of thought.
+// How to approach this class? Should we have:
+// 1) MaterialComponent which will fill out internal data based on a .material proprietary format?
+// 2) Just add a shader to this? Where do shaders live? How are they represented engine-side vs renderer side?
 class Material
 {
 public:
