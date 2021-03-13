@@ -31,6 +31,8 @@ void RenderSystem::Initialize()
 	InternalGetComponentFilter().AddFilterType<MeshComponent>();
 
 	RegisterForComponentNotifications();
+
+	mRenderer = &RZE_Application::RZE().GetRenderer();
 }
 
 void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
@@ -53,8 +55,23 @@ void RenderSystem::RegisterForComponentNotifications()
 		Apollo::EntityHandler::ComponentAddedFunc OnMeshComponentAdded([this, &handler](Apollo::EntityID entityID)
 		{
 			OPTICK_EVENT("RenderSystem::OnMeshComponentAdded");
+
+			ResourceHandler& resourceHandler = RZE_Application::RZE().GetResourceHandler();
+
 			// We've detected a MeshComponent was created. Create a render object
 			// and fill it with the data required to properly render the mesh resource.
+			MeshComponent* const meshComponent = handler.GetComponent<MeshComponent>(entityID);
+			AssertNotNull(meshComponent);
+
+			ResourceHandle resource = resourceHandler.LoadResource<Model3D>(meshComponent->ResourcePath);
+			AssertExpr(resource.IsValid());
+			meshComponent->Resource = resource;
+
+			Model3D* const modelData = resourceHandler.GetResource<Model3D>(resource);
+			AssertNotNull(modelData);
+
+
+			Diotima::RenderObjectHandle objectHandle = mRenderer->CreateRenderObject();
 		});
 		handler.RegisterForComponentAddNotification<MeshComponent>(OnMeshComponentAdded);
 

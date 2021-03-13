@@ -7,6 +7,11 @@
 struct CameraComponent;
 struct TransformComponent;
 
+namespace Diotima
+{
+	class Renderer;
+}
+
 class RenderSystem final : public Apollo::EntitySystem
 {
 public:
@@ -21,4 +26,7 @@ private:
 	void RegisterForComponentNotifications();
 
 	void GenerateCameraMatrices(CameraComponent& cameraComponent, const TransformComponent& transformComponent);
+
+private:
+	Diotima::Renderer* mRenderer;
 };
