@@ -46,7 +46,7 @@ void GameApp::Initialize()
 
 	// #TODO(Josh::Putting this comment here because too lazy to do it elsewhere. Hopefully I find it later:
 	//             -- Need to add at least commandline arg like -startscene or something)
-	RZE().GetActiveScene().Load(FilePath("Assets/Scenes/PlaneFlight.scene"));
+	RZE().GetActiveScene().Load(FilePath("Assets/Scenes/RenderTest.scene"));
 
 	Apollo::EntityHandler& entityHandler = RZE().GetActiveScene().GetEntityHandler();
 	//entityHandler.AddSystem<InteractiveSpawningSystem>();
