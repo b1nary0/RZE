@@ -36,6 +36,7 @@ namespace Diotima
 	// for lighting etc
 	struct MaterialData
 	{
+		Int32 TextureBuffer = -1;
 		float Shininess;
 	};
 
@@ -50,7 +51,6 @@ namespace Diotima
 	{
 		Int32 VertexBuffer = -1;
 		Int32 IndexBuffer = -1;
-		Int32 TextureBuffer = -1;
 		Int32 ConstantBuffer = -1;
 		MaterialData Material;
 		Matrix4x4 Transform;
