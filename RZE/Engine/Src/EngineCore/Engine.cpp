@@ -19,8 +19,11 @@ RZE_Engine::RZE_Engine()
 	: mMainWindow(nullptr)
 	, mEngineConfig(nullptr)
 	, mApplication(nullptr)
-	, mLegacyRenderer(nullptr)
+#if WITH_NEW_RENDERER
 	, mRenderer(nullptr)
+#else
+	, mLegacyRenderer(nullptr)
+#endif
 	, bShouldExit(false)
 	, bIsInitialized(false)
 	, mDeltaTime(0.0)
@@ -77,14 +80,22 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 
 					Update();
 
+#if WITH_NEW_RENDERER
+					mRenderer->Update();
+#else
 					mLegacyRenderer->Update();
+#endif
 
 					ImGui::EndFrame();
 				}
 
 				{
 					OPTICK_EVENT("GPU Submission");
+#if WITH_NEW_RENDERER
+					mRenderer->Render();
+#else
 					mLegacyRenderer->Render();
+#endif
 				}
 			}
 
@@ -187,14 +198,17 @@ void RZE_Engine::CreateAndInitializeWindow()
 
 void RZE_Engine::CreateAndInitializeRenderer()
 {
+#if WITH_NEW_RENDERER
+	mRenderer = new Diotima::Renderer();
+	mRenderer->Initialize();
+#else
 	mLegacyRenderer = new Diotima::LegacyRenderer();
 
 	mLegacyRenderer->SetWindow(mMainWindow->GetOSWindowHandleData().windowHandle);
 
 	mLegacyRenderer->Initialize();
 	mLegacyRenderer->EnableVsync(mEngineConfig->GetEngineSettings().IsVSyncEnabled());
-
-	mRenderer = new Diotima::Renderer();
+#endif
 }
 
 void RZE_Engine::InitializeApplication(Functor<RZE_Application* const> createGameCallback)
@@ -250,7 +264,11 @@ void RZE_Engine::RegisterWindowEvents()
 		else if (event.mWindowEvent.mEventInfo.mEventSubType == EWindowEventType::Window_Resize)
 		{
 			Vector2D newSize(event.mWindowEvent.mSizeX, event.mWindowEvent.mSizeY);
+#if WITH_NEW_RENDERER
+			GetRenderer().ResizeCanvas(newSize);
+#else
 			GetLegacyRenderer().ResizeCanvas(newSize);
+#endif
 		}
 	});
 	mEventHandler.RegisterForEvent(EEventType::Window, windowCallback);
@@ -299,12 +317,20 @@ void RZE_Engine::InternalShutDown()
 {
 	AssertNotNull(mMainWindow);
 	AssertNotNull(mEngineConfig);
+#if WITH_NEW_RENDERER
+	AssertNotNull(mRenderer);
+#else
 	AssertNotNull(mLegacyRenderer);
+#endif
 	AssertNotNull(mActiveScene);
 
 	delete mMainWindow;
 	delete mEngineConfig;
+#if WITH_NEW_RENDERER
+	delete mRenderer;
+#else
 	delete mLegacyRenderer;
+#endif
 	delete mActiveScene;
 }
 
@@ -323,16 +349,18 @@ InputHandler& RZE_Engine::GetInputHandler()
 	return mInputHandler;
 }
 
+#if WITH_NEW_RENDERER
 Diotima::Renderer& RZE_Engine::GetRenderer()
 {
 	return *mRenderer;
 }
-
+#else
 Diotima::LegacyRenderer& RZE_Engine::GetLegacyRenderer()
 {
 	AssertNotNull(mLegacyRenderer);
 	return *mLegacyRenderer;
 }
+#endif
 
 GameScene& RZE_Engine::GetActiveScene()
 {

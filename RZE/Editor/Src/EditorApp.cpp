@@ -56,8 +56,11 @@ namespace Editor
 
 		const Vector2D& windowDims = GetWindow()->GetDimensions();
 		mRenderTarget = std::make_unique<Diotima::RenderTargetTexture>(static_cast<U32>(windowDims.X()), static_cast<U32>(windowDims.Y()));
+#if WITH_NEW_RENDERER
+#else
 		mRenderTarget->Initialize(&RZE().GetLegacyRenderer().GetDriverDevice());
 		RZE().GetLegacyRenderer().SetRenderTarget(mRenderTarget.get());
+#endif
 
 		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 		ImGui::GetIO().KeyRepeatDelay = 0.5f;

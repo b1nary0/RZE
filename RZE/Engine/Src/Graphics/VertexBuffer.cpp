@@ -12,5 +12,8 @@ VertexBuffer::~VertexBuffer()
 
 void VertexBuffer::Initialize()
 {
+#if WITH_NEW_RENDERER
+#else
 	mGPUBufferHandle = RZE_Application::RZE().GetLegacyRenderer().QueueCreateVertexBufferCommand(static_cast<void*>(mLocalBuffer.data()), sizeof(float), static_cast<U32>(mLocalBuffer.size()));
+#endif
 }

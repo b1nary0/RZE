@@ -18,6 +18,7 @@
 #include <Diotima/LegacyRenderer.h>
 #include <Diotima/Renderer.h>
 
+
 class RZE_Application;
 
 class GameWorld;
@@ -46,8 +47,11 @@ public:
 	// All of these gets might be best to hide behind a cpp. Or static engine in CPP memory with accessor in h.
 	ResourceHandler&			GetResourceHandler();
 	InputHandler&				GetInputHandler();
+#if WITH_NEW_RENDERER
 	Diotima::Renderer&			GetRenderer();
+#else
 	Diotima::LegacyRenderer&	GetLegacyRenderer();
+#endif
 	GameScene&					GetActiveScene();
 
 	// #TODO(Should probably put the window in the app..)
@@ -96,8 +100,11 @@ private:
 	EventHandler mEventHandler;
 	InputHandler mInputHandler;
 
-	Diotima::LegacyRenderer* mLegacyRenderer;
+#if WITH_NEW_RENDERER
 	Diotima::Renderer* mRenderer;
+#else
+	Diotima::LegacyRenderer* mLegacyRenderer;
+#endif
 
 	EngineConfig* mEngineConfig;
 	

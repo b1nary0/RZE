@@ -26,7 +26,11 @@ namespace Editor
 			if (viewportDims.x != mDimensions.X() || viewportDims.y != mDimensions.Y())
 			{
 				mDimensions.SetXY(viewportDims.x, viewportDims.y);
+#if WITH_NEW_RENDERER
+				RZE_Application::RZE().GetRenderer().SetViewportSize(mDimensions);
+#else
 				RZE_Application::RZE().GetLegacyRenderer().SetViewportSize(mDimensions);
+#endif
 				Apollo::EntityHandler& entityHandler = RZE_Application::RZE().GetActiveScene().GetEntityHandler();
 
 				Functor<void, Apollo::EntityID> cameraUpdateFunc([this, &entityHandler](Apollo::EntityID entityID) 
