@@ -222,9 +222,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 	}
 
 	outMesh.SetMaterial(pMaterial);
-#if WITH_NEW_RENDERER
-	outMesh.AllocateData();
-#else
+#if !WITH_NEW_RENDERER
 	outMesh.AllocateGPUData();
 #endif
 }
