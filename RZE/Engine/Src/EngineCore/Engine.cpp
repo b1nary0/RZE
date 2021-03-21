@@ -200,6 +200,7 @@ void RZE_Engine::CreateAndInitializeRenderer()
 {
 #if WITH_NEW_RENDERER
 	mRenderer = new Diotima::Renderer();
+	mRenderer->SetWindow(mMainWindow->GetOSWindowHandleData().windowHandle);
 	mRenderer->Initialize();
 #else
 	mLegacyRenderer = new Diotima::LegacyRenderer();

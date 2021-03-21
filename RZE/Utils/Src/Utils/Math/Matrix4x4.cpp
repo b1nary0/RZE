@@ -6,6 +6,8 @@
 
 #include <Utils/Math/Math.h>
 
+Matrix4x4 Matrix4x4::IDENTITY = Matrix4x4(glm::mat4());
+
 Matrix4x4::Matrix4x4()
 {
 	mMat = glm::mat4(1.0f);

@@ -38,6 +38,8 @@ public:
 	Matrix4x4 operator*(const Matrix4x4& rhs) const;
 	Vector4D operator*(const Vector4D& rhs) const;
 
+	static Matrix4x4 IDENTITY;
+
 private:
 	Matrix4x4(const glm::mat4& mat);
 

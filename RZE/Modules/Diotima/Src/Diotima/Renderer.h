@@ -13,6 +13,9 @@
 #include <Utils/PrimitiveDefs.h>
 
 struct ID3D11InputLayout;
+struct ID3D10Blob;
+struct ID3D11VertexShader;
+struct ID3D11PixelShader;
 
 namespace Diotima
 {
@@ -32,12 +35,20 @@ namespace Diotima
 
 	};
 
+
 	// Essentially a direct copy into a constant buffer. All this data is consumed by the GPU
 	// for lighting etc
 	struct MaterialData
 	{
 		Int32 TextureBuffer = -1;
 		float Shininess;
+	};
+
+	struct MeshData
+	{
+		std::vector<float> Vertices;
+		std::vector<U32> Indices;
+		MaterialData Material;
 	};
 
 	// Bundle of data that is necessary for each draw call.
@@ -56,9 +67,18 @@ namespace Diotima
 		Matrix4x4 Transform;
 	};
 
-	struct RenderObjectHandle
+	// [newrenderer]
+	// Not permanent
+	struct CameraData
 	{
-		U32 Value;
+		Vector3D Position;
+		Matrix4x4 ProjectionMat;
+		Matrix4x4 ViewMat;
+
+		float FOV;
+		float AspectRatio;
+		float NearCull;
+		float FarCull;
 	};
 
 	class Renderer
@@ -67,6 +87,21 @@ namespace Diotima
 	public:
 		Renderer();
 		~Renderer();
+
+		// [newrenderer]
+	public:
+		void SetCameraData(
+			const Vector3D& position,
+			const Matrix4x4& projectionMat,
+			const Matrix4x4& viewMat,
+			float FOV,
+			float aspectRatio,
+			float nearCull,
+			float farCull);
+
+	private:
+		void PrepareDrawState();
+		// [/newrenderer]
 
 	public:
 		void Initialize();
@@ -95,7 +130,8 @@ namespace Diotima
 		Int32 CreateIndexBuffer(void* data, size_t size, U32 count);
 		Int32 CreateTextureBuffer2D(void* data, U32 width, U32 height);
 
-		RenderObjectHandle CreateRenderObject();
+		void CreateRenderObject(const MeshData& meshData, const Matrix4x4& transform);
+		void InitializeRenderObject(RenderObject& renderObject, const MeshData& meshData, const Matrix4x4& transform);
 
 	private:
 		// #TODO
@@ -110,5 +146,7 @@ namespace Diotima
 		void* mWindowHandle;
 		std::unique_ptr<DX11GFXDevice> mDevice;
 		Vector2D mViewportDimensions;
+
+		CameraData mCameraData;
 	};
 }

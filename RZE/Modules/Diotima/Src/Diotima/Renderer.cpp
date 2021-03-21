@@ -30,8 +30,76 @@
 
 #include <array>
 
+namespace
+{
+	D3D11_INPUT_ELEMENT_DESC k_vertLayout[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+	};
+	UINT numLayoutElements = ARRAYSIZE(k_vertLayout);
+
+	// [newrenderer]
+	// Only used to test preliminary changes to how the renderer functions without
+	// having to write too much code that won't last
+	struct DrawStateData_Prototype
+	{
+		ID3D10Blob* mVSBlob = nullptr;
+		ID3D10Blob* mPSBlob = nullptr;
+		ID3D11VertexShader* mVertexShader = nullptr;
+		ID3D11PixelShader* mPixelShader = nullptr;
+		ID3D11InputLayout* mVertexLayout = nullptr;
+		Int32 mViewProjBuffer = -1;
+
+		void Initialize(Diotima::DX11GFXDevice* hwDevice)
+		{
+			mViewProjBuffer = hwDevice->CreateConstantBuffer(sizeof(Matrix4x4), 1);
+
+			// Shaders
+			{
+				FilePath vertexShaderPath("Assets/Shaders/Vertex_NewRenderer.hlsl");
+				FilePath pixelShaderPath("Assets/Shaders/Pixel_NewRenderer.hlsl");
+
+				HRESULT hr;
+				ID3D10Blob* error;
+				
+				auto errorCB = [](ID3D10Blob* error)
+				{
+					if (error != nullptr)
+					{
+						char const* message =
+							static_cast<char const*>(error->GetBufferPointer());
+
+						// Write the warning to the output window when the program is
+						// executing through the Microsoft Visual Studio IDE.
+						size_t const length = strlen(message);
+						std::wstring output = L"";
+						for (size_t i = 0; i < length; ++i)
+						{
+							output += static_cast<wchar_t>(message[i]);
+						}
+						output += L'\n';
+						OutputDebugString(output.c_str());
+					}
+				};
+
+				hr = D3DCompileFromFile(Conversions::StringToWString(vertexShaderPath.GetAbsolutePath()).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VSMain", "vs_5_0", 0, 0, &mVSBlob, &error);
+				errorCB(error);
+
+				hr = D3DCompileFromFile(Conversions::StringToWString(pixelShaderPath.GetAbsolutePath()).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "PSMain", "ps_5_0", 0, 0, &mPSBlob, &error);
+				errorCB(error);
+
+				hr = hwDevice->GetHardwareDevice().CreateVertexShader(mVSBlob->GetBufferPointer(), mVSBlob->GetBufferSize(), nullptr, &mVertexShader);
+				hr = hwDevice->GetHardwareDevice().CreatePixelShader(mPSBlob->GetBufferPointer(), mPSBlob->GetBufferSize(), nullptr, &mPixelShader);
+
+				hr = hwDevice->GetHardwareDevice().CreateInputLayout(k_vertLayout, numLayoutElements, mVSBlob->GetBufferPointer(), mVSBlob->GetBufferSize(), &mVertexLayout);
+			}
+		}
+	};
+}
+
 namespace Diotima
 {
+	static DrawStateData_Prototype kDrawStateData;
 
 	Renderer::Renderer()
 		: mRenderTarget(nullptr)
@@ -42,6 +110,58 @@ namespace Diotima
 	{
 	}
 
+	void Renderer::PrepareDrawState()
+	{
+		ID3D11DeviceContext& deviceContext = mDevice->GetDeviceContext();
+
+		deviceContext.RSSetState(mDevice->mRasterState);
+		deviceContext.VSSetShader(kDrawStateData.mVertexShader, 0, 0);
+		deviceContext.PSSetShader(kDrawStateData.mPixelShader, 0, 0);
+
+		Matrix4x4 camViewProjMat = mCameraData.ProjectionMat * mCameraData.ViewMat;
+		DX11GFXConstantBuffer* viewProjBuf = mDevice->GetConstantBuffer(kDrawStateData.mViewProjBuffer);
+		ID3D11Buffer* vpbHardwareBuf = &viewProjBuf->GetHardwareBuffer();
+		viewProjBuf->UpdateSubresources(&camViewProjMat);
+		deviceContext.VSSetConstantBuffers(0, 1, &vpbHardwareBuf);
+
+		deviceContext.OMSetRenderTargets(1, &mDevice->mRenderTargetView, mDevice->mDepthStencilView);
+
+		FLOAT rgba[4] = { 0.35f, 0.35f, 0.35f, 1.0f };
+
+		deviceContext.ClearDepthStencilView(mDevice->mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+		deviceContext.ClearRenderTargetView(mDevice->mRenderTargetView, rgba);
+
+		D3D11_VIEWPORT viewport;
+		viewport.Width = GetCanvasSize().X();
+		viewport.Height = GetCanvasSize().Y();
+		viewport.MinDepth = 0.0f;
+		viewport.MaxDepth = 1.0f;
+		viewport.TopLeftX = 0.0f;
+		viewport.TopLeftY = 0.0f;
+		deviceContext.RSSetViewports(1, &viewport);
+
+		deviceContext.IASetInputLayout(kDrawStateData.mVertexLayout);
+	}
+
+	void Renderer::SetCameraData(
+		const Vector3D& position, 
+		const Matrix4x4& projectionMat, 
+		const Matrix4x4& viewMat, 
+		float FOV, 
+		float aspectRatio, 
+		float nearCull, 
+		float farCull)
+	{
+		// lol gross
+		mCameraData.Position = position;
+		mCameraData.ProjectionMat = projectionMat;
+		mCameraData.ViewMat = viewMat;
+		mCameraData.FOV = FOV;
+		mCameraData.AspectRatio = aspectRatio;
+		mCameraData.NearCull = nearCull;
+		mCameraData.FarCull = farCull;
+	}
+
 	void Renderer::Initialize()
 	{
 		mCanvasSize.SetXY(1600, 900);
@@ -49,6 +169,8 @@ namespace Diotima
 		mDevice = std::make_unique<DX11GFXDevice>();
 		mDevice->SetWindow(mWindowHandle);
 		mDevice->Initialize();
+
+		kDrawStateData.Initialize(mDevice.get());
 
 		ImGui::CreateContext();
 		ImGui_ImplWin32_Init(mWindowHandle);
@@ -64,21 +186,14 @@ namespace Diotima
 
 	void Renderer::Render()
 	{
-		if (mRenderTarget != nullptr)
-		{
-			ID3D11RenderTargetView* nullViews[] = { nullptr };
-			mDevice->GetDeviceContext().OMSetRenderTargets(ARRAYSIZE(nullViews), nullViews, nullptr);
-
-			mDevice->GetDeviceContext().OMSetRenderTargets(1, &mDevice->mRenderTargetView, mDevice->mDepthStencilView);
-
-			FLOAT rgba[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-			mDevice->GetDeviceContext().ClearRenderTargetView(mDevice->mRenderTargetView, rgba);
-		}
+		PrepareDrawState();
 
 		ImGui::Render();
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
 		mDevice->Present();
+
+		mRenderObjects.clear();
 	}
 
 	void Renderer::ShutDown()
@@ -148,33 +263,33 @@ namespace Diotima
 		return mDevice->CreateTextureBuffer2D(data, params);
 	}
 
-
-	Diotima::RenderObjectHandle Renderer::CreateRenderObject()
+	void Renderer::CreateRenderObject(const MeshData& meshData, const Matrix4x4& transform)
 	{
-		RenderObjectHandle objectHandle;
-
 		if (!mFreeRenderObjectIndices.empty())
 		{
 			U32 freeIndex = mFreeRenderObjectIndices.front();
 			mFreeRenderObjectIndices.pop();
-			objectHandle.Value = freeIndex;
 
 			RenderObject& renderObject = mRenderObjects[freeIndex];
 			renderObject = {};
-
-			return objectHandle;
+			InitializeRenderObject(renderObject, meshData, transform);
 		}
 
-		objectHandle.Value = mRenderObjects.size();
 		mRenderObjects.emplace_back();
+		RenderObject& renderObject = mRenderObjects.back();
+		InitializeRenderObject(renderObject, meshData, transform);
+	}
 
-		return objectHandle;
+	void Renderer::InitializeRenderObject(RenderObject& renderObject, const MeshData& meshData, const Matrix4x4& transform)
+	{
+		renderObject.Transform = transform;
+		renderObject.VertexBuffer = CreateVertexBuffer((void*)meshData.Vertices.data(), meshData.Vertices.size(), 1);
+		renderObject.IndexBuffer = CreateIndexBuffer((void*)meshData.Indices.data(), meshData.Indices.size(), 1);
 	}
 
 	void Renderer::ProcessCommands()
 	{
 		OPTICK_EVENT();
-		
 	}
 
 }

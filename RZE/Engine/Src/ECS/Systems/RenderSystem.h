@@ -10,6 +10,8 @@
 struct CameraComponent;
 struct TransformComponent;
 
+class MeshGeometry;
+
 namespace Diotima
 {
 	class Renderer;
@@ -17,6 +19,14 @@ namespace Diotima
 
 class RenderSystem final : public Apollo::EntitySystem
 {
+private:
+	struct RenderNode
+	{
+		const MeshGeometry* Geometry = nullptr;
+		Matrix4x4 Transform = Matrix4x4::IDENTITY;
+		std::vector<RenderNode> Children;
+	};
+
 public:
 	RenderSystem(Apollo::EntityHandler* const entityHandler);
 
@@ -30,7 +40,13 @@ private:
 
 	void GenerateCameraMatrices(CameraComponent& cameraComponent, const TransformComponent& transformComponent);
 
+	void BuildRenderCommands();
+
 private:
 	Diotima::Renderer* mRenderer;
+
+	std::vector<RenderNode> mRootNodes;
+
+	Apollo::EntityID mCurrentCameraEntity = Apollo::kInvalidEntityID;
 };
 #endif

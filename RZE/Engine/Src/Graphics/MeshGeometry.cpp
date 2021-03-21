@@ -14,8 +14,11 @@ MeshGeometry::~MeshGeometry()
 {
 }
 
-#if !WITH_NEW_RENDERER
+#if WITH_NEW_RENDERER
+void MeshGeometry::AllocateData()
+#else
 void MeshGeometry::AllocateGPUData()
+#endif
 {
 	std::vector<float> vertexDataBuffer;
 	vertexDataBuffer.reserve(mVertices.size() * sizeof(MeshVertex));
@@ -48,7 +51,6 @@ void MeshGeometry::AllocateGPUData()
 	mIndexBuffer = std::make_shared<IndexBuffer>(mIndices);
 	mIndexBuffer->Initialize();
 }
-#endif
 
 void MeshGeometry::AddVertex(const MeshVertex& vertex)
 {
@@ -72,17 +74,22 @@ const Material& MeshGeometry::GetMaterial() const
 	return *mMaterial;
 }
 
-const std::vector<U32>& MeshGeometry::GetIndices() const
-{
-	return mIndices;
-}
-
 const std::vector<MeshVertex>& MeshGeometry::GetVertices()
 {
 	return mVertices;
 }
 
-#if !WITH_NEW_RENDERER
+#if WITH_NEW_RENDERER
+const std::vector<float>& MeshGeometry::GetVertexDataRaw() const
+{
+	return mVertexBuffer->GetData();
+}
+
+const std::vector<U32>& MeshGeometry::GetIndexDataRaw() const
+{
+	return mIndexBuffer->GetData();
+}
+#else
 U32 MeshGeometry::GetVertexBuffer() const
 {
 	return mVertexBuffer->GetGPUBufferIndex();

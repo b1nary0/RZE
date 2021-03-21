@@ -11,6 +11,8 @@ public:
 
 	void Initialize();
 
+	inline const std::vector<float>& GetData() const { return mLocalBuffer; }
+
 #if !WITH_NEW_RENDERER
 	U32 GetGPUBufferIndex();
 #endif

@@ -12,6 +12,8 @@
 
 #include <Game/Model3D.h>
 
+#include <Graphics/MeshGeometry.h>
+
 #include <Utils/Platform/FilePath.h>
 #include <Utils/Platform/Timers/HiResTimer.h>
 
@@ -37,7 +39,28 @@ void RenderSystem::Initialize()
 
 void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 {
-	
+	// Update Renderer camera
+	{
+		Apollo::EntityHandler& handler = InternalGetEntityHandler();
+
+		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(mCurrentCameraEntity);
+		CameraComponent* const camComp = handler.GetComponent<CameraComponent>(mCurrentCameraEntity);
+		AssertNotNull(transfComp);
+		AssertNotNull(camComp);
+
+		GenerateCameraMatrices(*camComp, *transfComp);
+
+		mRenderer->SetCameraData(
+			transfComp->Position,
+			camComp->ProjectionMat,
+			camComp->ViewMat,
+			camComp->FOV,
+			camComp->AspectRatio,
+			camComp->NearCull,
+			camComp->FarCull);
+	}
+
+	BuildRenderCommands();
 }
 
 void RenderSystem::ShutDown()
@@ -62,6 +85,8 @@ void RenderSystem::RegisterForComponentNotifications()
 			// and fill it with the data required to properly render the mesh resource.
 			MeshComponent* const meshComponent = handler.GetComponent<MeshComponent>(entityID);
 			AssertNotNull(meshComponent);
+			TransformComponent* const rootTransformComponent = handler.GetComponent<TransformComponent>(entityID);
+			AssertNotNull(rootTransformComponent);
 
 			ResourceHandle resource = resourceHandler.LoadResource<Model3D>(meshComponent->ResourcePath);
 			AssertExpr(resource.IsValid());
@@ -70,8 +95,15 @@ void RenderSystem::RegisterForComponentNotifications()
 			Model3D* const modelData = resourceHandler.GetResource<Model3D>(resource);
 			AssertNotNull(modelData);
 
-
-			Diotima::RenderObjectHandle objectHandle = mRenderer->CreateRenderObject();
+			mRootNodes.emplace_back();
+			RenderNode& renderNode = mRootNodes.back();
+			renderNode.Transform = rootTransformComponent->GetAsMat4x4();
+			for (auto& meshGeometry : modelData->GetStaticMesh().GetSubMeshes())
+			{
+				renderNode.Children.emplace_back();
+				RenderNode& childNode = renderNode.Children.back();
+				childNode.Geometry = &meshGeometry;
+			}
 		});
 		handler.RegisterForComponentAddNotification<MeshComponent>(OnMeshComponentAdded);
 
@@ -111,11 +143,42 @@ void RenderSystem::RegisterForComponentNotifications()
 	{
 		Apollo::EntityHandler::ComponentAddedFunc OnCameraComponentAdded([this, &handler](Apollo::EntityID entityID)
 		{
+			CameraComponent* const camComp = handler.GetComponent<CameraComponent>(entityID);
+			AssertNotNull(camComp);
+
+			if (mCurrentCameraEntity != Apollo::kInvalidEntityID)
+			{
+				CameraComponent* const currentCamera = handler.GetComponent<CameraComponent>(mCurrentCameraEntity);
+				AssertNotNull(currentCamera);
+
+				currentCamera->bIsActiveCamera = false;
+			}
+
+			// #NOTE(For now, the last camera added becomes the main camera.)
+			mCurrentCameraEntity = entityID;
+			camComp->bIsActiveCamera = true;
+
+			camComp->AspectRatio = RZE_Application::RZE().GetWindowSize().X() / RZE_Application::RZE().GetWindowSize().Y();
 		});
 		handler.RegisterForComponentAddNotification<CameraComponent>(OnCameraComponentAdded);
 
 		Apollo::EntityHandler::ComponentModifiedFunc OnCameraComponentModified([this, &handler](Apollo::EntityID entityID)
 		{
+			CameraComponent* const camComp = handler.GetComponent<CameraComponent>(entityID);
+			AssertNotNull(camComp);
+
+			if (camComp->bIsActiveCamera)
+			{
+				if (mCurrentCameraEntity != Apollo::kInvalidEntityID)
+				{
+					CameraComponent* const currentCamera = handler.GetComponent<CameraComponent>(mCurrentCameraEntity);
+					AssertNotNull(currentCamera);
+
+					currentCamera->bIsActiveCamera = false;
+				}
+
+				mCurrentCameraEntity = entityID;
+			}
 		});
 		handler.RegisterForComponentModifiedNotification<CameraComponent>(OnCameraComponentModified);
 
@@ -131,4 +194,20 @@ void RenderSystem::GenerateCameraMatrices(CameraComponent& cameraComponent, cons
 	cameraComponent.ProjectionMat = Matrix4x4::CreatePerspectiveMatrix(cameraComponent.FOV, cameraComponent.AspectRatio, cameraComponent.NearCull, cameraComponent.FarCull);
 	cameraComponent.ViewMat = Matrix4x4::CreateViewMatrix(transformComponent.Position, transformComponent.Position + cameraComponent.Forward, cameraComponent.UpDir);
 }
+
+void RenderSystem::BuildRenderCommands()
+{
+	for (size_t index = 0; index < mRootNodes.size(); ++index)
+	{
+		for (auto& child : mRootNodes[index].Children)
+		{
+			Diotima::MeshData meshData;
+			meshData.Vertices = child.Geometry->GetVertexDataRaw();
+			meshData.Indices = child.Geometry->GetIndexDataRaw();
+
+			mRenderer->CreateRenderObject(meshData, mRootNodes[index].Transform);
+		}
+	}
+}
+
 #endif

@@ -104,7 +104,7 @@ namespace Diotima
 			mDevice->CreateRasterizerState(&rasterDesc, &mRasterState);
 		}
 
-		SetupSceneStuff();
+		//SetupSceneStuff();
 	}
 
 	void DX11GFXDevice::SetWindow(void* windowHandle)
