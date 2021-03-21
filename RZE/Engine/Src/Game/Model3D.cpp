@@ -123,10 +123,14 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 		}
 	}
 	
-	Material* pMaterial = new Material();
+	Material* pMaterial;
 	if (mesh.mMaterialIndex >= 0)
 	{
 		aiMaterial* mat = scene.mMaterials[mesh.mMaterialIndex];
+		aiString matName;
+		mat->Get(AI_MATKEY_NAME, matName);
+
+		pMaterial = MaterialDatabase::Get().GetOrCreateMaterial(matName.C_Str());
 
 		float shininess = 0.0f;
 		if (mat->Get(AI_MATKEY_SHININESS, shininess) == AI_SUCCESS)

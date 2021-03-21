@@ -9,9 +9,13 @@ class Texture2D;
 // 2) Just add a shader to this? Where do shaders live? How are they represented engine-side vs renderer side?
 class Material
 {
+	friend class MaterialDatabase;
+
 public:
-	Material();
 	~Material();
+
+private:
+	Material();
 
 public:
 	void SetDiffuse(Texture2D* texture);
@@ -39,4 +43,50 @@ private:
 	Texture2D* mDiffuseMap;
 	Texture2D* mSpecularMap;
 	Texture2D* mNormalMap;
+};
+
+// [newrenderer]
+// Manages material resources so we only ever load what we need to texture-wise
+// Just an idea, will need mega fleshing out
+class MaterialDatabase
+{
+public:
+	MaterialDatabase() = default;
+	~MaterialDatabase() = default;
+
+public:
+	static MaterialDatabase& Get()
+	{
+		static MaterialDatabase staticRef;
+		return staticRef;
+	}
+
+public:
+	// Slow and gross but just stubbing code ideas for the moment
+	Material* GetOrCreateMaterial(const std::string& name)
+	{
+		auto iter = mDatabase.find(name);
+
+		if (iter == mDatabase.end())
+		{
+			Material* material = new Material();
+			mDatabase[name] = material;
+			return material;
+		}
+
+		return iter->second;
+	}
+
+	Material* FindMaterial(const std::string& name)
+	{
+		auto iter = mDatabase.find(name);
+		if (iter != mDatabase.end())
+		{
+			return iter->second;
+		}
+		return nullptr;
+	}
+
+private:
+	std::unordered_map<std::string, Material*> mDatabase;
 };
