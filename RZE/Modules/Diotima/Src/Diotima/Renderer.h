@@ -101,6 +101,7 @@ namespace Diotima
 
 	private:
 		void PrepareDrawState();
+		void Draw();
 		// [/newrenderer]
 
 	public:
@@ -130,7 +131,10 @@ namespace Diotima
 		Int32 CreateIndexBuffer(void* data, size_t size, U32 count);
 		Int32 CreateTextureBuffer2D(void* data, U32 width, U32 height);
 
-		void CreateRenderObject(const MeshData& meshData, const Matrix4x4& transform);
+		// [newrenderer]
+		// This is just to fix allocating resources every frame. Need to track the RenderObject
+		// created, but ideally this should **NOT** just be U32 based on the index of the item.
+		U32 CreateRenderObject(const MeshData& meshData, const Matrix4x4& transform);
 		void InitializeRenderObject(RenderObject& renderObject, const MeshData& meshData, const Matrix4x4& transform);
 
 	private:

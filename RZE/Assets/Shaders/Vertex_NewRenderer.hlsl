@@ -17,7 +17,6 @@ cbuffer ViewProjectionBuf : register(b0)
 cbuffer ModelMatBuf : register(b1)
 {
 	matrix ModelView;
-	matrix ModelViewInv;
 };
 
 VS_OUT VSMain(VS_IN input) // main is the default function name

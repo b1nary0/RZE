@@ -22,6 +22,7 @@ class RenderSystem final : public Apollo::EntitySystem
 private:
 	struct RenderNode
 	{
+		U32 RenderObjectIndex;
 		const MeshGeometry* Geometry = nullptr;
 		Matrix4x4 Transform = Matrix4x4::IDENTITY;
 		std::vector<RenderNode> Children;
@@ -39,8 +40,6 @@ private:
 	void RegisterForComponentNotifications();
 
 	void GenerateCameraMatrices(CameraComponent& cameraComponent, const TransformComponent& transformComponent);
-
-	void BuildRenderCommands();
 
 private:
 	Diotima::Renderer* mRenderer;

@@ -59,8 +59,6 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 			camComp->NearCull,
 			camComp->FarCull);
 	}
-
-	BuildRenderCommands();
 }
 
 void RenderSystem::ShutDown()
@@ -103,6 +101,12 @@ void RenderSystem::RegisterForComponentNotifications()
 				renderNode.Children.emplace_back();
 				RenderNode& childNode = renderNode.Children.back();
 				childNode.Geometry = &meshGeometry;
+
+				Diotima::MeshData meshData;
+				meshData.Vertices = childNode.Geometry->GetVertexDataRaw();
+				meshData.Indices = childNode.Geometry->GetIndexDataRaw();
+
+				childNode.RenderObjectIndex = mRenderer->CreateRenderObject(meshData, renderNode.Transform);
 			}
 		});
 		handler.RegisterForComponentAddNotification<MeshComponent>(OnMeshComponentAdded);
@@ -193,21 +197,6 @@ void RenderSystem::GenerateCameraMatrices(CameraComponent& cameraComponent, cons
 {
 	cameraComponent.ProjectionMat = Matrix4x4::CreatePerspectiveMatrix(cameraComponent.FOV, cameraComponent.AspectRatio, cameraComponent.NearCull, cameraComponent.FarCull);
 	cameraComponent.ViewMat = Matrix4x4::CreateViewMatrix(transformComponent.Position, transformComponent.Position + cameraComponent.Forward, cameraComponent.UpDir);
-}
-
-void RenderSystem::BuildRenderCommands()
-{
-	for (size_t index = 0; index < mRootNodes.size(); ++index)
-	{
-		for (auto& child : mRootNodes[index].Children)
-		{
-			Diotima::MeshData meshData;
-			meshData.Vertices = child.Geometry->GetVertexDataRaw();
-			meshData.Indices = child.Geometry->GetIndexDataRaw();
-
-			mRenderer->CreateRenderObject(meshData, mRootNodes[index].Transform);
-		}
-	}
 }
 
 #endif

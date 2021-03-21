@@ -143,6 +143,35 @@ namespace Diotima
 		deviceContext.IASetInputLayout(kDrawStateData.mVertexLayout);
 	}
 
+	void Renderer::Draw()
+	{
+		ID3D11DeviceContext& deviceContext = mDevice->GetDeviceContext();
+		deviceContext.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+		for (auto& renderObject : mRenderObjects)
+		{
+			DX11GFXConstantBuffer* modelMatBuf = mDevice->GetConstantBuffer(renderObject.ConstantBuffer);
+			ID3D11Buffer* hwModelMatBuf = &modelMatBuf->GetHardwareBuffer();
+			deviceContext.VSSetConstantBuffers(1, 1, &hwModelMatBuf);
+
+			ID3D11Buffer* vertBuf = &mDevice->GetVertexBuffer(renderObject.VertexBuffer)->GetHardwareBuffer();
+
+			struct TempDataLayoutStructure
+			{
+				Vector3D position;
+			};
+			UINT stride = sizeof(TempDataLayoutStructure);
+			UINT offset = 0;
+			mDevice->GetDeviceContext().IASetVertexBuffers(0, 1, &vertBuf, &stride, &offset);
+
+			// Index buffer
+			DX11GFXIndexBuffer* indexBuf = mDevice->GetIndexBuffer(renderObject.IndexBuffer);
+			mDevice->GetDeviceContext().IASetIndexBuffer(&indexBuf->GetHardwareBuffer(), DXGI_FORMAT_R32_UINT, 0);
+
+			deviceContext.DrawIndexed(indexBuf->GetIndexCount(), 0, 0);
+		}
+	}
+
 	void Renderer::SetCameraData(
 		const Vector3D& position, 
 		const Matrix4x4& projectionMat, 
@@ -187,13 +216,12 @@ namespace Diotima
 	void Renderer::Render()
 	{
 		PrepareDrawState();
+		Draw();
 
 		ImGui::Render();
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
 		mDevice->Present();
-
-		mRenderObjects.clear();
 	}
 
 	void Renderer::ShutDown()
@@ -263,7 +291,7 @@ namespace Diotima
 		return mDevice->CreateTextureBuffer2D(data, params);
 	}
 
-	void Renderer::CreateRenderObject(const MeshData& meshData, const Matrix4x4& transform)
+	U32 Renderer::CreateRenderObject(const MeshData& meshData, const Matrix4x4& transform)
 	{
 		if (!mFreeRenderObjectIndices.empty())
 		{
@@ -273,18 +301,26 @@ namespace Diotima
 			RenderObject& renderObject = mRenderObjects[freeIndex];
 			renderObject = {};
 			InitializeRenderObject(renderObject, meshData, transform);
+
+			return freeIndex;
 		}
 
 		mRenderObjects.emplace_back();
 		RenderObject& renderObject = mRenderObjects.back();
 		InitializeRenderObject(renderObject, meshData, transform);
+
+		return mRenderObjects.size() - 1;
 	}
 
 	void Renderer::InitializeRenderObject(RenderObject& renderObject, const MeshData& meshData, const Matrix4x4& transform)
 	{
 		renderObject.Transform = transform;
-		renderObject.VertexBuffer = CreateVertexBuffer((void*)meshData.Vertices.data(), meshData.Vertices.size(), 1);
-		renderObject.IndexBuffer = CreateIndexBuffer((void*)meshData.Indices.data(), meshData.Indices.size(), 1);
+		renderObject.VertexBuffer = CreateVertexBuffer((void*)meshData.Vertices.data(), sizeof(float), meshData.Vertices.size());
+		renderObject.IndexBuffer = CreateIndexBuffer((void*)meshData.Indices.data(), sizeof(U32), meshData.Indices.size());
+		renderObject.ConstantBuffer = mDevice->CreateConstantBuffer(sizeof(Matrix4x4), 1);
+
+		DX11GFXConstantBuffer* constBuf = mDevice->GetConstantBuffer(renderObject.ConstantBuffer);
+		constBuf->UpdateSubresources(renderObject.Transform.GetValuePtr());
 	}
 
 	void Renderer::ProcessCommands()
