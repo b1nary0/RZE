@@ -19,7 +19,6 @@
 
 static Vector4D sDefaultFragColor(0.25f, 0.25f, 0.25f, 1.0f);
 
-
 RenderSystem::RenderSystem(Apollo::EntityHandler* const entityHandler)
 	: Apollo::EntitySystem(entityHandler)
 {
@@ -71,21 +70,8 @@ void RenderSystem::RegisterForComponentNotifications()
 			Model3D* const modelData = resourceHandler.GetResource<Model3D>(resource);
 			AssertNotNull(modelData);
 
-			Diotima::RenderObjectProxy* renderProxy = mRenderer->CreateRenderObjectProxy();
 
-			const std::vector<MeshGeometry>& subMeshes = modelData->GetStaticMesh().GetSubMeshes();
-			for (auto& subMesh : subMeshes)
-			{
-				Diotima::MeshData renderMeshData;
-				// [newrenderer]
-				// these are very likely unnecessary copies of what averages to be a lot
-				// of data. figure it out, just stubbing atm
-				renderMeshData.Vertices = subMesh.GetVertexDataRaw();
-				renderMeshData.Indices = subMesh.GetIndices();
-
-				renderProxy->AddMesh(renderMeshData);
-			}
-
+			Diotima::RenderObjectHandle objectHandle = mRenderer->CreateRenderObject();
 		});
 		handler.RegisterForComponentAddNotification<MeshComponent>(OnMeshComponentAdded);
 

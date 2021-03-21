@@ -36,12 +36,9 @@ public:
 
 	const Material& GetMaterial() const;
 	const std::vector<U32>& GetIndices() const;
-	const std::vector<MeshVertex>& GetVertices() const;
+	const std::vector<MeshVertex>& GetVertices();
 
-#if WITH_NEW_RENDERER
-	const std::vector<MeshVertex>& GetVertexData() const;
-	const std::vector<float>& GetVertexDataRaw() const;
-#else
+#if !WITH_NEW_RENDERER
 	U32 GetVertexBuffer() const;
 	U32 GetIndexBuffer() const;
 #endif

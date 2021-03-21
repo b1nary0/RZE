@@ -14,4 +14,3 @@ void IndexBuffer::Initialize()
 #endif
 }
 
-

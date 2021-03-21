@@ -1,6 +1,3 @@
-#include <RZE_Config.h>
-
-#if WITH_NEW_RENDERER
 #include <Diotima/Renderer.h>
 
 #include <Optick/optick.h>
@@ -25,6 +22,7 @@
 #include <Diotima/Driver/DX11/DX11GFXConstantBuffer.h>
 #include <Diotima/Driver/DX11/DX11GFXTextureBuffer2D.h>
 #include <Diotima/Graphics/RenderTarget.h>
+
 
 #include <ImGui/imgui.h>
 #include <ImGui/imgui_impl_dx11.h>
@@ -151,9 +149,26 @@ namespace Diotima
 	}
 
 
-	RenderObjectProxy* Renderer::CreateRenderObjectProxy()
+	Diotima::RenderObjectHandle Renderer::CreateRenderObject()
 	{
-		return new RenderObjectProxy();
+		RenderObjectHandle objectHandle;
+
+		if (!mFreeRenderObjectIndices.empty())
+		{
+			U32 freeIndex = mFreeRenderObjectIndices.front();
+			mFreeRenderObjectIndices.pop();
+			objectHandle.Value = freeIndex;
+
+			RenderObject& renderObject = mRenderObjects[freeIndex];
+			renderObject = {};
+
+			return objectHandle;
+		}
+
+		objectHandle.Value = mRenderObjects.size();
+		mRenderObjects.emplace_back();
+
+		return objectHandle;
 	}
 
 	void Renderer::ProcessCommands()
@@ -162,29 +177,4 @@ namespace Diotima
 		
 	}
 
-	void RenderObjectProxy::AddMesh(const MeshData& meshData)
-	{
-		/*
-		 * This function needs to either re-use or allocate a RenderObject
-		 * and then initialize the requisite GPU data.
-		 */
-
-//  		if (!mFreeRenderObjectIndices.empty())
-//  		{
-//  			U32 freeIndex = mFreeRenderObjectIndices.front();
-//  			mFreeRenderObjectIndices.pop();
-//  
-//  			RenderObject& renderObject = mRenderObjects[freeIndex];
-//  			renderObject = {};
-//  
-//  			return new RenderObjectProxy();
-//  		}
-//  
-//  		mRenderObjects.emplace_back();
-//  		RenderObject& renderObject = mRenderObjects.back();
-//  
-//  		return new RenderObjectProxy();
-	}
-
 }
-#endif
