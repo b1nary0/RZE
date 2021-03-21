@@ -34,7 +34,8 @@ namespace
 {
 	D3D11_INPUT_ELEMENT_DESC k_vertLayout[] =
 	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 	};
 	UINT numLayoutElements = ARRAYSIZE(k_vertLayout);
 
@@ -150,19 +151,26 @@ namespace Diotima
 
 		for (auto& renderObject : mRenderObjects)
 		{
-			DX11GFXConstantBuffer* modelMatBuf = mDevice->GetConstantBuffer(renderObject.ConstantBuffer);
-			ID3D11Buffer* hwModelMatBuf = &modelMatBuf->GetHardwareBuffer();
-			deviceContext.VSSetConstantBuffers(1, 1, &hwModelMatBuf);
-
-			ID3D11Buffer* vertBuf = &mDevice->GetVertexBuffer(renderObject.VertexBuffer)->GetHardwareBuffer();
-
-			struct TempDataLayoutStructure
+			// World Matrix
 			{
-				Vector3D position;
-			};
-			UINT stride = sizeof(TempDataLayoutStructure);
-			UINT offset = 0;
-			mDevice->GetDeviceContext().IASetVertexBuffers(0, 1, &vertBuf, &stride, &offset);
+				DX11GFXConstantBuffer* modelMatBuf = mDevice->GetConstantBuffer(renderObject.ConstantBuffer);
+				ID3D11Buffer* hwModelMatBuf = &modelMatBuf->GetHardwareBuffer();
+				deviceContext.VSSetConstantBuffers(1, 1, &hwModelMatBuf);
+			}
+
+			// Vertex buffer
+			{
+				struct TempDataLayoutStructure
+				{
+					Vector3D position;
+					Vector3D normal;
+				};
+				UINT stride = sizeof(TempDataLayoutStructure);
+				UINT offset = 0;
+
+				ID3D11Buffer* vertBuf = &mDevice->GetVertexBuffer(renderObject.VertexBuffer)->GetHardwareBuffer();
+				mDevice->GetDeviceContext().IASetVertexBuffers(0, 1, &vertBuf, &stride, &offset);
+			}
 
 			// Index buffer
 			DX11GFXIndexBuffer* indexBuf = mDevice->GetIndexBuffer(renderObject.IndexBuffer);

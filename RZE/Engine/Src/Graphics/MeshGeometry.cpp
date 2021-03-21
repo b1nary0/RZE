@@ -25,6 +25,11 @@ void MeshGeometry::AllocateData()
 		{
 			vertexDataBuffer.push_back(vertex.Position[index]);
 		}
+
+		for (int index = 0; index < 3; ++index)
+		{
+			vertexDataBuffer.push_back(vertex.Normal[index]);
+		}
 	}
 
 	mVertexBuffer = std::make_shared<VertexBuffer>(vertexDataBuffer);
