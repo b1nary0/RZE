@@ -25,7 +25,9 @@ public:
 	MeshGeometry();
 	~MeshGeometry();
 
+#if !WITH_NEW_RENDERER
 	void AllocateGPUData();
+#endif
 
 	void AddVertex(const MeshVertex& vertex);
 	void AddIndex(U32 index);
@@ -36,8 +38,10 @@ public:
 	const std::vector<U32>& GetIndices() const;
 	const std::vector<MeshVertex>& GetVertices();
 
+#if !WITH_NEW_RENDERER
 	U32 GetVertexBuffer() const;
 	U32 GetIndexBuffer() const;
+#endif
 
 private:
 	// #TODO

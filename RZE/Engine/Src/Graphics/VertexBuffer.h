@@ -1,4 +1,5 @@
 #pragma once
+#include <RZE_Config.h>
 
 #include <vector>
 
@@ -10,7 +11,9 @@ public:
 
 	void Initialize();
 
+#if !WITH_NEW_RENDERER
 	U32 GetGPUBufferIndex();
+#endif
 
 private:
 	// The CPU buffer for the mesh data
@@ -20,10 +23,14 @@ private:
 	// Don't store this here. VertexBuffer should only be CPU data storage
 	// the GPU buffer is tracked renderer side. it will be created when a GPU resource
 	// is requested.
+#if !WITH_NEW_RENDERER
 	U32 mGPUBufferHandle;
+#endif
 };
 
+#if !WITH_NEW_RENDERER
 inline U32 VertexBuffer::GetGPUBufferIndex()
 {
 	return mGPUBufferHandle;
 }
+#endif

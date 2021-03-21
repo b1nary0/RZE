@@ -1,6 +1,6 @@
 #pragma once
 
-#define WITH_NEW_RENDERER 0
+#define WITH_NEW_RENDERER 1
 
 #define DEBUG 1
 

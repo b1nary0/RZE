@@ -14,6 +14,7 @@ MeshGeometry::~MeshGeometry()
 {
 }
 
+#if !WITH_NEW_RENDERER
 void MeshGeometry::AllocateGPUData()
 {
 	std::vector<float> vertexDataBuffer;
@@ -47,6 +48,7 @@ void MeshGeometry::AllocateGPUData()
 	mIndexBuffer = std::make_shared<IndexBuffer>(mIndices);
 	mIndexBuffer->Initialize();
 }
+#endif
 
 void MeshGeometry::AddVertex(const MeshVertex& vertex)
 {
@@ -80,6 +82,7 @@ const std::vector<MeshVertex>& MeshGeometry::GetVertices()
 	return mVertices;
 }
 
+#if !WITH_NEW_RENDERER
 U32 MeshGeometry::GetVertexBuffer() const
 {
 	return mVertexBuffer->GetGPUBufferIndex();
@@ -89,3 +92,4 @@ U32 MeshGeometry::GetIndexBuffer() const
 {
 	return mIndexBuffer->GetGPUBufferIndex();
 }
+#endif
