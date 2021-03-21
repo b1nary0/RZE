@@ -14,8 +14,11 @@ MeshGeometry::~MeshGeometry()
 {
 }
 
-#if !WITH_NEW_RENDERER
+#if WITH_NEW_RENDERER
+void MeshGeometry::AllocateData()
+#else
 void MeshGeometry::AllocateGPUData()
+#endif
 {
 	std::vector<float> vertexDataBuffer;
 	vertexDataBuffer.reserve(mVertices.size() * sizeof(MeshVertex));
@@ -48,7 +51,6 @@ void MeshGeometry::AllocateGPUData()
 	mIndexBuffer = std::make_shared<IndexBuffer>(mIndices);
 	mIndexBuffer->Initialize();
 }
-#endif
 
 void MeshGeometry::AddVertex(const MeshVertex& vertex)
 {

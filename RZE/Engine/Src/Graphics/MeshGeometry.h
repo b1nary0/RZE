@@ -25,7 +25,9 @@ public:
 	MeshGeometry();
 	~MeshGeometry();
 
-#if !WITH_NEW_RENDERER
+#if WITH_NEW_RENDERER
+	void AllocateData();
+#else
 	void AllocateGPUData();
 #endif
 
