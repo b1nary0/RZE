@@ -77,12 +77,23 @@ const std::vector<U32>& MeshGeometry::GetIndices() const
 	return mIndices;
 }
 
-const std::vector<MeshVertex>& MeshGeometry::GetVertices()
+const std::vector<MeshVertex>& MeshGeometry::GetVertices() const
 {
 	return mVertices;
 }
 
-#if !WITH_NEW_RENDERER
+#if WITH_NEW_RENDERER
+const std::vector<MeshVertex>& MeshGeometry::GetVertexData() const
+{
+	return mVertices;
+}
+
+const std::vector<float>& MeshGeometry::GetVertexDataRaw() const
+{
+	return mVertexBuffer->GetData();
+}
+
+#else
 U32 MeshGeometry::GetVertexBuffer() const
 {
 	return mVertexBuffer->GetGPUBufferIndex();

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <RZE_Config.h>
+
+#if WITH_NEW_RENDERER
 #include <functional>
 #include <mutex>
 #include <queue>
@@ -37,28 +40,45 @@ namespace Diotima
 	struct MaterialData
 	{
 		Int32 TextureBuffer = -1;
+		Int32 ConstantBuffer = -1;
 		float Shininess;
 	};
 
-	// Bundle of data that is necessary for each draw call.
-	// #TODO
-	// These will need to be wrapped or otherwise sorted properly by some higher-level design.
-	// This is simply the data for any item with geometry. When and how this data is used is determined
-	// elsewhere. The Int32 handles should be designed such that -1 means no data. 
-	// For now, each item will need a Vertex and Index buffer, but should be easily extensible
-	// to support other types of data construction or use.
 	struct RenderObject
 	{
 		Int32 VertexBuffer = -1;
 		Int32 IndexBuffer = -1;
 		Int32 ConstantBuffer = -1;
-		MaterialData Material;
+		Diotima::MaterialData Material;
 		Matrix4x4 Transform;
 	};
 
-	struct RenderObjectHandle
+	struct MeshData
 	{
-		U32 Value;
+		std::vector<float> Vertices;
+		std::vector<U32> Indices;
+	};
+
+	class RenderObjectProxy
+	{
+		friend class Renderer;
+
+	public:
+		~RenderObjectProxy() = default;
+		RenderObjectProxy(const RenderObjectProxy&) = delete;
+
+	public:
+		void AddMesh(const MeshData& meshData);
+
+	private:
+		RenderObjectProxy(RenderObjectProxy&&) = default;
+		RenderObjectProxy() = default;
+
+	private:
+		// Eventually change this to have the relationship represented differently.
+		// Right now a proxy represents an entire mesh as the sum of its parts, but what if
+		// we want to do RenderObjectProxy things with the composite objects?
+		std::vector<RenderObject> mCompositeObjects;
 	};
 
 	class Renderer
@@ -95,7 +115,7 @@ namespace Diotima
 		Int32 CreateIndexBuffer(void* data, size_t size, U32 count);
 		Int32 CreateTextureBuffer2D(void* data, U32 width, U32 height);
 
-		RenderObjectHandle CreateRenderObject();
+		RenderObjectProxy* CreateRenderObjectProxy();
 
 	private:
 		// #TODO
@@ -112,3 +132,4 @@ namespace Diotima
 		Vector2D mViewportDimensions;
 	};
 }
+#endif
