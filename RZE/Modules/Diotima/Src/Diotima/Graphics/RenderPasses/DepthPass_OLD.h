@@ -3,6 +3,7 @@
 #include <Diotima/Graphics/RenderPass.h>
 
 #include <Diotima/LegacyRenderer.h>
+#if !WITH_NEW_RENDERER
 
 struct ID3D10Blob;
 struct ID3D11VertexShader;
@@ -58,3 +59,4 @@ namespace Diotima
 	};
 
 }
+#endif

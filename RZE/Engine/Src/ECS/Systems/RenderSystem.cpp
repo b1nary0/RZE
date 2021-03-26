@@ -1,5 +1,5 @@
 #include <StdAfx.h>
-#if WITH_NEW_RENDERER
+
 #include <ECS/Systems/RenderSystem.h>
 #include <Apollo/ECS/EntityComponentFilter.h>
 
@@ -198,5 +198,3 @@ void RenderSystem::GenerateCameraMatrices(CameraComponent& cameraComponent, cons
 	cameraComponent.ProjectionMat = Matrix4x4::CreatePerspectiveMatrix(cameraComponent.FOV, cameraComponent.AspectRatio, cameraComponent.NearCull, cameraComponent.FarCull);
 	cameraComponent.ViewMat = Matrix4x4::CreateViewMatrix(transformComponent.Position, transformComponent.Position + cameraComponent.Forward, cameraComponent.UpDir);
 }
-
-#endif

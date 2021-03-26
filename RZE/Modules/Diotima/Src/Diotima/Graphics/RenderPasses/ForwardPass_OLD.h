@@ -4,6 +4,7 @@
 
 #include <Diotima/LegacyRenderer.h>
 
+#if !WITH_NEW_RENDERER
 struct ID3D11InputLayout;
 struct ID3D10Blob;
 struct ID3D11PixelShader;
@@ -57,3 +58,4 @@ namespace Diotima
 	};
 
 }
+#endif

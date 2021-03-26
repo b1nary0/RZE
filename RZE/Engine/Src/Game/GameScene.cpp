@@ -7,11 +7,7 @@
 #include <ECS/Components/NameComponent.h>
 #include <ECS/Components/TransformComponent.h>
 #include <ECS/Systems/LifetimeSystem.h>
-#if WITH_NEW_RENDERER
 #include <ECS/Systems/RenderSystem.h>
-#else
-#include <ECS/Systems/LegacyRenderSystem.h>
-#endif
 
 #include <RapidJSON/document.h>
 #include <RapidJSON/writer.h>
@@ -34,11 +30,7 @@ void GameScene::Initialize()
 
 	// #TODO(Josh::This is the order of update. Need to make it so we can call these whenever)
 	mEntityHandler.AddSystem<LifetimeSystem>();
-#if WITH_NEW_RENDERER
 	mEntityHandler.AddSystem<RenderSystem>();
-#else
-	mEntityHandler.AddSystem<LegacyRenderSystem>();
-#endif
 }
 
 void GameScene::NewScene()

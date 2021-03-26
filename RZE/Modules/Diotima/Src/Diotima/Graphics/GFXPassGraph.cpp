@@ -1,6 +1,7 @@
 #include <Diotima/Graphics/GFXPassGraph.h>
 
 #include <Diotima/LegacyRenderer.h>
+#if !WITH_NEW_RENDERER
 #include <Diotima/Graphics/RenderPasses/ForwardPass_OLD.h>
 #include <Diotima/Graphics/RenderPasses/DepthPass_OLD.h>
 
@@ -62,3 +63,4 @@ namespace Diotima
 	}
 
 }
+#endif

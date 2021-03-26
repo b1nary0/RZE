@@ -14,7 +14,6 @@ MeshGeometry::~MeshGeometry()
 {
 }
 
-#if WITH_NEW_RENDERER
 void MeshGeometry::AllocateData()
 {
 	std::vector<float> vertexDataBuffer;
@@ -38,41 +37,6 @@ void MeshGeometry::AllocateData()
 	mIndexBuffer = std::make_shared<IndexBuffer>(mIndices);
 	mIndexBuffer->Initialize();
 }
-#else
-void MeshGeometry::AllocateGPUData()
-{
-	std::vector<float> vertexDataBuffer;
-	vertexDataBuffer.reserve(mVertices.size() * sizeof(MeshVertex));
-	for (MeshVertex vertex : GetVertices())
-	{
-		for (int index = 0; index < 3; ++index)
-		{
-			vertexDataBuffer.push_back(vertex.Position[index]);
-		}
-
-		for (int index = 0; index < 3; ++index)
-		{
-			vertexDataBuffer.push_back(vertex.Normal[index]);
-		}
-
-		for (int index = 0; index < 2; ++index)
-		{
-			vertexDataBuffer.push_back(vertex.UVData[index]);
-		}
-
-		for (int index = 0; index < 3; ++index)
-		{
-			vertexDataBuffer.push_back(vertex.Tangent[index]);
-		}
-	}
-
-	mVertexBuffer = std::make_shared<VertexBuffer>(vertexDataBuffer);
-	mVertexBuffer->Initialize();
-
-	mIndexBuffer = std::make_shared<IndexBuffer>(mIndices);
-	mIndexBuffer->Initialize();
-}
-#endif
 
 void MeshGeometry::AddVertex(const MeshVertex& vertex)
 {
@@ -101,7 +65,6 @@ const std::vector<MeshVertex>& MeshGeometry::GetVertices()
 	return mVertices;
 }
 
-#if WITH_NEW_RENDERER
 const std::vector<float>& MeshGeometry::GetVertexDataRaw() const
 {
 	return mVertexBuffer->GetData();
@@ -111,14 +74,3 @@ const std::vector<U32>& MeshGeometry::GetIndexDataRaw() const
 {
 	return mIndexBuffer->GetData();
 }
-#else
-U32 MeshGeometry::GetVertexBuffer() const
-{
-	return mVertexBuffer->GetGPUBufferIndex();
-}
-
-U32 MeshGeometry::GetIndexBuffer() const
-{
-	return mIndexBuffer->GetGPUBufferIndex();
-}
-#endif

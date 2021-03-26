@@ -1,5 +1,5 @@
 #include <Diotima/Graphics/RenderPasses/ForwardPass_OLD.h>
-
+#if !WITH_NEW_RENDERER
 #include <Diotima/Driver/DX11/DX11GFXDevice.h>
 #include <Diotima/Driver/DX11/DX11GFXConstantBuffer.h>
 #include <Diotima/Driver/DX11/DX11GFXTextureBuffer2D.h>
@@ -307,4 +307,4 @@ namespace Diotima
 	}
 
 }
-
+#endif

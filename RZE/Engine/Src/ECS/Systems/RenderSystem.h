@@ -1,8 +1,5 @@
 #pragma once
 
-#include <RZE_Config.h>
-
-#if WITH_NEW_RENDERER
 #include <Apollo/ECS/EntitySystem.h>
 
 #include <Utils/Functor.h>
@@ -48,4 +45,3 @@ private:
 
 	Apollo::EntityID mCurrentCameraEntity = Apollo::kInvalidEntityID;
 };
-#endif

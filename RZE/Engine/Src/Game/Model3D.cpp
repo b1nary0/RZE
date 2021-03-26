@@ -226,11 +226,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 	}
 
 	outMesh.SetMaterial(pMaterial);
-#if WITH_NEW_RENDERER
 	outMesh.AllocateData();
-#else
-	outMesh.AllocateGPUData();
-#endif
 }
 
 // #TODO(Josh::Pull this out into a util function)

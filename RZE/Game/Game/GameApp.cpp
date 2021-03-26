@@ -50,7 +50,7 @@ void GameApp::Initialize()
 
 	Apollo::EntityHandler& entityHandler = RZE().GetActiveScene().GetEntityHandler();
 	//entityHandler.AddSystem<InteractiveSpawningSystem>();
-	entityHandler.AddSystem<TestbedSystem>();
+	//entityHandler.AddSystem<TestbedSystem>();
 	entityHandler.AddSystem<FreeCameraSystem>();
 	//entityHandler.AddSystem<ProjectileSystem>();
 }

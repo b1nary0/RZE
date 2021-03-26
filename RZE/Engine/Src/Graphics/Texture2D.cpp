@@ -32,14 +32,6 @@ bool Texture2D::Load(const FilePath& filePath)
 		AssertNotNull(mData);
 	}
 
-	if (mData != nullptr)
-	{
-#if WITH_NEW_RENDERER
-#else
-		mGPUBuffer = RZE_Application::RZE().GetLegacyRenderer().QueueCreateTextureCommand(Diotima::ECreateTextureBufferType::Texture2D, mData, mWidth, mHeight);
-#endif
-	}
-
 	return mData != nullptr;
 }
 

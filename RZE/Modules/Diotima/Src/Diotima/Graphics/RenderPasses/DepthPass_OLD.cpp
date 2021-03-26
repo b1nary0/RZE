@@ -1,5 +1,6 @@
 #include <Diotima/Graphics/RenderPasses/DepthPass_OLD.h>
 
+#if !WITH_NEW_RENDERER
 #include <Diotima/Driver/DX11/DX11GFXDevice.h>
 #include <Diotima/Driver/DX11/DX11GFXVertexBuffer.h>
 #include <Diotima/Driver/DX11/DX11GFXIndexBuffer.h>
@@ -211,4 +212,4 @@ namespace Diotima
 	}
 
 }
-
+#endif

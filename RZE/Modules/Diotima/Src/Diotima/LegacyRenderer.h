@@ -1,5 +1,7 @@
 #pragma once
 
+#include <RZE_Config.h>
+#if !WITH_NEW_RENDERER
 #include <functional>
 #include <mutex>
 #include <queue>
@@ -231,3 +233,4 @@ namespace Diotima
 		std::mutex mUpdateRenderItemWorldMatrixCommandMutex;
 	};
 }
+#endif

@@ -1,3 +1,5 @@
+#include <RZE_Config.h>
+#if !WITH_NEW_RENDERER
 #include <Diotima/LegacyRenderer.h>
 
 #include <Optick/optick.h>
@@ -461,3 +463,4 @@ namespace Diotima
 	}
 
 }
+#endif
