@@ -14,7 +14,7 @@ float4 PSMain(PS_IN input) : SV_TARGET
 	float LightStrength_Temp = 10.0f;
 	float3 LightPos_Temp = float3(0.0f, 5.0f, -20.0f);
 	float3 LightColour_Temp = float3(1.0f, 1.0f, 1.0f);
-	float3 Ambient_Temp = float3(0.15f, 0.15f, 0.15f);
+	float3 Ambient_Temp = float3(0.1f, 0.1f, 0.1f);
 	//float3 ObjectColour_Temp = float3(0.5f, 0.5f, 0.5f);
 
 	float3 lightDir = normalize(LightPos_Temp - input.FragPos);
@@ -23,7 +23,7 @@ float4 PSMain(PS_IN input) : SV_TARGET
 	{
 		float4 diffSample = diffuse.Sample(diffSampler, input.UVCoords);
 		
-		float diffuse = max(0.0f, dot(lightDir, input.Normal));
+		float diffuse = max(dot(lightDir, input.Normal), 0.0f);
 		float3 diffuseResult = diffuse * diffSample.rgb * LightColour_Temp;
 		
 		shadingResult = (Ambient_Temp + diffuseResult);
