@@ -145,6 +145,7 @@ void ResourceHandle::operator=(const ResourceHandle& rhs)
 {
 	mResourceID = rhs.mResourceID;
 	mResourceSource = rhs.mResourceSource;
+	mHandler = rhs.mHandler;
 
 	mResourceSource->IncreaseRefCount();
 }
