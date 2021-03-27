@@ -9,6 +9,13 @@ namespace Diotima
 	class IGFXVertexBuffer;
 	struct GFXTextureBufferParams;
 
+	enum class EGFXBufferType
+	{
+		Vertex,
+		Index,
+		Texture2D
+	};
+
 	class IGFXDevice
 	{
 	public:

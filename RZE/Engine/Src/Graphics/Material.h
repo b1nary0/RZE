@@ -7,9 +7,19 @@ class Texture2D;
 // How to approach this class? Should we have:
 // 1) MaterialComponent which will fill out internal data based on a .material proprietary format?
 // 2) Just add a shader to this? Where do shaders live? How are they represented engine-side vs renderer side?
+
+// This class needs a UID that we can use to sort in renderer.
 class Material
 {
 	friend class MaterialDatabase;
+public:
+	enum TextureSlot : U8
+	{
+		TEXTURE_SLOT_DIFFUSE,
+		TEXTURE_SLOT_SPECULAR,
+		TEXTURE_SLOT_NORMAL,
+		TEXTURE_SLOT_COUNT
+	};
 
 public:
 	~Material();
@@ -18,21 +28,8 @@ private:
 	Material();
 
 public:
-	void SetDiffuse(Texture2D* texture);
-	void SetSpecular(Texture2D* texture);
-	void SetNormal(Texture2D* texture);
-
-public:
-	const Texture2D& GetDiffuse() const;
-	const Texture2D& GetSpecular() const;
-	const Texture2D& GetNormal() const;
-
-	bool HasDiffuse() const;
-	bool HasSpecular() const;
-	bool HasNormal() const;
-
-public:
-	bool IsTextured() const;
+	void SetTexture(U8 textureSlot, const ResourceHandle& textureResource);
+	const ResourceHandle& GetTexture(U8 textureSlot) const;
 
 public:
 	// #TODO(Josh::Turn into material properties or something; material system?)
@@ -40,9 +37,7 @@ public:
 	float Opacity { 1.0f };
 
 private:
-	Texture2D* mDiffuseMap;
-	Texture2D* mSpecularMap;
-	Texture2D* mNormalMap;
+	std::vector<ResourceHandle> mTextureSlots;
 };
 
 // [newrenderer]

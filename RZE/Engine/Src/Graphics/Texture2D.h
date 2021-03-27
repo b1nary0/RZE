@@ -41,7 +41,7 @@ public:
 	ETextureType GetTextureType() const;
 	Vector2D GetDimensions() const;
 
-	U32 GetTextureBufferID() const;
+	Int32 GetGPUBufferID() const;
 
 private:
 	U8* mData;
@@ -52,5 +52,5 @@ private:
 	Int32 mHeight;
 	Int32 mChannels;
 
-	U32 mGPUBuffer;
+	Int32 mGPUBuffer;
 };

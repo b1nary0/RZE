@@ -23,7 +23,6 @@ public:
 
 public:
 	inline const StaticMesh& GetStaticMesh() { return mMesh; }
-	inline std::vector<ResourceHandle>& GetTextureHandles() { return mTextureHandles; }
 
 private:
 	void ProcessNode(const aiNode& node, const aiScene& scene, std::vector<MeshGeometry>& outMeshGeometry);
@@ -35,7 +34,4 @@ private:
 	FilePath mFilePath;
 
 	StaticMesh mMesh;
-	
-	// Stored to keep references to the resource alive.
-	std::vector<ResourceHandle> mTextureHandles;
 };

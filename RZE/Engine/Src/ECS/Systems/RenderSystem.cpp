@@ -12,7 +12,9 @@
 
 #include <Game/Model3D.h>
 
+#include <Graphics/Material.h>
 #include <Graphics/MeshGeometry.h>
+#include <Graphics/Texture2D.h>
 
 #include <Utils/Platform/FilePath.h>
 #include <Utils/Platform/Timers/HiResTimer.h>
@@ -98,6 +100,8 @@ void RenderSystem::RegisterForComponentNotifications()
 			renderNode.Transform = rootTransformComponent->GetAsMat4x4();
 			for (auto& meshGeometry : modelData->GetStaticMesh().GetSubMeshes())
 			{
+				const Material& material = meshGeometry.GetMaterial();
+
 				renderNode.Children.emplace_back();
 				RenderNode& childNode = renderNode.Children.back();
 				childNode.Geometry = &meshGeometry;
@@ -105,6 +109,33 @@ void RenderSystem::RegisterForComponentNotifications()
 				Diotima::MeshData meshData;
 				meshData.Vertices = childNode.Geometry->GetVertexDataRaw();
 				meshData.Indices = childNode.Geometry->GetIndexDataRaw();
+
+				// #TODO
+				// This code is dangerous if we want to have a modular shader/material relationship (we do)
+				{
+					// Diffuse
+					Texture2D* const texture = resourceHandler.GetResource<Texture2D>(material.GetTexture(Material::TEXTURE_SLOT_DIFFUSE));
+					if (texture != nullptr)
+					{
+						meshData.Material.BufferData.DiffuseBuffer = texture->GetGPUBufferID();
+					}
+				}
+				{
+					// Specular
+					Texture2D* const texture = resourceHandler.GetResource<Texture2D>(material.GetTexture(Material::TEXTURE_SLOT_SPECULAR));
+					if (texture != nullptr)
+					{
+						meshData.Material.BufferData.SpecularBuffer = texture->GetGPUBufferID();
+					}
+				}
+				{
+					// Normal
+					Texture2D* const texture = resourceHandler.GetResource<Texture2D>(material.GetTexture(Material::TEXTURE_SLOT_NORMAL));
+					if (texture != nullptr)
+					{
+						meshData.Material.BufferData.NormalBuffer = texture->GetGPUBufferID();
+					}
+				}
 
 				childNode.RenderObjectIndex = mRenderer->CreateRenderObject(meshData, renderNode.Transform);
 			}

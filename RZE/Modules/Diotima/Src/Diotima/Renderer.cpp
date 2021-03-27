@@ -327,6 +327,11 @@ namespace Diotima
 		renderObject.IndexBuffer = CreateIndexBuffer((void*)meshData.Indices.data(), sizeof(U32), meshData.Indices.size());
 		renderObject.ConstantBuffer = mDevice->CreateConstantBuffer(sizeof(Matrix4x4), 1);
 
+		{
+			// Material Setup
+			renderObject.Material = meshData.Material;
+		}
+
 		DX11GFXConstantBuffer* constBuf = mDevice->GetConstantBuffer(renderObject.ConstantBuffer);
 		constBuf->UpdateSubresources(renderObject.Transform.GetValuePtr());
 	}

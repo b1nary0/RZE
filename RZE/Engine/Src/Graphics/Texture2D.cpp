@@ -27,10 +27,14 @@ bool Texture2D::Load(const FilePath& filePath)
 	mData = stbi_load(filePath.GetAbsolutePath().c_str(), &mWidth, &mHeight, &mChannels, STBI_rgb_alpha);
 	if (mData == nullptr)
 	{
+		// #TODO
+		// Don't use default textures, use default shaders that don't require the data
 		// Default texture
 		mData = stbi_load(kDefaultDiffuseTexturePath.GetAbsolutePath().c_str(), &mWidth, &mHeight, &mChannels, STBI_rgb_alpha);
 		AssertNotNull(mData);
 	}
+
+	mGPUBuffer = RZE_Application::RZE().GetRenderer().CreateTextureBuffer2D(mData, mWidth, mHeight);
 
 	return mData != nullptr;
 }
@@ -54,7 +58,7 @@ Vector2D Texture2D::GetDimensions() const
 	return Vector2D(mWidth, mHeight);
 }
 
-U32 Texture2D::GetTextureBufferID() const
+Int32 Texture2D::GetGPUBufferID() const
 {
 	return mGPUBuffer;
 }
