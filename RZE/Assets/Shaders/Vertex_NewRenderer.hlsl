@@ -2,6 +2,7 @@ struct VS_IN
 {
 	float3 Position : POSITION;
 	float3 Normal : NORMAL;
+	float2 UVCoords : UV;
 };
 
 struct VS_OUT
@@ -9,6 +10,7 @@ struct VS_OUT
 	float4 Position : SV_POSITION;
 	float3 FragPos : POSITION;
 	float3 Normal : NORMAL;
+	float2 UVCoords : UV;
 };
 
 cbuffer ViewProjectionBuf : register(b0)
@@ -30,6 +32,7 @@ VS_OUT VSMain(VS_IN input) // main is the default function name
 	output.Position = mul(ViewProj, float4(fragPos, 1.0f));
 	output.FragPos = fragPos;
 	output.Normal = input.Normal;
+	output.UVCoords = input.UVCoords;
 	
     return output;
 }

@@ -35,7 +35,8 @@ namespace
 	D3D11_INPUT_ELEMENT_DESC k_vertLayout[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 	};
 	UINT numLayoutElements = ARRAYSIZE(k_vertLayout);
 
@@ -164,12 +165,23 @@ namespace Diotima
 				{
 					Vector3D position;
 					Vector3D normal;
+					Vector2D uv;
 				};
 				UINT stride = sizeof(TempDataLayoutStructure);
 				UINT offset = 0;
 
 				ID3D11Buffer* vertBuf = &mDevice->GetVertexBuffer(renderObject.VertexBuffer)->GetHardwareBuffer();
 				mDevice->GetDeviceContext().IASetVertexBuffers(0, 1, &vertBuf, &stride, &offset);
+			}
+
+			{
+				// Texture
+				DX11GFXTextureBuffer2D* const textureBuf = mDevice->GetTextureBuffer2D(renderObject.Material.BufferData.DiffuseBuffer);
+				ID3D11ShaderResourceView* const resourceView = &textureBuf->GetResourceView();
+				ID3D11SamplerState* const samplerState = &textureBuf->GetSamplerState();
+
+				deviceContext.PSSetShaderResources(0, 1, &resourceView);
+				deviceContext.PSSetSamplers(0, 1, &samplerState);
 			}
 
 			// Index buffer
