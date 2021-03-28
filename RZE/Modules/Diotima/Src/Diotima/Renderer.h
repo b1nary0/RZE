@@ -151,6 +151,7 @@ namespace Diotima
 		// created, but ideally this should **NOT** just be U32 based on the index of the item.
 		U32 CreateRenderObject(const MeshData& meshData, const Matrix4x4& transform);
 		void InitializeRenderObject(RenderObject& renderObject, const MeshData& meshData, const Matrix4x4& transform);
+		void UpdateRenderObject(U32 renderObjectHandle, const Matrix4x4& newTransform);
 
 	private:
 		// #TODO

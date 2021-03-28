@@ -49,10 +49,8 @@ void GameApp::Initialize()
 	RZE().GetActiveScene().Load(FilePath("Assets/Scenes/RenderTest.scene"));
 
 	Apollo::EntityHandler& entityHandler = RZE().GetActiveScene().GetEntityHandler();
-	//entityHandler.AddSystem<InteractiveSpawningSystem>();
-	//entityHandler.AddSystem<TestbedSystem>();
 	entityHandler.AddSystem<FreeCameraSystem>();
-	//entityHandler.AddSystem<ProjectileSystem>();
+	//entityHandler.AddSystem<TestbedSystem>();
 }
 
 void GameApp::Start()

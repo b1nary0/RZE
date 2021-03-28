@@ -45,21 +45,43 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 	{
 		Apollo::EntityHandler& handler = InternalGetEntityHandler();
 
-		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(mCurrentCameraEntity);
-		CameraComponent* const camComp = handler.GetComponent<CameraComponent>(mCurrentCameraEntity);
-		AssertNotNull(transfComp);
-		AssertNotNull(camComp);
+		/* CAMERA */
+		{
+			TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(mCurrentCameraEntity);
+			CameraComponent* const camComp = handler.GetComponent<CameraComponent>(mCurrentCameraEntity);
+			AssertNotNull(transfComp);
+			AssertNotNull(camComp);
 
-		GenerateCameraMatrices(*camComp, *transfComp);
+			GenerateCameraMatrices(*camComp, *transfComp);
 
-		mRenderer->SetCameraData(
-			transfComp->Position,
-			camComp->ProjectionMat,
-			camComp->ViewMat,
-			camComp->FOV,
-			camComp->AspectRatio,
-			camComp->NearCull,
-			camComp->FarCull);
+			mRenderer->SetCameraData(
+				transfComp->Position,
+				camComp->ProjectionMat,
+				camComp->ViewMat,
+				camComp->FOV,
+				camComp->AspectRatio,
+				camComp->NearCull,
+				camComp->FarCull);
+		}
+
+		/* XFORM UPDATE */
+		{
+			OPTICK_EVENT("XForm Update");
+			// #TODO
+			// Gross... This is obviously not the way we should be doing this..
+			for (auto& rootNode : mRootNodes)
+			{
+				MeshComponent* const meshComponent = handler.GetComponent<MeshComponent>(rootNode.EntityID);
+				TransformComponent* const transformComponent = handler.GetComponent<TransformComponent>(rootNode.EntityID);
+
+				// rootnodes don't have a render object
+				rootNode.Transform = transformComponent->GetAsMat4x4();
+				for (auto& child : rootNode.Children)
+				{
+					mRenderer->UpdateRenderObject(child.RenderObjectIndex, rootNode.Transform);
+				}
+			}
+		}
 	}
 }
 
@@ -96,14 +118,15 @@ void RenderSystem::RegisterForComponentNotifications()
 			AssertNotNull(modelData);
 
 			mRootNodes.emplace_back();
-			RenderNode& renderNode = mRootNodes.back();
-			renderNode.Transform = rootTransformComponent->GetAsMat4x4();
+			RenderNode& rootNode = mRootNodes.back();
+			rootNode.Transform = rootTransformComponent->GetAsMat4x4();
+			rootNode.EntityID = entityID;
 			for (auto& meshGeometry : modelData->GetStaticMesh().GetSubMeshes())
 			{
 				const Material& material = meshGeometry.GetMaterial();
 
-				renderNode.Children.emplace_back();
-				RenderNode& childNode = renderNode.Children.back();
+				rootNode.Children.emplace_back();
+				RenderNode& childNode = rootNode.Children.back();
 				childNode.Geometry = &meshGeometry;
 
 				Diotima::MeshData meshData;
@@ -137,7 +160,7 @@ void RenderSystem::RegisterForComponentNotifications()
 					}
 				}
 
-				childNode.RenderObjectIndex = mRenderer->CreateRenderObject(meshData, renderNode.Transform);
+				childNode.RenderObjectIndex = mRenderer->CreateRenderObject(meshData, rootNode.Transform);
 			}
 		});
 		handler.RegisterForComponentAddNotification<MeshComponent>(OnMeshComponentAdded);

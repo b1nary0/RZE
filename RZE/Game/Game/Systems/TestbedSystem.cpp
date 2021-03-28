@@ -13,9 +13,9 @@ void TestbedSystem::Initialize()
 	Functor<void, Apollo::EntityID> onEntityAdded([this](Apollo::EntityID entity)
 	{
 		const NameComponent* const nameComponent = InternalGetEntityHandler().GetComponent<NameComponent>(entity);
-		if (nameComponent->Name == "Plane")
+		if (nameComponent->Name == "Nanosuit")
 		{
-			mPlaneEntity = entity;
+			mRenderEntity = entity;
 		}
 	});
 	InternalGetEntityHandler().RegisterForComponentAddNotification<NameComponent>(onEntityAdded);
@@ -23,33 +23,14 @@ void TestbedSystem::Initialize()
 
 void TestbedSystem::Update(const std::vector<Apollo::EntityID>& entities)
 {
-	const Vector3D kMaxDistances(0.0f, 0.0f, 10.0f);
-	const float kMoveSpeed = 4.0f;
-
-	GameScene& gameScene = RZE_Application::RZE().GetActiveScene();
-	const float kDeltaT = static_cast<float>(RZE_Application::RZE().GetDeltaTime());
-
-	if (mPlaneEntity != Apollo::kInvalidEntityID)
+	if (mRenderEntity != Apollo::kInvalidEntityID)
 	{
-		TransformComponent* const tComponent = gameScene.GetEntityHandler().GetComponent<TransformComponent>(mPlaneEntity);
-		AssertNotNull(tComponent);
+		const float RotateSpeed = 50.0f;
+		const Vector3D RotateAxis(0.0f, 1.0f, 0.0f);
+		const float DeltaTime = static_cast<float>(RZE_Application::RZE().GetDeltaTime());
 
-		static bool bMovingFoward = true;
-		if (tComponent->Position.Z() > kMaxDistances.Z() || tComponent->Position.Z() < -kMaxDistances.Z())
-		{
-			bMovingFoward = !bMovingFoward;
-			tComponent->Rotate(Vector3D(0.0f, 180.0f, 0.0f));
-		}
-
-		const float posDelta = (kMoveSpeed * kDeltaT);
-		if (bMovingFoward)
-		{
-			tComponent->Position.SetZ(tComponent->Position.Z() + posDelta);
-		}
-		else
-		{
-			tComponent->Position.SetZ(tComponent->Position.Z() - posDelta);
-		}
+		TransformComponent* const xformComp = InternalGetEntityHandler().GetComponent<TransformComponent>(mRenderEntity);
+		xformComp->Rotate(RotateAxis * RotateSpeed * DeltaTime);
 	}
 }
 

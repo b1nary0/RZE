@@ -16,7 +16,5 @@ public:
 	void ShutDown() override;
 
 private:
-	Apollo::EntityID mPlaneEntity = Apollo::kInvalidEntityID;
-
-	ResourceHandle mProjectileResource;
+	Apollo::EntityID mRenderEntity = Apollo::kInvalidEntityID;
 };

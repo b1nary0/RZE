@@ -348,6 +348,15 @@ namespace Diotima
 		constBuf->UpdateSubresources(renderObject.Transform.GetValuePtr());
 	}
 
+	void Renderer::UpdateRenderObject(U32 renderObjectHandle, const Matrix4x4& newTransform)
+	{
+		RenderObject& renderObject = mRenderObjects[renderObjectHandle];
+		renderObject.Transform = newTransform;
+
+		DX11GFXConstantBuffer* constBuf = mDevice->GetConstantBuffer(renderObject.ConstantBuffer);
+		constBuf->UpdateSubresources(renderObject.Transform.GetValuePtr());
+	}
+
 	void Renderer::ProcessCommands()
 	{
 		OPTICK_EVENT();
