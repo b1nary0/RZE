@@ -196,6 +196,10 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 	}
 
 	outMesh.SetMaterial(pMaterial);
+	// #TODO
+	// Instead of doing this, and having redundant memory on MeshGeometry
+	// we can instead form the combined data buffer here and set it on the mesh directly
+	// then if we need a higher level view of the data we can create that when needed?
 	outMesh.AllocateData();
 }
 
