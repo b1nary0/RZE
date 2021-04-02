@@ -133,34 +133,22 @@ void RenderSystem::RegisterForComponentNotifications()
 				meshData.Vertices = childNode.Geometry->GetVertexDataRaw();
 				meshData.Indices = childNode.Geometry->GetIndexDataRaw();
 
-				// #TODO
-				// This code is dangerous if we want to have a modular shader/material relationship (we do)
+				std::vector<Diotima::TextureData> textureData;
+				textureData.reserve(Material::TEXTURE_SLOT_COUNT);
+				for (size_t textureSlot = 0; textureSlot < Material::TEXTURE_SLOT_COUNT; ++textureSlot)
 				{
-					// Diffuse
-					Texture2D* const texture = resourceHandler.GetResource<Texture2D>(material.GetTexture(Material::TEXTURE_SLOT_DIFFUSE));
+					Texture2D* const texture = resourceHandler.GetResource<Texture2D>(material.GetTexture(textureSlot));
 					if (texture != nullptr)
 					{
-						meshData.Material.BufferData.DiffuseBuffer = texture->GetGPUBufferID();
-					}
-				}
-				{
-					// Specular
-					Texture2D* const texture = resourceHandler.GetResource<Texture2D>(material.GetTexture(Material::TEXTURE_SLOT_SPECULAR));
-					if (texture != nullptr)
-					{
-						meshData.Material.BufferData.SpecularBuffer = texture->GetGPUBufferID();
-					}
-				}
-				{
-					// Normal
-					Texture2D* const texture = resourceHandler.GetResource<Texture2D>(material.GetTexture(Material::TEXTURE_SLOT_NORMAL));
-					if (texture != nullptr)
-					{
-						meshData.Material.BufferData.NormalBuffer = texture->GetGPUBufferID();
+						Diotima::TextureData data;
+						data.mWidth = static_cast<int>(texture->GetDimensions().X());
+						data.mHeight = static_cast<int>(texture->GetDimensions().Y());
+						data.mData = texture->GetRawData();
+						textureData.emplace_back(std::move(data));
 					}
 				}
 
-				childNode.RenderObjectIndex = mRenderer->CreateRenderObject(meshData, rootNode.Transform);
+				childNode.RenderObjectIndex = mRenderer->CreateRenderObject(meshData, textureData, rootNode.Transform);
 			}
 		});
 		handler.RegisterForComponentAddNotification<MeshComponent>(OnMeshComponentAdded);

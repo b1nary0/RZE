@@ -7,6 +7,7 @@
 #include <vector>
 
 #include <Diotima/RenderCommands.h>
+#include <Diotima/Graphics/Texture.h>
 
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector2D.h>
@@ -39,23 +40,7 @@ namespace Diotima
 	// Essentially a direct copy starting at sizeof(GPUBufferData) into a constant buffer. 
 	struct MaterialData
 	{
-		struct GPUBufferData
-		{
-			// #TODO
-			// Find a more elegant solution for texture buffer usage
-			// potentially segment a single buffer for every necessary texture pack.
-			// TexturePack consists of buffer management with known positions of
-			// allocated textures. That way this just becomes:
-			// Int32 TextureBuffer
-			// We can then rely on shader validation to make sure the Material provides
-			// the correct data for the Shader inputs.
-			// Also we should associate this data instead of storing it on the MaterialData struct
-			Int32 DiffuseBuffer = -1;
-			Int32 SpecularBuffer = -1;
-			Int32 NormalBuffer = -1;
-		};
-		
-		GPUBufferData BufferData;
+		TexturePack* mTexturePack;
 		float Shininess;
 	};
 
@@ -117,7 +102,6 @@ namespace Diotima
 	private:
 		void PrepareDrawState();
 		void Draw();
-		// [/newrenderer]
 
 	public:
 		void Initialize();
@@ -149,8 +133,17 @@ namespace Diotima
 		// [newrenderer]
 		// This is just to fix allocating resources every frame. Need to track the RenderObject
 		// created, but ideally this should **NOT** just be U32 based on the index of the item.
-		U32 CreateRenderObject(const MeshData& meshData, const Matrix4x4& transform);
-		void InitializeRenderObject(RenderObject& renderObject, const MeshData& meshData, const Matrix4x4& transform);
+		U32 CreateRenderObject(
+			const MeshData& meshData, 
+			const std::vector<TextureData>& textureData, 
+			const Matrix4x4& transform);
+
+		void InitializeRenderObject(
+			RenderObject& renderObject, 
+			const MeshData& meshData, 
+			const std::vector<TextureData>& textureData, 
+			const Matrix4x4& transform);
+		
 		void UpdateRenderObject(U32 renderObjectHandle, const Matrix4x4& newTransform);
 
 	private:

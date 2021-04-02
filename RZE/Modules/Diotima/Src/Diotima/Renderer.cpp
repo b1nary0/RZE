@@ -176,7 +176,7 @@ namespace Diotima
 
 			{
 				// Texture
-				DX11GFXTextureBuffer2D* const textureBuf = mDevice->GetTextureBuffer2D(renderObject.Material.BufferData.DiffuseBuffer);
+				DX11GFXTextureBuffer2D* const textureBuf = renderObject.Material.mTexturePack->GetResourceAt(0);
 				ID3D11ShaderResourceView* const resourceView = &textureBuf->GetResourceView();
 				ID3D11SamplerState* const samplerState = &textureBuf->GetSamplerState();
 
@@ -311,7 +311,10 @@ namespace Diotima
 		return mDevice->CreateTextureBuffer2D(data, params);
 	}
 
-	U32 Renderer::CreateRenderObject(const MeshData& meshData, const Matrix4x4& transform)
+	U32 Renderer::CreateRenderObject(
+		const MeshData& meshData, 
+		const std::vector<TextureData>& textureData, 
+		const Matrix4x4& transform)
 	{
 		if (!mFreeRenderObjectIndices.empty())
 		{
@@ -320,19 +323,23 @@ namespace Diotima
 
 			RenderObject& renderObject = mRenderObjects[freeIndex];
 			renderObject = {};
-			InitializeRenderObject(renderObject, meshData, transform);
+			InitializeRenderObject(renderObject, meshData, textureData, transform);
 
 			return freeIndex;
 		}
 
 		mRenderObjects.emplace_back();
 		RenderObject& renderObject = mRenderObjects.back();
-		InitializeRenderObject(renderObject, meshData, transform);
+		InitializeRenderObject(renderObject, meshData, textureData, transform);
 
 		return mRenderObjects.size() - 1;
 	}
 
-	void Renderer::InitializeRenderObject(RenderObject& renderObject, const MeshData& meshData, const Matrix4x4& transform)
+	void Renderer::InitializeRenderObject(
+		RenderObject& renderObject, 
+		const MeshData& meshData, 
+		const std::vector<TextureData>& textureData,
+		const Matrix4x4& transform)
 	{
 		renderObject.Transform = transform;
 		renderObject.VertexBuffer = CreateVertexBuffer((void*)meshData.Vertices.data(), sizeof(float), meshData.Vertices.size());
@@ -341,7 +348,9 @@ namespace Diotima
 
 		{
 			// Material Setup
-			renderObject.Material = meshData.Material;
+			renderObject.Material.Shininess = meshData.Material.Shininess;
+			renderObject.Material.mTexturePack = new TexturePack();
+			renderObject.Material.mTexturePack->Allocate(*mDevice, textureData);
 		}
 
 		DX11GFXConstantBuffer* constBuf = mDevice->GetConstantBuffer(renderObject.ConstantBuffer);

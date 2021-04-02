@@ -34,8 +34,6 @@ bool Texture2D::Load(const FilePath& filePath)
 		AssertNotNull(mData);
 	}
 
-	mGPUBuffer = RZE_Application::RZE().GetRenderer().CreateTextureBuffer2D(mData, mWidth, mHeight);
-
 	return mData != nullptr;
 }
 
@@ -56,9 +54,4 @@ Texture2D::ETextureType Texture2D::GetTextureType() const
 Vector2D Texture2D::GetDimensions() const
 {
 	return Vector2D(mWidth, mHeight);
-}
-
-Int32 Texture2D::GetGPUBufferID() const
-{
-	return mGPUBuffer;
 }
