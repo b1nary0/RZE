@@ -6,8 +6,31 @@ struct PS_IN
 	float2 UVCoords : UV;
 };
 
-Texture2D diffuse : register(t0);
-SamplerState diffSampler : register(s0);
+struct CAMERA_INPUT_DATA
+{
+	float3 Position;
+};
+
+cbuffer CameraConstantBuffer : register(b0)
+{
+	CAMERA_INPUT_DATA CameraData;
+};
+
+Texture2D textures[3] : register(t0);
+SamplerState samplerState : register(s0);
+
+float CalculateBlinnPhong(float3 viewDir, float3 lightDir, float3 normal)
+{
+	float specular = 0.0f;
+	
+	 float3 halfDir = normalize(lightDir + viewDir);
+	 float specAngle = max(0.0f, dot(halfDir, normal));
+	 // #TODO
+	 // Need material shininess here
+	 specular = pow(specAngle, 0.5f);
+	
+	return specular;
+}
 
 float4 PSMain(PS_IN input) : SV_TARGET
 {
@@ -17,16 +40,24 @@ float4 PSMain(PS_IN input) : SV_TARGET
 	float3 Ambient_Temp = float3(0.1f, 0.1f, 0.1f);
 	//float3 ObjectColour_Temp = float3(0.5f, 0.5f, 0.5f);
 
-	float3 lightDir = normalize(LightPos_Temp - input.FragPos);
+	float3 lightDir = LightPos_Temp - input.FragPos;
+	float distance = length(lightDir);
+	lightDir = normalize(lightDir);
+	
+	float3 viewDir = normalize(CameraData.Position - input.FragPos);
 	
 	float3 shadingResult;
 	{
-		float4 diffSample = diffuse.Sample(diffSampler, input.UVCoords);
+		float4 diffSample = textures[0].Sample(samplerState, input.UVCoords);
+		float4 specularSample = textures[1].Sample(samplerState, input.UVCoords);
 		
 		float diffuse = max(dot(lightDir, input.Normal), 0.0f);
 		float3 diffuseResult = diffuse * diffSample.rgb * LightColour_Temp;
 		
-		shadingResult = (Ambient_Temp + diffuseResult);
+		float specularValue = CalculateBlinnPhong(viewDir, lightDir, input.Normal);
+		float3 specularResult = specularSample.rgb * specularValue;
+		
+		shadingResult = (Ambient_Temp + diffuseResult + specularResult);
 	}
 	
 	

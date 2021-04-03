@@ -66,30 +66,6 @@
                 }
             }
         },
-        "Floor": {
-            "components": {
-                "TransformComponent": {
-                    "Position": [
-                        0.0,
-                        0.0,
-                        0.0
-                    ],
-                    "Scale": [
-                        10.0,
-                        10.0,
-                        10.0
-                    ],
-                    "Rotation": [
-                        90.0,
-                        0.0,
-                        0.0
-                    ]
-                },
-                "MeshComponent": {
-                    "ResourcePath": "Assets/3D/Ground/Quad.obj"
-                }
-            }
-        },
         "Nanosuit": {
             "components": {
                 "TransformComponent": {

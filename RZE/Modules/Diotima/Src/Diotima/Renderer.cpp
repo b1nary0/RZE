@@ -51,10 +51,12 @@ namespace
 		ID3D11PixelShader* mPixelShader = nullptr;
 		ID3D11InputLayout* mVertexLayout = nullptr;
 		Int32 mViewProjBuffer = -1;
+		Int32 mCameraDataBuffer = -1;
 
 		void Initialize(Diotima::DX11GFXDevice* hwDevice)
 		{
 			mViewProjBuffer = hwDevice->CreateConstantBuffer(sizeof(Matrix4x4), 1);
+			mCameraDataBuffer = hwDevice->CreateConstantBuffer(MemoryUtils::AlignSize(sizeof(Vector3D), 16), 1);
 
 			// Shaders
 			{
@@ -125,6 +127,11 @@ namespace Diotima
 		ID3D11Buffer* vpbHardwareBuf = &viewProjBuf->GetHardwareBuffer();
 		viewProjBuf->UpdateSubresources(&camViewProjMat);
 		deviceContext.VSSetConstantBuffers(0, 1, &vpbHardwareBuf);
+
+		DX11GFXConstantBuffer* cameraDataBuf = mDevice->GetConstantBuffer(kDrawStateData.mCameraDataBuffer);
+		ID3D11Buffer* camDataHWbuf = &cameraDataBuf->GetHardwareBuffer();
+		cameraDataBuf->UpdateSubresources(&mCameraData.Position);
+		deviceContext.PSSetConstantBuffers(0, 1, &camDataHWbuf);
 
 		deviceContext.OMSetRenderTargets(1, &mDevice->mRenderTargetView, mDevice->mDepthStencilView);
 
