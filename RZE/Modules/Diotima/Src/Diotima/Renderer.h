@@ -40,8 +40,13 @@ namespace Diotima
 	// Essentially a direct copy starting at sizeof(GPUBufferData) into a constant buffer. 
 	struct MaterialData
 	{
+		struct MaterialProperties
+		{
+			float Shininess;
+		};
+
 		TexturePack* mTexturePack;
-		float Shininess;
+		MaterialProperties mProperties;
 	};
 
 	struct MeshData
@@ -63,6 +68,7 @@ namespace Diotima
 		Int32 VertexBuffer = -1;
 		Int32 IndexBuffer = -1;
 		Int32 ConstantBuffer = -1;
+		Int32 MaterialDataBuffer = -1;
 		MaterialData Material;
 		Matrix4x4 Transform;
 	};

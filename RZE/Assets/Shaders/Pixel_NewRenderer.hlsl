@@ -11,10 +11,20 @@ struct CAMERA_INPUT_DATA
 	float3 Position;
 };
 
+struct MATERIAL_DATA
+{
+	float Shininess;
+};
+
 cbuffer CameraConstantBuffer : register(b0)
 {
 	CAMERA_INPUT_DATA CameraData;
 };
+
+cbuffer MaterialBuffer : register(b1)
+{
+	MATERIAL_DATA MaterialData;
+}
 
 Texture2D textures[3] : register(t0);
 SamplerState samplerState : register(s0);
@@ -27,7 +37,7 @@ float CalculateBlinnPhong(float3 viewDir, float3 lightDir, float3 normal)
 	 float specAngle = max(0.0f, dot(halfDir, normal));
 	 // #TODO
 	 // Need material shininess here
-	 specular = pow(specAngle, 0.5f);
+	 specular = pow(specAngle, MaterialData.Shininess);
 	
 	return specular;
 }

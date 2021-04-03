@@ -180,9 +180,15 @@ namespace Diotima
 				ID3D11Buffer* vertBuf = &mDevice->GetVertexBuffer(renderObject.VertexBuffer)->GetHardwareBuffer();
 				mDevice->GetDeviceContext().IASetVertexBuffers(0, 1, &vertBuf, &stride, &offset);
 			}
-
+			// Material buffer
 			{
-				// Texture
+				DX11GFXConstantBuffer* materialBuffer = mDevice->GetConstantBuffer(renderObject.MaterialDataBuffer);
+				ID3D11Buffer* matHWbuf = &materialBuffer->GetHardwareBuffer();
+				materialBuffer->UpdateSubresources(&renderObject.Material.mProperties);
+				deviceContext.PSSetConstantBuffers(1, 1, &matHWbuf);
+			}
+			// Textures
+			{
 				// #TODO
 				// Move the sampler state elsewhere so we're not bound to an individual texture resource for it...
 				DX11GFXTextureBuffer2D* const textureBuf = renderObject.Material.mTexturePack->GetResourceAt(0);
@@ -354,10 +360,11 @@ namespace Diotima
 		renderObject.VertexBuffer = CreateVertexBuffer((void*)meshData.Vertices.data(), sizeof(float), meshData.Vertices.size());
 		renderObject.IndexBuffer = CreateIndexBuffer((void*)meshData.Indices.data(), sizeof(U32), meshData.Indices.size());
 		renderObject.ConstantBuffer = mDevice->CreateConstantBuffer(sizeof(Matrix4x4), 1);
+		renderObject.MaterialDataBuffer = mDevice->CreateConstantBuffer(MemoryUtils::AlignSize(sizeof(MaterialData::MaterialProperties), 16), 1);
 
 		{
 			// Material Setup
-			renderObject.Material.Shininess = meshData.Material.Shininess;
+			renderObject.Material.mProperties = meshData.Material.mProperties;
 			renderObject.Material.mTexturePack = new TexturePack();
 			renderObject.Material.mTexturePack->Allocate(*mDevice, textureData);
 		}

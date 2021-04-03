@@ -133,6 +133,8 @@ void RenderSystem::RegisterForComponentNotifications()
 				meshData.Vertices = childNode.Geometry->GetVertexDataRaw();
 				meshData.Indices = childNode.Geometry->GetIndexDataRaw();
 
+				meshData.Material.mProperties.Shininess = material.Shininess;
+
 				std::vector<Diotima::TextureData> textureData;
 				textureData.reserve(Material::TEXTURE_SLOT_COUNT);
 				for (size_t textureSlot = 0; textureSlot < Material::TEXTURE_SLOT_COUNT; ++textureSlot)
