@@ -176,11 +176,13 @@ namespace Diotima
 
 			{
 				// Texture
+				// #TODO
+				// Move the sampler state elsewhere so we're not bound to an individual texture resource for it...
 				DX11GFXTextureBuffer2D* const textureBuf = renderObject.Material.mTexturePack->GetResourceAt(0);
-				ID3D11ShaderResourceView* const resourceView = &textureBuf->GetResourceView();
 				ID3D11SamplerState* const samplerState = &textureBuf->GetSamplerState();
 
-				deviceContext.PSSetShaderResources(0, 1, &resourceView);
+				std::vector<ID3D11ShaderResourceView*> resourceViews = renderObject.Material.mTexturePack->GetAsGPUTextureArray();
+				deviceContext.PSSetShaderResources(0, resourceViews.size(), resourceViews.data());
 				deviceContext.PSSetSamplers(0, 1, &samplerState);
 			}
 

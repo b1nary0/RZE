@@ -7,6 +7,8 @@
 #include <memory>
 #include <vector>
 
+struct ID3D11ShaderResourceView;
+
 namespace Diotima
 {
 	class DX11GFXDevice;
@@ -33,6 +35,8 @@ namespace Diotima
 
 		size_t GetResourceCount() const;
 		DX11GFXTextureBuffer2D* GetResourceAt(size_t index);
+
+		std::vector<ID3D11ShaderResourceView*> GetAsGPUTextureArray() const;
 
 	private:
 		std::vector<std::unique_ptr<DX11GFXTextureBuffer2D>> mResources;

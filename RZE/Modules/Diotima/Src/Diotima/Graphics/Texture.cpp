@@ -36,4 +36,15 @@ namespace Diotima
 		return mResources[index].get();
 	}
 
+	std::vector<ID3D11ShaderResourceView*> TexturePack::GetAsGPUTextureArray() const
+	{
+		std::vector<ID3D11ShaderResourceView*> srvs;
+		for (size_t index = 0; index < mResources.size(); ++index)
+		{
+			srvs.push_back(&mResources[index]->GetResourceView());
+		}
+
+		return std::move(srvs);
+	}
+
 }
