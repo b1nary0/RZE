@@ -34,7 +34,7 @@ float CalculateBlinnPhong(float3 viewDir, float3 lightDir, float3 normal)
 	float specular = 0.0f;
 	
 	 float3 halfDir = normalize(lightDir + viewDir);
-	 float specAngle = max(0.0f, dot(halfDir, normal));
+	 float specAngle = saturate(max(0.0f, dot(halfDir, normal)));
 	 specular = pow(specAngle, MaterialData.Shininess);
 	
 	return specular;
