@@ -86,7 +86,7 @@
                     ]
                 },
                 "MeshComponent": {
-                    "ResourcePath": "Assets/3D/Nanosuit/Nanosuit.obj"
+                    "ResourcePath": "Assets/3D/Nyra/Nyra.obj"
                 }
             }
         }
