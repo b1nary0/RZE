@@ -34,6 +34,11 @@ void MeshGeometry::AllocateData()
 		{
 			vertexDataBuffer.push_back(vertex.UVData[index]);
 		}
+
+		for (int index = 0; index < 3; ++index)
+		{
+			vertexDataBuffer.push_back(vertex.Tangent[index]);
+		}
 	}
 
 	mVertexBuffer = std::make_shared<VertexBuffer>(vertexDataBuffer);

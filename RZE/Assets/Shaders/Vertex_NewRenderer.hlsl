@@ -3,14 +3,16 @@ struct VS_IN
 	float3 Position : POSITION;
 	float3 Normal : NORMAL;
 	float2 UVCoords : UV;
+	float3 Tangent : TANGENT;
 };
 
 struct VS_OUT
 {
 	float4 Position : SV_POSITION;
-	float3 FragPos : POSITION;
 	float3 Normal : NORMAL;
 	float2 UVCoords : UV;
+	float3 Tangent : TANGENT;
+	float3 FragPos : POSITION;
 };
 
 cbuffer ViewProjectionBuf : register(b0)
@@ -33,6 +35,7 @@ VS_OUT VSMain(VS_IN input) // main is the default function name
 	output.FragPos = fragPos;
 	output.Normal = input.Normal;
 	output.UVCoords = input.UVCoords;
+	output.Tangent = mul(ModelView, float4(input.Tangent, 1.0f)).xyz;
 	
     return output;
 }

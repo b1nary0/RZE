@@ -36,7 +36,8 @@ namespace
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+		{ "UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TANGENT", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 	};
 	UINT numLayoutElements = ARRAYSIZE(k_vertLayout);
 
@@ -173,6 +174,7 @@ namespace Diotima
 					Vector3D position;
 					Vector3D normal;
 					Vector2D uv;
+					Vector3D tangent;
 				};
 				UINT stride = sizeof(TempDataLayoutStructure);
 				UINT offset = 0;
