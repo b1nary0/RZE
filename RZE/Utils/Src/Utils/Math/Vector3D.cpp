@@ -5,6 +5,8 @@
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Matrix4x4.h>
 
+Vector3D Vector3D::ZERO = Vector3D();
+
 Vector3D::Vector3D()
 	: mVec(0.0f, 0.0f, 0.0f)
 {
