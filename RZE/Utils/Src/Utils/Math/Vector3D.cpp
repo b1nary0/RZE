@@ -149,6 +149,11 @@ Vector3D Vector3D::operator/(const float scalar) const
 	return Vector3D(retVec.x, retVec.y, retVec.z);
 }
 
+bool Vector3D::operator==(const Vector3D& rhs) const
+{
+	return rhs.mVec == mVec;
+}
+
 float Vector3D::operator[](int index) const
 {
 	AssertExpr(index < 3);

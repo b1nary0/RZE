@@ -10,12 +10,14 @@ class Vector2D;
 class Vector3D
 {
 public:
-
 	Vector3D();
 	Vector3D(const Vector2D& vec2D);
 	Vector3D(const float val);
 	Vector3D(const float x, const float y, const float z);
 	Vector3D(const int x, const int y, const int z);
+
+public:
+	static Vector3D ZERO;
 
 	float X() const;
 	float Y() const;
@@ -55,6 +57,7 @@ public:
 
 	Vector3D operator/(const float scalar) const;
 
+	bool operator==(const Vector3D& rhs) const;
 	bool operator!=(const Vector3D& rhs) const;
 
 	float operator[](int index) const;
