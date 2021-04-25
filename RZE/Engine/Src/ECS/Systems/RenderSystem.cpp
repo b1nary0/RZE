@@ -117,41 +117,7 @@ void RenderSystem::RegisterForComponentNotifications()
 			Model3D* const modelData = resourceHandler.GetResource<Model3D>(resource);
 			AssertNotNull(modelData);
 
-			mRootNodes.emplace_back();
-			RenderNode& rootNode = mRootNodes.back();
-			rootNode.Transform = rootTransformComponent->GetAsMat4x4();
-			rootNode.EntityID = entityID;
-			for (auto& meshGeometry : modelData->GetStaticMesh().GetSubMeshes())
-			{
-				const Material& material = meshGeometry.GetMaterial();
-
-				rootNode.Children.emplace_back();
-				RenderNode& childNode = rootNode.Children.back();
-				childNode.Geometry = &meshGeometry;
-
-				Diotima::MeshData meshData;
-				meshData.Vertices = childNode.Geometry->GetVertexDataRaw();
-				meshData.Indices = childNode.Geometry->GetIndexDataRaw();
-
-				meshData.Material.mProperties.Shininess = material.Shininess;
-
-				std::vector<Diotima::TextureData> textureData;
-				textureData.reserve(Material::TEXTURE_SLOT_COUNT);
-				for (size_t textureSlot = 0; textureSlot < Material::TEXTURE_SLOT_COUNT; ++textureSlot)
-				{
-					Texture2D* const texture = resourceHandler.GetResource<Texture2D>(material.GetTexture(textureSlot));
-					if (texture != nullptr)
-					{
-						Diotima::TextureData data;
-						data.mWidth = static_cast<int>(texture->GetDimensions().X());
-						data.mHeight = static_cast<int>(texture->GetDimensions().Y());
-						data.mData = texture->GetRawData();
-						textureData.emplace_back(std::move(data));
-					}
-				}
-
-				childNode.RenderObjectIndex = mRenderer->CreateRenderObject(meshData, textureData, rootNode.Transform);
-			}
+			CreateAndInitializeRenderNode(entityID, *modelData, rootTransformComponent->GetAsMat4x4());
 		});
 		handler.RegisterForComponentAddNotification<MeshComponent>(OnMeshComponentAdded);
 
@@ -241,4 +207,45 @@ void RenderSystem::GenerateCameraMatrices(CameraComponent& cameraComponent, cons
 {
 	cameraComponent.ProjectionMat = Matrix4x4::CreatePerspectiveMatrix(cameraComponent.FOV, cameraComponent.AspectRatio, cameraComponent.NearCull, cameraComponent.FarCull);
 	cameraComponent.ViewMat = Matrix4x4::CreateViewMatrix(transformComponent.Position, transformComponent.Position + cameraComponent.Forward, cameraComponent.UpDir);
+}
+
+void RenderSystem::CreateAndInitializeRenderNode(const Apollo::EntityID entityID, const Model3D& modelData, const Matrix4x4& transform)
+{
+	mRootNodes.emplace_back();
+	RenderNode& rootNode = mRootNodes.back();
+	rootNode.Transform = transform;
+	rootNode.EntityID = entityID;
+	for (auto& meshGeometry : modelData.GetStaticMesh().GetSubMeshes())
+	{
+		const Material& material = meshGeometry.GetMaterial();
+
+		rootNode.Children.emplace_back();
+		RenderNode& childNode = rootNode.Children.back();
+		childNode.Geometry = &meshGeometry;
+
+		Diotima::MeshData meshData;
+		meshData.Vertices = childNode.Geometry->GetVertexDataRaw();
+		meshData.Indices = childNode.Geometry->GetIndexDataRaw();
+
+		meshData.Material.mProperties.Shininess = material.Shininess;
+
+		ResourceHandler& resourceHandler = RZE_Application::RZE().GetResourceHandler();
+
+		std::vector<Diotima::TextureData> textureData;
+		textureData.reserve(Material::TEXTURE_SLOT_COUNT);
+		for (size_t textureSlot = 0; textureSlot < Material::TEXTURE_SLOT_COUNT; ++textureSlot)
+		{
+			Texture2D* const texture = resourceHandler.GetResource<Texture2D>(material.GetTexture(textureSlot));
+			if (texture != nullptr)
+			{
+				Diotima::TextureData data;
+				data.mWidth = static_cast<int>(texture->GetDimensions().X());
+				data.mHeight = static_cast<int>(texture->GetDimensions().Y());
+				data.mData = texture->GetRawData();
+				textureData.emplace_back(std::move(data));
+			}
+		}
+
+		childNode.RenderObjectIndex = mRenderer->CreateRenderObject(meshData, textureData, rootNode.Transform);
+	}
 }

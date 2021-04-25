@@ -22,7 +22,7 @@ public:
 	virtual void Release() override;
 
 public:
-	inline const StaticMesh& GetStaticMesh() { return mMesh; }
+	inline const StaticMesh& GetStaticMesh() const { return mMesh; }
 
 private:
 	void ProcessNode(const aiNode& node, const aiScene& scene, std::vector<MeshGeometry>& outMeshGeometry);

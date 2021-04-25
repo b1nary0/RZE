@@ -8,6 +8,7 @@ struct CameraComponent;
 struct TransformComponent;
 
 class MeshGeometry;
+class Model3D;
 
 namespace Diotima
 {
@@ -38,6 +39,7 @@ private:
 	void RegisterForComponentNotifications();
 
 	void GenerateCameraMatrices(CameraComponent& cameraComponent, const TransformComponent& transformComponent);
+	void CreateAndInitializeRenderNode(const Apollo::EntityID entityID, const Model3D& modelData, const Matrix4x4& transform);
 
 private:
 	Diotima::Renderer* mRenderer;
