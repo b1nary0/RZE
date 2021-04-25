@@ -13,6 +13,10 @@ public:
 	Vector2D(const float x, const float y);
 	Vector2D(const int x, const int y);
 
+private:
+	Vector2D(const glm::vec2& internalVec);
+
+public:
 	float X() const;
 	float Y() const;
 
@@ -32,7 +36,9 @@ public:
 	//
 public:
 	// #TODO(Josh::Fill these out to the same standard as 2D/4D)
-	Vector2D operator-(const Vector2D& other);
+	Vector2D operator-(const Vector2D& other) const;
+	Vector2D operator/(const float& scalar) const;
+
 	bool operator!=(const Vector2D& rhs) const;
 
 	float operator[](int index) const;
