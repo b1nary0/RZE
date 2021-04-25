@@ -100,7 +100,7 @@ public:
 	ResourceHandle(ResourceHandle&& rhs);
 	~ResourceHandle();
 
-	static ResourceHandle EmptyHandle(ResourceHandler* handler) { return ResourceHandle("", nullptr, handler); }
+	static ResourceHandle EmptyHandle() { return ResourceHandle(); }
 
 	bool IsValid() const;
 	const std::string& GetID() const;
@@ -136,7 +136,7 @@ ResourceHandle ResourceHandler::LoadResource(const FilePath& resourcePath, Args.
 		}
 		else
 		{
-			return ResourceHandle::EmptyHandle(this);
+			return ResourceHandle::EmptyHandle();
 		}
 	}
 

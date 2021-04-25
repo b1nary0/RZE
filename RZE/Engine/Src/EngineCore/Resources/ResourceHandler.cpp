@@ -67,8 +67,10 @@ void ResourceHandler::ReleaseResource(ResourceHandle& resourceHandle)
 }
 
 ResourceHandle::ResourceHandle()
+	: mResourceID("NO_RESOURCE")
+	, mResourceSource(nullptr)
+	, mHandler(nullptr)
 {
-	mResourceSource = nullptr;
 }
 
 ResourceHandle::ResourceHandle(const std::string& resourceID, ResourceHandler::ResourceSource* resourceSource, ResourceHandler* handler)
