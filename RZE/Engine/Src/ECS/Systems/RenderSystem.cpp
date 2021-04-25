@@ -41,6 +41,7 @@ void RenderSystem::Initialize()
 
 void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 {
+	OPTICK_EVENT("RenderSystem::Update");
 	// Update Renderer camera
 	{
 		Apollo::EntityHandler& handler = InternalGetEntityHandler();
@@ -205,6 +206,8 @@ void RenderSystem::RegisterForComponentNotifications()
 
 void RenderSystem::GenerateCameraMatrices(CameraComponent& cameraComponent, const TransformComponent& transformComponent)
 {
+	OPTICK_EVENT("GenerateCameraMatrices");
+
 	cameraComponent.ProjectionMat = Matrix4x4::CreatePerspectiveMatrix(cameraComponent.FOV, cameraComponent.AspectRatio, cameraComponent.NearCull, cameraComponent.FarCull);
 	cameraComponent.ViewMat = Matrix4x4::CreateViewMatrix(transformComponent.Position, transformComponent.Position + cameraComponent.Forward, cameraComponent.UpDir);
 }

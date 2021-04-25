@@ -70,19 +70,20 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 				{
 					OPTICK_EVENT("Update and Render");
 
- 					ImGui_ImplDX11_NewFrame();
-					ImGui_ImplWin32_NewFrame();
- 					ImGui::NewFrame();
+					{
+						OPTICK_EVENT("ImGui Frame Work");
+
+						ImGui_ImplDX11_NewFrame();
+						ImGui_ImplWin32_NewFrame();
+						ImGui::NewFrame();
+					}
 
 					Update();
 
 					mRenderer->Update();
 
 					ImGui::EndFrame();
-				}
 
-				{
-					OPTICK_EVENT("GPU Submission");
 					mRenderer->Render();
 				}
 			}

@@ -117,6 +117,8 @@ namespace Diotima
 
 	void Renderer::PrepareDrawState()
 	{
+		OPTICK_EVENT();
+
 		ID3D11DeviceContext& deviceContext = mDevice->GetDeviceContext();
 
 		deviceContext.RSSetState(mDevice->mRasterState);
@@ -155,6 +157,8 @@ namespace Diotima
 
 	void Renderer::Draw()
 	{
+		OPTICK_EVENT();
+
 		ID3D11DeviceContext& deviceContext = mDevice->GetDeviceContext();
 		deviceContext.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -252,13 +256,21 @@ namespace Diotima
 
 	void Renderer::Render()
 	{
+		OPTICK_EVENT();
+
 		PrepareDrawState();
 		Draw();
 
-		ImGui::Render();
-		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+		{
+			OPTICK_EVENT("ImGui Render");
+			ImGui::Render();
+			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+		}
 
-		mDevice->Present();
+		{
+			OPTICK_EVENT("Present");
+			mDevice->Present();
+		}
 	}
 
 	void Renderer::ShutDown()
