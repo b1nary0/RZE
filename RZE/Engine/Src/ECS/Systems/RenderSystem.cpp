@@ -41,7 +41,7 @@ void RenderSystem::Initialize()
 
 void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 {
-	OPTICK_EVENT("RenderSystem::Update");
+	OPTICK_EVENT();
 	// Update Renderer camera
 	{
 		Apollo::EntityHandler& handler = InternalGetEntityHandler();
