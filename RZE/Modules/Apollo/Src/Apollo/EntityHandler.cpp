@@ -164,6 +164,7 @@ namespace Apollo
 		OPTICK_EVENT();
 
 		FlushComponentIDQueues();
+
 		for (size_t idx = 0; idx < mSystems.size(); ++idx)
 		{
 			EntitySystem* system = mSystems[idx];

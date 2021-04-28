@@ -72,7 +72,6 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 			// Gross... This is obviously not the way we should be doing this..
 			for (auto& rootNode : mRootNodes)
 			{
-				MeshComponent* const meshComponent = handler.GetComponent<MeshComponent>(rootNode.EntityID);
 				TransformComponent* const transformComponent = handler.GetComponent<TransformComponent>(rootNode.EntityID);
 
 				// rootnodes don't have a render object
