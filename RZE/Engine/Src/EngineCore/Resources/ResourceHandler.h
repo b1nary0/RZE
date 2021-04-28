@@ -87,9 +87,13 @@ private:
 	template <class ResourceT, class... Args>
 	IResource* CreateAndLoadResource(const FilePath& resourcePath, Args&&... args);
 
+	// #TODO Turn the resource IDs into hashes/guids
 	std::unordered_map<std::string, ResourceSource> mResourceTable;
 };
 
+// #TODO
+// Investigate templating this class so it can be stored as
+// ResourceHandle<ResourceType> 
 class ResourceHandle
 {
 	friend class ResourceHandler;

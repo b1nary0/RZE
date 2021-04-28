@@ -237,6 +237,8 @@ void RenderSystem::CreateAndInitializeRenderNode(const Apollo::EntityID entityID
 		textureData.reserve(Material::TEXTURE_SLOT_COUNT);
 		for (size_t textureSlot = 0; textureSlot < Material::TEXTURE_SLOT_COUNT; ++textureSlot)
 		{
+			// #TODO We should really be writing code that can deal with permutations of valid textures.
+			// Likely via a shader infrastructure that can validate the data needed and pair with its materials etc
 			Texture2D* const texture = resourceHandler.GetResource<Texture2D>(material.GetTexture(textureSlot));
 			if (texture != nullptr)
 			{

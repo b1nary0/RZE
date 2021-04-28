@@ -29,7 +29,7 @@ public:
 	virtual void Update();
 	virtual void ShutDown();
 
-	// Returning TRUE will fire callbacks registered with RZE. Returning FALSE steals input.
+	// Returning TRUE will fire callbacks registered with RZE. Returning FALSE steals input from the engine.
 	virtual bool ProcessInput(const InputHandler& handler);
 
 	virtual void ParseArguments(const char* arguments, int count);
