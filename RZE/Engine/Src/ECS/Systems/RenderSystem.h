@@ -2,8 +2,6 @@
 
 #include <Apollo/ECS/EntitySystem.h>
 
-#include <Utils/Functor.h>
-
 struct CameraComponent;
 struct TransformComponent;
 
