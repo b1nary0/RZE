@@ -1,5 +1,6 @@
 #pragma once
 
+class ShaderTechnique;
 class Texture2D;
 
 // [newrenderer]
@@ -31,12 +32,16 @@ public:
 	void SetTexture(U8 textureSlot, const ResourceHandle& textureResource);
 	const ResourceHandle& GetTexture(U8 textureSlot) const;
 
+	void SetShaderTechnique(const ResourceHandle& shaderTechnique);
+	inline ResourceHandle GetShaderResource() const { return mShaderTechnique; }
+
 public:
 	// #TODO(Josh::Turn into material properties or something; material system?)
 	float Shininess { 1.0f };
 	float Opacity { 1.0f };
 
 private:
+	ResourceHandle mShaderTechnique;
 	std::vector<ResourceHandle> mTextureSlots;
 };
 

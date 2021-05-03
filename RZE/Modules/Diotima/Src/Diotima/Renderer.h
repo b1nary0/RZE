@@ -9,9 +9,10 @@
 #include <Diotima/RenderCommands.h>
 #include <Diotima/Graphics/Texture.h>
 
+#include <Utils/PrimitiveDefs.h>
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector2D.h>
-#include <Utils/PrimitiveDefs.h>
+#include <Utils/Platform/FilePath.h>
 
 struct ID3D11InputLayout;
 struct ID3D10Blob;
@@ -20,6 +21,16 @@ struct ID3D11PixelShader;
 
 namespace Diotima
 {
+	// #DESIGN
+	// 	class RenderResource
+	// 	{
+	// 	public:
+	// 		RenderResource() = default;
+	// 
+	// 	private:
+	// 		GPUResourceOfType* mResource;
+	// 	};
+
 	class DX11GFXDevice;
 
 	class GFXPassGraph;
@@ -45,6 +56,7 @@ namespace Diotima
 			float Shininess;
 		};
 
+		Int32 mShaderID;
 		TexturePack* mTexturePack;
 		MaterialProperties mProperties;
 	};
@@ -135,6 +147,7 @@ namespace Diotima
 		Int32 CreateVertexBuffer(void* data, size_t size, U32 count);
 		Int32 CreateIndexBuffer(void* data, size_t size, U32 count);
 		Int32 CreateTextureBuffer2D(void* data, U32 width, U32 height);
+		Int32 CreatePixelShader(const FilePath& filePath);
 
 		// [newrenderer]
 		// This is just to fix allocating resources every frame. Need to track the RenderObject

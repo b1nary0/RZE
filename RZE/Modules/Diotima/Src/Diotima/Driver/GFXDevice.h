@@ -3,6 +3,7 @@
 #include <vector>
 
 #include <Utils/PrimitiveDefs.h>
+#include <Utils/Platform/FilePath.h>
 
 namespace Diotima
 {
@@ -32,5 +33,7 @@ namespace Diotima
 		virtual Int32 CreateIndexBuffer(void* data, size_t size, U32 count) = 0;
 		virtual Int32 CreateTextureBuffer2D(void* data, const GFXTextureBufferParams& params) = 0;
 		virtual Int32 CreateConstantBuffer(size_t memberSize, U32 maxMembers) = 0;
+
+		virtual Int32 CreatePixelShader(const FilePath& filePath) = 0;
 	};
 }

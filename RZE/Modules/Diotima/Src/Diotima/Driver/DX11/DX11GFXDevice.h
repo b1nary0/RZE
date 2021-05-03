@@ -2,6 +2,8 @@
 
 #include <Diotima/Driver/GFXDevice.h>
 
+#include <Utils/Platform/FilePath.h>
+
 #include <memory>
 
 struct ID3D11Device;
@@ -34,6 +36,23 @@ namespace Diotima
 		DX11GFXDevice() = default;
 		~DX11GFXDevice() = default;
 
+	private:
+		// #TODO
+		// Temp because I couldn't be arsed writing an entire DX11Shader class
+		// but unique_ptr screams with ID3D11*Shader classes
+		class ShaderDeleteWrapper
+		{
+		public:
+			ShaderDeleteWrapper() = default;
+			~ShaderDeleteWrapper() = default;
+
+		public:
+			void Release();
+
+		public:
+			ID3D11PixelShader* mHWShader;
+		};
+
 	// IGFXDevice interface
 	public:
 		virtual void Initialize() override;
@@ -48,6 +67,8 @@ namespace Diotima
 		Int32 CreateRenderTarget2D(U32 width, U32 height);
 		Int32 CreateConstantBuffer(size_t memberSize, U32 maxMembers) override;
 
+		Int32 CreatePixelShader(const FilePath& filePath);
+
 	public:
 		ID3D11Device& GetHardwareDevice();
 		ID3D11DeviceContext& GetDeviceContext();
@@ -61,6 +82,8 @@ namespace Diotima
 		DX11GFXIndexBuffer* GetIndexBuffer(Int32 bufferID);
 		DX11GFXConstantBuffer* GetConstantBuffer(Int32 bufferID);
 		DX11GFXTextureBuffer2D* GetTextureBuffer2D(Int32 bufferID);
+
+		ID3D11PixelShader* GetPixelShader(Int32 index) const;
 
 	public:
 		void SetSyncInterval(U32 interval);
@@ -101,6 +124,8 @@ namespace Diotima
  		std::vector<std::unique_ptr<DX11GFXIndexBuffer>> mIndexBuffers;
  		std::vector<std::unique_ptr<DX11GFXConstantBuffer>> mConstantBuffers;
 		std::vector<std::unique_ptr<DX11GFXTextureBuffer2D>> mTexture2DBuffers;
+
+		std::vector<std::unique_ptr<ShaderDeleteWrapper>> mPixelShaders;
 
 	// temp for testing will move after
 	private:

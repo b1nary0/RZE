@@ -47,9 +47,7 @@ namespace
 	struct DrawStateData_Prototype
 	{
 		ID3D10Blob* mVSBlob = nullptr;
-		ID3D10Blob* mPSBlob = nullptr;
 		ID3D11VertexShader* mVertexShader = nullptr;
-		ID3D11PixelShader* mPixelShader = nullptr;
 		ID3D11InputLayout* mVertexLayout = nullptr;
 		Int32 mViewProjBuffer = -1;
 		Int32 mCameraDataBuffer = -1;
@@ -62,7 +60,6 @@ namespace
 			// Shaders
 			{
 				FilePath vertexShaderPath("Assets/Shaders/Vertex_NewRenderer.hlsl");
-				FilePath pixelShaderPath("Assets/Shaders/Pixel_NewRenderer.hlsl");
 
 				HRESULT hr;
 				ID3D10Blob* error;
@@ -90,12 +87,7 @@ namespace
 				hr = D3DCompileFromFile(Conversions::StringToWString(vertexShaderPath.GetAbsolutePath()).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VSMain", "vs_5_0", 0, 0, &mVSBlob, &error);
 				errorCB(error);
 
-				hr = D3DCompileFromFile(Conversions::StringToWString(pixelShaderPath.GetAbsolutePath()).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "PSMain", "ps_5_0", 0, 0, &mPSBlob, &error);
-				errorCB(error);
-
 				hr = hwDevice->GetHardwareDevice().CreateVertexShader(mVSBlob->GetBufferPointer(), mVSBlob->GetBufferSize(), nullptr, &mVertexShader);
-				hr = hwDevice->GetHardwareDevice().CreatePixelShader(mPSBlob->GetBufferPointer(), mPSBlob->GetBufferSize(), nullptr, &mPixelShader);
-
 				hr = hwDevice->GetHardwareDevice().CreateInputLayout(k_vertLayout, numLayoutElements, mVSBlob->GetBufferPointer(), mVSBlob->GetBufferSize(), &mVertexLayout);
 			}
 		}
@@ -123,18 +115,14 @@ namespace Diotima
 
 		deviceContext.RSSetState(mDevice->mRasterState);
 		deviceContext.VSSetShader(kDrawStateData.mVertexShader, 0, 0);
-		deviceContext.PSSetShader(kDrawStateData.mPixelShader, 0, 0);
-
+		
 		Matrix4x4 camViewProjMat = mCameraData.ProjectionMat * mCameraData.ViewMat;
 		DX11GFXConstantBuffer* viewProjBuf = mDevice->GetConstantBuffer(kDrawStateData.mViewProjBuffer);
 		ID3D11Buffer* vpbHardwareBuf = &viewProjBuf->GetHardwareBuffer();
 		viewProjBuf->UpdateSubresources(&camViewProjMat);
 		deviceContext.VSSetConstantBuffers(0, 1, &vpbHardwareBuf);
 
-		DX11GFXConstantBuffer* cameraDataBuf = mDevice->GetConstantBuffer(kDrawStateData.mCameraDataBuffer);
-		ID3D11Buffer* camDataHWbuf = &cameraDataBuf->GetHardwareBuffer();
-		cameraDataBuf->UpdateSubresources(&mCameraData.Position);
-		deviceContext.PSSetConstantBuffers(0, 1, &camDataHWbuf);
+		
 
 		deviceContext.OMSetRenderTargets(1, &mDevice->mRenderTargetView, mDevice->mDepthStencilView);
 
@@ -164,6 +152,19 @@ namespace Diotima
 
 		for (auto& renderObject : mRenderObjects)
 		{
+			ID3D11PixelShader* const hwShader = mDevice->GetPixelShader(renderObject.Material.mShaderID);
+			deviceContext.PSSetShader(hwShader, 0, 0);
+
+			{
+				// #TODO
+				// This is god awful. Just in place while developing shader model.
+				// Should get resolved once the system matures
+				DX11GFXConstantBuffer* cameraDataBuf = mDevice->GetConstantBuffer(kDrawStateData.mCameraDataBuffer);
+				ID3D11Buffer* camDataHWbuf = &cameraDataBuf->GetHardwareBuffer();
+				cameraDataBuf->UpdateSubresources(&mCameraData.Position);
+				deviceContext.PSSetConstantBuffers(0, 1, &camDataHWbuf);
+			}
+
 			// World Matrix
 			{
 				DX11GFXConstantBuffer* modelMatBuf = mDevice->GetConstantBuffer(renderObject.ConstantBuffer);
@@ -343,6 +344,11 @@ namespace Diotima
 		return mDevice->CreateTextureBuffer2D(data, params);
 	}
 
+	Int32 Renderer::CreatePixelShader(const FilePath& filePath)
+	{
+		return mDevice->CreatePixelShader(filePath);
+	}
+
 	U32 Renderer::CreateRenderObject(
 		const MeshData& meshData, 
 		const std::vector<TextureData>& textureData, 
@@ -381,7 +387,7 @@ namespace Diotima
 
 		{
 			// Material Setup
-			renderObject.Material.mProperties = meshData.Material.mProperties;
+			renderObject.Material = meshData.Material;
 			renderObject.Material.mTexturePack = new TexturePack();
 			renderObject.Material.mTexturePack->Allocate(*mDevice, textureData);
 		}

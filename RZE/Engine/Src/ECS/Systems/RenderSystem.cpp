@@ -14,6 +14,7 @@
 
 #include <Graphics/Material.h>
 #include <Graphics/MeshGeometry.h>
+#include <Graphics/Shader.h>
 #include <Graphics/Texture2D.h>
 
 #include <Utils/Platform/FilePath.h>
@@ -230,6 +231,10 @@ void RenderSystem::CreateAndInitializeRenderNode(const Apollo::EntityID entityID
 		meshData.Indices = childNode.Geometry->GetIndexDataRaw();
 
 		meshData.Material.mProperties.Shininess = material.Shininess;
+		ShaderTechnique* const shader = RZE_Application::RZE().GetResourceHandler().GetResource<ShaderTechnique>(material.GetShaderResource());
+		AssertNotNull(shader);
+
+		meshData.Material.mShaderID = shader->GetHardwareID();
 
 		ResourceHandler& resourceHandler = RZE_Application::RZE().GetResourceHandler();
 

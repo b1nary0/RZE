@@ -12,6 +12,29 @@
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Platform/FilePath.h>
 
+namespace
+{
+	auto errorCB = [](ID3D10Blob* error)
+	{
+		if (error != nullptr)
+		{
+			char const* message =
+				static_cast<char const*>(error->GetBufferPointer());
+
+			// Write the warning to the output window when the program is
+			// executing through the Microsoft Visual Studio IDE.
+			size_t const length = strlen(message);
+			std::wstring output = L"";
+			for (size_t i = 0; i < length; ++i)
+			{
+				output += static_cast<wchar_t>(message[i]);
+			}
+			output += L'\n';
+			OutputDebugString(output.c_str());
+		}
+	};
+}
+
 namespace Diotima
 {
 	const int kInitialWidth = 1600;
@@ -144,6 +167,12 @@ namespace Diotima
 			t2dBuf->Release();
 			t2dBuf.reset();
 		}
+
+		for (auto& pixelShader : mPixelShaders)
+		{
+			pixelShader->Release();
+			pixelShader.reset();
+		}
 	}
 
 	Int32 DX11GFXDevice::CreateVertexBuffer(void* data, size_t size, U32 count)
@@ -201,6 +230,30 @@ namespace Diotima
 		mConstantBuffers.back()->Allocate(memberSize, maxMembers);
 
 		return static_cast<U32>(mConstantBuffers.size() - 1);
+	}
+
+	Int32 DX11GFXDevice::CreatePixelShader(const FilePath& filePath)
+	{
+		ID3D10Blob* psBlob = nullptr;
+
+		HRESULT hr;
+		ID3D10Blob* error;
+		hr = D3DCompileFromFile(
+			Conversions::StringToWString(filePath.GetAbsolutePath()).c_str(), 
+			nullptr, 
+			D3D_COMPILE_STANDARD_FILE_INCLUDE, 
+			"PSMain", "ps_5_0", 
+			0, 0, 
+			&psBlob, &error);
+		errorCB(error);
+
+		ID3D11PixelShader* hwShader = nullptr;
+		hr = GetHardwareDevice().CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), nullptr, &hwShader);
+
+		ShaderDeleteWrapper* deleteWrapper = new ShaderDeleteWrapper();
+		deleteWrapper->mHWShader = hwShader;
+		mPixelShaders.push_back(std::unique_ptr<ShaderDeleteWrapper>(deleteWrapper));
+		return mPixelShaders.size() - 1;
 	}
 
 	DX11GFXVertexBuffer* DX11GFXDevice::GetVertexBuffer(Int32 bufferID)
@@ -351,6 +404,12 @@ namespace Diotima
 		return *mDeviceContext;
 	}
 
+	ID3D11PixelShader* DX11GFXDevice::GetPixelShader(Int32 index) const
+	{
+		AssertExpr(index < mPixelShaders.size());
+		return mPixelShaders[index]->mHWShader;
+	}
+
 	void DX11GFXDevice::SetupSceneStuff()
 	{
 		HRESULT hr;
@@ -433,6 +492,11 @@ namespace Diotima
 	void DX11GFXDevice::Present()
 	{
 		mSwapChain->Present(mSyncInterval, 0);
+	}
+
+	void DX11GFXDevice::ShaderDeleteWrapper::Release()
+	{
+		mHWShader->Release();
 	}
 
 }
