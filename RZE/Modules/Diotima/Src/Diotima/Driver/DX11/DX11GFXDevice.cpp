@@ -118,9 +118,6 @@ namespace Diotima
 		mDevice->Release();
 		mDeviceContext->Release();
 
-		// temp remove later
-		mSquareVertBuf->Release();
-		mSquareIndexBuf->Release();
 		mDepthStencilView->Release();
 		mDepthStencilTex->Release();
 

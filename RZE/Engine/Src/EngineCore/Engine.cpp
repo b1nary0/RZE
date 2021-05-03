@@ -284,6 +284,7 @@ void RZE_Engine::BeginShutDown()
 	mActiveScene->Finish();
 	mApplication->ShutDown();
 	mResourceHandler.ShutDown();
+	mRenderer->ShutDown();
 
 	Perseus::JobScheduler::Get().ShutDown();
 
