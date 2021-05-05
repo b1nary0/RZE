@@ -16,6 +16,9 @@ MeshGeometry::~MeshGeometry()
 
 void MeshGeometry::AllocateData()
 {
+	AssertExpr(mVertexBuffer == nullptr);
+	AssertExpr(mIndexBuffer == nullptr);
+
 	std::vector<float> vertexDataBuffer;
 	vertexDataBuffer.reserve(mVertices.size() * sizeof(MeshVertex));
 	for (MeshVertex vertex : GetVertices())
