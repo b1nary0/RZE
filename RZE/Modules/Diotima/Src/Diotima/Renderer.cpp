@@ -122,12 +122,9 @@ namespace Diotima
 		viewProjBuf->UpdateSubresources(&camViewProjMat);
 		deviceContext.VSSetConstantBuffers(0, 1, &vpbHardwareBuf);
 
-		
-
 		deviceContext.OMSetRenderTargets(1, &mDevice->mRenderTargetView, mDevice->mDepthStencilView);
 
 		FLOAT rgba[4] = { 0.35f, 0.35f, 0.35f, 1.0f };
-
 		deviceContext.ClearDepthStencilView(mDevice->mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 		deviceContext.ClearRenderTargetView(mDevice->mRenderTargetView, rgba);
 
