@@ -123,6 +123,10 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 		}
 	}
 	
+	bool bHasDiffuse = false;
+	bool bHasSpecular = false;
+	bool bHasBump = false;
+
 	Material* pMaterial;
 	if (mesh.mMaterialIndex >= 0)
 	{
@@ -143,7 +147,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 		{
 			pMaterial->Opacity = opacity;
 		}
-
+		
 		for (unsigned int i = 0; i < mat->GetTextureCount(aiTextureType_DIFFUSE); ++i)
 		{
 			aiString str;
@@ -154,6 +158,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 			if (textureHandle.IsValid())
 			{
 				pMaterial->SetTexture(Material::TEXTURE_SLOT_DIFFUSE, textureHandle);
+				bHasDiffuse = true;
 			}
 			else
 			{
@@ -171,6 +176,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 			if (textureHandle.IsValid())
 			{
 				pMaterial->SetTexture(Material::TEXTURE_SLOT_SPECULAR, textureHandle);
+				bHasSpecular = true;
 			}
 			else
 			{
@@ -188,6 +194,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 			if (textureHandle.IsValid())
 			{
 				pMaterial->SetTexture(Material::TEXTURE_SLOT_NORMAL, textureHandle);
+				bHasBump = true;
 			}
 			else
 			{
@@ -196,10 +203,22 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 		}
 	}
 
-	// #TODO
-	// This is essentially stubbing code. Next pass should set an arbitrary shader based on 
-	// what data we have from the asset. Consider how we handle vertex shaders.
-	ResourceHandle shaderTechnique = RZE_Application::RZE().GetResourceHandler().LoadResource<ShaderTechnique>(FilePath("Assets/Shaders/Pixel_NewRenderer.hlsl"));
+	AssertMsg(bHasDiffuse, "Unsupported without diffuse texture for the hopefully short time being");
+	const bool bFullShading = bHasDiffuse && bHasSpecular && bHasBump;
+
+	ResourceHandle shaderTechnique;
+	if (bFullShading)
+	{
+		// #TODO
+		// This is essentially stubbing code. Next pass should set an arbitrary shader based on 
+		// what data we have from the asset. Consider how we handle vertex shaders.
+		shaderTechnique = RZE_Application::RZE().GetResourceHandler().LoadResource<ShaderTechnique>(FilePath("Assets/Shaders/Pixel_NewRenderer.hlsl"));
+	}
+	else
+	{
+		shaderTechnique = RZE_Application::RZE().GetResourceHandler().LoadResource<ShaderTechnique>(FilePath("Assets/Shaders/Pixel_NewRenderer_DiffuseOnly.hlsl"));
+	}
+
 	pMaterial->SetShaderTechnique(shaderTechnique);
 	outMesh.SetMaterial(pMaterial);
 	// #TODO

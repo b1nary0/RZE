@@ -23,7 +23,7 @@ namespace Diotima
 			params.SampleQuality = 0;
 
 			// #TODO
-			// Hella no bueno here. Basically a new allocation for every texture.
+			// Hella no bueno here. Basically a new GPU allocation for every texture.
 			// Think about texture management in Diotima; should we handle resources like
 			// in the engine? Load once and reference later? Then if mutable, we can handle
 			// that with a bespoke class like MutableTexture or something.
