@@ -50,7 +50,6 @@ void GameApp::Initialize()
 
 	Apollo::EntityHandler& entityHandler = RZE().GetActiveScene().GetEntityHandler();
 	entityHandler.AddSystem<FreeCameraSystem>();
-	//entityHandler.AddSystem<TestbedSystem>();
 }
 
 void GameApp::Start()
