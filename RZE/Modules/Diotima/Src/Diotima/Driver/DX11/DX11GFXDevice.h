@@ -127,10 +127,7 @@ namespace Diotima
 
 		std::vector<std::unique_ptr<ShaderDeleteWrapper>> mPixelShaders;
 
-	// temp for testing will move after
 	private:
-		void SetupSceneStuff();
-
 		ID3D11Buffer* mSquareVertBuf;
 		ID3D11Buffer* mSquareIndexBuf;
 
