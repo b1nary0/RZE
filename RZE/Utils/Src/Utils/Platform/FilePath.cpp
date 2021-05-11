@@ -12,6 +12,11 @@ EDirectoryContext gDirectoryContext = EDirectoryContext::Runtime;
 
 FilePath::FilePath(const std::string& path)
 {
+	// #TODO
+	// This function should actually be a lot simpler, but I'd rather not 
+	// touch it until we have the concept of build structure (then all dev can be
+	// from the RZE/Assets folder instead of where the executable is).
+
 	char buffer[1024];
 	GetModuleFileNameA(NULL, buffer, 1024);
 	std::string execPath(buffer);
