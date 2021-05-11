@@ -18,8 +18,13 @@ namespace Diotima
 	// Prototypical for TexturePack first implementation
 	struct TextureData
 	{
-		int mWidth;
-		int mHeight;
+		struct TextureDataHeader
+		{
+			int mWidth;
+			int mHeight;
+		};
+
+		TextureDataHeader mHeader;
 		U8* mData;
 	};
 
