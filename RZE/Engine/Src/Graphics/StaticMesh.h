@@ -10,7 +10,7 @@ public:
 	StaticMesh();
 	~StaticMesh();
 
-	void Initialize(const std::vector<MeshGeometry>& meshGeometry);
+	void Initialize(const std::vector<MeshGeometry>&& meshGeometry);
 
 	const std::vector<MeshGeometry>& GetSubMeshes() const;
 

@@ -12,11 +12,13 @@ namespace Diotima
 
 		for (size_t index = 0; index < textureData.size(); ++index)
 		{
+			const TextureData& texture = textureData[index];
+
 			GFXTextureBufferParams params = { 0 };
 			params.bIsRenderTarget = true;
 			params.bIsShaderResource = true;
-			params.Height = textureData[index].mHeader.mHeight;
-			params.Width = textureData[index].mHeader.mWidth;
+			params.Height = texture.mHeader.mHeight;
+			params.Width = texture.mHeader.mWidth;
 			params.MipLevels = 0;
 			params.MostDetailedMip = 0;
 			params.SampleCount = 1;
@@ -30,7 +32,7 @@ namespace Diotima
 			// Should handle this sooner than later...
 			mResources.push_back(std::make_unique<DX11GFXTextureBuffer2D>());
 			mResources.back()->SetDevice(&hwDevice);
-			mResources.back()->Allocate(textureData[index].mData, params);
+			mResources.back()->Allocate(texture.mData, params);
 		}
 
 		return true;

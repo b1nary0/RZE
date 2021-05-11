@@ -12,7 +12,7 @@ StaticMesh::~StaticMesh()
 {
 }
 
-void StaticMesh::Initialize(const std::vector<MeshGeometry>& meshGeometry)
+void StaticMesh::Initialize(const std::vector<MeshGeometry>&& meshGeometry)
 {
 	mSubMeshes = std::move(meshGeometry);
 }

@@ -55,7 +55,7 @@ bool Model3D::Load(const FilePath& filePath)
 		return false;
 	}
 
-	mMesh.Initialize(meshGeometry);
+	mMesh.Initialize(std::move(meshGeometry));
 	return true;
 }
 
