@@ -167,6 +167,24 @@ namespace Diotima
 
 	private:
 		// #TODO
+		// Turn this into a command structure. Something like:
+		// UpdateRenderObject<UpdateTransformCommand>(renderObject);
+		// Where UpdateTransformCommand:
+		// 
+		// class UpdateTransformCommand : public RenderCommand
+		// {
+		// public:
+		//		UpdateTransformCommand(const RenderObject& renderObject, const Matrix4x4& transform);
+		// 		virtual void Execute();
+		// private:
+		//		RenderObject& renderObject;
+		// 		Matrix4x4 transform;
+		// };
+
+		void UpdateRenderObjectTransform_GPU(const RenderObject& renderObject);
+
+	private:
+		// #TODO
 		// Eventually needs to sort on key.
 		std::vector<RenderObject> mRenderObjects;
 		std::queue<U32> mFreeRenderObjectIndices;

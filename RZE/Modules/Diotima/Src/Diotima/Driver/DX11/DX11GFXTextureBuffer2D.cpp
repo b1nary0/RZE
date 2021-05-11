@@ -22,6 +22,8 @@ namespace Diotima
 		sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 		mDevice->GetHardwareDevice().CreateSamplerState(&sampDesc, &mSamplerState);
 
+		// #TODO
+		// lol get rid of this shit
 		if (params.bIsDepthTexture)
 		{
 			D3D11_TEXTURE2D_DESC textureDesc;

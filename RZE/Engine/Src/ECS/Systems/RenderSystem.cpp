@@ -231,13 +231,12 @@ void RenderSystem::CreateAndInitializeRenderNode(const Apollo::EntityID entityID
 		meshData.Indices = childNode.Geometry->GetIndexDataRaw();
 
 		meshData.Material.mProperties.Shininess = material.Shininess;
+
 		ShaderTechnique* const shader = RZE_Application::RZE().GetResourceHandler().GetResource<ShaderTechnique>(material.GetShaderResource());
 		AssertNotNull(shader);
-
 		meshData.Material.mShaderID = shader->GetHardwareID();
 
 		ResourceHandler& resourceHandler = RZE_Application::RZE().GetResourceHandler();
-
 		std::vector<Diotima::TextureData> textureData;
 		textureData.reserve(Material::TEXTURE_SLOT_COUNT);
 		for (size_t textureSlot = 0; textureSlot < Material::TEXTURE_SLOT_COUNT; ++textureSlot)
@@ -248,8 +247,8 @@ void RenderSystem::CreateAndInitializeRenderNode(const Apollo::EntityID entityID
 			if (texture != nullptr)
 			{
 				Diotima::TextureData data;
-				data.mWidth = static_cast<int>(texture->GetDimensions().X());
-				data.mHeight = static_cast<int>(texture->GetDimensions().Y());
+				data.mHeader.mWidth = static_cast<int>(texture->GetDimensions().X());
+				data.mHeader.mHeight = static_cast<int>(texture->GetDimensions().Y());
 				data.mData = texture->GetRawData();
 				textureData.emplace_back(std::move(data));
 			}

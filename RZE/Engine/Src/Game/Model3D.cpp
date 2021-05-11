@@ -203,15 +203,14 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 		}
 	}
 
+	// #TODO
+	// This is essentially stubbing code. More to prove out the support infrastructure.
 	AssertMsg(bHasDiffuse, "Unsupported without diffuse texture for the hopefully short time being");
 	const bool bFullShading = bHasDiffuse && bHasSpecular && bHasBump;
 
 	ResourceHandle shaderTechnique;
 	if (bFullShading)
 	{
-		// #TODO
-		// This is essentially stubbing code. Next pass should set an arbitrary shader based on 
-		// what data we have from the asset. Consider how we handle vertex shaders.
 		shaderTechnique = RZE_Application::RZE().GetResourceHandler().LoadResource<ShaderTechnique>(FilePath("Assets/Shaders/Pixel_NewRenderer.hlsl"));
 	}
 	else
