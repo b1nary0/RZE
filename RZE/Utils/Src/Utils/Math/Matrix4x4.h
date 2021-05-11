@@ -22,6 +22,7 @@ public:
 	void Scale(const Vector3D& scale);
 
 	Matrix4x4 Inverse() const;
+	Matrix4x4 Transpose() const;
 
 	const Vector3D GetPosition() const;
 	const Quaternion GetRotation() const;

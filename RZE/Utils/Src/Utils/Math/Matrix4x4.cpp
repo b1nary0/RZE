@@ -63,6 +63,11 @@ Matrix4x4 Matrix4x4::Inverse() const
 	return Matrix4x4(glm::inverse(mMat));
 }
 
+Matrix4x4 Matrix4x4::Transpose() const
+{
+	return Matrix4x4(glm::transpose(mMat));
+}
+
 const Vector3D Matrix4x4::GetPosition() const
 {
 	glm::vec3 scale;
