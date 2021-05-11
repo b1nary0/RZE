@@ -15,5 +15,6 @@ bool ShaderTechnique::Load(const FilePath& filePath)
 
 void ShaderTechnique::Release()
 {
-
+	// #TODO
+	// Write this function le-mao
 }
