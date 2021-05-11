@@ -15,8 +15,8 @@ namespace Diotima
 			GFXTextureBufferParams params = { 0 };
 			params.bIsRenderTarget = true;
 			params.bIsShaderResource = true;
-			params.Height = textureData[index].mHeight;
-			params.Width = textureData[index].mWidth;
+			params.Height = textureData[index].mHeader.mHeight;
+			params.Width = textureData[index].mHeader.mWidth;
 			params.MipLevels = 0;
 			params.MostDetailedMip = 0;
 			params.SampleCount = 1;
