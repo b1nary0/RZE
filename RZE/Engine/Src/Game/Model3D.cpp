@@ -205,17 +205,26 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 
 	// #TODO
 	// This is essentially stubbing code. More to prove out the support infrastructure.
-	AssertMsg(bHasDiffuse, "Unsupported without diffuse texture for the hopefully short time being");
+	//AssertMsg(bHasDiffuse, "Unsupported without diffuse texture for the hopefully short time being");
 	const bool bFullShading = bHasDiffuse && bHasSpecular && bHasBump;
 
 	ResourceHandle shaderTechnique;
 	if (bFullShading)
 	{
-		shaderTechnique = RZE_Application::RZE().GetResourceHandler().LoadResource<ShaderTechnique>(FilePath("Assets/Shaders/Pixel_NewRenderer.hlsl"));
+		shaderTechnique = RZE_Application::RZE().GetResourceHandler().LoadResource<ShaderTechnique>(FilePath("Assets/Shaders/Pixel_NewRenderer.hlsl"), "Pixel_NewRenderer");
 	}
-	else
+	else if (bHasDiffuse)
 	{
-		shaderTechnique = RZE_Application::RZE().GetResourceHandler().LoadResource<ShaderTechnique>(FilePath("Assets/Shaders/Pixel_NewRenderer_DiffuseOnly.hlsl"));
+		shaderTechnique = RZE_Application::RZE().GetResourceHandler().LoadResource<ShaderTechnique>(FilePath("Assets/Shaders/Pixel_NewRenderer_DiffuseOnly.hlsl"), "Pixel_NewRenderer_DiffuseOnly");
+	}
+
+	// #TODO
+	// If we have no diffuse/bump/specular use the default asf shader.
+	// This is an atrocious way to handle this but in lieu of a better system and more patience
+	// it will have to do for now. Lots of bugs here, not really thought out code.
+	if (!shaderTechnique.IsValid() && !bHasSpecular)
+	{
+		shaderTechnique = RZE_Application::RZE().GetResourceHandler().LoadResource<ShaderTechnique>(FilePath("Assets/Shaders/Pixel_Default_NewRenderer.hlsl"), "Pixel_Default_NewRenderer");
 	}
 
 	pMaterial->SetShaderTechnique(shaderTechnique);
