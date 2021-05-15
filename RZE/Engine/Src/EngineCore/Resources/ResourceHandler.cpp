@@ -122,7 +122,8 @@ ResourceHandle::~ResourceHandle()
 
 bool ResourceHandle::IsValid() const
 {
-	return !mResourceID.empty() && mResourceSource->IsValid();
+	return !mResourceID.empty() 
+		&& (mResourceSource != nullptr && mResourceSource->IsValid());
 }
 
 const std::string& ResourceHandle::GetID() const

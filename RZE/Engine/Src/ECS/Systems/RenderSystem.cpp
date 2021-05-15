@@ -108,6 +108,8 @@ void RenderSystem::RegisterForComponentNotifications()
 			// and fill it with the data required to properly render the mesh resource.
 			MeshComponent* const meshComponent = handler.GetComponent<MeshComponent>(entityID);
 			AssertNotNull(meshComponent);
+			AssertMsg(!meshComponent->Resource.IsValid(), 
+				"MeshComponent resource already loaded. RenderSystem should be the only code servicing MeshComponent resource loads");
 			TransformComponent* const rootTransformComponent = handler.GetComponent<TransformComponent>(entityID);
 			AssertNotNull(rootTransformComponent);
 
