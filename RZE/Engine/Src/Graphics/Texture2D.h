@@ -19,13 +19,7 @@ public:
 	struct TextureProperties
 	{
 		ETextureType Type;
-
 	};
-
-public:
-	static FilePath kDefaultDiffuseTexturePath;
-	static FilePath kDefaultSpecularTexturePath;
-	static FilePath kDefaultNormalTexturePath;
 
 public:
 	Texture2D() = delete;

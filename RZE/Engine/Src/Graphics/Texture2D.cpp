@@ -3,10 +3,6 @@
 
 #include <STB/stb_image.cpp>
 
-FilePath Texture2D::kDefaultDiffuseTexturePath = FilePath("Assets/2D/NOASSET_Texture.png");
-FilePath Texture2D::kDefaultSpecularTexturePath = FilePath("Assets/2D/NOASSET_TextureSpecular.png");
-FilePath Texture2D::kDefaultNormalTexturePath = FilePath("Assets/2D/NOASSET_TextureNormal.png");
-
 Texture2D::Texture2D(ETextureType textureType)
 	: IResource()
 	, mData(nullptr)
@@ -27,13 +23,10 @@ bool Texture2D::Load(const FilePath& filePath)
 	mData = stbi_load(filePath.GetAbsolutePath().c_str(), &mWidth, &mHeight, &mChannels, STBI_rgb_alpha);
 	if (mData == nullptr)
 	{
-		// #TODO
-		// Don't use default textures, use default shaders that don't require the data
-		// Default texture
-		mData = stbi_load(kDefaultDiffuseTexturePath.GetAbsolutePath().c_str(), &mWidth, &mHeight, &mChannels, STBI_rgb_alpha);
-		AssertNotNull(mData);
+		LOG_CONSOLE_ARGS("Loading texture from [%s] failed.", filePath.GetRelativePath());
+		AssertFalse();
 	}
-
+	
 	return mData != nullptr;
 }
 
