@@ -44,8 +44,7 @@ private:
 			AssertNotNull(mResource);
 			AssertExpr(mReferenceCount <= 0);
 
-			delete mResource;
-			mResource = nullptr;
+			InternalDestroy();
 		}
 
 	private:
