@@ -2,6 +2,11 @@
 
 #include <Graphics/Shader.h>
 
+ShaderTechnique::ShaderTechnique(const std::string& name)
+	: mName(name)
+{
+}
+
 bool ShaderTechnique::Load(const FilePath& filePath)
 {
 	if (filePath.IsValid())
