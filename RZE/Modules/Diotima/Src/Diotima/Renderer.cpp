@@ -54,7 +54,7 @@ namespace
 
 		void Initialize(Diotima::DX11GFXDevice* hwDevice)
 		{
-			mViewProjBuffer = hwDevice->CreateConstantBuffer(sizeof(Matrix4x4), 1);
+			mViewProjBuffer = hwDevice->CreateConstantBuffer(sizeof(Matrix4x4) * 2, 1);
 			mCameraDataBuffer = hwDevice->CreateConstantBuffer(MemoryUtils::AlignSize(sizeof(Vector3D), 16), 1);
 
 			// Shaders
@@ -379,7 +379,7 @@ namespace Diotima
 		renderObject.Transform = transform;
 		renderObject.VertexBuffer = CreateVertexBuffer((void*)meshData.Vertices.data(), sizeof(float), meshData.Vertices.size());
 		renderObject.IndexBuffer = CreateIndexBuffer((void*)meshData.Indices.data(), sizeof(U32), meshData.Indices.size());
-		renderObject.ConstantBuffer = mDevice->CreateConstantBuffer(sizeof(Matrix4x4), 1);
+		renderObject.ConstantBuffer = mDevice->CreateConstantBuffer(sizeof(Matrix4x4) * 2, 1);
 		renderObject.MaterialDataBuffer = mDevice->CreateConstantBuffer(MemoryUtils::AlignSize(sizeof(MaterialData::MaterialProperties), 16), 1);
 
 		{
@@ -389,17 +389,29 @@ namespace Diotima
 			renderObject.Material.mTexturePack->Allocate(*mDevice, textureData);
 		}
 
-		DX11GFXConstantBuffer* constBuf = mDevice->GetConstantBuffer(renderObject.ConstantBuffer);
-		constBuf->UpdateSubresources(renderObject.Transform.GetValuePtr());
+		UpdateRenderObjectTransform_GPU(renderObject);
 	}
 
 	void Renderer::UpdateRenderObject(U32 renderObjectHandle, const Matrix4x4& newTransform)
 	{
 		RenderObject& renderObject = mRenderObjects[renderObjectHandle];
 		renderObject.Transform = newTransform;
+		UpdateRenderObjectTransform_GPU(renderObject);
+	}
 
+	void Renderer::UpdateRenderObjectTransform_GPU(const RenderObject& renderObject)
+	{
 		DX11GFXConstantBuffer* constBuf = mDevice->GetConstantBuffer(renderObject.ConstantBuffer);
-		constBuf->UpdateSubresources(renderObject.Transform.GetValuePtr());
+		struct MatrixMem
+		{
+			Matrix4x4 world;
+			Matrix4x4 inverseWorld;
+		} matrixMem;
+
+		matrixMem.world = renderObject.Transform;
+		matrixMem.inverseWorld = renderObject.Transform.Inverse();
+
+		constBuf->UpdateSubresources(&matrixMem);
 	}
 
 	void Renderer::ProcessCommands()
