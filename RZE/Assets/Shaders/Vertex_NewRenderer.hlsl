@@ -23,19 +23,20 @@ cbuffer ViewProjectionBuf : register(b0)
 cbuffer ModelMatBuf : register(b1)
 {
 	matrix ModelView;
+	matrix InvModelView;
 };
 
 VS_OUT VSMain(VS_IN input) // main is the default function name
 {
 	VS_OUT output;
 	
-	float3 fragPos = mul(ModelView, float4(input.Position, 1.0f)).xyz;
+	matrix mvp = mul(ViewProj, ModelView);
 	
-	output.Position = mul(ViewProj, float4(fragPos, 1.0f));
-	output.FragPos = fragPos;
-	output.Normal = input.Normal;
-	output.UVCoords = input.UVCoords;
+	output.Position = mul(mvp, float4(input.Position, 1.0f));
+	output.FragPos = mul(ModelView, float4(input.Position, 1.0f)).xyz;;
+	output.Normal = normalize(mul(ModelView, input.Normal));
 	output.Tangent = mul(ModelView, float4(input.Tangent, 1.0f)).xyz;
+	output.UVCoords = input.UVCoords;
 	
     return output;
 }

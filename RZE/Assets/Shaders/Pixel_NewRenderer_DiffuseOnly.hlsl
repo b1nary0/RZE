@@ -33,7 +33,7 @@ SamplerState samplerState : register(s0);
 float4 PSMain(PS_IN input) : SV_TARGET
 {
 	float LightStrength_Temp = 10.0f;
-	float3 LightPos_Temp = float3(0.0f, 5.0f, -20.0f);
+	float3 LightPos_Temp = float3(-15.0f, 19.0f, 9.0f);
 	float3 LightColour_Temp = float3(1.0f, 1.0f, 1.0f);
 	float3 Ambient_Temp = float3(0.1f, 0.1f, 0.1f);
 	//float3 ObjectColour_Temp = float3(0.5f, 0.5f, 0.5f);
