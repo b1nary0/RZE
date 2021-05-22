@@ -80,7 +80,7 @@ public:
 	void ReleaseResource(ResourceHandle& resourceHandle);
 
 	template <class ResourceT>
-	ResourceT* GetResource(const ResourceHandle& resourceHandle);
+	const ResourceT* GetResource(const ResourceHandle& resourceHandle);
 
 private:
 	template <class ResourceT, class... Args>
@@ -148,7 +148,7 @@ ResourceHandle ResourceHandler::LoadResource(const FilePath& resourcePath, Args.
 }
 
 template <class ResourceT>
-ResourceT* ResourceHandler::GetResource(const ResourceHandle& resourceHandle)
+const ResourceT* ResourceHandler::GetResource(const ResourceHandle& resourceHandle)
 {
 	auto iter = mResourceTable.find(resourceHandle.GetID());
 	if (iter != mResourceTable.end())

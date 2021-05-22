@@ -117,7 +117,7 @@ void RenderSystem::RegisterForComponentNotifications()
 			AssertExpr(resource.IsValid());
 			meshComponent->Resource = resource;
 
-			Model3D* const modelData = resourceHandler.GetResource<Model3D>(resource);
+			const Model3D* const modelData = resourceHandler.GetResource<Model3D>(resource);
 			AssertNotNull(modelData);
 
 			CreateAndInitializeRenderNode(entityID, *modelData, rootTransformComponent->GetAsMat4x4());
@@ -234,7 +234,7 @@ void RenderSystem::CreateAndInitializeRenderNode(const Apollo::EntityID entityID
 
 		meshData.Material.mProperties.Shininess = material.Shininess;
 
-		ShaderTechnique* const shader = RZE_Application::RZE().GetResourceHandler().GetResource<ShaderTechnique>(material.GetShaderResource());
+		const ShaderTechnique* const shader = RZE_Application::RZE().GetResourceHandler().GetResource<ShaderTechnique>(material.GetShaderResource());
 		AssertNotNull(shader);
 		meshData.Material.mShaderID = shader->GetHardwareID();
 
@@ -245,7 +245,7 @@ void RenderSystem::CreateAndInitializeRenderNode(const Apollo::EntityID entityID
 		{
 			// #TODO We should really be writing code that can deal with permutations of valid textures.
 			// Likely via a shader infrastructure that can validate the data needed and pair with its materials etc
-			Texture2D* const texture = resourceHandler.GetResource<Texture2D>(material.GetTexture(textureSlot));
+			const Texture2D* const texture = resourceHandler.GetResource<Texture2D>(material.GetTexture(textureSlot));
 			if (texture != nullptr)
 			{
 				Diotima::TextureData data;
