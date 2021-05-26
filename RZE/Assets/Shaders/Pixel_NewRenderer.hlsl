@@ -39,7 +39,7 @@ float3 CalculateBumpNormal(float3 inNormal, float3 inTangent, float3 inBumpMapSa
 	float3 bumpMapNormal = (2.0f * inBumpMapSample) - 1.0f;
 	
 	float3x3 TBN = float3x3(tangent, biTangent, inNormal);
-	float3 newNormal = normalize(mul(TBN, bumpMapNormal));
+	float3 newNormal = normalize(mul(bumpMapNormal, TBN));
 	
 	return newNormal;
 }
@@ -49,7 +49,7 @@ float CalculateBlinnPhong(float3 viewDir, float3 lightDir, float3 normal)
 	float specular = 0.0f;
 	
 	 float3 halfDir = normalize(lightDir + viewDir);
-	 float specAngle = max(0.0f, dot(normal, halfDir));
+	 float specAngle = max(0.0f, dot(halfDir, normal));
 	 specular = pow(specAngle, MaterialData.Shininess);
 	
 	return specular;
@@ -58,7 +58,7 @@ float CalculateBlinnPhong(float3 viewDir, float3 lightDir, float3 normal)
 float4 PSMain(PS_IN input) : SV_TARGET
 {
 	float LightStrength_Temp = 10.0f;
-	float3 LightPos_Temp = float3(-15.0f, 19.0f, 9.0f);
+	float3 LightPos_Temp = float3(-15.0f, 19.0f, 15.0f);
 	float3 LightColour_Temp = float3(1.0f, 1.0f, 1.0f);
 	float3 Ambient_Temp = float3(0.1f, 0.1f, 0.1f);
 	//float3 ObjectColour_Temp = float3(0.5f, 0.5f, 0.5f);
@@ -75,15 +75,15 @@ float4 PSMain(PS_IN input) : SV_TARGET
 		float4 specularSample = textures[1].Sample(samplerState, input.UVCoords);
 		float4 bumpSample = textures[2].Sample(samplerState, input.UVCoords);
 		
-		float3 bumpNormal = input.Normal;//CalculateBumpNormal(input.Normal, input.Tangent, bumpSample.rgb);
+		float3 bumpNormal = CalculateBumpNormal(input.Normal, input.Tangent, bumpSample.rgb);
 		
 		float diffuse = max(dot(bumpNormal, lightDir), 0.0f);
 		float3 diffuseResult = saturate(diffuse * diffSample.rgb * LightColour_Temp);
 		
 		float specularValue = CalculateBlinnPhong(viewDir, lightDir, bumpNormal);
-		//float3 specularResult = saturate(specularSample.rgb * specularValue);
+		float3 specularResult = saturate(specularSample.rgb * specularValue * diffuseResult.rgb);
 		
-		shadingResult = (Ambient_Temp + diffuseResult /*+ specularResult*/);
+		shadingResult = (Ambient_Temp + diffuseResult + specularResult);
 	}
 	
 	

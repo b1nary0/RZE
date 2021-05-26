@@ -35,7 +35,7 @@ VS_OUT VSMain(VS_IN input) // main is the default function name
 	output.Position = mul(mvp, float4(input.Position, 1.0f));
 	output.FragPos = mul(ModelView, float4(input.Position, 1.0f)).xyz;;
 	output.Normal = normalize(mul(ModelView, input.Normal));
-	output.Tangent = mul(ModelView, float4(input.Tangent, 1.0f)).xyz;
+	output.Tangent = mul(InvModelView, float4(input.Tangent, 1.0f)).xyz;
 	output.UVCoords = input.UVCoords;
 	
     return output;
