@@ -216,6 +216,8 @@ void RenderSystem::GenerateCameraMatrices(CameraComponent& cameraComponent, cons
 
 void RenderSystem::CreateAndInitializeRenderNode(const Apollo::EntityID entityID, const Model3D& modelData, const Matrix4x4& transform)
 {
+	ResourceHandler& resourceHandler = RZE_Application::RZE().GetResourceHandler();
+
 	mRootNodes.emplace_back();
 	RenderNode& rootNode = mRootNodes.back();
 	rootNode.Transform = transform;
@@ -234,11 +236,10 @@ void RenderSystem::CreateAndInitializeRenderNode(const Apollo::EntityID entityID
 
 		meshData.Material.mProperties.Shininess = material.Shininess;
 
-		const ShaderTechnique* const shader = RZE_Application::RZE().GetResourceHandler().GetResource<ShaderTechnique>(material.GetShaderResource());
+		const ShaderTechnique* const shader = resourceHandler.GetResource<ShaderTechnique>(material.GetShaderResource());
 		AssertNotNull(shader);
 		meshData.Material.mShaderID = shader->GetHardwareID();
 
-		ResourceHandler& resourceHandler = RZE_Application::RZE().GetResourceHandler();
 		std::vector<Diotima::TextureData> textureData;
 		textureData.reserve(Material::TEXTURE_SLOT_COUNT);
 		for (size_t textureSlot = 0; textureSlot < Material::TEXTURE_SLOT_COUNT; ++textureSlot)
