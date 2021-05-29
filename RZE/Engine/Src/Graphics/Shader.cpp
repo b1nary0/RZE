@@ -2,6 +2,8 @@
 
 #include <Graphics/Shader.h>
 
+#include <Diotima/Renderer.h>
+
 ShaderTechnique::ShaderTechnique(const std::string& name)
 	: mName(name)
 {

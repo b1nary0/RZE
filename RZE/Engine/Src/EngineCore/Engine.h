@@ -15,8 +15,6 @@
 
 #include <Apollo/EntityHandler.h>
 
-#include <Diotima/LegacyRenderer.h>
-#include <Diotima/Renderer.h>
 
 
 class RZE_Application;
@@ -27,6 +25,11 @@ class Win32Window;
 namespace Apollo
 {
 	class EntityComponentSystem;
+}
+
+namespace Diotima
+{
+	class Renderer;
 }
 
 class RZE_Engine

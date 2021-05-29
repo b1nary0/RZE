@@ -3,6 +3,7 @@
 #include <deque>
 #include <string>
 #include <vector>
+#include <mutex>
 
 #include <Utils/Math/Vector3D.h>
 

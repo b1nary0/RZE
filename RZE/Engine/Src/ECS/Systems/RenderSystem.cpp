@@ -17,6 +17,8 @@
 #include <Graphics/Shader.h>
 #include <Graphics/Texture2D.h>
 
+#include <Diotima/Renderer.h>
+
 #include <Utils/Platform/FilePath.h>
 #include <Utils/Platform/Timers/HiResTimer.h>
 

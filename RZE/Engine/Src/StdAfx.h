@@ -12,6 +12,7 @@
 #include <locale.h>
 #include <string>
 #include <math.h>
+#include <limits>
 
 // std io
 #include <cstdio>
@@ -44,3 +45,11 @@
 #endif
 
 #include <imGUI/imgui.h>
+
+#ifdef min
+#undef min
+#endif
+
+#ifdef max
+#undef max
+#endif

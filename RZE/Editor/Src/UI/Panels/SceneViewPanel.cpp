@@ -2,6 +2,7 @@
 
 #include <EditorApp.h>
 
+#include <Diotima/Renderer.h>
 #include <Diotima/Driver/DX11/DX11GFXTextureBuffer2D.h>
 #include <Diotima/Graphics/RenderTarget.h>
 

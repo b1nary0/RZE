@@ -3,7 +3,7 @@
 
 #include <DebugUtils/DebugServices.h>
 
-#include <Diotima/LegacyRenderer.h>
+#include <Diotima/Renderer.h>
 #include <Diotima/Graphics/RenderTarget.h>
 
 #include <Windowing/Win32Window.h>

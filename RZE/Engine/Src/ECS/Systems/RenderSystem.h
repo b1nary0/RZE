@@ -2,6 +2,8 @@
 
 #include <Apollo/ECS/EntitySystem.h>
 
+#include <Utils/Math/Matrix4x4.h>
+
 struct CameraComponent;
 struct TransformComponent;
 
