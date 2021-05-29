@@ -124,7 +124,7 @@ namespace Diotima
 
 		deviceContext.OMSetRenderTargets(1, &mDevice->mRenderTargetView, mDevice->mDepthStencilView);
 
-		FLOAT rgba[4] = { 0.35f, 0.35f, 0.35f, 1.0f };
+		FLOAT rgba[4] = { 0.25f, 0.25f, 0.25f, 1.0f };
 		deviceContext.ClearDepthStencilView(mDevice->mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 		deviceContext.ClearRenderTargetView(mDevice->mRenderTargetView, rgba);
 
