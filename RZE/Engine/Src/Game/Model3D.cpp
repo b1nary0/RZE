@@ -217,15 +217,6 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 	{
 		shaderTechnique = RZE_Application::RZE().GetResourceHandler().LoadResource<ShaderTechnique>(FilePath("Assets/Shaders/Pixel_NewRenderer_DiffuseOnly.hlsl"), "Pixel_NewRenderer_DiffuseOnly");
 	}
-	else
-	{
-		// #NOTE
-		// This is more of a reminder to get to this whenever the need arises. When this assert fires, the work will be done.
-		// Hitting this code means you are in no-mans land when it comes to shader support. You're either diffuse + bump
-		// or bump + spec (wtf) - if we support this with future shader work and this never fires, great. 
-		// Otherwise, it will lay here until it's removed or it fires.
-		AssertFalse();
-	}
 
 	// #TODO
 	// If we have no diffuse/bump/specular use the default asf shader.
