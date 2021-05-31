@@ -47,7 +47,6 @@ namespace Diotima
 
 	};
 
-
 	// Essentially a direct copy starting at sizeof(GPUBufferData) into a constant buffer. 
 	struct MaterialData
 	{
@@ -68,23 +67,6 @@ namespace Diotima
 		MaterialData Material;
 	};
 
-	// Bundle of data that is necessary for each draw call.
-	// #TODO
-	// These will need to be wrapped or otherwise sorted properly by some higher-level design.
-	// This is simply the data for any item with geometry. When and how this data is used is determined
-	// elsewhere. The Int32 handles should be designed such that -1 means no data. 
-	// For now, each item will need a Vertex and Index buffer, but should be easily extensible
-	// to support other types of data construction or use.
-	struct RenderObject
-	{
-		Int32 VertexBuffer = -1;
-		Int32 IndexBuffer = -1;
-		Int32 ConstantBuffer = -1;
-		Int32 MaterialDataBuffer = -1;
-		MaterialData Material;
-		Matrix4x4 Transform;
-	};
-
 	// [newrenderer]
 	// Not permanent
 	struct CameraData
@@ -101,6 +83,24 @@ namespace Diotima
 
 	class Renderer
 	{
+	private:
+		// Bundle of data that is necessary for each draw call.
+		// #TODO
+		// These will need to be wrapped or otherwise sorted properly by some higher-level design.
+		// This is simply the data for any item with geometry. When and how this data is used is determined
+		// elsewhere. The Int32 handles should be designed such that -1 means no data. 
+		// For now, each item will need a Vertex and Index buffer, but should be easily extensible
+		// to support other types of data construction or use.
+		struct RenderObject
+		{
+			Int32 VertexBuffer = -1;
+			Int32 IndexBuffer = -1;
+			Int32 ConstantBuffer = -1;
+			Int32 MaterialDataBuffer = -1;
+			MaterialData Material;
+			Matrix4x4 Transform;
+		};
+
 		// Constructors
 	public:
 		Renderer();
