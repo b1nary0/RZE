@@ -73,17 +73,12 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 			OPTICK_EVENT("XForm Update");
 			// #TODO
 			// Gross... This is obviously not the way we should be doing this..
-			for (auto& rootNode : mRootNodes)
-			{
-				TransformComponent* const transformComponent = handler.GetComponent<TransformComponent>(rootNode.EntityID);
+			RenderSceneGraph::VisitorFunc updateRenderObject =
+			[this](U32 renderObjectIndex, const Matrix4x4& transform) {
+				mRenderer->UpdateRenderObject(renderObjectIndex, transform);
+			};
 
-				// rootnodes don't have a render object
-				rootNode.Transform = transformComponent->GetAsMat4x4();
-				for (auto& child : rootNode.Children)
-				{
-					mRenderer->UpdateRenderObject(child.RenderObjectIndex, rootNode.Transform);
-				}
-			}
+			mSceneGraph.ForEachNodeUpdate(updateRenderObject);
 		}
 	}
 }
@@ -220,21 +215,21 @@ void RenderSystem::CreateAndInitializeRenderNode(const Apollo::EntityID entityID
 {
 	ResourceHandler& resourceHandler = RZE_Application::RZE().GetResourceHandler();
 
-	mRootNodes.emplace_back();
-	RenderNode& rootNode = mRootNodes.back();
-	rootNode.Transform = transform;
-	rootNode.EntityID = entityID;
+	RenderSceneGraph::RenderNodeParms parms;
+	parms.EntityID = entityID;
+	parms.Transform = transform;
+	size_t rootIndex = mSceneGraph.AddRootNode(parms);
+
 	for (auto& meshGeometry : modelData.GetStaticMesh().GetSubMeshes())
 	{
+		// Reuse the parms each time
+		parms = {};
+
 		const Material& material = meshGeometry.GetMaterial();
-
-		rootNode.Children.emplace_back();
-		RenderNode& childNode = rootNode.Children.back();
-		childNode.Geometry = &meshGeometry;
-
+		
 		Diotima::MeshData meshData;
-		meshData.Vertices = childNode.Geometry->GetVertexDataRaw();
-		meshData.Indices = childNode.Geometry->GetIndexDataRaw();
+		meshData.Vertices = meshGeometry.GetVertexDataRaw();
+		meshData.Indices = meshGeometry.GetIndexDataRaw();
 
 		meshData.Material.mProperties.Shininess = material.Shininess;
 
@@ -259,6 +254,9 @@ void RenderSystem::CreateAndInitializeRenderNode(const Apollo::EntityID entityID
 			}
 		}
 
-		childNode.RenderObjectIndex = mRenderer->CreateRenderObject(meshData, textureData, rootNode.Transform);
+		parms.GeometryData = &meshGeometry;
+		parms.Transform = transform;
+		parms.RenderObjectIndex = mRenderer->CreateRenderObject(meshData, textureData, transform);
+		mSceneGraph.AddChildNode(rootIndex, parms);
 	}
 }

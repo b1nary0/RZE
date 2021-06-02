@@ -1,0 +1,28 @@
+RENDERSYSTEM:
+
+Scene Graph
+	Maintains scene graph state from relevant components being added/removed/modified
+	
+Bucketing
+	Grouping things together to form something like a pass - shadow casters, etc
+	This reflects a similar concept that the renderer should have wrt bucketing RenderObjects for passes, etc
+	
+Culling
+	Determining what contributes meaningfully to the viewport.
+	
+Renderer Communication
+	Requests from the renderer operations like 
+		Creating a RenderObject (allocates all required state and resources for GPU*)
+		Updating RenderObjects && RenderState (RenderState unimplemented**)
+		
+	Need to decide what approach to use for submitting draw calls to the renderer.
+		Something like Renderer::AddForDraw(objectID, bucketID, ...)
+	
+	
+	
+* Thinking on this we need a better way to define RenderObjects as they relate to the GPU resources/state 
+** RenderState may be a good way to manage the objects particular render state (blending, etc)
+
+Essentially, RenderSystem is what would conventially be considered a rendering engine. It will use composition to achieve its goal of preparing the render scene for its low level processing by the Renderer. This includes scene culling, render pass management and population, and more culminating in the submission of RenderCommands that determine the render state for the frame. 
+
+The Renderer is written with an intimate understanding of the hardware API. It is relied upon to organize and deliver draw calls to the GPU as fast as it can. It's sole job is to simply issue commands to the renderer in the most efficient way that it can, understanding the nuances of the hardware API to aid this goal.
