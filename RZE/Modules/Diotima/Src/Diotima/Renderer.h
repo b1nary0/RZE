@@ -140,8 +140,6 @@ namespace Diotima
 		void SetViewportSize(const Vector2D& newSize);
 		const Vector2D& GetViewportSize();
 
-		void ProcessCommands();
-
 		// #TODO
 		// private later
 		Int32 CreateVertexBuffer(void* data, size_t size, U32 count);
@@ -156,16 +154,18 @@ namespace Diotima
 			const MeshData& meshData, 
 			const std::vector<TextureData>& textureData, 
 			const Matrix4x4& transform);
-
-		void InitializeRenderObject(
-			RenderObject& renderObject, 
-			const MeshData& meshData, 
-			const std::vector<TextureData>& textureData, 
-			const Matrix4x4& transform);
 		
 		void UpdateRenderObject(U32 renderObjectHandle, const Matrix4x4& newTransform);
 
 	private:
+		void InitializeRenderObject(
+			RenderObject& renderObject,
+			const MeshData& meshData,
+			const std::vector<TextureData>& textureData,
+			const Matrix4x4& transform);
+
+		void ProcessCommands();
+
 		// #TODO
 		// Turn this into a command structure. Something like:
 		// UpdateRenderObject<UpdateTransformCommand>(renderObject);
