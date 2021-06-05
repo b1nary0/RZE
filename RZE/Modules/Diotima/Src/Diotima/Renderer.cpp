@@ -41,7 +41,14 @@ namespace
 	};
 	UINT numLayoutElements = ARRAYSIZE(k_vertLayout);
 
-	// [newrenderer]
+	// #TODO
+	// Temp struct just to move code.
+	struct CameraGPUData
+	{
+		Matrix4x4 ClipSpace;
+		Vector3D Position;
+	};
+
 	// Only used to test preliminary changes to how the renderer functions without
 	// having to write too much code that won't last
 	struct DrawStateData_Prototype
@@ -49,13 +56,15 @@ namespace
 		ID3D10Blob* mVSBlob = nullptr;
 		ID3D11VertexShader* mVertexShader = nullptr;
 		ID3D11InputLayout* mVertexLayout = nullptr;
-		Int32 mViewProjBuffer = -1;
 		Int32 mCameraDataBuffer = -1;
+
+		// #TODO
+		// Temp struct just to move code.
+		CameraGPUData mCameraGPUData;
 
 		void Initialize(Diotima::DX11GFXDevice* hwDevice)
 		{
-			mViewProjBuffer = hwDevice->CreateConstantBuffer(sizeof(Matrix4x4) * 2, 1);
-			mCameraDataBuffer = hwDevice->CreateConstantBuffer(MemoryUtils::AlignSize(sizeof(Vector3D), 16), 1);
+			mCameraDataBuffer = hwDevice->CreateConstantBuffer(MemoryUtils::AlignSize(sizeof(CameraGPUData), 16), 1);
 
 			// Shaders
 			{
@@ -116,10 +125,12 @@ namespace Diotima
 		deviceContext.RSSetState(mDevice->mRasterState);
 		deviceContext.VSSetShader(kDrawStateData.mVertexShader, 0, 0);
 		
-		Matrix4x4 camViewProjMat = mCameraData.ProjectionMat * mCameraData.ViewMat;
-		DX11GFXConstantBuffer* viewProjBuf = mDevice->GetConstantBuffer(kDrawStateData.mViewProjBuffer);
-		ID3D11Buffer* vpbHardwareBuf = &viewProjBuf->GetHardwareBuffer();
-		viewProjBuf->UpdateSubresources(&camViewProjMat);
+		kDrawStateData.mCameraGPUData.ClipSpace = mCameraData.ProjectionMat * mCameraData.ViewMat;
+		kDrawStateData.mCameraGPUData.Position = mCameraData.Position;
+
+		DX11GFXConstantBuffer* camDataBuf = mDevice->GetConstantBuffer(kDrawStateData.mCameraDataBuffer);
+		ID3D11Buffer* vpbHardwareBuf = &camDataBuf->GetHardwareBuffer();
+		camDataBuf->UpdateSubresources(&kDrawStateData.mCameraGPUData);
 		deviceContext.VSSetConstantBuffers(0, 1, &vpbHardwareBuf);
 
 		deviceContext.OMSetRenderTargets(1, &mDevice->mRenderTargetView, mDevice->mDepthStencilView);
@@ -158,7 +169,6 @@ namespace Diotima
 				// Should get resolved once the system matures
 				DX11GFXConstantBuffer* cameraDataBuf = mDevice->GetConstantBuffer(kDrawStateData.mCameraDataBuffer);
 				ID3D11Buffer* camDataHWbuf = &cameraDataBuf->GetHardwareBuffer();
-				cameraDataBuf->UpdateSubresources(&mCameraData.Position);
 				deviceContext.PSSetConstantBuffers(0, 1, &camDataHWbuf);
 			}
 

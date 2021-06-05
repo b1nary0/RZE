@@ -9,6 +9,7 @@ struct PS_IN
 
 struct CAMERA_INPUT_DATA
 {
+	matrix ClipSpace;
 	float3 Position;
 };
 

@@ -15,9 +15,15 @@ struct VS_OUT
 	float3 FragPos : POSITION;
 };
 
-cbuffer ViewProjectionBuf : register(b0)
+struct CAMERA_INPUT_DATA
 {
-	matrix ViewProj;
+	matrix ClipSpace;
+	float3 Position;
+};
+
+cbuffer CameraDataBuf : register(b0)
+{
+	CAMERA_INPUT_DATA CameraData;
 };
 
 cbuffer ModelMatBuf : register(b1)
@@ -30,7 +36,7 @@ VS_OUT VSMain(VS_IN input) // main is the default function name
 {
 	VS_OUT output;
 	
-	matrix mvp = mul(ViewProj, ModelView);
+	matrix mvp = mul(CameraData.ClipSpace, ModelView);
 	
 	output.Position = mul(mvp, float4(input.Position, 1.0f));
 	output.FragPos = mul(ModelView, float4(input.Position, 1.0f)).xyz;;
