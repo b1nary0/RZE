@@ -58,7 +58,7 @@ float CalculateBlinnPhong(float3 viewDir, float3 lightDir, float3 normal)
 float4 PSMain(PS_IN input) : SV_TARGET
 {
 	float LightStrength_Temp = 10.0f;
-	float minDiffuseFactor = 0.2f;
+	float minDiffuseFactor = 0.5f;
 	
 	float3 LightPos_Temp = float3(-15.0f, 19.0f, 15.0f);
 	float3 LightColour_Temp = float3(1.0f, 1.0f, 1.0f);
