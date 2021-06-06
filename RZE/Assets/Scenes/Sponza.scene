@@ -2,26 +2,11 @@
     "entities": {
         "Camera": {
             "components": {
-                "CameraComponent": {
-                    "FOV": 50.0,
-                    "NearCull": 0.10000000149011612,
-                    "FarCull": 1000.0,
-                    "Forward": [
-                        -0.9029576182365418,
-                        -0.34038811922073367,
-                        -0.26230406761169436
-                    ],
-                    "UpDir": [
-                        0.0,
-                        1.0,
-                        0.0
-                    ]
-                },
                 "TransformComponent": {
                     "Position": [
-                        5.109292030334473,
-                        3.336409568786621,
-                        1.0114034414291382
+                        -13.751141548156739,
+                        19.882986068725587,
+                        6.920830726623535
                     ],
                     "Scale": [
                         1.0,
@@ -33,20 +18,26 @@
                         0.0,
                         0.0
                     ]
+                },
+                "CameraComponent": {
+                    "FOV": 50.0,
+                    "NearCull": 0.10000000149011612,
+                    "FarCull": 1000.0,
+                    "Forward": [
+                        -0.8338330984115601,
+                        -0.5328844785690308,
+                        -0.14407140016555787
+                    ],
+                    "UpDir": [
+                        0.0,
+                        1.0,
+                        0.0
+                    ]
                 }
             }
         },
         "DirectionalLight": {
             "components": {
-                "LightSourceComponent": {
-                    "LightType": 0,
-                    "Color": [
-                        1.0,
-                        1.0,
-                        1.0
-                    ],
-                    "Strength": 0.25
-                },
                 "TransformComponent": {
                     "Position": [
                         0.3700000047683716,
@@ -63,14 +54,20 @@
                         0.0,
                         0.0
                     ]
+                },
+                "LightSourceComponent": {
+                    "LightType": 0,
+                    "Color": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "Strength": 0.25
                 }
             }
         },
         "Sponza": {
             "components": {
-                "MeshComponent": {
-                    "ResourcePath": "Assets/3D/Sponza/sponza.obj"
-                },
                 "TransformComponent": {
                     "Position": [
                         0.0,
@@ -78,15 +75,114 @@
                         0.0
                     ],
                     "Scale": [
-                        0.004999999888241291,
-                        0.004999999888241291,
-                        0.004999999888241291
+                        0.05000000074505806,
+                        0.05000000074505806,
+                        0.05000000074505806
                     ],
                     "Rotation": [
                         0.0,
                         0.0,
                         0.0
                     ]
+                },
+                "MeshComponent": {
+                    "ResourcePath": "Assets/3D/Sponza/sponza.obj"
+                }
+            }
+        },
+        "Nyra": {
+            "components": {
+                "TransformComponent": {
+                    "Position": [
+                        30.299999237060548,
+                        0.6050000190734863,
+                        0.375
+                    ],
+                    "Scale": [
+                        0.25,
+                        0.25,
+                        0.25
+                    ],
+                    "Rotation": [
+                        0.0,
+                        56.400001525878909,
+                        0.0
+                    ]
+                },
+                "MeshComponent": {
+                    "ResourcePath": "Assets/3D/Nyra/Nyra.obj"
+                }
+            }
+        },
+        "Nanosuit": {
+            "components": {
+                "TransformComponent": {
+                    "Position": [
+                        -19.43000030517578,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "Rotation": [
+                        0.0,
+                        -81.19999694824219,
+                        0.0
+                    ]
+                },
+                "MeshComponent": {
+                    "ResourcePath": "Assets/3D/Nanosuit/Nanosuit.obj"
+                }
+            }
+        },
+        "NeckMechWalker": {
+            "components": {
+                "TransformComponent": {
+                    "Position": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        1.5,
+                        1.5,
+                        1.5
+                    ],
+                    "Rotation": [
+                        0.0,
+                        -44.79999923706055,
+                        0.0
+                    ]
+                },
+                "MeshComponent": {
+                    "ResourcePath": "Assets/3D/NeckMechWalker/NeckMechWalker.obj"
+                }
+            }
+        },
+        "Tank": {
+            "components": {
+                "TransformComponent": {
+                    "Position": [
+                        -48.150001525878909,
+                        0.0,
+                        1.7799999713897706
+                    ],
+                    "Scale": [
+                        25.0,
+                        25.0,
+                        25.0
+                    ],
+                    "Rotation": [
+                        0.0,
+                        56.5,
+                        0.0
+                    ]
+                },
+                "MeshComponent": {
+                    "ResourcePath": "Assets/3D/Panzer/Panzer.obj"
                 }
             }
         }
