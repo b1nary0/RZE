@@ -198,5 +198,23 @@ namespace Diotima
 		Vector2D mViewportDimensions;
 
 		CameraData mCameraData;
+
+		//
+		// Buckets
+		//
+		// std::vector<DrawBucket> mBuckets;
+		//
+		// void Draw()
+		// {
+		//		for (const DrawBucket& bucket : mBuckets)
+		//		{
+		//			Draw bucket.RenderObject[i] with bucket.DrawState
+		//		}
+		// }
+		//
+		// BucketProxy* bucketProxy = Renderer::CreateBucket();
+		// bucketProxy->SetDrawState(someState);
+		// bucketProxy->AddRenderObjectThatPassedSomeCullingOperation(someObject);
+		// Renderer::SubmitBucket(bucketProxy); // We're done here, bucketProxy invalid now.
 	};
 }
