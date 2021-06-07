@@ -212,7 +212,7 @@ namespace Diotima
 		//		}
 		// }
 		//
-		// BucketProxy* bucketProxy = Renderer::CreateBucket();
+		// BucketProxy* bucketProxy = Renderer::StartBucket();
 		// bucketProxy->SetDrawState(someState);
 		// bucketProxy->AddRenderObjectThatPassedSomeCullingOperation(someObject);
 		// Renderer::SubmitBucket(bucketProxy); // We're done here, bucketProxy invalid now.
