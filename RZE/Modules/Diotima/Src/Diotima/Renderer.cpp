@@ -163,24 +163,52 @@ namespace Diotima
 			ID3D11PixelShader* const hwShader = mDevice->GetPixelShader(renderObject.Material.mShaderID);
 			deviceContext.PSSetShader(hwShader, 0, 0);
 
+			//
+			// Shader State
 			{
-				// #TODO
-				// This is god awful. Just in place while developing shader model.
-				// Should get resolved once the system matures
-				DX11GFXConstantBuffer* cameraDataBuf = mDevice->GetConstantBuffer(kDrawStateData.mCameraDataBuffer);
-				ID3D11Buffer* camDataHWbuf = &cameraDataBuf->GetHardwareBuffer();
-				deviceContext.PSSetConstantBuffers(0, 1, &camDataHWbuf);
-			}
+				{
+					// #TODO
+					// This is god awful. Just in place while developing shader model.
+					// Should get resolved once the system matures
+					DX11GFXConstantBuffer* cameraDataBuf = mDevice->GetConstantBuffer(kDrawStateData.mCameraDataBuffer);
+					ID3D11Buffer* camDataHWbuf = &cameraDataBuf->GetHardwareBuffer();
+					deviceContext.PSSetConstantBuffers(0, 1, &camDataHWbuf);
+				}
 
-			// World Matrix
-			{
-				DX11GFXConstantBuffer* modelMatBuf = mDevice->GetConstantBuffer(renderObject.ConstantBuffer);
-				ID3D11Buffer* hwModelMatBuf = &modelMatBuf->GetHardwareBuffer();
-				deviceContext.VSSetConstantBuffers(1, 1, &hwModelMatBuf);
-			}
+				// World Matrix
+				{
+					DX11GFXConstantBuffer* modelMatBuf = mDevice->GetConstantBuffer(renderObject.ConstantBuffer);
+					ID3D11Buffer* hwModelMatBuf = &modelMatBuf->GetHardwareBuffer();
+					deviceContext.VSSetConstantBuffers(1, 1, &hwModelMatBuf);
+				}
 
-			// Vertex buffer
+				// Material buffer
+				{
+					DX11GFXConstantBuffer* materialBuffer = mDevice->GetConstantBuffer(renderObject.MaterialDataBuffer);
+					ID3D11Buffer* matHWbuf = &materialBuffer->GetHardwareBuffer();
+					materialBuffer->UpdateSubresources(&renderObject.Material.mProperties);
+					deviceContext.PSSetConstantBuffers(1, 1, &matHWbuf);
+				}
+				// Textures
+				{
+					// #TODO
+					// Move the sampler state elsewhere so we're not bound to an individual texture resource for it...
+					if (renderObject.Material.mTexturePack->GetResourceCount() > 0)
+					{
+						DX11GFXTextureBuffer2D* const textureBuf = renderObject.Material.mTexturePack->GetResourceAt(0);
+						ID3D11SamplerState* const samplerState = &textureBuf->GetSamplerState();
+
+						std::vector<ID3D11ShaderResourceView*> resourceViews = renderObject.Material.mTexturePack->GetAsGPUTextureArray();
+						deviceContext.PSSetShaderResources(0, resourceViews.size(), resourceViews.data());
+						deviceContext.PSSetSamplers(0, 1, &samplerState);
+					}
+				}
+			}
+			
+			//
+			// Mesh Data
 			{
+				// Vertex buffer
 				struct TempDataLayoutStructure
 				{
 					Vector3D position;
@@ -193,27 +221,6 @@ namespace Diotima
 
 				ID3D11Buffer* vertBuf = &mDevice->GetVertexBuffer(renderObject.VertexBuffer)->GetHardwareBuffer();
 				mDevice->GetDeviceContext().IASetVertexBuffers(0, 1, &vertBuf, &stride, &offset);
-			}
-			// Material buffer
-			{
-				DX11GFXConstantBuffer* materialBuffer = mDevice->GetConstantBuffer(renderObject.MaterialDataBuffer);
-				ID3D11Buffer* matHWbuf = &materialBuffer->GetHardwareBuffer();
-				materialBuffer->UpdateSubresources(&renderObject.Material.mProperties);
-				deviceContext.PSSetConstantBuffers(1, 1, &matHWbuf);
-			}
-			// Textures
-			{
-				// #TODO
-				// Move the sampler state elsewhere so we're not bound to an individual texture resource for it...
-				if (renderObject.Material.mTexturePack->GetResourceCount() > 0)
-				{
-					DX11GFXTextureBuffer2D* const textureBuf = renderObject.Material.mTexturePack->GetResourceAt(0);
-					ID3D11SamplerState* const samplerState = &textureBuf->GetSamplerState();
-
-					std::vector<ID3D11ShaderResourceView*> resourceViews = renderObject.Material.mTexturePack->GetAsGPUTextureArray();
-					deviceContext.PSSetShaderResources(0, resourceViews.size(), resourceViews.data());
-					deviceContext.PSSetSamplers(0, 1, &samplerState);
-				}
 			}
 
 			// Index buffer
