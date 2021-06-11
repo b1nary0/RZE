@@ -14,11 +14,6 @@
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Platform/FilePath.h>
 
-struct ID3D11InputLayout;
-struct ID3D10Blob;
-struct ID3D11VertexShader;
-struct ID3D11PixelShader;
-
 namespace Diotima
 {
 	// #DESIGN
