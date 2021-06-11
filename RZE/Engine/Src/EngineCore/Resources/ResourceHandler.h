@@ -116,7 +116,7 @@ private:
 	ResourceHandle(const std::string& resourceID, ResourceHandler::ResourceSource* resourceSource, ResourceHandler* handler);
 
 	ResourceHandler* mHandler;
-	std::string mResourceID;
+	std::string mResourceID; // #TODO Turn this into a hash
 	ResourceHandler::ResourceSource* mResourceSource;
 };
 
