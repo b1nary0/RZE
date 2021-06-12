@@ -21,8 +21,6 @@ struct ID3D11InputLayout;
 struct ID3D11DepthStencilView;
 struct ID3D11Texture2D;
 
-class Vector2D;
-
 namespace Diotima
 {
 	class DX11GFXVertexBuffer;
@@ -90,7 +88,7 @@ namespace Diotima
 		void SendTextureToBackBuffer(DX11GFXTextureBuffer2D* texture);
 
 	public:
-		void HandleWindowResize(const Vector2D& newSize);
+		void HandleWindowResize(U32 newWidth, U32 newHeight);
 
 	// Temp access, these will move somewhere else.
 	public:

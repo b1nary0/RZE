@@ -79,7 +79,19 @@ namespace Diotima
 		swapChainDesc.Windowed = true;
 		swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 
-		hr = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, D3D11_CREATE_DEVICE_DEBUG, NULL, NULL, D3D11_SDK_VERSION, &swapChainDesc, &mSwapChain, &mDevice, NULL, &mDeviceContext);
+		hr = D3D11CreateDeviceAndSwapChain(
+			NULL, 
+			D3D_DRIVER_TYPE_HARDWARE, 
+			NULL, 
+			D3D11_CREATE_DEVICE_DEBUG, 
+			NULL, 
+			NULL, 
+			D3D11_SDK_VERSION, 
+			&swapChainDesc, 
+			&mSwapChain, 
+			&mDevice, 
+			NULL, 
+			&mDeviceContext);
 		AssertExpr(hr == S_OK);
 		
 		ID3D11Texture2D* backBufferTexture;
@@ -91,7 +103,7 @@ namespace Diotima
 
 		backBufferTexture->Release();
 
-		mDeviceContext->OMSetRenderTargets(1, &mRenderTargetView, NULL);
+		//mDeviceContext->OMSetRenderTargets(1, &mRenderTargetView, NULL);
 
 		// DepthStencil
 		{
@@ -326,13 +338,10 @@ namespace Diotima
 		mDeviceContext->PSSetShaderResources(0, 1, pSRV);
 	}
 
-	void DX11GFXDevice::HandleWindowResize(const Vector2D& newSize)
+	void DX11GFXDevice::HandleWindowResize(U32 newWidth, U32 newHeight)
 	{
 		GetDeviceContext().OMSetRenderTargets(0, 0, 0);
 		mRenderTargetView->Release();
-
-		UINT newWidth = static_cast<UINT>(newSize.X());
-		UINT newHeight = static_cast<UINT>(newSize.Y());
 
 		HRESULT hr = mSwapChain->ResizeBuffers(0, newWidth, newHeight, DXGI_FORMAT_UNKNOWN, 0);
 

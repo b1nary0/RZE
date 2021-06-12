@@ -321,7 +321,7 @@ namespace Diotima
 		ImGui::GetIO().DisplaySize.x = static_cast<float>(mCanvasSize.X());
 		ImGui::GetIO().DisplaySize.y = static_cast<float>(mCanvasSize.Y());
 
-		mDevice->HandleWindowResize(newSize);
+		mDevice->HandleWindowResize(static_cast<U32>(newSize.X()), static_cast<U32>(newSize.Y()));
 
 		LOG_CONSOLE_ARGS("New Canvas Size: %f x %f", mCanvasSize.X(), mCanvasSize.Y());
 	}
