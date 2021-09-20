@@ -26,6 +26,8 @@ namespace Diotima
 		// lol get rid of this shit
 		if (params.bIsDepthTexture)
 		{
+			bIsDepthTexture = true;
+
 			D3D11_TEXTURE2D_DESC textureDesc;
 			ZeroMemory(&textureDesc, sizeof(textureDesc));
 
@@ -121,13 +123,26 @@ namespace Diotima
 	{
 		AssertNotNull(mResource);
 		AssertNotNull(mSRV);
-		AssertNotNull(mRTV);
 		AssertNotNull(mSamplerState);
+		
+		// #TODO
+		// The if (!bIsDepthTexture)'s in this function are a result of an infrastructure
+		// that is essentially DX11GFXTextureBuffer2D. Because we don't need a RTV
+		// for a depth texture, we won't have anything allocated here. This should be 
+		// handled by subclassing different types of texture buffer uses (or something)
+		if (!bIsDepthTexture)
+		{
+			AssertNotNull(mRTV);
+		}
 
 		mResource->Release();
 		mSRV->Release();
-		mRTV->Release();
 		mSamplerState->Release();
+
+		if (!bIsDepthTexture)
+		{
+			mRTV->Release();
+		}
 	}
 
 	void DX11GFXTextureBuffer2D::SetIsRenderTarget()
@@ -163,6 +178,11 @@ namespace Diotima
 	{
 		AssertNotNull(mSamplerState);
 		return *mSamplerState;
+	}
+
+	ID3D11Texture2D* DX11GFXTextureBuffer2D::GetHWResource()
+	{
+		return mResource;
 	}
 
 }

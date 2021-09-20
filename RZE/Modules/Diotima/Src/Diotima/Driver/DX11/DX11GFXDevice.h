@@ -87,6 +87,8 @@ namespace Diotima
 		void SetSyncInterval(U32 interval);
 		void SendTextureToBackBuffer(DX11GFXTextureBuffer2D* texture);
 
+		void SetRenderTarget(ID3D11Texture2D* texture);
+
 	public:
 		void HandleWindowResize(U32 newWidth, U32 newHeight);
 

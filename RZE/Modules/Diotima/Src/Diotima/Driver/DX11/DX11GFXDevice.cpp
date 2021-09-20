@@ -338,6 +338,15 @@ namespace Diotima
 		mDeviceContext->PSSetShaderResources(0, 1, pSRV);
 	}
 
+	void DX11GFXDevice::SetRenderTarget(ID3D11Texture2D* texture)
+	{
+		AssertFalse();
+		// #TODO
+		// This is big bug. Not disposing of old resources. Commenting for now
+		// and asserting if this function is called.
+		//HRESULT hr = mDevice->CreateRenderTargetView(texture, NULL, &mRenderTargetView);
+	}
+
 	void DX11GFXDevice::HandleWindowResize(U32 newWidth, U32 newHeight)
 	{
 		GetDeviceContext().OMSetRenderTargets(0, 0, 0);

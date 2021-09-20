@@ -34,6 +34,11 @@ namespace Diotima
 		ID3D11DepthStencilView& GetDepthView();
 		ID3D11SamplerState& GetSamplerState();
 
+		// #TODO
+		// This is probably causing an API naming consistency apocolypse but I think
+		// This Is The Way.
+		ID3D11Texture2D* GetHWResource();
+
 	private:
 		DX11GFXDevice* mDevice;
 
@@ -44,7 +49,8 @@ namespace Diotima
 		ID3D11RenderTargetView* mRTV;
 		ID3D11DepthStencilView* mDSV;
 
-		bool bIsRenderTarget;
+		bool bIsRenderTarget { false };
+		bool bIsDepthTexture { false };
 	};
 
 }

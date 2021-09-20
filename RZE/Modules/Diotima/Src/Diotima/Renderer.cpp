@@ -41,6 +41,8 @@ namespace
 	};
 	UINT numLayoutElements = ARRAYSIZE(k_vertLayout);
 
+	FLOAT rgba[4] = { 0.25f, 0.25f, 0.25f, 1.0f };
+
 	// #TODO
 	// Temp struct just to move code.
 	struct CameraGPUData
@@ -138,11 +140,23 @@ namespace Diotima
 		// then just copy that texture into the backbuffer? The editor needs to become functional again
 		// so we need a way to say "draw the scene to this texture of this resolution" and then have imgui
 		// use the actual backbuffer (mDevice->mRenderTargetView) - and a good way to signal this to the underlying systems
-		deviceContext.OMSetRenderTargets(1, &mDevice->mRenderTargetView, mDevice->mDepthStencilView);
+		ID3D11RenderTargetView* targetViews[1] = { nullptr };
+		ID3D11DepthStencilView* targetDepthView = nullptr;
+		if (mRenderTarget != nullptr)
+		{
+			targetViews[0] = { &mRenderTarget->GetGFXTexture().GetTargetView() };
+			targetDepthView = &mRenderTarget->GetDepthTexture().GetDepthView();
+		}
+		else
+		{
+			targetViews[0] = { mDevice->mRenderTargetView };
+			targetDepthView = mDevice->mDepthStencilView;
+		}
 
-		FLOAT rgba[4] = { 0.25f, 0.25f, 0.25f, 1.0f };
-		deviceContext.ClearDepthStencilView(mDevice->mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-		deviceContext.ClearRenderTargetView(mDevice->mRenderTargetView, rgba);
+		deviceContext.OMSetRenderTargets(1, targetViews, targetDepthView);
+
+		deviceContext.ClearRenderTargetView(targetViews[0], rgba);
+		deviceContext.ClearDepthStencilView(targetDepthView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 		D3D11_VIEWPORT viewport;
 		viewport.Width = GetCanvasSize().X();
@@ -233,6 +247,16 @@ namespace Diotima
 			mDevice->GetDeviceContext().IASetIndexBuffer(&indexBuf->GetHardwareBuffer(), DXGI_FORMAT_R32_UINT, 0);
 
 			deviceContext.DrawIndexed(indexBuf->GetIndexCount(), 0, 0);
+		}
+
+		// #TODO
+		// Have a better place for this. Kind of hidden at the end of Draw() here
+		if (mRenderTarget != nullptr)
+		{
+			deviceContext.OMSetRenderTargets(1, &mDevice->mRenderTargetView, mDevice->mDepthStencilView);
+
+			deviceContext.ClearRenderTargetView(mDevice->mRenderTargetView, rgba);
+			deviceContext.ClearDepthStencilView(mDevice->mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 		}
 	}
 
@@ -336,6 +360,15 @@ namespace Diotima
 	const Vector2D& Renderer::GetViewportSize()
 	{
 		return mViewportDimensions;
+	}
+
+	void Renderer::SetRenderTarget(RenderTargetTexture* renderTarget)
+	{
+		//#TODO_CRITICAL
+		// Dont initialize here... just did this for ease of access to the device for PoC
+		renderTarget->Initialize(mDevice.get());
+
+		mRenderTarget = renderTarget;
 	}
 
 	Int32 Renderer::CreateVertexBuffer(void* data, size_t size, U32 count)

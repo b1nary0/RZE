@@ -4,6 +4,7 @@
 
 // Needed for call to RZE().GetRenderer().GetDriverDevice()
 // Should remove ASAP.
+#include <Diotima/Renderer.h>
 #include <Diotima/Driver/DX11/DX11GFXDevice.h>
 #include <Diotima/Graphics/RenderTarget.h>
 
@@ -56,6 +57,9 @@ namespace Editor
 
 		const Vector2D& windowDims = GetWindow()->GetDimensions();
 		mRenderTarget = std::make_unique<Diotima::RenderTargetTexture>(static_cast<U32>(windowDims.X()), static_cast<U32>(windowDims.Y()));
+		// First pass:
+		// Renderer::SetRenderTarget here which will override target in renderer, specifically the device directly.
+		RZE().GetRenderer().SetRenderTarget(mRenderTarget.get());
 
 		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 		ImGui::GetIO().KeyRepeatDelay = 0.5f;

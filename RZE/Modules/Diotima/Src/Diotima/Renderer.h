@@ -135,6 +135,8 @@ namespace Diotima
 		void SetViewportSize(const Vector2D& newSize);
 		const Vector2D& GetViewportSize();
 
+		void SetRenderTarget(RenderTargetTexture* renderTarget);
+
 		// #TODO
 		// private later
 		Int32 CreateVertexBuffer(void* data, size_t size, U32 count);

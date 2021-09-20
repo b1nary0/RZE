@@ -41,6 +41,11 @@ public:
 	void AddChildNode(size_t parentIndex, const RenderNodeParms& parms);
 
 	// #TODO
+	// Not implementing these functions has broken deleting entities (and maybe more?)
+	// Implement ASAP
+	void RemoveNode();
+
+	// #TODO
 	// This function needs to die almost immediately. This is entirely a workaround
 	// to easily and simply keep things working while decoupling as much as possible.
 	// Turns out, needs more thought. I'm this far already with no time so just contriving
