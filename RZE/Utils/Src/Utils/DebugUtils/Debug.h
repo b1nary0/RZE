@@ -6,7 +6,7 @@
 #include <Utils/StringUtils.h>
 #include <Utils/Platform/Timers/HiResTimer.h>
 
-#if DEBUG == 1
+#ifdef _DEBUG
 
 #define AssertFalse() assert(false);
 #define AssertEqual(Value1, Value2) assert(Value1 == Value2);

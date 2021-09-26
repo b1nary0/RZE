@@ -187,6 +187,8 @@ void RZE_Engine::CreateAndInitializeWindow()
 
 void RZE_Engine::CreateAndInitializeRenderer()
 {
+	LOG_CONSOLE("Initializing Renderer");
+
 	mRenderer = new Diotima::Renderer();
 	mRenderer->SetWindow(mMainWindow->GetOSWindowHandleData().windowHandle);
 	mRenderer->Initialize();

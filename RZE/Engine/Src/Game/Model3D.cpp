@@ -154,6 +154,12 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 			mat->GetTexture(aiTextureType_DIFFUSE, i, &str);
 
 			FilePath texturePath = GetTextureFilePath(str.C_Str());
+
+			// #TODO
+			// Should really shorthand these long lines by doing the following at the top somewhere for all the callsites to use
+			// ResourceHandler& resourceHandler = RZE_Application::RZE().GetResourceHandler();
+			// resourceHandler.LoadResource<...>
+			// but should do it as a larger effort instead of sprinkled efforts
 			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().LoadResource<Texture2D>(texturePath, Texture2D::ETextureType::Diffuse);
 			if (textureHandle.IsValid())
 			{
