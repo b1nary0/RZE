@@ -135,11 +135,6 @@ namespace Diotima
 		camDataBuf->UpdateSubresources(&kDrawStateData.mCameraGPUData);
 		deviceContext.VSSetConstantBuffers(0, 1, &vpbHardwareBuf);
 
-		// #TODO
-		// We want to dynamically set the render target so we can use a framebuffer to draw to a texture
-		// then just copy that texture into the backbuffer? The editor needs to become functional again
-		// so we need a way to say "draw the scene to this texture of this resolution" and then have imgui
-		// use the actual backbuffer (mDevice->mRenderTargetView) - and a good way to signal this to the underlying systems
 		ID3D11RenderTargetView* targetViews[1] = { nullptr };
 		ID3D11DepthStencilView* targetDepthView = nullptr;
 		if (mRenderTarget != nullptr)
