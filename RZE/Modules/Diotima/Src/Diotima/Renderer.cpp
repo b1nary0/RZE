@@ -135,6 +135,7 @@ namespace Diotima
 		camDataBuf->UpdateSubresources(&kDrawStateData.mCameraGPUData);
 		deviceContext.VSSetConstantBuffers(0, 1, &vpbHardwareBuf);
 
+		// This is early code supporting a single proxy render target.
 		ID3D11RenderTargetView* targetViews[1] = { nullptr };
 		ID3D11DepthStencilView* targetDepthView = nullptr;
 		if (mRenderTarget != nullptr)
@@ -246,6 +247,7 @@ namespace Diotima
 
 		// #TODO
 		// Have a better place for this. Kind of hidden at the end of Draw() here
+		// This is early code supporting a single proxy render target.
 		if (mRenderTarget != nullptr)
 		{
 			deviceContext.OMSetRenderTargets(1, &mDevice->mRenderTargetView, mDevice->mDepthStencilView);
