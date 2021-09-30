@@ -210,11 +210,11 @@ namespace Diotima
 				}
 				// Textures
 				{
-					// #TODO
-					// Move the sampler state elsewhere so we're not bound to an individual texture resource for it...
 					if (renderObject.Material.mTexturePack->GetResourceCount() > 0)
 					{
 						DX11GFXTextureBuffer2D* const textureBuf = renderObject.Material.mTexturePack->GetResourceAt(0);
+						// #TODO
+						// Move the sampler state elsewhere so we're not bound to an individual texture resource for it...
 						ID3D11SamplerState* const samplerState = &textureBuf->GetSamplerState();
 
 						std::vector<ID3D11ShaderResourceView*> resourceViews = renderObject.Material.mTexturePack->GetAsGPUTextureArray();
