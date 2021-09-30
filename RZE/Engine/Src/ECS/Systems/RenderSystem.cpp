@@ -251,6 +251,7 @@ void RenderSystem::CreateAndInitializeRenderNode(const Apollo::EntityID entityID
 			if (texture != nullptr)
 			{
 				Diotima::TextureData data;
+				// Can solve this problem with a Vector2D(int) maybe?
 				data.mHeader.mWidth = static_cast<int>(texture->GetDimensions().X());
 				data.mHeader.mHeight = static_cast<int>(texture->GetDimensions().Y());
 				data.mData = texture->GetRawData();
