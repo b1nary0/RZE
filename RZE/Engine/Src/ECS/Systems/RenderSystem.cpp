@@ -104,6 +104,10 @@ void RenderSystem::RegisterForComponentNotifications()
 			// We've detected a MeshComponent was created. Create a render object
 			// and fill it with the data required to properly render the mesh resource.
 			MeshComponent* const meshComponent = handler.GetComponent<MeshComponent>(entityID);
+
+			// #TODO
+			// Places like these don't need to assert. GetComponent should be (is) verifying via assert.
+			// If that rule every changes just fix the callsites then. Extraneous code.
 			AssertNotNull(meshComponent);
 			AssertMsg(!meshComponent->Resource.IsValid(), 
 				"MeshComponent resource already loaded. RenderSystem should be the only code servicing MeshComponent resource loads");
