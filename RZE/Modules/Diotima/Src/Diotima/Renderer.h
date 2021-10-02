@@ -213,5 +213,6 @@ namespace Diotima
 		// bucketProxy->SetDrawState(someState);
 		// bucketProxy->AddRenderObjectThatPassedSomeCullingOperation(someObject);
 		// Renderer::SubmitBucket(bucketProxy); // We're done here, bucketProxy invalid now.
+		// ^^^^^ This looks like it should be some reference-type structure/architecture
 	};
 }
