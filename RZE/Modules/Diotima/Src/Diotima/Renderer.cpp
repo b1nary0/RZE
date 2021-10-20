@@ -140,7 +140,7 @@ namespace Diotima
 		ID3D11DepthStencilView* targetDepthView = nullptr;
 		if (mRenderTarget != nullptr)
 		{
-			targetViews[0] = { &mRenderTarget->GetGFXTexture().GetTargetView() };
+			targetViews[0] = &mRenderTarget->GetGFXTexture().GetTargetView();
 			targetDepthView = &mRenderTarget->GetDepthTexture().GetDepthView();
 		}
 		else
