@@ -103,14 +103,7 @@ namespace Diotima
 
 		// [newrenderer]
 	public:
-		void SetCameraData(
-			const Vector3D& position,
-			const Matrix4x4& projectionMat,
-			const Matrix4x4& viewMat,
-			float FOV,
-			float aspectRatio,
-			float nearCull,
-			float farCull);
+		void SetCameraData(const CameraData& cameraData);
 
 	private:
 		void PrepareDrawState();

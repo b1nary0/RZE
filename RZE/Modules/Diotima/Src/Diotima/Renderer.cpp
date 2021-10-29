@@ -257,23 +257,9 @@ namespace Diotima
 		}
 	}
 
-	void Renderer::SetCameraData(
-		const Vector3D& position, 
-		const Matrix4x4& projectionMat, 
-		const Matrix4x4& viewMat, 
-		float FOV, 
-		float aspectRatio, 
-		float nearCull, 
-		float farCull)
+	void Renderer::SetCameraData(const CameraData& cameraData)
 	{
-		// lol gross
-		mCameraData.Position = position;
-		mCameraData.ProjectionMat = projectionMat;
-		mCameraData.ViewMat = viewMat;
-		mCameraData.FOV = FOV;
-		mCameraData.AspectRatio = aspectRatio;
-		mCameraData.NearCull = nearCull;
-		mCameraData.FarCull = farCull;
+		mCameraData = cameraData;
 	}
 
 	void Renderer::Initialize()

@@ -58,14 +58,16 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 
 			GenerateCameraMatrices(*camComp, *transfComp);
 
-			mRenderer->SetCameraData(
-				transfComp->Position,
-				camComp->ProjectionMat,
-				camComp->ViewMat,
-				camComp->FOV,
-				camComp->AspectRatio,
-				camComp->NearCull,
-				camComp->FarCull);
+			Diotima::CameraData cameraData;
+			cameraData.Position = transfComp->Position;
+			cameraData.ProjectionMat = camComp->ProjectionMat;
+			cameraData.ViewMat = camComp->ViewMat;
+			cameraData.FOV = camComp->FOV;
+			cameraData.AspectRatio = camComp->AspectRatio;
+			cameraData.NearCull = camComp->NearCull;
+			cameraData.FarCull = camComp->FarCull;
+
+			mRenderer->SetCameraData(cameraData);
 		}
 
 		/* XFORM UPDATE */
