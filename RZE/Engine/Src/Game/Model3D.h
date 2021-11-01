@@ -1,8 +1,5 @@
 #pragma once
 
-// #TODO
-// Move Model3D.h/cpp out of Game/
-
 #include <memory.h>
 #include <string>
 

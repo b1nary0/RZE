@@ -1,7 +1,5 @@
 #pragma once
 
-#include <Graphics/SceneGraph.h>
-
 #include <Apollo/ECS/EntitySystem.h>
 
 #include <Utils/Math/Matrix4x4.h>
@@ -19,6 +17,16 @@ namespace Diotima
 
 class RenderSystem final : public Apollo::EntitySystem
 {
+private:
+	struct RenderNode
+	{
+		U32 RenderObjectIndex;
+		Apollo::EntityID EntityID;
+		const MeshGeometry* Geometry = nullptr;
+		Matrix4x4 Transform = Matrix4x4::IDENTITY;
+		std::vector<RenderNode> Children;
+	};
+
 public:
 	RenderSystem(Apollo::EntityHandler* const entityHandler);
 
@@ -34,10 +42,9 @@ private:
 	void CreateAndInitializeRenderNode(const Apollo::EntityID entityID, const Model3D& modelData, const Matrix4x4& transform);
 
 private:
-	RenderSceneGraph mSceneGraph;
-
-private:
 	Diotima::Renderer* mRenderer;
+
+	std::vector<RenderNode> mRootNodes;
 
 	Apollo::EntityID mCurrentCameraEntity = Apollo::kInvalidEntityID;
 };
