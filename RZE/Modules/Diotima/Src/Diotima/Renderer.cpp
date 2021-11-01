@@ -155,8 +155,8 @@ namespace Diotima
 		deviceContext.ClearDepthStencilView(targetDepthView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 		D3D11_VIEWPORT viewport;
-		viewport.Width = GetCanvasSize().X();
-		viewport.Height = GetCanvasSize().Y();
+		viewport.Width = GetViewportSize().X();
+		viewport.Height = GetViewportSize().Y();
 		viewport.MinDepth = 0.0f;
 		viewport.MaxDepth = 1.0f;
 		viewport.TopLeftX = 0.0f;
@@ -336,8 +336,6 @@ namespace Diotima
 		LOG_CONSOLE_ARGS("New Canvas Size: %f x %f", mCanvasSize.X(), mCanvasSize.Y());
 	}
 
-	// #TODO
-	// Take with new renderer - only used in hacky RenderTarget code in EditorApp
 	void Renderer::SetViewportSize(const Vector2D& newSize)
 	{
 		mViewportDimensions = newSize;
