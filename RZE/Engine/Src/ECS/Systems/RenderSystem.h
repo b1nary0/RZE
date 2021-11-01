@@ -20,6 +20,8 @@ class RenderSystem final : public Apollo::EntitySystem
 private:
 	struct RenderNode
 	{
+		Int32 NodeIndex; // Used to index mRootNodes for the moment
+
 		U32 RenderObjectIndex;
 		Apollo::EntityID EntityID;
 		const MeshGeometry* Geometry = nullptr;

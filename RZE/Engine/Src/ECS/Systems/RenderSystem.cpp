@@ -228,6 +228,8 @@ void RenderSystem::CreateAndInitializeRenderNode(const Apollo::EntityID entityID
 
 	mRootNodes.emplace_back();
 	RenderNode& rootNode = mRootNodes.back();
+	rootNode.NodeIndex = mRootNodes.size() - 1;
+
 	rootNode.Transform = transform;
 	rootNode.EntityID = entityID;
 	for (auto& meshGeometry : modelData.GetStaticMesh().GetSubMeshes())
