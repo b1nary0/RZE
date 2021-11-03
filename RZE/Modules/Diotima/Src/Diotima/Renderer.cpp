@@ -333,6 +333,10 @@ namespace Diotima
 
 		mDevice->HandleWindowResize(static_cast<U32>(newSize.X()), static_cast<U32>(newSize.Y()));
 
+		// This code is kinda wonky in that if you end up in a situation where you set the viewport
+		// then resize the window, you'll need to re-set your viewport. i will need to address this in the future.
+		SetViewportSize(newSize);
+
 		LOG_CONSOLE_ARGS("New Canvas Size: %f x %f", mCanvasSize.X(), mCanvasSize.Y());
 	}
 
