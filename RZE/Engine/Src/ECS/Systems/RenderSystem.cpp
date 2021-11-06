@@ -238,11 +238,10 @@ void RenderSystem::CreateAndInitializeRenderNode(const Apollo::EntityID entityID
 
 		rootNode.Children.emplace_back();
 		RenderNode& childNode = rootNode.Children.back();
-		childNode.Geometry = &meshGeometry;
 
 		Diotima::MeshData meshData;
-		meshData.Vertices = childNode.Geometry->GetVertexDataRaw();
-		meshData.Indices = childNode.Geometry->GetIndexDataRaw();
+		meshData.Vertices = meshGeometry.GetVertexDataRaw();
+		meshData.Indices = meshGeometry.GetIndexDataRaw();
 
 		meshData.Material.mProperties.Shininess = material.Shininess;
 

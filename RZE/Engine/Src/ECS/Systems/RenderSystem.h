@@ -24,7 +24,6 @@ private:
 
 		U32 RenderObjectIndex;
 		Apollo::EntityID EntityID;
-		const MeshGeometry* Geometry = nullptr;
 		Matrix4x4 Transform = Matrix4x4::IDENTITY;
 		std::vector<RenderNode> Children;
 	};
