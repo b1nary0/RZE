@@ -243,7 +243,7 @@ namespace Diotima
 			mDevice->GetDeviceContext().IASetIndexBuffer(&indexBuf->GetHardwareBuffer(), DXGI_FORMAT_R32_UINT, 0);
 
 			// #TODO
-			// When optimizing, ideally by this point we have collapsed all geometry possible to 
+			// When optimizing, ideally by this point we have collapsed all collapsable geometry possible to 
 			// a single vertex buffer, so we can just have a single draw call.
 			deviceContext.DrawIndexed(indexBuf->GetIndexCount(), 0, 0);
 		}
