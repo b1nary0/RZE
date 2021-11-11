@@ -27,7 +27,7 @@ namespace Perseus
 		ThreadSetup();
 	}
 
-	void WorkerThread::Finish()
+	void WorkerThread::ShutDown()
 	{
 		bActive = false;
 		mThread.join();

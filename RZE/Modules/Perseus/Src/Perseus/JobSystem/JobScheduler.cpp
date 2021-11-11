@@ -33,7 +33,7 @@ namespace Perseus
 	{
 		for (int i = 0; i < PERSEUS_MAX_WORKER_THREADS; ++i)
 		{
-			mWorkerThreads[i].Finish();
+			mWorkerThreads[i].ShutDown();
 		}
 	}
 

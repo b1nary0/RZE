@@ -206,7 +206,7 @@ void GameScene::Update()
 	mEntityHandler.Update();
 }
 
-void GameScene::Finish()
+void GameScene::ShutDown()
 {
 	mEntityHandler.ShutDown();
 }

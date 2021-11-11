@@ -15,7 +15,7 @@ namespace Perseus
 
 	public:
 		void Initialize();
-		void Finish();
+		void ShutDown();
 
 	public:
 		bool IsIdle();

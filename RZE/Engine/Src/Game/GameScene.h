@@ -22,7 +22,7 @@ public:
 public:
 	virtual void Start();
 	virtual void Update();
-	virtual void Finish();
+	virtual void ShutDown();
 
 	Apollo::EntityHandler& GetEntityHandler() { return mEntityHandler; }
 
