@@ -6,24 +6,11 @@
 #include <Utils/Math/Math.h>
 #include <Utils/Platform/FilePath.h>
 
-// TEST
-#include <ECS/Components/CameraComponent.h>
-#include <ECS/Components/LightSourceComponent.h>
-#include <ECS/Components/MeshComponent.h>
-#include <ECS/Components/TransformComponent.h>
-#include <ECS/Components/MaterialComponent.h>
-
 #include <ECS/Systems/FreeCameraSystem.h>
-
-#include <DebugUtils/DebugServices.h>
 
 // GAME
 #include <Game/Systems/FirstPersonCameraSystem.h>
-#include <Game/Systems/InteractiveSpawningSystem.h>
-#include <Game/Systems/ProjectileSystem.h>
 #include <Game/Systems/TestbedSystem.h>
-
-#include <Game/Components/VelocityComponent.h>
 
 GameApp::GameApp()
 	: RZE_Application()
@@ -38,8 +25,6 @@ void GameApp::Initialize()
 {
 	RZE_Application::Initialize();
 
-	APOLLO_REGISTER_COMPONENT(VelocityComponent);
-
 	// #TODO #BIGBUG
 	// This function doesn't get called on reload of a scene. Maybe this should be set in the scene itself (the systems, etc)
 	// If we load something that _isnt_ the scene below during runtime, EntitySystem::Initialize isnt called.
@@ -49,6 +34,18 @@ void GameApp::Initialize()
 	//RZE().GetActiveScene().Load(FilePath("Assets/Scenes/Sponza.scene"));
 	RZE().GetActiveScene().Load(FilePath("Assets/Scenes/RenderTest.scene"));
 
+	// #TODO
+	// Do this in GameScene. Derive in code for the actual game i.e
+	// class RenderTestScene : public GameScene
+	// {
+	//		virtual void Initialize() override
+	//		{
+	//			mEntityHandler.AddSystem<FreeCameraSystem>();
+	//			mEntityHandler.AddSystem<TestbedSystem>();
+	//		}
+	//	}
+	// This will mean API use will have to change a bit, since GetActiveScene() for the above Load() call
+	// will need to have been instantiated. Investigate.
 	Apollo::EntityHandler& entityHandler = RZE().GetActiveScene().GetEntityHandler();
 	entityHandler.AddSystem<FreeCameraSystem>();
 	entityHandler.AddSystem<TestbedSystem>();
@@ -88,15 +85,6 @@ void GameApp::RegisterInputEvents(InputHandler& inputHandler)
 		else if (key.GetKeyCode() == Win32KeyCode::F3)
 		{
 			RZE().SetWindowSize(Vector2D(1920, 1080));
-		}
-
-		if (key.GetKeyCode() == Win32KeyCode::Key_K)
-		{
-			for (U32 entityCount = 0; entityCount < 3000; ++entityCount)
-			{
-				Apollo::EntityID entity = RZE().GetActiveScene().CreateEntity("Entity");
-				RZE().GetActiveScene().GetEntityHandler().AddComponent<MeshComponent>(entity, FilePath("Assets/3D/FW190/FW190.obj"));
-			}
 		}
 	});
 	inputHandler.BindAction(Win32KeyCode::Escape, EButtonState::ButtonState_Pressed, keyFunc);
