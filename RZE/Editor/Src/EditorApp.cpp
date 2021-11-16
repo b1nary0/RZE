@@ -67,7 +67,7 @@ namespace Editor
 		LoadFonts();
 		StyleSetup();
 
-		RZE().GetActiveScene().GetEntityHandler().AddSystem<FreeCameraSystem>();
+		RZE().GetActiveScene().AddSystem<FreeCameraSystem>();
 	}
 
 	void EditorApp::Start()
