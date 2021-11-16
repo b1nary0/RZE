@@ -36,6 +36,12 @@ public:
 	Apollo::EntityID CreateEntity(const std::string& name);
 	void DestroyEntity(Apollo::EntityID entity);
 
+	template <typename TSystemType, typename... TArgs>
+	TSystemType* AddSystem(TArgs... args)
+	{
+		return mEntityHandler.AddSystem<TSystemType>(args...);
+	}
+
 	const std::vector<SceneEntryTemp>& GetSceneEntries() { return mEntityEntries; }
 
 private:

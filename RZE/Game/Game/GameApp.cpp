@@ -29,26 +29,14 @@ void GameApp::Initialize()
 	// This function doesn't get called on reload of a scene. Maybe this should be set in the scene itself (the systems, etc)
 	// If we load something that _isnt_ the scene below during runtime, EntitySystem::Initialize isnt called.
 
+	GameScene& activeScene = RZE().GetActiveScene();
 	// #TODO(Josh::Putting this comment here because too lazy to do it elsewhere. Hopefully I find it later:
 	//             -- Need to add at least commandline arg like -startscene or something)
 	//RZE().GetActiveScene().Load(FilePath("Assets/Scenes/Sponza.scene"));
-	RZE().GetActiveScene().Load(FilePath("Assets/Scenes/RenderTest.scene"));
+	activeScene.Load(FilePath("Assets/Scenes/RenderTest.scene"));
 
-	// #TODO
-	// Do this in GameScene. Derive in code for the actual game i.e
-	// class RenderTestScene : public GameScene
-	// {
-	//		virtual void Initialize() override
-	//		{
-	//			mEntityHandler.AddSystem<FreeCameraSystem>();
-	//			mEntityHandler.AddSystem<TestbedSystem>();
-	//		}
-	//	}
-	// This will mean API use will have to change a bit, since GetActiveScene() for the above Load() call
-	// will need to have been instantiated. Investigate.
-	Apollo::EntityHandler& entityHandler = RZE().GetActiveScene().GetEntityHandler();
-	entityHandler.AddSystem<FreeCameraSystem>();
-	entityHandler.AddSystem<TestbedSystem>();
+	activeScene.AddSystem<FreeCameraSystem>();
+	activeScene.AddSystem<TestbedSystem>();
 }
 
 void GameApp::Start()
