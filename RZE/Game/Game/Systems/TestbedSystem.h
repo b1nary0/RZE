@@ -14,7 +14,4 @@ public:
 	void Initialize() override;
 	void Update(const std::vector<Apollo::EntityID>& entities) override;
 	void ShutDown() override;
-
-private:
-	Apollo::EntityID mRenderEntity = Apollo::kInvalidEntityID;
 };

@@ -10,7 +10,7 @@
 
 // GAME
 #include <Game/Systems/FirstPersonCameraSystem.h>
-#include <Game/Systems/TestbedSystem.h>
+#include <Game/Systems/RotateSingleEntitySystem.h>
 
 GameApp::GameApp()
 	: RZE_Application()
@@ -36,7 +36,7 @@ void GameApp::Initialize()
 	activeScene.Load(FilePath("Assets/Scenes/RenderTest.scene"));
 
 	activeScene.AddSystem<FreeCameraSystem>();
-	activeScene.AddSystem<TestbedSystem>();
+	activeScene.AddSystem<RotateSingleEntitySystem>();
 }
 
 void GameApp::Start()
