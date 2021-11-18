@@ -21,5 +21,5 @@ public:
 	void ShutDown() override;
 
 private:
-	Apollo::EntityID mRenderEntity = Apollo::kInvalidEntityID;
+	Apollo::EntityID mRotateEntityID = Apollo::kInvalidEntityID;
 };
