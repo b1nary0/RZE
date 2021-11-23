@@ -7,9 +7,6 @@
 #include <ECS/Components/LightSourceComponent.h>
 #include <ECS/Components/MeshComponent.h>
 #include <ECS/Components/TransformComponent.h>
-#include <ECS/Components/MaterialComponent.h>
-#include <ECS/Components/NameComponent.h>
-
 #include <Game/Model3D.h>
 
 #include <Graphics/Material.h>
@@ -18,13 +15,6 @@
 #include <Graphics/Texture2D.h>
 
 #include <Diotima/Renderer.h>
-
-#include <Utils/Platform/FilePath.h>
-#include <Utils/Platform/Timers/HiResTimer.h>
-
-#include <Utils/MemoryUtils.h>
-
-static Vector4D sDefaultFragColor(0.25f, 0.25f, 0.25f, 1.0f);
 
 RenderSystem::RenderSystem(Apollo::EntityHandler* const entityHandler)
 	: Apollo::EntitySystem(entityHandler)
