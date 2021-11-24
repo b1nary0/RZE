@@ -57,7 +57,14 @@ void AssimpSourceImporter::ProcessNode(const aiNode& node, const aiScene& scene)
 		mMeshes.emplace_back();
 		MeshData& meshData = mMeshes.back();
 
-		meshData.MeshName = assimpMesh.mName.C_Str();
+		if (assimpMesh.mName.length > 0)
+		{
+			meshData.MeshName = assimpMesh.mName.C_Str();
+		}
+		else
+		{
+			meshData.MeshName = node.mName.C_Str();
+		}
 
 		LOG_CONSOLE_ARGS("AssimpSourceImporter : Processing Mesh %i of %i - %s", meshIndex + 1, node.mNumMeshes, meshData.MeshName.c_str());
 		ProcessMesh(assimpMesh, scene, meshData);
