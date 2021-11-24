@@ -150,6 +150,59 @@ workspace "RZE"
 
 	--
 	--
+	-- RZE_SourceAssetBurner
+	--
+	--
+	project "SourceAssetBurner"
+		local ProjectDir = RootDir .. "SourceAssetBurner/"
+		local SourceDir = ProjectDir .. SourceFolder
+
+		filter {}
+		
+		flags { "FatalCompileWarnings" }
+		disablewarnings { "4267" }
+
+		kind "StaticLib"
+		language "C++"
+		targetdir (LibDir)
+		targetname "RZE_SourceAssetBurner"
+		
+		dependson { "Utils" }
+
+		files
+		{
+			SourceDir .. "**.h",
+			SourceDir .. "**.hpp",
+			SourceDir .. "**.c",
+			SourceDir .. "**.cpp"
+		}
+
+		includedirs
+		{
+			IncludeDir,
+			SourceDir,
+			RootDir .. "Utils/Src/"
+		}
+
+		libdirs
+		{
+			LibDir,
+			ThirdPartyLibDir,
+		}
+		
+		vpaths
+		{
+			["Source Files/*"] =
+			{
+				SourceDir .. "**.h",
+				SourceDir .. "**.hpp",
+				SourceDir .. "**.c",
+				SourceDir .. "**.cpp"
+			}
+		}
+
+	--
+	--
 	-- RZE_Utils
 	--
 	--
