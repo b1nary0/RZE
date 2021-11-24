@@ -114,15 +114,8 @@ workspace "RZE"
 		}
 		links
 		{
-			"OpenGL32",
 			"assimp",
-			"glew64",
 			"OptickCore",
-			"D3d12.lib",
-			"d3d11.lib",
-			"DXGI.lib",
-			"D3DCompiler.lib",
-			"DirectXTK",
 			-- RZE --
 			"RZE_Utils",
 			"Apollo",
@@ -276,7 +269,7 @@ workspace "RZE"
 		targetdir (LibDir)
 		targetname "Apollo"
 
-		dependson { "Perseus", "Utils" }
+		dependson { "Utils" }
 
 		files
 		{
@@ -303,17 +296,8 @@ workspace "RZE"
 		links
 		{
 			-- ThirdParty
-			"OpenGL32",
-			"assimp",
-			"glew64",
 			"OptickCore",
-			"D3d12.lib",
-			"d3d11.lib",
-			"DXGI.lib",
-			"D3DCompiler.lib",
-			"DirectXTK",
 			-- RZE
-			"Perseus",
 			"RZE_Utils"
 		}
 
@@ -373,15 +357,7 @@ workspace "RZE"
 		links
 		{
 			-- ThirdParty
-			"OpenGL32",
-			"assimp",
-			"glew64",
 			"OptickCore",
-			"D3d12.lib",
-			"d3d11.lib",
-			"DXGI.lib",
-			"D3DCompiler.lib",
-			"DirectXTK",
 			-- RZE
 			"RZE_Utils"
 		}
@@ -416,7 +392,7 @@ workspace "RZE"
 		targetdir (LibDir)
 		targetname "Diotima"
 
-		dependson { "Externals", "Perseus", "Utils" }
+		dependson { "Externals", "Utils" }
 
 		files
 		{
@@ -443,9 +419,6 @@ workspace "RZE"
 		links
 		{
 			-- ThirdParty
-			"OpenGL32",
-			"assimp",
-			"glew64",
 			"OptickCore",
 			"D3d12.lib",
 			"d3d11.lib",
@@ -453,7 +426,6 @@ workspace "RZE"
 			"D3DCompiler.lib",
 			"DirectXTK",
 			-- RZE
-			"Perseus",
 			"RZE_Utils",
 			"Externals"
 		}
