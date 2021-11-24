@@ -162,7 +162,7 @@ workspace "RZE"
 		flags { "FatalCompileWarnings" }
 		disablewarnings { "4267" }
 
-		kind "StaticLib"
+		kind "ConsoleApp"
 		language "C++"
 		targetdir (LibDir)
 		targetname "RZE_SourceAssetBurner"
@@ -188,6 +188,12 @@ workspace "RZE"
 		{
 			LibDir,
 			ThirdPartyLibDir,
+		}
+		
+		links
+		{
+			"assimp",
+			"RZE_Utils"
 		}
 		
 		vpaths

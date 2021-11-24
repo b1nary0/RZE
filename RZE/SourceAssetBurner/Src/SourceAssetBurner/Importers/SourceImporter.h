@@ -6,9 +6,9 @@ class SourceImporter
 {
 public:
 	SourceImporter() = default;
-	~SourceImporter() = default;
-
-	void Import(const FilePath& filePath);
+	virtual ~SourceImporter() = default;
+	
+	virtual bool Import(const FilePath& filePath) = 0;
 
 private:
 
