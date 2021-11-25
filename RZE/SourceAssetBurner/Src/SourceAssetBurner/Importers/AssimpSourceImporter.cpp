@@ -13,9 +13,9 @@
 
 namespace
 {
-	constexpr char kMeshAssetSuffix[] = { ".mesh" };
-	constexpr char kMaterialAssetSuffix[] = { ".material" };
-	constexpr char kMeshAssetVersion[] = { "meshasset_v1" };
+	constexpr char kMeshAssetSuffix[] = { ".meshasset" };
+	constexpr char kMaterialAssetSuffix[] = { ".materialasset" };
+	constexpr int kMeshAssetVersion = 1;
 
 	std::string StripAssetNameFromFilePath(const FilePath& filePath)
 	{
@@ -272,9 +272,14 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 
 bool AssimpSourceImporter::WriteMeshFile()
 {
-	// #TODO maybe write burn system data here if necessary
+	// #TODO does this cause mesh issues when loaded?
+	mWriter.SetMaxDecimalPlaces(6);
+	
 	mWriter.StartObject();
 	{
+		// #TODO maybe write burn system data here if necessary
+		mWriter.Key("meshasset_version");
+		mWriter.Int(kMeshAssetVersion);
 		for (auto& meshData : mMeshes)
 		{
 			WriteSingleMesh(meshData);
@@ -307,52 +312,37 @@ bool AssimpSourceImporter::WriteMeshFile()
 
 void AssimpSourceImporter::WriteSingleMesh(const MeshData& meshData)
 {
-	// #TODO does this cause mesh issues when loaded?
-	mWriter.SetMaxDecimalPlaces(6);
-	mWriter.String(kMeshAssetVersion);
+	mWriter.String(meshData.MeshName.c_str());
 	mWriter.StartObject();
 	{
-		mWriter.Key("mesh_name");
-		mWriter.String(meshData.MeshName.c_str());
-
-		mWriter.String("vertex data");
-		mWriter.StartObject();
+		mWriter.Key("vertex_data");
+		mWriter.StartArray();
 		{
 			for (auto& meshVertex : meshData.VertexDataArray)
 			{
-				mWriter.Key("p");
-				mWriter.StartArray();
+				// Position
 				for (int i = 0; i < 3; ++i)
 				{
 					mWriter.Double(meshVertex.Position[i]);
 				}
-				mWriter.EndArray();
-
-				mWriter.Key("n");
-				mWriter.StartArray();
+				// Normal
 				for (int i = 0; i < 3; ++i)
 				{
 					mWriter.Double(meshVertex.Normal[i]);
 				}
-				mWriter.EndArray();
-
-				mWriter.Key("t");
-				mWriter.StartArray();
+				// Tangent
 				for (int i = 0; i < 3; ++i)
 				{
 					mWriter.Double(meshVertex.Tangent[i]);
 				}
-				mWriter.EndArray();
-
-				mWriter.Key("uv");
-				mWriter.StartArray();
+				// UV
 				for (int i = 0; i < 2; ++i)
 				{
 					mWriter.Double(meshVertex.UVData[i]);
 				}
-				mWriter.EndArray();
 			}
 		}
-		mWriter.EndObject();
+		mWriter.EndArray();
 	}
+	mWriter.EndObject();
 }
