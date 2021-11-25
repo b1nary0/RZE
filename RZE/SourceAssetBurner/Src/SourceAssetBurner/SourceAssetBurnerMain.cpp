@@ -4,7 +4,7 @@
 
 int main(int argc, char* argv[])
 {
-	if (argc <= 0)
+	if (argc <= 1)
 	{
 		LOG_CONSOLE("SourceAssetBurner : No arguments provided");
 		return -1;
