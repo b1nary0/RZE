@@ -7,12 +7,38 @@
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/PrimitiveDefs.h>
 
-constexpr char* k_meshAssetSuffix = ".mesh";
-constexpr char* k_materialAssetSuffix = ".material";
+#include "Utils/Platform/File.h"
+
+#include <filesystem>
+
+namespace
+{
+	constexpr char kMeshAssetSuffix[] = { ".mesh" };
+	constexpr char kMaterialAssetSuffix[] = { ".material" };
+	constexpr char kMeshAssetVersion[] = { "meshasset_v1" };
+
+	std::string StripAssetNameFromFilePath(const FilePath& filePath)
+	{
+		std::string assetPath = filePath.GetRelativePath();
+
+		size_t pos = assetPath.find_last_of('/');
+		std::string assetName = assetPath.substr(pos + 1, assetPath.size());
+		assetName = assetName.substr(0, assetName.find_last_of('.'));
+
+		return assetName;
+	}
+}
+
+AssimpSourceImporter::AssimpSourceImporter()
+	: mWriter(mStringBuffer)
+{
+}
 
 bool AssimpSourceImporter::Import(const FilePath& filePath)
 {
 	LOG_CONSOLE_ARGS("AssimpSourceImporter : Importing %s...", filePath.GetRelativePath().c_str());
+
+	mAssetName = StripAssetNameFromFilePath(filePath);
 
 	Assimp::Importer ModelImporter;
 	const aiScene* AssimpScene = ModelImporter.ReadFile(filePath.GetAbsolutePath(),
@@ -40,6 +66,12 @@ bool AssimpSourceImporter::Import(const FilePath& filePath)
 	if (mMeshes.size() != AssimpScene->mNumMeshes)
 	{
 		LOG_CONSOLE_ARGS("Error reading meshes from [%s].", filePath.GetRelativePath().c_str());
+		return false;
+	}
+
+	if (!WriteMeshFile())
+	{
+		LOG_CONSOLE("Failed to write output file. See logs.");
 		return false;
 	}
 
@@ -236,4 +268,91 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 	//// we can instead form the combined data buffer here and set it on the mesh directly
 	//// then if we need a higher level view of the data we can create that when needed?
 	//outMesh.AllocateData();
+}
+
+bool AssimpSourceImporter::WriteMeshFile()
+{
+	// #TODO maybe write burn system data here if necessary
+	mWriter.StartObject();
+	{
+		for (auto& meshData : mMeshes)
+		{
+			WriteSingleMesh(meshData);
+		}
+	}
+	mWriter.EndObject();
+
+	// #TODO really gross string manip lol
+	std::string assetFilename = mAssetName + kMeshAssetSuffix;
+	std::string assetFilepathRelative = "ProjectData/Mesh/";
+	assetFilepathRelative = assetFilepathRelative + assetFilename;
+
+	FilePath outputPath(assetFilepathRelative);
+	if (!std::filesystem::exists(outputPath.GetAbsolutePath()))
+	{
+		std::filesystem::create_directories(outputPath.GetAbsoluteDirectoryPath());
+	}
+
+	// #TODO json files are too large. need to compress and write the stream - see zlib
+	File outputFile(outputPath);
+	outputFile.Open(File::EFileOpenMode::Write);
+	outputFile.Write(mStringBuffer.GetString());
+	AssertExpr(outputFile.IsValid());
+	outputFile.Close();
+
+	LOG_CONSOLE_ARGS("AssimpSourceImporter : %s written.", outputPath.GetRelativePath().c_str());
+
+	return true;
+}
+
+void AssimpSourceImporter::WriteSingleMesh(const MeshData& meshData)
+{
+	// #TODO does this cause mesh issues when loaded?
+	mWriter.SetMaxDecimalPlaces(6);
+	mWriter.String(kMeshAssetVersion);
+	mWriter.StartObject();
+	{
+		mWriter.Key("mesh_name");
+		mWriter.String(meshData.MeshName.c_str());
+
+		mWriter.String("vertex data");
+		mWriter.StartObject();
+		{
+			for (auto& meshVertex : meshData.VertexDataArray)
+			{
+				mWriter.Key("p");
+				mWriter.StartArray();
+				for (int i = 0; i < 3; ++i)
+				{
+					mWriter.Double(meshVertex.Position[i]);
+				}
+				mWriter.EndArray();
+
+				mWriter.Key("n");
+				mWriter.StartArray();
+				for (int i = 0; i < 3; ++i)
+				{
+					mWriter.Double(meshVertex.Normal[i]);
+				}
+				mWriter.EndArray();
+
+				mWriter.Key("t");
+				mWriter.StartArray();
+				for (int i = 0; i < 3; ++i)
+				{
+					mWriter.Double(meshVertex.Tangent[i]);
+				}
+				mWriter.EndArray();
+
+				mWriter.Key("uv");
+				mWriter.StartArray();
+				for (int i = 0; i < 2; ++i)
+				{
+					mWriter.Double(meshVertex.UVData[i]);
+				}
+				mWriter.EndArray();
+			}
+		}
+		mWriter.EndObject();
+	}
 }
