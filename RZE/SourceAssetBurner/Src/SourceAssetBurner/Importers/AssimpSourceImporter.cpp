@@ -274,16 +274,21 @@ bool AssimpSourceImporter::WriteMeshFile()
 {
 	// #TODO does this cause mesh issues when loaded?
 	mWriter.SetMaxDecimalPlaces(6);
-	
+
 	mWriter.StartObject();
 	{
-		// #TODO maybe write burn system data here if necessary
-		mWriter.Key("meshasset_version");
-		mWriter.Int(kMeshAssetVersion);
-		for (auto& meshData : mMeshes)
+		mWriter.Key("asset_start");
+		mWriter.StartObject();
 		{
-			WriteSingleMesh(meshData);
+			// #TODO maybe write burn system data here if necessary
+			mWriter.Key("meshasset_version");
+			mWriter.Int(kMeshAssetVersion);
+			for (auto& meshData : mMeshes)
+			{
+				WriteSingleMesh(meshData);
+			}
 		}
+		mWriter.EndObject();
 	}
 	mWriter.EndObject();
 
@@ -315,6 +320,8 @@ void AssimpSourceImporter::WriteSingleMesh(const MeshData& meshData)
 	mWriter.String(meshData.MeshName.c_str());
 	mWriter.StartObject();
 	{
+		mWriter.Key("vertex_data_size");
+		mWriter.Int(meshData.VertexDataArray.size());
 		mWriter.Key("vertex_data");
 		mWriter.StartArray();
 		{
