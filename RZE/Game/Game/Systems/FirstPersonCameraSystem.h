@@ -24,6 +24,10 @@ private:
 
 	void DoInput(CameraComponent& camera, TransformComponent& transform);
 
+	// Component lifecycle callbacks
+	void OnTransformComponentAdded(Apollo::EntityID entityID);
+private:
+
 private:
 	float mSpeed = 2.0f;
 	Vector3D mMoveToPoint;

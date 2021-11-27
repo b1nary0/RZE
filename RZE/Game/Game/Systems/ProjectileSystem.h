@@ -15,6 +15,12 @@ public:
 	void Update(const std::vector<Apollo::EntityID>& entities) override;
 	void ShutDown() override;
 
+	// Component lifecycle functions
+private:
+	void RegisterForComponentNotifications();
+
+	void OnCameraComponentAdded(Apollo::EntityID entityID);
+
 private:
 	Apollo::EntityID mCameraEntity;
 

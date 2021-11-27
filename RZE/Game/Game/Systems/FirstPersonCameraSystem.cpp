@@ -55,20 +55,24 @@ void FirstPersonCameraSystem::RegisterForComponentNotifications()
 {
 	Apollo::EntityHandler& handler = InternalGetEntityHandler();
 
-	Apollo::EntityHandler::ComponentAddedFunc transfCompAdded([this, &handler](Apollo::EntityID entity)
-	{
-		NameComponent* const nameComp = handler.GetComponent<NameComponent>(entity);
-		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
-		AssertNotNull(transfComp);
-		AssertNotNull(nameComp);
+	Apollo::EntityHandler::ComponentAddedFunc onTransformComponentAdded = std::bind(&FirstPersonCameraSystem::OnTransformComponentAdded, this, std::placeholders::_1);
+	handler.RegisterForComponentAddNotification<TransformComponent>(onTransformComponentAdded);
+}
 
-		if (nameComp->Name == "Camera")
-		{
-			mCamera = entity;
-			mMoveToPoint = transfComp->Position;
-		}
-	});
-	handler.RegisterForComponentAddNotification<TransformComponent>(transfCompAdded);
+void FirstPersonCameraSystem::OnTransformComponentAdded(Apollo::EntityID entityID)
+{
+	Apollo::EntityHandler& handler = InternalGetEntityHandler();
+
+	NameComponent* const nameComp = handler.GetComponent<NameComponent>(entityID);
+	TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entityID);
+	AssertNotNull(transfComp);
+	AssertNotNull(nameComp);
+
+	if (nameComp->Name == "Camera")
+	{
+		mCamera = entityID;
+		mMoveToPoint = transfComp->Position;
+	}
 }
 
 void FirstPersonCameraSystem::DoInput(CameraComponent& camera, TransformComponent& transform)

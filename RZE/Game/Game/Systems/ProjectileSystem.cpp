@@ -20,15 +20,11 @@ void ProjectileSystem::Initialize()
 
 	Apollo::EntityHandler& entityHandler = InternalGetEntityHandler();
 
+	RegisterForComponentNotifications();
+
 	mProjectileResource = RZE_Application::RZE().GetResourceHandler().LoadResource<Model3D>(FilePath("Assets/3D/NeckMechWalker/NeckMechWalker.obj"));
 	AssertExpr(mProjectileResource.IsValid());
-
-	Apollo::EntityHandler::ComponentAddedFunc onCameraAdded([this](Apollo::EntityID entity)
-	{
-		mCameraEntity = entity;
-	});
-	entityHandler.RegisterForComponentAddNotification<CameraComponent>(onCameraAdded);
-
+	
 	InputHandler::KeyActionFunc leftButtonFunc([this, &entityHandler](const InputKey& key)
 	{
 		CameraComponent* const camComp = entityHandler.GetComponent<CameraComponent>(mCameraEntity);
@@ -71,4 +67,17 @@ void ProjectileSystem::Update(const std::vector<Apollo::EntityID>& entities)
 void ProjectileSystem::ShutDown()
 {
 
+}
+
+void ProjectileSystem::RegisterForComponentNotifications()
+{
+	Apollo::EntityHandler& entityHandler = RZE_Application::RZE().GetActiveScene().GetEntityHandler();
+
+	Apollo::EntityHandler::ComponentAddedFunc onCameraComponentAdded = std::bind(&ProjectileSystem::OnCameraComponentAdded, this, std::placeholders::_1);
+	entityHandler.RegisterForComponentAddNotification<CameraComponent>(onCameraComponentAdded);
+}
+
+void ProjectileSystem::OnCameraComponentAdded(Apollo::EntityID entityID)
+{
+	mCameraEntity = entityID;
 }

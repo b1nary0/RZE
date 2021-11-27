@@ -42,6 +42,16 @@ private:
 	void GenerateCameraMatrices(CameraComponent& cameraComponent, const TransformComponent& transformComponent);
 	void CreateAndInitializeRenderNode(const Apollo::EntityID entityID, const Model3D& modelData, const Matrix4x4& transform);
 
+	// Component lifecycle callbacks
+private:
+	void OnMeshComponentAdded(Apollo::EntityID entityID);
+	void OnMeshComponentRemoved(Apollo::EntityID entityID);
+	void OnMeshComponentModified(Apollo::EntityID entityID);
+
+	void OnCameraComponentAdded(Apollo::EntityID entityID);
+	void OnCameraComponentRemoved(Apollo::EntityID entityID);
+	void OnCameraComponentModified(Apollo::EntityID entityID);
+
 private:
 	Diotima::Renderer* mRenderer;
 

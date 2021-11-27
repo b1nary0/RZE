@@ -87,120 +87,117 @@ void RenderSystem::ShutDown()
 void RenderSystem::RegisterForComponentNotifications()
 {
 	Apollo::EntityHandler& handler = InternalGetEntityHandler();
-
 	//
 	// MeshComponent
 	//
 	{
-		Apollo::EntityHandler::ComponentAddedFunc OnMeshComponentAdded([this, &handler](Apollo::EntityID entityID)
-		{
-			OPTICK_EVENT("RenderSystem::OnMeshComponentAdded");
+		Apollo::EntityHandler::ComponentAddedFunc onMeshComponentAdded = std::bind(&RenderSystem::OnMeshComponentAdded, this, std::placeholders::_1);
+		handler.RegisterForComponentAddNotification<MeshComponent>(onMeshComponentAdded);
+		
+		Apollo::EntityHandler::ComponentRemovedFunc onMeshComponentRemoved = std::bind(&RenderSystem::OnMeshComponentRemoved, this, std::placeholders::_1);
+		handler.RegisterForComponentRemovedNotification<MeshComponent>(onMeshComponentRemoved);
 
-			ResourceHandler& resourceHandler = RZE_Application::RZE().GetResourceHandler();
-
-			// We've detected a MeshComponent was created. Create a render object
-			// and fill it with the data required to properly render the mesh resource.
-			MeshComponent* const meshComponent = handler.GetComponent<MeshComponent>(entityID);
-
-			// #TODO
-			// Places like these don't need to assert. GetComponent should be (is) verifying via assert.
-			// If that rule every changes just fix the callsites then. Extraneous code.
-			AssertNotNull(meshComponent);
-			AssertMsg(!meshComponent->Resource.IsValid(), 
-				"MeshComponent resource already loaded. RenderSystem should be the only code servicing MeshComponent resource loads");
-			TransformComponent* const rootTransformComponent = handler.GetComponent<TransformComponent>(entityID);
-			AssertNotNull(rootTransformComponent);
-
-			ResourceHandle resource = resourceHandler.LoadResource<Model3D>(meshComponent->ResourcePath);
-			AssertExpr(resource.IsValid());
-			meshComponent->Resource = resource;
-
-			const Model3D* const modelData = resourceHandler.GetResource<Model3D>(resource);
-			AssertNotNull(modelData);
-
-			CreateAndInitializeRenderNode(entityID, *modelData, rootTransformComponent->GetAsMat4x4());
-		});
-		handler.RegisterForComponentAddNotification<MeshComponent>(OnMeshComponentAdded);
-
-		Apollo::EntityHandler::ComponentRemovedFunc OnMeshComponentRemoved([this, &handler](Apollo::EntityID entityID)
-		{
-		});
-		handler.RegisterForComponentRemovedNotification<MeshComponent>(OnMeshComponentRemoved);
-
-		//#TODO(Should make a function that does the common work here since this is exactly the same for added mesh except we modify existing RenderItem instead of creating one)
-		Apollo::EntityHandler::ComponentModifiedFunc OnMeshComponentModified([this, &handler](Apollo::EntityID entityID)
-		{
-			// #TODO
-			// There is a leak in this function. We don't clean up the old stuff (material buffers, etc). Fix this.
-			// Best fix is probably moving away from internal usage of U32 buffer indexes to store buffer references.
-			// Just use straight pointers atm.
-			OPTICK_EVENT("RenderSystem::OnMeshComponentModified");
-		});
-		handler.RegisterForComponentModifiedNotification<MeshComponent>(OnMeshComponentModified);
-	}
-
-	// LightSourceComponent
-	{
-		Apollo::EntityHandler::ComponentAddedFunc OnLightSourceComponentAdded([this, &handler](Apollo::EntityID entityID)
-		{
-		});
-		handler.RegisterForComponentAddNotification<LightSourceComponent>(OnLightSourceComponentAdded);
-
-		Apollo::EntityHandler::ComponentRemovedFunc OnLightSourceComponentRemoved([this, &handler](Apollo::EntityID entityID)
-		{
-		});
-		handler.RegisterForComponentRemovedNotification<LightSourceComponent>(OnLightSourceComponentRemoved);
+		Apollo::EntityHandler::ComponentModifiedFunc onMeshComponentModified = std::bind(&RenderSystem::OnMeshComponentModified, this, std::placeholders::_1);
+		handler.RegisterForComponentModifiedNotification<MeshComponent>(onMeshComponentModified);
 	}
 
 	//
 	// CameraComponent
 	//
 	{
-		Apollo::EntityHandler::ComponentAddedFunc OnCameraComponentAdded([this, &handler](Apollo::EntityID entityID)
+		Apollo::EntityHandler::ComponentAddedFunc onCameraComponentAdded = std::bind(&RenderSystem::OnCameraComponentAdded, this, std::placeholders::_1);
+		handler.RegisterForComponentAddNotification<CameraComponent>(onCameraComponentAdded);
+
+		Apollo::EntityHandler::ComponentRemovedFunc onCameraComponentRemoved = std::bind(&RenderSystem::OnCameraComponentRemoved, this, std::placeholders::_1);
+		handler.RegisterForComponentRemovedNotification<CameraComponent>(onCameraComponentRemoved);
+
+		Apollo::EntityHandler::ComponentModifiedFunc onCameraComponentModified = std::bind(&RenderSystem::OnCameraComponentModified, this, std::placeholders::_1);
+		handler.RegisterForComponentModifiedNotification<CameraComponent>(onCameraComponentModified);
+	}
+}
+
+void RenderSystem::OnMeshComponentAdded(Apollo::EntityID entityID)
+{
+	OPTICK_EVENT("RenderSystem::OnMeshComponentAdded");
+
+	Apollo::EntityHandler& handler = RZE_Application::RZE().GetActiveScene().GetEntityHandler();
+	ResourceHandler& resourceHandler = RZE_Application::RZE().GetResourceHandler();
+
+	// We've detected a MeshComponent was created. Create a render object
+	// and fill it with the data required to properly render the mesh resource.
+	MeshComponent* const meshComponent = handler.GetComponent<MeshComponent>(entityID);
+
+	// #TODO
+	// Places like these don't need to assert. GetComponent should be (is) verifying via assert.
+	// If that rule every changes just fix the callsites then. Extraneous code.
+	AssertNotNull(meshComponent);
+	AssertMsg(!meshComponent->Resource.IsValid(),
+		"MeshComponent resource already loaded. RenderSystem should be the only code servicing MeshComponent resource loads");
+	TransformComponent* const rootTransformComponent = handler.GetComponent<TransformComponent>(entityID);
+	AssertNotNull(rootTransformComponent);
+
+	ResourceHandle resource = resourceHandler.LoadResource<Model3D>(meshComponent->ResourcePath);
+	AssertExpr(resource.IsValid());
+	meshComponent->Resource = resource;
+
+	const Model3D* const modelData = resourceHandler.GetResource<Model3D>(resource);
+	AssertNotNull(modelData);
+
+	CreateAndInitializeRenderNode(entityID, *modelData, rootTransformComponent->GetAsMat4x4());
+}
+
+void RenderSystem::OnMeshComponentRemoved(Apollo::EntityID entityID)
+{
+}
+
+void RenderSystem::OnMeshComponentModified(Apollo::EntityID entityID)
+{
+}
+
+void RenderSystem::OnCameraComponentAdded(Apollo::EntityID entityID)
+{
+	Apollo::EntityHandler& entityHandler = RZE_Application::RZE().GetActiveScene().GetEntityHandler();
+
+	CameraComponent* const camComp = entityHandler.GetComponent<CameraComponent>(entityID);
+	AssertNotNull(camComp);
+
+	if (mCurrentCameraEntity != Apollo::kInvalidEntityID)
+	{
+		CameraComponent* const currentCamera = entityHandler.GetComponent<CameraComponent>(mCurrentCameraEntity);
+		AssertNotNull(currentCamera);
+
+		currentCamera->bIsActiveCamera = false;
+	}
+
+	// #NOTE(For now, the last camera added becomes the main camera.)
+	mCurrentCameraEntity = entityID;
+	camComp->bIsActiveCamera = true;
+
+	camComp->AspectRatio = RZE_Application::RZE().GetWindowSize().X() / RZE_Application::RZE().GetWindowSize().Y();
+}
+
+void RenderSystem::OnCameraComponentRemoved(Apollo::EntityID entityID)
+{
+}
+
+void RenderSystem::OnCameraComponentModified(Apollo::EntityID entityID)
+{
+	Apollo::EntityHandler& entityHandler = RZE_Application::RZE().GetActiveScene().GetEntityHandler();
+
+	CameraComponent* const camComp = entityHandler.GetComponent<CameraComponent>(entityID);
+	AssertNotNull(camComp);
+
+	if (camComp->bIsActiveCamera)
+	{
+		if (mCurrentCameraEntity != Apollo::kInvalidEntityID)
 		{
-			CameraComponent* const camComp = handler.GetComponent<CameraComponent>(entityID);
-			AssertNotNull(camComp);
+			CameraComponent* const currentCamera = entityHandler.GetComponent<CameraComponent>(mCurrentCameraEntity);
+			AssertNotNull(currentCamera);
 
-			if (mCurrentCameraEntity != Apollo::kInvalidEntityID)
-			{
-				CameraComponent* const currentCamera = handler.GetComponent<CameraComponent>(mCurrentCameraEntity);
-				AssertNotNull(currentCamera);
+			currentCamera->bIsActiveCamera = false;
+		}
 
-				currentCamera->bIsActiveCamera = false;
-			}
-
-			// #NOTE(For now, the last camera added becomes the main camera.)
-			mCurrentCameraEntity = entityID;
-			camComp->bIsActiveCamera = true;
-
-			camComp->AspectRatio = RZE_Application::RZE().GetWindowSize().X() / RZE_Application::RZE().GetWindowSize().Y();
-		});
-		handler.RegisterForComponentAddNotification<CameraComponent>(OnCameraComponentAdded);
-
-		Apollo::EntityHandler::ComponentModifiedFunc OnCameraComponentModified([this, &handler](Apollo::EntityID entityID)
-		{
-			CameraComponent* const camComp = handler.GetComponent<CameraComponent>(entityID);
-			AssertNotNull(camComp);
-
-			if (camComp->bIsActiveCamera)
-			{
-				if (mCurrentCameraEntity != Apollo::kInvalidEntityID)
-				{
-					CameraComponent* const currentCamera = handler.GetComponent<CameraComponent>(mCurrentCameraEntity);
-					AssertNotNull(currentCamera);
-
-					currentCamera->bIsActiveCamera = false;
-				}
-
-				mCurrentCameraEntity = entityID;
-			}
-		});
-		handler.RegisterForComponentModifiedNotification<CameraComponent>(OnCameraComponentModified);
-
-		Apollo::EntityHandler::ComponentModifiedFunc OnCameraComponentRemoved([this, &handler](Apollo::EntityID entityID)
-		{
-		});
-		handler.RegisterForComponentRemovedNotification<CameraComponent>(OnCameraComponentRemoved);
+		mCurrentCameraEntity = entityID;
 	}
 }
 
