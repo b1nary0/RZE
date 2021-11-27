@@ -15,7 +15,7 @@ struct CameraComponent final : public Apollo::Component<CameraComponent>
 	Matrix4x4 ViewMat;
 
 	float FOV { 60.0f };
-	float AspectRatio { 0.0f };
+	float AspectRatio { 0.0f }; // #TODO I don't think we're updating this sensibly when the aspect ratio changes...
 	float NearCull { 0.01f };
 	float FarCull { 1000.0f };
 
