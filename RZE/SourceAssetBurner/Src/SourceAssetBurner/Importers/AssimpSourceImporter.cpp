@@ -272,6 +272,8 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 
 bool AssimpSourceImporter::WriteMeshFile()
 {
+	AssertExpr(mMeshes.size() > 0);
+
 	// #TODO does this cause mesh issues when loaded?
 	mWriter.SetMaxDecimalPlaces(6);
 
