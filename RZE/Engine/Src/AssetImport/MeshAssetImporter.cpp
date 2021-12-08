@@ -29,7 +29,7 @@ bool MeshAssetImporter::Import(const FilePath& filePath)
 	for (auto& member = rootVal.MemberBegin(); member != rootVal.MemberEnd(); ++member)
 	{
 		std::string memberName = member->name.GetString();
-		if (memberName == "meshasset_version")
+		if (memberName == kAssetImportVersionKey)
 		{
 			const int fileVersion = member->value.GetInt();
 			AssertExpr(fileVersion == kAssetImportVersion);

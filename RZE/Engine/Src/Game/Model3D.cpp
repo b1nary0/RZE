@@ -8,9 +8,9 @@
 #include <Graphics/Material.h>
 #include <Graphics/Texture2D.h>
 
-#include <Graphics/IndexBuffer.h>
-#include <Graphics/VertexBuffer.h>
 #include <Graphics/Shader.h>
+
+#include <AssetImport/MeshAssetImporter.h>
 
 Model3D::Model3D()
 {
@@ -44,6 +44,9 @@ bool Model3D::Load(const FilePath& filePath)
 		LOG_CONSOLE_ARGS("Failed to load model from [%s].", mFilePath.GetRelativePath().c_str());
 		return false;
 	}
+
+	MeshAssetImporter meshImporter;
+	meshImporter.Import(FilePath("ProjectData/Mesh/Nyra.meshasset"));
 
 	std::vector<MeshGeometry> meshGeometry;
 	meshGeometry.reserve(AssimpScene->mNumMeshes);
@@ -157,10 +160,10 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 
 			// #TODO
 			// Should really shorthand these long lines by doing the following at the top somewhere for all the callsites to use
-			// ResourceHandler& resourceHandler = RZE_Application::RZE().GetResourceHandler();
+			// ResourceHandler& resourceHandler = RZE::GetResourceHandler();
 			// resourceHandler.LoadResource<...>
 			// but should do it as a larger effort instead of sprinkled efforts
-			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().LoadResource<Texture2D>(texturePath, Texture2D::ETextureType::Diffuse);
+			ResourceHandle textureHandle = RZE::GetResourceHandler().LoadResource<Texture2D>(texturePath, Texture2D::ETextureType::Diffuse);
 			if (textureHandle.IsValid())
 			{
 				pMaterial->SetTexture(Material::TEXTURE_SLOT_DIFFUSE, textureHandle);
@@ -178,7 +181,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 			mat->GetTexture(aiTextureType_SPECULAR, i, &str);
 
 			FilePath texturePath = GetTextureFilePath(str.C_Str());
-			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().LoadResource<Texture2D>(texturePath, Texture2D::ETextureType::Specular);
+			ResourceHandle textureHandle = RZE::GetResourceHandler().LoadResource<Texture2D>(texturePath, Texture2D::ETextureType::Specular);
 			if (textureHandle.IsValid())
 			{
 				pMaterial->SetTexture(Material::TEXTURE_SLOT_SPECULAR, textureHandle);
@@ -196,7 +199,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 			mat->GetTexture(aiTextureType_NORMALS, i, &str);
 
 			FilePath texturePath = GetTextureFilePath(str.C_Str());
-			ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().LoadResource<Texture2D>(texturePath, Texture2D::ETextureType::Normal);
+			ResourceHandle textureHandle = RZE::GetResourceHandler().LoadResource<Texture2D>(texturePath, Texture2D::ETextureType::Normal);
 			if (textureHandle.IsValid())
 			{
 				pMaterial->SetTexture(Material::TEXTURE_SLOT_NORMAL, textureHandle);
@@ -217,11 +220,11 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 	ResourceHandle shaderTechnique;
 	if (bFullShading)
 	{
-		shaderTechnique = RZE_Application::RZE().GetResourceHandler().LoadResource<ShaderTechnique>(FilePath("Assets/Shaders/Pixel_NewRenderer.hlsl"), "Pixel_NewRenderer");
+		shaderTechnique = RZE::GetResourceHandler().LoadResource<ShaderTechnique>(FilePath("Assets/Shaders/Pixel_NewRenderer.hlsl"), "Pixel_NewRenderer");
 	}
 	else if (bHasDiffuse)
 	{
-		shaderTechnique = RZE_Application::RZE().GetResourceHandler().LoadResource<ShaderTechnique>(FilePath("Assets/Shaders/Pixel_NewRenderer_DiffuseOnly.hlsl"), "Pixel_NewRenderer_DiffuseOnly");
+		shaderTechnique = RZE::GetResourceHandler().LoadResource<ShaderTechnique>(FilePath("Assets/Shaders/Pixel_NewRenderer_DiffuseOnly.hlsl"), "Pixel_NewRenderer_DiffuseOnly");
 	}
 
 	// #TODO
@@ -230,7 +233,7 @@ void Model3D::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry
 	// it will have to do for now. Lots of bugs here, not really thought out code.
 	if (!shaderTechnique.IsValid() && !bHasSpecular)
 	{
-		shaderTechnique = RZE_Application::RZE().GetResourceHandler().LoadResource<ShaderTechnique>(FilePath("Assets/Shaders/Pixel_Default_NewRenderer.hlsl"), "Pixel_Default_NewRenderer");
+		shaderTechnique = RZE::GetResourceHandler().LoadResource<ShaderTechnique>(FilePath("Assets/Shaders/Pixel_Default_NewRenderer.hlsl"), "Pixel_Default_NewRenderer");
 	}
 
 	pMaterial->SetShaderTechnique(shaderTechnique);

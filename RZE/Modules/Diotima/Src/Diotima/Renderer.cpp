@@ -389,7 +389,7 @@ namespace Diotima
 		return mDevice->CreatePixelShader(filePath);
 	}
 
-	U32 Renderer::CreateRenderObject(
+	U32 Renderer::CreateAndInitializeRenderObject(
 		const MeshData& meshData, 
 		const std::vector<TextureData>& textureData, 
 		const Matrix4x4& transform)

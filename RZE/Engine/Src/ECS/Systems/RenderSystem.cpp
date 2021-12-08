@@ -121,7 +121,7 @@ void RenderSystem::OnMeshComponentAdded(Apollo::EntityID entityID)
 	OPTICK_EVENT("RenderSystem::OnMeshComponentAdded");
 
 	Apollo::EntityHandler& handler = RZE_Application::RZE().GetActiveScene().GetEntityHandler();
-	ResourceHandler& resourceHandler = RZE_Application::RZE().GetResourceHandler();
+	ResourceHandler& resourceHandler = RZE::GetResourceHandler();
 
 	// We've detected a MeshComponent was created. Create a render object
 	// and fill it with the data required to properly render the mesh resource.
@@ -211,7 +211,7 @@ void RenderSystem::GenerateCameraMatrices(CameraComponent& cameraComponent, cons
 
 void RenderSystem::CreateAndInitializeRenderNode(const Apollo::EntityID entityID, const Model3D& modelData, const Matrix4x4& transform)
 {
-	ResourceHandler& resourceHandler = RZE_Application::RZE().GetResourceHandler();
+	ResourceHandler& resourceHandler = RZE::GetResourceHandler();
 
 	mRootNodes.emplace_back();
 	RenderNode& rootNode = mRootNodes.back();
@@ -254,6 +254,6 @@ void RenderSystem::CreateAndInitializeRenderNode(const Apollo::EntityID entityID
 			}
 		}
 
-		childNode.RenderObjectIndex = mRenderer->CreateRenderObject(meshData, textureData, rootNode.Transform);
+		childNode.RenderObjectIndex = mRenderer->CreateAndInitializeRenderObject(meshData, textureData, rootNode.Transform);
 	}
 }

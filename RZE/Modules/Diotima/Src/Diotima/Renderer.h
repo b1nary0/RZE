@@ -140,7 +140,7 @@ namespace Diotima
 		// [newrenderer]
 		// This is just to fix allocating resources every frame. Need to track the RenderObject
 		// created, but ideally this should **NOT** just be U32 based on the index of the item.
-		U32 CreateRenderObject(
+		U32 CreateAndInitializeRenderObject(
 			const MeshData& meshData, 
 			const std::vector<TextureData>& textureData, 
 			const Matrix4x4& transform);

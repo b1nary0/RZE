@@ -22,7 +22,7 @@ void ProjectileSystem::Initialize()
 
 	RegisterForComponentNotifications();
 
-	mProjectileResource = RZE_Application::RZE().GetResourceHandler().LoadResource<Model3D>(FilePath("Assets/3D/NeckMechWalker/NeckMechWalker.obj"));
+	mProjectileResource = RZE::GetResourceHandler().LoadResource<Model3D>(FilePath("Assets/3D/NeckMechWalker/NeckMechWalker.obj"));
 	AssertExpr(mProjectileResource.IsValid());
 	
 	InputHandler::KeyActionFunc leftButtonFunc([this, &entityHandler](const InputKey& key)

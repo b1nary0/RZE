@@ -32,7 +32,7 @@ void GameApp::Initialize()
 	GameScene& activeScene = RZE().GetActiveScene();
 	// #TODO(Josh::Putting this comment here because too lazy to do it elsewhere. Hopefully I find it later:
 	//             -- Need to add at least commandline arg like -startscene or something)
-	//RZE().GetActiveScene().Load(FilePath("Assets/Scenes/Sponza.scene"));
+	//activeScene.Load(FilePath("Assets/Scenes/Sponza.scene"));
 	activeScene.Load(FilePath("Assets/Scenes/RenderTest.scene"));
 
 	activeScene.AddSystem<FreeCameraSystem>();

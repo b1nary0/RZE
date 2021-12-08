@@ -23,6 +23,8 @@
 
 namespace
 {
+	constexpr char kSceneFileToLoadHack[] = { "Assets/Scenes/RenderTest.scene" };
+
 	// #TODO
 	// Uber temp struct here to represent editor state.
 	// Needs to move out eventually into something not bad.
@@ -80,7 +82,7 @@ namespace Editor
 		// For now, it's always false here because we always load into TestGame.scene
 		gEditorState.IsNewScene = false;
 
-		FilePath scenePath("Assets/Scenes/TestGame.scene");
+		FilePath scenePath(kSceneFileToLoadHack);
 		RZE().GetActiveScene().Load(scenePath);
 
 		AddFilePathToWindowTitle(scenePath.GetRelativePath());

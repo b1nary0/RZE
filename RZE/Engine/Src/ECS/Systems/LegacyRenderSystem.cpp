@@ -111,11 +111,11 @@ void LegacyRenderSystem::RegisterForComponentNotifications()
 
 		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entityID);
 		AssertNotNull(meshComp);
-		meshComp->Resource = RZE_Application::RZE().GetResourceHandler().LoadResource<Model3D>(meshComp->ResourcePath);
+		meshComp->Resource = RZE::GetResourceHandler().LoadResource<Model3D>(meshComp->ResourcePath);
 
 		if (meshComp->Resource.IsValid())
 		{
-			Model3D* const modelData = RZE_Application::RZE().GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
+			Model3D* const modelData = RZE::GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
 
 			// #NOTE_RENDER_REFACTOR
 			// This is the entry point into the Renderer so this is the code that needs to be turned into something more intuitive.
@@ -156,7 +156,7 @@ void LegacyRenderSystem::RegisterForComponentNotifications()
 		MeshComponent* const meshComponent = handler.GetComponent<MeshComponent>(entityID);
 		AssertNotNull(meshComponent);
 
-		RZE_Application::RZE().GetResourceHandler().ReleaseResource(meshComponent->Resource);
+		RZE::GetResourceHandler().ReleaseResource(meshComponent->Resource);
 
 		Int32 renderIndex = mRenderItemEntityMap[entityID];
 		RZE_Application::RZE().GetLegacyRenderer().RemoveRenderItem(renderIndex);
@@ -176,8 +176,8 @@ void LegacyRenderSystem::RegisterForComponentNotifications()
 		MeshComponent* const meshComp = handler.GetComponent<MeshComponent>(entityID);
 		AssertNotNull(meshComp);
 		// #TODO(Doing this here because ResourceHandle lifetime is buggy (copies/moves/etc))
-		RZE_Application::RZE().GetResourceHandler().ReleaseResource(meshComp->Resource);
-		meshComp->Resource = RZE_Application::RZE().GetResourceHandler().LoadResource<Model3D>(meshComp->ResourcePath);
+		RZE::GetResourceHandler().ReleaseResource(meshComp->Resource);
+		meshComp->Resource = RZE::GetResourceHandler().LoadResource<Model3D>(meshComp->ResourcePath);
 
 		if (meshComp->Resource.IsValid())
 		{
@@ -185,7 +185,7 @@ void LegacyRenderSystem::RegisterForComponentNotifications()
 			Diotima::LegacyRenderer::RenderItemProtocol& renderItem = RZE_Application::RZE().GetLegacyRenderer().GetItemProtocolByIdx(renderIndex);
 			renderItem.MeshData.clear();
 
-			Model3D* const modelData = RZE_Application::RZE().GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
+			Model3D* const modelData = RZE::GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
 
 			for (const MeshGeometry& mesh : modelData->GetStaticMesh().GetSubMeshes())
 			{

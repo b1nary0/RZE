@@ -185,10 +185,10 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 
 	//		// #TODO
 	//		// Should really shorthand these long lines by doing the following at the top somewhere for all the callsites to use
-	//		// ResourceHandler& resourceHandler = RZE_Application::RZE().GetResourceHandler();
+	//		// ResourceHandler& resourceHandler = RZE::GetResourceHandler();
 	//		// resourceHandler.LoadResource<...>
 	//		// but should do it as a larger effort instead of sprinkled efforts
-	//		ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().LoadResource<Texture2D>(texturePath, Texture2D::ETextureType::Diffuse);
+	//		ResourceHandle textureHandle = RZE::GetResourceHandler().LoadResource<Texture2D>(texturePath, Texture2D::ETextureType::Diffuse);
 	//		if (textureHandle.IsValid())
 	//		{
 	//			pMaterial->SetTexture(Material::TEXTURE_SLOT_DIFFUSE, textureHandle);
@@ -206,7 +206,7 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 	//		mat->GetTexture(aiTextureType_SPECULAR, i, &str);
 
 	//		FilePath texturePath = GetTextureFilePath(str.C_Str());
-	//		ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().LoadResource<Texture2D>(texturePath, Texture2D::ETextureType::Specular);
+	//		ResourceHandle textureHandle = RZE::GetResourceHandler().LoadResource<Texture2D>(texturePath, Texture2D::ETextureType::Specular);
 	//		if (textureHandle.IsValid())
 	//		{
 	//			pMaterial->SetTexture(Material::TEXTURE_SLOT_SPECULAR, textureHandle);
@@ -224,7 +224,7 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 	//		mat->GetTexture(aiTextureType_NORMALS, i, &str);
 
 	//		FilePath texturePath = GetTextureFilePath(str.C_Str());
-	//		ResourceHandle textureHandle = RZE_Application::RZE().GetResourceHandler().LoadResource<Texture2D>(texturePath, Texture2D::ETextureType::Normal);
+	//		ResourceHandle textureHandle = RZE::GetResourceHandler().LoadResource<Texture2D>(texturePath, Texture2D::ETextureType::Normal);
 	//		if (textureHandle.IsValid())
 	//		{
 	//			pMaterial->SetTexture(Material::TEXTURE_SLOT_NORMAL, textureHandle);
@@ -245,11 +245,11 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 	//ResourceHandle shaderTechnique;
 	//if (bFullShading)
 	//{
-	//	shaderTechnique = RZE_Application::RZE().GetResourceHandler().LoadResource<ShaderTechnique>(FilePath("Assets/Shaders/Pixel_NewRenderer.hlsl"), "Pixel_NewRenderer");
+	//	shaderTechnique = RZE::GetResourceHandler().LoadResource<ShaderTechnique>(FilePath("Assets/Shaders/Pixel_NewRenderer.hlsl"), "Pixel_NewRenderer");
 	//}
 	//else if (bHasDiffuse)
 	//{
-	//	shaderTechnique = RZE_Application::RZE().GetResourceHandler().LoadResource<ShaderTechnique>(FilePath("Assets/Shaders/Pixel_NewRenderer_DiffuseOnly.hlsl"), "Pixel_NewRenderer_DiffuseOnly");
+	//	shaderTechnique = RZE::GetResourceHandler().LoadResource<ShaderTechnique>(FilePath("Assets/Shaders/Pixel_NewRenderer_DiffuseOnly.hlsl"), "Pixel_NewRenderer_DiffuseOnly");
 	//}
 
 	//// #TODO
@@ -258,7 +258,7 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 	//// it will have to do for now. Lots of bugs here, not really thought out code.
 	//if (!shaderTechnique.IsValid() && !bHasSpecular)
 	//{
-	//	shaderTechnique = RZE_Application::RZE().GetResourceHandler().LoadResource<ShaderTechnique>(FilePath("Assets/Shaders/Pixel_Default_NewRenderer.hlsl"), "Pixel_Default_NewRenderer");
+	//	shaderTechnique = RZE::GetResourceHandler().LoadResource<ShaderTechnique>(FilePath("Assets/Shaders/Pixel_Default_NewRenderer.hlsl"), "Pixel_Default_NewRenderer");
 	//}
 
 	//pMaterial->SetShaderTechnique(shaderTechnique);
