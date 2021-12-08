@@ -6,10 +6,6 @@ build:
   verbosity: minimal
  
 shallow_clone: false
- 
-branches:
-  only:
-    - NewRenderer
     
 configuration:
  - Debug
