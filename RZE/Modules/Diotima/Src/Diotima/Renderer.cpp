@@ -164,6 +164,7 @@ namespace Diotima
 		deviceContext.RSSetViewports(1, &viewport);
 
 		deviceContext.IASetInputLayout(kDrawStateData.mVertexLayout);
+		deviceContext.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	}
 
 	void Renderer::Draw()
@@ -171,9 +172,24 @@ namespace Diotima
 		OPTICK_EVENT();
 
 		ID3D11DeviceContext& deviceContext = mDevice->GetDeviceContext();
-		deviceContext.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		for (auto& renderObject : mRenderObjects)
+		std::vector<RenderObject> renderObjects_sorted;
+		{
+			OPTICK_EVENT("RenderObject Copy + Sort");
+
+			//The need for the second vectorand subsequent copy
+					// is due to referencing directly by object index. This needs to change to a more robust 
+					// implementation.
+			renderObjects_sorted = mRenderObjects;
+			std::sort(renderObjects_sorted.begin(), renderObjects_sorted.end(),
+				[](const RenderObject& objA, const RenderObject& objB)
+				{
+					return objA.Material.mShaderID < objB.Material.mShaderID;
+				}
+			);
+		}
+
+		for (auto& renderObject : renderObjects_sorted)
 		{
 			ID3D11PixelShader* const hwShader = mDevice->GetPixelShader(renderObject.Material.mShaderID);
 			deviceContext.PSSetShader(hwShader, 0, 0);
