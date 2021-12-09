@@ -14,6 +14,12 @@ bool MeshAssetImporter::Import(const FilePath& filePath)
 	AssertExpr(meshFile.IsValid());
 	meshFile.Close();
 
+	if (meshFile.Empty())
+	{
+		LOG_CONSOLE_ARGS("Error reading file [%s]", filePath.GetRelativePath().c_str());
+		return false;
+	}
+
 	rapidjson::Document meshDoc;
 	meshDoc.Parse(meshFile.Content().c_str());
 
