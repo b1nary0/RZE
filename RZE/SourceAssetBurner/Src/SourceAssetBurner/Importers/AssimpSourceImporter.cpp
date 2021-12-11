@@ -314,6 +314,7 @@ bool AssimpSourceImporter::WriteMeshFile()
 
 	LOG_CONSOLE_ARGS("AssimpSourceImporter : %s written.", outputPath.GetRelativePath().c_str());
 
+	mWriter.Reset(mStringBuffer);
 	return true;
 }
 
