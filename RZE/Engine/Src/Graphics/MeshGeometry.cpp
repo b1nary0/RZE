@@ -25,6 +25,8 @@ void MeshGeometry::AllocateData()
 	vertexDataBuffer.reserve(mVertices.size() * sizeof(MeshVertex));
 	for (const MeshVertex& vertex : GetVertices())
 	{
+		// #TODO
+		// These copies are in a different order than how we write/read with the import pipeline
 		for (int index = 0; index < 3; ++index)
 		{
 			vertexDataBuffer.push_back(vertex.Position[index]);

@@ -25,12 +25,6 @@ public:
 	inline const StaticMesh& GetStaticMesh() const { return mMesh; }
 
 private:
-	void ProcessNode(const aiNode& node, const aiScene& scene, std::vector<MeshGeometry>& outMeshGeometry);
-	void ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshGeometry& outMesh);
-
-	FilePath GetTextureFilePath(const std::string& fileName);
-
-private:
 	FilePath mFilePath;
 
 	StaticMesh mMesh;
