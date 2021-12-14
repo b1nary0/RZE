@@ -22,7 +22,7 @@ struct MeshVertex
 class MeshGeometry
 {
 public:
-	MeshGeometry();
+	MeshGeometry(U32 vertexCount, U32 indexCount);
 	~MeshGeometry();
 
 	void AllocateData();

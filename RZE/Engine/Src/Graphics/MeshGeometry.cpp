@@ -6,8 +6,10 @@
 #include <Graphics/IndexBuffer.h>
 #include <Graphics/VertexBuffer.h>
 
-MeshGeometry::MeshGeometry()
+MeshGeometry::MeshGeometry(U32 vertexCount, U32 indexCount)
 {
+	mVertices.reserve(vertexCount);
+	mIndices.reserve(indexCount);
 }
 
 MeshGeometry::~MeshGeometry()
@@ -21,7 +23,7 @@ void MeshGeometry::AllocateData()
 
 	std::vector<float> vertexDataBuffer;
 	vertexDataBuffer.reserve(mVertices.size() * sizeof(MeshVertex));
-	for (MeshVertex vertex : GetVertices())
+	for (const MeshVertex& vertex : GetVertices())
 	{
 		for (int index = 0; index < 3; ++index)
 		{

@@ -86,7 +86,7 @@
                     ]
                 },
                 "MeshComponent": {
-                    "ResourcePath": "Assets/3D/Sponza/sponza.obj"
+                    "ResourcePath": "ProjectData/Mesh/sponza.meshasset"
                 }
             }
         },
@@ -110,7 +110,7 @@
                     ]
                 },
                 "MeshComponent": {
-                    "ResourcePath": "Assets/3D/Nyra/Nyra.obj"
+                    "ResourcePath": "ProjectData/Mesh/Nyra.meshasset"
                 }
             }
         },
@@ -134,7 +134,7 @@
                     ]
                 },
                 "MeshComponent": {
-                    "ResourcePath": "Assets/3D/Nanosuit/Nanosuit.obj"
+                    "ResourcePath": "ProjectData/Mesh/Nanosuit.meshasset"
                 }
             }
         },
@@ -158,7 +158,7 @@
                     ]
                 },
                 "MeshComponent": {
-                    "ResourcePath": "Assets/3D/NeckMechWalker/NeckMechWalker.obj"
+                    "ResourcePath": "ProjectData/Mesh/NeckMechWalker.meshasset"
                 }
             }
         },
@@ -182,7 +182,7 @@
                     ]
                 },
                 "MeshComponent": {
-                    "ResourcePath": "Assets/3D/Panzer/Panzer.obj"
+                    "ResourcePath": "ProjectData/Mesh/Panzer.meshasset"
                 }
             }
         }
