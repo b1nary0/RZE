@@ -2,6 +2,8 @@
 
 #include <AssetImport/AssetImporter.h>
 
+#include <Graphics/MeshGeometry.h>
+
 class MeshAssetImporter : public AssetImporter
 {
 public:
@@ -11,10 +13,6 @@ public:
 public:
 	virtual bool Import(const FilePath& filePath) override;
 	
-private:
-	struct MeshData
-	{
-		std::vector<float> VertexData;
-	};
-	std::vector<MeshData> test;
+//private:
+	std::vector<MeshGeometry> mMeshGeometry;
 };

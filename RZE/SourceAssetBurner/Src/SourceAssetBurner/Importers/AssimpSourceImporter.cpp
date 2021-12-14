@@ -13,8 +13,13 @@
 
 namespace
 {
+	// #TODO
+	// Move these into a common file. They will be used across different classes
 	constexpr char kMeshAssetSuffix[] = { ".meshasset" };
 	constexpr char kMaterialAssetSuffix[] = { ".materialasset" };
+
+	constexpr char kSubMeshStartKey[] = { "submesh_start" };
+	constexpr char kMeshAssetVersionKey[] = { "meshasset_version" };
 	constexpr int kMeshAssetVersion = 1;
 
 	std::string StripAssetNameFromFilePath(const FilePath& filePath)
@@ -283,7 +288,7 @@ bool AssimpSourceImporter::WriteMeshFile()
 		mWriter.StartObject();
 		{
 			// #TODO maybe write burn system data here if necessary
-			mWriter.Key("meshasset_version");
+			mWriter.Key(kMeshAssetVersionKey);
 			mWriter.Int(kMeshAssetVersion);
 			for (auto& meshData : mMeshes)
 			{
@@ -323,36 +328,52 @@ void AssimpSourceImporter::WriteSingleMesh(const MeshData& meshData)
 	mWriter.String(meshData.MeshName.c_str());
 	mWriter.StartObject();
 	{
-		mWriter.Key("vertex_data_size");
-		mWriter.Int(meshData.VertexDataArray.size());
-		mWriter.Key("vertex_data");
-		mWriter.StartArray();
 		{
-			for (auto& meshVertex : meshData.VertexDataArray)
+			mWriter.Key("vertex_data_size");
+			mWriter.Int(meshData.VertexDataArray.size());
+			mWriter.Key("vertex_data");
+			mWriter.StartArray();
 			{
-				// Position
-				for (int i = 0; i < 3; ++i)
+				for (auto& meshVertex : meshData.VertexDataArray)
 				{
-					mWriter.Double(meshVertex.Position[i]);
-				}
-				// Normal
-				for (int i = 0; i < 3; ++i)
-				{
-					mWriter.Double(meshVertex.Normal[i]);
-				}
-				// Tangent
-				for (int i = 0; i < 3; ++i)
-				{
-					mWriter.Double(meshVertex.Tangent[i]);
-				}
-				// UV
-				for (int i = 0; i < 2; ++i)
-				{
-					mWriter.Double(meshVertex.UVData[i]);
+					// Position
+					for (int i = 0; i < 3; ++i)
+					{
+						mWriter.Double(meshVertex.Position[i]);
+					}
+					// Normal
+					for (int i = 0; i < 3; ++i)
+					{
+						mWriter.Double(meshVertex.Normal[i]);
+					}
+					// Tangent
+					for (int i = 0; i < 3; ++i)
+					{
+						mWriter.Double(meshVertex.Tangent[i]);
+					}
+					// UV
+					for (int i = 0; i < 2; ++i)
+					{
+						mWriter.Double(meshVertex.UVData[i]);
+					}
 				}
 			}
+			mWriter.EndArray();
 		}
-		mWriter.EndArray();
+
+		{
+			mWriter.Key("index_data_size");
+			mWriter.Int(meshData.IndexArray.size());
+			mWriter.Key("index_data");
+			mWriter.StartArray();
+			{
+				for (auto& index : meshData.IndexArray)
+				{
+					mWriter.Uint(index);
+				}
+			}
+			mWriter.EndArray();
+		}
 	}
 	mWriter.EndObject();
 }
