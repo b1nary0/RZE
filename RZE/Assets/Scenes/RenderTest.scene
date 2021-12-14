@@ -86,7 +86,7 @@
                     ]
                 },
                 "MeshComponent": {
-                    "ResourcePath": "Assets/3D/Nyra/Nyra.obj"
+                    "ResourcePath": "ProjectData/Mesh/Nyra.meshasset"
                 }
             }
         }
