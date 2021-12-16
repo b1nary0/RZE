@@ -1,6 +1,6 @@
 #include <StdAfx.h>
 
-#include <AssetImport/MeshAssetImporter.h>
+#include <Asset/AssetImport/MeshAssetImporter.h>
 
 namespace
 {

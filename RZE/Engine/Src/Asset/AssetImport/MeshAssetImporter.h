@@ -1,6 +1,6 @@
 #pragma once
 
-#include <AssetImport/AssetImporter.h>
+#include <Asset/AssetImport/AssetImporter.h>
 
 #include <Graphics/MeshGeometry.h>
 
