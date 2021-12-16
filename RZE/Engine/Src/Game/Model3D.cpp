@@ -10,7 +10,7 @@
 
 #include <Graphics/Shader.h>
 
-#include <AssetImport/MeshAssetImporter.h>
+#include <Asset/AssetImport/MeshAssetImporter.h>
 
 Model3D::Model3D()
 {
