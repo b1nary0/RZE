@@ -73,16 +73,11 @@ std::vector<float> MeshAssetImporter::ReadVertices(Byte* readBytes, size_t& curP
 	size_t vertexDataSizeBytes = *reinterpret_cast<size_t*>(&readBytes[curPos]);
 	curPos += sizeof(size_t);
 
-	unsigned char* vertexData = new unsigned char[vertexDataSizeBytes];
-	memcpy(vertexData, &readBytes[curPos], vertexDataSizeBytes);
-
 	std::vector<float> vertexDataVec;
 	vertexDataVec.resize(vertexDataSizeBytes / sizeof(float));
-	memcpy(vertexDataVec.data(), vertexData, vertexDataSizeBytes);
+	memcpy(vertexDataVec.data(), &readBytes[curPos], vertexDataSizeBytes);
 	curPos += vertexDataSizeBytes;
 
-	delete[] vertexData;
-	vertexData = nullptr;
 	return vertexDataVec;
 }
 
@@ -91,15 +86,10 @@ std::vector<U32> MeshAssetImporter::ReadIndices(Byte* readBytes, size_t& curPos)
 	size_t indexDataSizeBytes = *reinterpret_cast<size_t*>(&readBytes[curPos]);
 	curPos += sizeof(size_t);
 
-	unsigned char* indexData = new unsigned char[indexDataSizeBytes];
-	memcpy(indexData, &readBytes[curPos], indexDataSizeBytes);
-
 	std::vector<U32> indexDataVec;
 	indexDataVec.resize(indexDataSizeBytes / sizeof(U32));
-	memcpy(indexDataVec.data(), &indexData[0], indexDataSizeBytes);
+	memcpy(indexDataVec.data(), &readBytes[curPos], indexDataSizeBytes);
 	curPos += indexDataSizeBytes;
 
-	delete[] indexData;
-	indexData = nullptr;
 	return indexDataVec;
 }
