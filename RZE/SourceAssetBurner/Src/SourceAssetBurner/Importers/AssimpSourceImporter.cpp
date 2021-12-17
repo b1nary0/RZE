@@ -18,8 +18,6 @@ namespace
 	constexpr char kMeshAssetSuffix[] = { ".meshasset" };
 	constexpr char kMaterialAssetSuffix[] = { ".materialasset" };
 
-	constexpr char kSubMeshStartKey[] = { "submesh_start" };
-	constexpr char kMeshAssetVersionKey[] = { "meshasset_version" };
 	constexpr int kMeshAssetVersion = 1;
 
 	std::string StripAssetNameFromFilePath(const FilePath& filePath)
@@ -279,26 +277,6 @@ bool AssimpSourceImporter::WriteMeshFile()
 {
 	AssertExpr(mMeshes.size() > 0);
 
-	// #TODO does this cause mesh issues when loaded?
-	mWriter.SetMaxDecimalPlaces(6);
-
-	mWriter.StartObject();
-	{
-		mWriter.Key("asset_start");
-		mWriter.StartObject();
-		{
-			// #TODO maybe write burn system data here if necessary
-			mWriter.Key(kMeshAssetVersionKey);
-			mWriter.Int(kMeshAssetVersion);
-			for (auto& meshData : mMeshes)
-			{
-				WriteSingleMesh(meshData);
-			}
-		}
-		mWriter.EndObject();
-	}
-	mWriter.EndObject();
-
 	// #TODO really gross string manip lol
 	std::string assetFilename = mAssetName + kMeshAssetSuffix;
 	std::string assetFilepathRelative = "ProjectData/Mesh/";
@@ -312,68 +290,72 @@ bool AssimpSourceImporter::WriteMeshFile()
 
 	// #TODO json files are too large. need to compress and write the stream - see zlib
 	File outputFile(outputPath);
-	outputFile.Open(File::EFileOpenMode::Write);
-	outputFile.Write(mStringBuffer.GetString());
-	AssertExpr(outputFile.IsValid());
+	outputFile.Open((File::EFileOpenMode::Value)(File::EFileOpenMode::Write | File::EFileOpenMode::Binary));
+
+	size_t bufSize = 0;
+	for (auto& mesh : mMeshes)
+	{
+		// #TODO
+		// Am i just dumb or can this be done in a much more elegant manner by a monkey
+		const size_t meshDataSize = mesh.MeshName.size() + sizeof(MeshVertex) * mesh.VertexDataArray.size() + sizeof(U32) * mesh.IndexArray.size();
+		bufSize += meshDataSize;
+	}
+	// magic numbers atm re: calculating data size headers per piece of data.
+	bufSize += sizeof(size_t) * 2 + (sizeof(size_t) * 3 * mMeshes.size());
+
+	unsigned char* byteBuffer = new unsigned char[bufSize];
+	memset(byteBuffer, NULL, bufSize);
+
+	size_t bytesWritten = 0;
+
+	size_t curPos = 0;
+	memcpy(&byteBuffer[curPos], &bufSize, sizeof(size_t));
+	curPos += sizeof(size_t);
+
+	const size_t meshCount = mMeshes.size();
+	memcpy(&byteBuffer[curPos], &meshCount, sizeof(size_t));
+	curPos += sizeof(size_t);
+
+	for (auto& mesh : mMeshes)
+	{
+		// Have to piece-meal the copy here because the vectors are dynamically allocated. 
+		const size_t nameSizeBytes = mesh.MeshName.size();
+		memcpy(&byteBuffer[curPos], &nameSizeBytes, sizeof(size_t));
+		curPos += sizeof(size_t);
+
+		memcpy(&byteBuffer[curPos], mesh.MeshName.data(), nameSizeBytes);
+		curPos += nameSizeBytes;
+
+		const size_t vertexDataSizeBytes = sizeof(MeshVertex) * mesh.VertexDataArray.size();
+		memcpy(&byteBuffer[curPos], &vertexDataSizeBytes, sizeof(size_t));
+		curPos += sizeof(size_t);
+
+		memcpy(&byteBuffer[curPos], mesh.VertexDataArray.data(), vertexDataSizeBytes);
+		curPos += vertexDataSizeBytes;
+
+		const size_t indexDataSizeBytes = sizeof(U32) * mesh.IndexArray.size();
+		memcpy(&byteBuffer[curPos], &indexDataSizeBytes, sizeof(size_t));
+		curPos += sizeof(size_t);
+		
+		memcpy(&byteBuffer[curPos], mesh.IndexArray.data(), indexDataSizeBytes);
+		curPos += indexDataSizeBytes;
+
+		bytesWritten = curPos;
+	}
+
+	AssertExpr(bytesWritten == bufSize);
+
+	for (size_t byteIndex = 0; byteIndex < bufSize; ++byteIndex)
+	{
+		outputFile << byteBuffer[byteIndex];
+	}
+
 	outputFile.Close();
+
+	delete[] byteBuffer;
+	byteBuffer = nullptr;
 
 	LOG_CONSOLE_ARGS("AssimpSourceImporter : %s written.", outputPath.GetRelativePath().c_str());
 
-	mWriter.Reset(mStringBuffer);
 	return true;
-}
-
-void AssimpSourceImporter::WriteSingleMesh(const MeshData& meshData)
-{
-	mWriter.String(meshData.MeshName.c_str());
-	mWriter.StartObject();
-	{
-		{
-			mWriter.Key("vertex_data_size");
-			mWriter.Int(meshData.VertexDataArray.size());
-			mWriter.Key("vertex_data");
-			mWriter.StartArray();
-			{
-				for (auto& meshVertex : meshData.VertexDataArray)
-				{
-					// Position
-					for (int i = 0; i < 3; ++i)
-					{
-						mWriter.Double(meshVertex.Position[i]);
-					}
-					// Normal
-					for (int i = 0; i < 3; ++i)
-					{
-						mWriter.Double(meshVertex.Normal[i]);
-					}
-					// Tangent
-					for (int i = 0; i < 3; ++i)
-					{
-						mWriter.Double(meshVertex.Tangent[i]);
-					}
-					// UV
-					for (int i = 0; i < 2; ++i)
-					{
-						mWriter.Double(meshVertex.UVData[i]);
-					}
-				}
-			}
-			mWriter.EndArray();
-		}
-
-		{
-			mWriter.Key("index_data_size");
-			mWriter.Int(meshData.IndexArray.size());
-			mWriter.Key("index_data");
-			mWriter.StartArray();
-			{
-				for (auto& index : meshData.IndexArray)
-				{
-					mWriter.Uint(index);
-				}
-			}
-			mWriter.EndArray();
-		}
-	}
-	mWriter.EndObject();
 }

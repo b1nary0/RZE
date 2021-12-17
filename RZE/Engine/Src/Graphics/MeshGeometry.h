@@ -22,6 +22,7 @@ struct MeshVertex
 class MeshGeometry
 {
 public:
+	MeshGeometry() = default;
 	MeshGeometry(U32 vertexCount, U32 indexCount);
 	~MeshGeometry();
 
@@ -29,6 +30,10 @@ public:
 
 	void AddVertex(const MeshVertex& vertex);
 	void AddIndex(U32 index);
+
+	void SetName(const std::string& name);
+	void SetVertexData(const std::vector<MeshVertex>& verts);
+	void SetIndexData(const std::vector<U32>& indices);
 
 	void SetMaterial(Material* material);
 
@@ -39,6 +44,10 @@ public:
 	const std::vector<U32>& GetIndexDataRaw() const;
 
 private:
+	std::string mName;
+	std::vector<MeshVertex> mVertices;
+	std::vector<U32> mIndices;
+
 	// #TODO
 	// Mature this concept, just jotting some ideas down.
 	// Essentially the RenderData (or whatever it gets called) needs to be created
@@ -52,6 +61,4 @@ private:
 
 	Material* mMaterial;
 
-	std::vector<MeshVertex> mVertices;
-	std::vector<U32> mIndices;
 };

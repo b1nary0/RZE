@@ -65,6 +65,21 @@ void MeshGeometry::AddIndex(U32 index)
 	mIndices.push_back(index);
 }
 
+void MeshGeometry::SetName(const std::string& name)
+{
+	mName = name;
+}
+
+void MeshGeometry::SetVertexData(const std::vector<MeshVertex>& verts)
+{
+	mVertices = verts;
+}
+
+void MeshGeometry::SetIndexData(const std::vector<U32>& indices)
+{
+	mIndices = indices;
+}
+
 void MeshGeometry::SetMaterial(Material* material)
 {
 	AssertNotNull(material);

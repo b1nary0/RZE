@@ -28,7 +28,7 @@ bool Model3D::Load(const FilePath& filePath)
 	MeshAssetImporter meshImporter;
 	meshImporter.Import(filePath);
 
-	mMesh.Initialize(std::move(meshImporter.mMeshGeometry));
+	mMesh.Initialize(std::move(meshImporter.GetMeshGeometry()));
 	return true;
 }
 

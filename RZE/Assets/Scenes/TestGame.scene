@@ -65,14 +65,14 @@
                     ]
                 },
 				"MeshComponent": {
-					"ResourcePath": "Assets/3D/Cube.obj"
+					"ResourcePath": "ProjectData/Mesh/Cube.meshasset"
 				}
             }
         },
         "Floor": {
             "components": {
                 "MeshComponent": {
-                    "ResourcePath": "Assets/3D/Ground/Quad.obj"
+                    "ResourcePath": "ProjectData/Mesh/Quad.meshasset"
                 },
                 "TransformComponent": {
                     "Position": [
@@ -96,7 +96,7 @@
         "Bomber": {
             "components": {
                 "MeshComponent": {
-                    "ResourcePath": "Assets/3D/FW190/FW190.obj"
+                    "ResourcePath": "ProjectData/Mesh/FW190.meshasset"
                 },
                 "TransformComponent": {
                     "Position": [
@@ -120,7 +120,7 @@
         "NeckMechWalker": {
             "components": {
                 "MeshComponent": {
-                    "ResourcePath": "Assets/3D/NeckMechWalker/NeckMechWalker.obj"
+                    "ResourcePath": "ProjectData/Mesh/NeckMechWalker.meshasset"
                 },
                 "TransformComponent": {
                     "Position": [
@@ -144,7 +144,7 @@
         "Nanosuit": {
             "components": {
                 "MeshComponent": {
-                    "ResourcePath": "Assets/3D/Nanosuit/Nanosuit.obj"
+                    "ResourcePath": "ProjectData/Mesh/Nanosuit.meshasset"
                 },
                 "TransformComponent": {
                     "Position": [
@@ -168,7 +168,7 @@
         "Nyra": {
             "components": {
                 "MeshComponent": {
-                    "ResourcePath": "Assets/3D/Nyra/Nyra.obj"
+                    "ResourcePath": "ProjectData/Mesh/Nyra.meshasset"
                 },
                 "TransformComponent": {
                     "Position": [
@@ -192,7 +192,7 @@
         "Panzer": {
             "components": {
                 "MeshComponent": {
-                    "ResourcePath": "Assets/3D/Panzer/Panzer.obj"
+                    "ResourcePath": "ProjectData/Mesh/Panzer.meshasset"
                 },
                 "TransformComponent": {
                     "Position": [

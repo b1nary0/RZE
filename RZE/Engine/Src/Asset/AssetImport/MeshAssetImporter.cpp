@@ -2,114 +2,104 @@
 
 #include <Asset/AssetImport/MeshAssetImporter.h>
 
+#include <EngineCore/Platform/Memory/ByteStream.h>
+
 namespace
 {
-	constexpr char kAssetImportVersionKey[] = { "meshasset_version" };
+	// #TODO
+	// Read/Write this information to .meshasset
 	constexpr int kAssetImportVersion = 1;
-
-	constexpr char kAssetStartKey[] = { "asset_start" };
-
-	constexpr char kVertexDataSizeKey[] = { "vertex_data_size" };
-	constexpr char kVertexDataKey[] = { "vertex_data" };
-
-	constexpr char kIndexDataSizeKey[] = { "index_data_size" };
-	constexpr char kIndexDataKey[] = { "index_data" };
 }
 
 bool MeshAssetImporter::Import(const FilePath& filePath)
 {
-	File meshFile(filePath);
-	AssertExpr(meshFile.IsValid());
-	meshFile.Close();
+	ByteStream byteStream(filePath.GetRelativePath());
+	byteStream.ReadFromFile(filePath);
 
-	if (meshFile.Empty())
+	Byte* readBytes = byteStream.GetByteStream();
+
+	struct MeshAssetFileHeader
 	{
-		LOG_CONSOLE_ARGS("Error reading file [%s]", filePath.GetRelativePath().c_str());
-		return false;
-	}
+		size_t BufSize;
+		size_t MeshCount;
+	};
 
-	rapidjson::Document meshDoc;
-	meshDoc.Parse(meshFile.Content().c_str());
-
-	rapidjson::Value::MemberIterator root = meshDoc.FindMember(kAssetStartKey);
-
-	if (root == meshDoc.MemberEnd())
+	MeshAssetFileHeader* headerData = reinterpret_cast<MeshAssetFileHeader*>(readBytes);
+	size_t curPos = sizeof(MeshAssetFileHeader);
+	for (int i = 0; i < headerData->MeshCount; ++i)
 	{
-		// #TODO log a helpful message
-		return false;
-	}
+		std::string meshName = ReadName(readBytes, curPos);
+		std::vector<float> vertexData = ReadVertices(readBytes, curPos);
+		std::vector<U32> indexData = ReadIndices(readBytes, curPos);
 
-	rapidjson::Value& rootVal = root->value;
-	for (auto& member = rootVal.MemberBegin(); member != rootVal.MemberEnd(); ++member)
-	{
-		std::string memberName = member->name.GetString();
-		if (memberName == kAssetImportVersionKey)
-		{
-			const int fileVersion = member->value.GetInt();
-			AssertExpr(fileVersion == kAssetImportVersion);
-		}
-		else
-		{
-			// Everything else should be a mesh definition, nothing else should be on this
-			// layer except meshasset_version.
-			rapidjson::Value& meshMemberVal = member->value;
-			
-			rapidjson::Value::MemberIterator vertexDataSizeMember = meshMemberVal.FindMember(kVertexDataSizeKey);
-			if (vertexDataSizeMember == meshMemberVal.MemberEnd())
-			{
-				LOG_CONSOLE_ARGS("Missing data in [%s] : %s", filePath.GetRelativePath().c_str(), kVertexDataSizeKey);
-				return false;
-			}
+		std::vector<MeshVertex> meshVertexArray;
 
-			rapidjson::Value::MemberIterator vertexDataMember = meshMemberVal.FindMember(kVertexDataKey);
-			if (vertexDataMember == meshMemberVal.MemberEnd())
-			{
-				LOG_CONSOLE_ARGS("Missing data in [%s] : %s", filePath.GetRelativePath().c_str(), kVertexDataKey);
-				return false;
-			}
+		MeshVertex* vertexDataArray = reinterpret_cast<MeshVertex*>(vertexData.data());
+		meshVertexArray.insert(meshVertexArray.end(), &vertexDataArray[0], &vertexDataArray[vertexData.size() / (sizeof(MeshVertex) / 4)]);
 
-			rapidjson::Value::MemberIterator indexDataSizeMember = meshMemberVal.FindMember(kIndexDataSizeKey);
-			if (indexDataSizeMember == meshMemberVal.MemberEnd())
-			{
-				LOG_CONSOLE_ARGS("Missing data in [%s] : %s", filePath.GetRelativePath().c_str(), kIndexDataSizeKey);
-				return false;
-			}
+		MeshGeometry geo;
+		geo.SetName(meshName);
+		geo.SetVertexData(meshVertexArray);
+		geo.SetIndexData(indexData);
+		geo.AllocateData();
 
-			rapidjson::Value::MemberIterator indexDataMember = meshMemberVal.FindMember(kIndexDataKey);
-			if (indexDataMember == meshMemberVal.MemberEnd())
-			{
-				LOG_CONSOLE_ARGS("Missing data in [%s] : %s", filePath.GetRelativePath().c_str(), kIndexDataKey);
-				return false;
-			}
-
-			const int vertexCount = vertexDataSizeMember->value.GetInt();
-			const int vertexStride = sizeof(MeshVertex) / sizeof(float);
-			const int vertexDataSize = vertexCount * vertexStride;
-			const int indexDataSize = indexDataSizeMember->value.GetInt();
-
-			std::vector<float> floatArray;
-			floatArray.reserve(vertexDataSize);
-			for (int i = 0; i < vertexDataSize; ++i)
-			{
-				floatArray.push_back(static_cast<float>(vertexDataMember->value[i].GetDouble()));
-			}
-
-			MeshGeometry meshGeometry(vertexCount, indexDataSize);
-			for (int i = 0; i < vertexCount; ++i)
-			{
-				MeshVertex* vertLikeTonyHawk = static_cast<MeshVertex*>((void*)&floatArray[i * vertexStride]);
-				meshGeometry.AddVertex(*vertLikeTonyHawk);
-			}
-
-			for (int i = 0; i < indexDataSize; ++i)
-			{
-				meshGeometry.AddIndex(indexDataMember->value[i].GetUint());
-			}
-
-			meshGeometry.AllocateData();
-			mMeshGeometry.emplace_back(std::move(meshGeometry));
-		}
+		mMeshGeometry.push_back(geo);
 	}
 
 	return true;
+}
+
+// #TODO
+// Should be able to just copy directly from readBytes instead of 
+// creating a buffer on the heap each time for the functions below.
+std::string MeshAssetImporter::ReadName(Byte* readBytes, size_t& curPos)
+{
+	size_t nameSizeBytes = *reinterpret_cast<size_t*>(&readBytes[curPos]);
+	curPos += sizeof(size_t);
+
+	unsigned char* name = new unsigned char[nameSizeBytes + 1];
+	memcpy(name, &readBytes[curPos], nameSizeBytes);
+	name[nameSizeBytes] = '\0';
+	std::string string((char*)name);
+	curPos += nameSizeBytes;
+
+	delete[] name;
+	name = nullptr;
+	return std::move(string);
+}
+
+std::vector<float> MeshAssetImporter::ReadVertices(Byte* readBytes, size_t& curPos)
+{
+	size_t vertexDataSizeBytes = *reinterpret_cast<size_t*>(&readBytes[curPos]);
+	curPos += sizeof(size_t);
+
+	unsigned char* vertexData = new unsigned char[vertexDataSizeBytes];
+	memcpy(vertexData, &readBytes[curPos], vertexDataSizeBytes);
+
+	std::vector<float> vertexDataVec;
+	vertexDataVec.resize(vertexDataSizeBytes / sizeof(float));
+	memcpy(vertexDataVec.data(), vertexData, vertexDataSizeBytes);
+	curPos += vertexDataSizeBytes;
+
+	delete[] vertexData;
+	vertexData = nullptr;
+	return vertexDataVec;
+}
+
+std::vector<U32> MeshAssetImporter::ReadIndices(Byte* readBytes, size_t& curPos)
+{
+	size_t indexDataSizeBytes = *reinterpret_cast<size_t*>(&readBytes[curPos]);
+	curPos += sizeof(size_t);
+
+	unsigned char* indexData = new unsigned char[indexDataSizeBytes];
+	memcpy(indexData, &readBytes[curPos], indexDataSizeBytes);
+
+	std::vector<U32> indexDataVec;
+	indexDataVec.resize(indexDataSizeBytes / sizeof(U32));
+	memcpy(indexDataVec.data(), &indexData[0], indexDataSizeBytes);
+	curPos += indexDataSizeBytes;
+
+	delete[] indexData;
+	indexData = nullptr;
+	return indexDataVec;
 }
