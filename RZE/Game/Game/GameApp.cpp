@@ -33,7 +33,7 @@ void GameApp::Initialize()
 	// #TODO(Josh::Putting this comment here because too lazy to do it elsewhere. Hopefully I find it later:
 	//             -- Need to add at least commandline arg like -startscene or something)
 	
-	//activeScene.Load(FilePath("Assets/Scenes/RenderTest.scene"));
+	activeScene.Load(FilePath("Assets/Scenes/RenderTest.scene"));
 
 	activeScene.AddSystem<FreeCameraSystem>();
 	activeScene.AddSystem<RotateSingleEntitySystem>();
@@ -64,8 +64,7 @@ void GameApp::RegisterInputEvents(InputHandler& inputHandler)
 		}
 		else if (key.GetKeyCode() == Win32KeyCode::F1)
 		{
-			RZE().GetActiveScene().Load(FilePath("Assets/Scenes/Sponza.scene"));
-			//RZE().SetWindowSize(Vector2D(1280, 720));
+			RZE().SetWindowSize(Vector2D(1280, 720));
 		}
 		else if (key.GetKeyCode() == Win32KeyCode::F2)
 		{

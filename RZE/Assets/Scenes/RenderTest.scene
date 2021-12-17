@@ -86,7 +86,7 @@
                     ]
                 },
                 "MeshComponent": {
-                    "ResourcePath": "ProjectData/Mesh/Nanosuit.meshasset"
+                    "ResourcePath": "ProjectData/Mesh/Nyra.meshasset"
                 }
             }
         }
