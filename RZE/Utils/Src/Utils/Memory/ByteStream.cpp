@@ -47,10 +47,30 @@ void ByteStream::ReadFromFile(const FilePath& filePath)
 	AssertExpr(!input.is_open());
 }
 
-bool ByteStream::WriteBytes(unsigned char* buf, size_t writeLength)
+Byte* ByteStream::PeekBytes()
 {
-	memcpy(&mBytes[curPos], buf, writeLength);
-	curPos += writeLength;
+	return &mBytes[curPos];
+}
+
+Byte* ByteStream::PeekBytesAdvance(size_t sizeBytes)
+{
+	Byte* bytes = &mBytes[curPos];
+	curPos += sizeBytes;
+	return bytes;
+}
+
+bool ByteStream::ReadBytes(Byte* buf, size_t sizeBytes)
+{
+	memcpy(buf, &mBytes[curPos], sizeBytes);
+	curPos += sizeBytes;
+
+	return true;
+}
+
+bool ByteStream::WriteBytes(const void* buf, size_t sizeBytes)
+{
+	memcpy(&mBytes[curPos], buf, sizeBytes);
+	curPos += sizeBytes;
 	return true;
 }
 

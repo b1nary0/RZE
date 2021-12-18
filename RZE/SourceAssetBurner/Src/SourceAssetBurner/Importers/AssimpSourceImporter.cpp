@@ -303,58 +303,38 @@ bool AssimpSourceImporter::WriteMeshFile()
 	}
 	// magic numbers atm re: calculating data size headers per piece of data.
 	bufSize += sizeof(size_t) * 2 + (sizeof(size_t) * 3 * mMeshes.size());
-
-	unsigned char* byteBuffer = new unsigned char[bufSize];
-	memset(byteBuffer, NULL, bufSize);
-
-	size_t bytesWritten = 0;
-
-	size_t curPos = 0;
-	memcpy(&byteBuffer[curPos], &bufSize, sizeof(size_t));
-	curPos += sizeof(size_t);
-
 	const size_t meshCount = mMeshes.size();
-	memcpy(&byteBuffer[curPos], &meshCount, sizeof(size_t));
-	curPos += sizeof(size_t);
+
+	ByteStream byteStream(outputPath.GetRelativePath(), bufSize);
+
+	byteStream.WriteBytes(&bufSize, sizeof(size_t));
+	byteStream.WriteBytes(&meshCount, sizeof(size_t));
 
 	for (auto& mesh : mMeshes)
 	{
 		// Have to piece-meal the copy here because the vectors are dynamically allocated. 
 		const size_t nameSizeBytes = mesh.MeshName.size();
-		memcpy(&byteBuffer[curPos], &nameSizeBytes, sizeof(size_t));
-		curPos += sizeof(size_t);
-
-		memcpy(&byteBuffer[curPos], mesh.MeshName.data(), nameSizeBytes);
-		curPos += nameSizeBytes;
+		byteStream.WriteBytes(&nameSizeBytes, sizeof(size_t));
+		byteStream.WriteBytes(mesh.MeshName.data(), nameSizeBytes);
 
 		const size_t vertexDataSizeBytes = sizeof(MeshVertex) * mesh.VertexDataArray.size();
-		memcpy(&byteBuffer[curPos], &vertexDataSizeBytes, sizeof(size_t));
-		curPos += sizeof(size_t);
-
-		memcpy(&byteBuffer[curPos], mesh.VertexDataArray.data(), vertexDataSizeBytes);
-		curPos += vertexDataSizeBytes;
+		byteStream.WriteBytes(&vertexDataSizeBytes, sizeof(size_t));
+		byteStream.WriteBytes(mesh.VertexDataArray.data(), vertexDataSizeBytes);
 
 		const size_t indexDataSizeBytes = sizeof(U32) * mesh.IndexArray.size();
-		memcpy(&byteBuffer[curPos], &indexDataSizeBytes, sizeof(size_t));
-		curPos += sizeof(size_t);
-		
-		memcpy(&byteBuffer[curPos], mesh.IndexArray.data(), indexDataSizeBytes);
-		curPos += indexDataSizeBytes;
-
-		bytesWritten = curPos;
+		byteStream.WriteBytes(&indexDataSizeBytes, sizeof(size_t));
+		byteStream.WriteBytes(mesh.IndexArray.data(), indexDataSizeBytes);
 	}
 
-	AssertExpr(bytesWritten == bufSize);
+	AssertExpr(byteStream.GetNumBytesWritten() == bufSize);
 
-	for (size_t byteIndex = 0; byteIndex < bufSize; ++byteIndex)
+	Byte* bytes = byteStream.GetBytes();
+	for (size_t byteIndex = 0; byteIndex < byteStream.GetNumBytesWritten(); ++byteIndex)
 	{
-		outputFile << byteBuffer[byteIndex];
+		outputFile << bytes[byteIndex];
 	}
 
 	outputFile.Close();
-
-	delete[] byteBuffer;
-	byteBuffer = nullptr;
 
 	LOG_CONSOLE_ARGS("AssimpSourceImporter : %s written.", outputPath.GetRelativePath().c_str());
 

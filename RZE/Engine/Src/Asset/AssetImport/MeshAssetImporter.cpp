@@ -16,21 +16,19 @@ bool MeshAssetImporter::Import(const FilePath& filePath)
 	ByteStream byteStream(filePath.GetRelativePath());
 	byteStream.ReadFromFile(filePath);
 
-	Byte* readBytes = byteStream.GetByteStream();
-
 	struct MeshAssetFileHeader
 	{
 		size_t BufSize;
 		size_t MeshCount;
 	};
 
-	MeshAssetFileHeader* headerData = reinterpret_cast<MeshAssetFileHeader*>(readBytes);
+	MeshAssetFileHeader* headerData = reinterpret_cast<MeshAssetFileHeader*>(byteStream.PeekBytesAdvance(sizeof(MeshAssetFileHeader)));
 	size_t curPos = sizeof(MeshAssetFileHeader);
 	for (int i = 0; i < headerData->MeshCount; ++i)
 	{
-		std::string meshName = ReadName(readBytes, curPos);
-		std::vector<float> vertexData = ReadVertices(readBytes, curPos);
-		std::vector<U32> indexData = ReadIndices(readBytes, curPos);
+		std::string meshName = ReadName(byteStream);
+		std::vector<float> vertexData = ReadVertices(byteStream);
+		std::vector<U32> indexData = ReadIndices(byteStream);
 
 		std::vector<MeshVertex> meshVertexArray;
 
@@ -49,44 +47,38 @@ bool MeshAssetImporter::Import(const FilePath& filePath)
 	return true;
 }
 
-std::string MeshAssetImporter::ReadName(Byte* readBytes, size_t& curPos)
+std::string MeshAssetImporter::ReadName(ByteStream& byteStream)
 {
-	size_t nameSizeBytes = *reinterpret_cast<size_t*>(&readBytes[curPos]);
-	curPos += sizeof(size_t);
+	size_t nameSizeBytes = *reinterpret_cast<size_t*>(byteStream.PeekBytesAdvance(sizeof(size_t)));
 
 	unsigned char* name = new unsigned char[nameSizeBytes + 1];
-	memcpy(name, &readBytes[curPos], nameSizeBytes);
+	byteStream.ReadBytes(name, nameSizeBytes);
 	name[nameSizeBytes] = '\0';
 	std::string string((char*)name);
-	curPos += nameSizeBytes;
 
 	delete[] name;
 	name = nullptr;
 	return std::move(string);
 }
 
-std::vector<float> MeshAssetImporter::ReadVertices(Byte* readBytes, size_t& curPos)
+std::vector<float> MeshAssetImporter::ReadVertices(ByteStream& byteStream)
 {
-	size_t vertexDataSizeBytes = *reinterpret_cast<size_t*>(&readBytes[curPos]);
-	curPos += sizeof(size_t);
+	size_t vertexDataSizeBytes = *reinterpret_cast<size_t*>(byteStream.PeekBytesAdvance(sizeof(size_t)));
 
 	std::vector<float> vertexDataVec;
 	vertexDataVec.resize(vertexDataSizeBytes / sizeof(float));
-	memcpy(vertexDataVec.data(), &readBytes[curPos], vertexDataSizeBytes);
-	curPos += vertexDataSizeBytes;
+	byteStream.ReadBytes((Byte*)vertexDataVec.data(), vertexDataSizeBytes);
 
 	return vertexDataVec;
 }
 
-std::vector<U32> MeshAssetImporter::ReadIndices(Byte* readBytes, size_t& curPos)
+std::vector<U32> MeshAssetImporter::ReadIndices(ByteStream& byteStream)
 {
-	size_t indexDataSizeBytes = *reinterpret_cast<size_t*>(&readBytes[curPos]);
-	curPos += sizeof(size_t);
+	size_t indexDataSizeBytes = *reinterpret_cast<size_t*>(byteStream.PeekBytesAdvance(sizeof(size_t)));
 
 	std::vector<U32> indexDataVec;
 	indexDataVec.resize(indexDataSizeBytes / sizeof(U32));
-	memcpy(indexDataVec.data(), &readBytes[curPos], indexDataSizeBytes);
-	curPos += indexDataSizeBytes;
+	byteStream.ReadBytes((Byte*)indexDataVec.data(), indexDataSizeBytes);
 
 	return indexDataVec;
 }

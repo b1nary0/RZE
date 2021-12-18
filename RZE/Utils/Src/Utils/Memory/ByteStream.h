@@ -11,8 +11,8 @@ public:
 	~ByteStream();
 
 public:
-	inline const unsigned char* GetByteStream() const { return mBytes; }
-	unsigned char* GetByteStream() { return mBytes; }
+	inline const Byte* GetBytes() const { return mBytes; }
+	Byte* GetBytes() { return mBytes; }
 
 	void ReadFromFile(const FilePath& filePath);
 
@@ -20,16 +20,13 @@ public:
 	// WriteToStream/FlushToFile type functions to flesh out this class.
 	// Then the File class can essentially just hold one of these 
 
-	template <typename T>
-	T* ReadBytes()
-	{
-		T* byteCast = static_cast<T*>(mBytes);
-		curPos += sizeof(T);
+	Byte* PeekBytes(); // For when you just want to take a look at the bytes, like reinterpret_cast to get at data
+	Byte* PeekBytesAdvance(size_t sizeBytes); // PeekBytes and advance cursor position
+	bool ReadBytes(Byte* buf, size_t sizeBytes); // Will copy sizeBytes into client allocated buffer
 
-		return byteCast;
-	}
+	bool WriteBytes(const void* buf, size_t sizeBytes);
 
-	bool WriteBytes(unsigned char* buf, size_t writeLength);
+	size_t GetNumBytesWritten() { return curPos; }
 
 private:
 	std::string mName;

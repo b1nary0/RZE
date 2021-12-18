@@ -6,6 +6,8 @@
 
 #include <Utils/PrimitiveDefs.h>
 
+class ByteStream;
+
 class MeshAssetImporter : public AssetImporter
 {
 public:
@@ -18,9 +20,9 @@ public:
 	std::vector<MeshGeometry> GetMeshGeometry() { return mMeshGeometry; }
 
 private:
-	std::string ReadName(Byte* readBytes, size_t& curPos);
-	std::vector<float> ReadVertices(Byte* readBytes, size_t& curPos);
-	std::vector<U32> ReadIndices(Byte* readBytes, size_t& curPos);
+	std::string ReadName(ByteStream& byteStream);
+	std::vector<float> ReadVertices(ByteStream& byteStream);
+	std::vector<U32> ReadIndices(ByteStream& byteStream);
 
 private:
 	std::vector<MeshGeometry> mMeshGeometry;
