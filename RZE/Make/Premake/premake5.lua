@@ -114,7 +114,6 @@ workspace "RZE"
 		}
 		links
 		{
-			"assimp",
 			"OptickCore",
 			-- RZE --
 			"RZE_Utils",
