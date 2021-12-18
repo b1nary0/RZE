@@ -11,6 +11,7 @@ ByteStream::ByteStream(const std::string& name)
 
 ByteStream::ByteStream(const std::string& name, size_t streamLength)
 	: mName(name)
+	, mStreamLength(streamLength)
 {
 	mBytes = new unsigned char[streamLength];
 	memset(mBytes, NULL, streamLength);
@@ -40,6 +41,8 @@ void ByteStream::ReadFromFile(const FilePath& filePath)
 	size_t length = input.tellg();
 	input.seekg(0, input.beg);
 
+	mStreamLength = length;
+
 	mBytes = new unsigned char[length];
 	input.read((char*)mBytes, length);
 
@@ -49,28 +52,38 @@ void ByteStream::ReadFromFile(const FilePath& filePath)
 
 Byte* ByteStream::PeekBytes()
 {
-	return &mBytes[curPos];
+	return &mBytes[mCurPos];
 }
 
 Byte* ByteStream::PeekBytesAdvance(size_t sizeBytes)
 {
+	AssertMsg(mCurPos + sizeBytes <= mStreamLength, 
+		"Attempting to advance stream cursor past stream length");
+
 	Byte* bytes = PeekBytes();
-	curPos += sizeBytes;
+	mCurPos += sizeBytes;
 	return bytes;
 }
 
 bool ByteStream::ReadBytes(Byte* buf, size_t sizeBytes)
 {
-	memcpy(buf, &mBytes[curPos], sizeBytes);
-	curPos += sizeBytes;
+	AssertMsg(mCurPos + sizeBytes <= mStreamLength,
+		"Attempting to read past stream length");
+
+	memcpy(buf, &mBytes[mCurPos], sizeBytes);
+	mCurPos += sizeBytes;
 
 	return true;
 }
 
 bool ByteStream::WriteBytes(const void* buf, size_t sizeBytes)
 {
-	memcpy(&mBytes[curPos], buf, sizeBytes);
-	curPos += sizeBytes;
+	AssertMsg(mCurPos + sizeBytes <= mStreamLength,
+		"Attempting to read past stream length");
+
+	memcpy(&mBytes[mCurPos], buf, sizeBytes);
+	mCurPos += sizeBytes;
+
 	return true;
 }
 

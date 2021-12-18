@@ -22,15 +22,15 @@ public:
 
 	Byte* PeekBytes(); // For when you just want to take a look at the bytes, like reinterpret_cast to get at data
 	Byte* PeekBytesAdvance(size_t sizeBytes); // PeekBytes and advance cursor position
-	bool ReadBytes(Byte* buf, size_t sizeBytes); // Will copy sizeBytes into client allocated buffer
 
+	bool ReadBytes(Byte* buf, size_t sizeBytes); // Will copy sizeBytes into client allocated buffer
 	bool WriteBytes(const void* buf, size_t sizeBytes);
 
-	size_t GetNumBytesWritten() { return curPos; }
+	size_t GetNumBytesWritten() { return mCurPos; }
 
 private:
 	std::string mName;
 	Byte* mBytes = nullptr;
-
-	size_t curPos = 0; // Byte "cursor" - index of byte next to be read
+	size_t mCurPos = 0; // Byte "cursor" - index of byte next to be read
+	size_t mStreamLength = 0;
 };
