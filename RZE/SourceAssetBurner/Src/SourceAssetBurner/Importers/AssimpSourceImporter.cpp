@@ -33,7 +33,6 @@ namespace
 }
 
 AssimpSourceImporter::AssimpSourceImporter()
-	: mWriter(mStringBuffer)
 {
 }
 
