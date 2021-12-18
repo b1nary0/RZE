@@ -1,11 +1,19 @@
-#include <StdAfx.h>
-#include <EngineCore/Platform/Memory/ByteStream.h>
+#include <Utils/Memory/ByteStream.h>
+
+#include <Utils/DebugUtils/Debug.h>
 
 #include <fstream>
 
 ByteStream::ByteStream(const std::string& name)
 	: mName(name)
 {
+}
+
+ByteStream::ByteStream(const std::string& name, size_t streamLength)
+	: mName(name)
+{
+	mBytes = new unsigned char[streamLength];
+	memset(mBytes, NULL, streamLength);
 }
 
 ByteStream::~ByteStream()
@@ -38,3 +46,11 @@ void ByteStream::ReadFromFile(const FilePath& filePath)
 	input.close();
 	AssertExpr(!input.is_open());
 }
+
+bool ByteStream::WriteBytes(unsigned char* buf, size_t writeLength)
+{
+	memcpy(&mBytes[curPos], buf, writeLength);
+	curPos += writeLength;
+	return true;
+}
+

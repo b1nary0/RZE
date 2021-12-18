@@ -1,10 +1,6 @@
 #include <StdAfx.h>
 #include <Game/Model3D.h>
 
-#include <Assimp/Importer.hpp>
-#include <Assimp/postprocess.h>
-#include <Assimp/scene.h>
-
 #include <Graphics/Material.h>
 #include <Graphics/Texture2D.h>
 

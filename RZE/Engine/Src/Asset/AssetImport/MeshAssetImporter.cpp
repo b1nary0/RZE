@@ -2,7 +2,7 @@
 
 #include <Asset/AssetImport/MeshAssetImporter.h>
 
-#include <EngineCore/Platform/Memory/ByteStream.h>
+#include <Utils/Memory/ByteStream.h>
 
 namespace
 {

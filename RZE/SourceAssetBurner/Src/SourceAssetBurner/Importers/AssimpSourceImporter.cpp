@@ -4,6 +4,8 @@
 #include <Assimp/postprocess.h>
 #include <Assimp/scene.h>
 
+#include <Utils/Memory/ByteStream.h>
+
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/PrimitiveDefs.h>
 
