@@ -49,9 +49,6 @@ bool MeshAssetImporter::Import(const FilePath& filePath)
 	return true;
 }
 
-// #TODO
-// Should be able to just copy directly from readBytes instead of 
-// creating a buffer on the heap each time for the functions below.
 std::string MeshAssetImporter::ReadName(Byte* readBytes, size_t& curPos)
 {
 	size_t nameSizeBytes = *reinterpret_cast<size_t*>(&readBytes[curPos]);
