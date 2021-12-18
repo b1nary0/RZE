@@ -54,7 +54,7 @@ Byte* ByteStream::PeekBytes()
 
 Byte* ByteStream::PeekBytesAdvance(size_t sizeBytes)
 {
-	Byte* bytes = &mBytes[curPos];
+	Byte* bytes = PeekBytes();
 	curPos += sizeBytes;
 	return bytes;
 }
