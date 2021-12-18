@@ -7,9 +7,9 @@
 #include <Perseus/JobSystem/JobScheduler.h>
 
 #include <Utils/Conversions.h>
-#include <Utils/MemoryUtils.h>
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Vector4D.h>
+#include <Utils/Memory/MemoryUtils.h>
 #include <Utils/Platform/FilePath.h>
 
 // DX11
