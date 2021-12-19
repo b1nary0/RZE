@@ -73,9 +73,15 @@ bool AssimpSourceImporter::Import(const FilePath& filePath)
 		return false;
 	}
 
-	if (!WriteMeshFile())
+	if (!WriteMeshAsset())
 	{
-		LOG_CONSOLE("Failed to write output file. See logs.");
+		LOG_CONSOLE_ARGS("Failed to write meshasset for [%s]. See logs.", filePath.GetRelativePath().c_str());
+		return false;
+	}
+
+	if (!WriteMaterialAsset())
+	{
+		LOG_CONSOLE_ARGS("Failed to write materialAsset for [%s]. See logs.", filePath.GetRelativePath().c_str());
 		return false;
 	}
 
@@ -160,25 +166,38 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 	//bool bHasBump = false;
 
 	//Material* pMaterial;
-	//if (mesh.mMaterialIndex >= 0)
-	//{
-	//	aiMaterial* mat = scene.mMaterials[mesh.mMaterialIndex];
-	//	aiString matName;
-	//	mat->Get(AI_MATKEY_NAME, matName);
+	if (mesh.mMaterialIndex >= 0)
+	{
+		MaterialData materialData;
 
-	//	pMaterial = MaterialDatabase::Get().GetOrCreateMaterial(matName.C_Str());
+		aiMaterial* mat = scene.mMaterials[mesh.mMaterialIndex];
+		aiString matName;
+		mat->Get(AI_MATKEY_NAME, matName);
 
-	//	float shininess = 0.0f;
-	//	if (mat->Get(AI_MATKEY_SHININESS, shininess) == AI_SUCCESS)
-	//	{
-	//		pMaterial->Shininess = shininess;
-	//	}
+		materialData.MaterialName = matName.C_Str();
 
-	//	float opacity = 0.0f;
-	//	if (mat->Get(AI_MATKEY_OPACITY, opacity) == AI_SUCCESS)
-	//	{
-	//		pMaterial->Opacity = opacity;
-	//	}
+		float shininess = 0.0f;
+		if (mat->Get(AI_MATKEY_SHININESS, shininess) == AI_SUCCESS)
+		{
+			materialData.Properties.Shininess = shininess;
+		}
+
+		float opacity = 0.0f;
+		if (mat->Get(AI_MATKEY_OPACITY, opacity) == AI_SUCCESS)
+		{
+			materialData.Properties.Opacity = opacity;
+		}
+
+		aiColor3D diffColour;
+		if (mat->Get(AI_MATKEY_COLOR_DIFFUSE, diffColour) == AI_SUCCESS)
+		{
+		}
+
+		if (!mMaterialTable.count(materialData.MaterialName))
+		{
+			mMaterialTable[materialData.MaterialName] = std::move(materialData);
+		}
+	}
 
 	//	for (unsigned int i = 0; i < mat->GetTextureCount(aiTextureType_DIFFUSE); ++i)
 	//	{
@@ -274,7 +293,7 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 	//outMesh.AllocateData();
 }
 
-bool AssimpSourceImporter::WriteMeshFile()
+bool AssimpSourceImporter::WriteMeshAsset()
 {
 	AssertExpr(mMeshes.size() > 0);
 
@@ -301,7 +320,8 @@ bool AssimpSourceImporter::WriteMeshFile()
 		const size_t meshDataSize = mesh.MeshName.size() + sizeof(MeshVertex) * mesh.VertexDataArray.size() + sizeof(U32) * mesh.IndexArray.size();
 		bufSize += meshDataSize;
 	}
-	// magic numbers atm re: calculating data size headers per piece of data.
+	// magic numbers atm re: calculating data size headers per piece of data:
+	// bufSize + meshCount + nameSizeBytes + vertexDataSizeBytes + indexDataSizeBytes
 	bufSize += sizeof(size_t) * 2 + (sizeof(size_t) * 3 * mMeshes.size());
 	const size_t meshCount = mMeshes.size();
 
@@ -339,4 +359,59 @@ bool AssimpSourceImporter::WriteMeshFile()
 	LOG_CONSOLE_ARGS("AssimpSourceImporter : %s written.", outputPath.GetRelativePath().c_str());
 
 	return true;
+}
+
+bool AssimpSourceImporter::WriteMaterialAsset()
+{
+	// #TODO really gross string manip lol
+	std::string assetFilename = mAssetName + kMaterialAssetSuffix;
+	std::string assetFilepathRelative = "ProjectData/Material/";
+	assetFilepathRelative = assetFilepathRelative + assetFilename;
+
+	FilePath outputPath(assetFilepathRelative);
+	if (!std::filesystem::exists(outputPath.GetAbsolutePath()))
+	{
+		std::filesystem::create_directories(outputPath.GetAbsoluteDirectoryPath());
+	}
+
+	// #TODO json files are too large. need to compress and write the stream - see zlib
+	File outputFile(outputPath);
+	outputFile.Open((File::EFileOpenMode::Value)(File::EFileOpenMode::Write | File::EFileOpenMode::Binary));
+
+	size_t bufSize = 0;
+	size_t materialCount = mMaterialTable.size();
+	for (auto& dataPair : mMaterialTable)
+	{
+		bufSize += dataPair.second.MaterialName.length();
+	}
+	bufSize += sizeof(size_t) * 2 + (sizeof(MaterialData::MaterialProperties) /*+ sizeof(U8)*/ * mMaterialTable.size());
+
+	ByteStream byteStream(outputPath.GetRelativePath(), bufSize);
+
+	byteStream.WriteBytes(&bufSize, sizeof(size_t));
+	byteStream.WriteBytes(&materialCount, sizeof(size_t));
+	for (auto& dataPair : mMaterialTable)
+	{
+		byteStream.WriteBytes(dataPair.second.MaterialName.data(), dataPair.second.MaterialName.length());
+		byteStream.WriteBytes(&dataPair.second.Properties, sizeof(MaterialData::MaterialProperties));
+	}
+
+	AssertExpr(byteStream.GetNumBytesWritten() == bufSize);
+
+	Byte* bytes = byteStream.GetBytes();
+	for (size_t byteIndex = 0; byteIndex < byteStream.GetNumBytesWritten(); ++byteIndex)
+	{
+		outputFile << bytes[byteIndex];
+	}
+
+	outputFile.Close();
+
+	LOG_CONSOLE_ARGS("AssimpSourceImporter : %s written.", outputPath.GetRelativePath().c_str());
+
+	return true;
+}
+
+bool AssimpSourceImporter::WriteTextureAsset()
+{
+	return false;
 }

@@ -2,6 +2,7 @@
 
 #include <SourceAssetBurner/Importers/SourceImporter.h>
 
+#include <unordered_map>
 #include <vector>
 
 #include <Utils/Math/Vector2D.h>
@@ -45,24 +46,27 @@ private:
 	struct MaterialData
 	{
 		std::string MaterialName;
+		struct MaterialProperties
+		{
+			float Shininess = 0.0f;;
+			float Opacity = 1.0f;
+		} Properties;
+		// #TODO These flags inform which texture types are used by this material
+		// probably not the best implementation of this but i think the asset infrastructure
+		// needs to mature.
+		U8 TextureFlags;
 	};
 
 	void ProcessNode(const aiNode& node, const aiScene& scene);
 	void ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshData& outMeshData);
 
-	// #TODO this is first pass stuff, ideally some reflection system facilitates this stuff
-	// the manual json format is a maintenance nightmare but quick to implement. Should get to
-	// this before it gets out of hand. Just wrote myself into more non-rendering work lol
-	bool WriteMeshFile();
-	void WriteSingleMesh(const MeshData& meshData);
+	bool WriteMeshAsset();
+	bool WriteMaterialAsset();
+	bool WriteTextureAsset();
 	
 private:
 	std::string mAssetName;
 
 	std::vector<MeshData> mMeshes;
-	// #TODO will need to consider duplicate material references across meshes for this implementation.
-	std::vector<MaterialData> mMaterials;
-
-	rapidjson::StringBuffer mStringBuffer;
-	rapidjson::Writer<rapidjson::StringBuffer> mWriter;
+	std::unordered_map<std::string, MaterialData> mMaterialTable; // #TODO this is just a quick way to prevent duplicates. need a better solution in the future
 };
