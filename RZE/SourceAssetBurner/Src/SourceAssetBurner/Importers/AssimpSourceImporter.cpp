@@ -370,7 +370,7 @@ bool AssimpSourceImporter::WriteMaterialAsset()
 	{
 		bufSize += dataPair.second.MaterialName.length();
 	}
-	bufSize += sizeof(size_t) * 2 + ((sizeof(MaterialData::MaterialProperties) + sizeof(U8)) * mMaterialTable.size());
+	bufSize += sizeof(size_t) * 2 + ((sizeof(size_t) + sizeof(MaterialData::MaterialProperties) + sizeof(U8)) * mMaterialTable.size());
 
 	ByteStream byteStream(outputPath.GetRelativePath(), bufSize);
 
@@ -378,7 +378,10 @@ bool AssimpSourceImporter::WriteMaterialAsset()
 	byteStream.WriteBytes(&materialCount, sizeof(size_t));
 	for (auto& dataPair : mMaterialTable)
 	{
-		byteStream.WriteBytes(dataPair.second.MaterialName.data(), dataPair.second.MaterialName.length());
+		const size_t nameSizeBytes = dataPair.second.MaterialName.length();
+		byteStream.WriteBytes(&nameSizeBytes, sizeof(size_t));
+		byteStream.WriteBytes(dataPair.second.MaterialName.data(), nameSizeBytes);
+
 		byteStream.WriteBytes(&dataPair.second.Properties, sizeof(MaterialData::MaterialProperties));
 		byteStream.WriteBytes(&dataPair.second.TextureFlags, sizeof(U8));
 	}

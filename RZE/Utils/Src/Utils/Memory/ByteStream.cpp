@@ -80,7 +80,7 @@ bool ByteStream::ReadBytes(Byte* buf, size_t sizeBytes)
 bool ByteStream::WriteBytes(const void* buf, size_t sizeBytes)
 {
 	AssertMsg(mCurPos + sizeBytes <= mStreamLength,
-		"Attempting to read past stream length");
+		"Attempting to write past stream length");
 
 	memcpy(&mBytes[mCurPos], buf, sizeBytes);
 	mCurPos += sizeBytes;

@@ -42,5 +42,5 @@ private:
 	U8 ReadTextureFlags(ByteStream& byteStream);
 
 private:
-	MaterialData mMaterialData;
+	std::vector<MaterialData> mMaterialData;
 };
