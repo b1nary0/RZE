@@ -52,6 +52,7 @@ void ByteStream::ReadFromFile(const FilePath& filePath)
 
 Byte* ByteStream::PeekBytes()
 {
+	AssertMsg(mCurPos < mStreamLength, "Attempting to peek past the stream length");
 	return &mBytes[mCurPos];
 }
 
