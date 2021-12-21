@@ -32,6 +32,15 @@ namespace
 
 		return assetName;
 	}
+
+	FilePath GetTextureFilePath(const FilePath& filePath, const std::string& fileName)
+	{
+		// #TODO(Josh::We need to bake the texture folder structure here, or get on proper asset referencing system)
+		std::string path = filePath.GetRelativeDirectoryPath();
+		path.append(fileName);
+
+		return FilePath(path);
+	}
 }
 
 AssimpSourceImporter::AssimpSourceImporter()
@@ -193,72 +202,50 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 		{
 		}
 
+		// #TODO
+		// Not entirely sure what would come in with > 0 of these texture types (though obviously its valid)
+		// so in the interest of being explicit of what RZE supports at the moment, only take the 0th texture data
+		if (mat->GetTextureCount(aiTextureType_DIFFUSE) > 0)
+		{
+			aiString str;
+			mat->GetTexture(aiTextureType_DIFFUSE, 0, &str);
+
+			FilePath texturePath;
+			GetTextureFilePath(texturePath, str.C_Str());
+
+			materialData.TextureFlags |= MaterialData::ETextureFlags::TEXTUREFLAG_ALBEDO;
+			mTextures.push_back(texturePath);
+		}
+
+		if (mat->GetTextureCount(aiTextureType_SPECULAR) > 0)
+		{
+			aiString str;
+			mat->GetTexture(aiTextureType_SPECULAR, 0, &str);
+
+			FilePath texturePath;
+			GetTextureFilePath(texturePath, str.C_Str());
+
+			materialData.TextureFlags |= MaterialData::ETextureFlags::TEXTUREFLAG_SPECULAR;
+			mTextures.push_back(texturePath);
+		}
+
+		if (mat->GetTextureCount(aiTextureType_NORMALS))
+		{
+			aiString str;
+			mat->GetTexture(aiTextureType_SPECULAR, 0, &str);
+
+			FilePath texturePath;
+			GetTextureFilePath(texturePath, str.C_Str());
+
+			materialData.TextureFlags |= MaterialData::ETextureFlags::TEXTUREFLAG_NORMAL;
+			mTextures.push_back(texturePath);
+		}
+
 		if (!mMaterialTable.count(materialData.MaterialName))
 		{
 			mMaterialTable[materialData.MaterialName] = std::move(materialData);
 		}
 	}
-
-	//	for (unsigned int i = 0; i < mat->GetTextureCount(aiTextureType_DIFFUSE); ++i)
-	//	{
-	//		aiString str;
-	//		mat->GetTexture(aiTextureType_DIFFUSE, i, &str);
-
-	//		FilePath texturePath = GetTextureFilePath(str.C_Str());
-
-	//		// #TODO
-	//		// Should really shorthand these long lines by doing the following at the top somewhere for all the callsites to use
-	//		// ResourceHandler& resourceHandler = RZE::GetResourceHandler();
-	//		// resourceHandler.LoadResource<...>
-	//		// but should do it as a larger effort instead of sprinkled efforts
-	//		ResourceHandle textureHandle = RZE::GetResourceHandler().LoadResource<Texture2D>(texturePath, Texture2D::ETextureType::Diffuse);
-	//		if (textureHandle.IsValid())
-	//		{
-	//			pMaterial->SetTexture(Material::TEXTURE_SLOT_DIFFUSE, textureHandle);
-	//			bHasDiffuse = true;
-	//		}
-	//		else
-	//		{
-	//			LOG_CONSOLE_ARGS("Could not load texture at [%s]", texturePath.GetRelativePath().c_str());
-	//		}
-	//	}
-
-	//	for (unsigned int i = 0; i < mat->GetTextureCount(aiTextureType_SPECULAR); ++i)
-	//	{
-	//		aiString str;
-	//		mat->GetTexture(aiTextureType_SPECULAR, i, &str);
-
-	//		FilePath texturePath = GetTextureFilePath(str.C_Str());
-	//		ResourceHandle textureHandle = RZE::GetResourceHandler().LoadResource<Texture2D>(texturePath, Texture2D::ETextureType::Specular);
-	//		if (textureHandle.IsValid())
-	//		{
-	//			pMaterial->SetTexture(Material::TEXTURE_SLOT_SPECULAR, textureHandle);
-	//			bHasSpecular = true;
-	//		}
-	//		else
-	//		{
-	//			LOG_CONSOLE_ARGS("Could not load texture at [%s]", texturePath.GetRelativePath().c_str());
-	//		}
-	//	}
-
-	//	for (unsigned int i = 0; i < mat->GetTextureCount(aiTextureType_NORMALS); ++i)
-	//	{
-	//		aiString str;
-	//		mat->GetTexture(aiTextureType_NORMALS, i, &str);
-
-	//		FilePath texturePath = GetTextureFilePath(str.C_Str());
-	//		ResourceHandle textureHandle = RZE::GetResourceHandler().LoadResource<Texture2D>(texturePath, Texture2D::ETextureType::Normal);
-	//		if (textureHandle.IsValid())
-	//		{
-	//			pMaterial->SetTexture(Material::TEXTURE_SLOT_NORMAL, textureHandle);
-	//			bHasBump = true;
-	//		}
-	//		else
-	//		{
-	//			LOG_CONSOLE_ARGS("Could not load texture at [%s]", texturePath.GetRelativePath().c_str());
-	//		}
-	//	}
-	//}
 
 	//// #TODO
 	//// This is essentially stubbing code. More to prove out the support infrastructure.
@@ -308,7 +295,6 @@ bool AssimpSourceImporter::WriteMeshAsset()
 		std::filesystem::create_directories(outputPath.GetAbsoluteDirectoryPath());
 	}
 
-	// #TODO json files are too large. need to compress and write the stream - see zlib
 	File outputFile(outputPath);
 	outputFile.Open((File::EFileOpenMode::Value)(File::EFileOpenMode::Write | File::EFileOpenMode::Binary));
 
@@ -321,7 +307,7 @@ bool AssimpSourceImporter::WriteMeshAsset()
 		bufSize += meshDataSize;
 	}
 	// magic numbers atm re: calculating data size headers per piece of data:
-	// bufSize + meshCount + nameSizeBytes + vertexDataSizeBytes + indexDataSizeBytes
+	// (bufSize + meshCount + nameSizeBytes + vertexDataSizeBytes + indexDataSizeBytes) * meshCount
 	bufSize += sizeof(size_t) * 2 + (sizeof(size_t) * 3 * mMeshes.size());
 	const size_t meshCount = mMeshes.size();
 
@@ -384,7 +370,7 @@ bool AssimpSourceImporter::WriteMaterialAsset()
 	{
 		bufSize += dataPair.second.MaterialName.length();
 	}
-	bufSize += sizeof(size_t) * 2 + (sizeof(MaterialData::MaterialProperties) /*+ sizeof(U8)*/ * mMaterialTable.size());
+	bufSize += sizeof(size_t) * 2 + ((sizeof(MaterialData::MaterialProperties) + sizeof(U8)) * mMaterialTable.size());
 
 	ByteStream byteStream(outputPath.GetRelativePath(), bufSize);
 
@@ -394,6 +380,7 @@ bool AssimpSourceImporter::WriteMaterialAsset()
 	{
 		byteStream.WriteBytes(dataPair.second.MaterialName.data(), dataPair.second.MaterialName.length());
 		byteStream.WriteBytes(&dataPair.second.Properties, sizeof(MaterialData::MaterialProperties));
+		byteStream.WriteBytes(&dataPair.second.TextureFlags, sizeof(U8));
 	}
 
 	AssertExpr(byteStream.GetNumBytesWritten() == bufSize);

@@ -43,8 +43,19 @@ private:
 		std::vector<U32> IndexArray;
 	};
 
+	// #TODO
+	// standardize these data structures so they dont all need to be maintained...
 	struct MaterialData
 	{
+		enum ETextureFlags
+		{
+			TEXTUREFLAG_NONE = 0,
+			TEXTUREFLAG_ALBEDO = 1 << 0,
+			TEXTUREFLAG_SPECULAR = 1 << 1,
+			TEXTUREFLAG_NORMAL = 1 << 2,
+			TEXTUREFLAG_ALL = TEXTUREFLAG_ALBEDO | TEXTUREFLAG_SPECULAR |  TEXTUREFLAG_NORMAL
+		};
+
 		std::string MaterialName;
 		struct MaterialProperties
 		{
@@ -54,7 +65,7 @@ private:
 		// #TODO These flags inform which texture types are used by this material
 		// probably not the best implementation of this but i think the asset infrastructure
 		// needs to mature.
-		U8 TextureFlags;
+		U8 TextureFlags = TEXTUREFLAG_NONE;
 	};
 
 	void ProcessNode(const aiNode& node, const aiScene& scene);
@@ -69,4 +80,5 @@ private:
 
 	std::vector<MeshData> mMeshes;
 	std::unordered_map<std::string, MaterialData> mMaterialTable; // #TODO this is just a quick way to prevent duplicates. need a better solution in the future
+	std::vector<FilePath> mTextures;
 };
