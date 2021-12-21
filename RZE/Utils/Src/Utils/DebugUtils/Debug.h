@@ -18,11 +18,6 @@
 #define LOG_CONSOLE(Msg) 									\
 {															\
 	std::stringstream ss;									\
-	ss << "[@ ";											\
-	ss << StringUtils::ExtractFileNameFromPath(__FILE__);	\
-	ss << ": ";												\
-	ss << __LINE__;											\
-	ss << "] ";												\
 	ss << Msg;												\
 	ss << "\n";												\
 															\
@@ -46,11 +41,6 @@
 #define LOG_CONSOLE_ARGS(Msg, ...)							\
 {															\
 	std::stringstream ss;									\
-	ss << "[@ ";											\
-	ss << StringUtils::ExtractFileNameFromPath(__FILE__);	\
-	ss << ": ";												\
-	ss << __LINE__;											\
-	ss << "] ";												\
 	ss << Msg;											    \
 	ss << "\n";												\
 															\
