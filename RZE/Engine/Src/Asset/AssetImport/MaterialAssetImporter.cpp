@@ -9,17 +9,10 @@ bool MaterialAssetImporter::Import(const FilePath& filePath)
 	byteStream.ReadFromFile(filePath);
 
 	byteStream.PeekBytesAdvance(sizeof(size_t)); // bufSize
-	const size_t materialCount = *reinterpret_cast<size_t*>(byteStream.PeekBytesAdvance(sizeof(size_t)));
 
-	for (int materialIndex = 0; materialIndex < materialCount; ++materialIndex)
-	{
-		MaterialData materialData;
-		materialData.MaterialName = ReadName(byteStream);
-		materialData.Properties = ReadMaterialProperties(byteStream);
-		materialData.TextureFlags = ReadTextureFlags(byteStream);
-
-		mMaterialData.emplace_back(std::move(materialData));
-	}
+	mMaterialData.MaterialName = ReadName(byteStream);
+	mMaterialData.Properties = ReadMaterialProperties(byteStream);
+	mMaterialData.TextureFlags = ReadTextureFlags(byteStream);
 
 	return true;
 }

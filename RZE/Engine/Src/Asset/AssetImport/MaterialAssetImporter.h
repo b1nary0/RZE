@@ -6,7 +6,7 @@ class ByteStream;
 
 class MaterialAssetImporter : public AssetImporter
 {
-private:
+public:
 	struct MaterialData
 	{
 		enum ETextureFlags
@@ -36,11 +36,14 @@ public:
 public:
 	virtual bool Import(const FilePath& filePath) override;
 
+public:
+	MaterialData GetMaterialData() { return mMaterialData; }
+
 private:
 	std::string ReadName(ByteStream& byteStream);
 	MaterialData::MaterialProperties ReadMaterialProperties(ByteStream& byteStream);
 	U8 ReadTextureFlags(ByteStream& byteStream);
 
 private:
-	std::vector<MaterialData> mMaterialData;
+	MaterialData mMaterialData;
 };

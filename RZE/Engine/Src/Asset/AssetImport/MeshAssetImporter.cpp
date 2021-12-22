@@ -1,6 +1,9 @@
 #include <StdAfx.h>
 
 #include <Asset/AssetImport/MeshAssetImporter.h>
+#include <Asset/AssetImport/MaterialAssetImporter.h>
+
+#include <Graphics/Material.h>
 
 #include <Utils/Memory/ByteStream.h>
 
@@ -23,10 +26,10 @@ bool MeshAssetImporter::Import(const FilePath& filePath)
 	};
 
 	MeshAssetFileHeader* headerData = reinterpret_cast<MeshAssetFileHeader*>(byteStream.PeekBytesAdvance(sizeof(MeshAssetFileHeader)));
-	size_t curPos = sizeof(MeshAssetFileHeader);
 	for (int i = 0; i < headerData->MeshCount; ++i)
 	{
 		std::string meshName = ReadName(byteStream);
+		std::string materialPath = ReadName(byteStream);
 		std::vector<float> vertexData = ReadVertices(byteStream);
 		std::vector<U32> indexData = ReadIndices(byteStream);
 
@@ -39,6 +42,17 @@ bool MeshAssetImporter::Import(const FilePath& filePath)
 		geo.SetName(meshName);
 		geo.SetVertexData(meshVertexArray);
 		geo.SetIndexData(indexData);
+
+		MaterialAssetImporter materialImporter;
+		materialImporter.Import(FilePath(materialPath));
+
+		MaterialAssetImporter::MaterialData materialData = materialImporter.GetMaterialData();
+		Material* material = MaterialDatabase::Get().GetOrCreateMaterial(materialData.MaterialName);
+		material->Shininess = materialData.Properties.Shininess;
+		material->Opacity = materialData.Properties.Opacity;
+
+		geo.SetMaterial(material);
+
 		geo.AllocateData();
 
 		mMeshGeometry.push_back(geo);

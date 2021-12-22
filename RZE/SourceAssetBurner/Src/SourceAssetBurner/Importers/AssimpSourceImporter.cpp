@@ -88,10 +88,13 @@ bool AssimpSourceImporter::Import(const FilePath& filePath)
 		return false;
 	}
 
-	if (!WriteMaterialAsset())
+	for (auto& dataPair : mMaterialTable)
 	{
-		LOG_CONSOLE_ARGS("Failed to write materialAsset for [%s]. See logs.", filePath.GetRelativePath().c_str());
-		return false;
+		if (!WriteMaterialAsset(dataPair.first, dataPair.second))
+		{
+			LOG_CONSOLE_ARGS("Failed to write materialAsset for [%s]. See logs.", filePath.GetRelativePath().c_str());
+			return false;
+		}
 	}
 
 	LOG_CONSOLE_ARGS("AssimpSourceImporter : Import Success for %s", filePath.GetRelativePath().c_str());
@@ -241,9 +244,16 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 			mTextures.push_back(texturePath);
 		}
 
-		if (!mMaterialTable.count(materialData.MaterialName))
+		// #TODO really gross string manip lol
+		std::string assetFilename = materialData.MaterialName + kMaterialAssetSuffix;
+		std::string assetFilepathRelative = "ProjectData/Material/" + mAssetName + "/";
+		assetFilepathRelative = assetFilepathRelative + assetFilename;
+
+		outMeshData.MaterialPath = assetFilepathRelative;
+
+		if (!mMaterialTable.count(assetFilepathRelative))
 		{
-			mMaterialTable[materialData.MaterialName] = std::move(materialData);
+			mMaterialTable[assetFilepathRelative] = std::move(materialData);
 		}
 	}
 
@@ -303,12 +313,12 @@ bool AssimpSourceImporter::WriteMeshAsset()
 	{
 		// #TODO
 		// Am i just dumb or can this be done in a much more elegant manner by a monkey
-		const size_t meshDataSize = mesh.MeshName.size() + sizeof(MeshVertex) * mesh.VertexDataArray.size() + sizeof(U32) * mesh.IndexArray.size();
+		const size_t meshDataSize = mesh.MeshName.size() + mesh.MaterialPath.size() + sizeof(MeshVertex) * mesh.VertexDataArray.size() + sizeof(U32) * mesh.IndexArray.size();
 		bufSize += meshDataSize;
 	}
 	// magic numbers atm re: calculating data size headers per piece of data:
 	// (bufSize + meshCount + nameSizeBytes + vertexDataSizeBytes + indexDataSizeBytes) * meshCount
-	bufSize += sizeof(size_t) * 2 + (sizeof(size_t) * 3 * mMeshes.size());
+	bufSize += sizeof(size_t) * 2 + (sizeof(size_t) * 4 * mMeshes.size());
 	const size_t meshCount = mMeshes.size();
 
 	ByteStream byteStream(outputPath.GetRelativePath(), bufSize);
@@ -322,6 +332,10 @@ bool AssimpSourceImporter::WriteMeshAsset()
 		const size_t nameSizeBytes = mesh.MeshName.size();
 		byteStream.WriteBytes(&nameSizeBytes, sizeof(size_t));
 		byteStream.WriteBytes(mesh.MeshName.data(), nameSizeBytes);
+
+		const size_t materialPathSizeBytes = mesh.MaterialPath.size();
+		byteStream.WriteBytes(&materialPathSizeBytes, sizeof(size_t));
+		byteStream.WriteBytes(mesh.MaterialPath.data(), materialPathSizeBytes);
 
 		const size_t vertexDataSizeBytes = sizeof(MeshVertex) * mesh.VertexDataArray.size();
 		byteStream.WriteBytes(&vertexDataSizeBytes, sizeof(size_t));
@@ -347,14 +361,11 @@ bool AssimpSourceImporter::WriteMeshAsset()
 	return true;
 }
 
-bool AssimpSourceImporter::WriteMaterialAsset()
+bool AssimpSourceImporter::WriteMaterialAsset(const std::string& relativePath, const MaterialData& materialData)
 {
-	// #TODO really gross string manip lol
-	std::string assetFilename = mAssetName + kMaterialAssetSuffix;
-	std::string assetFilepathRelative = "ProjectData/Material/";
-	assetFilepathRelative = assetFilepathRelative + assetFilename;
+	AssertExpr(!relativePath.empty());
 
-	FilePath outputPath(assetFilepathRelative);
+	FilePath outputPath(relativePath);
 	if (!std::filesystem::exists(outputPath.GetAbsolutePath()))
 	{
 		std::filesystem::create_directories(outputPath.GetAbsoluteDirectoryPath());
@@ -364,27 +375,18 @@ bool AssimpSourceImporter::WriteMaterialAsset()
 	File outputFile(outputPath);
 	outputFile.Open((File::EFileOpenMode::Value)(File::EFileOpenMode::Write | File::EFileOpenMode::Binary));
 
-	size_t bufSize = 0;
-	size_t materialCount = mMaterialTable.size();
-	for (auto& dataPair : mMaterialTable)
-	{
-		bufSize += dataPair.second.MaterialName.length();
-	}
-	bufSize += sizeof(size_t) * 2 + ((sizeof(size_t) + sizeof(MaterialData::MaterialProperties) + sizeof(U8)) * mMaterialTable.size());
+	size_t bufSize = (sizeof(size_t) * 2) + materialData.MaterialName.length() + sizeof(MaterialData::MaterialProperties) + sizeof(U8);
 
 	ByteStream byteStream(outputPath.GetRelativePath(), bufSize);
 
 	byteStream.WriteBytes(&bufSize, sizeof(size_t));
-	byteStream.WriteBytes(&materialCount, sizeof(size_t));
-	for (auto& dataPair : mMaterialTable)
-	{
-		const size_t nameSizeBytes = dataPair.second.MaterialName.length();
-		byteStream.WriteBytes(&nameSizeBytes, sizeof(size_t));
-		byteStream.WriteBytes(dataPair.second.MaterialName.data(), nameSizeBytes);
 
-		byteStream.WriteBytes(&dataPair.second.Properties, sizeof(MaterialData::MaterialProperties));
-		byteStream.WriteBytes(&dataPair.second.TextureFlags, sizeof(U8));
-	}
+	const size_t nameSizeBytes = materialData.MaterialName.length();
+	byteStream.WriteBytes(&nameSizeBytes, sizeof(size_t));
+	byteStream.WriteBytes(materialData.MaterialName.data(), nameSizeBytes);
+
+	byteStream.WriteBytes(&materialData.Properties, sizeof(MaterialData::MaterialProperties));
+	byteStream.WriteBytes(&materialData.TextureFlags, sizeof(U8));
 
 	AssertExpr(byteStream.GetNumBytesWritten() == bufSize);
 

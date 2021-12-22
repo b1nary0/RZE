@@ -39,6 +39,7 @@ private:
 	struct MeshData
 	{
 		std::string MeshName;
+		std::string MaterialPath;
 		std::vector<MeshVertex> VertexDataArray;
 		std::vector<U32> IndexArray;
 	};
@@ -72,7 +73,7 @@ private:
 	void ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshData& outMeshData);
 
 	bool WriteMeshAsset();
-	bool WriteMaterialAsset();
+	bool WriteMaterialAsset(const std::string& relativePath, const MaterialData& materialData);
 	bool WriteTextureAsset();
 	
 private:

@@ -230,7 +230,7 @@ void RenderSystem::CreateAndInitializeRenderNode(const Apollo::EntityID entityID
 		meshData.Vertices = meshGeometry.GetVertexDataRaw();
 		meshData.Indices = meshGeometry.GetIndexDataRaw();
 
-		//meshData.Material.mProperties.Shininess = material.Shininess;
+		meshData.Material.mProperties.Shininess = material.Shininess;
 
 		ResourceHandle testResource = resourceHandler.LoadResource<ShaderTechnique>(FilePath("Assets/Shaders/Pixel_Default_NewRenderer.hlsl"), "Default");
 		const ShaderTechnique* const shader = resourceHandler.GetResource<ShaderTechnique>(testResource);//resourceHandler.GetResource<ShaderTechnique>(material.GetShaderResource());
