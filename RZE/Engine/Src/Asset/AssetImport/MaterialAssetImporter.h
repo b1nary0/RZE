@@ -11,6 +11,7 @@ public:
 	{
 		enum ETextureFlags
 		{
+			TEXTUREFLAG_NONE = 0,
 			TEXTUREFLAG_ALBEDO = 1 << 0,
 			TEXTUREFLAG_SPECULAR = 1 << 1,
 			TEXTUREFLAG_NORMAL = 1 << 2,
@@ -27,6 +28,7 @@ public:
 		// probably not the best implementation of this but i think the asset infrastructure
 		// needs to mature.
 		U8 TextureFlags;
+		std::vector<std::string> TexturePaths;
 	};
 
 public:

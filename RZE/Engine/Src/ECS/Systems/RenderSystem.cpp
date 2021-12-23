@@ -233,27 +233,27 @@ void RenderSystem::CreateAndInitializeRenderNode(const Apollo::EntityID entityID
 		meshData.Material.mProperties.Shininess = material.Shininess;
 
 		ResourceHandle testResource = resourceHandler.LoadResource<ShaderTechnique>(FilePath("Assets/Shaders/Pixel_Default_NewRenderer.hlsl"), "Default");
-		const ShaderTechnique* const shader = resourceHandler.GetResource<ShaderTechnique>(testResource);//resourceHandler.GetResource<ShaderTechnique>(material.GetShaderResource());
+		const ShaderTechnique* const shader = resourceHandler.GetResource<ShaderTechnique>(material.GetShaderResource());
 		AssertNotNull(shader);
 		meshData.Material.mShaderID = shader->GetHardwareID();
 
 		std::vector<Diotima::TextureData> textureData;
 		textureData.reserve(Material::TEXTURE_SLOT_COUNT);
-// 		for (size_t textureSlot = 0; textureSlot < Material::TEXTURE_SLOT_COUNT; ++textureSlot)
-// 		{
-// 			// #TODO We should really be writing code that can deal with permutations of valid textures.
-// 			// Likely via a shader infrastructure that can validate the data needed and pair with its materials etc
-// 			const Texture2D* const texture = resourceHandler.GetResource<Texture2D>(material.GetTexture(textureSlot));
-// 			if (texture != nullptr)
-// 			{
-// 				Diotima::TextureData data;
-// 				// Can solve this problem with a Vector2D(int) maybe?
-// 				data.mHeader.mWidth = static_cast<int>(texture->GetDimensions().X());
-// 				data.mHeader.mHeight = static_cast<int>(texture->GetDimensions().Y());
-// 				data.mData = texture->GetRawData();
-// 				textureData.emplace_back(std::move(data));
-// 			}
-// 		}
+ 		for (size_t textureSlot = 0; textureSlot < Material::TEXTURE_SLOT_COUNT; ++textureSlot)
+ 		{
+ 			// #TODO We should really be writing code that can deal with permutations of valid textures.
+ 			// Likely via a shader infrastructure that can validate the data needed and pair with its materials etc
+ 			const Texture2D* const texture = resourceHandler.GetResource<Texture2D>(material.GetTexture(textureSlot));
+ 			if (texture != nullptr)
+ 			{
+ 				Diotima::TextureData data;
+ 				// Can solve this problem with a Vector2D(int) maybe?
+ 				data.mHeader.mWidth = static_cast<int>(texture->GetDimensions().X());
+ 				data.mHeader.mHeight = static_cast<int>(texture->GetDimensions().Y());
+ 				data.mData = texture->GetRawData();
+ 				textureData.emplace_back(std::move(data));
+ 			}
+ 		}
 
 		childNode.RenderObjectIndex = mRenderer->CreateAndInitializeRenderObject(meshData, textureData, rootNode.Transform);
 	}

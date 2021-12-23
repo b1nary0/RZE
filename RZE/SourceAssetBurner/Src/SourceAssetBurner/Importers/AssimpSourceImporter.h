@@ -67,6 +67,7 @@ private:
 		// probably not the best implementation of this but i think the asset infrastructure
 		// needs to mature.
 		U8 TextureFlags = TEXTUREFLAG_NONE;
+		std::vector<std::string> TexturePaths;
 	};
 
 	void ProcessNode(const aiNode& node, const aiScene& scene);
@@ -77,6 +78,7 @@ private:
 	bool WriteTextureAsset();
 	
 private:
+	FilePath mFilePath;
 	std::string mAssetName;
 
 	std::vector<MeshData> mMeshes;

@@ -51,6 +51,7 @@ bool AssimpSourceImporter::Import(const FilePath& filePath)
 {
 	LOG_CONSOLE_ARGS("AssimpSourceImporter : Importing %s...", filePath.GetRelativePath().c_str());
 
+	mFilePath = filePath;
 	mAssetName = StripAssetNameFromFilePath(filePath);
 
 	Assimp::Importer ModelImporter;
@@ -180,7 +181,12 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 	//Material* pMaterial;
 	if (mesh.mMaterialIndex >= 0)
 	{
+		// #TODO
+		// This is just temp
+		const int kTextureTypeCount = 3;
+
 		MaterialData materialData;
+		materialData.TexturePaths.resize(kTextureTypeCount);
 
 		aiMaterial* mat = scene.mMaterials[mesh.mMaterialIndex];
 		aiString matName;
@@ -213,11 +219,10 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 			aiString str;
 			mat->GetTexture(aiTextureType_DIFFUSE, 0, &str);
 
-			FilePath texturePath;
-			GetTextureFilePath(texturePath, str.C_Str());
+			FilePath texturePath = GetTextureFilePath(mFilePath, str.C_Str());
 
 			materialData.TextureFlags |= MaterialData::ETextureFlags::TEXTUREFLAG_ALBEDO;
-			mTextures.push_back(texturePath);
+			materialData.TexturePaths[0] = texturePath.GetRelativePath();
 		}
 
 		if (mat->GetTextureCount(aiTextureType_SPECULAR) > 0)
@@ -225,23 +230,21 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 			aiString str;
 			mat->GetTexture(aiTextureType_SPECULAR, 0, &str);
 
-			FilePath texturePath;
-			GetTextureFilePath(texturePath, str.C_Str());
+			FilePath texturePath = GetTextureFilePath(mFilePath, str.C_Str());
 
 			materialData.TextureFlags |= MaterialData::ETextureFlags::TEXTUREFLAG_SPECULAR;
-			mTextures.push_back(texturePath);
+			materialData.TexturePaths[1] = texturePath.GetRelativePath();
 		}
 
 		if (mat->GetTextureCount(aiTextureType_NORMALS))
 		{
 			aiString str;
-			mat->GetTexture(aiTextureType_SPECULAR, 0, &str);
+			mat->GetTexture(aiTextureType_NORMALS, 0, &str);
 
-			FilePath texturePath;
-			GetTextureFilePath(texturePath, str.C_Str());
+			FilePath texturePath = GetTextureFilePath(mFilePath, str.C_Str());
 
 			materialData.TextureFlags |= MaterialData::ETextureFlags::TEXTUREFLAG_NORMAL;
-			mTextures.push_back(texturePath);
+			materialData.TexturePaths[2] = texturePath.GetRelativePath();
 		}
 
 		// #TODO really gross string manip lol
@@ -375,18 +378,35 @@ bool AssimpSourceImporter::WriteMaterialAsset(const std::string& relativePath, c
 	File outputFile(outputPath);
 	outputFile.Open((File::EFileOpenMode::Value)(File::EFileOpenMode::Write | File::EFileOpenMode::Binary));
 
-	size_t bufSize = (sizeof(size_t) * 2) + materialData.MaterialName.length() + sizeof(MaterialData::MaterialProperties) + sizeof(U8);
+	// sizeof(size_t) * 3 == bufSize + nameSizeBytes + textureCount
+	size_t bufSize = (sizeof(size_t) * 3) + materialData.MaterialName.length() + sizeof(MaterialData::MaterialProperties) + sizeof(U8);
+	for (const std::string& texturePath : materialData.TexturePaths)
+	{
+		// count the bytes of the texture string size in sizeof(size_t) here
+		bufSize += sizeof(size_t) + texturePath.size();
+	}
 
 	ByteStream byteStream(outputPath.GetRelativePath(), bufSize);
 
 	byteStream.WriteBytes(&bufSize, sizeof(size_t));
 
-	const size_t nameSizeBytes = materialData.MaterialName.length();
+	const size_t nameSizeBytes = materialData.MaterialName.size();
 	byteStream.WriteBytes(&nameSizeBytes, sizeof(size_t));
 	byteStream.WriteBytes(materialData.MaterialName.data(), nameSizeBytes);
 
 	byteStream.WriteBytes(&materialData.Properties, sizeof(MaterialData::MaterialProperties));
 	byteStream.WriteBytes(&materialData.TextureFlags, sizeof(U8));
+
+	const size_t kTextureCount = materialData.TexturePaths.size();
+	byteStream.WriteBytes(&kTextureCount, sizeof(size_t));
+	for (int textureIdx = 0; textureIdx < kTextureCount; ++textureIdx)
+	{
+		const std::string& texturePath = materialData.TexturePaths[textureIdx];
+
+		const size_t pathSizeBytes = texturePath.size();
+		byteStream.WriteBytes(&pathSizeBytes, sizeof(size_t));
+		byteStream.WriteBytes(texturePath.data(), pathSizeBytes);
+	}
 
 	AssertExpr(byteStream.GetNumBytesWritten() == bufSize);
 

@@ -14,6 +14,12 @@ bool MaterialAssetImporter::Import(const FilePath& filePath)
 	mMaterialData.Properties = ReadMaterialProperties(byteStream);
 	mMaterialData.TextureFlags = ReadTextureFlags(byteStream);
 
+	const size_t textureCount = *reinterpret_cast<size_t*>(byteStream.PeekBytesAdvance(sizeof(size_t)));
+	for (size_t i = 0; i < textureCount; ++i)
+	{
+		mMaterialData.TexturePaths.push_back(ReadName(byteStream));
+	}
+
 	return true;
 }
 

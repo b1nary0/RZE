@@ -4,6 +4,8 @@
 #include <Asset/AssetImport/MaterialAssetImporter.h>
 
 #include <Graphics/Material.h>
+#include <Graphics/Shader.h>
+#include <Graphics/Texture2D.h>
 
 #include <Utils/Memory/ByteStream.h>
 
@@ -44,12 +46,44 @@ bool MeshAssetImporter::Import(const FilePath& filePath)
 		geo.SetIndexData(indexData);
 
 		MaterialAssetImporter materialImporter;
-		materialImporter.Import(FilePath(materialPath));
+		materialImporter.Import(FilePath(materialPath));	
 
+		// #TODO
+		// Not a huge fan of doing this material work here but for the moment it's really the only place that 
+		// makes sense since we are constructing the MeshGeometry here.
 		MaterialAssetImporter::MaterialData materialData = materialImporter.GetMaterialData();
 		Material* material = MaterialDatabase::Get().GetOrCreateMaterial(materialData.MaterialName);
 		material->Shininess = materialData.Properties.Shininess;
 		material->Opacity = materialData.Properties.Opacity;
+
+		U8 textureSlot = 0; // #TODO This is a really hacky way to do this. Not safe at all in any other circumstance
+		for (const std::string& texturePath : materialData.TexturePaths)
+		{
+			if (!texturePath.empty())
+			{
+				material->SetTexture(textureSlot++, RZE::GetResourceHandler().LoadResource<Texture2D>(FilePath(texturePath)));
+			}
+			else
+			{
+				textureSlot++;
+			}
+		}
+
+		if ((materialData.TextureFlags & MaterialAssetImporter::MaterialData::TEXTUREFLAG_ALL) == MaterialAssetImporter::MaterialData::TEXTUREFLAG_ALL)
+		{
+			FilePath fullShaderPath("Assets/Shaders/Pixel_NewRenderer.hlsl");
+			material->SetShaderTechnique(RZE::GetResourceHandler().LoadResource<ShaderTechnique>(fullShaderPath, "Pixel_NewRenderer"));
+		}
+		else if (materialData.TextureFlags == MaterialAssetImporter::MaterialData::TEXTUREFLAG_NONE)
+		{
+			FilePath noTextureShaderPath("Assets/Shaders/Pixel_Default_NewRenderer.hlsl");
+			material->SetShaderTechnique(RZE::GetResourceHandler().LoadResource<ShaderTechnique>(noTextureShaderPath, "Pixel_Default_NewRenderer"));
+		}
+		else
+		{
+			FilePath diffuseOnlyPath("Assets/Shaders/Pixel_NewRenderer_DiffuseOnly.hlsl");
+			material->SetShaderTechnique(RZE::GetResourceHandler().LoadResource<ShaderTechnique>(diffuseOnlyPath, "Pixel_NewRenderer_DiffuseOnly"));
+		}
 
 		geo.SetMaterial(material);
 

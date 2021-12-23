@@ -7,23 +7,8 @@
 
 class Texture2D : public IResource
 {
-	// Types
 public:
-	enum class ETextureType : U32
-	{
-		Diffuse,
-		Specular,
-		Normal
-	};
-
-	struct TextureProperties
-	{
-		ETextureType Type;
-	};
-
-public:
-	Texture2D() = delete;
-	Texture2D(ETextureType textureType);
+	Texture2D();
 	virtual ~Texture2D();
 
 public:
@@ -32,13 +17,10 @@ public:
 
 public:
 	U8* GetRawData() const { return mData; }
-	ETextureType GetTextureType() const;
 	Vector2D GetDimensions() const;
 
 private:
 	U8* mData;
-
-	ETextureType mTextureType;
 
 	Int32 mWidth;
 	Int32 mHeight;

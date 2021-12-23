@@ -3,10 +3,9 @@
 
 #include <STB/stb_image.cpp>
 
-Texture2D::Texture2D(ETextureType textureType)
+Texture2D::Texture2D()
 	: IResource()
 	, mData(nullptr)
-	, mTextureType(textureType)
 	, mWidth(0)
 	, mHeight(0)
 	, mChannels(0)
@@ -37,11 +36,6 @@ void Texture2D::Release()
 		delete mData;
 		mData = nullptr;
 	}
-}
-
-Texture2D::ETextureType Texture2D::GetTextureType() const
-{
-	return mTextureType;
 }
 
 Vector2D Texture2D::GetDimensions() const
