@@ -30,6 +30,9 @@ namespace ByteStreamUtils
 		return dataVec;
 	}
 
+	// #NOTE
+	// ReadType will only work on POD types. How could you know the length of a dynamically allocated array
+	// like a string? If you can't rely on sizeof(TType) then this function will fail.
 	template<typename TType>
 	inline TType ReadType(ByteStream& byteStream)
 	{
