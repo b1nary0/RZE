@@ -2,6 +2,7 @@
 #include <Asset/AssetImport/MaterialAssetImporter.h>
 
 #include <Utils/Memory/ByteStream.h>
+#include <Utils/Memory/ByteStreamUtils.h>
 
 bool MaterialAssetImporter::Import(const FilePath& filePath)
 {
@@ -10,42 +11,15 @@ bool MaterialAssetImporter::Import(const FilePath& filePath)
 
 	byteStream.PeekBytesAdvance(sizeof(size_t)); // bufSize
 
-	mMaterialData.MaterialName = ReadName(byteStream);
-	mMaterialData.Properties = ReadMaterialProperties(byteStream);
-	mMaterialData.TextureFlags = ReadTextureFlags(byteStream);
+	mMaterialData.MaterialName = ByteStreamUtils::ReadString(byteStream);
+	mMaterialData.Properties = ByteStreamUtils::ReadType<MaterialData::MaterialProperties>(byteStream);
+	mMaterialData.TextureFlags = ByteStreamUtils::ReadType<U8>(byteStream);
 
 	const size_t textureCount = *reinterpret_cast<size_t*>(byteStream.PeekBytesAdvance(sizeof(size_t)));
 	for (size_t i = 0; i < textureCount; ++i)
 	{
-		mMaterialData.TexturePaths.push_back(ReadName(byteStream));
+		mMaterialData.TexturePaths.push_back(ByteStreamUtils::ReadString(byteStream));
 	}
 
 	return true;
-}
-
-std::string MaterialAssetImporter::ReadName(ByteStream& byteStream)
-{
-	size_t nameSizeBytes = *reinterpret_cast<size_t*>(byteStream.PeekBytesAdvance(sizeof(size_t)));
-
-	unsigned char* name = new unsigned char[nameSizeBytes + 1];
-	byteStream.ReadBytes(name, nameSizeBytes);
-	name[nameSizeBytes] = '\0';
-	std::string string((char*)name);
-
-	delete[] name;
-	name = nullptr;
-	return std::move(string);
-}
-
-MaterialAssetImporter::MaterialData::MaterialProperties 
-MaterialAssetImporter::ReadMaterialProperties(ByteStream& byteStream)
-{
-	MaterialData::MaterialProperties* properties = 
-		reinterpret_cast<MaterialData::MaterialProperties*>(byteStream.PeekBytesAdvance(sizeof(MaterialData::MaterialProperties)));
-	return *properties;
-}
-
-U8 MaterialAssetImporter::ReadTextureFlags(ByteStream& byteStream)
-{
-	return *((U8*)byteStream.PeekBytesAdvance(sizeof(U8)));
 }

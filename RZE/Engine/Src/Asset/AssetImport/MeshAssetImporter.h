@@ -20,10 +20,5 @@ public:
 	std::vector<MeshGeometry> GetMeshGeometry() { return mMeshGeometry; }
 
 private:
-	std::string ReadName(ByteStream& byteStream);
-	std::vector<float> ReadVertices(ByteStream& byteStream);
-	std::vector<U32> ReadIndices(ByteStream& byteStream);
-
-private:
 	std::vector<MeshGeometry> mMeshGeometry;
 };

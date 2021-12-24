@@ -8,6 +8,7 @@
 #include <Graphics/Texture2D.h>
 
 #include <Utils/Memory/ByteStream.h>
+#include <Utils/Memory/ByteStreamUtils.h>
 
 namespace
 {
@@ -30,10 +31,10 @@ bool MeshAssetImporter::Import(const FilePath& filePath)
 	MeshAssetFileHeader* headerData = reinterpret_cast<MeshAssetFileHeader*>(byteStream.PeekBytesAdvance(sizeof(MeshAssetFileHeader)));
 	for (int i = 0; i < headerData->MeshCount; ++i)
 	{
-		std::string meshName = ReadName(byteStream);
-		std::string materialPath = ReadName(byteStream);
-		std::vector<float> vertexData = ReadVertices(byteStream);
-		std::vector<U32> indexData = ReadIndices(byteStream);
+		std::string meshName = ByteStreamUtils::ReadString(byteStream);
+		std::string materialPath = ByteStreamUtils::ReadString(byteStream);
+		std::vector<float> vertexData = ByteStreamUtils::ReadArray<float>(byteStream);
+		std::vector<U32> indexData = ByteStreamUtils::ReadArray<U32>(byteStream);
 
 		std::vector<MeshVertex> meshVertexArray;
 
@@ -95,40 +96,4 @@ bool MeshAssetImporter::Import(const FilePath& filePath)
 	}
 
 	return true;
-}
-
-std::string MeshAssetImporter::ReadName(ByteStream& byteStream)
-{
-	size_t nameSizeBytes = *reinterpret_cast<size_t*>(byteStream.PeekBytesAdvance(sizeof(size_t)));
-
-	unsigned char* name = new unsigned char[nameSizeBytes + 1];
-	byteStream.ReadBytes(name, nameSizeBytes);
-	name[nameSizeBytes] = '\0';
-	std::string string((char*)name);
-
-	delete[] name;
-	name = nullptr;
-	return std::move(string);
-}
-
-std::vector<float> MeshAssetImporter::ReadVertices(ByteStream& byteStream)
-{
-	size_t vertexDataSizeBytes = *reinterpret_cast<size_t*>(byteStream.PeekBytesAdvance(sizeof(size_t)));
-
-	std::vector<float> vertexDataVec;
-	vertexDataVec.resize(vertexDataSizeBytes / sizeof(float));
-	byteStream.ReadBytes((Byte*)vertexDataVec.data(), vertexDataSizeBytes);
-
-	return vertexDataVec;
-}
-
-std::vector<U32> MeshAssetImporter::ReadIndices(ByteStream& byteStream)
-{
-	size_t indexDataSizeBytes = *reinterpret_cast<size_t*>(byteStream.PeekBytesAdvance(sizeof(size_t)));
-
-	std::vector<U32> indexDataVec;
-	indexDataVec.resize(indexDataSizeBytes / sizeof(U32));
-	byteStream.ReadBytes((Byte*)indexDataVec.data(), indexDataSizeBytes);
-
-	return indexDataVec;
 }
