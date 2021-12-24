@@ -18,6 +18,9 @@ namespace ByteStreamUtils
 		return std::move(string);
 	}
 
+	// #NOTE
+	// ReadArray will only work on POD types. How could you know the length of a dynamically allocated array
+	// like a string? If you can't rely on sizeof(TDataType) then this function will fail.
 	template<typename TDataType>
 	inline std::vector<TDataType> ReadArray(ByteStream& byteStream)
 	{
