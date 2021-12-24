@@ -174,11 +174,6 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 		}
 	}
 
-	//bool bHasDiffuse = false;
-	//bool bHasSpecular = false;
-	//bool bHasBump = false;
-
-	//Material* pMaterial;
 	if (mesh.mMaterialIndex >= 0)
 	{
 		// #TODO
@@ -259,38 +254,6 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 			mMaterialTable[assetFilepathRelative] = std::move(materialData);
 		}
 	}
-
-	//// #TODO
-	//// This is essentially stubbing code. More to prove out the support infrastructure.
-	////AssertMsg(bHasDiffuse, "Unsupported without diffuse texture for the hopefully short time being");
-	//const bool bFullShading = bHasDiffuse && bHasSpecular && bHasBump;
-
-	//ResourceHandle shaderTechnique;
-	//if (bFullShading)
-	//{
-	//	shaderTechnique = RZE::GetResourceHandler().LoadResource<ShaderTechnique>(FilePath("Assets/Shaders/Pixel_NewRenderer.hlsl"), "Pixel_NewRenderer");
-	//}
-	//else if (bHasDiffuse)
-	//{
-	//	shaderTechnique = RZE::GetResourceHandler().LoadResource<ShaderTechnique>(FilePath("Assets/Shaders/Pixel_NewRenderer_DiffuseOnly.hlsl"), "Pixel_NewRenderer_DiffuseOnly");
-	//}
-
-	//// #TODO
-	//// If we have no diffuse/bump/specular use the default asf shader.
-	//// This is an atrocious way to handle this but in lieu of a better system and more patience
-	//// it will have to do for now. Lots of bugs here, not really thought out code.
-	//if (!shaderTechnique.IsValid() && !bHasSpecular)
-	//{
-	//	shaderTechnique = RZE::GetResourceHandler().LoadResource<ShaderTechnique>(FilePath("Assets/Shaders/Pixel_Default_NewRenderer.hlsl"), "Pixel_Default_NewRenderer");
-	//}
-
-	//pMaterial->SetShaderTechnique(shaderTechnique);
-	//outMesh.SetMaterial(pMaterial);
-	//// #TODO
-	//// Instead of doing this, and having redundant memory on MeshGeometry
-	//// we can instead form the combined data buffer here and set it on the mesh directly
-	//// then if we need a higher level view of the data we can create that when needed?
-	//outMesh.AllocateData();
 }
 
 bool AssimpSourceImporter::WriteMeshAsset()
