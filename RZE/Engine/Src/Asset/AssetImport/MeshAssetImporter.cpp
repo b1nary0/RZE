@@ -36,9 +36,9 @@ bool MeshAssetImporter::Import(const FilePath& filePath)
 		std::vector<float> vertexData = ByteStreamUtils::ReadArray<float>(byteStream);
 		std::vector<U32> indexData = ByteStreamUtils::ReadArray<U32>(byteStream);
 
-		std::vector<MeshVertex> meshVertexArray;
-
 		MeshVertex* vertexDataArray = reinterpret_cast<MeshVertex*>(vertexData.data());
+
+		std::vector<MeshVertex> meshVertexArray;
 		meshVertexArray.insert(meshVertexArray.end(), &vertexDataArray[0], &vertexDataArray[vertexData.size() / (sizeof(MeshVertex) / 4)]);
 
 		MeshGeometry geo;
