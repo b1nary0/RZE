@@ -25,7 +25,5 @@ public:
 	inline const StaticMesh& GetStaticMesh() const { return mMesh; }
 
 private:
-	FilePath mFilePath;
-
 	StaticMesh mMesh;
 };

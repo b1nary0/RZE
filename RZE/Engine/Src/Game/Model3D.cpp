@@ -19,8 +19,6 @@ Model3D::~Model3D()
 bool Model3D::Load(const FilePath& filePath)
 {
 	OPTICK_EVENT("Model3D::Load");
-	mFilePath = filePath;
-
 	MeshAssetImporter meshImporter;
 	meshImporter.Import(filePath);
 
