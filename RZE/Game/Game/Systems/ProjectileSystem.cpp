@@ -13,6 +13,11 @@
 
 #include <Optick/optick.h>
 
+namespace
+{
+	constexpr char kProjectileMeshAssetPath[] = "ProjectData/Mesh/NeckMechWalker.meshasset";
+}
+
 void ProjectileSystem::Initialize()
 {
 	InternalGetComponentFilter().AddFilterType<TransformComponent>();
@@ -22,7 +27,7 @@ void ProjectileSystem::Initialize()
 
 	RegisterForComponentNotifications();
 
-	mProjectileResource = RZE::GetResourceHandler().LoadResource<Model3D>(FilePath("Assets/3D/NeckMechWalker/NeckMechWalker.obj"));
+	mProjectileResource = RZE::GetResourceHandler().LoadResource<Model3D>(FilePath(kProjectileMeshAssetPath));
 	AssertExpr(mProjectileResource.IsValid());
 	
 	InputHandler::KeyActionFunc leftButtonFunc([this, &entityHandler](const InputKey& key)
@@ -41,7 +46,7 @@ void ProjectileSystem::Initialize()
 
 		// #TODO(Need to resolve the situation where you want to create a MeshComponent based off an existing ResourceHandle.
 		//       For the time being this will simply end up just returning the cached resource but it should be explicit)
-		entityHandler.AddComponent<MeshComponent>(projectileEntity, FilePath("Assets/3D/NeckMechWalker/NeckMechWalker.obj"));
+		entityHandler.AddComponent<MeshComponent>(projectileEntity, FilePath(kProjectileMeshAssetPath));
 		entityHandler.AddComponent<VelocityComponent>(projectileEntity, velocity);
 		entityHandler.AddComponent<LifetimeComponent>(projectileEntity, 3000.0f);
 	});
