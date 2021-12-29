@@ -148,10 +148,20 @@ void RenderSystem::OnMeshComponentAdded(Apollo::EntityID entityID)
 
 void RenderSystem::OnMeshComponentRemoved(Apollo::EntityID entityID)
 {
+	DestroyRenderNode(entityID);
 }
 
 void RenderSystem::OnMeshComponentModified(Apollo::EntityID entityID)
 {
+	Apollo::EntityHandler& entityHandler = RZE_Application::RZE().GetActiveScene().GetEntityHandler();
+	ResourceHandler& resourceHandler = RZE::GetResourceHandler();
+
+	DestroyRenderNode(entityID);
+
+	MeshComponent* const meshComponent = entityHandler.GetComponent<MeshComponent>(entityID);
+	resourceHandler.ReleaseResource(meshComponent->Resource);
+
+	OnMeshComponentAdded(entityID);
 }
 
 void RenderSystem::OnCameraComponentAdded(Apollo::EntityID entityID)
@@ -178,6 +188,12 @@ void RenderSystem::OnCameraComponentAdded(Apollo::EntityID entityID)
 
 void RenderSystem::OnCameraComponentRemoved(Apollo::EntityID entityID)
 {
+	// #TODO
+	// I think this is buggy
+	if (mCurrentCameraEntity == entityID)
+	{
+		mCurrentCameraEntity = Apollo::kInvalidEntityID;
+	}
 }
 
 void RenderSystem::OnCameraComponentModified(Apollo::EntityID entityID)
@@ -231,6 +247,7 @@ void RenderSystem::CreateAndInitializeRenderNode(const Apollo::EntityID entityID
 		meshData.Indices = meshGeometry.GetIndexDataRaw();
 
 		meshData.Material.mProperties.Shininess = material.Shininess;
+		meshData.Material.mProperties.Opacity = material.Opacity;
 
 		const ShaderTechnique* const shader = resourceHandler.GetResource<ShaderTechnique>(material.GetShaderResource());
 		AssertNotNull(shader);
@@ -256,4 +273,65 @@ void RenderSystem::CreateAndInitializeRenderNode(const Apollo::EntityID entityID
 
 		childNode.RenderObjectIndex = mRenderer->CreateAndInitializeRenderObject(meshData, textureData, rootNode.Transform);
 	}
+}
+
+void RenderSystem::CreateRenderObject(const MeshComponent& meshComponent, const TransformComponent& transformComponent)
+{
+	ResourceHandler& resourceHandler = RZE::GetResourceHandler();
+
+	const Model3D* modelData = resourceHandler.GetResource<Model3D>(meshComponent.Resource);
+	AssertNotNull(modelData);
+
+	for (auto& meshGeometry : modelData->GetStaticMesh().GetSubMeshes())
+	{
+		const Material& material = meshGeometry.GetMaterial();
+
+		Diotima::MeshData meshData;
+		meshData.Vertices = meshGeometry.GetVertexDataRaw();
+		meshData.Indices = meshGeometry.GetIndexDataRaw();
+
+		meshData.Material.mProperties.Shininess = material.Shininess;
+		meshData.Material.mProperties.Opacity = material.Opacity;
+
+		const ShaderTechnique* const shader = resourceHandler.GetResource<ShaderTechnique>(material.GetShaderResource());
+		AssertNotNull(shader);
+		meshData.Material.mShaderID = shader->GetHardwareID();
+
+		std::vector<Diotima::TextureData> textureData;
+		textureData.reserve(Material::TEXTURE_SLOT_COUNT);
+		for (size_t textureSlot = 0; textureSlot < Material::TEXTURE_SLOT_COUNT; ++textureSlot)
+		{
+			// #TODO We should really be writing code that can deal with permutations of valid textures.
+			// Likely via a shader infrastructure that can validate the data needed and pair with its materials etc
+			const Texture2D* const texture = resourceHandler.GetResource<Texture2D>(material.GetTexture(textureSlot));
+			if (texture != nullptr)
+			{
+				Diotima::TextureData data;
+				// Can solve this problem with a Vector2D(int) maybe?
+				data.mHeader.mWidth = static_cast<int>(texture->GetDimensions().X());
+				data.mHeader.mHeight = static_cast<int>(texture->GetDimensions().Y());
+				data.mData = texture->GetRawData();
+				textureData.emplace_back(std::move(data));
+			}
+		}
+
+		mRenderer->CreateAndInitializeRenderObject(meshData, textureData, transformComponent.GetAsMat4x4());
+	}
+}
+
+void RenderSystem::DestroyRenderNode(Apollo::EntityID entityID)
+{
+	auto iter = std::find_if(mRootNodes.begin(), mRootNodes.end(),
+		[entityID](const RenderNode& renderObject)
+		{
+			return renderObject.EntityID == entityID;
+		});
+
+	AssertExpr(iter != mRootNodes.end());
+	for (auto& child : iter->Children)
+	{
+		mRenderer->DestroyRenderObject(child.RenderObjectIndex);
+	}
+
+	mRootNodes.erase(iter);
 }

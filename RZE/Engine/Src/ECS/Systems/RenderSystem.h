@@ -5,6 +5,7 @@
 #include <Utils/Math/Matrix4x4.h>
 
 struct CameraComponent;
+struct MeshComponent;
 struct TransformComponent;
 
 class MeshGeometry;
@@ -41,6 +42,9 @@ private:
 
 	void GenerateCameraMatrices(CameraComponent& cameraComponent, const TransformComponent& transformComponent);
 	void CreateAndInitializeRenderNode(const Apollo::EntityID entityID, const Model3D& modelData, const Matrix4x4& transform);
+
+	void CreateRenderObject(const MeshComponent& meshComponent, const TransformComponent& transformComponent);
+	void DestroyRenderNode(Apollo::EntityID entityID);
 
 	// Component lifecycle callbacks
 private:

@@ -37,6 +37,7 @@ namespace Diotima
 
 	public:
 		bool Allocate(DX11GFXDevice& hwDevice, const std::vector<TextureData>& textureData);
+		void Release();
 
 		size_t GetResourceCount() const;
 		DX11GFXTextureBuffer2D* GetResourceAt(size_t index);

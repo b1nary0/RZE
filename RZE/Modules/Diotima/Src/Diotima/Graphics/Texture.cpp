@@ -38,6 +38,16 @@ namespace Diotima
 		return true;
 	}
 
+	void TexturePack::Release()
+	{
+		for (size_t index = 0; index < mResources.size(); ++index)
+		{
+			mResources[index]->Release();
+		}
+
+		mResources.clear();
+	}
+
 	Diotima::DX11GFXTextureBuffer2D* TexturePack::GetResourceAt(size_t index)
 	{
 		AssertExpr(index < mResources.size());

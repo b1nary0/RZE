@@ -58,6 +58,8 @@ void ResourceHandler::ReleaseResource(ResourceHandle& resourceHandle)
 			resourceSource.GetResource()->Release();
 			resourceSource.Destroy();
 			mResourceTable.erase(iter);
+
+			resourceHandle = ResourceHandle::EmptyHandle();
 		}
 	}
 	else

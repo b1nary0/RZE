@@ -8,7 +8,10 @@ struct MeshComponent final : Apollo::Component<MeshComponent>
 {
 	MeshComponent()
 	{
-		ResourcePath = FilePath("Assets/3D/Cube.obj");
+		// #TODO
+		// This is not a good place for this. Need to either be able to create
+		// a MeshComponent without an asset or have a better way to determine the default asset
+		ResourcePath = FilePath("ProjectData/Mesh/Cube.meshasset");
 	}
 
 	MeshComponent(const FilePath& resourcePath)

@@ -94,6 +94,7 @@ namespace Diotima
 		// to support other types of data construction or use.
 		struct RenderObject
 		{
+			bool bEnabled = false;
 			IGFXVertexBuffer* VertexBuffer = nullptr;
 			IGFXIndexBuffer* IndexBuffer = nullptr;
 			IGFXConstantBuffer* ConstantBuffer = nullptr;
@@ -150,6 +151,8 @@ namespace Diotima
 			const MeshData& meshData, 
 			const std::vector<TextureData>& textureData, 
 			const Matrix4x4& transform);
+
+		void DestroyRenderObject(U32 renderObjectIndex);
 		
 		void UpdateRenderObject(U32 renderObjectHandle, const Matrix4x4& newTransform);
 

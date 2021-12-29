@@ -406,6 +406,18 @@ FilePath Win32Window::ShowOpenFilePrompt()
 
 		std::string path(test);
 		size_t index = path.find("Assets\\");
+		if (index == std::string::npos)
+		{
+			// #TODO
+			// This is a hack to handle the fact we currently mismatch where
+			// assets come from. Some from from Assets/ (i.e scenes, textures)
+			// and some come from ProjectData/ (meshasset, materialasset)
+			index = path.find("ProjectData\\");
+
+			// If we've still not found a valid index, something is wrong.
+			AssertExpr(index != std::string::npos);
+		}
+
 		path = path.substr(index, path.size());
 
 		return FilePath(path);

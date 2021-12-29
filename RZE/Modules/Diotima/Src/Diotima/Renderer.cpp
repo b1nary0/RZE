@@ -191,6 +191,15 @@ namespace Diotima
 
 		for (auto& renderObject : renderObjects_sorted)
 		{
+			if (!renderObject.bEnabled)
+			{
+				// #TODO
+				// want to get rid of this with a proper per-frame registration technique
+				// but that means moving the ownership of the renderobject outside of the renderer
+				// which is a future task
+				continue;
+			}
+
 			ID3D11PixelShader* const hwShader = mDevice->GetPixelShader(renderObject.Material.mShaderID);
 			deviceContext.PSSetShader(hwShader, 0, 0);
 
@@ -432,6 +441,23 @@ namespace Diotima
 		return mRenderObjects.size() - 1;
 	}
 
+	void Renderer::DestroyRenderObject(U32 renderObjectIndex)
+	{
+		AssertExpr(renderObjectIndex < mRenderObjects.size());
+		RenderObject& renderObject = mRenderObjects[renderObjectIndex];
+		
+		renderObject.VertexBuffer->Release();
+		renderObject.IndexBuffer->Release();
+		renderObject.ConstantBuffer->Release();
+		renderObject.MaterialDataBuffer->Release();
+
+		renderObject.Material.mTexturePack->Release();
+
+		renderObject = {};
+
+		mFreeRenderObjectIndices.push(renderObjectIndex);
+	}
+
 	void Renderer::InitializeRenderObject(
 		RenderObject& renderObject, 
 		const MeshData& meshData, 
@@ -450,6 +476,8 @@ namespace Diotima
 			renderObject.Material.mTexturePack = new TexturePack();
 			renderObject.Material.mTexturePack->Allocate(*mDevice, textureData);
 		}
+
+		renderObject.bEnabled = true;
 
 		UpdateRenderObjectTransform_GPU(renderObject);
 	}
