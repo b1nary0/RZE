@@ -1,11 +1,5 @@
 #pragma once
 
-#include <functional>
-#include <mutex>
-#include <queue>
-#include <unordered_map>
-#include <vector>
-
 #include <Diotima/RenderCommands.h>
 #include <Diotima/Graphics/Texture.h>
 
@@ -13,6 +7,13 @@
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Platform/FilePath.h>
+
+#include <functional>
+#include <memory>
+#include <mutex>
+#include <queue>
+#include <unordered_map>
+#include <vector>
 
 namespace Diotima
 {
@@ -27,6 +28,10 @@ namespace Diotima
 	// 	};
 
 	class DX11GFXDevice;
+
+	class IGFXVertexBuffer;
+	class IGFXIndexBuffer;
+	class IGFXConstantBuffer;
 
 	class GFXPassGraph;
 	class RenderTargetTexture;
@@ -48,6 +53,7 @@ namespace Diotima
 		struct MaterialProperties
 		{
 			float Shininess;
+			float Opacity;
 		};
 
 		Int32 mShaderID;
@@ -88,10 +94,10 @@ namespace Diotima
 		// to support other types of data construction or use.
 		struct RenderObject
 		{
-			Int32 VertexBuffer = -1;
-			Int32 IndexBuffer = -1;
-			Int32 ConstantBuffer = -1;
-			Int32 MaterialDataBuffer = -1;
+			IGFXVertexBuffer* VertexBuffer = nullptr;
+			IGFXIndexBuffer* IndexBuffer = nullptr;
+			IGFXConstantBuffer* ConstantBuffer = nullptr;
+			IGFXConstantBuffer* MaterialDataBuffer = nullptr;
 			MaterialData Material;
 			Matrix4x4 Transform;
 		};
@@ -132,8 +138,8 @@ namespace Diotima
 
 		// #TODO
 		// private later
-		Int32 CreateVertexBuffer(void* data, size_t size, U32 count);
-		Int32 CreateIndexBuffer(void* data, size_t size, U32 count);
+		IGFXVertexBuffer* CreateVertexBuffer(void* data, size_t size, U32 count);
+		IGFXIndexBuffer* CreateIndexBuffer(void* data, size_t size, U32 count);
 		Int32 CreateTextureBuffer2D(void* data, U32 width, U32 height);
 		Int32 CreatePixelShader(const FilePath& filePath);
 

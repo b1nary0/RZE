@@ -156,24 +156,6 @@ namespace Diotima
 		mDepthStencilView->Release();
 		mDepthStencilTex->Release();
 
-		for (auto& vertexBuf : mVertexBuffers)
-		{
-			vertexBuf->Release();
-			vertexBuf.reset();
-		}
-
-		for (auto& indexBuf : mIndexBuffers)
-		{
-			indexBuf->Release();
-			indexBuf.reset();
-		}
-
-		for (auto& constantBuf : mConstantBuffers)
-		{
-			constantBuf->Release();
-			constantBuf.reset();
-		}
-
 		for (auto& t2dBuf : mTexture2DBuffers)
 		{
 			t2dBuf->Release();
@@ -187,22 +169,22 @@ namespace Diotima
 		}
 	}
 
-	Int32 DX11GFXDevice::CreateVertexBuffer(void* data, size_t size, U32 count)
+	IGFXVertexBuffer* DX11GFXDevice::CreateVertexBuffer(void* data, size_t size, U32 count)
 	{
-		mVertexBuffers.push_back(std::make_unique<DX11GFXVertexBuffer>());
-		mVertexBuffers.back()->SetDevice(this);
-		mVertexBuffers.back()->Allocate(data, size, count);
+		DX11GFXVertexBuffer* retBuf = new DX11GFXVertexBuffer();
+		retBuf->SetDevice(this);
+		retBuf->Allocate(data, size, count);
 
-		return static_cast<U32>(mVertexBuffers.size() - 1);
+		return retBuf;
 	}
 
-	Int32 DX11GFXDevice::CreateIndexBuffer(void* data, size_t size, U32 count)
+	IGFXIndexBuffer* DX11GFXDevice::CreateIndexBuffer(void* data, size_t size, U32 count)
 	{
-		mIndexBuffers.push_back(std::make_unique<DX11GFXIndexBuffer>());
-		mIndexBuffers.back()->SetDevice(this);
-		mIndexBuffers.back()->Allocate(data, size, count);
+		DX11GFXIndexBuffer* retBuf = new DX11GFXIndexBuffer();
+		retBuf->SetDevice(this);
+		retBuf->Allocate(data, size, count);
 
-		return static_cast<U32>(mIndexBuffers.size() - 1);
+		return retBuf;
 	}
 
 	Int32 DX11GFXDevice::CreateRenderTarget2D(U32 width, U32 height)
@@ -235,13 +217,13 @@ namespace Diotima
 		return static_cast<U32>(mTexture2DBuffers.size() - 1);
 	}
 
-	Int32 DX11GFXDevice::CreateConstantBuffer(size_t memberSize, U32 maxMembers)
+	IGFXConstantBuffer* DX11GFXDevice::CreateConstantBuffer(size_t memberSize, U32 maxMembers)
 	{
-		mConstantBuffers.push_back(std::make_unique<DX11GFXConstantBuffer>());
-		mConstantBuffers.back()->SetDevice(this);
-		mConstantBuffers.back()->Allocate(memberSize, maxMembers);
+		DX11GFXConstantBuffer* retBuf = new DX11GFXConstantBuffer();
+		retBuf->SetDevice(this);
+		retBuf->Allocate(memberSize, maxMembers);
 
-		return static_cast<U32>(mConstantBuffers.size() - 1);
+		return retBuf;
 	}
 
 	Int32 DX11GFXDevice::CreatePixelShader(const FilePath& filePath)
@@ -268,30 +250,6 @@ namespace Diotima
 		return mPixelShaders.size() - 1;
 	}
 
-	DX11GFXVertexBuffer* DX11GFXDevice::GetVertexBuffer(Int32 bufferID)
-	{
-		AssertExpr(bufferID != kInvalidBufferID);
-		AssertExpr(mVertexBuffers.size() > bufferID);
-
-		return mVertexBuffers[bufferID].get();
-	}
-
-	Diotima::DX11GFXIndexBuffer* DX11GFXDevice::GetIndexBuffer(Int32 bufferID)
-	{
-		AssertExpr(bufferID != kInvalidBufferID);
-		AssertExpr(mIndexBuffers.size() > bufferID);
-
-		return mIndexBuffers[bufferID].get();
-	}
-
-	Diotima::DX11GFXConstantBuffer* DX11GFXDevice::GetConstantBuffer(Int32 bufferID)
-	{
-		AssertExpr(bufferID != kInvalidBufferID);
-		AssertExpr(mConstantBuffers.size() > bufferID);
-
-		return mConstantBuffers[bufferID].get();
-	}
-
 	Diotima::DX11GFXTextureBuffer2D* DX11GFXDevice::GetTextureBuffer2D(Int32 bufferID)
 	{
 		AssertExpr(bufferID != kInvalidBufferID);
@@ -305,38 +263,38 @@ namespace Diotima
 		mSyncInterval = interval;
 	}
 
-	void DX11GFXDevice::SendTextureToBackBuffer(DX11GFXTextureBuffer2D* texture)
-	{
-		FLOAT rgba[4] = { 1.0f, 1.0f, 0.0f, 1.0f };
-		mDeviceContext->OMSetRenderTargets(1, &mRenderTargetView, mDepthStencilView);
-		mDeviceContext->ClearRenderTargetView(mRenderTargetView, rgba);
-		mDeviceContext->ClearDepthStencilView(mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
-		mDeviceContext->VSSetShader(mVSRenderTarget, 0, 0);
-		mDeviceContext->PSSetShader(mPSRenderTarget, 0, 0);
-
-		DX11GFXVertexBuffer* vb = GetVertexBuffer(mRenderTargetVB);
-		ID3D11Buffer* hwvb = &vb->GetHardwareBuffer();
-
-		UINT stride = sizeof(float) * 5;
-		UINT offset = 0;
-		mDeviceContext->IASetVertexBuffers(0, 1, &hwvb, &stride, &offset);
-
-		DX11GFXIndexBuffer* ib = GetIndexBuffer(mRenderTargetIB);
-		mDeviceContext->IASetIndexBuffer(&ib->GetHardwareBuffer(), DXGI_FORMAT_R32_UINT, 0);
-
-		mDeviceContext->IASetInputLayout(mRTTVertLayout);
-
-		ID3D11ShaderResourceView* texSRV = &texture->GetResourceView();
-		ID3D11SamplerState* texSamplerState = &texture->GetSamplerState();
-		mDeviceContext->PSSetShaderResources(0, 1, &texSRV);
-		mDeviceContext->PSSetSamplers(0, 1, &texSamplerState);
-
-		mDeviceContext->DrawIndexed(6, 0, 0);
-
-		ID3D11ShaderResourceView* const pSRV[1] = { NULL };
-		mDeviceContext->PSSetShaderResources(0, 1, pSRV);
-	}
+// 	void DX11GFXDevice::SendTextureToBackBuffer(DX11GFXTextureBuffer2D* texture)
+// 	{
+// 		FLOAT rgba[4] = { 1.0f, 1.0f, 0.0f, 1.0f };
+// 		mDeviceContext->OMSetRenderTargets(1, &mRenderTargetView, mDepthStencilView);
+// 		mDeviceContext->ClearRenderTargetView(mRenderTargetView, rgba);
+// 		mDeviceContext->ClearDepthStencilView(mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+// 
+// 		mDeviceContext->VSSetShader(mVSRenderTarget, 0, 0);
+// 		mDeviceContext->PSSetShader(mPSRenderTarget, 0, 0);
+// 
+// 		DX11GFXVertexBuffer* vb = GetVertexBuffer(mRenderTargetVB);
+// 		ID3D11Buffer* hwvb = &vb->GetHardwareBuffer();1
+// 
+// 		UINT stride = sizeof(float) * 5;
+// 		UINT offset = 0;
+// 		mDeviceContext->IASetVertexBuffers(0, 1, &hwvb, &stride, &offset);
+// 
+// 		DX11GFXIndexBuffer* ib = GetIndexBuffer(mRenderTargetIB);
+// 		mDeviceContext->IASetIndexBuffer(&ib->GetHardwareBuffer(), DXGI_FORMAT_R32_UINT, 0);
+// 
+// 		mDeviceContext->IASetInputLayout(mRTTVertLayout);
+// 
+// 		ID3D11ShaderResourceView* texSRV = &texture->GetResourceView();
+// 		ID3D11SamplerState* texSamplerState = &texture->GetSamplerState();
+// 		mDeviceContext->PSSetShaderResources(0, 1, &texSRV);
+// 		mDeviceContext->PSSetSamplers(0, 1, &texSamplerState);
+// 
+// 		mDeviceContext->DrawIndexed(6, 0, 0);
+// 
+// 		ID3D11ShaderResourceView* const pSRV[1] = { NULL };
+// 		mDeviceContext->PSSetShaderResources(0, 1, pSRV);
+// 	}
 
 	void DX11GFXDevice::SetRenderTarget(ID3D11Texture2D* texture)
 	{
@@ -388,21 +346,6 @@ namespace Diotima
 		viewport.TopLeftX = 0;
 		viewport.TopLeftY = 0;
 		GetDeviceContext().RSSetViewports(1, &viewport);
-	}
-
-	U32 DX11GFXDevice::GetVertexBufferCount() const
-	{
-		return mVertexBuffers.size();
-	}
-
-	U32 DX11GFXDevice::GetIndexBufferCount() const
-	{
-		return mVertexBuffers.size();
-	}
-
-	U32 DX11GFXDevice::GetConstantBufferCount() const
-	{
-		return mVertexBuffers.size();
 	}
 
 	U32 DX11GFXDevice::GetTextureBufferCount() const

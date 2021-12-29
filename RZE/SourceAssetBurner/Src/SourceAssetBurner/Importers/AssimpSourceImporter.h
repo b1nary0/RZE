@@ -19,6 +19,12 @@ struct aiMesh;
 struct aiNode;
 struct aiScene;
 
+// #TODO
+// Eventually move the writing code out and the importers just store the data from the relevant
+// import library (assimp etc) but the data is transformed to the same RZE concepts and written the
+// same way via "globally" accessible functions (like a writing class or something? i dunno need to think
+// on it more)
+
 class AssimpSourceImporter : public SourceImporter
 {
 public:

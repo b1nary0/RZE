@@ -58,7 +58,7 @@ namespace
 		ID3D10Blob* mVSBlob = nullptr;
 		ID3D11VertexShader* mVertexShader = nullptr;
 		ID3D11InputLayout* mVertexLayout = nullptr;
-		Int32 mCameraDataBuffer = -1;
+		Diotima::IGFXConstantBuffer* mCameraDataBuffer = nullptr;
 
 		// #TODO
 		// Temp struct just to move code.
@@ -130,7 +130,7 @@ namespace Diotima
 		kDrawStateData.mCameraGPUData.ClipSpace = mCameraData.ProjectionMat * mCameraData.ViewMat;
 		kDrawStateData.mCameraGPUData.Position = mCameraData.Position;
 
-		DX11GFXConstantBuffer* camDataBuf = mDevice->GetConstantBuffer(kDrawStateData.mCameraDataBuffer);
+		DX11GFXConstantBuffer* camDataBuf = static_cast<DX11GFXConstantBuffer*>(kDrawStateData.mCameraDataBuffer);
 		ID3D11Buffer* vpbHardwareBuf = &camDataBuf->GetHardwareBuffer();
 		camDataBuf->UpdateSubresources(&kDrawStateData.mCameraGPUData);
 		deviceContext.VSSetConstantBuffers(0, 1, &vpbHardwareBuf);
@@ -201,21 +201,21 @@ namespace Diotima
 					// #TODO
 					// This is god awful. Just in place while developing shader model.
 					// Should get resolved once the system matures
-					DX11GFXConstantBuffer* cameraDataBuf = mDevice->GetConstantBuffer(kDrawStateData.mCameraDataBuffer);
+					DX11GFXConstantBuffer* cameraDataBuf = static_cast<DX11GFXConstantBuffer*>(kDrawStateData.mCameraDataBuffer);
 					ID3D11Buffer* camDataHWbuf = &cameraDataBuf->GetHardwareBuffer();
 					deviceContext.PSSetConstantBuffers(0, 1, &camDataHWbuf);
 				}
 
 				// World Matrix
 				{
-					DX11GFXConstantBuffer* modelMatBuf = mDevice->GetConstantBuffer(renderObject.ConstantBuffer);
+					DX11GFXConstantBuffer* modelMatBuf = static_cast<DX11GFXConstantBuffer*>(renderObject.ConstantBuffer);
 					ID3D11Buffer* hwModelMatBuf = &modelMatBuf->GetHardwareBuffer();
 					deviceContext.VSSetConstantBuffers(1, 1, &hwModelMatBuf);
 				}
 
 				// Material buffer
 				{
-					DX11GFXConstantBuffer* materialBuffer = mDevice->GetConstantBuffer(renderObject.MaterialDataBuffer);
+					DX11GFXConstantBuffer* materialBuffer = static_cast<DX11GFXConstantBuffer*>(renderObject.MaterialDataBuffer);
 					ID3D11Buffer* matHWbuf = &materialBuffer->GetHardwareBuffer();
 					materialBuffer->UpdateSubresources(&renderObject.Material.mProperties);
 					deviceContext.PSSetConstantBuffers(1, 1, &matHWbuf);
@@ -250,12 +250,15 @@ namespace Diotima
 				UINT stride = sizeof(TempDataLayoutStructure);
 				UINT offset = 0;
 
-				ID3D11Buffer* vertBuf = &mDevice->GetVertexBuffer(renderObject.VertexBuffer)->GetHardwareBuffer();
+				// #TODO
+				// Code like this needs to be removed by writing a proper abstraction layer that get provide this functionality
+				// while still obfuscating the underlying type
+				ID3D11Buffer* vertBuf = &static_cast<DX11GFXVertexBuffer*>(renderObject.VertexBuffer)->GetHardwareBuffer();
 				mDevice->GetDeviceContext().IASetVertexBuffers(0, 1, &vertBuf, &stride, &offset);
 			}
 
 			// Index buffer
-			DX11GFXIndexBuffer* indexBuf = mDevice->GetIndexBuffer(renderObject.IndexBuffer);
+			DX11GFXIndexBuffer* indexBuf = static_cast<DX11GFXIndexBuffer*>(renderObject.IndexBuffer);
 			mDevice->GetDeviceContext().IASetIndexBuffer(&indexBuf->GetHardwareBuffer(), DXGI_FORMAT_R32_UINT, 0);
 
 			// #TODO
@@ -375,12 +378,12 @@ namespace Diotima
 		mRenderTarget = renderTarget;
 	}
 
-	Int32 Renderer::CreateVertexBuffer(void* data, size_t size, U32 count)
+	IGFXVertexBuffer* Renderer::CreateVertexBuffer(void* data, size_t size, U32 count)
 	{
 		return mDevice->CreateVertexBuffer(data, size, count);
 	}
 
-	Int32 Renderer::CreateIndexBuffer(void* data, size_t size, U32 count)
+	IGFXIndexBuffer* Renderer::CreateIndexBuffer(void* data, size_t size, U32 count)
 	{
 		return mDevice->CreateIndexBuffer(data, size, count);
 	}
@@ -460,7 +463,7 @@ namespace Diotima
 
 	void Renderer::UpdateRenderObjectTransform_GPU(const RenderObject& renderObject)
 	{
-		DX11GFXConstantBuffer* constBuf = mDevice->GetConstantBuffer(renderObject.ConstantBuffer);
+		DX11GFXConstantBuffer* constBuf = static_cast<DX11GFXConstantBuffer*>(renderObject.ConstantBuffer);
 		struct MatrixMem
 		{
 			Matrix4x4 world;

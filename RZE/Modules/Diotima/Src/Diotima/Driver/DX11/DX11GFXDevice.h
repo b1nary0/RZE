@@ -59,11 +59,11 @@ namespace Diotima
 		virtual void Shutdown() override;
 
 	public:
-		Int32 CreateVertexBuffer(void* data, size_t size, U32 count) override;
-		Int32 CreateIndexBuffer(void* data, size_t size, U32 count) override;
+		IGFXVertexBuffer* CreateVertexBuffer(void* data, size_t size, U32 count) override;
+		IGFXIndexBuffer* CreateIndexBuffer(void* data, size_t size, U32 count) override;
+		IGFXConstantBuffer* CreateConstantBuffer(size_t memberSize, U32 maxMembers) override;
 		Int32 CreateTextureBuffer2D(void* data, const GFXTextureBufferParams& params) override;
 		Int32 CreateRenderTarget2D(U32 width, U32 height);
-		Int32 CreateConstantBuffer(size_t memberSize, U32 maxMembers) override;
 
 		Int32 CreatePixelShader(const FilePath& filePath);
 
@@ -71,14 +71,8 @@ namespace Diotima
 		ID3D11Device& GetHardwareDevice();
 		ID3D11DeviceContext& GetDeviceContext();
 
-		U32 GetVertexBufferCount() const;
-		U32 GetIndexBufferCount() const;
-		U32 GetConstantBufferCount() const;
 		U32 GetTextureBufferCount() const;
 
-		DX11GFXVertexBuffer* GetVertexBuffer(Int32 bufferID);
-		DX11GFXIndexBuffer* GetIndexBuffer(Int32 bufferID);
-		DX11GFXConstantBuffer* GetConstantBuffer(Int32 bufferID);
 		DX11GFXTextureBuffer2D* GetTextureBuffer2D(Int32 bufferID);
 
 		ID3D11PixelShader* GetPixelShader(Int32 index) const;
@@ -120,9 +114,6 @@ namespace Diotima
 		U32 mSyncInterval = 0;
 
 	private:
-		std::vector<std::unique_ptr<DX11GFXVertexBuffer>> mVertexBuffers;
- 		std::vector<std::unique_ptr<DX11GFXIndexBuffer>> mIndexBuffers;
- 		std::vector<std::unique_ptr<DX11GFXConstantBuffer>> mConstantBuffers;
 		std::vector<std::unique_ptr<DX11GFXTextureBuffer2D>> mTexture2DBuffers;
 
 		std::vector<std::unique_ptr<ShaderDeleteWrapper>> mPixelShaders;
