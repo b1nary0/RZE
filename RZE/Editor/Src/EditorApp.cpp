@@ -23,7 +23,6 @@
 
 namespace
 {
-	const FilePath kImguiConfigFilePath("Config/imgui.ini");
 	constexpr char kSceneFileToLoadHack[] = { "Assets/Scenes/RenderTest.scene" };
 
 	// #TODO
@@ -55,6 +54,9 @@ namespace Editor
 		// Should probably bake this into RZE::Application
 		FilePath::SetDirectoryContext(EDirectoryContext::Tools);
 
+		mImguiConfigFilePath = FilePath("Config/imgui.ini");
+		ImGui::GetIO().IniFilename = mImguiConfigFilePath.GetAbsolutePath().c_str();
+
 		GetWindow()->SetTitle("RZEStudio");
 		GetWindow()->Maximize();
 
@@ -67,8 +69,6 @@ namespace Editor
 		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 		ImGui::GetIO().KeyRepeatDelay = 0.5f;
 		
-		ImGui::GetIO().IniFilename = kImguiConfigFilePath.GetAbsolutePath().c_str();
-
 		LoadFonts();
 		StyleSetup();
 
