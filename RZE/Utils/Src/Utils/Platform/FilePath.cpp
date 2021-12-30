@@ -22,21 +22,32 @@ FilePath::FilePath(const std::string& path)
 	std::string execPath(buffer);
 	std::replace(execPath.begin(), execPath.end(), '\\', '/');
 
-	LOG_CONSOLE_ARGS("EXEC PATH: %s", execPath.c_str());
 	if (gDirectoryContext == EDirectoryContext::Tools)
 	{
 		size_t pos = execPath.find("_Build/");
-		AssertMsg(pos != std::string::npos, "Directory structure invalid.");
+		if (pos == std::string::npos)
+		{
+			// #TODO
+			// hacky code to support ci artifacts which wont have the _Build folder.
+			// eventually will write good code here but im lazy and bad so who knows
+			pos = execPath.find_last_of('/');
+			std::string newpath = execPath.substr(0, pos + 1);
 
-		// #NOTE
-		// Magic number 8 is giving us everything to RZE/RZE/ so we can tack on the 
-		// relative given path.
-		std::string newpath = execPath.substr(0, pos);
-		std::string pathCpy = path;
-		std::replace(pathCpy.begin(), pathCpy.end(), '\\', '/');
-		
-		mAbsolutePath = newpath + pathCpy;
-		mRelativePath = pathCpy;
+			// #TODO(This is just for std::replace, but should be dealt with later)
+			std::string pathCpy = path;
+			std::replace(pathCpy.begin(), pathCpy.end(), '\\', '/');
+			mAbsolutePath = newpath + pathCpy;
+			mRelativePath = pathCpy;
+		}
+		else
+		{
+			std::string newpath = execPath.substr(0, pos);
+			std::string pathCpy = path;
+			std::replace(pathCpy.begin(), pathCpy.end(), '\\', '/');
+
+			mAbsolutePath = newpath + pathCpy;
+			mRelativePath = pathCpy;
+		}
 	}
 	else
 	{

@@ -42,15 +42,16 @@ jobs:
       
     - name: Asset Copy
       shell: cmd
-      run: call AssetCpy.bat
+      run: call .\RZE\AssetCpy.bat
+      continue-on-error: true
 
     - name: Archive Build
       uses: actions/upload-artifact@v2
       with:
         name: RZE v${{github.run_number}} - ${{matrix.buildconfig}}
         path: |
-          _Build/${{matrix.buildconfig}}
-          !_Build/${{matrix.buildconfig}}/x64/*.lib
-          !_Build/${{matrix.buildconfig}}/x64/*.pdb
-          !_Build/${{matrix.buildconfig}}/x64/*.exp
-          !_Build/${{matrix.buildconfig}}/x64/*.log
+          RZE/_Build/${{matrix.buildconfig}}
+          !_RZE/Build/${{matrix.buildconfig}}/x64/*.lib
+          !_RZE/Build/${{matrix.buildconfig}}/x64/*.pdb
+          !_RZE/Build/${{matrix.buildconfig}}/x64/*.exp
+          !_RZE/Build/${{matrix.buildconfig}}/x64/*.log
