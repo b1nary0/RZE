@@ -1,0 +1,49 @@
+name: Windows
+# Workflow file for windows
+on:
+  push:
+    branches: [master, Sandbox, NewRenderer]
+  pull_request:
+    branches: [master, Sandbox, NewRenderer]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-2019]
+        buildconfig: [Debug, Release]
+        include:
+          - os: windows-2019
+            shell: cmd
+            compiler: cl
+            target: Windows
+
+    steps:
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v1.0.2
+
+    - name: Checkout
+      uses: actions/checkout@v1
+          
+    - name: Generate a new project
+      shell: cmd
+      run: cd RZE/ && call GenerateSolutions.bat
+      
+    - name: Compile Project
+      shell: cmd
+      run: msbuild /property:Configuration="${{matrix.buildconfig}}"
+
+    - name: Archive Build
+      uses: actions/upload-artifact@v2
+      with:
+        name: RZE v${{github.run_number}} - ${{matrix.buildconfig}}
+        path: |
+          _Build/${{matrix.buildconfig}}
+          !_Build/${{matrix.buildconfig}}/*.lib
+          !_Build/${{matrix.buildconfig}}/*.pdb
+          !_Build/${{matrix.buildconfig}}/*.exp
+          !_Build/${{matrix.buildconfig}}/*.log
+          !_Build/${{matrix.buildconfig}}/*.map
+          !_Build/${{matrix.buildconfig}}/*.exp
