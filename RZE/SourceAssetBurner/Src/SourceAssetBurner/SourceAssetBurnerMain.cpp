@@ -42,10 +42,6 @@ int main(int argc, char* argv[])
 			AssimpSourceImporter assimpImporter;
 			assimpImporter.Import(sourcePath);
 		}
-		else
-		{
-
-		}
 
 		return 0;
 	}
