@@ -37,7 +37,11 @@ jobs:
       
     - name: Burn Assets
       shell: cmd
-      run: RZE/_Build/${{matrix.buildconfig}}/x64/RZE_SourceAssetBurner.exe
+      run: ./RZE/_Build/${{matrix.buildconfig}}/x64/RZE_SourceAssetBurner.exe
+      
+    - name: Asset Copy
+      shell: cmd
+      run: ./RZE/AssetCpy.bat
 
     - name: Archive Build
       uses: actions/upload-artifact@v2
