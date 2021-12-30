@@ -33,7 +33,7 @@ jobs:
       
     - name: Compile Project
       shell: cmd
-      run: msbuild _Project/RZE.sln /property:Configuration="${{matrix.buildconfig}}"
+      run: msbuild RZE/_Project/RZE.sln /property:Configuration="${{matrix.buildconfig}}"
       
     - name: Burn Assets
       shell: cmd
