@@ -33,7 +33,7 @@ jobs:
       
     - name: Compile Project
       shell: cmd
-      run: msbuild RZE.sln
+      run: msbuild _Project/RZE.sln /property:Configuration="${{matrix.buildconfig}}"
 
     - name: Archive Build
       uses: actions/upload-artifact@v2
