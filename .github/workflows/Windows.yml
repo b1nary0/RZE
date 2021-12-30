@@ -34,6 +34,10 @@ jobs:
     - name: Compile Project
       shell: cmd
       run: msbuild RZE/_Project/RZE.sln /property:Configuration="${{matrix.buildconfig}}"
+      
+    - name: Burn Assets
+      shell: cmd
+      run: RZE/_Build/${{matrix.buildconfig}}/x64/RZE_SourceAssetBurner.exe
 
     - name: Archive Build
       uses: actions/upload-artifact@v2
@@ -41,9 +45,7 @@ jobs:
         name: RZE v${{github.run_number}} - ${{matrix.buildconfig}}
         path: |
           _Build/${{matrix.buildconfig}}
-          !_Build/${{matrix.buildconfig}}/*.lib
-          !_Build/${{matrix.buildconfig}}/*.pdb
-          !_Build/${{matrix.buildconfig}}/*.exp
-          !_Build/${{matrix.buildconfig}}/*.log
-          !_Build/${{matrix.buildconfig}}/*.map
-          !_Build/${{matrix.buildconfig}}/*.exp
+          !_Build/${{matrix.buildconfig}}/x64/*.lib
+          !_Build/${{matrix.buildconfig}}/x64/*.pdb
+          !_Build/${{matrix.buildconfig}}/x64/*.exp
+          !_Build/${{matrix.buildconfig}}/x64/*.log
