@@ -23,6 +23,7 @@
 
 namespace
 {
+	const FilePath kImguiConfigFilePath("Config/imgui.ini");
 	constexpr char kSceneFileToLoadHack[] = { "Assets/Scenes/RenderTest.scene" };
 
 	// #TODO
@@ -65,6 +66,8 @@ namespace Editor
 
 		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 		ImGui::GetIO().KeyRepeatDelay = 0.5f;
+		
+		ImGui::GetIO().IniFilename = kImguiConfigFilePath.GetAbsolutePath().c_str();
 
 		LoadFonts();
 		StyleSetup();
