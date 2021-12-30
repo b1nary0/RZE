@@ -92,6 +92,12 @@ const Material& MeshGeometry::GetMaterial() const
 	return *mMaterial;
 }
 
+Material& MeshGeometry::GetMaterial()
+{
+	AssertNotNull(mMaterial);
+	return *mMaterial;
+}
+
 const std::vector<MeshVertex>& MeshGeometry::GetVertices()
 {
 	return mVertices;

@@ -28,4 +28,16 @@ bool Model3D::Load(const FilePath& filePath)
 
 void Model3D::Release()
 {
+	for (auto& subMesh : mMesh.GetSubMeshes())
+	{
+		Material& material = subMesh.GetMaterial();
+		for (U8 textureSlot = 0; textureSlot < Material::TextureSlot::TEXTURE_SLOT_COUNT; ++textureSlot)
+		{
+			ResourceHandle resource = material.GetTexture(textureSlot);
+			if (resource.IsValid())
+			{
+				RZE::GetResourceHandler().ReleaseResource(resource);
+			}
+		}
+	}
 }

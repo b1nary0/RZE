@@ -21,3 +21,8 @@ const std::vector<MeshGeometry>& StaticMesh::GetSubMeshes() const
 {
 	return mSubMeshes;
 }
+
+std::vector<MeshGeometry>& StaticMesh::GetSubMeshes()
+{
+	return mSubMeshes;
+}

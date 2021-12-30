@@ -37,6 +37,7 @@ public:
 
 	void SetMaterial(Material* material);
 
+	Material& GetMaterial();
 	const Material& GetMaterial() const;
 	const std::vector<MeshVertex>& GetVertices();
 

@@ -24,6 +24,12 @@ const ResourceHandle& Material::GetTexture(U8 textureSlot) const
 	return mTextureSlots[textureSlot];
 }
 
+ResourceHandle Material::GetTexture(U8 textureSlot)
+{
+	AssertExpr(textureSlot < TEXTURE_SLOT_COUNT);
+	return mTextureSlots[textureSlot];
+}
+
 void Material::SetShaderTechnique(const ResourceHandle& shaderTechnique)
 {
 	mShaderTechnique = shaderTechnique;

@@ -94,7 +94,10 @@ ResourceHandle::ResourceHandle(const ResourceHandle& rhs)
 	mResourceSource = rhs.mResourceSource;
 	mHandler = rhs.mHandler;
 
-	mResourceSource->IncreaseRefCount();
+	if (mResourceSource != nullptr)
+	{
+		mResourceSource->IncreaseRefCount();
+	}
 }
 
 

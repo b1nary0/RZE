@@ -30,6 +30,8 @@ private:
 
 public:
 	void SetTexture(U8 textureSlot, const ResourceHandle& textureResource);
+
+	ResourceHandle GetTexture(U8 textureSlot);
 	const ResourceHandle& GetTexture(U8 textureSlot) const;
 
 	void SetShaderTechnique(const ResourceHandle& shaderTechnique);

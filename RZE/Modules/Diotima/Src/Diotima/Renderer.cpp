@@ -111,6 +111,7 @@ namespace Diotima
 
 	Renderer::Renderer()
 		: mRenderTarget(nullptr)
+		, mWindowHandle(nullptr)
 	{
 	}
 
@@ -173,34 +174,20 @@ namespace Diotima
 
 		ID3D11DeviceContext& deviceContext = mDevice->GetDeviceContext();
 
-		std::vector<RenderObject> renderObjects_sorted;
 		{
-			OPTICK_EVENT("RenderObject Copy + Sort");
+			OPTICK_EVENT("RenderObject Sort");
 
-			//The need for the second vectorand subsequent copy
-					// is due to referencing directly by object index. This needs to change to a more robust 
-					// implementation.
-			renderObjects_sorted = mRenderObjects;
-			std::sort(renderObjects_sorted.begin(), renderObjects_sorted.end(),
-				[](const RenderObject& objA, const RenderObject& objB)
+			std::sort(mRenderObjects.begin(), mRenderObjects.end(),
+				[](const RenderObject* objA, const RenderObject* objB)
 				{
-					return objA.Material.mShaderID < objB.Material.mShaderID;
+					return objA->Material.mShaderID < objB->Material.mShaderID;
 				}
 			);
 		}
 
-		for (auto& renderObject : renderObjects_sorted)
+		for (auto& renderObject : mRenderObjects)
 		{
-			if (!renderObject.bEnabled)
-			{
-				// #TODO
-				// want to get rid of this with a proper per-frame registration technique
-				// but that means moving the ownership of the renderobject outside of the renderer
-				// which is a future task
-				continue;
-			}
-
-			ID3D11PixelShader* const hwShader = mDevice->GetPixelShader(renderObject.Material.mShaderID);
+			ID3D11PixelShader* const hwShader = mDevice->GetPixelShader(renderObject->Material.mShaderID);
 			deviceContext.PSSetShader(hwShader, 0, 0);
 
 			//
@@ -217,28 +204,28 @@ namespace Diotima
 
 				// World Matrix
 				{
-					DX11GFXConstantBuffer* modelMatBuf = static_cast<DX11GFXConstantBuffer*>(renderObject.ConstantBuffer);
+					DX11GFXConstantBuffer* modelMatBuf = static_cast<DX11GFXConstantBuffer*>(renderObject->ConstantBuffer);
 					ID3D11Buffer* hwModelMatBuf = &modelMatBuf->GetHardwareBuffer();
 					deviceContext.VSSetConstantBuffers(1, 1, &hwModelMatBuf);
 				}
 
 				// Material buffer
 				{
-					DX11GFXConstantBuffer* materialBuffer = static_cast<DX11GFXConstantBuffer*>(renderObject.MaterialDataBuffer);
+					DX11GFXConstantBuffer* materialBuffer = static_cast<DX11GFXConstantBuffer*>(renderObject->MaterialDataBuffer);
 					ID3D11Buffer* matHWbuf = &materialBuffer->GetHardwareBuffer();
-					materialBuffer->UpdateSubresources(&renderObject.Material.mProperties);
+					materialBuffer->UpdateSubresources(&renderObject->Material.mProperties);
 					deviceContext.PSSetConstantBuffers(1, 1, &matHWbuf);
 				}
 				// Textures
 				{
-					if (renderObject.Material.mTexturePack->GetResourceCount() > 0)
+					if (renderObject->Material.mTexturePack->GetResourceCount() > 0)
 					{
-						DX11GFXTextureBuffer2D* const textureBuf = renderObject.Material.mTexturePack->GetResourceAt(0);
+						DX11GFXTextureBuffer2D* const textureBuf = renderObject->Material.mTexturePack->GetResourceAt(0);
 						// #TODO
 						// Move the sampler state elsewhere so we're not bound to an individual texture resource for it...
 						ID3D11SamplerState* const samplerState = &textureBuf->GetSamplerState();
 
-						std::vector<ID3D11ShaderResourceView*> resourceViews = renderObject.Material.mTexturePack->GetAsGPUTextureArray();
+						std::vector<ID3D11ShaderResourceView*> resourceViews = renderObject->Material.mTexturePack->GetAsGPUTextureArray();
 						deviceContext.PSSetShaderResources(0, resourceViews.size(), resourceViews.data());
 						deviceContext.PSSetSamplers(0, 1, &samplerState);
 					}
@@ -262,12 +249,12 @@ namespace Diotima
 				// #TODO
 				// Code like this needs to be removed by writing a proper abstraction layer that get provide this functionality
 				// while still obfuscating the underlying type
-				ID3D11Buffer* vertBuf = &static_cast<DX11GFXVertexBuffer*>(renderObject.VertexBuffer)->GetHardwareBuffer();
+				ID3D11Buffer* vertBuf = &static_cast<DX11GFXVertexBuffer*>(renderObject->VertexBuffer)->GetHardwareBuffer();
 				mDevice->GetDeviceContext().IASetVertexBuffers(0, 1, &vertBuf, &stride, &offset);
 			}
 
 			// Index buffer
-			DX11GFXIndexBuffer* indexBuf = static_cast<DX11GFXIndexBuffer*>(renderObject.IndexBuffer);
+			DX11GFXIndexBuffer* indexBuf = static_cast<DX11GFXIndexBuffer*>(renderObject->IndexBuffer);
 			mDevice->GetDeviceContext().IASetIndexBuffer(&indexBuf->GetHardwareBuffer(), DXGI_FORMAT_R32_UINT, 0);
 
 			// #TODO
@@ -275,6 +262,8 @@ namespace Diotima
 			// a single vertex buffer, so we can just have a single draw call.
 			deviceContext.DrawIndexed(indexBuf->GetIndexCount(), 0, 0);
 		}
+
+		mRenderObjects.clear();
 
 		// #TODO
 		// Have a better place for this. Kind of hidden at the end of Draw() here
@@ -417,45 +406,28 @@ namespace Diotima
 		return mDevice->CreatePixelShader(filePath);
 	}
 
-	U32 Renderer::CreateAndInitializeRenderObject(
+	RenderObject* Renderer::CreateAndInitializeRenderObject(
 		const MeshData& meshData, 
 		const std::vector<TextureData>& textureData, 
 		const Matrix4x4& transform)
 	{
-		if (!mFreeRenderObjectIndices.empty())
-		{
-			U32 freeIndex = mFreeRenderObjectIndices.front();
-			mFreeRenderObjectIndices.pop();
+		RenderObject* renderObject = new RenderObject();
+		InitializeRenderObject(*renderObject, meshData, textureData, transform);
 
-			RenderObject& renderObject = mRenderObjects[freeIndex];
-			renderObject = {};
-			InitializeRenderObject(renderObject, meshData, textureData, transform);
-
-			return freeIndex;
-		}
-
-		mRenderObjects.emplace_back();
-		RenderObject& renderObject = mRenderObjects.back();
-		InitializeRenderObject(renderObject, meshData, textureData, transform);
-
-		return mRenderObjects.size() - 1;
+		return renderObject;
 	}
 
-	void Renderer::DestroyRenderObject(U32 renderObjectIndex)
-	{
-		AssertExpr(renderObjectIndex < mRenderObjects.size());
-		RenderObject& renderObject = mRenderObjects[renderObjectIndex];
-		
-		renderObject.VertexBuffer->Release();
-		renderObject.IndexBuffer->Release();
-		renderObject.ConstantBuffer->Release();
-		renderObject.MaterialDataBuffer->Release();
+	void Renderer::DestroyRenderObject(RenderObject* renderObject)
+	{	
+		renderObject->VertexBuffer->Release();
+		renderObject->IndexBuffer->Release();
+		renderObject->ConstantBuffer->Release();
+		renderObject->MaterialDataBuffer->Release();
 
-		renderObject.Material.mTexturePack->Release();
+		renderObject->Material.mTexturePack->Release();
 
-		renderObject = {};
-
-		mFreeRenderObjectIndices.push(renderObjectIndex);
+		delete renderObject;
+		renderObject = nullptr;
 	}
 
 	void Renderer::InitializeRenderObject(
@@ -482,11 +454,17 @@ namespace Diotima
 		UpdateRenderObjectTransform_GPU(renderObject);
 	}
 
-	void Renderer::UpdateRenderObject(U32 renderObjectHandle, const Matrix4x4& newTransform)
+	void Renderer::UpdateRenderObject(RenderObject* renderObject, const Matrix4x4& newTransform)
 	{
-		RenderObject& renderObject = mRenderObjects[renderObjectHandle];
-		renderObject.Transform = newTransform;
-		UpdateRenderObjectTransform_GPU(renderObject);
+		renderObject->Transform = newTransform;
+		UpdateRenderObjectTransform_GPU(*renderObject);
+	}
+
+	void Renderer::AddRenderObject(RenderObject* renderObject)
+	{
+		// #TODO
+		// handle dupe entries somehow - at least assert
+		mRenderObjects.push_back(renderObject);
 	}
 
 	void Renderer::UpdateRenderObjectTransform_GPU(const RenderObject& renderObject)

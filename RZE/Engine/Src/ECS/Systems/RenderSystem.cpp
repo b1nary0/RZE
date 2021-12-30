@@ -62,7 +62,7 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 
 		/* XFORM UPDATE */
 		{
-			OPTICK_EVENT("XForm Update");
+			OPTICK_EVENT("RenderObject register + XForm Update");
 			// #TODO
 			// Gross... This is obviously not the way we should be doing this..
 			for (auto& rootNode : mRootNodes)
@@ -73,7 +73,8 @@ void RenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 				rootNode.Transform = transformComponent->GetAsMat4x4();
 				for (auto& child : rootNode.Children)
 				{
-					mRenderer->UpdateRenderObject(child.RenderObjectIndex, rootNode.Transform);
+					mRenderer->UpdateRenderObject(child.RenderObject, rootNode.Transform);
+					mRenderer->AddRenderObject(child.RenderObject);
 				}
 			}
 		}
@@ -148,7 +149,13 @@ void RenderSystem::OnMeshComponentAdded(Apollo::EntityID entityID)
 
 void RenderSystem::OnMeshComponentRemoved(Apollo::EntityID entityID)
 {
+	Apollo::EntityHandler& entityHandler = RZE_Application::RZE().GetActiveScene().GetEntityHandler();
+	ResourceHandler& resourceHandler = RZE::GetResourceHandler();
+
 	DestroyRenderNode(entityID);
+
+	MeshComponent* const meshComponent = entityHandler.GetComponent<MeshComponent>(entityID);
+	resourceHandler.ReleaseResource(meshComponent->Resource);
 }
 
 void RenderSystem::OnMeshComponentModified(Apollo::EntityID entityID)
@@ -271,7 +278,7 @@ void RenderSystem::CreateAndInitializeRenderNode(const Apollo::EntityID entityID
  			}
  		}
 
-		childNode.RenderObjectIndex = mRenderer->CreateAndInitializeRenderObject(meshData, textureData, rootNode.Transform);
+		childNode.RenderObject = mRenderer->CreateAndInitializeRenderObject(meshData, textureData, rootNode.Transform);
 	}
 }
 
@@ -330,7 +337,7 @@ void RenderSystem::DestroyRenderNode(Apollo::EntityID entityID)
 	AssertExpr(iter != mRootNodes.end());
 	for (auto& child : iter->Children)
 	{
-		mRenderer->DestroyRenderObject(child.RenderObjectIndex);
+		mRenderer->DestroyRenderObject(child.RenderObject);
 	}
 
 	mRootNodes.erase(iter);

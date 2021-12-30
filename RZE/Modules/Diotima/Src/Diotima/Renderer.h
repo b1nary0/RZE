@@ -82,27 +82,19 @@ namespace Diotima
 		float FarCull;
 	};
 
+	struct RenderObject
+	{
+		bool bEnabled = false;
+		IGFXVertexBuffer* VertexBuffer = nullptr;
+		IGFXIndexBuffer* IndexBuffer = nullptr;
+		IGFXConstantBuffer* ConstantBuffer = nullptr;
+		IGFXConstantBuffer* MaterialDataBuffer = nullptr;
+		MaterialData Material;
+		Matrix4x4 Transform;
+	};
+
 	class Renderer
 	{
-	private:
-		// Bundle of data that is necessary for each draw call.
-		// #TODO
-		// These will need to be wrapped or otherwise sorted properly by some higher-level design.
-		// This is simply the data for any item with geometry. When and how this data is used is determined
-		// elsewhere. The Int32 handles should be designed such that -1 means no data. 
-		// For now, each item will need a Vertex and Index buffer, but should be easily extensible
-		// to support other types of data construction or use.
-		struct RenderObject
-		{
-			bool bEnabled = false;
-			IGFXVertexBuffer* VertexBuffer = nullptr;
-			IGFXIndexBuffer* IndexBuffer = nullptr;
-			IGFXConstantBuffer* ConstantBuffer = nullptr;
-			IGFXConstantBuffer* MaterialDataBuffer = nullptr;
-			MaterialData Material;
-			Matrix4x4 Transform;
-		};
-
 		// Constructors
 	public:
 		Renderer();
@@ -147,14 +139,16 @@ namespace Diotima
 		// [newrenderer]
 		// This is just to fix allocating resources every frame. Need to track the RenderObject
 		// created, but ideally this should **NOT** just be U32 based on the index of the item.
-		U32 CreateAndInitializeRenderObject(
+		RenderObject* CreateAndInitializeRenderObject(
 			const MeshData& meshData, 
 			const std::vector<TextureData>& textureData, 
 			const Matrix4x4& transform);
 
-		void DestroyRenderObject(U32 renderObjectIndex);
+		void DestroyRenderObject(RenderObject* renderObject);
 		
-		void UpdateRenderObject(U32 renderObjectHandle, const Matrix4x4& newTransform);
+		void UpdateRenderObject(RenderObject* renderObject, const Matrix4x4& newTransform);
+
+		void AddRenderObject(RenderObject* renderObject);
 
 	private:
 		void InitializeRenderObject(
@@ -185,8 +179,7 @@ namespace Diotima
 	private:
 		// #TODO
 		// Eventually needs to sort on key.
-		std::vector<RenderObject> mRenderObjects;
-		std::queue<U32> mFreeRenderObjectIndices;
+		std::vector<RenderObject*> mRenderObjects;
 
 		Vector2D mCanvasSize;
 		RenderTargetTexture* mRenderTarget;

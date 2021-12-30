@@ -14,6 +14,7 @@ class Model3D;
 namespace Diotima
 {
 	class Renderer;
+	struct RenderObject;
 }
 
 class RenderSystem final : public Apollo::EntitySystem
@@ -23,7 +24,7 @@ private:
 	{
 		Int32 NodeIndex; // Used to index mRootNodes for the moment
 
-		U32 RenderObjectIndex;
+		Diotima::RenderObject* RenderObject;
 		Apollo::EntityID EntityID;
 		Matrix4x4 Transform = Matrix4x4::IDENTITY;
 		std::vector<RenderNode> Children;
