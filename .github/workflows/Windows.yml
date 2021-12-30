@@ -37,7 +37,7 @@ jobs:
       
     - name: Burn Assets
       shell: cmd
-      run: call .\RZE/_Build/${{matrix.buildconfig}}/x64/RZE_SourceAssetBurner.exe
+      run: call .\RZE\_Build\${{matrix.buildconfig}}\x64\RZE_SourceAssetBurner.exe
       
     - name: Asset Copy
       shell: cmd
