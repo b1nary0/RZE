@@ -22,15 +22,16 @@ FilePath::FilePath(const std::string& path)
 	std::string execPath(buffer);
 	std::replace(execPath.begin(), execPath.end(), '\\', '/');
 
+	LOG_CONSOLE_ARGS("EXEC PATH: %s", execPath.c_str());
 	if (gDirectoryContext == EDirectoryContext::Tools)
 	{
-		size_t pos = execPath.find("RZE/RZE");
+		size_t pos = execPath.find("_Build/");
 		AssertMsg(pos != std::string::npos, "Directory structure invalid.");
 
 		// #NOTE
 		// Magic number 8 is giving us everything to RZE/RZE/ so we can tack on the 
 		// relative given path.
-		std::string newpath = execPath.substr(0, pos + 8);
+		std::string newpath = execPath.substr(0, pos);
 		std::string pathCpy = path;
 		std::replace(pathCpy.begin(), pathCpy.end(), '\\', '/');
 		
