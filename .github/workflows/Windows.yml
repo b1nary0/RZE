@@ -33,15 +33,15 @@ jobs:
       
     - name: Compile Project
       shell: cmd
-      run: msbuild RZE/_Project/RZE.sln /property:Configuration="${{matrix.buildconfig}}"
+      run: msbuild _Project/RZE.sln /property:Configuration="${{matrix.buildconfig}}"
       
     - name: Burn Assets
       shell: cmd
-      run: call RZE/_Build/${{matrix.buildconfig}}/x64/RZE_SourceAssetBurner.exe
+      run: call _Build/${{matrix.buildconfig}}/x64/RZE_SourceAssetBurner.exe
       
     - name: Asset Copy
       shell: cmd
-      run: call RZE/AssetCpy.bat
+      run: call AssetCpy.bat
 
     - name: Archive Build
       uses: actions/upload-artifact@v2
