@@ -2,9 +2,9 @@ name: Windows
 # Workflow file for windows
 on:
   push:
-    branches: [master, Sandbox, NewRenderer, ActorType]
+    branches: [master, Sandbox, NewRenderer, ActorLike]
   pull_request:
-    branches: [master, Sandbox, NewRenderer, ActorType]
+    branches: [master, Sandbox, NewRenderer, ActorLike]
   workflow_dispatch:
 
 jobs:
