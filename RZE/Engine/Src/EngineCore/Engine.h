@@ -13,21 +13,12 @@
 
 #include <Game/GameScene.h>
 
-#include <Apollo/EntityHandler.h>
-
-
-
 class RZE_Application;
 
 class GameWorld;
 class Win32Window;
 
-namespace Apollo
-{
-	class EntityComponentSystem;
-}
-
-namespace Diotima
+namespace Rendering
 {
 	class Renderer;
 }
@@ -50,7 +41,7 @@ public:
 	// All of these gets might be best to hide behind a cpp. Or static engine in CPP memory with accessor in h.
 	ResourceHandler&			GetResourceHandler();
 	InputHandler&				GetInputHandler();
-	Diotima::Renderer&			GetRenderer();
+	Rendering::Renderer&			GetRenderer();
 	GameScene&					GetActiveScene();
 
 	// #TODO(Should probably put the window in the app..)
@@ -99,7 +90,7 @@ private:
 	EventHandler mEventHandler;
 	InputHandler mInputHandler;
 
-	Diotima::Renderer* mRenderer;
+	Rendering::Renderer* mRenderer;
 
 	EngineConfig* mEngineConfig;
 	

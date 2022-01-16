@@ -1,10 +1,8 @@
 #pragma once
 
-#include <Apollo/ECS/EntityComponent.h>
-
 #include <Utils/Math/Vector3D.h>
 
-struct VelocityComponent : public Apollo::Component<VelocityComponent>
+struct VelocityComponent
 {
 	VelocityComponent() {}
 	VelocityComponent(const Vector3D& velocity)

@@ -2,9 +2,9 @@
 
 #include <EditorApp.h>
 
-#include <Diotima/Renderer.h>
-#include <Diotima/Driver/DX11/DX11GFXTextureBuffer2D.h>
-#include <Diotima/Graphics/RenderTarget.h>
+#include <Rendering/Renderer.h>
+#include <Rendering/Driver/DX11/DX11GFXTextureBuffer2D.h>
+#include <Rendering/Graphics/RenderTarget.h>
 
 #include <ECS/Components/CameraComponent.h>
 
@@ -29,7 +29,7 @@ namespace Editor
 				mDimensions.SetXY(viewportDims.x, viewportDims.y);
 				RZE_Application::RZE().GetRenderer().SetViewportSize(mDimensions);
 
-				Apollo::EntityHandler& entityHandler = RZE_Application::RZE().GetActiveScene().GetEntityHandler();
+				/*Apollo::EntityHandler& entityHandler = RZE_Application::RZE().GetActiveScene().GetEntityHandler();
 
 				Functor<void, Apollo::EntityID> cameraUpdateFunc([this, &entityHandler](Apollo::EntityID entityID) 
 				{
@@ -40,11 +40,11 @@ namespace Editor
 						cameraComp->AspectRatio = mDimensions.X() / mDimensions.Y();
 					}
 				});
-				entityHandler.ForEach<CameraComponent>(cameraUpdateFunc);
+				entityHandler.ForEach<CameraComponent>(cameraUpdateFunc);*/
 			}
 
-			Diotima::RenderTargetTexture* const pRTT = RZE_Application::RZE().GetApplication().GetRTT();
-			Diotima::DX11GFXTextureBuffer2D& GFXTexture = pRTT->GetGFXTexture();
+			Rendering::RenderTargetTexture* const pRTT = RZE_Application::RZE().GetApplication().GetRTT();
+			Rendering::DX11GFXTextureBuffer2D& GFXTexture = pRTT->GetGFXTexture();
 
 			auto clamp = [](float a, float b, float val)
 			{

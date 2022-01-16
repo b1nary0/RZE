@@ -2,6 +2,8 @@
 
 #include <EngineCore/Platform/Memory/Memory.h>
 
+#include <Utils/PrimitiveDefs.h>
+
 /*
  * Using the Buddy Block allocation algorithm.
  */

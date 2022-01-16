@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Utils/PrimitiveDefs.h>
 #include <Utils/Math/Matrix4x4.h>
 
 class MeshGeometry;
@@ -15,7 +16,7 @@ private:
 	struct RenderNode
 	{
 		U32 RenderObjectIndex;
-		Apollo::EntityID EntityID;
+		//Apollo::EntityID EntityID;
 		const MeshGeometry* Geometry = nullptr;
 		Matrix4x4 Transform = Matrix4x4::IDENTITY;
 		std::vector<RenderNode> Children;
@@ -27,7 +28,7 @@ public:
 	struct RenderNodeParms
 	{
 		U32 RenderObjectIndex;
-		Apollo::EntityID EntityID;
+		//Apollo::EntityID EntityID;
 		const MeshGeometry* GeometryData;
 		Matrix4x4 Transform = Matrix4x4::IDENTITY;
 	};

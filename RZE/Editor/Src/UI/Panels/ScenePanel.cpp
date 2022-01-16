@@ -36,13 +36,13 @@ namespace Editor
 				{
 					if (ImGui::MenuItem("Create Entity"))
 					{
-						// #TODO(Do this better)
-						static int sGenericEntityCount = 0;
+						//// #TODO(Do this better)
+						//static int sGenericEntityCount = 0;
 
-						std::string newEntityStr = StringUtils::FormatString("Entity%i", sGenericEntityCount);
-						RZE_Application::RZE().GetActiveScene().CreateEntity(newEntityStr);
+						//std::string newEntityStr = StringUtils::FormatString("Entity%i", sGenericEntityCount);
+						//RZE_Application::RZE().GetActiveScene().CreateEntity(newEntityStr);
 
-						++sGenericEntityCount;
+						//++sGenericEntityCount;
 					}
 
 					ImGui::EndMenu();
@@ -58,32 +58,32 @@ namespace Editor
 					mSelectedItem = nullptr;
 				}
 
-				bool bSelectedCurrent = mSelectedItem != nullptr && mSelectedItem->EntityID == entry.ID;
-				NameComponent* const nameComponent = RZE_Application::RZE().GetActiveScene().GetEntityHandler().GetComponent<NameComponent>(entry.ID);
+				bool bSelectedCurrent = mSelectedItem != nullptr /*&& mSelectedItem->EntityID == entry.ID*/;
+				/*NameComponent* const nameComponent = RZE_Application::RZE().GetActiveScene().GetEntityHandler().GetComponent<NameComponent>(entry.ID);
 				const std::string& entityName = nameComponent->Name;
-				AssertNotNull(nameComponent);
-				if (ImGui::Selectable(entityName.c_str(), &bSelectedCurrent))
+				AssertNotNull(nameComponent);*/
+				if (ImGui::Selectable("UNIMPLEMENTED ENTITY NAME", &bSelectedCurrent))
 				{
-					if (mSelectedItem != nullptr && mSelectedItem->EntityID != entry.ID)
+					if (mSelectedItem != nullptr /*&& mSelectedItem->EntityID != entry.ID*/)
 					{
 						delete mSelectedItem;
 						mSelectedItem = nullptr;
 					}
 
-					mSelectedItem = new EntityItem();
-					mSelectedItem->EntityID = entry.ID;
+					/*mSelectedItem = new EntityItem();
+					mSelectedItem->EntityID = entry.ID;*/
 				}
 
-				if (HasSelectedEntity() && GetSelectedEntityID() == entry.ID)
+				if (HasSelectedEntity() /*&& GetSelectedEntityID() == entry.ID*/)
 				{
-					if (ImGui::BeginPopupContextItem(entityName.c_str()))
+					if (ImGui::BeginPopupContextItem("UNIMPLEMENTED ENTITY NAME"))
 					{
-						ImGui::Text(entityName.c_str());
+						ImGui::Text("UNIMPLEMENTED ENTITY NAME");
 						ImGui::Separator();
 
 						if (ImGui::BeginMenu("Add Component"))
 						{
-							const Apollo::EntityHandler::ComponentNameIDMap& componentTypeNames = RZE_Application::RZE().GetActiveScene().GetEntityHandler().GetAllComponentTypes();
+							/*const Apollo::EntityHandler::ComponentNameIDMap& componentTypeNames = RZE_Application::RZE().GetActiveScene().GetEntityHandler().GetAllComponentTypes();
 							for (auto& pair : componentTypeNames)
 							{
 								if (ImGui::MenuItem(pair.second.c_str()))
@@ -91,14 +91,14 @@ namespace Editor
 									Apollo::ComponentID componentID = pair.first;
 									RZE_Application::RZE().GetActiveScene().GetEntityHandler().AddComponentByID(mSelectedItem->EntityID, componentID);
 								}
-							}
+							}*/
 
 							ImGui::EndMenu();
 						}
 
 						if (ImGui::MenuItem("Delete"))
 						{
-							RZE_Application::RZE().GetActiveScene().DestroyEntity(mSelectedItem->EntityID);
+							//RZE_Application::RZE().GetActiveScene().DestroyEntity(mSelectedItem->EntityID);
 						}
 
 						ImGui::EndPopup();
@@ -112,16 +112,16 @@ namespace Editor
 		{
 			if (HasSelectedEntity())
 			{
-				Apollo::EntityHandler::ComponentList entityComponents;
-				RZE_Application::RZE().GetActiveScene().GetEntityHandler().GetAllComponents(mSelectedItem->EntityID, entityComponents);
+				//Apollo::EntityHandler::ComponentList entityComponents;
+				//RZE_Application::RZE().GetActiveScene().GetEntityHandler().GetAllComponents(mSelectedItem->EntityID, entityComponents);
 
-				for (Apollo::ComponentBase* component : entityComponents)
+				//for (Apollo::ComponentBase* component : entityComponents)
 				{
 					EditorApp* editorApp = static_cast<EditorApp*>(&RZE_Application::RZE().GetApplication());
 
-					ImGui::TextColored(ImVec4(0.65f, 0.65f, 1.0f, 1.0f), "[ %s ]", component->ComponentName.c_str());
+					ImGui::TextColored(ImVec4(0.65f, 0.65f, 1.0f, 1.0f), "[ %s ]", "UNIMPLEMENTED COMPONENT NAME");
 					ImGui::Separator();
-					component->OnEditorInspect(mSelectedItem->EntityID);
+					//component->OnEditorInspect(mSelectedItem->EntityID);
 					ImGui::Separator();
 				}
 			}

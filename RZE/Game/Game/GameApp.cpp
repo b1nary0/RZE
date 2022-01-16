@@ -35,8 +35,8 @@ void GameApp::Initialize()
 	
 	activeScene.Load(FilePath("Assets/Scenes/RenderTest.scene"));
 
-	activeScene.AddSystem<FreeCameraSystem>();
-	activeScene.AddSystem<RotateSingleEntitySystem>();
+	//activeScene.AddSystem<FreeCameraSystem>();
+	//activeScene.AddSystem<RotateSingleEntitySystem>();
 }
 
 void GameApp::Start()

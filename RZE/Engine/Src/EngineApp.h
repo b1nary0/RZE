@@ -9,7 +9,7 @@
 class EventHandler;
 class Win32Window;
 
-namespace Diotima
+namespace Rendering
 {
 	class RenderTargetTexture;
 }
@@ -18,7 +18,7 @@ class RZE_Application
 {
 	// @note maybe review this connection later
 	friend class RZE_Engine;
-
+	
 public:
 	RZE_Application();
 	virtual ~RZE_Application();
@@ -36,7 +36,7 @@ public:
 
 	virtual void RegisterInputEvents(InputHandler& inputHandler);
 
-	Diotima::RenderTargetTexture* GetRTT();
+	Rendering::RenderTargetTexture* GetRTT();
 
 	static RZE_Engine& RZE() { return mEngine; }
 
@@ -50,7 +50,7 @@ protected:
 
 	Win32Window* const GetWindow() const;
 
-	std::unique_ptr<Diotima::RenderTargetTexture> mRenderTarget;
+	std::unique_ptr<Rendering::RenderTargetTexture> mRenderTarget;
 
 private:
 	void SetWindow(Win32Window* const window);

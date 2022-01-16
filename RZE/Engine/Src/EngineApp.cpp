@@ -13,8 +13,8 @@
 
 #include <Windowing/Win32Window.h>
 
-#include <Diotima/Driver/DX11/DX11GFXDevice.h>
-#include <Diotima/Graphics/RenderTarget.h>
+#include <Rendering/Driver/DX11/DX11GFXDevice.h>
+#include <Rendering/Graphics/RenderTarget.h>
 
 #include <Utils/DebugUtils/Debug.h>
 
@@ -70,13 +70,13 @@ void RZE_Application::Initialize()
 {
 	LOG_CONSOLE("RZE_Application::Init() called.");
 
-	APOLLO_REGISTER_COMPONENT(CameraComponent);
-	APOLLO_REGISTER_COMPONENT(LightSourceComponent);
-	APOLLO_REGISTER_COMPONENT(LifetimeComponent);
-	APOLLO_REGISTER_COMPONENT(MaterialComponent);
-	APOLLO_REGISTER_COMPONENT(MeshComponent);
-	APOLLO_REGISTER_COMPONENT(NameComponent);
-	APOLLO_REGISTER_COMPONENT(TransformComponent);
+	//APOLLO_REGISTER_COMPONENT(CameraComponent);
+	//APOLLO_REGISTER_COMPONENT(LightSourceComponent);
+	//APOLLO_REGISTER_COMPONENT(LifetimeComponent);
+	//APOLLO_REGISTER_COMPONENT(MaterialComponent);
+	//APOLLO_REGISTER_COMPONENT(MeshComponent);
+	//APOLLO_REGISTER_COMPONENT(NameComponent);
+	//APOLLO_REGISTER_COMPONENT(TransformComponent);
 }
 
 Win32Window& RZE_Application::InternalGetWindow()
@@ -107,7 +107,7 @@ Win32Window* const RZE_Application::GetWindow() const
 	return mWindow;
 }
 
-Diotima::RenderTargetTexture* RZE_Application::GetRTT()
+Rendering::RenderTargetTexture* RZE_Application::GetRTT()
 {
 	AssertNotNull(mRenderTarget);
 	return mRenderTarget.get();

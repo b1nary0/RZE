@@ -84,7 +84,7 @@ workspace "RZE"
 		targetdir (LibDir)
 		targetname "RZE_Engine"
 
-		dependson { "Apollo", "Diotima", "Perseus", "Utils" }
+		dependson { "Rendering", "Utils" }
 
 		pchheader "StdAfx.h"
 		pchsource "../../Engine/Src/StdAfx.cpp"
@@ -102,9 +102,7 @@ workspace "RZE"
 			IncludeDir,
 			SourceDir,
 			RootDir .. "Utils/Src/",
-			RootDir .. "Modules/Apollo/Src/",
-			RootDir .. "Modules/Diotima/Src/",
-			RootDir .. "Modules/Perseus/Src/"
+			RootDir .. "Modules/Rendering/Src/"
 		}
 
 		libdirs
@@ -117,9 +115,7 @@ workspace "RZE"
 			"OptickCore",
 			-- RZE --
 			"RZE_Utils",
-			"Apollo",
-			"Diotima",
-			"Perseus"
+			"Rendering",
 		}
 
 		local command = "xcopy /y /d /s "
@@ -251,11 +247,11 @@ workspace "RZE"
 
 	--
 	--
-	-- APOLLO
+	-- RENDERING
 	--
 	--
-	project "Apollo"
-		local ProjectDir = RootDir .. "Modules/Apollo/"
+	 project "Rendering"
+		local ProjectDir = RootDir .. "Modules/Rendering/"
 		local SourceDir = ProjectDir .. SourceFolder
 
 		filter {}
@@ -266,130 +262,7 @@ workspace "RZE"
 		kind "StaticLib"
 		language "C++"
 		targetdir (LibDir)
-		targetname "Apollo"
-
-		dependson { "Utils" }
-
-		files
-		{
-			SourceDir .. "**.h",
-			SourceDir .. "**.hpp",
-			SourceDir .. "**.c",
-			SourceDir .. "**.cpp"
-		}
-
-		includedirs
-		{
-			IncludeDir,
-			SourceDir,
-			RootDir .. "Engine/Src",
-			RootDir .. "Utils/Src/",
-			RootDir .. "Modules/Perseus/Src/"
-		}
-
-		libdirs
-		{
-			LibDir,
-			ThirdPartyLibDir
-		}
-		links
-		{
-			-- ThirdParty
-			"OptickCore",
-			-- RZE
-			"RZE_Utils"
-		}
-
-		 vpaths
-		 {
-			["Source Files/*"] =
-			{
-				SourceDir .. "**.h",
-				SourceDir .. "**.hpp",
-				SourceDir .. "**.c",
-				SourceDir .. "**.cpp"
-			}
-		 }
-
-	--
-	--
-	-- PERSEUS
-	--
-	--
-	project "Perseus"
-		local ProjectDir = RootDir .. "Modules/Perseus/"
-		local SourceDir = ProjectDir .. SourceFolder
-
-		filter {}
-		
-		flags { "FatalCompileWarnings" }
-		disablewarnings { "4267" }
-		
-		kind "StaticLib"
-		language "C++"
-		targetdir (LibDir)
-		targetname "Perseus"
-
-		dependson { "Utils" }
-
-		files
-		{
-			SourceDir .. "**.h",
-			SourceDir .. "**.hpp",
-			SourceDir .. "**.c",
-			SourceDir .. "**.cpp"
-		}
-
-		includedirs
-		{
-			RootDir .. "Engine/Src",
-			RootDir .. "Utils/Src/",
-			SourceDir,
-			IncludeDir
-		}
-
-		libdirs
-		{
-			LibDir,
-			ThirdPartyLibDir
-		}
-		links
-		{
-			-- ThirdParty
-			"OptickCore",
-			-- RZE
-			"RZE_Utils"
-		}
-
-		 vpaths
-		 {
-			["Source Files/*"] =
-			{
-				SourceDir .. "**.h",
-				SourceDir .. "**.hpp",
-				SourceDir .. "**.c",
-				SourceDir .. "**.cpp"
-			}
-		 }
-
-	--
-	--
-	-- DIOTIMA
-	--
-	--
-	 project "Diotima"
-		local ProjectDir = RootDir .. "Modules/Diotima/"
-		local SourceDir = ProjectDir .. SourceFolder
-
-		filter {}
-		
-		flags { "FatalCompileWarnings" }
-		disablewarnings { "4267" }
-		
-		kind "StaticLib"
-		language "C++"
-		targetdir (LibDir)
-		targetname "Diotima"
+		targetname "Rendering"
 
 		dependson { "Externals", "Utils" }
 
@@ -405,7 +278,6 @@ workspace "RZE"
 		{
 			RootDir .. "Engine/Src",
 			RootDir .. "Utils/Src/",
-			RootDir .. "Modules/Perseus/Src/",
 			SourceDir,
 			IncludeDir
 		}
@@ -506,7 +378,7 @@ workspace "RZE"
 		targetdir (LibDir)
 		targetname "RZE_Game"
 
-		dependson { "Engine", "Apollo", "Diotima", "Perseus", "Utils"}
+		dependson { "Engine", "Rendering", "Utils"}
 
 		files
 		{
@@ -522,9 +394,7 @@ workspace "RZE"
 			SourceDir,
 			RootDir .. "Engine/Src/",
 			RootDir .. "Utils/Src/",
-			RootDir .. "Modules/Apollo/Src/",
-			RootDir .. "Modules/Diotima/Src/",
-			RootDir .. "Modules/Perseus/Src/",
+			RootDir .. "Modules/Rendering/Src/"
 		}
 
 		libdirs
@@ -536,9 +406,7 @@ workspace "RZE"
 		{
 			"RZE_Engine",
 			"RZE_Utils",
-			"Apollo",
-			"Diotima",
-			"Perseus"
+			"Rendering"
 		}
 
 		 vpaths
@@ -571,7 +439,7 @@ workspace "RZE"
 	targetdir (LibDir)
 	targetname "RZE_Editor"
 
-	dependson { "Engine", "Apollo", "Diotima", "Perseus", "Utils"}
+	dependson { "Engine", "Rendering", "Utils"}
 
 	files
 	{
@@ -587,9 +455,7 @@ workspace "RZE"
 		SourceDir,
 		RootDir .. "Engine/Src/",
 		RootDir .. "Utils/Src/",
-		RootDir .. "Modules/Apollo/Src/",
-		RootDir .. "Modules/Diotima/Src/",
-		RootDir .. "Modules/Perseus/Src/",
+		RootDir .. "Modules/Rendering/Src/"
 	}
 
 	libdirs
@@ -601,9 +467,7 @@ workspace "RZE"
 	{
 		"RZE_Engine",
 		"RZE_Utils",
-		"Apollo",
-		"Diotima",
-		"Perseus"
+		"Rendering"
 	}
 
 	 vpaths

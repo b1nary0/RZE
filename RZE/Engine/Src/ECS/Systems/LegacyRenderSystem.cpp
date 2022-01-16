@@ -23,7 +23,7 @@
 
 #include <Perseus/JobSystem/JobScheduler.h>
 
-#include <Diotima/Driver/DX11/DX11GFXDevice.h>
+#include <Rendering/Driver/DX11/DX11GFXDevice.h>
 #include <Utils/MemoryUtils.h>
 
 static Vector4D sDefaultFragColor(0.25f, 0.25f, 0.25f, 1.0f);
@@ -48,7 +48,7 @@ void LegacyRenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 	OPTICK_EVENT();
 
 	Apollo::EntityHandler& handler = InternalGetEntityHandler();
-	Diotima::LegacyRenderer& renderer = RZE_Application::RZE().GetLegacyRenderer();
+	Rendering::LegacyRenderer& renderer = RZE_Application::RZE().GetLegacyRenderer();
 
 	TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(mMainCameraEntity);
 	CameraComponent* const camComp = handler.GetComponent<CameraComponent>(mMainCameraEntity);
@@ -57,7 +57,7 @@ void LegacyRenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 
 	GenerateCameraMatrices(*camComp, *transfComp);
 
-	Diotima::LegacyRenderer::CameraItemProtocol camera;
+	Rendering::LegacyRenderer::CameraItemProtocol camera;
 	camera.ProjectionMat = camComp->ProjectionMat;
 	camera.ViewMat = camComp->ViewMat;
 	camera.Position = transfComp->Position;
@@ -80,7 +80,7 @@ void LegacyRenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 		LightSourceComponent* const lightComp = handler.GetComponent<LightSourceComponent>(entity);
 		TransformComponent* const transfComp = handler.GetComponent<TransformComponent>(entity);
 
-		Diotima::LegacyRenderer::LightItemProtocol& item = renderer.GetLightProtocolByIdx(mLightItemEntityMap[entity]);
+		Rendering::LegacyRenderer::LightItemProtocol& item = renderer.GetLightProtocolByIdx(mLightItemEntityMap[entity]);
 
 		Matrix4x4 orthoProj = Matrix4x4::CreateOrthoMatrix(-25.0f, 25.0f, -25.0f, 25.0f, -100.0f, 100.0f);
 		Matrix4x4 lightView = Matrix4x4::CreateViewMatrix(transfComp->Position, Vector3D(), Vector3D(0.0f, 1.0f, 0.0f));
@@ -88,7 +88,7 @@ void LegacyRenderSystem::Update(const std::vector<Apollo::EntityID>& entities)
 		item.LightSpaceMatrix = orthoProj * lightView;
 		item.Color = lightComp->Color;
 		item.Strength = lightComp->Strength;
-		item.LightType = static_cast<Diotima::LegacyRenderer::ELightType>(lightComp->LightType);
+		item.LightType = static_cast<Rendering::LegacyRenderer::ELightType>(lightComp->LightType);
 		item.Position = transfComp->Position;
 	});
 	handler.ForEach<LightSourceComponent, TransformComponent>(LightSourceFunc);
@@ -120,22 +120,22 @@ void LegacyRenderSystem::RegisterForComponentNotifications()
 			// #NOTE_RENDER_REFACTOR
 			// This is the entry point into the Renderer so this is the code that needs to be turned into something more intuitive.
 			// Our uses here should dictate the API into the Renderer (in terms of data needed, etc).
-			Diotima::LegacyRenderer::RenderItemProtocol item;
+			Rendering::LegacyRenderer::RenderItemProtocol item;
 			for (const MeshGeometry& mesh : modelData->GetStaticMesh().GetSubMeshes())
 			{
-				Diotima::LegacyRenderer::RenderItemMeshData meshData;
+				Rendering::LegacyRenderer::RenderItemMeshData meshData;
 				meshData.VertexBuffer = mesh.GetVertexBuffer();
 				meshData.IndexBuffer = mesh.GetIndexBuffer();
 
 				const bool bIsTextured = mesh.GetMaterial().IsTextured();
 				if (bIsTextured)
 				{
-					meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetDiffuse().GetTextureBufferID(), Diotima::LegacyRenderer::ETextureType::Diffuse);
-					meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetSpecular().GetTextureBufferID(), Diotima::LegacyRenderer::ETextureType::Specular);
-					meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetNormal().GetTextureBufferID(), Diotima::LegacyRenderer::ETextureType::Normal);
+					meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetDiffuse().GetTextureBufferID(), Rendering::LegacyRenderer::ETextureType::Diffuse);
+					meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetSpecular().GetTextureBufferID(), Rendering::LegacyRenderer::ETextureType::Specular);
+					meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetNormal().GetTextureBufferID(), Rendering::LegacyRenderer::ETextureType::Normal);
 				}
  
- 				Diotima::LegacyRenderer::RenderItemMaterialDesc matDesc;
+ 				Rendering::LegacyRenderer::RenderItemMaterialDesc matDesc;
  				matDesc.Shininess = mesh.GetMaterial().Shininess;
 				matDesc.IsTextured = static_cast<U32>(bIsTextured);
  
@@ -182,26 +182,26 @@ void LegacyRenderSystem::RegisterForComponentNotifications()
 		if (meshComp->Resource.IsValid())
 		{
 			Int32 renderIndex = mRenderItemEntityMap[entityID];
-			Diotima::LegacyRenderer::RenderItemProtocol& renderItem = RZE_Application::RZE().GetLegacyRenderer().GetItemProtocolByIdx(renderIndex);
+			Rendering::LegacyRenderer::RenderItemProtocol& renderItem = RZE_Application::RZE().GetLegacyRenderer().GetItemProtocolByIdx(renderIndex);
 			renderItem.MeshData.clear();
 
 			Model3D* const modelData = RZE::GetResourceHandler().GetResource<Model3D>(meshComp->Resource);
 
 			for (const MeshGeometry& mesh : modelData->GetStaticMesh().GetSubMeshes())
 			{
-				Diotima::LegacyRenderer::RenderItemMeshData meshData;
+				Rendering::LegacyRenderer::RenderItemMeshData meshData;
 				meshData.VertexBuffer = mesh.GetVertexBuffer();
 				meshData.IndexBuffer = mesh.GetIndexBuffer();
 
 				const bool bIsTextured = mesh.GetMaterial().IsTextured();
 				if (bIsTextured)
 				{
-					meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetDiffuse().GetTextureBufferID(), Diotima::LegacyRenderer::ETextureType::Diffuse);
-					meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetSpecular().GetTextureBufferID(), Diotima::LegacyRenderer::ETextureType::Specular);
-					meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetNormal().GetTextureBufferID(), Diotima::LegacyRenderer::ETextureType::Normal);
+					meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetDiffuse().GetTextureBufferID(), Rendering::LegacyRenderer::ETextureType::Diffuse);
+					meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetSpecular().GetTextureBufferID(), Rendering::LegacyRenderer::ETextureType::Specular);
+					meshData.TextureDescs.emplace_back(mesh.GetMaterial().GetNormal().GetTextureBufferID(), Rendering::LegacyRenderer::ETextureType::Normal);
 				}
 
- 				Diotima::LegacyRenderer::RenderItemMaterialDesc matDesc;
+ 				Rendering::LegacyRenderer::RenderItemMaterialDesc matDesc;
  				matDesc.Shininess = mesh.GetMaterial().Shininess;
 				matDesc.IsTextured = static_cast<U32>(mesh.GetMaterial().IsTextured());
  
@@ -211,14 +211,14 @@ void LegacyRenderSystem::RegisterForComponentNotifications()
 			}
 
 			// #TODO
-			// This is bad, make a modifyrenderitem function on Diotima::Renderer where this can be done
-			Diotima::DX11GFXDevice& device = RZE_Application::RZE().GetLegacyRenderer().GetDriverDevice();
+			// This is bad, make a modifyrenderitem function on Rendering::Renderer where this can be done
+			Rendering::DX11GFXDevice& device = RZE_Application::RZE().GetLegacyRenderer().GetDriverDevice();
 
 			std::vector<U32> meshMaterialBuffers;
 			meshMaterialBuffers.reserve(renderItem.MeshData.size());
 			for (size_t index = 0; index < renderItem.MeshData.size(); ++index)
 			{
-				meshMaterialBuffers.push_back(device.CreateConstantBuffer(MemoryUtils::AlignSize(sizeof(Diotima::LegacyRenderer::RenderItemMaterialDesc), 16), 1));
+				meshMaterialBuffers.push_back(device.CreateConstantBuffer(MemoryUtils::AlignSize(sizeof(Rendering::LegacyRenderer::RenderItemMaterialDesc), 16), 1));
 			}
 
 			renderItem.MaterialBuffers = std::move(meshMaterialBuffers);
@@ -232,8 +232,8 @@ void LegacyRenderSystem::RegisterForComponentNotifications()
 		LightSourceComponent* const lightComp = handler.GetComponent<LightSourceComponent>(entityID);
 		AssertNotNull(lightComp);
 
-		Diotima::LegacyRenderer::LightItemProtocol item;
-		item.LightType = static_cast<Diotima::LegacyRenderer::ELightType>(lightComp->LightType);
+		Rendering::LegacyRenderer::LightItemProtocol item;
+		item.LightType = static_cast<Rendering::LegacyRenderer::ELightType>(lightComp->LightType);
 		item.Color = lightComp->Color;
 		item.Strength = lightComp->Strength;
 

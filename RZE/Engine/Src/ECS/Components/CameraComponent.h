@@ -1,11 +1,9 @@
 #pragma once
 
-#include <Apollo/ECS/EntityComponent.h>
-
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector3D.h>
 
-struct CameraComponent final : public Apollo::Component<CameraComponent>
+struct CameraComponent
 {
 	Vector3D LookAt;
 	Vector3D UpDir { 0.0f, 1.0f, 0.0f };
@@ -21,8 +19,8 @@ struct CameraComponent final : public Apollo::Component<CameraComponent>
 
 	bool bIsActiveCamera { false };
 
-	virtual void OnEditorInspect(Apollo::EntityID entityID) override;
+	//virtual void OnEditorInspect(Apollo::EntityID entityID) override;
 
-	virtual void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override;
-	virtual void Load(const rapidjson::Value& data) override;
+	//virtual void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override;
+	//virtual void Load(const rapidjson::Value& data) override;
 };

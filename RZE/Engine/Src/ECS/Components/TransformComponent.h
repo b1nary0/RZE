@@ -1,12 +1,10 @@
 #pragma once
 
-#include <Apollo/ECS/EntityComponent.h>
-
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Quaternion.h>
 #include <Utils/Math/Vector3D.h>
 
-struct TransformComponent final : public Apollo::Component<TransformComponent>
+struct TransformComponent
 {
 	TransformComponent() = default;
 	
@@ -60,9 +58,9 @@ struct TransformComponent final : public Apollo::Component<TransformComponent>
 		Rotation += rotation;
 	}
 
-	virtual void OnEditorInspect(Apollo::EntityID entityID) override;
-	virtual void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer);
-	virtual void Load(const rapidjson::Value& data) override;
+	//virtual void OnEditorInspect(Apollo::EntityID entityID) override;
+	//virtual void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer);
+	//virtual void Load(const rapidjson::Value& data) override;
 
 	Vector3D	Position;
  	Vector3D	Scale {1, 1, 1};

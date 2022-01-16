@@ -3,15 +3,13 @@
 #include <string>
 #include <vector>
 
-#include <Apollo/EntityHandler.h>
-
 class GameScene
 {
 public:
 	// #TODO(Josh) Temp. First passing it.
 	struct SceneEntryTemp
 	{
-		Apollo::EntityID ID;
+		//Apollo::EntityID ID;
 		std::string Name;
 	};
 
@@ -24,7 +22,7 @@ public:
 	virtual void Update();
 	virtual void ShutDown();
 
-	Apollo::EntityHandler& GetEntityHandler() { return mEntityHandler; }
+	//Apollo::EntityHandler& GetEntityHandler() { return mEntityHandler; }
 
 	void Initialize();
 
@@ -33,24 +31,24 @@ public:
 	void Load(FilePath filePath);
 	void Unload();
 
-	Apollo::EntityID CreateEntity(const std::string& name);
-	void DestroyEntity(Apollo::EntityID entity);
+	//Apollo::EntityID CreateEntity(const std::string& name);
+	//void DestroyEntity(Apollo::EntityID entity);
 
-	template <typename TSystemType, typename... TArgs>
-	TSystemType* AddSystem(TArgs... args)
-	{
-		return mEntityHandler.AddSystem<TSystemType>(args...);
-	}
+	//template <typename TSystemType, typename... TArgs>
+	//TSystemType* AddSystem(TArgs... args)
+	//{
+	//	return mEntityHandler.AddSystem<TSystemType>(args...);
+	//}
 
 	const std::vector<SceneEntryTemp>& GetSceneEntries() { return mEntityEntries; }
 
 private:
-	void AddToScene(Apollo::EntityID entityID, const std::string& name);
+	//void AddToScene(Apollo::EntityID entityID, const std::string& name);
 
 	void Clear();
 
 private:
-	Apollo::EntityHandler mEntityHandler;
+	//Apollo::EntityHandler mEntityHandler;
 
 private:
 	FilePath mCurrentScenePath;

@@ -4,11 +4,11 @@
 
 // Needed for call to RZE().GetRenderer().GetDriverDevice()
 // Should remove ASAP.
-#include <Diotima/Renderer.h>
-#include <Diotima/Driver/DX11/DX11GFXDevice.h>
-#include <Diotima/Graphics/RenderTarget.h>
+#include <Rendering/Renderer.h>
+#include <Rendering/Driver/DX11/DX11GFXDevice.h>
+#include <Rendering/Graphics/RenderTarget.h>
 
-#include <Perseus/JobSystem/JobScheduler.h>
+//#include <Perseus/JobSystem/JobScheduler.h>
 
 #include <Utils/Platform/FilePath.h>
 
@@ -61,7 +61,7 @@ namespace Editor
 		GetWindow()->Maximize();
 
 		const Vector2D& windowDims = GetWindow()->GetDimensions();
-		mRenderTarget = std::make_unique<Diotima::RenderTargetTexture>(static_cast<U32>(windowDims.X()), static_cast<U32>(windowDims.Y()));
+		mRenderTarget = std::make_unique<Rendering::RenderTargetTexture>(static_cast<U32>(windowDims.X()), static_cast<U32>(windowDims.Y()));
 		// First pass:
 		// Renderer::SetRenderTarget here which will override target in renderer, specifically the device directly.
 		RZE().GetRenderer().SetRenderTarget(mRenderTarget.get());
@@ -72,7 +72,7 @@ namespace Editor
 		LoadFonts();
 		StyleSetup();
 
-		RZE().GetActiveScene().AddSystem<FreeCameraSystem>();
+		//RZE().GetActiveScene().AddSystem<FreeCameraSystem>();
 	}
 
 	void EditorApp::Start()
@@ -221,7 +221,7 @@ namespace Editor
 				if (ImGui::MenuItem("Build Game..."))
 				{
 					DebugServices::Get().Trace(LogChannel::Build, "Building Game...");
-					Perseus::Job::Task buildTask = [this]()
+					/*Perseus::Job::Task buildTask = [this]()
 					{
 						char buffer[2048];
 						FILE* pipe = nullptr;
@@ -232,35 +232,35 @@ namespace Editor
 							Log(buffer);
 						}
 					};
-					Perseus::JobScheduler::Get().PushJob(buildTask);
+					Perseus::JobScheduler::Get().PushJob(buildTask);*/
 				}
 				if (ImGui::MenuItem("Launch Game..."))
 				{
-					Perseus::Job::Task gameTask = [this]()
-					{
-						static FilePath buildGameBat("BuildGame.bat");
-						static FilePath gamePath("_Build\\Debug\\x64\\RZE_Game.exe");
+					//Perseus::Job::Task gameTask = [this]()
+					//{
+					//	static FilePath buildGameBat("BuildGame.bat");
+					//	static FilePath gamePath("_Build\\Debug\\x64\\RZE_Game.exe");
 
-						// #TODO
-						// Make function to do this stuff
-						{
-							FILE* pipe = nullptr;
-							pipe = _popen(buildGameBat.GetAbsolutePath().c_str(), "rt");
-							char buffer[2048];
-							while (fgets(buffer, 2048, pipe))
-							{
-								DebugServices::Get().Trace(LogChannel::Build, buffer);
-							}
-						}
-						{
-							RunAssetCpy();
-						}
-						{
-							FILE* pipe = nullptr;
-							pipe = _popen(gamePath.GetAbsolutePath().c_str(), "rt");
-						}
-					};
-					Perseus::JobScheduler::Get().PushJob(gameTask);
+					//	// #TODO
+					//	// Make function to do this stuff
+					//	{
+					//		FILE* pipe = nullptr;
+					//		pipe = _popen(buildGameBat.GetAbsolutePath().c_str(), "rt");
+					//		char buffer[2048];
+					//		while (fgets(buffer, 2048, pipe))
+					//		{
+					//			DebugServices::Get().Trace(LogChannel::Build, buffer);
+					//		}
+					//	}
+					//	{
+					//		RunAssetCpy();
+					//	}
+					//	{
+					//		FILE* pipe = nullptr;
+					//		pipe = _popen(gamePath.GetAbsolutePath().c_str(), "rt");
+					//	}
+					//};
+					//Perseus::JobScheduler::Get().PushJob(gameTask);
 
 				}
 				ImGui::Separator();
@@ -342,7 +342,7 @@ namespace Editor
 				static int sGenericEntityCount = 0;
 
 				std::string newEntityStr = StringUtils::FormatString("Entity%i", sGenericEntityCount);
-				RZE().GetActiveScene().CreateEntity(newEntityStr);
+				//RZE().GetActiveScene().CreateEntity(newEntityStr);
 
 				++sGenericEntityCount;
 			}

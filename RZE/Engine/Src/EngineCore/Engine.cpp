@@ -3,8 +3,8 @@
 
 #include <DebugUtils/DebugServices.h>
 
-#include <Diotima/Renderer.h>
-#include <Diotima/Graphics/RenderTarget.h>
+#include <Rendering/Renderer.h>
+#include <Rendering/Graphics/RenderTarget.h>
 
 #include <Windowing/Win32Window.h>
 #include <Windowing/WinKeyCodes.h>
@@ -119,7 +119,7 @@ void RZE_Engine::Init()
 
 		DebugServices::Get().Initialize();
 
-		Perseus::JobScheduler::Get().Initialize();
+		//Perseus::JobScheduler::Get().Initialize();
 
 		LoadEngineConfig();
 
@@ -189,7 +189,7 @@ void RZE_Engine::CreateAndInitializeRenderer()
 {
 	LOG_CONSOLE("Initializing Renderer");
 
-	mRenderer = new Diotima::Renderer();
+	mRenderer = new Rendering::Renderer();
 	mRenderer->SetWindow(mMainWindow->GetOSWindowHandleData().windowHandle);
 	mRenderer->Initialize();
 }
@@ -288,7 +288,7 @@ void RZE_Engine::BeginShutDown()
 	mResourceHandler.ShutDown();
 	mRenderer->ShutDown();
 
-	Perseus::JobScheduler::Get().ShutDown();
+	//Perseus::JobScheduler::Get().ShutDown();
 
 	InternalShutDown();
 }
@@ -321,7 +321,7 @@ InputHandler& RZE_Engine::GetInputHandler()
 	return mInputHandler;
 }
 
-Diotima::Renderer& RZE_Engine::GetRenderer()
+Rendering::Renderer& RZE_Engine::GetRenderer()
 {
 	return *mRenderer;
 }
