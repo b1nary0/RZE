@@ -1,10 +1,10 @@
 #pragma once
 
-#include <Perseus/Threading.h>
+#include <EngineCore/Threading/Threading.h>
 
 #include <Utils/Functor.h>
 
-namespace Perseus
+namespace Threading
 {
 	class Job
 	{

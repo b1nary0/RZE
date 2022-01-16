@@ -1,6 +1,8 @@
 #include <StdAfx.h>
 #include <EngineCore/Engine.h>
 
+#include <EngineCore/Threading/JobSystem/JobScheduler.h>
+
 #include <DebugUtils/DebugServices.h>
 
 #include <Rendering/Renderer.h>
@@ -119,7 +121,7 @@ void RZE_Engine::Init()
 
 		DebugServices::Get().Initialize();
 
-		//Perseus::JobScheduler::Get().Initialize();
+		Threading::JobScheduler::Get().Initialize();
 
 		LoadEngineConfig();
 
@@ -288,7 +290,7 @@ void RZE_Engine::BeginShutDown()
 	mResourceHandler.ShutDown();
 	mRenderer->ShutDown();
 
-	//Perseus::JobScheduler::Get().ShutDown();
+	Threading::JobScheduler::Get().ShutDown();
 
 	InternalShutDown();
 }

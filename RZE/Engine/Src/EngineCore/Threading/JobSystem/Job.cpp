@@ -1,6 +1,7 @@
-#include <Perseus/JobSystem/Job.h>
+#include <StdAfx.h>
+#include <EngineCore/Threading/JobSystem/Job.h>
 
-namespace Perseus
+namespace Threading
 {
 	Job::Job()
 	{

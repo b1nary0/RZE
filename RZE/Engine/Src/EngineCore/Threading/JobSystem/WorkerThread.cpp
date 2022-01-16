@@ -1,12 +1,13 @@
-#include <Perseus/JobSystem/WorkerThread.h>
+#include <StdAfx.h>
+#include <EngineCore/Threading/JobSystem/WorkerThread.h>
 
-#include <Perseus/JobSystem/JobScheduler.h>
+#include <EngineCore/Threading/JobSystem/JobScheduler.h>
 
 #include <Utils/Functor.h>
 
 #include <Optick/optick.h>
 
-namespace Perseus
+namespace Threading
 {
 	WorkerThread::WorkerThread()
 		: bActive(false)

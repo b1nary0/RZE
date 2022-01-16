@@ -8,7 +8,7 @@
 #include <Rendering/Driver/DX11/DX11GFXDevice.h>
 #include <Rendering/Graphics/RenderTarget.h>
 
-//#include <Perseus/JobSystem/JobScheduler.h>
+#include <EngineCore/Threading/JobSystem/JobScheduler.h>
 
 #include <Utils/Platform/FilePath.h>
 
@@ -221,7 +221,7 @@ namespace Editor
 				if (ImGui::MenuItem("Build Game..."))
 				{
 					DebugServices::Get().Trace(LogChannel::Build, "Building Game...");
-					/*Perseus::Job::Task buildTask = [this]()
+					Threading::Job::Task buildTask = [this]()
 					{
 						char buffer[2048];
 						FILE* pipe = nullptr;
@@ -232,35 +232,35 @@ namespace Editor
 							Log(buffer);
 						}
 					};
-					Perseus::JobScheduler::Get().PushJob(buildTask);*/
+					Threading::JobScheduler::Get().PushJob(buildTask);
 				}
 				if (ImGui::MenuItem("Launch Game..."))
 				{
-					//Perseus::Job::Task gameTask = [this]()
-					//{
-					//	static FilePath buildGameBat("BuildGame.bat");
-					//	static FilePath gamePath("_Build\\Debug\\x64\\RZE_Game.exe");
+					Threading::Job::Task gameTask = [this]()
+					{
+						static FilePath buildGameBat("BuildGame.bat");
+						static FilePath gamePath("_Build\\Debug\\x64\\RZE_Game.exe");
 
-					//	// #TODO
-					//	// Make function to do this stuff
-					//	{
-					//		FILE* pipe = nullptr;
-					//		pipe = _popen(buildGameBat.GetAbsolutePath().c_str(), "rt");
-					//		char buffer[2048];
-					//		while (fgets(buffer, 2048, pipe))
-					//		{
-					//			DebugServices::Get().Trace(LogChannel::Build, buffer);
-					//		}
-					//	}
-					//	{
-					//		RunAssetCpy();
-					//	}
-					//	{
-					//		FILE* pipe = nullptr;
-					//		pipe = _popen(gamePath.GetAbsolutePath().c_str(), "rt");
-					//	}
-					//};
-					//Perseus::JobScheduler::Get().PushJob(gameTask);
+						// #TODO
+						// Make function to do this stuff
+						{
+							FILE* pipe = nullptr;
+							pipe = _popen(buildGameBat.GetAbsolutePath().c_str(), "rt");
+							char buffer[2048];
+							while (fgets(buffer, 2048, pipe))
+							{
+								DebugServices::Get().Trace(LogChannel::Build, buffer);
+							}
+						}
+						{
+							RunAssetCpy();
+						}
+						{
+							FILE* pipe = nullptr;
+							pipe = _popen(gamePath.GetAbsolutePath().c_str(), "rt");
+						}
+					};
+					Threading::JobScheduler::Get().PushJob(gameTask);
 
 				}
 				ImGui::Separator();

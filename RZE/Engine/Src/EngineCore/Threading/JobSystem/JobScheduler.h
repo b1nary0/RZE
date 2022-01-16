@@ -3,12 +3,12 @@
 #include <queue>
 #include <vector>
 
-#include <Perseus/Threading.h>
-#include <Perseus/JobSystem/WorkerThread.h>
+#include <EngineCore/Threading/Threading.h>
+#include <EngineCore/Threading/JobSystem/WorkerThread.h>
 
 #include <Utils/Functor.h>
 
-namespace Perseus
+namespace Threading
 {
 	class JobScheduler
 	{
@@ -42,7 +42,7 @@ namespace Perseus
 
 	private:
 		// The "home" array of the worker threads
-		WorkerThread mWorkerThreads[PERSEUS_MAX_WORKER_THREADS];
+		WorkerThread mWorkerThreads[MAX_WORKER_THREADS];
 		JobQueue mJobQueue;
 
 		bool bShouldWait;

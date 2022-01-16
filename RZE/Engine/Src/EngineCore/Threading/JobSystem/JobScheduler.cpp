@@ -1,9 +1,10 @@
-#include <Perseus/JobSystem/JobScheduler.h>
+#include <StdAfx.h>
+#include <EngineCore/Threading/JobSystem/JobScheduler.h>
 
 #include <Utils/PrimitiveDefs.h>
 #include <Utils/DebugUtils/Debug.h>
 
-namespace Perseus
+namespace Threading
 {
 	std::mutex JobScheduler::JobMutex;
 
@@ -15,7 +16,7 @@ namespace Perseus
 
 	JobScheduler::~JobScheduler()
 	{
-		for (int i = 0; i < PERSEUS_MAX_WORKER_THREADS; ++i)
+		for (int i = 0; i < MAX_WORKER_THREADS; ++i)
 		{
 			AssertExpr(!mWorkerThreads[i].IsRunning());
 		}
@@ -23,7 +24,7 @@ namespace Perseus
 
 	void JobScheduler::Initialize()
 	{
-		for (int i = 0; i < PERSEUS_MAX_WORKER_THREADS; ++i)
+		for (int i = 0; i < MAX_WORKER_THREADS; ++i)
 		{
 			mWorkerThreads[i].Initialize();
 		}
@@ -31,7 +32,7 @@ namespace Perseus
 
 	void JobScheduler::ShutDown()
 	{
-		for (int i = 0; i < PERSEUS_MAX_WORKER_THREADS; ++i)
+		for (int i = 0; i < MAX_WORKER_THREADS; ++i)
 		{
 			mWorkerThreads[i].ShutDown();
 		}
@@ -67,7 +68,7 @@ namespace Perseus
 			if (mJobQueue.empty())
 			{
 				U32 idleThreads = 0;
-				for (U32 workerIndex = 0; workerIndex < PERSEUS_MAX_WORKER_THREADS; ++workerIndex)
+				for (U32 workerIndex = 0; workerIndex < MAX_WORKER_THREADS; ++workerIndex)
 				{
 					if (mWorkerThreads[workerIndex].IsIdle())
 					{
@@ -75,7 +76,7 @@ namespace Perseus
 					}
 				}
 
-				if (idleThreads == PERSEUS_MAX_WORKER_THREADS)
+				if (idleThreads == MAX_WORKER_THREADS)
 				{
 					bShouldWait = false;
 				}

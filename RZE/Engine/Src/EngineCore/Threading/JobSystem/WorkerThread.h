@@ -2,10 +2,10 @@
 
 #include <queue>
 
-#include <Perseus/Threading.h>
-#include <Perseus/JobSystem/Job.h>
+#include <EngineCore/Threading/Threading.h>
+#include <EngineCore/Threading/JobSystem/Job.h>
 
-namespace Perseus
+namespace Threading
 {
 	class WorkerThread
 	{
