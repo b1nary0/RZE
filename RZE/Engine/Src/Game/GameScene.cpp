@@ -1,11 +1,14 @@
 #include <StdAfx.h>
 #include <Game/GameScene.h>
 
+#include <Game/World/GameObject/GameObject.h>
+
 #include <RapidJSON/document.h>
 #include <RapidJSON/writer.h>
 #include <RapidJSON/prettywriter.h>
 #include <RapidJSON/stringbuffer.h>
 
+#include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Quaternion.h>
 
 GameScene::GameScene()
@@ -18,11 +21,6 @@ GameScene::~GameScene()
 
 void GameScene::Initialize()
 {
-	//mEntityHandler.Initialize();
-
-	//// #TODO(Josh::This is the order of update. Need to make it so we can call these whenever)
-	//mEntityHandler.AddSystem<LifetimeSystem>();
-	//mEntityHandler.AddSystem<RenderSystem>();
 }
 
 void GameScene::NewScene()
@@ -92,8 +90,6 @@ void GameScene::Save(FilePath filePath)
 
 void GameScene::Load(FilePath filePath)
 {
-	Clear();
-
 	mCurrentScenePath = filePath;
 
 	File sceneFile(mCurrentScenePath);
@@ -139,52 +135,32 @@ void GameScene::Load(FilePath filePath)
 
 void GameScene::Unload()
 {
-	Clear();
 }
 
-//Apollo::EntityID GameScene::CreateEntity(const std::string& name)
-//{
-//	Apollo::EntityID newEnt = mEntityHandler.CreateEntity(name);
-//	mEntityHandler.AddComponent<NameComponent>(newEnt, name);
-//	mEntityHandler.AddComponent<TransformComponent>(newEnt);
-//
-//	AddToScene(newEnt, name);
-//
-//	return newEnt;
-//}
-
-//void GameScene::DestroyEntity(Apollo::EntityID entity)
-//{
-//	mEntityHandler.DestroyEntity(entity);
-//
-//	auto it = std::remove_if(mEntityEntries.begin(), mEntityEntries.end(), [&entity](SceneEntryTemp& entry)
-//	{
-//		return entry.ID == entity;
-//	});
-//
-//	if (it != mEntityEntries.end())
-//	{
-//		mEntityEntries.erase(it);
-//	}
-//}
-
-//void GameScene::AddToScene(Apollo::EntityID entityID, const std::string& name)
-//{
-//	mEntityEntries.emplace_back();
-//	mEntityEntries.back().ID = entityID;
-//	mEntityEntries.back().Name = name;
-//}
-
-void GameScene::Clear()
+void GameScene::AddGameObject(GameObject& gameObject)
 {
-	// #TODO(Josh::Remember to take a look at what SceneEntryTemp was needed for. Basically was a hack
-	//				to quickly let me represent the scene in data.
-	for (SceneEntryTemp sceneEntry : mEntityEntries)
+	// #TODO Slow function
+
+	const auto it = std::find(m_objectRegistry.begin(), m_objectRegistry.end(), &gameObject);
+	AssertMsg(it == m_objectRegistry.end(), "GameObject already exists in scene");
+	if (it == m_objectRegistry.end())
 	{
-		// #TODO(Josh::Also probably have a function on EntityHandler that will clear it's data of the scene.
-		//mEntityHandler.DestroyEntity(sceneEntry.ID);
+		m_objectRegistry.push_back(&gameObject);
+		// #TODO AddToScene stuff
 	}
-	mEntityEntries.clear();
+}
+
+void GameScene::RemoveGameObject(GameObject& gameObject)
+{
+	// #TODO Slow function
+
+	const auto it = std::find(m_objectRegistry.begin(), m_objectRegistry.end(), &gameObject);
+	AssertMsg(it != m_objectRegistry.end(), "GameObject doesn't exist in scene");
+	if (it != m_objectRegistry.end())
+	{
+		m_objectRegistry.erase(it);
+	// #TODO RemoveFromScene stuff
+	}
 }
 
 void GameScene::Start()
@@ -194,11 +170,12 @@ void GameScene::Start()
 void GameScene::Update()
 {
 	OPTICK_EVENT();
-
-	//mEntityHandler.Update();
+	for (auto& gameObject : m_objectRegistry)
+	{
+		gameObject->Update();
+	}
 }
 
 void GameScene::ShutDown()
 {
-	//mEntityHandler.ShutDown();
 }

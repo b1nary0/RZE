@@ -1,10 +1,8 @@
 #pragma once
 
-#include <Utils/PrimitiveDefs.h>
+#include <Game/World/GameObject/GameObjectDefinitions.h>
 
 #include <string>
-
-typedef U32 GameObjectComponentID;
 
 template <typename TComponentBase>
 class GameObjectComponentTypeID
@@ -38,8 +36,13 @@ public:
 	GameObjectComponentBase() = default;
 	virtual ~GameObjectComponentBase() = default;
 
+public:
+	virtual void Update() = 0;
+
+public:
+	GameObjectComponentID m_id; // #TODO For now
+
 protected:
-	GameObjectComponentID m_id;
 	std::string m_componentName;
 };
 
@@ -47,17 +50,24 @@ template <typename TComponentType>
 class GameObjectComponent : public GameObjectComponentBase
 {
 public:
-	GameObjectComponent() = default;
+	GameObjectComponent()
+	{
+		m_id = GetID();
+		m_componentName = GetComponentName();
+	}
+
 	virtual ~GameObjectComponent() = default;
 
 public:
-	static inline GameObjectComponentID GetID()
+	static GameObjectComponentID GetID()
 	{
 		return GameObjectComponentTypeID<GameObjectComponentBase>::GetComponentTypeID<TComponentType>();
 	}
 
-	static inline const char* const GetComponentName()
+	static const char* const GetComponentName()
 	{
 		return GameObjectComponentTypeID<GameObjectComponentBase>::GetComponentName<TComponentType>();
 	}
+
+	void Update() override {}
 };

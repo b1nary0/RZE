@@ -1,10 +1,16 @@
 #pragma once
 
-#include <Game/World/GameObject/GameObjectComponent.h>
+#include <Game/World/GameObject/GameObjectDefinitions.h>
 
 #include <Utils/DebugUtils/Debug.h>
 
 #include <unordered_map>
+
+#include "GameObjectComponent.h"
+
+typedef U32 GameObjectID;
+
+class GameObjectComponentBase;
 
 class GameObject
 {
@@ -21,28 +27,52 @@ public:
 
 	template <typename TComponentType>
 	void RemoveComponent();
-	
+
+	// #TODO Unsure if it's desired to update via the GameObject API but until convinced otherwise this is it
+	void Update();
+
+	GameObjectID GetID() const { return m_id; }
+
 private:
-	std::unordered_map<U32, GameObjectComponentBase*> m_components;
+	GameObjectID m_id;
+
+	std::vector<GameObjectComponentBase*> m_components;
 };
 
 template <typename TComponentType>
 TComponentType* GameObject::GetComponent()
 {
-	if (m_components.count(TComponentType::GetID()) > 0)
+	// #TODO Slow function
+
+	auto it = std::find_if(m_components.begin(), m_components.end(),
+		[](const GameObjectComponentBase* component)
+		{
+			return TComponentType::GetID() == component->m_id;
+		});
+
+	if (it != m_components.end())
 	{
-		return m_components[TComponentType::GetID()];
+		return it;
 	}
+
 	return nullptr;
 }
 
 template <typename TComponentType>
 void GameObject::RemoveComponent()
 {
-	if (m_components.count(TComponentType::GetID()) > 0)
+	// #TODO Slow function
+
+	auto it = std::find_if(m_components.begin(), m_components.end(),
+		[](const GameObjectComponentBase* component)
+		{
+			return TComponentType::GetID() == component->m_id;
+		});
+
+	if (it != m_components.end())
 	{
-		TComponentType* component = m_components[TComponentType::GetID()];
-		m_components.erase(TComponentType::GetID());
+		const TComponentType* component = it;
+		m_components.erase(it);
 
 		// #TODO uninitialize here
 		delete component;
@@ -52,10 +82,17 @@ void GameObject::RemoveComponent()
 template <typename TComponentType, typename ... Args>
 TComponentType* GameObject::AddComponent(Args... args)
 {
-	if (m_components.count(TComponentType::GetID()) == 0)
+	// #TODO Slow function
+	auto it = std::find_if(m_components.begin(), m_components.end(),
+		[](const GameObjectComponentBase* component)
+		{
+			return TComponentType::GetID() == component->m_id;
+		});
+
+	if (it == m_components.end())
 	{
 		TComponentType* component = new TComponentType(std::forward<Args>(args));
-		m_components[TComponentType::GetID()] = component;
+		m_components.push_back(component);
 
 		// #TODO Initialize here
 		return component;
