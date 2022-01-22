@@ -31,8 +31,8 @@ public:
 	void Rotate(const Vector3D& rotation);
 
 	//virtual void OnEditorInspect(Apollo::EntityID entityID) override;
-	void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override;
-	void Load(const rapidjson::Value& data) override;
+	virtual void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override;
+	virtual void Load(const rapidjson::Value& data) override;
 
 private:
 	Vector3D m_position;
