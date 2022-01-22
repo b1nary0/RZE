@@ -2,6 +2,10 @@
 
 #include <Game/World/GameObject/GameObjectDefinitions.h>
 
+#include <RapidJSON/document.h>
+#include <RapidJSON/prettywriter.h>
+#include <RapidJSON/stringbuffer.h>
+
 #include <string>
 
 template <typename TComponentBase>
@@ -11,7 +15,7 @@ public:
 	template <class TComponentType>
 	static inline GameObjectComponentID GetComponentTypeID()
 	{
-		static GameObjectComponentID id = sNextComponentID++;
+		static GameObjectComponentID id = s_nextComponentID++;
 		return id;
 	}
 
@@ -30,6 +34,7 @@ private:
 template <class TComponentBase>
 GameObjectComponentID GameObjectComponentTypeID<TComponentBase>::s_nextComponentID = 0;
 
+// #TODO Not a huge fan of this setup but easiest way to poor mans reflection for component IDs
 class GameObjectComponentBase
 {
 public:
@@ -38,6 +43,8 @@ public:
 
 public:
 	virtual void Update() = 0;
+	virtual void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) = 0;
+	virtual void Load(const rapidjson::Value& data) = 0;
 
 public:
 	GameObjectComponentID m_id; // #TODO For now
@@ -70,4 +77,6 @@ public:
 	}
 
 	void Update() override {}
+	void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override {}
+	void Load(const rapidjson::Value& data) override {}
 };

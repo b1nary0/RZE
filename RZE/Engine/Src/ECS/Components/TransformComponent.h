@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Utils/Math/Matrix4x4.h>
-#include <Utils/Math/Quaternion.h>
 #include <Utils/Math/Vector3D.h>
 
 struct TransformComponent
@@ -31,7 +30,7 @@ struct TransformComponent
 	//
 	void SetPosition(const Vector3D& position)
 	{
-		Position = position;
+		m_position = position;
 	}
 
 	void SetRotation(const Vector3D& rotation)
@@ -47,7 +46,7 @@ struct TransformComponent
 	// Helpers
 	Matrix4x4 GetAsMat4x4() const
 	{
-		return Matrix4x4::CreateInPlace(Position, Scale, Rotation);
+		return Matrix4x4::CreateInPlace(m_position, Scale, Rotation);
 	}
 
 	//
@@ -62,7 +61,7 @@ struct TransformComponent
 	//virtual void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer);
 	//virtual void Load(const rapidjson::Value& data) override;
 
-	Vector3D	Position;
+	Vector3D	m_position;
  	Vector3D	Scale {1, 1, 1};
 	Vector3D	Rotation;
 };

@@ -6,7 +6,7 @@
 
 //void TransformComponent::OnEditorInspect(Apollo::EntityID entityID)
 //{
-//	float* positionValues = const_cast<float*>(&Position.GetInternalVec().x);
+//	float* positionValues = const_cast<float*>(&m_position.GetInternalVec().x);
 //	float* rotationValues = const_cast<float*>(&Rotation.GetInternalVec().x);
 //	float* scaleValues = const_cast<float*>(&Scale.GetInternalVec().x);
 //
@@ -14,7 +14,7 @@
 //	// #TODO(Modify DragFloat3 to only register on mouse movement to avoid falloff when dragging)
 //
 //
-//	ImGui::Text("Position");
+//	ImGui::Text("m_position");
 //	ImGui::DragFloat3("##transfcomp_position", positionValues, 0.005f);
 //	ImGui::Text("Rotation");
 //	ImGui::DragFloat3("##transfcomp_rotation", rotationValues, 0.05f);
@@ -24,7 +24,7 @@
 
 //void TransformComponent::Load(const rapidjson::Value& data)
 //{
-//	Position = Vector3D(data["Position"][0].GetFloat(), data["Position"][1].GetFloat(), data["Position"][2].GetFloat());
+//	m_position = Vector3D(data["m_position"][0].GetFloat(), data["m_position"][1].GetFloat(), data["m_position"][2].GetFloat());
 //	Scale = Vector3D(data["Scale"][0].GetFloat(), data["Scale"][1].GetFloat(), data["Scale"][2].GetFloat());
 //	Rotation = Vector3D(data["Rotation"][0].GetFloat(), data["Rotation"][1].GetFloat(), data["Rotation"][2].GetFloat());
 //}
@@ -35,11 +35,11 @@
 //	writer.StartObject();
 //	{
 //		{
-//			writer.Key("Position");
+//			writer.Key("m_position");
 //			writer.StartArray();
 //			for (int i = 0; i < 3; ++i)
 //			{
-//				writer.Double(Position[i]);
+//				writer.Double(m_position[i]);
 //			}
 //			writer.EndArray();
 //		}
