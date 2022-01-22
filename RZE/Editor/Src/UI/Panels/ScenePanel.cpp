@@ -49,8 +49,8 @@ namespace Editor
 				}
 			}
 
-			const std::vector<GameScene::SceneEntryTemp>& entities = RZE_Application::RZE().GetActiveScene().GetSceneEntries();
-			for (const GameScene::SceneEntryTemp& entry : entities)
+			//const std::vector<GameScene::SceneEntryTemp>& entities = RZE_Application::RZE().GetActiveScene().GetSceneEntries();
+			//for (const GameScene::SceneEntryTemp& entry : entities)
 			{
 				if (ImGui::IsAnyMouseDown() && (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) && HasSelectedEntity())
 				{
