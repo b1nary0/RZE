@@ -11,6 +11,14 @@ public:
 	CameraComponent() = default;
 	~CameraComponent() = default;
 
+	// GameObjectComponent interface
+public:
+	virtual void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override;
+	virtual void Load(const rapidjson::Value& data) override;
+
+	//virtual void OnEditorInspect(Apollo::EntityID entityID) override;
+
+public:
 	const Vector3D& GetLookAt() const;
 	const Vector3D& GetUpDir() const;
 	const Vector3D& GetForward() const;
@@ -35,11 +43,6 @@ public:
 	void SetFarCull(float farCull);
 
 	void SetAsActiveCamera(bool isActiveCamera);
-
-	virtual void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override;
-	virtual void Load(const rapidjson::Value& data) override;
-
-	//virtual void OnEditorInspect(Apollo::EntityID entityID) override;
 	
 private:
 	Vector3D m_lookAt;

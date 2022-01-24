@@ -3,13 +3,9 @@
 
 #include <EngineCore/Engine.h>
 
-#include <ECS/Components/CameraComponent.h>
-#include <ECS/Components/LifetimeComponent.h>
-#include <ECS/Components/LightSourceComponent.h>
-#include <ECS/Components/MaterialComponent.h>
-#include <ECS/Components/MeshComponent.h>
-#include <ECS/Components/NameComponent.h>
-#include <ECS/Components/TransformComponent.h>
+#include <Game/World/GameObjectComponents/CameraComponent.h>
+#include <Game/World/GameObjectComponents/MeshComponent.h>
+#include <Game/World/GameObjectComponents/TransformComponent.h>
 
 #include <Windowing/Win32Window.h>
 
@@ -70,13 +66,12 @@ void RZE_Application::Initialize()
 {
 	LOG_CONSOLE("RZE_Application::Init() called.");
 
-	//APOLLO_REGISTER_COMPONENT(CameraComponent);
-	//APOLLO_REGISTER_COMPONENT(LightSourceComponent);
-	//APOLLO_REGISTER_COMPONENT(LifetimeComponent);
-	//APOLLO_REGISTER_COMPONENT(MaterialComponent);
-	//APOLLO_REGISTER_COMPONENT(MeshComponent);
-	//APOLLO_REGISTER_COMPONENT(NameComponent);
-	//APOLLO_REGISTER_COMPONENT(TransformComponent);
+	// #TODO This basically just runs a bunch of poor mans reflection stuff like
+	// creating entries in the component name lookup and factory functions. Necessary to function atm.
+	// Eventually hope to implement actual reflection and handle this.
+	REGISTER_GAMEOBJECTCOMPONENT(CameraComponent);
+	REGISTER_GAMEOBJECTCOMPONENT(MeshComponent);
+	REGISTER_GAMEOBJECTCOMPONENT(TransformComponent);
 }
 
 Win32Window& RZE_Application::InternalGetWindow()

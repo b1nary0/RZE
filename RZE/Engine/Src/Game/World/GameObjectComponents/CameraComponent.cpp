@@ -98,8 +98,46 @@ void CameraComponent::SetAsActiveCamera(bool isActiveCamera)
 
 void CameraComponent::Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer)
 {
+	writer.String("CameraComponent");
+	writer.StartObject();
+	{
+		writer.Key("FOV");
+		writer.Double(m_fov);
+
+		writer.Key("NearCull");
+		writer.Double(m_nearCull);
+
+		writer.Key("FarCull");
+		writer.Double(m_farCull);
+
+		writer.Key("Forward");
+		writer.StartArray();
+		{
+			for (int i = 0; i < 3; ++i)
+			{
+				writer.Double(m_forward[i]);
+			}
+		}
+		writer.EndArray();
+
+		writer.Key("UpDir");
+		writer.StartArray();
+		{
+			for (int i = 0; i < 3; ++i)
+			{
+				writer.Double(m_upDir[i]);
+			}
+		}
+		writer.EndArray();
+	}
+	writer.EndObject();
 }
 
 void CameraComponent::Load(const rapidjson::Value& data)
 {
+	m_fov = data["FOV"].GetFloat();
+	m_nearCull = data["NearCull"].GetFloat();
+	m_farCull = data["FarCull"].GetFloat();
+	m_forward = Vector3D(data["Forward"][0].GetFloat(), data["Forward"][1].GetFloat(), data["Forward"][2].GetFloat());
+	m_upDir = Vector3D(data["UpDir"][0].GetFloat(), data["UpDir"][1].GetFloat(), data["UpDir"][2].GetFloat());
 }

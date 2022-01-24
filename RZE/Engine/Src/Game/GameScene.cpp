@@ -33,43 +33,20 @@ void GameScene::Save(FilePath filePath)
 	rapidjson::StringBuffer buf;
 	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buf);
 
-	//writer.StartObject();
-	//{
-	//	writer.String("entities");
-	//	writer.StartObject();
-	//	{
-	//		for (const SceneEntryTemp& entry : mEntityEntries)
-	//		{
+	writer.StartObject();
+	{
+		writer.String("gameobjects");
+		writer.StartObject();
+		{
+			for (auto& gameObject : m_objectRegistry)
+			{
+				gameObject->Save(writer);
+			}
+		}
 
-	//			Apollo::EntityHandler::ComponentNameIDMap compMap;
-	//			mEntityHandler.GetComponentNames(entry.ID, compMap);
-
-	//			// We know everything has a name component, so just save the only thing they should have...
-	//			// A name.
-	//			const NameComponent* const nameComponent = mEntityHandler.GetComponent<NameComponent>(entry.ID);
-	//			AssertNotNull(nameComponent);
-
-	//			writer.String(nameComponent->Name.c_str());
-	//			writer.StartObject();
-	//			{
-	//				writer.String("components");
-	//				writer.StartObject();
-	//				{
-	//					for (auto& dataPair : compMap)
-	//					{
-	//						Apollo::ComponentBase* component = mEntityHandler.GetComponentByID(entry.ID, dataPair.first);
-	//						component->Save(writer);
-	//					}
-	//				}
-	//				writer.EndObject();
-	//			}
-	//			writer.EndObject();
-	//		}
-	//	}
-
-	//	writer.EndObject();
-	//}
-	//writer.EndObject();
+		writer.EndObject();
+	}
+	writer.EndObject();
 	
 	File sceneFile;
 	if (filePath.IsValid())
@@ -99,38 +76,23 @@ void GameScene::Load(FilePath filePath)
 	rapidjson::Document sceneDoc;
 	sceneDoc.Parse(sceneFile.Content().c_str());
 
-	//rapidjson::Value::MemberIterator root = sceneDoc.FindMember("entities");
-	//if (root != sceneDoc.MemberEnd())
-	//{
-	//	//
-	//	// Entity
-	//	//
-	//	rapidjson::Value& rootVal = root->value;
-	//	for (auto& entity = rootVal.MemberBegin(); entity != rootVal.MemberEnd(); ++entity)
-	//	{
-	//		Apollo::EntityID id = CreateEntity(entity->name.GetString());
-
-	//		//
-	//		// Components
-	//		//
-	//		const Apollo::EntityHandler::ComponentNameIDMap& componentInfo = mEntityHandler.GetAllComponentTypes();
-	//		// ComponentBegin
-	//		rapidjson::Value& val = entity->value;
-	//		for (auto& member = val.MemberBegin(); member != val.MemberEnd(); ++member)
-	//		{
-	//			rapidjson::Value& compVal = member->value;
-	//			for (auto& dataPair : componentInfo)
-	//			{
-	//				rapidjson::Value::MemberIterator compData = compVal.FindMember(dataPair.second.c_str());
-	//				if (compData != compVal.MemberEnd())
-	//				{
-	//					Apollo::ComponentBase* component = mEntityHandler.AddComponentByID(id, dataPair.first);
-	//					component->Load(compData->value);
-	//				}
-	//			}
-	//		}
-	//	}
-	//}
+	rapidjson::Value::MemberIterator root = sceneDoc.FindMember("entities");
+	if (root != sceneDoc.MemberEnd())
+	{
+		//
+		// Entity
+		//
+		rapidjson::Value& rootVal = root->value;
+		for (auto& entity = rootVal.MemberBegin(); entity != rootVal.MemberEnd(); ++entity)
+		{
+			rapidjson::Value& val = entity->value;
+			
+			GameObject* gameObject = new GameObject(entity->name.GetString());
+			// ComponentBegin
+			gameObject->Load(val);
+			AddGameObject(*gameObject);
+		}
+	}
 }
 
 void GameScene::Unload()

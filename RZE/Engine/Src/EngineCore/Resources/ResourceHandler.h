@@ -35,6 +35,7 @@ private:
 		void DecreaseRefCount() { --mReferenceCount; }
 
 		IResource* GetResource() { return mResource; }
+		const FilePath& GetResourcePath() const { return m_resourcePath; }
 
 		bool IsReferenced() { return mReferenceCount > 0; }
 		bool IsValid() { return IsReferenced() && mResource; }
@@ -59,6 +60,7 @@ private:
 		}
 
 		int mReferenceCount;
+		FilePath m_resourcePath;
 		IResource* mResource;
 	};
 
@@ -107,6 +109,7 @@ public:
 
 	bool IsValid() const;
 	const std::string& GetID() const;
+	const FilePath& GetResourcePath() const;
 
 	bool operator==(const ResourceHandle& rhs);
 	void operator=(const ResourceHandle& rhs);
@@ -133,6 +136,7 @@ ResourceHandle ResourceHandler::LoadResource(const FilePath& resourcePath, Args.
 		if (resource)
 		{
 			ResourceSource resourceSource(resource);
+			resourceSource.m_resourcePath = resourcePath;
 
 			mResourceTable[resourceKey] = resourceSource;
 			return ResourceHandle(resourceKey, &mResourceTable[resourceKey], this);

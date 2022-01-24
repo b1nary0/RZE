@@ -136,6 +136,10 @@ const std::string& ResourceHandle::GetID() const
 	return mResourceID;
 }
 
+const FilePath& ResourceHandle::GetResourcePath() const
+{
+	return mResourceSource->GetResourcePath();
+}
 
 void ResourceHandle::operator=(ResourceHandle&& rhs)
 {

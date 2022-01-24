@@ -16,12 +16,13 @@ class GameObject
 {
 public:
 	GameObject();
+	GameObject(const std::string& name);
 	~GameObject();
 
 public:
 	template <typename TComponentType, typename... Args>
 	TComponentType* AddComponent(Args... args);
-
+	
 	template <typename TComponentType>
 	TComponentType* GetComponent();
 
@@ -33,8 +34,19 @@ public:
 
 	GameObjectID GetID() const { return m_id; }
 
+	const std::string& GetName() const { return m_name; };
+
+public:
+	void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) const;
+	void Load(rapidjson::Value& data);
+
+private:
+	// Should only be used by load code
+	GameObjectComponentBase* AddComponentByID(GameObjectComponentID id);
+
 private:
 	GameObjectID m_id;
+	std::string m_name;
 
 	std::vector<GameObjectComponentBase*> m_components;
 };
@@ -83,6 +95,7 @@ template <typename TComponentType, typename ... Args>
 TComponentType* GameObject::AddComponent(Args... args)
 {
 	// #TODO Slow function
+
 	auto it = std::find_if(m_components.begin(), m_components.end(),
 		[](const GameObjectComponentBase* component)
 		{
