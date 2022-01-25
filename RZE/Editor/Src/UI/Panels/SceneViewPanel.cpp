@@ -27,7 +27,7 @@ namespace Editor
 			if (viewportDims.x != mDimensions.X() || viewportDims.y != mDimensions.Y())
 			{
 				mDimensions.SetXY(viewportDims.x, viewportDims.y);
-				RZE_Application::RZE().GetRenderer().SetViewportSize(mDimensions);
+				//RZE_Application::RZE().GetRenderer().SetViewportSize(mDimensions);
 
 				/*Apollo::EntityHandler& entityHandler = RZE_Application::RZE().GetActiveScene().GetEntityHandler();
 
