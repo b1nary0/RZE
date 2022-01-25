@@ -4,6 +4,8 @@
 
 #include <EngineCore/Resources/ResourceHandler.h>
 
+class RenderProxy;
+
 class MeshComponent : public GameObjectComponent<MeshComponent>
 {
 public:
@@ -12,14 +14,21 @@ public:
 
 	// GameObjectComponent interface
 public:
+	virtual void OnAddToScene() override;
+	virtual void Update() override;
+
 	virtual void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override;
 	virtual void Load(const rapidjson::Value& data) override;
+
+	//virtual void OnEditorInspect(Apollo::EntityID entityID) override;
 
 public:
 	void SetMeshResource(const ResourceHandle& resource);
 	
-	//virtual void OnEditorInspect(Apollo::EntityID entityID) override;
+private:
+	void CreateRenderObject();
 
 private:
+	RenderProxy* m_renderProxy;
 	ResourceHandle m_resource;
 };

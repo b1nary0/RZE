@@ -33,12 +33,21 @@ GameObjectComponentBase* GameObject::AddComponentByID(GameObjectComponentID id)
 	if (it == m_components.end())
 	{
 		GameObjectComponentBase* component = GameObjectComponentRegistry::CreateComponentByID(id);
+		component->SetOwner(this);
 		m_components.push_back(component);
 		return component;
 	}
 
 	LOG_CONSOLE("Failed to add component as a component of that type already exists");
 	return nullptr;
+}
+
+void GameObject::OnAddToScene()
+{
+	for (auto& component : m_components)
+	{
+		component->OnAddToScene();
+	}
 }
 
 void GameObject::Update()

@@ -1,12 +1,11 @@
 #pragma once
 
 #include <Game/World/GameObject/GameObjectDefinitions.h>
+#include <Game/World/GameObject/GameObjectComponent.h>
 
 #include <Utils/DebugUtils/Debug.h>
 
 #include <unordered_map>
-
-#include "GameObjectComponent.h"
 
 typedef U32 GameObjectID;
 
@@ -28,6 +27,8 @@ public:
 
 	template <typename TComponentType>
 	void RemoveComponent();
+
+	void OnAddToScene();
 
 	// #TODO Unsure if it's desired to update via the GameObject API but until convinced otherwise this is it
 	void Update();
@@ -64,7 +65,7 @@ TComponentType* GameObject::GetComponent()
 
 	if (it != m_components.end())
 	{
-		return it;
+		return static_cast<TComponentType*>(*it);
 	}
 
 	return nullptr;
@@ -105,6 +106,7 @@ TComponentType* GameObject::AddComponent(Args... args)
 	if (it == m_components.end())
 	{
 		TComponentType* component = new TComponentType(std::forward<Args>(args));
+		component->SetOwner(this);
 		m_components.push_back(component);
 
 		// #TODO Initialize here

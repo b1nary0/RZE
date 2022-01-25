@@ -109,6 +109,7 @@ void GameScene::AddGameObject(GameObject& gameObject)
 	{
 		m_objectRegistry.push_back(&gameObject);
 		// #TODO AddToScene stuff
+		gameObject.OnAddToScene();
 	}
 }
 

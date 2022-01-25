@@ -5,7 +5,8 @@
 
 #include <DebugUtils/DebugServices.h>
 
-#include <Rendering/Renderer.h>
+#include <Graphics/RenderEngine.h>
+
 #include <Rendering/Graphics/RenderTarget.h>
 
 #include <Windowing/Win32Window.h>
@@ -21,7 +22,7 @@ RZE_Engine::RZE_Engine()
 	: mMainWindow(nullptr)
 	, mEngineConfig(nullptr)
 	, mApplication(nullptr)
-	, mRenderer(nullptr)
+	, m_renderEngine(nullptr)
 	, bShouldExit(false)
 	, bIsInitialized(false)
 	, mDeltaTime(0.0)
@@ -82,11 +83,11 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 
 					Update();
 
-					mRenderer->Update();
+					m_renderEngine->Update();
 
 					ImGui::EndFrame();
 
-					mRenderer->Render();
+					m_renderEngine->Render();
 				}
 			}
 
@@ -191,9 +192,9 @@ void RZE_Engine::CreateAndInitializeRenderer()
 {
 	LOG_CONSOLE("Initializing Renderer");
 
-	mRenderer = new Rendering::Renderer();
-	mRenderer->SetWindow(mMainWindow->GetOSWindowHandleData().windowHandle);
-	mRenderer->Initialize();
+	m_renderEngine = std::make_unique<RenderEngine>();
+	m_renderEngine->SetWindow(mMainWindow->GetOSWindowHandleData().windowHandle);
+	m_renderEngine->Initialize();
 }
 
 void RZE_Engine::InitializeApplication(Functor<RZE_Application* const> createGameCallback)
@@ -249,7 +250,7 @@ void RZE_Engine::RegisterWindowEvents()
 		else if (event.mWindowEvent.mEventInfo.mEventSubType == EWindowEventType::Window_Resize)
 		{
 			Vector2D newSize(event.mWindowEvent.mSizeX, event.mWindowEvent.mSizeY);
-			GetRenderer().ResizeCanvas(newSize);
+			m_renderEngine->ResizeCanvas(newSize);
 		}
 	});
 	mEventHandler.RegisterForEvent(EEventType::Window, windowCallback);
@@ -288,7 +289,7 @@ void RZE_Engine::BeginShutDown()
 	mActiveScene->ShutDown();
 	mApplication->ShutDown();
 	mResourceHandler.ShutDown();
-	mRenderer->ShutDown();
+	m_renderEngine->Shutdown();
 
 	Threading::JobScheduler::Get().ShutDown();
 
@@ -299,12 +300,12 @@ void RZE_Engine::InternalShutDown()
 {
 	AssertNotNull(mMainWindow);
 	AssertNotNull(mEngineConfig);
-	AssertNotNull(mRenderer);
+	AssertNotNull(m_renderEngine);
 	AssertNotNull(mActiveScene);
 
 	delete mMainWindow;
 	delete mEngineConfig;
-	delete mRenderer;
+	m_renderEngine.reset();
 	delete mActiveScene;
 }
 
@@ -323,9 +324,9 @@ InputHandler& RZE_Engine::GetInputHandler()
 	return mInputHandler;
 }
 
-Rendering::Renderer& RZE_Engine::GetRenderer()
+RenderEngine& RZE_Engine::GetRenderEngine()
 {
-	return *mRenderer;
+	return *m_renderEngine.get();
 }
 
 GameScene& RZE_Engine::GetActiveScene()

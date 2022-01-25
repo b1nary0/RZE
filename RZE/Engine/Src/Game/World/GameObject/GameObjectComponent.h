@@ -17,8 +17,8 @@
 	GameObjectComponentRegistry::AddComponentFactory(ComponentType::GetID(), Functor<GameObjectComponentBase*>([]() { return new ComponentType();}));\
 }
 
+class GameObject;
 class GameObjectComponentBase;
-
 
 // #TODO Would ideally like to come back to this setup
 namespace GameObjectComponentRegistry
@@ -71,16 +71,22 @@ public:
 
 public:
 	virtual void Initialize() = 0;
+	virtual void OnAddToScene() = 0;
 
 	virtual void Update() = 0;
 	virtual void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) = 0;
 	virtual void Load(const rapidjson::Value& data) = 0;
 
 public:
+	void SetOwner(GameObject* owner) { m_owner = owner; }
+	GameObject* GetOwner() { return m_owner; }
+
+public:
 	GameObjectComponentID m_id; // #TODO For now
 
 protected:
 	std::string m_componentName;
+	GameObject* m_owner;
 };
 
 template <typename TComponentType>
@@ -107,8 +113,10 @@ public:
 	}
 
 	virtual void Initialize() override {}
+	virtual void OnAddToScene() override {}
 
 	virtual void Update() override {}
 	virtual void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override {}
 	virtual void Load(const rapidjson::Value& data) override {}
+	
 };

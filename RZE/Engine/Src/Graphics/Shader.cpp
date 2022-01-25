@@ -1,8 +1,9 @@
 #include <StdAfx.h>
 
-#include <Graphics/Shader.h>
+#include <RZE.h>
 
-#include <Rendering/Renderer.h>
+#include <Graphics/Shader.h>
+#include <Graphics/RenderEngine.h>
 
 ShaderTechnique::ShaderTechnique(const std::string& name)
 	: mName(name)
@@ -13,7 +14,7 @@ bool ShaderTechnique::Load(const FilePath& filePath)
 {
 	if (filePath.IsValid())
 	{
-		mHWShaderHandle = RZE_Application::RZE().GetRenderer().CreatePixelShader(filePath);
+		mHWShaderHandle = RZE::GetRenderEngine().CreatePixelShader(filePath);
 		return true;
 	}
 

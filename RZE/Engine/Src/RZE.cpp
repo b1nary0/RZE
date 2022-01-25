@@ -15,4 +15,9 @@ namespace RZE
 	{
 		return RZE_Application::RZE().GetResourceHandler();
 	}
+
+	RenderEngine& GetRenderEngine()
+	{
+		return RZE_Application::RZE().GetRenderEngine();
+	}
 }

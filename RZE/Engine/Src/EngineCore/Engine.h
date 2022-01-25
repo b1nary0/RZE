@@ -15,13 +15,8 @@
 
 class RZE_Application;
 
-class GameWorld;
+class RenderEngine;
 class Win32Window;
-
-namespace Rendering
-{
-	class Renderer;
-}
 
 class RZE_Engine
 {
@@ -41,7 +36,7 @@ public:
 	// All of these gets might be best to hide behind a cpp. Or static engine in CPP memory with accessor in h.
 	ResourceHandler&			GetResourceHandler();
 	InputHandler&				GetInputHandler();
-	Rendering::Renderer&			GetRenderer();
+	RenderEngine&			GetRenderEngine();
 	GameScene&					GetActiveScene();
 
 	// #TODO(Should probably put the window in the app..)
@@ -90,7 +85,7 @@ private:
 	EventHandler mEventHandler;
 	InputHandler mInputHandler;
 
-	Rendering::Renderer* mRenderer;
+	std::unique_ptr<RenderEngine> m_renderEngine;
 
 	EngineConfig* mEngineConfig;
 	

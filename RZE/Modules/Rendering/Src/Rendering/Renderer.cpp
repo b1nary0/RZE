@@ -261,7 +261,9 @@ namespace Rendering
 			deviceContext.DrawIndexed(indexBuf->GetIndexCount(), 0, 0);
 		}
 
-		mRenderObjects.clear();
+		// #TODO [ACTORLIKE] temp commenting out while getting stuff rendering
+		// currently no engine-side render engine hookup
+		//mRenderObjects.clear();
 
 		// #TODO
 		// Have a better place for this. Kind of hidden at the end of Draw() here
@@ -411,6 +413,9 @@ namespace Rendering
 	{
 		RenderObject* renderObject = new RenderObject();
 		InitializeRenderObject(*renderObject, meshData, textureData, transform);
+
+		// #TODO [ACTORLIKE] temp to get stuff rendering 
+		AddRenderObject(renderObject);
 
 		return renderObject;
 	}

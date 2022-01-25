@@ -1,6 +1,11 @@
 #include <StdAfx.h>
 #include <Game/World/GameObjectComponents/CameraComponent.h>
 
+#include <Game/World/GameObject/GameObject.h>
+#include <Game/World/GameObjectComponents/TransformComponent.h>
+
+#include <Graphics/RenderEngine.h>
+
 #include <Utils/DebugUtils/Debug.h>
 
 const Vector3D& CameraComponent::GetLookAt() const
@@ -94,6 +99,44 @@ void CameraComponent::SetFarCull(float farCull)
 void CameraComponent::SetAsActiveCamera(bool isActiveCamera)
 {
 	m_isActiveCamera = isActiveCamera;
+}
+
+void CameraComponent::OnAddToScene()
+{
+	// #TODO This wont work long term, just trying to get things rendering with new code
+	m_isActiveCamera = true;
+	m_aspectRatio = RZE_Application::RZE().GetWindowSize().X() / RZE_Application::RZE().GetWindowSize().Y();
+}
+
+void CameraComponent::Update()
+{
+	if (IsActiveCamera())
+	{
+		const TransformComponent* const transformComponent = GetOwner()->GetComponent<TransformComponent>();
+		AssertMsg(transformComponent != nullptr, "A camera without a transform is useless");
+
+		GenerateCameraMatrices(*transformComponent);
+
+		CameraData cameraData;
+		cameraData.Position = transformComponent->GetPosition();
+		cameraData.ProjectionMat = m_projectionMat;
+		cameraData.ViewMat = m_viewMat;
+		cameraData.FOV = m_fov;
+		// #TODO This wont work long term, just trying to get things rendering with new code
+		cameraData.AspectRatio = m_aspectRatio;
+		cameraData.NearCull = m_nearCull;
+		cameraData.FarCull = m_farCull;
+
+		RZE::GetRenderEngine().SetCameraData(cameraData);
+	}
+}
+
+void CameraComponent::GenerateCameraMatrices(const TransformComponent& transformComponent)
+{
+	OPTICK_EVENT("GenerateCameraMatrices");
+	
+	m_projectionMat = Matrix4x4::CreatePerspectiveMatrix(m_fov, m_aspectRatio, m_nearCull, m_farCull);
+	m_viewMat = Matrix4x4::CreateViewMatrix(transformComponent.GetPosition(), transformComponent.GetPosition()  + m_forward, m_upDir);
 }
 
 void CameraComponent::Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer)

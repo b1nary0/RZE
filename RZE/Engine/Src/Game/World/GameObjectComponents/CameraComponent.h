@@ -5,6 +5,8 @@
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector3D.h>
 
+class TransformComponent;
+
 class CameraComponent final : public GameObjectComponent<CameraComponent>
 {
 public:
@@ -13,12 +15,18 @@ public:
 
 	// GameObjectComponent interface
 public:
+	virtual void OnAddToScene() override;
+	virtual void Update() override;
+
 	virtual void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override;
 	virtual void Load(const rapidjson::Value& data) override;
 
 	//virtual void OnEditorInspect(Apollo::EntityID entityID) override;
 
 public:
+
+	void GenerateCameraMatrices(const TransformComponent& transformComponent);
+
 	const Vector3D& GetLookAt() const;
 	const Vector3D& GetUpDir() const;
 	const Vector3D& GetForward() const;
