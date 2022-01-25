@@ -2,8 +2,6 @@
 
 #include <EditorApp.h>
 
-#include <ECS/Components/NameComponent.h>
-
 #include <Utils/DebugUtils/Debug.h>
 
 #include <ImGui/imgui.h>

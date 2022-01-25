@@ -6,8 +6,6 @@
 #include <Utils/Math/Math.h>
 #include <Utils/Platform/FilePath.h>
 
-#include <ECS/Systems/FreeCameraSystem.h>
-
 // GAME
 #include <Game/Systems/FirstPersonCameraSystem.h>
 #include <Game/Systems/RotateSingleEntitySystem.h>

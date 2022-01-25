@@ -6,8 +6,6 @@
 #include <Rendering/Driver/DX11/DX11GFXTextureBuffer2D.h>
 #include <Rendering/Graphics/RenderTarget.h>
 
-#include <ECS/Components/CameraComponent.h>
-
 #include <ImGui/imgui.h>
 
 #include <algorithm>

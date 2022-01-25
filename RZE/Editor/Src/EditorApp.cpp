@@ -1,7 +1,5 @@
 #include <EditorApp.h>
 
-#include <ECS/Systems/FreeCameraSystem.h>
-
 // Needed for call to RZE().GetRenderer().GetDriverDevice()
 // Should remove ASAP.
 #include <Rendering/Renderer.h>
