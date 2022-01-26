@@ -25,7 +25,7 @@ public:
 
 public:
 
-	void GenerateCameraMatrices(const TransformComponent& transformComponent);
+	void GenerateCameraMatrices(const Vector3D& position);
 
 	const Vector3D& GetLookAt() const;
 	const Vector3D& GetUpDir() const;

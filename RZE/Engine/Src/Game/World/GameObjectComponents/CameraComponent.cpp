@@ -115,7 +115,7 @@ void CameraComponent::Update()
 		const TransformComponent* const transformComponent = GetOwner()->GetComponent<TransformComponent>();
 		AssertMsg(transformComponent != nullptr, "A camera without a transform is useless");
 
-		GenerateCameraMatrices(*transformComponent);
+		GenerateCameraMatrices(transformComponent->GetPosition());
 
 		CameraData cameraData;
 		cameraData.Position = transformComponent->GetPosition();
@@ -131,12 +131,12 @@ void CameraComponent::Update()
 	}
 }
 
-void CameraComponent::GenerateCameraMatrices(const TransformComponent& transformComponent)
+void CameraComponent::GenerateCameraMatrices(const Vector3D& position)
 {
 	OPTICK_EVENT("GenerateCameraMatrices");
 	
 	m_projectionMat = Matrix4x4::CreatePerspectiveMatrix(m_fov, m_aspectRatio, m_nearCull, m_farCull);
-	m_viewMat = Matrix4x4::CreateViewMatrix(transformComponent.GetPosition(), transformComponent.GetPosition()  + m_forward, m_upDir);
+	m_viewMat = Matrix4x4::CreateViewMatrix(position, position  + m_forward, m_upDir);
 }
 
 void CameraComponent::Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer)
