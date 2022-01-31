@@ -24,9 +24,6 @@ public:
 	//virtual void OnEditorInspect(Apollo::EntityID entityID) override;
 
 public:
-
-	void GenerateCameraMatrices(const Vector3D& position);
-
 	const Vector3D& GetLookAt() const;
 	const Vector3D& GetUpDir() const;
 	const Vector3D& GetForward() const;
@@ -51,7 +48,10 @@ public:
 	void SetFarCull(float farCull);
 
 	void SetAsActiveCamera(bool isActiveCamera);
-	
+
+private:
+	void GenerateCameraMatrices(const Vector3D& position);
+
 private:
 	Vector3D m_lookAt;
 	Vector3D m_upDir { 0.0f, 1.0f, 0.0f };
