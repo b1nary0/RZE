@@ -14,10 +14,6 @@
 
 #include <Utils/DebugUtils/Debug.h>
 
-#include <ImGui/imgui.h>
-#include <ImGui/imgui_impl_dx11.h>
-#include <ImGui/imgui_impl_win32.h>
-
 RZE_Engine::RZE_Engine()
 	: mMainWindow(nullptr)
 	, mEngineConfig(nullptr)
@@ -73,6 +69,7 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 				{
 					OPTICK_EVENT("Update and Render");
 
+#ifdef IMGUI_ENABLED
 					{
 						OPTICK_EVENT("ImGui Frame Work");
 
@@ -80,12 +77,15 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 						ImGui_ImplWin32_NewFrame();
 						ImGui::NewFrame();
 					}
+#endif
 
 					Update();
 
 					m_renderEngine->Update();
 
+#ifdef IMGUI_ENABLED
 					ImGui::EndFrame();
+#endif
 
 					m_renderEngine->Render();
 				}
@@ -257,8 +257,10 @@ void RZE_Engine::RegisterWindowEvents()
 
 void RZE_Engine::RegisterKeyEvents()
 {
+#ifdef IMGUI_ENABLED
  	ImGuiIO& io = ImGui::GetIO();
  	io.KeyMap[ImGuiKey_Enter] = Win32KeyCode::Return;
+#endif
 }
 
 void RZE_Engine::LoadEngineConfig()

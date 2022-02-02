@@ -19,6 +19,12 @@ namespace Rendering
 {
 	class Renderer
 	{
+	private:
+		struct RenderState
+		{
+			// This will get filled out per Begin/End call
+		};
+
 		// Constructors
 	public:
 		Renderer();
@@ -26,8 +32,20 @@ namespace Rendering
 		
 	public:
 		static void Initialize(void* mWindowHandle);
-		static void ShutDown();
-		
+		static void Shutdown();
+
+		// API for an entire frame (global state, etc)
+		static void BeginFrame();
+		static void EndFrame();
+
+		// API for a render pass (series of draw calls)
+		static void Begin();
+		static void End();
+
+
+	public:
+		static void SetClearColour(const Vector4D& colour);
+
 	private:
 		//void ProcessCommands();
 

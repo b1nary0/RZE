@@ -79,3 +79,29 @@ void GameApp::RegisterInputEvents(InputHandler& inputHandler)
 	inputHandler.BindAction(Win32KeyCode::F3, EButtonState::ButtonState_Pressed, keyFunc);
 	inputHandler.BindAction(Win32KeyCode::Key_K, EButtonState::ButtonState_Pressed, keyFunc);
 }
+
+bool GameApp::ProcessInput(const InputHandler& handler)
+{
+#ifdef IMGUI_ENABLED
+	ImGuiIO& io = ImGui::GetIO();
+
+	const Vector2D& mousePos = handler.GetProxyMouseState().CurPosition;
+	const Vector2D& prevMousePos = handler.GetProxyMouseState().PrevPosition;
+	io.MousePos = ImVec2(mousePos.X(), mousePos.Y());
+	io.MousePosPrev = ImVec2(prevMousePos.X(), prevMousePos.Y());
+
+	for (U32 mouseBtn = 0; mouseBtn < 3; ++mouseBtn)
+	{
+		io.MouseDown[mouseBtn] = handler.GetProxyMouseState().CurMouseBtnStates[mouseBtn];
+	}
+
+	for (int key = 0; key < MAX_KEYCODES_SUPPORTED; ++key)
+	{
+		io.KeysDown[key] = handler.GetProxyKeyboardState().IsDownThisFrame(key);
+	}
+
+	return false;
+#endif
+
+	return RZE_Application::ProcessInput(handler);
+}

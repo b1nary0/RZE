@@ -43,8 +43,6 @@
 
 #endif
 
-#include <imGUI/imgui.h>
-
 #ifdef min
 #undef min
 #endif

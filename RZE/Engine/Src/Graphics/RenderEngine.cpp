@@ -13,10 +13,6 @@
 
 #include <Rendering/Renderer.h>
 
-#include <ImGui/imgui.h>
-#include <ImGui/imgui_impl_dx11.h>
-#include <ImGui/imgui_impl_win32.h>
-
 RenderEngine::RenderEngine()
 {
 	
@@ -29,28 +25,38 @@ RenderEngine::~RenderEngine()
 
 void RenderEngine::Initialize(void* windowHandle)
 {
-	// Rendering::Renderer::Initialize
 	Rendering::Renderer::Initialize(windowHandle);
 }
 
 void RenderEngine::Update()
 {
+#ifdef IMGUI_ENABLED
+	ImGui::ShowDemoWindow();
+#endif
 }
 
 void RenderEngine::Render()
 {
-	//m_vertexShader = RZE::GetResourceHandler().LoadResource<ShaderTechnique>(FilePath("Assets/Shaders/Vertex_NewRenderer.hlsl"));
+	Rendering::Renderer::BeginFrame();
 
+	Rendering::Renderer::Begin();
+	Rendering::Renderer::SetClearColour(Vector4D(1.0f, 0.5f, 0.5f, 1.0f));
+	Rendering::Renderer::End();
+
+#ifdef IMGUI_ENABLED
 	{
 		OPTICK_EVENT("ImGui Render");
 		ImGui::Render();
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 	}
+#endif
+
+	Rendering::Renderer::EndFrame();
 }
 
 void RenderEngine::Shutdown()
 {
-	// Rendering::Renderer::Initialize
+	Rendering::Renderer::Shutdown();
 }
 
 void RenderEngine::ResizeCanvas(const Vector2D& newSize)

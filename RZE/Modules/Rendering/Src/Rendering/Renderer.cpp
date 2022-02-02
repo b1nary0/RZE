@@ -21,10 +21,6 @@
 #include <Rendering/Driver/DX11/DX11GFXTextureBuffer2D.h>
 #include <Rendering/Graphics/RenderTarget.h>
 
-#include <ImGui/imgui.h>
-#include <ImGui/imgui_impl_dx11.h>
-#include <ImGui/imgui_impl_win32.h>
-
 #include <array>
 
 namespace
@@ -119,16 +115,44 @@ namespace Rendering
 		m_device = std::make_unique<DX11GFXDevice>();
 		m_device->SetWindow(windowHandle);
 		m_device->Initialize();
-		
+
+#ifdef IMGUI_ENABLED
 		ImGui::CreateContext();
 		ImGui_ImplWin32_Init(windowHandle);
 		ImGui_ImplDX11_Init(&m_device->GetHardwareDevice(), &m_device->GetDeviceContext());
+#endif
 	}
 	
-	void Renderer::ShutDown()
+	void Renderer::Shutdown()
 	{
+#ifdef IMGUI_ENABLED
 		ImGui_ImplDX11_Shutdown();
+#endif
 		m_device->Shutdown();
 	}
-	
+
+	void Renderer::BeginFrame()
+	{
+	}
+
+	void Renderer::EndFrame()
+	{
+		m_device->Present();
+	}
+
+	void Renderer::Begin()
+	{
+	}
+
+	void Renderer::End()
+	{
+	}
+
+	void Renderer::SetClearColour(const Vector4D& colour)
+	{
+		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+		// @TODO Move render target off device and set it on render state
+		FLOAT rgba[4] = { colour.X(), colour.Y(), colour.Z(), colour.W() };
+		deviceContext.ClearRenderTargetView(m_device->mRenderTargetView, rgba);
+	}
 }

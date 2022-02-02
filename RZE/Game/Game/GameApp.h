@@ -18,4 +18,6 @@ public:
 
 	virtual void RegisterInputEvents(InputHandler& inputHandler) override;
 
+	virtual bool ProcessInput(const InputHandler& handler);
+
 };

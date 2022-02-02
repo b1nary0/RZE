@@ -15,9 +15,6 @@
 
 #include <stdlib.h>
 
-// #TODO(Super test, just to get things working. Will need to handle this with an event OnTextInput or something)
-#include <imGUI/imgui.h>
-
 LRESULT CALLBACK WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp);
 
 // Used to link WinProc messages with the window without having to static other class instances etc
@@ -166,10 +163,12 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 		{
 		case WM_CHAR:
 		{
+#ifdef IMGUI_ENABLED
   			if (ImGui::GetIO().WantCaptureKeyboard)
   			{
   				ImGui::GetIO().AddInputCharacter(static_cast<unsigned int>(msg.wParam));
   			}
+#endif
 		}
 		break;
 

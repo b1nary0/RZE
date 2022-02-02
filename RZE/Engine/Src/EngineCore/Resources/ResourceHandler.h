@@ -52,7 +52,7 @@ private:
 		// Bypasses asserts needed for regular destruction, 
 		// as when we shut down there may be a positive reference count, but thats ok
 		// when we just want to shut the system down. We will log each issue in the console
-		// for reference when we call ShutDown() on ResourceHandler
+		// for reference when we call Shutdown() on ResourceHandler
 		void InternalDestroy()
 		{
 			delete mResource;
