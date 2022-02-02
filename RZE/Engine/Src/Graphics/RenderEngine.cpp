@@ -1,15 +1,7 @@
 #include <StdAfx.h>
 #include <Graphics/RenderEngine.h>
 
-#include <EngineCore/Resources/ResourceHandler.h>
-
-#include <Graphics/MeshGeometry.h>
-#include <Graphics/Material.h>
-#include <Graphics/Shader.h>
-#include <Graphics/Texture2D.h>
-
-#include <Utils/Math/Matrix4x4.h>
-#include <Utils/Math/Vector2D.h>
+#include <Utils/Math/Vector4D.h>
 
 #include <Rendering/Renderer.h>
 

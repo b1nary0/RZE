@@ -1,8 +1,8 @@
 #pragma once
 
-#include <memory>
+#include <Rendering/Driver/GFXBuffer.h>
 
-#include "Driver/GFXBuffer.h"
+#include <memory>
 
 class Vector4D;
 

@@ -13,8 +13,6 @@
 #include <Rendering/Driver/DX11/DX11IndexBuffer.h>
 #include <Rendering/Driver/DX11/DX11VertexBuffer.h>
 
-#include <array>
-
 namespace
 {
 	D3D11_INPUT_ELEMENT_DESC k_vertLayout[] =
