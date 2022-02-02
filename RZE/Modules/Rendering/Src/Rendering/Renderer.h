@@ -9,7 +9,7 @@ class Vector4D;
 namespace Rendering
 {
 	class DX11Device;
-	class IGFXVertexBuffer;
+	class IVertexBuffer;
 
 	class VertexBufferHandle
 	{
@@ -19,12 +19,28 @@ namespace Rendering
 		VertexBufferHandle() = default;
 
 	private:
-		VertexBufferHandle(const std::shared_ptr<IGFXVertexBuffer>& hwBuffer)
+		VertexBufferHandle(const std::shared_ptr<IGPUBuffer>& buffer)
 		{
-			m_hwBuffer = hwBuffer;
+			m_buffer = buffer;
 		}
 
-		std::shared_ptr<IGFXVertexBuffer> m_hwBuffer;
+		std::shared_ptr<IGPUBuffer> m_buffer;
+	};
+
+	class IndexBufferHandle
+	{
+		friend class Renderer;
+
+	public:
+		IndexBufferHandle() = default;
+
+	private:
+		IndexBufferHandle(const std::shared_ptr<IGPUBuffer>& buffer)
+		{
+			m_buffer = buffer;
+		}
+
+		std::shared_ptr<IGPUBuffer> m_buffer;
 	};
 
 	class Renderer
@@ -54,6 +70,7 @@ namespace Rendering
 
 	public:
 		static VertexBufferHandle CreateVertexBuffer(void* data, size_t dataTypeSize, size_t count);
+		static IndexBufferHandle CreateIndexBuffer(void* data, size_t dataTypeSize, size_t count);
 
 	public:
 		static void SetClearColour(const Vector4D& colour);

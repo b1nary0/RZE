@@ -8,13 +8,13 @@ namespace Rendering
 {
 	class DX11Device;
 
-	class DX11VertexBuffer : public IGFXVertexBuffer
+	class DX11VertexBuffer : public IGPUBuffer
 	{
 	public:
 		DX11VertexBuffer() = default;
 		~DX11VertexBuffer() = default;
 
-		// IGFXVertexBuffer interface
+		// IVertexBuffer interface
 	public:
 		virtual void Allocate(void* data, size_t size, U32 count) override;
 		virtual void Release() override;

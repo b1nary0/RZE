@@ -10,6 +10,7 @@
 // DX11
 #include <Rendering/Driver/DX11/DX11Device.h>
 #include <Rendering/Driver/DX11/DX11.h>
+#include <Rendering/Driver/DX11/DX11IndexBuffer.h>
 #include <Rendering/Driver/DX11/DX11VertexBuffer.h>
 
 #include <array>
@@ -132,6 +133,15 @@ namespace Rendering
 		vertexBuffer->Allocate(data, dataTypeSize, count);
 
 		return VertexBufferHandle(vertexBuffer);
+	}
+
+	IndexBufferHandle Renderer::CreateIndexBuffer(void* data, size_t dataTypeSize, size_t count)
+	{
+		std::shared_ptr<DX11IndexBuffer> indexBuffer = std::make_shared<DX11IndexBuffer>();
+		indexBuffer->SetDevice(m_device.get());
+		indexBuffer->Allocate(data, dataTypeSize, count);
+
+		return IndexBufferHandle(indexBuffer);
 	}
 
 	void Renderer::SetClearColour(const Vector4D& colour)

@@ -8,8 +8,8 @@
 
 namespace Rendering
 {
-	class IGFXVertexBuffer;
-	class IGFXIndexBuffer;
+	class IVertexBuffer;
+	class IIndexBuffer;
 	class IGFXConstantBuffer;
 
 	struct GFXTextureBufferParams;

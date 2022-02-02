@@ -24,28 +24,18 @@ namespace Rendering
 		bool bIsDepthTexture;
 	};
 
-	class IGFXVertexBuffer
+	class IGPUBuffer
 	{
 	public:
-		IGFXVertexBuffer() = default;
-		virtual ~IGFXVertexBuffer() = default;
+		IGPUBuffer() = default;
+		virtual ~IGPUBuffer() = default;
 
 		virtual void Allocate(void* data, size_t size, U32 count) = 0;
 		virtual void Release() = 0;
 
 		virtual void SetActive() = 0;
 	};
-
-	class IGFXIndexBuffer
-	{
-	public:
-		IGFXIndexBuffer() = default;
-		virtual ~IGFXIndexBuffer() = default;
-
-		virtual void Allocate(void* data, size_t size, U32 count) = 0;
-		virtual void Release() = 0;
-	};
-
+	
 	class IGFXDepthStencilBuffer
 	{
 	public:

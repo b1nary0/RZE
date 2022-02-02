@@ -180,7 +180,7 @@ namespace Rendering
 // 		UINT offset = 0;
 // 		mDeviceContext->IASetVertexBuffers(0, 1, &hwvb, &stride, &offset);
 // 
-// 		DX11GFXIndexBuffer* ib = GetIndexBuffer(mRenderTargetIB);
+// 		DX11IndexBuffer* ib = GetIndexBuffer(mRenderTargetIB);
 // 		mDeviceContext->IASetIndexBuffer(&ib->GetHardwareBuffer(), DXGI_FORMAT_R32_UINT, 0);
 // 
 // 		mDeviceContext->IASetInputLayout(mRTTVertLayout);

@@ -1,12 +1,13 @@
 #include <StdAfx.h>
 #include <Graphics/IndexBuffer.h>
 
-IndexBuffer::IndexBuffer(const std::vector<U32>& indexData)
-	: mLocalBuffer(indexData)
+IndexBuffer::IndexBuffer()
 {
 }
 
-void IndexBuffer::Initialize()
+void IndexBuffer::Initialize(const std::vector<U32>& indexData)
 {
+	m_localBuffer = std::move(indexData);
+	m_gpuBuffer = Rendering::Renderer::CreateIndexBuffer(m_localBuffer.data(), sizeof(U32), m_localBuffer.size());
 }
 

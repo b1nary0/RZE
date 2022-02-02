@@ -8,16 +8,18 @@ namespace Rendering
 {
 	class DX11Device;
 
-	class DX11GFXIndexBuffer : public IGFXIndexBuffer
+	class DX11IndexBuffer : public IGPUBuffer
 	{
 	public:
-		DX11GFXIndexBuffer() = default;
-		~DX11GFXIndexBuffer() = default;
+		DX11IndexBuffer() = default;
+		~DX11IndexBuffer() = default;
 
-	// IGFXIndexBuffer interface
+	// IIndexBuffer interface
 	public:
 		virtual void Allocate(void* data, size_t size, U32 count) override;
 		virtual void Release() override;
+
+		virtual void SetActive() override;
 
 	public:
 		void SetDevice(DX11Device* device);
@@ -29,8 +31,8 @@ namespace Rendering
 		U32 mIndexCount;
 
 	private:
-		DX11Device* mDevice;
-		ID3D11Buffer* mBuf;
+		DX11Device* m_device;
+		ID3D11Buffer* m_hwBuffer;
 	};
 
 }

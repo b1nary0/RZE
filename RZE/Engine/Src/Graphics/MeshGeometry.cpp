@@ -51,8 +51,8 @@ void MeshGeometry::AllocateData()
 	mVertexBuffer = std::make_shared<VertexBuffer>();
 	mVertexBuffer->Initialize(std::move(vertexDataBuffer));
 
-	mIndexBuffer = std::make_shared<IndexBuffer>(mIndices);
-	mIndexBuffer->Initialize();
+	mIndexBuffer = std::make_shared<IndexBuffer>();
+	mIndexBuffer->Initialize(mIndices);
 }
 
 void MeshGeometry::AddVertex(const MeshVertex& vertex)

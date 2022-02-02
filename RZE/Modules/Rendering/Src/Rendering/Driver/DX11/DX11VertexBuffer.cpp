@@ -49,7 +49,8 @@ namespace Rendering
 		UINT stride = sizeof(TempDataLayoutStructure);
 		UINT offset = 0;
 
-		m_device->GetDeviceContext().IASetVertexBuffers(0, 1, &m_buffer, &stride, &offset);
+		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+		deviceContext.IASetVertexBuffers(0, 1, &m_buffer, &stride, &offset);
 	}
 	
 	void DX11VertexBuffer::SetDevice(DX11Device* device)

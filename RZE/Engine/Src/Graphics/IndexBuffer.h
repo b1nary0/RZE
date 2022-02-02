@@ -2,21 +2,25 @@
 
 #include <RZE_Config.h>
 
-#include <vector>
-
 #include <Utils/PrimitiveDefs.h>
+
+// @TODO remove when IndexBufferHandle gets moved to its own file
+#include <Rendering/Renderer.h>
+
+#include <vector>
 
 class IndexBuffer
 {
 public:
-	IndexBuffer(const std::vector<U32>& indexData);
+	IndexBuffer();
 	~IndexBuffer() = default;
 
 public:
-	void Initialize();
+	void Initialize(const std::vector<U32>& indexData);
 
-	inline const std::vector<U32>& GetData() const { return mLocalBuffer; }
+	inline const std::vector<U32>& GetData() const { return m_localBuffer; }
 
 private:
-	std::vector<U32> mLocalBuffer;
+	Rendering::IndexBufferHandle m_gpuBuffer;
+	std::vector<U32> m_localBuffer;
 };

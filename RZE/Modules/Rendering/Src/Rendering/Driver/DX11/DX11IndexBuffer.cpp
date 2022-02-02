@@ -1,4 +1,4 @@
-#include <Rendering/Driver/DX11/DX11GFXIndexBuffer.h>
+#include <Rendering/Driver/DX11/DX11IndexBuffer.h>
 
 #include <Rendering/Driver/DX11/DX11Device.h>
 
@@ -9,7 +9,7 @@
 namespace Rendering
 {
 
-	void DX11GFXIndexBuffer::Allocate(void* data, size_t size, U32 count)
+	void DX11IndexBuffer::Allocate(void* data, size_t size, U32 count)
 	{
 		mIndexCount = count;
 
@@ -28,29 +28,35 @@ namespace Rendering
 		indexBufferData.pSysMem = data;
 
 		HRESULT hr;
-		hr = mDevice->GetHardwareDevice().CreateBuffer(&indexBufferDesc, &indexBufferData, &mBuf);
+		hr = m_device->GetHardwareDevice().CreateBuffer(&indexBufferDesc, &indexBufferData, &m_hwBuffer);
 		AssertExpr(hr == S_OK);
 	}
 
-	void DX11GFXIndexBuffer::Release()
+	void DX11IndexBuffer::Release()
 	{
-		AssertNotNull(mBuf);
-		mBuf->Release();
+		AssertNotNull(m_hwBuffer);
+		m_hwBuffer->Release();
 	}
 
-	void DX11GFXIndexBuffer::SetDevice(DX11Device* device)
+	void DX11IndexBuffer::SetActive()
+	{
+		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+		deviceContext.IASetIndexBuffer(m_hwBuffer, DXGI_FORMAT_R32_UINT, 0);
+	}
+
+	void DX11IndexBuffer::SetDevice(DX11Device* device)
 	{
 		AssertNotNull(device);
-		mDevice = device;
+		m_device = device;
 	}
 
-	ID3D11Buffer& DX11GFXIndexBuffer::GetHardwareBuffer()
+	ID3D11Buffer& DX11IndexBuffer::GetHardwareBuffer()
 	{
-		AssertNotNull(mBuf);
-		return *mBuf;
+		AssertNotNull(m_hwBuffer);
+		return *m_hwBuffer;
 	}
 
-	U32 DX11GFXIndexBuffer::GetIndexCount()
+	U32 DX11IndexBuffer::GetIndexCount()
 	{
 		return mIndexCount;
 	}

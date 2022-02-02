@@ -24,7 +24,7 @@ struct ID3D11Texture2D;
 namespace Rendering
 {
 	class DX11VertexBuffer;
-	class DX11GFXIndexBuffer;
+	class DX11IndexBuffer;
 	class DX11GFXConstantBuffer;
 	class DX11GFXTextureBuffer2D;
 
