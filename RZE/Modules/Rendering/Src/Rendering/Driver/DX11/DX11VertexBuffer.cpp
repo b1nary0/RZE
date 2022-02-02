@@ -10,9 +10,19 @@
 
 namespace Rendering
 {
+	struct TempDataLayoutStructure
+	{
+		Vector3D position;
+		Vector3D normal;
+		Vector2D uv;
+		Vector3D tangent;
+	};
 
 	void DX11VertexBuffer::Allocate(void* data, size_t size, U32 count)
 	{
+		m_stride = sizeof(TempDataLayoutStructure);
+		m_offset = 0;
+
 		D3D11_BUFFER_DESC vertexBufferDesc;
 		ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
 
@@ -39,18 +49,8 @@ namespace Rendering
 
 	void DX11VertexBuffer::SetActive()
 	{
-		struct TempDataLayoutStructure
-		{
-			Vector3D position;
-			Vector3D normal;
-			Vector2D uv;
-			Vector3D tangent;
-		};
-		UINT stride = sizeof(TempDataLayoutStructure);
-		UINT offset = 0;
-
 		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
-		deviceContext.IASetVertexBuffers(0, 1, &m_buffer, &stride, &offset);
+		deviceContext.IASetVertexBuffers(0, 1, &m_buffer, &m_stride, &m_offset);
 	}
 	
 	void DX11VertexBuffer::SetDevice(DX11Device* device)

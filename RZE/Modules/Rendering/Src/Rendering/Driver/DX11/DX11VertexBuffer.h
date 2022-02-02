@@ -25,8 +25,8 @@ namespace Rendering
 		void SetDevice(DX11Device* device);
 
 	private:
-		U32 mStride;
-		U32 mOffset;
+		U32 m_stride;
+		U32 m_offset;
 
 		DX11Device* m_device;
 		ID3D11Buffer* m_buffer;
