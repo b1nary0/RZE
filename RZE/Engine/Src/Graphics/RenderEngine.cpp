@@ -40,7 +40,7 @@ void RenderEngine::Render()
 	Rendering::Renderer::BeginFrame();
 
 	Rendering::Renderer::Begin();
-	Rendering::Renderer::SetClearColour(Vector4D(1.0f, 0.5f, 0.5f, 1.0f));
+	Rendering::Renderer::SetClearColour(Vector4D(0.5f, 0.5f, 1.0f, 1.0f));
 	Rendering::Renderer::End();
 
 #ifdef IMGUI_ENABLED
