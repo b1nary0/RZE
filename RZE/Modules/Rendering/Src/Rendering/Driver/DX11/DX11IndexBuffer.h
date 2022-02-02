@@ -12,7 +12,7 @@ namespace Rendering
 	{
 	public:
 		DX11IndexBuffer() = default;
-		~DX11IndexBuffer() = default;
+		~DX11IndexBuffer();
 
 	// IIndexBuffer interface
 	public:

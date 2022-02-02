@@ -17,6 +17,7 @@ namespace Rendering
 
 	public:
 		VertexBufferHandle() = default;
+		~VertexBufferHandle() = default;
 
 	private:
 		VertexBufferHandle(const std::shared_ptr<IGPUBuffer>& buffer)
@@ -33,6 +34,7 @@ namespace Rendering
 
 	public:
 		IndexBufferHandle() = default;
+		~IndexBufferHandle() = default;
 
 	private:
 		IndexBufferHandle(const std::shared_ptr<IGPUBuffer>& buffer)

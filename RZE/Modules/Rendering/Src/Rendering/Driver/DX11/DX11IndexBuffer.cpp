@@ -8,6 +8,10 @@
 
 namespace Rendering
 {
+	DX11IndexBuffer::~DX11IndexBuffer()
+	{
+		Release();
+	}
 
 	void DX11IndexBuffer::Allocate(void* data, size_t size, U32 count)
 	{

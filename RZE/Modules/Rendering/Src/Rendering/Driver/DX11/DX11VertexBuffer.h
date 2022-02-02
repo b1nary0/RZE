@@ -12,7 +12,7 @@ namespace Rendering
 	{
 	public:
 		DX11VertexBuffer() = default;
-		~DX11VertexBuffer() = default;
+		~DX11VertexBuffer();
 
 		// IVertexBuffer interface
 	public:

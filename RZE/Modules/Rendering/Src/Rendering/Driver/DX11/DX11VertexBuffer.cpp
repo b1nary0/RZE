@@ -18,6 +18,11 @@ namespace Rendering
 		Vector3D tangent;
 	};
 
+	DX11VertexBuffer::~DX11VertexBuffer()
+	{
+		Release();
+	}
+
 	void DX11VertexBuffer::Allocate(void* data, size_t size, U32 count)
 	{
 		m_stride = sizeof(TempDataLayoutStructure);
