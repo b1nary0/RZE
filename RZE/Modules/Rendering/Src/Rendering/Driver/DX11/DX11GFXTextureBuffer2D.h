@@ -15,8 +15,8 @@ namespace Rendering
 	class DX11GFXTextureBuffer2D : public IGFXTextureBuffer2D
 	{
 	public:
-		DX11GFXTextureBuffer2D() = default;
-		~DX11GFXTextureBuffer2D() = default;
+		DX11GFXTextureBuffer2D() {};
+		~DX11GFXTextureBuffer2D() {};
 
 	// IGFXTextureBuffer2D interface
 	public:

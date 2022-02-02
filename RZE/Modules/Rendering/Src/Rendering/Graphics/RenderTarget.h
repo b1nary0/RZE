@@ -16,7 +16,7 @@ namespace Rendering
 	public:
 		RenderTargetTexture() = delete;
 		RenderTargetTexture(U32 width, U32 height);
-		virtual ~RenderTargetTexture() = default;
+		virtual ~RenderTargetTexture();
 
 	public:
 		void Initialize(DX11GFXDevice* device);

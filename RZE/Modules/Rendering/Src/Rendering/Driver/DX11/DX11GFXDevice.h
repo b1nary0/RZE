@@ -59,24 +59,9 @@ namespace Rendering
 		virtual void Shutdown() override;
 
 	public:
-		IGFXVertexBuffer* CreateVertexBuffer(void* data, size_t size, U32 count) override;
-		IGFXIndexBuffer* CreateIndexBuffer(void* data, size_t size, U32 count) override;
-		IGFXConstantBuffer* CreateConstantBuffer(size_t memberSize, U32 maxMembers) override;
-		Int32 CreateTextureBuffer2D(void* data, const GFXTextureBufferParams& params) override;
-		Int32 CreateRenderTarget2D(U32 width, U32 height);
-
-		Int32 CreatePixelShader(const FilePath& filePath);
-
-	public:
 		ID3D11Device& GetHardwareDevice();
 		ID3D11DeviceContext& GetDeviceContext();
-
-		U32 GetTextureBufferCount() const;
-
-		DX11GFXTextureBuffer2D* GetTextureBuffer2D(Int32 bufferID);
-
-		ID3D11PixelShader* GetPixelShader(Int32 index) const;
-
+		
 	public:
 		void SetSyncInterval(U32 interval);
 		void SendTextureToBackBuffer(DX11GFXTextureBuffer2D* texture);
@@ -114,8 +99,6 @@ namespace Rendering
 		U32 mSyncInterval = 0;
 
 	private:
-		std::vector<std::unique_ptr<DX11GFXTextureBuffer2D>> mTexture2DBuffers;
-
 		std::vector<std::unique_ptr<ShaderDeleteWrapper>> mPixelShaders;
 
 	private:

@@ -1,22 +1,13 @@
 #pragma once
 
-#include <Rendering/RenderCommands.h>
-#include <Rendering/Graphics/Texture.h>
-
-#include <Utils/PrimitiveDefs.h>
-#include <Utils/Math/Matrix4x4.h>
-#include <Utils/Math/Vector2D.h>
-#include <Utils/Platform/FilePath.h>
-
-#include <functional>
 #include <memory>
-#include <mutex>
-#include <queue>
-#include <unordered_map>
-#include <vector>
+
+class Vector4D;
 
 namespace Rendering
 {
+	class DX11GFXDevice;
+
 	class Renderer
 	{
 	private:

@@ -14,6 +14,10 @@ namespace Rendering
 	{
 	}
 
+	RenderTargetTexture::~RenderTargetTexture()
+	{
+	}
+
 	// #TODO
 	// This function is bad. Shouldn't need to directly access the device.
 	// Should just ask the Renderer to allocate the necessary structure to represent
@@ -30,11 +34,11 @@ namespace Rendering
 		depthTextureParams.SampleCount = 1;
 		depthTextureParams.SampleQuality = 0;
 
-		mTextureID = device->CreateRenderTarget2D(mWidth, mHeight);
-		mDepthTextureID = device->CreateTextureBuffer2D(nullptr, depthTextureParams);
+		//mTextureID = device->CreateRenderTarget2D(mWidth, mHeight);
+		//mDepthTextureID = device->CreateTextureBuffer2D(nullptr, depthTextureParams);
 
-		mGFXTexture = device->GetTextureBuffer2D(mTextureID);
-		mDepthTexture = device->GetTextureBuffer2D(mDepthTextureID);
+		//mGFXTexture = device->GetTextureBuffer2D(mTextureID);
+		//mDepthTexture = device->GetTextureBuffer2D(mDepthTextureID);
 	}
 
 	U32 RenderTargetTexture::GetTextureID() const

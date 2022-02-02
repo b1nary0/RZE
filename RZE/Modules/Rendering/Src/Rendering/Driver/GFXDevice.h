@@ -32,12 +32,5 @@ namespace Rendering
 		virtual void Present() = 0;
 		virtual void SetWindow(void* windowHandle) = 0;
 		virtual void Shutdown() = 0;
-
-		virtual IGFXVertexBuffer* CreateVertexBuffer(void* data, size_t size, U32 count) = 0;
-		virtual IGFXIndexBuffer* CreateIndexBuffer(void* data, size_t size, U32 count) = 0;
-		virtual IGFXConstantBuffer* CreateConstantBuffer(size_t memberSize, U32 maxMembers) = 0;
-		virtual Int32 CreateTextureBuffer2D(void* data, const GFXTextureBufferParams& params) = 0;
-
-		virtual Int32 CreatePixelShader(const FilePath& filePath) = 0;
 	};
 }

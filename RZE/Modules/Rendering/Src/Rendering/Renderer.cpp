@@ -2,24 +2,14 @@
 
 #include <Optick/optick.h>
 
-#include <Rendering/Graphics/GFXPassGraph.h>
-
 #include <Utils/Conversions.h>
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Vector4D.h>
-#include <Utils/Memory/MemoryUtils.h>
 #include <Utils/Platform/FilePath.h>
 
 // DX11
 #include <Rendering/Driver/DX11/DX11GFXDevice.h>
 #include <Rendering/Driver/DX11/DX11.h>
-// #TODO(What makes this needed here? unique_ptr complains re: destructor visibility
-//       is it necessary otherwise?)
-#include <Rendering/Driver/DX11/DX11GFXVertexBuffer.h>
-#include <Rendering/Driver/DX11/DX11GFXIndexBuffer.h>
-#include <Rendering/Driver/DX11/DX11GFXConstantBuffer.h>
-#include <Rendering/Driver/DX11/DX11GFXTextureBuffer2D.h>
-#include <Rendering/Graphics/RenderTarget.h>
 
 #include <array>
 
@@ -33,17 +23,7 @@ namespace
 		{ "TANGENT", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 	};
 	UINT numLayoutElements = ARRAYSIZE(k_vertLayout);
-
-	FLOAT rgba[4] = { 0.25f, 0.25f, 0.25f, 1.0f };
-
-	// #TODO
-	// Temp struct just to move code.
-	struct CameraGPUData
-	{
-		Matrix4x4 ClipSpace;
-		Vector3D Position;
-	};
-
+	
 	// Only used to test preliminary changes to how the renderer functions without
 	// having to write too much code that won't last
 	struct DrawStateData_Prototype
@@ -52,14 +32,10 @@ namespace
 		ID3D11VertexShader* mVertexShader = nullptr;
 		ID3D11InputLayout* mVertexLayout = nullptr;
 		Rendering::IGFXConstantBuffer* mCameraDataBuffer = nullptr;
-
-		// #TODO
-		// Temp struct just to move code.
-		CameraGPUData mCameraGPUData;
-
+		
 		void Initialize(Rendering::DX11GFXDevice* hwDevice)
 		{
-			mCameraDataBuffer = hwDevice->CreateConstantBuffer(MemoryUtils::AlignSize(sizeof(CameraGPUData), 16), 1);
+			//mCameraDataBuffer = hwDevice->CreateConstantBuffer(MemoryUtils::AlignSize(sizeof(CameraGPUData), 16), 1);
 
 			// Shaders
 			{

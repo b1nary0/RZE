@@ -2,11 +2,6 @@
 
 #include <Rendering/Driver/DX11/DX11.h>
 
-#include <Rendering/Driver/DX11/DX11GFXVertexBuffer.h>
-#include <Rendering/Driver/DX11/DX11GFXIndexBuffer.h>
-#include <Rendering/Driver/DX11/DX11GFXConstantBuffer.h>
-#include <Rendering/Driver/DX11/DX11GFXTextureBuffer2D.h>
-
 #include <Utils/Conversions.h>
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Vector2D.h>
@@ -155,107 +150,12 @@ namespace Rendering
 
 		mDepthStencilView->Release();
 		mDepthStencilTex->Release();
-
-		for (auto& t2dBuf : mTexture2DBuffers)
-		{
-			t2dBuf->Release();
-			t2dBuf.reset();
-		}
-
+		
 		for (auto& pixelShader : mPixelShaders)
 		{
 			pixelShader->Release();
 			pixelShader.reset();
 		}
-	}
-
-	IGFXVertexBuffer* DX11GFXDevice::CreateVertexBuffer(void* data, size_t size, U32 count)
-	{
-		DX11GFXVertexBuffer* retBuf = new DX11GFXVertexBuffer();
-		retBuf->SetDevice(this);
-		retBuf->Allocate(data, size, count);
-
-		return retBuf;
-	}
-
-	IGFXIndexBuffer* DX11GFXDevice::CreateIndexBuffer(void* data, size_t size, U32 count)
-	{
-		DX11GFXIndexBuffer* retBuf = new DX11GFXIndexBuffer();
-		retBuf->SetDevice(this);
-		retBuf->Allocate(data, size, count);
-
-		return retBuf;
-	}
-
-	Int32 DX11GFXDevice::CreateRenderTarget2D(U32 width, U32 height)
-	{
-		mTexture2DBuffers.push_back(std::make_unique<DX11GFXTextureBuffer2D>());
-		mTexture2DBuffers.back()->SetDevice(this);
-		mTexture2DBuffers.back()->SetIsRenderTarget();
-
-		GFXTextureBufferParams params = { 0 };
-		params.bIsRenderTarget = true;
-		params.bIsShaderResource = true;
-		params.Height = height;
-		params.Width = width;
-		params.MipLevels = 1;
-		params.MostDetailedMip = 0;
-		params.SampleCount = 1;
-		params.SampleQuality = 0;
-
-		mTexture2DBuffers.back()->Allocate(nullptr, params);
-
-		return static_cast<U32>(mTexture2DBuffers.size() - 1);
-	}
-
-	Int32 DX11GFXDevice::CreateTextureBuffer2D(void* data, const GFXTextureBufferParams& params)
-	{
-		mTexture2DBuffers.push_back(std::make_unique<DX11GFXTextureBuffer2D>());
-		mTexture2DBuffers.back()->SetDevice(this);
-		mTexture2DBuffers.back()->Allocate(data, params);
-
-		return static_cast<U32>(mTexture2DBuffers.size() - 1);
-	}
-
-	IGFXConstantBuffer* DX11GFXDevice::CreateConstantBuffer(size_t memberSize, U32 maxMembers)
-	{
-		DX11GFXConstantBuffer* retBuf = new DX11GFXConstantBuffer();
-		retBuf->SetDevice(this);
-		retBuf->Allocate(memberSize, maxMembers);
-
-		return retBuf;
-	}
-
-	Int32 DX11GFXDevice::CreatePixelShader(const FilePath& filePath)
-	{
-		ID3D10Blob* psBlob = nullptr;
-
-		HRESULT hr;
-		ID3D10Blob* error;
-		hr = D3DCompileFromFile(
-			Conversions::StringToWString(filePath.GetAbsolutePath()).c_str(), 
-			nullptr, 
-			D3D_COMPILE_STANDARD_FILE_INCLUDE, 
-			"PSMain", "ps_5_0", 
-			0, 0, 
-			&psBlob, &error);
-		errorCB(error);
-
-		ID3D11PixelShader* hwShader = nullptr;
-		hr = GetHardwareDevice().CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), nullptr, &hwShader);
-
-		ShaderDeleteWrapper* deleteWrapper = new ShaderDeleteWrapper();
-		deleteWrapper->mHWShader = hwShader;
-		mPixelShaders.push_back(std::unique_ptr<ShaderDeleteWrapper>(deleteWrapper));
-		return mPixelShaders.size() - 1;
-	}
-
-	Rendering::DX11GFXTextureBuffer2D* DX11GFXDevice::GetTextureBuffer2D(Int32 bufferID)
-	{
-		AssertExpr(bufferID != kInvalidBufferID);
-		AssertExpr(mTexture2DBuffers.size() > bufferID);
-
-		return mTexture2DBuffers[bufferID].get();
 	}
 
 	void DX11GFXDevice::SetSyncInterval(U32 interval)
@@ -347,12 +247,7 @@ namespace Rendering
 		viewport.TopLeftY = 0;
 		GetDeviceContext().RSSetViewports(1, &viewport);
 	}
-
-	U32 DX11GFXDevice::GetTextureBufferCount() const
-	{
-		return mTexture2DBuffers.size();
-	}
-
+	
 	ID3D11Device& DX11GFXDevice::GetHardwareDevice()
 	{
 		AssertNotNull(mDevice);
@@ -364,13 +259,7 @@ namespace Rendering
 		AssertNotNull(mDeviceContext);
 		return *mDeviceContext;
 	}
-
-	ID3D11PixelShader* DX11GFXDevice::GetPixelShader(Int32 index) const
-	{
-		AssertExpr(index < mPixelShaders.size());
-		return mPixelShaders[index]->mHWShader;
-	}
-
+	
 	void DX11GFXDevice::Present()
 	{
 		mSwapChain->Present(mSyncInterval, 0);
