@@ -193,8 +193,7 @@ void RZE_Engine::CreateAndInitializeRenderer()
 	LOG_CONSOLE("Initializing Renderer");
 
 	m_renderEngine = std::make_unique<RenderEngine>();
-	m_renderEngine->SetWindow(mMainWindow->GetOSWindowHandleData().windowHandle);
-	m_renderEngine->Initialize();
+	m_renderEngine->Initialize(mMainWindow->GetOSWindowHandleData().windowHandle);
 }
 
 void RZE_Engine::InitializeApplication(Functor<RZE_Application* const> createGameCallback)

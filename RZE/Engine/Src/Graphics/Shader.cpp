@@ -14,7 +14,7 @@ bool ShaderTechnique::Load(const FilePath& filePath)
 {
 	if (filePath.IsValid())
 	{
-		mHWShaderHandle = RZE::GetRenderEngine().CreatePixelShader(filePath);
+		//mHWShaderHandle = RZE::GetRenderEngine().CreatePixelShader(filePath);
 		return true;
 	}
 

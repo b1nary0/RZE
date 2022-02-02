@@ -26,8 +26,6 @@ void MeshComponent::CreateRenderObject()
 
 	const Model3D* modelData = resourceHandler.GetResource<Model3D>(m_resource);
 	AssertNotNull(modelData);
-
-	m_renderProxy = renderEngine.CreateRenderProxy(modelData->GetStaticMesh().GetSubMeshes(), transformComponent->GetAsMat4x4());
 }
 
 void MeshComponent::OnAddToScene()

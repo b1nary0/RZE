@@ -4,8 +4,6 @@
 
 #include <EngineCore/Resources/ResourceHandler.h>
 
-class RenderProxy;
-
 class MeshComponent : public GameObjectComponent<MeshComponent>
 {
 public:
@@ -29,6 +27,5 @@ private:
 	void CreateRenderObject();
 
 private:
-	RenderProxy* m_renderProxy;
 	ResourceHandle m_resource;
 };

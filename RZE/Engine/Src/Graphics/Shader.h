@@ -4,6 +4,20 @@
 
 #include <string>
 
+class VertexShader : public IResource
+{
+};
+
+class PixelShader : public IResource
+{
+	
+};
+
+
+// @TODO
+// IResource should be removed, this class should be an aggregate
+// of a shader pipeline that describes a certain technique composed of
+// n-many shader types
 class ShaderTechnique : public IResource
 {
 public:

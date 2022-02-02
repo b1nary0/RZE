@@ -116,18 +116,6 @@ void CameraComponent::Update()
 		AssertMsg(transformComponent != nullptr, "A camera without a transform is useless");
 
 		GenerateCameraMatrices(transformComponent->GetPosition());
-
-		CameraData cameraData;
-		cameraData.Position = transformComponent->GetPosition();
-		cameraData.ProjectionMat = m_projectionMat;
-		cameraData.ViewMat = m_viewMat;
-		cameraData.FOV = m_fov;
-		// #TODO This wont work long term, just trying to get things rendering with new code
-		cameraData.AspectRatio = m_aspectRatio;
-		cameraData.NearCull = m_nearCull;
-		cameraData.FarCull = m_farCull;
-
-		RZE::GetRenderEngine().SetCameraData(cameraData);
 	}
 }
 
