@@ -1,12 +1,12 @@
 #include <Rendering/Graphics/Texture.h>
 
-#include <Rendering/Driver/DX11/DX11GFXDevice.h>
+#include <Rendering/Driver/DX11/DX11Device.h>
 
 #include <Utils/DebugUtils/Debug.h>
 
 namespace Rendering
 {
-	bool TexturePack::Allocate(DX11GFXDevice& hwDevice, const std::vector<TextureData>& textureData)
+	bool TexturePack::Allocate(DX11Device& hwDevice, const std::vector<TextureData>& textureData)
 	{
 		mResources.reserve(textureData.size());
 

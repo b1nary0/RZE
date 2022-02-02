@@ -1,6 +1,6 @@
 #include <Rendering/Driver/DX11/DX11GFXTextureBuffer2D.h>
 
-#include <Rendering/Driver/DX11/DX11GFXDevice.h>
+#include <Rendering/Driver/DX11/DX11Device.h>
 
 #include <Rendering/Driver/DX11/DX11.h>
 
@@ -150,7 +150,7 @@ namespace Rendering
 		bIsRenderTarget = true;
 	}
 
-	void DX11GFXTextureBuffer2D::SetDevice(DX11GFXDevice* device)
+	void DX11GFXTextureBuffer2D::SetDevice(DX11Device* device)
 	{
 		AssertNotNull(device);
 		mDevice = device;

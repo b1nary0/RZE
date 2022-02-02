@@ -9,7 +9,8 @@ VertexBuffer::~VertexBuffer()
 {
 }
 
-void VertexBuffer::Initialize(const std::vector<float>& localBuffer)
+void VertexBuffer::Initialize(std::vector<float>&& localBuffer)
 {
 	m_localBuffer = std::move(localBuffer);
+	m_gpuBuffer = Rendering::Renderer::CreateVertexBuffer(m_localBuffer.data(), sizeof(float), m_localBuffer.size());
 }

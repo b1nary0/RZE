@@ -10,7 +10,7 @@ struct ID3D11DepthStencilView;
 
 namespace Rendering
 {
-	class DX11GFXDevice;
+	class DX11Device;
 
 	class DX11GFXTextureBuffer2D : public IGFXTextureBuffer2D
 	{
@@ -28,7 +28,7 @@ namespace Rendering
 		void SetIsRenderTarget();
 
 	public:
-		void SetDevice(DX11GFXDevice* device);
+		void SetDevice(DX11Device* device);
 		ID3D11ShaderResourceView& GetResourceView();
 		ID3D11RenderTargetView& GetTargetView();
 		ID3D11DepthStencilView& GetDepthView();
@@ -40,7 +40,7 @@ namespace Rendering
 		ID3D11Texture2D* GetHWResource();
 
 	private:
-		DX11GFXDevice* mDevice;
+		DX11Device* mDevice;
 
 		ID3D11Texture2D* mResource;
 		ID3D11SamplerState* mSamplerState;

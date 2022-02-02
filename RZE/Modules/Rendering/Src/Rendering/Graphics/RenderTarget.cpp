@@ -1,6 +1,6 @@
 #include <Rendering/Graphics/RenderTarget.h>
 
-#include <Rendering/Driver/DX11/DX11GFXDevice.h>
+#include <Rendering/Driver/DX11/DX11Device.h>
 #include <Rendering/Driver/DX11/DX11GFXTextureBuffer2D.h>
 
 #include <Utils/DebugUtils/Debug.h>
@@ -22,7 +22,7 @@ namespace Rendering
 	// This function is bad. Shouldn't need to directly access the device.
 	// Should just ask the Renderer to allocate the necessary structure to represent
 	// this render target.
-	void RenderTargetTexture::Initialize(DX11GFXDevice* device)
+	void RenderTargetTexture::Initialize(DX11Device* device)
 	{
 		GFXTextureBufferParams depthTextureParams = { 0 };
 		depthTextureParams.bIsDepthTexture = true;

@@ -23,16 +23,16 @@ struct ID3D11Texture2D;
 
 namespace Rendering
 {
-	class DX11GFXVertexBuffer;
+	class DX11VertexBuffer;
 	class DX11GFXIndexBuffer;
 	class DX11GFXConstantBuffer;
 	class DX11GFXTextureBuffer2D;
 
-	class DX11GFXDevice : public IGFXDevice
+	class DX11Device : public IGFXDevice
 	{
 	public:
-		DX11GFXDevice() = default;
-		~DX11GFXDevice() = default;
+		DX11Device() = default;
+		~DX11Device() = default;
 
 	private:
 		// #TODO

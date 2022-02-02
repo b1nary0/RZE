@@ -8,8 +8,9 @@
 #include <Utils/Platform/FilePath.h>
 
 // DX11
-#include <Rendering/Driver/DX11/DX11GFXDevice.h>
+#include <Rendering/Driver/DX11/DX11Device.h>
 #include <Rendering/Driver/DX11/DX11.h>
+#include <Rendering/Driver/DX11/DX11VertexBuffer.h>
 
 #include <array>
 
@@ -33,7 +34,7 @@ namespace
 		ID3D11InputLayout* mVertexLayout = nullptr;
 		Rendering::IGFXConstantBuffer* mCameraDataBuffer = nullptr;
 		
-		void Initialize(Rendering::DX11GFXDevice* hwDevice)
+		void Initialize(Rendering::DX11Device* hwDevice)
 		{
 			//mCameraDataBuffer = hwDevice->CreateConstantBuffer(MemoryUtils::AlignSize(sizeof(CameraGPUData), 16), 1);
 
@@ -76,7 +77,7 @@ namespace
 
 namespace Rendering
 {
-	std::unique_ptr<DX11GFXDevice> Renderer::m_device;
+	std::unique_ptr<DX11Device> Renderer::m_device;
 
 	Renderer::Renderer()
 	{
@@ -88,7 +89,7 @@ namespace Rendering
 
 	void Renderer::Initialize(void* windowHandle)
 	{
-		m_device = std::make_unique<DX11GFXDevice>();
+		m_device = std::make_unique<DX11Device>();
 		m_device->SetWindow(windowHandle);
 		m_device->Initialize();
 
@@ -122,6 +123,15 @@ namespace Rendering
 
 	void Renderer::End()
 	{
+	}
+
+	VertexBufferHandle Renderer::CreateVertexBuffer(void* data, size_t dataTypeSize, size_t count)
+	{
+		std::shared_ptr<DX11VertexBuffer> vertexBuffer = std::make_shared<DX11VertexBuffer>();
+		vertexBuffer->SetDevice(m_device.get());
+		vertexBuffer->Allocate(data, dataTypeSize, count);
+
+		return VertexBufferHandle(vertexBuffer);
 	}
 
 	void Renderer::SetClearColour(const Vector4D& colour)

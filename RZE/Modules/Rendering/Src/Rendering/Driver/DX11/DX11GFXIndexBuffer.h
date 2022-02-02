@@ -6,7 +6,7 @@ struct ID3D11Buffer;
 
 namespace Rendering
 {
-	class DX11GFXDevice;
+	class DX11Device;
 
 	class DX11GFXIndexBuffer : public IGFXIndexBuffer
 	{
@@ -20,7 +20,7 @@ namespace Rendering
 		virtual void Release() override;
 
 	public:
-		void SetDevice(DX11GFXDevice* device);
+		void SetDevice(DX11Device* device);
 		ID3D11Buffer& GetHardwareBuffer();
 
 		U32 GetIndexCount();
@@ -29,7 +29,7 @@ namespace Rendering
 		U32 mIndexCount;
 
 	private:
-		DX11GFXDevice* mDevice;
+		DX11Device* mDevice;
 		ID3D11Buffer* mBuf;
 	};
 

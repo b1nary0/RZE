@@ -32,6 +32,8 @@ namespace Rendering
 
 		virtual void Allocate(void* data, size_t size, U32 count) = 0;
 		virtual void Release() = 0;
+
+		virtual void SetActive() = 0;
 	};
 
 	class IGFXIndexBuffer

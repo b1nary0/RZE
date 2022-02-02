@@ -1,4 +1,4 @@
-#include <Rendering/Driver/DX11/DX11GFXDevice.h>
+#include <Rendering/Driver/DX11/DX11Device.h>
 
 #include <Rendering/Driver/DX11/DX11.h>
 
@@ -47,7 +47,7 @@ namespace Rendering
 	};
 	UINT layoutElementCount = ARRAYSIZE(k_RTTVertLayout);
 
-	void DX11GFXDevice::Initialize()
+	void DX11Device::Initialize()
 	{
 		HRESULT hr;
 
@@ -137,12 +137,12 @@ namespace Rendering
 		//SetupSceneStuff();
 	}
 
-	void DX11GFXDevice::SetWindow(void* windowHandle)
+	void DX11Device::SetWindow(void* windowHandle)
 	{
 		mWindowHandle = windowHandle;
 	}
 
-	void DX11GFXDevice::Shutdown()
+	void DX11Device::Shutdown()
 	{
 		mSwapChain->Release();
 		mDevice->Release();
@@ -158,12 +158,12 @@ namespace Rendering
 		}
 	}
 
-	void DX11GFXDevice::SetSyncInterval(U32 interval)
+	void DX11Device::SetSyncInterval(U32 interval)
 	{
 		mSyncInterval = interval;
 	}
 
-// 	void DX11GFXDevice::SendTextureToBackBuffer(DX11GFXTextureBuffer2D* texture)
+// 	void DX11Device::SendTextureToBackBuffer(DX11GFXTextureBuffer2D* texture)
 // 	{
 // 		FLOAT rgba[4] = { 1.0f, 1.0f, 0.0f, 1.0f };
 // 		mDeviceContext->OMSetRenderTargets(1, &mRenderTargetView, mDepthStencilView);
@@ -173,7 +173,7 @@ namespace Rendering
 // 		mDeviceContext->VSSetShader(mVSRenderTarget, 0, 0);
 // 		mDeviceContext->PSSetShader(mPSRenderTarget, 0, 0);
 // 
-// 		DX11GFXVertexBuffer* vb = GetVertexBuffer(mRenderTargetVB);
+// 		DX11VertexBuffer* vb = GetVertexBuffer(mRenderTargetVB);
 // 		ID3D11Buffer* hwvb = &vb->GetHardwareBuffer();1
 // 
 // 		UINT stride = sizeof(float) * 5;
@@ -196,7 +196,7 @@ namespace Rendering
 // 		mDeviceContext->PSSetShaderResources(0, 1, pSRV);
 // 	}
 
-	void DX11GFXDevice::SetRenderTarget(ID3D11Texture2D* texture)
+	void DX11Device::SetRenderTarget(ID3D11Texture2D* texture)
 	{
 		AssertFalse();
 		// #TODO
@@ -205,7 +205,7 @@ namespace Rendering
 		//HRESULT hr = mDevice->CreateRenderTargetView(texture, NULL, &mRenderTargetView);
 	}
 
-	void DX11GFXDevice::HandleWindowResize(U32 newWidth, U32 newHeight)
+	void DX11Device::HandleWindowResize(U32 newWidth, U32 newHeight)
 	{
 		GetDeviceContext().OMSetRenderTargets(0, 0, 0);
 		mRenderTargetView->Release();
@@ -248,24 +248,24 @@ namespace Rendering
 		GetDeviceContext().RSSetViewports(1, &viewport);
 	}
 	
-	ID3D11Device& DX11GFXDevice::GetHardwareDevice()
+	ID3D11Device& DX11Device::GetHardwareDevice()
 	{
 		AssertNotNull(mDevice);
 		return *mDevice;
 	}
 
-	ID3D11DeviceContext& DX11GFXDevice::GetDeviceContext()
+	ID3D11DeviceContext& DX11Device::GetDeviceContext()
 	{
 		AssertNotNull(mDeviceContext);
 		return *mDeviceContext;
 	}
 	
-	void DX11GFXDevice::Present()
+	void DX11Device::Present()
 	{
 		mSwapChain->Present(mSyncInterval, 0);
 	}
 
-	void DX11GFXDevice::ShaderDeleteWrapper::Release()
+	void DX11Device::ShaderDeleteWrapper::Release()
 	{
 		mHWShader->Release();
 	}

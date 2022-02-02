@@ -1,6 +1,6 @@
 #include <Rendering/Driver/DX11/DX11GFXConstantBuffer.h>
 
-#include <Rendering/Driver/DX11/DX11GFXDevice.h>
+#include <Rendering/Driver/DX11/DX11Device.h>
 
 #include <Rendering/Driver/DX11/DX11.h>
 
@@ -30,7 +30,7 @@ namespace Rendering
 		mBuf->Release();
 	}
 
-	void DX11GFXConstantBuffer::SetDevice(DX11GFXDevice* device)
+	void DX11GFXConstantBuffer::SetDevice(DX11Device* device)
 	{
 		AssertNotNull(device);
 		mDevice = device;

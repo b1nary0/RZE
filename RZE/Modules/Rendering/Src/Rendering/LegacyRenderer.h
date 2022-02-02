@@ -22,7 +22,7 @@ struct ID3D11InputLayout;
 namespace Rendering
 {
 
-	class DX11GFXDevice;
+	class DX11Device;
 
 	class GFXPassGraph;
 	class RenderTargetTexture;
@@ -182,7 +182,7 @@ namespace Rendering
 
 		void ProcessCommands();
 
-		DX11GFXDevice& GetDriverDevice();
+		DX11Device& GetDriverDevice();
 
 	private:
 		U32 CreateVertexBuffer(void* data, size_t size, U32 count);
@@ -219,7 +219,7 @@ namespace Rendering
 
 		// DX12 Temp
 	private:
-		std::unique_ptr<DX11GFXDevice> mDevice;
+		std::unique_ptr<DX11Device> mDevice;
 		std::unique_ptr<GFXPassGraph> mPassGraph;
 		
 		void* mWindowHandle;

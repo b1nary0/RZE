@@ -15,11 +15,11 @@
 #include <Utils/Platform/FilePath.h>
 
 // DX11
-#include <Rendering/Driver/DX11/DX11GFXDevice.h>
+#include <Rendering/Driver/DX11/DX11Device.h>
 #include <Rendering/Driver/DX11/DX11.h>
 // #TODO(What makes this needed here? unique_ptr complains re: destructor visibility
 //       is it necessary otherwise?)
-#include <Rendering/Driver/DX11/DX11GFXVertexBuffer.h>
+#include <Rendering/Driver/DX11/DX11VertexBuffer.h>
 #include <Rendering/Driver/DX11/DX11GFXIndexBuffer.h>
 #include <Rendering/Driver/DX11/DX11GFXConstantBuffer.h>
 #include <Rendering/Driver/DX11/DX11GFXTextureBuffer2D.h>
@@ -121,7 +121,7 @@ namespace Rendering
 	{
 		mCanvasSize.SetXY(1600, 900);
 
-		mDevice = std::make_unique<DX11GFXDevice>();
+		mDevice = std::make_unique<DX11Device>();
 		mDevice->SetWindow(mWindowHandle);
 		mDevice->Initialize();
 
@@ -245,7 +245,7 @@ namespace Rendering
 
 	// #TODO
 	// Take with new renderer - only used in hacky RenderTarget code in EditorApp
-	Rendering::DX11GFXDevice& LegacyRenderer::GetDriverDevice()
+	Rendering::DX11Device& LegacyRenderer::GetDriverDevice()
 	{
 		AssertNotNull(mDevice);
 		return *mDevice;

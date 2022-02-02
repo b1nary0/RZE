@@ -11,7 +11,7 @@ struct ID3D11ShaderResourceView;
 
 namespace Rendering
 {
-	class DX11GFXDevice;
+	class DX11Device;
 	class DX11GFXTextureBuffer2D;
 
 	// #TODO
@@ -36,7 +36,7 @@ namespace Rendering
 		~TexturePack() = default;
 
 	public:
-		bool Allocate(DX11GFXDevice& hwDevice, const std::vector<TextureData>& textureData);
+		bool Allocate(DX11Device& hwDevice, const std::vector<TextureData>& textureData);
 		void Release();
 
 		size_t GetResourceCount() const;

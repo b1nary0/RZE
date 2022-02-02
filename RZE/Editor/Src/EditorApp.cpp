@@ -3,7 +3,7 @@
 // Needed for call to RZE().GetRenderer().GetDriverDevice()
 // Should remove ASAP.
 #include <Rendering/Renderer.h>
-#include <Rendering/Driver/DX11/DX11GFXDevice.h>
+#include <Rendering/Driver/DX11/DX11Device.h>
 #include <Rendering/Graphics/RenderTarget.h>
 
 #include <EngineCore/Threading/JobSystem/JobScheduler.h>

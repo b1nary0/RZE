@@ -8,7 +8,7 @@ struct ID3D11RenderTargetView;
 
 namespace Rendering
 {
-	class DX11GFXDevice;
+	class DX11Device;
 	class DX11GFXTextureBuffer2D;
 
 	class RenderTargetTexture
@@ -19,7 +19,7 @@ namespace Rendering
 		virtual ~RenderTargetTexture();
 
 	public:
-		void Initialize(DX11GFXDevice* device);
+		void Initialize(DX11Device* device);
 
 		U32 GetTextureID() const;
 		U32 GetDepthTextureID() const;

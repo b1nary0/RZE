@@ -2,11 +2,30 @@
 
 #include <memory>
 
+#include "Driver/GFXBuffer.h"
+
 class Vector4D;
 
 namespace Rendering
 {
-	class DX11GFXDevice;
+	class DX11Device;
+	class IGFXVertexBuffer;
+
+	class VertexBufferHandle
+	{
+		friend class Renderer;
+
+	public:
+		VertexBufferHandle() = default;
+
+	private:
+		VertexBufferHandle(const std::shared_ptr<IGFXVertexBuffer>& hwBuffer)
+		{
+			m_hwBuffer = hwBuffer;
+		}
+
+		std::shared_ptr<IGFXVertexBuffer> m_hwBuffer;
+	};
 
 	class Renderer
 	{
@@ -33,6 +52,8 @@ namespace Rendering
 		static void Begin();
 		static void End();
 
+	public:
+		static VertexBufferHandle CreateVertexBuffer(void* data, size_t dataTypeSize, size_t count);
 
 	public:
 		static void SetClearColour(const Vector4D& colour);
@@ -56,7 +77,7 @@ namespace Rendering
 		// };
 		
 	private:
-		static std::unique_ptr<DX11GFXDevice> m_device;
+		static std::unique_ptr<DX11Device> m_device;
 		//
 		// Buckets
 		//

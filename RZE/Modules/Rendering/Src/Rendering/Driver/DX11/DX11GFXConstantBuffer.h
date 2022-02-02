@@ -6,7 +6,7 @@ struct ID3D11Buffer;
 
 namespace Rendering
 {
-	class DX11GFXDevice;
+	class DX11Device;
 
 	class DX11GFXConstantBuffer : public IGFXConstantBuffer
 	{
@@ -20,13 +20,13 @@ namespace Rendering
 		virtual void Release() override;
 
 	public:
-		void SetDevice(DX11GFXDevice* device);
+		void SetDevice(DX11Device* device);
 		ID3D11Buffer& GetHardwareBuffer();
 
 		void UpdateSubresources(const void* data);
 
 	private:
-		DX11GFXDevice* mDevice;
+		DX11Device* mDevice;
 		ID3D11Buffer* mBuf;
 	};
 }
