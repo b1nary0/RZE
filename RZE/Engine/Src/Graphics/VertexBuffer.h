@@ -6,14 +6,17 @@
 class VertexBuffer
 {
 public:
-	VertexBuffer(const std::vector<float>& localBuffer);
+	VertexBuffer();
 	~VertexBuffer();
 
-	void Initialize();
+	void Initialize(const std::vector<float>& localBuffer);
 
-	inline const std::vector<float>& GetData() const { return mLocalBuffer; }
+	inline const std::vector<float>& GetData() const { return m_localBuffer; }
 
 private:
+	// Should we also store the layout or leave that to Renderer?
+	// We still need to know what that layout is when we form this buffer
+
 	// The CPU buffer for the mesh data
-	std::vector<float> mLocalBuffer;
+	std::vector<float> m_localBuffer;
 };
