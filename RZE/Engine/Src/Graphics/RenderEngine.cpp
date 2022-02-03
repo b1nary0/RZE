@@ -54,8 +54,10 @@ void RenderEngine::ResizeCanvas(const Vector2D& newSize)
 {
 	m_canvasSize = newSize;
 
+#ifdef IMGUI_ENABLED
 	ImGui::GetIO().DisplaySize.x = m_canvasSize.X();
 	ImGui::GetIO().DisplaySize.y = m_canvasSize.Y();
+#endif
 
 	Rendering::Renderer::HandleWindowResize(m_canvasSize);
 
