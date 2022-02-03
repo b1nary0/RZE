@@ -4,6 +4,7 @@
 
 #include <memory>
 
+class Vector2D;
 class Vector4D;
 
 namespace Rendering
@@ -53,6 +54,17 @@ namespace Rendering
 			// This will get filled out per Begin/End call
 		};
 
+	public:
+		struct ViewportParams
+		{
+			float Width;
+			float Height;
+			float MinDepth;
+			float MaxDepth;
+			float TopLeftX;
+			float TopLeftY;
+		};
+
 		// Constructors
 	public:
 		Renderer();
@@ -70,12 +82,16 @@ namespace Rendering
 		static void Begin();
 		static void End();
 
+		static void HandleWindowResize(const Vector2D& newSize);
+
 	public:
 		static VertexBufferHandle CreateVertexBuffer(void* data, size_t dataTypeSize, size_t count);
 		static IndexBufferHandle CreateIndexBuffer(void* data, size_t dataTypeSize, size_t count);
 
 	public:
 		static void SetClearColour(const Vector4D& colour);
+
+		static void SetViewport(const ViewportParams& viewportParams);
 
 	private:
 		//void ProcessCommands();

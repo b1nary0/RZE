@@ -6,13 +6,11 @@
 #include <Rendering/Renderer.h>
 
 RenderEngine::RenderEngine()
-{
-	
+{	
 }
 
 RenderEngine::~RenderEngine()
 {
-	
 }
 
 void RenderEngine::Initialize(void* windowHandle)
@@ -32,6 +30,7 @@ void RenderEngine::Render()
 	Rendering::Renderer::BeginFrame();
 
 	Rendering::Renderer::Begin();
+	Rendering::Renderer::SetViewport({ m_canvasSize.X(), m_canvasSize.Y(), 0.0f, 1.0f, 0.0f, 0.0f });
 	Rendering::Renderer::SetClearColour(Vector4D(0.5f, 0.5f, 1.0f, 1.0f));
 	Rendering::Renderer::End();
 
@@ -53,4 +52,12 @@ void RenderEngine::Shutdown()
 
 void RenderEngine::ResizeCanvas(const Vector2D& newSize)
 {
+	m_canvasSize = newSize;
+
+	ImGui::GetIO().DisplaySize.x = m_canvasSize.X();
+	ImGui::GetIO().DisplaySize.y = m_canvasSize.Y();
+
+	Rendering::Renderer::HandleWindowResize(m_canvasSize);
+
+	LOG_CONSOLE_ARGS("New Canvas Size: %f x %f", m_canvasSize.X(), m_canvasSize.Y());
 }

@@ -4,6 +4,7 @@
 
 #include <Utils/Conversions.h>
 #include <Utils/DebugUtils/Debug.h>
+#include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector4D.h>
 #include <Utils/Platform/FilePath.h>
 
@@ -118,10 +119,19 @@ namespace Rendering
 
 	void Renderer::Begin()
 	{
+		// @TODO This is temporary until the API is written for SetRenderTarget() and ClearDepthStencilView()
+		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+		deviceContext.OMSetRenderTargets(1, &m_device->mRenderTargetView, m_device->mDepthStencilView);
+		deviceContext.ClearDepthStencilView(m_device->mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	}
 
 	void Renderer::End()
 	{
+	}
+
+	void Renderer::HandleWindowResize(const Vector2D& newSize)
+	{
+		m_device->HandleWindowResize(static_cast<U32>(newSize.X()), static_cast<U32>(newSize.Y()));
 	}
 
 	VertexBufferHandle Renderer::CreateVertexBuffer(void* data, size_t dataTypeSize, size_t count)
@@ -148,5 +158,19 @@ namespace Rendering
 		// @TODO Move render target off device and set it on render state
 		FLOAT rgba[4] = { colour.X(), colour.Y(), colour.Z(), colour.W() };
 		deviceContext.ClearRenderTargetView(m_device->mRenderTargetView, rgba);
+	}
+
+	void Renderer::SetViewport(const ViewportParams& viewportParams)
+	{
+		D3D11_VIEWPORT viewport;
+		viewport.Width = viewportParams.Width;
+		viewport.Height = viewportParams.Height;
+		viewport.MinDepth = viewportParams.MinDepth;
+		viewport.MaxDepth = viewportParams.MaxDepth;
+		viewport.TopLeftX = viewportParams.TopLeftX;
+		viewport.TopLeftY = viewportParams.TopLeftY;
+
+		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+		deviceContext.RSSetViewports(1, &viewport);
 	}
 }

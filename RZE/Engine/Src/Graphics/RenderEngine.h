@@ -1,7 +1,6 @@
 #pragma once
 
-#include <memory>
-#include <vector>
+#include <Utils/Math/Vector2D.h>
 
 class MeshGeometry;
 
@@ -19,4 +18,7 @@ public:
 	void Shutdown();
 	
 	void ResizeCanvas(const Vector2D& newSize);
+
+private:
+	Vector2D m_canvasSize;
 };

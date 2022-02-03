@@ -237,15 +237,6 @@ namespace Rendering
 
 		mDevice->CreateTexture2D(&depthStencilDesc, NULL, &mDepthStencilTex);
 		mDevice->CreateDepthStencilView(mDepthStencilTex, NULL, &mDepthStencilView);
-
-		D3D11_VIEWPORT viewport;
-		viewport.Width = (FLOAT)newWidth;
-		viewport.Height = (FLOAT)newHeight;
-		viewport.MinDepth = 0.0f;
-		viewport.MaxDepth = 1.0f;
-		viewport.TopLeftX = 0;
-		viewport.TopLeftY = 0;
-		GetDeviceContext().RSSetViewports(1, &viewport);
 	}
 	
 	ID3D11Device& DX11Device::GetHardwareDevice()
