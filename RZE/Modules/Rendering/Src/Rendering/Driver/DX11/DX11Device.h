@@ -2,22 +2,12 @@
 
 #include <Rendering/Driver/GFXDevice.h>
 
-#include <Utils/Platform/FilePath.h>
-
-#include <memory>
-
 struct ID3D11Device;
 struct ID3D11DeviceContext;
 struct IDXGISwapChain;
 struct ID3D11RenderTargetView;
 struct ID3D11RasterizerState;
 
-struct ID3D11Buffer;
-struct ID3D11VertexShader;
-struct ID3D11PixelShader;
-struct ID3D10Blob;
-struct ID3D10Blob;
-struct ID3D11InputLayout;
 struct ID3D11DepthStencilView;
 struct ID3D11Texture2D;
 
@@ -32,7 +22,7 @@ namespace Rendering
 	{
 	public:
 		DX11Device() = default;
-		~DX11Device() = default;
+		~DX11Device() override = default;
 
 	// IGFXDevice interface
 	public:
@@ -51,8 +41,7 @@ namespace Rendering
 		
 	public:
 		void HandleWindowResize(U32 newWidth, U32 newHeight);
-
-	// Temp access, these will move somewhere else.
+		
 	public:
 		ID3D11RasterizerState* mRasterState;
 
