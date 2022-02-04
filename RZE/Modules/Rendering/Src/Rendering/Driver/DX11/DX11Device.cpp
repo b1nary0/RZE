@@ -2,10 +2,8 @@
 
 #include <Rendering/Driver/DX11/DX11.h>
 
-#include <Utils/Conversions.h>
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Vector2D.h>
-#include <Utils/Platform/FilePath.h>
 
 namespace
 {
@@ -35,20 +33,11 @@ namespace Rendering
 	const int kInitialWidth = 1600;
 	const int kInitialHeight = 900;
 
-	// #TODO
-	// See if there's a better place for this. Just putting this here
-	// out of laziness
-	constexpr Int32 kInvalidBufferID = -1;
-
-	D3D11_INPUT_ELEMENT_DESC k_RTTVertLayout[] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-	};
-	UINT layoutElementCount = ARRAYSIZE(k_RTTVertLayout);
-
 	void DX11Device::Initialize()
 	{
+		// @TODO Need to move a bunch of this code out into RenderEngine
+		// and then do these operations via Rendering::Renderer calls. Really the only thing
+		// left for the device to do essentially is to create the swapchain and create a device, i think.
 		HRESULT hr;
 
 		DXGI_MODE_DESC bufferDesc;
@@ -97,9 +86,7 @@ namespace Rendering
 		AssertExpr(hr == S_OK);
 
 		backBufferTexture->Release();
-
-		//mDeviceContext->OMSetRenderTargets(1, &mRenderTargetView, NULL);
-
+		
 		// DepthStencil
 		{
 			D3D11_TEXTURE2D_DESC depthStencilDesc;
@@ -133,8 +120,6 @@ namespace Rendering
 
 			mDevice->CreateRasterizerState(&rasterDesc, &mRasterState);
 		}
-
-		//SetupSceneStuff();
 	}
 
 	void DX11Device::SetWindow(void* windowHandle)
@@ -145,17 +130,11 @@ namespace Rendering
 	void DX11Device::Shutdown()
 	{
 		mSwapChain->Release();
-		mDevice->Release();
 		mDeviceContext->Release();
+		mDevice->Release();
 
 		mDepthStencilView->Release();
 		mDepthStencilTex->Release();
-		
-		for (auto& pixelShader : mPixelShaders)
-		{
-			pixelShader->Release();
-			pixelShader.reset();
-		}
 	}
 
 	void DX11Device::SetSyncInterval(U32 interval)
@@ -196,17 +175,12 @@ namespace Rendering
 // 		mDeviceContext->PSSetShaderResources(0, 1, pSRV);
 // 	}
 
-	void DX11Device::SetRenderTarget(ID3D11Texture2D* texture)
-	{
-		AssertFalse();
-		// #TODO
-		// This is big bug. Not disposing of old resources. Commenting for now
-		// and asserting if this function is called.
-		//HRESULT hr = mDevice->CreateRenderTargetView(texture, NULL, &mRenderTargetView);
-	}
-
 	void DX11Device::HandleWindowResize(U32 newWidth, U32 newHeight)
 	{
+		// @TODO The code in here should eventually move out to RenderEngine
+		// via calling the requisite Renderering::Renderer functions to do the operations
+		// within. It will store an abstraction of RenderTarget.
+
 		GetDeviceContext().OMSetRenderTargets(0, 0, 0);
 		mRenderTargetView->Release();
 
@@ -254,11 +228,6 @@ namespace Rendering
 	void DX11Device::Present()
 	{
 		mSwapChain->Present(mSyncInterval, 0);
-	}
-
-	void DX11Device::ShaderDeleteWrapper::Release()
-	{
-		mHWShader->Release();
 	}
 
 }
