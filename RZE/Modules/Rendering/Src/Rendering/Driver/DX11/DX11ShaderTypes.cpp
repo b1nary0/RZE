@@ -45,27 +45,7 @@ namespace Rendering
 		HRESULT hr;
 		ID3D10Blob* error = nullptr;;
 		ID3D10Blob* vsBlob = nullptr;
-
-		auto errorCB = [](ID3D10Blob* error)
-		{
-			if (error != nullptr)
-			{
-				char const* message =
-					static_cast<char const*>(error->GetBufferPointer());
-
-				// Write the warning to the output window when the program is
-				// executing through the Microsoft Visual Studio IDE.
-				size_t const length = strlen(message);
-				std::wstring output = L"";
-				for (size_t i = 0; i < length; ++i)
-				{
-					output += static_cast<wchar_t>(message[i]);
-				}
-				output += L'\n';
-				OutputDebugString(output.c_str());
-			}
-		};
-
+		
 		hr = D3DCompileFromFile(Conversions::StringToWString(filePath.GetAbsolutePath()).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VSMain", "vs_5_0", 0, 0, &vsBlob, &error);
 		errorCB(error);
 		
