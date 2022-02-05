@@ -1,8 +1,6 @@
 #pragma once
 
-#include <Rendering/Graphics/RenderPass.h>
-
-#include <Rendering/LegacyRenderer.h>
+#include <RZE_Config.h>
 
 #if !WITH_NEW_RENDERER
 struct ID3D11InputLayout;

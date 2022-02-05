@@ -1,4 +1,5 @@
 #include <Rendering/Graphics/RenderPasses/ForwardPass_OLD.h>
+
 #if !WITH_NEW_RENDERER
 #include <Rendering/Driver/DX11/DX11GFXDevice.h>
 #include <Rendering/Driver/DX11/DX11GFXConstantBuffer.h>

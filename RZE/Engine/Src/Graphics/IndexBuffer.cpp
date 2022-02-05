@@ -1,6 +1,8 @@
 #include <StdAfx.h>
 #include <Graphics/IndexBuffer.h>
 
+#include <Rendering/Renderer.h>
+
 IndexBuffer::IndexBuffer()
 {
 }

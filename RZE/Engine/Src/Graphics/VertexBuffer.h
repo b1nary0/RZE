@@ -1,8 +1,6 @@
 #pragma once
-#include <RZE_Config.h>
 
-// @TODO remove when VertexBufferHandle gets moved to its own file
-#include <Rendering/Renderer.h>
+#include <Rendering/BufferHandle.h>
 
 #include <vector>
 
@@ -14,7 +12,7 @@ public:
 
 	void Initialize(std::vector<float>&& localBuffer);
 
-	inline const std::vector<float>& GetData() const { return m_localBuffer; }
+	const std::vector<float>& GetData() const { return m_localBuffer; }
 
 private:
 	// Should we also store the layout or leave that to Renderer?

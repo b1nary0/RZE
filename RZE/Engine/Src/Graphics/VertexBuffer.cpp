@@ -1,6 +1,8 @@
 #include <StdAfx.h>
 #include <Graphics/VertexBuffer.h>
 
+#include <Rendering/Renderer.h>
+
 VertexBuffer::VertexBuffer()
 {
 }

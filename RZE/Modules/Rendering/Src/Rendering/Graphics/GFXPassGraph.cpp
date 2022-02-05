@@ -1,6 +1,7 @@
 #include <Rendering/Graphics/GFXPassGraph.h>
 
-#include <Rendering/LegacyRenderer.h>
+#include <RZE_Config.h>
+
 #if !WITH_NEW_RENDERER
 #include <Rendering/Graphics/RenderPasses/ForwardPass_OLD.h>
 #include <Rendering/Graphics/RenderPasses/DepthPass_OLD.h>

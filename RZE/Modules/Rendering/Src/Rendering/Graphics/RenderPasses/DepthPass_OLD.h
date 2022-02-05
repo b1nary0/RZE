@@ -1,8 +1,7 @@
 #pragma once
 
-#include <Rendering/Graphics/RenderPass.h>
+#include <RZE_Config.h>
 
-#include <Rendering/LegacyRenderer.h>
 #if !WITH_NEW_RENDERER
 
 struct ID3D10Blob;

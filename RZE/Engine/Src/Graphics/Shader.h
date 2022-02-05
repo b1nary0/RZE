@@ -28,9 +28,9 @@ public:
 	virtual bool Load(const FilePath& filePath) final override;
 	virtual void Release() final override;
 
-	inline Int32 GetHardwareID() const { return mHWShaderHandle; }
+	Int32 GetHardwareID() const { return mHWShaderHandle; }
 
-	inline const std::string& GetName() const { return mName; }
+	const std::string& GetName() const { return mName; }
 
 private:
 	const std::string mName;

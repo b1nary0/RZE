@@ -1,11 +1,8 @@
 #pragma once
 
-#include <RZE_Config.h>
-
 #include <Utils/PrimitiveDefs.h>
 
-// @TODO remove when IndexBufferHandle gets moved to its own file
-#include <Rendering/Renderer.h>
+#include <Rendering/BufferHandle.h>
 
 #include <vector>
 
@@ -18,7 +15,7 @@ public:
 public:
 	void Initialize(const std::vector<U32>& indexData);
 
-	inline const std::vector<U32>& GetData() const { return m_localBuffer; }
+	const std::vector<U32>& GetData() const { return m_localBuffer; }
 
 private:
 	Rendering::IndexBufferHandle m_gpuBuffer;

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <Rendering/Driver/GFXBuffer.h>
-
 #include <memory>
+
+#include <Rendering/BufferHandle.h>
 
 class Vector2D;
 class Vector4D;
@@ -11,41 +11,7 @@ namespace Rendering
 {
 	class DX11Device;
 	class IVertexBuffer;
-
-	class VertexBufferHandle
-	{
-		friend class Renderer;
-
-	public:
-		VertexBufferHandle() = default;
-		~VertexBufferHandle() = default;
-
-	private:
-		VertexBufferHandle(const std::shared_ptr<IGPUBuffer>& buffer)
-		{
-			m_buffer = buffer;
-		}
-
-		std::shared_ptr<IGPUBuffer> m_buffer;
-	};
-
-	class IndexBufferHandle
-	{
-		friend class Renderer;
-
-	public:
-		IndexBufferHandle() = default;
-		~IndexBufferHandle() = default;
-
-	private:
-		IndexBufferHandle(const std::shared_ptr<IGPUBuffer>& buffer)
-		{
-			m_buffer = buffer;
-		}
-
-		std::shared_ptr<IGPUBuffer> m_buffer;
-	};
-
+	
 	class Renderer
 	{
 	private:
