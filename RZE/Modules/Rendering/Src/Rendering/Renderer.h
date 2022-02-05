@@ -3,6 +3,9 @@
 #include <memory>
 
 #include <Rendering/BufferHandle.h>
+#include <Rendering/ShaderHandle.h>
+
+#include <Utils/Platform/FilePath.h>
 
 class Vector2D;
 class Vector4D;
@@ -53,6 +56,13 @@ namespace Rendering
 	public:
 		static VertexBufferHandle CreateVertexBuffer(void* data, size_t dataTypeSize, size_t count);
 		static IndexBufferHandle CreateIndexBuffer(void* data, size_t dataTypeSize, size_t count);
+
+		// @TODO add BufferLayout param and drive input layout from BufferLayout
+		static VertexShaderHandle CreateVertexShader(const FilePath& filepath);
+		static PixelShaderHandle CreatePixelShader(const FilePath& filepath);
+
+		static void ReleaseVertexShader(VertexShaderHandle& shaderHandle);
+		static void ReleasePixelShader(PixelShaderHandle& shaderHandle);
 
 	public:
 		static void SetClearColour(const Vector4D& colour);

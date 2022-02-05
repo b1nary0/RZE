@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Rendering/ShaderHandle.h>
+
 #include <Utils/Math/Vector2D.h>
 
 class MeshGeometry;
@@ -21,4 +23,8 @@ public:
 
 private:
 	Vector2D m_canvasSize;
+
+	// @TODO temp until ShaderTechniques are properly implemented
+	// (could be a while)
+	Rendering::VertexShaderHandle m_vertexShader;
 };

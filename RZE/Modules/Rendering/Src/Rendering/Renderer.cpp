@@ -13,6 +13,7 @@
 #include <Rendering/Driver/DX11/DX11.h>
 #include <Rendering/Driver/DX11/DX11IndexBuffer.h>
 #include <Rendering/Driver/DX11/DX11VertexBuffer.h>
+#include <Rendering/Driver/DX11/DX11ShaderTypes.h>
 
 namespace
 {
@@ -150,6 +151,34 @@ namespace Rendering
 		indexBuffer->Allocate(data, dataTypeSize, count);
 
 		return IndexBufferHandle(indexBuffer);
+	}
+
+	VertexShaderHandle Renderer::CreateVertexShader(const FilePath& filePath)
+	{
+		std::shared_ptr<DX11VertexShader> vertexShader = std::make_shared<DX11VertexShader>();
+		vertexShader->SetDevice(m_device.get());
+		vertexShader->Create(filePath);
+
+		return VertexShaderHandle(vertexShader);
+	}
+
+	PixelShaderHandle Renderer::CreatePixelShader(const FilePath& filePath)
+	{
+		std::shared_ptr<DX11PixelShader> pixelShader = std::make_shared<DX11PixelShader>();
+		pixelShader->SetDevice(m_device.get());
+		pixelShader->Create(filePath);
+
+		return PixelShaderHandle(pixelShader);
+	}
+
+	void Renderer::ReleaseVertexShader(VertexShaderHandle& shaderHandle)
+	{
+		shaderHandle.m_shader.reset();
+	}
+
+	void Renderer::ReleasePixelShader(PixelShaderHandle& shaderHandle)
+	{
+		shaderHandle.m_shader.reset();
 	}
 
 	void Renderer::SetClearColour(const Vector4D& colour)

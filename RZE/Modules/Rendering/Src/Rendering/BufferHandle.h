@@ -12,13 +12,14 @@ namespace Rendering
 
 	public:
 		VertexBufferHandle() = default;
-		~VertexBufferHandle() = default;
+		virtual ~VertexBufferHandle() = default;
+
+	public:
+		bool IsValid() { return m_buffer != nullptr; }
 
 	private:
 		VertexBufferHandle(const std::shared_ptr<IGPUBuffer>& buffer)
-		{
-			m_buffer = buffer;
-		}
+			: m_buffer(buffer) {}
 
 		std::shared_ptr<IGPUBuffer> m_buffer;
 	};
@@ -29,13 +30,14 @@ namespace Rendering
 
 	public:
 		IndexBufferHandle() = default;
-		~IndexBufferHandle() = default;
+		virtual ~IndexBufferHandle() = default;
+
+	public:
+		bool IsValid() { return m_buffer != nullptr; }
 
 	private:
 		IndexBufferHandle(const std::shared_ptr<IGPUBuffer>& buffer)
-		{
-			m_buffer = buffer;
-		}
+			: m_buffer(buffer) {}
 
 		std::shared_ptr<IGPUBuffer> m_buffer;
 	};

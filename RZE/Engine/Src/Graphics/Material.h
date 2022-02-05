@@ -34,6 +34,7 @@ public:
 	ResourceHandle GetTexture(U8 textureSlot);
 	const ResourceHandle& GetTexture(U8 textureSlot) const;
 
+	// @TODO SetShaderTechnique is actually being set as PixelShader directly until actual techniques are implemented
 	void SetShaderTechnique(const ResourceHandle& shaderTechnique);
 	inline ResourceHandle GetShaderResource() const { return mShaderTechnique; }
 

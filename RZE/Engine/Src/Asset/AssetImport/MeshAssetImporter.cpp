@@ -75,17 +75,17 @@ bool MeshAssetImporter::Import(const FilePath& filePath)
 		if ((materialData.TextureFlags & MaterialAssetImporter::MaterialData::TEXTUREFLAG_ALL) == MaterialAssetImporter::MaterialData::TEXTUREFLAG_ALL)
 		{
 			FilePath fullShaderPath("Assets/Shaders/Pixel_NewRenderer.hlsl");
-			material->SetShaderTechnique(RZE::GetResourceHandler().LoadResource<ShaderTechnique>(fullShaderPath, "Pixel_NewRenderer"));
+			material->SetShaderTechnique(RZE::GetResourceHandler().LoadResource<PixelShader>(fullShaderPath, "Pixel_NewRenderer"));
 		}
 		else if (materialData.TextureFlags == MaterialAssetImporter::MaterialData::TEXTUREFLAG_NONE)
 		{
 			FilePath noTextureShaderPath("Assets/Shaders/Pixel_Default_NewRenderer.hlsl");
-			material->SetShaderTechnique(RZE::GetResourceHandler().LoadResource<ShaderTechnique>(noTextureShaderPath, "Pixel_Default_NewRenderer"));
+			material->SetShaderTechnique(RZE::GetResourceHandler().LoadResource<PixelShader>(noTextureShaderPath, "Pixel_Default_NewRenderer"));
 		}
 		else
 		{
 			FilePath diffuseOnlyPath("Assets/Shaders/Pixel_NewRenderer_DiffuseOnly.hlsl");
-			material->SetShaderTechnique(RZE::GetResourceHandler().LoadResource<ShaderTechnique>(diffuseOnlyPath, "Pixel_NewRenderer_DiffuseOnly"));
+			material->SetShaderTechnique(RZE::GetResourceHandler().LoadResource<PixelShader>(diffuseOnlyPath, "Pixel_NewRenderer_DiffuseOnly"));
 		}
 
 		geo.SetMaterial(material);

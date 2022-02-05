@@ -16,6 +16,8 @@ RenderEngine::~RenderEngine()
 void RenderEngine::Initialize(void* windowHandle)
 {
 	Rendering::Renderer::Initialize(windowHandle);
+
+	m_vertexShader = Rendering::Renderer::CreateVertexShader(FilePath("Assets/Shaders/Vertex_NewRenderer.hlsl"));
 }
 
 void RenderEngine::Update()
