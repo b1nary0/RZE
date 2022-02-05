@@ -23,7 +23,7 @@ namespace Rendering
 		Release();
 	}
 
-	void DX11VertexBuffer::Allocate(void* data, size_t size, U32 count)
+	void DX11VertexBuffer::Allocate(const void* data, size_t size, U32 count)
 	{
 		m_stride = sizeof(TempDataLayoutStructure);
 		m_offset = 0;
@@ -52,10 +52,10 @@ namespace Rendering
 		m_buffer->Release();
 	}
 
-	void DX11VertexBuffer::SetActive()
+	void DX11VertexBuffer::SetActive(U32 bufferSlot)
 	{
 		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
-		deviceContext.IASetVertexBuffers(0, 1, &m_buffer, &m_stride, &m_offset);
+		deviceContext.IASetVertexBuffers(bufferSlot, 1, &m_buffer, &m_stride, &m_offset);
 	}
 	
 	void DX11VertexBuffer::SetDevice(DX11Device* device)

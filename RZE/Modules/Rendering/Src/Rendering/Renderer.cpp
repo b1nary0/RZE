@@ -10,6 +10,7 @@
 // DX11
 #include <Rendering/Driver/DX11/DX11Device.h>
 #include <Rendering/Driver/DX11/DX11.h>
+#include <Rendering/Driver/DX11/DX11ConstantBuffer.h>
 #include <Rendering/Driver/DX11/DX11IndexBuffer.h>
 #include <Rendering/Driver/DX11/DX11VertexBuffer.h>
 #include <Rendering/Driver/DX11/DX11ShaderTypes.h>
@@ -89,6 +90,15 @@ namespace Rendering
 		indexBuffer->Allocate(data, dataTypeSize, count);
 
 		return IndexBufferHandle(indexBuffer);
+	}
+
+	ConstantBufferHandle Renderer::CreateConstantBuffer(void* data, size_t dataTypeSize, size_t count)
+	{
+		std::shared_ptr<DX11ConstantBuffer> constantBuffer = std::make_shared<DX11ConstantBuffer>();
+		constantBuffer->SetDevice(m_device.get());
+		constantBuffer->Allocate(data, dataTypeSize, count);
+
+		return ConstantBufferHandle(constantBuffer);
 	}
 
 	VertexShaderHandle Renderer::CreateVertexShader(const FilePath& filePath)

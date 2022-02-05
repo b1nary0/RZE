@@ -56,6 +56,7 @@ namespace Rendering
 	public:
 		static VertexBufferHandle CreateVertexBuffer(void* data, size_t dataTypeSize, size_t count);
 		static IndexBufferHandle CreateIndexBuffer(void* data, size_t dataTypeSize, size_t count);
+		static ConstantBufferHandle CreateConstantBuffer(void* data, size_t dataTypeSize, size_t count);
 
 		// @TODO add BufferLayout param and drive input layout from BufferLayout
 		static VertexShaderHandle CreateVertexShader(const FilePath& filepath);

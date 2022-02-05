@@ -16,10 +16,10 @@ namespace Rendering
 
 	// IIndexBuffer interface
 	public:
-		virtual void Allocate(void* data, size_t size, U32 count) override;
-		virtual void Release() override;
+		void Allocate(const void* data, size_t size, U32 count) override;
+		void Release() override;
 
-		virtual void SetActive() override;
+		void SetActive(U32 bufferSlot) override;
 
 	public:
 		void SetDevice(DX11Device* device);

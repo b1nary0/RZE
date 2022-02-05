@@ -8,28 +8,26 @@ namespace Rendering
 {
 	class DX11Device;
 
-	class DX11VertexBuffer : public IGPUBuffer
+	class DX11ConstantBuffer : public IGPUBuffer
 	{
 	public:
-		DX11VertexBuffer() = default;
-		~DX11VertexBuffer();
+		DX11ConstantBuffer() = default;
+		~DX11ConstantBuffer() = default;
 
-		// IVertexBuffer interface
+	// IGFXConstantBuffer interface
 	public:
 		void Allocate(const void* data, size_t size, U32 count) override;
 		void Release() override;
-
 		void SetActive(U32 bufferSlot) override;
 
 	public:
 		void SetDevice(DX11Device* device);
+		ID3D11Buffer& GetHardwareBuffer();
+
+		void UpdateSubresources(const void* data);
 
 	private:
-		U32 m_stride;
-		U32 m_offset;
-
-		DX11Device* m_device;
-		ID3D11Buffer* m_buffer;
+		DX11Device* m_device = nullptr;
+		ID3D11Buffer* m_buffer = nullptr;
 	};
-
 }

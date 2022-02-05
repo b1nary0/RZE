@@ -116,6 +116,13 @@ void CameraComponent::Update()
 		AssertMsg(transformComponent != nullptr, "A camera without a transform is useless");
 
 		GenerateCameraMatrices(transformComponent->GetPosition());
+
+		{
+			// Push data to RenderEngine
+			RenderCamera& renderCamera = RZE::GetRenderEngine().GetCamera();
+			renderCamera.Position = transformComponent->GetPosition();
+			renderCamera.ClipSpace = GetProjectionMatrix() * GetViewMatrix();
+		}
 	}
 }
 

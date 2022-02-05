@@ -2,7 +2,7 @@
 
 #if !WITH_NEW_RENDERER
 #include <Rendering/Driver/DX11/DX11GFXDevice.h>
-#include <Rendering/Driver/DX11/DX11GFXConstantBuffer.h>
+#include <Rendering/Driver/DX11/DX11ConstantBuffer.h>
 #include <Rendering/Driver/DX11/DX11GFXTextureBuffer2D.h>
 #include <Rendering/Driver/DX11/DX11GFXIndexBuffer.h>
 #include <Rendering/Driver/DX11/DX11GFXVertexBuffer.h>
@@ -126,16 +126,16 @@ namespace Rendering
 		deviceContext.PSSetShader(mPixelShader, 0, 0);
 
 		Matrix4x4 camViewProjMat = camera.ProjectionMat * camera.ViewMat;
-		DX11GFXConstantBuffer* viewProjBuf = mDevice->GetConstantBuffer(mViewProjBuf);
+		DX11ConstantBuffer* viewProjBuf = mDevice->GetConstantBuffer(mViewProjBuf);
 		ID3D11Buffer* vpbHardwareBuf = &viewProjBuf->GetHardwareBuffer();
 		viewProjBuf->UpdateSubresources(&camViewProjMat);
 		deviceContext.VSSetConstantBuffers(0, 1, &vpbHardwareBuf);
 
-		DX11GFXConstantBuffer* lightBuf = mDevice->GetConstantBuffer(mLightBuf);
+		DX11ConstantBuffer* lightBuf = mDevice->GetConstantBuffer(mLightBuf);
 		ID3D11Buffer* hwLightBuf = &lightBuf->GetHardwareBuffer();
 		deviceContext.PSSetConstantBuffers(0, 1, &hwLightBuf);
 
-		DX11GFXConstantBuffer* camDataBuf = mDevice->GetConstantBuffer(mCameraDataBuf);
+		DX11ConstantBuffer* camDataBuf = mDevice->GetConstantBuffer(mCameraDataBuf);
 		ID3D11Buffer* hwCamDataBuf = &camDataBuf->GetHardwareBuffer();
 		camDataBuf->UpdateSubresources(&camera.Position);
 		deviceContext.PSSetConstantBuffers(1, 1, &hwCamDataBuf);
@@ -202,11 +202,11 @@ namespace Rendering
  				// try to draw something
  				mDevice->GetDeviceContext().IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
  
- 				DX11GFXConstantBuffer* modelMatBuf = mDevice->GetConstantBuffer(drawCall.ConstantBuffer);
+ 				DX11ConstantBuffer* modelMatBuf = mDevice->GetConstantBuffer(drawCall.ConstantBuffer);
  				ID3D11Buffer* hwModelMatBuf = &modelMatBuf->GetHardwareBuffer();
  				deviceContext.VSSetConstantBuffers(1, 1, &hwModelMatBuf);
  
- 				DX11GFXConstantBuffer* materialBuf = mDevice->GetConstantBuffer(drawCall.MaterialDataBuffer);
+ 				DX11ConstantBuffer* materialBuf = mDevice->GetConstantBuffer(drawCall.MaterialDataBuffer);
  				ID3D11Buffer* hwMaterialBuf = &materialBuf->GetHardwareBuffer();
  				deviceContext.PSSetConstantBuffers(2, 1, &hwMaterialBuf);
  
@@ -276,7 +276,7 @@ namespace Rendering
 	{
 		//OPTICK_EVENT();
 
-		DX11GFXConstantBuffer* const lightBuf = mDevice->GetConstantBuffer(mLightBuf);
+		DX11ConstantBuffer* const lightBuf = mDevice->GetConstantBuffer(mLightBuf);
 		lightBuf->UpdateSubresources(lights.data());
 	}
 

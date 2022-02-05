@@ -28,10 +28,10 @@ namespace Rendering
 		IGPUBuffer() = default;
 		virtual ~IGPUBuffer() = default;
 
-		virtual void Allocate(void* data, size_t size, U32 count) = 0;
+		virtual void Allocate(const void* data, size_t size, U32 count) = 0;
 		virtual void Release() = 0;
 
-		virtual void SetActive() = 0;
+		virtual void SetActive(U32 bufferSlot) = 0;
 	};
 	
 	class IGFXDepthStencilBuffer

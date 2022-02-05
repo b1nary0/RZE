@@ -15,11 +15,11 @@ public:
 
 	// GameObjectComponent interface
 public:
-	virtual void OnAddToScene() override;
-	virtual void Update() override;
+	void OnAddToScene() override;
+	void Update() override;
 
-	virtual void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override;
-	virtual void Load(const rapidjson::Value& data) override;
+	void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override;
+	void Load(const rapidjson::Value& data) override;
 
 	//virtual void OnEditorInspect(Apollo::EntityID entityID) override;
 

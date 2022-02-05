@@ -18,6 +18,7 @@ void RenderEngine::Initialize(void* windowHandle)
 	Rendering::Renderer::Initialize(windowHandle);
 
 	m_vertexShader = Rendering::Renderer::CreateVertexShader(FilePath("Assets/Shaders/Vertex_NewRenderer.hlsl"));
+	m_cameraConstantBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(RenderCamera), 1);
 }
 
 void RenderEngine::Update()

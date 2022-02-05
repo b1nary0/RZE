@@ -63,6 +63,7 @@ namespace Rendering
 		swapChainDesc.Windowed = true;
 		swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 
+		// @TODO only create debug device when running _DEBUG
 		hr = D3D11CreateDeviceAndSwapChain(
 			NULL, 
 			D3D_DRIVER_TYPE_HARDWARE, 

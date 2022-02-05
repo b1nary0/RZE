@@ -17,7 +17,7 @@ namespace Rendering
 {
 	class DX11VertexBuffer;
 	class DX11IndexBuffer;
-	class DX11GFXConstantBuffer;
+	class DX11ConstantBuffer;
 	class DX11GFXTextureBuffer2D;
 
 	class DX11Device : public IGFXDevice

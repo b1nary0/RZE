@@ -13,7 +13,7 @@ namespace Rendering
 		Release();
 	}
 
-	void DX11IndexBuffer::Allocate(void* data, size_t size, U32 count)
+	void DX11IndexBuffer::Allocate(const void* data, size_t size, U32 count)
 	{
 		mIndexCount = count;
 
@@ -42,8 +42,9 @@ namespace Rendering
 		m_hwBuffer->Release();
 	}
 
-	void DX11IndexBuffer::SetActive()
+	void DX11IndexBuffer::SetActive(U32 bufferSlot)
 	{
+		// @NOTE IndexBuffer doesn't use buffer slot, maybe investigate IGPUIndexBuffer class instead. Think on it.
 		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 		deviceContext.IASetIndexBuffer(m_hwBuffer, DXGI_FORMAT_R32_UINT, 0);
 	}
