@@ -2,6 +2,8 @@
 
 #include <Rendering/Driver/GFXDevice.h>
 
+#include <Utils/PrimitiveDefs.h>
+
 struct ID3D11Device;
 struct ID3D11DeviceContext;
 struct IDXGISwapChain;

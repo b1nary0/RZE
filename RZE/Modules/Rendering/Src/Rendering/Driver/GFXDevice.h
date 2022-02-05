@@ -1,26 +1,7 @@
 #pragma once
 
-#include <Utils/PrimitiveDefs.h>
-#include <Utils/Platform/FilePath.h>
-
-#include <memory>
-#include <vector>
-
 namespace Rendering
 {
-	class IVertexBuffer;
-	class IIndexBuffer;
-	class IGFXConstantBuffer;
-
-	struct GFXTextureBufferParams;
-
-	enum class EGFXBufferType
-	{
-		Vertex,
-		Index,
-		Texture2D
-	};
-
 	class IGFXDevice
 	{
 	public:
