@@ -17,6 +17,16 @@
 
 namespace Rendering
 {
+	D3D_PRIMITIVE_TOPOLOGY ConvertToDX11TopologyType(EPrimitiveTopology topologyType)
+	{
+		switch (topologyType)
+		{
+			case EPrimitiveTopology::TriangleList: return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+
+			default: return D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
+		}
+	}
+
 	std::unique_ptr<DX11Device> Renderer::m_device;
 
 	Renderer::Renderer()
@@ -54,13 +64,17 @@ namespace Rendering
 
 	void Renderer::EndFrame()
 	{
-		m_device->Present();
+		{
+			OPTICK_EVENT("Device Present");
+			m_device->Present();
+		}
 	}
 
 	void Renderer::Begin()
 	{
 		// @TODO This is temporary until the API is written for SetRenderTarget() and ClearDepthStencilView()
 		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+		deviceContext.RSSetState(m_device->mRasterState);
 		deviceContext.OMSetRenderTargets(1, &m_device->mRenderTargetView, m_device->mDepthStencilView);
 		deviceContext.ClearDepthStencilView(m_device->mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	}
@@ -119,6 +133,13 @@ namespace Rendering
 		return PixelShaderHandle(pixelShader);
 	}
 
+	void Renderer::UploadDataToBuffer(const ConstantBufferHandle& buffer, const void* data)
+	{
+		std::shared_ptr<IConstantBuffer> bufferPtr = buffer.m_buffer;
+		DX11ConstantBuffer* const dx11Buf = static_cast<DX11ConstantBuffer*>(bufferPtr.get());
+		dx11Buf->UpdateSubresources(data);
+	}
+
 	void Renderer::ReleaseVertexShader(VertexShaderHandle& shaderHandle)
 	{
 		shaderHandle.m_shader.reset();
@@ -149,5 +170,69 @@ namespace Rendering
 
 		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 		deviceContext.RSSetViewports(1, &viewport);
+	}
+
+	void Renderer::SetInputLayout(const VertexShaderHandle& vertexShader)
+	{
+		std::shared_ptr<IShader> shaderPtr = vertexShader.m_shader;
+		DX11VertexShader* const dx11Shader = static_cast<DX11VertexShader*>(shaderPtr.get());
+		dx11Shader->SetInputLayout();
+	}
+
+	void Renderer::SetPrimitiveTopology(EPrimitiveTopology topologyType)
+	{
+		D3D_PRIMITIVE_TOPOLOGY d3dTopology = ConvertToDX11TopologyType(topologyType);
+		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+		deviceContext.IASetPrimitiveTopology(d3dTopology);
+	}
+
+	void Renderer::SetVertexShader(const VertexShaderHandle& vertexShader)
+	{
+		std::shared_ptr<IShader> shaderPtr = vertexShader.m_shader;
+		DX11VertexShader* const dx11Shader = static_cast<DX11VertexShader*>(shaderPtr.get());
+		dx11Shader->SetActive();
+	}
+
+	void Renderer::SetPixelShader(const PixelShaderHandle& pixelShader)
+	{
+		std::shared_ptr<IShader> shaderPtr = pixelShader.m_shader;
+		DX11PixelShader* const dx11Shader = static_cast<DX11PixelShader*>(shaderPtr.get());
+		dx11Shader->SetActive();
+	}
+
+	void Renderer::SetConstantBufferVS(const ConstantBufferHandle& buffer, U32 bufferSlot)
+	{
+		std::shared_ptr<IConstantBuffer> bufferPtr = buffer.m_buffer;
+		DX11ConstantBuffer* const dx11Buffer = static_cast<DX11ConstantBuffer*>(bufferPtr.get());
+		dx11Buffer->SetActiveVS(bufferSlot);
+	}
+
+	void Renderer::SetConstantBufferPS(const ConstantBufferHandle& buffer, U32 bufferSlot)
+	{
+		std::shared_ptr<IConstantBuffer> bufferPtr = buffer.m_buffer;
+		DX11ConstantBuffer* const dx11Buffer = static_cast<DX11ConstantBuffer*>(bufferPtr.get());
+		dx11Buffer->SetActivePS(bufferSlot);
+	}
+
+	void Renderer::SetVertexBuffer(const VertexBufferHandle& buffer, U32 bufferSlot)
+	{
+		std::shared_ptr<IVertexBuffer> bufferPtr = buffer.m_buffer;
+		DX11VertexBuffer* const dx11Buffer = static_cast<DX11VertexBuffer*>(bufferPtr.get());
+		dx11Buffer->SetActive(bufferSlot);
+	}
+
+	void Renderer::SetIndexBuffer(const IndexBufferHandle& buffer)
+	{
+		std::shared_ptr<IIndexBuffer> bufferPtr = buffer.m_buffer;
+		DX11IndexBuffer* const dx11Buffer = static_cast<DX11IndexBuffer*>(bufferPtr.get());
+		dx11Buffer->SetActive();
+	}
+
+	void Renderer::DrawIndexed(const IndexBufferHandle& indexBuffer)
+	{
+		std::shared_ptr<IIndexBuffer> bufferPtr = indexBuffer.m_buffer;
+		DX11IndexBuffer* const dx11Buffer = static_cast<DX11IndexBuffer*>(bufferPtr.get());
+		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+		deviceContext.DrawIndexed(dx11Buffer->GetIndexCount(), 0, 0);
 	}
 }

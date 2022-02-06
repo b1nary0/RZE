@@ -22,18 +22,47 @@ namespace Rendering
 		bool bIsDepthTexture;
 	};
 
-	class IGPUBuffer
+	class IVertexBuffer
 	{
 	public:
-		IGPUBuffer() = default;
-		virtual ~IGPUBuffer() = default;
+		IVertexBuffer() = default;
+		virtual ~IVertexBuffer() = default;
 
 		virtual void Allocate(const void* data, size_t size, U32 count) = 0;
 		virtual void Release() = 0;
 
+		// @TODO Index buffers and vertex buffers don't fit this interface very well
+		// Will have to go back to previous implementation of interface for each
 		virtual void SetActive(U32 bufferSlot) = 0;
 	};
-	
+
+	class IIndexBuffer
+	{
+	public:
+		IIndexBuffer() = default;
+		virtual ~IIndexBuffer() = default;
+
+		virtual void Allocate(const void* data, size_t size, U32 count) = 0;
+		virtual void Release() = 0;
+
+		// @TODO Index buffers and vertex buffers don't fit this interface very well
+		// Will have to go back to previous implementation of interface for each
+		virtual void SetActive() = 0;
+	};
+
+	class IConstantBuffer
+	{
+	public:
+		IConstantBuffer() = default;
+		virtual ~IConstantBuffer() = default;
+
+		virtual void Allocate(const void* data, size_t size, U32 count) = 0;
+		virtual void Release() = 0;
+
+		virtual void SetActiveVS(U32 bufferSlot) = 0;
+		virtual void SetActivePS(U32 bufferSlot) = 0;
+	};
+
 	class IGFXDepthStencilBuffer
 	{
 	public:
@@ -41,16 +70,6 @@ namespace Rendering
 		virtual ~IGFXDepthStencilBuffer() = default;
 
 		virtual void Allocate() = 0;
-		virtual void Release() = 0;
-	};
-
-	class IGFXConstantBuffer
-	{
-	public:
-		IGFXConstantBuffer() = default;
-		virtual ~IGFXConstantBuffer() = default;
-
-		virtual void Allocate(size_t size, U32 count) = 0;
 		virtual void Release() = 0;
 	};
 

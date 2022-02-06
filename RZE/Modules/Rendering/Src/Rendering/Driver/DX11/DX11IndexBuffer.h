@@ -8,7 +8,7 @@ namespace Rendering
 {
 	class DX11Device;
 
-	class DX11IndexBuffer : public IGPUBuffer
+	class DX11IndexBuffer : public IIndexBuffer
 	{
 	public:
 		DX11IndexBuffer() = default;
@@ -19,7 +19,7 @@ namespace Rendering
 		void Allocate(const void* data, size_t size, U32 count) override;
 		void Release() override;
 
-		void SetActive(U32 bufferSlot) override;
+		void SetActive() override;
 
 	public:
 		void SetDevice(DX11Device* device);

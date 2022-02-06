@@ -20,10 +20,13 @@ namespace Rendering
 		void Create(const FilePath& filePath) override;
 		void Release() override;
 		void SetActive() override;
-
+		
 	public:
 		void SetDevice(DX11Device* graphicsDevice);
-		
+
+		// @TODO This needs to go when BufferLayout is matured and ready to go
+		void SetInputLayout();
+
 	private:
 		ID3D11VertexShader* m_hwShader = nullptr;
 		ID3D11InputLayout* m_hwInputLayout = nullptr;

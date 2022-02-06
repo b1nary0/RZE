@@ -1,5 +1,9 @@
 #pragma once
 
+#include <Rendering/BufferHandle.h>
+
+#include <memory>
+
 class ShaderTechnique;
 class Texture2D;
 
@@ -22,6 +26,13 @@ public:
 		TEXTURE_SLOT_COUNT
 	};
 
+	// #TODO(Josh::Turn into material properties or something; material system?)
+	struct MaterialProperties
+	{
+		float Shininess{ 1.0f };
+		float Opacity{ 1.0f };
+	};
+
 public:
 	~Material();
 
@@ -36,14 +47,14 @@ public:
 
 	// @TODO SetShaderTechnique is actually being set as PixelShader directly until actual techniques are implemented
 	void SetShaderTechnique(const ResourceHandle& shaderTechnique);
-	inline ResourceHandle GetShaderResource() const { return mShaderTechnique; }
+	ResourceHandle GetShaderResource() const { return mShaderTechnique; }
 
-public:
-	// #TODO(Josh::Turn into material properties or something; material system?)
-	float Shininess { 1.0f };
-	float Opacity { 1.0f };
-
+	MaterialProperties& GetProperties() { return m_properties; }
+	const MaterialProperties& GetProperties() const { return m_properties; }
+		
 private:
+	MaterialProperties m_properties;
+
 	ResourceHandle mShaderTechnique;
 	std::vector<ResourceHandle> mTextureSlots;
 };
@@ -66,21 +77,21 @@ public:
 
 public:
 	// Slow and gross but just stubbing code ideas for the moment
-	Material* GetOrCreateMaterial(const std::string& name)
+	std::shared_ptr<Material> GetOrCreateMaterial(const std::string& name)
 	{
 		auto iter = mDatabase.find(name);
 
 		if (iter == mDatabase.end())
 		{
-			Material* material = new Material();
+			std::shared_ptr<Material> material = std::shared_ptr<Material>(new Material());
 			mDatabase[name] = material;
-			return material;
+			return std::move(material);
 		}
 
 		return iter->second;
 	}
 
-	Material* FindMaterial(const std::string& name)
+	std::shared_ptr<Material> FindMaterial(const std::string& name)
 	{
 		auto iter = mDatabase.find(name);
 		if (iter != mDatabase.end())
@@ -91,5 +102,5 @@ public:
 	}
 
 private:
-	std::unordered_map<std::string, Material*> mDatabase;
+	std::unordered_map<std::string, std::shared_ptr<Material>> mDatabase;
 };

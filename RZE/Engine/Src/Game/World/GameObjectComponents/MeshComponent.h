@@ -2,6 +2,8 @@
 
 #include <Game/World/GameObject/GameObjectComponent.h>
 
+#include <Graphics/RenderEngine.h>
+
 #include <EngineCore/Resources/ResourceHandler.h>
 
 class MeshComponent : public GameObjectComponent<MeshComponent>
@@ -27,5 +29,6 @@ private:
 	void CreateRenderObject();
 
 private:
+	std::shared_ptr<RenderObject> m_renderObject;
 	ResourceHandle m_resource;
 };

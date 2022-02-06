@@ -8,8 +8,8 @@
 
 MeshGeometry::MeshGeometry(U32 vertexCount, U32 indexCount)
 {
-	mVertices.reserve(vertexCount);
-	mIndices.reserve(indexCount);
+	m_vertices.reserve(vertexCount);
+	m_indices.reserve(indexCount);
 }
 
 MeshGeometry::~MeshGeometry()
@@ -18,11 +18,11 @@ MeshGeometry::~MeshGeometry()
 
 void MeshGeometry::AllocateData()
 {
-	AssertExpr(mVertexBuffer == nullptr);
-	AssertExpr(mIndexBuffer == nullptr);
+	AssertExpr(m_vertexBuffer == nullptr);
+	AssertExpr(m_indexBuffer == nullptr);
 
 	std::vector<float> vertexDataBuffer;
-	vertexDataBuffer.reserve(mVertices.size() * sizeof(MeshVertex));
+	vertexDataBuffer.reserve(m_vertices.size() * sizeof(MeshVertex));
 	for (const MeshVertex& vertex : GetVertices())
 	{
 		// #TODO
@@ -48,67 +48,77 @@ void MeshGeometry::AllocateData()
 		}
 	}
 
-	mVertexBuffer = std::make_shared<VertexBuffer>();
-	mVertexBuffer->Initialize(std::move(vertexDataBuffer));
+	m_vertexBuffer = std::make_shared<VertexBuffer>();
+	m_vertexBuffer->Initialize(std::move(vertexDataBuffer));
 
-	mIndexBuffer = std::make_shared<IndexBuffer>();
-	mIndexBuffer->Initialize(mIndices);
+	m_indexBuffer = std::make_shared<IndexBuffer>();
+	m_indexBuffer->Initialize(m_indices);
 }
 
 void MeshGeometry::AddVertex(const MeshVertex& vertex)
 {
-	mVertices.push_back(vertex);
+	m_vertices.push_back(vertex);
 }
 
 void MeshGeometry::AddIndex(U32 index)
 {
-	mIndices.push_back(index);
+	m_indices.push_back(index);
 }
 
 void MeshGeometry::SetName(const std::string& name)
 {
-	mName = name;
+	m_name = name;
 }
 
 void MeshGeometry::SetVertexData(const std::vector<MeshVertex>& verts)
 {
-	mVertices = verts;
+	m_vertices = verts;
 }
 
 void MeshGeometry::SetIndexData(const std::vector<U32>& indices)
 {
-	mIndices = indices;
+	m_indices = indices;
 }
 
-void MeshGeometry::SetMaterial(Material* material)
+void MeshGeometry::SetMaterial(const std::shared_ptr<Material>& material)
 {
 	AssertNotNull(material);
-	mMaterial = material;
+	m_material = material;
 }
 
-const Material& MeshGeometry::GetMaterial() const
+const std::shared_ptr<Material> MeshGeometry::GetMaterial() const
 {
-	AssertNotNull(mMaterial);
-	return *mMaterial;
+	AssertNotNull(m_material);
+	return m_material;
 }
 
-Material& MeshGeometry::GetMaterial()
+std::shared_ptr<Material> MeshGeometry::GetMaterial()
 {
-	AssertNotNull(mMaterial);
-	return *mMaterial;
+	AssertNotNull(m_material);
+	return m_material;
 }
 
 const std::vector<MeshVertex>& MeshGeometry::GetVertices()
 {
-	return mVertices;
+	return m_vertices;
 }
 
 const std::vector<float>& MeshGeometry::GetVertexDataRaw() const
 {
-	return mVertexBuffer->GetData();
+	return m_vertexBuffer->GetData();
 }
 
 const std::vector<U32>& MeshGeometry::GetIndexDataRaw() const
 {
-	return mIndexBuffer->GetData();
+	return m_indexBuffer->GetData();
+}
+
+const std::shared_ptr<VertexBuffer> MeshGeometry::GetVertexBuffer() const
+{
+	return m_vertexBuffer;
+}
+
+const std::shared_ptr<IndexBuffer> MeshGeometry::GetIndexBuffer() const
+{
+	return m_indexBuffer;
 }

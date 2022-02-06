@@ -2,9 +2,11 @@
 
 #include <memory>
 
+#include <Rendering/RenderingDefines.h>
 #include <Rendering/BufferHandle.h>
 #include <Rendering/ShaderHandle.h>
 
+#include <Utils/PrimitiveDefs.h>
 #include <Utils/Platform/FilePath.h>
 
 class Vector2D;
@@ -62,6 +64,8 @@ namespace Rendering
 		static VertexShaderHandle CreateVertexShader(const FilePath& filepath);
 		static PixelShaderHandle CreatePixelShader(const FilePath& filepath);
 
+		static void UploadDataToBuffer(const ConstantBufferHandle& buffer, const void* data);
+
 		static void ReleaseVertexShader(VertexShaderHandle& shaderHandle);
 		static void ReleasePixelShader(PixelShaderHandle& shaderHandle);
 
@@ -69,6 +73,21 @@ namespace Rendering
 		static void SetClearColour(const Vector4D& colour);
 
 		static void SetViewport(const ViewportParams& viewportParams);
+
+		// @TODO This API will change when BufferLayout is referenced by a shader and we then pass it in here instead of the shader
+		static void SetInputLayout(const VertexShaderHandle& vertexShader);
+		static void SetPrimitiveTopology(EPrimitiveTopology topologyType);
+
+		static void SetVertexShader(const VertexShaderHandle& vertexShader);
+		static void SetPixelShader(const PixelShaderHandle& pixelShader);
+
+		static void SetConstantBufferVS(const ConstantBufferHandle& buffer, U32 bufferSlot);
+		static void SetConstantBufferPS(const ConstantBufferHandle& buffer, U32 bufferSlot);
+
+		static void SetVertexBuffer(const VertexBufferHandle& buffer, U32 bufferSlot);
+		static void SetIndexBuffer(const IndexBufferHandle& buffer);
+
+		static void DrawIndexed(const IndexBufferHandle& indexBuffer);
 
 	private:
 		//void ProcessCommands();

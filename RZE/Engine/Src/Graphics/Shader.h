@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Rendering/BufferHandle.h>
 #include <Rendering/ShaderHandle.h>
 
 #include <Utils/Interfaces/Resource.h>
@@ -19,11 +20,16 @@ public:
 	void Release() final;
 
 	const std::string& GetName() const { return m_name; }
+
+	Rendering::VertexShaderHandle GetPlatformObject() const { return m_shader; }
+	Rendering::ConstantBufferHandle GetCameraDataBuffer() const { return m_cameraDataBuf; }
+	Rendering::ConstantBufferHandle GetWorldMatrixBuffer() const { return m_worldMatrixBuf; }
 	
 private:
 	const std::string m_name;
 	Rendering::VertexShaderHandle m_shader;
-
+	Rendering::ConstantBufferHandle m_cameraDataBuf;
+	Rendering::ConstantBufferHandle m_worldMatrixBuf;
 };
 
 class PixelShader : public IResource
@@ -39,10 +45,15 @@ public:
 	void Release() final;
 
 	const std::string& GetName() const { return m_name; }
+	const Rendering::PixelShaderHandle GetPlatformObject() const;
+
+	const Rendering::ConstantBufferHandle GetMaterialBuffer() const { return m_materialBuffer; }
 	
 private:
 	const std::string m_name;
 	Rendering::PixelShaderHandle m_shader;
+
+	Rendering::ConstantBufferHandle m_materialBuffer;
 };
 
 

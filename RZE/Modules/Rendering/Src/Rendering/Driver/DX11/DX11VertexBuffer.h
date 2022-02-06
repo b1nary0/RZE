@@ -8,7 +8,7 @@ namespace Rendering
 {
 	class DX11Device;
 
-	class DX11VertexBuffer : public IGPUBuffer
+	class DX11VertexBuffer : public IVertexBuffer
 	{
 	public:
 		DX11VertexBuffer() = default;

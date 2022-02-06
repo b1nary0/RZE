@@ -8,7 +8,7 @@ namespace Rendering
 {
 	class DX11Device;
 
-	class DX11ConstantBuffer : public IGPUBuffer
+	class DX11ConstantBuffer : public IConstantBuffer
 	{
 	public:
 		DX11ConstantBuffer() = default;
@@ -18,7 +18,10 @@ namespace Rendering
 	public:
 		void Allocate(const void* data, size_t size, U32 count) override;
 		void Release() override;
-		void SetActive(U32 bufferSlot) override;
+
+
+		void SetActiveVS(U32 bufferSlot) override;
+		void SetActivePS(U32 bufferSlot) override;
 
 	public:
 		void SetDevice(DX11Device* device);

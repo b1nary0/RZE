@@ -4,7 +4,9 @@
 
 namespace Rendering
 {
-	class IGPUBuffer;
+	class IVertexBuffer;
+	class IIndexBuffer;
+	class IConstantBuffer;
 
 	class VertexBufferHandle
 	{
@@ -18,10 +20,10 @@ namespace Rendering
 		bool IsValid() { return m_buffer != nullptr; }
 
 	private:
-		VertexBufferHandle(const std::shared_ptr<IGPUBuffer>& buffer)
+		VertexBufferHandle(const std::shared_ptr<IVertexBuffer>& buffer)
 			: m_buffer(buffer) {}
 
-		std::shared_ptr<IGPUBuffer> m_buffer;
+		std::shared_ptr<IVertexBuffer> m_buffer;
 	};
 
 	class IndexBufferHandle
@@ -36,10 +38,10 @@ namespace Rendering
 		bool IsValid() { return m_buffer != nullptr; }
 
 	private:
-		IndexBufferHandle(const std::shared_ptr<IGPUBuffer>& buffer)
+		IndexBufferHandle(const std::shared_ptr<IIndexBuffer>& buffer)
 			: m_buffer(buffer) {}
 
-		std::shared_ptr<IGPUBuffer> m_buffer;
+		std::shared_ptr<IIndexBuffer> m_buffer;
 	};
 
 	class ConstantBufferHandle
@@ -52,11 +54,11 @@ namespace Rendering
 
 	public:
 		bool IsValid() { return m_buffer != nullptr; }
-
+		
 	private:
-		ConstantBufferHandle(const std::shared_ptr<IGPUBuffer>& buffer)
+		ConstantBufferHandle(const std::shared_ptr<IConstantBuffer>& buffer)
 			: m_buffer(buffer) {}
 
-		std::shared_ptr<IGPUBuffer> m_buffer;
+		std::shared_ptr<IConstantBuffer> m_buffer;
 	};
 }

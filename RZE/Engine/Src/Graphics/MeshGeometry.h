@@ -35,31 +35,25 @@ public:
 	void SetVertexData(const std::vector<MeshVertex>& verts);
 	void SetIndexData(const std::vector<U32>& indices);
 
-	void SetMaterial(Material* material);
+	void SetMaterial(const std::shared_ptr<Material>& material);
 
-	Material& GetMaterial();
-	const Material& GetMaterial() const;
+	std::shared_ptr<Material> GetMaterial();
+	const std::shared_ptr<Material> GetMaterial() const;
 	const std::vector<MeshVertex>& GetVertices();
 
 	const std::vector<float>& GetVertexDataRaw() const;
 	const std::vector<U32>& GetIndexDataRaw() const;
 
+	const std::shared_ptr<VertexBuffer> GetVertexBuffer() const;
+	const std::shared_ptr<IndexBuffer> GetIndexBuffer() const;
+
 private:
-	std::string mName;
-	std::vector<MeshVertex> mVertices;
-	std::vector<U32> mIndices;
+	std::string m_name;
+	std::vector<MeshVertex> m_vertices;
+	std::vector<U32> m_indices;
 
-	// #TODO
-	// Mature this concept, just jotting some ideas down.
-	// Essentially the RenderData (or whatever it gets called) needs to be created
-	// and essentially "reserved" Renderer-side. Every RenderData node gets allocated
-	// an index, vertex, texture, and constant buffer. Data is uploaded to the GPU
-	// by using this handle as a key into the Renderer storage to modify or control its lifespan.
-	U32 RenderDataHandle;
-
-	std::shared_ptr<VertexBuffer> mVertexBuffer;
-	std::shared_ptr<IndexBuffer> mIndexBuffer;
-
-	Material* mMaterial;
+	std::shared_ptr<VertexBuffer> m_vertexBuffer;
+	std::shared_ptr<IndexBuffer> m_indexBuffer;
+	std::shared_ptr<Material> m_material;
 
 };

@@ -26,6 +26,9 @@ void MeshComponent::CreateRenderObject()
 
 	const Model3D* modelData = resourceHandler.GetResource<Model3D>(m_resource);
 	AssertNotNull(modelData);
+
+	m_renderObject = RZE::GetRenderEngine().CreateRenderObject(modelData->GetStaticMesh());
+	m_renderObject->SetTransform(transformComponent->GetAsMat4x4());
 }
 
 void MeshComponent::OnAddToScene()

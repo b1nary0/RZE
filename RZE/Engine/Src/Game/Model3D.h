@@ -1,8 +1,5 @@
 #pragma once
 
-#include <memory.h>
-#include <string>
-
 #include <Graphics/StaticMesh.h>
 
 #include <Utils/Interfaces/Resource.h>
@@ -18,11 +15,11 @@ public:
 	virtual ~Model3D();
 
 public:
-	virtual bool Load(const FilePath& filePath) override;
-	virtual void Release() override;
+	bool Load(const FilePath& filePath) override;
+	void Release() override;
 
 public:
-	inline const StaticMesh& GetStaticMesh() const { return mMesh; }
+	const StaticMesh& GetStaticMesh() const { return mMesh; }
 
 private:
 	StaticMesh mMesh;

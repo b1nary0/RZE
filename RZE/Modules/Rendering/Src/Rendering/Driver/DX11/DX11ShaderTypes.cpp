@@ -85,6 +85,12 @@ namespace Rendering
 		m_graphicsDevice = graphicsDevice;
 	}
 
+	void DX11VertexShader::SetInputLayout()
+	{
+		ID3D11DeviceContext& deviceContext = m_graphicsDevice->GetDeviceContext();
+		deviceContext.IASetInputLayout(m_hwInputLayout);
+	}
+
 	DX11PixelShader::DX11PixelShader()
 	{
 	}
@@ -121,7 +127,7 @@ namespace Rendering
 	void DX11PixelShader::SetActive()
 	{
 		ID3D11DeviceContext& deviceContext = m_graphicsDevice->GetDeviceContext();
-		deviceContext.PSSetShader(m_hwShader, 0, 0);
+		deviceContext.PSSetShader(m_hwShader, nullptr, 0);
 	}
 
 	void DX11PixelShader::SetDevice(DX11Device* graphicsDevice)

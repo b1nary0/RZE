@@ -30,7 +30,13 @@ namespace Rendering
 		m_buffer->Release();
 	}
 
-	void DX11ConstantBuffer::SetActive(U32 bufferSlot)
+	void DX11ConstantBuffer::SetActiveVS(U32 bufferSlot)
+	{
+		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+		deviceContext.VSSetConstantBuffers(bufferSlot, 1, &m_buffer);
+	}
+
+	void DX11ConstantBuffer::SetActivePS(U32 bufferSlot)
 	{
 		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 		deviceContext.PSSetConstantBuffers(bufferSlot, 1, &m_buffer);

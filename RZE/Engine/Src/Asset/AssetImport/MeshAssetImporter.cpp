@@ -55,9 +55,9 @@ bool MeshAssetImporter::Import(const FilePath& filePath)
 		// in the AssetImporter pipeline, it just spits out the requisite data to load in say Model3D or any other
 		// IResource derived object with a ::Load() function on it
 		MaterialAssetImporter::MaterialData materialData = materialImporter.GetMaterialData();
-		Material* material = MaterialDatabase::Get().GetOrCreateMaterial(materialData.MaterialName);
-		material->Shininess = materialData.Properties.Shininess;
-		material->Opacity = materialData.Properties.Opacity;
+		std::shared_ptr<Material> material = MaterialDatabase::Get().GetOrCreateMaterial(materialData.MaterialName);
+		material->GetProperties().Shininess = materialData.Properties.Shininess;
+		material->GetProperties().Opacity = materialData.Properties.Opacity;
 
 		U8 textureSlot = 0; // #TODO This is a really hacky way to do this. Not safe at all in any other circumstance
 		for (const std::string& texturePath : materialData.TexturePaths)
@@ -72,20 +72,21 @@ bool MeshAssetImporter::Import(const FilePath& filePath)
 			}
 		}
 
+		FilePath noTextureShaderPath("Assets/Shaders/Pixel_Default_NewRenderer.hlsl");
 		if ((materialData.TextureFlags & MaterialAssetImporter::MaterialData::TEXTUREFLAG_ALL) == MaterialAssetImporter::MaterialData::TEXTUREFLAG_ALL)
 		{
 			FilePath fullShaderPath("Assets/Shaders/Pixel_NewRenderer.hlsl");
-			material->SetShaderTechnique(RZE::GetResourceHandler().LoadResource<PixelShader>(fullShaderPath, "Pixel_NewRenderer"));
+			material->SetShaderTechnique(RZE::GetResourceHandler().LoadResource<PixelShader>(noTextureShaderPath, "Pixel_NewRenderer"));
 		}
 		else if (materialData.TextureFlags == MaterialAssetImporter::MaterialData::TEXTUREFLAG_NONE)
 		{
-			FilePath noTextureShaderPath("Assets/Shaders/Pixel_Default_NewRenderer.hlsl");
+			//FilePath noTextureShaderPath("Assets/Shaders/Pixel_Default_NewRenderer.hlsl");
 			material->SetShaderTechnique(RZE::GetResourceHandler().LoadResource<PixelShader>(noTextureShaderPath, "Pixel_Default_NewRenderer"));
 		}
 		else
 		{
 			FilePath diffuseOnlyPath("Assets/Shaders/Pixel_NewRenderer_DiffuseOnly.hlsl");
-			material->SetShaderTechnique(RZE::GetResourceHandler().LoadResource<PixelShader>(diffuseOnlyPath, "Pixel_NewRenderer_DiffuseOnly"));
+			material->SetShaderTechnique(RZE::GetResourceHandler().LoadResource<PixelShader>(noTextureShaderPath, "Pixel_NewRenderer_DiffuseOnly"));
 		}
 
 		geo.SetMaterial(material);
