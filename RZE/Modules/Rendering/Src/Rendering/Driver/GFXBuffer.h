@@ -73,11 +73,11 @@ namespace Rendering
 		virtual void Release() = 0;
 	};
 
-	class IGFXTextureBuffer2D
+	class ITextureBuffer2D
 	{
 	public:
-		IGFXTextureBuffer2D() = default;
-		virtual ~IGFXTextureBuffer2D() = default;
+		ITextureBuffer2D() = default;
+		virtual ~ITextureBuffer2D() = default;
 
 		virtual void Allocate(void* data, const GFXTextureBufferParams& params) = 0;
 		virtual void Release() = 0;

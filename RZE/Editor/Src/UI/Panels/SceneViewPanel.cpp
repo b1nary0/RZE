@@ -3,7 +3,7 @@
 #include <EditorApp.h>
 
 #include <Rendering/Renderer.h>
-#include <Rendering/Driver/DX11/DX11GFXTextureBuffer2D.h>
+#include <Rendering/Driver/DX11/DX11TextureBuffer2D.h>
 #include <Rendering/Graphics/RenderTarget.h>
 
 #include <ImGui/imgui.h>
@@ -42,7 +42,7 @@ namespace Editor
 			}
 
 			Rendering::RenderTargetTexture* const pRTT = RZE_Application::RZE().GetApplication().GetRTT();
-			Rendering::DX11GFXTextureBuffer2D& GFXTexture = pRTT->GetGFXTexture();
+			Rendering::DX11TextureBuffer2D& GFXTexture = pRTT->GetGFXTexture();
 
 			auto clamp = [](float a, float b, float val)
 			{

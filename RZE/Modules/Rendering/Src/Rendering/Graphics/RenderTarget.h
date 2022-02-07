@@ -9,7 +9,7 @@ struct ID3D11RenderTargetView;
 namespace Rendering
 {
 	class DX11Device;
-	class DX11GFXTextureBuffer2D;
+	class DX11TextureBuffer2D;
 
 	class RenderTargetTexture
 	{
@@ -23,8 +23,8 @@ namespace Rendering
 
 		U32 GetTextureID() const;
 		U32 GetDepthTextureID() const;
-		DX11GFXTextureBuffer2D& GetGFXTexture();
-		DX11GFXTextureBuffer2D& GetDepthTexture();
+		DX11TextureBuffer2D& GetGFXTexture();
+		DX11TextureBuffer2D& GetDepthTexture();
 
 		U32 GetWidth() const;
 		U32 GetHeight() const;
@@ -39,7 +39,7 @@ namespace Rendering
 
 		// All these driver-specific classes will need
 		// to be moved with new API.
-		DX11GFXTextureBuffer2D* mGFXTexture;
-		DX11GFXTextureBuffer2D* mDepthTexture;
+		DX11TextureBuffer2D* mGFXTexture;
+		DX11TextureBuffer2D* mDepthTexture;
 	};
 }

@@ -30,7 +30,7 @@ namespace Rendering
 			// in the engine? Load once and reference later? Then if mutable, we can handle
 			// that with a bespoke class like MutableTexture or something.
 			// Should handle this sooner than later...
-			mResources.push_back(std::make_unique<DX11GFXTextureBuffer2D>());
+			mResources.push_back(std::make_unique<DX11TextureBuffer2D>());
 			mResources.back()->SetDevice(&hwDevice);
 			mResources.back()->Allocate(texture.mData, params);
 		}
@@ -48,7 +48,7 @@ namespace Rendering
 		mResources.clear();
 	}
 
-	Rendering::DX11GFXTextureBuffer2D* TexturePack::GetResourceAt(size_t index)
+	Rendering::DX11TextureBuffer2D* TexturePack::GetResourceAt(size_t index)
 	{
 		AssertExpr(index < mResources.size());
 		return mResources[index].get();

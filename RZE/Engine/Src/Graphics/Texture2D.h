@@ -12,8 +12,8 @@ public:
 	virtual ~Texture2D();
 
 public:
-	virtual bool Load(const FilePath& filePath) final override;
-	virtual void Release() final override;
+	bool Load(const FilePath& filePath) final;
+	void Release() final;
 
 public:
 	U8* GetRawData() const { return mData; }

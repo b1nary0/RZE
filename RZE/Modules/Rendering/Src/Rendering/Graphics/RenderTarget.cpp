@@ -1,7 +1,7 @@
 #include <Rendering/Graphics/RenderTarget.h>
 
 #include <Rendering/Driver/DX11/DX11Device.h>
-#include <Rendering/Driver/DX11/DX11GFXTextureBuffer2D.h>
+#include <Rendering/Driver/DX11/DX11TextureBuffer2D.h>
 
 #include <Utils/DebugUtils/Debug.h>
 
@@ -51,13 +51,13 @@ namespace Rendering
 		return mDepthTextureID;
 	}
 
-	DX11GFXTextureBuffer2D& RenderTargetTexture::GetGFXTexture()
+	DX11TextureBuffer2D& RenderTargetTexture::GetGFXTexture()
 	{
 		AssertNotNull(mGFXTexture);
 		return *mGFXTexture;
 	}
 
-	DX11GFXTextureBuffer2D& RenderTargetTexture::GetDepthTexture()
+	DX11TextureBuffer2D& RenderTargetTexture::GetDepthTexture()
 	{
 		AssertNotNull(mDepthTexture);
 		return *mDepthTexture;

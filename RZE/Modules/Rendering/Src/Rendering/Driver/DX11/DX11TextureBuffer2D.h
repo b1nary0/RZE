@@ -12,13 +12,13 @@ namespace Rendering
 {
 	class DX11Device;
 
-	class DX11GFXTextureBuffer2D : public IGFXTextureBuffer2D
+	class DX11TextureBuffer2D : public ITextureBuffer2D
 	{
 	public:
-		DX11GFXTextureBuffer2D() {};
-		~DX11GFXTextureBuffer2D() {};
+		DX11TextureBuffer2D() {};
+		~DX11TextureBuffer2D() {};
 
-	// IGFXTextureBuffer2D interface
+	// ITextureBuffer2D interface
 	public:
 		virtual void Allocate(void* data, const GFXTextureBufferParams& params) override;
 		virtual void Release() override;

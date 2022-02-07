@@ -143,7 +143,7 @@ namespace Rendering
 		mSyncInterval = interval;
 	}
 
-// 	void DX11Device::SendTextureToBackBuffer(DX11GFXTextureBuffer2D* texture)
+// 	void DX11Device::SendTextureToBackBuffer(DX11TextureBuffer2D* texture)
 // 	{
 // 		FLOAT rgba[4] = { 1.0f, 1.0f, 0.0f, 1.0f };
 // 		mDeviceContext->OMSetRenderTargets(1, &mRenderTargetView, mDepthStencilView);

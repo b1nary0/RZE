@@ -1,4 +1,4 @@
-#include <Rendering/Driver/DX11/DX11GFXTextureBuffer2D.h>
+#include <Rendering/Driver/DX11/DX11TextureBuffer2D.h>
 
 #include <Rendering/Driver/DX11/DX11Device.h>
 
@@ -9,7 +9,7 @@
 namespace Rendering
 {
 
-	void DX11GFXTextureBuffer2D::Allocate(void* data, const GFXTextureBufferParams& params)
+	void DX11TextureBuffer2D::Allocate(void* data, const GFXTextureBufferParams& params)
 	{
 		D3D11_SAMPLER_DESC sampDesc;
 		ZeroMemory(&sampDesc, sizeof(sampDesc));
@@ -119,7 +119,7 @@ namespace Rendering
 		}
 	}
 
-	void DX11GFXTextureBuffer2D::Release()
+	void DX11TextureBuffer2D::Release()
 	{
 		AssertNotNull(mResource);
 		AssertNotNull(mSRV);
@@ -127,7 +127,7 @@ namespace Rendering
 		
 		// #TODO
 		// The if (!bIsDepthTexture)'s in this function are a result of an infrastructure
-		// that is essentially DX11GFXTextureBuffer2D. Because we don't need a RTV
+		// that is essentially DX11TextureBuffer2D. Because we don't need a RTV
 		// for a depth texture, we won't have anything allocated here. This should be 
 		// handled by subclassing different types of texture buffer uses (or something)
 		if (!bIsDepthTexture)
@@ -145,42 +145,42 @@ namespace Rendering
 		}
 	}
 
-	void DX11GFXTextureBuffer2D::SetIsRenderTarget()
+	void DX11TextureBuffer2D::SetIsRenderTarget()
 	{
 		bIsRenderTarget = true;
 	}
 
-	void DX11GFXTextureBuffer2D::SetDevice(DX11Device* device)
+	void DX11TextureBuffer2D::SetDevice(DX11Device* device)
 	{
 		AssertNotNull(device);
 		mDevice = device;
 	}
 
-	ID3D11ShaderResourceView& DX11GFXTextureBuffer2D::GetResourceView()
+	ID3D11ShaderResourceView& DX11TextureBuffer2D::GetResourceView()
 	{
 		AssertNotNull(mSRV);
 		return *mSRV;
 	}
 
-	ID3D11RenderTargetView& DX11GFXTextureBuffer2D::GetTargetView()
+	ID3D11RenderTargetView& DX11TextureBuffer2D::GetTargetView()
 	{
 		AssertNotNull(mRTV);
 		return *mRTV;
 	}
 
-	ID3D11DepthStencilView& DX11GFXTextureBuffer2D::GetDepthView()
+	ID3D11DepthStencilView& DX11TextureBuffer2D::GetDepthView()
 	{
 		AssertNotNull(mDSV);
 		return *mDSV;
 	}
 
-	ID3D11SamplerState& DX11GFXTextureBuffer2D::GetSamplerState()
+	ID3D11SamplerState& DX11TextureBuffer2D::GetSamplerState()
 	{
 		AssertNotNull(mSamplerState);
 		return *mSamplerState;
 	}
 
-	ID3D11Texture2D* DX11GFXTextureBuffer2D::GetHWResource()
+	ID3D11Texture2D* DX11TextureBuffer2D::GetHWResource()
 	{
 		return mResource;
 	}

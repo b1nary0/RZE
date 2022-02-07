@@ -18,7 +18,7 @@ namespace Rendering
 	class DX11VertexBuffer;
 	class DX11IndexBuffer;
 	class DX11ConstantBuffer;
-	class DX11GFXTextureBuffer2D;
+	class DX11TextureBuffer2D;
 
 	class DX11Device : public IGFXDevice
 	{
@@ -39,7 +39,7 @@ namespace Rendering
 		
 	public:
 		void SetSyncInterval(U32 interval);
-		//void SendTextureToBackBuffer(DX11GFXTextureBuffer2D* texture);
+		//void SendTextureToBackBuffer(DX11TextureBuffer2D* texture);
 		
 	public:
 		void HandleWindowResize(U32 newWidth, U32 newHeight);
