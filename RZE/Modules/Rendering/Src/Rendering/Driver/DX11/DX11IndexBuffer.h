@@ -21,11 +21,12 @@ namespace Rendering
 
 		void SetActive() override;
 
+		U32 GetIndexCount() override;
+
 	public:
 		void SetDevice(DX11Device* device);
 		ID3D11Buffer& GetHardwareBuffer();
 
-		U32 GetIndexCount();
 
 	private:
 		U32 mIndexCount;

@@ -4,6 +4,7 @@
 #include <Graphics/IndexBuffer.h>
 #include <Graphics/Material.h>
 #include <Graphics/Shader.h>
+#include <Graphics/Texture2D.h>
 
 #include <Utils/Math/Vector4D.h>
 
@@ -31,30 +32,7 @@ void RenderEngine::Update()
 	OPTICK_EVENT();
 
 	Rendering::Renderer::UploadDataToBuffer(m_vertexShader->GetCameraDataBuffer(), &m_camera);
-
-	for (auto& renderObject : m_renderObjects)
-	{
-		struct MatrixMem
-		{
-			Matrix4x4 world;
-			Matrix4x4 inverseWorld;
-		} matrixMem;
-
-		matrixMem.world = renderObject->GetTransform();
-		matrixMem.inverseWorld = renderObject->GetTransform().Inverse();
-
-		Rendering::Renderer::UploadDataToBuffer(m_vertexShader->GetWorldMatrixBuffer(), &matrixMem);
-
-		for (auto& meshGeometry : renderObject->GetStaticMesh().GetSubMeshes())
-		{
-			std::shared_ptr<Material> material = meshGeometry.GetMaterial();
-			const Material::MaterialProperties& materialProperties = material->GetProperties();
-			const PixelShader* const pixelShader = RZE::GetResourceHandler().GetResource<PixelShader>(material->GetShaderResource());
-			
-			Rendering::Renderer::UploadDataToBuffer(pixelShader->GetMaterialBuffer(), &materialProperties);
-		}
-	}
-
+	
 #ifdef IMGUI_ENABLED
 	ImGui::ShowDemoWindow();
 #endif
@@ -79,6 +57,17 @@ void RenderEngine::Render()
 
 	for (auto& renderObject : m_renderObjects)
 	{
+		struct MatrixMem
+		{
+			Matrix4x4 world;
+			Matrix4x4 inverseWorld;
+		} matrixMem;
+
+		matrixMem.world = renderObject->GetTransform();
+		matrixMem.inverseWorld = renderObject->GetTransform().Inverse();
+
+		Rendering::Renderer::UploadDataToBuffer(m_vertexShader->GetWorldMatrixBuffer(), &matrixMem);
+
 		// @TODO
 		// Currently each MeshGeometry is a draw call. Need to batch this down so it becomes a single draw call
 		// per render object, at least.
@@ -87,12 +76,29 @@ void RenderEngine::Render()
 			// @TODO
 			// This is god awful. Just in place while developing shader model.
 			// Should get resolved once the system matures
-			const PixelShader* const pixelShader = RZE::GetResourceHandler().GetResource<PixelShader>(meshGeometry.GetMaterial()->GetShaderResource());
+			std::shared_ptr<Material> material = meshGeometry.GetMaterial();
+			const Material::MaterialProperties& materialProperties = material->GetProperties();
+			const PixelShader* const pixelShader = RZE::GetResourceHandler().GetResource<PixelShader>(material->GetShaderResource());
+
 			Rendering::Renderer::SetPixelShader(pixelShader->GetPlatformObject());
 
+			// @TODO This upload call should be moved when MaterialInstance is a thing.
+			Rendering::Renderer::UploadDataToBuffer(pixelShader->GetMaterialBuffer(), &materialProperties);
+			
 			Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetWorldMatrixBuffer(), 1);
 			Rendering::Renderer::SetConstantBufferPS(m_vertexShader->GetCameraDataBuffer(), 0);
 			Rendering::Renderer::SetConstantBufferPS(pixelShader->GetMaterialBuffer(), 1);
+
+			// @TODO Really need to get to texture infrastructure refactor soon - 2/6/2022
+			for (U8 textureSlot = 0; textureSlot < Material::TextureSlot::TEXTURE_SLOT_COUNT; ++textureSlot)
+			{
+				const Texture2D* const texture = RZE::GetResourceHandler().GetResource<Texture2D>(material->GetTexture(textureSlot));
+				if (texture != nullptr)
+				{
+					// @TODO Should solve this better by providing an API that will provide a texture resource array
+					Rendering::Renderer::SetTextureResource(texture->GetPlatformObject(), textureSlot);
+				}
+			}
 
 			Rendering::Renderer::SetVertexBuffer(meshGeometry.GetVertexBuffer()->GetPlatformObject(), 0);
 			Rendering::Renderer::SetIndexBuffer(meshGeometry.GetIndexBuffer()->GetPlatformObject());

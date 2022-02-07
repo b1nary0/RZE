@@ -4,9 +4,11 @@
 
 namespace Rendering
 {
-	class IVertexBuffer;
-	class IIndexBuffer;
 	class IConstantBuffer;
+	class IIndexBuffer;
+	class IVertexBuffer;
+	class ITextureBuffer2D;
+
 
 	class VertexBufferHandle
 	{
@@ -60,5 +62,23 @@ namespace Rendering
 			: m_buffer(buffer) {}
 
 		std::shared_ptr<IConstantBuffer> m_buffer;
+	};
+
+	class TextureBuffer2DHandle
+	{
+		friend class Renderer;
+
+	public:
+		TextureBuffer2DHandle() = default;
+		virtual ~TextureBuffer2DHandle() = default;
+
+	public:
+		bool IsValid() { return m_buffer != nullptr; }
+
+	private:
+		TextureBuffer2DHandle(const std::shared_ptr<ITextureBuffer2D>& buffer)
+			: m_buffer(buffer) {}
+
+		std::shared_ptr<ITextureBuffer2D> m_buffer;
 	};
 }

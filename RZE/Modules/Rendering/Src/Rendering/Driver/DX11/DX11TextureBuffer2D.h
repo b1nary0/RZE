@@ -20,8 +20,9 @@ namespace Rendering
 
 	// ITextureBuffer2D interface
 	public:
-		virtual void Allocate(void* data, const GFXTextureBufferParams& params) override;
-		virtual void Release() override;
+		void Allocate(void* data, const GFXTextureBufferParams& params) override;
+		void Release() override;
+		void SetActive(U32 textureSlot) override;
 
 	public:
 		// #TODO(Hack asf)
@@ -40,14 +41,14 @@ namespace Rendering
 		ID3D11Texture2D* GetHWResource();
 
 	private:
-		DX11Device* mDevice;
+		DX11Device* m_device;
 
-		ID3D11Texture2D* mResource;
-		ID3D11SamplerState* mSamplerState;
+		ID3D11Texture2D* m_resource;
+		ID3D11SamplerState* m_samplerState;
 
-		ID3D11ShaderResourceView* mSRV;
-		ID3D11RenderTargetView* mRTV;
-		ID3D11DepthStencilView* mDSV;
+		ID3D11ShaderResourceView* m_SRV;
+		ID3D11RenderTargetView* m_RTV;
+		ID3D11DepthStencilView* m_DSV;
 
 		bool bIsRenderTarget { false };
 		bool bIsDepthTexture { false };

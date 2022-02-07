@@ -20,7 +20,7 @@ namespace Rendering
 		sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
 		sampDesc.MinLOD = 0;
 		sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
-		mDevice->GetHardwareDevice().CreateSamplerState(&sampDesc, &mSamplerState);
+		m_device->GetHardwareDevice().CreateSamplerState(&sampDesc, &m_samplerState);
 
 		// #TODO
 		// lol get rid of this shit
@@ -43,7 +43,7 @@ namespace Rendering
 			textureDesc.CPUAccessFlags = 0;
 			textureDesc.MiscFlags = 0;
 
-			HRESULT hr = mDevice->GetHardwareDevice().CreateTexture2D(&textureDesc, NULL, &mResource);
+			HRESULT hr = m_device->GetHardwareDevice().CreateTexture2D(&textureDesc, NULL, &m_resource);
 			AssertExpr(hr == S_OK);
 
 			D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
@@ -51,7 +51,7 @@ namespace Rendering
 			depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 			depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 			depthStencilViewDesc.Texture2D.MipSlice = 0;
-			hr = mDevice->GetHardwareDevice().CreateDepthStencilView(mResource, &depthStencilViewDesc, &mDSV);
+			hr = m_device->GetHardwareDevice().CreateDepthStencilView(m_resource, &depthStencilViewDesc, &m_DSV);
 			AssertExpr(hr == S_OK);
 
 			if (params.bIsShaderResource)
@@ -63,7 +63,7 @@ namespace Rendering
 				srvDesc.Texture2D.MostDetailedMip = params.MostDetailedMip;
 				srvDesc.Texture2D.MipLevels = (params.MipLevels == 0) ? -1 : params.MipLevels;
 
-				hr = mDevice->GetHardwareDevice().CreateShaderResourceView(mResource, &srvDesc, &mSRV);
+				hr = m_device->GetHardwareDevice().CreateShaderResourceView(m_resource, &srvDesc, &m_SRV);
 				AssertExpr(hr == S_OK);
 			}
 		}
@@ -101,29 +101,29 @@ namespace Rendering
 			rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 			rtvDesc.Texture2D.MipSlice = 0;
 
-			HRESULT hr = mDevice->GetHardwareDevice().CreateTexture2D(&textureDesc, NULL, &mResource);
+			HRESULT hr = m_device->GetHardwareDevice().CreateTexture2D(&textureDesc, NULL, &m_resource);
 			AssertExpr(hr == S_OK);
 
 			if (data != nullptr)
 			{
 				U32 rowPitch = (32 * params.Width) / 8;
-				mDevice->GetDeviceContext().UpdateSubresource(mResource, 0, NULL, data, rowPitch, 0);
+				m_device->GetDeviceContext().UpdateSubresource(m_resource, 0, NULL, data, rowPitch, 0);
 			}
 
-			hr = mDevice->GetHardwareDevice().CreateRenderTargetView(mResource, &rtvDesc, &mRTV);
+			hr = m_device->GetHardwareDevice().CreateRenderTargetView(m_resource, &rtvDesc, &m_RTV);
 			AssertExpr(hr == S_OK);
-			hr = mDevice->GetHardwareDevice().CreateShaderResourceView(mResource, &srvDesc, &mSRV);
+			hr = m_device->GetHardwareDevice().CreateShaderResourceView(m_resource, &srvDesc, &m_SRV);
 			AssertExpr(hr == S_OK);
 
-			mDevice->GetDeviceContext().GenerateMips(mSRV);
+			m_device->GetDeviceContext().GenerateMips(m_SRV);
 		}
 	}
 
 	void DX11TextureBuffer2D::Release()
 	{
-		AssertNotNull(mResource);
-		AssertNotNull(mSRV);
-		AssertNotNull(mSamplerState);
+		AssertNotNull(m_resource);
+		AssertNotNull(m_SRV);
+		AssertNotNull(m_samplerState);
 		
 		// #TODO
 		// The if (!bIsDepthTexture)'s in this function are a result of an infrastructure
@@ -132,17 +132,24 @@ namespace Rendering
 		// handled by subclassing different types of texture buffer uses (or something)
 		if (!bIsDepthTexture)
 		{
-			AssertNotNull(mRTV);
+			AssertNotNull(m_RTV);
 		}
 
-		mResource->Release();
-		mSRV->Release();
-		mSamplerState->Release();
+		m_resource->Release();
+		m_SRV->Release();
+		m_samplerState->Release();
 
 		if (!bIsDepthTexture)
 		{
-			mRTV->Release();
+			m_RTV->Release();
 		}
+	}
+
+	void DX11TextureBuffer2D::SetActive(U32 textureSlot)
+	{
+		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+		deviceContext.PSSetShaderResources(textureSlot, 1, &m_SRV);
+		deviceContext.PSSetSamplers(0, 1, &m_samplerState);
 	}
 
 	void DX11TextureBuffer2D::SetIsRenderTarget()
@@ -153,36 +160,36 @@ namespace Rendering
 	void DX11TextureBuffer2D::SetDevice(DX11Device* device)
 	{
 		AssertNotNull(device);
-		mDevice = device;
+		m_device = device;
 	}
 
 	ID3D11ShaderResourceView& DX11TextureBuffer2D::GetResourceView()
 	{
-		AssertNotNull(mSRV);
-		return *mSRV;
+		AssertNotNull(m_SRV);
+		return *m_SRV;
 	}
 
 	ID3D11RenderTargetView& DX11TextureBuffer2D::GetTargetView()
 	{
-		AssertNotNull(mRTV);
-		return *mRTV;
+		AssertNotNull(m_RTV);
+		return *m_RTV;
 	}
 
 	ID3D11DepthStencilView& DX11TextureBuffer2D::GetDepthView()
 	{
-		AssertNotNull(mDSV);
-		return *mDSV;
+		AssertNotNull(m_DSV);
+		return *m_DSV;
 	}
 
 	ID3D11SamplerState& DX11TextureBuffer2D::GetSamplerState()
 	{
-		AssertNotNull(mSamplerState);
-		return *mSamplerState;
+		AssertNotNull(m_samplerState);
+		return *m_samplerState;
 	}
 
 	ID3D11Texture2D* DX11TextureBuffer2D::GetHWResource()
 	{
-		return mResource;
+		return m_resource;
 	}
 
 }

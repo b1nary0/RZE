@@ -48,6 +48,8 @@ namespace Rendering
 		// @TODO Index buffers and vertex buffers don't fit this interface very well
 		// Will have to go back to previous implementation of interface for each
 		virtual void SetActive() = 0;
+
+		virtual U32 GetIndexCount() = 0;
 	};
 
 	class IConstantBuffer
@@ -81,5 +83,7 @@ namespace Rendering
 
 		virtual void Allocate(void* data, const GFXTextureBufferParams& params) = 0;
 		virtual void Release() = 0;
+
+		virtual void SetActive(U32 textureSlot) = 0;
 	};
 }

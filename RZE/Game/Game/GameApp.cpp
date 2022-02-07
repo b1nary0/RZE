@@ -32,9 +32,6 @@ void GameApp::Initialize()
 	//             -- Need to add at least commandline arg like -startscene or something)
 	
 	activeScene.Load(FilePath("Assets/Scenes/RenderTest.scene"));
-
-	//activeScene.AddSystem<FreeCameraSystem>();
-	//activeScene.AddSystem<RotateSingleEntitySystem>();
 }
 
 void GameApp::Start()

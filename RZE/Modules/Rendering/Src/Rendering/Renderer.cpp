@@ -13,6 +13,7 @@
 #include <Rendering/Driver/DX11/DX11ConstantBuffer.h>
 #include <Rendering/Driver/DX11/DX11IndexBuffer.h>
 #include <Rendering/Driver/DX11/DX11VertexBuffer.h>
+#include <Rendering/Driver/DX11/DX11TextureBuffer2D.h>
 #include <Rendering/Driver/DX11/DX11ShaderTypes.h>
 
 namespace Rendering
@@ -115,6 +116,15 @@ namespace Rendering
 		return ConstantBufferHandle(constantBuffer);
 	}
 
+	TextureBuffer2DHandle Renderer::CreateTextureBuffer2D(void* data, const GFXTextureBufferParams& params)
+	{
+		std::shared_ptr<DX11TextureBuffer2D> textureBuffer = std::make_shared<DX11TextureBuffer2D>();
+		textureBuffer->SetDevice(m_device.get());
+		textureBuffer->Allocate(data, params);
+
+		return TextureBuffer2DHandle(textureBuffer);
+	}
+
 	VertexShaderHandle Renderer::CreateVertexShader(const FilePath& filePath)
 	{
 		std::shared_ptr<DX11VertexShader> vertexShader = std::make_shared<DX11VertexShader>();
@@ -189,50 +199,49 @@ namespace Rendering
 	void Renderer::SetVertexShader(const VertexShaderHandle& vertexShader)
 	{
 		std::shared_ptr<IShader> shaderPtr = vertexShader.m_shader;
-		DX11VertexShader* const dx11Shader = static_cast<DX11VertexShader*>(shaderPtr.get());
-		dx11Shader->SetActive();
+		shaderPtr->SetActive();
 	}
 
 	void Renderer::SetPixelShader(const PixelShaderHandle& pixelShader)
 	{
 		std::shared_ptr<IShader> shaderPtr = pixelShader.m_shader;
-		DX11PixelShader* const dx11Shader = static_cast<DX11PixelShader*>(shaderPtr.get());
-		dx11Shader->SetActive();
+		shaderPtr->SetActive();
 	}
 
 	void Renderer::SetConstantBufferVS(const ConstantBufferHandle& buffer, U32 bufferSlot)
 	{
 		std::shared_ptr<IConstantBuffer> bufferPtr = buffer.m_buffer;
-		DX11ConstantBuffer* const dx11Buffer = static_cast<DX11ConstantBuffer*>(bufferPtr.get());
-		dx11Buffer->SetActiveVS(bufferSlot);
+		bufferPtr->SetActiveVS(bufferSlot);
 	}
 
 	void Renderer::SetConstantBufferPS(const ConstantBufferHandle& buffer, U32 bufferSlot)
 	{
 		std::shared_ptr<IConstantBuffer> bufferPtr = buffer.m_buffer;
-		DX11ConstantBuffer* const dx11Buffer = static_cast<DX11ConstantBuffer*>(bufferPtr.get());
-		dx11Buffer->SetActivePS(bufferSlot);
+		bufferPtr->SetActivePS(bufferSlot);
 	}
 
 	void Renderer::SetVertexBuffer(const VertexBufferHandle& buffer, U32 bufferSlot)
 	{
 		std::shared_ptr<IVertexBuffer> bufferPtr = buffer.m_buffer;
-		DX11VertexBuffer* const dx11Buffer = static_cast<DX11VertexBuffer*>(bufferPtr.get());
-		dx11Buffer->SetActive(bufferSlot);
+		bufferPtr->SetActive(bufferSlot);
 	}
 
 	void Renderer::SetIndexBuffer(const IndexBufferHandle& buffer)
 	{
 		std::shared_ptr<IIndexBuffer> bufferPtr = buffer.m_buffer;
-		DX11IndexBuffer* const dx11Buffer = static_cast<DX11IndexBuffer*>(bufferPtr.get());
-		dx11Buffer->SetActive();
+		bufferPtr->SetActive();
+	}
+
+	void Renderer::SetTextureResource(const TextureBuffer2DHandle& texture, U32 textureSlot)
+	{
+		std::shared_ptr<ITextureBuffer2D> bufferPtr = texture.m_buffer;
+		bufferPtr->SetActive(textureSlot);
 	}
 
 	void Renderer::DrawIndexed(const IndexBufferHandle& indexBuffer)
 	{
 		std::shared_ptr<IIndexBuffer> bufferPtr = indexBuffer.m_buffer;
-		DX11IndexBuffer* const dx11Buffer = static_cast<DX11IndexBuffer*>(bufferPtr.get());
 		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
-		deviceContext.DrawIndexed(dx11Buffer->GetIndexCount(), 0, 0);
+		deviceContext.DrawIndexed(bufferPtr->GetIndexCount(), 0, 0);
 	}
 }

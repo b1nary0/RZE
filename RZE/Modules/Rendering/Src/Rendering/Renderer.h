@@ -15,7 +15,10 @@ class Vector4D;
 namespace Rendering
 {
 	class DX11Device;
+
 	class IVertexBuffer;
+
+	struct GFXTextureBufferParams;
 	
 	class Renderer
 	{
@@ -59,6 +62,7 @@ namespace Rendering
 		static VertexBufferHandle CreateVertexBuffer(void* data, size_t dataTypeSize, size_t count);
 		static IndexBufferHandle CreateIndexBuffer(void* data, size_t dataTypeSize, size_t count);
 		static ConstantBufferHandle CreateConstantBuffer(void* data, size_t dataTypeSize, size_t count);
+		static TextureBuffer2DHandle CreateTextureBuffer2D(void* data, const GFXTextureBufferParams& params);
 
 		// @TODO add BufferLayout param and drive input layout from BufferLayout
 		static VertexShaderHandle CreateVertexShader(const FilePath& filepath);
@@ -86,6 +90,8 @@ namespace Rendering
 
 		static void SetVertexBuffer(const VertexBufferHandle& buffer, U32 bufferSlot);
 		static void SetIndexBuffer(const IndexBufferHandle& buffer);
+
+		static void SetTextureResource(const TextureBuffer2DHandle& texture, U32 textureSlot);
 
 		static void DrawIndexed(const IndexBufferHandle& indexBuffer);
 
