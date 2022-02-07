@@ -47,7 +47,7 @@ public:
 
 	// @TODO SetShaderTechnique is actually being set as PixelShader directly until actual techniques are implemented
 	void SetShaderTechnique(const ResourceHandle& shaderTechnique);
-	ResourceHandle GetShaderResource() const { return mShaderTechnique; }
+	ResourceHandle GetShaderResource() const { return m_shaderTechnique; }
 
 	MaterialProperties& GetProperties() { return m_properties; }
 	const MaterialProperties& GetProperties() const { return m_properties; }
@@ -55,8 +55,8 @@ public:
 private:
 	MaterialProperties m_properties;
 
-	ResourceHandle mShaderTechnique;
-	std::vector<ResourceHandle> mTextureSlots;
+	ResourceHandle m_shaderTechnique;
+	std::vector<ResourceHandle> m_textureSlots;
 };
 
 // [newrenderer]
@@ -79,13 +79,13 @@ public:
 	// Slow and gross but just stubbing code ideas for the moment
 	std::shared_ptr<Material> GetOrCreateMaterial(const std::string& name)
 	{
-		auto iter = mDatabase.find(name);
+		auto iter = m_database.find(name);
 
-		if (iter == mDatabase.end())
+		if (iter == m_database.end())
 		{
 			std::shared_ptr<Material> material = std::shared_ptr<Material>(new Material());
-			mDatabase[name] = material;
-			return std::move(material);
+			m_database[name] = material;
+			return material;
 		}
 
 		return iter->second;
@@ -93,8 +93,8 @@ public:
 
 	std::shared_ptr<Material> FindMaterial(const std::string& name)
 	{
-		auto iter = mDatabase.find(name);
-		if (iter != mDatabase.end())
+		auto iter = m_database.find(name);
+		if (iter != m_database.end())
 		{
 			return iter->second;
 		}
@@ -102,5 +102,5 @@ public:
 	}
 
 private:
-	std::unordered_map<std::string, std::shared_ptr<Material>> mDatabase;
+	std::unordered_map<std::string, std::shared_ptr<Material>> m_database;
 };
