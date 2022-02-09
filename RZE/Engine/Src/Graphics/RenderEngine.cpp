@@ -24,10 +24,10 @@ void RenderEngine::Initialize(void* windowHandle)
 	
 	Rendering::ShaderInputLayout inputLayout =
 	{
-		{ "POSITION", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::ShaderInputLayout::EDataClassification::PER_VERTEX, 0 },
-		{ "NORMAL", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::ShaderInputLayout::EDataClassification::PER_VERTEX, 12 },
-		{ "UV", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::ShaderInputLayout::EDataClassification::PER_VERTEX, 24 },
-		{ "TANGENT", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::ShaderInputLayout::EDataClassification::PER_VERTEX, 32 }
+		{ "POSITION", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 0 },
+		{ "NORMAL", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 12 },
+		{ "UV", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 24 },
+		{ "TANGENT", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 32 }
 	};
 
 	m_vertexShaderResource = RZE::GetResourceHandler().LoadResource<VertexShader>(FilePath("Assets/Shaders/Vertex_NewRenderer.hlsl"), "Vertex_NewRenderer", inputLayout);

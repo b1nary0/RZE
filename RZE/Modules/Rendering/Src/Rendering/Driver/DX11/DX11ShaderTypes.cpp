@@ -29,17 +29,6 @@ namespace
 			OutputDebugString(output.c_str());
 		}
 	};
-	
-	D3D11_INPUT_CLASSIFICATION ConvertToD3D11InputClassification(Rendering::ShaderInputLayout::EDataClassification inputClassification)
-	{
-		switch (inputClassification)
-		{
-			case Rendering::ShaderInputLayout::EDataClassification::PER_VERTEX: return D3D11_INPUT_PER_VERTEX_DATA;
-			case Rendering::ShaderInputLayout::EDataClassification::PER_INSTANCE: return D3D11_INPUT_PER_INSTANCE_DATA;
-		}
-
-		return D3D11_INPUT_PER_VERTEX_DATA;
-	}
 }
 
 namespace Rendering

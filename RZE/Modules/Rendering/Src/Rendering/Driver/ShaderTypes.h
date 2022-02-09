@@ -15,12 +15,6 @@ namespace Rendering
 	class ShaderInputLayout
 	{
 	public:
-		enum class EDataClassification : uint8_t
-		{
-			PER_INSTANCE = 0,
-			PER_VERTEX
-		};
-
 		struct ShaderInputLayoutData
 		{
 			ShaderInputLayoutData(const std::string& name, EDataFormat dataFormat, EDataClassification dataClassification, size_t offset)
