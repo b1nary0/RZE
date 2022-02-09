@@ -21,8 +21,16 @@ RenderEngine::~RenderEngine()
 void RenderEngine::Initialize(void* windowHandle)
 {
 	Rendering::Renderer::Initialize(windowHandle);
+	
+	Rendering::ShaderInputLayout inputLayout =
+	{
+		{ "POSITION", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::ShaderInputLayout::EDataClassification::PER_VERTEX, 0 },
+		{ "NORMAL", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::ShaderInputLayout::EDataClassification::PER_VERTEX, 12 },
+		{ "UV", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::ShaderInputLayout::EDataClassification::PER_VERTEX, 24 },
+		{ "TANGENT", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::ShaderInputLayout::EDataClassification::PER_VERTEX, 32 }
+	};
 
-	m_vertexShaderResource = RZE::GetResourceHandler().LoadResource<VertexShader>(FilePath("Assets/Shaders/Vertex_NewRenderer.hlsl"), "Vertex_NewRenderer");
+	m_vertexShaderResource = RZE::GetResourceHandler().LoadResource<VertexShader>(FilePath("Assets/Shaders/Vertex_NewRenderer.hlsl"), "Vertex_NewRenderer", inputLayout);
 	AssertExpr(m_vertexShaderResource.IsValid());
 	m_vertexShader = RZE::GetResourceHandler().GetResource<VertexShader>(m_vertexShaderResource);
 }

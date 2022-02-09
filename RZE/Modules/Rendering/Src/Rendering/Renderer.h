@@ -63,9 +63,8 @@ namespace Rendering
 		static IndexBufferHandle CreateIndexBuffer(void* data, size_t dataTypeSize, size_t count);
 		static ConstantBufferHandle CreateConstantBuffer(void* data, size_t dataTypeSize, size_t count);
 		static TextureBuffer2DHandle CreateTextureBuffer2D(void* data, const GFXTextureBufferParams& params);
-
-		// @TODO add BufferLayout param and drive input layout from BufferLayout
-		static VertexShaderHandle CreateVertexShader(const FilePath& filepath);
+		
+		static VertexShaderHandle CreateVertexShader(const FilePath& filepath, const ShaderInputLayout& inputLayout);
 		static PixelShaderHandle CreatePixelShader(const FilePath& filepath);
 
 		static void UploadDataToBuffer(const ConstantBufferHandle& buffer, const void* data);
@@ -77,8 +76,7 @@ namespace Rendering
 		static void SetClearColour(const Vector4D& colour);
 
 		static void SetViewport(const ViewportParams& viewportParams);
-
-		// @TODO This API will change when BufferLayout is referenced by a shader and we then pass it in here instead of the shader
+		
 		static void SetInputLayout(const VertexShaderHandle& vertexShader);
 		static void SetPrimitiveTopology(EPrimitiveTopology topologyType);
 

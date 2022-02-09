@@ -2,8 +2,11 @@
 
 #include <Rendering/Driver/DX11/DX11.h>
 #include <Rendering/Driver/DX11/DX11Device.h>
+#include <Rendering/Driver/DX11/DX11TypeConversion.h>
 
 #include <Utils/Conversions.h>
+
+#include "Rendering/Driver/ShaderTypes.h"
 
 namespace
 {
@@ -26,6 +29,17 @@ namespace
 			OutputDebugString(output.c_str());
 		}
 	};
+	
+	D3D11_INPUT_CLASSIFICATION ConvertToD3D11InputClassification(Rendering::ShaderInputLayout::EDataClassification inputClassification)
+	{
+		switch (inputClassification)
+		{
+			case Rendering::ShaderInputLayout::EDataClassification::PER_VERTEX: return D3D11_INPUT_PER_VERTEX_DATA;
+			case Rendering::ShaderInputLayout::EDataClassification::PER_INSTANCE: return D3D11_INPUT_PER_INSTANCE_DATA;
+		}
+
+		return D3D11_INPUT_PER_VERTEX_DATA;
+	}
 }
 
 namespace Rendering
@@ -40,7 +54,7 @@ namespace Rendering
 		Release();
 	}
 
-	void DX11VertexShader::Create(const FilePath& filePath)
+	void DX11VertexShader::Create(const FilePath& filePath, const ShaderInputLayout& inputLayout)
 	{
 		HRESULT hr;
 		ID3D10Blob* error = nullptr;;
@@ -50,21 +64,18 @@ namespace Rendering
 		errorCB(error);
 		
 		hr = m_graphicsDevice->GetHardwareDevice().CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, &m_hwShader);
+		
+		std::unique_ptr<D3D11_INPUT_ELEMENT_DESC> inputLayoutStructure = std::unique_ptr<D3D11_INPUT_ELEMENT_DESC>(new D3D11_INPUT_ELEMENT_DESC[inputLayout.GetDataCount()]);
 
-		// @TODO Move this
-		// Need to drive this from BufferLayout class instead - just putting this here to get stuff working.
-		// Not really feeling hardware abstraction at all. Might just leave it at D3D...
-		D3D11_INPUT_ELEMENT_DESC k_vertLayout[] =
+		for (size_t i = 0; i < inputLayout.GetDataCount(); ++i)
 		{
-			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-			{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-			{ "UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-			{ "TANGENT", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-		};
+			const ShaderInputLayout::ShaderInputLayoutData& layoutData = inputLayout[i];
+			inputLayoutStructure.get()[i] = {layoutData.Name.c_str(), 0, ConvertToDXGIFormat(layoutData.DataFormat), 0, static_cast<U32>(layoutData.Offset), ConvertToD3D11InputClassification(layoutData.DataClassification), 0};
+		}
 
-		UINT numLayoutElements = ARRAYSIZE(k_vertLayout);
+		UINT numLayoutElements = static_cast<UINT>(inputLayout.GetDataCount());
 
-		hr = m_graphicsDevice->GetHardwareDevice().CreateInputLayout(k_vertLayout, numLayoutElements, vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &m_hwInputLayout);
+		hr = m_graphicsDevice->GetHardwareDevice().CreateInputLayout(inputLayoutStructure.get(), numLayoutElements, vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &m_hwInputLayout);
 	}
 
 	void DX11VertexShader::Release()

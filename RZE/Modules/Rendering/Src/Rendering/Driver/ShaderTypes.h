@@ -1,7 +1,8 @@
 #pragma once
 
-#include <Utils/Platform/FilePath.h>
+#include <Rendering/Driver/TypeDefines.h>
 
+#include <Utils/Platform/FilePath.h>
 #include <Utils/DebugUtils/Debug.h>
 
 #include <string>
@@ -11,52 +12,63 @@ namespace Rendering
 {
 	class IGFXDevice;
 
-	class BufferLayout
+	class ShaderInputLayout
 	{
 	public:
-		enum class EDataFormat : uint8_t
-		{
-			R32G32_FLOAT = 0,
-			R32G32B32_FLOAT
-		};
-
 		enum class EDataClassification : uint8_t
 		{
 			PER_INSTANCE = 0,
 			PER_VERTEX
 		};
 
-	private:
-		struct BufferLayoutData
+		struct ShaderInputLayoutData
 		{
-			BufferLayoutData(const std::string& name, EDataFormat dataFormat, EDataClassification dataClassification, size_t size, size_t offset)
+			ShaderInputLayoutData(const std::string& name, EDataFormat dataFormat, EDataClassification dataClassification, size_t offset)
 				: Name(name)
 				, DataFormat(dataFormat)
 				, DataClassification(dataClassification)
-				, Size(size)
 				, Offset(offset) {}
 
 			std::string Name;
 			EDataFormat DataFormat;
 			EDataClassification DataClassification;
-			size_t Size;
 			size_t Offset;
 		};
 
 	public:
-		BufferLayout(const std::initializer_list<BufferLayoutData>& initializerList)
+		ShaderInputLayout(const std::initializer_list<ShaderInputLayoutData>& initializerList)
 			: m_layoutData(initializerList) {}
 
+		const ShaderInputLayoutData& operator[](size_t idx) const
+		{
+			return m_layoutData[idx];
+		}
+
+	public:
+		size_t GetDataCount() const { return m_layoutData.size(); }
+
 	private:
-		std::vector<BufferLayoutData> m_layoutData;
+		std::vector<ShaderInputLayoutData> m_layoutData;
 	};
-	
-	// @TODO move into it's own file?
-	class IShader
+
+	class IVertexShader
 	{
 	public:
-		IShader() = default;
-		virtual ~IShader() = default;
+		IVertexShader() = default;
+		virtual ~IVertexShader() = default;
+
+		virtual void Create(const FilePath& filePath, const ShaderInputLayout& inputLayout) = 0;
+		virtual void Release() = 0;
+		virtual void SetActive() = 0;
+		virtual void SetInputLayout() = 0;
+	};
+
+	// @TODO move into it's own file?
+	class IPixelShader
+	{
+	public:
+		IPixelShader() = default;
+		virtual ~IPixelShader() = default;
 
 		virtual void Create(const FilePath& filePath) = 0;
 		virtual void Release() = 0;

@@ -125,11 +125,11 @@ namespace Rendering
 		return TextureBuffer2DHandle(textureBuffer);
 	}
 
-	VertexShaderHandle Renderer::CreateVertexShader(const FilePath& filePath)
+	VertexShaderHandle Renderer::CreateVertexShader(const FilePath& filePath, const ShaderInputLayout& inputLayout)
 	{
 		std::shared_ptr<DX11VertexShader> vertexShader = std::make_shared<DX11VertexShader>();
 		vertexShader->SetDevice(m_device.get());
-		vertexShader->Create(filePath);
+		vertexShader->Create(filePath, inputLayout);
 
 		return VertexShaderHandle(vertexShader);
 	}
@@ -184,7 +184,7 @@ namespace Rendering
 
 	void Renderer::SetInputLayout(const VertexShaderHandle& vertexShader)
 	{
-		std::shared_ptr<IShader> shaderPtr = vertexShader.m_shader;
+		std::shared_ptr<IVertexShader> shaderPtr = vertexShader.m_shader;
 		DX11VertexShader* const dx11Shader = static_cast<DX11VertexShader*>(shaderPtr.get());
 		dx11Shader->SetInputLayout();
 	}
@@ -198,13 +198,13 @@ namespace Rendering
 
 	void Renderer::SetVertexShader(const VertexShaderHandle& vertexShader)
 	{
-		std::shared_ptr<IShader> shaderPtr = vertexShader.m_shader;
+		std::shared_ptr<IVertexShader> shaderPtr = vertexShader.m_shader;
 		shaderPtr->SetActive();
 	}
 
 	void Renderer::SetPixelShader(const PixelShaderHandle& pixelShader)
 	{
-		std::shared_ptr<IShader> shaderPtr = pixelShader.m_shader;
+		std::shared_ptr<IPixelShader> shaderPtr = pixelShader.m_shader;
 		shaderPtr->SetActive();
 	}
 

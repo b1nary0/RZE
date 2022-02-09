@@ -11,8 +11,9 @@ class VertexShader : public IResource
 {
 public:
 	VertexShader() = delete;
-	VertexShader(const std::string& name)
-		: m_name(name) {}
+	VertexShader(const std::string& name, const Rendering::ShaderInputLayout& inputLayout)
+		: m_name(name)
+		, m_shaderInputLayout (inputLayout) {}
 
 	virtual ~VertexShader() = default;
 
@@ -27,6 +28,9 @@ public:
 	
 private:
 	const std::string m_name;
+
+	Rendering::ShaderInputLayout m_shaderInputLayout;
+
 	Rendering::VertexShaderHandle m_shader;
 	Rendering::ConstantBufferHandle m_cameraDataBuf;
 	Rendering::ConstantBufferHandle m_worldMatrixBuf;
