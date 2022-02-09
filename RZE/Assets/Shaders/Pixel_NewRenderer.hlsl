@@ -5,22 +5,12 @@ struct PS_IN
 	float2 UVCoords : UV;
 	float3 Tangent : TANGENT;
 	float3 FragPos : POSITION;
-};
-
-struct CAMERA_INPUT_DATA
-{
-	matrix ClipSpace;
-	float3 Position;
+	float3 CameraPos : POSITION1;
 };
 
 struct MATERIAL_DATA
 {
 	float Shininess;
-};
-
-cbuffer CameraConstantBuffer : register(b0)
-{
-	CAMERA_INPUT_DATA CameraData;
 };
 
 cbuffer MaterialBuffer : register(b1)
@@ -70,7 +60,7 @@ float4 PSMain(PS_IN input) : SV_TARGET
 	float distance = length(lightDir);
 	lightDir = normalize(lightDir);
 	
-	float3 viewDir = normalize(CameraData.Position - input.FragPos);
+	float3 viewDir = normalize(input.CameraPos - input.FragPos);
 	
 	float3 shadingResult;
 	{

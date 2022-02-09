@@ -86,7 +86,6 @@ void RenderEngine::Render()
 			Rendering::Renderer::UploadDataToBuffer(pixelShader->GetMaterialBuffer(), &materialProperties);
 			
 			Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetWorldMatrixBuffer(), 1);
-			Rendering::Renderer::SetConstantBufferPS(m_vertexShader->GetCameraDataBuffer(), 0);
 			Rendering::Renderer::SetConstantBufferPS(pixelShader->GetMaterialBuffer(), 1);
 
 			// @TODO Really need to get to texture infrastructure refactor soon - 2/6/2022

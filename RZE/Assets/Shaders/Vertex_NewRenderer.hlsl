@@ -13,6 +13,7 @@ struct VS_OUT
 	float2 UVCoords : UV;
 	float3 Tangent : TANGENT;
 	float3 FragPos : POSITION;
+	CAMERA_INPUT_DATA CameraData;
 };
 
 struct CAMERA_INPUT_DATA
@@ -43,6 +44,7 @@ VS_OUT VSMain(VS_IN input) // main is the default function name
 	output.Normal = normalize(mul(ModelView, input.Normal));
 	output.Tangent = mul(InvModelView, float4(input.Tangent, 1.0f)).xyz;
 	output.UVCoords = input.UVCoords;
+	output.CameraData = CameraData;
 	
     return output;
 }
