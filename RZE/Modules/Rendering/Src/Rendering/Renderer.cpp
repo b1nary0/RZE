@@ -185,8 +185,7 @@ namespace Rendering
 	void Renderer::SetInputLayout(const VertexShaderHandle& vertexShader)
 	{
 		std::shared_ptr<IVertexShader> shaderPtr = vertexShader.m_shader;
-		DX11VertexShader* const dx11Shader = static_cast<DX11VertexShader*>(shaderPtr.get());
-		dx11Shader->SetInputLayout();
+		shaderPtr->SetInputLayout();
 	}
 
 	void Renderer::SetPrimitiveTopology(EPrimitiveTopology topologyType)
