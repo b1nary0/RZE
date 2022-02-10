@@ -27,7 +27,7 @@ void VertexShader::Release()
 bool PixelShader::Load(const FilePath& filePath)
 {
 	m_shader = Rendering::Renderer::CreatePixelShader(filePath);
-	m_materialBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, MemoryUtils::AlignSize(sizeof(Material::MaterialProperties), 16), 1);
+	m_materialBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, MemoryUtils::AlignSize(sizeof(MaterialInstance::MaterialProperties), 16), 1);
 
 	return m_shader.IsValid();
 }

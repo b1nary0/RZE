@@ -14,7 +14,7 @@ class Texture2D;
 // 2) Just add a shader to this? Where do shaders live? How are they represented engine-side vs renderer side?
 
 // This class needs a UID that we can use to sort in renderer.
-class Material
+class MaterialInstance
 {
 	friend class MaterialDatabase;
 public:
@@ -34,10 +34,10 @@ public:
 	};
 
 public:
-	~Material();
+	~MaterialInstance();
 
 private:
-	Material();
+	MaterialInstance();
 
 public:
 	void SetTexture(U8 textureSlot, const ResourceHandle& textureResource);
@@ -77,13 +77,13 @@ public:
 
 public:
 	// Slow and gross but just stubbing code ideas for the moment
-	std::shared_ptr<Material> GetOrCreateMaterial(const std::string& name)
+	std::shared_ptr<MaterialInstance> GetOrCreateMaterial(const std::string& name)
 	{
 		auto iter = m_database.find(name);
 
 		if (iter == m_database.end())
 		{
-			std::shared_ptr<Material> material = std::shared_ptr<Material>(new Material());
+			std::shared_ptr<MaterialInstance> material = std::shared_ptr<MaterialInstance>(new MaterialInstance());
 			m_database[name] = material;
 			return material;
 		}
@@ -91,7 +91,7 @@ public:
 		return iter->second;
 	}
 
-	std::shared_ptr<Material> FindMaterial(const std::string& name)
+	std::shared_ptr<MaterialInstance> FindMaterial(const std::string& name)
 	{
 		auto iter = m_database.find(name);
 		if (iter != m_database.end())
@@ -102,5 +102,5 @@ public:
 	}
 
 private:
-	std::unordered_map<std::string, std::shared_ptr<Material>> m_database;
+	std::unordered_map<std::string, std::shared_ptr<MaterialInstance>> m_database;
 };

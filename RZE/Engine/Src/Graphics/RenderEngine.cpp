@@ -84,8 +84,8 @@ void RenderEngine::Render()
 			// @TODO
 			// This is god awful. Just in place while developing shader model.
 			// Should get resolved once the system matures
-			std::shared_ptr<Material> material = meshGeometry.GetMaterial();
-			const Material::MaterialProperties& materialProperties = material->GetProperties();
+			std::shared_ptr<MaterialInstance> material = meshGeometry.GetMaterial();
+			const MaterialInstance::MaterialProperties& materialProperties = material->GetProperties();
 			const PixelShader* const pixelShader = RZE::GetResourceHandler().GetResource<PixelShader>(material->GetShaderResource());
 
 			Rendering::Renderer::SetPixelShader(pixelShader->GetPlatformObject());
@@ -97,7 +97,7 @@ void RenderEngine::Render()
 			Rendering::Renderer::SetConstantBufferPS(pixelShader->GetMaterialBuffer(), 1);
 
 			// @TODO Really need to get to texture infrastructure refactor soon - 2/6/2022
-			for (U8 textureSlot = 0; textureSlot < Material::TextureSlot::TEXTURE_SLOT_COUNT; ++textureSlot)
+			for (U8 textureSlot = 0; textureSlot < MaterialInstance::TextureSlot::TEXTURE_SLOT_COUNT; ++textureSlot)
 			{
 				ResourceHandle resourceHandle = material->GetTexture(textureSlot);
 				if (resourceHandle.IsValid())

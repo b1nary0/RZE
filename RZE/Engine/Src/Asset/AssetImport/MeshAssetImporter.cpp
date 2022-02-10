@@ -55,7 +55,7 @@ bool MeshAssetImporter::Import(const FilePath& filePath)
 		// in the AssetImporter pipeline, it just spits out the requisite data to load in say Model3D or any other
 		// IResource derived object with a ::Load() function on it
 		MaterialAssetImporter::MaterialData materialData = materialImporter.GetMaterialData();
-		std::shared_ptr<Material> material = MaterialDatabase::Get().GetOrCreateMaterial(materialData.MaterialName);
+		std::shared_ptr<MaterialInstance> material = MaterialDatabase::Get().GetOrCreateMaterial(materialData.MaterialName);
 		material->GetProperties().Shininess = materialData.Properties.Shininess;
 		material->GetProperties().Opacity = materialData.Properties.Opacity;
 

@@ -7,7 +7,7 @@
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector3D.h>
 
-class Material;
+class MaterialInstance;
 class IndexBuffer;
 class VertexBuffer;
 
@@ -35,10 +35,10 @@ public:
 	void SetVertexData(const std::vector<MeshVertex>& verts);
 	void SetIndexData(const std::vector<U32>& indices);
 
-	void SetMaterial(const std::shared_ptr<Material>& material);
+	void SetMaterial(const std::shared_ptr<MaterialInstance>& material);
 
-	std::shared_ptr<Material> GetMaterial();
-	const std::shared_ptr<Material> GetMaterial() const;
+	std::shared_ptr<MaterialInstance> GetMaterial();
+	const std::shared_ptr<MaterialInstance> GetMaterial() const;
 	const std::vector<MeshVertex>& GetVertices();
 
 	const std::vector<float>& GetVertexDataRaw() const;
@@ -54,6 +54,5 @@ private:
 
 	std::shared_ptr<VertexBuffer> m_vertexBuffer;
 	std::shared_ptr<IndexBuffer> m_indexBuffer;
-	std::shared_ptr<Material> m_material;
-
+	std::shared_ptr<MaterialInstance> m_material;
 };

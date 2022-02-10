@@ -80,19 +80,19 @@ void MeshGeometry::SetIndexData(const std::vector<U32>& indices)
 	m_indices = indices;
 }
 
-void MeshGeometry::SetMaterial(const std::shared_ptr<Material>& material)
+void MeshGeometry::SetMaterial(const std::shared_ptr<MaterialInstance>& material)
 {
 	AssertNotNull(material);
 	m_material = material;
 }
 
-const std::shared_ptr<Material> MeshGeometry::GetMaterial() const
+const std::shared_ptr<MaterialInstance> MeshGeometry::GetMaterial() const
 {
 	AssertNotNull(m_material);
 	return m_material;
 }
 
-std::shared_ptr<Material> MeshGeometry::GetMaterial()
+std::shared_ptr<MaterialInstance> MeshGeometry::GetMaterial()
 {
 	AssertNotNull(m_material);
 	return m_material;

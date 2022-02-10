@@ -3,34 +3,34 @@
 
 #include <Graphics/Texture2D.h>
 
-Material::Material()
+MaterialInstance::MaterialInstance()
 {
 	m_textureSlots.resize(TEXTURE_SLOT_COUNT);
 }
 
-Material::~Material()
+MaterialInstance::~MaterialInstance()
 {
 }
 
-void Material::SetTexture(U8 textureSlot, const ResourceHandle& textureResource)
+void MaterialInstance::SetTexture(U8 textureSlot, const ResourceHandle& textureResource)
 {
 	AssertExpr(textureSlot < TEXTURE_SLOT_COUNT);
 	m_textureSlots[textureSlot] = textureResource;
 }
 
-const ResourceHandle& Material::GetTexture(U8 textureSlot) const
+const ResourceHandle& MaterialInstance::GetTexture(U8 textureSlot) const
 {
 	AssertExpr(textureSlot < TEXTURE_SLOT_COUNT);
 	return m_textureSlots[textureSlot];
 }
 
-ResourceHandle Material::GetTexture(U8 textureSlot)
+ResourceHandle MaterialInstance::GetTexture(U8 textureSlot)
 {
 	AssertExpr(textureSlot < TEXTURE_SLOT_COUNT);
 	return m_textureSlots[textureSlot];
 }
 
-void Material::SetShaderTechnique(const ResourceHandle& shaderTechnique)
+void MaterialInstance::SetShaderTechnique(const ResourceHandle& shaderTechnique)
 {
 	m_shaderTechnique = shaderTechnique;
 }
