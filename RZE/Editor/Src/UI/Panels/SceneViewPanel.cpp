@@ -41,7 +41,7 @@ namespace Editor
 				entityHandler.ForEach<CameraComponent>(cameraUpdateFunc);*/
 			}
 
-			Rendering::RenderTargetTexture* const pRTT = RZE_Application::RZE().GetApplication().GetRTT();
+			/*Rendering::RenderTargetTexture* const pRTT = RZE_Application::RZE().GetApplication().GetRTT();
 			Rendering::DX11TextureBuffer2D& GFXTexture = pRTT->GetGFXTexture();
 
 			auto clamp = [](float a, float b, float val)
@@ -53,7 +53,7 @@ namespace Editor
 			};
 			float uvbx = clamp(0.0f, 1.0f, mDimensions.X() / pRTT->GetWidth());
 			float uvby = clamp(0.0f, 1.0f, mDimensions.Y() / pRTT->GetHeight());
-			ImGui::Image((void*)&GFXTexture.GetResourceView(), ImVec2(mDimensions.X(), mDimensions.Y()), ImVec2(0.0f, 0.0f), ImVec2(uvbx, uvby));
+			ImGui::Image((void*)&GFXTexture.GetResourceView(), ImVec2(mDimensions.X(), mDimensions.Y()), ImVec2(0.0f, 0.0f), ImVec2(uvbx, uvby));*/
 		}
 		ImGui::End();
 		ImGui::PopStyleVar();
