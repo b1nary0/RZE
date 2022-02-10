@@ -27,7 +27,7 @@ public:
 	};
 
 	// #TODO(Josh::Turn into material properties or something; material system?)
-	struct MaterialProperties
+	struct MaterialParams
 	{
 		float Shininess{ 1.0f };
 		float Opacity{ 1.0f };
@@ -49,14 +49,22 @@ public:
 	void SetShaderTechnique(const ResourceHandle& shaderTechnique);
 	ResourceHandle GetShaderResource() const { return m_shaderTechnique; }
 
-	MaterialProperties& GetProperties() { return m_properties; }
-	const MaterialProperties& GetProperties() const { return m_properties; }
+	MaterialParams& GetProperties() { return m_properties; }
+	const MaterialParams& GetProperties() const { return m_properties; }
+
+	// @TODO Is this API good?
+	// Commit property changes to GPU buffer
+	void CommitPropertyChanges();
+
+	Rendering::ConstantBufferHandle GetParamBuffer() const;
 		
 private:
-	MaterialProperties m_properties;
+	MaterialParams m_properties;
 
 	ResourceHandle m_shaderTechnique;
 	std::vector<ResourceHandle> m_textureSlots;
+
+	Rendering::ConstantBufferHandle m_paramBuffer;
 };
 
 // [newrenderer]

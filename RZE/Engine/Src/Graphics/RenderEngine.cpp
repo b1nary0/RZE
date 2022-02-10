@@ -84,22 +84,18 @@ void RenderEngine::Render()
 			// @TODO
 			// This is god awful. Just in place while developing shader model.
 			// Should get resolved once the system matures
-			std::shared_ptr<MaterialInstance> material = meshGeometry.GetMaterial();
-			const MaterialInstance::MaterialProperties& materialProperties = material->GetProperties();
-			const PixelShader* const pixelShader = RZE::GetResourceHandler().GetResource<PixelShader>(material->GetShaderResource());
+			std::shared_ptr<MaterialInstance> materialInstance = meshGeometry.GetMaterial();
+			const PixelShader* const pixelShader = RZE::GetResourceHandler().GetResource<PixelShader>(materialInstance->GetShaderResource());
 
 			Rendering::Renderer::SetPixelShader(pixelShader->GetPlatformObject());
-
-			// @TODO This upload call should be moved when MaterialInstance is a thing.
-			Rendering::Renderer::UploadDataToBuffer(pixelShader->GetMaterialBuffer(), &materialProperties);
 			
 			Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetWorldMatrixBuffer(), 1);
-			Rendering::Renderer::SetConstantBufferPS(pixelShader->GetMaterialBuffer(), 1);
+			Rendering::Renderer::SetConstantBufferPS(materialInstance->GetParamBuffer(), 1);
 
 			// @TODO Really need to get to texture infrastructure refactor soon - 2/6/2022
 			for (U8 textureSlot = 0; textureSlot < MaterialInstance::TextureSlot::TEXTURE_SLOT_COUNT; ++textureSlot)
 			{
-				ResourceHandle resourceHandle = material->GetTexture(textureSlot);
+				ResourceHandle resourceHandle = materialInstance->GetTexture(textureSlot);
 				if (resourceHandle.IsValid())
 				{
 					const Texture2D* const texture = RZE::GetResourceHandler().GetResource<Texture2D>(resourceHandle);

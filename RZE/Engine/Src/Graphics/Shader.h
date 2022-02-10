@@ -50,14 +50,10 @@ public:
 
 	const std::string& GetName() const { return m_name; }
 	const Rendering::PixelShaderHandle GetPlatformObject() const;
-
-	const Rendering::ConstantBufferHandle GetMaterialBuffer() const { return m_materialBuffer; }
 	
 private:
 	const std::string m_name;
 	Rendering::PixelShaderHandle m_shader;
-
-	Rendering::ConstantBufferHandle m_materialBuffer;
 };
 
 
