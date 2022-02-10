@@ -40,10 +40,6 @@ void RenderEngine::Update()
 	OPTICK_EVENT();
 
 	Rendering::Renderer::UploadDataToBuffer(m_vertexShader->GetCameraDataBuffer(), &m_camera);
-	
-#ifdef IMGUI_ENABLED
-	ImGui::ShowDemoWindow();
-#endif
 }
 
 void RenderEngine::Render()
@@ -75,6 +71,7 @@ void RenderEngine::Render()
 		matrixMem.inverseWorld = renderObject->GetTransform().Inverse();
 
 		Rendering::Renderer::UploadDataToBuffer(m_vertexShader->GetWorldMatrixBuffer(), &matrixMem);
+		Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetWorldMatrixBuffer(), 1);
 
 		// @TODO
 		// Currently each MeshGeometry is a draw call. Need to batch this down so it becomes a single draw call
@@ -88,10 +85,8 @@ void RenderEngine::Render()
 			const PixelShader* const pixelShader = RZE::GetResourceHandler().GetResource<PixelShader>(materialInstance->GetShaderResource());
 
 			Rendering::Renderer::SetPixelShader(pixelShader->GetPlatformObject());
-			
-			Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetWorldMatrixBuffer(), 1);
 			Rendering::Renderer::SetConstantBufferPS(materialInstance->GetParamBuffer(), 1);
-
+		
 			// @TODO Really need to get to texture infrastructure refactor soon - 2/6/2022
 			for (U8 textureSlot = 0; textureSlot < MaterialInstance::TextureSlot::TEXTURE_SLOT_COUNT; ++textureSlot)
 			{
