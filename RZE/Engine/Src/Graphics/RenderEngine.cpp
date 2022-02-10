@@ -99,9 +99,11 @@ void RenderEngine::Render()
 			// @TODO Really need to get to texture infrastructure refactor soon - 2/6/2022
 			for (U8 textureSlot = 0; textureSlot < Material::TextureSlot::TEXTURE_SLOT_COUNT; ++textureSlot)
 			{
-				const Texture2D* const texture = RZE::GetResourceHandler().GetResource<Texture2D>(material->GetTexture(textureSlot));
-				if (texture != nullptr)
+				ResourceHandle resourceHandle = material->GetTexture(textureSlot);
+				if (resourceHandle.IsValid())
 				{
+					const Texture2D* const texture = RZE::GetResourceHandler().GetResource<Texture2D>(resourceHandle);
+
 					// @TODO Should solve this better by providing an API that will provide a texture resource array
 					Rendering::Renderer::SetTextureResource(texture->GetPlatformObject(), textureSlot);
 				}
