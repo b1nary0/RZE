@@ -279,8 +279,10 @@ bool AssimpSourceImporter::WriteMeshAsset()
 	{
 		// #TODO
 		// Am i just dumb or can this be done in a much more elegant manner by a monkey
-		const size_t meshDataSize = mesh.MeshName.size() + mesh.MaterialPath.size() + sizeof(MeshVertex) * mesh.VertexDataArray.size() + sizeof(U32) * mesh.IndexArray.size();
-		bufSize += meshDataSize;
+		bufSize += mesh.MeshName.size();
+		bufSize += mesh.MaterialPath.size();
+		bufSize += sizeof(MeshVertex) * mesh.VertexDataArray.size();
+		bufSize += sizeof(U32) * mesh.IndexArray.size();
 	}
 	// magic numbers atm re: calculating data size headers per piece of data:
 	// (bufSize + meshCount + nameSizeBytes + vertexDataSizeBytes + indexDataSizeBytes) * meshCount
