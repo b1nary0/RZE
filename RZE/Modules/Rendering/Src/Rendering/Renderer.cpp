@@ -16,6 +16,10 @@
 #include <Rendering/Driver/DX11/DX11TextureBuffer2D.h>
 #include <Rendering/Driver/DX11/DX11ShaderTypes.h>
 
+#include <ImGui/imgui.h>
+#include <imGUI/imgui_impl_dx11.h>
+#include <imGUI/imgui_impl_win32.h>
+
 namespace Rendering
 {
 	D3D_PRIMITIVE_TOPOLOGY ConvertToDX11TopologyType(EPrimitiveTopology topologyType)
@@ -28,7 +32,8 @@ namespace Rendering
 		}
 	}
 
-	std::unique_ptr<DX11Device> Renderer::m_device;
+	std::unique_ptr<DX11Device> Renderer::m_device = nullptr;
+	void* Renderer::m_windowHandle = nullptr;
 
 	Renderer::Renderer()
 	{
@@ -40,22 +45,20 @@ namespace Rendering
 
 	void Renderer::Initialize(void* windowHandle)
 	{
-		m_device = std::make_unique<DX11Device>();
-		m_device->SetWindow(windowHandle);
-		m_device->Initialize();
+		AssertNotNull(windowHandle);
 
-#ifdef IMGUI_ENABLED
-		ImGui::CreateContext();
-		ImGui_ImplWin32_Init(windowHandle);
-		ImGui_ImplDX11_Init(&m_device->GetHardwareDevice(), &m_device->GetDeviceContext());
-#endif
+		m_windowHandle = windowHandle;
+
+		m_device = std::make_unique<DX11Device>();
+		m_device->SetWindow(m_windowHandle);
+		m_device->Initialize();
+		
+		InitializeImGui();
 	}
 	
 	void Renderer::Shutdown()
 	{
-#ifdef IMGUI_ENABLED
 		ImGui_ImplDX11_Shutdown();
-#endif
 		m_device->Shutdown();
 	}
 
@@ -82,6 +85,13 @@ namespace Rendering
 
 	void Renderer::End()
 	{
+	}
+
+	void Renderer::InitializeImGui()
+	{
+		ImGui::CreateContext();
+		ImGui_ImplWin32_Init(m_windowHandle);
+		ImGui_ImplDX11_Init(&m_device->GetHardwareDevice(), &m_device->GetDeviceContext());
 	}
 
 	void Renderer::HandleWindowResize(const Vector2D& newSize)

@@ -8,7 +8,6 @@
 #include <Events/EventHandler.h>
 
 #include <Windowing/WindowMessageAdaptor.h>
-#include <Windowing/WinKeyCodes.h>
 
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Conversions.h>
@@ -163,12 +162,10 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 		{
 		case WM_CHAR:
 		{
-#ifdef IMGUI_ENABLED
   			if (ImGui::GetIO().WantCaptureKeyboard)
   			{
   				ImGui::GetIO().AddInputCharacter(static_cast<unsigned int>(msg.wParam));
   			}
-#endif
 		}
 		break;
 

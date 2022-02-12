@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Graphics/MeshGeometry.h>
-#include <Graphics/VertexBuffer.h>
 
 class StaticMesh
 {

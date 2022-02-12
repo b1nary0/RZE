@@ -10,6 +10,8 @@
 #include <Game/Systems/FirstPersonCameraSystem.h>
 #include <Game/Systems/RotateSingleEntitySystem.h>
 
+#include <imGUI/imgui.h>
+
 GameApp::GameApp()
 	: RZE_Application()
 {

@@ -41,6 +41,8 @@ private:
 	Matrix4x4 m_transform;
 };
 
+class IRenderStage;
+
 class RenderEngine
 {
 public:
@@ -58,6 +60,9 @@ public:
 	void Update();
 	void Render();
 	void Shutdown();
+	
+	template <typename TRenderStageType>
+	void AddRenderStage();
 
 	std::shared_ptr<RenderObject> CreateRenderObject(const StaticMesh& staticMesh);
 
@@ -65,16 +70,24 @@ public:
 
 	RenderCamera& GetCamera() { return m_camera; }
 
+	const Vector2D& GetCanvasSize() const;
+
+private:
+	void InternalAddRenderStage(IRenderStage* pipeline);
+
 private:
 	RenderCamera m_camera;
 
 	Vector2D m_canvasSize;
 
-	// @TODO temp until ShaderTechniques are properly implemented
-	// (could be a while)
-	ResourceHandle m_vertexShaderResource;
-	const VertexShader* m_vertexShader = nullptr; // @TODO This is just to avoid having to GetResource() in a loop but is more a deficiency of the Resource API
-
 	// @TODO Make not vector or something
 	std::vector<std::shared_ptr<RenderObject>> m_renderObjects;
+
+	std::vector<std::unique_ptr<IRenderStage>> m_pipelines;
 };
+
+template <typename TRenderStageType>
+void RenderEngine::AddRenderStage()
+{
+	InternalAddRenderStage(new TRenderStageType());
+}

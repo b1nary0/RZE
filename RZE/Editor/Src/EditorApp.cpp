@@ -3,8 +3,10 @@
 // Needed for call to RZE().GetRenderer().GetDriverDevice()
 // Should remove ASAP.
 #include <Rendering/Renderer.h>
-#include <Rendering/Driver/DX11/DX11Device.h>
 #include <Rendering/Graphics/RenderTarget.h>
+
+#include <Graphics/RenderEngine.h>
+#include <Graphics/RenderStages/ImGuiRenderStage.h>
 
 #include <EngineCore/Threading/JobSystem/JobScheduler.h>
 
@@ -13,11 +15,10 @@
 #include <DebugUtils/DebugServices.h>
 
 #include <ImGui/imgui.h>
-#include <imGUI/imgui_impl_dx11.h>
-#include <imGUI/imgui_impl_win32.h>
 #include <Optick/optick.h>
 
 #include <stdio.h>
+
 
 namespace
 {
@@ -52,9 +53,11 @@ namespace Editor
 		// Should probably bake this into RZE::Application
 		FilePath::SetDirectoryContext(EDirectoryContext::Tools);
 
+		RZE::GetRenderEngine().AddRenderStage<ImGuiRenderStage>();
+
 		mImguiConfigFilePath = FilePath("Config/imgui.ini");
 		ImGui::GetIO().IniFilename = mImguiConfigFilePath.GetAbsolutePath().c_str();
-
+		
 		GetWindow()->SetTitle("RZEStudio");
 		GetWindow()->Maximize();
 

@@ -56,6 +56,8 @@ namespace Rendering
 		static void Begin();
 		static void End();
 
+		static void InitializeImGui();
+
 		static void HandleWindowResize(const Vector2D& newSize);
 
 	public:
@@ -113,6 +115,7 @@ namespace Rendering
 		
 	private:
 		static std::unique_ptr<DX11Device> m_device;
+		static void* m_windowHandle;
 		//
 		// Buckets
 		//

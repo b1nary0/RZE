@@ -37,6 +37,9 @@
 #include <Utils/Platform/FilePath.h>
 #include <Utils/PrimitiveDefs.h>
 
+// IMGUI
+#include <ImGui/imgui.h>
+
 #ifdef DEBUG
 
 #include <DebugUtils/DebugServices.h>

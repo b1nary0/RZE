@@ -52,10 +52,6 @@
 
 #define IMGUI_ENABLED
 
-#include <ImGui/imgui.h>
-#include <imGUI/imgui_impl_dx11.h>
-#include <imGUI/imgui_impl_win32.h>
-
 #else
 
 #define AssertFalse()
