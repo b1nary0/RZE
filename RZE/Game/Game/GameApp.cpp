@@ -10,7 +10,12 @@
 #include <Game/Systems/FirstPersonCameraSystem.h>
 #include <Game/Systems/RotateSingleEntitySystem.h>
 
+#ifdef IMGUI_ENABLED
 #include <imGUI/imgui.h>
+#include <Graphics/RenderStages/ImGuiRenderStage.h>
+#endif
+
+#include "Graphics/RenderEngine.h"
 
 GameApp::GameApp()
 	: RZE_Application()
@@ -34,6 +39,10 @@ void GameApp::Initialize()
 	//             -- Need to add at least commandline arg like -startscene or something)
 	
 	activeScene.Load(FilePath("Assets/Scenes/RenderTest.scene"));
+	
+#ifdef IMGUI_ENABLED
+	RZE::GetRenderEngine().AddRenderStage<ImGuiRenderStage>();
+#endif
 }
 
 void GameApp::Start()
@@ -44,6 +53,10 @@ void GameApp::Start()
 void GameApp::Update()
 {
 	RZE_Application::Update();
+
+#ifdef IMGUI_ENABLED
+	ImGui::ShowDemoWindow();
+#endif
 }
 
 void GameApp::ShutDown()
