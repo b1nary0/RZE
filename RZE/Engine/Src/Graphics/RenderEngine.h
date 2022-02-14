@@ -83,7 +83,7 @@ private:
 	// @TODO Make not vector or something
 	std::vector<std::shared_ptr<RenderObject>> m_renderObjects;
 
-	std::vector<std::unique_ptr<IRenderStage>> m_pipelines;
+	std::vector<std::unique_ptr<IRenderStage>> m_renderStages;
 };
 
 template <typename TRenderStageType>

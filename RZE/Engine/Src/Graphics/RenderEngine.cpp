@@ -26,7 +26,7 @@ void RenderEngine::Initialize(void* windowHandle)
 void RenderEngine::Update()
 {
 	OPTICK_EVENT();
-	for (auto& pipeline : m_pipelines)
+	for (auto& pipeline : m_renderStages)
 	{
 		pipeline->Update(m_renderObjects);
 	}
@@ -38,7 +38,7 @@ void RenderEngine::Render()
 
 	Rendering::Renderer::BeginFrame();
 
-	for (auto& pipeline : m_pipelines)
+	for (auto& pipeline : m_renderStages)
 	{
 		pipeline->Render(m_renderObjects);
 	}
@@ -82,9 +82,9 @@ void RenderEngine::InternalAddRenderStage(IRenderStage* pipeline)
 {
 	std::unique_ptr<IRenderStage> ptr = std::unique_ptr<IRenderStage>(pipeline);
 	ptr->Initialize();
-	m_pipelines.emplace_back(std::move(ptr));
+	m_renderStages.emplace_back(std::move(ptr));
 
-	std::sort(m_pipelines.begin(), m_pipelines.end(),
+	std::sort(m_renderStages.begin(), m_renderStages.end(),
 		[](const std::unique_ptr<IRenderStage>& pipelineA, const std::unique_ptr<IRenderStage>& pipelineB)
 		{
 			return pipelineA->GetPriority() < pipelineB->GetPriority();
