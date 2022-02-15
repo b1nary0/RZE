@@ -6,8 +6,6 @@
 
 #include <Rendering/Renderer.h>
 
-
-
 RenderEngine::RenderEngine()
 {	
 }

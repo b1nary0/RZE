@@ -1,7 +1,5 @@
 #pragma once
 
-#include <memory>
-
 #include <Rendering/RenderingDefines.h>
 #include <Rendering/BufferHandle.h>
 #include <Rendering/ShaderHandle.h>
@@ -9,13 +7,14 @@
 #include <Utils/PrimitiveDefs.h>
 #include <Utils/Platform/FilePath.h>
 
+#include <memory>
+
 class Vector2D;
 class Vector4D;
 
 namespace Rendering
 {
 	class DX11Device;
-
 	class IVertexBuffer;
 
 	struct GFXTextureBufferParams;

@@ -9,7 +9,6 @@
 #include <Utils/Math/Vector2D.h>
 
 class MeshGeometry;
-
 class Vector2D;
 
 struct RenderCamera
