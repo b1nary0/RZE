@@ -1,16 +1,11 @@
 #pragma once
 
-#include <Utils/Math/Vector2D.h>
-#include <Utils/PrimitiveDefs.h>
+#include <Rendering/BufferHandle.h>
 
-struct ID3D11DepthStencilView;
-struct ID3D11RenderTargetView;
+#include <Utils/PrimitiveDefs.h>
 
 namespace Rendering
 {
-	class DX11Device;
-	class DX11TextureBuffer2D;
-
 	class RenderTargetTexture
 	{
 	public:
@@ -19,27 +14,20 @@ namespace Rendering
 		virtual ~RenderTargetTexture();
 
 	public:
-		void Initialize(DX11Device* device);
-
-		U32 GetTextureID() const;
-		U32 GetDepthTextureID() const;
-		DX11TextureBuffer2D& GetGFXTexture();
-		DX11TextureBuffer2D& GetDepthTexture();
+		void Initialize();
+		
+		RenderTargetHandle GetTargetPlatformObject() const;
+		TextureBuffer2DHandle GetDepthTexturePlatformObject() const;
 
 		U32 GetWidth() const;
 		U32 GetHeight() const;
 
 	private:
-		U32 mWidth;
-		U32 mHeight;
+		U32 m_width;
+		U32 m_height;
 
 	private:
-		U32 mTextureID;
-		U32 mDepthTextureID;
-
-		// All these driver-specific classes will need
-		// to be moved with new API.
-		DX11TextureBuffer2D* mGFXTexture;
-		DX11TextureBuffer2D* mDepthTexture;
+		RenderTargetHandle m_target;
+		TextureBuffer2DHandle m_depthTexture;
 	};
 }
