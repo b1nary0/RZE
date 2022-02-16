@@ -1,14 +1,16 @@
 #include <Rendering/Graphics/RenderTarget.h>
 
-#include <Rendering/Renderer.h>
-#include <Rendering/Driver/GFXBuffer.h>
+#include <Rendering/Driver/DX11/DX11Device.h>
+#include <Rendering/Driver/DX11/DX11TextureBuffer2D.h>
+
+#include <Utils/DebugUtils/Debug.h>
 
 namespace Rendering
 {
 
 	RenderTargetTexture::RenderTargetTexture(U32 width, U32 height)
-		: m_width(width)
-		, m_height(height)
+		: mWidth(width)
+		, mHeight(height)
 	{
 	}
 
@@ -20,51 +22,55 @@ namespace Rendering
 	// This function is bad. Shouldn't need to directly access the device.
 	// Should just ask the Renderer to allocate the necessary structure to represent
 	// this render target.
-	void RenderTargetTexture::Initialize()
+	void RenderTargetTexture::Initialize(DX11Device* device)
 	{
 		GFXTextureBufferParams depthTextureParams = { 0 };
 		depthTextureParams.bIsDepthTexture = true;
 		depthTextureParams.bIsShaderResource = true;
-		depthTextureParams.Height = m_height;
-		depthTextureParams.Width = m_width;
+		depthTextureParams.Height = mHeight;
+		depthTextureParams.Width = mWidth;
 		depthTextureParams.MipLevels = 0;
 		depthTextureParams.MostDetailedMip = 0;
 		depthTextureParams.SampleCount = 1;
 		depthTextureParams.SampleQuality = 0;
 
-		m_depthTexture = Rendering::Renderer::CreateTextureBuffer2D(nullptr, depthTextureParams);
+		//mTextureID = device->CreateRenderTarget2D(mWidth, mHeight);
+		//mDepthTextureID = device->CreateTextureBuffer2D(nullptr, depthTextureParams);
 
-		GFXTextureBufferParams targetParams = { 0 };
-		targetParams.bIsRenderTarget = true;
-		targetParams.bIsShaderResource = true;
-		targetParams.Height = m_height;
-		targetParams.Width = m_width;
-		targetParams.MipLevels = 0;
-		targetParams.MostDetailedMip = 0;
-		targetParams.SampleCount = 1;
-		targetParams.SampleQuality = 0;
-		
-		m_target = Rendering::Renderer::CreateTextureBuffer2D(nullptr, targetParams);
-	}
-	
-	RenderTargetHandle RenderTargetTexture::GetTargetPlatformObject() const
-	{
-		return m_target;
+		//mGFXTexture = device->GetTextureBuffer2D(mTextureID);
+		//mDepthTexture = device->GetTextureBuffer2D(mDepthTextureID);
 	}
 
-	TextureBuffer2DHandle RenderTargetTexture::GetDepthTexturePlatformObject() const
+	U32 RenderTargetTexture::GetTextureID() const
 	{
-		return m_depthTexture;
+		return mTextureID;
+	}
+
+	U32 RenderTargetTexture::GetDepthTextureID() const
+	{
+		return mDepthTextureID;
+	}
+
+	DX11TextureBuffer2D& RenderTargetTexture::GetGFXTexture()
+	{
+		AssertNotNull(mGFXTexture);
+		return *mGFXTexture;
+	}
+
+	DX11TextureBuffer2D& RenderTargetTexture::GetDepthTexture()
+	{
+		AssertNotNull(mDepthTexture);
+		return *mDepthTexture;
 	}
 
 	U32 RenderTargetTexture::GetWidth() const
 	{
-		return m_width;
+		return mWidth;
 	}
 
 	U32 RenderTargetTexture::GetHeight() const
 	{
-		return m_height;
+		return mHeight;
 	}
 
 }

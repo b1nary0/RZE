@@ -3,7 +3,6 @@
 #include <Rendering/RenderingDefines.h>
 #include <Rendering/BufferHandle.h>
 #include <Rendering/ShaderHandle.h>
-#include <Rendering/Graphics/RenderTarget.h>
 
 #include <Utils/PrimitiveDefs.h>
 #include <Utils/Platform/FilePath.h>
@@ -74,12 +73,7 @@ namespace Rendering
 		static void ReleaseVertexShader(VertexShaderHandle& shaderHandle);
 		static void ReleasePixelShader(PixelShaderHandle& shaderHandle);
 
-		// @TODO Make this API better by taking more params. Right now the internals just do one operation sequence
-		static void ClearDepthStencilBuffer(const TextureBuffer2DHandle& buffer);
-
 	public:
-		static void SetRenderTarget(const RenderTargetTexture* renderTarget);
-
 		static void SetClearColour(const Vector4D& colour);
 
 		static void SetViewport(const ViewportParams& viewportParams);
