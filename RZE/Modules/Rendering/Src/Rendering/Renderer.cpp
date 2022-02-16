@@ -76,11 +76,9 @@ namespace Rendering
 
 	void Renderer::Begin()
 	{
-		// @TODO This is temporary until the API is written for SetRenderTarget() and ClearDepthStencilView()
+		// @TODO This is temporary until the API is written for SetRasterState() (and it's moved off the device)
 		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 		deviceContext.RSSetState(m_device->mRasterState);
-		deviceContext.OMSetRenderTargets(1, &m_device->mRenderTargetView, m_device->mDepthStencilView);
-		deviceContext.ClearDepthStencilView(m_device->mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	}
 
 	void Renderer::End()
@@ -175,6 +173,28 @@ namespace Rendering
 	void Renderer::ReleasePixelShader(PixelShaderHandle& shaderHandle)
 	{
 		shaderHandle.m_shader.reset();
+	}
+
+	void Renderer::ClearDepthStencilBuffer(const TextureBuffer2DHandle& buffer)
+	{
+		std::shared_ptr<ITextureBuffer2D> texture = buffer.m_buffer;
+		DX11TextureBuffer2D* texturePtr = static_cast<DX11TextureBuffer2D*>(texture.get());
+
+		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+		deviceContext.ClearDepthStencilView(&texturePtr->GetDepthView(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	}
+
+	void Renderer::SetRenderTarget(const RenderTargetTexture* renderTarget)
+	{
+		RenderTargetHandle target = renderTarget->GetTargetPlatformObject();
+		TextureBuffer2DHandle depthTexture = renderTarget->GetDepthTexturePlatformObject();
+
+		DX11TextureBuffer2D* targetPtr = static_cast<DX11TextureBuffer2D*>(target.m_buffer.get());
+		DX11TextureBuffer2D* depthTexturePtr = static_cast<DX11TextureBuffer2D*>(depthTexture.m_buffer.get());
+
+		ID3D11RenderTargetView* rtv = &targetPtr->GetTargetView();
+		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+		deviceContext.OMSetRenderTargets(1, &rtv, &depthTexturePtr->GetDepthView());
 	}
 
 	void Renderer::SetClearColour(const Vector4D& colour)
