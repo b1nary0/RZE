@@ -16,7 +16,7 @@ namespace Rendering
 
 	public:
 		VertexBufferHandle() = default;
-		virtual ~VertexBufferHandle() = default;
+		~VertexBufferHandle() = default;
 
 	public:
 		bool IsValid() { return m_buffer != nullptr; }
@@ -34,7 +34,7 @@ namespace Rendering
 
 	public:
 		IndexBufferHandle() = default;
-		virtual ~IndexBufferHandle() = default;
+		~IndexBufferHandle() = default;
 
 	public:
 		bool IsValid() { return m_buffer != nullptr; }
@@ -52,7 +52,7 @@ namespace Rendering
 
 	public:
 		ConstantBufferHandle() = default;
-		virtual ~ConstantBufferHandle() = default;
+		~ConstantBufferHandle() = default;
 
 	public:
 		bool IsValid() { return m_buffer != nullptr; }
@@ -70,7 +70,7 @@ namespace Rendering
 
 	public:
 		TextureBuffer2DHandle() = default;
-		virtual ~TextureBuffer2DHandle() = default;
+		~TextureBuffer2DHandle() = default;
 
 	public:
 		bool IsValid() { return m_buffer != nullptr; }
@@ -81,4 +81,6 @@ namespace Rendering
 
 		std::shared_ptr<ITextureBuffer2D> m_buffer;
 	};
+
+	using RenderTargetHandle = TextureBuffer2DHandle;
 }
