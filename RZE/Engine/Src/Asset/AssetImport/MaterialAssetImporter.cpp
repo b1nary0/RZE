@@ -6,6 +6,8 @@
 
 bool MaterialAssetImporter::Import(const FilePath& filePath)
 {
+	// @TODO fail condition
+
 	ByteStream byteStream(filePath.GetRelativePath());
 	byteStream.ReadFromFile(filePath);
 
