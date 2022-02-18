@@ -18,6 +18,7 @@
 #include <Graphics/RenderStages/ImGuiRenderStage.h>
 #endif
 
+#include <Graphics/RenderStages/FinalRenderTargetStage.h>
 
 GameApp::GameApp()
 	: RZE_Application()
@@ -49,6 +50,8 @@ void GameApp::Initialize()
 #ifdef IMGUI_ENABLED
 	RZE::GetRenderEngine().AddRenderStage<ImGuiRenderStage>();
 #endif
+
+	RZE::GetRenderEngine().AddRenderStage<FinalRenderTargetStage>();
 }
 
 void GameApp::Start()
@@ -130,6 +133,8 @@ void GameApp::OnWindowResize(const Vector2D& newSize)
 
 	CreateRenderTarget(GetWindow()->GetDimensions());
 	RZE().GetRenderEngine().SetRenderTarget(m_renderTarget.get());
+
+	RZE().GetRenderEngine().SetViewportSize(newSize);
 }
 
 void GameApp::CreateRenderTarget(const Vector2D& dimensions)

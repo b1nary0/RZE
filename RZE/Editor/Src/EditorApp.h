@@ -32,7 +32,10 @@ namespace Editor
 		void RegisterInputEvents(InputHandler& inputHandler) override;
 		bool ProcessInput(const InputHandler& handler) override;
 
-		void OnWindowResize(const Vector2D& newSize) override {}
+		void OnWindowResize(const Vector2D& newSize) override;
+
+	protected:
+		void CreateRenderTarget(const Vector2D& dimensions) override;
 
 	public:
 		void SetFont(const char* fontName);

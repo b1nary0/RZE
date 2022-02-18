@@ -29,6 +29,7 @@ public:
 	virtual void Update();
 	virtual void ShutDown();
 
+	virtual void CreateRenderTarget(const Vector2D& dimensions) = 0;
 	virtual void OnWindowResize(const Vector2D& newSize) = 0;
 
 	// Returning TRUE will fire callbacks registered with RZE. Returning FALSE steals input from the engine.

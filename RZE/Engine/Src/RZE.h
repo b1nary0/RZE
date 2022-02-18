@@ -10,4 +10,5 @@ namespace RZE
 {
 	RenderEngine& GetRenderEngine();
 	ResourceHandler& GetResourceHandler();
+	GameScene& GetActiveScene();
 }

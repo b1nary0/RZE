@@ -47,7 +47,7 @@ void ForwardRenderStage::Render(const std::vector<std::shared_ptr<RenderObject>>
 	Rendering::Renderer::SetVertexShader(m_vertexShader->GetPlatformObject());
 	Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetCameraDataBuffer(), 0);
 
-	Rendering::Renderer::SetViewport({ renderEngine.GetCanvasSize().X(), renderEngine.GetCanvasSize().Y(), 0.0f, 1.0f, 0.0f, 0.0f});
+	Rendering::Renderer::SetViewport({ renderEngine.GetViewportSize().X(), renderEngine.GetViewportSize().Y(), 0.0f, 1.0f, 0.0f, 0.0f});
 
 	Rendering::Renderer::SetInputLayout(m_vertexShader->GetPlatformObject());
 	Rendering::Renderer::SetPrimitiveTopology(Rendering::EPrimitiveTopology::TriangleList);

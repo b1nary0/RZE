@@ -85,5 +85,7 @@ namespace Rendering
 		virtual void Release() = 0;
 
 		virtual void SetActive(U32 textureSlot) = 0;
+
+		virtual void* GetTextureData() = 0;
 	};
 }

@@ -2,13 +2,13 @@
 
 #include <EditorApp.h>
 
-#include <Rendering/Renderer.h>
-#include <Rendering/Driver/DX11/DX11TextureBuffer2D.h>
+#include <Game/World/GameObject/GameObject.h>
+#include <Game/World/GameObjectComponents/CameraComponent.h>
+
+#include <Graphics/RenderEngine.h>
 #include <Rendering/Graphics/RenderTarget.h>
 
 #include <ImGui/imgui.h>
-
-#include <algorithm>
 
 namespace Editor
 {
@@ -25,24 +25,17 @@ namespace Editor
 			if (viewportDims.x != mDimensions.X() || viewportDims.y != mDimensions.Y())
 			{
 				mDimensions.SetXY(viewportDims.x, viewportDims.y);
-				//RZE_Application::RZE().GetRenderer().SetViewportSize(mDimensions);
+				RZE::GetRenderEngine().SetViewportSize(mDimensions);
 
-				/*Apollo::EntityHandler& entityHandler = RZE_Application::RZE().GetActiveScene().GetEntityHandler();
-
-				Functor<void, Apollo::EntityID> cameraUpdateFunc([this, &entityHandler](Apollo::EntityID entityID) 
-				{
-					CameraComponent* const cameraComp = entityHandler.GetComponent<CameraComponent>(entityID);
-					AssertNotNull(cameraComp);
-					if (cameraComp->bIsActiveCamera)
-					{
-						cameraComp->AspectRatio = mDimensions.X() / mDimensions.Y();
-					}
-				});
-				entityHandler.ForEach<CameraComponent>(cameraUpdateFunc);*/
+				GameObject* gameObject = RZE::GetActiveScene().FindGameObjectByName("Camera");
+				AssertNotNull(gameObject);
+				CameraComponent* const cameraComponent = gameObject->GetComponent<CameraComponent>();
+				AssertNotNull(cameraComponent);
+				cameraComponent->SetAspectRatio(mDimensions.X() / mDimensions.Y());
 			}
 
-			/*Rendering::RenderTargetTexture* const pRTT = RZE_Application::RZE().GetApplication().GetRTT();
-			Rendering::DX11TextureBuffer2D& GFXTexture = pRTT->GetGFXTexture();
+			Rendering::RenderTargetTexture* const pRTT = RZE_Application::RZE().GetApplication().GetRTT();
+			Rendering::TextureBuffer2DHandle texture = pRTT->GetTargetPlatformObject();
 
 			auto clamp = [](float a, float b, float val)
 			{
@@ -53,7 +46,7 @@ namespace Editor
 			};
 			float uvbx = clamp(0.0f, 1.0f, mDimensions.X() / pRTT->GetWidth());
 			float uvby = clamp(0.0f, 1.0f, mDimensions.Y() / pRTT->GetHeight());
-			ImGui::Image((void*)&GFXTexture.GetResourceView(), ImVec2(mDimensions.X(), mDimensions.Y()), ImVec2(0.0f, 0.0f), ImVec2(uvbx, uvby));*/
+			ImGui::Image(texture.GetTextureData(), ImVec2(mDimensions.X(), mDimensions.Y()), ImVec2(0.0f, 0.0f), ImVec2(uvbx, uvby));
 		}
 		ImGui::End();
 		ImGui::PopStyleVar();

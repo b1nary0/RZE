@@ -22,6 +22,8 @@ public:
 
 	void OnWindowResize(const Vector2D& newSize) override;
 
+protected:
+	void CreateRenderTarget(const Vector2D& dimensions) override;
+
 private:
-	void CreateRenderTarget(const Vector2D& dimensions);
 };

@@ -66,18 +66,21 @@ public:
 	void Shutdown();
 
 public:
-	template <typename TRenderStageType>
-	void AddRenderStage();
+	template <typename TRenderStageType, typename... Args>
+	void AddRenderStage(Args... args);
 
 	std::shared_ptr<RenderObject> CreateRenderObject(const StaticMesh& staticMesh);
 
 	void ResizeCanvas(const Vector2D& newSize);
-
-	RenderCamera& GetCamera() { return m_camera; }
 	const Vector2D& GetCanvasSize() const;
 
+	RenderCamera& GetCamera() { return m_camera; }
+	
 	const Rendering::RenderTargetTexture& GetRenderTarget();
 	void SetRenderTarget(Rendering::RenderTargetTexture* renderTarget) { m_renderTarget = renderTarget; }
+	
+	void SetViewportSize(const Vector2D& size) { m_viewportSize = size; }
+	const Vector2D& GetViewportSize() const { return m_viewportSize; }
 
 private:
 	void InternalAddRenderStage(IRenderStage* pipeline);
@@ -86,6 +89,7 @@ private:
 	RenderCamera m_camera;
 
 	Vector2D m_canvasSize;
+	Vector2D m_viewportSize;
 
 	// @TODO currently only single render target support - also write engine-side RenderTarget
 	Rendering::RenderTargetTexture* m_renderTarget = nullptr;
@@ -131,8 +135,8 @@ private:
 	// ^^^^^ This looks like it should be some reference-type structure/architecture
 };
 
-template <typename TRenderStageType>
-void RenderEngine::AddRenderStage()
+template <typename TRenderStageType, typename... Args>
+void RenderEngine::AddRenderStage(Args... args)
 {
-	InternalAddRenderStage(new TRenderStageType());
+	InternalAddRenderStage(new TRenderStageType(std::forward<Args>(args)...));
 }

@@ -5,8 +5,6 @@
 
 #include <Utils/DebugUtils/Debug.h>
 
-#include <unordered_map>
-
 typedef U32 GameObjectID;
 
 class GameObjectComponentBase;

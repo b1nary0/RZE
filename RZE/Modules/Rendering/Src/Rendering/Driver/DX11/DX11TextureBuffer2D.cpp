@@ -152,6 +152,11 @@ namespace Rendering
 		deviceContext.PSSetSamplers(0, 1, &m_samplerState);
 	}
 
+	void* DX11TextureBuffer2D::GetTextureData()
+	{
+		return &GetResourceView();
+	}
+
 	void DX11TextureBuffer2D::SetIsRenderTarget()
 	{
 		bIsRenderTarget = true;

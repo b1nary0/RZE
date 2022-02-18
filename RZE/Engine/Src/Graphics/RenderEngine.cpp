@@ -20,7 +20,6 @@ void RenderEngine::Initialize(void* windowHandle)
 	Rendering::Renderer::Initialize(windowHandle);
 	
 	AddRenderStage<ForwardRenderStage>();
-	AddRenderStage<FinalRenderTargetStage>();
 }
 
 void RenderEngine::Update()

@@ -15,16 +15,16 @@
 #include <imGUI/imgui_impl_win32.h>
 
 RZE_Engine::RZE_Engine()
-	: mMainWindow(nullptr)
-	, mEngineConfig(nullptr)
+	: m_window(nullptr)
+	, m_engineConfig(nullptr)
 	, m_application(nullptr)
 	, m_renderEngine(nullptr)
-	, bShouldExit(false)
-	, bIsInitialized(false)
-	, mDeltaTime(0.0)
-	, mFrameCount(0)
+	, m_shouldExit(false)
+	, m_isInitialized(false)
+	, m_deltaTime(0.0)
+	, m_frameCount(0)
 {
-	mFrameSamples.resize(MAX_FRAMETIME_SAMPLES);
+	m_frameSamples.resize(MAX_FRAMETIME_SAMPLES);
 }
 
 RZE_Engine::~RZE_Engine()
@@ -35,7 +35,7 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 {
 	Init();
 
-	if (bIsInitialized)
+	if (m_isInitialized)
 	{
 		AssertNotNull(createApplicationCallback);
 		PostInit(createApplicationCallback);
@@ -43,7 +43,7 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 		HiResTimer programTimer;
 		programTimer.Start();
 		double prevTime = programTimer.GetElapsed<double>();
-		while (!bShouldExit)
+		while (!m_shouldExit)
 		{
 			OPTICK_FRAME("Main");
 
@@ -51,15 +51,15 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 			double frameTime = currTime - prevTime;
 			prevTime = currTime;
 
-			mDeltaTime = frameTime;
-			mFrameSamples[mFrameCount % MAX_FRAMETIME_SAMPLES] = static_cast<float>(mDeltaTime);
+			m_deltaTime = frameTime;
+			m_frameSamples[m_frameCount % MAX_FRAMETIME_SAMPLES] = static_cast<float>(m_deltaTime);
 
 			const float averageFrametime = CalculateAverageFrametime();
 
 			static float frameTimeBuffer[MAX_FRAMETIME_SAMPLES];
 			for (int idx = 0; idx < MAX_FRAMETIME_SAMPLES; ++idx)
 			{
-				frameTimeBuffer[idx] = mFrameSamples[idx] * 1000.0f;
+				frameTimeBuffer[idx] = m_frameSamples[idx] * 1000.0f;
 			}
 
 			{	
@@ -87,7 +87,7 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 				}
 			}
 
-			++mFrameCount;
+			++m_frameCount;
 		}
 
 		BeginShutDown();
@@ -100,8 +100,8 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 
 const Vector2D& RZE_Engine::GetWindowSize() const
 {
-	AssertNotNull(mMainWindow);
-	return mMainWindow->GetDimensions();
+	AssertNotNull(m_window);
+	return m_window->GetDimensions();
 }
 
 RZE_Application& RZE_Engine::GetApplication()
@@ -124,18 +124,18 @@ void RZE_Engine::Init()
 
 		CreateAndInitializeWindow();
 
-		mInputHandler.Initialize();
+		m_inputHandler.Initialize();
 
 		RegisterWindowEvents();
 
-		mResourceHandler.Init();
+		m_resourceHandler.Init();
 
 		CreateAndInitializeRenderer();
 
-		mActiveScene = new GameScene();
-		mActiveScene->Initialize();
+		m_activeScene = new GameScene();
+		m_activeScene->Initialize();
 
-		bIsInitialized = true;
+		m_isInitialized = true;
 	}
 }
 
@@ -147,7 +147,7 @@ void RZE_Engine::PostInit(Functor<RZE_Application* const>& createApplicationCall
 
 	InitializeApplication(createApplicationCallback);
 
-	mActiveScene->Start();
+	m_activeScene->Start();
 }
 
 void RZE_Engine::PreUpdate()
@@ -155,33 +155,33 @@ void RZE_Engine::PreUpdate()
 	OPTICK_EVENT();
 
 	CompileEvents();
-	mEventHandler.ProcessEvents();
+	m_eventHandler.ProcessEvents();
 
-	if (m_application->ProcessInput(mInputHandler))
+	if (m_application->ProcessInput(m_inputHandler))
 	{
-		mInputHandler.RaiseEvents();
+		m_inputHandler.RaiseEvents();
 	}
 	else
 	{
-		mInputHandler.Reset();
+		m_inputHandler.Reset();
 	} 
 }
 
 void RZE_Engine::CreateAndInitializeWindow()
 {
-	WindowSettings& windowSettings = mEngineConfig->GetWindowSettings();
+	WindowSettings& windowSettings = m_engineConfig->GetWindowSettings();
 
 	Win32Window::WindowCreationParams params;
 	params.windowTitle = windowSettings.GetTitle();
 	params.width = static_cast<int>(windowSettings.GetDimensions().X());
 	params.height = static_cast<int>(windowSettings.GetDimensions().Y());
 
-	mMainWindow = new Win32Window(params);
-	AssertNotNull(mMainWindow);
+	m_window = new Win32Window(params);
+	AssertNotNull(m_window);
 
-	mMainWindow->RegisterEvents(mEventHandler);
+	m_window->RegisterEvents(m_eventHandler);
 
-	mMainWindow->Show();
+	m_window->Show();
 }
 
 void RZE_Engine::CreateAndInitializeRenderer()
@@ -189,7 +189,7 @@ void RZE_Engine::CreateAndInitializeRenderer()
 	LOG_CONSOLE("Initializing Renderer");
 
 	m_renderEngine = std::make_unique<RenderEngine>();
-	m_renderEngine->Initialize(mMainWindow->GetOSWindowHandleData().windowHandle);
+	m_renderEngine->Initialize(m_window->GetOSWindowHandleData().windowHandle);
 }
 
 void RZE_Engine::InitializeApplication(Functor<RZE_Application* const> createGameCallback)
@@ -197,9 +197,9 @@ void RZE_Engine::InitializeApplication(Functor<RZE_Application* const> createGam
 	m_application = createGameCallback();
 	AssertNotNull(m_application);
 
-	m_application->SetWindow(mMainWindow);
+	m_application->SetWindow(m_window);
 	m_application->Initialize();
-	m_application->RegisterInputEvents(mInputHandler);
+	m_application->RegisterInputEvents(m_inputHandler);
 
 	// #IDEA
 	// Move this out and controlled in another manner. At this point
@@ -211,7 +211,7 @@ void RZE_Engine::InitializeApplication(Functor<RZE_Application* const> createGam
 float RZE_Engine::CalculateAverageFrametime()
 {
 	float sum = 0.0f;
-	for (float frameSample : mFrameSamples)
+	for (float frameSample : m_frameSamples)
 	{
 		sum += frameSample;
 	}
@@ -223,14 +223,14 @@ float RZE_Engine::CalculateAverageFrametime()
 
 void RZE_Engine::SetWindowSize(Vector2D newSize)
 {
-	AssertNotNull(mMainWindow);
-	mMainWindow->SetWindowSize(newSize);
+	AssertNotNull(m_window);
+	m_window->SetWindowSize(newSize);
 }
 
 void RZE_Engine::CompileEvents()
 {
-	mMainWindow->CompileInputMessages(mInputHandler);
-	mMainWindow->CompileWindowMessages(mEventHandler);
+	m_window->CompileInputMessages(m_inputHandler);
+	m_window->CompileWindowMessages(m_eventHandler);
 }
 
 void RZE_Engine::RegisterWindowEvents()
@@ -250,7 +250,7 @@ void RZE_Engine::RegisterWindowEvents()
 			m_renderEngine->ResizeCanvas(newSize);
 		}
 	});
-	mEventHandler.RegisterForEvent(EEventType::Window, windowCallback);
+	m_eventHandler.RegisterForEvent(EEventType::Window, windowCallback);
 }
 
 void RZE_Engine::RegisterKeyEvents()
@@ -262,10 +262,10 @@ void RZE_Engine::RegisterKeyEvents()
 void RZE_Engine::LoadEngineConfig()
 {
 	// #TODO(Josh) This should probably be a resource? 
-	mEngineConfig = new EngineConfig();
-	mEngineConfig->Load(FilePath("Config/Engine.ini"));
+	m_engineConfig = new EngineConfig();
+	m_engineConfig->Load(FilePath("Config/Engine.ini"));
 
-	if (mEngineConfig->Empty())
+	if (m_engineConfig->Empty())
 	{
 		LOG_CONSOLE("Engine config could not load. Defaults were used.");
 	}
@@ -276,16 +276,16 @@ void RZE_Engine::Update()
 	OPTICK_EVENT();
 
 	m_application->Update();
-	mActiveScene->Update();
+	m_activeScene->Update();
 }
 
 void RZE_Engine::BeginShutDown()
 {
 	LOG_CONSOLE("Shutting engine down...");
 	
-	mActiveScene->ShutDown();
+	m_activeScene->ShutDown();
 	m_application->ShutDown();
-	mResourceHandler.ShutDown();
+	m_resourceHandler.ShutDown();
 	m_renderEngine->Shutdown();
 
 	Threading::JobScheduler::Get().ShutDown();
@@ -295,30 +295,30 @@ void RZE_Engine::BeginShutDown()
 
 void RZE_Engine::InternalShutDown()
 {
-	AssertNotNull(mMainWindow);
-	AssertNotNull(mEngineConfig);
+	AssertNotNull(m_window);
+	AssertNotNull(m_engineConfig);
 	AssertNotNull(m_renderEngine);
-	AssertNotNull(mActiveScene);
+	AssertNotNull(m_activeScene);
 
-	delete mMainWindow;
-	delete mEngineConfig;
+	delete m_window;
+	delete m_engineConfig;
 	m_renderEngine.reset();
-	delete mActiveScene;
+	delete m_activeScene;
 }
 
 void RZE_Engine::PostExit()
 {
-	bShouldExit = true;
+	m_shouldExit = true;
 }
 
 ResourceHandler& RZE_Engine::GetResourceHandler()
 {
-	return mResourceHandler;
+	return m_resourceHandler;
 }
 
 InputHandler& RZE_Engine::GetInputHandler()
 {
-	return mInputHandler;
+	return m_inputHandler;
 }
 
 RenderEngine& RZE_Engine::GetRenderEngine()
@@ -328,14 +328,14 @@ RenderEngine& RZE_Engine::GetRenderEngine()
 
 GameScene& RZE_Engine::GetActiveScene()
 {
-	AssertNotNull(mActiveScene);
-	return *mActiveScene;
+	AssertNotNull(m_activeScene);
+	return *m_activeScene;
 }
 
 FilePath RZE_Engine::ShowOpenFilePrompt()
 {
-	AssertNotNull(mMainWindow);
-	return mMainWindow->ShowOpenFilePrompt();
+	AssertNotNull(m_window);
+	return m_window->ShowOpenFilePrompt();
 }
 
 void RZE_Engine::Log(const std::string& text, const Vector3D& color)

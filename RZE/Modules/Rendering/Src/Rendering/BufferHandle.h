@@ -75,6 +75,8 @@ namespace Rendering
 	public:
 		bool IsValid() { return m_buffer != nullptr; }
 
+		void* GetTextureData() const;
+
 	private:
 		TextureBuffer2DHandle(const std::shared_ptr<ITextureBuffer2D>& buffer)
 			: m_buffer(buffer) {}

@@ -53,7 +53,8 @@ namespace Editor
 		// Should probably bake this into RZE::Application
 		FilePath::SetDirectoryContext(EDirectoryContext::Tools);
 
-		RZE::GetRenderEngine().AddRenderStage<ImGuiRenderStage>();
+		const bool isWithEditor = true;
+		RZE::GetRenderEngine().AddRenderStage<ImGuiRenderStage>(isWithEditor);
 
 		mImguiConfigFilePath = FilePath("Config/imgui.ini");
 		ImGui::GetIO().IniFilename = mImguiConfigFilePath.GetAbsolutePath().c_str();
@@ -62,18 +63,14 @@ namespace Editor
 		GetWindow()->Maximize();
 
 		const Vector2D& windowDims = GetWindow()->GetDimensions();
-		m_renderTarget = std::make_unique<Rendering::RenderTargetTexture>(static_cast<U32>(windowDims.X()), static_cast<U32>(windowDims.Y()));
-		// First pass:
-		// Renderer::SetRenderTarget here which will override target in renderer, specifically the device directly.
-		//RZE().GetRenderer().SetRenderTarget(m_renderTarget.get());
+		CreateRenderTarget(windowDims);
+		RZE::GetRenderEngine().SetRenderTarget(m_renderTarget.get());
 
 		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 		ImGui::GetIO().KeyRepeatDelay = 0.5f;
 		
 		LoadFonts();
 		StyleSetup();
-
-		//RZE().GetActiveScene().AddSystem<FreeCameraSystem>();
 	}
 
 	void EditorApp::Start()
@@ -153,6 +150,20 @@ namespace Editor
 		//io.MouseWheel = static_cast<float>(handler.GetProxyMouseState().CurWheelVal);
 
 		return mSceneViewPanel.IsHovered();
+	}
+
+	void EditorApp::OnWindowResize(const Vector2D& newSize)
+	{
+		CreateRenderTarget(newSize);
+		RZE::GetRenderEngine().SetRenderTarget(m_renderTarget.get());
+	}
+
+	void EditorApp::CreateRenderTarget(const Vector2D& dimensions)
+	{
+		m_renderTarget.reset();
+
+		m_renderTarget = std::make_unique<Rendering::RenderTargetTexture>(static_cast<U32>(dimensions.X()), static_cast<U32>(dimensions.Y()));
+		m_renderTarget->Initialize();
 	}
 
 	void EditorApp::SetFont(const char* fontName)

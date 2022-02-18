@@ -15,6 +15,11 @@ void ImGuiRenderStage::Render(const std::vector<std::shared_ptr<RenderObject>>& 
 {
 	OPTICK_EVENT();
 
+	if (m_withEditor)
+	{
+		Rendering::Renderer::SetRenderTargetBackBuffer();
+	}
+
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }

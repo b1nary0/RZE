@@ -20,9 +20,12 @@ public:
 	void Load(FilePath filePath);
 	void Unload();
 	
+	GameObject* FindGameObjectByName(const std::string& name);
+
 private:
 	void AddGameObject(GameObject& gameObject);
 	void RemoveGameObject(GameObject& gameObject);
+
 	
 private:
 	FilePath mCurrentScenePath;

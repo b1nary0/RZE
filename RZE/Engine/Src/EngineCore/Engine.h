@@ -24,7 +24,7 @@ public:
 	RZE_Engine();
 	~RZE_Engine();
 
-	inline bool IsInitialized() { return bIsInitialized; }
+	inline bool IsInitialized() { return m_isInitialized; }
 
 	void Run(Functor<RZE_Application* const>& createApplicationCallback);
 
@@ -42,7 +42,7 @@ public:
 	// #TODO(Should probably put the window in the app..)
 	FilePath ShowOpenFilePrompt();
 
-	inline double GetDeltaTime() const { return mDeltaTime; }
+	inline double GetDeltaTime() const { return m_deltaTime; }
 	
 	void PostExit();
 
@@ -77,25 +77,25 @@ private:
 
 private:
 	RZE_Application* m_application;
-	GameScene* mActiveScene;
+	GameScene* m_activeScene;
 
-	Win32Window* mMainWindow;
+	Win32Window* m_window;
 
-	ResourceHandler mResourceHandler;
-	EventHandler mEventHandler;
-	InputHandler mInputHandler;
+	ResourceHandler m_resourceHandler;
+	EventHandler m_eventHandler;
+	InputHandler m_inputHandler;
 
 	std::unique_ptr<RenderEngine> m_renderEngine;
 
-	EngineConfig* mEngineConfig;
+	EngineConfig* m_engineConfig;
 	
 	// PODs
 private:
-	double mDeltaTime;
-	U64 mFrameCount;
+	double m_deltaTime;
+	U64 m_frameCount;
 
-	bool bIsInitialized;
-	bool bShouldExit;
+	bool m_isInitialized;
+	bool m_shouldExit;
 
-	std::vector<float> mFrameSamples;
+	std::vector<float> m_frameSamples;
 };

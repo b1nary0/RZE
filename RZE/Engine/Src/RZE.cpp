@@ -20,4 +20,9 @@ namespace RZE
 	{
 		return RZE_Application::RZE().GetRenderEngine();
 	}
+
+	GameScene& GetActiveScene()
+	{
+		return RZE_Application::RZE().GetActiveScene();
+	}
 }

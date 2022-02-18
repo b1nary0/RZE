@@ -126,6 +126,23 @@ void GameScene::RemoveGameObject(GameObject& gameObject)
 	}
 }
 
+GameObject* GameScene::FindGameObjectByName(const std::string& name)
+{
+	// @TODO Slow first-pass quick implementation
+	auto iter = std::find_if(m_objectRegistry.begin(), m_objectRegistry.end(),
+		[&name](const GameObject* object)
+		{
+			return object->GetName() == name;
+		});
+
+	if (iter != m_objectRegistry.end())
+	{
+		return *iter;
+	}
+
+	return nullptr;
+}
+
 void GameScene::Start()
 {
 }
