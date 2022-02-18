@@ -62,10 +62,10 @@ namespace Editor
 		GetWindow()->Maximize();
 
 		const Vector2D& windowDims = GetWindow()->GetDimensions();
-		mRenderTarget = std::make_unique<Rendering::RenderTargetTexture>(static_cast<U32>(windowDims.X()), static_cast<U32>(windowDims.Y()));
+		m_renderTarget = std::make_unique<Rendering::RenderTargetTexture>(static_cast<U32>(windowDims.X()), static_cast<U32>(windowDims.Y()));
 		// First pass:
 		// Renderer::SetRenderTarget here which will override target in renderer, specifically the device directly.
-		//RZE().GetRenderer().SetRenderTarget(mRenderTarget.get());
+		//RZE().GetRenderer().SetRenderTarget(m_renderTarget.get());
 
 		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 		ImGui::GetIO().KeyRepeatDelay = 0.5f;
