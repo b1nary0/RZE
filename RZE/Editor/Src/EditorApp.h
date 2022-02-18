@@ -21,16 +21,18 @@ namespace Editor
 
 	public:
 		EditorApp();
-		virtual ~EditorApp();
+		~EditorApp() override;
 
-		virtual void Initialize() override;
-		virtual void Start() override;
-		virtual void Update() override;
-		virtual void ShutDown() override;
+		void Initialize() override;
+		void Start() override;
+		void Update() override;
+		void ShutDown() override;
 
-		virtual void ParseArguments(const char* arguments, int count);
-		virtual void RegisterInputEvents(InputHandler& inputHandler) override;
-		virtual bool ProcessInput(const InputHandler& handler) override;
+		void ParseArguments(const char* arguments, int count) override;
+		void RegisterInputEvents(InputHandler& inputHandler) override;
+		bool ProcessInput(const InputHandler& handler) override;
+
+		void OnWindowResize(const Vector2D& newSize) override {}
 
 	public:
 		void SetFont(const char* fontName);
