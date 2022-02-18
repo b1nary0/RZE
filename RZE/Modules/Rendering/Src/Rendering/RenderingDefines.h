@@ -4,6 +4,7 @@ namespace Rendering
 {
 	enum class EPrimitiveTopology
 	{
-		TriangleList
+		TriangleList,
+		TriangleStrip
 	};
 }

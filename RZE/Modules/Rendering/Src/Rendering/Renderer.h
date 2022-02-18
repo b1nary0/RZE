@@ -16,6 +16,7 @@ namespace Rendering
 {
 	class DX11Device;
 	class IVertexBuffer;
+	class RenderTargetTexture;
 
 	struct GFXTextureBufferParams;
 	
@@ -60,7 +61,7 @@ namespace Rendering
 		static void HandleWindowResize(const Vector2D& newSize);
 
 	public:
-		static VertexBufferHandle CreateVertexBuffer(void* data, size_t dataTypeSize, size_t count);
+		static VertexBufferHandle CreateVertexBuffer(void* data, size_t dataTypeSize, size_t count, U32 stride);
 		static IndexBufferHandle CreateIndexBuffer(void* data, size_t dataTypeSize, size_t count);
 		static ConstantBufferHandle CreateConstantBuffer(void* data, size_t dataTypeSize, size_t count);
 		static TextureBuffer2DHandle CreateTextureBuffer2D(void* data, const GFXTextureBufferParams& params);
@@ -73,8 +74,13 @@ namespace Rendering
 		static void ReleaseVertexShader(VertexShaderHandle& shaderHandle);
 		static void ReleasePixelShader(PixelShaderHandle& shaderHandle);
 
+		static void ClearDepthStencilBuffer(const TextureBuffer2DHandle& buffer);
+
 	public:
-		static void SetClearColour(const Vector4D& colour);
+		static void SetRenderTarget(const RenderTargetTexture* renderTarget);
+		static void SetRenderTargetBackBuffer();
+
+		static void SetClearColour(const RenderTargetHandle& renderTarget, const Vector4D& colour);
 
 		static void SetViewport(const ViewportParams& viewportParams);
 		
@@ -91,47 +97,17 @@ namespace Rendering
 		static void SetIndexBuffer(const IndexBufferHandle& buffer);
 
 		static void SetTextureResource(const TextureBuffer2DHandle& texture, U32 textureSlot);
+		static void UnsetTextureResource(U32 textureSlot);
 
+		static void Draw(const VertexBufferHandle& vertexBuffer, size_t count);
 		static void DrawIndexed(const IndexBufferHandle& indexBuffer);
+		static void DrawFullScreenQuad();
 
 	private:
 		//void ProcessCommands();
-
-		// #TODO
-		// Turn this into a command structure. Something like:
-		// UpdateRenderObject<UpdateTransformCommand>(renderObject);
-		// Where UpdateTransformCommand:
-		// 
-		// class UpdateTransformCommand : public RenderCommand
-		// {
-		// public:
-		//		UpdateTransformCommand(const RenderObject& renderObject, const Matrix4x4& transform);
-		// 		virtual void Execute();
-		// private:
-		//		RenderObject& renderObject;
-		// 		Matrix4x4 transform;
-		// };
 		
 	private:
 		static std::unique_ptr<DX11Device> m_device;
 		static void* m_windowHandle;
-		//
-		// Buckets
-		//
-		// std::vector<DrawBucket> mBuckets;
-		//
-		// void Draw()
-		// {
-		//		for (const DrawBucket& bucket : mBuckets)
-		//		{
-		//			Draw bucket.RenderObject[i] with bucket.DrawState
-		//		}
-		// }
-		//
-		// BucketProxy* bucketProxy = Renderer::StartBucket();
-		// bucketProxy->SetDrawState(someState);
-		// bucketProxy->AddRenderObjectThatPassedSomeCullingOperation(someObject);
-		// Renderer::SubmitBucket(bucketProxy); // We're done here, bucketProxy invalid now.
-		// ^^^^^ This looks like it should be some reference-type structure/architecture
 	};
 }

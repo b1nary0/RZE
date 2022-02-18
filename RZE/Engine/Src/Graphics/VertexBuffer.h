@@ -10,7 +10,7 @@ public:
 	VertexBuffer();
 	~VertexBuffer();
 
-	void Initialize(std::vector<float>&& localBuffer);
+	void Initialize(std::vector<float>&& localBuffer, U32 stride);
 
 	const std::vector<float>& GetData() const { return m_localBuffer; }
 

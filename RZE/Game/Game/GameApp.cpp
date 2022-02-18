@@ -2,8 +2,11 @@
 
 #include <RZE.h>
 
+#include <Graphics/RenderEngine.h>
+
+#include <Rendering/Graphics/RenderTarget.h>
+
 #include <Utils/DebugUtils/Debug.h>
-#include <Utils/Math/Math.h>
 #include <Utils/Platform/FilePath.h>
 
 // GAME
@@ -15,7 +18,6 @@
 #include <Graphics/RenderStages/ImGuiRenderStage.h>
 #endif
 
-#include "Graphics/RenderEngine.h"
 
 GameApp::GameApp()
 	: RZE_Application()
@@ -29,6 +31,10 @@ GameApp::~GameApp()
 void GameApp::Initialize()
 {
 	RZE_Application::Initialize();
+
+	CreateRenderTarget(GetWindow()->GetDimensions());
+
+	RZE().GetRenderEngine().SetRenderTarget(m_renderTarget.get());
 
 	// #TODO #BIGBUG
 	// This function doesn't get called on reload of a scene. Maybe this should be set in the scene itself (the systems, etc)
@@ -116,4 +122,23 @@ bool GameApp::ProcessInput(const InputHandler& handler)
 #endif
 
 	return RZE_Application::ProcessInput(handler);
+}
+
+void GameApp::OnWindowResize(const Vector2D& newSize)
+{
+	m_renderTarget.reset();
+
+	CreateRenderTarget(GetWindow()->GetDimensions());
+	RZE().GetRenderEngine().SetRenderTarget(m_renderTarget.get());
+}
+
+void GameApp::CreateRenderTarget(const Vector2D& dimensions)
+{
+	AssertNull(m_renderTarget);
+
+	const U32 renderTargetWidth = static_cast<U32>(dimensions.X());
+	const U32 renderTargetHeight = static_cast<U32>(dimensions.Y());
+	m_renderTarget = std::make_unique<Rendering::RenderTargetTexture>(renderTargetWidth, renderTargetHeight);
+
+	m_renderTarget->Initialize();
 }

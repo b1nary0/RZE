@@ -3,6 +3,7 @@
 
 #include <Graphics/RenderStage.h>
 #include <Graphics/RenderStages/ForwardRenderStage.h>
+#include <Graphics/RenderStages/FinalRenderTargetStage.h>
 
 #include <Rendering/Renderer.h>
 
@@ -19,6 +20,7 @@ void RenderEngine::Initialize(void* windowHandle)
 	Rendering::Renderer::Initialize(windowHandle);
 	
 	AddRenderStage<ForwardRenderStage>();
+	AddRenderStage<FinalRenderTargetStage>();
 }
 
 void RenderEngine::Update()
@@ -74,6 +76,12 @@ void RenderEngine::ResizeCanvas(const Vector2D& newSize)
 const Vector2D& RenderEngine::GetCanvasSize() const
 {
 	return m_canvasSize;
+}
+
+const Rendering::RenderTargetTexture& RenderEngine::GetRenderTarget()
+{
+	AssertNotNull(m_renderTarget);
+	return *m_renderTarget;
 }
 
 void RenderEngine::InternalAddRenderStage(IRenderStage* pipeline)

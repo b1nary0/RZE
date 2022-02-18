@@ -16,6 +16,8 @@
 #include <Rendering/Driver/DX11/DX11TextureBuffer2D.h>
 #include <Rendering/Driver/DX11/DX11ShaderTypes.h>
 
+#include <Rendering/Graphics/RenderTarget.h>
+
 #include <ImGui/imgui.h>
 #include <imGUI/imgui_impl_dx11.h>
 #include <imGUI/imgui_impl_win32.h>
@@ -27,6 +29,7 @@ namespace Rendering
 		switch (topologyType)
 		{
 			case EPrimitiveTopology::TriangleList: return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+			case EPrimitiveTopology::TriangleStrip: return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
 
 			default: return D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
 		}
@@ -79,8 +82,6 @@ namespace Rendering
 		// @TODO This is temporary until the API is written for SetRenderTarget() and ClearDepthStencilView()
 		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 		deviceContext.RSSetState(m_device->mRasterState);
-		deviceContext.OMSetRenderTargets(1, &m_device->mRenderTargetView, m_device->mDepthStencilView);
-		deviceContext.ClearDepthStencilView(m_device->mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	}
 
 	void Renderer::End()
@@ -99,11 +100,11 @@ namespace Rendering
 		m_device->HandleWindowResize(static_cast<U32>(newSize.X()), static_cast<U32>(newSize.Y()));
 	}
 
-	VertexBufferHandle Renderer::CreateVertexBuffer(void* data, size_t dataTypeSize, size_t count)
+	VertexBufferHandle Renderer::CreateVertexBuffer(void* data, size_t dataTypeSize, size_t count, U32 stride)
 	{
 		std::shared_ptr<DX11VertexBuffer> vertexBuffer = std::make_shared<DX11VertexBuffer>();
 		vertexBuffer->SetDevice(m_device.get());
-		vertexBuffer->Allocate(data, dataTypeSize, count);
+		vertexBuffer->Allocate(data, dataTypeSize, count, stride);
 
 		return VertexBufferHandle(vertexBuffer);
 	}
@@ -177,12 +178,52 @@ namespace Rendering
 		shaderHandle.m_shader.reset();
 	}
 
-	void Renderer::SetClearColour(const Vector4D& colour)
+	void Renderer::ClearDepthStencilBuffer(const TextureBuffer2DHandle& buffer)
+	{
+		std::shared_ptr<ITextureBuffer2D> texture = buffer.m_buffer;
+		DX11TextureBuffer2D* texturePtr = static_cast<DX11TextureBuffer2D*>(texture.get());
+
+		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+		deviceContext.ClearDepthStencilView(&texturePtr->GetDepthView(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	}
+
+	void Renderer::SetRenderTarget(const RenderTargetTexture* renderTarget)
+	{
+		if (renderTarget != nullptr)
+		{
+			RenderTargetHandle target = renderTarget->GetTargetPlatformObject();
+			TextureBuffer2DHandle depthTexture = renderTarget->GetDepthTexturePlatformObject();
+
+			DX11TextureBuffer2D* targetPtr = static_cast<DX11TextureBuffer2D*>(target.m_buffer.get());
+			DX11TextureBuffer2D* depthTexturePtr = static_cast<DX11TextureBuffer2D*>(depthTexture.m_buffer.get());
+
+			ID3D11RenderTargetView* rtv = &targetPtr->GetTargetView();
+			ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+			deviceContext.OMSetRenderTargets(1, &rtv, &depthTexturePtr->GetDepthView());
+		}
+		else
+		{
+			ID3D11RenderTargetView* rtv = nullptr;
+			ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+			deviceContext.OMSetRenderTargets(1, &rtv, nullptr);
+		}
+	}
+
+	void Renderer::SetRenderTargetBackBuffer()
 	{
 		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
-		// @TODO Move render target off device and set it on render state
+		deviceContext.OMSetRenderTargets(1, &m_device->mRenderTargetView, m_device->mDepthStencilView);
+		deviceContext.ClearDepthStencilView(m_device->mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	}
+
+	void Renderer::SetClearColour(const RenderTargetHandle& renderTarget, const Vector4D& colour)
+	{
+		std::shared_ptr<ITextureBuffer2D> texture = renderTarget.m_buffer;
+		DX11TextureBuffer2D* texturePtr = static_cast<DX11TextureBuffer2D*>(texture.get());
+		
+		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 		FLOAT rgba[4] = { colour.X(), colour.Y(), colour.Z(), colour.W() };
-		deviceContext.ClearRenderTargetView(m_device->mRenderTargetView, rgba);
+		deviceContext.ClearRenderTargetView(&texturePtr->GetTargetView(), rgba);
 	}
 
 	void Renderer::SetViewport(const ViewportParams& viewportParams)
@@ -254,10 +295,31 @@ namespace Rendering
 		bufferPtr->SetActive(textureSlot);
 	}
 
+	void Renderer::UnsetTextureResource(U32 textureSlot)
+	{
+		ID3D11ShaderResourceView* nullSRV = nullptr;
+
+		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+		deviceContext.PSSetShaderResources(textureSlot, 1, &nullSRV);
+	}
+
+	void Renderer::Draw(const VertexBufferHandle& vertexBuffer, size_t count)
+	{
+		std::shared_ptr<IVertexBuffer> bufferPtr = vertexBuffer.m_buffer;
+		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+		deviceContext.Draw(count, 0);
+	}
+
 	void Renderer::DrawIndexed(const IndexBufferHandle& indexBuffer)
 	{
 		std::shared_ptr<IIndexBuffer> bufferPtr = indexBuffer.m_buffer;
 		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 		deviceContext.DrawIndexed(bufferPtr->GetIndexCount(), 0, 0);
+	}
+
+	void Renderer::DrawFullScreenQuad()
+	{
+		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+		deviceContext.Draw(4, 0);
 	}
 }

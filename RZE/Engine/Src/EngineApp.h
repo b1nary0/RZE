@@ -29,12 +29,15 @@ public:
 	virtual void Update();
 	virtual void ShutDown();
 
+	virtual void OnWindowResize(const Vector2D& newSize) = 0;
+
 	// Returning TRUE will fire callbacks registered with RZE. Returning FALSE steals input from the engine.
 	virtual bool ProcessInput(const InputHandler& handler);
 
 	virtual void ParseArguments(const char* arguments, int count);
 
 	virtual void RegisterInputEvents(InputHandler& inputHandler);
+
 
 	Rendering::RenderTargetTexture* GetRTT();
 
@@ -50,12 +53,11 @@ protected:
 
 	Win32Window* const GetWindow() const;
 
-	std::unique_ptr<Rendering::RenderTargetTexture> mRenderTarget;
+	std::unique_ptr<Rendering::RenderTargetTexture> m_renderTarget;
 
 private:
 	void SetWindow(Win32Window* const window);
-
-
+	
 	Win32Window* mWindow;
 	bool bIsRunning;
 

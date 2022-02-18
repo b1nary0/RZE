@@ -16,7 +16,7 @@ namespace Rendering
 
 		// IVertexBuffer interface
 	public:
-		void Allocate(const void* data, size_t size, U32 count) override;
+		void Allocate(const void* data, size_t size, U32 count, U32 stride) override;
 		void Release() override;
 
 		void SetActive(U32 bufferSlot) override;

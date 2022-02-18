@@ -104,8 +104,8 @@ Win32Window* const RZE_Application::GetWindow() const
 
 Rendering::RenderTargetTexture* RZE_Application::GetRTT()
 {
-	AssertNotNull(mRenderTarget);
-	return mRenderTarget.get();
+	AssertNotNull(m_renderTarget);
+	return m_renderTarget.get();
 }
 
 void RZE_Application::ParseArguments(const char* arguments, int count)

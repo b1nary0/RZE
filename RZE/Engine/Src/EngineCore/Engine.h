@@ -76,7 +76,7 @@ private:
 	float CalculateAverageFrametime();
 
 private:
-	RZE_Application* mApplication;
+	RZE_Application* m_application;
 	GameScene* mActiveScene;
 
 	Win32Window* mMainWindow;

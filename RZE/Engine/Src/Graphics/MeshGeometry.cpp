@@ -6,6 +6,17 @@
 #include <Graphics/IndexBuffer.h>
 #include <Graphics/VertexBuffer.h>
 
+namespace
+{
+	struct TempDataLayoutStructure
+	{
+		Vector3D position;
+		Vector3D normal;
+		Vector2D uv;
+		Vector3D tangent;
+	};
+}
+
 MeshGeometry::MeshGeometry(U32 vertexCount, U32 indexCount)
 {
 	m_vertices.reserve(vertexCount);
@@ -49,7 +60,8 @@ void MeshGeometry::AllocateData()
 	}
 
 	m_vertexBuffer = std::make_shared<VertexBuffer>();
-	m_vertexBuffer->Initialize(std::move(vertexDataBuffer));
+	
+	m_vertexBuffer->Initialize(std::move(vertexDataBuffer), sizeof(TempDataLayoutStructure));
 
 	m_indexBuffer = std::make_shared<IndexBuffer>();
 	m_indexBuffer->Initialize(m_indices);

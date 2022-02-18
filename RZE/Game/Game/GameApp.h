@@ -11,13 +11,17 @@ public:
 	GameApp();
 	virtual ~GameApp();
 
-	virtual void Initialize() override;
-	virtual void Start() override;
-	virtual void Update() override;
-	virtual void ShutDown() override;
+	void Initialize() override;
+	void Start() override;
+	void Update() override;
+	void ShutDown() override;
 
-	virtual void RegisterInputEvents(InputHandler& inputHandler) override;
+	void RegisterInputEvents(InputHandler& inputHandler) override;
 
-	virtual bool ProcessInput(const InputHandler& handler);
+	bool ProcessInput(const InputHandler& handler) override;
 
+	void OnWindowResize(const Vector2D& newSize) override;
+
+private:
+	void CreateRenderTarget(const Vector2D& dimensions);
 };

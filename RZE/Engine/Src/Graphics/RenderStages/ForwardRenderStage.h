@@ -10,7 +10,7 @@ class ForwardRenderStage : public IRenderStage
 {
 public:
 	ForwardRenderStage() = default;
-	virtual ~ForwardRenderStage() = default;
+	~ForwardRenderStage() override = default;
 
 public:
 	void Initialize() override;

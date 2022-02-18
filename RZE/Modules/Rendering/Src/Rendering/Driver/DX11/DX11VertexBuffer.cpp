@@ -10,22 +10,14 @@
 
 namespace Rendering
 {
-	struct TempDataLayoutStructure
-	{
-		Vector3D position;
-		Vector3D normal;
-		Vector2D uv;
-		Vector3D tangent;
-	};
-
 	DX11VertexBuffer::~DX11VertexBuffer()
 	{
 		Release();
 	}
 
-	void DX11VertexBuffer::Allocate(const void* data, size_t size, U32 count)
+	void DX11VertexBuffer::Allocate(const void* data, size_t size, U32 count, U32 stride)
 	{
-		m_stride = sizeof(TempDataLayoutStructure);
+		m_stride = stride;
 		m_offset = 0;
 
 		D3D11_BUFFER_DESC vertexBufferDesc;

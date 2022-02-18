@@ -28,7 +28,7 @@ namespace Rendering
 		IVertexBuffer() = default;
 		virtual ~IVertexBuffer() = default;
 
-		virtual void Allocate(const void* data, size_t size, U32 count) = 0;
+		virtual void Allocate(const void* data, size_t size, U32 count, U32 stride) = 0;
 		virtual void Release() = 0;
 
 		// @TODO Index buffers and vertex buffers don't fit this interface very well

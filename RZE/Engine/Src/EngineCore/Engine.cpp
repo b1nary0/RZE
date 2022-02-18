@@ -17,7 +17,7 @@
 RZE_Engine::RZE_Engine()
 	: mMainWindow(nullptr)
 	, mEngineConfig(nullptr)
-	, mApplication(nullptr)
+	, m_application(nullptr)
 	, m_renderEngine(nullptr)
 	, bShouldExit(false)
 	, bIsInitialized(false)
@@ -106,8 +106,8 @@ const Vector2D& RZE_Engine::GetWindowSize() const
 
 RZE_Application& RZE_Engine::GetApplication()
 {
-	AssertNotNull(mApplication);
-	return *mApplication;
+	AssertNotNull(m_application);
+	return *m_application;
 }
 
 void RZE_Engine::Init()
@@ -157,7 +157,7 @@ void RZE_Engine::PreUpdate()
 	CompileEvents();
 	mEventHandler.ProcessEvents();
 
-	if (mApplication->ProcessInput(mInputHandler))
+	if (m_application->ProcessInput(mInputHandler))
 	{
 		mInputHandler.RaiseEvents();
 	}
@@ -194,18 +194,18 @@ void RZE_Engine::CreateAndInitializeRenderer()
 
 void RZE_Engine::InitializeApplication(Functor<RZE_Application* const> createGameCallback)
 {
-	mApplication = createGameCallback();
-	AssertNotNull(mApplication);
+	m_application = createGameCallback();
+	AssertNotNull(m_application);
 
-	mApplication->SetWindow(mMainWindow);
-	mApplication->Initialize();
-	mApplication->RegisterInputEvents(mInputHandler);
+	m_application->SetWindow(mMainWindow);
+	m_application->Initialize();
+	m_application->RegisterInputEvents(mInputHandler);
 
 	// #IDEA
 	// Move this out and controlled in another manner. At this point
 	// we instead just initialize the application,and start it much later 
 	// explicitly in RZE_Engine::Initialize or something
-	mApplication->Start();
+	m_application->Start();
 }
 
 float RZE_Engine::CalculateAverageFrametime()
@@ -245,6 +245,8 @@ void RZE_Engine::RegisterWindowEvents()
 		else if (event.mWindowEvent.mEventInfo.mEventSubType == EWindowEventType::Window_Resize)
 		{
 			Vector2D newSize(event.mWindowEvent.mSizeX, event.mWindowEvent.mSizeY);
+
+			m_application->OnWindowResize(newSize);
 			m_renderEngine->ResizeCanvas(newSize);
 		}
 	});
@@ -273,7 +275,7 @@ void RZE_Engine::Update()
 {
 	OPTICK_EVENT();
 
-	mApplication->Update();
+	m_application->Update();
 	mActiveScene->Update();
 }
 
@@ -282,7 +284,7 @@ void RZE_Engine::BeginShutDown()
 	LOG_CONSOLE("Shutting engine down...");
 	
 	mActiveScene->ShutDown();
-	mApplication->ShutDown();
+	m_application->ShutDown();
 	mResourceHandler.ShutDown();
 	m_renderEngine->Shutdown();
 

@@ -3,13 +3,13 @@
 
 #include <Graphics/IndexBuffer.h>
 #include <Graphics/Material.h>
+#include <Graphics/RenderEngine.h>
 #include <Graphics/Shader.h>
 #include <Graphics/Texture2D.h>
 #include <Graphics/VertexBuffer.h>
 
 #include <Rendering/Renderer.h>
-
-#include "Graphics/RenderEngine.h"
+#include <Rendering/Graphics/RenderTarget.h>
 
 void ForwardRenderStage::Initialize()
 {
@@ -17,7 +17,7 @@ void ForwardRenderStage::Initialize()
 	{
 		{ "POSITION", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 0 },
 		{ "NORMAL", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 12 },
-		{ "UV", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 24 },
+		{ "UV", Rendering::EDataFormat::R32G32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 24 },
 		{ "TANGENT", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 32 }
 	};
 
@@ -35,12 +35,18 @@ void ForwardRenderStage::Update(const std::vector<std::shared_ptr<RenderObject>>
 void ForwardRenderStage::Render(const std::vector<std::shared_ptr<RenderObject>>& renderObjects)
 {
 	const RenderEngine& renderEngine = RZE::GetRenderEngine();
+	
+	Rendering::Renderer::Begin();
+
+	const Rendering::RenderTargetTexture& renderTarget = RZE::GetRenderEngine().GetRenderTarget();
+
+	Rendering::Renderer::SetRenderTarget(&renderTarget);
+	Rendering::Renderer::SetClearColour(renderTarget.GetTargetPlatformObject(), Vector4D(0.5f, 0.5f, 1.0f, 1.0f));
+	Rendering::Renderer::ClearDepthStencilBuffer(renderTarget.GetDepthTexturePlatformObject());
+
 	Rendering::Renderer::SetVertexShader(m_vertexShader->GetPlatformObject());
 	Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetCameraDataBuffer(), 0);
 
-	Rendering::Renderer::Begin();
-
-	Rendering::Renderer::SetClearColour(Vector4D(0.5f, 0.5f, 1.0f, 1.0f));
 	Rendering::Renderer::SetViewport({ renderEngine.GetCanvasSize().X(), renderEngine.GetCanvasSize().Y(), 0.0f, 1.0f, 0.0f, 0.0f});
 
 	Rendering::Renderer::SetInputLayout(m_vertexShader->GetPlatformObject());
@@ -93,6 +99,6 @@ void ForwardRenderStage::Render(const std::vector<std::shared_ptr<RenderObject>>
 			Rendering::Renderer::DrawIndexed(meshGeometry.GetIndexBuffer()->GetPlatformObject());
 		}
 	}
-
+	
 	Rendering::Renderer::End();
 }

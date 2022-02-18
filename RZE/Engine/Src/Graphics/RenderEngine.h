@@ -8,6 +8,11 @@
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector2D.h>
 
+namespace Rendering
+{
+	class RenderTargetTexture;
+}
+
 class MeshGeometry;
 class Vector2D;
 
@@ -59,7 +64,8 @@ public:
 	void Update();
 	void Render();
 	void Shutdown();
-	
+
+public:
 	template <typename TRenderStageType>
 	void AddRenderStage();
 
@@ -68,8 +74,10 @@ public:
 	void ResizeCanvas(const Vector2D& newSize);
 
 	RenderCamera& GetCamera() { return m_camera; }
-
 	const Vector2D& GetCanvasSize() const;
+
+	const Rendering::RenderTargetTexture& GetRenderTarget();
+	void SetRenderTarget(Rendering::RenderTargetTexture* renderTarget) { m_renderTarget = renderTarget; }
 
 private:
 	void InternalAddRenderStage(IRenderStage* pipeline);
@@ -79,10 +87,48 @@ private:
 
 	Vector2D m_canvasSize;
 
+	// @TODO currently only single render target support - also write engine-side RenderTarget
+	Rendering::RenderTargetTexture* m_renderTarget = nullptr;
+
 	// @TODO Make not vector or something
 	std::vector<std::shared_ptr<RenderObject>> m_renderObjects;
 
 	std::vector<std::unique_ptr<IRenderStage>> m_renderStages;
+
+	// #TODO
+	// Turn this into a command structure. Something like:
+	// UpdateRenderObject<UpdateTransformCommand>(renderObject);
+	// Where UpdateTransformCommand:
+	// 
+	// class UpdateTransformCommand : public RenderCommand
+	// {
+	// public:
+	//		UpdateTransformCommand(const RenderObject& renderObject, const Matrix4x4& transform);
+	// 		virtual void Execute();
+	// private:
+	//		RenderObject& renderObject;
+	// 		Matrix4x4 transform;
+	// };
+
+
+	//
+	// Buckets
+	//
+	// std::vector<DrawBucket> mBuckets;
+	//
+	// void Draw()
+	// {
+	//		for (const DrawBucket& bucket : mBuckets)
+	//		{
+	//			Draw bucket.RenderObject[i] with bucket.DrawState
+	//		}
+	// }
+	//
+	// BucketProxy* bucketProxy = Renderer::StartBucket();
+	// bucketProxy->SetDrawState(someState);
+	// bucketProxy->AddRenderObjectThatPassedSomeCullingOperation(someObject);
+	// Renderer::SubmitBucket(bucketProxy); // We're done here, bucketProxy invalid now.
+	// ^^^^^ This looks like it should be some reference-type structure/architecture
 };
 
 template <typename TRenderStageType>
