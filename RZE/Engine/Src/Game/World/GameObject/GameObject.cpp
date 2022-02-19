@@ -50,6 +50,14 @@ void GameObject::OnAddToScene()
 	}
 }
 
+void GameObject::OnRemoveFromScene()
+{
+	for (auto& component : m_components)
+	{
+		component->OnRemoveFromScene();
+	}
+}
+
 void GameObject::Update()
 {
 	for (auto& component : m_components)

@@ -66,29 +66,29 @@ namespace Editor
 
 					if (HasSelectedGameObject() && GetSelectedGameObject() == gameObject)
 					{
-						if (ImGui::BeginPopupContextItem(gameObject->GetName().c_str()))
+						if (ImGui::BeginPopupContextItem(GetSelectedGameObject()->GetName().c_str()))
 						{
-							ImGui::Text(gameObject->GetName().c_str());
+							ImGui::Text(GetSelectedGameObject()->GetName().c_str());
 							ImGui::Separator();
 
 							if (ImGui::BeginMenu("Add Component"))
 							{
-								/*const Apollo::EntityHandler::ComponentNameIDMap& componentTypeNames = RZE_Application::RZE().GetActiveScene().GetEntityHandler().GetAllComponentTypes();
-								for (auto& pair : componentTypeNames)
+								const GameObjectComponentRegistry::ComponentNameIDMap& componentReflectData = GameObjectComponentRegistry::GetAllComponentReflectData();
+								for (auto& pair : componentReflectData)
 								{
 									if (ImGui::MenuItem(pair.second.c_str()))
 									{
-										Apollo::ComponentID componentID = pair.first;
-										RZE_Application::RZE().GetActiveScene().GetEntityHandler().AddComponentByID(mSelectedItem->EntityID, componentID);
+										GameObjectComponentID componentID = pair.first;
+										GetSelectedGameObject()->AddComponentByID(componentID);
 									}
-								}*/
+								}
 
 								ImGui::EndMenu();
 							}
 
 							if (ImGui::MenuItem("Delete"))
 							{
-								//RZE_Application::RZE().GetActiveScene().DestroyEntity(mSelectedItem->EntityID);
+								RZE::GetActiveScene().RemoveGameObject(gameObject);
 							}
 
 							ImGui::EndPopup();
@@ -102,16 +102,12 @@ namespace Editor
 		{
 			if (HasSelectedGameObject())
 			{
-				//Apollo::EntityHandler::ComponentList entityComponents;
-				//RZE_Application::RZE().GetActiveScene().GetEntityHandler().GetAllComponents(mSelectedItem->EntityID, entityComponents);
-
-				//for (Apollo::ComponentBase* component : entityComponents)
+				const GameObject::ComponentList& componentList = GetSelectedGameObject()->GetComponents();
+				for (auto& component : componentList)
 				{
-					EditorApp* editorApp = static_cast<EditorApp*>(&RZE_Application::RZE().GetApplication());
-
-					ImGui::TextColored(ImVec4(0.65f, 0.65f, 1.0f, 1.0f), "[ %s ]", "UNIMPLEMENTED COMPONENT NAME");
+					ImGui::TextColored(ImVec4(0.65f, 0.65f, 1.0f, 1.0f), "[ %s ]", component->GetName().c_str());
 					ImGui::Separator();
-					//component->OnEditorInspect(mSelectedItem->EntityID);
+					component->OnEditorInspect();
 					ImGui::Separator();
 				}
 			}

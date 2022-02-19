@@ -21,7 +21,7 @@ public:
 	void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override;
 	void Load(const rapidjson::Value& data) override;
 
-	//virtual void OnEditorInspect(Apollo::EntityID entityID) override;
+	void OnEditorInspect() override;
 
 public:
 	const Vector3D& GetLookAt() const;

@@ -60,6 +60,27 @@ std::shared_ptr<RenderObject> RenderEngine::CreateRenderObject(const StaticMesh&
 	return m_renderObjects.back();
 }
 
+void RenderEngine::DestroyRenderObject(const std::shared_ptr<RenderObject>& renderObject)
+{
+	OPTICK_EVENT();
+
+	auto iter = std::find_if(m_renderObjects.begin(), m_renderObjects.end(),
+		[&renderObject](const std::shared_ptr<RenderObject>& other)
+		{
+			return renderObject == other;
+		});
+
+	if (iter != m_renderObjects.end())
+	{
+		if (m_renderObjects.size() == 1)
+		{
+			std::iter_swap(iter, std::prev(m_renderObjects.end()));	
+		}
+
+		m_renderObjects.erase(iter);
+	}
+}
+
 void RenderEngine::ResizeCanvas(const Vector2D& newSize)
 {
 	m_canvasSize = newSize;

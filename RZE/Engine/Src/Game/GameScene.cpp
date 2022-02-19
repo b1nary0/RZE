@@ -2,6 +2,7 @@
 #include <Game/GameScene.h>
 
 #include <Game/World/GameObject/GameObject.h>
+#include <Game/World/GameObjectComponents/TransformComponent.h>
 
 #include <RapidJSON/document.h>
 #include <RapidJSON/writer.h>
@@ -87,13 +88,18 @@ void GameScene::Load(FilePath filePath)
 		{
 			rapidjson::Value& val = object->value;
 			
-			std::shared_ptr<GameObject> gameObject = CreateGameObject();
+			std::shared_ptr<GameObject> gameObject = CreateGameObjectNoComponents();
 			gameObject->SetName(object->name.GetString());
 			// ComponentBegin
 			gameObject->Load(val);
 			AddGameObject(gameObject);
 		}
 	}
+}
+
+std::shared_ptr<GameObject> GameScene::CreateGameObjectNoComponents()
+{
+	return std::make_shared<GameObject>();
 }
 
 void GameScene::Unload()
@@ -118,12 +124,22 @@ void GameScene::RemoveGameObject(const std::shared_ptr<GameObject>& gameObject)
 {
 	// #TODO Slow function
 
-	const auto it = std::find(m_objectRegistry.begin(), m_objectRegistry.end(), gameObject);
-	AssertMsg(it != m_objectRegistry.end(), "GameObject doesn't exist in scene");
-	if (it != m_objectRegistry.end())
+	const auto iter = std::find(m_objectRegistry.begin(), m_objectRegistry.end(), gameObject);
+	AssertMsg(iter != m_objectRegistry.end(), "GameObject doesn't exist in scene");
+	if (iter != m_objectRegistry.end())
 	{
-		m_objectRegistry.erase(it);
-	// #TODO RemoveFromScene stuff
+		if (m_objectRegistry.size() == 1)
+		{
+			m_objectRegistry.erase(iter);
+		}
+		else
+		{
+			std::iter_swap(iter, std::prev(m_objectRegistry.end()));
+		}
+
+		gameObject->OnRemoveFromScene();
+
+		m_objectRegistry.erase(iter);
 	}
 }
 
@@ -163,7 +179,9 @@ void GameScene::ForEachGameObject(Functor<void, std::shared_ptr<GameObject>> fun
 
 std::shared_ptr<GameObject> GameScene::CreateGameObject()
 {
-	return std::make_shared<GameObject>();
+	std::shared_ptr<GameObject> gameObject = std::make_shared<GameObject>();
+	gameObject->AddComponent<TransformComponent>();
+	return gameObject;
 }
 
 void GameScene::Start()

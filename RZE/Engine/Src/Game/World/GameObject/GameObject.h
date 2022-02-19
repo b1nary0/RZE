@@ -12,6 +12,8 @@ class GameObjectComponentBase;
 class GameObject
 {
 public:
+	typedef std::vector<GameObjectComponentBase*> ComponentList;
+public:
 	GameObject();
 	GameObject(const std::string& name);
 	~GameObject();
@@ -27,6 +29,7 @@ public:
 	void RemoveComponent();
 
 	void OnAddToScene();
+	void OnRemoveFromScene();
 
 	// #TODO Unsure if it's desired to update via the GameObject API but until convinced otherwise this is it
 	void Update();
@@ -36,19 +39,21 @@ public:
 	void SetName(const std::string& name) { m_name = name; }
 	const std::string& GetName() const { return m_name; };
 
+	// @NOTE Should only be used by load code and editor code
+	// but should really find another solution to handle this
+	GameObjectComponentBase* AddComponentByID(GameObjectComponentID id);
+
+	const ComponentList& GetComponents() const { return m_components; }
+
 public:
 	void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) const;
 	void Load(rapidjson::Value& data);
-
-private:
-	// Should only be used by load code
-	GameObjectComponentBase* AddComponentByID(GameObjectComponentID id);
-
+	
 private:
 	GameObjectID m_id;
 	std::string m_name;
 
-	std::vector<GameObjectComponentBase*> m_components;
+	ComponentList m_components;
 };
 
 template <typename TComponentType>
@@ -104,7 +109,7 @@ TComponentType* GameObject::AddComponent(Args... args)
 
 	if (it == m_components.end())
 	{
-		TComponentType* component = new TComponentType(std::forward<Args>(args));
+		TComponentType* component = new TComponentType(std::forward<Args>(args)...);
 		component->SetOwner(this);
 		m_components.push_back(component);
 

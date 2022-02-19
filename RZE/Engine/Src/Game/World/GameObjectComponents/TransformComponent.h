@@ -13,6 +13,12 @@ public:
 	TransformComponent(const Vector3D& position, const Vector3D& rotation);
 	TransformComponent(const Vector3D& position, const Vector3D& rotation, const Vector3D& scale);
 
+	// GameObjectComponent interface
+public:
+	void OnEditorInspect() override;
+	void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override;
+	void Load(const rapidjson::Value& data) override;
+
 public:
 	const Vector3D& GetPosition() const;
 	const Vector3D& GetRotation() const;
@@ -29,10 +35,6 @@ public:
 	// Operations
 	//
 	void Rotate(const Vector3D& rotation);
-
-	//virtual void OnEditorInspect(Apollo::EntityID entityID) override;
-	virtual void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override;
-	virtual void Load(const rapidjson::Value& data) override;
 
 private:
 	Vector3D m_position;

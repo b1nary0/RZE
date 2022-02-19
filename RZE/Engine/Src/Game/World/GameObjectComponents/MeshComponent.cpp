@@ -36,6 +36,11 @@ void MeshComponent::OnAddToScene()
 	CreateRenderObject();
 }
 
+void MeshComponent::OnRemoveFromScene()
+{
+	RZE::GetRenderEngine().DestroyRenderObject(m_renderObject);
+}
+
 void MeshComponent::Update()
 {
 }
@@ -56,4 +61,35 @@ void MeshComponent::Load(const rapidjson::Value& data)
 	FilePath resourcePath = FilePath(data["ResourcePath"].GetString());
 
 	m_resource = RZE::GetResourceHandler().LoadResource<Model3D>(resourcePath);
+}
+
+void MeshComponent::OnEditorInspect()
+{
+	if (m_resource.IsValid())
+	{
+		ImGui::Text(m_resource.GetResourcePath().GetRelativePath().c_str());
+	}
+
+	if (ImGui::Button("Browse..."))
+	{
+		FilePath path = RZE_Application::RZE().ShowOpenFilePrompt();
+		if (path.IsValid())
+		{
+			ResourceHandler& resourceHandler = RZE::GetResourceHandler();
+
+			if (m_resource.IsValid())
+			{
+				resourceHandler.ReleaseResource(m_resource);
+			}
+			
+			m_resource = resourceHandler.LoadResource<Model3D>(path);
+
+			if (m_renderObject != nullptr)
+			{
+				RZE::GetRenderEngine().DestroyRenderObject(m_renderObject);
+			}
+
+			CreateRenderObject();
+		}
+	}
 }

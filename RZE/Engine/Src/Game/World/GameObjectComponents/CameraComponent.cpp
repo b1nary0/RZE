@@ -179,3 +179,20 @@ void CameraComponent::Load(const rapidjson::Value& data)
 	m_forward = Vector3D(data["Forward"][0].GetFloat(), data["Forward"][1].GetFloat(), data["Forward"][2].GetFloat());
 	m_upDir = Vector3D(data["UpDir"][0].GetFloat(), data["UpDir"][1].GetFloat(), data["UpDir"][2].GetFloat());
 }
+
+void CameraComponent::OnEditorInspect()
+{
+	ImGui::Checkbox("Main Camera", &m_isActiveCamera);
+	
+	ImGui::Text("Field Of View");
+	ImGui::InputFloat("##cameracomponent_fov", &m_fov, 0.05f, 0.5f, "%.2f", ImGuiInputTextFlags_EnterReturnsTrue);
+
+	ImGui::Text("Near Cull");
+	ImGui::InputFloat("##cameracomponent_nearcull", &m_nearCull, 0.05f, 0.05f, "%.2f", ImGuiInputTextFlags_EnterReturnsTrue);
+	ImGui::Text("Far Cull");
+	ImGui::InputFloat("##cameracomponent_farcull", &m_farCull, 0.05f, 0.05f, "%.2f", ImGuiInputTextFlags_EnterReturnsTrue);
+
+	float* forwardDirValues = const_cast<float*>(&m_forward.GetInternalVec().x);
+	ImGui::Text("Look At");
+	ImGui::DragFloat3("##cameracomponent_forwarddir", forwardDirValues, 0.005f, -100.0f, 100.0f);
+}

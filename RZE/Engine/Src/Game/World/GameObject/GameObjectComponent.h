@@ -72,14 +72,19 @@ public:
 public:
 	virtual void Initialize() = 0;
 	virtual void OnAddToScene() = 0;
+	virtual void OnRemoveFromScene() = 0;
 
 	virtual void Update() = 0;
 	virtual void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) = 0;
 	virtual void Load(const rapidjson::Value& data) = 0;
 
+	virtual void OnEditorInspect() = 0;
+
 public:
 	void SetOwner(GameObject* owner) { m_owner = owner; }
 	GameObject* GetOwner() { return m_owner; }
+
+	const std::string& GetName() { return m_componentName; }
 
 public:
 	GameObjectComponentID m_id; // #TODO For now
@@ -112,11 +117,14 @@ public:
 		return GameObjectComponentTypeID<GameObjectComponentBase>::GetComponentName<TComponentType>();
 	}
 
-	virtual void Initialize() override {}
-	virtual void OnAddToScene() override {}
+	void Initialize() override {}
+	void OnAddToScene() override {}
+	void OnRemoveFromScene() override {}
 
-	virtual void Update() override {}
-	virtual void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override {}
-	virtual void Load(const rapidjson::Value& data) override {}
+	void Update() override {}
+	void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override {}
+	void Load(const rapidjson::Value& data) override {}
+
+	void OnEditorInspect() override {}
 	
 };
