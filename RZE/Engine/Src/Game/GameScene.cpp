@@ -77,7 +77,7 @@ void GameScene::Load(FilePath filePath)
 	rapidjson::Document sceneDoc;
 	sceneDoc.Parse(sceneFile.Content().c_str());
 
-	rapidjson::Value::MemberIterator root = sceneDoc.FindMember("entities");
+	rapidjson::Value::MemberIterator root = sceneDoc.FindMember("gameobjects");
 	if (root != sceneDoc.MemberEnd())
 	{
 		//
