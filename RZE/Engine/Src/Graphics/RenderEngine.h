@@ -70,7 +70,7 @@ public:
 	void AddRenderStage(Args... args);
 
 	std::shared_ptr<RenderObject> CreateRenderObject(const StaticMesh& staticMesh);
-	void DestroyRenderObject(const std::shared_ptr<RenderObject>& renderObject);
+	void DestroyRenderObject(std::shared_ptr<RenderObject>& renderObject);
 
 	void ResizeCanvas(const Vector2D& newSize);
 	const Vector2D& GetCanvasSize() const;
