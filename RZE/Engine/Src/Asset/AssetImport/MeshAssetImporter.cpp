@@ -55,7 +55,7 @@ bool MeshAssetImporter::Import(const FilePath& filePath)
 		// in the AssetImporter pipeline, it just spits out the requisite data to load in say Model3D or any other
 		// IResource derived object with a ::Load() function on it
 		MaterialAssetImporter::MaterialData materialData = materialImporter.GetMaterialData();
-		std::shared_ptr<MaterialInstance> materialInstance = MaterialDatabase::Get().GetOrCreateMaterial(materialData.MaterialName);
+		std::shared_ptr<MaterialInstance> materialInstance = std::make_shared<MaterialInstance>();
 
 		U8 textureSlot = 0; // #TODO This is a really hacky way to do this. Not safe at all in any other circumstance
 		for (const std::string& texturePath : materialData.TexturePaths)

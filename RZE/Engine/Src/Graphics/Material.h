@@ -34,11 +34,9 @@ public:
 	};
 
 public:
-	~MaterialInstance();
-
-private:
 	MaterialInstance();
-
+	~MaterialInstance();
+	
 public:
 	void SetTexture(U8 textureSlot, const ResourceHandle& textureResource);
 
@@ -65,50 +63,4 @@ private:
 	std::vector<ResourceHandle> m_textureSlots;
 
 	Rendering::ConstantBufferHandle m_paramBuffer;
-};
-
-// [newrenderer]
-// Manages material resources so we only ever load what we need to texture-wise
-// Just an idea, will need mega fleshing out
-class MaterialDatabase
-{
-public:
-	MaterialDatabase() = default;
-	~MaterialDatabase() = default;
-
-public:
-	static MaterialDatabase& Get()
-	{
-		static MaterialDatabase staticRef;
-		return staticRef;
-	}
-
-public:
-	// Slow and gross but just stubbing code ideas for the moment
-	std::shared_ptr<MaterialInstance> GetOrCreateMaterial(const std::string& name)
-	{
-		auto iter = m_database.find(name);
-
-		if (iter == m_database.end())
-		{
-			std::shared_ptr<MaterialInstance> material = std::shared_ptr<MaterialInstance>(new MaterialInstance());
-			m_database[name] = material;
-			return material;
-		}
-
-		return iter->second;
-	}
-
-	std::shared_ptr<MaterialInstance> FindMaterial(const std::string& name)
-	{
-		auto iter = m_database.find(name);
-		if (iter != m_database.end())
-		{
-			return iter->second;
-		}
-		return nullptr;
-	}
-
-private:
-	std::unordered_map<std::string, std::shared_ptr<MaterialInstance>> m_database;
 };
