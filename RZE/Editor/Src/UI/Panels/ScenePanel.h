@@ -2,18 +2,20 @@
 
 #include <Utils/PrimitiveDefs.h>
 
+#include <memory>
 #include <string>
 #include <vector>
+
+class GameObject;
 
 namespace Editor
 {
 	class ScenePanel
 	{
-		struct EntityItem
+		struct SelectedItem
 		{
-			U32 EntityID;
+			std::shared_ptr<GameObject> m_gameObject;
 		};
-
 	public:
 		ScenePanel();
 		~ScenePanel();
@@ -25,14 +27,14 @@ namespace Editor
 		void Disable();
 		bool IsEnabled();
 
-		bool HasSelectedEntity();
-		U32 GetSelectedEntityID();
+		bool HasSelectedGameObject();
+		std::shared_ptr<GameObject> GetSelectedGameObject();
 
 	private:
 		bool bEnabled;
 
 		std::vector<std::string> mSelectedComponents;
 
-		EntityItem* mSelectedItem;
+		std::unique_ptr<SelectedItem> m_selectedItem;
 	};
 }

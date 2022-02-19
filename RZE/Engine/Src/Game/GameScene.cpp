@@ -83,14 +83,15 @@ void GameScene::Load(FilePath filePath)
 		// Entity
 		//
 		rapidjson::Value& rootVal = root->value;
-		for (auto& entity = rootVal.MemberBegin(); entity != rootVal.MemberEnd(); ++entity)
+		for (auto& object = rootVal.MemberBegin(); object != rootVal.MemberEnd(); ++object)
 		{
-			rapidjson::Value& val = entity->value;
+			rapidjson::Value& val = object->value;
 			
-			GameObject* gameObject = new GameObject(entity->name.GetString());
+			std::shared_ptr<GameObject> gameObject = CreateGameObject();
+			gameObject->SetName(object->name.GetString());
 			// ComponentBegin
 			gameObject->Load(val);
-			AddGameObject(*gameObject);
+			AddGameObject(gameObject);
 		}
 	}
 }
@@ -99,25 +100,25 @@ void GameScene::Unload()
 {
 }
 
-void GameScene::AddGameObject(GameObject& gameObject)
+void GameScene::AddGameObject(const std::shared_ptr<GameObject>& gameObject)
 {
 	// #TODO Slow function
 
-	const auto it = std::find(m_objectRegistry.begin(), m_objectRegistry.end(), &gameObject);
+	const auto it = std::find(m_objectRegistry.begin(), m_objectRegistry.end(), gameObject);
 	AssertMsg(it == m_objectRegistry.end(), "GameObject already exists in scene");
 	if (it == m_objectRegistry.end())
 	{
-		m_objectRegistry.push_back(&gameObject);
+		m_objectRegistry.push_back(gameObject);
 		// #TODO AddToScene stuff
-		gameObject.OnAddToScene();
+		gameObject->OnAddToScene();
 	}
 }
 
-void GameScene::RemoveGameObject(GameObject& gameObject)
+void GameScene::RemoveGameObject(const std::shared_ptr<GameObject>& gameObject)
 {
 	// #TODO Slow function
 
-	const auto it = std::find(m_objectRegistry.begin(), m_objectRegistry.end(), &gameObject);
+	const auto it = std::find(m_objectRegistry.begin(), m_objectRegistry.end(), gameObject);
 	AssertMsg(it != m_objectRegistry.end(), "GameObject doesn't exist in scene");
 	if (it != m_objectRegistry.end())
 	{
@@ -126,11 +127,11 @@ void GameScene::RemoveGameObject(GameObject& gameObject)
 	}
 }
 
-GameObject* GameScene::FindGameObjectByName(const std::string& name)
+std::shared_ptr<GameObject> GameScene::FindGameObjectByName(const std::string& name)
 {
 	// @TODO Slow first-pass quick implementation
 	auto iter = std::find_if(m_objectRegistry.begin(), m_objectRegistry.end(),
-		[&name](const GameObject* object)
+		[&name](const std::shared_ptr<GameObject> object)
 		{
 			return object->GetName() == name;
 		});
@@ -141,6 +142,28 @@ GameObject* GameScene::FindGameObjectByName(const std::string& name)
 	}
 
 	return nullptr;
+}
+
+std::shared_ptr<GameObject> GameScene::AddGameObject(const std::string& name)
+{
+	std::shared_ptr<GameObject> gameObject = CreateGameObject();
+	gameObject->SetName(name);
+	AddGameObject(gameObject);
+
+	return gameObject;
+}
+
+void GameScene::ForEachGameObject(Functor<void, std::shared_ptr<GameObject>> func)
+{
+	for (auto& gameObject : m_objectRegistry)
+	{
+		func(gameObject);
+	}
+}
+
+std::shared_ptr<GameObject> GameScene::CreateGameObject()
+{
+	return std::make_shared<GameObject>();
 }
 
 void GameScene::Start()

@@ -20,16 +20,20 @@ public:
 	void Load(FilePath filePath);
 	void Unload();
 	
-	GameObject* FindGameObjectByName(const std::string& name);
+	std::shared_ptr<GameObject> FindGameObjectByName(const std::string& name);
+
+	std::shared_ptr<GameObject> AddGameObject(const std::string& name);
+
+	void ForEachGameObject(Functor<void, std::shared_ptr<GameObject>> func);
 
 private:
-	void AddGameObject(GameObject& gameObject);
-	void RemoveGameObject(GameObject& gameObject);
-
+	std::shared_ptr<GameObject> CreateGameObject();
+	void AddGameObject(const std::shared_ptr<GameObject>& gameObject);
+	void RemoveGameObject(const std::shared_ptr<GameObject>& gameObject);
 	
 private:
 	FilePath mCurrentScenePath;
 
 	// #TODO Implement sparse array to make this faster
-	std::vector<GameObject*> m_objectRegistry;
+	std::vector<std::shared_ptr<GameObject>> m_objectRegistry;
 };

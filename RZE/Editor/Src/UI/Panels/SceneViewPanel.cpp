@@ -27,7 +27,7 @@ namespace Editor
 				mDimensions.SetXY(viewportDims.x, viewportDims.y);
 				RZE::GetRenderEngine().SetViewportSize(mDimensions);
 
-				GameObject* gameObject = RZE::GetActiveScene().FindGameObjectByName("Camera");
+				std::shared_ptr<GameObject> gameObject = RZE::GetActiveScene().FindGameObjectByName("Camera");
 				AssertNotNull(gameObject);
 				CameraComponent* const cameraComponent = gameObject->GetComponent<CameraComponent>();
 				AssertNotNull(cameraComponent);

@@ -2,6 +2,8 @@
 
 #include <EditorApp.h>
 
+#include <Game/World/GameObject/GameObject.h>
+
 #include <Utils/DebugUtils/Debug.h>
 
 #include <ImGui/imgui.h>
@@ -11,104 +13,94 @@ namespace Editor
 
 	ScenePanel::ScenePanel()
 		: bEnabled(false)
-		, mSelectedItem(nullptr)
+		, m_selectedItem(nullptr)
 	{
 	}
 
 	ScenePanel::~ScenePanel()
 	{
-		if (mSelectedItem != nullptr)
-		{
-			delete mSelectedItem;
-			mSelectedItem = nullptr;
-		}
 	}
 
 	void ScenePanel::Display()
 	{
 		if (ImGui::Begin("Scene", &bEnabled))
 		{
-			if (!HasSelectedEntity())
+			if (!HasSelectedGameObject())
 			{
 				if (ImGui::BeginPopupContextWindow("SceneMenu"))
 				{
 					if (ImGui::MenuItem("Create Entity"))
 					{
 						//// #TODO(Do this better)
-						//static int sGenericEntityCount = 0;
+						static int sGenericEntityCount = 0;
 
-						//std::string newEntityStr = StringUtils::FormatString("Entity%i", sGenericEntityCount);
-						//RZE_Application::RZE().GetActiveScene().CreateEntity(newEntityStr);
+						std::string newEntityStr = StringUtils::FormatString("Entity%i", sGenericEntityCount);
+						RZE::GetActiveScene().AddGameObject(newEntityStr);
 
-						//++sGenericEntityCount;
+						++sGenericEntityCount;
 					}
 
 					ImGui::EndMenu();
 				}
 			}
-
-			//const std::vector<GameScene::SceneEntryTemp>& entities = RZE_Application::RZE().GetActiveScene().GetSceneEntries();
-			//for (const GameScene::SceneEntryTemp& entry : entities)
-			{
-				if (ImGui::IsAnyMouseDown() && (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) && HasSelectedEntity())
+			
+			RZE::GetActiveScene().ForEachGameObject(
+				Functor<void, std::shared_ptr<GameObject>>([this](std::shared_ptr<GameObject> gameObject)
 				{
-					delete mSelectedItem;
-					mSelectedItem = nullptr;
-				}
-
-				bool bSelectedCurrent = mSelectedItem != nullptr /*&& mSelectedItem->EntityID == entry.ID*/;
-				/*NameComponent* const nameComponent = RZE_Application::RZE().GetActiveScene().GetEntityHandler().GetComponent<NameComponent>(entry.ID);
-				const std::string& entityName = nameComponent->Name;
-				AssertNotNull(nameComponent);*/
-				if (ImGui::Selectable("UNIMPLEMENTED ENTITY NAME", &bSelectedCurrent))
-				{
-					if (mSelectedItem != nullptr /*&& mSelectedItem->EntityID != entry.ID*/)
+					if (ImGui::IsAnyMouseDown() && (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) && HasSelectedGameObject())
 					{
-						delete mSelectedItem;
-						mSelectedItem = nullptr;
+						m_selectedItem.reset();
 					}
 
-					/*mSelectedItem = new EntityItem();
-					mSelectedItem->EntityID = entry.ID;*/
-				}
-
-				if (HasSelectedEntity() /*&& GetSelectedEntityID() == entry.ID*/)
-				{
-					if (ImGui::BeginPopupContextItem("UNIMPLEMENTED ENTITY NAME"))
+					bool bSelectedCurrent = HasSelectedGameObject() && GetSelectedGameObject() == gameObject;
+					if (ImGui::Selectable(gameObject->GetName().c_str(), &bSelectedCurrent))
 					{
-						ImGui::Text("UNIMPLEMENTED ENTITY NAME");
-						ImGui::Separator();
-
-						if (ImGui::BeginMenu("Add Component"))
+						if (!HasSelectedGameObject() || (HasSelectedGameObject() && GetSelectedGameObject() != gameObject))
 						{
-							/*const Apollo::EntityHandler::ComponentNameIDMap& componentTypeNames = RZE_Application::RZE().GetActiveScene().GetEntityHandler().GetAllComponentTypes();
-							for (auto& pair : componentTypeNames)
+							SelectedItem* newItem = new SelectedItem();
+							newItem->m_gameObject = gameObject;
+
+							m_selectedItem.reset(newItem);
+						}
+					}
+
+					if (HasSelectedGameObject() && GetSelectedGameObject() == gameObject)
+					{
+						if (ImGui::BeginPopupContextItem(gameObject->GetName().c_str()))
+						{
+							ImGui::Text(gameObject->GetName().c_str());
+							ImGui::Separator();
+
+							if (ImGui::BeginMenu("Add Component"))
 							{
-								if (ImGui::MenuItem(pair.second.c_str()))
+								/*const Apollo::EntityHandler::ComponentNameIDMap& componentTypeNames = RZE_Application::RZE().GetActiveScene().GetEntityHandler().GetAllComponentTypes();
+								for (auto& pair : componentTypeNames)
 								{
-									Apollo::ComponentID componentID = pair.first;
-									RZE_Application::RZE().GetActiveScene().GetEntityHandler().AddComponentByID(mSelectedItem->EntityID, componentID);
-								}
-							}*/
+									if (ImGui::MenuItem(pair.second.c_str()))
+									{
+										Apollo::ComponentID componentID = pair.first;
+										RZE_Application::RZE().GetActiveScene().GetEntityHandler().AddComponentByID(mSelectedItem->EntityID, componentID);
+									}
+								}*/
 
-							ImGui::EndMenu();
+								ImGui::EndMenu();
+							}
+
+							if (ImGui::MenuItem("Delete"))
+							{
+								//RZE_Application::RZE().GetActiveScene().DestroyEntity(mSelectedItem->EntityID);
+							}
+
+							ImGui::EndPopup();
 						}
-
-						if (ImGui::MenuItem("Delete"))
-						{
-							//RZE_Application::RZE().GetActiveScene().DestroyEntity(mSelectedItem->EntityID);
-						}
-
-						ImGui::EndPopup();
 					}
-				}
-			}
+				}));
 		}
 		ImGui::End();
 
 		if (ImGui::Begin("Component View"))
 		{
-			if (HasSelectedEntity())
+			if (HasSelectedGameObject())
 			{
 				//Apollo::EntityHandler::ComponentList entityComponents;
 				//RZE_Application::RZE().GetActiveScene().GetEntityHandler().GetAllComponents(mSelectedItem->EntityID, entityComponents);
@@ -142,15 +134,15 @@ namespace Editor
 		return bEnabled;
 	}
 
-	bool ScenePanel::HasSelectedEntity()
+	bool ScenePanel::HasSelectedGameObject()
 	{
-		return mSelectedItem != nullptr;
+		return m_selectedItem != nullptr;
 	}
 
-	U32 ScenePanel::GetSelectedEntityID()
+	std::shared_ptr<GameObject> ScenePanel::GetSelectedGameObject()
 	{
-		AssertNotNull(mSelectedItem);
-		return mSelectedItem->EntityID;
+		AssertNotNull(m_selectedItem);
+		return m_selectedItem->m_gameObject;
 	}
 
 }

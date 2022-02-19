@@ -33,6 +33,7 @@ public:
 
 	GameObjectID GetID() const { return m_id; }
 
+	void SetName(const std::string& name) { m_name = name; }
 	const std::string& GetName() const { return m_name; };
 
 public:
