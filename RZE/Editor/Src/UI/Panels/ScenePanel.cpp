@@ -69,6 +69,16 @@ namespace Editor
 						if (ImGui::BeginPopupContextItem(GetSelectedGameObject()->GetName().c_str()))
 						{
 							ImGui::Text(GetSelectedGameObject()->GetName().c_str());
+							if (ImGui::BeginPopupContextItem("Rename"))
+							{
+								char name[64];
+								memcpy(name, GetSelectedGameObject()->GetName().c_str(), 64);
+								if (ImGui::InputText("##gameObject_rename", name, 256, ImGuiInputTextFlags_EnterReturnsTrue))
+								{
+									GetSelectedGameObject()->SetName(name);
+								}
+								ImGui::EndPopup();
+							}
 							ImGui::Separator();
 							
 							if (ImGui::BeginMenu("Add Component"))
