@@ -43,6 +43,14 @@ void MeshComponent::OnRemoveFromScene()
 
 void MeshComponent::Update()
 {
+	if (m_renderObject != nullptr)
+	{
+		const TransformComponent* const transformComponent = GetOwner()->GetComponent<TransformComponent>();
+		AssertMsg(transformComponent != nullptr, "No TransformComponent found. Mesh creation is useless without a location in 3D space.");
+
+		// @TODO Look into ways to avoid this
+		m_renderObject->SetTransform(transformComponent->GetAsMat4x4());
+	}
 }
 
 void MeshComponent::Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer)

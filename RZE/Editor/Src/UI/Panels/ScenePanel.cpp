@@ -29,15 +29,15 @@ namespace Editor
 			{
 				if (ImGui::BeginPopupContextWindow("SceneMenu"))
 				{
-					if (ImGui::MenuItem("Create Entity"))
+					if (ImGui::MenuItem("Create GameObject"))
 					{
 						//// #TODO(Do this better)
-						static int sGenericEntityCount = 0;
+						static int sGenericObjectCount = 0;
 
-						std::string newEntityStr = StringUtils::FormatString("Entity%i", sGenericEntityCount);
-						RZE::GetActiveScene().AddGameObject(newEntityStr);
+						std::string newGameObjectStr = StringUtils::FormatString("GameObject_%i", sGenericObjectCount);
+						RZE::GetActiveScene().AddGameObject(newGameObjectStr);
 
-						++sGenericEntityCount;
+						++sGenericObjectCount;
 					}
 
 					ImGui::EndMenu();
@@ -70,7 +70,7 @@ namespace Editor
 						{
 							ImGui::Text(GetSelectedGameObject()->GetName().c_str());
 							ImGui::Separator();
-
+							
 							if (ImGui::BeginMenu("Add Component"))
 							{
 								const GameObjectComponentRegistry::ComponentNameIDMap& componentReflectData = GameObjectComponentRegistry::GetAllComponentReflectData();
