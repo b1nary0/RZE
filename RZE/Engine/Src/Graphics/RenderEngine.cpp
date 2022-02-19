@@ -75,9 +75,12 @@ void RenderEngine::DestroyRenderObject(std::shared_ptr<RenderObject>& renderObje
 		if (m_renderObjects.size() > 1)
 		{
 			std::iter_swap(iter, std::prev(m_renderObjects.end()));	
+			m_renderObjects.erase(std::prev(m_renderObjects.end()));
 		}
-
-		m_renderObjects.erase(iter);
+		else
+		{
+			m_renderObjects.erase(iter);
+		}
 
 		renderObject.reset();
 	}

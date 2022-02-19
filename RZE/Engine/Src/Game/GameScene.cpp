@@ -139,9 +139,12 @@ void GameScene::RemoveGameObject(const std::shared_ptr<GameObject>& gameObject)
 		if (m_objectRegistry.size() > 1)
 		{
 			std::iter_swap(iter, std::prev(m_objectRegistry.end()));
+			m_objectRegistry.erase(std::prev(m_objectRegistry.end()));
 		}
-		
-		m_objectRegistry.erase(iter);
+		else
+		{
+			m_objectRegistry.erase(iter);
+		}
 	}
 }
 
