@@ -104,6 +104,12 @@ std::shared_ptr<GameObject> GameScene::CreateGameObjectNoComponents()
 
 void GameScene::Unload()
 {
+	for (auto& gameObject : m_objectRegistry)
+	{
+		gameObject->OnRemoveFromScene();
+	}
+
+	m_objectRegistry.clear();
 }
 
 void GameScene::AddGameObject(const std::shared_ptr<GameObject>& gameObject)
