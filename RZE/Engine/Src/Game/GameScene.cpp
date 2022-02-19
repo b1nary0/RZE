@@ -134,17 +134,13 @@ void GameScene::RemoveGameObject(const std::shared_ptr<GameObject>& gameObject)
 	AssertMsg(iter != m_objectRegistry.end(), "GameObject doesn't exist in scene");
 	if (iter != m_objectRegistry.end())
 	{
-		if (m_objectRegistry.size() == 1)
-		{
-			m_objectRegistry.erase(iter);
-		}
-		else
+		gameObject->OnRemoveFromScene();
+
+		if (m_objectRegistry.size() > 1)
 		{
 			std::iter_swap(iter, std::prev(m_objectRegistry.end()));
 		}
-
-		gameObject->OnRemoveFromScene();
-
+		
 		m_objectRegistry.erase(iter);
 	}
 }
