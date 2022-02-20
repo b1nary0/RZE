@@ -11,12 +11,17 @@ class GameObjectComponentBase;
 
 class GameObject
 {
+
 public:
 	typedef std::vector<GameObjectComponentBase*> ComponentList;
 public:
 	GameObject();
 	GameObject(const std::string& name);
 	~GameObject();
+
+public:
+	void Initialize();
+	void Uninitialize();
 
 public:
 	template <typename TComponentType, typename... Args>

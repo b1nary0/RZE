@@ -69,12 +69,12 @@ void ForwardRenderStage::Render(const std::vector<std::shared_ptr<RenderObject>>
 		// @TODO
 		// Currently each MeshGeometry is a draw call. Need to batch this down so it becomes a single draw call
 		// per render object, at least.
-		for (auto& meshGeometry : renderObject->GetStaticMesh().GetSubMeshes())
+		for (const auto& meshGeometry : renderObject->GetStaticMesh().GetSubMeshes())
 		{
 			// @TODO
 			// This is god awful. Just in place while developing shader model.
 			// Should get resolved once the system matures
-			std::shared_ptr<MaterialInstance> materialInstance = meshGeometry.GetMaterial();
+			std::shared_ptr<const MaterialInstance> materialInstance = meshGeometry.GetMaterial();
 			const PixelShader* const pixelShader = RZE::GetResourceHandler().GetResource<PixelShader>(materialInstance->GetShaderResource());
 
 			Rendering::Renderer::SetPixelShader(pixelShader->GetPlatformObject());
@@ -83,7 +83,7 @@ void ForwardRenderStage::Render(const std::vector<std::shared_ptr<RenderObject>>
 			// @TODO Really need to get to texture infrastructure refactor soon - 2/6/2022
 			for (U8 textureSlot = 0; textureSlot < MaterialInstance::TextureSlot::TEXTURE_SLOT_COUNT; ++textureSlot)
 			{
-				ResourceHandle resourceHandle = materialInstance->GetTexture(textureSlot);
+				const ResourceHandle& resourceHandle = materialInstance->GetTexture(textureSlot);
 				if (resourceHandle.IsValid())
 				{
 					const Texture2D* const texture = RZE::GetResourceHandler().GetResource<Texture2D>(resourceHandle);

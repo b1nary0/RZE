@@ -112,7 +112,7 @@ public:
 	const FilePath& GetResourcePath() const;
 
 	bool operator==(const ResourceHandle& rhs);
-	void operator=(const ResourceHandle& rhs);
+	ResourceHandle& operator=(const ResourceHandle& rhs);
 	void operator=(ResourceHandle&& rhs);
 
 private:

@@ -153,13 +153,20 @@ void ResourceHandle::operator=(ResourceHandle&& rhs)
 	rhs.mHandler = nullptr;
 }
 
-void ResourceHandle::operator=(const ResourceHandle& rhs)
+ResourceHandle& ResourceHandle::operator=(const ResourceHandle& rhs)
 {
+	if (this == &rhs)
+	{
+		return *this;
+	}
+
 	mResourceID = rhs.mResourceID;
 	mResourceSource = rhs.mResourceSource;
 	mHandler = rhs.mHandler;
 
 	mResourceSource->IncreaseRefCount();
+
+	return *this;
 }
 
 bool ResourceHandle::operator==(const ResourceHandle& rhs)

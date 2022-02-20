@@ -38,7 +38,7 @@ public:
 	void SetMaterial(const std::shared_ptr<MaterialInstance>& material);
 
 	std::shared_ptr<MaterialInstance> GetMaterial();
-	const std::shared_ptr<MaterialInstance> GetMaterial() const;
+	std::shared_ptr<const MaterialInstance> GetMaterial() const;
 	const std::vector<MeshVertex>& GetVertices();
 
 	const std::vector<float>& GetVertexDataRaw() const;

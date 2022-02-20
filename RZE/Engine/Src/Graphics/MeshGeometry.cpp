@@ -98,7 +98,7 @@ void MeshGeometry::SetMaterial(const std::shared_ptr<MaterialInstance>& material
 	m_material = material;
 }
 
-const std::shared_ptr<MaterialInstance> MeshGeometry::GetMaterial() const
+std::shared_ptr<const MaterialInstance> MeshGeometry::GetMaterial() const
 {
 	AssertNotNull(m_material);
 	return m_material;

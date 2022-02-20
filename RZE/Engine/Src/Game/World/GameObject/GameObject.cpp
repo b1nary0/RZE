@@ -18,6 +18,20 @@ GameObject::GameObject(const std::string& name)
 
 GameObject::~GameObject()
 {
+	Uninitialize();
+}
+
+void GameObject::Initialize()
+{
+}
+
+void GameObject::Uninitialize()
+{
+	for (auto& component : m_components)
+	{
+		delete component;
+	}
+	m_components.clear();
 }
 
 GameObjectComponentBase* GameObject::AddComponentByID(GameObjectComponentID id)
