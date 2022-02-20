@@ -24,7 +24,7 @@ namespace Editor
 
 		if (gShouldSetScroll)
 		{
-			ImGui::SetScrollHere();
+			ImGui::SetScrollHereY();
 			gShouldSetScroll = false;
 		}
 

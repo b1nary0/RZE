@@ -8,7 +8,7 @@
 void ImGuiRenderStage::Initialize()
 {
 	// @TODO really not a huge fan of this... come back to this later
-	Rendering::Renderer::InitializeImGui();
+	//Rendering::Renderer::InitializeImGui();
 }
 
 void ImGuiRenderStage::Render(const std::vector<std::shared_ptr<RenderObject>>& renderObjects)
