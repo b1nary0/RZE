@@ -7,11 +7,11 @@
 
 #include <Utils/Math/Math.h>
 
-Matrix4x4 Matrix4x4::IDENTITY = Matrix4x4(glm::mat4());
+Matrix4x4 Matrix4x4::IDENTITY = Matrix4x4(glm::mat4(1.0f));
 
 Matrix4x4::Matrix4x4()
 {
-	m_mat = glm::mat4();
+	m_mat = glm::mat4(1.0f);
 }
 
 Matrix4x4::Matrix4x4(const glm::mat4& mat)
@@ -22,8 +22,8 @@ Matrix4x4::Matrix4x4(const glm::mat4& mat)
 Matrix4x4 Matrix4x4::CreateInPlace(const Vector3D& position, const Vector3D& scale, const Vector3D& rotation)
 {
 	Quaternion quatRot(rotation * MathUtils::ToRadians);
-	glm::mat4 matrix = glm::translate(glm::mat4(), position.GetInternalVec());
-	matrix = glm::rotate(matrix, quatRot.ToAngle(), quatRot.ToAxis().GetInternalVec());
+	glm::mat4 matrix = glm::translate(glm::mat4(1.0f), position.GetInternalVec());
+	matrix *= glm::toMat4(quatRot.GetInternalQuat());
 	matrix = glm::scale(matrix, scale.GetInternalVec());
 
 	return Matrix4x4(matrix);
