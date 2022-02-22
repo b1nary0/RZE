@@ -13,6 +13,7 @@ public:
 	Quaternion(const Vector3D& a, const Vector3D& b);
 
 	float ToAngle() const;
+	Vector3D ToEuler() const;
 	Vector3D ToAxis() const;
 
 	const glm::quat& GetInternalQuat() const;
@@ -27,5 +28,5 @@ public:
 private:
 	Quaternion(const glm::quat& quat);
 
-	glm::quat mQuat;
+	glm::quat m_quat;
 };

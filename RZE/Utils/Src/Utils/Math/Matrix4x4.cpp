@@ -3,6 +3,7 @@
 
 #include <GLM/gtx/quaternion.hpp>
 #include <GLM/gtx/matrix_decompose.hpp>
+#include <GLM/gtx/euler_angles.hpp>
 
 #include <Utils/Math/Math.h>
 
@@ -10,17 +11,17 @@ Matrix4x4 Matrix4x4::IDENTITY = Matrix4x4(glm::mat4());
 
 Matrix4x4::Matrix4x4()
 {
-	mMat = glm::mat4(1.0f);
+	m_mat = glm::mat4();
 }
 
 Matrix4x4::Matrix4x4(const glm::mat4& mat)
 {
-	mMat = mat;
+	m_mat = mat;
 }
 
 Matrix4x4 Matrix4x4::CreateInPlace(const Vector3D& position, const Vector3D& scale, const Vector3D& rotation)
 {
-	Quaternion quatRot(rotation);
+	Quaternion quatRot(rotation * MathUtils::ToRadians);
 	glm::mat4 matrix = glm::translate(glm::mat4(), position.GetInternalVec());
 	matrix = glm::rotate(matrix, quatRot.ToAngle(), quatRot.ToAxis().GetInternalVec());
 	matrix = glm::scale(matrix, scale.GetInternalVec());
@@ -45,30 +46,39 @@ Matrix4x4 Matrix4x4::CreateOrthoMatrix(const float left, const float right, cons
 
 void Matrix4x4::Translate(const Vector3D& translation)
 {
-	mMat = glm::translate(mMat, translation.GetInternalVec());
+	m_mat = glm::translate(m_mat, translation.GetInternalVec());
 }
 
 void Matrix4x4::Rotate(const float angle, const Vector3D& axis)
 {
-	mMat = glm::rotate(mMat, angle, axis.GetInternalVec());
+	m_mat = glm::rotate(m_mat, angle, axis.GetInternalVec());
+}
+
+void Matrix4x4::Rotate(const Vector3D& rotation)
+{
+	Quaternion quatRot = Quaternion(rotation);
+	float angle = quatRot.ToAngle();
+	Vector3D axis = quatRot.ToAxis();
+	
+	m_mat = glm::rotate(m_mat, angle, axis.GetInternalVec());
 }
 
 void Matrix4x4::Scale(const Vector3D& scale)
 {
-	mMat = glm::scale(mMat, scale.GetInternalVec());
+	m_mat = glm::scale(m_mat, scale.GetInternalVec());
 }
 
 Matrix4x4 Matrix4x4::Inverse() const
 {
-	return Matrix4x4(glm::inverse(mMat));
+	return Matrix4x4(glm::inverse(m_mat));
 }
 
 Matrix4x4 Matrix4x4::Transpose() const
 {
-	return Matrix4x4(glm::transpose(mMat));
+	return Matrix4x4(glm::transpose(m_mat));
 }
 
-const Vector3D Matrix4x4::GetPosition() const
+Vector3D Matrix4x4::GetPosition() const
 {
 	glm::vec3 scale;
 	glm::quat rotation;
@@ -80,8 +90,7 @@ const Vector3D Matrix4x4::GetPosition() const
 	return Vector3D(translation.x, translation.y, translation.z);
 }
 
-
-const Quaternion Matrix4x4::GetRotation() const
+Quaternion Matrix4x4::GetRotation() const
 {
 	glm::vec3 scale;
 	glm::quat rotation;
@@ -93,7 +102,7 @@ const Quaternion Matrix4x4::GetRotation() const
 	return Quaternion(rotation.x, rotation.y, rotation.z, rotation.w);
 }
 
-const Vector3D Matrix4x4::GetScale() const
+Vector3D Matrix4x4::GetScale() const
 {
 	glm::vec3 scale;
 	glm::quat rotation;
@@ -105,14 +114,36 @@ const Vector3D Matrix4x4::GetScale() const
 	return Vector3D(scale.x, scale.y, scale.z);
 }
 
+void Matrix4x4::SetPosition(const Vector3D& position)
+{
+	m_mat[3] = Vector4D(position.X(), position.Y(), position.Z(), 1.0f).GetInternalVec();
+}
+
+void Matrix4x4::SetRotation(const Vector3D& rotation)
+{
+	m_mat = m_mat * glm::eulerAngleXYZ(rotation.X(), rotation.Y(), rotation.Z());
+}
+
+void Matrix4x4::SetScale(const Vector3D& scale)
+{
+	m_mat[0].x = scale.X();
+	m_mat[1].y = scale.Y();
+	m_mat[2].z = scale.Z();
+}
+
 const glm::mat4& Matrix4x4::GetInternalMat() const
 {
-	return mMat;
+	return m_mat;
 }
 
 const float* Matrix4x4::GetValuePtr() const
 {
-	return glm::value_ptr(mMat);
+	return glm::value_ptr(m_mat);
+}
+
+float* Matrix4x4::GetValuePtr()
+{
+	return glm::value_ptr(m_mat);
 }
 
 bool Matrix4x4::operator!=(const Matrix4x4& rhs) const
@@ -123,7 +154,7 @@ bool Matrix4x4::operator!=(const Matrix4x4& rhs) const
 	{
 		for (int j = 0; j < 4; ++j)
 		{
-			if (mMat[i][j] != rhsInternalMat[i][j])
+			if (m_mat[i][j] != rhsInternalMat[i][j])
 			{
 				bEqual = false;
 				break;
@@ -136,7 +167,7 @@ bool Matrix4x4::operator!=(const Matrix4x4& rhs) const
 
 Matrix4x4 Matrix4x4::operator*(const Matrix4x4& rhs) const
 {
-	return Matrix4x4(mMat * rhs.mMat);
+	return Matrix4x4(m_mat * rhs.m_mat);
 }
 
 Vector4D Matrix4x4::operator*(const Vector4D& rhs) const

@@ -34,6 +34,10 @@ namespace Editor
 
 		void OnWindowResize(const Vector2D& newSize) override;
 
+		// @TODO Re-architect editor API to avoid having this call here. Probably event-driven.
+		// i.e Fire GameObjectSelectedEvent from ScenePanel and react to it in SceneViewPanel
+		std::shared_ptr<GameObject> GetSelectedObjectFromScenePanel();
+
 	protected:
 		void CreateRenderTarget(const Vector2D& dimensions) override;
 
@@ -54,16 +58,16 @@ namespace Editor
 		void RunAssetCpy();
 
 	private:
-		PanelStates mPanelStates;
+		PanelStates m_panelStates;
 
-		LogPanel mLogPanel;
-		ScenePanel mScenePanel;
-		SceneViewPanel mSceneViewPanel;
+		LogPanel m_logPanel;
+		ScenePanel m_scenePanel;
+		SceneViewPanel m_sceneViewPanel;
 
-		std::unordered_map<std::string, ImFont*> mFontMapping;
+		std::unordered_map<std::string, ImFont*> m_fontMapping;
 
-		FilePath mImguiConfigFilePath;
+		FilePath m_imguiConfigFilepath;
 
-		const float kMenuBarHeight = 24.f;
+		const float k_menuBarHeight = 24.f;
 	};
 }

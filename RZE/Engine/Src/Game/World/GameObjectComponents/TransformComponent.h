@@ -19,6 +19,8 @@ public:
 	void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override;
 	void Load(const rapidjson::Value& data) override;
 
+	void Update() override;
+
 public:
 	const Vector3D& GetPosition() const;
 	const Vector3D& GetRotation() const;
@@ -29,15 +31,19 @@ public:
 	void SetScale(const Vector3D& scale);
 
 	// Helpers
-	Matrix4x4 GetAsMat4x4() const;
+	const Matrix4x4& GetAsMat4x4() const;
 
 	//
 	// Operations
 	//
-	void Rotate(const Vector3D& rotation);
+	void RotateBy(const Vector3D& rotation);
 
 private:
+	bool m_isDirty = true;
+
 	Vector3D m_position;
-	Vector3D	 m_rotation;
+	Vector3D m_rotation;
 	Vector3D	 m_scale { 1, 1, 1 };
+
+	Matrix4x4 m_transform;
 };

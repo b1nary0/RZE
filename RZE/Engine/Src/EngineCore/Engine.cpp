@@ -13,6 +13,7 @@
 
 #include <imGUI/imgui_impl_dx11.h>
 #include <imGUI/imgui_impl_win32.h>
+#include <imGUI/ImGuizmo.h>
 
 RZE_Engine::RZE_Engine()
 	: m_window(nullptr)
@@ -75,6 +76,7 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 						ImGui_ImplDX11_NewFrame();
 						ImGui_ImplWin32_NewFrame();
 						ImGui::NewFrame();
+						ImGuizmo::BeginFrame();
 					}
 
 					Update();

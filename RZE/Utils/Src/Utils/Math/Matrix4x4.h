@@ -20,20 +20,22 @@ public:
 	void Translate(const Vector3D& translation);
 	void Rotate(const float angle, const Vector3D& axis);
 	void Scale(const Vector3D& scale);
+	void Rotate(const Vector3D& rotation);
 
 	Matrix4x4 Inverse() const;
 	Matrix4x4 Transpose() const;
 
-	const Vector3D GetPosition() const;
-	const Quaternion GetRotation() const;
-	const Vector3D GetScale() const;
+	Vector3D GetPosition() const;
+	Quaternion GetRotation() const;
+	Vector3D GetScale() const;
 
 	void SetPosition(const Vector3D& position);
-	void SetRotation(const Quaternion& rotation);
+	void SetRotation(const Vector3D& rotation);
 	void SetScale(const Vector3D& scale);
 
 	const glm::mat4& GetInternalMat() const;
 	const float* GetValuePtr() const;
+	float* GetValuePtr();
 
 	bool operator!=(const Matrix4x4& rhs) const;
 	Matrix4x4 operator*(const Matrix4x4& rhs) const;
@@ -44,5 +46,5 @@ public:
 private:
 	Matrix4x4(const glm::mat4& mat);
 
-	glm::mat4 mMat;
+	glm::mat4 m_mat;
 };

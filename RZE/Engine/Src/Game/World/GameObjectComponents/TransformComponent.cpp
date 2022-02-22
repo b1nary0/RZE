@@ -19,6 +19,15 @@ TransformComponent::TransformComponent(const Vector3D& position, const Vector3D&
 	SetScale(scale);
 }
 
+void TransformComponent::Update()
+{
+	if (m_isDirty)
+	{
+		m_transform = Matrix4x4::CreateInPlace(m_position, m_scale, m_rotation);
+		m_isDirty = false;
+	}
+}
+
 void TransformComponent::OnEditorInspect()
 {
 	float* positionValues = const_cast<float*>(&m_position.GetInternalVec().x);
@@ -27,37 +36,54 @@ void TransformComponent::OnEditorInspect()
 
 	// #TODO(Modify DragFloat3 to only register on mouse movement to avoid falloff when dragging)
 
+	bool valueChanged = false;
+
 	ImGui::Text("Position");
-	ImGui::DragFloat3("##transfcomp_position", positionValues, 0.005f);
+	valueChanged |= ImGui::InputFloat3("##transfcomp_position", positionValues, nullptr, ImGuiInputTextFlags_EnterReturnsTrue);
 	ImGui::Text("Rotation");
-	ImGui::DragFloat3("##transfcomp_rotation", rotationValues, 0.05f);
+	valueChanged |= ImGui::InputFloat3("##transfcomp_rotation", rotationValues, nullptr, ImGuiInputTextFlags_EnterReturnsTrue);
 	ImGui::Text("Scale");
-	ImGui::DragFloat3("##transfcomp_scale", scaleValues, 0.005f);
+	valueChanged |= ImGui::InputFloat3("##transfcomp_scale", scaleValues, nullptr, ImGuiInputTextFlags_EnterReturnsTrue);
+
+	m_isDirty = valueChanged;
 }
 
 void TransformComponent::SetPosition(const Vector3D& position)
 {
-	m_position = position;
+	if (m_position != position)
+	{
+		m_position = position;
+		m_isDirty = true;
+	}
 }
 
 void TransformComponent::SetRotation(const Vector3D& rotation)
 {
-	m_rotation = rotation;
+	if (m_rotation != rotation)
+	{
+		m_rotation = rotation;
+		m_isDirty = true;
+	}
 }
 
 void TransformComponent::SetScale(const Vector3D& scale)
 {
-	m_scale = scale;
+	if (m_scale != scale)
+	{
+		m_scale = scale;
+		m_isDirty = true;
+	}
 }
 
-Matrix4x4 TransformComponent::GetAsMat4x4() const
+const Matrix4x4& TransformComponent::GetAsMat4x4() const
 {
-	return Matrix4x4::CreateInPlace(m_position, m_scale, m_rotation);
+	return m_transform;
 }
 
-void TransformComponent::Rotate(const Vector3D& rotation)
+void TransformComponent::RotateBy(const Vector3D& rotation)
 {
-	m_rotation = rotation;
+	m_rotation += rotation;
+	m_isDirty = true;
 }
 
 const Vector3D& TransformComponent::GetPosition() const
