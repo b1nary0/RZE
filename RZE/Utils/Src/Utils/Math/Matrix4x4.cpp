@@ -21,12 +21,13 @@ Matrix4x4::Matrix4x4(const glm::mat4& mat)
 
 Matrix4x4 Matrix4x4::CreateInPlace(const Vector3D& position, const Vector3D& scale, const Vector3D& rotation)
 {
-	Quaternion quatRot(rotation * MathUtils::ToRadians);
-	glm::mat4 matrix = glm::translate(glm::mat4(1.0f), position.GetInternalVec());
-	matrix *= glm::toMat4(quatRot.GetInternalQuat());
-	matrix = glm::scale(matrix, scale.GetInternalVec());
+	glm::mat4 translation = glm::translate(glm::mat4(1.0f), position.GetInternalVec());
+	glm::quat quatRot = Quaternion(rotation * MathUtils::ToRadians).GetInternalQuat();
+	glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), scale.GetInternalVec());
 
-	return Matrix4x4(matrix);
+	glm::mat4 transformationMatrix = translation * glm::toMat4(quatRot) * scaleMatrix;
+
+	return Matrix4x4(transformationMatrix);
 }
 
 Matrix4x4 Matrix4x4::CreateViewMatrix(const Vector3D& eyePos, const Vector3D& centerPos, const Vector3D& upDir)
