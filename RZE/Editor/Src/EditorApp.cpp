@@ -2,10 +2,7 @@
 
 #include <Game/World/GameObject/GameObject.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
-#include <Game/World/GameObjectComponents/CameraComponent.h>
 
-// Needed for call to RZE().GetRenderer().GetDriverDevice()
-// Should remove ASAP.
 #include <Rendering/Renderer.h>
 #include <Rendering/Graphics/RenderTarget.h>
 
@@ -19,7 +16,6 @@
 #include <DebugUtils/DebugServices.h>
 
 #include <ImGui/imgui.h>
-#include <ImGui/ImGuizmo.h>
 
 #include <Optick/optick.h>
 
