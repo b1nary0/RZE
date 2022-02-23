@@ -28,12 +28,16 @@ void ForwardRenderStage::Initialize()
 
 void ForwardRenderStage::Update(const std::vector<std::shared_ptr<RenderObject>>& renderObjects)
 {
+	OPTICK_EVENT();
+
 	const RenderCamera& renderCamera = RZE::GetRenderEngine().GetCamera();
 	Rendering::Renderer::UploadDataToBuffer(m_vertexShader->GetCameraDataBuffer(), &renderCamera);
 }
 
 void ForwardRenderStage::Render(const std::vector<std::shared_ptr<RenderObject>>& renderObjects)
 {
+	OPTICK_EVENT();
+
 	const RenderEngine& renderEngine = RZE::GetRenderEngine();
 	
 	Rendering::Renderer::Begin();
