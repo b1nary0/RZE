@@ -131,10 +131,14 @@ namespace Editor
 				case Win32KeyCode::Key_R:
 					m_gizmoState.m_currentOpMode = ImGuizmo::SCALE;
 					break;
+				case Win32KeyCode::Key_Q:
+					m_gizmoState.m_transformationSpace = (m_gizmoState.m_transformationSpace == ImGuizmo::WORLD) ? ImGuizmo::LOCAL : ImGuizmo::WORLD;
+					break;
 				}
 			});
 		inputHandler.BindAction(Win32KeyCode::Key_W, EButtonState::ButtonState_Pressed, keyFunc);
 		inputHandler.BindAction(Win32KeyCode::Key_E, EButtonState::ButtonState_Pressed, keyFunc);
 		inputHandler.BindAction(Win32KeyCode::Key_R, EButtonState::ButtonState_Pressed, keyFunc);
+		inputHandler.BindAction(Win32KeyCode::Key_Q, EButtonState::ButtonState_Pressed, keyFunc);
 	}
 }
