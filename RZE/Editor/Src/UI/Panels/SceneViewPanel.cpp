@@ -79,12 +79,11 @@ namespace Editor
 
 					std::shared_ptr<GameObject> cameraObject = RZE::GetActiveScene().FindGameObjectByName("Camera");
 					const CameraComponent* const cameraComponent = cameraObject->GetComponent<CameraComponent>();
-
+					
 					const Matrix4x4& view = cameraComponent->GetViewMatrix();
 					const Matrix4x4& projection = cameraComponent->GetProjectionMatrix();
 
 					TransformComponent* const transformComponent = selectedGameObject->GetComponent<TransformComponent>();
-					Matrix4x4 transform = transformComponent->GetAsMat4x4();
 
 					float* translation = &const_cast<glm::vec3&>(transformComponent->GetPosition().GetInternalVec())[0];
 					float* rotation = &const_cast<glm::vec3&>(transformComponent->GetRotation().GetInternalVec())[0];
