@@ -5,7 +5,8 @@
 
 #include <Utils/Memory/MemoryUtils.h>
 
-MaterialInstance::MaterialInstance()
+MaterialInstance::MaterialInstance(const std::string& name)
+	: m_name(name)
 {
 	m_textureSlots.resize(TEXTURE_SLOT_COUNT);
 	

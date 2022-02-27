@@ -6,9 +6,30 @@
 
 #include <Game/World/GameObject/GameObject.h>
 
+#include <Graphics/RenderEngine.h>
+#include <Graphics/Material.h>
+
 #include <Utils/DebugUtils/Debug.h>
 
-#include <Graphics/RenderEngine.h>
+#include "Graphics/Texture2D.h"
+
+namespace
+{
+	std::string GetTextureTypeStr(MaterialInstance::TextureSlot textureSlot)
+	{
+		switch (textureSlot)
+		{
+		case MaterialInstance::TEXTURE_SLOT_DIFFUSE:
+				return "Diffuse";
+		case MaterialInstance::TEXTURE_SLOT_SPECULAR:
+				return "Specular";
+		case MaterialInstance::TEXTURE_SLOT_NORMAL:
+				return "Normal";
+		default:
+			return "None";
+		}
+	}
+}
 
 void MeshComponent::SetMeshResource(const ResourceHandle& resource)
 {
@@ -73,17 +94,64 @@ void MeshComponent::Load(const rapidjson::Value& data)
 
 void MeshComponent::OnEditorInspect()
 {
+	ResourceHandler& resourceHandler = RZE::GetResourceHandler();
+
 	if (m_resource.IsValid())
 	{
 		ImGui::Text(m_resource.GetResourcePath().GetRelativePath().c_str());
+
+		const Model3D* const modelData = resourceHandler.GetResource<Model3D>(m_resource);
+		for (const auto& subMesh : modelData->GetStaticMesh().GetSubMeshes())
+		{
+			if (ImGui::TreeNode(&subMesh, subMesh.GetName().c_str()))
+			{
+				const std::shared_ptr<const MaterialInstance>& material = subMesh.GetMaterial();
+				//
+				// Material Information
+				//
+				if (ImGui::TreeNode(&material, "%s %s", "Material:", material->GetName().c_str()))
+				{
+					const PixelShader* const shader = resourceHandler.GetResource<PixelShader>(material->GetShaderResource());
+					AssertNotNull(shader);
+
+					ImGui::TextColored(ImVec4(0.65f, 0.65f, 1.0f, 1.0f), "[Shader] ");
+					ImGui::Text(shader->GetName().c_str());
+
+					ImGui::Separator();
+
+					//
+					// Textures
+					//
+					for (U8 textureSlot = 0; textureSlot < MaterialInstance::TEXTURE_SLOT_COUNT; ++textureSlot)
+					{
+						ResourceHandle textureResource = material->GetTexture(textureSlot);
+
+						ImGui::NewLine();
+
+						if (textureResource.IsValid())
+						{
+							const Texture2D* const textureData = resourceHandler.GetResource<Texture2D>(textureResource);
+							AssertNotNull(textureData);
+
+							const std::string textureTypeStr = GetTextureTypeStr(static_cast<MaterialInstance::TextureSlot>(textureSlot));
+							ImGui::TextColored(ImVec4(0.65f, 0.65f, 1.0f, 1.0f), "[%s] ", textureTypeStr.c_str());
+							ImGui::Text(textureData->GetFilepath().GetRelativePath().c_str());
+							ImGui::Image(textureData->GetPlatformObject().GetTextureData(), ImVec2(128.0f, 128.0f));
+						}
+					}
+					ImGui::TreePop();
+				}
+
+				ImGui::TreePop();
+			}
+		}
 	}
 
-	if (ImGui::Button("Browse..."))
+	if (ImGui::Button("Select Mesh..."))
 	{
 		FilePath path = RZE_Application::RZE().ShowOpenFilePrompt();
 		if (path.IsValid())
 		{
-			ResourceHandler& resourceHandler = RZE::GetResourceHandler();
 
 			if (m_resource.IsValid())
 			{

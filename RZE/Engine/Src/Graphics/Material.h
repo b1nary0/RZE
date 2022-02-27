@@ -34,7 +34,7 @@ public:
 	};
 
 public:
-	MaterialInstance();
+	MaterialInstance(const std::string& name);
 	~MaterialInstance();
 	
 public:
@@ -42,6 +42,8 @@ public:
 
 	ResourceHandle GetTexture(U8 textureSlot);
 	const ResourceHandle& GetTexture(U8 textureSlot) const;
+
+	const std::string& GetName() const { return m_name; }
 
 	// @TODO SetShaderTechnique is actually being set as PixelShader directly until actual techniques are implemented
 	void SetShaderTechnique(const ResourceHandle& shaderTechnique);
@@ -57,6 +59,8 @@ public:
 	Rendering::ConstantBufferHandle GetParamBuffer() const;
 		
 private:
+	std::string m_name;
+
 	MaterialParams m_properties;
 
 	ResourceHandle m_shaderTechnique;

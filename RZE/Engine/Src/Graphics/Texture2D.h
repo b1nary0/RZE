@@ -5,6 +5,7 @@
 #include <Utils/PrimitiveDefs.h>
 
 #include <Utils/Interfaces/Resource.h>
+#include <Utils/Platform/FilePath.h>
 
 class Texture2D : public IResource
 {
@@ -20,6 +21,8 @@ public:
 	U8* GetRawData() const { return m_data; }
 	Vector2D GetDimensions() const;
 
+	const FilePath& GetFilepath() const { return m_filepath; }
+
 	Rendering::TextureBuffer2DHandle GetPlatformObject() const { return m_GPUResource; }
 
 private:
@@ -28,6 +31,8 @@ private:
 	Int32 m_width;
 	Int32 m_height;
 	Int32 m_channels;
+
+	FilePath m_filepath;
 
 	Rendering::TextureBuffer2DHandle m_GPUResource;
 };

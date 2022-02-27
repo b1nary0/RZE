@@ -21,6 +21,8 @@ Texture2D::~Texture2D()
 
 bool Texture2D::Load(const FilePath& filePath)
 {
+	m_filepath = filePath;
+
 	// #TODO(Josh) This will need to be customized for different bit sizes... 24, 32 etc?
 	m_data = stbi_load(filePath.GetAbsolutePath().c_str(), &m_width, &m_height, &m_channels, STBI_rgb_alpha);
 	if (m_data == nullptr)
