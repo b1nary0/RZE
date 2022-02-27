@@ -14,8 +14,8 @@ public:
 
 public:
 	void Initialize() override;
-	void Update(const std::vector<std::shared_ptr<RenderObject>>& renderObjects) override;
-	void Render(const std::vector<std::shared_ptr<RenderObject>>& renderObjects) override;
+	void Update(const RenderStageData& renderData) override;
+	void Render(const RenderStageData& renderData) override;
 
 	U32 GetPriority() override { return std::numeric_limits<U32>::max(); }
 

@@ -11,7 +11,7 @@ void ImGuiRenderStage::Initialize()
 	//Rendering::Renderer::InitializeImGui();
 }
 
-void ImGuiRenderStage::Render(const std::vector<std::shared_ptr<RenderObject>>& renderObjects)
+void ImGuiRenderStage::Render(const RenderStageData& renderData)
 {
 	OPTICK_EVENT();
 

@@ -14,7 +14,7 @@ public:
 	Vector4D(const float x, const float y, const float z, const float w);
 	Vector4D(const int x, const int y, const int z, const int w);
 
-	inline static Vector4D& Default() { return sDefaultVec; }
+	static Vector4D ZERO;
 
 	float X() const;
 	float Y() const;
@@ -43,6 +43,5 @@ public:
 	void operator=(const Vector3D& rhs);
 
 private:
-	static Vector4D sDefaultVec;
 	glm::vec4 mVec;
 };

@@ -6,6 +6,7 @@
 #include <Game/World/GameObjectComponents/CameraComponent.h>
 #include <Game/World/GameObjectComponents/MeshComponent.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
+#include <Game/World/GameObjectComponents/DirectionalLightComponent.h>
 
 #include <Windowing/Win32Window.h>
 
@@ -72,6 +73,7 @@ void RZE_Application::Initialize()
 	REGISTER_GAMEOBJECTCOMPONENT(CameraComponent);
 	REGISTER_GAMEOBJECTCOMPONENT(MeshComponent);
 	REGISTER_GAMEOBJECTCOMPONENT(TransformComponent);
+	REGISTER_GAMEOBJECTCOMPONENT(DirectionalLightComponent);
 }
 
 Win32Window& RZE_Application::InternalGetWindow()

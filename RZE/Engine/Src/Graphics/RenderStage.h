@@ -6,6 +6,15 @@
 #include <vector>
 
 class RenderObject;
+class LightObject;
+struct RenderCamera;
+
+struct RenderStageData
+{
+	RenderCamera* m_camera = nullptr;
+	std::vector<std::shared_ptr<RenderObject>>* m_renderObjects = nullptr;
+	std::vector<std::shared_ptr<LightObject>>* m_lights = nullptr;
+};
 
 class IRenderStage
 {
@@ -15,8 +24,8 @@ public:
 
 public:
 	virtual void Initialize() = 0;
-	virtual void Update(const std::vector<std::shared_ptr<RenderObject>>& renderObjects) = 0;
-	virtual void Render(const std::vector<std::shared_ptr<RenderObject>>& renderObjects) = 0;
+	virtual void Update(const RenderStageData& renderData) = 0;
+	virtual void Render(const RenderStageData& renderData) = 0;
 
 	virtual U32 GetPriority() = 0;
 };

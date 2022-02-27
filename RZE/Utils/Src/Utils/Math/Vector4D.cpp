@@ -5,7 +5,7 @@
 
 #include <GLM/vec4.hpp>
 
-Vector4D Vector4D::sDefaultVec;
+Vector4D Vector4D::ZERO = Vector4D(0.0f);
 
 Vector4D::Vector4D()
 	: mVec(0.0f, 0.0f, 0.0f, 0.0f)

@@ -31,12 +31,14 @@
           "Scale": [1, 1, 1],
           "Rotation": [0, 0, 0]
         },
-        "LightSourceComponent":
-        {
-					"LightType": 0,
-          "Color": [0.95, 0.95, 0.85],
-          "Strength": 1.25
-        }
+                        "DirectionalLightComponent": {
+                    "LightColour": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "LightStrength": 0.25
+                }
       }
     }
   }

@@ -12,8 +12,8 @@ public:
 	~ImGuiRenderStage() override = default;
 
 	void Initialize() override;
-	void Update(const std::vector<std::shared_ptr<RenderObject>>& renderObjects) override {}
-	void Render(const std::vector<std::shared_ptr<RenderObject>>& renderObjects) override;
+	void Update(const RenderStageData& renderData) override {}
+	void Render(const RenderStageData& renderData) override;
 
 	U32 GetPriority() override { return 1000; }
 

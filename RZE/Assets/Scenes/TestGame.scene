@@ -38,14 +38,13 @@
         },
         "Directional Light": {
             "components": {
-                "LightSourceComponent": {
-                    "LightType": 0,
-                    "Color": [
+                "DirectionalLightComponent": {
+                    "LightColour": [
                         1.0,
                         1.0,
                         1.0
                     ],
-                    "Strength": 1.0049997568130494
+                    "LightStrength": 0.25
                 },
                 "TransformComponent": {
                     "Position": [

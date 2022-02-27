@@ -54,6 +54,14 @@
                         0.0,
                         0.0
                     ]
+                },
+                "DirectionalLightComponent": {
+                    "LightColour": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "LightStrength": 0.25
                 }
             }
         },

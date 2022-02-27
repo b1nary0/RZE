@@ -5,11 +5,15 @@
 
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector2D.h>
+#include <Utils/Math/Vector3D.h>
+#include <Utils/Math/Vector4D.h>
 
 namespace Rendering
 {
 	class RenderTargetTexture;
 }
+
+class IRenderStage;
 
 class MeshGeometry;
 class Vector2D;
@@ -22,6 +26,34 @@ struct RenderCamera
 };
 
 // @TODO Move to own file
+class LightObject
+{
+public:
+	LightObject() = default;
+	~LightObject() = default;
+
+	void Initialize();
+
+	void SetPosition(const Vector3D& position) { m_position = position; }
+	const Vector3D& GetPosition() const { return m_position; }
+
+	void SetStrength(float strength) { m_strength = strength; }
+	float GetStrength() const { return m_strength; }
+
+	void SetColour(const Vector4D& colour) { m_colour = colour; }
+	const Vector4D& GetColour() const { return m_colour; }
+
+	const Rendering::ConstantBufferHandle& GetPropertyBuffer() { return m_propertyBuffer; }
+
+private:
+	Vector3D m_position = Vector3D::ZERO;
+	Vector4D m_colour = Vector4D::ZERO;
+	float m_strength = 0.0f;
+
+private:
+	Rendering::ConstantBufferHandle m_propertyBuffer;
+};
+
 class RenderObject
 {
 public:
@@ -42,8 +74,6 @@ private:
 	StaticMesh m_staticMesh;
 	Matrix4x4 m_transform;
 };
-
-class IRenderStage;
 
 class RenderEngine
 {
@@ -70,6 +100,9 @@ public:
 	std::shared_ptr<RenderObject> CreateRenderObject(const StaticMesh& staticMesh);
 	void DestroyRenderObject(std::shared_ptr<RenderObject>& renderObject);
 
+	std::shared_ptr<LightObject> CreateLightObject();
+	void DestroyLightObject(std::shared_ptr<LightObject>& lightObject);
+
 	void ResizeCanvas(const Vector2D& newSize);
 	const Vector2D& GetCanvasSize() const;
 
@@ -95,6 +128,8 @@ private:
 
 	// @TODO Make not vector or something
 	std::vector<std::shared_ptr<RenderObject>> m_renderObjects;
+	// @TODO Maybe move light stuff into its own area?
+	std::vector<std::shared_ptr<LightObject>> m_lightObjects;
 
 	std::vector<std::unique_ptr<IRenderStage>> m_renderStages;
 

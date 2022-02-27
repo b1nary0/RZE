@@ -23,11 +23,11 @@ void FinalRenderTargetStage::Initialize()
 	}
 }
 
-void FinalRenderTargetStage::Update(const std::vector<std::shared_ptr<RenderObject>>& renderObjects)
+void FinalRenderTargetStage::Update(const RenderStageData& renderData)
 {
 }
 
-void FinalRenderTargetStage::Render(const std::vector<std::shared_ptr<RenderObject>>& renderObjects)
+void FinalRenderTargetStage::Render(const RenderStageData& renderData)
 {
 	RenderEngine& engine = RZE::GetRenderEngine();
 	const Rendering::RenderTargetTexture& target = engine.GetRenderTarget();

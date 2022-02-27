@@ -55,14 +55,13 @@
                         0.0
                     ]
                 },
-                "LightSourceComponent": {
-                    "LightType": 0,
-                    "Color": [
+                "DirectionalLightComponent": {
+                    "LightColour": [
                         1.0,
                         1.0,
                         1.0
                     ],
-                    "Strength": 0.25
+                    "LightStrength": 0.25
                 }
             }
         },

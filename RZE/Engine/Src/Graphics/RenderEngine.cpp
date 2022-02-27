@@ -3,9 +3,20 @@
 
 #include <Graphics/RenderStage.h>
 #include <Graphics/RenderStages/ForwardRenderStage.h>
-#include <Graphics/RenderStages/FinalRenderTargetStage.h>
 
 #include <Rendering/Renderer.h>
+
+void LightObject::Initialize()
+{
+	struct PropertyBufferLayout
+	{
+		Vector3D position;
+		Vector4D colour;
+		float strength;
+	};
+
+	m_propertyBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(PropertyBufferLayout), 1);
+}
 
 RenderEngine::RenderEngine()
 {	
@@ -25,9 +36,15 @@ void RenderEngine::Initialize(void* windowHandle)
 void RenderEngine::Update()
 {
 	OPTICK_EVENT();
+
+	RenderStageData renderStageData;
+	renderStageData.m_camera = &m_camera;
+	renderStageData.m_renderObjects = &m_renderObjects;
+	renderStageData.m_lights = &m_lightObjects;
+
 	for (auto& pipeline : m_renderStages)
 	{
-		pipeline->Update(m_renderObjects);
+		pipeline->Update(renderStageData);
 	}
 }
 
@@ -37,9 +54,14 @@ void RenderEngine::Render()
 
 	Rendering::Renderer::BeginFrame();
 
+	RenderStageData renderStageData;
+	renderStageData.m_camera = &m_camera;
+	renderStageData.m_renderObjects = &m_renderObjects;
+	renderStageData.m_lights = &m_lightObjects;
+
 	for (auto& pipeline : m_renderStages)
 	{
-		pipeline->Render(m_renderObjects);
+		pipeline->Render(renderStageData);
 	}
 
 	Rendering::Renderer::EndFrame();
@@ -83,6 +105,40 @@ void RenderEngine::DestroyRenderObject(std::shared_ptr<RenderObject>& renderObje
 		}
 
 		renderObject.reset();
+	}
+}
+
+std::shared_ptr<LightObject> RenderEngine::CreateLightObject()
+{
+	m_lightObjects.emplace_back(std::make_shared<LightObject>());
+	m_lightObjects.back()->Initialize();
+
+	return m_lightObjects.back();
+}
+
+void RenderEngine::DestroyLightObject(std::shared_ptr<LightObject>& lightObject)
+{
+	OPTICK_EVENT();
+
+	auto iter = std::find_if(m_lightObjects.begin(), m_lightObjects.end(),
+		[&lightObject](const std::shared_ptr<LightObject>& other)
+		{
+			return lightObject == other;
+		});
+
+	if (iter != m_lightObjects.end())
+	{
+		if (m_lightObjects.size() > 1)
+		{
+			std::iter_swap(iter, std::prev(m_lightObjects.end()));
+			m_lightObjects.erase(std::prev(m_lightObjects.end()));
+		}
+		else
+		{
+			m_lightObjects.erase(iter);
+		}
+
+		lightObject.reset();
 	}
 }
 

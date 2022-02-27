@@ -28,20 +28,28 @@ cbuffer MaterialBuffer : register(b1)
 	MATERIAL_DATA MaterialData;
 }
 
+struct LightData
+{
+	float3 position;
+	float4 colour;
+	float strength;
+};
+
+cbuffer LightBuffer : register(b2)
+{
+	LightData lightData;
+}
+
 Texture2D textures[3] : register(t0);
 SamplerState samplerState : register(s0);
 
 float4 PSMain(PS_IN input) : SV_TARGET
 {
-	float LightStrength_Temp = 10.0f;
 	float minDiffuseFactor = 0.2f;
 	
-	float3 LightPos_Temp = float3(-15.0f, 19.0f, 9.0f);
-	float3 LightColour_Temp = float3(1.0f, 1.0f, 1.0f);
 	float3 Ambient_Temp = float3(0.1f, 0.1f, 0.1f);
-	//float3 ObjectColour_Temp = float3(0.5f, 0.5f, 0.5f);
 
-	float3 lightDir = LightPos_Temp - input.FragPos;
+	float3 lightDir = lightData.position - input.FragPos;
 	lightDir = normalize(lightDir);
 	
 	float3 viewDir = normalize(CameraData.Position - input.FragPos);
@@ -53,7 +61,7 @@ float4 PSMain(PS_IN input) : SV_TARGET
 		float3 normal = input.Normal;
 		
 		float diffuse = max(dot(lightDir, normal), minDiffuseFactor);
-		float3 diffuseResult = diffuse * diffSample.rgb * LightColour_Temp;
+		float3 diffuseResult = (diffuse * diffSample.rgb) * lightData.colour;
 				
 		shadingResult = (Ambient_Temp + diffuseResult);
 	}

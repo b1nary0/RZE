@@ -5,6 +5,18 @@ struct PS_IN
 	float3 Normal : NORMAL;
 };
 
+struct LightData
+{
+	float3 position;
+	float4 colour;
+	float strength;
+};
+
+cbuffer LightBuffer : register(b2)
+{
+	LightData lightData;
+}
+
 float4 PSMain(PS_IN input) : SV_TARGET
 {
 	float LightStrength_Temp = 10.0f;

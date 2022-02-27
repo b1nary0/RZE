@@ -26,15 +26,28 @@ void ForwardRenderStage::Initialize()
 	m_vertexShader = RZE::GetResourceHandler().GetResource<VertexShader>(m_vertexShaderResource);
 }
 
-void ForwardRenderStage::Update(const std::vector<std::shared_ptr<RenderObject>>& renderObjects)
+void ForwardRenderStage::Update(const RenderStageData& renderData)
 {
 	OPTICK_EVENT();
+	
+	Rendering::Renderer::UploadDataToBuffer(m_vertexShader->GetCameraDataBuffer(), renderData.m_camera);
 
-	const RenderCamera& renderCamera = RZE::GetRenderEngine().GetCamera();
-	Rendering::Renderer::UploadDataToBuffer(m_vertexShader->GetCameraDataBuffer(), &renderCamera);
+	std::shared_ptr<LightObject> lightObject = (*renderData.m_lights)[0];
+	struct LightProperties
+	{
+		Vector3D position;
+		Vector4D colour;
+		float strength;
+	} lightMem;
+
+	lightMem.position = lightObject->GetPosition();
+	lightMem.colour = lightObject->GetColour();
+	lightMem.strength = lightObject->GetStrength();
+
+	Rendering::Renderer::UploadDataToBuffer(lightObject->GetPropertyBuffer(), &lightMem);
 }
 
-void ForwardRenderStage::Render(const std::vector<std::shared_ptr<RenderObject>>& renderObjects)
+void ForwardRenderStage::Render(const RenderStageData& renderData)
 {
 	OPTICK_EVENT();
 
@@ -56,7 +69,7 @@ void ForwardRenderStage::Render(const std::vector<std::shared_ptr<RenderObject>>
 	Rendering::Renderer::SetInputLayout(m_vertexShader->GetPlatformObject());
 	Rendering::Renderer::SetPrimitiveTopology(Rendering::EPrimitiveTopology::TriangleList);
 
-	for (auto& renderObject : renderObjects)
+	for (const auto& renderObject : *renderData.m_renderObjects)
 	{
 		struct MatrixMem
 		{
@@ -72,7 +85,7 @@ void ForwardRenderStage::Render(const std::vector<std::shared_ptr<RenderObject>>
 
 		// @TODO
 		// Currently each MeshGeometry is a draw call. Need to batch this down so it becomes a single draw call
-		// per render object, at least.
+		// per render object, at least. Can do this maybe in the burner?
 		for (const auto& meshGeometry : renderObject->GetStaticMesh().GetSubMeshes())
 		{
 			// @TODO
@@ -83,7 +96,8 @@ void ForwardRenderStage::Render(const std::vector<std::shared_ptr<RenderObject>>
 
 			Rendering::Renderer::SetPixelShader(pixelShader->GetPlatformObject());
 			Rendering::Renderer::SetConstantBufferPS(materialInstance->GetParamBuffer(), 1);
-
+			Rendering::Renderer::SetConstantBufferPS((*renderData.m_lights)[0]->GetPropertyBuffer(), 2);
+			
 			// @TODO Really need to get to texture infrastructure refactor soon - 2/6/2022
 			for (U8 textureSlot = 0; textureSlot < MaterialInstance::TextureSlot::TEXTURE_SLOT_COUNT; ++textureSlot)
 			{
