@@ -9,10 +9,6 @@
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Platform/FilePath.h>
 
-// GAME
-#include <Game/Systems/FirstPersonCameraSystem.h>
-#include <Game/Systems/RotateSingleEntitySystem.h>
-
 #ifdef IMGUI_ENABLED
 #include <imGUI/imgui.h>
 #include <Graphics/RenderStages/ImGuiRenderStage.h>

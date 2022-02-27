@@ -52,7 +52,7 @@ bool MeshAssetImporter::Import(const FilePath& filePath)
 		// #TODO
 		// Not a huge fan of doing this material work here but for the moment it's really the only place that 
 		// makes sense since we are constructing the MeshGeometry here. Ideally we don't do any resource loading
-		// in the AssetImporter pipeline, it just spits out the requisite data to load in say Model3D or any other
+		// in the AssetImporter pipeline, it just spits out the requisite data to load in say MeshResource or any other
 		// IResource derived object with a ::Load() function on it
 		MaterialAssetImporter::MaterialData materialData = materialImporter.GetMaterialData();
 		std::shared_ptr<MaterialInstance> materialInstance = std::make_shared<MaterialInstance>(materialData.MaterialName);

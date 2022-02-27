@@ -1,5 +1,5 @@
 #include <StdAfx.h>
-#include <Game/Model3D.h>
+#include <Game/MeshResource.h>
 
 #include <Graphics/Material.h>
 #include <Graphics/Texture2D.h>
@@ -8,17 +8,17 @@
 
 #include <Asset/AssetImport/MeshAssetImporter.h>
 
-Model3D::Model3D()
+MeshResource::MeshResource()
 {
 }
 
-Model3D::~Model3D()
+MeshResource::~MeshResource()
 {
 }
 
-bool Model3D::Load(const FilePath& filePath)
+bool MeshResource::Load(const FilePath& filePath)
 {
-	OPTICK_EVENT("Model3D::Load");
+	OPTICK_EVENT("MeshResource::Load");
 	MeshAssetImporter meshImporter;
 	meshImporter.Import(filePath);
 
@@ -26,6 +26,6 @@ bool Model3D::Load(const FilePath& filePath)
 	return true;
 }
 
-void Model3D::Release()
+void MeshResource::Release()
 {
 }

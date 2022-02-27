@@ -1,7 +1,7 @@
 #include <StdAfx.h>
 #include <Game/World/GameObjectComponents/MeshComponent.h>
 
-#include <Game/Model3D.h>
+#include <Game/MeshResource.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
 #include <Game/World/GameObject/GameObject.h>
@@ -45,7 +45,7 @@ void MeshComponent::CreateRenderObject()
 	const TransformComponent* const transformComponent = GetOwner()->GetComponent<TransformComponent>();
 	AssertMsg(transformComponent != nullptr, "No TransformComponent found. Mesh creation is useless without a location in 3D space.");
 
-	const Model3D* modelData = resourceHandler.GetResource<Model3D>(m_resource);
+	const MeshResource* modelData = resourceHandler.GetResource<MeshResource>(m_resource);
 	AssertNotNull(modelData);
 
 	m_renderObject = RZE::GetRenderEngine().CreateRenderObject(modelData->GetStaticMesh());
@@ -89,7 +89,7 @@ void MeshComponent::Load(const rapidjson::Value& data)
 {
 	FilePath resourcePath = FilePath(data["ResourcePath"].GetString());
 
-	m_resource = RZE::GetResourceHandler().LoadResource<Model3D>(resourcePath);
+	m_resource = RZE::GetResourceHandler().LoadResource<MeshResource>(resourcePath);
 }
 
 void MeshComponent::OnEditorInspect()
@@ -100,7 +100,7 @@ void MeshComponent::OnEditorInspect()
 	{
 		ImGui::Text(m_resource.GetResourcePath().GetRelativePath().c_str());
 
-		const Model3D* const modelData = resourceHandler.GetResource<Model3D>(m_resource);
+		const MeshResource* const modelData = resourceHandler.GetResource<MeshResource>(m_resource);
 		for (const auto& subMesh : modelData->GetStaticMesh().GetSubMeshes())
 		{
 			if (ImGui::TreeNode(&subMesh, subMesh.GetName().c_str()))
@@ -158,7 +158,7 @@ void MeshComponent::OnEditorInspect()
 				resourceHandler.ReleaseResource(m_resource);
 			}
 			
-			m_resource = resourceHandler.LoadResource<Model3D>(path);
+			m_resource = resourceHandler.LoadResource<MeshResource>(path);
 
 			if (m_renderObject != nullptr)
 			{

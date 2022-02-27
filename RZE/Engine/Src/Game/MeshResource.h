@@ -8,11 +8,11 @@ struct aiMesh;
 struct aiNode;
 struct aiScene;
 
-class Model3D : public IResource
+class MeshResource : public IResource
 {
 public:
-	Model3D();
-	virtual ~Model3D();
+	MeshResource();
+	virtual ~MeshResource();
 
 public:
 	bool Load(const FilePath& filePath) override;
