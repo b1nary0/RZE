@@ -122,21 +122,22 @@ void MeshComponent::OnEditorInspect()
 					//
 					// Textures
 					//
+					ImGui::TextColored(ImVec4(0.65f, 0.65f, 1.0f, 1.0f), "[Textures]");
 					for (U8 textureSlot = 0; textureSlot < MaterialInstance::TEXTURE_SLOT_COUNT; ++textureSlot)
 					{
 						ResourceHandle textureResource = material->GetTexture(textureSlot);
-
-						ImGui::NewLine();
-
+						
 						if (textureResource.IsValid())
 						{
 							const Texture2D* const textureData = resourceHandler.GetResource<Texture2D>(textureResource);
 							AssertNotNull(textureData);
 
 							const std::string textureTypeStr = GetTextureTypeStr(static_cast<MaterialInstance::TextureSlot>(textureSlot));
-							ImGui::TextColored(ImVec4(0.65f, 0.65f, 1.0f, 1.0f), "[%s] ", textureTypeStr.c_str());
-							ImGui::Text(textureData->GetFilepath().GetRelativePath().c_str());
-							ImGui::Image(textureData->GetPlatformObject().GetTextureData(), ImVec2(128.0f, 128.0f));
+							if (ImGui::CollapsingHeader(textureTypeStr.c_str()))
+							{
+								ImGui::Text(textureData->GetFilepath().GetRelativePath().c_str());
+								ImGui::Image(textureData->GetPlatformObject().GetTextureData(), ImVec2(128.0f, 128.0f));
+							}
 						}
 					}
 					ImGui::TreePop();
@@ -147,6 +148,7 @@ void MeshComponent::OnEditorInspect()
 		}
 	}
 
+	ImGui::NewLine();
 	if (ImGui::Button("Select Mesh..."))
 	{
 		FilePath path = RZE_Application::RZE().ShowOpenFilePrompt();
