@@ -1,7 +1,8 @@
 #pragma once
 
-#include <Graphics/Shader.h>
 #include <Graphics/StaticMesh.h>
+
+#include <Rendering/BufferHandle.h>
 
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector2D.h>
@@ -14,9 +15,6 @@ namespace Rendering
 }
 
 class IRenderStage;
-
-class MeshGeometry;
-class Vector2D;
 
 struct RenderCamera
 {

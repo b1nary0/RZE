@@ -6,8 +6,9 @@
 
 #include <Game/World/GameObject/GameObject.h>
 
-#include <Graphics/RenderEngine.h>
 #include <Graphics/Material.h>
+#include <Graphics/RenderEngine.h>
+#include <Graphics/Shader.h>
 
 #include <Utils/DebugUtils/Debug.h>
 
