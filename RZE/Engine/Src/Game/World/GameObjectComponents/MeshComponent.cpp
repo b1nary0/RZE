@@ -114,11 +114,13 @@ void MeshComponent::OnEditorInspect()
 				{
 					const PixelShader* const shader = resourceHandler.GetResource<PixelShader>(material->GetShaderResource());
 					AssertNotNull(shader);
+					
+					ImGui::Separator();
 
 					ImGui::TextColored(ImVec4(0.65f, 0.65f, 1.0f, 1.0f), "[Shader] ");
 					ImGui::Text(shader->GetName().c_str());
-
-					ImGui::Separator();
+					
+					ImGui::NewLine();
 
 					//
 					// Textures
