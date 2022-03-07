@@ -8,6 +8,11 @@
 
 #include <ImGui/imgui.h>
 
+namespace
+{
+	constexpr size_t k_maxGameObjectNameSize = 64;
+}
+
 namespace Editor
 {
 
@@ -21,6 +26,7 @@ namespace Editor
 	{
 	}
 
+	bool showGameObjectNameBoxForCreate = false;
 	void ScenePanel::Display()
 	{
 		if (ImGui::Begin("Scene", &bEnabled))
@@ -31,16 +37,31 @@ namespace Editor
 				{
 					if (ImGui::MenuItem("Create GameObject"))
 					{
-						//// #TODO(Do this better)
-						static int sGenericObjectCount = 0;
-
-						std::string newGameObjectStr = StringUtils::FormatString("GameObject_%i", sGenericObjectCount);
-						RZE::GetActiveScene().AddGameObject(newGameObjectStr);
-
-						++sGenericObjectCount;
+						showGameObjectNameBoxForCreate = true;
 					}
-
+					
 					ImGui::EndMenu();
+				}
+
+				if (showGameObjectNameBoxForCreate)
+				{
+					ImGuiWindowFlags windowFlags = 
+						ImGuiWindowFlags_AlwaysAutoResize
+					| ImGuiWindowFlags_NoResize
+					| ImGuiWindowFlags_NoMove
+					| ImGuiWindowFlags_NoCollapse;
+					// @TODO Figure out why GetCursorScreenPos() doesnt give the actual position (it gets drawn at the top)
+					ImGui::SetNextWindowPos(ImGui::GetCursorScreenPos());
+					if (ImGui::Begin("GameObjectNameCreate", &showGameObjectNameBoxForCreate, windowFlags))
+					{
+						char name[k_maxGameObjectNameSize] = { 0 };
+						if (ImGui::InputText("GameObject Name", name, k_maxGameObjectNameSize, ImGuiInputTextFlags_EnterReturnsTrue))
+						{
+							RZE::GetActiveScene().AddGameObject(name);
+							showGameObjectNameBoxForCreate = false;
+						}
+					}
+					ImGui::End();
 				}
 			}
 			
@@ -71,10 +92,9 @@ namespace Editor
 							ImGui::Text(GetSelectedGameObject()->GetName().c_str());
 							if (ImGui::BeginPopupContextItem("Rename"))
 							{
-								constexpr size_t k_maxNameSize = 64;
-								char name[k_maxNameSize];
-								memcpy(name, GetSelectedGameObject()->GetName().c_str(), k_maxNameSize);
-								if (ImGui::InputText("##gameObject_rename", name, k_maxNameSize, ImGuiInputTextFlags_EnterReturnsTrue))
+								char name[k_maxGameObjectNameSize];
+								memcpy(name, GetSelectedGameObject()->GetName().c_str(), k_maxGameObjectNameSize);
+								if (ImGui::InputText("##gameObject_rename", name, k_maxGameObjectNameSize, ImGuiInputTextFlags_EnterReturnsTrue))
 								{
 									GetSelectedGameObject()->SetName(name);
 								}
