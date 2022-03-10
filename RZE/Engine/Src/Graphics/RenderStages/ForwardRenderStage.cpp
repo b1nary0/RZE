@@ -58,7 +58,7 @@ void ForwardRenderStage::Render(const RenderStageData& renderData)
 	const Rendering::RenderTargetTexture& renderTarget = RZE::GetRenderEngine().GetRenderTarget();
 
 	Rendering::Renderer::SetRenderTarget(&renderTarget);
-	Rendering::Renderer::SetClearColour(renderTarget.GetTargetPlatformObject(), Vector4D(0.5f, 0.5f, 1.0f, 1.0f));
+	Rendering::Renderer::SetClearColour(renderTarget.GetTargetPlatformObject(), Vector4D(0.25f, 0.25f, 0.35f, 1.0f));
 	Rendering::Renderer::ClearDepthStencilBuffer(renderTarget.GetDepthTexturePlatformObject());
 
 	Rendering::Renderer::SetVertexShader(m_vertexShader->GetPlatformObject());
