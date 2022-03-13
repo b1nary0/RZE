@@ -209,14 +209,16 @@ namespace Rendering
 		}
 	}
 
+	const FLOAT s_backBufferClearColour[4] = { 0.25f, 0.45f, 0.65f, 1.0f };
 	void Renderer::SetRenderTargetBackBuffer()
 	{
 		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
-		deviceContext.OMSetRenderTargets(1, &m_device->mRenderTargetView, m_device->mDepthStencilView);
+		deviceContext.ClearRenderTargetView(m_device->mRenderTargetView, s_backBufferClearColour);
 		deviceContext.ClearDepthStencilView(m_device->mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+		deviceContext.OMSetRenderTargets(1, &m_device->mRenderTargetView, m_device->mDepthStencilView);
 	}
 
-	void Renderer::SetClearColour(const RenderTargetHandle& renderTarget, const Vector4D& colour)
+	void Renderer::ClearRenderTarget(const RenderTargetHandle& renderTarget, const Vector4D& colour)
 	{
 		std::shared_ptr<ITextureBuffer2D> texture = renderTarget.m_buffer;
 		DX11TextureBuffer2D* texturePtr = static_cast<DX11TextureBuffer2D*>(texture.get());

@@ -80,7 +80,7 @@ namespace Rendering
 		static void SetRenderTarget(const RenderTargetTexture* renderTarget);
 		static void SetRenderTargetBackBuffer();
 
-		static void SetClearColour(const RenderTargetHandle& renderTarget, const Vector4D& colour);
+		static void ClearRenderTarget(const RenderTargetHandle& renderTarget, const Vector4D& colour);
 
 		static void SetViewport(const ViewportParams& viewportParams);
 		
