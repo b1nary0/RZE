@@ -209,9 +209,10 @@ namespace Rendering
 		}
 	}
 
-	const FLOAT s_backBufferClearColour[4] = { 0.25f, 0.45f, 0.65f, 1.0f };
 	void Renderer::SetRenderTargetBackBuffer()
 	{
+		constexpr FLOAT s_backBufferClearColour[4] = { 0.25f, 0.45f, 0.65f, 1.0f };
+
 		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 		deviceContext.ClearRenderTargetView(m_device->mRenderTargetView, s_backBufferClearColour);
 		deviceContext.ClearDepthStencilView(m_device->mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
