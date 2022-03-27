@@ -48,6 +48,7 @@ GameObjectComponentBase* GameObject::AddComponentByID(GameObjectComponentID id)
 	{
 		GameObjectComponentBase* component = GameObjectComponentRegistry::CreateComponentByID(id);
 		component->SetOwner(this);
+		component->Initialize();
 		m_components.push_back(component);
 		return component;
 	}
