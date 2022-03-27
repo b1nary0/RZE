@@ -4,7 +4,8 @@
 #include <Rendering/Renderer.h>
 #include <Rendering/Driver/GFXBuffer.h>
 
-#include <STB/stb_image.cpp>
+#define STB_IMAGE_IMPLEMENTATION
+#include <STB/stb_image.h>
 
 Texture2D::Texture2D()
 	: IResource()
