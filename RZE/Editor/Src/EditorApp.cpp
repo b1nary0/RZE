@@ -23,7 +23,7 @@
 
 namespace
 {
-	constexpr char kSceneFileToLoadHack[] = { "Assets/Scenes/SpaceHangar.scene" };
+	constexpr char kSceneFileToLoadHack[] = { "Assets/Scenes/RenderTest.scene" };
 
 	// #TODO
 	// Uber temp struct here to represent editor state.

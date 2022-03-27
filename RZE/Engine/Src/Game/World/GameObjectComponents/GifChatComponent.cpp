@@ -1,0 +1,294 @@
+#include <StdAfx.h>
+#include <Game/World/GameObjectComponents/GifChatComponent.h>
+
+#include <Game/World/GameObject/GameObject.h>
+#include <Game/World/GameObjectComponents/TransformComponent.h>
+
+#include <Graphics/Material.h>
+#include <Graphics/Shader.h>
+#include <Graphics/RenderEngine.h>
+#include <Graphics/Texture2D.h>
+
+
+#define STB_IMAGE_IMPLEMENTATION
+#include <STB/stb_image.h>
+
+#include <Game/StaticMeshResource.h>
+
+STBIDEF unsigned char* stbi_xload(stbi__context* s, int* x, int* y, int* frames, int** delays);
+STBIDEF unsigned char* stbi_xload_mem(unsigned char* buffer, int len, int* x, int* y, int* frames, int** delays);
+STBIDEF unsigned char* stbi_xload_file(char const* filename, int* x, int* y, int* frames, int** delays);
+
+namespace
+{
+	std::string GetTextureTypeStr(MaterialInstance::TextureSlot textureSlot)
+	{
+		switch (textureSlot)
+		{
+		case MaterialInstance::TEXTURE_SLOT_DIFFUSE:
+			return "Diffuse";
+		case MaterialInstance::TEXTURE_SLOT_SPECULAR:
+			return "Specular";
+		case MaterialInstance::TEXTURE_SLOT_NORMAL:
+			return "Normal";
+		default:
+			return "None";
+		}
+	}
+}
+
+struct GifData
+{
+	unsigned char* m_data;
+};
+
+GifChatComponent::GifChatComponent()
+{
+}
+
+GifChatComponent::~GifChatComponent()
+{
+}
+
+void GifChatComponent::Initialize()
+{
+	m_gifData = std::make_unique<GifData>();
+
+	Load(FilePath("Assets/2D/GIFs/friends-joey-tribbiani.gif"));
+
+	CreateRenderObject();
+}
+
+void GifChatComponent::OnAddToScene()
+{
+}
+
+void GifChatComponent::OnRemoveFromScene()
+{
+}
+
+void GifChatComponent::Update()
+{
+	static float elapsed = 0.0f;
+	elapsed += static_cast<float>(RZE_Application::RZE().GetDeltaTime());
+
+	if (elapsed * 1000 >= 100.0f)
+	{
+		elapsed = 0;
+
+		if (m_currentDisplayingFrame < m_totalFrames - 1)
+		{
+			++m_currentDisplayingFrame;
+			m_meshGeometry.GetSubMeshes()[0].GetMaterial()->SetTexture(0, m_frames[m_currentDisplayingFrame]);
+		}
+		else
+		{
+			m_currentDisplayingFrame = 0;
+		}
+	}
+
+	if (m_meshRenderObject != nullptr)
+	{
+		const TransformComponent* const transformComponent = GetOwner()->GetComponent<TransformComponent>();
+		AssertMsg(transformComponent != nullptr, "No TransformComponent found. Mesh creation is useless without a location in 3D space.");
+
+		// @TODO Look into ways to avoid this
+		m_meshRenderObject->SetTransform(transformComponent->GetAsMat4x4());
+	}
+}
+
+void GifChatComponent::OnEditorInspect()
+{
+	for (const auto& subMesh : m_meshGeometry.GetSubMeshes())
+	{
+		if (ImGui::TreeNode(&subMesh, subMesh.GetName().c_str()))
+		{
+			const std::shared_ptr<const MaterialInstance>& material = subMesh.GetMaterial();
+			//
+			// Material Information
+			//
+			if (ImGui::TreeNode(&material, "%s %s", "Material:", material->GetName().c_str()))
+			{
+				const PixelShader* const shader = RZE::GetResourceHandler().GetResource<PixelShader>(material->GetShaderResource());
+				AssertNotNull(shader);
+
+				ImGui::Separator();
+
+				ImGui::TextColored(ImVec4(0.65f, 0.65f, 1.0f, 1.0f), "[Shader] ");
+				ImGui::Text(shader->GetName().c_str());
+
+				ImGui::NewLine();
+
+				//
+				// Textures
+				//
+				ImGui::TextColored(ImVec4(0.65f, 0.65f, 1.0f, 1.0f), "[Textures]");
+				for (U8 textureSlot = 0; textureSlot < MaterialInstance::TEXTURE_SLOT_COUNT; ++textureSlot)
+				{
+					ResourceHandle textureResource = material->GetTexture(textureSlot);
+
+					if (textureResource.IsValid())
+					{
+						const Texture2D* const textureData = RZE::GetResourceHandler().GetResource<Texture2D>(textureResource);
+						AssertNotNull(textureData);
+
+						const std::string textureTypeStr = GetTextureTypeStr(static_cast<MaterialInstance::TextureSlot>(textureSlot));
+						if (ImGui::CollapsingHeader(textureTypeStr.c_str()))
+						{
+							ImGui::Text(textureData->GetFilepath().GetRelativePath().c_str());
+							ImGui::Image(textureData->GetPlatformObject().GetTextureData(), ImVec2(textureData->GetDimensions().X(), textureData->GetDimensions().Y()));
+						}
+					}
+				}
+				ImGui::TreePop();
+			}
+
+			ImGui::TreePop();
+		}
+	}
+}
+
+void GifChatComponent::Load(const FilePath& fp)
+{
+	int x = 0;
+	int y = 0;
+	int comp = 0;
+	int* delays = nullptr;
+	m_gifData->m_data = stbi_xload_file(fp.GetAbsolutePath().c_str(), &x, &y, &m_totalFrames, &delays);
+	AssertNotNull(m_gifData->m_data);
+	
+	const size_t frameSizeBytes = (x * y) * 4;
+
+	for (size_t frame = 0; frame < m_totalFrames; ++frame)
+	{
+		Texture2D* frameTexture = new Texture2D();
+		frameTexture->Load(m_gifData->m_data + frame * frameSizeBytes, x, y);
+		
+		m_frames.push_back(RZE::GetResourceHandler().Make("FIRST_FRAME_GIF_" + std::to_string(frame), frameTexture));
+		AssertExpr(m_frames.back().IsValid());
+	}
+
+	GenerateMesh();
+
+	ResourceHandle shader = 
+		RZE::GetResourceHandler().LoadResource<PixelShader>(FilePath("Assets/Shaders/Pixel_NewRenderer_DiffuseOnly.hlsl"), "Pixel_NewRenderer_DiffuseOnly");
+	AssertExpr(shader.IsValid());
+
+	std::shared_ptr<MaterialInstance> material = std::make_shared<MaterialInstance>("GifMaterial");
+	material->SetTexture(0, m_frames[m_currentDisplayingFrame]);
+	material->SetShaderTechnique(shader);
+
+	// For purposes, always one mesh - a quad
+	MeshGeometry& geo = m_meshGeometry.GetSubMeshes()[0];
+	geo.SetMaterial(material);
+}
+
+void GifChatComponent::CreateRenderObject()
+{
+	const TransformComponent* transformComponent = GetOwner()->GetComponent<TransformComponent>();
+
+	m_meshRenderObject = RZE::GetRenderEngine().CreateRenderObject(m_meshGeometry);
+	m_meshRenderObject->SetTransform(transformComponent->GetAsMat4x4());
+}
+
+void GifChatComponent::GenerateMesh()
+{
+	StaticMesh mesh;
+
+	std::vector<MeshGeometry> geometryList;
+	geometryList.emplace_back();
+	MeshGeometry& geo = geometryList.back();
+	geo.SetName("GIF_RENDER_MESH");
+
+	MeshVertex topLeft;
+	topLeft.Position = Vector3D(-0.5f, 0.5f, 0.0f);
+	topLeft.UVData = Vector2D(0.0f, 0.0f);
+
+	MeshVertex topRight;
+	topRight.Position = Vector3D(0.5f, 0.5f, 0.0f);
+	topRight.UVData = Vector2D(1.0f, 0.0f);
+
+	MeshVertex bottomLeft;
+	bottomLeft.Position = Vector3D(-0.5f, -0.5f, 0.0f);
+	bottomLeft.UVData = Vector2D(0.0f, 1.0f);
+
+	MeshVertex bottomRight;
+	bottomRight.Position = Vector3D(0.5f, -0.5f, 0.0f);
+	bottomRight.UVData = Vector2D(1.0f, 1.0f);
+
+	Vector3D top = topRight.Position - topLeft.Position;
+	Vector3D left = topRight.Position - bottomLeft.Position;
+
+	Vector3D planeNormal = top.Cross(left);
+
+	topLeft.Normal = planeNormal;
+	topRight.Normal = planeNormal;
+	bottomLeft.Normal = planeNormal;
+	bottomRight.Normal = planeNormal;
+
+	geo.AddVertex(topLeft);  
+	geo.AddVertex(topRight); 
+	geo.AddVertex(bottomLeft);
+	geo.AddVertex(bottomRight);
+
+	geo.AddIndex(0);
+	geo.AddIndex(1);
+	geo.AddIndex(2);
+	geo.AddIndex(1);
+	geo.AddIndex(3);
+	geo.AddIndex(2);
+
+	
+	geo.AllocateData();
+
+	mesh.Initialize(std::move(geometryList));
+
+	m_meshGeometry = std::move(mesh);
+}
+
+//
+// STBI STUFF REMOVE SOON
+//
+STBIDEF unsigned char* stbi_xload_mem(unsigned char* buffer, int len, int* x, int* y, int* frames, int** delays)
+{
+	stbi__context s;
+	stbi__start_mem(&s, buffer, len);
+	return stbi_xload(&s, x, y, frames, delays);
+}
+
+STBIDEF unsigned char* stbi_xload_file(char const* filename, int* x, int* y, int* frames, int** delays)
+{
+	FILE* f;
+	stbi__context s;
+	unsigned char* result = 0;
+
+	if (!(f = stbi__fopen(filename, "rb")))
+		return stbi__errpuc("can't fopen", "Unable to open file");
+
+	stbi__start_file(&s, f);
+	result = stbi_xload(&s, x, y, frames, delays);
+	fclose(f);
+
+	return result;
+}
+
+STBIDEF unsigned char* stbi_xload(stbi__context* s, int* x, int* y, int* frames, int** delays)
+{
+	int comp;
+	unsigned char* result = 0;
+
+	if (stbi__gif_test(s))
+		return static_cast<unsigned char*>(stbi__load_gif_main(s, delays, x, y, frames, &comp, 4));
+
+	stbi__result_info ri;
+	result = static_cast<unsigned char*>(stbi__load_main(s, x, y, &comp, 4, &ri, 8));
+	*frames = !!result;
+
+	if (ri.bits_per_channel != 8) {
+		STBI_ASSERT(ri.bits_per_channel == 16);
+		result = stbi__convert_16_to_8((stbi__uint16*)result, *x, *y, 4);
+		ri.bits_per_channel = 8;
+	}
+
+	return result;
+}
