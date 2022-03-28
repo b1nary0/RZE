@@ -77,6 +77,10 @@ void GifChatComponent::OnAddToScene()
 
 void GifChatComponent::OnRemoveFromScene()
 {
+	if (m_meshRenderObject != nullptr)
+	{
+		RZE::GetRenderEngine().DestroyRenderObject(m_meshRenderObject);
+	}
 }
 
 void GifChatComponent::Update()
