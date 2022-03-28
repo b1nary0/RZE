@@ -21,6 +21,18 @@ STBIDEF unsigned char* stbi_xload_file(char const* filename, int* x, int* y, int
 
 namespace
 {
+	enum GifFilepathIndex
+	{
+		JOEY_WINK = 0,
+		PULP_FICTION_TRAVOLTA
+	};
+
+	FilePath gifFilepaths[] =
+	{
+		FilePath("Assets/2D/GIFs/friends-joey-tribbiani.gif"),
+		FilePath("Assets/2D/GIFs/pulp_fiction_travolta.gif")
+	};
+
 	std::string GetTextureTypeStr(MaterialInstance::TextureSlot textureSlot)
 	{
 		switch (textureSlot)
@@ -54,7 +66,7 @@ void GifChatComponent::Initialize()
 {
 	m_gifData = std::make_unique<GifData>();
 
-	Load(FilePath("Assets/2D/GIFs/friends-joey-tribbiani.gif"));
+	Load(gifFilepaths[GifFilepathIndex::PULP_FICTION_TRAVOLTA]);
 
 	CreateRenderObject();
 }
@@ -72,19 +84,19 @@ void GifChatComponent::Update()
 	static float elapsed = 0.0f;
 	elapsed += static_cast<float>(RZE_Application::RZE().GetDeltaTime());
 
-	if (elapsed * 1000 >= 100.0f)
+	if (m_currentDisplayingFrame < m_totalFrames)
 	{
-		elapsed = 0;
-
-		if (m_currentDisplayingFrame < m_totalFrames - 1)
+		if (elapsed * 1000 >= static_cast<float>(m_frameDelays[m_currentDisplayingFrame]))
 		{
-			++m_currentDisplayingFrame;
 			m_meshGeometry.GetSubMeshes()[0].GetMaterial()->SetTexture(0, m_frames[m_currentDisplayingFrame]);
+			++m_currentDisplayingFrame;
+
+			elapsed = 0;
 		}
-		else
-		{
-			m_currentDisplayingFrame = 0;
-		}
+	}
+	else
+	{
+		m_currentDisplayingFrame = 0;
 	}
 
 	if (m_meshRenderObject != nullptr)
@@ -148,6 +160,19 @@ void GifChatComponent::OnEditorInspect()
 	}
 }
 
+void GifChatComponent::Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer)
+{
+	writer.String("GifChatComponent");
+	writer.StartObject();
+	{
+	}
+	writer.EndObject();
+}
+
+void GifChatComponent::Load(const rapidjson::Value& data)
+{
+}
+
 void GifChatComponent::Load(const FilePath& fp)
 {
 	int x = 0;
@@ -156,13 +181,27 @@ void GifChatComponent::Load(const FilePath& fp)
 	int* delays = nullptr;
 	m_gifData->m_data = stbi_xload_file(fp.GetAbsolutePath().c_str(), &x, &y, &m_totalFrames, &delays);
 	AssertNotNull(m_gifData->m_data);
-	
-	const size_t frameSizeBytes = (x * y) * 4;
 
-	for (size_t frame = 0; frame < m_totalFrames; ++frame)
+	// Store array data in vector instead of holding raw ptr to data
+	m_frameDelays.reserve(m_totalFrames);
+	for (int frameIdx = 0; frameIdx < m_totalFrames; ++frameIdx)
+	{
+		m_frameDelays.push_back(delays[frameIdx]);
+	}
+
+	const size_t frameSizeBytes = (x * y) * 4;
+	for (int frame = 0; frame < m_totalFrames; ++frame)
 	{
 		Texture2D* frameTexture = new Texture2D();
-		frameTexture->Load(m_gifData->m_data + frame * frameSizeBytes, x, y);
+
+		// Copy the texture data into a buffer to pass to Texture2D to take ownership of
+		// this is necessary atm because there is no "Instance" layer of resources - just the immutable
+		// resources themselves from ResourceHandler. Since this hacky meme implementation needs to circumvent that
+		// instead of writing a whole new architecture layer, we can't be deleting memory (as will happen when the resource
+		// releases) which we don't own.
+		U8* textureBuffer = new U8[frameSizeBytes];
+		memcpy(textureBuffer, m_gifData->m_data + frame * frameSizeBytes, frameSizeBytes);
+		frameTexture->Load(textureBuffer, x, y);
 		
 		m_frames.push_back(RZE::GetResourceHandler().Make("FIRST_FRAME_GIF_" + std::to_string(frame), frameTexture));
 		AssertExpr(m_frames.back().IsValid());

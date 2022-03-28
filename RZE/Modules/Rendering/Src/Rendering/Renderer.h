@@ -64,7 +64,7 @@ namespace Rendering
 		static VertexBufferHandle CreateVertexBuffer(void* data, size_t dataTypeSize, size_t count, U32 stride);
 		static IndexBufferHandle CreateIndexBuffer(void* data, size_t dataTypeSize, size_t count);
 		static ConstantBufferHandle CreateConstantBuffer(void* data, size_t dataTypeSize, size_t count);
-		static TextureBuffer2DHandle CreateTextureBuffer2D(void* data, const GFXTextureBufferParams& params);
+		static TextureBuffer2DHandle CreateTextureBuffer2D(const void* data, const GFXTextureBufferParams& params);
 		
 		static VertexShaderHandle CreateVertexShader(const FilePath& filepath, const ShaderInputLayout& inputLayout);
 		static PixelShaderHandle CreatePixelShader(const FilePath& filepath);

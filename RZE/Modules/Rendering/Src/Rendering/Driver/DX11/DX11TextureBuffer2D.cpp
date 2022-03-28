@@ -9,7 +9,7 @@
 namespace Rendering
 {
 
-	void DX11TextureBuffer2D::Allocate(void* data, const GFXTextureBufferParams& params)
+	void DX11TextureBuffer2D::Allocate(const void* data, const GFXTextureBufferParams& params)
 	{
 		D3D11_SAMPLER_DESC sampDesc;
 		ZeroMemory(&sampDesc, sizeof(sampDesc));

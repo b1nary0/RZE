@@ -127,7 +127,7 @@ namespace Rendering
 		return ConstantBufferHandle(constantBuffer);
 	}
 
-	TextureBuffer2DHandle Renderer::CreateTextureBuffer2D(void* data, const GFXTextureBufferParams& params)
+	TextureBuffer2DHandle Renderer::CreateTextureBuffer2D(const void* data, const GFXTextureBufferParams& params)
 	{
 		std::shared_ptr<DX11TextureBuffer2D> textureBuffer = std::make_shared<DX11TextureBuffer2D>();
 		textureBuffer->SetDevice(m_device.get());

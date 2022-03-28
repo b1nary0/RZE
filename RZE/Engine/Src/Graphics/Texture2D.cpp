@@ -4,7 +4,6 @@
 #include <Rendering/Renderer.h>
 #include <Rendering/Driver/GFXBuffer.h>
 
-#define STB_IMAGE_IMPLEMENTATION
 #include <STB/stb_image.h>
 
 Texture2D::Texture2D()
@@ -33,6 +32,26 @@ bool Texture2D::Load(const FilePath& filePath)
 	}
 
 	// @TODO Not sure how happy I am with this being here
+	Rendering::GFXTextureBufferParams params = { 0 };
+	params.bIsRenderTarget = true;
+	params.bIsShaderResource = true;
+	params.Height = m_height;
+	params.Width = m_width;
+	params.MipLevels = 0;
+	params.MostDetailedMip = 0;
+	params.SampleCount = 1;
+	params.SampleQuality = 0;
+	m_GPUResource = Rendering::Renderer::CreateTextureBuffer2D(m_data, params);
+
+	return m_data != nullptr;
+}
+
+bool Texture2D::Load(const U8* buffer, int width, int height)
+{
+	m_data = buffer;
+	m_width = width;
+	m_height = height;
+
 	Rendering::GFXTextureBufferParams params = { 0 };
 	params.bIsRenderTarget = true;
 	params.bIsShaderResource = true;

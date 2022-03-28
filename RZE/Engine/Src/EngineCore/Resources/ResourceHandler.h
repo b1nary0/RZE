@@ -84,10 +84,14 @@ public:
 	template <class ResourceT>
 	const ResourceT* GetResource(const ResourceHandle& resourceHandle);
 
+	// @TODO This should be removed when resource instance layer goes in.
+	// Do not rely on this function
+	ResourceHandle Make(const std::string& resourceID, IResource* resource);
+
 private:
 	template <class ResourceT, class... Args>
 	IResource* CreateAndLoadResource(const FilePath& resourcePath, Args&&... args);
-
+	
 	// #TODO Turn the resource IDs into hashes/guids
 	std::unordered_map<std::string, ResourceSource> mResourceTable;
 };
@@ -104,7 +108,7 @@ public:
 	ResourceHandle(const ResourceHandle& rhs);
 	ResourceHandle(ResourceHandle&& rhs);
 	~ResourceHandle();
-
+	
 	static ResourceHandle EmptyHandle() { return ResourceHandle(); }
 
 	bool IsValid() const;

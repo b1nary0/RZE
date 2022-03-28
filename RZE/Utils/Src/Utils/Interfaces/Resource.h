@@ -11,5 +11,7 @@ public:
 	virtual bool Load(const FilePath& filePath) = 0;
 	virtual void Release() = 0;
 
+	virtual bool Load(const U8* buffer, int width, int height) { return false; }
+
 protected:
 };

@@ -81,7 +81,7 @@ namespace Rendering
 		ITextureBuffer2D() = default;
 		virtual ~ITextureBuffer2D() = default;
 
-		virtual void Allocate(void* data, const GFXTextureBufferParams& params) = 0;
+		virtual void Allocate(const void* data, const GFXTextureBufferParams& params) = 0;
 		virtual void Release() = 0;
 
 		virtual void SetActive(U32 textureSlot) = 0;

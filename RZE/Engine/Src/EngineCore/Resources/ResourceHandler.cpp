@@ -68,6 +68,32 @@ void ResourceHandler::ReleaseResource(ResourceHandle& resourceHandle)
 	}
 }
 
+ResourceHandle ResourceHandler::Make(const std::string& resourceID, IResource* resource)
+{
+	std::string resourceKey = resourceID;
+
+	auto iter = mResourceTable.find(resourceKey);
+	if (iter == mResourceTable.end())
+	{
+		LOG_CONSOLE_ARGS("Making resource [%s]", resourceKey.c_str());
+		if (resource)
+		{
+			ResourceSource resourceSource(resource);
+			resourceSource.m_resourcePath = FilePath(resourceID);
+
+			mResourceTable[resourceKey] = resourceSource;
+			return ResourceHandle(resourceKey, &mResourceTable[resourceKey], this);
+		}
+		else
+		{
+			return ResourceHandle::EmptyHandle();
+		}
+	}
+
+	ResourceSource& resourceSource = (*iter).second;
+	return ResourceHandle(resourceKey, &resourceSource, this);
+}
+
 ResourceHandle::ResourceHandle()
 	: mResourceID("NO_RESOURCE")
 	, mResourceSource(nullptr)

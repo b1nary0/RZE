@@ -27,6 +27,9 @@ public:
 
 	void OnEditorInspect() override;
 
+	void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override;
+	void Load(const rapidjson::Value& data) override;
+
 public:
 	void Load(const FilePath& fp);
 
@@ -37,6 +40,7 @@ private:
 private:
 	int m_totalFrames;
 	int m_currentDisplayingFrame = 0;
+	std::vector<int> m_frameDelays;
 
 	std::unique_ptr<GifData> m_gifData;
 	std::vector<ResourceHandle> m_frames;
