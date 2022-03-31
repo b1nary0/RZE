@@ -181,7 +181,6 @@ void GifChatComponent::Load(const FilePath& fp)
 {
 	int x = 0;
 	int y = 0;
-	int comp = 0;
 	int* delays = nullptr;
 	m_gifData->m_data = stbi_xload_file(fp.GetAbsolutePath().c_str(), &x, &y, &m_totalFrames, &delays);
 	AssertNotNull(m_gifData->m_data);
