@@ -2,14 +2,19 @@
 
 #include <Utils/Conversions.h>
 
+#include <Windows.h>
+
 namespace Conversions
 {
 	std::wstring StringToWString(const std::string& string)
 	{
-		// see: http://stackoverflow.com/questions/2573834/c-convert-string-or-char-to-wstring-or-wchar-t
+		// @NOTE passing 0 as last param returns size needed for conversion from mbstr to wstr
+		const int wstringSize = MultiByteToWideChar(CP_UTF8, 0, string.c_str(), -1, nullptr, 0);
+		std::wstring wstr;
+		wstr.reserve(wstringSize);
 
-		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-		return converter.from_bytes(string);
+		MultiByteToWideChar(CP_UTF8, 0, string.c_str(), -1, &wstr[0], wstringSize);
+		return wstr;
 	}
 
 	int IntFromString(const std::string& string)
