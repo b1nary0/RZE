@@ -244,7 +244,7 @@ namespace Editor
 				if (ImGui::MenuItem("Build Game..."))
 				{
 					DebugServices::Get().Trace(LogChannel::Build, "Building Game...");
-					Threading::Job::Task buildTask = [this]()
+					Threading::Job::Task buildTask([this]()
 					{
 						char buffer[2048];
 						FILE* pipe = nullptr;
@@ -254,12 +254,12 @@ namespace Editor
 						{
 							Log(buffer);
 						}
-					};
+					});
 					Threading::JobScheduler::Get().PushJob(buildTask);
 				}
 				if (ImGui::MenuItem("Launch Game..."))
 				{
-					Threading::Job::Task gameTask = [this]()
+					Threading::Job::Task gameTask([this]()
 					{
 						static FilePath buildGameBat("BuildGame.bat");
 						static FilePath gamePath("_Build\\Debug\\x64\\RZE_Game.exe");
@@ -282,7 +282,7 @@ namespace Editor
 							FILE* pipe = nullptr;
 							pipe = _popen(gamePath.GetAbsolutePath().c_str(), "rt");
 						}
-					};
+					});
 					Threading::JobScheduler::Get().PushJob(gameTask);
 
 				}
