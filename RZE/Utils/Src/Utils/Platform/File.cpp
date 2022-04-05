@@ -4,67 +4,64 @@
 #include <Utils/DebugUtils/Debug.h>
 
 File::File(const std::string& filePath)
-	: mOpenState(EFileOpenMode::Closed)
-	, bIsOpen(false)
+	: m_openState(EFileOpenMode::Closed)
+	, m_isOpen(false)
 {
 	// #TODO
 	// Standardize FilePath in the API
-	mFilePath = FilePath(filePath);
-
-	Read();
+	m_filePath = FilePath(filePath);
 }
 
 File::File(const FilePath& filePath)
 {
-	mFilePath = filePath;
-	Read();
+	m_filePath = filePath;
 }
 
 void File::SetFilePath(const std::string& path)
 {
-	mFilePath = FilePath(path);
+	m_filePath = FilePath(path);
 }
 
 const FilePath& File::GetPath() const
 {
-	return mFilePath;
+	return m_filePath;
 }
 
 bool File::Open(EFileOpenMode::Value fileOpenMode)
 {
-	if (bIsOpen)
+	if (m_isOpen)
 	{
 		Close();
 	}
 
 	if (IsValid())
 	{
-		mFileStream.open(mFilePath.GetAbsolutePath().c_str(), fileOpenMode);
-
-		bIsOpen = mFileStream.is_open();
-		if (!bIsOpen)
+		m_fileStream.open(m_filePath.GetAbsolutePath().c_str(), fileOpenMode);
+		
+		m_isOpen = m_fileStream.is_open();
+		if (!m_isOpen)
 		{
 			// #TODO Log error
-			LOG_CONSOLE_ARGS("File with path [%s] failed to open.", mFilePath.GetRelativePath().c_str());
+			LOG_CONSOLE_ARGS("File with path [%s] failed to open.", m_filePath.GetRelativePath().c_str());
 			return false;
 		}
 
-		mOpenState = fileOpenMode;
+		m_openState = fileOpenMode;
 	}
 
-	return bIsOpen;
+	return m_isOpen;
 }
 
 void File::Close()
 {
-	if (bIsOpen)
+	if (m_isOpen)
 	{
-		mFileStream.close();
-		bIsOpen = mFileStream.is_open();
+		m_fileStream.close();
+		m_isOpen = m_fileStream.is_open();
 
-		if (!bIsOpen)
+		if (!m_isOpen)
 		{
-			mOpenState = EFileOpenMode::Value::Closed;
+			m_openState = EFileOpenMode::Value::Closed;
 		}
 	}
 }
@@ -73,14 +70,14 @@ bool File::Read()
 {
 	if (IsValid())
 	{
-		mData.clear();
+		m_data.clear();
 
 		Open(EFileOpenMode::Value::Read);
-		if (bIsOpen)
+		if (m_isOpen)
 		{
 			std::stringstream stringStream;
-			stringStream << mFileStream.rdbuf();
-			mData = stringStream.str();
+			stringStream << m_fileStream.rdbuf();
+			m_data = stringStream.str();
 			Close();
 		}
 		else
@@ -89,19 +86,19 @@ bool File::Read()
 		}
 	}
 
-	return bIsOpen;
+	return m_isOpen;
 }
 
 bool File::IsValid() const
 {
 	// #FIXME - We should probably do some more checks on the string itself to 
 	//			ensure that it's an actual filepath, but for now this is fine.
-	return mFilePath.IsValid() /*&& !Empty()*/;
+	return m_filePath.IsValid() /*&& !Empty()*/;
 }
 
 bool File::Empty() const
 {
-	return mData.empty();
+	return m_data.empty();
 }
 
 bool File::Overwrite()
@@ -110,7 +107,7 @@ bool File::Overwrite()
 
 	if (IsValid())
 	{
-		if (bIsOpen)
+		if (m_isOpen)
 		{
 			Close();
 		}
@@ -128,5 +125,5 @@ bool File::Overwrite()
 
 const std::string& File::Content()
 {
-	return mData;
+	return m_data;
 }

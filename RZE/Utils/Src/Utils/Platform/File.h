@@ -53,16 +53,16 @@ public:
 	{
 		if (IsValid())
 		{
-			if (bIsOpen)
+			if (m_isOpen)
 			{
 				Close();
 			}
 
 			Open(EFileOpenMode::Write);
 
-			if (bIsOpen)
+			if (m_isOpen)
 			{
-				mFileStream << data;
+				m_fileStream << data;
 				Close();
 			}
 			else
@@ -80,9 +80,9 @@ public:
 	{
 		if (IsValid())
 		{
-			if (bIsOpen)
+			if (m_isOpen)
 			{
-				mFileStream << data;
+				m_fileStream << data;
 			}
 			else
 			{
@@ -104,11 +104,11 @@ public:
 
 private:
 
-	EFileOpenMode::Value mOpenState;
-	std::ofstream mFileStream;
+	EFileOpenMode::Value m_openState;
+	std::ofstream m_fileStream;
 
-	FilePath mFilePath;
-	std::string mData;
+	FilePath m_filePath;
+	std::string m_data;
 
-	bool bIsOpen;
+	bool m_isOpen;
 };

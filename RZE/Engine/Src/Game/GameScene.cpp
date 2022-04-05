@@ -72,6 +72,7 @@ void GameScene::Load(FilePath filePath)
 
 	File sceneFile(mCurrentScenePath);
 	AssertExpr(sceneFile.IsValid());
+	sceneFile.Read();
 	sceneFile.Close();
 
 	rapidjson::Document sceneDoc;
