@@ -440,6 +440,7 @@ workspace "RZE"
 	
 	kind "ConsoleApp"
 	language "C++"
+	cppdialect "C++17"
 	targetdir (LibDir)
 	targetname "RZE_Editor"
 
