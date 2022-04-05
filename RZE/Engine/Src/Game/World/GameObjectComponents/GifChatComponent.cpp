@@ -238,8 +238,7 @@ void GifChatComponent::GenerateMesh()
 	StaticMesh mesh;
 
 	std::vector<MeshGeometry> geometryList;
-	geometryList.emplace_back();
-	MeshGeometry& geo = geometryList.back();
+	MeshGeometry& geo = geometryList.emplace_back();
 	geo.SetName("GIF_RENDER_MESH");
 
 	MeshVertex topLeft;

@@ -65,9 +65,8 @@ void InputHandler::BindAction(Int32 keyCode, EButtonState::T buttonState, KeyAct
 void InputHandler::BindAxis(EAxisBinding::T bindingType, EAxisType::T axisType, Functor<void, const Vector3D&, Int32> func)
 {
 	std::vector<AxisBinding>& bindings = mAxisBindings[bindingType];
-	bindings.emplace_back();
-
-	AxisBinding& binding = bindings.back();
+	
+	AxisBinding& binding = bindings.emplace_back();
 	binding.AxisType = axisType;
 	binding.BindingType = bindingType;
 	binding.Func = func;

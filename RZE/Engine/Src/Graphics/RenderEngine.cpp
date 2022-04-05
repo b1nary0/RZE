@@ -76,8 +76,8 @@ std::shared_ptr<RenderObject> RenderEngine::CreateRenderObject(const StaticMesh&
 {
 	OPTICK_EVENT();
 
-	m_renderObjects.emplace_back(std::make_shared<RenderObject>());
-	m_renderObjects.back()->SetStaticMesh(staticMesh);
+	std::shared_ptr<RenderObject>& renderObjectPtr = m_renderObjects.emplace_back(std::make_shared<RenderObject>());
+	renderObjectPtr->SetStaticMesh(staticMesh);
 
 	return m_renderObjects.back();
 }
@@ -110,8 +110,8 @@ void RenderEngine::DestroyRenderObject(std::shared_ptr<RenderObject>& renderObje
 
 std::shared_ptr<LightObject> RenderEngine::CreateLightObject()
 {
-	m_lightObjects.emplace_back(std::make_shared<LightObject>());
-	m_lightObjects.back()->Initialize();
+	std::shared_ptr<LightObject>& lightObjectPtr = m_lightObjects.emplace_back(std::make_shared<LightObject>());
+	lightObjectPtr->Initialize();
 
 	return m_lightObjects.back();
 }

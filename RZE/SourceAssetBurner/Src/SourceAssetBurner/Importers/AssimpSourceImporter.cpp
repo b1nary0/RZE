@@ -108,9 +108,8 @@ void AssimpSourceImporter::ProcessNode(const aiNode& node, const aiScene& scene)
 	{
 		const unsigned int assimpMeshIdx = node.mMeshes[meshIndex];
 		const aiMesh& assimpMesh = *scene.mMeshes[assimpMeshIdx];
-
-		mMeshes.emplace_back();
-		MeshData& meshData = mMeshes.back();
+		
+		MeshData& meshData = mMeshes.emplace_back();
 
 		if (assimpMesh.mName.length > 0)
 		{

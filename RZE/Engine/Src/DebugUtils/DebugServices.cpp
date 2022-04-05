@@ -14,8 +14,7 @@ DebugServices::DebugServices()
 
 void DebugServices::AddData(const std::string& text, const Vector3D& color)
 {
-	mDataEntries.emplace_back();
-	LogEntry& entry = mDataEntries.back();
+	LogEntry& entry = mDataEntries.emplace_back();;
 
 	entry.Text = text;
 	entry.TextColor = color;
@@ -27,14 +26,13 @@ void DebugServices::Trace(LogChannel channel, const std::string& text)
 	{
 		std::lock_guard<std::mutex> guard(mChannelLookupsMutex);
 
-		mChannelLookups[channelIndex].emplace_back();
-		mChannelLookups[channelIndex].back() = mDataEntries.size();
+		U16& channelLookup = mChannelLookups[channelIndex].emplace_back();
+		channelLookup = mDataEntries.size();
 	}
 	{
 		std::lock_guard<std::mutex> guard(mDataEntriesMutex);
-
-		mDataEntries.emplace_back();
-		LogEntry& entry = mDataEntries.back();
+		
+		LogEntry& entry = mDataEntries.emplace_back();
 
 		entry.Text = text;
 
