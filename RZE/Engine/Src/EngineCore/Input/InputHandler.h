@@ -102,7 +102,7 @@ private:
 
 	struct ActionBinding
 	{
-		char* ActionName;
+		std::string ActionName;
 	};
 
 	struct KeyboardActionBinding : public ActionBinding

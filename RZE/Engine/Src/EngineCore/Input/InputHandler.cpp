@@ -55,7 +55,7 @@ void InputHandler::BindAction(Int32 keyCode, EButtonState::T buttonState, KeyAct
 {
 	KeyboardActionBinding actionBinding;
 	actionBinding.ActionName = "Test";
-	actionBinding.Func = func;
+	actionBinding.Func = std::move(func);
 
 	actionBinding.State = buttonState;
 
@@ -185,7 +185,7 @@ void InputHandler::Reset()
 void InputHandler::RaiseKeyEvent(const InputKey& inputKey)
 {
 	EButtonState::T buttonState = mProxyKeyboardState.GetButtonState(inputKey.GetKeyCode());
-	auto& bindingIt = mKeyboardBindings.find(inputKey.GetKeyCode());
+	auto bindingIt = mKeyboardBindings.find(inputKey.GetKeyCode());
 	if (bindingIt != mKeyboardBindings.end())
 	{
 	 	KeyboardActionBinding& actionBinding = (*bindingIt).second;

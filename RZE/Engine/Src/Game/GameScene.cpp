@@ -84,7 +84,7 @@ void GameScene::Load(FilePath filePath)
 		// Entity
 		//
 		rapidjson::Value& rootVal = root->value;
-		for (auto& object = rootVal.MemberBegin(); object != rootVal.MemberEnd(); ++object)
+		for (auto object = rootVal.MemberBegin(); object != rootVal.MemberEnd(); ++object)
 		{
 			rapidjson::Value& val = object->value;
 			

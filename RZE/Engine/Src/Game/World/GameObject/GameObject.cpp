@@ -104,7 +104,7 @@ void GameObject::Load(rapidjson::Value& data)
 	const GameObjectComponentRegistry::ComponentNameIDMap& componentInfo = GameObjectComponentRegistry::GetAllComponentReflectData();
 
 	// ComponentBegin
-	for (auto& member = data.MemberBegin(); member != data.MemberEnd(); ++member)
+	for (auto member = data.MemberBegin(); member != data.MemberEnd(); ++member)
 	{
 		rapidjson::Value& compVal = member->value;
 		for (auto& dataPair : componentInfo)
