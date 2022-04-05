@@ -321,10 +321,10 @@ namespace Editor
 
 			ImGui::Separator();
 			static int frameCount = 0;
-			static float frametime = 0.0f;
+			static float frametimeMS = 0.0f;
 			if (frameCount > 15)
 			{
-				frametime = static_cast<float>(RZE().GetDeltaTime());
+				frametimeMS = RZE().GetDeltaTimeMS();
 				frameCount = 0;
 			}
 			else
@@ -332,7 +332,7 @@ namespace Editor
 				++frameCount;
 			}
 
-			ImGui::Text("%.1f ms", frametime * 1000.0f);
+			ImGui::Text("%.1f ms", frametimeMS);
 
 			ImGui::EndMainMenuBar();
 		}

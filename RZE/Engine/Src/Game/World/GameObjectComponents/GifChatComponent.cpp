@@ -85,17 +85,17 @@ void GifChatComponent::OnRemoveFromScene()
 
 void GifChatComponent::Update()
 {
-	static float elapsed = 0.0f;
-	elapsed += static_cast<float>(RZE_Application::RZE().GetDeltaTime());
+	static float elapsedMS = 0.0f;
+	elapsedMS += RZE_Application::RZE().GetDeltaTimeMS();
 
 	if (m_currentDisplayingFrame < m_totalFrames)
 	{
-		if (elapsed * 1000 >= static_cast<float>(m_frameDelays[m_currentDisplayingFrame]))
+		if (elapsedMS >= static_cast<float>(m_frameDelays[m_currentDisplayingFrame]))
 		{
 			m_meshGeometry.GetSubMeshes()[0].GetMaterial()->SetTexture(0, m_frames[m_currentDisplayingFrame]);
 			++m_currentDisplayingFrame;
 
-			elapsed = 0;
+			elapsedMS = 0;
 		}
 	}
 	else
