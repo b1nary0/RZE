@@ -38,8 +38,10 @@ bool MeshAssetImporter::Import(const FilePath& filePath)
 
 		MeshVertex* vertexDataArray = reinterpret_cast<MeshVertex*>(vertexData.data());
 
+		const size_t meshVertexBufferSize = vertexData.size() / (sizeof(MeshVertex) / 4);
 		std::vector<MeshVertex> meshVertexArray;
-		meshVertexArray.insert(meshVertexArray.end(), &vertexDataArray[0], &vertexDataArray[vertexData.size() / (sizeof(MeshVertex) / 4)]);
+		meshVertexArray.reserve(meshVertexBufferSize);
+		meshVertexArray.insert(meshVertexArray.end(), &vertexDataArray[0], &vertexDataArray[meshVertexBufferSize]);
 
 		MeshGeometry geo;
 		geo.SetName(meshName);
@@ -69,7 +71,8 @@ bool MeshAssetImporter::Import(const FilePath& filePath)
 				textureSlot++;
 			}
 		}
-		
+
+		// @TODO This needs to be reworked. Should have the shader linked with the material asset?
 		if ((materialData.TextureFlags & MaterialAssetImporter::MaterialData::TEXTUREFLAG_ALL) == MaterialAssetImporter::MaterialData::TEXTUREFLAG_ALL)
 		{
 			FilePath fullShaderPath("Assets/Shaders/Pixel_NewRenderer.hlsl");
