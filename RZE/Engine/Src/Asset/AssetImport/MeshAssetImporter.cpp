@@ -24,6 +24,7 @@ bool MeshAssetImporter::Import(const FilePath& filePath)
 
 	struct MeshAssetFileHeader
 	{
+		// @TODO int AssetVersion;
 		size_t BufSize;
 		size_t MeshCount;
 	};

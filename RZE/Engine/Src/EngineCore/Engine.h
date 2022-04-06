@@ -43,7 +43,7 @@ public:
 	FilePath ShowOpenFilePrompt();
 
 	[[nodiscard]]
-	double GetDeltaTimeElapsed() const { return m_deltaTime; }
+	double GetDeltaTime() const { return m_deltaTime; }
 	[[nodiscard]]
 	float GetDeltaTimeMS() const { return static_cast<float>(m_deltaTime * 1000); }
 	
