@@ -336,10 +336,10 @@ GameScene& RZE_Engine::GetActiveScene()
 	return *m_activeScene;
 }
 
-FilePath RZE_Engine::ShowOpenFilePrompt(const OpenFilePromptParams& params)
+bool RZE_Engine::ShowOpenFilePrompt(const FilePromptParams& params, std::string& chosenPath)
 {
 	AssertNotNull(m_window);
-	return m_window->ShowOpenFilePrompt(params);
+	return m_window->ShowOpenFilePrompt(params, chosenPath);
 }
 
 void RZE_Engine::Log(const std::string& text, const Vector3D& color)

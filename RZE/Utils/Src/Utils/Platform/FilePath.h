@@ -24,6 +24,8 @@ public:
 	FilePath(const std::string& path, const bool isCustomPath);
 	~FilePath();
 
+	static FilePath FromAbsolutePathStr(const std::string& absolutePath);
+
 	const std::string& GetAbsolutePath() const;
 	const std::string& GetRelativePath() const;
 

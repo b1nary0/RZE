@@ -204,22 +204,18 @@ namespace Editor
 				}
 				if (ImGui::MenuItem("Load Scene..."))
 				{
-					OpenFilePromptParams openFileParams =
+					FilePromptParams openFileParams =
 					{
 						"RZE Scene"
 						, "*.scene"
 					};
 
-					FilePath newScenePath = RZE_Application::RZE().ShowOpenFilePrompt(openFileParams);
-					if (newScenePath.IsValid())
+					std::string chosenPath;
+					bool openSuccess = RZE_Application::RZE().ShowOpenFilePrompt(openFileParams, chosenPath);
+					if (openSuccess)
 					{
+						FilePath newScenePath = FilePath::FromAbsolutePathStr(chosenPath);
 						RZE().GetActiveScene().Unload();
-						// #TODO
-						// Having to re-construct a FilePath like this seems weird.
-						// Investigate. 
-						// #NOTE
-						// We should work mostly with relative paths, and resolve to absolute only when dealing with
-						// lower-level clients of the API
 						RZE().GetActiveScene().Load(FilePath(newScenePath.GetRelativePath()));
 						AddFilePathToWindowTitle(newScenePath.GetRelativePath());
 					}
@@ -228,18 +224,16 @@ namespace Editor
 				{
 					if (gEditorState.IsNewScene)
 					{
-						// #TODO
-						// Using ShowOpenFilePrompt() here requires that you create the file
-						// from within the open file prompt. This is a quick way to implement this feature,
-						// but we need to fix this to use a new file prompt.
-						OpenFilePromptParams openFileParams =
+						FilePromptParams promptParams =
 						{
-							"RZE Scene"
-							, "*.scene"
+							"Save Scene", "*.scene"
 						};
-						FilePath newScenePath = RZE_Application::RZE().ShowOpenFilePrompt(openFileParams);
-						if (newScenePath.IsValid())
+
+						std::string chosenPath;
+						bool saveSuccess = GetWindow()->ShowSaveFilePrompt(promptParams, chosenPath);
+						if (saveSuccess)
 						{
+							FilePath newScenePath = FilePath::FromAbsolutePathStr(chosenPath);
 							RZE().GetActiveScene().Save(newScenePath);
 							gEditorState.IsNewScene = false;
 							RunAssetCpy();

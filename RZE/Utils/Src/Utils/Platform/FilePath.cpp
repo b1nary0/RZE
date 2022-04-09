@@ -76,6 +76,20 @@ FilePath::~FilePath()
 {
 }
 
+FilePath FilePath::FromAbsolutePathStr(const std::string& absolutePath)
+{
+	// @TODO having to distinguish between Assets folder and ProjectData needs to be reworked
+	// potentially leveraging the DirectoryContext enum
+	size_t index = absolutePath.find("Assets\\");
+	index = (index != std::string::npos) ? index : absolutePath.find("ProjectData\\");
+	if (index != std::string::npos)
+	{
+		return FilePath(absolutePath.substr(index, absolutePath.size()));
+	}
+
+	return FilePath();
+}
+
 const std::string& FilePath::GetAbsolutePath() const
 {
 	return mAbsolutePath;

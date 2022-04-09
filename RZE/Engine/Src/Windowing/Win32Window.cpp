@@ -376,7 +376,7 @@ void Win32Window::Maximize()
 }
 
 // @TODO pass in some like enum EFileOpenContext or better yet a struct of instructions for the open file prompt
-FilePath Win32Window::ShowOpenFilePrompt(const OpenFilePromptParams& params)
+bool Win32Window::ShowOpenFilePrompt(const FilePromptParams& params, std::string& chosenPath)
 {
 	HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
 		COINIT_DISABLE_OLE1DDE);
@@ -411,14 +411,20 @@ FilePath Win32Window::ShowOpenFilePrompt(const OpenFilePromptParams& params)
 				{
 					PWSTR pszFilePath;
 					hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
-					
-					// Display the file name to the user.
-					if (SUCCEEDED(hr))
-					{
-						MessageBoxW(NULL, pszFilePath, L"File Path", MB_OK);
-						CoTaskMemFree(pszFilePath);
-					}
+
+					constexpr size_t k_maxCharacters = 512;
+
+					char converted[k_maxCharacters];
+					size_t convertedCount = 0;
+					wcstombs_s(&convertedCount, converted, pszFilePath, k_maxCharacters);
+
+					chosenPath = converted;
+
 					pItem->Release();
+					pFileOpen->Release();
+					CoUninitialize();
+
+					return true;
 				}
 			}
 			pFileOpen->Release();
@@ -426,7 +432,61 @@ FilePath Win32Window::ShowOpenFilePrompt(const OpenFilePromptParams& params)
 		CoUninitialize();
 	}
 
-	return FilePath();
+	return false;
+}
+
+bool Win32Window::ShowSaveFilePrompt(const FilePromptParams& params, std::string& chosenPath)
+{
+	HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED |
+		COINIT_DISABLE_OLE1DDE);
+	if (SUCCEEDED(hr))
+	{
+		IFileSaveDialog* pSaveFile;
+
+		// Create the FileOpenDialog object.
+		hr = CoCreateInstance(CLSID_FileSaveDialog, nullptr, CLSCTX_ALL,
+			IID_IFileSaveDialog, reinterpret_cast<void**>(&pSaveFile));
+
+		if (SUCCEEDED(hr))
+		{
+			std::wstring wStrPromptName = Conversions::StringToWString(params.Name);
+			std::wstring wStrTypeFilter = Conversions::StringToWString(params.FiletypeFilter);
+			COMDLG_FILTERSPEC rgSpec[] =
+			{
+				{wStrPromptName.c_str(), wStrTypeFilter.c_str()}
+			};
+
+			pSaveFile->SetFileTypes(1, rgSpec);
+
+			hr = pSaveFile->Show(mOSWindowHandleData.windowHandle);
+			if (SUCCEEDED(hr))
+			{
+				IShellItem* pItem = nullptr;
+				pSaveFile->GetResult(&pItem);
+
+				PWSTR pszFilePath;
+				hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+
+				constexpr size_t k_maxCharacters = 512;
+
+				char converted[k_maxCharacters];
+				size_t convertedCount = 0;
+				wcstombs_s(&convertedCount, converted, pszFilePath, k_maxCharacters);
+
+				chosenPath = converted;
+
+				pItem->Release();
+				pSaveFile->Release();
+				CoUninitialize();
+
+				return true;
+			}
+			pSaveFile->Release();
+		}
+		CoUninitialize();
+	}
+
+	return false;
 }
 
 LRESULT CALLBACK WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp)
