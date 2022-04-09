@@ -2,11 +2,11 @@
 
 class GameObject;
 
-class GameScene
+class GameScene final
 {
 public:
 	GameScene();
-	~GameScene();
+	virtual ~GameScene();
 
 public:
 	virtual void Start();

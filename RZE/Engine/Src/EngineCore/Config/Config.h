@@ -10,7 +10,7 @@ class Config
 {
 public:
 	Config();
-	~Config();
+	virtual ~Config();
 
 	virtual void Load(const FilePath& filePath) = 0;
 

@@ -40,11 +40,11 @@ private:
 	Vector2D mDimensions;
 };
 
-class EngineConfig : public Config
+class EngineConfig final : public Config
 {
 public:
 	EngineConfig();
-	~EngineConfig();
+	~EngineConfig() override;
 
 	virtual void Load(const FilePath& filePath) override;
 
