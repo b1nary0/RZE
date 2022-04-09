@@ -13,6 +13,7 @@
 #include <Utils/Conversions.h>
 
 #include <stdlib.h>
+#include <shobjidl.h>     // for IFileDialogEvents and IFileDialogControlEvents
 
 LRESULT CALLBACK WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp);
 
@@ -89,7 +90,7 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 		mOSWindowHandleData.windowHandle = CreateWindowEx(0,
 			wStrTitle.c_str(),
 			wStrTitle.c_str(),
-			WS_OVERLAPPEDWINDOW ^ WS_SIZEBOX, // @note WS_POPUP = borderless. WS_OVERLAPPEDWINDOW default
+			WS_OVERLAPPEDWINDOW /*^ WS_SIZEBOX*/, // @note WS_POPUP = borderless. WS_OVERLAPPEDWINDOW default
 			CW_USEDEFAULT,
 			CW_USEDEFAULT,
 			static_cast<int>(mDimensions.X()),
@@ -374,49 +375,55 @@ void Win32Window::Maximize()
 	mDimensions.SetXY(static_cast<float>(width), static_cast<float>(height));
 }
 
-FilePath Win32Window::ShowOpenFilePrompt()
+// @TODO pass in some like enum EFileOpenContext or better yet a struct of instructions for the open file prompt
+FilePath Win32Window::ShowOpenFilePrompt(const OpenFilePromptParams& params)
 {
-	//make sure this is commented out in all code (usually stdafx.h)
-		// #define WIN32_LEAN_AND_MEAN 
-	OPENFILENAME ofn;       // common dialog box structure
-	TCHAR szFile[512] = { 0 };       // if using TCHAR macros
-
-	// Initialize OPENFILENAME
-	ZeroMemory(&ofn, sizeof(ofn));
-	ofn.lStructSize = sizeof(ofn);
-	ofn.hwndOwner = mOSWindowHandleData.windowHandle;
-	ofn.lpstrFile = szFile;
-	ofn.nMaxFile = sizeof(szFile);
-	ofn.lpstrFilter = (LPWSTR)"All\0*.*\0Text\0*.TXT\0";
-	ofn.nFilterIndex = 1;
-	ofn.lpstrFileTitle = NULL;
-	ofn.nMaxFileTitle = 0;
-	ofn.lpstrInitialDir = NULL;
-	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-
-	if (GetOpenFileName(&ofn) == TRUE)
+	HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
+		COINIT_DISABLE_OLE1DDE);
+	if (SUCCEEDED(hr))
 	{
-		char test[512];
-		size_t converted = 0;
-		wcstombs_s(&converted, test, ofn.lpstrFile, 512);
+		IFileOpenDialog* pFileOpen;
 
-		std::string path(test);
-		size_t index = path.find("Assets\\");
-		if (index == std::string::npos)
+		// Create the FileOpenDialog object.
+		hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
+			IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
+
+		if (SUCCEEDED(hr))
 		{
-			// #TODO
-			// This is a hack to handle the fact we currently mismatch where
-			// assets come from. Some from from Assets/ (i.e scenes, textures)
-			// and some come from ProjectData/ (meshasset, materialasset)
-			index = path.find("ProjectData\\");
+			std::wstring wStrPromptName = Conversions::StringToWString(params.Name);
+			std::wstring wStrTypeFilter = Conversions::StringToWString(params.FiletypeFilter);
 
-			// If we've still not found a valid index, something is wrong.
-			AssertExpr(index != std::string::npos);
+			COMDLG_FILTERSPEC rgSpec[] =
+			{
+				{wStrPromptName.c_str(), wStrTypeFilter.c_str()}
+			};
+			pFileOpen->SetFileTypes(1, rgSpec);
+
+			// Show the Open dialog box.
+			hr = pFileOpen->Show(NULL);
+
+			// Get the file name from the dialog box.
+			if (SUCCEEDED(hr))
+			{
+				IShellItem* pItem;
+				hr = pFileOpen->GetResult(&pItem);
+				if (SUCCEEDED(hr))
+				{
+					PWSTR pszFilePath;
+					hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+					
+					// Display the file name to the user.
+					if (SUCCEEDED(hr))
+					{
+						MessageBoxW(NULL, pszFilePath, L"File Path", MB_OK);
+						CoTaskMemFree(pszFilePath);
+					}
+					pItem->Release();
+				}
+			}
+			pFileOpen->Release();
 		}
-
-		path = path.substr(index, path.size());
-
-		return FilePath(path);
+		CoUninitialize();
 	}
 
 	return FilePath();

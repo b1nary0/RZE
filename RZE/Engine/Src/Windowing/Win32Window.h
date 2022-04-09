@@ -15,6 +15,12 @@
 class EventHandler;
 class InputHandler;
 
+struct OpenFilePromptParams
+{
+	std::string Name;
+	std::string FiletypeFilter;
+};
+
 class Win32Window
 {
 
@@ -63,7 +69,7 @@ public:
 
 	void Maximize();
 
-	FilePath ShowOpenFilePrompt();
+	FilePath ShowOpenFilePrompt(const OpenFilePromptParams& params);
 
 protected:
 

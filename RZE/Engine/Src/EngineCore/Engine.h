@@ -18,6 +18,8 @@ class RZE_Application;
 class RenderEngine;
 class Win32Window;
 
+struct OpenFilePromptParams;
+
 class RZE_Engine
 {
 public:
@@ -40,7 +42,7 @@ public:
 	GameScene&					GetActiveScene();
 
 	// #TODO(Should probably put the window in the app..)
-	FilePath ShowOpenFilePrompt();
+	FilePath ShowOpenFilePrompt(const OpenFilePromptParams& params);
 
 	[[nodiscard]]
 	double GetDeltaTime() const { return m_deltaTime; }

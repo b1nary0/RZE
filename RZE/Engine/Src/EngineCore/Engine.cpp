@@ -15,6 +15,8 @@
 #include <imGUI/imgui_impl_win32.h>
 #include <imGUI/ImGuizmo.h>
 
+#include "Windowing/Win32Window.h"
+
 RZE_Engine::RZE_Engine()
 	: m_window(nullptr)
 	, m_engineConfig(nullptr)
@@ -334,10 +336,10 @@ GameScene& RZE_Engine::GetActiveScene()
 	return *m_activeScene;
 }
 
-FilePath RZE_Engine::ShowOpenFilePrompt()
+FilePath RZE_Engine::ShowOpenFilePrompt(const OpenFilePromptParams& params)
 {
 	AssertNotNull(m_window);
-	return m_window->ShowOpenFilePrompt();
+	return m_window->ShowOpenFilePrompt(params);
 }
 
 void RZE_Engine::Log(const std::string& text, const Vector3D& color)

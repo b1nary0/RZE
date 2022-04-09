@@ -154,7 +154,12 @@ void MeshComponent::OnEditorInspect()
 	ImGui::NewLine();
 	if (ImGui::Button("Select Mesh..."))
 	{
-		FilePath path = RZE_Application::RZE().ShowOpenFilePrompt();
+		OpenFilePromptParams openFileParams =
+		{
+			"RZE MeshAsset"
+			, "*.meshasset"
+		};
+		FilePath path = RZE_Application::RZE().ShowOpenFilePrompt(openFileParams);
 		if (path.IsValid())
 		{
 

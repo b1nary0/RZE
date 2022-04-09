@@ -61,7 +61,7 @@ namespace Editor
 		ImGui::GetIO().IniFilename = m_imguiConfigFilepath.GetAbsolutePath().c_str();
 		
 		GetWindow()->SetTitle("RZEStudio");
-		GetWindow()->Maximize();
+		//GetWindow()->Maximize();
 
 		const Vector2D& windowDims = GetWindow()->GetDimensions();
 		CreateRenderTarget(windowDims);
@@ -204,7 +204,13 @@ namespace Editor
 				}
 				if (ImGui::MenuItem("Load Scene..."))
 				{
-					FilePath newScenePath = RZE_Application::RZE().ShowOpenFilePrompt();
+					OpenFilePromptParams openFileParams =
+					{
+						"RZE Scene"
+						, "*.scene"
+					};
+
+					FilePath newScenePath = RZE_Application::RZE().ShowOpenFilePrompt(openFileParams);
 					if (newScenePath.IsValid())
 					{
 						RZE().GetActiveScene().Unload();
@@ -226,7 +232,12 @@ namespace Editor
 						// Using ShowOpenFilePrompt() here requires that you create the file
 						// from within the open file prompt. This is a quick way to implement this feature,
 						// but we need to fix this to use a new file prompt.
-						FilePath newScenePath = RZE_Application::RZE().ShowOpenFilePrompt();
+						OpenFilePromptParams openFileParams =
+						{
+							"RZE Scene"
+							, "*.scene"
+						};
+						FilePath newScenePath = RZE_Application::RZE().ShowOpenFilePrompt(openFileParams);
 						if (newScenePath.IsValid())
 						{
 							RZE().GetActiveScene().Save(newScenePath);
