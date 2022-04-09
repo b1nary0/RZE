@@ -17,8 +17,19 @@
 
 LRESULT CALLBACK WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp);
 
-// Used to link WinProc messages with the window without having to static other class instances etc
-static WindowMessageAdaptor sWindowMessageAdaptor;
+namespace
+{
+	// Used to link WinProc messages with the window without having to static other class instances etc
+	WindowMessageAdaptor sWindowMessageAdaptor;
+
+	GUID GenerateGuid()
+	{
+		GUID gidReference;
+		HRESULT hCreateGuid = CoCreateGuid(&gidReference);
+
+		return gidReference;
+	}
+}
 
 Win32Window::Win32Window(const WindowCreationParams& creationProtocol)
 {
@@ -390,6 +401,9 @@ bool Win32Window::ShowOpenFilePrompt(const FilePromptParams& params, std::string
 
 		if (SUCCEEDED(hr))
 		{
+			static GUID guid = GenerateGuid();
+			pFileOpen->SetClientGuid(guid);
+
 			std::wstring wStrPromptName = Conversions::StringToWString(params.Name);
 			std::wstring wStrTypeFilter = Conversions::StringToWString(params.FiletypeFilter);
 
@@ -449,13 +463,16 @@ bool Win32Window::ShowSaveFilePrompt(const FilePromptParams& params, std::string
 
 		if (SUCCEEDED(hr))
 		{
+			static GUID guid = GenerateGuid();
+			pSaveFile->SetClientGuid(guid);
+
 			std::wstring wStrPromptName = Conversions::StringToWString(params.Name);
 			std::wstring wStrTypeFilter = Conversions::StringToWString(params.FiletypeFilter);
 			COMDLG_FILTERSPEC rgSpec[] =
 			{
 				{wStrPromptName.c_str(), wStrTypeFilter.c_str()}
 			};
-
+			
 			pSaveFile->SetFileTypes(1, rgSpec);
 
 			hr = pSaveFile->Show(mOSWindowHandleData.windowHandle);
@@ -474,7 +491,7 @@ bool Win32Window::ShowSaveFilePrompt(const FilePromptParams& params, std::string
 				wcstombs_s(&convertedCount, converted, pszFilePath, k_maxCharacters);
 
 				chosenPath = converted;
-
+				
 				pItem->Release();
 				pSaveFile->Release();
 				CoUninitialize();
