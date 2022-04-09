@@ -59,7 +59,9 @@ void ResourceHandler::ReleaseResource(ResourceHandle& resourceHandle)
 			resourceSource.Destroy();
 			mResourceTable.erase(iter);
 
-			resourceHandle = ResourceHandle::EmptyHandle();
+			resourceHandle.mHandler = nullptr;
+			resourceHandle.mResourceSource = nullptr;
+			resourceHandle.mResourceID = "NO_RESOURCE";
 		}
 	}
 	else
@@ -106,7 +108,7 @@ ResourceHandle::ResourceHandle(const std::string& resourceID, ResourceHandler::R
 	mHandler = handler;
 	mResourceID = resourceID;
 	mResourceSource = resourceSource;
-
+	
 	// #TODO(Josh::Quick fix for ::EmptyHandle but really this shouldn't happen. Revisit.)
 	if (resourceSource != nullptr)
 	{
@@ -114,27 +116,14 @@ ResourceHandle::ResourceHandle(const std::string& resourceID, ResourceHandler::R
 	}
 }
 
-ResourceHandle::ResourceHandle(const ResourceHandle& rhs)
-{
-	mResourceID = rhs.mResourceID;
-	mResourceSource = rhs.mResourceSource;
-	mHandler = rhs.mHandler;
-
-	if (mResourceSource != nullptr)
-	{
-		mResourceSource->IncreaseRefCount();
-	}
-}
-
-
 ResourceHandle::ResourceHandle(ResourceHandle&& rhs)
 {
 	mResourceID = rhs.mResourceID;
-	rhs.mResourceID = "";
+	rhs.mResourceID = "NO_RESOURCE";
 
 	mResourceSource = rhs.mResourceSource;
 	rhs.mResourceSource = nullptr;
-
+	
 	mHandler = rhs.mHandler;
 	rhs.mHandler = nullptr;
 }

@@ -128,7 +128,7 @@ void MeshComponent::OnEditorInspect()
 					ImGui::TextColored(ImVec4(0.65f, 0.65f, 1.0f, 1.0f), "[Textures]");
 					for (U8 textureSlot = 0; textureSlot < MaterialInstance::TEXTURE_SLOT_COUNT; ++textureSlot)
 					{
-						ResourceHandle textureResource = material->GetTexture(textureSlot);
+						const ResourceHandle& textureResource = material->GetTexture(textureSlot);
 						
 						if (textureResource.IsValid())
 						{

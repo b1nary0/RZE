@@ -18,7 +18,6 @@ GameObject::GameObject(const std::string& name)
 
 GameObject::~GameObject()
 {
-	Uninitialize();
 }
 
 void GameObject::Initialize()

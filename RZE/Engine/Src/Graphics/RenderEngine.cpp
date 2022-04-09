@@ -69,6 +69,8 @@ void RenderEngine::Render()
 
 void RenderEngine::Shutdown()
 {
+	m_renderObjects.clear();
+
 	Rendering::Renderer::Shutdown();
 }
 

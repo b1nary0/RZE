@@ -108,6 +108,7 @@ void GameScene::Unload()
 	for (auto& gameObject : m_objectRegistry)
 	{
 		gameObject->OnRemoveFromScene();
+		gameObject->Uninitialize();
 	}
 
 	m_objectRegistry.clear();
@@ -136,6 +137,11 @@ void GameScene::RemoveGameObject(const std::shared_ptr<GameObject>& gameObject)
 	if (iter != m_objectRegistry.end())
 	{
 		gameObject->OnRemoveFromScene();
+		// @TODO This shouldnt be here but we'll end up with "leaking" objects when
+		// we remove from the scene but dont call Uninitialize (which stray resources will be stale and bad)
+		// which is actually more indicative of a larger dumb but i can only focus on so much dumb at a time
+		// and this entire codebase is atrocious.
+		gameObject->Uninitialize();
 
 		if (m_objectRegistry.size() > 1)
 		{
@@ -205,4 +211,9 @@ void GameScene::Update()
 
 void GameScene::ShutDown()
 {
+	for (auto& gameObject : m_objectRegistry)
+	{
+		gameObject->Uninitialize();
+	}
+	m_objectRegistry.clear();
 }

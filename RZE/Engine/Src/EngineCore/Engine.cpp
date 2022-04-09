@@ -289,9 +289,9 @@ void RZE_Engine::BeginShutDown()
 	
 	m_activeScene->ShutDown();
 	m_application->ShutDown();
-	m_resourceHandler.ShutDown();
 	m_renderEngine->Shutdown();
 
+	m_resourceHandler.ShutDown();
 	Threading::JobScheduler::Get().ShutDown();
 
 	InternalShutDown();
@@ -304,10 +304,10 @@ void RZE_Engine::InternalShutDown()
 	AssertNotNull(m_renderEngine);
 	AssertNotNull(m_activeScene);
 
+	delete m_activeScene;
+	m_renderEngine.reset();
 	delete m_window;
 	delete m_engineConfig;
-	m_renderEngine.reset();
-	delete m_activeScene;
 }
 
 void RZE_Engine::PostExit()

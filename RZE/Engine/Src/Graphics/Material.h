@@ -2,8 +2,6 @@
 
 #include <Rendering/BufferHandle.h>
 
-#include <memory>
-
 class ShaderTechnique;
 class Texture2D;
 
@@ -39,15 +37,14 @@ public:
 	
 public:
 	void SetTexture(U8 textureSlot, const ResourceHandle& textureResource);
-
-	ResourceHandle GetTexture(U8 textureSlot);
+	
 	const ResourceHandle& GetTexture(U8 textureSlot) const;
 
 	const std::string& GetName() const { return m_name; }
 
 	// @TODO SetShaderTechnique is actually being set as PixelShader directly until actual techniques are implemented
 	void SetShaderTechnique(const ResourceHandle& shaderTechnique);
-	ResourceHandle GetShaderResource() const { return m_shaderTechnique; }
+	const ResourceHandle& GetShaderResource() const { return m_shaderTechnique; }
 
 	MaterialParams& GetProperties() { return m_properties; }
 	const MaterialParams& GetProperties() const { return m_properties; }

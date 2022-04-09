@@ -61,7 +61,7 @@ private:
 
 		int mReferenceCount;
 		FilePath m_resourcePath;
-		IResource* mResource;
+		IResource* mResource = nullptr;
 	};
 
 	typedef std::pair<std::string, ResourceSource> ResourcePair;
@@ -105,8 +105,8 @@ class ResourceHandle
 
 public:
 	ResourceHandle();
-	ResourceHandle(const ResourceHandle& rhs);
 	ResourceHandle(ResourceHandle&& rhs);
+	ResourceHandle(const ResourceHandle& rhs) = delete;
 	~ResourceHandle();
 	
 	static ResourceHandle EmptyHandle() { return ResourceHandle(); }
@@ -158,6 +158,7 @@ ResourceHandle ResourceHandler::LoadResource(const FilePath& resourcePath, Args.
 template <class ResourceT>
 const ResourceT* ResourceHandler::GetResource(const ResourceHandle& resourceHandle)
 {
+	// @TODO We dont actually need to do this. We can use our friendship with ResourceHandle to reach into its privates
 	auto iter = mResourceTable.find(resourceHandle.GetID());
 	if (iter != mResourceTable.end())
 	{
