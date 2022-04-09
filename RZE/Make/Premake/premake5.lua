@@ -156,7 +156,7 @@ workspace "RZE"
 		targetdir (LibDir)
 		targetname "RZE_SourceAssetBurner"
 		
-		dependson { "Utils" }
+		dependson { "Engine, Utils" }
 
 		files
 		{
@@ -170,6 +170,7 @@ workspace "RZE"
 		{
 			IncludeDir,
 			SourceDir,
+			RootDir .. "Engine/Src/",
 			RootDir .. "Utils/Src/"
 		}
 
@@ -182,6 +183,7 @@ workspace "RZE"
 		links
 		{
 			"assimp",
+			"RZE_Engine",
 			"RZE_Utils"
 		}
 		

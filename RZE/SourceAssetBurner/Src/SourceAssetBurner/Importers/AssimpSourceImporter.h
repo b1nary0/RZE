@@ -2,18 +2,12 @@
 
 #include <SourceAssetBurner/Importers/SourceImporter.h>
 
-#include <unordered_map>
-#include <vector>
-
-#include <Utils/Math/Vector2D.h>
-#include <Utils/Math/Vector3D.h>
+#include <Graphics/MeshGeometry.h>
 
 #include <Utils/PrimitiveDefs.h>
 
-// #TODO should hide these behind some interface so we can swap out RapidJSON when we want to
-#include <RapidJSON/document.h>
-#include <RapidJSON/prettywriter.h>
-#include <RapidJSON/stringbuffer.h>
+#include <unordered_map>
+#include <vector>
 
 struct aiMesh;
 struct aiNode;
@@ -34,14 +28,6 @@ public:
 	virtual bool Import(const FilePath& filePath) override;
 
 private:
-	struct MeshVertex
-	{
-		Vector3D Position;
-		Vector3D Normal;
-		Vector3D Tangent;
-		Vector2D UVData;
-	};
-
 	struct MeshData
 	{
 		std::string MeshName;
