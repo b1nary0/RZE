@@ -2,6 +2,8 @@
 
 #include <Rendering/BufferHandle.h>
 
+#include <Asset/AssetImport/MaterialAssetImporter.h>
+
 class ShaderTechnique;
 class Texture2D;
 
@@ -36,6 +38,9 @@ public:
 	~MaterialInstance();
 	
 public:
+	// @TODO hoist MaterialData out and use it in MaterialAssetImporter and MaterialInstance (no namespace resolution)
+	static std::shared_ptr<MaterialInstance> Create(const MaterialAssetImporter::MaterialData& materialData);
+
 	void SetTexture(U8 textureSlot, const ResourceHandle& textureResource);
 	
 	const ResourceHandle& GetTexture(U8 textureSlot) const;
