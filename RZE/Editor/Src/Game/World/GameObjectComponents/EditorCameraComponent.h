@@ -58,7 +58,7 @@ private:
 	Matrix4x4 m_projectionMat;
 	Matrix4x4 m_viewMat;
 
-	float m_fov { 30.0f };
+	float m_fov { 70.0f };
 	float m_aspectRatio { 0.0f }; // #TODO I don't think we're updating this sensibly when the aspect ratio changes...
 	float m_nearCull { 0.01f };
 	float m_farCull { 1000.0f };
