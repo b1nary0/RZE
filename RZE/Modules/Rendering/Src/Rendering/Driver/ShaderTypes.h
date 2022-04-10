@@ -2,7 +2,7 @@
 
 #include <Rendering/Driver/TypeDefines.h>
 
-#include <Utils/Platform/FilePath.h>
+#include <Utils/Platform/Filepath.h>
 #include <Utils/DebugUtils/Debug.h>
 
 #include <string>
@@ -51,7 +51,7 @@ namespace Rendering
 		IVertexShader() = default;
 		virtual ~IVertexShader() = default;
 
-		virtual void Create(const FilePath& filePath, const ShaderInputLayout& inputLayout) = 0;
+		virtual void Create(const Filepath& filePath, const ShaderInputLayout& inputLayout) = 0;
 		virtual void Release() = 0;
 		virtual void SetActive() = 0;
 		virtual void SetInputLayout() = 0;
@@ -64,7 +64,7 @@ namespace Rendering
 		IPixelShader() = default;
 		virtual ~IPixelShader() = default;
 
-		virtual void Create(const FilePath& filePath) = 0;
+		virtual void Create(const Filepath& filePath) = 0;
 		virtual void Release() = 0;
 
 		virtual void SetActive() = 0;

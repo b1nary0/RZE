@@ -11,13 +11,13 @@ void FinalRenderTargetStage::Initialize()
 	{
 		Rendering::ShaderInputLayout inputLayout = {};
 
-		m_vertexShaderResource = RZE::GetResourceHandler().LoadResource<VertexShader>(FilePath("Assets/Shaders/Vertex_RenderTargetQuad.hlsl"), "Vertex_RenderTargetQuad", inputLayout);
+		m_vertexShaderResource = RZE::GetResourceHandler().LoadResource<VertexShader>(Filepath("Assets/Shaders/Vertex_RenderTargetQuad.hlsl"), "Vertex_RenderTargetQuad", inputLayout);
 		AssertExpr(m_vertexShaderResource.IsValid());
 		m_vertexShader = RZE::GetResourceHandler().GetResource<VertexShader>(m_vertexShaderResource);
 	}
 
 	{
-		m_pixelShaderResource = RZE::GetResourceHandler().LoadResource<PixelShader>(FilePath("Assets/Shaders/Pixel_RenderToTarget.hlsl"), "Pixel_RenderToTarget");
+		m_pixelShaderResource = RZE::GetResourceHandler().LoadResource<PixelShader>(Filepath("Assets/Shaders/Pixel_RenderToTarget.hlsl"), "Pixel_RenderToTarget");
 		AssertExpr(m_pixelShaderResource.IsValid());
 		m_pixelShader = RZE::GetResourceHandler().GetResource<PixelShader>(m_pixelShaderResource);
 	}

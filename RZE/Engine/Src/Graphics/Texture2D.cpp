@@ -19,7 +19,7 @@ Texture2D::~Texture2D()
 {
 }
 
-bool Texture2D::Load(const FilePath& filePath)
+bool Texture2D::Load(const Filepath& filePath)
 {
 	m_filepath = filePath;
 

@@ -5,7 +5,7 @@
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector4D.h>
-#include <Utils/Platform/FilePath.h>
+#include <Utils/Platform/Filepath.h>
 
 // DX11
 #include <Rendering/Driver/DX11/DX11Device.h>
@@ -143,7 +143,7 @@ namespace Rendering
 		return TextureBuffer2DHandle(textureBuffer);
 	}
 
-	VertexShaderHandle Renderer::CreateVertexShader(const FilePath& filePath, const ShaderInputLayout& inputLayout)
+	VertexShaderHandle Renderer::CreateVertexShader(const Filepath& filePath, const ShaderInputLayout& inputLayout)
 	{
 		std::shared_ptr<DX11VertexShader> vertexShader = std::make_shared<DX11VertexShader>();
 		vertexShader->SetDevice(m_device.get());
@@ -152,7 +152,7 @@ namespace Rendering
 		return VertexShaderHandle(vertexShader);
 	}
 
-	PixelShaderHandle Renderer::CreatePixelShader(const FilePath& filePath)
+	PixelShaderHandle Renderer::CreatePixelShader(const Filepath& filePath)
 	{
 		std::shared_ptr<DX11PixelShader> pixelShader = std::make_shared<DX11PixelShader>();
 		pixelShader->SetDevice(m_device.get());

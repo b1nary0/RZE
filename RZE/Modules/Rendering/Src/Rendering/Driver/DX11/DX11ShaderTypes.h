@@ -17,7 +17,7 @@ namespace Rendering
 		~DX11VertexShader() override;
 
 	public:
-		void Create(const FilePath& filePath, const ShaderInputLayout& inputLayout) override;
+		void Create(const Filepath& filePath, const ShaderInputLayout& inputLayout) override;
 		void Release() override;
 		void SetActive() override;
 		void SetInputLayout() override;
@@ -39,7 +39,7 @@ namespace Rendering
 		~DX11PixelShader() override;
 
 	public:
-		void Create(const FilePath& filePath) override;
+		void Create(const Filepath& filePath) override;
 		void Release() override;
 		void SetActive() override;
 

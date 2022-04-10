@@ -15,7 +15,7 @@ public:
 	virtual ~StaticMeshResource();
 
 public:
-	bool Load(const FilePath& filePath) override;
+	bool Load(const Filepath& filePath) override;
 	void Release() override;
 
 public:

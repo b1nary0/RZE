@@ -7,5 +7,5 @@ public:
 	virtual ~AssetImporter() = default;
 
 public:
-	virtual bool Import(const FilePath& filePath) = 0;
+	virtual bool Import(const Filepath& filePath) = 0;
 };

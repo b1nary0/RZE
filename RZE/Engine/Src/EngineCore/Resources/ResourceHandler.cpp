@@ -81,7 +81,7 @@ ResourceHandle ResourceHandler::Make(const std::string& resourceID, IResource* r
 		if (resource)
 		{
 			ResourceSource resourceSource(resource);
-			resourceSource.m_resourcePath = FilePath(resourceID);
+			resourceSource.m_resourcePath = Filepath(resourceID);
 
 			mResourceTable[resourceKey] = resourceSource;
 			return ResourceHandle(resourceKey, &mResourceTable[resourceKey], this);
@@ -151,7 +151,7 @@ const std::string& ResourceHandle::GetID() const
 	return mResourceID;
 }
 
-const FilePath& ResourceHandle::GetResourcePath() const
+const Filepath& ResourceHandle::GetResourcePath() const
 {
 	return mResourceSource->GetResourcePath();
 }

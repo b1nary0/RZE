@@ -1,16 +1,17 @@
 #include <Utils/StdAfx.h>
 
 #include <Utils/DebugUtils/Debug.h>
-#include <Utils/Platform/FilePath.h>
+#include <Utils/Platform/Filepath.h>
 
+#include <filesystem>
 #include <Windows.h>
 
 // #TODO
-// Ideally this isn't on the FilePath but instead part of the broader
+// Ideally this isn't on the Filepath but instead part of the broader
 // system. For now though it's the most relevant place.
 EDirectoryContext gDirectoryContext = EDirectoryContext::Runtime;
 
-FilePath::FilePath(const std::string& path)
+Filepath::Filepath(const std::string& path)
 {
 	// #TODO
 	// This function should actually be a lot simpler, but I'd rather not 
@@ -62,7 +63,7 @@ FilePath::FilePath(const std::string& path)
 	}
 }
 
-FilePath::FilePath(const std::string& path, const bool isCustomPath)
+Filepath::Filepath(const std::string& path, const bool isCustomPath)
 {
 	// #TODO
 	// WARNING:
@@ -72,11 +73,21 @@ FilePath::FilePath(const std::string& path, const bool isCustomPath)
 	mAbsolutePath = path;
 }
 
-FilePath::~FilePath()
+Filepath::~Filepath()
 {
 }
 
-FilePath FilePath::FromAbsolutePathStr(const std::string& absolutePath)
+void Filepath::CreateDir(const std::string& directoryPath)
+{
+	std::filesystem::create_directories(directoryPath);
+}
+
+bool Filepath::Exists()
+{
+	return std::filesystem::exists(GetAbsolutePath());
+}
+
+Filepath Filepath::FromAbsolutePathStr(const std::string& absolutePath)
 {
 	// @TODO having to distinguish between Assets folder and ProjectData needs to be reworked
 	// potentially leveraging the DirectoryContext enum
@@ -84,42 +95,42 @@ FilePath FilePath::FromAbsolutePathStr(const std::string& absolutePath)
 	index = (index != std::string::npos) ? index : absolutePath.find("ProjectData\\");
 	if (index != std::string::npos)
 	{
-		return FilePath(absolutePath.substr(index, absolutePath.size()));
+		return Filepath(absolutePath.substr(index, absolutePath.size()));
 	}
 
-	return FilePath();
+	return Filepath();
 }
 
-const std::string& FilePath::GetAbsolutePath() const
+const std::string& Filepath::GetAbsolutePath() const
 {
 	return mAbsolutePath;
 }
 
-const std::string& FilePath::GetRelativePath() const
+const std::string& Filepath::GetRelativePath() const
 {
 	// #TODO(Josh) for now until we develop this class better
 	return mRelativePath;
 }
 
-const std::string FilePath::GetAbsoluteDirectoryPath() const
+const std::string Filepath::GetAbsoluteDirectoryPath() const
 {
 	size_t substrCount = mAbsolutePath.find_last_of('/');
 	return mAbsolutePath.substr(0, substrCount + 1);
 }
 
-const std::string FilePath::GetRelativeDirectoryPath() const
+const std::string Filepath::GetRelativeDirectoryPath() const
 {
 	size_t substrCount = mRelativePath.find_last_of('/');
 	return mRelativePath.substr(0, substrCount + 1);
 }
 
-bool FilePath::IsValid() const
+bool Filepath::IsValid() const
 {
 	// #TODO(This is an absolutely stupid but still relevant condition)
 	return !mAbsolutePath.empty();
 }
 
-void FilePath::SetDirectoryContext(EDirectoryContext context)
+void Filepath::SetDirectoryContext(EDirectoryContext context)
 {
 	gDirectoryContext = context;
 }

@@ -27,10 +27,10 @@ namespace
 		PULP_FICTION_TRAVOLTA
 	};
 
-	FilePath gifFilepaths[] =
+	Filepath gifFilepaths[] =
 	{
-		FilePath("Assets/2D/GIFs/friends-joey-tribbiani.gif"),
-		FilePath("Assets/2D/GIFs/pulp_fiction_travolta.gif")
+		Filepath("Assets/2D/GIFs/friends-joey-tribbiani.gif"),
+		Filepath("Assets/2D/GIFs/pulp_fiction_travolta.gif")
 	};
 
 	std::string GetTextureTypeStr(MaterialInstance::TextureSlot textureSlot)
@@ -177,7 +177,7 @@ void GifChatComponent::Load(const rapidjson::Value& data)
 {
 }
 
-void GifChatComponent::Load(const FilePath& fp)
+void GifChatComponent::Load(const Filepath& fp)
 {
 	int x = 0;
 	int y = 0;
@@ -213,7 +213,7 @@ void GifChatComponent::Load(const FilePath& fp)
 	GenerateMesh();
 
 	ResourceHandle shader = 
-		RZE::GetResourceHandler().LoadResource<PixelShader>(FilePath("Assets/Shaders/Pixel_NewRenderer_DiffuseOnly.hlsl"), "Pixel_NewRenderer_DiffuseOnly");
+		RZE::GetResourceHandler().LoadResource<PixelShader>(Filepath("Assets/Shaders/Pixel_NewRenderer_DiffuseOnly.hlsl"), "Pixel_NewRenderer_DiffuseOnly");
 	AssertExpr(shader.IsValid());
 
 	std::shared_ptr<MaterialInstance> material = std::make_shared<MaterialInstance>("GifMaterial");

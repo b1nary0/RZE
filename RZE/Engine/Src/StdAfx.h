@@ -34,7 +34,7 @@
 #include <RZE.h>
 #include <EngineApp.h>
 #include <Utils/DebugUtils/Debug.h>
-#include <Utils/Platform/FilePath.h>
+#include <Utils/Platform/Filepath.h>
 #include <Utils/PrimitiveDefs.h>
 
 // IMGUI

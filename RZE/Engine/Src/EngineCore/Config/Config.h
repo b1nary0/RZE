@@ -4,7 +4,7 @@
 
 #include <Utils/Platform/File.h>
 
-class FilePath;
+class Filepath;
 
 class Config
 {
@@ -12,7 +12,7 @@ public:
 	Config();
 	virtual ~Config();
 
-	virtual void Load(const FilePath& filePath) = 0;
+	virtual void Load(const Filepath& filePath) = 0;
 
 	bool Empty();
 

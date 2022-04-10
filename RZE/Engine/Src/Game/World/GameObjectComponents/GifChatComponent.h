@@ -31,7 +31,7 @@ public:
 	void Load(const rapidjson::Value& data) override;
 
 public:
-	void Load(const FilePath& fp);
+	void Load(const Filepath& fp);
 
 private:
 	void CreateRenderObject();

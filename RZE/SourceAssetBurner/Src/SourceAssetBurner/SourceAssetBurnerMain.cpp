@@ -6,12 +6,12 @@
 
 int main(int argc, char* argv[])
 {
-	FilePath::SetDirectoryContext(EDirectoryContext::Tools);
+	Filepath::SetDirectoryContext(EDirectoryContext::Tools);
 	if (argc <= 1)
 	{
 		// Troll Assets/3D and BURN IT ALL
 		// MUAHAHAHAHAHAHAHAHAHAHAHAHHAHA HAH AH AA
-		FilePath assetsDir3D("Assets/3D/");
+		Filepath assetsDir3D("Assets/3D/");
 		for (const auto& dirEntry : std::filesystem::recursive_directory_iterator(assetsDir3D.GetAbsolutePath()))
 		{
 			std::string path = dirEntry.path().generic_string();
@@ -21,7 +21,7 @@ int main(int argc, char* argv[])
 				if (pos != std::string::npos)
 				{
 					path = path.substr(pos, path.size());
-					FilePath fp(path);
+					Filepath fp(path);
 
 					AssimpSourceImporter assimpImporter;
 					assimpImporter.Import(fp);
@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
 	{
 		// #TODO just prototype stuff. assuming the only argument is the source file to import
 		// argv[0] is executable path
-		FilePath sourcePath(argv[1]);
+		Filepath sourcePath(argv[1]);
 
 		if (sourcePath.IsValid())
 		{

@@ -7,7 +7,7 @@
 #include <Rendering/Graphics/RenderTarget.h>
 
 #include <Utils/DebugUtils/Debug.h>
-#include <Utils/Platform/FilePath.h>
+#include <Utils/Platform/Filepath.h>
 
 #ifdef IMGUI_ENABLED
 #include <imGUI/imgui.h>
@@ -41,7 +41,7 @@ void GameApp::Initialize()
 	// #TODO(Josh::Putting this comment here because too lazy to do it elsewhere. Hopefully I find it later:
 	//             -- Need to add at least commandline arg like -startscene or something)
 	
-	activeScene.Load(FilePath("Assets/Scenes/RenderTest.scene"));
+	activeScene.Load(Filepath("Assets/Scenes/RenderTest.scene"));
 	
 #ifdef IMGUI_ENABLED
 	RZE::GetRenderEngine().AddRenderStage<ImGuiRenderStage>();

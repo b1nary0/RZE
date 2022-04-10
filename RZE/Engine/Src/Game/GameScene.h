@@ -16,8 +16,8 @@ public:
 	void Initialize();
 
 	void NewScene();
-	void Save(FilePath filePath);
-	void Load(FilePath filePath);
+	void Save(Filepath filePath);
+	void Load(Filepath filePath);
 	void Unload();
 	
 	std::shared_ptr<GameObject> FindGameObjectByName(const std::string& name);
@@ -34,7 +34,7 @@ private:
 	void AddGameObject(const std::shared_ptr<GameObject>& gameObject);
 	
 private:
-	FilePath mCurrentScenePath;
+	Filepath mCurrentScenePath;
 
 	// #TODO Implement sparse array to make this faster
 	std::vector<std::shared_ptr<GameObject>> m_objectRegistry;

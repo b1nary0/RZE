@@ -70,7 +70,7 @@ namespace Editor
 
 		std::shared_ptr<GameObject> m_editorCameraObject;
 
-		FilePath m_imguiConfigFilepath;
+		Filepath m_imguiConfigFilepath;
 
 		const float k_menuBarHeight = 24.f;
 	};

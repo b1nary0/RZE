@@ -19,7 +19,7 @@ namespace
 	// Move these into a common file. They will be used across different classes
 	constexpr char kMaterialAssetSuffix[] = { ".materialasset" };
 	
-	std::string StripAssetNameFromFilePath(const FilePath& filePath)
+	std::string StripAssetNameFromFilePath(const Filepath& filePath)
 	{
 		const std::string& assetPath = filePath.GetRelativePath();
 
@@ -30,13 +30,13 @@ namespace
 		return assetName;
 	}
 
-	FilePath GetTextureFilePath(const FilePath& filePath, const std::string& fileName)
+	Filepath GetTextureFilePath(const Filepath& filePath, const std::string& fileName)
 	{
 		// #TODO(Josh::We need to bake the texture folder structure here, or get on proper asset referencing system)
 		std::string path = filePath.GetRelativeDirectoryPath();
 		path.append(fileName);
 
-		return FilePath(path);
+		return Filepath(path);
 	}
 }
 
@@ -44,7 +44,7 @@ AssimpSourceImporter::AssimpSourceImporter()
 {
 }
 
-bool AssimpSourceImporter::Import(const FilePath& filePath)
+bool AssimpSourceImporter::Import(const Filepath& filePath)
 {
 	LOG_CONSOLE_ARGS("AssimpSourceImporter : Importing %s...", filePath.GetRelativePath().c_str());
 
@@ -210,7 +210,7 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 			aiString str;
 			mat->GetTexture(aiTextureType_DIFFUSE, 0, &str);
 
-			FilePath texturePath = GetTextureFilePath(m_filepath, str.C_Str());
+			Filepath texturePath = GetTextureFilePath(m_filepath, str.C_Str());
 
 			materialData.TextureFlags |= MaterialData::ETextureFlags::TEXTUREFLAG_ALBEDO;
 			materialData.TexturePaths[0] = texturePath.GetRelativePath();
@@ -221,7 +221,7 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 			aiString str;
 			mat->GetTexture(aiTextureType_SPECULAR, 0, &str);
 
-			FilePath texturePath = GetTextureFilePath(m_filepath, str.C_Str());
+			Filepath texturePath = GetTextureFilePath(m_filepath, str.C_Str());
 
 			materialData.TextureFlags |= MaterialData::ETextureFlags::TEXTUREFLAG_SPECULAR;
 			materialData.TexturePaths[1] = texturePath.GetRelativePath();
@@ -232,7 +232,7 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 			aiString str;
 			mat->GetTexture(aiTextureType_NORMALS, 0, &str);
 
-			FilePath texturePath = GetTextureFilePath(m_filepath, str.C_Str());
+			Filepath texturePath = GetTextureFilePath(m_filepath, str.C_Str());
 
 			materialData.TextureFlags |= MaterialData::ETextureFlags::TEXTUREFLAG_NORMAL;
 			materialData.TexturePaths[2] = texturePath.GetRelativePath();
@@ -267,10 +267,10 @@ bool AssimpSourceImporter::WriteMaterialAsset(const std::string& relativePath, c
 {
 	AssertExpr(!relativePath.empty());
 
-	FilePath outputPath(relativePath);
-	if (!std::filesystem::exists(outputPath.GetAbsolutePath()))
+	Filepath outputPath(relativePath);
+	if (!outputPath.Exists())
 	{
-		std::filesystem::create_directories(outputPath.GetAbsoluteDirectoryPath());
+		Filepath::CreateDir(outputPath.GetAbsoluteDirectoryPath());
 	}
 
 	// #TODO json files are too large. need to compress and write the stream - see zlib

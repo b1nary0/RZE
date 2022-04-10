@@ -29,7 +29,7 @@ std::shared_ptr<MaterialInstance> MaterialInstance::Create(const MaterialAssetIm
 	{
 		if (!texturePath.empty())
 		{
-			materialInstance->SetTexture(textureSlot++, RZE::GetResourceHandler().LoadResource<Texture2D>(FilePath(texturePath)));
+			materialInstance->SetTexture(textureSlot++, RZE::GetResourceHandler().LoadResource<Texture2D>(Filepath(texturePath)));
 		}
 		else
 		{
@@ -40,17 +40,17 @@ std::shared_ptr<MaterialInstance> MaterialInstance::Create(const MaterialAssetIm
 	// @TODO This needs to be reworked. Should have the shader linked with the material asset?
 	if ((materialData.TextureFlags & MaterialAssetImporter::MaterialData::TEXTUREFLAG_ALL) == MaterialAssetImporter::MaterialData::TEXTUREFLAG_ALL)
 	{
-		FilePath fullShaderPath("Assets/Shaders/Pixel_NewRenderer.hlsl");
+		Filepath fullShaderPath("Assets/Shaders/Pixel_NewRenderer.hlsl");
 		materialInstance->SetShaderTechnique(RZE::GetResourceHandler().LoadResource<PixelShader>(fullShaderPath, "Pixel_NewRenderer"));
 	}
 	else if (materialData.TextureFlags == MaterialAssetImporter::MaterialData::TEXTUREFLAG_NONE)
 	{
-		FilePath noTextureShaderPath("Assets/Shaders/Pixel_Default_NewRenderer.hlsl");
+		Filepath noTextureShaderPath("Assets/Shaders/Pixel_Default_NewRenderer.hlsl");
 		materialInstance->SetShaderTechnique(RZE::GetResourceHandler().LoadResource<PixelShader>(noTextureShaderPath, "Pixel_Default_NewRenderer"));
 	}
 	else
 	{
-		FilePath diffuseOnlyPath("Assets/Shaders/Pixel_NewRenderer_DiffuseOnly.hlsl");
+		Filepath diffuseOnlyPath("Assets/Shaders/Pixel_NewRenderer_DiffuseOnly.hlsl");
 		materialInstance->SetShaderTechnique(RZE::GetResourceHandler().LoadResource<PixelShader>(diffuseOnlyPath, "Pixel_NewRenderer_DiffuseOnly"));
 	}
 

@@ -8,21 +8,21 @@ File::File(const std::string& filePath)
 	, m_isOpen(false)
 {
 	// #TODO
-	// Standardize FilePath in the API
-	m_filePath = FilePath(filePath);
+	// Standardize Filepath in the API
+	m_filePath = Filepath(filePath);
 }
 
-File::File(const FilePath& filePath)
+File::File(const Filepath& filePath)
 {
 	m_filePath = filePath;
 }
 
 void File::SetFilePath(const std::string& path)
 {
-	m_filePath = FilePath(path);
+	m_filePath = Filepath(path);
 }
 
-const FilePath& File::GetPath() const
+const Filepath& File::GetPath() const
 {
 	return m_filePath;
 }

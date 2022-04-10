@@ -26,10 +26,10 @@ void GameScene::Initialize()
 
 void GameScene::NewScene()
 {
-	Load(FilePath("Assets/Scenes/Default.scene"));
+	Load(Filepath("Assets/Scenes/Default.scene"));
 }
 
-void GameScene::Save(FilePath filePath)
+void GameScene::Save(Filepath filePath)
 {
 	rapidjson::StringBuffer buf;
 	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buf);
@@ -66,7 +66,7 @@ void GameScene::Save(FilePath filePath)
 	sceneFile.Close();
 }
 
-void GameScene::Load(FilePath filePath)
+void GameScene::Load(Filepath filePath)
 {
 	mCurrentScenePath = filePath;
 

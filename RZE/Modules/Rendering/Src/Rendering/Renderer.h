@@ -5,7 +5,7 @@
 #include <Rendering/ShaderHandle.h>
 
 #include <Utils/PrimitiveDefs.h>
-#include <Utils/Platform/FilePath.h>
+#include <Utils/Platform/Filepath.h>
 
 #include <memory>
 
@@ -66,8 +66,8 @@ namespace Rendering
 		static ConstantBufferHandle CreateConstantBuffer(void* data, size_t dataTypeSize, size_t count);
 		static TextureBuffer2DHandle CreateTextureBuffer2D(const void* data, const GFXTextureBufferParams& params);
 		
-		static VertexShaderHandle CreateVertexShader(const FilePath& filepath, const ShaderInputLayout& inputLayout);
-		static PixelShaderHandle CreatePixelShader(const FilePath& filepath);
+		static VertexShaderHandle CreateVertexShader(const Filepath& filepath, const ShaderInputLayout& inputLayout);
+		static PixelShaderHandle CreatePixelShader(const Filepath& filepath);
 
 		static void UploadDataToBuffer(const ConstantBufferHandle& buffer, const void* data);
 

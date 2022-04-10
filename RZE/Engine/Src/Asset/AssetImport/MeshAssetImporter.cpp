@@ -17,7 +17,7 @@ namespace
 	constexpr uint16_t k_meshAssetVersion = 0;
 }
 
-bool MeshAssetImporter::Import(const FilePath& filePath)
+bool MeshAssetImporter::Import(const Filepath& filePath)
 {
 	ByteStream byteStream(filePath.GetRelativePath());
 	byteStream.ReadFromFile(filePath);
@@ -45,7 +45,7 @@ bool MeshAssetImporter::Import(const FilePath& filePath)
 		geo.SetIndexData(indexData);
 
 		MaterialAssetImporter materialImporter;
-		materialImporter.Import(FilePath(materialPath));	
+		materialImporter.Import(Filepath(materialPath));	
 
 		// #TODO
 		// Not a huge fan of doing this material work here but for the moment it's really the only place that 

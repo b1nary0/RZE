@@ -36,7 +36,7 @@ public:
 	virtual ~MaterialAssetImporter() = default;
 
 public:
-	virtual bool Import(const FilePath& filePath) override;
+	virtual bool Import(const Filepath& filePath) override;
 
 public:
 	MaterialData GetMaterialData() { return mMaterialData; }

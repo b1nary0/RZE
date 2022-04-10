@@ -15,7 +15,7 @@ public:
 	virtual ~MeshAssetImporter() = default;
 
 public:
-	virtual bool Import(const FilePath& filePath) override;
+	virtual bool Import(const Filepath& filePath) override;
 	
 	std::vector<MeshGeometry> GetMeshGeometry() { return mMeshGeometry; }
 

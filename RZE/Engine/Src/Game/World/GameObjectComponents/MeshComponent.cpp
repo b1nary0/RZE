@@ -88,7 +88,7 @@ void MeshComponent::Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& write
 
 void MeshComponent::Load(const rapidjson::Value& data)
 {
-	FilePath resourcePath = FilePath(data["ResourcePath"].GetString());
+	Filepath resourcePath = Filepath(data["ResourcePath"].GetString());
 
 	m_resource = RZE::GetResourceHandler().LoadResource<StaticMeshResource>(resourcePath);
 }
@@ -164,7 +164,7 @@ void MeshComponent::OnEditorInspect()
 		bool openSuccess = RZE_Application::RZE().ShowOpenFilePrompt(openFileParams, chosenPath);
 		if (openSuccess)
 		{
-			FilePath path = FilePath::FromAbsolutePathStr(chosenPath);
+			Filepath path = Filepath::FromAbsolutePathStr(chosenPath);
 			if (m_resource.IsValid())
 			{
 				resourceHandler.ReleaseResource(m_resource);

@@ -7,7 +7,7 @@
 #include <Utils/Conversions.h>
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Interfaces/Resource.h>
-#include <Utils/Platform/FilePath.h>
+#include <Utils/Platform/Filepath.h>
 
 class ResourceHandler
 {
@@ -35,7 +35,7 @@ private:
 		void DecreaseRefCount() { --mReferenceCount; }
 
 		IResource* GetResource() { return mResource; }
-		const FilePath& GetResourcePath() const { return m_resourcePath; }
+		const Filepath& GetResourcePath() const { return m_resourcePath; }
 
 		bool IsReferenced() { return mReferenceCount > 0; }
 		bool IsValid() { return IsReferenced() && mResource; }
@@ -60,7 +60,7 @@ private:
 		}
 
 		int mReferenceCount;
-		FilePath m_resourcePath;
+		Filepath m_resourcePath;
 		IResource* mResource = nullptr;
 	};
 
@@ -77,7 +77,7 @@ public:
 	ResourceHandle GetEmptyResourceHandle();
 
 	template <class ResourceT, class... Args>
-	ResourceHandle LoadResource(const FilePath& resourcePath, Args... args);
+	ResourceHandle LoadResource(const Filepath& resourcePath, Args... args);
 
 	void ReleaseResource(ResourceHandle& resourceHandle);
 
@@ -90,7 +90,7 @@ public:
 
 private:
 	template <class ResourceT, class... Args>
-	IResource* CreateAndLoadResource(const FilePath& resourcePath, Args&&... args);
+	IResource* CreateAndLoadResource(const Filepath& resourcePath, Args&&... args);
 	
 	// #TODO Turn the resource IDs into hashes/guids
 	std::unordered_map<std::string, ResourceSource> mResourceTable;
@@ -113,7 +113,7 @@ public:
 
 	bool IsValid() const;
 	const std::string& GetID() const;
-	const FilePath& GetResourcePath() const;
+	const Filepath& GetResourcePath() const;
 
 	bool operator==(const ResourceHandle& rhs);
 	ResourceHandle& operator=(const ResourceHandle& rhs);
@@ -128,7 +128,7 @@ private:
 };
 
 template <class ResourceT, class... Args>
-ResourceHandle ResourceHandler::LoadResource(const FilePath& resourcePath, Args... args)
+ResourceHandle ResourceHandler::LoadResource(const Filepath& resourcePath, Args... args)
 {
 	std::string resourceKey = Conversions::CreateResourceKeyFromPath(resourcePath.GetRelativePath());
 
@@ -171,7 +171,7 @@ const ResourceT* ResourceHandler::GetResource(const ResourceHandle& resourceHand
 }
 
 template <class ResourceT, class... Args>
-IResource* ResourceHandler::CreateAndLoadResource(const FilePath& resourcePath, Args&&... args)
+IResource* ResourceHandler::CreateAndLoadResource(const Filepath& resourcePath, Args&&... args)
 {
 	IResource* resource = new ResourceT(args...);//new (mAllocator.Allocate(sizeof(ResourceT))) ResourceT;
 	AssertNotNull(resource);

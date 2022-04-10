@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Utils/PrimitiveDefs.h>
-#include <Utils/Platform/FilePath.h>
+#include <Utils/Platform/Filepath.h>
 
 class ByteStream
 {
@@ -14,7 +14,7 @@ public:
 	inline const Byte* GetBytes() const { return mBytes; }
 	Byte* GetBytes() { return mBytes; }
 
-	void ReadFromFile(const FilePath& filePath);
+	void ReadFromFile(const Filepath& filePath);
 
 	// #TODO
 	// WriteToStream/FlushToFile type functions to flesh out this class.

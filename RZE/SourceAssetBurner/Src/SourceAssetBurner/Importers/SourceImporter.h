@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Utils/Platform/FilePath.h>
+#include <Utils/Platform/Filepath.h>
 
 class SourceImporter
 {
@@ -8,7 +8,7 @@ public:
 	SourceImporter() = default;
 	virtual ~SourceImporter() = default;
 	
-	virtual bool Import(const FilePath& filePath) = 0;
+	virtual bool Import(const Filepath& filePath) = 0;
 
 private:
 

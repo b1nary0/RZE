@@ -43,7 +43,7 @@ namespace Rendering
 		Release();
 	}
 
-	void DX11VertexShader::Create(const FilePath& filePath, const ShaderInputLayout& inputLayout)
+	void DX11VertexShader::Create(const Filepath& filePath, const ShaderInputLayout& inputLayout)
 	{
 		HRESULT hr;
 		ID3D10Blob* error = nullptr;;
@@ -100,7 +100,7 @@ namespace Rendering
 		Release();
 	}
 
-	void DX11PixelShader::Create(const FilePath& filePath)
+	void DX11PixelShader::Create(const Filepath& filePath)
 	{
 		ID3D10Blob* psBlob = nullptr;
 		ID3D10Blob* error = nullptr;

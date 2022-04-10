@@ -12,7 +12,7 @@
 
 #include <EngineCore/Threading/JobSystem/JobScheduler.h>
 
-#include <Utils/Platform/FilePath.h>
+#include <Utils/Platform/Filepath.h>
 
 #include <DebugUtils/DebugServices.h>
 
@@ -21,7 +21,6 @@
 #include <Optick/optick.h>
 
 #include <stdio.h>
-
 
 namespace
 {
@@ -55,12 +54,12 @@ namespace Editor
 		
 		// #TODO
 		// Should probably bake this into RZE::Application
-		FilePath::SetDirectoryContext(EDirectoryContext::Tools);
+		Filepath::SetDirectoryContext(EDirectoryContext::Tools);
 
 		const bool isWithEditor = true;
 		RZE::GetRenderEngine().AddRenderStage<ImGuiRenderStage>(isWithEditor);
 
-		m_imguiConfigFilepath = FilePath("Config/imgui.ini");
+		m_imguiConfigFilepath = Filepath("Config/imgui.ini");
 		ImGui::GetIO().IniFilename = m_imguiConfigFilepath.GetAbsolutePath().c_str();
 		
 		GetWindow()->SetTitle("RZEStudio");
@@ -87,7 +86,7 @@ namespace Editor
 		// For now, it's always false here because we always load into TestGame.scene
 		gEditorState.IsNewScene = false;
 
-		FilePath scenePath(kSceneFileToLoadHack);
+		Filepath scenePath(kSceneFileToLoadHack);
 		RZE().GetActiveScene().Load(scenePath);
 
 		CreateAndInitializeEditorCamera();
@@ -230,9 +229,9 @@ namespace Editor
 					bool openSuccess = RZE_Application::RZE().ShowOpenFilePrompt(openFileParams, chosenPath);
 					if (openSuccess)
 					{
-						FilePath newScenePath = FilePath::FromAbsolutePathStr(chosenPath);
+						Filepath newScenePath = Filepath::FromAbsolutePathStr(chosenPath);
 						RZE().GetActiveScene().Unload();
-						RZE().GetActiveScene().Load(FilePath(newScenePath.GetRelativePath()));
+						RZE().GetActiveScene().Load(Filepath(newScenePath.GetRelativePath()));
 						AddFilePathToWindowTitle(newScenePath.GetRelativePath());
 					}
 				}
@@ -249,7 +248,7 @@ namespace Editor
 						bool saveSuccess = GetWindow()->ShowSaveFilePrompt(promptParams, chosenPath);
 						if (saveSuccess)
 						{
-							FilePath newScenePath = FilePath::FromAbsolutePathStr(chosenPath);
+							Filepath newScenePath = Filepath::FromAbsolutePathStr(chosenPath);
 							RZE().GetActiveScene().Save(newScenePath);
 							gEditorState.IsNewScene = false;
 							RunAssetCpy();
@@ -257,7 +256,7 @@ namespace Editor
 					}
 					else
 					{
-						RZE().GetActiveScene().Save(FilePath());
+						RZE().GetActiveScene().Save(Filepath());
 						RunAssetCpy();
 					}
 				}
@@ -269,7 +268,7 @@ namespace Editor
 					{
 						char buffer[2048];
 						FILE* pipe = nullptr;
-						static FilePath buildGameBat("BuildGame.bat");
+						static Filepath buildGameBat("BuildGame.bat");
 						pipe = _popen(buildGameBat.GetAbsolutePath().c_str(), "rt");
 						while (fgets(buffer, 2048, pipe))
 						{
@@ -282,8 +281,8 @@ namespace Editor
 				{
 					Threading::Job::Task gameTask([this]()
 					{
-						static FilePath buildGameBat("BuildGame.bat");
-						static FilePath gamePath("_Build\\Debug\\x64\\RZE_Game.exe");
+						static Filepath buildGameBat("BuildGame.bat");
+						static Filepath gamePath("_Build\\Debug\\x64\\RZE_Game.exe");
 
 						// #TODO
 						// Make function to do this stuff
@@ -401,12 +400,12 @@ namespace Editor
 		ImGuiIO& io = ImGui::GetIO();
 		io.Fonts->AddFontDefault();
 
-		FilePath ubuntuRegularPath("Assets/Fonts/Ubuntu-Regular.ttf");
-		FilePath ubuntuMediumPath("Assets/Fonts/Ubuntu-Medium.ttf");
-		FilePath arialPath("Assets/Fonts/Arial.ttf");
-		FilePath consolasPath("Assets/Fonts/Consolas.ttf");
-		FilePath liberationRegularPath("Assets/Fonts/LiberationMono-Bold.ttf");
-		FilePath dinBoldPath("Assets/Fonts/D-DIN-Bold.otf");
+		Filepath ubuntuRegularPath("Assets/Fonts/Ubuntu-Regular.ttf");
+		Filepath ubuntuMediumPath("Assets/Fonts/Ubuntu-Medium.ttf");
+		Filepath arialPath("Assets/Fonts/Arial.ttf");
+		Filepath consolasPath("Assets/Fonts/Consolas.ttf");
+		Filepath liberationRegularPath("Assets/Fonts/LiberationMono-Bold.ttf");
+		Filepath dinBoldPath("Assets/Fonts/D-DIN-Bold.otf");
 
 		m_fontMapping.insert({"ubuntu_medium", io.Fonts->AddFontFromFileTTF(ubuntuMediumPath.GetAbsolutePath().c_str(), 16)});
 		m_fontMapping.insert({"ubuntu_regular", io.Fonts->AddFontFromFileTTF(ubuntuRegularPath.GetAbsolutePath().c_str(), 14)});
@@ -486,7 +485,7 @@ namespace Editor
 
 	void EditorApp::RunAssetCpy()
 	{
-		static FilePath assetCpyPath("AssetCpy.bat");
+		static Filepath assetCpyPath("AssetCpy.bat");
 		{
 			FILE* pipe = nullptr;
 			pipe = _popen(assetCpyPath.GetAbsolutePath().c_str(), "rt");

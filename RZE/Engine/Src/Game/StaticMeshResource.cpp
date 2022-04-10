@@ -16,7 +16,7 @@ StaticMeshResource::~StaticMeshResource()
 {
 }
 
-bool StaticMeshResource::Load(const FilePath& filePath)
+bool StaticMeshResource::Load(const Filepath& filePath)
 {
 	OPTICK_EVENT("StaticMeshResource::Load");
 	MeshAssetImporter meshImporter;

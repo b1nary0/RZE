@@ -17,7 +17,7 @@ public:
 
 	virtual ~VertexShader() = default;
 
-	bool Load(const FilePath& filePath) final;
+	bool Load(const Filepath& filePath) final;
 	void Release() final;
 
 	const std::string& GetName() const { return m_name; }
@@ -45,7 +45,7 @@ public:
 
 	virtual ~PixelShader() = default;
 
-	bool Load(const FilePath& filePath) final;
+	bool Load(const Filepath& filePath) final;
 	void Release() final;
 
 	const std::string& GetName() const { return m_name; }
@@ -68,7 +68,7 @@ public:
 	ShaderTechnique(const std::string& name);
 	virtual ~ShaderTechnique() = default;
 
-	bool Load(const FilePath& filePath) final;
+	bool Load(const Filepath& filePath) final;
 	void Release() final;
 	
 	const std::string& GetName() const { return m_name; }

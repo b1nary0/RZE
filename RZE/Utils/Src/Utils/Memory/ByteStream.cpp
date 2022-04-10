@@ -30,7 +30,7 @@ ByteStream::~ByteStream()
 	}
 }
 
-void ByteStream::ReadFromFile(const FilePath& filePath)
+void ByteStream::ReadFromFile(const Filepath& filePath)
 {
 	if (mBytes != nullptr)
 	{

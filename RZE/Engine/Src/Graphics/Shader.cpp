@@ -10,7 +10,7 @@
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Memory/MemoryUtils.h>
 
-bool VertexShader::Load(const FilePath& filePath)
+bool VertexShader::Load(const Filepath& filePath)
 {
 	m_shader = Rendering::Renderer::CreateVertexShader(filePath, m_shaderInputLayout);
 	m_cameraDataBuf = Rendering::Renderer::CreateConstantBuffer(nullptr, MemoryUtils::AlignSize(sizeof(RenderCamera), 128), 1);
@@ -24,7 +24,7 @@ void VertexShader::Release()
 	Rendering::Renderer::ReleaseVertexShader(m_shader);
 }
 
-bool PixelShader::Load(const FilePath& filePath)
+bool PixelShader::Load(const Filepath& filePath)
 {
 	m_shader = Rendering::Renderer::CreatePixelShader(filePath);
 
@@ -46,7 +46,7 @@ ShaderTechnique::ShaderTechnique(const std::string& name)
 {
 }
 
-bool ShaderTechnique::Load(const FilePath& filePath)
+bool ShaderTechnique::Load(const Filepath& filePath)
 {
 	if (filePath.IsValid())
 	{

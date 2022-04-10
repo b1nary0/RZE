@@ -19,7 +19,7 @@ public:
 	AssimpSourceImporter();
 	~AssimpSourceImporter() override = default;
 
-	virtual bool Import(const FilePath& filePath) override;
+	virtual bool Import(const Filepath& filePath) override;
 
 private:
 	// #TODO
@@ -56,10 +56,10 @@ private:
 	bool WriteTextureAsset();
 	
 private:
-	FilePath m_filepath;
+	Filepath m_filepath;
 	std::string m_assetName;
 
 	std::vector<MeshData> m_meshes;
 	std::unordered_map<std::string, MaterialData> m_materialTable; // #TODO this is just a quick way to prevent duplicates. need a better solution in the future
-	std::vector<FilePath> m_textures;
+	std::vector<Filepath> m_textures;
 };

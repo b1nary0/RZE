@@ -12,19 +12,22 @@ enum class EDirectoryContext
 	Tools
 };
 
-class FilePath
+class Filepath
 {
 public:
-	FilePath() = default;
-	explicit FilePath(const std::string& path);
+	Filepath() = default;
+	explicit Filepath(const std::string& path);
 	// #TODO
 	// Hacky constructor to read from non-runtime asset paths
-	// until the FilePath infrastructure understands different directory
+	// until the Filepath infrastructure understands different directory
 	// contexts.
-	FilePath(const std::string& path, const bool isCustomPath);
-	~FilePath();
+	Filepath(const std::string& path, const bool isCustomPath);
+	~Filepath();
 
-	static FilePath FromAbsolutePathStr(const std::string& absolutePath);
+	static void CreateDir(const std::string& directoryPath);
+	static Filepath FromAbsolutePathStr(const std::string& absolutePath);
+
+	bool Exists();
 
 	const std::string& GetAbsolutePath() const;
 	const std::string& GetRelativePath() const;

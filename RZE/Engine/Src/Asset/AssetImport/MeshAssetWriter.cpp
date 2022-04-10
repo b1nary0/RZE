@@ -32,10 +32,10 @@ void MeshAssetWriter::Write()
 	std::string assetFilepathRelative = "ProjectData/Mesh/";
 	assetFilepathRelative = assetFilepathRelative + assetFilename;
 
-	FilePath outputPath(assetFilepathRelative);
-	if (!std::filesystem::exists(outputPath.GetAbsolutePath()))
+	Filepath outputPath(assetFilepathRelative);
+	if (!outputPath.Exists())
 	{
-		std::filesystem::create_directories(outputPath.GetAbsoluteDirectoryPath());
+		Filepath::CreateDir(outputPath.GetAbsoluteDirectoryPath());
 	}
 
 	File outputFile(outputPath);

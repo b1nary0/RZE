@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Utils/Platform/FilePath.h>
+#include <Utils/Platform/Filepath.h>
 
 #include <string>
 #include <fstream>
@@ -29,14 +29,14 @@ public:
 	File() = default;
 	// #TODO
 	// Hacky constructor to read from non-runtime asset paths
-	// until the FilePath infrastructure understands different directory
+	// until the Filepath infrastructure understands different directory
 	// contexts.
-	File(const FilePath& filePath);
+	File(const Filepath& filePath);
 	File(const std::string& filePath);
 
 	// If setting file path manually, Read() must be called.
 	void SetFilePath(const std::string& path);
-	const FilePath& GetPath() const;
+	const Filepath& GetPath() const;
 
 	bool Open(EFileOpenMode::Value fileOpenMode);
 	void Close();
@@ -107,7 +107,7 @@ private:
 	EFileOpenMode::Value m_openState;
 	std::ofstream m_fileStream;
 
-	FilePath m_filePath;
+	Filepath m_filePath;
 	std::string m_data;
 
 	bool m_isOpen;

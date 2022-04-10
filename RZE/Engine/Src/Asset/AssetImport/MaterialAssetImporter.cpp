@@ -4,7 +4,7 @@
 #include <Utils/Memory/ByteStream.h>
 #include <Utils/Memory/ByteStreamUtils.h>
 
-bool MaterialAssetImporter::Import(const FilePath& filePath)
+bool MaterialAssetImporter::Import(const Filepath& filePath)
 {
 	// @TODO fail condition
 

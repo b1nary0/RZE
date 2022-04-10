@@ -5,7 +5,7 @@
 #include <Utils/PrimitiveDefs.h>
 #include <Utils/Math/Vector2D.h>
 
-class FilePath;
+class Filepath;
 
 class EngineSettings
 {
@@ -46,7 +46,7 @@ public:
 	EngineConfig();
 	~EngineConfig() override;
 
-	virtual void Load(const FilePath& filePath) override;
+	virtual void Load(const Filepath& filePath) override;
 
 	EngineSettings& GetEngineSettings();
 	WindowSettings& GetWindowSettings();
