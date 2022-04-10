@@ -41,7 +41,10 @@ void GameScene::Save(Filepath filePath)
 		{
 			for (auto& gameObject : m_objectRegistry)
 			{
-				gameObject->Save(writer);
+				if (gameObject->IncludeInSave())
+				{
+					gameObject->Save(writer);
+				}
 			}
 		}
 

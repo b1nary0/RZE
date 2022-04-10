@@ -105,6 +105,11 @@ void EditorCameraComponent::SetAsActiveCamera(bool isActiveCamera)
 	m_isActiveCamera = isActiveCamera;
 }
 
+void EditorCameraComponent::Initialize()
+{
+	GetOwner()->SetIncludeInSave(false);
+}
+
 void EditorCameraComponent::OnAddToScene()
 {
 	// #TODO This wont work long term, just trying to get things rendering with new code

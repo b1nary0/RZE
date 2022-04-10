@@ -15,6 +15,7 @@ public:
 
 	// GameObjectComponent interface
 public:
+	void Initialize() override;
 	void OnAddToScene() override;
 	void Update() override;
 	

@@ -12,6 +12,7 @@ class GameObjectComponentBase;
 struct GameObjectStateFlags
 {
 	uint16_t IsInScene : 1;
+	uint16_t IncludeInSave : 1;
 };
 
 class GameObject
@@ -40,6 +41,9 @@ public:
 
 	void OnAddToScene();
 	void OnRemoveFromScene();
+
+	bool IncludeInSave() { return m_stateFlags.IncludeInSave; }
+	void SetIncludeInSave(bool include);
 
 	// #TODO Unsure if it's desired to update via the GameObject API but until convinced otherwise this is it
 	void Update();
@@ -123,8 +127,8 @@ TComponentType* GameObject::AddComponent(Args... args)
 	{
 		TComponentType* component = new TComponentType(std::forward<Args>(args)...);
 		m_components.push_back(component);
-		component->Initialize();
 		component->SetOwner(this);
+		component->Initialize();
 		if (m_stateFlags.IsInScene)
 		{
 			component->OnAddToScene();

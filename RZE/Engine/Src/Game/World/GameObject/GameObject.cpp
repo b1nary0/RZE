@@ -8,6 +8,8 @@ static GameObjectID s_nextObjectID = 0;
 GameObject::GameObject()
 	: m_id(s_nextObjectID++)
 {
+	m_stateFlags.IsInScene = false;
+	m_stateFlags.IncludeInSave = true;
 }
 
 GameObject::GameObject(const std::string& name)
@@ -74,6 +76,11 @@ void GameObject::OnRemoveFromScene()
 	}
 
 	m_stateFlags.IsInScene = false;
+}
+
+void GameObject::SetIncludeInSave(bool include)
+{
+	m_stateFlags.IncludeInSave = include;
 }
 
 void GameObject::Update()
