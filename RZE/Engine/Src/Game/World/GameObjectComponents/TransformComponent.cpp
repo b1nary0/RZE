@@ -28,6 +28,21 @@ void TransformComponent::Update()
 	}
 }
 
+Vector3D& TransformComponent::GetPosition()
+{
+	return m_position;
+}
+
+Vector3D& TransformComponent::GetRotation()
+{
+	return m_rotation;
+}
+
+Vector3D& TransformComponent::GetScale()
+{
+	return m_scale;
+}
+
 void TransformComponent::OnEditorInspect()
 {
 	float* positionValues = const_cast<float*>(&m_position.GetInternalVec().x);

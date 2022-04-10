@@ -9,6 +9,11 @@ typedef U32 GameObjectID;
 
 class GameObjectComponentBase;
 
+struct GameObjectStateFlags
+{
+	uint16_t IsInScene : 1;
+};
+
 class GameObject
 {
 
@@ -59,6 +64,8 @@ private:
 	std::string m_name;
 
 	ComponentList m_components;
+
+	GameObjectStateFlags m_stateFlags;
 };
 
 template <typename TComponentType>
@@ -115,8 +122,13 @@ TComponentType* GameObject::AddComponent(Args... args)
 	if (it == m_components.end())
 	{
 		TComponentType* component = new TComponentType(std::forward<Args>(args)...);
-		component->SetOwner(this);
 		m_components.push_back(component);
+		component->Initialize();
+		component->SetOwner(this);
+		if (m_stateFlags.IsInScene)
+		{
+			component->OnAddToScene();
+		}
 
 		// #TODO Initialize here
 		return component;

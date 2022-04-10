@@ -46,6 +46,8 @@ namespace Editor
 
 		void Log(const std::string& msg);
 
+		void CreateAndInitializeEditorCamera();
+
 	private:
 		void DisplayMenuBar();
 		void HandleGeneralContextMenu();
@@ -65,6 +67,8 @@ namespace Editor
 		SceneViewPanel m_sceneViewPanel;
 
 		std::unordered_map<std::string, ImFont*> m_fontMapping;
+
+		std::shared_ptr<GameObject> m_editorCameraObject;
 
 		FilePath m_imguiConfigFilepath;
 

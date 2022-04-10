@@ -1,6 +1,7 @@
 #include <EditorApp.h>
 
 #include <Game/World/GameObject/GameObject.h>
+#include <Game/World/GameObjectComponents/EditorCameraComponent.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
 #include <Rendering/Renderer.h>
@@ -21,6 +22,7 @@
 
 #include <stdio.h>
 
+
 namespace
 {
 	constexpr char kSceneFileToLoadHack[] = { "Assets/Scenes/RenderTest.scene" };
@@ -40,6 +42,7 @@ namespace Editor
 
 	EditorApp::EditorApp()
 	{
+		REGISTER_GAMEOBJECTCOMPONENT(EditorCameraComponent);
 	}
 
 	EditorApp::~EditorApp()
@@ -49,7 +52,7 @@ namespace Editor
 	void EditorApp::Initialize()
 	{
 		RZE_Application::Initialize();
-
+		
 		// #TODO
 		// Should probably bake this into RZE::Application
 		FilePath::SetDirectoryContext(EDirectoryContext::Tools);
@@ -86,6 +89,8 @@ namespace Editor
 
 		FilePath scenePath(kSceneFileToLoadHack);
 		RZE().GetActiveScene().Load(scenePath);
+
+		CreateAndInitializeEditorCamera();
 
 		AddFilePathToWindowTitle(scenePath.GetRelativePath());
 	}
@@ -186,6 +191,17 @@ namespace Editor
 	void EditorApp::Log(const std::string& msg)
 	{
 		m_logPanel.AddEntry(msg);
+	}
+
+	void EditorApp::CreateAndInitializeEditorCamera()
+	{
+		m_editorCameraObject = RZE().GetActiveScene().AddGameObject("EditorCam");
+		TransformComponent* transformComponent = m_editorCameraObject->GetComponent<TransformComponent>();
+		transformComponent->SetPosition(Vector3D(-4.0f, 10.0f, 4.0f));
+
+		EditorCameraComponent* editorCam = m_editorCameraObject->AddComponent<EditorCameraComponent>();
+		editorCam->SetAsActiveCamera(true);
+
 	}
 
 	void EditorApp::DisplayMenuBar()

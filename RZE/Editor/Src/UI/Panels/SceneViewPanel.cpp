@@ -3,7 +3,7 @@
 #include <EditorApp.h>
 
 #include <Game/World/GameObject/GameObject.h>
-#include <Game/World/GameObjectComponents/CameraComponent.h>
+#include <Game/World/GameObjectComponents/EditorCameraComponent.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
 #include <Graphics/RenderEngine.h>
@@ -44,9 +44,10 @@ namespace Editor
 				m_dimensions.SetXY(viewportDims.x, viewportDims.y);
 				RZE::GetRenderEngine().SetViewportSize(m_dimensions);
 
-				std::shared_ptr<GameObject> gameObject = RZE::GetActiveScene().FindGameObjectByName("Camera");
+				// @TODO lazy josh to future josh just use object cached on EditorApp
+				std::shared_ptr<GameObject> gameObject = RZE::GetActiveScene().FindGameObjectByName("EditorCam");
 				AssertNotNull(gameObject);
-				CameraComponent* const cameraComponent = gameObject->GetComponent<CameraComponent>();
+				EditorCameraComponent* const cameraComponent = gameObject->GetComponent<EditorCameraComponent>();
 				AssertNotNull(cameraComponent);
 				cameraComponent->SetAspectRatio(m_dimensions.X() / m_dimensions.Y());
 			}
@@ -77,8 +78,8 @@ namespace Editor
 					const Vector2D& sceneViewPos = GetPosition();
 					ImGuizmo::SetRect(sceneViewPos.X(), sceneViewPos.Y(), sceneViewDims.X(), sceneViewDims.Y());
 
-					std::shared_ptr<GameObject> cameraObject = RZE::GetActiveScene().FindGameObjectByName("Camera");
-					const CameraComponent* const cameraComponent = cameraObject->GetComponent<CameraComponent>();
+					std::shared_ptr<GameObject> cameraObject = RZE::GetActiveScene().FindGameObjectByName("EditorCam");
+					const EditorCameraComponent* const cameraComponent = cameraObject->GetComponent<EditorCameraComponent>();
 					
 					const Matrix4x4& view = cameraComponent->GetViewMatrix();
 					const Matrix4x4& projection = cameraComponent->GetProjectionMatrix();

@@ -1,0 +1,245 @@
+#include <StdAfx.h>
+#include <Game/World/GameObjectComponents/EditorCameraComponent.h>
+
+#include <Game/World/GameObject/GameObject.h>
+#include <Game/World/GameObjectComponents/TransformComponent.h>
+
+#include <Graphics/RenderEngine.h>
+
+#include <Utils/DebugUtils/Debug.h>
+#include <Utils/Math/Math.h>
+
+namespace
+{
+	constexpr float k_cameraMaxZoomSpeed = 0.5f;
+	constexpr float k_cameraMaxSpeed = 8.0f;
+}
+
+const Vector3D& EditorCameraComponent::GetLookAt() const
+{
+	return m_lookAt;
+}
+
+const Vector3D& EditorCameraComponent::GetUpDir() const
+{
+	return m_upDir;
+}
+
+const Vector3D& EditorCameraComponent::GetForward() const
+{
+	return m_forward;
+}
+
+const Matrix4x4& EditorCameraComponent::GetProjectionMatrix() const
+{
+	return m_projectionMat;
+}
+
+const Matrix4x4& EditorCameraComponent::GetViewMatrix() const
+{
+	return m_viewMat;
+}
+
+float EditorCameraComponent::GetFOV() const
+{
+	return m_fov;
+}
+
+float EditorCameraComponent::GetAspectRatio() const
+{
+	return m_aspectRatio;
+}
+
+float EditorCameraComponent::GetNearCull() const
+{
+	return m_nearCull;
+}
+
+float EditorCameraComponent::GetFarCull() const
+{
+	return m_farCull;
+}
+
+bool EditorCameraComponent::IsActiveCamera() const
+{
+	return m_isActiveCamera;
+}
+
+void EditorCameraComponent::SetLookAt(const Vector3D& lookAt)
+{
+	m_lookAt = lookAt;
+}
+
+void EditorCameraComponent::SetUpDir(const Vector3D& upDir)
+{
+	m_upDir = upDir;
+}
+
+void EditorCameraComponent::SetForward(const Vector3D& forward)
+{
+	m_forward = forward;
+}
+
+void EditorCameraComponent::SetFOV(float fov)
+{
+	m_fov = fov;
+}
+
+void EditorCameraComponent::SetAspectRatio(float aspectRatio)
+{
+	m_aspectRatio = aspectRatio;
+}
+
+void EditorCameraComponent::SetNearCull(float nearCull)
+{
+	m_nearCull = nearCull;
+}
+
+void EditorCameraComponent::SetFarCull(float farCull)
+{
+	m_farCull = farCull;
+}
+
+void EditorCameraComponent::SetAsActiveCamera(bool isActiveCamera)
+{
+	m_isActiveCamera = isActiveCamera;
+}
+
+void EditorCameraComponent::OnAddToScene()
+{
+	// #TODO This wont work long term, just trying to get things rendering with new code
+	m_isActiveCamera = true;
+	m_aspectRatio = RZE_Application::RZE().GetWindowSize().X() / RZE_Application::RZE().GetWindowSize().Y();
+}
+
+void EditorCameraComponent::Update()
+{
+	if (IsActiveCamera())
+	{
+		TransformComponent* const transformComponent = GetOwner()->GetComponent<TransformComponent>();
+		AssertMsg(transformComponent != nullptr, "A camera without a transform is useless");
+
+		KeyboardInput(*transformComponent);
+		MouseInput(*transformComponent);
+			
+		GenerateCameraMatrices(transformComponent->GetPosition());
+		{
+			// Push data to RenderEngine
+			RenderCamera& renderCamera = RZE::GetRenderEngine().GetCamera();
+			renderCamera.Position = transformComponent->GetPosition();
+			renderCamera.ClipSpace = GetProjectionMatrix() * GetViewMatrix();
+		}
+	}
+}
+
+void EditorCameraComponent::GenerateCameraMatrices(const Vector3D& position)
+{
+	OPTICK_EVENT("GenerateCameraMatrices");
+	
+	m_projectionMat = Matrix4x4::CreatePerspectiveMatrix(m_fov, m_aspectRatio, m_nearCull, m_farCull);
+	m_viewMat = Matrix4x4::CreateViewMatrix(position, position  + m_forward, m_upDir);
+}
+
+void EditorCameraComponent::KeyboardInput(TransformComponent& transfComp)
+{
+	InputHandler& inputHandler = RZE_Application::RZE().GetInputHandler();
+
+	float dt = static_cast<float>(RZE_Application::RZE().GetDeltaTime());
+
+	float speedDelta = m_speed * dt;
+
+	// TODO(Josh::The extra condition here for hold is because of the frame delay for ::Hold. Should fix eventually.)
+	if (inputHandler.GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Pressed)
+	{
+		if (inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Key_W) == EButtonState::ButtonState_Pressed
+			|| inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Key_W) == EButtonState::ButtonState_Hold)
+		{
+			transfComp.GetPosition() += m_forward * speedDelta;
+		}
+		else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_S])
+		{
+			transfComp.GetPosition() -= m_forward * speedDelta;
+		}
+
+		if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_A])
+		{
+			transfComp.GetPosition() -= m_forward.Cross(m_upDir).Normalize() * speedDelta;
+		}
+		else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_D])
+		{
+			transfComp.GetPosition() += m_forward.Cross(m_upDir).Normalize() * speedDelta;
+		}
+
+		if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_E])
+		{
+			transfComp.GetPosition() += m_forward.Cross(m_upDir).Cross(m_forward) * speedDelta;
+		}
+		else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_Q])
+		{
+			transfComp.GetPosition() -= m_forward.Cross(m_upDir).Cross(m_forward) * speedDelta;
+		}
+
+		if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_1])
+		{
+			// Focus object
+		}
+	}
+
+	// #TODO(Josh::Support for special keys CTRL SHIFT etc)
+	if (inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Key_R) == EButtonState::ButtonState_Pressed)
+	{
+		m_speed = k_cameraMaxSpeed * 4.0f;
+	}
+	else if (inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Space) == EButtonState::ButtonState_Pressed)
+	{
+		m_speed = k_cameraMaxSpeed / 8.0f;
+	}
+
+	if (!inputHandler.GetKeyboardState().IsDownThisFrame(Win32KeyCode::Space) && !inputHandler.GetKeyboardState().IsDownThisFrame(Win32KeyCode::Key_R))
+	{
+		m_speed = k_cameraMaxSpeed;
+	}
+
+	Int32 wheelVal = RZE_Application::RZE().GetInputHandler().GetMouseState().CurWheelVal;
+	if (wheelVal != 0)
+	{
+		wheelVal = MathUtils::Clamp(wheelVal, -1, 1);
+		transfComp.GetPosition() = transfComp.GetPosition() + (m_forward * static_cast<float>(wheelVal)) * k_cameraMaxZoomSpeed;
+	}
+}
+
+void EditorCameraComponent::MouseInput(TransformComponent& transfComp)
+{
+	InputHandler& inputHandler = RZE_Application::RZE().GetInputHandler();
+
+	const Vector3D& curPos = inputHandler.GetMouseState().CurPosition;
+
+	Int32 wheelVal = inputHandler.GetMouseState().CurWheelVal;
+	if (wheelVal != 0)
+	{
+		wheelVal = MathUtils::Clamp(wheelVal, -1, 1);
+		transfComp.GetPosition() = transfComp.GetPosition() + (m_forward * static_cast<float>(wheelVal)) * k_cameraMaxZoomSpeed;
+	}
+
+	if (inputHandler.GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Pressed)
+	{
+		Vector3D diff = curPos - m_mousePrevPos;
+
+		const float sensitivity = 0.1f;
+		diff *= sensitivity;
+		m_yawPitchRoll += diff;
+
+		float yawInRadians = m_yawPitchRoll.X() * MathUtils::ToRadians;
+		float pitchInRadians = m_yawPitchRoll.Y() * MathUtils::ToRadians;
+
+		Vector3D newForward;
+		newForward.SetX(std::cos(yawInRadians) * std::cos(pitchInRadians));
+		newForward.SetY(-std::sin(pitchInRadians));
+		newForward.SetZ(std::sin(yawInRadians) * std::cos(pitchInRadians));
+
+		m_forward = newForward;
+		m_forward.Normalize();
+	}
+
+	m_mousePrevPos = curPos;
+}

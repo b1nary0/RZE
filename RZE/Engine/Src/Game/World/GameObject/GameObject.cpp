@@ -62,6 +62,8 @@ void GameObject::OnAddToScene()
 	{
 		component->OnAddToScene();
 	}
+
+	m_stateFlags.IsInScene = true;
 }
 
 void GameObject::OnRemoveFromScene()
@@ -70,6 +72,8 @@ void GameObject::OnRemoveFromScene()
 	{
 		component->OnRemoveFromScene();
 	}
+
+	m_stateFlags.IsInScene = false;
 }
 
 void GameObject::Update()

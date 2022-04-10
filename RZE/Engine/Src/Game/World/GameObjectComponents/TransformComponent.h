@@ -22,8 +22,11 @@ public:
 	void Update() override;
 
 public:
+	Vector3D& GetPosition();
 	const Vector3D& GetPosition() const;
+	Vector3D& GetRotation();
 	const Vector3D& GetRotation() const;
+	Vector3D& GetScale();
 	const Vector3D& GetScale() const;
 
 	void SetPosition(const Vector3D& position);
