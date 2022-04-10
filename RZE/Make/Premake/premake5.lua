@@ -156,7 +156,7 @@ workspace "RZE"
 		targetdir (LibDir)
 		targetname "RZE_SourceAssetBurner"
 		
-		dependson { "Engine, Utils" }
+		dependson { "Engine", "Utils" }
 
 		files
 		{

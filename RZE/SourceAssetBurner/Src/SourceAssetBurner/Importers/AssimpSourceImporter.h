@@ -2,7 +2,7 @@
 
 #include <SourceAssetBurner/Importers/SourceImporter.h>
 
-#include <Graphics/MeshGeometry.h>
+#include <Asset/AssetImport/MeshAssetWriter.h>
 
 #include <Utils/PrimitiveDefs.h>
 
@@ -13,29 +13,15 @@ struct aiMesh;
 struct aiNode;
 struct aiScene;
 
-// #TODO
-// Eventually move the writing code out and the importers just store the data from the relevant
-// import library (assimp etc) but the data is transformed to the same RZE concepts and written the
-// same way via "globally" accessible functions (like a writing class or something? i dunno need to think
-// on it more)
-
-class AssimpSourceImporter : public SourceImporter
+class AssimpSourceImporter final : public SourceImporter
 {
 public:
 	AssimpSourceImporter();
-	virtual ~AssimpSourceImporter() = default;
+	~AssimpSourceImporter() override = default;
 
 	virtual bool Import(const FilePath& filePath) override;
 
 private:
-	struct MeshData
-	{
-		std::string MeshName;
-		std::string MaterialPath;
-		std::vector<MeshVertex> VertexDataArray;
-		std::vector<U32> IndexArray;
-	};
-
 	// #TODO
 	// standardize these data structures so they dont all need to be maintained...
 	struct MaterialData
@@ -70,10 +56,10 @@ private:
 	bool WriteTextureAsset();
 	
 private:
-	FilePath mFilePath;
-	std::string mAssetName;
+	FilePath m_filepath;
+	std::string m_assetName;
 
-	std::vector<MeshData> mMeshes;
-	std::unordered_map<std::string, MaterialData> mMaterialTable; // #TODO this is just a quick way to prevent duplicates. need a better solution in the future
-	std::vector<FilePath> mTextures;
+	std::vector<MeshData> m_meshes;
+	std::unordered_map<std::string, MaterialData> m_materialTable; // #TODO this is just a quick way to prevent duplicates. need a better solution in the future
+	std::vector<FilePath> m_textures;
 };

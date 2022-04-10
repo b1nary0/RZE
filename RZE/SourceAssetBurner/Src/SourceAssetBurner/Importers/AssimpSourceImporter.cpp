@@ -17,14 +17,11 @@ namespace
 {
 	// #TODO
 	// Move these into a common file. They will be used across different classes
-	constexpr char kMeshAssetSuffix[] = { ".meshasset" };
 	constexpr char kMaterialAssetSuffix[] = { ".materialasset" };
-
-	constexpr int kMeshAssetVersion = 1;
-
+	
 	std::string StripAssetNameFromFilePath(const FilePath& filePath)
 	{
-		std::string assetPath = filePath.GetRelativePath();
+		const std::string& assetPath = filePath.GetRelativePath();
 
 		size_t pos = assetPath.find_last_of('/');
 		std::string assetName = assetPath.substr(pos + 1, assetPath.size());
@@ -51,8 +48,8 @@ bool AssimpSourceImporter::Import(const FilePath& filePath)
 {
 	LOG_CONSOLE_ARGS("AssimpSourceImporter : Importing %s...", filePath.GetRelativePath().c_str());
 
-	mFilePath = filePath;
-	mAssetName = StripAssetNameFromFilePath(filePath);
+	m_filepath = filePath;
+	m_assetName = StripAssetNameFromFilePath(filePath);
 
 	Assimp::Importer ModelImporter;
 	const aiScene* AssimpScene = ModelImporter.ReadFile(filePath.GetAbsolutePath(),
@@ -74,10 +71,10 @@ bool AssimpSourceImporter::Import(const FilePath& filePath)
 		return false;
 	}
 
-	mMeshes.reserve(AssimpScene->mNumMeshes);
+	m_meshes.reserve(AssimpScene->mNumMeshes);
 	ProcessNode(*AssimpScene->mRootNode, *AssimpScene);
 
-	if (mMeshes.size() != AssimpScene->mNumMeshes)
+	if (m_meshes.size() != AssimpScene->mNumMeshes)
 	{
 		LOG_CONSOLE_ARGS("Error reading meshes from [%s].", filePath.GetRelativePath().c_str());
 		return false;
@@ -89,7 +86,7 @@ bool AssimpSourceImporter::Import(const FilePath& filePath)
 		return false;
 	}
 
-	for (auto& dataPair : mMaterialTable)
+	for (auto& dataPair : m_materialTable)
 	{
 		if (!WriteMaterialAsset(dataPair.first, dataPair.second))
 		{
@@ -109,7 +106,7 @@ void AssimpSourceImporter::ProcessNode(const aiNode& node, const aiScene& scene)
 		const unsigned int assimpMeshIdx = node.mMeshes[meshIndex];
 		const aiMesh& assimpMesh = *scene.mMeshes[assimpMeshIdx];
 		
-		MeshData& meshData = mMeshes.emplace_back();
+		MeshData& meshData = m_meshes.emplace_back();
 
 		if (assimpMesh.mName.length > 0)
 		{
@@ -213,7 +210,7 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 			aiString str;
 			mat->GetTexture(aiTextureType_DIFFUSE, 0, &str);
 
-			FilePath texturePath = GetTextureFilePath(mFilePath, str.C_Str());
+			FilePath texturePath = GetTextureFilePath(m_filepath, str.C_Str());
 
 			materialData.TextureFlags |= MaterialData::ETextureFlags::TEXTUREFLAG_ALBEDO;
 			materialData.TexturePaths[0] = texturePath.GetRelativePath();
@@ -224,7 +221,7 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 			aiString str;
 			mat->GetTexture(aiTextureType_SPECULAR, 0, &str);
 
-			FilePath texturePath = GetTextureFilePath(mFilePath, str.C_Str());
+			FilePath texturePath = GetTextureFilePath(m_filepath, str.C_Str());
 
 			materialData.TextureFlags |= MaterialData::ETextureFlags::TEXTUREFLAG_SPECULAR;
 			materialData.TexturePaths[1] = texturePath.GetRelativePath();
@@ -235,7 +232,7 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 			aiString str;
 			mat->GetTexture(aiTextureType_NORMALS, 0, &str);
 
-			FilePath texturePath = GetTextureFilePath(mFilePath, str.C_Str());
+			FilePath texturePath = GetTextureFilePath(m_filepath, str.C_Str());
 
 			materialData.TextureFlags |= MaterialData::ETextureFlags::TEXTUREFLAG_NORMAL;
 			materialData.TexturePaths[2] = texturePath.GetRelativePath();
@@ -243,87 +240,25 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 
 		// #TODO really gross string manip lol
 		std::string assetFilename = materialData.MaterialName + kMaterialAssetSuffix;
-		std::string assetFilepathRelative = "ProjectData/Material/" + mAssetName + "/";
+		std::string assetFilepathRelative = "ProjectData/Material/" + m_assetName + "/";
 		assetFilepathRelative = assetFilepathRelative + assetFilename;
 
 		outMeshData.MaterialPath = assetFilepathRelative;
 
-		if (!mMaterialTable.count(assetFilepathRelative))
+		if (!m_materialTable.count(assetFilepathRelative))
 		{
-			mMaterialTable[assetFilepathRelative] = std::move(materialData);
+			m_materialTable[assetFilepathRelative] = std::move(materialData);
 		}
 	}
 }
 
 bool AssimpSourceImporter::WriteMeshAsset()
 {
-	AssertExpr(mMeshes.size() > 0);
+	std::shared_ptr<MeshAssetWriter> assetWriter = std::make_shared<MeshAssetWriter>();
+	assetWriter->SetAssetName(m_assetName);
+	assetWriter->SetMeshData(std::move(m_meshes));
 
-	// #TODO really gross string manip lol
-	std::string assetFilename = mAssetName + kMeshAssetSuffix;
-	std::string assetFilepathRelative = "ProjectData/Mesh/";
-	assetFilepathRelative = assetFilepathRelative + assetFilename;
-
-	FilePath outputPath(assetFilepathRelative);
-	if (!std::filesystem::exists(outputPath.GetAbsolutePath()))
-	{
-		std::filesystem::create_directories(outputPath.GetAbsoluteDirectoryPath());
-	}
-
-	File outputFile(outputPath);
-	outputFile.Open((File::EFileOpenMode::Value)(File::EFileOpenMode::Write | File::EFileOpenMode::Binary));
-
-	size_t bufSize = 0;
-	for (auto& mesh : mMeshes)
-	{
-		// #TODO
-		// Am i just dumb or can this be done in a much more elegant manner by a monkey
-		bufSize += mesh.MeshName.size();
-		bufSize += mesh.MaterialPath.size();
-		bufSize += sizeof(MeshVertex) * mesh.VertexDataArray.size();
-		bufSize += sizeof(U32) * mesh.IndexArray.size();
-	}
-	// magic numbers atm re: calculating data size headers per piece of data:
-	// (bufSize + meshCount + nameSizeBytes + vertexDataSizeBytes + indexDataSizeBytes) * meshCount
-	bufSize += sizeof(size_t) * 2 + (sizeof(size_t) * 4 * mMeshes.size());
-	const size_t meshCount = mMeshes.size();
-
-	ByteStream byteStream(outputPath.GetRelativePath(), bufSize);
-
-	byteStream.WriteBytes(&bufSize, sizeof(size_t));
-	byteStream.WriteBytes(&meshCount, sizeof(size_t));
-
-	for (auto& mesh : mMeshes)
-	{
-		// Have to piece-meal the copy here because the vectors are dynamically allocated. 
-		const size_t nameSizeBytes = mesh.MeshName.size();
-		byteStream.WriteBytes(&nameSizeBytes, sizeof(size_t));
-		byteStream.WriteBytes(mesh.MeshName.data(), nameSizeBytes);
-
-		const size_t materialPathSizeBytes = mesh.MaterialPath.size();
-		byteStream.WriteBytes(&materialPathSizeBytes, sizeof(size_t));
-		byteStream.WriteBytes(mesh.MaterialPath.data(), materialPathSizeBytes);
-
-		const size_t vertexDataSizeBytes = sizeof(MeshVertex) * mesh.VertexDataArray.size();
-		byteStream.WriteBytes(&vertexDataSizeBytes, sizeof(size_t));
-		byteStream.WriteBytes(mesh.VertexDataArray.data(), vertexDataSizeBytes);
-
-		const size_t indexDataSizeBytes = sizeof(U32) * mesh.IndexArray.size();
-		byteStream.WriteBytes(&indexDataSizeBytes, sizeof(size_t));
-		byteStream.WriteBytes(mesh.IndexArray.data(), indexDataSizeBytes);
-	}
-
-	AssertExpr(byteStream.GetNumBytesWritten() == bufSize);
-
-	Byte* bytes = byteStream.GetBytes();
-	for (size_t byteIndex = 0; byteIndex < byteStream.GetNumBytesWritten(); ++byteIndex)
-	{
-		outputFile << bytes[byteIndex];
-	}
-
-	outputFile.Close();
-
-	LOG_CONSOLE_ARGS("AssimpSourceImporter : %s written.", outputPath.GetRelativePath().c_str());
+	assetWriter->Write();
 
 	return true;
 }
