@@ -4,10 +4,6 @@
 
 #include <Utils/Interfaces/Resource.h>
 
-struct aiMesh;
-struct aiNode;
-struct aiScene;
-
 class StaticMeshResource : public IResource
 {
 public:

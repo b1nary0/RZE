@@ -1,11 +1,6 @@
 #include <StdAfx.h>
 #include <Game/StaticMeshResource.h>
 
-#include <Graphics/Material.h>
-#include <Graphics/Texture2D.h>
-
-#include <Graphics/Shader.h>
-
 #include <Asset/AssetImport/MeshAssetImporter.h>
 
 StaticMeshResource::StaticMeshResource()
