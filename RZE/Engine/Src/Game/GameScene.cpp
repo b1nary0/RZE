@@ -121,7 +121,12 @@ void GameScene::AddGameObject(const std::shared_ptr<GameObject>& gameObject)
 {
 	// #TODO Slow function
 
-	const auto it = std::find(m_objectRegistry.begin(), m_objectRegistry.end(), gameObject);
+	const auto it = std::find_if(m_objectRegistry.begin(), m_objectRegistry.end(), 
+		[&gameObject](const auto& registryObject)
+		{
+			return gameObject == registryObject || registryObject->GetName() == gameObject->GetName();
+		});
+
 	AssertMsg(it == m_objectRegistry.end(), "GameObject already exists in scene");
 	if (it == m_objectRegistry.end())
 	{
@@ -179,6 +184,8 @@ std::shared_ptr<GameObject> GameScene::AddGameObject(const std::string& name)
 {
 	std::shared_ptr<GameObject> gameObject = CreateGameObject();
 	gameObject->SetName(name);
+	gameObject->Initialize();
+
 	AddGameObject(gameObject);
 
 	return gameObject;

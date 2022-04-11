@@ -26,6 +26,10 @@ public:
 	~GameObject();
 
 public:
+	// @NOTE Initialize is called before any components are added to the object.
+	// This is intentional. All initialization should be for the object itself.
+	// The components should be self-contained state that will initialize themselves and
+	// set up objects from their end.
 	void Initialize();
 	void Uninitialize();
 

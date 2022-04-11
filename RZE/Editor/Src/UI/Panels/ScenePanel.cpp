@@ -172,4 +172,8 @@ namespace Editor
 		return m_selectedItem->m_gameObject;
 	}
 
+	void ScenePanel::ResetSelectedGameObject()
+	{
+		m_selectedItem.reset();
+	}
 }

@@ -87,10 +87,8 @@ namespace Editor
 		gEditorState.IsNewScene = false;
 
 		Filepath scenePath(kSceneFileToLoadHack);
-		RZE().GetActiveScene().Load(scenePath);
-
-		CreateAndInitializeEditorCamera();
-
+		LoadScene(scenePath);
+		
 		AddFilePathToWindowTitle(scenePath.GetRelativePath());
 	}
 	
@@ -152,6 +150,8 @@ namespace Editor
 		}
 
 		io.KeyCtrl = handler.GetProxyKeyboardState().IsDownThisFrame(Win32KeyCode::Control);
+		// @TODO this is commented because imgui needs extra data or im doing something wrong
+		// to not scroll to the very top or bottom every mouse notch.
 		//io.MouseWheel = static_cast<float>(handler.GetProxyMouseState().CurWheelVal);
 
 		return m_sceneViewPanel.IsHovered();
@@ -171,6 +171,11 @@ namespace Editor
 		}
 
 		return nullptr;
+	}
+
+	void EditorApp::ResetSelectedObject()
+	{
+		m_scenePanel.ResetSelectedGameObject();
 	}
 
 	void EditorApp::CreateRenderTarget(const Vector2D& dimensions)
@@ -200,7 +205,6 @@ namespace Editor
 
 		EditorCameraComponent* editorCam = m_editorCameraObject->AddComponent<EditorCameraComponent>();
 		editorCam->SetAsActiveCamera(true);
-
 	}
 
 	void EditorApp::DisplayMenuBar()
@@ -214,8 +218,7 @@ namespace Editor
 				{
 					gEditorState.IsNewScene = true;
 
-					RZE().GetActiveScene().Unload();
-					RZE().GetActiveScene().NewScene();
+					LoadScene(Filepath());
 				}
 				if (ImGui::MenuItem("Load Scene..."))
 				{
@@ -230,8 +233,8 @@ namespace Editor
 					if (openSuccess)
 					{
 						Filepath newScenePath = Filepath::FromAbsolutePathStr(chosenPath);
-						RZE().GetActiveScene().Unload();
-						RZE().GetActiveScene().Load(Filepath(newScenePath.GetRelativePath()));
+						LoadScene(newScenePath);
+
 						AddFilePathToWindowTitle(newScenePath.GetRelativePath());
 					}
 				}
@@ -495,6 +498,25 @@ namespace Editor
 				DebugServices::Get().Trace(LogChannel::Build, buffer);
 			}
 		}
+	}
+
+	void EditorApp::LoadScene(const Filepath& filepath)
+	{
+		// @TODO should go away with editor event system
+		ResetSelectedObject();
+
+		m_editorCameraObject.reset();
+		RZE::GetActiveScene().Unload();
+		if (!filepath.IsValid())
+		{
+			RZE::GetActiveScene().NewScene();
+		}
+		else
+		{
+			RZE::GetActiveScene().Load(filepath);
+		}
+
+		CreateAndInitializeEditorCamera();
 	}
 
 	void EditorApp::ParseArguments(const char* arguments, int count)

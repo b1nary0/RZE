@@ -79,6 +79,8 @@ namespace Editor
 					ImGuizmo::SetRect(sceneViewPos.X(), sceneViewPos.Y(), sceneViewDims.X(), sceneViewDims.Y());
 
 					std::shared_ptr<GameObject> cameraObject = RZE::GetActiveScene().FindGameObjectByName("EditorCam");
+					AssertNotNull(cameraObject);
+
 					const EditorCameraComponent* const cameraComponent = cameraObject->GetComponent<EditorCameraComponent>();
 					
 					const Matrix4x4& view = cameraComponent->GetViewMatrix();

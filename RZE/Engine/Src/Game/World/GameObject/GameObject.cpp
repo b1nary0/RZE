@@ -30,6 +30,7 @@ void GameObject::Uninitialize()
 {
 	for (auto& component : m_components)
 	{
+		// @TODO component->Uninitialize here?
 		delete component;
 	}
 	m_components.clear();

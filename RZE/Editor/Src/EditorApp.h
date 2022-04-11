@@ -34,9 +34,10 @@ namespace Editor
 
 		void OnWindowResize(const Vector2D& newSize) override;
 
-		// @TODO Re-architect editor API to avoid having this call here. Probably event-driven.
+		// @TODO Re-architect editor API to avoid having these calls here. Probably event-driven.
 		// i.e Fire GameObjectSelectedEvent from ScenePanel and react to it in SceneViewPanel
 		std::shared_ptr<GameObject> GetSelectedObjectFromScenePanel();
+		void ResetSelectedObject();
 
 	protected:
 		void CreateRenderTarget(const Vector2D& dimensions) override;
@@ -58,6 +59,9 @@ namespace Editor
 
 		void AddFilePathToWindowTitle(const std::string& path);
 		void RunAssetCpy();
+
+	private:
+		void LoadScene(const Filepath& filepath);
 
 	private:
 		PanelStates m_panelStates;

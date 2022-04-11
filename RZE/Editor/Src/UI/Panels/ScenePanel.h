@@ -29,6 +29,7 @@ namespace Editor
 
 		bool HasSelectedGameObject();
 		std::shared_ptr<GameObject> GetSelectedGameObject();
+		void ResetSelectedGameObject();
 
 	private:
 		bool bEnabled;
