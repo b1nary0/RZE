@@ -63,16 +63,6 @@ Filepath::Filepath(const std::string& path)
 	}
 }
 
-Filepath::Filepath(const std::string& path, const bool isCustomPath)
-{
-	// #TODO
-	// WARNING:
-	// This constructor is temporary only, any use other than what it was made for will
-	// likely break. Just didn't have time to go down this rabbit hole at the moment.
-	mRelativePath = path;
-	mAbsolutePath = path;
-}
-
 Filepath::~Filepath()
 {
 }

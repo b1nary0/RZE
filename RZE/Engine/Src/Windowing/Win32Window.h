@@ -17,7 +17,6 @@ class InputHandler;
 
 struct FilePromptParams
 {
-	std::string DialogGuid;
 	std::string Name;
 	std::string FiletypeFilter;
 };
