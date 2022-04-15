@@ -17,11 +17,6 @@ class Filepath
 public:
 	Filepath() = default;
 	explicit Filepath(const std::string& path);
-	// #TODO
-	// Hacky constructor to read from non-runtime asset paths
-	// until the Filepath infrastructure understands different directory
-	// contexts.
-	Filepath(const std::string& path, const bool isCustomPath);
 	~Filepath();
 
 	static void CreateDir(const std::string& directoryPath);
