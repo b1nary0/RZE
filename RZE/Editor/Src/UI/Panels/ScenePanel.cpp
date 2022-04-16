@@ -3,6 +3,7 @@
 #include <EditorApp.h>
 
 #include <Game/World/GameObject/GameObject.h>
+#include <Game/World/GameObjectComponents/EditorCameraComponent.h>
 
 #include <Utils/DebugUtils/Debug.h>
 
@@ -71,6 +72,14 @@ namespace Editor
 					if (ImGui::IsAnyMouseDown() && (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) && HasSelectedGameObject())
 					{
 						m_selectedItem.reset();
+					}
+
+					// @NOTE Don't show the EditorComponent. Settings for this should go through
+					// editor preferences UI
+					EditorCameraComponent* cameraComponent = gameObject->GetComponent<EditorCameraComponent>();
+					if (cameraComponent != nullptr)
+					{
+						return;
 					}
 
 					bool bSelectedCurrent = HasSelectedGameObject() && GetSelectedGameObject() == gameObject;
