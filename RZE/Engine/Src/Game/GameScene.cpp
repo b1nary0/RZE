@@ -5,12 +5,10 @@
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
 #include <RapidJSON/document.h>
-#include <RapidJSON/writer.h>
 #include <RapidJSON/prettywriter.h>
 #include <RapidJSON/stringbuffer.h>
 
 #include <Utils/DebugUtils/Debug.h>
-#include <Utils/Math/Quaternion.h>
 
 GameScene::GameScene()
 {
@@ -92,22 +90,24 @@ void GameScene::Load(Filepath filePath)
 		{
 			rapidjson::Value& val = object->value;
 			
-			std::shared_ptr<GameObject> gameObject = CreateGameObjectNoComponents();
+			std::unique_ptr<GameObject> gameObject = CreateGameObjectNoComponents();
 			gameObject->SetName(object->name.GetString());
 			// ComponentBegin
 			gameObject->Load(val);
-			AddGameObject(gameObject);
+			AddGameObject(std::move(gameObject));
 		}
 	}
 }
 
-std::shared_ptr<GameObject> GameScene::CreateGameObjectNoComponents()
+std::unique_ptr<GameObject> GameScene::CreateGameObjectNoComponents()
 {
-	return std::make_shared<GameObject>();
+	return std::make_unique<GameObject>();
 }
 
 void GameScene::Unload()
 {
+	ProcessObjectRemoveDeferrals();
+
 	for (auto& gameObject : m_objectRegistry)
 	{
 		gameObject->OnRemoveFromScene();
@@ -117,7 +117,7 @@ void GameScene::Unload()
 	m_objectRegistry.clear();
 }
 
-void GameScene::AddGameObject(const std::shared_ptr<GameObject>& gameObject)
+void GameScene::AddGameObject(std::unique_ptr<GameObject>&& gameObject)
 {
 	// #TODO Slow function
 
@@ -130,21 +130,24 @@ void GameScene::AddGameObject(const std::shared_ptr<GameObject>& gameObject)
 	AssertMsg(it == m_objectRegistry.end(), "GameObject already exists in scene");
 	if (it == m_objectRegistry.end())
 	{
-		m_objectRegistry.push_back(gameObject);
-		// #TODO AddToScene stuff
 		gameObject->OnAddToScene();
+		m_objectRegistry.emplace_back(std::move(gameObject));
 	}
 }
 
-void GameScene::RemoveGameObject(const std::shared_ptr<GameObject>& gameObject)
+void GameScene::InternalRemoveGameObject(GameObjectPtr& gameObject)
 {
-	// #TODO Slow function
-
-	const auto iter = std::find(m_objectRegistry.begin(), m_objectRegistry.end(), gameObject);
+	const auto iter = std::find_if(m_objectRegistry.begin(), m_objectRegistry.end(),
+		[&gameObject](const std::unique_ptr<GameObject>& other)
+		{
+			return gameObject.m_ptr == other.get();
+		});
 	AssertMsg(iter != m_objectRegistry.end(), "GameObject doesn't exist in scene");
+
 	if (iter != m_objectRegistry.end())
 	{
-		gameObject->OnRemoveFromScene();
+		AssertExpr(!gameObject->IsInScene());
+
 		// @TODO This shouldnt be here but we'll end up with "leaking" objects when
 		// we remove from the scene but dont call Uninitialize (which stray resources will be stale and bad)
 		// which is actually more indicative of a larger dumb but i can only focus on so much dumb at a time
@@ -160,48 +163,73 @@ void GameScene::RemoveGameObject(const std::shared_ptr<GameObject>& gameObject)
 		{
 			m_objectRegistry.erase(iter);
 		}
+
+		gameObject = GameObjectPtr();
 	}
 }
 
-std::shared_ptr<GameObject> GameScene::FindGameObjectByName(const std::string& name)
+void GameScene::ProcessObjectRemoveDeferrals()
+{
+	// @TODO This is really ugly and slow, should go away with better object accessing/storage
+	for (auto& object : m_objectsToRemove)
+	{
+		InternalRemoveGameObject(object);
+	}
+	m_objectsToRemove.clear();
+}
+
+void GameScene::RemoveGameObject(GameObjectPtr& gameObject)
+{
+	AssertNotNull(gameObject);
+	gameObject->OnRemoveFromScene();
+	m_objectsToRemove.emplace_back(gameObject);
+}
+
+GameObjectPtr GameScene::FindGameObjectByName(const std::string& name)
 {
 	// @TODO Slow first-pass quick implementation
 	auto iter = std::find_if(m_objectRegistry.begin(), m_objectRegistry.end(),
-		[&name](const std::shared_ptr<GameObject> object)
+		[&name](const std::unique_ptr<GameObject>& object)
 		{
-			return object->GetName() == name;
+			return object->IsInScene() && object->GetName() == name;
 		});
 
 	if (iter != m_objectRegistry.end())
 	{
-		return *iter;
+		return GameObjectPtr((*iter).get());
 	}
 
 	return nullptr;
 }
 
-std::shared_ptr<GameObject> GameScene::AddGameObject(const std::string& name)
+GameObjectPtr GameScene::AddGameObject(const std::string& name)
 {
-	std::shared_ptr<GameObject> gameObject = CreateGameObject();
+	std::unique_ptr<GameObject> gameObject = CreateGameObject();
 	gameObject->SetName(name);
 	gameObject->Initialize();
 
-	AddGameObject(gameObject);
+	GameObjectPtr ptr;
+	ptr.m_ptr = gameObject.get();
 
-	return gameObject;
+	AddGameObject(std::move(gameObject));
+
+	return ptr;
 }
 
-void GameScene::ForEachGameObject(Functor<void, std::shared_ptr<GameObject>> func)
+void GameScene::ForEachGameObject(Functor<void, GameObjectPtr> func)
 {
 	for (auto& gameObject : m_objectRegistry)
 	{
-		func(gameObject);
+		if (gameObject->IsInScene())
+		{
+			func(GameObjectPtr(gameObject.get()));
+		}
 	}
 }
 
-std::shared_ptr<GameObject> GameScene::CreateGameObject()
+std::unique_ptr<GameObject> GameScene::CreateGameObject()
 {
-	std::shared_ptr<GameObject> gameObject = std::make_shared<GameObject>();
+	std::unique_ptr<GameObject> gameObject = std::make_unique<GameObject>();
 	gameObject->AddComponent<TransformComponent>();
 	return gameObject;
 }
@@ -213,6 +241,8 @@ void GameScene::Start()
 void GameScene::Update()
 {
 	OPTICK_EVENT();
+	ProcessObjectRemoveDeferrals();
+
 	for (auto& gameObject : m_objectRegistry)
 	{
 		gameObject->Update();
@@ -221,6 +251,8 @@ void GameScene::Update()
 
 void GameScene::ShutDown()
 {
+	ProcessObjectRemoveDeferrals();
+
 	for (auto& gameObject : m_objectRegistry)
 	{
 		gameObject->Uninitialize();

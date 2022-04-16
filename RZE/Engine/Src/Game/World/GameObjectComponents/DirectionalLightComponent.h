@@ -22,7 +22,7 @@ public:
 	void OnEditorInspect() override;
 
 private:
-	std::shared_ptr<LightObject> m_lightObject;
+	LightObjectPtr m_lightObject;
 
 	float m_lightStrength = 1.0f;
 	Vector4D m_lightColour = Vector4D(1.0f);

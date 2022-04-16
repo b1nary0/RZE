@@ -74,24 +74,27 @@ void RenderEngine::Shutdown()
 	Rendering::Renderer::Shutdown();
 }
 
-std::shared_ptr<RenderObject> RenderEngine::CreateRenderObject(const StaticMesh& staticMesh)
+RenderObjectPtr RenderEngine::CreateRenderObject(const StaticMesh& staticMesh)
 {
 	OPTICK_EVENT();
+	
+	RenderObjectPtr ptr;
 
-	std::shared_ptr<RenderObject>& renderObjectPtr = m_renderObjects.emplace_back(std::make_shared<RenderObject>());
+	std::unique_ptr<RenderObject>& renderObjectPtr = m_renderObjects.emplace_back(std::make_unique<RenderObject>());
 	renderObjectPtr->SetStaticMesh(staticMesh);
 
-	return m_renderObjects.back();
+	ptr.m_ptr = m_renderObjects.back().get();
+	return ptr;
 }
 
-void RenderEngine::DestroyRenderObject(std::shared_ptr<RenderObject>& renderObject)
+void RenderEngine::DestroyRenderObject(RenderObjectPtr& renderObject)
 {
 	OPTICK_EVENT();
 
 	auto iter = std::find_if(m_renderObjects.begin(), m_renderObjects.end(),
-		[&renderObject](const std::shared_ptr<RenderObject>& other)
+		[&renderObject](const std::unique_ptr<RenderObject>& other)
 		{
-			return renderObject == other;
+			return renderObject.m_ptr == other.get();
 		});
 
 	if (iter != m_renderObjects.end())
@@ -106,26 +109,29 @@ void RenderEngine::DestroyRenderObject(std::shared_ptr<RenderObject>& renderObje
 			m_renderObjects.erase(iter);
 		}
 
-		renderObject.reset();
+		renderObject = RenderObjectPtr();
 	}
 }
 
-std::shared_ptr<LightObject> RenderEngine::CreateLightObject()
+LightObjectPtr RenderEngine::CreateLightObject()
 {
-	std::shared_ptr<LightObject>& lightObjectPtr = m_lightObjects.emplace_back(std::make_shared<LightObject>());
+	LightObjectPtr ptr;
+	
+	std::unique_ptr<LightObject>& lightObjectPtr = m_lightObjects.emplace_back(std::make_unique<LightObject>());
 	lightObjectPtr->Initialize();
 
-	return m_lightObjects.back();
+	ptr.m_ptr = m_lightObjects.back().get();
+	return ptr;
 }
 
-void RenderEngine::DestroyLightObject(std::shared_ptr<LightObject>& lightObject)
+void RenderEngine::DestroyLightObject(LightObjectPtr& lightObject)
 {
 	OPTICK_EVENT();
 
 	auto iter = std::find_if(m_lightObjects.begin(), m_lightObjects.end(),
-		[&lightObject](const std::shared_ptr<LightObject>& other)
+		[&lightObject](const std::unique_ptr<LightObject>& other)
 		{
-			return lightObject == other;
+			return lightObject.m_ptr == other.get();
 		});
 
 	if (iter != m_lightObjects.end())
@@ -140,7 +146,7 @@ void RenderEngine::DestroyLightObject(std::shared_ptr<LightObject>& lightObject)
 			m_lightObjects.erase(iter);
 		}
 
-		lightObject.reset();
+		lightObject = LightObjectPtr();
 	}
 }
 

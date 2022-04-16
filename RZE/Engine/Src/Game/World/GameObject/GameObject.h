@@ -63,6 +63,8 @@ public:
 
 	const ComponentList& GetComponents() const { return m_components; }
 
+	bool IsInScene() { return m_stateFlags.IsInScene; }
+
 public:
 	void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) const;
 	void Load(rapidjson::Value& data);

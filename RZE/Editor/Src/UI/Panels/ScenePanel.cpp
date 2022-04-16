@@ -66,7 +66,7 @@ namespace Editor
 			}
 			
 			RZE::GetActiveScene().ForEachGameObject(
-				Functor<void, std::shared_ptr<GameObject>>([this](std::shared_ptr<GameObject> gameObject)
+				Functor<void, GameObjectPtr>([this](GameObjectPtr gameObject)
 				{
 					if (ImGui::IsAnyMouseDown() && (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) && HasSelectedGameObject())
 					{
@@ -119,6 +119,11 @@ namespace Editor
 
 							if (ImGui::MenuItem("Delete"))
 							{
+								if (gameObject == GetSelectedGameObject())
+								{
+									ResetSelectedGameObject();
+								}
+
 								RZE::GetActiveScene().RemoveGameObject(gameObject);
 							}
 
@@ -166,7 +171,7 @@ namespace Editor
 		return m_selectedItem != nullptr;
 	}
 
-	std::shared_ptr<GameObject> ScenePanel::GetSelectedGameObject()
+	GameObjectPtr ScenePanel::GetSelectedGameObject()
 	{
 		AssertNotNull(m_selectedItem);
 		return m_selectedItem->m_gameObject;

@@ -2,6 +2,7 @@
 
 #include <Game/World/GameObject/GameObjectComponent.h>
 
+#include <Graphics/GraphicsDefines.h>
 #include <Graphics/StaticMesh.h>
 
 struct GifData;
@@ -44,6 +45,6 @@ private:
 
 	std::unique_ptr<GifData> m_gifData;
 	std::vector<ResourceHandle> m_frames;
-	std::shared_ptr<RenderObject> m_meshRenderObject;
+	RenderObjectPtr m_meshRenderObject;
 	StaticMesh m_meshGeometry;
 };

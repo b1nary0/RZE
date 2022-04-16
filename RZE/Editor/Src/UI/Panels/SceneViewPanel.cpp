@@ -45,7 +45,7 @@ namespace Editor
 				RZE::GetRenderEngine().SetViewportSize(m_dimensions);
 
 				// @TODO lazy josh to future josh just use object cached on EditorApp
-				std::shared_ptr<GameObject> gameObject = RZE::GetActiveScene().FindGameObjectByName("EditorCam");
+				GameObjectPtr gameObject = RZE::GetActiveScene().FindGameObjectByName("EditorCam");
 				AssertNotNull(gameObject);
 				EditorCameraComponent* const cameraComponent = gameObject->GetComponent<EditorCameraComponent>();
 				AssertNotNull(cameraComponent);
@@ -68,7 +68,7 @@ namespace Editor
 
 			{
 				EditorApp& editorApp = static_cast<EditorApp&>(RZE_Application::RZE().GetApplication());
-				std::shared_ptr<GameObject> selectedGameObject = editorApp.GetSelectedObjectFromScenePanel();
+				GameObjectPtr selectedGameObject = editorApp.GetSelectedObjectFromScenePanel();
 				if (selectedGameObject != nullptr)
 				{
 					ImGuizmo::SetOrthographic(false);
@@ -78,7 +78,7 @@ namespace Editor
 					const Vector2D& sceneViewPos = GetPosition();
 					ImGuizmo::SetRect(sceneViewPos.X(), sceneViewPos.Y(), sceneViewDims.X(), sceneViewDims.Y());
 
-					std::shared_ptr<GameObject> cameraObject = RZE::GetActiveScene().FindGameObjectByName("EditorCam");
+					GameObjectPtr cameraObject = RZE::GetActiveScene().FindGameObjectByName("EditorCam");
 					AssertNotNull(cameraObject);
 
 					const EditorCameraComponent* const cameraComponent = cameraObject->GetComponent<EditorCameraComponent>();

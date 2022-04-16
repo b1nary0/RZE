@@ -36,7 +36,7 @@ namespace Editor
 
 		// @TODO Re-architect editor API to avoid having these calls here. Probably event-driven.
 		// i.e Fire GameObjectSelectedEvent from ScenePanel and react to it in SceneViewPanel
-		std::shared_ptr<GameObject> GetSelectedObjectFromScenePanel();
+		GameObjectPtr GetSelectedObjectFromScenePanel();
 		void ResetSelectedObject();
 
 	protected:
@@ -72,7 +72,7 @@ namespace Editor
 
 		std::unordered_map<std::string, ImFont*> m_fontMapping;
 
-		std::shared_ptr<GameObject> m_editorCameraObject;
+		GameObjectPtr m_editorCameraObject;
 
 		Filepath m_imguiConfigFilepath;
 

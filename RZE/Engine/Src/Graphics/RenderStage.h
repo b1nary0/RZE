@@ -12,8 +12,8 @@ struct RenderCamera;
 struct RenderStageData
 {
 	RenderCamera* m_camera = nullptr;
-	std::vector<std::shared_ptr<RenderObject>>* m_renderObjects = nullptr;
-	std::vector<std::shared_ptr<LightObject>>* m_lights = nullptr;
+	std::vector<std::unique_ptr<RenderObject>>* m_renderObjects = nullptr;
+	std::vector<std::unique_ptr<LightObject>>* m_lights = nullptr;
 };
 
 class IRenderStage

@@ -163,14 +163,14 @@ namespace Editor
 		RZE::GetRenderEngine().SetRenderTarget(m_renderTarget.get());
 	}
 
-	std::shared_ptr<GameObject> EditorApp::GetSelectedObjectFromScenePanel()
+	GameObjectPtr EditorApp::GetSelectedObjectFromScenePanel()
 	{
 		if (m_scenePanel.HasSelectedGameObject())
 		{
 			return m_scenePanel.GetSelectedGameObject();
 		}
 
-		return nullptr;
+		return GameObjectPtr();
 	}
 
 	void EditorApp::ResetSelectedObject()
@@ -504,8 +504,7 @@ namespace Editor
 	{
 		// @TODO should go away with editor event system
 		ResetSelectedObject();
-
-		m_editorCameraObject.reset();
+		
 		RZE::GetActiveScene().Unload();
 		if (!filepath.IsValid())
 		{

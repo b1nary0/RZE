@@ -2,6 +2,8 @@
 
 #include <Graphics/StaticMesh.h>
 
+#include <Graphics/GraphicsDefines.h>
+
 #include <Rendering/BufferHandle.h>
 
 #include <Utils/Math/Matrix4x4.h>
@@ -95,11 +97,11 @@ public:
 	template <typename TRenderStageType, typename... Args>
 	void AddRenderStage(Args... args);
 
-	std::shared_ptr<RenderObject> CreateRenderObject(const StaticMesh& staticMesh);
-	void DestroyRenderObject(std::shared_ptr<RenderObject>& renderObject);
+	RenderObjectPtr CreateRenderObject(const StaticMesh& staticMesh);
+	void DestroyRenderObject(RenderObjectPtr& renderObject);
 
-	std::shared_ptr<LightObject> CreateLightObject();
-	void DestroyLightObject(std::shared_ptr<LightObject>& lightObject);
+	LightObjectPtr CreateLightObject();
+	void DestroyLightObject(LightObjectPtr& lightObject);
 
 	void ResizeCanvas(const Vector2D& newSize);
 	const Vector2D& GetCanvasSize() const;
@@ -125,9 +127,9 @@ private:
 	Rendering::RenderTargetTexture* m_renderTarget = nullptr;
 
 	// @TODO Make not vector or something
-	std::vector<std::shared_ptr<RenderObject>> m_renderObjects;
+	std::vector<std::unique_ptr<RenderObject>> m_renderObjects;
 	// @TODO Maybe move light stuff into its own area?
-	std::vector<std::shared_ptr<LightObject>> m_lightObjects;
+	std::vector<std::unique_ptr<LightObject>> m_lightObjects;
 
 	std::vector<std::unique_ptr<IRenderStage>> m_renderStages;
 

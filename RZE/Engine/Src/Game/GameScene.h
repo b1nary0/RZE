@@ -1,6 +1,7 @@
 #pragma once
 
-class GameObject;
+// @TODO When GameObjectPtr doesnt live in GameObject.h remove this include
+#include <Game/World/GameObject/GameObjectDefinitions.h>
 
 class GameScene final
 {
@@ -20,22 +21,28 @@ public:
 	void Load(Filepath filePath);
 	void Unload();
 	
-	std::shared_ptr<GameObject> FindGameObjectByName(const std::string& name);
-	std::shared_ptr<GameObject> AddGameObject(const std::string& name);
-	void RemoveGameObject(const std::shared_ptr<GameObject>& gameObject);
+	GameObjectPtr FindGameObjectByName(const std::string& name);
+	GameObjectPtr AddGameObject(const std::string& name);
 	
-	void ForEachGameObject(Functor<void, std::shared_ptr<GameObject>> func);
-
+	void ForEachGameObject(Functor<void, GameObjectPtr> func);
+	void RemoveGameObject(GameObjectPtr& gameObject);
+	
 private:
 	// @NOTE Creates GameObject with TransformComponent, as all gameobjects have a spatial representation
-	std::shared_ptr<GameObject> CreateGameObject();
+	std::unique_ptr<GameObject> CreateGameObject();
 	// @NOTE Creates GameObject with no components. Just used for load code.
-	std::shared_ptr<GameObject> CreateGameObjectNoComponents();
-	void AddGameObject(const std::shared_ptr<GameObject>& gameObject);
-	
+	std::unique_ptr<GameObject> CreateGameObjectNoComponents();
+
+	void AddGameObject(std::unique_ptr<GameObject>&& gameObject);
+
+	void InternalRemoveGameObject(GameObjectPtr& gameObject);
+	void ProcessObjectRemoveDeferrals();
+
 private:
 	Filepath mCurrentScenePath;
 
 	// #TODO Implement sparse array to make this faster
-	std::vector<std::shared_ptr<GameObject>> m_objectRegistry;
+	std::vector<std::unique_ptr<GameObject>> m_objectRegistry;
+
+	std::vector<GameObjectPtr> m_objectsToRemove;
 };

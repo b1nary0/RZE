@@ -21,7 +21,7 @@ void DirectionalLightComponent::OnRemoveFromScene()
 
 void DirectionalLightComponent::Update()
 {
-	if (m_lightObject)
+	if (m_lightObject != nullptr)
 	{
 		TransformComponent* const transformComponent = GetOwner()->GetComponent<TransformComponent>();
 

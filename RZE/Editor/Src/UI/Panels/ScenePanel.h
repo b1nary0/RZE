@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Utils/PrimitiveDefs.h>
+#include <Game/World/GameObject/GameObjectDefinitions.h>
 
 #include <memory>
 #include <string>
@@ -14,7 +14,7 @@ namespace Editor
 	{
 		struct SelectedItem
 		{
-			std::shared_ptr<GameObject> m_gameObject;
+			GameObjectPtr m_gameObject;
 		};
 	public:
 		ScenePanel();
@@ -28,7 +28,7 @@ namespace Editor
 		bool IsEnabled();
 
 		bool HasSelectedGameObject();
-		std::shared_ptr<GameObject> GetSelectedGameObject();
+		GameObjectPtr GetSelectedGameObject();
 		void ResetSelectedGameObject();
 
 	private:

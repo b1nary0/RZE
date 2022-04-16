@@ -32,7 +32,7 @@ void ForwardRenderStage::Update(const RenderStageData& renderData)
 	
 	Rendering::Renderer::UploadDataToBuffer(m_vertexShader->GetCameraDataBuffer(), renderData.m_camera);
 
-	std::shared_ptr<LightObject> lightObject = (*renderData.m_lights)[0];
+	std::unique_ptr<LightObject>& lightObject = (*renderData.m_lights)[0];
 	struct LightProperties
 	{
 		Vector3D position;

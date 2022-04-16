@@ -2,7 +2,7 @@
 
 #include <Game/World/GameObject/GameObjectComponent.h>
 
-#include <Graphics/RenderEngine.h>
+#include <Graphics/GraphicsDefines.h>
 
 #include <EngineCore/Resources/ResourceHandler.h>
 
@@ -31,6 +31,6 @@ private:
 	void CreateRenderObject();
 
 private:
-	std::shared_ptr<RenderObject> m_renderObject;
+	RenderObjectPtr m_renderObject;
 	ResourceHandle m_resource;
 };
