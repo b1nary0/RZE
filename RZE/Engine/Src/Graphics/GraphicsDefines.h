@@ -11,7 +11,7 @@ public:
 	LightObjectPtr() = default;
 	LightObjectPtr(const LightObjectPtr&) = default;
 	~LightObjectPtr() = default;
-
+	
 	LightObjectPtr(LightObjectPtr&& other)
 	{
 		m_ptr = other.m_ptr;
@@ -43,6 +43,10 @@ public:
 	{
 		return this->m_ptr != null;
 	}
+
+private:
+	LightObjectPtr(LightObject* lightObject)
+		: m_ptr(lightObject) {}
 
 private:
 	LightObject* m_ptr = nullptr;
@@ -89,6 +93,10 @@ public:
 	{
 		return this->m_ptr != null;
 	}
+
+private:
+	explicit RenderObjectPtr(RenderObject* renderObject)
+		: m_ptr(renderObject) {}
 
 private:
 	RenderObject* m_ptr = nullptr;

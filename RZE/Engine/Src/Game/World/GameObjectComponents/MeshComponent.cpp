@@ -49,7 +49,7 @@ void MeshComponent::CreateRenderObject()
 	const StaticMeshResource* modelData = resourceHandler.GetResource<StaticMeshResource>(m_resource);
 	AssertNotNull(modelData);
 
-	m_renderObject = RZE::GetRenderEngine().CreateRenderObject(modelData->GetStaticMesh());
+	m_renderObject = renderEngine.CreateRenderObject(modelData->GetStaticMesh());
 	m_renderObject->SetTransform(transformComponent->GetAsMat4x4());
 }
 

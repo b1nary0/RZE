@@ -78,13 +78,10 @@ RenderObjectPtr RenderEngine::CreateRenderObject(const StaticMesh& staticMesh)
 {
 	OPTICK_EVENT();
 	
-	RenderObjectPtr ptr;
-
 	std::unique_ptr<RenderObject>& renderObjectPtr = m_renderObjects.emplace_back(std::make_unique<RenderObject>());
 	renderObjectPtr->SetStaticMesh(staticMesh);
-
-	ptr.m_ptr = m_renderObjects.back().get();
-	return ptr;
+	
+	return RenderObjectPtr(renderObjectPtr.get());
 }
 
 void RenderEngine::DestroyRenderObject(RenderObjectPtr& renderObject)
@@ -115,13 +112,10 @@ void RenderEngine::DestroyRenderObject(RenderObjectPtr& renderObject)
 
 LightObjectPtr RenderEngine::CreateLightObject()
 {
-	LightObjectPtr ptr;
-	
 	std::unique_ptr<LightObject>& lightObjectPtr = m_lightObjects.emplace_back(std::make_unique<LightObject>());
 	lightObjectPtr->Initialize();
-
-	ptr.m_ptr = m_lightObjects.back().get();
-	return ptr;
+	
+	return LightObjectPtr(lightObjectPtr.get());
 }
 
 void RenderEngine::DestroyLightObject(LightObjectPtr& lightObject)

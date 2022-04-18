@@ -208,8 +208,7 @@ GameObjectPtr GameScene::AddGameObject(const std::string& name)
 	gameObject->SetName(name);
 	gameObject->Initialize();
 
-	GameObjectPtr ptr;
-	ptr.m_ptr = gameObject.get();
+	GameObjectPtr ptr(gameObject.get());
 
 	AddGameObject(std::move(gameObject));
 
