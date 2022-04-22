@@ -55,7 +55,7 @@ void ForwardRenderStage::Render(const RenderStageData& renderData)
 	
 	Rendering::Renderer::Begin();
 
-	const Rendering::RenderTargetTexture& renderTarget = renderEngine.GetRenderTarget();
+	const Rendering::RenderTargetTexture& renderTarget = RZE::GetRenderEngine().GetRenderTarget();
 
 	Rendering::Renderer::SetRenderTarget(&renderTarget);
 	Rendering::Renderer::ClearRenderTarget(renderTarget.GetTargetPlatformObject(), Vector4D(0.25f, 0.25f, 0.35f, 1.0f));
