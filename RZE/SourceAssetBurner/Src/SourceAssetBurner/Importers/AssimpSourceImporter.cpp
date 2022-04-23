@@ -254,11 +254,11 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 
 bool AssimpSourceImporter::WriteMeshAsset()
 {
-	std::shared_ptr<MeshAssetWriter> assetWriter = std::make_shared<MeshAssetWriter>();
-	assetWriter->SetAssetName(m_assetName);
-	assetWriter->SetMeshData(std::move(m_meshes));
+	MeshAssetWriter assetWriter;
+	assetWriter.SetAssetName(m_assetName);
+	assetWriter.SetMeshData(std::move(m_meshes));
 
-	assetWriter->Write();
+	assetWriter.Write();
 
 	return true;
 }
