@@ -26,6 +26,7 @@ void MeshAssetWriter::SetAssetName(const std::string& assetName)
 void MeshAssetWriter::Write()
 {
 	AssertExpr(m_meshes.size() > 0);
+	AssertExpr(!m_assetName.empty());
 
 	// #TODO really gross string manip lol
 	std::string assetFilename = m_assetName + k_meshAssetExtension;
