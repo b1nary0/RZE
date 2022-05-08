@@ -4,8 +4,6 @@
 
 #include <Graphics/MeshGeometry.h>
 
-#include <Utils/PrimitiveDefs.h>
-
 class ByteStream;
 
 class MeshAssetImporter : public AssetImporter

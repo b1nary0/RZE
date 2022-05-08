@@ -12,8 +12,6 @@
 
 namespace
 {
-	// #TODO
-	// Read/Write this information to .meshasset
 	constexpr uint16_t k_meshAssetVersion = 0;
 }
 

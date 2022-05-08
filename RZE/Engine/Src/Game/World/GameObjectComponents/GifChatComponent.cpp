@@ -166,6 +166,8 @@ void GifChatComponent::OnEditorInspect()
 
 void GifChatComponent::Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer)
 {
+	// @TODO Look at moving this out so that GameObject::Save actually
+	// writes the name of the component?
 	writer.String("GifChatComponent");
 	writer.StartObject();
 	{
