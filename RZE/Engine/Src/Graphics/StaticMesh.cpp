@@ -1,9 +1,6 @@
 #include <StdAfx.h>
 #include <Graphics/StaticMesh.h>
 
-#include <Graphics/IndexBuffer.h>
-#include <Graphics/VertexBuffer.h>
-
 StaticMesh::StaticMesh()
 {
 }
