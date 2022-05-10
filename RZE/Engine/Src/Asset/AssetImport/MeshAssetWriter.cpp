@@ -55,7 +55,7 @@ void MeshAssetWriter::Write()
 	}
 	// magic numbers atm re: calculating data size headers per piece of data:
 	// (file header + (nameSizeBytes + vertexDataSizeBytes + materialPathSizeBytes + indexDataSizeBytes) * meshCount
-	bufSize += (sizeof(MeshAssetFileHeader) + (sizeof(size_t) * 4)) * m_meshes.size();
+	bufSize += sizeof(MeshAssetFileHeader) + ((sizeof(size_t) * 4) * m_meshes.size());
 	const size_t meshCount = m_meshes.size();
 
 	MeshAssetFileHeader header;
