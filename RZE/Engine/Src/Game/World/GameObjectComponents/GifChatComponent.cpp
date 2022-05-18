@@ -64,8 +64,6 @@ GifChatComponent::~GifChatComponent()
 
 void GifChatComponent::Initialize()
 {
-	m_gifData = std::make_unique<GifData>();
-
 	Load(gifFilepaths[GifFilepathIndex::PULP_FICTION_TRAVOLTA]);
 
 	CreateRenderObject();
@@ -184,8 +182,10 @@ void GifChatComponent::Load(const Filepath& fp)
 	int x = 0;
 	int y = 0;
 	int* delays = nullptr;
-	m_gifData->m_data = stbi_xload_file(fp.GetAbsolutePath().c_str(), &x, &y, &m_totalFrames, &delays);
-	AssertNotNull(m_gifData->m_data);
+
+	unsigned char* gifData = stbi_xload_file(fp.GetAbsolutePath().c_str(), &x, &y, &m_totalFrames, &delays);
+	m_gifData = std::unique_ptr<unsigned char>(gifData);
+	AssertNotNull(m_gifData);
 
 	// Store array data in vector instead of holding raw ptr to data
 	m_frameDelays.reserve(m_totalFrames);
@@ -205,7 +205,7 @@ void GifChatComponent::Load(const Filepath& fp)
 		// instead of writing a whole new architecture layer, we can't be deleting memory (as will happen when the resource
 		// releases) which we don't own.
 		U8* textureBuffer = new U8[frameSizeBytes];
-		memcpy(textureBuffer, m_gifData->m_data + frame * frameSizeBytes, frameSizeBytes);
+		memcpy(textureBuffer, m_gifData.get() + frame * frameSizeBytes, frameSizeBytes);
 		frameTexture->Load(textureBuffer, x, y);
 		
 		m_frames.push_back(RZE::GetResourceHandler().Make("FIRST_FRAME_GIF_" + std::to_string(frame), frameTexture));
