@@ -22,7 +22,7 @@ public:
 	static void CreateDir(const std::string& directoryPath);
 	static Filepath FromAbsolutePathStr(const std::string& absolutePath);
 
-	bool Exists();
+	bool Exists() const;
 
 	const std::string& GetAbsolutePath() const;
 	const std::string& GetRelativePath() const;

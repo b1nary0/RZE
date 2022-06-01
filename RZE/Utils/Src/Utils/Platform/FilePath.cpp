@@ -72,7 +72,7 @@ void Filepath::CreateDir(const std::string& directoryPath)
 	std::filesystem::create_directories(directoryPath);
 }
 
-bool Filepath::Exists()
+bool Filepath::Exists() const
 {
 	return std::filesystem::exists(GetAbsolutePath());
 }
