@@ -22,6 +22,7 @@ namespace
 	// Used to link WinProc messages with the window without having to static other class instances etc
 	WindowMessageAdaptor sWindowMessageAdaptor;
 
+	// @TODO Move this out and use it to generate GUIDs for all kinds of cool stuff
 	GUID GenerateGuid()
 	{
 		GUID gidReference;
