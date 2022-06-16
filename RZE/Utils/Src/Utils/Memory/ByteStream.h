@@ -26,7 +26,7 @@ public:
 	bool ReadBytes(Byte* buf, size_t sizeBytes); // Will copy sizeBytes into client allocated buffer
 	bool WriteBytes(const void* buf, size_t sizeBytes);
 
-	size_t GetNumBytesWritten() { return mCurPos; }
+	size_t GetNumBytesWritten() const { return mCurPos; }
 
 private:
 	std::string mName;
