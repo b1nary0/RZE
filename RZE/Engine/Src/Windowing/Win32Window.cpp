@@ -9,8 +9,9 @@
 
 #include <Windowing/WindowMessageAdaptor.h>
 
-#include <Utils/DebugUtils/Debug.h>
 #include <Utils/Conversions.h>
+#include <Utils/GUID.h>
+#include <Utils/DebugUtils/Debug.h>
 
 #include <stdlib.h>
 #include <shobjidl.h>     // for IFileDialogEvents and IFileDialogControlEvents
@@ -21,15 +22,6 @@ namespace
 {
 	// Used to link WinProc messages with the window without having to static other class instances etc
 	WindowMessageAdaptor sWindowMessageAdaptor;
-
-	// @TODO Move this out and use it to generate GUIDs for all kinds of cool stuff
-	GUID GenerateGuid()
-	{
-		GUID gidReference;
-		HRESULT hCreateGuid = CoCreateGuid(&gidReference);
-
-		return gidReference;
-	}
 }
 
 Win32Window::Win32Window(const WindowCreationParams& creationProtocol)
@@ -402,7 +394,7 @@ bool Win32Window::ShowOpenFilePrompt(const FilePromptParams& params, std::string
 
 		if (SUCCEEDED(hr))
 		{
-			static GUID guid = GenerateGuid();
+			static GUID guid = GUIDHelper::GenerateGUID();
 			pFileOpen->SetClientGuid(guid);
 
 			std::wstring wStrPromptName = Conversions::StringToWString(params.Name);
@@ -464,7 +456,7 @@ bool Win32Window::ShowSaveFilePrompt(const FilePromptParams& params, std::string
 
 		if (SUCCEEDED(hr))
 		{
-			static GUID guid = GenerateGuid();
+			static GUID guid = GUIDHelper::GenerateGUID();
 			pSaveFile->SetClientGuid(guid);
 
 			std::wstring wStrPromptName = Conversions::StringToWString(params.Name);
