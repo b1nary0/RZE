@@ -34,7 +34,9 @@ public:
 
 	static void SetDirectoryContext(EDirectoryContext context);
 
+	void ConvertToWindowsFormat();
+
 private:
-	std::string mRelativePath;
-	std::string mAbsolutePath;
+	std::string m_relativePath;
+	std::string m_absolutePath;
 };
