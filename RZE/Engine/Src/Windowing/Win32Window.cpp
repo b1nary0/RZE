@@ -396,6 +396,19 @@ bool Win32Window::ShowOpenFilePrompt(const FilePromptParams& params, std::string
 		{
 			static GUID guid = GUIDHelper::GenerateGUID();
 			pFileOpen->SetClientGuid(guid);
+			pFileOpen->SetFileName(Conversions::StringToWString(params.DirectoryPath.GetAbsolutePath()).c_str());
+			{
+				IShellItem* folder;
+				const HRESULT result = SHCreateItemFromParsingName(
+					Conversions::StringToWString(params.DirectoryPath.GetAbsolutePath()).c_str(), 
+					nullptr, 
+					IID_PPV_ARGS(&folder));
+
+				if (SUCCEEDED(result))
+				{
+					pFileOpen->SetFolder(folder);
+				}
+			}
 
 			std::wstring wStrPromptName = Conversions::StringToWString(params.Name);
 			std::wstring wStrTypeFilter = Conversions::StringToWString(params.FiletypeFilter);

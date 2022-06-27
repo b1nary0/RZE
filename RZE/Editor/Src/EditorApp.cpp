@@ -24,6 +24,8 @@
 
 namespace
 {
+	const Filepath k_sceneFileDirectoryPath("Assets/Scenes");
+
 	constexpr char kSceneFileToLoadHack[] = { "Assets/Scenes/RenderTest.scene" };
 
 	// #TODO
@@ -224,8 +226,9 @@ namespace Editor
 				{
 					FilePromptParams openFileParams =
 					{
-						"RZE Scene"
-						, "*.scene"
+						"RZE Scene",
+						k_sceneFileDirectoryPath,
+						"*.scene"
 					};
 
 					std::string chosenPath;
@@ -244,7 +247,9 @@ namespace Editor
 					{
 						FilePromptParams promptParams =
 						{
-							"Save Scene", "*.scene"
+							"Save Scene",
+							k_sceneFileDirectoryPath,
+							"*.scene"
 						};
 
 						std::string chosenPath;
