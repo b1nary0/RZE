@@ -23,7 +23,7 @@ namespace
 	{
 		const std::string& assetPath = filePath.GetRelativePath();
 
-		size_t pos = assetPath.find_last_of('/');
+		size_t pos = assetPath.find_last_of('\\');
 		std::string assetName = assetPath.substr(pos + 1, assetPath.size());
 		assetName = assetName.substr(0, assetName.find_last_of('.'));
 
