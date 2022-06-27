@@ -99,13 +99,13 @@ const std::string& Filepath::GetRelativePath() const
 
 const std::string Filepath::GetAbsoluteDirectoryPath() const
 {
-	size_t substrCount = m_absolutePath.find_last_of('/');
+	size_t substrCount = m_absolutePath.find_last_of('\\');
 	return m_absolutePath.substr(0, substrCount + 1);
 }
 
 const std::string Filepath::GetRelativeDirectoryPath() const
 {
-	size_t substrCount = m_relativePath.find_last_of('/');
+	size_t substrCount = m_relativePath.find_last_of('\\');
 	return m_relativePath.substr(0, substrCount + 1);
 }
 
