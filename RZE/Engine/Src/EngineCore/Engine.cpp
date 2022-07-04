@@ -73,7 +73,7 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 					OPTICK_EVENT("Update and Render");
 					
 					{
-						OPTICK_EVENT("ImGui Frame Work");
+						OPTICK_EVENT("ImGui NewFrame Work");
 
 						ImGui_ImplDX11_NewFrame();
 						ImGui_ImplWin32_NewFrame();
