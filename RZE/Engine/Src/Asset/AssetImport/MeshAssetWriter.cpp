@@ -46,8 +46,6 @@ void MeshAssetWriter::Write()
 	size_t bufSize = 0;
 	for (auto& mesh : m_meshes)
 	{
-		// #TODO
-		// Am i just dumb or can this be done in a much more elegant manner by a monkey
 		bufSize += mesh.MeshName.size();
 		bufSize += mesh.MaterialPath.size();
 		bufSize += sizeof(MeshVertex) * mesh.VertexDataArray.size();
