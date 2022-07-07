@@ -33,9 +33,7 @@ public:
 	bool IsValid() const;
 
 	static void SetDirectoryContext(EDirectoryContext context);
-
-	void ConvertToWindowsFormat();
-
+	
 private:
 	std::string m_relativePath;
 	std::string m_absolutePath;

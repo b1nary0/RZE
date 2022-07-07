@@ -13,11 +13,6 @@ EDirectoryContext gDirectoryContext = EDirectoryContext::Runtime;
 
 Filepath::Filepath(const std::string& path)
 {
-	// #TODO
-	// This function should actually be a lot simpler, but I'd rather not 
-	// touch it until we have the concept of build structure (then all dev can be
-	// from the RZE/Assets folder instead of where the executable is).
-
 	std::string pathCpy = path;
 	std::replace(pathCpy.begin(), pathCpy.end(), '/', '\\');
 
@@ -81,7 +76,7 @@ Filepath Filepath::FromAbsolutePathStr(const std::string& absolutePath)
 	if (index != std::string::npos)
 	{
 		return Filepath(absolutePath.substr(index, absolutePath.size()));
-	}
+	} 
 
 	return Filepath();
 }
@@ -118,10 +113,4 @@ bool Filepath::IsValid() const
 void Filepath::SetDirectoryContext(EDirectoryContext context)
 {
 	gDirectoryContext = context;
-}
-
-void Filepath::ConvertToWindowsFormat()
-{
-	std::replace(m_absolutePath.begin(), m_absolutePath.end(), '/', '\\');
-	std::replace(m_relativePath.begin(), m_relativePath.end(), '/', '\\');
 }
