@@ -9,7 +9,7 @@
 
 #include <ImGui/imgui.h>
 
-#include "Game/World/GameObjectComponents/TransformComponent.h"
+#include <Game/World/GameObjectComponents/TransformComponent.h>
 
 namespace
 {
