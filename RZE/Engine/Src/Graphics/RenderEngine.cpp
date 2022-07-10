@@ -8,6 +8,10 @@
 
 void LightObject::Initialize()
 {
+	// @NOTE
+	// Can expand on this idea and actually have a struct for each "layout"
+	// of memory for constant buffers and have it as a first class citizen for
+	// the engine.
 	struct PropertyBufferLayout
 	{
 		Vector3D position;
