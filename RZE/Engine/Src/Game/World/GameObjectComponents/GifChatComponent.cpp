@@ -225,6 +225,8 @@ void GifChatComponent::Load(const Filepath& fp)
 	// For purposes, always one mesh - a quad
 	MeshGeometry& geo = m_meshGeometry.GetSubMeshes()[0];
 	geo.SetMaterial(material);
+
+	delete delays;
 }
 
 void GifChatComponent::CreateRenderObject()
