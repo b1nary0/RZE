@@ -21,6 +21,8 @@ namespace Editor
 		m_gizmoState.m_currentOpMode = ImGuizmo::TRANSLATE;
 		m_gizmoState.m_transformationSpace = ImGuizmo::WORLD;
 
+		// @TODO The pattern here should be to register with the InputHandler at start
+		// and unregister when going bye bye
 		Temp_RegisterInputs();
 	}
 

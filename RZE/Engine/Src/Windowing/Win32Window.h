@@ -18,6 +18,7 @@ class InputHandler;
 struct FilePromptParams
 {
 	std::string Name;
+	Filepath DirectoryPath;
 	std::string FiletypeFilter;
 };
 

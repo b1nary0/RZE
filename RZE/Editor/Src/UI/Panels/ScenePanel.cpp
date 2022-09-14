@@ -9,6 +9,8 @@
 
 #include <ImGui/imgui.h>
 
+#include <Game/World/GameObjectComponents/TransformComponent.h>
+
 namespace
 {
 	constexpr size_t k_maxGameObjectNameSize = 64;
@@ -83,14 +85,29 @@ namespace Editor
 					}
 
 					bool bSelectedCurrent = HasSelectedGameObject() && GetSelectedGameObject() == gameObject;
-					if (ImGui::Selectable(gameObject->GetName().c_str(), &bSelectedCurrent))
+					if (ImGui::Selectable(gameObject->GetName().c_str(), &bSelectedCurrent, ImGuiSelectableFlags_AllowDoubleClick))
 					{
-						if (!HasSelectedGameObject() || (HasSelectedGameObject() && GetSelectedGameObject() != gameObject))
+						if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && HasSelectedGameObject())
 						{
-							SelectedItem* newItem = new SelectedItem();
-							newItem->m_gameObject = gameObject;
+							GameObjectPtr gameObject = GetSelectedGameObject();
+							TransformComponent& transformComponent = gameObject->GetTransformComponent();
 
-							m_selectedItem.reset(newItem);
+							GameObjectPtr camera = RZE::GetActiveScene().FindGameObjectByName("EditorCam");
+							EditorCameraComponent* editorCam = camera->GetComponent<EditorCameraComponent>();
+							AssertNotNull(editorCam);
+							TransformComponent& cameraTransform = camera->GetTransformComponent();
+
+							editorCam->SetForward((transformComponent.GetPosition() - cameraTransform.GetPosition()).Normalized());
+						}
+						else 
+						{
+							if (!HasSelectedGameObject() || (HasSelectedGameObject() && GetSelectedGameObject() != gameObject))
+							{
+								SelectedItem* newItem = new SelectedItem();
+								newItem->m_gameObject = gameObject;
+
+								m_selectedItem.reset(newItem);
+							}
 						}
 					}
 

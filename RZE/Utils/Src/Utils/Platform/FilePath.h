@@ -22,7 +22,7 @@ public:
 	static void CreateDir(const std::string& directoryPath);
 	static Filepath FromAbsolutePathStr(const std::string& absolutePath);
 
-	bool Exists();
+	bool Exists() const;
 
 	const std::string& GetAbsolutePath() const;
 	const std::string& GetRelativePath() const;
@@ -33,8 +33,8 @@ public:
 	bool IsValid() const;
 
 	static void SetDirectoryContext(EDirectoryContext context);
-
+	
 private:
-	std::string mRelativePath;
-	std::string mAbsolutePath;
+	std::string m_relativePath;
+	std::string m_absolutePath;
 };

@@ -17,6 +17,8 @@ namespace
 
 bool MeshAssetImporter::Import(const Filepath& filePath)
 {
+	AssertExpr(filePath.Exists());
+
 	ByteStream byteStream(filePath.GetRelativePath());
 	byteStream.ReadFromFile(filePath);
 

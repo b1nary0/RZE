@@ -13,8 +13,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <STB/stb_image.h>
 
-#include <Game/StaticMeshResource.h>
-
 STBIDEF unsigned char* stbi_xload(stbi__context* s, int* x, int* y, int* frames, int** delays);
 STBIDEF unsigned char* stbi_xload_mem(unsigned char* buffer, int len, int* x, int* y, int* frames, int** delays);
 STBIDEF unsigned char* stbi_xload_file(char const* filename, int* x, int* y, int* frames, int** delays);
@@ -292,7 +290,8 @@ void GifChatComponent::GenerateMesh()
 }
 
 //
-// STBI STUFF REMOVE SOON
+// STBI STUFF
+// @TODO REMOVE SOON
 //
 STBIDEF unsigned char* stbi_xload_mem(unsigned char* buffer, int len, int* x, int* y, int* frames, int** delays)
 {

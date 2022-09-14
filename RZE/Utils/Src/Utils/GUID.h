@@ -1,15 +1,8 @@
 #pragma once
 
-#include <Boost/uuid/uuid.hpp>
-#include <Boost/uuid/uuid_io.hpp>
-#include <Boost/uuid/uuid_generators.hpp>
-
-typedef boost::uuids::uuid GUID;
+#include <guiddef.h>
 
 namespace GUIDHelper
 {
-	inline GUID GenerateGUID()
-	{
-		return boost::uuids::random_generator()();
-	}
+	GUID GenerateGUID();
 }

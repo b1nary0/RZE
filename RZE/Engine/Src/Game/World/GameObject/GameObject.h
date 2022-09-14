@@ -8,6 +8,7 @@
 typedef U32 GameObjectID;
 
 class GameObjectComponentBase;
+class TransformComponent;
 
 struct GameObjectStateFlags
 {
@@ -17,7 +18,6 @@ struct GameObjectStateFlags
 
 class GameObject
 {
-
 public:
 	typedef std::vector<GameObjectComponentBase*> ComponentList;
 public:
@@ -62,6 +62,8 @@ public:
 	GameObjectComponentBase* AddComponentByID(GameObjectComponentID id);
 
 	const ComponentList& GetComponents() const { return m_components; }
+
+	TransformComponent& GetTransformComponent();
 
 	bool IsInScene() { return m_stateFlags.IsInScene; }
 

@@ -3,6 +3,8 @@
 
 #include <Game/World/GameObject/GameObjectComponent.h>
 
+#include <Game/World/GameObjectComponents/TransformComponent.h>
+
 static GameObjectID s_nextObjectID = 0;
 
 GameObject::GameObject()
@@ -57,6 +59,14 @@ GameObjectComponentBase* GameObject::AddComponentByID(GameObjectComponentID id)
 
 	LOG_CONSOLE("Failed to add component as a component of that type already exists");
 	return nullptr;
+}
+
+TransformComponent& GameObject::GetTransformComponent()
+{
+	TransformComponent* transformComponent = GetComponent<TransformComponent>();
+	AssertMsg(transformComponent != nullptr, "Illegal for GameObject to not have TransformComponent at any time.");
+
+	return *transformComponent;
 }
 
 void GameObject::OnAddToScene()

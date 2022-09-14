@@ -16,6 +16,8 @@
 
 namespace
 {
+	const Filepath k_meshAssetDirectoryPath("ProjectData/Mesh");
+
 	std::string GetTextureTypeStr(MaterialInstance::TextureSlot textureSlot)
 	{
 		switch (textureSlot)
@@ -156,8 +158,9 @@ void MeshComponent::OnEditorInspect()
 	{
 		FilePromptParams openFileParams =
 		{
-			"RZE MeshAsset"
-			, "*.meshasset"
+			"RZE MeshAsset",
+			k_meshAssetDirectoryPath,
+			"*.meshasset"
 		};
 
 		std::string chosenPath;
