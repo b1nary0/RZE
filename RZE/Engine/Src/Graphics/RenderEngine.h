@@ -29,6 +29,14 @@ struct RenderCamera
 class LightObject
 {
 public:
+	struct PropertyBufferLayout
+	{
+		Vector3D position;
+		Vector4D colour;
+		float strength;
+	};
+
+public:
 	LightObject() = default;
 	~LightObject() = default;
 

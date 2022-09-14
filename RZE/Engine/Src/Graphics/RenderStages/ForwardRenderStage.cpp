@@ -33,18 +33,13 @@ void ForwardRenderStage::Update(const RenderStageData& renderData)
 	Rendering::Renderer::UploadDataToBuffer(m_vertexShader->GetCameraDataBuffer(), renderData.m_camera);
 
 	std::unique_ptr<LightObject>& lightObject = (*renderData.m_lights)[0];
-	struct LightProperties
-	{
-		Vector3D position;
-		Vector4D colour;
-		float strength;
-	} lightMem;
 
-	lightMem.position = lightObject->GetPosition();
-	lightMem.colour = lightObject->GetColour();
-	lightMem.strength = lightObject->GetStrength();
+	LightObject::PropertyBufferLayout lightProperties;
+	lightProperties.position = lightObject->GetPosition();
+	lightProperties.colour = lightObject->GetColour();
+	lightProperties.strength = lightObject->GetStrength();
 
-	Rendering::Renderer::UploadDataToBuffer(lightObject->GetPropertyBuffer(), &lightMem);
+	Rendering::Renderer::UploadDataToBuffer(lightObject->GetPropertyBuffer(), &lightProperties);
 }
 
 void ForwardRenderStage::Render(const RenderStageData& renderData)

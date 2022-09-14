@@ -8,13 +8,6 @@
 
 void LightObject::Initialize()
 {
-	struct PropertyBufferLayout
-	{
-		Vector3D position;
-		Vector4D colour;
-		float strength;
-	};
-
 	m_propertyBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(PropertyBufferLayout), 1);
 }
 
