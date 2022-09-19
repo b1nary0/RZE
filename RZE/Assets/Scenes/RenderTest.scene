@@ -40,9 +40,9 @@
             "components": {
                 "TransformComponent": {
                     "Position": [
-                        0.0,
+                        -11.361002922058106,
                         9.619766235351563,
-                        2.859698534011841
+                        17.25012969970703
                     ],
                     "Scale": [
                         1.0,
@@ -68,7 +68,7 @@
         "Nyra": {
             "components": {
                 "MeshComponent": {
-                    "ResourcePath": "ProjectData/Mesh/Nyra.meshasset"
+                    "ResourcePath": "ProjectData\\Mesh\\Nyra.meshasset"
                 },
                 "TransformComponent": {
                     "Position": [
