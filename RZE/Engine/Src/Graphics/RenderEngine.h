@@ -83,6 +83,41 @@ private:
 	Matrix4x4 m_transform;
 };
 
+// #TODO
+// Turn this into a command structure. Something like:
+// UpdateRenderObject<UpdateTransformCommand>(renderObject);
+// Where UpdateTransformCommand:
+// 
+// class UpdateTransformCommand : public RenderCommand
+// {
+// public:
+//		UpdateTransformCommand(const RenderObject& renderObject, const Matrix4x4& transform);
+// 		virtual void Execute();
+// private:
+//		RenderObject& renderObject;
+// 		Matrix4x4 transform;
+// };
+
+
+//
+// Buckets
+//
+// std::vector<DrawBucket> mBuckets;
+//
+// void Draw()
+// {
+//		for (const DrawBucket& bucket : mBuckets)
+//		{
+//			Draw bucket.RenderObject[i] with bucket.DrawState
+//		}
+// }
+//
+// BucketProxy* bucketProxy = Renderer::StartBucket();
+// bucketProxy->SetDrawState(someState);
+// bucketProxy->AddRenderObjectThatPassedSomeCullingOperation(someObject);
+// Renderer::SubmitBucket(bucketProxy); // We're done here, bucketProxy invalid now.
+// ^^^^^ This looks like it should be some reference-type structure/architecture
+
 class RenderEngine
 {
 public:
@@ -140,41 +175,6 @@ private:
 	std::vector<std::unique_ptr<LightObject>> m_lightObjects;
 
 	std::vector<std::unique_ptr<IRenderStage>> m_renderStages;
-
-	// #TODO
-	// Turn this into a command structure. Something like:
-	// UpdateRenderObject<UpdateTransformCommand>(renderObject);
-	// Where UpdateTransformCommand:
-	// 
-	// class UpdateTransformCommand : public RenderCommand
-	// {
-	// public:
-	//		UpdateTransformCommand(const RenderObject& renderObject, const Matrix4x4& transform);
-	// 		virtual void Execute();
-	// private:
-	//		RenderObject& renderObject;
-	// 		Matrix4x4 transform;
-	// };
-
-
-	//
-	// Buckets
-	//
-	// std::vector<DrawBucket> mBuckets;
-	//
-	// void Draw()
-	// {
-	//		for (const DrawBucket& bucket : mBuckets)
-	//		{
-	//			Draw bucket.RenderObject[i] with bucket.DrawState
-	//		}
-	// }
-	//
-	// BucketProxy* bucketProxy = Renderer::StartBucket();
-	// bucketProxy->SetDrawState(someState);
-	// bucketProxy->AddRenderObjectThatPassedSomeCullingOperation(someObject);
-	// Renderer::SubmitBucket(bucketProxy); // We're done here, bucketProxy invalid now.
-	// ^^^^^ This looks like it should be some reference-type structure/architecture
 };
 
 template <typename TRenderStageType, typename... Args>
