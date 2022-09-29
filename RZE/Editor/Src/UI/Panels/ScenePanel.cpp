@@ -111,7 +111,7 @@ namespace Editor
 						}
 					}
 
-					if (HasSelectedGameObject() && GetSelectedGameObject() == gameObject)
+					if (bSelectedCurrent)
 					{
 						if (ImGui::BeginPopupContextItem(GetSelectedGameObject()->GetName().c_str()))
 						{
