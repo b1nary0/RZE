@@ -29,12 +29,10 @@ std::shared_ptr<MaterialInstance> MaterialInstance::Create(const MaterialAssetIm
 	{
 		if (!texturePath.empty())
 		{
-			materialInstance->SetTexture(textureSlot++, RZE::GetResourceHandler().LoadResource<Texture2D>(Filepath(texturePath)));
+			materialInstance->SetTexture(textureSlot, RZE::GetResourceHandler().LoadResource<Texture2D>(Filepath(texturePath)));
 		}
-		else
-		{
-			textureSlot++;
-		}
+
+		textureSlot++;
 	}
 
 	// @TODO This needs to be reworked. Should have the shader linked with the material asset?
