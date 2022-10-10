@@ -130,6 +130,17 @@ namespace Editor
 
 	void EditorApp::RegisterInputEvents(InputHandler& inputHandler)
 	{
+		Functor<void, const InputKey&> keyFunc([this](const InputKey& key)
+			{
+				if (key.GetKeyCode() == Win32KeyCode::Escape)
+				{
+					if (GetSelectedObjectFromScenePanel() != nullptr)
+					{
+						ResetSelectedObject();
+					}
+				}
+			});
+		inputHandler.BindAction(Win32KeyCode::Escape, EButtonState::ButtonState_Pressed, keyFunc);
 	}
 
 	bool EditorApp::ProcessInput(const InputHandler& handler)
