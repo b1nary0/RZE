@@ -64,6 +64,7 @@ public:
 template <typename TComponentType>
 class GameObjectComponentPtr
 {
+	friend class GameObject;
 	friend class GameScene;
 
 public:
@@ -94,7 +95,7 @@ public:
 		return this == other;
 	}
 
-	bool operator!=(const GameObjectComponentPtr& other)
+	bool operator!=(const GameObjectComponentPtr& other) const
 	{
 		return !(*this == other);
 	}

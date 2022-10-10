@@ -48,8 +48,8 @@ public:
 private:
 	void GenerateCameraMatrices(const Vector3D& position);
 
-	void KeyboardInput(TransformComponent& transfComp);
-	void MouseInput(TransformComponent& transfComp);
+	void KeyboardInput(GameObjectComponentPtr<TransformComponent>& transfComp);
+	void MouseInput(GameObjectComponentPtr<TransformComponent>& transfComp);
 
 private:
 	Vector3D m_lookAt;

@@ -38,7 +38,7 @@ public:
 	TComponentType* AddComponent(Args... args);
 	
 	template <typename TComponentType>
-	TComponentType* GetComponent();
+	GameObjectComponentPtr<TComponentType> GetComponent();
 
 	template <typename TComponentType>
 	void RemoveComponent();
@@ -63,7 +63,7 @@ public:
 
 	const ComponentList& GetComponents() const { return m_components; }
 
-	TransformComponent& GetTransformComponent();
+	GameObjectComponentPtr<TransformComponent> GetTransformComponent();
 
 	bool IsInScene() { return m_stateFlags.IsInScene; }
 
@@ -81,7 +81,7 @@ private:
 };
 
 template <typename TComponentType>
-TComponentType* GameObject::GetComponent()
+GameObjectComponentPtr<TComponentType> GameObject::GetComponent()
 {
 	// #TODO Slow function
 

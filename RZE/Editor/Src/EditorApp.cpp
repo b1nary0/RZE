@@ -202,7 +202,7 @@ namespace Editor
 	void EditorApp::CreateAndInitializeEditorCamera()
 	{
 		m_editorCameraObject = RZE().GetActiveScene().AddGameObject("EditorCam");
-		TransformComponent* transformComponent = m_editorCameraObject->GetComponent<TransformComponent>();
+		GameObjectComponentPtr<TransformComponent> transformComponent = m_editorCameraObject->GetComponent<TransformComponent>();
 		transformComponent->SetPosition(Vector3D(-4.0f, 10.0f, 4.0f));
 
 		EditorCameraComponent* editorCam = m_editorCameraObject->AddComponent<EditorCameraComponent>();

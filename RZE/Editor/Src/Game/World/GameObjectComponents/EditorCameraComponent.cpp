@@ -121,11 +121,11 @@ void EditorCameraComponent::Update()
 {
 	if (IsActiveCamera())
 	{
-		TransformComponent* const transformComponent = GetOwner()->GetComponent<TransformComponent>();
+		GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
 		AssertMsg(transformComponent != nullptr, "A camera without a transform is useless");
 
-		KeyboardInput(*transformComponent);
-		MouseInput(*transformComponent);
+		KeyboardInput(transformComponent);
+		MouseInput(transformComponent);
 			
 		GenerateCameraMatrices(transformComponent->GetPosition());
 		{
@@ -145,7 +145,7 @@ void EditorCameraComponent::GenerateCameraMatrices(const Vector3D& position)
 	m_viewMat = Matrix4x4::CreateViewMatrix(position, position  + m_forward, m_upDir);
 }
 
-void EditorCameraComponent::KeyboardInput(TransformComponent& transfComp)
+void EditorCameraComponent::KeyboardInput(GameObjectComponentPtr<TransformComponent>& transfComp)
 {
 	InputHandler& inputHandler = RZE_Application::RZE().GetInputHandler();
 
@@ -159,29 +159,29 @@ void EditorCameraComponent::KeyboardInput(TransformComponent& transfComp)
 		if (inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Key_W) == EButtonState::ButtonState_Pressed
 			|| inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Key_W) == EButtonState::ButtonState_Hold)
 		{
-			transfComp.GetPosition() += m_forward * speedDelta;
+			transfComp->GetPosition() += m_forward * speedDelta;
 		}
 		else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_S])
 		{
-			transfComp.GetPosition() -= m_forward * speedDelta;
+			transfComp->GetPosition() -= m_forward * speedDelta;
 		}
 
 		if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_A])
 		{
-			transfComp.GetPosition() -= m_forward.Cross(m_upDir).Normalize() * speedDelta;
+			transfComp->GetPosition() -= m_forward.Cross(m_upDir).Normalize() * speedDelta;
 		}
 		else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_D])
 		{
-			transfComp.GetPosition() += m_forward.Cross(m_upDir).Normalize() * speedDelta;
+			transfComp->GetPosition() += m_forward.Cross(m_upDir).Normalize() * speedDelta;
 		}
 
 		if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_E])
 		{
-			transfComp.GetPosition() += m_forward.Cross(m_upDir).Cross(m_forward) * speedDelta;
+			transfComp->GetPosition() += m_forward.Cross(m_upDir).Cross(m_forward) * speedDelta;
 		}
 		else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_Q])
 		{
-			transfComp.GetPosition() -= m_forward.Cross(m_upDir).Cross(m_forward) * speedDelta;
+			transfComp->GetPosition() -= m_forward.Cross(m_upDir).Cross(m_forward) * speedDelta;
 		}
 
 		if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_1])
@@ -209,11 +209,11 @@ void EditorCameraComponent::KeyboardInput(TransformComponent& transfComp)
 	if (wheelVal != 0)
 	{
 		wheelVal = MathUtils::Clamp(wheelVal, -1, 1);
-		transfComp.GetPosition() = transfComp.GetPosition() + (m_forward * static_cast<float>(wheelVal)) * k_cameraMaxZoomSpeed;
+		transfComp->GetPosition() = transfComp->GetPosition() + (m_forward * static_cast<float>(wheelVal)) * k_cameraMaxZoomSpeed;
 	}
 }
 
-void EditorCameraComponent::MouseInput(TransformComponent& transfComp)
+void EditorCameraComponent::MouseInput(GameObjectComponentPtr<TransformComponent>& transfComp)
 {
 	InputHandler& inputHandler = RZE_Application::RZE().GetInputHandler();
 
@@ -223,7 +223,7 @@ void EditorCameraComponent::MouseInput(TransformComponent& transfComp)
 	if (wheelVal != 0)
 	{
 		wheelVal = MathUtils::Clamp(wheelVal, -1, 1);
-		transfComp.GetPosition() = transfComp.GetPosition() + (m_forward * static_cast<float>(wheelVal)) * k_cameraMaxZoomSpeed;
+		transfComp->GetPosition() = transfComp->GetPosition() + (m_forward * static_cast<float>(wheelVal)) * k_cameraMaxZoomSpeed;
 	}
 
 	if (inputHandler.GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Pressed)

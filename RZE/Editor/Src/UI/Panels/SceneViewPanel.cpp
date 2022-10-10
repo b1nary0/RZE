@@ -49,7 +49,7 @@ namespace Editor
 				// @TODO lazy josh to future josh just use object cached on EditorApp
 				GameObjectPtr gameObject = RZE::GetActiveScene().FindGameObjectByName("EditorCam");
 				AssertNotNull(gameObject);
-				EditorCameraComponent* const cameraComponent = gameObject->GetComponent<EditorCameraComponent>();
+				GameObjectComponentPtr<EditorCameraComponent> cameraComponent = gameObject->GetComponent<EditorCameraComponent>();
 				AssertNotNull(cameraComponent);
 				cameraComponent->SetAspectRatio(m_dimensions.X() / m_dimensions.Y());
 			}
@@ -83,12 +83,12 @@ namespace Editor
 					GameObjectPtr cameraObject = RZE::GetActiveScene().FindGameObjectByName("EditorCam");
 					AssertNotNull(cameraObject);
 
-					const EditorCameraComponent* const cameraComponent = cameraObject->GetComponent<EditorCameraComponent>();
+					GameObjectComponentPtr<EditorCameraComponent> cameraComponent = cameraObject->GetComponent<EditorCameraComponent>();
 					
 					const Matrix4x4& view = cameraComponent->GetViewMatrix();
 					const Matrix4x4& projection = cameraComponent->GetProjectionMatrix();
 
-					TransformComponent* const transformComponent = selectedGameObject->GetComponent<TransformComponent>();
+					GameObjectComponentPtr<TransformComponent> transformComponent = selectedGameObject->GetComponent<TransformComponent>();
 
 					float* translation = &const_cast<glm::vec3&>(transformComponent->GetPosition().GetInternalVec())[0];
 					float* rotation = &const_cast<glm::vec3&>(transformComponent->GetRotation().GetInternalVec())[0];

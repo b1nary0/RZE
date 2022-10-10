@@ -78,7 +78,7 @@ namespace Editor
 
 					// @NOTE Don't show the EditorComponent. Settings for this should go through
 					// editor preferences UI
-					EditorCameraComponent* cameraComponent = gameObject->GetComponent<EditorCameraComponent>();
+					GameObjectComponentPtr<EditorCameraComponent> cameraComponent = gameObject->GetComponent<EditorCameraComponent>();
 					if (cameraComponent != nullptr)
 					{
 						return;
@@ -90,14 +90,14 @@ namespace Editor
 						if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && HasSelectedGameObject())
 						{
 							GameObjectPtr gameObject = GetSelectedGameObject();
-							TransformComponent& transformComponent = gameObject->GetTransformComponent();
+							GameObjectComponentPtr<TransformComponent> transformComponent = gameObject->GetTransformComponent();
 
 							GameObjectPtr camera = RZE::GetActiveScene().FindGameObjectByName("EditorCam");
-							EditorCameraComponent* editorCam = camera->GetComponent<EditorCameraComponent>();
+							GameObjectComponentPtr<EditorCameraComponent> editorCam = camera->GetComponent<EditorCameraComponent>();
 							AssertNotNull(editorCam);
-							TransformComponent& cameraTransform = camera->GetTransformComponent();
+							GameObjectComponentPtr<TransformComponent> cameraTransform = camera->GetTransformComponent();
 
-							editorCam->SetForward((transformComponent.GetPosition() - cameraTransform.GetPosition()).Normalized());
+							editorCam->SetForward((transformComponent->GetPosition() - cameraTransform->GetPosition()).Normalized());
 						}
 						else 
 						{

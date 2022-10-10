@@ -101,7 +101,7 @@ void GifChatComponent::Update()
 
 	if (m_meshRenderObject != nullptr)
 	{
-		const TransformComponent* const transformComponent = GetOwner()->GetComponent<TransformComponent>();
+		GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
 		AssertMsg(transformComponent != nullptr, "No TransformComponent found. Mesh creation is useless without a location in 3D space.");
 
 		// @TODO Look into ways to avoid this
@@ -229,7 +229,7 @@ void GifChatComponent::Load(const Filepath& fp)
 
 void GifChatComponent::CreateRenderObject()
 {
-	const TransformComponent* transformComponent = GetOwner()->GetComponent<TransformComponent>();
+	GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
 
 	m_meshRenderObject = RZE::GetRenderEngine().CreateRenderObject(m_meshGeometry);
 	m_meshRenderObject->SetTransform(transformComponent->GetAsMat4x4());

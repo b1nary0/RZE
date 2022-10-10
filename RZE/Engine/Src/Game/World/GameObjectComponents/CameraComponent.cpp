@@ -112,7 +112,7 @@ void CameraComponent::Update()
 {
 	if (IsActiveCamera())
 	{
-		const TransformComponent* const transformComponent = GetOwner()->GetComponent<TransformComponent>();
+		GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
 		AssertMsg(transformComponent != nullptr, "A camera without a transform is useless");
 
 		GenerateCameraMatrices(transformComponent->GetPosition());

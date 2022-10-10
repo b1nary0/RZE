@@ -45,7 +45,7 @@ void MeshComponent::CreateRenderObject()
 	RenderEngine& renderEngine = RZE::GetRenderEngine();
 
 	// #TODO We should probably make MeshComponent a TransformComponent since a mesh without a transform is useless.
-	const TransformComponent* const transformComponent = GetOwner()->GetComponent<TransformComponent>();
+	GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
 	AssertMsg(transformComponent != nullptr, "No TransformComponent found. Mesh creation is useless without a location in 3D space.");
 
 	const StaticMeshResource* modelData = resourceHandler.GetResource<StaticMeshResource>(m_resource);
@@ -69,7 +69,7 @@ void MeshComponent::Update()
 {
 	if (m_renderObject != nullptr)
 	{
-		const TransformComponent* const transformComponent = GetOwner()->GetComponent<TransformComponent>();
+		GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
 		AssertMsg(transformComponent != nullptr, "No TransformComponent found. Mesh creation is useless without a location in 3D space.");
 
 		// @TODO Look into ways to avoid this

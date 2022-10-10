@@ -6,7 +6,7 @@
 
 void DirectionalLightComponent::OnAddToScene()
 {
-	TransformComponent* const transformComponent = GetOwner()->GetComponent<TransformComponent>();
+	GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
 
 	m_lightObject = RZE::GetRenderEngine().CreateLightObject();
 	m_lightObject->SetPosition(transformComponent->GetPosition());
@@ -23,7 +23,7 @@ void DirectionalLightComponent::Update()
 {
 	if (m_lightObject != nullptr)
 	{
-		TransformComponent* const transformComponent = GetOwner()->GetComponent<TransformComponent>();
+		GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
 
 		m_lightObject->SetPosition(transformComponent->GetPosition());
 		m_lightObject->SetColour(m_lightColour);

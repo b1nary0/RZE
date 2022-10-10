@@ -61,12 +61,12 @@ GameObjectComponentBase* GameObject::AddComponentByID(GameObjectComponentID id)
 	return nullptr;
 }
 
-TransformComponent& GameObject::GetTransformComponent()
+GameObjectComponentPtr<TransformComponent> GameObject::GetTransformComponent()
 {
-	TransformComponent* transformComponent = GetComponent<TransformComponent>();
+	GameObjectComponentPtr<TransformComponent> transformComponent = GetComponent<TransformComponent>();
 	AssertMsg(transformComponent != nullptr, "Illegal for GameObject to not have TransformComponent at any time.");
 
-	return *transformComponent;
+	return transformComponent;
 }
 
 void GameObject::OnAddToScene()
