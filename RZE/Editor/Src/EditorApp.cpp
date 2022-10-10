@@ -130,6 +130,8 @@ namespace Editor
 
 	void EditorApp::RegisterInputEvents(InputHandler& inputHandler)
 	{
+		// NOTE: This will only get called when we're hovering the SceneView panel
+		// SEE: EditorApp::ProcessInput return statement. 
 		Functor<void, const InputKey&> keyFunc([this](const InputKey& key)
 			{
 				if (key.GetKeyCode() == Win32KeyCode::Escape)
