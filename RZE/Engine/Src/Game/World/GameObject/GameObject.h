@@ -35,7 +35,7 @@ public:
 
 public:
 	template <typename TComponentType, typename... Args>
-	TComponentType* AddComponent(Args... args);
+	GameObjectComponentPtr<TComponentType> AddComponent(Args... args);
 	
 	template <typename TComponentType>
 	GameObjectComponentPtr<TComponentType> GetComponent();
@@ -121,7 +121,7 @@ void GameObject::RemoveComponent()
 }
 
 template <typename TComponentType, typename ... Args>
-TComponentType* GameObject::AddComponent(Args... args)
+GameObjectComponentPtr<TComponentType> GameObject::AddComponent(Args... args)
 {
 	// #TODO Slow function
 

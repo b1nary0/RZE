@@ -218,7 +218,7 @@ namespace Editor
 		GameObjectComponentPtr<TransformComponent> transformComponent = m_editorCameraObject->GetComponent<TransformComponent>();
 		transformComponent->SetPosition(Vector3D(-4.0f, 10.0f, 4.0f));
 
-		EditorCameraComponent* editorCam = m_editorCameraObject->AddComponent<EditorCameraComponent>();
+		GameObjectComponentPtr<EditorCameraComponent> editorCam = m_editorCameraObject->AddComponent<EditorCameraComponent>();
 		editorCam->SetAsActiveCamera(true);
 	}
 
