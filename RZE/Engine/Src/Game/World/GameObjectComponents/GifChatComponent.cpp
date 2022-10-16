@@ -160,9 +160,9 @@ void GifChatComponent::OnEditorInspect()
 	}
 }
 
-void GifChatComponent::Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer)
+void GifChatComponent::Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer)
 {
-	// @TODO Look at moving this out so that GameObject::Save actually
+	// @TODO Look at moving this out so that GameObject::Serialize actually
 	// writes the name of the component?
 	writer.String("GifChatComponent");
 	writer.StartObject();
@@ -171,7 +171,7 @@ void GifChatComponent::Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& wr
 	writer.EndObject();
 }
 
-void GifChatComponent::Load(const rapidjson::Value& data)
+void GifChatComponent::Deserialize(const rapidjson::Value& data)
 {
 }
 

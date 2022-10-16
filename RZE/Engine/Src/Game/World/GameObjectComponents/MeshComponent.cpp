@@ -77,7 +77,7 @@ void MeshComponent::Update()
 	}
 }
 
-void MeshComponent::Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer)
+void MeshComponent::Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer)
 {
 	writer.String("MeshComponent");
 	writer.StartObject();
@@ -88,7 +88,7 @@ void MeshComponent::Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& write
 	writer.EndObject();
 }
 
-void MeshComponent::Load(const rapidjson::Value& data)
+void MeshComponent::Deserialize(const rapidjson::Value& data)
 {
 	Filepath resourcePath = Filepath(data["ResourcePath"].GetString());
 

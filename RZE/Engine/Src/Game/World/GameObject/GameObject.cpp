@@ -112,7 +112,7 @@ void GameObject::Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) 
 		{
 			for (auto& component : m_components)
 			{
-				component->Save(writer);
+				component->Serialize(writer);
 			}
 		}
 		writer.EndObject();
@@ -134,7 +134,7 @@ void GameObject::Load(rapidjson::Value& data)
 			if (compData != compVal.MemberEnd())
 			{
 				GameObjectComponentBase* component = AddComponentByID(dataPair.first);
-				component->Load(compData->value);
+				component->Deserialize(compData->value);
 			}
 		}
 	}

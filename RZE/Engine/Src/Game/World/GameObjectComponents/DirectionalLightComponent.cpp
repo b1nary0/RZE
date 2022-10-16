@@ -31,7 +31,7 @@ void DirectionalLightComponent::Update()
 	}
 }
 
-void DirectionalLightComponent::Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer)
+void DirectionalLightComponent::Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer)
 {
 	writer.String("DirectionalLightComponent");
 	writer.StartObject();
@@ -52,7 +52,7 @@ void DirectionalLightComponent::Save(rapidjson::PrettyWriter<rapidjson::StringBu
 	writer.EndObject();
 }
 
-void DirectionalLightComponent::Load(const rapidjson::Value& data)
+void DirectionalLightComponent::Deserialize(const rapidjson::Value& data)
 {
 	m_lightStrength = data["LightStrength"].GetFloat();
 	m_lightColour = Vector3D(

@@ -270,14 +270,14 @@ namespace Editor
 						if (saveSuccess)
 						{
 							Filepath newScenePath = Filepath::FromAbsolutePathStr(chosenPath);
-							RZE().GetActiveScene().Save(newScenePath);
+							RZE().GetActiveScene().Serialize(newScenePath);
 							gEditorState.IsNewScene = false;
 							RunAssetCpy();
 						}
 					}
 					else
 					{
-						RZE().GetActiveScene().Save(Filepath());
+						RZE().GetActiveScene().Serialize(Filepath());
 						RunAssetCpy();
 					}
 				}
@@ -530,7 +530,7 @@ namespace Editor
 		}
 		else
 		{
-			RZE::GetActiveScene().Load(filepath);
+			RZE::GetActiveScene().Deserialize(filepath);
 		}
 
 		CreateAndInitializeEditorCamera();

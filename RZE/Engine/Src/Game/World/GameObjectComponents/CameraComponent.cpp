@@ -134,7 +134,7 @@ void CameraComponent::GenerateCameraMatrices(const Vector3D& position)
 	m_viewMat = Matrix4x4::CreateViewMatrix(position, position  + m_forward, m_upDir);
 }
 
-void CameraComponent::Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer)
+void CameraComponent::Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer)
 {
 	writer.String("CameraComponent");
 	writer.StartObject();
@@ -171,7 +171,7 @@ void CameraComponent::Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& wri
 	writer.EndObject();
 }
 
-void CameraComponent::Load(const rapidjson::Value& data)
+void CameraComponent::Deserialize(const rapidjson::Value& data)
 {
 	m_fov = data["FOV"].GetFloat();
 	m_nearCull = data["NearCull"].GetFloat();

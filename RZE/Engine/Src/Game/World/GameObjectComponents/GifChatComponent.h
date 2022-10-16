@@ -28,8 +28,8 @@ public:
 
 	void OnEditorInspect() override;
 
-	void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override;
-	void Load(const rapidjson::Value& data) override;
+	void Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override;
+	void Deserialize(const rapidjson::Value& data) override;
 
 public:
 	void Load(const Filepath& fp);

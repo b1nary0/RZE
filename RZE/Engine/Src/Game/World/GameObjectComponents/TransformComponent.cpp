@@ -116,7 +116,7 @@ const Vector3D& TransformComponent::GetScale() const
 	return m_scale;
 }
 
-void TransformComponent::Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer)
+void TransformComponent::Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer)
 {
 	writer.String("TransformComponent");
 	writer.StartObject();
@@ -152,7 +152,7 @@ void TransformComponent::Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& 
 	writer.EndObject();
 }
 
-void TransformComponent::Load(const rapidjson::Value& data)
+void TransformComponent::Deserialize(const rapidjson::Value& data)
 {
 	m_position = Vector3D(data["Position"][0].GetFloat(), data["Position"][1].GetFloat(), data["Position"][2].GetFloat());
 	m_scale = Vector3D(data["Scale"][0].GetFloat(), data["Scale"][1].GetFloat(), data["Scale"][2].GetFloat());

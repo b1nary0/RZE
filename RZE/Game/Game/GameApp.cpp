@@ -41,7 +41,7 @@ void GameApp::Initialize()
 	// #TODO(Josh::Putting this comment here because too lazy to do it elsewhere. Hopefully I find it later:
 	//             -- Need to add at least commandline arg like -startscene or something)
 	
-	activeScene.Load(Filepath("Assets/Scenes/RenderTest.scene"));
+	activeScene.Deserialize(Filepath("Assets/Scenes/RenderTest.scene"));
 	
 #ifdef IMGUI_ENABLED
 	RZE::GetRenderEngine().AddRenderStage<ImGuiRenderStage>();

@@ -75,8 +75,8 @@ public:
 	virtual void OnRemoveFromScene() = 0;
 
 	virtual void Update() = 0;
-	virtual void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) = 0;
-	virtual void Load(const rapidjson::Value& data) = 0;
+	virtual void Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) = 0;
+	virtual void Deserialize(const rapidjson::Value& data) = 0;
 
 	virtual void OnEditorInspect() = 0;
 
@@ -122,8 +122,8 @@ public:
 	void OnRemoveFromScene() override {}
 
 	void Update() override {}
-	void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override {}
-	void Load(const rapidjson::Value& data) override {}
+	void Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override {}
+	void Deserialize(const rapidjson::Value& data) override {}
 
 	void OnEditorInspect() override {}
 	
