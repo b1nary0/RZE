@@ -40,7 +40,7 @@
 // IMGUI
 #include <ImGui/imgui.h>
 
-#ifdef DEBUG
+#ifdef RZE_DEBUG
 
 #include <DebugUtils/DebugServices.h>
 
