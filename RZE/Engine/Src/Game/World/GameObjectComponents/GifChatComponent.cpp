@@ -63,12 +63,11 @@ GifChatComponent::~GifChatComponent()
 void GifChatComponent::Initialize()
 {
 	Load(gifFilepaths[GifFilepathIndex::PULP_FICTION_TRAVOLTA]);
-
-	CreateRenderObject();
 }
 
 void GifChatComponent::OnAddToScene()
 {
+	CreateRenderObject();
 }
 
 void GifChatComponent::OnRemoveFromScene()
