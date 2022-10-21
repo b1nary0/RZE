@@ -220,6 +220,8 @@ namespace Editor
 
 		GameObjectComponentPtr<EditorCameraComponent> editorCam = m_editorCameraObject->AddComponent<EditorCameraComponent>();
 		editorCam->SetAsActiveCamera(true);
+		const Vector2D& sceneViewPanelDims = m_sceneViewPanel.GetDimensions();
+		editorCam->SetAspectRatio(sceneViewPanelDims.X() / sceneViewPanelDims.Y());
 	}
 
 	void EditorApp::DisplayMenuBar()
