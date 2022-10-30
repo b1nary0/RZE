@@ -281,7 +281,6 @@ workspace "RZE"
 
 		includedirs
 		{
-			RootDir .. "Engine/Src",
 			RootDir .. "Utils/Src/",
 			SourceDir,
 			IncludeDir
