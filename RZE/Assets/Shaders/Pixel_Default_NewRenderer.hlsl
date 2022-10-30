@@ -1,8 +1,11 @@
 struct PS_IN
 {
 	float4 Position : SV_POSITION;
-	float3 FragPos : POSITION;
 	float3 Normal : NORMAL;
+	float2 UVCoords : UV;
+	float3 Tangent : TANGENT;
+	float3 FragPos : POSITION;
+	float3 CameraPos : POSITION1;
 };
 
 struct LightData
