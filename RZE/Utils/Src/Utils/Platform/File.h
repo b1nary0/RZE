@@ -31,8 +31,7 @@ public:
 	// Hacky constructor to read from non-runtime asset paths
 	// until the Filepath infrastructure understands different directory
 	// contexts.
-	File(const Filepath& filePath);
-	File(const std::string& filePath);
+	File(const Filepath& filePath, bool createIfNotExist = false);
 
 	// If setting file path manually, Read() must be called.
 	void SetFilePath(const std::string& path);
@@ -104,11 +103,11 @@ public:
 
 private:
 
-	EFileOpenMode::Value m_openState;
+	EFileOpenMode::Value m_openState = EFileOpenMode::Closed;
 	std::ofstream m_fileStream;
 
 	Filepath m_filePath;
 	std::string m_data;
 
-	bool m_isOpen;
+	bool m_isOpen = false;
 };

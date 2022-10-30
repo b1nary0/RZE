@@ -3,8 +3,16 @@
 #include <sstream>
 #include <assert.h>
 
+#include <Utils/Platform/File.h>
+
 #include <Utils/StringUtils.h>
 #include <Utils/Platform/Timers/HiResTimer.h>
+
+namespace Debug
+{
+	bool CreateLogFile();
+	File& GetLogFile();
+}
 
 #ifdef _DEBUG
 
@@ -44,7 +52,13 @@
 	ss << Msg;											    \
 	ss << "\n";												\
 															\
+	char buf[1024];											\
+	sprintf_s(buf, 1024, ss.str().c_str(), __VA_ARGS__);		\
 	printf_s(ss.str().c_str(), __VA_ARGS__); 				\
+	File& logFile = Debug::GetLogFile();						\
+	logFile.Open(File::EFileOpenMode::Append);				\
+	logFile << buf;											\
+	logFile.Close();											\
 }											
 
 #define START_TIMED_BLOCK(Name)	\

@@ -120,6 +120,8 @@ void RZE_Engine::Init()
 	{
 		LOG_CONSOLE("RZE_EngineCore::Init() called.");
 
+		Debug::CreateLogFile();
+
 		DebugServices::Get().Initialize();
 
 		Threading::JobScheduler::Get().Initialize();

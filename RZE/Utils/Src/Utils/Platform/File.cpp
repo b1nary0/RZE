@@ -3,18 +3,13 @@
 
 #include <Utils/DebugUtils/Debug.h>
 
-File::File(const std::string& filePath)
-	: m_openState(EFileOpenMode::Closed)
-	, m_isOpen(false)
+File::File(const Filepath& filePath, bool createIfNotExist)
+	: m_filePath(filePath)
 {
-	// #TODO
-	// Standardize Filepath in the API
-	m_filePath = Filepath(filePath);
-}
-
-File::File(const Filepath& filePath)
-{
-	m_filePath = filePath;
+	if (createIfNotExist && !filePath.Exists())
+	{
+		Filepath::CreateDir(filePath.GetAbsoluteDirectoryPath());
+	}
 }
 
 void File::SetFilePath(const std::string& path)
@@ -42,7 +37,7 @@ bool File::Open(EFileOpenMode::Value fileOpenMode)
 		if (!m_isOpen)
 		{
 			// #TODO Log error
-			LOG_CONSOLE_ARGS("File with path [%s] failed to open.", m_filePath.GetRelativePath().c_str());
+			//LOG_CONSOLE_ARGS("File with path [%s] failed to open.", m_filePath.GetRelativePath().c_str());
 			return false;
 		}
 

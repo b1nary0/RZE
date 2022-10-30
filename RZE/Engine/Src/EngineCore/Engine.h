@@ -26,10 +26,11 @@ public:
 	RZE_Engine();
 	~RZE_Engine();
 
-	inline bool IsInitialized() { return m_isInitialized; }
+	bool IsInitialized() { return m_isInitialized; }
 
 	void Run(Functor<RZE_Application* const>& createApplicationCallback);
 
+	[[nodiscard]]
 	const Vector2D& GetWindowSize() const;
 
 	// #TODO(Josh) Need to figure out this weird connection of accessing engine from application, and application from engine.
@@ -66,7 +67,7 @@ private:
 
 	void BeginShutDown();
 	void InternalShutDown();
-
+	
 	void CompileEvents();
 
 	void RegisterWindowEvents();
