@@ -35,7 +35,7 @@ public:
 	// Returning TRUE will fire callbacks registered with RZE. Returning FALSE steals input from the engine.
 	virtual bool ProcessInput(const InputHandler& handler);
 
-	virtual void ParseArguments(const char* arguments, int count);
+	virtual void ParseArguments(char** arguments, int count);
 
 	virtual void RegisterInputEvents(InputHandler& inputHandler);
 

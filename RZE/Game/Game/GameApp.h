@@ -11,6 +11,8 @@ public:
 	GameApp();
 	virtual ~GameApp();
 
+	void ParseArguments(char** arguments, int count) override;
+
 	void Initialize() override;
 	void Start() override;
 	void Update() override;
@@ -26,4 +28,7 @@ protected:
 	void CreateRenderTarget(const Vector2D& dimensions) override;
 
 private:
+	// #TODO Look into hiding this behind a debug ifdef or something?
+	// should really only be used in dev builds
+	std::string m_startScene;
 };

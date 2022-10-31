@@ -112,6 +112,6 @@ Rendering::RenderTargetTexture* RZE_Application::GetRTT()
 	return m_renderTarget.get();
 }
 
-void RZE_Application::ParseArguments(const char* arguments, int count)
+void RZE_Application::ParseArguments(char** arguments, int count)
 {
 }

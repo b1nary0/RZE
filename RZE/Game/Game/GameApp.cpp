@@ -25,6 +25,33 @@ GameApp::~GameApp()
 {
 }
 
+void GameApp::ParseArguments(char** arguments, int count)
+{
+	RZE_Application::ParseArguments(arguments, count);
+	
+	for (int argIdx = 0; argIdx < count;)
+	{
+		const char* arg = arguments[argIdx];
+
+		bool argHasValue = false;
+		if (strcmp(arg, "-startScene") == 0)
+		{
+			argHasValue = true;
+
+			m_startScene = arguments[argIdx + 1];
+		}
+
+		if (argHasValue)
+		{
+			argIdx += 2;
+		}
+		else
+		{
+			++argIdx;
+		}
+	}
+}
+
 void GameApp::Initialize()
 {
 	RZE_Application::Initialize();
@@ -38,10 +65,15 @@ void GameApp::Initialize()
 	// If we load something that _isnt_ the scene below during runtime, EntitySystem::Initialize isnt called.
 
 	GameScene& activeScene = RZE().GetActiveScene();
-	// #TODO(Josh::Putting this comment here because too lazy to do it elsewhere. Hopefully I find it later:
-	//             -- Need to add at least commandline arg like -startscene or something)
-	
-	activeScene.Deserialize(Filepath("Assets/Scenes/RenderTest.scene"));
+
+	if (m_startScene.empty())
+	{
+		activeScene.Deserialize(Filepath("Assets/Scenes/RenderTest.scene"));
+	}
+	else
+	{
+		activeScene.Deserialize(Filepath("Assets/Scenes/" + m_startScene));
+	}
 	
 #ifdef IMGUI_ENABLED
 	RZE::GetRenderEngine().AddRenderStage<ImGuiRenderStage>();

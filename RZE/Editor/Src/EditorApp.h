@@ -28,7 +28,7 @@ namespace Editor
 		void Update() override;
 		void ShutDown() override;
 
-		void ParseArguments(const char* arguments, int count) override;
+		void ParseArguments(char** arguments, int count) override;
 		void RegisterInputEvents(InputHandler& inputHandler) override;
 		bool ProcessInput(const InputHandler& handler) override;
 

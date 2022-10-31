@@ -538,7 +538,7 @@ namespace Editor
 		CreateAndInitializeEditorCamera();
 	}
 
-	void EditorApp::ParseArguments(const char* arguments, int count)
+	void EditorApp::ParseArguments(char** arguments, int count)
 	{
 	}
 }
