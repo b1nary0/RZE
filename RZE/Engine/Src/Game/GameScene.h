@@ -18,7 +18,7 @@ public:
 
 	void NewScene();
 	void Serialize(Filepath filePath);
-	void Deserialize(Filepath filePath);
+	void Deserialize(const Filepath& filePath);
 	void Unload();
 	
 	GameObjectPtr FindGameObjectByName(const std::string& name);
