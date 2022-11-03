@@ -37,7 +37,7 @@ bool File::Open(EFileOpenMode::Value fileOpenMode)
 		if (!m_isOpen)
 		{
 			// #TODO Log error
-			//LOG_CONSOLE_ARGS("File with path [%s] failed to open.", m_filePath.GetRelativePath().c_str());
+			//RZE_LOG_ARGS("File with path [%s] failed to open.", m_filePath.GetRelativePath().c_str());
 			return false;
 		}
 

@@ -146,6 +146,6 @@ GameObjectComponentPtr<TComponentType> GameObject::AddComponent(Args... args)
 		return component;
 	}
 
-	LOG_CONSOLE_ARGS("Failed to add component %s as a component of that type already exists", TComponentType::GetComponentName());
+	RZE_LOG_ARGS("Failed to add component %s as a component of that type already exists", TComponentType::GetComponentName());
 	return nullptr;
 }

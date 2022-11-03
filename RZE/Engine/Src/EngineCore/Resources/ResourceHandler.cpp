@@ -33,7 +33,7 @@ void ResourceHandler::ShutDown()
 
 	// Just an informative log to notify that we had some referenced resources at the time
 	// ShutDown() was called. This is fine.
-	LOG_CONSOLE_ARGS("ResourceHandler::ShutDown() encountered %u live resources.", liveResourceCount);
+	RZE_LOG_ARGS("ResourceHandler::ShutDown() encountered %u live resources.", liveResourceCount);
 
 	mResourceTable.erase(mResourceTable.begin(), mResourceTable.end());
 }
@@ -53,7 +53,7 @@ void ResourceHandler::ReleaseResource(ResourceHandle& resourceHandle)
 
 		if (!resourceSource.IsReferenced() && resourceSource.GetResource())
 		{
-			LOG_CONSOLE_ARGS("Releasing resource [%s]", resourceHandle.GetID().c_str());
+			RZE_LOG_ARGS("Releasing resource [%s]", resourceHandle.GetID().c_str());
 
 			resourceSource.GetResource()->Release();
 			resourceSource.Destroy();
@@ -66,7 +66,7 @@ void ResourceHandler::ReleaseResource(ResourceHandle& resourceHandle)
 	}
 	else
 	{
-		LOG_CONSOLE_ARGS("Attempting to release resource with key [%s] but it does not currently exist.", resourceHandle.GetID().c_str());
+		RZE_LOG_ARGS("Attempting to release resource with key [%s] but it does not currently exist.", resourceHandle.GetID().c_str());
 	}
 }
 
@@ -77,7 +77,7 @@ ResourceHandle ResourceHandler::Make(const std::string& resourceID, IResource* r
 	auto iter = mResourceTable.find(resourceKey);
 	if (iter == mResourceTable.end())
 	{
-		LOG_CONSOLE_ARGS("Making resource [%s]", resourceKey.c_str());
+		RZE_LOG_ARGS("Making resource [%s]", resourceKey.c_str());
 		if (resource)
 		{
 			ResourceSource resourceSource(resource);

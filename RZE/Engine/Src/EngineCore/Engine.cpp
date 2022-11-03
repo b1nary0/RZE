@@ -98,7 +98,7 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 	}
 	else
 	{
-		LOG_CONSOLE("Initialization Failed.");
+		RZE_LOG("Initialization Failed.");
 	}
 }
 
@@ -118,7 +118,7 @@ void RZE_Engine::Init()
 {
 	if (!IsInitialized())
 	{
-		LOG_CONSOLE("RZE_EngineCore::Init() called.");
+		RZE_LOG("RZE_EngineCore::Init() called.");
 
 		Debug::CreateLogFile();
 
@@ -147,7 +147,7 @@ void RZE_Engine::Init()
 
 void RZE_Engine::PostInit(Functor<RZE_Application* const>& createApplicationCallback)
 {
-	LOG_CONSOLE("RZE_EngineCore::PostInit() called.");
+	RZE_LOG("RZE_EngineCore::PostInit() called.");
 
 	RegisterKeyEvents();
 
@@ -192,7 +192,7 @@ void RZE_Engine::CreateAndInitializeWindow()
 
 void RZE_Engine::CreateAndInitializeRenderer()
 {
-	LOG_CONSOLE("Initializing Renderer");
+	RZE_LOG("Initializing Renderer");
 
 	m_renderEngine = std::make_unique<RenderEngine>();
 	m_renderEngine->Initialize(m_window->GetOSWindowHandleData().windowHandle);
@@ -273,7 +273,7 @@ void RZE_Engine::LoadEngineConfig()
 
 	if (m_engineConfig->Empty())
 	{
-		LOG_CONSOLE("Engine config could not load. Defaults were used.");
+		RZE_LOG("Engine config could not load. Defaults were used.");
 	}
 }
 
@@ -287,7 +287,7 @@ void RZE_Engine::Update()
 
 void RZE_Engine::BeginShutDown()
 {
-	LOG_CONSOLE("Shutting engine down...");
+	RZE_LOG("Shutting engine down...");
 	
 	m_activeScene->ShutDown();
 	m_application->ShutDown();

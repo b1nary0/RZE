@@ -27,7 +27,7 @@ bool Texture2D::Load(const Filepath& filePath)
 	m_data = stbi_load(filePath.GetAbsolutePath().c_str(), &m_width, &m_height, &m_channels, STBI_rgb_alpha);
 	if (m_data == nullptr)
 	{
-		LOG_CONSOLE_ARGS("Loading texture from [%s] failed.", filePath.GetRelativePath());
+		RZE_LOG_ARGS("Loading texture from [%s] failed.", filePath.GetRelativePath());
 		AssertFalse();
 	}
 

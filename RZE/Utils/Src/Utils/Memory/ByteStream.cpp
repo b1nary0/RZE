@@ -23,7 +23,7 @@ ByteStream::~ByteStream()
 	{
 		// #TODO
 		// implement logging verbosity and then re-enable this.
-		//LOG_CONSOLE_ARGS("ByteStream [%s] destroying with live buffer", mName.c_str());
+		//RZE_LOG_ARGS("ByteStream [%s] destroying with live buffer", mName.c_str());
 
 		delete[] mBytes;
 		mBytes = nullptr;

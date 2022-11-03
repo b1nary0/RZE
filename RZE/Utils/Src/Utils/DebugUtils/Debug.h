@@ -5,13 +5,13 @@
 
 #include <Utils/Platform/File.h>
 
-#include <Utils/StringUtils.h>
 #include <Utils/Platform/Timers/HiResTimer.h>
 
 namespace Debug
 {
 	bool CreateLogFile();
 	File& GetLogFile();
+	void WriteToLogFile(const std::string_view str);
 }
 
 #ifdef _DEBUG
@@ -23,13 +23,14 @@ namespace Debug
 #define AssertExpr(Expr) assert(Expr);
 #define AssertMsg(Expr, Msg) assert(Expr && Msg);
 
-#define LOG_CONSOLE(Msg) 									\
+#define RZE_LOG(Msg) 									\
 {															\
 	std::stringstream ss;									\
 	ss << Msg;												\
 	ss << "\n";												\
 															\
 	printf_s(ss.str().c_str());								\
+	Debug::WriteToLogFile(ss.str());							\
 }
 
 #define LOG_CONSOLE_ANNOUNCE(Msg, ...) 						\
@@ -46,7 +47,7 @@ namespace Debug
 	printf_s(ss.str().c_str(), __VA_ARGS__);				\
 }
 
-#define LOG_CONSOLE_ARGS(Msg, ...)							\
+#define RZE_LOG_ARGS(Msg, ...)							\
 {															\
 	std::stringstream ss;									\
 	ss << Msg;											    \
@@ -55,10 +56,7 @@ namespace Debug
 	char buf[1024];											\
 	sprintf_s(buf, 1024, ss.str().c_str(), __VA_ARGS__);		\
 	printf_s(ss.str().c_str(), __VA_ARGS__); 				\
-	File& logFile = Debug::GetLogFile();						\
-	logFile.Open(File::EFileOpenMode::Append);				\
-	logFile << buf;											\
-	logFile.Close();											\
+	Debug::WriteToLogFile(buf);										\
 }											
 
 #define START_TIMED_BLOCK(Name)	\
@@ -76,7 +74,7 @@ namespace Debug
 #define AssertMsg(Expr, Msg)
 
 #define LOG_CONSOLE
-#define LOG_CONSOLE_ARGS
+#define RZE_LOG_ARGS
 #define LOG_CONSOLE_ANNOUNCE
 
 #endif

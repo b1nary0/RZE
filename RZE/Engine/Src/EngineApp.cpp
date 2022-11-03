@@ -66,7 +66,7 @@ void RZE_Application::RegisterInputEvents(InputHandler& inputHandler)
 
 void RZE_Application::Initialize()
 {
-	LOG_CONSOLE("RZE_Application::Init() called.");
+	RZE_LOG("RZE_Application::Init() called.");
 
 	// #TODO This basically just runs a bunch of poor mans reflection stuff like
 	// creating entries in the component name lookup and factory functions. Necessary to function atm.

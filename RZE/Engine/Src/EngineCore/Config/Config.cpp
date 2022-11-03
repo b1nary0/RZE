@@ -29,6 +29,6 @@ void Config::Read(const std::string& filePath)
 	}
 	else
 	{
-		LOG_CONSOLE_ARGS("Could not open file at path [%s]", mINIFile.GetPath().GetRelativePath().c_str());
+		RZE_LOG_ARGS("Could not open file at path [%s]", mINIFile.GetPath().GetRelativePath().c_str());
 	}
 }

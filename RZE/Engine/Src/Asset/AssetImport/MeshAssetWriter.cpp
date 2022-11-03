@@ -95,5 +95,5 @@ void MeshAssetWriter::Write()
 
 	outputFile.Close();
 
-	LOG_CONSOLE_ARGS("MeshAssetWriter : %s written.", outputPath.GetRelativePath().c_str());
+	RZE_LOG_ARGS("MeshAssetWriter : %s written.", outputPath.GetRelativePath().c_str());
 }

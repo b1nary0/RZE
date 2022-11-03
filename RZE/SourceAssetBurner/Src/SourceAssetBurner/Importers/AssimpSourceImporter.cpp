@@ -46,7 +46,7 @@ AssimpSourceImporter::AssimpSourceImporter()
 
 bool AssimpSourceImporter::Import(const Filepath& filePath)
 {
-	LOG_CONSOLE_ARGS("AssimpSourceImporter : Importing %s...", filePath.GetRelativePath().c_str());
+	RZE_LOG_ARGS("AssimpSourceImporter : Importing %s...", filePath.GetRelativePath().c_str());
 
 	m_filepath = filePath;
 	m_assetName = StripAssetNameFromFilePath(filePath);
@@ -67,7 +67,7 @@ bool AssimpSourceImporter::Import(const Filepath& filePath)
 	if (bAssimpNotLoaded)
 	{
 		// #TODO More informative error message.
-		LOG_CONSOLE_ARGS("Failed to load model from [%s].", filePath.GetRelativePath().c_str());
+		RZE_LOG_ARGS("Failed to load model from [%s].", filePath.GetRelativePath().c_str());
 		return false;
 	}
 
@@ -76,13 +76,13 @@ bool AssimpSourceImporter::Import(const Filepath& filePath)
 
 	if (m_meshes.size() != AssimpScene->mNumMeshes)
 	{
-		LOG_CONSOLE_ARGS("Error reading meshes from [%s].", filePath.GetRelativePath().c_str());
+		RZE_LOG_ARGS("Error reading meshes from [%s].", filePath.GetRelativePath().c_str());
 		return false;
 	}
 
 	if (!WriteMeshAsset())
 	{
-		LOG_CONSOLE_ARGS("Failed to write meshasset for [%s]. See logs.", filePath.GetRelativePath().c_str());
+		RZE_LOG_ARGS("Failed to write meshasset for [%s]. See logs.", filePath.GetRelativePath().c_str());
 		return false;
 	}
 
@@ -90,12 +90,12 @@ bool AssimpSourceImporter::Import(const Filepath& filePath)
 	{
 		if (!WriteMaterialAsset(dataPair.first, dataPair.second))
 		{
-			LOG_CONSOLE_ARGS("Failed to write materialAsset for [%s]. See logs.", filePath.GetRelativePath().c_str());
+			RZE_LOG_ARGS("Failed to write materialAsset for [%s]. See logs.", filePath.GetRelativePath().c_str());
 			return false;
 		}
 	}
 
-	LOG_CONSOLE_ARGS("AssimpSourceImporter : Import Success for %s", filePath.GetRelativePath().c_str());
+	RZE_LOG_ARGS("AssimpSourceImporter : Import Success for %s", filePath.GetRelativePath().c_str());
 	return true;
 }
 
@@ -117,7 +117,7 @@ void AssimpSourceImporter::ProcessNode(const aiNode& node, const aiScene& scene)
 			meshData.MeshName = node.mName.C_Str();
 		}
 
-		LOG_CONSOLE_ARGS("AssimpSourceImporter : Processing Mesh %i of %i - %s", meshIndex + 1, node.mNumMeshes, meshData.MeshName.c_str());
+		RZE_LOG_ARGS("AssimpSourceImporter : Processing Mesh %i of %i - %s", meshIndex + 1, node.mNumMeshes, meshData.MeshName.c_str());
 		ProcessMesh(assimpMesh, scene, meshData);
 	}
 
@@ -317,7 +317,7 @@ bool AssimpSourceImporter::WriteMaterialAsset(const std::string& relativePath, c
 
 	outputFile.Close();
 
-	LOG_CONSOLE_ARGS("AssimpSourceImporter : %s written.", outputPath.GetRelativePath().c_str());
+	RZE_LOG_ARGS("AssimpSourceImporter : %s written.", outputPath.GetRelativePath().c_str());
 
 	return true;
 }

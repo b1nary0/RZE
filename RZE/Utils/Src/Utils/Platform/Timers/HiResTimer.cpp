@@ -34,5 +34,5 @@ ScopedHiResTimer::~ScopedHiResTimer()
 
 void ScopedHiResTimer::Print()
 {
-	LOG_CONSOLE_ARGS("%s took %f ms to complete.", Name, Timer.GetElapsedMS<float>());
+	RZE_LOG_ARGS("%s took %f ms to complete.", Name, Timer.GetElapsedMS<float>());
 }

@@ -135,7 +135,7 @@ ResourceHandle ResourceHandler::LoadResource(const Filepath& resourcePath, Args.
 	auto iter = mResourceTable.find(resourceKey);
 	if (iter == mResourceTable.end())
 	{
-		LOG_CONSOLE_ARGS("Creating resource [%s]", resourceKey.c_str());
+		RZE_LOG_ARGS("Creating resource [%s]", resourceKey.c_str());
 		IResource* resource = CreateAndLoadResource<ResourceT>(resourcePath, args...);
 		if (resource)
 		{
@@ -166,7 +166,7 @@ const ResourceT* ResourceHandler::GetResource(const ResourceHandle& resourceHand
 		return static_cast<ResourceT*>(resourceSource.GetResource());
 	}
 
-	LOG_CONSOLE_ARGS("Resource with key [%s] does not exist. Request it first.", resourceHandle.GetID().c_str());
+	RZE_LOG_ARGS("Resource with key [%s] does not exist. Request it first.", resourceHandle.GetID().c_str());
 	return nullptr;
 }
 

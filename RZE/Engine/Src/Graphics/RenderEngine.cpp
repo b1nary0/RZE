@@ -146,7 +146,7 @@ void RenderEngine::ResizeCanvas(const Vector2D& newSize)
 
 	Rendering::Renderer::HandleWindowResize(m_canvasSize);
 
-	LOG_CONSOLE_ARGS("New Canvas Size: %f x %f", m_canvasSize.X(), m_canvasSize.Y());
+	RZE_LOG_ARGS("New Canvas Size: %f x %f", m_canvasSize.X(), m_canvasSize.Y());
 }
 
 const Vector2D& RenderEngine::GetCanvasSize() const

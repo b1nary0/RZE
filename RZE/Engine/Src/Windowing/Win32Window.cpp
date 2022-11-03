@@ -129,20 +129,20 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 		mOSWindowHandleData.deviceContext = GetDC(mOSWindowHandleData.windowHandle);
 		if (!mOSWindowHandleData.deviceContext)
 		{
-			LOG_CONSOLE("<Failure retrieving device context>");
+			RZE_LOG("<Failure retrieving device context>");
 			AssertFalse();
 		}
 
 		int pixelFormat = ChoosePixelFormat(mOSWindowHandleData.deviceContext, &mOSWindowHandleData.pixelFormatDesc);
 		if (!pixelFormat)
 		{
-			LOG_CONSOLE("<Failure choosing pixel format>");
+			RZE_LOG("<Failure choosing pixel format>");
 			AssertFalse();
 		}
 
 		if (!SetPixelFormat(mOSWindowHandleData.deviceContext, pixelFormat, &mOSWindowHandleData.pixelFormatDesc))
 		{
-			LOG_CONSOLE("<Failure setting pixel format>");
+			RZE_LOG("<Failure setting pixel format>");
 			AssertFalse();
 		}
 
@@ -331,7 +331,7 @@ void Win32Window::ProcessWinProcMessage(const WindowMessageAdaptor::WindowMessag
 		}
 		else
 		{
-			LOG_CONSOLE("Setting 0 dimension window size. Could be minimized. Is this expected?");
+			RZE_LOG("Setting 0 dimension window size. Could be minimized. Is this expected?");
 		}
 	}
 }

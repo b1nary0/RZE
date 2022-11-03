@@ -27,4 +27,12 @@ namespace Debug
 	{
 		return g_logFile;
 	}
+
+	void WriteToLogFile(const std::string_view str)
+	{
+		File& logFile = Debug::GetLogFile();
+		logFile.Open(File::EFileOpenMode::Append);
+		logFile << str.data();
+		logFile.Close();
+	}
 }
