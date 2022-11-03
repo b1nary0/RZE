@@ -17,7 +17,7 @@ public:
 	void Initialize();
 
 	void NewScene();
-	void Serialize(Filepath filePath);
+	void Serialize(const Filepath& filePath);
 	void Deserialize(const Filepath& filePath);
 	void Unload();
 	
