@@ -73,7 +73,7 @@ namespace Debug
 #define AssertExpr(Expr)
 #define AssertMsg(Expr, Msg)
 
-#define LOG_CONSOLE
+#define RZE_LOG
 #define RZE_LOG_ARGS
 #define LOG_CONSOLE_ANNOUNCE
 
