@@ -122,23 +122,26 @@ namespace Editor
 	{
 		InputHandler& inputHandler = RZE_Application::RZE().GetInputHandler();
 
-		Functor<void, const InputKey&> keyFunc([this](const InputKey& key)
+		Functor<void, const InputKey&> keyFunc([this, &inputHandler](const InputKey& key)
+			{
+			if (inputHandler.GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) != EButtonState::ButtonState_Pressed)
 			{
 				switch (key.GetKeyCode())
-				{
-				case Win32KeyCode::Key_W:
-					m_gizmoState.m_currentOpMode = ImGuizmo::TRANSLATE;
-					break;
-				case Win32KeyCode::Key_E:
-					m_gizmoState.m_currentOpMode = ImGuizmo::ROTATE;
-					break;
-				case Win32KeyCode::Key_R:
-					m_gizmoState.m_currentOpMode = ImGuizmo::SCALE;
-					break;
-				case Win32KeyCode::Key_Q:
-					m_gizmoState.m_transformationSpace = (m_gizmoState.m_transformationSpace == ImGuizmo::WORLD) ? ImGuizmo::LOCAL : ImGuizmo::WORLD;
-					break;
-				}
+			   {
+			   case Win32KeyCode::Key_W:
+			   	m_gizmoState.m_currentOpMode = ImGuizmo::TRANSLATE;
+				   break;
+			   case Win32KeyCode::Key_E:
+			   	m_gizmoState.m_currentOpMode = ImGuizmo::ROTATE;
+				   break;
+			   case Win32KeyCode::Key_R:
+			   	m_gizmoState.m_currentOpMode = ImGuizmo::SCALE;
+				   break;
+			   case Win32KeyCode::Key_Q:
+			   	m_gizmoState.m_transformationSpace = (m_gizmoState.m_transformationSpace == ImGuizmo::WORLD) ? ImGuizmo::LOCAL : ImGuizmo::WORLD;
+				   break;
+			   }
+			}
 			});
 		inputHandler.BindAction(Win32KeyCode::Key_W, EButtonState::ButtonState_Pressed, keyFunc);
 		inputHandler.BindAction(Win32KeyCode::Key_E, EButtonState::ButtonState_Pressed, keyFunc);
