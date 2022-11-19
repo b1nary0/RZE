@@ -3,8 +3,8 @@ name: Windows
 on:
   push:
     branches: [master, Sandbox, NewRenderer, ActorLike]
-    tags:
-       - '![NO_CI]'
+    tags-ignore:
+       - '[NO_CI]'
   pull_request:
     branches: [master, Sandbox, NewRenderer, ActorLike]
 
