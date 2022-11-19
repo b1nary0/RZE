@@ -67,4 +67,6 @@ private:
 
 	bool m_isActiveCamera { false };
 
+	// #TODO this should only be a thing in editor
+	std::unique_ptr<Rendering::RenderTargetTexture> m_renderTarget;
 };

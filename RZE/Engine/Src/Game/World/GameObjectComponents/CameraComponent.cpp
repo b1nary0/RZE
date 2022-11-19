@@ -212,11 +212,14 @@ void CameraComponent::OnEditorInspect()
 		renderCam.Viewport = RenderViewport(Vector2D(240.0f, 144.0f));
 		renderCam.ClipSpace = GetProjectionMatrix() * GetViewMatrix();
 		renderCam.Position = GetOwner()->GetTransformComponent()->GetPosition();
-		std::unique_ptr<Rendering::RenderTargetTexture> rtt = RZE().GetRenderEngine().RenderView(renderCam);
+		if (m_renderTarget == nullptr)
+		{
+			m_renderTarget = RZE().GetRenderEngine().RenderView(renderCam);
+		}
 
 		m_aspectRatio = prevAspectRatio;
 
-		Rendering::TextureBuffer2DHandle texture = rtt->GetTargetPlatformObject();
+		Rendering::TextureBuffer2DHandle texture = m_renderTarget->GetTargetPlatformObject();
 
 		auto clamp = [](float a, float b, float val)
 		{
@@ -225,8 +228,8 @@ void CameraComponent::OnEditorInspect()
 
 			return val;
 		};
-		float uvbx = clamp(0.0f, 1.0f, renderCam.Viewport.Size.X() / rtt->GetWidth());
-		float uvby = clamp(0.0f, 1.0f, renderCam.Viewport.Size.Y() / rtt->GetHeight());
+		float uvbx = clamp(0.0f, 1.0f, renderCam.Viewport.Size.X() / m_renderTarget->GetWidth());
+		float uvby = clamp(0.0f, 1.0f, renderCam.Viewport.Size.Y() / m_renderTarget->GetHeight());
 		ImGui::Image(texture.GetTextureData(), ImVec2(renderCam.Viewport.Size.X(), renderCam.Viewport.Size.Y()), ImVec2(0.0f, 0.0f), ImVec2(uvbx, uvby));
 	}
 }
