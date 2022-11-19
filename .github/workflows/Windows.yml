@@ -5,6 +5,8 @@ on:
     branches: [master, Sandbox, NewRenderer, ActorLike]
   pull_request:
     branches: [master, Sandbox, NewRenderer, ActorLike]
+   tags-ignore:
+     - '[NO_CI]'
   workflow_dispatch:
 
 jobs:
