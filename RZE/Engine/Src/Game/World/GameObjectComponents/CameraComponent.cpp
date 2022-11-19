@@ -197,12 +197,22 @@ void CameraComponent::OnEditorInspect()
 	float* forwardDirValues = const_cast<float*>(&m_forward.GetInternalVec().x);
 	ImGui::Text("Look At");
 	ImGui::DragFloat3("##cameracomponent_forwarddir", forwardDirValues, 0.005f, -100.0f, 100.0f);
-	
+
+	// #TODO this is a particularly bad part of not having the right API
+	// starting to change state of stuff temporarily - could leak state eventually
+	const float prevAspectRatio = m_aspectRatio;
+	m_aspectRatio = 240.0f / 144.0f;
+
+	GameObjectComponentPtr<TransformComponent> transfComp = GetOwner()->GetTransformComponent();
+	GenerateCameraMatrices(transfComp->GetPosition());
+
 	RenderCamera renderCam;
 	renderCam.Viewport = RenderViewport(Vector2D(240.0f, 144.0f));
 	renderCam.ClipSpace = GetProjectionMatrix() * GetViewMatrix();
 	renderCam.Position = GetOwner()->GetTransformComponent()->GetPosition();
 	std::unique_ptr<Rendering::RenderTargetTexture> rtt = RZE().GetRenderEngine().RenderView(renderCam);
+
+	m_aspectRatio = prevAspectRatio;
 
 	Rendering::TextureBuffer2DHandle texture = rtt->GetTargetPlatformObject();
 
