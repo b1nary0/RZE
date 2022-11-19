@@ -18,11 +18,17 @@ namespace Rendering
 
 class IRenderStage;
 
+struct RenderViewport
+{
+	Vector2D Size;
+};
+
 struct RenderCamera
 {
 	// @TODO integrate with viewport maybe
 	Matrix4x4 ClipSpace;
 	Vector3D Position;
+	RenderViewport Viewport;
 };
 
 // @TODO Move to own file
@@ -133,7 +139,7 @@ public:
 public:
 	void Initialize(void* windowHandle);
 	void Update();
-	void Render();
+	void Render(bool withImgui);
 	void Shutdown();
 
 public:
@@ -156,6 +162,8 @@ public:
 	
 	void SetViewportSize(const Vector2D& size) { m_viewportSize = size; }
 	const Vector2D& GetViewportSize() const { return m_viewportSize; }
+
+	std::unique_ptr<Rendering::RenderTargetTexture> RenderView(const RenderCamera& renderCamera);
 
 private:
 	void InternalAddRenderStage(IRenderStage* pipeline);

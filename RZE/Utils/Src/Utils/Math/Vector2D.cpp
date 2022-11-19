@@ -3,6 +3,8 @@
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Vector2D.h>
 
+Vector2D Vector2D::ZERO = Vector2D();
+
 Vector2D::Vector2D()
 	: mVec(0.0f)
 {

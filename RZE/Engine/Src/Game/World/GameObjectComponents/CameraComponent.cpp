@@ -6,6 +6,8 @@
 
 #include <Graphics/RenderEngine.h>
 
+#include <Rendering/Graphics/RenderTarget.h>
+
 #include <Utils/DebugUtils/Debug.h>
 
 const Vector3D& CameraComponent::GetLookAt() const
@@ -195,4 +197,23 @@ void CameraComponent::OnEditorInspect()
 	float* forwardDirValues = const_cast<float*>(&m_forward.GetInternalVec().x);
 	ImGui::Text("Look At");
 	ImGui::DragFloat3("##cameracomponent_forwarddir", forwardDirValues, 0.005f, -100.0f, 100.0f);
+	
+	RenderCamera renderCam;
+	renderCam.Viewport = RenderViewport(Vector2D(240.0f, 144.0f));
+	renderCam.ClipSpace = GetProjectionMatrix() * GetViewMatrix();
+	renderCam.Position = GetOwner()->GetTransformComponent()->GetPosition();
+	std::unique_ptr<Rendering::RenderTargetTexture> rtt = RZE().GetRenderEngine().RenderView(renderCam);
+
+	Rendering::TextureBuffer2DHandle texture = rtt->GetTargetPlatformObject();
+
+	auto clamp = [](float a, float b, float val)
+	{
+		if (val > b) val = b;
+		else if (val < a) val = a;
+
+		return val;
+	};
+	float uvbx = clamp(0.0f, 1.0f, renderCam.Viewport.Size.X() / rtt->GetWidth());
+	float uvby = clamp(0.0f, 1.0f, renderCam.Viewport.Size.Y() / rtt->GetHeight());
+	ImGui::Image(texture.GetTextureData(), ImVec2(renderCam.Viewport.Size.X(), renderCam.Viewport.Size.Y()), ImVec2(0.0f, 0.0f), ImVec2(uvbx, uvby));
 }

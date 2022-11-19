@@ -87,7 +87,7 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 					
 					ImGui::EndFrame();
 
-					m_renderEngine->Render();
+					m_renderEngine->Render(true);
 				}
 			}
 

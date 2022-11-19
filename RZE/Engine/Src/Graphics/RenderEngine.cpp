@@ -6,6 +6,8 @@
 
 #include <Rendering/Renderer.h>
 
+#include "Rendering/Graphics/RenderTarget.h"
+
 void LightObject::Initialize()
 {
 	m_propertyBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(PropertyBufferLayout), 1);
@@ -41,7 +43,7 @@ void RenderEngine::Update()
 	}
 }
 
-void RenderEngine::Render()
+void RenderEngine::Render(bool withImgui)
 {
 	OPTICK_EVENT();
 
@@ -54,6 +56,12 @@ void RenderEngine::Render()
 
 	for (auto& pipeline : m_renderStages)
 	{
+		// #TODO dont do imgui. magic number should change
+		if (pipeline->GetPriority() == 1000 && !withImgui)
+		{
+			continue;
+		}
+
 		pipeline->Render(renderStageData);
 	}
 
@@ -158,6 +166,31 @@ const Rendering::RenderTargetTexture& RenderEngine::GetRenderTarget()
 {
 	AssertNotNull(m_renderTarget);
 	return *m_renderTarget;
+}
+
+std::unique_ptr<Rendering::RenderTargetTexture> RenderEngine::RenderView(const RenderCamera& renderCamera)
+{
+	AssertExpr(renderCamera.Viewport.Size != Vector2D::ZERO);
+
+	std::unique_ptr<Rendering::RenderTargetTexture> retTex = 
+		std::make_unique<Rendering::RenderTargetTexture>(static_cast<U32>(renderCamera.Viewport.Size.X()), static_cast<U32>(renderCamera.Viewport.Size.Y()));
+	retTex->Initialize();
+
+	const RenderCamera prevCamera = GetCamera();
+	const Vector2D prevViewportSize = GetViewportSize();
+	Rendering::RenderTargetTexture* prevRenderTarget = m_renderTarget;
+
+	GetCamera() = renderCamera;
+	SetViewportSize(renderCamera.Viewport.Size);
+	SetRenderTarget(retTex.get());
+	Update();
+	Render(false);
+
+	SetViewportSize(prevViewportSize);
+	SetRenderTarget(prevRenderTarget);
+	GetCamera() = prevCamera;
+
+	return retTex;
 }
 
 void RenderEngine::InternalAddRenderStage(IRenderStage* pipeline)
