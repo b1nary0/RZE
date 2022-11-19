@@ -3,10 +3,11 @@ name: Windows
 on:
   push:
     branches: [master, Sandbox, NewRenderer, ActorLike]
+    tags-ignore:
+       - '[NO_CI]'
   pull_request:
     branches: [master, Sandbox, NewRenderer, ActorLike]
-   tags-ignore:
-     - '[NO_CI]'
+
   workflow_dispatch:
 
 jobs:
