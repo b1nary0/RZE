@@ -105,7 +105,7 @@ void CameraComponent::OnAddToScene()
 {
 	// #TODO This wont work long term, just trying to get things rendering with new code
 	m_isActiveCamera = true;
-	m_aspectRatio = RZE_Application::RZE().GetWindowSize().X() / RZE_Application::RZE().GetWindowSize().Y();
+	m_aspectRatio = RZE().GetWindowSize().X() / RZE().GetWindowSize().Y();
 }
 
 void CameraComponent::Update()
@@ -119,7 +119,7 @@ void CameraComponent::Update()
 
 		{
 			// Push data to RenderEngine
-			RenderCamera& renderCamera = RZE::GetRenderEngine().GetCamera();
+			RenderCamera& renderCamera = RZE().GetRenderEngine().GetCamera();
 			renderCamera.Position = transformComponent->GetPosition();
 			renderCamera.ClipSpace = GetProjectionMatrix() * GetViewMatrix();
 		}

@@ -8,7 +8,7 @@ void DirectionalLightComponent::OnAddToScene()
 {
 	GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
 
-	m_lightObject = RZE::GetRenderEngine().CreateLightObject();
+	m_lightObject = RZE().GetRenderEngine().CreateLightObject();
 	m_lightObject->SetPosition(transformComponent->GetPosition());
 	m_lightObject->SetColour(m_lightColour);
 	m_lightObject->SetStrength(m_lightStrength);
@@ -16,7 +16,7 @@ void DirectionalLightComponent::OnAddToScene()
 
 void DirectionalLightComponent::OnRemoveFromScene()
 {
-	RZE::GetRenderEngine().DestroyLightObject(m_lightObject);
+	RZE().GetRenderEngine().DestroyLightObject(m_lightObject);
 }
 
 void DirectionalLightComponent::Update()

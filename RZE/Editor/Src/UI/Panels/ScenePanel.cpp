@@ -60,7 +60,7 @@ namespace Editor
 						char name[k_maxGameObjectNameSize] = { 0 };
 						if (ImGui::InputText("GameObject Name", name, k_maxGameObjectNameSize, ImGuiInputTextFlags_EnterReturnsTrue))
 						{
-							RZE::GetActiveScene().AddGameObject(name);
+							RZE().GetActiveScene().AddGameObject(name);
 							showGameObjectNameBoxForCreate = false;
 						}
 					}
@@ -68,7 +68,7 @@ namespace Editor
 				}
 			}
 			
-			RZE::GetActiveScene().ForEachGameObject(
+			RZE().GetActiveScene().ForEachGameObject(
 				Functor<void, GameObjectPtr>([this](GameObjectPtr gameObject)
 				{
 					if (ImGui::IsAnyMouseDown() && (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) && HasSelectedGameObject())
@@ -92,7 +92,7 @@ namespace Editor
 							GameObjectPtr gameObject = GetSelectedGameObject();
 							GameObjectComponentPtr<TransformComponent> transformComponent = gameObject->GetTransformComponent();
 
-							GameObjectPtr camera = RZE::GetActiveScene().FindGameObjectByName("EditorCam");
+							GameObjectPtr camera = RZE().GetActiveScene().FindGameObjectByName("EditorCam");
 							GameObjectComponentPtr<EditorCameraComponent> editorCam = camera->GetComponent<EditorCameraComponent>();
 							AssertNotNull(editorCam);
 							GameObjectComponentPtr<TransformComponent> cameraTransform = camera->GetTransformComponent();
@@ -150,7 +150,7 @@ namespace Editor
 									ResetSelectedGameObject();
 								}
 
-								RZE::GetActiveScene().RemoveGameObject(gameObject);
+								RZE().GetActiveScene().RemoveGameObject(gameObject);
 							}
 
 							ImGui::EndPopup();

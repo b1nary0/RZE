@@ -11,12 +11,9 @@
 
 #include <Windowing/Win32Window.h>
 
-#include <Rendering/Driver/DX11/DX11Device.h>
 #include <Rendering/Graphics/RenderTarget.h>
 
 #include <Utils/DebugUtils/Debug.h>
-
-RZE_Engine RZE_Application::mEngine;
 
 RZE_Application::RZE_Application()
 	: mWindow(nullptr)

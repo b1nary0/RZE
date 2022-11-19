@@ -74,14 +74,14 @@ void GifChatComponent::OnRemoveFromScene()
 {
 	if (m_meshRenderObject != nullptr)
 	{
-		RZE::GetRenderEngine().DestroyRenderObject(m_meshRenderObject);
+		RZE().GetRenderEngine().DestroyRenderObject(m_meshRenderObject);
 	}
 }
 
 void GifChatComponent::Update()
 {
 	static float elapsedMS = 0.0f;
-	elapsedMS += RZE_Application::RZE().GetDeltaTimeMS();
+	elapsedMS += RZE().GetDeltaTimeMS();
 
 	if (m_currentDisplayingFrame < m_totalFrames)
 	{
@@ -120,7 +120,7 @@ void GifChatComponent::OnEditorInspect()
 			//
 			if (ImGui::TreeNode(&material, "%s %s", "Material:", material->GetName().c_str()))
 			{
-				const PixelShader* const shader = RZE::GetResourceHandler().GetResource<PixelShader>(material->GetShaderResource());
+				const PixelShader* const shader = RZE().GetResourceHandler().GetResource<PixelShader>(material->GetShaderResource());
 				AssertNotNull(shader);
 
 				ImGui::Separator();
@@ -140,7 +140,7 @@ void GifChatComponent::OnEditorInspect()
 
 					if (textureResource.IsValid())
 					{
-						const Texture2D* const textureData = RZE::GetResourceHandler().GetResource<Texture2D>(textureResource);
+						const Texture2D* const textureData = RZE().GetResourceHandler().GetResource<Texture2D>(textureResource);
 						AssertNotNull(textureData);
 
 						const std::string textureTypeStr = GetTextureTypeStr(static_cast<MaterialInstance::TextureSlot>(textureSlot));
@@ -205,14 +205,14 @@ void GifChatComponent::Load(const Filepath& fp)
 		memcpy(textureBuffer, m_gifData.get() + frame * frameSizeBytes, frameSizeBytes);
 		frameTexture->Load(textureBuffer, x, y);
 		
-		m_frames.push_back(RZE::GetResourceHandler().Make("FIRST_FRAME_GIF_" + std::to_string(frame), frameTexture));
+		m_frames.push_back(RZE().GetResourceHandler().Make("FIRST_FRAME_GIF_" + std::to_string(frame), frameTexture));
 		AssertExpr(m_frames.back().IsValid());
 	}
 
 	GenerateMesh();
 
 	ResourceHandle shader = 
-		RZE::GetResourceHandler().LoadResource<PixelShader>(Filepath("Assets/Shaders/Pixel_NewRenderer_DiffuseOnly.hlsl"), "Pixel_NewRenderer_DiffuseOnly");
+		RZE().GetResourceHandler().LoadResource<PixelShader>(Filepath("Assets/Shaders/Pixel_NewRenderer_DiffuseOnly.hlsl"), "Pixel_NewRenderer_DiffuseOnly");
 	AssertExpr(shader.IsValid());
 
 	std::shared_ptr<MaterialInstance> material = std::make_shared<MaterialInstance>("GifMaterial");
@@ -230,7 +230,7 @@ void GifChatComponent::CreateRenderObject()
 {
 	GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
 
-	m_meshRenderObject = RZE::GetRenderEngine().CreateRenderObject(m_meshGeometry);
+	m_meshRenderObject = RZE().GetRenderEngine().CreateRenderObject(m_meshGeometry);
 	m_meshRenderObject->SetTransform(transformComponent->GetAsMat4x4());
 }
 

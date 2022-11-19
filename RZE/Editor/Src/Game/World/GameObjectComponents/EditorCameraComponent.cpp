@@ -114,7 +114,7 @@ void EditorCameraComponent::OnAddToScene()
 {
 	// #TODO This wont work long term, just trying to get things rendering with new code
 	m_isActiveCamera = true;
-	m_aspectRatio = RZE_Application::RZE().GetWindowSize().X() / RZE_Application::RZE().GetWindowSize().Y();
+	m_aspectRatio = RZE().GetWindowSize().X() / RZE().GetWindowSize().Y();
 }
 
 void EditorCameraComponent::Update()
@@ -130,7 +130,7 @@ void EditorCameraComponent::Update()
 		GenerateCameraMatrices(transformComponent->GetPosition());
 		{
 			// Push data to RenderEngine
-			RenderCamera& renderCamera = RZE::GetRenderEngine().GetCamera();
+			RenderCamera& renderCamera = RZE().GetRenderEngine().GetCamera();
 			renderCamera.Position = transformComponent->GetPosition();
 			renderCamera.ClipSpace = GetProjectionMatrix() * GetViewMatrix();
 		}
@@ -147,9 +147,9 @@ void EditorCameraComponent::GenerateCameraMatrices(const Vector3D& position)
 
 void EditorCameraComponent::KeyboardInput(GameObjectComponentPtr<TransformComponent>& transfComp)
 {
-	InputHandler& inputHandler = RZE_Application::RZE().GetInputHandler();
+	InputHandler& inputHandler = RZE().GetInputHandler();
 
-	float dt = static_cast<float>(RZE_Application::RZE().GetDeltaTime());
+	float dt = static_cast<float>(RZE().GetDeltaTime());
 
 	float speedDelta = m_speed * dt;
 
@@ -205,7 +205,7 @@ void EditorCameraComponent::KeyboardInput(GameObjectComponentPtr<TransformCompon
 		m_speed = k_cameraMaxSpeed;
 	}
 
-	Int32 wheelVal = RZE_Application::RZE().GetInputHandler().GetMouseState().CurWheelVal;
+	Int32 wheelVal = RZE().GetInputHandler().GetMouseState().CurWheelVal;
 	if (wheelVal != 0)
 	{
 		wheelVal = MathUtils::Clamp(wheelVal, -1, 1);
@@ -215,7 +215,7 @@ void EditorCameraComponent::KeyboardInput(GameObjectComponentPtr<TransformCompon
 
 void EditorCameraComponent::MouseInput(GameObjectComponentPtr<TransformComponent>& transfComp)
 {
-	InputHandler& inputHandler = RZE_Application::RZE().GetInputHandler();
+	InputHandler& inputHandler = RZE().GetInputHandler();
 
 	const Vector3D& curPos = inputHandler.GetMouseState().CurPosition;
 

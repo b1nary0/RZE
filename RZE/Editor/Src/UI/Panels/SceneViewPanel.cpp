@@ -44,17 +44,17 @@ namespace Editor
 			if (viewportDims.x != m_dimensions.X() || viewportDims.y != m_dimensions.Y())
 			{
 				m_dimensions.SetXY(viewportDims.x, viewportDims.y);
-				RZE::GetRenderEngine().SetViewportSize(m_dimensions);
+				RZE().GetRenderEngine().SetViewportSize(m_dimensions);
 
 				// @TODO lazy josh to future josh just use object cached on EditorApp
-				GameObjectPtr gameObject = RZE::GetActiveScene().FindGameObjectByName("EditorCam");
+				GameObjectPtr gameObject = RZE().GetActiveScene().FindGameObjectByName("EditorCam");
 				AssertNotNull(gameObject);
 				GameObjectComponentPtr<EditorCameraComponent> cameraComponent = gameObject->GetComponent<EditorCameraComponent>();
 				AssertNotNull(cameraComponent);
 				cameraComponent->SetAspectRatio(m_dimensions.X() / m_dimensions.Y());
 			}
 
-			Rendering::RenderTargetTexture* const pRTT = RZE_Application::RZE().GetApplication().GetRTT();
+			Rendering::RenderTargetTexture* const pRTT = RZE().GetApplication().GetRTT();
 			Rendering::TextureBuffer2DHandle texture = pRTT->GetTargetPlatformObject();
 
 			auto clamp = [](float a, float b, float val)
@@ -69,7 +69,7 @@ namespace Editor
 			ImGui::Image(texture.GetTextureData(), ImVec2(m_dimensions.X(), m_dimensions.Y()), ImVec2(0.0f, 0.0f), ImVec2(uvbx, uvby));
 
 			{
-				EditorApp& editorApp = static_cast<EditorApp&>(RZE_Application::RZE().GetApplication());
+				EditorApp& editorApp = static_cast<EditorApp&>(RZE().GetApplication());
 				GameObjectPtr selectedGameObject = editorApp.GetSelectedObjectFromScenePanel();
 				if (selectedGameObject != nullptr)
 				{
@@ -80,7 +80,7 @@ namespace Editor
 					const Vector2D& sceneViewPos = GetPosition();
 					ImGuizmo::SetRect(sceneViewPos.X(), sceneViewPos.Y(), sceneViewDims.X(), sceneViewDims.Y());
 
-					GameObjectPtr cameraObject = RZE::GetActiveScene().FindGameObjectByName("EditorCam");
+					GameObjectPtr cameraObject = RZE().GetActiveScene().FindGameObjectByName("EditorCam");
 					AssertNotNull(cameraObject);
 
 					GameObjectComponentPtr<EditorCameraComponent> cameraComponent = cameraObject->GetComponent<EditorCameraComponent>();
@@ -120,7 +120,7 @@ namespace Editor
 
 	void SceneViewPanel::Temp_RegisterInputs()
 	{
-		InputHandler& inputHandler = RZE_Application::RZE().GetInputHandler();
+		InputHandler& inputHandler = RZE().GetInputHandler();
 
 		Functor<void, const InputKey&> keyFunc([this, &inputHandler](const InputKey& key)
 			{

@@ -55,11 +55,11 @@ namespace Editor
 		RZE_Application::Initialize();
 		
 		// #TODO
-		// Should probably bake this into RZE::Application
+		// Should probably bake this into RZE().Application
 		Filepath::SetDirectoryContext(EDirectoryContext::Tools);
 
 		const bool isWithEditor = true;
-		RZE::GetRenderEngine().AddRenderStage<ImGuiRenderStage>(isWithEditor);
+		RZE().GetRenderEngine().AddRenderStage<ImGuiRenderStage>(isWithEditor);
 
 		m_imguiConfigFilepath = Filepath("Config/imgui.ini");
 		ImGui::GetIO().IniFilename = m_imguiConfigFilepath.GetAbsolutePath().c_str();
@@ -69,7 +69,7 @@ namespace Editor
 
 		const Vector2D& windowDims = GetWindow()->GetDimensions();
 		CreateRenderTarget(windowDims);
-		RZE::GetRenderEngine().SetRenderTarget(m_renderTarget.get());
+		RZE().GetRenderEngine().SetRenderTarget(m_renderTarget.get());
 
 		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 		ImGui::GetIO().KeyRepeatDelay = 0.5f;
@@ -175,7 +175,7 @@ namespace Editor
 	void EditorApp::OnWindowResize(const Vector2D& newSize)
 	{
 		CreateRenderTarget(newSize);
-		RZE::GetRenderEngine().SetRenderTarget(m_renderTarget.get());
+		RZE().GetRenderEngine().SetRenderTarget(m_renderTarget.get());
 	}
 
 	GameObjectPtr EditorApp::GetSelectedObjectFromScenePanel()
@@ -247,7 +247,7 @@ namespace Editor
 					};
 
 					std::string chosenPath;
-					bool openSuccess = RZE_Application::RZE().ShowOpenFilePrompt(openFileParams, chosenPath);
+					bool openSuccess = RZE().ShowOpenFilePrompt(openFileParams, chosenPath);
 					if (openSuccess)
 					{
 						Filepath newScenePath = Filepath::FromAbsolutePathStr(chosenPath);
@@ -525,14 +525,14 @@ namespace Editor
 		// @TODO should go away with editor event system
 		ResetSelectedObject();
 		
-		RZE::GetActiveScene().Unload();
+		RZE().GetActiveScene().Unload();
 		if (!filepath.IsValid())
 		{
-			RZE::GetActiveScene().NewScene();
+			RZE().GetActiveScene().NewScene();
 		}
 		else
 		{
-			RZE::GetActiveScene().Deserialize(filepath);
+			RZE().GetActiveScene().Deserialize(filepath);
 		}
 
 		CreateAndInitializeEditorCamera();

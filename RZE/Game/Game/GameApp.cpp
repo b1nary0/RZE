@@ -76,10 +76,10 @@ void GameApp::Initialize()
 	}
 	
 #ifdef IMGUI_ENABLED
-	RZE::GetRenderEngine().AddRenderStage<ImGuiRenderStage>();
+	RZE().GetRenderEngine().AddRenderStage<ImGuiRenderStage>();
 #endif
 
-	RZE::GetRenderEngine().AddRenderStage<FinalRenderTargetStage>();
+	RZE().GetRenderEngine().AddRenderStage<FinalRenderTargetStage>();
 }
 
 void GameApp::Start()

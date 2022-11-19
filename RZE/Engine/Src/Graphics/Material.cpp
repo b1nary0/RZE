@@ -29,7 +29,7 @@ std::shared_ptr<MaterialInstance> MaterialInstance::Create(const MaterialAssetIm
 	{
 		if (!texturePath.empty())
 		{
-			materialInstance->SetTexture(textureSlot, RZE::GetResourceHandler().LoadResource<Texture2D>(Filepath(texturePath)));
+			materialInstance->SetTexture(textureSlot, RZE().GetResourceHandler().LoadResource<Texture2D>(Filepath(texturePath)));
 		}
 
 		textureSlot++;
@@ -39,17 +39,17 @@ std::shared_ptr<MaterialInstance> MaterialInstance::Create(const MaterialAssetIm
 	if ((materialData.TextureFlags & MaterialAssetImporter::MaterialData::TEXTUREFLAG_ALL) == MaterialAssetImporter::MaterialData::TEXTUREFLAG_ALL)
 	{
 		Filepath fullShaderPath("Assets/Shaders/Pixel_NewRenderer.hlsl");
-		materialInstance->SetShaderTechnique(RZE::GetResourceHandler().LoadResource<PixelShader>(fullShaderPath, "Pixel_NewRenderer"));
+		materialInstance->SetShaderTechnique(RZE().GetResourceHandler().LoadResource<PixelShader>(fullShaderPath, "Pixel_NewRenderer"));
 	}
 	else if (materialData.TextureFlags == MaterialAssetImporter::MaterialData::TEXTUREFLAG_NONE)
 	{
 		Filepath noTextureShaderPath("Assets/Shaders/Pixel_Default_NewRenderer.hlsl");
-		materialInstance->SetShaderTechnique(RZE::GetResourceHandler().LoadResource<PixelShader>(noTextureShaderPath, "Pixel_Default_NewRenderer"));
+		materialInstance->SetShaderTechnique(RZE().GetResourceHandler().LoadResource<PixelShader>(noTextureShaderPath, "Pixel_Default_NewRenderer"));
 	}
 	else
 	{
 		Filepath diffuseOnlyPath("Assets/Shaders/Pixel_NewRenderer_DiffuseOnly.hlsl");
-		materialInstance->SetShaderTechnique(RZE::GetResourceHandler().LoadResource<PixelShader>(diffuseOnlyPath, "Pixel_NewRenderer_DiffuseOnly"));
+		materialInstance->SetShaderTechnique(RZE().GetResourceHandler().LoadResource<PixelShader>(diffuseOnlyPath, "Pixel_NewRenderer_DiffuseOnly"));
 	}
 
 	materialInstance->GetProperties().Shininess = materialData.Properties.Shininess;

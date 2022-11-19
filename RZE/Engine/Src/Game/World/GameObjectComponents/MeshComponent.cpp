@@ -41,8 +41,8 @@ void MeshComponent::SetMeshResource(const ResourceHandle& resource)
 
 void MeshComponent::CreateRenderObject()
 {
-	ResourceHandler& resourceHandler = RZE::GetResourceHandler();
-	RenderEngine& renderEngine = RZE::GetRenderEngine();
+	ResourceHandler& resourceHandler = RZE().GetResourceHandler();
+	RenderEngine& renderEngine = RZE().GetRenderEngine();
 
 	// #TODO We should probably make MeshComponent a TransformComponent since a mesh without a transform is useless.
 	GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
@@ -62,7 +62,7 @@ void MeshComponent::OnAddToScene()
 
 void MeshComponent::OnRemoveFromScene()
 {
-	RZE::GetRenderEngine().DestroyRenderObject(m_renderObject);
+	RZE().GetRenderEngine().DestroyRenderObject(m_renderObject);
 }
 
 void MeshComponent::Update()
@@ -92,12 +92,12 @@ void MeshComponent::Deserialize(const rapidjson::Value& data)
 {
 	Filepath resourcePath = Filepath(data["ResourcePath"].GetString());
 
-	m_resource = RZE::GetResourceHandler().LoadResource<StaticMeshResource>(resourcePath);
+	m_resource = RZE().GetResourceHandler().LoadResource<StaticMeshResource>(resourcePath);
 }
 
 void MeshComponent::OnEditorInspect()
 {
-	ResourceHandler& resourceHandler = RZE::GetResourceHandler();
+	ResourceHandler& resourceHandler = RZE().GetResourceHandler();
 
 	if (m_resource.IsValid())
 	{
@@ -164,7 +164,7 @@ void MeshComponent::OnEditorInspect()
 		};
 
 		std::string chosenPath;
-		bool openSuccess = RZE_Application::RZE().ShowOpenFilePrompt(openFileParams, chosenPath);
+		bool openSuccess = RZE().ShowOpenFilePrompt(openFileParams, chosenPath);
 		if (openSuccess)
 		{
 			Filepath path = Filepath::FromAbsolutePathStr(chosenPath);
@@ -177,7 +177,7 @@ void MeshComponent::OnEditorInspect()
 
 			if (m_renderObject != nullptr)
 			{
-				RZE::GetRenderEngine().DestroyRenderObject(m_renderObject);
+				RZE().GetRenderEngine().DestroyRenderObject(m_renderObject);
 			}
 
 			CreateRenderObject();

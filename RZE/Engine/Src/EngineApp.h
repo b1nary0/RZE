@@ -41,9 +41,7 @@ public:
 
 
 	Rendering::RenderTargetTexture* GetRTT();
-
-	static RZE_Engine& RZE() { return mEngine; }
-
+	
 protected:
 	virtual void Initialize();
 
@@ -61,6 +59,4 @@ private:
 	
 	Win32Window* mWindow;
 	bool bIsRunning;
-
-	static RZE_Engine mEngine;
 };

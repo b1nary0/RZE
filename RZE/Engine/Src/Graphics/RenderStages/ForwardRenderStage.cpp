@@ -21,9 +21,9 @@ void ForwardRenderStage::Initialize()
 		{ "TANGENT", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 32 }
 	};
 
-	m_vertexShaderResource = RZE::GetResourceHandler().LoadResource<VertexShader>(Filepath("Assets/Shaders/Vertex_NewRenderer.hlsl"), "Vertex_NewRenderer", inputLayout);
+	m_vertexShaderResource = RZE().GetResourceHandler().LoadResource<VertexShader>(Filepath("Assets/Shaders/Vertex_NewRenderer.hlsl"), "Vertex_NewRenderer", inputLayout);
 	AssertExpr(m_vertexShaderResource.IsValid());
-	m_vertexShader = RZE::GetResourceHandler().GetResource<VertexShader>(m_vertexShaderResource);
+	m_vertexShader = RZE().GetResourceHandler().GetResource<VertexShader>(m_vertexShaderResource);
 }
 
 void ForwardRenderStage::Update(const RenderStageData& renderData)
@@ -46,11 +46,11 @@ void ForwardRenderStage::Render(const RenderStageData& renderData)
 {
 	OPTICK_EVENT();
 
-	const RenderEngine& renderEngine = RZE::GetRenderEngine();
+	const RenderEngine& renderEngine = RZE().GetRenderEngine();
 	
 	Rendering::Renderer::Begin();
 
-	const Rendering::RenderTargetTexture& renderTarget = RZE::GetRenderEngine().GetRenderTarget();
+	const Rendering::RenderTargetTexture& renderTarget = RZE().GetRenderEngine().GetRenderTarget();
 
 	Rendering::Renderer::SetRenderTarget(&renderTarget);
 	Rendering::Renderer::ClearRenderTarget(renderTarget.GetTargetPlatformObject(), Vector4D(0.25f, 0.25f, 0.35f, 1.0f));
@@ -87,7 +87,7 @@ void ForwardRenderStage::Render(const RenderStageData& renderData)
 			// This is god awful. Just in place while developing shader model.
 			// Should get resolved once the system matures
 			std::shared_ptr<const MaterialInstance> materialInstance = meshGeometry.GetMaterial();
-			const PixelShader* const pixelShader = RZE::GetResourceHandler().GetResource<PixelShader>(materialInstance->GetShaderResource());
+			const PixelShader* const pixelShader = RZE().GetResourceHandler().GetResource<PixelShader>(materialInstance->GetShaderResource());
 
 			Rendering::Renderer::SetPixelShader(pixelShader->GetPlatformObject());
 			Rendering::Renderer::SetConstantBufferPS(materialInstance->GetParamBuffer(), 1);
@@ -99,7 +99,7 @@ void ForwardRenderStage::Render(const RenderStageData& renderData)
 				const ResourceHandle& resourceHandle = materialInstance->GetTexture(textureSlot);
 				if (resourceHandle.IsValid())
 				{
-					const Texture2D* const texture = RZE::GetResourceHandler().GetResource<Texture2D>(resourceHandle);
+					const Texture2D* const texture = RZE().GetResourceHandler().GetResource<Texture2D>(resourceHandle);
 
 					// @TODO Should solve this better by providing an API that will provide a texture resource array
 					Rendering::Renderer::SetTextureResource(texture->GetPlatformObject(), textureSlot);
