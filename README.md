@@ -1,9 +1,8 @@
 **Setup:**
 Once you have the repo locally:
-1) Run GenerateSolutions.bat
-2) Build solution
-3) Right click SourceAssetBurner project -> Debug -> Start new instance
-4) Run AssetCpy.bat
+1) Run Tools/RZEHub.exe
+2) Open and build solution
+3) Click Burn Assets then Asset Copy in RZE Hub
 5) Start Editor project or Game project (Game is default)
 
 
