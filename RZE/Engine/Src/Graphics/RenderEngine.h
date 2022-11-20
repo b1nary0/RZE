@@ -163,7 +163,7 @@ public:
 	void SetViewportSize(const Vector2D& size) { m_viewportSize = size; }
 	const Vector2D& GetViewportSize() const { return m_viewportSize; }
 
-	std::unique_ptr<Rendering::RenderTargetTexture> RenderView(const RenderCamera& renderCamera);
+	void RenderView(const RenderCamera& renderCamera, Rendering::RenderTargetTexture* renderTarget);
 
 private:
 	void InternalAddRenderStage(IRenderStage* pipeline);

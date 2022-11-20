@@ -168,13 +168,9 @@ const Rendering::RenderTargetTexture& RenderEngine::GetRenderTarget()
 	return *m_renderTarget;
 }
 
-std::unique_ptr<Rendering::RenderTargetTexture> RenderEngine::RenderView(const RenderCamera& renderCamera)
+void RenderEngine::RenderView(const RenderCamera& renderCamera, Rendering::RenderTargetTexture* renderTarget)
 {
 	AssertExpr(renderCamera.Viewport.Size != Vector2D::ZERO);
-
-	std::unique_ptr<Rendering::RenderTargetTexture> retTex = 
-		std::make_unique<Rendering::RenderTargetTexture>(static_cast<U32>(renderCamera.Viewport.Size.X()), static_cast<U32>(renderCamera.Viewport.Size.Y()));
-	retTex->Initialize();
 
 	const RenderCamera prevCamera = GetCamera();
 	const Vector2D prevViewportSize = GetViewportSize();
@@ -182,15 +178,13 @@ std::unique_ptr<Rendering::RenderTargetTexture> RenderEngine::RenderView(const R
 
 	GetCamera() = renderCamera;
 	SetViewportSize(renderCamera.Viewport.Size);
-	SetRenderTarget(retTex.get());
+	SetRenderTarget(renderTarget);
 	Update();
 	Render(false);
 
 	SetViewportSize(prevViewportSize);
 	SetRenderTarget(prevRenderTarget);
 	GetCamera() = prevCamera;
-
-	return retTex;
 }
 
 void RenderEngine::InternalAddRenderStage(IRenderStage* pipeline)

@@ -214,9 +214,14 @@ void CameraComponent::OnEditorInspect()
 		renderCam.Position = GetOwner()->GetTransformComponent()->GetPosition();
 		if (m_renderTarget == nullptr)
 		{
-			m_renderTarget = RZE().GetRenderEngine().RenderView(renderCam);
+			m_renderTarget = std::make_unique<Rendering::RenderTargetTexture>(
+				static_cast<U32>(renderCam.Viewport.Size.X()), 
+				static_cast<U32>(renderCam.Viewport.Size.Y())
+				);
+			m_renderTarget->Initialize();
 		}
 
+		RZE().GetRenderEngine().RenderView(renderCam, m_renderTarget.get());
 		m_aspectRatio = prevAspectRatio;
 
 		Rendering::TextureBuffer2DHandle texture = m_renderTarget->GetTargetPlatformObject();
