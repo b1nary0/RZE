@@ -211,7 +211,7 @@ void CameraComponent::OnEditorInspect()
 		RenderCamera renderCam;
 		renderCam.Viewport = RenderViewport(Vector2D(240.0f, 144.0f));
 		renderCam.ClipSpace = GetProjectionMatrix() * GetViewMatrix();
-		renderCam.Position = GetOwner()->GetTransformComponent()->GetPosition();
+		renderCam.Position = transfComp->GetPosition();
 		if (m_renderTarget == nullptr)
 		{
 			m_renderTarget = std::make_unique<Rendering::RenderTargetTexture>(
