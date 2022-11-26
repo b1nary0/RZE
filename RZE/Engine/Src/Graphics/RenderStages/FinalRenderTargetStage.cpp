@@ -29,6 +29,8 @@ void FinalRenderTargetStage::Update(const RenderStageData& renderData)
 
 void FinalRenderTargetStage::Render(const RenderStageData& renderData)
 {
+	Rendering::Renderer::Begin("FinalRenderTargetStage");
+
 	RenderEngine& engine = RZE().GetRenderEngine();
 	const Rendering::RenderTargetTexture& target = engine.GetRenderTarget();
 
@@ -45,4 +47,6 @@ void FinalRenderTargetStage::Render(const RenderStageData& renderData)
 	Rendering::Renderer::DrawFullScreenQuad();
 
 	Rendering::Renderer::UnsetTextureResource(0);
+
+	Rendering::Renderer::End();
 }

@@ -46,10 +46,9 @@ void ForwardRenderStage::Render(const RenderStageData& renderData)
 {
 	OPTICK_EVENT();
 
-	const RenderEngine& renderEngine = RZE().GetRenderEngine();
+	Rendering::Renderer::Begin("ForwardRenderStage");
 	
-	Rendering::Renderer::Begin();
-
+	const RenderEngine& renderEngine = RZE().GetRenderEngine();
 	const Rendering::RenderTargetTexture& renderTarget = RZE().GetRenderEngine().GetRenderTarget();
 
 	Rendering::Renderer::SetRenderTarget(&renderTarget);

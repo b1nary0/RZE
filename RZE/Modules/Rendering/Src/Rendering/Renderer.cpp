@@ -2,6 +2,7 @@
 
 #include <Optick/optick.h>
 
+#include <Utils/Conversions.h>
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector4D.h>
@@ -21,6 +22,8 @@
 #include <ImGui/imgui.h>
 #include <imGUI/imgui_impl_dx11.h>
 #include <imGUI/imgui_impl_win32.h>
+
+#include <d3d9.h>
 
 namespace Rendering
 {
@@ -65,20 +68,20 @@ namespace Rendering
 		m_device->Shutdown();
 	}
 
-	void Renderer::BeginFrame()
+	void Renderer::BeginFrame(const char* frameName)
 	{
+		D3DPERF_BeginEvent(0xffffffff, Conversions::StringToWString(frameName).c_str());
 	}
 
 	void Renderer::EndFrame()
 	{
-		{
-			OPTICK_EVENT("Device Present");
-			m_device->Present();
-		}
+		D3DPERF_EndEvent();
 	}
 
-	void Renderer::Begin()
+	void Renderer::Begin(const char* drawSetName)
 	{
+		D3DPERF_BeginEvent(0xffffffff, Conversions::StringToWString(drawSetName).c_str());
+
 		// @TODO This is temporary until the API is written for SetRenderTarget() and ClearDepthStencilView()
 		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 		deviceContext.RSSetState(m_device->mRasterState);
@@ -86,6 +89,8 @@ namespace Rendering
 
 	void Renderer::End()
 	{
+		// #TODO form the api such that we can verify Begin() and End() calls for sanity checks
+		D3DPERF_EndEvent();
 	}
 
 	void Renderer::DevicePresent()

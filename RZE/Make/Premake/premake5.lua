@@ -295,8 +295,9 @@ workspace "RZE"
 		{
 			-- ThirdParty
 			"OptickCore",
-			"D3d12.lib",
+			"d3d9",
 			"d3d11.lib",
+			"D3d12.lib",
 			"DXGI.lib",
 			"D3DCompiler.lib",
 			"DirectXTK",

@@ -43,11 +43,11 @@ void RenderEngine::Update()
 	}
 }
 
-void RenderEngine::Render(bool withImgui)
+void RenderEngine::Render(const char* frameName, bool withImgui)
 {
 	OPTICK_EVENT();
 
-	Rendering::Renderer::BeginFrame();
+	Rendering::Renderer::BeginFrame(frameName);
 
 	RenderStageData renderStageData;
 	renderStageData.m_camera = &m_camera;
@@ -174,7 +174,7 @@ const Rendering::RenderTargetTexture& RenderEngine::GetRenderTarget()
 	return *m_renderTarget;
 }
 
-void RenderEngine::RenderView(const RenderCamera& renderCamera, Rendering::RenderTargetTexture* renderTarget)
+void RenderEngine::RenderView(const char* frameName, const RenderCamera& renderCamera, Rendering::RenderTargetTexture* renderTarget)
 {
 	OPTICK_EVENT();
 	AssertExpr(renderCamera.Viewport.Size != Vector2D::ZERO);
@@ -187,7 +187,7 @@ void RenderEngine::RenderView(const RenderCamera& renderCamera, Rendering::Rende
 	SetViewportSize(renderCamera.Viewport.Size);
 	SetRenderTarget(renderTarget);
 	Update();
-	Render(false);
+	Render(frameName, false);
 
 	SetViewportSize(prevViewportSize);
 	SetRenderTarget(prevRenderTarget);

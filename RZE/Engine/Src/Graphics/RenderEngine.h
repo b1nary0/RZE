@@ -139,7 +139,7 @@ public:
 public:
 	void Initialize(void* windowHandle);
 	void Update();
-	void Render(bool withImgui);
+	void Render(const char* frameName, bool withImgui);
 	// Finish() does all the work that the main render phase needs including device present
 	void Finish();
 	void Shutdown();
@@ -165,7 +165,7 @@ public:
 	void SetViewportSize(const Vector2D& size) { m_viewportSize = size; }
 	const Vector2D& GetViewportSize() const { return m_viewportSize; }
 
-	void RenderView(const RenderCamera& renderCamera, Rendering::RenderTargetTexture* renderTarget);
+	void RenderView(const char* frameName, const RenderCamera& renderCamera, Rendering::RenderTargetTexture* renderTarget);
 
 private:
 	void InternalAddRenderStage(IRenderStage* pipeline);

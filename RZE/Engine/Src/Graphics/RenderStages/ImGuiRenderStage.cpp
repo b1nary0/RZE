@@ -14,6 +14,7 @@ void ImGuiRenderStage::Initialize()
 void ImGuiRenderStage::Render(const RenderStageData& renderData)
 {
 	OPTICK_EVENT();
+	Rendering::Renderer::Begin("ImGuiRenderStage");
 
 	if (m_withEditor)
 	{
@@ -22,4 +23,6 @@ void ImGuiRenderStage::Render(const RenderStageData& renderData)
 
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+	Rendering::Renderer::End();
 }

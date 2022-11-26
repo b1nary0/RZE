@@ -221,7 +221,7 @@ void CameraComponent::OnEditorInspect()
 			m_renderTarget->Initialize();
 		}
 
-		RZE().GetRenderEngine().RenderView(renderCam, m_renderTarget.get());
+		RZE().GetRenderEngine().RenderView("Camera View", renderCam, m_renderTarget.get());
 		m_aspectRatio = prevAspectRatio;
 
 		Rendering::TextureBuffer2DHandle texture = m_renderTarget->GetTargetPlatformObject();

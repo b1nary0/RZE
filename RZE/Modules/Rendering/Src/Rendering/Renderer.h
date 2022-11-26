@@ -49,11 +49,11 @@ namespace Rendering
 		static void Shutdown();
 
 		// API for an entire frame (global state, etc)
-		static void BeginFrame();
+		static void BeginFrame(const char* frameName);
 		static void EndFrame();
 
 		// API for a render pass (series of draw calls)
-		static void Begin();
+		static void Begin(const char* drawSetName);
 		static void End();
 
 		static void DevicePresent();
