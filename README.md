@@ -1,4 +1,6 @@
 **Setup:**
+NOTE: YOU CURRENTLY NEED YOUR DEPOT IN **C:\dev\RZE** FOR RZEHUB TO WORK.
+
 Once you have the repo locally:
 1) Run Tools/RZEHub.exe
 2) Open and build solution
