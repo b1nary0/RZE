@@ -88,6 +88,12 @@ namespace Rendering
 	{
 	}
 
+	void Renderer::DevicePresent()
+	{
+		OPTICK_EVENT();
+		m_device->Present();
+	}
+
 	void Renderer::InitializeImGui()
 	{
 		ImGui::CreateContext();

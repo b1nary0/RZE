@@ -140,6 +140,8 @@ public:
 	void Initialize(void* windowHandle);
 	void Update();
 	void Render(bool withImgui);
+	// Finish() does all the work that the main render phase needs including device present
+	void Finish();
 	void Shutdown();
 
 public:

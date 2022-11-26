@@ -68,6 +68,12 @@ void RenderEngine::Render(bool withImgui)
 	Rendering::Renderer::EndFrame();
 }
 
+void RenderEngine::Finish()
+{
+	OPTICK_EVENT();
+	Rendering::Renderer::DevicePresent();
+}
+
 void RenderEngine::Shutdown()
 {
 	m_renderObjects.clear();
@@ -170,6 +176,7 @@ const Rendering::RenderTargetTexture& RenderEngine::GetRenderTarget()
 
 void RenderEngine::RenderView(const RenderCamera& renderCamera, Rendering::RenderTargetTexture* renderTarget)
 {
+	OPTICK_EVENT();
 	AssertExpr(renderCamera.Viewport.Size != Vector2D::ZERO);
 
 	const RenderCamera prevCamera = GetCamera();

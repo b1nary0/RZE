@@ -56,6 +56,8 @@ namespace Rendering
 		static void Begin();
 		static void End();
 
+		static void DevicePresent();
+
 		static void InitializeImGui();
 
 		static void HandleWindowResize(const Vector2D& newSize);
