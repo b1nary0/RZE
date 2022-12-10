@@ -15,11 +15,7 @@ namespace Rendering
 	RenderTargetTexture::~RenderTargetTexture()
 	{
 	}
-
-	// #TODO
-	// This function is bad. Shouldn't need to directly access the device.
-	// Should just ask the Renderer to allocate the necessary structure to represent
-	// this render target.
+	
 	void RenderTargetTexture::Initialize()
 	{
 		GFXTextureBufferParams depthTextureParams = { 0 };
