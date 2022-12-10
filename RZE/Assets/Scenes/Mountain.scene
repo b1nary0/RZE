@@ -19,9 +19,9 @@
                 },
                 "TransformComponent": {
                     "Position": [
-                        -12.816221237182618,
-                        1.3434338569641114,
-                        56.38141632080078
+                        -12.82691478729248,
+                        0.9520071744918823,
+                        56.18921661376953
                     ],
                     "Scale": [
                         1.0,
@@ -91,6 +91,9 @@
         },
         "Tank": {
             "components": {
+                "MeshComponent": {
+                    "ResourcePath": "ProjectData\\Mesh\\Panzer.meshasset"
+                },
                 "TransformComponent": {
                     "Position": [
                         -12.814422607421875,
@@ -107,9 +110,6 @@
                         -26.237445831298829,
                         0.0
                     ]
-                },
-                "MeshComponent": {
-                    "ResourcePath": "ProjectData\\Mesh\\Panzer.meshasset"
                 }
             }
         }
