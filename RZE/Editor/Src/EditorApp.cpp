@@ -12,6 +12,7 @@
 
 #include <EngineCore/Threading/JobSystem/JobScheduler.h>
 
+#include <Utils/Platform/CmdLine.h>
 #include <Utils/Platform/Filepath.h>
 
 #include <DebugUtils/DebugServices.h>
@@ -88,8 +89,18 @@ namespace Editor
 		// For now, it's always false here because we always load into TestGame.scene
 		gEditorState.IsNewScene = false;
 
-		Filepath scenePath(kSceneFileToLoadHack);
-		LoadScene(scenePath);
+		std::string_view startScene;
+		Filepath scenePath;
+		if (CmdLine::Arguments::Get("-startScene", startScene))
+		{
+			scenePath = Filepath("Assets/Scenes/" + std::string(startScene));
+			LoadScene(scenePath);
+		}
+		else
+		{
+			scenePath = Filepath(kSceneFileToLoadHack);
+			LoadScene(scenePath);
+		}
 		
 		AddFilePathToWindowTitle(scenePath.GetRelativePath());
 	}
@@ -540,5 +551,6 @@ namespace Editor
 
 	void EditorApp::ParseArguments(char** arguments, int count)
 	{
+		CmdLine::Arguments::Initialize(arguments, count);
 	}
 }
