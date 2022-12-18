@@ -228,7 +228,7 @@ float RZE_Engine::CalculateAverageFrametime()
 }
 
 
-void RZE_Engine::SetWindowSize(Vector2D newSize)
+void RZE_Engine::SetWindowSize(const Vector2D& newSize)
 {
 	AssertNotNull(m_window);
 	m_window->SetWindowSize(newSize);
