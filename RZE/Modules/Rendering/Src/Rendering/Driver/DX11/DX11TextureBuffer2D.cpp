@@ -8,6 +8,10 @@
 
 namespace Rendering
 {
+	DX11TextureBuffer2D::~DX11TextureBuffer2D()
+	{
+		Release();
+	}
 
 	void DX11TextureBuffer2D::Allocate(const void* data, const GFXTextureBufferParams& params)
 	{
