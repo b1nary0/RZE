@@ -16,7 +16,7 @@ namespace Rendering
 	{
 	public:
 		DX11TextureBuffer2D() {};
-		~DX11TextureBuffer2D() {};
+		~DX11TextureBuffer2D();
 
 	// ITextureBuffer2D interface
 	public:
