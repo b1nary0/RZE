@@ -26,10 +26,6 @@ namespace Rendering
 		void* GetTextureData() override;
 
 	public:
-		// #TODO(Hack asf)
-		void SetIsRenderTarget();
-
-	public:
 		void SetDevice(DX11Device* device);
 		ID3D11ShaderResourceView& GetResourceView();
 		ID3D11RenderTargetView& GetTargetView();
