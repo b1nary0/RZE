@@ -157,11 +157,6 @@ namespace Rendering
 		return &GetResourceView();
 	}
 
-	void DX11TextureBuffer2D::SetIsRenderTarget()
-	{
-		bIsRenderTarget = true;
-	}
-
 	void DX11TextureBuffer2D::SetDevice(DX11Device* device)
 	{
 		AssertNotNull(device);

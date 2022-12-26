@@ -142,13 +142,6 @@ namespace Rendering
 	{
 		std::shared_ptr<DX11TextureBuffer2D> textureBuffer = std::make_shared<DX11TextureBuffer2D>();
 		textureBuffer->SetDevice(m_device.get());
-
-		if (params.bIsRenderTarget)
-		{
-			// @TODO Can we remove the need for this?
-			textureBuffer->SetIsRenderTarget();
-		}
-
 		textureBuffer->Allocate(data, params);
 
 		return TextureBuffer2DHandle(textureBuffer);
