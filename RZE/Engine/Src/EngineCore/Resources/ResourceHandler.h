@@ -130,6 +130,7 @@ private:
 template <class ResourceT, class... Args>
 ResourceHandle ResourceHandler::LoadResource(const Filepath& resourcePath, Args... args)
 {
+	static_assert(std::is_base_of_v<IResource, ResourceT>);
 	std::string resourceKey = Conversions::CreateResourceKeyFromPath(resourcePath.GetRelativePath());
 
 	auto iter = mResourceTable.find(resourceKey);
