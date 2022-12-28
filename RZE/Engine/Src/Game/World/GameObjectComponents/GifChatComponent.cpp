@@ -201,6 +201,8 @@ void GifChatComponent::Load(const Filepath& fp)
 		// resources themselves from ResourceHandler. Since this hacky meme implementation needs to circumvent that
 		// instead of writing a whole new architecture layer, we can't be deleting memory (as will happen when the resource
 		// releases) which we don't own.
+		// #TODO
+		// Make ClassDef and ClassInstance to support mutable resources?
 		U8* textureBuffer = new U8[frameSizeBytes];
 		memcpy(textureBuffer, m_gifData.get() + frame * frameSizeBytes, frameSizeBytes);
 		frameTexture->Load(textureBuffer, x, y);

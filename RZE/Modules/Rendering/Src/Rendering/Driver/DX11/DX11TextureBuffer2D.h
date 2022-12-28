@@ -26,10 +26,6 @@ namespace Rendering
 		void* GetTextureData() override;
 
 	public:
-		// #TODO(Hack asf)
-		void SetIsRenderTarget();
-
-	public:
 		void SetDevice(DX11Device* device);
 		ID3D11ShaderResourceView& GetResourceView();
 		ID3D11RenderTargetView& GetTargetView();
@@ -51,7 +47,6 @@ namespace Rendering
 		ID3D11RenderTargetView* m_RTV;
 		ID3D11DepthStencilView* m_DSV;
 
-		bool bIsRenderTarget { false };
 		bool bIsDepthTexture { false };
 	};
 
