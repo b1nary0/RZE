@@ -55,10 +55,6 @@ namespace Editor
 	{
 		RZE_Application::Initialize();
 		
-		// #TODO
-		// Should probably bake this into RZE().Application
-		Filepath::SetDirectoryContext(EDirectoryContext::Tools);
-
 		const bool isWithEditor = true;
 		RZE().GetRenderEngine().AddRenderStage<ImGuiRenderStage>(isWithEditor);
 
