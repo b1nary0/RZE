@@ -81,7 +81,7 @@ void RenderEngine::Shutdown()
 	Rendering::Renderer::Shutdown();
 }
 
-RenderObjectPtr RenderEngine::CreateRenderObject(const StaticMesh& staticMesh)
+RenderObjectPtr RenderEngine::CreateRenderObject(const StaticMeshInstance& staticMesh)
 {
 	OPTICK_EVENT();
 	

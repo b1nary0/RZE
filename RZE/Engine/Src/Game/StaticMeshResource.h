@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Graphics/StaticMesh.h>
+#include <Graphics/StaticMeshInstance.h>
 
 #include <Utils/Interfaces/Resource.h>
 
@@ -15,8 +15,11 @@ public:
 	void Release() override;
 
 public:
-	const StaticMesh& GetStaticMesh() const { return mMesh; }
+	const StaticMeshInstance& GetStaticMesh() const { return m_mesh; }
+
+	[[nodiscard]]
+	StaticMeshInstance GetInstance() const { return m_mesh; }
 
 private:
-	StaticMesh mMesh;
+	StaticMeshInstance m_mesh;
 };

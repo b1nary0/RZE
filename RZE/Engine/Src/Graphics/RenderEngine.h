@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Graphics/StaticMesh.h>
+#include <Graphics/StaticMeshInstance.h>
 
 #include <Graphics/GraphicsDefines.h>
 
@@ -74,8 +74,8 @@ public:
 	RenderObject() = default;
 	~RenderObject() = default;
 
-	void SetStaticMesh(const StaticMesh& staticMesh) { m_staticMesh = staticMesh; }
-	const StaticMesh& GetStaticMesh() { return m_staticMesh; }
+	void SetStaticMesh(const StaticMeshInstance& staticMesh) { m_staticMesh = staticMesh; }
+	const StaticMeshInstance& GetStaticMesh() { return m_staticMesh; }
 
 	void SetTransform(const Matrix4x4& transform) { m_transform = transform; }
 	const Matrix4x4& GetTransform() const { return m_transform; }
@@ -85,7 +85,7 @@ private:
 	// Will pack all geometry into single vertex buffer and all materials into single material buffer and index away
 	// or something i dunno im shit at my job. Also.. limited to just static mesh here, bad. Will end up with refactor
 	// when skinned meshes are a thing
-	StaticMesh m_staticMesh;
+	StaticMeshInstance m_staticMesh;
 	Matrix4x4 m_transform;
 };
 
@@ -148,7 +148,7 @@ public:
 	template <typename TRenderStageType, typename... Args>
 	void AddRenderStage(Args... args);
 
-	RenderObjectPtr CreateRenderObject(const StaticMesh& staticMesh);
+	RenderObjectPtr CreateRenderObject(const StaticMeshInstance& staticMesh);
 	void DestroyRenderObject(RenderObjectPtr& renderObject);
 
 	LightObjectPtr CreateLightObject();

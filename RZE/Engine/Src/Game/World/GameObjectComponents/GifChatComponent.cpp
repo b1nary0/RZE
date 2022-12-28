@@ -238,7 +238,7 @@ void GifChatComponent::CreateRenderObject()
 
 void GifChatComponent::GenerateMesh()
 {
-	StaticMesh mesh;
+	StaticMeshInstance mesh;
 
 	std::vector<MeshGeometry> geometryList;
 	MeshGeometry& geo = geometryList.emplace_back();

@@ -17,7 +17,7 @@ bool StaticMeshResource::Load(const Filepath& filePath)
 	MeshAssetImporter meshImporter;
 	meshImporter.Import(filePath);
 
-	mMesh.Initialize(std::move(meshImporter.GetMeshGeometry()));
+	m_mesh.Initialize(std::move(meshImporter.GetMeshGeometry()));
 	return true;
 }
 
