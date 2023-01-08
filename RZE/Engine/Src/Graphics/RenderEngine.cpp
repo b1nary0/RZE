@@ -57,7 +57,7 @@ void RenderEngine::Render(const char* frameName, bool withImgui)
 	for (auto& pipeline : m_renderStages)
 	{
 		// #TODO dont do imgui. magic number should change
-		if (pipeline->GetPriority() == 1000 && !withImgui)
+		if (!withImgui && pipeline->GetPriority() == 1000)
 		{
 			continue;
 		}
