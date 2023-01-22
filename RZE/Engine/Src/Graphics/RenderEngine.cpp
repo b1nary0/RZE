@@ -174,10 +174,25 @@ const Rendering::RenderTargetTexture& RenderEngine::GetRenderTarget()
 	return *m_renderTarget;
 }
 
-void RenderEngine::RenderView(const char* frameName, const RenderCamera& renderCamera, Rendering::RenderTargetTexture* renderTarget)
+struct RenderViewData
+{
+	RenderCamera Camera;
+
+};
+
+void RenderEngine::RenderView(const char* frameName, const RenderCamera& renderCamera, std::unique_ptr<Rendering::RenderTargetTexture>& renderTarget)
 {
 	OPTICK_EVENT();
 	AssertExpr(renderCamera.Viewport.Size != Vector2D::ZERO);
+
+	if (renderTarget == nullptr)
+	{
+		renderTarget = std::make_unique<Rendering::RenderTargetTexture>(
+			static_cast<U32>(renderCamera.Viewport.Size.X()),
+			static_cast<U32>(renderCamera.Viewport.Size.Y())
+			);
+		renderTarget->Initialize();
+	}
 
 	const RenderCamera prevCamera = GetCamera();
 	const Vector2D prevViewportSize = GetViewportSize();
@@ -185,7 +200,8 @@ void RenderEngine::RenderView(const char* frameName, const RenderCamera& renderC
 
 	GetCamera() = renderCamera;
 	SetViewportSize(renderCamera.Viewport.Size);
-	SetRenderTarget(renderTarget);
+	SetRenderTarget(renderTarget.get());
+
 	Update();
 	Render(frameName, false);
 
