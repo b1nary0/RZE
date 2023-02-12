@@ -1,5 +1,5 @@
 #include <StdAfx.h>
-#include <Game/World/GameObjectComponents/MeshComponent.h>
+#include <Game/World/GameObjectComponents/RenderComponent.h>
 
 #include <Game/StaticMeshResource.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
@@ -34,17 +34,17 @@ namespace
 	}
 }
 
-void MeshComponent::SetMeshResource(const ResourceHandle& resource)
+void RenderComponent::SetMeshResource(const ResourceHandle& resource)
 {
 	m_resource = resource;
 }
 
-void MeshComponent::CreateRenderObject()
+void RenderComponent::CreateRenderObject()
 {
 	ResourceHandler& resourceHandler = RZE().GetResourceHandler();
 	RenderEngine& renderEngine = RZE().GetRenderEngine();
 
-	// #TODO We should probably make MeshComponent a TransformComponent since a mesh without a transform is useless.
+	// #TODO We should probably make RenderComponent a TransformComponent since a mesh without a transform is useless.
 	GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
 	AssertMsg(transformComponent != nullptr, "No TransformComponent found. Mesh creation is useless without a location in 3D space.");
 
@@ -55,17 +55,17 @@ void MeshComponent::CreateRenderObject()
 	m_renderObject->SetTransform(transformComponent->GetAsMat4x4());
 }
 
-void MeshComponent::OnAddToScene()
+void RenderComponent::OnAddToScene()
 {
 	CreateRenderObject();
 }
 
-void MeshComponent::OnRemoveFromScene()
+void RenderComponent::OnRemoveFromScene()
 {
 	RZE().GetRenderEngine().DestroyRenderObject(m_renderObject);
 }
 
-void MeshComponent::Update()
+void RenderComponent::Update()
 {
 	if (m_renderObject != nullptr)
 	{
@@ -77,9 +77,9 @@ void MeshComponent::Update()
 	}
 }
 
-void MeshComponent::Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer)
+void RenderComponent::Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer)
 {
-	writer.String("MeshComponent");
+	writer.String("RenderComponent");
 	writer.StartObject();
 	{
 		writer.Key("ResourcePath");
@@ -88,14 +88,14 @@ void MeshComponent::Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>& 
 	writer.EndObject();
 }
 
-void MeshComponent::Deserialize(const rapidjson::Value& data)
+void RenderComponent::Deserialize(const rapidjson::Value& data)
 {
 	Filepath resourcePath = Filepath(data["ResourcePath"].GetString());
 
 	m_resource = RZE().GetResourceHandler().LoadResource<StaticMeshResource>(resourcePath);
 }
 
-void MeshComponent::OnEditorInspect()
+void RenderComponent::OnEditorInspect()
 {
 	ResourceHandler& resourceHandler = RZE().GetResourceHandler();
 

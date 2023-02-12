@@ -6,7 +6,7 @@
 #include <Game/World/GameObjectComponents/CameraComponent.h>
 #include <Game/World/GameObjectComponents/DirectionalLightComponent.h>
 #include <Game/World/GameObjectComponents/GifChatComponent.h>
-#include <Game/World/GameObjectComponents/MeshComponent.h>
+#include <Game/World/GameObjectComponents/RenderComponent.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
 #include <Windowing/Win32Window.h>
@@ -69,7 +69,7 @@ void RZE_Application::Initialize()
 	// creating entries in the component name lookup and factory functions. Necessary to function atm.
 	// Eventually hope to implement actual reflection and handle this.
 	REGISTER_GAMEOBJECTCOMPONENT(CameraComponent);
-	REGISTER_GAMEOBJECTCOMPONENT(MeshComponent);
+	REGISTER_GAMEOBJECTCOMPONENT(RenderComponent);
 	REGISTER_GAMEOBJECTCOMPONENT(TransformComponent);
 	REGISTER_GAMEOBJECTCOMPONENT(DirectionalLightComponent);
 	REGISTER_GAMEOBJECTCOMPONENT(GifChatComponent);

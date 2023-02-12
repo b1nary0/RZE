@@ -6,11 +6,11 @@
 
 #include <EngineCore/Resources/ResourceHandler.h>
 
-class MeshComponent : public GameObjectComponent<MeshComponent>
+class RenderComponent : public GameObjectComponent<RenderComponent>
 {
 public:
-	MeshComponent() = default;
-	~MeshComponent() = default;
+	RenderComponent() = default;
+	~RenderComponent() = default;
 
 	// GameObjectComponent interface
 public:
