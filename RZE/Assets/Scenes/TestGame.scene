@@ -63,14 +63,14 @@
                         0.0
                     ]
                 },
-				"MeshComponent": {
+				"RenderComponent": {
 					"ResourcePath": "ProjectData/Mesh/Cube.meshasset"
 				}
             }
         },
         "Floor": {
             "components": {
-                "MeshComponent": {
+                "RenderComponent": {
                     "ResourcePath": "ProjectData/Mesh/Quad.meshasset"
                 },
                 "TransformComponent": {
@@ -94,7 +94,7 @@
         },
         "Bomber": {
             "components": {
-                "MeshComponent": {
+                "RenderComponent": {
                     "ResourcePath": "ProjectData/Mesh/FW190.meshasset"
                 },
                 "TransformComponent": {
@@ -118,7 +118,7 @@
         },
         "NeckMechWalker": {
             "components": {
-                "MeshComponent": {
+                "RenderComponent": {
                     "ResourcePath": "ProjectData/Mesh/NeckMechWalker.meshasset"
                 },
                 "TransformComponent": {
@@ -142,7 +142,7 @@
         },
         "Nanosuit": {
             "components": {
-                "MeshComponent": {
+                "RenderComponent": {
                     "ResourcePath": "ProjectData/Mesh/Nanosuit.meshasset"
                 },
                 "TransformComponent": {
@@ -166,7 +166,7 @@
         },
         "Nyra": {
             "components": {
-                "MeshComponent": {
+                "RenderComponent": {
                     "ResourcePath": "ProjectData/Mesh/Nyra.meshasset"
                 },
                 "TransformComponent": {
@@ -190,7 +190,7 @@
         },
         "Panzer": {
             "components": {
-                "MeshComponent": {
+                "RenderComponent": {
                     "ResourcePath": "ProjectData/Mesh/Panzer.meshasset"
                 },
                 "TransformComponent": {

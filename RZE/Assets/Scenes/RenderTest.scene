@@ -67,7 +67,7 @@
         },
         "Nyra": {
             "components": {
-                "MeshComponent": {
+                "RenderComponent": {
                     "ResourcePath": "ProjectData\\Mesh\\Nyra.meshasset"
                 },
                 "TransformComponent": {

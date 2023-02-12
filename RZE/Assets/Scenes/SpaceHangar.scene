@@ -84,7 +84,7 @@
                         0.0
                     ]
                 },
-                "MeshComponent": {
+                "RenderComponent": {
                     "ResourcePath": "ProjectData/Mesh/Hangar.meshasset"
                 }
             }
@@ -108,7 +108,7 @@
                         0.0
                     ]
                 },
-                "MeshComponent": {
+                "RenderComponent": {
                     "ResourcePath": "ProjectData/Mesh/spaceship.meshasset"
                 }
             }

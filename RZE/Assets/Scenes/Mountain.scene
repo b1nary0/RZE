@@ -67,7 +67,7 @@
         },
         "Mountain": {
             "components": {
-                "MeshComponent": {
+                "RenderComponent": {
                     "ResourcePath": "ProjectData\\Mesh\\Mountain.meshasset"
                 },
                 "TransformComponent": {
@@ -91,7 +91,7 @@
         },
         "Tank": {
             "components": {
-                "MeshComponent": {
+                "RenderComponent": {
                     "ResourcePath": "ProjectData\\Mesh\\Panzer.meshasset"
                 },
                 "TransformComponent": {
