@@ -87,7 +87,7 @@ namespace Editor
 
 		std::string_view startScene;
 		Filepath scenePath;
-		if (CmdLine::Arguments::Get("-startScene", startScene))
+		if (CmdLine::Arguments::Get("-scene", startScene))
 		{
 			scenePath = Filepath("Assets/Scenes/" + std::string(startScene));
 			LoadScene(scenePath);

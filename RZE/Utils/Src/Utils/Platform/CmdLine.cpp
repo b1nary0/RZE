@@ -23,7 +23,7 @@ namespace CmdLine
 		int startIndex = 1;
 		if (argStrings[1][0] != '-')
 		{
-			m_arguments["-startScene"] = argStrings[1].substr(argStrings[1].find_last_of('\\') + 1, argStrings[1].size());
+			m_arguments["-scene"] = argStrings[1].substr(argStrings[1].find_last_of('\\') + 1, argStrings[1].size());
 			startIndex = 2;
 		}
 

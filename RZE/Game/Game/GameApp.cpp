@@ -34,7 +34,7 @@ void GameApp::ParseArguments(char** arguments, int count)
 		const char* arg = arguments[argIdx];
 
 		bool argHasValue = false;
-		if (strcmp(arg, "-startScene") == 0)
+		if (strcmp(arg, "-scene") == 0)
 		{
 			argHasValue = true;
 
