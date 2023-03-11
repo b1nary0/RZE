@@ -23,6 +23,7 @@ void ResourceHandler::ShutDown()
 		if (resourceSource.IsValid())
 		{
 			++liveResourceCount;
+			RZE_LOG_ARGS("Resource [%s] still referenced at shutdown.", resourceSource.GetResourcePath().GetRelativePath().c_str());
 		}
 
 		// We should always have a resource if it is in the resource table.
