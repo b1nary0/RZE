@@ -11,6 +11,7 @@ struct PS_IN
 struct MATERIAL_DATA
 {
 	float Shininess;
+	float Opacity;
 };
 
 cbuffer MaterialBuffer : register(b1)
