@@ -151,43 +151,55 @@ void EditorCameraComponent::KeyboardInput(GameObjectComponentPtr<TransformCompon
 
 	float dt = static_cast<float>(RZE().GetDeltaTime());
 
-	float speedDelta = m_speed * dt;
+	float speedDelta = (m_speed * m_deltaSpeedRampMultiplier) * dt;
 
 	// TODO(Josh::The extra condition here for hold is because of the frame delay for ::Hold. Should fix eventually.)
 	if (inputHandler.GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Pressed)
 	{
+		bool hasValidMovementInput = false;
+
 		if (inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Key_W) == EButtonState::ButtonState_Pressed
 			|| inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Key_W) == EButtonState::ButtonState_Hold)
 		{
 			transfComp->GetPosition() += m_forward * speedDelta;
+			hasValidMovementInput = true;
 		}
 		else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_S])
 		{
 			transfComp->GetPosition() -= m_forward * speedDelta;
-		}
+			hasValidMovementInput = true;
+        }
 
 		if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_A])
 		{
 			transfComp->GetPosition() -= m_forward.Cross(m_upDir).Normalize() * speedDelta;
-		}
+			hasValidMovementInput = true;
+        }
 		else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_D])
 		{
 			transfComp->GetPosition() += m_forward.Cross(m_upDir).Normalize() * speedDelta;
-		}
+			hasValidMovementInput = true;
+        }
 
 		if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_E])
 		{
 			transfComp->GetPosition() += m_forward.Cross(m_upDir).Cross(m_forward) * speedDelta;
-		}
+			hasValidMovementInput = true;
+        }
 		else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_Q])
 		{
 			transfComp->GetPosition() -= m_forward.Cross(m_upDir).Cross(m_forward) * speedDelta;
-		}
+			hasValidMovementInput = true;
+        }
 
 		if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_1])
 		{
 			// Focus object
-		}
+			hasValidMovementInput = true;
+        }
+
+		// [RZE-148] TODO (jpod): Pick a better name
+		SetTimeBasedMovementModifierBasedOnIfMovementKeysAreHeldDownOrNotToIncreaseTheRampingSpeedAtWhitchTheCameraMovesInTheEditor(hasValidMovementInput, m_deltaSpeedRampMultiplier + dt);
 	}
 
 	// #TODO(Josh::Support for special keys CTRL SHIFT etc)
@@ -247,4 +259,16 @@ void EditorCameraComponent::MouseInput(GameObjectComponentPtr<TransformComponent
 	}
 
 	m_mousePrevPos = curPos;
+}
+
+void EditorCameraComponent::SetTimeBasedMovementModifierBasedOnIfMovementKeysAreHeldDownOrNotToIncreaseTheRampingSpeedAtWhitchTheCameraMovesInTheEditor(bool isMoving, float growingDelta)
+{
+	if (isMoving)
+	{
+		m_deltaSpeedRampMultiplier = MathUtils::Clampf(growingDelta, kMinDirectionHeldTime, kMaxDirectionHeldTime);
+	}
+	else
+	{
+		m_deltaSpeedRampMultiplier = kMinDirectionHeldTime;
+	}
 }

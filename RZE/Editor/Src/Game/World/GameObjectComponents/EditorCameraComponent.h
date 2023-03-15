@@ -9,6 +9,8 @@ class TransformComponent;
 
 class EditorCameraComponent final : public GameObjectComponent<EditorCameraComponent>
 {
+	static constexpr float kMinDirectionHeldTime = 1.f;
+	static constexpr float kMaxDirectionHeldTime = 10.f;
 public:
 	EditorCameraComponent() = default;
 	~EditorCameraComponent() = default;
@@ -49,7 +51,9 @@ private:
 	void GenerateCameraMatrices(const Vector3D& position);
 
 	void KeyboardInput(GameObjectComponentPtr<TransformComponent>& transfComp);
-	void MouseInput(GameObjectComponentPtr<TransformComponent>& transfComp);
+    void MouseInput( GameObjectComponentPtr<TransformComponent>& transfComp );
+
+    void SetTimeBasedMovementModifierBasedOnIfMovementKeysAreHeldDownOrNotToIncreaseTheRampingSpeedAtWhitchTheCameraMovesInTheEditor(bool isMoving, float growingDelta);
 
 private:
 	Vector3D m_lookAt;
@@ -65,11 +69,11 @@ private:
 	float m_farCull { 1000.0f };
 
 	float m_speed;
+	float m_deltaSpeedRampMultiplier = kMinDirectionHeldTime;
 	float m_wheelZoomSpeed;
 
 	Vector3D m_mousePrevPos;
 	Vector3D m_yawPitchRoll;
 
 	bool m_isActiveCamera { false };
-
 };
