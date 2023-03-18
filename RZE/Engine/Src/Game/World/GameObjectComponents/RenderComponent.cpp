@@ -41,18 +41,25 @@ void RenderComponent::SetMeshResource(const ResourceHandle& resource)
 
 void RenderComponent::CreateRenderObject()
 {
-	ResourceHandler& resourceHandler = RZE().GetResourceHandler();
-	RenderEngine& renderEngine = RZE().GetRenderEngine();
+	if (m_renderObject != nullptr)
+	{
+		ResourceHandler& resourceHandler = RZE().GetResourceHandler();
+		RenderEngine& renderEngine = RZE().GetRenderEngine();
 
-	// #TODO We should probably make RenderComponent a TransformComponent since a mesh without a transform is useless.
-	GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
-	AssertMsg(transformComponent != nullptr, "No TransformComponent found. Mesh creation is useless without a location in 3D space.");
+		// #TODO We should probably make RenderComponent a TransformComponent since a mesh without a transform is useless.
+		GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
+		AssertMsg(transformComponent != nullptr, "No TransformComponent found. Mesh creation is useless without a location in 3D space.");
 
-	const StaticMeshResource* modelData = resourceHandler.GetResource<StaticMeshResource>(m_resource);
-	AssertNotNull(modelData);
+		const StaticMeshResource* modelData = resourceHandler.GetResource<StaticMeshResource>(m_resource);
+		AssertNotNull(modelData);
 
-	m_renderObject = renderEngine.CreateRenderObject(modelData->GetStaticMesh());
-	m_renderObject->SetTransform(transformComponent->GetAsMat4x4());
+		m_renderObject = renderEngine.CreateRenderObject(modelData->GetStaticMesh());
+		m_renderObject->SetTransform(transformComponent->GetAsMat4x4());
+
+		return;
+	}
+
+	RZE_LOG("RenderComponent already has a RenderObject when calling CreateRenderObject()")
 }
 
 void RenderComponent::OnAddToScene()
