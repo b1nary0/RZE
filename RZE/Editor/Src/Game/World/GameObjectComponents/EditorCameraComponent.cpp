@@ -126,7 +126,7 @@ void EditorCameraComponent::Update()
 
 		KeyboardInput(transformComponent);
 		MouseInput(transformComponent);
-			
+
 		GenerateCameraMatrices(transformComponent->GetPosition());
 		{
 			// Push data to RenderEngine
@@ -140,9 +140,9 @@ void EditorCameraComponent::Update()
 void EditorCameraComponent::GenerateCameraMatrices(const Vector3D& position)
 {
 	OPTICK_EVENT("GenerateCameraMatrices");
-	
+
 	m_projectionMat = Matrix4x4::CreatePerspectiveMatrix(m_fov, m_aspectRatio, m_nearCull, m_farCull);
-	m_viewMat = Matrix4x4::CreateViewMatrix(position, position  + m_forward, m_upDir);
+	m_viewMat = Matrix4x4::CreateViewMatrix(position, position + m_forward, m_upDir);
 }
 
 void EditorCameraComponent::KeyboardInput(GameObjectComponentPtr<TransformComponent>& transfComp)
@@ -168,35 +168,35 @@ void EditorCameraComponent::KeyboardInput(GameObjectComponentPtr<TransformCompon
 		{
 			transfComp->GetPosition() -= m_forward * speedDelta;
 			hasValidMovementInput = true;
-        }
+		}
 
 		if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_A])
 		{
 			transfComp->GetPosition() -= m_forward.Cross(m_upDir).Normalize() * speedDelta;
 			hasValidMovementInput = true;
-        }
+		}
 		else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_D])
 		{
 			transfComp->GetPosition() += m_forward.Cross(m_upDir).Normalize() * speedDelta;
 			hasValidMovementInput = true;
-        }
+		}
 
 		if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_E])
 		{
 			transfComp->GetPosition() += m_forward.Cross(m_upDir).Cross(m_forward) * speedDelta;
 			hasValidMovementInput = true;
-        }
+		}
 		else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_Q])
 		{
 			transfComp->GetPosition() -= m_forward.Cross(m_upDir).Cross(m_forward) * speedDelta;
 			hasValidMovementInput = true;
-        }
+		}
 
 		if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_1])
 		{
 			// Focus object
 			hasValidMovementInput = true;
-        }
+		}
 
 		// [RZE-148] TODO (jpod): Pick a better name
 		SetTimeBasedMovementModifierBasedOnIfMovementKeysAreHeldDownOrNotToIncreaseTheRampingSpeedAtWhitchTheCameraMovesInTheEditor(hasValidMovementInput, m_deltaSpeedRampMultiplier + dt);

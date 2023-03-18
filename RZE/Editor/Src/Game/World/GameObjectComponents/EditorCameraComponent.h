@@ -20,7 +20,7 @@ public:
 	void Initialize() override;
 	void OnAddToScene() override;
 	void Update() override;
-	
+
 public:
 	const Vector3D& GetLookAt() const;
 	const Vector3D& GetUpDir() const;
@@ -46,27 +46,27 @@ public:
 	void SetFarCull(float farCull);
 
 	void SetAsActiveCamera(bool isActiveCamera);
-	
+
 private:
 	void GenerateCameraMatrices(const Vector3D& position);
 
 	void KeyboardInput(GameObjectComponentPtr<TransformComponent>& transfComp);
-    void MouseInput( GameObjectComponentPtr<TransformComponent>& transfComp );
+	void MouseInput(GameObjectComponentPtr<TransformComponent>& transfComp);
 
-    void SetTimeBasedMovementModifierBasedOnIfMovementKeysAreHeldDownOrNotToIncreaseTheRampingSpeedAtWhitchTheCameraMovesInTheEditor(bool isMoving, float growingDelta);
+	void SetTimeBasedMovementModifierBasedOnIfMovementKeysAreHeldDownOrNotToIncreaseTheRampingSpeedAtWhitchTheCameraMovesInTheEditor(bool isMoving, float growingDelta);
 
 private:
 	Vector3D m_lookAt;
-	Vector3D m_upDir { 0.0f, 1.0f, 0.0f };
-	Vector3D m_forward { 0.0f, 0.0f, -1.0f};
+	Vector3D m_upDir{ 0.0f, 1.0f, 0.0f };
+	Vector3D m_forward{ 0.0f, 0.0f, -1.0f };
 
 	Matrix4x4 m_projectionMat;
 	Matrix4x4 m_viewMat;
 
-	float m_fov { 70.0f };
-	float m_aspectRatio { 0.0f }; // #TODO I don't think we're updating this sensibly when the aspect ratio changes...
-	float m_nearCull { 0.01f };
-	float m_farCull { 1000.0f };
+	float m_fov{ 70.0f };
+	float m_aspectRatio{ 0.0f }; // #TODO I don't think we're updating this sensibly when the aspect ratio changes...
+	float m_nearCull{ 0.01f };
+	float m_farCull{ 1000.0f };
 
 	float m_speed;
 	float m_deltaSpeedRampMultiplier = kMinDirectionHeldTime;
@@ -75,5 +75,5 @@ private:
 	Vector3D m_mousePrevPos;
 	Vector3D m_yawPitchRoll;
 
-	bool m_isActiveCamera { false };
+	bool m_isActiveCamera{ false };
 };
