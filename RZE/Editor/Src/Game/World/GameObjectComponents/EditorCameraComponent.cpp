@@ -198,8 +198,7 @@ void EditorCameraComponent::KeyboardInput(GameObjectComponentPtr<TransformCompon
 			hasValidMovementInput = true;
 		}
 
-		// [RZE-148] TODO (jpod): Pick a better name
-		SetTimeBasedMovementModifierBasedOnIfMovementKeysAreHeldDownOrNotToIncreaseTheRampingSpeedAtWhitchTheCameraMovesInTheEditor(hasValidMovementInput, m_deltaSpeedRampMultiplier + dt);
+		SetSpeedRampMultiplier(hasValidMovementInput, m_deltaSpeedRampMultiplier + dt);
 	}
 
 	// #TODO(Josh::Support for special keys CTRL SHIFT etc)
@@ -261,7 +260,7 @@ void EditorCameraComponent::MouseInput(GameObjectComponentPtr<TransformComponent
 	m_mousePrevPos = curPos;
 }
 
-void EditorCameraComponent::SetTimeBasedMovementModifierBasedOnIfMovementKeysAreHeldDownOrNotToIncreaseTheRampingSpeedAtWhitchTheCameraMovesInTheEditor(bool isMoving, float growingDelta)
+void EditorCameraComponent::SetSpeedRampMultiplier(bool isMoving, float growingDelta)
 {
 	if (isMoving)
 	{

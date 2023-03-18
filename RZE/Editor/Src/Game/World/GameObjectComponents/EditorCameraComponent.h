@@ -53,7 +53,7 @@ private:
 	void KeyboardInput(GameObjectComponentPtr<TransformComponent>& transfComp);
 	void MouseInput(GameObjectComponentPtr<TransformComponent>& transfComp);
 
-	void SetTimeBasedMovementModifierBasedOnIfMovementKeysAreHeldDownOrNotToIncreaseTheRampingSpeedAtWhitchTheCameraMovesInTheEditor(bool isMoving, float growingDelta);
+	void SetSpeedRampMultiplier(bool isMoving, float growingDelta);
 
 private:
 	Vector3D m_lookAt;
