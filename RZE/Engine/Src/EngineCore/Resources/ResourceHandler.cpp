@@ -97,6 +97,11 @@ ResourceHandle ResourceHandler::Make(const std::string& resourceID, IResource* r
 	return ResourceHandle(resourceKey, &resourceSource, this);
 }
 
+const std::unordered_map<std::string, ResourceHandler::ResourceSource>& ResourceHandler::GetResourceTableInternal() const
+{
+	return mResourceTable;
+}
+
 ResourceHandle::ResourceHandle()
 	: mResourceID("NO_RESOURCE")
 	, mResourceSource(nullptr)
@@ -188,4 +193,9 @@ ResourceHandle& ResourceHandle::operator=(const ResourceHandle& rhs)
 bool ResourceHandle::operator==(const ResourceHandle& rhs)
 {
 	return rhs.mResourceID == mResourceID;
+}
+
+int ResourceHandler::ResourceSource::GetRefCount() const
+{
+	return mReferenceCount;
 }

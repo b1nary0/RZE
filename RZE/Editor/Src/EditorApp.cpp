@@ -353,6 +353,10 @@ namespace Editor
 					{
 						m_scenePanel.Enable();
 					}
+
+					// UX note, having an exposed bool allows ImGui to display checkmarks in the menu on items in the dropdown.
+					ImGui::MenuItem( "Resource Monitor", "", &m_resourceMonitor.IsEnabled );
+
 					ImGui::EndMenu();
 				}
 
@@ -421,6 +425,8 @@ namespace Editor
 		m_scenePanel.Display();
 
 		m_sceneViewPanel.Display();
+
+		m_resourceMonitor.Display();
 
 		m_logPanel.Display();
 	}

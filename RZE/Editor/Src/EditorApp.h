@@ -5,6 +5,7 @@
 #include <UI/Panels/LogPanel.h>
 #include <UI/Panels/ScenePanel.h>
 #include <UI/Panels/SceneViewPanel.h>
+#include <UI/Panels/ResourceMonitorPanel.h>
 
 struct ImFont;
 
@@ -69,6 +70,7 @@ namespace Editor
 		LogPanel m_logPanel;
 		ScenePanel m_scenePanel;
 		SceneViewPanel m_sceneViewPanel;
+		ResourceMonitorPanel m_resourceMonitor;
 
 		std::unordered_map<std::string, ImFont*> m_fontMapping;
 
