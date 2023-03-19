@@ -2,16 +2,20 @@
 
 #include <unordered_map>
 
-#include <EngineCore/Platform/Memory/BlockAllocator.h>
-
 #include <Utils/Conversions.h>
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Interfaces/Resource.h>
 #include <Utils/Platform/Filepath.h>
 
+namespace Editor
+{
+	class ResourceMonitorPanel;
+}
+
 class ResourceHandler
 {
 	friend class ResourceHandle;
+	friend class Editor::ResourceMonitorPanel;
 
 private:
 	class ResourceSource
@@ -89,13 +93,12 @@ public:
 	// @TODO This should be removed when resource instance layer goes in.
 	// Do not rely on this function
 	ResourceHandle Make(const std::string& resourceID, IResource* resource);
-	const std::unordered_map<std::string, ResourceSource>& GetResourceTableInternal() const;
 
 private:
 	template <class ResourceT, class... Args>
 	IResource* CreateAndLoadResource(const Filepath& resourcePath, Args&&... args);
 
-	friend class ResourceMonitorPanel;
+	const std::unordered_map<std::string, ResourceSource>& GetResourceTableInternal() const;
 
 	// #TODO Turn the resource IDs into hashes/guids
 	std::unordered_map<std::string, ResourceSource> mResourceTable;
