@@ -41,7 +41,7 @@ void RenderComponent::SetMeshResource(const ResourceHandle& resource)
 
 void RenderComponent::CreateRenderObject()
 {
-	if (m_renderObject != nullptr)
+	if (m_renderObject == nullptr)
 	{
 		ResourceHandler& resourceHandler = RZE().GetResourceHandler();
 		RenderEngine& renderEngine = RZE().GetRenderEngine();

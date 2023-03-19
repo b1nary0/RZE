@@ -74,6 +74,11 @@ public:
 
 	RenderObjectPtr& operator=(const RenderObjectPtr&) = default;
 
+	bool operator==(const std::nullptr_t null)
+	{
+		return this->m_ptr == null;
+	}
+
 	bool operator==(const RenderObjectPtr& other)
 	{
 		return m_ptr == other.m_ptr;
