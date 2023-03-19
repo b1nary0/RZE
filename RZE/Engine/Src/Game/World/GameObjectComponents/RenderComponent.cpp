@@ -59,7 +59,7 @@ void RenderComponent::CreateRenderObject()
 		return;
 	}
 
-	RZE_LOG("RenderComponent already has a RenderObject when calling CreateRenderObject()")
+	RZE_LOG("RenderComponent already has a RenderObject when calling CreateRenderObject()");
 }
 
 void RenderComponent::OnAddToScene()
