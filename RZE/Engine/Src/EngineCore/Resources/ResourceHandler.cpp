@@ -114,7 +114,7 @@ ResourceHandle::ResourceHandle(const std::string& resourceID, ResourceHandler::R
 	mHandler = handler;
 	mResourceID = resourceID;
 	mResourceSource = resourceSource;
-	
+
 	// #TODO(Josh::Quick fix for ::EmptyHandle but really this shouldn't happen. Revisit.)
 	if (resourceSource != nullptr)
 	{
@@ -129,7 +129,7 @@ ResourceHandle::ResourceHandle(ResourceHandle&& rhs)
 
 	mResourceSource = rhs.mResourceSource;
 	rhs.mResourceSource = nullptr;
-	
+
 	mHandler = rhs.mHandler;
 	rhs.mHandler = nullptr;
 }
@@ -148,7 +148,7 @@ ResourceHandle::~ResourceHandle()
 
 bool ResourceHandle::IsValid() const
 {
-	return !mResourceID.empty() 
+	return !mResourceID.empty()
 		&& (mResourceSource != nullptr && mResourceSource->IsValid());
 }
 

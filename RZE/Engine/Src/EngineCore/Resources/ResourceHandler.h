@@ -89,14 +89,14 @@ public:
 	// @TODO This should be removed when resource instance layer goes in.
 	// Do not rely on this function
 	ResourceHandle Make(const std::string& resourceID, IResource* resource);
-    const std::unordered_map<std::string, ResourceSource>& GetResourceTableInternal() const;
+	const std::unordered_map<std::string, ResourceSource>& GetResourceTableInternal() const;
 
 private:
 	template <class ResourceT, class... Args>
 	IResource* CreateAndLoadResource(const Filepath& resourcePath, Args&&... args);
 
-    friend class ResourceMonitorPanel;
-	
+	friend class ResourceMonitorPanel;
+
 	// #TODO Turn the resource IDs into hashes/guids
 	std::unordered_map<std::string, ResourceSource> mResourceTable;
 };
@@ -113,7 +113,7 @@ public:
 	ResourceHandle(ResourceHandle&& rhs);
 	ResourceHandle(const ResourceHandle& rhs) = delete;
 	~ResourceHandle();
-	
+
 	static ResourceHandle EmptyHandle() { return ResourceHandle(); }
 
 	bool IsValid() const;

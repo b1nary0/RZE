@@ -54,13 +54,13 @@ namespace Editor
 	void EditorApp::Initialize()
 	{
 		RZE_Application::Initialize();
-		
+
 		const bool isWithEditor = true;
 		RZE().GetRenderEngine().AddRenderStage<ImGuiRenderStage>(isWithEditor);
 
 		m_imguiConfigFilepath = Filepath("Config/imgui.ini");
 		ImGui::GetIO().IniFilename = m_imguiConfigFilepath.GetAbsolutePath().c_str();
-		
+
 		GetWindow()->SetTitle("RZEStudio");
 		//GetWindow()->Maximize();
 
@@ -70,7 +70,7 @@ namespace Editor
 
 		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 		ImGui::GetIO().KeyRepeatDelay = 0.5f;
-		
+
 		LoadFonts();
 		StyleSetup();
 	}
@@ -97,10 +97,10 @@ namespace Editor
 			scenePath = Filepath(kSceneFileToLoadHack);
 			LoadScene(scenePath);
 		}
-		
+
 		AddFilePathToWindowTitle(scenePath.GetRelativePath());
 	}
-	
+
 	void EditorApp::Update()
 	{
 		OPTICK_EVENT();
@@ -295,44 +295,44 @@ namespace Editor
 				{
 					DebugServices::Get().Trace(LogChannel::Build, "Building Game...");
 					Threading::Job::Task buildTask([this]()
-					{
-						char buffer[2048];
-						FILE* pipe = nullptr;
-						static Filepath buildGameBat("BuildGame.bat");
-						pipe = _popen(buildGameBat.GetAbsolutePath().c_str(), "rt");
-						while (fgets(buffer, 2048, pipe))
 						{
-							Log(buffer);
-						}
-					});
+							char buffer[2048];
+							FILE* pipe = nullptr;
+							static Filepath buildGameBat("BuildGame.bat");
+							pipe = _popen(buildGameBat.GetAbsolutePath().c_str(), "rt");
+							while (fgets(buffer, 2048, pipe))
+							{
+								Log(buffer);
+							}
+						});
 					Threading::JobScheduler::Get().PushJob(buildTask);
 				}
 				if (ImGui::MenuItem("Launch Game..."))
 				{
 					Threading::Job::Task gameTask([this]()
-					{
-						static Filepath buildGameBat("BuildGame.bat");
-						static Filepath gamePath("_Build\\Debug\\x64\\RZE_Game.exe");
+						{
+							static Filepath buildGameBat("BuildGame.bat");
+							static Filepath gamePath("_Build\\Debug\\x64\\RZE_Game.exe");
 
-						// #TODO
-						// Make function to do this stuff
-						{
-							FILE* pipe = nullptr;
-							pipe = _popen(buildGameBat.GetAbsolutePath().c_str(), "rt");
-							char buffer[2048];
-							while (fgets(buffer, 2048, pipe))
+							// #TODO
+							// Make function to do this stuff
 							{
-								DebugServices::Get().Trace(LogChannel::Build, buffer);
+								FILE* pipe = nullptr;
+								pipe = _popen(buildGameBat.GetAbsolutePath().c_str(), "rt");
+								char buffer[2048];
+								while (fgets(buffer, 2048, pipe))
+								{
+									DebugServices::Get().Trace(LogChannel::Build, buffer);
+								}
 							}
-						}
-						{
-							RunAssetCpy();
-						}
-						{
-							FILE* pipe = nullptr;
-							pipe = _popen(gamePath.GetAbsolutePath().c_str(), "rt");
-						}
-					});
+							{
+								RunAssetCpy();
+							}
+							{
+								FILE* pipe = nullptr;
+								pipe = _popen(gamePath.GetAbsolutePath().c_str(), "rt");
+							}
+						});
 					Threading::JobScheduler::Get().PushJob(gameTask);
 
 				}
@@ -355,7 +355,7 @@ namespace Editor
 					}
 
 					// UX note, having an exposed bool allows ImGui to display checkmarks in the menu on items in the dropdown.
-					ImGui::MenuItem( "Resource Monitor", "", &m_resourceMonitor.IsEnabled );
+					ImGui::MenuItem("Resource Monitor", "", &m_resourceMonitor.IsEnabled);
 
 					ImGui::EndMenu();
 				}
@@ -443,10 +443,10 @@ namespace Editor
 		Filepath liberationRegularPath("Assets/Fonts/LiberationMono-Bold.ttf");
 		Filepath dinBoldPath("Assets/Fonts/D-DIN-Bold.otf");
 
-		m_fontMapping.insert({"ubuntu_medium", io.Fonts->AddFontFromFileTTF(ubuntuMediumPath.GetAbsolutePath().c_str(), 16)});
-		m_fontMapping.insert({"ubuntu_regular", io.Fonts->AddFontFromFileTTF(ubuntuRegularPath.GetAbsolutePath().c_str(), 14)});
-		m_fontMapping.insert({"arial", io.Fonts->AddFontFromFileTTF(arialPath.GetAbsolutePath().c_str(), 15)});
-		m_fontMapping.insert({"consolas", io.Fonts->AddFontFromFileTTF(consolasPath.GetAbsolutePath().c_str(), 14)});
+		m_fontMapping.insert({ "ubuntu_medium", io.Fonts->AddFontFromFileTTF(ubuntuMediumPath.GetAbsolutePath().c_str(), 16) });
+		m_fontMapping.insert({ "ubuntu_regular", io.Fonts->AddFontFromFileTTF(ubuntuRegularPath.GetAbsolutePath().c_str(), 14) });
+		m_fontMapping.insert({ "arial", io.Fonts->AddFontFromFileTTF(arialPath.GetAbsolutePath().c_str(), 15) });
+		m_fontMapping.insert({ "consolas", io.Fonts->AddFontFromFileTTF(consolasPath.GetAbsolutePath().c_str(), 14) });
 		m_fontMapping.insert({ "liberation_bold", io.Fonts->AddFontFromFileTTF(liberationRegularPath.GetAbsolutePath().c_str(), 15) });
 		m_fontMapping.insert({ "din_bold", io.Fonts->AddFontFromFileTTF(dinBoldPath.GetAbsolutePath().c_str(), 14) });
 
@@ -537,7 +537,7 @@ namespace Editor
 	{
 		// @TODO should go away with editor event system
 		ResetSelectedObject();
-		
+
 		RZE().GetActiveScene().Unload();
 		if (!filepath.IsValid())
 		{
