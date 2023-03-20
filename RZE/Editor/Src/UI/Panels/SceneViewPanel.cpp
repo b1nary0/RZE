@@ -29,8 +29,43 @@ namespace Editor
 	void SceneViewPanel::Display()
 	{
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-		if (ImGui::Begin("SceneView", (bool*)1, ImGuiWindowFlags_NoScrollbar)) // #TODO(Josh) Why does the window need scroll bar?
+		if (ImGui::Begin("SceneView", (bool*)1, ImGuiWindowFlags_MenuBar))
 		{
+			if (ImGui::BeginMenuBar())
+			{
+				if (ImGui::RadioButton("Translate", m_gizmoState.m_currentOpMode == ImGuizmo::TRANSLATE))
+				{
+					m_gizmoState.m_currentOpMode = ImGuizmo::TRANSLATE;
+				}
+			
+				if (ImGui::RadioButton("Rotate", m_gizmoState.m_currentOpMode == ImGuizmo::ROTATE))
+				{
+					m_gizmoState.m_currentOpMode = ImGuizmo::ROTATE;
+				}
+			
+				if (ImGui::RadioButton("Scale", m_gizmoState.m_currentOpMode == ImGuizmo::SCALE))
+				{
+					m_gizmoState.m_currentOpMode = ImGuizmo::SCALE;
+				}
+			
+				if (m_gizmoState.m_currentOpMode != ImGuizmo::SCALE)
+				{
+					const float cursorPos = ImGui::GetCursorPosX();
+					const float controlSpacing = 25.f;
+					ImGui::SetCursorPosX(cursorPos + controlSpacing);
+					if (ImGui::RadioButton("Local", m_gizmoState.m_transformationSpace == ImGuizmo::LOCAL))
+					{
+						m_gizmoState.m_transformationSpace = ImGuizmo::LOCAL;
+					}
+					if (ImGui::RadioButton("World", m_gizmoState.m_transformationSpace == ImGuizmo::WORLD))
+					{
+						m_gizmoState.m_transformationSpace = ImGuizmo::WORLD;
+					}
+				}
+			
+				ImGui::EndMenuBar();
+			}
+
 			m_isFocused = ImGui::IsWindowFocused();
 			m_isHovered = ImGui::IsWindowHovered();
 
@@ -40,7 +75,7 @@ namespace Editor
 				m_position.SetXY(viewportPos.x, viewportPos.y);
 			}
 
-			ImVec2 viewportDims = ImGui::GetWindowSize();
+			ImVec2 viewportDims = ImGui::GetContentRegionAvail();
 			if (viewportDims.x != m_dimensions.X() || viewportDims.y != m_dimensions.Y())
 			{
 				m_dimensions.SetXY(viewportDims.x, viewportDims.y);
