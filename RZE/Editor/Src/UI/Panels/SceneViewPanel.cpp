@@ -37,17 +37,17 @@ namespace Editor
 				{
 					m_gizmoState.m_currentOpMode = ImGuizmo::TRANSLATE;
 				}
-			
+
 				if (ImGui::RadioButton("Rotate", m_gizmoState.m_currentOpMode == ImGuizmo::ROTATE))
 				{
 					m_gizmoState.m_currentOpMode = ImGuizmo::ROTATE;
 				}
-			
+
 				if (ImGui::RadioButton("Scale", m_gizmoState.m_currentOpMode == ImGuizmo::SCALE))
 				{
 					m_gizmoState.m_currentOpMode = ImGuizmo::SCALE;
 				}
-			
+
 				if (m_gizmoState.m_currentOpMode != ImGuizmo::SCALE)
 				{
 					const float cursorPos = ImGui::GetCursorPosX();
@@ -62,7 +62,7 @@ namespace Editor
 						m_gizmoState.m_transformationSpace = ImGuizmo::WORLD;
 					}
 				}
-			
+
 				ImGui::EndMenuBar();
 			}
 
@@ -119,7 +119,7 @@ namespace Editor
 					AssertNotNull(cameraObject);
 
 					GameObjectComponentPtr<EditorCameraComponent> cameraComponent = cameraObject->GetComponent<EditorCameraComponent>();
-					
+
 					const Matrix4x4& view = cameraComponent->GetViewMatrix();
 					const Matrix4x4& projection = cameraComponent->GetProjectionMatrix();
 
@@ -140,7 +140,7 @@ namespace Editor
 							&const_cast<glm::vec3&>(newTranslation.GetInternalVec())[0],
 							&const_cast<glm::vec3&>(newRotation.GetInternalVec())[0],
 							&const_cast<glm::vec3&>(newScale.GetInternalVec())[0]);
-						
+
 						transformComponent->SetPosition(newTranslation);
 						transformComponent->SetRotation(newRotation);
 						transformComponent->SetScale(newScale);
@@ -159,24 +159,24 @@ namespace Editor
 
 		Functor<void, const InputKey&> keyFunc([this, &inputHandler](const InputKey& key)
 			{
-			if (inputHandler.GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) != EButtonState::ButtonState_Pressed)
-			{
-				switch (key.GetKeyCode())
-			   {
-			   case Win32KeyCode::Key_W:
-			   	m_gizmoState.m_currentOpMode = ImGuizmo::TRANSLATE;
-				   break;
-			   case Win32KeyCode::Key_E:
-			   	m_gizmoState.m_currentOpMode = ImGuizmo::ROTATE;
-				   break;
-			   case Win32KeyCode::Key_R:
-			   	m_gizmoState.m_currentOpMode = ImGuizmo::SCALE;
-				   break;
-			   case Win32KeyCode::Key_Q:
-			   	m_gizmoState.m_transformationSpace = (m_gizmoState.m_transformationSpace == ImGuizmo::WORLD) ? ImGuizmo::LOCAL : ImGuizmo::WORLD;
-				   break;
-			   }
-			}
+				if (inputHandler.GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) != EButtonState::ButtonState_Pressed)
+				{
+					switch (key.GetKeyCode())
+					{
+					case Win32KeyCode::Key_W:
+						m_gizmoState.m_currentOpMode = ImGuizmo::TRANSLATE;
+						break;
+					case Win32KeyCode::Key_E:
+						m_gizmoState.m_currentOpMode = ImGuizmo::ROTATE;
+						break;
+					case Win32KeyCode::Key_R:
+						m_gizmoState.m_currentOpMode = ImGuizmo::SCALE;
+						break;
+					case Win32KeyCode::Key_Q:
+						m_gizmoState.m_transformationSpace = (m_gizmoState.m_transformationSpace == ImGuizmo::WORLD) ? ImGuizmo::LOCAL : ImGuizmo::WORLD;
+						break;
+					}
+				}
 			});
 		inputHandler.BindAction(Win32KeyCode::Key_W, EButtonState::ButtonState_Pressed, keyFunc);
 		inputHandler.BindAction(Win32KeyCode::Key_E, EButtonState::ButtonState_Pressed, keyFunc);
