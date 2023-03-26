@@ -258,6 +258,7 @@ bool AssimpSourceImporter::WriteMeshAsset()
 	assetWriter.SetAssetName(m_assetName);
 	assetWriter.SetMeshData(std::move(m_meshes));
 
+	assetWriter.Process();
 	assetWriter.Write();
 
 	return true;

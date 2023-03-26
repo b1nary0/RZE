@@ -13,6 +13,8 @@ public:
 	std::vector<MeshGeometry>& GetSubMeshes();
 	const std::vector<MeshGeometry>& GetSubMeshes() const;
 
+	Vector3D m_centerPos;
+
 private:
 	std::vector<MeshGeometry> m_subMeshes;
 };

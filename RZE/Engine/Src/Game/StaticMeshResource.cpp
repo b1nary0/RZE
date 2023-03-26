@@ -18,6 +18,8 @@ bool StaticMeshResource::Load(const Filepath& filePath)
 	meshImporter.Import(filePath);
 
 	m_mesh.Initialize(std::move(meshImporter.GetMeshGeometry()));
+	m_mesh.m_centerPos = meshImporter.m_centerPos;
+
 	return true;
 }
 

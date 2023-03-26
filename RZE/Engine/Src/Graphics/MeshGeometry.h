@@ -34,6 +34,7 @@ public:
 	void SetName(const std::string& name);
 	void SetVertexData(const std::vector<MeshVertex>& verts);
 	void SetIndexData(const std::vector<U32>& indices);
+	void SetCenterPos(const Vector3D& centerPos);
 
 	void SetMaterial(const std::shared_ptr<MaterialInstance>& material);
 
@@ -52,6 +53,8 @@ private:
 	std::string m_name;
 	std::vector<MeshVertex> m_vertices;
 	std::vector<U32> m_indices;
+
+	Vector3D m_centerPos;
 
 	std::shared_ptr<VertexBuffer> m_vertexBuffer;
 	std::shared_ptr<IndexBuffer> m_indexBuffer;

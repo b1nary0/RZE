@@ -92,6 +92,11 @@ void MeshGeometry::SetIndexData(const std::vector<U32>& indices)
 	m_indices = indices;
 }
 
+void MeshGeometry::SetCenterPos(const Vector3D& centerPos)
+{
+	m_centerPos = centerPos;
+}
+
 void MeshGeometry::SetMaterial(const std::shared_ptr<MaterialInstance>& material)
 {
 	AssertNotNull(material);

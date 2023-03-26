@@ -16,6 +16,7 @@ struct MeshAssetFileHeader
 	uint16_t AssetVersion;
 	size_t BufSize;
 	size_t MeshCount;
+	Vector3D CenterPos;
 };
 
 class MeshAssetWriter : public AssetWriter
@@ -26,9 +27,12 @@ public:
 	void SetMeshData(std::vector<MeshData>&& meshData);
 	void SetAssetName(const std::string& assetName);
 
+	void Process() override;
+
 	void Write() override;
 
 private:
+	Vector3D m_centerPos;
 	std::vector<MeshData> m_meshes;
 	std::string m_assetName;
 };

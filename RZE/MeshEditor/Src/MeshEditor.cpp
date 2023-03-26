@@ -48,6 +48,11 @@ namespace MeshEditor
 
 		ResourceHandle assetResource = RZE().GetResourceHandler().LoadResource<StaticMeshResource>(Filepath("ProjectData/Mesh/" + assetStr));
 		renderComponent->SetMeshResource(assetResource);
+
+		const StaticMeshResource* meshResource = RZE().GetResourceHandler().GetResource<StaticMeshResource>(assetResource);
+		
+		GameObjectComponentPtr<TransformComponent> transformComponent = assetObject->GetTransformComponent();
+		transformComponent->SetPosition(transformComponent->GetPosition() - meshResource->GetStaticMesh().m_centerPos);
 		
 		{
 			m_editorCamera = RZE().GetActiveScene().AddGameObject("EditorCam");

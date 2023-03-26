@@ -10,7 +10,7 @@
 namespace
 {
 	constexpr char k_meshAssetExtension[] = { ".meshasset" };
-	constexpr uint16_t k_meshAssetVersion = 0;
+	constexpr uint16_t k_meshAssetVersion = 1;
 }
 
 void MeshAssetWriter::SetMeshData(std::vector<MeshData>&& meshData)
@@ -21,6 +21,41 @@ void MeshAssetWriter::SetMeshData(std::vector<MeshData>&& meshData)
 void MeshAssetWriter::SetAssetName(const std::string& assetName)
 {
 	m_assetName = assetName;
+}
+
+void MeshAssetWriter::Process()
+{
+	for (MeshData& meshData : m_meshes)
+	{
+		auto xExtremes = std::minmax_element(meshData.VertexDataArray.begin(), meshData.VertexDataArray.end(),
+			[](const MeshVertex& lhs, const MeshVertex& rhs)
+			{
+				return lhs.Position.X() < rhs.Position.X();
+			});
+
+		auto yExtremes = std::minmax_element(meshData.VertexDataArray.begin(), meshData.VertexDataArray.end(),
+			[](const MeshVertex& lhs, const MeshVertex& rhs)
+			{
+				return lhs.Position.Y() < rhs.Position.Y();
+			});
+
+		auto zExtremes = std::minmax_element(meshData.VertexDataArray.begin(), meshData.VertexDataArray.end(),
+			[](const MeshVertex& lhs, const MeshVertex& rhs)
+			{
+				return lhs.Position.Z() < rhs.Position.Z();
+			});
+
+		float xMean = xExtremes.second->Position.X() / 2;
+		float yMean = yExtremes.second->Position.Y() / 2;
+		float zMean = zExtremes.second->Position.Z() / 2;
+
+		m_centerPos = Vector3D(xMean, yMean, zMean);
+
+		//for (MeshVertex& vertex : meshData.VertexDataArray)
+		//{
+		//	vertex.Position = vertex.Position - m_centerPos;
+		//}
+	}
 }
 
 void MeshAssetWriter::Write()
@@ -60,6 +95,7 @@ void MeshAssetWriter::Write()
 	header.AssetVersion = k_meshAssetVersion;
 	header.BufSize = bufSize;
 	header.MeshCount = meshCount;
+	header.CenterPos = m_centerPos;
 
 	ByteStream byteStream(outputPath.GetRelativePath(), bufSize);
 

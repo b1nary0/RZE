@@ -12,7 +12,7 @@
 
 namespace
 {
-	constexpr uint16_t k_meshAssetVersion = 0;
+	constexpr uint16_t k_meshAssetVersion = 1;
 }
 
 bool MeshAssetImporter::Import(const Filepath& filePath)
@@ -25,13 +25,15 @@ bool MeshAssetImporter::Import(const Filepath& filePath)
 	MeshAssetFileHeader* headerData = reinterpret_cast<MeshAssetFileHeader*>(byteStream.PeekBytesAdvance(sizeof(MeshAssetFileHeader)));
 	AssertExpr(headerData->AssetVersion == k_meshAssetVersion);
 
+	m_centerPos = headerData->CenterPos;
+
 	for (int i = 0; i < headerData->MeshCount; ++i)
 	{
 		std::string meshName = ByteStreamUtils::ReadString(byteStream);
 		std::string materialPath = ByteStreamUtils::ReadString(byteStream);
 		std::vector<float> vertexData = ByteStreamUtils::ReadArray<float>(byteStream);
 		std::vector<U32> indexData = ByteStreamUtils::ReadArray<U32>(byteStream);
-
+		
 		MeshVertex* vertexDataArray = reinterpret_cast<MeshVertex*>(vertexData.data());
 
 		const size_t meshVertexBufferSize = vertexData.size() / (sizeof(MeshVertex) / 4);
@@ -59,7 +61,7 @@ bool MeshAssetImporter::Import(const Filepath& filePath)
 
 		geo.AllocateData();
 
-		mMeshGeometry.push_back(geo);
+		m_meshGeometry.push_back(geo);
 	}
 
 	return true;

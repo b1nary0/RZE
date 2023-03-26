@@ -13,10 +13,12 @@ public:
 	virtual ~MeshAssetImporter() = default;
 
 public:
-	virtual bool Import(const Filepath& filePath) override;
+	bool Import(const Filepath& filePath) override;
 	
-	std::vector<MeshGeometry> GetMeshGeometry() { return mMeshGeometry; }
+	std::vector<MeshGeometry> GetMeshGeometry() { return m_meshGeometry; }
+
+	Vector3D m_centerPos;
 
 private:
-	std::vector<MeshGeometry> mMeshGeometry;
+	std::vector<MeshGeometry> m_meshGeometry;
 };
