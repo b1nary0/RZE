@@ -487,3 +487,65 @@ workspace "RZE"
 			SourceDir .. "**.cpp"
 		}
 	 }
+
+	 --
+	--
+	-- MeshEditor
+	--
+	--
+	project "MeshEditor"
+	local ProjectDir = RootDir .. "MeshEditor/"
+	local SourceDir = ProjectDir .. SourceFolder
+
+	filter {}
+	
+	flags { "FatalCompileWarnings" }
+	disablewarnings { "4267" }
+	
+	kind "ConsoleApp"
+	language "C++"
+	cppdialect "C++17"
+	targetdir (LibDir)
+	targetname "MeshEditor"
+
+	dependson { "Engine", "Rendering", "Utils"}
+
+	files
+	{
+		SourceDir .. "**.h",
+		SourceDir .. "**.hpp",
+		SourceDir .. "**.c",
+		SourceDir .. "**.cpp"
+	}
+
+	includedirs
+	{
+		IncludeDir,
+		SourceDir,
+		RootDir .. "Engine/Src/",
+		RootDir .. "Utils/Src/",
+		RootDir .. "Modules/Rendering/Src/"
+	}
+
+	libdirs
+	{
+		LibDir,
+		ThirdPartyLibDir,
+	}
+	links
+	{
+		"RZE_Engine",
+		"RZE_Utils",
+		"Rendering"
+	}
+
+	 vpaths
+	 {
+		["Source Files/*"] =
+		{
+			SourceDir .. "**.h",
+			SourceDir .. "**.hpp",
+			SourceDir .. "**.c",
+			SourceDir .. "**.cpp"
+		}
+	 }

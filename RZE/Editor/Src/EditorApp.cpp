@@ -55,7 +55,7 @@ namespace Editor
 	{
 		RZE_Application::Initialize();
 
-		const bool isWithEditor = true;
+		constexpr bool isWithEditor = true;
 		RZE().GetRenderEngine().AddRenderStage<ImGuiRenderStage>(isWithEditor);
 
 		m_imguiConfigFilepath = Filepath("Config/imgui.ini");
@@ -105,9 +105,9 @@ namespace Editor
 	{
 		OPTICK_EVENT();
 
-		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking;
-		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-		window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+		ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDocking;
+		windowFlags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+		windowFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
 		Vector2D windowDims = GetWindow()->GetDimensions();
 
@@ -118,7 +118,7 @@ namespace Editor
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
 		bool show = true;
-		ImGui::Begin("DockSpace Demo", &show, window_flags);
+		ImGui::Begin("DockSpace Demo", &show, windowFlags);
 		ImGui::PopStyleVar(1);
 		{
 			ImGuiID dockspace_id = ImGui::GetID("MyDockspace");
@@ -358,6 +358,18 @@ namespace Editor
 					ImGui::MenuItem("Resource Monitor", "", &m_resourceMonitor.IsEnabled);
 
 					ImGui::EndMenu();
+				}
+
+				if (ImGui::MenuItem("MeshEditor"))
+				{
+					Threading::Job::Task meshEditorTask([this]()
+						{
+							static Filepath meshEditorPath("_Build\\Debug\\x64\\MeshEditor.exe");
+							
+							FILE* pipe = nullptr;
+							pipe = _popen(meshEditorPath.GetAbsolutePath().c_str(), "rt");
+						});
+					Threading::JobScheduler::Get().PushJob(meshEditorTask);
 				}
 
 				ImGui::EndMenu();
