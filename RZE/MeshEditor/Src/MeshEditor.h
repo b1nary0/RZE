@@ -2,8 +2,12 @@
 
 #include <EngineApp.h>
 
+#include <Game/World/GameObject/GameObject.h>
+
 namespace MeshEditor
 {
+	class MeshEditorCameraComponent;
+
 	class MeshEditorApp : public RZE_Application
 	{
 	public:
@@ -20,5 +24,8 @@ namespace MeshEditor
 
 	protected:
 		void CreateRenderTarget(const Vector2D& dimensions) override;
+
+	private:
+		GameObjectPtr m_editorCamera;
 	};
 }

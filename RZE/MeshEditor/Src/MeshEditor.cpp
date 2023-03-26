@@ -1,7 +1,11 @@
 #include <MeshEditor.h>
 
 #include <Game/World/GameObject/GameObject.h>
+#include <Game/World/GameObjectComponents/CameraComponent.h>
 #include <Game/World/GameObjectComponents/RenderComponent.h>
+#include <Game/World/GameObjectComponents/TransformComponent.h>
+
+#include <Game/World/GameObjectComponents/MeshEditorCameraComponent.h>
 
 #include <Graphics/RenderEngine.h>
 #include <Graphics/RenderStages/ImGuiRenderStage.h>
@@ -16,15 +20,16 @@
 
 namespace MeshEditor
 {
+	static const Vector2D k_arbitraryViewDims = Vector2D(1024, 768);
+
 	void MeshEditorApp::Initialize()
 	{
 		RZE_Application::Initialize();
 
 		constexpr bool isWithEditor = true;
 		RZE().GetRenderEngine().AddRenderStage<ImGuiRenderStage>(isWithEditor);
-
-		const Vector2D& windowDims = GetWindow()->GetDimensions();
-		CreateRenderTarget(windowDims);
+		
+		CreateRenderTarget(k_arbitraryViewDims);
 		RZE().GetRenderEngine().SetRenderTarget(m_renderTarget.get());
 	}
 
@@ -43,6 +48,19 @@ namespace MeshEditor
 
 		ResourceHandle assetResource = RZE().GetResourceHandler().LoadResource<StaticMeshResource>(Filepath("ProjectData/Mesh/" + assetStr));
 		renderComponent->SetMeshResource(assetResource);
+		
+		{
+			m_editorCamera = RZE().GetActiveScene().AddGameObject("EditorCam");
+
+			GameObjectComponentPtr<MeshEditorCameraComponent> editorCam = m_editorCamera->AddComponent<MeshEditorCameraComponent>();
+			editorCam->SetAsActiveCamera(true);
+			editorCam->SetAspectRatio(k_arbitraryViewDims.X() / k_arbitraryViewDims.Y());
+
+			GameObjectComponentPtr<TransformComponent> transformComponent = m_editorCamera->GetComponent<TransformComponent>();
+			transformComponent->SetPosition(Vector3D(0.0f, 0.0f, 10.0f));
+		}
+
+		RZE().GetRenderEngine().SetViewportSize(k_arbitraryViewDims);
 	}
 
 	void MeshEditorApp::Update()
@@ -71,10 +89,10 @@ namespace MeshEditor
 		};
 
 		// #TODO::Josh
-		// don't use windowdims
-		float uvbx = clamp(0.0f, 1.0f, windowDims.X() / pRTT->GetWidth());
-		float uvby = clamp(0.0f, 1.0f, windowDims.Y() / pRTT->GetHeight());
-		ImGui::Image(texture.GetTextureData(), ImVec2(windowDims.X(), windowDims.Y()), ImVec2(0.0f, 0.0f), ImVec2(uvbx, uvby));
+		// don't use k_arbitraryViewDims
+		float uvbx = clamp(0.0f, 1.0f, k_arbitraryViewDims.X() / pRTT->GetWidth());
+		float uvby = clamp(0.0f, 1.0f, k_arbitraryViewDims.Y() / pRTT->GetHeight());
+		ImGui::Image(texture.GetTextureData(), ImVec2(k_arbitraryViewDims.X(), k_arbitraryViewDims.Y()), ImVec2(0.0f, 0.0f), ImVec2(uvbx, uvby));
 		ImGui::End();
 	}
 
