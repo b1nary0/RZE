@@ -1,12 +1,18 @@
 #include <MeshEditor.h>
 
+#include <Game/World/GameObject/GameObject.h>
+#include <Game/World/GameObjectComponents/RenderComponent.h>
+
 #include <Graphics/RenderEngine.h>
+#include <Graphics/RenderStages/ImGuiRenderStage.h>
 
 #include <Rendering/Graphics/RenderTarget.h>
 
+#include <Utils/Platform/CmdLine.h>
+
 #include <imGUI/imgui.h>
 
-#include <Graphics/RenderStages/ImGuiRenderStage.h>
+#include "Game/StaticMeshResource.h"
 
 namespace MeshEditor
 {
@@ -26,7 +32,17 @@ namespace MeshEditor
 	{
 		RZE_Application::Start();
 
+		std::string_view asset;
+		AssertExpr(CmdLine::Arguments::Get("-asset", asset));
+
 		RZE().GetActiveScene().Deserialize(Filepath("Assets/Scenes/Default.scene"));
+
+		std::string assetStr = std::string(asset);
+		GameObjectPtr assetObject = RZE().GetActiveScene().AddGameObject(assetStr);
+		GameObjectComponentPtr<RenderComponent> renderComponent = assetObject->AddComponent<RenderComponent>();
+
+		ResourceHandle assetResource = RZE().GetResourceHandler().LoadResource<StaticMeshResource>(Filepath("ProjectData/Mesh/" + assetStr));
+		renderComponent->SetMeshResource(assetResource);
 	}
 
 	void MeshEditorApp::Update()
@@ -43,6 +59,22 @@ namespace MeshEditor
 		bool show = true;
 		ImGui::Begin("MeshEditor", &show, windowFlags);
 		ImGui::Text("This is MeshEditor");
+		Rendering::RenderTargetTexture* const pRTT = RZE().GetApplication().GetRTT();
+		Rendering::TextureBuffer2DHandle texture = pRTT->GetTargetPlatformObject();
+
+		auto clamp = [](float a, float b, float val)
+		{
+			if (val > b) val = b;
+			else if (val < a) val = a;
+
+			return val;
+		};
+
+		// #TODO::Josh
+		// don't use windowdims
+		float uvbx = clamp(0.0f, 1.0f, windowDims.X() / pRTT->GetWidth());
+		float uvby = clamp(0.0f, 1.0f, windowDims.Y() / pRTT->GetHeight());
+		ImGui::Image(texture.GetTextureData(), ImVec2(windowDims.X(), windowDims.Y()), ImVec2(0.0f, 0.0f), ImVec2(uvbx, uvby));
 		ImGui::End();
 	}
 
@@ -53,7 +85,7 @@ namespace MeshEditor
 
 	void MeshEditorApp::ParseArguments(char** arguments, int count)
 	{
-		RZE_Application::ParseArguments(arguments, count);
+		CmdLine::Arguments::Initialize(arguments, count);
 	}
 
 	void MeshEditorApp::RegisterInputEvents(InputHandler& inputHandler)

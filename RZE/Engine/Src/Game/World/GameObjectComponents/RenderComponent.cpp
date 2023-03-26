@@ -37,6 +37,11 @@ namespace
 void RenderComponent::SetMeshResource(const ResourceHandle& resource)
 {
 	m_resource = resource;
+	// #TODO::Josh
+	// this is just hacky hack for MeshEditor proof of concept. needs thought.
+	// basically there is code during the addtoscene flow that tries to use the resource as soon as the component is created
+	// which doesnt work when we want to add the component then give it it's resource programatically
+	CreateRenderObject();
 }
 
 void RenderComponent::CreateRenderObject()
@@ -64,7 +69,10 @@ void RenderComponent::CreateRenderObject()
 
 void RenderComponent::OnAddToScene()
 {
-	CreateRenderObject();
+	if (m_resource.IsValid())
+	{
+		CreateRenderObject();
+	}
 }
 
 void RenderComponent::OnRemoveFromScene()
