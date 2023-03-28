@@ -62,7 +62,9 @@ namespace MeshEditor
 			editorCam->SetAspectRatio(k_arbitraryViewDims.X() / k_arbitraryViewDims.Y());
 
 			GameObjectComponentPtr<TransformComponent> transformComponent = m_editorCamera->GetComponent<TransformComponent>();
-			transformComponent->SetPosition(Vector3D(0.0f, 0.0f, 10.0f));
+			transformComponent->SetPosition(Vector3D(0.0f, 0.0f, -10.0f));
+
+			editorCam->SetForward((Vector3D::ZERO - transformComponent->GetPosition()).Normalized());
 		}
 
 		RZE().GetRenderEngine().SetViewportSize(k_arbitraryViewDims);
