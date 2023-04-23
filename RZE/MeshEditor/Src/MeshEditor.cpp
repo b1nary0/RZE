@@ -38,7 +38,8 @@ namespace MeshEditor
 		RZE_Application::Start();
 
 		std::string_view asset;
-		AssertExpr(CmdLine::Arguments::Get("-asset", asset));
+		CmdLine::Arguments::Get("-asset", asset);
+		AssertMsg(asset.empty(), "There has been no -asset command passed to MeshEditor");
 
 		RZE().GetActiveScene().Deserialize(Filepath("Assets/Scenes/Default.scene"));
 
