@@ -121,9 +121,9 @@ namespace Editor
 							if (ImGui::BeginPopupContextItem("Rename"))
 							{
 								char name[k_maxGameObjectNameSize];
-								memcpy(name, GetSelectedGameObject()->GetName().c_str(), k_maxGameObjectNameSize);
-								if (ImGui::InputText("##gameObject_rename", name, k_maxGameObjectNameSize, ImGuiInputTextFlags_EnterReturnsTrue))
-								{
+                                memcpy( name, GetSelectedGameObject()->GetName().c_str(), k_maxGameObjectNameSize );
+                                if ( ImGui::InputText( "##gameObject_rename", name, k_maxGameObjectNameSize, ImGuiInputTextFlags_EnterReturnsTrue ) )
+                                {
 									GetSelectedGameObject()->SetName(name);
 								}
 								ImGui::EndPopup();
@@ -177,37 +177,30 @@ namespace Editor
 					const EditorComponentCache::ComponentInfoMap& componentData = EditorComponentCache::GetAllComponentsInfo();
 
 					for (auto& component : componentList)
-                    {
-						if ( component )
-						{
-							m_components.push_back( component );
-						}
-						else
-						{
-							assert( 0 );
-						}
+					{
+						m_components.push_back( component );
 					}
 
-                    if ( m_components.size() > 1 )
-                    {
-                        std::sort( m_components.begin(), m_components.end(), [&componentData]( const GameObjectComponentBase* a, const GameObjectComponentBase* b ) {
-							int32_t first = 0x0100;
-							int32_t second = 0x0100;
-                            bool foundFirst = componentData.find( a->m_id ) != componentData.end();
-							if ( foundFirst )
-							{
-								first = componentData.at( a->m_id ).Order;
-							}
-								 
-                            bool foundSecond = componentData.find( b->m_id ) != componentData.end();
-                            if ( foundSecond )
-                            {
-                                second = componentData.at( b->m_id ).Order;
-                            }
-
-                            return first <= second;
-                            } );
-                    }
+					if ( m_components.size() > 1 )
+					{
+ 						std::sort( m_components.begin(), m_components.end(), [&componentData](const GameObjectComponentBase* a, const GameObjectComponentBase* b) {
+ 							int32_t first = EditorComponentCache::kDefaultSortingOrder;
+							int32_t second = EditorComponentCache::kDefaultSortingOrder;
+ 							bool foundFirst = componentData.find(a->m_id) != componentData.end();
+ 							if (foundFirst)
+ 							{
+								first = componentData.at(a->m_id).Order;
+ 							}
+							
+ 							bool foundSecond = componentData.find(b->m_id) != componentData.end();
+ 							if (foundSecond)
+ 							{
+								second = componentData.at(b->m_id).Order;
+ 							}
+							
+ 							return first < second;
+ 						} );
+					}
 
 					m_selectedItem->m_isDirty = false;
 				}
