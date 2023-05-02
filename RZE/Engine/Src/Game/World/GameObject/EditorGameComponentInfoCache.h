@@ -24,7 +24,7 @@ namespace EditorComponentCache
 {
 	struct EditorComponentInfo
 	{
-		uint16_t Order = 0x0010;
+		uint32_t Order = 0x0100;
 	};
 	typedef std::unordered_map<GameObjectComponentID, EditorComponentInfo> ComponentInfoMap;
 

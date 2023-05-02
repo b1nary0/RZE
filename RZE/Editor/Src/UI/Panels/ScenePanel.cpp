@@ -171,33 +171,56 @@ namespace Editor
 				// Cache the component pointers if we've modified our components or we've changed the focused GameObject.
 				if (m_selectedItem->m_isDirty || componentList.size() != m_components.size())
 				{
-					m_components.reserve(sizeof(GameObjectComponentBase*) * componentList.size());
+					m_components.reserve(componentList.size());
 					m_components.clear();
 
 					const EditorComponentCache::ComponentInfoMap& componentData = EditorComponentCache::GetAllComponentsInfo();
 
 					for (auto& component : componentList)
-					{
-						m_components.push_back(component);
+                    {
+						if ( component )
+						{
+							m_components.push_back( component );
+						}
+						else
+						{
+							assert( 0 );
+						}
 					}
 
-					std::sort(m_components.begin(), m_components.end(), [&componentData](const GameObjectComponentBase* a, const GameObjectComponentBase* b) {
-						if (componentData.find(a->m_id) != componentData.end())
-						{
-							return componentData.at(a->m_id).Order < componentData.at(b->m_id).Order;
-						}
-						return false;
-					} );
+                    if ( m_components.size() > 1 )
+                    {
+                        std::sort( m_components.begin(), m_components.end(), [&componentData]( const GameObjectComponentBase* a, const GameObjectComponentBase* b ) {
+							int32_t first = 0x0100;
+							int32_t second = 0x0100;
+                            bool foundFirst = componentData.find( a->m_id ) != componentData.end();
+							if ( foundFirst )
+							{
+								first = componentData.at( a->m_id ).Order;
+							}
+								 
+                            bool foundSecond = componentData.find( b->m_id ) != componentData.end();
+                            if ( foundSecond )
+                            {
+                                second = componentData.at( b->m_id ).Order;
+                            }
+
+                            return first <= second;
+                            } );
+                    }
 
 					m_selectedItem->m_isDirty = false;
 				}
 
 				for (auto& component : m_components)
 				{
-					ImGui::TextColored(ImVec4(0.65f, 0.65f, 1.0f, 1.0f), "[ %s ]", component->GetName().c_str());
-					ImGui::Separator();
-					component->OnEditorInspect();
-					ImGui::Separator();
+					if ( component )
+					{
+						ImGui::TextColored( ImVec4( 0.65f, 0.65f, 1.0f, 1.0f ), "[ %s ]", component->GetName().c_str() );
+						ImGui::Separator();
+						component->OnEditorInspect();
+						ImGui::Separator();
+					}
 				}
 			}
 		}
