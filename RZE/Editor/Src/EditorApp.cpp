@@ -22,6 +22,9 @@
 #include <Optick/optick.h>
 
 #include <stdio.h>
+#include "Game/World/GameObject/EditorGameComponentInfoCache.h"
+#include "Game/World/GameObjectComponents/CameraComponent.h"
+#include "Game/World/GameObjectComponents/RenderComponent.h"
 
 namespace
 {
@@ -45,6 +48,11 @@ namespace Editor
 	EditorApp::EditorApp()
 	{
 		REGISTER_GAMEOBJECTCOMPONENT(EditorCameraComponent);
+
+        REGISTER_EDITORCOMPONENTCACHE_ORDERDATA( TransformComponent, 0x0010 );
+        REGISTER_EDITORCOMPONENTCACHE_ORDERDATA( EditorCameraComponent, 0x0300 );
+        REGISTER_EDITORCOMPONENTCACHE_ORDERDATA( CameraComponent, 0x0030 );
+        REGISTER_EDITORCOMPONENTCACHE_ORDERDATA( RenderComponent, 0x000F );
 	}
 
 	EditorApp::~EditorApp()
