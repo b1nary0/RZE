@@ -26,10 +26,9 @@ namespace EditorComponentCache
 	{
 		uint16_t Order = 0x0010;
 	};
-	typedef std::unordered_map<GameObjectComponentID, EditorComponentInfo> ComponentOrderMap;
+	typedef std::unordered_map<GameObjectComponentID, EditorComponentInfo> ComponentInfoMap;
 
 	void RegisterComponentType(GameObjectComponentID id, uint32_t componentOrder);
 
-	// #TODO This should only really be used by load code.
-	const ComponentOrderMap& GetAllComponentReflectData();
+	const ComponentInfoMap& GetAllComponentsInfo();
 }

@@ -3,14 +3,14 @@
 
 namespace EditorComponentCache
 {
-	ComponentOrderMap s_componentTypeRegistry;
+	ComponentInfoMap s_componentTypeRegistry;
 
 	void RegisterComponentType(GameObjectComponentID id, uint32_t componentOrder )
 	{
 		s_componentTypeRegistry[id].Order = componentOrder;
 	}
 
-	const ComponentOrderMap& GetAllComponentReflectData()
+	const ComponentInfoMap& GetAllComponentsInfo()
 	{
 		return s_componentTypeRegistry;
 	}

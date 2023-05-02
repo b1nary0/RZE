@@ -169,30 +169,30 @@ namespace Editor
 				const GameObject::ComponentList& componentList = GetSelectedGameObject()->GetComponents();
 
 				// Cache the component pointers if we've modified our components or we've changed the focused GameObject.
-				if ( m_selectedItem->m_isDirty || componentList.size() != m_components.size() )
+				if (m_selectedItem->m_isDirty || componentList.size() != m_components.size())
 				{
-					m_components.reserve( sizeof( GameObjectComponentBase* ) * componentList.size() );
+					m_components.reserve(sizeof(GameObjectComponentBase*) * componentList.size());
 					m_components.clear();
 
-					const EditorComponentCache::ComponentOrderMap& componentData = EditorComponentCache::GetAllComponentReflectData();
+					const EditorComponentCache::ComponentInfoMap& componentData = EditorComponentCache::GetAllComponentsInfo();
 
-					for ( auto& component : componentList )
+					for (auto& component : componentList)
 					{
-						m_components.push_back( component );
+						m_components.push_back(component);
 					}
 
-					std::sort( m_components.begin(), m_components.end(), [&componentData]( const GameObjectComponentBase* a, const GameObjectComponentBase* b ) {
-						if ( componentData.find( a->m_id ) != componentData.end() )
+					std::sort(m_components.begin(), m_components.end(), [&componentData](const GameObjectComponentBase* a, const GameObjectComponentBase* b) {
+						if (componentData.find(a->m_id) != componentData.end())
 						{
-							return componentData.at( a->m_id ).Order < componentData.at( b->m_id ).Order;
+							return componentData.at(a->m_id).Order < componentData.at(b->m_id).Order;
 						}
 						return false;
-                    } );
+					} );
 
-                    m_selectedItem->m_isDirty = false;
+					m_selectedItem->m_isDirty = false;
 				}
 
-				for (auto& component : m_components )
+				for (auto& component : m_components)
 				{
 					ImGui::TextColored(ImVec4(0.65f, 0.65f, 1.0f, 1.0f), "[ %s ]", component->GetName().c_str());
 					ImGui::Separator();
