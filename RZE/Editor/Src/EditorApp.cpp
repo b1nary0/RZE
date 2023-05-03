@@ -50,14 +50,14 @@ namespace Editor
 		REGISTER_GAMEOBJECTCOMPONENT(EditorCameraComponent);
 
 		// 0x0100 is the default, so we put the transform component decently high up.
-        REGISTER_EDITORCOMPONENTCACHE_ORDERDATA( TransformComponent, 0x00F0 );
+		REGISTER_EDITORCOMPONENTCACHE_ORDERDATA( TransformComponent, 0x00F0 );
 
 		// This would be first if uncommented.
-        //REGISTER_EDITORCOMPONENTCACHE_ORDERDATA( RenderComponent, 0x000F );
+		//REGISTER_EDITORCOMPONENTCACHE_ORDERDATA( RenderComponent, 0x000F );
 
 		// Other examples...
-        //REGISTER_EDITORCOMPONENTCACHE_ORDERDATA( EditorCameraComponent, 0x0300 );
-        //REGISTER_EDITORCOMPONENTCACHE_ORDERDATA( CameraComponent, 0x000E );
+		//REGISTER_EDITORCOMPONENTCACHE_ORDERDATA( EditorCameraComponent, 0x0300 );
+		//REGISTER_EDITORCOMPONENTCACHE_ORDERDATA( CameraComponent, 0x000E );
 	}
 
 	EditorApp::~EditorApp()

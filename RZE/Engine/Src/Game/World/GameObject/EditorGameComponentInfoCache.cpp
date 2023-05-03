@@ -5,7 +5,7 @@ namespace EditorComponentCache
 {
 	ComponentInfoMap s_componentTypeRegistry;
 
-	void RegisterComponentType(GameObjectComponentID id, uint32_t componentOrder )
+	void RegisterComponentOrder(GameObjectComponentID id, uint32_t componentOrder )
 	{
 		s_componentTypeRegistry[id].Order = componentOrder;
 	}
@@ -14,5 +14,4 @@ namespace EditorComponentCache
 	{
 		return s_componentTypeRegistry;
 	}
-
 }

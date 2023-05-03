@@ -121,9 +121,9 @@ namespace Editor
 							if (ImGui::BeginPopupContextItem("Rename"))
 							{
 								char name[k_maxGameObjectNameSize];
-                                memcpy( name, GetSelectedGameObject()->GetName().c_str(), k_maxGameObjectNameSize );
-                                if ( ImGui::InputText( "##gameObject_rename", name, k_maxGameObjectNameSize, ImGuiInputTextFlags_EnterReturnsTrue ) )
-                                {
+								memcpy(name, GetSelectedGameObject()->GetName().c_str(), k_maxGameObjectNameSize);
+								if (ImGui::InputText("##gameObject_rename", name, k_maxGameObjectNameSize, ImGuiInputTextFlags_EnterReturnsTrue))
+								{
 									GetSelectedGameObject()->SetName(name);
 								}
 								ImGui::EndPopup();
@@ -172,18 +172,13 @@ namespace Editor
 				if (m_selectedItem->m_isDirty || componentList.size() != m_components.size())
 				{
 					m_components.reserve(componentList.size());
-					m_components.clear();
+					m_components.assign(componentList.begin(), componentList.end());
 
-					const EditorComponentCache::ComponentInfoMap& componentData = EditorComponentCache::GetAllComponentsInfo();
-
-					for (auto& component : componentList)
+					if (m_components.size() > 1)
 					{
-						m_components.push_back( component );
-					}
+						const EditorComponentCache::ComponentInfoMap& componentData = EditorComponentCache::GetAllComponentsInfo();
 
-					if ( m_components.size() > 1 )
-					{
- 						std::sort( m_components.begin(), m_components.end(), [&componentData](const GameObjectComponentBase* a, const GameObjectComponentBase* b) {
+ 						std::sort(m_components.begin(), m_components.end(), [&componentData](const GameObjectComponentBase* a, const GameObjectComponentBase* b) {
  							int32_t first = EditorComponentCache::kDefaultSortingOrder;
 							int32_t second = EditorComponentCache::kDefaultSortingOrder;
  							bool foundFirst = componentData.find(a->m_id) != componentData.end();
@@ -199,7 +194,7 @@ namespace Editor
  							}
 							
  							return first < second;
- 						} );
+ 						});
 					}
 
 					m_selectedItem->m_isDirty = false;
@@ -207,13 +202,10 @@ namespace Editor
 
 				for (auto& component : m_components)
 				{
-					if ( component )
-					{
-						ImGui::TextColored( ImVec4( 0.65f, 0.65f, 1.0f, 1.0f ), "[ %s ]", component->GetName().c_str() );
-						ImGui::Separator();
-						component->OnEditorInspect();
-						ImGui::Separator();
-					}
+					ImGui::TextColored(ImVec4(0.65f, 0.65f, 1.0f, 1.0f), "[ %s ]", component->GetName().c_str());
+					ImGui::Separator();
+					component->OnEditorInspect();
+					ImGui::Separator();
 				}
 			}
 		}

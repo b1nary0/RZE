@@ -5,7 +5,7 @@
 #define REGISTER_EDITORCOMPONENTCACHE_ORDERDATA(ComponentType, ComponentOrder)\
 {\
 	GameObjectComponentTypeID<GameObjectComponentBase>::GetComponentTypeID<ComponentType>();	\
-	EditorComponentCache::RegisterComponentType(ComponentType::GetID(), ComponentOrder);\
+	EditorComponentCache::RegisterComponentOrder(ComponentType::GetID(), ComponentOrder);\
 }
 
 namespace EditorComponentCache
@@ -17,7 +17,7 @@ namespace EditorComponentCache
 	};
 	typedef std::unordered_map<GameObjectComponentID, EditorComponentInfo> ComponentInfoMap;
 
-	void RegisterComponentType(GameObjectComponentID id, uint32_t componentOrder);
+	void RegisterComponentOrder(GameObjectComponentID id, uint32_t componentOrder);
 
 	const ComponentInfoMap& GetAllComponentsInfo();
 }
