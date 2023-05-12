@@ -22,6 +22,11 @@ Vector4D::Vector4D(const int x, const int y, const int z, const int w)
 {
 }
 
+Vector4D::Vector4D(const Vector3D& vec3D, float w)
+	: mVec(vec3D.X(), vec3D.Y(), vec3D.Z(), w)
+{
+}
+
 Vector4D::Vector4D(const float val)
 	: mVec(val, val, val, 1.0f)
 {

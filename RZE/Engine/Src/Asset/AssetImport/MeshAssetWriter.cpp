@@ -6,6 +6,10 @@
 #include <Utils/Platform/File.h>
 
 #include <filesystem>
+#include <GLM/gtc/matrix_transform.hpp>
+#include <GLM/gtx/matrix_decompose.hpp>
+
+#include "Utils/Math/Matrix4x4.h"
 
 namespace
 {
@@ -49,11 +53,34 @@ void MeshAssetWriter::Process()
 		float yMean = yExtremes.second->Position.Y() / 2;
 		float zMean = zExtremes.second->Position.Z() / 2;
 
+
 		m_centerPos = Vector3D(xMean, yMean, zMean);
 
 		//for (MeshVertex& vertex : meshData.VertexDataArray)
 		//{
-		//	vertex.Position = vertex.Position - m_centerPos;
+		//	//Matrix4x4 matrix;
+		//	//matrix.Translate(vertex.Position);
+		//	//matrix = (matrix.Inverse() * Vector4D(m_centerPos, 1.0f)) * matrix;
+
+		//	glm::mat4 matrix;
+		//	glm::vec3 pos = vertex.Position.GetInternalVec();
+		//	matrix = glm::translate(matrix, pos);
+
+		//	glm::mat4 centerMatrix;
+		//	glm::vec3 centerPos = m_centerPos.GetInternalVec();
+		//	centerMatrix = glm::translate(centerMatrix, centerPos);
+
+		//	glm::vec4 pos4 = glm::vec4(pos, 1.0f);
+		//	matrix = matrix * centerMatrix * glm::inverse(matrix);
+		//	
+		//	glm::vec3 scale;
+		//	glm::quat rotation;
+		//	glm::vec3 translation;
+		//	glm::vec3 skew;
+		//	glm::vec4 perspective;
+		//	glm::decompose(matrix, scale, rotation, translation, skew, perspective);
+
+		//	vertex.Position = Vector3D(translation.x, translation.y, translation.z);
 		//}
 	}
 }

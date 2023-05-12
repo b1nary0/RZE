@@ -13,6 +13,7 @@ public:
 	Vector4D(const float val);
 	Vector4D(const float x, const float y, const float z, const float w);
 	Vector4D(const int x, const int y, const int z, const int w);
+	Vector4D(const Vector3D& vec3D, float w);
 
 	static Vector4D ZERO;
 
