@@ -56,17 +56,20 @@
                     ]
                 },
                 "DirectionalLightComponent": {
+                    "LightStrength": 0.25,
                     "LightColour": [
                         1.0,
                         1.0,
                         1.0
-                    ],
-                    "LightStrength": 0.25
+                    ]
                 }
             }
         },
         "Hangar": {
             "components": {
+                "RenderComponent": {
+                    "ResourcePath": "ProjectData\\Mesh\\Hangar.meshasset"
+                },
                 "TransformComponent": {
                     "Position": [
                         0.0,
@@ -83,14 +86,14 @@
                         0.0,
                         0.0
                     ]
-                },
-                "RenderComponent": {
-                    "ResourcePath": "ProjectData/Mesh/Hangar.meshasset"
                 }
             }
         },
         "Spaceship": {
             "components": {
+                "RenderComponent": {
+                    "ResourcePath": "ProjectData\\Mesh\\spaceship.meshasset"
+                },
                 "TransformComponent": {
                     "Position": [
                         6.860000133514404,
@@ -107,9 +110,6 @@
                         0.0,
                         0.0
                     ]
-                },
-                "RenderComponent": {
-                    "ResourcePath": "ProjectData/Mesh/spaceship.meshasset"
                 }
             }
         }

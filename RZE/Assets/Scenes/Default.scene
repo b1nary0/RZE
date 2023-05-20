@@ -1,45 +1,69 @@
 {
-  "gameobjects":
-  {
-    "Camera":
-    {
-        "components":
-        {
-            "TransformComponent":
-            {
-                "Position": [0, 5, -10],
-                "Scale": [1, 1, 1],
-                "Rotation": [0, 0, 0]
-            },
-            "CameraComponent":
-            {
-                "FOV": 65,
-                "NearCull": 0.01,
-                "FarCull": 1000,
-                "Forward": [0, 0, 1.0],
-                "UpDir":[0.0, 1.0, 0.0]
-            }
-        }
-    },
-		"DirectionalLight":
-    {
-      "components":
-      {
-        "TransformComponent":
-        {
-          "Position":[0, 10, -15],
-          "Scale": [1, 1, 1],
-          "Rotation": [0, 0, 0]
-        },
-                        "DirectionalLightComponent": {
-                    "LightColour": [
+    "gameobjects": {
+        "Camera": {
+            "components": {
+                "CameraComponent": {
+                    "FOV": 65.0,
+                    "NearCull": 0.009999999776482582,
+                    "FarCull": 1000.0,
+                    "Forward": [
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "UpDir": [
+                        0.0,
+                        1.0,
+                        0.0
+                    ]
+                },
+                "TransformComponent": {
+                    "Position": [
+                        0.0,
+                        5.0,
+                        -10.0
+                    ],
+                    "Scale": [
                         1.0,
                         1.0,
                         1.0
                     ],
-                    "LightStrength": 0.25
+                    "Rotation": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
                 }
-      }
+            }
+        },
+        "DirectionalLight": {
+            "components": {
+                "TransformComponent": {
+                    "Position": [
+                        0.0,
+                        10.0,
+                        -15.0
+                    ],
+                    "Scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "Rotation": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "DirectionalLightComponent": {
+                    "LightStrength": 0.25,
+                    "LightColour": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                }
+            }
+        }
     }
-  }
 }

@@ -38,13 +38,8 @@
         },
         "Directional Light": {
             "components": {
-                "DirectionalLightComponent": {
-                    "LightColour": [
-                        1.0,
-                        1.0,
-                        1.0
-                    ],
-                    "LightStrength": 0.25
+                "RenderComponent": {
+                    "ResourcePath": "ProjectData\\Mesh\\Cube.meshasset"
                 },
                 "TransformComponent": {
                     "Position": [
@@ -63,15 +58,20 @@
                         0.0
                     ]
                 },
-				"RenderComponent": {
-					"ResourcePath": "ProjectData/Mesh/Cube.meshasset"
-				}
+                "DirectionalLightComponent": {
+                    "LightStrength": 0.25,
+                    "LightColour": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                }
             }
         },
         "Floor": {
             "components": {
                 "RenderComponent": {
-                    "ResourcePath": "ProjectData/Mesh/Quad.meshasset"
+                    "ResourcePath": "ProjectData\\Mesh\\Quad.meshasset"
                 },
                 "TransformComponent": {
                     "Position": [
@@ -95,7 +95,7 @@
         "Bomber": {
             "components": {
                 "RenderComponent": {
-                    "ResourcePath": "ProjectData/Mesh/FW190.meshasset"
+                    "ResourcePath": "ProjectData\\Mesh\\FW190.meshasset"
                 },
                 "TransformComponent": {
                     "Position": [
@@ -119,7 +119,7 @@
         "NeckMechWalker": {
             "components": {
                 "RenderComponent": {
-                    "ResourcePath": "ProjectData/Mesh/NeckMechWalker.meshasset"
+                    "ResourcePath": "ProjectData\\Mesh\\NeckMechWalker.meshasset"
                 },
                 "TransformComponent": {
                     "Position": [
@@ -143,7 +143,7 @@
         "Nanosuit": {
             "components": {
                 "RenderComponent": {
-                    "ResourcePath": "ProjectData/Mesh/Nanosuit.meshasset"
+                    "ResourcePath": "ProjectData\\Mesh\\Nanosuit.meshasset"
                 },
                 "TransformComponent": {
                     "Position": [
@@ -167,7 +167,7 @@
         "Nyra": {
             "components": {
                 "RenderComponent": {
-                    "ResourcePath": "ProjectData/Mesh/Nyra.meshasset"
+                    "ResourcePath": "ProjectData\\Mesh\\Nyra.meshasset"
                 },
                 "TransformComponent": {
                     "Position": [
@@ -191,7 +191,7 @@
         "Panzer": {
             "components": {
                 "RenderComponent": {
-                    "ResourcePath": "ProjectData/Mesh/Panzer.meshasset"
+                    "ResourcePath": "ProjectData\\Mesh\\Panzer.meshasset"
                 },
                 "TransformComponent": {
                     "Position": [

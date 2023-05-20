@@ -2,6 +2,21 @@
     "gameobjects": {
         "Camera": {
             "components": {
+                "CameraComponent": {
+                    "FOV": 50.0,
+                    "NearCull": 0.10000000149011612,
+                    "FarCull": 1000.0,
+                    "Forward": [
+                        -0.8338330984115601,
+                        -0.5328844785690308,
+                        -0.14407140016555787
+                    ],
+                    "UpDir": [
+                        0.0,
+                        1.0,
+                        0.0
+                    ]
+                },
                 "TransformComponent": {
                     "Position": [
                         -13.751141548156739,
@@ -16,21 +31,6 @@
                     "Rotation": [
                         0.0,
                         0.0,
-                        0.0
-                    ]
-                },
-                "CameraComponent": {
-                    "FOV": 50.0,
-                    "NearCull": 0.10000000149011612,
-                    "FarCull": 1000.0,
-                    "Forward": [
-                        -0.8338330984115601,
-                        -0.5328844785690308,
-                        -0.14407140016555787
-                    ],
-                    "UpDir": [
-                        0.0,
-                        1.0,
                         0.0
                     ]
                 }
@@ -56,17 +56,20 @@
                     ]
                 },
                 "DirectionalLightComponent": {
+                    "LightStrength": 0.25,
                     "LightColour": [
                         1.0,
                         1.0,
                         1.0
-                    ],
-                    "LightStrength": 0.25
+                    ]
                 }
             }
         },
         "Sponza": {
             "components": {
+                "RenderComponent": {
+                    "ResourcePath": "ProjectData\\Mesh\\sponza.meshasset"
+                },
                 "TransformComponent": {
                     "Position": [
                         0.0,
@@ -74,23 +77,23 @@
                         0.0
                     ],
                     "Scale": [
-                        0.05000000074505806,
-                        0.05000000074505806,
-                        0.05000000074505806
+                        0.06551999598741532,
+                        0.06551999598741532,
+                        0.06551999598741532
                     ],
                     "Rotation": [
                         0.0,
                         0.0,
                         0.0
                     ]
-                },
-                "RenderComponent": {
-                    "ResourcePath": "ProjectData/Mesh/sponza.meshasset"
                 }
             }
         },
         "Nyra": {
             "components": {
+                "RenderComponent": {
+                    "ResourcePath": "ProjectData\\Mesh\\Nyra.meshasset"
+                },
                 "TransformComponent": {
                     "Position": [
                         30.299999237060548,
@@ -107,14 +110,14 @@
                         56.400001525878909,
                         0.0
                     ]
-                },
-                "RenderComponent": {
-                    "ResourcePath": "ProjectData/Mesh/Nyra.meshasset"
                 }
             }
         },
         "Nanosuit": {
             "components": {
+                "RenderComponent": {
+                    "ResourcePath": "ProjectData\\Mesh\\Nanosuit.meshasset"
+                },
                 "TransformComponent": {
                     "Position": [
                         -19.43000030517578,
@@ -131,14 +134,14 @@
                         -81.19999694824219,
                         0.0
                     ]
-                },
-                "RenderComponent": {
-                    "ResourcePath": "ProjectData/Mesh/Nanosuit.meshasset"
                 }
             }
         },
         "NeckMechWalker": {
             "components": {
+                "RenderComponent": {
+                    "ResourcePath": "ProjectData\\Mesh\\NeckMechWalker.meshasset"
+                },
                 "TransformComponent": {
                     "Position": [
                         0.0,
@@ -155,14 +158,14 @@
                         -44.79999923706055,
                         0.0
                     ]
-                },
-                "RenderComponent": {
-                    "ResourcePath": "ProjectData/Mesh/NeckMechWalker.meshasset"
                 }
             }
         },
         "Tank": {
             "components": {
+                "RenderComponent": {
+                    "ResourcePath": "ProjectData\\Mesh\\Panzer.meshasset"
+                },
                 "TransformComponent": {
                     "Position": [
                         -48.150001525878909,
@@ -179,9 +182,6 @@
                         56.5,
                         0.0
                     ]
-                },
-                "RenderComponent": {
-                    "ResourcePath": "ProjectData/Mesh/Panzer.meshasset"
                 }
             }
         }
