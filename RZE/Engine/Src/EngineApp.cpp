@@ -14,6 +14,7 @@
 #include <Rendering/Graphics/RenderTarget.h>
 
 #include <Utils/DebugUtils/Debug.h>
+#include <Utils/Platform/CmdLine.h>
 
 RZE_Application::RZE_Application()
 	: mWindow(nullptr)
@@ -111,4 +112,5 @@ Rendering::RenderTargetTexture* RZE_Application::GetRTT()
 
 void RZE_Application::ParseArguments(char** arguments, int count)
 {
+	CmdLine::Arguments::Initialize(arguments, count);
 }

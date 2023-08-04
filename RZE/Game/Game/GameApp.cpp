@@ -6,6 +6,7 @@
 
 #include <Rendering/Graphics/RenderTarget.h>
 
+#include <Utils/Platform/CmdLine.h>
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Platform/Filepath.h>
 
@@ -29,27 +30,9 @@ void GameApp::ParseArguments(char** arguments, int count)
 {
 	RZE_Application::ParseArguments(arguments, count);
 	
-	for (int argIdx = 0; argIdx < count;)
-	{
-		const char* arg = arguments[argIdx];
-
-		bool argHasValue = false;
-		if (strcmp(arg, "-scene") == 0)
-		{
-			argHasValue = true;
-
-			m_startScene = arguments[argIdx + 1];
-		}
-
-		if (argHasValue)
-		{
-			argIdx += 2;
-		}
-		else
-		{
-			++argIdx;
-		}
-	}
+	std::string_view sceneArg;
+	CmdLine::Arguments::Get("-scene", sceneArg);
+	m_startScene = sceneArg;
 }
 
 void GameApp::Initialize()

@@ -553,6 +553,6 @@ namespace Editor
 
 	void EditorApp::ParseArguments(char** arguments, int count)
 	{
-		CmdLine::Arguments::Initialize(arguments, count);
+		RZE_Application::ParseArguments(arguments, count);
 	}
 }
