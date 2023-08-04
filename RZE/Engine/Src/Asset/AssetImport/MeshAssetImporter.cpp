@@ -12,7 +12,7 @@
 
 namespace
 {
-	constexpr uint16_t k_meshAssetVersion = 0;
+	constexpr uint16_t k_meshImporterVersion = 0;
 }
 
 bool MeshAssetImporter::Import(const Filepath& filePath)
@@ -23,7 +23,7 @@ bool MeshAssetImporter::Import(const Filepath& filePath)
 	byteStream.ReadFromFile(filePath);
 
 	MeshAssetFileHeader* headerData = reinterpret_cast<MeshAssetFileHeader*>(byteStream.PeekBytesAdvance(sizeof(MeshAssetFileHeader)));
-	AssertExpr(headerData->AssetVersion == k_meshAssetVersion);
+	AssertExpr(headerData->AssetVersion == k_meshImporterVersion);
 
 	for (int i = 0; i < headerData->MeshCount; ++i)
 	{
