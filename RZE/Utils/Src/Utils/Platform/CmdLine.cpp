@@ -8,7 +8,6 @@ namespace CmdLine
 	void PartitionString(char** str, int count)
 	{
 		std::vector<std::string_view> argStrings;
-		size_t prevEndPos = 0;
 
 		for (int argIndex = 0; argIndex < count; ++argIndex)
 		{
