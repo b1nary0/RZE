@@ -200,7 +200,8 @@ void GifChatComponent::Load(const Filepath& fp)
 		// this is necessary atm because there is no "Instance" layer of resources - just the immutable
 		// resources themselves from ResourceHandler. Since this hacky meme implementation needs to circumvent that
 		// instead of writing a whole new architecture layer, we can't be deleting memory (as will happen when the resource
-		// releases) which we don't own.
+		// releases) which we don't own. Essentially we can't allow strong ownership of any memory slice of m_gifData
+		// because of this exploitation of the resource system.
 		// #TODO
 		// Make ClassDef and ClassInstance to support mutable resources?
 		U8* textureBuffer = new U8[frameSizeBytes];
