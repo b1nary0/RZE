@@ -49,7 +49,7 @@ namespace Threading
 		// #TODO(Have each thread have a queue and send it to whoever is free at the moment
 		//       instead of one queue because we're losing time to a locked mutex)
 		std::unique_lock<std::mutex> lock(JobMutex, std::defer_lock);
-		if (lock.try_lock() && !mJobQueue.empty())
+		if (!mJobQueue.empty() && lock.try_lock())
 		{
 			Job job = mJobQueue.front();
 			outJob = std::move(job);
