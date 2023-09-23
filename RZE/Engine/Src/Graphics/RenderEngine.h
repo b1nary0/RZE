@@ -165,6 +165,9 @@ public:
 	void SetViewportSize(const Vector2D& size) { m_viewportSize = size; }
 	const Vector2D& GetViewportSize() const { return m_viewportSize; }
 
+	// RenderView()
+	// Renders the current scene to a render target from a specified camera setup. renderTarget will be allocated
+	// if passed nullptr
 	void RenderView(const char* frameName, const RenderCamera& renderCamera, std::unique_ptr<Rendering::RenderTargetTexture>& renderTarget);
 
 private:

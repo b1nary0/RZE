@@ -43,10 +43,6 @@ void GameApp::Initialize()
 
 	RZE().GetRenderEngine().SetRenderTarget(m_renderTarget.get());
 
-	// #TODO #BIGBUG
-	// This function doesn't get called on reload of a scene. Maybe this should be set in the scene itself (the systems, etc)
-	// If we load something that _isnt_ the scene below during runtime, EntitySystem::Initialize isnt called.
-
 	GameScene& activeScene = RZE().GetActiveScene();
 
 	if (m_startScene.empty())
