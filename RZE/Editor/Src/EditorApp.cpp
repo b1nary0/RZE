@@ -62,7 +62,7 @@ namespace Editor
 		ImGui::GetIO().IniFilename = m_imguiConfigFilepath.GetAbsolutePath().c_str();
 
 		GetWindow()->SetTitle("RZEStudio");
-		//GetWindow()->Maximize();
+		GetWindow()->Maximize();
 
 		const Vector2D& windowDims = GetWindow()->GetDimensions();
 		CreateRenderTarget(windowDims);
