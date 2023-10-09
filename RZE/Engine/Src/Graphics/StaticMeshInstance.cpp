@@ -9,9 +9,9 @@ StaticMeshInstance::~StaticMeshInstance()
 {
 }
 
-void StaticMeshInstance::Initialize(const std::vector<MeshGeometry>&& meshGeometry)
+void StaticMeshInstance::Initialize(const std::vector<MeshGeometry>& meshGeometry)
 {
-	m_subMeshes = std::move(meshGeometry);
+	m_subMeshes = meshGeometry;
 }
 
 const std::vector<MeshGeometry>& StaticMeshInstance::GetSubMeshes() const
