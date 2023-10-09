@@ -1,8 +1,11 @@
 #include <Utils/StdAfx.h>
 
 #include <Utils/Conversions.h>
+#include <Utils/Platform/Filepath.h>
 
 #include <Windows.h>
+
+#include <string>
 
 namespace Conversions
 {
@@ -46,6 +49,17 @@ namespace Conversions
 		std::replace(resourceKey.begin(), resourceKey.end(), ' ', '.');
 
 		return resourceKey;
+	}
+
+	std::string StripAssetNameFromFilePath(const Filepath& filePath)
+	{
+		const std::string& assetPath = filePath.GetRelativePath();
+
+		size_t pos = assetPath.find_last_of('\\');
+		std::string assetName = assetPath.substr(pos + 1, assetPath.size());
+		assetName = assetName.substr(0, assetName.find_last_of('.'));
+
+		return assetName;
 	}
 
 }

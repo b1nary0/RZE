@@ -3,6 +3,8 @@
 
 #include <Asset/AssetImport/MeshAssetImporter.h>
 
+#include <Utils/Conversions.h>
+
 StaticMeshResource::StaticMeshResource()
 {
 }
@@ -18,6 +20,10 @@ bool StaticMeshResource::Load(const Filepath& filePath)
 	meshImporter.Import(filePath);
 
 	m_mesh.Initialize(std::move(meshImporter.GetMeshGeometry()));
+
+	std::string meshName = Conversions::StripAssetNameFromFilePath(filePath);
+	m_mesh.SetName(meshName);
+
 	return true;
 }
 

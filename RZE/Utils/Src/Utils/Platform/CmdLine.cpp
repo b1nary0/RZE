@@ -20,6 +20,7 @@ namespace CmdLine
 
 		// #TODO hacky here to check for file being sent in from windows when a file is double clicked...
 		// there must be a better, more standard way to handle this..
+		// #NOTE this is actually broken... if the first argument passed is not -scene then this breaks..?
 		int startIndex = 1;
 		if (argStrings[1][0] != '-')
 		{
