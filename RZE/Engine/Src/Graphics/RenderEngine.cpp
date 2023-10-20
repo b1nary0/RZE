@@ -198,7 +198,7 @@ void RenderEngine::RenderView(const char* frameName, const RenderCamera& renderC
 	const Vector2D prevViewportSize = GetViewportSize();
 	Rendering::RenderTargetTexture* prevRenderTarget = m_renderTarget;
 
-	GetCamera() = renderCamera;
+	GetCamera() = renderCamera; // This bad
 	SetViewportSize(renderCamera.Viewport.Size);
 	SetRenderTarget(renderTarget.get());
 

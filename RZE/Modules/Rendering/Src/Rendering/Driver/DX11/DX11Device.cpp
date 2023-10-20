@@ -63,12 +63,17 @@ namespace Rendering
 		swapChainDesc.Windowed = true;
 		swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 
+		D3D11_CREATE_DEVICE_FLAG deviceType = D3D11_CREATE_DEVICE_SINGLETHREADED;
+#ifdef _DEBUG
+		deviceType = D3D11_CREATE_DEVICE_DEBUG;
+#endif
+
 		// @TODO only create debug device when running _DEBUG
 		hr = D3D11CreateDeviceAndSwapChain(
 			NULL, 
 			D3D_DRIVER_TYPE_HARDWARE, 
 			NULL, 
-			D3D11_CREATE_DEVICE_DEBUG, 
+			deviceType,
 			NULL, 
 			NULL, 
 			D3D11_SDK_VERSION, 
