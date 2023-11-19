@@ -2,6 +2,9 @@
 
 #include <RZE.h>
 
+#include <Game/World/GameObject/GameObject.h>
+#include <Game/World/GameObjectComponents/CameraComponent.h>
+
 #include <Graphics/RenderEngine.h>
 
 #include <Rendering/Graphics/RenderTarget.h>
@@ -138,10 +141,16 @@ void GameApp::OnWindowResize(const Vector2D& newSize)
 {
 	m_renderTarget.reset();
 
-	CreateRenderTarget(GetWindow()->GetDimensions());
+	CreateRenderTarget(newSize);
 	RZE().GetRenderEngine().SetRenderTarget(m_renderTarget.get());
 
 	RZE().GetRenderEngine().SetViewportSize(newSize);
+
+	GameObjectPtr cameraObject = RZE().GetActiveScene().FindGameObjectByName("Camera");
+	GameObjectComponentPtr<CameraComponent> camera = cameraObject->GetComponent<CameraComponent>();
+	AssertNotNull(camera);
+
+	camera->SetAspectRatio(newSize.X() / newSize.Y());
 }
 
 void GameApp::CreateRenderTarget(const Vector2D& dimensions)
