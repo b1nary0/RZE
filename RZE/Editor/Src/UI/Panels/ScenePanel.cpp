@@ -10,6 +10,7 @@
 #include <ImGui/imgui.h>
 
 #include <Game/World/GameObjectComponents/TransformComponent.h>
+#include "Game/World/GameObject/EditorGameComponentInfoCache.h"
 
 namespace
 {
@@ -105,6 +106,7 @@ namespace Editor
 							{
 								SelectedItem* newItem = new SelectedItem();
 								newItem->m_gameObject = gameObject;
+								newItem->m_isDirty = true;
 
 								m_selectedItem.reset(newItem);
 							}
@@ -165,7 +167,40 @@ namespace Editor
 			if (HasSelectedGameObject())
 			{
 				const GameObject::ComponentList& componentList = GetSelectedGameObject()->GetComponents();
-				for (auto& component : componentList)
+
+				// Cache the component pointers if we've modified our components or we've changed the focused GameObject.
+				if (m_selectedItem->m_isDirty || componentList.size() != m_components.size())
+				{
+					m_components.reserve(componentList.size());
+					m_components.assign(componentList.begin(), componentList.end());
+
+					if (m_components.size() > 1)
+					{
+						const EditorComponentCache::ComponentInfoMap& componentData = EditorComponentCache::GetAllComponentsInfo();
+
+ 						std::sort(m_components.begin(), m_components.end(), [&componentData](const GameObjectComponentBase* a, const GameObjectComponentBase* b) {
+ 							int32_t first = EditorComponentCache::kDefaultSortingOrder;
+							int32_t second = EditorComponentCache::kDefaultSortingOrder;
+ 							bool foundFirst = componentData.find(a->m_id) != componentData.end();
+ 							if (foundFirst)
+ 							{
+								first = componentData.at(a->m_id).Order;
+ 							}
+							
+ 							bool foundSecond = componentData.find(b->m_id) != componentData.end();
+ 							if (foundSecond)
+ 							{
+								second = componentData.at(b->m_id).Order;
+ 							}
+							
+ 							return first < second;
+ 						});
+					}
+
+					m_selectedItem->m_isDirty = false;
+				}
+
+				for (auto& component : m_components)
 				{
 					ImGui::TextColored(ImVec4(0.65f, 0.65f, 1.0f, 1.0f), "[ %s ]", component->GetName().c_str());
 					ImGui::Separator();

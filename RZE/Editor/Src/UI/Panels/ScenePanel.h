@@ -15,6 +15,7 @@ namespace Editor
 		struct SelectedItem
 		{
 			GameObjectPtr m_gameObject;
+			bool m_isDirty = true;
 		};
 	public:
 		ScenePanel();
@@ -37,5 +38,7 @@ namespace Editor
 		std::vector<std::string> mSelectedComponents;
 
 		std::unique_ptr<SelectedItem> m_selectedItem;
+
+		std::vector<GameObjectComponentBase*> m_components;
 	};
 }
