@@ -46,10 +46,11 @@ public:
 	EngineConfig();
 	~EngineConfig() override;
 
-	virtual void Load(const Filepath& filePath) override;
+	virtual bool Load(const Filepath& filePath) override;
+	virtual void Release() override;
 
-	EngineSettings& GetEngineSettings();
-	WindowSettings& GetWindowSettings();
+	const EngineSettings& GetEngineSettings() const;
+	const WindowSettings& GetWindowSettings() const;
 
 private:
 	void LoadEngineSettings();

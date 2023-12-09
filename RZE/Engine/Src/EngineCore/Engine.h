@@ -93,7 +93,7 @@ private:
 
 	std::unique_ptr<RenderEngine> m_renderEngine;
 
-	EngineConfig* m_engineConfig;
+	ResourceHandle m_engineConfig;
 	
 	// PODs
 private:

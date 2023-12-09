@@ -2,19 +2,18 @@
 
 #include <SimpleINI/SimpleIni.h>
 
+#include <Utils/Interfaces/Resource.h>
 #include <Utils/Platform/File.h>
 
 class Filepath;
 
-class Config
+class Config : public IResource
 {
 public:
 	Config();
 	virtual ~Config();
 
-	virtual void Load(const Filepath& filePath) = 0;
-
-	bool Empty();
+	bool Empty() const;
 
 protected:
 	void Read(const std::string& filePath);

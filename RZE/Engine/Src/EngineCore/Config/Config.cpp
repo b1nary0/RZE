@@ -9,7 +9,7 @@ Config::~Config()
 {
 }
 
-bool Config::Empty()
+bool Config::Empty() const
 {
 	const bool bFileEmpty = mINIFile.Empty();
 	const bool bParserEmpty = mINIParser.IsEmpty();

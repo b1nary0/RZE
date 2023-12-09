@@ -19,7 +19,6 @@
 
 RZE_Engine::RZE_Engine()
 	: m_window(nullptr)
-	, m_engineConfig(nullptr)
 	, m_application(nullptr)
 	, m_renderEngine(nullptr)
 	, m_shouldExit(false)
@@ -176,7 +175,7 @@ void RZE_Engine::PreUpdate()
 
 void RZE_Engine::CreateAndInitializeWindow()
 {
-	WindowSettings& windowSettings = m_engineConfig->GetWindowSettings();
+	const WindowSettings& windowSettings = GetResourceHandler().GetResource<EngineConfig>(m_engineConfig)->GetWindowSettings();
 
 	Win32Window::WindowCreationParams params;
 	params.windowTitle = windowSettings.GetTitle();
@@ -269,10 +268,9 @@ void RZE_Engine::RegisterKeyEvents()
 void RZE_Engine::LoadEngineConfig()
 {
 	// #TODO(Josh) This should probably be a resource? 
-	m_engineConfig = new EngineConfig();
-	m_engineConfig->Load(Filepath("Config/Engine.ini"));
-
-	if (m_engineConfig->Empty())
+	m_engineConfig = GetResourceHandler().LoadResource<EngineConfig>(Filepath("Config/Engine.ini"));
+	const EngineConfig* engineConfig = GetResourceHandler().GetResource<EngineConfig>(m_engineConfig);
+	if (engineConfig->Empty())
 	{
 		RZE_LOG("Engine config could not load. Defaults were used.");
 	}
@@ -303,14 +301,12 @@ void RZE_Engine::BeginShutDown()
 void RZE_Engine::InternalShutDown()
 {
 	AssertNotNull(m_window);
-	AssertNotNull(m_engineConfig);
 	AssertNotNull(m_renderEngine);
 	AssertNotNull(m_activeScene);
 
 	delete m_activeScene;
 	m_renderEngine.reset();
 	delete m_window;
-	delete m_engineConfig;
 }
 
 void RZE_Engine::PostExit()

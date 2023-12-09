@@ -13,7 +13,7 @@ EngineConfig::~EngineConfig()
 
 }
 
-void EngineConfig::Load(const Filepath& filePath)
+bool EngineConfig::Load(const Filepath& filePath)
 {
 	// #TODO
 	// This function should take a Filepath to avoid having to understand
@@ -22,14 +22,21 @@ void EngineConfig::Load(const Filepath& filePath)
 
 	LoadEngineSettings();
 	LoadWindowSettings();
+
+	// @TODO properly return true/false from this function. for now true is fine but jeapordizes the integrity of the resource system
+	return true;
 }
 
-EngineSettings& EngineConfig::GetEngineSettings()
+void EngineConfig::Release()
+{
+}
+
+const EngineSettings& EngineConfig::GetEngineSettings() const
 {
 	return mEngineSettings;
 }
 
-WindowSettings& EngineConfig::GetWindowSettings()
+const WindowSettings& EngineConfig::GetWindowSettings() const
 {
 	return mWindowSettings;
 }
