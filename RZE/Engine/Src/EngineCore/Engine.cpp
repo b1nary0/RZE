@@ -267,7 +267,6 @@ void RZE_Engine::RegisterKeyEvents()
 
 void RZE_Engine::LoadEngineConfig()
 {
-	// #TODO(Josh) This should probably be a resource? 
 	m_engineConfig = GetResourceHandler().LoadResource<EngineConfig>(Filepath("Config/Engine.ini"));
 	const EngineConfig* engineConfig = GetResourceHandler().GetResource<EngineConfig>(m_engineConfig);
 	if (engineConfig->Empty())
