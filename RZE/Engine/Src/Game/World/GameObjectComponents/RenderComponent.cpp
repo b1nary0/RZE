@@ -186,6 +186,11 @@ void RenderComponent::OnEditorInspect()
 			{
 				RZE().GetRenderEngine().DestroyRenderObject(m_renderObject);
 			}
+			else
+			{
+				// @TODO meaningful error feedback - no crashy gamey tho
+				// this means something went wrong during load of the resource
+			}
 
 			CreateRenderObject();
 		}

@@ -146,6 +146,8 @@ void GameApp::OnWindowResize(const Vector2D& newSize)
 
 	RZE().GetRenderEngine().SetViewportSize(newSize);
 
+	// @TODO This needs to be moved into a better spot. it is not wise to have this as boilerplate for such
+	// a low level concept (resizing camera to viewport)
 	GameObjectPtr cameraObject = RZE().GetActiveScene().FindGameObjectByName("Camera");
 	GameObjectComponentPtr<CameraComponent> camera = cameraObject->GetComponent<CameraComponent>();
 	AssertNotNull(camera);
