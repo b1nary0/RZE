@@ -12,7 +12,6 @@ public:
 
 public:
 	inline const Byte* GetBytes() const { return mBytes; }
-	Byte* GetBytes() { return mBytes; }
 
 	void ReadFromFile(const Filepath& filePath);
 

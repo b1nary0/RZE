@@ -309,7 +309,7 @@ bool AssimpSourceImporter::WriteMaterialAsset(const std::string& relativePath, c
 
 	AssertExpr(byteStream.GetNumBytesWritten() == bufSize);
 
-	Byte* bytes = byteStream.GetBytes();
+	const Byte* bytes = byteStream.GetBytes();
 	for (size_t byteIndex = 0; byteIndex < byteStream.GetNumBytesWritten(); ++byteIndex)
 	{
 		outputFile << bytes[byteIndex];
