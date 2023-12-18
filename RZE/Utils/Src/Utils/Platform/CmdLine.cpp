@@ -1,3 +1,4 @@
+#include <Utils/StdAfx.h>
 #include <Utils/Platform/CmdLine.h>
 
 namespace CmdLine

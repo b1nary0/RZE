@@ -209,7 +209,7 @@ void CameraComponent::OnEditorInspect()
 		GenerateCameraMatrices(transfComp->GetPosition());
 
 		RenderCamera renderCam;
-		renderCam.Viewport = RenderViewport(Vector2D(426.0f, 240.0f));
+		renderCam.Viewport = RenderViewport { Vector2D( 426.0f, 240.0f ) };
 		renderCam.ClipSpace = GetProjectionMatrix() * GetViewMatrix();
 		renderCam.Position = transfComp->GetPosition();
 
