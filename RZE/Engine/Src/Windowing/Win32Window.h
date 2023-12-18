@@ -53,6 +53,7 @@ public:
 
 	const std::string& GetTitle() const;
 	const Vector2D& GetDimensions() const;
+	const Vector2D& GetClientSize() const;
 
 	// Compile input messages from Win32 api
 	void CompileInputMessages(InputHandler& inputHandler);
@@ -86,13 +87,17 @@ private:
 
 	void InternalSetWindowSize(const Vector2D& size);
 
+	// @note right now (and maybe forever) we need to query winapi to update our client size every time
+	// a change in window happens
+	void QueryClientSize();
 
-	OSWindowHandleData mOSWindowHandleData;
-	WindowCreationParams mCreationData;
 
-	std::string mTitle;
-	Vector2D mDimensions;
-	Vector2D mPos;
+	OSWindowHandleData m_osWindowHandleData;
+
+	std::string m_title;
+	Vector2D m_dimensions;
+	Vector2D m_clientSize;
+	Vector2D m_pos;
 
 	bool bCursorEnabled;
 };

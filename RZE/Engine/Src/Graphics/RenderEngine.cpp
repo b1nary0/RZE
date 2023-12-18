@@ -154,11 +154,11 @@ void RenderEngine::DestroyLightObject(LightObjectPtr& lightObject)
 void RenderEngine::ResizeCanvas(const Vector2D& newSize)
 {
 	m_canvasSize = newSize;
-	
-	ImGui::GetIO().DisplaySize.x = m_canvasSize.X();
-	ImGui::GetIO().DisplaySize.y = m_canvasSize.Y();
 
 	Rendering::Renderer::HandleWindowResize(m_canvasSize);
+
+	ImGui::GetIO().DisplaySize.x = m_canvasSize.X();
+	ImGui::GetIO().DisplaySize.y = m_canvasSize.Y();
 
 	RZE_LOG_ARGS("New Canvas Size: %f x %f", m_canvasSize.X(), m_canvasSize.Y());
 }

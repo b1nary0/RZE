@@ -77,7 +77,7 @@ namespace Editor
 		GetWindow()->SetTitle("RZEStudio");
 		GetWindow()->Maximize();
 
-		const Vector2D& windowDims = GetWindow()->GetDimensions();
+		const Vector2D& windowDims = GetWindow()->GetClientSize();
 		CreateRenderTarget(windowDims);
 		RZE().GetRenderEngine().SetRenderTarget(m_renderTarget.get());
 
@@ -122,21 +122,21 @@ namespace Editor
 		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
 		window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
-		Vector2D windowDims = GetWindow()->GetDimensions();
+		Vector2D clientSize = GetWindow()->GetClientSize();
 
 		ImGui::PushFont(m_fontMapping.at("din_bold"));
 		DisplayMenuBar();
-		ImGui::SetNextWindowSize(ImVec2(windowDims.X(), windowDims.Y()));
-		ImGui::SetNextWindowPos(ImVec2(0.f, k_menuBarHeight));
+		ImGui::SetNextWindowPos(ImVec2(0.f, 24.0f));
+		ImGui::SetNextWindowSize(ImVec2(clientSize.X(), clientSize.Y() - 24.0f));
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
 		bool show = true;
-		ImGui::Begin("DockSpace Demo", &show, window_flags);
+		ImGui::Begin("RZE_Editor", &show, window_flags);
 		ImGui::PopStyleVar(1);
 		{
 			ImGuiID dockspace_id = ImGui::GetID("MyDockspace");
 			ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
-			ImGui::DockSpace(dockspace_id, ImVec2(windowDims.X(), windowDims.Y()), dockspace_flags);
+			ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
 
 			ResolvePanelState();
 		}

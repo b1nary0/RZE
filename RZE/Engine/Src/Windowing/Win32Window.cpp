@@ -26,8 +26,8 @@ namespace
 
 Win32Window::Win32Window(const WindowCreationParams& creationProtocol)
 {
-	mTitle = creationProtocol.windowTitle;
-	mDimensions = Vector2D(static_cast<float>(creationProtocol.width), static_cast<float>(creationProtocol.height));
+	m_title = creationProtocol.windowTitle;
+	m_dimensions = Vector2D(static_cast<float>(creationProtocol.width), static_cast<float>(creationProtocol.height));
 
 	Create(creationProtocol);
 }
@@ -42,34 +42,39 @@ void Win32Window::ResetCursorToCenter()
 	if (!bCursorEnabled)
 	{
 		RECT rcClip;
-		GetClientRect(mOSWindowHandleData.windowHandle, &rcClip);
-		MapWindowPoints(mOSWindowHandleData.windowHandle, GetParent(mOSWindowHandleData.windowHandle), (LPPOINT)(&rcClip), 1);
+		GetClientRect(m_osWindowHandleData.windowHandle, &rcClip);
+		MapWindowPoints(m_osWindowHandleData.windowHandle, GetParent(m_osWindowHandleData.windowHandle), (LPPOINT)(&rcClip), 1);
 		ClipCursor(&rcClip);
-		SetCursorPos(rcClip.left + static_cast<int>(mDimensions.X() / 2), rcClip.top + static_cast<int>(mDimensions.Y() / 2));
+		SetCursorPos(rcClip.left + static_cast<int>(m_dimensions.X() / 2), rcClip.top + static_cast<int>(m_dimensions.Y() / 2));
 	}
 }
 
 void Win32Window::SetTitle(const std::string& title)
 {
-	::SetWindowTextA(mOSWindowHandleData.windowHandle, (LPCSTR)title.c_str());
+	::SetWindowTextA(m_osWindowHandleData.windowHandle, (LPCSTR)title.c_str());
 }
 
 const std::string& Win32Window::GetTitle() const
 {
-	return mTitle;
+	return m_title;
 }
 
 const Vector2D& Win32Window::GetDimensions() const
 {
-	return mDimensions;
+	return m_dimensions;
+}
+
+const Vector2D& Win32Window::GetClientSize() const
+{
+	return m_clientSize;
 }
 
 void Win32Window::Create(const WindowCreationParams& creationProtocol)
 {
 	// Interface with WinAPI and create a window -- store useful information.
-	LOG_CONSOLE_ANNOUNCE("[ Creating Win32Window ] Title : %s", mTitle.c_str());
+	LOG_CONSOLE_ANNOUNCE("[ Creating Win32Window ] Title : %s", m_title.c_str());
 
-	const std::wstring wStrTitle = Conversions::StringToWString(mTitle);
+	const std::wstring wStrTitle = Conversions::StringToWString(m_title);
 
 	//BYTE CursorMaskAND[] = { 0xFF };
 	//BYTE CursorMaskXOR[] = { 0x00 };
@@ -91,20 +96,20 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 
 	if (RegisterClassEx(&wc))
 	{
-		mOSWindowHandleData.windowHandle = CreateWindowEx(0,
+		m_osWindowHandleData.windowHandle = CreateWindowEx(0,
 			wStrTitle.c_str(),
 			wStrTitle.c_str(),
 			WS_OVERLAPPEDWINDOW /*^ WS_SIZEBOX*/, // @note WS_POPUP = borderless. WS_OVERLAPPEDWINDOW default
 			CW_USEDEFAULT,
 			CW_USEDEFAULT,
-			static_cast<int>(mDimensions.X()),
-			static_cast<int>(mDimensions.Y()),
+			static_cast<int>(m_dimensions.X()),
+			static_cast<int>(m_dimensions.Y()),
 			0,
 			0,
 			GetModuleHandle(0),
 			0);
 
-		mOSWindowHandleData.pixelFormatDesc =
+		m_osWindowHandleData.pixelFormatDesc =
 		{
 			sizeof(PIXELFORMATDESCRIPTOR),
 			1,
@@ -126,21 +131,21 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 
 		//@todo this needs to be abstracted out of the window somehow 
 
-		mOSWindowHandleData.deviceContext = GetDC(mOSWindowHandleData.windowHandle);
-		if (!mOSWindowHandleData.deviceContext)
+		m_osWindowHandleData.deviceContext = GetDC(m_osWindowHandleData.windowHandle);
+		if (!m_osWindowHandleData.deviceContext)
 		{
 			RZE_LOG("<Failure retrieving device context>");
 			AssertFalse();
 		}
 
-		int pixelFormat = ChoosePixelFormat(mOSWindowHandleData.deviceContext, &mOSWindowHandleData.pixelFormatDesc);
+		int pixelFormat = ChoosePixelFormat(m_osWindowHandleData.deviceContext, &m_osWindowHandleData.pixelFormatDesc);
 		if (!pixelFormat)
 		{
 			RZE_LOG("<Failure choosing pixel format>");
 			AssertFalse();
 		}
 
-		if (!SetPixelFormat(mOSWindowHandleData.deviceContext, pixelFormat, &mOSWindowHandleData.pixelFormatDesc))
+		if (!SetPixelFormat(m_osWindowHandleData.deviceContext, pixelFormat, &m_osWindowHandleData.pixelFormatDesc))
 		{
 			RZE_LOG("<Failure setting pixel format>");
 			AssertFalse();
@@ -149,6 +154,8 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 		InternalSetWindowPosition(Vector2D(0, 0));
 		// #NOTE(Josh) Gonna put this here for now instead of in Engine.cpp until it has a better home
 		SetWindowPos(GetConsoleWindow(), 0, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
+
+		QueryClientSize();
 	}
 }
 
@@ -161,7 +168,7 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 	}
 
 	MSG msg;
-	if (PeekMessage(&msg, mOSWindowHandleData.windowHandle, 0, 0, PM_REMOVE))
+	if (PeekMessage(&msg, m_osWindowHandleData.windowHandle, 0, 0, PM_REMOVE))
 	{
 		switch (msg.message)
 		{
@@ -296,15 +303,15 @@ void Win32Window::CompileWindowMessages(EventHandler& eventHandler)
 
 void Win32Window::Show()
 {
-	if (mOSWindowHandleData.windowHandle)
+	if (m_osWindowHandleData.windowHandle)
 	{
-		ShowWindow(mOSWindowHandleData.windowHandle, SW_SHOWNORMAL); // @note SW_SHOWMAXIMIZED for borderless fullscreen. SW_SHOWDEFAULT default
+		ShowWindow(m_osWindowHandleData.windowHandle, SW_SHOWNORMAL); // @note SW_SHOWMAXIMIZED for borderless fullscreen. SW_SHOWDEFAULT default
 	}
 }
 
 const Win32Window::OSWindowHandleData& Win32Window::GetOSWindowHandleData() const
 {
-	return mOSWindowHandleData;
+	return m_osWindowHandleData;
 }
 
 void Win32Window::ProcessWinProcMessage(const WindowMessageAdaptor::WindowMessageInfo& messageInfo, EventHandler& eventHandler)
@@ -318,11 +325,12 @@ void Win32Window::ProcessWinProcMessage(const WindowMessageAdaptor::WindowMessag
 	{
 		WindowEvent windowEvent(EWindowEventType::Window_Resize);
 
-		RECT windowRect;
-		GetClientRect(mOSWindowHandleData.windowHandle, &windowRect);
-		int width = windowRect.right - windowRect.top;
-		int height = windowRect.bottom - windowRect.top;
+		QueryClientSize();
 
+		const Vector2D& clientSize = GetClientSize();
+		// @todo this is a great example of why making a Vec2Di class is good. Or just impose usage on APIs to be in the w/h values
+		const int width = static_cast<int>(clientSize.X());
+		const int height = static_cast<int>(clientSize.Y());
 		if (width > 0 && height > 0)
 		{
 			windowEvent.mSizeX = width;
@@ -338,22 +346,32 @@ void Win32Window::ProcessWinProcMessage(const WindowMessageAdaptor::WindowMessag
 
 void Win32Window::InternalSetWindowPosition(const Vector2D& pos)
 {
-	mPos = pos;
-	::SetWindowPos(mOSWindowHandleData.windowHandle, 0, static_cast<int>(mPos.X()), static_cast<int>(mPos.Y()), 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+	m_pos = pos;
+	::SetWindowPos(m_osWindowHandleData.windowHandle, 0, static_cast<int>(m_pos.X()), static_cast<int>(m_pos.Y()), 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 }
 
 void Win32Window::InternalSetWindowSize(const Vector2D& size)
 {
-	mDimensions = size;
-	::SetWindowPos(mOSWindowHandleData.windowHandle, nullptr, static_cast<int>(mPos.X()), static_cast<int>(mPos.Y()), static_cast<int>(size.X()), static_cast<int>(size.Y()), SWP_NOZORDER);
+	m_dimensions = size;
+	::SetWindowPos(m_osWindowHandleData.windowHandle, nullptr, static_cast<int>(m_pos.X()), static_cast<int>(m_pos.Y()), static_cast<int>(size.X()), static_cast<int>(size.Y()), SWP_NOZORDER);
+}
+
+void Win32Window::QueryClientSize()
+{
+	RECT windowRect;
+	GetClientRect(m_osWindowHandleData.windowHandle, &windowRect);
+	int width = windowRect.right - windowRect.top;
+	int height = windowRect.bottom - windowRect.top;
+
+	m_clientSize.SetXY(static_cast<float>(width), static_cast<float>(height));
 }
 
 void Win32Window::RegisterEvents(EventHandler& eventHandler)
 {
 	Functor<void, const Event&> windowResizeCallback([this](const Event& evt)
 	{
-		mDimensions.SetX(evt.mWindowEvent.mSizeX);
-		mDimensions.SetY(evt.mWindowEvent.mSizeY);
+		m_dimensions.SetX(evt.mWindowEvent.mSizeX);
+		m_dimensions.SetY(evt.mWindowEvent.mSizeY);
 	});
 
 	eventHandler.RegisterForEvent(EEventType::Window, windowResizeCallback);
@@ -367,16 +385,9 @@ void Win32Window::SetWindowSize(const Vector2D& newSize)
 
 void Win32Window::Maximize()
 {
-	ShowWindow(mOSWindowHandleData.windowHandle, SW_MAXIMIZE);
+	ShowWindow(m_osWindowHandleData.windowHandle, SW_MAXIMIZE);
 
-	// Hack for the time being since when we call Maximize() we haven't tracked the window's size and
-	// the way the code is set up we won't get the event to update it by the time we need it (it's delayed until
-	// Engine::PreUpdate
-	RECT windowRect;
-	GetClientRect(mOSWindowHandleData.windowHandle, &windowRect);
-	int width = windowRect.right - windowRect.top;
-	int height = windowRect.bottom - windowRect.top;
-	mDimensions.SetXY(static_cast<float>(width), static_cast<float>(height));
+	QueryClientSize();
 }
 
 // @TODO pass in some like enum EFileOpenContext or better yet a struct of instructions for the open file prompt
@@ -481,7 +492,7 @@ bool Win32Window::ShowSaveFilePrompt(const FilePromptParams& params, std::string
 			
 			pSaveFile->SetFileTypes(1, rgSpec);
 
-			hr = pSaveFile->Show(mOSWindowHandleData.windowHandle);
+			hr = pSaveFile->Show(m_osWindowHandleData.windowHandle);
 			if (SUCCEEDED(hr))
 			{
 				IShellItem* pItem = nullptr;

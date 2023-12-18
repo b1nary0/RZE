@@ -42,7 +42,7 @@ void GameApp::Initialize()
 {
 	RZE_Application::Initialize();
 
-	CreateRenderTarget(GetWindow()->GetDimensions());
+	CreateRenderTarget(GetWindow()->GetClientSize());
 
 	RZE().GetRenderEngine().SetRenderTarget(m_renderTarget.get());
 

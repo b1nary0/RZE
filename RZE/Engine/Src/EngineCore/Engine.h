@@ -57,6 +57,8 @@ public:
 
 	void SetWindowSize(const Vector2D& newSize);
 
+	const Vector2D& GetWindowClientSize() const;
+
 private:
 
 	void Init();

@@ -77,7 +77,5 @@ namespace Editor
 		GameObjectPtr m_editorCameraObject;
 
 		Filepath m_imguiConfigFilepath;
-
-		const float k_menuBarHeight = 24.f;
 	};
 }

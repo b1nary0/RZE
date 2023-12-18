@@ -233,6 +233,11 @@ void RZE_Engine::SetWindowSize(const Vector2D& newSize)
 	m_window->SetWindowSize(newSize);
 }
 
+const Vector2D& RZE_Engine::GetWindowClientSize() const
+{
+	return m_window->GetClientSize();
+}
+
 void RZE_Engine::CompileEvents()
 {
 	m_window->CompileInputMessages(m_inputHandler);
@@ -253,6 +258,7 @@ void RZE_Engine::RegisterWindowEvents()
 			Vector2D newSize(event.mWindowEvent.mSizeX, event.mWindowEvent.mSizeY);
 
 			m_application->OnWindowResize(newSize);
+
 			m_renderEngine->ResizeCanvas(newSize);
 		}
 	});
