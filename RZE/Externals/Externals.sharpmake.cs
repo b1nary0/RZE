@@ -1,12 +1,13 @@
 using Sharpmake;
+using System.IO;
 
 [Generate]
-public class Utils : BaseProject
+public class Externals : BaseProject
 {
-    public Utils()
+    public Externals()
         : base()
     {
-        Name = "Utils";
+        Name = "Externals";
         SourceRootPath = "Src";
     }
 
@@ -14,8 +15,5 @@ public class Utils : BaseProject
     {
         base.ConfigureAll(conf, target);
         conf.Output = Configuration.OutputType.Lib;
-
-        conf.PrecompHeader = "StdAfx.h";
-        conf.PrecompSource = "StdAfx.cpp";
     }
 }

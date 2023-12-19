@@ -1,4 +1,4 @@
-#include <Utils/StdAfx.h>
+#include <StdAfx.h>
 #include <Utils/Math/Matrix4x4.h>
 
 #include <GLM/gtx/quaternion.hpp>

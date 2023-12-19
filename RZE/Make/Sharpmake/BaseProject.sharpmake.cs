@@ -29,55 +29,15 @@ public abstract class BaseProject : Project
     [Configure]
     public virtual void ConfigureAll(Project.Configuration conf, CommonTarget target)
     {
-        conf.ProjectPath = Path.Combine("[project.SharpmakeCsPath]", ".tmp/project");
+        conf.ProjectPath = Path.Combine("[project.SharpmakeCsPath]", "_Project");
+        conf.ProjectFileName = @"[project.Name]_[target.Platform]";
+
+        conf.TargetPath = Path.Combine(Globals.RootDir, "_Build/[target.Name]/");
+        conf.LibraryPaths.Add(Path.Combine(Globals.RootDir, "_Build/[target.Name]/"));
 
         // It seems like you use <> includes a lot, so this is needed per project
         conf.IncludePaths.Add(Path.Combine("[project.SharpmakeCsPath]", "Src"));
         conf.IncludePaths.Add(Globals.IncludeDir);
-
-        //conf.Options.Add(Sharpmake.Project.Configuration.LocalDebuggerWorkingDirectory.Vc.Compiler.Exceptions.Enable);
-        conf.VcxprojUserFile = new Configuration.VcxprojUserFileSettings();
-        //conf.VcxprojUserFile.LocalDebuggerWorkingDirectory = Globals.RootDir;
-        conf.VcxprojUserFile.OverwriteExistingFile = true;
-        conf.ProjectFileName = @"[project.Name]_[target.Platform]";
-        //public static string LibDir = RootDir.."_Build/".."%{cfg.buildcfg}/".."%{cfg.platform}"
-
-        conf.TargetPath = Path.Combine(Globals.RootDir, "_Build/[target.Name]/[target.Platform]/");
-        conf.LibraryPaths.Add("[project.SharpmakeCsPath]/.build/[target.Name]/");
-
-        // RenderDoc DLL
-        // TODO: Is this a chocolatey package? cross platform?
-        // Shitty detection atm, but it works without this?
-        if (File.Exists("C:/Program Files/RenderDoc/renderdoc.dll"))
-        {
-            conf.Defines.Add("DEFINE_ME_RENDERDOC");
-            conf.IncludePaths.Add("C:/Program Files/RenderDoc/");
-            // If we have RenderDoc installed, it better be the same version 😤
-            var copyDirBuildStep = new Configuration.BuildStepCopy(
-                $@"[project.SharpmakeCsPath]/ThirdParty/RenderDoc",
-                Globals.RootDir + "/.build/[target.Name]");
-
-            copyDirBuildStep.IsFileCopy = false;
-            copyDirBuildStep.CopyPattern = "*.dll";
-            conf.EventPostBuildExe.Add(copyDirBuildStep);
-        }
-
-        //conf.Options.Add(Options.Vc.General.TreatWarningsAsErrors.Enable);
-
-        conf.Defines.Add("NOMINMAX");
-
-        if (Directory.Exists(Globals.FMOD_Win64_Dir) || Directory.Exists(Globals.FMOD_UWP_Dir))
-        {
-            conf.Defines.Add("_DISABLE_EXTENDED_ALIGNED_STORAGE");
-        }
-
-        if (target.Optimization == Optimization.Debug)
-        {
-        }
-        else
-        {
-
-        }
     }
 
     #region Platfoms
@@ -90,24 +50,15 @@ public abstract class BaseProject : Project
         conf.Options.Add(Options.Vc.Compiler.RTTI.Enable);
         conf.Options.Add(Options.Vc.General.CharacterSet.Unicode);
         conf.Options.Add(Options.Vc.Compiler.Exceptions.Enable);
-
-        conf.Defines.Add("DEFINE_ME_PLATFORM_WIN64");
+        //conf.Options.Add(Options.Vc.General.TreatWarningsAsErrors.Enable);
 
         conf.Options.Add(
             new Options.Vc.Compiler.DisableSpecificWarnings(
-                "4201",
-                "4100"
+                "4267"
                 )
         );
 
-        if (Directory.Exists(Globals.FMOD_Win64_Dir))
-        {
-            conf.Defines.Add("DEFINE_ME_FMOD");
-        }
-        if (Directory.Exists(Globals.MONO_Win64_Dir))
-        {
-            conf.Defines.Add("DEFINE_ME_MONO");
-        }
+        conf.Defines.Add("NOMINMAX");
     }
 
     #endregion
@@ -120,7 +71,7 @@ public abstract class BaseProject : Project
     {
         conf.DefaultOption = Options.DefaultTarget.Debug;
 
-        conf.Options.Add(Sharpmake.Options.Vc.Compiler.RuntimeLibrary.MultiThreadedDebugDLL);
+        conf.Options.Add(Options.Vc.Compiler.RuntimeLibrary.MultiThreadedDebugDLL);
         conf.Options.Add(Options.Vc.Compiler.Inline.Disable);
     }
 
@@ -129,7 +80,7 @@ public abstract class BaseProject : Project
     public virtual void ConfigureRelease(Configuration conf, CommonTarget target)
     {
         conf.DefaultOption = Options.DefaultTarget.Release;
-        conf.Options.Add(Sharpmake.Options.Vc.Compiler.RuntimeLibrary.MultiThreadedDLL);
+        conf.Options.Add(Options.Vc.Compiler.RuntimeLibrary.MultiThreadedDLL);
         conf.Options.Add(Options.Vc.Compiler.Inline.OnlyInline);
     }
 
@@ -140,7 +91,7 @@ public abstract class BaseProject : Project
     {
         conf.DefaultOption = Options.DefaultTarget.Release;
 
-        conf.Options.Add(Sharpmake.Options.Vc.Compiler.RuntimeLibrary.MultiThreadedDLL);
+        conf.Options.Add(Options.Vc.Compiler.RuntimeLibrary.MultiThreadedDLL);
 
         // Full inlining
         conf.Options.Add(Options.Vc.Compiler.Inline.AnySuitable);

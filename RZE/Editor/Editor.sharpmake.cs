@@ -2,12 +2,12 @@ using Sharpmake;
 using System.IO;
 
 [Generate]
-public class SourceAssetBurner : BaseProject
+public class Editor : BaseProject
 {
-    public SourceAssetBurner()
+    public Editor()
         : base()
     {
-        Name = "SourceAssetBurner";
+        Name = "Editor";
         SourceRootPath = "Src";
     }
 

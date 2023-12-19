@@ -1,4 +1,4 @@
-#include <Game/GameApp.h>
+#include <GameApp.h>
 
 int main(int argc, char* argv[])
 {
