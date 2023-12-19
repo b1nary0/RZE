@@ -290,11 +290,11 @@ __pycache__/
 *.odx.cs
 *.xsd.cs
 
-RZE/_Project/imgui\.ini
+RZE/_[Pp]roject/imgui\.ini
 !Tools
 !RZE/Engine/ThirdParty
 RZE/ProjectData
-RZE/_Project/SourceAssetBurner.args.json
-RZE/_Project/Project-RZE.index
+RZE/_[Pp]roject/SourceAssetBurner.args.json
+RZE/_[Pp]roject/Project-RZE.index
 RZE/Logs
-RZE/_Project/Game.args.json
+RZE/_[Pp]roject/Game.args.json
