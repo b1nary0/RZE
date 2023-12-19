@@ -24,6 +24,11 @@ jobs:
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1.0.2
 
+    - name: Install DotNet
+      uses: actions/setup-detnet@v1
+      with:
+        dotnet-version: "5.0.100"
+        
     - name: Checkout
       uses: actions/checkout@v1
           
