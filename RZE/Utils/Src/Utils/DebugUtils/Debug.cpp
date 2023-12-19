@@ -1,6 +1,8 @@
+#include <StdAfx.h>
 #include <Utils/DebugUtils/Debug.h>
 
 #include <ctime>
+#include <iomanip>
 
 namespace Debug
 {

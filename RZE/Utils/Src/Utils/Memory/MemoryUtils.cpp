@@ -1,3 +1,4 @@
+#include <StdAfx.h>
 #include <Utils/Memory/MemoryUtils.h>
 
 #include <Utils/DebugUtils/Debug.h>

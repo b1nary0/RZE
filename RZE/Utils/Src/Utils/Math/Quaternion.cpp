@@ -1,4 +1,4 @@
-#include <Utils/StdAfx.h>
+#include <StdAfx.h>
 #include <Utils/Math/Quaternion.h>
 
 #include <Utils/Math/Math.h>

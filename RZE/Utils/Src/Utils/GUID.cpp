@@ -1,3 +1,4 @@
+#include <StdAfx.h>
 #include <Utils/GUID.h>
 
 #include <Windows.h>
