@@ -2,9 +2,9 @@ name: Windows
 # Workflow file for windows
 on:
   push:
-    branches: [master, Sandbox, NewRenderer, ActorLike]
+    branches: [master, Sandbox]
   pull_request:
-    branches: [master, Sandbox, NewRenderer, ActorLike]
+    branches: [master, Sandbox]
   workflow_dispatch:
 
 jobs:
@@ -43,12 +43,12 @@ jobs:
     - name: Burn Assets
       shell: cmd
       run: call .\RZE\_Build\${{matrix.buildconfig}}\x64\RZE_SourceAssetBurner.exe
-      continue-on-error: true
+      continue-on-error: false
       
     - name: Asset Copy
       shell: cmd
       run: call .\RZE\AssetCpy.bat
-      continue-on-error: true
+      continue-on-error: false
 
     - name: Archive Build
       uses: actions/upload-artifact@v2
