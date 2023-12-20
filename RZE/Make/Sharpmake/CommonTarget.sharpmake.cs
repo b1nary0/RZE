@@ -67,7 +67,7 @@ public class CommonTarget : Sharpmake.ITarget
                 {
                     var baseTarget = new CommonTarget(
                         Platform.win64,
-                        DevEnv.vs2019,
+                        DevEnv.vs2017,
                         Optimization.Debug | Optimization.Release | Optimization.Retail,
                         DotNetFramework.v4_8,
                         dotNetOS: 0);

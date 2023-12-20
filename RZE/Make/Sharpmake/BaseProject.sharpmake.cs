@@ -50,7 +50,9 @@ public abstract class BaseProject : Project
         conf.Options.Add(Options.Vc.Compiler.RTTI.Enable);
         conf.Options.Add(Options.Vc.General.CharacterSet.Unicode);
         conf.Options.Add(Options.Vc.Compiler.Exceptions.Enable);
-        //conf.Options.Add(Options.Vc.General.TreatWarningsAsErrors.Enable);
+
+        conf.Options.Add(Options.Vc.General.WarningLevel.Level3);
+        conf.Options.Add(Options.Vc.General.TreatWarningsAsErrors.Enable);
 
         conf.Options.Add(
             new Options.Vc.Compiler.DisableSpecificWarnings(
