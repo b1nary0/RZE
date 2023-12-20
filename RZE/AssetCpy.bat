@@ -1,14 +1,14 @@
 @echo off
 REM using crappy stuff here until a better build pipeline exists -- this serves its purpose atm
 
-set debugExecPath=%~dp0_build\Debug\
-set debugAssetPath=%~dp0_build\Debug\Assets
-set debugConfigPath=%~dp0_build\Debug\Config
-set debugProjectDataPath=%~dp0_build\Debug\ProjectData
-set releaseExecPath=%~dp0_build\Release\
-set releaseAssetPath=%~dp0_build\Release\Assets
-set releaseConfigPath=%~dp0_build\Release\Config
-set releaseProjectDataPath=%~dp0_build\Release\ProjectData
+set debugExecPath=%~dp0_build\debug\
+set debugAssetPath=%~dp0_build\debug\Assets
+set debugConfigPath=%~dp0_build\debug\Config
+set debugProjectDataPath=%~dp0_build\debug\ProjectData
+set releaseExecPath=%~dp0_build\release\
+set releaseAssetPath=%~dp0_build\release\Assets
+set releaseConfigPath=%~dp0_build\release\Config
+set releaseProjectDataPath=%~dp0_build\release\ProjectData
 
 if exist %debugExecPath% (
 	if not exist %debugAssetPath% (mkdir %debugAssetPath%)
