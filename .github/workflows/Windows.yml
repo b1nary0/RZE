@@ -45,7 +45,7 @@ jobs:
       
     - name: Burn Assets
       shell: cmd
-      run: call .\RZE\_build\${{matrix.buildconfig}}\x64\RZE_SourceAssetBurner.exe
+      run: call .\RZE\_build\${{matrix.buildconfig}}\RZE_SourceAssetBurner.exe
       continue-on-error: false
       
     - name: Asset Copy
@@ -59,7 +59,7 @@ jobs:
         name: RZE v${{github.run_number}} - ${{matrix.buildconfig}}
         path: |
           RZE/_build/${{matrix.buildconfig}}
-          !_RZE/build/${{matrix.buildconfig}}/x64/*.lib
-          !_RZE/build/${{matrix.buildconfig}}/x64/*.pdb
-          !_RZE/build/${{matrix.buildconfig}}/x64/*.exp
-          !_RZE/build/${{matrix.buildconfig}}/x64/*.log
+          !_RZE/build/${{matrix.buildconfig}}/*.lib
+          !_RZE/build/${{matrix.buildconfig}}/*.pdb
+          !_RZE/build/${{matrix.buildconfig}}/*.exp
+          !_RZE/build/${{matrix.buildconfig}}/*.log
