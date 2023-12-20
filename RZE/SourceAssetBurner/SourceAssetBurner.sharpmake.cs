@@ -7,7 +7,7 @@ public class SourceAssetBurner : BaseProject
     public SourceAssetBurner()
         : base()
     {
-        Name = "RZE_SourceAssetBurner";
+        Name = "SourceAssetBurner";
         SourceRootPath = "Src";
     }
 

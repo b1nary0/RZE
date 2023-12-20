@@ -23,7 +23,7 @@ Filepath::Filepath(const std::string& path)
 
 	if (gDirectoryContext == EDirectoryContext::Tools)
 	{
-		size_t pos = execPath.find("_Build\\");
+		size_t pos = execPath.find("_build\\");
 		if (pos == std::string::npos)
 		{
 			// #TODO
