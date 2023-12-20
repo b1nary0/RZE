@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         os: [windows-2019]
-        buildconfig: [Debug, Release]
+        buildconfig: [debug, release]
         include:
           - os: windows-2019
             shell: cmd
