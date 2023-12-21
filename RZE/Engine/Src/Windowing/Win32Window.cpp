@@ -525,6 +525,11 @@ bool Win32Window::ShowSaveFilePrompt(const FilePromptParams& params, std::string
 
 LRESULT CALLBACK WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp)
 {
+	// @todo actually solve this instead of this hack
+	// this is so that we can still use WM_SIZE for restore/maximize functionality but also
+	// not get those called for every pixel the size changes.
+	static bool k_isUserResizing = false;
+
 	// @unfinished - check for values of msg possibly needed
 	switch (msg)
 	{
@@ -540,11 +545,28 @@ LRESULT CALLBACK WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp)
 		return 0;
 	}
 
+	case WM_ENTERSIZEMOVE:
+	{
+		k_isUserResizing = true;
+
+		return 0;
+	}
 	// #NOTE(Josh) This is fine for now, will make WM_SIZE it's own thing when necessary
-	case WM_SIZE:
-	case WM_SIZING:
+	case WM_EXITSIZEMOVE:
 	{
 		sWindowMessageAdaptor.PushMessage(WindowMessageAdaptor::EMessageType::Window_Resize, wp, lp);
+
+		k_isUserResizing = false;
+		return 0;
+	}
+	
+	case WM_SIZE:
+	{
+		if (!k_isUserResizing)
+		{
+			sWindowMessageAdaptor.PushMessage(WindowMessageAdaptor::EMessageType::Window_Resize, wp, lp);
+		}
+
 		return 0;
 	}
 
