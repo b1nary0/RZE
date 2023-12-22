@@ -81,6 +81,8 @@ namespace Rendering
 
 	void Renderer::EndFrame()
 	{
+		MemArena::Cycle();
+
 		D3DPERF_EndEvent();
 	}
 

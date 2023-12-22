@@ -22,7 +22,7 @@ namespace Rendering
 			{
 				size_t sizeAvailable = s_arenaState.size - s_arenaState.curPos;
 				RZE_LOG_ARGS("Rendering memory arena has run out of space. Size requested: %zu available: %zu ", sizeRequested, sizeAvailable);
-				AssertExpr(s_arenaState.curPos + sizeRequested > s_arenaState.size);
+				AssertExpr(s_arenaState.curPos + sizeRequested < s_arenaState.size);
 			}
 		}
 
@@ -36,6 +36,8 @@ namespace Rendering
 			}
 			
 			s_memory = new Byte[size];
+
+			s_arenaState.size = size;
 		}
 
 		void* Alloc(size_t size)
@@ -46,6 +48,11 @@ namespace Rendering
 			s_arenaState.curPos += size;
 
 			return allocMem;
+		}
+
+		void Cycle()
+		{
+			s_arenaState.curPos = 0;
 		}
 	}
 }

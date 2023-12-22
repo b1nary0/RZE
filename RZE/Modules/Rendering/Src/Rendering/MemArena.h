@@ -16,5 +16,8 @@ namespace Rendering
 		}
 
 		void* Alloc(size_t sizeRequested);
+
+		// Cycle will reset the arena for fresh use.
+		void Cycle();
 	}
 }
