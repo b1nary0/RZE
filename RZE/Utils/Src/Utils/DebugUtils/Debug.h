@@ -18,7 +18,7 @@ namespace Debug
 
 #define AssertFalse() assert(false);
 #define AssertEqual(Value1, Value2) assert(Value1 == Value2);
-#define AssertNull(Value) assert(Value == nullptr);
+#define AssertIsNull(Value) assert(Value == nullptr);
 #define AssertNotNull(Value) assert(Value != nullptr)
 #define AssertExpr(Expr) assert(Expr);
 #define AssertMsg(Expr, Msg) assert(Expr && Msg);
@@ -68,7 +68,7 @@ namespace Debug
 
 #define AssertFalse()
 #define AssertEqual(Value1, Value2)
-#define AssertNull(Value)
+#define AssertIsNull(Value)
 #define AssertNotNull(Value)
 #define AssertExpr(Expr)
 #define AssertMsg(Expr, Msg)
