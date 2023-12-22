@@ -14,7 +14,7 @@ ByteStream::ByteStream(const std::string& name, size_t streamLength)
 	: mName(name)
 	, mStreamLength(streamLength)
 {
-	mBytes = new unsigned char[streamLength];
+	mBytes = new Byte[streamLength];
 	memset(mBytes, NULL, streamLength);
 }
 
