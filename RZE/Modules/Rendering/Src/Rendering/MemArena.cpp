@@ -11,20 +11,12 @@ namespace Rendering
 
 		struct ArenaState
 		{
-			void* nextMem = nullptr;
-			// @todo putting this here for now but can probably deduce the size by being clever with the offset value instead
 			size_t curPos = 0;
 			size_t size = 0;
 		} s_arenaState;
 
 		void ValidateArenaState(size_t sizeRequested)
 		{
-			if (sizeRequested == 0)
-			{
-				// might be able to remove this branch later
-				return;
-			}
-
 			// validate state. can't alloc if these rules arent met.
 			if (s_arenaState.curPos + sizeRequested > s_arenaState.size)
 			{
