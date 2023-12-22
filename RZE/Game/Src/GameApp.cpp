@@ -157,7 +157,7 @@ void GameApp::OnWindowResize(const Vector2D& newSize)
 
 void GameApp::CreateRenderTarget(const Vector2D& dimensions)
 {
-	AssertNull(m_renderTarget);
+	AssertIsNull(m_renderTarget);
 
 	const U32 renderTargetWidth = static_cast<U32>(dimensions.X());
 	const U32 renderTargetHeight = static_cast<U32>(dimensions.Y());
