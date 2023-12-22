@@ -24,8 +24,6 @@ namespace Rendering
 				RZE_LOG_ARGS("Rendering memory arena has run out of space. Size requested: %zu available: %zu ", sizeRequested, sizeAvailable);
 				AssertExpr(s_arenaState.curPos + sizeRequested < s_arenaState.size);
 			}
-
-			AssertMsg(false, "All arena state rule failures must be met with an assert. Hitting this line means you forgot one.");
 		}
 
 		void InitializeArena(size_t size)
