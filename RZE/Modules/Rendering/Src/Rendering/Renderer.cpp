@@ -19,11 +19,15 @@
 
 #include <Rendering/Graphics/RenderTarget.h>
 
+#include <Rendering/MemArena.h>
+
 #include <ImGui/imgui.h>
 #include <imGUI/imgui_impl_dx11.h>
 #include <imGUI/imgui_impl_win32.h>
 
 #include <d3d9.h>
+
+#define MEM_ARENA_SIZE 1024
 
 namespace Rendering
 {
@@ -60,6 +64,8 @@ namespace Rendering
 		m_device->Initialize();
 		
 		InitializeImGui();
+
+		MemArena::InitializeArena(MEM_ARENA_SIZE);
 	}
 	
 	void Renderer::Shutdown()
@@ -116,6 +122,13 @@ namespace Rendering
 		std::shared_ptr<DX11VertexBuffer> vertexBuffer = std::make_shared<DX11VertexBuffer>();
 		vertexBuffer->SetDevice(m_device.get());
 		vertexBuffer->Allocate(data, dataTypeSize, count, stride);
+
+		struct Command
+		{
+			int test = 0;
+		};
+
+		Command* command = MemArena::AllocType<Command>();
 
 		return VertexBufferHandle(vertexBuffer);
 	}
