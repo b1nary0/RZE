@@ -9,6 +9,9 @@
 #include <Utils/Platform/Filepath.h>
 
 // DX11
+#include <Rendering/RenderCommand.h>
+#include <Rendering/MemArena.h>
+
 #include <Rendering/Driver/DX11/DX11Device.h>
 #include <Rendering/Driver/DX11/DX11.h>
 #include <Rendering/Driver/DX11/DX11ConstantBuffer.h>
@@ -19,18 +22,16 @@
 
 #include <Rendering/Graphics/RenderTarget.h>
 
-#include <Rendering/MemArena.h>
-
 #include <ImGui/imgui.h>
 #include <imGUI/imgui_impl_dx11.h>
 #include <imGUI/imgui_impl_win32.h>
 
 #include <d3d9.h>
 
-#define MEM_ARENA_SIZE 1024
-
 namespace Rendering
 {
+	RenderThread Renderer::m_renderThread;
+
 	D3D_PRIMITIVE_TOPOLOGY ConvertToDX11TopologyType(EPrimitiveTopology topologyType)
 	{
 		switch (topologyType)
@@ -64,8 +65,6 @@ namespace Rendering
 		m_device->Initialize();
 		
 		InitializeImGui();
-
-		MemArena::InitializeArena(MEM_ARENA_SIZE);
 	}
 	
 	void Renderer::Shutdown()
@@ -81,6 +80,8 @@ namespace Rendering
 
 	void Renderer::EndFrame()
 	{
+		m_renderThread.SignalProcess();
+
 		MemArena::Cycle();
 
 		D3DPERF_EndEvent();
@@ -121,45 +122,76 @@ namespace Rendering
 
 	VertexBufferHandle Renderer::CreateVertexBuffer(void* data, size_t dataTypeSize, size_t count, U32 stride)
 	{
-		std::shared_ptr<DX11VertexBuffer> vertexBuffer = std::make_shared<DX11VertexBuffer>();
-		vertexBuffer->SetDevice(m_device.get());
-		vertexBuffer->Allocate(data, dataTypeSize, count, stride);
+		//std::shared_ptr<DX11VertexBuffer> vertexBuffer = std::make_shared<DX11VertexBuffer>();
+		//vertexBuffer->SetDevice(m_device.get());
+		//vertexBuffer->Allocate(data, dataTypeSize, count, stride);
 
-		struct Command
-		{
-			int test = 0;
-		};
+		RenderCommand_CreateVertexBuffer* command = MemArena::AllocType<RenderCommand_CreateVertexBuffer>();
 
-		Command* command = MemArena::AllocType<Command>();
+		command->bufferPtr = std::make_shared<DX11VertexBuffer>();
+		command->count = count;
+		command->dataTypeSize = dataTypeSize;
+		command->stride = stride;
+		command->data = data;
+		
+		command->bufferPtr->SetDevice(m_device.get());
 
-		return VertexBufferHandle(vertexBuffer);
+		m_renderThread.PushCommand(command);
+
+		return VertexBufferHandle(command->bufferPtr);
 	}
 
 	IndexBufferHandle Renderer::CreateIndexBuffer(void* data, size_t dataTypeSize, size_t count)
 	{
-		std::shared_ptr<DX11IndexBuffer> indexBuffer = std::make_shared<DX11IndexBuffer>();
-		indexBuffer->SetDevice(m_device.get());
-		indexBuffer->Allocate(data, dataTypeSize, count);
+		//std::shared_ptr<DX11IndexBuffer> indexBuffer = std::make_shared<DX11IndexBuffer>();
+		//indexBuffer->SetDevice(m_device.get());
+		//indexBuffer->Allocate(data, dataTypeSize, count);
 
-		return IndexBufferHandle(indexBuffer);
+		RenderCommand_CreateIndexBuffer* command = MemArena::AllocType<RenderCommand_CreateIndexBuffer>();
+		command->bufferPtr = std::make_shared<DX11IndexBuffer>();
+		command->dataTypeSize = dataTypeSize;
+		command->count = count;
+		command->data = data;
+
+		command->bufferPtr->SetDevice(m_device.get());
+
+		m_renderThread.PushCommand(command);
+
+		return IndexBufferHandle(command->bufferPtr);
 	}
 
 	ConstantBufferHandle Renderer::CreateConstantBuffer(void* data, size_t dataTypeSize, size_t count)
 	{
-		std::shared_ptr<DX11ConstantBuffer> constantBuffer = std::make_shared<DX11ConstantBuffer>();
-		constantBuffer->SetDevice(m_device.get());
-		constantBuffer->Allocate(data, dataTypeSize, count);
+		//std::shared_ptr<DX11ConstantBuffer> constantBuffer = std::make_shared<DX11ConstantBuffer>();
+		//constantBuffer->SetDevice(m_device.get());
+		//constantBuffer->Allocate(data, dataTypeSize, count);
 
-		return ConstantBufferHandle(constantBuffer);
+		RenderCommand_CreateConstantBuffer* command = MemArena::AllocType<RenderCommand_CreateConstantBuffer>();
+		command->bufferPtr = std::make_shared<DX11ConstantBuffer>();
+		command->dataTypeSize = dataTypeSize;
+		command->count = count;
+		command->data = data;
+
+		command->bufferPtr->SetDevice(m_device.get());
+
+		m_renderThread.PushCommand(command);
+
+		return ConstantBufferHandle(command->bufferPtr);
 	}
 
 	TextureBuffer2DHandle Renderer::CreateTextureBuffer2D(const void* data, const GFXTextureBufferParams& params)
 	{
-		std::shared_ptr<DX11TextureBuffer2D> textureBuffer = std::make_shared<DX11TextureBuffer2D>();
+		/*std::shared_ptr<DX11TextureBuffer2D> textureBuffer = std::make_shared<DX11TextureBuffer2D>();
 		textureBuffer->SetDevice(m_device.get());
-		textureBuffer->Allocate(data, params);
+		textureBuffer->Allocate(data, params);*/
 
-		return TextureBuffer2DHandle(textureBuffer);
+		RenderCommand_CreateTextureBuffer2D* command = MemArena::AllocType<RenderCommand_CreateTextureBuffer2D>();
+		command->bufferPtr = std::make_shared<DX11TextureBuffer2D>();
+		command->data = data;
+
+		command->bufferPtr->SetDevice(m_device.get());
+
+		return TextureBuffer2DHandle(command->bufferPtr);
 	}
 
 	VertexShaderHandle Renderer::CreateVertexShader(const Filepath& filePath, const ShaderInputLayout& inputLayout)

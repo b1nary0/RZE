@@ -3,11 +3,15 @@
 #include <Rendering/RenderingDefines.h>
 #include <Rendering/BufferHandle.h>
 #include <Rendering/ShaderHandle.h>
+#include <Rendering/RenderCommand.h>
+
+#include <Rendering/RenderThread.h>
 
 #include <Utils/PrimitiveDefs.h>
 #include <Utils/Platform/Filepath.h>
 
 #include <memory>
+#include <queue>
 
 class Vector2D;
 class Vector4D;
@@ -106,10 +110,9 @@ namespace Rendering
 		static void DrawFullScreenQuad();
 
 	private:
-		//void ProcessCommands();
-		
-	private:
 		static std::unique_ptr<DX11Device> m_device;
 		static void* m_windowHandle;
+
+		static RenderThread m_renderThread;
 	};
 }

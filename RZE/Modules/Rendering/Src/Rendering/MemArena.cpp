@@ -50,6 +50,11 @@ namespace Rendering
 			return allocMem;
 		}
 
+		void* Get()
+		{
+			return s_memory;
+		}
+
 		void Cycle()
 		{
 			s_arenaState.curPos = 0;

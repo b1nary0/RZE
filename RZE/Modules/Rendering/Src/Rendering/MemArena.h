@@ -9,13 +9,13 @@ namespace Rendering
 		template <typename TAlloc>
 		TAlloc* AllocType()
 		{
-			void* memory = Alloc(sizeof(TAlloc));
-			memset(memory, 0, sizeof(TAlloc));
-
-			return reinterpret_cast<TAlloc*>(memory);
+			TAlloc* memory = new (Alloc(sizeof(TAlloc))) TAlloc();
+			return memory;
 		}
 
 		void* Alloc(size_t sizeRequested);
+
+		void* Get();
 
 		// Cycle will reset the arena for fresh use.
 		void Cycle();
