@@ -191,51 +191,88 @@ namespace Rendering
 
 		command->bufferPtr->SetDevice(m_device.get());
 
+		m_renderThread.PushCommand(command);
+
 		return TextureBuffer2DHandle(command->bufferPtr);
 	}
 
 	VertexShaderHandle Renderer::CreateVertexShader(const Filepath& filePath, const ShaderInputLayout& inputLayout)
 	{
-		std::shared_ptr<DX11VertexShader> vertexShader = std::make_shared<DX11VertexShader>();
-		vertexShader->SetDevice(m_device.get());
-		vertexShader->Create(filePath, inputLayout);
+		//std::shared_ptr<DX11VertexShader> vertexShader = std::make_shared<DX11VertexShader>();
+		//vertexShader->SetDevice(m_device.get());
+		//vertexShader->Create(filePath, inputLayout);
 
-		return VertexShaderHandle(vertexShader);
+		RenderCommand_CreateVertexShader* command = MemArena::AllocType<RenderCommand_CreateVertexShader>();
+		command->bufferPtr = std::make_shared<DX11VertexShader>();
+		command->filepath = filePath;
+
+		command->bufferPtr->SetDevice(m_device.get());
+
+		m_renderThread.PushCommand(command);
+
+		return VertexShaderHandle(command->bufferPtr);
 	}
 
 	PixelShaderHandle Renderer::CreatePixelShader(const Filepath& filePath)
 	{
-		std::shared_ptr<DX11PixelShader> pixelShader = std::make_shared<DX11PixelShader>();
+		/*std::shared_ptr<DX11PixelShader> pixelShader = std::make_shared<DX11PixelShader>();
 		pixelShader->SetDevice(m_device.get());
-		pixelShader->Create(filePath);
+		pixelShader->Create(filePath);*/
 
-		return PixelShaderHandle(pixelShader);
+		RenderCommand_CreatePixelShader* command = MemArena::AllocType<RenderCommand_CreatePixelShader>();
+		command->bufferPtr = std::make_shared<DX11PixelShader>();
+		command->filepath = filePath;
+
+		command->bufferPtr->SetDevice(m_device.get());
+
+		m_renderThread.PushCommand(command);
+
+		return PixelShaderHandle(command->bufferPtr);
 	}
 
 	void Renderer::UploadDataToBuffer(const ConstantBufferHandle& buffer, const void* data)
 	{
-		std::shared_ptr<IConstantBuffer> bufferPtr = buffer.m_buffer;
-		DX11ConstantBuffer* const dx11Buf = static_cast<DX11ConstantBuffer*>(bufferPtr.get());
-		dx11Buf->UpdateSubresources(data);
+		//std::shared_ptr<IConstantBuffer> bufferPtr = buffer.m_buffer;
+		//DX11ConstantBuffer* const dx11Buf = static_cast<DX11ConstantBuffer*>(bufferPtr.get());
+		//dx11Buf->UpdateSubresources(data);
+
+		RenderCommand_UploadDataToBuffer* command = MemArena::AllocType<RenderCommand_UploadDataToBuffer>();
+		command->bufferHandle = buffer;
+		command->data = data;
+
+		m_renderThread.PushCommand(command);
 	}
 
 	void Renderer::ReleaseVertexShader(VertexShaderHandle& shaderHandle)
 	{
-		shaderHandle.m_shader.reset();
+		//shaderHandle.m_shader.reset();
+		RenderCommand_ReleaseVertexShader* command = MemArena::AllocType<RenderCommand_ReleaseVertexShader>();
+		command->shaderHandle = shaderHandle;
+
+		m_renderThread.PushCommand(command);
 	}
 
 	void Renderer::ReleasePixelShader(PixelShaderHandle& shaderHandle)
 	{
-		shaderHandle.m_shader.reset();
+		//shaderHandle.m_shader.reset();
+		RenderCommand_ReleasePixelShader* command = MemArena::AllocType<RenderCommand_ReleasePixelShader>();
+		command->shaderHandle = shaderHandle;
+
+		m_renderThread.PushCommand(command);
 	}
 
 	void Renderer::ClearDepthStencilBuffer(const TextureBuffer2DHandle& buffer)
 	{
-		std::shared_ptr<ITextureBuffer2D> texture = buffer.m_buffer;
-		DX11TextureBuffer2D* texturePtr = static_cast<DX11TextureBuffer2D*>(texture.get());
+		//std::shared_ptr<ITextureBuffer2D> texture = buffer.m_buffer;
+		//DX11TextureBuffer2D* texturePtr = static_cast<DX11TextureBuffer2D*>(texture.get());
 
-		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
-		deviceContext.ClearDepthStencilView(&texturePtr->GetDepthView(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+		//ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+		//deviceContext.ClearDepthStencilView(&texturePtr->GetDepthView(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+		RenderCommand_ClearDepthStencilBuffer* command = MemArena::AllocType<RenderCommand_ClearDepthStencilBuffer>();
+		command->bufferHandle = buffer;
+
+		m_renderThread.PushCommand(command);
 	}
 
 	void Renderer::SetRenderTarget(const RenderTargetTexture* renderTarget)

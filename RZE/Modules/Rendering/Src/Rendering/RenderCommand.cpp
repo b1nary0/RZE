@@ -23,4 +23,30 @@ namespace Rendering
     void RenderCommand_CreateTextureBuffer2D::Execute()
     {
     }
+
+    void RenderCommand_CreateVertexShader::Execute()
+    {
+    }
+
+    void RenderCommand_CreatePixelShader::Execute()
+    {
+    }
+
+    void RenderCommand_UploadDataToBuffer::Execute()
+    {
+    }
+
+    void RenderCommand_ReleaseVertexShader::Execute()
+    {
+        shaderHandle.m_shader.reset();
+    }
+
+    void RenderCommand_ReleasePixelShader::Execute()
+    {
+        shaderHandle.m_shader.reset();
+    }
+
+    void RenderCommand_ClearDepthStencilBuffer::Execute()
+    {
+    }
 }

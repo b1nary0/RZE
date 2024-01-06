@@ -30,6 +30,8 @@ namespace Rendering
 		};
 
 	public:
+		ShaderInputLayout() = default;
+
 		ShaderInputLayout(const std::initializer_list<ShaderInputLayoutData>& initializerList)
 			: m_layoutData(initializerList) {}
 

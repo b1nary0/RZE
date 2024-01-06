@@ -1,6 +1,11 @@
 #pragma once
 
+#include <Rendering/BufferHandle.h>
+#include <Rendering/Driver/ShaderTypes.h>
+#include <Rendering/ShaderHandle.h>
+
 #include <Utils/PrimitiveDefs.h>
+#include <Utils/Platform/FilePath.h>
 
 #include <memory>
 
@@ -10,6 +15,8 @@ namespace Rendering
 	class DX11IndexBuffer;
 	class DX11ConstantBuffer;
 	class DX11TextureBuffer2D;
+	class DX11VertexShader;
+	class DX11PixelShader;
 
 	enum RenderCommandType
 	{
@@ -17,7 +24,13 @@ namespace Rendering
 		CreateVertexBuffer = 100,
 		CreateIndexBuffer,
 		CreateConstantBuffer,
-		CreateTextureBuffer2D
+		CreateTextureBuffer2D,
+		CreateVertexShader,
+		CreatePixelShader,
+		UploadDataToBuffer,
+		ReleaseVertexShader,
+		ReleasePixelShader,
+		ClearDepthStencilBuffer
 	};
 
 	// @todo a dummy class for storing these all separately just to prove out system.
@@ -72,6 +85,64 @@ namespace Rendering
 
 		const void* data = nullptr;
 		std::shared_ptr<DX11TextureBuffer2D> bufferPtr = nullptr;
+
+		void Execute() override;
+	};
+
+	struct RenderCommand_CreateVertexShader : RenderCommand
+	{
+		RenderCommand_CreateVertexShader() { type = RenderCommandType::CreateVertexShader; }
+
+		Filepath filepath;
+		ShaderInputLayout shaderInputLayout;
+		std::shared_ptr<DX11VertexShader> bufferPtr = nullptr;
+
+		void Execute() override;
+	};
+
+	struct RenderCommand_CreatePixelShader : RenderCommand
+	{
+		RenderCommand_CreatePixelShader() { type = RenderCommandType::CreatePixelShader; }
+
+		Filepath filepath;
+		std::shared_ptr<DX11PixelShader> bufferPtr = nullptr;
+
+		void Execute() override;
+	};
+
+	struct RenderCommand_UploadDataToBuffer : RenderCommand
+	{
+		RenderCommand_UploadDataToBuffer() { type = RenderCommandType::UploadDataToBuffer; }
+
+		const void* data = nullptr;
+		ConstantBufferHandle bufferHandle;
+
+		void Execute() override;
+	};
+
+	struct RenderCommand_ReleaseVertexShader : RenderCommand
+	{
+		RenderCommand_ReleaseVertexShader() { type = RenderCommandType::ReleaseVertexShader; }
+
+		VertexShaderHandle shaderHandle;
+
+		void Execute() override;
+	};
+
+	struct RenderCommand_ReleasePixelShader : RenderCommand
+	{
+		RenderCommand_ReleasePixelShader() { type = RenderCommandType::ReleasePixelShader; }
+
+		PixelShaderHandle shaderHandle;
+
+		void Execute() override;
+	};
+
+	struct RenderCommand_ClearDepthStencilBuffer : RenderCommand
+	{
+		RenderCommand_ClearDepthStencilBuffer() { type = RenderCommandType::ClearDepthStencilBuffer; }
+
+		TextureBuffer2DHandle bufferHandle;
 
 		void Execute() override;
 	};
