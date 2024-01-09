@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Utils/PrimitiveDefs.h>
+
 namespace Rendering
 {
 	namespace MemArena
@@ -15,7 +17,7 @@ namespace Rendering
 
 		void* Alloc(size_t sizeRequested);
 
-		void* Get();
+		Byte* GetConsumerPtr();
 
 		// Cycle will reset the arena for fresh use.
 		void Cycle();

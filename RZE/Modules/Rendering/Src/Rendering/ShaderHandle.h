@@ -8,12 +8,8 @@ namespace Rendering
 {
 	class VertexShaderHandle
 	{
-		// @todo remove this after Renderer only issues commands
 		friend class Renderer;
-		// @todo come back to this. right now the only places that should be able to call reset
-		// on the smart_ptr is a command. that way we can guarantee you're going through the right places
-		// to handle it. but not convinced at this approach at all. its ugly, but works
-		friend struct RenderCommand_ReleaseVertexShader;
+		friend class RenderThread;
 
 	public:
 		VertexShaderHandle() = default;
@@ -32,7 +28,7 @@ namespace Rendering
 	class PixelShaderHandle
 	{
 		friend class Renderer;
-		friend struct RenderCommand_ReleasePixelShader;
+		friend class RenderThread;
 
 	public:
 		PixelShaderHandle() = default;

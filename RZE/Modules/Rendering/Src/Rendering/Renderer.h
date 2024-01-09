@@ -23,6 +23,7 @@ namespace Rendering
 	class RenderTargetTexture;
 
 	struct GFXTextureBufferParams;
+	struct ViewportParams;
 	
 	class Renderer
 	{
@@ -32,17 +33,6 @@ namespace Rendering
 			// This will get filled out per Begin/End call
 		};
 
-	public:
-		struct ViewportParams
-		{
-			float Width;
-			float Height;
-			float MinDepth;
-			float MaxDepth;
-			float TopLeftX;
-			float TopLeftY;
-		};
-
 		// Constructors
 	public:
 		Renderer();
@@ -50,6 +40,7 @@ namespace Rendering
 		
 	public:
 		static void Initialize(void* mWindowHandle);
+		static void Update();
 		static void Shutdown();
 
 		// API for an entire frame (global state, etc)
@@ -62,9 +53,9 @@ namespace Rendering
 
 		static void DevicePresent();
 
-		static void InitializeImGui();
-
 		static void HandleWindowResize(const Vector2D& newSize);
+
+		static void ImGuiRender();
 
 	public:
 		static VertexBufferHandle CreateVertexBuffer(void* data, size_t dataTypeSize, size_t count, U32 stride);
@@ -110,9 +101,6 @@ namespace Rendering
 		static void DrawFullScreenQuad();
 
 	private:
-		static std::unique_ptr<DX11Device> m_device;
-		static void* m_windowHandle;
-
 		static RenderThread m_renderThread;
 	};
 }

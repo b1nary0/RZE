@@ -7,13 +7,15 @@ namespace Rendering
 {
 	namespace MemArena
 	{
-		Byte* s_memory = nullptr;
+		Byte* s_producerBuf = nullptr;
+		Byte* s_consumerBuf = nullptr;
 
 		struct ArenaState
 		{
 			size_t curPos = 0;
 			size_t size = 0;
-		} s_arenaState;
+		};
+		ArenaState s_arenaState;
 
 		void ValidateArenaState(size_t sizeRequested)
 		{
@@ -28,14 +30,16 @@ namespace Rendering
 
 		void InitializeArena(size_t size)
 		{
-			if (s_memory != nullptr)
+			if (s_producerBuf != nullptr || s_consumerBuf != nullptr)
 			{
 				RZE_LOG("Rendering memory arena being re-initialized. \
 					This is incorrect as the memory should be valid once for the length of a Rendering::Renderer lifetime.");
-				AssertIsNull(s_memory);
+				AssertIsNull(s_producerBuf);
+				AssertIsNull(s_consumerBuf);
 			}
 			
-			s_memory = new Byte[size];
+			s_producerBuf = new Byte[size];
+			s_consumerBuf = new Byte[size];
 
 			s_arenaState.size = size;
 		}
@@ -44,20 +48,22 @@ namespace Rendering
 		{
 			ValidateArenaState(size);
 
-			Byte* allocMem = &s_memory[s_arenaState.curPos];
+			Byte* allocMem = &s_producerBuf[s_arenaState.curPos];
 			s_arenaState.curPos += size;
 
 			return allocMem;
 		}
 
-		void* Get()
+		Byte* GetConsumerPtr()
 		{
-			return s_memory;
+			return s_consumerBuf;
 		}
 
 		void Cycle()
 		{
 			s_arenaState.curPos = 0;
+
+			std::swap(s_producerBuf, s_consumerBuf);
 		}
 	}
 }

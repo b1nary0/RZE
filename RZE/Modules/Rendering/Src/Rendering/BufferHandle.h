@@ -12,7 +12,11 @@ namespace Rendering
 
 	class VertexBufferHandle
 	{
+		// @todo handle classes as atomic units is getting out of hand
+		// friend class Renderer is needed to dole out the handle (private constructor for shared_ptr
+		// and friend class RenderThread is needed to directly access m_buffer
 		friend class Renderer;
+		friend class RenderThread;
 
 	public:
 		VertexBufferHandle() = default;
@@ -31,6 +35,7 @@ namespace Rendering
 	class IndexBufferHandle
 	{
 		friend class Renderer;
+		friend class RenderThread;
 
 	public:
 		IndexBufferHandle() = default;
@@ -49,6 +54,7 @@ namespace Rendering
 	class ConstantBufferHandle
 	{
 		friend class Renderer;
+		friend class RenderThread;
 
 	public:
 		ConstantBufferHandle() = default;
@@ -67,6 +73,7 @@ namespace Rendering
 	class TextureBuffer2DHandle
 	{
 		friend class Renderer;
+		friend class RenderThread;
 
 	public:
 		TextureBuffer2DHandle() = default;

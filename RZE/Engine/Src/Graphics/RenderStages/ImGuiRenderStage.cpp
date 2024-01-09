@@ -21,8 +21,7 @@ void ImGuiRenderStage::Render(const RenderStageData& renderData)
 		Rendering::Renderer::SetRenderTargetBackBuffer();
 	}
 
-	ImGui::Render();
-	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+	Rendering::Renderer::ImGuiRender();
 
 	Rendering::Renderer::End();
 }

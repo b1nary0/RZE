@@ -72,6 +72,8 @@ void RenderEngine::Finish()
 {
 	OPTICK_EVENT();
 	Rendering::Renderer::DevicePresent();
+
+	Rendering::Renderer::Update();
 }
 
 void RenderEngine::Shutdown()

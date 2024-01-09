@@ -1,6 +1,5 @@
 #include <Rendering/Renderer.h>
 
-#include <Optick/optick.h>
 
 #include <Utils/Conversions.h>
 #include <Utils/DebugUtils/Debug.h>
@@ -12,8 +11,8 @@
 #include <Rendering/RenderCommand.h>
 #include <Rendering/MemArena.h>
 
-#include <Rendering/Driver/DX11/DX11Device.h>
 #include <Rendering/Driver/DX11/DX11.h>
+#include <Rendering/Driver/DX11/DX11Device.h>
 #include <Rendering/Driver/DX11/DX11ConstantBuffer.h>
 #include <Rendering/Driver/DX11/DX11IndexBuffer.h>
 #include <Rendering/Driver/DX11/DX11VertexBuffer.h>
@@ -22,29 +21,11 @@
 
 #include <Rendering/Graphics/RenderTarget.h>
 
-#include <ImGui/imgui.h>
-#include <imGUI/imgui_impl_dx11.h>
-#include <imGUI/imgui_impl_win32.h>
-
-#include <d3d9.h>
+#include <Optick/optick.h>
 
 namespace Rendering
 {
 	RenderThread Renderer::m_renderThread;
-
-	D3D_PRIMITIVE_TOPOLOGY ConvertToDX11TopologyType(EPrimitiveTopology topologyType)
-	{
-		switch (topologyType)
-		{
-			case EPrimitiveTopology::TriangleList: return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-			case EPrimitiveTopology::TriangleStrip: return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
-
-			default: return D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
-		}
-	}
-
-	std::unique_ptr<DX11Device> Renderer::m_device = nullptr;
-	void* Renderer::m_windowHandle = nullptr;
 
 	Renderer::Renderer()
 	{
@@ -56,76 +37,73 @@ namespace Rendering
 
 	void Renderer::Initialize(void* windowHandle)
 	{
-		AssertNotNull(windowHandle);
+		m_renderThread.Initialize(windowHandle);
+	}
 
-		m_windowHandle = windowHandle;
-
-		m_device = std::make_unique<DX11Device>();
-		m_device->SetWindow(m_windowHandle);
-		m_device->Initialize();
-		
-		InitializeImGui();
+	void Renderer::Update()
+	{
+		m_renderThread.Update();
 	}
 	
 	void Renderer::Shutdown()
 	{
-		ImGui_ImplDX11_Shutdown();
-		m_device->Shutdown();
+		m_renderThread.Shutdown();
 	}
 
 	void Renderer::BeginFrame(const char* frameName)
 	{
-		D3DPERF_BeginEvent(0xffffffff, Conversions::StringToWString(frameName).c_str());
+		RenderCommand_BeginFrame* command = MemArena::AllocType<RenderCommand_BeginFrame>();
+		command->frameName = frameName;
+
+		m_renderThread.PushCommand(command);
 	}
 
 	void Renderer::EndFrame()
 	{
+		RenderCommand_EndFrame* command = MemArena::AllocType<RenderCommand_EndFrame>();
+		m_renderThread.PushCommand(command);
+
 		m_renderThread.SignalProcess();
-
 		MemArena::Cycle();
-
-		D3DPERF_EndEvent();
 	}
 
 	void Renderer::Begin(const char* drawSetName)
 	{
-		D3DPERF_BeginEvent(0xffffffff, Conversions::StringToWString(drawSetName).c_str());
+		RenderCommand_Begin* command = MemArena::AllocType<RenderCommand_Begin>();
+		command->drawSetName = drawSetName;
 
-		// @TODO This is temporary until the API is written for SetRenderTarget() and ClearDepthStencilView()
-		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
-		deviceContext.RSSetState(m_device->mRasterState);
+		m_renderThread.PushCommand(command);
 	}
 
 	void Renderer::End()
 	{
-		// #TODO form the api such that we can verify Begin() and End() calls for sanity checks
-		D3DPERF_EndEvent();
+		RenderCommand_End* command = MemArena::AllocType<RenderCommand_End>();
+
+		m_renderThread.PushCommand(command);
 	}
 
 	void Renderer::DevicePresent()
 	{
-		OPTICK_EVENT();
-		m_device->Present();
-	}
-
-	void Renderer::InitializeImGui()
-	{
-		ImGui::CreateContext();
-		ImGui_ImplWin32_Init(m_windowHandle);
-		ImGui_ImplDX11_Init(&m_device->GetHardwareDevice(), &m_device->GetDeviceContext());
+		RenderCommand_DevicePresent* command = MemArena::AllocType<RenderCommand_DevicePresent>();
+		m_renderThread.PushCommand(command);
 	}
 
 	void Renderer::HandleWindowResize(const Vector2D& newSize)
 	{
-		m_device->HandleWindowResize(static_cast<U32>(newSize.X()), static_cast<U32>(newSize.Y()));
+		RenderCommand_HandleWindowResize* command = MemArena::AllocType<RenderCommand_HandleWindowResize>();
+		command->size = newSize;
+
+		m_renderThread.PushCommand(command);
+	}
+
+	void Renderer::ImGuiRender()
+	{
+		RenderCommand_ImGuiRender* command = MemArena::AllocType<RenderCommand_ImGuiRender>();
+		m_renderThread.PushCommand(command);
 	}
 
 	VertexBufferHandle Renderer::CreateVertexBuffer(void* data, size_t dataTypeSize, size_t count, U32 stride)
 	{
-		//std::shared_ptr<DX11VertexBuffer> vertexBuffer = std::make_shared<DX11VertexBuffer>();
-		//vertexBuffer->SetDevice(m_device.get());
-		//vertexBuffer->Allocate(data, dataTypeSize, count, stride);
-
 		RenderCommand_CreateVertexBuffer* command = MemArena::AllocType<RenderCommand_CreateVertexBuffer>();
 
 		command->bufferPtr = std::make_shared<DX11VertexBuffer>();
@@ -134,8 +112,6 @@ namespace Rendering
 		command->stride = stride;
 		command->data = data;
 		
-		command->bufferPtr->SetDevice(m_device.get());
-
 		m_renderThread.PushCommand(command);
 
 		return VertexBufferHandle(command->bufferPtr);
@@ -143,17 +119,11 @@ namespace Rendering
 
 	IndexBufferHandle Renderer::CreateIndexBuffer(void* data, size_t dataTypeSize, size_t count)
 	{
-		//std::shared_ptr<DX11IndexBuffer> indexBuffer = std::make_shared<DX11IndexBuffer>();
-		//indexBuffer->SetDevice(m_device.get());
-		//indexBuffer->Allocate(data, dataTypeSize, count);
-
 		RenderCommand_CreateIndexBuffer* command = MemArena::AllocType<RenderCommand_CreateIndexBuffer>();
 		command->bufferPtr = std::make_shared<DX11IndexBuffer>();
 		command->dataTypeSize = dataTypeSize;
 		command->count = count;
 		command->data = data;
-
-		command->bufferPtr->SetDevice(m_device.get());
 
 		m_renderThread.PushCommand(command);
 
@@ -162,17 +132,11 @@ namespace Rendering
 
 	ConstantBufferHandle Renderer::CreateConstantBuffer(void* data, size_t dataTypeSize, size_t count)
 	{
-		//std::shared_ptr<DX11ConstantBuffer> constantBuffer = std::make_shared<DX11ConstantBuffer>();
-		//constantBuffer->SetDevice(m_device.get());
-		//constantBuffer->Allocate(data, dataTypeSize, count);
-
 		RenderCommand_CreateConstantBuffer* command = MemArena::AllocType<RenderCommand_CreateConstantBuffer>();
 		command->bufferPtr = std::make_shared<DX11ConstantBuffer>();
 		command->dataTypeSize = dataTypeSize;
 		command->count = count;
 		command->data = data;
-
-		command->bufferPtr->SetDevice(m_device.get());
 
 		m_renderThread.PushCommand(command);
 
@@ -181,15 +145,10 @@ namespace Rendering
 
 	TextureBuffer2DHandle Renderer::CreateTextureBuffer2D(const void* data, const GFXTextureBufferParams& params)
 	{
-		/*std::shared_ptr<DX11TextureBuffer2D> textureBuffer = std::make_shared<DX11TextureBuffer2D>();
-		textureBuffer->SetDevice(m_device.get());
-		textureBuffer->Allocate(data, params);*/
-
 		RenderCommand_CreateTextureBuffer2D* command = MemArena::AllocType<RenderCommand_CreateTextureBuffer2D>();
 		command->bufferPtr = std::make_shared<DX11TextureBuffer2D>();
 		command->data = data;
-
-		command->bufferPtr->SetDevice(m_device.get());
+		command->params = params;
 
 		m_renderThread.PushCommand(command);
 
@@ -198,15 +157,9 @@ namespace Rendering
 
 	VertexShaderHandle Renderer::CreateVertexShader(const Filepath& filePath, const ShaderInputLayout& inputLayout)
 	{
-		//std::shared_ptr<DX11VertexShader> vertexShader = std::make_shared<DX11VertexShader>();
-		//vertexShader->SetDevice(m_device.get());
-		//vertexShader->Create(filePath, inputLayout);
-
 		RenderCommand_CreateVertexShader* command = MemArena::AllocType<RenderCommand_CreateVertexShader>();
 		command->bufferPtr = std::make_shared<DX11VertexShader>();
 		command->filepath = filePath;
-
-		command->bufferPtr->SetDevice(m_device.get());
 
 		m_renderThread.PushCommand(command);
 
@@ -215,15 +168,9 @@ namespace Rendering
 
 	PixelShaderHandle Renderer::CreatePixelShader(const Filepath& filePath)
 	{
-		/*std::shared_ptr<DX11PixelShader> pixelShader = std::make_shared<DX11PixelShader>();
-		pixelShader->SetDevice(m_device.get());
-		pixelShader->Create(filePath);*/
-
 		RenderCommand_CreatePixelShader* command = MemArena::AllocType<RenderCommand_CreatePixelShader>();
 		command->bufferPtr = std::make_shared<DX11PixelShader>();
 		command->filepath = filePath;
-
-		command->bufferPtr->SetDevice(m_device.get());
 
 		m_renderThread.PushCommand(command);
 
@@ -232,10 +179,6 @@ namespace Rendering
 
 	void Renderer::UploadDataToBuffer(const ConstantBufferHandle& buffer, const void* data)
 	{
-		//std::shared_ptr<IConstantBuffer> bufferPtr = buffer.m_buffer;
-		//DX11ConstantBuffer* const dx11Buf = static_cast<DX11ConstantBuffer*>(bufferPtr.get());
-		//dx11Buf->UpdateSubresources(data);
-
 		RenderCommand_UploadDataToBuffer* command = MemArena::AllocType<RenderCommand_UploadDataToBuffer>();
 		command->bufferHandle = buffer;
 		command->data = data;
@@ -245,7 +188,6 @@ namespace Rendering
 
 	void Renderer::ReleaseVertexShader(VertexShaderHandle& shaderHandle)
 	{
-		//shaderHandle.m_shader.reset();
 		RenderCommand_ReleaseVertexShader* command = MemArena::AllocType<RenderCommand_ReleaseVertexShader>();
 		command->shaderHandle = shaderHandle;
 
@@ -254,7 +196,6 @@ namespace Rendering
 
 	void Renderer::ReleasePixelShader(PixelShaderHandle& shaderHandle)
 	{
-		//shaderHandle.m_shader.reset();
 		RenderCommand_ReleasePixelShader* command = MemArena::AllocType<RenderCommand_ReleasePixelShader>();
 		command->shaderHandle = shaderHandle;
 
@@ -263,154 +204,159 @@ namespace Rendering
 
 	void Renderer::ClearDepthStencilBuffer(const TextureBuffer2DHandle& buffer)
 	{
-		//std::shared_ptr<ITextureBuffer2D> texture = buffer.m_buffer;
-		//DX11TextureBuffer2D* texturePtr = static_cast<DX11TextureBuffer2D*>(texture.get());
-
-		//ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
-		//deviceContext.ClearDepthStencilView(&texturePtr->GetDepthView(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
 		RenderCommand_ClearDepthStencilBuffer* command = MemArena::AllocType<RenderCommand_ClearDepthStencilBuffer>();
 		command->bufferHandle = buffer;
 
 		m_renderThread.PushCommand(command);
 	}
 
+	// @todo why are we using const RenderTargetTexture* here instead of RenderTargetHandle?
 	void Renderer::SetRenderTarget(const RenderTargetTexture* renderTarget)
 	{
 		if (renderTarget != nullptr)
 		{
-			RenderTargetHandle target = renderTarget->GetTargetPlatformObject();
-			TextureBuffer2DHandle depthTexture = renderTarget->GetDepthTexturePlatformObject();
+			RenderCommand_SetRenderTarget* command = MemArena::AllocType<RenderCommand_SetRenderTarget>();
+			command->renderTarget = renderTarget;
 
-			DX11TextureBuffer2D* targetPtr = static_cast<DX11TextureBuffer2D*>(target.m_buffer.get());
-			DX11TextureBuffer2D* depthTexturePtr = static_cast<DX11TextureBuffer2D*>(depthTexture.m_buffer.get());
-
-			ID3D11RenderTargetView* rtv = &targetPtr->GetTargetView();
-			ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
-			deviceContext.OMSetRenderTargets(1, &rtv, &depthTexturePtr->GetDepthView());
+			m_renderThread.PushCommand(command);
 		}
 		else
 		{
-			ID3D11RenderTargetView* rtv = nullptr;
-			ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
-			deviceContext.OMSetRenderTargets(1, &rtv, nullptr);
+			RenderCommand_ClearRenderTarget* command = MemArena::AllocType<RenderCommand_ClearRenderTarget>();
+
+			m_renderThread.PushCommand(command);
 		}
 	}
 
 	void Renderer::SetRenderTargetBackBuffer()
 	{
-		constexpr FLOAT s_backBufferClearColour[4] = { 0.25f, 0.45f, 0.65f, 1.0f };
+		RenderCommand_SetRenderTargetBackBuffer* command = MemArena::AllocType<RenderCommand_SetRenderTargetBackBuffer>();
 
-		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
-		deviceContext.ClearRenderTargetView(m_device->mRenderTargetView, s_backBufferClearColour);
-		deviceContext.ClearDepthStencilView(m_device->mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-		deviceContext.OMSetRenderTargets(1, &m_device->mRenderTargetView, m_device->mDepthStencilView);
+		m_renderThread.PushCommand(command);
 	}
 
 	void Renderer::ClearRenderTarget(const RenderTargetHandle& renderTarget, const Vector4D& colour)
 	{
-		std::shared_ptr<ITextureBuffer2D> texture = renderTarget.m_buffer;
-		DX11TextureBuffer2D* texturePtr = static_cast<DX11TextureBuffer2D*>(texture.get());
-		
-		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
-		FLOAT rgba[4] = { colour.X(), colour.Y(), colour.Z(), colour.W() };
-		deviceContext.ClearRenderTargetView(&texturePtr->GetTargetView(), rgba);
+		RenderCommand_ClearRenderTarget* command = MemArena::AllocType<RenderCommand_ClearRenderTarget>();
+		command->renderTarget = renderTarget;
+		command->colour = colour;
+
+		m_renderThread.PushCommand(command);
 	}
 
 	void Renderer::SetViewport(const ViewportParams& viewportParams)
 	{
-		D3D11_VIEWPORT viewport;
-		viewport.Width = viewportParams.Width;
-		viewport.Height = viewportParams.Height;
-		viewport.MinDepth = viewportParams.MinDepth;
-		viewport.MaxDepth = viewportParams.MaxDepth;
-		viewport.TopLeftX = viewportParams.TopLeftX;
-		viewport.TopLeftY = viewportParams.TopLeftY;
+		RenderCommand_SetViewport* command = MemArena::AllocType<RenderCommand_SetViewport>();
+		command->params = viewportParams;
 
-		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
-		deviceContext.RSSetViewports(1, &viewport);
+		m_renderThread.PushCommand(command);
 	}
 
 	void Renderer::SetInputLayout(const VertexShaderHandle& vertexShader)
 	{
-		std::shared_ptr<IVertexShader> shaderPtr = vertexShader.m_shader;
-		shaderPtr->SetInputLayout();
+		RenderCommand_SetInputLayout* command = MemArena::AllocType<RenderCommand_SetInputLayout>();
+		command->shaderHandle = vertexShader;
+
+		m_renderThread.PushCommand(command);
 	}
 
 	void Renderer::SetPrimitiveTopology(EPrimitiveTopology topologyType)
 	{
-		D3D_PRIMITIVE_TOPOLOGY d3dTopology = ConvertToDX11TopologyType(topologyType);
-		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
-		deviceContext.IASetPrimitiveTopology(d3dTopology);
+		RenderCommand_SetPrimitiveTopology* command = MemArena::AllocType<RenderCommand_SetPrimitiveTopology>();
+		command->topology = topologyType;
+
+		m_renderThread.PushCommand(command);
 	}
 
 	void Renderer::SetVertexShader(const VertexShaderHandle& vertexShader)
 	{
-		std::shared_ptr<IVertexShader> shaderPtr = vertexShader.m_shader;
-		shaderPtr->SetActive();
+		RenderCommand_SetVertexShader* command = MemArena::AllocType<RenderCommand_SetVertexShader>();
+		command->shaderHandle = vertexShader;
+
+		m_renderThread.PushCommand(command);
 	}
 
 	void Renderer::SetPixelShader(const PixelShaderHandle& pixelShader)
 	{
-		std::shared_ptr<IPixelShader> shaderPtr = pixelShader.m_shader;
-		shaderPtr->SetActive();
+		RenderCommand_SetPixelShader* command = MemArena::AllocType<RenderCommand_SetPixelShader>();
+		command->shaderHandle = pixelShader;
+
+		m_renderThread.PushCommand(command);
 	}
 
 	void Renderer::SetConstantBufferVS(const ConstantBufferHandle& buffer, U32 bufferSlot)
 	{
-		std::shared_ptr<IConstantBuffer> bufferPtr = buffer.m_buffer;
-		bufferPtr->SetActiveVS(bufferSlot);
+		RenderCommand_SetConstantBufferVS* command = MemArena::AllocType<RenderCommand_SetConstantBufferVS>();
+		command->bufferHandle = buffer;
+		command->bufferSlot = bufferSlot;
+
+		m_renderThread.PushCommand(command);
 	}
 
 	void Renderer::SetConstantBufferPS(const ConstantBufferHandle& buffer, U32 bufferSlot)
 	{
-		std::shared_ptr<IConstantBuffer> bufferPtr = buffer.m_buffer;
-		bufferPtr->SetActivePS(bufferSlot);
+		RenderCommand_SetConstantBufferPS* command = MemArena::AllocType<RenderCommand_SetConstantBufferPS>();
+		command->bufferHandle = buffer;
+		command->bufferSlot = bufferSlot;
+
+		m_renderThread.PushCommand(command);
 	}
 
 	void Renderer::SetVertexBuffer(const VertexBufferHandle& buffer, U32 bufferSlot)
 	{
-		std::shared_ptr<IVertexBuffer> bufferPtr = buffer.m_buffer;
-		bufferPtr->SetActive(bufferSlot);
+		RenderCommand_SetVertexBuffer* command = MemArena::AllocType<RenderCommand_SetVertexBuffer>();
+		command->bufferHandle = buffer;
+		command->bufferSlot = bufferSlot;
+
+		m_renderThread.PushCommand(command);
 	}
 
 	void Renderer::SetIndexBuffer(const IndexBufferHandle& buffer)
 	{
-		std::shared_ptr<IIndexBuffer> bufferPtr = buffer.m_buffer;
-		bufferPtr->SetActive();
+		RenderCommand_SetIndexBuffer* command = MemArena::AllocType<RenderCommand_SetIndexBuffer>();
+		command->bufferHandle = buffer;
+
+		m_renderThread.PushCommand(command);
 	}
 
 	void Renderer::SetTextureResource(const TextureBuffer2DHandle& texture, U32 textureSlot)
 	{
-		std::shared_ptr<ITextureBuffer2D> bufferPtr = texture.m_buffer;
-		bufferPtr->SetActive(textureSlot);
+		RenderCommand_SetTextureResource* command = MemArena::AllocType<RenderCommand_SetTextureResource>();
+		command->bufferHandle = texture;
+		command->bufferSlot = textureSlot;
+
+		m_renderThread.PushCommand(command);
 	}
 
 	void Renderer::UnsetTextureResource(U32 textureSlot)
 	{
-		ID3D11ShaderResourceView* nullSRV = nullptr;
+		RenderCommand_UnsetTextureResource* command = MemArena::AllocType<RenderCommand_UnsetTextureResource>();
+		command->textureSlot = textureSlot;
 
-		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
-		deviceContext.PSSetShaderResources(textureSlot, 1, &nullSRV);
+		m_renderThread.PushCommand(command);
 	}
 
 	void Renderer::Draw(const VertexBufferHandle& vertexBuffer, size_t count)
 	{
-		std::shared_ptr<IVertexBuffer> bufferPtr = vertexBuffer.m_buffer;
-		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
-		deviceContext.Draw(count, 0);
+		RenderCommand_Draw* command = MemArena::AllocType<RenderCommand_Draw>();
+		command->vertexBuffer = vertexBuffer;
+		command->count = count;
+
+		m_renderThread.PushCommand(command);
 	}
 
 	void Renderer::DrawIndexed(const IndexBufferHandle& indexBuffer)
 	{
-		std::shared_ptr<IIndexBuffer> bufferPtr = indexBuffer.m_buffer;
-		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
-		deviceContext.DrawIndexed(bufferPtr->GetIndexCount(), 0, 0);
+		RenderCommand_DrawIndexed* command = MemArena::AllocType<RenderCommand_DrawIndexed>();
+		command->indexBuffer = indexBuffer;
+
+		m_renderThread.PushCommand(command);
 	}
 
 	void Renderer::DrawFullScreenQuad()
 	{
-		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
-		deviceContext.Draw(4, 0);
+		RenderCommand_DrawFullScreenQuad* command = MemArena::AllocType<RenderCommand_DrawFullScreenQuad>();
+
+		m_renderThread.PushCommand(command);
 	}
 }
