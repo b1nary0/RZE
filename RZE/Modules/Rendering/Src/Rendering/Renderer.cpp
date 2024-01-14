@@ -159,6 +159,7 @@ namespace Rendering
 	{
 		RenderCommand_CreateVertexShader* command = MemArena::AllocType<RenderCommand_CreateVertexShader>();
 		command->bufferPtr = std::make_shared<DX11VertexShader>();
+		command->shaderInputLayout = inputLayout;
 		command->filepath = filePath;
 
 		m_renderThread.PushCommand(command);

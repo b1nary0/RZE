@@ -43,11 +43,14 @@ void RenderEngine::Update()
 	}
 }
 
-void RenderEngine::Render(const char* frameName, bool withImgui)
+void RenderEngine::Render(const char* frameName, bool isMainRenderCall, bool withImgui)
 {
 	OPTICK_EVENT();
 
-	Rendering::Renderer::BeginFrame(frameName);
+	if (isMainRenderCall)
+	{
+		Rendering::Renderer::BeginFrame(frameName);
+	}
 
 	RenderStageData renderStageData;
 	renderStageData.m_camera = &m_camera;
@@ -65,7 +68,10 @@ void RenderEngine::Render(const char* frameName, bool withImgui)
 		pipeline->Render(renderStageData);
 	}
 
-	Rendering::Renderer::EndFrame();
+	if (isMainRenderCall)
+	{
+		Rendering::Renderer::EndFrame();
+	}
 }
 
 void RenderEngine::Finish()
@@ -205,7 +211,7 @@ void RenderEngine::RenderView(const char* frameName, const RenderCamera& renderC
 	SetRenderTarget(renderTarget.get());
 
 	Update();
-	Render(frameName, false);
+	Render(frameName, false, false);
 
 	SetViewportSize(prevViewportSize);
 	SetRenderTarget(prevRenderTarget);

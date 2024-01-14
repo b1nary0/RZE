@@ -148,7 +148,7 @@ namespace Rendering
 
 	struct RenderCommand_CreateTextureBuffer2D : RenderCommand
 	{
-		RenderCommand_CreateTextureBuffer2D() { type = RenderCommandType::CreateIndexBuffer; }
+		RenderCommand_CreateTextureBuffer2D() { type = RenderCommandType::CreateTextureBuffer2D; }
 
 		GFXTextureBufferParams params;
 		const void* data = nullptr;

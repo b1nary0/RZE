@@ -41,6 +41,9 @@ namespace Rendering
 			s_producerBuf = new Byte[size];
 			s_consumerBuf = new Byte[size];
 
+			memset(s_producerBuf, 0, size);
+			memset(s_consumerBuf, 0, size);
+
 			s_arenaState.size = size;
 		}
 

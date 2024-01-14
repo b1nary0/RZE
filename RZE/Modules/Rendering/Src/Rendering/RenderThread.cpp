@@ -79,11 +79,6 @@ namespace Rendering
 	{
 		if (k_processSignal)
 		{
-			/*{
-				OPTICK_EVENT("RenderCommand memcpy");
-				memcpy(s_processingMemory, MemArena::Get(), MEM_ARENA_SIZE);
-			}*/
-
 			ProcessCommands();
 
 			k_processSignal = false;
@@ -111,6 +106,8 @@ namespace Rendering
 				ImGui::Render();
 				ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_ImGuiRender));
+
 				break;
 			}
 			case RenderCommandType::BeginFrame:
@@ -119,7 +116,7 @@ namespace Rendering
 
 				D3DPERF_BeginEvent(0xffffffff, Conversions::StringToWString(command->frameName).c_str());
 
-				currCommand += sizeof(RenderCommand_BeginFrame);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_BeginFrame));
 
 				break;
 			}
@@ -144,7 +141,7 @@ namespace Rendering
 				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 				deviceContext.RSSetState(m_device->mRasterState);
 
-				currCommand += sizeof(RenderCommand_Begin);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_Begin));
 
 				break;
 			}
@@ -154,7 +151,7 @@ namespace Rendering
 				// #TODO form the api such that we can verify Begin() and End() calls for sanity checks
 				D3DPERF_EndEvent();
 
-				currCommand += sizeof(RenderCommand_End);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_End));
 
 				break;
 			}
@@ -164,7 +161,7 @@ namespace Rendering
 				OPTICK_EVENT("Device Present");
 				m_device->Present();
 
-				currCommand += sizeof(RenderCommand_DevicePresent);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_DevicePresent));
 
 				break;
 			}
@@ -176,7 +173,7 @@ namespace Rendering
 				const Vector2D& newSize = command->size;
 				m_device->HandleWindowResize(static_cast<U32>(newSize.X()), static_cast<U32>(newSize.Y()));
 
-				currCommand += sizeof(RenderCommand_HandleWindowResize);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_HandleWindowResize));
 
 				break;
 			}
@@ -187,7 +184,7 @@ namespace Rendering
 				command->bufferPtr->SetDevice(m_device.get());
 				command->bufferPtr->Allocate(command->data, command->dataTypeSize, command->count, command->stride);
 
-				currCommand += sizeof(RenderCommand_CreateVertexBuffer);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_CreateVertexBuffer));
 
 				break;
 			}
@@ -198,7 +195,7 @@ namespace Rendering
 				command->bufferPtr->SetDevice(m_device.get());
 				command->bufferPtr->Allocate(command->data, command->dataTypeSize, command->count);
 
-				currCommand += sizeof(RenderCommand_CreateIndexBuffer);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_CreateIndexBuffer));
 
 				break;
 			}
@@ -209,7 +206,7 @@ namespace Rendering
 				command->bufferPtr->SetDevice(m_device.get());
 				command->bufferPtr->Allocate(command->data, command->dataTypeSize, command->count);
 
-				currCommand += sizeof(RenderCommand_CreateConstantBuffer);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_CreateConstantBuffer));
 
 				break;
 			}
@@ -220,7 +217,7 @@ namespace Rendering
 				command->bufferPtr->SetDevice(m_device.get());
 				command->bufferPtr->Allocate(command->data, command->params);
 
-				currCommand += sizeof(RenderCommand_CreateTextureBuffer2D);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_CreateTextureBuffer2D));
 
 				break;
 			}
@@ -231,7 +228,7 @@ namespace Rendering
 				command->bufferPtr->SetDevice(m_device.get());
 				command->bufferPtr->Create(command->filepath, command->shaderInputLayout);
 				
-				currCommand += sizeof(RenderCommand_CreateVertexShader);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_CreateVertexShader));
 
 				break;
 			}
@@ -242,7 +239,7 @@ namespace Rendering
 				command->bufferPtr->SetDevice(m_device.get());
 				command->bufferPtr->Create(command->filepath);
 
-				currCommand += sizeof(RenderCommand_CreatePixelShader);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_CreatePixelShader));
 
 				break;
 			}
@@ -253,7 +250,7 @@ namespace Rendering
 				DX11ConstantBuffer* cbuf = static_cast<DX11ConstantBuffer*>(command->bufferHandle.m_buffer.get());
 				cbuf->UpdateSubresources(command->data);
 
-				currCommand += sizeof(RenderCommand_UploadDataToBuffer);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_UploadDataToBuffer));
 
 				break;
 			}
@@ -263,7 +260,7 @@ namespace Rendering
 				RenderCommand_ReleaseVertexShader* command = static_cast<RenderCommand_ReleaseVertexShader*>(currCommand);
 				command->shaderHandle.m_shader.reset();
 
-				currCommand += sizeof(RenderCommand_ReleaseVertexShader);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_ReleaseVertexShader));
 
 				break;
 			}
@@ -273,7 +270,7 @@ namespace Rendering
 				RenderCommand_ReleasePixelShader* command = static_cast<RenderCommand_ReleasePixelShader*>(currCommand);
 				command->shaderHandle.m_shader.reset();
 
-				currCommand += sizeof(RenderCommand_ReleasePixelShader);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_ReleasePixelShader));
 
 				break;
 			}
@@ -286,7 +283,7 @@ namespace Rendering
 				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 				deviceContext.ClearDepthStencilView(&texturePtr->GetDepthView(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-				currCommand += sizeof(RenderCommand_ClearDepthStencilBuffer);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_ClearDepthStencilBuffer));
 
 				break;
 			}
@@ -306,7 +303,7 @@ namespace Rendering
 				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 				deviceContext.OMSetRenderTargets(1, &rtv, &depthTexturePtr->GetDepthView());
 
-				currCommand += sizeof(RenderCommand_SetRenderTarget);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_SetRenderTarget));
 
 				break;
 			}
@@ -317,7 +314,7 @@ namespace Rendering
 				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 				deviceContext.OMSetRenderTargets(1, &nullrtv, nullptr);
 
-				currCommand += sizeof(RenderCommand_ClearRenderTargets);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_ClearRenderTargets));
 
 				break;
 			}
@@ -331,7 +328,7 @@ namespace Rendering
 				deviceContext.ClearDepthStencilView(m_device->mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 				deviceContext.OMSetRenderTargets(1, &m_device->mRenderTargetView, m_device->mDepthStencilView);
 
-				currCommand += sizeof(RenderCommand_SetRenderTargetBackBuffer);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_SetRenderTargetBackBuffer));
 
 				break;
 			}
@@ -348,7 +345,7 @@ namespace Rendering
 				FLOAT rgba[4] = { colour.X(), colour.Y(), colour.Z(), colour.W() };
 				deviceContext.ClearRenderTargetView(&texturePtr->GetTargetView(), rgba);
 
-				currCommand += sizeof(RenderCommand_ClearRenderTarget);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_ClearRenderTarget));
 
 				break;
 			}
@@ -369,7 +366,7 @@ namespace Rendering
 				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 				deviceContext.RSSetViewports(1, &viewport);
 
-				currCommand += sizeof(RenderCommand_SetViewport);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_SetViewport));
 
 				break;
 			}
@@ -379,7 +376,7 @@ namespace Rendering
 				RenderCommand_SetInputLayout* command = static_cast<RenderCommand_SetInputLayout*>(currCommand);
 				command->shaderHandle.m_shader->SetInputLayout();
 
-				currCommand += sizeof(RenderCommand_SetInputLayout);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_SetInputLayout));
 
 				break;
 			}
@@ -392,7 +389,7 @@ namespace Rendering
 				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 				deviceContext.IASetPrimitiveTopology(d3dTopology);
 
-				currCommand += sizeof(RenderCommand_SetPrimitiveTopology);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_SetPrimitiveTopology));
 
 				break;
 			}
@@ -402,7 +399,7 @@ namespace Rendering
 				RenderCommand_SetVertexShader* command = static_cast<RenderCommand_SetVertexShader*>(currCommand);
 				command->shaderHandle.m_shader->SetActive();
 				
-				currCommand += sizeof(RenderCommand_SetVertexShader);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_SetVertexShader));
 
 				break;
 			}
@@ -412,7 +409,7 @@ namespace Rendering
 				RenderCommand_SetPixelShader* command = static_cast<RenderCommand_SetPixelShader*>(currCommand);
 				command->shaderHandle.m_shader->SetActive();
 
-				currCommand += sizeof(RenderCommand_SetPixelShader);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_SetPixelShader));
 
 				break;
 			}
@@ -422,7 +419,7 @@ namespace Rendering
 				RenderCommand_SetConstantBufferVS* command = static_cast<RenderCommand_SetConstantBufferVS*>(currCommand);
 				command->bufferHandle.m_buffer->SetActiveVS(command->bufferSlot);
 
-				currCommand += sizeof(RenderCommand_SetConstantBufferVS);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_SetConstantBufferVS));
 
 				break;
 			}
@@ -432,7 +429,7 @@ namespace Rendering
 				RenderCommand_SetConstantBufferPS* command = static_cast<RenderCommand_SetConstantBufferPS*>(currCommand);
 				command->bufferHandle.m_buffer->SetActivePS(command->bufferSlot);
 
-				currCommand += sizeof(RenderCommand_SetConstantBufferPS);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_SetConstantBufferPS));
 
 				break;
 			}
@@ -442,7 +439,7 @@ namespace Rendering
 				RenderCommand_SetVertexBuffer* command = static_cast<RenderCommand_SetVertexBuffer*>(currCommand);
 				command->bufferHandle.m_buffer->SetActive(command->bufferSlot);
 
-				currCommand += sizeof(RenderCommand_SetVertexBuffer);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_SetVertexBuffer));
 
 				break;
 			}
@@ -452,7 +449,7 @@ namespace Rendering
 				RenderCommand_SetIndexBuffer* command = static_cast<RenderCommand_SetIndexBuffer*>(currCommand);
 				command->bufferHandle.m_buffer->SetActive();
 
-				currCommand += sizeof(RenderCommand_SetIndexBuffer);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_SetIndexBuffer));
 
 				break;
 			}
@@ -462,7 +459,7 @@ namespace Rendering
 				RenderCommand_SetTextureResource* command = static_cast<RenderCommand_SetTextureResource*>(currCommand);
 				command->bufferHandle.m_buffer->SetActive(command->bufferSlot);
 
-				currCommand += sizeof(RenderCommand_SetTextureResource);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_SetTextureResource));
 
 				break;
 			}
@@ -476,7 +473,7 @@ namespace Rendering
 
 				deviceContext.PSSetShaderResources(command->textureSlot, 1, &nullSRV);
 
-				currCommand += sizeof(RenderCommand_UnsetTextureResource);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_UnsetTextureResource));
 
 				break;
 			}
@@ -489,7 +486,7 @@ namespace Rendering
 				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 				deviceContext.Draw(command->count, 0);
 
-				currCommand += sizeof(RenderCommand_Draw);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_Draw));
 
 				break;
 			}
@@ -502,7 +499,7 @@ namespace Rendering
 				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 				deviceContext.DrawIndexed(bufferPtr->GetIndexCount(), 0, 0);
 
-				currCommand += sizeof(RenderCommand_DrawIndexed);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_DrawIndexed));
 
 				break;
 			}
@@ -512,8 +509,7 @@ namespace Rendering
 				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 				deviceContext.Draw(4, 0);
 
-				currCommand += sizeof(RenderCommand_DrawFullScreenQuad);
-				currCommand += sizeof(RenderCommand_DrawFullScreenQuad);
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_DrawFullScreenQuad));
 
 				break;
 			}

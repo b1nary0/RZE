@@ -139,7 +139,8 @@ public:
 public:
 	void Initialize(void* windowHandle);
 	void Update();
-	void Render(const char* frameName, bool withImgui);
+	// @todo isMainRenderCall is kinda a hack and should be solved by API instead
+	void Render(const char* frameName, bool isMainRenderCall, bool withImgui);
 	// Finish() does all the work that the main render phase needs including device present
 	void Finish();
 	void Shutdown();
