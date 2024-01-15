@@ -47,11 +47,27 @@ namespace Rendering
 			s_arenaState.size = size;
 		}
 
+		void Shutdown()
+		{
+			if (s_producerBuf == nullptr)
+			{
+				AssertMsg(s_consumerBuf == nullptr, "If one is null, they must both be null or something got weird.");
+				delete s_producerBuf;
+			}
+
+			if (s_consumerBuf == nullptr)
+			{
+				AssertMsg(s_producerBuf == nullptr, "If one is null, they must both be null or something got weird.");
+				delete s_consumerBuf;
+			}
+		}
+
 		void* Alloc(size_t size)
 		{
 			ValidateArenaState(size);
 
 			Byte* allocMem = &s_producerBuf[s_arenaState.curPos];
+			memset(allocMem, 0, size);
 			s_arenaState.curPos += size;
 
 			return allocMem;

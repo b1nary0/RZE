@@ -15,6 +15,8 @@ namespace Rendering
 			return memory;
 		}
 
+		void Shutdown();
+
 		void* Alloc(size_t sizeRequested);
 
 		Byte* GetConsumerPtr();

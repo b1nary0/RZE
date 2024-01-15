@@ -66,6 +66,8 @@ namespace Rendering
 	{
 		ImGui_ImplDX11_Shutdown();
 		m_device->Shutdown();
+
+		MemArena::Shutdown();
 	}
 
 	void RenderThread::InitializeImGui()
