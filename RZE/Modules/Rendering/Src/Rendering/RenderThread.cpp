@@ -105,7 +105,6 @@ namespace Rendering
 			{
 			case RenderCommandType::ImGuiRender:
 			{
-				ImGui::Render();
 				ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
 				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_ImGuiRender));

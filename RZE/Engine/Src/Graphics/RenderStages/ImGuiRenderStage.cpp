@@ -21,6 +21,7 @@ void ImGuiRenderStage::Render(const RenderStageData& renderData)
 		Rendering::Renderer::SetRenderTargetBackBuffer();
 	}
 
+	ImGui::Render();
 	Rendering::Renderer::ImGuiRender();
 
 	Rendering::Renderer::End();
