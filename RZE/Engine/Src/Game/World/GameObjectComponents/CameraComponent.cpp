@@ -218,18 +218,21 @@ void CameraComponent::OnEditorInspect()
 
 		Rendering::TextureBuffer2DHandle texture = m_renderTarget->GetTargetPlatformObject();
 
-		auto clamp = [](float a, float b, float val)
+		if (texture.IsValid())
 		{
-			if (val > b) val = b;
-			else if (val < a) val = a;
+			auto clamp = [](float a, float b, float val)
+				{
+					if (val > b) val = b;
+					else if (val < a) val = a;
 
-			return val;
-		};
-		float uvbx = clamp(0.0f, 1.0f, renderCam.Viewport.Size.X() / m_renderTarget->GetWidth());
-		float uvby = clamp(0.0f, 1.0f, renderCam.Viewport.Size.Y() / m_renderTarget->GetHeight());
-		// @todo this is the reason for the crash when trying to render the component view for CameraComponent.
-		// because of the now delayed-by-commands timing of gpu resource creation, and the ImGui::Image API taking the ID as value
-		// it stores the un-initialized address in texture.GetTextureData() and tries to use that later but its garbage at this time.
-		ImGui::Image(texture.GetTextureData(), ImVec2(renderCam.Viewport.Size.X(), renderCam.Viewport.Size.Y()), ImVec2(0.0f, 0.0f), ImVec2(uvbx, uvby));
+					return val;
+				};
+			float uvbx = clamp(0.0f, 1.0f, renderCam.Viewport.Size.X() / m_renderTarget->GetWidth());
+			float uvby = clamp(0.0f, 1.0f, renderCam.Viewport.Size.Y() / m_renderTarget->GetHeight());
+			// @todo this is the reason for the crash when trying to render the component view for CameraComponent.
+			// because of the now delayed-by-commands timing of gpu resource creation, and the ImGui::Image API taking the ID as value
+			// it stores the un-initialized address in texture.GetTextureData() and tries to use that later but its garbage at this time.
+			ImGui::Image(texture.GetTextureData(), ImVec2(renderCam.Viewport.Size.X(), renderCam.Viewport.Size.Y()), ImVec2(0.0f, 0.0f), ImVec2(uvbx, uvby));
+		}
 	}
 }

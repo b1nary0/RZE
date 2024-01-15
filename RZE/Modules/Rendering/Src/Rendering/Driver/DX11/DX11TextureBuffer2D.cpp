@@ -161,6 +161,11 @@ namespace Rendering
 		return &GetResourceView();
 	}
 
+	bool DX11TextureBuffer2D::IsValid()
+	{
+		return m_device != nullptr;
+	}
+
 	void DX11TextureBuffer2D::SetDevice(DX11Device* device)
 	{
 		AssertNotNull(device);

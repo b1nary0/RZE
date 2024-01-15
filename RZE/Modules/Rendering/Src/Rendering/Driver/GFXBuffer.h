@@ -87,5 +87,7 @@ namespace Rendering
 		virtual void SetActive(U32 textureSlot) = 0;
 
 		virtual void* GetTextureData() = 0;
+
+		virtual bool IsValid() = 0;
 	};
 }

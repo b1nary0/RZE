@@ -92,58 +92,61 @@ namespace Editor
 			Rendering::RenderTargetTexture* const pRTT = RZE().GetApplication().GetRTT();
 			Rendering::TextureBuffer2DHandle texture = pRTT->GetTargetPlatformObject();
 
-			auto clamp = [](float a, float b, float val)
+			if (texture.IsValid())
 			{
-				if (val > b) val = b;
-				else if (val < a) val = a;
-
-				return val;
-			};
-			float uvbx = clamp(0.0f, 1.0f, m_dimensions.X() / pRTT->GetWidth());
-			float uvby = clamp(0.0f, 1.0f, m_dimensions.Y() / pRTT->GetHeight());
-			ImGui::Image(texture.GetTextureData(), ImVec2(m_dimensions.X(), m_dimensions.Y()), ImVec2(0.0f, 0.0f), ImVec2(uvbx, uvby));
-
-			{
-				EditorApp& editorApp = static_cast<EditorApp&>(RZE().GetApplication());
-				GameObjectPtr selectedGameObject = editorApp.GetSelectedObjectFromScenePanel();
-				if (selectedGameObject != nullptr)
-				{
-					ImGuizmo::SetOrthographic(false);
-					ImGuizmo::SetDrawlist();
-
-					const Vector2D& sceneViewDims = GetDimensions();
-					const Vector2D& sceneViewPos = GetPosition();
-					ImGuizmo::SetRect(sceneViewPos.X(), sceneViewPos.Y(), sceneViewDims.X(), sceneViewDims.Y());
-
-					GameObjectPtr cameraObject = RZE().GetActiveScene().FindGameObjectByName("EditorCam");
-					AssertNotNull(cameraObject);
-
-					GameObjectComponentPtr<EditorCameraComponent> cameraComponent = cameraObject->GetComponent<EditorCameraComponent>();
-
-					const Matrix4x4& view = cameraComponent->GetViewMatrix();
-					const Matrix4x4& projection = cameraComponent->GetProjectionMatrix();
-
-					GameObjectComponentPtr<TransformComponent> transformComponent = selectedGameObject->GetComponent<TransformComponent>();
-
-					float* translation = &const_cast<glm::vec3&>(transformComponent->GetPosition().GetInternalVec())[0];
-					float* rotation = &const_cast<glm::vec3&>(transformComponent->GetRotation().GetInternalVec())[0];
-					float* scale = &const_cast<glm::vec3&>(transformComponent->GetScale().GetInternalVec())[0];
-
-					float matrix[16];
-					ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
-
-					ImGuizmo::Manipulate(view.GetValuePtr(), projection.GetValuePtr(), (ImGuizmo::OPERATION)m_gizmoState.m_currentOpMode, (ImGuizmo::MODE)m_gizmoState.m_transformationSpace, matrix);
-					if (ImGuizmo::IsUsing())
+				auto clamp = [](float a, float b, float val)
 					{
-						Vector3D newTranslation, newRotation, newScale;
-						ImGuizmo::DecomposeMatrixToComponents(matrix,
-							&const_cast<glm::vec3&>(newTranslation.GetInternalVec())[0],
-							&const_cast<glm::vec3&>(newRotation.GetInternalVec())[0],
-							&const_cast<glm::vec3&>(newScale.GetInternalVec())[0]);
+						if (val > b) val = b;
+						else if (val < a) val = a;
 
-						transformComponent->SetPosition(newTranslation);
-						transformComponent->SetRotation(newRotation);
-						transformComponent->SetScale(newScale);
+						return val;
+					};
+				float uvbx = clamp(0.0f, 1.0f, m_dimensions.X() / pRTT->GetWidth());
+				float uvby = clamp(0.0f, 1.0f, m_dimensions.Y() / pRTT->GetHeight());
+				ImGui::Image(texture.GetTextureData(), ImVec2(m_dimensions.X(), m_dimensions.Y()), ImVec2(0.0f, 0.0f), ImVec2(uvbx, uvby));
+
+				{
+					EditorApp& editorApp = static_cast<EditorApp&>(RZE().GetApplication());
+					GameObjectPtr selectedGameObject = editorApp.GetSelectedObjectFromScenePanel();
+					if (selectedGameObject != nullptr)
+					{
+						ImGuizmo::SetOrthographic(false);
+						ImGuizmo::SetDrawlist();
+
+						const Vector2D& sceneViewDims = GetDimensions();
+						const Vector2D& sceneViewPos = GetPosition();
+						ImGuizmo::SetRect(sceneViewPos.X(), sceneViewPos.Y(), sceneViewDims.X(), sceneViewDims.Y());
+
+						GameObjectPtr cameraObject = RZE().GetActiveScene().FindGameObjectByName("EditorCam");
+						AssertNotNull(cameraObject);
+
+						GameObjectComponentPtr<EditorCameraComponent> cameraComponent = cameraObject->GetComponent<EditorCameraComponent>();
+
+						const Matrix4x4& view = cameraComponent->GetViewMatrix();
+						const Matrix4x4& projection = cameraComponent->GetProjectionMatrix();
+
+						GameObjectComponentPtr<TransformComponent> transformComponent = selectedGameObject->GetComponent<TransformComponent>();
+
+						float* translation = &const_cast<glm::vec3&>(transformComponent->GetPosition().GetInternalVec())[0];
+						float* rotation = &const_cast<glm::vec3&>(transformComponent->GetRotation().GetInternalVec())[0];
+						float* scale = &const_cast<glm::vec3&>(transformComponent->GetScale().GetInternalVec())[0];
+
+						float matrix[16];
+						ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
+
+						ImGuizmo::Manipulate(view.GetValuePtr(), projection.GetValuePtr(), (ImGuizmo::OPERATION)m_gizmoState.m_currentOpMode, (ImGuizmo::MODE)m_gizmoState.m_transformationSpace, matrix);
+						if (ImGuizmo::IsUsing())
+						{
+							Vector3D newTranslation, newRotation, newScale;
+							ImGuizmo::DecomposeMatrixToComponents(matrix,
+								&const_cast<glm::vec3&>(newTranslation.GetInternalVec())[0],
+								&const_cast<glm::vec3&>(newRotation.GetInternalVec())[0],
+								&const_cast<glm::vec3&>(newScale.GetInternalVec())[0]);
+
+							transformComponent->SetPosition(newTranslation);
+							transformComponent->SetRotation(newRotation);
+							transformComponent->SetScale(newScale);
+						}
 					}
 				}
 

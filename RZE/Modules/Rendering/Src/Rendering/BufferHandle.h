@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Rendering/Driver/GFXBuffer.h>
+
 #include <memory>
 
 namespace Rendering
@@ -80,7 +82,7 @@ namespace Rendering
 		~TextureBuffer2DHandle() = default;
 
 	public:
-		bool IsValid() { return m_buffer != nullptr; }
+		bool IsValid() { return m_buffer->IsValid(); }
 
 		void* GetTextureData() const;
 

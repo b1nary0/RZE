@@ -24,6 +24,7 @@ namespace Rendering
 		void Release() override;
 		void SetActive(U32 textureSlot) override;
 		void* GetTextureData() override;
+		bool IsValid() override;
 
 	public:
 		void SetDevice(DX11Device* device);
@@ -38,14 +39,14 @@ namespace Rendering
 		ID3D11Texture2D* GetHWResource();
 
 	private:
-		DX11Device* m_device;
+		DX11Device* m_device = nullptr;
 
-		ID3D11Texture2D* m_resource;
-		ID3D11SamplerState* m_samplerState;
+		ID3D11Texture2D* m_resource = nullptr;
+		ID3D11SamplerState* m_samplerState = nullptr;
 
-		ID3D11ShaderResourceView* m_SRV;
-		ID3D11RenderTargetView* m_RTV;
-		ID3D11DepthStencilView* m_DSV;
+		ID3D11ShaderResourceView* m_SRV = nullptr;
+		ID3D11RenderTargetView* m_RTV = nullptr;
+		ID3D11DepthStencilView* m_DSV = nullptr;
 
 		bool bIsDepthTexture { false };
 	};
