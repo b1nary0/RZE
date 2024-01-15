@@ -33,13 +33,7 @@ void ForwardRenderStage::Update(const RenderStageData& renderData)
 	Rendering::Renderer::UploadDataToBuffer(m_vertexShader->GetCameraDataBuffer(), renderData.m_camera);
 
 	std::unique_ptr<LightObject>& lightObject = (*renderData.m_lights)[0];
-
-	LightObject::PropertyBufferLayout lightProperties;
-	lightProperties.position = lightObject->GetPosition();
-	lightProperties.colour = lightObject->GetColour();
-	lightProperties.strength = lightObject->GetStrength();
-
-	Rendering::Renderer::UploadDataToBuffer(lightObject->GetPropertyBuffer(), &lightProperties);
+	Rendering::Renderer::UploadDataToBuffer(lightObject->GetPropertyBuffer(), &lightObject->GetData());
 }
 
 void ForwardRenderStage::Render(const RenderStageData& renderData)
@@ -65,16 +59,9 @@ void ForwardRenderStage::Render(const RenderStageData& renderData)
 
 	for (const auto& renderObject : *renderData.m_renderObjects)
 	{
-		struct MatrixMem
-		{
-			Matrix4x4 world;
-			Matrix4x4 inverseWorld;
-		} matrixMem;
-
-		matrixMem.world = renderObject->GetTransform();
-		matrixMem.inverseWorld = renderObject->GetTransform().Inverse();
-
-		Rendering::Renderer::UploadDataToBuffer(m_vertexShader->GetWorldMatrixBuffer(), &matrixMem);
+		// @note this sends in the address of renderObject->m_matrixMem.transform but fulfils the memory of struct MatrixMem as a whole
+		// this should be re-evaluated later to have a better solve for the issue of commands needing access to the data being uploaded's lifetime
+		Rendering::Renderer::UploadDataToBuffer(m_vertexShader->GetWorldMatrixBuffer(), &renderObject->GetTransform());
 		Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetWorldMatrixBuffer(), 1);
 
 		// @TODO

@@ -99,6 +99,8 @@ namespace Rendering
 		RenderCommand* currCommand = reinterpret_cast<RenderCommand*>(MemArena::GetConsumerPtr());
 		while (currCommand != nullptr)
 		{
+			m_commandQueue.pop();
+
 			switch (currCommand->type)
 			{
 			case RenderCommandType::ImGuiRender:
@@ -125,8 +127,7 @@ namespace Rendering
 			{
 				D3DPERF_EndEvent();
 
-				currCommand = nullptr;
-
+				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_EndFrame));
 				break;
 			}
 
@@ -161,7 +162,7 @@ namespace Rendering
 				OPTICK_EVENT("Device Present");
 				m_device->Present();
 
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_DevicePresent));
+				currCommand = nullptr;
 
 				break;
 			}

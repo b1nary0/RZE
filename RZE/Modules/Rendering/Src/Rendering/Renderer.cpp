@@ -62,9 +62,6 @@ namespace Rendering
 	{
 		RenderCommand_EndFrame* command = MemArena::AllocType<RenderCommand_EndFrame>();
 		m_renderThread.PushCommand(command);
-
-		m_renderThread.SignalProcess();
-		MemArena::Cycle();
 	}
 
 	void Renderer::Begin(const char* drawSetName)
@@ -86,6 +83,9 @@ namespace Rendering
 	{
 		RenderCommand_DevicePresent* command = MemArena::AllocType<RenderCommand_DevicePresent>();
 		m_renderThread.PushCommand(command);
+
+		m_renderThread.SignalProcess();
+		MemArena::Cycle();
 	}
 
 	void Renderer::HandleWindowResize(const Vector2D& newSize)

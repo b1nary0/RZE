@@ -48,21 +48,21 @@ public:
 
 	void Initialize();
 
-	void SetPosition(const Vector3D& position) { m_position = position; }
-	const Vector3D& GetPosition() const { return m_position; }
+	void SetPosition(const Vector3D& position) { m_data.position = position; }
+	const Vector3D& GetPosition() const { return m_data.position; }
 
-	void SetStrength(float strength) { m_strength = strength; }
-	float GetStrength() const { return m_strength; }
+	void SetStrength(float strength) { m_data.strength = strength; }
+	float GetStrength() const { return m_data.strength; }
 
-	void SetColour(const Vector4D& colour) { m_colour = colour; }
-	const Vector4D& GetColour() const { return m_colour; }
+	void SetColour(const Vector4D& colour) { m_data.colour = colour; }
+	const Vector4D& GetColour() const { return m_data.colour; }
+
+	const PropertyBufferLayout& GetData() { return m_data; }
 
 	const Rendering::ConstantBufferHandle& GetPropertyBuffer() { return m_propertyBuffer; }
 
 private:
-	Vector3D m_position = Vector3D::ZERO;
-	Vector4D m_colour = Vector4D::ZERO;
-	float m_strength = 0.0f;
+	PropertyBufferLayout m_data;
 
 private:
 	Rendering::ConstantBufferHandle m_propertyBuffer;
@@ -74,11 +74,19 @@ public:
 	RenderObject() = default;
 	~RenderObject() = default;
 
+public:
+	struct MatrixMem
+	{
+		Matrix4x4 transform;
+		Matrix4x4 invTransform;
+	};
+
+public:
 	void SetStaticMesh(const StaticMeshInstance& staticMesh) { m_staticMesh = staticMesh; }
 	const StaticMeshInstance& GetStaticMesh() { return m_staticMesh; }
 
-	void SetTransform(const Matrix4x4& transform) { m_transform = transform; }
-	const Matrix4x4& GetTransform() const { return m_transform; }
+	void SetTransform(const Matrix4x4& transform) { m_matrixMem.transform = transform; m_matrixMem.invTransform = transform.Inverse(); }
+	const Matrix4x4& GetTransform() const { return m_matrixMem.transform; }
 
 private:
 	// @TODO This will be replaced after a batching system is implemented
@@ -86,24 +94,8 @@ private:
 	// or something i dunno im shit at my job. Also.. limited to just static mesh here, bad. Will end up with refactor
 	// when skinned meshes are a thing
 	StaticMeshInstance m_staticMesh;
-	Matrix4x4 m_transform;
+	MatrixMem m_matrixMem;
 };
-
-// #TODO
-// Turn this into a command structure. Something like:
-// UpdateRenderObject<UpdateTransformCommand>(renderObject);
-// Where UpdateTransformCommand:
-// 
-// class UpdateTransformCommand : public RenderCommand
-// {
-// public:
-//		UpdateTransformCommand(const RenderObject& renderObject, const Matrix4x4& transform);
-// 		virtual void Execute();
-// private:
-//		RenderObject& renderObject;
-// 		Matrix4x4 transform;
-// };
-
 
 //
 // Buckets
