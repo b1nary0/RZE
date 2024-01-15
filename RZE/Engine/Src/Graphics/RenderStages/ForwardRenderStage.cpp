@@ -29,11 +29,6 @@ void ForwardRenderStage::Initialize()
 void ForwardRenderStage::Update(const RenderStageData& renderData)
 {
 	OPTICK_EVENT();
-	
-	Rendering::Renderer::UploadDataToBuffer(m_vertexShader->GetCameraDataBuffer(), renderData.m_camera);
-
-	std::unique_ptr<LightObject>& lightObject = (*renderData.m_lights)[0];
-	Rendering::Renderer::UploadDataToBuffer(lightObject->GetPropertyBuffer(), &lightObject->GetData());
 }
 
 void ForwardRenderStage::Render(const RenderStageData& renderData)
@@ -48,6 +43,11 @@ void ForwardRenderStage::Render(const RenderStageData& renderData)
 	Rendering::Renderer::SetRenderTarget(&renderTarget);
 	Rendering::Renderer::ClearRenderTarget(renderTarget.GetTargetPlatformObject(), Vector4D(0.25f, 0.25f, 0.35f, 1.0f));
 	Rendering::Renderer::ClearDepthStencilBuffer(renderTarget.GetDepthTexturePlatformObject());
+
+	Rendering::Renderer::UploadDataToBuffer(m_vertexShader->GetCameraDataBuffer(), renderData.m_camera);
+
+	std::unique_ptr<LightObject>& lightObject = (*renderData.m_lights)[0];
+	Rendering::Renderer::UploadDataToBuffer(lightObject->GetPropertyBuffer(), &lightObject->GetData());
 
 	Rendering::Renderer::SetVertexShader(m_vertexShader->GetPlatformObject());
 	Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetCameraDataBuffer(), 0);
