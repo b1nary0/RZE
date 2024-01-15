@@ -81,6 +81,9 @@ namespace Rendering
 	{
 		if (k_processSignal)
 		{
+			MemArena::Cycle();
+			std::swap(m_producerQueue, m_consumerQueue);
+
 			ProcessCommands();
 
 			k_processSignal = false;
@@ -90,7 +93,7 @@ namespace Rendering
 	void RenderThread::PushCommand(RenderCommand* command)
 	{
 		AssertNotNull(command);
-		m_commandQueue.push(command);
+		m_producerQueue.push(command);
 	}
 
 	void RenderThread::ProcessCommands()
@@ -98,28 +101,24 @@ namespace Rendering
 		AssertExpr(k_processSignal = true);
 		k_processSignal = false;
 
-		RenderCommand* currCommand = reinterpret_cast<RenderCommand*>(MemArena::GetConsumerPtr());
-		while (currCommand != nullptr)
+		while (!m_consumerQueue.empty())
 		{
-			m_commandQueue.pop();
+			RenderCommand* command = m_consumerQueue.front();
+			m_consumerQueue.pop();
 
-			switch (currCommand->type)
+			switch (command->type)
 			{
 			case RenderCommandType::ImGuiRender:
 			{
 				ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_ImGuiRender));
-
 				break;
 			}
 			case RenderCommandType::BeginFrame:
 			{
-				RenderCommand_BeginFrame* command = static_cast<RenderCommand_BeginFrame*>(currCommand);
+				RenderCommand_BeginFrame* cmd = static_cast<RenderCommand_BeginFrame*>(command);
 
-				D3DPERF_BeginEvent(0xffffffff, Conversions::StringToWString(command->frameName).c_str());
-
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_BeginFrame));
+				D3DPERF_BeginEvent(0xffffffff, Conversions::StringToWString(cmd->frameName).c_str());
 
 				break;
 			}
@@ -128,22 +127,19 @@ namespace Rendering
 			{
 				D3DPERF_EndEvent();
 
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_EndFrame));
 				break;
 			}
 
 			case RenderCommandType::Begin:
 			{
-				RenderCommand_Begin* command = static_cast<RenderCommand_Begin*>(currCommand);
+				RenderCommand_Begin* cmd = static_cast<RenderCommand_Begin*>(command);
 
-				D3DPERF_BeginEvent(0xffffffff, Conversions::StringToWString(command->drawSetName).c_str());
+				D3DPERF_BeginEvent(0xffffffff, Conversions::StringToWString(cmd->drawSetName).c_str());
 
 				// @TODO This is temporary until the API is written for SetRenderTarget() and ClearDepthStencilView()
 				// @note past josh wtf api are you talking about
 				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 				deviceContext.RSSetState(m_device->mRasterState);
-
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_Begin));
 
 				break;
 			}
@@ -153,8 +149,6 @@ namespace Rendering
 				// #TODO form the api such that we can verify Begin() and End() calls for sanity checks
 				D3DPERF_EndEvent();
 
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_End));
-
 				break;
 			}
 
@@ -163,137 +157,113 @@ namespace Rendering
 				OPTICK_EVENT("Device Present");
 				m_device->Present();
 
-				currCommand = nullptr;
-
 				break;
 			}
 
 			case RenderCommandType::HandleWindowResize:
 			{
-				RenderCommand_HandleWindowResize* command = static_cast<RenderCommand_HandleWindowResize*>(currCommand);
+				RenderCommand_HandleWindowResize* cmd = static_cast<RenderCommand_HandleWindowResize*>(command);
 
-				const Vector2D& newSize = command->size;
+				const Vector2D& newSize = cmd->size;
 				m_device->HandleWindowResize(static_cast<U32>(newSize.X()), static_cast<U32>(newSize.Y()));
-
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_HandleWindowResize));
 
 				break;
 			}
 
 			case RenderCommandType::CreateVertexBuffer:
 			{
-				RenderCommand_CreateVertexBuffer* command = static_cast<RenderCommand_CreateVertexBuffer*>(currCommand);
-				command->bufferPtr->SetDevice(m_device.get());
-				command->bufferPtr->Allocate(command->data, command->dataTypeSize, command->count, command->stride);
-
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_CreateVertexBuffer));
+				RenderCommand_CreateVertexBuffer* cmd = static_cast<RenderCommand_CreateVertexBuffer*>(command);
+				cmd->bufferPtr->SetDevice(m_device.get());
+				cmd->bufferPtr->Allocate(cmd->data, cmd->dataTypeSize, cmd->count, cmd->stride);
 
 				break;
 			}
 
 			case RenderCommandType::CreateIndexBuffer:
 			{
-				RenderCommand_CreateIndexBuffer* command = static_cast<RenderCommand_CreateIndexBuffer*>(currCommand);
-				command->bufferPtr->SetDevice(m_device.get());
-				command->bufferPtr->Allocate(command->data, command->dataTypeSize, command->count);
-
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_CreateIndexBuffer));
+				RenderCommand_CreateIndexBuffer* cmd = static_cast<RenderCommand_CreateIndexBuffer*>(command);
+				cmd->bufferPtr->SetDevice(m_device.get());
+				cmd->bufferPtr->Allocate(cmd->data, cmd->dataTypeSize, cmd->count);
 
 				break;
 			}
 
 			case RenderCommandType::CreateConstantBuffer:
 			{
-				RenderCommand_CreateConstantBuffer* command = static_cast<RenderCommand_CreateConstantBuffer*>(currCommand);
-				command->bufferPtr->SetDevice(m_device.get());
-				command->bufferPtr->Allocate(command->data, command->dataTypeSize, command->count);
-
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_CreateConstantBuffer));
+				RenderCommand_CreateConstantBuffer* cmd = static_cast<RenderCommand_CreateConstantBuffer*>(command);
+				cmd->bufferPtr->SetDevice(m_device.get());
+				cmd->bufferPtr->Allocate(cmd->data, cmd->dataTypeSize, cmd->count);
 
 				break;
 			}
 
 			case RenderCommandType::CreateTextureBuffer2D:
 			{
-				RenderCommand_CreateTextureBuffer2D* command = static_cast<RenderCommand_CreateTextureBuffer2D*>(currCommand);
-				command->bufferPtr->SetDevice(m_device.get());
-				command->bufferPtr->Allocate(command->data, command->params);
-
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_CreateTextureBuffer2D));
+				RenderCommand_CreateTextureBuffer2D* cmd = static_cast<RenderCommand_CreateTextureBuffer2D*>(command);
+				cmd->bufferPtr->SetDevice(m_device.get());
+				cmd->bufferPtr->Allocate(cmd->data, cmd->params);
 
 				break;
 			}
 
 			case RenderCommandType::CreateVertexShader:
 			{
-				RenderCommand_CreateVertexShader* command = static_cast<RenderCommand_CreateVertexShader*>(currCommand);
-				command->bufferPtr->SetDevice(m_device.get());
-				command->bufferPtr->Create(command->filepath, command->shaderInputLayout);
+				RenderCommand_CreateVertexShader* cmd = static_cast<RenderCommand_CreateVertexShader*>(command);
+				cmd->bufferPtr->SetDevice(m_device.get());
+				cmd->bufferPtr->Create(cmd->filepath, cmd->shaderInputLayout);
 				
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_CreateVertexShader));
-
 				break;
 			}
 
 			case RenderCommandType::CreatePixelShader:
 			{
-				RenderCommand_CreatePixelShader* command = static_cast<RenderCommand_CreatePixelShader*>(currCommand);
-				command->bufferPtr->SetDevice(m_device.get());
-				command->bufferPtr->Create(command->filepath);
-
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_CreatePixelShader));
+				RenderCommand_CreatePixelShader* cmd = static_cast<RenderCommand_CreatePixelShader*>(command);
+				cmd->bufferPtr->SetDevice(m_device.get());
+				cmd->bufferPtr->Create(cmd->filepath);
 
 				break;
 			}
 
 			case RenderCommandType::UploadDataToBuffer:
 			{
-				RenderCommand_UploadDataToBuffer* command = static_cast<RenderCommand_UploadDataToBuffer*>(currCommand);
-				DX11ConstantBuffer* cbuf = static_cast<DX11ConstantBuffer*>(command->bufferHandle.m_buffer.get());
-				cbuf->UpdateSubresources(command->data);
-
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_UploadDataToBuffer));
+				RenderCommand_UploadDataToBuffer* cmd = static_cast<RenderCommand_UploadDataToBuffer*>(command);
+				DX11ConstantBuffer* cbuf = static_cast<DX11ConstantBuffer*>(cmd->bufferHandle.m_buffer.get());
+				cbuf->UpdateSubresources(cmd->data);
 
 				break;
 			}
 
 			case RenderCommandType::ReleaseVertexShader:
 			{
-				RenderCommand_ReleaseVertexShader* command = static_cast<RenderCommand_ReleaseVertexShader*>(currCommand);
-				command->shaderHandle.m_shader.reset();
-
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_ReleaseVertexShader));
+				RenderCommand_ReleaseVertexShader* cmd = static_cast<RenderCommand_ReleaseVertexShader*>(command);
+				cmd->shaderHandle.m_shader.reset();
 
 				break;
 			}
 
 			case RenderCommandType::ReleasePixelShader:
 			{
-				RenderCommand_ReleasePixelShader* command = static_cast<RenderCommand_ReleasePixelShader*>(currCommand);
-				command->shaderHandle.m_shader.reset();
-
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_ReleasePixelShader));
+				RenderCommand_ReleasePixelShader* cmd = static_cast<RenderCommand_ReleasePixelShader*>(command);
+				cmd->shaderHandle.m_shader.reset();
 
 				break;
 			}
 
 			case RenderCommandType::ClearDepthStencilBuffer:
 			{
-				RenderCommand_ClearDepthStencilBuffer* command = static_cast<RenderCommand_ClearDepthStencilBuffer*>(currCommand);
-				DX11TextureBuffer2D* texturePtr = static_cast<DX11TextureBuffer2D*>(command->bufferHandle.m_buffer.get());
+				RenderCommand_ClearDepthStencilBuffer* cmd = static_cast<RenderCommand_ClearDepthStencilBuffer*>(command);
+				DX11TextureBuffer2D* texturePtr = static_cast<DX11TextureBuffer2D*>(cmd->bufferHandle.m_buffer.get());
 
 				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 				deviceContext.ClearDepthStencilView(&texturePtr->GetDepthView(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_ClearDepthStencilBuffer));
 
 				break;
 			}
 
 			case RenderCommandType::SetRenderTarget:
 			{
-				RenderCommand_SetRenderTarget* command = static_cast<RenderCommand_SetRenderTarget*>(currCommand);
-				const RenderTargetTexture* renderTarget = command->renderTarget;
+				RenderCommand_SetRenderTarget* cmd = static_cast<RenderCommand_SetRenderTarget*>(command);
+				const RenderTargetTexture* renderTarget = cmd->renderTarget;
 
 				RenderTargetHandle target = renderTarget->GetTargetPlatformObject();
 				TextureBuffer2DHandle depthTexture = renderTarget->GetDepthTexturePlatformObject();
@@ -305,8 +275,6 @@ namespace Rendering
 				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 				deviceContext.OMSetRenderTargets(1, &rtv, &depthTexturePtr->GetDepthView());
 
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_SetRenderTarget));
-
 				break;
 			}
 
@@ -315,8 +283,6 @@ namespace Rendering
 				ID3D11RenderTargetView* nullrtv = nullptr;
 				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 				deviceContext.OMSetRenderTargets(1, &nullrtv, nullptr);
-
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_ClearRenderTargets));
 
 				break;
 			}
@@ -330,32 +296,28 @@ namespace Rendering
 				deviceContext.ClearDepthStencilView(m_device->mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 				deviceContext.OMSetRenderTargets(1, &m_device->mRenderTargetView, m_device->mDepthStencilView);
 
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_SetRenderTargetBackBuffer));
-
 				break;
 			}
 
 			case RenderCommandType::ClearRenderTarget:
 			{
-				RenderCommand_ClearRenderTarget* command = static_cast<RenderCommand_ClearRenderTarget*>(currCommand);
+				RenderCommand_ClearRenderTarget* cmd = static_cast<RenderCommand_ClearRenderTarget*>(command);
 
-				std::shared_ptr<ITextureBuffer2D> texture = command->renderTarget.m_buffer;
+				std::shared_ptr<ITextureBuffer2D> texture = cmd->renderTarget.m_buffer;
 				DX11TextureBuffer2D* texturePtr = static_cast<DX11TextureBuffer2D*>(texture.get());
-				const Vector4D& colour = command->colour;
+				const Vector4D& colour = cmd->colour;
 
 				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 				FLOAT rgba[4] = { colour.X(), colour.Y(), colour.Z(), colour.W() };
 				deviceContext.ClearRenderTargetView(&texturePtr->GetTargetView(), rgba);
-
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_ClearRenderTarget));
 
 				break;
 			}
 
 			case RenderCommandType::SetViewport:
 			{
-				RenderCommand_SetViewport* command = static_cast<RenderCommand_SetViewport*>(currCommand);
-				const ViewportParams& params = command->params;
+				RenderCommand_SetViewport* cmd = static_cast<RenderCommand_SetViewport*>(command);
+				const ViewportParams& params = cmd->params;
 
 				D3D11_VIEWPORT viewport;
 				viewport.Width = params.Width;
@@ -368,140 +330,114 @@ namespace Rendering
 				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 				deviceContext.RSSetViewports(1, &viewport);
 
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_SetViewport));
-
 				break;
 			}
 
 			case RenderCommandType::SetInputLayout:
 			{
-				RenderCommand_SetInputLayout* command = static_cast<RenderCommand_SetInputLayout*>(currCommand);
-				command->shaderHandle.m_shader->SetInputLayout();
-
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_SetInputLayout));
+				RenderCommand_SetInputLayout* cmd = static_cast<RenderCommand_SetInputLayout*>(command);
+				cmd->shaderHandle.m_shader->SetInputLayout();
 
 				break;
 			}
 
 			case RenderCommandType::SetPrimitiveTopology:
 			{
-				RenderCommand_SetPrimitiveTopology* command = static_cast<RenderCommand_SetPrimitiveTopology*>(currCommand);
+				RenderCommand_SetPrimitiveTopology* cmd = static_cast<RenderCommand_SetPrimitiveTopology*>(command);
 
-				D3D_PRIMITIVE_TOPOLOGY d3dTopology = ConvertToDX11TopologyType(command->topology);
+				D3D_PRIMITIVE_TOPOLOGY d3dTopology = ConvertToDX11TopologyType(cmd->topology);
 				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 				deviceContext.IASetPrimitiveTopology(d3dTopology);
-
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_SetPrimitiveTopology));
 
 				break;
 			}
 
 			case RenderCommandType::SetVertexShader:
 			{
-				RenderCommand_SetVertexShader* command = static_cast<RenderCommand_SetVertexShader*>(currCommand);
-				command->shaderHandle.m_shader->SetActive();
+				RenderCommand_SetVertexShader* cmd = static_cast<RenderCommand_SetVertexShader*>(command);
+				cmd->shaderHandle.m_shader->SetActive();
 				
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_SetVertexShader));
-
 				break;
 			}
 
 			case RenderCommandType::SetPixelShader:
 			{
-				RenderCommand_SetPixelShader* command = static_cast<RenderCommand_SetPixelShader*>(currCommand);
-				command->shaderHandle.m_shader->SetActive();
-
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_SetPixelShader));
+				RenderCommand_SetPixelShader* cmd = static_cast<RenderCommand_SetPixelShader*>(command);
+				cmd->shaderHandle.m_shader->SetActive();
 
 				break;
 			}
 
 			case RenderCommandType::SetConstantBufferVS:
 			{
-				RenderCommand_SetConstantBufferVS* command = static_cast<RenderCommand_SetConstantBufferVS*>(currCommand);
-				command->bufferHandle.m_buffer->SetActiveVS(command->bufferSlot);
-
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_SetConstantBufferVS));
+				RenderCommand_SetConstantBufferVS* cmd = static_cast<RenderCommand_SetConstantBufferVS*>(command);
+				cmd->bufferHandle.m_buffer->SetActiveVS(cmd->bufferSlot);
 
 				break;
 			}
 
 			case RenderCommandType::SetConstantBufferPS:
 			{
-				RenderCommand_SetConstantBufferPS* command = static_cast<RenderCommand_SetConstantBufferPS*>(currCommand);
-				command->bufferHandle.m_buffer->SetActivePS(command->bufferSlot);
-
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_SetConstantBufferPS));
+				RenderCommand_SetConstantBufferPS* cmd = static_cast<RenderCommand_SetConstantBufferPS*>(command);
+				cmd->bufferHandle.m_buffer->SetActivePS(cmd->bufferSlot);
 
 				break;
 			}
 
 			case RenderCommandType::SetVertexBuffer:
 			{
-				RenderCommand_SetVertexBuffer* command = static_cast<RenderCommand_SetVertexBuffer*>(currCommand);
-				command->bufferHandle.m_buffer->SetActive(command->bufferSlot);
-
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_SetVertexBuffer));
+				RenderCommand_SetVertexBuffer* cmd = static_cast<RenderCommand_SetVertexBuffer*>(command);
+				cmd->bufferHandle.m_buffer->SetActive(cmd->bufferSlot);
 
 				break;
 			}
 
 			case RenderCommandType::SetIndexBuffer:
 			{
-				RenderCommand_SetIndexBuffer* command = static_cast<RenderCommand_SetIndexBuffer*>(currCommand);
-				command->bufferHandle.m_buffer->SetActive();
-
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_SetIndexBuffer));
+				RenderCommand_SetIndexBuffer* cmd = static_cast<RenderCommand_SetIndexBuffer*>(command);
+				cmd->bufferHandle.m_buffer->SetActive();
 
 				break;
 			}
 
 			case RenderCommandType::SetTextureResource:
 			{
-				RenderCommand_SetTextureResource* command = static_cast<RenderCommand_SetTextureResource*>(currCommand);
-				command->bufferHandle.m_buffer->SetActive(command->bufferSlot);
-
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_SetTextureResource));
+				RenderCommand_SetTextureResource* cmd = static_cast<RenderCommand_SetTextureResource*>(command);
+				cmd->bufferHandle.m_buffer->SetActive(cmd->bufferSlot);
 
 				break;
 			}
 
 			case RenderCommandType::UnsetTextureResource:
 			{
-				RenderCommand_UnsetTextureResource* command = static_cast<RenderCommand_UnsetTextureResource*>(currCommand);
+				RenderCommand_UnsetTextureResource* cmd = static_cast<RenderCommand_UnsetTextureResource*>(command);
 
 				ID3D11ShaderResourceView* nullSRV = nullptr;
 				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 
-				deviceContext.PSSetShaderResources(command->textureSlot, 1, &nullSRV);
-
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_UnsetTextureResource));
+				deviceContext.PSSetShaderResources(cmd->textureSlot, 1, &nullSRV);
 
 				break;
 			}
 
 			case RenderCommandType::Draw:
 			{
-				RenderCommand_Draw* command = static_cast<RenderCommand_Draw*>(currCommand);
+				RenderCommand_Draw* cmd = static_cast<RenderCommand_Draw*>(command);
 
-				std::shared_ptr<IVertexBuffer> bufferPtr = command->vertexBuffer.m_buffer;
+				std::shared_ptr<IVertexBuffer> bufferPtr = cmd->vertexBuffer.m_buffer;
 				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
-				deviceContext.Draw(command->count, 0);
-
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_Draw));
+				deviceContext.Draw(cmd->count, 0);
 
 				break;
 			}
 
 			case RenderCommandType::DrawIndexed:
 			{
-				RenderCommand_DrawIndexed* command = static_cast<RenderCommand_DrawIndexed*>(currCommand);
+				RenderCommand_DrawIndexed* cmd = static_cast<RenderCommand_DrawIndexed*>(command);
 				
-				std::shared_ptr<IIndexBuffer> bufferPtr = command->indexBuffer.m_buffer;
+				std::shared_ptr<IIndexBuffer> bufferPtr = cmd->indexBuffer.m_buffer;
 				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 				deviceContext.DrawIndexed(bufferPtr->GetIndexCount(), 0, 0);
-
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_DrawIndexed));
 
 				break;
 			}
@@ -511,14 +447,12 @@ namespace Rendering
 				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 				deviceContext.Draw(4, 0);
 
-				currCommand = (RenderCommand*)((Byte*)currCommand + sizeof(RenderCommand_DrawFullScreenQuad));
-
 				break;
 			}
 
 			default:
 			{
-				RZE_LOG_ARGS("[Rendering::Renderer] Unknown RenderCommandType encountered: %d", currCommand->type);
+				RZE_LOG_ARGS("[Rendering::Renderer] Unknown RenderCommandType encountered: %d", command->type);
 				AssertFalse();
 			}
 			}

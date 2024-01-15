@@ -32,7 +32,8 @@ namespace Rendering
 
 	private:
 		// @note these are guaranteed to be contiguous as its backed by MemArena
-		std::queue<RenderCommand*> m_commandQueue;
+		std::queue<RenderCommand*> m_producerQueue;
+		std::queue<RenderCommand*> m_consumerQueue;
 
 		void* m_windowHandle = nullptr;
 		std::unique_ptr<DX11Device> m_device = nullptr;
