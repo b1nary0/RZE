@@ -127,7 +127,10 @@ namespace Rendering
 
 				ImGui_ImplDX11_RenderDrawData(cmd->drawData);
 
-				delete[] cmd->drawData->CmdLists;
+				for (int i = 0; i < cmd->drawData->CmdListsCount; ++i)
+				{
+					IM_DELETE<ImDrawList>(cmd->drawData->CmdLists[i]);
+				}
 				delete cmd->drawData;
 
 				break;
