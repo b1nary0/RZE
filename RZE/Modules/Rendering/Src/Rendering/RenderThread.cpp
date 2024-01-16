@@ -41,8 +41,6 @@ namespace Rendering
 		}
 	}
 
-	static bool k_processSignal = false;
-
 	RenderThread::RenderThread()
 	{
 	}
@@ -60,10 +58,24 @@ namespace Rendering
 		m_device->Initialize();
 
 		InitializeImGui();
+
+		auto threadExec = [this]()
+			{
+				OPTICK_THREAD("Render Thread");
+				while (!m_shuttingDown)
+				{
+					Update();
+				}
+			};
+
+		m_thread = std::thread(threadExec);
 	}
 
 	void RenderThread::Shutdown()
 	{
+		m_shuttingDown = true;
+		m_thread.join();
+
 		ImGui_ImplDX11_Shutdown();
 		m_device->Shutdown();
 
@@ -79,14 +91,16 @@ namespace Rendering
 
 	void RenderThread::Update()
 	{
-		if (k_processSignal)
+		if (m_processSignal)
 		{
+			std::lock_guard lock(m_updateMutex);
+
 			MemArena::Cycle();
 			std::swap(m_producerQueue, m_consumerQueue);
 
 			ProcessCommands();
 
-			k_processSignal = false;
+			m_processSignal = false;
 		}
 	}
 
@@ -98,8 +112,7 @@ namespace Rendering
 
 	void RenderThread::ProcessCommands()
 	{
-		AssertExpr(k_processSignal = true);
-		k_processSignal = false;
+		AssertExpr(m_processSignal = true);
 
 		while (!m_consumerQueue.empty())
 		{
@@ -110,7 +123,12 @@ namespace Rendering
 			{
 			case RenderCommandType::ImGuiRender:
 			{
-				ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+				RenderCommand_ImGuiRender* cmd = static_cast<RenderCommand_ImGuiRender*>(command);
+
+				ImGui_ImplDX11_RenderDrawData(cmd->drawData);
+
+				delete[] cmd->drawData->CmdLists;
+				delete cmd->drawData;
 
 				break;
 			}
@@ -458,9 +476,12 @@ namespace Rendering
 			}
 		}
 	}
+
 	void RenderThread::SignalProcess()
 	{
-		AssertExpr(k_processSignal == false);
-		k_processSignal = true;
+		std::lock_guard lock(m_updateMutex);
+
+		//AssertExpr(m_processSignal == false);
+		m_processSignal = true;
 	}
 }

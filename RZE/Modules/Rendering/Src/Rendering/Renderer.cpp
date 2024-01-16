@@ -22,6 +22,7 @@
 #include <Rendering/Graphics/RenderTarget.h>
 
 #include <Optick/optick.h>
+#include <imGUI/imgui.h>
 
 namespace Rendering
 {
@@ -42,7 +43,6 @@ namespace Rendering
 
 	void Renderer::Update()
 	{
-		m_renderThread.Update();
 	}
 	
 	void Renderer::Shutdown()
@@ -95,9 +95,33 @@ namespace Rendering
 		m_renderThread.PushCommand(command);
 	}
 
+	ImDrawData* CloneDrawData(ImDrawData* toClone)
+	{
+		ImDrawData* clone = new ImDrawData();
+		clone->Valid = toClone->Valid;
+		clone->CmdListsCount = toClone->CmdListsCount;
+		clone->TotalIdxCount = toClone->TotalIdxCount;
+		clone->TotalVtxCount = toClone->TotalVtxCount;
+		clone->DisplayPos = toClone->DisplayPos;
+		clone->DisplaySize = toClone->DisplaySize;
+		clone->FramebufferScale = toClone->FramebufferScale;
+
+		clone->CmdLists = new ImDrawList*[toClone->CmdListsCount];
+		for (int i = 0; i < toClone->CmdListsCount; ++i)
+		{
+			clone->CmdLists[i] = toClone->CmdLists[i]->CloneOutput();
+		}
+
+		clone->OwnerViewport = toClone->OwnerViewport;
+
+		return clone;
+	}
+
 	void Renderer::ImGuiRender()
 	{
 		RenderCommand_ImGuiRender* command = MemArena::AllocType<RenderCommand_ImGuiRender>();
+		command->drawData = CloneDrawData(ImGui::GetDrawData());
+
 		m_renderThread.PushCommand(command);
 	}
 

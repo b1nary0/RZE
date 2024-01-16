@@ -1,5 +1,7 @@
 #pragma once
 
+#include <mutex>
+#include <thread>
 #include <queue>
 
 namespace Rendering
@@ -37,5 +39,11 @@ namespace Rendering
 
 		void* m_windowHandle = nullptr;
 		std::unique_ptr<DX11Device> m_device = nullptr;
+
+		std::thread m_thread;
+		std::mutex m_updateMutex;
+
+		bool m_processSignal = false;
+		bool m_shuttingDown = false;
 	};
 }

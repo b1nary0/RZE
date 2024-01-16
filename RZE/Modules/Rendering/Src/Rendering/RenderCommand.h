@@ -13,6 +13,9 @@
 
 #include <memory>
 
+
+struct ImDrawData;
+
 namespace Rendering
 {
 	class DX11VertexBuffer;
@@ -75,6 +78,8 @@ namespace Rendering
 	struct RenderCommand_ImGuiRender : RenderCommand
 	{
 		RenderCommand_ImGuiRender() { type = RenderCommandType::ImGuiRender; }
+
+		ImDrawData* drawData;
 	};
 
 	struct RenderCommand_BeginFrame : RenderCommand
