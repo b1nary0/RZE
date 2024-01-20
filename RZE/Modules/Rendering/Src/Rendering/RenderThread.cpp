@@ -73,6 +73,16 @@ namespace Rendering
 
 	void RenderThread::Shutdown()
 	{
+		{
+			// @todo need to wrap this it's ugly and see if we can API-ifize our usage of this pattern in general
+			// this block is to ensure the proper shutdown thread synchronization
+			std::unique_lock waitlock(m_updateMutex);
+			m_updateCondition.wait(waitlock, [this]() { return m_processSignal == false; });
+			m_processSignal = true;
+			waitlock.unlock();
+			m_updateCondition.notify_all();
+		}
+
 		m_shuttingDown = true;
 		m_thread.join();
 
@@ -91,17 +101,20 @@ namespace Rendering
 
 	void RenderThread::Update()
 	{
-		if (m_processSignal)
+		std::unique_lock lock(m_updateMutex);
 		{
-			std::lock_guard lock(m_updateMutex);
-
-			MemArena::Cycle();
-			std::swap(m_producerQueue, m_consumerQueue);
-
-			ProcessCommands();
-
-			m_processSignal = false;
+			OPTICK_EVENT("Wait");
+			m_updateCondition.wait(lock, [this] { return m_processSignal; });
 		}
+
+		if (!m_shuttingDown)
+		{
+			ProcessCommands();
+		}
+
+		m_processSignal = false;
+		lock.unlock();
+		m_updateCondition.notify_all();
 	}
 
 	void RenderThread::PushCommand(RenderCommand* command)
@@ -112,6 +125,7 @@ namespace Rendering
 
 	void RenderThread::ProcessCommands()
 	{
+		OPTICK_EVENT();
 		AssertExpr(m_processSignal = true);
 
 		while (!m_consumerQueue.empty())
@@ -482,7 +496,16 @@ namespace Rendering
 
 	void RenderThread::SignalProcess()
 	{
-		std::lock_guard lock(m_updateMutex);
+		{
+			std::unique_lock waitlock(m_updateMutex);
+			m_updateCondition.wait(waitlock, [this]() { return m_processSignal == false; });
+		}
+
+		MemArena::Cycle();
+		std::swap(m_producerQueue, m_consumerQueue);
+
+		std::lock_guard<std::mutex> lock(m_updateMutex);
+		m_updateCondition.notify_all();
 
 		//AssertExpr(m_processSignal == false);
 		m_processSignal = true;

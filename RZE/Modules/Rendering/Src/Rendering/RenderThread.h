@@ -43,6 +43,7 @@ namespace Rendering
 		std::thread m_thread;
 		std::mutex m_updateMutex;
 
+		std::condition_variable m_updateCondition;
 		bool m_processSignal = false;
 		bool m_shuttingDown = false;
 	};

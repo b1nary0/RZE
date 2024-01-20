@@ -41,10 +41,6 @@ namespace Rendering
 		m_renderThread.Initialize(windowHandle);
 	}
 
-	void Renderer::Update()
-	{
-	}
-	
 	void Renderer::Shutdown()
 	{
 		m_renderThread.Shutdown();

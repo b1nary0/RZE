@@ -40,7 +40,6 @@ namespace Rendering
 		
 	public:
 		static void Initialize(void* mWindowHandle);
-		static void Update();
 		static void Shutdown();
 
 		// API for an entire frame (global state, etc)
