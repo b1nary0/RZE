@@ -502,11 +502,12 @@ namespace Rendering
 			m_updateCondition.wait(waitlock, [this]() { return m_processSignal == false; });
 		}
 
+		AssertExpr(m_processSignal == false);
+
 		MemArena::Cycle();
 		std::swap(m_producerQueue, m_consumerQueue);
 
 		std::lock_guard<std::mutex> lock(m_updateMutex);
-		//AssertExpr(m_processSignal == false);
 		m_processSignal = true;
 		m_updateCondition.notify_all();
 	}
