@@ -242,7 +242,7 @@ namespace Rendering
 		}
 		else
 		{
-			RenderCommand_ClearRenderTarget* command = MemArena::AllocType<RenderCommand_ClearRenderTarget>();
+			RenderCommand_ClearRenderTargets* command = MemArena::AllocType<RenderCommand_ClearRenderTargets>();
 
 			m_renderThread.PushCommand(command);
 		}
