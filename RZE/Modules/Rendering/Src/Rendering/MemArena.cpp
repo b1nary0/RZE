@@ -30,6 +30,8 @@ namespace Rendering
 
 		void InitializeArena(size_t size)
 		{
+			AssertExpr(size > 0);
+
 			if (s_producerBuf != nullptr || s_consumerBuf != nullptr)
 			{
 				RZE_LOG("Rendering memory arena being re-initialized. \

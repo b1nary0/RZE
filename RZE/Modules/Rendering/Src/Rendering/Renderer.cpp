@@ -5,6 +5,7 @@
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector4D.h>
+#include <Utils/Memory/MemoryUtils.h>
 #include <Utils/Platform/Filepath.h>
 
 // DX11
@@ -24,6 +25,8 @@
 #include <Optick/optick.h>
 #include <imGUI/imgui.h>
 
+#define MEM_ARENA_SIZE MemoryUtils::Megabytes(500)
+
 namespace Rendering
 {
 	RenderThread Renderer::m_renderThread;
@@ -38,12 +41,16 @@ namespace Rendering
 
 	void Renderer::Initialize(void* windowHandle)
 	{
+		MemArena::InitializeArena(MEM_ARENA_SIZE);
+
 		m_renderThread.Initialize(windowHandle);
 	}
 
 	void Renderer::Shutdown()
 	{
 		m_renderThread.Shutdown();
+
+		MemArena::Shutdown();
 	}
 
 	void Renderer::BeginFrame(const char* frameName)

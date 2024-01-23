@@ -15,7 +15,6 @@
 #include <Rendering/Driver/DX11/DX11ShaderTypes.h>
 
 #include <Utils/Conversions.h>
-#include <Utils/Memory/MemoryUtils.h>
 #include <Utils/DebugUtils/Debug.h>
 
 #include <Optick/optick.h>
@@ -25,8 +24,6 @@
 #include <imGUI/imgui_impl_win32.h>
 
 #include <d3d9.h>
-
-#define MEM_ARENA_SIZE MemoryUtils::Megabytes(500)
 
 namespace Rendering
 {
@@ -48,8 +45,6 @@ namespace Rendering
 	void RenderThread::Initialize(void* windowHandle)
 	{
 		AssertNotNull(windowHandle);
-
-		MemArena::InitializeArena(MEM_ARENA_SIZE);
 
 		m_windowHandle = windowHandle;
 
@@ -88,8 +83,6 @@ namespace Rendering
 
 		ImGui_ImplDX11_Shutdown();
 		m_device->Shutdown();
-
-		MemArena::Shutdown();
 	}
 
 	void RenderThread::InitializeImGui()
