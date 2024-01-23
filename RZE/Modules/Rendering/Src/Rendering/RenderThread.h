@@ -21,16 +21,17 @@ namespace Rendering
 		void Initialize(void* windowHandle);
 		void Shutdown();
 
-		void Update();
-
 		void PushCommand(RenderCommand* command);
-		void ProcessCommands();
 
 		// @todo note sure about the future of this, but just getting an idea down
 		void SignalProcess();
 
 	private:
+		void Update();
+
 		void InitializeImGui();
+
+		void ProcessCommands();
 
 	private:
 		// @note these are guaranteed to be contiguous as its backed by MemArena
