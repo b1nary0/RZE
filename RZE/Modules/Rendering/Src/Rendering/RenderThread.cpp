@@ -138,6 +138,7 @@ namespace Rendering
 				{
 					IM_DELETE<ImDrawList>(cmd->drawData->CmdLists[i]);
 				}
+				delete cmd->drawData->CmdLists;
 				delete cmd->drawData;
 
 				break;
