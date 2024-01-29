@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Graphics/RenderEngine.h>
+
 #include <Utils/PrimitiveDefs.h>
 
 #include <memory>
@@ -11,7 +13,7 @@ struct RenderCamera;
 
 struct RenderStageData
 {
-	RenderCamera* m_camera = nullptr;
+	RenderCamera m_camera;
 	std::vector<std::unique_ptr<RenderObject>>* m_renderObjects = nullptr;
 	std::vector<std::unique_ptr<LightObject>>* m_lights = nullptr;
 };

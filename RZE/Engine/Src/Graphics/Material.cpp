@@ -13,7 +13,7 @@ MaterialInstance::MaterialInstance(const std::string& name)
 {
 	m_textureSlots.resize(TEXTURE_SLOT_COUNT);
 	
-	m_paramBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, MemoryUtils::AlignSize(sizeof(MaterialParams), 16), 1);
+	m_paramBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(MaterialParams), 16, 1);
 }
 
 MaterialInstance::~MaterialInstance()
@@ -78,7 +78,7 @@ void MaterialInstance::SetShaderTechnique(const ResourceHandle& shaderTechnique)
 
 void MaterialInstance::CommitPropertyChanges()
 {
-	Rendering::Renderer::UploadDataToBuffer(m_paramBuffer, &m_properties);
+	Rendering::Renderer::UploadDataToBuffer<MaterialParams>(m_paramBuffer, &m_properties);
 }
 
 Rendering::ConstantBufferHandle MaterialInstance::GetParamBuffer() const

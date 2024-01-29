@@ -4,6 +4,7 @@
 
 #include <Rendering/Driver/DX11/DX11.h>
 
+#include <Utils/Memory/MemoryUtils.h>
 #include <Utils/DebugUtils/Debug.h>
 
 namespace Rendering
@@ -15,7 +16,7 @@ namespace Rendering
 		ZeroMemory(&bufferDesc, sizeof(bufferDesc));
 
 		bufferDesc.Usage = D3D11_USAGE_DEFAULT;
-		bufferDesc.ByteWidth = size * count;
+		bufferDesc.ByteWidth = MemoryUtils::AlignSize(size, GetAlignment()) * count;
 		bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 		bufferDesc.CPUAccessFlags = 0;
 		bufferDesc.MiscFlags = 0;
@@ -40,6 +41,11 @@ namespace Rendering
 	{
 		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 		deviceContext.PSSetConstantBuffers(bufferSlot, 1, &m_buffer);
+	}
+
+	U32 DX11ConstantBuffer::GetAlignment()
+	{
+		return m_alignment;
 	}
 
 	void DX11ConstantBuffer::SetDevice(DX11Device* device)

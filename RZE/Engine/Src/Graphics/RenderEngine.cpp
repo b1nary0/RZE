@@ -10,7 +10,7 @@
 
 void LightObject::Initialize()
 {
-	m_propertyBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(PropertyBufferLayout), 1);
+	m_propertyBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(PropertyBufferLayout), 16, 1);
 }
 
 RenderEngine::RenderEngine()
@@ -33,7 +33,7 @@ void RenderEngine::Update()
 	OPTICK_EVENT();
 
 	RenderStageData renderStageData;
-	renderStageData.m_camera = &m_camera;
+	renderStageData.m_camera = m_camera;
 	renderStageData.m_renderObjects = &m_renderObjects;
 	renderStageData.m_lights = &m_lightObjects;
 
@@ -53,7 +53,7 @@ void RenderEngine::Render(const char* frameName, bool isMainRenderCall, bool wit
 	}
 
 	RenderStageData renderStageData;
-	renderStageData.m_camera = &m_camera;
+	renderStageData.m_camera = m_camera;
 	renderStageData.m_renderObjects = &m_renderObjects;
 	renderStageData.m_lights = &m_lightObjects;
 

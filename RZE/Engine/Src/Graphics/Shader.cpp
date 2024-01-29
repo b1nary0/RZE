@@ -13,8 +13,8 @@
 bool VertexShader::Load(const Filepath& filePath)
 {
 	m_shader = Rendering::Renderer::CreateVertexShader(filePath, m_shaderInputLayout);
-	m_cameraDataBuf = Rendering::Renderer::CreateConstantBuffer(nullptr, MemoryUtils::AlignSize(sizeof(RenderCamera), 128), 1);
-	m_worldMatrixBuf = Rendering::Renderer::CreateConstantBuffer(nullptr, MemoryUtils::AlignSize(sizeof(Matrix4x4), 128), 1);
+	m_cameraDataBuf = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(RenderCamera), 128, 1);
+	m_worldMatrixBuf = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(Matrix4x4), 128, 1);
 
 	return m_shader.IsValid();
 }

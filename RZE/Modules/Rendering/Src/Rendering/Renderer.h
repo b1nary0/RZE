@@ -59,12 +59,13 @@ namespace Rendering
 	public:
 		static VertexBufferHandle CreateVertexBuffer(void* data, size_t dataTypeSize, size_t count, U32 stride);
 		static IndexBufferHandle CreateIndexBuffer(void* data, size_t dataTypeSize, size_t count);
-		static ConstantBufferHandle CreateConstantBuffer(void* data, size_t dataTypeSize, size_t count);
+		static ConstantBufferHandle CreateConstantBuffer(void* data, size_t dataTypeSize, U32 alignment, size_t count);
 		static TextureBuffer2DHandle CreateTextureBuffer2D(const void* data, const GFXTextureBufferParams& params);
 		
 		static VertexShaderHandle CreateVertexShader(const Filepath& filepath, const ShaderInputLayout& inputLayout);
 		static PixelShaderHandle CreatePixelShader(const Filepath& filepath);
 
+		template <typename TType>
 		static void UploadDataToBuffer(const ConstantBufferHandle& buffer, const void* data);
 
 		static void ReleaseVertexShader(VertexShaderHandle& shaderHandle);
@@ -100,6 +101,15 @@ namespace Rendering
 		static void DrawFullScreenQuad();
 
 	private:
+		static void InternalUploadDataToBuffer(const ConstantBufferHandle& buffer, const void* data, size_t dataSize);
+
+	private:
 		static RenderThread m_renderThread;
 	};
+
+	template<typename TType>
+	inline void Renderer::UploadDataToBuffer(const ConstantBufferHandle& buffer, const void* data)
+	{
+		InternalUploadDataToBuffer(buffer, data, sizeof(TType));
+	}
 }

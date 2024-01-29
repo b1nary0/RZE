@@ -63,6 +63,8 @@ namespace Rendering
 
 		virtual void SetActiveVS(U32 bufferSlot) = 0;
 		virtual void SetActivePS(U32 bufferSlot) = 0;
+
+		virtual U32 GetAlignment() { return 0; }
 	};
 
 	class IGFXDepthStencilBuffer

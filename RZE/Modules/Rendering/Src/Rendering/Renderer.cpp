@@ -156,13 +156,13 @@ namespace Rendering
 		return IndexBufferHandle(command->bufferPtr);
 	}
 
-	ConstantBufferHandle Renderer::CreateConstantBuffer(void* data, size_t dataTypeSize, size_t count)
+	ConstantBufferHandle Renderer::CreateConstantBuffer(void* data, size_t dataTypeSize, U32 alignment, size_t count)
 	{
 		RenderCommand_CreateConstantBuffer* command = MemArena::AllocType<RenderCommand_CreateConstantBuffer>();
-		command->bufferPtr = std::make_shared<DX11ConstantBuffer>();
-		command->dataTypeSize = dataTypeSize;
+		command->bufferPtr = std::make_shared<DX11ConstantBuffer>(alignment);
 		command->count = count;
 		command->data = data;
+		command->dataTypeSize = dataTypeSize;
 
 		m_renderThread.PushCommand(command);
 
@@ -204,11 +204,14 @@ namespace Rendering
 		return PixelShaderHandle(command->bufferPtr);
 	}
 
-	void Renderer::UploadDataToBuffer(const ConstantBufferHandle& buffer, const void* data)
+	void Renderer::InternalUploadDataToBuffer(const ConstantBufferHandle& buffer, const void* data, size_t dataSize)
 	{
 		RenderCommand_UploadDataToBuffer* command = MemArena::AllocType<RenderCommand_UploadDataToBuffer>();
 		command->bufferHandle = buffer;
-		command->data = data;
+
+		const size_t alignedSize = MemoryUtils::AlignSize(dataSize, buffer.m_buffer->GetAlignment());
+		command->data = malloc(alignedSize);
+		memcpy(const_cast<void*>(command->data), data, alignedSize);
 
 		m_renderThread.PushCommand(command);
 	}

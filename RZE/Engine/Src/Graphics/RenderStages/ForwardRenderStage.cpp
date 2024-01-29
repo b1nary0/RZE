@@ -44,10 +44,10 @@ void ForwardRenderStage::Render(const RenderStageData& renderData)
 	Rendering::Renderer::ClearRenderTarget(renderTarget.GetTargetPlatformObject(), Vector4D(0.25f, 0.25f, 0.35f, 1.0f));
 	Rendering::Renderer::ClearDepthStencilBuffer(renderTarget.GetDepthTexturePlatformObject());
 
-	Rendering::Renderer::UploadDataToBuffer(m_vertexShader->GetCameraDataBuffer(), renderData.m_camera);
+	Rendering::Renderer::UploadDataToBuffer<RenderCamera>(m_vertexShader->GetCameraDataBuffer(), &renderData.m_camera);
 
 	std::unique_ptr<LightObject>& lightObject = (*renderData.m_lights)[0];
-	Rendering::Renderer::UploadDataToBuffer(lightObject->GetPropertyBuffer(), &lightObject->GetData());
+	Rendering::Renderer::UploadDataToBuffer<LightObject::PropertyBufferLayout>(lightObject->GetPropertyBuffer(), &lightObject->GetData());
 
 	Rendering::Renderer::SetVertexShader(m_vertexShader->GetPlatformObject());
 	Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetCameraDataBuffer(), 0);
@@ -61,7 +61,7 @@ void ForwardRenderStage::Render(const RenderStageData& renderData)
 	{
 		// @note this sends in the address of renderObject->m_matrixMem.transform but fulfils the memory of struct MatrixMem as a whole
 		// this should be re-evaluated later to have a better solve for the issue of commands needing access to the data being uploaded's lifetime
-		Rendering::Renderer::UploadDataToBuffer(m_vertexShader->GetWorldMatrixBuffer(), &renderObject->GetTransform());
+		Rendering::Renderer::UploadDataToBuffer<Matrix4x4>(m_vertexShader->GetWorldMatrixBuffer(), &renderObject->GetTransform());
 		Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetWorldMatrixBuffer(), 1);
 
 		// @TODO
