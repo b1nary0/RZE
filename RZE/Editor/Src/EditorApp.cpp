@@ -1,10 +1,14 @@
 #include <EditorApp.h>
 
 #include <Game/World/GameObject/GameObject.h>
+#include <Game/World/GameObject/EditorGameComponentInfoCache.h>
+#include <Game/World/GameObjectComponents/CameraComponent.h>
 #include <Game/World/GameObjectComponents/EditorCameraComponent.h>
+#include <Game/World/GameObjectComponents/RenderComponent.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
 #include <Rendering/Renderer.h>
+#include <Rendering/MemArena.h>
 #include <Rendering/Graphics/RenderTarget.h>
 
 #include <Graphics/RenderEngine.h>
@@ -12,6 +16,7 @@
 
 #include <EngineCore/Threading/JobSystem/JobScheduler.h>
 
+#include <Utils/Memory/MemoryUtils.h>
 #include <Utils/Platform/CmdLine.h>
 #include <Utils/Platform/Filepath.h>
 
@@ -22,9 +27,6 @@
 #include <Optick/optick.h>
 
 #include <stdio.h>
-#include "Game/World/GameObject/EditorGameComponentInfoCache.h"
-#include "Game/World/GameObjectComponents/CameraComponent.h"
-#include "Game/World/GameObjectComponents/RenderComponent.h"
 
 namespace
 {
@@ -400,6 +402,51 @@ namespace Editor
 			}
 
 			ImGui::Text("%.1f ms", frametimeMS);
+			
+			ImGui::Separator();
+			{
+				// @todo Move to function later maybe
+				ImVec4 colour;
+				Rendering::MemArena::PressureValue memPressure = Rendering::MemArena::GetPressureValue();
+				switch (memPressure)
+				{
+				case Rendering::MemArena::PressureValue::LOW:
+					colour = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+					break;
+					
+				case Rendering::MemArena::PressureValue::MED:
+					colour = ImVec4(255.0f, 255.0f, 0.0f, 1.0f);
+					break;
+
+				case Rendering::MemArena::PressureValue::HIGH:
+					colour = ImVec4(255.0f, 0.0f, 0.0f, 1.0f);
+					break;
+
+				default:
+					colour = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+					break;
+				}
+
+				const size_t lastFrameAllocationSize = Rendering::MemArena::GetTotalMemoryAllocatedLastFrame();
+				const size_t memArenaTotalSizeBytes = Rendering::MemArena::GetSize();
+
+				const float lastFrameSizeKB = static_cast<float>(lastFrameAllocationSize / 1024);
+				const float memArenaSizeKB = static_cast<float>(memArenaTotalSizeBytes / 1024);
+				const float memArenaSizeMB = static_cast<float>(memArenaTotalSizeBytes / 1024) / 1024;
+
+				const float* memArenaValue = &memArenaSizeKB;
+
+				char* memArenaSizeMagnitudeStr = "KB";
+				if (memArenaTotalSizeBytes >= MemoryUtils::Megabytes(1))
+				{
+					memArenaSizeMagnitudeStr = "MB";
+					memArenaValue = &memArenaSizeMB;
+				}
+
+				ImGui::Text("RenderCommand MemArena:");
+				ImGui::TextColored(colour, "%.2f KB / %.2f %s", lastFrameSizeKB, *memArenaValue, memArenaSizeMagnitudeStr);
+				ImGui::Text("Peak Used: %d", Rendering::MemArena::GetPeakUsedBytes() / 1024);
+			}
 
 			ImGui::EndMainMenuBar();
 		}

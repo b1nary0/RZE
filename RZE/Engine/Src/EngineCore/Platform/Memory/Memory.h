@@ -8,7 +8,7 @@
 #define RZE_NEW new;
 #define RZE_DEL delete;
 
-#define ALLOCATOR_DEFAULT_FIXED_SIZE_KB MemoryUtils::Kilobyes(64)
+#define ALLOCATOR_DEFAULT_FIXED_SIZE_KB MemoryUtils::Kilobytes(64)
 #define ALLOCATOR_BLOCK_DEFAULT_MAX_SIZE MemoryUtils::Megabytes(200)
 #define ALLOCATOR_BLOCK_DEFAULT_ALIGNMENT 32
 

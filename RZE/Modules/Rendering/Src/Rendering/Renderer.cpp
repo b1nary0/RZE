@@ -25,7 +25,7 @@
 #include <Optick/optick.h>
 #include <imGUI/imgui.h>
 
-#define MEM_ARENA_SIZE MemoryUtils::Megabytes(500)
+#define MEM_ARENA_SIZE MemoryUtils::Kilobytes(512)
 
 namespace Rendering
 {

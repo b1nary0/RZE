@@ -3,6 +3,9 @@
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/PrimitiveDefs.h>
 
+#define PRESSURE_LIMIT_MED 60
+#define PRESSURE_LIMIT_HIGH 90
+
 namespace Rendering
 {
 	namespace MemArena
@@ -14,10 +17,16 @@ namespace Rendering
 		{
 			size_t curPos = 0;
 			size_t size = 0;
+			// The total amount of memory allocated this frame
+			size_t frameTotalMemAllocCurrFrame = 0;
+			size_t frameTotalMemAllocLastFrame = 0;
+			// The highest size encountered during a runtime session
+			size_t peakUsedBytes = 0;
+			PressureValue pressureValue = PressureValue::LOW;
 		};
 		ArenaState s_arenaState;
 
-		void ValidateArenaState(size_t sizeRequested)
+		static void ValidateArenaState(size_t sizeRequested)
 		{
 			// validate state. can't alloc if these rules arent met.
 			if (s_arenaState.curPos + sizeRequested > s_arenaState.size)
@@ -25,6 +34,24 @@ namespace Rendering
 				size_t sizeAvailable = s_arenaState.size - s_arenaState.curPos;
 				RZE_LOG_ARGS("Rendering memory arena has run out of space. Size requested: %zu available: %zu ", sizeRequested, sizeAvailable);
 				AssertExpr(s_arenaState.curPos + sizeRequested < s_arenaState.size);
+			}
+		}
+		
+		static PressureValue CalculatePressureValue()
+		{
+			const float pressurePercentage = (static_cast<float>(s_arenaState.frameTotalMemAllocCurrFrame) / s_arenaState.size) * 100;
+
+			if (pressurePercentage >= PRESSURE_LIMIT_HIGH)
+			{
+				return PressureValue::HIGH;
+			}
+			else if (pressurePercentage >= PRESSURE_LIMIT_MED)
+			{
+				return PressureValue::MED;
+			}
+			else
+			{
+				return PressureValue::LOW;
 			}
 		}
 
@@ -70,7 +97,14 @@ namespace Rendering
 
 			Byte* allocMem = &s_producerBuf[s_arenaState.curPos];
 			memset(allocMem, 0, size);
+
 			s_arenaState.curPos += size;
+			s_arenaState.frameTotalMemAllocCurrFrame += size;
+
+			if (s_arenaState.peakUsedBytes < s_arenaState.curPos)
+			{
+				s_arenaState.peakUsedBytes = s_arenaState.curPos;
+			}
 
 			return allocMem;
 		}
@@ -83,8 +117,32 @@ namespace Rendering
 		void Cycle()
 		{
 			s_arenaState.curPos = 0;
+			s_arenaState.frameTotalMemAllocLastFrame = s_arenaState.frameTotalMemAllocCurrFrame;
+			s_arenaState.frameTotalMemAllocCurrFrame = 0;
+
+			s_arenaState.pressureValue = CalculatePressureValue();
 
 			std::swap(s_producerBuf, s_consumerBuf);
+		}
+
+		size_t GetTotalMemoryAllocatedLastFrame()
+		{
+			return s_arenaState.frameTotalMemAllocLastFrame;
+		}
+
+		size_t GetSize()
+		{
+			return s_arenaState.size;
+		}
+
+		size_t GetPeakUsedBytes()
+		{
+			return s_arenaState.peakUsedBytes;
+		}
+
+		PressureValue GetPressureValue()
+		{
+			return s_arenaState.pressureValue;
 		}
 	}
 }

@@ -4,14 +4,14 @@
 
 namespace MemoryUtils
 {
-	inline size_t Kilobyes(size_t val)
+	inline size_t Kilobytes(size_t val)
 	{
 		return val * 1024;
 	}
 
 	inline size_t Megabytes(size_t val)
 	{
-		return Kilobyes(val) * 1024;
+		return Kilobytes(val) * 1024;
 	}
 
 	inline size_t Gigabytes(size_t val)
