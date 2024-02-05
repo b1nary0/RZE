@@ -401,6 +401,7 @@ namespace Editor
 				++frameCount;
 			}
 
+			const float imguiCursorPos = ImGui::GetCursorPosX();
 			ImGui::Text("%.1f ms", frametimeMS);
 			
 			ImGui::Separator();
@@ -443,6 +444,8 @@ namespace Editor
 					memArenaValue = &memArenaSizeMB;
 				}
 
+				ImVec2 textSize = ImGui::CalcTextSize("12.0ms ");
+				ImGui::SameLine(imguiCursorPos + textSize.x);
 				ImGui::Text("RenderCommand MemArena:");
 				ImGui::TextColored(colour, "%.2f KB / %.2f %s", lastFrameSizeKB, *memArenaValue, memArenaSizeMagnitudeStr);
 				ImGui::Text("Peak Used: %d", Rendering::MemArena::GetPeakUsedBytes() / 1024);
