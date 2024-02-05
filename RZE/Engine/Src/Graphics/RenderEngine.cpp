@@ -189,16 +189,8 @@ struct RenderViewData
 void RenderEngine::RenderView(const char* frameName, const RenderCamera& renderCamera, std::unique_ptr<Rendering::RenderTargetTexture>& renderTarget)
 {
 	OPTICK_EVENT();
+	AssertNotNull(renderTarget);
 	AssertExpr(renderCamera.Viewport.Size != Vector2D::ZERO);
-
-	if (renderTarget == nullptr)
-	{
-		renderTarget = std::make_unique<Rendering::RenderTargetTexture>(
-			static_cast<U32>(renderCamera.Viewport.Size.X()),
-			static_cast<U32>(renderCamera.Viewport.Size.Y())
-			);
-		renderTarget->Initialize();
-	}
 
 	const RenderCamera prevCamera = GetCamera();
 	const Vector2D prevViewportSize = GetViewportSize();

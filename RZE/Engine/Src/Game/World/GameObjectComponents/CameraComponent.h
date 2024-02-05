@@ -15,6 +15,7 @@ public:
 
 	// GameObjectComponent interface
 public:
+	void Initialize() override;
 	void OnAddToScene() override;
 	void Update() override;
 
@@ -69,4 +70,5 @@ private:
 
 	// #TODO this should only be a thing in editor
 	std::unique_ptr<Rendering::RenderTargetTexture> m_renderTarget;
+
 };

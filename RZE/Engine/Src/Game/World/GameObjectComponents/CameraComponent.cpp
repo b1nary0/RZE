@@ -103,6 +103,19 @@ void CameraComponent::SetAsActiveCamera(bool isActiveCamera)
 	m_isActiveCamera = isActiveCamera;
 }
 
+void CameraComponent::Initialize()
+{
+	RenderCamera renderCam;
+	renderCam.Viewport = RenderViewport{ Vector2D(426.0f, 240.0f) };
+	renderCam.ClipSpace = GetProjectionMatrix() * GetViewMatrix();
+
+	m_renderTarget = std::make_unique<Rendering::RenderTargetTexture>(
+		static_cast<U32>(renderCam.Viewport.Size.X()),
+		static_cast<U32>(renderCam.Viewport.Size.Y())
+	);
+	m_renderTarget->Initialize();
+}
+
 void CameraComponent::OnAddToScene()
 {
 	// #TODO This wont work long term, just trying to get things rendering with new code
