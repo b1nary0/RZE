@@ -78,15 +78,15 @@ namespace Rendering
 
 		void Shutdown()
 		{
-			if (s_producerBuf == nullptr)
+			if (s_producerBuf != nullptr)
 			{
-				AssertMsg(s_consumerBuf == nullptr, "If one is null, they must both be null or something got weird.");
+				AssertMsg(s_consumerBuf != nullptr, "If one is valid, they must both be valid or something got weird.");
 				delete s_producerBuf;
 			}
 
-			if (s_consumerBuf == nullptr)
+			if (s_consumerBuf != nullptr)
 			{
-				AssertMsg(s_producerBuf == nullptr, "If one is null, they must both be null or something got weird.");
+				AssertMsg(s_producerBuf != nullptr, "If one is valid, they must both be valid or something got weird.");
 				delete s_consumerBuf;
 			}
 		}

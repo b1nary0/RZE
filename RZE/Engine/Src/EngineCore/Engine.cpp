@@ -293,11 +293,11 @@ void RZE_Engine::BeginShutDown()
 {
 	RZE_LOG("Shutting engine down...");
 	
+	m_resourceHandler.ShutDown();
 	m_activeScene->ShutDown();
 	m_application->ShutDown();
 	m_renderEngine->Shutdown();
 
-	m_resourceHandler.ShutDown();
 	Threading::JobScheduler::Get().ShutDown();
 
 	InternalShutDown();
