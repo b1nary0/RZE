@@ -119,7 +119,7 @@ namespace Rendering
 	void RenderThread::ProcessCommands()
 	{
 		OPTICK_EVENT();
-		AssertExpr(m_processSignal = true);
+		AssertExpr(m_processSignal == true);
 
 		while (!m_consumerQueue.empty())
 		{
