@@ -448,7 +448,7 @@ namespace Editor
 				ImGui::SameLine(imguiCursorPos + textSize.x);
 				ImGui::Text("RenderCommand MemArena:");
 				ImGui::TextColored(colour, "%.2f KB / %.2f %s", lastFrameSizeKB, *memArenaValue, memArenaSizeMagnitudeStr);
-				ImGui::Text("Peak Used: %d", Rendering::MemArena::GetPeakUsedBytes() / 1024);
+				ImGui::Text("Peak Used: %d KB", Rendering::MemArena::GetPeakUsedBytes() / 1024, memArenaSizeMagnitudeStr);
 			}
 
 			ImGui::EndMainMenuBar();
