@@ -82,9 +82,12 @@ void RenderEngine::Finish()
 
 void RenderEngine::Shutdown()
 {
-	m_renderObjects.clear();
-
 	Rendering::Renderer::Shutdown();
+}
+
+void RenderEngine::ClearObjects()
+{
+	m_renderObjects.clear();
 }
 
 RenderObjectPtr RenderEngine::CreateRenderObject(const StaticMeshInstance& staticMesh)

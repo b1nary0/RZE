@@ -137,6 +137,8 @@ public:
 	void Finish();
 	void Shutdown();
 
+	void ClearObjects();
+
 public:
 	template <typename TRenderStageType, typename... Args>
 	void AddRenderStage(Args... args);

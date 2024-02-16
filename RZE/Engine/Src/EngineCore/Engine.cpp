@@ -293,9 +293,12 @@ void RZE_Engine::BeginShutDown()
 {
 	RZE_LOG("Shutting engine down...");
 	
-	m_resourceHandler.ShutDown();
 	m_activeScene->ShutDown();
 	m_application->ShutDown();
+
+	//@todo this is a quick fix for the cyclical dependency between Rendering::MemArena and ResourceHandler releasing leftover reasources.
+	m_renderEngine->ClearObjects();
+	m_resourceHandler.ShutDown();
 	m_renderEngine->Shutdown();
 
 	Threading::JobScheduler::Get().ShutDown();
