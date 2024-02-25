@@ -12,8 +12,8 @@ public:
 	~ImGuiRenderStage() override = default;
 
 	void Initialize() override;
-	void Update(const RenderStageData& renderData) override {}
-	void Render(const RenderStageData& renderData) override;
+	void Update(const RenderCamera& camera, const RenderEngine::SceneData& renderData) override {}
+	void Render(const RenderCamera& camera, const RenderEngine::SceneData& renderData) override;
 
 	U32 GetPriority() override { return 1000; }
 

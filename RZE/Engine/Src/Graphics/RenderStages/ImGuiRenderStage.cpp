@@ -11,7 +11,7 @@ void ImGuiRenderStage::Initialize()
 	//Rendering::Renderer::InitializeImGui();
 }
 
-void ImGuiRenderStage::Render(const RenderStageData& renderData)
+void ImGuiRenderStage::Render(const RenderCamera& camera, const RenderEngine::SceneData& renderData)
 {
 	OPTICK_EVENT();
 	Rendering::Renderer::Begin("ImGuiRenderStage");

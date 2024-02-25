@@ -32,14 +32,9 @@ void RenderEngine::Update()
 {
 	OPTICK_EVENT();
 
-	RenderStageData renderStageData;
-	renderStageData.m_camera = m_camera;
-	renderStageData.m_renderObjects = &m_renderObjects;
-	renderStageData.m_lights = &m_lightObjects;
-
 	for (auto& pipeline : m_renderStages)
 	{
-		pipeline->Update(renderStageData);
+		pipeline->Update(m_camera, m_sceneData);
 	}
 }
 
@@ -52,11 +47,6 @@ void RenderEngine::Render(const char* frameName, bool isMainRenderCall, bool wit
 		Rendering::Renderer::BeginFrame(frameName);
 	}
 
-	RenderStageData renderStageData;
-	renderStageData.m_camera = m_camera;
-	renderStageData.m_renderObjects = &m_renderObjects;
-	renderStageData.m_lights = &m_lightObjects;
-
 	for (auto& pipeline : m_renderStages)
 	{
 		// #TODO dont do imgui. magic number should change
@@ -65,7 +55,7 @@ void RenderEngine::Render(const char* frameName, bool isMainRenderCall, bool wit
 			continue;
 		}
 
-		pipeline->Render(renderStageData);
+		pipeline->Render(m_camera, m_sceneData);
 	}
 
 	if (isMainRenderCall)
@@ -87,14 +77,14 @@ void RenderEngine::Shutdown()
 
 void RenderEngine::ClearObjects()
 {
-	m_renderObjects.clear();
+	m_sceneData.renderObjects.clear();
 }
 
 RenderObjectPtr RenderEngine::CreateRenderObject(const StaticMeshInstance& staticMesh)
 {
 	OPTICK_EVENT();
 	
-	std::unique_ptr<RenderObject>& renderObjectPtr = m_renderObjects.emplace_back(std::make_unique<RenderObject>());
+	std::unique_ptr<RenderObject>& renderObjectPtr = m_sceneData.renderObjects.emplace_back(std::make_unique<RenderObject>());
 	renderObjectPtr->SetStaticMesh(staticMesh);
 	
 	return RenderObjectPtr(renderObjectPtr.get());
@@ -104,22 +94,23 @@ void RenderEngine::DestroyRenderObject(RenderObjectPtr& renderObject)
 {
 	OPTICK_EVENT();
 
-	auto iter = std::find_if(m_renderObjects.begin(), m_renderObjects.end(),
+	RenderObjectContainer& renderObjects = m_sceneData.renderObjects;
+	auto iter = std::find_if(renderObjects.begin(), renderObjects.end(),
 		[&renderObject](const std::unique_ptr<RenderObject>& other)
 		{
 			return renderObject.m_ptr == other.get();
 		});
 
-	if (iter != m_renderObjects.end())
+	if (iter != renderObjects.end())
 	{
-		if (m_renderObjects.size() > 1)
+		if (renderObjects.size() > 1)
 		{
-			std::iter_swap(iter, std::prev(m_renderObjects.end()));	
-			m_renderObjects.erase(std::prev(m_renderObjects.end()));
+			std::iter_swap(iter, std::prev(renderObjects.end()));
+			renderObjects.erase(std::prev(renderObjects.end()));
 		}
 		else
 		{
-			m_renderObjects.erase(iter);
+			renderObjects.erase(iter);
 		}
 
 		renderObject = RenderObjectPtr();
@@ -128,7 +119,7 @@ void RenderEngine::DestroyRenderObject(RenderObjectPtr& renderObject)
 
 LightObjectPtr RenderEngine::CreateLightObject()
 {
-	std::unique_ptr<LightObject>& lightObjectPtr = m_lightObjects.emplace_back(std::make_unique<LightObject>());
+	std::unique_ptr<LightObject>& lightObjectPtr = m_sceneData.lightObjects.emplace_back(std::make_unique<LightObject>());
 	lightObjectPtr->Initialize();
 	
 	return LightObjectPtr(lightObjectPtr.get());
@@ -138,22 +129,23 @@ void RenderEngine::DestroyLightObject(LightObjectPtr& lightObject)
 {
 	OPTICK_EVENT();
 
-	auto iter = std::find_if(m_lightObjects.begin(), m_lightObjects.end(),
+	LightObjectContainer& lightObjects = m_sceneData.lightObjects;
+	auto iter = std::find_if(lightObjects.begin(), lightObjects.end(),
 		[&lightObject](const std::unique_ptr<LightObject>& other)
 		{
 			return lightObject.m_ptr == other.get();
 		});
 
-	if (iter != m_lightObjects.end())
+	if (iter != lightObjects.end())
 	{
-		if (m_lightObjects.size() > 1)
+		if (lightObjects.size() > 1)
 		{
-			std::iter_swap(iter, std::prev(m_lightObjects.end()));
-			m_lightObjects.erase(std::prev(m_lightObjects.end()));
+			std::iter_swap(iter, std::prev(lightObjects.end()));
+			lightObjects.erase(std::prev(lightObjects.end()));
 		}
 		else
 		{
-			m_lightObjects.erase(iter);
+			lightObjects.erase(iter);
 		}
 
 		lightObject = LightObjectPtr();

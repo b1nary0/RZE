@@ -23,11 +23,11 @@ void FinalRenderTargetStage::Initialize()
 	}
 }
 
-void FinalRenderTargetStage::Update(const RenderStageData& renderData)
+void FinalRenderTargetStage::Update(const RenderCamera& camera, const RenderEngine::SceneData& renderData)
 {
 }
 
-void FinalRenderTargetStage::Render(const RenderStageData& renderData)
+void FinalRenderTargetStage::Render(const RenderCamera& camera, const RenderEngine::SceneData& renderData)
 {
 	Rendering::Renderer::Begin("FinalRenderTargetStage");
 

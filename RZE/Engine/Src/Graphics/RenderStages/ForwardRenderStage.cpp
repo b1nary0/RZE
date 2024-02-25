@@ -26,12 +26,12 @@ void ForwardRenderStage::Initialize()
 	m_vertexShader = RZE().GetResourceHandler().GetResource<VertexShader>(m_vertexShaderResource);
 }
 
-void ForwardRenderStage::Update(const RenderStageData& renderData)
+void ForwardRenderStage::Update(const RenderCamera& camera, const RenderEngine::SceneData& renderData)
 {
 	OPTICK_EVENT();
 }
 
-void ForwardRenderStage::Render(const RenderStageData& renderData)
+void ForwardRenderStage::Render(const RenderCamera& camera, const RenderEngine::SceneData& renderData)
 {
 	OPTICK_EVENT();
 
@@ -44,9 +44,9 @@ void ForwardRenderStage::Render(const RenderStageData& renderData)
 	Rendering::Renderer::ClearRenderTarget(renderTarget.GetTargetPlatformObject(), Vector4D(0.25f, 0.25f, 0.35f, 1.0f));
 	Rendering::Renderer::ClearDepthStencilBuffer(renderTarget.GetDepthTexturePlatformObject());
 
-	Rendering::Renderer::UploadDataToBuffer<RenderCamera>(m_vertexShader->GetCameraDataBuffer(), &renderData.m_camera);
+	Rendering::Renderer::UploadDataToBuffer<RenderCamera>(m_vertexShader->GetCameraDataBuffer(), &camera);
 
-	std::unique_ptr<LightObject>& lightObject = (*renderData.m_lights)[0];
+	const std::unique_ptr<LightObject>& lightObject = renderData.lightObjects[0];
 	Rendering::Renderer::UploadDataToBuffer<LightObject::PropertyBufferLayout>(lightObject->GetPropertyBuffer(), &lightObject->GetData());
 
 	Rendering::Renderer::SetVertexShader(m_vertexShader->GetPlatformObject());
@@ -57,7 +57,7 @@ void ForwardRenderStage::Render(const RenderStageData& renderData)
 	Rendering::Renderer::SetInputLayout(m_vertexShader->GetPlatformObject());
 	Rendering::Renderer::SetPrimitiveTopology(Rendering::EPrimitiveTopology::TriangleList);
 
-	for (const auto& renderObject : *renderData.m_renderObjects)
+	for (const auto& renderObject : renderData.renderObjects)
 	{
 		// @note this sends in the address of renderObject->m_matrixMem.transform but fulfils the memory of struct MatrixMem as a whole
 		// this should be re-evaluated later to have a better solve for the issue of commands needing access to the data being uploaded's lifetime
@@ -77,7 +77,7 @@ void ForwardRenderStage::Render(const RenderStageData& renderData)
 
 			Rendering::Renderer::SetPixelShader(pixelShader->GetPlatformObject());
 			Rendering::Renderer::SetConstantBufferPS(materialInstance->GetParamBuffer(), 1);
-			Rendering::Renderer::SetConstantBufferPS((*renderData.m_lights)[0]->GetPropertyBuffer(), 2);
+			Rendering::Renderer::SetConstantBufferPS(renderData.lightObjects[0]->GetPropertyBuffer(), 2);
 			
 			// @TODO Really need to get to texture infrastructure refactor soon - 2/6/2022
 			for (U8 textureSlot = 0; textureSlot < MaterialInstance::TextureSlot::TEXTURE_SLOT_COUNT; ++textureSlot)

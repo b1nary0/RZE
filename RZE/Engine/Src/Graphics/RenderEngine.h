@@ -116,8 +116,20 @@ private:
 // Renderer::SubmitBucket(bucketProxy); // We're done here, bucketProxy invalid now.
 // ^^^^^ This looks like it should be some reference-type structure/architecture
 
+typedef std::vector<std::unique_ptr<RenderObject>> RenderObjectContainer;
+typedef std::vector<std::unique_ptr<LightObject>> LightObjectContainer;
+
 class RenderEngine
 {
+public:
+	struct SceneData
+	{
+		// @TODO Make not vector or something
+		RenderObjectContainer renderObjects;
+		// @TODO Maybe move light stuff into its own area?
+		LightObjectContainer lightObjects;
+	};
+
 public:
 	RenderEngine();
 	~RenderEngine();
@@ -170,17 +182,13 @@ private:
 
 private:
 	RenderCamera m_camera;
+	SceneData m_sceneData;
 
 	Vector2D m_canvasSize;
 	Vector2D m_viewportSize;
 
 	// @TODO currently only single render target support - also write engine-side RenderTarget
 	Rendering::RenderTargetTexture* m_renderTarget = nullptr;
-
-	// @TODO Make not vector or something
-	std::vector<std::unique_ptr<RenderObject>> m_renderObjects;
-	// @TODO Maybe move light stuff into its own area?
-	std::vector<std::unique_ptr<LightObject>> m_lightObjects;
 
 	std::vector<std::unique_ptr<IRenderStage>> m_renderStages;
 };
