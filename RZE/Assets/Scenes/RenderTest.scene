@@ -110,6 +110,30 @@
                 },
                 "GifChatComponent": {}
             }
+        },
+        "M4": {
+            "components": {
+                "TransformComponent": {
+                    "Position": [
+                        -14.114900588989258,
+                        0.0,
+                        -39.433319091796878
+                    ],
+                    "Scale": [
+                        0.9999913573265076,
+                        1.0,
+                        0.9999913573265076
+                    ],
+                    "Rotation": [
+                        0.0,
+                        -71.47037506103516,
+                        0.0
+                    ]
+                },
+                "RenderComponent": {
+                    "ResourcePath": "ProjectData\\Mesh\\m4a1.meshasset"
+                }
+            }
         }
     }
 }
