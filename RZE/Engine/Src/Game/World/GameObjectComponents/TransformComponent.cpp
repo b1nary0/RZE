@@ -1,6 +1,8 @@
 #include <StdAfx.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
+#include <Utils/Utils.h>
+
 TransformComponent::TransformComponent(const Vector3D& position)
 {
 	SetPosition(position);
@@ -154,7 +156,7 @@ void TransformComponent::RemoveChild(TransformComponent* child)
 
 	if (foundChild != m_children.end())
 	{
-		// erase back
+		ContainerUtils::VectorEraseBack(m_children, foundChild);
 	}
 }
 

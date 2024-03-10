@@ -5,6 +5,8 @@
 
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
+#include <Utils/Utils.h>
+
 static GameObjectID s_nextObjectID = 0;
 
 GameObject::GameObject()
@@ -155,6 +157,7 @@ void GameObject::RemoveChild(GameObject* child)
 	if (existingChild != m_children.end())
 	{
 		// eraseback
+		ContainerUtils::VectorEraseBack(m_children, existingChild);
 	}
 }
 
