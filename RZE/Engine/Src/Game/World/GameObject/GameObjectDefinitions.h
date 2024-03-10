@@ -50,6 +50,11 @@ public:
 		return this->m_ptr != null;
 	}
 
+	GameObject* operator*() const
+	{
+		return m_ptr;
+	}
+
 private:
 	GameObjectPtr(GameObject* gameObject)
 		: m_ptr(gameObject) {}
@@ -103,6 +108,11 @@ public:
 	bool operator!=(const std::nullptr_t null)
 	{
 		return this->m_ptr != null;
+	}
+
+	TComponentType* operator*() const
+	{
+		return m_ptr;
 	}
 
 private:

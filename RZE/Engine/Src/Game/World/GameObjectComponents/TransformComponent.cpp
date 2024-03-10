@@ -23,7 +23,16 @@ void TransformComponent::Update()
 {
 	if (m_isDirty)
 	{
-		m_transform = Matrix4x4::CreateInPlace(m_position, m_scale, m_rotation);
+		if (!IsRoot())
+		{
+			m_localTransform = Matrix4x4::CreateInPlace(m_position, m_scale, m_rotation);
+			m_worldTransform = m_parent->GetWorldMatrix() * m_localTransform;
+		}
+		else
+		{
+			m_worldTransform = Matrix4x4::CreateInPlace(m_position, m_scale, m_rotation);
+		}
+
 		m_isDirty = false;
 	}
 }
@@ -60,7 +69,10 @@ void TransformComponent::OnEditorInspect()
 	ImGui::Text("Scale");
 	valueChanged |= ImGui::InputFloat3("##transfcomp_scale", scaleValues, nullptr, ImGuiInputTextFlags_EnterReturnsTrue);
 
-	m_isDirty = valueChanged;
+	if (valueChanged)
+	{
+		MarkDirty();
+	}
 }
 
 void TransformComponent::SetPosition(const Vector3D& position)
@@ -68,7 +80,7 @@ void TransformComponent::SetPosition(const Vector3D& position)
 	if (m_position != position)
 	{
 		m_position = position;
-		m_isDirty = true;
+		MarkDirty();
 	}
 }
 
@@ -77,7 +89,7 @@ void TransformComponent::SetRotation(const Vector3D& rotation)
 	if (m_rotation != rotation)
 	{
 		m_rotation = rotation;
-		m_isDirty = true;
+		MarkDirty();
 	}
 }
 
@@ -86,19 +98,79 @@ void TransformComponent::SetScale(const Vector3D& scale)
 	if (m_scale != scale)
 	{
 		m_scale = scale;
-		m_isDirty = true;
+		MarkDirty();
 	}
 }
 
-const Matrix4x4& TransformComponent::GetAsMat4x4() const
+const Matrix4x4& TransformComponent::GetWorldMatrix() const
 {
-	return m_transform;
+	return m_worldTransform;
 }
 
 void TransformComponent::RotateBy(const Vector3D& rotation)
 {
 	m_rotation += rotation;
+	MarkDirty();
+}
+
+void TransformComponent::AttachTo(TransformComponent* parent)
+{
+	AssertIsNull(m_parent);
+	parent->AddChild(this);
+	m_parent = parent;
+	
+	MarkDirty();
+}
+
+void TransformComponent::DetachFromParent()
+{
+	AssertNotNull(m_parent);
+	m_parent->RemoveChild(this);
+	m_parent = nullptr;
+
+	// set dirty? technically we just orphan ourselves and keep transform
+}
+
+void TransformComponent::AddChild(TransformComponent* child)
+{
+	AssertNotNull(child);
+#if _DEBUG
+	auto existingChild = std::find_if(m_children.begin(), m_children.end(), [child](TransformComponent* component)
+		{
+			return component == child;
+		});
+	AssertExpr(existingChild == m_children.end());
+#endif
+
+	m_children.push_back(child);
+}
+
+void TransformComponent::RemoveChild(TransformComponent* child)
+{
+	auto foundChild = std::find_if(m_children.begin(), m_children.end(), [child](TransformComponent* component)
+		{
+			return component == child;
+		});
+
+	if (foundChild != m_children.end())
+	{
+		// erase back
+	}
+}
+
+bool TransformComponent::IsRoot()
+{
+	return m_parent == nullptr;
+}
+
+void TransformComponent::MarkDirty()
+{
 	m_isDirty = true;
+
+	for (auto& child : m_children)
+	{
+		child->MarkDirty();
+	}
 }
 
 const Vector3D& TransformComponent::GetPosition() const

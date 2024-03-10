@@ -54,7 +54,7 @@ void RenderComponent::CreateRenderObject()
 		AssertNotNull(modelData);
 
 		m_renderObject = renderEngine.CreateRenderObject(modelData->GetStaticMesh());
-		m_renderObject->SetTransform(transformComponent->GetAsMat4x4());
+		m_renderObject->SetTransform(transformComponent->GetWorldMatrix());
 
 		return;
 	}
@@ -80,7 +80,7 @@ void RenderComponent::Update()
 		AssertMsg(transformComponent != nullptr, "No TransformComponent found. Mesh creation is useless without a location in 3D space.");
 
 		// @TODO Look into ways to avoid this
-		m_renderObject->SetTransform(transformComponent->GetAsMat4x4());
+		m_renderObject->SetTransform(transformComponent->GetWorldMatrix());
 	}
 }
 

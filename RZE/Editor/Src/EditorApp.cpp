@@ -114,6 +114,13 @@ namespace Editor
 		}
 
 		AddFilePathToWindowTitle(scenePath.GetRelativePath());
+
+		GameObjectPtr m4 = RZE().GetActiveScene().FindGameObjectByName("M4");
+		if (m4 != nullptr)
+		{
+			GameObjectPtr camera = RZE().GetActiveScene().FindGameObjectByName("Camera");
+			m4->AttachTo(*camera);
+		}
 	}
 
 	void EditorApp::Update()

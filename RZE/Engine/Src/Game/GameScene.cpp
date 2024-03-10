@@ -244,7 +244,13 @@ void GameScene::Update()
 
 	for (auto& gameObject : m_objectRegistry)
 	{
-		gameObject->Update();
+		// @todo eventually we should _only_ store root objects maybe?
+		// feels like there could be some gross maintaining that during
+		// AddChild/RemoveChild calls...
+		if (gameObject->IsRoot())
+		{
+			gameObject->Update();
+		}
 	}
 }
 

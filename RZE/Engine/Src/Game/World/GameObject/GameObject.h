@@ -67,6 +67,16 @@ public:
 
 	bool IsInScene() { return m_stateFlags.IsInScene; }
 
+	// Attachment
+	bool IsRoot();
+
+	void AttachTo(GameObject* gameObject);
+	void DetachFromParent();
+
+private:
+	void AddChild(GameObject* child);
+	void RemoveChild(GameObject* child);
+
 public:
 	void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) const;
 	void Load(rapidjson::Value& data);
@@ -78,6 +88,9 @@ private:
 	ComponentList m_components;
 
 	GameObjectStateFlags m_stateFlags;
+
+	GameObject* m_parent;
+	std::vector<GameObject*> m_children;
 };
 
 template <typename TComponentType>

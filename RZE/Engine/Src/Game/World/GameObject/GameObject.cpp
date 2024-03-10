@@ -63,6 +63,8 @@ GameObjectComponentBase* GameObject::AddComponentByID(GameObjectComponentID id)
 
 GameObjectComponentPtr<TransformComponent> GameObject::GetTransformComponent()
 {
+	// @todo should store GameObjectComponent<TransformComponent> as member variable 
+	// to avoid doing the search incurred by GetComponent<>
 	GameObjectComponentPtr<TransformComponent> transformComponent = GetComponent<TransformComponent>();
 	AssertMsg(transformComponent != nullptr, "Illegal for GameObject to not have TransformComponent at any time.");
 
@@ -96,9 +98,63 @@ void GameObject::SetIncludeInSave(bool include)
 
 void GameObject::Update()
 {
+	// @todo maybe do IsDirty() or something
 	for (auto& component : m_components)
 	{
 		component->Update();
+	}
+
+	for (auto& child : m_children)
+	{
+		child->Update();
+	}
+}
+
+bool GameObject::IsRoot()
+{
+	return GetTransformComponent()->IsRoot();
+}
+
+void GameObject::AttachTo(GameObject* gameObject)
+{
+	AssertNotNull(gameObject);
+	gameObject->AddChild(this);
+	m_parent = gameObject;
+}
+
+void GameObject::DetachFromParent()
+{
+	AssertNotNull(m_parent);
+	m_parent->RemoveChild(this);
+	m_parent = nullptr;
+}
+
+void GameObject::AddChild(GameObject* child)
+{
+#ifdef _DEBUG
+	auto existingChild = std::find_if(m_children.begin(), m_children.end(), [&child](GameObject* gameObject)
+		{
+			return gameObject == child;
+		});
+
+	AssertExpr(existingChild == m_children.end());
+#endif
+
+	child->GetTransformComponent()->AttachTo(*GetTransformComponent());
+	m_children.push_back(child);
+	// @todo OnChildAdded/OnAttachToParent signal
+}
+
+void GameObject::RemoveChild(GameObject* child)
+{
+	auto existingChild = std::find_if(m_children.begin(), m_children.end(), [&child](GameObject* gameObject)
+		{
+			return gameObject == child;
+		});
+
+	if (existingChild != m_children.end())
+	{
+		// eraseback
 	}
 }
 

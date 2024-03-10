@@ -34,12 +34,24 @@ public:
 	void SetScale(const Vector3D& scale);
 
 	// Helpers
-	const Matrix4x4& GetAsMat4x4() const;
+	const Matrix4x4& GetWorldMatrix() const;
 
 	//
 	// Operations
 	//
 	void RotateBy(const Vector3D& rotation);
+
+	void AttachTo(TransformComponent* parent);
+	void DetachFromParent();
+
+
+	bool IsRoot();
+
+private:
+	void MarkDirty();
+
+	void AddChild(TransformComponent* child);
+	void RemoveChild(TransformComponent* child);
 
 private:
 	bool m_isDirty = true;
@@ -48,5 +60,9 @@ private:
 	Vector3D m_rotation;
 	Vector3D	 m_scale { 1, 1, 1 };
 
-	Matrix4x4 m_transform;
+	Matrix4x4 m_worldTransform;
+	Matrix4x4 m_localTransform;
+
+	TransformComponent* m_parent;
+	std::vector<TransformComponent*> m_children;
 };
