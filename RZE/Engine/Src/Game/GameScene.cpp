@@ -39,7 +39,7 @@ void GameScene::Serialize(const Filepath& filePath)
 		{
 			for (auto& gameObject : m_objectRegistry)
 			{
-				if (gameObject->IncludeInSave())
+				if (gameObject->IncludeInSave() && gameObject->IsRoot())
 				{
 					gameObject->Save(writer);
 				}

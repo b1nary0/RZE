@@ -129,8 +129,6 @@ void TransformComponent::DetachFromParent()
 	AssertNotNull(m_parent);
 	m_parent->RemoveChild(this);
 	m_parent = nullptr;
-
-	// set dirty? technically we just orphan ourselves and keep transform
 }
 
 void TransformComponent::AddChild(TransformComponent* child)

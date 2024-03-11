@@ -156,7 +156,6 @@ void GameObject::RemoveChild(GameObject* child)
 
 	if (existingChild != m_children.end())
 	{
-		// eraseback
 		ContainerUtils::VectorEraseBack(m_children, existingChild);
 	}
 }
@@ -175,8 +174,19 @@ void GameObject::Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) 
 			}
 		}
 		writer.EndObject();
+
+		if (m_parent != nullptr)
+		{
+			writer.Key("parent");
+			writer.String(m_parent->GetName().c_str());
+		}
 	}
 	writer.EndObject();
+
+	for (auto& child : m_children)
+	{
+		child->Save(writer);
+	}
 }
 
 void GameObject::Load(rapidjson::Value& data)
@@ -186,14 +196,25 @@ void GameObject::Load(rapidjson::Value& data)
 	// ComponentBegin
 	for (auto member = data.MemberBegin(); member != data.MemberEnd(); ++member)
 	{
-		rapidjson::Value& compVal = member->value;
-		for (auto& dataPair : componentInfo)
+		if (member->name == "parent")
 		{
-			rapidjson::Value::MemberIterator compData = compVal.FindMember(dataPair.second.c_str());
-			if (compData != compVal.MemberEnd())
+			const char* parentName = member->value.GetString();
+			GameObjectPtr parent = RZE().GetActiveScene().FindGameObjectByName(parentName);
+			AssertNotNull(parent);
+
+			AttachTo(*parent);
+		}
+		else if (member->name == "components")
+		{
+			rapidjson::Value& compVal = member->value;
+			for (auto& dataPair : componentInfo)
 			{
-				GameObjectComponentBase* component = AddComponentByID(dataPair.first);
-				component->Deserialize(compData->value);
+				rapidjson::Value::MemberIterator compData = compVal.FindMember(dataPair.second.c_str());
+				if (compData != compVal.MemberEnd())
+				{
+					GameObjectComponentBase* component = AddComponentByID(dataPair.first);
+					component->Deserialize(compData->value);
+				}
 			}
 		}
 	}

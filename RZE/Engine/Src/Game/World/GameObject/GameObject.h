@@ -89,7 +89,7 @@ private:
 
 	GameObjectStateFlags m_stateFlags;
 
-	GameObject* m_parent;
+	GameObject* m_parent = nullptr;
 	std::vector<GameObject*> m_children;
 };
 
