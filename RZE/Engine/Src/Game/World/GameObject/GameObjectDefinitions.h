@@ -11,6 +11,7 @@ class GameObjectComponentBase;
 class GameObjectPtr
 {
 	friend class GameScene;
+	friend class GameObject;
 
 public:
 	GameObjectPtr() = default;
@@ -28,9 +29,14 @@ public:
 		return m_ptr;
 	}
 
+	const GameObject* operator->() const
+	{
+		return m_ptr;
+	}
+
 	GameObjectPtr& operator=(const GameObjectPtr& other) = default;
 
-	bool operator==(const GameObjectPtr& other)
+	bool operator==(const GameObjectPtr& other) const
 	{
 		return m_ptr == other.m_ptr;
 	}
@@ -50,6 +56,16 @@ public:
 		return this->m_ptr != null;
 	}
 
+	bool operator!=(const std::nullptr_t null) const
+	{
+		return this->m_ptr != null;
+	}
+
+	bool operator!=(const GameObjectPtr& other) const
+	{
+		return !(*this == other);
+	}
+
 	GameObject* operator*() const
 	{
 		return m_ptr;
@@ -61,9 +77,6 @@ private:
 
 private:
 	GameObject* m_ptr = nullptr;
-
-public:
-	static const GameObjectPtr EMPTY;
 };
 
 template <typename TComponentType>

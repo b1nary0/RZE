@@ -70,7 +70,11 @@ public:
 	// Attachment
 	bool IsRoot();
 
-	void AttachTo(GameObject* gameObject);
+	int NumChildren();
+	bool HasChildren();
+	GameObjectPtr GetChildAtIndex(int index);
+
+	void AttachTo(GameObjectPtr gameObject);
 	void DetachFromParent();
 
 private:
@@ -89,7 +93,7 @@ private:
 
 	GameObjectStateFlags m_stateFlags;
 
-	GameObject* m_parent = nullptr;
+	GameObjectPtr m_parent = nullptr;
 	std::vector<GameObject*> m_children;
 };
 

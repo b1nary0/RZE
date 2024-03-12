@@ -69,96 +69,72 @@ namespace Editor
 				}
 			}
 			
+			if (ImGui::IsAnyMouseDown() && (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) && HasSelectedGameObject())
+			{
+				m_selectedItem.reset();
+			}
+
 			RZE().GetActiveScene().ForEachGameObject(
 				Functor<void, GameObjectPtr>([this](GameObjectPtr gameObject)
 				{
-					if (ImGui::IsAnyMouseDown() && (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) && HasSelectedGameObject())
+					GameObjectPtr selectedObject;
+					if (gameObject->IsRoot())
 					{
-						m_selectedItem.reset();
-					}
-
-					// @NOTE Don't show the EditorComponent. Settings for this should go through
-					// editor preferences UI
-					GameObjectComponentPtr<EditorCameraComponent> cameraComponent = gameObject->GetComponent<EditorCameraComponent>();
-					if (cameraComponent != nullptr)
-					{
-						return;
-					}
-
-					bool bSelectedCurrent = HasSelectedGameObject() && GetSelectedGameObject() == gameObject;
-					if (ImGui::Selectable(gameObject->GetName().c_str(), &bSelectedCurrent, ImGuiSelectableFlags_AllowDoubleClick))
-					{
-						if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && HasSelectedGameObject())
+						// @NOTE Don't show the EditorComponent. Settings for this should go through
+						// editor preferences UI
+						GameObjectComponentPtr<EditorCameraComponent> cameraComponent = gameObject->GetComponent<EditorCameraComponent>();
+						if (cameraComponent != nullptr)
 						{
-							GameObjectPtr gameObject = GetSelectedGameObject();
-							GameObjectComponentPtr<TransformComponent> transformComponent = gameObject->GetTransformComponent();
-
-							GameObjectPtr camera = RZE().GetActiveScene().FindGameObjectByName("EditorCam");
-							GameObjectComponentPtr<EditorCameraComponent> editorCam = camera->GetComponent<EditorCameraComponent>();
-							AssertNotNull(editorCam);
-							GameObjectComponentPtr<TransformComponent> cameraTransform = camera->GetTransformComponent();
-
-							editorCam->SetForward((transformComponent->GetPosition() - cameraTransform->GetPosition()).Normalized());
+							return;
 						}
-						else 
-						{
-							if (!HasSelectedGameObject() || (HasSelectedGameObject() && GetSelectedGameObject() != gameObject))
-							{
-								SelectedItem* newItem = new SelectedItem();
-								newItem->m_gameObject = gameObject;
-								newItem->m_isDirty = true;
 
-								m_selectedItem.reset(newItem);
-							}
-						}
-					}
-
-					if (bSelectedCurrent)
-					{
-						if (ImGui::BeginPopupContextItem(GetSelectedGameObject()->GetName().c_str()))
-						{
-							ImGui::Text(GetSelectedGameObject()->GetName().c_str());
-							if (ImGui::BeginPopupContextItem("Rename"))
-							{
-								char name[k_maxGameObjectNameSize];
-								memcpy(name, GetSelectedGameObject()->GetName().c_str(), k_maxGameObjectNameSize);
-								if (ImGui::InputText("##gameObject_rename", name, k_maxGameObjectNameSize, ImGuiInputTextFlags_EnterReturnsTrue))
-								{
-									GetSelectedGameObject()->SetName(name);
-								}
-								ImGui::EndPopup();
-							}
-							ImGui::Separator();
-							
-							if (ImGui::BeginMenu("Add Component"))
-							{
-								const GameObjectComponentRegistry::ComponentNameIDMap& componentReflectData = GameObjectComponentRegistry::GetAllComponentReflectData();
-								for (auto& pair : componentReflectData)
-								{
-									if (ImGui::MenuItem(pair.second.c_str()))
-									{
-										GameObjectComponentID componentID = pair.first;
-										GetSelectedGameObject()->AddComponentByID(componentID);
-									}
-								}
-
-								ImGui::EndMenu();
-							}
-
-							if (ImGui::MenuItem("Delete"))
-							{
-								if (gameObject == GetSelectedGameObject())
-								{
-									ResetSelectedGameObject();
-								}
-
-								RZE().GetActiveScene().RemoveGameObject(gameObject);
-							}
-
-							ImGui::EndPopup();
-						}
+						DisplayObject(gameObject);
 					}
 				}));
+
+			if (HasSelectedGameObject())
+			{
+				GameObjectPtr gameObject = GetSelectedGameObject();
+				if (ImGui::BeginPopupContextItem(gameObject->GetName().c_str()))
+				{
+					ImGui::Text(gameObject->GetName().c_str());
+					if (ImGui::BeginPopupContextItem("Rename"))
+					{
+						char name[k_maxGameObjectNameSize];
+						memcpy(name, gameObject->GetName().c_str(), k_maxGameObjectNameSize);
+						if (ImGui::InputText("##gameObject_rename", name, k_maxGameObjectNameSize, ImGuiInputTextFlags_EnterReturnsTrue))
+						{
+							gameObject->SetName(name);
+						}
+						ImGui::EndPopup();
+					}
+					ImGui::Separator();
+
+					if (ImGui::BeginMenu("Add Component"))
+					{
+						const GameObjectComponentRegistry::ComponentNameIDMap& componentReflectData = GameObjectComponentRegistry::GetAllComponentReflectData();
+						for (auto& pair : componentReflectData)
+						{
+							if (ImGui::MenuItem(pair.second.c_str()))
+							{
+								GameObjectComponentID componentID = pair.first;
+								gameObject->AddComponentByID(componentID);
+							}
+						}
+
+						ImGui::EndMenu();
+					}
+
+					if (ImGui::MenuItem("Delete"))
+					{
+						ResetSelectedGameObject();
+
+						RZE().GetActiveScene().RemoveGameObject(gameObject);
+					}
+
+					ImGui::EndPopup();
+				}
+			}
 		}
 		ImGui::End();
 
@@ -241,5 +217,59 @@ namespace Editor
 	void ScenePanel::ResetSelectedGameObject()
 	{
 		m_selectedItem.reset();
+	}
+
+	void ScenePanel::DisplayObject(GameObjectPtr gameObject)
+	{
+		int nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow;
+		bool bSelectedCurrent = HasSelectedGameObject() && GetSelectedGameObject() == gameObject;
+		if (bSelectedCurrent)
+		{
+			nodeFlags |= ImGuiTreeNodeFlags_Selected;
+		}
+
+		if (!gameObject->HasChildren())
+		{
+			nodeFlags |= ImGuiTreeNodeFlags_Leaf;
+		}
+
+		if (ImGui::TreeNodeEx(gameObject->GetName().c_str(), nodeFlags))
+		{
+			if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+			{
+				if (!HasSelectedGameObject() || GetSelectedGameObject() != gameObject)
+				{
+					SelectedItem* newItem = new SelectedItem();
+					newItem->m_gameObject = gameObject;
+					newItem->m_isDirty = true;
+
+					m_selectedItem.reset(newItem);
+				}
+			}
+
+			if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && HasSelectedGameObject())
+			{
+				GameObjectPtr gameObject = GetSelectedGameObject();
+				GameObjectComponentPtr<TransformComponent> transformComponent = gameObject->GetTransformComponent();
+
+				GameObjectPtr camera = RZE().GetActiveScene().FindGameObjectByName("EditorCam");
+				GameObjectComponentPtr<EditorCameraComponent> editorCam = camera->GetComponent<EditorCameraComponent>();
+				AssertNotNull(editorCam);
+				GameObjectComponentPtr<TransformComponent> cameraTransform = camera->GetTransformComponent();
+
+				editorCam->SetForward((transformComponent->GetPosition() - cameraTransform->GetPosition()).Normalized());
+			}
+
+			if (gameObject->HasChildren())
+			{
+				for (int childIdx = 0; childIdx < gameObject->NumChildren(); ++childIdx)
+				{
+					GameObjectPtr child = gameObject->GetChildAtIndex(childIdx);
+					DisplayObject(child);
+				}
+			}
+
+			ImGui::TreePop();
+		}
 	}
 }

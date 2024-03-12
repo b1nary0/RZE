@@ -117,7 +117,23 @@ bool GameObject::IsRoot()
 	return GetTransformComponent()->IsRoot();
 }
 
-void GameObject::AttachTo(GameObject* gameObject)
+int GameObject::NumChildren()
+{
+	return m_children.size();
+}
+
+bool GameObject::HasChildren()
+{
+	return m_children.size();
+}
+
+GameObjectPtr GameObject::GetChildAtIndex(int index)
+{
+	AssertExpr(index < m_children.size());
+	return m_children[index];
+}
+
+void GameObject::AttachTo(GameObjectPtr gameObject)
 {
 	AssertNotNull(gameObject);
 	gameObject->AddChild(this);
@@ -156,6 +172,7 @@ void GameObject::RemoveChild(GameObject* child)
 
 	if (existingChild != m_children.end())
 	{
+		(*existingChild)->GetTransformComponent()->DetachFromParent();
 		ContainerUtils::VectorEraseBack(m_children, existingChild);
 	}
 }

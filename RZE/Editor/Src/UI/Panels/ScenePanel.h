@@ -33,6 +33,9 @@ namespace Editor
 		void ResetSelectedGameObject();
 
 	private:
+		void DisplayObject(GameObjectPtr gameObject);
+
+	private:
 		bool bEnabled;
 
 		std::vector<std::string> mSelectedComponents;

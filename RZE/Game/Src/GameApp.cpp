@@ -72,7 +72,7 @@ void GameApp::Start()
 	if (m4 != nullptr)
 	{
 		GameObjectPtr nyra = RZE().GetActiveScene().FindGameObjectByName("Nyra");
-		m4->AttachTo(*nyra);
+		m4->AttachTo(nyra);
 	}
 }
 
