@@ -274,6 +274,14 @@ namespace Editor
 						ImGui::EndMenu();
 					}
 
+					if (!gameObject->IsRoot())
+					{
+						if (ImGui::MenuItem("DetachFromParent"))
+						{
+							GetSelectedGameObject()->DetachFromParent();
+						}
+					}
+
 					if (ImGui::MenuItem("Delete"))
 					{
 						ResetSelectedGameObject();
