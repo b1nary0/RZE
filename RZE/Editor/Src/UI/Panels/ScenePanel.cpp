@@ -91,50 +91,6 @@ namespace Editor
 						DisplayObject(gameObject);
 					}
 				}));
-
-			if (HasSelectedGameObject())
-			{
-				GameObjectPtr gameObject = GetSelectedGameObject();
-				if (ImGui::BeginPopupContextItem(gameObject->GetName().c_str()))
-				{
-					ImGui::Text(gameObject->GetName().c_str());
-					if (ImGui::BeginPopupContextItem("Rename"))
-					{
-						char name[k_maxGameObjectNameSize];
-						memcpy(name, gameObject->GetName().c_str(), k_maxGameObjectNameSize);
-						if (ImGui::InputText("##gameObject_rename", name, k_maxGameObjectNameSize, ImGuiInputTextFlags_EnterReturnsTrue))
-						{
-							gameObject->SetName(name);
-						}
-						ImGui::EndPopup();
-					}
-					ImGui::Separator();
-
-					if (ImGui::BeginMenu("Add Component"))
-					{
-						const GameObjectComponentRegistry::ComponentNameIDMap& componentReflectData = GameObjectComponentRegistry::GetAllComponentReflectData();
-						for (auto& pair : componentReflectData)
-						{
-							if (ImGui::MenuItem(pair.second.c_str()))
-							{
-								GameObjectComponentID componentID = pair.first;
-								gameObject->AddComponentByID(componentID);
-							}
-						}
-
-						ImGui::EndMenu();
-					}
-
-					if (ImGui::MenuItem("Delete"))
-					{
-						ResetSelectedGameObject();
-
-						RZE().GetActiveScene().RemoveGameObject(gameObject);
-					}
-
-					ImGui::EndPopup();
-				}
-			}
 		}
 		ImGui::End();
 
@@ -258,6 +214,50 @@ namespace Editor
 				GameObjectComponentPtr<TransformComponent> cameraTransform = camera->GetTransformComponent();
 
 				editorCam->SetForward((transformComponent->GetPosition() - cameraTransform->GetPosition()).Normalized());
+			}
+
+			if (HasSelectedGameObject())
+			{
+				GameObjectPtr gameObject = GetSelectedGameObject();
+				if (ImGui::BeginPopupContextItem(gameObject->GetName().c_str()))
+				{
+					ImGui::Text(gameObject->GetName().c_str());
+					if (ImGui::BeginPopupContextItem("Rename"))
+					{
+						char name[k_maxGameObjectNameSize];
+						memcpy(name, gameObject->GetName().c_str(), k_maxGameObjectNameSize);
+						if (ImGui::InputText("##gameObject_rename", name, k_maxGameObjectNameSize, ImGuiInputTextFlags_EnterReturnsTrue))
+						{
+							gameObject->SetName(name);
+						}
+						ImGui::EndPopup();
+					}
+					ImGui::Separator();
+
+					if (ImGui::BeginMenu("Add Component"))
+					{
+						const GameObjectComponentRegistry::ComponentNameIDMap& componentReflectData = GameObjectComponentRegistry::GetAllComponentReflectData();
+						for (auto& pair : componentReflectData)
+						{
+							if (ImGui::MenuItem(pair.second.c_str()))
+							{
+								GameObjectComponentID componentID = pair.first;
+								gameObject->AddComponentByID(componentID);
+							}
+						}
+
+						ImGui::EndMenu();
+					}
+
+					if (ImGui::MenuItem("Delete"))
+					{
+						ResetSelectedGameObject();
+
+						RZE().GetActiveScene().RemoveGameObject(gameObject);
+					}
+
+					ImGui::EndPopup();
+				}
 			}
 
 			if (gameObject->HasChildren())
