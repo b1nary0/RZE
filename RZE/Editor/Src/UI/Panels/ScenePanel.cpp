@@ -216,6 +216,31 @@ namespace Editor
 				editorCam->SetForward((transformComponent->GetPosition() - cameraTransform->GetPosition()).Normalized());
 			}
 
+			if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
+			{
+				ImGui::SetDragDropPayload("DraggedObjectName", gameObject->GetName().c_str(), gameObject->GetName().size());
+
+				ImGui::EndDragDropSource();
+			}
+
+			if (ImGui::BeginDragDropTarget())
+			{
+				const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DraggedObjectName");
+				if (payload != nullptr)
+				{
+					const char* draggedObjectName = static_cast<const char*>(payload->Data);
+					GameObjectPtr draggedObject = RZE().GetActiveScene().FindGameObjectByName(draggedObjectName);
+					AssertNotNull(draggedObject);
+					if (!draggedObject->IsRoot())
+					{
+						draggedObject->DetachFromParent();
+					}
+
+					draggedObject->AttachTo(gameObject);
+				}
+				ImGui::EndDragDropTarget();
+			}
+
 			if (HasSelectedGameObject())
 			{
 				GameObjectPtr gameObject = GetSelectedGameObject();

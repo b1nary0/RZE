@@ -109,7 +109,7 @@ namespace Rendering
 		clone->DisplaySize = toClone->DisplaySize;
 		clone->FramebufferScale = toClone->FramebufferScale;
 
-		clone->CmdLists = new ImDrawList*[toClone->CmdListsCount];
+		clone->CmdLists = toClone->CmdLists;
 		for (int i = 0; i < toClone->CmdListsCount; ++i)
 		{
 			clone->CmdLists[i] = toClone->CmdLists[i]->CloneOutput();
