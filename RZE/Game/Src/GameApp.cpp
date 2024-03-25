@@ -35,8 +35,10 @@ void GameApp::ParseArguments(char** arguments, int count)
 	RZE_Application::ParseArguments(arguments, count);
 	
 	std::string_view sceneArg;
-	CmdLine::Arguments::Get("-scene", sceneArg);
-	m_startScene = sceneArg;
+	if (CmdLine::Arguments::Get("-scene", sceneArg))
+	{ 
+		m_startScene = sceneArg;
+	}
 }
 
 void GameApp::Initialize()
