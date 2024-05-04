@@ -151,6 +151,15 @@ Vector3D Vector3D::operator/(const float scalar) const
 	return Vector3D(retVec.x, retVec.y, retVec.z);
 }
 
+Vector3D Vector3D::operator/(const Vector3D& other) const
+{
+	float x = mVec.x / other.X();
+	float y = mVec.y / other.Y();
+	float z = mVec.z / other.Z();
+
+	return Vector3D(x, y, z);
+}
+
 bool Vector3D::operator==(const Vector3D& rhs) const
 {
 	return rhs.mVec == mVec;

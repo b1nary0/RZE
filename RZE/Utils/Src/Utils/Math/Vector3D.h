@@ -56,6 +56,7 @@ public:
 	void operator*=(const Vector3D& rhs);
 
 	Vector3D operator/(const float scalar) const;
+	Vector3D operator/(const Vector3D& other) const;
 
 	bool operator==(const Vector3D& rhs) const;
 	bool operator!=(const Vector3D& rhs) const;
