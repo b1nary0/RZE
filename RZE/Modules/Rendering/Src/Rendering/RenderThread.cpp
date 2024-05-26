@@ -33,6 +33,7 @@ namespace Rendering
 		{
 		case EPrimitiveTopology::TriangleList: return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 		case EPrimitiveTopology::TriangleStrip: return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+		case EPrimitiveTopology::LineList: return D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
 
 		default: return D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
 		}

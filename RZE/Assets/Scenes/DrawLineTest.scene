@@ -1,0 +1,117 @@
+{
+    "gameobjects": {
+        "Camera": {
+            "components": {
+                "CameraComponent": {
+                    "FOV": 65.0,
+                    "NearCull": 0.009999999776482582,
+                    "FarCull": 1000.0,
+                    "Forward": [
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "UpDir": [
+                        0.0,
+                        1.0,
+                        0.0
+                    ]
+                },
+                "TransformComponent": {
+                    "Position": [
+                        0.0,
+                        5.0,
+                        -10.0
+                    ],
+                    "Scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "Rotation": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                }
+            }
+        },
+        "DirectionalLight": {
+            "components": {
+                "TransformComponent": {
+                    "Position": [
+                        0.0,
+                        10.0,
+                        -15.0
+                    ],
+                    "Scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "Rotation": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "DirectionalLightComponent": {
+                    "LightStrength": 0.25,
+                    "LightColour": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                }
+            }
+        },
+        "NeckMech": {
+            "components": {
+                "RenderComponent": {
+                    "ResourcePath": "ProjectData\\Mesh\\NeckMechWalker.meshasset"
+                },
+                "TransformComponent": {
+                    "Position": [
+                        -22.729938507080079,
+                        10.736211776733399,
+                        -9.06086540222168
+                    ],
+                    "Scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "Rotation": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                }
+            }
+        },
+        "M4": {
+            "components": {
+                "TransformComponent": {
+                    "Position": [
+                        42.541439056396487,
+                        17.4096736907959,
+                        4.407410144805908
+                    ],
+                    "Scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "Rotation": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "RenderComponent": {
+                    "ResourcePath": "ProjectData\\Mesh\\m4a1.meshasset"
+                }
+            }
+        }
+    }
+}

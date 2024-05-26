@@ -5,7 +5,8 @@ namespace Rendering
 	enum class EPrimitiveTopology
 	{
 		TriangleList,
-		TriangleStrip
+		TriangleStrip,
+		LineList
 	};
 
 	struct ViewportParams
