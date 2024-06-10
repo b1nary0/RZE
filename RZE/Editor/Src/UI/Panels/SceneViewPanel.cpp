@@ -103,7 +103,10 @@ namespace Editor
 					};
 				float uvbx = clamp(0.0f, 1.0f, m_dimensions.X() / pRTT->GetWidth());
 				float uvby = clamp(0.0f, 1.0f, m_dimensions.Y() / pRTT->GetHeight());
-				ImGui::Image(texture.GetTextureData(), ImVec2(m_dimensions.X(), m_dimensions.Y()), ImVec2(0.0f, 0.0f), ImVec2(uvbx, uvby));
+
+				ImVec2 cursorPos = ImGui::GetCursorPos();
+
+				ImGui::Image(texture.GetTextureData(), ImVec2(GetDimensions().X(), GetDimensions().Y()), ImVec2(0.0f, 0.0f), ImVec2(uvbx, uvby));
 
 				{
 					EditorApp& editorApp = static_cast<EditorApp&>(RZE().GetApplication());
@@ -113,8 +116,12 @@ namespace Editor
 						ImGuizmo::SetOrthographic(false);
 						ImGuizmo::SetDrawlist();
 
+
 						const Vector2D& sceneViewDims = GetDimensions();
-						const Vector2D& sceneViewPos = GetPosition();
+
+						Vector2D sceneViewPos = GetPosition();
+						sceneViewPos.SetY(sceneViewPos.Y() + cursorPos.y);
+
 						ImGuizmo::SetRect(sceneViewPos.X(), sceneViewPos.Y(), sceneViewDims.X(), sceneViewDims.Y());
 
 						GameObjectPtr cameraObject = RZE().GetActiveScene().FindGameObjectByName("EditorCam");
