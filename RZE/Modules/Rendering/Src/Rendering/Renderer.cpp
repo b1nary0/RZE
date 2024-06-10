@@ -1,6 +1,5 @@
 #include <Rendering/Renderer.h>
 
-
 #include <Utils/Conversions.h>
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Vector2D.h>
@@ -136,7 +135,9 @@ namespace Rendering
 		command->count = count;
 		command->dataTypeSize = dataTypeSize;
 		command->stride = stride;
-		command->data = data;
+
+		command->data = malloc(dataTypeSize * count);
+		memcpy(command->data, data, dataTypeSize * count);
 		
 		m_renderThread.PushCommand(command);
 

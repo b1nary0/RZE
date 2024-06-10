@@ -30,24 +30,6 @@ void DebugDrawRenderStage::Render(const RenderCamera& camera, const RenderEngine
 {
 	OPTICK_EVENT();
 
-	static bool init = false;
-	if (!init)
-	{
-		MeshVertex start;
-		MeshVertex end;
-		start.Position = Vector3D(0.0f, 0.0f, -2.45f);//camera.Position;
-		//end.Position = Vector3D(-22.730f, 10.736f, -9.061f);//Vector3D(-7.036f, 3.882f, -0.716f);
-		end.Position = Vector3D(-42.541f, 17.410f, 4.407f);
-
-		s_testLineGeo.AddVertex(start);
-		s_testLineGeo.AddVertex(end);
-		s_testLineGeo.AddIndex(0);
-		s_testLineGeo.AddIndex(1);
-		s_testLineGeo.AllocateData();
-
-		init = true;
-	}
-
 	RenderEngine& renderEngine = RZE().GetRenderEngine();
 
 	Rendering::Renderer::Begin("DebugDrawRenderStage");
@@ -63,16 +45,47 @@ void DebugDrawRenderStage::Render(const RenderCamera& camera, const RenderEngine
 	Rendering::Renderer::SetInputLayout(m_vertexShader->GetPlatformObject());
 
 	Matrix4x4 transform = Matrix4x4::CreateInPlace(Vector3D(), Vector3D(1.0f), Vector3D());
-	//Matrix4x4 transform = Matrix4x4::CreateOrthoMatrix(0, renderEngine.GetViewportSize().X() / 2.0f, renderEngine.GetViewportSize().Y() / 2.0f, 0, 0, 0.25);
-	//Matrix4x4 transform = Matrix4x4::CreateOrthoMatrix(0, 0.25f, 0.25f, 0, 0, 1);
 
 	Rendering::Renderer::UploadDataToBuffer<Matrix4x4>(m_vertexShader->GetWorldMatrixBuffer(), &transform);
 	Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetWorldMatrixBuffer(), 1);
 
 	Rendering::Renderer::SetPixelShader(m_lineShader->GetPlatformObject());
 
-	Rendering::Renderer::SetVertexBuffer(s_testLineGeo.GetVertexBuffer()->GetPlatformObject(), 0);
-	Rendering::Renderer::DrawIndexed(s_testLineGeo.GetIndexBuffer()->GetPlatformObject());
+	for (auto& line : renderData.debugLines)
+	{
+		//@todo not be a numpty shithead programmer
+		MeshVertex vertex0;
+		MeshVertex vertex1;
+		vertex0.Position = line.start;
+		vertex1.Position = line.end;
+
+		MeshGeometry lineGeo;
+		lineGeo.AddVertex(vertex0);
+		lineGeo.AddVertex(vertex1);
+		lineGeo.AddIndex(0);
+		lineGeo.AddIndex(1);
+		lineGeo.AllocateData();
+
+		Rendering::Renderer::SetVertexBuffer(lineGeo.GetVertexBuffer()->GetPlatformObject(), 0);
+		Rendering::Renderer::DrawIndexed(lineGeo.GetIndexBuffer()->GetPlatformObject());
+	}
+
+	/*static bool init = false;
+	if (!init)
+	{
+		MeshVertex start;
+		MeshVertex end;
+		start.Position = Vector3D(0.0f, 0.0f, -2.45f);
+		end.Position = Vector3D(-42.541f, 17.410f, 4.407f);
+
+		s_testLineGeo.AddVertex(start);
+		s_testLineGeo.AddVertex(end);
+		s_testLineGeo.AddIndex(0);
+		s_testLineGeo.AddIndex(1);
+		s_testLineGeo.AllocateData();
+
+		init = true;
+	}*/
 
 	Rendering::Renderer::End();
 }

@@ -116,8 +116,15 @@ private:
 // Renderer::SubmitBucket(bucketProxy); // We're done here, bucketProxy invalid now.
 // ^^^^^ This looks like it should be some reference-type structure/architecture
 
+struct DebugLine
+{
+	Vector3D start;
+	Vector3D end;
+};
+
 typedef std::vector<std::unique_ptr<RenderObject>> RenderObjectContainer;
 typedef std::vector<std::unique_ptr<LightObject>> LightObjectContainer;
+typedef std::vector<DebugLine> DebugLineContainer;
 
 class RenderEngine
 {
@@ -128,6 +135,8 @@ public:
 		RenderObjectContainer renderObjects;
 		// @TODO Maybe move light stuff into its own area?
 		LightObjectContainer lightObjects;
+
+		DebugLineContainer debugLines;
 	};
 
 public:
@@ -160,6 +169,8 @@ public:
 
 	LightObjectPtr CreateLightObject();
 	void DestroyLightObject(LightObjectPtr& lightObject);
+
+	void DrawLine(const Vector3D& start, const Vector3D& end);
 
 	void ResizeCanvas(const Vector2D& newSize);
 	const Vector2D& GetCanvasSize() const;

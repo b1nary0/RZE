@@ -63,6 +63,8 @@ void RenderEngine::Render(const char* frameName, bool isMainRenderCall, bool wit
 		pipeline->Render(m_camera, m_sceneData);
 	}
 
+	m_sceneData.debugLines.clear();
+
 	if (isMainRenderCall)
 	{
 		Rendering::Renderer::EndFrame();
@@ -155,6 +157,12 @@ void RenderEngine::DestroyLightObject(LightObjectPtr& lightObject)
 
 		lightObject = LightObjectPtr();
 	}
+}
+
+void RenderEngine::DrawLine(const Vector3D& start, const Vector3D& end)
+{
+	DebugLine line{ start, end };
+	m_sceneData.debugLines.emplace_back(std::move(line));
 }
 
 void RenderEngine::ResizeCanvas(const Vector2D& newSize)
