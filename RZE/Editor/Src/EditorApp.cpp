@@ -120,9 +120,9 @@ namespace Editor
 	{
 		OPTICK_EVENT();
 
-		GameObjectPtr mechObj = RZE().GetActiveScene().FindGameObjectByName("NeckMech");
+		GameObjectPtr mechObj = RZE().GetActiveScene().FindGameObjectByName("NeckMechWalker");
 		AssertNotNull(mechObj);
-		GameObjectPtr m4Obj = RZE().GetActiveScene().FindGameObjectByName("M4");
+		GameObjectPtr m4Obj = RZE().GetActiveScene().FindGameObjectByName("Nyra");
 		AssertNotNull(m4Obj);
 
 		GameObjectComponentPtr<TransformComponent> mechTransform = mechObj->GetComponent<TransformComponent>();

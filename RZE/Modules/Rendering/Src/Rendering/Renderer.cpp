@@ -24,7 +24,7 @@
 #include <Optick/optick.h>
 #include <imGUI/imgui.h>
 
-#define MEM_ARENA_SIZE MemoryUtils::Kilobytes(512)
+#define MEM_ARENA_SIZE MemoryUtils::Megabytes(64)
 
 namespace Rendering
 {
@@ -136,7 +136,7 @@ namespace Rendering
 		command->dataTypeSize = dataTypeSize;
 		command->stride = stride;
 
-		command->data = malloc(dataTypeSize * count);
+		command->data = MemArena::Alloc(dataTypeSize * count);
 		memcpy(command->data, data, dataTypeSize * count);
 		
 		m_renderThread.PushCommand(command);

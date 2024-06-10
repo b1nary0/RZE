@@ -205,8 +205,6 @@ namespace Rendering
 				cmd->bufferPtr->SetDevice(m_device.get());
 				cmd->bufferPtr->Allocate(cmd->data, cmd->dataTypeSize, cmd->count, cmd->stride);
 
-				free(cmd->data);
-
 				break;
 			}
 
