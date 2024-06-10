@@ -163,7 +163,7 @@ namespace Rendering
 
 	bool DX11TextureBuffer2D::IsValid()
 	{
-		return m_device != nullptr;
+		return m_device != nullptr && m_SRV != nullptr;
 	}
 
 	void DX11TextureBuffer2D::SetDevice(DX11Device* device)
