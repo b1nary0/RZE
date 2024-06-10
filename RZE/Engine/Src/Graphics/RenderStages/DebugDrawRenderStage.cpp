@@ -70,22 +70,5 @@ void DebugDrawRenderStage::Render(const RenderCamera& camera, const RenderEngine
 		Rendering::Renderer::DrawIndexed(lineGeo.GetIndexBuffer()->GetPlatformObject());
 	}
 
-	/*static bool init = false;
-	if (!init)
-	{
-		MeshVertex start;
-		MeshVertex end;
-		start.Position = Vector3D(0.0f, 0.0f, -2.45f);
-		end.Position = Vector3D(-42.541f, 17.410f, 4.407f);
-
-		s_testLineGeo.AddVertex(start);
-		s_testLineGeo.AddVertex(end);
-		s_testLineGeo.AddIndex(0);
-		s_testLineGeo.AddIndex(1);
-		s_testLineGeo.AllocateData();
-
-		init = true;
-	}*/
-
 	Rendering::Renderer::End();
 }
