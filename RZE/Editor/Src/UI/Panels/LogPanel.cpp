@@ -15,7 +15,7 @@ namespace Editor
 	{
 		ImGui::Begin("Log", nullptr, ImGuiWindowFlags_NoCollapse);
 
-		const std::vector<DebugServices::LogEntry> logEntries = DebugServices::Get().GetLogEntries();
+		const std::vector<DebugServices::LogEntry>& logEntries = DebugServices::Get().GetLogEntries();
 		for (auto& logItem : logEntries)
 		{
 			ImVec4 imColor(logItem.TextColor.X(), logItem.TextColor.Y(), logItem.TextColor.Z(), 1.0f);
