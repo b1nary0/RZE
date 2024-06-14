@@ -150,7 +150,9 @@ namespace Rendering
 		command->bufferPtr = std::make_shared<DX11IndexBuffer>();
 		command->dataTypeSize = dataTypeSize;
 		command->count = count;
-		command->data = data;
+
+		command->data = MemArena::Alloc(dataTypeSize * count);
+		memcpy(command->data, data, dataTypeSize * count);
 
 		m_renderThread.PushCommand(command);
 

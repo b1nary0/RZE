@@ -205,6 +205,8 @@ namespace Rendering
 				cmd->bufferPtr->SetDevice(m_device.get());
 				cmd->bufferPtr->Allocate(cmd->data, cmd->dataTypeSize, cmd->count, cmd->stride);
 
+				cmd->bufferPtr.reset();
+
 				break;
 			}
 
@@ -213,6 +215,8 @@ namespace Rendering
 				RenderCommand_CreateIndexBuffer* cmd = static_cast<RenderCommand_CreateIndexBuffer*>(command);
 				cmd->bufferPtr->SetDevice(m_device.get());
 				cmd->bufferPtr->Allocate(cmd->data, cmd->dataTypeSize, cmd->count);
+
+				cmd->bufferPtr.reset();
 
 				break;
 			}
@@ -223,6 +227,8 @@ namespace Rendering
 				cmd->bufferPtr->SetDevice(m_device.get());
 				cmd->bufferPtr->Allocate(cmd->data, cmd->dataTypeSize, cmd->count);
 
+				cmd->bufferPtr.reset();
+
 				break;
 			}
 
@@ -231,6 +237,8 @@ namespace Rendering
 				RenderCommand_CreateTextureBuffer2D* cmd = static_cast<RenderCommand_CreateTextureBuffer2D*>(command);
 				cmd->bufferPtr->SetDevice(m_device.get());
 				cmd->bufferPtr->Allocate(cmd->data, cmd->params);
+
+				cmd->bufferPtr.reset();
 
 				break;
 			}
@@ -241,6 +249,8 @@ namespace Rendering
 				cmd->bufferPtr->SetDevice(m_device.get());
 				cmd->bufferPtr->Create(cmd->filepath, cmd->shaderInputLayout);
 				
+				cmd->bufferPtr.reset();
+
 				break;
 			}
 
@@ -249,6 +259,8 @@ namespace Rendering
 				RenderCommand_CreatePixelShader* cmd = static_cast<RenderCommand_CreatePixelShader*>(command);
 				cmd->bufferPtr->SetDevice(m_device.get());
 				cmd->bufferPtr->Create(cmd->filepath);
+
+				cmd->bufferPtr.reset();
 
 				break;
 			}
@@ -457,7 +469,6 @@ namespace Rendering
 			{
 				RenderCommand_Draw* cmd = static_cast<RenderCommand_Draw*>(command);
 
-				std::shared_ptr<IVertexBuffer> bufferPtr = cmd->vertexBuffer.m_buffer;
 				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 				deviceContext.Draw(cmd->count, 0);
 

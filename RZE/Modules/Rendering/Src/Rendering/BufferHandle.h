@@ -11,7 +11,6 @@ namespace Rendering
 	class IVertexBuffer;
 	class ITextureBuffer2D;
 
-
 	class VertexBufferHandle
 	{
 		// @todo handle classes as atomic units is getting out of hand
@@ -31,7 +30,7 @@ namespace Rendering
 		VertexBufferHandle(const std::shared_ptr<IVertexBuffer>& buffer)
 			: m_buffer(buffer) {}
 
-		std::shared_ptr<IVertexBuffer> m_buffer;
+		std::shared_ptr<IVertexBuffer> m_buffer = nullptr;
 	};
 
 	class IndexBufferHandle
@@ -50,7 +49,7 @@ namespace Rendering
 		IndexBufferHandle(const std::shared_ptr<IIndexBuffer>& buffer)
 			: m_buffer(buffer) {}
 
-		std::shared_ptr<IIndexBuffer> m_buffer;
+		std::shared_ptr<IIndexBuffer> m_buffer = nullptr;
 	};
 
 	class ConstantBufferHandle
@@ -69,7 +68,7 @@ namespace Rendering
 		ConstantBufferHandle(const std::shared_ptr<IConstantBuffer>& buffer)
 			: m_buffer(buffer) {}
 
-		std::shared_ptr<IConstantBuffer> m_buffer;
+		std::shared_ptr<IConstantBuffer> m_buffer = nullptr;
 	};
 
 	class TextureBuffer2DHandle
