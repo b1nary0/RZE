@@ -205,8 +205,6 @@ namespace Rendering
 				cmd->bufferPtr->SetDevice(m_device.get());
 				cmd->bufferPtr->Allocate(cmd->data, cmd->dataTypeSize, cmd->count, cmd->stride);
 
-				cmd->bufferPtr.reset();
-
 				break;
 			}
 
@@ -215,8 +213,6 @@ namespace Rendering
 				RenderCommand_CreateIndexBuffer* cmd = static_cast<RenderCommand_CreateIndexBuffer*>(command);
 				cmd->bufferPtr->SetDevice(m_device.get());
 				cmd->bufferPtr->Allocate(cmd->data, cmd->dataTypeSize, cmd->count);
-
-				cmd->bufferPtr.reset();
 
 				break;
 			}
@@ -227,8 +223,6 @@ namespace Rendering
 				cmd->bufferPtr->SetDevice(m_device.get());
 				cmd->bufferPtr->Allocate(cmd->data, cmd->dataTypeSize, cmd->count);
 
-				cmd->bufferPtr.reset();
-
 				break;
 			}
 
@@ -238,8 +232,6 @@ namespace Rendering
 				cmd->bufferPtr->SetDevice(m_device.get());
 				cmd->bufferPtr->Allocate(cmd->data, cmd->params);
 
-				cmd->bufferPtr.reset();
-
 				break;
 			}
 
@@ -248,8 +240,6 @@ namespace Rendering
 				RenderCommand_CreateVertexShader* cmd = static_cast<RenderCommand_CreateVertexShader*>(command);
 				cmd->bufferPtr->SetDevice(m_device.get());
 				cmd->bufferPtr->Create(cmd->filepath, cmd->shaderInputLayout);
-				
-				cmd->bufferPtr.reset();
 
 				break;
 			}
@@ -259,8 +249,6 @@ namespace Rendering
 				RenderCommand_CreatePixelShader* cmd = static_cast<RenderCommand_CreatePixelShader*>(command);
 				cmd->bufferPtr->SetDevice(m_device.get());
 				cmd->bufferPtr->Create(cmd->filepath);
-
-				cmd->bufferPtr.reset();
 
 				break;
 			}
@@ -500,6 +488,8 @@ namespace Rendering
 				AssertFalse();
 			}
 			}
+
+			command->~RenderCommand();
 		}
 	}
 

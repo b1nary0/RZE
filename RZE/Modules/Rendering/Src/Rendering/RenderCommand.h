@@ -72,6 +72,8 @@ namespace Rendering
 	// doubt it needs to be inherited just for storage but i dont wanna think about it atm
 	struct RenderCommand
 	{
+		virtual ~RenderCommand() = default;
+
 		RenderCommandType type;
 	};
 
