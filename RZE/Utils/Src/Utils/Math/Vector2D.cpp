@@ -69,7 +69,7 @@ Vector2D Vector2D::operator-(const Vector2D& other) const
 
 Vector2D Vector2D::operator/(const float& scalar) const
 {
-	return Vector2D(mVec / 2.0f);
+	return Vector2D(mVec / scalar);
 }
 
 float Vector2D::operator[](int index) const
