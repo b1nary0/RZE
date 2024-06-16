@@ -61,15 +61,40 @@ const glm::vec2& Vector2D::GetInternalVec() const
 	return mVec;
 }
 
+Vector2D Vector2D::operator+(const Vector2D& other) const
+{
+	return Vector2D(mVec + other.GetInternalVec());
+}
+
 Vector2D Vector2D::operator-(const Vector2D& other) const
 {
 	glm::vec2 vec = GetInternalVec() - other.GetInternalVec();
 	return Vector2D(vec.x, vec.y);
 }
 
-Vector2D Vector2D::operator/(const float& scalar) const
+void Vector2D::operator*=(const float scalar)
+{
+	mVec = mVec * scalar;
+}
+
+Vector2D Vector2D::operator*(const float scalar) const
+{
+	return Vector2D(mVec * scalar);
+}
+
+Vector2D Vector2D::operator/(const float scalar) const
 {
 	return Vector2D(mVec / scalar);
+}
+
+void Vector2D::operator+=(const Vector2D& other)
+{
+	mVec = mVec + other.GetInternalVec();
+}
+
+void Vector2D::operator+=(const float scalar)
+{
+	mVec = mVec + scalar;
 }
 
 float Vector2D::operator[](int index) const

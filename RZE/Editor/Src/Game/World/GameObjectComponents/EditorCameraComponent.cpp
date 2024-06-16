@@ -239,22 +239,10 @@ void EditorCameraComponent::MouseInput(GameObjectComponentPtr<TransformComponent
 
 	if (inputHandler.GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Pressed)
 	{
-		Vector3D diff = curPos - m_mousePrevPos;
+		Vector2D diff = curPos - m_mousePrevPos;
 
-		const float sensitivity = 0.1f;
-		diff *= sensitivity;
-		m_yawPitchRoll += diff;
-
-		float yawInRadians = m_yawPitchRoll.X() * MathUtils::ToRadians;
-		float pitchInRadians = m_yawPitchRoll.Y() * MathUtils::ToRadians;
-
-		Vector3D newForward;
-		newForward.SetX(std::cos(yawInRadians) * std::cos(pitchInRadians));
-		newForward.SetY(-std::sin(pitchInRadians));
-		newForward.SetZ(std::sin(yawInRadians) * std::cos(pitchInRadians));
-
-		m_forward = newForward;
-		m_forward.Normalize();
+		const bool withSensitivity = true;
+		CalculateNewForward(diff, withSensitivity);
 	}
 
 	m_mousePrevPos = curPos;
@@ -270,4 +258,28 @@ void EditorCameraComponent::SetSpeedRampMultiplier(bool isMoving, float growingD
 	{
 		m_deltaSpeedRampMultiplier = kMinDirectionHeldTime;
 	}
+}
+
+void EditorCameraComponent::CalculateNewForward(const Vector2D& delta, bool withSensitivity)
+{
+	Vector2D outDelta = delta;
+
+	if (withSensitivity)
+	{
+		const float sensitivity = 0.1f;
+		outDelta *= sensitivity;
+	}
+
+	m_yawPitch += outDelta;
+
+	float yawInRadians = m_yawPitch.X() * MathUtils::ToRadians;
+	float pitchInRadians = m_yawPitch.Y() * MathUtils::ToRadians;
+
+	Vector3D newForward;
+	newForward.SetX(std::cos(yawInRadians) * std::cos(pitchInRadians));
+	newForward.SetY(-std::sin(pitchInRadians));
+	newForward.SetZ(std::sin(yawInRadians) * std::cos(pitchInRadians));
+
+	m_forward = newForward;
+	m_forward.Normalize();
 }

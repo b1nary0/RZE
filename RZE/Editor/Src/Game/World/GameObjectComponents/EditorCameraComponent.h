@@ -55,6 +55,8 @@ private:
 
 	void SetSpeedRampMultiplier(bool isMoving, float growingDelta);
 
+	void CalculateNewForward(const Vector2D& curMousePos, bool withSensitivity);
+
 private:
 	Vector3D m_lookAt;
 	Vector3D m_upDir{ 0.0f, 1.0f, 0.0f };
@@ -72,8 +74,8 @@ private:
 	float m_deltaSpeedRampMultiplier = kMinDirectionHeldTime;
 	float m_wheelZoomSpeed;
 
-	Vector3D m_mousePrevPos;
-	Vector3D m_yawPitchRoll;
+	Vector2D m_mousePrevPos;
+	Vector2D m_yawPitch;
 
 	bool m_isActiveCamera{ false };
 };
