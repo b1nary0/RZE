@@ -108,6 +108,11 @@ void EditorCameraComponent::SetAsActiveCamera(bool isActiveCamera)
 void EditorCameraComponent::Initialize()
 {
 	GetOwner()->SetIncludeInSave(false);
+
+	const Vector2D& windowDims = RZE().GetWindowClientSize();
+
+	constexpr bool withSensitivity = false;
+	CalculateNewForward(windowDims / 2.0f, withSensitivity);
 }
 
 void EditorCameraComponent::OnAddToScene()
@@ -228,7 +233,7 @@ void EditorCameraComponent::MouseInput(GameObjectComponentPtr<TransformComponent
 {
 	InputHandler& inputHandler = RZE().GetInputHandler();
 
-	const Vector3D& curPos = inputHandler.GetMouseState().CurPosition;
+	const Vector2D& curPos = inputHandler.GetMouseState().CurPosition;
 
 	Int32 wheelVal = inputHandler.GetMouseState().CurWheelVal;
 	if (wheelVal != 0)
