@@ -1,0 +1,10 @@
+{
+  "FileVersion": 2,
+  "Id": "05fe95e4-b42a-e8c6-a5b3-cbb6434cd1fe",
+  "Items": [
+    {
+      "Id": "ea3fbcd6-c0bd-48da-8924-268aeee8de70",
+      "Command": "-scene Sponza.scene"
+    }
+  ]
+}
