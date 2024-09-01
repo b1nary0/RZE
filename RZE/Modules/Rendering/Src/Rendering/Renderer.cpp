@@ -30,6 +30,19 @@ namespace Rendering
 {
 	RenderThread Renderer::m_renderThread;
 
+	void* AllocateCommandData(void* src, size_t dataTypeSize, size_t count)
+	{
+		if (src == nullptr)
+		{
+			return src;
+		}
+
+		void* dst = MemArena::Alloc(dataTypeSize * count);
+		memcpy(dst, src, dataTypeSize * count);
+
+		return dst;
+	}
+
 	Renderer::Renderer()
 	{
 	}
@@ -136,8 +149,7 @@ namespace Rendering
 		command->dataTypeSize = dataTypeSize;
 		command->stride = stride;
 
-		command->data = MemArena::Alloc(dataTypeSize * count);
-		memcpy(command->data, data, dataTypeSize * count);
+		command->data = AllocateCommandData(data, dataTypeSize, count);
 		
 		m_renderThread.PushCommand(command);
 
@@ -151,8 +163,7 @@ namespace Rendering
 		command->dataTypeSize = dataTypeSize;
 		command->count = count;
 
-		command->data = MemArena::Alloc(dataTypeSize * count);
-		memcpy(command->data, data, dataTypeSize * count);
+		command->data = AllocateCommandData(data, dataTypeSize, count);
 
 		m_renderThread.PushCommand(command);
 
@@ -164,7 +175,7 @@ namespace Rendering
 		RenderCommand_CreateConstantBuffer* command = MemArena::AllocType<RenderCommand_CreateConstantBuffer>();
 		command->bufferPtr = std::make_shared<DX11ConstantBuffer>(alignment);
 		command->count = count;
-		command->data = data;
+		command->data = AllocateCommandData(data, dataTypeSize, count);
 		command->dataTypeSize = dataTypeSize;
 
 		m_renderThread.PushCommand(command);
