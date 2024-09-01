@@ -78,17 +78,13 @@ namespace Rendering
 
 		void Shutdown()
 		{
-			if (s_producerBuf != nullptr)
-			{
-				AssertMsg(s_consumerBuf != nullptr, "If one is valid, they must both be valid or something got weird.");
-				delete s_producerBuf;
-			}
+			AssertMsg(s_consumerBuf != nullptr && s_producerBuf != nullptr, "If one is valid, they must both be valid or something got weird.");
 
-			if (s_consumerBuf != nullptr)
-			{
-				AssertMsg(s_producerBuf != nullptr, "If one is valid, they must both be valid or something got weird.");
-				delete s_consumerBuf;
-			}
+			delete s_producerBuf;
+			s_producerBuf = nullptr;
+
+			delete s_consumerBuf;
+			s_consumerBuf = nullptr;
 		}
 
 		void* Alloc(size_t size)
