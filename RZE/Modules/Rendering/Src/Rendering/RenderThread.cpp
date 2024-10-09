@@ -259,9 +259,6 @@ namespace Rendering
 				DX11ConstantBuffer* cbuf = static_cast<DX11ConstantBuffer*>(cmd->bufferHandle.m_buffer.get());
 
 				cbuf->UpdateSubresources(cmd->data);
-				
-				AssertNotNull(cmd->data);
-				free(const_cast<void*>(cmd->data));
 
 				break;
 			}

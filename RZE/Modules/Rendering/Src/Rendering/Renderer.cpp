@@ -226,8 +226,7 @@ namespace Rendering
 		const size_t alignedSize = MemoryUtils::AlignSize(dataSize, buffer.m_buffer->GetAlignment());
 		// @todo maybe also have a memory buffer for allocating data for the commands as well (or partition the memory arena or something)
 		// also maybe add a way to api-ifize the memory malloc/free (calling something like .Consume() on the command or when processing the command
-		command->data = malloc(alignedSize);
-		memcpy(const_cast<void*>(command->data), data, alignedSize);
+		command->data = AllocateCommandData(const_cast<void*>(data), alignedSize, 1);
 
 		m_renderThread.PushCommand(command);
 	}
