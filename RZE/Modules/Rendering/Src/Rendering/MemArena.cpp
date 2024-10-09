@@ -24,7 +24,7 @@ namespace Rendering
 			size_t peakUsedBytes = 0;
 			PressureValue pressureValue = PressureValue::LOW;
 		};
-		ArenaState s_arenaState;
+		static ArenaState s_arenaState;
 
 		static void ValidateArenaState(size_t sizeRequested)
 		{
