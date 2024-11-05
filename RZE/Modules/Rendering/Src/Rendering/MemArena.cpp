@@ -13,7 +13,7 @@ namespace Rendering
 		Byte* s_producerBuf = nullptr;
 		Byte* s_consumerBuf = nullptr;
 
-		struct ArenaState
+		static struct ArenaState
 		{
 			size_t curPos = 0;
 			size_t size = 0;
@@ -23,8 +23,7 @@ namespace Rendering
 			// The highest size encountered during a runtime session
 			size_t peakUsedBytes = 0;
 			PressureValue pressureValue = PressureValue::LOW;
-		};
-		static ArenaState s_arenaState;
+		} s_arenaState;
 
 		static void ValidateArenaState(size_t sizeRequested)
 		{
