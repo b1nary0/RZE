@@ -21,7 +21,7 @@ class GameObject;
 class GameObjectComponentBase;
 
 // @NOTE
-// This stuff doesn't support class hierarchies, and will only ever use the deepest inherited class
+// This stuff doesn't support class hierarchies, and will only ever use the first registered component
 // in any hierarchy. Needs to be refactored to support this. As such, things like CameraComponent
 // are broken because I refactored EditorCameraComponent to inherit from CameraComponent; this
 // means we can't have both a CameraComponent and EditorCameraComponent reflected because the ID will
