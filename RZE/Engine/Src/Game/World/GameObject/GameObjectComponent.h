@@ -20,6 +20,13 @@
 class GameObject;
 class GameObjectComponentBase;
 
+// @NOTE
+// This stuff doesn't support class hierarchies, and will only ever use the deepest inherited class
+// in any hierarchy. Needs to be refactored to support this. As such, things like CameraComponent
+// are broken because I refactored EditorCameraComponent to inherit from CameraComponent; this
+// means we can't have both a CameraComponent and EditorCameraComponent reflected because the ID will
+// be the same, and the ID is the driving factor behind all recognition of unique classes.
+
 // #TODO Would ideally like to come back to this setup
 namespace GameObjectComponentRegistry
 {
