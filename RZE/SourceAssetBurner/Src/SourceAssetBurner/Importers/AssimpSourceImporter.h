@@ -26,7 +26,7 @@ private:
 	// standardize these data structures so they dont all need to be maintained...
 	struct MaterialData
 	{
-		enum ETextureFlags : U8
+		enum ETextureFlags
 		{
 			TEXTUREFLAG_NONE = 0,
 			TEXTUREFLAG_ALBEDO = 1 << 0,
@@ -44,7 +44,7 @@ private:
 		// #TODO These flags inform which texture types are used by this material
 		// probably not the best implementation of this but i think the asset infrastructure
 		// needs to mature.
-		ETextureFlags TextureFlags = TEXTUREFLAG_NONE;
+		U8 TextureFlags = TEXTUREFLAG_NONE;
 		std::vector<std::string> TexturePaths;
 	};
 
