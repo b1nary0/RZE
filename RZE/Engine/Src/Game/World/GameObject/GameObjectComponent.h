@@ -107,7 +107,8 @@ protected:
 // Basically, GameObjectComponent<EditorCameraComponent> never gets called during runtime to fetch
 // the id because ::GetID underneath is static to ::GetComponentTypeID<CameraComponent> even though
 // we've technically registered an ID for EditorCameraComponent. We just never fetch it properly.
-// No matter what, we call GameObjectComponent<CameraComponent>'s version of ::GetComponentTypeID<>.
+// No matter what, we call GameObjectComponent<EditorCameraComponent>'s version of ::GetComponentTypeID<>
+// because it's the first one that gets registered in that component hierarchy.
 // Feels like we need to disconnect the ID system from GameObjectComponent. Not exactly sure how atm
 // but we can't be driving the ID from functions templated to the type inheriting from GameObjectComponent
 // because it's totally reasonable to have a component B want to extend the behaviour of Component A
