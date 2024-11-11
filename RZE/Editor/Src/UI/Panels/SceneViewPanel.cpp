@@ -28,6 +28,8 @@ namespace Editor
 
 	void SceneViewPanel::Display()
 	{
+		EditorApp& editorApp = static_cast<EditorApp&>(RZE().GetApplication());
+
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 		if (ImGui::Begin("SceneView", (bool*)1, ImGuiWindowFlags_MenuBar))
 		{
@@ -82,9 +84,8 @@ namespace Editor
 				RZE().GetRenderEngine().SetViewportSize(m_dimensions);
 
 				// @TODO lazy josh to future josh just use object cached on EditorApp
-				GameObjectPtr gameObject = RZE().GetActiveScene().FindGameObjectByName("EditorCam");
-				AssertNotNull(gameObject);
-				GameObjectComponentPtr<EditorCameraComponent> cameraComponent = gameObject->GetComponent<EditorCameraComponent>();
+				GameObjectPtr cameraObject = editorApp.GetCameraObject();
+				GameObjectComponentPtr<EditorCameraComponent> cameraComponent = cameraObject->GetComponent<EditorCameraComponent>();
 				AssertNotNull(cameraComponent);
 				cameraComponent->SetAspectRatio(m_dimensions.X() / m_dimensions.Y());
 			}
@@ -109,7 +110,6 @@ namespace Editor
 				ImGui::Image(texture.GetTextureData(), ImVec2(GetDimensions().X(), GetDimensions().Y()), ImVec2(0.0f, 0.0f), ImVec2(uvbx, uvby));
 
 				{
-					EditorApp& editorApp = static_cast<EditorApp&>(RZE().GetApplication());
 					GameObjectPtr selectedGameObject = editorApp.GetSelectedObjectFromScenePanel();
 					if (selectedGameObject != nullptr)
 					{
