@@ -50,6 +50,8 @@ namespace Editor
 
 		void CreateAndInitializeEditorCamera();
 
+		GameObjectPtr GetCameraObject() const { return m_editorCameraObject; }
+
 	private:
 		void DisplayMenuBar();
 		void HandleGeneralContextMenu();
