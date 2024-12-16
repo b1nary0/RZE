@@ -10,8 +10,6 @@ namespace Rendering
 
 	class DX11Device;
 
-	// @note not threaded atm, but storing the functionality here, then we
-	// will  basically signal the thread to process in its update function
 	class RenderThread
 	{
 	public:

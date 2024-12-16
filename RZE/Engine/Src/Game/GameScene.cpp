@@ -135,6 +135,11 @@ void GameScene::AddGameObject(std::unique_ptr<GameObject>&& gameObject)
 	}
 }
 
+void GameScene::AddGameObject(const GameObjectPtr& gameObject)
+{
+	AddGameObject(std::unique_ptr<GameObject>(gameObject.m_ptr));
+}
+
 void GameScene::InternalRemoveGameObject(GameObjectPtr& gameObject)
 {
 	const auto iter = std::find_if(m_objectRegistry.begin(), m_objectRegistry.end(),
@@ -204,15 +209,13 @@ GameObjectPtr GameScene::FindGameObjectByName(const std::string& name)
 
 GameObjectPtr GameScene::AddGameObject(const std::string& name)
 {
-	std::unique_ptr<GameObject> gameObject = CreateGameObject();
+	GameObjectPtr gameObject = CreateGameObject();
+	
 	gameObject->SetName(name);
-	gameObject->Initialize();
 
-	GameObjectPtr ptr(gameObject.get());
+	AddGameObject(gameObject);
 
-	AddGameObject(std::move(gameObject));
-
-	return ptr;
+	return gameObject;
 }
 
 void GameScene::ForEachGameObject(Functor<void, GameObjectPtr> func)
@@ -226,11 +229,13 @@ void GameScene::ForEachGameObject(Functor<void, GameObjectPtr> func)
 	}
 }
 
-std::unique_ptr<GameObject> GameScene::CreateGameObject()
+GameObjectPtr GameScene::CreateGameObject()
 {
 	std::unique_ptr<GameObject> gameObject = std::make_unique<GameObject>();
 	gameObject->AddComponent<TransformComponent>();
-	return gameObject;
+	gameObject->Initialize();
+
+	return GameObjectPtr(gameObject.release());
 }
 
 void GameScene::Start()

@@ -23,13 +23,15 @@ public:
 	
 	GameObjectPtr FindGameObjectByName(const std::string& name);
 	GameObjectPtr AddGameObject(const std::string& name);
+	void AddGameObject(const GameObjectPtr& gameObject);
 	
 	void ForEachGameObject(Functor<void, GameObjectPtr> func);
 	void RemoveGameObject(GameObjectPtr& gameObject);
 	
-private:
 	// @NOTE Creates GameObject with TransformComponent, as all gameobjects have a spatial representation
-	std::unique_ptr<GameObject> CreateGameObject();
+	GameObjectPtr CreateGameObject();
+
+private:
 	// @NOTE Creates GameObject with no components. Just used for load code.
 	std::unique_ptr<GameObject> CreateGameObjectNoComponents();
 
