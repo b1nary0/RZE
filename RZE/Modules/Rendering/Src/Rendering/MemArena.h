@@ -19,7 +19,6 @@ namespace Rendering
 		// Cycle will reset the arena for fresh use.
 		void Cycle();
 
-		Byte* GetConsumerPtr();
 		size_t GetTotalMemoryAllocatedLastFrame();
 		size_t GetSize();
 		// Returns the highest total bytes used during a runtime session

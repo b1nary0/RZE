@@ -104,11 +104,6 @@ namespace Rendering
 			return allocMem;
 		}
 
-		Byte* GetConsumerPtr()
-		{
-			return s_consumerBuf;
-		}
-
 		void Cycle()
 		{
 			s_arenaState.curPos = 0;
