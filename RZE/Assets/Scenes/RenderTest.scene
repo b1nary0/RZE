@@ -36,31 +36,6 @@
                 }
             }
         },
-        "M4": {
-            "components": {
-                "RenderComponent": {
-                    "ResourcePath": "ProjectData\\Mesh\\m4a1.meshasset"
-                },
-                "TransformComponent": {
-                    "Position": [
-                        7.036288738250732,
-                        -3.8822784423828127,
-                        -0.7160981297492981
-                    ],
-                    "Scale": [
-                        0.5899946689605713,
-                        0.5900000333786011,
-                        0.5899946689605713
-                    ],
-                    "Rotation": [
-                        179.99989318847657,
-                        69.05461883544922,
-                        179.99989318847657
-                    ]
-                }
-            },
-            "parent": "Camera"
-        },
         "DirectionalLight": {
             "components": {
                 "TransformComponent": {
@@ -134,30 +109,6 @@
                     ]
                 },
                 "GifChatComponent": {}
-            }
-        },
-        "m42": {
-            "components": {
-                "RenderComponent": {
-                    "ResourcePath": "ProjectData\\Mesh\\m4a1.meshasset"
-                },
-                "TransformComponent": {
-                    "Position": [
-                        -12.154186248779297,
-                        0.06074513494968414,
-                        5.533438682556152
-                    ],
-                    "Scale": [
-                        0.9472001791000366,
-                        0.9472001791000366,
-                        0.9472001791000366
-                    ],
-                    "Rotation": [
-                        0.0,
-                        0.0,
-                        0.0
-                    ]
-                }
             }
         }
     }
