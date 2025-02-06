@@ -120,16 +120,6 @@ namespace Editor
 	{
 		OPTICK_EVENT();
 
-		GameObjectPtr mechObj = RZE().GetActiveScene().FindGameObjectByName("NeckMech");
-		AssertNotNull(mechObj);
-		GameObjectPtr m4Obj = RZE().GetActiveScene().FindGameObjectByName("M4");
-		AssertNotNull(m4Obj);
-
-		GameObjectComponentPtr<TransformComponent> mechTransform = mechObj->GetComponent<TransformComponent>();
-		GameObjectComponentPtr<TransformComponent> m4Transform = m4Obj->GetComponent<TransformComponent>();
-
-		RZE().GetRenderEngine().DrawLine(mechTransform->GetPosition(), m4Transform->GetPosition());
-
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking;
 		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
 		window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
