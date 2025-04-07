@@ -9,7 +9,7 @@
 #include <vector>
 #include <unordered_map>
 
-typedef U32 ReflectTypeID;
+typedef size_t ReflectTypeID;
 
 class ReflectDB
 {
