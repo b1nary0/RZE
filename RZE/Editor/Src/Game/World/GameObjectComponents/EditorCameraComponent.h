@@ -5,6 +5,8 @@
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector3D.h>
 
+#include <Utils/Reflect/Reflection.h>
+
 class TransformComponent;
 
 class EditorCameraComponent final : public GameObjectComponent<EditorCameraComponent>
@@ -12,7 +14,7 @@ class EditorCameraComponent final : public GameObjectComponent<EditorCameraCompo
 	static constexpr float kMinDirectionHeldTime = 1.f;
 	static constexpr float kMaxDirectionHeldTime = 10.f;
 public:
-	EditorCameraComponent() = default;
+	EditorCameraComponent();
 	~EditorCameraComponent() = default;
 
 	// GameObjectComponent interface

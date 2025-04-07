@@ -10,7 +10,7 @@ class TransformComponent;
 class CameraComponent final : public GameObjectComponent<CameraComponent>
 {
 public:
-	CameraComponent() = default;
+	CameraComponent();
 	~CameraComponent() = default;
 
 	// GameObjectComponent interface

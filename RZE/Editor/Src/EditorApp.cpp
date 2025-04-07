@@ -223,6 +223,8 @@ namespace Editor
 
 	void EditorApp::CreateRenderTarget(const Vector2D& dimensions)
 	{
+		// #TODO pretty sure this causes a leak. doesn't look like the default destructors
+		// are set up to do any cleanup. investigate.
 		m_renderTarget.reset();
 
 		m_renderTarget = std::make_unique<Rendering::RenderTargetTexture>(static_cast<U32>(dimensions.X()), static_cast<U32>(dimensions.Y()));

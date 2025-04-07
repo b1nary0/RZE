@@ -9,6 +9,12 @@
 #include <Rendering/Graphics/RenderTarget.h>
 
 #include <Utils/DebugUtils/Debug.h>
+#include <Utils/Reflect/Reflection.h>
+
+CameraComponent::CameraComponent()
+{
+	REFLECT_REGISTER_COMPONENT(CameraComponent);
+}
 
 const Vector3D& CameraComponent::GetLookAt() const
 {

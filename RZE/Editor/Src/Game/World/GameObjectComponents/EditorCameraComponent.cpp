@@ -105,6 +105,11 @@ void EditorCameraComponent::SetAsActiveCamera(bool isActiveCamera)
 	m_isActiveCamera = isActiveCamera;
 }
 
+EditorCameraComponent::EditorCameraComponent()
+{
+	REFLECT_REGISTER_COMPONENT_CHILD(EditorCameraComponent, CameraComponent);
+}
+
 void EditorCameraComponent::Initialize()
 {
 	GetOwner()->SetIncludeInSave(false);
