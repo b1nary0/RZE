@@ -2,6 +2,7 @@
 
 #include <Utils/Reflect/ReflectDB.h>
 
+ReflectDB::ReflectRegistry ReflectDB::m_registry;
 ReflectTypeID ReflectDB::k_reflectKey = 0;
 
 void ReflectDB::RegisterComponent(const char* typeStr)
@@ -21,5 +22,4 @@ size_t ReflectDB::GenerateTypeID(const char* typeStr)
 	return hasher(typeStr);
 }
 
-ReflectDB::ReflectRegistry ReflectDB::m_registry;
 
