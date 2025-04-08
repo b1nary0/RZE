@@ -15,14 +15,18 @@ class ReflectDB
 {
 public:
 	static void RegisterComponent(const char* typeStr);
+	static void RegisterComponentChild(const char* typeStr, const char* parentTypeStr);
+
+	static size_t GetIDFromName(const char* typeName);
 
 private:
 	struct ReflectTypeDescriptor
 	{
 		std::string name;
-		ReflectTypeID id = 0;
+		ReflectTypeID typeID = 0;
+		ReflectTypeID parentTypeID = 0;
 
-		std::vector<ReflectTypeID> m_children;
+		std::vector<ReflectTypeID> children;
 	};
 
 	typedef std::unordered_map<ReflectTypeID, ReflectTypeDescriptor> ReflectRegistry;
@@ -31,6 +35,5 @@ private:
 
 private:
 	static ReflectRegistry m_registry;
-
 	static ReflectTypeID k_reflectKey;
 };
