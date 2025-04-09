@@ -17,21 +17,15 @@ void ReflectDB::RegisterComponent(const char* typeStr)
 void ReflectDB::RegisterComponentChild(const char* typeStr, const char* parentTypeStr)
 {
 	RegisterComponent(typeStr);
-	ReflectTypeID typeID = GetIDFromName(typeStr);
-	ReflectTypeID parentTypeID = GetIDFromName(parentTypeStr);
+
+	ReflectTypeID typeID = GenerateTypeID(typeStr);
+	ReflectTypeID parentTypeID = GenerateTypeID(parentTypeStr);
 
 	ReflectTypeDescriptor& parentTypeDescriptor = m_registry[parentTypeID];
 	parentTypeDescriptor.children.push_back(typeID);
 
 	ReflectTypeDescriptor& childTypeDescriptor = m_registry[typeID];
 	childTypeDescriptor.parentTypeID = parentTypeID;
-}
-
-size_t ReflectDB::GetIDFromName(const char* typeName)
-{
-	// #TODO: Measure hashing speed to see if we should look for other methods
-	ReflectTypeID typeID = ReflectDB::GenerateTypeID(typeName);
-	return typeID;
 }
 
 size_t ReflectDB::GenerateTypeID(const char* typeStr)
