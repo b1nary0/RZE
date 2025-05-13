@@ -473,8 +473,10 @@ void    ImGui_ImplWin32_NewFrame()
         ImGui_ImplWin32_UpdateMouseCursor();
     }
 
+#ifdef CONTROLLER_SUPPORT
     // Update game controllers (if enabled and available)
     ImGui_ImplWin32_UpdateGamepads();
+#endif
 }
 
 // There is no distinct VK_xxx for keypad enter, instead it is VK_RETURN + KF_EXTENDED, we assign it an arbitrary value to make code more readable (VK_ codes go up to 255)
