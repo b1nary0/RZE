@@ -94,7 +94,7 @@ private:
 	GameObjectStateFlags m_stateFlags;
 
 	GameObjectPtr m_parent = nullptr;
-	std::vector<GameObject*> m_children;
+	std::vector<GameObjectPtr> m_children;
 };
 
 template <typename TComponentType>

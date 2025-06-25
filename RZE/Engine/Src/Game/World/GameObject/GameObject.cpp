@@ -150,7 +150,7 @@ void GameObject::DetachFromParent()
 void GameObject::AddChild(GameObject* child)
 {
 #ifdef _DEBUG
-	auto existingChild = std::find_if(m_children.begin(), m_children.end(), [&child](GameObject* gameObject)
+	auto existingChild = std::find_if(m_children.begin(), m_children.end(), [&child](GameObjectPtr gameObject)
 		{
 			return gameObject == child;
 		});
@@ -165,7 +165,7 @@ void GameObject::AddChild(GameObject* child)
 
 void GameObject::RemoveChild(GameObject* child)
 {
-	auto existingChild = std::find_if(m_children.begin(), m_children.end(), [&child](GameObject* gameObject)
+	auto existingChild = std::find_if(m_children.begin(), m_children.end(), [&child](GameObjectPtr gameObject)
 		{
 			return gameObject == child;
 		});
