@@ -185,8 +185,6 @@ namespace Rendering
 
 		const void* data = nullptr;
 		ConstantBufferHandle bufferHandle;
-		const char* name = nullptr;
-		size_t dataSize = 0;
 	};
 
 	struct RenderCommand_ReleaseVertexShader : RenderCommand
