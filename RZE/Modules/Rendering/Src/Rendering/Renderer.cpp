@@ -30,7 +30,7 @@ namespace Rendering
 {
 	RenderThread Renderer::m_renderThread;
 
-	void* AllocateCommandData(void* src, size_t dataTypeSize, size_t count)
+	inline void* AllocateCommandData(void* src, size_t dataTypeSize, size_t count)
 	{
 		if (src == nullptr)
 		{
