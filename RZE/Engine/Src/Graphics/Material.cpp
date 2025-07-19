@@ -43,6 +43,8 @@ std::shared_ptr<MaterialInstance> MaterialInstance::Create(const MaterialAssetIm
 	}
 	else if (materialData.TextureFlags == MaterialAssetImporter::MaterialData::TEXTUREFLAG_NONE)
 	{
+		// @TODO Understand why (at least) Material_47 on sponza object has NO textures - how is this even worth it? If we don't have texures to display what
+		// purpose do we have?
 		Filepath noTextureShaderPath("Assets/Shaders/Pixel_Default_NewRenderer.hlsl");
 		materialInstance->SetShaderTechnique(RZE().GetResourceHandler().LoadResource<PixelShader>(noTextureShaderPath, "Pixel_Default_NewRenderer"));
 	}
