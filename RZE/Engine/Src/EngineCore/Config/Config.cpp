@@ -17,9 +17,9 @@ bool Config::Empty() const
 	return bFileEmpty && bParserEmpty;
 }
 
-void Config::Read(const std::string& filePath)
+void Config::Read(const Filepath& filePath)
 {
-	mINIFile.SetFilePath(filePath);
+	mINIFile.SetFilePath(filePath.GetRelativePath());
 	mINIFile.Read();
 	mINIFile.Close();
 

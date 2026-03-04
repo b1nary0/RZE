@@ -16,7 +16,7 @@ public:
 	bool Empty() const;
 
 protected:
-	void Read(const std::string& filePath);
+	void Read(const Filepath& filePath);
 
 	File mINIFile;
 	CSimpleIniA mINIParser;
