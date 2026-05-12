@@ -19,6 +19,7 @@ bool StaticMeshResource::Load(const Filepath& filePath)
 	MeshAssetImporter meshImporter;
 	meshImporter.Import(filePath);
 
+	// TODO: Maybe send a StaticMesh& into MeshImporter::Import and do this boilerplate there
 	m_mesh.Initialize(std::move(meshImporter.GetMeshGeometry()));
 
 	std::string meshName = Conversions::StripAssetNameFromFilePath(filePath);
