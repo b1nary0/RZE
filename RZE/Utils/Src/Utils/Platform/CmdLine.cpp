@@ -1,13 +1,35 @@
 #include <StdAfx.h>
 #include <Utils/Platform/CmdLine.h>
 
+#include <Utils/DebugUtils/Debug.h>
+
+#include <charconv>
+#include <cstdio>
+
 namespace CmdLine
 {
 	typedef std::unordered_map<std::string_view, std::string_view> ArgumentMap;
 	static ArgumentMap m_arguments;
+	static bool s_bInitialized = false;
+
+	// A flag starts with '-' but isn't a negative number, so "-launchMonitor -1" still treats -1 as a value
+	bool IsFlag(std::string_view token)
+	{
+		if (token.size() < 2 || token[0] != '-')
+		{
+			return false;
+		}
+
+		return !(token[1] >= '0' && token[1] <= '9');
+	}
 
 	void PartitionString(char** str, int count)
 	{
+		if (str == nullptr || count < 1)
+		{
+			return;
+		}
+
 		std::vector<std::string_view> argStrings;
 		argStrings.reserve(count);
 
@@ -21,24 +43,29 @@ namespace CmdLine
 
 		// #TODO hacky here to check for file being sent in from windows when a file is double clicked...
 		// there must be a better, more standard way to handle this..
-		// #NOTE this is actually broken... if the first argument passed is not -scene then this breaks..?
 		int startIndex = 1;
-		if (argStrings[1][0] != '-')
+		if (count > 1 && !argStrings[1].empty() && argStrings[1][0] != '-')
 		{
 			m_arguments["-scene"] = argStrings[1].substr(argStrings[1].find_last_of('\\') + 1, argStrings[1].size());
 			startIndex = 2;
 		}
 
-		for (size_t idx = startIndex; idx < argStrings.size();)
+		for (int idx = startIndex; idx < count; ++idx)
 		{
-			if (argStrings[idx][0] == '-')
+			const std::string_view token = argStrings[idx];
+			if (!IsFlag(token))
 			{
-				std::string_view key = argStrings[idx];
-				std::string_view value = argStrings[idx + 1];
+				// @note can't use RZE_LOG here, arguments are parsed before the log file is created
+				printf_s("Ignoring unexpected command line argument: %.*s\n", static_cast<int>(token.size()), token.data());
+				continue;
+			}
 
-				m_arguments[key] = value;
-
-				idx += 2;
+			// Flags without a value are stored with an empty value so they can still be queried for presence
+			const bool bHasValue = (idx + 1 < count) && !IsFlag(argStrings[idx + 1]);
+			m_arguments[token] = bHasValue ? argStrings[idx + 1] : std::string_view();
+			if (bHasValue)
+			{
+				++idx;
 			}
 		}
 	}
@@ -47,6 +74,15 @@ namespace CmdLine
 	{
 		void Initialize(char** str, int count)
 		{
+			if (s_bInitialized)
+			{
+				// @note can't use RZE_LOG here, arguments are parsed before the log file is created
+				printf_s("CmdLine::Arguments::Initialize called more than once. Ignoring.\n");
+				AssertMsg(false, "CmdLine::Arguments::Initialize called more than once");
+				return;
+			}
+
+			s_bInitialized = true;
 			PartitionString(str, count);
 		}
 
@@ -60,6 +96,26 @@ namespace CmdLine
 			}
 
 			return false;
+		}
+
+		bool GetInt(const char* argument, int& outVal)
+		{
+			std::string_view value;
+			if (!Get(argument, value) || value.empty())
+			{
+				return false;
+			}
+
+			int parsed = 0;
+			const char* const end = value.data() + value.size();
+			const std::from_chars_result result = std::from_chars(value.data(), end, parsed);
+			if (result.ec != std::errc() || result.ptr != end)
+			{
+				return false;
+			}
+
+			outVal = parsed;
+			return true;
 		}
 	}
 }

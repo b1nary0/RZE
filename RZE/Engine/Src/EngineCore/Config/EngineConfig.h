@@ -34,10 +34,12 @@ public:
 
 	const Vector2D& GetDimensions() const;
 	const std::string& GetTitle() const;
+	int GetLaunchMonitor() const;
 
 private:
 	std::string mTitle;
 	Vector2D mDimensions;
+	int mLaunchMonitor{ 0 };
 };
 
 class EngineConfig final : public Config

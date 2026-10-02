@@ -53,6 +53,7 @@ void EngineConfig::LoadWindowSettings()
 
 	mWindowSettings.mDimensions = Vector2D(width, height);
 	mWindowSettings.mTitle = mINIParser.GetValue("WindowSettings", "WindowTitle", "RZE_Engine");
+	mWindowSettings.mLaunchMonitor = Conversions::IntFromString(mINIParser.GetValue("WindowSettings", "LaunchMonitor", "0"));
 }
 
 WindowSettings::WindowSettings()
@@ -71,6 +72,11 @@ const Vector2D& WindowSettings::GetDimensions() const
 const std::string& WindowSettings::GetTitle() const
 {
 	return mTitle;
+}
+
+int WindowSettings::GetLaunchMonitor() const
+{
+	return mLaunchMonitor;
 }
 
 EngineSettings::EngineSettings()

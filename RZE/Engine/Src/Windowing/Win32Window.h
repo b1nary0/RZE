@@ -42,6 +42,7 @@ public:
 		std::string		windowTitle;
 		int				width{ -1 };
 		int				height{ -1 };
+		int				monitorIndex{ 0 };	// 0 = primary monitor
 	};
 
 	Win32Window(const WindowCreationParams& creationProtocol);

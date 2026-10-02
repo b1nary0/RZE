@@ -7,6 +7,7 @@
 #include <EngineCore/Input/InputHandler.h>
 #include <Events/EventHandler.h>
 
+#include <Windowing/Display.h>
 #include <Windowing/WindowMessageAdaptor.h>
 
 #include <Utils/Conversions.h>
@@ -151,9 +152,17 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 			AssertFalse();
 		}
 
-		InternalSetWindowPosition(Vector2D(0, 0));
+		Display::MonitorInfo monitorInfo;
+		if (!Display::GetMonitor(creationProtocol.monitorIndex, monitorInfo))
+		{
+			RZE_LOG_ARGS("Launch monitor %d out of range (%d monitors). Using primary.", creationProtocol.monitorIndex, static_cast<int>(Display::EnumerateMonitors().size()));
+			Display::GetMonitor(0, monitorInfo);
+		}
+
+		const Display::ScreenRect& workArea = monitorInfo.WorkArea;
+		InternalSetWindowPosition(Vector2D(static_cast<float>(workArea.Left), static_cast<float>(workArea.Top)));
 		// #NOTE(Josh) Gonna put this here for now instead of in Engine.cpp until it has a better home
-		SetWindowPos(GetConsoleWindow(), 0, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
+		SetWindowPos(GetConsoleWindow(), 0, workArea.Left, workArea.Top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
 
 		QueryClientSize();
 	}

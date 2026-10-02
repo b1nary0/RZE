@@ -10,6 +10,7 @@
 #include <Windowing/Win32Window.h>
 
 #include <Utils/DebugUtils/Debug.h>
+#include <Utils/Platform/CmdLine.h>
 
 #include <imGUI/imgui_impl_dx11.h>
 #include <imGUI/imgui_impl_win32.h>
@@ -181,6 +182,15 @@ void RZE_Engine::CreateAndInitializeWindow()
 	params.windowTitle = windowSettings.GetTitle();
 	params.width = static_cast<int>(windowSettings.GetDimensions().X());
 	params.height = static_cast<int>(windowSettings.GetDimensions().Y());
+
+	// Command line overrides the config value
+	params.monitorIndex = windowSettings.GetLaunchMonitor();
+	std::string_view launchMonitorArg;
+	if (CmdLine::Arguments::Get("-launchMonitor", launchMonitorArg)
+		&& !CmdLine::Arguments::GetInt("-launchMonitor", params.monitorIndex))
+	{
+		RZE_LOG_ARGS("-launchMonitor value '%s' is not a valid integer. Using config value %d.", std::string(launchMonitorArg).c_str(), params.monitorIndex);
+	}
 
 	m_window = new Win32Window(params);
 	AssertNotNull(m_window);
