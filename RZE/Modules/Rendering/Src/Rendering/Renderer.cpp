@@ -1,7 +1,5 @@
 #include <Rendering/Renderer.h>
 
-#include <Utils/Conversions.h>
-#include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector4D.h>
 #include <Utils/Memory/MemoryUtils.h>
@@ -11,7 +9,6 @@
 #include <Rendering/RenderCommand.h>
 #include <Rendering/MemArena.h>
 
-#include <Rendering/Driver/DX11/DX11.h>
 #include <Rendering/Driver/DX11/DX11Device.h>
 #include <Rendering/Driver/DX11/DX11ConstantBuffer.h>
 #include <Rendering/Driver/DX11/DX11IndexBuffer.h>
@@ -21,7 +18,6 @@
 
 #include <Rendering/Graphics/RenderTarget.h>
 
-#include <Optick/optick.h>
 #include <imGUI/imgui.h>
 
 #define MEM_ARENA_SIZE MemoryUtils::Megabytes(64)
