@@ -309,6 +309,33 @@ namespace Rendering
 		m_renderThread.PushCommand(command);
 	}
 
+	void Renderer::SetColourTarget(const RenderTargetHandle& colourTarget)
+	{
+		RenderCommand_SetColourTarget* command = MemArena::AllocType<RenderCommand_SetColourTarget>();
+		command->colourTarget = colourTarget;
+		command->hasDepth = false;
+
+		m_renderThread.PushCommand(command);
+	}
+
+	void Renderer::SetColourTarget(const RenderTargetHandle& colourTarget, const TextureBuffer2DHandle& depthTexture)
+	{
+		RenderCommand_SetColourTarget* command = MemArena::AllocType<RenderCommand_SetColourTarget>();
+		command->colourTarget = colourTarget;
+		command->depthTexture = depthTexture;
+		command->hasDepth = true;
+
+		m_renderThread.PushCommand(command);
+	}
+
+	void Renderer::GenerateMips(const TextureBuffer2DHandle& texture)
+	{
+		RenderCommand_GenerateMips* command = MemArena::AllocType<RenderCommand_GenerateMips>();
+		command->texture = texture;
+
+		m_renderThread.PushCommand(command);
+	}
+
 	void Renderer::ClearRenderTarget(const RenderTargetHandle& renderTarget, const Vector4D& colour)
 	{
 		RenderCommand_ClearRenderTarget* command = MemArena::AllocType<RenderCommand_ClearRenderTarget>();

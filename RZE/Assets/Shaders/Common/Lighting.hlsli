@@ -3,52 +3,23 @@
 
 // Include paths are relative to Assets/Shaders/: the engine's D3D_COMPILE_STANDARD_FILE_INCLUDE
 // resolves nested includes from the top-level shader's directory, not the including file's.
+#include "Common/ColourSpace.hlsli"
 #include "Common/PixelResources.hlsli"
 
 //
 // Tunables
 //
 static const float  AlphaCutoff  = 0.5f;
-static const float  Exposure     = 1.0f;
 // Height-map bump: normal tilt per unit of height change per texel
 static const float  BumpStrength = 10.0f;
 // Linear-space hemisphere ambient: sky colour for up-facing normals, ground colour for down-facing.
 // Kept well below the light strength (~2) so lit and unlit sides read clearly.
 static const float3 AmbientSky    = float3(0.14f, 0.16f, 0.20f);
 static const float3 AmbientGround = float3(0.05f, 0.045f, 0.04f);
+// Blinn-Phong exponent treated as a mirror for ambient reflections; log2(2048) = 11
+static const float  MaxShininessLog2 = 11.0f;
 // Specular reflectance at normal incidence = SpecularIntensity * this; 0.5 intensity gives the typical dielectric 0.04
 static const float  SpecularF0Scale = 0.08f;
-
-//
-// Colour space
-//
-// Textures and render targets are UNORM holding sRGB-encoded data, so convert manually.
-float3 SRGBToLinear(float3 colour)
-{
-	return pow(max(colour, 0.0f), 2.2f);
-}
-
-float3 LinearToSRGB(float3 colour)
-{
-	return pow(max(colour, 0.0f), 1.0f / 2.2f);
-}
-
-// ACES filmic curve fit (Krzysztof Narkowicz). Keeps more contrast and saturation than Reinhard.
-float3 TonemapACES(float3 colour)
-{
-	const float a = 2.51f;
-	const float b = 0.03f;
-	const float c = 2.43f;
-	const float d = 0.59f;
-	const float e = 0.14f;
-	return saturate((colour * (a * colour + b)) / (colour * (c * colour + d) + e));
-}
-
-// Linear HDR lighting result -> display-ready colour for the UNORM render target
-float3 FinalizeColour(float3 linearColour)
-{
-	return LinearToSRGB(TonemapACES(linearColour * Exposure));
-}
 
 //
 // Surface
@@ -163,9 +134,15 @@ float SampleShadow(float3 worldPos, float3 vertexNormal)
 //
 // Lighting
 //
-float3 HemisphereAmbient(float3 normal)
+float3 LightRadiance()
 {
-	return lerp(AmbientGround, AmbientSky, normal.y * 0.5f + 0.5f);
+	return SRGBToLinear(LightColour.rgb) * LightStrength;
+}
+
+// Sky above, ground below. Also used as the environment for ambient reflections.
+float3 HemisphereAmbient(float3 direction)
+{
+	return lerp(AmbientGround, AmbientSky, direction.y * 0.5f + 0.5f);
 }
 
 // Schlick's Fresnel approximation: reflectance rises from f0 to f90 at glancing angles
@@ -181,6 +158,33 @@ float BlinnPhongSpecular(float NdotH, float shininess)
 	return (shininess + 8.0f) / 8.0f * pow(NdotH, shininess);
 }
 
+// Hemisphere ambient, diffuse plus reflection. Without the reflection, glossy dark materials in shade
+// (black armour, iron) render as albedo x ambient, which is near black, when they'd really mirror their surroundings.
+float3 AmbientLighting(SurfaceData surface, float3 viewDir, float shininess)
+{
+	float3 N = surface.Normal;
+	float NdotV = saturate(dot(N, viewDir));
+
+	// 0 = rough, 1 = mirror. Rough surfaces see a blurred environment and lose the glancing-angle boost.
+	float gloss = saturate(log2(shininess) / MaxShininessLog2);
+
+	float3 R = reflect(-viewDir, N);
+	float3 environment = HemisphereAmbient(normalize(lerp(N, R, gloss)));
+
+	float f0 = surface.SpecularIntensity * SpecularF0Scale;
+	float fresnel = FresnelSchlick(f0, lerp(f0, surface.SpecularIntensity, gloss), NdotV);
+
+	// Stand-in for specular occlusion: nothing blocks the hemisphere, so a broad, rough lobe would
+	// otherwise put a grey sheen over every crevice and wash out coloured materials like rust
+	float reflectionWeight = gloss * gloss;
+
+	// Light that reflects off the surface isn't also scattered as diffuse
+	float3 diffuse = HemisphereAmbient(N) * surface.Albedo * (1.0f - fresnel);
+	float3 reflection = environment * fresnel * reflectionWeight;
+
+	return diffuse + reflection;
+}
+
 // Returns linear HDR radiance for the scene's directional light
 float3 ComputeLighting(SurfaceData surface, float3 viewDir)
 {
@@ -192,7 +196,7 @@ float3 ComputeLighting(SurfaceData surface, float3 viewDir)
 	float NdotH = saturate(dot(N, H));
 	float VdotH = saturate(dot(viewDir, H));
 
-	float3 radiance = SRGBToLinear(LightColour.rgb) * LightStrength;
+	float3 radiance = LightRadiance();
 
 	// The specular mask also scales f90 so unmasked areas don't pick up a glancing-angle sheen
 	float fresnel = FresnelSchlick(surface.SpecularIntensity * SpecularF0Scale, surface.SpecularIntensity, VdotH);
@@ -200,7 +204,7 @@ float3 ComputeLighting(SurfaceData surface, float3 viewDir)
 
 	float3 diffuse = surface.Albedo * NdotL;
 	float3 specular = fresnel * BlinnPhongSpecular(NdotH, shininess) * NdotL;
-	float3 ambient = HemisphereAmbient(N) * surface.Albedo;
+	float3 ambient = AmbientLighting(surface, viewDir, shininess);
 
 	float shadow = SampleShadow(surface.WorldPos, surface.VertexNormal);
 

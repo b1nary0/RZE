@@ -53,8 +53,10 @@ void ForwardRenderStage::Render(const RenderCamera& camera, const RenderEngine::
 	const RenderEngine& renderEngine = RZE().GetRenderEngine();
 	const Rendering::RenderTargetTexture& renderTarget = RZE().GetRenderEngine().GetRenderTarget();
 
-	Rendering::Renderer::SetRenderTarget(&renderTarget);
-	Rendering::Renderer::ClearRenderTarget(renderTarget.GetTargetPlatformObject(), Vector4D(0.25f, 0.25f, 0.35f, 1.0f));
+	// Linear scene colour; PostProcessRenderStage exposes and tonemaps it into the 8-bit target.
+	// Alpha 0 marks the background, which it fills with the clear colour.
+	Rendering::Renderer::SetColourTarget(renderTarget.GetSceneTargetPlatformObject(), renderTarget.GetDepthTexturePlatformObject());
+	Rendering::Renderer::ClearRenderTarget(renderTarget.GetSceneTargetPlatformObject(), Vector4D(0.0f, 0.0f, 0.0f, 0.0f));
 	Rendering::Renderer::ClearDepthStencilBuffer(renderTarget.GetDepthTexturePlatformObject());
 
 	Rendering::Renderer::UploadDataToBuffer<RenderCamera>(m_vertexShader->GetCameraDataBuffer(), &camera);

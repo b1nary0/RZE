@@ -352,6 +352,35 @@ namespace Rendering
 				break;
 			}
 
+			case RenderCommandType::SetColourTarget:
+			{
+				RenderCommand_SetColourTarget* cmd = static_cast<RenderCommand_SetColourTarget*>(command);
+				DX11TextureBuffer2D* targetPtr = static_cast<DX11TextureBuffer2D*>(cmd->colourTarget.m_buffer.get());
+
+				ID3D11DepthStencilView* dsv = nullptr;
+				if (cmd->hasDepth)
+				{
+					dsv = &static_cast<DX11TextureBuffer2D*>(cmd->depthTexture.m_buffer.get())->GetDepthView();
+				}
+
+				ID3D11RenderTargetView* rtv = &targetPtr->GetTargetView();
+				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+				deviceContext.OMSetRenderTargets(1, &rtv, dsv);
+
+				break;
+			}
+
+			case RenderCommandType::GenerateMips:
+			{
+				RenderCommand_GenerateMips* cmd = static_cast<RenderCommand_GenerateMips*>(command);
+				DX11TextureBuffer2D* texturePtr = static_cast<DX11TextureBuffer2D*>(cmd->texture.m_buffer.get());
+
+				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+				deviceContext.GenerateMips(&texturePtr->GetResourceView());
+
+				break;
+			}
+
 			case RenderCommandType::ClearRenderTarget:
 			{
 				RenderCommand_ClearRenderTarget* cmd = static_cast<RenderCommand_ClearRenderTarget*>(command);

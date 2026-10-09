@@ -53,6 +53,8 @@ namespace Rendering
 		ClearRenderTargets,
 		SetRenderTargetBackBuffer,
 		SetDepthTarget,
+		SetColourTarget,
+		GenerateMips,
 		ClearRenderTarget,
 		SetViewport,
 		SetInputLayout,
@@ -243,6 +245,22 @@ namespace Rendering
 		RenderCommand_SetDepthTarget() { type = RenderCommandType::SetDepthTarget; }
 
 		TextureBuffer2DHandle depthTexture;
+	};
+
+	struct RenderCommand_SetColourTarget : RenderCommand
+	{
+		RenderCommand_SetColourTarget() { type = RenderCommandType::SetColourTarget; }
+
+		RenderTargetHandle colourTarget;
+		TextureBuffer2DHandle depthTexture;
+		bool hasDepth = false;
+	};
+
+	struct RenderCommand_GenerateMips : RenderCommand
+	{
+		RenderCommand_GenerateMips() { type = RenderCommandType::GenerateMips; }
+
+		TextureBuffer2DHandle texture;
 	};
 
 	struct RenderCommand_ClearRenderTarget : RenderCommand

@@ -4,6 +4,7 @@
 #include <Graphics/RenderStage.h>
 #include <Graphics/RenderStages/DebugDrawRenderStage.h>
 #include <Graphics/RenderStages/ForwardRenderStage.h>
+#include <Graphics/RenderStages/PostProcessRenderStage.h>
 #include <Graphics/RenderStages/ShadowRenderStage.h>
 
 #include <Rendering/Renderer.h>
@@ -29,7 +30,8 @@ void RenderEngine::Initialize(void* windowHandle)
 	
 	AddRenderStage<ShadowRenderStage>();
 	AddRenderStage<ForwardRenderStage>();
-	
+	AddRenderStage<PostProcessRenderStage>();
+
 #ifdef _DEBUG
 	AddRenderStage<DebugDrawRenderStage>();
 #endif
@@ -244,7 +246,9 @@ void RenderEngine::RenderView(const char* frameName, const RenderCamera& renderC
 	SetRenderTarget(renderTarget.get());
 
 	Update();
+	m_isRenderingMainView = false;
 	Render(frameName, false, false);
+	m_isRenderingMainView = true;
 
 	SetViewportSize(prevViewportSize);
 	SetRenderTarget(prevRenderTarget);

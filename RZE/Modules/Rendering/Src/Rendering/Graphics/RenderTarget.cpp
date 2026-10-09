@@ -41,11 +41,22 @@ namespace Rendering
 		targetParams.SampleQuality = 0;
 		
 		m_target = Rendering::Renderer::CreateTextureBuffer2D(nullptr, targetParams);
+
+		GFXTextureBufferParams sceneTargetParams = targetParams;
+		sceneTargetParams.Format = ETextureFormat::RGBA16_FLOAT;
+		sceneTargetParams.MipLevels = 1;
+
+		m_sceneTarget = Rendering::Renderer::CreateTextureBuffer2D(nullptr, sceneTargetParams);
 	}
-	
+
 	RenderTargetHandle RenderTargetTexture::GetTargetPlatformObject() const
 	{
 		return m_target;
+	}
+
+	RenderTargetHandle RenderTargetTexture::GetSceneTargetPlatformObject() const
+	{
+		return m_sceneTarget;
 	}
 
 	TextureBuffer2DHandle RenderTargetTexture::GetDepthTexturePlatformObject() const

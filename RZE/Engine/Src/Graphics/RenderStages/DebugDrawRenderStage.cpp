@@ -48,6 +48,9 @@ void DebugDrawRenderStage::Render(const RenderCamera& camera, const RenderEngine
 
 	Rendering::Renderer::Begin("DebugDrawRenderStage");
 
+	// Drawn after tonemapping, into the 8-bit target, depth-tested against the scene
+	Rendering::Renderer::SetRenderTarget(&renderEngine.GetRenderTarget());
+
 	Rendering::Renderer::SetPrimitiveTopology(Rendering::EPrimitiveTopology::LineList);
 	Rendering::Renderer::UploadDataToBuffer<RenderCamera>(m_vertexShader->GetCameraDataBuffer(), &camera);
 

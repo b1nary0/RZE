@@ -36,6 +36,7 @@ public:
 	float GetAspectRatio() const;
 	float GetNearCull() const;
 	float GetFarCull() const;
+	float GetExposureCompensation() const;
 
 	bool IsActiveCamera() const;
 
@@ -47,6 +48,7 @@ public:
 	void SetAspectRatio(float aspectRatio);
 	void SetNearCull(float nearCull);
 	void SetFarCull(float farCull);
+	void SetExposureCompensation(float ev);
 
 	void SetAsActiveCamera(bool isActiveCamera);
 
@@ -65,6 +67,8 @@ private:
 	float m_aspectRatio { 0.0f }; // #TODO I don't think we're updating this sensibly when the aspect ratio changes...
 	float m_nearCull { 0.01f };
 	float m_farCull { 1000.0f };
+	// EV on top of auto-exposure; lets a scene sit darker (low-key) or brighter (high-key) than the default
+	float m_exposureCompensation { 0.0f };
 
 	bool m_isActiveCamera { false };
 

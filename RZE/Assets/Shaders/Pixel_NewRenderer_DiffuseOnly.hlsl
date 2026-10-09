@@ -23,5 +23,6 @@ float4 PSMain(VertexToPixel input) : SV_TARGET
 	float3 viewDir = normalize(input.CameraPos - input.WorldPos);
 	float3 colour = ComputeLighting(surface, viewDir);
 
-	return float4(FinalizeColour(colour), 1.0f);
+	// Linear and unclipped; PostProcessRenderStage applies exposure and tonemapping
+	return float4(colour, 1.0f);
 }

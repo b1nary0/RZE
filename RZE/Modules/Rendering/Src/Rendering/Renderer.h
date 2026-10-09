@@ -82,6 +82,12 @@ namespace Rendering
 		static void SetRenderTargetBackBuffer();
 		// Binds only a depth buffer (no colour target), e.g. for shadow map rendering
 		static void SetDepthTarget(const TextureBuffer2DHandle& depthTexture);
+		// Binds a single colour texture, optionally with a depth buffer
+		static void SetColourTarget(const RenderTargetHandle& colourTarget);
+		static void SetColourTarget(const RenderTargetHandle& colourTarget, const TextureBuffer2DHandle& depthTexture);
+
+		// Fills the texture's mip chain from mip 0
+		static void GenerateMips(const TextureBuffer2DHandle& texture);
 
 		static void ClearRenderTarget(const RenderTargetHandle& renderTarget, const Vector4D& colour);
 

@@ -8,6 +8,22 @@
 
 namespace Rendering
 {
+	namespace
+	{
+		DXGI_FORMAT ConvertToDXGIFormat(ETextureFormat format)
+		{
+			switch (format)
+			{
+			case ETextureFormat::RGBA8_UNORM: return DXGI_FORMAT_R8G8B8A8_UNORM;
+			case ETextureFormat::RGBA16_FLOAT: return DXGI_FORMAT_R16G16B16A16_FLOAT;
+			case ETextureFormat::RG16_FLOAT: return DXGI_FORMAT_R16G16_FLOAT;
+			}
+
+			AssertFalse();
+			return DXGI_FORMAT_UNKNOWN;
+		}
+	}
+
 	DX11TextureBuffer2D::~DX11TextureBuffer2D()
 	{
 		Release();
@@ -80,7 +96,7 @@ namespace Rendering
 			textureDesc.Height = params.Height;
 			textureDesc.MipLevels = params.MipLevels;
 			textureDesc.ArraySize = 1;
-			textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+			textureDesc.Format = ConvertToDXGIFormat(params.Format);
 			textureDesc.SampleDesc.Count = params.SampleCount;
 			textureDesc.SampleDesc.Quality = params.SampleQuality;
 			textureDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -110,6 +126,8 @@ namespace Rendering
 
 			if (data != nullptr)
 			{
+				// Row pitch below assumes 4 bytes per texel
+				AssertExpr(params.Format == ETextureFormat::RGBA8_UNORM);
 				U32 rowPitch = (32 * params.Width) / 8;
 				m_device->GetDeviceContext().UpdateSubresource(m_resource, 0, NULL, data, rowPitch, 0);
 			}

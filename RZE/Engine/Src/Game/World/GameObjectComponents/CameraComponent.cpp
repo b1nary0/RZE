@@ -61,6 +61,11 @@ float CameraComponent::GetFarCull() const
 	return m_farCull;
 }
 
+float CameraComponent::GetExposureCompensation() const
+{
+	return m_exposureCompensation;
+}
+
 bool CameraComponent::IsActiveCamera() const
 {
 	return m_isActiveCamera;
@@ -104,6 +109,11 @@ void CameraComponent::SetFarCull(float farCull)
 	m_farCull = farCull;
 }
 
+void CameraComponent::SetExposureCompensation(float ev)
+{
+	m_exposureCompensation = ev;
+}
+
 void CameraComponent::SetAsActiveCamera(bool isActiveCamera)
 {
 	m_isActiveCamera = isActiveCamera;
@@ -143,6 +153,9 @@ void CameraComponent::Update()
 			RenderCamera& renderCamera = RZE().GetRenderEngine().GetCamera();
 			renderCamera.Position = transformComponent->GetPosition();
 			renderCamera.ClipSpace = GetProjectionMatrix() * GetViewMatrix();
+
+			// Also applies in the editor, whose own camera doesn't carry an exposure
+			RZE().GetRenderEngine().SetExposureCompensation(m_exposureCompensation);
 		}
 	}
 }
@@ -168,6 +181,9 @@ void CameraComponent::Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>
 
 		writer.Key("FarCull");
 		writer.Double(m_farCull);
+
+		writer.Key("ExposureCompensation");
+		writer.Double(m_exposureCompensation);
 
 		writer.Key("Forward");
 		writer.StartArray();
@@ -197,6 +213,8 @@ void CameraComponent::Deserialize(const rapidjson::Value& data)
 	m_fov = data["FOV"].GetFloat();
 	m_nearCull = data["NearCull"].GetFloat();
 	m_farCull = data["FarCull"].GetFloat();
+	// Optional: scenes saved before exposure existed default to 0 EV
+	m_exposureCompensation = data.HasMember("ExposureCompensation") ? data["ExposureCompensation"].GetFloat() : 0.0f;
 	m_forward = Vector3D(data["Forward"][0].GetFloat(), data["Forward"][1].GetFloat(), data["Forward"][2].GetFloat());
 	m_upDir = Vector3D(data["UpDir"][0].GetFloat(), data["UpDir"][1].GetFloat(), data["UpDir"][2].GetFloat());
 }
@@ -212,6 +230,9 @@ void CameraComponent::OnEditorInspect()
 	ImGui::InputFloat("##cameracomponent_nearcull", &m_nearCull, 0.05f, 0.05f, "%.2f", ImGuiInputTextFlags_EnterReturnsTrue);
 	ImGui::Text("Far Cull");
 	ImGui::InputFloat("##cameracomponent_farcull", &m_farCull, 0.05f, 0.05f, "%.2f", ImGuiInputTextFlags_EnterReturnsTrue);
+
+	ImGui::Text("Exposure Compensation (EV)");
+	ImGui::DragFloat("##cameracomponent_exposurecompensation", &m_exposureCompensation, 0.05f, -4.0f, 4.0f, "%.2f");
 
 	float* forwardDirValues = const_cast<float*>(&m_forward.GetInternalVec().x);
 	ImGui::Text("Look At");

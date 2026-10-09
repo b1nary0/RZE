@@ -195,6 +195,14 @@ public:
 	const Rendering::TextureBuffer2DHandle& GetShadowMap() const { return m_shadowMap; }
 	const Rendering::ConstantBufferHandle& GetShadowBuffer() const { return m_shadowBuffer; }
 
+	// EV on top of auto-exposure; set per scene by the active CameraComponent
+	void SetExposureCompensation(float ev) { m_exposureCompensation = ev; }
+	float GetExposureCompensation() const { return m_exposureCompensation; }
+
+	// False while RenderView() draws a secondary view (e.g. a camera preview), whose frames
+	// mustn't feed the main view's eye adaptation
+	bool IsRenderingMainView() const { return m_isRenderingMainView; }
+
 	// RenderView()
 	// Renders the current scene to a render target from a specified camera setup. renderTarget will be allocated
 	// if passed nullptr
@@ -216,6 +224,9 @@ private:
 	Rendering::TextureBuffer2DHandle m_shadowMap;
 	Rendering::ConstantBufferHandle m_shadowBuffer;
 	bool m_hasShadowResources = false;
+
+	float m_exposureCompensation = 0.0f;
+	bool m_isRenderingMainView = true;
 
 	std::vector<std::unique_ptr<IRenderStage>> m_renderStages;
 };

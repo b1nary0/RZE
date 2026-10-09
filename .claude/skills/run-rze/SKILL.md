@@ -31,7 +31,7 @@ cmd /c RZE\AssetCpy.bat
 | `GenerateSolutions.bat` | Sharpmake generates `.sln`/`.vcxproj`, which are gitignored. **Re-run it after adding or removing any source file**, or the new file won't compile. |
 | MSBuild | Builds Debug x64 into `RZE\_build\debug\`. A clean incremental build is fast. |
 | `SourceAssetBurner.exe` | Imports `RZE\Assets\3D\**` into `RZE\ProjectData\` (gitignored). Needed once after cloning. Takes about 15 s and writes into `RZE\ProjectData` wherever you run it from. |
-| `AssetCpy.bat` | Copies `Assets/`, `Config/` and `ProjectData/` into `_build\debug` and `_build\release` with `xcopy /d`, so only newer files. **The build does not do this.** Re-run it after editing any shader in `RZE\Assets\Shaders\`, or the editor keeps running the old copy. |
+| `AssetCpy.bat` | Copies `Assets/`, `Config/` and `ProjectData/` into `_build\debug` and `_build\release` with `xcopy /d`, so only newer files. **The build does not do this.** Only `Game.exe` reads these copies; the editor doesn't (see Gotchas). Re-run it before running the Game after editing assets or shaders. |
 
 ## Run (agent path)
 
@@ -94,7 +94,7 @@ There is no unit-test suite. CI (`.github/workflows/Windows.yml`) only builds an
 
 - **Never `ShowWindow(SW_RESTORE)` the editor to focus it.** On a maximized window it un-maximizes it (2560x1369 → 1584x861), the whole ImGui layout reflows, and every coordinate you measured is wrong. The driver only restores when the window is minimized.
 - **Debug draws only work in Debug builds.** `DebugDrawRenderStage` (debug lines, bounds boxes, the light's direction line) is only added under `_DEBUG`. Use `-Config debug` for anything involving debug lines.
-- **The editor reads assets from `_build\<config>`, not from `RZE\Assets`.** The working directory must be the build dir, which `launch` sets. Shader edits need `AssetCpy.bat` before they take effect.
+- **The editor reads assets from the source tree, not from `_build\<config>`.** `EditorMain.cpp` sets `EDirectoryContext::Tools`, so `Filepath` resolves paths against the folder above `_build\` (e.g. `RZE\Assets\Shaders\...`). Shader edits take effect on the next editor launch with no `AssetCpy.bat`. This also means the shader in `RZE\Assets` is what runs: to capture a "before" image, revert or disable the change in the source file itself, not just in `_build`. `Game.exe` uses `EDirectoryContext::Runtime` and reads from its own folder (`_build\<config>`), so it does need `AssetCpy.bat`.
 - **Large screenshots are downscaled when Read.** A 2560-wide PNG shows at 2000 px with a note to "multiply coordinates by 1.28". Measure positions in the displayed image, then multiply by that factor before passing them to `click`.
 - **The window title appears before the scene finishes loading.** Meshes stream in afterwards. `-SettleSeconds` covers this: 5 is enough for DrawLineTest, Sponza needs about 20.
 - **`Stop-Process` returns about 2 s before `Editor.exe` actually exits.** The render thread and D3D device are still tearing down. `quit` polls for this; don't `launch` immediately after a bare `Stop-Process`.

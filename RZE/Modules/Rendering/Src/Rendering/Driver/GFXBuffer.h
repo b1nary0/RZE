@@ -4,6 +4,14 @@
 
 namespace Rendering
 {
+	// Colour texture formats. RGBA8_UNORM is 0 so zero-initialized params keep the default.
+	enum class ETextureFormat : U32
+	{
+		RGBA8_UNORM = 0,
+		RGBA16_FLOAT,
+		RG16_FLOAT
+	};
+
 	// This isn't the complete answer to this atm, but will do for now
 	// to solve the problems at hand.. I fear I am leaving things
 	// too late, but what needs to get done will get done.
@@ -15,7 +23,8 @@ namespace Rendering
 		U32 SampleQuality;
 		U32 MipLevels;
 		U32 MostDetailedMip;
-		//U32 Format;
+		// Ignored for depth textures
+		ETextureFormat Format;
 		//U32 Usage;
 		bool bIsShaderResource;
 		bool bIsRenderTarget;
