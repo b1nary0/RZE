@@ -50,6 +50,10 @@ public:
 	std::shared_ptr<const MaterialInstance> GetMaterial() const;
 	const std::vector<MeshVertex>& GetVertices();
 
+	// Object-space axis-aligned bounds of the vertices; calculated in AllocateData()
+	const Vector3D& GetBoundsMin() const { return m_boundsMin; }
+	const Vector3D& GetBoundsMax() const { return m_boundsMax; }
+
 	const std::vector<float>& GetVertexDataRaw() const;
 	const std::vector<U32>& GetIndexDataRaw() const;
 
@@ -57,8 +61,13 @@ public:
 	const std::shared_ptr<IndexBuffer> GetIndexBuffer() const;
 
 private:
+	void CalculateBounds();
+
+private:
 	std::string m_name;
 	std::vector<MeshVertex> m_vertices;
+	Vector3D m_boundsMin;
+	Vector3D m_boundsMax;
 	std::vector<U32> m_indices;
 
 	std::shared_ptr<VertexBuffer> m_vertexBuffer;

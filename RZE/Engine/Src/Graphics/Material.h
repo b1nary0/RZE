@@ -23,6 +23,8 @@ public:
 		TEXTURE_SLOT_DIFFUSE,
 		TEXTURE_SLOT_SPECULAR,
 		TEXTURE_SLOT_NORMAL,
+		TEXTURE_SLOT_OPACITY,
+		TEXTURE_SLOT_HEIGHT,
 		TEXTURE_SLOT_COUNT
 	};
 
@@ -31,6 +33,12 @@ public:
 	{
 		float Shininess{ 1.0f };
 		float Opacity{ 1.0f };
+		// 1.0f when the matching texture slot is set. Unset slots aren't unbound, so the shader needs
+		// these to avoid sampling a previous draw's texture.
+		float HasOpacityMask{ 0.0f };
+		float HasHeightMap{ 0.0f };
+		// 1.0f when the opacity mask is in the texture's alpha channel rather than red
+		float OpacityMaskInAlpha{ 0.0f };
 	};
 
 public:

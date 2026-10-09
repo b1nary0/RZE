@@ -1,17 +1,18 @@
 struct VS_OUT
 {
 	float4 Position : SV_POSITION;
-	float2 UVCoords : UV;
+	float2 UV       : UV;
 };
 
-VS_OUT VSMain(uint vI : SV_VERTEXID)
+// Fullscreen quad generated from the vertex ID; no vertex buffer needed
+VS_OUT VSMain(uint vertexID : SV_VERTEXID)
 {
 	VS_OUT output;
-	
-    float2 texcoord = float2(vI&1,vI>>1);
-	
-	output.UVCoords = texcoord;
-	output.Position = float4((texcoord.x-0.5f)*2,-(texcoord.y-0.5f)*2,0,1);
-	
-    return output;
+
+	float2 uv = float2(vertexID & 1, vertexID >> 1);
+
+	output.UV = uv;
+	output.Position = float4((uv.x - 0.5f) * 2.0f, -(uv.y - 0.5f) * 2.0f, 0.0f, 1.0f);
+
+	return output;
 }

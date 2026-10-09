@@ -6,6 +6,8 @@
 #include <Graphics/IndexBuffer.h>
 #include <Graphics/VertexBuffer.h>
 
+#include <GLM/common.hpp>
+
 namespace
 {
 	struct TempDataLayoutStructure
@@ -36,6 +38,8 @@ void MeshGeometry::AllocateData(std::vector<float>&& interleavedVertexData)
 {
 	AssertExpr(m_vertexBuffer == nullptr);
 	AssertExpr(m_indexBuffer == nullptr);
+
+	CalculateBounds();
 
 	m_vertexBuffer = std::make_shared<VertexBuffer>();
 	m_vertexBuffer->Initialize(std::move(interleavedVertexData), sizeof(TempDataLayoutStructure));
@@ -74,6 +78,27 @@ std::vector<float> MeshGeometry::BuildInterleavedVertexData(const std::vector<Me
 	}
 
 	return vertexDataBuffer;
+}
+
+void MeshGeometry::CalculateBounds()
+{
+	if (m_vertices.empty())
+	{
+		m_boundsMin = Vector3D();
+		m_boundsMax = Vector3D();
+		return;
+	}
+
+	glm::vec3 boundsMin = m_vertices[0].Position.GetInternalVec();
+	glm::vec3 boundsMax = boundsMin;
+	for (const MeshVertex& vertex : m_vertices)
+	{
+		boundsMin = glm::min(boundsMin, vertex.Position.GetInternalVec());
+		boundsMax = glm::max(boundsMax, vertex.Position.GetInternalVec());
+	}
+
+	m_boundsMin = Vector3D(boundsMin.x, boundsMin.y, boundsMin.z);
+	m_boundsMax = Vector3D(boundsMax.x, boundsMax.y, boundsMax.z);
 }
 
 void MeshGeometry::AddVertex(const MeshVertex& vertex)

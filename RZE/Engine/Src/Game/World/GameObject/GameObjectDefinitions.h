@@ -46,6 +46,16 @@ public:
 		return this == other;
 	}
 
+	bool operator==(const std::nullptr_t null)
+	{
+		return this->m_ptr == null;
+	}
+
+	bool operator==(const std::nullptr_t null) const
+	{
+		return this->m_ptr == null;
+	}
+
 	bool operator!=(const GameObjectPtr& other)
 	{
 		return !(*this == other);
@@ -111,6 +121,16 @@ public:
 	bool operator==(const GameObjectComponentPtr* other)
 	{
 		return this == other;
+	}
+
+	bool operator==(const std::nullptr_t null)
+	{
+		return this->m_ptr == null;
+	}
+
+	bool operator==(const std::nullptr_t null) const
+	{
+		return this->m_ptr == null;
 	}
 
 	bool operator!=(const GameObjectComponentPtr& other) const

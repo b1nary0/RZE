@@ -51,10 +51,12 @@ namespace Rendering
 		SetRenderTarget,
 		ClearRenderTargets,
 		SetRenderTargetBackBuffer,
+		SetDepthTarget,
 		ClearRenderTarget,
 		SetViewport,
 		SetInputLayout,
 		SetPrimitiveTopology,
+		SetRasterizerState,
 		SetVertexShader,
 		SetPixelShader,
 		SetConstantBufferVS,
@@ -225,6 +227,13 @@ namespace Rendering
 		RenderCommand_SetRenderTargetBackBuffer() { type = RenderCommandType::SetRenderTargetBackBuffer; }
 	};
 
+	struct RenderCommand_SetDepthTarget : RenderCommand
+	{
+		RenderCommand_SetDepthTarget() { type = RenderCommandType::SetDepthTarget; }
+
+		TextureBuffer2DHandle depthTexture;
+	};
+
 	struct RenderCommand_ClearRenderTarget : RenderCommand
 	{
 		RenderCommand_ClearRenderTarget() { type = RenderCommandType::ClearRenderTarget; }
@@ -252,6 +261,13 @@ namespace Rendering
 		RenderCommand_SetPrimitiveTopology() { type = RenderCommandType::SetPrimitiveTopology; }
 
 		EPrimitiveTopology topology;
+	};
+
+	struct RenderCommand_SetRasterizerState : RenderCommand
+	{
+		RenderCommand_SetRasterizerState() { type = RenderCommandType::SetRasterizerState; }
+
+		ERasterizerState state;
 	};
 
 	struct RenderCommand_SetVertexShader : RenderCommand

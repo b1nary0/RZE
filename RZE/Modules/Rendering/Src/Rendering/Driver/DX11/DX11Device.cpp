@@ -126,6 +126,41 @@ namespace Rendering
 
 			mDevice->CreateRasterizerState(&rasterDesc, &mRasterState);
 		}
+
+		// Shadow caster raster state
+		{
+			D3D11_RASTERIZER_DESC rasterDesc;
+			ZeroMemory(&rasterDesc, sizeof(rasterDesc));
+			rasterDesc.FillMode = D3D11_FILL_SOLID;
+			// Single-sided geometry facing away from the light must still cast
+			rasterDesc.CullMode = D3D11_CULL_NONE;
+			// Pushes stored depth away from the light, more on surfaces at grazing angles, to prevent shadow acne
+			rasterDesc.DepthBias = 1000;
+			rasterDesc.SlopeScaledDepthBias = 2.0f;
+			rasterDesc.DepthBiasClamp = 0.0f;
+			// DepthClipEnable stays false so casters in front of the light's near plane are clamped rather than clipped
+
+			mDevice->CreateRasterizerState(&rasterDesc, &mShadowCasterRasterState);
+		}
+
+		// Shadow comparison sampler
+		{
+			D3D11_SAMPLER_DESC samplerDesc;
+			ZeroMemory(&samplerDesc, sizeof(samplerDesc));
+			samplerDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
+			samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+			samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+			samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+			// Outside the shadow map counts as lit
+			samplerDesc.BorderColor[0] = 1.0f;
+			samplerDesc.BorderColor[1] = 1.0f;
+			samplerDesc.BorderColor[2] = 1.0f;
+			samplerDesc.BorderColor[3] = 1.0f;
+			samplerDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
+			samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+			mDevice->CreateSamplerState(&samplerDesc, &mShadowSamplerState);
+		}
 	}
 
 	void DX11Device::SetWindow(void* windowHandle)
@@ -141,6 +176,10 @@ namespace Rendering
 
 		mDepthStencilView->Release();
 		mDepthStencilTex->Release();
+
+		mRasterState->Release();
+		mShadowCasterRasterState->Release();
+		mShadowSamplerState->Release();
 	}
 
 	void DX11Device::SetSyncInterval(U32 interval)

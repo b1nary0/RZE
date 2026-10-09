@@ -4,6 +4,7 @@
 #include <Graphics/RenderStage.h>
 #include <Graphics/RenderStages/DebugDrawRenderStage.h>
 #include <Graphics/RenderStages/ForwardRenderStage.h>
+#include <Graphics/RenderStages/ShadowRenderStage.h>
 
 #include <Rendering/Renderer.h>
 
@@ -26,6 +27,7 @@ void RenderEngine::Initialize(void* windowHandle)
 {
 	Rendering::Renderer::Initialize(windowHandle);
 	
+	AddRenderStage<ShadowRenderStage>();
 	AddRenderStage<ForwardRenderStage>();
 	
 #ifdef _DEBUG

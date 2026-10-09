@@ -24,6 +24,6 @@ public:
 private:
 	LightObjectPtr m_lightObject;
 
-	float m_lightStrength = 1.0f;
+	float m_lightStrength = 2.0f;
 	Vector4D m_lightColour = Vector4D(1.0f);
 };

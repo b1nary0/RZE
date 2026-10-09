@@ -76,6 +76,8 @@ namespace Rendering
 	public:
 		static void SetRenderTarget(const RenderTargetTexture* renderTarget);
 		static void SetRenderTargetBackBuffer();
+		// Binds only a depth buffer (no colour target), e.g. for shadow map rendering
+		static void SetDepthTarget(const TextureBuffer2DHandle& depthTexture);
 
 		static void ClearRenderTarget(const RenderTargetHandle& renderTarget, const Vector4D& colour);
 
@@ -83,6 +85,8 @@ namespace Rendering
 		
 		static void SetInputLayout(const VertexShaderHandle& vertexShader);
 		static void SetPrimitiveTopology(EPrimitiveTopology topologyType);
+		// Reset to Default by every Begin()
+		static void SetRasterizerState(ERasterizerState state);
 
 		static void SetVertexShader(const VertexShaderHandle& vertexShader);
 		static void SetPixelShader(const PixelShaderHandle& pixelShader);

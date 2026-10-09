@@ -1,40 +1,27 @@
+#include "Common/VertexResources.hlsli"
+
+// Line vertices are currently uploaded as MeshVertex, so COLOUR actually reads the normal slot.
+// Use a constant colour until line vertices carry real colour data.
+static const float3 LineColour = float3(1.0f, 0.0f, 0.0f);
+
 struct VS_IN
 {
 	float3 Position : POSITION;
-	float3 Colour : COLOUR;
+	float3 Colour   : COLOUR;
 };
 
 struct VS_OUT
 {
 	float4 Position : SV_POSITION;
-	float3 Colour : COLOUR;
+	float3 Colour   : COLOUR;
 };
 
-struct CAMERA_INPUT_DATA
-{
-	matrix ClipSpace;
-	float3 Position;
-};
-
-cbuffer CameraDataBuf : register(b0)
-{
-	CAMERA_INPUT_DATA CameraData;
-};
-
-cbuffer ModelMatBuf : register(b1)
-{
-	matrix ModelView;
-	//matrix InvModelView;
-};
-
-VS_OUT VSMain(VS_IN input) // main is the default function name
+VS_OUT VSMain(VS_IN input)
 {
 	VS_OUT output;
-	
-	matrix mvp = mul(CameraData.ClipSpace, ModelView);
-	
-	output.Position = mul(mvp, float4(input.Position, 1.0f));
-	output.Colour = float4(255.0f, 0.0f, 0.0f, 1.0f);
-	
-    return output;
+
+	output.Position = mul(ViewProjection, mul(World, float4(input.Position, 1.0f)));
+	output.Colour = LineColour;
+
+	return output;
 }

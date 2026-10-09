@@ -17,7 +17,8 @@ public:
 	void Update(const RenderCamera& camera, const RenderEngine::SceneData& renderData) override;
 	void Render(const RenderCamera& camera, const RenderEngine::SceneData& renderData) override;
 
-	U32 GetPriority() override { return 0; }
+	// After ShadowRenderStage (0), which produces the shadow map sampled here
+	U32 GetPriority() override { return 10; }
 
 private:
 	// @TODO temp until ShaderTechniques are properly implemented

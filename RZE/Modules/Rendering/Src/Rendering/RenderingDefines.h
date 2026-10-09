@@ -9,6 +9,12 @@ namespace Rendering
 		LineList
 	};
 
+	enum class ERasterizerState
+	{
+		Default,      // Back-face culling
+		ShadowCaster  // No culling (thin geometry still casts) + slope-scaled depth bias
+	};
+
 	struct ViewportParams
 	{
 		float Width;

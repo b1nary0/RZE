@@ -32,6 +32,9 @@ private:
 			TEXTUREFLAG_ALBEDO = 1 << 0,
 			TEXTUREFLAG_SPECULAR = 1 << 1,
 			TEXTUREFLAG_NORMAL = 1 << 2,
+			TEXTUREFLAG_OPACITY = 1 << 3,
+			TEXTUREFLAG_HEIGHT = 1 << 4,
+			TEXTUREFLAG_OPACITY_IN_ALPHA = 1 << 5, // Opacity texture is the diffuse texture; cutout is in its alpha
 			TEXTUREFLAG_ALL = TEXTUREFLAG_ALBEDO | TEXTUREFLAG_SPECULAR |  TEXTUREFLAG_NORMAL
 		};
 

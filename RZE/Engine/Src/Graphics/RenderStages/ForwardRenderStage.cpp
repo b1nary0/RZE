@@ -11,6 +11,13 @@
 #include <Rendering/Renderer.h>
 #include <Rendering/Graphics/RenderTarget.h>
 
+namespace
+{
+	// Must match ShadowBuffer / ShadowMap registers in Common/PixelResources.hlsli
+	constexpr U32 k_shadowBufferSlot = 3;
+	constexpr U32 k_shadowMapSlot = 5;
+}
+
 void ForwardRenderStage::Initialize()
 {
 	Rendering::ShaderInputLayout inputLayout =
@@ -27,7 +34,7 @@ void ForwardRenderStage::Initialize()
 
 	m_fallbackLight = std::make_unique<LightObject>();
 	m_fallbackLight->Initialize();
-	m_fallbackLight->SetPosition(Vector3D());
+	m_fallbackLight->SetDirection(Vector3D(0.0f, -1.0f, 0.0f));
 	m_fallbackLight->SetColour(Vector4D(0.0f, 0.0f, 0.0f, 1.0f));
 	m_fallbackLight->SetStrength(0.0f);
 }
@@ -62,6 +69,13 @@ void ForwardRenderStage::Render(const RenderCamera& camera, const RenderEngine::
 
 	Rendering::Renderer::SetInputLayout(m_vertexShader->GetPlatformObject());
 	Rendering::Renderer::SetPrimitiveTopology(Rendering::EPrimitiveTopology::TriangleList);
+
+	// Produced by ShadowRenderStage this frame
+	if (renderEngine.HasShadowResources())
+	{
+		Rendering::Renderer::SetConstantBufferPS(renderEngine.GetShadowBuffer(), k_shadowBufferSlot);
+		Rendering::Renderer::SetTextureResource(renderEngine.GetShadowMap(), k_shadowMapSlot);
+	}
 
 	for (const auto& renderObject : renderData.renderObjects)
 	{
@@ -104,6 +118,12 @@ void ForwardRenderStage::Render(const RenderCamera& camera, const RenderEngine::
 			Rendering::Renderer::DrawIndexed(meshGeometry.GetIndexBuffer()->GetPlatformObject());
 		}
 	}
-	
+
+	// The shadow map can't stay bound as a shader input while the next frame renders depth into it
+	if (renderEngine.HasShadowResources())
+	{
+		Rendering::Renderer::UnsetTextureResource(k_shadowMapSlot);
+	}
+
 	Rendering::Renderer::End();
 }

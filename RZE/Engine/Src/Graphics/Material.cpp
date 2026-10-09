@@ -56,6 +56,9 @@ std::shared_ptr<MaterialInstance> MaterialInstance::Create(const MaterialAssetIm
 
 	materialInstance->GetProperties().Shininess = materialData.Properties.Shininess;
 	materialInstance->GetProperties().Opacity = materialData.Properties.Opacity;
+	materialInstance->GetProperties().HasOpacityMask = (materialData.TextureFlags & MaterialAssetImporter::MaterialData::TEXTUREFLAG_OPACITY) ? 1.0f : 0.0f;
+	materialInstance->GetProperties().HasHeightMap = (materialData.TextureFlags & MaterialAssetImporter::MaterialData::TEXTUREFLAG_HEIGHT) ? 1.0f : 0.0f;
+	materialInstance->GetProperties().OpacityMaskInAlpha = (materialData.TextureFlags & MaterialAssetImporter::MaterialData::TEXTUREFLAG_OPACITY_IN_ALPHA) ? 1.0f : 0.0f;
 	materialInstance->CommitPropertyChanges();
 
 	return materialInstance;

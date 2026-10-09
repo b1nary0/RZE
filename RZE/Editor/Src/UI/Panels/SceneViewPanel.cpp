@@ -3,6 +3,7 @@
 #include <EditorApp.h>
 
 #include <Game/World/GameObject/GameObject.h>
+#include <Game/World/GameObjectComponents/DirectionalLightComponent.h>
 #include <Game/World/GameObjectComponents/EditorCameraComponent.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
@@ -113,6 +114,8 @@ namespace Editor
 
 				ImGui::Image(texture.GetTextureData(), ImVec2(GetDimensions().X(), GetDimensions().Y()), ImVec2(0.0f, 0.0f), ImVec2(uvbx, uvby));
 
+				DrawLightIcons(ImVec2(GetPosition().X(), GetPosition().Y() + cursorPos.y));
+
 				{
 					GameObjectPtr selectedGameObject = editorApp.GetSelectedObjectFromScenePanel();
 					GameObjectPtr cameraObject = editorApp.GetCameraObject();
@@ -163,6 +166,62 @@ namespace Editor
 		}
 		ImGui::End();
 		ImGui::PopStyleVar();
+	}
+
+	void SceneViewPanel::DrawLightIcons(const ImVec2& viewOrigin)
+	{
+		EditorApp& editorApp = static_cast<EditorApp&>(RZE().GetApplication());
+		// The camera is empty while a scene loads
+		GameObjectPtr cameraObject = editorApp.GetCameraObject();
+		if (cameraObject == nullptr)
+		{
+			return;
+		}
+
+		GameObjectComponentPtr<EditorCameraComponent> cameraComponent = cameraObject->GetComponent<EditorCameraComponent>();
+		const Matrix4x4 viewProjection = cameraComponent->GetProjectionMatrix() * cameraComponent->GetViewMatrix();
+
+		const Vector2D& viewSize = GetDimensions();
+		ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+		RZE().GetActiveScene().ForEachGameObject(
+			Functor<void, GameObjectPtr>([&](GameObjectPtr gameObject)
+			{
+				if (gameObject->GetComponent<DirectionalLightComponent>() == nullptr)
+				{
+					return;
+				}
+
+				const Vector3D& position = gameObject->GetTransformComponent()->GetPosition();
+				const Vector4D clip = viewProjection * Vector4D(position.X(), position.Y(), position.Z(), 1.0f);
+				if (clip.W() <= 0.0f)
+				{
+					return; // Behind the camera
+				}
+
+				const ImVec2 center(
+					viewOrigin.x + (clip.X() / clip.W() * 0.5f + 0.5f) * viewSize.X(),
+					viewOrigin.y + (0.5f - clip.Y() / clip.W() * 0.5f) * viewSize.Y());
+
+				// Sun: filled disc with eight rays
+				constexpr float k_discRadius = 7.0f;
+				constexpr float k_rayInner = 10.0f;
+				constexpr float k_rayOuter = 15.0f;
+				const ImU32 sunColour = IM_COL32(255, 210, 60, 255);
+				const ImU32 outlineColour = IM_COL32(0, 0, 0, 200);
+
+				drawList->AddCircleFilled(center, k_discRadius, sunColour, 16);
+				drawList->AddCircle(center, k_discRadius, outlineColour, 16, 1.5f);
+				for (int ray = 0; ray < 8; ++ray)
+				{
+					const float angle = ray * (3.14159265f / 4.0f);
+					const ImVec2 dir(std::cos(angle), std::sin(angle));
+					drawList->AddLine(
+						ImVec2(center.x + dir.x * k_rayInner, center.y + dir.y * k_rayInner),
+						ImVec2(center.x + dir.x * k_rayOuter, center.y + dir.y * k_rayOuter),
+						sunColour, 2.0f);
+				}
+			}));
 	}
 
 	void SceneViewPanel::Temp_RegisterInputs()

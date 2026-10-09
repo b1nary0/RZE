@@ -1,71 +1,27 @@
-struct PS_IN
+// Material with only a diffuse map
+#include "Common/ForwardTypes.hlsli"
+#include "Common/Lighting.hlsli"
+
+static const float DefaultSpecularIntensity = 0.5f; // Typical non-metal; see SurfaceData
+
+float4 PSMain(VertexToPixel input) : SV_TARGET
 {
-	float4 Position : SV_POSITION;
-	float3 Normal : NORMAL;
-	float2 UVCoords : UV;
-	float3 Tangent : TANGENT;
-	float3 FragPos : POSITION;
-};
+	ApplyOpacityMask(input.UV);
 
-struct CAMERA_INPUT_DATA
-{
-	matrix ClipSpace;
-	float3 Position;
-};
+	float4 diffuseSample = DiffuseMap.Sample(LinearSampler, input.UV);
 
-struct MATERIAL_DATA
-{
-	float Shininess;
-};
+	float3 vertexNormal = normalize(input.Normal);
 
-cbuffer CameraConstantBuffer : register(b0)
-{
-	CAMERA_INPUT_DATA CameraData;
-};
+	SurfaceData surface;
+	surface.Albedo = SRGBToLinear(diffuseSample.rgb);
+	surface.VertexNormal = vertexNormal;
+	surface.Normal = ApplyHeightMap(vertexNormal, input.WorldPos, input.UV);
+	surface.SpecularIntensity = DefaultSpecularIntensity;
+	surface.Shininess = Shininess;
+	surface.WorldPos = input.WorldPos;
 
-cbuffer MaterialBuffer : register(b1)
-{
-	MATERIAL_DATA MaterialData;
-}
+	float3 viewDir = normalize(input.CameraPos - input.WorldPos);
+	float3 colour = ComputeLighting(surface, viewDir);
 
-struct LightData
-{
-	float3 position;
-	float4 colour;
-	float strength;
-};
-
-cbuffer LightBuffer : register(b2)
-{
-	LightData lightData;
-}
-
-Texture2D textures[3] : register(t0);
-SamplerState samplerState : register(s0);
-
-float4 PSMain(PS_IN input) : SV_TARGET
-{
-	float minDiffuseFactor = 0.2f;
-	
-	float3 Ambient_Temp = float3(0.1f, 0.1f, 0.1f);
-
-	float3 lightDir = lightData.position - input.FragPos;
-	lightDir = normalize(lightDir);
-	
-	float3 viewDir = normalize(CameraData.Position - input.FragPos);
-	
-	float3 shadingResult;
-	{
-		float4 diffSample = textures[0].Sample(samplerState, input.UVCoords);
-		
-		float3 normal = input.Normal;
-		
-		float diffuse = max(dot(lightDir, normal), minDiffuseFactor);
-		float3 diffuseResult = (diffuse * diffSample.rgb) * lightData.colour;
-				
-		shadingResult = (Ambient_Temp + diffuseResult);
-	}
-	
-	
-    return float4(shadingResult, 1.0f);
+	return float4(FinalizeColour(colour), 1.0f);
 }

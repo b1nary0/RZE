@@ -37,7 +37,8 @@ class LightObject
 public:
 	struct PropertyBufferLayout
 	{
-		Vector3D position;
+		Vector3D direction; // World-space, normalized; the direction light travels
+		float _pad0; // Matches HLSL cbuffer packing: float4 can't straddle a 16-byte boundary
 		Vector4D colour;
 		float strength;
 	};
@@ -48,8 +49,8 @@ public:
 
 	void Initialize();
 
-	void SetPosition(const Vector3D& position) { m_data.position = position; }
-	const Vector3D& GetPosition() const { return m_data.position; }
+	void SetDirection(const Vector3D& direction) { m_data.direction = direction; }
+	const Vector3D& GetDirection() const { return m_data.direction; }
 
 	void SetStrength(float strength) { m_data.strength = strength; }
 	float GetStrength() const { return m_data.strength; }
@@ -185,6 +186,12 @@ public:
 	void SetViewportSize(const Vector2D& size) { m_viewportSize = size; }
 	const Vector2D& GetViewportSize() const { return m_viewportSize; }
 
+	// Written by ShadowRenderStage, sampled by ForwardRenderStage
+	void SetShadowResources(const Rendering::TextureBuffer2DHandle& shadowMap, const Rendering::ConstantBufferHandle& shadowBuffer) { m_shadowMap = shadowMap; m_shadowBuffer = shadowBuffer; m_hasShadowResources = true; }
+	bool HasShadowResources() const { return m_hasShadowResources; }
+	const Rendering::TextureBuffer2DHandle& GetShadowMap() const { return m_shadowMap; }
+	const Rendering::ConstantBufferHandle& GetShadowBuffer() const { return m_shadowBuffer; }
+
 	// RenderView()
 	// Renders the current scene to a render target from a specified camera setup. renderTarget will be allocated
 	// if passed nullptr
@@ -202,6 +209,10 @@ private:
 
 	// @TODO currently only single render target support - also write engine-side RenderTarget
 	Rendering::RenderTargetTexture* m_renderTarget = nullptr;
+
+	Rendering::TextureBuffer2DHandle m_shadowMap;
+	Rendering::ConstantBufferHandle m_shadowBuffer;
+	bool m_hasShadowResources = false;
 
 	std::vector<std::unique_ptr<IRenderStage>> m_renderStages;
 };

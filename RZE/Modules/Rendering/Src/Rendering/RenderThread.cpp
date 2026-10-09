@@ -169,6 +169,7 @@ namespace Rendering
 				// @note past josh wtf api are you talking about
 				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 				deviceContext.RSSetState(m_device->mRasterState);
+				deviceContext.PSSetSamplers(1, 1, &m_device->mShadowSamplerState);
 
 				break;
 			}
@@ -329,6 +330,17 @@ namespace Rendering
 				break;
 			}
 
+			case RenderCommandType::SetDepthTarget:
+			{
+				RenderCommand_SetDepthTarget* cmd = static_cast<RenderCommand_SetDepthTarget*>(command);
+				DX11TextureBuffer2D* depthTexturePtr = static_cast<DX11TextureBuffer2D*>(cmd->depthTexture.m_buffer.get());
+
+				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+				deviceContext.OMSetRenderTargets(0, nullptr, &depthTexturePtr->GetDepthView());
+
+				break;
+			}
+
 			case RenderCommandType::ClearRenderTarget:
 			{
 				RenderCommand_ClearRenderTarget* cmd = static_cast<RenderCommand_ClearRenderTarget*>(command);
@@ -378,6 +390,16 @@ namespace Rendering
 				D3D_PRIMITIVE_TOPOLOGY d3dTopology = ConvertToDX11TopologyType(cmd->topology);
 				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 				deviceContext.IASetPrimitiveTopology(d3dTopology);
+
+				break;
+			}
+
+			case RenderCommandType::SetRasterizerState:
+			{
+				RenderCommand_SetRasterizerState* cmd = static_cast<RenderCommand_SetRasterizerState*>(command);
+
+				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+				deviceContext.RSSetState(cmd->state == ERasterizerState::ShadowCaster ? m_device->mShadowCasterRasterState : m_device->mRasterState);
 
 				break;
 			}

@@ -174,7 +174,7 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 	{
 		// #TODO
 		// This is just temp
-		const int kTextureTypeCount = 3;
+		const int kTextureTypeCount = 5;
 
 		MaterialData materialData;
 		materialData.TexturePaths.resize(kTextureTypeCount);
@@ -236,6 +236,36 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 
 			materialData.TextureFlags |= MaterialData::ETextureFlags::TEXTUREFLAG_NORMAL;
 			materialData.TexturePaths[2] = texturePath.GetRelativePath();
+		}
+
+		// Cutout mask (map_d in .mtl)
+		if (mat->GetTextureCount(aiTextureType_OPACITY) > 0)
+		{
+			aiString str;
+			mat->GetTexture(aiTextureType_OPACITY, 0, &str);
+
+			Filepath texturePath = GetTextureFilePath(m_filepath, str.C_Str());
+
+			materialData.TextureFlags |= MaterialData::ETextureFlags::TEXTUREFLAG_OPACITY;
+			materialData.TexturePaths[3] = texturePath.GetRelativePath();
+
+			// map_d pointing at the diffuse texture means "use the diffuse alpha"; a dedicated mask stores it in its colour channels
+			if (materialData.TexturePaths[3] == materialData.TexturePaths[0])
+			{
+				materialData.TextureFlags |= MaterialData::ETextureFlags::TEXTUREFLAG_OPACITY_IN_ALPHA;
+			}
+		}
+
+		// Grayscale height/bump map (map_bump in .mtl). Distinct from tangent-space normal maps (map_Kn).
+		if (mat->GetTextureCount(aiTextureType_HEIGHT) > 0)
+		{
+			aiString str;
+			mat->GetTexture(aiTextureType_HEIGHT, 0, &str);
+
+			Filepath texturePath = GetTextureFilePath(m_filepath, str.C_Str());
+
+			materialData.TextureFlags |= MaterialData::ETextureFlags::TEXTUREFLAG_HEIGHT;
+			materialData.TexturePaths[4] = texturePath.GetRelativePath();
 		}
 
 		// #TODO really gross string manip lol

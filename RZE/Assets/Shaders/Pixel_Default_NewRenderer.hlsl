@@ -1,43 +1,22 @@
-struct PS_IN
-{
-	float4 Position : SV_POSITION;
-	float3 Normal : NORMAL;
-	float2 UVCoords : UV;
-	float3 Tangent : TANGENT;
-	float3 FragPos : POSITION;
-	float3 CameraPos : POSITION1;
-};
+// Fallback for materials with no textures
+#include "Common/ForwardTypes.hlsli"
+#include "Common/Lighting.hlsli"
 
-struct LightData
-{
-	float3 position;
-	float4 colour;
-	float strength;
-};
+static const float3 DefaultAlbedo = float3(0.5f, 0.5f, 0.5f); // sRGB
+static const float DefaultSpecularIntensity = 0.5f; // Typical non-metal; see SurfaceData
 
-cbuffer LightBuffer : register(b2)
+float4 PSMain(VertexToPixel input) : SV_TARGET
 {
-	LightData lightData;
-}
+	SurfaceData surface;
+	surface.Albedo = SRGBToLinear(DefaultAlbedo);
+	surface.Normal = normalize(input.Normal);
+	surface.VertexNormal = surface.Normal;
+	surface.SpecularIntensity = DefaultSpecularIntensity;
+	surface.Shininess = Shininess;
+	surface.WorldPos = input.WorldPos;
 
-float4 PSMain(PS_IN input) : SV_TARGET
-{
-	float LightStrength_Temp = 10.0f;
-	float3 LightPos_Temp = float3(0.0f, 5.0f, -20.0f);
-	float3 LightColour_Temp = float3(1.0f, 1.0f, 1.0f);
-	float3 Ambient_Temp = float3(0.1f, 0.1f, 0.1f);
-	float3 ObjectColour_Temp = float3(0.5f, 0.5f, 0.5f);
+	float3 viewDir = normalize(input.CameraPos - input.WorldPos);
+	float3 colour = ComputeLighting(surface, viewDir);
 
-	float3 lightDir = normalize(LightPos_Temp - input.FragPos);
-	
-	float3 shadingResult;
-	{
-		float diffuse = max(dot(lightDir, input.Normal), 0.0f);
-		float3 diffuseResult = diffuse * LightColour_Temp;
-		
-		shadingResult = (Ambient_Temp + diffuseResult) * ObjectColour_Temp;
-	}
-	
-	
-    return float4(shadingResult, 1.0f);
+	return float4(FinalizeColour(colour), 1.0f);
 }

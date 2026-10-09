@@ -45,6 +45,13 @@ Matrix4x4 Matrix4x4::CreateOrthoMatrix(const float left, const float right, cons
 	return Matrix4x4(glm::ortho(left, right, bottom, top, zNear, zFar));
 }
 
+Matrix4x4 Matrix4x4::CreateOrthoMatrixZeroToOne(const float left, const float right, const float bottom, const float top, const float zNear, const float zFar)
+{
+	// This GLM version predates glm::orthoZO, so remap z from [-1, 1] to [0, 1]
+	const glm::mat4 depthRemap = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.5f)) * glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 0.5f));
+	return Matrix4x4(depthRemap * glm::ortho(left, right, bottom, top, zNear, zFar));
+}
+
 void Matrix4x4::Translate(const Vector3D& translation)
 {
 	m_mat = glm::translate(m_mat, translation.GetInternalVec());

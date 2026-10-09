@@ -2,6 +2,8 @@
 
 #include <Utils/Math/Vector2D.h>
 
+struct ImVec2;
+
 namespace Editor
 {
 	class SceneViewPanel
@@ -24,6 +26,9 @@ namespace Editor
 		bool IsFocused();
 
 		void Temp_RegisterInputs();
+
+		// Sun icon at each directional light's position; viewOrigin is the screen-space top-left of the scene image
+		void DrawLightIcons(const ImVec2& viewOrigin);
 
 		const Vector2D& GetDimensions() const { return m_dimensions; }
 		const Vector2D& GetPosition() const { return m_position; }

@@ -41,6 +41,10 @@ namespace
 			return "Specular";
 		case MaterialInstance::TEXTURE_SLOT_NORMAL:
 			return "Normal";
+		case MaterialInstance::TEXTURE_SLOT_OPACITY:
+			return "Opacity";
+		case MaterialInstance::TEXTURE_SLOT_HEIGHT:
+			return "Height";
 		default:
 			return "None";
 		}

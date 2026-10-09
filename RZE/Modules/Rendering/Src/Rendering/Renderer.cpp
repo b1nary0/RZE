@@ -276,6 +276,14 @@ namespace Rendering
 		m_renderThread.PushCommand(command);
 	}
 
+	void Renderer::SetDepthTarget(const TextureBuffer2DHandle& depthTexture)
+	{
+		RenderCommand_SetDepthTarget* command = MemArena::AllocType<RenderCommand_SetDepthTarget>();
+		command->depthTexture = depthTexture;
+
+		m_renderThread.PushCommand(command);
+	}
+
 	void Renderer::ClearRenderTarget(const RenderTargetHandle& renderTarget, const Vector4D& colour)
 	{
 		RenderCommand_ClearRenderTarget* command = MemArena::AllocType<RenderCommand_ClearRenderTarget>();
@@ -305,6 +313,14 @@ namespace Rendering
 	{
 		RenderCommand_SetPrimitiveTopology* command = MemArena::AllocType<RenderCommand_SetPrimitiveTopology>();
 		command->topology = topologyType;
+
+		m_renderThread.PushCommand(command);
+	}
+
+	void Renderer::SetRasterizerState(ERasterizerState state)
+	{
+		RenderCommand_SetRasterizerState* command = MemArena::AllocType<RenderCommand_SetRasterizerState>();
+		command->state = state;
 
 		m_renderThread.PushCommand(command);
 	}

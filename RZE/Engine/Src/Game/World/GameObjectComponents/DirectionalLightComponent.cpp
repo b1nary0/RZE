@@ -4,12 +4,27 @@
 #include <Game/World/GameObject/GameObject.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
+namespace
+{
+	// Length of the editor debug line showing which way the light points
+	constexpr float k_directionLineLength = 5.0f;
+
+	// The light shines along the transform's local -Y axis, so a zero rotation is a straight-down sun
+	Vector3D CalculateLightDirection(const Vector3D& eulerRotationDegrees)
+	{
+		const Matrix4x4 rotation = Matrix4x4::CreateInPlace(Vector3D(), Vector3D(1.0f), eulerRotationDegrees);
+		const Vector4D direction = rotation * Vector4D(0.0f, -1.0f, 0.0f, 0.0f);
+
+		return Vector3D(direction.X(), direction.Y(), direction.Z()).Normalized();
+	}
+}
+
 void DirectionalLightComponent::OnAddToScene()
 {
 	GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
 
 	m_lightObject = RZE().GetRenderEngine().CreateLightObject();
-	m_lightObject->SetPosition(transformComponent->GetPosition());
+	m_lightObject->SetDirection(CalculateLightDirection(transformComponent->GetRotation()));
 	m_lightObject->SetColour(m_lightColour);
 	m_lightObject->SetStrength(m_lightStrength);
 }
@@ -25,9 +40,15 @@ void DirectionalLightComponent::Update()
 	{
 		GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
 
-		m_lightObject->SetPosition(transformComponent->GetPosition());
+		const Vector3D direction = CalculateLightDirection(transformComponent->GetRotation());
+
+		m_lightObject->SetDirection(direction);
 		m_lightObject->SetColour(m_lightColour);
 		m_lightObject->SetStrength(m_lightStrength);
+
+		// Position only matters for this gizmo; a directional light lights everything from the same direction
+		const Vector3D& position = transformComponent->GetPosition();
+		RZE().GetRenderEngine().DrawLine(position, position + direction * k_directionLineLength);
 	}
 }
 
