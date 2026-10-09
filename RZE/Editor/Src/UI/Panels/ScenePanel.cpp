@@ -64,6 +64,11 @@ namespace Editor
 							RZE().GetActiveScene().AddGameObject(name);
 							showGameObjectNameBoxForCreate = false;
 						}
+
+						if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && ImGui::IsKeyPressed(ImGuiKey_Escape, false))
+						{
+							showGameObjectNameBoxForCreate = false;
+						}
 					}
 					ImGui::End();
 				}

@@ -279,6 +279,13 @@ void RZE_Engine::RegisterKeyEvents()
 {
  	ImGuiIO& io = ImGui::GetIO();
  	io.KeyMap[ImGuiKey_Enter] = Win32KeyCode::Return;
+	io.KeyMap[ImGuiKey_Backspace] = Win32KeyCode::Backspace;
+	io.KeyMap[ImGuiKey_Delete] = Win32KeyCode::Delete;
+	io.KeyMap[ImGuiKey_LeftArrow] = Win32KeyCode::LEFT;
+	io.KeyMap[ImGuiKey_RightArrow] = Win32KeyCode::Right;
+	io.KeyMap[ImGuiKey_UpArrow] = Win32KeyCode::Up;
+	io.KeyMap[ImGuiKey_DownArrow] = Win32KeyCode::Down;
+	io.KeyMap[ImGuiKey_Escape] = Win32KeyCode::Escape;
 }
 
 void RZE_Engine::LoadEngineConfig()
