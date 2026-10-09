@@ -26,14 +26,22 @@ public:
 	MeshGeometry(U32 vertexCount, U32 indexCount);
 	~MeshGeometry();
 
+	// Creates the GPU vertex/index buffers. Main thread only.
 	void AllocateData();
+	// As above, using vertex data already laid out by BuildInterleavedVertexData (e.g. prepared on a worker thread).
+	void AllocateData(std::vector<float>&& interleavedVertexData);
+
+	// Converts vertices into the layout the vertex shader expects. Pure CPU work; safe on any thread.
+	static std::vector<float> BuildInterleavedVertexData(const std::vector<MeshVertex>& vertices);
 
 	void AddVertex(const MeshVertex& vertex);
 	void AddIndex(U32 index);
 
 	void SetName(const std::string& name);
 	void SetVertexData(const std::vector<MeshVertex>& verts);
+	void SetVertexData(std::vector<MeshVertex>&& verts);
 	void SetIndexData(const std::vector<U32>& indices);
+	void SetIndexData(std::vector<U32>&& indices);
 
 	void SetMaterial(const std::shared_ptr<MaterialInstance>& material);
 

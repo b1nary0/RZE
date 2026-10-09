@@ -7,6 +7,7 @@
 // @todo:josh this is where the weird include-before issue is
 #include <Events/EventHandler.h>
 
+#include <EngineCore/Async/AsyncOperationManager.h>
 #include <EngineCore/Config/EngineConfig.h>
 #include <EngineCore/Input/InputHandler.h>
 #include <EngineCore/Resources/ResourceHandler.h>
@@ -41,6 +42,7 @@ public:
 	InputHandler&				GetInputHandler();
 	RenderEngine&			GetRenderEngine();
 	GameScene&					GetActiveScene();
+	AsyncOperationManager&		GetAsyncOperationManager();
 
 	// #TODO(Should probably put the window in the app..)
 	bool ShowOpenFilePrompt(const FilePromptParams& params, std::string& chosenPath);
@@ -92,6 +94,7 @@ private:
 	ResourceHandler m_resourceHandler;
 	EventHandler m_eventHandler;
 	InputHandler m_inputHandler;
+	AsyncOperationManager m_asyncOperationManager;
 
 	std::unique_ptr<RenderEngine> m_renderEngine;
 

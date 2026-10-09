@@ -3,6 +3,8 @@
 // @TODO When GameObjectPtr doesnt live in GameObject.h remove this include
 #include <Game/World/GameObject/GameObjectDefinitions.h>
 
+#include <RapidJSON/fwd.h>
+
 class GameScene final
 {
 public:
@@ -13,13 +15,26 @@ public:
 	virtual void Start();
 	virtual void Update();
 	virtual void ShutDown();
-	
+
 	void Initialize();
 
 	void NewScene();
 	void Serialize(const Filepath& filePath);
+	// Synchronous load. See SceneLoadOperation for the asynchronous equivalent.
 	void Deserialize(const Filepath& filePath);
 	void Unload();
+
+	static const Filepath& GetDefaultScenePath();
+
+	// Reads and parses a scene file without touching any scene state. Safe to call from any thread.
+	static bool ParseSceneFile(const Filepath& filePath, rapidjson::Document& outDocument, std::string& outError);
+
+	// Main thread. Creates a game object from its serialized data and adds it to the scene.
+	// A parent referenced by the data must already be in the scene.
+	void DeserializeGameObject(const char* name, rapidjson::Value& data);
+
+	void SetCurrentScenePath(const Filepath& filePath) { mCurrentScenePath = filePath; }
+	const Filepath& GetCurrentScenePath() const { return mCurrentScenePath; }
 	
 	GameObjectPtr FindGameObjectByName(const std::string& name);
 	GameObjectPtr AddGameObject(const std::string& name);

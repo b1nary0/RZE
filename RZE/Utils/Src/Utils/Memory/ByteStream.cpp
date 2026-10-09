@@ -31,7 +31,7 @@ ByteStream::~ByteStream()
 	}
 }
 
-void ByteStream::ReadFromFile(const Filepath& filePath)
+bool ByteStream::ReadFromFile(const Filepath& filePath)
 {
 	if (mBytes != nullptr)
 	{
@@ -39,18 +39,33 @@ void ByteStream::ReadFromFile(const Filepath& filePath)
 		mBytes = nullptr;
 	}
 
+	mStreamLength = 0;
+	mCurPos = 0;
+
 	std::ifstream input(filePath.GetAbsolutePath().c_str(), std::fstream::binary);
+	if (!input.is_open())
+	{
+		return false;
+	}
+
 	input.seekg(0, input.end);
-	size_t length = input.tellg();
+	const std::streamoff length = input.tellg();
 	input.seekg(0, input.beg);
 
-	mStreamLength = length;
+	if (length <= 0)
+	{
+		return false;
+	}
 
-	mBytes = new unsigned char[length];
-	input.read((char*)mBytes, length);
+	mStreamLength = static_cast<size_t>(length);
+
+	mBytes = new unsigned char[mStreamLength];
+	input.read((char*)mBytes, mStreamLength);
 
 	input.close();
 	AssertExpr(!input.is_open());
+
+	return true;
 }
 
 Byte* ByteStream::PeekBytes()

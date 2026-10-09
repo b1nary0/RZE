@@ -6,10 +6,13 @@
 
 bool MaterialAssetImporter::Import(const Filepath& filePath)
 {
-	// @TODO fail condition
-
+	// @TODO Validate contents; currently only a missing/empty file is detected.
 	ByteStream byteStream(filePath.GetRelativePath());
-	byteStream.ReadFromFile(filePath);
+	if (!byteStream.ReadFromFile(filePath))
+	{
+		RZE_LOG_ARGS("Failed to read material asset [%s].", filePath.GetRelativePath().c_str());
+		return false;
+	}
 
 	byteStream.PeekBytesAdvance(sizeof(size_t)); // bufSize
 

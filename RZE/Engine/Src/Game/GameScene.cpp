@@ -24,7 +24,13 @@ void GameScene::Initialize()
 
 void GameScene::NewScene()
 {
-	Deserialize(Filepath("Assets/Scenes/Default.scene"));
+	Deserialize(GetDefaultScenePath());
+}
+
+const Filepath& GameScene::GetDefaultScenePath()
+{
+	static const Filepath s_defaultScenePath("Assets/Scenes/Default.scene");
+	return s_defaultScenePath;
 }
 
 void GameScene::Serialize(const Filepath& filePath)
@@ -71,13 +77,13 @@ void GameScene::Deserialize(const Filepath& filePath)
 {
 	mCurrentScenePath = filePath;
 
-	File sceneFile(mCurrentScenePath);
-	AssertExpr(sceneFile.IsValid());
-	sceneFile.Read();
-	sceneFile.Close();
-
 	rapidjson::Document sceneDoc;
-	sceneDoc.Parse(sceneFile.Content().c_str());
+	std::string error;
+	if (!ParseSceneFile(filePath, sceneDoc, error))
+	{
+		RZE_LOG_ARGS("Failed to load scene: %s", error.c_str());
+		return;
+	}
 
 	rapidjson::Value::MemberIterator root = sceneDoc.FindMember("gameobjects");
 	if (root != sceneDoc.MemberEnd())
@@ -88,15 +94,53 @@ void GameScene::Deserialize(const Filepath& filePath)
 		rapidjson::Value& rootVal = root->value;
 		for (auto object = rootVal.MemberBegin(); object != rootVal.MemberEnd(); ++object)
 		{
-			rapidjson::Value& val = object->value;
-			
-			std::unique_ptr<GameObject> gameObject = CreateGameObjectNoComponents();
-			gameObject->SetName(object->name.GetString());
-			// ComponentBegin
-			gameObject->Load(val);
-			AddGameObject(std::move(gameObject));
+			DeserializeGameObject(object->name.GetString(), object->value);
 		}
 	}
+}
+
+bool GameScene::ParseSceneFile(const Filepath& filePath, rapidjson::Document& outDocument, std::string& outError)
+{
+	if (!filePath.IsValid() || !filePath.Exists())
+	{
+		outError = "Scene file [" + filePath.GetRelativePath() + "] does not exist.";
+		return false;
+	}
+
+	File sceneFile(filePath);
+	sceneFile.Read();
+	sceneFile.Close();
+
+	if (sceneFile.Content().empty())
+	{
+		outError = "Scene file [" + filePath.GetRelativePath() + "] could not be read or is empty.";
+		return false;
+	}
+
+	outDocument.Parse(sceneFile.Content().c_str());
+	if (outDocument.HasParseError() || !outDocument.IsObject())
+	{
+		outError = "Scene file [" + filePath.GetRelativePath() + "] is not valid JSON (error at offset " + std::to_string(outDocument.GetErrorOffset()) + ").";
+		return false;
+	}
+
+	rapidjson::Value::ConstMemberIterator root = outDocument.FindMember("gameobjects");
+	if (root != outDocument.MemberEnd() && !root->value.IsObject())
+	{
+		outError = "Scene file [" + filePath.GetRelativePath() + "] has a malformed \"gameobjects\" entry.";
+		return false;
+	}
+
+	return true;
+}
+
+void GameScene::DeserializeGameObject(const char* name, rapidjson::Value& data)
+{
+	std::unique_ptr<GameObject> gameObject = CreateGameObjectNoComponents();
+	gameObject->SetName(name);
+	// ComponentBegin
+	gameObject->Load(data);
+	AddGameObject(std::move(gameObject));
 }
 
 std::unique_ptr<GameObject> GameScene::CreateGameObjectNoComponents()

@@ -24,14 +24,12 @@ void DebugServices::Trace(LogChannel channel, const std::string& text)
 {
 	size_t channelIndex = GetLogChannelIndex(channel);
 	{
-		std::lock_guard<std::mutex> guard(mChannelLookupsMutex);
+		// Both locks are needed: the channel lookup records the index of the entry about to be added.
+		std::scoped_lock guard(mChannelLookupsMutex, mDataEntriesMutex);
 
 		U16& channelLookup = mChannelLookups[channelIndex].emplace_back();
-		channelLookup = mDataEntries.size();
-	}
-	{
-		std::lock_guard<std::mutex> guard(mDataEntriesMutex);
-		
+		channelLookup = static_cast<U16>(mDataEntries.size());
+
 		LogEntry& entry = mDataEntries.emplace_back();
 
 		entry.Text = text;

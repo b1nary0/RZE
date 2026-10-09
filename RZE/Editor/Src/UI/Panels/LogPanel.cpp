@@ -19,7 +19,8 @@ namespace Editor
 		for (auto& logItem : logEntries)
 		{
 			ImVec4 imColor(logItem.TextColor.X(), logItem.TextColor.Y(), logItem.TextColor.Z(), 1.0f);
-			ImGui::TextColored(imColor, logItem.Text.c_str());
+			// Log text (e.g. build output) can contain '%', so never use it as the format string.
+			ImGui::TextColored(imColor, "%s", logItem.Text.c_str());
 		}
 
 		if (gShouldSetScroll)

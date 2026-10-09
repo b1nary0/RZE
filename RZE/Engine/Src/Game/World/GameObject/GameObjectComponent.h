@@ -19,6 +19,7 @@
 
 class GameObject;
 class GameObjectComponentBase;
+class ResourceDependencyList;
 
 // @NOTE
 // This stuff doesn't support class hierarchies, and will only ever use the first registered component
@@ -41,6 +42,16 @@ namespace GameObjectComponentRegistry
 
 	// #TODO This should only really be used by load code.
 	const ComponentNameIDMap& GetAllComponentReflectData();
+
+	// Reports the resources a component will load when deserialized from componentData, so that scene
+	// loading can preload them off the main thread. Gatherers are called from worker threads: they must only
+	// read componentData and write to outDependencies.
+	using ResourceDependencyGatherer = void(*)(const rapidjson::Value& componentData, ResourceDependencyList& outDependencies);
+
+	// Registration must happen at startup, before any scene loads (the registry is read from worker threads).
+	void SetResourceDependencyGatherer(GameObjectComponentID id, ResourceDependencyGatherer gatherer);
+	// nullptr if the component type has no gatherer.
+	ResourceDependencyGatherer GetResourceDependencyGatherer(GameObjectComponentID id);
 }
 
 template <typename TComponentBase>

@@ -74,6 +74,9 @@ void RZE_Application::Initialize()
 	REGISTER_GAMEOBJECTCOMPONENT(TransformComponent);
 	REGISTER_GAMEOBJECTCOMPONENT(DirectionalLightComponent);
 	REGISTER_GAMEOBJECTCOMPONENT(GifChatComponent);
+
+	// Lets async scene loading preload these components' resources on worker threads.
+	GameObjectComponentRegistry::SetResourceDependencyGatherer(RenderComponent::GetID(), &RenderComponent::GatherResourceDependencies);
 }
 
 Win32Window& RZE_Application::InternalGetWindow()

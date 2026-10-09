@@ -1,6 +1,8 @@
 #include <StdAfx.h>
 #include <EngineCore/Resources/ResourceHandler.h>
 
+#include <EngineCore/Threading/MainThreadDispatcher.h>
+
 ResourceHandler::ResourceHandler()
 {
 }
@@ -44,6 +46,61 @@ void ResourceHandler::ShutDown()
 ResourceHandle ResourceHandler::GetEmptyResourceHandle()
 {
 	return ResourceHandle("", nullptr, this);
+}
+
+std::string ResourceHandler::CreateResourceKey(const Filepath& resourcePath)
+{
+	return Conversions::CreateResourceKeyFromPath(resourcePath.GetRelativePath());
+}
+
+bool ResourceHandler::HasResource(const Filepath& resourcePath) const
+{
+	AssertExpr(Threading::MainThreadDispatcher::Get().IsMainThread());
+
+	return mResourceTable.find(CreateResourceKey(resourcePath)) != mResourceTable.end();
+}
+
+ResourceHandle ResourceHandler::GetHandle(const Filepath& resourcePath)
+{
+	AssertExpr(Threading::MainThreadDispatcher::Get().IsMainThread());
+
+	const std::string resourceKey = CreateResourceKey(resourcePath);
+
+	auto iter = mResourceTable.find(resourceKey);
+	if (iter == mResourceTable.end() || iter->second.GetResource() == nullptr)
+	{
+		return ResourceHandle::EmptyHandle();
+	}
+
+	return ResourceHandle(resourceKey, &iter->second, this);
+}
+
+ResourceHandle ResourceHandler::RegisterLoadedResource(const Filepath& resourcePath, IResource* resource)
+{
+	AssertExpr(Threading::MainThreadDispatcher::Get().IsMainThread());
+	AssertNotNull(resource);
+
+	const std::string resourceKey = CreateResourceKey(resourcePath);
+
+	auto iter = mResourceTable.find(resourceKey);
+	if (iter != mResourceTable.end() && iter->second.GetResource() != nullptr)
+	{
+		RZE_LOG_ARGS("Resource [%s] was already registered; discarding the duplicate.", resourceKey.c_str());
+		resource->Release();
+		delete resource;
+
+		return ResourceHandle(resourceKey, &iter->second, this);
+	}
+
+	ResourceSource resourceSource(resource);
+	resourceSource.m_resourcePath = resourcePath;
+
+	// unordered_map never moves its nodes, so the ResourceSource pointer held by handles stays valid
+	// as other entries are inserted.
+	ResourceSource& storedSource = mResourceTable[resourceKey];
+	storedSource = resourceSource;
+
+	return ResourceHandle(resourceKey, &storedSource, this);
 }
 
 void ResourceHandler::ReleaseResource(ResourceHandle& resourceHandle)

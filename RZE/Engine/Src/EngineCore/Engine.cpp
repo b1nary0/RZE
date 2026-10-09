@@ -1,6 +1,7 @@
 #include <StdAfx.h>
 #include <EngineCore/Engine.h>
 
+#include <EngineCore/Threading/MainThreadDispatcher.h>
 #include <EngineCore/Threading/JobSystem/JobScheduler.h>
 
 #include <DebugUtils/DebugServices.h>
@@ -125,7 +126,9 @@ void RZE_Engine::Init()
 
 		DebugServices::Get().Initialize();
 
+		Threading::MainThreadDispatcher::Get().Initialize();
 		Threading::JobScheduler::Get().Initialize();
+		m_asyncOperationManager.Initialize();
 
 		LoadEngineConfig();
 
@@ -160,6 +163,8 @@ void RZE_Engine::PostInit(Functor<RZE_Application* const>& createApplicationCall
 void RZE_Engine::PreUpdate()
 {	
 	OPTICK_EVENT();
+
+	Threading::MainThreadDispatcher::Get().Drain();
 
 	CompileEvents();
 	m_eventHandler.ProcessEvents();
@@ -302,6 +307,9 @@ void RZE_Engine::Update()
 {
 	OPTICK_EVENT();
 
+	// Ticked before the application so completion callbacks land before this frame's UI is built.
+	m_asyncOperationManager.Tick();
+
 	m_application->Update();
 	m_activeScene->Update();
 }
@@ -309,7 +317,10 @@ void RZE_Engine::Update()
 void RZE_Engine::BeginShutDown()
 {
 	RZE_LOG("Shutting engine down...");
-	
+
+	// First, so no async work is touching the scene, resources or renderer while they shut down.
+	m_asyncOperationManager.ShutDown();
+
 	m_activeScene->ShutDown();
 	m_application->ShutDown();
 
@@ -319,6 +330,7 @@ void RZE_Engine::BeginShutDown()
 	m_renderEngine->Shutdown();
 
 	Threading::JobScheduler::Get().ShutDown();
+	Threading::MainThreadDispatcher::Get().ShutDown();
 
 	InternalShutDown();
 }
@@ -361,6 +373,11 @@ GameScene& RZE_Engine::GetActiveScene()
 {
 	AssertNotNull(m_activeScene);
 	return *m_activeScene;
+}
+
+AsyncOperationManager& RZE_Engine::GetAsyncOperationManager()
+{
+	return m_asyncOperationManager;
 }
 
 bool RZE_Engine::ShowOpenFilePrompt(const FilePromptParams& params, std::string& chosenPath)

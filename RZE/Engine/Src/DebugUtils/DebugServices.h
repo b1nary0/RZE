@@ -39,6 +39,8 @@ public:
 	void Trace(LogChannel channel, const std::string& text);
 
 public:
+	// Main thread only. The returned reference is not protected once this returns, so worker threads
+	// must not Trace() while it is being iterated; marshal log calls via Threading::MainThreadDispatcher instead.
 	const std::vector<LogEntry>& GetLogEntries();
 
 private:

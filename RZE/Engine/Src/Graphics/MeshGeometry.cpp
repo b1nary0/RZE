@@ -29,12 +29,26 @@ MeshGeometry::~MeshGeometry()
 
 void MeshGeometry::AllocateData()
 {
+	AllocateData(BuildInterleavedVertexData(m_vertices));
+}
+
+void MeshGeometry::AllocateData(std::vector<float>&& interleavedVertexData)
+{
 	AssertExpr(m_vertexBuffer == nullptr);
 	AssertExpr(m_indexBuffer == nullptr);
 
+	m_vertexBuffer = std::make_shared<VertexBuffer>();
+	m_vertexBuffer->Initialize(std::move(interleavedVertexData), sizeof(TempDataLayoutStructure));
+
+	m_indexBuffer = std::make_shared<IndexBuffer>();
+	m_indexBuffer->Initialize(m_indices);
+}
+
+std::vector<float> MeshGeometry::BuildInterleavedVertexData(const std::vector<MeshVertex>& vertices)
+{
 	std::vector<float> vertexDataBuffer;
-	vertexDataBuffer.reserve(m_vertices.size() * sizeof(MeshVertex));
-	for (const MeshVertex& vertex : GetVertices())
+	vertexDataBuffer.reserve(vertices.size() * (sizeof(TempDataLayoutStructure) / sizeof(float)));
+	for (const MeshVertex& vertex : vertices)
 	{
 		// #TODO
 		// These copies are in a different order than how we write/read with the import pipeline
@@ -59,12 +73,7 @@ void MeshGeometry::AllocateData()
 		}
 	}
 
-	m_vertexBuffer = std::make_shared<VertexBuffer>();
-	
-	m_vertexBuffer->Initialize(std::move(vertexDataBuffer), sizeof(TempDataLayoutStructure));
-
-	m_indexBuffer = std::make_shared<IndexBuffer>();
-	m_indexBuffer->Initialize(m_indices);
+	return vertexDataBuffer;
 }
 
 void MeshGeometry::AddVertex(const MeshVertex& vertex)
@@ -87,9 +96,19 @@ void MeshGeometry::SetVertexData(const std::vector<MeshVertex>& verts)
 	m_vertices = verts;
 }
 
+void MeshGeometry::SetVertexData(std::vector<MeshVertex>&& verts)
+{
+	m_vertices = std::move(verts);
+}
+
 void MeshGeometry::SetIndexData(const std::vector<U32>& indices)
 {
 	m_indices = indices;
+}
+
+void MeshGeometry::SetIndexData(std::vector<U32>&& indices)
+{
+	m_indices = std::move(indices);
 }
 
 void MeshGeometry::SetMaterial(const std::shared_ptr<MaterialInstance>& material)

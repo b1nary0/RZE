@@ -13,7 +13,10 @@ public:
 public:
 	inline const Byte* GetBytes() const { return mBytes; }
 
-	void ReadFromFile(const Filepath& filePath);
+	// Returns false (leaving the stream empty) if the file can't be opened.
+	bool ReadFromFile(const Filepath& filePath);
+
+	size_t GetLength() const { return mStreamLength; }
 
 	// #TODO
 	// WriteToStream/FlushToFile type functions to flesh out this class.

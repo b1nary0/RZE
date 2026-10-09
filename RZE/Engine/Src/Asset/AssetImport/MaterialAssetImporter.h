@@ -27,7 +27,7 @@ public:
 		// #TODO These flags inform which texture types are used by this material
 		// probably not the best implementation of this but i think the asset infrastructure
 		// needs to mature.
-		U8 TextureFlags;
+		U8 TextureFlags = TEXTUREFLAG_NONE;
 		std::vector<std::string> TexturePaths;
 	};
 

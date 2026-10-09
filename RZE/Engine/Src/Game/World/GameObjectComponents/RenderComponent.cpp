@@ -1,6 +1,8 @@
 #include <StdAfx.h>
 #include <Game/World/GameObjectComponents/RenderComponent.h>
 
+#include <EngineCore/Resources/ResourceDependencyList.h>
+
 #include <Game/StaticMeshResource.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
@@ -99,6 +101,15 @@ void RenderComponent::Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>
 		writer.String(m_resource.GetResourcePath().GetRelativePath().c_str());
 	}
 	writer.EndObject();
+}
+
+void RenderComponent::GatherResourceDependencies(const rapidjson::Value& componentData, ResourceDependencyList& outDependencies)
+{
+	rapidjson::Value::ConstMemberIterator resourcePath = componentData.FindMember("ResourcePath");
+	if (resourcePath != componentData.MemberEnd() && resourcePath->value.IsString())
+	{
+		outDependencies.Add<StaticMeshResource>(resourcePath->value.GetString());
+	}
 }
 
 void RenderComponent::Deserialize(const rapidjson::Value& data)

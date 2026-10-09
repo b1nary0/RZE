@@ -3,72 +3,42 @@
 
 #include <EngineCore/Threading/JobSystem/JobScheduler.h>
 
-#include <Utils/Functor.h>
-
 #include <Optick/optick.h>
 
 namespace Threading
 {
-	WorkerThread::WorkerThread()
-		: bActive(false)
-		, bIdle(true)
-		, bRunning(false)
+	void WorkerThread::Start(JobScheduler& scheduler, U32 workerIndex)
 	{
-		static int count = 1;
-		mThreadID = count;
-		++count;
+		AssertExpr(!m_thread.joinable());
+
+		m_workerIndex = workerIndex;
+		m_thread = std::thread([this, &scheduler]() { ThreadMain(scheduler); });
 	}
 
-	WorkerThread::~WorkerThread()
+	void WorkerThread::Join()
 	{
-	}
-
-	void WorkerThread::Initialize()
-	{
-		ThreadSetup();
-	}
-
-	void WorkerThread::ShutDown()
-	{
-		bActive = false;
-		mThread.join();
-		bRunning = false;
-	}
-
-	bool WorkerThread::IsIdle()
-	{
-		return bIdle;
-	}
-
-	void WorkerThread::ThreadSetup()
-	{
-		auto exec([this]()
+		if (m_thread.joinable())
 		{
-			OPTICK_THREAD("Worker Thread");
-			while (bActive)
-			{
-				Job job;
-				if (JobScheduler::Get().RequestJob(job))
-				{
-					bIdle = false;
-					job.Run();
-				}
-				else
-				{
-					bIdle = true;
-					std::this_thread::sleep_for(std::chrono::milliseconds(1));
-				}
-			}
-		});
-
-		bActive = true;
-		mThread = std::thread(exec);
-		bRunning = true;
+			m_thread.join();
+		}
 	}
 
-	bool WorkerThread::IsRunning()
+	bool WorkerThread::IsRunning() const
 	{
-		return bRunning;
+		return m_thread.joinable();
 	}
 
+	void WorkerThread::ThreadMain(JobScheduler& scheduler)
+	{
+		OPTICK_THREAD("Worker Thread");
+
+		Job job;
+		while (scheduler.WaitForJob(job))
+		{
+			job.Run();
+			job = Job();
+
+			scheduler.OnJobFinished();
+		}
+	}
 }

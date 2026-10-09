@@ -83,11 +83,15 @@ namespace Editor
 				m_dimensions.SetXY(viewportDims.x, viewportDims.y);
 				RZE().GetRenderEngine().SetViewportSize(m_dimensions);
 
-				// @TODO lazy josh to future josh just use object cached on EditorApp
+				// The editor camera doesn't exist while a scene is loading; it picks up
+				// the current dimensions when it's created (EditorApp::CreateAndInitializeEditorCamera).
 				GameObjectPtr cameraObject = editorApp.GetCameraObject();
-				GameObjectComponentPtr<EditorCameraComponent> cameraComponent = cameraObject->GetComponent<EditorCameraComponent>();
-				AssertNotNull(cameraComponent);
-				cameraComponent->SetAspectRatio(m_dimensions.X() / m_dimensions.Y());
+				if (cameraObject != nullptr)
+				{
+					GameObjectComponentPtr<EditorCameraComponent> cameraComponent = cameraObject->GetComponent<EditorCameraComponent>();
+					AssertNotNull(cameraComponent);
+					cameraComponent->SetAspectRatio(m_dimensions.X() / m_dimensions.Y());
+				}
 			}
 
 			Rendering::RenderTargetTexture* const pRTT = RZE().GetApplication().GetRTT();
@@ -111,7 +115,8 @@ namespace Editor
 
 				{
 					GameObjectPtr selectedGameObject = editorApp.GetSelectedObjectFromScenePanel();
-					if (selectedGameObject != nullptr)
+					GameObjectPtr cameraObject = editorApp.GetCameraObject();
+					if (selectedGameObject != nullptr && cameraObject != nullptr)
 					{
 						ImGuizmo::SetOrthographic(false);
 						ImGuizmo::SetDrawlist();
@@ -123,9 +128,6 @@ namespace Editor
 						sceneViewPos.SetY(sceneViewPos.Y() + cursorPos.y);
 
 						ImGuizmo::SetRect(sceneViewPos.X(), sceneViewPos.Y(), sceneViewDims.X(), sceneViewDims.Y());
-
-						GameObjectPtr cameraObject = RZE().GetActiveScene().FindGameObjectByName("EditorCam");
-						AssertNotNull(cameraObject);
 
 						GameObjectComponentPtr<EditorCameraComponent> cameraComponent = cameraObject->GetComponent<EditorCameraComponent>();
 

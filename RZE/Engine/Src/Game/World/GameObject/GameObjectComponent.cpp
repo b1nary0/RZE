@@ -4,9 +4,11 @@
 namespace GameObjectComponentRegistry
 {
 	typedef std::unordered_map<GameObjectComponentID, Functor<GameObjectComponentBase*>> ComponentFactoryMap;
+	typedef std::unordered_map<GameObjectComponentID, ResourceDependencyGatherer> ResourceDependencyGathererMap;
 
 	ComponentNameIDMap s_componentTypeRegistry;
 	ComponentFactoryMap s_componentFactories;
+	ResourceDependencyGathererMap s_resourceDependencyGatherers;
 
 	void RegisterComponentType(GameObjectComponentID id, const char* componentName)
 	{
@@ -26,6 +28,17 @@ namespace GameObjectComponentRegistry
 	const ComponentNameIDMap& GetAllComponentReflectData()
 	{
 		return s_componentTypeRegistry;
+	}
+
+	void SetResourceDependencyGatherer(GameObjectComponentID id, ResourceDependencyGatherer gatherer)
+	{
+		s_resourceDependencyGatherers[id] = gatherer;
+	}
+
+	ResourceDependencyGatherer GetResourceDependencyGatherer(GameObjectComponentID id)
+	{
+		auto iter = s_resourceDependencyGatherers.find(id);
+		return iter != s_resourceDependencyGatherers.end() ? iter->second : nullptr;
 	}
 
 }

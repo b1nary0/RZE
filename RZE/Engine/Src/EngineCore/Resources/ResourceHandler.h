@@ -80,7 +80,23 @@ public:
 	void Init();
 	void ShutDown();
 
+	// NOTE: ResourceHandler and ResourceHandle are main-thread only (the table and ref counts are unsynchronized).
+	// Use AsyncResourceBatch to load resources off the main thread.
+
 	ResourceHandle GetEmptyResourceHandle();
+
+	// The key a resource path is stored under. Paths that map to the same key refer to the same resource.
+	static std::string CreateResourceKey(const Filepath& resourcePath);
+
+	bool HasResource(const Filepath& resourcePath) const;
+
+	// Handle to an already-loaded resource, or an empty handle if it isn't loaded.
+	ResourceHandle GetHandle(const Filepath& resourcePath);
+
+	// Adds a resource that was loaded outside of LoadResource (e.g. asynchronously) and takes ownership of it.
+	// If a resource is already registered for the path, the incoming one is released and destroyed and a handle
+	// to the existing one is returned.
+	ResourceHandle RegisterLoadedResource(const Filepath& resourcePath, IResource* resource);
 
 	template <class ResourceT, class... Args>
 	ResourceHandle LoadResource(const Filepath& resourcePath, Args... args);
@@ -142,29 +158,21 @@ template <class ResourceT, class... Args>
 ResourceHandle ResourceHandler::LoadResource(const Filepath& resourcePath, Args... args)
 {
 	static_assert(std::is_base_of_v<IResource, ResourceT>);
-	std::string resourceKey = Conversions::CreateResourceKeyFromPath(resourcePath.GetRelativePath());
 
-	auto iter = mResourceTable.find(resourceKey);
-	if (iter == mResourceTable.end())
+	ResourceHandle existingHandle = GetHandle(resourcePath);
+	if (existingHandle.IsValid())
 	{
-		RZE_LOG_ARGS("Creating resource [%s]", resourceKey.c_str());
-		IResource* resource = CreateAndLoadResource<ResourceT>(resourcePath, args...);
-		if (resource)
-		{
-			ResourceSource resourceSource(resource);
-			resourceSource.m_resourcePath = resourcePath;
-
-			mResourceTable[resourceKey] = resourceSource;
-			return ResourceHandle(resourceKey, &mResourceTable[resourceKey], this);
-		}
-		else
-		{
-			return ResourceHandle::EmptyHandle();
-		}
+		return existingHandle;
 	}
 
-	ResourceSource& resourceSource = (*iter).second;
-	return ResourceHandle(resourceKey, &resourceSource, this);
+	RZE_LOG_ARGS("Creating resource [%s]", CreateResourceKey(resourcePath).c_str());
+	IResource* resource = CreateAndLoadResource<ResourceT>(resourcePath, args...);
+	if (resource == nullptr)
+	{
+		return ResourceHandle::EmptyHandle();
+	}
+
+	return RegisterLoadedResource(resourcePath, resource);
 }
 
 template <class ResourceT>
@@ -192,5 +200,7 @@ IResource* ResourceHandler::CreateAndLoadResource(const Filepath& resourcePath, 
 		return resource;
 	}
 
+	resource->Release();
+	delete resource;
 	return nullptr;
 }

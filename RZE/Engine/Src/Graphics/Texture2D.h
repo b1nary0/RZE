@@ -18,6 +18,14 @@ public:
 	bool Load(const U8* buffer, int width, int height) final;
 	void Release() final;
 
+	bool SupportsAsyncLoad() const final { return true; }
+	bool LoadCPU(const Filepath& filePath) final;
+	ResourceFinalizeCost GetNextFinalizeStepCost() const final;
+	bool FinalizeStep() final;
+
+private:
+	void CreateGPUResource();
+
 public:
 	const U8* GetRawData() const { return m_data; }
 	Vector2D GetDimensions() const;

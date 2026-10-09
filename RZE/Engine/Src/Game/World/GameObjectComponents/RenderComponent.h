@@ -26,7 +26,10 @@ public:
 
 public:
 	void SetMeshResource(const ResourceHandle& resource);
-	
+
+	// See GameObjectComponentRegistry::ResourceDependencyGatherer.
+	static void GatherResourceDependencies(const rapidjson::Value& componentData, ResourceDependencyList& outDependencies);
+
 private:
 	void CreateRenderObject();
 

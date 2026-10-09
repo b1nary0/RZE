@@ -24,6 +24,12 @@ void ForwardRenderStage::Initialize()
 	m_vertexShaderResource = RZE().GetResourceHandler().LoadResource<VertexShader>(Filepath("Assets/Shaders/Vertex_NewRenderer.hlsl"), "Vertex_NewRenderer", inputLayout);
 	AssertExpr(m_vertexShaderResource.IsValid());
 	m_vertexShader = RZE().GetResourceHandler().GetResource<VertexShader>(m_vertexShaderResource);
+
+	m_fallbackLight = std::make_unique<LightObject>();
+	m_fallbackLight->Initialize();
+	m_fallbackLight->SetPosition(Vector3D());
+	m_fallbackLight->SetColour(Vector4D(0.0f, 0.0f, 0.0f, 1.0f));
+	m_fallbackLight->SetStrength(0.0f);
 }
 
 void ForwardRenderStage::Update(const RenderCamera& camera, const RenderEngine::SceneData& renderData)
@@ -46,7 +52,7 @@ void ForwardRenderStage::Render(const RenderCamera& camera, const RenderEngine::
 
 	Rendering::Renderer::UploadDataToBuffer<RenderCamera>(m_vertexShader->GetCameraDataBuffer(), &camera);
 
-	const std::unique_ptr<LightObject>& lightObject = renderData.lightObjects[0];
+	LightObject* const lightObject = renderData.lightObjects.empty() ? m_fallbackLight.get() : renderData.lightObjects[0].get();
 	Rendering::Renderer::UploadDataToBuffer<LightObject::PropertyBufferLayout>(lightObject->GetPropertyBuffer(), &lightObject->GetData());
 
 	Rendering::Renderer::SetVertexShader(m_vertexShader->GetPlatformObject());
@@ -77,7 +83,7 @@ void ForwardRenderStage::Render(const RenderCamera& camera, const RenderEngine::
 
 			Rendering::Renderer::SetPixelShader(pixelShader->GetPlatformObject());
 			Rendering::Renderer::SetConstantBufferPS(materialInstance->GetParamBuffer(), 1);
-			Rendering::Renderer::SetConstantBufferPS(renderData.lightObjects[0]->GetPropertyBuffer(), 2);
+			Rendering::Renderer::SetConstantBufferPS(lightObject->GetPropertyBuffer(), 2);
 			
 			// @TODO Really need to get to texture infrastructure refactor soon - 2/6/2022
 			for (U8 textureSlot = 0; textureSlot < MaterialInstance::TextureSlot::TEXTURE_SLOT_COUNT; ++textureSlot)

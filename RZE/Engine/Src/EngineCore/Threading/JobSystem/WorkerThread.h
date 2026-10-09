@@ -1,39 +1,33 @@
 #pragma once
 
-#include <queue>
-
 #include <EngineCore/Threading/Threading.h>
-#include <EngineCore/Threading/JobSystem/Job.h>
+
+#include <Utils/PrimitiveDefs.h>
 
 namespace Threading
 {
+	class JobScheduler;
+
 	class WorkerThread
 	{
 	public:
-		WorkerThread();
-		~WorkerThread();
+		WorkerThread() = default;
+		~WorkerThread() = default;
+
+		WorkerThread(const WorkerThread&) = delete;
+		WorkerThread& operator=(const WorkerThread&) = delete;
 
 	public:
-		void Initialize();
-		void ShutDown();
+		void Start(JobScheduler& scheduler, U32 workerIndex);
+		void Join();
 
-	public:
-		bool IsIdle();
-		bool IsRunning();
+		bool IsRunning() const;
 
 	private:
-		void ThreadSetup();
+		void ThreadMain(JobScheduler& scheduler);
 
 	private:
-		int mThreadID;
-
-		// #TODO(Josh) These should be turned into an enum
-		bool bIdle; // Sleeping, waiting for work
-		bool bRunning; // false when the thread is joined
-		bool bActive; // Thread is alive and either sleeping or working.
-
-		std::queue<Job> mJobQueue;
-		std::thread mThread;
-
+		std::thread m_thread;
+		U32 m_workerIndex = 0;
 	};
 }

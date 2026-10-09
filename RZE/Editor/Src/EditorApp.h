@@ -6,8 +6,13 @@
 #include <UI/Panels/ScenePanel.h>
 #include <UI/Panels/SceneViewPanel.h>
 #include <UI/Panels/ResourceMonitorPanel.h>
+#include <UI/Modals/AsyncOperationModal.h>
+
+#include <Utils/Functor.h>
 
 struct ImFont;
+
+class AsyncOperation;
 
 namespace Editor
 {
@@ -61,10 +66,19 @@ namespace Editor
 		void StyleSetup();
 
 		void AddFilePathToWindowTitle(const std::string& path);
-		void RunAssetCpy();
+
+		// Runs AssetCpy.bat on the calling thread, forwarding each line of its output. Returns the process exit code.
+		static int RunAssetCpy(const Functor<void, const std::string&>& onOutputLine);
+
+		// Builds the game on a worker thread, optionally launching it once the build succeeds.
+		void BuildGame(bool launchAfterBuild);
+		bool IsBuildRunning() const;
 
 	private:
+		// Asynchronous; the scene is unloaded immediately and the new one streams in over the following frames.
+		// An invalid filepath loads the default (new) scene.
 		void LoadScene(const Filepath& filepath);
+		bool IsSceneLoading() const;
 
 	private:
 		PanelStates m_panelStates;
@@ -73,6 +87,10 @@ namespace Editor
 		ScenePanel m_scenePanel;
 		SceneViewPanel m_sceneViewPanel;
 		ResourceMonitorPanel m_resourceMonitor;
+
+		AsyncOperationModal m_asyncOperationModal;
+		std::shared_ptr<AsyncOperation> m_sceneLoadOperation;
+		std::shared_ptr<AsyncOperation> m_buildOperation;
 
 		std::unordered_map<std::string, ImFont*> m_fontMapping;
 

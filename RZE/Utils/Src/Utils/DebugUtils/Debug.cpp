@@ -3,6 +3,7 @@
 
 #include <ctime>
 #include <iomanip>
+#include <mutex>
 
 namespace Debug
 {
@@ -32,6 +33,11 @@ namespace Debug
 
 	void WriteToLogFile(const std::string_view str)
 	{
+		// The log file is a single shared handle that gets opened/closed per write,
+		// so writes from worker threads must be serialized.
+		static std::mutex s_logFileMutex;
+		std::lock_guard<std::mutex> lock(s_logFileMutex);
+
 		File& logFile = Debug::GetLogFile();
 		logFile.Open(File::EFileOpenMode::Append);
 		logFile << str.data();
