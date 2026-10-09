@@ -146,7 +146,9 @@ namespace Editor
 						float matrix[16];
 						ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
 
-						ImGuizmo::Manipulate(view.GetValuePtr(), projection.GetValuePtr(), (ImGuizmo::OPERATION)m_gizmoState.m_currentOpMode, (ImGuizmo::MODE)m_gizmoState.m_transformationSpace, matrix);
+						// Scale is always applied in local space; ImGuizmo's world-space scale drops the rotation.
+						ImGuizmo::MODE gizmoMode = (m_gizmoState.m_currentOpMode == ImGuizmo::SCALE) ? ImGuizmo::LOCAL : (ImGuizmo::MODE)m_gizmoState.m_transformationSpace;
+						ImGuizmo::Manipulate(view.GetValuePtr(), projection.GetValuePtr(), (ImGuizmo::OPERATION)m_gizmoState.m_currentOpMode, gizmoMode, matrix);
 						if (ImGuizmo::IsUsing())
 						{
 							Vector3D newTranslation, newRotation, newScale;
