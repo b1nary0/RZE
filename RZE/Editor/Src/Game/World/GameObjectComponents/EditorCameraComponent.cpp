@@ -1,6 +1,7 @@
 #include <StdAfx.h>
 #include <Game/World/GameObjectComponents/EditorCameraComponent.h>
 
+#include <Game/GameScene.h>
 #include <Game/World/GameObject/GameObject.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
@@ -77,7 +78,12 @@ void EditorCameraComponent::SetUpDir(const Vector3D& upDir)
 
 void EditorCameraComponent::SetForward(const Vector3D& forward)
 {
-	m_forward = forward;
+	m_forward = forward.Normalized();
+
+	// Keep yaw/pitch in sync, since mouse look rebuilds m_forward from them (inverse of CalculateNewForward).
+	const float yaw = std::atan2(m_forward.Z(), m_forward.X()) * MathUtils::ToDegrees;
+	const float pitch = -std::asin(MathUtils::Clampf(m_forward.Y(), -1.0f, 1.0f)) * MathUtils::ToDegrees;
+	m_yawPitch.SetXY(yaw, pitch);
 }
 
 void EditorCameraComponent::SetFOV(float fov)
@@ -114,10 +120,18 @@ void EditorCameraComponent::Initialize()
 {
 	GetOwner()->SetIncludeInSave(false);
 
-	const Vector2D& windowDims = RZE().GetWindowClientSize();
+	GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
+	AssertMsg(transformComponent != nullptr, "A camera without a transform is useless");
 
-	constexpr bool withSensitivity = false;
-	CalculateNewForward(windowDims / 2.0f, withSensitivity);
+	Vector3D toSceneCenter = RZE().GetActiveScene().CalculateSceneCenter() - transformComponent->GetPosition();
+	if (toSceneCenter.LengthSq() > 0.0f)
+	{
+		SetForward(toSceneCenter);
+	}
+	else
+	{
+		SetForward(m_forward);
+	}
 }
 
 void EditorCameraComponent::OnAddToScene()

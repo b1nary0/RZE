@@ -2,6 +2,7 @@
 #include <Game/GameScene.h>
 
 #include <Game/World/GameObject/GameObject.h>
+#include <Game/World/GameObjectComponents/RenderComponent.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
 #include <RapidJSON/document.h>
@@ -280,6 +281,35 @@ GameObjectPtr GameScene::CreateGameObject()
 	gameObject->Initialize();
 
 	return GameObjectPtr(gameObject.release());
+}
+
+Vector3D GameScene::CalculateSceneCenter() const
+{
+	bool hasRenderedObject = false;
+	Vector3D boundsMin;
+	Vector3D boundsMax;
+
+	for (const auto& gameObject : m_objectRegistry)
+	{
+		if (!gameObject->IsInScene() || !gameObject->IsRoot() || gameObject->GetComponent<RenderComponent>() == nullptr)
+		{
+			continue;
+		}
+
+		const Vector3D& position = gameObject->GetTransformComponent()->GetPosition();
+		if (!hasRenderedObject)
+		{
+			boundsMin = position;
+			boundsMax = position;
+			hasRenderedObject = true;
+			continue;
+		}
+
+		boundsMin = Vector3D(std::min(boundsMin.X(), position.X()), std::min(boundsMin.Y(), position.Y()), std::min(boundsMin.Z(), position.Z()));
+		boundsMax = Vector3D(std::max(boundsMax.X(), position.X()), std::max(boundsMax.Y(), position.Y()), std::max(boundsMax.Z(), position.Z()));
+	}
+
+	return (boundsMin + boundsMax) * 0.5f;
 }
 
 void GameScene::Start()

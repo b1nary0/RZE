@@ -179,6 +179,11 @@ void InputHandler::Reset()
 
 	mMouseState.Reset();
 	mKeyboardState.Reset();
+
+	// Keep the cursor position current while input is gated, otherwise anything tracking
+	// per-frame mouse deltas sees a jump from the stale position once input resumes.
+	mMouseState.CurPosition = mProxyMouseState.CurPosition;
+	mMouseState.PrevPosition = mProxyMouseState.PrevPosition;
 }
 
 void InputHandler::RaiseKeyEvent(const InputKey& inputKey)

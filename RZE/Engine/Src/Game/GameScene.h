@@ -5,6 +5,8 @@
 
 #include <RapidJSON/fwd.h>
 
+#include <Utils/Math/Vector3D.h>
+
 class GameScene final
 {
 public:
@@ -45,6 +47,10 @@ public:
 	
 	// @NOTE Creates GameObject with TransformComponent, as all gameobjects have a spatial representation
 	GameObjectPtr CreateGameObject();
+
+	// Center of the bounding box around every rendered root object's position. Uses positions rather
+	// than mesh bounds so it's valid while meshes are still streaming in. Returns the origin if nothing is rendered.
+	Vector3D CalculateSceneCenter() const;
 
 private:
 	// @NOTE Creates GameObject with no components. Just used for load code.
