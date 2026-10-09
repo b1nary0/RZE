@@ -76,6 +76,7 @@ Ni 1.000000
 d 0.119661
 illum 6
 map_Kd Nyra_TGAs\head_d.tga
+map_d Nyra_TGAs\head_d.tga
 
 newmtl dx11Shader6
 Ns 94.117647
@@ -87,5 +88,6 @@ Ni 1.000000
 d 1.000000
 illum 2
 map_Kd Nyra_TGAs\head_d.tga
+map_d Nyra_TGAs\head_d.tga
 map_Ks Nyra_TGAs\head_s.tga
 map_Kn Nyra_TGAs\head_n.tga
