@@ -159,6 +159,8 @@ public:
 	void Shutdown();
 
 	void ClearObjects();
+	// Destroys all render stages, releasing any resources they hold. Must be called before ResourceHandler::ShutDown().
+	void ReleaseRenderStages();
 
 public:
 	template <typename TRenderStageType, typename... Args>

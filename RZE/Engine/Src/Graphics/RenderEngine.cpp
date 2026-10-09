@@ -87,6 +87,11 @@ void RenderEngine::ClearObjects()
 	m_sceneData.renderObjects.clear();
 }
 
+void RenderEngine::ReleaseRenderStages()
+{
+	m_renderStages.clear();
+}
+
 RenderObjectPtr RenderEngine::CreateRenderObject(const StaticMeshInstance& staticMesh)
 {
 	OPTICK_EVENT();

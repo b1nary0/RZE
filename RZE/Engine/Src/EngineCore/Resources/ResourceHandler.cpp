@@ -36,7 +36,9 @@ void ResourceHandler::ShutDown()
 	// ShutDown() was called. This is fine.
 	RZE_LOG_ARGS("ResourceHandler::ShutDown() encountered %u live resources.", liveResourceCount);
 
-	mResourceTable.erase(mResourceTable.begin(), mResourceTable.end());
+	// Entries are intentionally left in the table: live ResourceHandles still point at them and will
+	// decrement their ref counts as they are destroyed. The resources themselves are gone (mResource == nullptr),
+	// so those releases are no-ops. The table is freed in ~ResourceHandler, after all handles are gone.
 }
 
 ResourceHandle ResourceHandler::GetEmptyResourceHandle()
@@ -141,14 +143,10 @@ ResourceHandle::~ResourceHandle()
 
 void ResourceHandle::ReleaseHeldResource()
 {
-	if (mResourceSource != nullptr)
+	if (mResourceSource != nullptr && mHandler != nullptr)
 	{
-		mResourceSource->DecreaseRefCount();
-		if (!mResourceSource->IsReferenced() && mResourceSource->GetResource() != nullptr)
-		{
-			// Nulls our members if the resource is destroyed
-			mHandler->ReleaseResource(*this);
-		}
+		// Decrements the ref count and destroys the resource if this was the last reference
+		mHandler->ReleaseResource(*this);
 	}
 
 	mResourceID = "NO_RESOURCE";
