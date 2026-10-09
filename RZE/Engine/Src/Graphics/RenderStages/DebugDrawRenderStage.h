@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Graphics/DynamicVertexBuffer.h>
 #include <Graphics/RenderStage.h>
 
 class VertexShader;
@@ -20,6 +21,15 @@ public:
 	U32 GetPriority() override { return 50; }
 
 private:
+	// Matches the Vertex_Line input layout: POSITION @ 0, COLOUR @ 12
+	struct LineVertex
+	{
+		float position[3];
+		float colour[3];
+	};
+	static_assert(sizeof(LineVertex) == 24, "LineVertex must match the Vertex_Line input layout");
+
+private:
 	// @TODO temp until ShaderTechniques are properly implemented
 // (could be a while)
 	ResourceHandle m_vertexShaderResource;
@@ -27,4 +37,9 @@ private:
 
 	ResourceHandle m_lineShaderResource;
 	const PixelShader* m_lineShader = nullptr;
+
+	// All lines for a Render() call are batched into this one buffer
+	DynamicVertexBuffer m_lineBuffer;
+	// Reused every call so steady state does no heap allocation
+	std::vector<LineVertex> m_scratchVertices;
 };

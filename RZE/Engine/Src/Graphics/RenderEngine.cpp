@@ -166,10 +166,38 @@ void RenderEngine::DestroyLightObject(LightObjectPtr& lightObject)
 	}
 }
 
-void RenderEngine::DrawLine(const Vector3D& start, const Vector3D& end)
+void RenderEngine::DrawLine(const Vector3D& start, const Vector3D& end, const Vector3D& colour)
 {
-	DebugLine line{ start, end };
+	DebugLine line{ start, end, colour };
 	m_sceneData.debugLines.emplace_back(std::move(line));
+}
+
+void RenderEngine::DrawWireBox(const Vector3D& boundsMin, const Vector3D& boundsMax, const Matrix4x4& transform, const Vector3D& colour)
+{
+	// Corner i takes max on X if bit 0 is set, Y if bit 1, Z if bit 2.
+	// Transformed individually so the box follows the object's rotation and scale.
+	Vector3D corners[8];
+	for (int i = 0; i < 8; ++i)
+	{
+		const Vector4D corner = transform * Vector4D(
+			(i & 1) ? boundsMax.X() : boundsMin.X(),
+			(i & 2) ? boundsMax.Y() : boundsMin.Y(),
+			(i & 4) ? boundsMax.Z() : boundsMin.Z(),
+			1.0f);
+		corners[i] = Vector3D(corner.X(), corner.Y(), corner.Z());
+	}
+
+	// Edges connect corners that differ by exactly one axis bit
+	for (int i = 0; i < 8; ++i)
+	{
+		for (int axisBit = 1; axisBit < 8; axisBit <<= 1)
+		{
+			if ((i & axisBit) == 0)
+			{
+				DrawLine(corners[i], corners[i | axisBit], colour);
+			}
+		}
+	}
 }
 
 void RenderEngine::ResizeCanvas(const Vector2D& newSize)

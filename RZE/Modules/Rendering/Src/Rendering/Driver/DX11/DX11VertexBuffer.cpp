@@ -19,23 +19,41 @@ namespace Rendering
 	{
 		m_stride = stride;
 		m_offset = 0;
+		m_capacityBytes = size * count;
 
 		D3D11_BUFFER_DESC vertexBufferDesc;
 		ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
 
-		vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-		vertexBufferDesc.ByteWidth = size * count;
+		vertexBufferDesc.Usage = m_isDynamic ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
+		vertexBufferDesc.ByteWidth = static_cast<UINT>(m_capacityBytes);
 		vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-		vertexBufferDesc.CPUAccessFlags = 0;
+		vertexBufferDesc.CPUAccessFlags = m_isDynamic ? D3D11_CPU_ACCESS_WRITE : 0;
 		vertexBufferDesc.MiscFlags = 0;
 
 		D3D11_SUBRESOURCE_DATA vertexBufferData;
 		ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
-
-		HRESULT hr;
 		vertexBufferData.pSysMem = data;
-		hr = m_device->GetHardwareDevice().CreateBuffer(&vertexBufferDesc, &vertexBufferData, &m_buffer);
+
+		// Dynamic buffers start empty; CreateBuffer rejects initial data with a null pSysMem
+		const D3D11_SUBRESOURCE_DATA* initialData = data != nullptr ? &vertexBufferData : nullptr;
+
+		HRESULT hr = m_device->GetHardwareDevice().CreateBuffer(&vertexBufferDesc, initialData, &m_buffer);
 		AssertExpr(hr == S_OK);
+	}
+
+	void DX11VertexBuffer::UpdateData(const void* data, size_t bytes)
+	{
+		AssertExpr(m_isDynamic);
+		AssertExpr(bytes <= m_capacityBytes);
+
+		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+
+		D3D11_MAPPED_SUBRESOURCE mapped;
+		HRESULT hr = deviceContext.Map(m_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+		AssertExpr(hr == S_OK);
+
+		memcpy(mapped.pData, data, bytes);
+		deviceContext.Unmap(m_buffer, 0);
 	}
 
 	void DX11VertexBuffer::Release()

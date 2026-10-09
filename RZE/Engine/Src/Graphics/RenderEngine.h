@@ -121,6 +121,7 @@ struct DebugLine
 {
 	Vector3D start;
 	Vector3D end;
+	Vector3D colour;
 };
 
 typedef std::vector<std::unique_ptr<RenderObject>> RenderObjectContainer;
@@ -173,7 +174,9 @@ public:
 	LightObjectPtr CreateLightObject();
 	void DestroyLightObject(LightObjectPtr& lightObject);
 
-	void DrawLine(const Vector3D& start, const Vector3D& end);
+	void DrawLine(const Vector3D& start, const Vector3D& end, const Vector3D& colour = Vector3D(1.0f, 0.0f, 0.0f));
+	// Draws the 12 edges of an object-space box, transformed into world space by transform
+	void DrawWireBox(const Vector3D& boundsMin, const Vector3D& boundsMax, const Matrix4x4& transform, const Vector3D& colour);
 
 	void ResizeCanvas(const Vector2D& newSize);
 	const Vector2D& GetCanvasSize() const;

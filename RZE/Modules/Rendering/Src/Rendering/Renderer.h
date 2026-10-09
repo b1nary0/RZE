@@ -58,6 +58,8 @@ namespace Rendering
 
 	public:
 		static VertexBufferHandle CreateVertexBuffer(void* data, size_t dataTypeSize, size_t count, U32 stride);
+		// Created empty; contents are written with UpdateVertexBuffer()
+		static VertexBufferHandle CreateDynamicVertexBuffer(size_t capacityBytes, U32 stride);
 		static IndexBufferHandle CreateIndexBuffer(void* data, size_t dataTypeSize, size_t count);
 		static ConstantBufferHandle CreateConstantBuffer(void* data, size_t dataTypeSize, U32 alignment, size_t count);
 		static TextureBuffer2DHandle CreateTextureBuffer2D(const void* data, const GFXTextureBufferParams& params);
@@ -67,6 +69,8 @@ namespace Rendering
 
 		template <typename TType>
 		static void UploadDataToBuffer(const ConstantBufferHandle& buffer, const void* data);
+		// Overwrites a dynamic vertex buffer's contents. size must not exceed the buffer's capacity.
+		static void UpdateVertexBuffer(const VertexBufferHandle& buffer, const void* data, size_t size);
 
 		static void ReleaseVertexShader(VertexShaderHandle& shaderHandle);
 		static void ReleasePixelShader(PixelShaderHandle& shaderHandle);

@@ -20,6 +20,10 @@ namespace
 {
 	const Filepath k_meshAssetDirectoryPath("ProjectData/Mesh");
 
+	// Distinct so both are readable when drawn together
+	const Vector3D k_meshBoundsColour(1.0f, 0.85f, 0.0f);
+	const Vector3D k_subMeshBoundsColour(0.0f, 0.8f, 1.0f);
+
 	std::string GetTextureTypeStr(MaterialInstance::TextureSlot textureSlot)
 	{
 		switch (textureSlot)
@@ -93,6 +97,31 @@ void RenderComponent::Update()
 
 		// @TODO Look into ways to avoid this
 		m_renderObject->SetTransform(transformComponent->GetWorldMatrix());
+
+		if (m_drawMeshBounds || m_drawSubMeshBounds)
+		{
+			DrawBounds();
+		}
+	}
+}
+
+void RenderComponent::DrawBounds()
+{
+	RenderEngine& renderEngine = RZE().GetRenderEngine();
+	const Matrix4x4& worldMatrix = m_renderObject->GetTransform();
+	const StaticMeshInstance& staticMesh = m_renderObject->GetStaticMesh();
+
+	if (m_drawMeshBounds)
+	{
+		renderEngine.DrawWireBox(staticMesh.GetBoundsMin(), staticMesh.GetBoundsMax(), worldMatrix, k_meshBoundsColour);
+	}
+
+	if (m_drawSubMeshBounds)
+	{
+		for (const MeshGeometry& subMesh : staticMesh.GetSubMeshes())
+		{
+			renderEngine.DrawWireBox(subMesh.GetBoundsMin(), subMesh.GetBoundsMax(), worldMatrix, k_subMeshBoundsColour);
+		}
 	}
 }
 
@@ -130,6 +159,9 @@ void RenderComponent::OnEditorInspect()
 	if (m_resource.IsValid())
 	{
 		ImGui::Text(m_resource.GetResourcePath().GetRelativePath().c_str());
+
+		ImGui::Checkbox("Draw Mesh Bounds", &m_drawMeshBounds);
+		ImGui::Checkbox("Draw Sub-Mesh Bounds", &m_drawSubMeshBounds);
 
 		const StaticMeshResource* const modelData = resourceHandler.GetResource<StaticMeshResource>(m_resource);
 		for (const auto& subMesh : modelData->GetStaticMesh().GetSubMeshes())

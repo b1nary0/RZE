@@ -32,8 +32,13 @@ public:
 
 private:
 	void CreateRenderObject();
+	void DrawBounds();
 
 private:
 	RenderObjectPtr m_renderObject;
 	ResourceHandle m_resource;
+
+	// Editor debug toggles; not serialized
+	bool m_drawMeshBounds = false;
+	bool m_drawSubMeshBounds = false;
 };

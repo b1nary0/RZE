@@ -152,6 +152,31 @@ namespace Rendering
 		return VertexBufferHandle(command->bufferPtr);
 	}
 
+	VertexBufferHandle Renderer::CreateDynamicVertexBuffer(size_t capacityBytes, U32 stride)
+	{
+		RenderCommand_CreateVertexBuffer* command = MemArena::AllocType<RenderCommand_CreateVertexBuffer>();
+
+		command->bufferPtr = std::make_shared<DX11VertexBuffer>();
+		command->count = capacityBytes;
+		command->dataTypeSize = 1;
+		command->stride = stride;
+		command->isDynamic = true;
+
+		m_renderThread.PushCommand(command);
+
+		return VertexBufferHandle(command->bufferPtr);
+	}
+
+	void Renderer::UpdateVertexBuffer(const VertexBufferHandle& buffer, const void* data, size_t size)
+	{
+		RenderCommand_UpdateVertexBuffer* command = MemArena::AllocType<RenderCommand_UpdateVertexBuffer>();
+		command->bufferHandle = buffer;
+		command->size = size;
+		command->data = AllocateCommandData(const_cast<void*>(data), size, 1);
+
+		m_renderThread.PushCommand(command);
+	}
+
 	IndexBufferHandle Renderer::CreateIndexBuffer(void* data, size_t dataTypeSize, size_t count)
 	{
 		RenderCommand_CreateIndexBuffer* command = MemArena::AllocType<RenderCommand_CreateIndexBuffer>();

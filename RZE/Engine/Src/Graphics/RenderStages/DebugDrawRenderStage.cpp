@@ -4,10 +4,6 @@
 #include <Rendering/Renderer.h>
 
 #include <Graphics/Shader.h>
-#include <Graphics/VertexBuffer.h>
-#include <Graphics/IndexBuffer.h>
-
-MeshGeometry s_testLineGeo;
 
 void DebugDrawRenderStage::Initialize()
 {
@@ -24,11 +20,29 @@ void DebugDrawRenderStage::Initialize()
 	m_lineShaderResource = RZE().GetResourceHandler().LoadResource<PixelShader>(Filepath("Assets/Shaders/Pixel_Line.hlsl"), "Pixel_Line");
 	AssertExpr(m_lineShaderResource.IsValid());
 	m_lineShader = RZE().GetResourceHandler().GetResource<PixelShader>(m_lineShaderResource);
+
+	// 128 lines minimum; shrink window of 300 Render() calls is ~5s at 60Hz with a single view
+	m_lineBuffer.Initialize(sizeof(LineVertex), BufferCapacitySettings{ 256, 300, 4 });
 }
 
 void DebugDrawRenderStage::Render(const RenderCamera& camera, const RenderEngine::SceneData& renderData)
 {
 	OPTICK_EVENT();
+
+	m_scratchVertices.clear();
+	for (const DebugLine& line : renderData.debugLines)
+	{
+		m_scratchVertices.push_back({ { line.start.X(), line.start.Y(), line.start.Z() }, { line.colour.X(), line.colour.Y(), line.colour.Z() } });
+		m_scratchVertices.push_back({ { line.end.X(), line.end.Y(), line.end.Z() }, { line.colour.X(), line.colour.Y(), line.colour.Z() } });
+	}
+
+	// Uploaded even when empty so line-free calls still count toward shrinking
+	m_lineBuffer.Upload(m_scratchVertices);
+
+	if (m_lineBuffer.GetCount() == 0)
+	{
+		return;
+	}
 
 	RenderEngine& renderEngine = RZE().GetRenderEngine();
 
@@ -51,24 +65,8 @@ void DebugDrawRenderStage::Render(const RenderCamera& camera, const RenderEngine
 
 	Rendering::Renderer::SetPixelShader(m_lineShader->GetPlatformObject());
 
-	for (auto& line : renderData.debugLines)
-	{
-		//@todo not be a numpty shithead programmer
-		MeshVertex vertex0;
-		MeshVertex vertex1;
-		vertex0.Position = line.start;
-		vertex1.Position = line.end;
-
-		MeshGeometry lineGeo;
-		lineGeo.AddVertex(vertex0);
-		lineGeo.AddVertex(vertex1);
-		lineGeo.AddIndex(0);
-		lineGeo.AddIndex(1);
-		lineGeo.AllocateData();
-
-		Rendering::Renderer::SetVertexBuffer(lineGeo.GetVertexBuffer()->GetPlatformObject(), 0);
-		Rendering::Renderer::DrawIndexed(lineGeo.GetIndexBuffer()->GetPlatformObject());
-	}
+	Rendering::Renderer::SetVertexBuffer(m_lineBuffer.GetPlatformObject(), 0);
+	Rendering::Renderer::Draw(m_lineBuffer.GetPlatformObject(), m_lineBuffer.GetCount());
 
 	Rendering::Renderer::End();
 }

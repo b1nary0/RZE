@@ -45,6 +45,7 @@ namespace Rendering
 		CreateVertexShader,
 		CreatePixelShader,
 		UploadDataToBuffer,
+		UpdateVertexBuffer,
 		ReleaseVertexShader,
 		ReleasePixelShader,
 		ClearDepthStencilBuffer,
@@ -130,6 +131,7 @@ namespace Rendering
 		U32 stride = 0;
 		size_t count = 0;
 		void* data = nullptr;
+		bool isDynamic = false;
 		// @todo could we not pass VertexBufferHandle here instead to avoid having
 		// dx11 in this file
 		std::shared_ptr<DX11VertexBuffer> bufferPtr = nullptr;
@@ -187,6 +189,15 @@ namespace Rendering
 
 		const void* data = nullptr;
 		ConstantBufferHandle bufferHandle;
+	};
+
+	struct RenderCommand_UpdateVertexBuffer : RenderCommand
+	{
+		RenderCommand_UpdateVertexBuffer() { type = RenderCommandType::UpdateVertexBuffer; }
+
+		const void* data = nullptr;
+		size_t size = 0;
+		VertexBufferHandle bufferHandle;
 	};
 
 	struct RenderCommand_ReleaseVertexShader : RenderCommand

@@ -204,6 +204,7 @@ namespace Rendering
 			{
 				RenderCommand_CreateVertexBuffer* cmd = static_cast<RenderCommand_CreateVertexBuffer*>(command);
 				cmd->bufferPtr->SetDevice(m_device.get());
+				cmd->bufferPtr->SetDynamic(cmd->isDynamic);
 				cmd->bufferPtr->Allocate(cmd->data, cmd->dataTypeSize, cmd->count, cmd->stride);
 
 				break;
@@ -260,6 +261,16 @@ namespace Rendering
 				DX11ConstantBuffer* cbuf = static_cast<DX11ConstantBuffer*>(cmd->bufferHandle.m_buffer.get());
 
 				cbuf->UpdateSubresources(cmd->data);
+
+				break;
+			}
+
+			case RenderCommandType::UpdateVertexBuffer:
+			{
+				RenderCommand_UpdateVertexBuffer* cmd = static_cast<RenderCommand_UpdateVertexBuffer*>(command);
+				DX11VertexBuffer* vbuf = static_cast<DX11VertexBuffer*>(cmd->bufferHandle.m_buffer.get());
+
+				vbuf->UpdateData(cmd->data, cmd->size);
 
 				break;
 			}
