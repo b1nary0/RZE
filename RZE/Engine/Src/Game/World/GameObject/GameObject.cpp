@@ -20,6 +20,8 @@ GameObject::GameObject(const std::string& name)
 	: m_id(s_nextObjectID++)
 	, m_name(name)
 {
+	m_stateFlags.IsInScene = false;
+	m_stateFlags.IncludeInSave = true;
 }
 
 GameObject::~GameObject()
@@ -56,6 +58,10 @@ GameObjectComponentBase* GameObject::AddComponentByID(GameObjectComponentID id)
 		component->SetOwner(this);
 		component->Initialize();
 		m_components.push_back(component);
+		if (m_stateFlags.IsInScene)
+		{
+			component->OnAddToScene();
+		}
 		return component;
 	}
 

@@ -41,9 +41,9 @@ private:
 private:
 	int m_totalFrames;
 	int m_currentDisplayingFrame = 0;
+	float m_elapsedMS = 0.0f;
 	std::vector<int> m_frameDelays;
 
-	std::unique_ptr<unsigned char> m_gifData;
 	std::vector<ResourceHandle> m_frames;
 	RenderObjectPtr m_meshRenderObject;
 	StaticMeshInstance m_meshGeometry;

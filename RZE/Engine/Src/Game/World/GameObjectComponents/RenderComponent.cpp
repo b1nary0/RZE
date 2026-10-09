@@ -41,6 +41,12 @@ void RenderComponent::SetMeshResource(const ResourceHandle& resource)
 
 void RenderComponent::CreateRenderObject()
 {
+	// Added without a mesh (e.g. via the editor); a render object is created once a mesh is selected
+	if (!m_resource.IsValid())
+	{
+		return;
+	}
+
 	if (m_renderObject == nullptr)
 	{
 		ResourceHandler& resourceHandler = RZE().GetResourceHandler();
@@ -175,11 +181,6 @@ void RenderComponent::OnEditorInspect()
 		if (openSuccess)
 		{
 			Filepath path = Filepath::FromAbsolutePathStr(chosenPath);
-			if (m_resource.IsValid())
-			{
-				resourceHandler.ReleaseResource(m_resource);
-			}
-			
 			m_resource = resourceHandler.LoadResource<StaticMeshResource>(path);
 
 			if (m_renderObject != nullptr)

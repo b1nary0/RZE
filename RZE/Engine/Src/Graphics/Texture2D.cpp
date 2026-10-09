@@ -70,7 +70,7 @@ void Texture2D::Release()
 {
 	if (m_data != nullptr)
 	{
-		delete m_data;
+		stbi_image_free(const_cast<U8*>(m_data));
 		m_data = nullptr;
 	}
 }

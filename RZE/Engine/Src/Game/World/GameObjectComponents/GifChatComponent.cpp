@@ -80,17 +80,16 @@ void GifChatComponent::OnRemoveFromScene()
 
 void GifChatComponent::Update()
 {
-	static float elapsedMS = 0.0f;
-	elapsedMS += RZE().GetDeltaTimeMS();
+	m_elapsedMS += RZE().GetDeltaTimeMS();
 
 	if (m_currentDisplayingFrame < m_totalFrames)
 	{
-		if (elapsedMS >= static_cast<float>(m_frameDelays[m_currentDisplayingFrame]))
+		if (m_elapsedMS >= static_cast<float>(m_frameDelays[m_currentDisplayingFrame]))
 		{
 			m_meshGeometry.GetSubMeshes()[0].GetMaterial()->SetTexture(0, m_frames[m_currentDisplayingFrame]);
 			++m_currentDisplayingFrame;
 
-			elapsedMS = 0;
+			m_elapsedMS = 0;
 		}
 	}
 	else
@@ -181,8 +180,7 @@ void GifChatComponent::Load(const Filepath& fp)
 	int* delays = nullptr;
 
 	unsigned char* gifData = stbi_xload_file(fp.GetAbsolutePath().c_str(), &x, &y, &m_totalFrames, &delays);
-	m_gifData = std::unique_ptr<unsigned char>(gifData);
-	AssertNotNull(m_gifData);
+	AssertNotNull(gifData);
 
 	// Store array data in vector instead of holding raw ptr to data
 	m_frameDelays.reserve(m_totalFrames);
@@ -200,17 +198,21 @@ void GifChatComponent::Load(const Filepath& fp)
 		// this is necessary atm because there is no "Instance" layer of resources - just the immutable
 		// resources themselves from ResourceHandler. Since this hacky meme implementation needs to circumvent that
 		// instead of writing a whole new architecture layer, we can't be deleting memory (as will happen when the resource
-		// releases) which we don't own. Essentially we can't allow strong ownership of any memory slice of m_gifData
+		// releases) which we don't own. Essentially we can't allow strong ownership of any memory slice of gifData
 		// because of this exploitation of the resource system.
 		// #TODO
 		// Make ClassDef and ClassInstance to support mutable resources?
-		U8* textureBuffer = new U8[frameSizeBytes];
-		memcpy(textureBuffer, m_gifData.get() + frame * frameSizeBytes, frameSizeBytes);
+		// Allocated with STBI_MALLOC so Texture2D::Release can free all textures via stbi_image_free
+		U8* textureBuffer = static_cast<U8*>(STBI_MALLOC(frameSizeBytes));
+		memcpy(textureBuffer, gifData + frame * frameSizeBytes, frameSizeBytes);
 		frameTexture->Load(textureBuffer, x, y);
-		
+
 		m_frames.push_back(RZE().GetResourceHandler().Make("FIRST_FRAME_GIF_" + std::to_string(frame), frameTexture));
 		AssertExpr(m_frames.back().IsValid());
 	}
+
+	// Frames own copies of their data now
+	stbi_image_free(gifData);
 
 	GenerateMesh();
 
@@ -226,7 +228,7 @@ void GifChatComponent::Load(const Filepath& fp)
 	MeshGeometry& geo = m_meshGeometry.GetSubMeshes()[0];
 	geo.SetMaterial(material);
 
-	delete delays;
+	STBI_FREE(delays);
 }
 
 void GifChatComponent::CreateRenderObject()

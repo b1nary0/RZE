@@ -130,6 +130,9 @@ public:
 private:
 	ResourceHandle(const std::string& resourceID, ResourceHandler::ResourceSource* resourceSource, ResourceHandler* handler);
 
+	// Drops this handle's reference and resets it to empty.
+	void ReleaseHeldResource();
+
 	ResourceHandler* mHandler;
 	std::string mResourceID; // #TODO Turn this into a hash
 	ResourceHandler::ResourceSource* mResourceSource;

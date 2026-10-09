@@ -136,14 +136,24 @@ ResourceHandle::ResourceHandle(ResourceHandle&& rhs)
 
 ResourceHandle::~ResourceHandle()
 {
+	ReleaseHeldResource();
+}
+
+void ResourceHandle::ReleaseHeldResource()
+{
 	if (mResourceSource != nullptr)
 	{
 		mResourceSource->DecreaseRefCount();
 		if (!mResourceSource->IsReferenced() && mResourceSource->GetResource() != nullptr)
 		{
+			// Nulls our members if the resource is destroyed
 			mHandler->ReleaseResource(*this);
 		}
 	}
+
+	mResourceID = "NO_RESOURCE";
+	mResourceSource = nullptr;
+	mHandler = nullptr;
 }
 
 bool ResourceHandle::IsValid() const
@@ -164,8 +174,15 @@ const Filepath& ResourceHandle::GetResourcePath() const
 
 void ResourceHandle::operator=(ResourceHandle&& rhs)
 {
+	if (this == &rhs)
+	{
+		return;
+	}
+
+	ReleaseHeldResource();
+
 	mResourceID = rhs.mResourceID;
-	rhs.mResourceID = "";
+	rhs.mResourceID = "NO_RESOURCE";
 
 	mResourceSource = rhs.mResourceSource;
 	rhs.mResourceSource = nullptr;
@@ -181,11 +198,17 @@ ResourceHandle& ResourceHandle::operator=(const ResourceHandle& rhs)
 		return *this;
 	}
 
+	// Take the new reference before dropping the old one, in case both point at the same resource
+	if (rhs.mResourceSource != nullptr)
+	{
+		rhs.mResourceSource->IncreaseRefCount();
+	}
+
+	ReleaseHeldResource();
+
 	mResourceID = rhs.mResourceID;
 	mResourceSource = rhs.mResourceSource;
 	mHandler = rhs.mHandler;
-
-	mResourceSource->IncreaseRefCount();
 
 	return *this;
 }
