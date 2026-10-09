@@ -112,7 +112,7 @@ namespace Editor
 
 				ImVec2 cursorPos = ImGui::GetCursorPos();
 
-				ImGui::Image(texture.GetTextureData(), ImVec2(GetDimensions().X(), GetDimensions().Y()), ImVec2(0.0f, 0.0f), ImVec2(uvbx, uvby));
+				ImGui::Image((ImTextureID)(intptr_t)texture.GetTextureData(), ImVec2(GetDimensions().X(), GetDimensions().Y()), ImVec2(0.0f, 0.0f), ImVec2(uvbx, uvby));
 
 				DrawLightIcons(ImVec2(GetPosition().X(), GetPosition().Y() + cursorPos.y));
 
@@ -146,9 +146,7 @@ namespace Editor
 						float matrix[16];
 						ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
 
-						// Scale is always applied in local space; ImGuizmo's world-space scale drops the rotation.
-						ImGuizmo::MODE gizmoMode = (m_gizmoState.m_currentOpMode == ImGuizmo::SCALE) ? ImGuizmo::LOCAL : (ImGuizmo::MODE)m_gizmoState.m_transformationSpace;
-						ImGuizmo::Manipulate(view.GetValuePtr(), projection.GetValuePtr(), (ImGuizmo::OPERATION)m_gizmoState.m_currentOpMode, gizmoMode, matrix);
+						ImGuizmo::Manipulate(view.GetValuePtr(), projection.GetValuePtr(), (ImGuizmo::OPERATION)m_gizmoState.m_currentOpMode, (ImGuizmo::MODE)m_gizmoState.m_transformationSpace, matrix);
 						if (ImGuizmo::IsUsing())
 						{
 							Vector3D newTranslation, newRotation, newScale;

@@ -19,6 +19,7 @@
 #include <Rendering/Graphics/RenderTarget.h>
 
 #include <imGUI/imgui.h>
+#include <imGUI/imgui_impl_dx11.h>
 
 #define MEM_ARENA_SIZE MemoryUtils::Megabytes(64)
 
@@ -120,18 +121,54 @@ namespace Rendering
 		clone->CmdLists = toClone->CmdLists;
 		for (int i = 0; i < toClone->CmdListsCount; ++i)
 		{
-			clone->CmdLists[i] = toClone->CmdLists[i]->CloneOutput();
+			ImDrawList* cmdList = toClone->CmdLists[i]->CloneOutput();
+			// Resolve texture refs to plain IDs so the render thread never reads the main thread's ImTextureData
+			for (ImDrawCmd& drawCmd : cmdList->CmdBuffer)
+			{
+				drawCmd.TexRef = ImTextureRef(drawCmd.GetTexID());
+			}
+			clone->CmdLists[i] = cmdList;
 		}
 
 		clone->OwnerViewport = toClone->OwnerViewport;
+		// Texture requests are handled on the main thread in ImGuiRender(), so the backend must skip them
+		clone->Textures = nullptr;
 
 		return clone;
 	}
 
 	void Renderer::ImGuiRender()
 	{
+		ImDrawData* drawData = ImGui::GetDrawData();
+
+		// ImGui (1.92+) asks the backend to create/update/destroy textures (e.g. the font atlas when new glyphs
+		// are rasterized). The render thread runs a frame behind on a cloned ImDrawData, so service those
+		// requests here while the render thread is idle rather than racing it on the ImTextureData.
+		if (drawData->Textures != nullptr)
+		{
+			bool hasPendingTextures = false;
+			for (ImTextureData* tex : *drawData->Textures)
+			{
+				hasPendingTextures |= (tex->Status != ImTextureStatus_OK);
+			}
+
+			if (hasPendingTextures)
+			{
+				m_renderThread.RunWhileIdle([drawData]()
+				{
+					for (ImTextureData* tex : *drawData->Textures)
+					{
+						if (tex->Status != ImTextureStatus_OK)
+						{
+							ImGui_ImplDX11_UpdateTexture(tex);
+						}
+					}
+				});
+			}
+		}
+
 		RenderCommand_ImGuiRender* command = MemArena::AllocType<RenderCommand_ImGuiRender>();
-		command->drawData = CloneDrawData(ImGui::GetDrawData());
+		command->drawData = CloneDrawData(drawData);
 
 		m_renderThread.PushCommand(command);
 	}

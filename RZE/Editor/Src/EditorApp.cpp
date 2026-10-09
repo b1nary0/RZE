@@ -18,6 +18,7 @@
 #include <EngineCore/Async/AsyncOperationManager.h>
 #include <EngineCore/Async/JobAsyncOperation.h>
 #include <EngineCore/Threading/CancellationToken.h>
+#include <EngineCore/Input/ImGuiInput.h>
 
 #include <Utils/Memory/MemoryUtils.h>
 #include <Utils/Platform/CmdLine.h>
@@ -26,6 +27,7 @@
 #include <DebugUtils/DebugServices.h>
 
 #include <ImGui/imgui.h>
+#include <ImGui/imgui_internal.h> // DockBuilder API
 
 #include <Optick/optick.h>
 
@@ -39,6 +41,42 @@ namespace
 	constexpr char kSceneFileToLoadHack[] = { "Assets/Scenes/RenderTest.scene" };
 
 	using OutputLineSink = Functor<void, const std::string&>;
+
+	// ImGui 1.92+ PushFont() takes a size; use the size the font was loaded at.
+	void PushFontAtLoadedSize(ImFont* font)
+	{
+		ImGui::PushFont(font, font->LegacySize);
+	}
+
+	// Builds the editor's default panel layout into the dockspace. Used when the dockspace has no saved layout,
+	// e.g. imgui.ini is missing or was saved with IDs this ImGui version doesn't recognize.
+	//  ___________________________________
+	// |       |                   |       |
+	// | Scene |     SceneView     |  Comp |
+	// |       |                   |  View |
+	// |_______|___________________|_______|
+	// |               Log                 |
+	// |___________________________________|
+	void BuildDefaultDockLayout(ImGuiID dockspaceId, const ImVec2& size)
+	{
+		ImGui::DockBuilderRemoveNode(dockspaceId);
+		ImGui::DockBuilderAddNode(dockspaceId, ImGuiDockNodeFlags_DockSpace);
+		ImGui::DockBuilderSetNodeSize(dockspaceId, size);
+
+		// Each split carves a panel off the remaining central node, which ends up holding SceneView.
+		ImGuiID centerId = dockspaceId;
+		const ImGuiID logId = ImGui::DockBuilderSplitNode(centerId, ImGuiDir_Down, 0.22f, nullptr, &centerId);
+		const ImGuiID sceneId = ImGui::DockBuilderSplitNode(centerId, ImGuiDir_Left, 0.09f, nullptr, &centerId);
+		const ImGuiID componentViewId = ImGui::DockBuilderSplitNode(centerId, ImGuiDir_Right, 0.12f, nullptr, &centerId);
+
+		ImGui::DockBuilderDockWindow("Scene", sceneId);
+		ImGui::DockBuilderDockWindow("Resource Monitor", sceneId);
+		ImGui::DockBuilderDockWindow("SceneView", centerId);
+		ImGui::DockBuilderDockWindow("Component View", componentViewId);
+		ImGui::DockBuilderDockWindow("Log", logId);
+
+		ImGui::DockBuilderFinish(dockspaceId);
+	}
 
 	// Runs a process on the calling thread and forwards each line of its stdout (without the trailing newline).
 	// Stops reading early if cancellation is requested. Returns the process exit code, or -1 if it couldn't be started.
@@ -182,7 +220,7 @@ namespace Editor
 
 		Vector2D clientSize = GetWindow()->GetClientSize();
 
-		ImGui::PushFont(m_fontMapping.at("din_bold"));
+		PushFontAtLoadedSize(m_fontMapping.at("din_bold"));
 		DisplayMenuBar();
 		ImGui::SetNextWindowPos(ImVec2(0.f, 24.0f));
 		ImGui::SetNextWindowSize(ImVec2(clientSize.X(), clientSize.Y() - 24.0f));
@@ -193,6 +231,11 @@ namespace Editor
 		ImGui::PopStyleVar(1);
 		{
 			ImGuiID dockspace_id = ImGui::GetID("MyDockspace");
+			if (ImGui::DockBuilderGetNode(dockspace_id) == nullptr)
+			{
+				BuildDefaultDockLayout(dockspace_id, ImGui::GetContentRegionAvail());
+			}
+
 			ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
 			ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
 
@@ -201,7 +244,7 @@ namespace Editor
 		ImGui::PopFont();
 		ImGui::End();
 
-		ImGui::PushFont(m_fontMapping.at("din_bold"));
+		PushFontAtLoadedSize(m_fontMapping.at("din_bold"));
 		m_asyncOperationModal.Display(RZE().GetAsyncOperationManager());
 		ImGui::PopFont();
 	}
@@ -235,24 +278,8 @@ namespace Editor
 
 	bool EditorApp::ProcessInput(const InputHandler& handler)
 	{
-		ImGuiIO& io = ImGui::GetIO();
+		ImGuiInput::SubmitInput(handler);
 
-		const Vector2D& mousePos = handler.GetProxyMouseState().CurPosition;
-		const Vector2D& prevMousePos = handler.GetProxyMouseState().PrevPosition;
-		io.MousePos = ImVec2(mousePos.X(), mousePos.Y());
-		io.MousePosPrev = ImVec2(prevMousePos.X(), prevMousePos.Y());
-
-		for (U32 mouseBtn = 0; mouseBtn < 3; ++mouseBtn)
-		{
-			io.MouseDown[mouseBtn] = handler.GetProxyMouseState().CurMouseBtnStates[mouseBtn];
-		}
-
-		for (int key = 0; key < MAX_KEYCODES_SUPPORTED; ++key)
-		{
-			io.KeysDown[key] = handler.GetProxyKeyboardState().IsDownThisFrame(key);
-		}
-
-		io.KeyCtrl = handler.GetProxyKeyboardState().IsDownThisFrame(Win32KeyCode::Control);
 		// @TODO this is commented because imgui needs extra data or im doing something wrong
 		// to not scroll to the very top or bottom every mouse notch.
 		//io.MouseWheel = static_cast<float>(handler.GetProxyMouseState().CurWheelVal);
@@ -294,7 +321,7 @@ namespace Editor
 	void EditorApp::SetFont(const char* fontName)
 	{
 		ImGui::PopFont();
-		ImGui::PushFont(m_fontMapping.at(fontName));
+		PushFontAtLoadedSize(m_fontMapping.at(fontName));
 	}
 
 	void EditorApp::Log(const std::string& msg)
@@ -543,8 +570,6 @@ namespace Editor
 		m_fontMapping.insert({ "consolas", io.Fonts->AddFontFromFileTTF(consolasPath.GetAbsolutePath().c_str(), 14) });
 		m_fontMapping.insert({ "liberation_bold", io.Fonts->AddFontFromFileTTF(liberationRegularPath.GetAbsolutePath().c_str(), 15) });
 		m_fontMapping.insert({ "din_bold", io.Fonts->AddFontFromFileTTF(dinBoldPath.GetAbsolutePath().c_str(), 14) });
-
-		io.Fonts->Build();
 	}
 
 	void EditorApp::StyleSetup()
@@ -588,9 +613,9 @@ namespace Editor
 		style.Colors[ImGuiCol_ResizeGripActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.95f);
 		style.Colors[ImGuiCol_Tab] = ImVec4(0.17f, 0.17f, 0.17f, 0.86f);
 		style.Colors[ImGuiCol_TabHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.80f);
-		style.Colors[ImGuiCol_TabActive] = ImVec4(0.37f, 0.37f, 0.37f, 1.00f);
-		style.Colors[ImGuiCol_TabUnfocused] = ImVec4(0.07f, 0.10f, 0.15f, 0.97f);
-		style.Colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.14f, 0.26f, 0.42f, 1.00f);
+		style.Colors[ImGuiCol_TabSelected] = ImVec4(0.37f, 0.37f, 0.37f, 1.00f);
+		style.Colors[ImGuiCol_TabDimmed] = ImVec4(0.07f, 0.10f, 0.15f, 0.97f);
+		style.Colors[ImGuiCol_TabDimmedSelected] = ImVec4(0.14f, 0.26f, 0.42f, 1.00f);
 		style.Colors[ImGuiCol_DockingPreview] = ImVec4(0.26f, 0.59f, 0.98f, 0.70f);
 		style.Colors[ImGuiCol_DockingEmptyBg] = ImVec4(0.20f, 0.20f, 0.20f, 1.00f);
 		style.Colors[ImGuiCol_PlotLines] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);

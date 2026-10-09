@@ -150,7 +150,7 @@ void GifChatComponent::OnEditorInspect()
 						if (ImGui::CollapsingHeader(textureTypeStr.c_str()))
 						{
 							ImGui::Text(textureData->GetFilepath().GetRelativePath().c_str());
-							ImGui::Image(textureData->GetPlatformObject().GetTextureData(), ImVec2(textureData->GetDimensions().X(), textureData->GetDimensions().Y()));
+							ImGui::Image((ImTextureID)(intptr_t)textureData->GetPlatformObject().GetTextureData(), ImVec2(textureData->GetDimensions().X(), textureData->GetDimensions().Y()));
 						}
 					}
 				}

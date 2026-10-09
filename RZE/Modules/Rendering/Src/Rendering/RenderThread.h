@@ -24,6 +24,17 @@ namespace Rendering
 		// @todo note sure about the future of this, but just getting an idea down
 		void SignalProcess();
 
+		// Blocks until the render thread has finished processing its queue, then runs func on the calling
+		// thread while the render thread is held idle. Use for the rare case where the calling thread
+		// needs exclusive access to the device context.
+		template <typename Func>
+		void RunWhileIdle(Func&& func)
+		{
+			std::unique_lock waitlock(m_updateMutex);
+			m_updateCondition.wait(waitlock, [this]() { return m_processSignal == false; });
+			func();
+		}
+
 	private:
 		void Update();
 

@@ -201,7 +201,7 @@ void RenderComponent::OnEditorInspect()
 							if (ImGui::CollapsingHeader(textureTypeStr.c_str()))
 							{
 								ImGui::Text(textureData->GetFilepath().GetRelativePath().c_str());
-								ImGui::Image(textureData->GetPlatformObject().GetTextureData(), ImVec2(256.0f, 256.0f));
+								ImGui::Image((ImTextureID)(intptr_t)textureData->GetPlatformObject().GetTextureData(), ImVec2(256.0f, 256.0f));
 							}
 						}
 					}

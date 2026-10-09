@@ -269,7 +269,7 @@ void CameraComponent::OnEditorInspect()
 				};
 			float uvbx = clamp(0.0f, 1.0f, renderCam.Viewport.Size.X() / m_renderTarget->GetWidth());
 			float uvby = clamp(0.0f, 1.0f, renderCam.Viewport.Size.Y() / m_renderTarget->GetHeight());
-			ImGui::Image(texture.GetTextureData(), ImVec2(renderCam.Viewport.Size.X(), renderCam.Viewport.Size.Y()), ImVec2(0.0f, 0.0f), ImVec2(uvbx, uvby));
+			ImGui::Image((ImTextureID)(intptr_t)texture.GetTextureData(), ImVec2(renderCam.Viewport.Size.X(), renderCam.Viewport.Size.Y()), ImVec2(0.0f, 0.0f), ImVec2(uvbx, uvby));
 		}
 	}
 }

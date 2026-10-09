@@ -75,7 +75,6 @@ private:
 	void CompileEvents();
 
 	void RegisterWindowEvents();
-	void RegisterKeyEvents();
 
 	void LoadEngineConfig();
 	void CreateAndInitializeWindow();
