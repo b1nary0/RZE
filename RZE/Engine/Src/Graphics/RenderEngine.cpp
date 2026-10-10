@@ -102,7 +102,8 @@ void RenderEngine::Initialize(void* windowHandle)
 	AddRenderStage<ForwardRenderStage>();
 	AddRenderStage<PostProcessRenderStage>();
 
-#ifdef _DEBUG
+	// Available in Debug and Release; only Retail strips it
+#ifndef RZE_RETAIL
 	AddRenderStage<DebugDrawRenderStage>();
 #endif
 }

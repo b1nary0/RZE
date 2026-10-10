@@ -3,6 +3,7 @@
 #include <EditorApp.h>
 
 #include <Game/World/GameObject/GameObject.h>
+#include <Game/World/GameObjectComponents/CameraComponent.h>
 #include <Game/World/GameObjectComponents/DirectionalLightComponent.h>
 #include <Game/World/GameObjectComponents/EditorCameraComponent.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
@@ -114,8 +115,6 @@ namespace Editor
 
 				ImGui::Image((ImTextureID)(intptr_t)texture.GetTextureData(), ImVec2(GetDimensions().X(), GetDimensions().Y()), ImVec2(0.0f, 0.0f), ImVec2(uvbx, uvby));
 
-				DrawLightIcons(ImVec2(GetPosition().X(), GetPosition().Y() + cursorPos.y));
-
 				{
 					GameObjectPtr selectedGameObject = editorApp.GetSelectedObjectFromScenePanel();
 					GameObjectPtr cameraObject = editorApp.GetCameraObject();
@@ -162,13 +161,16 @@ namespace Editor
 					}
 				}
 
+				// After the gizmo so it can't hide them; they're draw-only, so the gizmo still takes the clicks
+				DrawObjectIcons(ImVec2(GetPosition().X(), GetPosition().Y() + cursorPos.y));
+
 			}
 		}
 		ImGui::End();
 		ImGui::PopStyleVar();
 	}
 
-	void SceneViewPanel::DrawLightIcons(const ImVec2& viewOrigin)
+	void SceneViewPanel::DrawObjectIcons(const ImVec2& viewOrigin)
 	{
 		EditorApp& editorApp = static_cast<EditorApp&>(RZE().GetApplication());
 		// The camera is empty while a scene loads
@@ -184,44 +186,140 @@ namespace Editor
 		const Vector2D& viewSize = GetDimensions();
 		ImDrawList* drawList = ImGui::GetWindowDrawList();
 
+		// False when the point is behind the editor camera
+		auto worldToScreen = [&](const Vector3D& position, ImVec2& outScreen)
+		{
+			const Vector4D clip = viewProjection * Vector4D(position.X(), position.Y(), position.Z(), 1.0f);
+			if (clip.W() <= 0.0f)
+			{
+				return false;
+			}
+
+			outScreen = ImVec2(
+				viewOrigin.x + (clip.X() / clip.W() * 0.5f + 0.5f) * viewSize.X(),
+				viewOrigin.y + (0.5f - clip.Y() / clip.W() * 0.5f) * viewSize.Y());
+			return true;
+		};
+
+		GameObjectPtr selectedGameObject = editorApp.GetSelectedObjectFromScenePanel();
+
 		RZE().GetActiveScene().ForEachGameObject(
 			Functor<void, GameObjectPtr>([&](GameObjectPtr gameObject)
 			{
-				if (gameObject->GetComponent<DirectionalLightComponent>() == nullptr)
-				{
-					return;
-				}
-
 				const Vector3D& position = gameObject->GetTransformComponent()->GetPosition();
-				const Vector4D clip = viewProjection * Vector4D(position.X(), position.Y(), position.Z(), 1.0f);
-				if (clip.W() <= 0.0f)
+
+				// The selected object's icon sits on top of its gizmo; fade it so the gizmo's centre handle shows through
+				const bool isSelected = selectedGameObject != nullptr && gameObject == selectedGameObject;
+				const float alpha = isSelected ? 0.4f : 1.0f;
+				auto withAlpha = [alpha](int r, int g, int b, int a)
 				{
-					return; // Behind the camera
+					return IM_COL32(r, g, b, static_cast<int>(a * alpha));
+				};
+				const ImU32 outlineColour = withAlpha(0, 0, 0, 200);
+
+				if (gameObject->GetComponent<DirectionalLightComponent>() != nullptr)
+				{
+					ImVec2 center;
+					if (worldToScreen(position, center))
+					{
+						// Sun: filled disc with eight rays
+						constexpr float k_discRadius = 7.0f;
+						constexpr float k_rayInner = 10.0f;
+						constexpr float k_rayOuter = 15.0f;
+						const ImU32 sunColour = withAlpha(255, 210, 60, 255);
+
+						drawList->AddCircleFilled(center, k_discRadius, sunColour, 16);
+						drawList->AddCircle(center, k_discRadius, outlineColour, 16, 1.5f);
+						for (int ray = 0; ray < 8; ++ray)
+						{
+							const float angle = ray * (3.14159265f / 4.0f);
+							const ImVec2 dir(std::cos(angle), std::sin(angle));
+							drawList->AddLine(
+								ImVec2(center.x + dir.x * k_rayInner, center.y + dir.y * k_rayInner),
+								ImVec2(center.x + dir.x * k_rayOuter, center.y + dir.y * k_rayOuter),
+								sunColour, 2.0f);
+						}
+					}
 				}
 
-				const ImVec2 center(
-					viewOrigin.x + (clip.X() / clip.W() * 0.5f + 0.5f) * viewSize.X(),
-					viewOrigin.y + (0.5f - clip.Y() / clip.W() * 0.5f) * viewSize.Y());
-
-				// Sun: filled disc with eight rays
-				constexpr float k_discRadius = 7.0f;
-				constexpr float k_rayInner = 10.0f;
-				constexpr float k_rayOuter = 15.0f;
-				const ImU32 sunColour = IM_COL32(255, 210, 60, 255);
-				const ImU32 outlineColour = IM_COL32(0, 0, 0, 200);
-
-				drawList->AddCircleFilled(center, k_discRadius, sunColour, 16);
-				drawList->AddCircle(center, k_discRadius, outlineColour, 16, 1.5f);
-				for (int ray = 0; ray < 8; ++ray)
+				GameObjectComponentPtr<CameraComponent> camera = gameObject->GetComponent<CameraComponent>();
+				if (camera != nullptr)
 				{
-					const float angle = ray * (3.14159265f / 4.0f);
-					const ImVec2 dir(std::cos(angle), std::sin(angle));
-					drawList->AddLine(
-						ImVec2(center.x + dir.x * k_rayInner, center.y + dir.y * k_rayInner),
-						ImVec2(center.x + dir.x * k_rayOuter, center.y + dir.y * k_rayOuter),
-						sunColour, 2.0f);
+					DrawCameraFrustum(position, **camera);
+
+					ImVec2 center;
+					if (worldToScreen(position, center))
+					{
+						// Movie camera: body, two film reels on top, lens on the right
+						constexpr float k_reelRadius = 6.0f;
+						const ImU32 cameraColour = withAlpha(200, 215, 235, 255);
+						const ImVec2 bodyMin(center.x - 15.0f, center.y - 6.0f);
+						const ImVec2 bodyMax(center.x + 6.0f, center.y + 9.0f);
+						const ImVec2 reelA(center.x - 9.0f, center.y - 12.0f);
+						const ImVec2 reelB(center.x + 1.5f, center.y - 12.0f);
+						const ImVec2 lensA(center.x + 6.0f, center.y + 1.5f);
+						const ImVec2 lensB(center.x + 16.0f, center.y - 6.0f);
+						const ImVec2 lensC(center.x + 16.0f, center.y + 9.0f);
+
+						drawList->AddCircleFilled(reelA, k_reelRadius, cameraColour, 12);
+						drawList->AddCircle(reelA, k_reelRadius, outlineColour, 12, 1.5f);
+						drawList->AddCircleFilled(reelB, k_reelRadius, cameraColour, 12);
+						drawList->AddCircle(reelB, k_reelRadius, outlineColour, 12, 1.5f);
+						drawList->AddTriangleFilled(lensA, lensB, lensC, cameraColour);
+						drawList->AddTriangle(lensA, lensB, lensC, outlineColour, 1.5f);
+						drawList->AddRectFilled(bodyMin, bodyMax, cameraColour, 1.5f);
+						drawList->AddRect(bodyMin, bodyMax, outlineColour, 1.5f, 0, 1.5f);
+					}
 				}
 			}));
+	}
+
+	void SceneViewPanel::DrawCameraFrustum(const Vector3D& position, const CameraComponent& camera)
+	{
+		// Same basis glm::lookAt builds the camera's view matrix from
+		const Vector3D forward = camera.GetForward().Normalized();
+		const Vector3D right = forward.Cross(camera.GetUpDir()).Normalized();
+		const Vector3D up = right.Cross(forward);
+
+		// The aspect ratio is only set once the camera is in a scene; fall back to the scene view's
+		const float aspectRatio = camera.GetAspectRatio() > 0.0f ? camera.GetAspectRatio() : GetDimensions().X() / GetDimensions().Y();
+		const float tanHalfFov = std::tan(camera.GetFOV() * 0.5f * MathUtils::ToRadians);
+
+		// Corner i is on the right if bit 0 is set and on top if bit 1 is set
+		auto planeCorners = [&](float distance, Vector3D (&outCorners)[4])
+		{
+			const Vector3D center = position + forward * distance;
+			const float halfHeight = distance * tanHalfFov;
+			const float halfWidth = halfHeight * aspectRatio;
+			for (int i = 0; i < 4; ++i)
+			{
+				outCorners[i] = center
+					+ right * ((i & 1) ? halfWidth : -halfWidth)
+					+ up * ((i & 2) ? halfHeight : -halfHeight);
+			}
+		};
+
+		Vector3D nearCorners[4];
+		Vector3D farCorners[4];
+		// Scene cameras usually see ~1000 units out, which would draw as four lines running off-screen
+		// with a microscopic near plane; stopping short keeps the frustum readable as a pyramid
+		constexpr float k_maxFrustumDrawDistance = 10.0f;
+		planeCorners(camera.GetNearCull(), nearCorners);
+		planeCorners(std::min(camera.GetFarCull(), k_maxFrustumDrawDistance), farCorners);
+
+		const Vector3D frustumColour(0.8f, 0.85f, 0.9f);
+		RenderEngine& renderEngine = RZE().GetRenderEngine();
+
+		// Walks each plane's rectangle: bottom-left, bottom-right, top-right, top-left
+		constexpr int k_ring[4] = { 0, 1, 3, 2 };
+		for (int i = 0; i < 4; ++i)
+		{
+			const int corner = k_ring[i];
+			const int nextCorner = k_ring[(i + 1) % 4];
+			renderEngine.DrawLine(nearCorners[corner], nearCorners[nextCorner], frustumColour);
+			renderEngine.DrawLine(farCorners[corner], farCorners[nextCorner], frustumColour);
+			renderEngine.DrawLine(nearCorners[corner], farCorners[corner], frustumColour);
+		}
 	}
 
 	void SceneViewPanel::Temp_RegisterInputs()

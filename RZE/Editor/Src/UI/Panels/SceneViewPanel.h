@@ -1,8 +1,10 @@
 #pragma once
 
 #include <Utils/Math/Vector2D.h>
+#include <Utils/Math/Vector3D.h>
 
 struct ImVec2;
+class CameraComponent;
 
 namespace Editor
 {
@@ -27,8 +29,10 @@ namespace Editor
 
 		void Temp_RegisterInputs();
 
-		// Sun icon at each directional light's position; viewOrigin is the screen-space top-left of the scene image
-		void DrawLightIcons(const ImVec2& viewOrigin);
+		// Icons at each light's and camera's position, plus camera frustums; viewOrigin is the screen-space top-left of the scene image
+		void DrawObjectIcons(const ImVec2& viewOrigin);
+		// Debug lines along the camera's view volume, from its near plane out to its far plane or a fixed cap, whichever is closer
+		void DrawCameraFrustum(const Vector3D& position, const CameraComponent& camera);
 
 		const Vector2D& GetDimensions() const { return m_dimensions; }
 		const Vector2D& GetPosition() const { return m_position; }
