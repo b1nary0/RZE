@@ -145,11 +145,9 @@ void ShadowRenderStage::RenderShadowMap(const RenderEngine::SceneData& renderDat
 				// Only needed for cutout casters (leaves, chains, lashes)
 				Rendering::Renderer::SetConstantBufferPS(materialInstance->GetParamBuffer(), 1);
 
-				const ResourceHandle& opacityMap = materialInstance->GetTexture(MaterialInstance::TEXTURE_SLOT_OPACITY);
-				if (opacityMap.IsValid())
+				if (const Texture2D* const opacityMap = materialInstance->GetTextureResource(MaterialInstance::TEXTURE_SLOT_OPACITY))
 				{
-					const Texture2D* const texture = RZE().GetResourceHandler().GetResource<Texture2D>(opacityMap);
-					Rendering::Renderer::SetTextureResource(texture->GetPlatformObject(), MaterialInstance::TEXTURE_SLOT_OPACITY);
+					Rendering::Renderer::SetTextureResource(opacityMap->GetPlatformObject(), MaterialInstance::TEXTURE_SLOT_OPACITY);
 				}
 
 				Rendering::Renderer::SetVertexBuffer(meshGeometry.GetVertexBuffer()->GetPlatformObject(), 0);

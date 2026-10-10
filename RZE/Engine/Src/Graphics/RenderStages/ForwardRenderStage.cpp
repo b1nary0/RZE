@@ -97,7 +97,7 @@ void ForwardRenderStage::Render(RenderContext& context)
 			// This is god awful. Just in place while developing shader model.
 			// Should get resolved once the system matures
 			std::shared_ptr<const MaterialInstance> materialInstance = meshGeometry.GetMaterial();
-			const PixelShader* const pixelShader = RZE().GetResourceHandler().GetResource<PixelShader>(materialInstance->GetShaderResource());
+			const PixelShader* const pixelShader = materialInstance->GetPixelShader();
 
 			Rendering::Renderer::SetPixelShader(pixelShader->GetPlatformObject());
 			Rendering::Renderer::SetConstantBufferPS(materialInstance->GetParamBuffer(), 1);
@@ -106,11 +106,8 @@ void ForwardRenderStage::Render(RenderContext& context)
 			// @TODO Really need to get to texture infrastructure refactor soon - 2/6/2022
 			for (U8 textureSlot = 0; textureSlot < MaterialInstance::TextureSlot::TEXTURE_SLOT_COUNT; ++textureSlot)
 			{
-				const ResourceHandle& resourceHandle = materialInstance->GetTexture(textureSlot);
-				if (resourceHandle.IsValid())
+				if (const Texture2D* const texture = materialInstance->GetTextureResource(textureSlot))
 				{
-					const Texture2D* const texture = RZE().GetResourceHandler().GetResource<Texture2D>(resourceHandle);
-
 					// @TODO Should solve this better by providing an API that will provide a texture resource array
 					Rendering::Renderer::SetTextureResource(texture->GetPlatformObject(), textureSlot);
 				}

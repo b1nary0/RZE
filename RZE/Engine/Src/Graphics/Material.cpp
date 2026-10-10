@@ -68,6 +68,9 @@ void MaterialInstance::SetTexture(U8 textureSlot, const ResourceHandle& textureR
 {
 	AssertExpr(textureSlot < TEXTURE_SLOT_COUNT);
 	m_textureSlots[textureSlot] = textureResource;
+	m_textureResources[textureSlot] = textureResource.IsValid()
+		? RZE().GetResourceHandler().GetResource<Texture2D>(textureResource)
+		: nullptr;
 }
 
 const ResourceHandle& MaterialInstance::GetTexture(U8 textureSlot) const
@@ -76,9 +79,18 @@ const ResourceHandle& MaterialInstance::GetTexture(U8 textureSlot) const
 	return m_textureSlots[textureSlot];
 }
 
+const Texture2D* MaterialInstance::GetTextureResource(U8 textureSlot) const
+{
+	AssertExpr(textureSlot < TEXTURE_SLOT_COUNT);
+	return m_textureResources[textureSlot];
+}
+
 void MaterialInstance::SetShaderTechnique(const ResourceHandle& shaderTechnique)
 {
 	m_shaderTechnique = shaderTechnique;
+	m_pixelShader = shaderTechnique.IsValid()
+		? RZE().GetResourceHandler().GetResource<PixelShader>(shaderTechnique)
+		: nullptr;
 }
 
 void MaterialInstance::CommitPropertyChanges()

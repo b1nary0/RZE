@@ -4,6 +4,9 @@
 
 #include <Asset/AssetImport/MaterialAssetImporter.h>
 
+#include <array>
+
+class PixelShader;
 class ShaderTechnique;
 class Texture2D;
 
@@ -50,14 +53,19 @@ public:
 	static std::shared_ptr<MaterialInstance> Create(const MaterialAssetImporter::MaterialData& materialData);
 
 	void SetTexture(U8 textureSlot, const ResourceHandle& textureResource);
-	
+
 	const ResourceHandle& GetTexture(U8 textureSlot) const;
+	// The loaded texture in a slot, or nullptr if the slot is empty. Use this when drawing: it's resolved
+	// when the slot is set, so it doesn't look the resource up by path.
+	const Texture2D* GetTextureResource(U8 textureSlot) const;
 
 	const std::string& GetName() const { return m_name; }
 
 	// @TODO SetShaderTechnique is actually being set as PixelShader directly until actual techniques are implemented
 	void SetShaderTechnique(const ResourceHandle& shaderTechnique);
 	const ResourceHandle& GetShaderResource() const { return m_shaderTechnique; }
+	// The loaded pixel shader, resolved when the technique is set. Use this when drawing.
+	const PixelShader* GetPixelShader() const { return m_pixelShader; }
 
 	MaterialParams& GetProperties() { return m_properties; }
 	const MaterialParams& GetProperties() const { return m_properties; }
@@ -75,6 +83,10 @@ private:
 
 	ResourceHandle m_shaderTechnique;
 	std::vector<ResourceHandle> m_textureSlots;
+
+	// Resolved from the handles above when they're set. The handles keep the resources loaded, so these stay valid.
+	const PixelShader* m_pixelShader = nullptr;
+	std::array<const Texture2D*, TEXTURE_SLOT_COUNT> m_textureResources {};
 
 	Rendering::ConstantBufferHandle m_paramBuffer;
 };
