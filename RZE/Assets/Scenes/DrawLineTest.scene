@@ -4,7 +4,7 @@
             "components": {
                 "CameraComponent": {
                     "FOV": 65.0,
-                    "NearCull": 0.009999999776482582,
+                    "NearCull": 0.10000000149011612,
                     "FarCull": 1000.0
                 },
                 "TransformComponent": {

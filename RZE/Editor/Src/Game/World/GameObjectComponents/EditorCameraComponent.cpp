@@ -12,8 +12,10 @@
 
 namespace
 {
+	// Metres per mouse wheel tick
 	constexpr float k_cameraMaxZoomSpeed = 0.5f;
-	constexpr float k_cameraMaxSpeed = 8.0f;
+	// Metres per second, before the hold-to-accelerate ramp and the R (x4) / Space (/8) modifiers
+	constexpr float k_cameraMaxSpeed = 5.0f;
 
 	constexpr float k_focusDuration = 0.5f;
 	// Shorter than k_focusDuration so the camera faces its target before it finishes moving, bringing the object into view early
