@@ -12,8 +12,7 @@
 #include <Rendering/Renderer.h>
 #include <Rendering/Driver/GFXBuffer.h>
 
-#include <GLM/common.hpp>
-#include <GLM/geometric.hpp>
+#include <Utils/Math/Math.h>
 
 #include <algorithm>
 #include <cfloat>
@@ -168,68 +167,61 @@ void ShadowRenderStage::RenderShadowMap(const RenderEngine::SceneData& renderDat
 
 bool ShadowRenderStage::CalculateLightViewProjection(const RenderEngine::SceneData& renderData, const Vector3D& lightDirection, Matrix4x4& outViewProjection, float& outWorldTexelSize) const
 {
-	// World-space corners of every submesh's bounds
-	std::vector<Vector3D> worldCorners;
-	glm::vec3 sceneMin(FLT_MAX);
-	glm::vec3 sceneMax(-FLT_MAX);
+	// Every submesh's world bounds, kept up to date by RenderObject
+	Vector3D sceneMin(FLT_MAX);
+	Vector3D sceneMax(-FLT_MAX);
+	bool hasCasters = false;
 
 	for (const auto& renderObject : renderData.renderObjects)
 	{
-		const Matrix4x4& transform = renderObject->GetTransform();
-		for (const MeshGeometry& meshGeometry : renderObject->GetStaticMesh().GetSubMeshes())
+		for (const RenderObject::SubMeshBounds& bounds : renderObject->GetSubMeshBounds())
 		{
-			const Vector3D& boundsMin = meshGeometry.GetBoundsMin();
-			const Vector3D& boundsMax = meshGeometry.GetBoundsMax();
-
-			for (int corner = 0; corner < 8; ++corner)
-			{
-				const Vector4D local(
-					(corner & 1) ? boundsMax.X() : boundsMin.X(),
-					(corner & 2) ? boundsMax.Y() : boundsMin.Y(),
-					(corner & 4) ? boundsMax.Z() : boundsMin.Z(),
-					1.0f);
-				const Vector4D world = transform * local;
-
-				worldCorners.emplace_back(world.X(), world.Y(), world.Z());
-				sceneMin = glm::min(sceneMin, glm::vec3(world.X(), world.Y(), world.Z()));
-				sceneMax = glm::max(sceneMax, glm::vec3(world.X(), world.Y(), world.Z()));
-			}
+			sceneMin = VectorUtils::Min(sceneMin, bounds.Min);
+			sceneMax = VectorUtils::Max(sceneMax, bounds.Max);
+			hasCasters = true;
 		}
 	}
 
-	if (worldCorners.empty())
+	if (!hasCasters)
 	{
 		return false;
 	}
 
 	// Look along the light from just outside the scene's bounding sphere
-	const Vector3D sceneCenter((sceneMin.x + sceneMax.x) * 0.5f, (sceneMin.y + sceneMax.y) * 0.5f, (sceneMin.z + sceneMax.z) * 0.5f);
-	const float sceneRadius = glm::length(sceneMax - sceneMin) * 0.5f;
+	const Vector3D sceneCenter = (sceneMin + sceneMax) * 0.5f;
+	const float sceneRadius = (sceneMax - sceneMin).Length() * 0.5f;
 
 	const Vector3D up = (std::abs(lightDirection.Y()) > 0.99f) ? Vector3D(0.0f, 0.0f, 1.0f) : Vector3D(0.0f, 1.0f, 0.0f);
 	const Vector3D eye = sceneCenter - lightDirection * (sceneRadius + 1.0f);
 	const Matrix4x4 view = Matrix4x4::CreateViewMatrix(eye, sceneCenter, up);
 
-	// Tight bounds of the scene as seen from the light
-	glm::vec3 lightMin(FLT_MAX);
-	glm::vec3 lightMax(-FLT_MAX);
-	for (const Vector3D& corner : worldCorners)
+	// Tight bounds of the scene as seen from the light: the submeshes' transformed boxes, not their looser
+	// world-axis-aligned boxes
+	Vector3D lightMin(FLT_MAX);
+	Vector3D lightMax(-FLT_MAX);
+	for (const auto& renderObject : renderData.renderObjects)
 	{
-		const Vector4D lightSpace = view * Vector4D(corner.X(), corner.Y(), corner.Z(), 1.0f);
-		lightMin = glm::min(lightMin, glm::vec3(lightSpace.X(), lightSpace.Y(), lightSpace.Z()));
-		lightMax = glm::max(lightMax, glm::vec3(lightSpace.X(), lightSpace.Y(), lightSpace.Z()));
+		for (const RenderObject::SubMeshBounds& bounds : renderObject->GetSubMeshBounds())
+		{
+			for (const Vector3D& corner : bounds.Corners)
+			{
+				const Vector3D lightSpace = (view * Vector4D(corner, 1.0f)).XYZ();
+				lightMin = VectorUtils::Min(lightMin, lightSpace);
+				lightMax = VectorUtils::Max(lightMax, lightSpace);
+			}
+		}
 	}
 
-	const float extent = std::max(lightMax.x - lightMin.x, lightMax.y - lightMin.y);
+	const float extent = std::max(lightMax.X() - lightMin.X(), lightMax.Y() - lightMin.Y());
 	const float padding = extent * (k_edgePaddingTexels / static_cast<float>(k_shadowMapSize));
 
 	// View space looks down -Z, so distances in front of the light are -z
-	const float nearDistance = std::max(0.0f, -lightMax.z - padding);
-	const float farDistance = -lightMin.z + padding;
+	const float nearDistance = std::max(0.0f, -lightMax.Z() - padding);
+	const float farDistance = -lightMin.Z() + padding;
 
 	const Matrix4x4 projection = Matrix4x4::CreateOrthoMatrixZeroToOne(
-		lightMin.x - padding, lightMax.x + padding,
-		lightMin.y - padding, lightMax.y + padding,
+		lightMin.X() - padding, lightMax.X() + padding,
+		lightMin.Y() - padding, lightMax.Y() + padding,
 		nearDistance, farDistance);
 
 	outViewProjection = projection * view;

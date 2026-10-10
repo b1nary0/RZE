@@ -1,6 +1,7 @@
 #include <StdAfx.h>
 #include <Graphics/RenderStages/ForwardRenderStage.h>
 
+#include <Graphics/Frustum.h>
 #include <Graphics/IndexBuffer.h>
 #include <Graphics/Material.h>
 #include <Graphics/RenderEngine.h>
@@ -88,17 +89,35 @@ void ForwardRenderStage::Render(RenderContext& context)
 	// Consecutive submeshes often share a shader, so it's only set when it changes
 	const PixelShader* boundPixelShader = nullptr;
 
+	// Objects and submeshes entirely outside the view aren't drawn
+	const Frustum frustum(view.Camera.ClipSpace);
+
 	for (const auto& renderObject : renderData.renderObjects)
 	{
+		if (!frustum.Intersects(renderObject->GetBoundsMin(), renderObject->GetBoundsMax()))
+		{
+			continue;
+		}
+
 		// @note this sends in the address of renderObject->m_matrixMem.transform but fulfils the memory of struct MatrixMem as a whole
 		// this should be re-evaluated later to have a better solve for the issue of commands needing access to the data being uploaded's lifetime
 		Rendering::Renderer::UploadDataToBuffer<Matrix4x4>(m_vertexShader->GetWorldMatrixBuffer(), &renderObject->GetTransform());
 
+		const std::vector<MeshGeometry>& subMeshes = renderObject->GetStaticMesh().GetSubMeshes();
+		const std::vector<RenderObject::SubMeshBounds>& subMeshBounds = renderObject->GetSubMeshBounds();
+
 		// @TODO
 		// Currently each MeshGeometry is a draw call. Need to batch this down so it becomes a single draw call
 		// per render object, at least. Can do this maybe in the burner?
-		for (const auto& meshGeometry : renderObject->GetStaticMesh().GetSubMeshes())
+		for (size_t subMeshIndex = 0; subMeshIndex < subMeshes.size(); ++subMeshIndex)
 		{
+			if (!frustum.Intersects(subMeshBounds[subMeshIndex].Min, subMeshBounds[subMeshIndex].Max))
+			{
+				continue;
+			}
+
+			const MeshGeometry& meshGeometry = subMeshes[subMeshIndex];
+
 			// @TODO
 			// This is god awful. Just in place while developing shader model.
 			// Should get resolved once the system matures

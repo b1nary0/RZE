@@ -90,23 +90,32 @@ public:
 		Matrix4x4 invTransform;
 	};
 
+	// World-space bounds of one submesh, kept up to date as the object's mesh or transform changes
+	struct SubMeshBounds
+	{
+		// The submesh's object-space bounding box, transformed into world space
+		Vector3D Corners[8];
+		// Axis-aligned box around Corners
+		Vector3D Min;
+		Vector3D Max;
+	};
+
 public:
-	void SetStaticMesh(const StaticMeshInstance& staticMesh) { m_staticMesh = staticMesh; MarkSceneChanged(); }
+	void SetStaticMesh(const StaticMeshInstance& staticMesh);
 	const StaticMeshInstance& GetStaticMesh() { return m_staticMesh; }
 
 	// Called every frame by RenderComponent, so an unchanged transform returns early
-	void SetTransform(const Matrix4x4& transform)
-	{
-		if (transform != m_matrixMem.transform)
-		{
-			m_matrixMem.transform = transform;
-			m_matrixMem.invTransform = transform.Inverse();
-			MarkSceneChanged();
-		}
-	}
+	void SetTransform(const Matrix4x4& transform);
 	const Matrix4x4& GetTransform() const { return m_matrixMem.transform; }
 
+	// Indexed like GetStaticMesh().GetSubMeshes()
+	const std::vector<SubMeshBounds>& GetSubMeshBounds() const { return m_subMeshBounds; }
+	// Axis-aligned world-space box around every submesh
+	const Vector3D& GetBoundsMin() const { return m_boundsMin; }
+	const Vector3D& GetBoundsMax() const { return m_boundsMax; }
+
 private:
+	void UpdateWorldBounds();
 	void MarkSceneChanged() { if (m_sceneRevision != nullptr) { ++*m_sceneRevision; } }
 
 private:
@@ -116,6 +125,11 @@ private:
 	// when skinned meshes are a thing
 	StaticMeshInstance m_staticMesh;
 	MatrixMem m_matrixMem;
+
+	std::vector<SubMeshBounds> m_subMeshBounds;
+	Vector3D m_boundsMin;
+	Vector3D m_boundsMax;
+
 	// RenderEngine::SceneData::revision of the scene this object is in
 	U64* m_sceneRevision = nullptr;
 };

@@ -12,9 +12,77 @@
 
 #include "Rendering/Graphics/RenderTarget.h"
 
+#include <Utils/Math/Math.h>
+
+#include <cfloat>
+
 void LightObject::Initialize()
 {
 	m_propertyBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(PropertyBufferLayout), 16, 1);
+}
+
+void RenderObject::SetStaticMesh(const StaticMeshInstance& staticMesh)
+{
+	m_staticMesh = staticMesh;
+	UpdateWorldBounds();
+	MarkSceneChanged();
+}
+
+void RenderObject::SetTransform(const Matrix4x4& transform)
+{
+	if (transform != m_matrixMem.transform)
+	{
+		m_matrixMem.transform = transform;
+		m_matrixMem.invTransform = transform.Inverse();
+		UpdateWorldBounds();
+		MarkSceneChanged();
+	}
+}
+
+void RenderObject::UpdateWorldBounds()
+{
+	const std::vector<MeshGeometry>& subMeshes = static_cast<const StaticMeshInstance&>(m_staticMesh).GetSubMeshes();
+	const Matrix4x4& transform = m_matrixMem.transform;
+
+	m_subMeshBounds.resize(subMeshes.size());
+
+	Vector3D objectMin(FLT_MAX);
+	Vector3D objectMax(-FLT_MAX);
+
+	for (size_t subMeshIndex = 0; subMeshIndex < subMeshes.size(); ++subMeshIndex)
+	{
+		const Vector3D& localMin = subMeshes[subMeshIndex].GetBoundsMin();
+		const Vector3D& localMax = subMeshes[subMeshIndex].GetBoundsMax();
+		SubMeshBounds& bounds = m_subMeshBounds[subMeshIndex];
+
+		bounds.Min = Vector3D(FLT_MAX);
+		bounds.Max = Vector3D(-FLT_MAX);
+
+		// Corner i takes max on X if bit 0 is set, Y if bit 1, Z if bit 2
+		for (int corner = 0; corner < 8; ++corner)
+		{
+			const Vector3D localCorner(
+				(corner & 1) ? localMax.X() : localMin.X(),
+				(corner & 2) ? localMax.Y() : localMin.Y(),
+				(corner & 4) ? localMax.Z() : localMin.Z());
+
+			bounds.Corners[corner] = (transform * Vector4D(localCorner, 1.0f)).XYZ();
+			bounds.Min = VectorUtils::Min(bounds.Min, bounds.Corners[corner]);
+			bounds.Max = VectorUtils::Max(bounds.Max, bounds.Corners[corner]);
+		}
+
+		objectMin = VectorUtils::Min(objectMin, bounds.Min);
+		objectMax = VectorUtils::Max(objectMax, bounds.Max);
+	}
+
+	if (subMeshes.empty())
+	{
+		objectMin = Vector3D::ZERO;
+		objectMax = Vector3D::ZERO;
+	}
+
+	m_boundsMin = objectMin;
+	m_boundsMax = objectMax;
 }
 
 RenderEngine::RenderEngine()
