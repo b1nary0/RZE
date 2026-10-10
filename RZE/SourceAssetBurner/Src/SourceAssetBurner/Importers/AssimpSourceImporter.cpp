@@ -7,10 +7,13 @@
 #include <Utils/Memory/ByteStream.h>
 
 #include <Utils/DebugUtils/Debug.h>
+#include <Utils/Math/Math.h>
 #include <Utils/PrimitiveDefs.h>
 
 #include <Utils/Platform/File.h>
 
+#include <algorithm>
+#include <cfloat>
 #include <filesystem>
 
 namespace
@@ -18,7 +21,11 @@ namespace
 	// #TODO
 	// Move these into a common file. They will be used across different classes
 	constexpr char kMaterialAssetSuffix[] = { ".materialasset" };
-	
+
+	// A model whose largest extent falls outside this range was probably authored in another unit
+	constexpr float k_minPlausibleExtentMetres = 0.01f;
+	constexpr float k_maxPlausibleExtentMetres = 500.0f;
+
 	std::string StripAssetNameFromFilePath(const Filepath& filePath)
 	{
 		const std::string& assetPath = filePath.GetRelativePath();
@@ -58,7 +65,9 @@ bool AssimpSourceImporter::Import(const Filepath& filePath)
 		aiProcess_MakeLeftHanded |
 		aiProcess_FlipUVs |
 		aiProcess_OptimizeMeshes |
-		aiProcess_OptimizeGraph);
+		aiProcess_OptimizeGraph |
+		// Converts formats that declare their unit (FBX) to metres. Unitless formats (OBJ) are taken as metres.
+		aiProcess_GlobalScale);
 
 	bool bAssimpNotLoaded =
 		!AssimpScene
@@ -79,6 +88,27 @@ bool AssimpSourceImporter::Import(const Filepath& filePath)
 	{
 		RZE_LOG_ARGS("Error reading meshes from [%s].", filePath.GetRelativePath().c_str());
 		return false;
+	}
+
+	{
+		Vector3D boundsMin(FLT_MAX);
+		Vector3D boundsMax(-FLT_MAX);
+		for (const MeshData& meshData : m_meshes)
+		{
+			for (const MeshVertex& vertex : meshData.VertexDataArray)
+			{
+				boundsMin = VectorUtils::Min(boundsMin, vertex.Position);
+				boundsMax = VectorUtils::Max(boundsMax, vertex.Position);
+			}
+		}
+
+		const Vector3D extents = boundsMax - boundsMin;
+		const float largestExtent = std::max({ extents.X(), extents.Y(), extents.Z() });
+		if (largestExtent < k_minPlausibleExtentMetres || largestExtent > k_maxPlausibleExtentMetres)
+		{
+			RZE_LOG_ARGS("AssimpSourceImporter : WARNING [%s] is %.2f m across; its source unit may not be metres. Imported at 1 unit = 1 m; scale it in the editor.",
+				filePath.GetRelativePath().c_str(), largestExtent);
+		}
 	}
 
 	if (!WriteMeshAsset())

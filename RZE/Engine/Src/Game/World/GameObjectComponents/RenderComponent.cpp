@@ -177,10 +177,18 @@ void RenderComponent::OnEditorInspect()
 	{
 		ImGui::Text(m_resource.GetResourcePath().GetRelativePath().c_str());
 
+		const StaticMeshResource* const modelData = resourceHandler.GetResource<StaticMeshResource>(m_resource);
+
+		// Along the object's own axes, so a mesh imported in the wrong unit can be scaled to its real size here
+		{
+			const StaticMeshInstance& staticMesh = modelData->GetStaticMesh();
+			const Vector3D size = (staticMesh.GetBoundsMax() - staticMesh.GetBoundsMin()) * GetOwner()->GetTransformComponent()->GetScale();
+			ImGui::Text("Size: %.2f x %.2f x %.2f m", size.X(), size.Y(), size.Z());
+		}
+
 		ImGui::Checkbox("Draw Mesh Bounds", &m_drawMeshBounds);
 		ImGui::Checkbox("Draw Sub-Mesh Bounds", &m_drawSubMeshBounds);
 
-		const StaticMeshResource* const modelData = resourceHandler.GetResource<StaticMeshResource>(m_resource);
 		for (const auto& subMesh : modelData->GetStaticMesh().GetSubMeshes())
 		{
 			if (ImGui::TreeNode(&subMesh, subMesh.GetName().c_str()))
