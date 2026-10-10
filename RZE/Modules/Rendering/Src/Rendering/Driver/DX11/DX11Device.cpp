@@ -122,6 +122,8 @@ namespace Rendering
 			ZeroMemory(&rasterDesc, sizeof(rasterDesc));
 			rasterDesc.FillMode = D3D11_FILL_SOLID;
 			rasterDesc.CullMode = D3D11_CULL_BACK;
+			// The engine is right-handed and imports geometry as authored, with counter-clockwise front faces
+			rasterDesc.FrontCounterClockwise = TRUE;
 			rasterDesc.MultisampleEnable = true;
 
 			mDevice->CreateRasterizerState(&rasterDesc, &mRasterState);

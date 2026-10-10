@@ -282,12 +282,13 @@ void GifChatComponent::GenerateMesh()
 	geo.AddVertex(bottomLeft);
 	geo.AddVertex(bottomRight);
 
+	// Counter-clockwise seen from the +Z side the normal faces
 	geo.AddIndex(0);
-	geo.AddIndex(1);
 	geo.AddIndex(2);
 	geo.AddIndex(1);
+	geo.AddIndex(1);
+	geo.AddIndex(2);
 	geo.AddIndex(3);
-	geo.AddIndex(2);
 
 	
 	geo.AllocateData();

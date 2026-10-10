@@ -50,7 +50,7 @@ float3 PerturbNormal(float3 normal, float3 tangent, float3 normalMapSample)
 {
 	// Gram-Schmidt: re-orthogonalize the interpolated tangent against the normal
 	tangent = normalize(tangent - dot(tangent, normal) * normal);
-	float3 bitangent = cross(tangent, normal);
+	float3 bitangent = cross(normal, tangent);
 
 	float3 tangentSpaceNormal = normalMapSample * 2.0f - 1.0f;
 	float3x3 TBN = float3x3(tangent, bitangent, normal);

@@ -61,8 +61,8 @@ bool AssimpSourceImporter::Import(const Filepath& filePath)
 	Assimp::Importer ModelImporter;
 	const aiScene* AssimpScene = ModelImporter.ReadFile(filePath.GetAbsolutePath(),
 		aiProcessPreset_TargetRealtime_Fast |
-		// aiProcess_ConvertToLeftHanded without its aiProcess_FlipWindingOrder
-		aiProcess_MakeLeftHanded |
+		// Source formats are right-handed like the engine, so geometry and winding stay as authored
+		// (counter-clockwise front faces). Only V flips, for D3D's top-left texture origin.
 		aiProcess_FlipUVs |
 		aiProcess_OptimizeMeshes |
 		aiProcess_OptimizeGraph |
