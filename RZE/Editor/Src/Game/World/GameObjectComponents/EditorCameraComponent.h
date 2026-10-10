@@ -24,7 +24,6 @@ public:
 	void Update() override;
 
 public:
-	const Vector3D& GetLookAt() const;
 	const Vector3D& GetUpDir() const;
 	const Vector3D& GetForward() const;
 
@@ -38,7 +37,6 @@ public:
 
 	bool IsActiveCamera() const;
 
-	void SetLookAt(const Vector3D& lookAt);
 	void SetUpDir(const Vector3D& upDir);
 	void SetForward(const Vector3D& forward);
 
@@ -60,7 +58,6 @@ private:
 	void CalculateNewForward(const Vector2D& curMousePos, bool withSensitivity);
 
 private:
-	Vector3D m_lookAt;
 	Vector3D m_upDir{ 0.0f, 1.0f, 0.0f };
 	Vector3D m_forward{ 0.0f, 0.0f, -1.0f };
 

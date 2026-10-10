@@ -27,9 +27,9 @@ public:
 	void OnEditorInspect() override;
 
 public:
-	const Vector3D& GetLookAt() const;
-	const Vector3D& GetUpDir() const;
-	const Vector3D& GetForward() const;
+	// Derived from the owner's TransformComponent rotation; an unrotated camera looks down -Z with +Y up
+	Vector3D GetForward() const;
+	Vector3D GetUpDir() const;
 
 	const Matrix4x4& GetProjectionMatrix() const;
 	const Matrix4x4& GetViewMatrix() const;
@@ -41,10 +41,6 @@ public:
 	float GetExposureCompensation() const;
 
 	bool IsActiveCamera() const;
-
-	void SetLookAt(const Vector3D& lookAt);
-	void SetUpDir(const Vector3D& upDir);
-	void SetForward(const Vector3D& forward);
 
 	void SetFOV(float fov);
 	void SetAspectRatio(float aspectRatio);
@@ -58,10 +54,6 @@ private:
 	void GenerateCameraMatrices(const Vector3D& position);
 
 private:
-	Vector3D m_lookAt;
-	Vector3D m_upDir { 0.0f, 1.0f, 0.0f };
-	Vector3D m_forward;
-
 	Matrix4x4 m_projectionMat;
 	Matrix4x4 m_viewMat;
 

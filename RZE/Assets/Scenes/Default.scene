@@ -5,17 +5,7 @@
                 "CameraComponent": {
                     "FOV": 65.0,
                     "NearCull": 0.009999999776482582,
-                    "FarCull": 1000.0,
-                    "Forward": [
-                        0.0,
-                        0.0,
-                        1.0
-                    ],
-                    "UpDir": [
-                        0.0,
-                        1.0,
-                        0.0
-                    ]
+                    "FarCull": 1000.0
                 },
                 "TransformComponent": {
                     "Position": [
@@ -30,7 +20,7 @@
                     ],
                     "Rotation": [
                         0.0,
-                        0.0,
+                        180.0,
                         0.0
                     ]
                 }

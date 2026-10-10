@@ -16,11 +16,6 @@ namespace
 	constexpr float k_cameraMaxSpeed = 8.0f;
 }
 
-const Vector3D& EditorCameraComponent::GetLookAt() const
-{
-	return m_lookAt;
-}
-
 const Vector3D& EditorCameraComponent::GetUpDir() const
 {
 	return m_upDir;
@@ -64,11 +59,6 @@ float EditorCameraComponent::GetFarCull() const
 bool EditorCameraComponent::IsActiveCamera() const
 {
 	return m_isActiveCamera;
-}
-
-void EditorCameraComponent::SetLookAt(const Vector3D& lookAt)
-{
-	m_lookAt = lookAt;
 }
 
 void EditorCameraComponent::SetUpDir(const Vector3D& upDir)

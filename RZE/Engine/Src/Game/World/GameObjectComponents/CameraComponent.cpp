@@ -9,6 +9,8 @@
 #include <Rendering/Graphics/RenderTarget.h>
 
 #include <Utils/DebugUtils/Debug.h>
+#include <Utils/Math/Math.h>
+#include <Utils/Math/Quaternion.h>
 #include <Utils/Reflect/Reflection.h>
 
 CameraComponent::CameraComponent()
@@ -16,19 +18,16 @@ CameraComponent::CameraComponent()
 	REFLECT_REGISTER_COMPONENT(CameraComponent);
 }
 
-const Vector3D& CameraComponent::GetLookAt() const
+Vector3D CameraComponent::GetForward() const
 {
-	return m_lookAt;
+	const Quaternion rotation(m_owner->GetTransformComponent()->GetRotation() * MathUtils::ToRadians);
+	return (rotation * Vector3D(0.0f, 0.0f, -1.0f)).Normalized();
 }
 
-const Vector3D& CameraComponent::GetUpDir() const
+Vector3D CameraComponent::GetUpDir() const
 {
-	return m_upDir;
-}
-
-const Vector3D& CameraComponent::GetForward() const
-{
-	return m_forward;
+	const Quaternion rotation(m_owner->GetTransformComponent()->GetRotation() * MathUtils::ToRadians);
+	return (rotation * Vector3D(0.0f, 1.0f, 0.0f)).Normalized();
 }
 
 const Matrix4x4& CameraComponent::GetProjectionMatrix() const
@@ -69,21 +68,6 @@ float CameraComponent::GetExposureCompensation() const
 bool CameraComponent::IsActiveCamera() const
 {
 	return m_isActiveCamera;
-}
-
-void CameraComponent::SetLookAt(const Vector3D& lookAt)
-{
-	m_lookAt = lookAt;
-}
-
-void CameraComponent::SetUpDir(const Vector3D& upDir)
-{
-	m_upDir = upDir;
-}
-
-void CameraComponent::SetForward(const Vector3D& forward)
-{
-	m_forward = forward;
 }
 
 void CameraComponent::SetFOV(float fov)
@@ -168,7 +152,7 @@ void CameraComponent::GenerateCameraMatrices(const Vector3D& position)
 	OPTICK_EVENT("GenerateCameraMatrices");
 	
 	m_projectionMat = Matrix4x4::CreatePerspectiveMatrix(m_fov, m_aspectRatio, m_nearCull, m_farCull);
-	m_viewMat = Matrix4x4::CreateViewMatrix(position, position  + m_forward, m_upDir);
+	m_viewMat = Matrix4x4::CreateViewMatrix(position, position + GetForward(), GetUpDir());
 }
 
 void CameraComponent::Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer)
@@ -187,26 +171,6 @@ void CameraComponent::Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>
 
 		writer.Key("ExposureCompensation");
 		writer.Double(m_exposureCompensation);
-
-		writer.Key("Forward");
-		writer.StartArray();
-		{
-			for (int i = 0; i < 3; ++i)
-			{
-				writer.Double(m_forward[i]);
-			}
-		}
-		writer.EndArray();
-
-		writer.Key("UpDir");
-		writer.StartArray();
-		{
-			for (int i = 0; i < 3; ++i)
-			{
-				writer.Double(m_upDir[i]);
-			}
-		}
-		writer.EndArray();
 	}
 	writer.EndObject();
 }
@@ -218,8 +182,6 @@ void CameraComponent::Deserialize(const rapidjson::Value& data)
 	m_farCull = data["FarCull"].GetFloat();
 	// Optional: scenes saved before exposure existed default to 0 EV
 	m_exposureCompensation = data.HasMember("ExposureCompensation") ? data["ExposureCompensation"].GetFloat() : 0.0f;
-	m_forward = Vector3D(data["Forward"][0].GetFloat(), data["Forward"][1].GetFloat(), data["Forward"][2].GetFloat());
-	m_upDir = Vector3D(data["UpDir"][0].GetFloat(), data["UpDir"][1].GetFloat(), data["UpDir"][2].GetFloat());
 }
 
 void CameraComponent::OnEditorInspect()
@@ -236,10 +198,6 @@ void CameraComponent::OnEditorInspect()
 
 	ImGui::Text("Exposure Compensation (EV)");
 	ImGui::DragFloat("##cameracomponent_exposurecompensation", &m_exposureCompensation, 0.05f, -4.0f, 4.0f, "%.2f");
-
-	float* forwardDirValues = const_cast<float*>(&m_forward.GetInternalVec().x);
-	ImGui::Text("Look At");
-	ImGui::DragFloat3("##cameracomponent_forwarddir", forwardDirValues, 0.005f, -100.0f, 100.0f);
 
 	/* Render camera view */
 	{
