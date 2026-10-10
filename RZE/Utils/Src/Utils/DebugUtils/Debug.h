@@ -12,16 +12,32 @@ namespace Debug
 	bool CreateLogFile();
 	File& GetLogFile();
 	void WriteToLogFile(const std::string_view str);
+
+	// Shows the CRT assert dialog (regardless of console/windows subsystem).
+	// Returns true if the caller should break into the debugger.
+	bool ReportAssertFailure(const char* file, int line, const char* expr, const char* msg);
 }
 
 #ifdef _DEBUG
 
-#define AssertFalse() assert(false);
-#define AssertEqual(Value1, Value2) assert(Value1 == Value2);
-#define AssertIsNull(Value) assert(Value == nullptr);
-#define AssertNotNull(Value) assert(Value != nullptr)
-#define AssertExpr(Expr) assert(Expr);
-#define AssertMsg(Expr, Msg) assert(Expr && Msg);
+// __debugbreak lives in the macro so the debugger stops at the failing line.
+#define RZE_ASSERT_IMPL(Cond, ExprStr, Msg)										\
+	do {																		\
+		if (!(Cond))															\
+		{																		\
+			if (Debug::ReportAssertFailure(__FILE__, __LINE__, ExprStr, Msg))	\
+			{																	\
+				__debugbreak();													\
+			}																	\
+		}																		\
+	} while (0)
+
+#define AssertFalse() RZE_ASSERT_IMPL(false, "false", nullptr)
+#define AssertEqual(Value1, Value2) RZE_ASSERT_IMPL((Value1) == (Value2), #Value1 " == " #Value2, nullptr)
+#define AssertIsNull(Value) RZE_ASSERT_IMPL((Value) == nullptr, #Value " == nullptr", nullptr)
+#define AssertNotNull(Value) RZE_ASSERT_IMPL((Value) != nullptr, #Value " != nullptr", nullptr)
+#define AssertExpr(Expr) RZE_ASSERT_IMPL(Expr, #Expr, nullptr)
+#define AssertMsg(Expr, Msg) RZE_ASSERT_IMPL(Expr, #Expr, Msg)
 
 #define RZE_LOG(Msg) 									\
 {															\

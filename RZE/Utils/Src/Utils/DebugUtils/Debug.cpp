@@ -1,6 +1,8 @@
 #include <StdAfx.h>
 #include <Utils/DebugUtils/Debug.h>
 
+#include <crtdbg.h>
+#include <cstdio>
 #include <ctime>
 #include <iomanip>
 #include <mutex>
@@ -43,4 +45,30 @@ namespace Debug
 		logFile << str.data();
 		logFile.Close();
 	}
+
+#ifdef _DEBUG
+	bool ReportAssertFailure(const char* file, int line, const char* expr, const char* msg)
+	{
+		// The CRT dialog already prefixes the text with "Expression: ".
+		std::string text = expr;
+		if (msg != nullptr)
+		{
+			text += "\n\nMessage: ";
+			text += msg;
+		}
+
+		fprintf(stderr, "Assertion failed: %s, file %s, line %d\n", expr, file, line);
+		if (msg != nullptr)
+		{
+			fprintf(stderr, "    Message: %s\n", msg);
+		}
+
+		// _CRT_ASSERT reports go to a message box by default for both console and
+		// windows subsystem apps, unlike assert() which only uses one for the latter.
+		// Retry returns 1, Ignore returns 0, Abort terminates; -1 means the report
+		// itself failed, so break rather than silently continuing.
+		const int result = _CrtDbgReport(_CRT_ASSERT, file, line, nullptr, "%s", text.c_str());
+		return result != 0;
+	}
+#endif
 }
