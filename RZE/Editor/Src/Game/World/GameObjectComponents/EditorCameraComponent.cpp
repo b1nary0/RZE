@@ -245,7 +245,7 @@ void EditorCameraComponent::GenerateCameraMatrices(const Vector3D& position)
 {
 	OPTICK_EVENT("GenerateCameraMatrices");
 
-	m_projectionMat = Matrix4x4::CreatePerspectiveMatrix(m_fov, m_aspectRatio, m_nearCull, m_farCull);
+	m_projectionMat = Matrix4x4::CreatePerspectiveMatrixZeroToOne(m_fov, m_aspectRatio, m_nearCull, m_farCull);
 	m_viewMat = Matrix4x4::CreateViewMatrix(position, position + m_forward, m_upDir);
 }
 

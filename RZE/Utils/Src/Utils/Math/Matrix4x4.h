@@ -15,6 +15,8 @@ public:
 
 	static Matrix4x4 CreateViewMatrix(const Vector3D& eyePos, const Vector3D& centerPos, const Vector3D& upDir);
 	static Matrix4x4 CreatePerspectiveMatrix(const float fovYDegrees, const float aspectRatio, const float nearCull, const float farCull);
+	// As CreatePerspectiveMatrix but outputs D3D's [0, 1] depth range instead of OpenGL's [-1, 1]
+	static Matrix4x4 CreatePerspectiveMatrixZeroToOne(const float fovYDegrees, const float aspectRatio, const float nearCull, const float farCull);
 	static Matrix4x4 CreateOrthoMatrix(const float left, const float right, const float bottom, const float top, const float zNear, const float zFar);
 	// As CreateOrthoMatrix but outputs D3D's [0, 1] depth range instead of OpenGL's [-1, 1]
 	static Matrix4x4 CreateOrthoMatrixZeroToOne(const float left, const float right, const float bottom, const float top, const float zNear, const float zFar);

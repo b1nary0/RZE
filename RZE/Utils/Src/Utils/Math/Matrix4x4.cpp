@@ -7,6 +7,16 @@
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Math.h>
 
+namespace
+{
+	// Remaps clip-space z from OpenGL's [-1, 1] to D3D's [0, 1] (z' = 0.5z + 0.5w); this GLM version
+	// predates glm::orthoZO / glm::perspectiveZO
+	glm::mat4 DepthRangeToZeroToOne()
+	{
+		return glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.5f)) * glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 0.5f));
+	}
+}
+
 Matrix4x4 Matrix4x4::IDENTITY = Matrix4x4(glm::mat4(1.0f));
 
 Matrix4x4::Matrix4x4()
@@ -40,6 +50,11 @@ Matrix4x4 Matrix4x4::CreatePerspectiveMatrix(const float fovYDegrees, const floa
 	return Matrix4x4(glm::perspective(fovYDegrees * MathUtils::ToRadians, aspectRatio, nearCull, farCull));
 }
 
+Matrix4x4 Matrix4x4::CreatePerspectiveMatrixZeroToOne(const float fovYDegrees, const float aspectRatio, const float nearCull, const float farCull)
+{
+	return Matrix4x4(DepthRangeToZeroToOne() * glm::perspective(fovYDegrees * MathUtils::ToRadians, aspectRatio, nearCull, farCull));
+}
+
 Matrix4x4 Matrix4x4::CreateOrthoMatrix(const float left, const float right, const float bottom, const float top, const float zNear, const float zFar)
 {
 	return Matrix4x4(glm::ortho(left, right, bottom, top, zNear, zFar));
@@ -47,9 +62,7 @@ Matrix4x4 Matrix4x4::CreateOrthoMatrix(const float left, const float right, cons
 
 Matrix4x4 Matrix4x4::CreateOrthoMatrixZeroToOne(const float left, const float right, const float bottom, const float top, const float zNear, const float zFar)
 {
-	// This GLM version predates glm::orthoZO, so remap z from [-1, 1] to [0, 1]
-	const glm::mat4 depthRemap = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.5f)) * glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 0.5f));
-	return Matrix4x4(depthRemap * glm::ortho(left, right, bottom, top, zNear, zFar));
+	return Matrix4x4(DepthRangeToZeroToOne() * glm::ortho(left, right, bottom, top, zNear, zFar));
 }
 
 void Matrix4x4::Translate(const Vector3D& translation)

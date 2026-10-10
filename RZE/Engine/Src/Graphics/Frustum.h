@@ -10,9 +10,8 @@
 class Frustum
 {
 public:
-	// Extracts the planes from a view-projection matrix (Gribb & Hartmann). Assumes GLM's default -1..1
-	// clip-space depth; with a 0..1 projection the near plane would sit slightly behind the real one,
-	// which only makes culling more conservative.
+	// Extracts the planes from a view-projection matrix (Gribb & Hartmann). Assumes D3D's 0..1 clip-space
+	// depth, as the camera projections produce (Matrix4x4::CreatePerspectiveMatrixZeroToOne).
 	explicit Frustum(const Matrix4x4& viewProjection)
 	{
 		const Vector4D row0 = viewProjection.GetRow(0);
@@ -24,7 +23,7 @@ public:
 		m_planes[1] = Plane(row3 - row0); // Right
 		m_planes[2] = Plane(row3 + row1); // Bottom
 		m_planes[3] = Plane(row3 - row1); // Top
-		m_planes[4] = Plane(row3 + row2); // Near
+		m_planes[4] = Plane(row2);        // Near: z >= 0
 		m_planes[5] = Plane(row3 - row2); // Far
 	}
 
