@@ -74,7 +74,7 @@ public:
 	// Commit property changes to GPU buffer
 	void CommitPropertyChanges();
 
-	Rendering::ConstantBufferHandle GetParamBuffer() const;
+	const Rendering::ConstantBufferHandle& GetParamBuffer() const;
 		
 private:
 	std::string m_name;

@@ -48,6 +48,8 @@ public:
 	const std::string& GetName() const { return m_name; }
 	std::shared_ptr<MaterialInstance> GetMaterial();
 	std::shared_ptr<const MaterialInstance> GetMaterial() const;
+	// For drawing: reads the material without copying the shared_ptr
+	const MaterialInstance& GetMaterialRef() const;
 	const std::vector<MeshVertex>& GetVertices();
 
 	// Object-space axis-aligned bounds of the vertices; calculated in AllocateData()
@@ -57,8 +59,8 @@ public:
 	const std::vector<float>& GetVertexDataRaw() const;
 	const std::vector<U32>& GetIndexDataRaw() const;
 
-	const std::shared_ptr<VertexBuffer> GetVertexBuffer() const;
-	const std::shared_ptr<IndexBuffer> GetIndexBuffer() const;
+	const std::shared_ptr<VertexBuffer>& GetVertexBuffer() const;
+	const std::shared_ptr<IndexBuffer>& GetIndexBuffer() const;
 
 private:
 	void CalculateBounds();

@@ -148,6 +148,12 @@ std::shared_ptr<const MaterialInstance> MeshGeometry::GetMaterial() const
 	return m_material;
 }
 
+const MaterialInstance& MeshGeometry::GetMaterialRef() const
+{
+	AssertNotNull(m_material);
+	return *m_material;
+}
+
 std::shared_ptr<MaterialInstance> MeshGeometry::GetMaterial()
 {
 	AssertNotNull(m_material);
@@ -169,12 +175,12 @@ const std::vector<U32>& MeshGeometry::GetIndexDataRaw() const
 	return m_indexBuffer->GetData();
 }
 
-const std::shared_ptr<VertexBuffer> MeshGeometry::GetVertexBuffer() const
+const std::shared_ptr<VertexBuffer>& MeshGeometry::GetVertexBuffer() const
 {
 	return m_vertexBuffer;
 }
 
-const std::shared_ptr<IndexBuffer> MeshGeometry::GetIndexBuffer() const
+const std::shared_ptr<IndexBuffer>& MeshGeometry::GetIndexBuffer() const
 {
 	return m_indexBuffer;
 }

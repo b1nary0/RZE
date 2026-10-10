@@ -140,20 +140,21 @@ void ShadowRenderStage::RenderShadowMap(const RenderEngine::SceneData& renderDat
 
 			for (const auto& meshGeometry : renderObject->GetStaticMesh().GetSubMeshes())
 			{
-				std::shared_ptr<const MaterialInstance> materialInstance = meshGeometry.GetMaterial();
+				const MaterialInstance& materialInstance = meshGeometry.GetMaterialRef();
 
 				// Only needed for cutout casters (leaves, chains, lashes)
-				Rendering::Renderer::SetConstantBufferPS(materialInstance->GetParamBuffer(), 1);
+				Rendering::Renderer::SetConstantBufferPS(materialInstance.GetParamBuffer(), 1);
 
-				if (const Texture2D* const opacityMap = materialInstance->GetTextureResource(MaterialInstance::TEXTURE_SLOT_OPACITY))
+				if (const Texture2D* const opacityMap = materialInstance.GetTextureResource(MaterialInstance::TEXTURE_SLOT_OPACITY))
 				{
 					Rendering::Renderer::SetTextureResource(opacityMap->GetPlatformObject(), MaterialInstance::TEXTURE_SLOT_OPACITY);
 				}
 
+				const Rendering::IndexBufferHandle& indexBuffer = meshGeometry.GetIndexBuffer()->GetPlatformObject();
 				Rendering::Renderer::SetVertexBuffer(meshGeometry.GetVertexBuffer()->GetPlatformObject(), 0);
-				Rendering::Renderer::SetIndexBuffer(meshGeometry.GetIndexBuffer()->GetPlatformObject());
+				Rendering::Renderer::SetIndexBuffer(indexBuffer);
 
-				Rendering::Renderer::DrawIndexed(meshGeometry.GetIndexBuffer()->GetPlatformObject());
+				Rendering::Renderer::DrawIndexed(indexBuffer);
 			}
 		}
 	}

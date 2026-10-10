@@ -96,27 +96,28 @@ void ForwardRenderStage::Render(RenderContext& context)
 			// @TODO
 			// This is god awful. Just in place while developing shader model.
 			// Should get resolved once the system matures
-			std::shared_ptr<const MaterialInstance> materialInstance = meshGeometry.GetMaterial();
-			const PixelShader* const pixelShader = materialInstance->GetPixelShader();
+			const MaterialInstance& materialInstance = meshGeometry.GetMaterialRef();
+			const PixelShader* const pixelShader = materialInstance.GetPixelShader();
 
 			Rendering::Renderer::SetPixelShader(pixelShader->GetPlatformObject());
-			Rendering::Renderer::SetConstantBufferPS(materialInstance->GetParamBuffer(), 1);
+			Rendering::Renderer::SetConstantBufferPS(materialInstance.GetParamBuffer(), 1);
 			Rendering::Renderer::SetConstantBufferPS(lightObject->GetPropertyBuffer(), 2);
-			
+
 			// @TODO Really need to get to texture infrastructure refactor soon - 2/6/2022
 			for (U8 textureSlot = 0; textureSlot < MaterialInstance::TextureSlot::TEXTURE_SLOT_COUNT; ++textureSlot)
 			{
-				if (const Texture2D* const texture = materialInstance->GetTextureResource(textureSlot))
+				if (const Texture2D* const texture = materialInstance.GetTextureResource(textureSlot))
 				{
 					// @TODO Should solve this better by providing an API that will provide a texture resource array
 					Rendering::Renderer::SetTextureResource(texture->GetPlatformObject(), textureSlot);
 				}
 			}
 
+			const Rendering::IndexBufferHandle& indexBuffer = meshGeometry.GetIndexBuffer()->GetPlatformObject();
 			Rendering::Renderer::SetVertexBuffer(meshGeometry.GetVertexBuffer()->GetPlatformObject(), 0);
-			Rendering::Renderer::SetIndexBuffer(meshGeometry.GetIndexBuffer()->GetPlatformObject());
+			Rendering::Renderer::SetIndexBuffer(indexBuffer);
 
-			Rendering::Renderer::DrawIndexed(meshGeometry.GetIndexBuffer()->GetPlatformObject());
+			Rendering::Renderer::DrawIndexed(indexBuffer);
 		}
 	}
 

@@ -32,7 +32,7 @@ public:
 
 	const Filepath& GetFilepath() const { return m_filepath; }
 
-	Rendering::TextureBuffer2DHandle GetPlatformObject() const { return m_GPUResource; }
+	const Rendering::TextureBuffer2DHandle& GetPlatformObject() const { return m_GPUResource; }
 
 private:
 	const U8* m_data;

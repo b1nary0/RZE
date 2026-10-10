@@ -14,7 +14,7 @@ public:
 
 	const std::vector<float>& GetData() const { return m_localBuffer; }
 
-	const Rendering::VertexBufferHandle GetPlatformObject() const { return m_gpuBuffer; }
+	const Rendering::VertexBufferHandle& GetPlatformObject() const { return m_gpuBuffer; }
 
 private:
 	// Should we also store the layout or leave that to Renderer?

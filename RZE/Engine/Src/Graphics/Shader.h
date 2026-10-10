@@ -22,9 +22,9 @@ public:
 
 	const std::string& GetName() const { return m_name; }
 
-	Rendering::VertexShaderHandle GetPlatformObject() const { return m_shader; }
-	Rendering::ConstantBufferHandle GetCameraDataBuffer() const { return m_cameraDataBuf; }
-	Rendering::ConstantBufferHandle GetWorldMatrixBuffer() const { return m_worldMatrixBuf; }
+	const Rendering::VertexShaderHandle& GetPlatformObject() const { return m_shader; }
+	const Rendering::ConstantBufferHandle& GetCameraDataBuffer() const { return m_cameraDataBuf; }
+	const Rendering::ConstantBufferHandle& GetWorldMatrixBuffer() const { return m_worldMatrixBuf; }
 	
 private:
 	const std::string m_name;
@@ -49,7 +49,7 @@ public:
 	void Release() final;
 
 	const std::string& GetName() const { return m_name; }
-	const Rendering::PixelShaderHandle GetPlatformObject() const;
+	const Rendering::PixelShaderHandle& GetPlatformObject() const;
 	
 private:
 	const std::string m_name;

@@ -36,7 +36,7 @@ void PixelShader::Release()
 	Rendering::Renderer::ReleasePixelShader(m_shader);
 }
 
-const Rendering::PixelShaderHandle PixelShader::GetPlatformObject() const
+const Rendering::PixelShaderHandle& PixelShader::GetPlatformObject() const
 {
 	return m_shader;
 }

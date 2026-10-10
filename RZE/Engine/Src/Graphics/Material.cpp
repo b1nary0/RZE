@@ -98,7 +98,7 @@ void MaterialInstance::CommitPropertyChanges()
 	Rendering::Renderer::UploadDataToBuffer<MaterialParams>(m_paramBuffer, &m_properties);
 }
 
-Rendering::ConstantBufferHandle MaterialInstance::GetParamBuffer() const
+const Rendering::ConstantBufferHandle& MaterialInstance::GetParamBuffer() const
 {
 	return m_paramBuffer;
 }

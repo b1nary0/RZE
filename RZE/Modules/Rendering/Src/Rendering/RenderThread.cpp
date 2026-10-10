@@ -385,8 +385,7 @@ namespace Rendering
 			{
 				RenderCommand_ClearRenderTarget* cmd = static_cast<RenderCommand_ClearRenderTarget*>(command);
 
-				std::shared_ptr<ITextureBuffer2D> texture = cmd->renderTarget.m_buffer;
-				DX11TextureBuffer2D* texturePtr = static_cast<DX11TextureBuffer2D*>(texture.get());
+				DX11TextureBuffer2D* texturePtr = static_cast<DX11TextureBuffer2D*>(cmd->renderTarget.m_buffer.get());
 				const Vector4D& colour = cmd->colour;
 
 				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
@@ -526,9 +525,8 @@ namespace Rendering
 			{
 				RenderCommand_DrawIndexed* cmd = static_cast<RenderCommand_DrawIndexed*>(command);
 				
-				std::shared_ptr<IIndexBuffer> bufferPtr = cmd->indexBuffer.m_buffer;
 				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
-				deviceContext.DrawIndexed(bufferPtr->GetIndexCount(), 0, 0);
+				deviceContext.DrawIndexed(cmd->indexBuffer.m_buffer->GetIndexCount(), 0, 0);
 
 				break;
 			}
