@@ -101,6 +101,8 @@ public abstract class BaseProject : Project
 
         conf.Options.Add(Options.Vc.Compiler.Exceptions.EnableWithSEH);
         conf.Options.Add(Options.Vc.Compiler.EnhancedInstructionSet.AdvancedVectorExtensions2);
+
+        conf.Defines.Add("RZE_RETAIL");
     }
 
     #endregion

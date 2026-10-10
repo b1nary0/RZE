@@ -46,13 +46,36 @@ namespace Debug
 #define AssertExpr(Expr) RZE_ASSERT_IMPL(Expr, #Expr, nullptr)
 #define AssertMsg(Expr, Msg) RZE_ASSERT_IMPL(Expr, #Expr, Msg)
 
+#define START_TIMED_BLOCK(Name)	\
+	ScopedHiResTimer timer(Name);\
+
+#define IMGUI_ENABLED
+
+#else
+
+#define AssertFalse()
+#define AssertEqual(Value1, Value2)
+#define AssertIsNull(Value)
+#define AssertNotNull(Value)
+#define AssertExpr(Expr)
+#define AssertMsg(Expr, Msg)
+
+#endif
+
+// Logging is available in Debug and Release; only Retail strips it.
+#ifndef RZE_RETAIL
+#define RZE_LOGGING_ENABLED
+#endif
+
+#ifdef RZE_LOGGING_ENABLED
+
 #define RZE_LOG(Msg) 									\
 {															\
 	std::stringstream ss;									\
 	ss << Msg;												\
 	ss << "\n";												\
 															\
-	printf_s(ss.str().c_str());								\
+	fputs(ss.str().c_str(), stdout);						\
 	Debug::WriteToLog(ss.str());							\
 }
 
@@ -78,26 +101,21 @@ namespace Debug
 															\
 	char buf[1024];											\
 	sprintf_s(buf, 1024, ss.str().c_str(), __VA_ARGS__);		\
-	printf_s(ss.str().c_str(), __VA_ARGS__); 				\
+	fputs(buf, stdout);										\
 	Debug::WriteToLog(buf);										\
-}											
-
-#define START_TIMED_BLOCK(Name)	\
-	ScopedHiResTimer timer(Name);\
-
-#define IMGUI_ENABLED
+}
 
 #else
 
-#define AssertFalse()
-#define AssertEqual(Value1, Value2)
-#define AssertIsNull(Value)
-#define AssertNotNull(Value)
-#define AssertExpr(Expr)
-#define AssertMsg(Expr, Msg)
+namespace Debug
+{
+	template <typename... Args>
+	inline void DiscardLogArgs(const Args&...) {}
+}
 
-#define RZE_LOG
-#define RZE_LOG_ARGS
-#define LOG_CONSOLE_ANNOUNCE
+// The args are passed to a dead branch so variables that only feed a log line don't warn as unused.
+#define RZE_LOG(Msg) do {} while (0)
+#define RZE_LOG_ARGS(Msg, ...) do { if (false) { Debug::DiscardLogArgs(__VA_ARGS__); } } while (0)
+#define LOG_CONSOLE_ANNOUNCE(Msg, ...) do { if (false) { Debug::DiscardLogArgs(__VA_ARGS__); } } while (0)
 
 #endif
