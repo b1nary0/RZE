@@ -132,11 +132,13 @@ void ShadowRenderStage::RenderShadowMap(const RenderEngine::SceneData& renderDat
 		Rendering::Renderer::SetInputLayout(m_vertexShader->GetPlatformObject());
 		Rendering::Renderer::SetPrimitiveTopology(Rendering::EPrimitiveTopology::TriangleList);
 
+		// Bound once; only its contents change per object
+		Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetWorldMatrixBuffer(), 1);
+
 		for (const auto& renderObject : renderData.renderObjects)
 		{
 			// See ForwardRenderStage: uploads the whole MatrixMem (transform + inverse)
 			Rendering::Renderer::UploadDataToBuffer<Matrix4x4>(m_vertexShader->GetWorldMatrixBuffer(), &renderObject->GetTransform());
-			Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetWorldMatrixBuffer(), 1);
 
 			for (const auto& meshGeometry : renderObject->GetStaticMesh().GetSubMeshes())
 			{

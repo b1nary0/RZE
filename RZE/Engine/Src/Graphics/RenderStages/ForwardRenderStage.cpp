@@ -81,12 +81,18 @@ void ForwardRenderStage::Render(RenderContext& context)
 	Rendering::Renderer::SetConstantBufferPS(shadowMapData.ShadowParams, k_shadowBufferSlot);
 	Rendering::Renderer::SetTextureResource(shadowMapData.ShadowMap, k_shadowMapSlot);
 
+	// The same for every draw: bound once, and only the world matrix buffer's contents change per object
+	Rendering::Renderer::SetConstantBufferPS(lightObject->GetPropertyBuffer(), 2);
+	Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetWorldMatrixBuffer(), 1);
+
+	// Consecutive submeshes often share a shader, so it's only set when it changes
+	const PixelShader* boundPixelShader = nullptr;
+
 	for (const auto& renderObject : renderData.renderObjects)
 	{
 		// @note this sends in the address of renderObject->m_matrixMem.transform but fulfils the memory of struct MatrixMem as a whole
 		// this should be re-evaluated later to have a better solve for the issue of commands needing access to the data being uploaded's lifetime
 		Rendering::Renderer::UploadDataToBuffer<Matrix4x4>(m_vertexShader->GetWorldMatrixBuffer(), &renderObject->GetTransform());
-		Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetWorldMatrixBuffer(), 1);
 
 		// @TODO
 		// Currently each MeshGeometry is a draw call. Need to batch this down so it becomes a single draw call
@@ -99,9 +105,12 @@ void ForwardRenderStage::Render(RenderContext& context)
 			const MaterialInstance& materialInstance = meshGeometry.GetMaterialRef();
 			const PixelShader* const pixelShader = materialInstance.GetPixelShader();
 
-			Rendering::Renderer::SetPixelShader(pixelShader->GetPlatformObject());
+			if (pixelShader != boundPixelShader)
+			{
+				Rendering::Renderer::SetPixelShader(pixelShader->GetPlatformObject());
+				boundPixelShader = pixelShader;
+			}
 			Rendering::Renderer::SetConstantBufferPS(materialInstance.GetParamBuffer(), 1);
-			Rendering::Renderer::SetConstantBufferPS(lightObject->GetPropertyBuffer(), 2);
 
 			// @TODO Really need to get to texture infrastructure refactor soon - 2/6/2022
 			for (U8 textureSlot = 0; textureSlot < MaterialInstance::TextureSlot::TEXTURE_SLOT_COUNT; ++textureSlot)
