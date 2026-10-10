@@ -94,6 +94,7 @@ AsyncResourceBatch::Entry* AsyncResourceBatch::BeginRequest(const Filepath& reso
 		return nullptr;
 	}
 
+	RZE_LOG_ARGS("Creating resource [%s]", resourceKey.c_str());
 	return entry;
 }
 
