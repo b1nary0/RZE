@@ -2,7 +2,7 @@
 
 #include <mutex>
 #include <thread>
-#include <queue>
+#include <vector>
 
 namespace Rendering
 {
@@ -44,8 +44,10 @@ namespace Rendering
 
 	private:
 		// @note these are guaranteed to be contiguous as its backed by MemArena
-		std::queue<RenderCommand*> m_producerQueue;
-		std::queue<RenderCommand*> m_consumerQueue;
+		// Commands run in the order they were pushed. Vectors rather than std::queue so they keep their
+		// capacity between frames: the consumer is cleared, not freed, after its commands run.
+		std::vector<RenderCommand*> m_producerQueue;
+		std::vector<RenderCommand*> m_consumerQueue;
 
 		void* m_windowHandle = nullptr;
 		std::unique_ptr<DX11Device> m_device = nullptr;

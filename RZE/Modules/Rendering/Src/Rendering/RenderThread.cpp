@@ -114,7 +114,7 @@ namespace Rendering
 	void RenderThread::PushCommand(RenderCommand* command)
 	{
 		AssertNotNull(command);
-		m_producerQueue.push(command);
+		m_producerQueue.push_back(command);
 	}
 
 	void RenderThread::ProcessCommands()
@@ -122,11 +122,8 @@ namespace Rendering
 		OPTICK_EVENT();
 		AssertExpr(m_processSignal == true);
 
-		while (!m_consumerQueue.empty())
+		for (RenderCommand* command : m_consumerQueue)
 		{
-			RenderCommand* command = m_consumerQueue.front();
-			m_consumerQueue.pop();
-
 			switch (command->type)
 			{
 			case RenderCommandType::ImGuiRender:
@@ -548,6 +545,9 @@ namespace Rendering
 
 			command->~RenderCommand();
 		}
+
+		// Keeps the capacity, so steady-state frames don't allocate
+		m_consumerQueue.clear();
 	}
 
 	void RenderThread::SignalProcess()
