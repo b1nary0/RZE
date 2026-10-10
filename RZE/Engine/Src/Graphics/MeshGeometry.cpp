@@ -6,7 +6,7 @@
 #include <Graphics/IndexBuffer.h>
 #include <Graphics/VertexBuffer.h>
 
-#include <GLM/common.hpp>
+#include <Utils/Math/Math.h>
 
 namespace
 {
@@ -89,16 +89,13 @@ void MeshGeometry::CalculateBounds()
 		return;
 	}
 
-	glm::vec3 boundsMin = m_vertices[0].Position.GetInternalVec();
-	glm::vec3 boundsMax = boundsMin;
+	m_boundsMin = m_vertices[0].Position;
+	m_boundsMax = m_vertices[0].Position;
 	for (const MeshVertex& vertex : m_vertices)
 	{
-		boundsMin = glm::min(boundsMin, vertex.Position.GetInternalVec());
-		boundsMax = glm::max(boundsMax, vertex.Position.GetInternalVec());
+		m_boundsMin = VectorUtils::Min(m_boundsMin, vertex.Position);
+		m_boundsMax = VectorUtils::Max(m_boundsMax, vertex.Position);
 	}
-
-	m_boundsMin = Vector3D(boundsMin.x, boundsMin.y, boundsMin.z);
-	m_boundsMax = Vector3D(boundsMax.x, boundsMax.y, boundsMax.z);
 }
 
 void MeshGeometry::AddVertex(const MeshVertex& vertex)

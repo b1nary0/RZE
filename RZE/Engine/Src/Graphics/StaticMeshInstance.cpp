@@ -3,7 +3,7 @@
 
 #include <Utils/DebugUtils/Debug.h>
 
-#include <GLM/common.hpp>
+#include <Utils/Math/Math.h>
 
 StaticMeshInstance::StaticMeshInstance()
 {
@@ -29,16 +29,13 @@ void StaticMeshInstance::CalculateBounds()
 		return;
 	}
 
-	glm::vec3 boundsMin = m_subMeshes[0].GetBoundsMin().GetInternalVec();
-	glm::vec3 boundsMax = m_subMeshes[0].GetBoundsMax().GetInternalVec();
+	m_boundsMin = m_subMeshes[0].GetBoundsMin();
+	m_boundsMax = m_subMeshes[0].GetBoundsMax();
 	for (const MeshGeometry& subMesh : m_subMeshes)
 	{
-		boundsMin = glm::min(boundsMin, subMesh.GetBoundsMin().GetInternalVec());
-		boundsMax = glm::max(boundsMax, subMesh.GetBoundsMax().GetInternalVec());
+		m_boundsMin = VectorUtils::Min(m_boundsMin, subMesh.GetBoundsMin());
+		m_boundsMax = VectorUtils::Max(m_boundsMax, subMesh.GetBoundsMax());
 	}
-
-	m_boundsMin = Vector3D(boundsMin.x, boundsMin.y, boundsMin.z);
-	m_boundsMax = Vector3D(boundsMax.x, boundsMax.y, boundsMax.z);
 }
 
 const std::vector<MeshGeometry>& StaticMeshInstance::GetSubMeshes() const

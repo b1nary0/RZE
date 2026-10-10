@@ -3,7 +3,7 @@
 
 #include <Utils/DebugUtils/Debug.h>
 
-#include <GLM/gtc/round.hpp>
+#include <Utils/Math/Math.h>
 
 BufferCapacityPolicy::BufferCapacityPolicy(const BufferCapacitySettings& settings)
 	: m_settings(settings)
@@ -20,7 +20,7 @@ bool BufferCapacityPolicy::Update(U32 needed)
 
 	if (needed > m_capacity)
 	{
-		m_capacity = std::max(m_settings.MinCapacity, glm::ceilPowerOfTwo(needed));
+		m_capacity = std::max(m_settings.MinCapacity, MathUtils::CeilPowerOfTwo(needed));
 		capacityChanged = true;
 
 		// A buffer that just grew shouldn't be considered for shrinking until full windows pass again
@@ -40,7 +40,7 @@ bool BufferCapacityPolicy::Update(U32 needed)
 	const U32 recentPeak = std::max(m_peakThisWindow, m_peakLastWindow);
 	if (m_capacity > m_settings.MinCapacity && recentPeak * m_settings.ShrinkUsageDivisor <= m_capacity)
 	{
-		m_capacity = std::max(m_settings.MinCapacity, glm::ceilPowerOfTwo(recentPeak * 2));
+		m_capacity = std::max(m_settings.MinCapacity, MathUtils::CeilPowerOfTwo(recentPeak * 2));
 		capacityChanged = true;
 	}
 
