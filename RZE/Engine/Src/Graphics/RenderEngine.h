@@ -23,6 +23,9 @@ class RenderPipeline;
 // @TODO Move to own file
 class LightObject
 {
+	// Hands out m_sceneRevision
+	friend class RenderEngine;
+
 public:
 	struct PropertyBufferLayout
 	{
@@ -38,7 +41,14 @@ public:
 
 	void Initialize();
 
-	void SetDirection(const Vector3D& direction) { m_data.direction = direction; }
+	void SetDirection(const Vector3D& direction)
+	{
+		if (direction != m_data.direction)
+		{
+			m_data.direction = direction;
+			MarkSceneChanged();
+		}
+	}
 	const Vector3D& GetDirection() const { return m_data.direction; }
 
 	void SetStrength(float strength) { m_data.strength = strength; }
@@ -52,14 +62,23 @@ public:
 	const Rendering::ConstantBufferHandle& GetPropertyBuffer() { return m_propertyBuffer; }
 
 private:
+	// Only the direction counts: colour and strength don't change anything that's cached (e.g. the shadow map)
+	void MarkSceneChanged() { if (m_sceneRevision != nullptr) { ++*m_sceneRevision; } }
+
+private:
 	PropertyBufferLayout m_data;
 
 private:
 	Rendering::ConstantBufferHandle m_propertyBuffer;
+	// RenderEngine::SceneData::revision of the scene this light is in
+	U64* m_sceneRevision = nullptr;
 };
 
 class RenderObject
 {
+	// Hands out m_sceneRevision
+	friend class RenderEngine;
+
 public:
 	RenderObject() = default;
 	~RenderObject() = default;
@@ -72,11 +91,23 @@ public:
 	};
 
 public:
-	void SetStaticMesh(const StaticMeshInstance& staticMesh) { m_staticMesh = staticMesh; }
+	void SetStaticMesh(const StaticMeshInstance& staticMesh) { m_staticMesh = staticMesh; MarkSceneChanged(); }
 	const StaticMeshInstance& GetStaticMesh() { return m_staticMesh; }
 
-	void SetTransform(const Matrix4x4& transform) { m_matrixMem.transform = transform; m_matrixMem.invTransform = transform.Inverse(); }
+	// Called every frame by RenderComponent, so an unchanged transform returns early
+	void SetTransform(const Matrix4x4& transform)
+	{
+		if (transform != m_matrixMem.transform)
+		{
+			m_matrixMem.transform = transform;
+			m_matrixMem.invTransform = transform.Inverse();
+			MarkSceneChanged();
+		}
+	}
 	const Matrix4x4& GetTransform() const { return m_matrixMem.transform; }
+
+private:
+	void MarkSceneChanged() { if (m_sceneRevision != nullptr) { ++*m_sceneRevision; } }
 
 private:
 	// @TODO This will be replaced after a batching system is implemented
@@ -85,6 +116,8 @@ private:
 	// when skinned meshes are a thing
 	StaticMeshInstance m_staticMesh;
 	MatrixMem m_matrixMem;
+	// RenderEngine::SceneData::revision of the scene this object is in
+	U64* m_sceneRevision = nullptr;
 };
 
 //
@@ -128,6 +161,10 @@ public:
 		LightObjectContainer lightObjects;
 
 		DebugLineContainer debugLines;
+
+		// Changes whenever a render object is added, removed, moved or given a new mesh, or a light changes
+		// direction. Lets stages skip work whose inputs haven't changed (e.g. ShadowRenderStage's shadow map).
+		U64 revision = 0;
 	};
 
 public:

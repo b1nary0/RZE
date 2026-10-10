@@ -14,7 +14,8 @@ class PixelShader;
 
 // Renders scene depth from the directional light into a shadow map that ForwardRenderStage samples.
 // A single map is fitted tightly around the bounds of every render object, as seen from the light.
-// It doesn't depend on the camera, so coverage and resolution stay fixed as the camera moves.
+// It doesn't depend on the camera, so coverage and resolution stay fixed as the camera moves, and it's
+// only re-rendered when the scene or the light changes.
 class ShadowRenderStage : public IRenderStage
 {
 public:
@@ -40,6 +41,8 @@ public:
 	void Render(RenderContext& context) override;
 
 private:
+	void RenderShadowMap(const RenderEngine::SceneData& renderData);
+
 	// Returns false if there's nothing to cast shadows
 	bool CalculateLightViewProjection(const RenderEngine::SceneData& renderData, const Vector3D& lightDirection, Matrix4x4& outViewProjection, float& outWorldTexelSize) const;
 
@@ -55,4 +58,8 @@ private:
 	Rendering::TextureBuffer2DHandle m_shadowMap;
 	Rendering::ConstantBufferHandle m_lightCameraBuffer;
 	Rendering::ConstantBufferHandle m_shadowBuffer;
+
+	// SceneData::revision the shadow map was last rendered for
+	U64 m_renderedRevision = 0;
+	bool m_hasRenderedMap = false;
 };

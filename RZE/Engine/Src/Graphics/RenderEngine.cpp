@@ -68,6 +68,7 @@ void RenderEngine::Shutdown()
 void RenderEngine::ClearObjects()
 {
 	m_sceneData.renderObjects.clear();
+	++m_sceneData.revision;
 }
 
 void RenderEngine::ReleaseRenderStages()
@@ -80,8 +81,10 @@ RenderObjectPtr RenderEngine::CreateRenderObject(const StaticMeshInstance& stati
 	OPTICK_EVENT();
 	
 	std::unique_ptr<RenderObject>& renderObjectPtr = m_sceneData.renderObjects.emplace_back(std::make_unique<RenderObject>());
+	renderObjectPtr->m_sceneRevision = &m_sceneData.revision;
 	renderObjectPtr->SetStaticMesh(staticMesh);
-	
+	++m_sceneData.revision;
+
 	return RenderObjectPtr(renderObjectPtr.get());
 }
 
@@ -109,14 +112,17 @@ void RenderEngine::DestroyRenderObject(RenderObjectPtr& renderObject)
 		}
 
 		renderObject = RenderObjectPtr();
+		++m_sceneData.revision;
 	}
 }
 
 LightObjectPtr RenderEngine::CreateLightObject()
 {
 	std::unique_ptr<LightObject>& lightObjectPtr = m_sceneData.lightObjects.emplace_back(std::make_unique<LightObject>());
+	lightObjectPtr->m_sceneRevision = &m_sceneData.revision;
 	lightObjectPtr->Initialize();
-	
+	++m_sceneData.revision;
+
 	return LightObjectPtr(lightObjectPtr.get());
 }
 
@@ -144,6 +150,7 @@ void RenderEngine::DestroyLightObject(LightObjectPtr& lightObject)
 		}
 
 		lightObject = LightObjectPtr();
+		++m_sceneData.revision;
 	}
 }
 

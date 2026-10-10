@@ -72,7 +72,27 @@ void ShadowRenderStage::Render(RenderContext& context)
 {
 	OPTICK_EVENT();
 
-	const RenderEngine::SceneData& renderData = context.Scene;
+	// The map depends only on the scene and the light, not on the view, so it's only re-rendered when
+	// SceneData::revision says one of them changed. That also skips it for every view after the first in a frame.
+	// Known gap: changing a material's opacity map at runtime doesn't change the revision, so the map
+	// picks that up at the next scene change.
+	if (!m_hasRenderedMap || m_renderedRevision != context.Scene.revision)
+	{
+		RenderShadowMap(context.Scene);
+		m_renderedRevision = context.Scene.revision;
+		m_hasRenderedMap = true;
+	}
+
+	// Published even without a light: HasShadows = 0 tells the sampling shaders to skip the lookup
+	ShadowMapData shadowMapData;
+	shadowMapData.ShadowMap = m_shadowMap;
+	shadowMapData.ShadowParams = m_shadowBuffer;
+	m_shadowMapOutput.Publish(context, shadowMapData);
+}
+
+void ShadowRenderStage::RenderShadowMap(const RenderEngine::SceneData& renderData)
+{
+	OPTICK_EVENT();
 
 	Rendering::Renderer::Begin("ShadowRenderStage");
 
@@ -91,7 +111,8 @@ void ShadowRenderStage::Render(RenderContext& context)
 	if (!renderData.lightObjects.empty()
 		&& CalculateLightViewProjection(renderData, renderData.lightObjects[0]->GetDirection(), lightViewProjection, worldTexelSize))
 	{
-		RenderCamera lightCamera = context.View.Camera;
+		// Only ClipSpace is used by the caster shaders
+		RenderCamera lightCamera;
 		lightCamera.ClipSpace = lightViewProjection;
 
 		shadowData.LightViewProjection = lightCamera.ClipSpace;
@@ -140,12 +161,6 @@ void ShadowRenderStage::Render(RenderContext& context)
 	}
 
 	Rendering::Renderer::UploadDataToBuffer<ShadowBufferLayout>(m_shadowBuffer, &shadowData);
-
-	// Published even without a light: HasShadows = 0 tells the sampling shaders to skip the lookup
-	ShadowMapData shadowMapData;
-	shadowMapData.ShadowMap = m_shadowMap;
-	shadowMapData.ShadowParams = m_shadowBuffer;
-	m_shadowMapOutput.Publish(context, shadowMapData);
 
 	Rendering::Renderer::End();
 }
