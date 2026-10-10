@@ -14,6 +14,17 @@ namespace
 {
 	constexpr float k_cameraMaxZoomSpeed = 0.5f;
 	constexpr float k_cameraMaxSpeed = 8.0f;
+
+	constexpr float k_focusDuration = 0.5f;
+	// Shorter than k_focusDuration so the camera faces its target before it finishes moving, bringing the object into view early
+	constexpr float k_focusRotateDuration = 0.3f;
+	// Distance multiplier past a tight fit, so the framed object fills ~70% of the view and the surroundings stay visible
+	constexpr float k_focusFramePadding = 1.4f;
+	// Keeps tiny or mesh-less objects from pulling the camera right on top of them
+	constexpr float k_focusMinRadius = 0.5f;
+	// Degrees above the object the focused camera looks down from; 45 is a hard cap
+	constexpr float k_focusMinElevation = 30.0f;
+	constexpr float k_focusMaxElevation = 45.0f;
 }
 
 const Vector3D& EditorCameraComponent::GetUpDir() const
@@ -101,6 +112,52 @@ void EditorCameraComponent::SetAsActiveCamera(bool isActiveCamera)
 	m_isActiveCamera = isActiveCamera;
 }
 
+void EditorCameraComponent::FocusOn(const Vector3D& boundsMin, const Vector3D& boundsMax)
+{
+	GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
+	AssertMsg(transformComponent != nullptr, "A camera without a transform is useless");
+
+	const Vector3D center = (boundsMin + boundsMax) * 0.5f;
+	const float radius = std::max((boundsMax - boundsMin).Length() * 0.5f, k_focusMinRadius);
+
+	// Fit the bounding sphere to the narrower of the vertical and horizontal FOVs
+	const float verticalHalfFov = m_fov * 0.5f * MathUtils::ToRadians;
+	const float horizontalHalfFov = std::atan(std::tan(verticalHalfFov) * m_aspectRatio);
+	const float halfFov = std::min(verticalHalfFov, horizontalHalfFov);
+	const float distance = (radius / std::sin(halfFov)) * k_focusFramePadding;
+
+	// Keep the heading we approached from, flattened into the XZ plane
+	Vector3D heading = center - transformComponent->GetPosition();
+	heading.SetY(0.0f);
+	if (heading.LengthSq() <= VectorUtils::kEpsilonSq)
+	{
+		// Directly above or below the object; fall back to the current heading
+		heading = m_forward;
+		heading.SetY(0.0f);
+		if (heading.LengthSq() <= VectorUtils::kEpsilonSq)
+		{
+			heading = Vector3D(0.0f, 0.0f, -1.0f);
+		}
+	}
+	heading.Normalize();
+
+	// Look down from the elevation we're already at relative to the object, kept within the allowed band
+	const Vector3D toCamera = transformComponent->GetPosition() - center;
+	const float toCameraLength = toCamera.Length();
+	const float currentElevation = toCameraLength > VectorUtils::kEpsilon
+		? std::asin(MathUtils::Clampf(toCamera.Y() / toCameraLength, -1.0f, 1.0f)) * MathUtils::ToDegrees
+		: 0.0f;
+	const float elevation = MathUtils::Clampf(currentElevation, k_focusMinElevation, k_focusMaxElevation) * MathUtils::ToRadians;
+	const Vector3D targetForward = heading * std::cos(elevation) + Vector3D(0.0f, -1.0f, 0.0f) * std::sin(elevation);
+
+	m_focusStartPos = transformComponent->GetPosition();
+	m_focusTargetPos = center - targetForward * distance;
+	m_focusStartForward = m_forward;
+	m_focusTargetForward = targetForward;
+	m_focusElapsed = 0.0f;
+	m_isFocusing = true;
+}
+
 EditorCameraComponent::EditorCameraComponent()
 {
 	REFLECT_REGISTER_COMPONENT_CHILD(EditorCameraComponent, CameraComponent);
@@ -138,6 +195,7 @@ void EditorCameraComponent::Update()
 		GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
 		AssertMsg(transformComponent != nullptr, "A camera without a transform is useless");
 
+		UpdateFocus(transformComponent);
 		KeyboardInput(transformComponent);
 		MouseInput(transformComponent);
 
@@ -148,6 +206,36 @@ void EditorCameraComponent::Update()
 			renderCamera.Position = transformComponent->GetPosition();
 			renderCamera.ClipSpace = GetProjectionMatrix() * GetViewMatrix();
 		}
+	}
+}
+
+void EditorCameraComponent::UpdateFocus(GameObjectComponentPtr<TransformComponent>& transfComp)
+{
+	if (!m_isFocusing)
+	{
+		return;
+	}
+
+	// Any manual look or zoom takes over from the animation
+	InputHandler& inputHandler = RZE().GetInputHandler();
+	if (inputHandler.GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Pressed
+		|| inputHandler.GetMouseState().CurWheelVal != 0)
+	{
+		m_isFocusing = false;
+		return;
+	}
+
+	m_focusElapsed += static_cast<float>(RZE().GetDeltaTime());
+	const float t = MathUtils::Clampf(m_focusElapsed / k_focusDuration, 0.0f, 1.0f);
+	const float eased = MathUtils::SmoothStep(t);
+	const float rotateEased = MathUtils::SmoothStep(MathUtils::Clampf(m_focusElapsed / k_focusRotateDuration, 0.0f, 1.0f));
+
+	transfComp->GetPosition() = VectorUtils::Lerp(m_focusStartPos, m_focusTargetPos, eased);
+	SetForward(VectorUtils::Slerp(m_focusStartForward, m_focusTargetForward, rotateEased));
+
+	if (t >= 1.0f)
+	{
+		m_isFocusing = false;
 	}
 }
 

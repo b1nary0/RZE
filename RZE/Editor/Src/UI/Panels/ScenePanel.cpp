@@ -231,17 +231,21 @@ namespace Editor
 				}
 			}
 
-			if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && HasSelectedGameObject())
+			if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 			{
-				GameObjectPtr gameObject = GetSelectedGameObject();
-				GameObjectComponentPtr<TransformComponent> transformComponent = gameObject->GetTransformComponent();
+				Vector3D boundsMin;
+				Vector3D boundsMax;
+				if (!gameObject->GetHierarchyBounds(boundsMin, boundsMax))
+				{
+					// Nothing to measure (light, empty, ...); frame its position and let the camera's minimum radius pick a distance
+					boundsMin = boundsMax = gameObject->GetTransformComponent()->GetWorldMatrix().GetPosition();
+				}
 
 				GameObjectPtr camera = RZE().GetActiveScene().FindGameObjectByName("EditorCam");
 				GameObjectComponentPtr<EditorCameraComponent> editorCam = camera->GetComponent<EditorCameraComponent>();
 				AssertNotNull(editorCam);
-				GameObjectComponentPtr<TransformComponent> cameraTransform = camera->GetTransformComponent();
 
-				editorCam->SetForward((transformComponent->GetPosition() - cameraTransform->GetPosition()).Normalized());
+				editorCam->FocusOn(boundsMin, boundsMax);
 			}
 
 			if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))

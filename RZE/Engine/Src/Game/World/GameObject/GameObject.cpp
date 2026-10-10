@@ -3,9 +3,13 @@
 
 #include <Game/World/GameObject/GameObjectComponent.h>
 
+#include <Game/World/GameObjectComponents/RenderComponent.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
+#include <Utils/Math/Math.h>
 #include <Utils/Utils.h>
+
+#include <cfloat>
 
 static GameObjectID s_nextObjectID = 0;
 
@@ -137,6 +141,35 @@ GameObjectPtr GameObject::GetChildAtIndex(int index)
 {
 	AssertExpr(index < m_children.size());
 	return m_children[index];
+}
+
+bool GameObject::GetHierarchyBounds(Vector3D& outMin, Vector3D& outMax)
+{
+	outMin = Vector3D(FLT_MAX);
+	outMax = Vector3D(-FLT_MAX);
+	return GrowHierarchyBounds(outMin, outMax);
+}
+
+bool GameObject::GrowHierarchyBounds(Vector3D& inOutMin, Vector3D& inOutMax)
+{
+	bool foundAny = false;
+
+	GameObjectComponentPtr<RenderComponent> renderComponent = GetComponent<RenderComponent>();
+	Vector3D meshMin;
+	Vector3D meshMax;
+	if (renderComponent != nullptr && renderComponent->GetWorldBounds(meshMin, meshMax))
+	{
+		inOutMin = VectorUtils::Min(inOutMin, meshMin);
+		inOutMax = VectorUtils::Max(inOutMax, meshMax);
+		foundAny = true;
+	}
+
+	for (GameObjectPtr child : m_children)
+	{
+		foundAny |= child->GrowHierarchyBounds(inOutMin, inOutMax);
+	}
+
+	return foundAny;
 }
 
 void GameObject::AttachTo(GameObjectPtr gameObject)

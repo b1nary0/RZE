@@ -9,6 +9,7 @@ typedef U32 GameObjectID;
 
 class GameObjectComponentBase;
 class TransformComponent;
+class Vector3D;
 
 struct GameObjectStateFlags
 {
@@ -67,6 +68,9 @@ public:
 
 	bool IsInScene() { return m_stateFlags.IsInScene; }
 
+	// Axis-aligned world-space box around every mesh on this object and its descendants; false if none have one
+	bool GetHierarchyBounds(Vector3D& outMin, Vector3D& outMax);
+
 	// Attachment
 	bool IsRoot();
 
@@ -80,6 +84,8 @@ public:
 private:
 	void AddChild(GameObject* child);
 	void RemoveChild(GameObject* child);
+
+	bool GrowHierarchyBounds(Vector3D& inOutMin, Vector3D& inOutMax);
 
 public:
 	void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) const;

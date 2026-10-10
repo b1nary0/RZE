@@ -28,6 +28,9 @@ public:
 	void SetMeshResource(const ResourceHandle& resource);
 	void SetDrawMeshBounds(bool draw);
 
+	// Axis-aligned world-space box around the mesh; false if no mesh has been created yet
+	bool GetWorldBounds(Vector3D& outMin, Vector3D& outMax);
+
 	// See GameObjectComponentRegistry::ResourceDependencyGatherer.
 	static void GatherResourceDependencies(const rapidjson::Value& componentData, ResourceDependencyList& outDependencies);
 

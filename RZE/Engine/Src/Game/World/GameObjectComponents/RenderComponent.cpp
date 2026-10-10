@@ -54,6 +54,18 @@ void RenderComponent::SetDrawMeshBounds(bool draw)
 	m_drawMeshBounds = draw;
 }
 
+bool RenderComponent::GetWorldBounds(Vector3D& outMin, Vector3D& outMax)
+{
+	if (m_renderObject == nullptr)
+	{
+		return false;
+	}
+
+	outMin = m_renderObject->GetBoundsMin();
+	outMax = m_renderObject->GetBoundsMax();
+	return true;
+}
+
 void RenderComponent::CreateRenderObject()
 {
 	// Added without a mesh (e.g. via the editor); a render object is created once a mesh is selected

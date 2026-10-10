@@ -14,6 +14,9 @@ namespace MathUtils
 	int Clamp(int value, int min, int max);
 	float Clampf(float value, float min, float max);
 
+	// Hermite ease-in/out of t over [0, 1]; t is clamped
+	float SmoothStep(float t);
+
 	// The smallest power of two that is >= value (value itself if it already is one)
 	U32 CeilPowerOfTwo(U32 value);
 }
@@ -31,6 +34,9 @@ namespace VectorUtils
 
 	Vector3D	Lerp(const Vector3D& from, const Vector3D& to, const float factor);
 	Vector2D	Lerp(const Vector2D& from, const Vector2D& to, const float factor);
+
+	// Spherical interpolation between unit vectors, turning at a constant angular rate
+	Vector3D	Slerp(const Vector3D& from, const Vector3D& to, const float factor);
 
 	float		DistanceSq(const Vector3D& from, const Vector3D& to);
 }

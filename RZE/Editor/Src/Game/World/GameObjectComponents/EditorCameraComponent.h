@@ -47,8 +47,13 @@ public:
 
 	void SetAsActiveCamera(bool isActiveCamera);
 
+	// Glides the camera to frame the given world-space box, keeping the current heading and looking down on it from 30-45 degrees
+	void FocusOn(const Vector3D& boundsMin, const Vector3D& boundsMax);
+
 private:
 	void GenerateCameraMatrices(const Vector3D& position);
+
+	void UpdateFocus(GameObjectComponentPtr<TransformComponent>& transfComp);
 
 	void KeyboardInput(GameObjectComponentPtr<TransformComponent>& transfComp);
 	void MouseInput(GameObjectComponentPtr<TransformComponent>& transfComp);
@@ -77,4 +82,12 @@ private:
 	Vector2D m_yawPitch;
 
 	bool m_isActiveCamera{ false };
+
+	// In-flight FocusOn() animation
+	bool m_isFocusing{ false };
+	float m_focusElapsed{ 0.0f };
+	Vector3D m_focusStartPos;
+	Vector3D m_focusTargetPos;
+	Vector3D m_focusStartForward;
+	Vector3D m_focusTargetForward;
 };
