@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Graphics/RenderData/ShadowMapData.h>
 #include <Graphics/RenderStage.h>
 
 #include <EngineCore/Resources/ResourceHandler.h>
@@ -32,18 +33,19 @@ public:
 	~ShadowRenderStage() override = default;
 
 public:
-	void Initialize() override;
-	void Update(const RenderCamera& camera, const RenderEngine::SceneData& renderData) override {}
-	void Render(const RenderCamera& camera, const RenderEngine::SceneData& renderData) override;
+	const char* GetName() const override { return "ShadowRenderStage"; }
 
-	// Before ForwardRenderStage
-	U32 GetPriority() override { return 0; }
+	void Initialize() override;
+	void Setup(RenderStageBuilder& builder) override;
+	void Render(RenderContext& context) override;
 
 private:
 	// Returns false if there's nothing to cast shadows
 	bool CalculateLightViewProjection(const RenderEngine::SceneData& renderData, const Vector3D& lightDirection, Matrix4x4& outViewProjection, float& outWorldTexelSize) const;
 
 private:
+	RenderOutput<ShadowMapData> m_shadowMapOutput;
+
 	ResourceHandle m_vertexShaderResource;
 	const VertexShader* m_vertexShader = nullptr;
 

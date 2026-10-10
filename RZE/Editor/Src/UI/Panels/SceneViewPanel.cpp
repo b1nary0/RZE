@@ -82,7 +82,7 @@ namespace Editor
 			if (viewportDims.x != m_dimensions.X() || viewportDims.y != m_dimensions.Y())
 			{
 				m_dimensions.SetXY(viewportDims.x, viewportDims.y);
-				RZE().GetRenderEngine().SetViewportSize(m_dimensions);
+				RZE().GetRenderEngine().GetMainView().ViewportSize = m_dimensions;
 
 				// The editor camera doesn't exist while a scene is loading; it picks up
 				// the current dimensions when it's created (EditorApp::CreateAndInitializeEditorCamera).

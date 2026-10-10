@@ -25,9 +25,18 @@ void DebugDrawRenderStage::Initialize()
 	m_lineBuffer.Initialize(sizeof(LineVertex), BufferCapacitySettings{ 256, 300, 4 });
 }
 
-void DebugDrawRenderStage::Render(const RenderCamera& camera, const RenderEngine::SceneData& renderData)
+void DebugDrawRenderStage::Setup(RenderStageBuilder& builder)
+{
+	// Drawn after tonemapping, so lines keep their exact colours
+	m_displayColour = builder.Modifies<DisplayColourData>();
+}
+
+void DebugDrawRenderStage::Render(RenderContext& context)
 {
 	OPTICK_EVENT();
+
+	const RenderView& view = context.View;
+	const RenderEngine::SceneData& renderData = context.Scene;
 
 	m_scratchVertices.clear();
 	for (const DebugLine& line : renderData.debugLines)
@@ -44,20 +53,20 @@ void DebugDrawRenderStage::Render(const RenderCamera& camera, const RenderEngine
 		return;
 	}
 
-	RenderEngine& renderEngine = RZE().GetRenderEngine();
+	const DisplayColourData& displayColour = m_displayColour.Get(context);
 
 	Rendering::Renderer::Begin("DebugDrawRenderStage");
 
-	// Drawn after tonemapping, into the 8-bit target, depth-tested against the scene
-	Rendering::Renderer::SetRenderTarget(&renderEngine.GetRenderTarget());
+	// Into the 8-bit target, depth-tested against the scene
+	Rendering::Renderer::SetColourTarget(displayColour.Colour, displayColour.Depth);
 
 	Rendering::Renderer::SetPrimitiveTopology(Rendering::EPrimitiveTopology::LineList);
-	Rendering::Renderer::UploadDataToBuffer<RenderCamera>(m_vertexShader->GetCameraDataBuffer(), &camera);
+	Rendering::Renderer::UploadDataToBuffer<RenderCamera>(m_vertexShader->GetCameraDataBuffer(), &view.Camera);
 
 	Rendering::Renderer::SetVertexShader(m_vertexShader->GetPlatformObject());
 	Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetCameraDataBuffer(), 0);
 
-	Rendering::Renderer::SetViewport({ renderEngine.GetViewportSize().X(), renderEngine.GetViewportSize().Y(), 0.0f, 1.0f, 0.0f, 0.0f });
+	Rendering::Renderer::SetViewport({ view.ViewportSize.X(), view.ViewportSize.Y(), 0.0f, 1.0f, 0.0f, 0.0f });
 
 	Rendering::Renderer::SetInputLayout(m_vertexShader->GetPlatformObject());
 

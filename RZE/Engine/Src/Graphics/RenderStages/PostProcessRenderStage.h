@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Graphics/RenderData/DisplayColourData.h>
+#include <Graphics/RenderData/SceneColourData.h>
 #include <Graphics/RenderStage.h>
 
 #include <EngineCore/Resources/ResourceHandler.h>
@@ -35,14 +37,16 @@ public:
 	~PostProcessRenderStage() override = default;
 
 public:
-	void Initialize() override;
-	void Update(const RenderCamera& camera, const RenderEngine::SceneData& renderData) override {}
-	void Render(const RenderCamera& camera, const RenderEngine::SceneData& renderData) override;
+	const char* GetName() const override { return "PostProcessRenderStage"; }
 
-	// After ForwardRenderStage, before DebugDrawRenderStage so debug lines aren't tonemapped
-	U32 GetPriority() override { return 20; }
+	void Initialize() override;
+	void Setup(RenderStageBuilder& builder) override;
+	void Render(RenderContext& context) override;
 
 private:
+	RenderInput<SceneColourData> m_sceneColourInput;
+	RenderOutput<DisplayColourData> m_displayColourOutput;
+
 	ResourceHandle m_vertexShaderResource;
 	const VertexShader* m_vertexShader = nullptr;
 
@@ -55,16 +59,9 @@ private:
 	ResourceHandle m_tonemapShaderResource;
 	const PixelShader* m_tonemapShader = nullptr;
 
-	// Weighted log-luminance (r) and weight (g); its 1x1 mip holds the scene average
+	// Weighted log-luminance (r) and weight (g); its 1x1 mip holds the scene average.
+	// Only used within a Render() call, so shared by every view. Eye-adaptation history is per view.
 	Rendering::TextureBuffer2DHandle m_luminance;
-	// 1x1 adapted log-luminance (r) and has-been-measured flag (g). Ping-ponged: read last frame's, write this frame's.
-	Rendering::TextureBuffer2DHandle m_adapted[2];
-	U32 m_adaptedIndex = 0;
-	// Written instead by secondary views (RenderView), which don't adapt over time
-	Rendering::TextureBuffer2DHandle m_secondaryViewAdapted;
 
 	Rendering::ConstantBufferHandle m_paramsBuffer;
-
-	// The first frame's history is uninitialized texture memory
-	bool m_needsReset = true;
 };

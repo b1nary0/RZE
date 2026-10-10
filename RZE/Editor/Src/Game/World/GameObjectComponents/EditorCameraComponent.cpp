@@ -154,7 +154,7 @@ void EditorCameraComponent::Update()
 		GenerateCameraMatrices(transformComponent->GetPosition());
 		{
 			// Push data to RenderEngine
-			RenderCamera& renderCamera = RZE().GetRenderEngine().GetCamera();
+			RenderCamera& renderCamera = RZE().GetRenderEngine().GetMainView().Camera;
 			renderCamera.Position = transformComponent->GetPosition();
 			renderCamera.ClipSpace = GetProjectionMatrix() * GetViewMatrix();
 		}

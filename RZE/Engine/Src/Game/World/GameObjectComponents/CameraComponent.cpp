@@ -130,6 +130,9 @@ void CameraComponent::Initialize()
 		static_cast<U32>(renderCam.Viewport.Size.Y())
 	);
 	m_renderTarget->Initialize();
+
+	m_previewView = std::make_unique<RenderView>(ERenderViewKind::Secondary);
+	m_previewView->Target = m_renderTarget.get();
 }
 
 void CameraComponent::OnAddToScene()
@@ -150,12 +153,12 @@ void CameraComponent::Update()
 
 		{
 			// Push data to RenderEngine
-			RenderCamera& renderCamera = RZE().GetRenderEngine().GetCamera();
+			RenderCamera& renderCamera = RZE().GetRenderEngine().GetMainView().Camera;
 			renderCamera.Position = transformComponent->GetPosition();
 			renderCamera.ClipSpace = GetProjectionMatrix() * GetViewMatrix();
 
 			// Also applies in the editor, whose own camera doesn't carry an exposure
-			RZE().GetRenderEngine().SetExposureCompensation(m_exposureCompensation);
+			RZE().GetRenderEngine().GetMainView().ExposureCompensation = m_exposureCompensation;
 		}
 	}
 }
@@ -248,12 +251,15 @@ void CameraComponent::OnEditorInspect()
 		GameObjectComponentPtr<TransformComponent> transfComp = GetOwner()->GetTransformComponent();
 		GenerateCameraMatrices(transfComp->GetPosition());
 
-		RenderCamera renderCam;
+		RenderCamera& renderCam = m_previewView->Camera;
 		renderCam.Viewport = RenderViewport { Vector2D( 426.0f, 240.0f ) };
 		renderCam.ClipSpace = GetProjectionMatrix() * GetViewMatrix();
 		renderCam.Position = transfComp->GetPosition();
 
-		RZE().GetRenderEngine().RenderView("Camera View", renderCam, m_renderTarget);
+		m_previewView->ViewportSize = renderCam.Viewport.Size;
+		m_previewView->ExposureCompensation = m_exposureCompensation;
+
+		RZE().GetRenderEngine().RenderSecondaryView("Camera View", *m_previewView);
 		m_aspectRatio = prevAspectRatio;
 
 		Rendering::TextureBuffer2DHandle texture = m_renderTarget->GetTargetPlatformObject();

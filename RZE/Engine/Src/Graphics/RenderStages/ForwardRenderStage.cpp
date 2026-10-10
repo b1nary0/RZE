@@ -39,27 +39,33 @@ void ForwardRenderStage::Initialize()
 	m_fallbackLight->SetStrength(0.0f);
 }
 
-void ForwardRenderStage::Update(const RenderCamera& camera, const RenderEngine::SceneData& renderData)
+void ForwardRenderStage::Setup(RenderStageBuilder& builder)
 {
-	OPTICK_EVENT();
+	m_shadowMapInput = builder.Reads<ShadowMapData>();
+	m_sceneColourOutput = builder.Writes<SceneColourData>();
 }
 
-void ForwardRenderStage::Render(const RenderCamera& camera, const RenderEngine::SceneData& renderData)
+void ForwardRenderStage::Render(RenderContext& context)
 {
 	OPTICK_EVENT();
 
 	Rendering::Renderer::Begin("ForwardRenderStage");
-	
-	const RenderEngine& renderEngine = RZE().GetRenderEngine();
-	const Rendering::RenderTargetTexture& renderTarget = RZE().GetRenderEngine().GetRenderTarget();
+
+	const RenderView& view = context.View;
+	const RenderEngine::SceneData& renderData = context.Scene;
+	const ShadowMapData& shadowMapData = m_shadowMapInput.Get(context);
 
 	// Linear scene colour; PostProcessRenderStage exposes and tonemaps it into the 8-bit target.
 	// Alpha 0 marks the background, which it fills with the clear colour.
-	Rendering::Renderer::SetColourTarget(renderTarget.GetSceneTargetPlatformObject(), renderTarget.GetDepthTexturePlatformObject());
-	Rendering::Renderer::ClearRenderTarget(renderTarget.GetSceneTargetPlatformObject(), Vector4D(0.0f, 0.0f, 0.0f, 0.0f));
-	Rendering::Renderer::ClearDepthStencilBuffer(renderTarget.GetDepthTexturePlatformObject());
+	SceneColourData sceneColourData;
+	sceneColourData.Colour = view.Target->GetSceneTargetPlatformObject();
+	sceneColourData.Depth = view.Target->GetDepthTexturePlatformObject();
 
-	Rendering::Renderer::UploadDataToBuffer<RenderCamera>(m_vertexShader->GetCameraDataBuffer(), &camera);
+	Rendering::Renderer::SetColourTarget(sceneColourData.Colour, sceneColourData.Depth);
+	Rendering::Renderer::ClearRenderTarget(sceneColourData.Colour, Vector4D(0.0f, 0.0f, 0.0f, 0.0f));
+	Rendering::Renderer::ClearDepthStencilBuffer(sceneColourData.Depth);
+
+	Rendering::Renderer::UploadDataToBuffer<RenderCamera>(m_vertexShader->GetCameraDataBuffer(), &view.Camera);
 
 	LightObject* const lightObject = renderData.lightObjects.empty() ? m_fallbackLight.get() : renderData.lightObjects[0].get();
 	Rendering::Renderer::UploadDataToBuffer<LightObject::PropertyBufferLayout>(lightObject->GetPropertyBuffer(), &lightObject->GetData());
@@ -67,17 +73,13 @@ void ForwardRenderStage::Render(const RenderCamera& camera, const RenderEngine::
 	Rendering::Renderer::SetVertexShader(m_vertexShader->GetPlatformObject());
 	Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetCameraDataBuffer(), 0);
 
-	Rendering::Renderer::SetViewport({ renderEngine.GetViewportSize().X(), renderEngine.GetViewportSize().Y(), 0.0f, 1.0f, 0.0f, 0.0f});
+	Rendering::Renderer::SetViewport({ view.ViewportSize.X(), view.ViewportSize.Y(), 0.0f, 1.0f, 0.0f, 0.0f});
 
 	Rendering::Renderer::SetInputLayout(m_vertexShader->GetPlatformObject());
 	Rendering::Renderer::SetPrimitiveTopology(Rendering::EPrimitiveTopology::TriangleList);
 
-	// Produced by ShadowRenderStage this frame
-	if (renderEngine.HasShadowResources())
-	{
-		Rendering::Renderer::SetConstantBufferPS(renderEngine.GetShadowBuffer(), k_shadowBufferSlot);
-		Rendering::Renderer::SetTextureResource(renderEngine.GetShadowMap(), k_shadowMapSlot);
-	}
+	Rendering::Renderer::SetConstantBufferPS(shadowMapData.ShadowParams, k_shadowBufferSlot);
+	Rendering::Renderer::SetTextureResource(shadowMapData.ShadowMap, k_shadowMapSlot);
 
 	for (const auto& renderObject : renderData.renderObjects)
 	{
@@ -122,10 +124,9 @@ void ForwardRenderStage::Render(const RenderCamera& camera, const RenderEngine::
 	}
 
 	// The shadow map can't stay bound as a shader input while the next frame renders depth into it
-	if (renderEngine.HasShadowResources())
-	{
-		Rendering::Renderer::UnsetTextureResource(k_shadowMapSlot);
-	}
+	Rendering::Renderer::UnsetTextureResource(k_shadowMapSlot);
+
+	m_sceneColourOutput.Publish(context, sceneColourData);
 
 	Rendering::Renderer::End();
 }

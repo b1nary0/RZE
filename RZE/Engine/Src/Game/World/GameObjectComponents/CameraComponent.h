@@ -2,6 +2,8 @@
 
 #include <Game/World/GameObject/GameObjectComponent.h>
 
+#include <Graphics/RenderView.h>
+
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector3D.h>
 
@@ -74,5 +76,7 @@ private:
 
 	// #TODO this should only be a thing in editor
 	std::unique_ptr<Rendering::RenderTargetTexture> m_renderTarget;
+	// The camera preview in the inspector; renders into m_renderTarget and keeps its own per-view render state
+	std::unique_ptr<RenderView> m_previewView;
 
 };

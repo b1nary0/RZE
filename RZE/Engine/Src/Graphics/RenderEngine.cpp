@@ -1,6 +1,7 @@
 #include <StdAfx.h>
 #include <Graphics/RenderEngine.h>
 
+#include <Graphics/RenderPipeline.h>
 #include <Graphics/RenderStage.h>
 #include <Graphics/RenderStages/DebugDrawRenderStage.h>
 #include <Graphics/RenderStages/ForwardRenderStage.h>
@@ -17,7 +18,8 @@ void LightObject::Initialize()
 }
 
 RenderEngine::RenderEngine()
-{	
+	: m_pipeline(std::make_unique<RenderPipeline>())
+{
 }
 
 RenderEngine::~RenderEngine()
@@ -37,42 +39,19 @@ void RenderEngine::Initialize(void* windowHandle)
 #endif
 }
 
-void RenderEngine::Update()
+void RenderEngine::Render(const char* frameName)
 {
 	OPTICK_EVENT();
+	AssertNotNull(m_mainView.Target);
 
-	for (auto& pipeline : m_renderStages)
-	{
-		pipeline->Update(m_camera, m_sceneData);
-	}
-}
+	Rendering::Renderer::BeginFrame(frameName);
 
-void RenderEngine::Render(const char* frameName, bool isMainRenderCall, bool withImgui)
-{
-	OPTICK_EVENT();
+	m_pipeline->Render(m_mainView, m_sceneData, static_cast<float>(RZE().GetDeltaTime()));
 
-	if (isMainRenderCall)
-	{
-		Rendering::Renderer::BeginFrame(frameName);
-	}
-
-	for (auto& pipeline : m_renderStages)
-	{
-		// #TODO dont do imgui. magic number should change
-		if (!withImgui && pipeline->GetPriority() == 1000)
-		{
-			continue;
-		}
-
-		pipeline->Render(m_camera, m_sceneData);
-	}
-
+	// Secondary views rendered earlier this frame have drawn them too
 	m_sceneData.debugLines.clear();
 
-	if (isMainRenderCall)
-	{
-		Rendering::Renderer::EndFrame();
-	}
+	Rendering::Renderer::EndFrame();
 }
 
 void RenderEngine::Finish()
@@ -93,7 +72,7 @@ void RenderEngine::ClearObjects()
 
 void RenderEngine::ReleaseRenderStages()
 {
-	m_renderStages.clear();
+	m_pipeline->Clear();
 }
 
 RenderObjectPtr RenderEngine::CreateRenderObject(const StaticMeshInstance& staticMesh)
@@ -219,51 +198,21 @@ const Vector2D& RenderEngine::GetCanvasSize() const
 	return m_canvasSize;
 }
 
-const Rendering::RenderTargetTexture& RenderEngine::GetRenderTarget()
-{
-	AssertNotNull(m_renderTarget);
-	return *m_renderTarget;
-}
-
-struct RenderViewData
-{
-	RenderCamera Camera;
-
-};
-
-void RenderEngine::RenderView(const char* frameName, const RenderCamera& renderCamera, std::unique_ptr<Rendering::RenderTargetTexture>& renderTarget)
+void RenderEngine::RenderSecondaryView(const char* frameName, RenderView& view)
 {
 	OPTICK_EVENT();
-	AssertNotNull(renderTarget);
-	AssertExpr(renderCamera.Viewport.Size != Vector2D::ZERO);
+	AssertExpr(view.GetKind() == ERenderViewKind::Secondary);
+	AssertNotNull(view.Target);
+	AssertExpr(view.ViewportSize != Vector2D::ZERO);
 
-	const RenderCamera prevCamera = GetCamera();
-	const Vector2D prevViewportSize = GetViewportSize();
-	Rendering::RenderTargetTexture* prevRenderTarget = m_renderTarget;
+	Rendering::Renderer::Begin(frameName);
 
-	GetCamera() = renderCamera; // This bad
-	SetViewportSize(renderCamera.Viewport.Size);
-	SetRenderTarget(renderTarget.get());
+	m_pipeline->Render(view, m_sceneData, static_cast<float>(RZE().GetDeltaTime()));
 
-	Update();
-	m_isRenderingMainView = false;
-	Render(frameName, false, false);
-	m_isRenderingMainView = true;
-
-	SetViewportSize(prevViewportSize);
-	SetRenderTarget(prevRenderTarget);
-	GetCamera() = prevCamera;
+	Rendering::Renderer::End();
 }
 
-void RenderEngine::InternalAddRenderStage(IRenderStage* pipeline)
+void RenderEngine::InternalAddRenderStage(IRenderStage* stage)
 {
-	std::unique_ptr<IRenderStage> ptr = std::unique_ptr<IRenderStage>(pipeline);
-	ptr->Initialize();
-	m_renderStages.emplace_back(std::move(ptr));
-
-	std::sort(m_renderStages.begin(), m_renderStages.end(),
-		[](const std::unique_ptr<IRenderStage>& pipelineA, const std::unique_ptr<IRenderStage>& pipelineB)
-		{
-			return pipelineA->GetPriority() < pipelineB->GetPriority();
-		});
+	m_pipeline->AddStage(std::unique_ptr<IRenderStage>(stage));
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Graphics/DynamicVertexBuffer.h>
+#include <Graphics/RenderData/DisplayColourData.h>
 #include <Graphics/RenderStage.h>
 
 class VertexShader;
@@ -13,12 +14,11 @@ public:
 
 	~DebugDrawRenderStage() override = default;
 
-	void Initialize() override;
-	void Update(const RenderCamera& camera, const RenderEngine::SceneData& renderData) override {}
-	void Render(const RenderCamera& camera, const RenderEngine::SceneData& renderData) override;
+	const char* GetName() const override { return "DebugDrawRenderStage"; }
 
-	// @todo make an enum for this so we can add and subtract from other stage placements
-	U32 GetPriority() override { return 50; }
+	void Initialize() override;
+	void Setup(RenderStageBuilder& builder) override;
+	void Render(RenderContext& context) override;
 
 private:
 	// Matches the Vertex_Line input layout: POSITION @ 0, COLOUR @ 12
@@ -30,6 +30,9 @@ private:
 	static_assert(sizeof(LineVertex) == 24, "LineVertex must match the Vertex_Line input layout");
 
 private:
+	// Lines are drawn into it after tonemapping, depth-tested against the scene
+	RenderInOut<DisplayColourData> m_displayColour;
+
 	// @TODO temp until ShaderTechniques are properly implemented
 // (could be a while)
 	ResourceHandle m_vertexShaderResource;

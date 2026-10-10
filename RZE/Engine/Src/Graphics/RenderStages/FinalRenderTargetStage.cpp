@@ -4,7 +4,6 @@
 #include <Graphics/RenderEngine.h>
 
 #include <Rendering/Renderer.h>
-#include <Rendering/Graphics/RenderTarget.h>
 
 void FinalRenderTargetStage::Initialize()
 {
@@ -23,16 +22,18 @@ void FinalRenderTargetStage::Initialize()
 	}
 }
 
-void FinalRenderTargetStage::Update(const RenderCamera& camera, const RenderEngine::SceneData& renderData)
+void FinalRenderTargetStage::Setup(RenderStageBuilder& builder)
 {
+	// Copies the finished main view to the back buffer
+	m_displayColourInput = builder.Reads<DisplayColourData>();
+	builder.RunsIn(ERenderViewFilter::MainOnly);
 }
 
-void FinalRenderTargetStage::Render(const RenderCamera& camera, const RenderEngine::SceneData& renderData)
+void FinalRenderTargetStage::Render(RenderContext& context)
 {
 	Rendering::Renderer::Begin("FinalRenderTargetStage");
 
-	RenderEngine& engine = RZE().GetRenderEngine();
-	const Rendering::RenderTargetTexture& target = engine.GetRenderTarget();
+	const DisplayColourData& displayColour = m_displayColourInput.Get(context);
 
 	Rendering::Renderer::SetRenderTarget(nullptr);
 	Rendering::Renderer::SetRenderTargetBackBuffer();
@@ -42,7 +43,7 @@ void FinalRenderTargetStage::Render(const RenderCamera& camera, const RenderEngi
 	Rendering::Renderer::SetVertexShader(m_vertexShader->GetPlatformObject());
 	Rendering::Renderer::SetPixelShader(m_pixelShader->GetPlatformObject());
 	
-	Rendering::Renderer::SetTextureResource(target.GetTargetPlatformObject(), 0);
+	Rendering::Renderer::SetTextureResource(displayColour.Colour, 0);
 	
 	Rendering::Renderer::DrawFullScreenQuad();
 

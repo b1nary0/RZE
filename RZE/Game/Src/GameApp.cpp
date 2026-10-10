@@ -49,7 +49,7 @@ void GameApp::Initialize()
 
 	CreateRenderTarget(GetWindow()->GetClientSize());
 
-	RZE().GetRenderEngine().SetRenderTarget(m_renderTarget.get());
+	RZE().GetRenderEngine().GetMainView().Target = m_renderTarget.get();
 
 	GameScene& activeScene = RZE().GetActiveScene();
 
@@ -136,9 +136,9 @@ void GameApp::OnWindowResize(const Vector2D& newSize)
 	m_renderTarget.reset();
 
 	CreateRenderTarget(newSize);
-	RZE().GetRenderEngine().SetRenderTarget(m_renderTarget.get());
+	RZE().GetRenderEngine().GetMainView().Target = m_renderTarget.get();
 
-	RZE().GetRenderEngine().SetViewportSize(newSize);
+	RZE().GetRenderEngine().GetMainView().ViewportSize = newSize;
 
 	// @TODO This needs to be moved into a better spot. it is not wise to have this as boilerplate for such
 	// a low level concept (resizing camera to viewport)

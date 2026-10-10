@@ -27,6 +27,31 @@ namespace
 	// Must match the register(tN) slots in the post-process shaders
 	constexpr U32 k_sourceSlot = 0;
 	constexpr U32 k_secondarySlot = 1;
+
+	// A view's eye-adaptation history, kept in its Persistent() blackboard so every view adapts on its own
+	struct EyeAdaptationState : RenderStageData<EyeAdaptationState>
+	{
+		static constexpr const char* k_name = "EyeAdaptationState";
+
+		// 1x1 adapted log-luminance (r) and has-been-measured flag (g). Ping-ponged: read last frame's, write this frame's.
+		Rendering::TextureBuffer2DHandle Adapted[2];
+		U32 AdaptedIndex = 0;
+		// The first frame's history is uninitialized texture memory
+		bool NeedsReset = true;
+	};
+
+	Rendering::TextureBuffer2DHandle CreateAdaptedTexture()
+	{
+		Rendering::GFXTextureBufferParams params = { 0 };
+		params.bIsRenderTarget = true;
+		params.bIsShaderResource = true;
+		params.Width = 1;
+		params.Height = 1;
+		params.MipLevels = 1;
+		params.SampleCount = 1;
+		params.Format = Rendering::ETextureFormat::RG16_FLOAT;
+		return Rendering::Renderer::CreateTextureBuffer2D(nullptr, params);
+	}
 }
 
 void PostProcessRenderStage::Initialize()
@@ -59,49 +84,50 @@ void PostProcessRenderStage::Initialize()
 	luminanceParams.Format = Rendering::ETextureFormat::RG16_FLOAT;
 	m_luminance = Rendering::Renderer::CreateTextureBuffer2D(nullptr, luminanceParams);
 
-	Rendering::GFXTextureBufferParams adaptedParams = luminanceParams;
-	adaptedParams.Width = 1;
-	adaptedParams.Height = 1;
-	adaptedParams.MipLevels = 1;
-	m_adapted[0] = Rendering::Renderer::CreateTextureBuffer2D(nullptr, adaptedParams);
-	m_adapted[1] = Rendering::Renderer::CreateTextureBuffer2D(nullptr, adaptedParams);
-	m_secondaryViewAdapted = Rendering::Renderer::CreateTextureBuffer2D(nullptr, adaptedParams);
-
 	m_paramsBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(ParamsLayout), 16, 1);
 }
 
-void PostProcessRenderStage::Render(const RenderCamera& camera, const RenderEngine::SceneData& renderData)
+void PostProcessRenderStage::Setup(RenderStageBuilder& builder)
+{
+	m_sceneColourInput = builder.Reads<SceneColourData>();
+	m_displayColourOutput = builder.Writes<DisplayColourData>();
+}
+
+void PostProcessRenderStage::Render(RenderContext& context)
 {
 	OPTICK_EVENT();
 
-	RenderEngine& renderEngine = RZE().GetRenderEngine();
-	const Rendering::RenderTargetTexture& renderTarget = renderEngine.GetRenderTarget();
-	const Vector2D& viewportSize = renderEngine.GetViewportSize();
+	const RenderView& view = context.View;
+	const SceneColourData& sceneColour = m_sceneColourInput.Get(context);
+	const Rendering::RenderTargetTexture& renderTarget = *view.Target;
+	const Vector2D& viewportSize = view.ViewportSize;
 
-	// Secondary views (camera previews) expose instantly into their own texture,
-	// leaving the main view's adaptation history untouched
-	const bool isMainView = renderEngine.IsRenderingMainView();
+	EyeAdaptationState& eyeAdaptation = context.Persistent().GetOrCreate<EyeAdaptationState>([]()
+	{
+		EyeAdaptationState state;
+		state.Adapted[0] = CreateAdaptedTexture();
+		state.Adapted[1] = CreateAdaptedTexture();
+		return state;
+	});
+	// Secondary views (camera previews) expose instantly instead of adapting over time
+	const bool resetAdaptation = eyeAdaptation.NeedsReset || !view.IsMainView();
+	eyeAdaptation.NeedsReset = false;
 
 	Rendering::Renderer::Begin("PostProcessRenderStage");
 
 	ParamsLayout params;
 	params.ViewportScale[0] = viewportSize.X() / static_cast<float>(renderTarget.GetWidth());
 	params.ViewportScale[1] = viewportSize.Y() / static_cast<float>(renderTarget.GetHeight());
-	params.DeltaTime = static_cast<float>(RZE().GetDeltaTime());
+	params.DeltaTime = context.DeltaTime;
 	params.AdaptationRate = k_adaptationRate;
 	params.MinExposure = k_minExposure;
 	params.MaxExposure = k_maxExposure;
-	params.ExposureCompensation = renderEngine.GetExposureCompensation();
+	params.ExposureCompensation = view.ExposureCompensation;
 	params.KeyValue = k_keyValue;
 	params.LuminanceMip = static_cast<float>(k_luminanceMipCount - 1);
-	params.Reset = (m_needsReset || !isMainView) ? 1.0f : 0.0f;
+	params.Reset = resetAdaptation ? 1.0f : 0.0f;
 	params._pad0[0] = 0.0f;
 	params._pad0[1] = 0.0f;
-
-	if (isMainView)
-	{
-		m_needsReset = false;
-	}
 
 	Rendering::Renderer::UploadDataToBuffer<ParamsLayout>(m_paramsBuffer, &params);
 	Rendering::Renderer::SetConstantBufferPS(m_paramsBuffer, 0);
@@ -114,7 +140,7 @@ void PostProcessRenderStage::Render(const RenderCamera& camera, const RenderEngi
 		Rendering::Renderer::SetColourTarget(m_luminance);
 		Rendering::Renderer::SetViewport({ static_cast<float>(k_luminanceSize), static_cast<float>(k_luminanceSize), 0.0f, 1.0f, 0.0f, 0.0f });
 		Rendering::Renderer::SetPixelShader(m_luminanceShader->GetPlatformObject());
-		Rendering::Renderer::SetTextureResource(renderTarget.GetSceneTargetPlatformObject(), k_sourceSlot);
+		Rendering::Renderer::SetTextureResource(sceneColour.Colour, k_sourceSlot);
 
 		Rendering::Renderer::DrawFullScreenQuad();
 
@@ -124,13 +150,9 @@ void PostProcessRenderStage::Render(const RenderCamera& camera, const RenderEngi
 		Rendering::Renderer::GenerateMips(m_luminance);
 	}
 
-	// A secondary view resets, so its "previous" is never read for its value
-	const Rendering::TextureBuffer2DHandle& previousAdapted = m_adapted[m_adaptedIndex];
-	if (isMainView)
-	{
-		m_adaptedIndex = 1 - m_adaptedIndex;
-	}
-	const Rendering::TextureBuffer2DHandle& currentAdapted = isMainView ? m_adapted[m_adaptedIndex] : m_secondaryViewAdapted;
+	const Rendering::TextureBuffer2DHandle previousAdapted = eyeAdaptation.Adapted[eyeAdaptation.AdaptedIndex];
+	eyeAdaptation.AdaptedIndex = 1 - eyeAdaptation.AdaptedIndex;
+	const Rendering::TextureBuffer2DHandle currentAdapted = eyeAdaptation.Adapted[eyeAdaptation.AdaptedIndex];
 
 	// Eye adaptation toward the measured average
 	{
@@ -147,12 +169,15 @@ void PostProcessRenderStage::Render(const RenderCamera& camera, const RenderEngi
 	}
 
 	// Expose, tonemap and encode into the 8-bit target. No depth bound, so the quad leaves the
-	// scene depth intact for DebugDrawRenderStage.
+	// scene depth intact for overlays that depth-test against it.
+	DisplayColourData displayColour;
+	displayColour.Colour = renderTarget.GetTargetPlatformObject();
+	displayColour.Depth = sceneColour.Depth;
 	{
-		Rendering::Renderer::SetColourTarget(renderTarget.GetTargetPlatformObject());
+		Rendering::Renderer::SetColourTarget(displayColour.Colour);
 		Rendering::Renderer::SetViewport({ viewportSize.X(), viewportSize.Y(), 0.0f, 1.0f, 0.0f, 0.0f });
 		Rendering::Renderer::SetPixelShader(m_tonemapShader->GetPlatformObject());
-		Rendering::Renderer::SetTextureResource(renderTarget.GetSceneTargetPlatformObject(), k_sourceSlot);
+		Rendering::Renderer::SetTextureResource(sceneColour.Colour, k_sourceSlot);
 		Rendering::Renderer::SetTextureResource(currentAdapted, k_secondarySlot);
 
 		Rendering::Renderer::DrawFullScreenQuad();
@@ -160,6 +185,8 @@ void PostProcessRenderStage::Render(const RenderCamera& camera, const RenderEngi
 		Rendering::Renderer::UnsetTextureResource(k_sourceSlot);
 		Rendering::Renderer::UnsetTextureResource(k_secondarySlot);
 	}
+
+	m_displayColourOutput.Publish(context, displayColour);
 
 	Rendering::Renderer::End();
 }

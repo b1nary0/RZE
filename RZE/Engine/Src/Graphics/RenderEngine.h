@@ -3,6 +3,7 @@
 #include <Graphics/StaticMeshInstance.h>
 
 #include <Graphics/GraphicsDefines.h>
+#include <Graphics/RenderView.h>
 
 #include <Rendering/BufferHandle.h>
 
@@ -17,19 +18,7 @@ namespace Rendering
 }
 
 class IRenderStage;
-
-struct RenderViewport
-{
-	Vector2D Size;
-};
-
-struct RenderCamera
-{
-	// @TODO integrate with viewport maybe
-	Matrix4x4 ClipSpace;
-	Vector3D Position;
-	RenderViewport Viewport;
-};
+class RenderPipeline;
 
 // @TODO Move to own file
 class LightObject
@@ -153,9 +142,8 @@ public:
 
 public:
 	void Initialize(void* windowHandle);
-	void Update();
-	// @todo isMainRenderCall is kinda a hack and should be solved by API instead
-	void Render(const char* frameName, bool isMainRenderCall, bool withImgui);
+	// Renders the main view as one frame
+	void Render(const char* frameName);
 	// Finish() does all the work that the main render phase needs including device present
 	void Finish();
 	void Shutdown();
@@ -181,54 +169,23 @@ public:
 	void ResizeCanvas(const Vector2D& newSize);
 	const Vector2D& GetCanvasSize() const;
 
-	RenderCamera& GetCamera() { return m_camera; }
-	
-	const Rendering::RenderTargetTexture& GetRenderTarget();
-	void SetRenderTarget(Rendering::RenderTargetTexture* renderTarget) { m_renderTarget = renderTarget; }
-	
-	void SetViewportSize(const Vector2D& size) { m_viewportSize = size; }
-	const Vector2D& GetViewportSize() const { return m_viewportSize; }
+	// The view presented to the user. Its owner (the app and the active camera) fills in its inputs.
+	RenderView& GetMainView() { return m_mainView; }
 
-	// Written by ShadowRenderStage, sampled by ForwardRenderStage
-	void SetShadowResources(const Rendering::TextureBuffer2DHandle& shadowMap, const Rendering::ConstantBufferHandle& shadowBuffer) { m_shadowMap = shadowMap; m_shadowBuffer = shadowBuffer; m_hasShadowResources = true; }
-	bool HasShadowResources() const { return m_hasShadowResources; }
-	const Rendering::TextureBuffer2DHandle& GetShadowMap() const { return m_shadowMap; }
-	const Rendering::ConstantBufferHandle& GetShadowBuffer() const { return m_shadowBuffer; }
-
-	// EV on top of auto-exposure; set per scene by the active CameraComponent
-	void SetExposureCompensation(float ev) { m_exposureCompensation = ev; }
-	float GetExposureCompensation() const { return m_exposureCompensation; }
-
-	// False while RenderView() draws a secondary view (e.g. a camera preview), whose frames
-	// mustn't feed the main view's eye adaptation
-	bool IsRenderingMainView() const { return m_isRenderingMainView; }
-
-	// RenderView()
-	// Renders the current scene to a render target from a specified camera setup. renderTarget will be allocated
-	// if passed nullptr
-	void RenderView(const char* frameName, const RenderCamera& renderCamera, std::unique_ptr<Rendering::RenderTargetTexture>& renderTarget);
+	// Renders the current scene into a secondary view (e.g. a camera preview) as part of the current frame.
+	// The view must have a Target.
+	void RenderSecondaryView(const char* frameName, RenderView& view);
 
 private:
-	void InternalAddRenderStage(IRenderStage* pipeline);
+	void InternalAddRenderStage(IRenderStage* stage);
 
 private:
-	RenderCamera m_camera;
 	SceneData m_sceneData;
 
 	Vector2D m_canvasSize;
-	Vector2D m_viewportSize;
 
-	// @TODO currently only single render target support - also write engine-side RenderTarget
-	Rendering::RenderTargetTexture* m_renderTarget = nullptr;
-
-	Rendering::TextureBuffer2DHandle m_shadowMap;
-	Rendering::ConstantBufferHandle m_shadowBuffer;
-	bool m_hasShadowResources = false;
-
-	float m_exposureCompensation = 0.0f;
-	bool m_isRenderingMainView = true;
-
-	std::vector<std::unique_ptr<IRenderStage>> m_renderStages;
+	RenderView m_mainView { ERenderViewKind::Main };
+	std::unique_ptr<RenderPipeline> m_pipeline;
 };
 
 template <typename TRenderStageType, typename... Args>

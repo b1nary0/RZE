@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Graphics/RenderData/SceneColourData.h>
+#include <Graphics/RenderData/ShadowMapData.h>
 #include <Graphics/RenderStage.h>
 
 #include <EngineCore/Resources/ResourceHandler.h>
@@ -13,14 +15,16 @@ public:
 	~ForwardRenderStage() override = default;
 
 public:
-	void Initialize() override;
-	void Update(const RenderCamera& camera, const RenderEngine::SceneData& renderData) override;
-	void Render(const RenderCamera& camera, const RenderEngine::SceneData& renderData) override;
+	const char* GetName() const override { return "ForwardRenderStage"; }
 
-	// After ShadowRenderStage (0), which produces the shadow map sampled here
-	U32 GetPriority() override { return 10; }
+	void Initialize() override;
+	void Setup(RenderStageBuilder& builder) override;
+	void Render(RenderContext& context) override;
 
 private:
+	RenderInput<ShadowMapData> m_shadowMapInput;
+	RenderOutput<SceneColourData> m_sceneColourOutput;
+
 	// @TODO temp until ShaderTechniques are properly implemented
 // (could be a while)
 	ResourceHandle m_vertexShaderResource;

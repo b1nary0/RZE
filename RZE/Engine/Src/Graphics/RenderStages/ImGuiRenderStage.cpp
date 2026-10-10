@@ -11,7 +11,22 @@ void ImGuiRenderStage::Initialize()
 	//Rendering::Renderer::InitializeImGui();
 }
 
-void ImGuiRenderStage::Render(const RenderCamera& camera, const RenderEngine::SceneData& renderData)
+void ImGuiRenderStage::Setup(RenderStageBuilder& builder)
+{
+	// ImGui::Render() ends ImGui's frame, so it can only run once per frame
+	builder.RunsIn(ERenderViewFilter::MainOnly);
+
+	if (m_withEditor)
+	{
+		m_displayedView = builder.Reads<DisplayColourData>();
+	}
+	else
+	{
+		m_overlayTarget = builder.Modifies<DisplayColourData>();
+	}
+}
+
+void ImGuiRenderStage::Render(RenderContext& context)
 {
 	OPTICK_EVENT();
 	Rendering::Renderer::Begin("ImGuiRenderStage");
@@ -19,6 +34,10 @@ void ImGuiRenderStage::Render(const RenderCamera& camera, const RenderEngine::Sc
 	if (m_withEditor)
 	{
 		Rendering::Renderer::SetRenderTargetBackBuffer();
+	}
+	else
+	{
+		Rendering::Renderer::SetColourTarget(m_overlayTarget.Get(context).Colour);
 	}
 
 	ImGui::Render();

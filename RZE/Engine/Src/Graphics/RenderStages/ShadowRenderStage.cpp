@@ -61,13 +61,18 @@ void ShadowRenderStage::Initialize()
 	// Separate from the vertex shader's own camera buffer so the forward pass's camera isn't overwritten
 	m_lightCameraBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(RenderCamera), 128, 1);
 	m_shadowBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(ShadowBufferLayout), 16, 1);
-
-	RZE().GetRenderEngine().SetShadowResources(m_shadowMap, m_shadowBuffer);
 }
 
-void ShadowRenderStage::Render(const RenderCamera& camera, const RenderEngine::SceneData& renderData)
+void ShadowRenderStage::Setup(RenderStageBuilder& builder)
+{
+	m_shadowMapOutput = builder.Writes<ShadowMapData>();
+}
+
+void ShadowRenderStage::Render(RenderContext& context)
 {
 	OPTICK_EVENT();
+
+	const RenderEngine::SceneData& renderData = context.Scene;
 
 	Rendering::Renderer::Begin("ShadowRenderStage");
 
@@ -86,7 +91,7 @@ void ShadowRenderStage::Render(const RenderCamera& camera, const RenderEngine::S
 	if (!renderData.lightObjects.empty()
 		&& CalculateLightViewProjection(renderData, renderData.lightObjects[0]->GetDirection(), lightViewProjection, worldTexelSize))
 	{
-		RenderCamera lightCamera = camera;
+		RenderCamera lightCamera = context.View.Camera;
 		lightCamera.ClipSpace = lightViewProjection;
 
 		shadowData.LightViewProjection = lightCamera.ClipSpace;
@@ -135,6 +140,12 @@ void ShadowRenderStage::Render(const RenderCamera& camera, const RenderEngine::S
 	}
 
 	Rendering::Renderer::UploadDataToBuffer<ShadowBufferLayout>(m_shadowBuffer, &shadowData);
+
+	// Published even without a light: HasShadows = 0 tells the sampling shaders to skip the lookup
+	ShadowMapData shadowMapData;
+	shadowMapData.ShadowMap = m_shadowMap;
+	shadowMapData.ShadowParams = m_shadowBuffer;
+	m_shadowMapOutput.Publish(context, shadowMapData);
 
 	Rendering::Renderer::End();
 }

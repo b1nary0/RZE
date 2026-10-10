@@ -177,7 +177,7 @@ namespace Editor
 
 		const Vector2D& windowDims = GetWindow()->GetClientSize();
 		CreateRenderTarget(windowDims);
-		RZE().GetRenderEngine().SetRenderTarget(m_renderTarget.get());
+		RZE().GetRenderEngine().GetMainView().Target = m_renderTarget.get();
 
 		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 		ImGui::GetIO().KeyRepeatDelay = 0.5f;
@@ -290,7 +290,7 @@ namespace Editor
 	void EditorApp::OnWindowResize(const Vector2D& newSize)
 	{
 		CreateRenderTarget(newSize);
-		RZE().GetRenderEngine().SetRenderTarget(m_renderTarget.get());
+		RZE().GetRenderEngine().GetMainView().Target = m_renderTarget.get();
 	}
 
 	GameObjectPtr EditorApp::GetSelectedObjectFromScenePanel()
