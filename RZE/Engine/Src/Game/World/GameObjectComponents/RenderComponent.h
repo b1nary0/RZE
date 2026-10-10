@@ -26,6 +26,7 @@ public:
 
 public:
 	void SetMeshResource(const ResourceHandle& resource);
+	void SetDrawMeshBounds(bool draw);
 
 	// See GameObjectComponentRegistry::ResourceDependencyGatherer.
 	static void GatherResourceDependencies(const rapidjson::Value& componentData, ResourceDependencyList& outDependencies);

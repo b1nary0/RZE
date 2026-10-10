@@ -4,6 +4,7 @@
 
 #include <Game/World/GameObject/GameObject.h>
 #include <Game/World/GameObjectComponents/EditorCameraComponent.h>
+#include <Game/World/GameObjectComponents/RenderComponent.h>
 
 #include <Utils/DebugUtils/Debug.h>
 
@@ -76,7 +77,7 @@ namespace Editor
 			
 			if (ImGui::IsAnyMouseDown() && (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) && HasSelectedGameObject())
 			{
-				m_selectedItem.reset();
+				ResetSelectedGameObject();
 			}
 
 			RZE().GetActiveScene().ForEachGameObject(
@@ -177,7 +178,33 @@ namespace Editor
 
 	void ScenePanel::ResetSelectedGameObject()
 	{
+		// The selected object's bounds are shown through RenderComponent's own toggle so its checkbox stays in sync
+		if (HasSelectedGameObject())
+		{
+			GameObjectComponentPtr<RenderComponent> renderComponent = GetSelectedGameObject()->GetComponent<RenderComponent>();
+			if (renderComponent != nullptr)
+			{
+				renderComponent->SetDrawMeshBounds(false);
+			}
+		}
+
 		m_selectedItem.reset();
+	}
+
+	void ScenePanel::SetSelectedGameObject(GameObjectPtr gameObject)
+	{
+		ResetSelectedGameObject();
+
+		SelectedItem* newItem = new SelectedItem();
+		newItem->m_gameObject = gameObject;
+		newItem->m_isDirty = true;
+		m_selectedItem.reset(newItem);
+
+		GameObjectComponentPtr<RenderComponent> renderComponent = gameObject->GetComponent<RenderComponent>();
+		if (renderComponent != nullptr)
+		{
+			renderComponent->SetDrawMeshBounds(true);
+		}
 	}
 
 	void ScenePanel::DisplayObject(GameObjectPtr gameObject)
@@ -200,11 +227,7 @@ namespace Editor
 			{
 				if (!HasSelectedGameObject() || GetSelectedGameObject() != gameObject)
 				{
-					SelectedItem* newItem = new SelectedItem();
-					newItem->m_gameObject = gameObject;
-					newItem->m_isDirty = true;
-
-					m_selectedItem.reset(newItem);
+					SetSelectedGameObject(gameObject);
 				}
 			}
 

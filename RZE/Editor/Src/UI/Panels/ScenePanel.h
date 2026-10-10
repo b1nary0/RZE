@@ -34,6 +34,8 @@ namespace Editor
 
 	private:
 		void DisplayObject(GameObjectPtr gameObject);
+		// Use ResetSelectedGameObject() to clear the selection
+		void SetSelectedGameObject(GameObjectPtr gameObject);
 
 	private:
 		bool bEnabled;

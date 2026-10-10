@@ -49,6 +49,11 @@ void RenderComponent::SetMeshResource(const ResourceHandle& resource)
 	m_resource = resource;
 }
 
+void RenderComponent::SetDrawMeshBounds(bool draw)
+{
+	m_drawMeshBounds = draw;
+}
+
 void RenderComponent::CreateRenderObject()
 {
 	// Added without a mesh (e.g. via the editor); a render object is created once a mesh is selected
