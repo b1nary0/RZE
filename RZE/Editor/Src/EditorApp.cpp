@@ -280,10 +280,6 @@ namespace Editor
 	{
 		ImGuiInput::SubmitInput(handler);
 
-		// @TODO this is commented because imgui needs extra data or im doing something wrong
-		// to not scroll to the very top or bottom every mouse notch.
-		//io.MouseWheel = static_cast<float>(handler.GetProxyMouseState().CurWheelVal);
-
 		return m_sceneViewPanel.IsHovered();
 	}
 

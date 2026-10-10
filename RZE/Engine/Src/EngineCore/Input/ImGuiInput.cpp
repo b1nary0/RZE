@@ -80,6 +80,12 @@ namespace ImGuiInput
 			io.AddMouseButtonEvent(mouseBtn, mouseState.CurMouseBtnStates[mouseBtn]);
 		}
 
+		// CurWheelVal is the raw WM_MOUSEWHEEL delta for this frame (cleared next frame), ImGui wants notches.
+		if (mouseState.CurWheelVal != 0)
+		{
+			io.AddMouseWheelEvent(0.0f, static_cast<float>(mouseState.CurWheelVal) / static_cast<float>(WHEEL_DELTA));
+		}
+
 		// ImGui drops events that don't change a key's state, so submitting every key each frame is fine.
 		const auto& keyboardState = handler.GetProxyKeyboardState();
 		for (int key = 0; key < MAX_KEYCODES_SUPPORTED; ++key)

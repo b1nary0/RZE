@@ -170,8 +170,9 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 
 void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 {
-	// #TODO(Josh) Fix this later. Need to reset mouse wheel.
-	if (inputHandler.GetMouseState().CurWheelVal != 0)
+	// The wheel only reports deltas, so clear it each frame. Check the proxy state: the raised state is
+	// only refreshed by RaiseEvents(), so it stays stale while the application is stealing input.
+	if (inputHandler.GetProxyMouseState().CurWheelVal != 0)
 	{
 		inputHandler.OnMouseWheel(0);
 	}
