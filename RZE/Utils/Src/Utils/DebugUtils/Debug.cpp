@@ -1,6 +1,7 @@
 #include <StdAfx.h>
 #include <Utils/DebugUtils/Debug.h>
 
+#include <atomic>
 #include <crtdbg.h>
 #include <cstdio>
 #include <ctime>
@@ -44,6 +45,29 @@ namespace Debug
 		logFile.Open(File::EFileOpenMode::Append);
 		logFile << str.data();
 		logFile.Close();
+	}
+
+	static std::atomic<LogSink> g_logSink = nullptr;
+
+	void SetLogSink(LogSink sink)
+	{
+		g_logSink = sink;
+	}
+
+	void WriteToLog(const std::string_view str)
+	{
+		WriteToLogFile(str);
+
+		if (LogSink sink = g_logSink)
+		{
+			std::string_view line = str;
+			while (!line.empty() && (line.back() == '\n' || line.back() == '\r'))
+			{
+				line.remove_suffix(1);
+			}
+
+			sink(line);
+		}
 	}
 
 #ifdef _DEBUG

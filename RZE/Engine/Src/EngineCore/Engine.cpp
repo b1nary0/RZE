@@ -19,6 +19,25 @@
 
 #include "Windowing/Win32Window.h"
 
+namespace
+{
+	// Forwards RZE_LOG/RZE_LOG_ARGS lines to DebugServices (the editor Log panel). Worker-thread lines are
+	// marshalled to the main thread, since DebugServices must not be traced while it is being iterated.
+	void TraceLogLine(std::string_view line)
+	{
+		if (Threading::MainThreadDispatcher::Get().IsMainThread())
+		{
+			DebugServices::Get().Trace(LogChannel::Info, std::string(line));
+			return;
+		}
+
+		Threading::MainThreadDispatcher::Get().Post(Threading::Job::Task([text = std::string(line)]()
+			{
+				DebugServices::Get().Trace(LogChannel::Info, text);
+			}));
+	}
+}
+
 RZE_Engine::RZE_Engine()
 	: m_window(nullptr)
 	, m_application(nullptr)
@@ -125,6 +144,7 @@ void RZE_Engine::Init()
 		DebugServices::Get().Initialize();
 
 		Threading::MainThreadDispatcher::Get().Initialize();
+		Debug::SetLogSink(&TraceLogLine);
 		Threading::JobScheduler::Get().Initialize();
 		m_asyncOperationManager.Initialize();
 
@@ -313,6 +333,7 @@ void RZE_Engine::BeginShutDown()
 	m_renderEngine->Shutdown();
 
 	Threading::JobScheduler::Get().ShutDown();
+	Debug::SetLogSink(nullptr);
 	Threading::MainThreadDispatcher::Get().ShutDown();
 
 	InternalShutDown();

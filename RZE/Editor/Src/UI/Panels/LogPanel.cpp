@@ -10,7 +10,6 @@
 
 namespace Editor
 {
-	static bool gShouldSetScroll = false;
 	void LogPanel::Display()
 	{
 		ImGui::Begin("Log", nullptr, ImGuiWindowFlags_NoCollapse);
@@ -23,11 +22,13 @@ namespace Editor
 			ImGui::TextColored(imColor, "%s", logItem.Text.c_str());
 		}
 
-		if (gShouldSetScroll)
+		// Entries can arrive from anywhere (RZE_LOG, build output), so follow the count rather than AddEntry.
+		static size_t s_lastEntryCount = 0;
+		if (logEntries.size() > s_lastEntryCount)
 		{
 			ImGui::SetScrollHereY();
-			gShouldSetScroll = false;
 		}
+		s_lastEntryCount = logEntries.size();
 
 		ImGui::End();
 	}
@@ -35,6 +36,5 @@ namespace Editor
 	void LogPanel::AddEntry(const std::string& msg)
 	{
 		DebugServices::Get().Trace(LogChannel::Info, msg);
-		gShouldSetScroll = true;
 	}
 }

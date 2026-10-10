@@ -13,6 +13,13 @@ namespace Debug
 	File& GetLogFile();
 	void WriteToLogFile(const std::string_view str);
 
+	// Receives each logged line (without its trailing newline). Called from whichever thread logged it.
+	using LogSink = void(*)(std::string_view line);
+	void SetLogSink(LogSink sink);
+
+	// Writes to the log file, then forwards to the log sink if one is set.
+	void WriteToLog(const std::string_view str);
+
 	// Shows the CRT assert dialog (regardless of console/windows subsystem).
 	// Returns true if the caller should break into the debugger.
 	bool ReportAssertFailure(const char* file, int line, const char* expr, const char* msg);
@@ -46,7 +53,7 @@ namespace Debug
 	ss << "\n";												\
 															\
 	printf_s(ss.str().c_str());								\
-	Debug::WriteToLogFile(ss.str());							\
+	Debug::WriteToLog(ss.str());							\
 }
 
 #define LOG_CONSOLE_ANNOUNCE(Msg, ...) 						\
@@ -72,7 +79,7 @@ namespace Debug
 	char buf[1024];											\
 	sprintf_s(buf, 1024, ss.str().c_str(), __VA_ARGS__);		\
 	printf_s(ss.str().c_str(), __VA_ARGS__); 				\
-	Debug::WriteToLogFile(buf);										\
+	Debug::WriteToLog(buf);										\
 }											
 
 #define START_TIMED_BLOCK(Name)	\
