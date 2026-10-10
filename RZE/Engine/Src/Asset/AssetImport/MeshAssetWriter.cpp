@@ -5,6 +5,7 @@
 #include <Utils/Memory/ByteStream.h>
 #include <Utils/Platform/File.h>
 
+#include <cstring>
 #include <filesystem>
 
 namespace
@@ -56,7 +57,9 @@ void MeshAssetWriter::Write()
 	const size_t meshCount = m_meshes.size();
 	bufSize += sizeof(MeshAssetFileHeader) + ((sizeof(size_t) * 4) * meshCount);
 
+	// Written as raw bytes, so clear the padding after AssetVersion too; otherwise identical burns differ
 	MeshAssetFileHeader header;
+	std::memset(&header, 0, sizeof(MeshAssetFileHeader));
 	header.AssetVersion = k_meshAssetVersion;
 	header.BufSize = bufSize;
 	header.MeshCount = meshCount;
