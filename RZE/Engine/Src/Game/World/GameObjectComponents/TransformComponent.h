@@ -22,6 +22,7 @@ public:
 	void Update() override;
 
 public:
+	// Position in metres; rotation as Euler angles in degrees (see Utils/Math/Units.h)
 	Vector3D& GetPosition();
 	const Vector3D& GetPosition() const;
 	Vector3D& GetRotation();

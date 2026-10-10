@@ -232,7 +232,7 @@ namespace Editor
 						drawList->AddCircle(center, k_discRadius, outlineColour, 16, 1.5f);
 						for (int ray = 0; ray < 8; ++ray)
 						{
-							const float angle = ray * (3.14159265f / 4.0f);
+							const float angle = ray * (MathUtils::Pi / 4.0f);
 							const ImVec2 dir(std::cos(angle), std::sin(angle));
 							drawList->AddLine(
 								ImVec2(center.x + dir.x * k_rayInner, center.y + dir.y * k_rayInner),

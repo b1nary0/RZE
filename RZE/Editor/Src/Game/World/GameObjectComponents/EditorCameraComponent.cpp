@@ -136,7 +136,7 @@ void EditorCameraComponent::FocusOn(const Vector3D& boundsMin, const Vector3D& b
 		heading.SetY(0.0f);
 		if (heading.LengthSq() <= VectorUtils::kEpsilonSq)
 		{
-			heading = Vector3D(0.0f, 0.0f, -1.0f);
+			heading = WorldAxes::Forward();
 		}
 	}
 	heading.Normalize();
@@ -148,7 +148,7 @@ void EditorCameraComponent::FocusOn(const Vector3D& boundsMin, const Vector3D& b
 		? std::asin(MathUtils::Clampf(toCamera.Y() / toCameraLength, -1.0f, 1.0f)) * MathUtils::ToDegrees
 		: 0.0f;
 	const float elevation = MathUtils::Clampf(currentElevation, k_focusMinElevation, k_focusMaxElevation) * MathUtils::ToRadians;
-	const Vector3D targetForward = heading * std::cos(elevation) + Vector3D(0.0f, -1.0f, 0.0f) * std::sin(elevation);
+	const Vector3D targetForward = heading * std::cos(elevation) - WorldAxes::Up() * std::sin(elevation);
 
 	m_focusStartPos = transformComponent->GetPosition();
 	m_focusTargetPos = center - targetForward * distance;

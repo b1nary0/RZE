@@ -11,18 +11,17 @@ class Matrix4x4
 public:
 	Matrix4x4();
 
-	static Matrix4x4 CreateInPlace(const Vector3D& position, const Vector3D& scale, const Vector3D& rotation);
+	static Matrix4x4 CreateInPlace(const Vector3D& position, const Vector3D& scale, const Vector3D& eulerDegrees);
 
 	static Matrix4x4 CreateViewMatrix(const Vector3D& eyePos, const Vector3D& centerPos, const Vector3D& upDir);
-	static Matrix4x4 CreatePerspectiveMatrix(const float fov, const float aspectRatio, const float nearCull, const float farCull);
+	static Matrix4x4 CreatePerspectiveMatrix(const float fovYDegrees, const float aspectRatio, const float nearCull, const float farCull);
 	static Matrix4x4 CreateOrthoMatrix(const float left, const float right, const float bottom, const float top, const float zNear, const float zFar);
 	// As CreateOrthoMatrix but outputs D3D's [0, 1] depth range instead of OpenGL's [-1, 1]
 	static Matrix4x4 CreateOrthoMatrixZeroToOne(const float left, const float right, const float bottom, const float top, const float zNear, const float zFar);
 
 	void Translate(const Vector3D& translation);
-	void Rotate(const float angle, const Vector3D& axis);
+	void Rotate(const float angleRadians, const Vector3D& axis);
 	void Scale(const Vector3D& scale);
-	void Rotate(const Vector3D& rotation);
 
 	Matrix4x4 Inverse() const;
 	Matrix4x4 Transpose() const;
@@ -32,7 +31,6 @@ public:
 	Vector3D GetScale() const;
 
 	void SetPosition(const Vector3D& position);
-	void SetRotation(const Vector3D& rotation);
 	void SetScale(const Vector3D& scale);
 
 	// Row 0-3 of the matrix as it multiplies a column vector (matrix * vector)

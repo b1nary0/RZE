@@ -4,6 +4,8 @@
 #include <Game/World/GameObject/GameObject.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
+#include <Utils/Math/Units.h>
+
 namespace
 {
 	// Length of the editor debug line showing which way the light points
@@ -13,7 +15,7 @@ namespace
 	Vector3D CalculateLightDirection(const Vector3D& eulerRotationDegrees)
 	{
 		const Matrix4x4 rotation = Matrix4x4::CreateInPlace(Vector3D(), Vector3D(1.0f), eulerRotationDegrees);
-		const Vector4D direction = rotation * Vector4D(0.0f, -1.0f, 0.0f, 0.0f);
+		const Vector4D direction = rotation * Vector4D(WorldAxes::Up() * -1.0f, 0.0f);
 
 		return Vector3D(direction.X(), direction.Y(), direction.Z()).Normalized();
 	}

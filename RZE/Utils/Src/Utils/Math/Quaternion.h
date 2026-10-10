@@ -9,11 +9,13 @@ class Quaternion
 public:
 	Quaternion();
 	Quaternion(const float x, const float y, const float z, const float w);
-	Quaternion(const Vector3D& angles);
+	// Euler angles in radians, applied X then Y then Z (see Units.h)
+	Quaternion(const Vector3D& eulerRadians);
+	// The shortest rotation taking unit vector a to unit vector b
 	Quaternion(const Vector3D& a, const Vector3D& b);
 
-	float ToAngle() const;
-	Vector3D ToEuler() const;
+	float ToAngleRadians() const;
+	Vector3D ToEulerDegrees() const;
 	Vector3D ToAxis() const;
 
 	const glm::quat& GetInternalQuat() const;

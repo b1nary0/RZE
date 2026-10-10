@@ -14,9 +14,9 @@ Quaternion::Quaternion(const float x, const float y, const float z, const float 
 {
 }
 
-Quaternion::Quaternion(const Vector3D& angles)
+Quaternion::Quaternion(const Vector3D& eulerRadians)
 {
-	m_quat = glm::quat(angles.GetInternalVec());
+	m_quat = glm::quat(eulerRadians.GetInternalVec());
 }
 
 Quaternion::Quaternion(const glm::quat& quat)
@@ -29,7 +29,7 @@ Quaternion::Quaternion(const Vector3D& a, const Vector3D& b)
 {
 }
 
-float Quaternion::ToAngle() const
+float Quaternion::ToAngleRadians() const
 {
 	return glm::angle(m_quat);
 }
@@ -40,7 +40,7 @@ Vector3D Quaternion::ToAxis() const
 	return Vector3D(axis.x, axis.y, axis.z);
 }
 
-Vector3D Quaternion::ToEuler() const
+Vector3D Quaternion::ToEulerDegrees() const
 {
 	glm::vec3 eulerRotation = glm::eulerAngles(m_quat);
 	return Vector3D(eulerRotation.x, eulerRotation.y, eulerRotation.z) * MathUtils::ToDegrees;

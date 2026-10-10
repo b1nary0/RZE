@@ -21,13 +21,13 @@ CameraComponent::CameraComponent()
 Vector3D CameraComponent::GetForward() const
 {
 	const Quaternion rotation(m_owner->GetTransformComponent()->GetRotation() * MathUtils::ToRadians);
-	return (rotation * Vector3D(0.0f, 0.0f, -1.0f)).Normalized();
+	return (rotation * WorldAxes::Forward()).Normalized();
 }
 
 Vector3D CameraComponent::GetUpDir() const
 {
 	const Quaternion rotation(m_owner->GetTransformComponent()->GetRotation() * MathUtils::ToRadians);
-	return (rotation * Vector3D(0.0f, 1.0f, 0.0f)).Normalized();
+	return (rotation * WorldAxes::Up()).Normalized();
 }
 
 const Matrix4x4& CameraComponent::GetProjectionMatrix() const

@@ -51,7 +51,7 @@ namespace VectorUtils
 		if (cosAngle < -1.0f + kEpsilon)
 		{
 			// Any perpendicular works as the halfway point; cross with whichever axis isn't near-parallel to from
-			const Vector3D axis = std::abs(from.Y()) < 0.9f ? Vector3D(0.0f, 1.0f, 0.0f) : Vector3D(1.0f, 0.0f, 0.0f);
+			const Vector3D axis = std::abs(from.Y()) < 0.9f ? WorldAxes::Up() : WorldAxes::Right();
 			const Vector3D perpendicular = from.Cross(axis).Normalized();
 			const float angle = MathUtils::Pi * factor;
 			return from * std::cos(angle) + perpendicular * std::sin(angle);

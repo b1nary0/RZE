@@ -191,7 +191,7 @@ bool ShadowRenderStage::CalculateLightViewProjection(const RenderEngine::SceneDa
 	const Vector3D sceneCenter = (sceneMin + sceneMax) * 0.5f;
 	const float sceneRadius = (sceneMax - sceneMin).Length() * 0.5f;
 
-	const Vector3D up = (std::abs(lightDirection.Y()) > 0.99f) ? Vector3D(0.0f, 0.0f, 1.0f) : Vector3D(0.0f, 1.0f, 0.0f);
+	const Vector3D up = (std::abs(lightDirection.Y()) > 0.99f) ? WorldAxes::Forward() : WorldAxes::Up();
 	const Vector3D eye = sceneCenter - lightDirection * (sceneRadius + 1.0f);
 	const Matrix4x4 view = Matrix4x4::CreateViewMatrix(eye, sceneCenter, up);
 

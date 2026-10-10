@@ -12,6 +12,8 @@
 #include <Rendering/Renderer.h>
 #include <Rendering/Graphics/RenderTarget.h>
 
+#include <Utils/Math/Units.h>
+
 namespace
 {
 	// Must match ShadowBuffer / ShadowMap registers in Common/PixelResources.hlsli
@@ -35,7 +37,7 @@ void ForwardRenderStage::Initialize()
 
 	m_fallbackLight = std::make_unique<LightObject>();
 	m_fallbackLight->Initialize();
-	m_fallbackLight->SetDirection(Vector3D(0.0f, -1.0f, 0.0f));
+	m_fallbackLight->SetDirection(WorldAxes::Up() * -1.0f);
 	m_fallbackLight->SetColour(Vector4D(0.0f, 0.0f, 0.0f, 1.0f));
 	m_fallbackLight->SetStrength(0.0f);
 }
