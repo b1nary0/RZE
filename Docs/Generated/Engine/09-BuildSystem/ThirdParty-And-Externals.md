@@ -6,7 +6,7 @@ RZE distinguishes between **prebuilt vendored binaries** (`ThirdParty\`) and **v
 
 | Library | Purpose |
 |---|---|
-| Assimp | 3D model import (`.obj`/`.fbx`/etc.) — used by `SourceAssetBurner`'s `AssimpSourceImporter` |
+| Assimp 6.0.5 | 3D model import (`.obj`/`.fbx`/etc.) — used by `SourceAssetBurner`'s `AssimpSourceImporter` |
 | DirectXTK (DirectX Tool Kit) | Audio, SpriteBatch, SimpleMath, texture loaders, effects |
 | FreeType | Font rasterization |
 | GL | OpenGL headers (constants/loader — DX11 is the active renderer backend, not OpenGL) |
@@ -17,7 +17,7 @@ RZE distinguishes between **prebuilt vendored binaries** (`ThirdParty\`) and **v
 | SimpleINI | INI parsing — backs the `Config`/`EngineConfig` system |
 | STB | Single-header libs (e.g. image loading) |
 
-Raw DLLs also present: `OptickCore.dll`, `assimp.dll`, `glew64.dll` (GLEW — OpenGL Extension Wrangler, likely a leftover from before the engine settled on DX11).
+Raw DLLs also present: `OptickCore.dll`, `assimp-vc141-mt.dll` (built from source with the v141 toolset, Release, shared), `glew64.dll` (GLEW — OpenGL Extension Wrangler, likely a leftover from before the engine settled on DX11).
 
 ## `Externals\` — vendored source, compiled from scratch as part of the solution
 
@@ -28,7 +28,7 @@ Raw DLLs also present: `OptickCore.dll`, `assimp.dll`, `glew64.dll` (GLEW — Op
 
 ## `Files\` — original download archives (not built, historical reference)
 
-`C:\dev\RZE\Files\` holds the original source archives many of the above were unpacked from: `assimp-3.1.1-win-binaries.zip`, `freetype-2.8.tar.gz`, `glew-2.1.0-win32.zip`, `rapidjson-master.zip`, an `stb` zip, `imgui-docking.zip`, `ImGuizmo-1.83.zip`, `Optick_1.3.0.zip`, `Brofiler-1.1.2.zip` (Optick's predecessor profiler — not currently integrated), `bullet3-master.zip` (Bullet Physics — **not** currently wired into `ThirdParty`/`Externals`; likely aspirational/exploratory, not an active dependency), `RenderDoc_1.2_64.msi`, and `Setup\vcredist_x64.exe`. Also sample-art archives (`nanosuit.rar`, `PanzerTank.rar`, `FW190_Plane.zip`, `m4a1.rar`, a neck-mech-walker rar) that were presumably unpacked into `Assets\3D`.
+`C:\dev\RZE\Files\` holds the original source archives many of the above were unpacked from: `assimp-6.0.5-win64-vc141-binaries.zip` (headers, import lib, DLL and LICENSE of the build above), `freetype-2.8.tar.gz`, `glew-2.1.0-win32.zip`, `rapidjson-master.zip`, an `stb` zip, `imgui-docking.zip`, `ImGuizmo-1.83.zip`, `Optick_1.3.0.zip`, `Brofiler-1.1.2.zip` (Optick's predecessor profiler — not currently integrated), `bullet3-master.zip` (Bullet Physics — **not** currently wired into `ThirdParty`/`Externals`; likely aspirational/exploratory, not an active dependency), `RenderDoc_1.2_64.msi`, and `Setup\vcredist_x64.exe`. Also sample-art archives (`nanosuit.rar`, `PanzerTank.rar`, `FW190_Plane.zip`, `m4a1.rar`, a neck-mech-walker rar) that were presumably unpacked into `Assets\3D`.
 
 ## `Tools\` — bundled binaries (not source)
 

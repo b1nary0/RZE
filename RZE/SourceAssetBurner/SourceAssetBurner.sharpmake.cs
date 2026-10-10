@@ -17,6 +17,6 @@ public class SourceAssetBurner : BaseProject
         conf.IncludePaths.Add(Path.Combine(Globals.RootDir, "Utils"));
         conf.AddPublicDependency<Engine>(target);
 
-        conf.LibraryFiles.Add("assimp");
+        conf.LibraryFiles.Add("assimp-vc141-mt");
     }
 }

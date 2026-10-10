@@ -29,7 +29,7 @@ Entry point `SourceAssetBurner\Src\SourceAssetBurner\SourceAssetBurnerMain.cpp`:
 `Importers\SourceImporter.h` — abstract interface `virtual bool Import(const Filepath&) = 0;`, designed so other source formats could be added later (only Assimp is implemented today).
 
 `Importers\AssimpSourceImporter.h/.cpp` — the only concrete importer:
-- Loads via `Assimp::Importer::ReadFile` with flags `aiProcessPreset_TargetRealtime_Fast | (aiProcess_ConvertToLeftHanded ^ aiProcess_FlipWindingOrder) | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph`.
+- Loads via `Assimp::Importer::ReadFile` with flags `aiProcessPreset_TargetRealtime_Fast | aiProcess_MakeLeftHanded | aiProcess_FlipUVs | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph` (i.e. `aiProcess_ConvertToLeftHanded` without its winding flip). Source shininess is a Phong exponent and is multiplied by 4 for the Blinn-Phong shaders.
 - Walks the Assimp node graph (`ProcessNode`/`ProcessMesh`), extracting per-vertex position/normal/UV/tangent data and index buffers into `MeshData`.
 - Extracts material data (shininess, opacity, diffuse/specular/normal texture paths) into an internal `MaterialData`, with an `ETextureFlags` bitmask (`ALBEDO`/`SPECULAR`/`NORMAL`) — matching the texture slots on `MaterialInstance` ([Materials-Meshes-Shaders.md](../04-Rendering/Materials-Meshes-Shaders.md)).
 - Deduplicates materials in `m_materialTable`, keyed by output path.

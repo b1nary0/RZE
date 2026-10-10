@@ -54,15 +54,16 @@ bool AssimpSourceImporter::Import(const Filepath& filePath)
 	Assimp::Importer ModelImporter;
 	const aiScene* AssimpScene = ModelImporter.ReadFile(filePath.GetAbsolutePath(),
 		aiProcessPreset_TargetRealtime_Fast |
-		// #TODO(Is this negation of aiProces_FlipWindingOrder even legal? does it have any consequences?)
-		(aiProcess_ConvertToLeftHanded ^ aiProcess_FlipWindingOrder) |
+		// aiProcess_ConvertToLeftHanded without its aiProcess_FlipWindingOrder
+		aiProcess_MakeLeftHanded |
+		aiProcess_FlipUVs |
 		aiProcess_OptimizeMeshes |
 		aiProcess_OptimizeGraph);
 
 	bool bAssimpNotLoaded =
 		!AssimpScene
 		|| !AssimpScene->mRootNode
-		|| AssimpScene->mFlags == AI_SCENE_FLAGS_INCOMPLETE;
+		|| (AssimpScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) != 0;
 
 	if (bAssimpNotLoaded)
 	{
@@ -129,20 +130,24 @@ void AssimpSourceImporter::ProcessNode(const aiNode& node, const aiScene& scene)
 
 void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshData& outMeshData)
 {
-	bool bHasTextureCoords = mesh.mTextureCoords[0] != nullptr;
-	bool bHasTangents = mesh.mTangents != nullptr;
+	bool bHasNormals = mesh.HasNormals();
+	bool bHasTextureCoords = mesh.HasTextureCoords(0);
+	bool bHasTangents = mesh.HasTangentsAndBitangents();
 
 	for (U32 vertexIdx = 0; vertexIdx < mesh.mNumVertices; vertexIdx++)
 	{
 		const aiVector3D& assimpVert = mesh.mVertices[vertexIdx];
-		const aiVector3D& assimpNormal = mesh.mNormals[vertexIdx];
 
 		Vector3D vertPos(assimpVert.x, assimpVert.y, assimpVert.z);
-		Vector3D vertNormal(assimpNormal.x, assimpNormal.y, assimpNormal.z);
 
 		MeshVertex vertex;
 		vertex.Position = vertPos;
-		vertex.Normal = vertNormal;
+
+		if (bHasNormals)
+		{
+			const aiVector3D& assimpNormal = mesh.mNormals[vertexIdx];
+			vertex.Normal = Vector3D(assimpNormal.x, assimpNormal.y, assimpNormal.z);
+		}
 
 		if (bHasTextureCoords)
 		{
@@ -170,7 +175,7 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 		}
 	}
 
-	if (mesh.mMaterialIndex >= 0)
+	if (mesh.mMaterialIndex < scene.mNumMaterials)
 	{
 		// #TODO
 		// This is just temp
@@ -188,7 +193,9 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 		float shininess = 0.0f;
 		if (mat->Get(AI_MATKEY_SHININESS, shininess) == AI_SUCCESS)
 		{
-			materialData.Properties.Shininess = shininess;
+			// Source files store a Phong exponent; the shaders use Blinn-Phong, whose half-vector
+			// lobe needs ~4x the exponent for a highlight of the same size
+			materialData.Properties.Shininess = shininess * 4.0f;
 		}
 
 		float opacity = 0.0f;
@@ -205,10 +212,14 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 		// #TODO
 		// Not entirely sure what would come in with > 0 of these texture types (though obviously its valid)
 		// so in the interest of being explicit of what RZE supports at the moment, only take the 0th texture data
-		if (mat->GetTextureCount(aiTextureType_DIFFUSE) > 0)
+		// glTF and other PBR sources fill BASE_COLOR and NORMAL_CAMERA instead of DIFFUSE and NORMALS
+		const aiTextureType albedoType = mat->GetTextureCount(aiTextureType_DIFFUSE) > 0 ? aiTextureType_DIFFUSE : aiTextureType_BASE_COLOR;
+		const aiTextureType normalType = mat->GetTextureCount(aiTextureType_NORMALS) > 0 ? aiTextureType_NORMALS : aiTextureType_NORMAL_CAMERA;
+
+		if (mat->GetTextureCount(albedoType) > 0)
 		{
 			aiString str;
-			mat->GetTexture(aiTextureType_DIFFUSE, 0, &str);
+			mat->GetTexture(albedoType, 0, &str);
 
 			Filepath texturePath = GetTextureFilePath(m_filepath, str.C_Str());
 
@@ -227,10 +238,10 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 			materialData.TexturePaths[1] = texturePath.GetRelativePath();
 		}
 
-		if (mat->GetTextureCount(aiTextureType_NORMALS))
+		if (mat->GetTextureCount(normalType) > 0)
 		{
 			aiString str;
-			mat->GetTexture(aiTextureType_NORMALS, 0, &str);
+			mat->GetTexture(normalType, 0, &str);
 
 			Filepath texturePath = GetTextureFilePath(m_filepath, str.C_Str());
 

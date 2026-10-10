@@ -44,8 +44,8 @@ public class RZE : Solution {
 | Externals | `Externals\Externals.sharpmake.cs` | static Lib | *(none)* | — |
 | Modules/Rendering | `Modules\Rendering\Rendering.sharpmake.cs` | static Lib | Externals, Utils | `d3d9`, `d3d11`, `d3d12`, `dxgi`, `d3dcompiler`, `DirectXTK`, `OptickCore` |
 | Engine | `Engine\Engine.sharpmake.cs` | static Lib | Utils, Externals, Rendering | `OptickCore`; copies `ThirdParty\Dll\x64\*.dll` to output post-build |
-| SourceAssetBurner | `SourceAssetBurner\SourceAssetBurner.sharpmake.cs` | exe | **Engine only** | `assimp` |
-| Editor | `Editor\Editor.sharpmake.cs` | exe | **Engine only** | `assimp` |
+| SourceAssetBurner | `SourceAssetBurner\SourceAssetBurner.sharpmake.cs` | exe | **Engine only** | `assimp-vc141-mt` |
+| Editor | `Editor\Editor.sharpmake.cs` | exe | **Engine only** | — |
 | Game | `Game\Game.sharpmake.cs` | exe | **Engine only** | — |
 
 All three executables — `Editor`, `Game`, and `SourceAssetBurner` — have converged on declaring a single explicit dependency, `Engine`, rather than also separately declaring `Utils` (and, for `Game`, `Rendering`). This isn't a behavior change: `Engine` itself has `AddPublicDependency<Utils>`/`<Externals>`/`<Rendering>`, and Sharpmake's `AddPublicDependency` propagates a project's public include/lib paths to everything that depends on it — so all three still get full access to `Utils`/`Rendering` headers/libs, just transitively through `Engine` instead of via their own separate declaration.

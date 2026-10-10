@@ -16,7 +16,5 @@ public class Editor : BaseProject
         base.ConfigureAll(conf, target);
         conf.IncludePaths.Add(Path.Combine(Globals.RootDir, "Utils"));
         conf.AddPublicDependency<Engine>(target);
-
-        conf.LibraryFiles.Add("assimp");
     }
 }
