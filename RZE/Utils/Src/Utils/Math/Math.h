@@ -3,6 +3,7 @@
 #include <Utils/Math/Quaternion.h>
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector3D.h>
+#include <Utils/PrimitiveDefs.h>
 
 namespace MathUtils
 {
@@ -12,6 +13,9 @@ namespace MathUtils
 
 	int Clamp(int value, int min, int max);
 	float Clampf(float value, float min, float max);
+
+	// The smallest power of two that is >= value (value itself if it already is one)
+	U32 CeilPowerOfTwo(U32 value);
 }
 
 namespace VectorUtils
@@ -20,6 +24,10 @@ namespace VectorUtils
 	constexpr float kEpsilonSq = kEpsilon * kEpsilon;
 
 	float Dot(const Vector3D& a, const Vector3D& b);
+
+	// Component-wise minimum and maximum, e.g. for growing a bounding box
+	Vector3D	Min(const Vector3D& a, const Vector3D& b);
+	Vector3D	Max(const Vector3D& a, const Vector3D& b);
 
 	Vector3D	Lerp(const Vector3D& from, const Vector3D& to, const float factor);
 	Vector2D	Lerp(const Vector2D& from, const Vector2D& to, const float factor);

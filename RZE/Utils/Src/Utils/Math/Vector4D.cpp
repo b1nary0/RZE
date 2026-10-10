@@ -22,6 +22,11 @@ Vector4D::Vector4D(const int x, const int y, const int z, const int w)
 {
 }
 
+Vector4D::Vector4D(const Vector3D& xyz, const float w)
+	: mVec(xyz.X(), xyz.Y(), xyz.Z(), w)
+{
+}
+
 Vector4D::Vector4D(const float val)
 	: mVec(val, val, val, 1.0f)
 {
@@ -75,9 +80,26 @@ void Vector4D::Set(const float x, const float y, const float z, const float w)
 	mVec.w = w;
 }
 
+Vector3D Vector4D::XYZ() const
+{
+	return Vector3D(mVec.x, mVec.y, mVec.z);
+}
+
 const glm::vec4& Vector4D::GetInternalVec() const
 {
 	return mVec;
+}
+
+Vector4D Vector4D::operator+(const Vector4D& rhs) const
+{
+	const glm::vec4 addVec = mVec + rhs.mVec;
+	return Vector4D(addVec.x, addVec.y, addVec.z, addVec.w);
+}
+
+Vector4D Vector4D::operator-(const Vector4D& rhs) const
+{
+	const glm::vec4 subVec = mVec - rhs.mVec;
+	return Vector4D(subVec.x, subVec.y, subVec.z, subVec.w);
 }
 
 float Vector4D::operator[](int index) const

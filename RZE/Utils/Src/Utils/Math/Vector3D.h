@@ -31,6 +31,7 @@ public:
 	Vector3D Normalized() const;
 	Vector3D Cross(const Vector3D& other) const;
 	float LengthSq();
+	float Length() const;
 
 	const glm::vec3& GetInternalVec() const;
 

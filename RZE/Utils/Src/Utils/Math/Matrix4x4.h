@@ -35,6 +35,9 @@ public:
 	void SetRotation(const Vector3D& rotation);
 	void SetScale(const Vector3D& scale);
 
+	// Row 0-3 of the matrix as it multiplies a column vector (matrix * vector)
+	Vector4D GetRow(int row) const;
+
 	const glm::mat4& GetInternalMat() const;
 	const float* GetValuePtr() const;
 	float* GetValuePtr();

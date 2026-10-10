@@ -5,6 +5,7 @@
 #include <GLM/gtx/matrix_decompose.hpp>
 #include <GLM/gtx/euler_angles.hpp>
 
+#include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Math.h>
 
 Matrix4x4 Matrix4x4::IDENTITY = Matrix4x4(glm::mat4(1.0f));
@@ -137,6 +138,14 @@ void Matrix4x4::SetScale(const Vector3D& scale)
 	m_mat[0].x = scale.X();
 	m_mat[1].y = scale.Y();
 	m_mat[2].z = scale.Z();
+}
+
+Vector4D Matrix4x4::GetRow(int row) const
+{
+	AssertExpr(row >= 0 && row < 4);
+
+	// GLM stores columns, so a row is one element from each of them
+	return Vector4D(m_mat[0][row], m_mat[1][row], m_mat[2][row], m_mat[3][row]);
 }
 
 const glm::mat4& Matrix4x4::GetInternalMat() const

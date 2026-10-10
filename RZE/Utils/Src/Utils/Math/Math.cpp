@@ -3,11 +3,25 @@
 
 #include <Utils/Math/Matrix4x4.h>
 
+#include <GLM/gtc/round.hpp>
+
 namespace VectorUtils
 {
 	float Dot(const Vector3D& a, const Vector3D& b)
 	{
 		return glm::dot(a.GetInternalVec(), b.GetInternalVec());
+	}
+
+	Vector3D Min(const Vector3D& a, const Vector3D& b)
+	{
+		const glm::vec3 minVec = glm::min(a.GetInternalVec(), b.GetInternalVec());
+		return Vector3D(minVec.x, minVec.y, minVec.z);
+	}
+
+	Vector3D Max(const Vector3D& a, const Vector3D& b)
+	{
+		const glm::vec3 maxVec = glm::max(a.GetInternalVec(), b.GetInternalVec());
+		return Vector3D(maxVec.x, maxVec.y, maxVec.z);
 	}
 
 	Vector2D Lerp(const Vector2D& from, const Vector2D& to, const float factor)
@@ -36,4 +50,9 @@ int MathUtils::Clamp(int value, int min, int max)
 float MathUtils::Clampf(float value, float min, float max)
 {
 	return (value < min) ? min : (value > max) ? max : value;
+}
+
+U32 MathUtils::CeilPowerOfTwo(U32 value)
+{
+	return glm::ceilPowerOfTwo(value);
 }

@@ -89,6 +89,11 @@ float Vector3D::LengthSq()
 	return mVec.x * mVec.x + mVec.y * mVec.y + mVec.z * mVec.z;
 }
 
+float Vector3D::Length() const
+{
+	return glm::length(mVec);
+}
+
 const glm::vec3& Vector3D::GetInternalVec() const
 {
 	return mVec;
