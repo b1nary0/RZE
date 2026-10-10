@@ -42,6 +42,10 @@ namespace Rendering
 
 		void ProcessCommands();
 
+		// Named regions for PIX and similar tools; no-ops when no profiler is attached
+		void BeginProfilerEvent(const char* name);
+		void EndProfilerEvent();
+
 	private:
 		// @note these are guaranteed to be contiguous as its backed by MemArena
 		// Commands run in the order they were pushed. Vectors rather than std::queue so they keep their
@@ -58,5 +62,8 @@ namespace Rendering
 		std::condition_variable m_updateCondition;
 		bool m_processSignal = false;
 		bool m_shuttingDown = false;
+
+		// Whether a profiler (e.g. PIX) is listening for D3DPERF markers; refreshed for each batch of commands
+		bool m_emitProfilerMarkers = false;
 	};
 }

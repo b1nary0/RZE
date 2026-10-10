@@ -122,6 +122,10 @@ namespace Rendering
 		OPTICK_EVENT();
 		AssertExpr(m_processSignal == true);
 
+		// Marker names are converted to wide strings, so they're only built when a profiler is listening.
+		// Checked once per batch: a batch is a whole frame, so every BeginEvent below still gets its EndEvent.
+		m_emitProfilerMarkers = D3DPERF_GetStatus() != 0;
+
 		for (RenderCommand* command : m_consumerQueue)
 		{
 			switch (command->type)
@@ -144,14 +148,14 @@ namespace Rendering
 			{
 				RenderCommand_BeginFrame* cmd = static_cast<RenderCommand_BeginFrame*>(command);
 
-				D3DPERF_BeginEvent(0xffffffff, Conversions::StringToWString(cmd->frameName).c_str());
+				BeginProfilerEvent(cmd->frameName);
 
 				break;
 			}
 
 			case RenderCommandType::EndFrame:
 			{
-				D3DPERF_EndEvent();
+				EndProfilerEvent();
 
 				break;
 			}
@@ -160,7 +164,7 @@ namespace Rendering
 			{
 				RenderCommand_Begin* cmd = static_cast<RenderCommand_Begin*>(command);
 
-				D3DPERF_BeginEvent(0xffffffff, Conversions::StringToWString(cmd->drawSetName).c_str());
+				BeginProfilerEvent(cmd->drawSetName);
 
 				// @TODO This is temporary until the API is written for SetRenderTarget() and ClearDepthStencilView()
 				// @note past josh wtf api are you talking about
@@ -174,7 +178,7 @@ namespace Rendering
 			case RenderCommandType::End:
 			{
 				// #TODO form the api such that we can verify Begin() and End() calls for sanity checks
-				D3DPERF_EndEvent();
+				EndProfilerEvent();
 
 				break;
 			}
@@ -548,6 +552,22 @@ namespace Rendering
 
 		// Keeps the capacity, so steady-state frames don't allocate
 		m_consumerQueue.clear();
+	}
+
+	void RenderThread::BeginProfilerEvent(const char* name)
+	{
+		if (m_emitProfilerMarkers)
+		{
+			D3DPERF_BeginEvent(0xffffffff, Conversions::StringToWString(name).c_str());
+		}
+	}
+
+	void RenderThread::EndProfilerEvent()
+	{
+		if (m_emitProfilerMarkers)
+		{
+			D3DPERF_EndEvent();
+		}
 	}
 
 	void RenderThread::SignalProcess()
