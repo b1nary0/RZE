@@ -5,11 +5,26 @@
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector3D.h>
+#include <Utils/PrimitiveDefs.h>
+
+#include <memory>
+#include <optional>
 
 namespace Rendering
 {
 	class RenderTargetTexture;
+	struct TexelReadback;
 }
+
+// Asks which object is drawn at one pixel of the main view; served by PickRenderStage
+struct RenderPickRequest
+{
+	// Relative to the viewport's top-left
+	U32 X = 0;
+	U32 Y = 0;
+	// Receives the RenderObject pick ID there, or 0 for nothing, a frame or two later
+	std::shared_ptr<Rendering::TexelReadback> Result;
+};
 
 struct RenderViewport
 {
@@ -57,6 +72,8 @@ public:
 	Rendering::RenderTargetTexture* Target = nullptr;
 	// EV on top of auto-exposure
 	float ExposureCompensation = 0.0f;
+	// Served by the main view's next render, then cleared
+	std::optional<RenderPickRequest> Pick;
 
 private:
 	ERenderViewKind m_kind;

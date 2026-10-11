@@ -373,6 +373,17 @@ namespace Rendering
 		m_renderThread.PushCommand(command);
 	}
 
+	void Renderer::ReadTexel(const TextureBuffer2DHandle& texture, U32 x, U32 y, std::shared_ptr<TexelReadback> result)
+	{
+		RenderCommand_ReadTexel* command = MemArena::AllocType<RenderCommand_ReadTexel>();
+		command->texture = texture;
+		command->x = x;
+		command->y = y;
+		command->result = std::move(result);
+
+		m_renderThread.PushCommand(command);
+	}
+
 	void Renderer::ClearRenderTarget(const RenderTargetHandle& renderTarget, const Vector4D& colour)
 	{
 		RenderCommand_ClearRenderTarget* command = MemArena::AllocType<RenderCommand_ClearRenderTarget>();

@@ -65,6 +65,14 @@ Matrix4x4 Matrix4x4::CreateOrthoMatrixZeroToOne(const float left, const float ri
 	return Matrix4x4(DepthRangeToZeroToOne() * glm::ortho(left, right, bottom, top, zNear, zFar));
 }
 
+Matrix4x4 Matrix4x4::CreateSubRectProjection(const float ndcMinX, const float ndcMinY, const float ndcMaxX, const float ndcMaxY)
+{
+	// Translates in clip space (scaled by w), so it holds before the perspective divide
+	const glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(2.0f / (ndcMaxX - ndcMinX), 2.0f / (ndcMaxY - ndcMinY), 1.0f));
+	const glm::mat4 translate = glm::translate(glm::mat4(1.0f), glm::vec3(-(ndcMinX + ndcMaxX) * 0.5f, -(ndcMinY + ndcMaxY) * 0.5f, 0.0f));
+	return Matrix4x4(scale * translate);
+}
+
 void Matrix4x4::Translate(const Vector3D& translation)
 {
 	m_mat = glm::translate(m_mat, translation.GetInternalVec());

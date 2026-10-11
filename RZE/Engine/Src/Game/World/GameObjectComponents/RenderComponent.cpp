@@ -88,6 +88,8 @@ void RenderComponent::CreateRenderObject()
 
 		m_renderObject = renderEngine.CreateRenderObject(modelData->GetStaticMesh());
 		m_renderObject->SetTransform(transformComponent->GetWorldMatrix());
+		// Offset by one because IDs start at 0, which picking uses for "nothing"
+		m_renderObject->SetPickID(GetOwner()->GetID() + 1);
 
 		return;
 	}

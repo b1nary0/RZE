@@ -114,6 +114,10 @@ public:
 	const Vector3D& GetBoundsMin() const { return m_boundsMin; }
 	const Vector3D& GetBoundsMax() const { return m_boundsMax; }
 
+	// What PickRenderStage writes for this object's pixels; 0 means nothing pickable
+	void SetPickID(U32 pickID) { m_pickID = pickID; }
+	U32 GetPickID() const { return m_pickID; }
+
 private:
 	void UpdateWorldBounds();
 	void MarkSceneChanged() { if (m_sceneRevision != nullptr) { ++*m_sceneRevision; } }
@@ -129,6 +133,8 @@ private:
 	std::vector<SubMeshBounds> m_subMeshBounds;
 	Vector3D m_boundsMin;
 	Vector3D m_boundsMax;
+
+	U32 m_pickID = 0;
 
 	// RenderEngine::SceneData::revision of the scene this object is in
 	U64* m_sceneRevision = nullptr;

@@ -382,6 +382,43 @@ namespace Rendering
 				break;
 			}
 
+			case RenderCommandType::ReadTexel:
+			{
+				RenderCommand_ReadTexel* cmd = static_cast<RenderCommand_ReadTexel*>(command);
+				DX11TextureBuffer2D* texturePtr = static_cast<DX11TextureBuffer2D*>(cmd->texture.m_buffer.get());
+
+				// Reads are rare (a click), so the staging copy is created for each one rather than kept around
+				D3D11_TEXTURE2D_DESC stagingDesc;
+				texturePtr->GetHWResource()->GetDesc(&stagingDesc);
+				stagingDesc.Width = 1;
+				stagingDesc.Height = 1;
+				stagingDesc.MipLevels = 1;
+				stagingDesc.Usage = D3D11_USAGE_STAGING;
+				stagingDesc.BindFlags = 0;
+				stagingDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+				stagingDesc.MiscFlags = 0;
+
+				ID3D11Texture2D* staging = nullptr;
+				HRESULT hr = m_device->GetHardwareDevice().CreateTexture2D(&stagingDesc, nullptr, &staging);
+				AssertExpr(hr == S_OK);
+
+				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+				const D3D11_BOX texel = { cmd->x, cmd->y, 0, cmd->x + 1, cmd->y + 1, 1 };
+				deviceContext.CopySubresourceRegion(staging, 0, 0, 0, 0, texturePtr->GetHWResource(), 0, &texel);
+
+				// Waits for the GPU to finish drawing the texel
+				D3D11_MAPPED_SUBRESOURCE mapped;
+				hr = deviceContext.Map(staging, 0, D3D11_MAP_READ, 0, &mapped);
+				AssertExpr(hr == S_OK);
+				memcpy(&cmd->result->Value, mapped.pData, sizeof(U32));
+				deviceContext.Unmap(staging, 0);
+				staging->Release();
+
+				cmd->result->IsReady.store(true, std::memory_order_release);
+
+				break;
+			}
+
 			case RenderCommandType::ClearRenderTarget:
 			{
 				RenderCommand_ClearRenderTarget* cmd = static_cast<RenderCommand_ClearRenderTarget*>(command);

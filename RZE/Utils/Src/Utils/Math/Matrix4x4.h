@@ -20,6 +20,9 @@ public:
 	static Matrix4x4 CreateOrthoMatrix(const float left, const float right, const float bottom, const float top, const float zNear, const float zFar);
 	// As CreateOrthoMatrix but outputs D3D's [0, 1] depth range instead of OpenGL's [-1, 1]
 	static Matrix4x4 CreateOrthoMatrixZeroToOne(const float left, const float right, const float bottom, const float top, const float zNear, const float zFar);
+	// Stretches the NDC rect from (minX, minY) to (maxX, maxY) to fill all of clip space. Multiplied in front of a
+	// projection, it gives one that only covers that part of the view, e.g. for picking or marquee selection.
+	static Matrix4x4 CreateSubRectProjection(const float ndcMinX, const float ndcMinY, const float ndcMaxX, const float ndcMaxY);
 
 	void Translate(const Vector3D& translation);
 	void Rotate(const float angleRadians, const Vector3D& axis);

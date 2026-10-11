@@ -5,10 +5,16 @@
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector3D.h>
 
+#include <memory>
 #include <vector>
 
 struct ImVec2;
 class CameraComponent;
+
+namespace Rendering
+{
+	struct TexelReadback;
+}
 
 namespace Editor
 {
@@ -56,6 +62,8 @@ namespace Editor
 		std::vector<GameObjectPtr> GatherObjectsInRect(const ImVec2& viewOrigin, const ImVec2& rectMin, const ImVec2& rectMax) const;
 		// The topmost icon under the point, or null
 		GameObjectPtr PickIcon(const ImVec2& point) const;
+		// Selects (or with Ctrl, toggles) what a click hit; a miss without Ctrl clears the selection
+		void ApplyClick(GameObjectPtr hitObject, bool isAdditive);
 
 	private:
 		bool m_isHovered = false;
@@ -70,6 +78,10 @@ namespace Editor
 		// Where the left button went down over the scene image; only meaningful while m_isSelecting
 		Vector2D m_selectStart;
 		bool m_isSelecting = false;
+
+		// A click's GPU pick (PickRenderStage) while it's in flight; it takes a frame or two
+		std::shared_ptr<Rendering::TexelReadback> m_pendingPick;
+		bool m_isPendingPickAdditive = false;
 	};
 
 	inline bool SceneViewPanel::IsHovered()

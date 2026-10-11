@@ -17,6 +17,7 @@ namespace Rendering
 			case ETextureFormat::RGBA8_UNORM: return DXGI_FORMAT_R8G8B8A8_UNORM;
 			case ETextureFormat::RGBA16_FLOAT: return DXGI_FORMAT_R16G16B16A16_FLOAT;
 			case ETextureFormat::RG16_FLOAT: return DXGI_FORMAT_R16G16_FLOAT;
+			case ETextureFormat::R32_UINT: return DXGI_FORMAT_R32_UINT;
 			}
 
 			AssertFalse();
@@ -105,9 +106,12 @@ namespace Rendering
 			if (params.bIsShaderResource) bindFlags = (bindFlags | D3D11_BIND_SHADER_RESOURCE);
 			if (params.bIsRenderTarget) bindFlags = (bindFlags | D3D11_BIND_RENDER_TARGET);
 
+			// Integer formats don't support mip generation, and creating one with the flag fails
+			const bool canGenerateMips = params.Format != ETextureFormat::R32_UINT;
+
 			textureDesc.BindFlags = bindFlags;
 			textureDesc.CPUAccessFlags = 0;
-			textureDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
+			textureDesc.MiscFlags = canGenerateMips ? D3D11_RESOURCE_MISC_GENERATE_MIPS : 0;
 
 			D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
 			ZeroMemory(&srvDesc, sizeof(srvDesc));
@@ -137,7 +141,10 @@ namespace Rendering
 			hr = m_device->GetHardwareDevice().CreateShaderResourceView(m_resource, &srvDesc, &m_SRV);
 			AssertExpr(hr == S_OK);
 
-			m_device->GetDeviceContext().GenerateMips(m_SRV);
+			if (canGenerateMips)
+			{
+				m_device->GetDeviceContext().GenerateMips(m_SRV);
+			}
 		}
 	}
 

@@ -11,6 +11,7 @@
 
 #include <Graphics/Frustum.h>
 #include <Graphics/RenderEngine.h>
+#include <Rendering/TexelReadback.h>
 #include <Rendering/Graphics/RenderTarget.h>
 
 #include <Utils/Math/Math.h>
@@ -343,6 +344,28 @@ namespace Editor
 
 		const ImGuiIO& io = ImGui::GetIO();
 
+		if (m_pendingPick != nullptr && m_pendingPick->IsReady.load(std::memory_order_acquire))
+		{
+			// Pick IDs are the GameObjectID + 1 (RenderComponent::CreateRenderObject)
+			const U32 pickID = m_pendingPick->Value;
+			m_pendingPick.reset();
+
+			GameObjectPtr hitObject;
+			if (pickID != 0)
+			{
+				RZE().GetActiveScene().ForEachGameObject(
+					Functor<void, GameObjectPtr>([&hitObject, pickID](GameObjectPtr gameObject)
+					{
+						if (gameObject->GetID() == pickID - 1)
+						{
+							hitObject = gameObject;
+						}
+					}));
+			}
+
+			ApplyClick(hitObject, m_isPendingPickAdditive);
+		}
+
 		// The gizmo takes clicks on its handles, and the other buttons drive the camera
 		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && isImageHovered && !ImGuizmo::IsOver()
 			&& !ImGui::IsMouseDown(ImGuiMouseButton_Right) && !ImGui::IsMouseDown(ImGuiMouseButton_Middle))
@@ -394,23 +417,43 @@ namespace Editor
 			return;
 		}
 
+		// Icons draw over the meshes, so they're tested first
 		GameObjectPtr icon = PickIcon(start);
 		if (icon != nullptr)
 		{
-			if (isAdditive)
-			{
-				scenePanel.ToggleSelected(icon);
-			}
-			else
-			{
-				scenePanel.SelectGameObject(icon);
-			}
+			ApplyClick(icon, isAdditive);
 			return;
 		}
 
-		if (!isAdditive)
+		// Meshes are picked on the GPU; the result is applied above when it arrives
+		m_pendingPick = std::make_shared<Rendering::TexelReadback>();
+		m_isPendingPickAdditive = isAdditive;
+
+		RenderPickRequest pickRequest;
+		pickRequest.X = static_cast<U32>(std::min(start.x - viewOrigin.x, GetDimensions().X() - 1.0f));
+		pickRequest.Y = static_cast<U32>(std::min(start.y - viewOrigin.y, GetDimensions().Y() - 1.0f));
+		pickRequest.Result = m_pendingPick;
+		RZE().GetRenderEngine().GetMainView().Pick = pickRequest;
+	}
+
+	void SceneViewPanel::ApplyClick(GameObjectPtr hitObject, bool isAdditive)
+	{
+		ScenePanel& scenePanel = static_cast<EditorApp&>(RZE().GetApplication()).GetScenePanel();
+
+		if (hitObject == nullptr)
 		{
-			scenePanel.ResetSelectedGameObject();
+			if (!isAdditive)
+			{
+				scenePanel.ResetSelectedGameObject();
+			}
+		}
+		else if (isAdditive)
+		{
+			scenePanel.ToggleSelected(hitObject);
+		}
+		else
+		{
+			scenePanel.SelectGameObject(hitObject);
 		}
 	}
 
@@ -441,12 +484,8 @@ namespace Editor
 		const float ndcMinY = 1.0f - (rectMax.y - viewOrigin.y) / viewSize.Y() * 2.0f;
 		const float ndcMaxY = 1.0f - (rectMin.y - viewOrigin.y) / viewSize.Y() * 2.0f;
 
-		// Stretches the rect's part of clip space to fill all of it, so the frustum built from the result only covers the rect
-		Matrix4x4 rectProjection;
-		rectProjection.Scale(Vector3D(2.0f / (ndcMaxX - ndcMinX), 2.0f / (ndcMaxY - ndcMinY), 1.0f));
-		rectProjection.Translate(Vector3D(-(ndcMinX + ndcMaxX) * 0.5f, -(ndcMinY + ndcMaxY) * 0.5f, 0.0f));
-
 		GameObjectComponentPtr<EditorCameraComponent> cameraComponent = cameraObject->GetComponent<EditorCameraComponent>();
+		const Matrix4x4 rectProjection = Matrix4x4::CreateSubRectProjection(ndcMinX, ndcMinY, ndcMaxX, ndcMaxY);
 		const Frustum frustum(rectProjection * cameraComponent->GetProjectionMatrix() * cameraComponent->GetViewMatrix());
 
 		RZE().GetActiveScene().ForEachGameObject(

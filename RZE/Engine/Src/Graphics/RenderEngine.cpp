@@ -5,6 +5,7 @@
 #include <Graphics/RenderStage.h>
 #include <Graphics/RenderStages/DebugDrawRenderStage.h>
 #include <Graphics/RenderStages/ForwardRenderStage.h>
+#include <Graphics/RenderStages/PickRenderStage.h>
 #include <Graphics/RenderStages/PostProcessRenderStage.h>
 #include <Graphics/RenderStages/ShadowRenderStage.h>
 
@@ -101,6 +102,7 @@ void RenderEngine::Initialize(void* windowHandle)
 	AddRenderStage<ShadowRenderStage>();
 	AddRenderStage<ForwardRenderStage>();
 	AddRenderStage<PostProcessRenderStage>();
+	AddRenderStage<PickRenderStage>();
 
 	// Available in Debug and Release; only Retail strips it
 #ifndef RZE_RETAIL
@@ -119,6 +121,7 @@ void RenderEngine::Render(const char* frameName)
 
 	// Secondary views rendered earlier this frame have drawn them too
 	m_sceneData.debugLines.clear();
+	m_mainView.Pick.reset();
 
 	Rendering::Renderer::EndFrame();
 }

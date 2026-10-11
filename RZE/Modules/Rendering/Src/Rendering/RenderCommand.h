@@ -3,6 +3,7 @@
 #include <Rendering/Rendering.h>
 #include <Rendering/BufferHandle.h>
 #include <Rendering/ShaderHandle.h>
+#include <Rendering/TexelReadback.h>
 #include <Rendering/Driver/ShaderTypes.h>
 #include <Rendering/Driver/GFXBuffer.h>
 
@@ -70,7 +71,8 @@ namespace Rendering
 		UnsetTextureResource,
 		Draw,
 		DrawIndexed,
-		DrawFullScreenQuad
+		DrawFullScreenQuad,
+		ReadTexel
 	};
 
 	// @todo a dummy class for storing these all separately just to prove out system.
@@ -261,6 +263,16 @@ namespace Rendering
 		RenderCommand_GenerateMips() { type = RenderCommandType::GenerateMips; }
 
 		TextureBuffer2DHandle texture;
+	};
+
+	struct RenderCommand_ReadTexel : RenderCommand
+	{
+		RenderCommand_ReadTexel() { type = RenderCommandType::ReadTexel; }
+
+		TextureBuffer2DHandle texture;
+		U32 x = 0;
+		U32 y = 0;
+		std::shared_ptr<TexelReadback> result;
 	};
 
 	struct RenderCommand_ClearRenderTarget : RenderCommand

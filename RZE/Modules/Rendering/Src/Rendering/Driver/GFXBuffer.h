@@ -9,7 +9,9 @@ namespace Rendering
 	{
 		RGBA8_UNORM = 0,
 		RGBA16_FLOAT,
-		RG16_FLOAT
+		RG16_FLOAT,
+		// Integer IDs, e.g. for picking; can't be filtered or have mips generated
+		R32_UINT
 	};
 
 	// This isn't the complete answer to this atm, but will do for now
