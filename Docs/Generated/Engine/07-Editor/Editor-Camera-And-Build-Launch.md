@@ -25,10 +25,12 @@ Camera input only works while the mouse is over the scene view.
 Orbit, pan and dolly all work around a **pivot**: a point straight ahead of the camera, `m_orbitDistance` metres away.
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 flowchart LR
-    Cam(("camera")) -- "m_forward x m_orbitDistance" --> Pivot(("pivot"))
-    Pivot -.-|"MMB: orbit around it"| Cam
-    Pivot -.-|"wheel / Ctrl+MMB: move toward or away"| Cam
+    Cam(("camera")) -->|"m_orbitDistance metres<br/>along m_forward"| Pivot(("pivot"))
+    Orbit["MMB: orbit<br/>the camera circles the pivot"] -.- Pivot
+    Dolly["wheel / Ctrl+MMB: dolly<br/>the camera moves toward<br/>or away from the pivot"] -.- Cam
+    Pan["Shift+MMB: pan<br/>camera and pivot<br/>slide together"] -.- Cam
 ```
 
 - **Orbit** turns the camera like mouse look, then backs it off along the new forward vector so the pivot stays put.
@@ -59,6 +61,7 @@ Double-clicking an object in the Scene panel calls `FocusOn(boundsMin, boundsMax
 File > **Build Game...** and **Launch Game...** run as an async job (`JobAsyncOperation`), so the Editor keeps running while the Game builds. Both items are greyed out while a build is in progress.
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 sequenceDiagram
     participant User
     participant App as EditorApp

@@ -31,6 +31,7 @@ Primarily window lifecycle notifications: `RZE_Engine::RegisterWindowEvents()` s
 ## Diagram
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 flowchart TD
     Win[Win32Window::CompileWindowMessages] -->|PostWindowEvent| Queue[EventHandler::mEventQueue]
     Queue -->|ProcessEvents each frame| Dispatch{mEventNotifyMap<br/>by eventType}

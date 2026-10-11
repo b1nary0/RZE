@@ -81,7 +81,6 @@ classDiagram
 
     GameScene "1" o-- "*" GameObject : owns
     GameObject "1" *-- "*" GameObjectComponentBase : owns
-    GameObject "1" o-- "*" GameObject : parent/children
     GameObjectComponentBase <|-- TransformComponent
 ```
 

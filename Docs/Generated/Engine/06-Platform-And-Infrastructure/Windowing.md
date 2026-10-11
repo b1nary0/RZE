@@ -20,6 +20,7 @@ Win32 virtual-key-code constants and mapping (`Win32KeyCode`), used by `InputHan
 ## Diagram
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 flowchart TD
     OS["Win32 OS message queue"] -->|WinProc trampoline| WMA[WindowMessageAdaptor]
     WMA --> Win32Window

@@ -9,7 +9,8 @@ A frame is drawn by a handful of **render stages**: small, independent passes su
 Rounded boxes are stages, and the parallelograms between them are the data contracts they pass along.
 
 ```mermaid
-flowchart LR
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+flowchart TD
     Shadow(["ShadowRenderStage"]) --> SMD[/"ShadowMapData<br/>shadow map + params"/]
     SMD --> Forward(["ForwardRenderStage"])
     Forward --> SCD[/"SceneColourData<br/>HDR colour + depth"/]
@@ -33,16 +34,19 @@ Render pipeline: ShadowRenderStage -> ForwardRenderStage -> PostProcessRenderSta
 ## The pieces
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 flowchart TD
     RE["RenderEngine"] -->|owns| RP["RenderPipeline"]
-    RE -->|owns| MV["main RenderView"]
-    RP -->|owns, in add order| Stages["IRenderStage x N"]
+    RE -->|owns| MV
+    RP -->|"owns, in add order"| Stages["IRenderStage x N"]
     RP -->|"Render(view, scene)"| Ctx["RenderContext<br/>(one per view render)"]
-    Ctx -->|View, Scene, DeltaTime| Stages
-    MV --> Frame["frame blackboard<br/>(cleared every render)"]
-    MV --> Persist["persistent blackboard<br/>(lives as long as the view)"]
-    Stages -. "ports: Get / Publish" .-> Frame
-    Stages -. "Persistent()" .-> Persist
+    Ctx -->|"View, Scene, DeltaTime"| Stages
+    subgraph MV["main RenderView"]
+        Frame["frame blackboard<br/>(cleared every render)"]
+        Persist["persistent blackboard<br/>(lives as long as the view)"]
+    end
+    Stages -.->|"ports: Get / Publish"| Frame
+    Stages -.->|"Persistent()"| Persist
 ```
 
 | Piece | File | What it is |
@@ -118,7 +122,8 @@ The engine adds Shadow, Forward, PostProcess, Pick and (outside Retail) DebugDra
 Turns linear HDR colour into something a monitor can show, in three steps:
 
 ```mermaid
-flowchart LR
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+flowchart TD
     S["Scene colour<br/>(HDR)"] --> L["Log luminance<br/>256x256, mips down to 1x1"]
     L --> A["Eye adaptation<br/>blend last frame's value<br/>toward the new average"]
     A --> T["Expose x ACES tonemap<br/>x sRGB encode"]
@@ -134,6 +139,7 @@ flowchart LR
 Finds the object at one pixel of the main view for the Editor's click selection. It only does work on frames where `RenderView::Pick` holds a `RenderPickRequest { X, Y, Result }`; `RenderEngine::Render()` clears the request afterwards.
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 sequenceDiagram
     participant Ed as Editor (SceneViewPanel)
     participant View as main RenderView

@@ -28,6 +28,7 @@ RZE/                    (repo root, C:\dev\RZE)
 Everything is wired together by Sharpmake (`RZE.sharpmake.cs`), and dependencies flow strictly one way — nothing later in this list is depended on by anything earlier:
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 graph LR
     Utils["Utils<br/>(math, containers, platform — zero deps)"]
     Externals["Externals<br/>(vendored ImGui + extensions)"]
@@ -67,6 +68,7 @@ Only the solid edges shown above are declared directly in Sharpmake (`AddPublicD
 ## Where to start
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 flowchart LR
     A["Building-And-Running"] --> B["World-Conventions<br/>(metres, +Y up, degrees)"]
     B --> C["Engine-Startup-And-Frame-Loop"]

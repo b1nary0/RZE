@@ -39,7 +39,8 @@ Everything spatial in the engine, the Editor and the content assumes these. The 
 These conventions were written down on 2026-10-10, and three fixes brought the content into line:
 
 ```mermaid
-flowchart LR
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+flowchart TD
     A["Units.h<br/>conventions defined"] --> B["Importer converts<br/>declared units to metres"]
     B --> C["Scenes rescaled<br/>to metres"]
     C --> D["Projections switched<br/>to 0..1 depth"]

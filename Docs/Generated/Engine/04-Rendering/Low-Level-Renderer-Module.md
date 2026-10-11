@@ -18,6 +18,7 @@ This is a self-contained, DirectX 11–backed rendering library, deliberately de
 ### Submission: game/engine thread queues a command
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 sequenceDiagram
     participant Game as Game/Engine thread
     participant Arena as MemArena
@@ -26,12 +27,13 @@ sequenceDiagram
     Game->>Arena: AllocType(RenderCommand_Draw)()
     Arena->>Game: placement-new'd command
     Game->>Prod: PushCommand(cmd)
-    Note over Game: Renderer::CreateVertexBuffer etc.<br/>return a handle immediately,<br/>underlying resource populated later
+    Note over Game,Arena: Renderer::CreateVertexBuffer etc.<br/>return a handle right away,<br/>the GPU resource is filled in later
 ```
 
 ### Processing: render thread drains the queue
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 sequenceDiagram
     participant Game as Game/Engine thread
     participant Arena as MemArena
@@ -63,15 +65,15 @@ The double-buffered queue means the game thread builds frame N+1 while the rende
 
 ```mermaid
 gantt
-    dateFormat X
-    axisFormat %s
+    dateFormat x
+    axisFormat %L
     section Game thread
-    Build frame 1 commands :g1, 0, 4
-    Build frame 2 commands :g2, 4, 8
-    Build frame 3 commands :g3, 8, 12
+    Build frame 1 commands :g1, 0, 4ms
+    Build frame 2 commands :g2, 4, 4ms
+    Build frame 3 commands :g3, 8, 4ms
     section Render thread
-    Execute frame 1 :r1, 4, 7
-    Execute frame 2 :r2, 8, 11
+    Execute frame 1 :r1, 4, 3ms
+    Execute frame 2 :r2, 8, 3ms
 ```
 
 `DevicePresent()` is the hand-off point: it waits until the render thread has finished the previous batch, swaps the queues, and wakes it. A frame's commands therefore run on the GPU one frame after they were queued, which is why results that come back from the GPU (like `ReadTexel`) arrive a frame or two later.

@@ -3,6 +3,7 @@
 `RenderEngine` (`Engine\Src\Graphics\RenderEngine.h/.cpp`) is the engine's rendering coordinator. It's reached through `RZE().GetRenderEngine()`, and it sits between gameplay code and the low-level renderer:
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 flowchart TD
     subgraph Game["Game objects (Engine/Src/Game)"]
         RC["RenderComponent"]
@@ -71,6 +72,7 @@ public:
 ```
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 flowchart LR
     subgraph Main["Main view (one, owned by RenderEngine)"]
         direction TB
@@ -92,24 +94,25 @@ flowchart LR
 ## Frame lifecycle
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 sequenceDiagram
-    participant Loop as Engine frame loop
+    participant Main as Engine frame loop
     participant RE as RenderEngine
     participant PL as RenderPipeline
     participant R as Rendering::Renderer
     participant RT as Render thread
 
-    Note over Loop: game objects update:<br/>transforms, camera, debug lines
-    Loop->>RE: Render("Main Render")
+    Note over Main,RE: game objects update<br/>(transforms, camera, debug lines)
+    Main->>RE: Render("Main Render")
     RE->>R: BeginFrame
     RE->>PL: Render(main view, scene data)
     PL->>R: each stage queues draw commands
     RE->>RE: clear debug lines and the pick request
     RE->>R: EndFrame
-    Loop->>RE: Finish()
+    Main->>RE: Finish()
     RE->>R: DevicePresent()
     R->>RT: hand over this frame's commands
-    Note over RT: executes them on the GPU<br/>while the next frame is prepared
+    Note over R,RT: runs them on the GPU<br/>while the next frame is being prepared
 ```
 
 Nothing touches D3D11 on the game thread; every `Renderer::` call just queues a command for the render thread (see [Low-Level-Renderer-Module.md](Low-Level-Renderer-Module.md)).

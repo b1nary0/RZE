@@ -35,6 +35,7 @@ The layout is an ImGui dockspace, saved in `Config\imgui.ini`. Each panel is des
 ## How the Editor fits together
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 flowchart TD
     App["EditorApp"]
     App --> Panels["Panels: Scene, SceneView,<br/>Component View, Log, Resource Monitor"]
@@ -58,6 +59,7 @@ flowchart TD
 Scene loading is **asynchronous**, so the Editor stays responsive and shows progress while big scenes like Sponza stream in.
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 sequenceDiagram
     participant User
     participant App as EditorApp
@@ -92,13 +94,16 @@ The right side of the menu bar shows the frame time and the render command arena
 ## Editor vs Game: where the picture goes
 
 ```mermaid
-flowchart LR
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+flowchart TD
     subgraph Editor
+        direction TB
         E_RE["RenderEngine<br/>main view"] --> E_RTT["Offscreen target"]
         E_RTT --> E_Panel["SceneView panel<br/>(ImGui::Image)"]
         E_Panel --> E_BB["Back buffer<br/>(ImGui draws the whole UI)"]
     end
     subgraph Game
+        direction TB
         G_RE["RenderEngine<br/>main view"] --> G_RTT["Offscreen target"]
         G_RTT --> G_Final["FinalRenderTargetStage"]
         G_Final --> G_BB["Back buffer"]

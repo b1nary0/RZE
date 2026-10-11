@@ -35,6 +35,7 @@ Used for `StaticMeshResource`, `Texture2D`, `VertexShader` / `PixelShader`, and 
 A resource opts in by returning `true` from `SupportsAsyncLoad()` and splitting its load in two. Today `StaticMeshResource` and `Texture2D` do; anything else requested through a batch falls back to a normal synchronous load.
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 flowchart TD
     Req["batch.Request&lt;T&gt;(path)"] --> Loaded{"already<br/>loaded?"}
     Loaded -->|yes| Ref["just reference it"]
@@ -57,6 +58,7 @@ flowchart TD
 Long-running work, like loading a scene or building the game, runs as an **`AsyncOperation`** (`Engine\Src\EngineCore\Async\`), driven by `AsyncOperationManager` (`RZE().GetAsyncOperationManager()`).
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 stateDiagram-v2
     [*] --> Running: Start() / OnStart()
     Running --> Running: OnTick(budget) each frame<br/>(+ worker jobs via PushWorkerJob)
@@ -76,6 +78,7 @@ stateDiagram-v2
 `Engine\Src\Game\SceneLoadOperation.h/.cpp` loads a `.scene` file into the active scene in three phases:
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 sequenceDiagram
     participant Main as Main thread
     participant W as Worker threads

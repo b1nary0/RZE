@@ -83,13 +83,14 @@ Why: `GameObjectComponentTypeID<GameObjectComponentBase>::GetComponentTypeID<TCo
 ## Sequence: adding a component to a GameObject already in the scene
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 sequenceDiagram
     participant Caller
     participant GO as GameObject
-    participant Comp as GameObjectComponentBase (TComponentType)
+    participant Comp as New component<br/>(a TComponentType)
 
     Caller->>GO: AddComponent<TComponentType>(args...)
-    GO->>GO: linear scan for existing component of this type
+    Note over Caller,GO: linear scan for an existing<br/>component of this type
     alt not already present
         GO->>Comp: new TComponentType(args...)
         GO->>Comp: SetOwner(this)

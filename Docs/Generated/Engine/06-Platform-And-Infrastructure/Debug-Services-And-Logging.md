@@ -3,6 +3,7 @@
 ## Where a log line goes
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 flowchart LR
     Call["RZE_LOG / RZE_LOG_ARGS<br/>(any thread)"] --> Out["stdout"]
     Call --> File["Logs/RZELOG_&lt;date&gt;_&lt;time&gt;.txt"]

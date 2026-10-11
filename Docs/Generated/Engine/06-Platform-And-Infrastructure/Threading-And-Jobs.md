@@ -3,21 +3,19 @@
 RZE runs on a few kinds of threads:
 
 ```mermaid
-flowchart LR
-    subgraph Main["Main thread"]
-        direction TB
-        D["MainThreadDispatcher::Drain()<br/>(start of frame)"] --> U["AsyncOperationManager::Tick()<br/>then app + scene Update"]
-        U --> R["RenderEngine: queue<br/>this frame's draw commands"]
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+flowchart TD
+    subgraph Main["Main thread, each frame"]
+        D["Step 1<br/>MainThreadDispatcher::Drain()<br/>runs tasks posted by workers"]
+        U["Step 2<br/>AsyncOperationManager::Tick()<br/>then app and scene Update"]
+        R["Step 3<br/>RenderEngine queues<br/>this frame's draw commands"]
+        D --> U --> R
     end
-    subgraph Workers["Worker threads (4)"]
-        J["Jobs from JobScheduler:<br/>file I/O, parsing, builds"]
-    end
-    subgraph RT["Render thread"]
-        X["Execute last frame's<br/>render commands on D3D11"]
-    end
-    U -->|"PushJob / PushWorkerJob"| J
-    J -->|"Post(task)"| D
-    R -->|"DevicePresent: hand over queue"| X
+    J["Worker threads (4)<br/>JobScheduler jobs:<br/>file I/O, parsing, builds"]
+    X["Render thread<br/>runs last frame's<br/>commands on D3D11"]
+    U -->|"PushJob"| J
+    J -.->|"Post(task)"| D
+    R -->|"DevicePresent"| X
 ```
 
 - The **main thread** owns the engine: scenes, components, `ResourceHandler`, ImGui and render submission. Most engine state is main-thread only.

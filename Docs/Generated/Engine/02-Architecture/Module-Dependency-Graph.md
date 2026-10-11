@@ -5,6 +5,7 @@ RZE is generated as a Visual Studio solution by [Sharpmake](https://github.com/u
 ## The dependency chain
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 graph LR
     Utils["Utils (Lib)<br/>no dependencies"]
     Externals["Externals (Lib)<br/>no dependencies<br/>vendored ImGui source"]

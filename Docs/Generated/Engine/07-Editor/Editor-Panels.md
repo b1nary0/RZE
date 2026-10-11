@@ -3,6 +3,7 @@
 All Editor UI panels live under `Editor\Src\UI\Panels\`. `EditorApp` owns one of each and draws them every frame inside its dockspace.
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 flowchart LR
     Scene["Scene<br/>(tree)"] <-->|"shared selection"| SV["SceneView<br/>(3D viewport)"]
     Scene -->|"primary selection"| CV["Component View<br/>(inspector)"]
@@ -21,7 +22,8 @@ The **selection** lives in `ScenePanel` as an ordered list, `std::vector<GameObj
 - **Escape** (with the viewport hovered) clears it, and loading a scene resets it.
 
 ```mermaid
-flowchart LR
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+flowchart TD
     A["[NeckMech]"] -->|"Ctrl+click M4"| B["[NeckMech, M4]<br/>M4 is primary"]
     B -->|"Ctrl+click M4 again"| C["[NeckMech]<br/>NeckMech is primary again"]
     C -->|"plain click Light"| D["[Light]"]
@@ -70,6 +72,7 @@ Clicks on the gizmo, and clicks while the right or middle button (camera control
 **Clicks and the marquee work differently**, each using what suits it:
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 flowchart TD
     Click["Left click"] --> Icon{"on a light or<br/>camera icon?"}
     Icon -->|yes| SelI["select that object now"]

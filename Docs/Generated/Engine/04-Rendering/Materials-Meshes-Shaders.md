@@ -5,6 +5,7 @@ This page covers the engine-side asset representation that sits between a burned
 ## Asset representation hierarchy (reproduced from `DrawIO\AssetRepresentation_March2021.drawio`)
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 flowchart TD
     Asset[Asset] --> Model3D[Model3D]
     Model3D --> StaticMesh[StaticMesh / StaticMeshInstance]
@@ -27,6 +28,7 @@ A `StaticMeshInstance` is a named collection of `MeshGeometry` sub-meshes (one p
 ## Shader GPU resource grouping (reproduced from page 2 of the same `.drawio`)
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 flowchart TD
     Shader --> GPURes["GPU Resources"]
     GPURes --> CB[ConstantBuffers]
@@ -59,6 +61,7 @@ Built from a burned `MaterialAssetImporter::MaterialData`. It holds a name, five
 **Which pixel shader a material gets** is decided from its texture flags when it's loaded:
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 flowchart TD
     M["Material's texture flags"] --> Q1{"diffuse + specular<br/>+ normal?"}
     Q1 -->|yes| Full["Pixel_NewRenderer.hlsl"]

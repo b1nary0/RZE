@@ -30,14 +30,14 @@ quadrantChart
     quadrant-3 Tidy up sometime
     quadrant-4 Probably not worth it
     "1 Component IDs": [0.7, 0.85]
-    "6 Bucketing": [0.8, 0.55]
-    "8 Texture burning": [0.75, 0.5]
+    "6 Bucketing": [0.85, 0.72]
+    "8 Texture burning": [0.65, 0.62]
     "2 ReflectDB hash": [0.15, 0.35]
-    "10 CB over-read": [0.2, 0.3]
+    "10 CB over-read": [0.25, 0.25]
     "11 Log colour": [0.05, 0.1]
     "5 Dead file": [0.05, 0.05]
     "7 Component lookups": [0.4, 0.2]
-    "9 Shadow opacity": [0.35, 0.15]
+    "9 Shadow opacity": [0.3, 0.08]
 ```
 
 ## 1. Component subclasses share their parent's type ID

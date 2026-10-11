@@ -3,7 +3,8 @@
 RZE never loads `.obj` / `.fbx` models at runtime. A separate tool, **SourceAssetBurner**, converts ("burns") them ahead of time into RZE's own binary formats, and the engine only ever reads those.
 
 ```mermaid
-flowchart LR
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+flowchart TD
     subgraph Offline["Offline: SourceAssetBurner.exe"]
         Src["RZE/Assets/3D/**/*.obj<br/>(source models)"] --> Assimp["Assimp 6.0.5<br/>read + triangulate,<br/>convert units"]
         Assimp --> Imp["AssimpSourceImporter<br/>meshes, materials,<br/>size check"]
@@ -57,6 +58,7 @@ Textures aren't converted: materials store paths back into `RZE\Assets\`, and `W
 The engine's conventions (`Utils/Math/Units.h`) are **1 unit = 1 metre, right-handed, +Y up, −Z forward**. The importer keeps models in that space:
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 flowchart TD
     S["Source model"] --> U{"Does the format<br/>declare a unit?"}
     U -->|"yes (e.g. FBX in cm)"| Scale["aiProcess_GlobalScale<br/>converts to metres"]

@@ -7,6 +7,7 @@ Per the repo README, the depot currently **must** be at `C:\dev\RZE` for `Tools\
 ## The canonical build sequence
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 flowchart TD
     A["GenerateSolutions.bat<br/>(Sharpmake -> RZE.sln + vcxprojs under _project)"] --> B["msbuild RZE.sln<br/>(compiles Engine, Rendering, Utils, Externals,<br/>SourceAssetBurner.exe, Editor.exe, Game.exe)"]
     B --> C["Burn Assets<br/>Run SourceAssetBurner.exe<br/>(Assets/3D/*.obj -> ProjectData/Mesh + Material/*)"]

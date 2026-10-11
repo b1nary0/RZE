@@ -34,11 +34,12 @@ Public accessors used as the de-facto service locator: `GetApplication()`, `GetR
 ## Startup sequence
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 flowchart TD
     A[RZE_Application::Run] --> B["RZE_Engine::Run(createApplicationCallback)"]
     B --> C[Init]
     C --> C1[Debug::CreateLogFile / DebugServices::Get.Initialize]
-    C1 --> C1b["MainThreadDispatcher::Initialize<br/>+ Debug::SetLogSink (log lines -> DebugServices)"]
+    C1 --> C1b["MainThreadDispatcher::Initialize<br/>+ Debug::SetLogSink<br/>(log lines also go to DebugServices)"]
     C1b --> C2[Threading::JobScheduler::Get.Initialize]
     C2 --> C2b[AsyncOperationManager::Initialize]
     C2b --> C3["LoadEngineConfig (Config/Engine.ini)"]
@@ -49,7 +50,7 @@ flowchart TD
     C7 --> C8[Create + Initialize GameScene]
     C8 --> D[PostInit]
     D --> D1[Register key events + ImGui key map]
-    D1 --> D2["InitializeApplication: construct app, app->Initialize() registers components, app->RegisterInputEvents(), app->Start()"]
+    D1 --> D2["InitializeApplication:<br/>construct the app, then app.Initialize()<br/>(registers components),<br/>app.RegisterInputEvents(), app.Start()"]
     D2 --> D3[GameScene::Start]
     D3 --> E[Main Loop]
 ```
@@ -73,6 +74,7 @@ Each iteration (`while (!m_shouldExit)`, wrapped in an Optick profiling frame) b
 ### Phase 1: input & event processing
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 sequenceDiagram
     participant ML as Main Loop
     participant Win as Win32Window
@@ -95,16 +97,16 @@ The `ProcessInput` return value is a deliberate hook: returning `false` means th
 ### Phase 2: update & render
 
 ```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 sequenceDiagram
     participant ML as Main Loop
     participant App as RZE_Application
     participant Scene as GameScene
     participant RE as RenderEngine
-
     participant Async as AsyncOperationManager
 
     ML->>ML: ImGui NewFrame (DX11 + Win32 backends, ImGuizmo)
-    ML->>Async: Tick() - each async operation's slice of work,<br/>within the frame budget; completion callbacks fire here
+    ML->>Async: Tick() - each operation's slice of work<br/>within the frame budget, completion callbacks fire here
     ML->>App: Update()
     ML->>Scene: Update() - updates root GameObjects (children recurse)
     ML->>ML: ImGui EndFrame()
@@ -119,16 +121,16 @@ This phase runs every frame, immediately after the input phase above. Two things
 
 ```mermaid
 gantt
-    dateFormat X
-    axisFormat %s
-    title One frame on the main thread (not to scale)
+    dateFormat x
+    axisFormat %L
+    title One frame on the main thread, in order (not to scale)
     section Main thread
-    Drain posted tasks         :0, 1
-    Input and events           :1, 3
-    Async operations tick      :3, 5
-    App and scene Update       :5, 9
-    Queue render commands      :9, 12
-    Present / hand over        :12, 13
+    Drain posted tasks         :a, 0, 1ms
+    Input and events           :b, after a, 2ms
+    Async operations tick      :c, after b, 2ms
+    App and scene Update       :d, after c, 4ms
+    Queue render commands      :e, after d, 3ms
+    Present / hand over        :f, after e, 1ms
 ```
 
 ## Shutdown
