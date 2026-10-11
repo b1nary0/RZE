@@ -41,13 +41,15 @@ RZEHub is a GUI front-end that (per its buttons' names) invokes `SourceAssetBurn
    ```
    _build\<config>\SourceAssetBurner.exe
    ```
-   With no argument, this walks `Assets\3D\` and converts every `.obj` found into RZE's binary `.meshasset`/`.materialasset` formats under `ProjectData\`.
+   With no argument, this walks `Assets\3D\` and converts every `.obj` found into RZE's binary `.meshasset`/`.materialasset` formats under `ProjectData\` (about 15 seconds). `ProjectData\` **isn't tracked in git**, so do this once after cloning, and again after pulling importer changes (for example the 2026-10-10 change that stopped models being mirrored; see [World-Conventions.md](../02-Architecture/World-Conventions.md)).
 
 4. **Copy runtime data to the build output**
    ```
    RZE\AssetCpy.bat
    ```
    Copies `Assets\`, `Config\`, and `ProjectData\` into whichever of `_build\debug\` / `_build\release\` exist, via `xcopy /y /d /s /f`. Its own header comment calls this "crappy stuff... until a better build pipeline exists" — it's intentionally a stopgap, not a polished asset-cooking step.
+
+   **Only the Game needs this.** The Editor reads `Assets\` and `ProjectData\` straight from the source tree (`EDirectoryContext::Tools`), so shader and asset edits show up on its next launch without copying. The Editor runs this copy itself after Save Scene and before Launch Game.
 
 5. **Run**
    - Game (default): `_build\<config>\RZE_Game.exe`

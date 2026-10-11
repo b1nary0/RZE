@@ -1,25 +1,63 @@
 # Threading & Job System
 
-`Engine\Src\EngineCore\Threading\JobSystem\` implements a small, fixed-size thread pool. It is early-stage — initialized/shut down alongside the engine, but not yet deeply wired into other subsystems.
+RZE runs on a few kinds of threads:
 
-## Types
+```mermaid
+flowchart LR
+    subgraph Main["Main thread"]
+        direction TB
+        D["MainThreadDispatcher::Drain()<br/>(start of frame)"] --> U["AsyncOperationManager::Tick()<br/>then app + scene Update"]
+        U --> R["RenderEngine: queue<br/>this frame's draw commands"]
+    end
+    subgraph Workers["Worker threads (4)"]
+        J["Jobs from JobScheduler:<br/>file I/O, parsing, builds"]
+    end
+    subgraph RT["Render thread"]
+        X["Execute last frame's<br/>render commands on D3D11"]
+    end
+    U -->|"PushJob / PushWorkerJob"| J
+    J -->|"Post(task)"| D
+    R -->|"DevicePresent: hand over queue"| X
+```
 
-- `Threading.h` — `MAX_WORKER_THREADS = 4`.
-- `Threading::Job` (`Job.h/.cpp`) — wraps a `Functor<void>` task plus an `mOnFinished` completion-callback slot. `Run()` executes it.
-- `Threading::WorkerThread` (`WorkerThread.h/.cpp`) — owns a `std::thread`, a local job queue, and idle/running/active flags. `Initialize()`/`ShutDown()`/`IsIdle()`/`IsRunning()`.
-- `Threading::JobScheduler` (`JobScheduler.h/.cpp`) — **singleton** (`static JobScheduler& Get()`), owns a fixed array `WorkerThread mWorkerThreads[MAX_WORKER_THREADS]` and a shared `JobQueue` (`std::queue<Job>`) guarded by a static `std::mutex`. API: `PushJob(Task)`, `RequestJob(Job&)` (pull-model — idle workers request work rather than having it pushed to them), `Wait()`.
+- The **main thread** owns the engine: scenes, components, `ResourceHandler`, ImGui and render submission. Most engine state is main-thread only.
+- **Worker threads** do work that doesn't touch engine state: reading and parsing files, decoding textures, running build scripts.
+- The **render thread** owns the D3D11 device and executes queued render commands (see [Low-Level-Renderer-Module.md](../04-Rendering/Low-Level-Renderer-Module.md)).
 
-## Lifecycle
+## The job system (`Engine\Src\EngineCore\Threading\JobSystem\`)
 
-`JobScheduler::Get().Initialize()` is called from `RZE_Engine::Init()`; `JobScheduler::ShutDown()` is called from `RZE_Engine::BeginShutDown()`. See [Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md).
+A fixed pool of `MAX_WORKER_THREADS = 4` workers pulling from one shared queue.
 
-## Current usage
+| Type | What it is |
+|---|---|
+| `JobScheduler` | Singleton (`JobScheduler::Get()`). `PushJob(task)` from any thread returns a `JobHandle` (ignore it for fire-and-forget). `Wait(handle)` blocks until a job is done; `WaitForIdle()` until the queue is empty and nothing is running. |
+| `Job` | A task (`std::function`, so captures must be copyable) plus its shared completion state. |
+| `JobHandle` | Stays valid however long the job or scheduler lives. `IsComplete()`; `WasAbandoned()` if the scheduler shut down before the job ran. |
+| `WorkerThread` | A thread that asks the scheduler for the next job and runs it. |
 
-The one concrete consumer found in the codebase today is the **Editor's build/launch workflow**: `EditorApp::DisplayMenuBar()` pushes jobs onto `JobScheduler::Get()` for "Build Game..." / "Launch Game..." menu actions, which shell out via `_popen` to `BuildGame.bat` / the built `RZE_Game.exe`, streaming stdout into the Editor's `LogPanel` (see [Editor-Camera-And-Build-Launch.md](../07-Editor/Editor-Camera-And-Build-Launch.md)). There is no evidence in the explored source of asset loading, resource decompression, or rendering work being parallelized through this system yet — `ResourceHandler::LoadResource` remains a synchronous call ([Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md)). Treat this as scaffolding for future parallel work rather than a load-bearing system today.
+On shutdown, queued jobs are abandoned (never run), running ones finish, then the workers are joined. Started in `RZE_Engine::Init()`, stopped in `BeginShutDown()` ([Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md)).
+
+Don't `Wait()` from a worker on a job that might be queued behind you; with only four workers that can deadlock.
+
+## Getting back to the main thread: `MainThreadDispatcher`
+
+```cpp
+Threading::MainThreadDispatcher::Get().Post(task);   // any thread
+```
+
+Posted tasks run on the main thread, in the order they were posted, at the start of the next frame (`RZE_Engine::PreUpdate`). Tasks posted while draining run the following frame. This is how worker code hands results back without touching main-thread-only state.
+
+## Cancelling: `CancellationToken`
+
+A shared, cooperative cancel flag. Copies share state, so it can be captured by value into jobs and checked from any thread. Long jobs should check it and stop early (the Editor's build job passes it to the process it runs).
+
+## Who uses all this
+
+- **Async operations** (`Engine\Src\EngineCore\Async\`): **scene loading** reads and parses on workers, then finalizes on the main thread a slice per frame; the Editor's **Build/Launch** runs as a worker job. See [Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md#async-operations).
+- **`AsyncResourceBatch`** runs each resource's `LoadCPU` as a worker job.
 
 ## Key files
 
-- `Engine\Src\EngineCore\Threading\Threading.h`
-- `Engine\Src\EngineCore\Threading\JobSystem\Job.h/.cpp`
-- `Engine\Src\EngineCore\Threading\JobSystem\WorkerThread.h/.cpp`
-- `Engine\Src\EngineCore\Threading\JobSystem\JobScheduler.h/.cpp`
+- `Engine\Src\EngineCore\Threading\Threading.h`, `MainThreadDispatcher.h/.cpp`, `CancellationToken.h`
+- `Engine\Src\EngineCore\Threading\JobSystem\Job.h/.cpp`, `WorkerThread.h/.cpp`, `JobScheduler.h/.cpp`
+- `Engine\Src\EngineCore\Async\` — operations built on top of the job system

@@ -1,70 +1,105 @@
 # Runtime Asset Import & Resource Loading
 
-This page covers how a burned `.meshasset`/`.materialasset` file (produced offline — see [Asset-Burning-Pipeline.md](Asset-Burning-Pipeline.md)) gets loaded back into memory at runtime, and how `ResourceHandler` manages the lifetime of loaded assets in general.
+How burned `.meshasset` / `.materialasset` files (see [Asset-Burning-Pipeline.md](Asset-Burning-Pipeline.md)) and textures get loaded at runtime, and how `ResourceHandler` keeps track of them.
 
-## `Engine\Src\Asset\AssetImport\` — the runtime-facing import layer
+There are **two ways to load** a resource:
 
-- `AssetImporter.h` — interface: `virtual bool Import(const Filepath&) = 0;`
-- `MeshAssetImporter.h/.cpp` — reads the `.meshasset` binary format (see [Asset-Burning-Pipeline.md](Asset-Burning-Pipeline.md) for the exact byte layout) back into `std::vector<MeshGeometry>`.
-- `MaterialAssetImporter.h/.cpp` — reads `.materialasset` files into a `MaterialData` struct, later consumed by `MaterialInstance::Create`.
-- `AssetWriter.h`, `MeshAssetWriter.h/.cpp` — the writer side, shared with `SourceAssetBurner` (documented in [Asset-Burning-Pipeline.md](Asset-Burning-Pipeline.md)).
+| | Synchronous | Asynchronous |
+|---|---|---|
+| Call | `ResourceHandler::LoadResource<T>(path)` | `AsyncResourceBatch::Request<T>(path)`, inside an `AsyncOperation` |
+| Where the work runs | All on the main thread, right away | File reading and parsing on worker threads; GPU uploads on the main thread, a little each frame |
+| Stalls the frame? | Yes, for the whole load | No; it's time-sliced by a per-frame budget |
+| Used by | One-off loads: shaders, config, "Select Mesh..." in the inspector | **Scene loading** (`SceneLoadOperation`) |
 
-## `StaticMeshResource` (`Engine\Src\Game\World\GameObjectComponents\StaticMeshResource.h/.cpp`)
+Both end in the same place: a resource registered in `ResourceHandler`, reached through a `ResourceHandle`.
 
-An `IResource` subclass wrapping a `StaticMeshInstance`. `Load(filePath)` deserializes the `.meshasset` binary format via `MeshAssetImporter`. Exposes `GetStaticMesh()`/`GetInstance()`. This is the type `RenderComponent` and `ResourceHandler::LoadResource<StaticMeshResource>()` operate on.
+## `ResourceHandler` (`Engine\Src\EngineCore\Resources\`)
 
-## `ResourceHandler` (`Engine\Src\EngineCore\Resources\ResourceHandler.h/.cpp`)
-
-The central, reference-counted resource/asset manager:
+A reference-counted table of loaded resources, keyed by a string made from the file path. **Main thread only**: the table and the reference counts aren't synchronised.
 
 ```cpp
-template <typename ResourceT, typename... Args>
-ResourceHandle LoadResource(const Filepath& path, Args... args);
-
-template <typename ResourceT>
-ResourceT& GetResource(const ResourceHandle& handle);
-
+ResourceHandle LoadResource<ResourceT>(const Filepath& path, Args... args); // load, or reuse if already loaded
+const ResourceT* GetResource<ResourceT>(const ResourceHandle& handle);      // no type check: ask for the right type
+bool HasResource(const Filepath& path) const;
+ResourceHandle GetHandle(const Filepath& path);                             // empty handle if it isn't loaded
+ResourceHandle RegisterLoadedResource(const Filepath& path, IResource* r);  // adopt a resource loaded elsewhere (async)
 void ReleaseResource(ResourceHandle& handle);
 ```
 
-Internally: a private nested `ResourceSource` wraps `IResource*` + a reference count + the originating `Filepath`. Resources are keyed by a string derived from the file path (`Conversions::CreateResourceKeyFromPath`) in `mResourceTable` (`std::unordered_map<std::string, ResourceSource>`). `LoadResource` checks the table first; if not already loaded, it constructs `new ResourceT(args...)`, calls `resource->Load(path)`, stores it, and returns a `ResourceHandle`. `GetResource<ResourceT>` does a `static_cast` to the requested type with no vtable-based type check — callers must request the correct type themselves.
+`ResourceHandle` is a move-only handle; when the last handle to a resource goes, the resource is released. Resources implement `IResource` (`Utils\Src\Utils\Interfaces\Resource.h`): `Load(path)` and `Release()`, plus the optional async hooks below.
 
-`ResourceHandle` is a move-only (copy-disabled), RAII-ish handle referencing a `ResourceSource*`, friended to `ResourceHandler`.
+Used for `StaticMeshResource`, `Texture2D`, `VertexShader` / `PixelShader`, and engine config.
 
-Used today for: `EngineConfig`, `StaticMeshResource`, `Texture2D`, `Shader` (vertex/pixel), `MaterialInstance`-adjacent assets.
+## Async loading, step by step
 
-`IResource` itself is defined in `Utils\Src\Utils\Interfaces\Resource.h` (outside Engine, in the foundational Utils library): `virtual bool Load(const Filepath&)`, `virtual void Release()`, plus a texture-specific overload `virtual bool Load(const U8* buffer, int width, int height)` (flagged as "gross" in its own source comment).
+A resource opts in by returning `true` from `SupportsAsyncLoad()` and splitting its load in two. Today `StaticMeshResource` and `Texture2D` do; anything else requested through a batch falls back to a normal synchronous load.
 
-## Loading is synchronous today
+```mermaid
+flowchart TD
+    Req["batch.Request&lt;T&gt;(path)"] --> Loaded{"already<br/>loaded?"}
+    Loaded -->|yes| Ref["just reference it"]
+    Loaded -->|no| Async{"SupportsAsyncLoad?"}
+    Async -->|no| Sync["ResourceHandler::LoadResource<br/>(synchronous fallback)"]
+    Async -->|yes| CPU["LoadCPU(path)<br/>worker thread:<br/>read + parse, no GPU"]
+    CPU --> Deps["RequestDependencies(batch)<br/>main thread: e.g. a mesh<br/>requests its textures"]
+    Deps --> Wait["wait until those<br/>are finalized"]
+    Wait --> Fin["FinalizeStep() repeatedly<br/>main thread, within the frame budget:<br/>GPU buffers, one piece at a time"]
+    Fin --> Reg["RegisterLoadedResource<br/>-> ResourceHandler"]
+```
 
-`ResourceHandler` performs a synchronous `resource->Load(path)` call — there's no async/streaming path, and loading isn't currently routed through the `Threading::JobScheduler` job system ([Threading-And-Jobs.md](../06-Platform-And-Infrastructure/Threading-And-Jobs.md)) despite that system existing. Worth knowing if you're chasing a load-time stall.
+- **`LoadCPU`** may not touch the renderer, the `ResourceHandler` or any other engine state; it only reads and decodes.
+- **`GetNextFinalizeStepCost`** tells the batch how big the next step is (bytes copied into the render command arena, bytes uploaded to the GPU), so it can be pushed to a later frame if it won't fit. `StaticMeshResource` finalizes one submesh (material and GPU buffers) per step.
+- Because a mesh's textures are its dependencies, they're always finalized first, so when the mesh builds its materials, its texture lookups are cache hits.
+- The batch holds every resolved resource until `ReleaseHeldResources()`, so nothing is unloaded before whoever asked for it picks it up.
 
-## Sequence: a `RenderComponent` requesting a mesh via the editor's "Select Mesh..." workflow
+## Async operations
+
+Long-running work, like loading a scene or building the game, runs as an **`AsyncOperation`** (`Engine\Src\EngineCore\Async\`), driven by `AsyncOperationManager` (`RZE().GetAsyncOperationManager()`).
+
+```mermaid
+stateDiagram-v2
+    [*] --> Running: Start() / OnStart()
+    Running --> Running: OnTick(budget) each frame<br/>(+ worker jobs via PushWorkerJob)
+    Running --> Finishing: Complete() / Fail() / cancel
+    Finishing --> Finished: no worker jobs left<br/>OnFinished(state) + completion callback
+    Finished --> [*]: 2 frames later: OnCleanup(), released
+```
+
+- **Threading rules:** progress, status text and cancellation can be set from any thread. Every hook and the completion callback run on the main thread. The manager won't finish an operation while any of its worker jobs are still running, so jobs can safely capture `this`.
+- **Frame budget** (`AsyncFrameBudget`): shared by all operations each frame. It allows **8 ms** of main-thread time and **16 MB** of GPU uploads (soft limits; the first piece of work each frame always runs, so everything makes progress), and leaves **8 MB** of headroom in the render command arena (a hard limit).
+- **Retiring:** an operation is only released two frames after it finishes, because the render thread may still be using data it submitted (see [Low-Level-Renderer-Module.md](../04-Rendering/Low-Level-Renderer-Module.md)).
+- **Progress:** `WeightedProgress` blends several stages of different cost into one 0–1 value that never goes backwards. Operations flagged `Blocking` get the Editor's progress modal automatically.
+- **`JobAsyncOperation`** wraps a single worker-thread function (the Editor's Build/Launch uses it).
+
+## Loading a scene: `SceneLoadOperation`
+
+`Engine\Src\Game\SceneLoadOperation.h/.cpp` loads a `.scene` file into the active scene in three phases:
 
 ```mermaid
 sequenceDiagram
-    participant User
-    participant RC as RenderComponent (OnEditorInspect)
-    participant Win as Win32Window
-    participant RH as ResourceHandler
-    participant SMR as StaticMeshResource
-    participant MAI as MeshAssetImporter
-
-    User->>RC: clicks "Select Mesh..."
-    RC->>Win: RZE().ShowOpenFilePrompt()
-    Win-->>RC: chosen .meshasset path
-    RC->>RH: LoadResource<StaticMeshResource>(path)
-    RH->>SMR: new StaticMeshResource()
-    RH->>SMR: Load(path)
-    SMR->>MAI: import binary mesh data
-    MAI-->>SMR: vector<MeshGeometry>
-    SMR-->>RH: loaded resource stored + refcounted
-    RH-->>RC: ResourceHandle
+    participant Main as Main thread
+    participant W as Worker threads
+    Main->>W: 1. Parsing: read and parse the .scene file,<br/>ask each component what resources it needs
+    W-->>Main: dependency list
+    Main->>W: 2. LoadingResources: AsyncResourceBatch<br/>LoadCPU for every mesh and texture
+    W-->>Main: parsed data
+    Main->>Main: finalize resources, a slice per frame
+    Main->>Main: 3. Instantiating: create game objects in file order,<br/>a slice per frame (resource loads are now cache hits)
+    Main-->>Main: completed (or, on failure, unload the partial scene)
 ```
+
+Components say what they need with a static `GatherResourceDependencies(componentData, outDependencies)` registered with `GameObjectComponentRegistry`; `RenderComponent` lists its mesh. Gathering everything up front is what lets the heavy loading happen before any objects exist.
+
+## Importers (`Engine\Src\Asset\AssetImport\`)
+
+- `MeshAssetImporter` reads the `.meshasset` format back into submesh data.
+- `MaterialAssetImporter` reads `.materialasset` into `MaterialData`, which `MaterialInstance::Create` turns into a material.
+- `StaticMeshResource` (`Engine\Src\Game\StaticMeshResource.h/.cpp`) is the `IResource` that wraps both, and owns the resulting `StaticMeshInstance`. It's what `RenderComponent` holds.
 
 ## Key files
 
-- `Engine\Src\Asset\AssetImport\AssetImporter.h`, `MeshAssetImporter.h/.cpp`, `MaterialAssetImporter.h/.cpp`
-- `Engine\Src\Game\World\GameObjectComponents\StaticMeshResource.h/.cpp`
-- `Engine\Src\EngineCore\Resources\ResourceHandler.h/.cpp`
-- `Utils\Src\Utils\Interfaces\Resource.h`
+- `Engine\Src\EngineCore\Resources\ResourceHandler.h/.cpp`, `AsyncResourceBatch.h/.cpp`, `ResourceDependencyList.h`
+- `Engine\Src\EngineCore\Async\` — `AsyncOperation`, `AsyncOperationManager`, `AsyncFrameBudget`, `JobAsyncOperation`, `WeightedProgress`
+- `Engine\Src\Game\SceneLoadOperation.h/.cpp`, `StaticMeshResource.h/.cpp`
+- `Engine\Src\Asset\AssetImport\MeshAssetImporter.h/.cpp`, `MaterialAssetImporter.h/.cpp`
+- `Utils\Src\Utils\Interfaces\Resource.h` — `IResource`
