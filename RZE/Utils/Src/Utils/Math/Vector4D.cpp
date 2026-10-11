@@ -90,6 +90,16 @@ const glm::vec4& Vector4D::GetInternalVec() const
 	return mVec;
 }
 
+const float* Vector4D::GetValuePtr() const
+{
+	return &mVec.x;
+}
+
+float* Vector4D::GetValuePtr()
+{
+	return &mVec.x;
+}
+
 Vector4D Vector4D::operator+(const Vector4D& rhs) const
 {
 	const glm::vec4 addVec = mVec + rhs.mVec;

@@ -56,9 +56,9 @@ Vector3D& TransformComponent::GetScale()
 
 void TransformComponent::OnEditorInspect()
 {
-	float* positionValues = const_cast<float*>(&m_position.GetInternalVec().x);
-	float* rotationValues = const_cast<float*>(&m_rotation.GetInternalVec().x);
-	float* scaleValues = const_cast<float*>(&m_scale.GetInternalVec().x);
+	float* positionValues = m_position.GetValuePtr();
+	float* rotationValues = m_rotation.GetValuePtr();
+	float* scaleValues = m_scale.GetValuePtr();
 
 	// #TODO(Modify DragFloat3 to only register on mouse movement to avoid falloff when dragging)
 

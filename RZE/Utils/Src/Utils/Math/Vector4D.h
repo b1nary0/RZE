@@ -33,6 +33,9 @@ public:
 	Vector3D XYZ() const;
 
 	const glm::vec4& GetInternalVec() const;
+	// X, Y, Z, W as a float[4], for APIs like ImGui
+	const float* GetValuePtr() const;
+	float* GetValuePtr();
 
 	inline std::string ToString() const
 	{

@@ -14,9 +14,17 @@ public:
 	// The shortest rotation taking unit vector a to unit vector b
 	Quaternion(const Vector3D& a, const Vector3D& b);
 
+	// Euler angles in degrees, in the same order as the radians constructor
+	static Quaternion FromEulerDegrees(const Vector3D& eulerDegrees);
+	// A rotation of angleRadians about the unit vector axis
+	static Quaternion FromAngleAxis(float angleRadians, const Vector3D& axis);
+
 	float ToAngleRadians() const;
 	Vector3D ToEulerDegrees() const;
 	Vector3D ToAxis() const;
+
+	Quaternion Inverse() const;
+	Quaternion Normalized() const;
 
 	const glm::quat& GetInternalQuat() const;
 

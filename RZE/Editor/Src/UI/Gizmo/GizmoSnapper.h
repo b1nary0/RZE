@@ -1,8 +1,7 @@
 #pragma once
 
+#include <Utils/Math/Quaternion.h>
 #include <Utils/Math/Vector3D.h>
-
-#include <GLM/gtc/quaternion.hpp>
 
 namespace Editor
 {
@@ -25,8 +24,8 @@ namespace Editor
 			Vector3D m_startPosition;
 			bool m_hasAxisMoved[3] = { false, false, false };
 			// The rotation at the start of the drag, and where the drag would have taken it without snapping
-			glm::quat m_startRotation;
-			glm::quat m_unsnappedRotation;
+			Quaternion m_startRotation;
+			Quaternion m_unsnappedRotation;
 		};
 
 	public:

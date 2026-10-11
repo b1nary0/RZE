@@ -29,6 +29,16 @@ Quaternion::Quaternion(const Vector3D& a, const Vector3D& b)
 {
 }
 
+Quaternion Quaternion::FromEulerDegrees(const Vector3D& eulerDegrees)
+{
+	return Quaternion(eulerDegrees * MathUtils::ToRadians);
+}
+
+Quaternion Quaternion::FromAngleAxis(float angleRadians, const Vector3D& axis)
+{
+	return Quaternion(glm::angleAxis(angleRadians, axis.GetInternalVec()));
+}
+
 float Quaternion::ToAngleRadians() const
 {
 	return glm::angle(m_quat);
@@ -44,6 +54,16 @@ Vector3D Quaternion::ToEulerDegrees() const
 {
 	glm::vec3 eulerRotation = glm::eulerAngles(m_quat);
 	return Vector3D(eulerRotation.x, eulerRotation.y, eulerRotation.z) * MathUtils::ToDegrees;
+}
+
+Quaternion Quaternion::Inverse() const
+{
+	return Quaternion(glm::inverse(m_quat));
+}
+
+Quaternion Quaternion::Normalized() const
+{
+	return Quaternion(glm::normalize(m_quat));
 }
 
 const glm::quat& Quaternion::GetInternalQuat() const

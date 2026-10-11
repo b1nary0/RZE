@@ -86,7 +86,7 @@ void DirectionalLightComponent::Deserialize(const rapidjson::Value& data)
 
 void DirectionalLightComponent::OnEditorInspect()
 {
-	float* colorValues = const_cast<float*>(&m_lightColour.GetInternalVec().x);
+	float* colorValues = m_lightColour.GetValuePtr();
 	
 	ImGui::Text("Colour");
 	ImGui::ColorEdit4("##directionallightcomponent_color", colorValues, ImGuiInputTextFlags_EnterReturnsTrue);

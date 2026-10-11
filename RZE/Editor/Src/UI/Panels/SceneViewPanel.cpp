@@ -145,12 +145,8 @@ namespace Editor
 
 						GameObjectComponentPtr<TransformComponent> transformComponent = selectedGameObject->GetComponent<TransformComponent>();
 
-						float* translation = &const_cast<glm::vec3&>(transformComponent->GetPosition().GetInternalVec())[0];
-						float* rotation = &const_cast<glm::vec3&>(transformComponent->GetRotation().GetInternalVec())[0];
-						float* scale = &const_cast<glm::vec3&>(transformComponent->GetScale().GetInternalVec())[0];
-
 						float matrix[16];
-						ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
+						ImGuizmo::RecomposeMatrixFromComponents(transformComponent->GetPosition().GetValuePtr(), transformComponent->GetRotation().GetValuePtr(), transformComponent->GetScale().GetValuePtr(), matrix);
 
 						GizmoSnapper& snapper = m_gizmoState.m_snapper;
 						const float* snap = snapper.PrepareManipulate(m_gizmoState.m_currentOpMode, m_gizmoState.m_transformationSpace, ImGui::GetIO().KeyCtrl);
@@ -161,10 +157,7 @@ namespace Editor
 						Vector3D newTranslation, newRotation, newScale;
 						if (isUsing)
 						{
-							ImGuizmo::DecomposeMatrixToComponents(matrix,
-								&const_cast<glm::vec3&>(newTranslation.GetInternalVec())[0],
-								&const_cast<glm::vec3&>(newRotation.GetInternalVec())[0],
-								&const_cast<glm::vec3&>(newScale.GetInternalVec())[0]);
+							ImGuizmo::DecomposeMatrixToComponents(matrix, newTranslation.GetValuePtr(), newRotation.GetValuePtr(), newScale.GetValuePtr());
 						}
 
 						// Called every frame, so it sees drags start and end

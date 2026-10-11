@@ -15,13 +15,15 @@
 
 All spatial values follow [World-Conventions.md](../02-Architecture/World-Conventions.md): metres, right-handed, +Y up, degrees for anything a person sees.
 
+**Convention: glm stays inside these classes.** Code outside `Utils\Src\Utils\Math\` uses `Vector2D/3D/4D`, `Matrix4x4`, `Quaternion` and the `MathUtils` / `VectorUtils` helpers, never `glm::` types or `GetInternalVec()` / `GetInternalMat()` / `GetInternalQuat()`. When something is missing, add a method or helper here rather than reaching for glm.
+
 | File | What's in it |
 |---|---|
 | `Units.h` | The conventions themselves (as a comment), `Units::Metre / Centimetre / Millimetre`, and `WorldAxes::Right() / Up() / Forward()` (+X, +Y, −Z). |
 | `Math.h/.cpp` | `MathUtils`: `Pi`, `ToRadians` / `ToDegrees` (constants to multiply by: `degrees * MathUtils::ToRadians`), `Clamp` / `Clampf`, `SmoothStep(t)`, `CeilPowerOfTwo`. `VectorUtils`: `kEpsilon` / `kEpsilonSq`, `Dot`, `Min` / `Max` (component-wise), `Lerp`, `Slerp`, `DistanceSq`. |
-| `Vector2D`, `Vector3D`, `Vector4D` | Wrap `glm::vec2/3/4`. Usual arithmetic, `Normalize` / `Normalized`, `Cross`, `Length` / `LengthSq`, `GetInternalVec()` for glm or ImGuizmo interop. `Vector4D(xyz, w)` and `XYZ()` convert between 3D points and homogeneous coordinates. |
+| `Vector2D`, `Vector3D`, `Vector4D` | Wrap `glm::vec2/3/4`. Usual arithmetic, `Normalize` / `Normalized`, `Cross`, `Length` / `LengthSq`, `GetValuePtr()` (const and non-const) hands the components to float-array APIs like ImGui and ImGuizmo. `Vector4D(xyz, w)` and `XYZ()` convert between 3D points and homogeneous coordinates. |
 | `Matrix4x4.h/.cpp` | Wraps `glm::mat4` (column-major). Builders: `CreateInPlace(position, scale, eulerDegrees)`, `CreateViewMatrix`, `CreatePerspectiveMatrix` / **`CreatePerspectiveMatrixZeroToOne`** (use this one: D3D's 0..1 depth), `CreateOrthoMatrix` / `CreateOrthoMatrixZeroToOne`, `CreateSubRectProjection(ndcMinX, ndcMinY, ndcMaxX, ndcMaxY)` (narrows a projection to part of the view; used by marquee selection and picking). Instance: `Translate`, `Rotate(angleRadians, axis)`, `Scale`, `Inverse`, `Transpose`, `GetPosition` / `GetRotation` / `GetScale`, `GetRow(i)` (as it multiplies a column vector), `GetValuePtr()`, `operator*` with matrices and `Vector4D`, `IDENTITY`. |
-| `Quaternion.h/.cpp` | Rotations. Built from `eulerRadians` or the rotation between two vectors; `ToEulerDegrees()`, `ToAngleRadians()`, `ToAxis()`, multiplication by quaternions and vectors. |
+| `Quaternion.h/.cpp` | Rotations. Built from `eulerRadians`, `FromEulerDegrees`, `FromAngleAxis(angleRadians, axis)` or the rotation between two vectors; `ToEulerDegrees()`, `ToAngleRadians()`, `ToAxis()`, `Inverse()`, `Normalized()`, multiplication by quaternions and vectors. |
 | `Plane.h/.cpp` | `Plane(normal, distance)`, or from `ax + by + cz + d` coefficients (`Vector4D`). `SignedDistance(point)` is positive on the side the normal points to. |
 
 `Frustum` (six planes taken from a view-projection matrix, with a box test) lives in the Engine at `Engine\Src\Graphics\Frustum.h`, since only rendering and the Editor use it.

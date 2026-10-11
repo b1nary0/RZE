@@ -34,6 +34,9 @@ public:
 	float Length() const;
 
 	const glm::vec3& GetInternalVec() const;
+	// X, Y, Z as a float[3], for APIs like ImGui and ImGuizmo
+	const float* GetValuePtr() const;
+	float* GetValuePtr();
 
 	inline std::string ToString() const
 	{

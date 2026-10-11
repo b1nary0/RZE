@@ -16,12 +16,6 @@ namespace
 	constexpr float k_rotationSteps[] = { 15.0f, 30.0f, 45.0f, 90.0f };
 	// An axis counts as moved once it's this far from where the drag started
 	constexpr float k_movedEpsilon = 1e-4f;
-
-	// Euler order matches TransformComponent and ImGuizmo (see Units.h)
-	glm::quat EulerDegreesToQuat(const Vector3D& eulerDegrees)
-	{
-		return glm::quat(eulerDegrees.GetInternalVec() * MathUtils::ToRadians);
-	}
 }
 
 namespace Editor
@@ -95,7 +89,8 @@ namespace Editor
 		{
 			m_drag.m_startPosition = currentPosition;
 			m_drag.m_hasAxisMoved[0] = m_drag.m_hasAxisMoved[1] = m_drag.m_hasAxisMoved[2] = false;
-			m_drag.m_startRotation = EulerDegreesToQuat(currentRotation);
+			// Euler order matches TransformComponent and ImGuizmo (see Units.h)
+			m_drag.m_startRotation = Quaternion::FromEulerDegrees(currentRotation);
 			m_drag.m_unsnappedRotation = m_drag.m_startRotation;
 		}
 		m_drag.m_wasUsing = isUsing;
@@ -119,18 +114,17 @@ namespace Editor
 	void GizmoSnapper::SnapTranslationToGrid(Vector3D& translation)
 	{
 		// No drift: ImGuizmo takes each frame's delta from the mouse to the current matrix, so rounding here doesn't accumulate
-		glm::vec3& translationVec = const_cast<glm::vec3&>(translation.GetInternalVec());
-		const glm::vec3& startVec = m_drag.m_startPosition.GetInternalVec();
+		float* translationValues = translation.GetValuePtr();
 		for (int axis = 0; axis < 3; ++axis)
 		{
-			if (std::abs(translationVec[axis] - startVec[axis]) > k_movedEpsilon)
+			if (std::abs(translationValues[axis] - m_drag.m_startPosition[axis]) > k_movedEpsilon)
 			{
 				m_drag.m_hasAxisMoved[axis] = true;
 			}
 
 			if (m_drag.m_hasAxisMoved[axis])
 			{
-				translationVec[axis] = std::round(translationVec[axis] / m_snapSize) * m_snapSize;
+				translationValues[axis] = std::round(translationValues[axis] / m_snapSize) * m_snapSize;
 			}
 		}
 	}
@@ -140,15 +134,14 @@ namespace Editor
 		// ImGuizmo rotates by the mouse's movement since last frame, applied to the (snapped) current rotation.
 		// Snapping that directly would swallow slow drags, so the movement is accumulated unsnapped and the
 		// total turn since the drag started is what gets snapped.
-		const glm::quat frameDelta = EulerDegreesToQuat(rotation) * glm::inverse(EulerDegreesToQuat(currentRotation));
-		m_drag.m_unsnappedRotation = glm::normalize(frameDelta * m_drag.m_unsnappedRotation);
+		const Quaternion frameDelta = Quaternion::FromEulerDegrees(rotation) * Quaternion::FromEulerDegrees(currentRotation).Inverse();
+		m_drag.m_unsnappedRotation = (frameDelta * m_drag.m_unsnappedRotation).Normalized();
 
-		const glm::quat totalDelta = m_drag.m_unsnappedRotation * glm::inverse(m_drag.m_startRotation);
+		const Quaternion totalDelta = m_drag.m_unsnappedRotation * m_drag.m_startRotation.Inverse();
 		const float step = m_rotationStep * MathUtils::ToRadians;
-		const float snappedAngle = std::round(glm::angle(totalDelta) / step) * step;
-		const glm::quat snapped = glm::angleAxis(snappedAngle, glm::axis(totalDelta)) * m_drag.m_startRotation;
+		const float snappedAngle = std::round(totalDelta.ToAngleRadians() / step) * step;
+		const Quaternion snapped = Quaternion::FromAngleAxis(snappedAngle, totalDelta.ToAxis()) * m_drag.m_startRotation;
 
-		const glm::vec3 eulerRadians = glm::eulerAngles(snapped);
-		rotation = Vector3D(eulerRadians.x, eulerRadians.y, eulerRadians.z) * MathUtils::ToDegrees;
+		rotation = snapped.ToEulerDegrees();
 	}
 }

@@ -99,6 +99,16 @@ const glm::vec3& Vector3D::GetInternalVec() const
 	return mVec;
 }
 
+const float* Vector3D::GetValuePtr() const
+{
+	return &mVec.x;
+}
+
+float* Vector3D::GetValuePtr()
+{
+	return &mVec.x;
+}
+
 Vector3D Vector3D::operator+(const Vector3D& rhs) const
 {
 	glm::vec3 addVec = mVec + rhs.GetInternalVec();
