@@ -425,6 +425,14 @@ namespace Rendering
 		m_renderThread.PushCommand(command);
 	}
 
+	void Renderer::SetBlendState(EBlendState state)
+	{
+		RenderCommand_SetBlendState* command = MemArena::AllocType<RenderCommand_SetBlendState>();
+		command->state = state;
+
+		m_renderThread.PushCommand(command);
+	}
+
 	void Renderer::SetVertexShader(const VertexShaderHandle& vertexShader)
 	{
 		RenderCommand_SetVertexShader* command = MemArena::AllocType<RenderCommand_SetVertexShader>();

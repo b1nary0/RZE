@@ -25,9 +25,9 @@ private:
 	struct LineVertex
 	{
 		float position[3];
-		float colour[3];
+		float colour[4];
 	};
-	static_assert(sizeof(LineVertex) == 24, "LineVertex must match the Vertex_Line input layout");
+	static_assert(sizeof(LineVertex) == 28, "LineVertex must match the Vertex_Line input layout");
 
 private:
 	// Lines are drawn into it after tonemapping, depth-tested against the scene

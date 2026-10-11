@@ -481,6 +481,16 @@ namespace Rendering
 				break;
 			}
 
+			case RenderCommandType::SetBlendState:
+			{
+				RenderCommand_SetBlendState* cmd = static_cast<RenderCommand_SetBlendState*>(command);
+
+				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+				deviceContext.OMSetBlendState(cmd->state == EBlendState::AlphaBlend ? m_device->mAlphaBlendState : nullptr, nullptr, 0xffffffff);
+
+				break;
+			}
+
 			case RenderCommandType::SetVertexShader:
 			{
 				RenderCommand_SetVertexShader* cmd = static_cast<RenderCommand_SetVertexShader*>(command);

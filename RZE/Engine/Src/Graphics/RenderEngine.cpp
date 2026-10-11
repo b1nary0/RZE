@@ -226,13 +226,13 @@ void RenderEngine::DestroyLightObject(LightObjectPtr& lightObject)
 	}
 }
 
-void RenderEngine::DrawLine(const Vector3D& start, const Vector3D& end, const Vector3D& colour)
+void RenderEngine::DrawLine(const Vector3D& start, const Vector3D& end, const Vector3D& colour, float alpha)
 {
-	DebugLine line{ start, end, colour };
+	DebugLine line{ start, end, colour, alpha };
 	m_sceneData.debugLines.emplace_back(std::move(line));
 }
 
-void RenderEngine::DrawWireBox(const Vector3D& boundsMin, const Vector3D& boundsMax, const Matrix4x4& transform, const Vector3D& colour)
+void RenderEngine::DrawWireBox(const Vector3D& boundsMin, const Vector3D& boundsMax, const Matrix4x4& transform, const Vector3D& colour, float alpha)
 {
 	// Corner i takes max on X if bit 0 is set, Y if bit 1, Z if bit 2.
 	// Transformed individually so the box follows the object's rotation and scale.
@@ -254,7 +254,7 @@ void RenderEngine::DrawWireBox(const Vector3D& boundsMin, const Vector3D& bounds
 		{
 			if ((i & axisBit) == 0)
 			{
-				DrawLine(corners[i], corners[i | axisBit], colour);
+				DrawLine(corners[i], corners[i | axisBit], colour, alpha);
 			}
 		}
 	}

@@ -101,6 +101,8 @@ namespace Rendering
 		static void SetPrimitiveTopology(EPrimitiveTopology topologyType);
 		// Reset to Default by every Begin()
 		static void SetRasterizerState(ERasterizerState state);
+		// Stays bound until changed, so set it back to Opaque after drawing
+		static void SetBlendState(EBlendState state);
 
 		static void SetVertexShader(const VertexShaderHandle& vertexShader);
 		static void SetPixelShader(const PixelShaderHandle& pixelShader);

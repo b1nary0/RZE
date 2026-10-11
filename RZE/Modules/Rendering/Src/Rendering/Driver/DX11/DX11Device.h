@@ -9,6 +9,7 @@ struct ID3D11DeviceContext;
 struct IDXGISwapChain;
 struct ID3D11RenderTargetView;
 struct ID3D11RasterizerState;
+struct ID3D11BlendState;
 struct ID3D11SamplerState;
 
 struct ID3D11DepthStencilView;
@@ -48,6 +49,9 @@ namespace Rendering
 	public:
 		ID3D11RasterizerState* mRasterState;
 		ID3D11RasterizerState* mShadowCasterRasterState;
+
+		// EBlendState::AlphaBlend; EBlendState::Opaque binds no blend state, D3D's default
+		ID3D11BlendState* mAlphaBlendState;
 
 		// Depth-comparison sampler for shadow maps; bound to PS slot s1 at every Begin()
 		ID3D11SamplerState* mShadowSamplerState;

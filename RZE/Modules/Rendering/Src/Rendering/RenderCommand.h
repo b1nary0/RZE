@@ -61,6 +61,7 @@ namespace Rendering
 		SetInputLayout,
 		SetPrimitiveTopology,
 		SetRasterizerState,
+		SetBlendState,
 		SetVertexShader,
 		SetPixelShader,
 		SetConstantBufferVS,
@@ -309,6 +310,13 @@ namespace Rendering
 		RenderCommand_SetRasterizerState() { type = RenderCommandType::SetRasterizerState; }
 
 		ERasterizerState state;
+	};
+
+	struct RenderCommand_SetBlendState : RenderCommand
+	{
+		RenderCommand_SetBlendState() { type = RenderCommandType::SetBlendState; }
+
+		EBlendState state;
 	};
 
 	struct RenderCommand_SetVertexShader : RenderCommand
