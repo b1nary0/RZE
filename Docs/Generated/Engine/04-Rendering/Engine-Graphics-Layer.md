@@ -12,9 +12,10 @@ struct RenderEngine::SceneData {
 };
 ```
 
-This is a render-facing scene, deliberately decoupled from `GameScene`/`GameObject` — a `RenderObject` doesn't know about the `GameObject` that created it, only a mesh + transform.
+This is a render-facing scene, deliberately decoupled from `GameScene`/`GameObject` — a `RenderObject` doesn't know about the `GameObject` that created it, only a mesh + transform, plus an opaque pick ID.
 
 - **`RenderObject`** — pairs a `StaticMeshInstance` with a `MatrixMem { Matrix4x4 transform; Matrix4x4 invTransform; }`. A source comment flags this as a placeholder to be replaced once a batching system exists ("will pack all geometry into a single vertex buffer and all materials into a single material buffer and index away").
+  `SetPickID` / `GetPickID` hold the value `PickRenderStage` writes for the object's pixels. `RenderComponent` sets it to its owner's `GameObjectID + 1`, so 0 means nothing pickable; the Editor maps a picked value back to the `GameObject`.
 - **`LightObject`** — position/colour/strength plus a GPU constant buffer handle (`Rendering::ConstantBufferHandle`); its `PropertyBufferLayout` is uploaded directly to the GPU.
 - **`RenderCamera`** — `Matrix4x4 ClipSpace`, `Vector3D Position`, `RenderViewport Viewport` (just a `Vector2D Size` today). `CameraComponent`/`EditorCameraComponent` push into this each frame via `RenderEngine::GetCamera()`.
 

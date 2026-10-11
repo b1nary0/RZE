@@ -15,7 +15,7 @@
 
 - `Math.h/.cpp` — `MathUtils` namespace (`Pi`, `ToRadians`/`ToDegrees`, `Clamp`/`Clampf`); `VectorUtils` namespace (`Dot`, `Lerp`, `DistanceSq`).
 - `Vector2D.h/.cpp`, `Vector3D.h/.cpp`, `Vector4D.h/.cpp` — wrap `glm::vec2/3/4` (`mVec`); usual operators, `Normalize`/`Normalized`, `Cross`, `LengthSq`, `GetInternalVec()` (raw glm vec, used directly for ImGuizmo interop), `ToString()`.
-- `Matrix4x4.h/.cpp` — wraps `glm::mat4`. Statics: `CreateInPlace(pos, scale, rot)`, `CreateViewMatrix`, `CreatePerspectiveMatrix`, `CreateOrthoMatrix`; instance ops `Translate`/`Rotate`/`Scale`, `Inverse`/`Transpose`, `GetPosition`/`GetRotation`/`GetScale` (+ setters), `GetValuePtr()` (raw `float*`, used for ImGuizmo/D3D interop), `operator*` (matrix×matrix, matrix×`Vector4D`), static `IDENTITY`.
+- `Matrix4x4.h/.cpp` — wraps `glm::mat4`. Statics: `CreateInPlace(pos, scale, rot)`, `CreateViewMatrix`, `CreatePerspectiveMatrix`, `CreateOrthoMatrix`, `CreateSubRectProjection(ndcMinX, ndcMinY, ndcMaxX, ndcMaxY)` (stretches an NDC rect over all of clip space; multiplied in front of a projection it gives a projection/frustum covering only that rect, used by the Editor's marquee and `PickRenderStage`); instance ops `Translate`/`Rotate`/`Scale`, `Inverse`/`Transpose`, `GetPosition`/`GetRotation`/`GetScale` (+ setters), `GetValuePtr()` (raw `float*`, used for ImGuizmo/D3D interop), `operator*` (matrix×matrix, matrix×`Vector4D`), static `IDENTITY`.
 - `Quaternion.h/.cpp` — rotation representation used by `Matrix4x4::GetRotation()`.
 
 ## Memory (`Memory\`)

@@ -64,6 +64,7 @@ Resource creation: `CreateVertexBuffer`, `CreateIndexBuffer`, `CreateConstantBuf
 Resource lifecycle: `UploadDataToBuffer`, `ReleaseVertexShader`, `ReleasePixelShader`, `ClearDepthStencilBuffer`.
 State: `SetRenderTarget`, `ClearRenderTargets`, `SetRenderTargetBackBuffer`, `ClearRenderTarget`, `SetViewport`, `SetInputLayout`, `SetPrimitiveTopology`, `SetVertexShader`, `SetPixelShader`, `SetConstantBufferVS`, `SetConstantBufferPS`, `SetVertexBuffer`, `SetIndexBuffer`, `SetTextureResource`, `UnsetTextureResource`.
 Draw: `Draw`, `DrawIndexed`, `DrawFullScreenQuad`.
+Readback: `ReadTexel`.
 
 Every one of these has a matching `RenderCommand_*` POD struct carrying exactly the parameters that call needs (e.g. `RenderCommand_SetConstantBufferVS { ConstantBufferHandle bufferHandle; U32 bufferSlot; }`).
 
@@ -77,7 +78,17 @@ Every one of these has a matching `RenderCommand_*` POD struct carrying exactly 
 
 ## Public `Renderer` API surface
 
-`Initialize`/`Shutdown`, `BeginFrame`/`EndFrame`, `Begin`/`End` (draw-set scoping for PIX/D3DPERF markers), `DevicePresent`, `HandleWindowResize`, `ImGuiRender`; resource creation (`CreateVertexBuffer`/`IndexBuffer`/`ConstantBuffer`/`TextureBuffer2D`, `CreateVertexShader`/`PixelShader`); a templated `UploadDataToBuffer<T>` for constant buffers; state-setting (`SetRenderTarget`/`SetRenderTargetBackBuffer`, `ClearRenderTarget`, `SetViewport`, `SetInputLayout`, `SetPrimitiveTopology`, `SetVertexShader`/`SetPixelShader`, `SetConstantBufferVS`/`PS`, `SetVertexBuffer`/`SetIndexBuffer`, `SetTextureResource`/`UnsetTextureResource`); draw calls (`Draw`, `DrawIndexed`, `DrawFullScreenQuad`).
+`Initialize`/`Shutdown`, `BeginFrame`/`EndFrame`, `Begin`/`End` (draw-set scoping for PIX/D3DPERF markers), `DevicePresent`, `HandleWindowResize`, `ImGuiRender`; resource creation (`CreateVertexBuffer`/`IndexBuffer`/`ConstantBuffer`/`TextureBuffer2D`, `CreateVertexShader`/`PixelShader`); a templated `UploadDataToBuffer<T>` for constant buffers; state-setting (`SetRenderTarget`/`SetRenderTargetBackBuffer`, `ClearRenderTarget`, `SetViewport`, `SetInputLayout`, `SetPrimitiveTopology`, `SetVertexShader`/`SetPixelShader`, `SetConstantBufferVS`/`PS`, `SetVertexBuffer`/`SetIndexBuffer`, `SetTextureResource`/`UnsetTextureResource`); draw calls (`Draw`, `DrawIndexed`, `DrawFullScreenQuad`); and readback (`ReadTexel`).
+
+### Reading back from the GPU: `ReadTexel`
+
+```cpp
+static void ReadTexel(const TextureBuffer2DHandle& texture, U32 x, U32 y, std::shared_ptr<TexelReadback> result);
+```
+
+Copies one texel of a 4-byte-per-texel texture (e.g. the `R32_UINT` format, added for picking) back to the CPU. On the render thread, the command creates a 1×1 `D3D11_USAGE_STAGING` texture, `CopySubresourceRegion`s the texel into it and `Map`s it, then writes `TexelReadback::Value` and sets `TexelReadback::IsReady` (`Rendering\TexelReadback.h`). Callers poll `IsReady` from any thread; the result arrives once the render thread has processed that frame's commands. `Map` waits for the GPU to finish drawing the texel, so this is for occasional reads such as the Editor's click picking (`PickRenderStage`), not per-frame use.
+
+`R32_UINT` textures are created without `D3D11_RESOURCE_MISC_GENERATE_MIPS`, since integer formats don't support mip generation.
 
 ## Profiling
 
@@ -88,6 +99,7 @@ Optick (`OptickCore`) macros (`OPTICK_EVENT`, `OPTICK_THREAD("Render Thread")`) 
 - `Modules\Rendering\Src\Rendering\Renderer.h/.cpp`
 - `Modules\Rendering\Src\Rendering\RenderThread.h/.cpp`
 - `Modules\Rendering\Src\Rendering\RenderCommand.h`
+- `Modules\Rendering\Src\Rendering\TexelReadback.h`
 - `Modules\Rendering\Src\Rendering\MemArena.h/.cpp`
 - `Modules\Rendering\Src\Rendering\BufferHandle.h/.cpp`, `ShaderHandle.h`
 - `Modules\Rendering\Src\Rendering\Driver\GFXDevice.h`, `GFXBuffer.h`, `ShaderTypes.h`, `TypeDefines.h`
