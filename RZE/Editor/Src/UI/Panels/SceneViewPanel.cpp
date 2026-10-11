@@ -70,6 +70,8 @@ namespace Editor
 					}
 				}
 
+				m_gizmoState.m_snapper.DisplayControls();
+
 				ImGui::EndMenuBar();
 			}
 
@@ -149,15 +151,26 @@ namespace Editor
 						float matrix[16];
 						ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
 
-						ImGuizmo::Manipulate(view.GetValuePtr(), projection.GetValuePtr(), (ImGuizmo::OPERATION)m_gizmoState.m_currentOpMode, (ImGuizmo::MODE)m_gizmoState.m_transformationSpace, matrix);
-						if (ImGuizmo::IsUsing())
+						GizmoSnapper& snapper = m_gizmoState.m_snapper;
+						const float* snap = snapper.PrepareManipulate(m_gizmoState.m_currentOpMode, m_gizmoState.m_transformationSpace, ImGui::GetIO().KeyCtrl);
+
+						ImGuizmo::Manipulate(view.GetValuePtr(), projection.GetValuePtr(), (ImGuizmo::OPERATION)m_gizmoState.m_currentOpMode, (ImGuizmo::MODE)m_gizmoState.m_transformationSpace, matrix, nullptr, snap);
+
+						const bool isUsing = ImGuizmo::IsUsing();
+						Vector3D newTranslation, newRotation, newScale;
+						if (isUsing)
 						{
-							Vector3D newTranslation, newRotation, newScale;
 							ImGuizmo::DecomposeMatrixToComponents(matrix,
 								&const_cast<glm::vec3&>(newTranslation.GetInternalVec())[0],
 								&const_cast<glm::vec3&>(newRotation.GetInternalVec())[0],
 								&const_cast<glm::vec3&>(newScale.GetInternalVec())[0]);
+						}
 
+						// Called every frame, so it sees drags start and end
+						snapper.Apply(isUsing, transformComponent->GetPosition(), transformComponent->GetRotation(), newTranslation, newRotation);
+
+						if (isUsing)
+						{
 							transformComponent->SetPosition(newTranslation);
 							transformComponent->SetRotation(newRotation);
 							transformComponent->SetScale(newScale);
@@ -553,6 +566,9 @@ namespace Editor
 					case Win32KeyCode::Key_Q:
 						m_gizmoState.m_transformationSpace = (m_gizmoState.m_transformationSpace == ImGuizmo::WORLD) ? ImGuizmo::LOCAL : ImGuizmo::WORLD;
 						break;
+					case Win32KeyCode::Key_X:
+						m_gizmoState.m_snapper.ToggleEnabled();
+						break;
 					}
 				}
 			});
@@ -560,5 +576,6 @@ namespace Editor
 		inputHandler.BindAction(Win32KeyCode::Key_E, EButtonState::ButtonState_Pressed, keyFunc);
 		inputHandler.BindAction(Win32KeyCode::Key_R, EButtonState::ButtonState_Pressed, keyFunc);
 		inputHandler.BindAction(Win32KeyCode::Key_Q, EButtonState::ButtonState_Pressed, keyFunc);
+		inputHandler.BindAction(Win32KeyCode::Key_X, EButtonState::ButtonState_Pressed, keyFunc);
 	}
 }

@@ -2,6 +2,8 @@
 
 #include <Game/World/GameObject/GameObjectDefinitions.h>
 
+#include <UI/Gizmo/GizmoSnapper.h>
+
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector3D.h>
 
@@ -25,6 +27,9 @@ namespace Editor
 		{
 			int m_currentOpMode;
 			int m_transformationSpace;
+
+			// Toggled with X; holding Ctrl during a drag inverts it
+			GizmoSnapper m_snapper;
 		};
 
 		// Screen-space rect of a light or camera icon drawn this frame, so objects without a mesh can be picked
