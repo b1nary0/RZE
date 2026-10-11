@@ -14,7 +14,7 @@ namespace Editor
 	{
 		PanelDesc desc;
 		desc.Name = "Log";
-		desc.Closable = false;
+		desc.MenuPath = "Windows/Log";
 		desc.WindowFlags = ImGuiWindowFlags_NoCollapse;
 		return desc;
 	}

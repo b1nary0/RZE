@@ -1,40 +1,26 @@
 #pragma once
 
+#include <UI/Framework/EditorPanel.h>
+
 #include <Game/World/GameObject/GameObjectDefinitions.h>
-
-#include <memory>
-#include <string>
-#include <vector>
-
-class GameObject;
 
 namespace Editor
 {
-	class EditorContext;
-
-	class ScenePanel
+	// The scene's GameObject hierarchy: selection, reparenting by drag and drop, and per-object actions
+	// (rename, add component, detach, delete) from the context menu
+	class ScenePanel : public EditorPanel
 	{
 	public:
-		ScenePanel();
-		~ScenePanel();
-
-	public:
-		void Display(EditorContext& context);
-
-		void Enable();
-		void Disable();
-		bool IsEnabled();
+		static PanelDesc Describe();
 
 	private:
+		void Draw(EditorContext& context) override;
+		void OnSceneReset() override;
+
 		void DisplayObject(EditorContext& context, GameObjectPtr gameObject);
 
 	private:
-		bool bEnabled;
-
-		std::vector<std::string> mSelectedComponents;
-
-		// The object m_components was cached for
-		GameObjectPtr m_inspectedObject;
-		std::vector<GameObjectComponentBase*> m_components;
+		// Whether the name prompt for a new GameObject is showing
+		bool m_isCreatingGameObject = false;
 	};
 }

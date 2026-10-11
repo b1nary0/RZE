@@ -2,16 +2,15 @@
 
 #include <RZE.h>
 #include <UI/Framework/EditorContext.h>
+#include <UI/Framework/PanelRegistry.h>
 
 #include <Game/World/GameObject/GameObject.h>
 #include <Game/World/GameObjectComponents/EditorCameraComponent.h>
+#include <Game/World/GameObjectComponents/TransformComponent.h>
 
 #include <Utils/DebugUtils/Debug.h>
 
 #include <ImGui/imgui.h>
-
-#include <Game/World/GameObjectComponents/TransformComponent.h>
-#include "Game/World/GameObject/EditorGameComponentInfoCache.h"
 
 namespace
 {
@@ -20,151 +19,85 @@ namespace
 
 namespace Editor
 {
+	REGISTER_EDITOR_PANEL(ScenePanel);
 
-	ScenePanel::ScenePanel()
-		: bEnabled(false)
+	PanelDesc ScenePanel::Describe()
 	{
+		PanelDesc desc;
+		desc.Name = "Scene";
+		desc.MenuPath = "Windows/Scene";
+		return desc;
 	}
 
-	ScenePanel::~ScenePanel()
+	void ScenePanel::OnSceneReset()
 	{
+		m_isCreatingGameObject = false;
 	}
 
-	bool showGameObjectNameBoxForCreate = false;
-	void ScenePanel::Display(EditorContext& context)
+	void ScenePanel::Draw(EditorContext& context)
 	{
 		EditorSelection& selection = context.GetSelection();
 
-		if (ImGui::Begin("Scene", &bEnabled))
+		if (selection.IsEmpty())
 		{
-			if (selection.IsEmpty())
+			if (ImGui::BeginPopupContextWindow("SceneMenu"))
 			{
-				if (ImGui::BeginPopupContextWindow("SceneMenu"))
+				if (ImGui::MenuItem("Create GameObject"))
 				{
-					if (ImGui::MenuItem("Create GameObject"))
-					{
-						showGameObjectNameBoxForCreate = true;
-					}
-					
-					ImGui::EndMenu();
+					m_isCreatingGameObject = true;
 				}
 
-				if (showGameObjectNameBoxForCreate)
-				{
-					ImGuiWindowFlags windowFlags = 
-						ImGuiWindowFlags_AlwaysAutoResize
-					| ImGuiWindowFlags_NoResize
-					| ImGuiWindowFlags_NoMove
-					| ImGuiWindowFlags_NoCollapse;
-					// @TODO Figure out why GetCursorScreenPos() doesnt give the actual position (it gets drawn at the top)
-					ImGui::SetNextWindowPos(ImGui::GetCursorScreenPos());
-					if (ImGui::Begin("GameObjectNameCreate", &showGameObjectNameBoxForCreate, windowFlags))
-					{
-						char name[k_maxGameObjectNameSize] = { 0 };
-						if (ImGui::InputText("GameObject Name", name, k_maxGameObjectNameSize, ImGuiInputTextFlags_EnterReturnsTrue))
-						{
-							RZE().GetActiveScene().AddGameObject(name);
-							showGameObjectNameBoxForCreate = false;
-						}
-
-						if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && ImGui::IsKeyPressed(ImGuiKey_Escape, false))
-						{
-							showGameObjectNameBoxForCreate = false;
-						}
-					}
-					ImGui::End();
-				}
-			}
-			
-			if (ImGui::IsAnyMouseDown() && (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) && !selection.IsEmpty())
-			{
-				selection.Clear();
+				ImGui::EndPopup();
 			}
 
-			RZE().GetActiveScene().ForEachGameObject(
-				Functor<void, GameObjectPtr>([this, &context](GameObjectPtr gameObject)
-				{
-					GameObjectPtr selectedObject;
-					if (gameObject->IsRoot())
-					{
-						// @NOTE Don't show the EditorComponent. Settings for this should go through
-						// editor preferences UI
-						GameObjectComponentPtr<EditorCameraComponent> cameraComponent = gameObject->GetComponent<EditorCameraComponent>();
-						if (cameraComponent != nullptr)
-						{
-							return;
-						}
-
-						DisplayObject(context, gameObject);
-					}
-				}));
-		}
-		ImGui::End();
-
-		if (ImGui::Begin("Component View"))
-		{
-			if (!selection.IsEmpty())
+			if (m_isCreatingGameObject)
 			{
-				GameObjectPtr primary = selection.GetPrimary();
-				const GameObject::ComponentList& componentList = primary->GetComponents();
-
-				// Cache the component pointers if we've modified our components or we've changed the focused GameObject.
-				if (m_inspectedObject != primary || componentList.size() != m_components.size())
+				ImGuiWindowFlags windowFlags =
+					ImGuiWindowFlags_AlwaysAutoResize
+				| ImGuiWindowFlags_NoResize
+				| ImGuiWindowFlags_NoMove
+				| ImGuiWindowFlags_NoCollapse;
+				// @TODO Figure out why GetCursorScreenPos() doesnt give the actual position (it gets drawn at the top)
+				ImGui::SetNextWindowPos(ImGui::GetCursorScreenPos());
+				if (ImGui::Begin("GameObjectNameCreate", &m_isCreatingGameObject, windowFlags))
 				{
-					m_components.reserve(componentList.size());
-					m_components.assign(componentList.begin(), componentList.end());
-
-					if (m_components.size() > 1)
+					char name[k_maxGameObjectNameSize] = { 0 };
+					if (ImGui::InputText("GameObject Name", name, k_maxGameObjectNameSize, ImGuiInputTextFlags_EnterReturnsTrue))
 					{
-						const EditorComponentCache::ComponentInfoMap& componentData = EditorComponentCache::GetAllComponentsInfo();
-
- 						std::sort(m_components.begin(), m_components.end(), [&componentData](const GameObjectComponentBase* a, const GameObjectComponentBase* b) {
- 							int32_t first = EditorComponentCache::kDefaultSortingOrder;
-							int32_t second = EditorComponentCache::kDefaultSortingOrder;
- 							bool foundFirst = componentData.find(a->m_id) != componentData.end();
- 							if (foundFirst)
- 							{
-								first = componentData.at(a->m_id).Order;
- 							}
-							
- 							bool foundSecond = componentData.find(b->m_id) != componentData.end();
- 							if (foundSecond)
- 							{
-								second = componentData.at(b->m_id).Order;
- 							}
-							
- 							return first < second;
- 						});
+						RZE().GetActiveScene().AddGameObject(name);
+						m_isCreatingGameObject = false;
 					}
 
-					m_inspectedObject = primary;
+					if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && ImGui::IsKeyPressed(ImGuiKey_Escape, false))
+					{
+						m_isCreatingGameObject = false;
+					}
 				}
-
-				for (auto& component : m_components)
-				{
-					ImGui::TextColored(ImVec4(0.65f, 0.65f, 1.0f, 1.0f), "[ %s ]", component->GetName().c_str());
-					ImGui::Separator();
-					component->OnEditorInspect();
-					ImGui::Separator();
-				}
+				ImGui::End();
 			}
 		}
-		ImGui::End();
-	}
 
-	void ScenePanel::Enable()
-	{
-		bEnabled = true;
-	}
+		if (ImGui::IsAnyMouseDown() && (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) && !selection.IsEmpty())
+		{
+			selection.Clear();
+		}
 
-	void ScenePanel::Disable()
-	{
-		bEnabled = false;
-	}
+		RZE().GetActiveScene().ForEachGameObject(
+			Functor<void, GameObjectPtr>([this, &context](GameObjectPtr gameObject)
+			{
+				if (gameObject->IsRoot())
+				{
+					// @NOTE Don't show the EditorComponent. Settings for this should go through
+					// editor preferences UI
+					GameObjectComponentPtr<EditorCameraComponent> cameraComponent = gameObject->GetComponent<EditorCameraComponent>();
+					if (cameraComponent != nullptr)
+					{
+						return;
+					}
 
-	bool ScenePanel::IsEnabled()
-	{
-		return bEnabled;
+					DisplayObject(context, gameObject);
+				}
+			}));
 	}
 
 	void ScenePanel::DisplayObject(EditorContext& context, GameObjectPtr gameObject)

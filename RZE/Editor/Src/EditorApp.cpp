@@ -402,16 +402,6 @@ namespace Editor
 
 			if (ImGui::BeginMenu("View"))
 			{
-				if (ImGui::BeginMenu("Windows"))
-				{
-					if (ImGui::MenuItem("Scene"))
-					{
-						m_scenePanel.Enable();
-					}
-
-					ImGui::EndMenu();
-				}
-
 				m_context.GetPanels().DrawMenuItems();
 
 				ImGui::EndMenu();
@@ -495,36 +485,12 @@ namespace Editor
 		ImGui::PopStyleVar();
 	}
 
-	void EditorApp::HandleGeneralContextMenu()
-	{
-		if (ImGui::BeginPopupContextWindow("Scene"))
-		{
-			if (ImGui::BeginMenu("View"))
-			{
-				if (ImGui::BeginMenu("Windows"))
-				{
-					if (ImGui::MenuItem("Scene"))
-					{
-						m_scenePanel.Enable();
-					}
-					ImGui::EndMenu();
-				}
-
-				ImGui::EndMenu();
-			}
-
-			ImGui::EndPopup();
-		}
-	}
-
 	void EditorApp::ResolvePanelState()
 	{
 		if (m_panelStates.bDemoPanelEnabled)
 		{
 			ImGui::ShowDemoWindow(nullptr);
 		}
-
-		m_scenePanel.Display(m_context);
 
 		m_sceneViewPanel.Display(m_context);
 

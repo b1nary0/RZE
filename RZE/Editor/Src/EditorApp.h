@@ -2,7 +2,6 @@
 
 #include <EngineApp.h>
 
-#include <UI/Panels/ScenePanel.h>
 #include <UI/Panels/SceneViewPanel.h>
 #include <UI/Modals/AsyncOperationModal.h>
 #include <UI/Framework/EditorContext.h>
@@ -21,7 +20,6 @@ namespace Editor
 		struct PanelStates
 		{
 			bool bDemoPanelEnabled{ false };
-			bool bScenePanelEnabled{ false };
 		};
 
 	public:
@@ -51,7 +49,6 @@ namespace Editor
 
 	private:
 		void DisplayMenuBar();
-		void HandleGeneralContextMenu();
 		void ResolvePanelState();
 
 		void LoadFonts();
@@ -77,7 +74,6 @@ namespace Editor
 
 		EditorContext m_context;
 
-		ScenePanel m_scenePanel;
 		SceneViewPanel m_sceneViewPanel;
 
 		AsyncOperationModal m_asyncOperationModal;
