@@ -81,6 +81,9 @@ private:
 	Vector2D m_mousePrevPos;
 	Vector2D m_yawPitch;
 
+	// Distance along m_forward to the point MMB orbits around; the pivot travels with the camera when flying
+	float m_orbitDistance{ 5.0f };
+
 	bool m_isActiveCamera{ false };
 
 	// In-flight FocusOn() animation

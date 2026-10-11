@@ -108,6 +108,7 @@ namespace Win32KeyCode
 		Return = 0xD,
 		Select = 0x29,
 		Separator = 0x6C,
+		Shift = 0x10,
 		Space = 0x20,
 		Subtract = 0x6D,
 		Tab = 0x09,

@@ -12,8 +12,16 @@
 
 namespace
 {
-	// Metres per mouse wheel tick
-	constexpr float k_cameraMaxZoomSpeed = 0.5f;
+	// Fraction of the distance to the orbit pivot covered per mouse wheel tick
+	constexpr float k_wheelDollyFraction = 0.15f;
+	// The camera never gets closer than this to its orbit pivot; zooming further pushes the pivot ahead instead
+	constexpr float k_minOrbitDistance = 0.1f;
+	// Ctrl+MMB drag: distance scales by e^(pixels * rate), so dragging feels the same near and far
+	constexpr float k_dragDollyRate = 0.005f;
+	// Degrees per pixel for RMB look and MMB orbit
+	constexpr float k_lookSensitivity = 0.1f;
+	// Stops look/orbit flipping over the poles, where the view matrix's up vector degenerates
+	constexpr float k_maxPitch = 89.0f;
 	// Metres per second, before the hold-to-accelerate ramp and the R (x4) / Space (/8) modifiers
 	constexpr float k_cameraMaxSpeed = 5.0f;
 
@@ -157,6 +165,8 @@ void EditorCameraComponent::FocusOn(const Vector3D& boundsMin, const Vector3D& b
 	m_focusStartForward = m_forward;
 	m_focusTargetForward = targetForward;
 	m_focusElapsed = 0.0f;
+	// Orbit around the focused object once the camera arrives
+	m_orbitDistance = distance;
 	m_isFocusing = true;
 }
 
@@ -176,6 +186,7 @@ void EditorCameraComponent::Initialize()
 	if (toSceneCenter.LengthSq() > 0.0f)
 	{
 		SetForward(toSceneCenter);
+		m_orbitDistance = std::max(toSceneCenter.Length(), k_minOrbitDistance);
 	}
 	else
 	{
@@ -218,9 +229,10 @@ void EditorCameraComponent::UpdateFocus(GameObjectComponentPtr<TransformComponen
 		return;
 	}
 
-	// Any manual look or zoom takes over from the animation
+	// Any manual look, orbit, pan or zoom takes over from the animation
 	InputHandler& inputHandler = RZE().GetInputHandler();
 	if (inputHandler.GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Pressed
+		|| inputHandler.GetMouseState().GetButtonState(EMouseButton::MouseButton_Middle) == EButtonState::ButtonState_Pressed
 		|| inputHandler.GetMouseState().CurWheelVal != 0)
 	{
 		m_isFocusing = false;
@@ -319,13 +331,6 @@ void EditorCameraComponent::KeyboardInput(GameObjectComponentPtr<TransformCompon
 	{
 		m_speed = k_cameraMaxSpeed;
 	}
-
-	Int32 wheelVal = RZE().GetInputHandler().GetMouseState().CurWheelVal;
-	if (wheelVal != 0)
-	{
-		wheelVal = MathUtils::Clamp(wheelVal, -1, 1);
-		transfComp->GetPosition() = transfComp->GetPosition() + (m_forward * static_cast<float>(wheelVal)) * k_cameraMaxZoomSpeed;
-	}
 }
 
 void EditorCameraComponent::MouseInput(GameObjectComponentPtr<TransformComponent>& transfComp)
@@ -333,23 +338,58 @@ void EditorCameraComponent::MouseInput(GameObjectComponentPtr<TransformComponent
 	InputHandler& inputHandler = RZE().GetInputHandler();
 
 	const Vector2D& curPos = inputHandler.GetMouseState().CurPosition;
+	const Vector2D diff = curPos - m_mousePrevPos;
+	m_mousePrevPos = curPos;
+
+	Vector3D& position = transfComp->GetPosition();
 
 	Int32 wheelVal = inputHandler.GetMouseState().CurWheelVal;
 	if (wheelVal != 0)
 	{
+		// Dolly toward the pivot by a fraction of the distance; once at the minimum, keep going and carry the pivot along
 		wheelVal = MathUtils::Clamp(wheelVal, -1, 1);
-		transfComp->GetPosition() = transfComp->GetPosition() + (m_forward * static_cast<float>(wheelVal)) * k_cameraMaxZoomSpeed;
+		const float step = std::max(m_orbitDistance * k_wheelDollyFraction, k_minOrbitDistance) * static_cast<float>(wheelVal);
+		position += m_forward * step;
+		m_orbitDistance = std::max(m_orbitDistance - step, k_minOrbitDistance);
 	}
 
-	if (inputHandler.GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Pressed)
+	if (inputHandler.GetMouseState().CurMouseBtnStates[EMouseButton::MouseButton_Right])
 	{
-		Vector2D diff = curPos - m_mousePrevPos;
-
 		const bool withSensitivity = true;
 		CalculateNewForward(diff, withSensitivity);
 	}
+	else if (inputHandler.GetMouseState().CurMouseBtnStates[EMouseButton::MouseButton_Middle] && (diff.X() != 0.0f || diff.Y() != 0.0f))
+	{
+		const auto& keyboardState = inputHandler.GetKeyboardState();
+		const Vector3D pivot = position + m_forward * m_orbitDistance;
 
-	m_mousePrevPos = curPos;
+		if (keyboardState.IsDownThisFrame(Win32KeyCode::Shift))
+		{
+			// Pan: scale pixels to metres at the pivot's depth so the scene stays under the cursor
+			const float viewportHeight = RZE().GetRenderEngine().GetMainView().ViewportSize.Y();
+			if (viewportHeight > 0.0f)
+			{
+				const float metresPerPixel = 2.0f * m_orbitDistance * std::tan(m_fov * 0.5f * MathUtils::ToRadians) / viewportHeight;
+				const Vector3D right = m_forward.Cross(m_upDir).Normalized();
+				const Vector3D up = right.Cross(m_forward);
+				position += (up * diff.Y() - right * diff.X()) * metresPerPixel;
+			}
+		}
+		else if (keyboardState.IsDownThisFrame(Win32KeyCode::Control))
+		{
+			// Dolly: drag down to pull away from the pivot, up to push in
+			const float newDistance = std::max(m_orbitDistance * std::exp(diff.Y() * k_dragDollyRate), k_minOrbitDistance);
+			position = pivot - m_forward * newDistance;
+			m_orbitDistance = newDistance;
+		}
+		else
+		{
+			// Orbit: turn the same way as RMB look, then back the camera off the pivot along the new forward
+			const bool withSensitivity = true;
+			CalculateNewForward(diff, withSensitivity);
+			position = pivot - m_forward * m_orbitDistance;
+		}
+	}
 }
 
 void EditorCameraComponent::SetSpeedRampMultiplier(bool isMoving, float growingDelta)
@@ -370,11 +410,11 @@ void EditorCameraComponent::CalculateNewForward(const Vector2D& delta, bool with
 
 	if (withSensitivity)
 	{
-		const float sensitivity = 0.1f;
-		outDelta *= sensitivity;
+		outDelta *= k_lookSensitivity;
 	}
 
 	m_yawPitch += outDelta;
+	m_yawPitch.SetY(MathUtils::Clampf(m_yawPitch.Y(), -k_maxPitch, k_maxPitch));
 
 	float yawInRadians = m_yawPitch.X() * MathUtils::ToRadians;
 	float pitchInRadians = m_yawPitch.Y() * MathUtils::ToRadians;
