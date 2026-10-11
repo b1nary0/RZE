@@ -226,9 +226,9 @@ void RenderEngine::DestroyLightObject(LightObjectPtr& lightObject)
 	}
 }
 
-void RenderEngine::DrawLine(const Vector3D& start, const Vector3D& end, const Vector3D& colour, float alpha)
+void RenderEngine::DrawLine(const Vector3D& start, const Vector3D& end, const Vector3D& colour, float alpha, const DebugLineFade& fade)
 {
-	DebugLine line{ start, end, colour, alpha };
+	DebugLine line{ start, end, colour, alpha, fade };
 	m_sceneData.debugLines.emplace_back(std::move(line));
 }
 

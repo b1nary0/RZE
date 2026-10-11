@@ -159,6 +159,15 @@ private:
 // Renderer::SubmitBucket(bucketProxy); // We're done here, bucketProxy invalid now.
 // ^^^^^ This looks like it should be some reference-type structure/architecture
 
+// Fades a debug line out with distance from a point: fully visible within start, gone beyond end.
+// Applied per pixel, so a long line fades along its length. end == 0 means no fade.
+struct DebugLineFade
+{
+	Vector3D centre;
+	float start = 0.0f;
+	float end = 0.0f;
+};
+
 struct DebugLine
 {
 	Vector3D start;
@@ -166,6 +175,7 @@ struct DebugLine
 	Vector3D colour;
 	// 1 is opaque; lower values blend with what's behind
 	float alpha;
+	DebugLineFade fade;
 };
 
 typedef std::vector<std::unique_ptr<RenderObject>> RenderObjectContainer;
@@ -221,8 +231,8 @@ public:
 	LightObjectPtr CreateLightObject();
 	void DestroyLightObject(LightObjectPtr& lightObject);
 
-	// alpha below 1 blends the line with what's behind it
-	void DrawLine(const Vector3D& start, const Vector3D& end, const Vector3D& colour = Vector3D(1.0f, 0.0f, 0.0f), float alpha = 1.0f);
+	// alpha below 1 blends the line with what's behind it; fade, if given, fades it out with distance
+	void DrawLine(const Vector3D& start, const Vector3D& end, const Vector3D& colour = Vector3D(1.0f, 0.0f, 0.0f), float alpha = 1.0f, const DebugLineFade& fade = DebugLineFade());
 	// Draws the 12 edges of an object-space box, transformed into world space by transform
 	void DrawWireBox(const Vector3D& boundsMin, const Vector3D& boundsMax, const Matrix4x4& transform, const Vector3D& colour, float alpha = 1.0f);
 

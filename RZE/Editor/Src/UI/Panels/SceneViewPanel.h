@@ -2,6 +2,7 @@
 
 #include <Game/World/GameObject/GameObjectDefinitions.h>
 
+#include <UI/Gizmo/EditorGrid.h>
 #include <UI/Gizmo/GizmoSnapper.h>
 
 #include <Utils/Math/Vector2D.h>
@@ -77,6 +78,7 @@ namespace Editor
 		Vector2D m_position;
 
 		TransformGizmoState m_gizmoState;
+		EditorGrid m_grid;
 
 		std::vector<IconHit> m_iconHits;
 

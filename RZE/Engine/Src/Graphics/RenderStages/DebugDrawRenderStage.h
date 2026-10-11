@@ -21,13 +21,15 @@ public:
 	void Render(RenderContext& context) override;
 
 private:
-	// Matches the Vertex_Line input layout: POSITION @ 0, COLOUR @ 12
+	// Matches the Vertex_Line input layout: POSITION @ 0, COLOUR @ 12, FADECENTRE @ 28, FADERANGE @ 40
 	struct LineVertex
 	{
 		float position[3];
 		float colour[4];
+		float fadeCentre[3];
+		float fadeRange[2];
 	};
-	static_assert(sizeof(LineVertex) == 28, "LineVertex must match the Vertex_Line input layout");
+	static_assert(sizeof(LineVertex) == 48, "LineVertex must match the Vertex_Line input layout");
 
 private:
 	// Lines are drawn into it after tonemapping, depth-tested against the scene

@@ -11,6 +11,8 @@ void DebugDrawRenderStage::Initialize()
 	{
 		{ "POSITION", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 0 },
 		{ "COLOUR", Rendering::EDataFormat::R32G32B32A32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 12 },
+		{ "FADECENTRE", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 28 },
+		{ "FADERANGE", Rendering::EDataFormat::R32G32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 40 },
 	};
 
 	m_vertexShaderResource = RZE().GetResourceHandler().LoadResource<VertexShader>(Filepath("Assets/Shaders/Vertex_Line.hlsl"), "Vertex_Line", inputLayout);
@@ -41,8 +43,11 @@ void DebugDrawRenderStage::Render(RenderContext& context)
 	m_scratchVertices.clear();
 	for (const DebugLine& line : renderData.debugLines)
 	{
-		m_scratchVertices.push_back({ { line.start.X(), line.start.Y(), line.start.Z() }, { line.colour.X(), line.colour.Y(), line.colour.Z(), line.alpha } });
-		m_scratchVertices.push_back({ { line.end.X(), line.end.Y(), line.end.Z() }, { line.colour.X(), line.colour.Y(), line.colour.Z(), line.alpha } });
+		const DebugLineFade& fade = line.fade;
+		m_scratchVertices.push_back({ { line.start.X(), line.start.Y(), line.start.Z() }, { line.colour.X(), line.colour.Y(), line.colour.Z(), line.alpha },
+			{ fade.centre.X(), fade.centre.Y(), fade.centre.Z() }, { fade.start, fade.end } });
+		m_scratchVertices.push_back({ { line.end.X(), line.end.Y(), line.end.Z() }, { line.colour.X(), line.colour.Y(), line.colour.Z(), line.alpha },
+			{ fade.centre.X(), fade.centre.Y(), fade.centre.Z() }, { fade.start, fade.end } });
 	}
 
 	// Uploaded even when empty so line-free calls still count toward shrinking

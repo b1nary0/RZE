@@ -1,5 +1,7 @@
 #include <UI/Gizmo/GizmoSnapper.h>
 
+#include <UI/ToolbarLayout.h>
+
 #include <Utils/Math/Math.h>
 
 #include <ImGui/imgui.h>
@@ -14,18 +16,6 @@ namespace
 	constexpr float k_rotationSteps[] = { 15.0f, 30.0f, 45.0f, 90.0f };
 	// An axis counts as moved once it's this far from where the drag started
 	constexpr float k_movedEpsilon = 1e-4f;
-
-	// Toolbar layout, in pixels
-	constexpr float k_itemSpacingInGroup = 6.0f;
-	constexpr float k_groupGap = 12.0f;
-
-	// A vertical separator with a gap either side, between groups of toolbar controls
-	void BeginControlGroup()
-	{
-		ImGui::Dummy(ImVec2(k_groupGap - k_itemSpacingInGroup, 0.0f));
-		ImGui::Separator();
-		ImGui::Dummy(ImVec2(k_groupGap - k_itemSpacingInGroup, 0.0f));
-	}
 
 	// Euler order matches TransformComponent and ImGuizmo (see Units.h)
 	glm::quat EulerDegreesToQuat(const Vector3D& eulerDegrees)
@@ -44,13 +34,12 @@ namespace Editor
 
 	void GizmoSnapper::DisplayControls()
 	{
-		// Wide gaps between groups and tight spacing within them, so each group reads as one unit
-		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(k_itemSpacingInGroup, ImGui::GetStyle().ItemSpacing.y));
+		ToolbarLayout::PushGroupSpacing();
 
-		BeginControlGroup();
+		ToolbarLayout::BeginGroup();
 		ImGui::Checkbox("Snap (X)", &m_isEnabled);
 
-		BeginControlGroup();
+		ToolbarLayout::BeginGroup();
 		ImGui::TextUnformatted("Move step:");
 		for (float snapSize : k_snapSizes)
 		{
@@ -62,7 +51,7 @@ namespace Editor
 			}
 		}
 
-		BeginControlGroup();
+		ToolbarLayout::BeginGroup();
 		ImGui::TextUnformatted("Rotate step:");
 		for (float rotationStep : k_rotationSteps)
 		{

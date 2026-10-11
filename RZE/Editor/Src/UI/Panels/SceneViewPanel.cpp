@@ -71,6 +71,7 @@ namespace Editor
 				}
 
 				m_gizmoState.m_snapper.DisplayControls();
+				m_grid.DisplayControls();
 
 				ImGui::EndMenuBar();
 			}
@@ -185,6 +186,12 @@ namespace Editor
 				// After the icons so this frame's icon rects are picked against
 				HandleSelectionInput(viewOrigin, isImageHovered);
 
+				// Last, so the grid's lines follow the opaque debug lines (frustums) and its depth writes can't hide them
+				GameObjectPtr cameraObject = editorApp.GetCameraObject();
+				if (cameraObject != nullptr)
+				{
+					m_grid.Draw(cameraObject->GetTransformComponent()->GetPosition(), m_gizmoState.m_snapper.GetSnapSize());
+				}
 			}
 		}
 		ImGui::End();
@@ -329,9 +336,11 @@ namespace Editor
 
 		Vector3D nearCorners[4];
 		Vector3D farCorners[4];
-		// Scene cameras usually see ~1000 units out, which would draw as four lines running off-screen
-		// with a microscopic near plane; stopping short keeps the frustum readable as a pyramid
-		constexpr float k_maxFrustumDrawDistance = 10.0f;
+		// Scene cameras usually see ~1000 m out, which would draw as four lines running off-screen
+		// with a microscopic near plane; stopping short keeps the frustum readable as a pyramid.
+		// Metres, sized like a physical camera; it was 10 units before scenes were rescaled to metres,
+		// which in the rescaled scenes is about this (Sponza's 0.15 m per unit).
+		constexpr float k_maxFrustumDrawDistance = 1.5f;
 		planeCorners(camera.GetNearCull(), nearCorners);
 		planeCorners(std::min(camera.GetFarCull(), k_maxFrustumDrawDistance), farCorners);
 
