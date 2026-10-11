@@ -1,68 +1,198 @@
-# Render Stages
+# Render Pipeline & Stages
 
-`RenderEngine` executes a priority-ordered list of `IRenderStage` implementations each frame — a lightweight, non-data-driven "render graph." This is the mechanism by which RZE composes a frame out of independent passes.
+A frame is drawn by a handful of **render stages**: small, independent passes such as "draw the shadow map" or "tonemap the image". Stages never call each other. Each one declares what data it **writes**, **reads** or **modifies**, and the `RenderPipeline` works out the order from those declarations.
 
-## The interface
+> **In one sentence:** stages hand each other typed data packets ("contracts") through a per-view blackboard, and the pipeline sorts the stages so every packet is written before anyone reads it.
 
-```cpp
-// Engine\Src\Graphics\RenderStage.h
-class IRenderStage {
-public:
-    virtual void Initialize() = 0;
-    virtual void Update(const RenderCamera& camera, const RenderEngine::SceneData& renderData) = 0;
-    virtual void Render(const RenderCamera& camera, const RenderEngine::SceneData& renderData) = 0;
-    virtual U32 GetPriority() = 0;
-};
+## A frame at a glance
+
+Rounded boxes are stages, and the parallelograms between them are the data contracts they pass along.
+
+```mermaid
+flowchart LR
+    Shadow(["ShadowRenderStage"]) --> SMD[/"ShadowMapData<br/>shadow map + params"/]
+    SMD --> Forward(["ForwardRenderStage"])
+    Forward --> SCD[/"SceneColourData<br/>HDR colour + depth"/]
+    SCD --> Post(["PostProcessRenderStage"])
+    Post --> DCD[/"DisplayColourData<br/>8-bit colour + depth"/]
+    DCD --> Debug(["DebugDrawRenderStage<br/>(modifies)"])
+    Debug --> DCD2[/"DisplayColourData<br/>+ debug lines"/]
+    DCD2 --> ImGui(["ImGuiRenderStage"])
+    DCD2 --> Final(["FinalRenderTargetStage<br/>(Game only)"])
+    Pick(["PickRenderStage<br/>(only on a click)"])
 ```
 
-Stages are stored in `RenderEngine::m_renderStages` (`std::vector<std::unique_ptr<IRenderStage>>`), kept sorted ascending by `GetPriority()`. Every stage gets `Update()` called every frame (`RenderEngine::Update()`), then every stage gets `Render()` called in priority order during `RenderEngine::Render()`.
+`PickRenderStage` stands apart because it uses no contracts. It renders from the scene alone and hands its result straight back to the Editor (see [Picking](#pickrenderstage)).
 
-## Concrete stages (`Engine\Src\Graphics\RenderStages\`)
+The order the pipeline settles on is logged when it compiles, e.g. in the Editor:
 
-| Stage | Priority | Active in | Purpose |
-|---|---|---|---|
-| `ForwardRenderStage` | 0 | Always | The main forward-rendering pass — draws every `RenderObject` in the scene's `RenderObjectContainer` using its vertex/pixel shaders. |
-| `PickRenderStage` | — (added after `PostProcessRenderStage`) | Main view, only on frames with a pick request | Finds the object at one pixel for the Editor's click selection. See [Picking](#picking-pickrenderstage) below. |
-| `DebugDrawRenderStage` | 50 | Debug builds only | Draws the queued `DebugLineContainer` (from `RenderEngine::DrawLine()`) with dedicated debug-line vertex/pixel shaders. |
-| `FinalRenderTargetStage` | `UINT32_MAX` (last) | `GameApp` only | Blits/finalizes the rendered frame to the actual back buffer/swap chain. The Editor never adds this stage — its output stays in an off-screen RTT consumed by ImGui instead. |
-| `ImGuiRenderStage` | 1000 | Both, but skippable | Issues the ImGui draw call. `RenderEngine::Render(..., withImgui)` skips this stage when `withImgui` is false. |
+```
+Render pipeline: ShadowRenderStage -> ForwardRenderStage -> PostProcessRenderStage -> PickRenderStage -> DebugDrawRenderStage -> ImGuiRenderStage
+```
 
-## Ordering diagram
+## The pieces
 
 ```mermaid
 flowchart TD
-    Update["RenderEngine::Update()<br/>calls Update() on every stage"] --> Render["RenderEngine::Render()"]
-    Render --> S0["ForwardRenderStage (priority 0)"]
-    S0 --> S50["DebugDrawRenderStage (priority 50, Debug only)"]
-    S50 --> SMax["FinalRenderTargetStage (priority UINT32_MAX, Game only)"]
-    SMax --> S1000["ImGuiRenderStage (priority 1000, skippable)"]
-    S1000 --> Finish["RenderEngine::Finish() -> Rendering::Renderer::DevicePresent()"]
+    RE["RenderEngine"] -->|owns| RP["RenderPipeline"]
+    RE -->|owns| MV["main RenderView"]
+    RP -->|owns, in add order| Stages["IRenderStage x N"]
+    RP -->|"Render(view, scene)"| Ctx["RenderContext<br/>(one per view render)"]
+    Ctx -->|View, Scene, DeltaTime| Stages
+    MV --> Frame["frame blackboard<br/>(cleared every render)"]
+    MV --> Persist["persistent blackboard<br/>(lives as long as the view)"]
+    Stages -. "ports: Get / Publish" .-> Frame
+    Stages -. "Persistent()" .-> Persist
 ```
 
-## Why priority ordering matters here
+| Piece | File | What it is |
+|---|---|---|
+| `IRenderStage` | `Graphics/RenderStage.h` | A pass: `Initialize()`, `Setup(builder)` to declare its data, `Render(context)` to draw. The header has a step-by-step guide to writing one. |
+| Data contract | `Graphics/RenderData/*.h` | A small struct of handles and values deriving `RenderStageData<T>`, e.g. `ShadowMapData { ShadowMap, ShadowParams }`. One header each, so readers depend on the data, not on the stage that makes it. |
+| Port | `Graphics/RenderPorts.h` | What `Setup()` hands back: `RenderInput<T>` (`Get`/`TryGet`), `RenderOutput<T>` (`Publish`), `RenderInOut<T>`. A stage can only touch data it declared. |
+| `RenderPipeline` | `Graphics/RenderPipeline.h/.cpp` | Owns the stages; compiles the declarations when stages change, then runs them in order for a view. |
+| `RenderView` | `Graphics/RenderView.h` | One point of view: camera, viewport size, target, exposure compensation, pick request, and two blackboards. See [Engine-Graphics-Layer.md](Engine-Graphics-Layer.md#views). |
+| `RenderContext` | `Graphics/RenderContext.h` | What a stage gets while rendering one view: the view's inputs (read-only), the scene, `DeltaTime`, and `Persistent()`. |
 
-- `ForwardRenderStage` must run first so there's a populated colour/depth buffer for later passes to build on.
-- `FinalRenderTargetStage` runs at `UINT32_MAX` specifically because it must be the very last pass that touches the swap chain before present — nothing else should draw after the "final" blit.
-- `ImGuiRenderStage` at priority 1000 sits after the final blit but before present, so ImGui always draws on top of the finished frame (both the game's debug overlays and, in the Editor, the entire UI).
+## How the order is worked out
 
-## Picking (`PickRenderStage`)
+`CompileRenderPipeline()` (`RenderPipelineCompiler.cpp`) reads every stage's declarations and applies a few rules:
 
-Serves `RenderView::Pick`, a `RenderPickRequest { U32 X, Y; std::shared_ptr<Rendering::TexelReadback> Result; }` that the Editor sets on the main view when the user clicks the scene view. `RenderEngine::Render()` clears the request after the main view has rendered.
+| Declaration | Meaning | Ordering rule |
+|---|---|---|
+| `Writes<T>()` | Produces a new `T` | Runs **first** for that contract. Exactly one writer per contract. |
+| `Modifies<T>()` | Changes an existing `T` in place (e.g. draws into its target) | After the writer, **before** any reader. Several modifiers run in the order they were added. |
+| `Reads<T>()` | Needs `T` | After the writer and all modifiers. |
+| `ReadsOptional<T>()` | Uses `T` if it exists (`TryGet`) | Same as `Reads`, but no error if nobody writes it. |
+| `RunsIn(MainOnly)` | Skip secondary views (camera previews) | Not an ordering rule; a filter applied at render time. |
 
-- **Only runs when asked.** `Render()` returns immediately unless the view has a request, so it costs nothing on other frames. It declares no data contracts and calls `RunsIn(ERenderViewFilter::MainOnly)`.
-- **1×1 target.** `Matrix4x4::CreateSubRectProjection` stretches the requested pixel over the whole of clip space, and the stage renders into a 1×1 `R32_UINT` ID target with a 1×1 depth buffer. Frustum culling with that one-pixel frustum skips almost every object, and nothing needs resizing with the window.
-- **IDs.** It reuses `Vertex_NewRenderer.hlsl` with its own camera buffer, and `Pixel_PickID.hlsl` writes each `RenderObject::GetPickID()` from a constant buffer at PS `b0`. Objects with ID 0 still draw, so they hide what's behind them. Cutout pixels are clipped with the material's opacity mask, as in `ShadowRenderStage`, so clicks go through them.
-- **Readback.** `Rendering::Renderer::ReadTexel` copies the texel to the CPU (see [Low-Level-Renderer-Module.md](Low-Level-Renderer-Module.md)); the requester polls `TexelReadback::IsReady`.
+Stages with no dependency between them keep the order they were added in.
 
-## Adding a new stage
+**What it catches** (logged, and the pipeline asserts):
+- a contract written by more than one stage;
+- a stage that reads or modifies a contract nobody writes;
+- a stage that runs in every view depending on a contract whose writer is `MainOnly` (it would be missing in camera previews).
 
-`RenderEngine::AddRenderStage<TRenderStageType>(args...)` is the only entry point — it constructs the stage and inserts it in priority order. There's no way to remove or reorder stages after `Initialize()`/an app's `Initialize()` call adds them; the stage list is effectively static for the lifetime of the app.
+## Views: main and secondary
+
+Every render is for one `RenderView`. There are two kinds:
+
+| | Main view | Secondary view |
+|---|---|---|
+| What it is | The picture shown to the user | An extra picture, e.g. a `CameraComponent` preview |
+| Rendered by | `RenderEngine::Render()` once per frame | `RenderEngine::RenderSecondaryView()`, on request |
+| `MainOnly` stages | Run | Skipped (`PickRenderStage`, `ImGuiRenderStage`, `FinalRenderTargetStage`) |
+| Eye adaptation | Adapts smoothly over time | Exposes instantly |
+
+Because stage objects are shared by every view, anything that must carry over between frames *for one view* (like eye-adaptation history) goes in `context.Persistent()`, not in a stage member.
+
+## The stages
+
+| Stage | Declares | Views | In one line |
+|---|---|---|---|
+| `ShadowRenderStage` | writes `ShadowMapData` | all | Renders the sun's shadow map, but only when the scene or light has changed. |
+| `ForwardRenderStage` | reads `ShadowMapData`, writes `SceneColourData` | all | Draws every visible object, lit, into an HDR target. |
+| `PostProcessRenderStage` | reads `SceneColourData`, writes `DisplayColourData` | all | Eye adaptation, ACES tonemapping, sRGB encode to 8-bit. |
+| `PickRenderStage` | nothing | main | On a click, finds the object under one pixel. |
+| `DebugDrawRenderStage` | modifies `DisplayColourData` | all | Draws debug lines on top, after tonemapping. Not in Retail builds. |
+| `ImGuiRenderStage` | Editor: reads `DisplayColourData`; Game: modifies it | main | Draws ImGui. Added by the app, not the engine. |
+| `FinalRenderTargetStage` | reads `DisplayColourData` | main | Game only: copies the finished image to the back buffer. |
+
+The engine adds Shadow, Forward, PostProcess, Pick and (outside Retail) DebugDraw in `RenderEngine::Initialize()`. The Editor adds `ImGuiRenderStage(withEditor = true)`; the Game adds `ImGuiRenderStage` and `FinalRenderTargetStage`.
+
+### `ShadowRenderStage`
+
+- One 4096² shadow map for the directional light, **fitted around the bounds of every render object** as seen from the light. It doesn't follow the camera, so it never shimmers as the camera moves.
+- **Cached:** it only re-renders when `SceneData::revision` changes (an object added, removed, moved or re-meshed, or the light turned). On other frames it just republishes the existing map.
+- Casters draw with `ERasterizerState::ShadowCaster` (no culling, so thin geometry still casts, plus slope-scaled depth bias). `Pixel_ShadowCaster.hlsl` clips cutout materials (leaves, chains), so they cast cut-out shadows.
+
+### `ForwardRenderStage`
+
+- Draws into the view's HDR scene target (`RGBA16_FLOAT`, alpha 0 marks the background) with depth.
+- **Frustum culling** at two levels: whole objects first, then each submesh, using the world-space bounds every `RenderObject` keeps (`Graphics/Frustum.h`).
+- Per-view constants (camera, light, shadow map) are bound once; per object only the world matrix changes. Pixel shaders are only re-bound when the next submesh uses a different one.
+- Shading lives in `Assets/Shaders/Common/Lighting.hlsli`: hemisphere ambient, the sun with soft shadows (`SampleShadow`), normal and height maps, and opacity masks.
+
+### `PostProcessRenderStage`
+
+Turns linear HDR colour into something a monitor can show, in three steps:
+
+```mermaid
+flowchart LR
+    S["Scene colour<br/>(HDR)"] --> L["Log luminance<br/>256x256, mips down to 1x1"]
+    L --> A["Eye adaptation<br/>blend last frame's value<br/>toward the new average"]
+    A --> T["Expose x ACES tonemap<br/>x sRGB encode"]
+    S --> T
+    T --> D["Display colour<br/>(8-bit)"]
+```
+
+- **Eye adaptation** moves toward the scene's log-average luminance at about 1.5 s to settle, clamped to −3…+4 EV, then `RenderView::ExposureCompensation` is added on top. Its 1×1 history is ping-ponged between two textures kept in the view's persistent blackboard.
+- The tonemap pass leaves the scene **depth** bound to `DisplayColourData`, so overlays drawn later (debug lines) can still depth-test against the scene.
+
+### `PickRenderStage`
+
+Finds the object at one pixel of the main view for the Editor's click selection. It only does work on frames where `RenderView::Pick` holds a `RenderPickRequest { X, Y, Result }`; `RenderEngine::Render()` clears the request afterwards.
+
+```mermaid
+sequenceDiagram
+    participant Ed as Editor (SceneViewPanel)
+    participant View as main RenderView
+    participant Pick as PickRenderStage
+    participant RT as Render thread
+    Ed->>View: Pick = { pixel, TexelReadback }
+    Note over Pick: next frame
+    Pick->>Pick: stretch that pixel over a 1x1 R32_UINT target<br/>(Matrix4x4::CreateSubRectProjection)
+    Pick->>Pick: draw nearby objects' pick IDs<br/>(frustum culling skips the rest)
+    Pick->>RT: Renderer::ReadTexel(target, 0, 0, result)
+    RT->>RT: copy to staging texture, Map, store value
+    RT-->>Ed: TexelReadback::IsReady = true
+    Ed->>Ed: pick ID - 1 = GameObjectID -> select it
+```
+
+- **Cheap by design:** a 1×1 target means nothing to resize with the window, the one-pixel frustum culls nearly everything, and only 4 bytes come back.
+- `Pixel_PickID.hlsl` writes each `RenderObject::GetPickID()`. Objects with ID 0 still draw, so they hide what's behind them. Cutout pixels are clipped as in the shadow pass, so clicks go through them.
+- The readback makes the render thread wait for the GPU, but only on a click frame. See [`ReadTexel`](Low-Level-Renderer-Module.md#reading-back-from-the-gpu-readtexel).
+
+### `DebugDrawRenderStage`
+
+Draws the lines queued with `RenderEngine::DrawLine()` / `DrawWireBox()` (bounds boxes, camera frustums, the light's direction) on top of the display colour, after tonemapping so they keep their exact colours. They depth-test against the scene. The queue is cleared after the main view renders, so secondary views drawn earlier in the frame get them too. Compiled out of Retail builds.
+
+### `ImGuiRenderStage` and `FinalRenderTargetStage`
+
+- **Editor:** ImGui draws the whole UI to the back buffer; the scene view panel shows the display colour target as an `ImGui::Image`, so the stage *reads* `DisplayColourData`.
+- **Game:** ImGui draws over the display colour (*modifies* it), then `FinalRenderTargetStage` copies it to the back buffer.
+
+Both are `MainOnly`: `ImGui::Render()` ends ImGui's frame, so it can only run once per frame.
+
+## Writing a new stage
+
+1. Add a data contract in `Graphics/RenderData/` if the stage produces something new.
+2. Implement `IRenderStage`. In `Setup()`, declare everything and keep the ports:
+
+    ```cpp
+    void MyStage::Setup(RenderStageBuilder& builder)
+    {
+        m_sceneColour = builder.Reads<SceneColourData>();
+        m_output = builder.Writes<MyData>();
+        builder.RunsIn(ERenderViewFilter::MainOnly); // only if it must skip previews
+    }
+
+    void MyStage::Render(RenderContext& context)
+    {
+        const SceneColourData& scene = m_sceneColour.Get(context);
+        // ... draw with Rendering::Renderer ...
+        m_output.Publish(context, MyData{ /* handles */ });
+    }
+    ```
+
+3. Register it: `RZE().GetRenderEngine().AddRenderStage<MyStage>()`. Where it lands in the order follows from the declarations; check the logged `Render pipeline:` line.
+
+Keep per-view, across-frame state in `context.Persistent()`, and add new per-frame inputs to `RenderView`/`RenderContext` rather than reading globals.
 
 ## Key files
 
-- `Engine\Src\Graphics\RenderStage.h`
-- `Engine\Src\Graphics\RenderStages\ForwardRenderStage.h/.cpp`
-- `Engine\Src\Graphics\RenderStages\PickRenderStage.h/.cpp`, `Assets\Shaders\Pixel_PickID.hlsl`
-- `Engine\Src\Graphics\RenderStages\DebugDrawRenderStage.h/.cpp`
-- `Engine\Src\Graphics\RenderStages\FinalRenderTargetStage.h/.cpp`
-- `Engine\Src\Graphics\RenderStages\ImGuiRenderStage.h/.cpp`
+- `Engine\Src\Graphics\RenderStage.h`, `RenderStageBuilder.h`, `RenderPorts.h`, `RenderBlackboard.h`, `RenderContext.h`
+- `Engine\Src\Graphics\RenderPipeline.h/.cpp`, `RenderPipelineCompiler.h/.cpp`
+- `Engine\Src\Graphics\RenderData\` — `ShadowMapData.h`, `SceneColourData.h`, `DisplayColourData.h`
+- `Engine\Src\Graphics\RenderStages\` — one `.h/.cpp` per stage
+- `Assets\Shaders\` — `Pixel_ShadowCaster`, `Pixel_NewRenderer*`, `Pixel_LuminanceLog`, `Pixel_ExposureAdapt`, `Pixel_Tonemap`, `Pixel_PickID`, `Pixel_Line`

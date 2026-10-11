@@ -57,14 +57,36 @@ sequenceDiagram
 3. **`RenderThread`** runs a dedicated `std::thread` looping `Update()`, waiting on a `std::condition_variable` (`m_updateCondition`/`m_processSignal`). `Renderer::DevicePresent()` calls `SignalProcess()`, which waits for prior processing to finish, calls `MemArena::Cycle()`, swaps `m_producerQueue`/`m_consumerQueue` (classic double-buffered command queue — the header notes these queues are "guaranteed to be contiguous as its backed by MemArena"), then wakes the render thread. `ProcessCommands()` drains the consumer queue via a large `switch (command->type)`, dispatching directly against `ID3D11DeviceContext` calls, and explicitly destructs each command afterward (`command->~RenderCommand()`) — memory is reused via the arena's next `Cycle()`, never `delete`d individually.
 4. This decouples game/render-logic submission from GPU-thread execution — a hand-rolled version of the "render command list"/deferred-context pattern, implemented without D3D11's actual deferred contexts.
 
+### How the two threads overlap
+
+The double-buffered queue means the game thread builds frame N+1 while the render thread executes frame N:
+
+```mermaid
+gantt
+    dateFormat X
+    axisFormat %s
+    section Game thread
+    Build frame 1 commands :g1, 0, 4
+    Build frame 2 commands :g2, 4, 8
+    Build frame 3 commands :g3, 8, 12
+    section Render thread
+    Execute frame 1 :r1, 4, 7
+    Execute frame 2 :r2, 8, 11
+```
+
+`DevicePresent()` is the hand-off point: it waits until the render thread has finished the previous batch, swaps the queues, and wakes it. A frame's commands therefore run on the GPU one frame after they were queued, which is why results that come back from the GPU (like `ReadTexel`) arrive a frame or two later.
+
 ## `RenderCommandType` (full list, from `RenderCommand.h`)
 
-Frame/pass control: `BeginFrame`, `EndFrame`, `Begin`, `End`, `DevicePresent`, `HandleWindowResize`, `ImGuiRender`.
-Resource creation: `CreateVertexBuffer`, `CreateIndexBuffer`, `CreateConstantBuffer`, `CreateTextureBuffer2D`, `CreateVertexShader`, `CreatePixelShader`.
-Resource lifecycle: `UploadDataToBuffer`, `ReleaseVertexShader`, `ReleasePixelShader`, `ClearDepthStencilBuffer`.
-State: `SetRenderTarget`, `ClearRenderTargets`, `SetRenderTargetBackBuffer`, `ClearRenderTarget`, `SetViewport`, `SetInputLayout`, `SetPrimitiveTopology`, `SetVertexShader`, `SetPixelShader`, `SetConstantBufferVS`, `SetConstantBufferPS`, `SetVertexBuffer`, `SetIndexBuffer`, `SetTextureResource`, `UnsetTextureResource`.
-Draw: `Draw`, `DrawIndexed`, `DrawFullScreenQuad`.
-Readback: `ReadTexel`.
+| Group | Commands |
+|---|---|
+| Frame / pass | `BeginFrame`, `EndFrame`, `Begin`, `End`, `DevicePresent`, `HandleWindowResize`, `ImGuiRender` |
+| Create | `CreateVertexBuffer` (static or dynamic), `CreateIndexBuffer`, `CreateConstantBuffer`, `CreateTextureBuffer2D`, `CreateVertexShader`, `CreatePixelShader` |
+| Update / release | `UploadDataToBuffer`, `UpdateVertexBuffer`, `ReleaseVertexShader`, `ReleasePixelShader`, `GenerateMips` |
+| Targets | `SetRenderTarget`, `SetRenderTargetBackBuffer`, `SetColourTarget` (colour, optionally with depth), `SetDepthTarget` (depth only, e.g. shadow maps), `ClearRenderTarget`, `ClearRenderTargets`, `ClearDepthStencilBuffer` |
+| Pipeline state | `SetViewport`, `SetInputLayout`, `SetPrimitiveTopology`, `SetRasterizerState`, `SetVertexShader`, `SetPixelShader`, `SetConstantBufferVS`, `SetConstantBufferPS`, `SetVertexBuffer`, `SetIndexBuffer`, `SetTextureResource`, `UnsetTextureResource` |
+| Draw | `Draw`, `DrawIndexed`, `DrawFullScreenQuad` |
+| Readback | `ReadTexel` |
 
 Every one of these has a matching `RenderCommand_*` POD struct carrying exactly the parameters that call needs (e.g. `RenderCommand_SetConstantBufferVS { ConstantBufferHandle bufferHandle; U32 bufferSlot; }`).
 
@@ -78,7 +100,28 @@ Every one of these has a matching `RenderCommand_*` POD struct carrying exactly 
 
 ## Public `Renderer` API surface
 
-`Initialize`/`Shutdown`, `BeginFrame`/`EndFrame`, `Begin`/`End` (draw-set scoping for PIX/D3DPERF markers), `DevicePresent`, `HandleWindowResize`, `ImGuiRender`; resource creation (`CreateVertexBuffer`/`IndexBuffer`/`ConstantBuffer`/`TextureBuffer2D`, `CreateVertexShader`/`PixelShader`); a templated `UploadDataToBuffer<T>` for constant buffers; state-setting (`SetRenderTarget`/`SetRenderTargetBackBuffer`, `ClearRenderTarget`, `SetViewport`, `SetInputLayout`, `SetPrimitiveTopology`, `SetVertexShader`/`SetPixelShader`, `SetConstantBufferVS`/`PS`, `SetVertexBuffer`/`SetIndexBuffer`, `SetTextureResource`/`UnsetTextureResource`); draw calls (`Draw`, `DrawIndexed`, `DrawFullScreenQuad`); and readback (`ReadTexel`).
+Everything is a static call on `Rendering::Renderer`, and every call only *queues* work.
+
+| Area | Calls |
+|---|---|
+| Lifetime | `Initialize`, `Shutdown`, `HandleWindowResize` |
+| Frame and passes | `BeginFrame` / `EndFrame`, `Begin(name)` / `End()` (one pass; also resets the rasterizer state and names the pass for PIX), `DevicePresent`, `ImGuiRender` |
+| Resources | `CreateVertexBuffer`, `CreateDynamicVertexBuffer` + `UpdateVertexBuffer`, `CreateIndexBuffer`, `CreateConstantBuffer`, `CreateTextureBuffer2D`, `CreateVertexShader`, `CreatePixelShader`, `Release*Shader`, `UploadDataToBuffer<T>` (copies the data, so a stack variable is fine), `GenerateMips` |
+| Targets | `SetColourTarget(colour[, depth])`, `SetDepthTarget`, `SetRenderTarget`, `SetRenderTargetBackBuffer`, `ClearRenderTarget`, `ClearDepthStencilBuffer` |
+| State | `SetViewport`, `SetInputLayout`, `SetPrimitiveTopology`, `SetRasterizerState` (`Default` = back-face culling, `ShadowCaster` = no culling + slope-scaled depth bias), shaders, constant buffers, vertex/index buffers, texture slots |
+| Draw | `Draw`, `DrawIndexed`, `DrawFullScreenQuad` |
+| Readback | `ReadTexel` (below) |
+
+Texture formats (`ETextureFormat`): `RGBA8_UNORM` (default), `RGBA16_FLOAT` (HDR scene colour), `RG16_FLOAT`, `R32_UINT` (integer IDs for picking). Depth textures are `D24_UNORM_S8_UINT`, with an optional shader-readable view.
+
+### Reusable dynamic buffers (`Engine\Src\Graphics\DynamicVertexBuffer.h`)
+
+For geometry rewritten every frame (debug lines, gizmos), `DynamicVertexBuffer` wraps `CreateDynamicVertexBuffer` / `UpdateVertexBuffer` and decides when to reallocate with `BufferCapacityPolicy`:
+
+- **Grow** straight away, to the next power of two, so a growing buffer reallocates only O(log n) times.
+- **Shrink** only when recent peak use has stayed at or below a quarter of capacity for a while, and then to twice that peak, so brief spikes don't cause grow/shrink churn.
+
+In steady state this means no GPU allocations at all.
 
 ### Reading back from the GPU: `ReadTexel`
 
@@ -92,7 +135,9 @@ Copies one texel of a 4-byte-per-texel texture (e.g. the `R32_UINT` format, adde
 
 ## Profiling
 
-Optick (`OptickCore`) macros (`OPTICK_EVENT`, `OPTICK_THREAD("Render Thread")`) are woven throughout the render thread and main loop for GPU/CPU frame profiling, viewable in the bundled `Tools\Optick\Optick.exe`.
+- **Optick:** `OPTICK_EVENT` / `OPTICK_THREAD("Render Thread")` are spread through the render thread and main loop, viewable in the bundled `Tools\Optick\Optick.exe`.
+- **PIX / RenderDoc markers:** each `Renderer::Begin(name)` / `End()` pair becomes a named region (`D3DPERF_BeginEvent`), so captures group draws by pass (`ForwardRenderStage`, `PickRenderStage`, ...). Markers are only built when a profiler is attached (`D3DPERF_GetStatus()` is checked once per batch), so they cost nothing otherwise.
+- **Command memory:** the Editor's menu bar shows `RenderCommand MemArena: <N> KB`, the arena memory used by last frame's commands. Compare it before and after a change to see its render-path cost.
 
 ## Key files
 

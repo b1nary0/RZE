@@ -44,7 +44,32 @@ A named collection of `MeshGeometry` sub-meshes — this is the in-memory "asset
 
 ## `MaterialInstance` (`Engine\Src\Graphics\Material.h` / `.cpp`)
 
-Holds: name, texture slots (`DIFFUSE`/`SPECULAR`/`NORMAL` — matching the render-decomposition diagram's `DiffuseBuffer`/`SpecularBuffer`/`NormalBuffer` and `AssimpSourceImporter`'s `ETextureFlags`), `MaterialParams { Shininess, Opacity }`, a shader-technique resource handle, and a GPU constant buffer for material params. Built from `MaterialAssetImporter::MaterialData`.
+Built from a burned `MaterialAssetImporter::MaterialData`. It holds a name, five texture slots, a pixel shader and a small constant buffer of parameters.
+
+| Texture slot | Shader register | Used for |
+|---|---|---|
+| `TEXTURE_SLOT_DIFFUSE` | `t0` `DiffuseMap` | Base colour |
+| `TEXTURE_SLOT_SPECULAR` | `t1` `SpecularMap` | Specular strength |
+| `TEXTURE_SLOT_NORMAL` | `t2` `NormalMap` | Tangent-space normals |
+| `TEXTURE_SLOT_OPACITY` | `t3` `OpacityMap` | Cutout mask (leaves, chains, lashes), in red or alpha |
+| `TEXTURE_SLOT_HEIGHT` | `t4` `HeightMap` | Grayscale height, turned into extra normal detail |
+
+`MaterialParams` (constant buffer `b1`, mirrored by `MaterialBuffer` in `Common/PixelResources.hlsli`): `Shininess`, `Opacity`, and the flags `HasOpacityMask`, `HasHeightMap` and `OpacityMaskInAlpha`. The flags matter because texture slots are **not unbound** between draws: without them a shader could sample the previous draw's texture.
+
+**Which pixel shader a material gets** is decided from its texture flags when it's loaded:
+
+```mermaid
+flowchart TD
+    M["Material's texture flags"] --> Q1{"diffuse + specular<br/>+ normal?"}
+    Q1 -->|yes| Full["Pixel_NewRenderer.hlsl"]
+    Q1 -->|no| Q2{"no textures<br/>at all?"}
+    Q2 -->|yes| Plain["Pixel_Default_NewRenderer.hlsl"]
+    Q2 -->|no| Diff["Pixel_NewRenderer_DiffuseOnly.hlsl"]
+```
+
+Opacity and height maps work with any of the three, through the flags above. The loaded shader and textures are **resolved when they're set** (`GetPixelShader()`, `GetTextureResource(slot)`), so drawing never looks a resource up by path.
+
+The same opacity mask is honoured in three passes: the forward pass, the shadow caster (cut-out shadows) and the pick pass (clicks go through cut-out pixels).
 
 ## `Shader` / `Texture2D` / `VertexBuffer` / `IndexBuffer` (`Engine\Src\Graphics\`)
 
