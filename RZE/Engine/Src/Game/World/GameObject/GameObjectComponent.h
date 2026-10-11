@@ -84,8 +84,12 @@ GameObjectComponentID GameObjectComponentTypeID<TComponentBase>::s_nextComponent
 class GameObjectComponentBase
 {
 public:
-	GameObjectComponentBase() = default;
-	virtual ~GameObjectComponentBase() = default;
+	GameObjectComponentBase();
+	virtual ~GameObjectComponentBase();
+
+	// The instance ID is what GameObjectComponentPtr tracks the component's lifetime by, so it must stay unique to one instance
+	GameObjectComponentBase(const GameObjectComponentBase&) = delete;
+	GameObjectComponentBase& operator=(const GameObjectComponentBase&) = delete;
 
 public:
 	virtual void Initialize() = 0;
@@ -104,12 +108,17 @@ public:
 
 	const std::string& GetName() { return m_componentName; }
 
+	GameObjectComponentInstanceID GetInstanceID() const { return m_instanceID; }
+
 public:
 	GameObjectComponentID m_id; // #TODO For now
 
 protected:
 	std::string m_componentName;
 	GameObject* m_owner;
+
+private:
+	GameObjectComponentInstanceID m_instanceID;
 };
 
 // @NOTE:

@@ -10,14 +10,42 @@
 #include <Utils/Utils.h>
 
 #include <cfloat>
+#include <unordered_set>
 
-static GameObjectID s_nextObjectID = 0;
+namespace
+{
+	// Never reset, so IDs are never reused (see GameObjectLifetime)
+	GameObjectID s_nextObjectID = 0;
+
+	std::unordered_set<GameObjectID> s_aliveGameObjects;
+}
+
+namespace GameObjectLifetime
+{
+	bool IsGameObjectAlive(GameObjectID id)
+	{
+		return s_aliveGameObjects.find(id) != s_aliveGameObjects.end();
+	}
+
+	void CheckGameObjectAccess(GameObjectID id)
+	{
+		AssertMsg(IsGameObjectAlive(id), "GameObjectPtr dereferenced after its GameObject was destroyed");
+	}
+}
+
+GameObjectPtr::GameObjectPtr(GameObject* gameObject)
+	: m_ptr(gameObject)
+	, m_id(gameObject != nullptr ? gameObject->GetID() : GameObjectLifetime::k_invalidID)
+{
+}
 
 GameObject::GameObject()
 	: m_id(s_nextObjectID++)
 {
 	m_stateFlags.IsInScene = false;
 	m_stateFlags.IncludeInSave = true;
+
+	s_aliveGameObjects.insert(m_id);
 }
 
 GameObject::GameObject(const std::string& name)
@@ -26,10 +54,13 @@ GameObject::GameObject(const std::string& name)
 {
 	m_stateFlags.IsInScene = false;
 	m_stateFlags.IncludeInSave = true;
+
+	s_aliveGameObjects.insert(m_id);
 }
 
 GameObject::~GameObject()
 {
+	s_aliveGameObjects.erase(m_id);
 }
 
 void GameObject::Initialize()

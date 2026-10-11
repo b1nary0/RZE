@@ -1,10 +1,10 @@
 #include <UI/Panels/ScenePanel.h>
 
 #include <EditorApp.h>
+#include <UI/Framework/EditorContext.h>
 
 #include <Game/World/GameObject/GameObject.h>
 #include <Game/World/GameObjectComponents/EditorCameraComponent.h>
-#include <Game/World/GameObjectComponents/RenderComponent.h>
 
 #include <Utils/DebugUtils/Debug.h>
 
@@ -31,11 +31,13 @@ namespace Editor
 	}
 
 	bool showGameObjectNameBoxForCreate = false;
-	void ScenePanel::Display()
+	void ScenePanel::Display(EditorContext& context)
 	{
+		EditorSelection& selection = context.GetSelection();
+
 		if (ImGui::Begin("Scene", &bEnabled))
 		{
-			if (!HasSelectedGameObject())
+			if (selection.IsEmpty())
 			{
 				if (ImGui::BeginPopupContextWindow("SceneMenu"))
 				{
@@ -74,13 +76,13 @@ namespace Editor
 				}
 			}
 			
-			if (ImGui::IsAnyMouseDown() && (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) && HasSelectedGameObject())
+			if (ImGui::IsAnyMouseDown() && (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) && !selection.IsEmpty())
 			{
-				ResetSelectedGameObject();
+				selection.Clear();
 			}
 
 			RZE().GetActiveScene().ForEachGameObject(
-				Functor<void, GameObjectPtr>([this](GameObjectPtr gameObject)
+				Functor<void, GameObjectPtr>([this, &context](GameObjectPtr gameObject)
 				{
 					GameObjectPtr selectedObject;
 					if (gameObject->IsRoot())
@@ -93,7 +95,7 @@ namespace Editor
 							return;
 						}
 
-						DisplayObject(gameObject);
+						DisplayObject(context, gameObject);
 					}
 				}));
 		}
@@ -101,12 +103,13 @@ namespace Editor
 
 		if (ImGui::Begin("Component View"))
 		{
-			if (HasSelectedGameObject())
+			if (!selection.IsEmpty())
 			{
-				const GameObject::ComponentList& componentList = GetSelectedGameObject()->GetComponents();
+				GameObjectPtr primary = selection.GetPrimary();
+				const GameObject::ComponentList& componentList = primary->GetComponents();
 
 				// Cache the component pointers if we've modified our components or we've changed the focused GameObject.
-				if (m_inspectedObject != GetSelectedGameObject() || componentList.size() != m_components.size())
+				if (m_inspectedObject != primary || componentList.size() != m_components.size())
 				{
 					m_components.reserve(componentList.size());
 					m_components.assign(componentList.begin(), componentList.end());
@@ -134,7 +137,7 @@ namespace Editor
  						});
 					}
 
-					m_inspectedObject = GetSelectedGameObject();
+					m_inspectedObject = primary;
 				}
 
 				for (auto& component : m_components)
@@ -164,92 +167,12 @@ namespace Editor
 		return bEnabled;
 	}
 
-	namespace
+	void ScenePanel::DisplayObject(EditorContext& context, GameObjectPtr gameObject)
 	{
-		// Selected objects show their bounds through RenderComponent's own toggle so its checkbox stays in sync
-		void SetDrawSelectionBounds(GameObjectPtr gameObject, bool draw)
-		{
-			GameObjectComponentPtr<RenderComponent> renderComponent = gameObject->GetComponent<RenderComponent>();
-			if (renderComponent != nullptr)
-			{
-				renderComponent->SetDrawMeshBounds(draw);
-			}
-		}
-	}
+		EditorSelection& selection = context.GetSelection();
 
-	bool ScenePanel::HasSelectedGameObject()
-	{
-		return !m_selection.empty();
-	}
-
-	GameObjectPtr ScenePanel::GetSelectedGameObject()
-	{
-		AssertExpr(HasSelectedGameObject());
-		return m_selection.back();
-	}
-
-	bool ScenePanel::IsSelected(const GameObjectPtr& gameObject) const
-	{
-		return std::find(m_selection.begin(), m_selection.end(), gameObject) != m_selection.end();
-	}
-
-	void ScenePanel::ResetSelectedGameObject()
-	{
-		for (GameObjectPtr& gameObject : m_selection)
-		{
-			SetDrawSelectionBounds(gameObject, false);
-		}
-
-		m_selection.clear();
-		m_inspectedObject = GameObjectPtr();
-	}
-
-	void ScenePanel::SelectGameObject(GameObjectPtr gameObject)
-	{
-		ResetSelectedGameObject();
-		AddSelected(gameObject);
-	}
-
-	void ScenePanel::SetSelection(const std::vector<GameObjectPtr>& gameObjects)
-	{
-		ResetSelectedGameObject();
-		AddToSelection(gameObjects);
-	}
-
-	void ScenePanel::ToggleSelected(GameObjectPtr gameObject)
-	{
-		auto it = std::find(m_selection.begin(), m_selection.end(), gameObject);
-		if (it == m_selection.end())
-		{
-			AddSelected(gameObject);
-			return;
-		}
-
-		SetDrawSelectionBounds(gameObject, false);
-		m_selection.erase(it);
-	}
-
-	void ScenePanel::AddToSelection(const std::vector<GameObjectPtr>& gameObjects)
-	{
-		for (const GameObjectPtr& gameObject : gameObjects)
-		{
-			if (!IsSelected(gameObject))
-			{
-				AddSelected(gameObject);
-			}
-		}
-	}
-
-	void ScenePanel::AddSelected(GameObjectPtr gameObject)
-	{
-		m_selection.push_back(gameObject);
-		SetDrawSelectionBounds(gameObject, true);
-	}
-
-	void ScenePanel::DisplayObject(GameObjectPtr gameObject)
-	{
 		int nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow;
-		if (IsSelected(gameObject))
+		if (selection.IsSelected(gameObject))
 		{
 			nodeFlags |= ImGuiTreeNodeFlags_Selected;
 		}
@@ -265,11 +188,11 @@ namespace Editor
 			{
 				if (ImGui::GetIO().KeyCtrl)
 				{
-					ToggleSelected(gameObject);
+					selection.Toggle(gameObject);
 				}
 				else
 				{
-					SelectGameObject(gameObject);
+					selection.Select(gameObject);
 				}
 			}
 
@@ -315,9 +238,9 @@ namespace Editor
 				ImGui::EndDragDropTarget();
 			}
 
-			if (HasSelectedGameObject())
+			if (!selection.IsEmpty())
 			{
-				GameObjectPtr gameObject = GetSelectedGameObject();
+				GameObjectPtr gameObject = selection.GetPrimary();
 				if (ImGui::BeginPopupContextItem(gameObject->GetName().c_str()))
 				{
 					ImGui::Text(gameObject->GetName().c_str());
@@ -352,13 +275,13 @@ namespace Editor
 					{
 						if (ImGui::MenuItem("DetachFromParent"))
 						{
-							GetSelectedGameObject()->DetachFromParent();
+							gameObject->DetachFromParent();
 						}
 					}
 
 					if (ImGui::MenuItem("Delete"))
 					{
-						ResetSelectedGameObject();
+						selection.Clear();
 
 						RZE().GetActiveScene().RemoveGameObject(gameObject);
 					}
@@ -372,7 +295,7 @@ namespace Editor
 				for (int childIdx = 0; childIdx < gameObject->NumChildren(); ++childIdx)
 				{
 					GameObjectPtr child = gameObject->GetChildAtIndex(childIdx);
-					DisplayObject(child);
+					DisplayObject(context, child);
 				}
 			}
 

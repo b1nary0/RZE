@@ -7,6 +7,7 @@
 #include <UI/Panels/SceneViewPanel.h>
 #include <UI/Panels/ResourceMonitorPanel.h>
 #include <UI/Modals/AsyncOperationModal.h>
+#include <UI/Framework/EditorContext.h>
 
 #include <Utils/Functor.h>
 
@@ -39,12 +40,6 @@ namespace Editor
 		bool ProcessInput(const InputHandler& handler) override;
 
 		void OnWindowResize(const Vector2D& newSize) override;
-
-		// @TODO Re-architect editor API to avoid having these calls here. Probably event-driven.
-		// i.e Fire GameObjectSelectedEvent from ScenePanel and react to it in SceneViewPanel
-		GameObjectPtr GetSelectedObjectFromScenePanel();
-		void ResetSelectedObject();
-		ScenePanel& GetScenePanel() { return m_scenePanel; }
 
 	protected:
 		void CreateRenderTarget(const Vector2D& dimensions) override;
@@ -83,6 +78,8 @@ namespace Editor
 
 	private:
 		PanelStates m_panelStates;
+
+		EditorContext m_context;
 
 		LogPanel m_logPanel;
 		ScenePanel m_scenePanel;

@@ -21,6 +21,9 @@ namespace Rendering
 
 namespace Editor
 {
+	class EditorContext;
+	class EditorSelection;
+
 	class SceneViewPanel
 	{
 	private:
@@ -46,7 +49,7 @@ namespace Editor
 		~SceneViewPanel() = default;
 
 	public:
-		void Display();
+		void Display(EditorContext& context);
 
 		bool IsHovered();
 		bool IsFocused();
@@ -54,7 +57,7 @@ namespace Editor
 		void Temp_RegisterInputs();
 
 		// Icons at each light's and camera's position, plus camera frustums; viewOrigin is the screen-space top-left of the scene image
-		void DrawObjectIcons(const ImVec2& viewOrigin);
+		void DrawObjectIcons(const EditorSelection& selection, const ImVec2& viewOrigin);
 		// Debug lines along the camera's view volume, from its near plane out to its far plane or a fixed cap, whichever is closer
 		void DrawCameraFrustum(const Vector3D& position, const CameraComponent& camera);
 
@@ -63,13 +66,13 @@ namespace Editor
 
 	private:
 		// Left click selects, Ctrl+click toggles, and a drag selects everything in a marquee (Ctrl adds)
-		void HandleSelectionInput(const ImVec2& viewOrigin, bool isImageHovered);
+		void HandleSelectionInput(EditorSelection& selection, const ImVec2& viewOrigin, bool isImageHovered);
 		// Every object with a mesh or icon inside the screen-space rect, including ones hidden behind others
 		std::vector<GameObjectPtr> GatherObjectsInRect(const ImVec2& viewOrigin, const ImVec2& rectMin, const ImVec2& rectMax) const;
 		// The topmost icon under the point, or null
 		GameObjectPtr PickIcon(const ImVec2& point) const;
 		// Selects (or with Ctrl, toggles) what a click hit; a miss without Ctrl clears the selection
-		void ApplyClick(GameObjectPtr hitObject, bool isAdditive);
+		void ApplyClick(EditorSelection& selection, GameObjectPtr hitObject, bool isAdditive);
 
 	private:
 		bool m_isHovered = false;

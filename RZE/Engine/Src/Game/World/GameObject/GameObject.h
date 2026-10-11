@@ -26,6 +26,10 @@ public:
 	GameObject(const std::string& name);
 	~GameObject();
 
+	// The ID is what GameObjectPtr tracks the object's lifetime by, so it must stay unique to one instance
+	GameObject(const GameObject&) = delete;
+	GameObject& operator=(const GameObject&) = delete;
+
 public:
 	// @NOTE Initialize is called before any components are added to the object.
 	// This is intentional. All initialization should be for the object itself.

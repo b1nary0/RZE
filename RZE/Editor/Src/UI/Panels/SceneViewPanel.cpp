@@ -1,6 +1,7 @@
 #include <UI/Panels/SceneViewPanel.h>
 
 #include <EditorApp.h>
+#include <UI/Framework/EditorContext.h>
 
 #include <Game/World/GameObject/GameObject.h>
 #include <Game/World/GameObjectComponents/CameraComponent.h>
@@ -31,8 +32,9 @@ namespace Editor
 		Temp_RegisterInputs();
 	}
 
-	void SceneViewPanel::Display()
+	void SceneViewPanel::Display(EditorContext& context)
 	{
+		EditorSelection& selection = context.GetSelection();
 		EditorApp& editorApp = static_cast<EditorApp&>(RZE().GetApplication());
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
@@ -123,7 +125,7 @@ namespace Editor
 				const bool isImageHovered = ImGui::IsItemHovered();
 
 				{
-					GameObjectPtr selectedGameObject = editorApp.GetSelectedObjectFromScenePanel();
+					GameObjectPtr selectedGameObject = selection.GetPrimary();
 					GameObjectPtr cameraObject = editorApp.GetCameraObject();
 					if (selectedGameObject != nullptr && cameraObject != nullptr)
 					{
@@ -174,10 +176,10 @@ namespace Editor
 
 				// After the gizmo so it can't hide them; they're draw-only, so the gizmo still takes the clicks
 				const ImVec2 viewOrigin(GetPosition().X(), GetPosition().Y() + cursorPos.y);
-				DrawObjectIcons(viewOrigin);
+				DrawObjectIcons(selection, viewOrigin);
 
 				// After the icons so this frame's icon rects are picked against
-				HandleSelectionInput(viewOrigin, isImageHovered);
+				HandleSelectionInput(selection, viewOrigin, isImageHovered);
 
 				// Last, so the grid's lines follow the opaque debug lines (frustums) and its depth writes can't hide them
 				GameObjectPtr cameraObject = editorApp.GetCameraObject();
@@ -191,7 +193,7 @@ namespace Editor
 		ImGui::PopStyleVar();
 	}
 
-	void SceneViewPanel::DrawObjectIcons(const ImVec2& viewOrigin)
+	void SceneViewPanel::DrawObjectIcons(const EditorSelection& selection, const ImVec2& viewOrigin)
 	{
 		m_iconHits.clear();
 
@@ -224,7 +226,7 @@ namespace Editor
 			return true;
 		};
 
-		GameObjectPtr selectedGameObject = editorApp.GetSelectedObjectFromScenePanel();
+		GameObjectPtr selectedGameObject = selection.GetPrimary();
 
 		RZE().GetActiveScene().ForEachGameObject(
 			Functor<void, GameObjectPtr>([&](GameObjectPtr gameObject)
@@ -352,7 +354,7 @@ namespace Editor
 		}
 	}
 
-	void SceneViewPanel::HandleSelectionInput(const ImVec2& viewOrigin, bool isImageHovered)
+	void SceneViewPanel::HandleSelectionInput(EditorSelection& selection, const ImVec2& viewOrigin, bool isImageHovered)
 	{
 		// How far the mouse can move before a click becomes a marquee
 		constexpr float k_marqueeThreshold = 4.0f;
@@ -378,7 +380,7 @@ namespace Editor
 					}));
 			}
 
-			ApplyClick(hitObject, m_isPendingPickAdditive);
+			ApplyClick(selection, hitObject, m_isPendingPickAdditive);
 		}
 
 		// The gizmo takes clicks on its handles, and the other buttons drive the camera
@@ -415,7 +417,6 @@ namespace Editor
 
 		m_isSelecting = false;
 
-		ScenePanel& scenePanel = static_cast<EditorApp&>(RZE().GetApplication()).GetScenePanel();
 		const bool isAdditive = io.KeyCtrl;
 
 		if (isMarquee)
@@ -423,11 +424,11 @@ namespace Editor
 			const std::vector<GameObjectPtr> gameObjects = GatherObjectsInRect(viewOrigin, rectMin, rectMax);
 			if (isAdditive)
 			{
-				scenePanel.AddToSelection(gameObjects);
+				selection.AddToSelection(gameObjects);
 			}
 			else
 			{
-				scenePanel.SetSelection(gameObjects);
+				selection.SetSelection(gameObjects);
 			}
 			return;
 		}
@@ -436,7 +437,7 @@ namespace Editor
 		GameObjectPtr icon = PickIcon(start);
 		if (icon != nullptr)
 		{
-			ApplyClick(icon, isAdditive);
+			ApplyClick(selection, icon, isAdditive);
 			return;
 		}
 
@@ -451,24 +452,22 @@ namespace Editor
 		RZE().GetRenderEngine().GetMainView().Pick = pickRequest;
 	}
 
-	void SceneViewPanel::ApplyClick(GameObjectPtr hitObject, bool isAdditive)
+	void SceneViewPanel::ApplyClick(EditorSelection& selection, GameObjectPtr hitObject, bool isAdditive)
 	{
-		ScenePanel& scenePanel = static_cast<EditorApp&>(RZE().GetApplication()).GetScenePanel();
-
 		if (hitObject == nullptr)
 		{
 			if (!isAdditive)
 			{
-				scenePanel.ResetSelectedGameObject();
+				selection.Clear();
 			}
 		}
 		else if (isAdditive)
 		{
-			scenePanel.ToggleSelected(hitObject);
+			selection.Toggle(hitObject);
 		}
 		else
 		{
-			scenePanel.SelectGameObject(hitObject);
+			selection.Select(hitObject);
 		}
 	}
 

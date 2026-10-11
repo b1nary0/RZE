@@ -261,9 +261,10 @@ namespace Editor
 			{
 				if (key.GetKeyCode() == Win32KeyCode::Escape)
 				{
-					if (GetSelectedObjectFromScenePanel() != nullptr)
+					EditorSelection& selection = m_context.GetSelection();
+					if (!selection.IsEmpty())
 					{
-						ResetSelectedObject();
+						selection.Clear();
 					}
 				}
 			});
@@ -281,21 +282,6 @@ namespace Editor
 	{
 		CreateRenderTarget(newSize);
 		RZE().GetRenderEngine().GetMainView().Target = m_renderTarget.get();
-	}
-
-	GameObjectPtr EditorApp::GetSelectedObjectFromScenePanel()
-	{
-		if (m_scenePanel.HasSelectedGameObject())
-		{
-			return m_scenePanel.GetSelectedGameObject();
-		}
-
-		return GameObjectPtr();
-	}
-
-	void EditorApp::ResetSelectedObject()
-	{
-		m_scenePanel.ResetSelectedGameObject();
 	}
 
 	void EditorApp::CreateRenderTarget(const Vector2D& dimensions)
@@ -533,9 +519,9 @@ namespace Editor
 			ImGui::ShowDemoWindow(nullptr);
 		}
 
-		m_scenePanel.Display();
+		m_scenePanel.Display(m_context);
 
-		m_sceneViewPanel.Display();
+		m_sceneViewPanel.Display(m_context);
 
 		m_resourceMonitor.Display();
 
@@ -713,8 +699,8 @@ namespace Editor
 			return;
 		}
 
-		// @TODO should go away with editor event system
-		ResetSelectedObject();
+		// Before the scene unloads, while the selected objects (and their bounds toggles) still exist
+		m_context.GetSelection().Clear();
 
 		// The current scene (and the editor camera in it) is unloaded as soon as the operation starts.
 		m_editorCameraObject = GameObjectPtr();
