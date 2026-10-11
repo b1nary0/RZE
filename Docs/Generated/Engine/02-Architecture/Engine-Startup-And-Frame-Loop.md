@@ -27,9 +27,9 @@ int main(int argc, char* argv[]) {
 
 ## `RZE_Engine` (`Engine\Src\EngineCore\Engine.h` / `.cpp`)
 
-Owns: `RZE_Application* m_application`, `GameScene* m_activeScene`, `Win32Window* m_window`, `ResourceHandler m_resourceHandler`, `EventHandler m_eventHandler`, `InputHandler m_inputHandler`, `std::unique_ptr<RenderEngine> m_renderEngine`, plus frame timing state (`m_deltaTime`, `m_frameCount`, a rolling `m_frameSamples` buffer for average frametime).
+Owns: `RZE_Application* m_application`, `GameScene* m_activeScene`, `Win32Window* m_window`, `ResourceHandler m_resourceHandler`, `EventHandler m_eventHandler`, `InputHandler m_inputHandler`, `std::unique_ptr<RenderEngine> m_renderEngine`, `AsyncOperationManager m_asyncOperationManager`, plus frame timing state (`m_deltaTime`, `m_frameCount`, a rolling `m_frameSamples` buffer for average frametime).
 
-Public accessors used as the de-facto service locator: `GetApplication()`, `GetResourceHandler()`, `GetInputHandler()`, `GetRenderEngine()`, `GetActiveScene()`, `GetDeltaTime()`/`GetDeltaTimeMS()`, `ShowOpenFilePrompt()` (passes through to `Win32Window`'s native file dialog), `SetWindowSize()`, `PostExit()`.
+Public accessors used as the de-facto service locator: `GetApplication()`, `GetResourceHandler()`, `GetInputHandler()`, `GetRenderEngine()`, `GetAsyncOperationManager()`, `GetActiveScene()`, `GetDeltaTime()`/`GetDeltaTimeMS()`, `ShowOpenFilePrompt()` (passes through to `Win32Window`'s native file dialog), `SetWindowSize()`, `PostExit()`.
 
 ## Startup sequence
 
@@ -38,8 +38,10 @@ flowchart TD
     A[RZE_Application::Run] --> B["RZE_Engine::Run(createApplicationCallback)"]
     B --> C[Init]
     C --> C1[Debug::CreateLogFile / DebugServices::Get.Initialize]
-    C1 --> C2[Threading::JobScheduler::Get.Initialize]
-    C2 --> C3["LoadEngineConfig (Config/Engine.ini)"]
+    C1 --> C1b["MainThreadDispatcher::Initialize<br/>+ Debug::SetLogSink (log lines -> DebugServices)"]
+    C1b --> C2[Threading::JobScheduler::Get.Initialize]
+    C2 --> C2b[AsyncOperationManager::Initialize]
+    C2b --> C3["LoadEngineConfig (Config/Engine.ini)"]
     C3 --> C4[CreateAndInitializeWindow — Win32Window]
     C4 --> C5[InputHandler::Initialize + RegisterWindowEvents]
     C5 --> C6[ResourceHandler::Init]
@@ -54,7 +56,8 @@ flowchart TD
 
 1. **`Init()`**:
    - `Debug::CreateLogFile()`, `DebugServices::Get().Initialize()`
-   - `Threading::JobScheduler::Get().Initialize()`
+   - `Threading::MainThreadDispatcher::Get().Initialize()` (records the main thread's ID), then `Debug::SetLogSink(&TraceLogLine)` so every `RZE_LOG` line also reaches `DebugServices` ([Debug-Services-And-Logging.md](../06-Platform-And-Infrastructure/Debug-Services-And-Logging.md))
+   - `Threading::JobScheduler::Get().Initialize()`, then `m_asyncOperationManager.Initialize()` ([Threading-And-Jobs.md](../06-Platform-And-Infrastructure/Threading-And-Jobs.md))
    - `LoadEngineConfig()` — loads `Config/Engine.ini` as an `EngineConfig` resource
    - `CreateAndInitializeWindow()` — constructs `Win32Window` sized/titled per config
    - `m_inputHandler.Initialize()`, `RegisterWindowEvents()` (subscribes to `EEventType::Window` → window resize/destroy handling)
@@ -98,20 +101,44 @@ sequenceDiagram
     participant Scene as GameScene
     participant RE as RenderEngine
 
+    participant Async as AsyncOperationManager
+
     ML->>ML: ImGui NewFrame (DX11 + Win32 backends, ImGuizmo)
+    ML->>Async: Tick() - each async operation's slice of work,<br/>within the frame budget; completion callbacks fire here
     ML->>App: Update()
     ML->>Scene: Update() - updates root GameObjects (children recurse)
-    ML->>RE: Update() - per-render-stage Update pass
     ML->>ML: ImGui EndFrame()
-    ML->>RE: Render("Main Render", true, true)
-    ML->>RE: Finish() - device present
+    ML->>RE: Render("Main Render") - runs the render pipeline for the main view
+    ML->>RE: Finish() - DevicePresent, hands the frame's commands to the render thread
 ```
 
-This phase runs unconditionally every frame, immediately after the input phase above.
+This phase runs every frame, immediately after the input phase above. Two things happen at fixed points so other threads and long-running work fit in:
+
+- **Start of the frame** (`PreUpdate`, before input): `MainThreadDispatcher::Drain()` runs every task worker threads posted since the last frame, such as log lines.
+- **Before the app's `Update()`**: `AsyncOperationManager::Tick()`, so a scene that finished loading is in place before this frame's UI is built.
+
+```mermaid
+gantt
+    dateFormat X
+    axisFormat %s
+    title One frame on the main thread (not to scale)
+    section Main thread
+    Drain posted tasks         :0, 1
+    Input and events           :1, 3
+    Async operations tick      :3, 5
+    App and scene Update       :5, 9
+    Queue render commands      :9, 12
+    Present / hand over        :12, 13
+```
 
 ## Shutdown
 
-`BeginShutDown()` → scene shutdown → app shutdown → `renderEngine->ClearObjects()` → `resourceHandler.ShutDown()` → `renderEngine->Shutdown()` → `JobScheduler::ShutDown()` → `InternalShutDown()` deletes the scene, renderer, and window.
+`BeginShutDown()`, in order:
+1. `AsyncOperationManager::ShutDown()` first, so no async work touches the scene, resources or renderer while they shut down (it cancels operations and waits for their worker jobs; completion callbacks don't fire);
+2. scene shutdown, then app shutdown;
+3. `renderEngine->ClearObjects()`, `ReleaseRenderStages()` (must happen before resources are released), `Shutdown()`;
+4. `JobScheduler::ShutDown()` (queued jobs are abandoned, running ones finish), clear the log sink, `MainThreadDispatcher::ShutDown()`;
+5. `InternalShutDown()` deletes the scene and renderer, releases the engine config, shuts down the `ResourceHandler`, and deletes the window.
 
 ## Key files
 

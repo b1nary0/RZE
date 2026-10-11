@@ -1,28 +1,68 @@
 # Debug Services & Logging
 
+## Where a log line goes
+
+```mermaid
+flowchart LR
+    Call["RZE_LOG / RZE_LOG_ARGS<br/>(any thread)"] --> Out["stdout"]
+    Call --> File["Logs/RZELOG_&lt;date&gt;_&lt;time&gt;.txt"]
+    Call --> Sink["log sink<br/>(TraceLogLine)"]
+    Sink -->|"main thread: directly<br/>worker: via MainThreadDispatcher"| DS["DebugServices<br/>(in-memory log, by channel)"]
+    Build["Build/Launch output<br/>LogChannel::Build"] --> DS
+    DS --> Panel["Editor Log panel"]
+```
+
+- **`RZE_LOG(msg)`** takes a stream expression (`RZE_LOG("Loaded " << count << " meshes")`).
+- **`RZE_LOG_ARGS(fmt, ...)`** takes `printf` formatting (`RZE_LOG_ARGS("Render pipeline: %s", order.c_str())`), up to 1024 characters.
+- Each line goes to stdout, to the session's log file under `Logs\`, and to the **log sink**. The engine sets the sink (`Debug::SetLogSink`) at start-up so every line also lands in `DebugServices`, which is what the Editor's Log panel shows. Lines logged on worker threads are posted to the main thread first, so `DebugServices` is only ever written from one thread.
+
+### Which builds have what
+
+| | Debug | Release | Retail (`RZE_RETAIL`) |
+|---|---|---|---|
+| `RZE_LOG`, `RZE_LOG_ARGS`, `LOG_CONSOLE_ANNOUNCE` | ✓ | ✓ | compiled out |
+| Asserts (`AssertExpr`, `AssertMsg`, ...) | ✓ | compiled out | compiled out |
+| `START_TIMED_BLOCK` | ✓ | — | — |
+| `IMGUI_ENABLED` (Game's ImGui) | ✓ | — | — |
+| `DebugDrawRenderStage` (debug lines) | ✓ | ✓ | compiled out |
+
+In Retail, the log macros still "use" their arguments in a dead branch, so variables that only feed a log line don't cause unused-variable warnings.
+
+## Asserts (`Utils\Src\Utils\DebugUtils\Debug.h`)
+
+`AssertFalse()`, `AssertEqual(a, b)`, `AssertIsNull(p)`, `AssertNotNull(p)`, `AssertExpr(expr)`, `AssertMsg(expr, "why")`. Debug builds only.
+
+A failing assert:
+1. prints `Assertion failed: <expression>, file <file>, line <n>` (and the message, if any) to stderr;
+2. shows the CRT assert dialog with the **expression and message**, in both console and windowed apps;
+3. if you choose **Retry**, breaks into the debugger on the line of the failing assert (`__debugbreak` sits in the macro, not in a helper function). **Ignore** carries on, and **Abort** quits.
+
 ## `DebugServices` (`Engine\Src\DebugUtils\DebugServices.h/.cpp`)
 
-A singleton (`static DebugServices& Get()`), thread-safe in-memory log store, guarded by three separate mutexes (entry-add, data-entries, channel-lookups). `LogChannel` enum: `Info`, `Debug`, `Build`. `AddData(text, color)` / `Trace(channel, text)` append a `LogEntry { TextColor, Text }` to `mDataEntries`, with per-channel index lists (`mChannelLookups[ChannelCount]`) so a debug console/editor UI can filter by channel. Initialized early in `RZE_Engine::Init()` alongside `Debug::CreateLogFile()`. The Editor's `LogPanel` reads through this to display build/launch output ([Editor-Camera-And-Build-Launch.md](../07-Editor/Editor-Camera-And-Build-Launch.md)).
+A singleton in-memory log (`DebugServices::Get()`), with three channels:
 
-## `Debug.h` macros (`Utils\Src\Utils\DebugUtils\Debug.h`) — gated on `_DEBUG`
+| Channel | Used for | Colour in the Log panel |
+|---|---|---|
+| `LogChannel::Info` | Everything from `RZE_LOG` | white |
+| `LogChannel::Debug` | Debug traces | white too: it's set to (255, 255, 1), which clamps to white; probably meant to be yellow |
+| `LogChannel::Build` | Build/Launch output | grey |
 
-In Debug builds:
-- `AssertFalse`/`AssertEqual`/`AssertIsNull`/`AssertNotNull`/`AssertExpr`/`AssertMsg` — map to `assert()`.
-- `RZE_LOG(Msg)`, `RZE_LOG_ARGS(Msg, ...)`, `LOG_CONSOLE_ANNOUNCE(Msg, ...)` — build a `std::stringstream`, `printf_s` it, and also write to the log file via `Debug::WriteToLogFile`.
-- `START_TIMED_BLOCK(Name)` — creates a `ScopedHiResTimer` (backed by `Utils\Platform\Timers\HiResTimer.h`).
+`Trace(channel, text)` adds an entry in the channel's colour; `AddData(text, colour)` adds one in any colour. Entries are kept per channel too, so a UI could filter by channel. Main-thread only: post from other threads with `MainThreadDispatcher` (the log sink already does this).
 
-In non-Debug builds, **all of the above compile to no-ops** — zero overhead in Release/Retail.
+## Timing a block
 
-## The `IMGUI_ENABLED` coupling
+```cpp
+{
+    START_TIMED_BLOCK("Build navmesh");   // Debug only; ScopedHiResTimer
+    ...
+}
+```
 
-`#define IMGUI_ENABLED` lives inside this same header's `_DEBUG` branch. This means whether the shipped **Game** executable compiles in ImGui at all is controlled by the same header that defines assert/log macros — a somewhat surprising coupling to be aware of if you're trying to trace why ImGui disappears in a Release/Retail Game build. See `GameApp::Initialize()`/`Update()` in [Game-App.md](../08-Game/Game-App.md), which conditionally compiles ImGui usage behind this macro.
-
-## File logging
-
-`Debug::CreateLogFile()`, `Debug::GetLogFile()`, `Debug::WriteToLogFile()` — backed by the `File` class (`Utils\Src\Utils\Platform\File.h`).
+For frame-level profiling use Optick or PIX instead (see [Low-Level-Renderer-Module.md](../04-Rendering/Low-Level-Renderer-Module.md#profiling)).
 
 ## Key files
 
+- `Utils\Src\Utils\DebugUtils\Debug.h/.cpp` — macros, log file, log sink, assert dialog
 - `Engine\Src\DebugUtils\DebugServices.h/.cpp`
-- `Utils\Src\Utils\DebugUtils\Debug.h`
+- `Engine\Src\EngineCore\Engine.cpp` — `TraceLogLine`, the engine's log sink
 - `Utils\Src\Utils\Platform\Timers\HiResTimer.h/.cpp`

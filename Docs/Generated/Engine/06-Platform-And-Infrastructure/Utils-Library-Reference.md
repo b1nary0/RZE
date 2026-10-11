@@ -11,12 +11,20 @@
 - `Conversions.h/.cpp` — string/encoding conversions (e.g. `StringToWString`, used for D3DPERF event names in the render thread).
 - `GUID.h/.cpp` — `GUIDHelper::GenerateGUID()`, wrapping Win32 `GUID`/`guiddef.h`.
 
-## Math (`Math\`) — thin wrappers over GLM
+## Math (`Math\`): thin wrappers over GLM
 
-- `Math.h/.cpp` — `MathUtils` namespace (`Pi`, `ToRadians`/`ToDegrees`, `Clamp`/`Clampf`); `VectorUtils` namespace (`Dot`, `Lerp`, `DistanceSq`).
-- `Vector2D.h/.cpp`, `Vector3D.h/.cpp`, `Vector4D.h/.cpp` — wrap `glm::vec2/3/4` (`mVec`); usual operators, `Normalize`/`Normalized`, `Cross`, `LengthSq`, `GetInternalVec()` (raw glm vec, used directly for ImGuizmo interop), `ToString()`.
-- `Matrix4x4.h/.cpp` — wraps `glm::mat4`. Statics: `CreateInPlace(pos, scale, rot)`, `CreateViewMatrix`, `CreatePerspectiveMatrix`, `CreateOrthoMatrix`, `CreateSubRectProjection(ndcMinX, ndcMinY, ndcMaxX, ndcMaxY)` (stretches an NDC rect over all of clip space; multiplied in front of a projection it gives a projection/frustum covering only that rect, used by the Editor's marquee and `PickRenderStage`); instance ops `Translate`/`Rotate`/`Scale`, `Inverse`/`Transpose`, `GetPosition`/`GetRotation`/`GetScale` (+ setters), `GetValuePtr()` (raw `float*`, used for ImGuizmo/D3D interop), `operator*` (matrix×matrix, matrix×`Vector4D`), static `IDENTITY`.
-- `Quaternion.h/.cpp` — rotation representation used by `Matrix4x4::GetRotation()`.
+All spatial values follow [World-Conventions.md](../02-Architecture/World-Conventions.md): metres, right-handed, +Y up, degrees for anything a person sees.
+
+| File | What's in it |
+|---|---|
+| `Units.h` | The conventions themselves (as a comment), `Units::Metre / Centimetre / Millimetre`, and `WorldAxes::Right() / Up() / Forward()` (+X, +Y, −Z). |
+| `Math.h/.cpp` | `MathUtils`: `Pi`, `ToRadians` / `ToDegrees` (constants to multiply by: `degrees * MathUtils::ToRadians`), `Clamp` / `Clampf`, `SmoothStep(t)`, `CeilPowerOfTwo`. `VectorUtils`: `kEpsilon` / `kEpsilonSq`, `Dot`, `Min` / `Max` (component-wise), `Lerp`, `Slerp`, `DistanceSq`. |
+| `Vector2D`, `Vector3D`, `Vector4D` | Wrap `glm::vec2/3/4`. Usual arithmetic, `Normalize` / `Normalized`, `Cross`, `Length` / `LengthSq`, `GetInternalVec()` for glm or ImGuizmo interop. `Vector4D(xyz, w)` and `XYZ()` convert between 3D points and homogeneous coordinates. |
+| `Matrix4x4.h/.cpp` | Wraps `glm::mat4` (column-major). Builders: `CreateInPlace(position, scale, eulerDegrees)`, `CreateViewMatrix`, `CreatePerspectiveMatrix` / **`CreatePerspectiveMatrixZeroToOne`** (use this one: D3D's 0..1 depth), `CreateOrthoMatrix` / `CreateOrthoMatrixZeroToOne`, `CreateSubRectProjection(ndcMinX, ndcMinY, ndcMaxX, ndcMaxY)` (narrows a projection to part of the view; used by marquee selection and picking). Instance: `Translate`, `Rotate(angleRadians, axis)`, `Scale`, `Inverse`, `Transpose`, `GetPosition` / `GetRotation` / `GetScale`, `GetRow(i)` (as it multiplies a column vector), `GetValuePtr()`, `operator*` with matrices and `Vector4D`, `IDENTITY`. |
+| `Quaternion.h/.cpp` | Rotations. Built from `eulerRadians` or the rotation between two vectors; `ToEulerDegrees()`, `ToAngleRadians()`, `ToAxis()`, multiplication by quaternions and vectors. |
+| `Plane.h/.cpp` | `Plane(normal, distance)`, or from `ax + by + cz + d` coefficients (`Vector4D`). `SignedDistance(point)` is positive on the side the normal points to. |
+
+`Frustum` (six planes taken from a view-projection matrix, with a box test) lives in the Engine at `Engine\Src\Graphics\Frustum.h`, since only rendering and the Editor use it.
 
 ## Memory (`Memory\`)
 
@@ -26,12 +34,12 @@ Covered in depth in [Memory-Management.md](Memory-Management.md): `ByteStream.h/
 
 - `FilePath.h/.cpp` — `class Filepath`: stores both `m_relativePath` and `m_absolutePath`. `EDirectoryContext { Runtime, Tools }` — a static, **process-wide** context switch (`Filepath::SetDirectoryContext`) that changes how relative paths resolve. Set to `Tools` in `EditorMain.cpp` and `SourceAssetBurnerMain.cpp`; left at the default (`Runtime`) in the Game. This single toggle is what lets identical relative path strings like `"Assets/Scenes/..."` resolve correctly whether the code is running as an offline tool or the shipped game. Also: `CreateDir`, `FromAbsolutePathStr`, `Exists`, `GetAbsolutePath`/`GetRelativePath`, `GetAbsoluteDirectoryPath`/`GetRelativeDirectoryPath`, `IsValid`.
 - `File.h/.cpp` — `class File` wraps `std::ofstream` with an `EFileOpenMode` (`Append`/`AtEnd`/`Binary`/`Read`/`Write`/`Truncate`/`Closed`, mapped onto `std::ios_base::openmode`), templated `Overwrite<T>`/`Write<T>`, `operator<<`, `Content()`.
-- `CmdLine.h/.cpp` — `CmdLine::Arguments::Initialize(argv, argc)` / `Get(name, out std::string_view)` — simple `flag=value` command-line parsing, used by `RZE_Application::ParseArguments` and both app subclasses (e.g. `-scene`).
+- `CmdLine.h/.cpp` — `CmdLine::Arguments::Initialize(argv, argc)`, `Get(name, out std::string_view)` and `GetInt(name, out int)`: simple `-flag value` command-line parsing, used for `-scene` (Editor, Game) and `-launchMonitor` (engine).
 - `Timers\HiResTimer.h/.cpp` — high-resolution timer backing `START_TIMED_BLOCK` in `Debug.h`.
 
 ## Interfaces
 
-- `Interfaces\Resource.h` — `class IResource`: `virtual bool Load(const Filepath&)`, `virtual void Release()`, plus a texture-specific `virtual bool Load(const U8* buffer, int width, int height)` overload (called "gross" in its own source comment). This is the contract `ResourceHandler` and every loadable resource type (`StaticMeshResource`, `EngineConfig`, texture resources) build on. See [Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md).
+- `Interfaces\Resource.h` — `class IResource`: `virtual bool Load(const Filepath&)`, `virtual void Release()`, plus a texture-specific `virtual bool Load(const U8* buffer, int width, int height)` overload (called "gross" in its own source comment). This is the contract `ResourceHandler` and every loadable resource type (`StaticMeshResource`, `EngineConfig`, texture resources) build on. It also has optional hooks for asynchronous loading (`SupportsAsyncLoad`, `LoadCPU`, `RequestDependencies`, `GetNextFinalizeStepCost`, `FinalizeStep`). See [Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md).
 
 ## Reflection (`Reflect\`) — a second, separate reflection system
 
@@ -44,7 +52,7 @@ Covered in depth in [Memory-Management.md](Memory-Management.md): `ByteStream.h/
 
 - `Utils\Src\StdAfx.h` — confirms GLM as the underlying math library
 - `Utils\Src\Utils\PrimitiveDefs.h`, `Utils.h`, `Functor.h`, `StringUtils.h`, `Conversions.h`, `GUID.h`
-- `Utils\Src\Utils\Math\Math.h`, `Vector2D.h`, `Vector3D.h`, `Vector4D.h`, `Matrix4x4.h`, `Quaternion.h`
+- `Utils\Src\Utils\Math\Units.h`, `Math.h`, `Vector2D.h`, `Vector3D.h`, `Vector4D.h`, `Matrix4x4.h`, `Quaternion.h`, `Plane.h`
 - `Utils\Src\Utils\Memory\ByteStream.h`, `MemoryUtils.h`
 - `Utils\Src\Utils\Platform\FilePath.h`, `File.h`, `CmdLine.h`, `Timers\HiResTimer.h`
 - `Utils\Src\Utils\Interfaces\Resource.h`

@@ -1,62 +1,113 @@
 # Known Architectural Issues & TODOs
 
-This page collects rough edges the codebase itself is candid about (source comments, `#TODO`/`@NOTE` annotations) plus a couple of risks observed while reading the code. None of these are "bugs" in the sense of currently breaking normal usage — they're documented limitations worth knowing about before extending the affected systems.
+Rough edges the codebase is candid about (source comments, `#TODO`s), plus a few found while working in it. None of them break normal use today; they're worth knowing before you extend the systems involved.
 
-## 1. Component-inheritance ID collision (confirmed, actively documented in source)
+## At a glance
 
-`Engine\Src\Game\World\GameObject\GameObjectComponent.h` carries this comment verbatim:
+| # | Issue | Area | Severity | Status |
+|---|---|---|---|---|
+| 1 | Component subclasses share their parent's type ID | Scene / components | **High** | Open |
+| 2 | `ReflectDB` hashes string *pointers* | Utils / reflection | Low | Open |
+| 3 | `BlockAllocator` exists but isn't used | Memory | Low | Open |
+| 4 | Job system was underused, busy-waited and couldn't return results | Threading | — | **Fixed** (10-09: async loading) |
+| 5 | Dead `old_RenderCommands.h` | Renderer | Cosmetic | Open |
+| 6 | No culling or bucketing | Rendering | Medium | **Culling fixed** (10-09); bucketing open |
+| 7 | Linear-scan component lookups | Scene | Low | Open |
+| 8 | Textures aren't burned | Asset pipeline | Medium | Open |
+| 9 | Shadow map misses runtime opacity-map changes | Rendering | Low | Open, noted in source |
+| 10 | Constant-buffer uploads read past small structs | Renderer | Low | Open |
+| 11 | `LogChannel::Debug`'s colour is out of range | Debug services | Cosmetic | Open |
+| 12 | Camera previews change the camera temporarily | Components | Low | Open, noted in source |
+| 13 | An incremental build once missed a header change | Build | Low | Observed once |
 
-> "This stuff doesn't support class hierarchies, and will only ever use the first registered component in any hierarchy... things like `CameraComponent` are broken because I refactored `EditorCameraComponent` to inherit from `CameraComponent`; this means we can't have both a `CameraComponent` and `EditorCameraComponent` reflected because the ID will be the same, and the ID is the driving factor behind all recognition of unique classes."
+```mermaid
+quadrantChart
+    title Where to spend effort (rough estimates)
+    x-axis Low effort --> High effort
+    y-axis Low impact --> High impact
+    quadrant-1 Plan it
+    quadrant-2 Quick wins
+    quadrant-3 Tidy up sometime
+    quadrant-4 Probably not worth it
+    "1 Component IDs": [0.7, 0.85]
+    "6 Bucketing": [0.8, 0.55]
+    "8 Texture burning": [0.75, 0.5]
+    "2 ReflectDB hash": [0.15, 0.35]
+    "10 CB over-read": [0.2, 0.3]
+    "11 Log colour": [0.05, 0.1]
+    "5 Dead file": [0.05, 0.05]
+    "7 Component lookups": [0.4, 0.2]
+    "9 Shadow opacity": [0.35, 0.15]
+```
 
-**Impact:** you cannot create a component subclass of another `GameObjectComponent`-derived type and expect it to get its own distinct type ID, factory entry, or independent serialization identity — it silently shares the parent's ID. Full detail in [Component-System.md](../03-SceneAndGameObjects/Component-System.md).
+## 1. Component subclasses share their parent's type ID
 
-**If you need this fixed:** the ID system needs to stop being driven by the first `GameObjectComponent<T>` instantiation in a hierarchy and instead assign IDs explicitly per concrete leaf type, independent of inheritance depth.
+`GameObjectComponent.h` says it directly:
 
-## 2. `ReflectDB` potentially hashes pointers, not string contents
+> "This stuff doesn't support class hierarchies, and will only ever use the first registered component in any hierarchy... things like `CameraComponent` are broken because I refactored `EditorCameraComponent` to inherit from `CameraComponent`; this means we can't have both a `CameraComponent` and `EditorCameraComponent` reflected because the ID will be the same..."
 
-`Utils\Src\Utils\Reflect\ReflectDB.h/.cpp` generates `ReflectTypeID` via `std::hash<const char*>` applied to a type-name string. In most standard library implementations, `std::hash<const char*>` hashes the **pointer value**, not the string's contents (there's no guaranteed content-based specialization for `const char*` the way there is for `std::string`). If two different `const char*` literals happen to contain the same text but live at different addresses, they could plausibly get different `ReflectTypeID`s — silently breaking the "same type name → same ID" assumption this registry depends on. This system currently only backs Editor inspector sort-ordering (`EditorComponentCache`), not the primary component ID/factory path, so the blast radius today is limited to inspector ordering glitches rather than serialization corruption — but it's worth fixing before this registry is used for anything more load-bearing. See [Utils-Library-Reference.md](../06-Platform-And-Infrastructure/Utils-Library-Reference.md).
+**Impact:** a component that derives from another component gets no ID, factory entry or serialisation identity of its own. **Fix:** assign IDs per concrete leaf type, independent of inheritance. See [Component-System.md](../03-SceneAndGameObjects/Component-System.md).
 
-## 3. Custom allocator (`BlockAllocator`) exists but isn't wired in
+## 2. `ReflectDB` hashes string pointers
 
-`Engine\Src\EngineCore\Platform\Memory\BlockAllocator.h/.cpp` is described in its own comment as a "Buddy Block allocation algorithm" but currently behaves like a simple bump/stack allocator over a fixed 64KB pool, with a member literally named/commented "tmp for testing." `ResourceHandler` and general engine code still use raw `new`/`delete`; `RZE_NEW`/`RZE_DEL` macros in `Memory.h` are no-op wrappers around plain `new`/`delete`. Treat this as scaffolding, not the engine's actual memory strategy. See [Memory-Management.md](../06-Platform-And-Infrastructure/Memory-Management.md).
+`ReflectDB.cpp` makes `ReflectTypeID`s with `std::hash<const char*>`, which hashes the **pointer**, not the text. Two copies of the same type name at different addresses would get different IDs. Today this only affects Editor inspector ordering; fix it (hash a `std::string_view`) before relying on it for anything else.
 
-## 4. Job system (`JobScheduler`) is underused relative to its design
+## 3. `BlockAllocator` isn't used
 
-A fixed 4-worker thread pool exists and is initialized/shut down with the engine, but the only confirmed consumer in the explored source is the Editor's "Build Game.../Launch Game..." background jobs. Asset loading (`ResourceHandler::LoadResource`) remains synchronous. If you're chasing a load-time stall or considering parallelizing resource loading, this system is the obvious place to route work through — but it isn't doing that yet.
+`Engine\Src\EngineCore\Platform\Memory\BlockAllocator.h/.cpp` calls itself a buddy allocator, but behaves like a bump allocator over 64 KB, with a member commented "tmp for testing". Engine code uses plain `new`/`delete` (`RZE_NEW`/`RZE_DEL` are thin wrappers). See [Memory-Management.md](../06-Platform-And-Infrastructure/Memory-Management.md).
 
-**Concrete weaknesses in the current implementation**, found reading `JobScheduler.cpp`/`WorkerThread.cpp`:
-- `JobScheduler::Wait()` is a true busy-spin loop (`while (bShouldWait) { ... }`, no sleep/yield at all) — it pins a full CPU core for the duration of any wait. Idle worker threads at least sleep 1ms between poll attempts (`WorkerThread::ThreadSetup()`), but the scheduler's own wait doesn't.
-- All workers pull from a single shared `mJobQueue` guarded by one global `JobMutex` (`RequestJob` uses `try_lock()` and just returns `false` on contention, causing the calling worker to spin again). The header carries its own `#TODO` acknowledging this: "Have each thread have a queue and send it to whoever is free at the moment instead of one queue because we're losing time to a locked mutex."
-- `PushJob(Job::Task)` is fire-and-forget — there's no future/promise or result channel, so nothing can await a job's output or chain dependent work off it. This is likely why `ResourceHandler::LoadResource` was never routed through it: an async load needs a way to hand the result back.
-- `MAX_WORKER_THREADS = 4` is a hard-coded constant, not derived from `std::thread::hardware_concurrency()`.
+## 4. Job system (fixed)
 
-**To actually use this for async asset loading**, the missing piece is a result-bearing job (e.g. a `Job<T>`/future wrapper) so `LoadResource` can return something awaitable instead of the resource itself; the busy-wait and single-queue-contention issues would also be worth fixing before adding load-bearing traffic. See [Threading-And-Jobs.md](../06-Platform-And-Infrastructure/Threading-And-Jobs.md).
+This entry used to say the job system was only used by the Editor's build, busy-spun in `Wait()`, contended on one `try_lock` mutex, and couldn't hand results back. Since the async loading work:
+- `PushJob` returns a `JobHandle`, and `Wait` / `WaitForIdle` block on condition variables instead of spinning;
+- `MainThreadDispatcher` hands results back to the main thread;
+- scene loading parses and decodes on the workers.
+
+Still true: there's one shared queue, and `MAX_WORKER_THREADS` is a fixed 4 rather than based on the core count. See [Threading-And-Jobs.md](../06-Platform-And-Infrastructure/Threading-And-Jobs.md).
 
 ## 5. Dead code: `old_RenderCommands.h`
 
-`Modules\Rendering\Src\Rendering\old_RenderCommands.h` contains vestigial command structs from a prior design iteration (e.g. `CreateBufferRenderCommand`) that aren't referenced by the current `RenderCommand.h`/`RenderThread.cpp`. Safe to ignore when reading the renderer, and a candidate for deletion in a future cleanup pass. See [Low-Level-Renderer-Module.md](../04-Rendering/Low-Level-Renderer-Module.md).
+Command structs from an earlier design, referenced by nothing. Safe to delete.
 
-## 6. No culling or bucketing yet, despite being part of the original design
+## 6. Culling (fixed) and bucketing (open)
 
-`Docs\RenderSystemThoughts.txt` describes bucketing (grouping RenderObjects into passes, e.g. shadow casters) and culling (determining viewport-relevant objects) as core `RenderSystem` responsibilities. Neither is implemented today — `RenderEngine` submits its entire scene to every render stage each frame. A commented-out sketch for a bucket API (`Renderer::StartBucket()`/`SubmitBucket()`) exists directly in `RenderEngine.h` as a design placeholder. See [Rendering-Overview.md](../04-Rendering/Rendering-Overview.md).
+The 2020 design notes called for both. **Culling** is implemented: objects and then submeshes are tested against the view frustum in the forward pass, and against the pixel's frustum in the pick pass. **Bucketing** isn't: every stage walks the whole render-object list, and every submesh is its own draw call. A commented-out bucket API sketch is still in `RenderEngine.h`. This is the main performance ceiling as scenes grow. See [Rendering-Overview.md](../04-Rendering/Rendering-Overview.md).
 
-## 7. Slow linear-scan component lookups on `GameObject`
+## 7. Linear-scan component lookups
 
-`GameObject::AddComponent<T>`, `GetComponent<T>`, and `RemoveComponent<T>` are all `std::find_if` linear scans over `m_components`, each explicitly flagged `// #TODO Slow function` in the header. Not a problem at current object/component counts, but worth knowing if profiling ever points at per-object component lookups — the fix would be an index (e.g. a type-ID→pointer map) rather than a linear scan. See [Scene-And-GameObject-Model.md](../03-SceneAndGameObjects/Scene-And-GameObject-Model.md).
+`GameObject::AddComponent<T>` / `GetComponent<T>` / `RemoveComponent<T>` are `std::find_if` scans, marked `// #TODO Slow function`. Fine at current component counts; an ID→component index would fix it.
 
-## 8. Texture "burning" is a stub
+## 8. Textures aren't burned
 
-`AssimpSourceImporter::WriteTextureAsset()` in `SourceAssetBurner` currently just returns `false` — there is no offline texture compression/packing step. Textures are referenced by relative path back into `Assets\` rather than converted into a burned format the way meshes and materials are. See [Asset-Burning-Pipeline.md](../05-AssetPipeline/Asset-Burning-Pipeline.md).
+`AssimpSourceImporter::WriteTextureAsset()` returns `false`. Materials reference textures by path in `Assets\`, and they're decoded at load time rather than conditioned offline (no compression, no pre-built mips). See [Asset-Burning-Pipeline.md](../05-AssetPipeline/Asset-Burning-Pipeline.md).
 
-## Summary table
+## 9. Shadow map misses runtime opacity-map changes
 
-| #   | Issue                                                | Severity                                              | Where documented in-source                                   |
-| --- | ---------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------ |
-| 1   | Component-inheritance ID collision                   | High (blocks a whole pattern of component reuse)      | `GameObjectComponent.h` comment                              |
-| 2   | `ReflectDB` pointer-hash risk                        | Low today, higher if reused elsewhere                 | Not commented — inferred from `std::hash<const char*>` usage |
-| 3   | `BlockAllocator` not wired in                        | Low (no current impact, misleading if assumed active) | "tmp for testing" comment                                    |
-| 4   | Job system underused                                 | Low (missed opportunity, not a bug)                   | Inferred from usage search                                   |
-| 5   | Dead `old_RenderCommands.h`                          | Cosmetic                                              | File name itself (`old_` prefix)                             |
-| 6   | No culling/bucketing                                 | Medium (perf ceiling as scene complexity grows)       | `RenderSystemThoughts.txt`, commented-out bucket sketch      |
-| 7   | Slow linear component lookups                        | Low today                                             | `// #TODO Slow function` comments                            |
-| 8   | Texture burning stubbed out                          | Medium (textures aren't actually "conditioned")       | `WriteTextureAsset` returns `false`                          |
+`ShadowRenderStage` only re-renders when `SceneData::revision` changes, and changing a material's opacity map at runtime doesn't bump it. The source notes this gap: the shadow picks up the change at the next scene change. Bump the revision from `MaterialInstance::SetTexture` if it ever matters.
+
+## 10. Constant-buffer uploads read past small structs
+
+`Renderer::UploadDataToBuffer<T>` copies the buffer's **aligned** size from the source pointer. For `RenderCamera` (84 bytes, in a 128-byte-aligned buffer), the shadow and pick stages pass a local, so 44 bytes past the struct are copied from the stack into unused padding. It works in practice, but it's undefined behaviour. Fix: copy `sizeof(T)` and zero the rest, or pad the struct to the alignment.
+
+## 11. `LogChannel::Debug`'s colour is out of range
+
+`DebugServices::Initialize()` sets it to (255, 255, 1). Colours are 0–1, so it shows as white like `Info`; yellow was probably intended (1, 1, 0).
+
+## 12. Camera previews change the camera temporarily
+
+`CameraComponent::OnEditorInspect()` swaps its aspect ratio to render the "Camera View" preview, then restores it. The source warns this "could leak state eventually". A preview-specific projection would avoid touching the camera.
+
+## 13. An incremental build once missed a header change
+
+While adding multi-selection, `ScenePanel.h` changed layout but MSBuild didn't recompile `EditorApp.cpp`, which holds a `ScenePanel` by value. The Editor then crashed on start-up with an access violation in a `std::vector` call. Touching the `.cpp` fixed it. The cause wasn't found. If the Editor crashes oddly right after a header change, rebuild before debugging.
+
+## Key files
+
+- `Engine\Src\Game\World\GameObject\GameObjectComponent.h` (1), `GameObject.h` (7)
+- `Utils\Src\Utils\Reflect\ReflectDB.cpp` (2)
+- `Engine\Src\EngineCore\Platform\Memory\BlockAllocator.h` (3)
+- `Modules\Rendering\Src\Rendering\old_RenderCommands.h` (5), `Renderer.h` (10)
+- `Engine\Src\Graphics\RenderEngine.h` (6), `RenderStages\ShadowRenderStage.cpp` (9)
+- `SourceAssetBurner\Src\SourceAssetBurner\Importers\AssimpSourceImporter.cpp` (8)
+- `Engine\Src\DebugUtils\DebugServices.cpp` (11)
+- `Engine\Src\Game\World\GameObjectComponents\CameraComponent.cpp` (12)

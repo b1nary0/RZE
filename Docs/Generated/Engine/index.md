@@ -54,7 +54,7 @@ Only the solid edges shown above are declared directly in Sharpmake (`AddPublicD
 | Folder | Covers |
 |---|---|
 | [01-GettingStarted](01-GettingStarted/Building-And-Running.md) | How to build and run RZE end-to-end |
-| [02-Architecture](02-Architecture/Module-Dependency-Graph.md) | Module graph, engine startup/frame loop, app-shell pattern |
+| [02-Architecture](02-Architecture/Module-Dependency-Graph.md) | Module graph, engine startup/frame loop, app-shell pattern, [world conventions](02-Architecture/World-Conventions.md) (metres, axes, angles) |
 | [03-SceneAndGameObjects](03-SceneAndGameObjects/Scene-And-GameObject-Model.md) | GameScene, GameObject, the component system, built-in components |
 | [04-Rendering](04-Rendering/Rendering-Overview.md) | RenderEngine, render stages, materials/meshes/shaders, the low-level renderer module |
 | [05-AssetPipeline](05-AssetPipeline/Asset-Burning-Pipeline.md) | Offline asset burning (SourceAssetBurner) and runtime asset loading |
@@ -64,11 +64,51 @@ Only the solid edges shown above are declared directly in Sharpmake (`AddPublicD
 | [09-BuildSystem](09-BuildSystem/Sharpmake-Project-Graph.md) | Sharpmake project definitions, third-party dependencies |
 | [10-KnownIssues](10-KnownIssues/Architectural-Notes-And-TODOs.md) | Documented rough edges and TODOs found in the source |
 
+## Where to start
+
+```mermaid
+flowchart LR
+    A["Building-And-Running"] --> B["World-Conventions<br/>(metres, +Y up, degrees)"]
+    B --> C["Engine-Startup-And-Frame-Loop"]
+    C --> D{"What are you<br/>working on?"}
+    D -->|rendering| R["Rendering-Overview<br/>-> Render-Stages"]
+    D -->|editor tools| E["Editor-Overview<br/>-> Editor-Panels"]
+    D -->|content| P["Asset-Burning-Pipeline<br/>-> Asset-Import-Runtime"]
+    D -->|gameplay| G["Scene-And-GameObject-Model<br/>-> Built-In-Components"]
+```
+
+## What's changed recently
+
+The knowledgebase was first generated on 2026-07-09. These are the larger changes since, and where they're documented:
+
+```mermaid
+timeline
+    title Engine changes since the docs were generated
+    2026-10-09 : Declarative render pipeline (Render-Stages)
+               : Frustum culling, cached shadow map
+               : Async scene loading + job system rework (Asset-Import-Runtime, Threading-And-Jobs)
+               : RZE_LOG in Release and in the Editor's Log panel
+    2026-10-10 : Camera icons and frustums, mesh bounds on selection
+               : Assimp 6, metres and +Y-up conventions, no more mirrored models (World-Conventions)
+               : 0..1 depth projections
+               : Editor camera orbit, pan and dolly
+               : Multi-selection, click picking (GPU) and marquee selection (Editor-Panels)
+```
+
+| Area | What changed | Read |
+|---|---|---|
+| Rendering | Stages declare the data they read and write; the pipeline orders them. Main and secondary views. Culling, shadow caching, eye adaptation + ACES. GPU picking stage. | [Render-Stages](04-Rendering/Render-Stages.md), [Engine-Graphics-Layer](04-Rendering/Engine-Graphics-Layer.md) |
+| Loading | Scenes load asynchronously: parsing on workers, GPU uploads time-sliced on the main thread. | [Asset-Import-Runtime](05-AssetPipeline/Asset-Import-Runtime.md), [Threading-And-Jobs](06-Platform-And-Infrastructure/Threading-And-Jobs.md) |
+| Content | Assimp 6.0.5, units converted to metres, models no longer mirrored, deterministic burns. **Re-burn after pulling.** | [Asset-Burning-Pipeline](05-AssetPipeline/Asset-Burning-Pipeline.md), [World-Conventions](02-Architecture/World-Conventions.md) |
+| Editor | Orbit/pan/dolly camera, glide-to-frame, light and camera icons, multi-select, click and marquee picking. | [Editor-Panels](07-Editor/Editor-Panels.md), [Editor-Camera-And-Build-Launch](07-Editor/Editor-Camera-And-Build-Launch.md) |
+| Diagnostics | `RZE_LOG` in Release and in the Log panel, clearer assert dialogs, PIX markers only when a profiler is attached. | [Debug-Services-And-Logging](06-Platform-And-Infrastructure/Debug-Services-And-Logging.md) |
+
 ## Key architectural themes (read this before diving into a section)
 
 1. **Singleton/service-locator core.** `RZE()` (a free function returning a global `RZE_Engine&`) is the hub nearly everything reaches through — `RZE().GetResourceHandler()`, `RZE().GetRenderEngine()`, etc. There is no dependency injection; see [Engine-Startup-And-Frame-Loop.md](02-Architecture/Engine-Startup-And-Frame-Loop.md).
 2. **Entity + component composition, not a data-oriented ECS.** `GameObject` owns a `std::vector<GameObjectComponentBase*>` of polymorphic components — classic OOP composition. Component type IDs are assigned via a CRTP static counter and a manual registration macro, not real reflection. See [Component-System.md](03-SceneAndGameObjects/Component-System.md).
 3. **Engine and low-level Renderer are separate libraries.** `Modules/Rendering` has zero dependency on `Engine` — it's a standalone DX11 abstraction with its own render thread and command queue. `Engine/Graphics` sits on top of it. See [Low-Level-Renderer-Module.md](04-Rendering/Low-Level-Renderer-Module.md).
-4. **Assets are "burned" offline, not loaded from source formats at runtime.** A separate tool, `SourceAssetBurner`, converts `.obj`/`.fbx` (via Assimp) into RZE's own binary `.meshasset`/`.materialasset` formats ahead of time; the runtime only ever reads the burned format. See [Asset-Burning-Pipeline.md](05-AssetPipeline/Asset-Burning-Pipeline.md).
-5. **The Editor and Game are thin shells over the same Engine.** Both subclass `RZE_Application` and mostly just configure render targets/stages and scene loading; nearly all logic lives in `Engine`. See [App-Shell-Pattern.md](02-Architecture/App-Shell-Pattern.md).
-6. **The codebase is candid about its own rough edges** — component-inheritance IDs, an unwired custom allocator, and more are called out directly in source comments. These are collected in [10-KnownIssues](10-KnownIssues/Architectural-Notes-And-TODOs.md) rather than glossed over.
+4. **Assets are "burned" offline, not loaded from source formats at runtime.** A separate tool, `SourceAssetBurner`, converts `.obj`/`.fbx` (via Assimp) into RZE's own binary `.meshasset`/`.materialasset` formats ahead of time; the runtime only ever reads the burned format, and loads scenes asynchronously. See [Asset-Burning-Pipeline.md](05-AssetPipeline/Asset-Burning-Pipeline.md).
+5. **Render passes are declarative.** Each render stage says what data it writes, reads or modifies, and the pipeline works out the order and checks it. Stages never call each other. See [Render-Stages.md](04-Rendering/Render-Stages.md).
+6. **The Editor and Game are thin shells over the same Engine.** Both subclass `RZE_Application` and mostly just configure render targets/stages and scene loading; nearly all logic lives in `Engine`. See [App-Shell-Pattern.md](02-Architecture/App-Shell-Pattern.md).
+7. **The codebase is candid about its own rough edges** — component-inheritance IDs, an unwired custom allocator, and more are called out directly in source comments. These are collected in [10-KnownIssues](10-KnownIssues/Architectural-Notes-And-TODOs.md) rather than glossed over.
