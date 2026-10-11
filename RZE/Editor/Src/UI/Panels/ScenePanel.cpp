@@ -23,7 +23,6 @@ namespace Editor
 
 	ScenePanel::ScenePanel()
 		: bEnabled(false)
-		, m_selectedItem(nullptr)
 	{
 	}
 
@@ -107,7 +106,7 @@ namespace Editor
 				const GameObject::ComponentList& componentList = GetSelectedGameObject()->GetComponents();
 
 				// Cache the component pointers if we've modified our components or we've changed the focused GameObject.
-				if (m_selectedItem->m_isDirty || componentList.size() != m_components.size())
+				if (m_inspectedObject != GetSelectedGameObject() || componentList.size() != m_components.size())
 				{
 					m_components.reserve(componentList.size());
 					m_components.assign(componentList.begin(), componentList.end());
@@ -135,7 +134,7 @@ namespace Editor
  						});
 					}
 
-					m_selectedItem->m_isDirty = false;
+					m_inspectedObject = GetSelectedGameObject();
 				}
 
 				for (auto& component : m_components)
@@ -165,53 +164,92 @@ namespace Editor
 		return bEnabled;
 	}
 
+	namespace
+	{
+		// Selected objects show their bounds through RenderComponent's own toggle so its checkbox stays in sync
+		void SetDrawSelectionBounds(GameObjectPtr gameObject, bool draw)
+		{
+			GameObjectComponentPtr<RenderComponent> renderComponent = gameObject->GetComponent<RenderComponent>();
+			if (renderComponent != nullptr)
+			{
+				renderComponent->SetDrawMeshBounds(draw);
+			}
+		}
+	}
+
 	bool ScenePanel::HasSelectedGameObject()
 	{
-		return m_selectedItem != nullptr;
+		return !m_selection.empty();
 	}
 
 	GameObjectPtr ScenePanel::GetSelectedGameObject()
 	{
-		AssertNotNull(m_selectedItem);
-		return m_selectedItem->m_gameObject;
+		AssertExpr(HasSelectedGameObject());
+		return m_selection.back();
+	}
+
+	bool ScenePanel::IsSelected(const GameObjectPtr& gameObject) const
+	{
+		return std::find(m_selection.begin(), m_selection.end(), gameObject) != m_selection.end();
 	}
 
 	void ScenePanel::ResetSelectedGameObject()
 	{
-		// The selected object's bounds are shown through RenderComponent's own toggle so its checkbox stays in sync
-		if (HasSelectedGameObject())
+		for (GameObjectPtr& gameObject : m_selection)
 		{
-			GameObjectComponentPtr<RenderComponent> renderComponent = GetSelectedGameObject()->GetComponent<RenderComponent>();
-			if (renderComponent != nullptr)
-			{
-				renderComponent->SetDrawMeshBounds(false);
-			}
+			SetDrawSelectionBounds(gameObject, false);
 		}
 
-		m_selectedItem.reset();
+		m_selection.clear();
+		m_inspectedObject = GameObjectPtr();
 	}
 
-	void ScenePanel::SetSelectedGameObject(GameObjectPtr gameObject)
+	void ScenePanel::SelectGameObject(GameObjectPtr gameObject)
 	{
 		ResetSelectedGameObject();
+		AddSelected(gameObject);
+	}
 
-		SelectedItem* newItem = new SelectedItem();
-		newItem->m_gameObject = gameObject;
-		newItem->m_isDirty = true;
-		m_selectedItem.reset(newItem);
+	void ScenePanel::SetSelection(const std::vector<GameObjectPtr>& gameObjects)
+	{
+		ResetSelectedGameObject();
+		AddToSelection(gameObjects);
+	}
 
-		GameObjectComponentPtr<RenderComponent> renderComponent = gameObject->GetComponent<RenderComponent>();
-		if (renderComponent != nullptr)
+	void ScenePanel::ToggleSelected(GameObjectPtr gameObject)
+	{
+		auto it = std::find(m_selection.begin(), m_selection.end(), gameObject);
+		if (it == m_selection.end())
 		{
-			renderComponent->SetDrawMeshBounds(true);
+			AddSelected(gameObject);
+			return;
 		}
+
+		SetDrawSelectionBounds(gameObject, false);
+		m_selection.erase(it);
+	}
+
+	void ScenePanel::AddToSelection(const std::vector<GameObjectPtr>& gameObjects)
+	{
+		for (const GameObjectPtr& gameObject : gameObjects)
+		{
+			if (!IsSelected(gameObject))
+			{
+				AddSelected(gameObject);
+			}
+		}
+	}
+
+	void ScenePanel::AddSelected(GameObjectPtr gameObject)
+	{
+		m_selection.push_back(gameObject);
+		SetDrawSelectionBounds(gameObject, true);
 	}
 
 	void ScenePanel::DisplayObject(GameObjectPtr gameObject)
 	{
 		int nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow;
-		bool bSelectedCurrent = HasSelectedGameObject() && GetSelectedGameObject() == gameObject;
-		if (bSelectedCurrent)
+		if (IsSelected(gameObject))
 		{
 			nodeFlags |= ImGuiTreeNodeFlags_Selected;
 		}
@@ -225,9 +263,13 @@ namespace Editor
 		{
 			if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
 			{
-				if (!HasSelectedGameObject() || GetSelectedGameObject() != gameObject)
+				if (ImGui::GetIO().KeyCtrl)
 				{
-					SetSelectedGameObject(gameObject);
+					ToggleSelected(gameObject);
+				}
+				else
+				{
+					SelectGameObject(gameObject);
 				}
 			}
 
