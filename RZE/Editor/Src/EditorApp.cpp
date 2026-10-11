@@ -492,8 +492,6 @@ namespace Editor
 			ImGui::ShowDemoWindow(nullptr);
 		}
 
-		m_sceneViewPanel.Display(m_context);
-
 		m_context.GetPanels().DrawAll(m_context);
 	}
 

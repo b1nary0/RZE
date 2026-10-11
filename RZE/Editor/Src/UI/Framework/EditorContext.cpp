@@ -9,6 +9,7 @@ namespace Editor
 {
 	void EditorContext::Update()
 	{
+		m_sceneViewport.IsHovered = false;
 		m_scenePicker.Update();
 	}
 

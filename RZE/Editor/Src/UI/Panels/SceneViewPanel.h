@@ -2,6 +2,7 @@
 
 #include <Game/World/GameObject/GameObjectDefinitions.h>
 
+#include <UI/Framework/EditorPanel.h>
 #include <UI/Gizmo/EditorGrid.h>
 #include <UI/Gizmo/GizmoSnapper.h>
 
@@ -15,10 +16,11 @@ class CameraComponent;
 
 namespace Editor
 {
-	class EditorContext;
 	class EditorSelection;
 
-	class SceneViewPanel
+	// The scene rendered from the editor camera, with the transform gizmo, light and camera icons, the grid, and
+	// click/marquee selection. Its menu bar holds the gizmo, snapping and grid controls.
+	class SceneViewPanel : public EditorPanel
 	{
 	private:
 		struct TransformGizmoState
@@ -39,15 +41,20 @@ namespace Editor
 		};
 
 	public:
+		static PanelDesc Describe();
+
 		SceneViewPanel();
-		~SceneViewPanel() = default;
-
-	public:
-		void Display(EditorContext& context);
-
-		void Temp_RegisterInputs();
 
 	private:
+		void Initialize(EditorContext& context) override;
+		void DrawMenuBar(EditorContext& context) override;
+		void Draw(EditorContext& context) override;
+		void OnSceneReset() override;
+		void PushWindowStyle(PanelWindowStyle& style) const override;
+
+		// W/E/R/Q/X gizmo shortcuts. They only reach the panel while the SceneView is hovered (EditorApp::ProcessInput).
+		void RegisterInputs();
+
 		const Vector2D& GetDimensions() const { return m_dimensions; }
 		const Vector2D& GetPosition() const { return m_position; }
 
@@ -77,6 +84,5 @@ namespace Editor
 		// Where the left button went down over the scene image; only meaningful while m_isSelecting
 		Vector2D m_selectStart;
 		bool m_isSelecting = false;
-
 	};
 }

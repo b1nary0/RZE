@@ -74,6 +74,12 @@ namespace Editor
 
 			if (isVisible)
 			{
+				if ((desc.WindowFlags & ImGuiWindowFlags_MenuBar) != 0 && ImGui::BeginMenuBar())
+				{
+					panel->DrawMenuBar(context);
+					ImGui::EndMenuBar();
+				}
+
 				panel->Draw(context);
 			}
 

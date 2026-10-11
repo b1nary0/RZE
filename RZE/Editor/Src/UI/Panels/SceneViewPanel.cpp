@@ -3,6 +3,7 @@
 #include <RZE.h>
 #include <EngineApp.h>
 #include <UI/Framework/EditorContext.h>
+#include <UI/Framework/PanelRegistry.h>
 
 #include <Game/World/GameObject/GameObject.h>
 #include <Game/World/GameObjectComponents/CameraComponent.h>
@@ -22,173 +23,187 @@
 
 namespace Editor
 {
+	REGISTER_EDITOR_PANEL(SceneViewPanel);
+
+	PanelDesc SceneViewPanel::Describe()
+	{
+		PanelDesc desc;
+		desc.Name = "SceneView";
+		// The editor has nothing to show without the scene, so it stays open
+		desc.Closable = false;
+		desc.WindowFlags = ImGuiWindowFlags_MenuBar;
+		return desc;
+	}
+
 	SceneViewPanel::SceneViewPanel()
 	{
 		m_gizmoState.m_currentOpMode = ImGuizmo::TRANSLATE;
 		m_gizmoState.m_transformationSpace = ImGuizmo::WORLD;
-
-		// @TODO The pattern here should be to register with the InputHandler at start
-		// and unregister when going bye bye
-		Temp_RegisterInputs();
 	}
 
-	void SceneViewPanel::Display(EditorContext& context)
+	void SceneViewPanel::Initialize(EditorContext& context)
+	{
+		RegisterInputs();
+	}
+
+	void SceneViewPanel::PushWindowStyle(PanelWindowStyle& style) const
+	{
+		style.Push(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+	}
+
+	void SceneViewPanel::OnSceneReset()
+	{
+		m_iconHits.clear();
+		m_isSelecting = false;
+	}
+
+	void SceneViewPanel::DrawMenuBar(EditorContext& context)
+	{
+		if (ImGui::RadioButton("Translate", m_gizmoState.m_currentOpMode == ImGuizmo::TRANSLATE))
+		{
+			m_gizmoState.m_currentOpMode = ImGuizmo::TRANSLATE;
+		}
+
+		if (ImGui::RadioButton("Rotate", m_gizmoState.m_currentOpMode == ImGuizmo::ROTATE))
+		{
+			m_gizmoState.m_currentOpMode = ImGuizmo::ROTATE;
+		}
+
+		if (ImGui::RadioButton("Scale", m_gizmoState.m_currentOpMode == ImGuizmo::SCALE))
+		{
+			m_gizmoState.m_currentOpMode = ImGuizmo::SCALE;
+		}
+
+		if (m_gizmoState.m_currentOpMode != ImGuizmo::SCALE)
+		{
+			const float cursorPos = ImGui::GetCursorPosX();
+			const float controlSpacing = 25.f;
+			ImGui::SetCursorPosX(cursorPos + controlSpacing);
+			if (ImGui::RadioButton("Local", m_gizmoState.m_transformationSpace == ImGuizmo::LOCAL))
+			{
+				m_gizmoState.m_transformationSpace = ImGuizmo::LOCAL;
+			}
+			if (ImGui::RadioButton("World", m_gizmoState.m_transformationSpace == ImGuizmo::WORLD))
+			{
+				m_gizmoState.m_transformationSpace = ImGuizmo::WORLD;
+			}
+		}
+
+		m_gizmoState.m_snapper.DisplayControls();
+		m_grid.DisplayControls();
+	}
+
+	void SceneViewPanel::Draw(EditorContext& context)
 	{
 		EditorSelection& selection = context.GetSelection();
 		SceneViewportState& viewport = context.GetSceneViewport();
-		// Stays false if the panel isn't visible this frame
-		viewport.IsHovered = false;
 
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-		if (ImGui::Begin("SceneView", (bool*)1, ImGuiWindowFlags_MenuBar))
+		viewport.IsHovered = IsHovered();
+
+		ImVec2 viewportPos = ImGui::GetWindowPos();
+		if (viewportPos.x != m_position.X() && viewportPos.y != m_position.Y())
 		{
-			if (ImGui::BeginMenuBar())
+			m_position.SetXY(viewportPos.x, viewportPos.y);
+		}
+
+		ImVec2 viewportDims = ImGui::GetContentRegionAvail();
+		if (viewportDims.x != m_dimensions.X() || viewportDims.y != m_dimensions.Y())
+		{
+			m_dimensions.SetXY(viewportDims.x, viewportDims.y);
+			viewport.Size = m_dimensions;
+			RZE().GetRenderEngine().GetMainView().ViewportSize = m_dimensions;
+
+			// The editor camera doesn't exist while a scene is loading; it picks up
+			// the viewport size when it's created (EditorApp::CreateAndInitializeEditorCamera).
+			GameObjectComponentPtr<EditorCameraComponent> cameraComponent = context.GetEditorCameraComponent();
+			if (cameraComponent != nullptr)
 			{
-				if (ImGui::RadioButton("Translate", m_gizmoState.m_currentOpMode == ImGuizmo::TRANSLATE))
-				{
-					m_gizmoState.m_currentOpMode = ImGuizmo::TRANSLATE;
-				}
-
-				if (ImGui::RadioButton("Rotate", m_gizmoState.m_currentOpMode == ImGuizmo::ROTATE))
-				{
-					m_gizmoState.m_currentOpMode = ImGuizmo::ROTATE;
-				}
-
-				if (ImGui::RadioButton("Scale", m_gizmoState.m_currentOpMode == ImGuizmo::SCALE))
-				{
-					m_gizmoState.m_currentOpMode = ImGuizmo::SCALE;
-				}
-
-				if (m_gizmoState.m_currentOpMode != ImGuizmo::SCALE)
-				{
-					const float cursorPos = ImGui::GetCursorPosX();
-					const float controlSpacing = 25.f;
-					ImGui::SetCursorPosX(cursorPos + controlSpacing);
-					if (ImGui::RadioButton("Local", m_gizmoState.m_transformationSpace == ImGuizmo::LOCAL))
-					{
-						m_gizmoState.m_transformationSpace = ImGuizmo::LOCAL;
-					}
-					if (ImGui::RadioButton("World", m_gizmoState.m_transformationSpace == ImGuizmo::WORLD))
-					{
-						m_gizmoState.m_transformationSpace = ImGuizmo::WORLD;
-					}
-				}
-
-				m_gizmoState.m_snapper.DisplayControls();
-				m_grid.DisplayControls();
-
-				ImGui::EndMenuBar();
-			}
-
-			viewport.IsHovered = ImGui::IsWindowHovered();
-
-			ImVec2 viewportPos = ImGui::GetWindowPos();
-			if (viewportPos.x != m_position.X() && viewportPos.y != m_position.Y())
-			{
-				m_position.SetXY(viewportPos.x, viewportPos.y);
-			}
-
-			ImVec2 viewportDims = ImGui::GetContentRegionAvail();
-			if (viewportDims.x != m_dimensions.X() || viewportDims.y != m_dimensions.Y())
-			{
-				m_dimensions.SetXY(viewportDims.x, viewportDims.y);
-				viewport.Size = m_dimensions;
-				RZE().GetRenderEngine().GetMainView().ViewportSize = m_dimensions;
-
-				// The editor camera doesn't exist while a scene is loading; it picks up
-				// the viewport size when it's created (EditorApp::CreateAndInitializeEditorCamera).
-				GameObjectComponentPtr<EditorCameraComponent> cameraComponent = context.GetEditorCameraComponent();
-				if (cameraComponent != nullptr)
-				{
-					cameraComponent->SetAspectRatio(m_dimensions.X() / m_dimensions.Y());
-				}
-			}
-
-			Rendering::RenderTargetTexture* const pRTT = RZE().GetApplication().GetRTT();
-			Rendering::TextureBuffer2DHandle texture = pRTT->GetTargetPlatformObject();
-
-			if (texture.IsValid())
-			{
-				auto clamp = [](float a, float b, float val)
-					{
-						if (val > b) val = b;
-						else if (val < a) val = a;
-
-						return val;
-					};
-				float uvbx = clamp(0.0f, 1.0f, m_dimensions.X() / pRTT->GetWidth());
-				float uvby = clamp(0.0f, 1.0f, m_dimensions.Y() / pRTT->GetHeight());
-
-				ImVec2 cursorPos = ImGui::GetCursorPos();
-
-				ImGui::Image((ImTextureID)(intptr_t)texture.GetTextureData(), ImVec2(GetDimensions().X(), GetDimensions().Y()), ImVec2(0.0f, 0.0f), ImVec2(uvbx, uvby));
-				const bool isImageHovered = ImGui::IsItemHovered();
-
-				{
-					GameObjectPtr selectedGameObject = selection.GetPrimary();
-					GameObjectComponentPtr<EditorCameraComponent> cameraComponent = context.GetEditorCameraComponent();
-					if (selectedGameObject != nullptr && cameraComponent != nullptr)
-					{
-						ImGuizmo::SetOrthographic(false);
-						ImGuizmo::SetDrawlist();
-
-
-						const Vector2D& sceneViewDims = GetDimensions();
-
-						Vector2D sceneViewPos = GetPosition();
-						sceneViewPos.SetY(sceneViewPos.Y() + cursorPos.y);
-
-						ImGuizmo::SetRect(sceneViewPos.X(), sceneViewPos.Y(), sceneViewDims.X(), sceneViewDims.Y());
-
-						const Matrix4x4& view = cameraComponent->GetViewMatrix();
-						const Matrix4x4& projection = cameraComponent->GetProjectionMatrix();
-
-						GameObjectComponentPtr<TransformComponent> transformComponent = selectedGameObject->GetComponent<TransformComponent>();
-
-						float matrix[16];
-						ImGuizmo::RecomposeMatrixFromComponents(transformComponent->GetPosition().GetValuePtr(), transformComponent->GetRotation().GetValuePtr(), transformComponent->GetScale().GetValuePtr(), matrix);
-
-						GizmoSnapper& snapper = m_gizmoState.m_snapper;
-						const float* snap = snapper.PrepareManipulate(m_gizmoState.m_currentOpMode, m_gizmoState.m_transformationSpace, ImGui::GetIO().KeyCtrl);
-
-						ImGuizmo::Manipulate(view.GetValuePtr(), projection.GetValuePtr(), (ImGuizmo::OPERATION)m_gizmoState.m_currentOpMode, (ImGuizmo::MODE)m_gizmoState.m_transformationSpace, matrix, nullptr, snap);
-
-						const bool isUsing = ImGuizmo::IsUsing();
-						Vector3D newTranslation, newRotation, newScale;
-						if (isUsing)
-						{
-							ImGuizmo::DecomposeMatrixToComponents(matrix, newTranslation.GetValuePtr(), newRotation.GetValuePtr(), newScale.GetValuePtr());
-						}
-
-						// Called every frame, so it sees drags start and end
-						snapper.Apply(isUsing, transformComponent->GetPosition(), transformComponent->GetRotation(), newTranslation, newRotation);
-
-						if (isUsing)
-						{
-							transformComponent->SetPosition(newTranslation);
-							transformComponent->SetRotation(newRotation);
-							transformComponent->SetScale(newScale);
-						}
-					}
-				}
-
-				// After the gizmo so it can't hide them; they're draw-only, so the gizmo still takes the clicks
-				const ImVec2 viewOrigin(GetPosition().X(), GetPosition().Y() + cursorPos.y);
-				DrawObjectIcons(context, viewOrigin);
-
-				// After the icons so this frame's icon rects are picked against
-				HandleSelectionInput(context, viewOrigin, isImageHovered);
-
-				// Last, so the grid's lines follow the opaque debug lines (frustums) and its depth writes can't hide them
-				GameObjectPtr cameraObject = context.GetEditorCamera();
-				if (cameraObject != nullptr)
-				{
-					m_grid.Draw(cameraObject->GetTransformComponent()->GetPosition(), m_gizmoState.m_snapper.GetSnapSize());
-				}
+				cameraComponent->SetAspectRatio(m_dimensions.X() / m_dimensions.Y());
 			}
 		}
-		ImGui::End();
-		ImGui::PopStyleVar();
+
+		Rendering::RenderTargetTexture* const pRTT = RZE().GetApplication().GetRTT();
+		Rendering::TextureBuffer2DHandle texture = pRTT->GetTargetPlatformObject();
+
+		if (texture.IsValid())
+		{
+			auto clamp = [](float a, float b, float val)
+				{
+					if (val > b) val = b;
+					else if (val < a) val = a;
+
+					return val;
+				};
+			float uvbx = clamp(0.0f, 1.0f, m_dimensions.X() / pRTT->GetWidth());
+			float uvby = clamp(0.0f, 1.0f, m_dimensions.Y() / pRTT->GetHeight());
+
+			ImVec2 cursorPos = ImGui::GetCursorPos();
+
+			ImGui::Image((ImTextureID)(intptr_t)texture.GetTextureData(), ImVec2(GetDimensions().X(), GetDimensions().Y()), ImVec2(0.0f, 0.0f), ImVec2(uvbx, uvby));
+			const bool isImageHovered = ImGui::IsItemHovered();
+
+			{
+				GameObjectPtr selectedGameObject = selection.GetPrimary();
+				GameObjectComponentPtr<EditorCameraComponent> cameraComponent = context.GetEditorCameraComponent();
+				if (selectedGameObject != nullptr && cameraComponent != nullptr)
+				{
+					ImGuizmo::SetOrthographic(false);
+					ImGuizmo::SetDrawlist();
+
+
+					const Vector2D& sceneViewDims = GetDimensions();
+
+					Vector2D sceneViewPos = GetPosition();
+					sceneViewPos.SetY(sceneViewPos.Y() + cursorPos.y);
+
+					ImGuizmo::SetRect(sceneViewPos.X(), sceneViewPos.Y(), sceneViewDims.X(), sceneViewDims.Y());
+
+					const Matrix4x4& view = cameraComponent->GetViewMatrix();
+					const Matrix4x4& projection = cameraComponent->GetProjectionMatrix();
+
+					GameObjectComponentPtr<TransformComponent> transformComponent = selectedGameObject->GetComponent<TransformComponent>();
+
+					float matrix[16];
+					ImGuizmo::RecomposeMatrixFromComponents(transformComponent->GetPosition().GetValuePtr(), transformComponent->GetRotation().GetValuePtr(), transformComponent->GetScale().GetValuePtr(), matrix);
+
+					GizmoSnapper& snapper = m_gizmoState.m_snapper;
+					const float* snap = snapper.PrepareManipulate(m_gizmoState.m_currentOpMode, m_gizmoState.m_transformationSpace, ImGui::GetIO().KeyCtrl);
+
+					ImGuizmo::Manipulate(view.GetValuePtr(), projection.GetValuePtr(), (ImGuizmo::OPERATION)m_gizmoState.m_currentOpMode, (ImGuizmo::MODE)m_gizmoState.m_transformationSpace, matrix, nullptr, snap);
+
+					const bool isUsing = ImGuizmo::IsUsing();
+					Vector3D newTranslation, newRotation, newScale;
+					if (isUsing)
+					{
+						ImGuizmo::DecomposeMatrixToComponents(matrix, newTranslation.GetValuePtr(), newRotation.GetValuePtr(), newScale.GetValuePtr());
+					}
+
+					// Called every frame, so it sees drags start and end
+					snapper.Apply(isUsing, transformComponent->GetPosition(), transformComponent->GetRotation(), newTranslation, newRotation);
+
+					if (isUsing)
+					{
+						transformComponent->SetPosition(newTranslation);
+						transformComponent->SetRotation(newRotation);
+						transformComponent->SetScale(newScale);
+					}
+				}
+			}
+
+			// After the gizmo so it can't hide them; they're draw-only, so the gizmo still takes the clicks
+			const ImVec2 viewOrigin(GetPosition().X(), GetPosition().Y() + cursorPos.y);
+			DrawObjectIcons(context, viewOrigin);
+
+			// After the icons so this frame's icon rects are picked against
+			HandleSelectionInput(context, viewOrigin, isImageHovered);
+
+			// Last, so the grid's lines follow the opaque debug lines (frustums) and its depth writes can't hide them
+			GameObjectPtr cameraObject = context.GetEditorCamera();
+			if (cameraObject != nullptr)
+			{
+				m_grid.Draw(cameraObject->GetTransformComponent()->GetPosition(), m_gizmoState.m_snapper.GetSnapSize());
+			}
+		}
 	}
 
 	void SceneViewPanel::DrawObjectIcons(const EditorContext& context, const ImVec2& viewOrigin)
@@ -518,7 +533,7 @@ namespace Editor
 		return GameObjectPtr();
 	}
 
-	void SceneViewPanel::Temp_RegisterInputs()
+	void SceneViewPanel::RegisterInputs()
 	{
 		InputHandler& inputHandler = RZE().GetInputHandler();
 

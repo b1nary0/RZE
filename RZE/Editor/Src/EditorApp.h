@@ -2,7 +2,6 @@
 
 #include <EngineApp.h>
 
-#include <UI/Panels/SceneViewPanel.h>
 #include <UI/Modals/AsyncOperationModal.h>
 #include <UI/Framework/EditorContext.h>
 
@@ -73,8 +72,6 @@ namespace Editor
 		PanelStates m_panelStates;
 
 		EditorContext m_context;
-
-		SceneViewPanel m_sceneViewPanel;
 
 		AsyncOperationModal m_asyncOperationModal;
 		std::shared_ptr<AsyncOperation> m_sceneLoadOperation;

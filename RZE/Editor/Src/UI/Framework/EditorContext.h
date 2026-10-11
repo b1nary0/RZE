@@ -15,7 +15,8 @@ namespace Editor
 	// The SceneView's state that the rest of the editor reacts to. Written by SceneViewPanel each frame it's displayed.
 	struct SceneViewportState
 	{
-		// Editor input (camera, shortcuts) only goes to the scene while this is set; see EditorApp::ProcessInput
+		// Editor input (camera, shortcuts) only goes to the scene while this is set; see EditorApp::ProcessInput.
+		// Cleared at the start of each frame (EditorContext::Update), so it stays false while the SceneView is hidden.
 		bool IsHovered = false;
 		// In pixels; the editor camera's aspect ratio follows it
 		Vector2D Size;

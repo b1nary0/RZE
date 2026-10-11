@@ -66,6 +66,9 @@ namespace Editor
 		// The window's contents, between its Begin and End. Only called while the window is open and visible.
 		virtual void Draw(EditorContext& context) = 0;
 
+		// The window's menu bar, before Draw. Only called when PanelDesc::WindowFlags includes ImGuiWindowFlags_MenuBar.
+		virtual void DrawMenuBar(EditorContext& context) {}
+
 		// Before the scene unloads (EditorContext::ResetSceneState). Drop anything that refers to the current scene.
 		virtual void OnSceneReset() {}
 
