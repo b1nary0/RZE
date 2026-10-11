@@ -161,7 +161,7 @@ sequenceDiagram
 
 ### `DebugDrawRenderStage`
 
-Draws the lines queued with `RenderEngine::DrawLine()` / `DrawWireBox()` (bounds boxes, camera frustums, the light's direction) on top of the display colour, after tonemapping so they keep their exact colours. They depth-test against the scene. The queue is cleared after the main view renders, so secondary views drawn earlier in the frame get them too. Compiled out of Retail builds.
+Draws the lines queued with `RenderEngine::DrawLine()` / `DrawWireBox()` (bounds boxes, camera frustums, the light's direction, the editor grid) on top of the display colour, after tonemapping so they keep their exact colours. They depth-test against the scene. Lines can be semi-transparent: the stage turns on `EBlendState::AlphaBlend` for its draw and restores `Opaque` after. Each vertex also carries an optional distance fade (`FADECENTRE`, `FADERANGE`), which `Pixel_Line.hlsl` applies per pixel; pixels that fade to nothing are clipped so they don't write depth. The queue is cleared after the main view renders, so secondary views drawn earlier in the frame get them too. Compiled out of Retail builds.
 
 ### `ImGuiRenderStage` and `FinalRenderTargetStage`
 

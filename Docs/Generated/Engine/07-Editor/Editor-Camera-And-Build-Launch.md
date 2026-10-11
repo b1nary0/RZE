@@ -6,7 +6,7 @@
 
 ### Controls
 
-Camera input only works while the mouse is over the scene view.
+Camera input only works while the mouse is over the scene view. All the Editor's shortcuts are listed in [Editor-Shortcuts.md](Editor-Shortcuts.md).
 
 | Do this | To | Feels like |
 |---|---|---|

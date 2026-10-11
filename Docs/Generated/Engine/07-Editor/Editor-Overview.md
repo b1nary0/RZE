@@ -8,18 +8,18 @@ The Editor ("RZEStudio", `RZE\Editor\`) is the scene-authoring app. It's a Dear 
 +---------------------------------------------------------------------------------+
 | File  View  Help  | frame time | RenderCommand MemArena: 4 KB / 64 MB  Peak ...   |
 +--------------+--------------------------------------------------+---------------+
-| Scene        | SceneView  (Translate Rotate Scale | Local World)| Component View|
+| Scene        | SceneView  (gizmo | snap | grid toolbar)        | Component View|
 |              |                                                  |               |
 |  Camera      |      3D viewport: the scene, gizmo, light and    | inspector for |
 |  Directional |      camera icons, bounds boxes, marquee         | the primary   |
 |  NeckMech    |                                                  | selection     |
-|  M4          |                                                  |               |
+|  M4          |      ground grid                                 |               |
 +--------------+--------------------------------------------------+---------------+
 | Log   (RZE_LOG output, resource loads, build output)                            |
 +---------------------------------------------------------------------------------+
 ```
 
-The layout is an ImGui dockspace, saved in `Config\imgui.ini`. Each panel is described in [Editor-Panels.md](Editor-Panels.md); the camera and the build/launch tools are in [Editor-Camera-And-Build-Launch.md](Editor-Camera-And-Build-Launch.md).
+The layout is an ImGui dockspace, saved in `Config\imgui.ini`. Each panel is described in [Editor-Panels.md](Editor-Panels.md); the camera and the build/launch tools are in [Editor-Camera-And-Build-Launch.md](Editor-Camera-And-Build-Launch.md); gizmo snapping and the ground grid are in [Gizmo-Snapping-And-Grid.md](Gizmo-Snapping-And-Grid.md). Every keyboard and mouse shortcut is in [Editor-Shortcuts.md](Editor-Shortcuts.md).
 
 ## Launching
 

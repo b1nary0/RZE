@@ -124,7 +124,7 @@ Nothing touches D3D11 on the game thread; every `Renderer::` call just queues a 
 | Lifetime | `Initialize(windowHandle)` (also adds the engine's stages), `Shutdown()`, `ClearObjects()`, `ReleaseRenderStages()` (must run before `ResourceHandler::ShutDown()`) |
 | Per frame | `Render(frameName)`, `Finish()`, `RenderSecondaryView(name, view)` |
 | Scene | `CreateRenderObject(staticMesh)` / `DestroyRenderObject`, `CreateLightObject()` / `DestroyLightObject` |
-| Debug drawing | `DrawLine(start, end, colour)`, `DrawWireBox(min, max, transform, colour)` |
+| Debug drawing | `DrawLine(start, end, colour, alpha = 1, fade = {})`, `DrawWireBox(min, max, transform, colour, alpha = 1)`. `alpha` makes lines semi-transparent; `fade` (`DebugLineFade { centre, start, end }`) fades a line out with each pixel's distance from `centre`, between the `start` and `end` radii (`end` = 0: no fade). The editor grid uses both. |
 | Stages | `AddRenderStage<T>(args...)` (see [Render-Stages.md](Render-Stages.md)) |
 | Views & canvas | `GetMainView()`, `ResizeCanvas(size)`, `GetCanvasSize()` |
 

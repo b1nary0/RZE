@@ -1,6 +1,6 @@
 # Editor Panels
 
-All Editor UI panels live under `Editor\Src\UI\Panels\`. `EditorApp` owns one of each and draws them every frame inside its dockspace.
+All Editor UI panels live under `Editor\Src\UI\Panels\`. `EditorApp` owns one of each and draws them every frame inside its dockspace. Every shortcut is listed in [Editor-Shortcuts.md](Editor-Shortcuts.md).
 
 ```mermaid
 %%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
@@ -54,8 +54,10 @@ The 3D viewport ("SceneView"). It shows the main view's render target with `ImGu
 |---|---|
 | **Viewport sizing** | When the panel resizes, it sets the main view's `ViewportSize` and the editor camera's aspect ratio. The render target stays window-sized, and the image's UVs are cropped to the panel. |
 | **Transform gizmo** | ImGuizmo on the primary selection. Toolbar: Translate / Rotate / Scale, Local / World. Hotkeys **W / E / R** pick the mode and **Q** toggles local/world (ignored while the right mouse button is held, since that's flying the camera). |
+| **Snapping** | Snap (X) toggle, move step (0.25–1 m) and rotate step (15–90°) in the toolbar; holding Ctrl during a drag inverts the toggle. See [Gizmo-Snapping-And-Grid.md](Gizmo-Snapping-And-Grid.md). |
+| **Grid** | A semi-transparent ground grid on Y = 0 whose squares match the move step and grow as the camera rises, fading with distance. Grid toggle in the toolbar. See [Gizmo-Snapping-And-Grid.md](Gizmo-Snapping-And-Grid.md). |
 | **Light and camera icons** | Each `DirectionalLightComponent` draws a sun icon and each `CameraComponent` a movie-camera icon at its position. The primary selection's icon fades to 40% so the gizmo's centre handle shows through. |
-| **Camera frustums** | Each scene camera draws its view volume as debug lines, from the near plane out to its far plane or 10 m, whichever is closer, so it reads as a pyramid. |
+| **Camera frustums** | Each scene camera draws its view volume as debug lines, from the near plane out to its far plane or 1.5 m, whichever is closer, so it reads as a pyramid. |
 | **Picking** | Click, Ctrl+click and marquee selection; see below. |
 
 ### Picking
@@ -107,6 +109,7 @@ A toggleable panel (View > Windows > Resource Monitor) with resource and asset s
 
 - `Editor\Src\UI\Panels\ScenePanel.h/.cpp`
 - `Editor\Src\UI\Panels\SceneViewPanel.h/.cpp`
+- `Editor\Src\UI\Gizmo\GizmoSnapper.h/.cpp`, `EditorGrid.h/.cpp` — see [Gizmo-Snapping-And-Grid.md](Gizmo-Snapping-And-Grid.md)
 - `Editor\Src\UI\Panels\LogPanel.h/.cpp`
 - `Editor\Src\UI\Panels\ResourceMonitorPanel.h/.cpp`
 - `Engine\Src\Graphics\RenderStages\PickRenderStage.h/.cpp` — the GPU side of click picking
