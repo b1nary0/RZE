@@ -266,14 +266,8 @@ namespace Editor
 						ResetSelectedObject();
 					}
 				}
-				else if (key.GetKeyCode() == Win32KeyCode::Key_H)
-				{
-					GameObjectPtr m4 = RZE().GetActiveScene().FindGameObjectByName("M4");
-					m4->DetachFromParent();
-				}
 			});
 		inputHandler.BindAction(Win32KeyCode::Escape, EButtonState::ButtonState_Pressed, keyFunc);
-		inputHandler.BindAction(Win32KeyCode::Key_H, EButtonState::ButtonState_Pressed, keyFunc);
 	}
 
 	bool EditorApp::ProcessInput(const InputHandler& handler)

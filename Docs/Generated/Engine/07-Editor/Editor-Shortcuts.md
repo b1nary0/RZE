@@ -55,7 +55,6 @@ Details: [Editor-Panels.md](Editor-Panels.md).
 |---|---|---|
 | **Escape** | "Create GameObject" name box | Close it without creating |
 | **Enter** | "Create GameObject" name box | Create the object |
-| **H** | SceneView hovered | Debug leftover: detaches the object named "M4" from its parent (`EditorApp::RegisterInputEvents`). It assumes M4 exists, so avoid it in other scenes. |
 
 The File, View and Help menus have no keyboard shortcuts.
 
@@ -67,7 +66,7 @@ The File, View and Help menus have no keyboard shortcuts.
 | Gizmo W/E/R/Q/X | `SceneViewPanel::Temp_RegisterInputs` (engine `InputHandler::BindAction`) |
 | Ctrl during a gizmo drag | `SceneViewPanel::Display` → `GizmoSnapper::PrepareManipulate` (ImGui's `KeyCtrl`) |
 | Picking and marquee | `SceneViewPanel::HandleSelectionInput` |
-| Escape / H in the SceneView | `EditorApp::RegisterInputEvents` |
+| Escape in the SceneView | `EditorApp::RegisterInputEvents` |
 | Scene panel | `ScenePanel::Display` (ImGui item clicks) |
 
 When adding a shortcut, check this page for conflicts and add a row here.
