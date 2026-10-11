@@ -66,6 +66,10 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 		HiResTimer programTimer;
 		programTimer.Start();
 		double prevTime = programTimer.GetElapsed<double>();
+
+		m_frameTimeCapture.Initialize();
+		double lastUpdateMS = 0.0;
+
 		while (!m_shouldExit)
 		{
 			OPTICK_FRAME("Main");
@@ -73,6 +77,11 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 			double currTime = programTimer.GetElapsed<double>();
 			double frameTime = currTime - prevTime;
 			prevTime = currTime;
+
+			if (m_frameTimeCapture.AddFrame(currTime, frameTime * 1000.0, lastUpdateMS))
+			{
+				break;
+			}
 
 			m_deltaTime = frameTime;
 			m_frameSamples[m_frameCount % MAX_FRAMETIME_SAMPLES] = static_cast<float>(m_deltaTime);
@@ -101,7 +110,9 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 						ImGuizmo::BeginFrame();
 					}
 
+					const double updateStart = programTimer.GetElapsed<double>();
 					Update();
+					lastUpdateMS = (programTimer.GetElapsed<double>() - updateStart) * 1000.0;
 
 					ImGui::EndFrame();
 

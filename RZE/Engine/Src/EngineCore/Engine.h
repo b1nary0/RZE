@@ -7,6 +7,8 @@
 // @todo:josh this is where the weird include-before issue is
 #include <Events/EventHandler.h>
 
+#include <DebugUtils/FrameTimeCapture.h>
+
 #include <EngineCore/Async/AsyncOperationManager.h>
 #include <EngineCore/Config/EngineConfig.h>
 #include <EngineCore/Input/InputHandler.h>
@@ -108,4 +110,6 @@ private:
 	bool m_shouldExit;
 
 	std::vector<float> m_frameSamples;
+
+	FrameTimeCapture m_frameTimeCapture;
 };
