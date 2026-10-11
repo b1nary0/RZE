@@ -2,10 +2,8 @@
 
 #include <EngineApp.h>
 
-#include <UI/Panels/LogPanel.h>
 #include <UI/Panels/ScenePanel.h>
 #include <UI/Panels/SceneViewPanel.h>
-#include <UI/Panels/ResourceMonitorPanel.h>
 #include <UI/Modals/AsyncOperationModal.h>
 #include <UI/Framework/EditorContext.h>
 
@@ -79,10 +77,8 @@ namespace Editor
 
 		EditorContext m_context;
 
-		LogPanel m_logPanel;
 		ScenePanel m_scenePanel;
 		SceneViewPanel m_sceneViewPanel;
-		ResourceMonitorPanel m_resourceMonitor;
 
 		AsyncOperationModal m_asyncOperationModal;
 		std::shared_ptr<AsyncOperation> m_sceneLoadOperation;

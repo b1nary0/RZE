@@ -184,6 +184,8 @@ namespace Editor
 
 		LoadFonts();
 		StyleSetup();
+
+		m_context.GetPanels().CreatePanels(m_context);
 	}
 
 	void EditorApp::Start()
@@ -304,7 +306,7 @@ namespace Editor
 
 	void EditorApp::Log(const std::string& msg)
 	{
-		m_logPanel.AddEntry(msg);
+		DebugServices::Get().Trace(LogChannel::Info, msg);
 	}
 
 	void EditorApp::CreateAndInitializeEditorCamera()
@@ -407,11 +409,10 @@ namespace Editor
 						m_scenePanel.Enable();
 					}
 
-					// UX note, having an exposed bool allows ImGui to display checkmarks in the menu on items in the dropdown.
-					ImGui::MenuItem("Resource Monitor", "", &m_resourceMonitor.IsEnabled);
-
 					ImGui::EndMenu();
 				}
+
+				m_context.GetPanels().DrawMenuItems();
 
 				ImGui::EndMenu();
 			}
@@ -527,9 +528,7 @@ namespace Editor
 
 		m_sceneViewPanel.Display(m_context);
 
-		m_resourceMonitor.Display();
-
-		m_logPanel.Display();
+		m_context.GetPanels().DrawAll(m_context);
 	}
 
 	void EditorApp::LoadFonts()

@@ -1,19 +1,26 @@
 #include <UI/Panels/LogPanel.h>
 
-#include <EditorApp.h>
+#include <UI/Framework/PanelRegistry.h>
 
 #include <DebugUtils/DebugServices.h>
 
-#include <imGUI/imgui.h>
-
-#define MAX_LOG_SIZE 256
+#include <ImGui/imgui.h>
 
 namespace Editor
 {
-	void LogPanel::Display()
-	{
-		ImGui::Begin("Log", nullptr, ImGuiWindowFlags_NoCollapse);
+	REGISTER_EDITOR_PANEL(LogPanel);
 
+	PanelDesc LogPanel::Describe()
+	{
+		PanelDesc desc;
+		desc.Name = "Log";
+		desc.Closable = false;
+		desc.WindowFlags = ImGuiWindowFlags_NoCollapse;
+		return desc;
+	}
+
+	void LogPanel::Draw(EditorContext& context)
+	{
 		const std::vector<DebugServices::LogEntry>& logEntries = DebugServices::Get().GetLogEntries();
 		for (auto& logItem : logEntries)
 		{
@@ -22,19 +29,10 @@ namespace Editor
 			ImGui::TextColored(imColor, "%s", logItem.Text.c_str());
 		}
 
-		// Entries can arrive from anywhere (RZE_LOG, build output), so follow the count rather than AddEntry.
-		static size_t s_lastEntryCount = 0;
-		if (logEntries.size() > s_lastEntryCount)
+		if (logEntries.size() > m_lastEntryCount)
 		{
 			ImGui::SetScrollHereY();
 		}
-		s_lastEntryCount = logEntries.size();
-
-		ImGui::End();
-	}
-
-	void LogPanel::AddEntry(const std::string& msg)
-	{
-		DebugServices::Get().Trace(LogChannel::Info, msg);
+		m_lastEntryCount = logEntries.size();
 	}
 }

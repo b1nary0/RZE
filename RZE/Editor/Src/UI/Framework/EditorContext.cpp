@@ -17,6 +17,7 @@ namespace Editor
 		m_selection.Clear();
 		m_editorCamera = GameObjectPtr();
 		m_scenePicker.Cancel();
+		m_panels.ResetSceneState();
 	}
 
 	GameObjectComponentPtr<EditorCameraComponent> EditorContext::GetEditorCameraComponent() const

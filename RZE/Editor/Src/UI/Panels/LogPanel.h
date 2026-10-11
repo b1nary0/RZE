@@ -1,22 +1,20 @@
 #pragma once
 
-#include <Utils/PrimitiveDefs.h>
-
-#include <deque>
-#include <string>
+#include <UI/Framework/EditorPanel.h>
 
 namespace Editor
 {
-	class LogPanel
+	// Every DebugServices log entry, following new ones as they arrive
+	class LogPanel : public EditorPanel
 	{
 	public:
-		LogPanel() = default;
-		~LogPanel() = default;
+		static PanelDesc Describe();
 
-	public:
-		void Display();
+	private:
+		void Draw(EditorContext& context) override;
 
-	public:
-		void AddEntry(const std::string& msg);
+	private:
+		// Entries can arrive from anywhere (RZE_LOG, build output), so the panel follows the count
+		size_t m_lastEntryCount = 0;
 	};
 }

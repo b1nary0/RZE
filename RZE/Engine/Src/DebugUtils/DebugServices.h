@@ -5,6 +5,7 @@
 #include <vector>
 #include <mutex>
 
+#include <Utils/PrimitiveDefs.h>
 #include <Utils/Math/Vector3D.h>
 
 enum class LogChannel

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <UI/Framework/EditorSelection.h>
+#include <UI/Framework/PanelManager.h>
 #include <UI/Framework/ScenePicker.h>
 
 #include <Game/World/GameObject/GameObjectDefinitions.h>
@@ -35,9 +36,10 @@ namespace Editor
 		// Once per frame, before panels are displayed
 		void Update();
 
-		// Drops everything that refers to the current scene's objects (selection, editor camera, a pick in flight).
-		// Call before the scene unloads, so cleanup that touches those objects (e.g. selection bounds) still can.
-		// UI state, like the SceneView's viewport, carries over.
+		// Drops everything that refers to the current scene's objects (selection, editor camera, a pick in flight,
+		// and whatever each panel holds; see EditorPanel::OnSceneReset). Call before the scene unloads, so cleanup
+		// that touches those objects (e.g. selection bounds) still can. UI state, like the SceneView's viewport,
+		// carries over.
 		void ResetSceneState();
 
 		EditorSelection& GetSelection() { return m_selection; }
@@ -54,10 +56,13 @@ namespace Editor
 
 		ScenePicker& GetScenePicker() { return m_scenePicker; }
 
+		PanelManager& GetPanels() { return m_panels; }
+
 	private:
 		EditorSelection m_selection;
 		GameObjectPtr m_editorCamera;
 		SceneViewportState m_sceneViewport;
 		ScenePicker m_scenePicker;
+		PanelManager m_panels;
 	};
 }
