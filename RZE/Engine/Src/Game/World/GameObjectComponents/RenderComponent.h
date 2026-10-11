@@ -30,6 +30,8 @@ public:
 
 	// Axis-aligned world-space box around the mesh; false if no mesh has been created yet
 	bool GetWorldBounds(Vector3D& outMin, Vector3D& outMax);
+	// Null until a mesh has been created
+	RenderObjectPtr GetRenderObject() const { return m_renderObject; }
 
 	// See GameObjectComponentRegistry::ResourceDependencyGatherer.
 	static void GatherResourceDependencies(const rapidjson::Value& componentData, ResourceDependencyList& outDependencies);

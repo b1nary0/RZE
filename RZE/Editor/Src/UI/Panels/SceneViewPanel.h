@@ -1,7 +1,11 @@
 #pragma once
 
+#include <Game/World/GameObject/GameObjectDefinitions.h>
+
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector3D.h>
+
+#include <vector>
 
 struct ImVec2;
 class CameraComponent;
@@ -15,6 +19,14 @@ namespace Editor
 		{
 			int m_currentOpMode;
 			int m_transformationSpace;
+		};
+
+		// Screen-space rect of a light or camera icon drawn this frame, so objects without a mesh can be picked
+		struct IconHit
+		{
+			GameObjectPtr m_gameObject;
+			Vector2D m_min;
+			Vector2D m_max;
 		};
 
 	public:
@@ -38,12 +50,26 @@ namespace Editor
 		const Vector2D& GetPosition() const { return m_position; }
 
 	private:
+		// Left click selects, Ctrl+click toggles, and a drag selects everything in a marquee (Ctrl adds)
+		void HandleSelectionInput(const ImVec2& viewOrigin, bool isImageHovered);
+		// Every object with a mesh or icon inside the screen-space rect, including ones hidden behind others
+		std::vector<GameObjectPtr> GatherObjectsInRect(const ImVec2& viewOrigin, const ImVec2& rectMin, const ImVec2& rectMax) const;
+		// The topmost icon under the point, or null
+		GameObjectPtr PickIcon(const ImVec2& point) const;
+
+	private:
 		bool m_isHovered = false;
 		bool m_isFocused = false;
 		Vector2D m_dimensions;
 		Vector2D m_position;
 
 		TransformGizmoState m_gizmoState;
+
+		std::vector<IconHit> m_iconHits;
+
+		// Where the left button went down over the scene image; only meaningful while m_isSelecting
+		Vector2D m_selectStart;
+		bool m_isSelecting = false;
 	};
 
 	inline bool SceneViewPanel::IsHovered()

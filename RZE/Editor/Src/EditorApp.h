@@ -44,6 +44,7 @@ namespace Editor
 		// i.e Fire GameObjectSelectedEvent from ScenePanel and react to it in SceneViewPanel
 		GameObjectPtr GetSelectedObjectFromScenePanel();
 		void ResetSelectedObject();
+		ScenePanel& GetScenePanel() { return m_scenePanel; }
 
 	protected:
 		void CreateRenderTarget(const Vector2D& dimensions) override;

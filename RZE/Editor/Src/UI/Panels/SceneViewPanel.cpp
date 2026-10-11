@@ -6,8 +6,10 @@
 #include <Game/World/GameObjectComponents/CameraComponent.h>
 #include <Game/World/GameObjectComponents/DirectionalLightComponent.h>
 #include <Game/World/GameObjectComponents/EditorCameraComponent.h>
+#include <Game/World/GameObjectComponents/RenderComponent.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
+#include <Graphics/Frustum.h>
 #include <Graphics/RenderEngine.h>
 #include <Rendering/Graphics/RenderTarget.h>
 
@@ -114,6 +116,7 @@ namespace Editor
 				ImVec2 cursorPos = ImGui::GetCursorPos();
 
 				ImGui::Image((ImTextureID)(intptr_t)texture.GetTextureData(), ImVec2(GetDimensions().X(), GetDimensions().Y()), ImVec2(0.0f, 0.0f), ImVec2(uvbx, uvby));
+				const bool isImageHovered = ImGui::IsItemHovered();
 
 				{
 					GameObjectPtr selectedGameObject = editorApp.GetSelectedObjectFromScenePanel();
@@ -162,7 +165,11 @@ namespace Editor
 				}
 
 				// After the gizmo so it can't hide them; they're draw-only, so the gizmo still takes the clicks
-				DrawObjectIcons(ImVec2(GetPosition().X(), GetPosition().Y() + cursorPos.y));
+				const ImVec2 viewOrigin(GetPosition().X(), GetPosition().Y() + cursorPos.y);
+				DrawObjectIcons(viewOrigin);
+
+				// After the icons so this frame's icon rects are picked against
+				HandleSelectionInput(viewOrigin, isImageHovered);
 
 			}
 		}
@@ -172,6 +179,8 @@ namespace Editor
 
 	void SceneViewPanel::DrawObjectIcons(const ImVec2& viewOrigin)
 	{
+		m_iconHits.clear();
+
 		EditorApp& editorApp = static_cast<EditorApp&>(RZE().GetApplication());
 		// The camera is empty while a scene loads
 		GameObjectPtr cameraObject = editorApp.GetCameraObject();
@@ -239,6 +248,8 @@ namespace Editor
 								ImVec2(center.x + dir.x * k_rayOuter, center.y + dir.y * k_rayOuter),
 								sunColour, 2.0f);
 						}
+
+						m_iconHits.push_back({ gameObject, Vector2D(center.x - k_rayOuter, center.y - k_rayOuter), Vector2D(center.x + k_rayOuter, center.y + k_rayOuter) });
 					}
 				}
 
@@ -269,6 +280,9 @@ namespace Editor
 						drawList->AddTriangle(lensA, lensB, lensC, outlineColour, 1.5f);
 						drawList->AddRectFilled(bodyMin, bodyMax, cameraColour, 1.5f);
 						drawList->AddRect(bodyMin, bodyMax, outlineColour, 1.5f, 0, 1.5f);
+
+						// From the reels' tops to the lens's right edge
+						m_iconHits.push_back({ gameObject, Vector2D(bodyMin.x, reelA.y - k_reelRadius), Vector2D(lensB.x, bodyMax.y) });
 					}
 				}
 			}));
@@ -320,6 +334,162 @@ namespace Editor
 			renderEngine.DrawLine(farCorners[corner], farCorners[nextCorner], frustumColour);
 			renderEngine.DrawLine(nearCorners[corner], farCorners[corner], frustumColour);
 		}
+	}
+
+	void SceneViewPanel::HandleSelectionInput(const ImVec2& viewOrigin, bool isImageHovered)
+	{
+		// How far the mouse can move before a click becomes a marquee
+		constexpr float k_marqueeThreshold = 4.0f;
+
+		const ImGuiIO& io = ImGui::GetIO();
+
+		// The gizmo takes clicks on its handles, and the other buttons drive the camera
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && isImageHovered && !ImGuizmo::IsOver()
+			&& !ImGui::IsMouseDown(ImGuiMouseButton_Right) && !ImGui::IsMouseDown(ImGuiMouseButton_Middle))
+		{
+			m_isSelecting = true;
+			m_selectStart = Vector2D(io.MousePos.x, io.MousePos.y);
+		}
+
+		if (!m_isSelecting)
+		{
+			return;
+		}
+
+		// The marquee is kept to the scene image so it maps inside the camera's view
+		const ImVec2 viewMax(viewOrigin.x + GetDimensions().X(), viewOrigin.y + GetDimensions().Y());
+		const ImVec2 start(m_selectStart.X(), m_selectStart.Y());
+		const ImVec2 end(MathUtils::Clampf(io.MousePos.x, viewOrigin.x, viewMax.x), MathUtils::Clampf(io.MousePos.y, viewOrigin.y, viewMax.y));
+		const ImVec2 rectMin(std::min(start.x, end.x), std::min(start.y, end.y));
+		const ImVec2 rectMax(std::max(start.x, end.x), std::max(start.y, end.y));
+		const bool isMarquee = rectMax.x - rectMin.x > k_marqueeThreshold || rectMax.y - rectMin.y > k_marqueeThreshold;
+
+		if (ImGui::IsMouseDown(ImGuiMouseButton_Left))
+		{
+			if (isMarquee)
+			{
+				ImDrawList* drawList = ImGui::GetWindowDrawList();
+				drawList->AddRectFilled(rectMin, rectMax, IM_COL32(90, 150, 255, 40));
+				drawList->AddRect(rectMin, rectMax, IM_COL32(90, 150, 255, 220));
+			}
+			return;
+		}
+
+		m_isSelecting = false;
+
+		ScenePanel& scenePanel = static_cast<EditorApp&>(RZE().GetApplication()).GetScenePanel();
+		const bool isAdditive = io.KeyCtrl;
+
+		if (isMarquee)
+		{
+			const std::vector<GameObjectPtr> gameObjects = GatherObjectsInRect(viewOrigin, rectMin, rectMax);
+			if (isAdditive)
+			{
+				scenePanel.AddToSelection(gameObjects);
+			}
+			else
+			{
+				scenePanel.SetSelection(gameObjects);
+			}
+			return;
+		}
+
+		GameObjectPtr icon = PickIcon(start);
+		if (icon != nullptr)
+		{
+			if (isAdditive)
+			{
+				scenePanel.ToggleSelected(icon);
+			}
+			else
+			{
+				scenePanel.SelectGameObject(icon);
+			}
+			return;
+		}
+
+		if (!isAdditive)
+		{
+			scenePanel.ResetSelectedGameObject();
+		}
+	}
+
+	std::vector<GameObjectPtr> SceneViewPanel::GatherObjectsInRect(const ImVec2& viewOrigin, const ImVec2& rectMin, const ImVec2& rectMax) const
+	{
+		std::vector<GameObjectPtr> gameObjects;
+
+		for (const IconHit& iconHit : m_iconHits)
+		{
+			const float centerX = (iconHit.m_min.X() + iconHit.m_max.X()) * 0.5f;
+			const float centerY = (iconHit.m_min.Y() + iconHit.m_max.Y()) * 0.5f;
+			if (centerX >= rectMin.x && centerX <= rectMax.x && centerY >= rectMin.y && centerY <= rectMax.y)
+			{
+				gameObjects.push_back(iconHit.m_gameObject);
+			}
+		}
+
+		GameObjectPtr cameraObject = static_cast<EditorApp&>(RZE().GetApplication()).GetCameraObject();
+		if (cameraObject == nullptr)
+		{
+			return gameObjects;
+		}
+
+		// The rect in NDC; screen y runs down, NDC y runs up
+		const Vector2D& viewSize = GetDimensions();
+		const float ndcMinX = (rectMin.x - viewOrigin.x) / viewSize.X() * 2.0f - 1.0f;
+		const float ndcMaxX = (rectMax.x - viewOrigin.x) / viewSize.X() * 2.0f - 1.0f;
+		const float ndcMinY = 1.0f - (rectMax.y - viewOrigin.y) / viewSize.Y() * 2.0f;
+		const float ndcMaxY = 1.0f - (rectMin.y - viewOrigin.y) / viewSize.Y() * 2.0f;
+
+		// Stretches the rect's part of clip space to fill all of it, so the frustum built from the result only covers the rect
+		Matrix4x4 rectProjection;
+		rectProjection.Scale(Vector3D(2.0f / (ndcMaxX - ndcMinX), 2.0f / (ndcMaxY - ndcMinY), 1.0f));
+		rectProjection.Translate(Vector3D(-(ndcMinX + ndcMaxX) * 0.5f, -(ndcMinY + ndcMaxY) * 0.5f, 0.0f));
+
+		GameObjectComponentPtr<EditorCameraComponent> cameraComponent = cameraObject->GetComponent<EditorCameraComponent>();
+		const Frustum frustum(rectProjection * cameraComponent->GetProjectionMatrix() * cameraComponent->GetViewMatrix());
+
+		RZE().GetActiveScene().ForEachGameObject(
+			Functor<void, GameObjectPtr>([&](GameObjectPtr gameObject)
+			{
+				GameObjectComponentPtr<RenderComponent> renderComponent = gameObject->GetComponent<RenderComponent>();
+				if (renderComponent == nullptr)
+				{
+					return;
+				}
+
+				RenderObjectPtr renderObject = renderComponent->GetRenderObject();
+				if (renderObject == nullptr)
+				{
+					return;
+				}
+
+				// Submesh boxes fit tighter than the whole object's box
+				for (const RenderObject::SubMeshBounds& bounds : renderObject->GetSubMeshBounds())
+				{
+					if (frustum.Intersects(bounds.Min, bounds.Max))
+					{
+						gameObjects.push_back(gameObject);
+						return;
+					}
+				}
+			}));
+
+		return gameObjects;
+	}
+
+	GameObjectPtr SceneViewPanel::PickIcon(const ImVec2& point) const
+	{
+		// Later icons draw on top of earlier ones
+		for (auto it = m_iconHits.rbegin(); it != m_iconHits.rend(); ++it)
+		{
+			if (point.x >= it->m_min.X() && point.x <= it->m_max.X() && point.y >= it->m_min.Y() && point.y <= it->m_max.Y())
+			{
+				return it->m_gameObject;
+			}
+		}
+
+		return GameObjectPtr();
 	}
 
 	void SceneViewPanel::Temp_RegisterInputs()
