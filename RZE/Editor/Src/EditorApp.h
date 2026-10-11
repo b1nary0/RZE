@@ -51,8 +51,6 @@ namespace Editor
 
 		void CreateAndInitializeEditorCamera();
 
-		GameObjectPtr GetCameraObject() const { return m_editorCameraObject; }
-
 	private:
 		void DisplayMenuBar();
 		void HandleGeneralContextMenu();
@@ -91,8 +89,6 @@ namespace Editor
 		std::shared_ptr<AsyncOperation> m_buildOperation;
 
 		std::unordered_map<std::string, ImFont*> m_fontMapping;
-
-		GameObjectPtr m_editorCameraObject;
 
 		Filepath m_imguiConfigFilepath;
 	};

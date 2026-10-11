@@ -1,6 +1,6 @@
 #include <UI/Panels/ScenePanel.h>
 
-#include <EditorApp.h>
+#include <RZE.h>
 #include <UI/Framework/EditorContext.h>
 
 #include <Game/World/GameObject/GameObject.h>
@@ -206,11 +206,12 @@ namespace Editor
 					boundsMin = boundsMax = gameObject->GetTransformComponent()->GetWorldMatrix().GetPosition();
 				}
 
-				GameObjectPtr camera = RZE().GetActiveScene().FindGameObjectByName("EditorCam");
-				GameObjectComponentPtr<EditorCameraComponent> editorCam = camera->GetComponent<EditorCameraComponent>();
-				AssertNotNull(editorCam);
-
-				editorCam->FocusOn(boundsMin, boundsMax);
+				// Absent while a scene is loading
+				GameObjectComponentPtr<EditorCameraComponent> editorCam = context.GetEditorCameraComponent();
+				if (editorCam != nullptr)
+				{
+					editorCam->FocusOn(boundsMin, boundsMax);
+				}
 			}
 
 			if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))

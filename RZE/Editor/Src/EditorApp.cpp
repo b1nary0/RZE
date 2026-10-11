@@ -214,6 +214,8 @@ namespace Editor
 	{
 		OPTICK_EVENT();
 
+		m_context.Update();
+
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking;
 		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
 		window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
@@ -275,7 +277,7 @@ namespace Editor
 	{
 		ImGuiInput::SubmitInput(handler);
 
-		return m_sceneViewPanel.IsHovered();
+		return m_context.GetSceneViewport().IsHovered;
 	}
 
 	void EditorApp::OnWindowResize(const Vector2D& newSize)
@@ -307,14 +309,16 @@ namespace Editor
 
 	void EditorApp::CreateAndInitializeEditorCamera()
 	{
-		m_editorCameraObject = RZE().GetActiveScene().AddGameObject("EditorCam");
-		GameObjectComponentPtr<TransformComponent> transformComponent = m_editorCameraObject->GetComponent<TransformComponent>();
+		GameObjectPtr editorCameraObject = RZE().GetActiveScene().AddGameObject("EditorCam");
+		GameObjectComponentPtr<TransformComponent> transformComponent = editorCameraObject->GetComponent<TransformComponent>();
 		transformComponent->SetPosition(Vector3D(-4.0f, 10.0f, 4.0f));
 
-		GameObjectComponentPtr<EditorCameraComponent> editorCam = m_editorCameraObject->AddComponent<EditorCameraComponent>();
+		GameObjectComponentPtr<EditorCameraComponent> editorCam = editorCameraObject->AddComponent<EditorCameraComponent>();
 		editorCam->SetAsActiveCamera(true);
-		const Vector2D& sceneViewPanelDims = m_sceneViewPanel.GetDimensions();
-		editorCam->SetAspectRatio(sceneViewPanelDims.X() / sceneViewPanelDims.Y());
+		const Vector2D& viewportSize = m_context.GetSceneViewport().Size;
+		editorCam->SetAspectRatio(viewportSize.X() / viewportSize.Y());
+
+		m_context.SetEditorCamera(editorCameraObject);
 	}
 
 	void EditorApp::DisplayMenuBar()
@@ -699,11 +703,8 @@ namespace Editor
 			return;
 		}
 
-		// Before the scene unloads, while the selected objects (and their bounds toggles) still exist
-		m_context.GetSelection().Clear();
-
-		// The current scene (and the editor camera in it) is unloaded as soon as the operation starts.
-		m_editorCameraObject = GameObjectPtr();
+		// The current scene is unloaded as soon as the operation starts, so this must come first
+		m_context.ResetSceneState();
 
 		const bool isNewScene = !filepath.IsValid();
 

@@ -8,16 +8,10 @@
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector3D.h>
 
-#include <memory>
 #include <vector>
 
 struct ImVec2;
 class CameraComponent;
-
-namespace Rendering
-{
-	struct TexelReadback;
-}
 
 namespace Editor
 {
@@ -51,32 +45,27 @@ namespace Editor
 	public:
 		void Display(EditorContext& context);
 
-		bool IsHovered();
-		bool IsFocused();
-
 		void Temp_RegisterInputs();
 
-		// Icons at each light's and camera's position, plus camera frustums; viewOrigin is the screen-space top-left of the scene image
-		void DrawObjectIcons(const EditorSelection& selection, const ImVec2& viewOrigin);
-		// Debug lines along the camera's view volume, from its near plane out to its far plane or a fixed cap, whichever is closer
-		void DrawCameraFrustum(const Vector3D& position, const CameraComponent& camera);
-
+	private:
 		const Vector2D& GetDimensions() const { return m_dimensions; }
 		const Vector2D& GetPosition() const { return m_position; }
 
-	private:
+		// Icons at each light's and camera's position, plus camera frustums; viewOrigin is the screen-space top-left of the scene image
+		void DrawObjectIcons(const EditorContext& context, const ImVec2& viewOrigin);
+		// Debug lines along the camera's view volume, from its near plane out to its far plane or a fixed cap, whichever is closer
+		void DrawCameraFrustum(const Vector3D& position, const CameraComponent& camera);
+
 		// Left click selects, Ctrl+click toggles, and a drag selects everything in a marquee (Ctrl adds)
-		void HandleSelectionInput(EditorSelection& selection, const ImVec2& viewOrigin, bool isImageHovered);
+		void HandleSelectionInput(EditorContext& context, const ImVec2& viewOrigin, bool isImageHovered);
 		// Every object with a mesh or icon inside the screen-space rect, including ones hidden behind others
-		std::vector<GameObjectPtr> GatherObjectsInRect(const ImVec2& viewOrigin, const ImVec2& rectMin, const ImVec2& rectMax) const;
+		std::vector<GameObjectPtr> GatherObjectsInRect(const EditorContext& context, const ImVec2& viewOrigin, const ImVec2& rectMin, const ImVec2& rectMax) const;
 		// The topmost icon under the point, or null
 		GameObjectPtr PickIcon(const ImVec2& point) const;
 		// Selects (or with Ctrl, toggles) what a click hit; a miss without Ctrl clears the selection
 		void ApplyClick(EditorSelection& selection, GameObjectPtr hitObject, bool isAdditive);
 
 	private:
-		bool m_isHovered = false;
-		bool m_isFocused = false;
 		Vector2D m_dimensions;
 		Vector2D m_position;
 
@@ -89,18 +78,5 @@ namespace Editor
 		Vector2D m_selectStart;
 		bool m_isSelecting = false;
 
-		// A click's GPU pick (PickRenderStage) while it's in flight; it takes a frame or two
-		std::shared_ptr<Rendering::TexelReadback> m_pendingPick;
-		bool m_isPendingPickAdditive = false;
 	};
-
-	inline bool SceneViewPanel::IsHovered()
-	{
-		return m_isHovered;
-	}
-
-	inline bool SceneViewPanel::IsFocused()
-	{
-		return m_isFocused;
-	}
 }

@@ -1,6 +1,7 @@
 #include <UI/Panels/SceneViewPanel.h>
 
-#include <EditorApp.h>
+#include <RZE.h>
+#include <EngineApp.h>
 #include <UI/Framework/EditorContext.h>
 
 #include <Game/World/GameObject/GameObject.h>
@@ -12,7 +13,6 @@
 
 #include <Graphics/Frustum.h>
 #include <Graphics/RenderEngine.h>
-#include <Rendering/TexelReadback.h>
 #include <Rendering/Graphics/RenderTarget.h>
 
 #include <Utils/Math/Math.h>
@@ -35,7 +35,9 @@ namespace Editor
 	void SceneViewPanel::Display(EditorContext& context)
 	{
 		EditorSelection& selection = context.GetSelection();
-		EditorApp& editorApp = static_cast<EditorApp&>(RZE().GetApplication());
+		SceneViewportState& viewport = context.GetSceneViewport();
+		// Stays false if the panel isn't visible this frame
+		viewport.IsHovered = false;
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 		if (ImGui::Begin("SceneView", (bool*)1, ImGuiWindowFlags_MenuBar))
@@ -78,8 +80,7 @@ namespace Editor
 				ImGui::EndMenuBar();
 			}
 
-			m_isFocused = ImGui::IsWindowFocused();
-			m_isHovered = ImGui::IsWindowHovered();
+			viewport.IsHovered = ImGui::IsWindowHovered();
 
 			ImVec2 viewportPos = ImGui::GetWindowPos();
 			if (viewportPos.x != m_position.X() && viewportPos.y != m_position.Y())
@@ -91,15 +92,14 @@ namespace Editor
 			if (viewportDims.x != m_dimensions.X() || viewportDims.y != m_dimensions.Y())
 			{
 				m_dimensions.SetXY(viewportDims.x, viewportDims.y);
+				viewport.Size = m_dimensions;
 				RZE().GetRenderEngine().GetMainView().ViewportSize = m_dimensions;
 
 				// The editor camera doesn't exist while a scene is loading; it picks up
-				// the current dimensions when it's created (EditorApp::CreateAndInitializeEditorCamera).
-				GameObjectPtr cameraObject = editorApp.GetCameraObject();
-				if (cameraObject != nullptr)
+				// the viewport size when it's created (EditorApp::CreateAndInitializeEditorCamera).
+				GameObjectComponentPtr<EditorCameraComponent> cameraComponent = context.GetEditorCameraComponent();
+				if (cameraComponent != nullptr)
 				{
-					GameObjectComponentPtr<EditorCameraComponent> cameraComponent = cameraObject->GetComponent<EditorCameraComponent>();
-					AssertNotNull(cameraComponent);
 					cameraComponent->SetAspectRatio(m_dimensions.X() / m_dimensions.Y());
 				}
 			}
@@ -126,8 +126,8 @@ namespace Editor
 
 				{
 					GameObjectPtr selectedGameObject = selection.GetPrimary();
-					GameObjectPtr cameraObject = editorApp.GetCameraObject();
-					if (selectedGameObject != nullptr && cameraObject != nullptr)
+					GameObjectComponentPtr<EditorCameraComponent> cameraComponent = context.GetEditorCameraComponent();
+					if (selectedGameObject != nullptr && cameraComponent != nullptr)
 					{
 						ImGuizmo::SetOrthographic(false);
 						ImGuizmo::SetDrawlist();
@@ -139,8 +139,6 @@ namespace Editor
 						sceneViewPos.SetY(sceneViewPos.Y() + cursorPos.y);
 
 						ImGuizmo::SetRect(sceneViewPos.X(), sceneViewPos.Y(), sceneViewDims.X(), sceneViewDims.Y());
-
-						GameObjectComponentPtr<EditorCameraComponent> cameraComponent = cameraObject->GetComponent<EditorCameraComponent>();
 
 						const Matrix4x4& view = cameraComponent->GetViewMatrix();
 						const Matrix4x4& projection = cameraComponent->GetProjectionMatrix();
@@ -176,13 +174,13 @@ namespace Editor
 
 				// After the gizmo so it can't hide them; they're draw-only, so the gizmo still takes the clicks
 				const ImVec2 viewOrigin(GetPosition().X(), GetPosition().Y() + cursorPos.y);
-				DrawObjectIcons(selection, viewOrigin);
+				DrawObjectIcons(context, viewOrigin);
 
 				// After the icons so this frame's icon rects are picked against
-				HandleSelectionInput(selection, viewOrigin, isImageHovered);
+				HandleSelectionInput(context, viewOrigin, isImageHovered);
 
 				// Last, so the grid's lines follow the opaque debug lines (frustums) and its depth writes can't hide them
-				GameObjectPtr cameraObject = editorApp.GetCameraObject();
+				GameObjectPtr cameraObject = context.GetEditorCamera();
 				if (cameraObject != nullptr)
 				{
 					m_grid.Draw(cameraObject->GetTransformComponent()->GetPosition(), m_gizmoState.m_snapper.GetSnapSize());
@@ -193,19 +191,17 @@ namespace Editor
 		ImGui::PopStyleVar();
 	}
 
-	void SceneViewPanel::DrawObjectIcons(const EditorSelection& selection, const ImVec2& viewOrigin)
+	void SceneViewPanel::DrawObjectIcons(const EditorContext& context, const ImVec2& viewOrigin)
 	{
 		m_iconHits.clear();
 
-		EditorApp& editorApp = static_cast<EditorApp&>(RZE().GetApplication());
 		// The camera is empty while a scene loads
-		GameObjectPtr cameraObject = editorApp.GetCameraObject();
-		if (cameraObject == nullptr)
+		GameObjectComponentPtr<EditorCameraComponent> cameraComponent = context.GetEditorCameraComponent();
+		if (cameraComponent == nullptr)
 		{
 			return;
 		}
 
-		GameObjectComponentPtr<EditorCameraComponent> cameraComponent = cameraObject->GetComponent<EditorCameraComponent>();
 		const Matrix4x4 viewProjection = cameraComponent->GetProjectionMatrix() * cameraComponent->GetViewMatrix();
 
 		const Vector2D& viewSize = GetDimensions();
@@ -226,7 +222,7 @@ namespace Editor
 			return true;
 		};
 
-		GameObjectPtr selectedGameObject = selection.GetPrimary();
+		GameObjectPtr selectedGameObject = context.GetSelection().GetPrimary();
 
 		RZE().GetActiveScene().ForEachGameObject(
 			Functor<void, GameObjectPtr>([&](GameObjectPtr gameObject)
@@ -354,34 +350,14 @@ namespace Editor
 		}
 	}
 
-	void SceneViewPanel::HandleSelectionInput(EditorSelection& selection, const ImVec2& viewOrigin, bool isImageHovered)
+	void SceneViewPanel::HandleSelectionInput(EditorContext& context, const ImVec2& viewOrigin, bool isImageHovered)
 	{
+		EditorSelection& selection = context.GetSelection();
+
 		// How far the mouse can move before a click becomes a marquee
 		constexpr float k_marqueeThreshold = 4.0f;
 
 		const ImGuiIO& io = ImGui::GetIO();
-
-		if (m_pendingPick != nullptr && m_pendingPick->IsReady.load(std::memory_order_acquire))
-		{
-			// Pick IDs are the GameObjectID + 1 (RenderComponent::CreateRenderObject)
-			const U32 pickID = m_pendingPick->Value;
-			m_pendingPick.reset();
-
-			GameObjectPtr hitObject;
-			if (pickID != 0)
-			{
-				RZE().GetActiveScene().ForEachGameObject(
-					Functor<void, GameObjectPtr>([&hitObject, pickID](GameObjectPtr gameObject)
-					{
-						if (gameObject->GetID() == pickID - 1)
-						{
-							hitObject = gameObject;
-						}
-					}));
-			}
-
-			ApplyClick(selection, hitObject, m_isPendingPickAdditive);
-		}
 
 		// The gizmo takes clicks on its handles, and the other buttons drive the camera
 		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && isImageHovered && !ImGuizmo::IsOver()
@@ -421,7 +397,7 @@ namespace Editor
 
 		if (isMarquee)
 		{
-			const std::vector<GameObjectPtr> gameObjects = GatherObjectsInRect(viewOrigin, rectMin, rectMax);
+			const std::vector<GameObjectPtr> gameObjects = GatherObjectsInRect(context, viewOrigin, rectMin, rectMax);
 			if (isAdditive)
 			{
 				selection.AddToSelection(gameObjects);
@@ -441,15 +417,13 @@ namespace Editor
 			return;
 		}
 
-		// Meshes are picked on the GPU; the result is applied above when it arrives
-		m_pendingPick = std::make_shared<Rendering::TexelReadback>();
-		m_isPendingPickAdditive = isAdditive;
-
-		RenderPickRequest pickRequest;
-		pickRequest.X = static_cast<U32>(std::min(start.x - viewOrigin.x, GetDimensions().X() - 1.0f));
-		pickRequest.Y = static_cast<U32>(std::min(start.y - viewOrigin.y, GetDimensions().Y() - 1.0f));
-		pickRequest.Result = m_pendingPick;
-		RZE().GetRenderEngine().GetMainView().Pick = pickRequest;
+		// Meshes are picked on the GPU, so the click is applied when the result arrives
+		const U32 pickX = static_cast<U32>(std::min(start.x - viewOrigin.x, GetDimensions().X() - 1.0f));
+		const U32 pickY = static_cast<U32>(std::min(start.y - viewOrigin.y, GetDimensions().Y() - 1.0f));
+		context.GetScenePicker().RequestPick(pickX, pickY, ScenePicker::ResultCallback([this, &selection, isAdditive](GameObjectPtr hitObject)
+			{
+				ApplyClick(selection, hitObject, isAdditive);
+			}));
 	}
 
 	void SceneViewPanel::ApplyClick(EditorSelection& selection, GameObjectPtr hitObject, bool isAdditive)
@@ -471,7 +445,7 @@ namespace Editor
 		}
 	}
 
-	std::vector<GameObjectPtr> SceneViewPanel::GatherObjectsInRect(const ImVec2& viewOrigin, const ImVec2& rectMin, const ImVec2& rectMax) const
+	std::vector<GameObjectPtr> SceneViewPanel::GatherObjectsInRect(const EditorContext& context, const ImVec2& viewOrigin, const ImVec2& rectMin, const ImVec2& rectMax) const
 	{
 		std::vector<GameObjectPtr> gameObjects;
 
@@ -485,8 +459,8 @@ namespace Editor
 			}
 		}
 
-		GameObjectPtr cameraObject = static_cast<EditorApp&>(RZE().GetApplication()).GetCameraObject();
-		if (cameraObject == nullptr)
+		GameObjectComponentPtr<EditorCameraComponent> cameraComponent = context.GetEditorCameraComponent();
+		if (cameraComponent == nullptr)
 		{
 			return gameObjects;
 		}
@@ -498,7 +472,6 @@ namespace Editor
 		const float ndcMinY = 1.0f - (rectMax.y - viewOrigin.y) / viewSize.Y() * 2.0f;
 		const float ndcMaxY = 1.0f - (rectMin.y - viewOrigin.y) / viewSize.Y() * 2.0f;
 
-		GameObjectComponentPtr<EditorCameraComponent> cameraComponent = cameraObject->GetComponent<EditorCameraComponent>();
 		const Matrix4x4 rectProjection = Matrix4x4::CreateSubRectProjection(ndcMinX, ndcMinY, ndcMaxX, ndcMaxY);
 		const Frustum frustum(rectProjection * cameraComponent->GetProjectionMatrix() * cameraComponent->GetViewMatrix());
 
