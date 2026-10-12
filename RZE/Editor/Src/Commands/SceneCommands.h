@@ -75,6 +75,21 @@ namespace Editor
 		GameObjectPtr m_parent;
 	};
 
+	// Adds the GameObjects in sceneData (a scene file's "gameobjects" layout, from GameObjectClipboard) as new objects
+	// and selects the top-level ones. Each gets a unique name ("Tank (1)"), its children's parent references follow
+	// the renames, and a top-level object keeps its parent if that's still in the scene.
+	class PasteGameObjectsCommand : public EditorCommand
+	{
+	public:
+		explicit PasteGameObjectsCommand(std::string sceneData);
+
+		void Execute(EditorContext& context) override;
+		const char* GetName() const override { return "Paste GameObjects"; }
+
+	private:
+		std::string m_sceneData;
+	};
+
 	class DetachFromParentCommand : public EditorCommand
 	{
 	public:

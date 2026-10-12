@@ -7,6 +7,7 @@
 #include <Commands/CommandQueue.h>
 
 #include <Services/GameBuilder.h>
+#include <Services/GameObjectClipboard.h>
 #include <Services/SceneDocument.h>
 
 #include <Game/World/GameObject/GameObjectDefinitions.h>
@@ -66,6 +67,7 @@ namespace Editor
 
 		SceneDocument& GetSceneDocument() { return m_sceneDocument; }
 		GameBuilder& GetGameBuilder() { return m_gameBuilder; }
+		GameObjectClipboard& GetClipboard() { return m_clipboard; }
 
 		// Where panels send scene changes; flushed once per frame after every panel has drawn
 		CommandQueue& GetCommands() { return m_commands; }
@@ -78,6 +80,7 @@ namespace Editor
 		PanelManager m_panels;
 		SceneDocument m_sceneDocument;
 		GameBuilder m_gameBuilder;
+		GameObjectClipboard m_clipboard;
 		CommandQueue m_commands;
 	};
 }

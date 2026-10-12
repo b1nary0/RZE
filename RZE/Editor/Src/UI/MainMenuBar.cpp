@@ -2,6 +2,8 @@
 
 #include <UI/Framework/EditorContext.h>
 
+#include <Commands/SceneCommands.h>
+
 #include <RZE.h>
 
 #include <Rendering/MemArena.h>
@@ -25,12 +27,20 @@ namespace Editor
 {
 	void MainMenuBar::Draw(EditorContext& context)
 	{
+		HandleEditShortcuts(context);
+
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.5f, 5.0f));
 		if (ImGui::BeginMainMenuBar())
 		{
 			if (ImGui::BeginMenu("File"))
 			{
 				DrawFileMenu(context);
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("Edit"))
+			{
+				DrawEditMenu(context);
 				ImGui::EndMenu();
 			}
 
@@ -122,6 +132,71 @@ namespace Editor
 		if (ImGui::MenuItem("Exit"))
 		{
 			RZE().PostExit();
+		}
+	}
+
+	void MainMenuBar::DrawEditMenu(EditorContext& context)
+	{
+		// Nothing that touches the scene while one is streaming in
+		const bool canUseScene = !context.GetSceneDocument().IsLoading();
+		const bool hasSelection = !context.GetSelection().IsEmpty();
+
+		if (ImGui::MenuItem("Copy", "Ctrl+C", false, canUseScene && hasSelection))
+		{
+			Copy(context);
+		}
+		if (ImGui::MenuItem("Paste", "Ctrl+V", false, canUseScene && context.GetClipboard().HasContents()))
+		{
+			Paste(context);
+		}
+		if (ImGui::MenuItem("Duplicate", "Ctrl+D", false, canUseScene && hasSelection))
+		{
+			Duplicate(context);
+		}
+	}
+
+	void MainMenuBar::HandleEditShortcuts(EditorContext& context)
+	{
+		if (context.GetSceneDocument().IsLoading())
+		{
+			return;
+		}
+
+		// Global routes lose to a focused widget that registers the same keys, so text fields keep their own copy/paste
+		if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_C, ImGuiInputFlags_RouteGlobal))
+		{
+			Copy(context);
+		}
+		if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_V, ImGuiInputFlags_RouteGlobal))
+		{
+			Paste(context);
+		}
+		if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_D, ImGuiInputFlags_RouteGlobal))
+		{
+			Duplicate(context);
+		}
+	}
+
+	void MainMenuBar::Copy(EditorContext& context)
+	{
+		context.GetClipboard().Copy(context.GetSelection().GetAll());
+	}
+
+	void MainMenuBar::Paste(EditorContext& context)
+	{
+		if (context.GetClipboard().HasContents())
+		{
+			context.GetCommands().Push<PasteGameObjectsCommand>(context.GetClipboard().GetContents());
+		}
+	}
+
+	void MainMenuBar::Duplicate(EditorContext& context)
+	{
+		// Copies straight into the paste, leaving the clipboard alone
+		std::string sceneData = GameObjectClipboard::Serialize(context.GetSelection().GetAll());
+		if (!sceneData.empty())
+		{
+			context.GetCommands().Push<PasteGameObjectsCommand>(std::move(sceneData));
 		}
 	}
 

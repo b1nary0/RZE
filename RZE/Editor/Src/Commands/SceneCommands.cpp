@@ -6,6 +6,41 @@
 
 #include <Game/World/GameObject/GameObject.h>
 
+#include <RapidJSON/document.h>
+
+#include <unordered_map>
+
+namespace
+{
+	// name, or "name (n)" with the lowest n that isn't taken
+	std::string MakeUniqueName(const std::string& name)
+	{
+		GameScene& scene = RZE().GetActiveScene();
+		if (scene.FindGameObjectByName(name) == nullptr)
+		{
+			return name;
+		}
+
+		// A copy of a copy is "Tank (2)", not "Tank (1) (1)"
+		std::string base = name;
+		const size_t suffixStart = name.rfind(" (");
+		if (suffixStart != std::string::npos && name.back() == ')'
+			&& name.find_first_not_of("0123456789", suffixStart + 2) == name.size() - 1)
+		{
+			base = name.substr(0, suffixStart);
+		}
+
+		for (int copyNumber = 1;; ++copyNumber)
+		{
+			const std::string candidate = base + " (" + std::to_string(copyNumber) + ")";
+			if (scene.FindGameObjectByName(candidate) == nullptr)
+			{
+				return candidate;
+			}
+		}
+	}
+}
+
 namespace Editor
 {
 	CreateGameObjectCommand::CreateGameObjectCommand(std::string name)
@@ -84,6 +119,72 @@ namespace Editor
 		}
 
 		m_child->AttachTo(m_parent);
+	}
+
+	PasteGameObjectsCommand::PasteGameObjectsCommand(std::string sceneData)
+		: m_sceneData(std::move(sceneData))
+	{
+	}
+
+	void PasteGameObjectsCommand::Execute(EditorContext& context)
+	{
+		rapidjson::Document document;
+		document.Parse(m_sceneData.c_str());
+		if (document.HasParseError() || !document.IsObject() || !document.HasMember("gameobjects"))
+		{
+			return;
+		}
+
+		GameScene& scene = RZE().GetActiveScene();
+		rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
+
+		// Copied name -> pasted name; parents are written before their children, so a child's parent is always here
+		// by the time it's pasted
+		std::unordered_map<std::string, std::string> renames;
+		std::vector<GameObjectPtr> pastedRoots;
+
+		rapidjson::Value& objects = document["gameobjects"];
+		for (auto member = objects.MemberBegin(); member != objects.MemberEnd(); ++member)
+		{
+			const std::string copiedName = member->name.GetString();
+			const std::string pastedName = MakeUniqueName(copiedName);
+
+			rapidjson::Value& data = member->value;
+			bool isRoot = true;
+			const auto parent = data.FindMember("parent");
+			if (parent != data.MemberEnd())
+			{
+				const auto renamedParent = renames.find(parent->value.GetString());
+				if (renamedParent != renames.end())
+				{
+					// Under another pasted object
+					parent->value.SetString(renamedParent->second.c_str(), allocator);
+					isRoot = false;
+				}
+				else if (scene.FindGameObjectByName(parent->value.GetString()) == nullptr)
+				{
+					// The original parent is gone; paste at the top level
+					data.RemoveMember(parent);
+				}
+			}
+
+			scene.DeserializeGameObject(pastedName.c_str(), data);
+			renames[copiedName] = pastedName;
+
+			if (isRoot)
+			{
+				GameObjectPtr pasted = scene.FindGameObjectByName(pastedName);
+				if (pasted != nullptr)
+				{
+					pastedRoots.push_back(pasted);
+				}
+			}
+		}
+
+		if (!pastedRoots.empty())
+		{
+			context.GetSelection().SetSelection(pastedRoots);
+		}
 	}
 
 	DetachFromParentCommand::DetachFromParentCommand(GameObjectPtr gameObject)
