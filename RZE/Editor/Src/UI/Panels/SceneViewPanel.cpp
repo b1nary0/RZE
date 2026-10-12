@@ -115,7 +115,7 @@ namespace Editor
 			RZE().GetRenderEngine().GetMainView().ViewportSize = m_dimensions;
 
 			// The editor camera doesn't exist while a scene is loading; it picks up
-			// the viewport size when it's created (EditorApp::CreateAndInitializeEditorCamera).
+			// the viewport size when it's created (SceneDocument::CreateEditorCamera).
 			GameObjectComponentPtr<EditorCameraComponent> cameraComponent = context.GetEditorCameraComponent();
 			if (cameraComponent != nullptr)
 			{

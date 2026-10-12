@@ -17,8 +17,10 @@ Rough edges the codebase is candid about (source comments, `#TODO`s), plus a few
 | 9 | Shadow map misses runtime opacity-map changes | Rendering | Low | Open, noted in source |
 | 10 | Constant-buffer uploads read past small structs | Renderer | Low | Open |
 | 11 | `LogChannel::Debug`'s colour is out of range | Debug services | Cosmetic | Open |
-| 12 | Camera previews change the camera temporarily | Components | Low | Open, noted in source |
+| 12 | Camera previews changed the camera temporarily | Components | — | **Fixed** (10-11: editor UI rework) |
 | 13 | An incremental build once missed a header change | Build | Low | Observed once |
+| 14 | Reparenting in the Scene panel keeps the local transform | Editor | Low | Open |
+| 15 | No prompt about unsaved changes | Editor | Medium | Open; the title shows a `*` |
 
 ```mermaid
 quadrantChart
@@ -93,13 +95,21 @@ The 2020 design notes called for both. **Culling** is implemented: objects and t
 
 `DebugServices::Initialize()` sets it to (255, 255, 1). Colours are 0–1, so it shows as white like `Info`; yellow was probably intended (1, 1, 0).
 
-## 12. Camera previews change the camera temporarily
+## 12. Camera previews changed the camera temporarily (fixed)
 
-`CameraComponent::OnEditorInspect()` swaps its aspect ratio to render the "Camera View" preview, then restores it. The source warns this "could leak state eventually". A preview-specific projection would avoid touching the camera.
+The old `CameraComponent::OnEditorInspect()` swapped the camera's aspect ratio to render the "Camera View" preview, then restored it. `CameraComponent::RenderPreview()` now builds its own projection and view for the preview and leaves the camera alone; the editor shows the result in a custom inspector section.
 
 ## 13. An incremental build once missed a header change
 
 While adding multi-selection, `ScenePanel.h` changed layout but MSBuild didn't recompile `EditorApp.cpp`, which holds a `ScenePanel` by value. The Editor then crashed on start-up with an access violation in a `std::vector` call. Touching the `.cpp` fixed it. The cause wasn't found. If the Editor crashes oddly right after a header change, rebuild before debugging.
+
+## 14. Reparenting in the Scene panel keeps the local transform
+
+Dragging an object onto another in the Scene panel (`AttachToParentCommand`) keeps its local position, rotation and scale, so it jumps if the new parent isn't at the origin with no rotation and unit scale. Keeping its world transform would mean converting the local values through the inverse of the parent's world matrix as it's attached (paste already does this for its offset).
+
+## 15. No prompt about unsaved changes
+
+The Editor tracks unsaved changes (`SceneDocument::IsModified`, shown as a `*` in the title), but loading another scene, starting a new one or quitting discards them without asking. Planned alongside undo/redo.
 
 ## Key files
 
@@ -111,3 +121,4 @@ While adding multi-selection, `ScenePanel.h` changed layout but MSBuild didn't r
 - `SourceAssetBurner\Src\SourceAssetBurner\Importers\AssimpSourceImporter.cpp` (8)
 - `Engine\Src\DebugUtils\DebugServices.cpp` (11)
 - `Engine\Src\Game\World\GameObjectComponents\CameraComponent.cpp` (12)
+- `Editor\Src\Commands\SceneCommands.cpp` (14), `Editor\Src\Services\SceneDocument.cpp` (15)

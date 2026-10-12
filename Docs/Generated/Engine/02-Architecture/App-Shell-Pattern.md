@@ -9,6 +9,7 @@ class RZE_Application {
 public:
     void Run();                                  // kicks off RZE().Run(engineHook)
     virtual void Start();
+    virtual void PreUIUpdate();                  // before ImGui's frame starts; no ImGui calls
     virtual void Update();
     virtual void ShutDown();
 
@@ -34,7 +35,7 @@ The base `Initialize()` registers the engine's built-in `GameObjectComponent` ty
 | Scene loading | Deserializes `-scene` CLI arg or falls back to `Assets/Scenes/RenderTest.scene` | Deserializes `-scene` CLI arg or falls back to `Assets/Scenes/RenderTest.scene` (same fallback, called a "hack" in a code comment) |
 | Extra components registered | None beyond the base set | `EditorCameraComponent` (free-fly viewport camera, see [07-Editor](../07-Editor/Editor-Camera-And-Build-Launch.md)) |
 | Player/runtime behavior | `Start()` finds the `"Camera"` GameObject and attaches a `PlayerControllerComponent` to it at runtime (not scene-serialized) | No player controller; navigation is via the editor camera instead |
-| Extra UI | None (ships without editor tooling) | Full dockspace: `ScenePanel`, `SceneViewPanel`, `LogPanel`, `ResourceMonitorPanel` |
+| Extra UI | None (ships without editor tooling) | Full dockspace of self-registering panels (Scene, SceneView, Object Inspector, Log, Resource Monitor), sharing an `EditorContext`; see [Editor-Framework.md](../07-Editor/Editor-Framework.md) |
 | Dev conveniences | F1/F2/F3 resize window to 720p/900p/1080p presets; Escape quits | "Build Game..." / "Launch Game..." menu items that shell out to `BuildGame.bat` / the built game exe via a background job |
 
 ## Why this split matters

@@ -2,7 +2,7 @@
 
 ## The editor camera (`EditorCameraComponent`)
 
-`Editor\Src\Game\World\GameObjectComponents\EditorCameraComponent.h/.cpp`: the viewport camera, used only by the Editor. It lives on the `"EditorCam"` object, which isn't saved with the scene, and fills the main view's camera every frame.
+`Editor\Src\Game\World\GameObjectComponents\EditorCameraComponent.h/.cpp`: the viewport camera, used only by the Editor. It lives on the `"EditorCam"` object, which isn't saved with the scene, and fills the main view's camera every frame. `SceneDocument` creates it after each load and hands it to the `EditorContext`, where panels find it (`GetEditorCamera()`, `GetEditorCameraComponent()`); the SceneView keeps its aspect ratio matched to the viewport.
 
 ### Controls
 
@@ -58,13 +58,13 @@ Double-clicking an object in the Scene panel calls `FocusOn(boundsMin, boundsMax
 
 ## Build/Launch workflow
 
-File > **Build Game...** and **Launch Game...** run as an async job (`JobAsyncOperation`), so the Editor keeps running while the Game builds. Both items are greyed out while a build is in progress.
+File > **Build Game...** and **Launch Game...** call `GameBuilder::Build(launchAfterBuild)` (`Editor\Src\Services\GameBuilder.h/.cpp`, owned by `EditorContext`). The build runs as an async job (`JobAsyncOperation`), so the Editor keeps running while the Game builds. Both items are greyed out while a build is in progress (`IsBuilding()`), and a second request is ignored with a log line.
 
 ```mermaid
 %%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 sequenceDiagram
     participant User
-    participant App as EditorApp
+    participant App as GameBuilder
     participant Job as Build job (worker thread)
     participant Log as Log panel
     User->>App: File > Launch Game...
@@ -84,10 +84,12 @@ sequenceDiagram
 
 - **Build Game** runs `BuildGame.bat` (MSBuild for the Game project) and stops there.
 - **Launch Game** does the same, then copies assets and starts the Game without waiting for it.
-- **Save Scene** also copies assets afterwards, so the Game sees the latest scene. The Game, unlike the Editor, reads from its own build folder.
+- **Save Scene** also copies assets afterwards (`SceneDocument` calls `GameBuilder::CopyAssets()`), so the Game sees the latest scene. The Game, unlike the Editor, reads from its own build folder.
 
 ## Key files
 
 - `Editor\Src\Game\World\GameObjectComponents\EditorCameraComponent.h/.cpp`
-- `Editor\Src\EditorApp.cpp` — `DisplayMenuBar()`, `BuildGame()`, `LoadScene()`
+- `Editor\Src\Services\GameBuilder.h/.cpp` — Build Game, Launch Game, `CopyAssets()`
+- `Editor\Src\Services\SceneDocument.h/.cpp` — creates the editor camera after each load
+- `Editor\Src\UI\MainMenuBar.cpp` — the File menu items
 - `BuildGame.bat`, `AssetCpy.bat`

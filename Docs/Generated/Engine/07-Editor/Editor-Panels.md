@@ -1,25 +1,36 @@
 # Editor Panels
 
-All Editor UI panels live under `Editor\Src\UI\Panels\`. `EditorApp` owns one of each and draws them every frame inside its dockspace. Every shortcut is listed in [Editor-Shortcuts.md](Editor-Shortcuts.md).
+Every Editor window is an `EditorPanel` in `Editor\Src\UI\Panels\`, registered with `REGISTER_EDITOR_PANEL` and hosted by `PanelManager`. How panels are written, when they run and how they change the scene is in [Editor-Framework.md](Editor-Framework.md). Every shortcut is listed in [Editor-Shortcuts.md](Editor-Shortcuts.md).
+
+| Panel (window name) | Class | Default dock | Menu | Closable |
+|---|---|---|---|---|
+| Scene | `ScenePanel` | Left | View > Windows > Scene | yes |
+| SceneView | `SceneViewPanel` | Centre | — | no |
+| Object Inspector | `InspectorPanel` | Right | View > Windows > Object Inspector | yes |
+| Log | `LogPanel` | Bottom | View > Windows > Log | yes |
+| Resource Monitor | `ResourceMonitorPanel` | Left (closed at first) | View > Windows > Resource Monitor | yes |
+| ImGui Demo | `ImGuiDemoPanel` | floating (closed at first) | Help > ImGui Demo | yes |
 
 ```mermaid
 %%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
-flowchart LR
-    Scene["Scene<br/>(tree)"] <-->|"shared selection"| SV["SceneView<br/>(3D viewport)"]
-    Scene -->|"primary selection"| CV["Component View<br/>(inspector)"]
-    SV -->|"gizmo edits"| TC["selected object's<br/>TransformComponent"]
-    CV -->|"OnEditorInspect()"| Comps["selected object's<br/>components"]
-    Log["Log"] -.->|"shows"| DS["DebugServices log<br/>(RZE_LOG, builds)"]
+flowchart TD
+    Scene["Scene<br/>(tree)"] -->|"select"| Sel["EditorSelection<br/>(in EditorContext)"]
+    SV["SceneView<br/>(3D viewport)"] -->|"select"| Sel
+    Sel -->|"primary + shared components"| OI["Object Inspector"]
+    Scene -->|"commands"| Q["CommandQueue"]
+    SV -->|"gizmo commands"| Q
+    OI -->|"property commands"| Q
+    Q -->|"once per frame"| GS["GameScene"]
 ```
 
-## Selection: shared by every panel
+## Selection
 
-The **selection** lives in `ScenePanel` as an ordered list, `std::vector<GameObjectPtr> m_selection`. Both the tree and the viewport edit it.
+The selection is `EditorSelection`, in the `EditorContext`, so every panel reads and changes the same one. It's an ordered list of GameObjects:
 
-- The **last** object in the list is the **primary** selection. It's the one the transform gizmo moves, the Component View shows and the right-click menu acts on (`GetSelectedGameObject()` returns it).
-- Every selected object draws its **mesh bounds** in yellow, through its `RenderComponent`'s "Draw Mesh Bounds" toggle, so the inspector checkbox stays in sync.
-- API: `SelectGameObject` / `SetSelection` replace the selection, `ToggleSelected` / `AddToSelection` extend it, `ResetSelectedGameObject` clears it, and `IsSelected` tests one object.
-- **Escape** (with the viewport hovered) clears it, and loading a scene resets it.
+- The **last** object is the **primary** selection. The transform gizmo is on it, the Object Inspector shows its values and the Scene panel's right-click menu acts on it.
+- `Select` / `SetSelection` replace the selection, `Toggle` / `AddToSelection` extend it, `Clear` empties it, `IsSelected` tests one object.
+- Each call that changes it publishes `SelectionChangedEvent`. `SelectionBoundsDisplay` listens and draws every selected object's **mesh bounds** in yellow, through its `RenderComponent`'s "Draw Mesh Bounds" toggle, so the inspector checkbox agrees.
+- **Escape** (with the SceneView hovered) clears it, and loading or creating a scene clears it.
 
 ```mermaid
 %%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
@@ -30,35 +41,40 @@ flowchart TD
     D -->|"click empty space"| E["[ ]"]
 ```
 
-## `ScenePanel` (`ScenePanel.h/.cpp`)
+## Scene (`ScenePanel`)
 
-Two ImGui windows.
+A tree of the scene's objects (the editor camera is hidden).
 
-**"Scene"**: a tree of the scene's root objects (the editor camera is hidden).
 - **Click** selects; **Ctrl+click** adds an object to the selection or removes it.
 - **Double-click** glides the editor camera to frame the object (`EditorCameraComponent::FocusOn`; see [Editor-Camera-And-Build-Launch.md](Editor-Camera-And-Build-Launch.md)).
-- **Drag and drop** one object onto another to parent it.
-- **Right-click** (on an object): Rename, Add Component (from `GameObjectComponentRegistry`), Detach From Parent, Delete. Right-click on empty space while nothing is selected: Create GameObject.
+- **Drag and drop** one object onto another to parent it. It keeps its local transform, so it moves if the new parent isn't at the origin (see [10-KnownIssues](../10-KnownIssues/Architectural-Notes-And-TODOs.md)).
+- **Right-click** an object for its menu. The first line is its name: **right-click the name** to rename it (Enter to apply). Then Add Component (every registered type), DetachFromParent (child objects only) and Delete.
+- **Right-click empty space** while nothing is selected: Create GameObject, which asks for a name.
 - Clicking empty space in the panel clears the selection.
+- Collapsed parents can be clicked, dragged and right-clicked like any other row.
 
-**"Component View"**: the inspector for the primary selection. It lists the object's components, sorted by `EditorComponentCache::GetAllComponentsInfo()[id].Order` (default `0x0100`), and calls each one's `OnEditorInspect()`. The list is re-sorted only when the primary object or its component count changes. Useful bits from the built-in components:
-- **TransformComponent:** position, rotation (degrees) and scale.
-- **RenderComponent:** the mesh path, its **size in metres**, "Draw Mesh Bounds" / "Draw Sub-Mesh Bounds" (blue boxes per submesh), and each submesh's material, textures and shader.
-- **CameraComponent:** FOV, near/far, exposure compensation, and a live "Camera View" preview.
+Rows take their ImGui IDs from each object's GUID, not its name, so objects with the same name (allowed; see [Scene-And-GameObject-Model.md](../03-SceneAndGameObjects/Scene-And-GameObject-Model.md)) don't share open state or menus. Every change goes through a command (`CreateGameObjectCommand`, `RenameGameObjectCommand`, `AttachToParentCommand`, ...).
 
-## `SceneViewPanel` (`SceneViewPanel.h/.cpp`)
+## Object Inspector (`InspectorPanel`)
 
-The 3D viewport ("SceneView"). It shows the main view's render target with `ImGui::Image` and draws editor overlays on top.
+Shows the primary selection's components, each under a `[ ComponentName ]` heading, and edits them. With several objects selected, it shows the components they all share ("3 objects selected; showing the components they share"), marks values that differ, and applies an edit to all of them. It's built entirely from the components' property descriptions; see [Object-Inspector-And-Properties.md](Object-Inspector-And-Properties.md).
+
+## SceneView (`SceneViewPanel`)
+
+The 3D viewport. It shows the main view's render target with `ImGui::Image` and draws editor overlays on top. It can't be closed.
 
 | Feature | How it works |
 |---|---|
-| **Viewport sizing** | When the panel resizes, it sets the main view's `ViewportSize` and the editor camera's aspect ratio. The render target stays window-sized, and the image's UVs are cropped to the panel. |
-| **Transform gizmo** | ImGuizmo on the primary selection. Toolbar: Translate / Rotate / Scale, Local / World. Hotkeys **W / E / R** pick the mode and **Q** toggles local/world (ignored while the right mouse button is held, since that's flying the camera). |
+| **Viewport sizing** | When the panel resizes (in `Draw()`, since the size comes from ImGui), it sets the main view's `ViewportSize`, the editor camera's aspect ratio and `SceneViewportState::Size`. The render target stays window-sized, and the image's UVs are cropped to the panel. |
+| **Transform gizmo** | ImGuizmo on the primary selection. Toolbar: Translate / Rotate / Scale, Local / World (tooltips name the shortcut). Hotkeys **W / E / R** pick the mode and **Q** toggles local/world (ignored while the right mouse button is held, since that's flying the camera). Each frame of a drag pushes a `SetTransformCommand`; the whole drag shares one interaction. |
+| **Several selected** | The gizmo moves all of them: each frame's change to the primary (move, turn, scale ratio) is applied to every other selected object, each turning about its own pivot. Objects whose parent is also selected are skipped, since they move with it. |
 | **Snapping** | Snap (X) toggle, move step (0.25–1 m) and rotate step (15–90°) in the toolbar; holding Ctrl during a drag inverts the toggle. See [Gizmo-Snapping-And-Grid.md](Gizmo-Snapping-And-Grid.md). |
-| **Grid** | A semi-transparent ground grid on Y = 0 whose squares match the move step and grow as the camera rises, fading with distance. Grid toggle in the toolbar. See [Gizmo-Snapping-And-Grid.md](Gizmo-Snapping-And-Grid.md). |
+| **Grid** | A semi-transparent ground grid on Y = 0 whose squares match the move step and grow as the camera rises, fading with distance. See [Gizmo-Snapping-And-Grid.md](Gizmo-Snapping-And-Grid.md). |
 | **Light and camera icons** | Each `DirectionalLightComponent` draws a sun icon and each `CameraComponent` a movie-camera icon at its position. The primary selection's icon fades to 40% so the gizmo's centre handle shows through. |
 | **Camera frustums** | Each scene camera draws its view volume as debug lines, from the near plane out to its far plane or 1.5 m, whichever is closer, so it reads as a pyramid. |
 | **Picking** | Click, Ctrl+click and marquee selection; see below. |
+
+The hovered flag in `SceneViewportState` decides whether editor input (camera, gizmo keys, Escape) reaches the scene. It's cleared at the start of each frame, so it stays false while the SceneView is hidden.
 
 ### Picking
 
@@ -78,7 +94,7 @@ Clicks on the gizmo, and clicks while the right or middle button (camera control
 flowchart TD
     Click["Left click"] --> Icon{"on a light or<br/>camera icon?"}
     Icon -->|yes| SelI["select that object now"]
-    Icon -->|no| Req["ask the GPU: RenderPickRequest<br/>for this pixel"]
+    Icon -->|no| Req["ScenePicker::RequestPick<br/>for this pixel"]
     Req --> GPU["PickRenderStage draws object IDs<br/>for that one pixel"]
     GPU --> Back["ID read back a frame or two later"]
     Back --> SelM["select the object with that ID<br/>(or clear on 0)"]
@@ -88,12 +104,12 @@ flowchart TD
     Test --> SelR["select them all"]
 ```
 
-- **Click → GPU, pixel-exact.** Icons draw on top of meshes, so their screen rects (recorded by `DrawObjectIcons()` each frame in `m_iconHits`) are tested first. Otherwise the panel puts a pick request on the main view and applies the result when `TexelReadback::IsReady` turns true. The pick respects occlusion and the exact silhouette: clicking the background inside an object's bounding box selects nothing, and a click goes to whichever object is in front. See [Render-Stages.md](../04-Rendering/Render-Stages.md#pickrenderstage).
+- **Click → GPU, pixel-exact.** Icons draw on top of meshes, so their screen rects (recorded each frame in `m_iconHits`) are tested first. Otherwise the panel asks the context's `ScenePicker`, which puts a pick request on the main view and calls back when the readback is ready (`EditorContext::Update` checks each frame). The pick respects occlusion and the exact silhouette: clicking the background inside an object's bounding box selects nothing, and a click goes to whichever object is in front. A pick still in flight is cancelled when the scene unloads. See [Render-Stages.md](../04-Rendering/Render-Stages.md#pickrenderstage).
 - **Marquee → CPU, frustum test.** The rectangle becomes a frustum, and every object with a `RenderComponent` whose **submesh** bounds intersect it is selected. That's how it catches hidden objects; a GPU ID buffer only keeps the nearest object per pixel.
 
-## `LogPanel` (`LogPanel.h/.cpp`)
+## Log (`LogPanel`)
 
-The "Log" window shows `DebugServices`' log entries, coloured by channel, and scrolls to the bottom when new ones arrive. Anything can write to it:
+Shows `DebugServices`' log entries, coloured by channel, and scrolls to the bottom when new ones arrive. Its `Update()` notes whether there are new entries; `Draw()` lists them. Anything can write to it:
 - `RZE_LOG` / `RZE_LOG_ARGS` from engine and game code (enabled in Debug and Release, stripped in Retail);
 - resource loads ("Creating resource [...]"), including ones loaded asynchronously;
 - the render pipeline's stage order when it compiles;
@@ -101,15 +117,18 @@ The "Log" window shows `DebugServices`' log entries, coloured by channel, and sc
 
 See [Debug-Services-And-Logging.md](../06-Platform-And-Infrastructure/Debug-Services-And-Logging.md).
 
-## `ResourceMonitorPanel` (`ResourceMonitorPanel.h/.cpp`)
+## Resource Monitor (`ResourceMonitorPanel`)
 
-A toggleable panel (View > Windows > Resource Monitor) with resource and asset statistics.
+A table of loaded resources and their reference counts. `Update()` copies the resource table into a sorted list at most every 250 ms (so it stays cheap in Debug), and `Draw()` only draws the visible rows (`ImGuiListClipper`).
+
+## ImGui Demo (`ImGuiDemoPanel`)
+
+Dear ImGui's own demo window, from Help > ImGui Demo. It draws its own window (`PanelDesc::OwnsWindow`).
 
 ## Key files
 
-- `Editor\Src\UI\Panels\ScenePanel.h/.cpp`
-- `Editor\Src\UI\Panels\SceneViewPanel.h/.cpp`
+- `Editor\Src\UI\Panels\ScenePanel`, `SceneViewPanel`, `InspectorPanel`, `LogPanel`, `ResourceMonitorPanel`, `ImGuiDemoPanel` (`.h/.cpp`)
+- `Editor\Src\UI\Framework\EditorSelection.h/.cpp`, `ScenePicker.h/.cpp`
+- `Editor\Src\Services\SelectionBoundsDisplay.h/.cpp`
 - `Editor\Src\UI\Gizmo\GizmoSnapper.h/.cpp`, `EditorGrid.h/.cpp` — see [Gizmo-Snapping-And-Grid.md](Gizmo-Snapping-And-Grid.md)
-- `Editor\Src\UI\Panels\LogPanel.h/.cpp`
-- `Editor\Src\UI\Panels\ResourceMonitorPanel.h/.cpp`
 - `Engine\Src\Graphics\RenderStages\PickRenderStage.h/.cpp` — the GPU side of click picking

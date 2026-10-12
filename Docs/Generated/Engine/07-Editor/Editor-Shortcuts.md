@@ -45,9 +45,20 @@ W/E/R/Q/X are ignored while RMB is held, because those keys fly the camera then.
 | **Click empty space** | Scene panel | Clear the selection |
 | **Double-click** | Scene panel | Frame the object with the editor camera |
 | **Drag and drop** onto another object | Scene panel | Parent it to that object |
-| **Right-click** | Scene panel | Context menu: Rename, Add Component, Detach From Parent, Delete (on empty space with nothing selected: Create GameObject) |
+| **Right-click** | Scene panel | Context menu: the object's name, Add Component, DetachFromParent, Delete (on empty space with nothing selected: Create GameObject) |
+| **Right-click the name** in that menu | Scene panel | Rename: type the new name, then Enter |
 
 Details: [Editor-Panels.md](Editor-Panels.md).
+
+## Edit
+
+| Shortcut | Action |
+|---|---|
+| **Ctrl + C** | Copy the selected objects (with their children) |
+| **Ctrl + V** | Paste: new copies beside the originals, each paste one step further |
+| **Ctrl + D** | Duplicate the selection, one step beside it |
+
+These work anywhere in the Editor, except that a focused text field keeps its own Ctrl+C/V. They're also in the Edit menu. Details: [Editor-Overview.md](Editor-Overview.md#edit-copy-paste-and-duplicate).
 
 ## Other
 
@@ -56,17 +67,18 @@ Details: [Editor-Panels.md](Editor-Panels.md).
 | **Escape** | "Create GameObject" name box | Close it without creating |
 | **Enter** | "Create GameObject" name box | Create the object |
 
-The File, View and Help menus have no keyboard shortcuts.
+The File, View and Help menus have no keyboard shortcuts. The SceneView toolbar's tooltips name the shortcut for each control, e.g. "Shortcut (W)".
 
 ## Where shortcuts are bound
 
 | Shortcuts | Code |
 |---|---|
 | Camera | `EditorCameraComponent::Update` → input handling, `Editor\Src\Game\World\GameObjectComponents\EditorCameraComponent.cpp` |
-| Gizmo W/E/R/Q/X | `SceneViewPanel::Temp_RegisterInputs` (engine `InputHandler::BindAction`) |
-| Ctrl during a gizmo drag | `SceneViewPanel::Display` → `GizmoSnapper::PrepareManipulate` (ImGui's `KeyCtrl`) |
+| Gizmo W/E/R/Q/X | `SceneViewPanel::RegisterInputs`, from `Initialize` (engine `InputHandler::BindAction`) |
+| Ctrl during a gizmo drag | `SceneViewPanel::Draw` → `GizmoSnapper::PrepareManipulate` (ImGui's `KeyCtrl`) |
 | Picking and marquee | `SceneViewPanel::HandleSelectionInput` |
 | Escape in the SceneView | `EditorApp::RegisterInputEvents` |
-| Scene panel | `ScenePanel::Display` (ImGui item clicks) |
+| Scene panel | `ScenePanel::Draw` (ImGui item clicks) |
+| Ctrl+C/V/D | `MainMenuBar::HandleEditShortcuts` (`ImGui::Shortcut` with `ImGuiInputFlags_RouteGlobal`) |
 
 When adding a shortcut, check this page for conflicts and add a row here.

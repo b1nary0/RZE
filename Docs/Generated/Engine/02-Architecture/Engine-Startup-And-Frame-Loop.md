@@ -105,8 +105,9 @@ sequenceDiagram
     participant RE as RenderEngine
     participant Async as AsyncOperationManager
 
-    ML->>ML: ImGui NewFrame (DX11 + Win32 backends, ImGuizmo)
     ML->>Async: Tick() - each operation's slice of work<br/>within the frame budget, completion callbacks fire here
+    ML->>App: PreUIUpdate() - app work before any UI,<br/>no ImGui calls (the Editor's panel Update)
+    ML->>ML: ImGui NewFrame (DX11 + Win32 backends, ImGuizmo)
     ML->>App: Update()
     ML->>Scene: Update() - updates root GameObjects (children recurse)
     ML->>ML: ImGui EndFrame()
@@ -117,7 +118,8 @@ sequenceDiagram
 This phase runs every frame, immediately after the input phase above. Two things happen at fixed points so other threads and long-running work fit in:
 
 - **Start of the frame** (`PreUpdate`, before input): `MainThreadDispatcher::Drain()` runs every task worker threads posted since the last frame, such as log lines.
-- **Before the app's `Update()`**: `AsyncOperationManager::Tick()`, so a scene that finished loading is in place before this frame's UI is built.
+- **Before ImGui's frame** (`RZE_Engine::PreUIUpdate`): `AsyncOperationManager::Tick()`, so a scene that finished loading is in place before this frame's UI is built, then `RZE_Application::PreUIUpdate()`. There's no ImGui frame yet, so an ImGui call there asserts; the Editor uses it for each panel's data step (see [Editor-Framework.md](../07-Editor/Editor-Framework.md#when-things-run-in-a-frame)).
+- **`-perfcapture <file>`** records every frame's total and update time (`PreUIUpdate` + `Update`) for A/B comparisons, then exits; see [Debug-Services-And-Logging.md](../06-Platform-And-Infrastructure/Debug-Services-And-Logging.md#frame-time-capture).
 
 ```mermaid
 gantt
@@ -127,7 +129,7 @@ gantt
     section Main thread
     Drain posted tasks         :a, 0, 1ms
     Input and events           :b, after a, 2ms
-    Async operations tick      :c, after b, 2ms
+    Async tick and PreUIUpdate :c, after b, 2ms
     App and scene Update       :d, after c, 4ms
     Queue render commands      :e, after d, 3ms
     Present / hand over        :f, after e, 1ms

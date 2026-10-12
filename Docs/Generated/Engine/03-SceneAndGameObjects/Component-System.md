@@ -15,14 +15,15 @@ public:
     virtual void Update() = 0;
     virtual void Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) = 0;
     virtual void Deserialize(const rapidjson::Value& data) = 0;
-    virtual void OnEditorInspect() = 0;   // drives the editor's per-component inspector panel
 
-    GameObjectComponentID m_id;
+    GameObjectComponentID m_id;      // the component's type
     GameObject* m_owner;
 };
 ```
 
-`OnEditorInspect()` being a first-class virtual on every component (not an editor-only add-on) shows how tightly the in-engine editor tooling is woven into the core component contract, rather than layered on separately.
+Each component instance also has a `GameObjectComponentInstanceID`, unique and never reused, which `GameObjectComponentPtr` handles check to know whether the component is still alive (see [Scene-And-GameObject-Model.md](Scene-And-GameObject-Model.md#handles-gameobjectptr-and-gameobjectcomponentptrt)).
+
+The base class has **no editor code**. The editor's inspector is driven by **property descriptions**: a component type lists its properties in a static `DescribeProperties(PropertyBuilder<T>&)`, from its own getters and setters, with no ImGui. See [Object-Inspector-And-Properties.md](../07-Editor/Object-Inspector-And-Properties.md).
 
 ## CRTP type-ID assignment
 
@@ -65,8 +66,11 @@ populated via the `REGISTER_GAMEOBJECTCOMPONENT(ComponentType)` macro:
     GameObjectComponentRegistry::RegisterComponentType(ComponentType::GetID(), #ComponentType);\
     GameObjectComponentRegistry::AddComponentFactory(ComponentType::GetID(),                  \
         Functor<GameObjectComponentBase*>([]() { return new ComponentType(); }));             \
+    ComponentPropertyRegistry::Register<ComponentType>();                                      \
 }
 ```
+
+(Simplified.) The last line stores the type's property description, if it has a `DescribeProperties`, under its type ID for the editor's inspector; types without one are skipped at compile time.
 
 This macro is invoked once per built-in component type inside `RZE_Application::Initialize()` (base class), and again by each app subclass for its own product-specific components (e.g. Editor registers `EditorCameraComponent`). This is what lets load code and the editor's "Add Component" menu call `GameObjectComponentRegistry::CreateComponentByID(id)` without knowing the concrete type at compile time.
 

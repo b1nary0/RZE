@@ -61,9 +61,22 @@ A singleton in-memory log (`DebugServices::Get()`), with three channels:
 
 For frame-level profiling use Optick or PIX instead (see [Low-Level-Renderer-Module.md](../04-Rendering/Low-Level-Renderer-Module.md#profiling)).
 
+## Frame time capture
+
+`FrameTimeCapture` (`Engine\Src\DebugUtils\FrameTimeCapture.h/.cpp`, owned by `RZE_Engine`) records every frame's timings for A/B performance comparisons, in either app. It's off unless the command line asks for it:
+
+| Argument | Meaning |
+|---|---|
+| `-perfcapture <file>` | Where to write the samples: one `frameMs,updateMs` line per frame. `updateMs` is `RZE_Engine::PreUIUpdate()` + `Update()`, not ImGui's `NewFrame`. |
+| `-perfwarmup <seconds>` | How long to wait before recording, e.g. for the scene to load (default 10) |
+| `-perfduration <seconds>` | How long to record (default 15) |
+
+When the duration is up it writes the file and the engine exits, so a script can launch the Editor or Game on a scene, wait for it to close and compare the files from two builds.
+
 ## Key files
 
 - `Utils\Src\Utils\DebugUtils\Debug.h/.cpp` — macros, log file, log sink, assert dialog
 - `Engine\Src\DebugUtils\DebugServices.h/.cpp`
+- `Engine\Src\DebugUtils\FrameTimeCapture.h/.cpp`
 - `Engine\Src\EngineCore\Engine.cpp` — `TraceLogLine`, the engine's log sink
 - `Utils\Src\Utils\Platform\Timers\HiResTimer.h/.cpp`

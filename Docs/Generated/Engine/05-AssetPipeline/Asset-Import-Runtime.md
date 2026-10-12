@@ -82,14 +82,16 @@ stateDiagram-v2
 sequenceDiagram
     participant Main as Main thread
     participant W as Worker threads
-    Main->>W: 1. Parsing: read and parse the .scene file,<br/>ask each component what resources it needs
+    Main->>W: 1. Parsing: read, parse and upgrade the .scene file,<br/>ask each component what resources it needs
     W-->>Main: dependency list
     Main->>W: 2. LoadingResources: AsyncResourceBatch<br/>LoadCPU for every mesh and texture
     W-->>Main: parsed data
     Main->>Main: finalize resources, a slice per frame
-    Main->>Main: 3. Instantiating: create game objects in file order,<br/>a slice per frame (resource loads are now cache hits)
+    Main->>Main: 3. Instantiating: GameObjectLoader creates objects in file order,<br/>a slice per frame (resource loads are now cache hits)
     Main-->>Main: completed (or, on failure, unload the partial scene)
 ```
+
+Parsing also runs `SceneFormat::Upgrade`, so an older scene file is converted to the current format before anything reads it, and instantiating links each object to its parent by GUID; see [Scene-And-GameObject-Model.md](../03-SceneAndGameObjects/Scene-And-GameObject-Model.md#scene-files).
 
 Components say what they need with a static `GatherResourceDependencies(componentData, outDependencies)` registered with `GameObjectComponentRegistry`; `RenderComponent` lists its mesh. Gathering everything up front is what lets the heavy loading happen before any objects exist.
 

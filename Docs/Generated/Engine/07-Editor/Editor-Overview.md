@@ -2,24 +2,26 @@
 
 The Editor ("RZEStudio", `RZE\Editor\`) is the scene-authoring app. It's a Dear ImGui app built on exactly the same `Engine` and `Modules\Rendering` stack as the Game. It has no renderer or scene model of its own: `EditorApp` is just another `RZE_Application` (see [App-Shell-Pattern.md](../02-Architecture/App-Shell-Pattern.md)) that adds panels, an editor camera and some tooling.
 
+Its UI code is organised around an `EditorContext` that panels share, self-registering panels with a separate data step and draw step, and commands and events for changing the scene; see [Editor-Framework.md](Editor-Framework.md).
+
 ## What you see
 
 ```
 +---------------------------------------------------------------------------------+
-| File  View  Help  | frame time | RenderCommand MemArena: 4 KB / 64 MB  Peak ...   |
+| File Edit View Help | frame time | RenderCommand MemArena: 4 KB / 64 MB  Peak ... |
 +--------------+--------------------------------------------------+---------------+
-| Scene        | SceneView  (gizmo | snap | grid toolbar)        | Component View|
-|              |                                                  |               |
-|  Camera      |      3D viewport: the scene, gizmo, light and    | inspector for |
-|  Directional |      camera icons, bounds boxes, marquee         | the primary   |
-|  NeckMech    |                                                  | selection     |
-|  M4          |      ground grid                                 |               |
+| Scene        | SceneView  (gizmo | snap | grid toolbar)        | Object        |
+|              |                                                  | Inspector     |
+|  Camera      |      3D viewport: the scene, gizmo, light and    |               |
+|  Directional |      camera icons, bounds boxes, marquee         | the selected  |
+|  NeckMech    |                                                  | objects'      |
+|  M4          |      ground grid                                 | components    |
 +--------------+--------------------------------------------------+---------------+
 | Log   (RZE_LOG output, resource loads, build output)                            |
 +---------------------------------------------------------------------------------+
 ```
 
-The layout is an ImGui dockspace, saved in `Config\imgui.ini`. Each panel is described in [Editor-Panels.md](Editor-Panels.md); the camera and the build/launch tools are in [Editor-Camera-And-Build-Launch.md](Editor-Camera-And-Build-Launch.md); gizmo snapping and the ground grid are in [Gizmo-Snapping-And-Grid.md](Gizmo-Snapping-And-Grid.md). Every keyboard and mouse shortcut is in [Editor-Shortcuts.md](Editor-Shortcuts.md).
+The layout is an ImGui dockspace, saved in `Config\imgui.ini`; without one, each panel docks where its `PanelDesc::DefaultDock` says. Each panel is described in [Editor-Panels.md](Editor-Panels.md), and the inspector in [Object-Inspector-And-Properties.md](Object-Inspector-And-Properties.md); the camera and the build/launch tools are in [Editor-Camera-And-Build-Launch.md](Editor-Camera-And-Build-Launch.md); gizmo snapping and the ground grid are in [Gizmo-Snapping-And-Grid.md](Gizmo-Snapping-And-Grid.md). Every keyboard and mouse shortcut is in [Editor-Shortcuts.md](Editor-Shortcuts.md).
 
 ## Launching
 
@@ -37,22 +39,23 @@ The layout is an ImGui dockspace, saved in `Config\imgui.ini`. Each panel is des
 ```mermaid
 %%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 flowchart TD
-    App["EditorApp"]
-    App --> Panels["Panels: Scene, SceneView,<br/>Component View, Log, Resource Monitor"]
-    App --> Cam["'EditorCam' GameObject<br/>+ EditorCameraComponent"]
+    App["EditorApp"] --> Ctx["EditorContext<br/>selection, settings, services"]
     App --> RT["Offscreen render target"]
-    App --> Ops["Async operations<br/>scene loading, build/launch"]
+    Ctx --> Panels["Panels: Scene, SceneView,<br/>Object Inspector, Log, ..."]
+    Ctx --> Doc["SceneDocument<br/>load, save"]
+    Doc --> Cam["'EditorCam' GameObject<br/>+ EditorCameraComponent"]
     Cam -->|"fills the main view's camera"| RE["RenderEngine"]
     RT -->|"main view's Target"| RE
     RE -->|"finished image"| RT
     RT -->|"ImGui::Image"| Panels
-    Panels -->|"select, pick, edit"| Scene["Active GameScene"]
+    Panels -->|"commands"| Scene["Active GameScene"]
 ```
 
 - **Offscreen viewport.** `CreateRenderTarget()` makes a `RenderTargetTexture` the size of the window and sets it as the main view's `Target`. The scene renders into it, and `SceneViewPanel` shows it with `ImGui::Image`, cropping the UVs to the panel's size. The Editor never draws the scene straight to the back buffer; ImGui owns the back buffer.
 - **Render stages.** On top of the engine's stages, the Editor adds `ImGuiRenderStage(withEditor = true)`. The `PickRenderStage` that click selection uses is part of the engine and idle unless the Editor asks for a pick. See [Render-Stages.md](../04-Rendering/Render-Stages.md).
-- **Editor camera.** `CreateAndInitializeEditorCamera()` adds an `"EditorCam"` object at `(-4, 10, 4)`, aimed at the scene's centre. It's excluded from saves (`SetIncludeInSave(false)`) and hidden from the Scene panel.
-- **Input.** `ProcessInput()` forwards mouse and keyboard to ImGui (`ImGuiInput::SubmitInput`, including the wheel and text input) and returns whether the scene view is hovered. Engine input actions, including the camera controls, only fire while it is, so typing in a panel doesn't fly the camera.
+- **Editor camera.** After each load, `SceneDocument::CreateEditorCamera()` adds an `"EditorCam"` object at `(-4, 10, 4)`, aimed at the scene's centre, and hands it to the context (`EditorContext::GetEditorCamera`). It's excluded from saves (`SetIncludeInSave(false)`) and hidden from the Scene panel.
+- **Input.** `ProcessInput()` forwards mouse and keyboard to ImGui (`ImGuiInput::SubmitInput`, including the wheel and text input) and returns whether the scene view is hovered (`SceneViewportState::IsHovered`). Engine input actions, including the camera controls, only fire while it is, so typing in a panel doesn't fly the camera.
+- **Window title.** `RZEStudio - <scene file>`, with a `*` while the scene has unsaved changes, or `RZEStudio - Untitled` for a new scene. `EditorApp` keeps it up to date from the scene document's events.
 
 ## Loading a scene
 
@@ -62,11 +65,11 @@ Scene loading is **asynchronous**, so the Editor stays responsive and shows prog
 %%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 sequenceDiagram
     participant User
-    participant App as EditorApp
+    participant App as SceneDocument
     participant Op as SceneLoadOperation
     participant Modal as AsyncOperationModal
     User->>App: File > Load Scene... (or -scene at start-up)
-    App->>App: clear the selection, drop the editor camera
+    App->>App: ResetSceneState - selection, camera,<br/>pending commands, panels
     App->>Op: start (via AsyncOperationManager)
     Op->>Op: 1. Parsing (worker thread)<br/>read the file, list needed resources
     Op->>Op: 2. LoadingResources (workers + main, time-sliced)
@@ -74,11 +77,12 @@ sequenceDiagram
     Modal-->>User: progress dialog while blocking operations run
     Op-->>App: completed
     App->>App: create the editor camera last,<br/>so it's the active camera
-    App->>App: put the scene path in the window title
+    App->>App: mark unmodified, publish SceneLoadedEvent<br/>(the window title follows)
 ```
 
 - Only one load runs at a time; the File menu disables New/Load while one is in progress.
 - If loading fails, the partial scene is unloaded, the error is logged, and the next Save prompts for a path rather than overwriting the file.
+- Scene files are format version 2 (objects keyed by GUID); older files are converted as they load. See [Scene-And-GameObject-Model.md](../03-SceneAndGameObjects/Scene-And-GameObject-Model.md#scene-files).
 - `AsyncOperationModal` (`UI\Modals\`) is a generic progress dialog. It watches `AsyncOperationManager` and appears for any operation flagged `Blocking`.
 
 ## Menu bar
@@ -86,10 +90,31 @@ sequenceDiagram
 | Menu | Items |
 |---|---|
 | File | New Scene..., Load Scene..., Save Scene (prompts for a path if the scene is new; copies assets afterwards), Build Game..., Launch Game..., Exit |
-| View | Windows: Scene, Resource Monitor |
-| Help | Show ImGui Demo Window |
+| Edit | Copy (Ctrl+C), Paste (Ctrl+V), Duplicate (Ctrl+D) |
+| View | Windows: Log, Object Inspector, Resource Monitor, Scene (built from each panel's `MenuPath`, checked while open) |
+| Help | ImGui Demo |
+
+`MainMenuBar` (`UI\MainMenuBar.h/.cpp`) draws the menus and readouts and handles the Edit shortcuts. File items call `SceneDocument` and `GameBuilder`; New and Load are disabled while a load runs, Build and Launch while a build does.
 
 The right side of the menu bar shows the frame time and the render command arena's use (`RenderCommand MemArena: current / total`, plus the peak), colour-coded by pressure. It's a quick way to see what a change costs on the render path.
+
+## Edit: copy, paste and duplicate
+
+Copy, paste and duplicate work on the selected GameObjects, with their components and children.
+
+- **Copy** (`GameObjectClipboard::Copy`) writes the selected objects in the scene file's format into the editor's own clipboard (not the system clipboard). An object whose ancestor is also selected is copied with that ancestor, and objects that aren't saved (the editor camera) are left out. It also records the copied objects' **width**: their combined world bounds along X, children included.
+- **Paste** pushes a `PasteGameObjectsCommand`, which loads the copied data as new objects and selects the top-level ones.
+- **Duplicate** copies the selection straight into a paste, leaving the clipboard alone.
+- The shortcuts are routed globally, but a focused text field keeps its own Ctrl+C/V.
+
+What a paste does to the copies:
+
+| | |
+|---|---|
+| **Identity** | Each pasted object gets a new GUID if its copied one is still in use. Parent links are resolved through the copied GUIDs, so copied children stay under their pasted parents, and a copied child whose original parent is still in the scene is pasted under that parent. |
+| **Names** | Numbered so copies are easy to tell apart: "Tank" pastes as "Tank (1)", a copy of "Tank (1)" as "Tank (2)". Purely cosmetic; names don't have to be unique. |
+| **Position** | The top-level copies move along world **+X** by the copied width **plus the snap size** (`EditorSettings`), so they sit beside the originals with a gap. Each further paste of the same clipboard goes one more step; Copy starts the count again. Duplicate always moves one step, and since the copies end up selected, duplicating again steps on from them. Objects with no mesh have no width, so they step by the snap size. |
+| **Parents** | The offset is converted into each copy's parent space (the inverse of the parent's world matrix, applied as a direction, so only its rotation and scale count), so it's a world-space step whatever the parent. |
 
 ## Editor vs Game: where the picture goes
 
@@ -113,6 +138,9 @@ flowchart TD
 ## Key files
 
 - `Editor\Src\EditorMain.cpp`, `Editor\Src\EditorApp.h/.cpp`
+- `Editor\Src\UI\Framework\`, `Editor\Src\Commands\`, `Editor\Src\Services\` — see [Editor-Framework.md](Editor-Framework.md)
+- `Editor\Src\UI\MainMenuBar.h/.cpp`
+- `Editor\Src\Services\GameObjectClipboard.h/.cpp`, `Editor\Src\Commands\SceneCommands.cpp` (`PasteGameObjectsCommand`)
 - `Editor\Src\UI\Panels\` — see [Editor-Panels.md](Editor-Panels.md)
 - `Editor\Src\UI\Modals\AsyncOperationModal.h/.cpp`
 - `Editor\Src\Game\World\GameObjectComponents\EditorCameraComponent.h/.cpp` — see [Editor-Camera-And-Build-Launch.md](Editor-Camera-And-Build-Launch.md)

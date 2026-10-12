@@ -89,7 +89,7 @@ flowchart LR
 ```
 
 - `GetMainView()` returns the main view. The app sets its `Target` and `ViewportSize` (the Editor sizes it to the scene view panel); the active camera component fills in `Camera` every frame.
-- `RenderSecondaryView(name, view)` renders the scene into another view as part of the current frame. `CameraComponent` uses this for the "Camera View" preview it draws in the Editor's inspector (`OnEditorInspect`), so a preview is only rendered while that camera is selected. Stages marked `MainOnly` (picking, ImGui, the final blit) skip secondary views.
+- `RenderSecondaryView(name, view)` renders the scene into another view as part of the current frame. `CameraComponent` uses this for the "Camera View" preview it draws in the Editor's inspector (`CameraComponent::RenderPreview`, called from the camera's custom inspector section), so a preview is only rendered while that camera is selected. Stages marked `MainOnly` (picking, ImGui, the final blit) skip secondary views.
 
 ## Frame lifecycle
 

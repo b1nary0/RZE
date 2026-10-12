@@ -1,6 +1,8 @@
 # Gizmo Snapping & the Editor Grid
 
-The SceneView's transform gizmo can snap moves to a world grid and turn in fixed steps, and a ground grid that matches the snap size is drawn under the scene. Both live in `Editor\Src\UI\Gizmo\` as classes the `SceneViewPanel` owns: `GizmoSnapper` and `EditorGrid`. Their toolbar controls sit in the SceneView's menu bar, separated into groups by `ToolbarLayout` (`Editor\Src\UI\ToolbarLayout.h`).
+The SceneView's transform gizmo can snap moves to a world grid and turn in fixed steps, and a ground grid that matches the snap size is drawn under the scene. Both live in `Editor\Src\UI\Gizmo\` as classes the `SceneViewPanel` owns: `GizmoSnapper` and `EditorGrid`. Their toolbar controls sit in the SceneView's menu bar (`SceneViewPanel::DrawMenuBar`), separated into groups by the `EditorUI` toolbar helpers (`ScopedToolbarSpacing`, `ToolbarGroupSeparator`).
+
+The **move step** (snap size) is shared: it lives in `EditorSettings` on the `EditorContext`, because the gizmo, the grid and paste all use it (paste leaves that gap between copies; see [Editor-Overview.md](Editor-Overview.md#edit-copy-paste-and-duplicate)). `GizmoSnapper` keeps the toggle and the rotate step.
 
 ```
 Translate Rotate Scale | Local World | [ ] Snap (X) | Move step: (o)0.25 m ( )0.5 m ( )0.75 m ( )1 m | Rotate step: (o)15° ( )30° ( )45° ( )90° | [x] Grid  1 m squares
@@ -13,7 +15,7 @@ All settings last for the session only. Defaults: snap off, 1 m move step, 15° 
 | Setting | Options | Applies to |
 |---|---|---|
 | **Snap (X)** | on / off; **X** toggles it, **holding Ctrl** during a drag inverts it for that drag | Translate and Rotate (Scale never snaps) |
-| **Move step** | 0.25, 0.5, 0.75, 1 m (`SetSnapSize` rounds to quarter metres and clamps to 0.25–1) | Translate |
+| **Move step** | 0.25, 0.5, 0.75, 1 m (`EditorSettings::SetSnapSize` rounds to quarter metres and clamps to 0.25–1) | Translate |
 | **Rotate step** | 15°, 30°, 45°, 90° | Rotate |
 
 How each mode snaps:
@@ -24,7 +26,7 @@ How each mode snaps:
 | **Translate, Local** | Local axes don't line up with the world grid, so this uses ImGuizmo's own snap: steps of the move step along the local axis, counted from where the drag started. |
 | **Rotate** (both spaces) | The **total** angle turned since the drag started snaps to whole steps. ImGuizmo's built-in rotation snap rounds the absolute ring angle instead, which drifts off-step (e.g. 45.028°), so `GizmoSnapper` does it itself: it keeps the unsnapped rotation as a quaternion, accumulates each frame's delta onto it, and snaps the angle between that and the drag's starting rotation. |
 
-Per frame, `SceneViewPanel` calls `PrepareManipulate(operation, mode, ctrlHeld)` before `ImGuizmo::Manipulate` (passing the result as the snap argument), then `Apply(isUsing, currentPosition, currentRotation, translation, rotation)` on the decomposed result. `Apply` also sees drags start and end, which is where the starting position and rotation are captured.
+Per frame, `SceneViewPanel` calls `PrepareManipulate(settings, operation, mode, ctrlHeld)` before `ImGuizmo::Manipulate` (passing the result as the snap argument), then `Apply(drag, currentPosition, currentRotation, translation, rotation)` on the decomposed result. `drag` is the gizmo's `InteractionTracker`, following `ImGuizmo::IsUsing()`; its start edge is where the starting position and rotation are captured. The snapped result is pushed as a `SetTransformCommand` carrying the drag's interaction ID (see [Editor-Framework.md](Editor-Framework.md#interactions-one-drag-many-commands)). With several objects selected, the others get the same change; see [Editor-Panels.md](Editor-Panels.md#sceneview-sceneviewpanel).
 
 ```mermaid
 %%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
@@ -79,6 +81,7 @@ See [Render-Stages.md](../04-Rendering/Render-Stages.md#debugdrawrenderstage).
 
 - `Editor\Src\UI\Gizmo\GizmoSnapper.h/.cpp`
 - `Editor\Src\UI\Gizmo\EditorGrid.h/.cpp`
-- `Editor\Src\UI\ToolbarLayout.h` — spacing and separators for the SceneView toolbar groups
+- `Editor\Src\UI\Framework\EditorSettings.h/.cpp` — the shared snap size
+- `Editor\Src\UI\Framework\EditorUI.h/.cpp` — spacing and separators for the SceneView toolbar groups
 - `Editor\Src\UI\Panels\SceneViewPanel.h/.cpp` — owns both, wires them to ImGuizmo and the camera
 - `Engine\Src\Graphics\RenderStages\DebugDrawRenderStage.h/.cpp`, `Assets\Shaders\Vertex_Line.hlsl`, `Pixel_Line.hlsl`

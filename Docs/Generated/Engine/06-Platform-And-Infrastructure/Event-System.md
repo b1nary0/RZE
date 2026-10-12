@@ -1,6 +1,6 @@
 # Event System
 
-`Engine\Src\Events\` implements a generic, engine-wide publish/subscribe event bus — distinct from `InputHandler`'s action-binding model ([Input-System.md](Input-System.md)), though both are ultimately fed by the same Win32 message pump via `Win32Window`.
+`Engine\Src\Events\` implements a generic, engine-wide publish/subscribe event bus — distinct from `InputHandler`'s action-binding model ([Input-System.md](Input-System.md)), though both are ultimately fed by the same Win32 message pump via `Win32Window`. It's also separate from the Editor's typed `EditorEvents` (scene loaded, selection changed, ...), described in [Editor-Framework.md](../07-Editor/Editor-Framework.md#events).
 
 ## Types
 

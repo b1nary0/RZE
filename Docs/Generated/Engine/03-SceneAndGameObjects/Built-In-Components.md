@@ -10,7 +10,7 @@ Every `GameObject` created via `GameScene::CreateGameObject()` gets one automati
 
 Bridges a GameObject to the rendering system. Holds a `ResourceHandle` to a `StaticMeshResource` and a `RenderObjectPtr` (handle into `RenderEngine`'s scene data). On `OnAddToScene()`, creates the render object via `RenderEngine::CreateRenderObject()`, seeded with the sibling `TransformComponent`'s current world matrix. `Update()` re-pushes the transform every frame (so moving the `TransformComponent` moves the rendered mesh; the render object ignores unchanged matrices). When it creates the render object it also gives it a **pick ID** (`GameObjectID + 1`), so the Editor can click-select it.
 - **Loading:** a static `GatherResourceDependencies()` tells `SceneLoadOperation` which mesh a serialised `RenderComponent` needs, so it's loaded asynchronously before the object is created ([Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md)).
-- **Inspector:** the mesh path, its **size in metres** (mesh bounds × transform scale), "Draw Mesh Bounds" (yellow) and "Draw Sub-Mesh Bounds" (blue) toggles, each submesh's material, textures and shader, and "Select Mesh..." (`RZE().ShowOpenFilePrompt()` → `ResourceHandler::LoadResource<StaticMeshResource>()`).
+- **Inspector** (described properties): Mesh, an asset path whose `...` button opens a file prompt and whose setter `LoadMesh(path)` loads it through the resource system; its **Size** in metres (mesh bounds × transform scale); "Draw Mesh Bounds" (yellow) and "Draw Sub-Mesh Bounds" (blue); and a Sub-Meshes tree with each submesh's material, shader and textures (with previews). See [Object-Inspector-And-Properties.md](../07-Editor/Object-Inspector-And-Properties.md).
 - `GetWorldBounds()` and `GetRenderObject()` expose the world-space bounds for framing and marquee selection.
 
 ## `CameraComponent`
@@ -18,12 +18,13 @@ Bridges a GameObject to the rendering system. Holds a `ResourceHandle` to a `Sta
 A scene camera: FOV (degrees), near/far clip (0.1 m / 1000 m in the shipped scenes) and exposure compensation (EV).
 - **Orientation comes from the owner's `TransformComponent` rotation**: −Z is forward, +Y is up. The Editor's rotate gizmo and the Rotation fields aim it; there's no separate look-at state.
 - When it's the **active camera** ("Main Camera" in the inspector), `Update()` writes its `ClipSpace` (projection × view, 0..1 depth), position and exposure compensation into `RZE().GetRenderEngine().GetMainView()`.
-- Owns a small render target and a secondary `RenderView`, used for the **"Camera View" preview** in its inspector ([Engine-Graphics-Layer.md](../04-Rendering/Engine-Graphics-Layer.md#views)).
+- Owns a small render target and a secondary `RenderView`. `RenderPreview()` renders the **"Camera View" preview** into it with its own local projection, leaving the camera untouched; the editor shows it in a custom inspector section ([Engine-Graphics-Layer.md](../04-Rendering/Engine-Graphics-Layer.md#views)).
+- Its inspector fields go through `SetFOV`, `SetNearCull`, `SetFarCull` and `SetExposureCompensation`. `SetFOV` and `SetNearCull` assert the value is positive, so the inspector's ranges keep them above 0. An active camera rebuilds its matrices every `Update()`, and the preview builds its own each time it renders, so changes show straight away.
 - In the Editor, every scene camera shows a movie-camera icon and its frustum in the scene view.
 
 ## `DirectionalLightComponent`
 
-Wraps a `LightObjectPtr` (strength + `Vector4D` colour). Creates the light object in `RenderEngine` on `OnAddToScene()`, destroys it on `OnRemoveFromScene()`. Its **direction comes from the owner's transform rotation**; rotating it bumps the render scene's revision, so the shadow map re-renders. In the Editor it shows as a sun icon. See `LightObject` in [Engine-Graphics-Layer.md](../04-Rendering/Engine-Graphics-Layer.md).
+Wraps a `LightObjectPtr` (strength + `Vector4D` colour, edited through `SetLightStrength` / `SetLightColour`). Creates the light object in `RenderEngine` on `OnAddToScene()`, destroys it on `OnRemoveFromScene()`. Its **direction comes from the owner's transform rotation**; rotating it bumps the render scene's revision, so the shadow map re-renders. In the Editor it shows as a sun icon. See `LightObject` in [Engine-Graphics-Layer.md](../04-Rendering/Engine-Graphics-Layer.md).
 
 ## `PlayerControllerComponent`
 
