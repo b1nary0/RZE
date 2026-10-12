@@ -1,21 +1,20 @@
 #include <StdAfx.h>
 #include <Game/World/GameObject/GameObjectComponent.h>
-
-#include <unordered_set>
+#include <Game/World/GameObject/LiveIDSet.h>
 
 namespace
 {
 	// Never reset, so instance IDs are never reused (see GameObjectLifetime)
 	GameObjectComponentInstanceID s_nextComponentInstanceID = 0;
 
-	std::unordered_set<GameObjectComponentInstanceID> s_aliveComponents;
+	LiveIDSet s_aliveComponents;
 }
 
 namespace GameObjectLifetime
 {
 	bool IsComponentAlive(GameObjectComponentInstanceID id)
 	{
-		return s_aliveComponents.find(id) != s_aliveComponents.end();
+		return s_aliveComponents.Contains(id);
 	}
 
 	void CheckComponentAccess(GameObjectComponentInstanceID id)
@@ -28,12 +27,12 @@ GameObjectComponentBase::GameObjectComponentBase()
 	: m_owner(nullptr)
 	, m_instanceID(s_nextComponentInstanceID++)
 {
-	s_aliveComponents.insert(m_instanceID);
+	s_aliveComponents.Add(m_instanceID);
 }
 
 GameObjectComponentBase::~GameObjectComponentBase()
 {
-	s_aliveComponents.erase(m_instanceID);
+	s_aliveComponents.Remove(m_instanceID);
 }
 
 namespace GameObjectComponentRegistry

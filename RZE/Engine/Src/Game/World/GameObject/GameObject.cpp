@@ -2,6 +2,7 @@
 #include <Game/World/GameObject/GameObject.h>
 
 #include <Game/World/GameObject/GameObjectComponent.h>
+#include <Game/World/GameObject/LiveIDSet.h>
 
 #include <Game/World/GameObjectComponents/RenderComponent.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
@@ -10,21 +11,20 @@
 #include <Utils/Utils.h>
 
 #include <cfloat>
-#include <unordered_set>
 
 namespace
 {
 	// Never reset, so IDs are never reused (see GameObjectLifetime)
 	GameObjectID s_nextObjectID = 0;
 
-	std::unordered_set<GameObjectID> s_aliveGameObjects;
+	LiveIDSet s_aliveGameObjects;
 }
 
 namespace GameObjectLifetime
 {
 	bool IsGameObjectAlive(GameObjectID id)
 	{
-		return s_aliveGameObjects.find(id) != s_aliveGameObjects.end();
+		return s_aliveGameObjects.Contains(id);
 	}
 
 	void CheckGameObjectAccess(GameObjectID id)
@@ -45,7 +45,7 @@ GameObject::GameObject()
 	m_stateFlags.IsInScene = false;
 	m_stateFlags.IncludeInSave = true;
 
-	s_aliveGameObjects.insert(m_id);
+	s_aliveGameObjects.Add(m_id);
 }
 
 GameObject::GameObject(const std::string& name)
@@ -55,12 +55,12 @@ GameObject::GameObject(const std::string& name)
 	m_stateFlags.IsInScene = false;
 	m_stateFlags.IncludeInSave = true;
 
-	s_aliveGameObjects.insert(m_id);
+	s_aliveGameObjects.Add(m_id);
 }
 
 GameObject::~GameObject()
 {
-	s_aliveGameObjects.erase(m_id);
+	s_aliveGameObjects.Remove(m_id);
 }
 
 void GameObject::Initialize()
