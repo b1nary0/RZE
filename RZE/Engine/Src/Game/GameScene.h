@@ -2,10 +2,13 @@
 
 // @TODO When GameObjectPtr doesnt live in GameObject.h remove this include
 #include <Game/World/GameObject/GameObjectDefinitions.h>
+#include <Game/World/GameObject/ObjectGUID.h>
 
 #include <RapidJSON/fwd.h>
 
 #include <Utils/Math/Vector3D.h>
+
+#include <unordered_map>
 
 class GameScene final
 {
@@ -39,6 +42,8 @@ public:
 	const Filepath& GetCurrentScenePath() const { return mCurrentScenePath; }
 	
 	GameObjectPtr FindGameObjectByName(const std::string& name);
+	// Null if no object in the scene has guid
+	GameObjectPtr FindGameObjectByGUID(ObjectGUID guid);
 	GameObjectPtr AddGameObject(const std::string& name);
 	void AddGameObject(const GameObjectPtr& gameObject);
 	
@@ -54,7 +59,12 @@ public:
 
 private:
 	// @NOTE Creates GameObject with no components. Just used for load code.
-	std::unique_ptr<GameObject> CreateGameObjectNoComponents();
+	std::unique_ptr<GameObject> CreateGameObjectNoComponents(ObjectGUID guid);
+
+	// The GUID saved in a loaded object's data ("id") if it's valid and not taken, otherwise a new one
+	ObjectGUID ChooseGUID(const rapidjson::Value& data) const;
+	// A new GUID that no object in the scene has
+	ObjectGUID GenerateFreeGUID() const;
 
 	void AddGameObject(std::unique_ptr<GameObject>&& gameObject);
 
@@ -68,4 +78,8 @@ private:
 	std::vector<std::unique_ptr<GameObject>> m_objectRegistry;
 
 	std::vector<GameObjectPtr> m_objectsToRemove;
+
+	// Every object in m_objectRegistry by GUID, including ones waiting to be removed; GUIDs never change, so this
+	// only changes when objects are added or erased
+	std::unordered_map<ObjectGUID, GameObject*> m_objectsByGUID;
 };

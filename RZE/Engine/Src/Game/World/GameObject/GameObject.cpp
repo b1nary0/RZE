@@ -39,8 +39,9 @@ GameObjectPtr::GameObjectPtr(GameObject* gameObject)
 {
 }
 
-GameObject::GameObject()
+GameObject::GameObject(ObjectGUID guid)
 	: m_id(s_nextObjectID++)
+	, m_guid(guid)
 {
 	m_stateFlags.IsInScene = false;
 	m_stateFlags.IncludeInSave = true;
@@ -48,8 +49,9 @@ GameObject::GameObject()
 	s_aliveGameObjects.Add(m_id);
 }
 
-GameObject::GameObject(const std::string& name)
+GameObject::GameObject(const std::string& name, ObjectGUID guid)
 	: m_id(s_nextObjectID++)
+	, m_guid(guid)
 	, m_name(name)
 {
 	m_stateFlags.IsInScene = false;
@@ -276,6 +278,9 @@ void GameObject::Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) 
 	writer.String(GetName().c_str());
 	writer.StartObject();
 	{
+		writer.Key("id");
+		writer.String(ObjectGUIDs::ToString(m_guid).c_str());
+
 		writer.String("components");
 		writer.StartObject();
 		{

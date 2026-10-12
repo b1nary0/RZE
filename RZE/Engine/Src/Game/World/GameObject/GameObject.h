@@ -2,6 +2,7 @@
 
 #include <Game/World/GameObject/GameObjectDefinitions.h>
 #include <Game/World/GameObject/GameObjectComponent.h>
+#include <Game/World/GameObject/ObjectGUID.h>
 
 #include <Utils/DebugUtils/Debug.h>
 
@@ -22,8 +23,10 @@ class GameObject
 public:
 	typedef std::vector<GameObjectComponentBase*> ComponentList;
 public:
-	GameObject();
-	GameObject(const std::string& name);
+	// guid is fixed for the object's lifetime. GameScene creates objects and picks it: a loaded object's saved one,
+	// or a new one that no other object in the scene has.
+	explicit GameObject(ObjectGUID guid);
+	GameObject(const std::string& name, ObjectGUID guid);
 	~GameObject();
 
 	// The ID is what GameObjectPtr tracks the object's lifetime by, so it must stay unique to one instance
@@ -57,7 +60,10 @@ public:
 	// #TODO Unsure if it's desired to update via the GameObject API but until convinced otherwise this is it
 	void Update();
 
+	// Unique within a session; see ObjectGUID for identity that lasts across sessions
 	GameObjectID GetID() const { return m_id; }
+	// Generated with the object, then saved and loaded with it
+	ObjectGUID GetGUID() const { return m_guid; }
 
 	void SetName(const std::string& name) { m_name = name; }
 	const std::string& GetName() const { return m_name; };
@@ -102,6 +108,7 @@ public:
 	
 private:
 	GameObjectID m_id;
+	const ObjectGUID m_guid;
 	std::string m_name;
 
 	ComponentList m_components;

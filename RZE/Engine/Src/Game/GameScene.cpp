@@ -137,16 +137,40 @@ bool GameScene::ParseSceneFile(const Filepath& filePath, rapidjson::Document& ou
 
 void GameScene::DeserializeGameObject(const char* name, rapidjson::Value& data)
 {
-	std::unique_ptr<GameObject> gameObject = CreateGameObjectNoComponents();
+	std::unique_ptr<GameObject> gameObject = CreateGameObjectNoComponents(ChooseGUID(data));
 	gameObject->SetName(name);
 	// ComponentBegin
 	gameObject->Load(data);
 	AddGameObject(std::move(gameObject));
 }
 
-std::unique_ptr<GameObject> GameScene::CreateGameObjectNoComponents()
+std::unique_ptr<GameObject> GameScene::CreateGameObjectNoComponents(ObjectGUID guid)
 {
-	return std::make_unique<GameObject>();
+	return std::make_unique<GameObject>(guid);
+}
+
+ObjectGUID GameScene::ChooseGUID(const rapidjson::Value& data) const
+{
+	// Scenes saved before GUIDs have no "id"; a pasted copy of an object still in the scene has a taken one
+	const auto id = data.FindMember("id");
+	const ObjectGUID saved = id != data.MemberEnd() && id->value.IsString() ? ObjectGUIDs::FromString(id->value.GetString()) : ObjectGUIDs::k_invalid;
+	if (saved != ObjectGUIDs::k_invalid && m_objectsByGUID.find(saved) == m_objectsByGUID.end())
+	{
+		return saved;
+	}
+
+	return GenerateFreeGUID();
+}
+
+ObjectGUID GameScene::GenerateFreeGUID() const
+{
+	// A clash between random 64-bit values is vanishingly unlikely, but cheap to rule out
+	ObjectGUID guid = ObjectGUIDs::Generate();
+	while (m_objectsByGUID.find(guid) != m_objectsByGUID.end())
+	{
+		guid = ObjectGUIDs::Generate();
+	}
+	return guid;
 }
 
 void GameScene::Unload()
@@ -160,6 +184,7 @@ void GameScene::Unload()
 	}
 
 	m_objectRegistry.clear();
+	m_objectsByGUID.clear();
 }
 
 void GameScene::AddGameObject(std::unique_ptr<GameObject>&& gameObject)
@@ -175,6 +200,10 @@ void GameScene::AddGameObject(std::unique_ptr<GameObject>&& gameObject)
 	AssertMsg(it == m_objectRegistry.end(), "GameObject already exists in scene");
 	if (it == m_objectRegistry.end())
 	{
+		// GameScene only creates objects with free GUIDs (ChooseGUID, GenerateFreeGUID), so a clash here is a bug
+		const bool isGUIDFree = m_objectsByGUID.emplace(gameObject->GetGUID(), gameObject.get()).second;
+		AssertMsg(isGUIDFree, "A GameObject with this GUID is already in the scene");
+
 		gameObject->OnAddToScene();
 		m_objectRegistry.emplace_back(std::move(gameObject));
 	}
@@ -203,6 +232,7 @@ void GameScene::InternalRemoveGameObject(GameObjectPtr& gameObject)
 		// which is actually more indicative of a larger dumb but i can only focus on so much dumb at a time
 		// and this entire codebase is atrocious.
 		gameObject->Uninitialize();
+		m_objectsByGUID.erase(gameObject->GetGUID());
 
 		if (m_objectRegistry.size() > 1)
 		{
@@ -252,6 +282,16 @@ GameObjectPtr GameScene::FindGameObjectByName(const std::string& name)
 	return nullptr;
 }
 
+GameObjectPtr GameScene::FindGameObjectByGUID(ObjectGUID guid)
+{
+	const auto it = m_objectsByGUID.find(guid);
+	if (it == m_objectsByGUID.end() || !it->second->IsInScene())
+	{
+		return GameObjectPtr();
+	}
+	return GameObjectPtr(it->second);
+}
+
 GameObjectPtr GameScene::AddGameObject(const std::string& name)
 {
 	GameObjectPtr gameObject = CreateGameObject();
@@ -276,7 +316,7 @@ void GameScene::ForEachGameObject(Functor<void, GameObjectPtr> func)
 
 GameObjectPtr GameScene::CreateGameObject()
 {
-	std::unique_ptr<GameObject> gameObject = std::make_unique<GameObject>();
+	std::unique_ptr<GameObject> gameObject = std::make_unique<GameObject>(GenerateFreeGUID());
 	gameObject->AddComponent<TransformComponent>();
 	gameObject->Initialize();
 
@@ -342,4 +382,5 @@ void GameScene::ShutDown()
 		gameObject->Uninitialize();
 	}
 	m_objectRegistry.clear();
+	m_objectsByGUID.clear();
 }
