@@ -4,6 +4,9 @@
 #include <UI/Framework/PanelManager.h>
 #include <UI/Framework/ScenePicker.h>
 
+#include <Services/GameBuilder.h>
+#include <Services/SceneDocument.h>
+
 #include <Game/World/GameObject/GameObjectDefinitions.h>
 
 #include <Utils/Math/Vector2D.h>
@@ -27,7 +30,7 @@ namespace Editor
 	class EditorContext
 	{
 	public:
-		EditorContext() = default;
+		EditorContext();
 		~EditorContext() = default;
 
 		EditorContext(const EditorContext&) = delete;
@@ -59,11 +62,16 @@ namespace Editor
 
 		PanelManager& GetPanels() { return m_panels; }
 
+		SceneDocument& GetSceneDocument() { return m_sceneDocument; }
+		GameBuilder& GetGameBuilder() { return m_gameBuilder; }
+
 	private:
 		EditorSelection m_selection;
 		GameObjectPtr m_editorCamera;
 		SceneViewportState m_sceneViewport;
 		ScenePicker m_scenePicker;
 		PanelManager m_panels;
+		SceneDocument m_sceneDocument;
+		GameBuilder m_gameBuilder;
 	};
 }

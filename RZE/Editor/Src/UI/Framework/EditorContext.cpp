@@ -7,6 +7,11 @@
 
 namespace Editor
 {
+	EditorContext::EditorContext()
+		: m_sceneDocument(*this)
+	{
+	}
+
 	void EditorContext::Update()
 	{
 		m_sceneViewport.IsHovered = false;

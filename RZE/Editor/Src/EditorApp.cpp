@@ -1,118 +1,40 @@
 #include <EditorApp.h>
 
-#include <Game/SceneLoadOperation.h>
-#include <Game/World/GameObject/GameObject.h>
 #include <Game/World/GameObject/EditorGameComponentInfoCache.h>
-#include <Game/World/GameObjectComponents/CameraComponent.h>
 #include <Game/World/GameObjectComponents/EditorCameraComponent.h>
-#include <Game/World/GameObjectComponents/RenderComponent.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
-#include <Rendering/Renderer.h>
-#include <Rendering/MemArena.h>
 #include <Rendering/Graphics/RenderTarget.h>
 
 #include <Graphics/RenderEngine.h>
 #include <Graphics/RenderStages/ImGuiRenderStage.h>
 
 #include <EngineCore/Async/AsyncOperationManager.h>
-#include <EngineCore/Async/JobAsyncOperation.h>
-#include <EngineCore/Threading/CancellationToken.h>
 #include <EngineCore/Input/ImGuiInput.h>
 
-#include <Utils/Memory/MemoryUtils.h>
 #include <Utils/Platform/CmdLine.h>
 #include <Utils/Platform/Filepath.h>
 
-#include <DebugUtils/DebugServices.h>
-
 #include <ImGui/imgui.h>
-#include <ImGui/imgui_internal.h> // DockBuilder API
+#include <ImGui/imgui_internal.h> // DockBuilderGetNode
 
 #include <Optick/optick.h>
 
-#include <process.h>
-#include <stdio.h>
+#include <sstream>
 
 namespace
 {
-	const Filepath k_sceneFileDirectoryPath("Assets/Scenes");
-
 	constexpr char kSceneFileToLoadHack[] = { "Assets/Scenes/RenderTest.scene" };
-
-	using OutputLineSink = Functor<void, const std::string&>;
 
 	// ImGui 1.92+ PushFont() takes a size; use the size the font was loaded at.
 	void PushFontAtLoadedSize(ImFont* font)
 	{
 		ImGui::PushFont(font, font->LegacySize);
 	}
-
-	// Runs a process on the calling thread and forwards each line of its stdout (without the trailing newline).
-	// Stops reading early if cancellation is requested. Returns the process exit code, or -1 if it couldn't be started.
-	int RunProcessStreamed(const Filepath& processPath, const OutputLineSink& onOutputLine, const Threading::CancellationToken* cancellationToken)
-	{
-		FILE* pipe = _popen(processPath.GetAbsolutePath().c_str(), "rt");
-		if (pipe == nullptr)
-		{
-			onOutputLine("Failed to start process: " + processPath.GetRelativePath());
-			return -1;
-		}
-
-		char buffer[2048];
-		while (fgets(buffer, sizeof(buffer), pipe) != nullptr)
-		{
-			std::string line(buffer);
-			while (!line.empty() && (line.back() == '\n' || line.back() == '\r'))
-			{
-				line.pop_back();
-			}
-
-			onOutputLine(line);
-
-			if (cancellationToken != nullptr && cancellationToken->IsCancellationRequested())
-			{
-				break;
-			}
-		}
-
-		return _pclose(pipe);
-	}
-
-	// Traces each line to the editor's build log channel. Main thread only.
-	OutputLineSink MakeBuildTraceSink()
-	{
-		return OutputLineSink([](const std::string& line)
-			{
-				DebugServices::Get().Trace(LogChannel::Build, line);
-			});
-	}
-
-	// Traces each line to the editor's build log channel. Safe from worker threads; lines are marshalled to the main thread.
-	OutputLineSink MakeWorkerBuildTraceSink(AsyncWorkerContext& context)
-	{
-		return OutputLineSink([&context](const std::string& line)
-			{
-				context.PostToMainThread(Threading::Job::Task([line]()
-					{
-						DebugServices::Get().Trace(LogChannel::Build, line);
-					}));
-			});
-	}
-
-	// #TODO
-	// Uber temp struct here to represent editor state.
-	// Needs to move out eventually into something not bad.
-	struct EditorState
-	{
-		bool IsNewScene = true;
-	};
 }
 
 namespace Editor
 {
-	static EditorState gEditorState;
-
 	EditorApp::EditorApp()
 	{
 		REGISTER_GAMEOBJECTCOMPONENT(EditorCameraComponent);
@@ -156,30 +78,25 @@ namespace Editor
 		StyleSetup();
 
 		m_context.GetPanels().CreatePanels(m_context);
+
+		m_context.GetSceneDocument().SetOnLoaded(SceneDocument::LoadedCallback([this](const SceneDocument& scene)
+			{
+				// A new scene keeps the previous title until it's saved
+				if (scene.HasFilePath())
+				{
+					AddFilePathToWindowTitle(scene.GetFilePath().GetRelativePath());
+				}
+			}));
 	}
 
 	void EditorApp::Start()
 	{
-		// #TODO
-		// Need to write some code that better defines loading into the last scene that was loaded
-		// when the editor closed. This is the difference between fresh (I've loaded into a new scene but havent saved)
-		// and "stale" (I closed the editor within a scene and it needs to be loaded for UX reasons).
-		// #NOTE
-		// For now, it's always false here because we always load into TestGame.scene
-		gEditorState.IsNewScene = false;
-
+		// #TODO Reopen the scene that was open when the editor last closed, rather than a fixed default
 		std::string_view startScene;
-		Filepath scenePath;
-		if (CmdLine::Arguments::Get("-scene", startScene))
-		{
-			scenePath = Filepath("Assets/Scenes/" + std::string(startScene));
-			LoadScene(scenePath);
-		}
-		else
-		{
-			scenePath = Filepath(kSceneFileToLoadHack);
-			LoadScene(scenePath);
-		}
+		const Filepath scenePath = CmdLine::Arguments::Get("-scene", startScene)
+			? Filepath("Assets/Scenes/" + std::string(startScene))
+			: Filepath(kSceneFileToLoadHack);
+		m_context.GetSceneDocument().Load(scenePath);
 	}
 
 	void EditorApp::Update()
@@ -195,7 +112,7 @@ namespace Editor
 		Vector2D clientSize = GetWindow()->GetClientSize();
 
 		PushFontAtLoadedSize(m_fontMapping.at("din_bold"));
-		DisplayMenuBar();
+		m_mainMenuBar.Draw(m_context);
 		ImGui::SetNextWindowPos(ImVec2(0.f, 24.0f));
 		ImGui::SetNextWindowSize(ImVec2(clientSize.X(), clientSize.Y() - 24.0f));
 
@@ -267,190 +184,6 @@ namespace Editor
 
 		m_renderTarget = std::make_unique<Rendering::RenderTargetTexture>(static_cast<U32>(dimensions.X()), static_cast<U32>(dimensions.Y()));
 		m_renderTarget->Initialize();
-	}
-
-	void EditorApp::SetFont(const char* fontName)
-	{
-		ImGui::PopFont();
-		PushFontAtLoadedSize(m_fontMapping.at(fontName));
-	}
-
-	void EditorApp::Log(const std::string& msg)
-	{
-		DebugServices::Get().Trace(LogChannel::Info, msg);
-	}
-
-	void EditorApp::CreateAndInitializeEditorCamera()
-	{
-		GameObjectPtr editorCameraObject = RZE().GetActiveScene().AddGameObject("EditorCam");
-		GameObjectComponentPtr<TransformComponent> transformComponent = editorCameraObject->GetComponent<TransformComponent>();
-		transformComponent->SetPosition(Vector3D(-4.0f, 10.0f, 4.0f));
-
-		GameObjectComponentPtr<EditorCameraComponent> editorCam = editorCameraObject->AddComponent<EditorCameraComponent>();
-		editorCam->SetAsActiveCamera(true);
-		const Vector2D& viewportSize = m_context.GetSceneViewport().Size;
-		editorCam->SetAspectRatio(viewportSize.X() / viewportSize.Y());
-
-		m_context.SetEditorCamera(editorCameraObject);
-	}
-
-	void EditorApp::DisplayMenuBar()
-	{
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.5f, 5.0f));
-		if (ImGui::BeginMainMenuBar())
-		{
-			if (ImGui::BeginMenu("File"))
-			{
-				const bool canLoadScene = !IsSceneLoading();
-				if (ImGui::MenuItem("New Scene...", nullptr, false, canLoadScene))
-				{
-					gEditorState.IsNewScene = true;
-
-					LoadScene(Filepath());
-				}
-				if (ImGui::MenuItem("Load Scene...", nullptr, false, canLoadScene))
-				{
-					FilePromptParams openFileParams =
-					{
-						"RZE Scene",
-						k_sceneFileDirectoryPath,
-						"*.scene"
-					};
-
-					std::string chosenPath;
-					bool openSuccess = RZE().ShowOpenFilePrompt(openFileParams, chosenPath);
-					if (openSuccess)
-					{
-						Filepath newScenePath = Filepath::FromAbsolutePathStr(chosenPath);
-						LoadScene(newScenePath);
-					}
-				}
-				if (ImGui::MenuItem("Save Scene"))
-				{
-					if (gEditorState.IsNewScene)
-					{
-						FilePromptParams promptParams =
-						{
-							"Save Scene",
-							k_sceneFileDirectoryPath,
-							"*.scene"
-						};
-
-						std::string chosenPath;
-						bool saveSuccess = GetWindow()->ShowSaveFilePrompt(promptParams, chosenPath);
-						if (saveSuccess)
-						{
-							Filepath newScenePath = Filepath::FromAbsolutePathStr(chosenPath);
-							RZE().GetActiveScene().Serialize(newScenePath);
-							gEditorState.IsNewScene = false;
-							RunAssetCpy(MakeBuildTraceSink());
-						}
-					}
-					else
-					{
-						RZE().GetActiveScene().Serialize(Filepath());
-						RunAssetCpy(MakeBuildTraceSink());
-					}
-				}
-				ImGui::Separator();
-				const bool canBuild = !IsBuildRunning();
-				if (ImGui::MenuItem("Build Game...", nullptr, false, canBuild))
-				{
-					BuildGame(false);
-				}
-				if (ImGui::MenuItem("Launch Game...", nullptr, false, canBuild))
-				{
-					BuildGame(true);
-				}
-				ImGui::Separator();
-				if (ImGui::MenuItem("Exit"))
-				{
-					RZE().PostExit();
-				}
-
-				ImGui::EndMenu();
-			}
-
-			if (ImGui::BeginMenu("View"))
-			{
-				m_context.GetPanels().DrawMenuItems("View");
-
-				ImGui::EndMenu();
-			}
-
-			if (ImGui::BeginMenu("Help"))
-			{
-				m_context.GetPanels().DrawMenuItems("Help");
-
-				ImGui::EndMenu();
-			}
-
-			ImGui::Separator();
-			static int frameCount = 0;
-			static float frametimeMS = 0.0f;
-			if (frameCount > 15)
-			{
-				frametimeMS = RZE().GetDeltaTimeMS();
-				frameCount = 0;
-			}
-			else
-			{
-				++frameCount;
-			}
-
-			const float imguiCursorPos = ImGui::GetCursorPosX();
-			ImGui::Text("%.1f ms", frametimeMS);
-			
-			ImGui::Separator();
-			{
-				// @todo Move to function later maybe
-				ImVec4 colour;
-				Rendering::MemArena::PressureValue memPressure = Rendering::MemArena::GetPressureValue();
-				switch (memPressure)
-				{
-				case Rendering::MemArena::PressureValue::LOW:
-					colour = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-					break;
-					
-				case Rendering::MemArena::PressureValue::MED:
-					colour = ImVec4(255.0f, 255.0f, 0.0f, 1.0f);
-					break;
-
-				case Rendering::MemArena::PressureValue::HIGH:
-					colour = ImVec4(255.0f, 0.0f, 0.0f, 1.0f);
-					break;
-
-				default:
-					colour = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-					break;
-				}
-
-				const size_t lastFrameAllocationSize = Rendering::MemArena::GetTotalMemoryAllocatedLastFrame();
-				const size_t memArenaTotalSizeBytes = Rendering::MemArena::GetSize();
-
-				const float lastFrameSizeKB = static_cast<float>(lastFrameAllocationSize / 1024);
-				const float memArenaSizeKB = static_cast<float>(memArenaTotalSizeBytes / 1024);
-				const float memArenaSizeMB = static_cast<float>(memArenaTotalSizeBytes / 1024) / 1024;
-
-				const float* memArenaValue = &memArenaSizeKB;
-
-				char* memArenaSizeMagnitudeStr = "KB";
-				if (memArenaTotalSizeBytes >= MemoryUtils::Megabytes(1))
-				{
-					memArenaSizeMagnitudeStr = "MB";
-					memArenaValue = &memArenaSizeMB;
-				}
-
-				ImVec2 textSize = ImGui::CalcTextSize("12.0ms ");
-				ImGui::SameLine(imguiCursorPos + textSize.x);
-				ImGui::Text("RenderCommand MemArena:");
-				ImGui::TextColored(colour, "%.2f KB / %.2f %s", lastFrameSizeKB, *memArenaValue, memArenaSizeMagnitudeStr);
-				ImGui::Text("Peak Used: %d KB", Rendering::MemArena::GetPeakUsedBytes() / 1024, memArenaSizeMagnitudeStr);
-			}
-
-			ImGui::EndMainMenuBar();
-		}
-		ImGui::PopStyleVar();
 	}
 
 	void EditorApp::LoadFonts()
@@ -537,122 +270,6 @@ namespace Editor
 		ss << "RZEStudio - ";
 		ss << path;
 		GetWindow()->SetTitle(ss.str());
-	}
-
-	int EditorApp::RunAssetCpy(const Functor<void, const std::string&>& onOutputLine)
-	{
-		static const Filepath assetCpyPath("AssetCpy.bat");
-		return RunProcessStreamed(assetCpyPath, onOutputLine, nullptr);
-	}
-
-	void EditorApp::BuildGame(bool launchAfterBuild)
-	{
-		if (IsBuildRunning())
-		{
-			DebugServices::Get().Trace(LogChannel::Build, "A build is already in progress.");
-			return;
-		}
-
-		DebugServices::Get().Trace(LogChannel::Build, launchAfterBuild ? "Building and launching game..." : "Building Game...");
-
-		JobAsyncOperation::WorkFunction work([launchAfterBuild](AsyncWorkerContext& context) -> bool
-			{
-				static const Filepath buildGameBat("BuildGame.bat");
-				static const Filepath gamePath("_Build\\Debug\\x64\\RZE_Game.exe");
-
-				const OutputLineSink traceLine = MakeWorkerBuildTraceSink(context);
-
-				context.SetStatusText("Building game...");
-				const int buildResult = RunProcessStreamed(buildGameBat, traceLine, &context.GetCancellationToken());
-				if (buildResult != 0)
-				{
-					context.SetErrorText("Build failed with exit code " + std::to_string(buildResult) + ".");
-					return false;
-				}
-
-				if (!launchAfterBuild || context.IsCancellationRequested())
-				{
-					return true;
-				}
-
-				context.SetStatusText("Copying assets...");
-				RunAssetCpy(traceLine);
-
-				context.SetStatusText("Launching game...");
-				const std::string gameExePath = gamePath.GetAbsolutePath();
-				const std::string quotedGameExePath = "\"" + gameExePath + "\"";
-				if (_spawnl(_P_NOWAIT, gameExePath.c_str(), quotedGameExePath.c_str(), nullptr) == -1)
-				{
-					context.SetErrorText("Failed to launch " + gameExePath + ".");
-					return false;
-				}
-
-				return true;
-			});
-
-		m_buildOperation = std::make_shared<JobAsyncOperation>(launchAfterBuild ? "Build and Launch Game" : "Build Game", EAsyncOperationFlags::None, work);
-		m_buildOperation->SetOnCompleted(AsyncOperation::CompletionCallback([](const AsyncOperation& operation)
-			{
-				if (operation.Succeeded())
-				{
-					DebugServices::Get().Trace(LogChannel::Build, operation.GetName() + " succeeded.");
-				}
-				else
-				{
-					DebugServices::Get().Trace(LogChannel::Build, operation.GetName() + " failed: " + operation.GetErrorText());
-				}
-			}));
-
-		RZE().GetAsyncOperationManager().Start(m_buildOperation);
-	}
-
-	bool EditorApp::IsBuildRunning() const
-	{
-		return m_buildOperation != nullptr && !m_buildOperation->IsFinished();
-	}
-
-	bool EditorApp::IsSceneLoading() const
-	{
-		return m_sceneLoadOperation != nullptr && !m_sceneLoadOperation->IsFinished();
-	}
-
-	void EditorApp::LoadScene(const Filepath& filepath)
-	{
-		if (IsSceneLoading())
-		{
-			Log("A scene is already loading.");
-			return;
-		}
-
-		// The current scene is unloaded as soon as the operation starts, so this must come first
-		m_context.ResetSceneState();
-
-		const bool isNewScene = !filepath.IsValid();
-
-		std::shared_ptr<SceneLoadOperation> loadOperation = std::make_shared<SceneLoadOperation>(RZE().GetActiveScene(), filepath);
-		loadOperation->SetOnCompleted(AsyncOperation::CompletionCallback([this, isNewScene](const AsyncOperation& operation)
-			{
-				// Created last, as before, so it ends up as the active camera over any camera in the scene.
-				CreateAndInitializeEditorCamera();
-
-				if (operation.Succeeded())
-				{
-					if (!isNewScene)
-					{
-						const SceneLoadOperation& sceneLoadOperation = static_cast<const SceneLoadOperation&>(operation);
-						AddFilePathToWindowTitle(sceneLoadOperation.GetScenePath().GetRelativePath());
-					}
-				}
-				else
-				{
-					// Nothing valid to save over; force Save to prompt for a path.
-					gEditorState.IsNewScene = true;
-					Log("Failed to load scene: " + operation.GetErrorText());
-				}
-			}));
-
-		m_sceneLoadOperation = loadOperation;
-		RZE().GetAsyncOperationManager().Start(loadOperation);
 	}
 
 	void EditorApp::ParseArguments(char** arguments, int count)

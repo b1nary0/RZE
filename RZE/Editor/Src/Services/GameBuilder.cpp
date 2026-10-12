@@ -1,0 +1,152 @@
+#include <Services/GameBuilder.h>
+
+#include <RZE.h>
+
+#include <EngineCore/Async/AsyncOperationManager.h>
+#include <EngineCore/Async/JobAsyncOperation.h>
+#include <EngineCore/Threading/CancellationToken.h>
+
+#include <DebugUtils/DebugServices.h>
+
+#include <Utils/Functor.h>
+#include <Utils/Platform/Filepath.h>
+
+#include <process.h>
+#include <stdio.h>
+
+namespace
+{
+	using OutputLineSink = Functor<void, const std::string&>;
+
+	// Runs a process on the calling thread and forwards each line of its stdout (without the trailing newline).
+	// Stops reading early if cancellation is requested. Returns the process exit code, or -1 if it couldn't be started.
+	int RunProcessStreamed(const Filepath& processPath, const OutputLineSink& onOutputLine, const Threading::CancellationToken* cancellationToken)
+	{
+		FILE* pipe = _popen(processPath.GetAbsolutePath().c_str(), "rt");
+		if (pipe == nullptr)
+		{
+			onOutputLine("Failed to start process: " + processPath.GetRelativePath());
+			return -1;
+		}
+
+		char buffer[2048];
+		while (fgets(buffer, sizeof(buffer), pipe) != nullptr)
+		{
+			std::string line(buffer);
+			while (!line.empty() && (line.back() == '\n' || line.back() == '\r'))
+			{
+				line.pop_back();
+			}
+
+			onOutputLine(line);
+
+			if (cancellationToken != nullptr && cancellationToken->IsCancellationRequested())
+			{
+				break;
+			}
+		}
+
+		return _pclose(pipe);
+	}
+
+	// Traces each line to the editor's build log channel. Main thread only.
+	OutputLineSink MakeBuildTraceSink()
+	{
+		return OutputLineSink([](const std::string& line)
+			{
+				DebugServices::Get().Trace(LogChannel::Build, line);
+			});
+	}
+
+	// Traces each line to the editor's build log channel. Safe from worker threads; lines are marshalled to the main thread.
+	OutputLineSink MakeWorkerBuildTraceSink(AsyncWorkerContext& context)
+	{
+		return OutputLineSink([&context](const std::string& line)
+			{
+				context.PostToMainThread(Threading::Job::Task([line]()
+					{
+						DebugServices::Get().Trace(LogChannel::Build, line);
+					}));
+			});
+	}
+
+	int RunAssetCpy(const OutputLineSink& onOutputLine)
+	{
+		static const Filepath assetCpyPath("AssetCpy.bat");
+		return RunProcessStreamed(assetCpyPath, onOutputLine, nullptr);
+	}
+}
+
+namespace Editor
+{
+	void GameBuilder::Build(bool launchAfterBuild)
+	{
+		if (IsBuilding())
+		{
+			DebugServices::Get().Trace(LogChannel::Build, "A build is already in progress.");
+			return;
+		}
+
+		DebugServices::Get().Trace(LogChannel::Build, launchAfterBuild ? "Building and launching game..." : "Building Game...");
+
+		JobAsyncOperation::WorkFunction work([launchAfterBuild](AsyncWorkerContext& context) -> bool
+			{
+				static const Filepath buildGameBat("BuildGame.bat");
+				static const Filepath gamePath("_Build\\Debug\\x64\\RZE_Game.exe");
+
+				const OutputLineSink traceLine = MakeWorkerBuildTraceSink(context);
+
+				context.SetStatusText("Building game...");
+				const int buildResult = RunProcessStreamed(buildGameBat, traceLine, &context.GetCancellationToken());
+				if (buildResult != 0)
+				{
+					context.SetErrorText("Build failed with exit code " + std::to_string(buildResult) + ".");
+					return false;
+				}
+
+				if (!launchAfterBuild || context.IsCancellationRequested())
+				{
+					return true;
+				}
+
+				context.SetStatusText("Copying assets...");
+				RunAssetCpy(traceLine);
+
+				context.SetStatusText("Launching game...");
+				const std::string gameExePath = gamePath.GetAbsolutePath();
+				const std::string quotedGameExePath = "\"" + gameExePath + "\"";
+				if (_spawnl(_P_NOWAIT, gameExePath.c_str(), quotedGameExePath.c_str(), nullptr) == -1)
+				{
+					context.SetErrorText("Failed to launch " + gameExePath + ".");
+					return false;
+				}
+
+				return true;
+			});
+
+		m_buildOperation = std::make_shared<JobAsyncOperation>(launchAfterBuild ? "Build and Launch Game" : "Build Game", EAsyncOperationFlags::None, work);
+		m_buildOperation->SetOnCompleted(AsyncOperation::CompletionCallback([](const AsyncOperation& operation)
+			{
+				if (operation.Succeeded())
+				{
+					DebugServices::Get().Trace(LogChannel::Build, operation.GetName() + " succeeded.");
+				}
+				else
+				{
+					DebugServices::Get().Trace(LogChannel::Build, operation.GetName() + " failed: " + operation.GetErrorText());
+				}
+			}));
+
+		RZE().GetAsyncOperationManager().Start(m_buildOperation);
+	}
+
+	bool GameBuilder::IsBuilding() const
+	{
+		return m_buildOperation != nullptr && !m_buildOperation->IsFinished();
+	}
+
+	int GameBuilder::CopyAssets()
+	{
+		return RunAssetCpy(MakeBuildTraceSink());
+	}
+}

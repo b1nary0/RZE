@@ -48,6 +48,7 @@ public:
 
 	// #TODO(Should probably put the window in the app..)
 	bool ShowOpenFilePrompt(const FilePromptParams& params, std::string& chosenPath);
+	bool ShowSaveFilePrompt(const FilePromptParams& params, std::string& chosenPath);
 
 	[[nodiscard]]
 	double GetDeltaTime() const { return m_deltaTime; }
