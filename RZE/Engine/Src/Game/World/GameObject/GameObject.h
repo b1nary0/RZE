@@ -83,6 +83,9 @@ public:
 	int NumChildren();
 	bool HasChildren();
 	GameObjectPtr GetChildAtIndex(int index);
+	// Whether gameObject is this object or anywhere below it in the hierarchy. Attaching this object to one of
+	// those would make a cycle.
+	bool IsSelfOrAncestorOf(const GameObjectPtr& gameObject) const;
 
 	void AttachTo(GameObjectPtr gameObject);
 	void DetachFromParent();

@@ -4,6 +4,8 @@
 #include <UI/Framework/EditorContext.h>
 #include <UI/Framework/PanelRegistry.h>
 
+#include <Commands/SceneCommands.h>
+
 #include <Game/World/GameObject/GameObject.h>
 #include <Game/World/GameObjectComponents/EditorCameraComponent.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
@@ -15,6 +17,23 @@
 namespace
 {
 	constexpr size_t k_maxGameObjectNameSize = 64;
+
+	// The dragged object's GameObjectID; names aren't unique
+	constexpr char k_gameObjectDragPayload[] = "GameObjectID";
+
+	GameObjectPtr FindGameObjectByID(GameObjectID id)
+	{
+		GameObjectPtr found;
+		RZE().GetActiveScene().ForEachGameObject(
+			Functor<void, GameObjectPtr>([&found, id](GameObjectPtr gameObject)
+			{
+				if (gameObject->GetID() == id)
+				{
+					found = gameObject;
+				}
+			}));
+		return found;
+	}
 }
 
 namespace Editor
@@ -65,7 +84,7 @@ namespace Editor
 					char name[k_maxGameObjectNameSize] = { 0 };
 					if (ImGui::InputText("GameObject Name", name, k_maxGameObjectNameSize, ImGuiInputTextFlags_EnterReturnsTrue))
 					{
-						RZE().GetActiveScene().AddGameObject(name);
+						context.GetCommands().Push<CreateGameObjectCommand>(name);
 						m_isCreatingGameObject = false;
 					}
 
@@ -150,25 +169,20 @@ namespace Editor
 
 			if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
 			{
-				ImGui::SetDragDropPayload("DraggedObjectName", gameObject->GetName().c_str(), gameObject->GetName().size());
+				const GameObjectID draggedID = gameObject->GetID();
+				ImGui::SetDragDropPayload(k_gameObjectDragPayload, &draggedID, sizeof(draggedID));
+				ImGui::TextUnformatted(gameObject->GetName().c_str());
 
 				ImGui::EndDragDropSource();
 			}
 
 			if (ImGui::BeginDragDropTarget())
 			{
-				const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DraggedObjectName");
+				const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(k_gameObjectDragPayload);
 				if (payload != nullptr)
 				{
-					const char* draggedObjectName = static_cast<const char*>(payload->Data);
-					GameObjectPtr draggedObject = RZE().GetActiveScene().FindGameObjectByName(draggedObjectName);
-					AssertNotNull(draggedObject);
-					if (!draggedObject->IsRoot())
-					{
-						draggedObject->DetachFromParent();
-					}
-
-					draggedObject->AttachTo(gameObject);
+					const GameObjectID draggedID = *static_cast<const GameObjectID*>(payload->Data);
+					context.GetCommands().Push<AttachToParentCommand>(FindGameObjectByID(draggedID), gameObject);
 				}
 				ImGui::EndDragDropTarget();
 			}
@@ -185,7 +199,7 @@ namespace Editor
 						memcpy(name, gameObject->GetName().c_str(), k_maxGameObjectNameSize);
 						if (ImGui::InputText("##gameObject_rename", name, k_maxGameObjectNameSize, ImGuiInputTextFlags_EnterReturnsTrue))
 						{
-							gameObject->SetName(name);
+							context.GetCommands().Push<RenameGameObjectCommand>(gameObject, name);
 						}
 						ImGui::EndPopup();
 					}
@@ -198,8 +212,7 @@ namespace Editor
 						{
 							if (ImGui::MenuItem(pair.second.c_str()))
 							{
-								GameObjectComponentID componentID = pair.first;
-								gameObject->AddComponentByID(componentID);
+								context.GetCommands().Push<AddComponentCommand>(gameObject, pair.first);
 							}
 						}
 
@@ -210,15 +223,13 @@ namespace Editor
 					{
 						if (ImGui::MenuItem("DetachFromParent"))
 						{
-							gameObject->DetachFromParent();
+							context.GetCommands().Push<DetachFromParentCommand>(gameObject);
 						}
 					}
 
 					if (ImGui::MenuItem("Delete"))
 					{
-						selection.Clear();
-
-						RZE().GetActiveScene().RemoveGameObject(gameObject);
+						context.GetCommands().Push<DeleteGameObjectCommand>(gameObject);
 					}
 
 					ImGui::EndPopup();

@@ -4,6 +4,8 @@
 #include <UI/Framework/PanelManager.h>
 #include <UI/Framework/ScenePicker.h>
 
+#include <Commands/CommandQueue.h>
+
 #include <Services/GameBuilder.h>
 #include <Services/SceneDocument.h>
 
@@ -41,7 +43,7 @@ namespace Editor
 		void Update();
 
 		// Drops everything that refers to the current scene's objects (selection, editor camera, a pick in flight,
-		// and whatever each panel holds; see EditorPanel::OnSceneReset). Call before the scene unloads, so cleanup
+		// pending commands, and whatever each panel holds; see EditorPanel::OnSceneReset). Call before the scene unloads, so cleanup
 		// that touches those objects (e.g. selection bounds) still can. UI state, like the SceneView's viewport,
 		// carries over.
 		void ResetSceneState();
@@ -65,6 +67,9 @@ namespace Editor
 		SceneDocument& GetSceneDocument() { return m_sceneDocument; }
 		GameBuilder& GetGameBuilder() { return m_gameBuilder; }
 
+		// Where panels send scene changes; flushed once per frame after every panel has drawn
+		CommandQueue& GetCommands() { return m_commands; }
+
 	private:
 		EditorSelection m_selection;
 		GameObjectPtr m_editorCamera;
@@ -73,5 +78,6 @@ namespace Editor
 		PanelManager m_panels;
 		SceneDocument m_sceneDocument;
 		GameBuilder m_gameBuilder;
+		CommandQueue m_commands;
 	};
 }

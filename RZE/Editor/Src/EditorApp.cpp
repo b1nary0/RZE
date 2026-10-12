@@ -142,6 +142,9 @@ namespace Editor
 		ImGui::PopFont();
 		ImGui::End();
 
+		// Once every panel has drawn, so none of them sees the scene change partway through the frame
+		m_context.GetCommands().Flush(m_context);
+
 		PushFontAtLoadedSize(m_fontMapping.at("din_bold"));
 		m_asyncOperationModal.Display(RZE().GetAsyncOperationManager());
 		ImGui::PopFont();

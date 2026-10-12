@@ -168,6 +168,20 @@ bool GameObject::IsRoot()
 	return GetTransformComponent()->IsRoot();
 }
 
+bool GameObject::IsSelfOrAncestorOf(const GameObjectPtr& gameObject) const
+{
+	// Up from gameObject, which is a single chain, rather than down through this object's whole subtree
+	for (const GameObject* current = *gameObject; current != nullptr; current = current->m_parent != nullptr ? *current->m_parent : nullptr)
+	{
+		if (current == this)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 int GameObject::NumChildren()
 {
 	return m_children.size();

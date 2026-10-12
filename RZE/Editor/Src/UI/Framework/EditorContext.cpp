@@ -23,6 +23,7 @@ namespace Editor
 		m_selection.Clear();
 		m_editorCamera = GameObjectPtr();
 		m_scenePicker.Cancel();
+		m_commands.Clear();
 		m_panels.ResetSceneState();
 	}
 
