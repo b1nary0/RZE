@@ -26,8 +26,6 @@ public:
 
 	static void DescribeProperties(PropertyBuilder<CameraComponent>& properties);
 
-	void OnEditorInspect() override;
-
 public:
 	// Derived from the owner's TransformComponent rotation; an unrotated camera looks down -Z with +Y up
 	Vector3D GetForward() const;
@@ -51,6 +49,13 @@ public:
 	void SetExposureCompensation(float ev);
 
 	void SetAsActiveCamera(bool isActiveCamera);
+
+	// Renders what the camera sees into its preview target, at the preview's own aspect ratio. Leaves the
+	// camera's own matrices alone. The result is ready to show once the frame renders.
+	void RenderPreview();
+	// What RenderPreview draws into, and the part of it that's used
+	const Rendering::RenderTargetTexture& GetPreviewTarget() const { return *m_renderTarget; }
+	static Vector2D GetPreviewSize();
 
 private:
 	void GenerateCameraMatrices(const Vector3D& position);

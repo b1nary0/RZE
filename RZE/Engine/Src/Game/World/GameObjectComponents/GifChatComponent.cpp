@@ -30,25 +30,6 @@ namespace
 		Filepath("Assets/2D/GIFs/friends-joey-tribbiani.gif"),
 		Filepath("Assets/2D/GIFs/pulp_fiction_travolta.gif")
 	};
-
-	std::string GetTextureTypeStr(MaterialInstance::TextureSlot textureSlot)
-	{
-		switch (textureSlot)
-		{
-		case MaterialInstance::TEXTURE_SLOT_DIFFUSE:
-			return "Diffuse";
-		case MaterialInstance::TEXTURE_SLOT_SPECULAR:
-			return "Specular";
-		case MaterialInstance::TEXTURE_SLOT_NORMAL:
-			return "Normal";
-		case MaterialInstance::TEXTURE_SLOT_OPACITY:
-			return "Opacity";
-		case MaterialInstance::TEXTURE_SLOT_HEIGHT:
-			return "Height";
-		default:
-			return "None";
-		}
-	}
 }
 
 struct GifData
@@ -108,57 +89,6 @@ void GifChatComponent::Update()
 
 		// @TODO Look into ways to avoid this
 		m_meshRenderObject->SetTransform(transformComponent->GetWorldMatrix());
-	}
-}
-
-void GifChatComponent::OnEditorInspect()
-{
-	for (const auto& subMesh : m_meshGeometry.GetSubMeshes())
-	{
-		if (ImGui::TreeNode(&subMesh, subMesh.GetName().c_str()))
-		{
-			const std::shared_ptr<const MaterialInstance>& material = subMesh.GetMaterial();
-			//
-			// Material Information
-			//
-			if (ImGui::TreeNode(&material, "%s %s", "Material:", material->GetName().c_str()))
-			{
-				const PixelShader* const shader = RZE().GetResourceHandler().GetResource<PixelShader>(material->GetShaderResource());
-				AssertNotNull(shader);
-
-				ImGui::Separator();
-
-				ImGui::TextColored(ImVec4(0.65f, 0.65f, 1.0f, 1.0f), "[Shader] ");
-				ImGui::Text(shader->GetName().c_str());
-
-				ImGui::NewLine();
-
-				//
-				// Textures
-				//
-				ImGui::TextColored(ImVec4(0.65f, 0.65f, 1.0f, 1.0f), "[Textures]");
-				for (U8 textureSlot = 0; textureSlot < MaterialInstance::TEXTURE_SLOT_COUNT; ++textureSlot)
-				{
-					const ResourceHandle& textureResource = material->GetTexture(textureSlot);
-
-					if (textureResource.IsValid())
-					{
-						const Texture2D* const textureData = RZE().GetResourceHandler().GetResource<Texture2D>(textureResource);
-						AssertNotNull(textureData);
-
-						const std::string textureTypeStr = GetTextureTypeStr(static_cast<MaterialInstance::TextureSlot>(textureSlot));
-						if (ImGui::CollapsingHeader(textureTypeStr.c_str()))
-						{
-							ImGui::Text(textureData->GetFilepath().GetRelativePath().c_str());
-							ImGui::Image((ImTextureID)(intptr_t)textureData->GetPlatformObject().GetTextureData(), ImVec2(textureData->GetDimensions().X(), textureData->GetDimensions().Y()));
-						}
-					}
-				}
-				ImGui::TreePop();
-			}
-
-			ImGui::TreePop();
-		}
 	}
 }
 

@@ -2,6 +2,7 @@
 
 #include <UI/Framework/EditorContext.h>
 #include <UI/Framework/PanelRegistry.h>
+#include <UI/Inspector/ComponentInspectors.h>
 
 #include <Game/World/GameObject/EditorGameComponentInfoCache.h>
 #include <Game/World/GameObject/GameObject.h>
@@ -65,7 +66,17 @@ namespace Editor
 			ImGui::TextColored(ImVec4(0.65f, 0.65f, 1.0f, 1.0f), "[ %s ]", component->GetName().c_str());
 			ImGui::Separator();
 			m_propertyInspector.Draw(context, component);
-			component->OnEditorInspect();
+
+			if (const ComponentInspectors::Inspector* const customInspector = ComponentInspectors::Find(component->m_id))
+			{
+				ImGui::PushID(static_cast<int>(component->GetInstanceID()));
+				(*customInspector)(context, **component);
+				ImGui::PopID();
+			}
+			else
+			{
+				component->OnEditorInspect();
+			}
 			ImGui::Separator();
 		}
 

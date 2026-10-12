@@ -6,6 +6,8 @@
 
 #include <EngineCore/Resources/ResourceHandler.h>
 
+class StaticMeshInstance;
+
 class RenderComponent : public GameObjectComponent<RenderComponent>
 {
 public:
@@ -24,8 +26,6 @@ public:
 
 	static void DescribeProperties(PropertyBuilder<RenderComponent>& properties);
 
-	void OnEditorInspect() override;
-
 public:
 	// The mesh asset's path; empty when there's no mesh
 	const Filepath& GetMeshPath() const;
@@ -37,6 +37,8 @@ public:
 
 	// The mesh's size along the object's own axes, including its scale; zero without a mesh
 	Vector3D GetMeshSize() const;
+	// Null without a mesh
+	const StaticMeshInstance* GetMesh() const;
 
 	bool IsDrawingMeshBounds() const { return m_drawMeshBounds; }
 	void SetDrawMeshBounds(bool draw);

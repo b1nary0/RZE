@@ -5,6 +5,8 @@
 #include <Graphics/GraphicsDefines.h>
 #include <Graphics/StaticMeshInstance.h>
 
+#include <EngineCore/Resources/ResourceHandler.h>
+
 struct GifData;
 
 class RenderObject;
@@ -26,13 +28,13 @@ public:
 
 	void Update() override;
 
-	void OnEditorInspect() override;
-
 	void Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override;
 	void Deserialize(const rapidjson::Value& data) override;
 
 public:
 	void Load(const Filepath& fp);
+
+	const StaticMeshInstance& GetMeshGeometry() const { return m_meshGeometry; }
 
 private:
 	void CreateRenderObject();

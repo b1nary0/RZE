@@ -103,15 +103,37 @@ void CameraComponent::SetAsActiveCamera(bool isActiveCamera)
 	m_isActiveCamera = isActiveCamera;
 }
 
+Vector2D CameraComponent::GetPreviewSize()
+{
+	return Vector2D(426.0f, 240.0f);
+}
+
+void CameraComponent::RenderPreview()
+{
+	const Vector2D previewSize = GetPreviewSize();
+	const Vector3D& position = GetOwner()->GetTransformComponent()->GetPosition();
+
+	// Local matrices; the camera's own are for its real viewport
+	const Matrix4x4 projection = Matrix4x4::CreatePerspectiveMatrixZeroToOne(m_fov, previewSize.X() / previewSize.Y(), m_nearCull, m_farCull);
+	const Matrix4x4 view = Matrix4x4::CreateViewMatrix(position, position + GetForward(), GetUpDir());
+
+	RenderCamera& renderCam = m_previewView->Camera;
+	renderCam.Viewport = RenderViewport{ previewSize };
+	renderCam.ClipSpace = projection * view;
+	renderCam.Position = position;
+
+	m_previewView->ViewportSize = previewSize;
+	m_previewView->ExposureCompensation = m_exposureCompensation;
+
+	RZE().GetRenderEngine().RenderSecondaryView("Camera View", *m_previewView);
+}
+
 void CameraComponent::Initialize()
 {
-	RenderCamera renderCam;
-	renderCam.Viewport = RenderViewport{ Vector2D(426.0f, 240.0f) };
-	renderCam.ClipSpace = GetProjectionMatrix() * GetViewMatrix();
-
+	const Vector2D previewSize = GetPreviewSize();
 	m_renderTarget = std::make_unique<Rendering::RenderTargetTexture>(
-		static_cast<U32>(renderCam.Viewport.Size.X()),
-		static_cast<U32>(renderCam.Viewport.Size.Y())
+		static_cast<U32>(previewSize.X()),
+		static_cast<U32>(previewSize.Y())
 	);
 	m_renderTarget->Initialize();
 
@@ -198,44 +220,3 @@ void CameraComponent::DescribeProperties(PropertyBuilder<CameraComponent>& prope
 		.Range(-4.0f, 4.0f).StepSize(0.05f).DisplayFormat("%.2f").As(EPropertyWidget::Drag);
 }
 
-// The fields are drawn from DescribeProperties; this is only the camera preview
-void CameraComponent::OnEditorInspect()
-{
-	/* Render camera view */
-	{
-		// #TODO this is a particularly bad part of not having the right API
-		// starting to change state of stuff temporarily - could leak state eventually
-		const float prevAspectRatio = m_aspectRatio;
-		m_aspectRatio = 240.0f / 144.0f;
-
-		GameObjectComponentPtr<TransformComponent> transfComp = GetOwner()->GetTransformComponent();
-		GenerateCameraMatrices(transfComp->GetPosition());
-
-		RenderCamera& renderCam = m_previewView->Camera;
-		renderCam.Viewport = RenderViewport { Vector2D( 426.0f, 240.0f ) };
-		renderCam.ClipSpace = GetProjectionMatrix() * GetViewMatrix();
-		renderCam.Position = transfComp->GetPosition();
-
-		m_previewView->ViewportSize = renderCam.Viewport.Size;
-		m_previewView->ExposureCompensation = m_exposureCompensation;
-
-		RZE().GetRenderEngine().RenderSecondaryView("Camera View", *m_previewView);
-		m_aspectRatio = prevAspectRatio;
-
-		Rendering::TextureBuffer2DHandle texture = m_renderTarget->GetTargetPlatformObject();
-
-		if (texture.IsValid())
-		{
-			auto clamp = [](float a, float b, float val)
-				{
-					if (val > b) val = b;
-					else if (val < a) val = a;
-
-					return val;
-				};
-			float uvbx = clamp(0.0f, 1.0f, renderCam.Viewport.Size.X() / m_renderTarget->GetWidth());
-			float uvby = clamp(0.0f, 1.0f, renderCam.Viewport.Size.Y() / m_renderTarget->GetHeight());
-			ImGui::Image((ImTextureID)(intptr_t)texture.GetTextureData(), ImVec2(renderCam.Viewport.Size.X(), renderCam.Viewport.Size.Y()), ImVec2(0.0f, 0.0f), ImVec2(uvbx, uvby));
-		}
-	}
-}

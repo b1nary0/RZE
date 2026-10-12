@@ -23,25 +23,6 @@ namespace
 	// Distinct so both are readable when drawn together
 	const Vector3D k_meshBoundsColour(1.0f, 0.85f, 0.0f);
 	const Vector3D k_subMeshBoundsColour(0.0f, 0.8f, 1.0f);
-
-	std::string GetTextureTypeStr(MaterialInstance::TextureSlot textureSlot)
-	{
-		switch (textureSlot)
-		{
-		case MaterialInstance::TEXTURE_SLOT_DIFFUSE:
-				return "Diffuse";
-		case MaterialInstance::TEXTURE_SLOT_SPECULAR:
-				return "Specular";
-		case MaterialInstance::TEXTURE_SLOT_NORMAL:
-				return "Normal";
-		case MaterialInstance::TEXTURE_SLOT_OPACITY:
-				return "Opacity";
-		case MaterialInstance::TEXTURE_SLOT_HEIGHT:
-				return "Height";
-		default:
-			return "None";
-		}
-	}
 }
 
 void RenderComponent::DescribeProperties(PropertyBuilder<RenderComponent>& properties)
@@ -81,6 +62,17 @@ void RenderComponent::LoadMesh(const Filepath& path)
 	{
 		CreateRenderObject();
 	}
+}
+
+const StaticMeshInstance* RenderComponent::GetMesh() const
+{
+	if (!m_resource.IsValid())
+	{
+		return nullptr;
+	}
+
+	const StaticMeshResource* const modelData = RZE().GetResourceHandler().GetResource<StaticMeshResource>(m_resource);
+	return modelData != nullptr ? &modelData->GetStaticMesh() : nullptr;
 }
 
 Vector3D RenderComponent::GetMeshSize() const
@@ -221,61 +213,3 @@ void RenderComponent::Deserialize(const rapidjson::Value& data)
 	LoadMesh(Filepath(data["ResourcePath"].GetString()));
 }
 
-// The fields are drawn from DescribeProperties; this is only the sub-mesh/material/texture tree
-void RenderComponent::OnEditorInspect()
-{
-	ResourceHandler& resourceHandler = RZE().GetResourceHandler();
-
-	if (m_resource.IsValid())
-	{
-		const StaticMeshResource* const modelData = resourceHandler.GetResource<StaticMeshResource>(m_resource);
-
-		for (const auto& subMesh : modelData->GetStaticMesh().GetSubMeshes())
-		{
-			if (ImGui::TreeNode(&subMesh, subMesh.GetName().c_str()))
-			{
-				const std::shared_ptr<const MaterialInstance>& material = subMesh.GetMaterial();
-				//
-				// Material Information
-				//
-				if (ImGui::TreeNode(&material, "%s %s", "Material:", material->GetName().c_str()))
-				{
-					const PixelShader* const shader = resourceHandler.GetResource<PixelShader>(material->GetShaderResource());
-					AssertNotNull(shader);
-					
-					ImGui::Separator();
-
-					ImGui::TextColored(ImVec4(0.65f, 0.65f, 1.0f, 1.0f), "[Shader] ");
-					ImGui::Text(shader->GetName().c_str());
-					
-					ImGui::NewLine();
-
-					//
-					// Textures
-					//
-					ImGui::TextColored(ImVec4(0.65f, 0.65f, 1.0f, 1.0f), "[Textures]");
-					for (U8 textureSlot = 0; textureSlot < MaterialInstance::TEXTURE_SLOT_COUNT; ++textureSlot)
-					{
-						const ResourceHandle& textureResource = material->GetTexture(textureSlot);
-						
-						if (textureResource.IsValid())
-						{
-							const Texture2D* const textureData = resourceHandler.GetResource<Texture2D>(textureResource);
-							AssertNotNull(textureData);
-
-							const std::string textureTypeStr = GetTextureTypeStr(static_cast<MaterialInstance::TextureSlot>(textureSlot));
-							if (ImGui::CollapsingHeader(textureTypeStr.c_str()))
-							{
-								ImGui::Text(textureData->GetFilepath().GetRelativePath().c_str());
-								ImGui::Image((ImTextureID)(intptr_t)textureData->GetPlatformObject().GetTextureData(), ImVec2(256.0f, 256.0f));
-							}
-						}
-					}
-					ImGui::TreePop();
-				}
-
-				ImGui::TreePop();
-			}
-		}
-	}
-}
