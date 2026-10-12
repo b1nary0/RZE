@@ -93,7 +93,7 @@ namespace Editor
 		// The window's menu bar, before Draw. Only called when PanelDesc::WindowFlags includes ImGuiWindowFlags_MenuBar.
 		virtual void DrawMenuBar(EditorContext& context) {}
 
-		// Before the scene unloads (EditorContext::ResetSceneState). Drop anything that refers to the current scene.
+		// Before the scene unloads (SceneUnloadingEvent). Drop anything that refers to the current scene.
 		virtual void OnSceneReset() {}
 
 		virtual void PushWindowStyle(PanelWindowStyle& style) const {}

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <UI/Framework/EditorEvents.h>
 #include <UI/Framework/EditorPanel.h>
 
 #include <memory>
@@ -39,8 +40,6 @@ namespace Editor
 		// its slot. For when there's no saved layout to restore.
 		void BuildDefaultDockLayout(ImGuiID dockspaceId, const ImVec2& size);
 
-		void ResetSceneState();
-
 		// Null if no panel of that type is registered. Prefer sharing state through EditorContext;
 		// this is for the rare case that really needs a specific panel.
 		template <typename TPanel>
@@ -48,6 +47,8 @@ namespace Editor
 
 	private:
 		std::vector<std::unique_ptr<EditorPanel>> m_panels;
+		// Calls each panel's OnSceneReset
+		EventSubscription m_sceneUnloading;
 	};
 
 	template <typename TPanel>

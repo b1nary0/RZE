@@ -57,10 +57,7 @@ namespace Editor
 
 				m_isUntitled = isNewScene;
 
-				if (m_onLoaded != nullptr)
-				{
-					m_onLoaded(*this);
-				}
+				m_context.GetEvents().Publish(SceneLoadedEvent{ *this });
 			}));
 
 		m_loadOperation = loadOperation;
@@ -97,6 +94,7 @@ namespace Editor
 	void SceneDocument::OnSaved()
 	{
 		m_context.GetGameBuilder().CopyAssets();
+		m_context.GetEvents().Publish(SceneSavedEvent{ *this });
 	}
 
 	void SceneDocument::CreateEditorCamera()

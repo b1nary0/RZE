@@ -1,5 +1,6 @@
 #pragma once
 
+#include <UI/Framework/EditorEvents.h>
 #include <UI/Framework/EditorSelection.h>
 #include <UI/Framework/EditorSettings.h>
 #include <UI/Framework/PanelManager.h>
@@ -45,10 +46,12 @@ namespace Editor
 		void Update();
 
 		// Drops everything that refers to the current scene's objects (selection, editor camera, a pick in flight,
-		// pending commands, and whatever each panel holds; see EditorPanel::OnSceneReset). Call before the scene unloads, so cleanup
-		// that touches those objects (e.g. selection bounds) still can. UI state, like the SceneView's viewport,
-		// carries over.
+		// pending commands), then publishes SceneUnloadingEvent so listeners drop theirs (e.g. each panel's
+		// EditorPanel::OnSceneReset). Call before the scene unloads, so cleanup that touches those objects (e.g.
+		// selection bounds) still can. UI state, like the SceneView's viewport, carries over.
 		void ResetSceneState();
+
+		EditorEvents& GetEvents() { return m_events; }
 
 		EditorSettings& GetSettings() { return m_settings; }
 		const EditorSettings& GetSettings() const { return m_settings; }
@@ -77,6 +80,8 @@ namespace Editor
 		CommandQueue& GetCommands() { return m_commands; }
 
 	private:
+		// First, so it's destroyed last: everything below may hold subscriptions
+		EditorEvents m_events;
 		EditorSettings m_settings;
 		EditorSelection m_selection;
 		GameObjectPtr m_editorCamera;

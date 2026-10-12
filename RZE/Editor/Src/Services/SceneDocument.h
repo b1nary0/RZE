@@ -1,6 +1,5 @@
 #pragma once
 
-#include <Utils/Functor.h>
 #include <Utils/Platform/Filepath.h>
 
 #include <memory>
@@ -11,12 +10,10 @@ namespace Editor
 {
 	class EditorContext;
 
-	// The scene being edited: creating, loading and saving it. Owned by EditorContext.
+	// The scene being edited: creating, loading and saving it. Owned by EditorContext. Publishes SceneLoadedEvent
+	// each time a load (or New) succeeds, and SceneSavedEvent after each save.
 	class SceneDocument
 	{
-	public:
-		using LoadedCallback = Functor<void, const SceneDocument&>;
-
 	public:
 		explicit SceneDocument(EditorContext& context);
 		~SceneDocument() = default;
@@ -25,9 +22,6 @@ namespace Editor
 		SceneDocument& operator=(const SceneDocument&) = delete;
 
 	public:
-		// Called each time a load (or New) succeeds, once the scene and the editor camera are in
-		void SetOnLoaded(const LoadedCallback& onLoaded) { m_onLoaded = onLoaded; }
-
 		// Replaces the scene with a copy of the default one, which has no file of its own until it's saved with SaveAs
 		void New();
 		// Asynchronous: the current scene is unloaded straight away and the new one streams in over the following
@@ -51,7 +45,6 @@ namespace Editor
 	private:
 		EditorContext& m_context;
 		std::shared_ptr<AsyncOperation> m_loadOperation;
-		LoadedCallback m_onLoaded;
 
 		// A new scene is loaded from the default scene's file and keeps its path, so the scene's path alone can't
 		// tell whether saving would overwrite the default scene

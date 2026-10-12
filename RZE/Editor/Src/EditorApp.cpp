@@ -79,14 +79,14 @@ namespace Editor
 
 		m_context.GetPanels().CreatePanels(m_context);
 
-		m_context.GetSceneDocument().SetOnLoaded(SceneDocument::LoadedCallback([this](const SceneDocument& scene)
+		m_sceneLoaded = m_context.GetEvents().Subscribe<SceneLoadedEvent>([this](const SceneLoadedEvent& event)
 			{
 				// A new scene keeps the previous title until it's saved
-				if (scene.HasFilePath())
+				if (event.Document.HasFilePath())
 				{
-					AddFilePathToWindowTitle(scene.GetFilePath().GetRelativePath());
+					AddFilePathToWindowTitle(event.Document.GetFilePath().GetRelativePath());
 				}
-			}));
+			});
 	}
 
 	void EditorApp::Start()

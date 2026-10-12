@@ -1,5 +1,6 @@
 #include <UI/Framework/PanelManager.h>
 
+#include <UI/Framework/EditorContext.h>
 #include <UI/Framework/PanelRegistry.h>
 
 #include <ImGui/imgui_internal.h> // DockBuilder API
@@ -36,6 +37,14 @@ namespace Editor
 	void PanelManager::CreatePanels(EditorContext& context)
 	{
 		AssertMsg(m_panels.empty(), "Panels have already been created");
+
+		m_sceneUnloading = context.GetEvents().Subscribe<SceneUnloadingEvent>([this](const SceneUnloadingEvent&)
+			{
+				for (std::unique_ptr<EditorPanel>& panel : m_panels)
+				{
+					panel->OnSceneReset();
+				}
+			});
 
 		for (const PanelRegistration& registration : PanelRegistry::GetAll())
 		{
@@ -203,11 +212,5 @@ namespace Editor
 		ImGui::DockBuilderFinish(dockspaceId);
 	}
 
-	void PanelManager::ResetSceneState()
-	{
-		for (std::unique_ptr<EditorPanel>& panel : m_panels)
-		{
-			panel->OnSceneReset();
-		}
-	}
+
 }

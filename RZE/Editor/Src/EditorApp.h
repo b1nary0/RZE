@@ -46,5 +46,8 @@ namespace Editor
 		std::unordered_map<std::string, ImFont*> m_fontMapping;
 
 		Filepath m_imguiConfigFilepath;
+
+		// Keeps the window title on the scene's file
+		EventSubscription m_sceneLoaded;
 	};
 }
