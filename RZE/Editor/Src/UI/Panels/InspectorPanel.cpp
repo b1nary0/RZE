@@ -73,10 +73,6 @@ namespace Editor
 				(*customInspector)(context, **component);
 				ImGui::PopID();
 			}
-			else
-			{
-				component->OnEditorInspect();
-			}
 			ImGui::Separator();
 		}
 

@@ -102,8 +102,6 @@ public:
 	virtual void Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) = 0;
 	virtual void Deserialize(const rapidjson::Value& data) = 0;
 
-	virtual void OnEditorInspect() = 0;
-
 public:
 	void SetOwner(GameObject* owner) { m_owner = owner; }
 	GameObject* GetOwner() { return m_owner; }
@@ -165,7 +163,4 @@ public:
 	void Update() override {}
 	void Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override {}
 	void Deserialize(const rapidjson::Value& data) override {}
-
-	void OnEditorInspect() override {}
-	
 };
