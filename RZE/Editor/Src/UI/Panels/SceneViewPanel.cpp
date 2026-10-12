@@ -20,9 +20,12 @@
 #include <Rendering/Graphics/RenderTarget.h>
 
 #include <Utils/Math/Math.h>
+#include <Utils/Math/Quaternion.h>
 
 #include <ImGui/imgui.h>
 #include <imGUI/ImGuizmo.h>
+
+#include <algorithm>
 
 namespace Editor
 {
@@ -184,6 +187,10 @@ namespace Editor
 					if (drag.IsActive())
 					{
 						context.GetCommands().Push<SetTransformCommand>(selectedGameObject, newTranslation, newRotation, newScale, drag.GetID());
+
+						const Vector3D& scale = transformComponent->GetScale();
+						ApplyGizmoToOthers(context, transformComponent->GetPosition(), transformComponent->GetRotation(), scale,
+							newTranslation, newRotation, newScale, drag.GetID());
 					}
 				}
 				else
@@ -206,6 +213,53 @@ namespace Editor
 			{
 				m_grid.Draw(cameraObject->GetTransformComponent()->GetPosition(), m_gizmoState.m_snapper.GetSnapSize());
 			}
+		}
+	}
+
+	void SceneViewPanel::ApplyGizmoToOthers(EditorContext& context, const Vector3D& fromPosition, const Vector3D& fromRotation, const Vector3D& fromScale,
+		const Vector3D& toPosition, const Vector3D& toRotation, const Vector3D& toScale, InteractionID interaction)
+	{
+		const EditorSelection& selection = context.GetSelection();
+		const GameObjectPtr primary = selection.GetPrimary();
+
+		// This frame's change to the primary, applied to each of the others
+		const Vector3D positionDelta = toPosition - fromPosition;
+		const Quaternion fromOrientation = Quaternion::FromEulerDegrees(fromRotation);
+		const Quaternion toOrientation = Quaternion::FromEulerDegrees(toRotation);
+		const bool isWorldSpace = m_gizmoState.m_transformationSpace == ImGuizmo::WORLD;
+		// World: rotate about the world axes the gizmo shows. Local: the same turn about each object's own axes.
+		const Quaternion rotationDelta = isWorldSpace ? toOrientation * fromOrientation.Inverse() : fromOrientation.Inverse() * toOrientation;
+		auto scaleRatio = [](float from, float to) { return from != 0.0f ? to / from : 1.0f; };
+		const Vector3D scaleRatios(scaleRatio(fromScale.X(), toScale.X()), scaleRatio(fromScale.Y(), toScale.Y()), scaleRatio(fromScale.Z(), toScale.Z()));
+
+		for (const GameObjectPtr& gameObject : selection.GetAll())
+		{
+			if (gameObject == primary || gameObject == nullptr)
+			{
+				continue;
+			}
+
+			// One whose parent is also selected moves with its parent already
+			const bool hasSelectedAncestor = std::any_of(selection.GetAll().begin(), selection.GetAll().end(),
+				[&gameObject](const GameObjectPtr& other)
+				{
+					return other != gameObject && other != nullptr && other->IsSelfOrAncestorOf(gameObject);
+				});
+			if (hasSelectedAncestor)
+			{
+				continue;
+			}
+
+			GameObjectComponentPtr<TransformComponent> transform = gameObject->GetTransformComponent();
+			const Quaternion orientation = Quaternion::FromEulerDegrees(transform->GetRotation());
+			const Quaternion newOrientation = isWorldSpace ? rotationDelta * orientation : orientation * rotationDelta;
+
+			// Each turns about its own pivot, like the primary
+			context.GetCommands().Push<SetTransformCommand>(gameObject,
+				transform->GetPosition() + positionDelta,
+				newOrientation.ToEulerDegrees(),
+				transform->GetScale() * scaleRatios,
+				interaction);
 		}
 	}
 

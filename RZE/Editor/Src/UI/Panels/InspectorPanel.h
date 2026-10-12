@@ -9,8 +9,9 @@
 
 namespace Editor
 {
-	// The primary selected GameObject's components, in EditorComponentCache order. Each shows its described properties
+	// The selected GameObjects' components, in EditorComponentCache order. Each shows its described properties
 	// (ComponentPropertyRegistry), then its custom inspector section if it has one (REGISTER_COMPONENT_INSPECTOR).
+	// With several objects selected, only the component types they all have are shown, and edits apply to all of them.
 	class InspectorPanel : public EditorPanel
 	{
 	public:
@@ -21,9 +22,11 @@ namespace Editor
 		void Draw(EditorContext& context) override;
 
 	private:
-		// The primary selection's components in display order. Rebuilt every Update; a member only so its
-		// allocation is reused. Handles, because a scene can unload between Update and Draw (e.g. New Scene).
-		std::vector<GameObjectComponentPtr<GameObjectComponentBase>> m_sortedComponents;
+		// Each entry is one component type the selected objects share: that component on each object, the primary's
+		// first. In display order. Rebuilt every Update; handles, because a scene can unload between Update and Draw
+		// (e.g. New Scene).
+		std::vector<PropertyInspector::ComponentList> m_componentGroups;
+		size_t m_selectedCount = 0;
 
 		PropertyInspector m_propertyInspector;
 	};

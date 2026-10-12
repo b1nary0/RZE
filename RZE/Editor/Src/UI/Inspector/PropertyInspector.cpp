@@ -10,6 +10,7 @@
 #include <Game/World/GameObject/Properties/ComponentPropertyRegistry.h>
 
 #include <ImGui/imgui.h>
+#include <ImGui/imgui_internal.h> // ImGuiItemFlags_MixedValue
 
 #include <algorithm>
 #include <string>
@@ -37,6 +38,72 @@ namespace
 	{
 		return ref.IsValid() && ref.Type->GetDisplayName ? ref.Type->GetDisplayName(ref.Object) : std::string();
 	}
+
+	// A property's label when the selected components' values differ
+	const ImVec4 k_mixedValueColour(1.0f, 0.75f, 0.3f, 1.0f);
+
+	bool AreEqual(const Vector3D& a, const Vector3D& b) { return a == b; }
+	bool AreEqual(const Vector4D& a, const Vector4D& b)
+	{
+		return a.X() == b.X() && a.Y() == b.Y() && a.Z() == b.Z() && a.W() == b.W();
+	}
+	bool AreEqual(const Filepath& a, const Filepath& b) { return a.GetRelativePath() == b.GetRelativePath(); }
+	bool AreEqual(bool a, bool b) { return a == b; }
+	bool AreEqual(int a, int b) { return a == b; }
+	bool AreEqual(float a, float b) { return a == b; }
+	bool AreEqual(const std::string& a, const std::string& b) { return a == b; }
+	// Nested objects and images are never edited across a selection, so they don't count as mixed
+	template <typename T>
+	bool AreEqual(const T&, const T&) { return true; }
+
+	bool AreEqual(const PropertyValue& a, const PropertyValue& b)
+	{
+		if (a.index() != b.index())
+		{
+			return false;
+		}
+		return std::visit([&b](const auto& aValue)
+			{
+				using T = std::decay_t<decltype(aValue)>;
+				return AreEqual(aValue, std::get<T>(b));
+			}, a);
+	}
+
+	// One target's value after an edit made on the first: a vector only takes the axes that were edited, so typing
+	// a new X into a mixed selection leaves each object's Y and Z alone. Anything else takes the edit as is.
+	PropertyValue ApplyEdit(const PropertyValue& before, const PropertyValue& after, const PropertyValue& target)
+	{
+		auto mergeAxes = [](const float* before, const float* after, float* target, int count)
+			{
+				for (int axis = 0; axis < count; ++axis)
+				{
+					if (before[axis] != after[axis])
+					{
+						target[axis] = after[axis];
+					}
+				}
+			};
+
+		if (std::holds_alternative<Vector3D>(after) && std::holds_alternative<Vector3D>(target))
+		{
+			Vector3D before3 = std::get<Vector3D>(before);
+			Vector3D after3 = std::get<Vector3D>(after);
+			Vector3D merged = std::get<Vector3D>(target);
+			mergeAxes(before3.GetValuePtr(), after3.GetValuePtr(), merged.GetValuePtr(), 3);
+			return PropertyValue(merged);
+		}
+
+		if (std::holds_alternative<Vector4D>(after) && std::holds_alternative<Vector4D>(target))
+		{
+			Vector4D before4 = std::get<Vector4D>(before);
+			Vector4D after4 = std::get<Vector4D>(after);
+			Vector4D merged = std::get<Vector4D>(target);
+			mergeAxes(before4.GetValuePtr(), after4.GetValuePtr(), merged.GetValuePtr(), 4);
+			return PropertyValue(merged);
+		}
+
+		return after;
+	}
 }
 
 namespace Editor
@@ -54,8 +121,14 @@ namespace Editor
 		}
 	}
 
-	bool PropertyInspector::Draw(EditorContext& context, const GameObjectComponentPtr<GameObjectComponentBase>& component)
+	bool PropertyInspector::Draw(EditorContext& context, const ComponentList& components)
 	{
+		if (components.empty() || components.front() == nullptr)
+		{
+			return false;
+		}
+
+		const GameObjectComponentPtr<GameObjectComponentBase>& component = components.front();
 		const ComponentPropertyRegistry::ComponentDescription* const description = ComponentPropertyRegistry::GetDescription(component->m_id);
 		if (description == nullptr || description->Type->Properties.empty())
 		{
@@ -74,7 +147,7 @@ namespace Editor
 		ImGui::PushID(static_cast<int>(component->GetInstanceID()));
 		if (EditorUI::BeginPropertyTable("##properties", EditorUI::CalcLabelColumnWidth(widestLabel)))
 		{
-			DrawProperties(context, *description->Type, object, &component);
+			DrawProperties(context, *description->Type, object, &components);
 			EditorUI::EndPropertyTable();
 		}
 		ImGui::PopID();
@@ -82,7 +155,7 @@ namespace Editor
 	}
 
 	void PropertyInspector::DrawProperties(EditorContext& context, const TypeDescription& type, const void* object,
-		const GameObjectComponentPtr<GameObjectComponentBase>* editableComponent)
+		const ComponentList* editableComponents)
 	{
 		for (size_t propertyIndex = 0; propertyIndex < type.Properties.size(); ++propertyIndex)
 		{
@@ -126,7 +199,7 @@ namespace Editor
 			}
 			else
 			{
-				DrawValueRow(context, property, propertyIndex, object, editableComponent);
+				DrawValueRow(context, property, propertyIndex, object, editableComponents);
 			}
 
 			ImGui::PopID();
@@ -134,7 +207,7 @@ namespace Editor
 	}
 
 	void PropertyInspector::DrawValueRow(EditorContext& context, const PropertyDescriptor& property, size_t propertyIndex, const void* object,
-		const GameObjectComponentPtr<GameObjectComponentBase>* editableComponent)
+		const ComponentList* editableComponents)
 	{
 		const PropertyDrawers::Drawer drawer = PropertyDrawers::Find(property.Type);
 		if (drawer == nullptr)
@@ -142,36 +215,74 @@ namespace Editor
 			return;
 		}
 
-		EditorUI::PropertyRow(property.Name.c_str(), property.Tooltip.c_str());
+		// Edits a copy; the components only change when the commands run
+		const PropertyValue before = property.Get(object);
+		PropertyValue value = before;
+
+		// Whether the other selected components' values differ from the first's, which is the one shown
+		bool isMixed = false;
+		if (editableComponents != nullptr)
+		{
+			for (size_t targetIndex = 1; targetIndex < editableComponents->size() && !isMixed; ++targetIndex)
+			{
+				const GameObjectComponentPtr<GameObjectComponentBase>& target = (*editableComponents)[targetIndex];
+				isMixed = target != nullptr && !AreEqual(before, property.Get(ComponentPropertyRegistry::GetDescribedObject(**target)));
+			}
+		}
+
+		if (isMixed)
+		{
+			ImGui::PushStyleColor(ImGuiCol_Text, k_mixedValueColour);
+			EditorUI::PropertyRow(property.Name.c_str(), "Differs across the selection; showing the primary's value");
+			ImGui::PopStyleColor();
+		}
+		else
+		{
+			EditorUI::PropertyRow(property.Name.c_str(), property.Tooltip.c_str());
+		}
 
 		// Nested objects' properties can't be edited yet: commands only address a component's own properties
-		const bool isReadOnly = property.IsReadOnly() || editableComponent == nullptr;
-
-		// Edits a copy; the component only changes when the command runs
-		PropertyValue value = property.Get(object);
+		const bool isReadOnly = property.IsReadOnly() || editableComponents == nullptr;
 
 		const bool isDisabled = isReadOnly && IsDrawnAsWidget(property.Type);
 		ImGui::BeginDisabled(isDisabled);
+		// Checkboxes show a dash for mixed values
+		ImGui::PushItemFlag(ImGuiItemFlags_MixedValue, isMixed);
 		const bool changed = drawer(property, value, isReadOnly);
+		ImGui::PopItemFlag();
 		const bool isHeld = ImGui::IsItemActive();
 		ImGui::EndDisabled();
 
-		if (editableComponent == nullptr || isReadOnly)
+		if (editableComponents == nullptr || isReadOnly)
 		{
 			return;
 		}
 
-		const GameObjectComponentPtr<GameObjectComponentBase>& component = *editableComponent;
-		const GameObjectComponentInstanceID instanceID = component->GetInstanceID();
+		// The held-edit bookkeeping follows the first component, which every target's edit shares
+		const GameObjectComponentInstanceID instanceID = editableComponents->front()->GetInstanceID();
 		if (isHeld && m_heldEdit.m_component == instanceID && m_heldEdit.m_propertyIndex == propertyIndex)
 		{
 			m_isHeldThisFrame = true;
 		}
 
-		if (changed)
+		if (!changed)
 		{
-			const InteractionID interaction = GetInteraction(instanceID, propertyIndex, isHeld);
-			context.GetCommands().Push<SetPropertyCommand>(component, propertyIndex, std::move(value), interaction);
+			return;
+		}
+
+		const InteractionID interaction = GetInteraction(instanceID, propertyIndex, isHeld);
+		for (size_t targetIndex = 0; targetIndex < editableComponents->size(); ++targetIndex)
+		{
+			const GameObjectComponentPtr<GameObjectComponentBase>& target = (*editableComponents)[targetIndex];
+			if (target == nullptr)
+			{
+				continue;
+			}
+
+			PropertyValue targetValue = targetIndex == 0
+				? value
+				: ApplyEdit(before, value, property.Get(ComponentPropertyRegistry::GetDescribedObject(**target)));
+			context.GetCommands().Push<SetPropertyCommand>(target, propertyIndex, std::move(targetValue), interaction);
 		}
 	}
 

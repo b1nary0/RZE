@@ -62,6 +62,12 @@ namespace Editor
 		const Vector2D& GetDimensions() const { return m_dimensions; }
 		const Vector2D& GetPosition() const { return m_position; }
 
+		// Applies this frame's gizmo change to the primary (from -> to) to every other selected object, as one
+		// interaction with the primary's. Positions move by the same offset, rotations turn by the same amount about
+		// each object's own pivot, and scales scale by the same ratio.
+		void ApplyGizmoToOthers(EditorContext& context, const Vector3D& fromPosition, const Vector3D& fromRotation, const Vector3D& fromScale,
+			const Vector3D& toPosition, const Vector3D& toRotation, const Vector3D& toScale, InteractionID interaction);
+
 		// Icons at each light's and camera's position, plus camera frustums; viewOrigin is the screen-space top-left of the scene image
 		void DrawObjectIcons(const EditorContext& context, const ImVec2& viewOrigin);
 		// Debug lines along the camera's view volume, from its near plane out to its far plane or a fixed cap, whichever is closer

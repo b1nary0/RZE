@@ -37,28 +37,74 @@ namespace Editor
 
 	void InspectorPanel::Update(EditorContext& context)
 	{
-		const GameObjectPtr primary = context.GetSelection().GetPrimary();
+		m_componentGroups.clear();
+
+		const EditorSelection& selection = context.GetSelection();
+		m_selectedCount = selection.GetAll().size();
+
+		const GameObjectPtr primary = selection.GetPrimary();
 		if (primary == nullptr)
 		{
-			m_sortedComponents.clear();
 			return;
 		}
 
 		// Stable, so components with the same order keep the order they were added in
-		primary->GetComponentHandles(m_sortedComponents);
-		std::stable_sort(m_sortedComponents.begin(), m_sortedComponents.end(),
+		PropertyInspector::ComponentList primaryComponents;
+		primary->GetComponentHandles(primaryComponents);
+		std::stable_sort(primaryComponents.begin(), primaryComponents.end(),
 			[](const GameObjectComponentPtr<GameObjectComponentBase>& a, const GameObjectComponentPtr<GameObjectComponentBase>& b)
 			{
 				return GetInspectorOrder(**a) < GetInspectorOrder(**b);
 			});
+
+		// Every other selected object's components, to match by type
+		std::vector<PropertyInspector::ComponentList> otherComponents;
+		for (const GameObjectPtr& gameObject : selection.GetAll())
+		{
+			if (gameObject != primary && gameObject != nullptr)
+			{
+				otherComponents.emplace_back();
+				gameObject->GetComponentHandles(otherComponents.back());
+			}
+		}
+
+		for (const GameObjectComponentPtr<GameObjectComponentBase>& component : primaryComponents)
+		{
+			PropertyInspector::ComponentList group = { component };
+			for (const PropertyInspector::ComponentList& components : otherComponents)
+			{
+				const auto match = std::find_if(components.begin(), components.end(),
+					[&component](const GameObjectComponentPtr<GameObjectComponentBase>& other)
+					{
+						return other->m_id == component->m_id;
+					});
+				if (match == components.end())
+				{
+					break;
+				}
+				group.push_back(*match);
+			}
+
+			// Only types every selected object has
+			if (group.size() == otherComponents.size() + 1)
+			{
+				m_componentGroups.push_back(std::move(group));
+			}
+		}
 	}
 
 	void InspectorPanel::Draw(EditorContext& context)
 	{
 		m_propertyInspector.BeginFrame();
 
-		for (const GameObjectComponentPtr<GameObjectComponentBase>& component : m_sortedComponents)
+		if (m_selectedCount > 1)
 		{
+			ImGui::TextDisabled("%d objects selected; showing the components they share", static_cast<int>(m_selectedCount));
+		}
+
+		for (const PropertyInspector::ComponentList& group : m_componentGroups)
+		{
+			const GameObjectComponentPtr<GameObjectComponentBase>& component = group.front();
 			if (component == nullptr)
 			{
 				continue;
@@ -66,9 +112,11 @@ namespace Editor
 
 			const std::string heading = "[ " + component->GetName() + " ]";
 			EditorUI::SectionHeading(heading.c_str());
-			m_propertyInspector.Draw(context, component);
+			m_propertyInspector.Draw(context, group);
 
-			if (const ComponentInspectors::Inspector* const customInspector = ComponentInspectors::Find(component->m_id))
+			// Custom sections (e.g. the camera preview) are about one object
+			const ComponentInspectors::Inspector* const customInspector = group.size() == 1 ? ComponentInspectors::Find(component->m_id) : nullptr;
+			if (customInspector != nullptr)
 			{
 				ImGui::PushID(static_cast<int>(component->GetInstanceID()));
 				(*customInspector)(context, **component);
