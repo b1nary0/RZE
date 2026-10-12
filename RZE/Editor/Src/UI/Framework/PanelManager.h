@@ -27,9 +27,14 @@ namespace Editor
 		// Each open panel's window, inside the editor's dockspace
 		void DrawAll(EditorContext& context);
 
-		// A checkable item per panel with a PanelDesc::MenuPath, nested in submenus by its path. Call inside the
-		// menu the paths are relative to (View); submenus with the same name as existing ones are appended to.
-		void DrawMenuItems();
+		// A checkable item per panel whose PanelDesc::MenuPath starts with mainMenu (e.g. "View"), nested in
+		// submenus by the rest of its path. Call inside that main menu's BeginMenu/EndMenu; submenus with the same
+		// name as existing ones are appended to.
+		void DrawMenuItems(const char* mainMenu);
+
+		// Splits the dockspace into the PanelDesc::DefaultDock slots that panels use and docks each panel into
+		// its slot. For when there's no saved layout to restore.
+		void BuildDefaultDockLayout(ImGuiID dockspaceId, const ImVec2& size);
 
 		void ResetSceneState();
 

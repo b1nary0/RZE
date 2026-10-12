@@ -8,18 +8,38 @@ namespace Editor
 {
 	class EditorContext;
 
+	// Where a panel docks in the default layout (PanelManager::BuildDefaultDockLayout)
+	enum class EPanelDock
+	{
+		Floating,
+		Left,
+		Right,
+		// Spans the full width under the others
+		Bottom,
+		// What's left in the middle; the scene view
+		Center,
+
+		Count
+	};
+
 	// How a panel's window is set up. Each panel class provides one from a static Describe(), which
 	// REGISTER_EDITOR_PANEL reads.
 	struct PanelDesc
 	{
 		// The window's title and ImGui ID. imgui.ini saves the docked layout under it, so renaming a panel loses its layout.
 		std::string Name;
-		// Where it appears under the View menu, e.g. "Windows/Log"; empty leaves it out. Items are listed by name.
+		// Where its menu item appears, starting at a main menu, e.g. "View/Windows/Log"; empty leaves it out.
+		// Items are listed by name.
 		std::string MenuPath;
+		// Only used when there's no saved layout to restore (imgui.ini)
+		EPanelDock DefaultDock = EPanelDock::Floating;
 		bool DefaultOpen = true;
 		// Shows the window's close button; panels that can't close are always open
 		bool Closable = true;
 		ImGuiWindowFlags WindowFlags = ImGuiWindowFlags_None;
+		// Draw() does its own Begin/End (e.g. ImGui's demo window), so PanelManager doesn't wrap it in a window.
+		// WindowFlags, PushWindowStyle and DrawMenuBar don't apply, and the panel isn't tracked as hovered or focused.
+		bool OwnsWindow = false;
 	};
 
 	// Style vars a panel pushes for its window. They're pushed before Begin and popped after End, so they
@@ -73,6 +93,9 @@ namespace Editor
 		virtual void OnSceneReset() {}
 
 		virtual void PushWindowStyle(PanelWindowStyle& style) const {}
+
+		// For PanelDesc::OwnsWindow panels to pass to their own Begin, so its close button closes the panel
+		bool* GetOpenFlag() { return &m_isOpen; }
 
 	private:
 		PanelDesc m_desc;

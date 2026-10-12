@@ -25,7 +25,8 @@ namespace Editor
 	{
 		PanelDesc desc;
 		desc.Name = "Scene";
-		desc.MenuPath = "Windows/Scene";
+		desc.MenuPath = "View/Windows/Scene";
+		desc.DefaultDock = EPanelDock::Left;
 		return desc;
 	}
 

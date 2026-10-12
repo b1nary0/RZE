@@ -28,7 +28,8 @@ namespace Editor
 	{
 		PanelDesc desc;
 		desc.Name = "Component View";
-		desc.MenuPath = "Windows/Component View";
+		desc.MenuPath = "View/Windows/Component View";
+		desc.DefaultDock = EPanelDock::Right;
 		return desc;
 	}
 

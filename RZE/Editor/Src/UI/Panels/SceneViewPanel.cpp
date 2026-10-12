@@ -29,6 +29,7 @@ namespace Editor
 	{
 		PanelDesc desc;
 		desc.Name = "SceneView";
+		desc.DefaultDock = EPanelDock::Center;
 		// The editor has nothing to show without the scene, so it stays open
 		desc.Closable = false;
 		desc.WindowFlags = ImGuiWindowFlags_MenuBar;

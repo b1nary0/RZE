@@ -15,12 +15,6 @@ namespace Editor
 {
 	class EditorApp : public RZE_Application
 	{
-	private:
-		struct PanelStates
-		{
-			bool bDemoPanelEnabled{ false };
-		};
-
 	public:
 		EditorApp();
 		~EditorApp() override;
@@ -48,7 +42,6 @@ namespace Editor
 
 	private:
 		void DisplayMenuBar();
-		void ResolvePanelState();
 
 		void LoadFonts();
 		void StyleSetup();
@@ -69,8 +62,6 @@ namespace Editor
 		bool IsSceneLoading() const;
 
 	private:
-		PanelStates m_panelStates;
-
 		EditorContext m_context;
 
 		AsyncOperationModal m_asyncOperationModal;

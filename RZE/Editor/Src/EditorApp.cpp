@@ -48,36 +48,6 @@ namespace
 		ImGui::PushFont(font, font->LegacySize);
 	}
 
-	// Builds the editor's default panel layout into the dockspace. Used when the dockspace has no saved layout,
-	// e.g. imgui.ini is missing or was saved with IDs this ImGui version doesn't recognize.
-	//  ___________________________________
-	// |       |                   |       |
-	// | Scene |     SceneView     |  Comp |
-	// |       |                   |  View |
-	// |_______|___________________|_______|
-	// |               Log                 |
-	// |___________________________________|
-	void BuildDefaultDockLayout(ImGuiID dockspaceId, const ImVec2& size)
-	{
-		ImGui::DockBuilderRemoveNode(dockspaceId);
-		ImGui::DockBuilderAddNode(dockspaceId, ImGuiDockNodeFlags_DockSpace);
-		ImGui::DockBuilderSetNodeSize(dockspaceId, size);
-
-		// Each split carves a panel off the remaining central node, which ends up holding SceneView.
-		ImGuiID centerId = dockspaceId;
-		const ImGuiID logId = ImGui::DockBuilderSplitNode(centerId, ImGuiDir_Down, 0.22f, nullptr, &centerId);
-		const ImGuiID sceneId = ImGui::DockBuilderSplitNode(centerId, ImGuiDir_Left, 0.09f, nullptr, &centerId);
-		const ImGuiID componentViewId = ImGui::DockBuilderSplitNode(centerId, ImGuiDir_Right, 0.12f, nullptr, &centerId);
-
-		ImGui::DockBuilderDockWindow("Scene", sceneId);
-		ImGui::DockBuilderDockWindow("Resource Monitor", sceneId);
-		ImGui::DockBuilderDockWindow("SceneView", centerId);
-		ImGui::DockBuilderDockWindow("Component View", componentViewId);
-		ImGui::DockBuilderDockWindow("Log", logId);
-
-		ImGui::DockBuilderFinish(dockspaceId);
-	}
-
 	// Runs a process on the calling thread and forwards each line of its stdout (without the trailing newline).
 	// Stops reading early if cancellation is requested. Returns the process exit code, or -1 if it couldn't be started.
 	int RunProcessStreamed(const Filepath& processPath, const OutputLineSink& onOutputLine, const Threading::CancellationToken* cancellationToken)
@@ -234,16 +204,17 @@ namespace Editor
 		ImGui::Begin("RZE_Editor", &show, window_flags);
 		ImGui::PopStyleVar(1);
 		{
+			// No node means imgui.ini had no saved layout for it (missing, or saved by an incompatible ImGui version)
 			ImGuiID dockspace_id = ImGui::GetID("MyDockspace");
 			if (ImGui::DockBuilderGetNode(dockspace_id) == nullptr)
 			{
-				BuildDefaultDockLayout(dockspace_id, ImGui::GetContentRegionAvail());
+				m_context.GetPanels().BuildDefaultDockLayout(dockspace_id, ImGui::GetContentRegionAvail());
 			}
 
 			ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
 			ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
 
-			ResolvePanelState();
+			m_context.GetPanels().DrawAll(m_context);
 		}
 		ImGui::PopFont();
 		ImGui::End();
@@ -402,17 +373,14 @@ namespace Editor
 
 			if (ImGui::BeginMenu("View"))
 			{
-				m_context.GetPanels().DrawMenuItems();
+				m_context.GetPanels().DrawMenuItems("View");
 
 				ImGui::EndMenu();
 			}
 
 			if (ImGui::BeginMenu("Help"))
 			{
-				if (ImGui::MenuItem("Show ImGui Demo Window"))
-				{
-					m_panelStates.bDemoPanelEnabled = true;
-				}
+				m_context.GetPanels().DrawMenuItems("Help");
 
 				ImGui::EndMenu();
 			}
@@ -483,16 +451,6 @@ namespace Editor
 			ImGui::EndMainMenuBar();
 		}
 		ImGui::PopStyleVar();
-	}
-
-	void EditorApp::ResolvePanelState()
-	{
-		if (m_panelStates.bDemoPanelEnabled)
-		{
-			ImGui::ShowDemoWindow(nullptr);
-		}
-
-		m_context.GetPanels().DrawAll(m_context);
 	}
 
 	void EditorApp::LoadFonts()
