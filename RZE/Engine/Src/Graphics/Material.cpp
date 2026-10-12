@@ -4,6 +4,8 @@
 #include <Graphics/Shader.h>
 #include <Graphics/Texture2D.h>
 
+#include <Game/World/GameObject/Properties/PropertyBuilder.h>
+
 #include <Rendering/Renderer.h>
 
 #include <Utils/Memory/MemoryUtils.h>
@@ -101,4 +103,48 @@ void MaterialInstance::CommitPropertyChanges()
 const Rendering::ConstantBufferHandle& MaterialInstance::GetParamBuffer() const
 {
 	return m_paramBuffer;
+}
+
+const char* MaterialInstance::GetTextureSlotName(TextureSlot textureSlot)
+{
+	switch (textureSlot)
+	{
+	case TEXTURE_SLOT_DIFFUSE:
+		return "Diffuse";
+	case TEXTURE_SLOT_SPECULAR:
+		return "Specular";
+	case TEXTURE_SLOT_NORMAL:
+		return "Normal";
+	case TEXTURE_SLOT_OPACITY:
+		return "Opacity";
+	case TEXTURE_SLOT_HEIGHT:
+		return "Height";
+	default:
+		return "None";
+	}
+}
+
+void MaterialInstance::DescribeProperties(PropertyBuilder<MaterialInstance>& properties)
+{
+	properties.DisplayName([](const MaterialInstance& material) { return material.GetName(); });
+
+	properties.Value<std::string>("Shader", [](const MaterialInstance& material)
+		{
+			const PixelShader* const shader = material.GetPixelShader();
+			return shader != nullptr ? shader->GetName() : std::string("(none)");
+		});
+
+	// Only the slots that have a texture, each labelled with its slot
+	properties.Array("Textures", [](const MaterialInstance& material)
+		{
+			std::vector<ObjectRef> textures;
+			for (U8 textureSlot = 0; textureSlot < TEXTURE_SLOT_COUNT; ++textureSlot)
+			{
+				if (const Texture2D* const texture = material.GetTextureResource(textureSlot))
+				{
+					textures.push_back(MakeObjectRef(texture, GetTextureSlotName(static_cast<TextureSlot>(textureSlot))));
+				}
+			}
+			return textures;
+		});
 }

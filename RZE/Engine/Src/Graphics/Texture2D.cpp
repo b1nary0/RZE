@@ -1,6 +1,8 @@
 #include <StdAfx.h>
 #include <Graphics/Texture2D.h>
 
+#include <Game/World/GameObject/Properties/PropertyBuilder.h>
+
 #include <Rendering/Renderer.h>
 #include <Rendering/Driver/GFXBuffer.h>
 
@@ -94,4 +96,16 @@ void Texture2D::Release()
 Vector2D Texture2D::GetDimensions() const
 {
 	return Vector2D(m_width, m_height);
+}
+
+void Texture2D::DescribeProperties(PropertyBuilder<Texture2D>& properties)
+{
+	properties.AssetPath("File", &Texture2D::GetFilepath);
+	properties.Value<PropertyTexture>("Preview", [](const Texture2D& texture)
+		{
+			PropertyTexture preview;
+			preview.Handle = texture.GetPlatformObject();
+			preview.Size = texture.GetDimensions();
+			return preview;
+		});
 }

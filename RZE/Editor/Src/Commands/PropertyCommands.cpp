@@ -28,6 +28,6 @@ namespace Editor
 		const PropertyDescriptor& property = (*properties)[m_propertyIndex];
 		AssertMsg(!property.IsReadOnly(), "Read-only properties can't be set");
 
-		property.Set(**m_component, m_value);
+		property.Set(ComponentPropertyRegistry::GetDescribedObject(**m_component), m_value);
 	}
 }

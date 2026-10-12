@@ -7,11 +7,17 @@
 #include <Utils/Interfaces/Resource.h>
 #include <Utils/Platform/Filepath.h>
 
+template <typename TObject>
+class PropertyBuilder;
+
 class Texture2D : public IResource
 {
 public:
 	Texture2D();
 	~Texture2D() override;
+
+	// For tools: the texture's file and a preview
+	static void DescribeProperties(PropertyBuilder<Texture2D>& properties);
 
 public:
 	bool Load(const Filepath& filePath) final;

@@ -275,3 +275,11 @@ STBIDEF unsigned char* stbi_xload(stbi__context* s, int* x, int* y, int* frames,
 
 	return result;
 }
+
+void GifChatComponent::DescribeProperties(PropertyBuilder<GifChatComponent>& properties)
+{
+	properties.Array("Sub-Meshes", [](const GifChatComponent& gifChat)
+		{
+			return MakeObjectRefs(gifChat.GetMeshGeometry().GetSubMeshes());
+		});
+}

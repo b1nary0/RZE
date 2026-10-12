@@ -9,6 +9,8 @@
 
 class MaterialInstance;
 class IndexBuffer;
+template <typename TObject>
+class PropertyBuilder;
 class VertexBuffer;
 
 struct MeshVertex
@@ -25,6 +27,9 @@ public:
 	MeshGeometry() = default;
 	MeshGeometry(U32 vertexCount, U32 indexCount);
 	~MeshGeometry();
+
+	// For tools: a sub-mesh shows its name and material
+	static void DescribeProperties(PropertyBuilder<MeshGeometry>& properties);
 
 	// Creates the GPU vertex/index buffers. Main thread only.
 	void AllocateData();

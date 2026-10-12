@@ -1,5 +1,8 @@
 #pragma once
 
+#include <Rendering/BufferHandle.h>
+
+#include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector3D.h>
 #include <Utils/Math/Vector4D.h>
 #include <Utils/Platform/FilePath.h>
@@ -7,12 +10,34 @@
 #include <functional>
 #include <string>
 #include <variant>
+#include <vector>
 
-class GameObjectComponentBase;
+struct TypeDescription;
 
-// A property's value, type-erased so tools can read and write any component's properties without knowing the
-// component. The alternatives' order matches EPropertyType.
-using PropertyValue = std::variant<bool, int, float, Vector3D, Vector4D, std::string, Filepath>;
+// A described object somewhere in memory: what it is (its TypeDescription) and where. Non-owning; only valid while
+// the object is, which for a nested property's value means the frame it was read in.
+struct ObjectRef
+{
+	const TypeDescription* Type = nullptr;
+	const void* Object = nullptr;
+	// Shown instead of the type's display name, e.g. a material's texture slot ("Diffuse")
+	std::string Label;
+
+	bool IsValid() const { return Type != nullptr && Object != nullptr; }
+};
+
+// An image to show, e.g. a texture asset or a render target. Only the [0, UVMax] corner of the texture is shown,
+// at Size pixels.
+struct PropertyTexture
+{
+	Rendering::TextureBuffer2DHandle Handle;
+	Vector2D Size;
+	Vector2D UVMax = Vector2D(1.0f, 1.0f);
+};
+
+// A property's value, type-erased so tools can read and write any described type's properties without knowing the
+// type. The alternatives' order matches EPropertyType.
+using PropertyValue = std::variant<bool, int, float, Vector3D, Vector4D, std::string, Filepath, ObjectRef, std::vector<ObjectRef>, PropertyTexture>;
 
 enum class EPropertyType
 {
@@ -23,7 +48,13 @@ enum class EPropertyType
 	Vector4,
 	String,
 	// A Filepath to an asset file, picked with a file prompt; see PropertyDescriptor::Asset
-	AssetPath
+	AssetPath,
+	// Another described object, shown nested; read-only
+	Object,
+	// A list of described objects, each shown nested; read-only
+	Array,
+	// An image; read-only
+	Texture
 };
 
 // A hint for how an editor should show the value; types without a matching widget fall back to their default
@@ -37,12 +68,13 @@ enum class EPropertyWidget
 	Colour
 };
 
-// One editable value on a component type: its name, type, how to read and write it, and how tools should present it.
-// Built by PropertyBuilder; the metadata setters chain, e.g. .Range(1.0f, 179.0f).Step(0.5f).
+// One value on a described type: its name, type, how to read and write it, and how tools should present it.
+// Built by PropertyBuilder; the metadata setters chain, e.g. .Range(1.0f, 179.0f).StepSize(0.5f).
 struct PropertyDescriptor
 {
-	using Getter = std::function<PropertyValue(const GameObjectComponentBase&)>;
-	using Setter = std::function<void(GameObjectComponentBase&, const PropertyValue&)>;
+	// object points at an instance of the described type
+	using Getter = std::function<PropertyValue(const void* object)>;
+	using Setter = std::function<void(void* object, const PropertyValue&)>;
 
 	std::string Name;
 	EPropertyType Type = EPropertyType::Float;
@@ -80,4 +112,14 @@ struct PropertyDescriptor
 		AssetFilter = filter;
 		return *this;
 	}
+};
+
+// Everything described about a type: its properties, and optionally a name to show for an instance of it (e.g. a
+// sub-mesh's name). Built once per type by DescribeType<T>().
+struct TypeDescription
+{
+	using DisplayNameGetter = std::function<std::string(const void* object)>;
+
+	std::vector<PropertyDescriptor> Properties;
+	DisplayNameGetter GetDisplayName;
 };

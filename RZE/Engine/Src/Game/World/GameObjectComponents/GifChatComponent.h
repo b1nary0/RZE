@@ -22,6 +22,8 @@ public:
 	// GameObjectComponent interface
 	//
 public:
+	static void DescribeProperties(PropertyBuilder<GifChatComponent>& properties);
+
 	void Initialize() override;
 	void OnAddToScene() override;
 	void OnRemoveFromScene() override;

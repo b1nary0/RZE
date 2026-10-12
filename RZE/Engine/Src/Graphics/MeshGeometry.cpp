@@ -3,6 +3,8 @@
 
 #include <Graphics/Material.h>
 
+#include <Game/World/GameObject/Properties/PropertyBuilder.h>
+
 #include <Graphics/IndexBuffer.h>
 #include <Graphics/VertexBuffer.h>
 
@@ -180,4 +182,10 @@ const std::shared_ptr<VertexBuffer>& MeshGeometry::GetVertexBuffer() const
 const std::shared_ptr<IndexBuffer>& MeshGeometry::GetIndexBuffer() const
 {
 	return m_indexBuffer;
+}
+
+void MeshGeometry::DescribeProperties(PropertyBuilder<MeshGeometry>& properties)
+{
+	properties.DisplayName([](const MeshGeometry& mesh) { return mesh.GetName(); });
+	properties.Object<MaterialInstance>("Material", &MeshGeometry::GetMaterial);
 }

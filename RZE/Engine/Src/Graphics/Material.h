@@ -9,6 +9,8 @@
 class PixelShader;
 class ShaderTechnique;
 class Texture2D;
+template <typename TObject>
+class PropertyBuilder;
 
 // [newrenderer]
 // This class (well, material/shader system in general...) needs a lot of thought.
@@ -51,6 +53,11 @@ public:
 public:
 	// @TODO hoist MaterialData out and use it in MaterialAssetImporter and MaterialInstance (no namespace resolution)
 	static std::shared_ptr<MaterialInstance> Create(const MaterialAssetImporter::MaterialData& materialData);
+
+	// For tools: the material's shader and textures
+	static void DescribeProperties(PropertyBuilder<MaterialInstance>& properties);
+
+	static const char* GetTextureSlotName(TextureSlot textureSlot);
 
 	void SetTexture(U8 textureSlot, const ResourceHandle& textureResource);
 

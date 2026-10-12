@@ -7,8 +7,8 @@
 
 namespace Editor
 {
-	// Sets one described property (ComponentPropertyRegistry) on a component through its setter. Does nothing if
-	// the component has been destroyed.
+	// Sets one of a component's own described properties (ComponentPropertyRegistry) through its setter. Does
+	// nothing if the component has been destroyed.
 	class SetPropertyCommand : public EditorCommand
 	{
 	public:

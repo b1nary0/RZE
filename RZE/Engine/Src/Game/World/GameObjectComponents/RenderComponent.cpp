@@ -33,6 +33,11 @@ void RenderComponent::DescribeProperties(PropertyBuilder<RenderComponent>& prope
 		.DisplayFormat("%.2f m").Tip("Along the object's own axes, including its scale");
 	properties.Bool("Draw Mesh Bounds", &RenderComponent::IsDrawingMeshBounds, &RenderComponent::SetDrawMeshBounds);
 	properties.Bool("Draw Sub-Mesh Bounds", &RenderComponent::IsDrawingSubMeshBounds, &RenderComponent::SetDrawSubMeshBounds);
+	properties.Array("Sub-Meshes", [](const RenderComponent& renderComponent)
+		{
+			const StaticMeshInstance* const mesh = renderComponent.GetMesh();
+			return mesh != nullptr ? MakeObjectRefs(mesh->GetSubMeshes()) : std::vector<ObjectRef>();
+		});
 }
 
 const Filepath& RenderComponent::GetMeshPath() const

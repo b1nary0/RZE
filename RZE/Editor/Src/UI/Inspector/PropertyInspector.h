@@ -4,13 +4,18 @@
 
 #include <Game/World/GameObject/GameObjectDefinitions.h>
 
+struct ObjectRef;
+struct PropertyDescriptor;
+struct TypeDescription;
+
 namespace Editor
 {
 	class EditorContext;
 
 	// Draws a component's described properties (ComponentPropertyRegistry) as a two-column label/value table, using
-	// PropertyDrawers, and turns edits into SetPropertyCommands. A drag or slider edit shares one interaction across
-	// the frames it's held; anything else (a checkbox, Enter in a text field, a file pick) is its own interaction.
+	// PropertyDrawers, and turns edits into SetPropertyCommands. Nested objects and arrays are tree nodes, drawn
+	// read-only. A drag or slider edit shares one interaction across the frames it's held; anything else (a checkbox,
+	// Enter in a text field, a file pick) is its own interaction.
 	class PropertyInspector
 	{
 	public:
@@ -26,6 +31,15 @@ namespace Editor
 		bool Draw(EditorContext& context, const GameObjectComponentPtr<GameObjectComponentBase>& component);
 
 	private:
+		// editableComponent is the component whose top-level properties these are, or null for a nested object,
+		// whose properties are read-only
+		void DrawProperties(EditorContext& context, const TypeDescription& type, const void* object,
+			const GameObjectComponentPtr<GameObjectComponentBase>* editableComponent);
+		void DrawValueRow(EditorContext& context, const PropertyDescriptor& property, size_t propertyIndex, const void* object,
+			const GameObjectComponentPtr<GameObjectComponentBase>* editableComponent);
+		// A tree node for a nested object, labelled heading; its properties are drawn inside when open
+		void DrawObjectNode(EditorContext& context, const char* heading, const ObjectRef& ref);
+
 		InteractionID GetInteraction(GameObjectComponentInstanceID component, size_t propertyIndex, bool isHeld);
 
 	private:

@@ -7,32 +7,46 @@
 #include <utility>
 #include <vector>
 
-// Every registered component type's PropertyDescriptors, keyed by component type. Filled when a component type is
+// Every registered component type's description, keyed by component type. Filled when a component type is
 // registered (REGISTER_GAMEOBJECTCOMPONENT), from its static DescribeProperties if it has one. Startup and main
 // thread only for writes.
 namespace ComponentPropertyRegistry
 {
-	template <typename TComponent, typename = void>
+	template <typename T, typename = void>
 	struct HasDescribeProperties : std::false_type {};
 
-	template <typename TComponent>
-	struct HasDescribeProperties<TComponent, std::void_t<decltype(TComponent::DescribeProperties(std::declval<PropertyBuilder<TComponent>&>()))>>
+	template <typename T>
+	struct HasDescribeProperties<T, std::void_t<decltype(T::DescribeProperties(std::declval<PropertyBuilder<T>&>()))>>
 		: std::true_type {};
 
-	void SetProperties(GameObjectComponentID id, std::vector<PropertyDescriptor>&& properties);
+	struct ComponentDescription
+	{
+		const TypeDescription* Type = nullptr;
+		// The component as the type its description describes, which property accessors expect
+		void* (*ToObject)(GameObjectComponentBase& component) = nullptr;
+	};
+
+	void SetDescription(GameObjectComponentID id, const ComponentDescription& description);
 
 	// Null for a component type that doesn't describe its properties
+	const ComponentDescription* GetDescription(GameObjectComponentID id);
 	const std::vector<PropertyDescriptor>* GetProperties(GameObjectComponentID id);
+
+	// The component as its description's object, for PropertyDescriptor::Get/Set; null if its type isn't described
+	void* GetDescribedObject(GameObjectComponentBase& component);
 
 	template <typename TComponent>
 	void Register()
 	{
 		if constexpr (HasDescribeProperties<TComponent>::value)
 		{
-			std::vector<PropertyDescriptor> properties;
-			PropertyBuilder<TComponent> builder(properties);
-			TComponent::DescribeProperties(builder);
-			SetProperties(TComponent::GetID(), std::move(properties));
+			ComponentDescription description;
+			description.Type = &DescribeType<TComponent>();
+			description.ToObject = [](GameObjectComponentBase& component) -> void*
+				{
+					return static_cast<TComponent*>(&component);
+				};
+			SetDescription(TComponent::GetID(), description);
 		}
 	}
 }
