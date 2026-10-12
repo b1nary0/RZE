@@ -90,7 +90,7 @@ namespace Editor
 			}
 		}
 
-		m_gizmoState.m_snapper.DisplayControls();
+		m_gizmoState.m_snapper.DisplayControls(context.GetSettings());
 		m_grid.DisplayControls();
 	}
 
@@ -168,7 +168,7 @@ namespace Editor
 					ImGuizmo::RecomposeMatrixFromComponents(transformComponent->GetPosition().GetValuePtr(), transformComponent->GetRotation().GetValuePtr(), transformComponent->GetScale().GetValuePtr(), matrix);
 
 					GizmoSnapper& snapper = m_gizmoState.m_snapper;
-					const float* snap = snapper.PrepareManipulate(m_gizmoState.m_currentOpMode, m_gizmoState.m_transformationSpace, ImGui::GetIO().KeyCtrl);
+					const float* snap = snapper.PrepareManipulate(context.GetSettings(), m_gizmoState.m_currentOpMode, m_gizmoState.m_transformationSpace, ImGui::GetIO().KeyCtrl);
 
 					ImGuizmo::Manipulate(view.GetValuePtr(), projection.GetValuePtr(), (ImGuizmo::OPERATION)m_gizmoState.m_currentOpMode, (ImGuizmo::MODE)m_gizmoState.m_transformationSpace, matrix, nullptr, snap);
 
@@ -211,7 +211,7 @@ namespace Editor
 			GameObjectPtr cameraObject = context.GetEditorCamera();
 			if (cameraObject != nullptr)
 			{
-				m_grid.Draw(cameraObject->GetTransformComponent()->GetPosition(), m_gizmoState.m_snapper.GetSnapSize());
+				m_grid.Draw(cameraObject->GetTransformComponent()->GetPosition(), context.GetSettings().GetSnapSize());
 			}
 		}
 	}

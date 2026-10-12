@@ -1,5 +1,6 @@
 #include <UI/Gizmo/GizmoSnapper.h>
 
+#include <UI/Framework/EditorSettings.h>
 #include <UI/Framework/EditorUI.h>
 
 #include <Utils/Math/Math.h>
@@ -20,13 +21,7 @@ namespace
 
 namespace Editor
 {
-	void GizmoSnapper::SetSnapSize(float snapSize)
-	{
-		const float increments = std::round(snapSize / k_snapIncrement);
-		m_snapSize = MathUtils::Clampf(increments * k_snapIncrement, k_snapIncrement, k_maxSnapSize);
-	}
-
-	void GizmoSnapper::DisplayControls()
+	void GizmoSnapper::DisplayControls(EditorSettings& settings)
 	{
 		const EditorUI::ScopedToolbarSpacing spacing;
 
@@ -39,9 +34,9 @@ namespace Editor
 		{
 			char label[32];
 			snprintf(label, sizeof(label), "%g m##SnapSize", snapSize);
-			if (ImGui::RadioButton(label, m_snapSize == snapSize))
+			if (ImGui::RadioButton(label, settings.GetSnapSize() == snapSize))
 			{
-				SetSnapSize(snapSize);
+				settings.SetSnapSize(snapSize);
 			}
 		}
 
@@ -56,8 +51,10 @@ namespace Editor
 		}
 	}
 
-	const float* GizmoSnapper::PrepareManipulate(int operation, int mode, bool isInverted)
+	const float* GizmoSnapper::PrepareManipulate(const EditorSettings& settings, int operation, int mode, bool isInverted)
 	{
+		m_snapSize = settings.GetSnapSize();
+
 		const bool isSnapping = m_isEnabled != isInverted;
 		const bool isTranslating = operation == ImGuizmo::TRANSLATE;
 

@@ -26,10 +26,23 @@ namespace Editor
 		// A paste of the clipboard's contents, for PasteGameObjectsCommand; empty if there's nothing to paste
 		const std::string& GetContents() const { return m_contents; }
 
+		// How wide the copied objects were, measured at Copy (see MeasureWidth)
+		float GetContentsWidth() const { return m_contentsWidth; }
+
+		// Counts a paste of the contents and returns how many offset steps to move it by: 1 for the first paste
+		// since Copy, 2 for the second, and so on, so repeated pastes fan out instead of landing on each other
+		int AdvancePasteSteps() { return ++m_pasteCount; }
+
 		// Copies gameObjects into a scene-file string without touching the clipboard, e.g. for duplicating
 		static std::string Serialize(const std::vector<GameObjectPtr>& gameObjects);
 
+		// Metres along world X covered by gameObjects' meshes and their children's, taken together; 0 if none have
+		// one. Measured from the originals, since a paste's meshes may still be loading.
+		static float MeasureWidth(const std::vector<GameObjectPtr>& gameObjects);
+
 	private:
 		std::string m_contents;
+		float m_contentsWidth = 0.0f;
+		int m_pasteCount = 0;
 	};
 }

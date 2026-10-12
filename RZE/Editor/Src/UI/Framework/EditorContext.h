@@ -1,6 +1,7 @@
 #pragma once
 
 #include <UI/Framework/EditorSelection.h>
+#include <UI/Framework/EditorSettings.h>
 #include <UI/Framework/PanelManager.h>
 #include <UI/Framework/ScenePicker.h>
 
@@ -49,6 +50,9 @@ namespace Editor
 		// carries over.
 		void ResetSceneState();
 
+		EditorSettings& GetSettings() { return m_settings; }
+		const EditorSettings& GetSettings() const { return m_settings; }
+
 		EditorSelection& GetSelection() { return m_selection; }
 		const EditorSelection& GetSelection() const { return m_selection; }
 
@@ -73,6 +77,7 @@ namespace Editor
 		CommandQueue& GetCommands() { return m_commands; }
 
 	private:
+		EditorSettings m_settings;
 		EditorSelection m_selection;
 		GameObjectPtr m_editorCamera;
 		SceneViewportState m_sceneViewport;

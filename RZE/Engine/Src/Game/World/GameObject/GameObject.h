@@ -85,6 +85,8 @@ public:
 
 	// Attachment
 	bool IsRoot();
+	// Null for a root object
+	GameObjectPtr GetParent() const { return m_parent; }
 
 	int NumChildren();
 	bool HasChildren();

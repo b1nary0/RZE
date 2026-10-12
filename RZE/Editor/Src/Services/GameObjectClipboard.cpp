@@ -17,7 +17,31 @@ namespace Editor
 		if (!contents.empty())
 		{
 			m_contents = std::move(contents);
+			m_contentsWidth = MeasureWidth(gameObjects);
+			m_pasteCount = 0;
 		}
+	}
+
+	float GameObjectClipboard::MeasureWidth(const std::vector<GameObjectPtr>& gameObjects)
+	{
+		bool hasBounds = false;
+		float minX = 0.0f;
+		float maxX = 0.0f;
+		for (const GameObjectPtr& gameObject : gameObjects)
+		{
+			Vector3D boundsMin;
+			Vector3D boundsMax;
+			if (gameObject == nullptr || !gameObject->GetHierarchyBounds(boundsMin, boundsMax))
+			{
+				continue;
+			}
+
+			minX = hasBounds ? std::min(minX, boundsMin.X()) : boundsMin.X();
+			maxX = hasBounds ? std::max(maxX, boundsMax.X()) : boundsMax.X();
+			hasBounds = true;
+		}
+
+		return hasBounds ? maxX - minX : 0.0f;
 	}
 
 	std::string GameObjectClipboard::Serialize(const std::vector<GameObjectPtr>& gameObjects)

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Utils/Math/Vector3D.h>
+
 namespace Editor
 {
 	class EditorContext;
@@ -24,6 +26,9 @@ namespace Editor
 		void Copy(EditorContext& context);
 		void Paste(EditorContext& context);
 		void Duplicate(EditorContext& context);
+		// How far a paste moves the pasted objects from the originals, in world space: steps times the copied
+		// objects' width (GameObjectClipboard::MeasureWidth) plus a gap, along +X
+		static Vector3D GetPasteOffset(const EditorContext& context, float width, int steps);
 		void DrawStatus();
 
 	private:

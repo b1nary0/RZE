@@ -5,6 +5,7 @@
 #include <RZE.h>
 
 #include <Game/World/GameObject/GameObject.h>
+#include <Game/World/GameObjectComponents/TransformComponent.h>
 
 #include <Game/SceneFormat.h>
 
@@ -39,6 +40,21 @@ namespace
 				return candidate;
 			}
 		}
+	}
+
+	// Moves gameObject by worldOffset in world space, whatever its parent's rotation and scale
+	void MoveInWorld(const GameObjectPtr& gameObject, const Vector3D& worldOffset)
+	{
+		Vector3D localOffset = worldOffset;
+		const GameObjectPtr parent = gameObject->GetParent();
+		if (parent != nullptr)
+		{
+			// w = 0 makes it a direction, so only the parent's rotation and scale apply, not its position
+			localOffset = (parent->GetTransformComponent()->GetWorldMatrix().Inverse() * Vector4D(worldOffset, 0.0f)).XYZ();
+		}
+
+		GameObjectComponentPtr<TransformComponent> transform = gameObject->GetTransformComponent();
+		transform->SetPosition(transform->GetPosition() + localOffset);
 	}
 }
 
@@ -122,8 +138,9 @@ namespace Editor
 		m_child->AttachTo(m_parent);
 	}
 
-	PasteGameObjectsCommand::PasteGameObjectsCommand(std::string sceneData)
+	PasteGameObjectsCommand::PasteGameObjectsCommand(std::string sceneData, const Vector3D& worldOffset)
 		: m_sceneData(std::move(sceneData))
+		, m_worldOffset(worldOffset)
 	{
 	}
 
@@ -146,6 +163,11 @@ namespace Editor
 			const std::string pastedName = MakeUniqueName(entry["name"].GetString());
 			entry["name"].SetString(pastedName.c_str(), static_cast<rapidjson::SizeType>(pastedName.size()), allocator);
 			loader.Load(entry);
+		}
+
+		for (const GameObjectPtr& gameObject : loader.GetTopLevelObjects())
+		{
+			MoveInWorld(gameObject, m_worldOffset);
 		}
 
 		if (!loader.GetTopLevelObjects().empty())

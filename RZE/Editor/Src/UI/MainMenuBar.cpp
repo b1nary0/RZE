@@ -184,20 +184,33 @@ namespace Editor
 
 	void MainMenuBar::Paste(EditorContext& context)
 	{
-		if (context.GetClipboard().HasContents())
+		GameObjectClipboard& clipboard = context.GetClipboard();
+		if (clipboard.HasContents())
 		{
-			context.GetCommands().Push<PasteGameObjectsCommand>(context.GetClipboard().GetContents());
+			const int steps = clipboard.AdvancePasteSteps();
+			context.GetCommands().Push<PasteGameObjectsCommand>(clipboard.GetContents(), GetPasteOffset(context, clipboard.GetContentsWidth(), steps));
 		}
 	}
 
 	void MainMenuBar::Duplicate(EditorContext& context)
 	{
-		// Copies straight into the paste, leaving the clipboard alone
-		std::string sceneData = GameObjectClipboard::Serialize(context.GetSelection().GetAll());
+		// Copies straight into the paste, leaving the clipboard alone. The copies are selected afterwards, so
+		// duplicating again steps on from them.
+		const std::vector<GameObjectPtr>& selected = context.GetSelection().GetAll();
+		std::string sceneData = GameObjectClipboard::Serialize(selected);
 		if (!sceneData.empty())
 		{
-			context.GetCommands().Push<PasteGameObjectsCommand>(std::move(sceneData));
+			const float width = GameObjectClipboard::MeasureWidth(selected);
+			context.GetCommands().Push<PasteGameObjectsCommand>(std::move(sceneData), GetPasteOffset(context, width, 1));
 		}
+	}
+
+	Vector3D MainMenuBar::GetPasteOffset(const EditorContext& context, float width, int steps)
+	{
+		// Along world +X, clear of the originals (and of earlier pastes) with a snap size between them. Objects without
+		// a mesh have no width, so they just step by the snap size.
+		const float step = width + context.GetSettings().GetSnapSize();
+		return Vector3D(step * static_cast<float>(steps), 0.0f, 0.0f);
 	}
 
 	void MainMenuBar::DrawStatus()
