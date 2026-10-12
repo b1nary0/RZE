@@ -135,107 +135,111 @@ namespace Editor
 			nodeFlags |= ImGuiTreeNodeFlags_Leaf;
 		}
 
-		if (ImGui::TreeNodeEx(gameObject->GetName().c_str(), nodeFlags))
+		// The item code below runs whether or not the node is open, so a collapsed parent can be clicked, dragged and
+		// right-clicked too; only its children and TreePop depend on it being open
+		const bool isOpen = ImGui::TreeNodeEx(gameObject->GetName().c_str(), nodeFlags);
+
+		if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
 		{
-			if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+			if (ImGui::GetIO().KeyCtrl)
 			{
-				if (ImGui::GetIO().KeyCtrl)
-				{
-					selection.Toggle(gameObject);
-				}
-				else
-				{
-					selection.Select(gameObject);
-				}
+				selection.Toggle(gameObject);
+			}
+			else
+			{
+				selection.Select(gameObject);
+			}
+		}
+
+		if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+		{
+			Vector3D boundsMin;
+			Vector3D boundsMax;
+			if (!gameObject->GetHierarchyBounds(boundsMin, boundsMax))
+			{
+				// Nothing to measure (light, empty, ...); frame its position and let the camera's minimum radius pick a distance
+				boundsMin = boundsMax = gameObject->GetTransformComponent()->GetWorldMatrix().GetPosition();
 			}
 
-			if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+			// Absent while a scene is loading
+			GameObjectComponentPtr<EditorCameraComponent> editorCam = context.GetEditorCameraComponent();
+			if (editorCam != nullptr)
 			{
-				Vector3D boundsMin;
-				Vector3D boundsMax;
-				if (!gameObject->GetHierarchyBounds(boundsMin, boundsMax))
-				{
-					// Nothing to measure (light, empty, ...); frame its position and let the camera's minimum radius pick a distance
-					boundsMin = boundsMax = gameObject->GetTransformComponent()->GetWorldMatrix().GetPosition();
-				}
-
-				// Absent while a scene is loading
-				GameObjectComponentPtr<EditorCameraComponent> editorCam = context.GetEditorCameraComponent();
-				if (editorCam != nullptr)
-				{
-					editorCam->FocusOn(boundsMin, boundsMax);
-				}
+				editorCam->FocusOn(boundsMin, boundsMax);
 			}
+		}
 
-			if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
+		if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
+		{
+			const GameObjectID draggedID = gameObject->GetID();
+			ImGui::SetDragDropPayload(k_gameObjectDragPayload, &draggedID, sizeof(draggedID));
+			ImGui::TextUnformatted(gameObject->GetName().c_str());
+
+			ImGui::EndDragDropSource();
+		}
+
+		if (ImGui::BeginDragDropTarget())
+		{
+			const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(k_gameObjectDragPayload);
+			if (payload != nullptr)
 			{
-				const GameObjectID draggedID = gameObject->GetID();
-				ImGui::SetDragDropPayload(k_gameObjectDragPayload, &draggedID, sizeof(draggedID));
-				ImGui::TextUnformatted(gameObject->GetName().c_str());
-
-				ImGui::EndDragDropSource();
+				const GameObjectID draggedID = *static_cast<const GameObjectID*>(payload->Data);
+				context.GetCommands().Push<AttachToParentCommand>(FindGameObjectByID(draggedID), gameObject);
 			}
+			ImGui::EndDragDropTarget();
+		}
 
-			if (ImGui::BeginDragDropTarget())
+		if (!selection.IsEmpty())
+		{
+			GameObjectPtr gameObject = selection.GetPrimary();
+			if (ImGui::BeginPopupContextItem(gameObject->GetName().c_str()))
 			{
-				const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(k_gameObjectDragPayload);
-				if (payload != nullptr)
+				ImGui::Text(gameObject->GetName().c_str());
+				if (ImGui::BeginPopupContextItem("Rename"))
 				{
-					const GameObjectID draggedID = *static_cast<const GameObjectID*>(payload->Data);
-					context.GetCommands().Push<AttachToParentCommand>(FindGameObjectByID(draggedID), gameObject);
-				}
-				ImGui::EndDragDropTarget();
-			}
-
-			if (!selection.IsEmpty())
-			{
-				GameObjectPtr gameObject = selection.GetPrimary();
-				if (ImGui::BeginPopupContextItem(gameObject->GetName().c_str()))
-				{
-					ImGui::Text(gameObject->GetName().c_str());
-					if (ImGui::BeginPopupContextItem("Rename"))
+					char name[k_maxGameObjectNameSize];
+					memcpy(name, gameObject->GetName().c_str(), k_maxGameObjectNameSize);
+					if (ImGui::InputText("##gameObject_rename", name, k_maxGameObjectNameSize, ImGuiInputTextFlags_EnterReturnsTrue))
 					{
-						char name[k_maxGameObjectNameSize];
-						memcpy(name, gameObject->GetName().c_str(), k_maxGameObjectNameSize);
-						if (ImGui::InputText("##gameObject_rename", name, k_maxGameObjectNameSize, ImGuiInputTextFlags_EnterReturnsTrue))
-						{
-							context.GetCommands().Push<RenameGameObjectCommand>(gameObject, name);
-						}
-						ImGui::EndPopup();
+						context.GetCommands().Push<RenameGameObjectCommand>(gameObject, name);
 					}
-					ImGui::Separator();
-
-					if (ImGui::BeginMenu("Add Component"))
-					{
-						const GameObjectComponentRegistry::ComponentNameIDMap& componentReflectData = GameObjectComponentRegistry::GetAllComponentReflectData();
-						for (auto& pair : componentReflectData)
-						{
-							if (ImGui::MenuItem(pair.second.c_str()))
-							{
-								context.GetCommands().Push<AddComponentCommand>(gameObject, pair.first);
-							}
-						}
-
-						ImGui::EndMenu();
-					}
-
-					if (!gameObject->IsRoot())
-					{
-						if (ImGui::MenuItem("DetachFromParent"))
-						{
-							context.GetCommands().Push<DetachFromParentCommand>(gameObject);
-						}
-					}
-
-					if (ImGui::MenuItem("Delete"))
-					{
-						context.GetCommands().Push<DeleteGameObjectCommand>(gameObject);
-					}
-
 					ImGui::EndPopup();
 				}
-			}
+				ImGui::Separator();
 
+				if (ImGui::BeginMenu("Add Component"))
+				{
+					const GameObjectComponentRegistry::ComponentNameIDMap& componentReflectData = GameObjectComponentRegistry::GetAllComponentReflectData();
+					for (auto& pair : componentReflectData)
+					{
+						if (ImGui::MenuItem(pair.second.c_str()))
+						{
+							context.GetCommands().Push<AddComponentCommand>(gameObject, pair.first);
+						}
+					}
+
+					ImGui::EndMenu();
+				}
+
+				if (!gameObject->IsRoot())
+				{
+					if (ImGui::MenuItem("DetachFromParent"))
+					{
+						context.GetCommands().Push<DetachFromParentCommand>(gameObject);
+					}
+				}
+
+				if (ImGui::MenuItem("Delete"))
+				{
+					context.GetCommands().Push<DeleteGameObjectCommand>(gameObject);
+				}
+
+				ImGui::EndPopup();
+			}
+		}
+
+		if (isOpen)
+		{
 			if (gameObject->HasChildren())
 			{
 				for (int childIdx = 0; childIdx < gameObject->NumChildren(); ++childIdx)
