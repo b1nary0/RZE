@@ -1,6 +1,7 @@
 #include <StdAfx.h>
 #include <Game/World/GameObjectComponents/CameraComponent.h>
 
+#include <Game/GameScene.h>
 #include <Game/World/GameObject/GameObject.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
@@ -65,9 +66,9 @@ float CameraComponent::GetExposureCompensation() const
 	return m_exposureCompensation;
 }
 
-bool CameraComponent::IsActiveCamera() const
+bool CameraComponent::IsMainCamera() const
 {
-	return m_isActiveCamera;
+	return m_isMainCamera;
 }
 
 void CameraComponent::SetFOV(float fov)
@@ -98,9 +99,13 @@ void CameraComponent::SetExposureCompensation(float ev)
 	m_exposureCompensation = ev;
 }
 
-void CameraComponent::SetAsActiveCamera(bool isActiveCamera)
+void CameraComponent::SetMainCamera(bool isMainCamera)
 {
-	m_isActiveCamera = isActiveCamera;
+	if (isMainCamera && !m_isMainCamera)
+	{
+		GameScene& scene = RZE().GetActiveScene();
+		scene.SetMainCamera(scene.FindGameObjectByGUID(GetOwner()->GetGUID()));
+	}
 }
 
 Vector2D CameraComponent::GetPreviewSize()
@@ -143,29 +148,30 @@ void CameraComponent::Initialize()
 
 void CameraComponent::OnAddToScene()
 {
-	// #TODO This wont work long term, just trying to get things rendering with new code
-	m_isActiveCamera = true;
 	m_aspectRatio = RZE().GetWindowSize().X() / RZE().GetWindowSize().Y();
 }
 
 void CameraComponent::Update()
 {
-	if (IsActiveCamera())
+	if (!IsMainCamera())
+	{
+		return;
+	}
+
+	// Also applies in the editor, whose own camera doesn't carry an exposure
+	RZE().GetRenderEngine().GetMainView().ExposureCompensation = m_exposureCompensation;
+
+	// The Editor's own camera drives the view there instead
+	if (RZE().GetActiveScene().DoesMainCameraDriveView())
 	{
 		GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
 		AssertMsg(transformComponent != nullptr, "A camera without a transform is useless");
 
 		GenerateCameraMatrices(transformComponent->GetPosition());
 
-		{
-			// Push data to RenderEngine
-			RenderCamera& renderCamera = RZE().GetRenderEngine().GetMainView().Camera;
-			renderCamera.Position = transformComponent->GetPosition();
-			renderCamera.ClipSpace = GetProjectionMatrix() * GetViewMatrix();
-
-			// Also applies in the editor, whose own camera doesn't carry an exposure
-			RZE().GetRenderEngine().GetMainView().ExposureCompensation = m_exposureCompensation;
-		}
+		RenderCamera& renderCamera = RZE().GetRenderEngine().GetMainView().Camera;
+		renderCamera.Position = transformComponent->GetPosition();
+		renderCamera.ClipSpace = GetProjectionMatrix() * GetViewMatrix();
 	}
 }
 
@@ -193,6 +199,9 @@ void CameraComponent::Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>
 
 		writer.Key("ExposureCompensation");
 		writer.Double(m_exposureCompensation);
+
+		writer.Key("MainCamera");
+		writer.Bool(m_isMainCamera);
 	}
 	writer.EndObject();
 }
@@ -204,14 +213,18 @@ void CameraComponent::Deserialize(const rapidjson::Value& data)
 	m_farCull = data["FarCull"].GetFloat();
 	// Optional: scenes saved before exposure existed default to 0 EV
 	m_exposureCompensation = data.HasMember("ExposureCompensation") ? data["ExposureCompensation"].GetFloat() : 0.0f;
+	// Optional too; GameScene::ResolveMainCamera picks one after a load if no camera has it
+	const auto mainCamera = data.FindMember("MainCamera");
+	m_isMainCamera = mainCamera != data.MemberEnd() && mainCamera->value.IsBool() && mainCamera->value.GetBool();
 }
 
 void CameraComponent::DescribeProperties(PropertyBuilder<CameraComponent>& properties)
 {
-	properties.Bool("Main Camera", &CameraComponent::IsActiveCamera, &CameraComponent::SetAsActiveCamera);
+	properties.Bool("Main Camera", &CameraComponent::IsMainCamera, &CameraComponent::SetMainCamera).Exclusive()
+		.ToolTip("The camera the game renders through. Only one camera in the scene can be the main one.");
 	// The ranges keep the setters' asserts (positive FOV and near cull) from firing
 	properties.Float("Field Of View", &CameraComponent::GetFOV, &CameraComponent::SetFOV)
-		.Range(1.0f, 179.0f).StepSize(0.5f).DisplayFormat("%.2f").Tip("Vertical, in degrees");
+		.Range(1.0f, 179.0f).StepSize(0.5f).DisplayFormat("%.2f").ToolTip("Vertical, in degrees");
 	properties.Float("Near Cull", &CameraComponent::GetNearCull, &CameraComponent::SetNearCull)
 		.Range(0.001f, 100.0f).StepSize(0.05f).DisplayFormat("%.3f");
 	properties.Float("Far Cull", &CameraComponent::GetFarCull, &CameraComponent::SetFarCull)

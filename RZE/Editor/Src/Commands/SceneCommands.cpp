@@ -5,6 +5,7 @@
 #include <RZE.h>
 
 #include <Game/World/GameObject/GameObject.h>
+#include <Game/World/GameObjectComponents/CameraComponent.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
 #include <Game/SceneFormat.h>
@@ -55,6 +56,22 @@ namespace
 
 		GameObjectComponentPtr<TransformComponent> transform = gameObject->GetTransformComponent();
 		transform->SetPosition(transform->GetPosition() + localOffset);
+	}
+
+	// A pasted camera is a copy, so it never takes over as the main camera
+	void ClearMainCameraFlag(rapidjson::Value& entry)
+	{
+		const auto components = entry.FindMember("components");
+		if (components == entry.MemberEnd() || !components->value.IsObject())
+		{
+			return;
+		}
+
+		const auto camera = components->value.FindMember(CameraComponent::GetComponentName());
+		if (camera != components->value.MemberEnd() && camera->value.IsObject() && camera->value.HasMember("MainCamera"))
+		{
+			camera->value["MainCamera"].SetBool(false);
+		}
 	}
 }
 
@@ -162,6 +179,7 @@ namespace Editor
 		{
 			const std::string pastedName = MakeUniqueName(entry["name"].GetString());
 			entry["name"].SetString(pastedName.c_str(), static_cast<rapidjson::SizeType>(pastedName.size()), allocator);
+			ClearMainCameraFlag(entry);
 			loader.Load(entry);
 		}
 

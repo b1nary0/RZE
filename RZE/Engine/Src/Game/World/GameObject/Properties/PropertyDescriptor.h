@@ -91,6 +91,10 @@ struct PropertyDescriptor
 	std::string Format;
 	std::string Tooltip;
 	EPropertyWidget Widget = EPropertyWidget::Default;
+	// For Bool properties that at most one object of the described type in the scene can have on, such as a
+	// camera's Main Camera. The setter keeps it that way, turning it off for the others when it's turned on, so it's
+	// only ever turned on: tools turn it off by turning it on for another object.
+	bool IsExclusive = false;
 
 	// For AssetPath properties: the file prompt's title, the folder it starts in, and its filter (e.g. "*.meshasset")
 	std::string AssetDescription;
@@ -103,8 +107,9 @@ struct PropertyDescriptor
 	PropertyDescriptor& Range(float min, float max) { Min = min; Max = max; return *this; }
 	PropertyDescriptor& StepSize(float step) { Step = step; return *this; }
 	PropertyDescriptor& DisplayFormat(const char* format) { Format = format; return *this; }
-	PropertyDescriptor& Tip(const char* tooltip) { Tooltip = tooltip; return *this; }
+	PropertyDescriptor& ToolTip(const char* tooltip) { Tooltip = tooltip; return *this; }
 	PropertyDescriptor& As(EPropertyWidget widget) { Widget = widget; return *this; }
+	PropertyDescriptor& Exclusive() { IsExclusive = true; return *this; }
 	PropertyDescriptor& Asset(const char* description, const char* directory, const char* filter)
 	{
 		AssetDescription = description;

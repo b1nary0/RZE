@@ -55,6 +55,21 @@ public:
 	// @NOTE Creates GameObject with TransformComponent, as all gameobjects have a spatial representation
 	GameObjectPtr CreateGameObject();
 
+	// The scene's main camera: the one with CameraComponent::IsMainCamera, which the game renders through. Null if
+	// the scene has none. Cached by SetMainCamera, so it's cheap.
+	GameObjectPtr GetMainCamera() const;
+	// Makes camera (which must have a CameraComponent) the main camera and clears the flag on the one before it.
+	// Null leaves the scene without one.
+	void SetMainCamera(const GameObjectPtr& camera);
+	// After a load, makes sure there's one main camera if there are any cameras: the first flagged one, or the first
+	// camera in scenes saved before the flag existed
+	void ResolveMainCamera();
+
+	// Whether the main camera drives the main view. The Editor turns this off, since its own camera does; the main
+	// camera's exposure still applies.
+	void SetMainCameraDrivesView(bool drivesView) { m_mainCameraDrivesView = drivesView; }
+	bool DoesMainCameraDriveView() const { return m_mainCameraDrivesView; }
+
 	// Center of the bounding box around every rendered root object's position. Uses positions rather
 	// than mesh bounds so it's valid while meshes are still streaming in. Returns the origin if nothing is rendered.
 	Vector3D CalculateSceneCenter() const;
@@ -70,6 +85,9 @@ private:
 
 	void AddGameObject(std::unique_ptr<GameObject>&& gameObject);
 
+	// Called when the main camera leaves the scene: the first camera still in it becomes the main camera, if any
+	void ReplaceMainCamera();
+
 	void InternalRemoveGameObject(GameObjectPtr& gameObject);
 	void ProcessObjectRemoveDeferrals();
 
@@ -84,4 +102,8 @@ private:
 	// Every object in m_objectRegistry by GUID, including ones waiting to be removed; GUIDs never change, so this
 	// only changes when objects are added or erased
 	std::unordered_map<ObjectGUID, GameObject*> m_objectsByGUID;
+
+	// Set only by SetMainCamera, alongside the camera's flag
+	GameObjectPtr m_mainCamera;
+	bool m_mainCameraDrivesView = true;
 };

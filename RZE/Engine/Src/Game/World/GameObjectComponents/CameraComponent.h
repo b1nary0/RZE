@@ -7,6 +7,7 @@
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector3D.h>
 
+class GameScene;
 class TransformComponent;
 
 class CameraComponent final : public GameObjectComponent<CameraComponent>
@@ -40,15 +41,18 @@ public:
 	float GetFarCull() const;
 	float GetExposureCompensation() const;
 
-	bool IsActiveCamera() const;
+	// Whether this is the scene's main camera, the one the game renders through. Saved with the camera; there's
+	// only ever one per scene.
+	bool IsMainCamera() const;
 
 	void SetFOV(float fov);
 	void SetAspectRatio(float aspectRatio);
 	void SetNearCull(float nearCull);
 	void SetFarCull(float farCull);
 	void SetExposureCompensation(float ev);
-
-	void SetAsActiveCamera(bool isActiveCamera);
+	// True makes this the scene's main camera, through GameScene::SetMainCamera, which clears the flag on the
+	// previous one. False does nothing: the main camera changes by making another camera main.
+	void SetMainCamera(bool isMainCamera);
 
 	// Renders what the camera sees into its preview target, at the preview's own aspect ratio. Leaves the
 	// camera's own matrices alone. The result is ready to show once the frame renders.
@@ -71,7 +75,9 @@ private:
 	// EV on top of auto-exposure; lets a scene sit darker (low-key) or brighter (high-key) than the default
 	float m_exposureCompensation { 0.0f };
 
-	bool m_isActiveCamera { false };
+	// Only GameScene sets this, so there's never more than one main camera
+	friend class GameScene;
+	bool m_isMainCamera { false };
 
 	// #TODO this should only be a thing in editor
 	std::unique_ptr<Rendering::RenderTargetTexture> m_renderTarget;

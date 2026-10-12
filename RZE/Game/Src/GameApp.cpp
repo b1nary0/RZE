@@ -73,8 +73,8 @@ void GameApp::Start()
 {
 	RZE_Application::Start();
 
-	GameObjectPtr camera = RZE().GetActiveScene().FindGameObjectByName("Camera");
-	AssertNotNull(camera);
+	GameObjectPtr camera = RZE().GetActiveScene().GetMainCamera();
+	AssertMsg(camera != nullptr, "The scene has no camera to play through");
 	camera->AddComponent<PlayerControllerComponent>();
 }
 
@@ -142,10 +142,13 @@ void GameApp::OnWindowResize(const Vector2D& newSize)
 
 	// @TODO This needs to be moved into a better spot. it is not wise to have this as boilerplate for such
 	// a low level concept (resizing camera to viewport)
-	GameObjectPtr cameraObject = RZE().GetActiveScene().FindGameObjectByName("Camera");
-	GameObjectComponentPtr<CameraComponent> camera = cameraObject->GetComponent<CameraComponent>();
-	AssertNotNull(camera);
+	GameObjectPtr cameraObject = RZE().GetActiveScene().GetMainCamera();
+	if (cameraObject == nullptr)
+	{
+		return;
+	}
 
+	GameObjectComponentPtr<CameraComponent> camera = cameraObject->GetComponent<CameraComponent>();
 	camera->SetAspectRatio(newSize.X() / newSize.Y());
 }
 

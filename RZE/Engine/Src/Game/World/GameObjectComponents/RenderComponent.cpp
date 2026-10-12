@@ -30,7 +30,7 @@ void RenderComponent::DescribeProperties(PropertyBuilder<RenderComponent>& prope
 	properties.AssetPath("Mesh", &RenderComponent::GetMeshPath, &RenderComponent::LoadMesh)
 		.Asset("RZE MeshAsset", k_meshAssetDirectoryPath.GetRelativePath().c_str(), "*.meshasset");
 	properties.Vector3("Size", &RenderComponent::GetMeshSize)
-		.DisplayFormat("%.2f m").Tip("Along the object's own axes, including its scale");
+		.DisplayFormat("%.2f m").ToolTip("Along the object's own axes, including its scale");
 	properties.Bool("Draw Mesh Bounds", &RenderComponent::IsDrawingMeshBounds, &RenderComponent::SetDrawMeshBounds);
 	properties.Bool("Draw Sub-Mesh Bounds", &RenderComponent::IsDrawingSubMeshBounds, &RenderComponent::SetDrawSubMeshBounds);
 	properties.Array("Sub-Meshes", [](const RenderComponent& renderComponent)

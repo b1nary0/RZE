@@ -180,6 +180,7 @@ void SceneLoadOperation::TickInstantiating(AsyncFrameBudget& budget)
 
 	if (m_nextObjectIndex >= objectCount)
 	{
+		m_scene.ResolveMainCamera();
 		m_progress.MarkStageComplete(m_instantiateStage);
 		Complete();
 	}

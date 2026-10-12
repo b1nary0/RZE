@@ -126,5 +126,8 @@ namespace Editor
 		editorCam->SetAspectRatio(viewportSize.X() / viewportSize.Y());
 
 		m_context.SetEditorCamera(editorCameraObject);
+
+		// The editor camera drives the scene view; the scene's main camera is only for the game
+		RZE().GetActiveScene().SetMainCameraDrivesView(false);
 	}
 }

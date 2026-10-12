@@ -3,6 +3,7 @@
 
 #include <Game/SceneFormat.h>
 #include <Game/World/GameObject/GameObject.h>
+#include <Game/World/GameObjectComponents/CameraComponent.h>
 #include <Game/World/GameObjectComponents/RenderComponent.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
@@ -84,6 +85,8 @@ void GameScene::Deserialize(const Filepath& filePath)
 	{
 		loader.Load(entry);
 	}
+
+	ResolveMainCamera();
 }
 
 bool GameScene::ParseSceneFile(const Filepath& filePath, rapidjson::Document& outDocument, std::string& outError)
@@ -177,6 +180,7 @@ void GameScene::Unload()
 
 	m_objectRegistry.clear();
 	m_objectsByGUID.clear();
+	m_mainCamera = nullptr;
 }
 
 void GameScene::AddGameObject(std::unique_ptr<GameObject>&& gameObject)
@@ -248,6 +252,11 @@ void GameScene::RemoveGameObject(GameObjectPtr& gameObject)
 	AssertNotNull(gameObject);
 	gameObject->OnRemoveFromScene();
 	m_objectsToRemove.emplace_back(gameObject);
+
+	if (gameObject == m_mainCamera)
+	{
+		ReplaceMainCamera();
+	}
 }
 
 GameObjectPtr GameScene::FindGameObjectByName(const std::string& name)
@@ -306,6 +315,82 @@ GameObjectPtr GameScene::CreateGameObject()
 	gameObject->Initialize();
 
 	return GameObjectPtr(gameObject.release());
+}
+
+GameObjectPtr GameScene::GetMainCamera() const
+{
+	// Null once the camera is destroyed, and while it's out of the scene waiting to be
+	if (m_mainCamera == nullptr || !m_mainCamera->IsInScene())
+	{
+		return nullptr;
+	}
+	return m_mainCamera;
+}
+
+void GameScene::SetMainCamera(const GameObjectPtr& camera)
+{
+	AssertMsg(camera == nullptr || camera->GetComponent<CameraComponent>() != nullptr, "The main camera needs a CameraComponent");
+
+	for (auto& gameObject : m_objectRegistry)
+	{
+		GameObjectComponentPtr<CameraComponent> cameraComponent = gameObject->GetComponent<CameraComponent>();
+		if (cameraComponent != nullptr)
+		{
+			cameraComponent->m_isMainCamera = camera != nullptr && GameObjectPtr(gameObject.get()) == camera;
+		}
+	}
+
+	m_mainCamera = camera;
+}
+
+void GameScene::ResolveMainCamera()
+{
+	GameObjectPtr firstCamera;
+	GameObjectPtr firstMain;
+	for (auto& gameObject : m_objectRegistry)
+	{
+		GameObjectComponentPtr<CameraComponent> camera = gameObject->GetComponent<CameraComponent>();
+		if (!gameObject->IsInScene() || camera == nullptr)
+		{
+			continue;
+		}
+
+		if (firstCamera == nullptr)
+		{
+			firstCamera = GameObjectPtr(gameObject.get());
+		}
+
+		if (camera->IsMainCamera())
+		{
+			if (firstMain == nullptr)
+			{
+				firstMain = GameObjectPtr(gameObject.get());
+			}
+			else
+			{
+				RZE_LOG_ARGS("Scene has more than one main camera; using [%s], not [%s].", firstMain->GetName().c_str(), gameObject->GetName().c_str());
+			}
+		}
+	}
+
+	SetMainCamera(firstMain != nullptr ? firstMain : firstCamera);
+}
+
+void GameScene::ReplaceMainCamera()
+{
+	const std::string previousName = m_mainCamera != nullptr ? m_mainCamera->GetName() : std::string();
+
+	// The camera that left is out of the scene, so this skips it and clears its flag
+	ResolveMainCamera();
+
+	if (m_mainCamera != nullptr)
+	{
+		RZE_LOG_ARGS("Main camera [%s] left the scene; [%s] is the main camera now.", previousName.c_str(), m_mainCamera->GetName().c_str());
+	}
+	else
+	{
+		RZE_LOG_ARGS("Main camera [%s] left the scene, and there's no other camera to replace it.", previousName.c_str());
+	}
 }
 
 Vector3D GameScene::CalculateSceneCenter() const
@@ -368,4 +453,5 @@ void GameScene::ShutDown()
 	}
 	m_objectRegistry.clear();
 	m_objectsByGUID.clear();
+	m_mainCamera = nullptr;
 }

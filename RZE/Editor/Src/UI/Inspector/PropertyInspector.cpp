@@ -241,8 +241,22 @@ namespace Editor
 			EditorUI::PropertyRow(property.Name.c_str(), property.Tooltip.c_str());
 		}
 
+		// An exclusive property is turned off by turning it on for another object, and can't be on for several at once
+		const char* exclusiveReason = nullptr;
+		if (property.IsExclusive && editableComponents != nullptr)
+		{
+			if (editableComponents->size() > 1)
+			{
+				exclusiveReason = "Only one object can have this on; select just one to change it";
+			}
+			else if (std::get<bool>(before))
+			{
+				exclusiveReason = "Turn this on for another one to change it";
+			}
+		}
+
 		// Nested objects' properties can't be edited yet: commands only address a component's own properties
-		const bool isReadOnly = property.IsReadOnly() || editableComponents == nullptr;
+		const bool isReadOnly = property.IsReadOnly() || editableComponents == nullptr || exclusiveReason != nullptr;
 
 		const bool isDisabled = isReadOnly && IsDrawnAsWidget(property.Type);
 		ImGui::BeginDisabled(isDisabled);
@@ -251,6 +265,10 @@ namespace Editor
 		const bool changed = drawer(property, value, isReadOnly);
 		ImGui::PopItemFlag();
 		const bool isHeld = ImGui::IsItemActive();
+		if (exclusiveReason != nullptr && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+		{
+			ImGui::SetTooltip("%s", exclusiveReason);
+		}
 		ImGui::EndDisabled();
 
 		if (editableComponents == nullptr || isReadOnly)
