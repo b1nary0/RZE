@@ -76,8 +76,9 @@ namespace Editor
 	};
 
 	// Adds the GameObjects in sceneData (the scene format, from GameObjectClipboard) as new objects and selects the
-	// top-level ones. Each gets a unique name ("Tank (1)") and a new GUID if its copied one is taken; copied children
-	// stay under their pasted parents, and a top-level object keeps its parent if that's still in the scene.
+	// top-level ones. Each gets a numbered name ("Tank (1)", to tell copies apart) and a new GUID if its copied one is
+	// taken; copied children stay under their pasted parents, and a top-level object keeps its parent if that's still
+	// in the scene.
 	class PasteGameObjectsCommand : public EditorCommand
 	{
 	public:

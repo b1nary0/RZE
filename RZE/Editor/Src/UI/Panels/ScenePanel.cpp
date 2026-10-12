@@ -135,9 +135,12 @@ namespace Editor
 			nodeFlags |= ImGuiTreeNodeFlags_Leaf;
 		}
 
+		// Names aren't unique, so the row's IDs come from the GUID; the label is only displayed
+		ImGui::PushID(reinterpret_cast<const void*>(static_cast<uintptr_t>(gameObject->GetGUID())));
+
 		// The item code below runs whether or not the node is open, so a collapsed parent can be clicked, dragged and
 		// right-clicked too; only its children and TreePop depend on it being open
-		const bool isOpen = ImGui::TreeNodeEx(gameObject->GetName().c_str(), nodeFlags);
+		const bool isOpen = ImGui::TreeNodeEx("##GameObject", nodeFlags, "%s", gameObject->GetName().c_str());
 
 		if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
 		{
@@ -192,9 +195,9 @@ namespace Editor
 		if (!selection.IsEmpty())
 		{
 			GameObjectPtr gameObject = selection.GetPrimary();
-			if (ImGui::BeginPopupContextItem(gameObject->GetName().c_str()))
+			if (ImGui::BeginPopupContextItem("GameObjectMenu"))
 			{
-				ImGui::Text(gameObject->GetName().c_str());
+				ImGui::TextUnformatted(gameObject->GetName().c_str());
 				if (ImGui::BeginPopupContextItem("Rename"))
 				{
 					char name[k_maxGameObjectNameSize];
@@ -251,5 +254,7 @@ namespace Editor
 
 			ImGui::TreePop();
 		}
+
+		ImGui::PopID();
 	}
 }

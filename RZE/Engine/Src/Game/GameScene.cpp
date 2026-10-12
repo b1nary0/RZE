@@ -181,24 +181,17 @@ void GameScene::Unload()
 
 void GameScene::AddGameObject(std::unique_ptr<GameObject>&& gameObject)
 {
-	// #TODO Slow function
-
-	const auto it = std::find_if(m_objectRegistry.begin(), m_objectRegistry.end(), 
-		[&gameObject](const auto& registryObject)
-		{
-			return gameObject == registryObject || registryObject->GetName() == gameObject->GetName();
-		});
-
-	AssertMsg(it == m_objectRegistry.end(), "GameObject already exists in scene");
-	if (it == m_objectRegistry.end())
+	// Objects are identified by GUID, not name, so names can repeat. GameScene only creates objects with free GUIDs
+	// (ChooseGUID, GenerateFreeGUID), so a taken one means this object is already in the scene.
+	const bool isGUIDFree = m_objectsByGUID.emplace(gameObject->GetGUID(), gameObject.get()).second;
+	AssertMsg(isGUIDFree, "GameObject already exists in scene");
+	if (!isGUIDFree)
 	{
-		// GameScene only creates objects with free GUIDs (ChooseGUID, GenerateFreeGUID), so a clash here is a bug
-		const bool isGUIDFree = m_objectsByGUID.emplace(gameObject->GetGUID(), gameObject.get()).second;
-		AssertMsg(isGUIDFree, "A GameObject with this GUID is already in the scene");
-
-		gameObject->OnAddToScene();
-		m_objectRegistry.emplace_back(std::move(gameObject));
+		return;
 	}
+
+	gameObject->OnAddToScene();
+	m_objectRegistry.emplace_back(std::move(gameObject));
 }
 
 void GameScene::AddGameObject(const GameObjectPtr& gameObject)
@@ -259,7 +252,7 @@ void GameScene::RemoveGameObject(GameObjectPtr& gameObject)
 
 GameObjectPtr GameScene::FindGameObjectByName(const std::string& name)
 {
-	// @TODO Slow first-pass quick implementation
+	// A scan, since names aren't indexed; prefer FindGameObjectByGUID to find a specific object
 	auto iter = std::find_if(m_objectRegistry.begin(), m_objectRegistry.end(),
 		[&name](const std::unique_ptr<GameObject>& object)
 		{

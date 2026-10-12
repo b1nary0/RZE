@@ -41,6 +41,8 @@ public:
 	void SetCurrentScenePath(const Filepath& filePath) { mCurrentScenePath = filePath; }
 	const Filepath& GetCurrentScenePath() const { return mCurrentScenePath; }
 	
+	// The first object in the scene with this name, or null. Names aren't unique (objects are identified by
+	// ObjectGUID), so this is for convenience, e.g. finding a scene's only "Camera".
 	GameObjectPtr FindGameObjectByName(const std::string& name);
 	// Null if no object in the scene has guid
 	GameObjectPtr FindGameObjectByGUID(ObjectGUID guid);
