@@ -6,14 +6,19 @@
 
 namespace Editor
 {
+	class EditorEvents;
+
 	// The editor's selected GameObjects, shared by every panel through EditorContext.
 	// In selection order; the last entry is the primary, which the gizmo and inspector act on.
-	// Selected objects draw their mesh bounds while they're selected.
+	// Each call that changes it publishes one SelectionChangedEvent (see SelectionBoundsDisplay).
 	class EditorSelection
 	{
 	public:
-		EditorSelection() = default;
+		explicit EditorSelection(EditorEvents& events);
 		~EditorSelection() = default;
+
+		EditorSelection(const EditorSelection&) = delete;
+		EditorSelection& operator=(const EditorSelection&) = delete;
 
 	public:
 		bool IsEmpty() const { return m_selection.empty(); }
@@ -25,15 +30,17 @@ namespace Editor
 		void Clear();
 		// Replaces the selection
 		void Select(GameObjectPtr gameObject);
+		// Replaces the selection; duplicates are dropped
 		void SetSelection(const std::vector<GameObjectPtr>& gameObjects);
 		// Ctrl+click: adds the object, or removes it if it's already selected
 		void Toggle(GameObjectPtr gameObject);
 		void AddToSelection(const std::vector<GameObjectPtr>& gameObjects);
 
 	private:
-		void Add(GameObjectPtr gameObject);
+		void PublishChanged();
 
 	private:
+		EditorEvents& m_events;
 		std::vector<GameObjectPtr> m_selection;
 	};
 }

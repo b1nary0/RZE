@@ -8,7 +8,9 @@
 namespace Editor
 {
 	EditorContext::EditorContext()
-		: m_sceneDocument(*this)
+		: m_selection(m_events)
+		, m_selectionBounds(m_events)
+		, m_sceneDocument(*this)
 	{
 	}
 

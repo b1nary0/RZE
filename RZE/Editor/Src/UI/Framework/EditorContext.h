@@ -11,6 +11,7 @@
 #include <Services/GameBuilder.h>
 #include <Services/GameObjectClipboard.h>
 #include <Services/SceneDocument.h>
+#include <Services/SelectionBoundsDisplay.h>
 
 #include <Game/World/GameObject/GameObjectDefinitions.h>
 
@@ -84,6 +85,7 @@ namespace Editor
 		EditorEvents m_events;
 		EditorSettings m_settings;
 		EditorSelection m_selection;
+		SelectionBoundsDisplay m_selectionBounds;
 		GameObjectPtr m_editorCamera;
 		SceneViewportState m_sceneViewport;
 		ScenePicker m_scenePicker;

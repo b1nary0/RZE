@@ -96,7 +96,7 @@ namespace Editor
 			return;
 		}
 
-		// While the object is still alive, so the selection can turn off its bounds
+		// While the object is still alive, so SelectionBoundsDisplay can turn off its bounds
 		context.GetSelection().Clear();
 
 		// Deferred by the scene to its next update

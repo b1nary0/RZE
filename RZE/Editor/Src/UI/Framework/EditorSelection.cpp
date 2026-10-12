@@ -1,25 +1,16 @@
 #include <UI/Framework/EditorSelection.h>
 
-#include <Game/World/GameObject/GameObject.h>
-#include <Game/World/GameObjectComponents/RenderComponent.h>
+#include <UI/Framework/EditorEvents.h>
 
 #include <algorithm>
 
-namespace
-{
-	// Selected objects show their bounds through RenderComponent's own toggle so its checkbox stays in sync
-	void SetDrawSelectionBounds(GameObjectPtr gameObject, bool draw)
-	{
-		GameObjectComponentPtr<RenderComponent> renderComponent = gameObject->GetComponent<RenderComponent>();
-		if (renderComponent != nullptr)
-		{
-			renderComponent->SetDrawMeshBounds(draw);
-		}
-	}
-}
-
 namespace Editor
 {
+	EditorSelection::EditorSelection(EditorEvents& events)
+		: m_events(events)
+	{
+	}
+
 	GameObjectPtr EditorSelection::GetPrimary() const
 	{
 		return m_selection.empty() ? GameObjectPtr() : m_selection.back();
@@ -32,24 +23,34 @@ namespace Editor
 
 	void EditorSelection::Clear()
 	{
-		for (GameObjectPtr& gameObject : m_selection)
+		if (!m_selection.empty())
 		{
-			SetDrawSelectionBounds(gameObject, false);
+			m_selection.clear();
+			PublishChanged();
 		}
-
-		m_selection.clear();
 	}
 
 	void EditorSelection::Select(GameObjectPtr gameObject)
 	{
-		Clear();
-		Add(gameObject);
+		SetSelection({ gameObject });
 	}
 
 	void EditorSelection::SetSelection(const std::vector<GameObjectPtr>& gameObjects)
 	{
-		Clear();
-		AddToSelection(gameObjects);
+		std::vector<GameObjectPtr> selection;
+		for (const GameObjectPtr& gameObject : gameObjects)
+		{
+			if (std::find(selection.begin(), selection.end(), gameObject) == selection.end())
+			{
+				selection.push_back(gameObject);
+			}
+		}
+
+		if (selection != m_selection)
+		{
+			m_selection = std::move(selection);
+			PublishChanged();
+		}
 	}
 
 	void EditorSelection::Toggle(GameObjectPtr gameObject)
@@ -57,28 +58,36 @@ namespace Editor
 		auto it = std::find(m_selection.begin(), m_selection.end(), gameObject);
 		if (it == m_selection.end())
 		{
-			Add(gameObject);
-			return;
+			m_selection.push_back(gameObject);
+		}
+		else
+		{
+			m_selection.erase(it);
 		}
 
-		SetDrawSelectionBounds(gameObject, false);
-		m_selection.erase(it);
+		PublishChanged();
 	}
 
 	void EditorSelection::AddToSelection(const std::vector<GameObjectPtr>& gameObjects)
 	{
+		bool isChanged = false;
 		for (const GameObjectPtr& gameObject : gameObjects)
 		{
 			if (!IsSelected(gameObject))
 			{
-				Add(gameObject);
+				m_selection.push_back(gameObject);
+				isChanged = true;
 			}
+		}
+
+		if (isChanged)
+		{
+			PublishChanged();
 		}
 	}
 
-	void EditorSelection::Add(GameObjectPtr gameObject)
+	void EditorSelection::PublishChanged()
 	{
-		m_selection.push_back(gameObject);
-		SetDrawSelectionBounds(gameObject, true);
+		m_events.Publish(SelectionChangedEvent{ *this });
 	}
 }

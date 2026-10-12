@@ -54,7 +54,7 @@ namespace Editor
 	};
 
 	// Tells whoever's interested about editor-wide changes, so they don't have to poll EditorContext. Owned by
-	// EditorContext. Main thread only.
+	// EditorContext. Main thread only (Publish asserts it).
 	//
 	// Events are delivered synchronously, as they're published, which can be in the middle of drawing (e.g. a click
 	// in the Scene panel changing the selection), so listeners must not call ImGui. A listener subscribed during a

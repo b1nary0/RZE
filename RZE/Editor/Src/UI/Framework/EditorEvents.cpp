@@ -105,8 +105,8 @@ namespace Editor
 
 	EventSubscription EditorEvents::Subscribe(size_t eventType, std::function<void(const void*)> listener)
 	{
-		AssertExpr(Threading::MainThreadDispatcher::Get().IsMainThread());
-
+		// No main-thread check here: EditorContext's members subscribe while it's constructed, before the engine has
+		// set up MainThreadDispatcher. Publish checks.
 		if (m_listeners->ListenersByType.size() <= eventType)
 		{
 			m_listeners->ListenersByType.resize(eventType + 1);
