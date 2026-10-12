@@ -70,6 +70,8 @@ private:
 	void PostInit(Functor<RZE_Application* const>& createApplicationCallback);
 
 	void PreUpdate(); // Set up anything the new frame will need
+	// Before ImGui's frame starts: async operations, then the application's PreUIUpdate
+	void PreUIUpdate();
 	void Update();
 
 	void BeginShutDown();

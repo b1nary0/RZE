@@ -26,6 +26,10 @@ public:
 public:
 	virtual void Run();
 	virtual void Start();
+	// Each frame before ImGui's frame starts (and so before Update), for work that mustn't make ImGui calls.
+	// There's no ImGui frame or current window here, so a stray widget call fails immediately (a null window
+	// access, which a debugger stops on), which keeps UI drawing out of it.
+	virtual void PreUIUpdate();
 	virtual void Update();
 	virtual void ShutDown();
 

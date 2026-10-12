@@ -104,6 +104,16 @@ GameObjectComponentBase* GameObject::AddComponentByID(GameObjectComponentID id)
 	return nullptr;
 }
 
+void GameObject::GetComponentHandles(std::vector<GameObjectComponentPtr<GameObjectComponentBase>>& outHandles) const
+{
+	outHandles.clear();
+	outHandles.reserve(m_components.size());
+	for (GameObjectComponentBase* component : m_components)
+	{
+		outHandles.push_back(GameObjectComponentPtr<GameObjectComponentBase>(component));
+	}
+}
+
 GameObjectComponentPtr<TransformComponent> GameObject::GetTransformComponent()
 {
 	// @todo should store GameObjectComponent<TransformComponent> as member variable 

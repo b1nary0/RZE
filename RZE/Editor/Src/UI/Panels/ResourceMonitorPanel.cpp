@@ -7,6 +7,13 @@
 
 #include <ImGui/imgui.h>
 
+#include <algorithm>
+
+namespace
+{
+	constexpr double k_refreshIntervalMS = 250.0;
+}
+
 namespace Editor
 {
 	REGISTER_EDITOR_PANEL(ResourceMonitorPanel);
@@ -27,6 +34,33 @@ namespace Editor
 		style.Push(ImGuiStyleVar_FramePadding, ImVec2(12.f, ImGui::GetStyle().FramePadding.y));
 	}
 
+	void ResourceMonitorPanel::Update(EditorContext& context)
+	{
+		if (m_hasRows && m_sinceRefresh.GetElapsedMS<double>() < k_refreshIntervalMS)
+		{
+			return;
+		}
+		m_hasRows = true;
+		m_sinceRefresh.Start();
+
+		// The table is an unordered_map, so copy it out sorted for a stable display
+		const auto& resourceTable = RZE().GetResourceHandler().GetResourceTableInternal();
+		m_rows.resize(resourceTable.size());
+
+		size_t rowIndex = 0;
+		for (const auto& resource : resourceTable)
+		{
+			ResourceRow& row = m_rows[rowIndex++];
+			row.m_name = resource.first;
+			row.m_refCount = resource.second.GetRefCount();
+		}
+
+		std::sort(m_rows.begin(), m_rows.end(), [](const ResourceRow& a, const ResourceRow& b)
+			{
+				return a.m_name < b.m_name;
+			});
+	}
+
 	void ResourceMonitorPanel::Draw(EditorContext& context)
 	{
 		ImVec2 size = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y);
@@ -43,23 +77,22 @@ namespace Editor
 			ImGui::TableSetupScrollFreeze(1, 1);
 			ImGui::TableHeadersRow();
 
-			const auto& resourceList = RZE().GetResourceHandler().GetResourceTableInternal();
-
-			// TODO (mitch) CLIPPING: Implement clipping to only draw the resources only being displayed
-			// this has some implications on how ImGui does sorting.
-
-			// TODO (mitch) SORTING: Unfortunately sorting can't be applied here atm with a unordered_map type
-			// need to have a trivially sortable container
-			// For now we just render the unordered list of resources and their ref count.
-			for (auto& resource : resourceList)
+			// Only the visible rows are drawn
+			ImGuiListClipper clipper;
+			clipper.Begin(static_cast<int>(m_rows.size()));
+			while (clipper.Step())
 			{
-				ImGui::TableNextRow();
+				for (int rowIndex = clipper.DisplayStart; rowIndex < clipper.DisplayEnd; ++rowIndex)
+				{
+					const ResourceRow& row = m_rows[rowIndex];
+					ImGui::TableNextRow();
 
-				ImGui::TableSetColumnIndex(0);
-				ImGui::Text(resource.first.c_str());
+					ImGui::TableSetColumnIndex(0);
+					ImGui::TextUnformatted(row.m_name.c_str());
 
-				ImGui::TableSetColumnIndex(1);
-				ImGui::Text(std::to_string(resource.second.GetRefCount()).c_str());
+					ImGui::TableSetColumnIndex(1);
+					ImGui::Text("%d", row.m_refCount);
+				}
 			}
 
 			ImGui::EndTable();

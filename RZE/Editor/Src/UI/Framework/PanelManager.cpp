@@ -57,6 +57,17 @@ namespace Editor
 		}
 	}
 
+	void PanelManager::UpdateAll(EditorContext& context)
+	{
+		for (std::unique_ptr<EditorPanel>& panel : m_panels)
+		{
+			if (panel->m_isOpen)
+			{
+				panel->Update(context);
+			}
+		}
+	}
+
 	void PanelManager::DrawAll(EditorContext& context)
 	{
 		for (std::unique_ptr<EditorPanel>& panel : m_panels)

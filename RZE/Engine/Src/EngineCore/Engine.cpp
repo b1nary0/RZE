@@ -100,7 +100,12 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 				PreUpdate();
 				{
 					OPTICK_EVENT("Update and Render");
-					
+
+					// The frame capture's update time covers PreUIUpdate and Update, but not ImGui's NewFrame
+					const double preUIUpdateStart = programTimer.GetElapsed<double>();
+					PreUIUpdate();
+					const double preUIUpdateMS = (programTimer.GetElapsed<double>() - preUIUpdateStart) * 1000.0;
+
 					{
 						OPTICK_EVENT("ImGui NewFrame Work");
 
@@ -112,7 +117,7 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 
 					const double updateStart = programTimer.GetElapsed<double>();
 					Update();
-					lastUpdateMS = (programTimer.GetElapsed<double>() - updateStart) * 1000.0;
+					lastUpdateMS = preUIUpdateMS + (programTimer.GetElapsed<double>() - updateStart) * 1000.0;
 
 					ImGui::EndFrame();
 
@@ -317,12 +322,20 @@ void RZE_Engine::LoadEngineConfig()
 	}
 }
 
-void RZE_Engine::Update()
+void RZE_Engine::PreUIUpdate()
 {
 	OPTICK_EVENT();
 
-	// Ticked before the application so completion callbacks land before this frame's UI is built.
+	// First, so completion callbacks (e.g. a scene finishing loading) land before the application gathers this
+	// frame's state, rather than between that and the UI being drawn from it
 	m_asyncOperationManager.Tick();
+
+	m_application->PreUIUpdate();
+}
+
+void RZE_Engine::Update()
+{
+	OPTICK_EVENT();
 
 	m_application->Update();
 	m_activeScene->Update();

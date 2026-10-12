@@ -44,6 +44,10 @@ void RZE_Application::Start()
 	
 }
 
+void RZE_Application::PreUIUpdate()
+{
+}
+
 void RZE_Application::Update()
 {
 }

@@ -83,6 +83,10 @@ namespace Editor
 		// Once, after every panel has been created
 		virtual void Initialize(EditorContext& context) {}
 
+		// Each frame while the panel is open, before ImGui's frame starts (EditorApp::PreUIUpdate): gather and
+		// prepare what Draw shows. No ImGui calls: there's no ImGui frame yet, so they fail immediately.
+		virtual void Update(EditorContext& context) {}
+
 		// The window's contents, between its Begin and End. Only called while the window is open and visible.
 		virtual void Draw(EditorContext& context) = 0;
 

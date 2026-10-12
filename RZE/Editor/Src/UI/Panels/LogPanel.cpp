@@ -20,6 +20,13 @@ namespace Editor
 		return desc;
 	}
 
+	void LogPanel::Update(EditorContext& context)
+	{
+		const size_t entryCount = DebugServices::Get().GetLogEntries().size();
+		m_hasNewEntries = entryCount > m_lastEntryCount;
+		m_lastEntryCount = entryCount;
+	}
+
 	void LogPanel::Draw(EditorContext& context)
 	{
 		const std::vector<DebugServices::LogEntry>& logEntries = DebugServices::Get().GetLogEntries();
@@ -30,10 +37,9 @@ namespace Editor
 			ImGui::TextColored(imColor, "%s", logItem.Text.c_str());
 		}
 
-		if (logEntries.size() > m_lastEntryCount)
+		if (m_hasNewEntries)
 		{
 			ImGui::SetScrollHereY();
 		}
-		m_lastEntryCount = logEntries.size();
 	}
 }

@@ -40,7 +40,7 @@ $d = '.\.claude\skills\run-rze\driver.ps1'
 & $d launch -Scene DrawLineTest.scene      # waits for the window title, then 5 s for assets to stream in
 & $d shot                                  # -> $env:TEMP\rze-shots\<timestamp>.png
 & $d click -X 60 -Y 95                     # select "NeckMech" in the Scene panel
-& $d click -X 2303 -Y 254                  # tick "Draw Mesh Bounds" in Component View
+& $d click -X 2303 -Y 254                  # tick "Draw Mesh Bounds" in Object Inspector
 & $d click -X 2372 -Y 143; & $d key -Keys '^a45{ENTER}'   # set Rotation Y = 45
 & $d shot -Out "$env:TEMP\rze-shots\flow.png"
 & $d alive                                 # running pid=... responding=True
@@ -73,9 +73,9 @@ The editor starts maximized on a 2560-wide monitor. ImGui panels scale with the 
 | target | client coords |
 |---|---|
 | Scene panel rows (Camera, DirectionalLight, ...) | x≈60, y = 59 + 18·row (row 0 = Camera). NeckMech = row 2 → (60, 95) ✓; Sponza in Sponza.scene → (51, 95) ✓ |
-| Component View: Position X / Y / Z field | (2310 / 2372 / 2435, 102) |
-| Component View: Rotation X / Y / Z field | (2310 / 2372 ✓ / 2435, 143) |
-| Component View: Scale X / Y / Z field | (2310 / 2372 / 2435, 186) |
+| Object Inspector: Position X / Y / Z field | (2310 / 2372 / 2435, 102) |
+| Object Inspector: Rotation X / Y / Z field | (2310 / 2372 ✓ / 2435, 143) |
+| Object Inspector: Scale X / Y / Z field | (2310 / 2372 / 2435, 186) |
 | RenderComponent "Draw Mesh Bounds" checkbox | (2303, 254) ✓ |
 | RenderComponent "Draw Sub-Mesh Bounds" checkbox | (2303, 278) ✓ |
 | DrawLineTest: NeckMech translate gizmo, X arrow (after selecting NeckMech) | drag (1555, 1038) → (1755, 1038) moves Position X ≈ +5.9 ✓ |

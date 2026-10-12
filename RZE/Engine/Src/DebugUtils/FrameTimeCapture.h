@@ -5,7 +5,8 @@
 #include <vector>
 
 // Records every frame's timings for A/B performance comparisons, enabled from the command line:
-//   -perfcapture <file>      where to write the samples, one "frameMs,updateMs" line per frame
+//   -perfcapture <file>      where to write the samples, one "frameMs,updateMs" line per frame, where updateMs is
+//                            RZE_Engine::PreUIUpdate() + RZE_Engine::Update()
 //   -perfwarmup <seconds>    how long to wait before recording, e.g. for the scene to load (default 10)
 //   -perfduration <seconds>  how long to record (default 15)
 // When the duration is up the samples are written and the engine exits.
@@ -22,8 +23,8 @@ public:
 	bool IsEnabled() const { return m_isEnabled; }
 
 	// Once per frame. elapsedSeconds is the time since the engine loop started; frameMs and updateMs are the
-	// previous frame's total and RZE_Engine::Update() times. Returns true once the capture has been written,
-	// meaning the engine should exit.
+	// previous frame's total and RZE_Engine::PreUIUpdate() + Update() times. Returns true once the capture has
+	// been written, meaning the engine should exit.
 	bool AddFrame(double elapsedSeconds, double frameMs, double updateMs);
 
 private:

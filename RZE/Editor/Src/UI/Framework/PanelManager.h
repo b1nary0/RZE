@@ -24,6 +24,9 @@ namespace Editor
 		// Creates and initializes every panel registered with REGISTER_EDITOR_PANEL. Once, after ImGui is set up.
 		void CreatePanels(EditorContext& context);
 
+		// Each open panel's Update. Before ImGui's frame starts.
+		void UpdateAll(EditorContext& context);
+
 		// Each open panel's window, inside the editor's dockspace
 		void DrawAll(EditorContext& context);
 

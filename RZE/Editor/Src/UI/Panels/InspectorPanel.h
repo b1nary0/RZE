@@ -2,9 +2,9 @@
 
 #include <UI/Framework/EditorPanel.h>
 
-#include <vector>
+#include <Game/World/GameObject/GameObjectDefinitions.h>
 
-class GameObjectComponentBase;
+#include <vector>
 
 namespace Editor
 {
@@ -15,10 +15,12 @@ namespace Editor
 		static PanelDesc Describe();
 
 	private:
+		void Update(EditorContext& context) override;
 		void Draw(EditorContext& context) override;
 
 	private:
-		// Rebuilt every frame; a member only so its allocation is reused
-		std::vector<GameObjectComponentBase*> m_sortedComponents;
+		// The primary selection's components in display order. Rebuilt every Update; a member only so its
+		// allocation is reused. Handles, because a scene can unload between Update and Draw (e.g. New Scene).
+		std::vector<GameObjectComponentPtr<GameObjectComponentBase>> m_sortedComponents;
 	};
 }

@@ -67,6 +67,8 @@ public:
 	GameObjectComponentBase* AddComponentByID(GameObjectComponentID id);
 
 	const ComponentList& GetComponents() const { return m_components; }
+	// Lifetime-checked handles to every component, in the same order as GetComponents
+	void GetComponentHandles(std::vector<GameObjectComponentPtr<GameObjectComponentBase>>& outHandles) const;
 
 	GameObjectComponentPtr<TransformComponent> GetTransformComponent();
 

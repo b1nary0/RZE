@@ -99,11 +99,17 @@ namespace Editor
 		m_context.GetSceneDocument().Load(scenePath);
 	}
 
-	void EditorApp::Update()
+	void EditorApp::PreUIUpdate()
 	{
 		OPTICK_EVENT();
 
 		m_context.Update();
+		m_context.GetPanels().UpdateAll(m_context);
+	}
+
+	void EditorApp::Update()
+	{
+		OPTICK_EVENT();
 
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking;
 		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;

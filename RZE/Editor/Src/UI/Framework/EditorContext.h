@@ -37,7 +37,7 @@ namespace Editor
 		EditorContext& operator=(const EditorContext&) = delete;
 
 	public:
-		// Once per frame, before panels are displayed
+		// Once per frame, before panels update or draw. Before ImGui's frame starts, so no ImGui calls.
 		void Update();
 
 		// Drops everything that refers to the current scene's objects (selection, editor camera, a pick in flight,

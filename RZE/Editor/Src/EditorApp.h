@@ -18,6 +18,7 @@ namespace Editor
 
 		void Initialize() override;
 		void Start() override;
+		void PreUIUpdate() override;
 		void Update() override;
 		void ShutDown() override;
 

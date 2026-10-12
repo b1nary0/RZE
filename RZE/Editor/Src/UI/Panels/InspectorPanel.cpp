@@ -12,10 +12,10 @@
 
 namespace
 {
-	U32 GetInspectorOrder(const GameObjectComponentBase* component)
+	U32 GetInspectorOrder(const GameObjectComponentBase& component)
 	{
 		const EditorComponentCache::ComponentInfoMap& componentInfo = EditorComponentCache::GetAllComponentsInfo();
-		const auto it = componentInfo.find(component->m_id);
+		const auto it = componentInfo.find(component.m_id);
 		return it != componentInfo.end() ? it->second.Order : EditorComponentCache::kDefaultSortingOrder;
 	}
 }
@@ -27,30 +27,39 @@ namespace Editor
 	PanelDesc InspectorPanel::Describe()
 	{
 		PanelDesc desc;
-		desc.Name = "Component View";
-		desc.MenuPath = "View/Windows/Component View";
+		desc.Name = "Object Inspector";
+		desc.MenuPath = "View/Windows/Object Inspector";
 		desc.DefaultDock = EPanelDock::Right;
 		return desc;
 	}
 
-	void InspectorPanel::Draw(EditorContext& context)
+	void InspectorPanel::Update(EditorContext& context)
 	{
 		const GameObjectPtr primary = context.GetSelection().GetPrimary();
 		if (primary == nullptr)
 		{
+			m_sortedComponents.clear();
 			return;
 		}
 
 		// Stable, so components with the same order keep the order they were added in
-		const GameObject::ComponentList& components = primary->GetComponents();
-		m_sortedComponents.assign(components.begin(), components.end());
-		std::stable_sort(m_sortedComponents.begin(), m_sortedComponents.end(), [](const GameObjectComponentBase* a, const GameObjectComponentBase* b)
+		primary->GetComponentHandles(m_sortedComponents);
+		std::stable_sort(m_sortedComponents.begin(), m_sortedComponents.end(),
+			[](const GameObjectComponentPtr<GameObjectComponentBase>& a, const GameObjectComponentPtr<GameObjectComponentBase>& b)
 			{
-				return GetInspectorOrder(a) < GetInspectorOrder(b);
+				return GetInspectorOrder(**a) < GetInspectorOrder(**b);
 			});
+	}
 
-		for (GameObjectComponentBase* component : m_sortedComponents)
+	void InspectorPanel::Draw(EditorContext& context)
+	{
+		for (const GameObjectComponentPtr<GameObjectComponentBase>& component : m_sortedComponents)
 		{
+			if (component == nullptr)
+			{
+				continue;
+			}
+
 			ImGui::TextColored(ImVec4(0.65f, 0.65f, 1.0f, 1.0f), "[ %s ]", component->GetName().c_str());
 			ImGui::Separator();
 			component->OnEditorInspect();
