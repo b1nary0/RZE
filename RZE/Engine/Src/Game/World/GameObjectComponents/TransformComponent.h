@@ -17,7 +17,6 @@ public:
 public:
 	static void DescribeProperties(PropertyBuilder<TransformComponent>& properties);
 
-	void OnEditorInspect() override;
 	void Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override;
 	void Deserialize(const rapidjson::Value& data) override;
 

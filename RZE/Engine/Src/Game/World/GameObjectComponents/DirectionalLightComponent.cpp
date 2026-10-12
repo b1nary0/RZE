@@ -91,13 +91,3 @@ void DirectionalLightComponent::DescribeProperties(PropertyBuilder<DirectionalLi
 		.Range(0.0f, 100.0f).StepSize(0.05f).DisplayFormat("%.2f");
 }
 
-void DirectionalLightComponent::OnEditorInspect()
-{
-	float* colorValues = m_lightColour.GetValuePtr();
-	
-	ImGui::Text("Colour");
-	ImGui::ColorEdit4("##directionallightcomponent_color", colorValues, ImGuiInputTextFlags_EnterReturnsTrue);
-
-	ImGui::Text("Strength");
-	ImGui::InputFloat("##directionallightcomponent_strength", &m_lightStrength, 0.005f, 0.05f, "%.2f", ImGuiInputTextFlags_EnterReturnsTrue);
-}

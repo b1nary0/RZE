@@ -221,24 +221,14 @@ void RenderComponent::Deserialize(const rapidjson::Value& data)
 	LoadMesh(Filepath(data["ResourcePath"].GetString()));
 }
 
+// The fields are drawn from DescribeProperties; this is only the sub-mesh/material/texture tree
 void RenderComponent::OnEditorInspect()
 {
 	ResourceHandler& resourceHandler = RZE().GetResourceHandler();
 
 	if (m_resource.IsValid())
 	{
-		ImGui::Text(m_resource.GetResourcePath().GetRelativePath().c_str());
-
 		const StaticMeshResource* const modelData = resourceHandler.GetResource<StaticMeshResource>(m_resource);
-
-		// Along the object's own axes, so a mesh imported in the wrong unit can be scaled to its real size here
-		{
-			const Vector3D size = GetMeshSize();
-			ImGui::Text("Size: %.2f x %.2f x %.2f m", size.X(), size.Y(), size.Z());
-		}
-
-		ImGui::Checkbox("Draw Mesh Bounds", &m_drawMeshBounds);
-		ImGui::Checkbox("Draw Sub-Mesh Bounds", &m_drawSubMeshBounds);
 
 		for (const auto& subMesh : modelData->GetStaticMesh().GetSubMeshes())
 		{
@@ -286,23 +276,6 @@ void RenderComponent::OnEditorInspect()
 
 				ImGui::TreePop();
 			}
-		}
-	}
-
-	ImGui::NewLine();
-	if (ImGui::Button("Select Mesh..."))
-	{
-		FilePromptParams openFileParams =
-		{
-			"RZE MeshAsset",
-			k_meshAssetDirectoryPath,
-			"*.meshasset"
-		};
-
-		std::string chosenPath;
-		if (RZE().ShowOpenFilePrompt(openFileParams, chosenPath))
-		{
-			LoadMesh(Filepath::FromAbsolutePathStr(chosenPath));
 		}
 	}
 }

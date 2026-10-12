@@ -9,6 +9,9 @@ namespace Editor
 	using InteractionID = U32;
 	constexpr InteractionID k_noInteraction = 0;
 
+	// A new, unique interaction; for edits that don't use an InteractionTracker
+	InteractionID NewInteractionID();
+
 	// Turns a control's per-frame "is it being used" into the start and end of each interaction, and gives each
 	// interaction a unique ID. Update it every frame the control exists, so no start or end is missed.
 	class InteractionTracker

@@ -21,7 +21,6 @@ public:
 
 	static void DescribeProperties(PropertyBuilder<DirectionalLightComponent>& properties);
 
-	void OnEditorInspect() override;
 
 public:
 	// RGBA, each in [0, 1]; the light picks it up on its next Update

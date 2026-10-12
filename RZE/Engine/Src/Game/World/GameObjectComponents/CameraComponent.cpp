@@ -198,21 +198,9 @@ void CameraComponent::DescribeProperties(PropertyBuilder<CameraComponent>& prope
 		.Range(-4.0f, 4.0f).StepSize(0.05f).DisplayFormat("%.2f").As(EPropertyWidget::Drag);
 }
 
+// The fields are drawn from DescribeProperties; this is only the camera preview
 void CameraComponent::OnEditorInspect()
 {
-	ImGui::Checkbox("Main Camera", &m_isActiveCamera);
-	
-	ImGui::Text("Field Of View");
-	ImGui::InputFloat("##cameracomponent_fov", &m_fov, 0.05f, 0.5f, "%.2f", ImGuiInputTextFlags_EnterReturnsTrue);
-
-	ImGui::Text("Near Cull");
-	ImGui::InputFloat("##cameracomponent_nearcull", &m_nearCull, 0.05f, 0.05f, "%.2f", ImGuiInputTextFlags_EnterReturnsTrue);
-	ImGui::Text("Far Cull");
-	ImGui::InputFloat("##cameracomponent_farcull", &m_farCull, 0.05f, 0.05f, "%.2f", ImGuiInputTextFlags_EnterReturnsTrue);
-
-	ImGui::Text("Exposure Compensation (EV)");
-	ImGui::DragFloat("##cameracomponent_exposurecompensation", &m_exposureCompensation, 0.05f, -4.0f, 4.0f, "%.2f");
-
 	/* Render camera view */
 	{
 		// #TODO this is a particularly bad part of not having the right API

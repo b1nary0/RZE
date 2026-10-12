@@ -8,6 +8,11 @@ namespace
 
 namespace Editor
 {
+	InteractionID NewInteractionID()
+	{
+		return s_nextInteractionID++;
+	}
+
 	void InteractionTracker::Update(bool isActive)
 	{
 		m_wasActive = m_isActive;
@@ -15,7 +20,7 @@ namespace Editor
 
 		if (HasBegun())
 		{
-			m_id = s_nextInteractionID++;
+			m_id = NewInteractionID();
 		}
 	}
 

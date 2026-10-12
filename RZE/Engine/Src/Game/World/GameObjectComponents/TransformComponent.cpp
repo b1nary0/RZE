@@ -61,29 +61,6 @@ void TransformComponent::DescribeProperties(PropertyBuilder<TransformComponent>&
 	properties.Vector3("Scale", &TransformComponent::GetScale, &TransformComponent::SetScale);
 }
 
-void TransformComponent::OnEditorInspect()
-{
-	float* positionValues = m_position.GetValuePtr();
-	float* rotationValues = m_rotation.GetValuePtr();
-	float* scaleValues = m_scale.GetValuePtr();
-
-	// #TODO(Modify DragFloat3 to only register on mouse movement to avoid falloff when dragging)
-
-	bool valueChanged = false;
-
-	ImGui::Text("Position");
-	valueChanged |= ImGui::InputFloat3("##transfcomp_position", positionValues, nullptr, ImGuiInputTextFlags_EnterReturnsTrue);
-	ImGui::Text("Rotation");
-	valueChanged |= ImGui::InputFloat3("##transfcomp_rotation", rotationValues, nullptr, ImGuiInputTextFlags_EnterReturnsTrue);
-	ImGui::Text("Scale");
-	valueChanged |= ImGui::InputFloat3("##transfcomp_scale", scaleValues, nullptr, ImGuiInputTextFlags_EnterReturnsTrue);
-
-	if (valueChanged)
-	{
-		MarkDirty();
-	}
-}
-
 void TransformComponent::SetPosition(const Vector3D& position)
 {
 	if (m_position != position)

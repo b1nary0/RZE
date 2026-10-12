@@ -53,6 +53,8 @@ namespace Editor
 
 	void InspectorPanel::Draw(EditorContext& context)
 	{
+		m_propertyInspector.BeginFrame();
+
 		for (const GameObjectComponentPtr<GameObjectComponentBase>& component : m_sortedComponents)
 		{
 			if (component == nullptr)
@@ -62,8 +64,11 @@ namespace Editor
 
 			ImGui::TextColored(ImVec4(0.65f, 0.65f, 1.0f, 1.0f), "[ %s ]", component->GetName().c_str());
 			ImGui::Separator();
+			m_propertyInspector.Draw(context, component);
 			component->OnEditorInspect();
 			ImGui::Separator();
 		}
+
+		m_propertyInspector.EndFrame();
 	}
 }
