@@ -1,6 +1,6 @@
 #include <UI/Gizmo/GizmoSnapper.h>
 
-#include <UI/ToolbarLayout.h>
+#include <UI/Framework/EditorUI.h>
 
 #include <Utils/Math/Math.h>
 
@@ -28,12 +28,12 @@ namespace Editor
 
 	void GizmoSnapper::DisplayControls()
 	{
-		ToolbarLayout::PushGroupSpacing();
+		const EditorUI::ScopedToolbarSpacing spacing;
 
-		ToolbarLayout::BeginGroup();
+		EditorUI::ToolbarGroupSeparator();
 		ImGui::Checkbox("Snap (X)", &m_isEnabled);
 
-		ToolbarLayout::BeginGroup();
+		EditorUI::ToolbarGroupSeparator();
 		ImGui::TextUnformatted("Move step:");
 		for (float snapSize : k_snapSizes)
 		{
@@ -45,20 +45,15 @@ namespace Editor
 			}
 		}
 
-		ToolbarLayout::BeginGroup();
+		EditorUI::ToolbarGroupSeparator();
 		ImGui::TextUnformatted("Rotate step:");
 		for (float rotationStep : k_rotationSteps)
 		{
 			char label[32];
 			// UTF-8 degree sign, spelled out so it doesn't depend on the source file's encoding
 			snprintf(label, sizeof(label), "%g\xC2\xB0##RotationStep", rotationStep);
-			if (ImGui::RadioButton(label, m_rotationStep == rotationStep))
-			{
-				m_rotationStep = rotationStep;
-			}
+			EditorUI::RadioOption(label, m_rotationStep, rotationStep);
 		}
-
-		ImGui::PopStyleVar();
 	}
 
 	const float* GizmoSnapper::PrepareManipulate(int operation, int mode, bool isInverted)

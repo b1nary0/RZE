@@ -1,6 +1,6 @@
 #include <UI/Gizmo/EditorGrid.h>
 
-#include <UI/ToolbarLayout.h>
+#include <UI/Framework/EditorUI.h>
 
 #include <RZE.h>
 #include <Graphics/RenderEngine.h>
@@ -70,17 +70,15 @@ namespace Editor
 {
 	void EditorGrid::DisplayControls()
 	{
-		ToolbarLayout::PushGroupSpacing();
+		const EditorUI::ScopedToolbarSpacing spacing;
 
-		ToolbarLayout::BeginGroup();
+		EditorUI::ToolbarGroupSeparator();
 		ImGui::Checkbox("Grid", &m_isVisible);
 		if (m_isVisible)
 		{
 			// So it's clear which level is showing once the squares outgrow the snap size
 			ImGui::TextDisabled("%g m squares", m_squareSize);
 		}
-
-		ImGui::PopStyleVar();
 	}
 
 	void EditorGrid::Draw(const Vector3D& cameraPosition, float baseSquareSize)

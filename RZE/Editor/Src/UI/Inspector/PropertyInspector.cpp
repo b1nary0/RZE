@@ -1,6 +1,7 @@
 #include <UI/Inspector/PropertyInspector.h>
 
 #include <UI/Framework/EditorContext.h>
+#include <UI/Framework/EditorUI.h>
 #include <UI/Inspector/PropertyDrawers.h>
 
 #include <Commands/PropertyCommands.h>
@@ -10,12 +11,11 @@
 
 #include <ImGui/imgui.h>
 
+#include <algorithm>
 #include <string>
 
 namespace
 {
-	constexpr float k_labelColumnFraction = 0.35f;
-
 	// Read-only values of these types are drawn as disabled widgets; the rest (text, paths, images) draw read-only
 	// themselves
 	bool IsDrawnAsWidget(EPropertyType type)
@@ -64,15 +64,18 @@ namespace Editor
 
 		const void* const object = description->ToObject(**component);
 
-		ImGui::PushID(static_cast<int>(component->GetInstanceID()));
-		if (ImGui::BeginTable("##properties", 2, ImGuiTableFlags_SizingStretchProp))
+		// Wide enough for this component's own labels; nested ones are indented and show in full on hover if cut off
+		float widestLabel = 0.0f;
+		for (const PropertyDescriptor& property : description->Type->Properties)
 		{
-			ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch, k_labelColumnFraction);
-			ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 1.0f - k_labelColumnFraction);
+			widestLabel = std::max(widestLabel, ImGui::CalcTextSize(property.Name.c_str()).x);
+		}
 
+		ImGui::PushID(static_cast<int>(component->GetInstanceID()));
+		if (EditorUI::BeginPropertyTable("##properties", EditorUI::CalcLabelColumnWidth(widestLabel)))
+		{
 			DrawProperties(context, *description->Type, object, &component);
-
-			ImGui::EndTable();
+			EditorUI::EndPropertyTable();
 		}
 		ImGui::PopID();
 		return true;
@@ -86,10 +89,10 @@ namespace Editor
 			const PropertyDescriptor& property = type.Properties[propertyIndex];
 
 			ImGui::PushID(static_cast<int>(propertyIndex));
-			ImGui::TableNextRow();
 
 			if (property.Type == EPropertyType::Object)
 			{
+				ImGui::TableNextRow();
 				const ObjectRef ref = std::get<ObjectRef>(property.Get(object));
 				const std::string displayName = GetDisplayName(ref);
 				const std::string heading = displayName.empty() ? property.Name : property.Name + ": " + displayName;
@@ -99,6 +102,7 @@ namespace Editor
 			{
 				const std::vector<ObjectRef> elements = std::get<std::vector<ObjectRef>>(property.Get(object));
 
+				ImGui::TableNextRow();
 				ImGui::TableSetColumnIndex(0);
 				const bool isOpen = ImGui::TreeNodeEx("##array", ImGuiTreeNodeFlags_SpanAllColumns, "%s (%d)", property.Name.c_str(), static_cast<int>(elements.size()));
 				if (isOpen)
@@ -138,16 +142,7 @@ namespace Editor
 			return;
 		}
 
-		ImGui::TableSetColumnIndex(0);
-		ImGui::AlignTextToFramePadding();
-		ImGui::TextUnformatted(property.Name.c_str());
-		if (!property.Tooltip.empty() && ImGui::IsItemHovered())
-		{
-			ImGui::SetTooltip("%s", property.Tooltip.c_str());
-		}
-
-		ImGui::TableSetColumnIndex(1);
-		ImGui::SetNextItemWidth(-FLT_MIN);
+		EditorUI::PropertyRow(property.Name.c_str(), property.Tooltip.c_str());
 
 		// Nested objects' properties can't be edited yet: commands only address a component's own properties
 		const bool isReadOnly = property.IsReadOnly() || editableComponent == nullptr;

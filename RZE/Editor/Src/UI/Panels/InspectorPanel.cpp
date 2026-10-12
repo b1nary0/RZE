@@ -1,6 +1,7 @@
 #include <UI/Panels/InspectorPanel.h>
 
 #include <UI/Framework/EditorContext.h>
+#include <UI/Framework/EditorUI.h>
 #include <UI/Framework/PanelRegistry.h>
 #include <UI/Inspector/ComponentInspectors.h>
 
@@ -63,8 +64,8 @@ namespace Editor
 				continue;
 			}
 
-			ImGui::TextColored(ImVec4(0.65f, 0.65f, 1.0f, 1.0f), "[ %s ]", component->GetName().c_str());
-			ImGui::Separator();
+			const std::string heading = "[ " + component->GetName() + " ]";
+			EditorUI::SectionHeading(heading.c_str());
 			m_propertyInspector.Draw(context, component);
 
 			if (const ComponentInspectors::Inspector* const customInspector = ComponentInspectors::Find(component->m_id))

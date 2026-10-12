@@ -3,6 +3,7 @@
 #include <RZE.h>
 #include <EngineApp.h>
 #include <UI/Framework/EditorContext.h>
+#include <UI/Framework/EditorUI.h>
 #include <UI/Framework/PanelRegistry.h>
 
 #include <Commands/TransformCommands.h>
@@ -63,33 +64,26 @@ namespace Editor
 
 	void SceneViewPanel::DrawMenuBar(EditorContext& context)
 	{
-		if (ImGui::RadioButton("Translate", m_gizmoState.m_currentOpMode == ImGuizmo::TRANSLATE))
 		{
-			m_gizmoState.m_currentOpMode = ImGuizmo::TRANSLATE;
-		}
+			const EditorUI::ScopedToolbarSpacing spacing;
 
-		if (ImGui::RadioButton("Rotate", m_gizmoState.m_currentOpMode == ImGuizmo::ROTATE))
-		{
-			m_gizmoState.m_currentOpMode = ImGuizmo::ROTATE;
-		}
+			int& operation = m_gizmoState.m_currentOpMode;
+			EditorUI::RadioOption("Translate", operation, static_cast<int>(ImGuizmo::TRANSLATE));
+			EditorUI::ItemTooltip("Shortcut (W)");
+			EditorUI::RadioOption("Rotate", operation, static_cast<int>(ImGuizmo::ROTATE));
+			EditorUI::ItemTooltip("Shortcut (E)");
+			EditorUI::RadioOption("Scale", operation, static_cast<int>(ImGuizmo::SCALE));
+			EditorUI::ItemTooltip("Shortcut (R)");
 
-		if (ImGui::RadioButton("Scale", m_gizmoState.m_currentOpMode == ImGuizmo::SCALE))
-		{
-			m_gizmoState.m_currentOpMode = ImGuizmo::SCALE;
-		}
-
-		if (m_gizmoState.m_currentOpMode != ImGuizmo::SCALE)
-		{
-			const float cursorPos = ImGui::GetCursorPosX();
-			const float controlSpacing = 25.f;
-			ImGui::SetCursorPosX(cursorPos + controlSpacing);
-			if (ImGui::RadioButton("Local", m_gizmoState.m_transformationSpace == ImGuizmo::LOCAL))
+			// Scaling is always along the object's own axes
+			if (operation != ImGuizmo::SCALE)
 			{
-				m_gizmoState.m_transformationSpace = ImGuizmo::LOCAL;
-			}
-			if (ImGui::RadioButton("World", m_gizmoState.m_transformationSpace == ImGuizmo::WORLD))
-			{
-				m_gizmoState.m_transformationSpace = ImGuizmo::WORLD;
+				int& space = m_gizmoState.m_transformationSpace;
+				EditorUI::ToolbarGroupSeparator();
+				EditorUI::RadioOption("Local", space, static_cast<int>(ImGuizmo::LOCAL));
+				EditorUI::ItemTooltip("Shortcut (Q)");
+				EditorUI::RadioOption("World", space, static_cast<int>(ImGuizmo::WORLD));
+				EditorUI::ItemTooltip("Shortcut (Q)");
 			}
 		}
 
