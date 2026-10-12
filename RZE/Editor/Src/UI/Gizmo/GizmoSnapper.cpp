@@ -83,9 +83,9 @@ namespace Editor
 		return nullptr;
 	}
 
-	void GizmoSnapper::Apply(bool isUsing, const Vector3D& currentPosition, const Vector3D& currentRotation, Vector3D& translation, Vector3D& rotation)
+	void GizmoSnapper::Apply(const InteractionTracker& gizmoDrag, const Vector3D& currentPosition, const Vector3D& currentRotation, Vector3D& translation, Vector3D& rotation)
 	{
-		if (isUsing && !m_drag.m_wasUsing)
+		if (gizmoDrag.HasBegun())
 		{
 			m_drag.m_startPosition = currentPosition;
 			m_drag.m_hasAxisMoved[0] = m_drag.m_hasAxisMoved[1] = m_drag.m_hasAxisMoved[2] = false;
@@ -93,9 +93,7 @@ namespace Editor
 			m_drag.m_startRotation = Quaternion::FromEulerDegrees(currentRotation);
 			m_drag.m_unsnappedRotation = m_drag.m_startRotation;
 		}
-		m_drag.m_wasUsing = isUsing;
-
-		if (!isUsing)
+		if (!gizmoDrag.IsActive())
 		{
 			return;
 		}

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <UI/Framework/InteractionTracker.h>
+
 #include <Utils/Math/Quaternion.h>
 #include <Utils/Math/Vector3D.h>
 
@@ -19,7 +21,6 @@ namespace Editor
 	private:
 		struct DragState
 		{
-			bool m_wasUsing = false;
 			// Which world axes the current translate drag has moved; only those get snapped, so axis and plane drags stay on their axes
 			Vector3D m_startPosition;
 			bool m_hasAxisMoved[3] = { false, false, false };
@@ -52,10 +53,10 @@ namespace Editor
 		// operation and mode are ImGuizmo::OPERATION and ImGuizmo::MODE.
 		const float* PrepareManipulate(int operation, int mode, bool isInverted);
 
-		// After ImGuizmo::Manipulate, every frame so it sees drags start and end. currentPosition and currentRotation
-		// (Euler degrees) are the object's before this frame's manipulation; translation and rotation are what
-		// ImGuizmo produced, and are snapped in place.
-		void Apply(bool isUsing, const Vector3D& currentPosition, const Vector3D& currentRotation, Vector3D& translation, Vector3D& rotation);
+		// After ImGuizmo::Manipulate. gizmoDrag tracks ImGuizmo::IsUsing(), so a drag's start is where snapping is
+		// measured from. currentPosition and currentRotation (Euler degrees) are the object's before this frame's
+		// manipulation; translation and rotation are what ImGuizmo produced, and are snapped in place.
+		void Apply(const InteractionTracker& gizmoDrag, const Vector3D& currentPosition, const Vector3D& currentRotation, Vector3D& translation, Vector3D& rotation);
 
 	private:
 		void SnapTranslationToGrid(Vector3D& translation);

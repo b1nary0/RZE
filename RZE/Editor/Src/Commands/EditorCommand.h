@@ -1,5 +1,7 @@
 #pragma once
 
+#include <UI/Framework/InteractionTracker.h>
+
 namespace Editor
 {
 	class EditorContext;
@@ -11,11 +13,20 @@ namespace Editor
 	class EditorCommand
 	{
 	public:
+		explicit EditorCommand(InteractionID interaction = k_noInteraction)
+			: m_interaction(interaction) {}
 		virtual ~EditorCommand() = default;
 
 		virtual void Execute(EditorContext& context) = 0;
 
 		// For logs and, later, undo history
 		virtual const char* GetName() const = 0;
+
+		// The continuous interaction (e.g. a gizmo drag) this command is one step of, or k_noInteraction for a
+		// one-off change. Undo will merge consecutive commands from the same interaction into one step.
+		InteractionID GetInteraction() const { return m_interaction; }
+
+	private:
+		InteractionID m_interaction;
 	};
 }

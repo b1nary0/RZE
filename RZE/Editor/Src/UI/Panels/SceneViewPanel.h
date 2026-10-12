@@ -3,6 +3,7 @@
 #include <Game/World/GameObject/GameObjectDefinitions.h>
 
 #include <UI/Framework/EditorPanel.h>
+#include <UI/Framework/InteractionTracker.h>
 #include <UI/Gizmo/EditorGrid.h>
 #include <UI/Gizmo/GizmoSnapper.h>
 
@@ -30,6 +31,9 @@ namespace Editor
 
 			// Toggled with X; holding Ctrl during a drag inverts it
 			GizmoSnapper m_snapper;
+
+			// Follows ImGuizmo::IsUsing(), so each drag's commands share an interaction
+			InteractionTracker m_drag;
 		};
 
 		// Screen-space rect of a light or camera icon drawn this frame, so objects without a mesh can be picked

@@ -5,6 +5,8 @@
 #include <UI/Framework/EditorContext.h>
 #include <UI/Framework/PanelRegistry.h>
 
+#include <Commands/TransformCommands.h>
+
 #include <Game/World/GameObject/GameObject.h>
 #include <Game/World/GameObjectComponents/CameraComponent.h>
 #include <Game/World/GameObjectComponents/DirectionalLightComponent.h>
@@ -54,6 +56,7 @@ namespace Editor
 
 	void SceneViewPanel::OnSceneReset()
 	{
+		m_gizmoState.m_drag.Reset();
 		m_iconHits.clear();
 		m_isSelecting = false;
 	}
@@ -172,22 +175,27 @@ namespace Editor
 
 					ImGuizmo::Manipulate(view.GetValuePtr(), projection.GetValuePtr(), (ImGuizmo::OPERATION)m_gizmoState.m_currentOpMode, (ImGuizmo::MODE)m_gizmoState.m_transformationSpace, matrix, nullptr, snap);
 
-					const bool isUsing = ImGuizmo::IsUsing();
+					InteractionTracker& drag = m_gizmoState.m_drag;
+					drag.Update(ImGuizmo::IsUsing());
+
 					Vector3D newTranslation, newRotation, newScale;
-					if (isUsing)
+					if (drag.IsActive())
 					{
 						ImGuizmo::DecomposeMatrixToComponents(matrix, newTranslation.GetValuePtr(), newRotation.GetValuePtr(), newScale.GetValuePtr());
 					}
 
-					// Called every frame, so it sees drags start and end
-					snapper.Apply(isUsing, transformComponent->GetPosition(), transformComponent->GetRotation(), newTranslation, newRotation);
+					snapper.Apply(drag, transformComponent->GetPosition(), transformComponent->GetRotation(), newTranslation, newRotation);
 
-					if (isUsing)
+					// Applied once every panel has drawn; the gizmo picks the new transform up next frame
+					if (drag.IsActive())
 					{
-						transformComponent->SetPosition(newTranslation);
-						transformComponent->SetRotation(newRotation);
-						transformComponent->SetScale(newScale);
+						context.GetCommands().Push<SetTransformCommand>(selectedGameObject, newTranslation, newRotation, newScale, drag.GetID());
 					}
+				}
+				else
+				{
+					// Nothing to manipulate, so any drag in progress has ended
+					m_gizmoState.m_drag.Update(false);
 				}
 			}
 
