@@ -79,14 +79,19 @@ namespace Editor
 
 		m_context.GetPanels().CreatePanels(m_context);
 
-		m_sceneLoaded = m_context.GetEvents().Subscribe<SceneLoadedEvent>([this](const SceneLoadedEvent& event)
+		EditorEvents& events = m_context.GetEvents();
+		m_titleSubscriptions.push_back(events.Subscribe<SceneLoadedEvent>([this](const SceneLoadedEvent& event)
 			{
-				// A new scene keeps the previous title until it's saved
-				if (event.Document.HasFilePath())
-				{
-					AddFilePathToWindowTitle(event.Document.GetFilePath().GetRelativePath());
-				}
-			});
+				RefreshWindowTitle(event.Document);
+			}));
+		m_titleSubscriptions.push_back(events.Subscribe<SceneSavedEvent>([this](const SceneSavedEvent& event)
+			{
+				RefreshWindowTitle(event.Document);
+			}));
+		m_titleSubscriptions.push_back(events.Subscribe<SceneModifiedStateChangedEvent>([this](const SceneModifiedStateChangedEvent& event)
+			{
+				RefreshWindowTitle(event.Document);
+			}));
 	}
 
 	void EditorApp::Start()
@@ -273,11 +278,15 @@ namespace Editor
 		style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
 	}
 
-	void EditorApp::AddFilePathToWindowTitle(const std::string& path)
+	void EditorApp::RefreshWindowTitle(const SceneDocument& document)
 	{
 		std::ostringstream ss;
 		ss << "RZEStudio - ";
-		ss << path;
+		ss << (document.HasFilePath() ? document.GetFilePath().GetRelativePath() : std::string("Untitled"));
+		if (document.IsModified())
+		{
+			ss << "*";
+		}
 		GetWindow()->SetTitle(ss.str());
 	}
 

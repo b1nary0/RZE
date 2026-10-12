@@ -19,6 +19,10 @@ namespace Editor
 {
 	SceneDocument::SceneDocument(EditorContext& context)
 		: m_context(context)
+		, m_sceneModified(context.GetEvents().Subscribe<SceneModifiedEvent>([this](const SceneModifiedEvent&)
+			{
+				SetModified(true);
+			}))
 	{
 	}
 
@@ -46,6 +50,9 @@ namespace Editor
 			{
 				// Created last, so it ends up as the active camera over any camera in the scene
 				CreateEditorCamera();
+
+				// Whatever's in now is what the file has (or, after a failed load, there's nothing worth saving)
+				SetModified(false);
 
 				if (!operation.Succeeded())
 				{
@@ -93,8 +100,18 @@ namespace Editor
 
 	void SceneDocument::OnSaved()
 	{
+		SetModified(false);
 		m_context.GetGameBuilder().CopyAssets();
 		m_context.GetEvents().Publish(SceneSavedEvent{ *this });
+	}
+
+	void SceneDocument::SetModified(bool isModified)
+	{
+		if (m_isModified != isModified)
+		{
+			m_isModified = isModified;
+			m_context.GetEvents().Publish(SceneModifiedStateChangedEvent{ *this });
+		}
 	}
 
 	void SceneDocument::CreateEditorCamera()

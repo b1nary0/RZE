@@ -19,6 +19,8 @@ namespace Editor
 	struct SceneSavedEvent { const SceneDocument& Document; };
 	// A command flush ran at least one command, so the scene may differ from its file
 	struct SceneModifiedEvent {};
+	// SceneDocument::IsModified changed
+	struct SceneModifiedStateChangedEvent { const SceneDocument& Document; };
 	// Once per EditorSelection call that changed it
 	struct SelectionChangedEvent { const EditorSelection& Selection; };
 

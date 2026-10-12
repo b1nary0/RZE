@@ -1,5 +1,7 @@
 #include <Commands/CommandQueue.h>
 
+#include <UI/Framework/EditorContext.h>
+
 #include <EngineCore/Threading/MainThreadDispatcher.h>
 
 #include <Utils/DebugUtils/Debug.h>
@@ -26,7 +28,14 @@ namespace Editor
 			command->Execute(context);
 		}
 
+		const bool hasRun = !m_pending.empty();
 		m_pending.clear();
+
+		// Every command changes the scene; editor state like the selection isn't changed through commands
+		if (hasRun)
+		{
+			context.GetEvents().Publish(SceneModifiedEvent{});
+		}
 	}
 
 	void CommandQueue::Clear()

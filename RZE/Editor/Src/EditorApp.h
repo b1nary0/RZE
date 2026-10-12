@@ -35,7 +35,8 @@ namespace Editor
 		void LoadFonts();
 		void StyleSetup();
 
-		void AddFilePathToWindowTitle(const std::string& path);
+		// "RZEStudio - <scene file>", with a * while it has unsaved changes
+		void RefreshWindowTitle(const SceneDocument& document);
 
 	private:
 		EditorContext m_context;
@@ -47,7 +48,7 @@ namespace Editor
 
 		Filepath m_imguiConfigFilepath;
 
-		// Keeps the window title on the scene's file
-		EventSubscription m_sceneLoaded;
+		// Keep the window title on the scene's file and modified state
+		std::vector<EventSubscription> m_titleSubscriptions;
 	};
 }

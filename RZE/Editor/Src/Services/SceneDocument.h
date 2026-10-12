@@ -1,5 +1,7 @@
 #pragma once
 
+#include <UI/Framework/EditorEvents.h>
+
 #include <Utils/Platform/Filepath.h>
 
 #include <memory>
@@ -10,8 +12,9 @@ namespace Editor
 {
 	class EditorContext;
 
-	// The scene being edited: creating, loading and saving it. Owned by EditorContext. Publishes SceneLoadedEvent
-	// each time a load (or New) succeeds, and SceneSavedEvent after each save.
+	// The scene being edited: creating, loading and saving it, and whether it has unsaved changes. Owned by
+	// EditorContext. Publishes SceneLoadedEvent each time a load (or New) succeeds, SceneSavedEvent after each save,
+	// and SceneModifiedStateChangedEvent when IsModified changes.
 	class SceneDocument
 	{
 	public:
@@ -37,8 +40,12 @@ namespace Editor
 		void Save();
 		void SaveAs(const Filepath& filepath);
 
+		// Changed since it was loaded or last saved (SceneModifiedEvent)
+		bool IsModified() const { return m_isModified; }
+
 	private:
 		void CreateEditorCamera();
+		void SetModified(bool isModified);
 		// Copies the saved scene to where the game reads it
 		void OnSaved();
 
@@ -49,5 +56,8 @@ namespace Editor
 		// A new scene is loaded from the default scene's file and keeps its path, so the scene's path alone can't
 		// tell whether saving would overwrite the default scene
 		bool m_isUntitled = true;
+		bool m_isModified = false;
+
+		EventSubscription m_sceneModified;
 	};
 }

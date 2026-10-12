@@ -28,7 +28,8 @@ namespace Editor
 
 		void Push(std::unique_ptr<EditorCommand> command);
 
-		// Executes every pending command in the order they were pushed, including any pushed during the flush
+		// Executes every pending command in the order they were pushed, including any pushed during the flush, then
+		// publishes SceneModifiedEvent if any ran
 		void Flush(EditorContext& context);
 
 		// Drops pending commands without running them, e.g. when they'd target a scene that's being unloaded
