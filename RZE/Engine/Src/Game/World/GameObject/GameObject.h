@@ -103,8 +103,10 @@ private:
 	bool GrowHierarchyBounds(Vector3D& inOutMin, Vector3D& inOutMax);
 
 public:
+	// Writes this object's entry in the scene format (SceneFormat), then each child's
 	void Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) const;
-	void Load(rapidjson::Value& data);
+	// Adds the components in a scene-format entry; GameScene handles its identity and parent
+	void LoadComponents(const rapidjson::Value& entry);
 	
 private:
 	GameObjectID m_id;

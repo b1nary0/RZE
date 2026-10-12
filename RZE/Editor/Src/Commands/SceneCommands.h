@@ -75,9 +75,9 @@ namespace Editor
 		GameObjectPtr m_parent;
 	};
 
-	// Adds the GameObjects in sceneData (a scene file's "gameobjects" layout, from GameObjectClipboard) as new objects
-	// and selects the top-level ones. Each gets a unique name ("Tank (1)"), its children's parent references follow
-	// the renames, and a top-level object keeps its parent if that's still in the scene.
+	// Adds the GameObjects in sceneData (the scene format, from GameObjectClipboard) as new objects and selects the
+	// top-level ones. Each gets a unique name ("Tank (1)") and a new GUID if its copied one is taken; copied children
+	// stay under their pasted parents, and a top-level object keeps its parent if that's still in the scene.
 	class PasteGameObjectsCommand : public EditorCommand
 	{
 	public:

@@ -1,6 +1,7 @@
 #include <StdAfx.h>
 #include <Game/GameScene.h>
 
+#include <Game/SceneFormat.h>
 #include <Game/World/GameObject/GameObject.h>
 #include <Game/World/GameObjectComponents/RenderComponent.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
@@ -36,26 +37,18 @@ const Filepath& GameScene::GetDefaultScenePath()
 
 void GameScene::Serialize(const Filepath& filePath)
 {
+	std::vector<GameObjectPtr> roots;
+	for (auto& gameObject : m_objectRegistry)
+	{
+		if (gameObject->IsInScene() && gameObject->IncludeInSave() && gameObject->IsRoot())
+		{
+			roots.push_back(GameObjectPtr(gameObject.get()));
+		}
+	}
+
 	rapidjson::StringBuffer buf;
 	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buf);
-
-	writer.StartObject();
-	{
-		writer.String("gameobjects");
-		writer.StartObject();
-		{
-			for (auto& gameObject : m_objectRegistry)
-			{
-				if (gameObject->IncludeInSave() && gameObject->IsRoot())
-				{
-					gameObject->Save(writer);
-				}
-			}
-		}
-
-		writer.EndObject();
-	}
-	writer.EndObject();
+	SceneFormat::Write(writer, roots);
 	
 	File sceneFile;
 	if (filePath.IsValid())
@@ -86,17 +79,10 @@ void GameScene::Deserialize(const Filepath& filePath)
 		return;
 	}
 
-	rapidjson::Value::MemberIterator root = sceneDoc.FindMember("gameobjects");
-	if (root != sceneDoc.MemberEnd())
+	GameObjectLoader loader(*this);
+	for (const rapidjson::Value& entry : SceneFormat::GetObjects(sceneDoc).GetArray())
 	{
-		//
-		// Entity
-		//
-		rapidjson::Value& rootVal = root->value;
-		for (auto object = rootVal.MemberBegin(); object != rootVal.MemberEnd(); ++object)
-		{
-			DeserializeGameObject(object->name.GetString(), object->value);
-		}
+		loader.Load(entry);
 	}
 }
 
@@ -125,23 +111,29 @@ bool GameScene::ParseSceneFile(const Filepath& filePath, rapidjson::Document& ou
 		return false;
 	}
 
-	rapidjson::Value::ConstMemberIterator root = outDocument.FindMember("gameobjects");
-	if (root != outDocument.MemberEnd() && !root->value.IsObject())
+	std::string formatError;
+	if (!SceneFormat::Upgrade(outDocument, formatError))
 	{
-		outError = "Scene file [" + filePath.GetRelativePath() + "] has a malformed \"gameobjects\" entry.";
+		outError = "Scene file [" + filePath.GetRelativePath() + "] can't be read: " + formatError + ".";
 		return false;
 	}
 
 	return true;
 }
 
-void GameScene::DeserializeGameObject(const char* name, rapidjson::Value& data)
+GameObjectPtr GameScene::DeserializeGameObject(const rapidjson::Value& entry, GameObjectPtr parent)
 {
-	std::unique_ptr<GameObject> gameObject = CreateGameObjectNoComponents(ChooseGUID(data));
-	gameObject->SetName(name);
-	// ComponentBegin
-	gameObject->Load(data);
+	std::unique_ptr<GameObject> gameObject = CreateGameObjectNoComponents(ChooseGUID(entry));
+	gameObject->SetName(entry["name"].GetString());
+	gameObject->LoadComponents(entry);
+	if (parent != nullptr)
+	{
+		gameObject->AttachTo(parent);
+	}
+
+	GameObjectPtr created(gameObject.get());
 	AddGameObject(std::move(gameObject));
+	return created;
 }
 
 std::unique_ptr<GameObject> GameScene::CreateGameObjectNoComponents(ObjectGUID guid)

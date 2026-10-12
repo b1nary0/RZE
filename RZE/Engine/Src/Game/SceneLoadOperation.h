@@ -12,6 +12,7 @@
 
 #include <RapidJSON/fwd.h>
 
+class GameObjectLoader;
 class GameScene;
 
 // Loads a scene asynchronously into the given (active) scene, replacing its contents:
@@ -66,6 +67,8 @@ private:
 
 	AsyncResourceBatch m_resourceBatch;
 	U32 m_nextObjectIndex = 0;
+	// Links parents across the batch while instantiating
+	std::unique_ptr<GameObjectLoader> m_loader;
 
 	WeightedProgress m_progress;
 	U32 m_parseStage = 0;

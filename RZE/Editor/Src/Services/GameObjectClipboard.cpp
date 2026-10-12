@@ -1,5 +1,6 @@
 #include <Services/GameObjectClipboard.h>
 
+#include <Game/SceneFormat.h>
 #include <Game/World/GameObject/GameObject.h>
 
 #include <RapidJSON/prettywriter.h>
@@ -50,15 +51,7 @@ namespace Editor
 		// The same layout as a scene file
 		rapidjson::StringBuffer buffer;
 		rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
-		writer.StartObject();
-		writer.String("gameobjects");
-		writer.StartObject();
-		for (const GameObjectPtr& root : roots)
-		{
-			root->Save(writer);
-		}
-		writer.EndObject();
-		writer.EndObject();
+		SceneFormat::Write(writer, roots);
 
 		return std::string(buffer.GetString(), buffer.GetSize());
 	}

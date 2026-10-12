@@ -1,6 +1,8 @@
 #include <StdAfx.h>
 #include <Game/SceneLoadOperation.h>
 
+#include <Game/SceneFormat.h>
+
 #include <EngineCore/Async/AsyncFrameBudget.h>
 
 #include <Game/GameScene.h>
@@ -20,25 +22,14 @@ namespace
 	{
 		outObjectCount = 0;
 
-		rapidjson::Value::MemberIterator root = document.FindMember("gameobjects");
-		if (root == document.MemberEnd())
-		{
-			return;
-		}
-
 		const GameObjectComponentRegistry::ComponentNameIDMap& componentInfo = GameObjectComponentRegistry::GetAllComponentReflectData();
 
-		for (auto object = root->value.MemberBegin(); object != root->value.MemberEnd(); ++object)
+		for (rapidjson::Value& object : SceneFormat::GetObjects(document).GetArray())
 		{
 			++outObjectCount;
 
-			if (!object->value.IsObject())
-			{
-				continue;
-			}
-
-			rapidjson::Value::MemberIterator components = object->value.FindMember("components");
-			if (components == object->value.MemberEnd() || !components->value.IsObject())
+			rapidjson::Value::MemberIterator components = object.FindMember("components");
+			if (components == object.MemberEnd() || !components->value.IsObject())
 			{
 				continue;
 			}
@@ -172,22 +163,18 @@ void SceneLoadOperation::TickLoadingResources(AsyncFrameBudget& budget)
 
 void SceneLoadOperation::TickInstantiating(AsyncFrameBudget& budget)
 {
-	rapidjson::Value::MemberIterator root = m_document->FindMember("gameobjects");
-	if (root == m_document->MemberEnd())
+	rapidjson::Value& objects = SceneFormat::GetObjects(*m_document);
+	const U32 objectCount = objects.Size();
+
+	if (m_loader == nullptr)
 	{
-		Complete();
-		return;
+		m_loader = std::make_unique<GameObjectLoader>(m_scene);
 	}
 
-	rapidjson::Value& objects = root->value;
-	const U32 objectCount = objects.MemberCount();
-
-	// File order matters: a child's "parent" must already be in the scene when it is loaded.
+	// File order matters: a child's parent must be loaded before it
 	while (m_nextObjectIndex < objectCount && budget.TryConsume(ResourceFinalizeCost()))
 	{
-		rapidjson::Value::MemberIterator object = objects.MemberBegin() + m_nextObjectIndex;
-		m_scene.DeserializeGameObject(object->name.GetString(), object->value);
-
+		m_loader->Load(objects[m_nextObjectIndex]);
 		++m_nextObjectIndex;
 	}
 

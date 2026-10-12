@@ -6,9 +6,9 @@
 
 #include <Game/World/GameObject/GameObject.h>
 
-#include <RapidJSON/document.h>
+#include <Game/SceneFormat.h>
 
-#include <unordered_map>
+#include <RapidJSON/document.h>
 
 namespace
 {
@@ -130,60 +130,26 @@ namespace Editor
 	{
 		rapidjson::Document document;
 		document.Parse(m_sceneData.c_str());
-		if (document.HasParseError() || !document.IsObject() || !document.HasMember("gameobjects"))
+		std::string error;
+		if (document.HasParseError() || !SceneFormat::Upgrade(document, error))
 		{
 			return;
 		}
 
-		GameScene& scene = RZE().GetActiveScene();
+		// Parents are linked by the GUIDs in the copied data, so the loader keeps copied children under their
+		// pasted parents, and a copied object keeps its original parent if that's still in the scene
+		GameObjectLoader loader(RZE().GetActiveScene());
 		rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
-
-		// Copied name -> pasted name; parents are written before their children, so a child's parent is always here
-		// by the time it's pasted
-		std::unordered_map<std::string, std::string> renames;
-		std::vector<GameObjectPtr> pastedRoots;
-
-		rapidjson::Value& objects = document["gameobjects"];
-		for (auto member = objects.MemberBegin(); member != objects.MemberEnd(); ++member)
+		for (rapidjson::Value& entry : SceneFormat::GetObjects(document).GetArray())
 		{
-			const std::string copiedName = member->name.GetString();
-			const std::string pastedName = MakeUniqueName(copiedName);
-
-			rapidjson::Value& data = member->value;
-			bool isRoot = true;
-			const auto parent = data.FindMember("parent");
-			if (parent != data.MemberEnd())
-			{
-				const auto renamedParent = renames.find(parent->value.GetString());
-				if (renamedParent != renames.end())
-				{
-					// Under another pasted object
-					parent->value.SetString(renamedParent->second.c_str(), allocator);
-					isRoot = false;
-				}
-				else if (scene.FindGameObjectByName(parent->value.GetString()) == nullptr)
-				{
-					// The original parent is gone; paste at the top level
-					data.RemoveMember(parent);
-				}
-			}
-
-			scene.DeserializeGameObject(pastedName.c_str(), data);
-			renames[copiedName] = pastedName;
-
-			if (isRoot)
-			{
-				GameObjectPtr pasted = scene.FindGameObjectByName(pastedName);
-				if (pasted != nullptr)
-				{
-					pastedRoots.push_back(pasted);
-				}
-			}
+			const std::string pastedName = MakeUniqueName(entry["name"].GetString());
+			entry["name"].SetString(pastedName.c_str(), static_cast<rapidjson::SizeType>(pastedName.size()), allocator);
+			loader.Load(entry);
 		}
 
-		if (!pastedRoots.empty())
+		if (!loader.GetTopLevelObjects().empty())
 		{
-			context.GetSelection().SetSelection(pastedRoots);
+			context.GetSelection().SetSelection(loader.GetTopLevelObjects());
 		}
 	}
 

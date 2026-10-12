@@ -275,13 +275,21 @@ void GameObject::RemoveChild(GameObject* child)
 
 void GameObject::Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) const
 {
-	writer.String(GetName().c_str());
 	writer.StartObject();
 	{
 		writer.Key("id");
 		writer.String(ObjectGUIDs::ToString(m_guid).c_str());
 
-		writer.String("components");
+		writer.Key("name");
+		writer.String(GetName().c_str());
+
+		if (m_parent != nullptr)
+		{
+			writer.Key("parent");
+			writer.String(ObjectGUIDs::ToString(m_parent->GetGUID()).c_str());
+		}
+
+		writer.Key("components");
 		writer.StartObject();
 		{
 			for (auto& component : m_components)
@@ -290,48 +298,32 @@ void GameObject::Save(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) 
 			}
 		}
 		writer.EndObject();
-
-		if (m_parent != nullptr)
-		{
-			writer.Key("parent");
-			writer.String(m_parent->GetName().c_str());
-		}
 	}
 	writer.EndObject();
 
+	// After this object, so a child's parent always comes first
 	for (auto& child : m_children)
 	{
 		child->Save(writer);
 	}
 }
 
-void GameObject::Load(rapidjson::Value& data)
+void GameObject::LoadComponents(const rapidjson::Value& entry)
 {
-	const GameObjectComponentRegistry::ComponentNameIDMap& componentInfo = GameObjectComponentRegistry::GetAllComponentReflectData();
-
-	// ComponentBegin
-	for (auto member = data.MemberBegin(); member != data.MemberEnd(); ++member)
+	const auto components = entry.FindMember("components");
+	if (components == entry.MemberEnd() || !components->value.IsObject())
 	{
-		if (member->name == "parent")
-		{
-			const char* parentName = member->value.GetString();
-			GameObjectPtr parent = RZE().GetActiveScene().FindGameObjectByName(parentName);
-			AssertNotNull(parent);
+		return;
+	}
 
-			AttachTo(*parent);
-		}
-		else if (member->name == "components")
+	const GameObjectComponentRegistry::ComponentNameIDMap& componentInfo = GameObjectComponentRegistry::GetAllComponentReflectData();
+	for (auto& dataPair : componentInfo)
+	{
+		const auto componentData = components->value.FindMember(dataPair.second.c_str());
+		if (componentData != components->value.MemberEnd())
 		{
-			rapidjson::Value& compVal = member->value;
-			for (auto& dataPair : componentInfo)
-			{
-				rapidjson::Value::MemberIterator compData = compVal.FindMember(dataPair.second.c_str());
-				if (compData != compVal.MemberEnd())
-				{
-					GameObjectComponentBase* component = AddComponentByID(dataPair.first);
-					component->Deserialize(compData->value);
-				}
-			}
+			GameObjectComponentBase* component = AddComponentByID(dataPair.first);
+			component->Deserialize(componentData->value);
 		}
 	}
 }
