@@ -184,6 +184,20 @@ void CameraComponent::Deserialize(const rapidjson::Value& data)
 	m_exposureCompensation = data.HasMember("ExposureCompensation") ? data["ExposureCompensation"].GetFloat() : 0.0f;
 }
 
+void CameraComponent::DescribeProperties(PropertyBuilder<CameraComponent>& properties)
+{
+	properties.Bool("Main Camera", &CameraComponent::IsActiveCamera, &CameraComponent::SetAsActiveCamera);
+	// The ranges keep the setters' asserts (positive FOV and near cull) from firing
+	properties.Float("Field Of View", &CameraComponent::GetFOV, &CameraComponent::SetFOV)
+		.Range(1.0f, 179.0f).StepSize(0.5f).DisplayFormat("%.2f").Tip("Vertical, in degrees");
+	properties.Float("Near Cull", &CameraComponent::GetNearCull, &CameraComponent::SetNearCull)
+		.Range(0.001f, 100.0f).StepSize(0.05f).DisplayFormat("%.3f");
+	properties.Float("Far Cull", &CameraComponent::GetFarCull, &CameraComponent::SetFarCull)
+		.Range(0.01f, 100000.0f).StepSize(1.0f).DisplayFormat("%.2f");
+	properties.Float("Exposure Compensation (EV)", &CameraComponent::GetExposureCompensation, &CameraComponent::SetExposureCompensation)
+		.Range(-4.0f, 4.0f).StepSize(0.05f).DisplayFormat("%.2f").As(EPropertyWidget::Drag);
+}
+
 void CameraComponent::OnEditorInspect()
 {
 	ImGui::Checkbox("Main Camera", &m_isActiveCamera);

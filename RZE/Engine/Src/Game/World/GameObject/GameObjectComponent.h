@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Game/World/GameObject/GameObjectDefinitions.h>
+#include <Game/World/GameObject/Properties/ComponentPropertyRegistry.h>
 
 #include <Utils/Functor.h>
 
@@ -15,6 +16,7 @@
 	GameObjectComponentTypeID<GameObjectComponentBase>::GetComponentTypeID<ComponentType>();	\
 	GameObjectComponentRegistry::RegisterComponentType(ComponentType::GetID(), #ComponentType);\
 	GameObjectComponentRegistry::AddComponentFactory(ComponentType::GetID(), Functor<GameObjectComponentBase*>([]() { return new ComponentType();}));\
+	ComponentPropertyRegistry::Register<ComponentType>();\
 }
 
 class GameObject;

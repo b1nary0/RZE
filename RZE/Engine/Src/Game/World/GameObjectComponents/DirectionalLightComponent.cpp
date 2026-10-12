@@ -84,6 +84,13 @@ void DirectionalLightComponent::Deserialize(const rapidjson::Value& data)
 		data["LightColour"][2].GetFloat());
 }
 
+void DirectionalLightComponent::DescribeProperties(PropertyBuilder<DirectionalLightComponent>& properties)
+{
+	properties.Colour("Colour", &DirectionalLightComponent::GetLightColour, &DirectionalLightComponent::SetLightColour);
+	properties.Float("Strength", &DirectionalLightComponent::GetLightStrength, &DirectionalLightComponent::SetLightStrength)
+		.Range(0.0f, 100.0f).StepSize(0.05f).DisplayFormat("%.2f");
+}
+
 void DirectionalLightComponent::OnEditorInspect()
 {
 	float* colorValues = m_lightColour.GetValuePtr();

@@ -24,6 +24,8 @@ public:
 	void Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override;
 	void Deserialize(const rapidjson::Value& data) override;
 
+	static void DescribeProperties(PropertyBuilder<CameraComponent>& properties);
+
 	void OnEditorInspect() override;
 
 public:

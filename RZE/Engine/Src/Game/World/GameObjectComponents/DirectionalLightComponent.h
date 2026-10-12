@@ -19,7 +19,17 @@ public:
 	void Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override;
 	void Deserialize(const rapidjson::Value& data) override;
 
+	static void DescribeProperties(PropertyBuilder<DirectionalLightComponent>& properties);
+
 	void OnEditorInspect() override;
+
+public:
+	// RGBA, each in [0, 1]; the light picks it up on its next Update
+	const Vector4D& GetLightColour() const { return m_lightColour; }
+	void SetLightColour(const Vector4D& colour) { m_lightColour = colour; }
+
+	float GetLightStrength() const { return m_lightStrength; }
+	void SetLightStrength(float strength) { m_lightStrength = strength; }
 
 private:
 	LightObjectPtr m_lightObject;

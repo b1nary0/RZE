@@ -54,6 +54,13 @@ Vector3D& TransformComponent::GetScale()
 	return m_scale;
 }
 
+void TransformComponent::DescribeProperties(PropertyBuilder<TransformComponent>& properties)
+{
+	properties.Vector3("Position", &TransformComponent::GetPosition, &TransformComponent::SetPosition).Tip("Metres, relative to the parent");
+	properties.Vector3("Rotation", &TransformComponent::GetRotation, &TransformComponent::SetRotation).Tip("Euler angles in degrees");
+	properties.Vector3("Scale", &TransformComponent::GetScale, &TransformComponent::SetScale);
+}
+
 void TransformComponent::OnEditorInspect()
 {
 	float* positionValues = m_position.GetValuePtr();

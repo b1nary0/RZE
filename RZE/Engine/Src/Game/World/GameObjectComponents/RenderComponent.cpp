@@ -44,9 +44,60 @@ namespace
 	}
 }
 
-void RenderComponent::SetMeshResource(const ResourceHandle& resource)
+void RenderComponent::DescribeProperties(PropertyBuilder<RenderComponent>& properties)
 {
-	m_resource = resource;
+	properties.AssetPath("Mesh", &RenderComponent::GetMeshPath, &RenderComponent::LoadMesh)
+		.Asset("RZE MeshAsset", k_meshAssetDirectoryPath.GetRelativePath().c_str(), "*.meshasset");
+	properties.Vector3("Size", &RenderComponent::GetMeshSize)
+		.DisplayFormat("%.2f m").Tip("Along the object's own axes, including its scale");
+	properties.Bool("Draw Mesh Bounds", &RenderComponent::IsDrawingMeshBounds, &RenderComponent::SetDrawMeshBounds);
+	properties.Bool("Draw Sub-Mesh Bounds", &RenderComponent::IsDrawingSubMeshBounds, &RenderComponent::SetDrawSubMeshBounds);
+}
+
+const Filepath& RenderComponent::GetMeshPath() const
+{
+	static const Filepath s_noMesh;
+	return m_resource.IsValid() ? m_resource.GetResourcePath() : s_noMesh;
+}
+
+void RenderComponent::LoadMesh(const Filepath& path)
+{
+	if (path.GetRelativePath() == GetMeshPath().GetRelativePath())
+	{
+		return;
+	}
+
+	// The old render object goes before the old mesh is released, since it was built from it
+	if (m_renderObject != nullptr)
+	{
+		RZE().GetRenderEngine().DestroyRenderObject(m_renderObject);
+	}
+
+	// Assigning releases the old mesh
+	m_resource = path.IsValid() ? RZE().GetResourceHandler().LoadResource<StaticMeshResource>(path) : ResourceHandle::EmptyHandle();
+
+	// A component not yet in a scene creates its render object in OnAddToScene
+	if (m_owner != nullptr && m_owner->IsInScene())
+	{
+		CreateRenderObject();
+	}
+}
+
+Vector3D RenderComponent::GetMeshSize() const
+{
+	if (!m_resource.IsValid() || m_owner == nullptr)
+	{
+		return Vector3D();
+	}
+
+	const StaticMeshResource* const modelData = RZE().GetResourceHandler().GetResource<StaticMeshResource>(m_resource);
+	if (modelData == nullptr)
+	{
+		return Vector3D();
+	}
+
+	const StaticMeshInstance& staticMesh = modelData->GetStaticMesh();
+	return (staticMesh.GetBoundsMax() - staticMesh.GetBoundsMin()) * m_owner->GetTransformComponent()->GetScale();
 }
 
 void RenderComponent::SetDrawMeshBounds(bool draw)
@@ -166,9 +217,8 @@ void RenderComponent::GatherResourceDependencies(const rapidjson::Value& compone
 
 void RenderComponent::Deserialize(const rapidjson::Value& data)
 {
-	Filepath resourcePath = Filepath(data["ResourcePath"].GetString());
-
-	m_resource = RZE().GetResourceHandler().LoadResource<StaticMeshResource>(resourcePath);
+	// Preloaded by GatherResourceDependencies during an async scene load, so this is normally a cache hit
+	LoadMesh(Filepath(data["ResourcePath"].GetString()));
 }
 
 void RenderComponent::OnEditorInspect()
@@ -183,8 +233,7 @@ void RenderComponent::OnEditorInspect()
 
 		// Along the object's own axes, so a mesh imported in the wrong unit can be scaled to its real size here
 		{
-			const StaticMeshInstance& staticMesh = modelData->GetStaticMesh();
-			const Vector3D size = (staticMesh.GetBoundsMax() - staticMesh.GetBoundsMin()) * GetOwner()->GetTransformComponent()->GetScale();
+			const Vector3D size = GetMeshSize();
 			ImGui::Text("Size: %.2f x %.2f x %.2f m", size.X(), size.Y(), size.Z());
 		}
 
@@ -251,23 +300,9 @@ void RenderComponent::OnEditorInspect()
 		};
 
 		std::string chosenPath;
-		bool openSuccess = RZE().ShowOpenFilePrompt(openFileParams, chosenPath);
-		if (openSuccess)
+		if (RZE().ShowOpenFilePrompt(openFileParams, chosenPath))
 		{
-			Filepath path = Filepath::FromAbsolutePathStr(chosenPath);
-			m_resource = resourceHandler.LoadResource<StaticMeshResource>(path);
-
-			if (m_renderObject != nullptr)
-			{
-				RZE().GetRenderEngine().DestroyRenderObject(m_renderObject);
-			}
-			else
-			{
-				// @TODO meaningful error feedback - no crashy gamey tho
-				// this means something went wrong during load of the resource
-			}
-
-			CreateRenderObject();
+			LoadMesh(Filepath::FromAbsolutePathStr(chosenPath));
 		}
 	}
 }
