@@ -3,6 +3,7 @@
 #include <EngineApp.h>
 
 #include <UI/MainMenuBar.h>
+#include <UI/StatusBar.h>
 #include <UI/Modals/AsyncOperationModal.h>
 #include <UI/Framework/EditorContext.h>
 
@@ -44,6 +45,7 @@ namespace Editor
 		EditorContext m_context;
 
 		MainMenuBar m_mainMenuBar;
+		StatusBar m_statusBar;
 		AsyncOperationModal m_asyncOperationModal;
 
 		std::unordered_map<std::string, ImFont*> m_fontMapping;

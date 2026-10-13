@@ -131,12 +131,14 @@ namespace Editor
 		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
 		window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
-		Vector2D clientSize = GetWindow()->GetClientSize();
-
 		PushFontAtLoadedSize(m_fontMapping.at("din_bold"));
 		m_mainMenuBar.Draw(m_context);
-		ImGui::SetNextWindowPos(ImVec2(0.f, 24.0f));
-		ImGui::SetNextWindowSize(ImVec2(clientSize.X(), clientSize.Y() - 24.0f));
+		m_statusBar.Draw(m_context);
+
+		// What the menu bar and status bar leave of the window
+		const ImGuiViewport* const viewport = ImGui::GetMainViewport();
+		ImGui::SetNextWindowPos(viewport->WorkPos);
+		ImGui::SetNextWindowSize(viewport->WorkSize);
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
 		bool show = true;

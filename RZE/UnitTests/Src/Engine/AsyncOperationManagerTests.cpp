@@ -4,37 +4,14 @@
 #include <EngineCore/Async/AsyncOperation.h>
 #include <EngineCore/Async/AsyncOperationManager.h>
 
-#include <functional>
+#include <TestOperation.h>
+
 #include <memory>
 #include <string>
 #include <vector>
 
 namespace
 {
-	// Runs onTick each frame until completed from outside
-	class TestOperation final : public AsyncOperation
-	{
-	public:
-		TestOperation(const std::string& name, U32 flags, std::function<void(AsyncFrameBudget&)> onTick = nullptr)
-			: AsyncOperation(name, flags)
-			, m_onTick(std::move(onTick)) {}
-
-		void Finish() { Complete(); }
-
-	protected:
-		void OnStart() override {}
-		void OnTick(AsyncFrameBudget& budget) override
-		{
-			if (m_onTick)
-			{
-				m_onTick(budget);
-			}
-		}
-
-	private:
-		std::function<void(AsyncFrameBudget&)> m_onTick;
-	};
-
 	std::vector<std::string> GetNames(const std::vector<std::shared_ptr<AsyncOperation>>& operations)
 	{
 		std::vector<std::string> names;
@@ -61,7 +38,7 @@ TEST_CASE("Only running operations that aren't hidden are visible, oldest first"
 
 	CHECK(GetNames(manager.GetVisibleOperations()) == std::vector<std::string>{ "Shown", "Background" });
 
-	shown->Finish();
+	shown->Succeed();
 	manager.Tick();
 	CHECK(GetNames(manager.GetVisibleOperations()) == std::vector<std::string>{ "Background" });
 

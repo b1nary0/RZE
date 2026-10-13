@@ -39,6 +39,28 @@ std::string AsyncOperation::GetErrorText() const
 	return m_errorText;
 }
 
+std::string AsyncOperation::GetWarningText() const
+{
+	std::lock_guard<std::mutex> lock(m_textMutex);
+	return m_warningText;
+}
+
+bool AsyncOperation::HasWarnings() const
+{
+	std::lock_guard<std::mutex> lock(m_textMutex);
+	return !m_warningText.empty();
+}
+
+std::vector<AsyncOperation::LoggedStep> AsyncOperation::GetLoggedSteps(size_t first) const
+{
+	std::lock_guard<std::mutex> lock(m_textMutex);
+	if (first >= m_loggedSteps.size())
+	{
+		return {};
+	}
+	return std::vector<LoggedStep>(m_loggedSteps.begin() + first, m_loggedSteps.end());
+}
+
 void AsyncOperation::SetProgress(float progress)
 {
 	const float clamped = std::min(1.0f, std::max(0.0f, progress));
@@ -59,6 +81,23 @@ void AsyncOperation::SetErrorText(const std::string& text)
 {
 	std::lock_guard<std::mutex> lock(m_textMutex);
 	m_errorText = text;
+}
+
+void AsyncOperation::AddWarning(const std::string& text)
+{
+	std::lock_guard<std::mutex> lock(m_textMutex);
+	if (!m_warningText.empty())
+	{
+		m_warningText += '\n';
+	}
+	m_warningText += text;
+	m_loggedSteps.push_back({ std::chrono::system_clock::now(), text, true });
+}
+
+void AsyncOperation::LogStep(const std::string& text)
+{
+	std::lock_guard<std::mutex> lock(m_textMutex);
+	m_loggedSteps.push_back({ std::chrono::system_clock::now(), text, false });
 }
 
 void AsyncOperation::RequestCancel()

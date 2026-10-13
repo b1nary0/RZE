@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <string>
 #include <vector>
 
@@ -74,6 +75,19 @@ public:
 	float GetProgress() const { return m_progress.load(std::memory_order_relaxed); }
 	std::string GetStatusText() const;
 	std::string GetErrorText() const;
+	// Every warning added, a line each; empty if there are none
+	std::string GetWarningText() const;
+	bool HasWarnings() const;
+
+	// One step in the operation's history (LogStep, AddWarning)
+	struct LoggedStep
+	{
+		std::chrono::system_clock::time_point Time;
+		std::string Text;
+		bool IsWarning = false;
+	};
+	// The steps logged from first on, oldest first
+	std::vector<LoggedStep> GetLoggedSteps(size_t first = 0) const;
 
 	const Threading::CancellationToken& GetCancellationToken() const { return m_cancellationToken; }
 	bool IsCancellationRequested() const { return m_cancellationToken.IsCancellationRequested(); }
@@ -82,6 +96,11 @@ public:
 	void SetProgress(float progress);
 	void SetStatusText(const std::string& text);
 	void SetErrorText(const std::string& text);
+	// Something worth knowing that didn't stop the operation, e.g. one item of many that couldn't be done. It can still
+	// succeed.
+	void AddWarning(const std::string& text);
+	// A step worth keeping in the operation's history, e.g. one item of a batch done. Warnings are logged too.
+	void LogStep(const std::string& text);
 
 	void RequestCancel();
 
@@ -127,6 +146,8 @@ private:
 	mutable std::mutex m_textMutex;
 	std::string m_statusText;
 	std::string m_errorText;
+	std::string m_warningText;
+	std::vector<LoggedStep> m_loggedSteps;
 
 	Threading::CancellationToken m_cancellationToken;
 
