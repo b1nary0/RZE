@@ -14,6 +14,7 @@
 #include <Game/World/GameObject/GameObject.h>
 #include <Game/World/GameObjectComponents/RenderComponent.h>
 
+#include <Graphics/RenderEngine.h>
 #include <Graphics/ViewCapture.h>
 
 #include <DebugUtils/DebugServices.h>
@@ -113,7 +114,7 @@ namespace
 			}
 
 			const RenderCamera camera = Editor::MeshFraming::FrameBounds(boundsMin, boundsMax, k_meshFieldOfView, m_capture.GetSize());
-			std::shared_ptr<AsyncOperation> capture = m_capture.Capture(camera, 0.0f, Editor::Thumbnails::Meshes().GetPathFor(item));
+			std::shared_ptr<AsyncOperation> capture = m_capture.Capture(RZE().GetRenderEngine().GetMainScene(), camera, 0.0f, Editor::Thumbnails::Meshes().GetPathFor(item));
 			capture->SetOnCompleted(AsyncOperation::CompletionCallback([onDone](const AsyncOperation& operation)
 				{
 					onDone(operation.Succeeded());

@@ -359,7 +359,7 @@ void RZE_Engine::BeginShutDown()
 	m_application->ShutDown();
 
 	//@todo this is a quick fix for the cyclical dependency between Rendering::MemArena and ResourceHandler releasing leftover reasources.
-	m_renderEngine->ClearObjects();
+	m_renderEngine->GetMainScene().ClearObjects();
 	m_renderEngine->ReleaseRenderStages();
 	m_renderEngine->Shutdown();
 

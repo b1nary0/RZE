@@ -48,18 +48,8 @@ void ShadowRenderStage::Initialize()
 	AssertExpr(m_casterShaderResource.IsValid());
 	m_casterShader = RZE().GetResourceHandler().GetResource<PixelShader>(m_casterShaderResource);
 
-	Rendering::GFXTextureBufferParams shadowMapParams = { 0 };
-	shadowMapParams.bIsDepthTexture = true;
-	shadowMapParams.bIsShaderResource = true;
-	shadowMapParams.Width = k_shadowMapSize;
-	shadowMapParams.Height = k_shadowMapSize;
-	shadowMapParams.MipLevels = 1;
-	shadowMapParams.SampleCount = 1;
-	m_shadowMap = Rendering::Renderer::CreateTextureBuffer2D(nullptr, shadowMapParams);
-
 	// Separate from the vertex shader's own camera buffer so the forward pass's camera isn't overwritten
 	m_lightCameraBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(RenderCamera), 128, 1);
-	m_shadowBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(ShadowBufferLayout), 16, 1);
 }
 
 void ShadowRenderStage::Setup(RenderStageBuilder& builder)
@@ -71,32 +61,51 @@ void ShadowRenderStage::Render(RenderContext& context)
 {
 	OPTICK_EVENT();
 
-	// The map depends only on the scene and the light, not on the view, so it's only re-rendered when
-	// SceneData::revision says one of them changed. That also skips it for every view after the first in a frame.
-	// Known gap: changing a material's opacity map at runtime doesn't change the revision, so the map
+	ShadowMapState& state = context.ScenePersistent().GetOrCreate<ShadowMapState>(&ShadowRenderStage::CreateShadowMapState);
+
+	// The map depends only on the scene and the light, not on the view, so it's only re-rendered when the
+	// scene's revision says one of them changed. That also skips it for every view of the scene after the first
+	// in a frame. Known gap: changing a material's opacity map at runtime doesn't change the revision, so the map
 	// picks that up at the next scene change.
-	if (!m_hasRenderedMap || m_renderedRevision != context.Scene.revision)
+	const RenderScene& scene = context.Scene;
+	if (!state.HasRenderedMap || state.RenderedRevision != scene.GetRevision())
 	{
-		RenderShadowMap(context.Scene);
-		m_renderedRevision = context.Scene.revision;
-		m_hasRenderedMap = true;
+		RenderShadowMap(scene, state);
+		state.RenderedRevision = scene.GetRevision();
+		state.HasRenderedMap = true;
 	}
 
 	// Published even without a light: HasShadows = 0 tells the sampling shaders to skip the lookup
 	ShadowMapData shadowMapData;
-	shadowMapData.ShadowMap = m_shadowMap;
-	shadowMapData.ShadowParams = m_shadowBuffer;
+	shadowMapData.ShadowMap = state.ShadowMap;
+	shadowMapData.ShadowParams = state.ShadowBuffer;
 	m_shadowMapOutput.Publish(context, shadowMapData);
 }
 
-void ShadowRenderStage::RenderShadowMap(const RenderEngine::SceneData& renderData)
+ShadowRenderStage::ShadowMapState ShadowRenderStage::CreateShadowMapState()
+{
+	Rendering::GFXTextureBufferParams shadowMapParams = { 0 };
+	shadowMapParams.bIsDepthTexture = true;
+	shadowMapParams.bIsShaderResource = true;
+	shadowMapParams.Width = k_shadowMapSize;
+	shadowMapParams.Height = k_shadowMapSize;
+	shadowMapParams.MipLevels = 1;
+	shadowMapParams.SampleCount = 1;
+
+	ShadowMapState state;
+	state.ShadowMap = Rendering::Renderer::CreateTextureBuffer2D(nullptr, shadowMapParams);
+	state.ShadowBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(ShadowBufferLayout), 16, 1);
+	return state;
+}
+
+void ShadowRenderStage::RenderShadowMap(const RenderScene& scene, const ShadowMapState& state)
 {
 	OPTICK_EVENT();
 
 	Rendering::Renderer::Begin("ShadowRenderStage");
 
-	Rendering::Renderer::SetDepthTarget(m_shadowMap);
-	Rendering::Renderer::ClearDepthStencilBuffer(m_shadowMap);
+	Rendering::Renderer::SetDepthTarget(state.ShadowMap);
+	Rendering::Renderer::ClearDepthStencilBuffer(state.ShadowMap);
 
 	ShadowBufferLayout shadowData;
 	shadowData.TexelSize = 1.0f / static_cast<float>(k_shadowMapSize);
@@ -107,8 +116,8 @@ void ShadowRenderStage::RenderShadowMap(const RenderEngine::SceneData& renderDat
 	Matrix4x4 lightViewProjection;
 	float worldTexelSize = 0.0f;
 
-	if (!renderData.lightObjects.empty()
-		&& CalculateLightViewProjection(renderData, renderData.lightObjects[0]->GetDirection(), lightViewProjection, worldTexelSize))
+	if (!scene.GetLightObjects().empty()
+		&& CalculateLightViewProjection(scene, scene.GetLightObjects()[0]->GetDirection(), lightViewProjection, worldTexelSize))
 	{
 		// Only ClipSpace is used by the caster shaders
 		RenderCamera lightCamera;
@@ -134,7 +143,7 @@ void ShadowRenderStage::RenderShadowMap(const RenderEngine::SceneData& renderDat
 		// Bound once; only its contents change per object
 		Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetWorldMatrixBuffer(), 1);
 
-		for (const auto& renderObject : renderData.renderObjects)
+		for (const auto& renderObject : scene.GetRenderObjects())
 		{
 			// See ForwardRenderStage: uploads the whole MatrixMem (transform + inverse)
 			Rendering::Renderer::UploadDataToBuffer<Matrix4x4>(m_vertexShader->GetWorldMatrixBuffer(), &renderObject->GetTransform());
@@ -160,19 +169,19 @@ void ShadowRenderStage::RenderShadowMap(const RenderEngine::SceneData& renderDat
 		}
 	}
 
-	Rendering::Renderer::UploadDataToBuffer<ShadowBufferLayout>(m_shadowBuffer, &shadowData);
+	Rendering::Renderer::UploadDataToBuffer<ShadowBufferLayout>(state.ShadowBuffer, &shadowData);
 
 	Rendering::Renderer::End();
 }
 
-bool ShadowRenderStage::CalculateLightViewProjection(const RenderEngine::SceneData& renderData, const Vector3D& lightDirection, Matrix4x4& outViewProjection, float& outWorldTexelSize) const
+bool ShadowRenderStage::CalculateLightViewProjection(const RenderScene& scene, const Vector3D& lightDirection, Matrix4x4& outViewProjection, float& outWorldTexelSize) const
 {
 	// Every submesh's world bounds, kept up to date by RenderObject
 	Vector3D sceneMin(FLT_MAX);
 	Vector3D sceneMax(-FLT_MAX);
 	bool hasCasters = false;
 
-	for (const auto& renderObject : renderData.renderObjects)
+	for (const auto& renderObject : scene.GetRenderObjects())
 	{
 		for (const RenderObject::SubMeshBounds& bounds : renderObject->GetSubMeshBounds())
 		{
@@ -199,7 +208,7 @@ bool ShadowRenderStage::CalculateLightViewProjection(const RenderEngine::SceneDa
 	// world-axis-aligned boxes
 	Vector3D lightMin(FLT_MAX);
 	Vector3D lightMax(-FLT_MAX);
-	for (const auto& renderObject : renderData.renderObjects)
+	for (const auto& renderObject : scene.GetRenderObjects())
 	{
 		for (const RenderObject::SubMeshBounds& bounds : renderObject->GetSubMeshBounds())
 		{

@@ -55,7 +55,7 @@ void ForwardRenderStage::Render(RenderContext& context)
 	Rendering::Renderer::Begin("ForwardRenderStage");
 
 	const RenderView& view = context.View;
-	const RenderEngine::SceneData& renderData = context.Scene;
+	const RenderScene& scene = context.Scene;
 	const ShadowMapData& shadowMapData = m_shadowMapInput.Get(context);
 
 	// Linear scene colour; PostProcessRenderStage exposes and tonemaps it into the 8-bit target.
@@ -70,7 +70,7 @@ void ForwardRenderStage::Render(RenderContext& context)
 
 	Rendering::Renderer::UploadDataToBuffer<RenderCamera>(m_vertexShader->GetCameraDataBuffer(), &view.Camera);
 
-	LightObject* const lightObject = renderData.lightObjects.empty() ? m_fallbackLight.get() : renderData.lightObjects[0].get();
+	LightObject* const lightObject = scene.GetLightObjects().empty() ? m_fallbackLight.get() : scene.GetLightObjects()[0].get();
 	Rendering::Renderer::UploadDataToBuffer<LightObject::PropertyBufferLayout>(lightObject->GetPropertyBuffer(), &lightObject->GetData());
 
 	Rendering::Renderer::SetVertexShader(m_vertexShader->GetPlatformObject());
@@ -94,7 +94,7 @@ void ForwardRenderStage::Render(RenderContext& context)
 	// Objects and submeshes entirely outside the view aren't drawn
 	const Frustum frustum(view.Camera.ClipSpace);
 
-	for (const auto& renderObject : renderData.renderObjects)
+	for (const auto& renderObject : scene.GetRenderObjects())
 	{
 		if (!frustum.Intersects(renderObject->GetBoundsMin(), renderObject->GetBoundsMax()))
 		{

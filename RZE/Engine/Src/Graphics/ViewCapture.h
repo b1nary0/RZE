@@ -9,13 +9,14 @@
 
 class AsyncOperation;
 class Filepath;
+class RenderScene;
 
 namespace Rendering
 {
 	class RenderTargetTexture;
 }
 
-// Renders the scene from a camera into an offscreen target of its own and saves it to an image file, e.g. for
+// Renders a scene from a camera into an offscreen target of its own and saves it to an image file, e.g. for
 // thumbnails or screenshots. Debug lines (the editor's grid, camera frustums, bounds boxes) aren't drawn.
 class ViewCapture
 {
@@ -30,10 +31,10 @@ public:
 public:
 	const Vector2D& GetSize() const { return m_size; }
 
-	// Renders the scene from camera, which should be set up for GetSize()'s aspect ratio, as part of the current frame,
-	// and saves it as a PNG through TextureFile::SaveToPNG. The image is read back from the commands queued now, so
+	// Renders scene from camera, which should be set up for GetSize()'s aspect ratio, as part of the current frame, and
+	// saves it as a PNG through TextureFile::SaveToPNG. The image is read back from the commands queued now, so
 	// another Capture can follow straight away.
-	std::shared_ptr<AsyncOperation> Capture(const RenderCamera& camera, float exposureCompensation, const Filepath& filepath);
+	std::shared_ptr<AsyncOperation> Capture(RenderScene& scene, const RenderCamera& camera, float exposureCompensation, const Filepath& filepath);
 
 private:
 	Vector2D m_size;

@@ -5,7 +5,7 @@ class LightObject;
 
 class LightObjectPtr
 {
-	friend class RenderEngine;
+	friend class RenderScene;
 
 public:
 	LightObjectPtr() = default;
@@ -54,7 +54,7 @@ private:
 
 class RenderObjectPtr
 {
-	friend class RenderEngine;
+	friend class RenderScene;
 
 public:
 	RenderObjectPtr() = default;

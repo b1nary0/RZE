@@ -21,10 +21,11 @@
 //	   scene, frame timing). Add new per-frame inputs to RenderContext rather than reading globals.
 //	3. Stage members are shared by every view. Keep only things that are the same for every view
 //	   (shaders, layouts, scratch resources used within one Render() call). State that must carry over
-//	   between frames for a particular view belongs in context.Persistent().
+//	   between frames for a particular view belongs in context.Persistent(), and state for a particular
+//	   scene (e.g. the shadow map) in context.ScenePersistent().
 //
-// Views currently render one after another on the main thread, so scratch GPU resources (e.g. the shadow
-// map) can be stage members.
+// Views currently render one after another on the main thread, so scratch GPU resources (e.g. the light
+// camera buffer) can be stage members.
 class IRenderStage
 {
 public:

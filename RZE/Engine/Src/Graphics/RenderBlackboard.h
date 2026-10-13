@@ -13,6 +13,7 @@
 // A RenderView has two. Its frame blackboard carries the contracts stages pass each other while rendering
 // the view; stages reach it only through their ports (RenderPorts.h), and BeginFrame() clears it before each
 // render. Its persistent blackboard (RenderContext::Persistent()) keeps values for as long as the view exists.
+// A RenderScene has a persistent one too (RenderContext::ScenePersistent()), shared by every view of the scene.
 class RenderBlackboard
 {
 public:
@@ -23,6 +24,9 @@ public:
 public:
 	// Drops every value published so far. Slots are kept, so steady state doesn't allocate.
 	void BeginFrame() { ++m_generation; }
+
+	// Destroys every value and slot, releasing what they hold
+	void Clear() { m_slots.clear(); }
 
 	template <typename T>
 	void Publish(const T& value)

@@ -16,7 +16,7 @@ ViewCapture::~ViewCapture()
 {
 }
 
-std::shared_ptr<AsyncOperation> ViewCapture::Capture(const RenderCamera& camera, float exposureCompensation, const Filepath& filepath)
+std::shared_ptr<AsyncOperation> ViewCapture::Capture(RenderScene& scene, const RenderCamera& camera, float exposureCompensation, const Filepath& filepath)
 {
 	if (m_target == nullptr)
 	{
@@ -30,7 +30,7 @@ std::shared_ptr<AsyncOperation> ViewCapture::Capture(const RenderCamera& camera,
 	m_view.ViewportSize = m_size;
 	m_view.ExposureCompensation = exposureCompensation;
 
-	RZE().GetRenderEngine().RenderSecondaryView("View Capture", m_view);
+	RZE().GetRenderEngine().RenderSecondaryView("View Capture", m_view, scene);
 
 	return TextureFile::SaveToPNG(m_target->GetTargetPlatformObject(), filepath);
 }

@@ -137,7 +137,8 @@ void CameraComponent::RenderPreview()
 	m_previewView->ViewportSize = previewSize;
 	m_previewView->ExposureCompensation = m_exposureCompensation;
 
-	RZE().GetRenderEngine().RenderSecondaryView("Camera View", *m_previewView);
+	RenderEngine& renderEngine = RZE().GetRenderEngine();
+	renderEngine.RenderSecondaryView("Camera View", *m_previewView, renderEngine.GetMainScene());
 }
 
 void CameraComponent::Initialize()

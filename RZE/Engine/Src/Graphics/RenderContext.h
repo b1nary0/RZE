@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Graphics/RenderEngine.h>
+#include <Graphics/RenderScene.h>
 #include <Graphics/RenderView.h>
 
 template <typename T> class RenderInput;
@@ -18,11 +18,12 @@ class RenderContext
 	template <typename T> friend class RenderInOut;
 
 public:
-	RenderContext(RenderView& view, const RenderEngine::SceneData& scene, float deltaTime)
+	RenderContext(RenderView& view, RenderScene& scene, float deltaTime)
 		: View(view)
 		, Scene(scene)
 		, DeltaTime(deltaTime)
-		, m_view(view) {}
+		, m_view(view)
+		, m_scene(scene) {}
 
 	RenderContext(const RenderContext&) = delete;
 	RenderContext& operator=(const RenderContext&) = delete;
@@ -30,16 +31,21 @@ public:
 public:
 	// Camera, viewport, target, exposure and kind of the view being rendered
 	const RenderView& View;
-	const RenderEngine::SceneData& Scene;
+	// The objects, lights and debug lines being drawn
+	const RenderScene& Scene;
 	// Seconds since the previous frame
 	const float DeltaTime;
 
 	// This view's state that lasts across frames. Each value should only be used by the stage that owns it.
 	RenderBlackboard& Persistent() { return m_view.m_persistent; }
+	// The scene's state that lasts across frames, shared by every view that renders it (e.g. the shadow map). Each
+	// value should only be used by the stage that owns it.
+	RenderBlackboard& ScenePersistent() { return m_scene.m_persistent; }
 
 private:
 	RenderBlackboard& FrameData() const { return m_view.m_frame; }
 
 private:
 	RenderView& m_view;
+	RenderScene& m_scene;
 };

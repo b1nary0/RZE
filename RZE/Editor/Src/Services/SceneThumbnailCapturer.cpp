@@ -12,6 +12,8 @@
 #include <Game/World/GameObjectComponents/EditorCameraComponent.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
+#include <Graphics/RenderEngine.h>
+
 #include <DebugUtils/DebugServices.h>
 
 namespace
@@ -110,7 +112,7 @@ namespace Editor
 			return;
 		}
 
-		std::shared_ptr<AsyncOperation> operation = m_capture.Capture(camera, exposureCompensation, thumbnailPath);
+		std::shared_ptr<AsyncOperation> operation = m_capture.Capture(RZE().GetRenderEngine().GetMainScene(), camera, exposureCompensation, thumbnailPath);
 		operation->SetOnCompleted(AsyncOperation::CompletionCallback([onDone](const AsyncOperation& operation)
 			{
 				if (!operation.Succeeded())

@@ -13,7 +13,7 @@ class VertexShader;
 class PixelShader;
 
 // Renders scene depth from the directional light into a shadow map that ForwardRenderStage samples.
-// A single map is fitted tightly around the bounds of every render object, as seen from the light.
+// Each scene has one map, fitted tightly around the bounds of every render object, as seen from the light.
 // It doesn't depend on the camera, so coverage and resolution stay fixed as the camera moves, and it's
 // only re-rendered when the scene or the light changes.
 class ShadowRenderStage : public IRenderStage
@@ -41,10 +41,25 @@ public:
 	void Render(RenderContext& context) override;
 
 private:
-	void RenderShadowMap(const RenderEngine::SceneData& renderData);
+	// A scene's shadow map, kept in its ScenePersistent() blackboard so every view of the scene shares it
+	struct ShadowMapState : RenderStageData<ShadowMapState>
+	{
+		static constexpr const char* k_name = "ShadowMapState";
+
+		Rendering::TextureBuffer2DHandle ShadowMap;
+		Rendering::ConstantBufferHandle ShadowBuffer;
+
+		// RenderScene::GetRevision the map was last rendered for
+		U64 RenderedRevision = 0;
+		bool HasRenderedMap = false;
+	};
+
+	static ShadowMapState CreateShadowMapState();
+
+	void RenderShadowMap(const RenderScene& scene, const ShadowMapState& state);
 
 	// Returns false if there's nothing to cast shadows
-	bool CalculateLightViewProjection(const RenderEngine::SceneData& renderData, const Vector3D& lightDirection, Matrix4x4& outViewProjection, float& outWorldTexelSize) const;
+	bool CalculateLightViewProjection(const RenderScene& scene, const Vector3D& lightDirection, Matrix4x4& outViewProjection, float& outWorldTexelSize) const;
 
 private:
 	RenderOutput<ShadowMapData> m_shadowMapOutput;
@@ -55,11 +70,6 @@ private:
 	ResourceHandle m_casterShaderResource;
 	const PixelShader* m_casterShader = nullptr;
 
-	Rendering::TextureBuffer2DHandle m_shadowMap;
+	// Only used within one RenderShadowMap call, so every scene shares it
 	Rendering::ConstantBufferHandle m_lightCameraBuffer;
-	Rendering::ConstantBufferHandle m_shadowBuffer;
-
-	// SceneData::revision the shadow map was last rendered for
-	U64 m_renderedRevision = 0;
-	bool m_hasRenderedMap = false;
 };

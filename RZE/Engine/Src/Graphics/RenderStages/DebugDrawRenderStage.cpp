@@ -43,10 +43,8 @@ void DebugDrawRenderStage::Render(RenderContext& context)
 		return;
 	}
 
-	const RenderEngine::SceneData& renderData = context.Scene;
-
 	m_scratchVertices.clear();
-	for (const DebugLine& line : renderData.debugLines)
+	for (const DebugLine& line : context.Scene.GetDebugLines())
 	{
 		const DebugLineFade& fade = line.fade;
 		m_scratchVertices.push_back({ { line.start.X(), line.start.Y(), line.start.Z() }, { line.colour.X(), line.colour.Y(), line.colour.Z(), line.alpha },

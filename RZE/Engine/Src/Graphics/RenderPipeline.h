@@ -1,12 +1,12 @@
 #pragma once
 
-#include <Graphics/RenderEngine.h>
 #include <Graphics/RenderPipelineCompiler.h>
 
 #include <memory>
 #include <vector>
 
 class IRenderStage;
+class RenderScene;
 class RenderView;
 
 // Owns the render stages and renders views with them, in the order CompileRenderPipeline() works out from
@@ -22,7 +22,7 @@ public:
 	void AddStage(std::unique_ptr<IRenderStage> stage);
 	void Clear();
 
-	void Render(RenderView& view, const RenderEngine::SceneData& sceneData, float deltaTime);
+	void Render(RenderView& view, RenderScene& scene, float deltaTime);
 
 private:
 	void CompileIfDirty();

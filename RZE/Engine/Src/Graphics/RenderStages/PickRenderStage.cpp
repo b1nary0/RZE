@@ -103,7 +103,7 @@ void PickRenderStage::Render(RenderContext& context)
 	// Only covers the requested pixel, so nearly everything is skipped
 	const Frustum frustum(pickCamera.ClipSpace);
 
-	for (const auto& renderObject : context.Scene.renderObjects)
+	for (const auto& renderObject : context.Scene.GetRenderObjects())
 	{
 		if (!frustum.Intersects(renderObject->GetBoundsMin(), renderObject->GetBoundsMax()))
 		{
