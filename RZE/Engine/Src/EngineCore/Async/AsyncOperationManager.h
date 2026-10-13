@@ -11,6 +11,10 @@ class AsyncFrameBudget;
 
 // Owns and drives every in-flight AsyncOperation. Main thread only.
 //
+// Each frame, foreground operations are ticked first, oldest first, sharing one budget. Background operations
+// (EAsyncOperationFlags::Background) are ticked after them with a smaller budget of their own and whatever render
+// command memory the foreground left, so they always make some progress but never take much of a frame.
+//
 // Lifecycle of an operation:
 //   Start() -> OnStart()
 //   Tick()  -> OnTick(budget) each frame until the operation calls Complete()/Fail() or is cancelled
@@ -20,6 +24,10 @@ class AsyncOperationManager
 {
 public:
 	static constexpr double k_defaultFrameBudgetMS = 8.0;
+	// Background operations' main-thread time each frame, on top of the foreground's
+	static constexpr double k_backgroundFrameBudgetMS = 2.0;
+	// Background operations get this fraction of the upload allowance, on top of the foreground's
+	static constexpr size_t k_backgroundUploadBudgetDivisor = 4;
 	// Render thread processes the previous frame's commands while the main thread builds the next one,
 	// so anything referenced by a submitted command must survive at least this many frames.
 	static constexpr U32 k_retireFrameCount = 2;
@@ -42,8 +50,12 @@ public:
 	bool HasBlockingOperation() const;
 	// The oldest running operation flagged as Blocking, or nullptr.
 	const AsyncOperation* GetBlockingOperation() const;
+	// The running operations that aren't Hidden, oldest first, e.g. for a progress display. Shared so the caller can
+	// keep watching one after it finishes, or cancel it.
+	std::vector<std::shared_ptr<AsyncOperation>> GetVisibleOperations() const;
 
-	// Main-thread time and GPU upload allowance shared by all operations each frame.
+	// Main-thread time and GPU upload allowance shared by the foreground operations each frame. Background operations
+	// get k_backgroundFrameBudgetMS and a share of the uploads on top.
 	void SetFrameBudget(double timeBudgetMS, size_t uploadBudgetBytes);
 
 private:
@@ -55,6 +67,8 @@ private:
 	};
 
 	AsyncFrameBudget CreateFrameBudget() const;
+	// Ticks the foreground or the background operations, removing those that are done
+	void TickEntries(bool background, AsyncFrameBudget& budget);
 	void StartInternal(const std::shared_ptr<AsyncOperation>& operation);
 	// Returns true when the entry can be removed.
 	bool TickEntry(Entry& entry, AsyncFrameBudget& budget);

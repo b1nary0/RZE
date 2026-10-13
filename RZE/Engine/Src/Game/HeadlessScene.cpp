@@ -11,6 +11,12 @@
 #include <Graphics/RenderScene.h>
 #include <Graphics/ViewCapture.h>
 
+namespace
+{
+	// Its loads serve background work, which reports on them itself
+	constexpr U32 k_operationFlags = EAsyncOperationFlags::Background | EAsyncOperationFlags::Hidden;
+}
+
 HeadlessScene::HeadlessScene()
 	: m_scene(std::make_shared<GameScene>())
 {
@@ -26,14 +32,14 @@ std::shared_ptr<AsyncOperation> HeadlessScene::Load(const Filepath& scenePath)
 	CancelLoad();
 
 	// The load replaces what's in the scene when it starts
-	m_load = std::make_shared<SceneLoadOperation>(m_scene, scenePath, EAsyncOperationFlags::None);
+	m_load = std::make_shared<SceneLoadOperation>(m_scene, scenePath, k_operationFlags);
 	RZE().GetAsyncOperationManager().Start(m_load);
 	return m_load;
 }
 
 std::shared_ptr<AsyncOperation> HeadlessScene::Preload(ResourceDependencyList resources)
 {
-	std::shared_ptr<AsyncOperation> preload = std::make_shared<ResourcePreloadOperation>(std::move(resources), EAsyncOperationFlags::None);
+	std::shared_ptr<AsyncOperation> preload = std::make_shared<ResourcePreloadOperation>(std::move(resources), k_operationFlags);
 	RZE().GetAsyncOperationManager().Start(preload);
 	m_preloads.push_back(preload);
 	return preload;

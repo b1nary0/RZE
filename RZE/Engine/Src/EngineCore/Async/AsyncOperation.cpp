@@ -76,7 +76,7 @@ Threading::JobHandle AsyncOperation::PushWorkerJob(Threading::Job::Task task)
 {
 	AssertExpr(Threading::MainThreadDispatcher::Get().IsMainThread());
 
-	Threading::JobHandle handle = Threading::JobScheduler::Get().PushJob(std::move(task));
+	Threading::JobHandle handle = Threading::JobScheduler::Get().PushJob(std::move(task), IsBackground() ? Threading::EJobLane::Background : Threading::EJobLane::Foreground);
 	m_outstandingJobs.push_back(handle);
 
 	return handle;

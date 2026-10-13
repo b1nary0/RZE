@@ -33,12 +33,13 @@ namespace Threading
 		OPTICK_THREAD("Worker Thread");
 
 		Job job;
-		while (scheduler.WaitForJob(job))
+		EJobLane lane = EJobLane::Foreground;
+		while (scheduler.WaitForJob(job, lane))
 		{
 			job.Run();
 			job = Job();
 
-			scheduler.OnJobFinished();
+			scheduler.OnJobFinished(lane);
 		}
 	}
 }

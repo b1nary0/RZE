@@ -26,6 +26,8 @@ public:
 	bool CanEverAfford(const ResourceFinalizeCost& cost) const;
 
 	size_t GetArenaBytesConsumed() const { return m_arenaBytesConsumed; }
+	size_t GetArenaBytesRemaining() const { return m_arenaBytesRemaining; }
+	size_t GetArenaCapacityBytes() const { return m_arenaCapacityBytes; }
 
 private:
 	double GetElapsedMS() const;

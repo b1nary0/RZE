@@ -27,7 +27,14 @@ namespace EAsyncOperationFlags
 	{
 		None = 0,
 		// The operation should block user interaction (e.g. the editor shows a modal progress dialog).
-		Blocking = 1 << 0
+		Blocking = 1 << 0,
+		// Left out of progress displays (AsyncOperationManager::GetVisibleOperations), e.g. a step that another
+		// operation already reports on
+		Hidden = 1 << 1,
+		// Work nobody is waiting on, e.g. rendering thumbnails. Ticked after every foreground operation, with a small
+		// budget of its own (AsyncOperationManager::k_backgroundFrameBudgetMS), and its worker jobs go to the
+		// background lane (Threading::EJobLane). It keeps going while a Blocking operation runs.
+		Background = 1 << 2
 	};
 }
 
@@ -57,6 +64,8 @@ public:
 public:
 	const std::string& GetName() const { return m_name; }
 	bool IsBlocking() const { return (m_flags & EAsyncOperationFlags::Blocking) != 0; }
+	bool IsHidden() const { return (m_flags & EAsyncOperationFlags::Hidden) != 0; }
+	bool IsBackground() const { return (m_flags & EAsyncOperationFlags::Background) != 0; }
 
 	EAsyncOperationState GetState() const { return m_state.load(std::memory_order_acquire); }
 	bool IsFinished() const;

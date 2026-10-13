@@ -105,22 +105,15 @@ void AsyncOperationManager::Tick()
 
 	m_isTicking = true;
 	{
-		AsyncFrameBudget budget = CreateFrameBudget();
+		AsyncFrameBudget foregroundBudget = CreateFrameBudget();
+		TickEntries(false, foregroundBudget);
 
-		// Index-based: StartInternal is deferred while ticking, so m_entries is stable during this loop.
-		for (size_t entryIndex = 0; entryIndex < m_entries.size();)
-		{
-			if (TickEntry(m_entries[entryIndex], budget))
-			{
-				m_entries.erase(m_entries.begin() + entryIndex);
-			}
-			else
-			{
-				++entryIndex;
-			}
-		}
+		// Only what the foreground left of the render command arena, which is a hard limit
+		AsyncFrameBudget backgroundBudget(k_backgroundFrameBudgetMS, m_uploadBudgetBytes / k_backgroundUploadBudgetDivisor,
+			foregroundBudget.GetArenaBytesRemaining(), foregroundBudget.GetArenaCapacityBytes());
+		TickEntries(true, backgroundBudget);
 
-		m_arenaBytesConsumedLastFrame = budget.GetArenaBytesConsumed();
+		m_arenaBytesConsumedLastFrame = foregroundBudget.GetArenaBytesConsumed() + backgroundBudget.GetArenaBytesConsumed();
 	}
 	m_isTicking = false;
 
@@ -129,6 +122,23 @@ void AsyncOperationManager::Tick()
 	for (const std::shared_ptr<AsyncOperation>& operation : pendingStarts)
 	{
 		StartInternal(operation);
+	}
+}
+
+void AsyncOperationManager::TickEntries(bool background, AsyncFrameBudget& budget)
+{
+	// Index-based: StartInternal is deferred while ticking, so m_entries only changes through the erase here.
+	for (size_t entryIndex = 0; entryIndex < m_entries.size();)
+	{
+		Entry& entry = m_entries[entryIndex];
+		if (entry.Operation->IsBackground() == background && TickEntry(entry, budget))
+		{
+			m_entries.erase(m_entries.begin() + entryIndex);
+		}
+		else
+		{
+			++entryIndex;
+		}
 	}
 }
 
@@ -187,6 +197,19 @@ const AsyncOperation* AsyncOperationManager::GetBlockingOperation() const
 	}
 
 	return nullptr;
+}
+
+std::vector<std::shared_ptr<AsyncOperation>> AsyncOperationManager::GetVisibleOperations() const
+{
+	std::vector<std::shared_ptr<AsyncOperation>> operations;
+	for (const Entry& entry : m_entries)
+	{
+		if (!entry.IsFinished && !entry.Operation->IsHidden())
+		{
+			operations.push_back(entry.Operation);
+		}
+	}
+	return operations;
 }
 
 void AsyncOperationManager::SetFrameBudget(double timeBudgetMS, size_t uploadBudgetBytes)

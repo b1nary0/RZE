@@ -47,10 +47,13 @@ namespace Threading
 
 			m_isShuttingDown = true;
 
-			while (!m_jobQueue.empty())
+			for (std::queue<Job>* queue : { &m_jobQueue, &m_backgroundJobQueue })
 			{
-				m_jobQueue.front().Abandon();
-				m_jobQueue.pop();
+				while (!queue->empty())
+				{
+					queue->front().Abandon();
+					queue->pop();
+				}
 			}
 		}
 
@@ -69,7 +72,7 @@ namespace Threading
 		m_jobCompletedCV.notify_all();
 	}
 
-	JobHandle JobScheduler::PushJob(Job::Task task)
+	JobHandle JobScheduler::PushJob(Job::Task task, EJobLane lane)
 	{
 		std::shared_ptr<JobState> state = std::make_shared<JobState>();
 		Job job(std::move(task), state);
@@ -83,7 +86,7 @@ namespace Threading
 				return JobHandle(state);
 			}
 
-			m_jobQueue.emplace(std::move(job));
+			(lane == EJobLane::Background ? m_backgroundJobQueue : m_jobQueue).emplace(std::move(job));
 		}
 
 		m_jobAvailableCV.notify_one();
@@ -99,40 +102,70 @@ namespace Threading
 	void JobScheduler::WaitForIdle()
 	{
 		std::unique_lock<std::mutex> lock(m_mutex);
-		m_jobCompletedCV.wait(lock, [this]() { return m_jobQueue.empty() && m_activeJobCount == 0; });
+		m_jobCompletedCV.wait(lock, [this]() { return m_jobQueue.empty() && m_backgroundJobQueue.empty() && m_activeJobCount == 0; });
 	}
 
 	size_t JobScheduler::GetQueueSize() const
 	{
 		std::lock_guard<std::mutex> lock(m_mutex);
-		return m_jobQueue.size();
+		return m_jobQueue.size() + m_backgroundJobQueue.size();
 	}
 
-	bool JobScheduler::WaitForJob(Job& outJob)
+	bool JobScheduler::WaitForJob(Job& outJob, EJobLane& outLane)
 	{
 		std::unique_lock<std::mutex> lock(m_mutex);
-		m_jobAvailableCV.wait(lock, [this]() { return m_isShuttingDown || !m_jobQueue.empty(); });
+		m_jobAvailableCV.wait(lock, [this]() { return m_isShuttingDown || !m_jobQueue.empty() || CanStartBackgroundJob(); });
 
 		if (m_isShuttingDown)
 		{
 			return false;
 		}
 
-		outJob = std::move(m_jobQueue.front());
-		m_jobQueue.pop();
+		// Foreground first
+		if (!m_jobQueue.empty())
+		{
+			outJob = std::move(m_jobQueue.front());
+			m_jobQueue.pop();
+			outLane = EJobLane::Foreground;
+		}
+		else
+		{
+			outJob = std::move(m_backgroundJobQueue.front());
+			m_backgroundJobQueue.pop();
+			outLane = EJobLane::Background;
+			++m_activeBackgroundJobCount;
+		}
 		++m_activeJobCount;
 
 		return true;
 	}
 
-	void JobScheduler::OnJobFinished()
+	void JobScheduler::OnJobFinished(EJobLane lane)
 	{
+		bool hasFreedBackgroundWorker = false;
 		{
 			std::lock_guard<std::mutex> lock(m_mutex);
 			AssertExpr(m_activeJobCount > 0);
 			--m_activeJobCount;
+
+			if (lane == EJobLane::Background)
+			{
+				AssertExpr(m_activeBackgroundJobCount > 0);
+				--m_activeBackgroundJobCount;
+				hasFreedBackgroundWorker = !m_backgroundJobQueue.empty();
+			}
 		}
 
 		m_jobCompletedCV.notify_all();
+		// A worker that woke for a queued background job while the lane was full went back to sleep
+		if (hasFreedBackgroundWorker)
+		{
+			m_jobAvailableCV.notify_one();
+		}
+	}
+
+	bool JobScheduler::CanStartBackgroundJob() const
+	{
+		return !m_backgroundJobQueue.empty() && m_activeBackgroundJobCount < k_maxActiveBackgroundJobs;
 	}
 }
