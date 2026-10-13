@@ -21,7 +21,7 @@ namespace Editor
 		: m_context(context)
 		, m_sceneModified(context.GetEvents().Subscribe<SceneModifiedEvent>([this](const SceneModifiedEvent&)
 			{
-				SetModified(true);
+				SetModified(!m_context.GetUndoHistory().IsAtSavePoint());
 			}))
 	{
 	}
@@ -100,6 +100,7 @@ namespace Editor
 
 	void SceneDocument::OnSaved()
 	{
+		m_context.GetUndoHistory().MarkSaved();
 		SetModified(false);
 		m_context.GetGameBuilder().CopyAssets();
 		m_context.GetEvents().Publish(SceneSavedEvent{ *this });

@@ -29,15 +29,21 @@ namespace Editor
 		{
 			// Moved out first, so a push during Execute can't invalidate it
 			const std::unique_ptr<EditorCommand> command = std::move(m_pending[commandIndex]);
+			std::vector<ObjectGUID> selectionBefore = context.GetSelection().GetGUIDs();
 			if (!command->Execute(context))
 			{
 				continue;
 			}
 
 			hasChanged = true;
+			UndoHistory& history = context.GetUndoHistory();
 			if (std::unique_ptr<UndoRecord> record = command->TakeUndoRecord())
 			{
-				context.GetUndoHistory().Record(command->GetInteraction(), std::move(record));
+				history.Record(command->GetInteraction(), std::move(record), std::move(selectionBefore), context.GetSelection().GetGUIDs());
+			}
+			else if (!command->IsHistoryNavigation())
+			{
+				history.MarkUnrecordedChange();
 			}
 		}
 

@@ -35,8 +35,12 @@ namespace Editor
 		// one-off change. UndoHistory merges a whole interaction into one step.
 		InteractionID GetInteraction() const { return m_interaction; }
 
-		// After Execute returns true: how to undo what it did, or null if it can't be undone
+		// After Execute returns true: how to undo what it did, or null if it can't be undone. A change with no record
+		// means the scene can't be undone back to its file (UndoHistory::MarkUnrecordedChange).
 		std::unique_ptr<UndoRecord> TakeUndoRecord() { return std::move(m_undoRecord); }
+
+		// Undo and redo, which change the scene by moving through the history rather than adding to it
+		virtual bool IsHistoryNavigation() const { return false; }
 
 	protected:
 		// For Execute to call once it has made its change

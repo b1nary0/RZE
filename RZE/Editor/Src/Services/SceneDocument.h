@@ -40,7 +40,8 @@ namespace Editor
 		void Save();
 		void SaveAs(const Filepath& filepath);
 
-		// Changed since it was loaded or last saved (SceneModifiedEvent)
+		// Differs from its file: the undo history isn't at the point of the last load or save, so undoing back to
+		// it clears this (UndoHistory::IsAtSavePoint). Updated after each command flush (SceneModifiedEvent).
 		bool IsModified() const { return m_isModified; }
 
 	private:

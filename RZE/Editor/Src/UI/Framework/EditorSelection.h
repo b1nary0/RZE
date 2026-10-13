@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Game/World/GameObject/GameObjectDefinitions.h>
+#include <Game/World/GameObject/ObjectGUID.h>
 
 #include <vector>
 
@@ -26,6 +27,8 @@ namespace Editor
 		GameObjectPtr GetPrimary() const;
 		bool IsSelected(const GameObjectPtr& gameObject) const;
 		const std::vector<GameObjectPtr>& GetAll() const { return m_selection; }
+		// The selected objects' GUIDs, in selection order, e.g. for undo to select them again later
+		std::vector<ObjectGUID> GetGUIDs() const;
 
 		void Clear();
 		// Replaces the selection

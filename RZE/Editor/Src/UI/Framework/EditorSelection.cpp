@@ -2,6 +2,8 @@
 
 #include <UI/Framework/EditorEvents.h>
 
+#include <Game/World/GameObject/GameObject.h>
+
 #include <algorithm>
 
 namespace Editor
@@ -14,6 +16,20 @@ namespace Editor
 	GameObjectPtr EditorSelection::GetPrimary() const
 	{
 		return m_selection.empty() ? GameObjectPtr() : m_selection.back();
+	}
+
+	std::vector<ObjectGUID> EditorSelection::GetGUIDs() const
+	{
+		std::vector<ObjectGUID> guids;
+		guids.reserve(m_selection.size());
+		for (const GameObjectPtr& gameObject : m_selection)
+		{
+			if (gameObject != nullptr)
+			{
+				guids.push_back(gameObject->GetGUID());
+			}
+		}
+		return guids;
 	}
 
 	bool EditorSelection::IsSelected(const GameObjectPtr& gameObject) const

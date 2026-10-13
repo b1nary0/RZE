@@ -264,3 +264,122 @@ TEST_CASE_FIXTURE(UndoHistoryFixture, "Clear doesn't drop anything, since the sc
 
 	CHECK(Log == std::vector<std::string>{ "undo 2=0" });
 }
+
+TEST_CASE_FIXTURE(UndoHistoryFixture, "A new history is at its save point, and a change moves off it")
+{
+	CHECK(History.IsAtSavePoint());
+
+	Record(k_noInteraction, 1, 0, 1);
+	CHECK_FALSE(History.IsAtSavePoint());
+
+	History.Undo(Context);
+	CHECK(History.IsAtSavePoint());
+
+	History.Redo(Context);
+	CHECK_FALSE(History.IsAtSavePoint());
+}
+
+TEST_CASE_FIXTURE(UndoHistoryFixture, "Undoing or redoing back to a save returns to the save point")
+{
+	Record(k_noInteraction, 1, 0, 1);
+	Record(k_noInteraction, 1, 1, 2);
+	History.MarkSaved();
+	CHECK(History.IsAtSavePoint());
+
+	History.Undo(Context);
+	CHECK_FALSE(History.IsAtSavePoint());
+	History.Redo(Context);
+	CHECK(History.IsAtSavePoint());
+}
+
+TEST_CASE_FIXTURE(UndoHistoryFixture, "Saving closes the step, so the same interaction afterwards isn't the saved state")
+{
+	Record(k_drag, 1, 0, 1);
+	History.MarkSaved();
+	Record(k_drag, 1, 1, 2);
+
+	CHECK_FALSE(History.IsAtSavePoint());
+	History.Undo(Context);
+	CHECK(History.IsAtSavePoint());
+}
+
+TEST_CASE_FIXTURE(UndoHistoryFixture, "The save point is lost when the saved state is replaced after an undo")
+{
+	Record(k_noInteraction, 1, 0, 1);
+	History.MarkSaved();
+	History.Undo(Context);
+
+	Record(k_noInteraction, 2, 0, 1);
+
+	CHECK_FALSE(History.IsAtSavePoint());
+	History.Undo(Context);
+	CHECK_FALSE(History.IsAtSavePoint());
+}
+
+TEST_CASE_FIXTURE(UndoHistoryFixture, "The save point follows its step when older steps are dropped, and is lost with it")
+{
+	Record(k_noInteraction, 0, 0, 1);
+	History.MarkSaved();
+	for (size_t step = 1; step < UndoHistory::k_maxSteps; ++step)
+	{
+		Record(k_noInteraction, static_cast<int>(step), 0, 1);
+	}
+
+	// The saved step is now the oldest, so undoing everything goes one past it
+	while (History.CanUndo())
+	{
+		History.Undo(Context);
+	}
+	CHECK_FALSE(History.IsAtSavePoint());
+	History.Redo(Context);
+	CHECK(History.IsAtSavePoint());
+
+	// Replacing everything after it drops the steps before it first: the start of the history is then the saved
+	// state, still reachable
+	for (size_t step = 0; step < UndoHistory::k_maxSteps; ++step)
+	{
+		Record(k_noInteraction, static_cast<int>(step), 0, 1);
+	}
+	while (History.CanUndo())
+	{
+		History.Undo(Context);
+	}
+	CHECK(History.IsAtSavePoint());
+
+	// One more step past the cap drops the saved state itself
+	while (History.CanRedo())
+	{
+		History.Redo(Context);
+	}
+	Record(k_noInteraction, 1000, 0, 1);
+	while (History.CanUndo())
+	{
+		CHECK_FALSE(History.IsAtSavePoint());
+		History.Undo(Context);
+	}
+	CHECK_FALSE(History.IsAtSavePoint());
+}
+
+TEST_CASE_FIXTURE(UndoHistoryFixture, "A change the history didn't record loses the save point")
+{
+	Record(k_noInteraction, 1, 0, 1);
+	History.Undo(Context);
+	REQUIRE(History.IsAtSavePoint());
+
+	History.MarkUnrecordedChange();
+
+	CHECK_FALSE(History.IsAtSavePoint());
+	History.Redo(Context);
+	History.Undo(Context);
+	CHECK_FALSE(History.IsAtSavePoint());
+}
+
+TEST_CASE_FIXTURE(UndoHistoryFixture, "Clear makes the empty history the save point")
+{
+	Record(k_noInteraction, 1, 0, 1);
+	History.MarkUnrecordedChange();
+
+	History.Clear();
+
+	CHECK(History.IsAtSavePoint());
+}

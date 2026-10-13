@@ -12,6 +12,7 @@ namespace Editor
 	public:
 		bool Execute(EditorContext& context) override;
 		const char* GetName() const override { return "Undo"; }
+		bool IsHistoryNavigation() const override { return true; }
 	};
 
 	class RedoCommand : public EditorCommand
@@ -19,5 +20,6 @@ namespace Editor
 	public:
 		bool Execute(EditorContext& context) override;
 		const char* GetName() const override { return "Redo"; }
+		bool IsHistoryNavigation() const override { return true; }
 	};
 }
