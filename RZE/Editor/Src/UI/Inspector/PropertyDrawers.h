@@ -4,6 +4,8 @@
 
 namespace Editor
 {
+	class EditorContext;
+
 	// How each property type is drawn in the inspector. A drawer shows value with ImGui widgets, honouring the
 	// descriptor's hints (range, step, format, widget), and writes any edit back into value. It returns true on the
 	// frame value changed. Widgets should use an empty ("##") label; the inspector draws the name and sets the
@@ -12,7 +14,7 @@ namespace Editor
 	// Object and Array properties are drawn by the inspector itself, as tree nodes.
 	namespace PropertyDrawers
 	{
-		using Drawer = bool (*)(const PropertyDescriptor& property, PropertyValue& value, bool isReadOnly);
+		using Drawer = bool (*)(EditorContext& context, const PropertyDescriptor& property, PropertyValue& value, bool isReadOnly);
 
 		// Replaces the drawer for a type; the built-in drawers are registered on first use
 		void Register(EPropertyType type, Drawer drawer);

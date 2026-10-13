@@ -25,3 +25,17 @@ TEST_CASE("Scenes and meshes have thumbnail folders of their own")
 	CHECK(Thumbnails::Scenes().GetFolder().GetRelativePath() == R"(ProjectData\SceneThumbnails)");
 	CHECK(Thumbnails::Meshes().GetFolder().GetRelativePath() == R"(ProjectData\MeshThumbnails)");
 }
+
+TEST_CASE("FindFor picks an asset's image by its extension")
+{
+	const Filepath scene("Assets/Scenes/Sponza.scene");
+	const Filepath mesh("ProjectData/Mesh/Cube.MESHASSET");
+	const Filepath image("Assets/2D/Logo.png");
+
+	CHECK(Thumbnails::FindFor(scene).GetRelativePath() == Thumbnails::Scenes().GetPathFor(scene).GetRelativePath());
+	CHECK(Thumbnails::FindFor(mesh).GetRelativePath() == Thumbnails::Meshes().GetPathFor(mesh).GetRelativePath());
+	// An image is its own thumbnail
+	CHECK(Thumbnails::FindFor(image).GetRelativePath() == image.GetRelativePath());
+
+	CHECK_FALSE(Thumbnails::FindFor(Filepath("Assets/Shaders/Line.hlsl")).IsValid());
+}

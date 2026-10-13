@@ -84,6 +84,35 @@ namespace Editor
 		return entries;
 	}
 
+	std::vector<std::string> ParseExtensionFilter(const std::string& filter)
+	{
+		std::vector<std::string> extensions;
+
+		size_t start = 0;
+		while (start <= filter.size())
+		{
+			const size_t end = std::min(filter.find(';', start), filter.size());
+			std::string pattern = filter.substr(start, end - start);
+			start = end + 1;
+
+			// "*.scene" -> ".scene"; "*.*" matches anything, so no list is needed
+			if (!pattern.empty() && pattern[0] == '*')
+			{
+				pattern.erase(0, 1);
+			}
+			if (pattern == ".*" || pattern == "*")
+			{
+				return {};
+			}
+			if (!pattern.empty())
+			{
+				extensions.push_back(pattern);
+			}
+		}
+
+		return extensions;
+	}
+
 	std::string FormatTimeAgo(std::chrono::system_clock::time_point time, std::chrono::system_clock::time_point now)
 	{
 		using namespace std::chrono;

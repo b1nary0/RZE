@@ -112,3 +112,14 @@ TEST_CASE("FormatTimeAgo describes recent times in words and older ones by date"
 	// A date, e.g. "Mar 02, 2026"
 	CHECK(FormatTimeAgo(now - hours(24 * 90), now).find(", ") != std::string::npos);
 }
+
+TEST_CASE("ParseExtensionFilter turns a file-prompt filter into extensions")
+{
+	CHECK(ParseExtensionFilter("*.meshasset") == std::vector<std::string>{ ".meshasset" });
+	CHECK(ParseExtensionFilter("*.scene;*.meshasset") == std::vector<std::string>{ ".scene", ".meshasset" });
+	CHECK(ParseExtensionFilter(".png") == std::vector<std::string>{ ".png" });
+
+	// Any file
+	CHECK(ParseExtensionFilter("*.*").empty());
+	CHECK(ParseExtensionFilter("").empty());
+}

@@ -34,5 +34,9 @@ namespace Editor
 		const ThumbnailFolder& Scenes();
 		// Each mesh asset on its own, in ProjectData/MeshThumbnails
 		const ThumbnailFolder& Meshes();
+
+		// The image that shows an asset, picked by its extension: a scene's or a mesh's rendered thumbnail, or the file
+		// itself for an image. Invalid for other kinds of asset. It may not exist yet, e.g. a scene never captured.
+		Filepath FindFor(const Filepath& asset);
 	}
 }

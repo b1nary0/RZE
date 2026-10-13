@@ -262,7 +262,7 @@ namespace Editor
 		ImGui::BeginDisabled(isDisabled);
 		// Checkboxes show a dash for mixed values
 		ImGui::PushItemFlag(ImGuiItemFlags_MixedValue, isMixed);
-		const bool changed = drawer(property, value, isReadOnly);
+		const bool changed = drawer(context, property, value, isReadOnly);
 		ImGui::PopItemFlag();
 		const bool isHeld = ImGui::IsItemActive();
 		if (exclusiveReason != nullptr && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))

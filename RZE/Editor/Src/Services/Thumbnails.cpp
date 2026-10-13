@@ -1,5 +1,11 @@
 #include <Services/Thumbnails.h>
 
+#include <Utils/StringUtils.h>
+
+#include <algorithm>
+#include <functional>
+#include <vector>
+
 namespace Editor
 {
 	ThumbnailFolder::ThumbnailFolder(const std::string& folder)
@@ -29,6 +35,32 @@ namespace Editor
 		{
 			static const ThumbnailFolder s_meshes("ProjectData/MeshThumbnails");
 			return s_meshes;
+		}
+
+		Filepath FindFor(const Filepath& asset)
+		{
+			struct Source
+			{
+				const char* Extension;
+				std::function<Filepath(const Filepath&)> FindImage;
+			};
+
+			static const std::vector<Source> s_sources =
+			{
+				{ ".scene", [](const Filepath& file) { return Scenes().GetPathFor(file); } },
+				{ ".meshasset", [](const Filepath& file) { return Meshes().GetPathFor(file); } },
+				// Images show themselves
+				{ ".png", [](const Filepath& file) { return file; } },
+				{ ".jpg", [](const Filepath& file) { return file; } },
+				{ ".jpeg", [](const Filepath& file) { return file; } },
+				{ ".tga", [](const Filepath& file) { return file; } },
+				{ ".bmp", [](const Filepath& file) { return file; } },
+			};
+
+			const std::string extension = asset.GetExtension();
+			const auto source = std::find_if(s_sources.begin(), s_sources.end(),
+				[&extension](const Source& candidate) { return StringUtils::EqualsIgnoringCase(candidate.Extension, extension); });
+			return source != s_sources.end() ? source->FindImage(asset) : Filepath();
 		}
 	}
 }

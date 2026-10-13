@@ -1,8 +1,8 @@
 #include <UI/Inspector/PropertyDrawers.h>
 
-#include <RZE.h>
-
-#include <Windowing/Win32Window.h> // FilePromptParams
+#include <Services/FolderListing.h>
+#include <Services/Thumbnails.h>
+#include <UI/Framework/EditorContext.h>
 
 #include <Utils/Math/Math.h>
 
@@ -35,12 +35,12 @@ namespace
 	// Drags and sliders apply as they move.
 	constexpr ImGuiInputTextFlags k_commitOnEnter = ImGuiInputTextFlags_EnterReturnsTrue;
 
-	bool DrawBool(const PropertyDescriptor& property, PropertyValue& value, bool isReadOnly)
+	bool DrawBool(Editor::EditorContext& context, const PropertyDescriptor& property, PropertyValue& value, bool isReadOnly)
 	{
 		return ImGui::Checkbox("##value", &std::get<bool>(value));
 	}
 
-	bool DrawInt(const PropertyDescriptor& property, PropertyValue& value, bool isReadOnly)
+	bool DrawInt(Editor::EditorContext& context, const PropertyDescriptor& property, PropertyValue& value, bool isReadOnly)
 	{
 		int& intValue = std::get<int>(value);
 		const int min = static_cast<int>(property.Min);
@@ -68,7 +68,7 @@ namespace
 		return changed;
 	}
 
-	bool DrawFloat(const PropertyDescriptor& property, PropertyValue& value, bool isReadOnly)
+	bool DrawFloat(Editor::EditorContext& context, const PropertyDescriptor& property, PropertyValue& value, bool isReadOnly)
 	{
 		float& floatValue = std::get<float>(value);
 
@@ -118,7 +118,7 @@ namespace
 		return changed;
 	}
 
-	bool DrawVector3(const PropertyDescriptor& property, PropertyValue& value, bool isReadOnly)
+	bool DrawVector3(Editor::EditorContext& context, const PropertyDescriptor& property, PropertyValue& value, bool isReadOnly)
 	{
 		Vector3D& vector = std::get<Vector3D>(value);
 		if (property.Widget == EPropertyWidget::Colour)
@@ -128,7 +128,7 @@ namespace
 		return DrawFloats(property, vector.GetValuePtr(), 3);
 	}
 
-	bool DrawVector4(const PropertyDescriptor& property, PropertyValue& value, bool isReadOnly)
+	bool DrawVector4(Editor::EditorContext& context, const PropertyDescriptor& property, PropertyValue& value, bool isReadOnly)
 	{
 		Vector4D& vector = std::get<Vector4D>(value);
 		if (property.Widget == EPropertyWidget::Colour)
@@ -138,7 +138,7 @@ namespace
 		return DrawFloats(property, vector.GetValuePtr(), 4);
 	}
 
-	bool DrawString(const PropertyDescriptor& property, PropertyValue& value, bool isReadOnly)
+	bool DrawString(Editor::EditorContext& context, const PropertyDescriptor& property, PropertyValue& value, bool isReadOnly)
 	{
 		std::string& stringValue = std::get<std::string>(value);
 		if (isReadOnly)
@@ -158,8 +158,8 @@ namespace
 		return false;
 	}
 
-	// The path, and a button that picks a new one with a file prompt
-	bool DrawAssetPath(const PropertyDescriptor& property, PropertyValue& value, bool isReadOnly)
+	// The path, and a button that picks a new one in the file browser
+	bool DrawAssetPath(Editor::EditorContext& context, const PropertyDescriptor& property, PropertyValue& value, bool isReadOnly)
 	{
 		Filepath& path = std::get<Filepath>(value);
 
@@ -182,29 +182,26 @@ namespace
 		}
 
 		ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-		if (!ImGui::Button(browseLabel))
+		Editor::FileBrowserModal& browser = context.GetFileBrowser();
+		const ImGuiID browseID = ImGui::GetID("##browse");
+		if (ImGui::Button(browseLabel))
 		{
-			return false;
+			Editor::FileBrowserRequest request;
+			request.Title = "Select " + property.Name;
+			request.ConfirmLabel = "Select";
+			request.RootFolder = Filepath(property.AssetDirectory);
+			request.Extensions = Editor::ParseExtensionFilter(property.AssetFilter);
+			request.InitialSelection = path;
+			request.ThumbnailFor = &Editor::Thumbnails::FindFor;
+			request.RequesterID = browseID;
+			browser.Open(std::move(request));
 		}
 
-		const FilePromptParams promptParams =
-		{
-			property.AssetDescription.empty() ? property.Name.c_str() : property.AssetDescription.c_str(),
-			Filepath(property.AssetDirectory),
-			property.AssetFilter.empty() ? "*.*" : property.AssetFilter.c_str()
-		};
-
-		std::string chosenPath;
-		if (!RZE().ShowOpenFilePrompt(promptParams, chosenPath))
-		{
-			return false;
-		}
-
-		path = Filepath::FromAbsolutePathStr(chosenPath);
-		return true;
+		// The pick comes back on a later frame, once the browser closes
+		return browser.ConsumeResult(browseID, path);
 	}
 
-	bool DrawTextureProperty(const PropertyDescriptor& property, PropertyValue& value, bool isReadOnly)
+	bool DrawTextureProperty(Editor::EditorContext& context, const PropertyDescriptor& property, PropertyValue& value, bool isReadOnly)
 	{
 		Editor::PropertyDrawers::DrawTexture(std::get<PropertyTexture>(value));
 		return false;
