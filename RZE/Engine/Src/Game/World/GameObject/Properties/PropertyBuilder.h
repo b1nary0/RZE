@@ -77,13 +77,15 @@ namespace PropertyBuilderDetail
 //   void CameraComponent::DescribeProperties(PropertyBuilder<CameraComponent>& properties)
 //   {
 //       properties.Float("Field Of View", &CameraComponent::GetFOV, &CameraComponent::SetFOV).Range(1.0f, 179.0f);
-//       properties.Float("Aspect Ratio", &CameraComponent::GetAspectRatio);   // no setter: read-only
+//       properties.Float("Aspect Ratio", &CameraComponent::GetAspectRatio);   // no setter: computed
 //       properties.Object<MaterialInstance>("Material", &MeshGeometry::GetMaterial);   // a nested described type
 //       properties.Value<std::string>("Shader", [](const MaterialInstance& m) { return ...; });   // computed
 //   }
 //
 // Setters go through the type's own setter, so whatever it does on a change (e.g. marking the transform dirty)
-// still happens. Leaving the setter out makes the property read-only.
+// still happens. Leaving the setter out makes the property computed: worked out from the others, so tools show it
+// but never write or copy it. State that tools mustn't edit but that belongs to the object keeps its setter and is
+// marked .ReadOnly() instead.
 template <typename TObject>
 class PropertyBuilder
 {

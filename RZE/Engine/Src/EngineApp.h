@@ -45,6 +45,10 @@ public:
 
 
 	Rendering::RenderTargetTexture* GetRTT();
+
+	// Registers the engine's component types: their names, factories and property descriptions. Initialize calls it;
+	// code that uses components without running an application (e.g. unit tests) calls it itself. Once per process.
+	static void RegisterEngineComponents();
 	
 protected:
 	virtual void Initialize();

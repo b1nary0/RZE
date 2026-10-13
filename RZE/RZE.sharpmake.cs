@@ -15,6 +15,8 @@ using Sharpmake;
 // Applications
 [module: Sharpmake.Include("Editor/Editor.sharpmake.cs")]
 [module: Sharpmake.Include("Game/Game.sharpmake.cs")]
+// Tests
+[module: Sharpmake.Include("UnitTests/UnitTests.sharpmake.cs")]
 
 
 [Generate]
@@ -42,8 +44,10 @@ public class RZE : Solution
         conf.AddProject<Utils>(target);
         conf.AddProject<SourceAssetBurner>(target);
         conf.AddProject<Externals>(target);
+        conf.AddProject<EditorLib>(target);
         conf.AddProject<Editor>(target);
         conf.AddProject<Game>(target);
+        conf.AddProject<UnitTests>(target);
     }
 }
 

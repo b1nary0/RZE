@@ -70,6 +70,11 @@ void RZE_Application::Initialize()
 {
 	RZE_LOG("RZE_Application::Init() called.");
 
+	RegisterEngineComponents();
+}
+
+void RZE_Application::RegisterEngineComponents()
+{
 	// #TODO This basically just runs a bunch of poor mans reflection stuff like
 	// creating entries in the component name lookup and factory functions. Necessary to function atm.
 	// Eventually hope to implement actual reflection and handle this.

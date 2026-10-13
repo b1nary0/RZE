@@ -7,9 +7,9 @@
 
 // Registers an EditorPanel subclass so PanelManager creates it. Put it in the panel's .cpp, at namespace scope.
 // The panel needs a static PanelDesc Describe() and a default constructor.
-// Registration runs from a static initializer, so it only happens for code linked straight into the editor
-// executable. If the panels ever move into a static library, the linker will drop them unless they're
-// force-linked (e.g. /WHOLEARCHIVE).
+// Registration runs from a static initializer that nothing else references. Panels are built into EditorLib, a
+// static library, so the linker would drop them; Editor links EditorLib with /WHOLEARCHIVE to keep them (see
+// Editor.sharpmake.cs). Anything else linking EditorLib (e.g. UnitTests) gets no panels unless it does the same.
 #define REGISTER_EDITOR_PANEL(PanelType) \
 	static const ::Editor::PanelRegistrar<PanelType> s_panelRegistrar_##PanelType
 
