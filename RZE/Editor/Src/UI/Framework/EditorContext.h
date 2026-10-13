@@ -12,6 +12,7 @@
 #include <Services/GameObjectClipboard.h>
 #include <Services/SceneDocument.h>
 #include <Services/SelectionBoundsDisplay.h>
+#include <Services/UndoHistory.h>
 
 #include <Game/World/GameObject/GameObjectDefinitions.h>
 
@@ -47,7 +48,7 @@ namespace Editor
 		void Update();
 
 		// Drops everything that refers to the current scene's objects (selection, editor camera, a pick in flight,
-		// pending commands), then publishes SceneUnloadingEvent so listeners drop theirs (e.g. each panel's
+		// pending commands, undo history), then publishes SceneUnloadingEvent so listeners drop theirs (e.g. each panel's
 		// EditorPanel::OnSceneReset). Call before the scene unloads, so cleanup that touches those objects (e.g.
 		// selection bounds) still can. UI state, like the SceneView's viewport, carries over.
 		void ResetSceneState();
@@ -80,6 +81,10 @@ namespace Editor
 		// Where panels send scene changes; flushed once per frame after every panel has drawn
 		CommandQueue& GetCommands() { return m_commands; }
 
+		// What the commands did, for undo and redo; cleared when the scene unloads
+		UndoHistory& GetUndoHistory() { return m_undoHistory; }
+		const UndoHistory& GetUndoHistory() const { return m_undoHistory; }
+
 	private:
 		// First, so it's destroyed last: everything below may hold subscriptions
 		EditorEvents m_events;
@@ -94,5 +99,6 @@ namespace Editor
 		GameBuilder m_gameBuilder;
 		GameObjectClipboard m_clipboard;
 		CommandQueue m_commands;
+		UndoHistory m_undoHistory;
 	};
 }

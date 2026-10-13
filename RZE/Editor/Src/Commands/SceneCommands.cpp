@@ -58,6 +58,36 @@ namespace
 		transform->SetPosition(transform->GetPosition() + localOffset);
 	}
 
+	class RenameRecord : public Editor::UndoRecord
+	{
+	public:
+		RenameRecord(ObjectGUID guid, std::string before, std::string after)
+			: m_guid(guid)
+			, m_before(std::move(before))
+			, m_after(std::move(after))
+		{
+		}
+
+		void Undo(Editor::EditorContext& context) override { Apply(m_before); }
+		void Redo(Editor::EditorContext& context) override { Apply(m_after); }
+		std::string GetName() const override { return "Rename"; }
+
+	private:
+		void Apply(const std::string& name)
+		{
+			const GameObjectPtr gameObject = Editor::UndoTargets::FindObject(m_guid);
+			if (gameObject != nullptr)
+			{
+				gameObject->SetName(name);
+			}
+		}
+
+	private:
+		ObjectGUID m_guid;
+		std::string m_before;
+		std::string m_after;
+	};
+
 	// A pasted camera is a copy, so it never takes over as the main camera
 	void ClearMainCameraFlag(rapidjson::Value& entry)
 	{
@@ -82,9 +112,10 @@ namespace Editor
 	{
 	}
 
-	void CreateGameObjectCommand::Execute(EditorContext& context)
+	bool CreateGameObjectCommand::Execute(EditorContext& context)
 	{
 		RZE().GetActiveScene().AddGameObject(m_name);
+		return true;
 	}
 
 	RenameGameObjectCommand::RenameGameObjectCommand(GameObjectPtr gameObject, std::string name)
@@ -93,12 +124,16 @@ namespace Editor
 	{
 	}
 
-	void RenameGameObjectCommand::Execute(EditorContext& context)
+	bool RenameGameObjectCommand::Execute(EditorContext& context)
 	{
-		if (m_gameObject != nullptr)
+		if (m_gameObject == nullptr || m_gameObject->GetName() == m_name)
 		{
-			m_gameObject->SetName(m_name);
+			return false;
 		}
+
+		SetUndoRecord(std::make_unique<RenameRecord>(m_gameObject->GetGUID(), m_gameObject->GetName(), m_name));
+		m_gameObject->SetName(m_name);
+		return true;
 	}
 
 	DeleteGameObjectCommand::DeleteGameObjectCommand(GameObjectPtr gameObject)
@@ -106,11 +141,11 @@ namespace Editor
 	{
 	}
 
-	void DeleteGameObjectCommand::Execute(EditorContext& context)
+	bool DeleteGameObjectCommand::Execute(EditorContext& context)
 	{
 		if (m_gameObject == nullptr)
 		{
-			return;
+			return false;
 		}
 
 		// While the object is still alive, so SelectionBoundsDisplay can turn off its bounds
@@ -118,6 +153,7 @@ namespace Editor
 
 		// Deferred by the scene to its next update
 		RZE().GetActiveScene().RemoveGameObject(m_gameObject);
+		return true;
 	}
 
 	AddComponentCommand::AddComponentCommand(GameObjectPtr gameObject, GameObjectComponentID componentID)
@@ -126,12 +162,10 @@ namespace Editor
 	{
 	}
 
-	void AddComponentCommand::Execute(EditorContext& context)
+	bool AddComponentCommand::Execute(EditorContext& context)
 	{
-		if (m_gameObject != nullptr)
-		{
-			m_gameObject->AddComponentByID(m_componentID);
-		}
+		// Null if the object already has one
+		return m_gameObject != nullptr && m_gameObject->AddComponentByID(m_componentID) != nullptr;
 	}
 
 	AttachToParentCommand::AttachToParentCommand(GameObjectPtr child, GameObjectPtr parent)
@@ -140,11 +174,11 @@ namespace Editor
 	{
 	}
 
-	void AttachToParentCommand::Execute(EditorContext& context)
+	bool AttachToParentCommand::Execute(EditorContext& context)
 	{
 		if (m_child == nullptr || m_parent == nullptr || m_child->IsSelfOrAncestorOf(m_parent))
 		{
-			return;
+			return false;
 		}
 
 		if (!m_child->IsRoot())
@@ -153,6 +187,7 @@ namespace Editor
 		}
 
 		m_child->AttachTo(m_parent);
+		return true;
 	}
 
 	PasteGameObjectsCommand::PasteGameObjectsCommand(std::string sceneData, const Vector3D& worldOffset)
@@ -161,14 +196,14 @@ namespace Editor
 	{
 	}
 
-	void PasteGameObjectsCommand::Execute(EditorContext& context)
+	bool PasteGameObjectsCommand::Execute(EditorContext& context)
 	{
 		rapidjson::Document document;
 		document.Parse(m_sceneData.c_str());
 		std::string error;
 		if (document.HasParseError() || !SceneFormat::Upgrade(document, error))
 		{
-			return;
+			return false;
 		}
 
 		// Parents are linked by the GUIDs in the copied data, so the loader keeps copied children under their
@@ -188,10 +223,13 @@ namespace Editor
 			MoveInWorld(gameObject, m_worldOffset);
 		}
 
-		if (!loader.GetTopLevelObjects().empty())
+		if (loader.GetTopLevelObjects().empty())
 		{
-			context.GetSelection().SetSelection(loader.GetTopLevelObjects());
+			return false;
 		}
+
+		context.GetSelection().SetSelection(loader.GetTopLevelObjects());
+		return true;
 	}
 
 	DetachFromParentCommand::DetachFromParentCommand(GameObjectPtr gameObject)
@@ -199,11 +237,14 @@ namespace Editor
 	{
 	}
 
-	void DetachFromParentCommand::Execute(EditorContext& context)
+	bool DetachFromParentCommand::Execute(EditorContext& context)
 	{
-		if (m_gameObject != nullptr && !m_gameObject->IsRoot())
+		if (m_gameObject == nullptr || m_gameObject->IsRoot())
 		{
-			m_gameObject->DetachFromParent();
+			return false;
 		}
+
+		m_gameObject->DetachFromParent();
+		return true;
 	}
 }

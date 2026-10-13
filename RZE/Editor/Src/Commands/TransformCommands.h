@@ -15,7 +15,7 @@ namespace Editor
 	public:
 		SetTransformCommand(GameObjectPtr gameObject, const Vector3D& position, const Vector3D& rotation, const Vector3D& scale, InteractionID interaction);
 
-		void Execute(EditorContext& context) override;
+		bool Execute(EditorContext& context) override;
 		const char* GetName() const override { return "Set Transform"; }
 
 	private:

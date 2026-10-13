@@ -22,19 +22,28 @@ namespace Editor
 
 		const SceneEditScope sceneEdit(*this);
 
+		bool hasChanged = false;
+
 		// Index-based, since a command can push more
 		for (size_t commandIndex = 0; commandIndex < m_pending.size(); ++commandIndex)
 		{
 			// Moved out first, so a push during Execute can't invalidate it
 			const std::unique_ptr<EditorCommand> command = std::move(m_pending[commandIndex]);
-			command->Execute(context);
+			if (!command->Execute(context))
+			{
+				continue;
+			}
+
+			hasChanged = true;
+			if (std::unique_ptr<UndoRecord> record = command->TakeUndoRecord())
+			{
+				context.GetUndoHistory().Record(command->GetInteraction(), std::move(record));
+			}
 		}
 
-		const bool hasRun = !m_pending.empty();
 		m_pending.clear();
 
-		// Every command changes the scene; editor state like the selection isn't changed through commands
-		if (hasRun)
+		if (hasChanged)
 		{
 			context.GetEvents().Publish(SceneModifiedEvent{});
 		}

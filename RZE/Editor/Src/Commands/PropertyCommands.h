@@ -14,7 +14,7 @@ namespace Editor
 	public:
 		SetPropertyCommand(GameObjectComponentPtr<GameObjectComponentBase> component, size_t propertyIndex, PropertyValue value, InteractionID interaction);
 
-		void Execute(EditorContext& context) override;
+		bool Execute(EditorContext& context) override;
 		const char* GetName() const override { return "Set Property"; }
 
 	private:

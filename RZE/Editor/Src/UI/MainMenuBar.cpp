@@ -2,6 +2,7 @@
 
 #include <UI/Framework/EditorContext.h>
 
+#include <Commands/HistoryCommands.h>
 #include <Commands/SceneCommands.h>
 
 #include <RZE.h>
@@ -14,10 +15,18 @@
 #include <Utils/Platform/Filepath.h>
 
 #include <ImGui/imgui.h>
+#include <imGUI/ImGuizmo.h>
 
 namespace
 {
 	const Filepath k_sceneFileDirectoryPath("Assets/Scenes");
+
+	// Undo and redo wait while a widget or the gizmo is held, so a drag isn't half undone and then carried on. A text
+	// field being edited also handles Ctrl+Z itself.
+	bool IsEditInProgress()
+	{
+		return ImGui::IsAnyItemActive() || ImGuizmo::IsUsing();
+	}
 
 	// How many frames the frame time readout holds each sample for
 	constexpr int k_frameTimeSampleInterval = 15;
@@ -141,6 +150,20 @@ namespace Editor
 		const bool canUseScene = !context.GetSceneDocument().IsLoading();
 		const bool hasSelection = !context.GetSelection().IsEmpty();
 
+		const UndoHistory& history = context.GetUndoHistory();
+		const std::string undoLabel = history.CanUndo() ? "Undo " + history.GetUndoName() : std::string("Undo");
+		const std::string redoLabel = history.CanRedo() ? "Redo " + history.GetRedoName() : std::string("Redo");
+		if (ImGui::MenuItem(undoLabel.c_str(), "Ctrl+Z", false, canUseScene && history.CanUndo()))
+		{
+			context.GetCommands().Push<UndoCommand>();
+		}
+		if (ImGui::MenuItem(redoLabel.c_str(), "Ctrl+Y", false, canUseScene && history.CanRedo()))
+		{
+			context.GetCommands().Push<RedoCommand>();
+		}
+
+		ImGui::Separator();
+
 		if (ImGui::MenuItem("Copy", "Ctrl+C", false, canUseScene && hasSelection))
 		{
 			Copy(context);
@@ -174,6 +197,19 @@ namespace Editor
 		if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_D, ImGuiInputFlags_RouteGlobal))
 		{
 			Duplicate(context);
+		}
+
+		if (!IsEditInProgress())
+		{
+			if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_Z, ImGuiInputFlags_RouteGlobal))
+			{
+				context.GetCommands().Push<UndoCommand>();
+			}
+			if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_Y, ImGuiInputFlags_RouteGlobal)
+				|| ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiMod_Shift | ImGuiKey_Z, ImGuiInputFlags_RouteGlobal))
+			{
+				context.GetCommands().Push<RedoCommand>();
+			}
 		}
 	}
 

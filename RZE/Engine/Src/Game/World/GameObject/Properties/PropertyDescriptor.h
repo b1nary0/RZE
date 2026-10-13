@@ -95,6 +95,9 @@ struct PropertyDescriptor
 	// camera's Main Camera. The setter keeps it that way, turning it off for the others when it's turned on, so it's
 	// only ever turned on: tools turn it off by turning it on for another object.
 	bool IsExclusive = false;
+	// A view setting rather than part of what's saved (e.g. drawing debug bounds): tools apply it without counting it
+	// as a change to the scene, so it isn't undoable and doesn't mark the scene modified
+	bool IsEditorOnly = false;
 
 	// For AssetPath properties: the file prompt's title, the folder it starts in, and its filter (e.g. "*.meshasset")
 	std::string AssetDescription;
@@ -110,6 +113,7 @@ struct PropertyDescriptor
 	PropertyDescriptor& ToolTip(const char* tooltip) { Tooltip = tooltip; return *this; }
 	PropertyDescriptor& As(EPropertyWidget widget) { Widget = widget; return *this; }
 	PropertyDescriptor& Exclusive() { IsExclusive = true; return *this; }
+	PropertyDescriptor& EditorOnly() { IsEditorOnly = true; return *this; }
 	PropertyDescriptor& Asset(const char* description, const char* directory, const char* filter)
 	{
 		AssetDescription = description;

@@ -16,7 +16,7 @@ namespace Editor
 	public:
 		explicit CreateGameObjectCommand(std::string name);
 
-		void Execute(EditorContext& context) override;
+		bool Execute(EditorContext& context) override;
 		const char* GetName() const override { return "Create GameObject"; }
 
 	private:
@@ -28,7 +28,7 @@ namespace Editor
 	public:
 		RenameGameObjectCommand(GameObjectPtr gameObject, std::string name);
 
-		void Execute(EditorContext& context) override;
+		bool Execute(EditorContext& context) override;
 		const char* GetName() const override { return "Rename GameObject"; }
 
 	private:
@@ -42,7 +42,7 @@ namespace Editor
 	public:
 		explicit DeleteGameObjectCommand(GameObjectPtr gameObject);
 
-		void Execute(EditorContext& context) override;
+		bool Execute(EditorContext& context) override;
 		const char* GetName() const override { return "Delete GameObject"; }
 
 	private:
@@ -54,7 +54,7 @@ namespace Editor
 	public:
 		AddComponentCommand(GameObjectPtr gameObject, GameObjectComponentID componentID);
 
-		void Execute(EditorContext& context) override;
+		bool Execute(EditorContext& context) override;
 		const char* GetName() const override { return "Add Component"; }
 
 	private:
@@ -69,7 +69,7 @@ namespace Editor
 	public:
 		AttachToParentCommand(GameObjectPtr child, GameObjectPtr parent);
 
-		void Execute(EditorContext& context) override;
+		bool Execute(EditorContext& context) override;
 		const char* GetName() const override { return "Attach To Parent"; }
 
 	private:
@@ -87,7 +87,7 @@ namespace Editor
 	public:
 		PasteGameObjectsCommand(std::string sceneData, const Vector3D& worldOffset);
 
-		void Execute(EditorContext& context) override;
+		bool Execute(EditorContext& context) override;
 		const char* GetName() const override { return "Paste GameObjects"; }
 
 	private:
@@ -100,7 +100,7 @@ namespace Editor
 	public:
 		explicit DetachFromParentCommand(GameObjectPtr gameObject);
 
-		void Execute(EditorContext& context) override;
+		bool Execute(EditorContext& context) override;
 		const char* GetName() const override { return "Detach From Parent"; }
 
 	private:

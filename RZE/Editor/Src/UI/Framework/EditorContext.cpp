@@ -26,6 +26,7 @@ namespace Editor
 		m_editorCamera = GameObjectPtr();
 		m_scenePicker.Cancel();
 		m_commands.Clear();
+		m_undoHistory.Clear();
 		m_events.Publish(SceneUnloadingEvent{});
 	}
 
