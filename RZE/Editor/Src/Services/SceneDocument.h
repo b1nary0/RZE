@@ -45,9 +45,6 @@ namespace Editor
 		// cancelled.
 		void SaveWithPrompt(std::function<void(bool saved)> onDone = nullptr);
 
-		// Where scene files live, which file prompts start in
-		static const Filepath& GetSceneFolder();
-
 		// Differs from its file: the undo history isn't at the point of the last load or save, so undoing back to
 		// it clears this (UndoHistory::IsAtSavePoint). Updated after each command flush (SceneModifiedEvent).
 		bool IsModified() const { return m_isModified; }

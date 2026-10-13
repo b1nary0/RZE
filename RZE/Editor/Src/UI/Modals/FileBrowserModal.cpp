@@ -114,6 +114,14 @@ namespace Editor
 		UpdatePendingReleases();
 		m_loadsThisFrame = 0;
 
+		// Another dialog opened at the root, such as a tile action's unsaved-changes prompt or progress dialog, takes the
+		// browser's place on screen (ImGui keeps one popup per level). The browser waits under it and comes back after.
+		if (m_isOpen && ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId) && !ImGui::IsPopupOpen(k_popupID))
+		{
+			m_shouldOpen = true;
+			return;
+		}
+
 		if (m_shouldOpen)
 		{
 			ImGui::OpenPopup(k_popupID);

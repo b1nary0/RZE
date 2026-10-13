@@ -28,6 +28,10 @@ namespace Editor
 		// Once per frame (EditorContext::Update); takes a capture that's waiting for a loaded scene to settle
 		void Update();
 
+		// Whether a scene that loads without a thumbnail is captured; on by default. Tools that capture scenes
+		// themselves (ThumbnailBatchOperation) turn it off, so the same file isn't written twice at once.
+		void SetCapturesOnLoad(bool capturesOnLoad);
+
 		// Captures the open scene's thumbnail now, through its main camera, or the editor camera if it has none.
 		// onDone, if given, runs once: when the file is written, or straight away with false if the scene has no file
 		// or no camera to capture from.
@@ -38,6 +42,7 @@ namespace Editor
 		ViewCapture m_capture;
 		// Frames left before a just-loaded scene is captured; negative when none is waiting
 		int m_framesUntilCapture = -1;
+		bool m_capturesOnLoad = true;
 
 		EventSubscription m_sceneSaved;
 		EventSubscription m_sceneLoaded;

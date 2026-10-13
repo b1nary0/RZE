@@ -5,6 +5,8 @@
 
 #include <RZE.h>
 
+#include <Asset/AssetPaths.h>
+
 #include <Game/SceneLoadOperation.h>
 #include <Game/World/GameObject/GameObject.h>
 #include <Game/World/GameObjectComponents/EditorCameraComponent.h>
@@ -115,8 +117,8 @@ namespace Editor
 		request.Mode = EFileBrowserMode::Save;
 		request.Title = "Save Scene";
 		request.ConfirmLabel = "Save";
-		request.RootFolder = GetSceneFolder();
-		request.Extensions = { ".scene" };
+		request.RootFolder = AssetPaths::GetSceneFolder();
+		request.Extensions = { AssetPaths::k_sceneExtension };
 		request.ThumbnailFor = [](const Filepath& file) { return Thumbnails::Scenes().GetPathFor(file); };
 		request.OnChosen = [this, onDone](const Filepath& file)
 			{
@@ -134,12 +136,6 @@ namespace Editor
 				}
 			};
 		m_context.GetFileBrowser().Open(std::move(request));
-	}
-
-	const Filepath& SceneDocument::GetSceneFolder()
-	{
-		static const Filepath s_sceneFolder("Assets/Scenes");
-		return s_sceneFolder;
 	}
 
 	void SceneDocument::OnSaved()

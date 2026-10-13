@@ -2,6 +2,8 @@
 
 #include <RZE.h>
 
+#include <Asset/AssetPaths.h>
+
 #include <Game/World/GameObject/GameObject.h>
 #include <Game/World/GameObjectComponents/CameraComponent.h>
 #include <Game/World/GameObjectComponents/PlayerControllerComponent.h>
@@ -55,11 +57,11 @@ void GameApp::Initialize()
 
 	if (m_startScene.empty())
 	{
-		activeScene.Deserialize(Filepath("Assets/Scenes/RenderTest.scene"));
+		activeScene.Deserialize(AssetPaths::GetScene("RenderTest.scene"));
 	}
 	else
 	{
-		activeScene.Deserialize(Filepath("Assets/Scenes/" + m_startScene));
+		activeScene.Deserialize(AssetPaths::GetScene(m_startScene));
 	}
 	
 #ifdef IMGUI_ENABLED

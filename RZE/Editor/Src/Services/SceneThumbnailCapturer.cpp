@@ -34,7 +34,7 @@ namespace Editor
 			});
 		m_sceneLoaded = events.Subscribe<SceneLoadedEvent>([this](const SceneLoadedEvent& event)
 			{
-				if (event.Document.HasFilePath() && !Thumbnails::Scenes().GetPathFor(event.Document.GetFilePath()).Exists())
+				if (m_capturesOnLoad && event.Document.HasFilePath() && !Thumbnails::Scenes().GetPathFor(event.Document.GetFilePath()).Exists())
 				{
 					m_framesUntilCapture = k_settleFrames;
 				}
@@ -55,6 +55,15 @@ namespace Editor
 		if (m_framesUntilCapture-- == 0)
 		{
 			CaptureNow();
+		}
+	}
+
+	void SceneThumbnailCapturer::SetCapturesOnLoad(bool capturesOnLoad)
+	{
+		m_capturesOnLoad = capturesOnLoad;
+		if (!capturesOnLoad)
+		{
+			m_framesUntilCapture = -1;
 		}
 	}
 

@@ -6,14 +6,18 @@
 #include <Commands/HistoryCommands.h>
 #include <Commands/SceneCommands.h>
 
+#include <Services/ThumbnailBatchOperation.h>
 #include <Services/Thumbnails.h>
 
 #include <RZE.h>
+
+#include <Asset/AssetPaths.h>
 
 #include <Rendering/MemArena.h>
 
 #include <Utils/Memory/MemoryUtils.h>
 #include <Utils/Platform/Filepath.h>
+#include <Utils/StringUtils.h>
 
 #include <ImGui/imgui.h>
 #include <imGUI/ImGuizmo.h>
@@ -29,6 +33,24 @@ namespace
 
 	// How many frames the frame time readout holds each sample for
 	constexpr int k_frameTimeSampleInterval = 15;
+
+	// Renders scene's thumbnail again: straight away if it's the open scene, otherwise by loading it in a batch of one
+	// (which loads the open scene again after). The browser shows the new image once it's written.
+	void RefreshSceneThumbnail(Editor::EditorContext& context, const Filepath& scene)
+	{
+		const Editor::SceneDocument& document = context.GetSceneDocument();
+		if (document.HasFilePath() && StringUtils::EqualsIgnoringCase(document.GetFilePath().GetRelativePath(), scene.GetRelativePath()))
+		{
+			context.GetSceneThumbnails().CaptureNow([&context](bool)
+				{
+					context.GetFileBrowser().RefreshThumbnails();
+				});
+		}
+		else
+		{
+			Editor::ThumbnailBatches::RenderScenes(context, { scene });
+		}
+	}
 }
 
 namespace Editor
@@ -93,11 +115,12 @@ namespace Editor
 				{
 					FileBrowserRequest request;
 					request.Title = "Load Scene";
-					request.RootFolder = SceneDocument::GetSceneFolder();
-					request.Extensions = { ".scene" };
+					request.RootFolder = AssetPaths::GetSceneFolder();
+					request.Extensions = { AssetPaths::k_sceneExtension };
 					request.InitialSelection = scene.HasFilePath() ? scene.GetFilePath() : Filepath();
 					request.ThumbnailFor = [](const Filepath& file) { return Thumbnails::Scenes().GetPathFor(file); };
 					request.OnChosen = [&scene](const Filepath& file) { scene.Load(file); };
+					request.TileActions.push_back({ "Refresh Thumbnail", [&context](const Filepath& file) { RefreshSceneThumbnail(context, file); } });
 					context.GetFileBrowser().Open(std::move(request));
 				});
 		}

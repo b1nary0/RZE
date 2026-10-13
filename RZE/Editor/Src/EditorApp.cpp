@@ -1,5 +1,7 @@
 #include <EditorApp.h>
 
+#include <Asset/AssetPaths.h>
+
 #include <Game/World/GameObject/EditorGameComponentInfoCache.h>
 #include <Game/World/GameObjectComponents/EditorCameraComponent.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
@@ -24,7 +26,7 @@
 
 namespace
 {
-	constexpr char kSceneFileToLoadHack[] = { "Assets/Scenes/RenderTest.scene" };
+	constexpr char kSceneFileToLoadHack[] = { "RenderTest.scene" };
 
 	// ImGui 1.92+ PushFont() takes a size; use the size the font was loaded at.
 	void PushFontAtLoadedSize(ImFont* font)
@@ -107,9 +109,9 @@ namespace Editor
 	{
 		// #TODO Reopen the scene that was open when the editor last closed, rather than a fixed default
 		std::string_view startScene;
-		const Filepath scenePath = CmdLine::Arguments::Get("-scene", startScene)
-			? Filepath("Assets/Scenes/" + std::string(startScene))
-			: Filepath(kSceneFileToLoadHack);
+		const Filepath scenePath = AssetPaths::GetScene(CmdLine::Arguments::Get("-scene", startScene)
+			? std::string(startScene)
+			: std::string(kSceneFileToLoadHack));
 		m_context.GetSceneDocument().Load(scenePath);
 	}
 

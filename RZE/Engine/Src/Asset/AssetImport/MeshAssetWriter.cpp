@@ -1,6 +1,8 @@
 #include <StdAfx.h>
 #include <Asset/AssetImport/MeshAssetWriter.h>
 
+#include <Asset/AssetPaths.h>
+
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Memory/ByteStream.h>
 #include <Utils/Platform/File.h>
@@ -10,7 +12,6 @@
 
 namespace
 {
-	constexpr char k_meshAssetExtension[] = { ".meshasset" };
 	constexpr uint16_t k_meshAssetVersion = 0;
 }
 
@@ -30,11 +31,7 @@ void MeshAssetWriter::Write()
 	AssertExpr(!m_assetName.empty());
 
 	// #TODO really gross string manip lol
-	std::string assetFilename = m_assetName + k_meshAssetExtension;
-	std::string assetFilepathRelative = "ProjectData/Mesh/";
-	assetFilepathRelative = assetFilepathRelative + assetFilename;
-
-	Filepath outputPath(assetFilepathRelative);
+	const Filepath outputPath(AssetPaths::GetMeshFolder().GetRelativePath() + "/" + m_assetName + AssetPaths::k_meshExtension);
 	if (!outputPath.Exists())
 	{
 		Filepath::CreateDir(outputPath.GetAbsoluteDirectoryPath());

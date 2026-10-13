@@ -1,6 +1,8 @@
 #include <StdAfx.h>
 #include <Game/World/GameObjectComponents/RenderComponent.h>
 
+#include <Asset/AssetPaths.h>
+
 #include <EngineCore/Resources/ResourceDependencyList.h>
 
 #include <Game/StaticMeshResource.h>
@@ -18,8 +20,6 @@
 
 namespace
 {
-	const Filepath k_meshAssetDirectoryPath("ProjectData/Mesh");
-
 	// Distinct so both are readable when drawn together
 	const Vector3D k_meshBoundsColour(1.0f, 0.85f, 0.0f);
 	const Vector3D k_subMeshBoundsColour(0.0f, 0.8f, 1.0f);
@@ -28,7 +28,7 @@ namespace
 void RenderComponent::DescribeProperties(PropertyBuilder<RenderComponent>& properties)
 {
 	properties.AssetPath("Mesh", &RenderComponent::GetMeshPath, &RenderComponent::LoadMesh)
-		.Asset("RZE MeshAsset", k_meshAssetDirectoryPath.GetRelativePath().c_str(), "*.meshasset");
+		.Asset("RZE MeshAsset", AssetPaths::GetMeshFolder().GetRelativePath().c_str(), (std::string("*") + AssetPaths::k_meshExtension).c_str());
 	properties.Vector3("Size", &RenderComponent::GetMeshSize)
 		.DisplayFormat("%.2f m").ToolTip("Along the object's own axes, including its scale");
 	properties.Bool("Draw Mesh Bounds", &RenderComponent::IsDrawingMeshBounds, &RenderComponent::SetDrawMeshBounds).EditorOnly();

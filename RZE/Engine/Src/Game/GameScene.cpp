@@ -1,6 +1,8 @@
 #include <StdAfx.h>
 #include <Game/GameScene.h>
 
+#include <Asset/AssetPaths.h>
+
 #include <Game/SceneFormat.h>
 #include <Game/World/GameObject/GameObject.h>
 #include <Game/World/GameObjectComponents/CameraComponent.h>
@@ -35,7 +37,7 @@ void GameScene::NewScene()
 
 const Filepath& GameScene::GetDefaultScenePath()
 {
-	static const Filepath s_defaultScenePath("Assets/Scenes/Default.scene");
+	static const Filepath s_defaultScenePath(AssetPaths::GetScene("Default.scene"));
 	return s_defaultScenePath;
 }
 

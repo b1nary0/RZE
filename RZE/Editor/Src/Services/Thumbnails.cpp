@@ -1,5 +1,7 @@
 #include <Services/Thumbnails.h>
 
+#include <Asset/AssetPaths.h>
+
 #include <Utils/StringUtils.h>
 
 #include <algorithm>
@@ -47,8 +49,8 @@ namespace Editor
 
 			static const std::vector<Source> s_sources =
 			{
-				{ ".scene", [](const Filepath& file) { return Scenes().GetPathFor(file); } },
-				{ ".meshasset", [](const Filepath& file) { return Meshes().GetPathFor(file); } },
+				{ AssetPaths::k_sceneExtension, [](const Filepath& file) { return Scenes().GetPathFor(file); } },
+				{ AssetPaths::k_meshExtension, [](const Filepath& file) { return Meshes().GetPathFor(file); } },
 				// Images show themselves
 				{ ".png", [](const Filepath& file) { return file; } },
 				{ ".jpg", [](const Filepath& file) { return file; } },
