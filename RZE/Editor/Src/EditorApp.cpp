@@ -161,7 +161,19 @@ namespace Editor
 
 		PushFontAtLoadedSize(m_fontMapping.at("din_bold"));
 		m_asyncOperationModal.Display(RZE().GetAsyncOperationManager());
+		m_context.GetUnsavedChangesPrompt().Display(m_context);
 		ImGui::PopFont();
+	}
+
+	bool EditorApp::OnCloseRequested()
+	{
+		if (!m_context.GetSceneDocument().IsModified())
+		{
+			return true;
+		}
+
+		m_context.GetUnsavedChangesPrompt().Request(m_context, "exiting", []() { RZE().PostExit(); });
+		return false;
 	}
 
 	void EditorApp::ShutDown()

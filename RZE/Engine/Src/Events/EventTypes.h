@@ -18,7 +18,9 @@ namespace EWindowEventType
 	{
 		Window_Create,
 		Window_Destroy,
-		Window_Resize
+		Window_Resize,
+		// The user asked to close the window (its close button, Alt+F4); the application decides whether to exit
+		Window_CloseRequested
 	};
 }
 

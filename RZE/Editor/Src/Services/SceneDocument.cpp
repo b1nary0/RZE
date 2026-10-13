@@ -11,6 +11,8 @@
 
 #include <EngineCore/Async/AsyncOperationManager.h>
 
+#include <Windowing/Win32Window.h> // FilePromptParams
+
 #include <DebugUtils/DebugServices.h>
 
 #include <Utils/DebugUtils/Debug.h>
@@ -96,6 +98,37 @@ namespace Editor
 		RZE().GetActiveScene().Serialize(filepath);
 		m_isUntitled = false;
 		OnSaved();
+	}
+
+	bool SceneDocument::SaveWithPrompt()
+	{
+		if (HasFilePath())
+		{
+			Save();
+			return true;
+		}
+
+		const FilePromptParams saveFileParams =
+		{
+			"Save Scene",
+			GetSceneFolder(),
+			"*.scene"
+		};
+
+		std::string chosenPath;
+		if (!RZE().ShowSaveFilePrompt(saveFileParams, chosenPath))
+		{
+			return false;
+		}
+
+		SaveAs(Filepath::FromAbsolutePathStr(chosenPath));
+		return true;
+	}
+
+	const Filepath& SceneDocument::GetSceneFolder()
+	{
+		static const Filepath s_sceneFolder("Assets/Scenes");
+		return s_sceneFolder;
 	}
 
 	void SceneDocument::OnSaved()

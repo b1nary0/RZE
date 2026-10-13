@@ -300,6 +300,13 @@ void RZE_Engine::RegisterWindowEvents()
 		{
 			PostExit();
 		}
+		else if (event.mWindowEvent.mEventInfo.mEventSubType == EWindowEventType::Window_CloseRequested)
+		{
+			if (m_application->OnCloseRequested())
+			{
+				PostExit();
+			}
+		}
 		else if (event.mWindowEvent.mEventInfo.mEventSubType == EWindowEventType::Window_Resize)
 		{
 			Vector2D newSize(event.mWindowEvent.mSizeX, event.mWindowEvent.mSizeY);

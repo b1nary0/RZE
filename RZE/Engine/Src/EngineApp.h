@@ -33,6 +33,10 @@ public:
 	virtual void Update();
 	virtual void ShutDown();
 
+	// The user asked to close the window. True exits; false keeps running, e.g. to ask about unsaved changes first,
+	// and the application exits later itself (RZE_Engine::PostExit) if it should.
+	virtual bool OnCloseRequested() { return true; }
+
 	virtual void CreateRenderTarget(const Vector2D& dimensions) = 0;
 	virtual void OnWindowResize(const Vector2D& newSize) = 0;
 

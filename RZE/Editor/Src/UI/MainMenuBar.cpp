@@ -1,6 +1,7 @@
 #include <UI/MainMenuBar.h>
 
 #include <UI/Framework/EditorContext.h>
+#include <UI/Modals/UnsavedChangesPrompt.h>
 
 #include <Commands/HistoryCommands.h>
 #include <Commands/SceneCommands.h>
@@ -19,8 +20,6 @@
 
 namespace
 {
-	const Filepath k_sceneFileDirectoryPath("Assets/Scenes");
-
 	// Undo and redo wait while a widget or the gizmo is held, so a drag isn't half undone and then carried on. A text
 	// field being edited also handles Ctrl+Z itself.
 	bool IsEditInProgress()
@@ -80,48 +79,36 @@ namespace Editor
 		// Nothing that touches the scene while one is streaming in
 		const bool canUseScene = !scene.IsLoading();
 
+		UnsavedChangesPrompt& unsavedChanges = context.GetUnsavedChangesPrompt();
+
 		if (ImGui::MenuItem("New Scene...", nullptr, false, canUseScene))
 		{
-			scene.New();
+			unsavedChanges.Request(context, "starting a new scene", [&scene]() { scene.New(); });
 		}
 
 		if (ImGui::MenuItem("Load Scene...", nullptr, false, canUseScene))
 		{
-			const FilePromptParams openFileParams =
-			{
-				"RZE Scene",
-				k_sceneFileDirectoryPath,
-				"*.scene"
-			};
+			// Asked first, so the file prompt only opens once it's decided to go ahead
+			unsavedChanges.Request(context, "loading another scene", [&scene]()
+				{
+					const FilePromptParams openFileParams =
+					{
+						"RZE Scene",
+						SceneDocument::GetSceneFolder(),
+						"*.scene"
+					};
 
-			std::string chosenPath;
-			if (RZE().ShowOpenFilePrompt(openFileParams, chosenPath))
-			{
-				scene.Load(Filepath::FromAbsolutePathStr(chosenPath));
-			}
+					std::string chosenPath;
+					if (RZE().ShowOpenFilePrompt(openFileParams, chosenPath))
+					{
+						scene.Load(Filepath::FromAbsolutePathStr(chosenPath));
+					}
+				});
 		}
 
 		if (ImGui::MenuItem("Save Scene", nullptr, false, canUseScene))
 		{
-			if (scene.HasFilePath())
-			{
-				scene.Save();
-			}
-			else
-			{
-				const FilePromptParams saveFileParams =
-				{
-					"Save Scene",
-					k_sceneFileDirectoryPath,
-					"*.scene"
-				};
-
-				std::string chosenPath;
-				if (RZE().ShowSaveFilePrompt(saveFileParams, chosenPath))
-				{
-					scene.SaveAs(Filepath::FromAbsolutePathStr(chosenPath));
-				}
-			}
+			scene.SaveWithPrompt();
 		}
 
 		ImGui::Separator();
@@ -140,7 +127,7 @@ namespace Editor
 
 		if (ImGui::MenuItem("Exit"))
 		{
-			RZE().PostExit();
+			unsavedChanges.Request(context, "exiting", []() { RZE().PostExit(); });
 		}
 	}
 

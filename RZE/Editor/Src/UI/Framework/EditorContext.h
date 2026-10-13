@@ -14,6 +14,8 @@
 #include <Services/SelectionBoundsDisplay.h>
 #include <Services/UndoHistory.h>
 
+#include <UI/Modals/UnsavedChangesPrompt.h>
+
 #include <Game/World/GameObject/GameObjectDefinitions.h>
 
 #include <Utils/Math/Vector2D.h>
@@ -85,6 +87,9 @@ namespace Editor
 		UndoHistory& GetUndoHistory() { return m_undoHistory; }
 		const UndoHistory& GetUndoHistory() const { return m_undoHistory; }
 
+		// For anything that would lose unsaved scene changes (New, Load, Exit): asks about saving them first
+		UnsavedChangesPrompt& GetUnsavedChangesPrompt() { return m_unsavedChangesPrompt; }
+
 	private:
 		// First, so it's destroyed last: everything below may hold subscriptions
 		EditorEvents m_events;
@@ -100,5 +105,6 @@ namespace Editor
 		GameObjectClipboard m_clipboard;
 		CommandQueue m_commands;
 		UndoHistory m_undoHistory;
+		UnsavedChangesPrompt m_unsavedChangesPrompt;
 	};
 }

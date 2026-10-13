@@ -331,6 +331,11 @@ void Win32Window::ProcessWinProcMessage(const WindowMessageAdaptor::WindowMessag
 		WindowEvent windowEvent(EWindowEventType::Window_Destroy);
 		eventHandler.PostWindowEvent(windowEvent);
 	}
+	else if (messageInfo.mMessageType == WindowMessageAdaptor::EMessageType::Window_Close)
+	{
+		WindowEvent windowEvent(EWindowEventType::Window_CloseRequested);
+		eventHandler.PostWindowEvent(windowEvent);
+	}
 	else if (messageInfo.mMessageType == WindowMessageAdaptor::EMessageType::Window_Resize)
 	{
 		WindowEvent windowEvent(EWindowEventType::Window_Resize);
@@ -546,6 +551,13 @@ LRESULT CALLBACK WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp)
 	case WM_CREATE:
 	{
 		sWindowMessageAdaptor.PushMessage(WindowMessageAdaptor::EMessageType::Window_Create, wp, lp);
+		return 0;
+	}
+
+	case WM_CLOSE:
+	{
+		// Not passed on to DefWindowProc, which would destroy the window: RZE_Application::OnCloseRequested decides
+		sWindowMessageAdaptor.PushMessage(WindowMessageAdaptor::EMessageType::Window_Close, wp, lp);
 		return 0;
 	}
 

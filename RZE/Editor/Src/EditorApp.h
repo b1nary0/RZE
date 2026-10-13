@@ -27,6 +27,8 @@ namespace Editor
 		bool ProcessInput(const InputHandler& handler) override;
 
 		void OnWindowResize(const Vector2D& newSize) override;
+		// Asks about unsaved changes first (UnsavedChangesPrompt), which exits once they're dealt with
+		bool OnCloseRequested() override;
 
 	protected:
 		void CreateRenderTarget(const Vector2D& dimensions) override;

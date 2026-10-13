@@ -39,6 +39,11 @@ namespace Editor
 
 		void Save();
 		void SaveAs(const Filepath& filepath);
+		// Saves to the scene's file, or asks for one first if it hasn't got one. False if the user cancelled that.
+		bool SaveWithPrompt();
+
+		// Where scene files live, which file prompts start in
+		static const Filepath& GetSceneFolder();
 
 		// Differs from its file: the undo history isn't at the point of the last load or save, so undoing back to
 		// it clears this (UndoHistory::IsAtSavePoint). Updated after each command flush (SceneModifiedEvent).
