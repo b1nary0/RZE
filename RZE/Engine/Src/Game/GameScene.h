@@ -57,6 +57,9 @@ public:
 	// Takes gameObject and all its descendants out of the scene now, and destroys them at the start of the next
 	// Update. Works on objects already out of the scene too. Keeps the order of the objects left.
 	void RemoveGameObject(GameObjectPtr& gameObject);
+	// Destroys what RemoveGameObject took out of the scene. Update does this each frame; a scene that isn't updated
+	// (HeadlessScene) calls it itself.
+	void ProcessObjectRemoveDeferrals();
 
 	// Called whenever an object is added to the scene or removed from it, for tools that track that. Empty by default.
 	void SetObjectsChangedCallback(std::function<void()> callback) { m_onObjectsChanged = std::move(callback); }
@@ -103,7 +106,6 @@ private:
 	void ReplaceMainCameraIfGone();
 	bool IsMainCameraGone() const;
 
-	void ProcessObjectRemoveDeferrals();
 
 private:
 	Filepath mCurrentScenePath;

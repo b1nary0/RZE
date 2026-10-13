@@ -64,6 +64,12 @@ SceneLoadOperation::SceneLoadOperation(GameScene& scene, const Filepath& scenePa
 	m_instantiateStage = m_progress.AddStage(k_instantiateWeight);
 }
 
+SceneLoadOperation::SceneLoadOperation(std::shared_ptr<GameScene> scene, const Filepath& scenePath, U32 flags)
+	: SceneLoadOperation(*scene, scenePath, flags)
+{
+	m_sceneOwner = std::move(scene);
+}
+
 SceneLoadOperation::~SceneLoadOperation()
 {
 }

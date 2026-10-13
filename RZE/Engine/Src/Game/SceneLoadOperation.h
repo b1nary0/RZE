@@ -26,6 +26,9 @@ class SceneLoadOperation final : public AsyncOperation
 public:
 	// An invalid scenePath loads the default (new) scene. flags are EAsyncOperationFlags.
 	SceneLoadOperation(GameScene& scene, const Filepath& scenePath, U32 flags = EAsyncOperationFlags::Blocking);
+	// For a scene the engine doesn't own: the operation keeps it alive until it's released, so its owner can let go of
+	// it while it's still loading (e.g. HeadlessScene cancelling one load for another)
+	SceneLoadOperation(std::shared_ptr<GameScene> scene, const Filepath& scenePath, U32 flags);
 	~SceneLoadOperation() override;
 
 public:
@@ -52,6 +55,8 @@ private:
 	void UpdateProgressAndStatus();
 
 private:
+	// Null for a scene someone else keeps alive
+	std::shared_ptr<GameScene> m_sceneOwner;
 	GameScene& m_scene;
 	const Filepath m_scenePath;
 
