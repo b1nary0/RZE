@@ -1,10 +1,7 @@
 #include <Services/GameObjectClipboard.h>
 
-#include <Game/SceneFormat.h>
 #include <Game/World/GameObject/GameObject.h>
-
-#include <RapidJSON/prettywriter.h>
-#include <RapidJSON/stringbuffer.h>
+#include <Game/World/GameObjectComponents/EditorCameraComponent.h>
 
 #include <algorithm>
 
@@ -12,7 +9,7 @@ namespace Editor
 {
 	void GameObjectClipboard::Copy(const std::vector<GameObjectPtr>& gameObjects)
 	{
-		std::string contents = Serialize(gameObjects);
+		std::vector<GameObjectSnapshot> contents = TakeSnapshots(gameObjects);
 		// Keep what was there if nothing could be copied, rather than clearing it
 		if (!contents.empty())
 		{
@@ -44,14 +41,14 @@ namespace Editor
 		return hasBounds ? maxX - minX : 0.0f;
 	}
 
-	std::string GameObjectClipboard::Serialize(const std::vector<GameObjectPtr>& gameObjects)
+	std::vector<GameObjectSnapshot> GameObjectClipboard::TakeSnapshots(const std::vector<GameObjectPtr>& gameObjects)
 	{
-		// GameObject::Save writes an object's children after it, so a selected object under another selected object
-		// is already copied with it
-		std::vector<GameObjectPtr> roots;
+		std::vector<GameObjectSnapshot> snapshots;
 		for (const GameObjectPtr& gameObject : gameObjects)
 		{
-			if (gameObject == nullptr || !gameObject->IncludeInSave())
+			// The editor camera is the editor's own, not part of the scene. It isn't selectable, but a copy would be a
+			// second one.
+			if (gameObject == nullptr || gameObject->GetComponent<EditorCameraComponent>() != nullptr)
 			{
 				continue;
 			}
@@ -63,20 +60,10 @@ namespace Editor
 				});
 			if (!hasCopiedAncestor)
 			{
-				roots.push_back(gameObject);
+				snapshots.push_back(GameObjectSnapshot::Take(**gameObject));
 			}
 		}
 
-		if (roots.empty())
-		{
-			return std::string();
-		}
-
-		// The same layout as a scene file
-		rapidjson::StringBuffer buffer;
-		rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
-		SceneFormat::Write(writer, roots);
-
-		return std::string(buffer.GetString(), buffer.GetSize());
+		return snapshots;
 	}
 }

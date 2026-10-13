@@ -12,6 +12,7 @@ class GameObjectComponentBase;
 class TransformComponent;
 class Vector3D;
 
+// The Editor's copy and paste (GameObjectSnapshot) handles each flag itself, so a new one needs a decision there
 struct GameObjectStateFlags
 {
 	uint16_t IsInScene : 1;

@@ -2,11 +2,14 @@
 
 #include <Commands/EditorCommand.h>
 
+#include <Services/GameObjectSnapshot.h>
+
 #include <Game/World/GameObject/GameObjectDefinitions.h>
 
 #include <Utils/Math/Vector3D.h>
 
 #include <string>
+#include <vector>
 
 // Structural changes to the scene's GameObjects. Each does nothing if the object it targets has been destroyed.
 namespace Editor
@@ -77,21 +80,20 @@ namespace Editor
 		GameObjectPtr m_parent;
 	};
 
-	// Adds the GameObjects in sceneData (the scene format, from GameObjectClipboard) as new objects and selects the
-	// top-level ones. Each gets a numbered name ("Tank (1)", to tell copies apart) and a new GUID if its copied one is
-	// taken; copied children stay under their pasted parents, and a top-level object keeps its parent if that's still
-	// in the scene. The top-level objects are moved by worldOffset (metres, world space) so they don't land exactly on
+	// Adds copies of the snapshots' objects (from GameObjectClipboard) as new objects and selects the top-level ones.
+	// Each gets a numbered name ("Tank (1)", to tell copies apart) and a new GUID; copied children stay under their
+	// pasted parents, and a top-level object keeps its parent if that's still in the scene. The top-level objects are moved by worldOffset (metres, world space) so they don't land exactly on
 	// the originals; their children move with them.
 	class PasteGameObjectsCommand : public EditorCommand
 	{
 	public:
-		PasteGameObjectsCommand(std::string sceneData, const Vector3D& worldOffset);
+		PasteGameObjectsCommand(std::vector<GameObjectSnapshot> snapshots, const Vector3D& worldOffset);
 
 		bool Execute(EditorContext& context) override;
 		const char* GetName() const override { return "Paste GameObjects"; }
 
 	private:
-		std::string m_sceneData;
+		std::vector<GameObjectSnapshot> m_snapshots;
 		Vector3D m_worldOffset;
 	};
 

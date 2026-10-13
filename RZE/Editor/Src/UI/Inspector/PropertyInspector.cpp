@@ -256,7 +256,7 @@ namespace Editor
 		}
 
 		// Nested objects' properties can't be edited yet: commands only address a component's own properties
-		const bool isReadOnly = property.IsReadOnly() || editableComponents == nullptr || exclusiveReason != nullptr;
+		const bool isReadOnly = !property.IsEditable() || editableComponents == nullptr || exclusiveReason != nullptr;
 
 		const bool isDisabled = isReadOnly && IsDrawnAsWidget(property.Type);
 		ImGui::BeginDisabled(isDisabled);

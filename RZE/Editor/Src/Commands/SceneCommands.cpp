@@ -5,12 +5,7 @@
 #include <RZE.h>
 
 #include <Game/World/GameObject/GameObject.h>
-#include <Game/World/GameObjectComponents/CameraComponent.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
-
-#include <Game/SceneFormat.h>
-
-#include <RapidJSON/document.h>
 
 namespace
 {
@@ -87,22 +82,6 @@ namespace
 		std::string m_before;
 		std::string m_after;
 	};
-
-	// A pasted camera is a copy, so it never takes over as the main camera
-	void ClearMainCameraFlag(rapidjson::Value& entry)
-	{
-		const auto components = entry.FindMember("components");
-		if (components == entry.MemberEnd() || !components->value.IsObject())
-		{
-			return;
-		}
-
-		const auto camera = components->value.FindMember(CameraComponent::GetComponentName());
-		if (camera != components->value.MemberEnd() && camera->value.IsObject() && camera->value.HasMember("MainCamera"))
-		{
-			camera->value["MainCamera"].SetBool(false);
-		}
-	}
 }
 
 namespace Editor
@@ -190,45 +169,32 @@ namespace Editor
 		return true;
 	}
 
-	PasteGameObjectsCommand::PasteGameObjectsCommand(std::string sceneData, const Vector3D& worldOffset)
-		: m_sceneData(std::move(sceneData))
+	PasteGameObjectsCommand::PasteGameObjectsCommand(std::vector<GameObjectSnapshot> snapshots, const Vector3D& worldOffset)
+		: m_snapshots(std::move(snapshots))
 		, m_worldOffset(worldOffset)
 	{
 	}
 
 	bool PasteGameObjectsCommand::Execute(EditorContext& context)
 	{
-		rapidjson::Document document;
-		document.Parse(m_sceneData.c_str());
-		std::string error;
-		if (document.HasParseError() || !SceneFormat::Upgrade(document, error))
+		if (m_snapshots.empty())
 		{
 			return false;
 		}
 
-		// Parents are linked by the GUIDs in the copied data, so the loader keeps copied children under their
-		// pasted parents, and a copied object keeps its original parent if that's still in the scene
-		GameObjectLoader loader(RZE().GetActiveScene());
-		rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
-		for (rapidjson::Value& entry : SceneFormat::GetObjects(document).GetArray())
+		GameScene& scene = RZE().GetActiveScene();
+		std::vector<GameObjectPtr> pasted;
+		for (const GameObjectSnapshot& snapshot : m_snapshots)
 		{
-			const std::string pastedName = MakeUniqueName(entry["name"].GetString());
-			entry["name"].SetString(pastedName.c_str(), static_cast<rapidjson::SizeType>(pastedName.size()), allocator);
-			ClearMainCameraFlag(entry);
-			loader.Load(entry);
-		}
-
-		for (const GameObjectPtr& gameObject : loader.GetTopLevelObjects())
-		{
+			// Null if the original's parent is gone, or the copy came from another scene
+			const GameObjectPtr parent = snapshot.GetParentGUID() != ObjectGUIDs::k_invalid
+				? scene.FindGameObjectByGUID(snapshot.GetParentGUID()) : GameObjectPtr();
+			const GameObjectPtr gameObject = snapshot.Create(scene, parent, &MakeUniqueName);
 			MoveInWorld(gameObject, m_worldOffset);
+			pasted.push_back(gameObject);
 		}
 
-		if (loader.GetTopLevelObjects().empty())
-		{
-			return false;
-		}
-
-		context.GetSelection().SetSelection(loader.GetTopLevelObjects());
+		context.GetSelection().SetSelection(pasted);
 		return true;
 	}
 

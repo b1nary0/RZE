@@ -138,7 +138,7 @@ namespace Editor
 
 		const GameObjectComponentID componentID = m_component->m_id;
 		const PropertyDescriptor& property = GetProperty(componentID, m_propertyIndex);
-		AssertMsg(!property.IsReadOnly(), "Read-only properties can't be set");
+		AssertMsg(property.IsEditable(), "Read-only properties can't be set");
 
 		void* const object = ComponentPropertyRegistry::GetDescribedObject(**m_component);
 

@@ -233,11 +233,11 @@ namespace Editor
 		// Copies straight into the paste, leaving the clipboard alone. The copies are selected afterwards, so
 		// duplicating again steps on from them.
 		const std::vector<GameObjectPtr>& selected = context.GetSelection().GetAll();
-		std::string sceneData = GameObjectClipboard::Serialize(selected);
-		if (!sceneData.empty())
+		std::vector<GameObjectSnapshot> snapshots = GameObjectClipboard::TakeSnapshots(selected);
+		if (!snapshots.empty())
 		{
 			const float width = GameObjectClipboard::MeasureWidth(selected);
-			context.GetCommands().Push<PasteGameObjectsCommand>(std::move(sceneData), GetPasteOffset(context, width, 1));
+			context.GetCommands().Push<PasteGameObjectsCommand>(std::move(snapshots), GetPasteOffset(context, width, 1));
 		}
 	}
 

@@ -79,7 +79,9 @@ struct PropertyDescriptor
 	std::string Name;
 	EPropertyType Type = EPropertyType::Float;
 	Getter Get;
-	// Null for a read-only property
+	// Null for a computed property: one worked out from other properties (e.g. a mesh's size), which tools show
+	// but never write, and copying skips since setting the others reproduces it. State that tools mustn't edit but
+	// that still belongs to the object keeps its setter and is marked ReadOnly instead.
 	Setter Set;
 
 	// Inclusive limits for numeric types; ignored when Min >= Max
@@ -98,13 +100,16 @@ struct PropertyDescriptor
 	// A view setting rather than part of what's saved (e.g. drawing debug bounds): tools apply it without counting it
 	// as a change to the scene, so it isn't undoable and doesn't mark the scene modified
 	bool IsEditorOnly = false;
+	// Shown but not editable in tools, though it has a setter, so it's still copied with the object
+	bool IsReadOnly = false;
 
 	// For AssetPath properties: the file prompt's title, the folder it starts in, and its filter (e.g. "*.meshasset")
 	std::string AssetDescription;
 	std::string AssetDirectory;
 	std::string AssetFilter;
 
-	bool IsReadOnly() const { return !Set; }
+	// Whether tools let the user change it
+	bool IsEditable() const { return Set && !IsReadOnly; }
 	bool HasRange() const { return Min < Max; }
 
 	PropertyDescriptor& Range(float min, float max) { Min = min; Max = max; return *this; }
@@ -114,6 +119,7 @@ struct PropertyDescriptor
 	PropertyDescriptor& As(EPropertyWidget widget) { Widget = widget; return *this; }
 	PropertyDescriptor& Exclusive() { IsExclusive = true; return *this; }
 	PropertyDescriptor& EditorOnly() { IsEditorOnly = true; return *this; }
+	PropertyDescriptor& ReadOnly() { IsReadOnly = true; return *this; }
 	PropertyDescriptor& Asset(const char* description, const char* directory, const char* filter)
 	{
 		AssetDescription = description;
