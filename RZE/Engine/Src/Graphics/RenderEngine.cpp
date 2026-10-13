@@ -44,10 +44,10 @@ void RenderEngine::Render(const char* frameName)
 
 	Rendering::Renderer::BeginFrame(frameName);
 
-	m_pipeline->Render(m_mainView, m_mainScene, static_cast<float>(RZE().GetDeltaTime()));
+	m_pipeline->Render(m_mainView, GetMainScene(), static_cast<float>(RZE().GetDeltaTime()));
 
 	// Secondary views rendered earlier this frame have drawn them too
-	m_mainScene.ClearDebugLines();
+	GetMainScene().ClearDebugLines();
 	m_mainView.Pick.reset();
 
 	Rendering::Renderer::EndFrame();
@@ -67,7 +67,16 @@ void RenderEngine::Shutdown()
 void RenderEngine::ReleaseRenderStages()
 {
 	m_pipeline->Clear();
-	m_mainScene.ReleaseStageState();
+	if (m_mainScene != nullptr)
+	{
+		m_mainScene->ReleaseStageState();
+	}
+}
+
+RenderScene& RenderEngine::GetMainScene()
+{
+	AssertMsg(m_mainScene != nullptr, "The main scene is set when the engine creates the active scene");
+	return *m_mainScene;
 }
 
 void RenderEngine::ResizeCanvas(const Vector2D& newSize)

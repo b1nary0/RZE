@@ -9,6 +9,8 @@
 #include <Game/World/GameObjectComponents/RenderComponent.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
+#include <Graphics/RenderScene.h>
+
 #include <RapidJSON/document.h>
 #include <RapidJSON/prettywriter.h>
 #include <RapidJSON/stringbuffer.h>
@@ -19,6 +21,7 @@
 #include <unordered_set>
 
 GameScene::GameScene()
+	: m_renderScene(std::make_unique<RenderScene>())
 {
 }
 
@@ -146,7 +149,7 @@ GameObjectPtr GameScene::DeserializeGameObject(const rapidjson::Value& entry, Ga
 
 std::unique_ptr<GameObject> GameScene::CreateGameObjectNoComponents(ObjectGUID guid)
 {
-	return std::make_unique<GameObject>(guid);
+	return std::make_unique<GameObject>(*this, guid);
 }
 
 ObjectGUID GameScene::ChooseGUID(const rapidjson::Value& data) const
@@ -194,6 +197,8 @@ void GameScene::Unload()
 
 void GameScene::AddGameObject(std::unique_ptr<GameObject>&& gameObject)
 {
+	AssertMsg(&gameObject->GetScene() == this, "A GameObject can only be added to the scene that created it");
+
 	// Objects are identified by GUID, not name, so names can repeat. GameScene only creates objects with free GUIDs
 	// (ChooseGUID, GenerateFreeGUID), so a taken one means this object is already in the scene.
 	const bool isGUIDFree = m_objectsByGUID.emplace(gameObject->GetGUID(), gameObject.get()).second;
@@ -331,7 +336,7 @@ void GameScene::ForEachGameObject(Functor<void, GameObjectPtr> func)
 
 GameObjectPtr GameScene::CreateGameObject()
 {
-	std::unique_ptr<GameObject> gameObject = std::make_unique<GameObject>(GenerateFreeGUID());
+	std::unique_ptr<GameObject> gameObject = std::make_unique<GameObject>(*this, GenerateFreeGUID());
 	gameObject->AddComponent<TransformComponent>();
 	gameObject->Initialize();
 

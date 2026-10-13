@@ -181,6 +181,7 @@ void RZE_Engine::Init()
 
 		m_activeScene = new GameScene();
 		m_activeScene->Initialize();
+		m_renderEngine->SetMainScene(m_activeScene->GetRenderScene());
 
 		m_isInitialized = true;
 	}

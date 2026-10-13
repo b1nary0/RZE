@@ -39,8 +39,9 @@ GameObjectPtr::GameObjectPtr(GameObject* gameObject)
 {
 }
 
-GameObject::GameObject(ObjectGUID guid)
-	: m_id(s_nextObjectID++)
+GameObject::GameObject(GameScene& scene, ObjectGUID guid)
+	: m_scene(scene)
+	, m_id(s_nextObjectID++)
 	, m_guid(guid)
 {
 	m_stateFlags.IsInScene = false;
@@ -49,8 +50,9 @@ GameObject::GameObject(ObjectGUID guid)
 	s_aliveGameObjects.Add(m_id);
 }
 
-GameObject::GameObject(const std::string& name, ObjectGUID guid)
-	: m_id(s_nextObjectID++)
+GameObject::GameObject(GameScene& scene, const std::string& name, ObjectGUID guid)
+	: m_scene(scene)
+	, m_id(s_nextObjectID++)
 	, m_guid(guid)
 	, m_name(name)
 {

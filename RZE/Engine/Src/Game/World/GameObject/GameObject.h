@@ -9,6 +9,7 @@
 typedef U32 GameObjectID;
 
 class GameObjectComponentBase;
+class GameScene;
 class TransformComponent;
 class Vector3D;
 
@@ -24,10 +25,10 @@ class GameObject
 public:
 	typedef std::vector<GameObjectComponentBase*> ComponentList;
 public:
-	// guid is fixed for the object's lifetime. GameScene creates objects and picks it: a loaded object's saved one,
-	// or a new one that no other object in the scene has.
-	explicit GameObject(ObjectGUID guid);
-	GameObject(const std::string& name, ObjectGUID guid);
+	// scene and guid are fixed for the object's lifetime. GameScene creates objects and picks the guid: a loaded
+	// object's saved one, or a new one that no other object in the scene has.
+	GameObject(GameScene& scene, ObjectGUID guid);
+	GameObject(GameScene& scene, const std::string& name, ObjectGUID guid);
 	~GameObject();
 
 	// The ID is what GameObjectPtr tracks the object's lifetime by, so it must stay unique to one instance
@@ -63,6 +64,9 @@ public:
 
 	// #TODO Unsure if it's desired to update via the GameObject API but until convinced otherwise this is it
 	void Update();
+
+	// The scene that made the object, whether or not it's in it right now (see OnRemoveFromScene)
+	GameScene& GetScene() const { return m_scene; }
 
 	// Unique within a session; see ObjectGUID for identity that lasts across sessions
 	GameObjectID GetID() const { return m_id; }
@@ -125,6 +129,7 @@ public:
 	void LoadComponents(const rapidjson::Value& entry);
 	
 private:
+	GameScene& m_scene;
 	GameObjectID m_id;
 	const ObjectGUID m_guid;
 	std::string m_name;

@@ -47,21 +47,19 @@ public:
 	template <typename TRenderStageType, typename... Args>
 	void AddRenderStage(Args... args);
 
-	// The scene the main view shows
-	RenderScene& GetMainScene() { return m_mainScene; }
+	// The scene the main view shows: the active GameScene's, which the engine sets
+	void SetMainScene(RenderScene& scene) { m_mainScene = &scene; }
+	RenderScene& GetMainScene();
 
-	// Shortcuts to the main scene's, for code that only ever draws into it
-	RenderObjectPtr CreateRenderObject(const StaticMeshInstance& staticMesh) { return m_mainScene.CreateRenderObject(staticMesh); }
-	void DestroyRenderObject(RenderObjectPtr& renderObject) { m_mainScene.DestroyRenderObject(renderObject); }
-	LightObjectPtr CreateLightObject() { return m_mainScene.CreateLightObject(); }
-	void DestroyLightObject(LightObjectPtr& lightObject) { m_mainScene.DestroyLightObject(lightObject); }
+	// Draws into the main scene, for tools that draw over the main view (e.g. the editor's grid and gizmos). Lines
+	// from a scene's own objects go into that scene's RenderScene instead.
 	void DrawLine(const Vector3D& start, const Vector3D& end, const Vector3D& colour = Vector3D(1.0f, 0.0f, 0.0f), float alpha = 1.0f, const DebugLineFade& fade = DebugLineFade())
 	{
-		m_mainScene.DrawLine(start, end, colour, alpha, fade);
+		GetMainScene().DrawLine(start, end, colour, alpha, fade);
 	}
 	void DrawWireBox(const Vector3D& boundsMin, const Vector3D& boundsMax, const Matrix4x4& transform, const Vector3D& colour, float alpha = 1.0f)
 	{
-		m_mainScene.DrawWireBox(boundsMin, boundsMax, transform, colour, alpha);
+		GetMainScene().DrawWireBox(boundsMin, boundsMax, transform, colour, alpha);
 	}
 
 	void ResizeCanvas(const Vector2D& newSize);
@@ -78,7 +76,7 @@ private:
 	void InternalAddRenderStage(IRenderStage* stage);
 
 private:
-	RenderScene m_mainScene;
+	RenderScene* m_mainScene = nullptr;
 
 	Vector2D m_canvasSize;
 

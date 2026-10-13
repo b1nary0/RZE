@@ -1,12 +1,13 @@
 #include <StdAfx.h>
 #include <Game/World/GameObjectComponents/GifChatComponent.h>
 
+#include <Game/GameScene.h>
 #include <Game/World/GameObject/GameObject.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
 #include <Graphics/Material.h>
 #include <Graphics/Shader.h>
-#include <Graphics/RenderEngine.h>
+#include <Graphics/RenderScene.h>
 #include <Graphics/Texture2D.h>
 
 
@@ -47,6 +48,8 @@ GifChatComponent::~GifChatComponent()
 
 void GifChatComponent::Initialize()
 {
+	m_renderScene = &GetOwner()->GetScene().GetRenderScene();
+
 	Load(gifFilepaths[GifFilepathIndex::PULP_FICTION_TRAVOLTA]);
 }
 
@@ -59,7 +62,7 @@ void GifChatComponent::OnRemoveFromScene()
 {
 	if (m_meshRenderObject != nullptr)
 	{
-		RZE().GetRenderEngine().DestroyRenderObject(m_meshRenderObject);
+		m_renderScene->DestroyRenderObject(m_meshRenderObject);
 	}
 }
 
@@ -169,7 +172,7 @@ void GifChatComponent::CreateRenderObject()
 {
 	GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
 
-	m_meshRenderObject = RZE().GetRenderEngine().CreateRenderObject(m_meshGeometry);
+	m_meshRenderObject = m_renderScene->CreateRenderObject(m_meshGeometry);
 	m_meshRenderObject->SetTransform(transformComponent->GetWorldMatrix());
 }
 

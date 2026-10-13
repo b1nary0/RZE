@@ -5,13 +5,14 @@
 
 #include <EngineCore/Resources/ResourceDependencyList.h>
 
+#include <Game/GameScene.h>
 #include <Game/StaticMeshResource.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
 #include <Game/World/GameObject/GameObject.h>
 
 #include <Graphics/Material.h>
-#include <Graphics/RenderEngine.h>
+#include <Graphics/RenderScene.h>
 #include <Graphics/Shader.h>
 
 #include <Utils/DebugUtils/Debug.h>
@@ -56,7 +57,7 @@ void RenderComponent::LoadMesh(const Filepath& path)
 	// The old render object goes before the old mesh is released, since it was built from it
 	if (m_renderObject != nullptr)
 	{
-		RZE().GetRenderEngine().DestroyRenderObject(m_renderObject);
+		m_renderScene->DestroyRenderObject(m_renderObject);
 	}
 
 	// Assigning releases the old mesh
@@ -125,7 +126,6 @@ void RenderComponent::CreateRenderObject()
 	if (m_renderObject == nullptr)
 	{
 		ResourceHandler& resourceHandler = RZE().GetResourceHandler();
-		RenderEngine& renderEngine = RZE().GetRenderEngine();
 
 		// #TODO We should probably make RenderComponent a TransformComponent since a mesh without a transform is useless.
 		GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
@@ -134,7 +134,7 @@ void RenderComponent::CreateRenderObject()
 		const StaticMeshResource* modelData = resourceHandler.GetResource<StaticMeshResource>(m_resource);
 		AssertNotNull(modelData);
 
-		m_renderObject = renderEngine.CreateRenderObject(modelData->GetStaticMesh());
+		m_renderObject = m_renderScene->CreateRenderObject(modelData->GetStaticMesh());
 		m_renderObject->SetTransform(transformComponent->GetWorldMatrix());
 		// Offset by one because IDs start at 0, which picking uses for "nothing"
 		m_renderObject->SetPickID(GetOwner()->GetID() + 1);
@@ -145,6 +145,11 @@ void RenderComponent::CreateRenderObject()
 	RZE_LOG("RenderComponent already has a RenderObject when calling CreateRenderObject()");
 }
 
+void RenderComponent::Initialize()
+{
+	m_renderScene = &GetOwner()->GetScene().GetRenderScene();
+}
+
 void RenderComponent::OnAddToScene()
 {
 	CreateRenderObject();
@@ -152,7 +157,7 @@ void RenderComponent::OnAddToScene()
 
 void RenderComponent::OnRemoveFromScene()
 {
-	RZE().GetRenderEngine().DestroyRenderObject(m_renderObject);
+	m_renderScene->DestroyRenderObject(m_renderObject);
 }
 
 void RenderComponent::Update()
@@ -174,20 +179,19 @@ void RenderComponent::Update()
 
 void RenderComponent::DrawBounds()
 {
-	RenderEngine& renderEngine = RZE().GetRenderEngine();
 	const Matrix4x4& worldMatrix = m_renderObject->GetTransform();
 	const StaticMeshInstance& staticMesh = m_renderObject->GetStaticMesh();
 
 	if (m_drawMeshBounds)
 	{
-		renderEngine.DrawWireBox(staticMesh.GetBoundsMin(), staticMesh.GetBoundsMax(), worldMatrix, k_meshBoundsColour);
+		m_renderScene->DrawWireBox(staticMesh.GetBoundsMin(), staticMesh.GetBoundsMax(), worldMatrix, k_meshBoundsColour);
 	}
 
 	if (m_drawSubMeshBounds)
 	{
 		for (const MeshGeometry& subMesh : staticMesh.GetSubMeshes())
 		{
-			renderEngine.DrawWireBox(subMesh.GetBoundsMin(), subMesh.GetBoundsMax(), worldMatrix, k_subMeshBoundsColour);
+			m_renderScene->DrawWireBox(subMesh.GetBoundsMin(), subMesh.GetBoundsMax(), worldMatrix, k_subMeshBoundsColour);
 		}
 	}
 }

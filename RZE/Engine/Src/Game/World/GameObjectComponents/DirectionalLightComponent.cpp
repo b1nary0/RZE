@@ -1,8 +1,11 @@
 #include <StdAfx.h>
 #include <Game/World/GameObjectComponents/DirectionalLightComponent.h>
 
+#include <Game/GameScene.h>
 #include <Game/World/GameObject/GameObject.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
+
+#include <Graphics/RenderScene.h>
 
 #include <Utils/Math/Units.h>
 
@@ -21,11 +24,16 @@ namespace
 	}
 }
 
+void DirectionalLightComponent::Initialize()
+{
+	m_renderScene = &GetOwner()->GetScene().GetRenderScene();
+}
+
 void DirectionalLightComponent::OnAddToScene()
 {
 	GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
 
-	m_lightObject = RZE().GetRenderEngine().CreateLightObject();
+	m_lightObject = m_renderScene->CreateLightObject();
 	m_lightObject->SetDirection(CalculateLightDirection(transformComponent->GetRotation()));
 	m_lightObject->SetColour(m_lightColour);
 	m_lightObject->SetStrength(m_lightStrength);
@@ -33,7 +41,7 @@ void DirectionalLightComponent::OnAddToScene()
 
 void DirectionalLightComponent::OnRemoveFromScene()
 {
-	RZE().GetRenderEngine().DestroyLightObject(m_lightObject);
+	m_renderScene->DestroyLightObject(m_lightObject);
 }
 
 void DirectionalLightComponent::Update()
@@ -50,7 +58,7 @@ void DirectionalLightComponent::Update()
 
 		// Position only matters for this gizmo; a directional light lights everything from the same direction
 		const Vector3D& position = transformComponent->GetPosition();
-		RZE().GetRenderEngine().DrawLine(position, position + direction * k_directionLineLength);
+		m_renderScene->DrawLine(position, position + direction * k_directionLineLength);
 	}
 }
 

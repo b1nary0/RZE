@@ -6,6 +6,7 @@
 
 #include <EngineCore/Resources/ResourceHandler.h>
 
+class RenderScene;
 class StaticMeshInstance;
 
 class RenderComponent : public GameObjectComponent<RenderComponent>
@@ -16,6 +17,7 @@ public:
 
 	// GameObjectComponent interface
 public:
+	void Initialize() override;
 	void OnAddToScene() override;
 	void OnRemoveFromScene() override;
 
@@ -58,6 +60,9 @@ private:
 	void DrawBounds();
 
 private:
+	// The owner's scene's; set in Initialize, once the component has an owner, and fixed from then on since objects
+	// never change scene
+	RenderScene* m_renderScene = nullptr;
 	RenderObjectPtr m_renderObject;
 	ResourceHandle m_resource;
 

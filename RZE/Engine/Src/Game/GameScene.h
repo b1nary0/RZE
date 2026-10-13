@@ -9,7 +9,10 @@
 #include <Utils/Math/Vector3D.h>
 
 #include <functional>
+#include <memory>
 #include <unordered_map>
+
+class RenderScene;
 
 class GameScene final
 {
@@ -76,6 +79,10 @@ public:
 	void SetMainCameraDrivesView(bool drivesView) { m_mainCameraDrivesView = drivesView; }
 	bool DoesMainCameraDriveView() const { return m_mainCameraDrivesView; }
 
+	// What the scene's components draw: their render objects, lights and debug lines. RenderEngine draws the active
+	// scene's in the main view; any scene's can be rendered into another view (RenderEngine::RenderSecondaryView).
+	RenderScene& GetRenderScene() const { return *m_renderScene; }
+
 	// Center of the bounding box around every rendered root object's position. Uses positions rather
 	// than mesh bounds so it's valid while meshes are still streaming in. Returns the origin if nothing is rendered.
 	Vector3D CalculateSceneCenter() const;
@@ -100,6 +107,9 @@ private:
 
 private:
 	Filepath mCurrentScenePath;
+
+	// First, so it outlives the objects whose components draw into it
+	std::unique_ptr<RenderScene> m_renderScene;
 
 	// #TODO Implement sparse array to make this faster
 	std::vector<std::unique_ptr<GameObject>> m_objectRegistry;

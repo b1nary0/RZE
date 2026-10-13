@@ -52,8 +52,8 @@ namespace
 	}
 }
 
-SceneLoadOperation::SceneLoadOperation(GameScene& scene, const Filepath& scenePath)
-	: AsyncOperation("Loading Scene", EAsyncOperationFlags::Blocking)
+SceneLoadOperation::SceneLoadOperation(GameScene& scene, const Filepath& scenePath, U32 flags)
+	: AsyncOperation("Loading Scene", flags)
 	, m_scene(scene)
 	, m_scenePath(scenePath.IsValid() ? scenePath : GameScene::GetDefaultScenePath())
 	, m_resourceBatch(*this)
@@ -71,7 +71,6 @@ SceneLoadOperation::~SceneLoadOperation()
 void SceneLoadOperation::OnStart()
 {
 	OPTICK_EVENT();
-	AssertMsg(&m_scene == &RZE().GetActiveScene(), "GameObject::Load resolves parents through the active scene, so only the active scene can be loaded into.");
 
 	m_scene.Unload();
 	m_scene.SetCurrentScenePath(m_scenePath);

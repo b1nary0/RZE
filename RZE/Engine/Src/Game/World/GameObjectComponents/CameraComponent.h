@@ -70,6 +70,10 @@ private:
 	void GenerateCameraMatrices(const Vector3D& position);
 
 private:
+	// The owner's scene; set in Initialize, once the component has an owner, and fixed from then on since objects
+	// never change scene
+	GameScene* m_scene = nullptr;
+
 	Matrix4x4 m_projectionMat;
 	Matrix4x4 m_viewMat;
 

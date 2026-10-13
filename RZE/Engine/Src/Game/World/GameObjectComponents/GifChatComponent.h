@@ -10,6 +10,7 @@
 struct GifData;
 
 class RenderObject;
+class RenderScene;
 class Texture2D;
 
 class GifChatComponent : public GameObjectComponent<GifChatComponent>
@@ -43,6 +44,10 @@ private:
 	void GenerateMesh();
 
 private:
+	// The owner's scene's; set in Initialize, once the component has an owner, and fixed from then on since objects
+	// never change scene
+	RenderScene* m_renderScene = nullptr;
+
 	int m_totalFrames;
 	int m_currentDisplayingFrame = 0;
 	float m_elapsedMS = 0.0f;

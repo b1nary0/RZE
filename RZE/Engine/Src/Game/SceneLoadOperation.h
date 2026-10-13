@@ -15,7 +15,7 @@
 class GameObjectLoader;
 class GameScene;
 
-// Loads a scene asynchronously into the given (active) scene, replacing its contents:
+// Loads a scene asynchronously into the given scene, active or not, replacing its contents:
 //  1. Parsing          (worker)  read + parse the scene file and gather the resources its components need.
 //  2. LoadingResources (workers + main, time-sliced) preload those resources via AsyncResourceBatch.
 //  3. Instantiating    (main, time-sliced) create the game objects in file order; resource loads are now cache hits.
@@ -24,8 +24,8 @@ class GameScene;
 class SceneLoadOperation final : public AsyncOperation
 {
 public:
-	// An invalid scenePath loads the default (new) scene.
-	SceneLoadOperation(GameScene& scene, const Filepath& scenePath);
+	// An invalid scenePath loads the default (new) scene. flags are EAsyncOperationFlags.
+	SceneLoadOperation(GameScene& scene, const Filepath& scenePath, U32 flags = EAsyncOperationFlags::Blocking);
 	~SceneLoadOperation() override;
 
 public:

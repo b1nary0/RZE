@@ -106,7 +106,7 @@ void CameraComponent::SetMainCamera(bool isMainCamera)
 		return;
 	}
 
-	RZE().GetActiveScene().SetMainCamera(isMainCamera ? GetOwner() : GameObjectPtr());
+	m_scene->SetMainCamera(isMainCamera ? GetOwner() : GameObjectPtr());
 }
 
 Vector2D CameraComponent::GetPreviewSize()
@@ -137,12 +137,13 @@ void CameraComponent::RenderPreview()
 	m_previewView->ViewportSize = previewSize;
 	m_previewView->ExposureCompensation = m_exposureCompensation;
 
-	RenderEngine& renderEngine = RZE().GetRenderEngine();
-	renderEngine.RenderSecondaryView("Camera View", *m_previewView, renderEngine.GetMainScene());
+	RZE().GetRenderEngine().RenderSecondaryView("Camera View", *m_previewView, m_scene->GetRenderScene());
 }
 
 void CameraComponent::Initialize()
 {
+	m_scene = &GetOwner()->GetScene();
+
 	const Vector2D previewSize = GetPreviewSize();
 	m_renderTarget = std::make_unique<Rendering::RenderTargetTexture>(
 		static_cast<U32>(previewSize.X()),
@@ -161,7 +162,9 @@ void CameraComponent::OnAddToScene()
 
 void CameraComponent::Update()
 {
-	if (!IsMainCamera())
+	// Only the active scene is in the main view; another scene's camera is only rendered through explicitly (e.g. for
+	// a thumbnail)
+	if (!IsMainCamera() || m_scene != &RZE().GetActiveScene())
 	{
 		return;
 	}
@@ -170,7 +173,7 @@ void CameraComponent::Update()
 	RZE().GetRenderEngine().GetMainView().ExposureCompensation = m_exposureCompensation;
 
 	// The Editor's own camera drives the view there instead
-	if (RZE().GetActiveScene().DoesMainCameraDriveView())
+	if (m_scene->DoesMainCameraDriveView())
 	{
 		GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
 		AssertMsg(transformComponent != nullptr, "A camera without a transform is useless");
