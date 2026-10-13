@@ -15,6 +15,11 @@ namespace Editor
 			return RZE().GetActiveScene().FindGameObjectByGUID(guid);
 		}
 
+		bool IsInScene(const GameObjectPtr& gameObject)
+		{
+			return gameObject != nullptr && gameObject->IsInScene();
+		}
+
 		GameObjectComponentPtr<GameObjectComponentBase> FindComponent(ObjectGUID guid, GameObjectComponentID componentID)
 		{
 			const GameObjectPtr gameObject = FindObject(guid);

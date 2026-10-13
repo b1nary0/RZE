@@ -26,6 +26,10 @@ namespace Editor
 		}
 
 		// A new change makes the undone steps unreachable
+		for (size_t stepIndex = m_position; stepIndex < m_steps.size(); ++stepIndex)
+		{
+			Drop(m_steps[stepIndex]);
+		}
 		m_steps.erase(m_steps.begin() + m_position, m_steps.end());
 
 		Step step;
@@ -36,6 +40,7 @@ namespace Editor
 
 		if (m_steps.size() > k_maxSteps)
 		{
+			Drop(m_steps.front());
 			m_steps.pop_front();
 		}
 
@@ -85,6 +90,14 @@ namespace Editor
 		}
 		++m_position;
 		return true;
+	}
+
+	void UndoHistory::Drop(Step& step)
+	{
+		for (std::unique_ptr<UndoRecord>& record : step.Records)
+		{
+			record->OnDropped();
+		}
 	}
 
 	void UndoHistory::Clear()

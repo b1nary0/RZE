@@ -103,8 +103,10 @@ public:
 	virtual void Deserialize(const rapidjson::Value& data) = 0;
 
 public:
-	void SetOwner(GameObject* owner) { m_owner = owner; }
-	GameObject* GetOwner() { return m_owner; }
+	// Set by the GameObject the component is added to
+	void SetOwner(const GameObjectPtr& owner) { m_owner = owner; }
+	// A lifetime-checked handle, like any other to a GameObject; null until the component is added to one
+	const GameObjectPtr& GetOwner() const { return m_owner; }
 
 	const std::string& GetName() { return m_componentName; }
 
@@ -115,7 +117,7 @@ public:
 
 protected:
 	std::string m_componentName;
-	GameObject* m_owner;
+	GameObjectPtr m_owner;
 
 private:
 	GameObjectComponentInstanceID m_instanceID;

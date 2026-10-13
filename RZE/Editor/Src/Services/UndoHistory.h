@@ -32,7 +32,7 @@ namespace Editor
 	public:
 		// Adds what a command did. A record from the same interaction as the last step (other than k_noInteraction)
 		// joins that step, unless it was closed; otherwise it starts a new one, dropping anything that could be redone,
-		// and the oldest step once there are more than k_maxSteps.
+		// and the oldest step once there are more than k_maxSteps (see UndoRecord::OnDropped).
 		void Record(InteractionID interaction, std::unique_ptr<UndoRecord> record);
 
 		// The next record starts a new step even if it's from the same interaction
@@ -48,6 +48,7 @@ namespace Editor
 		bool Undo(EditorContext& context);
 		bool Redo(EditorContext& context);
 
+		// Drops every step without calling UndoRecord::OnDropped, for when the scene is about to unload
 		void Clear();
 
 	private:
@@ -58,6 +59,9 @@ namespace Editor
 			std::vector<std::unique_ptr<UndoRecord>> Records;
 		};
 
+		static void Drop(Step& step);
+
+	private:
 		std::deque<Step> m_steps;
 		// Steps before this can be undone; the ones from it on can be redone
 		size_t m_position = 0;

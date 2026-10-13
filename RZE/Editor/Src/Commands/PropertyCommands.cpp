@@ -131,7 +131,7 @@ namespace Editor
 
 	bool SetPropertyCommand::Execute(EditorContext& context)
 	{
-		if (m_component == nullptr)
+		if (m_component == nullptr || !UndoTargets::IsInScene(m_component->GetOwner()))
 		{
 			return false;
 		}

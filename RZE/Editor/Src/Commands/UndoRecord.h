@@ -26,12 +26,20 @@ namespace Editor
 		// Within one interaction (e.g. a drag), a later record of the same change to the same target folds into this
 		// one: this keeps its own "before" and takes newer's "after". False if newer is a different change.
 		virtual bool TryMerge(const UndoRecord& newer) { return false; }
+
+		// The history has dropped this record for good: its step went past the cap, or was undone and then replaced
+		// by a new change. For releasing what only undo or redo needed, e.g. destroying objects set aside out of the
+		// scene. Not called when the history is cleared, since that's before the scene unloads, which destroys them.
+		virtual void OnDropped() {}
 	};
 
 	namespace UndoTargets
 	{
 		// The object with guid, or null if it isn't in the scene
 		GameObjectPtr FindObject(ObjectGUID guid);
+		// Whether gameObject is alive and in the scene. A command's or panel's handle to an object stays valid while
+		// undo has it set aside out of the scene, so check this rather than just for null before changing it.
+		bool IsInScene(const GameObjectPtr& gameObject);
 		// That object's component of type componentID, or null
 		GameObjectComponentPtr<GameObjectComponentBase> FindComponent(ObjectGUID guid, GameObjectComponentID componentID);
 	}

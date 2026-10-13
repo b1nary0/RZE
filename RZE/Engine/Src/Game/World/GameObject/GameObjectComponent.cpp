@@ -24,8 +24,7 @@ namespace GameObjectLifetime
 }
 
 GameObjectComponentBase::GameObjectComponentBase()
-	: m_owner(nullptr)
-	, m_instanceID(s_nextComponentInstanceID++)
+	: m_instanceID(s_nextComponentInstanceID++)
 {
 	s_aliveComponents.Add(m_instanceID);
 }

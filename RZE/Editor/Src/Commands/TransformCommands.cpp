@@ -73,7 +73,7 @@ namespace Editor
 
 	bool SetTransformCommand::Execute(EditorContext& context)
 	{
-		if (m_gameObject == nullptr)
+		if (!Editor::UndoTargets::IsInScene(m_gameObject))
 		{
 			return false;
 		}

@@ -101,11 +101,12 @@ void CameraComponent::SetExposureCompensation(float ev)
 
 void CameraComponent::SetMainCamera(bool isMainCamera)
 {
-	if (isMainCamera && !m_isMainCamera)
+	if (isMainCamera == m_isMainCamera)
 	{
-		GameScene& scene = RZE().GetActiveScene();
-		scene.SetMainCamera(scene.FindGameObjectByGUID(GetOwner()->GetGUID()));
+		return;
 	}
+
+	RZE().GetActiveScene().SetMainCamera(isMainCamera ? GetOwner() : GameObjectPtr());
 }
 
 Vector2D CameraComponent::GetPreviewSize()

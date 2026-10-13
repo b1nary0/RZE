@@ -79,6 +79,29 @@ void GameObject::Uninitialize()
 	m_components.clear();
 }
 
+bool GameObject::RemoveComponentByID(GameObjectComponentID id)
+{
+	auto it = std::find_if(m_components.begin(), m_components.end(),
+		[id](const GameObjectComponentBase* component)
+		{
+			return id == component->m_id;
+		});
+
+	if (it == m_components.end())
+	{
+		return false;
+	}
+
+	GameObjectComponentBase* const component = *it;
+	if (m_stateFlags.IsInScene)
+	{
+		component->OnRemoveFromScene();
+	}
+	m_components.erase(it);
+	delete component;
+	return true;
+}
+
 GameObjectComponentBase* GameObject::AddComponentByID(GameObjectComponentID id)
 {
 	// #TODO Slow function
@@ -92,7 +115,7 @@ GameObjectComponentBase* GameObject::AddComponentByID(GameObjectComponentID id)
 	if (it == m_components.end())
 	{
 		GameObjectComponentBase* component = GameObjectComponentRegistry::CreateComponentByID(id);
-		component->SetOwner(this);
+		component->SetOwner(GameObjectPtr(this));
 		component->Initialize();
 		m_components.push_back(component);
 		if (m_stateFlags.IsInScene)

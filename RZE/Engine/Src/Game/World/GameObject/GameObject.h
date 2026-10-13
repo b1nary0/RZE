@@ -75,6 +75,9 @@ public:
 	// @NOTE Should only be used by load code and editor code
 	// but should really find another solution to handle this
 	GameObjectComponentBase* AddComponentByID(GameObjectComponentID id);
+	// Takes the component of that type out of the scene (if the object is in it) and destroys it. False if the object
+	// hasn't got one.
+	bool RemoveComponentByID(GameObjectComponentID id);
 
 	const ComponentList& GetComponents() const { return m_components; }
 	// Lifetime-checked handles to every component, in the same order as GetComponents
@@ -156,22 +159,7 @@ GameObjectComponentPtr<TComponentType> GameObject::GetComponent()
 template <typename TComponentType>
 void GameObject::RemoveComponent()
 {
-	// #TODO Slow function
-
-	auto it = std::find_if(m_components.begin(), m_components.end(),
-		[](const GameObjectComponentBase* component)
-		{
-			return TComponentType::GetID() == component->m_id;
-		});
-
-	if (it != m_components.end())
-	{
-		const TComponentType* component = it;
-		m_components.erase(it);
-
-		// #TODO uninitialize here
-		delete component;
-	}
+	RemoveComponentByID(TComponentType::GetID());
 }
 
 template <typename TComponentType, typename ... Args>
@@ -189,7 +177,7 @@ GameObjectComponentPtr<TComponentType> GameObject::AddComponent(Args... args)
 	{
 		TComponentType* component = new TComponentType(std::forward<Args>(args)...);
 		m_components.push_back(component);
-		component->SetOwner(this);
+		component->SetOwner(GameObjectPtr(this));
 		component->Initialize();
 		if (m_stateFlags.IsInScene)
 		{

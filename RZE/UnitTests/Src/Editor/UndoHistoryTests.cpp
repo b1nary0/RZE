@@ -31,6 +31,8 @@ namespace
 		void Redo(EditorContext& context) override { Log("redo", m_after); }
 		std::string GetName() const override { return m_name; }
 
+		void OnDropped() override { m_log.push_back("dropped " + m_name); }
+
 		bool TryMerge(const UndoRecord& newer) override
 		{
 			const FakeRecord* const newerFake = dynamic_cast<const FakeRecord*>(&newer);
@@ -227,4 +229,38 @@ TEST_CASE_FIXTURE(UndoHistoryFixture, "Clear empties both lists")
 	Record(k_drag, 2, 2, 3);
 	History.Undo(Context);
 	CHECK_FALSE(History.CanUndo());
+}
+
+TEST_CASE_FIXTURE(UndoHistoryFixture, "Steps past the cap are dropped")
+{
+	for (size_t step = 0; step < UndoHistory::k_maxSteps + 2; ++step)
+	{
+		Record(k_noInteraction, static_cast<int>(step), 0, 1, std::to_string(step).c_str());
+	}
+
+	CHECK(Log == std::vector<std::string>{ "dropped 0", "dropped 1" });
+}
+
+TEST_CASE_FIXTURE(UndoHistoryFixture, "Undone steps are dropped when a new change replaces them")
+{
+	Record(k_noInteraction, 1, 0, 1, "First");
+	Record(k_drag, 2, 0, 1, "Second");
+	Record(k_drag, 3, 0, 1, "Second");
+	History.Undo(Context);
+	Log.clear();
+
+	Record(k_noInteraction, 4, 0, 1, "Third");
+
+	CHECK(Log == std::vector<std::string>{ "dropped Second", "dropped Second" });
+}
+
+TEST_CASE_FIXTURE(UndoHistoryFixture, "Clear doesn't drop anything, since the scene is about to unload")
+{
+	Record(k_noInteraction, 1, 0, 1);
+	Record(k_noInteraction, 2, 0, 1);
+	History.Undo(Context);
+
+	History.Clear();
+
+	CHECK(Log == std::vector<std::string>{ "undo 2=0" });
 }

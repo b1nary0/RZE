@@ -338,12 +338,13 @@ GameObjectPtr GameScene::CreateGameObject()
 
 GameObjectPtr GameScene::GetMainCamera() const
 {
-	// Null once the camera is destroyed, and while it's out of the scene waiting to be
-	if (m_mainCamera == nullptr || !m_mainCamera->IsInScene())
-	{
-		return nullptr;
-	}
-	return m_mainCamera;
+	// Null from when it's gone until ReplaceMainCameraIfGone picks another
+	return IsMainCameraGone() ? nullptr : m_mainCamera;
+}
+
+bool GameScene::IsMainCameraGone() const
+{
+	return m_mainCamera == nullptr || !m_mainCamera->IsInScene() || m_mainCamera->GetComponent<CameraComponent>() == nullptr;
 }
 
 void GameScene::SetMainCamera(const GameObjectPtr& camera)
@@ -397,23 +398,24 @@ void GameScene::ResolveMainCamera()
 
 void GameScene::ReplaceMainCameraIfGone()
 {
-	if (m_mainCamera == nullptr || m_mainCamera->IsInScene())
+	// Nothing to replace if there was never one, or it was destroyed (unload resets it)
+	if (m_mainCamera == nullptr || !IsMainCameraGone())
 	{
 		return;
 	}
 
 	const std::string previousName = m_mainCamera->GetName();
 
-	// Skips the camera that left, since it's out of the scene, and clears its flag
+	// Skips the camera that's gone, since it's out of the scene or no longer a camera
 	ResolveMainCamera();
 
 	if (m_mainCamera != nullptr)
 	{
-		RZE_LOG_ARGS("Main camera [%s] left the scene; [%s] is the main camera now.", previousName.c_str(), m_mainCamera->GetName().c_str());
+		RZE_LOG_ARGS("Main camera [%s] is gone; [%s] is the main camera now.", previousName.c_str(), m_mainCamera->GetName().c_str());
 	}
 	else
 	{
-		RZE_LOG_ARGS("Main camera [%s] left the scene, and there's no other camera to replace it.", previousName.c_str());
+		RZE_LOG_ARGS("Main camera [%s] is gone, and there's no other camera to replace it.", previousName.c_str());
 	}
 }
 

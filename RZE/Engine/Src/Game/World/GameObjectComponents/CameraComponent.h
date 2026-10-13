@@ -51,7 +51,8 @@ public:
 	void SetFarCull(float farCull);
 	void SetExposureCompensation(float ev);
 	// True makes this the scene's main camera, through GameScene::SetMainCamera, which clears the flag on the
-	// previous one. False does nothing: the main camera changes by making another camera main.
+	// previous one. False leaves the scene without a main camera if this was it; tools normally change the main camera
+	// by making another one main, but undo can need to turn it off when there was none before.
 	void SetMainCamera(bool isMainCamera);
 
 	// Renders what the camera sees into its preview target, at the preview's own aspect ratio. Leaves the

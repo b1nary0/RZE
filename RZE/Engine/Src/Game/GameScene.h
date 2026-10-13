@@ -91,9 +91,10 @@ private:
 
 	void AddGameObject(std::unique_ptr<GameObject>&& gameObject);
 
-	// When the main camera has left the scene (removed, or set aside by a tool), the first camera still in it takes
-	// over, if there is one
+	// When the main camera is gone (it left the scene, removed or set aside by a tool, or lost its CameraComponent),
+	// the first camera still in the scene takes over, if there is one
 	void ReplaceMainCameraIfGone();
+	bool IsMainCameraGone() const;
 
 	void ProcessObjectRemoveDeferrals();
 

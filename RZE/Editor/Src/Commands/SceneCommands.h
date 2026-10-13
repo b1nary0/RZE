@@ -39,7 +39,8 @@ namespace Editor
 		std::string m_name;
 	};
 
-	// Clears the selection, since the deleted object (or its children) may be in it
+	// Deletes the object and its descendants, and takes them out of the selection. They're parked rather than
+	// destroyed (see ParkedSubtree), so undo puts back the same objects.
 	class DeleteGameObjectCommand : public EditorCommand
 	{
 	public:
