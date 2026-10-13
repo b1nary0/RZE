@@ -4,6 +4,7 @@
 #include <Rendering/BufferHandle.h>
 #include <Rendering/ShaderHandle.h>
 #include <Rendering/TexelReadback.h>
+#include <Rendering/TextureReadback.h>
 #include <Rendering/Driver/ShaderTypes.h>
 #include <Rendering/Driver/GFXBuffer.h>
 
@@ -73,7 +74,8 @@ namespace Rendering
 		Draw,
 		DrawIndexed,
 		DrawFullScreenQuad,
-		ReadTexel
+		ReadTexel,
+		ReadTexture
 	};
 
 	// @todo a dummy class for storing these all separately just to prove out system.
@@ -274,6 +276,14 @@ namespace Rendering
 		U32 x = 0;
 		U32 y = 0;
 		std::shared_ptr<TexelReadback> result;
+	};
+
+	struct RenderCommand_ReadTexture : RenderCommand
+	{
+		RenderCommand_ReadTexture() { type = RenderCommandType::ReadTexture; }
+
+		TextureBuffer2DHandle texture;
+		std::shared_ptr<TextureReadback> result;
 	};
 
 	struct RenderCommand_ClearRenderTarget : RenderCommand

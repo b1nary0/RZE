@@ -24,6 +24,7 @@ namespace Rendering
 
 	struct GFXTextureBufferParams;
 	struct TexelReadback;
+	struct TextureReadback;
 	struct ViewportParams;
 	
 	class Renderer
@@ -92,6 +93,9 @@ namespace Rendering
 		// Copies one texel of a 4-byte-per-texel texture back to the CPU once the GPU has drawn it. The render
 		// thread waits on the GPU for it, so keep it to occasional reads such as picking.
 		static void ReadTexel(const TextureBuffer2DHandle& texture, U32 x, U32 y, std::shared_ptr<TexelReadback> result);
+		// Copies the whole of a texture's most detailed mip back to the CPU once the GPU has drawn it. Like ReadTexel,
+		// the render thread waits on the GPU for it, so keep it to one-off reads such as saving a capture to a file.
+		static void ReadTexture(const TextureBuffer2DHandle& texture, std::shared_ptr<TextureReadback> result);
 
 		static void ClearRenderTarget(const RenderTargetHandle& renderTarget, const Vector4D& colour);
 

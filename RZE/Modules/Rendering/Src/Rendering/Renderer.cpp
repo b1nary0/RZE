@@ -384,6 +384,15 @@ namespace Rendering
 		m_renderThread.PushCommand(command);
 	}
 
+	void Renderer::ReadTexture(const TextureBuffer2DHandle& texture, std::shared_ptr<TextureReadback> result)
+	{
+		RenderCommand_ReadTexture* command = MemArena::AllocType<RenderCommand_ReadTexture>();
+		command->texture = texture;
+		command->result = std::move(result);
+
+		m_renderThread.PushCommand(command);
+	}
+
 	void Renderer::ClearRenderTarget(const RenderTargetHandle& renderTarget, const Vector4D& colour)
 	{
 		RenderCommand_ClearRenderTarget* command = MemArena::AllocType<RenderCommand_ClearRenderTarget>();

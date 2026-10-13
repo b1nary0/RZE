@@ -39,6 +39,57 @@ namespace Rendering
 		}
 	}
 
+	namespace
+	{
+		U32 GetBytesPerTexel(DXGI_FORMAT format)
+		{
+			switch (format)
+			{
+			case DXGI_FORMAT_R8G8B8A8_UNORM:
+			case DXGI_FORMAT_R16G16_FLOAT:
+			case DXGI_FORMAT_R32_UINT:
+				return 4;
+			case DXGI_FORMAT_R16G16B16A16_FLOAT:
+				return 8;
+
+			default:
+				AssertMsg(false, "Reading back a texture format with no known texel size");
+				return 0;
+			}
+		}
+
+		// Copies a box of a texture's most detailed mip into a staging texture and maps it, waiting for the GPU to
+		// finish drawing it, then calls read(mapped) before unmapping. Reads are rare (a click, a capture), so the
+		// staging copy is made for each one rather than kept around.
+		template <typename ReadFunc>
+		void ReadBackRegion(DX11Device& device, DX11TextureBuffer2D& texture, const D3D11_BOX& box, ReadFunc&& read)
+		{
+			D3D11_TEXTURE2D_DESC stagingDesc;
+			texture.GetHWResource()->GetDesc(&stagingDesc);
+			stagingDesc.Width = box.right - box.left;
+			stagingDesc.Height = box.bottom - box.top;
+			stagingDesc.MipLevels = 1;
+			stagingDesc.Usage = D3D11_USAGE_STAGING;
+			stagingDesc.BindFlags = 0;
+			stagingDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+			stagingDesc.MiscFlags = 0;
+
+			ID3D11Texture2D* staging = nullptr;
+			HRESULT hr = device.GetHardwareDevice().CreateTexture2D(&stagingDesc, nullptr, &staging);
+			AssertExpr(hr == S_OK);
+
+			ID3D11DeviceContext& deviceContext = device.GetDeviceContext();
+			deviceContext.CopySubresourceRegion(staging, 0, 0, 0, 0, texture.GetHWResource(), 0, &box);
+
+			D3D11_MAPPED_SUBRESOURCE mapped;
+			hr = deviceContext.Map(staging, 0, D3D11_MAP_READ, 0, &mapped);
+			AssertExpr(hr == S_OK);
+			read(mapped);
+			deviceContext.Unmap(staging, 0);
+			staging->Release();
+		}
+	}
+
 	RenderThread::RenderThread()
 	{
 	}
@@ -387,34 +438,45 @@ namespace Rendering
 				RenderCommand_ReadTexel* cmd = static_cast<RenderCommand_ReadTexel*>(command);
 				DX11TextureBuffer2D* texturePtr = static_cast<DX11TextureBuffer2D*>(cmd->texture.m_buffer.get());
 
-				// Reads are rare (a click), so the staging copy is created for each one rather than kept around
-				D3D11_TEXTURE2D_DESC stagingDesc;
-				texturePtr->GetHWResource()->GetDesc(&stagingDesc);
-				stagingDesc.Width = 1;
-				stagingDesc.Height = 1;
-				stagingDesc.MipLevels = 1;
-				stagingDesc.Usage = D3D11_USAGE_STAGING;
-				stagingDesc.BindFlags = 0;
-				stagingDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-				stagingDesc.MiscFlags = 0;
-
-				ID3D11Texture2D* staging = nullptr;
-				HRESULT hr = m_device->GetHardwareDevice().CreateTexture2D(&stagingDesc, nullptr, &staging);
-				AssertExpr(hr == S_OK);
-
-				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 				const D3D11_BOX texel = { cmd->x, cmd->y, 0, cmd->x + 1, cmd->y + 1, 1 };
-				deviceContext.CopySubresourceRegion(staging, 0, 0, 0, 0, texturePtr->GetHWResource(), 0, &texel);
-
-				// Waits for the GPU to finish drawing the texel
-				D3D11_MAPPED_SUBRESOURCE mapped;
-				hr = deviceContext.Map(staging, 0, D3D11_MAP_READ, 0, &mapped);
-				AssertExpr(hr == S_OK);
-				memcpy(&cmd->result->Value, mapped.pData, sizeof(U32));
-				deviceContext.Unmap(staging, 0);
-				staging->Release();
+				ReadBackRegion(*m_device, *texturePtr, texel, [cmd](const D3D11_MAPPED_SUBRESOURCE& mapped)
+					{
+						memcpy(&cmd->result->Value, mapped.pData, sizeof(U32));
+					});
 
 				cmd->result->IsReady.store(true, std::memory_order_release);
+
+				break;
+			}
+
+			case RenderCommandType::ReadTexture:
+			{
+				RenderCommand_ReadTexture* cmd = static_cast<RenderCommand_ReadTexture*>(command);
+				DX11TextureBuffer2D* texturePtr = static_cast<DX11TextureBuffer2D*>(cmd->texture.m_buffer.get());
+
+				D3D11_TEXTURE2D_DESC desc;
+				texturePtr->GetHWResource()->GetDesc(&desc);
+
+				TextureReadback& result = *cmd->result;
+				result.Width = desc.Width;
+				result.Height = desc.Height;
+				result.BytesPerTexel = GetBytesPerTexel(desc.Format);
+
+				const size_t rowSize = static_cast<size_t>(result.Width) * result.BytesPerTexel;
+				result.Data.resize(rowSize * result.Height);
+
+				const D3D11_BOX whole = { 0, 0, 0, desc.Width, desc.Height, 1 };
+				ReadBackRegion(*m_device, *texturePtr, whole, [&result, rowSize](const D3D11_MAPPED_SUBRESOURCE& mapped)
+					{
+						// Mapped rows can be padded past the texture's width
+						const U8* source = static_cast<const U8*>(mapped.pData);
+						for (U32 row = 0; row < result.Height; ++row)
+						{
+							memcpy(&result.Data[row * rowSize], source + static_cast<size_t>(row) * mapped.RowPitch, rowSize);
+						}
+					});
+
+				result.IsReady.store(true, std::memory_order_release);
 
 				break;
 			}
