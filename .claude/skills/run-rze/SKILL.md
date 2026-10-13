@@ -44,7 +44,15 @@ $d = '.\.claude\skills\run-rze\driver.ps1'
 & $d click -X 2372 -Y 143; & $d key -Keys '^a45{ENTER}'   # set Rotation Y = 45
 & $d shot -Out "$env:TEMP\rze-shots\flow.png"
 & $d alive                                 # running pid=... responding=True
-& $d quit                                  # kills Editor.exe; unsaved scene edits are discarded
+& $d quit                                  # kills Editor.exe; the edits above are discarded
+```
+
+`quit` kills the process, so the engine's shutdown never runs. To check that too, end a run with `close`, which closes
+the window the way a user would:
+
+```powershell
+& $d launch -Scene Sponza.scene -SettleSeconds 20
+& $d close                                 # closed code=0, or fails with the crash's exit code (e.g. 0xC0000005)
 ```
 
 **Always Read the screenshot afterwards and look at it.** Coordinates are client-area physical pixels, the same space as the screenshot.
@@ -58,6 +66,7 @@ $d = '.\.claude\skills\run-rze\driver.ps1'
 | `key -Keys '...'` | `SendKeys` syntax. `'^a<value>{ENTER}'` replaces an ImGui number field. |
 | `info` | Window title and client size. |
 | `alive` | `running pid=N responding=True/False` or `not running`. |
+| `close [-TimeoutSeconds 30]` | Sends the window `WM_CLOSE`, like its close button, and waits for the process to exit. Prints `closed code=0`. Fails if the editor exits with any other code (a crash while shutting down), or is still open after the timeout. In that case it's left running, so `shot` can show why (the unsaved-changes prompt, a Debug assert dialog), then `quit`. |
 | `quit` | Kills the editor and polls until the process is gone. |
 
 Scenes live in `RZE\Assets\Scenes\`:
@@ -103,6 +112,7 @@ It covers the undo history, parking, copy snapshots, selection, interaction trac
 - **The editor reads assets from the source tree, not from `_build\<config>`.** `EditorMain.cpp` sets `EDirectoryContext::Tools`, so `Filepath` resolves paths against the folder above `_build\` (e.g. `RZE\Assets\Shaders\...`). Shader edits take effect on the next editor launch with no `AssetCpy.bat`. This also means the shader in `RZE\Assets` is what runs: to capture a "before" image, revert or disable the change in the source file itself, not just in `_build`. `Game.exe` uses `EDirectoryContext::Runtime` and reads from its own folder (`_build\<config>`), so it does need `AssetCpy.bat`.
 - **Large screenshots are downscaled when Read.** A 2560-wide PNG shows at 2000 px with a note to "multiply coordinates by 1.28". Measure positions in the displayed image, then multiply by that factor before passing them to `click`.
 - **The window title appears before the scene finishes loading.** Meshes stream in afterwards. `-SettleSeconds` covers this: 5 is enough for DrawLineTest, Sponza needs about 20.
+- **`quit` skips shutdown entirely, so it can't catch a crash on exit.** End at least one run per change with `close`. After editing the scene, `close` stops at the unsaved-changes prompt instead; use `quit` there, or answer the prompt.
 - **`Stop-Process` returns about 2 s before `Editor.exe` actually exits.** The render thread and D3D device are still tearing down. `quit` polls for this; don't `launch` immediately after a bare `Stop-Process`.
 - **The light's line in DrawLineTest is off-screen at load.** Move the DirectionalLight onto NeckMech (Position ≈ -22.7, 14, -9) to see it.
 - **The camera starts inside Sponza.** Bounds boxes there look like long lines crossing the view, not boxes. Use DrawLineTest to judge box shapes.

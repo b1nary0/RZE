@@ -9,15 +9,18 @@ One action per invocation; state lives in the running Editor.exe process.
   driver.ps1 key    -Keys '<SendKeys string>'  # e.g. '^a45{ENTER}' to replace an ImGui float field
   driver.ps1 info                              # window title + client size
   driver.ps1 alive                             # running / responding?
+  driver.ps1 close  [-TimeoutSeconds 30]       # closes the window like a user would, so the editor shuts down normally;
+                                               # fails if it crashes on the way out or is still open after the timeout
   driver.ps1 quit                              # kills Editor.exe (unsaved scene edits are discarded)
 #>
 param(
 	[Parameter(Mandatory, Position = 0)]
-	[ValidateSet('launch', 'shot', 'click', 'drag', 'key', 'info', 'alive', 'quit')]
+	[ValidateSet('launch', 'shot', 'click', 'drag', 'key', 'info', 'alive', 'close', 'quit')]
 	[string] $Action,
 	[string] $Scene = 'DrawLineTest.scene',
 	[ValidateSet('debug', 'release')] [string] $Config = 'debug',
 	[int] $SettleSeconds = 5,
+	# launch: how long to wait for the window. close: how long to wait for the process to exit (30 unless given).
 	[int] $TimeoutSeconds = 90,
 	[string] $Out,
 	[int] $X, [int] $Y,
@@ -45,6 +48,7 @@ public static class RzeWin {
 	[DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y);
 	[DllImport("user32.dll")] public static extern void mouse_event(uint f, int x, int y, uint d, UIntPtr e);
 	[DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
+	[DllImport("user32.dll")] public static extern bool PostMessage(IntPtr h, uint m, IntPtr w, IntPtr l);
 }
 "@
 }
@@ -139,6 +143,24 @@ switch ($Action) {
 		Focus $w
 		[System.Windows.Forms.SendKeys]::SendWait($Keys)
 		"sent $Keys"
+	}
+	'close' {
+		$w = Get-Window
+		$proc = $w.Proc
+		# Opens a handle now, so the exit code can still be read once the process is gone
+		$null = $proc.Handle
+		$timeout = if ($PSBoundParameters.ContainsKey('TimeoutSeconds')) { $TimeoutSeconds } else { 30 }
+
+		# WM_CLOSE: the same path as the window's close button, so the engine runs its whole shutdown
+		[RzeWin]::PostMessage($w.Handle, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero) | Out-Null
+		if (-not $proc.WaitForExit($timeout * 1000)) {
+			# Left open so it can be looked at: an unsaved-changes prompt, a Debug assert dialog, or a hang
+			throw "Editor.exe still running ${timeout}s after close (title: '$((Get-EditorProcess).MainWindowTitle)'). Run: driver.ps1 shot to see why, then driver.ps1 quit"
+		}
+		if ($proc.ExitCode -ne 0) {
+			throw ("Editor.exe exited with code 0x{0:X8} while shutting down" -f $proc.ExitCode)
+		}
+		'closed code=0'
 	}
 	'quit' {
 		$proc = Get-Process Editor -ErrorAction SilentlyContinue
