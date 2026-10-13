@@ -13,6 +13,9 @@
 
 #include <Utils/DebugUtils/Debug.h>
 
+#include <algorithm>
+#include <unordered_set>
+
 GameScene::GameScene()
 {
 }
@@ -174,7 +177,11 @@ void GameScene::Unload()
 
 	for (auto& gameObject : m_objectRegistry)
 	{
-		gameObject->OnRemoveFromScene();
+		// Some may already be out of the scene, set aside by a tool
+		if (gameObject->IsInScene())
+		{
+			gameObject->OnRemoveFromScene();
+		}
 		gameObject->Uninitialize();
 	}
 
@@ -196,6 +203,11 @@ void GameScene::AddGameObject(std::unique_ptr<GameObject>&& gameObject)
 
 	gameObject->OnAddToScene();
 	m_objectRegistry.emplace_back(std::move(gameObject));
+
+	if (m_onObjectsChanged)
+	{
+		m_onObjectsChanged();
+	}
 }
 
 void GameScene::AddGameObject(const GameObjectPtr& gameObject)
@@ -203,59 +215,66 @@ void GameScene::AddGameObject(const GameObjectPtr& gameObject)
 	AddGameObject(std::unique_ptr<GameObject>(gameObject.m_ptr));
 }
 
-void GameScene::InternalRemoveGameObject(GameObjectPtr& gameObject)
-{
-	const auto iter = std::find_if(m_objectRegistry.begin(), m_objectRegistry.end(),
-		[&gameObject](const std::unique_ptr<GameObject>& other)
-		{
-			return gameObject.m_ptr == other.get();
-		});
-	AssertMsg(iter != m_objectRegistry.end(), "GameObject doesn't exist in scene");
-
-	if (iter != m_objectRegistry.end())
-	{
-		AssertExpr(!gameObject->IsInScene());
-
-		// @TODO This shouldnt be here but we'll end up with "leaking" objects when
-		// we remove from the scene but dont call Uninitialize (which stray resources will be stale and bad)
-		// which is actually more indicative of a larger dumb but i can only focus on so much dumb at a time
-		// and this entire codebase is atrocious.
-		gameObject->Uninitialize();
-		m_objectsByGUID.erase(gameObject->GetGUID());
-
-		if (m_objectRegistry.size() > 1)
-		{
-			std::iter_swap(iter, std::prev(m_objectRegistry.end()));
-			m_objectRegistry.erase(std::prev(m_objectRegistry.end()));
-		}
-		else
-		{
-			m_objectRegistry.erase(iter);
-		}
-
-		gameObject = GameObjectPtr();
-	}
-}
-
 void GameScene::ProcessObjectRemoveDeferrals()
 {
-	// @TODO This is really ugly and slow, should go away with better object accessing/storage
-	for (auto& object : m_objectsToRemove)
+	if (m_objectsToRemove.empty())
 	{
-		InternalRemoveGameObject(object);
+		return;
+	}
+
+	// One pass over the registry for every removal this frame, keeping the order of what's left
+	std::unordered_set<const GameObject*> toRemove;
+	for (GameObjectPtr& gameObject : m_objectsToRemove)
+	{
+		AssertExpr(!gameObject->IsInScene());
+		toRemove.insert(*gameObject);
 	}
 	m_objectsToRemove.clear();
+
+	for (std::unique_ptr<GameObject>& gameObject : m_objectRegistry)
+	{
+		if (toRemove.count(gameObject.get()) != 0)
+		{
+			// @TODO This shouldnt be here but we'll end up with "leaking" objects when
+			// we remove from the scene but dont call Uninitialize (which stray resources will be stale and bad)
+			gameObject->Uninitialize();
+			m_objectsByGUID.erase(gameObject->GetGUID());
+		}
+	}
+
+	m_objectRegistry.erase(std::remove_if(m_objectRegistry.begin(), m_objectRegistry.end(),
+		[&toRemove](const std::unique_ptr<GameObject>& gameObject)
+		{
+			return toRemove.count(gameObject.get()) != 0;
+		}), m_objectRegistry.end());
 }
 
 void GameScene::RemoveGameObject(GameObjectPtr& gameObject)
 {
 	AssertNotNull(gameObject);
-	gameObject->OnRemoveFromScene();
-	m_objectsToRemove.emplace_back(gameObject);
 
-	if (gameObject == m_mainCamera)
+	// Out of the hierarchy, so the parent doesn't keep a child that's about to be destroyed
+	if (gameObject->GetParent() != nullptr)
 	{
-		ReplaceMainCamera();
+		gameObject->DetachFromParent();
+	}
+
+	std::vector<GameObject*> subtree;
+	gameObject->GetSubtree(subtree);
+	for (GameObject* object : subtree)
+	{
+		// It may already be out of the scene, set aside by a tool
+		if (object->IsInScene())
+		{
+			object->OnRemoveFromScene();
+		}
+		m_objectsToRemove.emplace_back(GameObjectPtr(object));
+	}
+	gameObject = GameObjectPtr();
+
+	if (m_onObjectsChanged)
+	{
+		m_onObjectsChanged();
 	}
 }
 
@@ -376,11 +395,16 @@ void GameScene::ResolveMainCamera()
 	SetMainCamera(firstMain != nullptr ? firstMain : firstCamera);
 }
 
-void GameScene::ReplaceMainCamera()
+void GameScene::ReplaceMainCameraIfGone()
 {
-	const std::string previousName = m_mainCamera != nullptr ? m_mainCamera->GetName() : std::string();
+	if (m_mainCamera == nullptr || m_mainCamera->IsInScene())
+	{
+		return;
+	}
 
-	// The camera that left is out of the scene, so this skips it and clears its flag
+	const std::string previousName = m_mainCamera->GetName();
+
+	// Skips the camera that left, since it's out of the scene, and clears its flag
 	ResolveMainCamera();
 
 	if (m_mainCamera != nullptr)
@@ -429,6 +453,8 @@ void GameScene::Start()
 void GameScene::Update()
 {
 	OPTICK_EVENT();
+	// Before the removals, while a removed main camera is still around to name
+	ReplaceMainCameraIfGone();
 	ProcessObjectRemoveDeferrals();
 
 	for (auto& gameObject : m_objectRegistry)
@@ -436,7 +462,7 @@ void GameScene::Update()
 		// @todo eventually we should _only_ store root objects maybe?
 		// feels like there could be some gross maintaining that during
 		// AddChild/RemoveChild calls...
-		if (gameObject->IsRoot())
+		if (gameObject->IsInScene() && gameObject->IsRoot())
 		{
 			gameObject->Update();
 		}

@@ -128,6 +128,12 @@ GameObjectComponentPtr<TransformComponent> GameObject::GetTransformComponent()
 
 void GameObject::OnAddToScene()
 {
+	AssertMsg(!m_stateFlags.IsInScene, "GameObject added to the scene while it's already in it");
+	if (m_stateFlags.IsInScene)
+	{
+		return;
+	}
+
 	for (auto& component : m_components)
 	{
 		component->OnAddToScene();
@@ -138,6 +144,12 @@ void GameObject::OnAddToScene()
 
 void GameObject::OnRemoveFromScene()
 {
+	AssertMsg(m_stateFlags.IsInScene, "GameObject removed from the scene while it's already out of it");
+	if (!m_stateFlags.IsInScene)
+	{
+		return;
+	}
+
 	for (auto& component : m_components)
 	{
 		component->OnRemoveFromScene();
@@ -162,6 +174,15 @@ void GameObject::Update()
 	for (auto& child : m_children)
 	{
 		child->Update();
+	}
+}
+
+void GameObject::GetSubtree(std::vector<GameObject*>& outObjects)
+{
+	outObjects.push_back(this);
+	for (GameObjectPtr& child : m_children)
+	{
+		child->GetSubtree(outObjects);
 	}
 }
 
@@ -200,6 +221,18 @@ GameObjectPtr GameObject::GetChildAtIndex(int index)
 	return m_children[index];
 }
 
+int GameObject::GetChildIndex(const GameObject* child) const
+{
+	for (size_t index = 0; index < m_children.size(); ++index)
+	{
+		if (m_children[index].m_ptr == child)
+		{
+			return static_cast<int>(index);
+		}
+	}
+	return -1;
+}
+
 bool GameObject::GetHierarchyBounds(Vector3D& outMin, Vector3D& outMax)
 {
 	outMin = Vector3D(FLT_MAX);
@@ -229,10 +262,10 @@ bool GameObject::GrowHierarchyBounds(Vector3D& inOutMin, Vector3D& inOutMax)
 	return foundAny;
 }
 
-void GameObject::AttachTo(GameObjectPtr gameObject)
+void GameObject::AttachTo(GameObjectPtr gameObject, int childIndex)
 {
 	AssertNotNull(gameObject);
-	gameObject->AddChild(this);
+	gameObject->AddChild(this, childIndex);
 	m_parent = gameObject;
 }
 
@@ -243,7 +276,7 @@ void GameObject::DetachFromParent()
 	m_parent = nullptr;
 }
 
-void GameObject::AddChild(GameObject* child)
+void GameObject::AddChild(GameObject* child, int childIndex)
 {
 #ifdef _DEBUG
 	auto existingChild = std::find_if(m_children.begin(), m_children.end(), [&child](GameObjectPtr gameObject)
@@ -255,7 +288,14 @@ void GameObject::AddChild(GameObject* child)
 #endif
 
 	child->GetTransformComponent()->AttachTo(*GetTransformComponent());
-	m_children.push_back(child);
+	if (childIndex >= 0 && childIndex < static_cast<int>(m_children.size()))
+	{
+		m_children.insert(m_children.begin() + childIndex, GameObjectPtr(child));
+	}
+	else
+	{
+		m_children.push_back(child);
+	}
 	// @todo OnChildAdded/OnAttachToParent signal
 }
 
@@ -269,7 +309,8 @@ void GameObject::RemoveChild(GameObject* child)
 	if (existingChild != m_children.end())
 	{
 		(*existingChild)->GetTransformComponent()->DetachFromParent();
-		ContainerUtils::VectorEraseBack(m_children, existingChild);
+		// Keeps the order, which the Scene panel shows and scene files save
+		m_children.erase(existingChild);
 	}
 }
 

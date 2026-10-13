@@ -51,6 +51,9 @@ public:
 	template <typename TComponentType>
 	void RemoveComponent();
 
+	// Each asserts, then does nothing, if the object is already in (or out of) the scene, so check IsInScene first
+	// where either is possible. An object can be out of the scene but still owned by it: waiting to be destroyed, or
+	// set aside by a tool (the Editor's undo) to be put back later.
 	void OnAddToScene();
 	void OnRemoveFromScene();
 
@@ -91,15 +94,22 @@ public:
 	int NumChildren();
 	bool HasChildren();
 	GameObjectPtr GetChildAtIndex(int index);
+	// child's position among this object's children, or -1 if it isn't one
+	int GetChildIndex(const GameObject* child) const;
 	// Whether gameObject is this object or anywhere below it in the hierarchy. Attaching this object to one of
 	// those would make a cycle.
 	bool IsSelfOrAncestorOf(const GameObjectPtr& gameObject) const;
 
-	void AttachTo(GameObjectPtr gameObject);
+	// childIndex is where it goes among the parent's children; -1 (or past the end) adds it last
+	void AttachTo(GameObjectPtr gameObject, int childIndex = -1);
 	void DetachFromParent();
 
+	// This object, then its descendants, depth first
+	void GetSubtree(std::vector<GameObject*>& outObjects);
+
+
 private:
-	void AddChild(GameObject* child);
+	void AddChild(GameObject* child, int childIndex);
 	void RemoveChild(GameObject* child);
 
 	bool GrowHierarchyBounds(Vector3D& inOutMin, Vector3D& inOutMax);

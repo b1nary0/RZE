@@ -20,6 +20,8 @@ namespace Editor
 	{
 		AssertExpr(Threading::MainThreadDispatcher::Get().IsMainThread());
 
+		const SceneEditScope sceneEdit(*this);
+
 		// Index-based, since a command can push more
 		for (size_t commandIndex = 0; commandIndex < m_pending.size(); ++commandIndex)
 		{

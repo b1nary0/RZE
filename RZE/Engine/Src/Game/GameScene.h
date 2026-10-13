@@ -8,6 +8,7 @@
 
 #include <Utils/Math/Vector3D.h>
 
+#include <functional>
 #include <unordered_map>
 
 class GameScene final
@@ -50,7 +51,12 @@ public:
 	void AddGameObject(const GameObjectPtr& gameObject);
 	
 	void ForEachGameObject(Functor<void, GameObjectPtr> func);
+	// Takes gameObject and all its descendants out of the scene now, and destroys them at the start of the next
+	// Update. Works on objects already out of the scene too. Keeps the order of the objects left.
 	void RemoveGameObject(GameObjectPtr& gameObject);
+
+	// Called whenever an object is added to the scene or removed from it, for tools that track that. Empty by default.
+	void SetObjectsChangedCallback(std::function<void()> callback) { m_onObjectsChanged = std::move(callback); }
 	
 	// @NOTE Creates GameObject with TransformComponent, as all gameobjects have a spatial representation
 	GameObjectPtr CreateGameObject();
@@ -85,10 +91,10 @@ private:
 
 	void AddGameObject(std::unique_ptr<GameObject>&& gameObject);
 
-	// Called when the main camera leaves the scene: the first camera still in it becomes the main camera, if any
-	void ReplaceMainCamera();
+	// When the main camera has left the scene (removed, or set aside by a tool), the first camera still in it takes
+	// over, if there is one
+	void ReplaceMainCameraIfGone();
 
-	void InternalRemoveGameObject(GameObjectPtr& gameObject);
 	void ProcessObjectRemoveDeferrals();
 
 private:
@@ -106,4 +112,6 @@ private:
 	// Set only by SetMainCamera, alongside the camera's flag
 	GameObjectPtr m_mainCamera;
 	bool m_mainCameraDrivesView = true;
+
+	std::function<void()> m_onObjectsChanged;
 };

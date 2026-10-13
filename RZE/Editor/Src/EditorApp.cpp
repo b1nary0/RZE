@@ -79,6 +79,15 @@ namespace Editor
 
 		m_context.GetPanels().CreatePanels(m_context);
 
+#ifdef _DEBUG
+		// Undo only sees changes made through commands, so catch anything that changes the scene's objects another way
+		RZE().GetActiveScene().SetObjectsChangedCallback([this]()
+			{
+				AssertMsg(m_context.GetCommands().IsSceneEditOpen() || m_context.GetSceneDocument().IsLoading(),
+					"Scene objects were added or removed outside a command; in the Editor, change them through one");
+			});
+#endif
+
 		EditorEvents& events = m_context.GetEvents();
 		m_titleSubscriptions.push_back(events.Subscribe<SceneLoadedEvent>([this](const SceneLoadedEvent& event)
 			{
@@ -157,6 +166,7 @@ namespace Editor
 
 	void EditorApp::ShutDown()
 	{
+		RZE().GetActiveScene().SetObjectsChangedCallback(nullptr);
 	}
 
 	void EditorApp::RegisterInputEvents(InputHandler& inputHandler)

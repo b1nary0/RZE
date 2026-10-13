@@ -116,6 +116,8 @@ namespace Editor
 
 	void SceneDocument::CreateEditorCamera()
 	{
+		// Setting up the editor rather than editing the scene, so not a command
+		const CommandQueue::SceneEditScope sceneEdit(m_context.GetCommands());
 		GameObjectPtr editorCameraObject = RZE().GetActiveScene().AddGameObject("EditorCam");
 		GameObjectComponentPtr<TransformComponent> transformComponent = editorCameraObject->GetComponent<TransformComponent>();
 		transformComponent->SetPosition(Vector3D(-4.0f, 10.0f, 4.0f));

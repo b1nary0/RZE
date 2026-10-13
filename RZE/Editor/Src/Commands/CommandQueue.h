@@ -37,7 +37,25 @@ namespace Editor
 
 		bool IsEmpty() const { return m_pending.empty(); }
 
+		// Opened while commands run, and by scene setup that isn't an edit (the editor camera). Adding or removing scene
+		// objects while none is open, other than during a load, asserts in Debug (EditorApp), since undo only sees
+		// changes made through commands.
+		class SceneEditScope
+		{
+		public:
+			explicit SceneEditScope(CommandQueue& commands) : m_commands(commands) { ++m_commands.m_sceneEditDepth; }
+			~SceneEditScope() { --m_commands.m_sceneEditDepth; }
+			SceneEditScope(const SceneEditScope&) = delete;
+			SceneEditScope& operator=(const SceneEditScope&) = delete;
+
+		private:
+			CommandQueue& m_commands;
+		};
+
+		bool IsSceneEditOpen() const { return m_sceneEditDepth > 0; }
+
 	private:
 		std::vector<std::unique_ptr<EditorCommand>> m_pending;
+		int m_sceneEditDepth = 0;
 	};
 }
