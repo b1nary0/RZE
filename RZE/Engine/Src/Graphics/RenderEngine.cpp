@@ -64,6 +64,11 @@ void RenderEngine::Shutdown()
 	Rendering::Renderer::Shutdown();
 }
 
+void RenderEngine::WaitUntilIdle()
+{
+	Rendering::Renderer::WaitUntilIdle();
+}
+
 void RenderEngine::ReleaseRenderStages()
 {
 	m_pipeline->Clear();

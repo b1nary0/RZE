@@ -38,6 +38,8 @@ public:
 	// Finish() does all the work that the main render phase needs including device present
 	void Finish();
 	void Shutdown();
+	// See Rendering::Renderer::WaitUntilIdle
+	void WaitUntilIdle();
 
 	// Destroys all render stages, releasing any resources they hold, and what they keep for the main scene. Must be
 	// called before ResourceHandler::ShutDown().

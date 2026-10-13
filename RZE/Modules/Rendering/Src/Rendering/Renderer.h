@@ -60,6 +60,9 @@ namespace Rendering
 		static U64 GetRecordingFrame() { return m_recordingFrame; }
 		// Whether the render thread has run every command pushed up to the end of frame. Main thread only.
 		static bool IsFrameProcessed(U64 frame) { return frame + 2 <= m_recordingFrame; }
+		// Blocks until the render thread has run every frame it's been given. Until the next DevicePresent it reads
+		// nothing the commands pushed so far point at, e.g. while shutting down. Main thread only.
+		static void WaitUntilIdle();
 
 		static void HandleWindowResize(const Vector2D& newSize);
 

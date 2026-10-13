@@ -365,6 +365,13 @@ void RZE_Engine::BeginShutDown()
 	//@todo this is a quick fix for the cyclical dependency between Rendering::MemArena and ResourceHandler releasing leftover reasources.
 	m_renderEngine->GetMainScene().ClearObjects();
 	m_renderEngine->ReleaseRenderStages();
+
+	// What was released while shutting down is waiting on the render thread (ResourceHandler::DestroyWhenRendered). It
+	// goes once the render thread has finished its last frame, and before the renderer shuts down, since releasing a
+	// GPU resource records a render command.
+	m_renderEngine->WaitUntilIdle();
+	m_resourceHandler.DestroyPendingNow();
+
 	m_renderEngine->Shutdown();
 
 	Threading::JobScheduler::Get().ShutDown();

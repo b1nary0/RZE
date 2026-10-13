@@ -63,6 +63,11 @@ namespace Rendering
 		MemArena::Shutdown();
 	}
 
+	void Renderer::WaitUntilIdle()
+	{
+		m_renderThread.RunWhileIdle([]() {});
+	}
+
 	void Renderer::BeginFrame(const char* frameName)
 	{
 		RenderCommand_BeginFrame* command = MemArena::AllocType<RenderCommand_BeginFrame>();

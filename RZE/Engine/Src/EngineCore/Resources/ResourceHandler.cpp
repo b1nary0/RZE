@@ -20,7 +20,8 @@ void ResourceHandler::Init()
 
 void ResourceHandler::ShutDown()
 {
-	// The render thread has stopped by now
+	// The engine destroyed what was waiting before the renderer shut down (RZE_Engine::BeginShutDown). What's been
+	// released since goes here, so it mustn't be a GPU resource: the renderer is gone.
 	DestroyPendingNow();
 
 	U32 liveResourceCount = 0;

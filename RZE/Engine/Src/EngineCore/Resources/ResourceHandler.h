@@ -102,6 +102,10 @@ public:
 	// uploaded (see Rendering::Renderer::IsFrameProcessed). Every resource the handler destroys goes through this, so
 	// one can be released in the frame it was uploaded or drawn in.
 	void DestroyWhenRendered(IResource* resource);
+	// Releases and deletes every resource waiting on the render thread straight away. Only while it's idle and won't
+	// be given another frame, i.e. while shutting down, and before the renderer shuts down: releasing a GPU resource
+	// records a render command.
+	void DestroyPendingNow();
 
 	// Async loads in progress, so a second request for a resource waits for the first instead of loading and uploading
 	// it again. loader identifies who's loading it (e.g. an AsyncResourceBatch); only it can end the load. Returns false
@@ -124,8 +128,7 @@ private:
 
 	const std::unordered_map<std::string, ResourceSource>& GetResourceTableInternal() const;
 
-	// Releases and deletes every resource waiting on the render thread. Only once it's stopped.
-	void DestroyPendingNow();
+
 
 	// #TODO Turn the resource IDs into hashes/guids
 	std::unordered_map<std::string, ResourceSource> mResourceTable;
