@@ -38,6 +38,11 @@ void DebugDrawRenderStage::Render(RenderContext& context)
 	OPTICK_EVENT();
 
 	const RenderView& view = context.View;
+	if (!view.DrawsDebug)
+	{
+		return;
+	}
+
 	const RenderEngine::SceneData& renderData = context.Scene;
 
 	m_scratchVertices.clear();

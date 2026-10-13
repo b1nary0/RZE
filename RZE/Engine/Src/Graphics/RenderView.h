@@ -72,6 +72,8 @@ public:
 	Rendering::RenderTargetTexture* Target = nullptr;
 	// EV on top of auto-exposure
 	float ExposureCompensation = 0.0f;
+	// Debug lines (the editor's grid, camera frustums, bounds boxes); off for clean captures such as thumbnails
+	bool DrawsDebug = true;
 	// Served by the main view's next render, then cleared
 	std::optional<RenderPickRequest> Pick;
 

@@ -55,6 +55,10 @@ public:
 	// by making another one main, but undo can need to turn it off when there was none before.
 	void SetMainCamera(bool isMainCamera);
 
+	// What the camera sees, for a view of viewportSize pixels: its field of view and cull distances at that size's
+	// aspect ratio. Leaves the camera's own matrices alone.
+	RenderCamera CreateRenderCamera(const Vector2D& viewportSize) const;
+
 	// Renders what the camera sees into its preview target, at the preview's own aspect ratio. Leaves the
 	// camera's own matrices alone. The result is ready to show once the frame renders.
 	void RenderPreview();

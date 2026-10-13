@@ -114,20 +114,26 @@ Vector2D CameraComponent::GetPreviewSize()
 	return Vector2D(426.0f, 240.0f);
 }
 
-void CameraComponent::RenderPreview()
+RenderCamera CameraComponent::CreateRenderCamera(const Vector2D& viewportSize) const
 {
-	const Vector2D previewSize = GetPreviewSize();
 	const Vector3D& position = GetOwner()->GetTransformComponent()->GetPosition();
 
 	// Local matrices; the camera's own are for its real viewport
-	const Matrix4x4 projection = Matrix4x4::CreatePerspectiveMatrixZeroToOne(m_fov, previewSize.X() / previewSize.Y(), m_nearCull, m_farCull);
+	const Matrix4x4 projection = Matrix4x4::CreatePerspectiveMatrixZeroToOne(m_fov, viewportSize.X() / viewportSize.Y(), m_nearCull, m_farCull);
 	const Matrix4x4 view = Matrix4x4::CreateViewMatrix(position, position + GetForward(), GetUpDir());
 
-	RenderCamera& renderCam = m_previewView->Camera;
-	renderCam.Viewport = RenderViewport{ previewSize };
+	RenderCamera renderCam;
+	renderCam.Viewport = RenderViewport{ viewportSize };
 	renderCam.ClipSpace = projection * view;
 	renderCam.Position = position;
+	return renderCam;
+}
 
+void CameraComponent::RenderPreview()
+{
+	const Vector2D previewSize = GetPreviewSize();
+
+	m_previewView->Camera = CreateRenderCamera(previewSize);
 	m_previewView->ViewportSize = previewSize;
 	m_previewView->ExposureCompensation = m_exposureCompensation;
 
