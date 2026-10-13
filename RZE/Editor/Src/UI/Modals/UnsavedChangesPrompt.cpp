@@ -23,8 +23,9 @@ namespace Editor
 
 		m_actionDescription = std::move(actionDescription);
 		m_pendingAction = std::move(action);
-		// Opened from Display, since a request can come from inside a menu, whose ID stack the popup mustn't use
-		m_shouldOpen = true;
+		// Opened from Display, since a request can come from inside a menu, whose ID stack the popup mustn't use.
+		// While the save is being asked about, the new action just waits on it instead.
+		m_shouldOpen = !m_isSaving;
 	}
 
 	void UnsavedChangesPrompt::Display(EditorContext& context)
@@ -52,9 +53,14 @@ namespace Editor
 
 		if (ImGui::Button("Save", ImVec2(k_buttonWidth, 0.0f)))
 		{
-			// Cancelling the file prompt for a new scene cancels the whole thing, rather than losing the changes
+			// Cancelling the file browser for a new scene cancels the whole thing, rather than losing the changes
 			ImGui::CloseCurrentPopup();
-			Finish(context.GetSceneDocument().SaveWithPrompt());
+			m_isSaving = true;
+			context.GetSceneDocument().SaveWithPrompt([this](bool saved)
+				{
+					m_isSaving = false;
+					Finish(saved);
+				});
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Don't Save", ImVec2(k_buttonWidth, 0.0f)))

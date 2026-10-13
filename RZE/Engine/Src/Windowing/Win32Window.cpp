@@ -11,11 +11,9 @@
 #include <Windowing/WindowMessageAdaptor.h>
 
 #include <Utils/Conversions.h>
-#include <Utils/GUID.h>
 #include <Utils/DebugUtils/Debug.h>
 
 #include <stdlib.h>
-#include <shobjidl.h>     // for IFileDialogEvents and IFileDialogControlEvents
 
 LRESULT CALLBACK WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp);
 
@@ -403,139 +401,6 @@ void Win32Window::Maximize()
 	ShowWindow(m_osWindowHandleData.windowHandle, SW_MAXIMIZE);
 
 	QueryClientSize();
-}
-
-// @TODO pass in some like enum EFileOpenContext or better yet a struct of instructions for the open file prompt
-bool Win32Window::ShowOpenFilePrompt(const FilePromptParams& params, std::string& chosenPath)
-{
-	HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
-		COINIT_DISABLE_OLE1DDE);
-	if (SUCCEEDED(hr))
-	{
-		IFileOpenDialog* pFileOpen;
-
-		// Create the FileOpenDialog object.
-		hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
-			IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
-
-		if (SUCCEEDED(hr))
-		{
-			static GUID guid = GUIDHelper::GenerateGUID();
-			pFileOpen->SetClientGuid(guid);
-			pFileOpen->SetFileName(Conversions::StringToWString(params.DirectoryPath.GetAbsolutePath()).c_str());
-			{
-				IShellItem* folder;
-				const HRESULT result = SHCreateItemFromParsingName(
-					Conversions::StringToWString(params.DirectoryPath.GetAbsolutePath()).c_str(), 
-					nullptr, 
-					IID_PPV_ARGS(&folder));
-
-				if (SUCCEEDED(result))
-				{
-					pFileOpen->SetFolder(folder);
-				}
-			}
-
-			std::wstring wStrPromptName = Conversions::StringToWString(params.Name);
-			std::wstring wStrTypeFilter = Conversions::StringToWString(params.FiletypeFilter);
-
-			COMDLG_FILTERSPEC rgSpec[] =
-			{
-				{wStrPromptName.c_str(), wStrTypeFilter.c_str()}
-			};
-			pFileOpen->SetFileTypes(1, rgSpec);
-
-			// Show the Open dialog box.
-			hr = pFileOpen->Show(NULL);
-
-			// Get the file name from the dialog box.
-			if (SUCCEEDED(hr))
-			{
-				IShellItem* pItem;
-				hr = pFileOpen->GetResult(&pItem);
-				if (SUCCEEDED(hr))
-				{
-					PWSTR pszFilePath;
-					hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
-
-					constexpr size_t k_maxCharacters = 512;
-
-					char converted[k_maxCharacters];
-					size_t convertedCount = 0;
-					wcstombs_s(&convertedCount, converted, pszFilePath, k_maxCharacters);
-
-					chosenPath = converted;
-
-					pItem->Release();
-					pFileOpen->Release();
-					CoUninitialize();
-
-					return true;
-				}
-			}
-			pFileOpen->Release();
-		}
-		CoUninitialize();
-	}
-
-	return false;
-}
-
-bool Win32Window::ShowSaveFilePrompt(const FilePromptParams& params, std::string& chosenPath)
-{
-	HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED |
-		COINIT_DISABLE_OLE1DDE);
-	if (SUCCEEDED(hr))
-	{
-		IFileSaveDialog* pSaveFile;
-
-		// Create the FileOpenDialog object.
-		hr = CoCreateInstance(CLSID_FileSaveDialog, nullptr, CLSCTX_ALL,
-			IID_IFileSaveDialog, reinterpret_cast<void**>(&pSaveFile));
-
-		if (SUCCEEDED(hr))
-		{
-			static GUID guid = GUIDHelper::GenerateGUID();
-			pSaveFile->SetClientGuid(guid);
-
-			std::wstring wStrPromptName = Conversions::StringToWString(params.Name);
-			std::wstring wStrTypeFilter = Conversions::StringToWString(params.FiletypeFilter);
-			COMDLG_FILTERSPEC rgSpec[] =
-			{
-				{wStrPromptName.c_str(), wStrTypeFilter.c_str()}
-			};
-			
-			pSaveFile->SetFileTypes(1, rgSpec);
-
-			hr = pSaveFile->Show(m_osWindowHandleData.windowHandle);
-			if (SUCCEEDED(hr))
-			{
-				IShellItem* pItem = nullptr;
-				pSaveFile->GetResult(&pItem);
-
-				PWSTR pszFilePath;
-				hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
-
-				constexpr size_t k_maxCharacters = 512;
-
-				char converted[k_maxCharacters];
-				size_t convertedCount = 0;
-				wcstombs_s(&convertedCount, converted, pszFilePath, k_maxCharacters);
-
-				chosenPath = converted;
-				
-				pItem->Release();
-				pSaveFile->Release();
-				CoUninitialize();
-
-				return true;
-			}
-			pSaveFile->Release();
-		}
-		CoUninitialize();
-	}
-
-	return false;
 }
 
 LRESULT CALLBACK WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp)

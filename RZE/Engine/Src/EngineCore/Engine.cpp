@@ -415,18 +415,6 @@ AsyncOperationManager& RZE_Engine::GetAsyncOperationManager()
 	return m_asyncOperationManager;
 }
 
-bool RZE_Engine::ShowOpenFilePrompt(const FilePromptParams& params, std::string& chosenPath)
-{
-	AssertNotNull(m_window);
-	return m_window->ShowOpenFilePrompt(params, chosenPath);
-}
-
-bool RZE_Engine::ShowSaveFilePrompt(const FilePromptParams& params, std::string& chosenPath)
-{
-	AssertNotNull(m_window);
-	return m_window->ShowSaveFilePrompt(params, chosenPath);
-}
-
 void RZE_Engine::Log(const std::string& text, const Vector3D& color)
 {
 }

@@ -11,6 +11,7 @@
 #include <ImGui/imgui_internal.h> // RenderTextEllipsis
 
 #include <algorithm>
+#include <cstring>
 
 namespace
 {
@@ -39,6 +40,8 @@ namespace
 	constexpr int k_releaseDelayFrames = 3;
 
 	const ImVec4 k_folderColour(0.86f, 0.70f, 0.36f, 1.0f);
+	const ImVec4 k_warningColour(1.0f, 0.78f, 0.35f, 1.0f);
+	const ImVec4 k_errorColour(1.0f, 0.45f, 0.40f, 1.0f);
 }
 
 namespace Editor
@@ -46,6 +49,9 @@ namespace Editor
 	void FileBrowserModal::Open(FileBrowserRequest request)
 	{
 		ReleaseThumbnails();
+
+		// A request still open is replaced, so it's answered as cancelled once the new one is set up
+		std::function<void()> replacedCancelled = IsOpen() ? std::move(m_request.OnCancelled) : nullptr;
 
 		m_request = std::move(request);
 		m_folder = m_request.RootFolder;
@@ -68,8 +74,21 @@ namespace Editor
 		Refresh();
 		m_scrollToTop = !m_scrollToSelected;
 
+		m_saveError.clear();
+		m_pendingReplace = Filepath();
+		if (IsSaving())
+		{
+			SetFileName(m_request.InitialSelection.IsValid() ? m_request.InitialSelection.GetStem() : m_request.DefaultFileName);
+			m_focusFileName = true;
+		}
+
 		// Opened from Display, since a request can come from inside a menu or a panel, whose ID stack the popup mustn't use
 		m_shouldOpen = true;
+
+		if (replacedCancelled)
+		{
+			replacedCancelled();
+		}
 	}
 
 	bool FileBrowserModal::ConsumeResult(ImGuiID requesterID, Filepath& outFile)
@@ -132,6 +151,12 @@ namespace Editor
 			// Closed by something other than the browser
 			m_isOpen = false;
 			ReleaseThumbnails();
+			std::function<void()> cancelled = std::move(m_request.OnCancelled);
+			m_request = FileBrowserRequest();
+			if (cancelled)
+			{
+				cancelled();
+			}
 			return;
 		}
 
@@ -177,7 +202,7 @@ namespace Editor
 			Refresh();
 			m_scrollToTop = true;
 		}
-		m_isSearchActive = ImGui::IsItemActive() || ImGui::IsItemDeactivated();
+		m_isTextActive = ImGui::IsItemActive() || ImGui::IsItemDeactivated();
 
 		ImGui::SetCursorPos(ImVec2(start.x, headerBottom));
 		ImGui::Spacing();
@@ -235,7 +260,9 @@ namespace Editor
 	void FileBrowserModal::DrawTiles()
 	{
 		const ImGuiStyle& style = ImGui::GetStyle();
-		const float footerHeight = ImGui::GetFrameHeight() + style.ItemSpacing.y * 2.0f + 6.0f;
+		const bool hasNoticeRow = IsSaving() && !m_saveError.empty() && !m_pendingReplace.IsValid();
+		const float footerHeight = ImGui::GetFrameHeight() + style.ItemSpacing.y * 2.0f + 6.0f
+			+ (hasNoticeRow ? ImGui::GetTextLineHeightWithSpacing() : 0.0f);
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(k_gridPadding, k_gridPadding));
 		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, k_tileRounding);
@@ -360,6 +387,10 @@ namespace Editor
 		if (ImGui::IsItemActivated())
 		{
 			m_selected = entry.Path;
+			if (IsSaving() && !entry.IsFolder)
+			{
+				SetFileName(entry.Path.GetStem());
+			}
 		}
 		const bool isActivated = isHovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
 		const bool isSelected = entry.Path.GetRelativePath() == m_selected.GetRelativePath();
@@ -484,46 +515,115 @@ namespace Editor
 		ImGui::Spacing();
 
 		const ImGuiStyle& style = ImGui::GetStyle();
-		const float right = ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x;
+		const float buttonsX = ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - k_buttonWidth * 2.0f - style.ItemSpacing.x;
 		const FolderEntry* const selected = GetSelected();
 
-		ImGui::AlignTextToFramePadding();
-		if (selected != nullptr)
+		bool isCancelled = false;
+		bool isConfirmed = false;
+
+		if (!IsSaving())
 		{
-			ImGui::TextDisabled("%s", selected->Path.GetRelativePath().c_str());
+			ImGui::AlignTextToFramePadding();
+			if (selected != nullptr)
+			{
+				ImGui::TextDisabled("%s", selected->Path.GetRelativePath().c_str());
+			}
+			else
+			{
+				ImGui::TextDisabled("Double-click a file to open it");
+			}
+
+			ImGui::SameLine(buttonsX);
+			isCancelled = ImGui::Button("Cancel", ImVec2(k_buttonWidth, 0.0f));
+			ImGui::SameLine();
+			ImGui::BeginDisabled(selected == nullptr);
+			isConfirmed = EditorUI::PrimaryButton(m_request.ConfirmLabel.c_str(), ImVec2(k_buttonWidth, 0.0f));
+			ImGui::EndDisabled();
+		}
+		else if (m_pendingReplace.IsValid())
+		{
+			// Asks in place, rather than in a second popup over this one
+			ImGui::AlignTextToFramePadding();
+			ImGui::TextColored(k_warningColour, "%s already exists. Replace it?", m_pendingReplace.GetFileName().c_str());
+
+			ImGui::SameLine(buttonsX);
+			if (ImGui::Button("Back", ImVec2(k_buttonWidth, 0.0f)))
+			{
+				m_pendingReplace = Filepath();
+			}
+			ImGui::SameLine();
+			if (EditorUI::PrimaryButton("Replace", ImVec2(k_buttonWidth, 0.0f)))
+			{
+				Choose(m_pendingReplace);
+				return;
+			}
 		}
 		else
 		{
-			ImGui::TextDisabled("Double-click a file to open it");
+			if (!m_saveError.empty())
+			{
+				ImGui::TextColored(k_errorColour, "%s", m_saveError.c_str());
+			}
+
+			ImGui::AlignTextToFramePadding();
+			ImGui::TextUnformatted("File name");
+			ImGui::SameLine();
+
+			if (m_focusFileName)
+			{
+				ImGui::SetKeyboardFocusHere();
+				m_focusFileName = false;
+			}
+			ImGui::SetNextItemWidth(std::max(1.0f, buttonsX - ImGui::GetCursorPosX() - style.ItemSpacing.x));
+			const bool isEntered = ImGui::InputText("##fileName", m_fileName, sizeof(m_fileName), ImGuiInputTextFlags_EnterReturnsTrue);
+			if (ImGui::IsItemEdited())
+			{
+				m_saveError.clear();
+			}
+			m_isTextActive = m_isTextActive || ImGui::IsItemActive() || ImGui::IsItemDeactivated();
+
+			ImGui::SameLine(buttonsX);
+			isCancelled = ImGui::Button("Cancel", ImVec2(k_buttonWidth, 0.0f));
+			ImGui::SameLine();
+			ImGui::BeginDisabled(m_fileName[0] == 0);
+			isConfirmed = EditorUI::PrimaryButton(m_request.ConfirmLabel.c_str(), ImVec2(k_buttonWidth, 0.0f)) || isEntered;
+			ImGui::EndDisabled();
 		}
 
-		ImGui::SameLine(right - k_buttonWidth * 2.0f - style.ItemSpacing.x);
-		if (ImGui::Button("Cancel", ImVec2(k_buttonWidth, 0.0f)))
+		if (isCancelled)
 		{
-			Close();
-			return;
+			Cancel();
 		}
-
-		ImGui::SameLine();
-		ImGui::BeginDisabled(selected == nullptr);
-		const bool isConfirmed = EditorUI::PrimaryButton(m_request.ConfirmLabel.c_str(), ImVec2(k_buttonWidth, 0.0f));
-		ImGui::EndDisabled();
-
-		if (isConfirmed)
+		else if (isConfirmed)
 		{
-			ConfirmSelection();
+			if (IsSaving())
+			{
+				ConfirmSave();
+			}
+			else
+			{
+				ConfirmSelection();
+			}
 		}
 	}
 
 	void FileBrowserModal::HandleKeys(int columns)
 	{
-		if (ImGui::IsKeyPressed(ImGuiKey_Escape, false) && !m_isSearchActive)
+		if (ImGui::IsKeyPressed(ImGuiKey_Escape, false) && !m_isTextActive)
 		{
-			Close();
+			// Backs out of the replace question first
+			if (m_pendingReplace.IsValid())
+			{
+				m_pendingReplace = Filepath();
+			}
+			else
+			{
+				Cancel();
+			}
 			return;
 		}
 
-		// Typing in the search box keeps its keys
+		// Typing in a text field keeps its keys
 		if (ImGui::IsAnyItemActive())
 		{
 			return;
@@ -576,20 +676,37 @@ namespace Editor
 	void FileBrowserModal::ConfirmSelection()
 	{
 		const FolderEntry* const selected = GetSelected();
-		if (selected == nullptr)
-		{
-			return;
-		}
-
-		if (selected->IsFolder)
+		if (selected != nullptr && selected->IsFolder)
 		{
 			const Filepath folder = selected->Path;
 			m_selected = Filepath();
 			Navigate(folder);
 		}
-		else
+		else if (IsSaving())
+		{
+			ConfirmSave();
+		}
+		else if (selected != nullptr)
 		{
 			Choose(selected->Path);
+		}
+	}
+
+	void FileBrowserModal::ConfirmSave()
+	{
+		const std::string extension = m_request.Extensions.empty() ? std::string() : m_request.Extensions.front();
+		const SaveName saveName = ResolveSaveName(m_folder, m_fileName, extension);
+		if (!saveName.Error.empty())
+		{
+			m_saveError = saveName.Error;
+		}
+		else if (saveName.Path.Exists())
+		{
+			m_pendingReplace = saveName.Path;
+		}
+		else
+		{
+			Choose(saveName.Path);
 		}
 	}
 
@@ -609,6 +726,26 @@ namespace Editor
 			m_resultRequester = request.RequesterID;
 			m_result = file;
 		}
+	}
+
+	void FileBrowserModal::Cancel()
+	{
+		// Moved out first, like Choose
+		std::function<void()> cancelled = std::move(m_request.OnCancelled);
+		m_request = FileBrowserRequest();
+		Close();
+
+		if (cancelled)
+		{
+			cancelled();
+		}
+	}
+
+	void FileBrowserModal::SetFileName(const std::string& name)
+	{
+		strncpy_s(m_fileName, name.c_str(), _TRUNCATE);
+		m_saveError.clear();
+		m_pendingReplace = Filepath();
 	}
 
 	void FileBrowserModal::Close()

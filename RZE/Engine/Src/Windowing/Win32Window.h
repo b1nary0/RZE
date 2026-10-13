@@ -15,13 +15,6 @@
 class EventHandler;
 class InputHandler;
 
-struct FilePromptParams
-{
-	std::string Name;
-	Filepath DirectoryPath;
-	std::string FiletypeFilter;
-};
-
 class Win32Window
 {
 
@@ -71,10 +64,6 @@ public:
 	void SetWindowSize(const Vector2D& newSize);
 
 	void Maximize();
-
-	bool ShowOpenFilePrompt(const FilePromptParams& params, std::string& chosenPath);
-
-	bool ShowSaveFilePrompt(const FilePromptParams& params, std::string& chosenPath);
 
 protected:
 

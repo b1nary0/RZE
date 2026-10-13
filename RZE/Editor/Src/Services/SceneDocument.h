@@ -4,6 +4,7 @@
 
 #include <Utils/Platform/Filepath.h>
 
+#include <functional>
 #include <memory>
 
 class AsyncOperation;
@@ -39,8 +40,10 @@ namespace Editor
 
 		void Save();
 		void SaveAs(const Filepath& filepath);
-		// Saves to the scene's file, or asks for one first if it hasn't got one. False if the user cancelled that.
-		bool SaveWithPrompt();
+		// Saves to the scene's file, or asks for one in the file browser first if it hasn't got one. onDone, if given,
+		// runs once: with true when the scene is saved (straight away if it has a file), or false if the browser is
+		// cancelled.
+		void SaveWithPrompt(std::function<void(bool saved)> onDone = nullptr);
 
 		// Where scene files live, which file prompts start in
 		static const Filepath& GetSceneFolder();

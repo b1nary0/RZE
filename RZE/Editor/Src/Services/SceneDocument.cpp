@@ -1,5 +1,6 @@
 #include <Services/SceneDocument.h>
 
+#include <Services/Thumbnails.h>
 #include <UI/Framework/EditorContext.h>
 
 #include <RZE.h>
@@ -10,8 +11,6 @@
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
 #include <EngineCore/Async/AsyncOperationManager.h>
-
-#include <Windowing/Win32Window.h> // FilePromptParams
 
 #include <DebugUtils/DebugServices.h>
 
@@ -100,29 +99,41 @@ namespace Editor
 		OnSaved();
 	}
 
-	bool SceneDocument::SaveWithPrompt()
+	void SceneDocument::SaveWithPrompt(std::function<void(bool saved)> onDone)
 	{
 		if (HasFilePath())
 		{
 			Save();
-			return true;
+			if (onDone)
+			{
+				onDone(true);
+			}
+			return;
 		}
 
-		const FilePromptParams saveFileParams =
-		{
-			"Save Scene",
-			GetSceneFolder(),
-			"*.scene"
-		};
-
-		std::string chosenPath;
-		if (!RZE().ShowSaveFilePrompt(saveFileParams, chosenPath))
-		{
-			return false;
-		}
-
-		SaveAs(Filepath::FromAbsolutePathStr(chosenPath));
-		return true;
+		FileBrowserRequest request;
+		request.Mode = EFileBrowserMode::Save;
+		request.Title = "Save Scene";
+		request.ConfirmLabel = "Save";
+		request.RootFolder = GetSceneFolder();
+		request.Extensions = { ".scene" };
+		request.ThumbnailFor = [](const Filepath& file) { return Thumbnails::Scenes().GetPathFor(file); };
+		request.OnChosen = [this, onDone](const Filepath& file)
+			{
+				SaveAs(file);
+				if (onDone)
+				{
+					onDone(true);
+				}
+			};
+		request.OnCancelled = [onDone]()
+			{
+				if (onDone)
+				{
+					onDone(false);
+				}
+			};
+		m_context.GetFileBrowser().Open(std::move(request));
 	}
 
 	const Filepath& SceneDocument::GetSceneFolder()

@@ -123,3 +123,29 @@ TEST_CASE("ParseExtensionFilter turns a file-prompt filter into extensions")
 	CHECK(ParseExtensionFilter("*.*").empty());
 	CHECK(ParseExtensionFilter("").empty());
 }
+
+TEST_CASE("ResolveSaveName adds the extension unless the name already ends with it")
+{
+	const Filepath scenes("Assets/Scenes");
+
+	CHECK(ResolveSaveName(scenes, "Level 2", ".scene").Path.GetRelativePath() == R"(Assets\Scenes\Level 2.scene)");
+	CHECK(ResolveSaveName(scenes, "Level 2.scene", ".scene").Path.GetRelativePath() == R"(Assets\Scenes\Level 2.scene)");
+	CHECK(ResolveSaveName(scenes, "Level 2.SCENE", ".scene").Path.GetRelativePath() == R"(Assets\Scenes\Level 2.SCENE)");
+	// Another extension is part of the name
+	CHECK(ResolveSaveName(scenes, "notes.txt", ".scene").Path.GetRelativePath() == R"(Assets\Scenes\notes.txt.scene)");
+	// Spaces around the name go
+	CHECK(ResolveSaveName(scenes, "  Level 2 ", ".scene").Path.GetRelativePath() == R"(Assets\Scenes\Level 2.scene)");
+	CHECK(ResolveSaveName(scenes, "Level 2", ".scene").Error.empty());
+}
+
+TEST_CASE("ResolveSaveName refuses names Windows can't use")
+{
+	const Filepath scenes("Assets/Scenes");
+
+	for (const char* name : { "", "   ", "a/b", R"(a\b)", "a:b", "a*b", "a?b", "a\"b", "a<b", "a>b", "a|b", "trailing." })
+	{
+		const SaveName saveName = ResolveSaveName(scenes, name, ".scene");
+		CHECK_MESSAGE(!saveName.Path.IsValid(), name);
+		CHECK_MESSAGE(!saveName.Error.empty(), name);
+	}
+}

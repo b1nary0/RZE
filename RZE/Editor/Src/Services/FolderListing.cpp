@@ -3,6 +3,7 @@
 #include <Utils/StringUtils.h>
 
 #include <algorithm>
+#include <cstring>
 #include <ctime>
 #include <filesystem>
 
@@ -111,6 +112,41 @@ namespace Editor
 		}
 
 		return extensions;
+	}
+
+	SaveName ResolveSaveName(const Filepath& folder, const std::string& typedName, const std::string& extension)
+	{
+		SaveName result;
+
+		const size_t first = typedName.find_first_not_of(" \t");
+		const size_t last = typedName.find_last_not_of(" \t");
+		const std::string name = first == std::string::npos ? std::string() : typedName.substr(first, last - first + 1);
+		if (name.empty())
+		{
+			result.Error = "Enter a file name";
+			return result;
+		}
+
+		const char* const invalidCharacters = "\\/:*?\"<>|";
+		const bool hasInvalidCharacter = std::any_of(name.begin(), name.end(),
+			[invalidCharacters](unsigned char c) { return c < 32 || std::strchr(invalidCharacters, c) != nullptr; });
+		if (hasInvalidCharacter)
+		{
+			result.Error = "A file name can't contain \\ / : * ? \" < > |";
+			return result;
+		}
+
+		// Windows drops a trailing dot, so the file wouldn't be named what was typed
+		if (name.back() == '.')
+		{
+			result.Error = "A file name can't end with a dot";
+			return result;
+		}
+
+		const bool hasExtension = name.size() > extension.size()
+			&& StringUtils::EqualsIgnoringCase(name.substr(name.size() - extension.size()), extension);
+		result.Path = Filepath(folder.GetRelativePath() + "/" + name + (hasExtension ? "" : extension));
+		return result;
 	}
 
 	std::string FormatTimeAgo(std::chrono::system_clock::time_point time, std::chrono::system_clock::time_point now)
