@@ -11,6 +11,20 @@ namespace Editor
 		// Section headings, e.g. each component in the Object Inspector
 		constexpr ImVec4 k_headingColour = ImVec4(0.65f, 0.65f, 1.0f, 1.0f);
 
+		// What's selected or confirms, e.g. a selected tile's outline or a dialog's main button
+		constexpr ImVec4 k_accentColour = ImVec4(0.26f, 0.59f, 0.98f, 1.0f);
+		constexpr ImVec4 k_accentHoveredColour = ImVec4(0.36f, 0.66f, 1.0f, 1.0f);
+		constexpr ImVec4 k_accentActiveColour = ImVec4(0.18f, 0.48f, 0.86f, 1.0f);
+
+		// colour with its alpha replaced, packed for an ImDrawList
+		ImU32 WithAlpha(const ImVec4& colour, float alpha);
+
+		// A button in the accent colours, for a dialog's main action (Open, Save)
+		bool PrimaryButton(const char* label, const ImVec2& size = ImVec2(0.0f, 0.0f));
+
+		// Text centred on centre, in the current font at fontSize
+		void AddCentredText(ImDrawList* drawList, const ImVec2& centre, float fontSize, ImU32 colour, const char* text);
+
 		// A heading in k_headingColour with a separator under it
 		void SectionHeading(const char* text);
 

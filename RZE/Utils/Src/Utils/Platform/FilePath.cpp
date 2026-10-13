@@ -2,6 +2,7 @@
 
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Platform/Filepath.h>
+#include <Utils/StringUtils.h>
 
 #include <filesystem>
 #include <Windows.h>
@@ -102,6 +103,39 @@ const std::string Filepath::GetRelativeDirectoryPath() const
 {
 	size_t substrCount = m_relativePath.find_last_of('\\');
 	return m_relativePath.substr(0, substrCount + 1);
+}
+
+std::string Filepath::GetFileName() const
+{
+	return std::filesystem::path(m_relativePath).filename().string();
+}
+
+std::string Filepath::GetStem() const
+{
+	return std::filesystem::path(m_relativePath).stem().string();
+}
+
+std::string Filepath::GetExtension() const
+{
+	return std::filesystem::path(m_relativePath).extension().string();
+}
+
+Filepath Filepath::GetParentFolder() const
+{
+	const size_t separator = m_relativePath.find_last_of('\\');
+	return separator != std::string::npos ? Filepath(m_relativePath.substr(0, separator)) : Filepath();
+}
+
+bool Filepath::IsInside(const Filepath& folder) const
+{
+	const std::string& folderPath = folder.m_relativePath;
+	if (!IsValid() || !folder.IsValid() || !StringUtils::StartsWithIgnoringCase(m_relativePath, folderPath))
+	{
+		return false;
+	}
+
+	// "Assets\Scenes2" isn't inside "Assets\Scenes"
+	return m_relativePath.size() == folderPath.size() || m_relativePath[folderPath.size()] == '\\';
 }
 
 bool Filepath::IsValid() const

@@ -30,6 +30,18 @@ public:
 	const std::string GetAbsoluteDirectoryPath() const;
 	const std::string GetRelativeDirectoryPath() const;
 
+	// The file or folder's own name, e.g. "Sponza.scene"
+	std::string GetFileName() const;
+	// GetFileName without its extension, e.g. "Sponza"
+	std::string GetStem() const;
+	// With its dot, e.g. ".scene"; empty if it has none
+	std::string GetExtension() const;
+
+	// The folder this is in, e.g. "Assets/Scenes" for "Assets/Scenes/Sponza.scene"; invalid if it isn't in one
+	Filepath GetParentFolder() const;
+	// Whether this is folder, or anywhere under it. Compares relative paths, ignoring case.
+	bool IsInside(const Filepath& folder) const;
+
 	bool IsValid() const;
 
 	static void SetDirectoryContext(EDirectoryContext context);

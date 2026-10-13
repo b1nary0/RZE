@@ -15,6 +15,7 @@
 #include <Services/SelectionBoundsDisplay.h>
 #include <Services/UndoHistory.h>
 
+#include <UI/Modals/FileBrowserModal.h>
 #include <UI/Modals/UnsavedChangesPrompt.h>
 
 #include <Game/World/GameObject/GameObjectDefinitions.h>
@@ -93,6 +94,9 @@ namespace Editor
 		// For anything that would lose unsaved scene changes (New, Load, Exit): asks about saving them first
 		UnsavedChangesPrompt& GetUnsavedChangesPrompt() { return m_unsavedChangesPrompt; }
 
+		// Picks a file in a modal browser of thumbnail tiles
+		FileBrowserModal& GetFileBrowser() { return m_fileBrowser; }
+
 	private:
 		// First, so it's destroyed last: everything below may hold subscriptions
 		EditorEvents m_events;
@@ -110,5 +114,6 @@ namespace Editor
 		CommandQueue m_commands;
 		UndoHistory m_undoHistory;
 		UnsavedChangesPrompt m_unsavedChangesPrompt;
+		FileBrowserModal m_fileBrowser;
 	};
 }

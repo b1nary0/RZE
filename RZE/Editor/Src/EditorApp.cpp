@@ -162,6 +162,7 @@ namespace Editor
 		PushFontAtLoadedSize(m_fontMapping.at("din_bold"));
 		m_asyncOperationModal.Display(RZE().GetAsyncOperationManager());
 		m_context.GetUnsavedChangesPrompt().Display(m_context);
+		m_context.GetFileBrowser().Display();
 		ImGui::PopFont();
 	}
 

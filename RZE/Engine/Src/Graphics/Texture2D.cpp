@@ -93,6 +93,11 @@ void Texture2D::Release()
 	}
 }
 
+bool Texture2D::IsOnGPU() const
+{
+	return m_GPUResource.IsValid();
+}
+
 Vector2D Texture2D::GetDimensions() const
 {
 	return Vector2D(m_width, m_height);

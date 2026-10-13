@@ -1,5 +1,7 @@
 #pragma once
 
+#include <algorithm>
+#include <cctype>
 #include <string>
 #include <vector>
 
@@ -18,6 +20,31 @@ struct StringUtils
 
 		const std::string fileName = filePath.substr(index + 1);
 		return fileName;
+	}
+
+	// ASCII only: other characters are left as they are
+	static std::string ToLower(std::string text)
+	{
+		std::transform(text.begin(), text.end(), text.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+		return text;
+	}
+
+	// ASCII only: other characters are left as they are
+	static std::string ToUpper(std::string text)
+	{
+		std::transform(text.begin(), text.end(), text.begin(), [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+		return text;
+	}
+
+	static bool EqualsIgnoringCase(const std::string& a, const std::string& b)
+	{
+		return a.size() == b.size() && std::equal(a.begin(), a.end(), b.begin(),
+			[](unsigned char x, unsigned char y) { return std::tolower(x) == std::tolower(y); });
+	}
+
+	static bool StartsWithIgnoringCase(const std::string& text, const std::string& prefix)
+	{
+		return text.size() >= prefix.size() && EqualsIgnoringCase(text.substr(0, prefix.size()), prefix);
 	}
 
 	template<class... Args>

@@ -244,8 +244,7 @@ namespace Editor
 
 		void DrawTexture(const PropertyTexture& texture, float maxSize)
 		{
-			// IsValid isn't const
-			Rendering::TextureBuffer2DHandle handle = texture.Handle;
+			const Rendering::TextureBuffer2DHandle& handle = texture.Handle;
 			if (!handle.IsValid() || texture.Size.X() <= 0.0f || texture.Size.Y() <= 0.0f)
 			{
 				ImGui::TextDisabled("(no image)");

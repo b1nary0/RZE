@@ -24,7 +24,7 @@ namespace Rendering
 		~VertexBufferHandle() = default;
 
 	public:
-		bool IsValid() { return m_buffer != nullptr; }
+		bool IsValid() const { return m_buffer != nullptr; }
 
 	private:
 		VertexBufferHandle(const std::shared_ptr<IVertexBuffer>& buffer)
@@ -43,7 +43,7 @@ namespace Rendering
 		~IndexBufferHandle() = default;
 
 	public:
-		bool IsValid() { return m_buffer != nullptr; }
+		bool IsValid() const { return m_buffer != nullptr; }
 
 	private:
 		IndexBufferHandle(const std::shared_ptr<IIndexBuffer>& buffer)
@@ -62,7 +62,7 @@ namespace Rendering
 		~ConstantBufferHandle() = default;
 
 	public:
-		bool IsValid() { return m_buffer != nullptr; }
+		bool IsValid() const { return m_buffer != nullptr; }
 		
 	private:
 		ConstantBufferHandle(const std::shared_ptr<IConstantBuffer>& buffer)
@@ -81,7 +81,8 @@ namespace Rendering
 		~TextureBuffer2DHandle() = default;
 
 	public:
-		bool IsValid() { return m_buffer->IsValid(); }
+		// Whether the GPU texture exists yet; the render thread makes it a frame or so after it's asked for
+		bool IsValid() const { return m_buffer != nullptr && m_buffer->IsValid(); }
 
 		void* GetTextureData() const;
 

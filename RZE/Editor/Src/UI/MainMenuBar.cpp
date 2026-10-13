@@ -6,11 +6,11 @@
 #include <Commands/HistoryCommands.h>
 #include <Commands/SceneCommands.h>
 
+#include <Services/Thumbnails.h>
+
 #include <RZE.h>
 
 #include <Rendering/MemArena.h>
-
-#include <Windowing/Win32Window.h> // FilePromptParams
 
 #include <Utils/Memory/MemoryUtils.h>
 #include <Utils/Platform/Filepath.h>
@@ -88,21 +88,17 @@ namespace Editor
 
 		if (ImGui::MenuItem("Load Scene...", nullptr, false, canUseScene))
 		{
-			// Asked first, so the file prompt only opens once it's decided to go ahead
-			unsavedChanges.Request(context, "loading another scene", [&scene]()
+			// Asked first, so the browser only opens once it's decided to go ahead
+			unsavedChanges.Request(context, "loading another scene", [&context, &scene]()
 				{
-					const FilePromptParams openFileParams =
-					{
-						"RZE Scene",
-						SceneDocument::GetSceneFolder(),
-						"*.scene"
-					};
-
-					std::string chosenPath;
-					if (RZE().ShowOpenFilePrompt(openFileParams, chosenPath))
-					{
-						scene.Load(Filepath::FromAbsolutePathStr(chosenPath));
-					}
+					FileBrowserRequest request;
+					request.Title = "Load Scene";
+					request.RootFolder = SceneDocument::GetSceneFolder();
+					request.Extensions = { ".scene" };
+					request.InitialSelection = scene.HasFilePath() ? scene.GetFilePath() : Filepath();
+					request.ThumbnailFor = [](const Filepath& file) { return Thumbnails::Scenes().GetPathFor(file); };
+					request.OnChosen = [&scene](const Filepath& file) { scene.Load(file); };
+					context.GetFileBrowser().Open(std::move(request));
 				});
 		}
 

@@ -1,7 +1,5 @@
 #include <Services/Thumbnails.h>
 
-#include <filesystem>
-
 namespace Editor
 {
 	ThumbnailFolder::ThumbnailFolder(const std::string& folder)
@@ -16,8 +14,7 @@ namespace Editor
 			return Filepath();
 		}
 
-		const std::string name = std::filesystem::path(asset.GetRelativePath()).stem().string();
-		return Filepath(m_folder.GetRelativePath() + "/" + name + ".png");
+		return Filepath(m_folder.GetRelativePath() + "/" + asset.GetStem() + ".png");
 	}
 
 	namespace Thumbnails

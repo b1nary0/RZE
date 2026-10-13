@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Utils/Platform/Filepath.h>
+#include <Utils/PrimitiveDefs.h>
 
 // Main-thread cost of a single IResource::FinalizeStep(), used to time-slice GPU submission across frames.
 struct ResourceFinalizeCost

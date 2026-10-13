@@ -39,6 +39,8 @@ public:
 	const Filepath& GetFilepath() const { return m_filepath; }
 
 	const Rendering::TextureBuffer2DHandle& GetPlatformObject() const { return m_GPUResource; }
+	// The render thread makes the GPU texture a frame or so after the image loads; it can't be drawn before then
+	bool IsOnGPU() const;
 
 private:
 	const U8* m_data;

@@ -30,6 +30,28 @@ namespace Editor
 			}
 		}
 
+		ImU32 WithAlpha(const ImVec4& colour, float alpha)
+		{
+			return ImGui::GetColorU32(ImVec4(colour.x, colour.y, colour.z, alpha));
+		}
+
+		bool PrimaryButton(const char* label, const ImVec2& size)
+		{
+			ImGui::PushStyleColor(ImGuiCol_Button, k_accentColour);
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, k_accentHoveredColour);
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, k_accentActiveColour);
+			const bool isPressed = ImGui::Button(label, size);
+			ImGui::PopStyleColor(3);
+			return isPressed;
+		}
+
+		void AddCentredText(ImDrawList* drawList, const ImVec2& centre, float fontSize, ImU32 colour, const char* text)
+		{
+			ImFont* const font = ImGui::GetFont();
+			const ImVec2 size = font->CalcTextSizeA(fontSize, FLT_MAX, 0.0f, text);
+			drawList->AddText(font, fontSize, ImVec2(centre.x - size.x * 0.5f, centre.y - size.y * 0.5f), colour, text);
+		}
+
 		ScopedToolbarSpacing::ScopedToolbarSpacing()
 		{
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(k_itemSpacingInGroup, ImGui::GetStyle().ItemSpacing.y));
