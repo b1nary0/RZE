@@ -11,6 +11,7 @@
 #include <Services/GameBuilder.h>
 #include <Services/GameObjectClipboard.h>
 #include <Services/SceneDocument.h>
+#include <Services/SceneThumbnailCapturer.h>
 #include <Services/SelectionBoundsDisplay.h>
 #include <Services/UndoHistory.h>
 
@@ -79,6 +80,8 @@ namespace Editor
 		SceneDocument& GetSceneDocument() { return m_sceneDocument; }
 		GameBuilder& GetGameBuilder() { return m_gameBuilder; }
 		GameObjectClipboard& GetClipboard() { return m_clipboard; }
+		// Keeps each scene's thumbnail up to date, and captures one on request
+		SceneThumbnailCapturer& GetSceneThumbnails() { return m_sceneThumbnails; }
 
 		// Where panels send scene changes; flushed once per frame after every panel has drawn
 		CommandQueue& GetCommands() { return m_commands; }
@@ -101,6 +104,7 @@ namespace Editor
 		ScenePicker m_scenePicker;
 		PanelManager m_panels;
 		SceneDocument m_sceneDocument;
+		SceneThumbnailCapturer m_sceneThumbnails;
 		GameBuilder m_gameBuilder;
 		GameObjectClipboard m_clipboard;
 		CommandQueue m_commands;
