@@ -20,7 +20,9 @@ Rough edges the codebase is candid about (source comments, `#TODO`s), plus a few
 | 12 | Camera previews changed the camera temporarily | Components | — | **Fixed** (10-11: editor UI rework) |
 | 13 | An incremental build once missed a header change | Build | Low | Observed once |
 | 14 | Reparenting in the Scene panel keeps the local transform | Editor | Low | Open |
-| 15 | No prompt about unsaved changes | Editor | Medium | Open; the title shows a `*` |
+| 15 | No prompt about unsaved changes | Editor | — | **Fixed** (10-12: undo/redo) |
+| 16 | Undoing Add Component brings back a new component | Editor | Low | Open |
+| 17 | Duplicate's undo step is named "Paste" | Editor | Cosmetic | Open |
 
 ```mermaid
 quadrantChart
@@ -107,9 +109,17 @@ While adding multi-selection, `ScenePanel.h` changed layout but MSBuild didn't r
 
 Dragging an object onto another in the Scene panel (`AttachToParentCommand`) keeps its local position, rotation and scale, so it jumps if the new parent isn't at the origin with no rotation and unit scale. Keeping its world transform would mean converting the local values through the inverse of the parent's world matrix as it's attached (paste already does this for its offset).
 
-## 15. No prompt about unsaved changes
+## 15. No prompt about unsaved changes (fixed)
 
-The Editor tracks unsaved changes (`SceneDocument::IsModified`, shown as a `*` in the title), but loading another scene, starting a new one or quitting discards them without asking. Planned alongside undo/redo.
+New, Load, Exit and closing the window now ask Save / Don't Save / Cancel while there are unsaved changes (`UnsavedChangesPrompt`), and undoing back to the last save clears the `*`. See [Editor-Framework.md](../07-Editor/Editor-Framework.md#the-unsaved-changes-prompt).
+
+## 16. Undoing Add Component brings back a new component
+
+Undo removes an added component (`RemoveComponentByID`) and redo adds a fresh one. Edits made to it afterwards are later undo steps, so redoing them restores its properties, but any state a component keeps that isn't a property (or isn't recorded, like `EditorOnly` view settings) comes back at its default. Deleted objects don't have this problem: they're parked, not rebuilt.
+
+## 17. Duplicate's undo step is named "Paste"
+
+Duplicate runs a `PasteGameObjectsCommand`, so Edit > Undo reads "Undo Paste" after a duplicate. Cosmetic; the command could take the step's name.
 
 ## Key files
 

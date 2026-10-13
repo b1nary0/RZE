@@ -48,7 +48,7 @@ A tree of the scene's objects (the editor camera is hidden).
 - **Click** selects; **Ctrl+click** adds an object to the selection or removes it.
 - **Double-click** glides the editor camera to frame the object (`EditorCameraComponent::FocusOn`; see [Editor-Camera-And-Build-Launch.md](Editor-Camera-And-Build-Launch.md)).
 - **Drag and drop** one object onto another to parent it. It keeps its local transform, so it moves if the new parent isn't at the origin (see [10-KnownIssues](../10-KnownIssues/Architectural-Notes-And-TODOs.md)).
-- **Right-click** an object for its menu. The first line is its name: **right-click the name** to rename it (Enter to apply). Then Add Component (every registered type), DetachFromParent (child objects only) and Delete.
+- **Right-click** an object for its menu. The first line is its name: **right-click the name** to rename it (Enter to apply). Then Add Component (every registered type), DetachFromParent (child objects only) and Delete. All of them, and drag-and-drop parenting, can be undone; Delete removes the object's children too, and undo brings them all back in the same order.
 - **Right-click empty space** while nothing is selected: Create GameObject, which asks for a name.
 - Clicking empty space in the panel clears the selection.
 - Collapsed parents can be clicked, dragged and right-clicked like any other row.

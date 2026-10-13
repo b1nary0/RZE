@@ -1,6 +1,6 @@
 # Editor Framework: Context, Panels, Commands & Events
 
-How the Editor's UI code is put together: what panels share, how a panel is written and registered, when it runs in the frame, and how it changes the scene. The framework lives in `Editor\Src\UI\Framework\`, `Editor\Src\Commands\` and `Editor\Src\Services\`. The panels built on it are described in [Editor-Panels.md](Editor-Panels.md), and the component inspector in [Object-Inspector-And-Properties.md](Object-Inspector-And-Properties.md).
+How the Editor's UI code is put together: what panels share, how a panel is written and registered, when it runs in the frame, how it changes the scene, and how those changes are undone. The framework lives in `Editor\Src\UI\Framework\`, `Editor\Src\Commands\` and `Editor\Src\Services\`. The panels built on it are described in [Editor-Panels.md](Editor-Panels.md), and the component inspector in [Object-Inspector-And-Properties.md](Object-Inspector-And-Properties.md).
 
 The Editor uses **immediate-mode** Dear ImGui throughout. The framework adds structure around it rather than replacing it:
 
@@ -8,7 +8,7 @@ The Editor uses **immediate-mode** Dear ImGui throughout. The framework adds str
 |---|---|
 | Panels share state through `EditorContext`, never through `EditorApp` or each other | Panels stay independent; any code can drive the selection or the scene document |
 | Each panel has `Update()` (data, no ImGui) and `Draw()` (ImGui only) | Data work is testable without ImGui, and ImGui asserts if `Update()` calls it |
-| Scene changes are pushed as **commands** and applied once per frame | No panel sees the scene change mid-draw; every change goes through one place, ready for undo |
+| Scene changes are pushed as **commands** and applied once per frame | No panel sees the scene change mid-draw; every change goes through one place, which is how undo sees it |
 | Interested code subscribes to **events** instead of polling | Loading, saving, selection and modification changes reach whoever needs them |
 
 ## `EditorContext`: what panels share
@@ -21,8 +21,8 @@ flowchart TD
     App["EditorApp"] --> Ctx["EditorContext"]
     Ctx --> State["State<br/>EditorSelection, editor camera,<br/>SceneViewportState, EditorSettings"]
     Ctx --> UI["UI<br/>PanelManager, ScenePicker"]
-    Ctx --> Flow["Change flow<br/>CommandQueue, EditorEvents"]
-    Ctx --> Svc["Services<br/>SceneDocument, GameBuilder,<br/>GameObjectClipboard, SelectionBoundsDisplay"]
+    Ctx --> Flow["Change flow<br/>CommandQueue, UndoHistory, EditorEvents"]
+    Ctx --> Svc["Services<br/>SceneDocument, GameBuilder,<br/>GameObjectClipboard, SelectionBoundsDisplay,<br/>UnsavedChangesPrompt"]
 ```
 
 | Member | What it is |
@@ -34,12 +34,14 @@ flowchart TD
 | `GetSceneViewport()` → `SceneViewportState` | Whether the SceneView is hovered (editor input only reaches the scene then) and its size in pixels. |
 | `GetScenePicker()` → `ScenePicker` | GPU picking: `RequestPick(x, y, callback)` asks `PickRenderStage` which object covers a pixel; the callback fires a frame or two later. |
 | `GetPanels()` → `PanelManager` | Every registered panel. `Find<T>()` exists for rare cases; prefer sharing state through the context. |
-| `GetSceneDocument()` → `SceneDocument` | New, load, save and save-as for the scene, and whether it has unsaved changes. |
+| `GetSceneDocument()` → `SceneDocument` | New, load, save and save-as for the scene (`SaveWithPrompt()` asks for a file if it hasn't got one), and whether it has unsaved changes (worked out from the undo history; see [Save point](#the-save-point-and-unsaved-changes)). |
 | `GetGameBuilder()` → `GameBuilder` | File > Build Game / Launch Game, on a worker thread. See [Editor-Camera-And-Build-Launch.md](Editor-Camera-And-Build-Launch.md). |
-| `GetClipboard()` → `GameObjectClipboard` | Copy and paste of GameObjects (see [Editor-Overview.md](Editor-Overview.md#edit-copy-paste-and-duplicate)). |
+| `GetClipboard()` → `GameObjectClipboard` | Copy and paste of GameObjects, held in memory as `GameObjectSnapshot`s (see [Editor-Overview.md](Editor-Overview.md#edit-copy-paste-and-duplicate)). |
 | `GetCommands()` → `CommandQueue` | Where scene changes go (below). |
+| `GetUndoHistory()` → `UndoHistory` | What the commands did, for undo and redo (below). |
+| `GetUnsavedChangesPrompt()` → `UnsavedChangesPrompt` | Asks Save / Don't Save / Cancel before anything that would lose unsaved changes (below). |
 
-`ResetSceneState()` runs before a scene unloads. It clears the selection, the editor camera, any pick in flight and pending commands, then publishes `SceneUnloadingEvent`, which `PanelManager` turns into each panel's `OnSceneReset()`. UI state such as the viewport size carries over.
+`ResetSceneState()` runs before a scene unloads. It clears the selection, the editor camera, any pick in flight, pending commands and the undo history, then publishes `SceneUnloadingEvent`, which `PanelManager` turns into each panel's `OnSceneReset()`. UI state such as the viewport size carries over.
 
 ## Panels
 
@@ -83,7 +85,7 @@ Optional hooks: `Initialize(context)` (once, after every panel exists), `DrawMen
 
 `PanelManager` creates every registered panel at start-up, sorted by name. Each frame it updates and draws the open ones, builds the View and Help menu items from their `MenuPath`s, and, when `imgui.ini` has no saved layout, docks each panel into its `DefaultDock` slot.
 
-> **Registration caveat.** `REGISTER_EDITOR_PANEL` (and `REGISTER_COMPONENT_INSPECTOR`) use static initializers, which only run for code linked straight into the Editor executable. If the panels ever move into a static library, they need force-linking (e.g. `/WHOLEARCHIVE`).
+> **Registration and linking.** `REGISTER_EDITOR_PANEL` (and `REGISTER_COMPONENT_INSPECTOR`) register from static initializers that nothing else references. The Editor's code is built as the `EditorLib` static library (so [the unit tests](../01-GettingStarted/Building-And-Running.md#unit-tests) can link it), and a linker drops unreferenced objects from a library, so `Editor` links `EditorLib` with `/WHOLEARCHIVE` to keep them. Anything else that links `EditorLib`, such as `UnitTests`, gets no panels unless it does the same.
 
 ## When things run in a frame
 
@@ -104,7 +106,7 @@ sequenceDiagram
     Eng->>App: Update()
     App->>App: main menu bar, dockspace
     App->>PM: DrawAll - each open panel's Draw()
-    App->>Q: Flush - apply this frame's commands
+    App->>Q: Flush - apply this frame's commands,<br/>record them in UndoHistory
     Q-->>App: SceneModifiedEvent if any ran
     Eng->>Scene: Update()
     Eng->>Eng: render
@@ -114,6 +116,8 @@ sequenceDiagram
 
 ## Commands: how panels change the scene
 
+**The rule:** every change the editor UI makes to the scene goes through a command, because undo only sees what commands record. A command that creates objects indirectly owns them, and records them for undo like any other change.
+
 Panels never change the scene while drawing. They push an `EditorCommand` to the context's `CommandQueue`:
 
 ```cpp
@@ -121,21 +125,25 @@ context.GetCommands().Push<DeleteGameObjectCommand>(gameObject);
 ```
 
 - `Flush()` runs the queue in push order once per frame, including commands pushed during the flush.
-- Commands hold `GameObjectPtr` / `GameObjectComponentPtr` **handles**, which become invalid when their target is destroyed, so a command whose object was deleted by an earlier command in the same flush does nothing. See [Scene-And-GameObject-Model.md](../03-SceneAndGameObjects/Scene-And-GameObject-Model.md#handles-gameobjectptr-and-gameobjectcomponentptrt).
+- Commands hold `GameObjectPtr` / `GameObjectComponentPtr` **handles**. A handle becomes invalid when its target is destroyed, but stays valid while undo has the object [parked](#parking-deleted-objects) out of the scene, so commands check `UndoTargets::IsInScene(handle)` rather than just for null. A command whose target is gone does nothing. See [Scene-And-GameObject-Model.md](../03-SceneAndGameObjects/Scene-And-GameObject-Model.md#handles-gameobjectptr-and-gameobjectcomponentptrt).
+- `Execute` returns whether it changed the scene: false if its target is gone, there was nothing to change, or it only changed editor state (an [`EditorOnly`](Object-Inspector-And-Properties.md#metadata) property).
+- While it runs, a command can hand over an `UndoRecord` (`SetUndoRecord`) describing how to undo it; `Flush` takes it (`TakeUndoRecord`) and adds it to the `UndoHistory`.
 - `Push` and `Flush` are main-thread only. Workers marshal back with `MainThreadDispatcher` first.
-- A flush that ran at least one command publishes `SceneModifiedEvent`. Every command changes the scene; editor state such as the selection is changed directly, not through commands.
+- A flush in which a command changed the scene publishes `SceneModifiedEvent`. Editor state such as the selection is changed directly, not through commands.
+- **Debug safety net.** `GameScene::SetObjectsChangedCallback` is a plain Engine hook, called whenever objects are added to or removed from the scene. In Debug, `EditorApp` installs a check that asserts unless a `CommandQueue::SceneEditScope` is open (`Flush` opens one, as does creating the editor camera) or a scene is loading, which catches UI code changing the scene outside a command.
 
-| Command | File | Does |
-|---|---|---|
-| `CreateGameObjectCommand` | `SceneCommands` | Adds a named GameObject |
-| `RenameGameObjectCommand` | `SceneCommands` | Sets its name; names don't have to be unique |
-| `DeleteGameObjectCommand` | `SceneCommands` | Deselects it (while it's still alive, so its bounds turn off), then removes it |
-| `AddComponentCommand` | `SceneCommands` | Adds a component by type ID |
-| `AttachToParentCommand` | `SceneCommands` | Reparents; refuses to make a cycle |
-| `DetachFromParentCommand` | `SceneCommands` | Makes it a root object |
-| `PasteGameObjectsCommand` | `SceneCommands` | Loads copied scene data as new objects, offset beside the originals, and selects them |
-| `SetTransformCommand` | `TransformCommands` | Sets local position, rotation and scale (the gizmo) |
-| `SetPropertyCommand` | `PropertyCommands` | Sets one described property through its setter (the inspector) |
+| Command | File | Does | Undo record |
+|---|---|---|---|
+| `CreateGameObjectCommand` | `SceneCommands` | Adds a named GameObject | parks / restores the new object |
+| `RenameGameObjectCommand` | `SceneCommands` | Sets its name; names don't have to be unique | old and new name |
+| `DeleteGameObjectCommand` | `SceneCommands` | Parks it and its descendants, and takes them out of the selection | restores / parks them |
+| `AddComponentCommand` | `SceneCommands` | Adds a component by type ID | removes it (`RemoveComponentByID`) / adds a new one |
+| `AttachToParentCommand` | `SceneCommands` | Reparents; refuses to make a cycle | old parent and child index, new parent and index |
+| `DetachFromParentCommand` | `SceneCommands` | Makes it a root object | old parent and child index |
+| `PasteGameObjectsCommand` | `SceneCommands` | Creates new objects from `GameObjectSnapshot`s, offset beside the originals, and selects them | parks / restores the pasted objects |
+| `SetTransformCommand` | `TransformCommands` | Sets local position, rotation and scale (the gizmo) | before and after; merges within a drag |
+| `SetPropertyCommand` | `PropertyCommands` | Sets one described property through its setter (the inspector) | before and after; merges within a drag. `Exclusive` properties record who had it before |
+| `UndoCommand` / `RedoCommand` | `HistoryCommands` | Steps through the history | not recorded |
 
 ### Interactions: one drag, many commands
 
@@ -144,6 +152,70 @@ A gizmo drag or a dragged number changes a value every frame, and each frame is 
 - `InteractionTracker` turns a control's per-frame "is it being used" into start and end edges and gives each interaction a unique ID. The gizmo's tracker follows `ImGuizmo::IsUsing()`, and `GizmoSnapper` uses the same edges to capture where a drag started.
 - One-off edits (a checkbox, Enter in a text field, a file pick) get a fresh ID from `NewInteractionID()`.
 - Widgets edit a **copy** of the value and push the result. The command is applied before the frame renders, so the round trip is invisible.
+
+## Undo and redo
+
+`UndoHistory` (`Services\UndoHistory`, owned by the context) is a list of **steps**. A step is everything one interaction did: a gizmo drag over three objects is one step holding three records, each with the transform from before the drag and from its end.
+
+```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+flowchart TD
+    Cmd["command Execute<br/>changes the scene,<br/>SetUndoRecord"] --> Flush["CommandQueue::Flush<br/>TakeUndoRecord"]
+    Flush --> Join{"same interaction as<br/>the open last step?"}
+    Join -->|yes| Merge["join it: TryMerge with a record<br/>for the same target, else append"]
+    Join -->|no| New["new step: drop the redo branch,<br/>drop the oldest past 200"]
+    Ctrl["Ctrl+Z / Ctrl+Y<br/>Edit menu"] --> UR["UndoCommand / RedoCommand<br/>(queued like any command)"]
+    UR --> Replay["Undo: records newest first,<br/>Redo: oldest first,<br/>then restore the selection"]
+```
+
+**Records.** An `UndoRecord` has `Undo(context)`, `Redo(context)`, `GetName()` (the Edit menu label, "Undo Rename"), and optionally:
+
+- `TryMerge(newer)`: within one interaction, a later record of the same change to the same target folds in, keeping this one's "before" and taking the newer "after". Transform and property records merge on the same GUID (and component and property).
+- `OnDropped()`: the step left the history for good. The parking records use it to destroy objects still parked.
+
+Records find their targets by **`ObjectGUID`** through `UndoTargets::FindObject` / `FindComponent`, never by handle, so they still work on an object that was deleted and brought back.
+
+**Steps.**
+
+- A record from the same interaction as the open last step joins it. `k_noInteraction` always starts a new step, as does any record after the step is **closed**: by undo, redo, a save, or `CloseStep()`.
+- A new step drops everything that could be redone (calling `OnDropped`).
+- The history keeps **200 steps** (`k_maxSteps`); past that, the oldest is dropped.
+- Each step stores the selection, as GUIDs, from before its first command and after its last. Undo selects the "before" set, redo the "after" set, leaving out objects that aren't in the scene. Undoing a delete selects the object again.
+- `Clear()` (on scene unload) drops everything **without** `OnDropped`: the scene is about to unload and destroys parked objects itself.
+
+**Shortcuts.** Ctrl+Z, Ctrl+Y and Ctrl+Shift+Z, and Edit > Undo / Redo with the step's name. They push `UndoCommand` / `RedoCommand`, so undo applies at flush time in order with other commands, and they're ignored while a widget or the gizmo is held, so a drag isn't half undone.
+
+**What isn't recorded.** Properties marked `EditorOnly` (view settings such as the bounds toggles) are applied without a record and don't count as a scene change.
+
+### Parking deleted objects
+
+Deleting doesn't destroy anything. `ParkedSubtree` (`Commands\ParkedSubtree`) takes an object and its descendants **out of the scene** but keeps them alive, and undo puts back the very same objects:
+
+- **Park:** remembers the parent's GUID and the object's index among its children, takes the subtree out of the selection, detaches it, and calls `OnRemoveFromScene` on each object. The objects stay in the scene's list (so root order and GUIDs come back unchanged) but are out of it: lookups, saving, updates and the Scene panel skip them (see [Scene-And-GameObject-Model.md](../03-SceneAndGameObjects/Scene-And-GameObject-Model.md#in-the-scene-and-out-of-it)).
+- **Restore:** reattaches at the same index under the same parent and calls `OnAddToScene`. Meshes and other resources were never released, so nothing reloads.
+- **Main camera:** if the scene's main camera was in the subtree, the scene hands the role to another camera while it's parked, and restoring gives it back.
+- **Destroy:** when the step is dropped (past the cap, or undone and replaced), `OnDropped` calls `GameScene::RemoveGameObject` on anything still parked.
+
+Delete, Create (undone) and Paste (undone) all park. Adding a component is undone with `GameObject::RemoveComponentByID`, and redone by adding a fresh one; edits made to it afterwards are later steps, which redo applies again.
+
+### The save point and unsaved changes
+
+The history also keeps a **save point**: its position at the last save or load. `SceneDocument::IsModified()` is whether the history is somewhere else, rechecked after every flush, so undoing back to the save clears the title's `*`.
+
+- Saving closes the open step, so a drag that carries on past a save is a new change.
+- The save point is lost (the scene stays modified until saved) when the saved state is in a redo branch that a new change replaces, when it's dropped past the cap, or when a command changes the scene **without** an undo record (`MarkUnrecordedChange`). Undo and redo don't count: they only move through the history (`EditorCommand::IsHistoryNavigation`).
+
+### The unsaved-changes prompt
+
+`UnsavedChangesPrompt` (`UI\Modals\`) guards anything that would lose unsaved changes:
+
+```cpp
+context.GetUnsavedChangesPrompt().Request(context, "loading another scene", [&scene]() { /* file prompt, then Load */ });
+```
+
+- If the scene has no unsaved changes, the action runs straight away.
+- Otherwise a modal asks *"Sponza.scene has unsaved changes. Save them before loading another scene?"*: **Save** (then the action), **Don't Save** (the action), **Cancel** or Escape (nothing). Choosing Save on a new scene opens Save As; cancelling that cancels the action too, so the changes aren't lost.
+- New, Load and Exit go through it, and so does closing the window: the engine turns the window's close button into `Window_CloseRequested`, and `EditorApp::OnCloseRequested()` returns false and opens the prompt while there are unsaved changes ([App-Shell-Pattern.md](../02-Architecture/App-Shell-Pattern.md)).
 
 ## Events
 
@@ -163,7 +235,7 @@ context.GetEvents().Publish(SceneModifiedEvent{});
 | `SceneUnloadingEvent` | `EditorContext::ResetSceneState` | Before a scene unloads, while its objects can still be touched |
 | `SceneLoadedEvent { Document }` | `SceneDocument` | A load (or New) succeeded and the editor camera is in |
 | `SceneSavedEvent { Document }` | `SceneDocument` | After Save or Save As |
-| `SceneModifiedEvent` | `CommandQueue::Flush` | A flush ran at least one command |
+| `SceneModifiedEvent` | `CommandQueue::Flush` | A command in the flush changed the scene |
 | `SceneModifiedStateChangedEvent { Document }` | `SceneDocument` | `IsModified()` flipped |
 | `SelectionChangedEvent { Selection }` | `EditorSelection` | Once per call that actually changed it |
 
@@ -172,7 +244,7 @@ Current listeners:
 | Listener | Listens for | Does |
 |---|---|---|
 | `PanelManager` | Scene unloading | Calls each panel's `OnSceneReset()` |
-| `SceneDocument` | Scene modified | Marks the document modified |
+| `SceneDocument` | Scene modified | Sets `IsModified()` from the undo history's save point |
 | `SelectionBoundsDisplay` | Selection changed | Turns mesh bounds on for newly selected objects and off for deselected ones, through `RenderComponent`'s own toggle so the inspector checkbox agrees |
 | `EditorApp` | Loaded, saved, modified state | Sets the window title: `RZEStudio - <file>`, `*` while there are unsaved changes, `Untitled` for a new scene |
 
@@ -196,7 +268,8 @@ Rules:
 | To add | Do |
 |---|---|
 | A panel | Subclass `EditorPanel`, add `Describe()`, `Draw()` (and `Update()` if it has data to prepare), put `REGISTER_EDITOR_PANEL` in the `.cpp`, then run `GenerateSolutions.bat` |
-| A scene change from the UI | Write an `EditorCommand` holding handles; push it from `Draw()`. Pass the interaction ID if it's part of a drag |
+| A scene change from the UI | Write an `EditorCommand` holding handles; check `UndoTargets::IsInScene` before changing anything, and give it an `UndoRecord` that finds its target by GUID. Push it from `Draw()`, with the interaction ID if it's part of a drag |
+| Something that would lose unsaved changes | Run it through `UnsavedChangesPrompt::Request` |
 | Something that reacts to loading, saving, selection or edits | Subscribe to the event, keeping the `EventSubscription` as a member |
 | A shared preference | Add it to `EditorSettings` |
 | A component's inspector fields | Describe its properties; see [Object-Inspector-And-Properties.md](Object-Inspector-And-Properties.md) |
@@ -205,7 +278,8 @@ Rules:
 
 - `Editor\Src\UI\Framework\EditorContext.h/.cpp`, `EditorSelection`, `EditorSettings`, `EditorEvents`, `ScenePicker`, `InteractionTracker`, `EditorUI`
 - `Editor\Src\UI\Framework\EditorPanel.h/.cpp`, `PanelRegistry.h/.cpp`, `PanelManager.h/.cpp`
-- `Editor\Src\Commands\EditorCommand.h`, `CommandQueue.h/.cpp`, `SceneCommands`, `TransformCommands`, `PropertyCommands`
-- `Editor\Src\Services\SceneDocument`, `GameBuilder`, `GameObjectClipboard`, `SelectionBoundsDisplay`
+- `Editor\Src\Commands\EditorCommand.h`, `CommandQueue.h/.cpp`, `SceneCommands`, `TransformCommands`, `PropertyCommands`, `HistoryCommands`, `UndoRecord`, `ParkedSubtree`
+- `Editor\Src\Services\SceneDocument`, `GameBuilder`, `GameObjectClipboard`, `GameObjectSnapshot`, `SelectionBoundsDisplay`, `UndoHistory`
+- `Editor\Src\UI\Modals\UnsavedChangesPrompt.h/.cpp`
 - `Editor\Src\UI\MainMenuBar.h/.cpp`, `Editor\Src\EditorApp.h/.cpp`
 - `Engine\Src\EngineApp.h` (`PreUIUpdate`), `Engine\Src\EngineCore\Engine.cpp` (frame order)

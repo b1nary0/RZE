@@ -88,7 +88,13 @@ Open `RZE\RZE.sln` in Visual Studio, set **Editor** as the startup project, and 
 
 ## Test
 
-There is no unit-test suite. CI (`.github/workflows/Windows.yml`) only builds and burns assets. Verification means building, then driving the editor as above.
+The solution builds `UnitTests.exe` (doctest). Run it after any Editor or Engine change:
+
+```powershell
+& .\RZE\_build\debug\UnitTests.exe    # exit code 0 = all passed; -tc="Undo*" runs matching test cases
+```
+
+It covers the undo history, parking, copy snapshots, selection, interaction tracking and the property registry, with no running engine. CI (`.github/workflows/Windows.yml`) runs it in Debug and Release after the build. Anything that needs a window or the renderer (selection restore, the main camera, rendering) still means building, then driving the editor as above.
 
 ## Gotchas
 

@@ -8,6 +8,7 @@ Wraps `HWND`/`HDC`/`HGLRC`/`PIXELFORMATDESCRIPTOR` in an `OSWindowHandleData` st
 - Window creation (`Create`), show/maximize, cursor control, title/size get/set.
 - Native Open/Save file dialogs (`ShowOpenFilePrompt`/`ShowSaveFilePrompt`) — surfaced up through `RZE().ShowOpenFilePrompt()`.
 - **`CompileInputMessages(InputHandler&)`** / **`CompileWindowMessages(EventHandler&)`** — pumps the Win32 message queue once per frame and translates messages into `InputHandler`/`EventHandler` calls via `ProcessWinProcMessage`. This is the single point where all OS input/window events enter the engine.
+- **Closing.** `WM_CLOSE` (the close button, Alt+F4) isn't passed to `DefWindowProc`, which would destroy the window. It becomes a `Window_CloseRequested` event, and the engine exits only if `RZE_Application::OnCloseRequested()` returns true, so an app can ask first (the Editor's unsaved-changes prompt). The window then lasts until the process exits.
 
 ## `WindowMessageAdaptor` (`WindowMessageAdaptor.h/.cpp`)
 

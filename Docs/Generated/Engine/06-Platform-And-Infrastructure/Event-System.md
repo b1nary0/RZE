@@ -4,7 +4,7 @@
 
 ## Types
 
-- `EventTypes.h` — `EEventType` enum (window/key/mouse categories) and `EWindowEventType` (e.g. `Window_Destroy`, `Window_Resize`).
+- `EventTypes.h` — `EEventType` enum (window/key/mouse categories) and `EWindowEventType` (`Window_Create`, `Window_Destroy`, `Window_Resize`, `Window_CloseRequested`).
 - `Events.h` — POD event structs: `EventInfo` (type + subtype), `WindowEvent` (+ size), `KeyEvent` (+ key), `MouseEvent` (+ position), combined into a tagged-union-style `Event` struct:
   ```cpp
   struct Event {

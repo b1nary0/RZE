@@ -16,6 +16,7 @@ RZE distinguishes between **prebuilt vendored binaries** (`ThirdParty\`) and **v
 | RapidJSON | JSON parsing — scene serialization (`GameScene::Serialize`/`Deserialize`) |
 | SimpleINI | INI parsing — backs the `Config`/`EngineConfig` system |
 | STB | Single-header libs (e.g. image loading) |
+| doctest 2.4.11 | Header-only unit test framework (`doctest\doctest.h`, MIT licence alongside), used by `UnitTests` |
 
 Raw DLLs also present: `OptickCore.dll`, `assimp-vc141-mt.dll` (built from source with the v141 toolset, Release, shared), `glew64.dll` (GLEW — OpenGL Extension Wrangler, likely a leftover from before the engine settled on DX11).
 

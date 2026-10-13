@@ -17,7 +17,8 @@ Bridges a GameObject to the rendering system. Holds a `ResourceHandle` to a `Sta
 
 A scene camera: FOV (degrees), near/far clip (0.1 m / 1000 m in the shipped scenes) and exposure compensation (EV).
 - **Orientation comes from the owner's `TransformComponent` rotation**: −Z is forward, +Y is up. The Editor's rotate gizmo and the Rotation fields aim it; there's no separate look-at state.
-- When it's the **active camera** ("Main Camera" in the inspector), `Update()` writes its `ClipSpace` (projection × view, 0..1 depth), position and exposure compensation into `RZE().GetRenderEngine().GetMainView()`.
+- When it's the scene's **main camera** ("Main Camera" in the inspector, saved as `"MainCamera"`), `Update()` writes its exposure compensation, and its `ClipSpace` (projection × view, 0..1 depth) and position, into `RZE().GetRenderEngine().GetMainView()`. The matrices are skipped while `GameScene::DoesMainCameraDriveView()` is false, as in the Editor, whose own camera drives the view. A scene can have any number of cameras; only one is main. See [Scene-And-GameObject-Model.md](Scene-And-GameObject-Model.md#the-main-camera).
+- `SetMainCamera(true)` makes it the main camera through `GameScene::SetMainCamera`, which clears the flag on the previous one; `SetMainCamera(false)` clears the role if it has it. The inspector property is `Exclusive`, so it can only be turned on (see [Object-Inspector-And-Properties.md](../07-Editor/Object-Inspector-And-Properties.md#metadata)). A pasted camera is never main.
 - Owns a small render target and a secondary `RenderView`. `RenderPreview()` renders the **"Camera View" preview** into it with its own local projection, leaving the camera untouched; the editor shows it in a custom inspector section ([Engine-Graphics-Layer.md](../04-Rendering/Engine-Graphics-Layer.md#views)).
 - Its inspector fields go through `SetFOV`, `SetNearCull`, `SetFarCull` and `SetExposureCompensation`. `SetFOV` and `SetNearCull` assert the value is positive, so the inspector's ranges keep them above 0. An active camera rebuilds its matrices every `Update()`, and the preview builds its own each time it renders, so changes show straight away.
 - In the Editor, every scene camera shows a movie-camera icon and its frustum in the scene view.
@@ -28,7 +29,7 @@ Wraps a `LightObjectPtr` (strength + `Vector4D` colour, edited through `SetLight
 
 ## `PlayerControllerComponent`
 
-Gameplay-facing first-person-style controller: movement speed, mouse yaw/pitch/roll, up/forward vectors. Attached at runtime (not scene-serialized) by `GameApp::Start()` onto whichever `GameObject` is named `"Camera"` in the loaded scene. Binds axes/actions through `RZE().GetInputHandler()`.
+Gameplay-facing first-person-style controller: movement speed, mouse yaw/pitch/roll, up/forward vectors. Attached at runtime (not scene-serialized) by `GameApp::Start()` onto the loaded scene's main camera. Binds axes/actions through `RZE().GetInputHandler()`.
 
 ## `GifChatComponent`
 
@@ -42,12 +43,12 @@ Documented in [07-Editor/Editor-Camera-And-Build-Launch.md](../07-Editor/Editor-
 
 | Component | Registered by | Scene-serialized? | Depends on |
 |---|---|---|---|
-| `TransformComponent` | `RZE_Application::Initialize()` (base) | Yes | — (always present) |
-| `RenderComponent` | `RZE_Application::Initialize()` (base) | Yes | `TransformComponent` (sibling), `RenderEngine`, `ResourceHandler` |
-| `CameraComponent` | `RZE_Application::Initialize()` (base) | Yes | `TransformComponent` (orientation), `RenderEngine::GetMainView()` |
-| `DirectionalLightComponent` | `RZE_Application::Initialize()` (base) | Yes | `RenderEngine` light objects |
-| `PlayerControllerComponent` | `RZE_Application::Initialize()` (base) | No — attached at runtime | `InputHandler`, `TransformComponent` |
-| `GifChatComponent` | `RZE_Application::Initialize()` (base) | Yes | — |
+| `TransformComponent` | `RZE_Application::RegisterEngineComponents()` | Yes | — (always present) |
+| `RenderComponent` | `RZE_Application::RegisterEngineComponents()` | Yes | `TransformComponent` (sibling), `RenderEngine`, `ResourceHandler` |
+| `CameraComponent` | `RZE_Application::RegisterEngineComponents()` | Yes | `TransformComponent` (orientation), `RenderEngine::GetMainView()`, `GameScene` (main camera) |
+| `DirectionalLightComponent` | `RZE_Application::RegisterEngineComponents()` | Yes | `RenderEngine` light objects |
+| `PlayerControllerComponent` | not registered | No — attached at runtime | `InputHandler`, `TransformComponent` |
+| `GifChatComponent` | `RZE_Application::RegisterEngineComponents()` | Yes | — |
 | `EditorCameraComponent` | `Editor::EditorApp::Initialize()` | No — excluded via `SetIncludeInSave(false)` | `CameraComponent` (inheritance — buggy ID), `RenderEngine`, `InputHandler` |
 
 ## Key files

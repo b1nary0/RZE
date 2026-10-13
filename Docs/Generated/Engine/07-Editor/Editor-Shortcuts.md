@@ -54,11 +54,13 @@ Details: [Editor-Panels.md](Editor-Panels.md).
 
 | Shortcut | Action |
 |---|---|
+| **Ctrl + Z** | Undo the last step (a whole drag is one step) |
+| **Ctrl + Y** or **Ctrl + Shift + Z** | Redo |
 | **Ctrl + C** | Copy the selected objects (with their children) |
 | **Ctrl + V** | Paste: new copies beside the originals, each paste one step further |
 | **Ctrl + D** | Duplicate the selection, one step beside it |
 
-These work anywhere in the Editor, except that a focused text field keeps its own Ctrl+C/V. They're also in the Edit menu. Details: [Editor-Overview.md](Editor-Overview.md#edit-copy-paste-and-duplicate).
+These work anywhere in the Editor, except that a focused text field keeps its own Ctrl+C/V/Z. They're also in the Edit menu. Undo and redo wait while a widget or the gizmo is held, so a drag isn't half undone. Details: [Editor-Overview.md](Editor-Overview.md#edit-copy-paste-and-duplicate), [Editor-Framework.md](Editor-Framework.md#undo-and-redo).
 
 ## Other
 
@@ -66,6 +68,8 @@ These work anywhere in the Editor, except that a focused text field keeps its ow
 |---|---|---|
 | **Escape** | "Create GameObject" name box | Close it without creating |
 | **Enter** | "Create GameObject" name box | Create the object |
+| **Alt + F4** / window close button | anywhere | Exit, asking about unsaved changes first |
+| **Escape** | Unsaved Changes prompt | Cancel |
 
 The File, View and Help menus have no keyboard shortcuts. The SceneView toolbar's tooltips name the shortcut for each control, e.g. "Shortcut (W)".
 
@@ -79,6 +83,7 @@ The File, View and Help menus have no keyboard shortcuts. The SceneView toolbar'
 | Picking and marquee | `SceneViewPanel::HandleSelectionInput` |
 | Escape in the SceneView | `EditorApp::RegisterInputEvents` |
 | Scene panel | `ScenePanel::Draw` (ImGui item clicks) |
-| Ctrl+C/V/D | `MainMenuBar::HandleEditShortcuts` (`ImGui::Shortcut` with `ImGuiInputFlags_RouteGlobal`) |
+| Ctrl+Z/Y/Shift+Z, Ctrl+C/V/D | `MainMenuBar::HandleEditShortcuts` (`ImGui::Shortcut` with `ImGuiInputFlags_RouteGlobal`) |
+| Window close | `EditorApp::OnCloseRequested` |
 
 When adding a shortcut, check this page for conflicts and add a row here.

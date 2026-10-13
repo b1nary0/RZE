@@ -34,7 +34,9 @@ graph LR
     Externals["Externals<br/>(vendored ImGui + extensions)"]
     Rendering["Modules/Rendering<br/>(DX11 command-buffer renderer)"]
     Engine["Engine<br/>(scene, components, resources, input)"]
+    EditorLib["EditorLib<br/>(the Editor's code)"]
     Editor["Editor<br/>(exe)"]
+    Tests["UnitTests<br/>(exe)"]
     Game["Game<br/>(exe)"]
     SAB["SourceAssetBurner<br/>(exe)"]
 
@@ -44,11 +46,13 @@ graph LR
     Externals --> Engine
     Rendering --> Engine
     Engine --> SAB
-    Engine --> Editor
+    Engine --> EditorLib
+    EditorLib --> Editor
+    EditorLib --> Tests
     Engine --> Game
 ```
 
-Only the solid edges shown above are declared directly in Sharpmake (`AddPublicDependency<T>`). `Editor`, `Game`, and `SourceAssetBurner` each declare a *single* explicit dependency — on `Engine` — and receive `Utils`/`Externals`/`Rendering` transitively, because Sharpmake propagates a project's *public* dependencies to everything that depends on it. See [02-Architecture/Module-Dependency-Graph.md](02-Architecture/Module-Dependency-Graph.md) for the exact declarations and this transitivity mechanic.
+Only the solid edges shown above are declared directly in Sharpmake (`AddPublicDependency<T>`). `EditorLib`, `Game`, and `SourceAssetBurner` each declare a *single* explicit dependency — on `Engine` (and `Editor` and `UnitTests` on `EditorLib`) — and receive `Utils`/`Externals`/`Rendering` transitively, because Sharpmake propagates a project's *public* dependencies to everything that depends on it. See [02-Architecture/Module-Dependency-Graph.md](02-Architecture/Module-Dependency-Graph.md) for the exact declarations and this transitivity mechanic.
 
 ## Navigating this knowledgebase
 
@@ -60,7 +64,7 @@ Only the solid edges shown above are declared directly in Sharpmake (`AddPublicD
 | [04-Rendering](04-Rendering/Rendering-Overview.md) | RenderEngine, render stages, materials/meshes/shaders, the low-level renderer module |
 | [05-AssetPipeline](05-AssetPipeline/Asset-Burning-Pipeline.md) | Offline asset burning (SourceAssetBurner) and runtime asset loading |
 | [06-Platform-And-Infrastructure](06-Platform-And-Infrastructure/Input-System.md) | Input, events, windowing, config, threading, memory, debug services, Utils reference |
-| [07-Editor](07-Editor/Editor-Overview.md) | The ImGui-based scene editor: its [framework](07-Editor/Editor-Framework.md) (context, panels, commands, events), panels, [Object Inspector and property descriptors](07-Editor/Object-Inspector-And-Properties.md), gizmo snapping and grid, and [every shortcut](07-Editor/Editor-Shortcuts.md) |
+| [07-Editor](07-Editor/Editor-Overview.md) | The ImGui-based scene editor: its [framework](07-Editor/Editor-Framework.md) (context, panels, commands, undo, events), panels, [Object Inspector and property descriptors](07-Editor/Object-Inspector-And-Properties.md), gizmo snapping and grid, and [every shortcut](07-Editor/Editor-Shortcuts.md) |
 | [08-Game](08-Game/Game-App.md) | The playable game application shell |
 | [09-BuildSystem](09-BuildSystem/Sharpmake-Project-Graph.md) | Sharpmake project definitions, third-party dependencies |
 | [10-KnownIssues](10-KnownIssues/Architectural-Notes-And-TODOs.md) | Documented rough edges and TODOs found in the source |
@@ -104,6 +108,10 @@ timeline
     2026-10-12 : Object GUIDs, scene format v2, names no longer unique
                : Copy, paste and duplicate (Editor-Overview)
                : Editor event bus, unsaved-changes marker (Editor-Framework)
+               : Main camera saved with the scene, stable object order
+               : Undo and redo, unsaved-changes prompt (Editor-Framework)
+               : Copy and paste from memory (Editor-Overview)
+               : Unit tests and EditorLib (Building-And-Running)
 ```
 
 | Area | What changed | Read |
@@ -117,6 +125,10 @@ timeline
 | Inspector | Components describe their properties in the Engine with no ImGui; the "Object Inspector" (was "Component View") draws them, nests materials, meshes and textures, and edits several selected objects at once. `OnEditorInspect` is gone. | [Object-Inspector-And-Properties](07-Editor/Object-Inspector-And-Properties.md), [Component-System](03-SceneAndGameObjects/Component-System.md) |
 | Scene model | `GameObjectPtr` / `GameObjectComponentPtr` know when their target is destroyed. Objects have a saved GUID; names can repeat. Scene files are version 2 (an array keyed by GUID); version 1 files convert on load. **Resave scenes to update them.** | [Scene-And-GameObject-Model](03-SceneAndGameObjects/Scene-And-GameObject-Model.md) |
 | Editing | Copy, paste and duplicate (Ctrl+C/V/D), pasted beside the originals. The gizmo and inspector edit every selected object. | [Editor-Overview](07-Editor/Editor-Overview.md#edit-copy-paste-and-duplicate), [Editor-Panels](07-Editor/Editor-Panels.md) |
+| Undo | Undo and redo (Ctrl+Z/Y) for every edit, a whole drag as one step, 200 steps. Deleted objects are parked and put back as the same objects. The selection comes back too, and undoing to the last save clears the `*`. New, Load, Exit and closing the window ask about unsaved changes. | [Editor-Framework](07-Editor/Editor-Framework.md#undo-and-redo) |
+| Copy and paste | Copies are taken in memory through the property descriptors, not the scene format, so they include unsaved edits. Properties can be `ReadOnly` (kept, copied), `EditorOnly` (not recorded or copied) or `Exclusive` (one per scene). | [Editor-Overview](07-Editor/Editor-Overview.md#edit-copy-paste-and-duplicate), [Object-Inspector-And-Properties](07-Editor/Object-Inspector-And-Properties.md#metadata) |
+| Scene | The main camera is saved with the scene (`"MainCamera"`); there can be several cameras, and another takes over if it goes. Deleting removes children too, and removal keeps the scene's order. Objects can be out of the scene but kept alive. | [Scene-And-GameObject-Model](03-SceneAndGameObjects/Scene-And-GameObject-Model.md#the-main-camera) |
+| Build | Editor's code is the `EditorLib` library; `UnitTests` (doctest) covers Editor and Engine code and runs in CI. | [Building-And-Running](01-GettingStarted/Building-And-Running.md#unit-tests), [Sharpmake-Project-Graph](09-BuildSystem/Sharpmake-Project-Graph.md) |
 
 ## Key architectural themes (read this before diving into a section)
 

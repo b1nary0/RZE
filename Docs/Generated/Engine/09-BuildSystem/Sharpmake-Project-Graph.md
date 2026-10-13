@@ -22,9 +22,10 @@ RZE\GenerateSolutions.bat
 [module: Sharpmake.Include("Modules/Rendering/Rendering.sharpmake.cs")]
 [module: Sharpmake.Include("Editor/Editor.sharpmake.cs")]
 [module: Sharpmake.Include("Game/Game.sharpmake.cs")]
+[module: Sharpmake.Include("UnitTests/UnitTests.sharpmake.cs")]
 
 public class RZE : Solution {
-    // registers all 7 native projects + SharpmakeProjectBase against CommonTarget
+    // registers all 9 native projects + SharpmakeProjectBase against CommonTarget
 }
 ```
 
@@ -45,10 +46,12 @@ public class RZE : Solution {
 | Modules/Rendering | `Modules\Rendering\Rendering.sharpmake.cs` | static Lib | Externals, Utils | `d3d9`, `d3d11`, `d3d12`, `dxgi`, `d3dcompiler`, `DirectXTK`, `OptickCore` |
 | Engine | `Engine\Engine.sharpmake.cs` | static Lib | Utils, Externals, Rendering | `OptickCore`; copies `ThirdParty\Dll\x64\*.dll` to output post-build |
 | SourceAssetBurner | `SourceAssetBurner\SourceAssetBurner.sharpmake.cs` | exe | **Engine only** | `assimp-vc141-mt` |
-| Editor | `Editor\Editor.sharpmake.cs` | exe | **Engine only** | — |
+| EditorLib | `Editor\Editor.sharpmake.cs` | static Lib | **Engine only** | — (everything in `Editor\Src` except `EditorMain.cpp`; its own intermediate folder, since it shares `Editor\_project` with Editor) |
+| Editor | `Editor\Editor.sharpmake.cs` | exe | **EditorLib only** | links `EditorLib` with `/WHOLEARCHIVE`, so self-registering panels aren't dropped; compiles only `EditorMain.cpp` |
 | Game | `Game\Game.sharpmake.cs` | exe | **Engine only** | — |
+| UnitTests | `UnitTests\UnitTests.sharpmake.cs` | exe | **EditorLib only** | — (doctest is header-only) |
 
-All three executables — `Editor`, `Game`, and `SourceAssetBurner` — have converged on declaring a single explicit dependency, `Engine`, rather than also separately declaring `Utils` (and, for `Game`, `Rendering`). This isn't a behavior change: `Engine` itself has `AddPublicDependency<Utils>`/`<Externals>`/`<Rendering>`, and Sharpmake's `AddPublicDependency` propagates a project's public include/lib paths to everything that depends on it — so all three still get full access to `Utils`/`Rendering` headers/libs, just transitively through `Engine` instead of via their own separate declaration.
+`Game` and `SourceAssetBurner` declare a single explicit dependency, `Engine` (`Editor` and `UnitTests` declare `EditorLib`, which declares `Engine`), rather than also separately declaring `Utils` (and, for `Game`, `Rendering`). This isn't a behavior change: `Engine` itself has `AddPublicDependency<Utils>`/`<Externals>`/`<Rendering>`, and Sharpmake's `AddPublicDependency` propagates a project's public include/lib paths to everything that depends on it — so all three still get full access to `Utils`/`Rendering` headers/libs, just transitively through `Engine` instead of via their own separate declaration.
 
 A couple of things worth knowing if you're auditing this yourself:
 

@@ -9,8 +9,9 @@ Per the repo README, the depot currently **must** be at `C:\dev\RZE` for `Tools\
 ```mermaid
 %%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 flowchart TD
-    A["GenerateSolutions.bat<br/>(Sharpmake -> RZE.sln + vcxprojs under _project)"] --> B["msbuild RZE.sln<br/>(compiles Engine, Rendering, Utils, Externals,<br/>SourceAssetBurner.exe, Editor.exe, Game.exe)"]
-    B --> C["Burn Assets<br/>Run SourceAssetBurner.exe<br/>(Assets/3D/*.obj -> ProjectData/Mesh + Material/*)"]
+    A["GenerateSolutions.bat<br/>(Sharpmake -> RZE.sln + vcxprojs under _project)"] --> B["msbuild RZE.sln<br/>(compiles Engine, Rendering, Utils, Externals, EditorLib,<br/>SourceAssetBurner.exe, Editor.exe, Game.exe, UnitTests.exe)"]
+    B --> T["Run UnitTests.exe"]
+    T --> C["Burn Assets<br/>Run SourceAssetBurner.exe<br/>(Assets/3D/*.obj -> ProjectData/Mesh + Material/*)"]
     C --> D["Asset Copy<br/>AssetCpy.bat<br/>(stages Assets/, Config/, ProjectData/ into _build/&lt;config&gt;/)"]
     D --> E["Run Editor.exe or Game.exe"]
 ```
@@ -56,6 +57,16 @@ RZEHub is a GUI front-end that (per its buttons' names) invokes `SourceAssetBurn
    - Game (default): `_build\<config>\RZE_Game.exe`
    - Editor: the built Editor executable in the same output folder
 
+## Unit tests
+
+`_build\<config>\UnitTests.exe` runs the unit tests ([doctest](https://github.com/doctest/doctest) 2.4.11, vendored in `ThirdParty\Include\doctest\`). It exits non-zero if any fail; doctest's options apply (`--help`, `-tc="name*"` to pick test cases, `-s` to show passing checks).
+
+- **Project:** `UnitTests\` (`UnitTests.sharpmake.cs`). It links `EditorLib`, the Editor's code as a static library, and through it `Engine`, so tests can cover either. Run `GenerateSolutions.bat` after adding a test file.
+- **Layout:** `UnitTests\Src\Editor\` and `Src\Engine\` mirror the code under test. `TestComponents.h` has a test component with one property of each kind (`EditorOnly`, `Exclusive`, `ReadOnly`, computed), registered with `RegisterTestComponents()`.
+- **What's covered:** `UndoHistory` (steps, merging, the cap, the redo branch, `OnDropped`, the save point), `ParkedSubtree`, `GameObjectSnapshot` and the clipboard, `EditorSelection`, `InteractionTracker`, and `ComponentPropertyRegistry`.
+- **No running engine.** Tests build their own `GameScene` and `EditorContext`; `main` (`TestMain.cpp`) only does what tests rely on from start-up: `MainThreadDispatcher::Initialize()` and `RZE_Application::RegisterEngineComponents()`. Code that needs a window or the render engine (e.g. `CameraComponent::OnAddToScene`, finding objects through `RZE().GetActiveScene()`) can't be tested this way.
+- **Asserts fail the test.** In Debug, a CRT report hook turns an engine assert into a failed check in the running test, with the assert's text, instead of a dialog, so a run never waits for input.
+
 ## CI reference (`.github\workflows\Windows.yml`)
 
 Runs on `windows-2019`, matrix over `debug`/`release`. Steps:
@@ -64,9 +75,10 @@ Runs on `windows-2019`, matrix over `debug`/`release`. Steps:
 2. Checkout
 3. `cd RZE && GenerateSolutions.bat`
 4. `msbuild RZE/RZE.sln /property:Configuration=<config>`
-5. Run `SourceAssetBurner.exe`
-6. Run `AssetCpy.bat`
-7. Archive `_build\<config>` as a build artifact (excluding `.lib`/`.pdb`/`.exp`/`.log`)
+5. Run `UnitTests.exe` (a failing test fails the run)
+6. Run `SourceAssetBurner.exe`
+7. Run `AssetCpy.bat`
+8. Archive `_build\<config>` as a build artifact (excluding `.lib`/`.pdb`/`.exp`/`.log`)
 
 This is the single most authoritative source for "the correct build order" if these docs and the CI config ever diverge — trust the CI file.
 
