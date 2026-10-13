@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -21,8 +22,13 @@ class AsyncOperation;
 //     frame budget, and the resource is registered with the ResourceHandler.
 //
 // Resources that are already loaded are simply referenced, and resources that don't support async loading
-// fall back to a synchronous ResourceHandler::LoadResource. Every resolved resource is held by the batch until
-// ReleaseHeldResources() so it can't be unloaded before whoever requested it picks it up.
+// fall back to a synchronous ResourceHandler::LoadResource. A resource another batch is already loading isn't loaded
+// again: this batch waits for that load (ResourceHandler::TryBeginAsyncLoad), and loads it itself only if that one
+// fails or is cancelled. Every resolved resource is held by the batch until ReleaseHeldResources() so it can't be
+// unloaded before whoever requested it picks it up.
+//
+// Waiting can't deadlock as long as resource dependencies have no cycles, which they don't (a mesh needs its
+// materials' textures, never the other way round).
 //
 // Main thread only. Worker jobs are pushed through the owning AsyncOperation, which guarantees they complete
 // before the operation (and therefore this batch) is torn down.
@@ -56,12 +62,15 @@ public:
 	// Drops the batch's references to resolved resources.
 	void ReleaseHeldResources();
 
-	// Destroys any resources that were loaded but never registered. Worker jobs must have finished.
+	// Destroys any resources that were loaded but never registered, and gives up the loads this batch was doing so
+	// other batches waiting on them load them instead. Worker jobs must have finished.
 	void DiscardPending();
 
 private:
 	enum class EEntryState : U8
 	{
+		// Another batch is loading it; resolved from the ResourceHandler once that's registered it
+		WaitingForOtherLoad,
 		LoadingCPU,
 		// CPU load finished; waiting for dependencies and/or main-thread finalization.
 		Finalizing,
@@ -74,6 +83,12 @@ private:
 		Filepath Path;
 		std::string Key;
 		EEntryState State = EEntryState::LoadingCPU;
+
+		// Make a new, unloaded resource, and load it synchronously for one that doesn't support async loading
+		std::function<std::unique_ptr<IResource>()> Create;
+		std::function<ResourceHandle()> LoadSynchronously;
+		// Whether this batch began the resource's async load (ResourceHandler::TryBeginAsyncLoad)
+		bool OwnsLoad = false;
 
 		// Owned until registered with the ResourceHandler.
 		std::unique_ptr<IResource> Resource;
@@ -89,9 +104,14 @@ private:
 
 	// Returns the new entry if the resource needs loading, or nullptr if it was already requested or already loaded.
 	Entry* BeginRequest(const Filepath& resourcePath);
+	// Loads it, or waits for another batch that's loading it
+	void StartLoad(Entry& entry);
 	void StartCPULoad(Entry& entry, std::unique_ptr<IResource> resource);
 	void ResolveWithHandle(Entry& entry, ResourceHandle handle);
+	// Lets other batches load it, if this one was
+	void EndLoad(Entry& entry);
 
+	void PollWaitingEntries();
 	void PollCPULoads();
 	void FinalizeReadyEntries(AsyncFrameBudget& budget);
 
@@ -129,14 +149,14 @@ void AsyncResourceBatch::Request(const Filepath& resourcePath, Args... args)
 		return;
 	}
 
-	std::unique_ptr<IResource> resource = std::make_unique<TResource>(args...);
-	if (resource->SupportsAsyncLoad())
+	entry->Create = [args...]() -> std::unique_ptr<IResource>
 	{
-		StartCPULoad(*entry, std::move(resource));
-	}
-	else
+		return std::make_unique<TResource>(args...);
+	};
+	entry->LoadSynchronously = [resourcePath, args...]()
 	{
-		resource.reset();
-		ResolveWithHandle(*entry, GetResourceHandler().LoadResource<TResource>(resourcePath, args...));
-	}
+		return GetResourceHandler().LoadResource<TResource>(resourcePath, args...);
+	};
+
+	StartLoad(*entry);
 }

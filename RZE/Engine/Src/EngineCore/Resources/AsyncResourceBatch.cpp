@@ -42,9 +42,11 @@ void AsyncResourceBatch::DiscardPending()
 		{
 			AssertMsg(entry->CPUJob.IsComplete(), "Discarding a resource while its CPU load is still running.");
 
-			entry->Resource->Release();
-			entry->Resource.reset();
+			// Its finalize may have queued uploads before it was cancelled
+			GetResourceHandler().DestroyWhenRendered(entry->Resource.release());
 		}
+
+		EndLoad(*entry);
 	}
 }
 
@@ -94,8 +96,28 @@ AsyncResourceBatch::Entry* AsyncResourceBatch::BeginRequest(const Filepath& reso
 		return nullptr;
 	}
 
-	RZE_LOG_ARGS("Creating resource [%s]", resourceKey.c_str());
 	return entry;
+}
+
+void AsyncResourceBatch::StartLoad(Entry& entry)
+{
+	std::unique_ptr<IResource> resource = entry.Create();
+	if (!resource->SupportsAsyncLoad())
+	{
+		resource.reset();
+		ResolveWithHandle(entry, entry.LoadSynchronously());
+		return;
+	}
+
+	if (!GetResourceHandler().TryBeginAsyncLoad(entry.Key, this))
+	{
+		entry.State = EEntryState::WaitingForOtherLoad;
+		return;
+	}
+
+	entry.OwnsLoad = true;
+	RZE_LOG_ARGS("Creating resource [%s]", entry.Key.c_str());
+	StartCPULoad(entry, std::move(resource));
 }
 
 void AsyncResourceBatch::StartCPULoad(Entry& entry, std::unique_ptr<IResource> resource)
@@ -134,13 +156,47 @@ void AsyncResourceBatch::ResolveWithHandle(Entry& entry, ResourceHandle handle)
 	++m_settledCount;
 }
 
+void AsyncResourceBatch::EndLoad(Entry& entry)
+{
+	if (entry.OwnsLoad)
+	{
+		GetResourceHandler().EndAsyncLoad(entry.Key, this);
+		entry.OwnsLoad = false;
+	}
+}
+
 void AsyncResourceBatch::Tick(AsyncFrameBudget& budget)
 {
 	OPTICK_EVENT();
 	AssertExpr(Threading::MainThreadDispatcher::Get().IsMainThread());
 
+	PollWaitingEntries();
 	PollCPULoads();
 	FinalizeReadyEntries(budget);
+}
+
+void AsyncResourceBatch::PollWaitingEntries()
+{
+	for (std::unique_ptr<Entry>& entryPtr : m_entries)
+	{
+		Entry& entry = *entryPtr;
+		if (entry.State != EEntryState::WaitingForOtherLoad)
+		{
+			continue;
+		}
+
+		ResourceHandle handle = GetResourceHandler().GetHandle(entry.Path);
+		if (handle.IsValid())
+		{
+			ResolveWithHandle(entry, std::move(handle));
+		}
+		else if (!GetResourceHandler().IsAsyncLoadInProgress(entry.Key))
+		{
+			// The other load failed or was cancelled (or its resource was already released again), so this batch
+			// loads it
+			StartLoad(entry);
+		}
+	}
 }
 
 void AsyncResourceBatch::PollCPULoads()
@@ -224,6 +280,8 @@ void AsyncResourceBatch::Register(Entry& entry)
 	{
 		m_heldResources.push_back(std::move(handle));
 	}
+	// After registering, so batches waiting on it find it
+	EndLoad(entry);
 
 	entry.State = EEntryState::Resolved;
 	++m_settledCount;
@@ -235,9 +293,10 @@ void AsyncResourceBatch::FailEntry(Entry& entry, const char* reason)
 
 	if (entry.Resource != nullptr)
 	{
-		entry.Resource->Release();
-		entry.Resource.reset();
+		// A step that ran before it failed may have queued uploads
+		GetResourceHandler().DestroyWhenRendered(entry.Resource.release());
 	}
+	EndLoad(entry);
 
 	entry.State = EEntryState::Failed;
 	++m_settledCount;
@@ -246,7 +305,7 @@ void AsyncResourceBatch::FailEntry(Entry& entry, const char* reason)
 
 void AsyncResourceBatch::MarkCPULoaded(Entry& entry)
 {
-	if (entry.State == EEntryState::LoadingCPU)
+	if (entry.State == EEntryState::LoadingCPU || entry.State == EEntryState::WaitingForOtherLoad)
 	{
 		++m_cpuLoadedCount;
 	}

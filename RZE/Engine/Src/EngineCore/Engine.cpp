@@ -123,6 +123,9 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 
 					m_renderEngine->Render("Main Render");
 					m_renderEngine->Finish();
+
+					// After the present, which is what lets the render thread's frame catch up
+					m_resourceHandler.Update();
 				}
 			}
 

@@ -54,6 +54,13 @@ namespace Rendering
 
 		static void DevicePresent();
 
+		// The frame whose commands are being pushed now, counting up from 0 at each DevicePresent. The render thread runs a
+		// frame behind, so it can still read memory a command points at (e.g. CreateTextureBuffer2D's texel data) until
+		// IsFrameProcessed is true for the frame the command was pushed in.
+		static U64 GetRecordingFrame() { return m_recordingFrame; }
+		// Whether the render thread has run every command pushed up to the end of frame. Main thread only.
+		static bool IsFrameProcessed(U64 frame) { return frame + 2 <= m_recordingFrame; }
+
 		static void HandleWindowResize(const Vector2D& newSize);
 
 		static void ImGuiRender();
@@ -129,6 +136,8 @@ namespace Rendering
 
 	private:
 		static RenderThread m_renderThread;
+		// DevicePresent hands a frame to the render thread once it's finished the one before
+		static U64 m_recordingFrame;
 	};
 
 	template<typename TType>

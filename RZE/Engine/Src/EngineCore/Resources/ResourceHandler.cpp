@@ -3,6 +3,8 @@
 
 #include <EngineCore/Threading/MainThreadDispatcher.h>
 
+#include <Rendering/Renderer.h>
+
 ResourceHandler::ResourceHandler()
 {
 }
@@ -18,6 +20,9 @@ void ResourceHandler::Init()
 
 void ResourceHandler::ShutDown()
 {
+	// The render thread has stopped by now
+	DestroyPendingNow();
+
 	U32 liveResourceCount = 0;
 	for (auto& resourcePair : mResourceTable)
 	{
@@ -36,11 +41,91 @@ void ResourceHandler::ShutDown()
 
 	// Just an informative log to notify that we had some referenced resources at the time
 	// ShutDown() was called. This is fine.
+	// Releasing those can release others they held
+	DestroyPendingNow();
+
 	RZE_LOG_ARGS("ResourceHandler::ShutDown() encountered %u live resources.", liveResourceCount);
 
 	// Entries are intentionally left in the table: live ResourceHandles still point at them and will
 	// decrement their ref counts as they are destroyed. The resources themselves are gone (mResource == nullptr),
 	// so those releases are no-ops. The table is freed in ~ResourceHandler, after all handles are gone.
+}
+
+void ResourceHandler::Update()
+{
+	OPTICK_EVENT();
+	AssertExpr(Threading::MainThreadDispatcher::Get().IsMainThread());
+
+	// Taken out of the list before any is released, since releasing one can release others (e.g. a mesh's textures)
+	std::vector<IResource*> finished;
+	for (auto it = m_pendingDestroys.begin(); it != m_pendingDestroys.end();)
+	{
+		if (Rendering::Renderer::IsFrameProcessed(it->ReleasedFrame))
+		{
+			finished.push_back(it->Resource);
+			it = m_pendingDestroys.erase(it);
+		}
+		else
+		{
+			++it;
+		}
+	}
+
+	for (IResource* resource : finished)
+	{
+		resource->Release();
+		delete resource;
+	}
+}
+
+void ResourceHandler::DestroyPendingNow()
+{
+	// Releasing one can release others (e.g. a mesh's textures), which queues them in turn
+	while (!m_pendingDestroys.empty())
+	{
+		std::vector<PendingDestroy> pendingDestroys;
+		pendingDestroys.swap(m_pendingDestroys);
+		for (const PendingDestroy& pending : pendingDestroys)
+		{
+			pending.Resource->Release();
+			delete pending.Resource;
+		}
+	}
+}
+
+void ResourceHandler::DestroyWhenRendered(IResource* resource)
+{
+	AssertExpr(Threading::MainThreadDispatcher::Get().IsMainThread());
+	AssertNotNull(resource);
+
+	m_pendingDestroys.push_back({ resource, Rendering::Renderer::GetRecordingFrame() });
+}
+
+bool ResourceHandler::TryBeginAsyncLoad(const std::string& resourceKey, const void* loader)
+{
+	AssertExpr(Threading::MainThreadDispatcher::Get().IsMainThread());
+	AssertNotNull(loader);
+
+	return m_asyncLoads.emplace(resourceKey, loader).second;
+}
+
+void ResourceHandler::EndAsyncLoad(const std::string& resourceKey, const void* loader)
+{
+	AssertExpr(Threading::MainThreadDispatcher::Get().IsMainThread());
+
+	auto iter = m_asyncLoads.find(resourceKey);
+	AssertMsg(iter != m_asyncLoads.end() && iter->second == loader, "Ending an async load that this loader didn't begin");
+	if (iter != m_asyncLoads.end() && iter->second == loader)
+	{
+		m_asyncLoads.erase(iter);
+	}
+}
+
+bool ResourceHandler::IsAsyncLoadInProgress(const std::string& resourceKey) const
+{
+	AssertExpr(Threading::MainThreadDispatcher::Get().IsMainThread());
+
+	return m_asyncLoads.find(resourceKey) != m_asyncLoads.end();
 }
 
 ResourceHandle ResourceHandler::GetEmptyResourceHandle()
@@ -86,8 +171,8 @@ ResourceHandle ResourceHandler::RegisterLoadedResource(const Filepath& resourceP
 	if (iter != mResourceTable.end() && iter->second.GetResource() != nullptr)
 	{
 		RZE_LOG_ARGS("Resource [%s] was already registered; discarding the duplicate.", resourceKey.c_str());
-		resource->Release();
-		delete resource;
+		// Its finalize may have queued uploads that read its data
+		DestroyWhenRendered(resource);
 
 		return ResourceHandle(resourceKey, &iter->second, this);
 	}
@@ -115,8 +200,8 @@ void ResourceHandler::ReleaseResource(ResourceHandle& resourceHandle)
 		{
 			RZE_LOG_ARGS("Releasing resource [%s]", resourceHandle.GetID().c_str());
 
-			resourceSource.GetResource()->Release();
-			resourceSource.Destroy();
+			// Out of the table now, so a new request loads it afresh, but destroyed only once the render thread is done with it
+			DestroyWhenRendered(resourceSource.GetResource());
 			mResourceTable.erase(iter);
 
 			resourceHandle.mHandler = nullptr;

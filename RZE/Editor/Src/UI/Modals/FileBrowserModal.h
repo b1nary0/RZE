@@ -89,13 +89,6 @@ namespace Editor
 		void Display();
 
 	private:
-		// A texture that stops being shown, released a few frames later once the render thread is done with it
-		struct PendingRelease
-		{
-			ResourceHandle Texture;
-			int FramesLeft = 0;
-		};
-
 		void DrawHeader();
 		void DrawBreadcrumb();
 		void DrawTiles();
@@ -122,7 +115,6 @@ namespace Editor
 		// Null while it's still to be loaded, or if there's no image
 		const Texture2D* GetThumbnail(const Filepath& file);
 		void ReleaseThumbnails();
-		void UpdatePendingReleases();
 
 		const FolderEntry* GetSelected() const;
 
@@ -151,7 +143,6 @@ namespace Editor
 
 		// The images loaded so far, by relative path; an empty handle for one that doesn't exist
 		std::unordered_map<std::string, ResourceHandle> m_thumbnails;
-		std::vector<PendingRelease> m_pendingReleases;
 		int m_loadsThisFrame = 0;
 
 		// A tile action picked this frame, run once the tiles are drawn

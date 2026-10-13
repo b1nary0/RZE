@@ -36,8 +36,6 @@ namespace
 
 	// Images load synchronously, so a big folder fills in over a few frames rather than stalling one
 	constexpr int k_maxLoadsPerFrame = 2;
-	// The render thread draws a frame or so behind, so a texture that's stopped being shown lives this long
-	constexpr int k_releaseDelayFrames = 3;
 
 	const ImVec4 k_folderColour(0.86f, 0.70f, 0.36f, 1.0f);
 	const ImVec4 k_warningColour(1.0f, 0.78f, 0.35f, 1.0f);
@@ -111,7 +109,6 @@ namespace Editor
 
 	void FileBrowserModal::Display()
 	{
-		UpdatePendingReleases();
 		m_loadsThisFrame = 0;
 
 		// Another dialog opened at the root, such as a tile action's unsaved-changes prompt or progress dialog, takes the
@@ -781,10 +778,7 @@ namespace Editor
 		auto it = m_thumbnails.find(key);
 		if (it == m_thumbnails.end())
 		{
-			// ResourceHandler shares a loaded image by its path, so an earlier copy has to go before a fresh one loads
-			const bool isBeingReleased = std::any_of(m_pendingReleases.begin(), m_pendingReleases.end(),
-				[&key](const PendingRelease& pending) { return pending.Texture.GetResourcePath().GetRelativePath() == key; });
-			if (isBeingReleased || m_loadsThisFrame >= k_maxLoadsPerFrame)
+			if (m_loadsThisFrame >= k_maxLoadsPerFrame)
 			{
 				return nullptr;
 			}
@@ -799,26 +793,8 @@ namespace Editor
 
 	void FileBrowserModal::ReleaseThumbnails()
 	{
-		for (auto& [path, texture] : m_thumbnails)
-		{
-			if (texture.IsValid())
-			{
-				m_pendingReleases.push_back({ std::move(texture), k_releaseDelayFrames });
-			}
-		}
+		// The ResourceHandler keeps a released texture until the render thread has drawn the frames that show it
 		m_thumbnails.clear();
-	}
-
-	void FileBrowserModal::UpdatePendingReleases()
-	{
-		for (PendingRelease& pending : m_pendingReleases)
-		{
-			--pending.FramesLeft;
-		}
-
-		// Erasing drops each handle, which releases its texture once nothing else holds it
-		m_pendingReleases.erase(std::remove_if(m_pendingReleases.begin(), m_pendingReleases.end(),
-			[](const PendingRelease& pending) { return pending.FramesLeft <= 0; }), m_pendingReleases.end());
 	}
 
 	const FolderEntry* FileBrowserModal::GetSelected() const

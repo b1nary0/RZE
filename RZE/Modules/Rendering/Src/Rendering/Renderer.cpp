@@ -26,6 +26,7 @@
 namespace Rendering
 {
 	RenderThread Renderer::m_renderThread;
+	U64 Renderer::m_recordingFrame = 0;
 
 	inline void* AllocateCommandData(void* src, size_t dataTypeSize, size_t count)
 	{
@@ -96,7 +97,9 @@ namespace Rendering
 		RenderCommand_DevicePresent* command = MemArena::AllocType<RenderCommand_DevicePresent>();
 		m_renderThread.PushCommand(command);
 
+		// Returns once the render thread has finished the previous frame and taken this one
 		m_renderThread.SignalProcess();
+		++m_recordingFrame;
 	}
 
 	void Renderer::HandleWindowResize(const Vector2D& newSize)

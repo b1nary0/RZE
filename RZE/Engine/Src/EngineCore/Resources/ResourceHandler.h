@@ -1,6 +1,7 @@
 #pragma once
 
 #include <unordered_map>
+#include <vector>
 
 #include <Utils/Conversions.h>
 #include <Utils/DebugUtils/Debug.h>
@@ -46,17 +47,8 @@ private:
 		bool IsReferenced() { return mReferenceCount > 0; }
 		bool IsValid() { return IsReferenced() && mResource; }
 
-		void Destroy()
-		{
-			AssertNotNull(mResource);
-			AssertExpr(mReferenceCount <= 0);
-
-			InternalDestroy();
-		}
-
 	private:
-		// Bypasses asserts needed for regular destruction, 
-		// as when we shut down there may be a positive reference count, but thats ok
+		// When we shut down there may be a positive reference count, but thats ok
 		// when we just want to shut the system down. We will log each issue in the console
 		// for reference when we call Shutdown() on ResourceHandler
 		void InternalDestroy()
@@ -79,6 +71,9 @@ public:
 
 	void Init();
 	void ShutDown();
+
+	// Once a frame, after the frame is presented: destroys the released resources the render thread is done with
+	void Update();
 
 	// NOTE: ResourceHandler and ResourceHandle are main-thread only (the table and ref counts are unsynchronized).
 	// Use AsyncResourceBatch to load resources off the main thread.
@@ -103,6 +98,19 @@ public:
 
 	void ReleaseResource(ResourceHandle& resourceHandle);
 
+	// Takes ownership of resource, and releases and deletes it once the render thread can no longer be reading what it
+	// uploaded (see Rendering::Renderer::IsFrameProcessed). Every resource the handler destroys goes through this, so
+	// one can be released in the frame it was uploaded or drawn in.
+	void DestroyWhenRendered(IResource* resource);
+
+	// Async loads in progress, so a second request for a resource waits for the first instead of loading and uploading
+	// it again. loader identifies who's loading it (e.g. an AsyncResourceBatch); only it can end the load. Returns false
+	// if someone else is already loading it.
+	bool TryBeginAsyncLoad(const std::string& resourceKey, const void* loader);
+	// Called once loader has registered the resource, or given up on it
+	void EndAsyncLoad(const std::string& resourceKey, const void* loader);
+	bool IsAsyncLoadInProgress(const std::string& resourceKey) const;
+
 	template <class ResourceT>
 	const ResourceT* GetResource(const ResourceHandle& resourceHandle);
 
@@ -116,8 +124,22 @@ private:
 
 	const std::unordered_map<std::string, ResourceSource>& GetResourceTableInternal() const;
 
+	// Releases and deletes every resource waiting on the render thread. Only once it's stopped.
+	void DestroyPendingNow();
+
 	// #TODO Turn the resource IDs into hashes/guids
 	std::unordered_map<std::string, ResourceSource> mResourceTable;
+
+	struct PendingDestroy
+	{
+		IResource* Resource = nullptr;
+		// Rendering::Renderer::GetRecordingFrame when it was released
+		U64 ReleasedFrame = 0;
+	};
+	std::vector<PendingDestroy> m_pendingDestroys;
+
+	// Resource key -> who's loading it
+	std::unordered_map<std::string, const void*> m_asyncLoads;
 };
 
 // #TODO
