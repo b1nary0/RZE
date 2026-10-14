@@ -61,6 +61,12 @@ Goal: glass and other uniformly see-through surfaces draw blended, behind-to-fro
 - Sorting is per placement, not per triangle, so overlapping transparent parts of one mesh can still sort wrong.
   That's an accepted limit; order-independent transparency is out of scope.
 - The pixel shaders output `alpha = Opacity` (times the albedo texture's alpha, if the texture has one) instead of 1.
+  Done without the albedo alpha so far. `MaterialInstance::Create` keeps the GPU opacity at 1 for anything not
+  `Transparent`, because the scene's alpha is also PostProcess's background marker and exposure weight.
+- **Known gap:** a transparent surface over empty background (scene alpha 0) vanishes. `AlphaBlend` leaves the
+  target's alpha alone, so it stays 0 and `Pixel_Tonemap.hlsl` paints the background colour over it. Fix by clearing
+  the scene target to the (linear) background colour and treating alpha as coverage, or by a blend state for this
+  pass that accumulates alpha, with `Pixel_Tonemap`/`Pixel_LuminanceLog` updated to match.
 - The transparent list is built during the existing walk over render objects, so it needs no extra pass over the
   scene. It's cleared every frame.
 

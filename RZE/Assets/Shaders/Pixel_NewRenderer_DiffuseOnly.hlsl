@@ -24,5 +24,6 @@ float4 PSMain(VertexToPixel input) : SV_TARGET
 	float3 colour = ComputeLighting(surface, viewDir);
 
 	// Linear and unclipped; PostProcessRenderStage applies exposure and tonemapping
-	return float4(colour, 1.0f);
+	// Opacity is 1 unless the material is Transparent (MaterialInstance::Create); only the transparent pass blends by it
+	return float4(colour, Opacity);
 }

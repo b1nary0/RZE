@@ -57,7 +57,10 @@ std::shared_ptr<MaterialInstance> MaterialInstance::Create(const MaterialAssetIm
 	}
 
 	materialInstance->GetProperties().Shininess = materialData.Properties.Shininess;
-	materialInstance->GetProperties().Opacity = materialData.Properties.Opacity;
+	// The shaders write opacity as the scene's alpha, which PostProcess also reads (background, exposure weight), so
+	// only a Transparent material, drawn blended, gets anything but solid
+	const bool isTransparent = materialData.BlendMode == MaterialAssetImporter::MaterialData::EBlendMode::Transparent;
+	materialInstance->GetProperties().Opacity = isTransparent ? materialData.Properties.Opacity : 1.0f;
 	materialInstance->GetProperties().HasOpacityMask = (materialData.TextureFlags & MaterialAssetImporter::MaterialData::TEXTUREFLAG_OPACITY) ? 1.0f : 0.0f;
 	materialInstance->GetProperties().HasHeightMap = (materialData.TextureFlags & MaterialAssetImporter::MaterialData::TEXTUREFLAG_HEIGHT) ? 1.0f : 0.0f;
 	materialInstance->GetProperties().OpacityMaskInAlpha = (materialData.TextureFlags & MaterialAssetImporter::MaterialData::TEXTUREFLAG_OPACITY_IN_ALPHA) ? 1.0f : 0.0f;

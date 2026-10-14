@@ -14,6 +14,8 @@
 
 #include <Utils/Math/Units.h>
 
+#include <algorithm>
+
 namespace
 {
 	// Must match ShadowBuffer / ShadowMap registers in Common/PixelResources.hlsli
@@ -90,9 +92,13 @@ void ForwardRenderStage::Render(RenderContext& context)
 
 	// Consecutive submeshes often share a shader, so it's only set when it changes
 	const PixelShader* boundPixelShader = nullptr;
+	// Placements at the mesh's origin share the object's transform, so it's only uploaded when it changes
+	const Matrix4x4* uploadedTransform = nullptr;
 
 	// Objects and submeshes entirely outside the view aren't drawn
 	const Frustum frustum(view.Camera.ClipSpace);
+
+	m_transparentDraws.clear();
 
 	for (const auto& renderObject : scene.GetRenderObjects())
 	{
@@ -105,9 +111,6 @@ void ForwardRenderStage::Render(RenderContext& context)
 		const std::vector<MeshPlacement>& placements = renderObject->GetStaticMesh().GetPlacements();
 		const std::vector<RenderObject::SubMeshBounds>& subMeshBounds = renderObject->GetSubMeshBounds();
 
-		// Placements at the mesh's origin share the object's transform, so it's only uploaded when it changes
-		const Matrix4x4* uploadedTransform = nullptr;
-
 		// @TODO
 		// Currently each placement is a draw call. Need to batch this down so it becomes a single draw call
 		// per render object, at least. Can do this maybe in the burner?
@@ -118,46 +121,39 @@ void ForwardRenderStage::Render(RenderContext& context)
 				continue;
 			}
 
-			// @note this sends in the address of a transform but fulfils the memory of struct MatrixMem as a whole
-			// this should be re-evaluated later to have a better solve for the issue of commands needing access to the data being uploaded's lifetime
-			const Matrix4x4& transform = renderObject->GetPlacementTransform(placementIndex);
-			if (&transform != uploadedTransform)
+			// See-through placements wait until everything they could show is drawn
+			const MaterialInstance& materialInstance = subMeshes[placements[placementIndex].GeometryIndex].GetMaterialRef();
+			if (materialInstance.GetBlendMode() == MaterialInstance::EBlendMode::Transparent)
 			{
-				Rendering::Renderer::UploadDataToBuffer<Matrix4x4>(m_vertexShader->GetWorldMatrixBuffer(), &transform);
-				uploadedTransform = &transform;
+				TransparentDraw& draw = m_transparentDraws.emplace_back();
+				draw.DistanceSquared = (subMeshBounds[placementIndex].Bounds.GetCentre() - view.Camera.Position).LengthSq();
+				draw.Object = renderObject.get();
+				draw.PlacementIndex = placementIndex;
+				continue;
 			}
 
-			const MeshGeometry& meshGeometry = subMeshes[placements[placementIndex].GeometryIndex];
-
-			// @TODO
-			// This is god awful. Just in place while developing shader model.
-			// Should get resolved once the system matures
-			const MaterialInstance& materialInstance = meshGeometry.GetMaterialRef();
-			const PixelShader* const pixelShader = materialInstance.GetPixelShader();
-
-			if (pixelShader != boundPixelShader)
-			{
-				Rendering::Renderer::SetPixelShader(pixelShader->GetPlatformObject());
-				boundPixelShader = pixelShader;
-			}
-			Rendering::Renderer::SetConstantBufferPS(materialInstance.GetParamBuffer(), 1);
-
-			// @TODO Really need to get to texture infrastructure refactor soon - 2/6/2022
-			for (U8 textureSlot = 0; textureSlot < MaterialInstance::TextureSlot::TEXTURE_SLOT_COUNT; ++textureSlot)
-			{
-				if (const Texture2D* const texture = materialInstance.GetTextureResource(textureSlot))
-				{
-					// @TODO Should solve this better by providing an API that will provide a texture resource array
-					Rendering::Renderer::SetTextureResource(texture->GetPlatformObject(), textureSlot);
-				}
-			}
-
-			const Rendering::IndexBufferHandle& indexBuffer = meshGeometry.GetIndexBuffer()->GetPlatformObject();
-			Rendering::Renderer::SetVertexBuffer(meshGeometry.GetVertexBuffer()->GetPlatformObject(), 0);
-			Rendering::Renderer::SetIndexBuffer(indexBuffer);
-
-			Rendering::Renderer::DrawIndexed(indexBuffer);
+			DrawPlacement(*renderObject, placementIndex, uploadedTransform, boundPixelShader);
 		}
+	}
+
+	if (!m_transparentDraws.empty())
+	{
+		SortBackToFront(m_transparentDraws);
+
+		// Blended over what's behind, and tested against depth without writing it, so one see-through surface
+		// doesn't hide another behind it.
+		// #TODO(Transparency) Over empty background (scene alpha 0) the blend leaves alpha 0, so PostProcess paints
+		// the background colour there and the surface vanishes. Needs the background handled before blending.
+		Rendering::Renderer::SetBlendState(Rendering::EBlendState::AlphaBlend);
+		Rendering::Renderer::SetDepthState(Rendering::EDepthState::ReadOnly);
+
+		for (const TransparentDraw& draw : m_transparentDraws)
+		{
+			DrawPlacement(*draw.Object, draw.PlacementIndex, uploadedTransform, boundPixelShader);
+		}
+
+		Rendering::Renderer::SetBlendState(Rendering::EBlendState::Opaque);
+		Rendering::Renderer::SetDepthState(Rendering::EDepthState::ReadWrite);
 	}
 
 	// The shadow map can't stay bound as a shader input while the next frame renders depth into it
@@ -166,4 +162,56 @@ void ForwardRenderStage::Render(RenderContext& context)
 	m_sceneColourOutput.Publish(context, sceneColourData);
 
 	Rendering::Renderer::End();
+}
+
+void ForwardRenderStage::SortBackToFront(std::vector<TransparentDraw>& draws)
+{
+	std::sort(draws.begin(), draws.end(), [](const TransparentDraw& a, const TransparentDraw& b)
+		{
+			return a.DistanceSquared > b.DistanceSquared;
+		});
+}
+
+void ForwardRenderStage::DrawPlacement(const RenderObject& renderObject, size_t placementIndex, const Matrix4x4*& uploadedTransform, const PixelShader*& boundPixelShader)
+{
+	const StaticMeshInstance& staticMesh = renderObject.GetStaticMesh();
+	const MeshGeometry& meshGeometry = staticMesh.GetSubMeshes()[staticMesh.GetPlacements()[placementIndex].GeometryIndex];
+
+	// @note this sends in the address of a transform but fulfils the memory of struct MatrixMem as a whole
+	// this should be re-evaluated later to have a better solve for the issue of commands needing access to the data being uploaded's lifetime
+	const Matrix4x4& transform = renderObject.GetPlacementTransform(placementIndex);
+	if (&transform != uploadedTransform)
+	{
+		Rendering::Renderer::UploadDataToBuffer<Matrix4x4>(m_vertexShader->GetWorldMatrixBuffer(), &transform);
+		uploadedTransform = &transform;
+	}
+
+	// @TODO
+	// This is god awful. Just in place while developing shader model.
+	// Should get resolved once the system matures
+	const MaterialInstance& materialInstance = meshGeometry.GetMaterialRef();
+	const PixelShader* const pixelShader = materialInstance.GetPixelShader();
+
+	if (pixelShader != boundPixelShader)
+	{
+		Rendering::Renderer::SetPixelShader(pixelShader->GetPlatformObject());
+		boundPixelShader = pixelShader;
+	}
+	Rendering::Renderer::SetConstantBufferPS(materialInstance.GetParamBuffer(), 1);
+
+	// @TODO Really need to get to texture infrastructure refactor soon - 2/6/2022
+	for (U8 textureSlot = 0; textureSlot < MaterialInstance::TextureSlot::TEXTURE_SLOT_COUNT; ++textureSlot)
+	{
+		if (const Texture2D* const texture = materialInstance.GetTextureResource(textureSlot))
+		{
+			// @TODO Should solve this better by providing an API that will provide a texture resource array
+			Rendering::Renderer::SetTextureResource(texture->GetPlatformObject(), textureSlot);
+		}
+	}
+
+	const Rendering::IndexBufferHandle& indexBuffer = meshGeometry.GetIndexBuffer()->GetPlatformObject();
+	Rendering::Renderer::SetVertexBuffer(meshGeometry.GetVertexBuffer()->GetPlatformObject(), 0);
+	Rendering::Renderer::SetIndexBuffer(indexBuffer);
+
+	Rendering::Renderer::DrawIndexed(indexBuffer);
 }

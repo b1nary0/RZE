@@ -152,6 +152,16 @@ void ShadowRenderStage::RenderShadowMap(const RenderScene& scene, const ShadowMa
 
 			for (size_t placementIndex = 0; placementIndex < placements.size(); ++placementIndex)
 			{
+				const MeshGeometry& meshGeometry = subMeshes[placements[placementIndex].GeometryIndex];
+				const MaterialInstance& materialInstance = meshGeometry.GetMaterialRef();
+
+				// #TODO(Transparency) See-through surfaces cast nothing for now: clear glass casting a solid shadow looks
+				// worse than no shadow. Partial or coloured shadows are future work (Docs/Plans/Transparency.md).
+				if (materialInstance.GetBlendMode() == MaterialInstance::EBlendMode::Transparent)
+				{
+					continue;
+				}
+
 				// See ForwardRenderStage: uploads the whole MatrixMem (transform + inverse)
 				const Matrix4x4& transform = renderObject->GetPlacementTransform(placementIndex);
 				if (&transform != uploadedTransform)
@@ -159,9 +169,6 @@ void ShadowRenderStage::RenderShadowMap(const RenderScene& scene, const ShadowMa
 					Rendering::Renderer::UploadDataToBuffer<Matrix4x4>(m_vertexShader->GetWorldMatrixBuffer(), &transform);
 					uploadedTransform = &transform;
 				}
-
-				const MeshGeometry& meshGeometry = subMeshes[placements[placementIndex].GeometryIndex];
-				const MaterialInstance& materialInstance = meshGeometry.GetMaterialRef();
 
 				// Only needed for cutout casters (leaves, chains, lashes)
 				Rendering::Renderer::SetConstantBufferPS(materialInstance.GetParamBuffer(), 1);
