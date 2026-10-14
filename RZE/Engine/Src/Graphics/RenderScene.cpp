@@ -1,11 +1,63 @@
 #include <StdAfx.h>
 #include <Graphics/RenderScene.h>
 
+#include <Game/World/GameObject/LiveIDSet.h>
+
 #include <Rendering/Renderer.h>
 
 #include <Utils/Math/Math.h>
 
 #include <algorithm>
+
+namespace
+{
+	// Never reset, so IDs are never reused (see RenderSceneLifetime)
+	U32 s_nextRenderObjectID = 0;
+	U32 s_nextLightObjectID = 0;
+
+	LiveIDSet s_aliveRenderObjects;
+	LiveIDSet s_aliveLightObjects;
+}
+
+namespace RenderSceneLifetime
+{
+	bool IsRenderObjectAlive(U32 id)
+	{
+		return s_aliveRenderObjects.Contains(id);
+	}
+
+	bool IsLightObjectAlive(U32 id)
+	{
+		return s_aliveLightObjects.Contains(id);
+	}
+
+	void CheckAccess(bool isAlive)
+	{
+		AssertMsg(isAlive, "Render scene handle dereferenced after its object was destroyed");
+	}
+}
+
+LightObject::LightObject()
+	: m_liveID(s_nextLightObjectID++)
+{
+	s_aliveLightObjects.Add(m_liveID);
+}
+
+LightObject::~LightObject()
+{
+	s_aliveLightObjects.Remove(m_liveID);
+}
+
+RenderObject::RenderObject()
+	: m_liveID(s_nextRenderObjectID++)
+{
+	s_aliveRenderObjects.Add(m_liveID);
+}
+
+RenderObject::~RenderObject()
+{
+	s_aliveRenderObjects.Remove(m_liveID);
+}
 
 void LightObject::Initialize()
 {
@@ -101,12 +153,19 @@ RenderObjectPtr RenderScene::CreateRenderObject(const StaticMeshInstance& static
 	// Marks the scene changed
 	renderObjectPtr->SetStaticMesh(staticMesh);
 
-	return RenderObjectPtr(renderObjectPtr.get());
+	return RenderObjectPtr(renderObjectPtr.get(), renderObjectPtr->GetLiveID());
 }
 
 void RenderScene::DestroyRenderObject(RenderObjectPtr& renderObject)
 {
 	OPTICK_EVENT();
+
+	// Already gone (e.g. ClearObjects): its address may belong to a new object by now, so it isn't searched for
+	if (!renderObject.IsValid())
+	{
+		renderObject = RenderObjectPtr();
+		return;
+	}
 
 	RenderObjectContainer& renderObjects = m_renderObjects;
 	auto iter = std::find_if(renderObjects.begin(), renderObjects.end(),
@@ -139,12 +198,19 @@ LightObjectPtr RenderScene::CreateLightObject()
 	lightObjectPtr->Initialize();
 	++m_revision;
 
-	return LightObjectPtr(lightObjectPtr.get());
+	return LightObjectPtr(lightObjectPtr.get(), lightObjectPtr->GetLiveID());
 }
 
 void RenderScene::DestroyLightObject(LightObjectPtr& lightObject)
 {
 	OPTICK_EVENT();
+
+	// Already gone: its address may belong to a new light by now, so it isn't searched for
+	if (!lightObject.IsValid())
+	{
+		lightObject = LightObjectPtr();
+		return;
+	}
 
 	LightObjectContainer& lightObjects = m_lightObjects;
 	auto iter = std::find_if(lightObjects.begin(), lightObjects.end(),

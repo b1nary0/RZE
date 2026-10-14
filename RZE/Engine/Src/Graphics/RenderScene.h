@@ -29,10 +29,17 @@ public:
 	};
 
 public:
-	LightObject() = default;
-	~LightObject() = default;
+	// Alive until destroyed (RenderSceneLifetime)
+	LightObject();
+	~LightObject();
+
+	LightObject(const LightObject&) = delete;
+	LightObject& operator=(const LightObject&) = delete;
 
 	void Initialize();
+
+	// Never reused, so a LightObjectPtr can tell once this light is gone
+	U32 GetLiveID() const { return m_liveID; }
 
 	void SetDirection(const Vector3D& direction)
 	{
@@ -65,6 +72,8 @@ private:
 	Rendering::ConstantBufferHandle m_propertyBuffer;
 	// RenderScene::GetRevision of the scene this light is in
 	U64* m_sceneRevision = nullptr;
+
+	const U32 m_liveID;
 };
 
 class RenderObject
@@ -73,8 +82,12 @@ class RenderObject
 	friend class RenderScene;
 
 public:
-	RenderObject() = default;
-	~RenderObject() = default;
+	// Alive until destroyed (RenderSceneLifetime)
+	RenderObject();
+	~RenderObject();
+
+	RenderObject(const RenderObject&) = delete;
+	RenderObject& operator=(const RenderObject&) = delete;
 
 public:
 	struct MatrixMem
@@ -114,6 +127,9 @@ public:
 	void SetPickID(U32 pickID) { m_pickID = pickID; }
 	U32 GetPickID() const { return m_pickID; }
 
+	// Never reused, so a RenderObjectPtr can tell once this object is gone
+	U32 GetLiveID() const { return m_liveID; }
+
 private:
 	// It moved or changed mesh: its world bounds are stale, and so is its scene
 	void MarkChanged();
@@ -137,6 +153,8 @@ private:
 
 	// The scene this object is in
 	RenderScene* m_scene = nullptr;
+
+	const U32 m_liveID;
 };
 
 //

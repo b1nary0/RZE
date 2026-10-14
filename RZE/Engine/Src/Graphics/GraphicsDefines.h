@@ -1,119 +1,129 @@
 #pragma once
 
+#include <Utils/PrimitiveDefs.h>
+
+#include <cstddef>
+
 class RenderObject;
 class LightObject;
 
-class LightObjectPtr
+// Tracks which render objects and lights are alive, so their handles can tell when they've been destroyed, whether
+// through the handle or not (e.g. RenderScene::ClearObjects, or the scene going away). IDs are never reused, so a
+// handle to a destroyed object stays invalid even if a new one lands at its address. Main thread only.
+namespace RenderSceneLifetime
+{
+	constexpr U32 k_invalidID = 0xFFFFFFFF;
+
+	bool IsRenderObjectAlive(U32 id);
+	bool IsLightObjectAlive(U32 id);
+
+	// Debug builds assert that a handle is alive before it's dereferenced
+	void CheckAccess(bool isAlive);
+}
+
+// The handle to an object in a RenderScene, held by whatever made it (e.g. RenderComponent), which destroys it through
+// RenderScene::DestroyRenderObject / DestroyLightObject. Move-only, so an object has one holder; code that only looks
+// at it borrows the holder's handle by reference.
+//
+// Once the object is destroyed the handle is invalid: it compares equal to nullptr and dereferencing it asserts in
+// debug builds.
+template <typename TObject, bool (*IsAlive)(U32)>
+class RenderSceneObjectPtr
 {
 	friend class RenderScene;
 
 public:
-	LightObjectPtr() = default;
-	LightObjectPtr(const LightObjectPtr&) = default;
-	~LightObjectPtr() = default;
-	
-	LightObjectPtr(LightObjectPtr&& other)
-	{
-		m_ptr = other.m_ptr;
-		other.m_ptr = nullptr;
-	}
-	
-	LightObject* operator->()
-	{
-		return m_ptr;
-	}
-	// Read-only access through a const handle
-	const LightObject* operator->() const
-	{
-		return m_ptr;
-	}
-	LightObjectPtr& operator=(const LightObjectPtr&) = default;
+	RenderSceneObjectPtr() = default;
+	~RenderSceneObjectPtr() = default;
 
-	bool operator==(const LightObjectPtr& other) const
+	RenderSceneObjectPtr(const RenderSceneObjectPtr&) = delete;
+	RenderSceneObjectPtr& operator=(const RenderSceneObjectPtr&) = delete;
+
+	RenderSceneObjectPtr(RenderSceneObjectPtr&& other) noexcept
+		: m_ptr(other.m_ptr)
+		, m_id(other.m_id)
 	{
-		return m_ptr == other.m_ptr;
+		other.Reset();
 	}
 
-	bool operator==(const LightObjectPtr* other) const
+	RenderSceneObjectPtr& operator=(RenderSceneObjectPtr&& other) noexcept
 	{
-		return this == other;
+		if (this != &other)
+		{
+			m_ptr = other.m_ptr;
+			m_id = other.m_id;
+			other.Reset();
+		}
+		return *this;
 	}
-
-	bool operator!=(const LightObjectPtr& other) const
-	{
-		return !(*this == other);
-	}
-
-	bool operator!=(const std::nullptr_t null) const
-	{
-		return this->m_ptr != null;
-	}
-
-private:
-	LightObjectPtr(LightObject* lightObject)
-		: m_ptr(lightObject) {}
-
-private:
-	LightObject* m_ptr = nullptr;
-};
-
-class RenderObjectPtr
-{
-	friend class RenderScene;
 
 public:
-	RenderObjectPtr() = default;
-	RenderObjectPtr(const RenderObjectPtr&) = default;
-	~RenderObjectPtr() = default;
-
-	RenderObjectPtr(RenderObjectPtr&& other)
+	// False once the object has been destroyed
+	bool IsValid() const
 	{
-		m_ptr = other.m_ptr;
-		other.m_ptr = nullptr;
+		return m_ptr != nullptr && IsAlive(m_id);
 	}
 
-	RenderObject* operator->()
+	TObject* operator->()
 	{
+		CheckAccess();
 		return m_ptr;
 	}
 
 	// Read-only access through a const handle
-	const RenderObject* operator->() const
+	const TObject* operator->() const
 	{
+		CheckAccess();
 		return m_ptr;
 	}
 
-	RenderObjectPtr& operator=(const RenderObjectPtr&) = default;
-
-	bool operator==(const std::nullptr_t null) const
+	bool operator==(const RenderSceneObjectPtr& other) const
 	{
-		return this->m_ptr == null;
+		return m_id == other.m_id;
 	}
 
-	bool operator==(const RenderObjectPtr& other) const
-	{
-		return m_ptr == other.m_ptr;
-	}
-
-	bool operator==(const RenderObjectPtr* other) const
-	{
-		return this == other;
-	}
-
-	bool operator!=(const RenderObjectPtr& other) const
+	bool operator!=(const RenderSceneObjectPtr& other) const
 	{
 		return !(*this == other);
 	}
 
-	bool operator!=(const std::nullptr_t null) const
+	bool operator==(std::nullptr_t) const
 	{
-		return this->m_ptr != null;
+		return !IsValid();
+	}
+
+	bool operator!=(std::nullptr_t) const
+	{
+		return IsValid();
 	}
 
 private:
-	explicit RenderObjectPtr(RenderObject* renderObject)
-		: m_ptr(renderObject) {}
+	RenderSceneObjectPtr(TObject* object, U32 id)
+		: m_ptr(object)
+		, m_id(id)
+	{
+	}
+
+	void Reset()
+	{
+		m_ptr = nullptr;
+		m_id = RenderSceneLifetime::k_invalidID;
+	}
+
+	void CheckAccess() const
+	{
+#ifdef _DEBUG
+		if (m_ptr != nullptr)
+		{
+			RenderSceneLifetime::CheckAccess(IsAlive(m_id));
+		}
+#endif
+	}
 
 private:
-	RenderObject* m_ptr = nullptr;
+	TObject* m_ptr = nullptr;
+	U32 m_id = RenderSceneLifetime::k_invalidID;
 };
+
+using RenderObjectPtr = RenderSceneObjectPtr<RenderObject, &RenderSceneLifetime::IsRenderObjectAlive>;
+using LightObjectPtr = RenderSceneObjectPtr<LightObject, &RenderSceneLifetime::IsLightObjectAlive>;

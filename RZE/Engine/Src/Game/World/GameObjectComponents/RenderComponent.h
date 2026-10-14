@@ -53,8 +53,8 @@ public:
 	BoundingBox GetWorldBounds() const;
 	// The mesh's box in the object's own space; empty if no mesh has been created yet
 	BoundingBox GetLocalBounds() const override;
-	// Null until a mesh has been created
-	RenderObjectPtr GetRenderObject() const { return m_renderObject; }
+	// Null until a mesh has been created. The component keeps the handle; this is for looking at the object.
+	const RenderObjectPtr& GetRenderObject() const { return m_renderObject; }
 
 	// See GameObjectComponentRegistry::ResourceDependencyGatherer.
 	static void GatherResourceDependencies(const rapidjson::Value& componentData, ResourceDependencyList& outDependencies);

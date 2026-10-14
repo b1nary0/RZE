@@ -26,7 +26,7 @@ Rough edges the codebase is candid about (source comments, `#TODO`s), plus a few
 | 18 | `GifChatComponent`'s GIF paths resolve against the build folder | Components | Medium | Open |
 | 19 | `ResourceHandler` reads the renderer's frame counter | Resources | Low | Open |
 | 20 | Every component has `GetLocalBounds`, though few take up space | Components | Low | Open |
-| 21 | `RenderObjectPtr` / `LightObjectPtr` can be copied | Rendering | Low | Open |
+| 21 | `RenderObjectPtr` / `LightObjectPtr` could be copied, and dangled | Rendering | — | **Fixed** (10-13: move-only, lifetime-checked) |
 | 22 | A few long frames remain while thumbnails render | Editor | Low | Open |
 
 ```mermaid
@@ -138,9 +138,9 @@ To destroy a resource only once the render thread is done with it ([Asset-Import
 
 `GameObject` builds its hierarchy bounds from each component's `GetLocalBounds()`, which is a virtual on `GameObjectComponentBase` returning an empty box. Only `RenderComponent` overrides it, so most components carry an API that means nothing for them. An `IBoundedComponent` interface that only space-taking components inherit would fit better.
 
-## 21. `RenderObjectPtr` / `LightObjectPtr` can be copied
+## 21. `RenderObjectPtr` / `LightObjectPtr` could be copied, and dangled (fixed)
 
-The handles into a `RenderScene` can be copied, so two owners can end up destroying the same object. Making them move-only would make ownership explicit.
+The handles into a `RenderScene` could be copied, so two holders could end up destroying the same object. A handle was also a bare pointer, so it dangled once its object went some other way (`ClearObjects`, or the scene being destroyed), and destroying through it searched by address, which could destroy a newer object at the same address. The handles are now move-only and lifetime-checked like `GameObjectPtr`; see [Engine-Graphics-Layer.md](../04-Rendering/Engine-Graphics-Layer.md#handles).
 
 ## 22. A few long frames remain while thumbnails render
 

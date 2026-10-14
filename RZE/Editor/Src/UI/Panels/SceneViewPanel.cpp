@@ -556,7 +556,7 @@ namespace Editor
 					return;
 				}
 
-				RenderObjectPtr renderObject = renderComponent->GetRenderObject();
+				const RenderObjectPtr& renderObject = renderComponent->GetRenderObject();
 				if (renderObject == nullptr)
 				{
 					return;

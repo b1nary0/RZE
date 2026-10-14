@@ -1,0 +1,34 @@
+{
+  "FileVersion": 2,
+  "Id": "dc7f44f2-c514-cf37-f24d-4bd1d9ab0563",
+  "Items": [
+    {
+      "Id": "c5415bb0-aed3-49f8-b15b-e09639bec270",
+      "Command": "Debug|x64",
+      "ProjectConfig": "Debug",
+      "ProjectPlatform": "x64",
+      "Items": [
+        {
+          "Id": "dbea0321-8bad-4a75-960f-64f536e4aabf",
+          "Command": "WindowsLocalDebugger",
+          "Items": [
+            {
+              "Id": "5b869cd1-b749-45c0-ba46-956d06e62d39",
+              "Command": "Assets\\3D\\Nyra\\Nyra.obj"
+            }
+          ]
+        },
+        {
+          "Id": "6a8733ab-1dd7-4b5b-9db1-5615e77c59c3",
+          "Command": "WindowsRemoteDebugger",
+          "Items": [
+            {
+              "Id": "01052807-3afb-4ee5-89a5-d8663aa377cc",
+              "Command": "Assets\\3D\\Nyra\\Nyra.obj"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

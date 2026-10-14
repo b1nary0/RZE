@@ -21,7 +21,7 @@
 #include <imGUI/imgui.h>
 #include <imGUI/imgui_impl_dx11.h>
 
-#define MEM_ARENA_SIZE MemoryUtils::Megabytes(64)
+#define MEM_ARENA_SIZE MemoryUtils::Megabytes(2048)
 
 namespace Rendering
 {

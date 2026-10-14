@@ -37,6 +37,13 @@ A **`RenderScene`** (`Engine\Src\Graphics\RenderScene.h/.cpp`) is what one scene
 | `GetBounds()` | The box around every render object, kept until one is added, removed, moved or given a new mesh, then rebuilt from the objects' boxes when next asked. |
 | Persistent stage state | What stages keep for this scene across frames, whichever view renders it: today, **each scene's own shadow map**. `ReleaseStageState()` drops it; it's made again the next time the scene is rendered. |
 
+### Handles
+
+`CreateRenderObject` and `CreateLightObject` return a **`RenderObjectPtr`** / **`LightObjectPtr`** (`Graphics\GraphicsDefines.h`, one template, `RenderSceneObjectPtr`). Whoever made the object keeps the handle and destroys the object through it (`DestroyRenderObject(handle)` empties it).
+
+- **Move-only**, so each object has one holder (`RenderComponent`, `DirectionalLightComponent`). Code that only looks at an object borrows the holder's handle by reference, e.g. `RenderComponent::GetRenderObject()` returns `const RenderObjectPtr&`.
+- **Lifetime-checked**, like `GameObjectPtr`. Each object takes an ID that's never reused (`RenderSceneLifetime`, a `LiveIDSet` per kind), and a handle compares equal to `nullptr` once its object is gone, however it went: destroyed through the handle, `ClearObjects`, or the scene being destroyed. Debug builds assert if a dead handle is dereferenced, and destroying through a dead handle just empties it.
+
 `RenderEngine` doesn't own a scene. `SetMainScene(scene)` says which one the main view shows; `RZE_Engine` sets it to the active `GameScene`'s. `RenderEngine::DrawLine` / `DrawWireBox` draw into the main scene, for tools that draw over the main view (the editor's grid and gizmos).
 
 ### `RenderObject`
@@ -154,4 +161,4 @@ Both object containers erase with swap-and-pop (`ContainerUtils::VectorEraseBack
 - `Engine\Src\Graphics\RenderView.h` — `RenderView`, `RenderCamera`, `RenderPickRequest`
 - `Engine\Src\Graphics\ViewCapture.h/.cpp`, `TextureFile.h/.cpp` — capturing a view to a PNG
 - `Engine\Src\Graphics\Frustum.h` — the six-plane view frustum used for culling and marquee selection
-- `Engine\Src\Graphics\GraphicsDefines.h` — `RenderObjectPtr` / `LightObjectPtr` handle wrappers
+- `Engine\Src\Graphics\GraphicsDefines.h` — `RenderObjectPtr` / `LightObjectPtr`, move-only and lifetime-checked
