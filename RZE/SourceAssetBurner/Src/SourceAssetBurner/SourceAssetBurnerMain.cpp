@@ -2,7 +2,20 @@
 
 #include <Utils/DebugUtils/Debug.h>
 
+#include <algorithm>
+#include <cctype>
 #include <filesystem>
+
+namespace
+{
+	// Source models the batch burn picks up
+	bool IsSourceModel(const std::filesystem::path& path)
+	{
+		std::string extension = path.extension().string();
+		std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
+		return extension == ".obj" || extension == ".fbx";
+	}
+}
 
 int main(int argc, char* argv[])
 {
@@ -15,7 +28,7 @@ int main(int argc, char* argv[])
 		for (const auto& dirEntry : std::filesystem::recursive_directory_iterator(assetsDir3D.GetAbsolutePath()))
 		{
 			std::string path = dirEntry.path().generic_string();
-			if (path.find(".obj") != std::string::npos)
+			if (dirEntry.is_regular_file() && IsSourceModel(dirEntry.path()))
 			{
 				size_t pos = path.find("Assets/");
 				if (pos != std::string::npos)

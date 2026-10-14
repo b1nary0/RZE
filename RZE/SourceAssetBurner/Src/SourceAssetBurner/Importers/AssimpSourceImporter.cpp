@@ -1,6 +1,7 @@
 #include <SourceAssetBurner/Importers/AssimpSourceImporter.h>
 
 #include <Assimp/Importer.hpp>
+#include <Assimp/config.h>
 #include <Assimp/postprocess.h>
 #include <Assimp/scene.h>
 
@@ -14,6 +15,8 @@
 #include <Utils/Platform/File.h>
 
 #include <algorithm>
+#include <cctype>
+#include <cstring>
 #include <filesystem>
 
 namespace
@@ -44,14 +47,185 @@ namespace
 		return Matrix4x4::FromValuePtr(&transform.a1);
 	}
 
-	Filepath GetTextureFilePath(const Filepath& filePath, const std::string& fileName)
+	// Source names (FBX especially) can hold namespaces (':'), '#', slashes and spaces; none belong in a file name
+	std::string SanitizeFileName(const std::string& name)
 	{
-		// #TODO(Josh::We need to bake the texture folder structure here, or get on proper asset referencing system)
-		std::string path = filePath.GetRelativeDirectoryPath();
-		path.append(fileName);
-
-		return Filepath(path);
+		std::string sanitized = name;
+		for (char& character : sanitized)
+		{
+			const bool isControl = static_cast<unsigned char>(character) < 32;
+			if (isControl || std::isspace(static_cast<unsigned char>(character)) || std::strchr("\\/:*?\"<>|#", character) != nullptr)
+			{
+				character = '_';
+			}
+		}
+		return sanitized;
 	}
+}
+
+aiMatrix4x4 AssimpSourceImporter::GetYUpCorrection(const aiScene& scene)
+{
+	// FBX's defaults are already the engine's: X right, Y up, Z front
+	int32_t upAxis = 1;
+	int32_t upAxisSign = 1;
+	int32_t frontAxis = 2;
+	int32_t frontAxisSign = 1;
+	int32_t coordAxis = 0;
+	int32_t coordAxisSign = 1;
+
+	if (const aiMetadata* const metadata = scene.mMetaData)
+	{
+		metadata->Get("UpAxis", upAxis);
+		metadata->Get("UpAxisSign", upAxisSign);
+		metadata->Get("FrontAxis", frontAxis);
+		metadata->Get("FrontAxisSign", frontAxisSign);
+		metadata->Get("CoordAxis", coordAxis);
+		metadata->Get("CoordAxisSign", coordAxisSign);
+	}
+
+	const bool isValid = upAxis >= 0 && upAxis < 3 && frontAxis >= 0 && frontAxis < 3 && coordAxis >= 0 && coordAxis < 3
+		&& upAxis != frontAxis && upAxis != coordAxis && frontAxis != coordAxis;
+	if (!isValid)
+	{
+		RZE_LOG_ARGS("AssimpSourceImporter : WARNING axes (up %d, front %d, coord %d) don't make sense; imported as Y-up", upAxis, frontAxis, coordAxis);
+		return aiMatrix4x4();
+	}
+
+	// Each row picks the source axis that becomes the engine's X (right), Y (up) and Z (front)
+	aiVector3D right;
+	aiVector3D up;
+	aiVector3D front;
+	right[coordAxis] = static_cast<ai_real>(coordAxisSign);
+	up[upAxis] = static_cast<ai_real>(upAxisSign);
+	front[frontAxis] = static_cast<ai_real>(frontAxisSign);
+
+	const aiMatrix4x4 correction(
+		right.x, right.y, right.z, 0.0f,
+		up.x, up.y, up.z, 0.0f,
+		front.x, front.y, front.z, 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f);
+
+	if (!correction.IsIdentity())
+	{
+		RZE_LOG_ARGS("AssimpSourceImporter : Source declares up axis %d (sign %d); turning it Y-up", upAxis, upAxisSign);
+	}
+	if (correction.Determinant() < 0.0f)
+	{
+		RZE_LOG_ARGS("AssimpSourceImporter : WARNING the source's axes are left-handed; it's mirrored into the engine's");
+	}
+
+	return correction;
+}
+
+std::string AssimpSourceImporter::ResolveTexturePath(const aiScene& scene, const aiMaterial& material, int textureType)
+{
+	const aiTextureType type = static_cast<aiTextureType>(textureType);
+	if (material.GetTextureCount(type) == 0)
+	{
+		return std::string();
+	}
+
+	aiString assimpPath;
+	material.GetTexture(type, 0, &assimpPath);
+	return ResolveTextureFile(scene, assimpPath.C_Str());
+}
+
+std::string AssimpSourceImporter::FindCutoutMaskFallback(const aiScene& scene, const aiMaterial& material)
+{
+	// #TODO(Transparency) STOPGAP - remove once materials carry real transparency (see Docs/Plans/Transparency.md,
+	// Part 2 "Blending").
+	//
+	// Why this exists: 3ds Max Physical Materials (New Sponza's dirt decals, for one) connect their mask through
+	// "3dsMax|Parameters|cutout_map" / "transparency_map". Assimp doesn't map either to aiTextureType_OPACITY; it only
+	// keeps them as raw FBX properties ("$raw.<property>|file", semantic aiTextureType_UNKNOWN). Without this the
+	// decals draw as solid slabs over the walls.
+	//
+	// What it gets wrong, on purpose, for now:
+	//  - transparency_map is a *blend* amount, not a cutout. We treat it as a cutout because the engine can only
+	//    clip (Lighting.hlsli: clip(mask - AlphaCutoff)); soft masks get hard edges at the cutoff.
+	//  - The material's scalar transparency ($raw.3dsMax|Parameters|transparency, $mat.transparencyfactor) is ignored.
+	//  - Only 3ds Max's property names are known. Maya (Stingray/StandardSurface), Blender and others name theirs
+	//    differently and still fall through to opaque.
+	//  - The mask's convention is assumed to match ours (white = solid). Max can invert maps in its own graph,
+	//    which we can't see here.
+	// The proper fix reads these into a real transparency model (alpha blend vs. cutout, a factor, an inverted
+	// flag) instead of folding everything into the cutout slot.
+	static constexpr const char* k_rawMaskKeys[] =
+	{
+		"$raw.3dsMax|Parameters|cutout_map|file",
+		"$raw.3dsMax|Parameters|transparency_map|file",
+	};
+
+	for (const char* rawKey : k_rawMaskKeys)
+	{
+		aiString rawPath;
+		if (material.Get(rawKey, aiTextureType_UNKNOWN, 0, rawPath) == AI_SUCCESS && rawPath.length > 0)
+		{
+			RZE_LOG_ARGS("AssimpSourceImporter : using %s [%s] as a cutout mask (stopgap; see #TODO(Transparency))", rawKey, rawPath.C_Str());
+			return ResolveTextureFile(scene, rawPath.C_Str());
+		}
+	}
+
+	return std::string();
+}
+
+std::string AssimpSourceImporter::ResolveTextureFile(const aiScene& scene, const std::string& sourcePath)
+{
+	// #TODO(Josh::We need to bake the texture folder structure here, or get on proper asset referencing system)
+	const std::string sourceDirectory = m_filepath.GetRelativeDirectoryPath();
+
+	// Embedded ("*0", or by name in newer exporters): written out next to the source, since textures load by path
+	const std::pair<const aiTexture*, int> embedded = scene.GetEmbeddedTextureAndIndex(sourcePath.c_str());
+	if (embedded.first != nullptr)
+	{
+		const aiTexture& texture = *embedded.first;
+		if (texture.mHeight != 0)
+		{
+			// Uncompressed texels would need encoding into an image file first
+			RZE_LOG_ARGS("AssimpSourceImporter : WARNING embedded texture %d [%s] isn't compressed; skipping it", embedded.second, sourcePath.c_str());
+			return std::string();
+		}
+
+		const std::string extension = texture.achFormatHint[0] != '\0' ? texture.achFormatHint : "bin";
+		const Filepath outputPath(sourceDirectory + m_assetName + "_embedded_" + std::to_string(embedded.second) + "." + extension);
+
+		File outputFile(outputPath);
+		outputFile.Open(static_cast<File::EFileOpenMode::Value>(File::EFileOpenMode::Write | File::EFileOpenMode::Binary));
+		const Byte* const bytes = reinterpret_cast<const Byte*>(texture.pcData);
+		for (U32 byteIndex = 0; byteIndex < texture.mWidth; ++byteIndex)
+		{
+			outputFile << bytes[byteIndex];
+		}
+		outputFile.Close();
+
+		RZE_LOG_ARGS("AssimpSourceImporter : %s written from embedded texture %d.", outputPath.GetRelativePath().c_str(), embedded.second);
+		return outputPath.GetRelativePath();
+	}
+
+	// FBX often keeps the path on the author's machine. Try it next to the source as given (unless it's absolute),
+	// then just its file name there, then in a textures folder.
+	const std::filesystem::path sourcePathFs(sourcePath);
+	const std::string fileName = sourcePathFs.filename().string();
+
+	std::vector<std::string> candidates;
+	if (!sourcePathFs.is_absolute() && !sourcePathFs.has_root_name())
+	{
+		candidates.push_back(sourceDirectory + sourcePath);
+	}
+	candidates.push_back(sourceDirectory + fileName);
+	candidates.push_back(sourceDirectory + "textures\\" + fileName);
+
+	for (const std::string& candidate : candidates)
+	{
+		const Filepath candidatePath(candidate);
+		if (candidatePath.Exists())
+		{
+			return candidatePath.GetRelativePath();
+		}
+	}
+
+	RZE_LOG_ARGS("AssimpSourceImporter : WARNING texture [%s] not found next to [%s]; leaving it out", sourcePath.c_str(), m_filepath.GetRelativePath().c_str());
+	return std::string();
 }
 
 AssimpSourceImporter::AssimpSourceImporter()
@@ -66,6 +240,17 @@ bool AssimpSourceImporter::Import(const Filepath& filePath)
 	m_assetName = StripAssetNameFromFilePath(filePath);
 
 	Assimp::Importer ModelImporter;
+
+	const std::string extension = std::filesystem::path(filePath.GetAbsolutePath()).extension().string();
+	if (!ModelImporter.IsExtensionSupported(extension))
+	{
+		RZE_LOG_ARGS("AssimpSourceImporter : This Assimp build can't read %s files [%s].", extension.c_str(), filePath.GetRelativePath().c_str());
+		return false;
+	}
+
+	// FBX pivots become extra nodes otherwise; folded into the node transforms they bake into the placements the same
+	ModelImporter.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
+
 	const aiScene* AssimpScene = ModelImporter.ReadFile(filePath.GetAbsolutePath(),
 		aiProcessPreset_TargetRealtime_Fast |
 		// Source formats are right-handed like the engine, so geometry and winding stay as authored
@@ -101,7 +286,7 @@ bool AssimpSourceImporter::Import(const Filepath& filePath)
 		ProcessMesh(assimpMesh, *AssimpScene, meshData);
 	}
 
-	ProcessNode(*AssimpScene->mRootNode, aiMatrix4x4());
+	ProcessNode(*AssimpScene->mRootNode, GetYUpCorrection(*AssimpScene));
 	RemoveUnplacedGeometry();
 
 	if (m_placements.empty())
@@ -292,6 +477,14 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 
 	if (mesh.mMaterialIndex < scene.mNumMaterials)
 	{
+		// Meshes sharing a material share its asset
+		auto knownMaterial = m_materialPaths.find(mesh.mMaterialIndex);
+		if (knownMaterial != m_materialPaths.end())
+		{
+			outMeshData.MaterialPath = knownMaterial->second;
+			return;
+		}
+
 		// #TODO
 		// This is just temp
 		const int kTextureTypeCount = 5;
@@ -299,11 +492,15 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 		MaterialData materialData;
 		materialData.TexturePaths.resize(kTextureTypeCount);
 
-		aiMaterial* mat = scene.mMaterials[mesh.mMaterialIndex];
+		const aiMaterial* mat = scene.mMaterials[mesh.mMaterialIndex];
 		aiString matName;
 		mat->Get(AI_MATKEY_NAME, matName);
 
-		materialData.MaterialName = matName.C_Str();
+		materialData.MaterialName = SanitizeFileName(matName.C_Str());
+		if (materialData.MaterialName.empty())
+		{
+			materialData.MaterialName = "Material_" + std::to_string(mesh.mMaterialIndex);
+		}
 
 		float shininess = 0.0f;
 		if (mat->Get(AI_MATKEY_SHININESS, shininess) == AI_SUCCESS)
@@ -331,80 +528,59 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 		const aiTextureType albedoType = mat->GetTextureCount(aiTextureType_DIFFUSE) > 0 ? aiTextureType_DIFFUSE : aiTextureType_BASE_COLOR;
 		const aiTextureType normalType = mat->GetTextureCount(aiTextureType_NORMALS) > 0 ? aiTextureType_NORMALS : aiTextureType_NORMAL_CAMERA;
 
-		if (mat->GetTextureCount(albedoType) > 0)
+		// Each slot only counts as used once its texture is found
+		const auto setTexture = [this, &scene, mat, &materialData](aiTextureType type, size_t slot, U8 flag)
 		{
-			aiString str;
-			mat->GetTexture(albedoType, 0, &str);
+			materialData.TexturePaths[slot] = ResolveTexturePath(scene, *mat, type);
+			if (!materialData.TexturePaths[slot].empty())
+			{
+				materialData.TextureFlags |= flag;
+			}
+		};
 
-			Filepath texturePath = GetTextureFilePath(m_filepath, str.C_Str());
-
-			materialData.TextureFlags |= MaterialData::ETextureFlags::TEXTUREFLAG_ALBEDO;
-			materialData.TexturePaths[0] = texturePath.GetRelativePath();
-		}
-
-		if (mat->GetTextureCount(aiTextureType_SPECULAR) > 0)
-		{
-			aiString str;
-			mat->GetTexture(aiTextureType_SPECULAR, 0, &str);
-
-			Filepath texturePath = GetTextureFilePath(m_filepath, str.C_Str());
-
-			materialData.TextureFlags |= MaterialData::ETextureFlags::TEXTUREFLAG_SPECULAR;
-			materialData.TexturePaths[1] = texturePath.GetRelativePath();
-		}
-
-		if (mat->GetTextureCount(normalType) > 0)
-		{
-			aiString str;
-			mat->GetTexture(normalType, 0, &str);
-
-			Filepath texturePath = GetTextureFilePath(m_filepath, str.C_Str());
-
-			materialData.TextureFlags |= MaterialData::ETextureFlags::TEXTUREFLAG_NORMAL;
-			materialData.TexturePaths[2] = texturePath.GetRelativePath();
-		}
+		setTexture(albedoType, 0, MaterialData::ETextureFlags::TEXTUREFLAG_ALBEDO);
+		setTexture(aiTextureType_SPECULAR, 1, MaterialData::ETextureFlags::TEXTUREFLAG_SPECULAR);
+		setTexture(normalType, 2, MaterialData::ETextureFlags::TEXTUREFLAG_NORMAL);
 
 		// Cutout mask (map_d in .mtl)
-		if (mat->GetTextureCount(aiTextureType_OPACITY) > 0)
+		setTexture(aiTextureType_OPACITY, 3, MaterialData::ETextureFlags::TEXTUREFLAG_OPACITY);
+
+		// #TODO(Transparency) Stopgap: masks Assimp leaves unmapped (3ds Max cutout/transparency maps) become cutouts.
+		// Remove when the material format has real transparency; FindCutoutMaskFallback lists what this gets wrong.
+		if (materialData.TexturePaths[3].empty())
 		{
-			aiString str;
-			mat->GetTexture(aiTextureType_OPACITY, 0, &str);
-
-			Filepath texturePath = GetTextureFilePath(m_filepath, str.C_Str());
-
-			materialData.TextureFlags |= MaterialData::ETextureFlags::TEXTUREFLAG_OPACITY;
-			materialData.TexturePaths[3] = texturePath.GetRelativePath();
-
-			// map_d pointing at the diffuse texture means "use the diffuse alpha"; a dedicated mask stores it in its colour channels
-			if (materialData.TexturePaths[3] == materialData.TexturePaths[0])
+			materialData.TexturePaths[3] = FindCutoutMaskFallback(scene, *mat);
+			if (!materialData.TexturePaths[3].empty())
 			{
-				materialData.TextureFlags |= MaterialData::ETextureFlags::TEXTUREFLAG_OPACITY_IN_ALPHA;
+				materialData.TextureFlags |= MaterialData::ETextureFlags::TEXTUREFLAG_OPACITY;
 			}
 		}
 
-		// Grayscale height/bump map (map_bump in .mtl). Distinct from tangent-space normal maps (map_Kn).
-		if (mat->GetTextureCount(aiTextureType_HEIGHT) > 0)
+		// #TODO(Transparency) (Docs/Plans/Transparency.md, Part 1) Glass comes in opaque. Only AI_MATKEY_OPACITY is read (into Properties.Opacity, above),
+		// and while it reaches the shaders' material buffer (PixelResources.hlsli) no shader uses it and nothing
+		// draws blended. FBX's $mat.transparencyfactor and 3ds Max's $raw.3dsMax|Parameters|transparency aren't read.
+
+		// map_d pointing at the diffuse texture means "use the diffuse alpha"; a dedicated mask stores it in its colour channels
+		if (!materialData.TexturePaths[3].empty() && materialData.TexturePaths[3] == materialData.TexturePaths[0])
 		{
-			aiString str;
-			mat->GetTexture(aiTextureType_HEIGHT, 0, &str);
-
-			Filepath texturePath = GetTextureFilePath(m_filepath, str.C_Str());
-
-			materialData.TextureFlags |= MaterialData::ETextureFlags::TEXTUREFLAG_HEIGHT;
-			materialData.TexturePaths[4] = texturePath.GetRelativePath();
+			materialData.TextureFlags |= MaterialData::ETextureFlags::TEXTUREFLAG_OPACITY_IN_ALPHA;
 		}
+
+		// Grayscale height/bump map (map_bump in .mtl). Distinct from tangent-space normal maps (map_Kn).
+		setTexture(aiTextureType_HEIGHT, 4, MaterialData::ETextureFlags::TEXTUREFLAG_HEIGHT);
 
 		// #TODO really gross string manip lol
-		std::string assetFilename = materialData.MaterialName + kMaterialAssetSuffix;
-		std::string assetFilepathRelative = "ProjectData/Material/" + m_assetName + "/";
-		assetFilepathRelative = assetFilepathRelative + assetFilename;
+		const std::string materialFolder = "ProjectData/Material/" + m_assetName + "/";
+		std::string assetFilepathRelative = materialFolder + materialData.MaterialName + kMaterialAssetSuffix;
+		// Another material already has this name: keep both by telling this one apart by its index
+		if (m_materialTable.count(assetFilepathRelative))
+		{
+			assetFilepathRelative = materialFolder + materialData.MaterialName + "_" + std::to_string(mesh.mMaterialIndex) + kMaterialAssetSuffix;
+		}
 
 		outMeshData.MaterialPath = assetFilepathRelative;
-
-		if (!m_materialTable.count(assetFilepathRelative))
-		{
-			m_materialTable[assetFilepathRelative] = std::move(materialData);
-		}
+		m_materialPaths[mesh.mMaterialIndex] = assetFilepathRelative;
+		m_materialTable[assetFilepathRelative] = std::move(materialData);
 	}
 }
 
