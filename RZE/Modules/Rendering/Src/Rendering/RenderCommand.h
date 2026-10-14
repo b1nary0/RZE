@@ -63,6 +63,7 @@ namespace Rendering
 		SetPrimitiveTopology,
 		SetRasterizerState,
 		SetBlendState,
+		SetDepthState,
 		SetVertexShader,
 		SetPixelShader,
 		SetConstantBufferVS,
@@ -327,6 +328,13 @@ namespace Rendering
 		RenderCommand_SetBlendState() { type = RenderCommandType::SetBlendState; }
 
 		EBlendState state;
+	};
+
+	struct RenderCommand_SetDepthState : RenderCommand
+	{
+		RenderCommand_SetDepthState() { type = RenderCommandType::SetDepthState; }
+
+		EDepthState state;
 	};
 
 	struct RenderCommand_SetVertexShader : RenderCommand

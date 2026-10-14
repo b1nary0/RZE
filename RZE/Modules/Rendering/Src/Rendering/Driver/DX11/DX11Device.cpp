@@ -162,6 +162,20 @@ namespace Rendering
 			mDevice->CreateBlendState(&blendDesc, &mAlphaBlendState);
 		}
 
+		// Depth states (ReadWrite is D3D's default, so it has none)
+		{
+			D3D11_DEPTH_STENCIL_DESC depthDesc;
+			ZeroMemory(&depthDesc, sizeof(depthDesc));
+			depthDesc.DepthEnable = TRUE;
+			depthDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+			// The same test as the default, so read-only draws agree with what opaque ones wrote
+			depthDesc.DepthFunc = D3D11_COMPARISON_LESS;
+			mDevice->CreateDepthStencilState(&depthDesc, &mDepthReadOnlyState);
+
+			depthDesc.DepthEnable = FALSE;
+			mDevice->CreateDepthStencilState(&depthDesc, &mDepthOffState);
+		}
+
 		// Shadow comparison sampler
 		{
 			D3D11_SAMPLER_DESC samplerDesc;
@@ -199,6 +213,8 @@ namespace Rendering
 		mRasterState->Release();
 		mShadowCasterRasterState->Release();
 		mAlphaBlendState->Release();
+		mDepthReadOnlyState->Release();
+		mDepthOffState->Release();
 		mShadowSamplerState->Release();
 	}
 

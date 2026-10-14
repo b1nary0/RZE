@@ -553,6 +553,29 @@ namespace Rendering
 				break;
 			}
 
+			case RenderCommandType::SetDepthState:
+			{
+				RenderCommand_SetDepthState* cmd = static_cast<RenderCommand_SetDepthState*>(command);
+
+				ID3D11DepthStencilState* depthState = nullptr;
+				switch (cmd->state)
+				{
+				case EDepthState::ReadOnly:
+					depthState = m_device->mDepthReadOnlyState;
+					break;
+				case EDepthState::Off:
+					depthState = m_device->mDepthOffState;
+					break;
+				default:
+					break;
+				}
+
+				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+				deviceContext.OMSetDepthStencilState(depthState, 0);
+
+				break;
+			}
+
 			case RenderCommandType::SetVertexShader:
 			{
 				RenderCommand_SetVertexShader* cmd = static_cast<RenderCommand_SetVertexShader*>(command);

@@ -450,6 +450,14 @@ namespace Rendering
 		m_renderThread.PushCommand(command);
 	}
 
+	void Renderer::SetDepthState(EDepthState state)
+	{
+		RenderCommand_SetDepthState* command = MemArena::AllocType<RenderCommand_SetDepthState>();
+		command->state = state;
+
+		m_renderThread.PushCommand(command);
+	}
+
 	void Renderer::SetVertexShader(const VertexShaderHandle& vertexShader)
 	{
 		RenderCommand_SetVertexShader* command = MemArena::AllocType<RenderCommand_SetVertexShader>();

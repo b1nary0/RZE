@@ -10,6 +10,7 @@ struct IDXGISwapChain;
 struct ID3D11RenderTargetView;
 struct ID3D11RasterizerState;
 struct ID3D11BlendState;
+struct ID3D11DepthStencilState;
 struct ID3D11SamplerState;
 
 struct ID3D11DepthStencilView;
@@ -52,6 +53,11 @@ namespace Rendering
 
 		// EBlendState::AlphaBlend; EBlendState::Opaque binds no blend state, D3D's default
 		ID3D11BlendState* mAlphaBlendState;
+
+		// EDepthState::ReadOnly and Off; EDepthState::ReadWrite binds no depth-stencil state, D3D's default
+		// (test with LESS, write)
+		ID3D11DepthStencilState* mDepthReadOnlyState;
+		ID3D11DepthStencilState* mDepthOffState;
 
 		// Depth-comparison sampler for shadow maps; bound to PS slot s1 at every Begin()
 		ID3D11SamplerState* mShadowSamplerState;

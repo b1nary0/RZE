@@ -117,6 +117,8 @@ namespace Rendering
 		static void SetRasterizerState(ERasterizerState state);
 		// Stays bound until changed, so set it back to Opaque after drawing
 		static void SetBlendState(EBlendState state);
+		// Stays bound until changed, so set it back to ReadWrite after drawing
+		static void SetDepthState(EDepthState state);
 
 		static void SetVertexShader(const VertexShaderHandle& vertexShader);
 		static void SetPixelShader(const PixelShaderHandle& pixelShader);
