@@ -64,6 +64,9 @@ std::shared_ptr<MaterialInstance> MaterialInstance::Create(const MaterialAssetIm
 	materialInstance->GetProperties().HasOpacityMask = (materialData.TextureFlags & MaterialAssetImporter::MaterialData::TEXTUREFLAG_OPACITY) ? 1.0f : 0.0f;
 	materialInstance->GetProperties().HasHeightMap = (materialData.TextureFlags & MaterialAssetImporter::MaterialData::TEXTUREFLAG_HEIGHT) ? 1.0f : 0.0f;
 	materialInstance->GetProperties().OpacityMaskInAlpha = (materialData.TextureFlags & MaterialAssetImporter::MaterialData::TEXTUREFLAG_OPACITY_IN_ALPHA) ? 1.0f : 0.0f;
+	materialInstance->GetProperties().InvertOpacityMask = (materialData.TextureFlags & MaterialAssetImporter::MaterialData::TEXTUREFLAG_INVERT_OPACITY) ? 1.0f : 0.0f;
+	// A cutout clips at the mask; a blended material fades by it
+	materialInstance->GetProperties().OpacityMaskIsCoverage = isBlended ? 1.0f : 0.0f;
 	materialInstance->CommitPropertyChanges();
 	materialInstance->SetBlendMode(materialData.BlendMode);
 

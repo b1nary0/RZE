@@ -133,45 +133,51 @@ std::string AssimpSourceImporter::ResolveTexturePath(const aiScene& scene, const
 	return ResolveTextureFile(scene, assimpPath.C_Str());
 }
 
-std::string AssimpSourceImporter::FindCutoutMaskFallback(const aiScene& scene, const aiMaterial& material)
+AssimpSourceImporter::SourceMask AssimpSourceImporter::FindMaxPhysicalMask(const aiScene& scene, const aiMaterial& material)
 {
-	// #TODO(Transparency) STOPGAP - remove once materials carry real transparency (see Docs/Plans/Transparency.md,
-	// Part 2 "Blending").
+	// 3ds Max Physical Materials (New Sponza's dirt decals, for one) connect their masks through
+	// "3dsMax|Parameters|transparency_map" and "cutout_map". Assimp doesn't map either to aiTextureType_OPACITY; it
+	// only keeps them as raw FBX properties ("$raw.<property>|file", semantic aiTextureType_UNKNOWN).
 	//
-	// Why this exists: 3ds Max Physical Materials (New Sponza's dirt decals, for one) connect their mask through
-	// "3dsMax|Parameters|cutout_map" / "transparency_map". Assimp doesn't map either to aiTextureType_OPACITY; it only
-	// keeps them as raw FBX properties ("$raw.<property>|file", semantic aiTextureType_UNKNOWN). Without this the
-	// decals draw as solid slabs over the walls.
+	// transparency_map comes first. It's how much shows (coverage, blended), and its white means *transparent*:
+	// New Sponza's dirt_decal connects its "invmask" here, and the asset's own baked alpha files keep the drips.
+	// cutout_map is keep-or-cut with white kept. dirt_decal connects the same file to both, which contradicts; the
+	// asset's baked files side with transparency_map.
 	//
-	// What it gets wrong, on purpose, for now:
-	//  - transparency_map is a *blend* amount, not a cutout. We treat it as a cutout because the engine can only
-	//    clip (Lighting.hlsli: clip(mask - AlphaCutoff)); soft masks get hard edges at the cutoff.
-	//  - The material's scalar transparency ($raw.3dsMax|Parameters|transparency, $mat.transparencyfactor) is ignored.
-	//  - Only 3ds Max's property names are known. Maya (Stingray/StandardSurface), Blender and others name theirs
-	//    differently and still fall through to opaque.
-	//  - The mask's convention is assumed to match ours (white = solid). It doesn't for New Sponza's dirt_decal:
-	//    transparency_map means white = transparent, and its file is the asset's own "invmask". So we keep the flat
-	//    plaster and cut away the drips. Part 2 of the plan fixes this with an InvertMask flag and by preferring
-	//    transparency_map over cutout_map (which points at the same file here, contradicting it).
-	// The proper fix reads these into a real transparency model (alpha blend vs. cutout, a factor, an inverted
-	// flag) instead of folding everything into the cutout slot.
-	static constexpr const char* k_rawMaskKeys[] =
+	// #TODO(Transparency) Only 3ds Max's names are known. Maya (Stingray/StandardSurface opacity, transmission),
+	// Blender and others name theirs differently and fall through to no mask. Max can also invert a map inside its
+	// own node graph, which isn't in the FBX; a mask that looks inside out can be flipped with
+	// TEXTUREFLAG_INVERT_OPACITY in its material asset.
+	struct MaskKey
 	{
-		"$raw.3dsMax|Parameters|cutout_map|file",
-		"$raw.3dsMax|Parameters|transparency_map|file",
+		const char* RawKey;
+		SourceMaterialRules::EMaskKind Kind;
+		bool IsInverted;
+	};
+	static constexpr MaskKey k_maskKeys[] =
+	{
+		{ "$raw.3dsMax|Parameters|transparency_map|file", SourceMaterialRules::EMaskKind::Coverage, true },
+		{ "$raw.3dsMax|Parameters|cutout_map|file", SourceMaterialRules::EMaskKind::Cutout, false },
 	};
 
-	for (const char* rawKey : k_rawMaskKeys)
+	for (const MaskKey& maskKey : k_maskKeys)
 	{
 		aiString rawPath;
-		if (material.Get(rawKey, aiTextureType_UNKNOWN, 0, rawPath) == AI_SUCCESS && rawPath.length > 0)
+		if (material.Get(maskKey.RawKey, aiTextureType_UNKNOWN, 0, rawPath) == AI_SUCCESS && rawPath.length > 0)
 		{
-			RZE_LOG_ARGS("AssimpSourceImporter : using %s [%s] as a cutout mask (stopgap; see #TODO(Transparency))", rawKey, rawPath.C_Str());
-			return ResolveTextureFile(scene, rawPath.C_Str());
+			SourceMask mask;
+			mask.Path = ResolveTextureFile(scene, rawPath.C_Str());
+			if (mask.Path.empty())
+			{
+				continue;
+			}
+			mask.Kind = maskKey.Kind;
+			mask.IsInverted = maskKey.IsInverted;
+			return mask;
 		}
 	}
 
-	return std::string();
+	return SourceMask();
 }
 
 std::string AssimpSourceImporter::ResolveTextureFile(const aiScene& scene, const std::string& sourcePath)
@@ -562,15 +568,23 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 
 		// Cutout mask (map_d in .mtl)
 		setTexture(aiTextureType_OPACITY, 3, MaterialData::ETextureFlags::TEXTUREFLAG_OPACITY);
+		SourceMaterialRules::EMaskKind maskKind = materialData.TexturePaths[3].empty()
+			? SourceMaterialRules::EMaskKind::None
+			: SourceMaterialRules::EMaskKind::Cutout;
 
-		// #TODO(Transparency) Stopgap: masks Assimp leaves unmapped (3ds Max cutout/transparency maps) become cutouts.
-		// Remove when the material format has real transparency; FindCutoutMaskFallback lists what this gets wrong.
-		if (materialData.TexturePaths[3].empty())
+		// Masks Assimp leaves unmapped (3ds Max transparency/cutout maps)
+		if (maskKind == SourceMaterialRules::EMaskKind::None)
 		{
-			materialData.TexturePaths[3] = FindCutoutMaskFallback(scene, *mat);
-			if (!materialData.TexturePaths[3].empty())
+			const SourceMask maxMask = FindMaxPhysicalMask(scene, *mat);
+			if (maxMask.Kind != SourceMaterialRules::EMaskKind::None)
 			{
+				materialData.TexturePaths[3] = maxMask.Path;
 				materialData.TextureFlags |= MaterialData::ETextureFlags::TEXTUREFLAG_OPACITY;
+				if (maxMask.IsInverted)
+				{
+					materialData.TextureFlags |= MaterialData::ETextureFlags::TEXTUREFLAG_INVERT_OPACITY;
+				}
+				maskKind = maxMask.Kind;
 			}
 		}
 
@@ -586,8 +600,7 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 		// Grayscale height/bump map (map_bump in .mtl). Distinct from tangent-space normal maps (map_Kn).
 		setTexture(aiTextureType_HEIGHT, 4, MaterialData::ETextureFlags::TEXTUREFLAG_HEIGHT);
 
-		// After every texture is resolved: a found mask makes it a cutout
-		materialData.BlendMode = SourceMaterialRules::ChooseBlendMode(materialData.TextureFlags, materialData.Properties.Opacity);
+		materialData.BlendMode = SourceMaterialRules::ChooseBlendMode(maskKind, materialData.Properties.Opacity);
 
 		// #TODO really gross string manip lol
 		const std::string materialFolder = "ProjectData/Material/" + m_assetName + "/";

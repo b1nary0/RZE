@@ -48,16 +48,29 @@ namespace SourceMaterialRules
 		return std::clamp(opacity, 0.0f, 1.0f);
 	}
 
-	// A mask wins: it's a cutout even when the material is also partly see-through, since the engine can't do both
-	// yet (#TODO(Transparency) Part 2 makes the mask blend instead, Docs/Plans/Transparency.md). Otherwise anything
-	// short of solid is Transparent.
-	inline MaterialAssetImporter::MaterialData::EBlendMode ChooseBlendMode(U8 textureFlags, float opacity)
+	// What a material's opacity mask means, from where the source connects it
+	enum class EMaskKind
+	{
+		None,
+		// Keep or cut, nothing between: OBJ's map_d, 3ds Max's cutout_map
+		Cutout,
+		// How much shows, blended: 3ds Max's transparency_map
+		Coverage
+	};
+
+	// A cutout mask makes a cutout, whatever the opacity: the engine can't clip and fade the same material. A coverage
+	// mask blends, even at full opacity, since the mask itself fades it. Without a mask, anything short of solid blends.
+	inline MaterialAssetImporter::MaterialData::EBlendMode ChooseBlendMode(EMaskKind mask, float opacity)
 	{
 		using MaterialData = MaterialAssetImporter::MaterialData;
-		if (textureFlags & MaterialData::TEXTUREFLAG_OPACITY)
+		switch (mask)
 		{
+		case EMaskKind::Cutout:
 			return MaterialData::EBlendMode::Cutout;
+		case EMaskKind::Coverage:
+			return MaterialData::EBlendMode::Transparent;
+		default:
+			return opacity < 1.0f ? MaterialData::EBlendMode::Transparent : MaterialData::EBlendMode::Opaque;
 		}
-		return opacity < 1.0f ? MaterialData::EBlendMode::Transparent : MaterialData::EBlendMode::Opaque;
 	}
 }

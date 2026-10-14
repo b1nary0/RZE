@@ -34,15 +34,30 @@ struct SurfaceData
 	float3 WorldPos;
 };
 
-// Discards the pixel if the material's cutout mask says so. Diffuse alpha isn't used for this
-// because some assets (e.g. Nanosuit) store unrelated data there.
-void ApplyOpacityMask(float2 uv)
+// How much of the pixel the material's opacity mask covers, 1 without a mask. A cutout material discards the pixel
+// below AlphaCutoff instead (and returns 1); a blended one returns the mask, to fade by. Diffuse alpha isn't used
+// unless the material says so, because some assets (e.g. Nanosuit) store unrelated data there.
+float ApplyOpacityMask(float2 uv)
 {
-	if (HasOpacityMask > 0.5f)
+	if (HasOpacityMask < 0.5f)
 	{
-		float4 mask = OpacityMap.Sample(LinearSampler, uv);
-		clip((OpacityMaskInAlpha > 0.5f ? mask.a : mask.r) - AlphaCutoff);
+		return 1.0f;
 	}
+
+	float4 maskSample = OpacityMap.Sample(LinearSampler, uv);
+	float mask = OpacityMaskInAlpha > 0.5f ? maskSample.a : maskSample.r;
+	if (InvertOpacityMask > 0.5f)
+	{
+		mask = 1.0f - mask;
+	}
+
+	if (OpacityMaskIsCoverage > 0.5f)
+	{
+		return mask;
+	}
+
+	clip(mask - AlphaCutoff);
+	return 1.0f;
 }
 
 // Applies a tangent-space normal map sample to the world-space vertex normal

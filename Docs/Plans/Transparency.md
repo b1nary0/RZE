@@ -1,11 +1,12 @@
 # Transparency and blending
 
-Status: Part 1 done. Transparent materials draw blended, back to front (glass is see-through but untinted, and
-vanishes over empty background; see Part 1 step 3). Part 2 is planned. Before this, the forward pass drew everything
-opaque, and the only "see-through" a material could do was a cutout (`clip(mask - AlphaCutoff)` in
+Status: Parts 1 and 2 done. Blended materials draw back to front after everything opaque, in five modes, and masks
+either cut or fade. Still open: glass is untinted, a blended surface over empty background vanishes (Part 1 step 3),
+`Multiply` ignores opacity, and only 3ds Max's mask and transparency names are read. Before this, the forward pass
+drew everything opaque, and the only "see-through" a material could do was a cutout (`clip(mask - AlphaCutoff)` in
 `Assets/Shaders/Common/Lighting.hlsli`).
 
-What that costs us right now, from burning Intel's New Sponza FBX:
+What that cost us, from burning Intel's New Sponza FBX:
 
 - **Glass is opaque.** `glass`, `lamp_glass_01` and `light_bulb` come in with no textures and opacity 1. The source's
   transparency isn't read, and nothing could draw it see-through anyway.
@@ -117,6 +118,8 @@ stopgap goes away.
 
 - **Mask channel:** the opacity texture becomes a *coverage* input to blending, not only a cutout.
   `alpha = Opacity * mask`, and `Cutout` remains its own mode (`clip`, no blending).
+  - Done (step 6): `ApplyOpacityMask` returns the coverage for blended materials (`OpacityMaskIsCoverage`) and clips
+    for cutouts. The pick pass clips coverage at `AlphaCutoff`, so clicks go through a decal's faint parts.
 - **Mask conventions:** an `InvertMask` flag in the material, set by the importer when the source says the map is
   inverted, or by hand in the editor.
   - **Known case, New Sponza's `dirt_decal`:** the stopgap currently uses its mask the wrong way round. The FBX connects
@@ -130,9 +133,15 @@ stopgap goes away.
     files side with `transparency_map`.
   - With the mask the right way round and blending at the material's opacity (0.61), the dirt should read as soft
     streaks over the bricks. Check against the shipped `dirt_decal_01_alpha.png`.
+  - Done (step 6): `TEXTUREFLAG_INVERT_OPACITY` (bit 6 of the texture flags, so no format change) and
+    `InvertOpacityMask` in the material buffer. `dirt_decal` now burns `Transparent`, 0.61, inverted. Its walls show
+    soft grime over the bricks. There's no inspector toggle yet: material edits still have nowhere to be saved.
 - **Decals that sit on a surface** (New Sponza's `dirt_decal` geometry) z-fight with the wall behind them once they
   stop writing depth. Give blended decals a small depth bias, via a rasterizer state like `ShadowCaster` but with a
   negative bias, so they win the depth test against the surface they're laid on.
+  - Not needed so far, so not built. New Sponza's decals sit slightly in front of the walls: they drew without
+    z-fighting as opaque cutouts, which test with the same comparison, and draw cleanly blended. Add the bias if a
+    source lays decals exactly on the surface.
 - **Lighting:** decals are lit like the surface under them. They use the same pixel shader, only blended.
 
 ### 3. Retire the stopgap
@@ -140,6 +149,8 @@ stopgap goes away.
 - `FindCutoutMaskFallback` becomes the importer's normal reading of 3ds Max's `cutout_map` (as `Cutout`) and
   `transparency_map` (as an `AlphaBlend` coverage mask). The `#TODO(Transparency)` markers come out.
 - Re-burn New Sponza. The dirt should read as soft grime at the source's 0.39 strength, not dark patches.
+- Done with step 6: it's now `AssimpSourceImporter::FindMaxPhysicalMask`, and `SourceMaterialRules::EMaskKind`
+  decides the blend mode. The remaining `#TODO(Transparency)` markers are for what's still open (above).
 
 ### 4. Checks
 
@@ -158,8 +169,8 @@ Each step is one commit, and each leaves the engine working.
 3. Transparent pass with sorting; shaders output alpha; shadow and pick handling.
 4. Importer: read transparency from FBX and 3ds Max properties (Part 1 done).
 5. Additional blend states and modes.
-6. Soft masks, `InvertMask`, decal depth bias.
-7. Retire `FindCutoutMaskFallback`; re-burn and compare (Part 2 done).
+6. Soft masks, `InvertMask`, decal depth bias (not needed; see above).
+7. Retire `FindCutoutMaskFallback`; re-burn and compare (Part 2 done). Done together with step 6.
 
 ## Open questions
 

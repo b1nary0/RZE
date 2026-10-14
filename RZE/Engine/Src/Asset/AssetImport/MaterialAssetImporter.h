@@ -23,6 +23,7 @@ public:
 			TEXTUREFLAG_OPACITY = 1 << 3,
 			TEXTUREFLAG_HEIGHT = 1 << 4,
 			TEXTUREFLAG_OPACITY_IN_ALPHA = 1 << 5, // Opacity texture is the diffuse texture; cutout is in its alpha
+			TEXTUREFLAG_INVERT_OPACITY = 1 << 6, // Opacity texture's white means see-through (3ds Max transparency_map)
 			TEXTUREFLAG_ALL = TEXTUREFLAG_ALBEDO | TEXTUREFLAG_SPECULAR | TEXTUREFLAG_NORMAL
 		};
 

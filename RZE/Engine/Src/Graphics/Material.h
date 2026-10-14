@@ -44,6 +44,12 @@ public:
 		float HasHeightMap{ 0.0f };
 		// 1.0f when the opacity mask is in the texture's alpha channel rather than red
 		float OpacityMaskInAlpha{ 0.0f };
+		// 1.0f when the mask's white means see-through rather than solid
+		float InvertOpacityMask{ 0.0f };
+		// 1.0f when the mask is how much of the material shows (blended materials) rather than where it's cut away
+		float OpacityMaskIsCoverage{ 0.0f };
+		// Keeps the buffer a whole number of 16-byte registers, which is what's uploaded
+		float _pad0{ 0.0f };
 	};
 
 public:

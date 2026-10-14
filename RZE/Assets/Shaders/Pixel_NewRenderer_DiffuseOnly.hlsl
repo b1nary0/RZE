@@ -6,7 +6,7 @@ static const float DefaultSpecularIntensity = 0.5f; // Typical non-metal; see Su
 
 float4 PSMain(VertexToPixel input) : SV_TARGET
 {
-	ApplyOpacityMask(input.UV);
+	const float coverage = ApplyOpacityMask(input.UV);
 
 	float4 diffuseSample = DiffuseMap.Sample(LinearSampler, input.UV);
 
@@ -24,6 +24,7 @@ float4 PSMain(VertexToPixel input) : SV_TARGET
 	float3 colour = ComputeLighting(surface, viewDir);
 
 	// Linear and unclipped; PostProcessRenderStage applies exposure and tonemapping
-	// Opacity is 1 unless the material is blended (MaterialInstance::Create); only the blended pass uses it
-	return float4(colour, Opacity);
+	// Opacity is 1 unless the material is blended (MaterialInstance::Create); only the blended pass uses it.
+	// Coverage is 1 unless a blended material has a mask.
+	return float4(colour, Opacity * coverage);
 }

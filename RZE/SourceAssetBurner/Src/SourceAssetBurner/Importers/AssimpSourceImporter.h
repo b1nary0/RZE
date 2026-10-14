@@ -3,6 +3,7 @@
 #include <SourceAssetBurner/Importers/SourceImporter.h>
 
 #include <Asset/AssetImport/MaterialAssetImporter.h>
+#include <Asset/AssetImport/SourceMaterialRules.h>
 #include <Asset/AssetImport/MeshAssetWriter.h>
 
 #include <Utils/PrimitiveDefs.h>
@@ -37,9 +38,15 @@ private:
 	std::string ResolveTexturePath(const aiScene& scene, const aiMaterial& material, int textureType);
 	// sourcePath as the source file names it: embedded ("*0"), relative, or absolute from the author's machine
 	std::string ResolveTextureFile(const aiScene& scene, const std::string& sourcePath);
-	// #TODO(Transparency) Stopgap: a mask the source connects somewhere Assimp doesn't map to aiTextureType_OPACITY
-	// (3ds Max Physical Material cutout/transparency maps), used as our cutout mask. See the comment on its definition.
-	std::string FindCutoutMaskFallback(const aiScene& scene, const aiMaterial& material);
+	// A 3ds Max Physical Material's opacity mask, which Assimp doesn't map to aiTextureType_OPACITY. See its definition.
+	struct SourceMask
+	{
+		std::string Path;
+		SourceMaterialRules::EMaskKind Kind = SourceMaterialRules::EMaskKind::None;
+		// White means see-through
+		bool IsInverted = false;
+	};
+	SourceMask FindMaxPhysicalMask(const aiScene& scene, const aiMaterial& material);
 	// Turns a source that declares its axes (FBX) Y-up like the engine; identity for one that doesn't (OBJ)
 	static aiMatrix4x4 GetYUpCorrection(const aiScene& scene);
 

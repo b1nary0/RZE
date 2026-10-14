@@ -43,13 +43,22 @@ TEST_CASE("Opacity stays within 0 and 1 whatever the source says")
 	CHECK(SourceMaterialRules::ChooseOpacity(tooOpaque) == doctest::Approx(1.0f));
 }
 
-TEST_CASE("A mask makes a material a cutout even when it's also partly see-through")
+TEST_CASE("A cutout mask makes a cutout even when the material is also partly see-through")
 {
-	using MaterialData = MaterialAssetImporter::MaterialData;
-	const U8 masked = MaterialData::TEXTUREFLAG_ALBEDO | MaterialData::TEXTUREFLAG_OPACITY;
-	CHECK(SourceMaterialRules::ChooseBlendMode(masked, 0.61f) == EBlendMode::Cutout);
-	CHECK(SourceMaterialRules::ChooseBlendMode(masked, 1.0f) == EBlendMode::Cutout);
+	// Nyra's cornea: map_d with d 0.12
+	CHECK(SourceMaterialRules::ChooseBlendMode(SourceMaterialRules::EMaskKind::Cutout, 0.12f) == EBlendMode::Cutout);
+	CHECK(SourceMaterialRules::ChooseBlendMode(SourceMaterialRules::EMaskKind::Cutout, 1.0f) == EBlendMode::Cutout);
+}
 
-	CHECK(SourceMaterialRules::ChooseBlendMode(MaterialData::TEXTUREFLAG_NONE, 0.43f) == EBlendMode::Transparent);
-	CHECK(SourceMaterialRules::ChooseBlendMode(MaterialData::TEXTUREFLAG_ALBEDO, 1.0f) == EBlendMode::Opaque);
+TEST_CASE("A coverage mask blends, even at full opacity")
+{
+	// New Sponza's dirt_decal: transparency_map with opacity 0.61
+	CHECK(SourceMaterialRules::ChooseBlendMode(SourceMaterialRules::EMaskKind::Coverage, 0.61f) == EBlendMode::Transparent);
+	CHECK(SourceMaterialRules::ChooseBlendMode(SourceMaterialRules::EMaskKind::Coverage, 1.0f) == EBlendMode::Transparent);
+}
+
+TEST_CASE("Without a mask, anything short of solid blends")
+{
+	CHECK(SourceMaterialRules::ChooseBlendMode(SourceMaterialRules::EMaskKind::None, 0.43f) == EBlendMode::Transparent);
+	CHECK(SourceMaterialRules::ChooseBlendMode(SourceMaterialRules::EMaskKind::None, 1.0f) == EBlendMode::Opaque);
 }
