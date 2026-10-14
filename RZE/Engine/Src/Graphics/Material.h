@@ -78,8 +78,9 @@ public:
 	const MaterialParams& GetProperties() const { return m_properties; }
 
 	using EBlendMode = MaterialAssetImporter::MaterialData::EBlendMode;
-	// #TODO(Transparency) Read, but every mode still draws opaque or cutout until the transparent pass exists
 	EBlendMode GetBlendMode() const { return m_blendMode; }
+	// Drawn in the forward pass's sorted, blended pass rather than with the opaque draws
+	bool IsBlended() const { return MaterialAssetImporter::IsBlended(m_blendMode); }
 	void SetBlendMode(EBlendMode blendMode) { m_blendMode = blendMode; }
 
 	// @TODO Is this API good?

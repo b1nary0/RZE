@@ -547,8 +547,27 @@ namespace Rendering
 			{
 				RenderCommand_SetBlendState* cmd = static_cast<RenderCommand_SetBlendState*>(command);
 
+				ID3D11BlendState* blendState = nullptr;
+				switch (cmd->state)
+				{
+				case EBlendState::AlphaBlend:
+					blendState = m_device->mAlphaBlendState;
+					break;
+				case EBlendState::Premultiplied:
+					blendState = m_device->mPremultipliedBlendState;
+					break;
+				case EBlendState::Additive:
+					blendState = m_device->mAdditiveBlendState;
+					break;
+				case EBlendState::Multiply:
+					blendState = m_device->mMultiplyBlendState;
+					break;
+				default:
+					break;
+				}
+
 				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
-				deviceContext.OMSetBlendState(cmd->state == EBlendState::AlphaBlend ? m_device->mAlphaBlendState : nullptr, nullptr, 0xffffffff);
+				deviceContext.OMSetBlendState(blendState, nullptr, 0xffffffff);
 
 				break;
 			}

@@ -31,7 +31,10 @@ public:
 		{
 			Opaque,      // Hides what's behind it
 			Cutout,      // Opaque where its opacity mask passes AlphaCutoff, absent elsewhere
-			Transparent  // See-through by Properties.Opacity (#TODO(Transparency) drawn opaque until the transparent pass exists)
+			Transparent, // See-through by Properties.Opacity: src * a + dst * (1 - a)
+			Premultiplied, // For colour already multiplied by its alpha: src + dst * (1 - a)
+			Additive,    // Adds its colour, scaled by opacity, to what's behind (glows, light shafts): src * a + dst
+			Multiply     // Darkens what's behind by its colour (grime): src * dst. #TODO(Transparency) ignores opacity
 		};
 
 		std::string MaterialName;
@@ -52,6 +55,8 @@ public:
 	// What a material made before blend modes existed (version 0) is: Cutout with an opacity mask, otherwise Opaque
 	static MaterialData::EBlendMode GetLegacyBlendMode(U8 textureFlags);
 	static const char* GetBlendModeName(MaterialData::EBlendMode blendMode);
+	// Blends with what's behind it, so it's drawn after everything opaque, sorted, and casts no shadow
+	static bool IsBlended(MaterialData::EBlendMode blendMode);
 
 public:
 	MaterialAssetImporter() = default;

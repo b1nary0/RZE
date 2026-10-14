@@ -108,6 +108,10 @@ stopgap goes away.
 
 - Add the matching `EBlendState`s and D3D11 states. `BlendMode` in the material asset picks one. A blended material
   draws in the transparent pass, sorted like Part 1.
+- Done (step 5). All blended modes share the sorted pass; the blend state changes only between draws of different
+  modes. `Multiply` is plain `src * dst` and ignores opacity, because the shaders don't know the mode. Fading it
+  needs the shader to output `lerp(1, colour, opacity)`, which means passing the mode in the material buffer. The
+  importer doesn't produce the new modes yet; they're set in the material asset.
 
 ### 2. Soft masks and decals
 

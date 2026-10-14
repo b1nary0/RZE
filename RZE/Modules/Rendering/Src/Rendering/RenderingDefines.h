@@ -18,7 +18,11 @@ namespace Rendering
 	enum class EBlendState
 	{
 		Opaque,     // Blending off; what every pass expects unless it asks otherwise
-		AlphaBlend  // Straight alpha: src * a + dst * (1 - a)
+		AlphaBlend,    // Straight alpha: src * a + dst * (1 - a)
+		Premultiplied, // Colour already multiplied by its alpha: src + dst * (1 - a)
+		Additive,      // src * a + dst
+		Multiply       // src * dst
+		// Each leaves the target's alpha as it was (see ForwardRenderStage's note on empty background)
 	};
 
 	enum class EDepthState

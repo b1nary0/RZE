@@ -64,6 +64,35 @@ TEST_CASE("A material asset reads back as it was written")
 	CHECK(read.TexturePaths == written.TexturePaths);
 }
 
+TEST_CASE("Every blend mode survives a write and read")
+{
+	const ScopedTestFolder folder("UnitTestsTemp_MaterialAsset");
+
+	const MaterialData::EBlendMode modes[] =
+	{
+		MaterialData::EBlendMode::Opaque, MaterialData::EBlendMode::Cutout, MaterialData::EBlendMode::Transparent,
+		MaterialData::EBlendMode::Premultiplied, MaterialData::EBlendMode::Additive, MaterialData::EBlendMode::Multiply
+	};
+	for (const MaterialData::EBlendMode mode : modes)
+	{
+		CAPTURE(MaterialAssetImporter::GetBlendModeName(mode));
+
+		MaterialData written;
+		written.MaterialName = MaterialAssetImporter::GetBlendModeName(mode);
+		written.BlendMode = mode;
+
+		const Filepath file = folder.GetFile(written.MaterialName + ".materialasset");
+		MaterialAssetWriter writer;
+		writer.SetOutputPath(file);
+		writer.SetMaterialData(written);
+		writer.Write();
+
+		MaterialAssetImporter importer;
+		REQUIRE(importer.Import(file));
+		CHECK(importer.GetMaterialData().BlendMode == mode);
+	}
+}
+
 TEST_CASE("A material asset from before blend modes reads as cutout with a mask, opaque without")
 {
 	const ScopedTestFolder folder("UnitTestsTemp_MaterialAsset");

@@ -160,6 +160,19 @@ namespace Rendering
 			blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
 			mDevice->CreateBlendState(&blendDesc, &mAlphaBlendState);
+
+			// The rest differ only in how colour combines; alpha stays as above
+			blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+			blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+			mDevice->CreateBlendState(&blendDesc, &mPremultipliedBlendState);
+
+			blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+			blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+			mDevice->CreateBlendState(&blendDesc, &mAdditiveBlendState);
+
+			blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_DEST_COLOR;
+			blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ZERO;
+			mDevice->CreateBlendState(&blendDesc, &mMultiplyBlendState);
 		}
 
 		// Depth states (ReadWrite is D3D's default, so it has none)
@@ -213,6 +226,9 @@ namespace Rendering
 		mRasterState->Release();
 		mShadowCasterRasterState->Release();
 		mAlphaBlendState->Release();
+		mPremultipliedBlendState->Release();
+		mAdditiveBlendState->Release();
+		mMultiplyBlendState->Release();
 		mDepthReadOnlyState->Release();
 		mDepthOffState->Release();
 		mShadowSamplerState->Release();

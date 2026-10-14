@@ -26,9 +26,20 @@ const char* MaterialAssetImporter::GetBlendModeName(MaterialData::EBlendMode ble
 		return "Cutout";
 	case MaterialData::EBlendMode::Transparent:
 		return "Transparent";
+	case MaterialData::EBlendMode::Premultiplied:
+		return "Premultiplied";
+	case MaterialData::EBlendMode::Additive:
+		return "Additive";
+	case MaterialData::EBlendMode::Multiply:
+		return "Multiply";
 	default:
 		return "Unknown";
 	}
+}
+
+bool MaterialAssetImporter::IsBlended(MaterialData::EBlendMode blendMode)
+{
+	return blendMode != MaterialData::EBlendMode::Opaque && blendMode != MaterialData::EBlendMode::Cutout;
 }
 
 bool MaterialAssetImporter::Import(const Filepath& filePath)

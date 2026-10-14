@@ -121,9 +121,9 @@ void ForwardRenderStage::Render(RenderContext& context)
 				continue;
 			}
 
-			// See-through placements wait until everything they could show is drawn
+			// Blended placements wait until everything they could show is drawn
 			const MaterialInstance& materialInstance = subMeshes[placements[placementIndex].GeometryIndex].GetMaterialRef();
-			if (materialInstance.GetBlendMode() == MaterialInstance::EBlendMode::Transparent)
+			if (materialInstance.IsBlended())
 			{
 				TransparentDraw& draw = m_transparentDraws.emplace_back();
 				draw.DistanceSquared = (subMeshBounds[placementIndex].Bounds.GetCentre() - view.Camera.Position).LengthSq();
@@ -144,11 +144,21 @@ void ForwardRenderStage::Render(RenderContext& context)
 		// doesn't hide another behind it.
 		// #TODO(Transparency) Over empty background (scene alpha 0) the blend leaves alpha 0, so PostProcess paints
 		// the background colour there and the surface vanishes. Needs the background handled before blending.
-		Rendering::Renderer::SetBlendState(Rendering::EBlendState::AlphaBlend);
 		Rendering::Renderer::SetDepthState(Rendering::EDepthState::ReadOnly);
 
+		// Sorted by distance, not by mode, so the blend state is only set when it changes from the last draw's
+		Rendering::EBlendState boundBlendState = Rendering::EBlendState::Opaque;
 		for (const TransparentDraw& draw : m_transparentDraws)
 		{
+			const StaticMeshInstance& staticMesh = draw.Object->GetStaticMesh();
+			const MeshGeometry& meshGeometry = staticMesh.GetSubMeshes()[staticMesh.GetPlacements()[draw.PlacementIndex].GeometryIndex];
+			const Rendering::EBlendState blendState = GetBlendState(meshGeometry.GetMaterialRef().GetBlendMode());
+			if (blendState != boundBlendState)
+			{
+				Rendering::Renderer::SetBlendState(blendState);
+				boundBlendState = blendState;
+			}
+
 			DrawPlacement(*draw.Object, draw.PlacementIndex, uploadedTransform, boundPixelShader);
 		}
 
@@ -170,6 +180,24 @@ void ForwardRenderStage::SortBackToFront(std::vector<TransparentDraw>& draws)
 		{
 			return a.DistanceSquared > b.DistanceSquared;
 		});
+}
+
+Rendering::EBlendState ForwardRenderStage::GetBlendState(MaterialAssetImporter::MaterialData::EBlendMode blendMode)
+{
+	using EBlendMode = MaterialAssetImporter::MaterialData::EBlendMode;
+	switch (blendMode)
+	{
+	case EBlendMode::Transparent:
+		return Rendering::EBlendState::AlphaBlend;
+	case EBlendMode::Premultiplied:
+		return Rendering::EBlendState::Premultiplied;
+	case EBlendMode::Additive:
+		return Rendering::EBlendState::Additive;
+	case EBlendMode::Multiply:
+		return Rendering::EBlendState::Multiply;
+	default:
+		return Rendering::EBlendState::Opaque;
+	}
 }
 
 void ForwardRenderStage::DrawPlacement(const RenderObject& renderObject, size_t placementIndex, const Matrix4x4*& uploadedTransform, const PixelShader*& boundPixelShader)

@@ -51,8 +51,11 @@ namespace Rendering
 		ID3D11RasterizerState* mRasterState;
 		ID3D11RasterizerState* mShadowCasterRasterState;
 
-		// EBlendState::AlphaBlend; EBlendState::Opaque binds no blend state, D3D's default
+		// EBlendState::AlphaBlend and the others; EBlendState::Opaque binds no blend state, D3D's default
 		ID3D11BlendState* mAlphaBlendState;
+		ID3D11BlendState* mPremultipliedBlendState;
+		ID3D11BlendState* mAdditiveBlendState;
+		ID3D11BlendState* mMultiplyBlendState;
 
 		// EDepthState::ReadOnly and Off; EDepthState::ReadWrite binds no depth-stencil state, D3D's default
 		// (test with LESS, write)
