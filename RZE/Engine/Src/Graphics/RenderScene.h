@@ -96,7 +96,7 @@ public:
 		Matrix4x4 invTransform;
 	};
 
-	// World-space bounds of one submesh, kept up to date as the object's mesh or transform changes
+	// World-space bounds of one placed submesh, kept up to date as the object's mesh or transform changes
 	struct SubMeshBounds
 	{
 		// The submesh's object-space bounding box's corners, transformed into world space
@@ -119,9 +119,13 @@ public:
 	// GetLocalBounds placed in the world by the transform, as an axis-aligned box. Worked out when asked after the
 	// object moves or changes mesh.
 	const BoundingBox& GetBounds() const;
-	// Indexed like GetStaticMesh().GetSubMeshes(); tighter than GetBounds, for culling submesh by submesh. Worked out
+	// Indexed like GetStaticMesh().GetPlacements(); tighter than GetBounds, for culling submesh by submesh. Worked out
 	// when asked after the object moves or changes mesh.
 	const std::vector<SubMeshBounds>& GetSubMeshBounds() const;
+	// Where a placement is drawn: the object's transform times the placement's. Its inverse follows it in memory,
+	// like MatrixMem, so it uploads as the shaders' ObjectBuffer. Placements at the mesh's origin all return
+	// GetTransform() itself, so comparing addresses tells a stage when it needs to upload again.
+	const Matrix4x4& GetPlacementTransform(size_t placementIndex) const;
 
 	// What PickRenderStage writes for this object's pixels; 0 means nothing pickable
 	void SetPickID(U32 pickID) { m_pickID = pickID; }
@@ -133,6 +137,8 @@ public:
 private:
 	// It moved or changed mesh: its world bounds are stale, and so is its scene
 	void MarkChanged();
+	// Works out m_subMeshBounds and m_placementMatrices if they're stale
+	void UpdatePlacements() const;
 
 private:
 	// @TODO This will be replaced after a batching system is implemented
@@ -147,7 +153,9 @@ private:
 	mutable BoundingBox m_bounds;
 	mutable bool m_isBoundsStale = true;
 	mutable std::vector<SubMeshBounds> m_subMeshBounds;
-	mutable bool m_areSubMeshBoundsStale = true;
+	// Indexed like the placements; only filled in for those away from the mesh's origin
+	mutable std::vector<MatrixMem> m_placementMatrices;
+	mutable bool m_arePlacementsStale = true;
 
 	U32 m_pickID = 0;
 

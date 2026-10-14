@@ -144,11 +144,23 @@ void ShadowRenderStage::RenderShadowMap(const RenderScene& scene, const ShadowMa
 
 		for (const auto& renderObject : scene.GetRenderObjects())
 		{
-			// See ForwardRenderStage: uploads the whole MatrixMem (transform + inverse)
-			Rendering::Renderer::UploadDataToBuffer<Matrix4x4>(m_vertexShader->GetWorldMatrixBuffer(), &renderObject->GetTransform());
+			const std::vector<MeshGeometry>& subMeshes = renderObject->GetStaticMesh().GetSubMeshes();
+			const std::vector<MeshPlacement>& placements = renderObject->GetStaticMesh().GetPlacements();
 
-			for (const auto& meshGeometry : renderObject->GetStaticMesh().GetSubMeshes())
+			// As in ForwardRenderStage: only uploaded when the placement's transform changes
+			const Matrix4x4* uploadedTransform = nullptr;
+
+			for (size_t placementIndex = 0; placementIndex < placements.size(); ++placementIndex)
 			{
+				// See ForwardRenderStage: uploads the whole MatrixMem (transform + inverse)
+				const Matrix4x4& transform = renderObject->GetPlacementTransform(placementIndex);
+				if (&transform != uploadedTransform)
+				{
+					Rendering::Renderer::UploadDataToBuffer<Matrix4x4>(m_vertexShader->GetWorldMatrixBuffer(), &transform);
+					uploadedTransform = &transform;
+				}
+
+				const MeshGeometry& meshGeometry = subMeshes[placements[placementIndex].GeometryIndex];
 				const MaterialInstance& materialInstance = meshGeometry.GetMaterialRef();
 
 				// Only needed for cutout casters (leaves, chains, lashes)

@@ -59,6 +59,7 @@ bool StaticMeshResource::LoadCPU(const Filepath& filePath)
 		pendingSubmesh.InterleavedVertexData = MeshGeometry::BuildInterleavedVertexData(importedSubmesh.Vertices);
 		pendingSubmesh.Data = std::move(importedSubmesh);
 	}
+	m_pendingPlacements = std::move(meshImporter.GetPlacements());
 
 	m_finalizedSubmeshes.clear();
 	m_finalizedSubmeshes.reserve(m_pendingSubmeshes.size());
@@ -128,10 +129,11 @@ bool StaticMeshResource::FinalizeStep()
 		return false;
 	}
 
-	m_mesh.Initialize(m_finalizedSubmeshes);
+	m_mesh.Initialize(m_finalizedSubmeshes, std::move(m_pendingPlacements));
 	m_mesh.SetName(m_meshName);
 
 	m_pendingSubmeshes.clear();
+	m_pendingPlacements.clear();
 	m_finalizedSubmeshes.clear();
 	m_nextSubmeshToFinalize = 0;
 	m_isFinalizePending = false;

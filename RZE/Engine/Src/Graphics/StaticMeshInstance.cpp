@@ -15,23 +15,40 @@ StaticMeshInstance::~StaticMeshInstance()
 
 void StaticMeshInstance::Initialize(const std::vector<MeshGeometry>& meshGeometry)
 {
+	std::vector<MeshPlacement> placements(meshGeometry.size());
+	for (size_t subMeshIndex = 0; subMeshIndex < placements.size(); ++subMeshIndex)
+	{
+		placements[subMeshIndex].GeometryIndex = static_cast<U32>(subMeshIndex);
+	}
+
+	Initialize(meshGeometry, std::move(placements));
+}
+
+void StaticMeshInstance::Initialize(const std::vector<MeshGeometry>& meshGeometry, std::vector<MeshPlacement>&& placements)
+{
 	m_subMeshes = meshGeometry;
+	m_placements = std::move(placements);
+
+	for (const MeshPlacement& placement : m_placements)
+	{
+		AssertExpr(placement.GeometryIndex < m_subMeshes.size());
+	}
 
 	CalculateBounds();
 }
 
 void StaticMeshInstance::CalculateBounds()
 {
-	if (m_subMeshes.empty())
+	if (m_placements.empty())
 	{
 		m_bounds = BoundingBox(Vector3D(), Vector3D());
 		return;
 	}
 
 	m_bounds = BoundingBox();
-	for (const MeshGeometry& subMesh : m_subMeshes)
+	for (const MeshPlacement& placement : m_placements)
 	{
-		m_bounds.Grow(subMesh.GetBounds());
+		m_bounds.Grow(m_subMeshes[placement.GeometryIndex].GetBounds().Transformed(placement.LocalTransform));
 	}
 }
 

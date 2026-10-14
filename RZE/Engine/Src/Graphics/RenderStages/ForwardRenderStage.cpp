@@ -101,24 +101,33 @@ void ForwardRenderStage::Render(RenderContext& context)
 			continue;
 		}
 
-		// @note this sends in the address of renderObject->m_matrixMem.transform but fulfils the memory of struct MatrixMem as a whole
-		// this should be re-evaluated later to have a better solve for the issue of commands needing access to the data being uploaded's lifetime
-		Rendering::Renderer::UploadDataToBuffer<Matrix4x4>(m_vertexShader->GetWorldMatrixBuffer(), &renderObject->GetTransform());
-
 		const std::vector<MeshGeometry>& subMeshes = renderObject->GetStaticMesh().GetSubMeshes();
+		const std::vector<MeshPlacement>& placements = renderObject->GetStaticMesh().GetPlacements();
 		const std::vector<RenderObject::SubMeshBounds>& subMeshBounds = renderObject->GetSubMeshBounds();
 
+		// Placements at the mesh's origin share the object's transform, so it's only uploaded when it changes
+		const Matrix4x4* uploadedTransform = nullptr;
+
 		// @TODO
-		// Currently each MeshGeometry is a draw call. Need to batch this down so it becomes a single draw call
+		// Currently each placement is a draw call. Need to batch this down so it becomes a single draw call
 		// per render object, at least. Can do this maybe in the burner?
-		for (size_t subMeshIndex = 0; subMeshIndex < subMeshes.size(); ++subMeshIndex)
+		for (size_t placementIndex = 0; placementIndex < placements.size(); ++placementIndex)
 		{
-			if (!frustum.Intersects(subMeshBounds[subMeshIndex].Bounds))
+			if (!frustum.Intersects(subMeshBounds[placementIndex].Bounds))
 			{
 				continue;
 			}
 
-			const MeshGeometry& meshGeometry = subMeshes[subMeshIndex];
+			// @note this sends in the address of a transform but fulfils the memory of struct MatrixMem as a whole
+			// this should be re-evaluated later to have a better solve for the issue of commands needing access to the data being uploaded's lifetime
+			const Matrix4x4& transform = renderObject->GetPlacementTransform(placementIndex);
+			if (&transform != uploadedTransform)
+			{
+				Rendering::Renderer::UploadDataToBuffer<Matrix4x4>(m_vertexShader->GetWorldMatrixBuffer(), &transform);
+				uploadedTransform = &transform;
+			}
+
+			const MeshGeometry& meshGeometry = subMeshes[placements[placementIndex].GeometryIndex];
 
 			// @TODO
 			// This is god awful. Just in place while developing shader model.

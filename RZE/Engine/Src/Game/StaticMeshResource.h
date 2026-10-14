@@ -43,6 +43,7 @@ private:
 	// Populated by LoadCPU, consumed by FinalizeStep.
 	std::vector<PendingSubmesh> m_pendingSubmeshes;
 	std::vector<MeshGeometry> m_finalizedSubmeshes;
+	std::vector<MeshPlacement> m_pendingPlacements;
 	size_t m_nextSubmeshToFinalize = 0;
 	bool m_isFinalizePending = false;
 };
