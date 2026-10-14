@@ -84,5 +84,27 @@ namespace Editor
 			const std::filesystem::file_time_type assetTime = std::filesystem::last_write_time(asset.GetAbsolutePath(), assetError);
 			return !imageError && !assetError && imageTime >= assetTime;
 		}
+
+		Coverage Survey(const std::vector<Filepath>& assets, const ThumbnailFolder& folder)
+		{
+			Coverage coverage;
+			for (const Filepath& asset : assets)
+			{
+				const Filepath image = folder.GetPathFor(asset);
+				if (!image.Exists())
+				{
+					++coverage.Missing;
+				}
+				else if (IsUpToDate(asset, image))
+				{
+					++coverage.UpToDate;
+				}
+				else
+				{
+					++coverage.OutOfDate;
+				}
+			}
+			return coverage;
+		}
 	}
 }

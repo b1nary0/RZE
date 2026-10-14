@@ -101,6 +101,13 @@ namespace Editor
 			PanelWindowStyle windowStyle;
 			panel->PushWindowStyle(windowStyle);
 
+			if (desc.DefaultDock == EPanelDock::Floating && desc.DefaultSize.x > 0.0f && desc.DefaultSize.y > 0.0f)
+			{
+				// Only until imgui.ini has a place and size for it
+				ImGui::SetNextWindowSize(desc.DefaultSize, ImGuiCond_FirstUseEver);
+				ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_FirstUseEver, ImVec2(0.5f, 0.5f));
+			}
+
 			bool* const isOpen = desc.Closable ? &panel->m_isOpen : nullptr;
 			const bool isVisible = ImGui::Begin(desc.Name.c_str(), isOpen, desc.WindowFlags);
 

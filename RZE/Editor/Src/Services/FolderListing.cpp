@@ -85,6 +85,39 @@ namespace Editor
 		return entries;
 	}
 
+	std::vector<Filepath> FindFiles(const Filepath& folder, const std::string& extension)
+	{
+		std::vector<std::string> relativePaths;
+
+		std::error_code error;
+		const std::filesystem::path root(folder.GetAbsolutePath());
+		std::filesystem::recursive_directory_iterator iterator(root, error);
+		if (error)
+		{
+			return {};
+		}
+
+		for (const std::filesystem::directory_entry& item : iterator)
+		{
+			if (item.is_regular_file(error) && StringUtils::EqualsIgnoringCase(item.path().extension().string(), extension))
+			{
+				relativePaths.push_back(std::filesystem::relative(item.path(), root, error).generic_string());
+			}
+		}
+
+		std::sort(relativePaths.begin(), relativePaths.end(), [](const std::string& a, const std::string& b)
+			{
+				return StringUtils::ToLower(a) < StringUtils::ToLower(b);
+			});
+
+		std::vector<Filepath> files;
+		for (const std::string& relativePath : relativePaths)
+		{
+			files.emplace_back(folder.GetRelativePath() + "/" + relativePath);
+		}
+		return files;
+	}
+
 	std::vector<std::string> ParseExtensionFilter(const std::string& filter)
 	{
 		std::vector<std::string> extensions;

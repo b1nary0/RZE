@@ -10,7 +10,7 @@ namespace Editor
 	class EditorSettings;
 
 	// Snapping for the SceneView transform gizmo: step-wise rotation and snap-to-grid translation.
-	// Owns the snap toggle and rotation step, and the state of the drag in progress; the snap size is shared
+	// Owns the snap toggle and the state of the drag in progress; the snap size and rotation step are shared
 	// (EditorSettings). Per frame, call PrepareManipulate
 	// before ImGuizmo::Manipulate and pass its result as the snap argument, then Apply to the
 	// translation and rotation ImGuizmo produced.
@@ -35,12 +35,12 @@ namespace Editor
 		bool IsEnabled() const { return m_isEnabled; }
 		void ToggleEnabled() { m_isEnabled = !m_isEnabled; }
 
-		// Degrees
-		float GetRotationStep() const { return m_rotationStep; }
-		void SetRotationStep(float rotationStep) { m_rotationStep = rotationStep; }
-
 		// The snap toggle and radio buttons for the snap size and rotation step, for the SceneView menu bar
 		void DisplayControls(EditorSettings& settings);
+
+		// One radio button per EditorSettings option, on the line of what's before them (e.g. a label)
+		static void DrawSnapSizeOptions(EditorSettings& settings);
+		static void DrawRotationStepOptions(EditorSettings& settings);
 
 		// Decides whether this frame snaps (the toggle, inverted while isInverted) and returns the snap
 		// array to hand ImGuizmo::Manipulate, or null when ImGuizmo shouldn't snap.
@@ -58,10 +58,10 @@ namespace Editor
 
 	private:
 		bool m_isEnabled = false;
-		float m_rotationStep = 15.0f;
 
 		// Set by PrepareManipulate for this frame
 		float m_snapSize = 1.0f;
+		float m_rotationStep = 15.0f;
 		bool m_isGridSnapping = false;
 		bool m_isRotationSnapping = false;
 		float m_imguizmoSnap[3] = { 0.0f, 0.0f, 0.0f };

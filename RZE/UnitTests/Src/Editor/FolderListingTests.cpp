@@ -118,3 +118,28 @@ TEST_CASE("ResolveSaveName refuses names Windows can't use")
 		CHECK_MESSAGE(!saveName.Error.empty(), name);
 	}
 }
+
+TEST_CASE("FindFiles finds files with the extension in subfolders too, sorted by path")
+{
+	const ScopedTestFolder folder("UnitTestsTemp_FolderListing");
+	folder.AddFile("b.meshasset");
+	folder.AddFile("Vehicles/Tank.MESHASSET");
+	folder.AddFile("Vehicles/Air/Plane.meshasset");
+	folder.AddFile("A.meshasset");
+	folder.AddFile("notes.txt");
+	folder.AddFolder("Empty");
+
+	std::vector<std::string> paths;
+	for (const Filepath& file : FindFiles(folder.Get(), ".meshasset"))
+	{
+		paths.push_back(file.GetRelativePath());
+	}
+
+	const std::string root = folder.Get().GetRelativePath();
+	CHECK(paths == std::vector<std::string>{ root + R"(\A.meshasset)", root + R"(\b.meshasset)", root + R"(\Vehicles\Air\Plane.meshasset)", root + R"(\Vehicles\Tank.MESHASSET)" });
+}
+
+TEST_CASE("FindFiles finds nothing in a folder that doesn't exist")
+{
+	CHECK(FindFiles(Filepath("UnitTestsTemp_NoSuchFolder"), ".scene").empty());
+}

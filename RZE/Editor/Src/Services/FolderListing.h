@@ -23,6 +23,10 @@ namespace Editor
 	// it. Empty if the folder doesn't exist.
 	std::vector<FolderEntry> ListFolder(const Filepath& folder, const std::vector<std::string>& extensions, const std::string& searchText = "");
 
+	// Every file under folder, in its subfolders too, with extension (e.g. ".scene", ignoring case), sorted by path.
+	// Empty if the folder doesn't exist.
+	std::vector<Filepath> FindFiles(const Filepath& folder, const std::string& extension);
+
 	// The extensions in a file-prompt style filter, for ListFolder: "*.scene;*.meshasset" gives { ".scene", ".meshasset" }.
 	// A filter that allows any file ("*.*", or empty) gives none, which ListFolder also takes as any file.
 	std::vector<std::string> ParseExtensionFilter(const std::string& filter);

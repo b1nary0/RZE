@@ -4,6 +4,7 @@
 #include <Utils/PrimitiveDefs.h>
 
 #include <string>
+#include <vector>
 
 namespace Editor
 {
@@ -45,5 +46,17 @@ namespace Editor
 
 		// Whether image exists and was written no earlier than asset was last changed
 		bool IsUpToDate(const Filepath& asset, const Filepath& image);
+
+		// How many of some assets' thumbnails are in what state
+		struct Coverage
+		{
+			size_t UpToDate = 0;
+			// Older than their asset
+			size_t OutOfDate = 0;
+			size_t Missing = 0;
+
+			size_t GetTotal() const { return UpToDate + OutOfDate + Missing; }
+		};
+		Coverage Survey(const std::vector<Filepath>& assets, const ThumbnailFolder& folder);
 	}
 }

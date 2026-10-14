@@ -13,8 +13,6 @@
 
 namespace
 {
-	constexpr float k_snapSizes[] = { 0.25f, 0.5f, 0.75f, 1.0f };
-	constexpr float k_rotationSteps[] = { 15.0f, 30.0f, 45.0f, 90.0f };
 	// An axis counts as moved once it's this far from where the drag started
 	constexpr float k_movedEpsilon = 1e-4f;
 }
@@ -30,30 +28,46 @@ namespace Editor
 
 		EditorUI::ToolbarGroupSeparator();
 		ImGui::TextUnformatted("Move step:");
-		for (float snapSize : k_snapSizes)
+		DrawSnapSizeOptions(settings);
+
+		EditorUI::ToolbarGroupSeparator();
+		ImGui::TextUnformatted("Rotate step:");
+		DrawRotationStepOptions(settings);
+	}
+
+	void GizmoSnapper::DrawSnapSizeOptions(EditorSettings& settings)
+	{
+		for (float snapSize : EditorSettings::k_snapSizeOptions)
 		{
 			char label[32];
 			snprintf(label, sizeof(label), "%g m##SnapSize", snapSize);
+			ImGui::SameLine();
 			if (ImGui::RadioButton(label, settings.GetSnapSize() == snapSize))
 			{
 				settings.SetSnapSize(snapSize);
 			}
 		}
+	}
 
-		EditorUI::ToolbarGroupSeparator();
-		ImGui::TextUnformatted("Rotate step:");
-		for (float rotationStep : k_rotationSteps)
+	void GizmoSnapper::DrawRotationStepOptions(EditorSettings& settings)
+	{
+		for (float rotationStep : EditorSettings::k_rotationStepOptions)
 		{
 			char label[32];
 			// UTF-8 degree sign, spelled out so it doesn't depend on the source file's encoding
 			snprintf(label, sizeof(label), "%g\xC2\xB0##RotationStep", rotationStep);
-			EditorUI::RadioOption(label, m_rotationStep, rotationStep);
+			ImGui::SameLine();
+			if (ImGui::RadioButton(label, settings.GetRotationStep() == rotationStep))
+			{
+				settings.SetRotationStep(rotationStep);
+			}
 		}
 	}
 
 	const float* GizmoSnapper::PrepareManipulate(const EditorSettings& settings, int operation, int mode, bool isInverted)
 	{
 		m_snapSize = settings.GetSnapSize();
+		m_rotationStep = settings.GetRotationStep();
 
 		const bool isSnapping = m_isEnabled != isInverted;
 		const bool isTranslating = operation == ImGuizmo::TRANSLATE;

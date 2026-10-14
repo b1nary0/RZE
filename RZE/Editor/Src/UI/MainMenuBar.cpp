@@ -162,6 +162,10 @@ namespace Editor
 		{
 			Duplicate(context);
 		}
+
+		ImGui::Separator();
+
+		context.GetPanels().DrawMenuItems("Edit");
 	}
 
 	void MainMenuBar::HandleEditShortcuts(EditorContext& context)

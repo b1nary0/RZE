@@ -33,6 +33,8 @@ namespace Editor
 		std::string MenuPath;
 		// Only used when there's no saved layout to restore (imgui.ini)
 		EPanelDock DefaultDock = EPanelDock::Floating;
+		// For a Floating panel the first time it opens, centred in the editor; zero leaves it to ImGui. Pixels.
+		ImVec2 DefaultSize = ImVec2(0.0f, 0.0f);
 		bool DefaultOpen = true;
 		// Shows the window's close button; panels that can't close are always open
 		bool Closable = true;

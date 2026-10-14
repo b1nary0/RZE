@@ -10,6 +10,10 @@ namespace Editor
 		static constexpr float k_snapIncrement = 0.25f;
 		static constexpr float k_maxSnapSize = 1.0f;
 
+		// What the scene view's toolbar and the Settings window offer
+		static constexpr float k_snapSizeOptions[] = { 0.25f, 0.5f, 0.75f, 1.0f };
+		static constexpr float k_rotationStepOptions[] = { 15.0f, 30.0f, 45.0f, 90.0f };
+
 	public:
 		EditorSettings() = default;
 		~EditorSettings() = default;
@@ -20,7 +24,12 @@ namespace Editor
 		// Rounded to the nearest k_snapIncrement and clamped to [k_snapIncrement, k_maxSnapSize]
 		void SetSnapSize(float snapSize);
 
+		// Degrees. How far the gizmo turns per step while snapping.
+		float GetRotationStep() const { return m_rotationStep; }
+		void SetRotationStep(float rotationStep) { m_rotationStep = rotationStep; }
+
 	private:
 		float m_snapSize = 1.0f;
+		float m_rotationStep = 15.0f;
 	};
 }

@@ -2,6 +2,11 @@
 
 #include <Services/Thumbnails.h>
 
+#include <TestFolder.h>
+
+#include <chrono>
+#include <filesystem>
+
 using namespace Editor;
 
 TEST_CASE("A thumbnail is the asset's file name as a PNG in the thumbnail folder")
@@ -38,4 +43,38 @@ TEST_CASE("FindFor picks an asset's image by its extension")
 	CHECK(Thumbnails::FindFor(image).GetRelativePath() == image.GetRelativePath());
 
 	CHECK_FALSE(Thumbnails::FindFor(Filepath("Assets/Shaders/Line.hlsl")).IsValid());
+}
+
+TEST_CASE("Survey counts thumbnails that are up to date, out of date and missing")
+{
+	const ScopedTestFolder folder("UnitTestsTemp_Thumbnails");
+	const ThumbnailFolder images(folder.Get().GetRelativePath() + "/Images");
+
+	// Each image a minute after or before its asset was changed
+	auto addImage = [&folder, &images](const Filepath& asset, bool isNewer)
+		{
+			const Filepath image = folder.AddFile("Images/" + asset.GetStem() + ".png");
+			const std::filesystem::file_time_type assetTime = std::filesystem::last_write_time(asset.GetAbsolutePath());
+			std::filesystem::last_write_time(image.GetAbsolutePath(), assetTime + std::chrono::minutes(isNewer ? 1 : -1));
+		};
+
+	const Filepath current = folder.AddFile("Current.scene");
+	const Filepath stale = folder.AddFile("Stale.scene");
+	const Filepath alsoCurrent = folder.AddFile("AlsoCurrent.scene");
+	const Filepath unrendered = folder.AddFile("Unrendered.scene");
+	addImage(current, true);
+	addImage(stale, false);
+	addImage(alsoCurrent, true);
+
+	const Thumbnails::Coverage coverage = Thumbnails::Survey({ current, stale, alsoCurrent, unrendered }, images);
+
+	CHECK(coverage.UpToDate == 2);
+	CHECK(coverage.OutOfDate == 1);
+	CHECK(coverage.Missing == 1);
+	CHECK(coverage.GetTotal() == 4);
+}
+
+TEST_CASE("Survey of no assets counts nothing")
+{
+	CHECK(Thumbnails::Survey({}, ThumbnailFolder("ProjectData/TestThumbnails")).GetTotal() == 0);
 }
