@@ -6,6 +6,7 @@
 #include <Assimp/scene.h>
 
 #include <Asset/AssetImport/MaterialAssetWriter.h>
+#include <Asset/AssetImport/SourceMaterialRules.h>
 
 #include <Utils/Memory/ByteStream.h>
 
@@ -148,8 +149,10 @@ std::string AssimpSourceImporter::FindCutoutMaskFallback(const aiScene& scene, c
 	//  - The material's scalar transparency ($raw.3dsMax|Parameters|transparency, $mat.transparencyfactor) is ignored.
 	//  - Only 3ds Max's property names are known. Maya (Stingray/StandardSurface), Blender and others name theirs
 	//    differently and still fall through to opaque.
-	//  - The mask's convention is assumed to match ours (white = solid). Max can invert maps in its own graph,
-	//    which we can't see here.
+	//  - The mask's convention is assumed to match ours (white = solid). It doesn't for New Sponza's dirt_decal:
+	//    transparency_map means white = transparent, and its file is the asset's own "invmask". So we keep the flat
+	//    plaster and cut away the drips. Part 2 of the plan fixes this with an InvertMask flag and by preferring
+	//    transparency_map over cutout_map (which points at the same file here, contradicting it).
 	// The proper fix reads these into a real transparency model (alpha blend vs. cutout, a factor, an inverted
 	// flag) instead of folding everything into the cutout slot.
 	static constexpr const char* k_rawMaskKeys[] =
@@ -512,10 +515,23 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 			materialData.Properties.Shininess = shininess * 4.0f;
 		}
 
-		float opacity = 0.0f;
-		if (mat->Get(AI_MATKEY_OPACITY, opacity) == AI_SUCCESS)
+		// Each source says how see-through it is in its own way; SourceMaterialRules picks one
 		{
-			materialData.Properties.Opacity = opacity;
+			SourceMaterialRules::SourceTransparency transparency;
+			float value = 0.0f;
+			if (mat->Get(AI_MATKEY_OPACITY, value) == AI_SUCCESS)
+			{
+				transparency.Opacity = value;
+			}
+			if (mat->Get(AI_MATKEY_TRANSPARENCYFACTOR, value) == AI_SUCCESS)
+			{
+				transparency.TransparencyFactor = value;
+			}
+			if (mat->Get("$raw.3dsMax|Parameters|transparency", 0, 0, value) == AI_SUCCESS)
+			{
+				transparency.MaxPhysicalTransparency = value;
+			}
+			materialData.Properties.Opacity = SourceMaterialRules::ChooseOpacity(transparency);
 		}
 
 		aiColor3D diffColour;
@@ -558,9 +574,8 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 			}
 		}
 
-		// #TODO(Transparency) (Docs/Plans/Transparency.md, Part 1) Glass comes in opaque. Only AI_MATKEY_OPACITY is read (into Properties.Opacity, above),
-		// and while it reaches the shaders' material buffer (PixelResources.hlsli) no shader uses it and nothing
-		// draws blended. FBX's $mat.transparencyfactor and 3ds Max's $raw.3dsMax|Parameters|transparency aren't read.
+		// #TODO(Transparency) Glass draws see-through but untinted: its colour (3ds Max's trans_color, base_color) isn't
+		// read, and an untextured material draws the default grey (Docs/Plans/Transparency.md).
 
 		// map_d pointing at the diffuse texture means "use the diffuse alpha"; a dedicated mask stores it in its colour channels
 		if (!materialData.TexturePaths[3].empty() && materialData.TexturePaths[3] == materialData.TexturePaths[0])
@@ -571,16 +586,8 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 		// Grayscale height/bump map (map_bump in .mtl). Distinct from tangent-space normal maps (map_Kn).
 		setTexture(aiTextureType_HEIGHT, 4, MaterialData::ETextureFlags::TEXTUREFLAG_HEIGHT);
 
-		// #TODO(Transparency) (Docs/Plans/Transparency.md, Part 1 step 4) Opacity only comes from AI_MATKEY_OPACITY so far,
-		// so FBX glass still lands Opaque here
-		if (materialData.Properties.Opacity < 1.0f)
-		{
-			materialData.BlendMode = MaterialData::EBlendMode::Transparent;
-		}
-		else if (materialData.TextureFlags & MaterialData::ETextureFlags::TEXTUREFLAG_OPACITY)
-		{
-			materialData.BlendMode = MaterialData::EBlendMode::Cutout;
-		}
+		// After every texture is resolved: a found mask makes it a cutout
+		materialData.BlendMode = SourceMaterialRules::ChooseBlendMode(materialData.TextureFlags, materialData.Properties.Opacity);
 
 		// #TODO really gross string manip lol
 		const std::string materialFolder = "ProjectData/Material/" + m_assetName + "/";

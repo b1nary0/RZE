@@ -1,7 +1,9 @@
 # Transparency and blending
 
-Status: planned. Today the forward pass draws everything opaque, and the only "see-through" a material can do is a
-cutout (`clip(mask - AlphaCutoff)` in `Assets/Shaders/Common/Lighting.hlsli`).
+Status: Part 1 done. Transparent materials draw blended, back to front (glass is see-through but untinted, and
+vanishes over empty background; see Part 1 step 3). Part 2 is planned. Before this, the forward pass drew everything
+opaque, and the only "see-through" a material could do was a cutout (`clip(mask - AlphaCutoff)` in
+`Assets/Shaders/Common/Lighting.hlsli`).
 
 What that costs us right now, from burning Intel's New Sponza FBX:
 
@@ -41,6 +43,10 @@ Goal: glass and other uniformly see-through surfaces draw blended, behind-to-fro
   - `Opacity < 1` gives `Transparent`, an opacity texture gives `Cutout`, otherwise `Opaque`.
   - Per-format quirks live in one function, so the Maya (Stingray/StandardSurface `opacity`, `transmission`) and
     Blender (glTF-style alpha) names can be added in one place.
+  - As built (`Engine/Src/Asset/AssetImport/SourceMaterialRules.h`): the FBX legacy factor comes before 3ds Max's
+    physical value, because the physical value calls clear glass fully transparent (invisible here), and a material
+    with a mask is `Cutout` even if it's also partly transparent (New Sponza's `dirt_decal`, Nyra's `cornea`) until
+    Part 2 lets masks blend.
 - **Engine:** `MaterialInstance` carries `BlendMode`. The editor's material properties show it and let you change it,
   so a wrong import can be fixed by hand.
 
@@ -109,6 +115,17 @@ stopgap goes away.
   `alpha = Opacity * mask`, and `Cutout` remains its own mode (`clip`, no blending).
 - **Mask conventions:** an `InvertMask` flag in the material, set by the importer when the source says the map is
   inverted, or by hand in the editor.
+  - **Known case, New Sponza's `dirt_decal`:** the stopgap currently uses its mask the wrong way round. The FBX connects
+    `textures\dirt_decal_01_mask_gltf.png` to both 3ds Max's `transparency_map` and `cutout_map`. In
+    `transparency_map` white means *more transparent*, and the asset agrees: the file is byte-for-byte its
+    `dirt_decal_01_invmask.png`, while `dirt_decal_01_mask.png` and both baked alpha files (`dirt_decal_01_alpha.png`,
+    `…_mask_gltf_alpha_dirt_decal_Opacity.png`) keep the drips and drop the flat areas. We treat white as solid, so the
+    walls get flat grey plaster with drip-shaped holes instead of drips.
+  - So: a `transparency_map` sets `InvertMask`, and when a 3ds Max material has both maps, `transparency_map` is the
+    one read. The two connections contradict here (`cutout_map` white normally means keep), and the asset's own baked
+    files side with `transparency_map`.
+  - With the mask the right way round and blending at the material's opacity (0.61), the dirt should read as soft
+    streaks over the bricks. Check against the shipped `dirt_decal_01_alpha.png`.
 - **Decals that sit on a surface** (New Sponza's `dirt_decal` geometry) z-fight with the wall behind them once they
   stop writing depth. Give blended decals a small depth bias, via a rasterizer state like `ShadowCaster` but with a
   negative bias, so they win the depth test against the surface they're laid on.
