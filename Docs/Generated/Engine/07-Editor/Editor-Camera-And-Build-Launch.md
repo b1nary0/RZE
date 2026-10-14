@@ -42,7 +42,7 @@ flowchart LR
 
 ### Framing an object (`FocusOn`)
 
-Double-clicking an object in the Scene panel calls `FocusOn(boundsMin, boundsMax)` with the object's hierarchy bounds (or just its position, for lights and empties). The camera then glides over 0.5 s:
+Double-clicking an object in the Scene panel calls `FocusOn(bounds)` with the object's hierarchy bounds (`GameObject::GetHierarchyBounds`), or a box around just its position for lights and empties. The camera then glides over 0.5 s:
 
 - It **approaches from the side it's already on** (the direction from the camera to the object, flattened onto the ground plane) and ends up looking down on the object from its current elevation, kept within **30–45°**.
 - It backs off far enough to fit the object's bounding sphere, plus 40% padding, so the object fills about 70% of the view and its surroundings stay visible. Tiny objects are treated as at least 0.5 m across.

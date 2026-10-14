@@ -64,7 +64,7 @@ Only the solid edges shown above are declared directly in Sharpmake (`AddPublicD
 | [04-Rendering](04-Rendering/Rendering-Overview.md) | RenderEngine, render stages, materials/meshes/shaders, the low-level renderer module |
 | [05-AssetPipeline](05-AssetPipeline/Asset-Burning-Pipeline.md) | Offline asset burning (SourceAssetBurner) and runtime asset loading |
 | [06-Platform-And-Infrastructure](06-Platform-And-Infrastructure/Input-System.md) | Input, events, windowing, config, threading, memory, debug services, Utils reference |
-| [07-Editor](07-Editor/Editor-Overview.md) | The ImGui-based scene editor: its [framework](07-Editor/Editor-Framework.md) (context, panels, commands, undo, events), panels, [Object Inspector and property descriptors](07-Editor/Object-Inspector-And-Properties.md), gizmo snapping and grid, and [every shortcut](07-Editor/Editor-Shortcuts.md) |
+| [07-Editor](07-Editor/Editor-Overview.md) | The ImGui-based scene editor: its [framework](07-Editor/Editor-Framework.md) (context, panels, commands, undo, events), panels, [Object Inspector and property descriptors](07-Editor/Object-Inspector-And-Properties.md), gizmo snapping and grid, the [file browser and thumbnails](07-Editor/Thumbnails-And-File-Browser.md), the [status bar and Settings window](07-Editor/Status-Bar-And-Settings.md), and [every shortcut](07-Editor/Editor-Shortcuts.md) |
 | [08-Game](08-Game/Game-App.md) | The playable game application shell |
 | [09-BuildSystem](09-BuildSystem/Sharpmake-Project-Graph.md) | Sharpmake project definitions, third-party dependencies |
 | [10-KnownIssues](10-KnownIssues/Architectural-Notes-And-TODOs.md) | Documented rough edges and TODOs found in the source |
@@ -112,6 +112,16 @@ timeline
                : Undo and redo, unsaved-changes prompt (Editor-Framework)
                : Copy and paste from memory (Editor-Overview)
                : Unit tests and EditorLib (Building-And-Running)
+               : Thumbnail file browser for load, save and asset picking
+               : GPU texture readback, ViewCapture to PNG (Engine-Graphics-Layer)
+    2026-10-13 : A RenderScene per GameScene, a shadow map per scene (Engine-Graphics-Layer)
+               : HeadlessScene for off-screen rendering
+               : Shared in-flight loads, resources destroyed once rendered (Asset-Import-Runtime)
+               : Background operations and job lane (Threading-And-Jobs)
+               : Status bar with task history (Status-Bar-And-Settings)
+               : BoundingBox, cached bounds, world matrices worked out when read
+               : Thumbnails rendered in the background, as they're needed
+               : Settings window (Status-Bar-And-Settings)
 ```
 
 | Area | What changed | Read |
@@ -129,6 +139,13 @@ timeline
 | Copy and paste | Copies are taken in memory through the property descriptors, not the scene format, so they include unsaved edits. Properties can be `ReadOnly` (kept, copied), `EditorOnly` (not recorded or copied) or `Exclusive` (one per scene). | [Editor-Overview](07-Editor/Editor-Overview.md#edit-copy-paste-and-duplicate), [Object-Inspector-And-Properties](07-Editor/Object-Inspector-And-Properties.md#metadata) |
 | Scene | The main camera is saved with the scene (`"MainCamera"`); there can be several cameras, and another takes over if it goes. Deleting removes children too, and removal keeps the scene's order. Objects can be out of the scene but kept alive. | [Scene-And-GameObject-Model](03-SceneAndGameObjects/Scene-And-GameObject-Model.md#the-main-camera) |
 | Build | Editor's code is the `EditorLib` library; `UnitTests` (doctest) covers Editor and Engine code and runs in CI. | [Building-And-Running](01-GettingStarted/Building-And-Running.md#unit-tests), [Sharpmake-Project-Graph](09-BuildSystem/Sharpmake-Project-Graph.md) |
+| File browser | Load Scene, Save on a new scene and the inspector's asset paths open a modal browser of thumbnail tiles, with search and subfolders. The Win32 file dialogs are gone. | [Thumbnails-And-File-Browser](07-Editor/Thumbnails-And-File-Browser.md) |
+| Thumbnails | Scene and mesh thumbnails render **in the background** in a `HeadlessScene`: on save, on load, for a tile with none, or from Settings. They're in `ProjectData` and aren't tracked. | [Thumbnails-And-File-Browser](07-Editor/Thumbnails-And-File-Browser.md) |
+| Render scenes | Each `GameScene` owns a `RenderScene` (objects, lights, debug lines, shadow map); any view can render any scene. `ViewCapture` renders one to a PNG through `Renderer::ReadTexture`. | [Engine-Graphics-Layer](04-Rendering/Engine-Graphics-Layer.md#scene-data), [Low-Level-Renderer-Module](04-Rendering/Low-Level-Renderer-Module.md#reading-back-from-the-gpu-readtexel-and-readtexture) |
+| Background work | `Background` async operations tick after foreground ones with their own small budget, and their jobs never take every worker. `Hidden` ones stay out of progress displays. Operations can log steps and warnings. | [Threading-And-Jobs](06-Platform-And-Infrastructure/Threading-And-Jobs.md#background-work), [Asset-Import-Runtime](05-AssetPipeline/Asset-Import-Runtime.md#async-operations) |
+| Resources | Loads in flight are shared between batches, and every resource is destroyed only once the render thread is done with it, including at shutdown. | [Asset-Import-Runtime](05-AssetPipeline/Asset-Import-Runtime.md#releasing-resources) |
+| Bounds & transforms | `BoundingBox`; render objects, render scenes and object hierarchies cache their bounds, and moving doesn't rebuild them. World matrices are worked out when read, so they're right without an update. | [Scene-And-GameObject-Model](03-SceneAndGameObjects/Scene-And-GameObject-Model.md#bounds), [Built-In-Components](03-SceneAndGameObjects/Built-In-Components.md#transformcomponent) |
+| Editor chrome | A status bar with background tasks, a status circle, and a history of every step. Edit > Settings opens a window of settings pages (Scene View, Thumbnails). | [Status-Bar-And-Settings](07-Editor/Status-Bar-And-Settings.md) |
 
 ## Key architectural themes (read this before diving into a section)
 

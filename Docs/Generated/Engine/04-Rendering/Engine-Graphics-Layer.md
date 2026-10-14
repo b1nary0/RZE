@@ -10,11 +10,9 @@ flowchart TD
         DL["DirectionalLightComponent"]
         CAM["CameraComponent /<br/>EditorCameraComponent"]
     end
-    subgraph RE["RenderEngine (Engine/Src/Graphics)"]
-        SD["SceneData<br/>render objects, lights,<br/>debug lines, revision"]
-        MV["main RenderView<br/>camera, viewport, target"]
-        PL["RenderPipeline<br/>+ render stages"]
-    end
+    SD["RenderScene<br/>one per GameScene: render objects,<br/>lights, debug lines, revision"]
+    MV["RenderEngine's main RenderView<br/>camera, viewport, target"]
+    PL["RenderEngine's RenderPipeline<br/>+ render stages"]
     LL["Rendering::Renderer<br/>(Modules/Rendering, render thread)"]
 
     RC -->|"CreateRenderObject / SetTransform"| SD
@@ -29,17 +27,17 @@ The render-side scene is deliberately separate from `GameScene`: a `RenderObject
 
 ## Scene data
 
-```cpp
-struct RenderEngine::SceneData
-{
-    RenderObjectContainer renderObjects;   // vector<unique_ptr<RenderObject>>
-    LightObjectContainer  lightObjects;    // vector<unique_ptr<LightObject>>
-    DebugLineContainer    debugLines;      // DrawLine / DrawWireBox, cleared every frame
-    U64 revision = 0;                      // bumped whenever anything that affects shadows changes
-};
-```
+A **`RenderScene`** (`Engine\Src\Graphics\RenderScene.h/.cpp`) is what one scene draws. **Each `GameScene` owns one** (`GameScene::GetRenderScene()`), and its components put their render objects and lights in it. Any view can render any scene, so a scene can be drawn without being the one on screen, e.g. a [`HeadlessScene`](../03-SceneAndGameObjects/Scene-And-GameObject-Model.md#headlessscene-a-scene-rendered-off-screen) for a thumbnail.
 
-**`revision`** is a cheap "did anything change?" counter. It goes up when a render object is added, removed, moved or given a new mesh, or when a light changes direction. `ShadowRenderStage` compares it with the revision it last rendered for and skips re-rendering the shadow map when nothing has changed.
+| Holds | Notes |
+|---|---|
+| Render objects, lights | `CreateRenderObject(staticMesh)` / `DestroyRenderObject`, `CreateLightObject()` / `DestroyLightObject`, `ClearObjects()` (render objects only) |
+| Debug lines | `DrawLine` / `DrawWireBox`, kept until `ClearDebugLines()`. `RenderEngine::Render` clears the main scene's once it has drawn them. |
+| `GetRevision()` | A cheap "did anything change?" counter. It goes up when a render object is added, removed, moved or given a new mesh, or when a light changes direction. `ShadowRenderStage` skips re-rendering the scene's shadow map when it hasn't changed. |
+| `GetBounds()` | The box around every render object, kept until one is added, removed, moved or given a new mesh, then rebuilt from the objects' boxes when next asked. |
+| Persistent stage state | What stages keep for this scene across frames, whichever view renders it: today, **each scene's own shadow map**. `ReleaseStageState()` drops it; it's made again the next time the scene is rendered. |
+
+`RenderEngine` doesn't own a scene. `SetMainScene(scene)` says which one the main view shows; `RZE_Engine` sets it to the active `GameScene`'s. `RenderEngine::DrawLine` / `DrawWireBox` draw into the main scene, for tools that draw over the main view (the editor's grid and gizmos).
 
 ### `RenderObject`
 
@@ -47,7 +45,7 @@ struct RenderEngine::SceneData
 |---|---|
 | `StaticMeshInstance` | The mesh's submeshes, each with its own material. |
 | `MatrixMem { transform, invTransform }` | `SetTransform()` is called every frame by `RenderComponent`, but returns early if the matrix hasn't changed. |
-| World-space bounds | Per submesh (`GetSubMeshBounds()`: 8 corners plus an axis-aligned min/max) and for the whole object (`GetBoundsMin/Max()`). Recomputed only when the mesh or transform changes. Used for frustum culling, shadow fitting, the Editor's marquee selection and its bounds boxes. |
+| Bounds | `GetLocalBounds()`: the mesh's box in the object's own space, which only changes with the mesh. `GetBounds()`: that box placed in the world as an axis-aligned `BoundingBox`. `GetSubMeshBounds()`: per submesh, 8 world-space corners plus the box around them. The world boxes are **worked out when asked** after the object moves or changes mesh (`MarkChanged()`), not on every move. Used for frustum culling, shadow fitting, framing thumbnails, the Editor's marquee selection and its bounds boxes. |
 | Pick ID | `SetPickID()` / `GetPickID()`. What `PickRenderStage` writes for this object's pixels. `RenderComponent` sets it to its owner's `GameObjectID + 1`, so 0 means "nothing pickable". |
 
 ### `LightObject`
@@ -66,6 +64,7 @@ public:
     Vector2D ViewportSize;
     Rendering::RenderTargetTexture* Target;  // owned by whoever owns the view
     float ExposureCompensation;              // EV on top of auto-exposure
+    bool DrawsDebug = true;                  // debug lines; off for clean captures such as thumbnails
     std::optional<RenderPickRequest> Pick;   // Editor click picking; cleared after each render
     // + a frame blackboard and a persistent blackboard (see Render-Stages.md)
 };
@@ -82,14 +81,32 @@ flowchart LR
     end
     subgraph Sec["Secondary views (any number)"]
         direction TB
-        S1["e.g. a CameraComponent's preview"]
-        S2["Target: the component's own texture"]
-        S3["Rendered by RenderSecondaryView()"]
+        S1["e.g. a CameraComponent's preview,<br/>or a ViewCapture"]
+        S2["Target: the owner's own texture"]
+        S3["Rendered by RenderSecondaryView()<br/>with any RenderScene"]
     end
 ```
 
-- `GetMainView()` returns the main view. The app sets its `Target` and `ViewportSize` (the Editor sizes it to the scene view panel); the active camera component fills in `Camera` every frame.
-- `RenderSecondaryView(name, view)` renders the scene into another view as part of the current frame. `CameraComponent` uses this for the "Camera View" preview it draws in the Editor's inspector (`CameraComponent::RenderPreview`, called from the camera's custom inspector section), so a preview is only rendered while that camera is selected. Stages marked `MainOnly` (picking, ImGui, the final blit) skip secondary views.
+- `GetMainView()` returns the main view. The app sets its `Target` and `ViewportSize` (the Editor sizes it to the scene view panel); the active scene's main camera fills in `Camera` every frame.
+- `RenderSecondaryView(name, view, scene)` renders a scene into another view as part of the current frame. `CameraComponent` uses this for the "Camera View" preview it draws in the Editor's inspector (`CameraComponent::RenderPreview`, called from the camera's custom inspector section), so a preview is only rendered while that camera is selected. Stages marked `MainOnly` (picking, ImGui, the final blit) skip secondary views.
+
+## Capturing a view to a file
+
+`ViewCapture` (`Engine\Src\Graphics\ViewCapture.h/.cpp`) renders a scene from a camera into an offscreen target of its own, at a size fixed when it's made, and saves it as a PNG. The editor's thumbnails use a 512×512 one; it's in the Engine so the game could take screenshots the same way.
+
+```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+flowchart TD
+    Cap["ViewCapture::Capture(scene, camera, exposure, file)"] --> Sec["RenderSecondaryView<br/>its own view, DrawsDebug off"]
+    Sec --> Save["TextureFile::SaveToPNG(target, file)"]
+    Save --> Read["Renderer::ReadTexture<br/>queued straight after the draw"]
+    Read --> Poll["background operation polls<br/>TextureReadback::IsReady"]
+    Poll --> Write["worker: WritePNG<br/>to file.tmp, then moved over file"]
+```
+
+- `Capture` returns the `AsyncOperation` that writes the file. The image is read back from the commands queued so far, so another capture can follow in the same frame.
+- **No debug lines** (grid, frustums, bounds boxes): its view has `DrawsDebug` off.
+- `TextureFile` (`Engine\Src\Graphics\TextureFile.h/.cpp`) wraps `stb_image_write`. `WritePNG(file, width, height, rgba)` is safe from any thread. It creates the folder, writes the PNG beside the file and moves it over the file (`File::MoveReplacing`), so readers only ever see a whole image. `SaveToPNG(texture, file)` is the GPU-to-file path above. Its operation is `Background | Hidden`, since whoever asked for the capture reports on it.
 
 ## Frame lifecycle
 
@@ -105,9 +122,9 @@ sequenceDiagram
     Note over Main,RE: game objects update<br/>(transforms, camera, debug lines)
     Main->>RE: Render("Main Render")
     RE->>R: BeginFrame
-    RE->>PL: Render(main view, scene data)
+    RE->>PL: Render(main view, main scene)
     PL->>R: each stage queues draw commands
-    RE->>RE: clear debug lines and the pick request
+    RE->>RE: clear the main scene's debug lines and the pick request
     RE->>R: EndFrame
     Main->>RE: Finish()
     RE->>R: DevicePresent()
@@ -121,10 +138,10 @@ Nothing touches D3D11 on the game thread; every `Renderer::` call just queues a 
 
 | Area | Calls |
 |---|---|
-| Lifetime | `Initialize(windowHandle)` (also adds the engine's stages), `Shutdown()`, `ClearObjects()`, `ReleaseRenderStages()` (must run before `ResourceHandler::ShutDown()`) |
-| Per frame | `Render(frameName)`, `Finish()`, `RenderSecondaryView(name, view)` |
-| Scene | `CreateRenderObject(staticMesh)` / `DestroyRenderObject`, `CreateLightObject()` / `DestroyLightObject` |
-| Debug drawing | `DrawLine(start, end, colour, alpha = 1, fade = {})`, `DrawWireBox(min, max, transform, colour, alpha = 1)`. `alpha` makes lines semi-transparent; `fade` (`DebugLineFade { centre, start, end }`) fades a line out with each pixel's distance from `centre`, between the `start` and `end` radii (`end` = 0: no fade). The editor grid uses both. |
+| Lifetime | `Initialize(windowHandle)` (also adds the engine's stages), `Shutdown()`, `ReleaseRenderStages()` (must run before `ResourceHandler::ShutDown()`), `WaitUntilIdle()` (until the render thread has run everything queued) |
+| Per frame | `Render(frameName)` (the main view, of the main scene), `Finish()`, `RenderSecondaryView(name, view, scene)` |
+| Scene | `SetMainScene(scene)` / `GetMainScene()`. Objects and lights are made in a [`RenderScene`](#scene-data). |
+| Debug drawing | Into the main scene: `DrawLine(start, end, colour, alpha = 1, fade = {})`, `DrawWireBox(box, transform, colour, alpha = 1)`. `alpha` makes lines semi-transparent; `fade` (`DebugLineFade { centre, start, end }`) fades a line out with each pixel's distance from `centre`, between the `start` and `end` radii (`end` = 0: no fade). The editor grid uses both. |
 | Stages | `AddRenderStage<T>(args...)` (see [Render-Stages.md](Render-Stages.md)) |
 | Views & canvas | `GetMainView()`, `ResizeCanvas(size)`, `GetCanvasSize()` |
 
@@ -132,7 +149,9 @@ Both object containers erase with swap-and-pop (`ContainerUtils::VectorEraseBack
 
 ## Key files
 
-- `Engine\Src\Graphics\RenderEngine.h/.cpp` — `RenderEngine`, `RenderObject`, `LightObject`
+- `Engine\Src\Graphics\RenderEngine.h/.cpp` — `RenderEngine`
+- `Engine\Src\Graphics\RenderScene.h/.cpp` — `RenderScene`, `RenderObject`, `LightObject`
 - `Engine\Src\Graphics\RenderView.h` — `RenderView`, `RenderCamera`, `RenderPickRequest`
+- `Engine\Src\Graphics\ViewCapture.h/.cpp`, `TextureFile.h/.cpp` — capturing a view to a PNG
 - `Engine\Src\Graphics\Frustum.h` — the six-plane view frustum used for culling and marquee selection
 - `Engine\Src\Graphics\GraphicsDefines.h` — `RenderObjectPtr` / `LightObjectPtr` handle wrappers

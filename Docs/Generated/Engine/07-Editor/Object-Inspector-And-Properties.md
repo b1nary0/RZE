@@ -50,7 +50,7 @@ void CameraComponent::DescribeProperties(PropertyBuilder<CameraComponent>& prope
 | `Vector3`, `Vector4` | `Vector3D`, `Vector4D` | getter returns by value or `const&` |
 | `Colour` | `Vector4D` | RGBA in 0–1, drawn as a colour picker |
 | `String` | `std::string` | |
-| `AssetPath` | `Filepath` | picked with a file prompt; set what to pick with `.Asset(title, folder, filter)` |
+| `AssetPath` | `Filepath` | picked in the file browser; set what to pick with `.Asset(title, folder, filter)` |
 | `Object<T>` | a nested described object | getter returns a reference, pointer or `shared_ptr`; read-only; drawn as a tree node |
 | `Array` | a list of nested objects | getter returns `std::vector<ObjectRef>`, e.g. from `MakeObjectRefs(vector)`; read-only |
 | `Value<T>` | a computed read-only value | getter is any callable taking the object, for values with no getter of their own |
@@ -94,7 +94,7 @@ Chained on any property:
 `PropertyInspector` draws a two-column label/value table (`EditorUI` property tables). The label column is sized to the widest label, and long labels show in full on hover. Each property's drawer comes from `PropertyDrawers`, by type:
 
 - Numbers and vectors use input or drag widgets according to the descriptor's range, step, format and widget hint. Properties that aren't editable (computed or `ReadOnly`) are drawn disabled.
-- `AssetPath` shows the path with a `...` button that opens the file prompt.
+- `AssetPath` shows the path with a `...` button that opens the [file browser](Thumbnails-And-File-Browser.md) on the property's folder and extensions, with thumbnails where the kind has them (meshes, scenes, images). The choice comes back through `FileBrowserModal::ConsumeResult` with the button's ImGui ID, so it's an ordinary property change: a `SetPropertyCommand`, undoable.
 - `Texture` shows the image, scaled to fit.
 - `Object` and `Array` properties are tree nodes, drawn by the inspector itself; their contents are read-only.
 

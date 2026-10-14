@@ -62,8 +62,14 @@ RZEHub is a GUI front-end that (per its buttons' names) invokes `SourceAssetBurn
 `_build\<config>\UnitTests.exe` runs the unit tests ([doctest](https://github.com/doctest/doctest) 2.4.11, vendored in `ThirdParty\Include\doctest\`). It exits non-zero if any fail; doctest's options apply (`--help`, `-tc="name*"` to pick test cases, `-s` to show passing checks).
 
 - **Project:** `UnitTests\` (`UnitTests.sharpmake.cs`). It links `EditorLib`, the Editor's code as a static library, and through it `Engine`, so tests can cover either. Run `GenerateSolutions.bat` after adding a test file.
-- **Layout:** `UnitTests\Src\Editor\` and `Src\Engine\` mirror the code under test. `TestComponents.h` has a test component with one property of each kind (`EditorOnly`, `Exclusive`, `ReadOnly`, computed), registered with `RegisterTestComponents()`.
-- **What's covered:** `UndoHistory` (steps, merging, the cap, the redo branch, `OnDropped`, the save point), `ParkedSubtree`, `GameObjectSnapshot` and the clipboard, `EditorSelection`, `InteractionTracker`, and `ComponentPropertyRegistry`.
+- **Layout:** `UnitTests\Src\Editor\`, `Src\Engine\` and `Src\Utils\` mirror the code under test. Shared helpers:
+  - `TestComponents.h`: a test component with one property of each kind (`EditorOnly`, `Exclusive`, `ReadOnly`, computed), registered with `RegisterTestComponents()`.
+  - `TestFolder.h`: `ScopedTestFolder`, a scratch folder beside the executable that's emptied at the start and removed at the end.
+  - `TestOperation.h`: an `AsyncOperation` a test can drive step by step.
+- **What's covered:**
+  - Editor: `UndoHistory` (steps, merging, the cap, the redo branch, `OnDropped`, the save point), `ParkedSubtree`, `GameObjectSnapshot` and the clipboard, `EditorSelection` and `InteractionTracker`; the file browser's listing and save names (`FolderListing`); thumbnails (`Thumbnails`, `ThumbnailQueue`) and `MeshFraming`; the status bar's `TaskTracker`; settings pages.
+  - Engine: `ComponentPropertyRegistry`, `GameScene`, `HeadlessScene`, `AsyncOperationManager` and `JobScheduler` (lanes, budgets), `ResourceHandler` (shared loads, deferred destroys), `TextureFile` (PNG round trip, atomic writes), `TransformComponent`, and object and render scene bounds.
+  - Utils: `BoundingBox`.
 - **No running engine.** Tests build their own `GameScene` and `EditorContext`; `main` (`TestMain.cpp`) only does what tests rely on from start-up: `MainThreadDispatcher::Initialize()` and `RZE_Application::RegisterEngineComponents()`. Code that needs a window or the render engine (e.g. `CameraComponent::OnAddToScene`, finding objects through `RZE().GetActiveScene()`) can't be tested this way.
 - **Asserts fail the test.** In Debug, a CRT report hook turns an engine assert into a failed check in the running test, with the assert's text, instead of a dialog, so a run never waits for input.
 

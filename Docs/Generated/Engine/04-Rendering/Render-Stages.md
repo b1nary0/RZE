@@ -56,7 +56,7 @@ flowchart TD
 | Port | `Graphics/RenderPorts.h` | What `Setup()` hands back: `RenderInput<T>` (`Get`/`TryGet`), `RenderOutput<T>` (`Publish`), `RenderInOut<T>`. A stage can only touch data it declared. |
 | `RenderPipeline` | `Graphics/RenderPipeline.h/.cpp` | Owns the stages; compiles the declarations when stages change, then runs them in order for a view. |
 | `RenderView` | `Graphics/RenderView.h` | One point of view: camera, viewport size, target, exposure compensation, pick request, and two blackboards. See [Engine-Graphics-Layer.md](Engine-Graphics-Layer.md#views). |
-| `RenderContext` | `Graphics/RenderContext.h` | What a stage gets while rendering one view: the view's inputs (read-only), the scene, `DeltaTime`, and `Persistent()`. |
+| `RenderContext` | `Graphics/RenderContext.h` | What a stage gets while rendering one view: the view's inputs (read-only), the `RenderScene` being drawn, `DeltaTime`, `Persistent()` (this view's state across frames) and `ScenePersistent()` (this scene's state across frames, shared by every view that renders it). |
 
 ## How the order is worked out
 
@@ -83,12 +83,13 @@ Every render is for one `RenderView`. There are two kinds:
 
 | | Main view | Secondary view |
 |---|---|---|
-| What it is | The picture shown to the user | An extra picture, e.g. a `CameraComponent` preview |
+| What it is | The picture shown to the user | An extra picture, e.g. a `CameraComponent` preview or a `ViewCapture` |
+| Scene | The active scene's (`RenderEngine::GetMainScene`) | Any `RenderScene`, passed in |
 | Rendered by | `RenderEngine::Render()` once per frame | `RenderEngine::RenderSecondaryView()`, on request |
 | `MainOnly` stages | Run | Skipped (`PickRenderStage`, `ImGuiRenderStage`, `FinalRenderTargetStage`) |
 | Eye adaptation | Adapts smoothly over time | Exposes instantly |
 
-Because stage objects are shared by every view, anything that must carry over between frames *for one view* (like eye-adaptation history) goes in `context.Persistent()`, not in a stage member.
+Because stage objects are shared by every view, anything that must carry over between frames *for one view* (like eye-adaptation history) goes in `context.Persistent()`, not in a stage member. Anything that belongs to *the scene*, whichever view draws it (like the shadow map), goes in `context.ScenePersistent()`.
 
 ## The stages
 
@@ -106,8 +107,8 @@ The engine adds Shadow, Forward, PostProcess, Pick and (outside Retail) DebugDra
 
 ### `ShadowRenderStage`
 
-- One 4096² shadow map for the directional light, **fitted around the bounds of every render object** as seen from the light. It doesn't follow the camera, so it never shimmers as the camera moves.
-- **Cached:** it only re-renders when `SceneData::revision` changes (an object added, removed, moved or re-meshed, or the light turned). On other frames it just republishes the existing map.
+- A 4096² shadow map for the directional light **per scene**, kept in the scene's persistent state (`RenderScene`), so a thumbnail's scene and the editor's each have their own. It's **fitted around the bounds of every render object** as seen from the light. It doesn't follow the camera, so it never shimmers as the camera moves.
+- **Cached:** it only re-renders when the scene's revision (`RenderScene::GetRevision`) changes: an object added, removed, moved or re-meshed, or the light turned. On other frames it just republishes the existing map.
 - Casters draw with `ERasterizerState::ShadowCaster` (no culling, so thin geometry still casts, plus slope-scaled depth bias). `Pixel_ShadowCaster.hlsl` clips cutout materials (leaves, chains), so they cast cut-out shadows.
 
 ### `ForwardRenderStage`
@@ -157,11 +158,11 @@ sequenceDiagram
 
 - **Cheap by design:** a 1×1 target means nothing to resize with the window, the one-pixel frustum culls nearly everything, and only 4 bytes come back.
 - `Pixel_PickID.hlsl` writes each `RenderObject::GetPickID()`. Objects with ID 0 still draw, so they hide what's behind them. Cutout pixels are clipped as in the shadow pass, so clicks go through them.
-- The readback makes the render thread wait for the GPU, but only on a click frame. See [`ReadTexel`](Low-Level-Renderer-Module.md#reading-back-from-the-gpu-readtexel).
+- The readback makes the render thread wait for the GPU, but only on a click frame. See [`ReadTexel`](Low-Level-Renderer-Module.md#reading-back-from-the-gpu-readtexel-and-readtexture).
 
 ### `DebugDrawRenderStage`
 
-Draws the lines queued with `RenderEngine::DrawLine()` / `DrawWireBox()` (bounds boxes, camera frustums, the light's direction, the editor grid) on top of the display colour, after tonemapping so they keep their exact colours. They depth-test against the scene. Lines can be semi-transparent: the stage turns on `EBlendState::AlphaBlend` for its draw and restores `Opaque` after. Each vertex also carries an optional distance fade (`FADECENTRE`, `FADERANGE`), which `Pixel_Line.hlsl` applies per pixel; pixels that fade to nothing are clipped so they don't write depth. The queue is cleared after the main view renders, so secondary views drawn earlier in the frame get them too. Compiled out of Retail builds.
+Draws the rendered scene's debug lines, queued with `RenderScene::DrawLine()` / `DrawWireBox()` or `RenderEngine`'s versions for the main scene (bounds boxes, camera frustums, the light's direction, the editor grid), on top of the display colour. A view with `DrawsDebug` off (a `ViewCapture`'s) skips it. They're drawn after tonemapping so they keep their exact colours. They depth-test against the scene. Lines can be semi-transparent: the stage turns on `EBlendState::AlphaBlend` for its draw and restores `Opaque` after. Each vertex also carries an optional distance fade (`FADECENTRE`, `FADERANGE`), which `Pixel_Line.hlsl` applies per pixel; pixels that fade to nothing are clipped so they don't write depth. The queue is cleared after the main view renders, so secondary views drawn earlier in the frame get them too. Compiled out of Retail builds.
 
 ### `ImGuiRenderStage` and `FinalRenderTargetStage`
 

@@ -2,7 +2,7 @@
 
 The SceneView's transform gizmo can snap moves to a world grid and turn in fixed steps, and a ground grid that matches the snap size is drawn under the scene. Both live in `Editor\Src\UI\Gizmo\` as classes the `SceneViewPanel` owns: `GizmoSnapper` and `EditorGrid`. Their toolbar controls sit in the SceneView's menu bar (`SceneViewPanel::DrawMenuBar`), separated into groups by the `EditorUI` toolbar helpers (`ScopedToolbarSpacing`, `ToolbarGroupSeparator`).
 
-The **move step** (snap size) is shared: it lives in `EditorSettings` on the `EditorContext`, because the gizmo, the grid and paste all use it (paste leaves that gap between copies; see [Editor-Overview.md](Editor-Overview.md#edit-copy-paste-and-duplicate)). `GizmoSnapper` keeps the toggle and the rotate step.
+The **move step** (snap size) and **rotate step** are shared: they live in `EditorSettings` on the `EditorContext`. The gizmo, the grid and paste all use the move step (paste leaves that gap between copies; see [Editor-Overview.md](Editor-Overview.md#edit-copy-paste-and-duplicate)), and both are also on the Settings window's **Scene View** page ([Status-Bar-And-Settings.md](Status-Bar-And-Settings.md#pages)). The toolbar and that page draw them with the same functions (`GizmoSnapper::DrawSnapSizeOptions` / `DrawRotationStepOptions`, over `EditorSettings::k_snapSizeOptions` / `k_rotationStepOptions`). `GizmoSnapper` keeps only the toggle, and reads both steps from the settings each frame (`PrepareManipulate`).
 
 ```
 Translate Rotate Scale | Local World | [ ] Snap (X) | Move step: (o)0.25 m ( )0.5 m ( )0.75 m ( )1 m | Rotate step: (o)15° ( )30° ( )45° ( )90° | [x] Grid  1 m squares
@@ -81,7 +81,7 @@ See [Render-Stages.md](../04-Rendering/Render-Stages.md#debugdrawrenderstage).
 
 - `Editor\Src\UI\Gizmo\GizmoSnapper.h/.cpp`
 - `Editor\Src\UI\Gizmo\EditorGrid.h/.cpp`
-- `Editor\Src\UI\Framework\EditorSettings.h/.cpp` — the shared snap size
+- `Editor\Src\UI\Framework\EditorSettings.h/.cpp` — the shared move and rotate steps, and their options
 - `Editor\Src\UI\Framework\EditorUI.h/.cpp` — spacing and separators for the SceneView toolbar groups
 - `Editor\Src\UI\Panels\SceneViewPanel.h/.cpp` — owns both, wires them to ImGuizmo and the camera
 - `Engine\Src\Graphics\RenderStages\DebugDrawRenderStage.h/.cpp`, `Assets\Shaders\Vertex_Line.hlsl`, `Pixel_Line.hlsl`

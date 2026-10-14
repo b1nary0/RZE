@@ -15,7 +15,9 @@ Key API:
 - Adding an object asserts its GUID is free; the scene only creates objects with free GUIDs, so a clash means the same object was added twice.
 - `Update()` — replaces the main camera if it's gone (below), processes deferred removals, then calls `Update()` only on **root** GameObjects in the scene; children are updated transitively because `GameObject::Update()` recurses into its own children.
 - `GetMainCamera()` / `SetMainCamera(camera)` — see [The main camera](#the-main-camera).
-- `Serialize(Filepath)` / `Deserialize(Filepath)` / `NewScene()` — JSON scene persistence via RapidJSON; see [Scene files](#scene-files). `Deserialize` is the synchronous load; the editor uses the asynchronous `SceneLoadOperation`.
+- `Serialize(Filepath)` / `Deserialize(Filepath)` / `NewScene()` — JSON scene persistence via RapidJSON; see [Scene files](#scene-files). `Deserialize` is the synchronous load; the editor uses the asynchronous `SceneLoadOperation`. `Serialize` writes a temporary file beside the scene and then moves it over the old one (`File::MoveReplacing`), so a failed save never leaves half a file.
+- `GetRenderScene()` — the scene's own [`RenderScene`](../04-Rendering/Engine-Graphics-Layer.md#scene-data): everything its components draw. `RZE_Engine` points the main view at the active scene's; any other scene's is only drawn when something renders it into a view of its own.
+- `GetBounds()` — the world-space box around everything the scene draws (`RenderScene::GetBounds`, cached until something in it changes). Used to frame a scene thumbnail when the scene has no camera.
 - `Start()` / `ShutDown()` / `Unload()` — lifecycle hooks called by `RZE_Engine`.
 
 ## `GameObject` (`Engine\Src\Game\World\GameObject\GameObject.h` / `.cpp`)
@@ -49,6 +51,8 @@ All three templated lookups are a linear `std::find_if` over `m_components` — 
 Persistence: `Save(writer)` writes the object's entry in the scene format (id, name, parent GUID, components), then each child's. `LoadComponents(entry)` adds the components in an entry; `GameScene` handles the object's identity and parent. Each component writes and reads its own data with `Serialize`/`Deserialize`.
 
 `GetComponentHandles(out)` returns lifetime-checked handles to every component, in order, for code that keeps them across frames (the editor's inspector).
+
+A `GameObject` is made with the scene it belongs to and keeps it for life (`GetScene()`). Components take what they need from it in `Initialize()` (e.g. `RenderComponent` and `DirectionalLightComponent` keep the scene's `RenderScene`) rather than looking it up each frame.
 
 ## Object relationship diagram
 
@@ -85,15 +89,43 @@ classDiagram
         +Deserialize()*
     }
     class TransformComponent {
-        -Matrix4x4 m_localTransform
         -Matrix4x4 m_worldTransform
+        -bool m_isDirty
         -TransformComponent* parent/children (own hierarchy)
+        +GetWorldMatrix() worked out when read
     }
 
     GameScene "1" o-- "*" GameObject : owns
     GameObject "1" *-- "*" GameObjectComponentBase : owns
     GameObjectComponentBase <|-- TransformComponent
 ```
+
+## Bounds
+
+`GameObject::GetHierarchyBounds()` is the world-space box around every mesh on an object and its descendants (empty if there are none). Double-click framing in the Scene panel uses it.
+
+- **Extents are kept in the object's own space** (`GetLocalHierarchyBounds`), built from each component's `GetLocalBounds()` (only `RenderComponent` has any) and each child's extents placed by the child's local matrix. Asking for the world box only places those extents with the object's world matrix (`BoundingBox::Transformed`), so **moving an object never rebuilds anything**.
+- **They're rebuilt only when what's under the object changes**: a mesh loads or changes, a component or child is added or removed, or a child moves within it. Each of those calls `MarkHierarchyBoundsChanged()`, which marks the object and walks up its ancestors. It stops at the first one that's already marked, since that one's ancestors were marked with it.
+- `BoundingBox` (`Utils\Src\Utils\Math\BoundingBox.h`) is empty until something grows it, so empty pieces (a light, a mesh still loading) add nothing.
+
+Render objects and render scenes cache their bounds the same way: see [`RenderObject`](../04-Rendering/Engine-Graphics-Layer.md#renderobject).
+
+## `HeadlessScene`: a scene rendered off-screen
+
+`HeadlessScene` (`Engine\Src\Game\HeadlessScene.h/.cpp`) is a `GameScene` of its own for rendering away from the screen, used by the editor's [thumbnail renderer](../07-Editor/Thumbnails-And-File-Browser.md). The active scene, the main view and the editor never see it.
+
+| Call | Does |
+|---|---|
+| `Load(scenePath)` | Replaces what's in it with a scene file, loaded in the background (`SceneLoadOperation`). Cancels a load still running. |
+| `Preload<T>(path)` | Loads a resource and its dependencies in the background (`ResourcePreloadOperation`) and keeps it loaded, so an object added later that uses it (e.g. `RenderComponent::LoadMesh`) finds it loaded instead of stalling the main thread. |
+| `ReleasePreloaded()` | Lets go of what was preloaded; what the scene's objects use stays loaded through them. |
+| `AddGameObject` / `RemoveGameObject` | Objects removed are destroyed straight away. |
+| `Capture(capture, camera, exposure, file)` | Renders its `RenderScene` from a camera into a [`ViewCapture`](../04-Rendering/Engine-Graphics-Layer.md#capturing-a-view-to-a-file) and writes a PNG. |
+| `Unload()` | Cancels loads, destroys everything, drops preloads and releases its render state (e.g. its shadow map). Must happen before the engine shuts down. |
+
+- It's **never updated**. A still capture doesn't need it: world matrices are worked out when read, render objects take their transform when they're made, and lights their direction when they're added.
+- Its loads are `Background | Hidden` [async operations](../06-Platform-And-Infrastructure/Threading-And-Jobs.md#background-work): they never block, and whoever uses the scene reports progress itself.
+- Main thread only.
 
 ## Handles: `GameObjectPtr` and `GameObjectComponentPtr<T>`
 
@@ -176,4 +208,6 @@ flowchart TD
 - `Engine\Src\Game\World\GameObject\GameObjectDefinitions.h`, `LiveIDSet.h`, `ObjectGUID.h/.cpp`
 - `Engine\Src\Game\SceneFormat.h/.cpp` — the file layout, version upgrades, `GameObjectLoader`
 - `Engine\Src\Game\SceneLoadOperation.h/.cpp`
+- `Engine\Src\Game\HeadlessScene.h/.cpp`, `Engine\Src\EngineCore\Resources\ResourcePreloadOperation.h/.cpp`
+- `Utils\Src\Utils\Math\BoundingBox.h/.cpp`
 - `Assets\Scenes\*.scene` — example serialized scenes (JSON)

@@ -23,6 +23,11 @@ Rough edges the codebase is candid about (source comments, `#TODO`s), plus a few
 | 15 | No prompt about unsaved changes | Editor | — | **Fixed** (10-12: undo/redo) |
 | 16 | Undoing Add Component brings back a new component | Editor | Low | Open |
 | 17 | Duplicate's undo step is named "Paste" | Editor | Cosmetic | Open |
+| 18 | `GifChatComponent`'s GIF paths resolve against the build folder | Components | Medium | Open |
+| 19 | `ResourceHandler` reads the renderer's frame counter | Resources | Low | Open |
+| 20 | Every component has `GetLocalBounds`, though few take up space | Components | Low | Open |
+| 21 | `RenderObjectPtr` / `LightObjectPtr` can be copied | Rendering | Low | Open |
+| 22 | A few long frames remain while thumbnails render | Editor | Low | Open |
 
 ```mermaid
 quadrantChart
@@ -87,7 +92,7 @@ The 2020 design notes called for both. **Culling** is implemented: objects and t
 
 ## 9. Shadow map misses runtime opacity-map changes
 
-`ShadowRenderStage` only re-renders when `SceneData::revision` changes, and changing a material's opacity map at runtime doesn't bump it. The source notes this gap: the shadow picks up the change at the next scene change. Bump the revision from `MaterialInstance::SetTexture` if it ever matters.
+`ShadowRenderStage` only re-renders when the scene's revision (`RenderScene::GetRevision`) changes, and changing a material's opacity map at runtime doesn't bump it. The source notes this gap: the shadow picks up the change at the next scene change. Bump the revision from `MaterialInstance::SetTexture` if it ever matters.
 
 ## 10. Constant-buffer uploads read past small structs
 
@@ -121,6 +126,26 @@ Undo removes an added component (`RemoveComponentByID`) and redo adds a fresh on
 
 Duplicate runs a `PasteGameObjectsCommand`, so Edit > Undo reads "Undo Paste" after a duplicate. Cosmetic; the command could take the step's name.
 
+## 18. `GifChatComponent`'s GIF paths resolve against the build folder
+
+`gifFilepaths[]` in `GifChatComponent.cpp` are global `Filepath`s, built during static initialisation, before `EditorMain` sets `EDirectoryContext::Tools`. So in the Editor they point at `_build\<config>\Assets\...` rather than the source tree. It works where `AssetCpy.bat` has copied the assets, though it may load a stale copy. A fresh clone or worktree asserts (`gifData != nullptr`) when it opens `RenderTest.scene`, which is also the Editor's default scene. Fix: build the paths when they're used.
+
+## 19. `ResourceHandler` reads the renderer's frame counter
+
+To destroy a resource only once the render thread is done with it ([Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md#releasing-resources)), `ResourceHandler` calls `Rendering::Renderer::GetRecordingFrame` and `IsFrameProcessed` directly. The resource system now knows a renderer detail. Injecting a frame fence or a "destroy when safe" policy would keep the two apart.
+
+## 20. Every component has `GetLocalBounds`, though few take up space
+
+`GameObject` builds its hierarchy bounds from each component's `GetLocalBounds()`, which is a virtual on `GameObjectComponentBase` returning an empty box. Only `RenderComponent` overrides it, so most components carry an API that means nothing for them. An `IBoundedComponent` interface that only space-taking components inherit would fit better.
+
+## 21. `RenderObjectPtr` / `LightObjectPtr` can be copied
+
+The handles into a `RenderScene` can be copied, so two owners can end up destroying the same object. Making them move-only would make ownership explicit.
+
+## 22. A few long frames remain while thumbnails render
+
+Background thumbnail runs keep frames short almost all the time. Over a full run in Release, 3 frames went over 100 ms, the worst at 167 ms, against 962 ms with the old blocking batch. Likely causes are each capture's GPU readback (the render thread waits on the GPU) and resources that don't load asynchronously falling back to a synchronous load. They haven't been profiled yet.
+
 ## Key files
 
 - `Engine\Src\Game\World\GameObject\GameObjectComponent.h` (1), `GameObject.h` (7)
@@ -132,3 +157,6 @@ Duplicate runs a `PasteGameObjectsCommand`, so Edit > Undo reads "Undo Paste" af
 - `Engine\Src\DebugUtils\DebugServices.cpp` (11)
 - `Engine\Src\Game\World\GameObjectComponents\CameraComponent.cpp` (12)
 - `Editor\Src\Commands\SceneCommands.cpp` (14), `Editor\Src\Services\SceneDocument.cpp` (15)
+- `Engine\Src\Game\World\GameObjectComponents\GifChatComponent.cpp` (18), `Engine\Src\EngineCore\Resources\ResourceHandler.cpp` (19)
+- `Engine\Src\Game\World\GameObject\GameObjectComponent.h` (20), `Engine\Src\Graphics\GraphicsDefines.h` (21)
+- `Editor\Src\Services\ThumbnailRenderer.cpp`, `Engine\Src\Graphics\TextureFile.cpp` (22)

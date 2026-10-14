@@ -24,11 +24,11 @@ flowchart TD
 
 ## The job system (`Engine\Src\EngineCore\Threading\JobSystem\`)
 
-A fixed pool of `MAX_WORKER_THREADS = 4` workers pulling from one shared queue.
+A fixed pool of `MAX_WORKER_THREADS = 4` workers pulling from two queues, one per [lane](#background-work).
 
 | Type | What it is |
 |---|---|
-| `JobScheduler` | Singleton (`JobScheduler::Get()`). `PushJob(task)` from any thread returns a `JobHandle` (ignore it for fire-and-forget). `Wait(handle)` blocks until a job is done; `WaitForIdle()` until the queue is empty and nothing is running. |
+| `JobScheduler` | Singleton (`JobScheduler::Get()`). `PushJob(task, lane = Foreground)` from any thread returns a `JobHandle` (ignore it for fire-and-forget). `Wait(handle)` blocks until a job is done; `WaitForIdle()` until both queues are empty and nothing is running. |
 | `Job` | A task (`std::function`, so captures must be copyable) plus its shared completion state. |
 | `JobHandle` | Stays valid however long the job or scheduler lives. `IsComplete()`; `WasAbandoned()` if the scheduler shut down before the job ran. |
 | `WorkerThread` | A thread that asks the scheduler for the next job and runs it. |
@@ -36,6 +36,17 @@ A fixed pool of `MAX_WORKER_THREADS = 4` workers pulling from one shared queue.
 On shutdown, queued jobs are abandoned (never run), running ones finish, then the workers are joined. Started in `RZE_Engine::Init()`, stopped in `BeginShutDown()` ([Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md)).
 
 Don't `Wait()` from a worker on a job that might be queued behind you; with only four workers that can deadlock.
+
+## Background work
+
+Some work nobody is waiting on, such as rendering thumbnails, shouldn't slow down work someone is waiting on, such as opening a scene. Two things keep it out of the way:
+
+| | Foreground | Background |
+|---|---|---|
+| **Jobs** (`Threading::EJobLane`) | Taken first | A worker only takes one when no foreground job is queued, and background jobs **never run on every worker at once** (at most `MAX_WORKER_THREADS − 1`), so a foreground job always has a worker free to start on |
+| **Async operations** (`EAsyncOperationFlags::Background`) | Ticked first, sharing the 8 ms budget | Ticked after, with 2 ms and a quarter of the upload allowance of their own; their `PushWorkerJob`s go to the background lane |
+
+An operation flagged `Background` gets both automatically. See [Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md#async-operations) for the flags.
 
 ## Getting back to the main thread: `MainThreadDispatcher`
 
@@ -52,7 +63,8 @@ A shared, cooperative cancel flag. Copies share state, so it can be captured by 
 ## Who uses all this
 
 - **Async operations** (`Engine\Src\EngineCore\Async\`): **scene loading** reads and parses on workers, then finalizes on the main thread a slice per frame; the Editor's **Build/Launch** runs as a worker job. See [Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md#async-operations).
-- **`AsyncResourceBatch`** runs each resource's `LoadCPU` as a worker job.
+- **`AsyncResourceBatch`** runs each resource's `LoadCPU` as a worker job, in its operation's lane.
+- **Editor thumbnails** load scenes and meshes, and encode PNGs, as background work ([Thumbnails-And-File-Browser.md](../07-Editor/Thumbnails-And-File-Browser.md)).
 
 ## Key files
 

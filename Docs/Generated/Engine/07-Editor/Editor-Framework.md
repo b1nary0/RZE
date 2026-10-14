@@ -22,21 +22,24 @@ flowchart TD
     Ctx --> State["State<br/>EditorSelection, editor camera,<br/>SceneViewportState, EditorSettings"]
     Ctx --> UI["UI<br/>PanelManager, ScenePicker"]
     Ctx --> Flow["Change flow<br/>CommandQueue, UndoHistory, EditorEvents"]
-    Ctx --> Svc["Services<br/>SceneDocument, GameBuilder,<br/>GameObjectClipboard, SelectionBoundsDisplay,<br/>UnsavedChangesPrompt"]
+    Ctx --> Svc["Services<br/>SceneDocument, GameBuilder,<br/>GameObjectClipboard, SelectionBoundsDisplay,<br/>ThumbnailRenderer"]
+    Ctx --> Modals["Modals<br/>UnsavedChangesPrompt, FileBrowserModal"]
 ```
 
 | Member | What it is |
 |---|---|
 | `GetEvents()` → `EditorEvents` | The event bus (below). Declared first, so it's destroyed last. |
-| `GetSettings()` → `EditorSettings` | Session-only preferences more than one place reads. Today: the snap size (0.25–1 m), used by the gizmo, the grid and paste. |
+| `GetSettings()` → `EditorSettings` | Session-only preferences more than one place reads. Today: the snap size (0.25–1 m), used by the gizmo, the grid and paste, and the gizmo's rotate step (15–90°). The scene view's toolbar and the Settings window both edit them. |
 | `GetSelection()` → `EditorSelection` | The selected GameObjects, in selection order. The **last** one is the **primary**: what the gizmo moves, the inspector shows first and the right-click menu acts on. Publishes `SelectionChangedEvent`. |
 | `GetEditorCamera()` / `GetEditorCameraComponent()` | The `"EditorCam"` object. Null while a scene is loading. |
 | `GetSceneViewport()` → `SceneViewportState` | Whether the SceneView is hovered (editor input only reaches the scene then) and its size in pixels. |
 | `GetScenePicker()` → `ScenePicker` | GPU picking: `RequestPick(x, y, callback)` asks `PickRenderStage` which object covers a pixel; the callback fires a frame or two later. |
 | `GetPanels()` → `PanelManager` | Every registered panel. `Find<T>()` exists for rare cases; prefer sharing state through the context. |
-| `GetSceneDocument()` → `SceneDocument` | New, load, save and save-as for the scene (`SaveWithPrompt()` asks for a file if it hasn't got one), and whether it has unsaved changes (worked out from the undo history; see [Save point](#the-save-point-and-unsaved-changes)). |
+| `GetSceneDocument()` → `SceneDocument` | New, load, save and save-as for the scene, and whether it has unsaved changes (worked out from the undo history; see [Save point](#the-save-point-and-unsaved-changes)). `SaveWithPrompt(onDone)` saves straight away if the scene has a file; otherwise it opens the file browser in Save mode and calls `onDone(true)` once saved, or `onDone(false)` if the browser is cancelled. |
 | `GetGameBuilder()` → `GameBuilder` | File > Build Game / Launch Game, on a worker thread. See [Editor-Camera-And-Build-Launch.md](Editor-Camera-And-Build-Launch.md). |
 | `GetClipboard()` → `GameObjectClipboard` | Copy and paste of GameObjects, held in memory as `GameObjectSnapshot`s (see [Editor-Overview.md](Editor-Overview.md#edit-copy-paste-and-duplicate)). |
+| `GetThumbnails()` → `ThumbnailRenderer` | Renders scene and mesh thumbnails in the background. `Request(asset, force)`, and `AddToBrowser(request)` to wire a file browser up to it. See [Thumbnails-And-File-Browser.md](Thumbnails-And-File-Browser.md). |
+| `GetFileBrowser()` → `FileBrowserModal` | The thumbnail file browser for opening, saving and picking files (same page). |
 | `GetCommands()` → `CommandQueue` | Where scene changes go (below). |
 | `GetUndoHistory()` → `UndoHistory` | What the commands did, for undo and redo (below). |
 | `GetUnsavedChangesPrompt()` → `UnsavedChangesPrompt` | Asks Save / Don't Save / Cancel before anything that would lose unsaved changes (below). |
@@ -76,6 +79,7 @@ REGISTER_EDITOR_PANEL(LogPanel);   // in LogPanel.cpp
 | `Name` | Window title and ImGui ID. Renaming a panel loses its saved dock position. |
 | `MenuPath` | Where its checkable menu item goes, starting with a main menu (`"View/Windows/Log"`, `"Help/ImGui Demo"`). Empty leaves it out of the menus. Items are sorted by name. |
 | `DefaultDock` | `Left`, `Right`, `Bottom`, `Center` or `Floating`, for the generated layout. |
+| `DefaultSize` | For a `Floating` panel: its size the first time it opens, centred in the editor (until `imgui.ini` has one). Zero leaves it to ImGui. |
 | `DefaultOpen` | Open on first run. |
 | `Closable` | Shows the close button. A panel that can't close is always open (the SceneView). |
 | `WindowFlags` | Passed to `Begin`. Include `ImGuiWindowFlags_MenuBar` to get a `DrawMenuBar()` call. |
@@ -83,9 +87,9 @@ REGISTER_EDITOR_PANEL(LogPanel);   // in LogPanel.cpp
 
 Optional hooks: `Initialize(context)` (once, after every panel exists), `DrawMenuBar(context)`, `OnSceneReset()`, and `PushWindowStyle(style)` (style vars that cover the title bar and tab too).
 
-`PanelManager` creates every registered panel at start-up, sorted by name. Each frame it updates and draws the open ones, builds the View and Help menu items from their `MenuPath`s, and, when `imgui.ini` has no saved layout, docks each panel into its `DefaultDock` slot.
+`PanelManager` creates every registered panel at start-up, sorted by name. Each frame it updates and draws the open ones, builds the Edit, View and Help menu items from their `MenuPath`s, and, when `imgui.ini` has no saved layout, docks each panel into its `DefaultDock` slot.
 
-> **Registration and linking.** `REGISTER_EDITOR_PANEL` (and `REGISTER_COMPONENT_INSPECTOR`) register from static initializers that nothing else references. The Editor's code is built as the `EditorLib` static library (so [the unit tests](../01-GettingStarted/Building-And-Running.md#unit-tests) can link it), and a linker drops unreferenced objects from a library, so `Editor` links `EditorLib` with `/WHOLEARCHIVE` to keep them. Anything else that links `EditorLib`, such as `UnitTests`, gets no panels unless it does the same.
+> **Registration and linking.** `REGISTER_EDITOR_PANEL` (and `REGISTER_COMPONENT_INSPECTOR`, `REGISTER_SETTINGS_PAGE`) register from static initializers that nothing else references. The Editor's code is built as the `EditorLib` static library (so [the unit tests](../01-GettingStarted/Building-And-Running.md#unit-tests) can link it), and a linker drops unreferenced objects from a library, so `Editor` links `EditorLib` with `/WHOLEARCHIVE` to keep them. Anything else that links `EditorLib`, such as `UnitTests`, gets no panels unless it does the same.
 
 ## When things run in a frame
 
@@ -104,10 +108,11 @@ sequenceDiagram
     App->>PM: UpdateAll - each open panel's Update()
     Eng->>Eng: ImGui NewFrame
     Eng->>App: Update()
-    App->>App: main menu bar, dockspace
+    App->>App: main menu bar, status bar, dockspace
     App->>PM: DrawAll - each open panel's Draw()
     App->>Q: Flush - apply this frame's commands,<br/>record them in UndoHistory
     Q-->>App: SceneModifiedEvent if any ran
+    App->>App: modals - progress, unsaved changes,<br/>file browser
     Eng->>Scene: Update()
     Eng->>Eng: render
 ```
@@ -210,11 +215,11 @@ The history also keeps a **save point**: its position at the last save or load. 
 `UnsavedChangesPrompt` (`UI\Modals\`) guards anything that would lose unsaved changes:
 
 ```cpp
-context.GetUnsavedChangesPrompt().Request(context, "loading another scene", [&scene]() { /* file prompt, then Load */ });
+context.GetUnsavedChangesPrompt().Request(context, "loading another scene", [&scene]() { /* file browser, then Load */ });
 ```
 
 - If the scene has no unsaved changes, the action runs straight away.
-- Otherwise a modal asks *"Sponza.scene has unsaved changes. Save them before loading another scene?"*: **Save** (then the action), **Don't Save** (the action), **Cancel** or Escape (nothing). Choosing Save on a new scene opens Save As; cancelling that cancels the action too, so the changes aren't lost.
+- Otherwise a modal asks *"Sponza.scene has unsaved changes. Save them before loading another scene?"*: **Save** (then the action), **Don't Save** (the action), **Cancel** or Escape (nothing). Choosing Save on a new scene opens the file browser in Save mode (`SaveWithPrompt`); cancelling it cancels the action too, so the changes aren't lost. The prompt stays pending (`IsOpen()`) while the browser is up.
 - New, Load and Exit go through it, and so does closing the window: the engine turns the window's close button into `Window_CloseRequested`, and `EditorApp::OnCloseRequested()` returns false and opens the prompt while there are unsaved changes ([App-Shell-Pattern.md](../02-Architecture/App-Shell-Pattern.md)).
 
 ## Events
@@ -247,6 +252,7 @@ Current listeners:
 | `SceneDocument` | Scene modified | Sets `IsModified()` from the undo history's save point |
 | `SelectionBoundsDisplay` | Selection changed | Turns mesh bounds on for newly selected objects and off for deselected ones, through `RenderComponent`'s own toggle so the inspector checkbox agrees |
 | `EditorApp` | Loaded, saved, modified state | Sets the window title: `RZEStudio - <file>`, `*` while there are unsaved changes, `Untitled` for a new scene |
+| `ThumbnailRenderer` | Loaded, saved | Renders the scene's thumbnail in the background: after a save always, after a load if it's missing or out of date |
 
 Rules:
 
@@ -271,7 +277,9 @@ Rules:
 | A scene change from the UI | Write an `EditorCommand` holding handles; check `UndoTargets::IsInScene` before changing anything, and give it an `UndoRecord` that finds its target by GUID. Push it from `Draw()`, with the interaction ID if it's part of a drag |
 | Something that would lose unsaved changes | Run it through `UnsavedChangesPrompt::Request` |
 | Something that reacts to loading, saving, selection or edits | Subscribe to the event, keeping the `EventSubscription` as a member |
-| A shared preference | Add it to `EditorSettings` |
+| A shared preference | Add it to `EditorSettings`, and a control for it on a Settings page |
+| A Settings page | Subclass `SettingsPage` (`GetName()`, `Draw(context)`), put `REGISTER_SETTINGS_PAGE` in the `.cpp`, then run `GenerateSolutions.bat`. See [Status-Bar-And-Settings.md](Status-Bar-And-Settings.md#the-settings-window) |
+| Long-running work | An `AsyncOperation`: `Blocking` if the user must wait, `Background` if not. Visible ones show in the status bar, with what they log ([Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md#async-operations)) |
 | A component's inspector fields | Describe its properties; see [Object-Inspector-And-Properties.md](Object-Inspector-And-Properties.md) |
 
 ## Key files
@@ -279,7 +287,8 @@ Rules:
 - `Editor\Src\UI\Framework\EditorContext.h/.cpp`, `EditorSelection`, `EditorSettings`, `EditorEvents`, `ScenePicker`, `InteractionTracker`, `EditorUI`
 - `Editor\Src\UI\Framework\EditorPanel.h/.cpp`, `PanelRegistry.h/.cpp`, `PanelManager.h/.cpp`
 - `Editor\Src\Commands\EditorCommand.h`, `CommandQueue.h/.cpp`, `SceneCommands`, `TransformCommands`, `PropertyCommands`, `HistoryCommands`, `UndoRecord`, `ParkedSubtree`
-- `Editor\Src\Services\SceneDocument`, `GameBuilder`, `GameObjectClipboard`, `GameObjectSnapshot`, `SelectionBoundsDisplay`, `UndoHistory`
-- `Editor\Src\UI\Modals\UnsavedChangesPrompt.h/.cpp`
+- `Editor\Src\Services\SceneDocument`, `GameBuilder`, `GameObjectClipboard`, `GameObjectSnapshot`, `SelectionBoundsDisplay`, `UndoHistory`, `ThumbnailRenderer`
+- `Editor\Src\UI\Modals\UnsavedChangesPrompt.h/.cpp`, `FileBrowserModal.h/.cpp`
+- `Editor\Src\UI\Settings\` — `SettingsPage`, `SettingsPageRegistry` and the pages
 - `Editor\Src\UI\MainMenuBar.h/.cpp`, `Editor\Src\EditorApp.h/.cpp`
 - `Engine\Src\EngineApp.h` (`PreUIUpdate`), `Engine\Src\EngineCore\Engine.cpp` (frame order)

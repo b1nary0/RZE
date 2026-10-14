@@ -37,8 +37,8 @@ public:
 	// Worked out when it's read after a change, here or in a parent, so it's right straight away (e.g. when a
 	// render object is made for a mesh that's just been loaded), whether or not the scene has been updated since
 	const Matrix4x4& GetWorldMatrix() const;
-	// Where it sits in its parent (its position, rotation and scale), or in the world for a root. Worked out now,
-	// rather than kept up to date each frame like GetWorldMatrix.
+	// Where it sits in its parent (its position, rotation and scale), or in the world for a root. Worked out on each
+	// call, rather than kept like GetWorldMatrix.
 	Matrix4x4 GetLocalMatrix() const;
 
 	//

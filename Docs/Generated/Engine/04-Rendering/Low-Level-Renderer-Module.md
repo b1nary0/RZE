@@ -88,7 +88,7 @@ gantt
 | Targets | `SetRenderTarget`, `SetRenderTargetBackBuffer`, `SetColourTarget` (colour, optionally with depth), `SetDepthTarget` (depth only, e.g. shadow maps), `ClearRenderTarget`, `ClearRenderTargets`, `ClearDepthStencilBuffer` |
 | Pipeline state | `SetViewport`, `SetInputLayout`, `SetPrimitiveTopology`, `SetRasterizerState`, `SetBlendState`, `SetVertexShader`, `SetPixelShader`, `SetConstantBufferVS`, `SetConstantBufferPS`, `SetVertexBuffer`, `SetIndexBuffer`, `SetTextureResource`, `UnsetTextureResource` |
 | Draw | `Draw`, `DrawIndexed`, `DrawFullScreenQuad` |
-| Readback | `ReadTexel` |
+| Readback | `ReadTexel`, `ReadTexture` |
 
 Every one of these has a matching `RenderCommand_*` POD struct carrying exactly the parameters that call needs (e.g. `RenderCommand_SetConstantBufferVS { ConstantBufferHandle bufferHandle; U32 bufferSlot; }`).
 
@@ -106,13 +106,14 @@ Everything is a static call on `Rendering::Renderer`, and every call only *queue
 
 | Area | Calls |
 |---|---|
-| Lifetime | `Initialize`, `Shutdown`, `HandleWindowResize` |
+| Lifetime | `Initialize`, `Shutdown`, `HandleWindowResize`, `WaitUntilIdle` (blocks until the render thread has run every frame it's been given, e.g. while shutting down) |
+| Frame tracking | `GetRecordingFrame()` (the frame being recorded, counting up at each `DevicePresent`), `IsFrameProcessed(frame)` (the render thread has run every command pushed up to the end of that frame). `ResourceHandler` uses these to destroy a resource only once nothing queued can still read it ([Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md)). |
 | Frame and passes | `BeginFrame` / `EndFrame`, `Begin(name)` / `End()` (one pass; also resets the rasterizer state and names the pass for PIX), `DevicePresent`, `ImGuiRender` |
 | Resources | `CreateVertexBuffer`, `CreateDynamicVertexBuffer` + `UpdateVertexBuffer`, `CreateIndexBuffer`, `CreateConstantBuffer`, `CreateTextureBuffer2D`, `CreateVertexShader`, `CreatePixelShader`, `Release*Shader`, `UploadDataToBuffer<T>` (copies the data, so a stack variable is fine), `GenerateMips` |
 | Targets | `SetColourTarget(colour[, depth])`, `SetDepthTarget`, `SetRenderTarget`, `SetRenderTargetBackBuffer`, `ClearRenderTarget`, `ClearDepthStencilBuffer` |
 | State | `SetViewport`, `SetInputLayout`, `SetPrimitiveTopology`, `SetRasterizerState` (`Default` = back-face culling, `ShadowCaster` = no culling + slope-scaled depth bias), `SetBlendState` (`Opaque` = no blending, `AlphaBlend` = source alpha over the target, leaving the target's alpha unchanged), shaders, constant buffers, vertex/index buffers, texture slots |
 | Draw | `Draw`, `DrawIndexed`, `DrawFullScreenQuad` |
-| Readback | `ReadTexel` (below) |
+| Readback | `ReadTexel`, `ReadTexture` (below) |
 
 Texture formats (`ETextureFormat`): `RGBA8_UNORM` (default), `RGBA16_FLOAT` (HDR scene colour), `RG16_FLOAT`, `R32_UINT` (integer IDs for picking). Depth textures are `D24_UNORM_S8_UINT`, with an optional shader-readable view.
 
@@ -125,13 +126,17 @@ For geometry rewritten every frame (debug lines, gizmos), `DynamicVertexBuffer` 
 
 In steady state this means no GPU allocations at all.
 
-### Reading back from the GPU: `ReadTexel`
+### Reading back from the GPU: `ReadTexel` and `ReadTexture`
 
 ```cpp
 static void ReadTexel(const TextureBuffer2DHandle& texture, U32 x, U32 y, std::shared_ptr<TexelReadback> result);
+static void ReadTexture(const TextureBuffer2DHandle& texture, std::shared_ptr<TextureReadback> result);
 ```
 
-Copies one texel of a 4-byte-per-texel texture (e.g. the `R32_UINT` format, added for picking) back to the CPU. On the render thread, the command creates a 1×1 `D3D11_USAGE_STAGING` texture, `CopySubresourceRegion`s the texel into it and `Map`s it, then writes `TexelReadback::Value` and sets `TexelReadback::IsReady` (`Rendering\TexelReadback.h`). Callers poll `IsReady` from any thread; the result arrives once the render thread has processed that frame's commands. `Map` waits for the GPU to finish drawing the texel, so this is for occasional reads such as the Editor's click picking (`PickRenderStage`), not per-frame use.
+- **`ReadTexel`** copies one texel of a 4-byte-per-texel texture (e.g. the `R32_UINT` format, added for picking) into `TexelReadback::Value` (`Rendering\TexelReadback.h`).
+- **`ReadTexture`** copies the whole of mip 0 into `TextureReadback` (`Rendering\TextureReadback.h`): `Width`, `Height`, `BytesPerTexel` and `Data`, rows from the top, tightly packed. It copies row by row, since the GPU's row pitch can be wider than a row. `TextureFile::SaveToPNG` uses it to save captures ([Engine-Graphics-Layer.md](Engine-Graphics-Layer.md#capturing-a-view-to-a-file)).
+
+Both go through one helper on the render thread: it creates a `D3D11_USAGE_STAGING` texture the size of the region, `CopySubresourceRegion`s into it, `Map`s it, and hands back the rows with their pitch. The result's `IsReady` is set at the end; callers poll it from any thread, and it's true once the render thread has processed that frame's commands. `Map` waits for the GPU to finish drawing the texture, so these are for occasional reads such as the Editor's click picking (`PickRenderStage`) or saving a thumbnail, not per-frame use.
 
 `R32_UINT` textures are created without `D3D11_RESOURCE_MISC_GENERATE_MIPS`, since integer formats don't support mip generation.
 
@@ -146,7 +151,7 @@ Copies one texel of a 4-byte-per-texel texture (e.g. the `R32_UINT` format, adde
 - `Modules\Rendering\Src\Rendering\Renderer.h/.cpp`
 - `Modules\Rendering\Src\Rendering\RenderThread.h/.cpp`
 - `Modules\Rendering\Src\Rendering\RenderCommand.h`
-- `Modules\Rendering\Src\Rendering\TexelReadback.h`
+- `Modules\Rendering\Src\Rendering\TexelReadback.h`, `TextureReadback.h`
 - `Modules\Rendering\Src\Rendering\MemArena.h/.cpp`
 - `Modules\Rendering\Src\Rendering\BufferHandle.h/.cpp`, `ShaderHandle.h`
 - `Modules\Rendering\Src\Rendering\Driver\GFXDevice.h`, `GFXBuffer.h`, `ShaderTypes.h`, `TypeDefines.h`

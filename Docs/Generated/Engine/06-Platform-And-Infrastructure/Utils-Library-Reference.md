@@ -25,6 +25,7 @@ All spatial values follow [World-Conventions.md](../02-Architecture/World-Conven
 | `Matrix4x4.h/.cpp` | Wraps `glm::mat4` (column-major). Builders: `CreateInPlace(position, scale, eulerDegrees)`, `CreateViewMatrix`, `CreatePerspectiveMatrix` / **`CreatePerspectiveMatrixZeroToOne`** (use this one: D3D's 0..1 depth), `CreateOrthoMatrix` / `CreateOrthoMatrixZeroToOne`, `CreateSubRectProjection(ndcMinX, ndcMinY, ndcMaxX, ndcMaxY)` (narrows a projection to part of the view; used by marquee selection and picking). Instance: `Translate`, `Rotate(angleRadians, axis)`, `Scale`, `Inverse`, `Transpose`, `GetPosition` / `GetRotation` / `GetScale`, `GetRow(i)` (as it multiplies a column vector), `GetValuePtr()`, `operator*` with matrices and `Vector4D`, `IDENTITY`. |
 | `Quaternion.h/.cpp` | Rotations. Built from `eulerRadians`, `FromEulerDegrees`, `FromAngleAxis(angleRadians, axis)` or the rotation between two vectors; `ToEulerDegrees()`, `ToAngleRadians()`, `ToAxis()`, `Inverse()`, `Normalized()`, multiplication by quaternions and vectors. |
 | `Plane.h/.cpp` | `Plane(normal, distance)`, or from `ax + by + cz + d` coefficients (`Vector4D`). `SignedDistance(point)` is positive on the side the normal points to. |
+| `BoundingBox.h/.cpp` | An axis-aligned box. **Empty when made with no arguments**: it holds nothing, and growing it by a point or box makes it exactly that (`IsEmpty()`; growing by an empty box changes nothing). `Around(points)`, `GetCentre`, `GetSize`, `GetRadius` (half the diagonal), `GetCorners` / `GetTransformedCorners(matrix)`, and `Transformed(matrix)`: the axis-aligned box around it once transformed, worked out from the matrix (Arvo's method) instead of 8 corners, for affine transforms. Used for render object, scene and hierarchy bounds, culling and framing. |
 
 `Frustum` (six planes taken from a view-projection matrix, with a box test) lives in the Engine at `Engine\Src\Graphics\Frustum.h`, since only rendering and the Editor use it.
 
@@ -35,7 +36,7 @@ Covered in depth in [Memory-Management.md](Memory-Management.md): `ByteStream.h/
 ## Platform (`Platform\`)
 
 - `FilePath.h/.cpp` — `class Filepath`: stores both `m_relativePath` and `m_absolutePath`. `EDirectoryContext { Runtime, Tools }` — a static, **process-wide** context switch (`Filepath::SetDirectoryContext`) that changes how relative paths resolve. Set to `Tools` in `EditorMain.cpp` and `SourceAssetBurnerMain.cpp`; left at the default (`Runtime`) in the Game. This single toggle is what lets identical relative path strings like `"Assets/Scenes/..."` resolve correctly whether the code is running as an offline tool or the shipped game. Also: `CreateDir`, `FromAbsolutePathStr`, `Exists`, `GetAbsolutePath`/`GetRelativePath`, `GetAbsoluteDirectoryPath`/`GetRelativeDirectoryPath`, `IsValid`.
-- `File.h/.cpp` — `class File` wraps `std::ofstream` with an `EFileOpenMode` (`Append`/`AtEnd`/`Binary`/`Read`/`Write`/`Truncate`/`Closed`, mapped onto `std::ios_base::openmode`), templated `Overwrite<T>`/`Write<T>`, `operator<<`, `Content()`.
+- `File.h/.cpp` — `class File` wraps `std::ofstream` with an `EFileOpenMode` (`Append`/`AtEnd`/`Binary`/`Read`/`Write`/`Truncate`/`Closed`, mapped onto `std::ios_base::openmode`), templated `Overwrite<T>`/`Write<T>`, `operator<<`, `Content()`. For writing a file so readers never see half of it: write to `File::GetTemporaryPathFor(path)` (the path plus `.tmp`), then `File::MoveReplacing(temporary, path)` renames it over the old file in one step. It returns false if it couldn't (e.g. the file is open elsewhere) and removes the temporary file either way. Scene saves and PNG writes use it.
 - `CmdLine.h/.cpp` — `CmdLine::Arguments::Initialize(argv, argc)`, `Get(name, out std::string_view)` and `GetInt(name, out int)`: simple `-flag value` command-line parsing, used for `-scene` (Editor, Game) and `-launchMonitor` (engine).
 - `Timers\HiResTimer.h/.cpp` — high-resolution timer backing `START_TIMED_BLOCK` in `Debug.h`.
 
@@ -54,7 +55,7 @@ Covered in depth in [Memory-Management.md](Memory-Management.md): `ByteStream.h/
 
 - `Utils\Src\StdAfx.h` — confirms GLM as the underlying math library
 - `Utils\Src\Utils\PrimitiveDefs.h`, `Utils.h`, `Functor.h`, `StringUtils.h`, `Conversions.h`, `GUID.h`
-- `Utils\Src\Utils\Math\Units.h`, `Math.h`, `Vector2D.h`, `Vector3D.h`, `Vector4D.h`, `Matrix4x4.h`, `Quaternion.h`, `Plane.h`
+- `Utils\Src\Utils\Math\Units.h`, `Math.h`, `Vector2D.h`, `Vector3D.h`, `Vector4D.h`, `Matrix4x4.h`, `Quaternion.h`, `Plane.h`, `BoundingBox.h`
 - `Utils\Src\Utils\Memory\ByteStream.h`, `MemoryUtils.h`
 - `Utils\Src\Utils\Platform\FilePath.h`, `File.h`, `CmdLine.h`, `Timers\HiResTimer.h`
 - `Utils\Src\Utils\Interfaces\Resource.h`

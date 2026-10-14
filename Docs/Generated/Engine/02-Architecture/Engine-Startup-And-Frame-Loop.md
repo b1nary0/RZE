@@ -119,6 +119,7 @@ This phase runs every frame, immediately after the input phase above. Two things
 
 - **Start of the frame** (`PreUpdate`, before input): `MainThreadDispatcher::Drain()` runs every task worker threads posted since the last frame, such as log lines.
 - **Before ImGui's frame** (`RZE_Engine::PreUIUpdate`): `AsyncOperationManager::Tick()`, so a scene that finished loading is in place before this frame's UI is built, then `RZE_Application::PreUIUpdate()`. There's no ImGui frame yet, so an ImGui call there asserts; the Editor uses it for each panel's data step (see [Editor-Framework.md](../07-Editor/Editor-Framework.md#when-things-run-in-a-frame)).
+- **After present** (`Finish()`): `ResourceHandler::Update()` destroys the resources released in earlier frames that the render thread has finished with (see [Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md#releasing-resources)).
 - **`-perfcapture <file>`** records every frame's total and update time (`PreUIUpdate` + `Update`) for A/B comparisons, then exits; see [Debug-Services-And-Logging.md](../06-Platform-And-Infrastructure/Debug-Services-And-Logging.md#frame-time-capture).
 
 ```mermaid
@@ -140,9 +141,11 @@ gantt
 `BeginShutDown()`, in order:
 1. `AsyncOperationManager::ShutDown()` first, so no async work touches the scene, resources or renderer while they shut down (it cancels operations and waits for their worker jobs; completion callbacks don't fire);
 2. scene shutdown, then app shutdown;
-3. `renderEngine->ClearObjects()`, `ReleaseRenderStages()` (must happen before resources are released), `Shutdown()`;
-4. `JobScheduler::ShutDown()` (queued jobs are abandoned, running ones finish), clear the log sink, `MainThreadDispatcher::ShutDown()`;
-5. `InternalShutDown()` deletes the scene and renderer, releases the engine config, shuts down the `ResourceHandler`, and deletes the window.
+3. the main scene's `ClearObjects()`, then `ReleaseRenderStages()` (must happen before resources are released);
+4. `RenderEngine::WaitUntilIdle()`, then `ResourceHandler::DestroyPendingNow()`: resources released while shutting down are waiting on the render thread, and they must go **before** the renderer shuts down, since releasing a GPU resource records a render command;
+5. `RenderEngine::Shutdown()`;
+6. `JobScheduler::ShutDown()` (queued jobs are abandoned, running ones finish), clear the log sink, `MainThreadDispatcher::ShutDown()`;
+7. `InternalShutDown()` deletes the scene and renderer, releases the engine config, shuts down the `ResourceHandler`, and deletes the window.
 
 ## Key files
 

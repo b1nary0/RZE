@@ -10,6 +10,7 @@ Every Editor window is an `EditorPanel` in `Editor\Src\UI\Panels\`, registered w
 | Log | `LogPanel` | Bottom | View > Windows > Log | yes |
 | Resource Monitor | `ResourceMonitorPanel` | Left (closed at first) | View > Windows > Resource Monitor | yes |
 | ImGui Demo | `ImGuiDemoPanel` | floating (closed at first) | Help > ImGui Demo | yes |
+| Settings | `SettingsPanel` | floating, 760×460 (closed at first) | Edit > Settings | yes |
 
 ```mermaid
 %%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
@@ -125,9 +126,13 @@ A table of loaded resources and their reference counts. `Update()` copies the re
 
 Dear ImGui's own demo window, from Help > ImGui Demo. It draws its own window (`PanelDesc::OwnsWindow`).
 
+## Settings (`SettingsPanel`)
+
+The Settings window: registered settings pages (Scene View, Thumbnails) listed on the left, the chosen one on the right. See [Status-Bar-And-Settings.md](Status-Bar-And-Settings.md#the-settings-window).
+
 ## Key files
 
-- `Editor\Src\UI\Panels\ScenePanel`, `SceneViewPanel`, `InspectorPanel`, `LogPanel`, `ResourceMonitorPanel`, `ImGuiDemoPanel` (`.h/.cpp`)
+- `Editor\Src\UI\Panels\ScenePanel`, `SceneViewPanel`, `InspectorPanel`, `LogPanel`, `ResourceMonitorPanel`, `ImGuiDemoPanel`, `SettingsPanel` (`.h/.cpp`)
 - `Editor\Src\UI\Framework\EditorSelection.h/.cpp`, `ScenePicker.h/.cpp`
 - `Editor\Src\Services\SelectionBoundsDisplay.h/.cpp`
 - `Editor\Src\UI\Gizmo\GizmoSnapper.h/.cpp`, `EditorGrid.h/.cpp` — see [Gizmo-Snapping-And-Grid.md](Gizmo-Snapping-And-Grid.md)

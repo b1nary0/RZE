@@ -19,9 +19,14 @@ Its UI code is organised around an `EditorContext` that panels share, self-regis
 +--------------+--------------------------------------------------+---------------+
 | Log   (RZE_LOG output, resource loads, build output)                            |
 +---------------------------------------------------------------------------------+
+| Ready                                           (o) [Rendering thumbnails  33%] |
++---------------------------------------------------------------------------------+
 ```
 
 The layout is an ImGui dockspace, saved in `Config\imgui.ini`; without one, each panel docks where its `PanelDesc::DefaultDock` says. Each panel is described in [Editor-Panels.md](Editor-Panels.md), and the inspector in [Object-Inspector-And-Properties.md](Object-Inspector-And-Properties.md); the camera and the build/launch tools are in [Editor-Camera-And-Build-Launch.md](Editor-Camera-And-Build-Launch.md); gizmo snapping and the ground grid are in [Gizmo-Snapping-And-Grid.md](Gizmo-Snapping-And-Grid.md). Every keyboard and mouse shortcut is in [Editor-Shortcuts.md](Editor-Shortcuts.md).
+
+- The **status bar** along the bottom shows background tasks, their progress and their history; Edit > **Settings** opens the Settings window. Both are in [Status-Bar-And-Settings.md](Status-Bar-And-Settings.md).
+- Scenes and meshes are picked in a **file browser** of thumbnails, which the editor renders in the background: [Thumbnails-And-File-Browser.md](Thumbnails-And-File-Browser.md).
 
 ## Launching
 
@@ -69,7 +74,7 @@ sequenceDiagram
     participant App as SceneDocument
     participant Op as SceneLoadOperation
     participant Modal as AsyncOperationModal
-    User->>App: File > Load Scene... (or -scene at start-up)
+    User->>App: File > Load Scene..., picked in the file browser<br/>(or -scene at start-up)
     App->>App: ResetSceneState - selection, camera,<br/>pending commands, undo history, panels
     App->>Op: start (via AsyncOperationManager)
     Op->>Op: 1. Parsing (worker thread)<br/>read the file, list needed resources
@@ -84,14 +89,15 @@ sequenceDiagram
 - Only one load runs at a time; the File menu disables New/Load while one is in progress.
 - If loading fails, the partial scene is unloaded, the error is logged, and the next Save prompts for a path rather than overwriting the file.
 - Scene files are format version 2 (objects keyed by GUID); older files are converted as they load. See [Scene-And-GameObject-Model.md](../03-SceneAndGameObjects/Scene-And-GameObject-Model.md#scene-files).
-- `AsyncOperationModal` (`UI\Modals\`) is a generic progress dialog. It watches `AsyncOperationManager` and appears for any operation flagged `Blocking`.
+- `AsyncOperationModal` (`UI\Modals\`) is a generic progress dialog. It watches `AsyncOperationManager` and appears for the oldest operation flagged `Blocking`. Background work, such as thumbnails, shows in the status bar instead and never blocks.
+- Once a scene has loaded, its thumbnail is rendered in the background if it's missing or older than the file ([Thumbnails-And-File-Browser.md](Thumbnails-And-File-Browser.md)).
 
 ## Menu bar
 
 | Menu | Items |
 |---|---|
-| File | New Scene..., Load Scene..., Save Scene (prompts for a path if the scene is new; copies assets afterwards), Build Game..., Launch Game..., Exit. New, Load and Exit ask about unsaved changes first. |
-| Edit | Undo "<step>" (Ctrl+Z), Redo "<step>" (Ctrl+Y), Copy (Ctrl+C), Paste (Ctrl+V), Duplicate (Ctrl+D) |
+| File | New Scene..., Load Scene... (the file browser, on `Assets\Scenes`), Save Scene (the file browser in Save mode if the scene is new; copies assets afterwards), Build Game..., Launch Game..., Exit. New, Load and Exit ask about unsaved changes first. |
+| Edit | Undo "<step>" (Ctrl+Z), Redo "<step>" (Ctrl+Y), Copy (Ctrl+C), Paste (Ctrl+V), Duplicate (Ctrl+D), then the panels registered under Edit: Settings |
 | View | Windows: Log, Object Inspector, Resource Monitor, Scene (built from each panel's `MenuPath`, checked while open) |
 | Help | ImGui Demo |
 
@@ -150,6 +156,7 @@ flowchart TD
 - `Editor\Src\UI\MainMenuBar.h/.cpp`
 - `Editor\Src\Services\GameObjectClipboard.h/.cpp`, `GameObjectSnapshot.h/.cpp`, `Editor\Src\Commands\SceneCommands.cpp` (`PasteGameObjectsCommand`)
 - `Editor\Src\UI\Panels\` — see [Editor-Panels.md](Editor-Panels.md)
-- `Editor\Src\UI\Modals\AsyncOperationModal.h/.cpp`, `UnsavedChangesPrompt.h/.cpp`
+- `Editor\Src\UI\Modals\AsyncOperationModal.h/.cpp`, `UnsavedChangesPrompt.h/.cpp`, `FileBrowserModal.h/.cpp`
+- `Editor\Src\UI\StatusBar.h/.cpp`, `TaskTracker.h/.cpp` — see [Status-Bar-And-Settings.md](Status-Bar-And-Settings.md)
 - `Editor\Src\Game\World\GameObjectComponents\EditorCameraComponent.h/.cpp` — see [Editor-Camera-And-Build-Launch.md](Editor-Camera-And-Build-Launch.md)
 - `Engine\Src\Game\SceneLoadOperation.h/.cpp`
