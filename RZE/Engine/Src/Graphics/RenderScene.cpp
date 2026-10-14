@@ -6,7 +6,6 @@
 #include <Utils/Math/Math.h>
 
 #include <algorithm>
-#include <cfloat>
 
 void LightObject::Initialize()
 {
@@ -16,8 +15,8 @@ void LightObject::Initialize()
 void RenderObject::SetStaticMesh(const StaticMeshInstance& staticMesh)
 {
 	m_staticMesh = staticMesh;
-	UpdateWorldBounds();
-	MarkSceneChanged();
+	m_localBounds = m_staticMesh.GetSubMeshes().empty() ? BoundingBox() : m_staticMesh.GetBounds();
+	MarkChanged();
 }
 
 void RenderObject::SetTransform(const Matrix4x4& transform)
@@ -26,61 +25,71 @@ void RenderObject::SetTransform(const Matrix4x4& transform)
 	{
 		m_matrixMem.transform = transform;
 		m_matrixMem.invTransform = transform.Inverse();
-		UpdateWorldBounds();
-		MarkSceneChanged();
+		MarkChanged();
 	}
 }
 
-void RenderObject::UpdateWorldBounds()
+const BoundingBox& RenderObject::GetBounds() const
 {
-	const std::vector<MeshGeometry>& subMeshes = static_cast<const StaticMeshInstance&>(m_staticMesh).GetSubMeshes();
-	const Matrix4x4& transform = m_matrixMem.transform;
-
-	m_subMeshBounds.resize(subMeshes.size());
-
-	Vector3D objectMin(FLT_MAX);
-	Vector3D objectMax(-FLT_MAX);
-
-	for (size_t subMeshIndex = 0; subMeshIndex < subMeshes.size(); ++subMeshIndex)
+	if (m_isBoundsStale)
 	{
-		const Vector3D& localMin = subMeshes[subMeshIndex].GetBoundsMin();
-		const Vector3D& localMax = subMeshes[subMeshIndex].GetBoundsMax();
-		SubMeshBounds& bounds = m_subMeshBounds[subMeshIndex];
+		m_bounds = m_localBounds.Transformed(m_matrixMem.transform);
+		m_isBoundsStale = false;
+	}
+	return m_bounds;
+}
 
-		bounds.Min = Vector3D(FLT_MAX);
-		bounds.Max = Vector3D(-FLT_MAX);
-
-		// Corner i takes max on X if bit 0 is set, Y if bit 1, Z if bit 2
-		for (int corner = 0; corner < 8; ++corner)
+const std::vector<RenderObject::SubMeshBounds>& RenderObject::GetSubMeshBounds() const
+{
+	if (m_areSubMeshBoundsStale)
+	{
+		const std::vector<MeshGeometry>& subMeshes = m_staticMesh.GetSubMeshes();
+		m_subMeshBounds.resize(subMeshes.size());
+		for (size_t subMeshIndex = 0; subMeshIndex < subMeshes.size(); ++subMeshIndex)
 		{
-			const Vector3D localCorner(
-				(corner & 1) ? localMax.X() : localMin.X(),
-				(corner & 2) ? localMax.Y() : localMin.Y(),
-				(corner & 4) ? localMax.Z() : localMin.Z());
-
-			bounds.Corners[corner] = (transform * Vector4D(localCorner, 1.0f)).XYZ();
-			bounds.Min = VectorUtils::Min(bounds.Min, bounds.Corners[corner]);
-			bounds.Max = VectorUtils::Max(bounds.Max, bounds.Corners[corner]);
+			SubMeshBounds& bounds = m_subMeshBounds[subMeshIndex];
+			bounds.Corners = subMeshes[subMeshIndex].GetBounds().GetTransformedCorners(m_matrixMem.transform);
+			bounds.Bounds = BoundingBox::Around(bounds.Corners);
 		}
-
-		objectMin = VectorUtils::Min(objectMin, bounds.Min);
-		objectMax = VectorUtils::Max(objectMax, bounds.Max);
+		m_areSubMeshBoundsStale = false;
 	}
+	return m_subMeshBounds;
+}
 
-	if (subMeshes.empty())
+void RenderObject::MarkChanged()
+{
+	m_isBoundsStale = true;
+	m_areSubMeshBoundsStale = true;
+	if (m_scene != nullptr)
 	{
-		objectMin = Vector3D::ZERO;
-		objectMax = Vector3D::ZERO;
+		m_scene->OnRenderObjectChanged();
 	}
-
-	m_boundsMin = objectMin;
-	m_boundsMax = objectMax;
 }
 
 void RenderScene::ClearObjects()
 {
 	m_renderObjects.clear();
+	OnRenderObjectChanged();
+}
+
+const BoundingBox& RenderScene::GetBounds() const
+{
+	if (m_isBoundsStale)
+	{
+		m_bounds = BoundingBox();
+		for (const std::unique_ptr<RenderObject>& renderObject : m_renderObjects)
+		{
+			m_bounds.Grow(renderObject->GetBounds());
+		}
+		m_isBoundsStale = false;
+	}
+	return m_bounds;
+}
+
+void RenderScene::OnRenderObjectChanged()
+{
 	++m_revision;
+	m_isBoundsStale = true;
 }
 
 RenderObjectPtr RenderScene::CreateRenderObject(const StaticMeshInstance& staticMesh)
@@ -88,9 +97,9 @@ RenderObjectPtr RenderScene::CreateRenderObject(const StaticMeshInstance& static
 	OPTICK_EVENT();
 	
 	std::unique_ptr<RenderObject>& renderObjectPtr = m_renderObjects.emplace_back(std::make_unique<RenderObject>());
-	renderObjectPtr->m_sceneRevision = &m_revision;
+	renderObjectPtr->m_scene = this;
+	// Marks the scene changed
 	renderObjectPtr->SetStaticMesh(staticMesh);
-	++m_revision;
 
 	return RenderObjectPtr(renderObjectPtr.get());
 }
@@ -119,7 +128,7 @@ void RenderScene::DestroyRenderObject(RenderObjectPtr& renderObject)
 		}
 
 		renderObject = RenderObjectPtr();
-		++m_revision;
+		OnRenderObjectChanged();
 	}
 }
 
@@ -167,22 +176,12 @@ void RenderScene::DrawLine(const Vector3D& start, const Vector3D& end, const Vec
 	m_debugLines.emplace_back(std::move(line));
 }
 
-void RenderScene::DrawWireBox(const Vector3D& boundsMin, const Vector3D& boundsMax, const Matrix4x4& transform, const Vector3D& colour, float alpha)
+void RenderScene::DrawWireBox(const BoundingBox& box, const Matrix4x4& transform, const Vector3D& colour, float alpha)
 {
-	// Corner i takes max on X if bit 0 is set, Y if bit 1, Z if bit 2.
-	// Transformed individually so the box follows the object's rotation and scale.
-	Vector3D corners[8];
-	for (int i = 0; i < 8; ++i)
-	{
-		const Vector4D corner = transform * Vector4D(
-			(i & 1) ? boundsMax.X() : boundsMin.X(),
-			(i & 2) ? boundsMax.Y() : boundsMin.Y(),
-			(i & 4) ? boundsMax.Z() : boundsMin.Z(),
-			1.0f);
-		corners[i] = Vector3D(corner.X(), corner.Y(), corner.Z());
-	}
+	// Transformed one by one, so the box follows the object's rotation and scale
+	const BoundingBox::Corners corners = box.GetTransformedCorners(transform);
 
-	// Edges connect corners that differ by exactly one axis bit
+	// Edges connect corners that differ by exactly one axis bit (BoundingBox's corner order)
 	for (int i = 0; i < 8; ++i)
 	{
 		for (int axisBit = 1; axisBit < 8; axisBit <<= 1)

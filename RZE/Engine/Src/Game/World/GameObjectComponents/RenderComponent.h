@@ -4,6 +4,8 @@
 
 #include <Graphics/GraphicsDefines.h>
 
+#include <Utils/Math/BoundingBox.h>
+
 #include <EngineCore/Resources/ResourceHandler.h>
 
 class RenderScene;
@@ -47,8 +49,10 @@ public:
 	bool IsDrawingSubMeshBounds() const { return m_drawSubMeshBounds; }
 	void SetDrawSubMeshBounds(bool draw) { m_drawSubMeshBounds = draw; }
 
-	// Axis-aligned world-space box around the mesh; false if no mesh has been created yet
-	bool GetWorldBounds(Vector3D& outMin, Vector3D& outMax);
+	// Axis-aligned world-space box around the mesh; empty if no mesh has been created yet
+	BoundingBox GetWorldBounds() const;
+	// The mesh's box in the object's own space; empty if no mesh has been created yet
+	BoundingBox GetLocalBounds() const override;
 	// Null until a mesh has been created
 	RenderObjectPtr GetRenderObject() const { return m_renderObject; }
 

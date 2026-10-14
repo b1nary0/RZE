@@ -105,15 +105,14 @@ namespace
 
 		void CaptureItem(const Filepath& item, std::function<void(bool succeeded)> onDone) override
 		{
-			Vector3D boundsMin;
-			Vector3D boundsMax;
-			if (!m_renderComponent->GetWorldBounds(boundsMin, boundsMax))
+			const BoundingBox bounds = m_renderComponent->GetWorldBounds();
+			if (bounds.IsEmpty())
 			{
 				onDone(false);
 				return;
 			}
 
-			const RenderCamera camera = Editor::MeshFraming::FrameBounds(boundsMin, boundsMax, k_meshFieldOfView, m_capture.GetSize());
+			const RenderCamera camera = Editor::MeshFraming::FrameBounds(bounds, k_meshFieldOfView, m_capture.GetSize());
 			std::shared_ptr<AsyncOperation> capture = m_capture.Capture(RZE().GetRenderEngine().GetMainScene(), camera, 0.0f, Editor::Thumbnails::Meshes().GetPathFor(item));
 			capture->SetOnCompleted(AsyncOperation::CompletionCallback([onDone](const AsyncOperation& operation)
 				{

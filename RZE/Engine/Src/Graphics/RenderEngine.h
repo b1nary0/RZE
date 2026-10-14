@@ -59,9 +59,9 @@ public:
 	{
 		GetMainScene().DrawLine(start, end, colour, alpha, fade);
 	}
-	void DrawWireBox(const Vector3D& boundsMin, const Vector3D& boundsMax, const Matrix4x4& transform, const Vector3D& colour, float alpha = 1.0f)
+	void DrawWireBox(const BoundingBox& box, const Matrix4x4& transform, const Vector3D& colour, float alpha = 1.0f)
 	{
-		GetMainScene().DrawWireBox(boundsMin, boundsMax, transform, colour, alpha);
+		GetMainScene().DrawWireBox(box, transform, colour, alpha);
 	}
 
 	void ResizeCanvas(const Vector2D& newSize);

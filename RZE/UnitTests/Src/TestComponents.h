@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Game/World/GameObject/GameObject.h>
 #include <Game/World/GameObject/GameObjectComponent.h>
 #include <Game/World/GameObject/Properties/PropertyBuilder.h>
 
@@ -48,6 +49,30 @@ class UndescribedTestComponent final : public GameObjectComponent<UndescribedTes
 {
 };
 
+// Takes up a box a test gives it, and counts how often its object asks for it (GameObject::GetHierarchyBounds asks
+// each component when it works its extents out again), so a test can tell when an object's extents were reused
+class BoundsTestComponent final : public GameObjectComponent<BoundsTestComponent>
+{
+public:
+	void SetBounds(const BoundingBox& bounds)
+	{
+		m_bounds = bounds;
+		GetOwner()->MarkHierarchyBoundsChanged();
+	}
+
+	BoundingBox GetLocalBounds() const override
+	{
+		++m_timesAsked;
+		return m_bounds;
+	}
+
+	int GetTimesAsked() const { return m_timesAsked; }
+
+private:
+	BoundingBox m_bounds;
+	mutable int m_timesAsked = 0;
+};
+
 // Registers the test component types, the way the engine registers its own at startup. Safe to call from every test.
 inline void RegisterTestComponents()
 {
@@ -56,6 +81,7 @@ inline void RegisterTestComponents()
 	{
 		REGISTER_GAMEOBJECTCOMPONENT(TestComponent);
 		REGISTER_GAMEOBJECTCOMPONENT(UndescribedTestComponent);
+		REGISTER_GAMEOBJECTCOMPONENT(BoundsTestComponent);
 		s_isRegistered = true;
 	}
 }

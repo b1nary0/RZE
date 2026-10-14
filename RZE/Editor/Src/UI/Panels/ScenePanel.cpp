@@ -156,19 +156,18 @@ namespace Editor
 
 		if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 		{
-			Vector3D boundsMin;
-			Vector3D boundsMax;
-			if (!gameObject->GetHierarchyBounds(boundsMin, boundsMax))
+			BoundingBox bounds = gameObject->GetHierarchyBounds();
+			if (bounds.IsEmpty())
 			{
 				// Nothing to measure (light, empty, ...); frame its position and let the camera's minimum radius pick a distance
-				boundsMin = boundsMax = gameObject->GetTransformComponent()->GetWorldMatrix().GetPosition();
+				bounds.Grow(gameObject->GetTransformComponent()->GetWorldMatrix().GetPosition());
 			}
 
 			// Absent while a scene is loading
 			GameObjectComponentPtr<EditorCameraComponent> editorCam = context.GetEditorCameraComponent();
 			if (editorCam != nullptr)
 			{
-				editorCam->FocusOn(boundsMin, boundsMax);
+				editorCam->FocusOn(bounds);
 			}
 		}
 

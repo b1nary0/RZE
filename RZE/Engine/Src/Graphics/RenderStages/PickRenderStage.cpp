@@ -105,7 +105,7 @@ void PickRenderStage::Render(RenderContext& context)
 
 	for (const auto& renderObject : context.Scene.GetRenderObjects())
 	{
-		if (!frustum.Intersects(renderObject->GetBoundsMin(), renderObject->GetBoundsMax()))
+		if (!frustum.Intersects(renderObject->GetBounds()))
 		{
 			continue;
 		}
@@ -122,7 +122,7 @@ void PickRenderStage::Render(RenderContext& context)
 
 		for (size_t subMeshIndex = 0; subMeshIndex < subMeshes.size(); ++subMeshIndex)
 		{
-			if (!frustum.Intersects(subMeshBounds[subMeshIndex].Min, subMeshBounds[subMeshIndex].Max))
+			if (!frustum.Intersects(subMeshBounds[subMeshIndex].Bounds))
 			{
 				continue;
 			}

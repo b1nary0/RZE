@@ -7,13 +7,13 @@
 #include <Utils/Memory/ByteStream.h>
 
 #include <Utils/DebugUtils/Debug.h>
+#include <Utils/Math/BoundingBox.h>
 #include <Utils/Math/Math.h>
 #include <Utils/PrimitiveDefs.h>
 
 #include <Utils/Platform/File.h>
 
 #include <algorithm>
-#include <cfloat>
 #include <filesystem>
 
 namespace
@@ -91,18 +91,16 @@ bool AssimpSourceImporter::Import(const Filepath& filePath)
 	}
 
 	{
-		Vector3D boundsMin(FLT_MAX);
-		Vector3D boundsMax(-FLT_MAX);
+		BoundingBox bounds;
 		for (const MeshData& meshData : m_meshes)
 		{
 			for (const MeshVertex& vertex : meshData.VertexDataArray)
 			{
-				boundsMin = VectorUtils::Min(boundsMin, vertex.Position);
-				boundsMax = VectorUtils::Max(boundsMax, vertex.Position);
+				bounds.Grow(vertex.Position);
 			}
 		}
 
-		const Vector3D extents = boundsMax - boundsMin;
+		const Vector3D extents = bounds.IsEmpty() ? Vector3D() : bounds.GetSize();
 		const float largestExtent = std::max({ extents.X(), extents.Y(), extents.Z() });
 		if (largestExtent < k_minPlausibleExtentMetres || largestExtent > k_maxPlausibleExtentMetres)
 		{

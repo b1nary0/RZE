@@ -1,6 +1,8 @@
 #include <StdAfx.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
+#include <Game/World/GameObject/GameObject.h>
+
 #include <Utils/Utils.h>
 
 TransformComponent::TransformComponent(const Vector3D& position)
@@ -66,7 +68,7 @@ void TransformComponent::SetPosition(const Vector3D& position)
 	if (m_position != position)
 	{
 		m_position = position;
-		MarkDirty();
+		OnLocalTransformChanged();
 	}
 }
 
@@ -75,7 +77,7 @@ void TransformComponent::SetRotation(const Vector3D& rotation)
 	if (m_rotation != rotation)
 	{
 		m_rotation = rotation;
-		MarkDirty();
+		OnLocalTransformChanged();
 	}
 }
 
@@ -84,7 +86,7 @@ void TransformComponent::SetScale(const Vector3D& scale)
 	if (m_scale != scale)
 	{
 		m_scale = scale;
-		MarkDirty();
+		OnLocalTransformChanged();
 	}
 }
 
@@ -93,10 +95,24 @@ const Matrix4x4& TransformComponent::GetWorldMatrix() const
 	return m_worldTransform;
 }
 
+Matrix4x4 TransformComponent::GetLocalMatrix() const
+{
+	return Matrix4x4::CreateInPlace(m_position, m_scale, m_rotation);
+}
+
+void TransformComponent::OnLocalTransformChanged()
+{
+	MarkDirty();
+	if (m_parent != nullptr)
+	{
+		m_parent->GetOwner()->MarkHierarchyBoundsChanged();
+	}
+}
+
 void TransformComponent::RotateBy(const Vector3D& rotation)
 {
 	m_rotation += rotation;
-	MarkDirty();
+	OnLocalTransformChanged();
 }
 
 void TransformComponent::AttachTo(TransformComponent* parent)

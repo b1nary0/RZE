@@ -58,6 +58,7 @@ void RenderComponent::LoadMesh(const Filepath& path)
 	if (m_renderObject != nullptr)
 	{
 		m_renderScene->DestroyRenderObject(m_renderObject);
+		GetOwner()->MarkHierarchyBoundsChanged();
 	}
 
 	// Assigning releases the old mesh
@@ -95,7 +96,7 @@ Vector3D RenderComponent::GetMeshSize() const
 	}
 
 	const StaticMeshInstance& staticMesh = modelData->GetStaticMesh();
-	return (staticMesh.GetBoundsMax() - staticMesh.GetBoundsMin()) * m_owner->GetTransformComponent()->GetScale();
+	return staticMesh.GetBounds().GetSize() * m_owner->GetTransformComponent()->GetScale();
 }
 
 void RenderComponent::SetDrawMeshBounds(bool draw)
@@ -103,16 +104,14 @@ void RenderComponent::SetDrawMeshBounds(bool draw)
 	m_drawMeshBounds = draw;
 }
 
-bool RenderComponent::GetWorldBounds(Vector3D& outMin, Vector3D& outMax)
+BoundingBox RenderComponent::GetWorldBounds() const
 {
-	if (m_renderObject == nullptr)
-	{
-		return false;
-	}
+	return m_renderObject != nullptr ? m_renderObject->GetBounds() : BoundingBox();
+}
 
-	outMin = m_renderObject->GetBoundsMin();
-	outMax = m_renderObject->GetBoundsMax();
-	return true;
+BoundingBox RenderComponent::GetLocalBounds() const
+{
+	return m_renderObject != nullptr ? m_renderObject->GetLocalBounds() : BoundingBox();
 }
 
 void RenderComponent::CreateRenderObject()
@@ -138,6 +137,7 @@ void RenderComponent::CreateRenderObject()
 		m_renderObject->SetTransform(transformComponent->GetWorldMatrix());
 		// Offset by one because IDs start at 0, which picking uses for "nothing"
 		m_renderObject->SetPickID(GetOwner()->GetID() + 1);
+		GetOwner()->MarkHierarchyBoundsChanged();
 
 		return;
 	}
@@ -158,6 +158,7 @@ void RenderComponent::OnAddToScene()
 void RenderComponent::OnRemoveFromScene()
 {
 	m_renderScene->DestroyRenderObject(m_renderObject);
+	GetOwner()->MarkHierarchyBoundsChanged();
 }
 
 void RenderComponent::Update()
@@ -184,14 +185,14 @@ void RenderComponent::DrawBounds()
 
 	if (m_drawMeshBounds)
 	{
-		m_renderScene->DrawWireBox(staticMesh.GetBoundsMin(), staticMesh.GetBoundsMax(), worldMatrix, k_meshBoundsColour);
+		m_renderScene->DrawWireBox(staticMesh.GetBounds(), worldMatrix, k_meshBoundsColour);
 	}
 
 	if (m_drawSubMeshBounds)
 	{
 		for (const MeshGeometry& subMesh : staticMesh.GetSubMeshes())
 		{
-			m_renderScene->DrawWireBox(subMesh.GetBoundsMin(), subMesh.GetBoundsMax(), worldMatrix, k_subMeshBoundsColour);
+			m_renderScene->DrawWireBox(subMesh.GetBounds(), worldMatrix, k_subMeshBoundsColour);
 		}
 	}
 }

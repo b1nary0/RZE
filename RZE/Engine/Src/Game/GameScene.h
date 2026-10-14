@@ -12,6 +12,7 @@
 #include <memory>
 #include <unordered_map>
 
+class BoundingBox;
 class RenderScene;
 
 class GameScene final
@@ -85,6 +86,8 @@ public:
 	// What the scene's components draw: their render objects, lights and debug lines. RenderEngine draws the active
 	// scene's in the main view; any scene's can be rendered into another view (RenderEngine::RenderSecondaryView).
 	RenderScene& GetRenderScene() const { return *m_renderScene; }
+	// Axis-aligned world-space box around everything the scene draws; empty if it draws nothing (RenderScene::GetBounds)
+	const BoundingBox& GetBounds() const;
 
 	// Center of the bounding box around every rendered root object's position. Uses positions rather
 	// than mesh bounds so it's valid while meshes are still streaming in. Returns the origin if nothing is rendered.

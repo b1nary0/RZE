@@ -22,24 +22,29 @@ public:
 	{
 		return m_ptr;
 	}
+	// Read-only access through a const handle
+	const LightObject* operator->() const
+	{
+		return m_ptr;
+	}
 	LightObjectPtr& operator=(const LightObjectPtr&) = default;
 
-	bool operator==(const LightObjectPtr& other)
+	bool operator==(const LightObjectPtr& other) const
 	{
 		return m_ptr == other.m_ptr;
 	}
 
-	bool operator==(const LightObjectPtr* other)
+	bool operator==(const LightObjectPtr* other) const
 	{
 		return this == other;
 	}
 
-	bool operator!=(const LightObjectPtr& other)
+	bool operator!=(const LightObjectPtr& other) const
 	{
 		return !(*this == other);
 	}
 
-	bool operator!=(const std::nullptr_t null)
+	bool operator!=(const std::nullptr_t null) const
 	{
 		return this->m_ptr != null;
 	}
@@ -72,29 +77,35 @@ public:
 		return m_ptr;
 	}
 
+	// Read-only access through a const handle
+	const RenderObject* operator->() const
+	{
+		return m_ptr;
+	}
+
 	RenderObjectPtr& operator=(const RenderObjectPtr&) = default;
 
-	bool operator==(const std::nullptr_t null)
+	bool operator==(const std::nullptr_t null) const
 	{
 		return this->m_ptr == null;
 	}
 
-	bool operator==(const RenderObjectPtr& other)
+	bool operator==(const RenderObjectPtr& other) const
 	{
 		return m_ptr == other.m_ptr;
 	}
 
-	bool operator==(const RenderObjectPtr* other)
+	bool operator==(const RenderObjectPtr* other) const
 	{
 		return this == other;
 	}
 
-	bool operator!=(const RenderObjectPtr& other)
+	bool operator!=(const RenderObjectPtr& other) const
 	{
 		return !(*this == other);
 	}
 
-	bool operator!=(const std::nullptr_t null)
+	bool operator!=(const std::nullptr_t null) const
 	{
 		return this->m_ptr != null;
 	}

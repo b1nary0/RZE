@@ -5,6 +5,7 @@
 #include <Game/World/GameObject/ObjectGUID.h>
 
 #include <Utils/DebugUtils/Debug.h>
+#include <Utils/Math/BoundingBox.h>
 
 typedef U32 GameObjectID;
 
@@ -91,8 +92,13 @@ public:
 
 	bool IsInScene() { return m_stateFlags.IsInScene; }
 
-	// Axis-aligned world-space box around every mesh on this object and its descendants; false if none have one
-	bool GetHierarchyBounds(Vector3D& outMin, Vector3D& outMax);
+	// Axis-aligned world-space box around every mesh on this object and its descendants; empty if none have one. Its
+	// extents are kept in the object's own space and only worked out again once what's under it has changed
+	// (MarkHierarchyBoundsChanged), so moving the object only changes where they're placed.
+	BoundingBox GetHierarchyBounds();
+	// Something under this object changed shape, came or went, or moved relative to it: marks this object's
+	// hierarchy extents, and its ancestors', to be worked out again when next asked for
+	void MarkHierarchyBoundsChanged();
 
 	// Attachment
 	bool IsRoot();
@@ -120,7 +126,8 @@ private:
 	void AddChild(GameObject* child, int childIndex);
 	void RemoveChild(GameObject* child);
 
-	bool GrowHierarchyBounds(Vector3D& inOutMin, Vector3D& inOutMax);
+	// GetHierarchyBounds' extents, in this object's own space
+	const BoundingBox& GetLocalHierarchyBounds();
 
 public:
 	// Writes this object's entry in the scene format (SceneFormat), then each child's
@@ -140,6 +147,10 @@ private:
 
 	GameObjectPtr m_parent = nullptr;
 	std::vector<GameObjectPtr> m_children;
+
+	// GetLocalHierarchyBounds' extents, worked out again when they're stale
+	BoundingBox m_localHierarchyBounds;
+	bool m_isHierarchyBoundsStale = true;
 };
 
 template <typename TComponentType>
@@ -188,6 +199,7 @@ GameObjectComponentPtr<TComponentType> GameObject::AddComponent(Args... args)
 		{
 			component->OnAddToScene();
 		}
+		MarkHierarchyBoundsChanged();
 
 		// #TODO Initialize here
 		return component;

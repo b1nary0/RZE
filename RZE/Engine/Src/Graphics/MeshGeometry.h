@@ -4,6 +4,7 @@
 
 #include <Utils/PrimitiveDefs.h>
 
+#include <Utils/Math/BoundingBox.h>
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector3D.h>
 
@@ -57,9 +58,9 @@ public:
 	const MaterialInstance& GetMaterialRef() const;
 	const std::vector<MeshVertex>& GetVertices();
 
-	// Object-space axis-aligned bounds of the vertices; calculated in AllocateData()
-	const Vector3D& GetBoundsMin() const { return m_boundsMin; }
-	const Vector3D& GetBoundsMax() const { return m_boundsMax; }
+	// Object-space box around the vertices, kept up to date as they're added or set; a zero-sized box at the origin
+	// with none
+	const BoundingBox& GetBounds() const { return m_bounds; }
 
 	const std::vector<float>& GetVertexDataRaw() const;
 	const std::vector<U32>& GetIndexDataRaw() const;
@@ -73,8 +74,7 @@ private:
 private:
 	std::string m_name;
 	std::vector<MeshVertex> m_vertices;
-	Vector3D m_boundsMin;
-	Vector3D m_boundsMax;
+	BoundingBox m_bounds { Vector3D(), Vector3D() };
 	std::vector<U32> m_indices;
 
 	std::shared_ptr<VertexBuffer> m_vertexBuffer;

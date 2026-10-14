@@ -24,17 +24,14 @@ void StaticMeshInstance::CalculateBounds()
 {
 	if (m_subMeshes.empty())
 	{
-		m_boundsMin = Vector3D();
-		m_boundsMax = Vector3D();
+		m_bounds = BoundingBox(Vector3D(), Vector3D());
 		return;
 	}
 
-	m_boundsMin = m_subMeshes[0].GetBoundsMin();
-	m_boundsMax = m_subMeshes[0].GetBoundsMax();
+	m_bounds = BoundingBox();
 	for (const MeshGeometry& subMesh : m_subMeshes)
 	{
-		m_boundsMin = VectorUtils::Min(m_boundsMin, subMesh.GetBoundsMin());
-		m_boundsMax = VectorUtils::Max(m_boundsMax, subMesh.GetBoundsMax());
+		m_bounds.Grow(subMesh.GetBounds());
 	}
 }
 

@@ -10,7 +10,6 @@
 #include <Utils/Math/Math.h>
 #include <Utils/Utils.h>
 
-#include <cfloat>
 
 namespace
 {
@@ -101,6 +100,7 @@ bool GameObject::RemoveComponentByID(GameObjectComponentID id)
 	}
 	m_components.erase(it);
 	delete component;
+	MarkHierarchyBoundsChanged();
 	return true;
 }
 
@@ -124,6 +124,7 @@ GameObjectComponentBase* GameObject::AddComponentByID(GameObjectComponentID id)
 		{
 			component->OnAddToScene();
 		}
+		MarkHierarchyBoundsChanged();
 		return component;
 	}
 
@@ -258,33 +259,42 @@ int GameObject::GetChildIndex(const GameObject* child) const
 	return -1;
 }
 
-bool GameObject::GetHierarchyBounds(Vector3D& outMin, Vector3D& outMax)
+BoundingBox GameObject::GetHierarchyBounds()
 {
-	outMin = Vector3D(FLT_MAX);
-	outMax = Vector3D(-FLT_MAX);
-	return GrowHierarchyBounds(outMin, outMax);
+	return GetLocalHierarchyBounds().Transformed(GetTransformComponent()->GetWorldMatrix());
 }
 
-bool GameObject::GrowHierarchyBounds(Vector3D& inOutMin, Vector3D& inOutMax)
+const BoundingBox& GameObject::GetLocalHierarchyBounds()
 {
-	bool foundAny = false;
-
-	GameObjectComponentPtr<RenderComponent> renderComponent = GetComponent<RenderComponent>();
-	Vector3D meshMin;
-	Vector3D meshMax;
-	if (renderComponent != nullptr && renderComponent->GetWorldBounds(meshMin, meshMax))
+	if (m_isHierarchyBoundsStale)
 	{
-		inOutMin = VectorUtils::Min(inOutMin, meshMin);
-		inOutMax = VectorUtils::Max(inOutMax, meshMax);
-		foundAny = true;
-	}
+		m_localHierarchyBounds = BoundingBox();
 
-	for (GameObjectPtr child : m_children)
+		for (const GameObjectComponentBase* component : m_components)
+		{
+			m_localHierarchyBounds.Grow(component->GetLocalBounds());
+		}
+
+		// Each child's own extents, placed by where it sits in this object
+		for (GameObjectPtr child : m_children)
+		{
+			m_localHierarchyBounds.Grow(child->GetLocalHierarchyBounds().Transformed(child->GetTransformComponent()->GetLocalMatrix()));
+		}
+
+		m_isHierarchyBoundsStale = false;
+	}
+	return m_localHierarchyBounds;
+}
+
+void GameObject::MarkHierarchyBoundsChanged()
+{
+	// An object whose bounds are stale already has stale ancestors, so the walk can stop at the first one
+	GameObject* object = this;
+	while (object != nullptr && !object->m_isHierarchyBoundsStale)
 	{
-		foundAny |= child->GrowHierarchyBounds(inOutMin, inOutMax);
+		object->m_isHierarchyBoundsStale = true;
+		object = object->m_parent != nullptr ? *object->m_parent : nullptr;
 	}
-
-	return foundAny;
 }
 
 void GameObject::AttachTo(GameObjectPtr gameObject, int childIndex)
@@ -321,6 +331,7 @@ void GameObject::AddChild(GameObject* child, int childIndex)
 	{
 		m_children.push_back(child);
 	}
+	MarkHierarchyBoundsChanged();
 	// @todo OnChildAdded/OnAttachToParent signal
 }
 
@@ -336,6 +347,7 @@ void GameObject::RemoveChild(GameObject* child)
 		(*existingChild)->GetTransformComponent()->DetachFromParent();
 		// Keeps the order, which the Scene panel shows and scene files save
 		m_children.erase(existingChild);
+		MarkHierarchyBoundsChanged();
 	}
 }
 

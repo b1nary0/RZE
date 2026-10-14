@@ -15,7 +15,6 @@
 #include <Utils/Math/Math.h>
 
 #include <algorithm>
-#include <cfloat>
 #include <cmath>
 #include <vector>
 
@@ -176,29 +175,15 @@ void ShadowRenderStage::RenderShadowMap(const RenderScene& scene, const ShadowMa
 
 bool ShadowRenderStage::CalculateLightViewProjection(const RenderScene& scene, const Vector3D& lightDirection, Matrix4x4& outViewProjection, float& outWorldTexelSize) const
 {
-	// Every submesh's world bounds, kept up to date by RenderObject
-	Vector3D sceneMin(FLT_MAX);
-	Vector3D sceneMax(-FLT_MAX);
-	bool hasCasters = false;
-
-	for (const auto& renderObject : scene.GetRenderObjects())
-	{
-		for (const RenderObject::SubMeshBounds& bounds : renderObject->GetSubMeshBounds())
-		{
-			sceneMin = VectorUtils::Min(sceneMin, bounds.Min);
-			sceneMax = VectorUtils::Max(sceneMax, bounds.Max);
-			hasCasters = true;
-		}
-	}
-
-	if (!hasCasters)
+	const BoundingBox& sceneBounds = scene.GetBounds();
+	if (sceneBounds.IsEmpty())
 	{
 		return false;
 	}
 
 	// Look along the light from just outside the scene's bounding sphere
-	const Vector3D sceneCenter = (sceneMin + sceneMax) * 0.5f;
-	const float sceneRadius = (sceneMax - sceneMin).Length() * 0.5f;
+	const Vector3D sceneCenter = sceneBounds.GetCentre();
+	const float sceneRadius = sceneBounds.GetRadius();
 
 	const Vector3D up = (std::abs(lightDirection.Y()) > 0.99f) ? WorldAxes::Forward() : WorldAxes::Up();
 	const Vector3D eye = sceneCenter - lightDirection * (sceneRadius + 1.0f);
@@ -206,20 +191,19 @@ bool ShadowRenderStage::CalculateLightViewProjection(const RenderScene& scene, c
 
 	// Tight bounds of the scene as seen from the light: the submeshes' transformed boxes, not their looser
 	// world-axis-aligned boxes
-	Vector3D lightMin(FLT_MAX);
-	Vector3D lightMax(-FLT_MAX);
+	BoundingBox lightBounds;
 	for (const auto& renderObject : scene.GetRenderObjects())
 	{
 		for (const RenderObject::SubMeshBounds& bounds : renderObject->GetSubMeshBounds())
 		{
 			for (const Vector3D& corner : bounds.Corners)
 			{
-				const Vector3D lightSpace = (view * Vector4D(corner, 1.0f)).XYZ();
-				lightMin = VectorUtils::Min(lightMin, lightSpace);
-				lightMax = VectorUtils::Max(lightMax, lightSpace);
+				lightBounds.Grow((view * Vector4D(corner, 1.0f)).XYZ());
 			}
 		}
 	}
+	const Vector3D& lightMin = lightBounds.GetMin();
+	const Vector3D& lightMax = lightBounds.GetMax();
 
 	const float extent = std::max(lightMax.X() - lightMin.X(), lightMax.Y() - lightMin.Y());
 	const float padding = extent * (k_edgePaddingTexels / static_cast<float>(k_shadowMapSize));

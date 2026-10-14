@@ -4,6 +4,7 @@
 #include <Game/World/GameObject/Properties/ComponentPropertyRegistry.h>
 
 #include <Utils/Functor.h>
+#include <Utils/Math/BoundingBox.h>
 
 #include <RapidJSON/document.h>
 #include <RapidJSON/prettywriter.h>
@@ -101,6 +102,11 @@ public:
 	virtual void Update() = 0;
 	virtual void Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) = 0;
 	virtual void Deserialize(const rapidjson::Value& data) = 0;
+
+	// What the component takes up, in its object's own space (e.g. a mesh's box); empty for one that takes up no
+	// space, as by default. Its object's hierarchy bounds are made of these (GameObject::GetHierarchyBounds), so a
+	// component whose box changes calls GameObject::MarkHierarchyBoundsChanged on its owner.
+	virtual BoundingBox GetLocalBounds() const { return BoundingBox(); }
 
 public:
 	// Set by the GameObject the component is added to

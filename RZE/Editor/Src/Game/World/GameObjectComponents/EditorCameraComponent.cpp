@@ -122,13 +122,13 @@ void EditorCameraComponent::SetAsActiveCamera(bool isActiveCamera)
 	m_isActiveCamera = isActiveCamera;
 }
 
-void EditorCameraComponent::FocusOn(const Vector3D& boundsMin, const Vector3D& boundsMax)
+void EditorCameraComponent::FocusOn(const BoundingBox& bounds)
 {
 	GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
 	AssertMsg(transformComponent != nullptr, "A camera without a transform is useless");
 
-	const Vector3D center = (boundsMin + boundsMax) * 0.5f;
-	const float radius = std::max((boundsMax - boundsMin).Length() * 0.5f, k_focusMinRadius);
+	const Vector3D center = bounds.GetCentre();
+	const float radius = std::max(bounds.GetRadius(), k_focusMinRadius);
 
 	// Fit the bounding sphere to the narrower of the vertical and horizontal FOVs
 	const float verticalHalfFov = m_fov * 0.5f * MathUtils::ToRadians;

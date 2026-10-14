@@ -37,6 +37,9 @@ public:
 
 	// Helpers
 	const Matrix4x4& GetWorldMatrix() const;
+	// Where it sits in its parent (its position, rotation and scale), or in the world for a root. Worked out now,
+	// rather than kept up to date each frame like GetWorldMatrix.
+	Matrix4x4 GetLocalMatrix() const;
 
 	//
 	// Operations
@@ -51,6 +54,9 @@ public:
 
 private:
 	void MarkDirty();
+	// Its position, rotation or scale changed. Moving within its parent changes the parent's hierarchy bounds
+	// (GameObject::GetHierarchyBounds); a root moving changes no one's.
+	void OnLocalTransformChanged();
 
 	void AddChild(TransformComponent* child);
 	void RemoveChild(TransformComponent* child);

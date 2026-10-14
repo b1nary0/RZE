@@ -1,5 +1,6 @@
 #include <Services/MeshFraming.h>
 
+#include <Utils/Math/BoundingBox.h>
 #include <Utils/Math/Math.h>
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Units.h>
@@ -24,10 +25,10 @@ namespace Editor
 {
 	namespace MeshFraming
 	{
-		RenderCamera FrameBounds(const Vector3D& boundsMin, const Vector3D& boundsMax, float fovYDegrees, const Vector2D& viewportSize)
+		RenderCamera FrameBounds(const BoundingBox& bounds, float fovYDegrees, const Vector2D& viewportSize)
 		{
-			const Vector3D centre = (boundsMin + boundsMax) * 0.5f;
-			const float radius = std::max(k_minRadius, (boundsMax - boundsMin).Length() * 0.5f);
+			const Vector3D centre = bounds.GetCentre();
+			const float radius = std::max(k_minRadius, bounds.GetRadius());
 
 			// The sphere has to fit the narrower of the two view angles
 			const float aspectRatio = viewportSize.X() / viewportSize.Y();

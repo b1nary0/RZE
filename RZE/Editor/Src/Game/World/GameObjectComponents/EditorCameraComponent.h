@@ -2,6 +2,7 @@
 
 #include <Game/World/GameObject/GameObjectComponent.h>
 
+#include <Utils/Math/BoundingBox.h>
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector3D.h>
 
@@ -48,7 +49,7 @@ public:
 	void SetAsActiveCamera(bool isActiveCamera);
 
 	// Glides the camera to frame the given world-space box, keeping the current heading and looking down on it from 30-45 degrees
-	void FocusOn(const Vector3D& boundsMin, const Vector3D& boundsMax);
+	void FocusOn(const BoundingBox& bounds);
 
 private:
 	void GenerateCameraMatrices(const Vector3D& position);

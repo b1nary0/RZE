@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Utils/Math/BoundingBox.h>
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Plane.h>
 #include <Utils/Math/Vector3D.h>
@@ -27,10 +28,17 @@ public:
 		m_planes[5] = Plane(row3 - row2); // Far
 	}
 
-	// False only when the box is entirely outside one of the planes. A box just outside a corner of the
+	// False only when the box is entirely outside one of the planes, or empty. A box just outside a corner of the
 	// frustum can still return true, which is fine for culling.
-	bool Intersects(const Vector3D& boxMin, const Vector3D& boxMax) const
+	bool Intersects(const BoundingBox& box) const
 	{
+		if (box.IsEmpty())
+		{
+			return false;
+		}
+
+		const Vector3D& boxMin = box.GetMin();
+		const Vector3D& boxMax = box.GetMax();
 		for (const Plane& plane : m_planes)
 		{
 			// The box corner furthest along the plane's normal

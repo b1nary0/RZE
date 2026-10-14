@@ -41,6 +41,7 @@ void MeshGeometry::AllocateData(std::vector<float>&& interleavedVertexData)
 	AssertExpr(m_vertexBuffer == nullptr);
 	AssertExpr(m_indexBuffer == nullptr);
 
+	// Again, in case the vertices were filled in some other way
 	CalculateBounds();
 
 	m_vertexBuffer = std::make_shared<VertexBuffer>();
@@ -86,23 +87,28 @@ void MeshGeometry::CalculateBounds()
 {
 	if (m_vertices.empty())
 	{
-		m_boundsMin = Vector3D();
-		m_boundsMax = Vector3D();
+		m_bounds = BoundingBox(Vector3D(), Vector3D());
 		return;
 	}
 
-	m_boundsMin = m_vertices[0].Position;
-	m_boundsMax = m_vertices[0].Position;
+	m_bounds = BoundingBox();
 	for (const MeshVertex& vertex : m_vertices)
 	{
-		m_boundsMin = VectorUtils::Min(m_boundsMin, vertex.Position);
-		m_boundsMax = VectorUtils::Max(m_boundsMax, vertex.Position);
+		m_bounds.Grow(vertex.Position);
 	}
 }
 
 void MeshGeometry::AddVertex(const MeshVertex& vertex)
 {
 	m_vertices.push_back(vertex);
+	if (m_vertices.size() == 1)
+	{
+		m_bounds = BoundingBox(vertex.Position, vertex.Position);
+	}
+	else
+	{
+		m_bounds.Grow(vertex.Position);
+	}
 }
 
 void MeshGeometry::AddIndex(U32 index)
@@ -118,11 +124,13 @@ void MeshGeometry::SetName(const std::string& name)
 void MeshGeometry::SetVertexData(const std::vector<MeshVertex>& verts)
 {
 	m_vertices = verts;
+	CalculateBounds();
 }
 
 void MeshGeometry::SetVertexData(std::vector<MeshVertex>&& verts)
 {
 	m_vertices = std::move(verts);
+	CalculateBounds();
 }
 
 void MeshGeometry::SetIndexData(const std::vector<U32>& indices)

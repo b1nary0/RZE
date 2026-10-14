@@ -565,7 +565,7 @@ namespace Editor
 				// Submesh boxes fit tighter than the whole object's box
 				for (const RenderObject::SubMeshBounds& bounds : renderObject->GetSubMeshBounds())
 				{
-					if (frustum.Intersects(bounds.Min, bounds.Max))
+					if (frustum.Intersects(bounds.Bounds))
 					{
 						gameObjects.push_back(gameObject);
 						return;

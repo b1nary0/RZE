@@ -21,24 +21,16 @@ namespace Editor
 
 	float GameObjectClipboard::MeasureWidth(const std::vector<GameObjectPtr>& gameObjects)
 	{
-		bool hasBounds = false;
-		float minX = 0.0f;
-		float maxX = 0.0f;
+		BoundingBox bounds;
 		for (const GameObjectPtr& gameObject : gameObjects)
 		{
-			Vector3D boundsMin;
-			Vector3D boundsMax;
-			if (gameObject == nullptr || !gameObject->GetHierarchyBounds(boundsMin, boundsMax))
+			if (gameObject != nullptr)
 			{
-				continue;
+				bounds.Grow(gameObject->GetHierarchyBounds());
 			}
-
-			minX = hasBounds ? std::min(minX, boundsMin.X()) : boundsMin.X();
-			maxX = hasBounds ? std::max(maxX, boundsMax.X()) : boundsMax.X();
-			hasBounds = true;
 		}
 
-		return hasBounds ? maxX - minX : 0.0f;
+		return bounds.IsEmpty() ? 0.0f : bounds.GetSize().X();
 	}
 
 	std::vector<GameObjectSnapshot> GameObjectClipboard::TakeSnapshots(const std::vector<GameObjectPtr>& gameObjects)
