@@ -184,6 +184,8 @@ namespace Editor
 	void EditorApp::ShutDown()
 	{
 		RZE().GetActiveScene().SetObjectsChangedCallback(nullptr);
+		// While the renderer and resources are still up
+		m_context.GetThumbnails().ShutDown();
 	}
 
 	void EditorApp::RegisterInputEvents(InputHandler& inputHandler)

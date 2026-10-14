@@ -7,37 +7,45 @@
 #include <functional>
 #include <memory>
 #include <string>
-#include <vector>
 
 namespace Editor
 {
-	class EditorContext;
-
-	// Renders the thumbnails of a list of assets one at a time, in the editor's own scene, then loads the scene that was
-	// open before (or a new one if it had no file). Blocking, so the progress modal shows it and nothing else touches
-	// the scene meanwhile. A subclass says how to set up and capture one item; a thumbnail that can't be rendered is
-	// logged and the batch carries on.
+	// Renders thumbnails one at a time, each through the same steps: set the item up, wait until it's ready, let it
+	// settle for a few frames, capture it, wait for the file, then tidy up. A subclass says where the items come from
+	// and how each is set up and captured; it can take more while the batch runs.
+	//
+	// Reports as it goes: "<item> (3 of 12)" with the progress, a logged step for each thumbnail written, and a warning
+	// for each that couldn't be, after which the batch carries on. It finishes once there's nothing left.
 	class ThumbnailBatchOperation : public AsyncOperation
 	{
 	public:
-		ThumbnailBatchOperation(EditorContext& context, const std::string& name, std::vector<Filepath> items);
+		// flags are EAsyncOperationFlags
+		ThumbnailBatchOperation(const std::string& name, U32 flags);
 
 	protected:
-		// Before the first item, e.g. starts a new scene to stage the items in. The first item waits for any scene load
-		// this starts.
-		virtual void BeginBatch() {}
+		// The next item, or false when there are none left, which finishes the batch
+		virtual bool TakeNextItem(Filepath& outItem) = 0;
+		// How many more are to come after the current one, for the progress
+		virtual size_t GetItemsLeft() const = 0;
+
 		// Sets the scene up for item, e.g. loads it
 		virtual void BeginItem(const Filepath& item) = 0;
-		// Whether the item is set up; it's captured once it has also settled for GetSettleFrames frames
+		// Whether the item is set up; it's captured once it has also settled for GetSettleFrames frames. FailItem from
+		// here gives up on it.
 		virtual bool IsItemReady() = 0;
-		// Captures the item's thumbnail, calling onDone once with whether it was written
-		virtual void CaptureItem(const Filepath& item, std::function<void(bool succeeded)> onDone) = 0;
-		// After the item's capture, e.g. removes what BeginItem added
-		virtual void EndItem() {}
-		// Frames a ready item waits before its capture, for its first frames' work (e.g. the shadow map, uploads)
-		virtual int GetSettleFrames() const { return 10; }
+		// Captures the item's thumbnail, calling onDone once, with the error if it wasn't written
+		virtual void CaptureItem(const Filepath& item, std::function<void(bool succeeded, const std::string& error)> onDone) = 0;
+		// After the item, whether or not it was written, e.g. removes what BeginItem added
+		virtual void EndItem(const Filepath& item, bool succeeded) {}
+		// Once the batch has finished: Succeeded when there was nothing left, or Cancelled
+		virtual void EndBatch(EAsyncOperationState finalState) {}
+		// Frames a ready item waits before its capture, for its first frames' work (e.g. uploads)
+		virtual int GetSettleFrames() const { return 3; }
 
-		EditorContext& GetContext() { return m_context; }
+		// Gives up on the current item, as a warning; the batch carries on with the next
+		void FailItem(const std::string& reason);
+
+		size_t GetWrittenCount() const { return m_writtenCount; }
 
 	private:
 		void OnStart() override;
@@ -45,15 +53,14 @@ namespace Editor
 		void OnFinished(EAsyncOperationState finalState) override;
 
 		void StartNextItem();
+		void FinishItem(bool succeeded, const std::string& error);
 
 	private:
 		enum class EState
 		{
-			Preparing,
 			WaitingForItem,
 			Settling,
-			Capturing,
-			Restoring
+			Capturing
 		};
 
 		// Written by a capture's callback, which may outlive the operation
@@ -61,29 +68,21 @@ namespace Editor
 		{
 			bool IsDone = false;
 			bool Succeeded = false;
+			std::string Error;
 		};
 
-		EditorContext& m_context;
-		std::vector<Filepath> m_items;
-		size_t m_itemIndex = 0;
+		Filepath m_item;
+		bool m_hasItem = false;
+		// Started, including the current one
+		size_t m_itemsStarted = 0;
+		size_t m_writtenCount = 0;
 		size_t m_failedCount = 0;
 
-		EState m_state = EState::Preparing;
+		EState m_state = EState::WaitingForItem;
 		int m_settleFramesLeft = 0;
 		std::shared_ptr<CaptureResult> m_captureResult;
-
-		// The scene to load again at the end; invalid if it had no file
-		Filepath m_originalScene;
+		// Set by FailItem
+		bool m_hasItemFailed = false;
+		std::string m_itemError;
 	};
-
-	namespace ThumbnailBatches
-	{
-		// Renders each scene's thumbnail through its main camera, loading each in turn: those in scenes, or every
-		// scene in the scene folder if it's empty. Asks about unsaved changes first, since it replaces the scene.
-		void RenderScenes(EditorContext& context, std::vector<Filepath> scenes = {});
-
-		// Renders every mesh asset's thumbnail, each on its own in a new scene, framed from a three-quarter angle. Asks
-		// about unsaved changes first.
-		void RenderMeshes(EditorContext& context);
-	}
 }

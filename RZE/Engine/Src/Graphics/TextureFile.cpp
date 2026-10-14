@@ -7,6 +7,7 @@
 #include <Rendering/Renderer.h>
 #include <Rendering/TextureReadback.h>
 
+#include <Utils/Platform/File.h>
 #include <Utils/Platform/Filepath.h>
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -21,7 +22,8 @@ namespace
 	{
 	public:
 		SaveTextureOperation(const Rendering::TextureBuffer2DHandle& texture, const Filepath& filepath)
-			: AsyncOperation("Saving " + filepath.GetRelativePath(), EAsyncOperationFlags::None)
+			// Whoever asked for the image reports on it (e.g. a thumbnail run), and nothing waits on it
+			: AsyncOperation("Saving " + filepath.GetRelativePath(), EAsyncOperationFlags::Background | EAsyncOperationFlags::Hidden)
 			, m_filepath(filepath)
 			, m_readback(std::make_shared<Rendering::TextureReadback>())
 		{
@@ -93,9 +95,13 @@ namespace TextureFile
 	{
 		Filepath::CreateDir(filepath.GetAbsoluteDirectoryPath());
 
+		// Beside it first, so anything loading the image (e.g. a file browser tile) never reads half of one
+		const Filepath temporaryPath = File::GetTemporaryPathFor(filepath);
 		const int stride = static_cast<int>(width * k_rgbaBytesPerTexel);
-		return stbi_write_png(filepath.GetAbsolutePath().c_str(), static_cast<int>(width), static_cast<int>(height),
+		const bool wasWritten = stbi_write_png(temporaryPath.GetAbsolutePath().c_str(), static_cast<int>(width), static_cast<int>(height),
 			static_cast<int>(k_rgbaBytesPerTexel), rgba, stride) != 0;
+
+		return File::MoveReplacing(temporaryPath, filepath) && wasWritten;
 	}
 
 	std::shared_ptr<AsyncOperation> SaveToPNG(const Rendering::TextureBuffer2DHandle& texture, const Filepath& filepath)

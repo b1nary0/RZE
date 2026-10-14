@@ -3,6 +3,8 @@
 
 #include <Utils/DebugUtils/Debug.h>
 
+#include <filesystem>
+
 File::File(const Filepath& filePath, bool createIfNotExist)
 	: m_filePath(filePath)
 {
@@ -10,6 +12,25 @@ File::File(const Filepath& filePath, bool createIfNotExist)
 	{
 		Filepath::CreateDir(filePath.GetAbsoluteDirectoryPath());
 	}
+}
+
+Filepath File::GetTemporaryPathFor(const Filepath& path)
+{
+	return Filepath(path.GetRelativePath() + ".tmp");
+}
+
+bool File::MoveReplacing(const Filepath& from, const Filepath& to)
+{
+	std::error_code error;
+	// Replaces an existing file in one step
+	std::filesystem::rename(from.GetAbsolutePath(), to.GetAbsolutePath(), error);
+	if (error)
+	{
+		std::error_code ignored;
+		std::filesystem::remove(from.GetAbsolutePath(), ignored);
+		return false;
+	}
+	return true;
 }
 
 void File::SetFilePath(const std::string& path)

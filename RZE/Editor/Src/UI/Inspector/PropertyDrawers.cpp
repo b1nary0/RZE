@@ -193,6 +193,8 @@ namespace
 			request.Extensions = Editor::ParseExtensionFilter(property.AssetFilter);
 			request.InitialSelection = path;
 			request.ThumbnailFor = &Editor::Thumbnails::FindFor;
+			// Mesh thumbnails, for one; does nothing for files without rendered thumbnails
+			context.GetThumbnails().AddToBrowser(request);
 			request.RequesterID = browseID;
 			browser.Open(std::move(request));
 		}

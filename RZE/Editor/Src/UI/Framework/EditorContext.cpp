@@ -11,7 +11,7 @@ namespace Editor
 		: m_selection(m_events)
 		, m_selectionBounds(m_events)
 		, m_sceneDocument(*this)
-		, m_sceneThumbnails(*this)
+		, m_thumbnails(*this)
 	{
 	}
 
@@ -19,7 +19,6 @@ namespace Editor
 	{
 		m_sceneViewport.IsHovered = false;
 		m_scenePicker.Update();
-		m_sceneThumbnails.Update();
 	}
 
 	void EditorContext::ResetSceneState()

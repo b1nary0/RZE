@@ -102,9 +102,10 @@ namespace Editor
 		return true;
 	}
 
-	void FileBrowserModal::RefreshThumbnails()
+	void FileBrowserModal::RefreshThumbnail(const Filepath& image)
 	{
-		ReleaseThumbnails();
+		// Released, so it's loaded again from the file next time a tile shows it
+		m_thumbnails.erase(image.GetRelativePath());
 	}
 
 	void FileBrowserModal::Display()
@@ -784,8 +785,13 @@ namespace Editor
 			}
 
 			++m_loadsThisFrame;
-			ResourceHandle texture = image.Exists() ? RZE().GetResourceHandler().LoadResource<Texture2D>(image) : ResourceHandle::EmptyHandle();
+			const bool exists = image.Exists();
+			ResourceHandle texture = exists ? RZE().GetResourceHandler().LoadResource<Texture2D>(image) : ResourceHandle::EmptyHandle();
 			it = m_thumbnails.emplace(key, std::move(texture)).first;
+			if (!exists && m_request.OnThumbnailMissing)
+			{
+				m_request.OnThumbnailMissing(file);
+			}
 		}
 
 		return it->second.IsValid() ? RZE().GetResourceHandler().GetResource<Texture2D>(it->second) : nullptr;

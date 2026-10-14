@@ -62,6 +62,15 @@ bool HeadlessScene::IsLoading() const
 	return false;
 }
 
+void HeadlessScene::ReleasePreloaded()
+{
+	for (const std::shared_ptr<AsyncOperation>& preload : m_preloads)
+	{
+		preload->RequestCancel();
+	}
+	m_preloads.clear();
+}
+
 GameObjectPtr HeadlessScene::AddGameObject(const std::string& name)
 {
 	return m_scene->AddGameObject(name);
@@ -83,11 +92,7 @@ void HeadlessScene::Unload()
 {
 	CancelLoad();
 
-	for (const std::shared_ptr<AsyncOperation>& preload : m_preloads)
-	{
-		preload->RequestCancel();
-	}
-	m_preloads.clear();
+	ReleasePreloaded();
 
 	m_scene->Unload();
 	m_scene->SetCurrentScenePath(Filepath());

@@ -5,6 +5,7 @@
 #include <Utils/StringUtils.h>
 
 #include <algorithm>
+#include <filesystem>
 #include <functional>
 #include <vector>
 
@@ -63,6 +64,25 @@ namespace Editor
 			const auto source = std::find_if(s_sources.begin(), s_sources.end(),
 				[&extension](const Source& candidate) { return StringUtils::EqualsIgnoringCase(candidate.Extension, extension); });
 			return source != s_sources.end() ? source->FindImage(asset) : Filepath();
+		}
+
+		bool IsRendered(const Filepath& asset)
+		{
+			return IsScene(asset) || StringUtils::EqualsIgnoringCase(asset.GetExtension(), AssetPaths::k_meshExtension);
+		}
+
+		bool IsScene(const Filepath& asset)
+		{
+			return StringUtils::EqualsIgnoringCase(asset.GetExtension(), AssetPaths::k_sceneExtension);
+		}
+
+		bool IsUpToDate(const Filepath& asset, const Filepath& image)
+		{
+			std::error_code imageError;
+			std::error_code assetError;
+			const std::filesystem::file_time_type imageTime = std::filesystem::last_write_time(image.GetAbsolutePath(), imageError);
+			const std::filesystem::file_time_type assetTime = std::filesystem::last_write_time(asset.GetAbsolutePath(), assetError);
+			return !imageError && !assetError && imageTime >= assetTime;
 		}
 	}
 }

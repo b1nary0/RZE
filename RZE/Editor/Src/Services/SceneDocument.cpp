@@ -120,6 +120,7 @@ namespace Editor
 		request.RootFolder = AssetPaths::GetSceneFolder();
 		request.Extensions = { AssetPaths::k_sceneExtension };
 		request.ThumbnailFor = [](const Filepath& file) { return Thumbnails::Scenes().GetPathFor(file); };
+		m_context.GetThumbnails().AddToBrowser(request);
 		request.OnChosen = [this, onDone](const Filepath& file)
 			{
 				SaveAs(file);

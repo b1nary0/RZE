@@ -2,6 +2,8 @@
 
 #include <Services/FolderListing.h>
 
+#include <TestFolder.h>
+
 #include <filesystem>
 #include <fstream>
 #include <string>
@@ -11,39 +13,6 @@ using namespace Editor;
 
 namespace
 {
-	// A scratch folder next to the test executable (Filepaths are relative to it), removed again when the test ends
-	class ScopedTestFolder
-	{
-	public:
-		ScopedTestFolder()
-			: m_folder("UnitTestsTemp_FolderListing")
-		{
-			std::filesystem::remove_all(m_folder.GetAbsolutePath());
-			std::filesystem::create_directories(m_folder.GetAbsolutePath());
-		}
-
-		~ScopedTestFolder()
-		{
-			std::error_code ignored;
-			std::filesystem::remove_all(m_folder.GetAbsolutePath(), ignored);
-		}
-
-		const Filepath& Get() const { return m_folder; }
-
-		void AddFile(const std::string& name) const
-		{
-			std::ofstream(std::filesystem::path(m_folder.GetAbsolutePath()) / name) << "test";
-		}
-
-		void AddFolder(const std::string& name) const
-		{
-			std::filesystem::create_directories(std::filesystem::path(m_folder.GetAbsolutePath()) / name);
-		}
-
-	private:
-		Filepath m_folder;
-	};
-
 	std::vector<std::string> GetNames(const std::vector<FolderEntry>& entries)
 	{
 		std::vector<std::string> names;
@@ -57,7 +26,7 @@ namespace
 
 TEST_CASE("ListFolder lists subfolders first, then files with the extensions, each sorted by name")
 {
-	const ScopedTestFolder folder;
+	const ScopedTestFolder folder("UnitTestsTemp_FolderListing");
 	folder.AddFile("b.scene");
 	folder.AddFile("A.SCENE");
 	folder.AddFile("notes.txt");
@@ -74,7 +43,7 @@ TEST_CASE("ListFolder lists subfolders first, then files with the extensions, ea
 
 TEST_CASE("ListFolder lists every file when no extensions are given")
 {
-	const ScopedTestFolder folder;
+	const ScopedTestFolder folder("UnitTestsTemp_FolderListing");
 	folder.AddFile("a.scene");
 	folder.AddFile("b.txt");
 
@@ -83,7 +52,7 @@ TEST_CASE("ListFolder lists every file when no extensions are given")
 
 TEST_CASE("ListFolder keeps the entries whose name contains the search, ignoring case")
 {
-	const ScopedTestFolder folder;
+	const ScopedTestFolder folder("UnitTestsTemp_FolderListing");
 	folder.AddFile("Sponza.scene");
 	folder.AddFile("SpaceHangar.scene");
 	folder.AddFile("Mountain.scene");

@@ -38,5 +38,12 @@ namespace Editor
 		// The image that shows an asset, picked by its extension: a scene's or a mesh's rendered thumbnail, or the file
 		// itself for an image. Invalid for other kinds of asset. It may not exist yet, e.g. a scene never captured.
 		Filepath FindFor(const Filepath& asset);
+
+		// Whether asset's thumbnail is rendered (ThumbnailRenderer): scenes and meshes
+		bool IsRendered(const Filepath& asset);
+		bool IsScene(const Filepath& asset);
+
+		// Whether image exists and was written no earlier than asset was last changed
+		bool IsUpToDate(const Filepath& asset, const Filepath& image);
 	}
 }

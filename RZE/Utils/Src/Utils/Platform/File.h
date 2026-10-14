@@ -33,6 +33,13 @@ public:
 	// contexts.
 	File(const Filepath& filePath, bool createIfNotExist = false);
 
+	// Where to write a file first, so it can be put in place with MoveReplacing once it's whole: path with ".tmp" on
+	static Filepath GetTemporaryPathFor(const Filepath& path);
+	// Moves the file at from over to, replacing it if it exists, in one step, so anything reading to gets the old file
+	// or the new one, never one half-written. False if it couldn't (e.g. while to is open elsewhere), and from is
+	// removed either way.
+	static bool MoveReplacing(const Filepath& from, const Filepath& to);
+
 	// If setting file path manually, Read() must be called.
 	void SetFilePath(const std::string& path);
 	const Filepath& GetPath() const;

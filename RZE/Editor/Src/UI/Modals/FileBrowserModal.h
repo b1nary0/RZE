@@ -51,6 +51,9 @@ namespace Editor
 		// The image a file's tile shows, e.g. its thumbnail. No function, or an invalid or missing file, shows a
 		// placeholder with the file's extension.
 		std::function<Filepath(const Filepath& file)> ThumbnailFor;
+		// Called once a tile is shown whose image (ThumbnailFor) doesn't exist yet, once per file each time the browser
+		// opens, e.g. to have it rendered (RefreshThumbnail shows it once it's written)
+		std::function<void(const Filepath& file)> OnThumbnailMissing;
 		// The right-click menu on a file's tile
 		std::vector<FileBrowserTileAction> TileActions;
 
@@ -82,8 +85,8 @@ namespace Editor
 		// the widget each frame.
 		bool ConsumeResult(ImGuiID requesterID, Filepath& outFile);
 
-		// Reloads the tiles' images, e.g. once a thumbnail has been rendered again
-		void RefreshThumbnails();
+		// Reloads the tiles that show image, e.g. once a thumbnail has been rendered again
+		void RefreshThumbnail(const Filepath& image);
 
 		// Must be called at the root of the ImGui ID stack (outside any Begin/End pair)
 		void Display();

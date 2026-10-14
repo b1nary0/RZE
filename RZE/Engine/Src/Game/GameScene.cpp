@@ -59,21 +59,25 @@ void GameScene::Serialize(const Filepath& filePath)
 	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buf);
 	SceneFormat::Write(writer, roots);
 	
-	File sceneFile;
 	if (filePath.IsValid())
 	{
-		sceneFile.SetFilePath(filePath.GetRelativePath());
 		mCurrentScenePath = filePath;
 	}
-	else
-	{
-		sceneFile.SetFilePath(mCurrentScenePath.GetRelativePath());
-	}
 
+	// Beside it first, then moved over it, so a load reading it meanwhile (e.g. a background thumbnail render) never
+	// gets half a scene
+	const Filepath temporaryPath = File::GetTemporaryPathFor(mCurrentScenePath);
+	File sceneFile;
+	sceneFile.SetFilePath(temporaryPath.GetRelativePath());
 	sceneFile.Open(File::EFileOpenMode::Write);
 	sceneFile.Write(buf.GetString());
 	AssertExpr(sceneFile.IsValid());
 	sceneFile.Close();
+
+	if (!File::MoveReplacing(temporaryPath, mCurrentScenePath))
+	{
+		RZE_LOG_ARGS("Couldn't save scene [%s].", mCurrentScenePath.GetRelativePath().c_str());
+	}
 }
 
 void GameScene::Deserialize(const Filepath& filePath)

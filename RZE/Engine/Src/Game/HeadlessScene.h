@@ -52,6 +52,9 @@ public:
 
 	// Whether a Load or Preload is still running
 	bool IsLoading() const;
+	// Lets go of what's been preloaded, cancelling preloads still running. What the scene's objects use stays loaded
+	// through them, e.g. a mesh once a RenderComponent has it.
+	void ReleasePreloaded();
 
 	GameObjectPtr AddGameObject(const std::string& name);
 	// Takes object and its descendants out of the scene and destroys them, and clears object
