@@ -29,6 +29,12 @@ Matrix4x4::Matrix4x4(const glm::mat4& mat)
 	m_mat = mat;
 }
 
+Matrix4x4 Matrix4x4::FromValuePtr(const float* values)
+{
+	AssertNotNull(values);
+	return Matrix4x4(glm::make_mat4(values));
+}
+
 Matrix4x4 Matrix4x4::CreateInPlace(const Vector3D& position, const Vector3D& scale, const Vector3D& eulerDegrees)
 {
 	glm::mat4 translation = glm::translate(glm::mat4(1.0f), position.GetInternalVec());

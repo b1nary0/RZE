@@ -5,6 +5,7 @@
 #include <Utils/PrimitiveDefs.h>
 
 #include <Utils/Math/BoundingBox.h>
+#include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector3D.h>
 
@@ -20,6 +21,14 @@ struct MeshVertex
 	Vector3D Normal;
 	Vector3D Tangent;
 	Vector2D UVData;
+};
+
+// One draw of a mesh's sub-mesh geometry. The same geometry can be placed more than once (an instanced part
+// in an FBX), each time with its own transform relative to the mesh.
+struct MeshPlacement
+{
+	U32 GeometryIndex = 0;
+	Matrix4x4 LocalTransform;
 };
 
 class MeshGeometry

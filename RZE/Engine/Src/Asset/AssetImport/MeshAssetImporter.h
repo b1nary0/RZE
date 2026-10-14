@@ -28,7 +28,11 @@ public:
 	virtual bool Import(const Filepath& filePath) override;
 
 	std::vector<ImportedSubmesh>& GetSubmeshes() { return m_submeshes; }
+	// Where each submesh is drawn; a submesh can appear more than once. Version 0 assets, which predate
+	// placements, get one identity placement per submesh.
+	std::vector<MeshPlacement>& GetPlacements() { return m_placements; }
 
 private:
 	std::vector<ImportedSubmesh> m_submeshes;
+	std::vector<MeshPlacement> m_placements;
 };

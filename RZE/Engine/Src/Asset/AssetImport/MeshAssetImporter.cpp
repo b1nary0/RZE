@@ -7,31 +7,53 @@
 #include <Utils/Memory/ByteStream.h>
 #include <Utils/Memory/ByteStreamUtils.h>
 
+#include <cstddef>
+
 namespace
 {
-	constexpr uint16_t k_meshImporterVersion = 0;
+	constexpr uint16_t k_meshImporterVersion = 1;
+	// Assets burned before placements existed; read as one identity placement per submesh
+	constexpr uint16_t k_meshImporterVersionNoPlacements = 0;
+
+	// The version 0 header. Version 1 (MeshAssetFileHeader) starts with the same fields and adds PlacementCount.
+	struct MeshAssetFileHeaderV0
+	{
+		uint16_t AssetVersion;
+		size_t BufSize;
+		size_t MeshCount;
+	};
+	static_assert(offsetof(MeshAssetFileHeader, PlacementCount) == sizeof(MeshAssetFileHeaderV0));
 }
 
 bool MeshAssetImporter::Import(const Filepath& filePath)
 {
 	m_submeshes.clear();
+	m_placements.clear();
 
 	ByteStream byteStream(filePath.GetRelativePath());
-	if (!byteStream.ReadFromFile(filePath) || byteStream.GetLength() < sizeof(MeshAssetFileHeader))
+	if (!byteStream.ReadFromFile(filePath) || byteStream.GetLength() < sizeof(MeshAssetFileHeaderV0))
 	{
 		RZE_LOG_ARGS("Failed to read mesh asset [%s].", filePath.GetRelativePath().c_str());
 		return false;
 	}
 
-	MeshAssetFileHeader* headerData = reinterpret_cast<MeshAssetFileHeader*>(byteStream.PeekBytesAdvance(sizeof(MeshAssetFileHeader)));
-	if (headerData->AssetVersion != k_meshImporterVersion)
+	const MeshAssetFileHeaderV0 headerData = ByteStreamUtils::ReadType<MeshAssetFileHeaderV0>(byteStream);
+	const bool hasPlacements = headerData.AssetVersion == k_meshImporterVersion;
+	if (!hasPlacements && headerData.AssetVersion != k_meshImporterVersionNoPlacements)
 	{
-		RZE_LOG_ARGS("Mesh asset [%s] has version %u, expected %u.", filePath.GetRelativePath().c_str(), static_cast<U32>(headerData->AssetVersion), static_cast<U32>(k_meshImporterVersion));
+		RZE_LOG_ARGS("Mesh asset [%s] has version %u, expected %u.", filePath.GetRelativePath().c_str(), static_cast<U32>(headerData.AssetVersion), static_cast<U32>(k_meshImporterVersion));
 		return false;
 	}
 
-	m_submeshes.reserve(headerData->MeshCount);
-	for (size_t meshIndex = 0; meshIndex < headerData->MeshCount; ++meshIndex)
+	if (hasPlacements && byteStream.GetLength() < sizeof(MeshAssetFileHeader))
+	{
+		RZE_LOG_ARGS("Failed to read mesh asset [%s].", filePath.GetRelativePath().c_str());
+		return false;
+	}
+	const size_t placementCount = hasPlacements ? ByteStreamUtils::ReadType<size_t>(byteStream) : headerData.MeshCount;
+
+	m_submeshes.reserve(headerData.MeshCount);
+	for (size_t meshIndex = 0; meshIndex < headerData.MeshCount; ++meshIndex)
 	{
 		ImportedSubmesh& submesh = m_submeshes.emplace_back();
 
@@ -49,6 +71,30 @@ bool MeshAssetImporter::Import(const Filepath& filePath)
 		if (materialImporter.Import(Filepath(materialPath)))
 		{
 			submesh.Material = materialImporter.GetMaterialData();
+		}
+	}
+
+	m_placements.reserve(placementCount);
+	for (size_t placementIndex = 0; placementIndex < placementCount; ++placementIndex)
+	{
+		MeshPlacement& placement = m_placements.emplace_back();
+		if (!hasPlacements)
+		{
+			placement.GeometryIndex = static_cast<U32>(placementIndex);
+			continue;
+		}
+
+		placement.GeometryIndex = ByteStreamUtils::ReadType<U32>(byteStream);
+		float localTransform[16];
+		byteStream.ReadBytes(reinterpret_cast<Byte*>(localTransform), sizeof(localTransform));
+		placement.LocalTransform = Matrix4x4::FromValuePtr(localTransform);
+
+		if (placement.GeometryIndex >= m_submeshes.size())
+		{
+			RZE_LOG_ARGS("Mesh asset [%s] places submesh %u, but only has %u.", filePath.GetRelativePath().c_str(), placement.GeometryIndex, static_cast<U32>(m_submeshes.size()));
+			m_submeshes.clear();
+			m_placements.clear();
+			return false;
 		}
 	}
 

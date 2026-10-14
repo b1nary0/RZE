@@ -11,6 +11,9 @@ class Matrix4x4
 public:
 	Matrix4x4();
 
+	// 16 floats in the order GetValuePtr() gives them (column-major), e.g. read back from a file
+	static Matrix4x4 FromValuePtr(const float* values);
+
 	static Matrix4x4 CreateInPlace(const Vector3D& position, const Vector3D& scale, const Vector3D& eulerDegrees);
 
 	static Matrix4x4 CreateViewMatrix(const Vector3D& eyePos, const Vector3D& centerPos, const Vector3D& upDir);
