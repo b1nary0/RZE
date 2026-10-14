@@ -293,10 +293,8 @@ __pycache__/
 RZE/_[Pp]roject/imgui\.ini
 !Tools
 !RZE/Engine/ThirdParty
-# Burned data is generated locally; the rendered thumbnails are kept
-RZE/ProjectData/*
-!RZE/ProjectData/SceneThumbnails/
-!RZE/ProjectData/MeshThumbnails/
+# Generated locally: burned data, and the editor's rendered thumbnails
+RZE/ProjectData
 RZE/_[Pp]roject/SourceAssetBurner.args.json
 RZE/_[Pp]roject/Project-RZE.index
 RZE/Logs
