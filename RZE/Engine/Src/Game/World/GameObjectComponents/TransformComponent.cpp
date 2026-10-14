@@ -23,24 +23,6 @@ TransformComponent::TransformComponent(const Vector3D& position, const Vector3D&
 	SetScale(scale);
 }
 
-void TransformComponent::Update()
-{
-	if (m_isDirty)
-	{
-		if (!IsRoot())
-		{
-			m_localTransform = Matrix4x4::CreateInPlace(m_position, m_scale, m_rotation);
-			m_worldTransform = m_parent->GetWorldMatrix() * m_localTransform;
-		}
-		else
-		{
-			m_worldTransform = Matrix4x4::CreateInPlace(m_position, m_scale, m_rotation);
-		}
-
-		m_isDirty = false;
-	}
-}
-
 Vector3D& TransformComponent::GetPosition()
 {
 	return m_position;
@@ -92,6 +74,12 @@ void TransformComponent::SetScale(const Vector3D& scale)
 
 const Matrix4x4& TransformComponent::GetWorldMatrix() const
 {
+	if (m_isDirty)
+	{
+		// The parent's is worked out first if it's out of date too
+		m_worldTransform = IsRoot() ? GetLocalMatrix() : m_parent->GetWorldMatrix() * GetLocalMatrix();
+		m_isDirty = false;
+	}
 	return m_worldTransform;
 }
 
@@ -129,6 +117,8 @@ void TransformComponent::DetachFromParent()
 	AssertNotNull(m_parent);
 	m_parent->RemoveChild(this);
 	m_parent = nullptr;
+	// Its position, rotation and scale are now in the world rather than in the parent
+	MarkDirty();
 }
 
 void TransformComponent::AddChild(TransformComponent* child)
@@ -158,7 +148,7 @@ void TransformComponent::RemoveChild(TransformComponent* child)
 	}
 }
 
-bool TransformComponent::IsRoot()
+bool TransformComponent::IsRoot() const
 {
 	return m_parent == nullptr;
 }

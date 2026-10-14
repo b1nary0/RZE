@@ -20,8 +20,6 @@ public:
 	void Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override;
 	void Deserialize(const rapidjson::Value& data) override;
 
-	void Update() override;
-
 public:
 	// Position in metres; rotation as Euler angles in degrees (see Utils/Math/Units.h)
 	Vector3D& GetPosition();
@@ -36,6 +34,8 @@ public:
 	void SetScale(const Vector3D& scale);
 
 	// Helpers
+	// Worked out when it's read after a change, here or in a parent, so it's right straight away (e.g. when a
+	// render object is made for a mesh that's just been loaded), whether or not the scene has been updated since
 	const Matrix4x4& GetWorldMatrix() const;
 	// Where it sits in its parent (its position, rotation and scale), or in the world for a root. Worked out now,
 	// rather than kept up to date each frame like GetWorldMatrix.
@@ -50,7 +50,7 @@ public:
 	void DetachFromParent();
 
 
-	bool IsRoot();
+	bool IsRoot() const;
 
 private:
 	void MarkDirty();
@@ -62,15 +62,15 @@ private:
 	void RemoveChild(TransformComponent* child);
 
 private:
-	bool m_isDirty = true;
+	// Whether m_worldTransform is out of date
+	mutable bool m_isDirty = true;
 
 	Vector3D m_position;
 	Vector3D m_rotation;
 	Vector3D	 m_scale { 1, 1, 1 };
 
-	Matrix4x4 m_worldTransform;
-	Matrix4x4 m_localTransform;
+	mutable Matrix4x4 m_worldTransform;
 
-	TransformComponent* m_parent;
+	TransformComponent* m_parent = nullptr;
 	std::vector<TransformComponent*> m_children;
 };

@@ -10,6 +10,7 @@
 
 #include <TestComponents.h>
 
+#include <cmath>
 #include <string>
 
 namespace
@@ -219,4 +220,16 @@ TEST_CASE_FIXTURE(BoundedObjects, "An object taken out of the scene no longer co
 
 	Scene.RemoveGameObject(child);
 	CheckBox(parent->GetHierarchyBounds(), Vector3D(-0.5f, -0.5f, -0.5f), Vector3D(0.5f, 0.5f, 0.5f));
+}
+
+TEST_CASE_FIXTURE(BoundedObjects, "Bounds are right straight after a move, before any update")
+{
+	GameObjectPtr parent = Add("Parent", k_unitBox, Vector3D());
+	GameObjectPtr child = Add("Child", k_unitBox, Vector3D(5.0f, 0.0f, 0.0f), parent);
+	CheckBox(parent->GetHierarchyBounds(), Vector3D(-0.5f, -0.5f, -0.5f), Vector3D(5.5f, 0.5f, 0.5f));
+
+	parent->GetTransformComponent()->SetPosition(Vector3D(0.0f, 10.0f, 0.0f));
+	child->GetTransformComponent()->SetPosition(Vector3D(-5.0f, 0.0f, 0.0f));
+	CheckBox(parent->GetHierarchyBounds(), Vector3D(-5.5f, 9.5f, -0.5f), Vector3D(0.5f, 10.5f, 0.5f));
+	CheckBox(child->GetHierarchyBounds(), Vector3D(-5.5f, 9.5f, -0.5f), Vector3D(-4.5f, 10.5f, 0.5f));
 }
