@@ -62,6 +62,7 @@ std::shared_ptr<MaterialInstance> MaterialInstance::Create(const MaterialAssetIm
 	materialInstance->GetProperties().HasHeightMap = (materialData.TextureFlags & MaterialAssetImporter::MaterialData::TEXTUREFLAG_HEIGHT) ? 1.0f : 0.0f;
 	materialInstance->GetProperties().OpacityMaskInAlpha = (materialData.TextureFlags & MaterialAssetImporter::MaterialData::TEXTUREFLAG_OPACITY_IN_ALPHA) ? 1.0f : 0.0f;
 	materialInstance->CommitPropertyChanges();
+	materialInstance->SetBlendMode(materialData.BlendMode);
 
 	return materialInstance;
 }
@@ -133,6 +134,14 @@ void MaterialInstance::DescribeProperties(PropertyBuilder<MaterialInstance>& pro
 			const PixelShader* const shader = material.GetPixelShader();
 			return shader != nullptr ? shader->GetName() : std::string("(none)");
 		});
+
+	// #TODO(Transparency) Read-only for now: material edits have nowhere to be saved, and the plan's editable blend
+	// mode needs an enum property type (PropertyBuilder has none)
+	properties.Value<std::string>("Blend Mode", [](const MaterialInstance& material)
+		{
+			return std::string(MaterialAssetImporter::GetBlendModeName(material.GetBlendMode()));
+		});
+	properties.Value<float>("Opacity", [](const MaterialInstance& material) { return material.GetProperties().Opacity; });
 
 	// Only the slots that have a texture, each labelled with its slot
 	properties.Array("Textures", [](const MaterialInstance& material)

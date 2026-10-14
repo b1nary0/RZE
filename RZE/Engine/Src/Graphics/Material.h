@@ -77,6 +77,11 @@ public:
 	MaterialParams& GetProperties() { return m_properties; }
 	const MaterialParams& GetProperties() const { return m_properties; }
 
+	using EBlendMode = MaterialAssetImporter::MaterialData::EBlendMode;
+	// #TODO(Transparency) Read, but every mode still draws opaque or cutout until the transparent pass exists
+	EBlendMode GetBlendMode() const { return m_blendMode; }
+	void SetBlendMode(EBlendMode blendMode) { m_blendMode = blendMode; }
+
 	// @TODO Is this API good?
 	// Commit property changes to GPU buffer
 	void CommitPropertyChanges();
@@ -87,6 +92,8 @@ private:
 	std::string m_name;
 
 	MaterialParams m_properties;
+	// CPU side only: decides which pass draws the material, so it isn't part of the GPU parameters
+	EBlendMode m_blendMode = EBlendMode::Opaque;
 
 	ResourceHandle m_shaderTechnique;
 	std::vector<ResourceHandle> m_textureSlots;

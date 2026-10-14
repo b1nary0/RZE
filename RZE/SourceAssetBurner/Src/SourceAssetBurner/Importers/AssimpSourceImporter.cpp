@@ -5,6 +5,8 @@
 #include <Assimp/postprocess.h>
 #include <Assimp/scene.h>
 
+#include <Asset/AssetImport/MaterialAssetWriter.h>
+
 #include <Utils/Memory/ByteStream.h>
 
 #include <Utils/DebugUtils/Debug.h>
@@ -569,6 +571,17 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 		// Grayscale height/bump map (map_bump in .mtl). Distinct from tangent-space normal maps (map_Kn).
 		setTexture(aiTextureType_HEIGHT, 4, MaterialData::ETextureFlags::TEXTUREFLAG_HEIGHT);
 
+		// #TODO(Transparency) (Docs/Plans/Transparency.md, Part 1 step 4) Opacity only comes from AI_MATKEY_OPACITY so far,
+		// so FBX glass still lands Opaque here
+		if (materialData.Properties.Opacity < 1.0f)
+		{
+			materialData.BlendMode = MaterialData::EBlendMode::Transparent;
+		}
+		else if (materialData.TextureFlags & MaterialData::ETextureFlags::TEXTUREFLAG_OPACITY)
+		{
+			materialData.BlendMode = MaterialData::EBlendMode::Cutout;
+		}
+
 		// #TODO really gross string manip lol
 		const std::string materialFolder = "ProjectData/Material/" + m_assetName + "/";
 		std::string assetFilepathRelative = materialFolder + materialData.MaterialName + kMaterialAssetSuffix;
@@ -600,57 +613,10 @@ bool AssimpSourceImporter::WriteMaterialAsset(const std::string& relativePath, c
 {
 	AssertExpr(!relativePath.empty());
 
-	Filepath outputPath(relativePath);
-	if (!outputPath.Exists())
-	{
-		Filepath::CreateDir(outputPath.GetAbsoluteDirectoryPath());
-	}
-
-	// #TODO json files are too large. need to compress and write the stream - see zlib
-	File outputFile(outputPath);
-	outputFile.Open((File::EFileOpenMode::Value)(File::EFileOpenMode::Write | File::EFileOpenMode::Binary));
-
-	// sizeof(size_t) * 3 == bufSize + nameSizeBytes + textureCount
-	size_t bufSize = (sizeof(size_t) * 3) + materialData.MaterialName.length() + sizeof(MaterialData::MaterialProperties) + sizeof(U8);
-	for (const std::string& texturePath : materialData.TexturePaths)
-	{
-		// count the bytes of the texture string size in sizeof(size_t) here
-		bufSize += sizeof(size_t) + texturePath.size();
-	}
-
-	ByteStream byteStream(outputPath.GetRelativePath(), bufSize);
-
-	byteStream.WriteBytes(&bufSize, sizeof(size_t));
-
-	const size_t nameSizeBytes = materialData.MaterialName.size();
-	byteStream.WriteBytes(&nameSizeBytes, sizeof(size_t));
-	byteStream.WriteBytes(materialData.MaterialName.data(), nameSizeBytes);
-
-	byteStream.WriteBytes(&materialData.Properties, sizeof(MaterialData::MaterialProperties));
-	byteStream.WriteBytes(&materialData.TextureFlags, sizeof(U8));
-
-	const size_t kTextureCount = materialData.TexturePaths.size();
-	byteStream.WriteBytes(&kTextureCount, sizeof(size_t));
-	for (int textureIdx = 0; textureIdx < kTextureCount; ++textureIdx)
-	{
-		const std::string& texturePath = materialData.TexturePaths[textureIdx];
-
-		const size_t pathSizeBytes = texturePath.size();
-		byteStream.WriteBytes(&pathSizeBytes, sizeof(size_t));
-		byteStream.WriteBytes(texturePath.data(), pathSizeBytes);
-	}
-
-	AssertExpr(byteStream.GetNumBytesWritten() == bufSize);
-
-	const Byte* bytes = byteStream.GetBytes();
-	for (size_t byteIndex = 0; byteIndex < byteStream.GetNumBytesWritten(); ++byteIndex)
-	{
-		outputFile << bytes[byteIndex];
-	}
-
-	outputFile.Close();
-
-	RZE_LOG_ARGS("AssimpSourceImporter : %s written.", outputPath.GetRelativePath().c_str());
+	MaterialAssetWriter assetWriter;
+	assetWriter.SetOutputPath(Filepath(relativePath));
+	assetWriter.SetMaterialData(materialData);
+	assetWriter.Write();
 
 	return true;
 }

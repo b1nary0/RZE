@@ -2,6 +2,7 @@
 
 #include <SourceAssetBurner/Importers/SourceImporter.h>
 
+#include <Asset/AssetImport/MaterialAssetImporter.h>
 #include <Asset/AssetImport/MeshAssetWriter.h>
 
 #include <Utils/PrimitiveDefs.h>
@@ -25,34 +26,8 @@ public:
 	virtual bool Import(const Filepath& filePath) override;
 
 private:
-	// #TODO
-	// standardize these data structures so they dont all need to be maintained...
-	struct MaterialData
-	{
-		enum ETextureFlags
-		{
-			TEXTUREFLAG_NONE = 0,
-			TEXTUREFLAG_ALBEDO = 1 << 0,
-			TEXTUREFLAG_SPECULAR = 1 << 1,
-			TEXTUREFLAG_NORMAL = 1 << 2,
-			TEXTUREFLAG_OPACITY = 1 << 3,
-			TEXTUREFLAG_HEIGHT = 1 << 4,
-			TEXTUREFLAG_OPACITY_IN_ALPHA = 1 << 5, // Opacity texture is the diffuse texture; cutout is in its alpha
-			TEXTUREFLAG_ALL = TEXTUREFLAG_ALBEDO | TEXTUREFLAG_SPECULAR |  TEXTUREFLAG_NORMAL
-		};
-
-		std::string MaterialName;
-		struct MaterialProperties
-		{
-			float Shininess = 0.0f;;
-			float Opacity = 1.0f;
-		} Properties;
-		// #TODO These flags inform which texture types are used by this material
-		// probably not the best implementation of this but i think the asset infrastructure
-		// needs to mature.
-		U8 TextureFlags = TEXTUREFLAG_NONE;
-		std::vector<std::string> TexturePaths;
-	};
+	// The engine's, so the burner and the engine can't disagree about the format (MaterialAssetWriter writes it)
+	using MaterialData = MaterialAssetImporter::MaterialData;
 
 	// Places the node's meshes with its transform relative to the model (parentTransform * the node's), then its children
 	void ProcessNode(const aiNode& node, const aiMatrix4x4& parentTransform);

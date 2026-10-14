@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Utils/Platform/Filepath.h>
+
 class AssetImporter
 {
 public:
