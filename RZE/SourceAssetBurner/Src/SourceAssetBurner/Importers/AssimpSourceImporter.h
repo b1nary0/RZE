@@ -9,6 +9,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include <Assimp/matrix4x4.h>
+
 struct aiMesh;
 struct aiNode;
 struct aiScene;
@@ -51,8 +53,14 @@ private:
 		std::vector<std::string> TexturePaths;
 	};
 
-	void ProcessNode(const aiNode& node, const aiScene& scene);
+	// Places the node's meshes with its transform relative to the model (parentTransform * the node's), then its children
+	void ProcessNode(const aiNode& node, const aiMatrix4x4& parentTransform);
 	void ProcessMesh(const aiMesh& mesh, const aiScene& scene, MeshData& outMeshData);
+
+	// A mirrored placement turns its triangles inside out, so it draws a copy with the opposite winding
+	U32 GetMirroredGeometryIndex(U32 geometryIndex);
+	// Drops geometry no node places (the mesh asset needs every geometry placed)
+	void RemoveUnplacedGeometry();
 
 	bool WriteMeshAsset();
 	bool WriteMaterialAsset(const std::string& relativePath, const MaterialData& materialData);
@@ -62,7 +70,11 @@ private:
 	Filepath m_filepath;
 	std::string m_assetName;
 
+	// Indexed like aiScene::mMeshes, then any mirrored copies
 	std::vector<MeshData> m_meshes;
+	std::vector<MeshPlacement> m_placements;
+	// Geometry index -> its mirrored copy's index
+	std::unordered_map<U32, U32> m_mirroredGeometry;
 	std::unordered_map<std::string, MaterialData> m_materialTable; // #TODO this is just a quick way to prevent duplicates. need a better solution in the future
 	std::vector<Filepath> m_textures;
 };

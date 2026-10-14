@@ -37,6 +37,13 @@ namespace
 		return assetName;
 	}
 
+	Matrix4x4 ToMatrix4x4(aiMatrix4x4 transform)
+	{
+		// Assimp stores a matrix row by row and the engine's math column by column; both multiply column vectors
+		transform.Transpose();
+		return Matrix4x4::FromValuePtr(&transform.a1);
+	}
+
 	Filepath GetTextureFilePath(const Filepath& filePath, const std::string& fileName)
 	{
 		// #TODO(Josh::We need to bake the texture folder structure here, or get on proper asset referencing system)
@@ -81,22 +88,47 @@ bool AssimpSourceImporter::Import(const Filepath& filePath)
 		return false;
 	}
 
+	// Each mesh is read once, however many nodes place it
 	m_meshes.reserve(AssimpScene->mNumMeshes);
-	ProcessNode(*AssimpScene->mRootNode, *AssimpScene);
-
-	if (m_meshes.size() != AssimpScene->mNumMeshes)
+	for (U32 meshIndex = 0; meshIndex < AssimpScene->mNumMeshes; ++meshIndex)
 	{
-		RZE_LOG_ARGS("Error reading meshes from [%s].", filePath.GetRelativePath().c_str());
+		const aiMesh& assimpMesh = *AssimpScene->mMeshes[meshIndex];
+
+		MeshData& meshData = m_meshes.emplace_back();
+		meshData.MeshName = assimpMesh.mName.C_Str();
+
+		RZE_LOG_ARGS("AssimpSourceImporter : Processing Mesh %u of %u - %s", meshIndex + 1, AssimpScene->mNumMeshes, meshData.MeshName.c_str());
+		ProcessMesh(assimpMesh, *AssimpScene, meshData);
+	}
+
+	ProcessNode(*AssimpScene->mRootNode, aiMatrix4x4());
+	RemoveUnplacedGeometry();
+
+	if (m_placements.empty())
+	{
+		RZE_LOG_ARGS("No meshes placed in [%s].", filePath.GetRelativePath().c_str());
 		return false;
 	}
 
+	RZE_LOG_ARGS("AssimpSourceImporter : %u geometries, %u placements (%u mirrored copies)",
+		static_cast<U32>(m_meshes.size()), static_cast<U32>(m_placements.size()), static_cast<U32>(m_mirroredGeometry.size()));
+
 	{
-		BoundingBox bounds;
-		for (const MeshData& meshData : m_meshes)
+		std::vector<BoundingBox> geometryBounds(m_meshes.size());
+		for (size_t meshIndex = 0; meshIndex < m_meshes.size(); ++meshIndex)
 		{
-			for (const MeshVertex& vertex : meshData.VertexDataArray)
+			for (const MeshVertex& vertex : m_meshes[meshIndex].VertexDataArray)
 			{
-				bounds.Grow(vertex.Position);
+				geometryBounds[meshIndex].Grow(vertex.Position);
+			}
+		}
+
+		BoundingBox bounds;
+		for (const MeshPlacement& placement : m_placements)
+		{
+			if (!geometryBounds[placement.GeometryIndex].IsEmpty())
+			{
+				bounds.Grow(geometryBounds[placement.GeometryIndex].Transformed(placement.LocalTransform));
 			}
 		}
 
@@ -128,31 +160,86 @@ bool AssimpSourceImporter::Import(const Filepath& filePath)
 	return true;
 }
 
-void AssimpSourceImporter::ProcessNode(const aiNode& node, const aiScene& scene)
+void AssimpSourceImporter::ProcessNode(const aiNode& node, const aiMatrix4x4& parentTransform)
 {
-	for (U32 meshIndex = 0; meshIndex < node.mNumMeshes; meshIndex++)
+	const aiMatrix4x4 transform = parentTransform * node.mTransformation;
+	const bool isMirrored = transform.Determinant() < 0.0f;
+
+	for (U32 nodeMeshIndex = 0; nodeMeshIndex < node.mNumMeshes; ++nodeMeshIndex)
 	{
-		const unsigned int assimpMeshIdx = node.mMeshes[meshIndex];
-		const aiMesh& assimpMesh = *scene.mMeshes[assimpMeshIdx];
-		
-		MeshData& meshData = m_meshes.emplace_back();
+		const U32 geometryIndex = node.mMeshes[nodeMeshIndex];
 
-		if (assimpMesh.mName.length > 0)
+		// Unnamed meshes take the name of the first node that places them
+		if (m_meshes[geometryIndex].MeshName.empty())
 		{
-			meshData.MeshName = assimpMesh.mName.C_Str();
-		}
-		else
-		{
-			meshData.MeshName = node.mName.C_Str();
+			m_meshes[geometryIndex].MeshName = node.mName.C_Str();
 		}
 
-		RZE_LOG_ARGS("AssimpSourceImporter : Processing Mesh %i of %i - %s", meshIndex + 1, node.mNumMeshes, meshData.MeshName.c_str());
-		ProcessMesh(assimpMesh, scene, meshData);
+		MeshPlacement& placement = m_placements.emplace_back();
+		placement.GeometryIndex = isMirrored ? GetMirroredGeometryIndex(geometryIndex) : geometryIndex;
+		placement.LocalTransform = ToMatrix4x4(transform);
 	}
 
 	for (U32 childNodeIdx = 0; childNodeIdx < node.mNumChildren; childNodeIdx++)
 	{
-		ProcessNode(*node.mChildren[childNodeIdx], scene);
+		ProcessNode(*node.mChildren[childNodeIdx], transform);
+	}
+}
+
+U32 AssimpSourceImporter::GetMirroredGeometryIndex(U32 geometryIndex)
+{
+	auto found = m_mirroredGeometry.find(geometryIndex);
+	if (found != m_mirroredGeometry.end())
+	{
+		return found->second;
+	}
+
+	// Copied rather than referenced: emplace_back may reallocate m_meshes
+	MeshData mirrored = m_meshes[geometryIndex];
+	mirrored.MeshName += "_Mirrored";
+	// Reversing the whole list reverses each triangle's winding (and the triangles' order, which doesn't matter)
+	std::reverse(mirrored.IndexArray.begin(), mirrored.IndexArray.end());
+
+	const U32 mirroredIndex = static_cast<U32>(m_meshes.size());
+	m_meshes.push_back(std::move(mirrored));
+	m_mirroredGeometry[geometryIndex] = mirroredIndex;
+
+	RZE_LOG_ARGS("AssimpSourceImporter : %s is placed mirrored; drawing it from a copy with reversed winding", m_meshes[geometryIndex].MeshName.c_str());
+	return mirroredIndex;
+}
+
+void AssimpSourceImporter::RemoveUnplacedGeometry()
+{
+	std::vector<bool> isPlaced(m_meshes.size(), false);
+	for (const MeshPlacement& placement : m_placements)
+	{
+		isPlaced[placement.GeometryIndex] = true;
+	}
+
+	if (std::find(isPlaced.begin(), isPlaced.end(), false) == isPlaced.end())
+	{
+		return;
+	}
+
+	std::vector<U32> newIndex(m_meshes.size(), 0);
+	std::vector<MeshData> placedMeshes;
+	placedMeshes.reserve(m_meshes.size());
+	for (size_t meshIndex = 0; meshIndex < m_meshes.size(); ++meshIndex)
+	{
+		if (!isPlaced[meshIndex])
+		{
+			RZE_LOG_ARGS("AssimpSourceImporter : %s isn't placed by any node; skipping it", m_meshes[meshIndex].MeshName.c_str());
+			continue;
+		}
+
+		newIndex[meshIndex] = static_cast<U32>(placedMeshes.size());
+		placedMeshes.push_back(std::move(m_meshes[meshIndex]));
+	}
+
+	m_meshes = std::move(placedMeshes);
+	for (MeshPlacement& placement : m_placements)
+	{
+		placement.GeometryIndex = newIndex[placement.GeometryIndex];
 	}
 }
 
@@ -326,6 +413,7 @@ bool AssimpSourceImporter::WriteMeshAsset()
 	MeshAssetWriter assetWriter;
 	assetWriter.SetAssetName(m_assetName);
 	assetWriter.SetMeshData(std::move(m_meshes));
+	assetWriter.SetPlacements(std::move(m_placements));
 
 	assetWriter.Write();
 
