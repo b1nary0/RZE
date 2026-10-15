@@ -6,7 +6,7 @@
 
 #include <Utils/Math/BoundingBox.h>
 
-#include <EngineCore/Resources/ResourceHandler.h>
+#include <memory>
 
 class RenderScene;
 class StaticMeshInstance;
@@ -31,18 +31,21 @@ public:
 	static void DescribeProperties(PropertyBuilder<RenderComponent>& properties);
 
 public:
-	// The mesh asset's path; empty when there's no mesh
+	// The mesh asset's path; empty when there's no mesh, or it was made in code
 	const Filepath& GetMeshPath() const;
-	// The one way to give the component a mesh, from a scene file, the editor or code. Loads the mesh asset at path
-	// through the ResourceHandler, releases the previous one, and rebuilds the render object from it if the object
-	// is in a scene (otherwise OnAddToScene builds it). An empty path unloads the mesh; the path already loaded does
-	// nothing.
+	// Gives the component the mesh asset at path, loading it synchronously through the ResourceHandler (a cache hit
+	// when it was preloaded, as scene loading does), then hands it over with SetMeshInstance. An empty path, or one
+	// that fails to load, leaves the component without a mesh; the path already loaded does nothing.
 	void LoadMesh(const Filepath& path);
+	// The one way the component's mesh changes. Draws meshInstance from now on: the render object, if there is one,
+	// keeps its identity and swaps what it draws; one is created if the object is in a scene and had none (otherwise
+	// OnAddToScene creates it). Null removes the mesh. The previous instance is released.
+	void SetMeshInstance(std::shared_ptr<StaticMeshInstance> meshInstance);
 
 	// The mesh's size along the object's own axes, including its scale; zero without a mesh
 	Vector3D GetMeshSize() const;
 	// Null without a mesh
-	const StaticMeshInstance* GetMesh() const;
+	const StaticMeshInstance* GetMesh() const { return m_meshInstance.get(); }
 
 	bool IsDrawingMeshBounds() const { return m_drawMeshBounds; }
 	void SetDrawMeshBounds(bool draw);
@@ -68,7 +71,8 @@ private:
 	// never change scene
 	RenderScene* m_renderScene = nullptr;
 	RenderObjectPtr m_renderObject;
-	ResourceHandle m_resource;
+	// What it draws; shared with m_renderObject. Holds the mesh asset's resource, keeping it loaded.
+	std::shared_ptr<StaticMeshInstance> m_meshInstance;
 
 	// Editor debug toggles; not serialized
 	bool m_drawMeshBounds = false;

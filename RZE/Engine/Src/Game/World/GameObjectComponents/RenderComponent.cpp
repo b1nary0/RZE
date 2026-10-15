@@ -37,14 +37,14 @@ void RenderComponent::DescribeProperties(PropertyBuilder<RenderComponent>& prope
 	properties.Array("Sub-Meshes", [](const RenderComponent& renderComponent)
 		{
 			const StaticMeshInstance* const mesh = renderComponent.GetMesh();
-			return mesh != nullptr ? MakeObjectRefs(mesh->GetSubMeshes()) : std::vector<ObjectRef>();
+			return mesh != nullptr ? MakeObjectRefs(mesh->GetMesh().GetSubMeshes()) : std::vector<ObjectRef>();
 		});
 }
 
 const Filepath& RenderComponent::GetMeshPath() const
 {
 	static const Filepath s_noMesh;
-	return m_resource.IsValid() ? m_resource.GetResourcePath() : s_noMesh;
+	return m_meshInstance != nullptr ? m_meshInstance->GetResourcePath() : s_noMesh;
 }
 
 void RenderComponent::LoadMesh(const Filepath& path)
@@ -54,15 +54,33 @@ void RenderComponent::LoadMesh(const Filepath& path)
 		return;
 	}
 
-	// The old render object goes before the old mesh is released, since it was built from it
-	if (m_renderObject != nullptr)
+	std::shared_ptr<StaticMeshInstance> meshInstance;
+	if (path.IsValid())
 	{
-		m_renderScene->DestroyRenderObject(m_renderObject);
-		GetOwner()->MarkHierarchyBoundsChanged();
+		const ResourceHandle meshResource = RZE().GetResourceHandler().LoadResource<StaticMeshResource>(path);
+		meshInstance = StaticMeshResource::CreateInstance(meshResource);
 	}
 
-	// Assigning releases the old mesh
-	m_resource = path.IsValid() ? RZE().GetResourceHandler().LoadResource<StaticMeshResource>(path) : ResourceHandle::EmptyHandle();
+	SetMeshInstance(std::move(meshInstance));
+}
+
+void RenderComponent::SetMeshInstance(std::shared_ptr<StaticMeshInstance> meshInstance)
+{
+	m_meshInstance = std::move(meshInstance);
+
+	if (m_renderObject != nullptr)
+	{
+		if (m_meshInstance != nullptr)
+		{
+			m_renderObject->SetMeshInstance(m_meshInstance);
+		}
+		else
+		{
+			m_renderScene->DestroyRenderObject(m_renderObject);
+		}
+		GetOwner()->MarkHierarchyBoundsChanged();
+		return;
+	}
 
 	// A component not yet in a scene creates its render object in OnAddToScene
 	if (m_owner != nullptr && m_owner->IsInScene())
@@ -71,32 +89,14 @@ void RenderComponent::LoadMesh(const Filepath& path)
 	}
 }
 
-const StaticMeshInstance* RenderComponent::GetMesh() const
-{
-	if (!m_resource.IsValid())
-	{
-		return nullptr;
-	}
-
-	const StaticMeshResource* const modelData = RZE().GetResourceHandler().GetResource<StaticMeshResource>(m_resource);
-	return modelData != nullptr ? &modelData->GetStaticMesh() : nullptr;
-}
-
 Vector3D RenderComponent::GetMeshSize() const
 {
-	if (!m_resource.IsValid() || m_owner == nullptr)
+	if (m_meshInstance == nullptr || m_owner == nullptr)
 	{
 		return Vector3D();
 	}
 
-	const StaticMeshResource* const modelData = RZE().GetResourceHandler().GetResource<StaticMeshResource>(m_resource);
-	if (modelData == nullptr)
-	{
-		return Vector3D();
-	}
-
-	const StaticMeshInstance& staticMesh = modelData->GetStaticMesh();
-	return staticMesh.GetBounds().GetSize() * m_owner->GetTransformComponent()->GetScale();
+	return m_meshInstance->GetMesh().GetBounds().GetSize() * m_owner->GetTransformComponent()->GetScale();
 }
 
 void RenderComponent::SetDrawMeshBounds(bool draw)
@@ -117,23 +117,18 @@ BoundingBox RenderComponent::GetLocalBounds() const
 void RenderComponent::CreateRenderObject()
 {
 	// Added without a mesh (e.g. via the editor); a render object is created once a mesh is selected
-	if (!m_resource.IsValid())
+	if (m_meshInstance == nullptr)
 	{
 		return;
 	}
 
 	if (m_renderObject == nullptr)
 	{
-		ResourceHandler& resourceHandler = RZE().GetResourceHandler();
-
 		// #TODO We should probably make RenderComponent a TransformComponent since a mesh without a transform is useless.
 		GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
 		AssertMsg(transformComponent != nullptr, "No TransformComponent found. Mesh creation is useless without a location in 3D space.");
 
-		const StaticMeshResource* modelData = resourceHandler.GetResource<StaticMeshResource>(m_resource);
-		AssertNotNull(modelData);
-
-		m_renderObject = m_renderScene->CreateRenderObject(modelData->GetStaticMesh());
+		m_renderObject = m_renderScene->CreateRenderObject(m_meshInstance);
 		m_renderObject->SetTransform(transformComponent->GetWorldMatrix());
 		// Offset by one because IDs start at 0, which picking uses for "nothing"
 		m_renderObject->SetPickID(GetOwner()->GetID() + 1);
@@ -181,11 +176,10 @@ void RenderComponent::Update()
 void RenderComponent::DrawBounds()
 {
 	const Matrix4x4& worldMatrix = m_renderObject->GetTransform();
-	const StaticMeshInstance& staticMesh = m_renderObject->GetStaticMesh();
 
 	if (m_drawMeshBounds)
 	{
-		m_renderScene->DrawWireBox(staticMesh.GetBounds(), worldMatrix, k_meshBoundsColour);
+		m_renderScene->DrawWireBox(m_meshInstance->GetMesh().GetBounds(), worldMatrix, k_meshBoundsColour);
 	}
 
 	if (m_drawSubMeshBounds)
@@ -203,7 +197,7 @@ void RenderComponent::Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>
 	writer.StartObject();
 	{
 		writer.Key("ResourcePath");
-		writer.String(m_resource.GetResourcePath().GetRelativePath().c_str());
+		writer.String(GetMeshPath().GetRelativePath().c_str());
 	}
 	writer.EndObject();
 }

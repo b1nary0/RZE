@@ -1,11 +1,13 @@
 #include <doctest/doctest.h>
 
 #include <Graphics/RenderScene.h>
+#include <Graphics/StaticMesh.h>
 #include <Graphics/StaticMeshInstance.h>
 
 #include <Utils/Math/BoundingBox.h>
 #include <Utils/Math/Matrix4x4.h>
 
+#include <memory>
 #include <vector>
 
 // Meshes are built on the CPU here: their vertices are enough for their bounds, and nothing in these tests draws
@@ -25,7 +27,8 @@ namespace
 		return subMesh;
 	}
 
-	StaticMeshInstance MakeMesh(const std::vector<BoundingBox>& subMeshBoxes)
+	// An instance of a new mesh with a sub-mesh around each box, each placed at the mesh's origin
+	std::shared_ptr<StaticMeshInstance> MakeMesh(const std::vector<BoundingBox>& subMeshBoxes)
 	{
 		std::vector<MeshGeometry> subMeshes;
 		for (const BoundingBox& box : subMeshBoxes)
@@ -33,9 +36,7 @@ namespace
 			subMeshes.push_back(MakeSubMesh(box));
 		}
 
-		StaticMeshInstance mesh;
-		mesh.Initialize(subMeshes);
-		return mesh;
+		return StaticMeshInstance::Create(StaticMesh::Create("Test", std::move(subMeshes)));
 	}
 
 	Matrix4x4 MakeTransform(const Vector3D& position, const Vector3D& rotation = Vector3D(), const Vector3D& scale = Vector3D(1.0f))
@@ -126,13 +127,14 @@ TEST_CASE("A sub-mesh placed twice is drawn and bounded at each placement")
 	placements[0].LocalTransform = MakeTransform(Vector3D(-5.0f, 0.0f, 0.0f));
 	placements[1].LocalTransform = MakeTransform(Vector3D(5.0f, 0.0f, 0.0f));
 
-	StaticMeshInstance mesh;
-	mesh.Initialize({ MakeSubMesh(k_unitBox) }, std::move(placements));
-	CHECK(mesh.GetSubMeshes().size() == 1);
-	CheckBox(mesh.GetBounds(), Vector3D(-6.0f, -1.0f, -1.0f), Vector3D(6.0f, 1.0f, 1.0f));
+	std::vector<MeshGeometry> subMeshes;
+	subMeshes.push_back(MakeSubMesh(k_unitBox));
+	const std::shared_ptr<const StaticMesh> mesh = StaticMesh::Create("Test", std::move(subMeshes), std::move(placements));
+	CHECK(mesh->GetSubMeshes().size() == 1);
+	CheckBox(mesh->GetBounds(), Vector3D(-6.0f, -1.0f, -1.0f), Vector3D(6.0f, 1.0f, 1.0f));
 
 	RenderScene scene;
-	RenderObjectPtr object = scene.CreateRenderObject(mesh);
+	RenderObjectPtr object = scene.CreateRenderObject(StaticMeshInstance::Create(mesh));
 	object->SetTransform(MakeTransform(Vector3D(0.0f, 10.0f, 0.0f)));
 
 	const std::vector<MeshDraw>& draws = object->GetDraws();
@@ -209,7 +211,7 @@ TEST_CASE("A scene's bounds follow its objects being added, moved, given new mes
 	CHECK(scene.GetRevision() == revision);
 	CheckBox(scene.GetBounds(), Vector3D(-1.0f), Vector3D(4.0f, 1.0f, 1.0f));
 
-	second->SetStaticMesh(MakeMesh({ BoundingBox(Vector3D(-5.0f), Vector3D(5.0f)) }));
+	second->SetMeshInstance(MakeMesh({ BoundingBox(Vector3D(-5.0f), Vector3D(5.0f)) }));
 	CheckBox(scene.GetBounds(), Vector3D(-2.0f, -5.0f, -5.0f), Vector3D(8.0f, 5.0f, 5.0f));
 
 	scene.DestroyRenderObject(second);
@@ -217,4 +219,69 @@ TEST_CASE("A scene's bounds follow its objects being added, moved, given new mes
 
 	scene.ClearObjects();
 	CHECK(scene.GetBounds().IsEmpty());
+}
+
+TEST_CASE("Objects drawing the same mesh share it rather than copying it")
+{
+	std::vector<MeshGeometry> subMeshes;
+	subMeshes.push_back(MakeSubMesh(k_unitBox));
+	const std::shared_ptr<const StaticMesh> mesh = StaticMesh::Create("Shared", std::move(subMeshes));
+
+	RenderScene scene;
+	RenderObjectPtr first = scene.CreateRenderObject(StaticMeshInstance::Create(mesh));
+	RenderObjectPtr second = scene.CreateRenderObject(StaticMeshInstance::Create(mesh));
+	second->SetTransform(MakeTransform(Vector3D(10.0f, 0.0f, 0.0f)));
+
+	// Both draw the mesh's own geometry, each where its object is
+	REQUIRE(first->GetDraws().size() == 1);
+	REQUIRE(second->GetDraws().size() == 1);
+	CHECK(first->GetDraws()[0].Geometry == &mesh->GetSubMeshes()[0]);
+	CHECK(second->GetDraws()[0].Geometry == &mesh->GetSubMeshes()[0]);
+	CheckBox(second->GetDraws()[0].Bounds, Vector3D(9.0f, -1.0f, -1.0f), Vector3D(11.0f, 1.0f, 1.0f));
+
+	scene.ClearObjects();
+}
+
+TEST_CASE("Swapping an object's mesh keeps the object and lets the old mesh go")
+{
+	RenderScene scene;
+	std::shared_ptr<StaticMeshInstance> small = MakeMesh({ k_unitBox });
+	const std::weak_ptr<StaticMeshInstance> oldInstance = small;
+	RenderObjectPtr object = scene.CreateRenderObject(std::move(small));
+	object->SetTransform(MakeTransform(Vector3D(0.0f, 5.0f, 0.0f)));
+	const U32 liveID = object->GetLiveID();
+	REQUIRE(object->GetDraws().size() == 1);
+
+	const BoundingBox left(Vector3D(-3.0f, 0.0f, 0.0f), Vector3D(-2.0f, 1.0f, 1.0f));
+	const BoundingBox right(Vector3D(2.0f, 0.0f, 0.0f), Vector3D(3.0f, 1.0f, 1.0f));
+	object->SetMeshInstance(MakeMesh({ left, right }));
+
+	// The same object, drawing the new mesh where it already was
+	CHECK(object->GetLiveID() == liveID);
+	REQUIRE(object->GetDraws().size() == 2);
+	CheckBox(object->GetDraws()[1].Bounds, Vector3D(2.0f, 5.0f, 0.0f), Vector3D(3.0f, 6.0f, 1.0f));
+	CheckBox(object->GetBounds(), Vector3D(-3.0f, 5.0f, 0.0f), Vector3D(3.0f, 6.0f, 1.0f));
+	// Nothing else held the old instance
+	CHECK(oldInstance.expired());
+
+	scene.ClearObjects();
+}
+
+TEST_CASE("An object without a mesh draws nothing and takes up no space")
+{
+	RenderScene scene;
+	RenderObjectPtr object = scene.CreateRenderObject(nullptr);
+	object->SetTransform(MakeTransform(Vector3D(50.0f, 0.0f, 0.0f)));
+	CHECK(object->GetDraws().empty());
+	CHECK(object->GetBounds().IsEmpty());
+	CHECK(scene.GetBounds().IsEmpty());
+
+	// Given one, it draws it; and taking it away again leaves it drawing nothing
+	object->SetMeshInstance(MakeMesh({ k_unitBox }));
+	CHECK(object->GetDraws().size() == 1);
+	object->SetMeshInstance(nullptr);
+	CHECK(object->GetDraws().empty());
+	CHECK(object->GetBounds().IsEmpty());
+
+	scene.ClearObjects();
 }

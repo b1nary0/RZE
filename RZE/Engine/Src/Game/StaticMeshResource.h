@@ -2,7 +2,10 @@
 
 #include <Asset/AssetImport/MeshAssetImporter.h>
 
+#include <Graphics/StaticMesh.h>
 #include <Graphics/StaticMeshInstance.h>
+
+#include <memory>
 
 #include <Utils/Interfaces/Resource.h>
 
@@ -24,10 +27,12 @@ public:
 	bool FinalizeStep() override;
 
 public:
-	const StaticMeshInstance& GetStaticMesh() const { return m_mesh; }
+	// Null until it has loaded
+	const std::shared_ptr<const StaticMesh>& GetMesh() const { return m_mesh; }
 
-	[[nodiscard]]
-	StaticMeshInstance GetInstance() const { return m_mesh; }
+	// A new instance of the loaded mesh meshResource refers to, holding meshResource so the mesh stays loaded while the
+	// instance lives. Null if meshResource isn't a loaded StaticMeshResource.
+	static std::shared_ptr<StaticMeshInstance> CreateInstance(const ResourceHandle& meshResource);
 
 private:
 	struct PendingSubmesh
@@ -37,7 +42,8 @@ private:
 	};
 
 private:
-	StaticMeshInstance m_mesh;
+	// Shared with every instance made from it
+	std::shared_ptr<const StaticMesh> m_mesh;
 	std::string m_meshName;
 
 	// Populated by LoadCPU, consumed by FinalizeStep.

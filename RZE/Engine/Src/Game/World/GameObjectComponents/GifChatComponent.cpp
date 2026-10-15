@@ -74,7 +74,7 @@ void GifChatComponent::Update()
 	{
 		if (m_elapsedMS >= static_cast<float>(m_frameDelays[m_currentDisplayingFrame]))
 		{
-			m_meshGeometry.GetSubMeshes()[0].GetMaterial()->SetTexture(0, m_frames[m_currentDisplayingFrame]);
+			m_material->SetTexture(0, m_frames[m_currentDisplayingFrame]);
 			++m_currentDisplayingFrame;
 
 			m_elapsedMS = 0;
@@ -151,19 +151,15 @@ void GifChatComponent::Load(const Filepath& fp)
 	// Frames own copies of their data now
 	stbi_image_free(gifData);
 
-	GenerateMesh();
-
 	ResourceHandle shader = 
 		RZE().GetResourceHandler().LoadResource<PixelShader>(Filepath("Assets/Shaders/Pixel_NewRenderer_DiffuseOnly.hlsl"), "Pixel_NewRenderer_DiffuseOnly");
 	AssertExpr(shader.IsValid());
 
-	std::shared_ptr<MaterialInstance> material = std::make_shared<MaterialInstance>("GifMaterial");
-	material->SetTexture(0, m_frames[m_currentDisplayingFrame]);
-	material->SetShaderTechnique(shader);
+	m_material = std::make_shared<MaterialInstance>("GifMaterial");
+	m_material->SetTexture(0, m_frames[m_currentDisplayingFrame]);
+	m_material->SetShaderTechnique(shader);
 
-	// For purposes, always one mesh - a quad
-	MeshGeometry& geo = m_meshGeometry.GetSubMeshes()[0];
-	geo.SetMaterial(material);
+	GenerateMesh(m_material);
 
 	STBI_FREE(delays);
 }
@@ -172,14 +168,12 @@ void GifChatComponent::CreateRenderObject()
 {
 	GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
 
-	m_meshRenderObject = m_renderScene->CreateRenderObject(m_meshGeometry);
+	m_meshRenderObject = m_renderScene->CreateRenderObject(m_mesh);
 	m_meshRenderObject->SetTransform(transformComponent->GetWorldMatrix());
 }
 
-void GifChatComponent::GenerateMesh()
+void GifChatComponent::GenerateMesh(const std::shared_ptr<MaterialInstance>& material)
 {
-	StaticMeshInstance mesh;
-
 	std::vector<MeshGeometry> geometryList;
 	MeshGeometry& geo = geometryList.emplace_back();
 	geo.SetName("GIF_RENDER_MESH");
@@ -225,10 +219,9 @@ void GifChatComponent::GenerateMesh()
 
 	
 	geo.AllocateData();
+	geo.SetMaterial(material);
 
-	mesh.Initialize(std::move(geometryList));
-
-	m_meshGeometry = std::move(mesh);
+	m_mesh = StaticMeshInstance::Create(StaticMesh::Create("GIF_RENDER_MESH", std::move(geometryList)));
 }
 
 //
@@ -283,6 +276,7 @@ void GifChatComponent::DescribeProperties(PropertyBuilder<GifChatComponent>& pro
 {
 	properties.Array("Sub-Meshes", [](const GifChatComponent& gifChat)
 		{
-			return MakeObjectRefs(gifChat.GetMeshGeometry().GetSubMeshes());
+			const StaticMeshInstance* const mesh = gifChat.GetMesh();
+			return mesh != nullptr ? MakeObjectRefs(mesh->GetMesh().GetSubMeshes()) : std::vector<ObjectRef>();
 		});
 }

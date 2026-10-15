@@ -17,12 +17,10 @@ static_assert(std::is_nothrow_move_constructible_v<LightObjectPtr> && std::is_no
 
 namespace
 {
-	// Nothing in these tests draws, so a mesh with no submeshes will do
-	StaticMeshInstance MakeEmptyMesh()
+	// Nothing in these tests draws, so no mesh will do
+	std::shared_ptr<const StaticMeshInstance> MakeEmptyMesh()
 	{
-		StaticMeshInstance mesh;
-		mesh.Initialize({});
-		return mesh;
+		return nullptr;
 	}
 }
 

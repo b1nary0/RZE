@@ -90,15 +90,17 @@ public:
 	RenderObject& operator=(const RenderObject&) = delete;
 
 public:
-	void SetStaticMesh(const StaticMeshInstance& staticMesh);
-	const StaticMeshInstance& GetStaticMesh() { return m_staticMesh; }
-	const StaticMeshInstance& GetStaticMesh() const { return m_staticMesh; }
+	// What the object draws; null draws nothing. Its draws and bounds follow the new instance, and the old one is
+	// released unless something else holds it.
+	void SetMeshInstance(std::shared_ptr<const StaticMeshInstance> meshInstance);
+	// Null when the object has nothing to draw
+	const std::shared_ptr<const StaticMeshInstance>& GetMeshInstance() const { return m_meshInstance; }
 
 	// Called every frame by RenderComponent, so an unchanged transform returns early
 	void SetTransform(const Matrix4x4& transform);
 	const Matrix4x4& GetTransform() const { return m_matrixMem.transform; }
 
-	// The mesh's box in the object's own space; empty without any submeshes. Only changes with the mesh.
+	// The mesh's box in the object's own space; empty without a mesh or sub-meshes. Only changes with the mesh.
 	const BoundingBox& GetLocalBounds() const { return m_localBounds; }
 	// GetLocalBounds placed in the world by the transform, as an axis-aligned box. Worked out when asked after the
 	// object moves or changes mesh.
@@ -123,7 +125,8 @@ private:
 	// Will pack all geometry into single vertex buffer and all materials into single material buffer and index away
 	// or something i dunno im shit at my job. Also.. limited to just static mesh here, bad. Will end up with refactor
 	// when skinned meshes are a thing
-	StaticMeshInstance m_staticMesh;
+	// Held so the mesh its draws point into stays alive
+	std::shared_ptr<const StaticMeshInstance> m_meshInstance;
 	MatrixMem m_matrixMem;
 
 	BoundingBox m_localBounds;
@@ -198,7 +201,8 @@ public:
 	RenderScene& operator=(const RenderScene&) = delete;
 
 public:
-	RenderObjectPtr CreateRenderObject(const StaticMeshInstance& staticMesh);
+	// meshInstance may be null (an object with nothing to draw yet)
+	RenderObjectPtr CreateRenderObject(std::shared_ptr<const StaticMeshInstance> meshInstance);
 	void DestroyRenderObject(RenderObjectPtr& renderObject);
 
 	LightObjectPtr CreateLightObject();

@@ -129,8 +129,7 @@ bool StaticMeshResource::FinalizeStep()
 		return false;
 	}
 
-	m_mesh.Initialize(m_finalizedSubmeshes, std::move(m_pendingPlacements));
-	m_mesh.SetName(m_meshName);
+	m_mesh = StaticMesh::Create(m_meshName, std::move(m_finalizedSubmeshes), std::move(m_pendingPlacements));
 
 	m_pendingSubmeshes.clear();
 	m_pendingPlacements.clear();
@@ -143,4 +142,25 @@ bool StaticMeshResource::FinalizeStep()
 
 void StaticMeshResource::Release()
 {
+	// Instances made from it keep the mesh alive until they go
+	m_mesh.reset();
+}
+
+std::shared_ptr<StaticMeshInstance> StaticMeshResource::CreateInstance(const ResourceHandle& meshResource)
+{
+	if (!meshResource.IsValid())
+	{
+		return nullptr;
+	}
+
+	const StaticMeshResource* const resource = RZE().GetResourceHandler().GetResource<StaticMeshResource>(meshResource);
+	if (resource == nullptr || resource->GetMesh() == nullptr)
+	{
+		return nullptr;
+	}
+
+	// The instance holds its own handle; copying one takes another reference
+	ResourceHandle heldResource;
+	heldResource = meshResource;
+	return StaticMeshInstance::Create(resource->GetMesh(), std::move(heldResource));
 }

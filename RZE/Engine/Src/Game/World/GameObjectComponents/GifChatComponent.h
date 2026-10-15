@@ -7,8 +7,11 @@
 
 #include <EngineCore/Resources/ResourceHandler.h>
 
+#include <memory>
+
 struct GifData;
 
+class MaterialInstance;
 class RenderObject;
 class RenderScene;
 class Texture2D;
@@ -37,11 +40,13 @@ public:
 public:
 	void Load(const Filepath& fp);
 
-	const StaticMeshInstance& GetMeshGeometry() const { return m_meshGeometry; }
+	// Null until a GIF has loaded
+	const StaticMeshInstance* GetMesh() const { return m_mesh.get(); }
 
 private:
 	void CreateRenderObject();
-	void GenerateMesh();
+	// A quad drawn with material
+	void GenerateMesh(const std::shared_ptr<MaterialInstance>& material);
 
 private:
 	// The owner's scene's; set in Initialize, once the component has an owner, and fixed from then on since objects
@@ -55,5 +60,7 @@ private:
 
 	std::vector<ResourceHandle> m_frames;
 	RenderObjectPtr m_meshRenderObject;
-	StaticMeshInstance m_meshGeometry;
+	std::shared_ptr<StaticMeshInstance> m_mesh;
+	// The quad's material, kept to show each frame in turn; the mesh itself can't be changed once made
+	std::shared_ptr<MaterialInstance> m_material;
 };

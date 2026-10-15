@@ -64,10 +64,12 @@ void LightObject::Initialize()
 	m_propertyBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(PropertyBufferLayout), 16, 1);
 }
 
-void RenderObject::SetStaticMesh(const StaticMeshInstance& staticMesh)
+void RenderObject::SetMeshInstance(std::shared_ptr<const StaticMeshInstance> meshInstance)
 {
-	m_staticMesh = staticMesh;
-	m_localBounds = m_staticMesh.GetSubMeshes().empty() ? BoundingBox() : m_staticMesh.GetBounds();
+	m_meshInstance = std::move(meshInstance);
+	const bool hasSubMeshes = m_meshInstance != nullptr && !m_meshInstance->GetMesh().GetSubMeshes().empty();
+	m_localBounds = hasSubMeshes ? m_meshInstance->GetMesh().GetBounds() : BoundingBox();
+	// The draws still point into the old mesh until GetDraws rebuilds them, which is the only way to read them
 	MarkChanged();
 }
 
@@ -95,7 +97,14 @@ const std::vector<MeshDraw>& RenderObject::GetDraws() const
 {
 	if (m_areDrawsStale)
 	{
-		m_staticMesh.BuildDraws(m_matrixMem, m_draws);
+		if (m_meshInstance != nullptr)
+		{
+			m_meshInstance->BuildDraws(m_matrixMem, m_draws);
+		}
+		else
+		{
+			m_draws.clear();
+		}
 		m_areDrawsStale = false;
 	}
 	return m_draws;
@@ -137,14 +146,14 @@ void RenderScene::OnRenderObjectChanged()
 	m_isBoundsStale = true;
 }
 
-RenderObjectPtr RenderScene::CreateRenderObject(const StaticMeshInstance& staticMesh)
+RenderObjectPtr RenderScene::CreateRenderObject(std::shared_ptr<const StaticMeshInstance> meshInstance)
 {
 	OPTICK_EVENT();
 	
 	std::unique_ptr<RenderObject>& renderObjectPtr = m_renderObjects.emplace_back(std::make_unique<RenderObject>());
 	renderObjectPtr->m_scene = this;
 	// Marks the scene changed
-	renderObjectPtr->SetStaticMesh(staticMesh);
+	renderObjectPtr->SetMeshInstance(std::move(meshInstance));
 
 	return RenderObjectPtr(renderObjectPtr.get(), renderObjectPtr->GetLiveID());
 }

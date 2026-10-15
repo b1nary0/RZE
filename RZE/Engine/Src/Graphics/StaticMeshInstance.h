@@ -1,43 +1,37 @@
 #pragma once
 
-#include <Graphics/MeshDraw.h>
-#include <Graphics/MeshGeometry.h>
+#include <Graphics/StaticMesh.h>
 
+#include <EngineCore/Resources/ResourceHandler.h>
+
+#include <memory>
+
+// A StaticMesh as one object draws it. The mesh is shared; what's per object lives here (material slots and their
+// overrides, Docs/Plans/MaterialOverrides.md). Its mesh never changes: swapping meshes means a new instance, handed
+// to RenderComponent::SetMeshInstance. An instance belongs to one object.
 class StaticMeshInstance
 {
 public:
-	StaticMeshInstance();
-	~StaticMeshInstance();
+	// meshResource, if given, is the loaded asset mesh came from (see StaticMeshResource::CreateInstance): holding it
+	// keeps the asset loaded while the instance lives, and gives its path. Empty for a mesh made in code.
+	static std::shared_ptr<StaticMeshInstance> Create(std::shared_ptr<const StaticMesh> mesh, ResourceHandle meshResource = ResourceHandle::EmptyHandle());
 
-	// Places each sub-mesh once, at the mesh's origin
-	void Initialize(const std::vector<MeshGeometry>& meshGeometry);
-	// For loaders: each placement draws one sub-mesh with its own transform; a sub-mesh can be placed more than once
-	void Initialize(const std::vector<MeshGeometry>& meshGeometry, std::vector<MeshPlacement>&& placements);
+	const StaticMesh& GetMesh() const { return *m_mesh; }
 
-	// Each sub-mesh's geometry and material, once however many times it's placed
-	std::vector<MeshGeometry>& GetSubMeshes();
-	const std::vector<MeshGeometry>& GetSubMeshes() const;
+	// The mesh asset's path; empty for a mesh made in code
+	const Filepath& GetResourcePath() const;
 
-	const std::string& GetName() const;
-	void SetName(const std::string& name);
-
-	// Object-space box around every placed sub-mesh, calculated in Initialize(); a zero-sized box at the origin with none
-	const BoundingBox& GetBounds() const { return m_bounds; }
-
-	// Every draw this mesh makes, placed in the world by objectMatrices: one per placement, in placement order.
-	// outDraws' geometry points into this mesh, and a draw at the mesh's origin points at objectMatrices, so both must
-	// outlive outDraws and stay where they are. Reuses outDraws' memory when the count is unchanged.
-	void BuildDraws(const MatrixMem& objectMatrices, std::vector<MeshDraw>& outDraws) const;
+	// See StaticMesh::BuildDraws
+	void BuildDraws(const MatrixMem& objectMatrices, std::vector<MeshDraw>& outDraws) const { m_mesh->BuildDraws(objectMatrices, outDraws); }
 
 private:
-	void CalculateBounds();
+	StaticMeshInstance(std::shared_ptr<const StaticMesh> mesh, ResourceHandle meshResource);
 
 private:
-	std::vector<MeshGeometry> m_subMeshes;
-	std::vector<MeshPlacement> m_placements;
-	// Indexed like m_placements: whether it's at the mesh's origin, so its draw shares the object's matrices.
-	// Worked out once in Initialize rather than comparing matrices on every build.
-	std::vector<bool> m_isAtOrigin;
-	std::string m_name;
-	BoundingBox m_bounds;
+	// Held directly so drawing and bounds reach the mesh without a ResourceHandler table lookup. The handle alone
+	// would be enough to find it, but it would have to be resolved every time.
+	std::shared_ptr<const StaticMesh> m_mesh;
+	// Only for the resource's availability: holding it keeps the mesh asset loaded (and cached, so loading it again
+	// is a hit) while this instance lives, and gives its path. Empty for a mesh made in code.
+	ResourceHandle m_meshResource;
 };
