@@ -190,12 +190,9 @@ void RenderComponent::DrawBounds()
 
 	if (m_drawSubMeshBounds)
 	{
-		const std::vector<MeshGeometry>& subMeshes = staticMesh.GetSubMeshes();
-		const std::vector<MeshPlacement>& placements = staticMesh.GetPlacements();
-		for (size_t placementIndex = 0; placementIndex < placements.size(); ++placementIndex)
+		for (const MeshDraw& draw : m_renderObject->GetDraws())
 		{
-			const MeshGeometry& subMesh = subMeshes[placements[placementIndex].GeometryIndex];
-			m_renderScene->DrawWireBox(subMesh.GetBounds(), m_renderObject->GetPlacementTransform(placementIndex), k_subMeshBoundsColour);
+			m_renderScene->DrawWireBox(draw.Geometry->GetBounds(), *draw.Transform, k_subMeshBoundsColour);
 		}
 	}
 }

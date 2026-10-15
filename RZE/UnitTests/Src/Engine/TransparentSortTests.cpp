@@ -1,28 +1,28 @@
 #include <doctest/doctest.h>
 
+#include <Graphics/MeshDraw.h>
 #include <Graphics/RenderStages/ForwardRenderStage.h>
 
 #include <vector>
 
 TEST_CASE("Transparent draws sort farthest first, so nearer surfaces blend over farther ones")
 {
+	const std::vector<MeshDraw> meshDraws(4);
 	std::vector<ForwardRenderStage::TransparentDraw> draws(4);
-	draws[0].DistanceSquared = 4.0f;
-	draws[0].PlacementIndex = 0;
-	draws[1].DistanceSquared = 100.0f;
-	draws[1].PlacementIndex = 1;
-	draws[2].DistanceSquared = 0.25f;
-	draws[2].PlacementIndex = 2;
-	draws[3].DistanceSquared = 36.0f;
-	draws[3].PlacementIndex = 3;
+	const float distancesSquared[] = { 4.0f, 100.0f, 0.25f, 36.0f };
+	for (size_t drawIndex = 0; drawIndex < draws.size(); ++drawIndex)
+	{
+		draws[drawIndex].DistanceSquared = distancesSquared[drawIndex];
+		draws[drawIndex].Draw = &meshDraws[drawIndex];
+	}
 
 	ForwardRenderStage::SortBackToFront(draws);
 
 	REQUIRE(draws.size() == 4);
-	CHECK(draws[0].PlacementIndex == 1);
-	CHECK(draws[1].PlacementIndex == 3);
-	CHECK(draws[2].PlacementIndex == 0);
-	CHECK(draws[3].PlacementIndex == 2);
+	CHECK(draws[0].Draw == &meshDraws[1]);
+	CHECK(draws[1].Draw == &meshDraws[3]);
+	CHECK(draws[2].Draw == &meshDraws[0]);
+	CHECK(draws[3].Draw == &meshDraws[2]);
 }
 
 TEST_CASE("Each blended material mode draws with its own blend state; the others aren't blended")

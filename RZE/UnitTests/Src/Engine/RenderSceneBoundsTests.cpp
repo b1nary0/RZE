@@ -84,7 +84,7 @@ TEST_CASE("A render object's bounds are its mesh's box, placed by its transform"
 
 	object->SetTransform(MakeTransform(Vector3D(5.0f, 0.0f, 0.0f)));
 	CheckBox(object->GetBounds(), Vector3D(4.0f, -1.0f, -1.0f), Vector3D(6.0f, 1.0f, 1.0f));
-	CheckBox(object->GetSubMeshBounds()[0].Bounds, Vector3D(4.0f, -1.0f, -1.0f), Vector3D(6.0f, 1.0f, 1.0f));
+	CheckBox(object->GetDraws()[0].Bounds, Vector3D(4.0f, -1.0f, -1.0f), Vector3D(6.0f, 1.0f, 1.0f));
 	// Moving doesn't change its own extents
 	CheckBox(object->GetLocalBounds(), Vector3D(-1.0f), Vector3D(1.0f));
 
@@ -93,12 +93,12 @@ TEST_CASE("A render object's bounds are its mesh's box, placed by its transform"
 	object->SetTransform(transform);
 	const BoundingBox aroundCorners = BoundingBox::Around(k_unitBox.GetTransformedCorners(transform));
 	CheckBox(object->GetBounds(), aroundCorners.GetMin(), aroundCorners.GetMax());
-	CheckBox(object->GetSubMeshBounds()[0].Bounds, aroundCorners.GetMin(), aroundCorners.GetMax());
+	CheckBox(object->GetDraws()[0].Bounds, aroundCorners.GetMin(), aroundCorners.GetMax());
 
 	scene.DestroyRenderObject(object);
 }
 
-TEST_CASE("Each sub-mesh's bounds follow the object, inside its bounds")
+TEST_CASE("Each draw's bounds follow the object, inside its bounds")
 {
 	RenderScene scene;
 	const BoundingBox left(Vector3D(-3.0f, 0.0f, 0.0f), Vector3D(-2.0f, 1.0f, 1.0f));
@@ -106,16 +106,16 @@ TEST_CASE("Each sub-mesh's bounds follow the object, inside its bounds")
 	RenderObjectPtr object = scene.CreateRenderObject(MakeMesh({ left, right }));
 
 	object->SetTransform(MakeTransform(Vector3D(0.0f, 10.0f, 0.0f)));
-	const std::vector<RenderObject::SubMeshBounds>& subMeshBounds = object->GetSubMeshBounds();
-	REQUIRE(subMeshBounds.size() == 2);
-	CheckBox(subMeshBounds[0].Bounds, Vector3D(-3.0f, 10.0f, 0.0f), Vector3D(-2.0f, 11.0f, 1.0f));
-	CheckBox(subMeshBounds[1].Bounds, Vector3D(2.0f, 10.0f, 0.0f), Vector3D(3.0f, 11.0f, 1.0f));
+	const std::vector<MeshDraw>& draws = object->GetDraws();
+	REQUIRE(draws.size() == 2);
+	CheckBox(draws[0].Bounds, Vector3D(-3.0f, 10.0f, 0.0f), Vector3D(-2.0f, 11.0f, 1.0f));
+	CheckBox(draws[1].Bounds, Vector3D(2.0f, 10.0f, 0.0f), Vector3D(3.0f, 11.0f, 1.0f));
 	CheckBox(object->GetBounds(), Vector3D(-3.0f, 10.0f, 0.0f), Vector3D(3.0f, 11.0f, 1.0f));
 
 	// Asked again after a move, the corners have moved too
 	object->SetTransform(MakeTransform(Vector3D(0.0f, -10.0f, 0.0f)));
-	CHECK(object->GetSubMeshBounds()[1].Corners[0].Y() == doctest::Approx(-10.0f));
-	CheckBox(object->GetSubMeshBounds()[1].Bounds, Vector3D(2.0f, -10.0f, 0.0f), Vector3D(3.0f, -9.0f, 1.0f));
+	CHECK(object->GetDraws()[1].Corners[0].Y() == doctest::Approx(-10.0f));
+	CheckBox(object->GetDraws()[1].Bounds, Vector3D(2.0f, -10.0f, 0.0f), Vector3D(3.0f, -9.0f, 1.0f));
 
 	scene.DestroyRenderObject(object);
 }
@@ -135,19 +135,20 @@ TEST_CASE("A sub-mesh placed twice is drawn and bounded at each placement")
 	RenderObjectPtr object = scene.CreateRenderObject(mesh);
 	object->SetTransform(MakeTransform(Vector3D(0.0f, 10.0f, 0.0f)));
 
-	const std::vector<RenderObject::SubMeshBounds>& subMeshBounds = object->GetSubMeshBounds();
-	REQUIRE(subMeshBounds.size() == 2);
-	CheckBox(subMeshBounds[0].Bounds, Vector3D(-6.0f, 9.0f, -1.0f), Vector3D(-4.0f, 11.0f, 1.0f));
-	CheckBox(subMeshBounds[1].Bounds, Vector3D(4.0f, 9.0f, -1.0f), Vector3D(6.0f, 11.0f, 1.0f));
+	const std::vector<MeshDraw>& draws = object->GetDraws();
+	REQUIRE(draws.size() == 2);
+	CHECK(draws[0].Geometry == draws[1].Geometry);
+	CheckBox(draws[0].Bounds, Vector3D(-6.0f, 9.0f, -1.0f), Vector3D(-4.0f, 11.0f, 1.0f));
+	CheckBox(draws[1].Bounds, Vector3D(4.0f, 9.0f, -1.0f), Vector3D(6.0f, 11.0f, 1.0f));
 	CheckBox(object->GetBounds(), Vector3D(-6.0f, 9.0f, -1.0f), Vector3D(6.0f, 11.0f, 1.0f));
 
 	// Each placement draws with the object's transform times its own, with the inverse kept beside it
-	const Matrix4x4& second = object->GetPlacementTransform(1);
+	const Matrix4x4& second = *draws[1].Transform;
 	CHECK(second.GetPosition().X() == doctest::Approx(5.0f));
 	CHECK(second.GetPosition().Y() == doctest::Approx(10.0f));
 	const Matrix4x4& secondInverse = *(&second + 1);
 	CHECK((second * secondInverse).GetPosition().X() == doctest::Approx(0.0f));
-	CHECK(&object->GetPlacementTransform(0) != &second);
+	CHECK(draws[0].Transform != draws[1].Transform);
 
 	scene.DestroyRenderObject(object);
 }
@@ -159,8 +160,10 @@ TEST_CASE("Placements at the mesh's origin draw with the object's own transform"
 	object->SetTransform(MakeTransform(Vector3D(3.0f, 0.0f, 0.0f)));
 
 	// The same address, so a stage uploads it once for both
-	CHECK(&object->GetPlacementTransform(0) == &object->GetTransform());
-	CHECK(&object->GetPlacementTransform(1) == &object->GetTransform());
+	const std::vector<MeshDraw>& draws = object->GetDraws();
+	REQUIRE(draws.size() == 2);
+	CHECK(draws[0].Transform == &object->GetTransform());
+	CHECK(draws[1].Transform == &object->GetTransform());
 
 	scene.DestroyRenderObject(object);
 }

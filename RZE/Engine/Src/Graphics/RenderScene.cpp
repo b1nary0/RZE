@@ -91,55 +91,20 @@ const BoundingBox& RenderObject::GetBounds() const
 	return m_bounds;
 }
 
-const std::vector<RenderObject::SubMeshBounds>& RenderObject::GetSubMeshBounds() const
+const std::vector<MeshDraw>& RenderObject::GetDraws() const
 {
-	UpdatePlacements();
-	return m_subMeshBounds;
-}
-
-const Matrix4x4& RenderObject::GetPlacementTransform(size_t placementIndex) const
-{
-	UpdatePlacements();
-
-	const MeshPlacement& placement = m_staticMesh.GetPlacements()[placementIndex];
-	return placement.LocalTransform != Matrix4x4::IDENTITY ? m_placementMatrices[placementIndex].transform : m_matrixMem.transform;
-}
-
-void RenderObject::UpdatePlacements() const
-{
-	if (!m_arePlacementsStale)
+	if (m_areDrawsStale)
 	{
-		return;
+		m_staticMesh.BuildDraws(m_matrixMem, m_draws);
+		m_areDrawsStale = false;
 	}
-
-	const std::vector<MeshGeometry>& subMeshes = m_staticMesh.GetSubMeshes();
-	const std::vector<MeshPlacement>& placements = m_staticMesh.GetPlacements();
-	m_subMeshBounds.resize(placements.size());
-	m_placementMatrices.resize(placements.size());
-	for (size_t placementIndex = 0; placementIndex < placements.size(); ++placementIndex)
-	{
-		const MeshPlacement& placement = placements[placementIndex];
-
-		const Matrix4x4* placementTransform = &m_matrixMem.transform;
-		if (placement.LocalTransform != Matrix4x4::IDENTITY)
-		{
-			MatrixMem& matrices = m_placementMatrices[placementIndex];
-			matrices.transform = m_matrixMem.transform * placement.LocalTransform;
-			matrices.invTransform = matrices.transform.Inverse();
-			placementTransform = &matrices.transform;
-		}
-
-		SubMeshBounds& bounds = m_subMeshBounds[placementIndex];
-		bounds.Corners = subMeshes[placement.GeometryIndex].GetBounds().GetTransformedCorners(*placementTransform);
-		bounds.Bounds = BoundingBox::Around(bounds.Corners);
-	}
-	m_arePlacementsStale = false;
+	return m_draws;
 }
 
 void RenderObject::MarkChanged()
 {
 	m_isBoundsStale = true;
-	m_arePlacementsStale = true;
+	m_areDrawsStale = true;
 	if (m_scene != nullptr)
 	{
 		m_scene->OnRenderObjectChanged();

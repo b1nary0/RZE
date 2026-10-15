@@ -114,29 +114,24 @@ void PickRenderStage::Render(RenderContext& context)
 		const PickBufferLayout pickData = { renderObject->GetPickID(), { 0, 0, 0 } };
 		Rendering::Renderer::UploadDataToBuffer<PickBufferLayout>(m_pickBuffer, &pickData);
 
-		const std::vector<MeshGeometry>& subMeshes = renderObject->GetStaticMesh().GetSubMeshes();
-		const std::vector<MeshPlacement>& placements = renderObject->GetStaticMesh().GetPlacements();
-		const std::vector<RenderObject::SubMeshBounds>& subMeshBounds = renderObject->GetSubMeshBounds();
-
-		// As in ForwardRenderStage: only uploaded when the placement's transform changes
+		// As in ForwardRenderStage: only uploaded when the draw's transform changes
 		const Matrix4x4* uploadedTransform = nullptr;
 
-		for (size_t placementIndex = 0; placementIndex < placements.size(); ++placementIndex)
+		for (const MeshDraw& draw : renderObject->GetDraws())
 		{
-			if (!frustum.Intersects(subMeshBounds[placementIndex].Bounds))
+			if (!frustum.Intersects(draw.Bounds))
 			{
 				continue;
 			}
 
 			// See ForwardRenderStage: uploads the whole MatrixMem (transform + inverse)
-			const Matrix4x4& transform = renderObject->GetPlacementTransform(placementIndex);
-			if (&transform != uploadedTransform)
+			if (draw.Transform != uploadedTransform)
 			{
-				Rendering::Renderer::UploadDataToBuffer<Matrix4x4>(m_vertexShader->GetWorldMatrixBuffer(), &transform);
-				uploadedTransform = &transform;
+				Rendering::Renderer::UploadDataToBuffer<Matrix4x4>(m_vertexShader->GetWorldMatrixBuffer(), draw.Transform);
+				uploadedTransform = draw.Transform;
 			}
 
-			const MeshGeometry& meshGeometry = subMeshes[placements[placementIndex].GeometryIndex];
+			const MeshGeometry& meshGeometry = *draw.Geometry;
 			const MaterialInstance& materialInstance = meshGeometry.GetMaterialRef();
 
 			// For cutout materials, as in ShadowRenderStage

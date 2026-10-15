@@ -14,8 +14,8 @@
 
 class Matrix4x4;
 class PixelShader;
-class RenderObject;
 class VertexShader;
+struct MeshDraw;
 
 class ForwardRenderStage : public IRenderStage
 {
@@ -31,26 +31,26 @@ public:
 	void Render(RenderContext& context) override;
 
 public:
-	// A see-through placement, drawn after everything opaque (Docs/Plans/Transparency.md)
+	// A see-through draw, drawn after everything opaque (Docs/Plans/Transparency.md)
 	struct TransparentDraw
 	{
-		// From the camera to the centre of the placement's world bounds
+		// From the camera to the centre of the draw's world bounds
 		float DistanceSquared = 0.0f;
-		const RenderObject* Object = nullptr;
-		size_t PlacementIndex = 0;
+		// One of a RenderObject's draws (RenderObject::GetDraws), which stay put for the frame
+		const MeshDraw* Draw = nullptr;
 	};
 
-	// Farthest first, so nearer surfaces blend over farther ones. Per placement, not per triangle: overlapping
-	// parts of one placement can still blend in the wrong order.
+	// Farthest first, so nearer surfaces blend over farther ones. Per draw, not per triangle: overlapping parts of
+	// one draw can still blend in the wrong order.
 	static void SortBackToFront(std::vector<TransparentDraw>& draws);
 
 	// How a blended material combines with what's behind it. Opaque for materials that aren't blended.
 	static Rendering::EBlendState GetBlendState(MaterialAssetImporter::MaterialData::EBlendMode blendMode);
 
 private:
-	// Binds the placement's transform, material and buffers and draws it. Only uploads the transform and sets the
-	// shader when they differ from the last draw's, which the two pointers track across calls.
-	void DrawPlacement(const RenderObject& renderObject, size_t placementIndex, const Matrix4x4*& uploadedTransform, const PixelShader*& boundPixelShader);
+	// Binds the draw's transform, material and buffers and draws it. Only uploads the transform and sets the shader
+	// when they differ from the last draw's, which the two pointers track across calls.
+	void DrawMesh(const MeshDraw& draw, const Matrix4x4*& uploadedTransform, const PixelShader*& boundPixelShader);
 
 private:
 	RenderInput<ShadowMapData> m_shadowMapInput;

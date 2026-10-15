@@ -90,22 +90,6 @@ public:
 	RenderObject& operator=(const RenderObject&) = delete;
 
 public:
-	struct MatrixMem
-	{
-		Matrix4x4 transform;
-		Matrix4x4 invTransform;
-	};
-
-	// World-space bounds of one placed submesh, kept up to date as the object's mesh or transform changes
-	struct SubMeshBounds
-	{
-		// The submesh's object-space bounding box's corners, transformed into world space
-		BoundingBox::Corners Corners;
-		// Axis-aligned box around Corners
-		BoundingBox Bounds;
-	};
-
-public:
 	void SetStaticMesh(const StaticMeshInstance& staticMesh);
 	const StaticMeshInstance& GetStaticMesh() { return m_staticMesh; }
 	const StaticMeshInstance& GetStaticMesh() const { return m_staticMesh; }
@@ -119,13 +103,9 @@ public:
 	// GetLocalBounds placed in the world by the transform, as an axis-aligned box. Worked out when asked after the
 	// object moves or changes mesh.
 	const BoundingBox& GetBounds() const;
-	// Indexed like GetStaticMesh().GetPlacements(); tighter than GetBounds, for culling submesh by submesh. Worked out
-	// when asked after the object moves or changes mesh.
-	const std::vector<SubMeshBounds>& GetSubMeshBounds() const;
-	// Where a placement is drawn: the object's transform times the placement's. Its inverse follows it in memory,
-	// like MatrixMem, so it uploads as the shaders' ObjectBuffer. Placements at the mesh's origin all return
-	// GetTransform() itself, so comparing addresses tells a stage when it needs to upload again.
-	const Matrix4x4& GetPlacementTransform(size_t placementIndex) const;
+	// Everything the object draws, each with its world transform and bounds (StaticMeshInstance::BuildDraws). Worked
+	// out when asked after the object moves or changes mesh; until then the draws, and pointers to them, stay valid.
+	const std::vector<MeshDraw>& GetDraws() const;
 
 	// What PickRenderStage writes for this object's pixels; 0 means nothing pickable
 	void SetPickID(U32 pickID) { m_pickID = pickID; }
@@ -137,8 +117,6 @@ public:
 private:
 	// It moved or changed mesh: its world bounds are stale, and so is its scene
 	void MarkChanged();
-	// Works out m_subMeshBounds and m_placementMatrices if they're stale
-	void UpdatePlacements() const;
 
 private:
 	// @TODO This will be replaced after a batching system is implemented
@@ -152,10 +130,8 @@ private:
 	// Worked out from the transform when asked
 	mutable BoundingBox m_bounds;
 	mutable bool m_isBoundsStale = true;
-	mutable std::vector<SubMeshBounds> m_subMeshBounds;
-	// Indexed like the placements; only filled in for those away from the mesh's origin
-	mutable std::vector<MatrixMem> m_placementMatrices;
-	mutable bool m_arePlacementsStale = true;
+	mutable std::vector<MeshDraw> m_draws;
+	mutable bool m_areDrawsStale = true;
 
 	U32 m_pickID = 0;
 

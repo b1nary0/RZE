@@ -48,6 +48,7 @@ public:
 	const float* GetValuePtr() const;
 	float* GetValuePtr();
 
+	bool operator==(const Matrix4x4& rhs) const { return !(*this != rhs); }
 	bool operator!=(const Matrix4x4& rhs) const;
 	Matrix4x4 operator*(const Matrix4x4& rhs) const;
 	Vector4D operator*(const Vector4D& rhs) const;

@@ -90,12 +90,12 @@ void ForwardRenderStage::Render(RenderContext& context)
 	Rendering::Renderer::SetConstantBufferPS(lightObject->GetPropertyBuffer(), 2);
 	Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetWorldMatrixBuffer(), 1);
 
-	// Consecutive submeshes often share a shader, so it's only set when it changes
+	// Consecutive draws often share a shader, so it's only set when it changes
 	const PixelShader* boundPixelShader = nullptr;
-	// Placements at the mesh's origin share the object's transform, so it's only uploaded when it changes
+	// Draws at the mesh's origin share the object's transform, so it's only uploaded when it changes
 	const Matrix4x4* uploadedTransform = nullptr;
 
-	// Objects and submeshes entirely outside the view aren't drawn
+	// Objects and draws entirely outside the view aren't drawn
 	const Frustum frustum(view.Camera.ClipSpace);
 
 	m_transparentDraws.clear();
@@ -107,32 +107,26 @@ void ForwardRenderStage::Render(RenderContext& context)
 			continue;
 		}
 
-		const std::vector<MeshGeometry>& subMeshes = renderObject->GetStaticMesh().GetSubMeshes();
-		const std::vector<MeshPlacement>& placements = renderObject->GetStaticMesh().GetPlacements();
-		const std::vector<RenderObject::SubMeshBounds>& subMeshBounds = renderObject->GetSubMeshBounds();
-
 		// @TODO
-		// Currently each placement is a draw call. Need to batch this down so it becomes a single draw call
+		// Currently each MeshDraw is a draw call. Need to batch this down so it becomes a single draw call
 		// per render object, at least. Can do this maybe in the burner?
-		for (size_t placementIndex = 0; placementIndex < placements.size(); ++placementIndex)
+		for (const MeshDraw& draw : renderObject->GetDraws())
 		{
-			if (!frustum.Intersects(subMeshBounds[placementIndex].Bounds))
+			if (!frustum.Intersects(draw.Bounds))
 			{
 				continue;
 			}
 
-			// Blended placements wait until everything they could show is drawn
-			const MaterialInstance& materialInstance = subMeshes[placements[placementIndex].GeometryIndex].GetMaterialRef();
-			if (materialInstance.IsBlended())
+			// Blended draws wait until everything they could show is drawn
+			if (draw.Geometry->GetMaterialRef().IsBlended())
 			{
-				TransparentDraw& draw = m_transparentDraws.emplace_back();
-				draw.DistanceSquared = (subMeshBounds[placementIndex].Bounds.GetCentre() - view.Camera.Position).LengthSq();
-				draw.Object = renderObject.get();
-				draw.PlacementIndex = placementIndex;
+				TransparentDraw& transparentDraw = m_transparentDraws.emplace_back();
+				transparentDraw.DistanceSquared = (draw.Bounds.GetCentre() - view.Camera.Position).LengthSq();
+				transparentDraw.Draw = &draw;
 				continue;
 			}
 
-			DrawPlacement(*renderObject, placementIndex, uploadedTransform, boundPixelShader);
+			DrawMesh(draw, uploadedTransform, boundPixelShader);
 		}
 	}
 
@@ -148,18 +142,17 @@ void ForwardRenderStage::Render(RenderContext& context)
 
 		// Sorted by distance, not by mode, so the blend state is only set when it changes from the last draw's
 		Rendering::EBlendState boundBlendState = Rendering::EBlendState::Opaque;
-		for (const TransparentDraw& draw : m_transparentDraws)
+		for (const TransparentDraw& transparentDraw : m_transparentDraws)
 		{
-			const StaticMeshInstance& staticMesh = draw.Object->GetStaticMesh();
-			const MeshGeometry& meshGeometry = staticMesh.GetSubMeshes()[staticMesh.GetPlacements()[draw.PlacementIndex].GeometryIndex];
-			const Rendering::EBlendState blendState = GetBlendState(meshGeometry.GetMaterialRef().GetBlendMode());
+			const MeshDraw& draw = *transparentDraw.Draw;
+			const Rendering::EBlendState blendState = GetBlendState(draw.Geometry->GetMaterialRef().GetBlendMode());
 			if (blendState != boundBlendState)
 			{
 				Rendering::Renderer::SetBlendState(blendState);
 				boundBlendState = blendState;
 			}
 
-			DrawPlacement(*draw.Object, draw.PlacementIndex, uploadedTransform, boundPixelShader);
+			DrawMesh(draw, uploadedTransform, boundPixelShader);
 		}
 
 		Rendering::Renderer::SetBlendState(Rendering::EBlendState::Opaque);
@@ -200,18 +193,16 @@ Rendering::EBlendState ForwardRenderStage::GetBlendState(MaterialAssetImporter::
 	}
 }
 
-void ForwardRenderStage::DrawPlacement(const RenderObject& renderObject, size_t placementIndex, const Matrix4x4*& uploadedTransform, const PixelShader*& boundPixelShader)
+void ForwardRenderStage::DrawMesh(const MeshDraw& draw, const Matrix4x4*& uploadedTransform, const PixelShader*& boundPixelShader)
 {
-	const StaticMeshInstance& staticMesh = renderObject.GetStaticMesh();
-	const MeshGeometry& meshGeometry = staticMesh.GetSubMeshes()[staticMesh.GetPlacements()[placementIndex].GeometryIndex];
+	const MeshGeometry& meshGeometry = *draw.Geometry;
 
 	// @note this sends in the address of a transform but fulfils the memory of struct MatrixMem as a whole
 	// this should be re-evaluated later to have a better solve for the issue of commands needing access to the data being uploaded's lifetime
-	const Matrix4x4& transform = renderObject.GetPlacementTransform(placementIndex);
-	if (&transform != uploadedTransform)
+	if (draw.Transform != uploadedTransform)
 	{
-		Rendering::Renderer::UploadDataToBuffer<Matrix4x4>(m_vertexShader->GetWorldMatrixBuffer(), &transform);
-		uploadedTransform = &transform;
+		Rendering::Renderer::UploadDataToBuffer<Matrix4x4>(m_vertexShader->GetWorldMatrixBuffer(), draw.Transform);
+		uploadedTransform = draw.Transform;
 	}
 
 	// @TODO

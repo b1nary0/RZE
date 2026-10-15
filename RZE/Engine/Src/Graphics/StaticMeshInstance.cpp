@@ -29,12 +29,40 @@ void StaticMeshInstance::Initialize(const std::vector<MeshGeometry>& meshGeometr
 	m_subMeshes = meshGeometry;
 	m_placements = std::move(placements);
 
-	for (const MeshPlacement& placement : m_placements)
+	m_isAtOrigin.resize(m_placements.size());
+	for (size_t placementIndex = 0; placementIndex < m_placements.size(); ++placementIndex)
 	{
+		const MeshPlacement& placement = m_placements[placementIndex];
 		AssertExpr(placement.GeometryIndex < m_subMeshes.size());
+		m_isAtOrigin[placementIndex] = placement.LocalTransform == Matrix4x4::IDENTITY;
 	}
 
 	CalculateBounds();
+}
+
+void StaticMeshInstance::BuildDraws(const MatrixMem& objectMatrices, std::vector<MeshDraw>& outDraws) const
+{
+	outDraws.resize(m_placements.size());
+	for (size_t placementIndex = 0; placementIndex < m_placements.size(); ++placementIndex)
+	{
+		const MeshPlacement& placement = m_placements[placementIndex];
+		MeshDraw& draw = outDraws[placementIndex];
+
+		draw.Geometry = &m_subMeshes[placement.GeometryIndex];
+		if (m_isAtOrigin[placementIndex])
+		{
+			draw.Transform = &objectMatrices.transform;
+		}
+		else
+		{
+			draw.OwnMatrices.transform = objectMatrices.transform * placement.LocalTransform;
+			draw.OwnMatrices.invTransform = draw.OwnMatrices.transform.Inverse();
+			draw.Transform = &draw.OwnMatrices.transform;
+		}
+
+		draw.Corners = draw.Geometry->GetBounds().GetTransformedCorners(*draw.Transform);
+		draw.Bounds = BoundingBox::Around(draw.Corners);
+	}
 }
 
 void StaticMeshInstance::CalculateBounds()

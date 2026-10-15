@@ -144,15 +144,12 @@ void ShadowRenderStage::RenderShadowMap(const RenderScene& scene, const ShadowMa
 
 		for (const auto& renderObject : scene.GetRenderObjects())
 		{
-			const std::vector<MeshGeometry>& subMeshes = renderObject->GetStaticMesh().GetSubMeshes();
-			const std::vector<MeshPlacement>& placements = renderObject->GetStaticMesh().GetPlacements();
-
-			// As in ForwardRenderStage: only uploaded when the placement's transform changes
+			// As in ForwardRenderStage: only uploaded when the draw's transform changes
 			const Matrix4x4* uploadedTransform = nullptr;
 
-			for (size_t placementIndex = 0; placementIndex < placements.size(); ++placementIndex)
+			for (const MeshDraw& draw : renderObject->GetDraws())
 			{
-				const MeshGeometry& meshGeometry = subMeshes[placements[placementIndex].GeometryIndex];
+				const MeshGeometry& meshGeometry = *draw.Geometry;
 				const MaterialInstance& materialInstance = meshGeometry.GetMaterialRef();
 
 				// #TODO(Transparency) See-through surfaces cast nothing for now: clear glass casting a solid shadow looks
@@ -163,11 +160,10 @@ void ShadowRenderStage::RenderShadowMap(const RenderScene& scene, const ShadowMa
 				}
 
 				// See ForwardRenderStage: uploads the whole MatrixMem (transform + inverse)
-				const Matrix4x4& transform = renderObject->GetPlacementTransform(placementIndex);
-				if (&transform != uploadedTransform)
+				if (draw.Transform != uploadedTransform)
 				{
-					Rendering::Renderer::UploadDataToBuffer<Matrix4x4>(m_vertexShader->GetWorldMatrixBuffer(), &transform);
-					uploadedTransform = &transform;
+					Rendering::Renderer::UploadDataToBuffer<Matrix4x4>(m_vertexShader->GetWorldMatrixBuffer(), draw.Transform);
+					uploadedTransform = draw.Transform;
 				}
 
 				// Only needed for cutout casters (leaves, chains, lashes)
@@ -208,14 +204,14 @@ bool ShadowRenderStage::CalculateLightViewProjection(const RenderScene& scene, c
 	const Vector3D eye = sceneCenter - lightDirection * (sceneRadius + 1.0f);
 	const Matrix4x4 view = Matrix4x4::CreateViewMatrix(eye, sceneCenter, up);
 
-	// Tight bounds of the scene as seen from the light: the submeshes' transformed boxes, not their looser
+	// Tight bounds of the scene as seen from the light: the draws' transformed boxes, not their looser
 	// world-axis-aligned boxes
 	BoundingBox lightBounds;
 	for (const auto& renderObject : scene.GetRenderObjects())
 	{
-		for (const RenderObject::SubMeshBounds& bounds : renderObject->GetSubMeshBounds())
+		for (const MeshDraw& draw : renderObject->GetDraws())
 		{
-			for (const Vector3D& corner : bounds.Corners)
+			for (const Vector3D& corner : draw.Corners)
 			{
 				lightBounds.Grow((view * Vector4D(corner, 1.0f)).XYZ());
 			}
