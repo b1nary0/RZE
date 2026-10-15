@@ -17,4 +17,8 @@ namespace AssetPaths
 	// Mesh assets, which the asset burner writes (MeshAssetWriter)
 	const Filepath& GetMeshFolder();
 	constexpr char k_meshExtension[] = ".meshasset";
+
+	// Material assets, which the asset burner writes (MaterialAssetWriter), a folder per mesh
+	const Filepath& GetMaterialFolder();
+	constexpr char k_materialExtension[] = ".materialasset";
 }

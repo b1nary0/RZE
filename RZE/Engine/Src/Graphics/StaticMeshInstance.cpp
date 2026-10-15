@@ -17,7 +17,7 @@ StaticMeshInstance::StaticMeshInstance(const std::shared_ptr<const StaticMesh>& 
 	m_materialSlots.reserve(m_mesh->GetSlots().size());
 	for (const StaticMesh::Slot& slot : m_mesh->GetSlots())
 	{
-		m_materialSlots.emplace_back(slot.Name, slot.Material);
+		m_materialSlots.emplace_back(slot);
 	}
 }
 

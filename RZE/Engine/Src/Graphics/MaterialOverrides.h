@@ -11,10 +11,13 @@
 #include <optional>
 #include <string>
 
-// What one object changes about a material: each field is set only where it differs from the material it's applied
-// to (ApplyTo), so the rest still follows that material
+// What one object changes about a material: which material asset it draws with, and each value that differs from
+// that material's (ApplyTo), so the rest still follow the material
 struct MaterialOverrides
 {
+	// A material asset drawn instead of the mesh's own; the values below go on top of it. Not a value, so ApplyTo
+	// leaves it to whoever picks the material (MaterialSlot).
+	std::optional<Filepath> Material;
 	std::optional<MaterialValues::EBlendMode> BlendMode;
 	std::optional<float> Opacity;
 	std::optional<float> Shininess;
@@ -23,13 +26,15 @@ struct MaterialOverrides
 	std::optional<bool> InvertOpacityMask;
 	std::optional<bool> OpacityMaskInAlpha;
 
-	// base, with these on top
+	// base, with the value overrides on top
 	MaterialValues ApplyTo(const MaterialValues& base) const;
 	// Nothing is overridden
 	bool IsEmpty() const;
+	// Some of the material's values are overridden, rather than only which material it is
+	bool ChangesValues() const;
 
-	// As a JSON object with just the overridden fields: the blend mode by name, textures by slot name (an emptied
-	// slot as ""), as scene files keep them
+	// As a JSON object with just the overridden fields: the material by path, the blend mode by name, textures by
+	// slot name (an emptied slot as ""), as scene files keep them
 	void Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) const;
 	// What Serialize wrote; fields it doesn't recognise are ignored
 	static MaterialOverrides Deserialize(const rapidjson::Value& data);

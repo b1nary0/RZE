@@ -84,6 +84,7 @@ bool MeshAssetImporter::Import(const Filepath& filePath)
 
 		ImportedMaterial& material = m_materials.emplace_back();
 		material.Name = materialPath.empty() ? std::string("Default") : std::filesystem::path(materialPath).stem().string();
+		material.Path = materialPath;
 
 		// Missing materials are tolerated: the submesh gets a default (untextured) material.
 		MaterialAssetImporter materialImporter;

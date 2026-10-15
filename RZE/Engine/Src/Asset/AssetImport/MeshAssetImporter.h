@@ -26,6 +26,8 @@ public:
 	{
 		// The asset's file name, unique within the mesh; "Default" for submeshes without one
 		std::string Name;
+		// The asset's path; empty for submeshes without one
+		std::string Path;
 		// Default (untextured) when the asset is missing
 		MaterialAssetImporter::MaterialData Data;
 	};

@@ -9,6 +9,7 @@ namespace
 {
 	using EBlendMode = MaterialValues::EBlendMode;
 
+	constexpr char k_materialKey[] = "Material";
 	constexpr char k_blendModeKey[] = "BlendMode";
 	constexpr char k_opacityKey[] = "Opacity";
 	constexpr char k_shininessKey[] = "Shininess";
@@ -67,20 +68,30 @@ MaterialValues MaterialOverrides::ApplyTo(const MaterialValues& base) const
 
 bool MaterialOverrides::IsEmpty() const
 {
+	return !Material && !ChangesValues();
+}
+
+bool MaterialOverrides::ChangesValues() const
+{
 	for (const std::optional<Filepath>& texture : Textures)
 	{
 		if (texture.has_value())
 		{
-			return false;
+			return true;
 		}
 	}
-	return !BlendMode && !Opacity && !Shininess && !InvertOpacityMask && !OpacityMaskInAlpha;
+	return BlendMode || Opacity || Shininess || InvertOpacityMask || OpacityMaskInAlpha;
 }
 
 void MaterialOverrides::Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) const
 {
 	writer.StartObject();
 
+	if (Material)
+	{
+		writer.Key(k_materialKey);
+		writer.String(Material->GetRelativePath().c_str());
+	}
 	if (BlendMode)
 	{
 		writer.Key(k_blendModeKey);
@@ -145,6 +156,11 @@ MaterialOverrides MaterialOverrides::Deserialize(const rapidjson::Value& data)
 			return it != data.MemberEnd() ? &it->value : nullptr;
 		};
 
+	// A material has to be one: "" isn't kept, since Filepath("") would resolve to the root folder
+	if (const rapidjson::Value* const material = member(k_materialKey); material != nullptr && material->IsString() && material->GetStringLength() > 0)
+	{
+		overrides.Material = Filepath(material->GetString());
+	}
 	if (const rapidjson::Value* const blendMode = member(k_blendModeKey); blendMode != nullptr && blendMode->IsString())
 	{
 		overrides.BlendMode = FindBlendMode(blendMode->GetString());

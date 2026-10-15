@@ -21,8 +21,8 @@ namespace
 	// Per pixel, for drags without a step
 	constexpr float k_defaultDragSpeed = 0.01f;
 	constexpr size_t k_maxStringLength = 256;
-	// How far a thumbnail's hover preview sits from the cursor, so the cursor doesn't cover its corner
-	constexpr float k_previewCursorOffset = 8.0f;
+	// How far a popup shown on hover (a thumbnail's preview, a path) sits from the cursor, so the cursor doesn't cover it
+	constexpr float k_hoverPopupCursorOffset = 8.0f;
 
 	const char* GetFormat(const PropertyDescriptor& property)
 	{
@@ -161,9 +161,26 @@ namespace
 		return false;
 	}
 
-	// A preview of the asset (if the property has one), the path, a button that picks a new one in the file browser,
-	// and one that clears it (if the property allows it). Fits the item width it's given, so the inspector can leave
-	// room beside it.
+	// Shows text as a tooltip just above the cursor, centred on it and kept inside the viewport, so it doesn't cover the
+	// rows below. Setting the position stops ImGui keeping it on screen, so that's done here with the size it will have.
+	void SetTooltipAboveCursor(const char* text)
+	{
+		const ImGuiStyle& style = ImGui::GetStyle();
+		const ImVec2 textSize = ImGui::CalcTextSize(text);
+		const ImVec2 size(textSize.x + style.WindowPadding.x * 2.0f, textSize.y + style.WindowPadding.y * 2.0f);
+
+		const ImGuiViewport* const viewport = ImGui::GetWindowViewport();
+		const ImVec2 mouse = ImGui::GetMousePos();
+		const float right = viewport->WorkPos.x + viewport->WorkSize.x;
+		const float x = std::max(viewport->WorkPos.x, std::min(mouse.x - size.x * 0.5f, right - size.x));
+		const float y = std::max(viewport->WorkPos.y, mouse.y - k_hoverPopupCursorOffset - size.y);
+		ImGui::SetNextWindowPos(ImVec2(x, y), ImGuiCond_Always);
+		ImGui::SetTooltip("%s", text);
+	}
+
+	// A preview of the asset (if the property has one), its file name (its relative path shows above the cursor on
+	// hover), a button that picks a new one in the file browser, and one that clears it (if the property allows it).
+	// Fits the item width it's given, so the inspector can leave room beside it.
 	bool DrawAssetPath(Editor::EditorContext& context, const PropertyDescriptor& property, const void* object, PropertyValue& value, bool isReadOnly)
 	{
 		Filepath& path = std::get<Filepath>(value);
@@ -178,11 +195,15 @@ namespace
 			width -= thumbnailSize + spacing;
 		}
 
-		std::string displayPath = path.IsValid() ? path.GetRelativePath() : "(none)";
+		std::string displayName = path.IsValid() ? path.GetFileName() : "(none)";
 		if (isReadOnly)
 		{
 			ImGui::AlignTextToFramePadding();
-			ImGui::TextUnformatted(displayPath.c_str());
+			ImGui::TextUnformatted(displayName.c_str());
+			if (ImGui::IsItemHovered() && path.IsValid())
+			{
+				SetTooltipAboveCursor(path.GetRelativePath().c_str());
+			}
 			return false;
 		}
 
@@ -196,10 +217,10 @@ namespace
 		}
 
 		ImGui::SetNextItemWidth(std::max(1.0f, width));
-		ImGui::InputText("##path", displayPath.data(), displayPath.size() + 1, ImGuiInputTextFlags_ReadOnly);
+		ImGui::InputText("##path", displayName.data(), displayName.size() + 1, ImGuiInputTextFlags_ReadOnly);
 		if (ImGui::IsItemHovered() && path.IsValid())
 		{
-			ImGui::SetTooltip("%s", path.GetRelativePath().c_str());
+			SetTooltipAboveCursor(path.GetRelativePath().c_str());
 		}
 
 		ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
@@ -334,8 +355,8 @@ namespace Editor
 				const ImGuiViewport* const viewport = ImGui::GetWindowViewport();
 				const ImVec2 mouse = ImGui::GetMousePos();
 				const float bottom = viewport->WorkPos.y + viewport->WorkSize.y;
-				const float y = std::max(viewport->WorkPos.y, std::min(mouse.y + k_previewCursorOffset, bottom - previewHeight));
-				ImGui::SetNextWindowPos(ImVec2(mouse.x - k_previewCursorOffset, y), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
+				const float y = std::max(viewport->WorkPos.y, std::min(mouse.y + k_hoverPopupCursorOffset, bottom - previewHeight));
+				ImGui::SetNextWindowPos(ImVec2(mouse.x - k_hoverPopupCursorOffset, y), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
 			}
 			if (isHovered && ImGui::BeginTooltip())
 			{

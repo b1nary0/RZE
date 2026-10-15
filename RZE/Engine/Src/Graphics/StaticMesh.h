@@ -3,6 +3,8 @@
 #include <Graphics/MeshDraw.h>
 #include <Graphics/MeshGeometry.h>
 
+#include <Utils/Platform/Filepath.h>
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -23,6 +25,8 @@ public:
 		std::string Name;
 		// Shared by every object drawing the mesh. Null only for a mesh that's never drawn (e.g. in tests).
 		std::shared_ptr<const MaterialInstance> Material;
+		// The material asset Material was made from; invalid for one made in code, or a sub-mesh without one
+		Filepath MaterialPath;
 	};
 
 	struct SubMesh

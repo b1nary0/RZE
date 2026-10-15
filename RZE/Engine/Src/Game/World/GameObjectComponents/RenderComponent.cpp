@@ -12,6 +12,7 @@
 #include <Game/World/GameObject/GameObject.h>
 
 #include <Graphics/Material.h>
+#include <Graphics/MaterialResource.h>
 #include <Graphics/MaterialSlot.h>
 #include <Graphics/RenderScene.h>
 #include <Graphics/Shader.h>
@@ -93,6 +94,18 @@ namespace
 		slot.Icon([](const MaterialSlot& materialSlot) { return GetTexturePreview(materialSlot, MaterialInstance::TEXTURE_SLOT_DIFFUSE); });
 
 		// What it draws with first, then its values in sections
+		slot.Value<Filepath>("Material",
+			[](const MaterialSlot& materialSlot) { return materialSlot.GetMaterialPath(); },
+			[](MaterialSlot& materialSlot, const Filepath& path)
+			{
+				ChangeOverrides(materialSlot, [&path](MaterialOverrides& overrides) { overrides.Material = path; });
+			})
+			.Overridable<MaterialSlot>(
+				[](const MaterialSlot& materialSlot) { return materialSlot.GetOverrides().Material.has_value(); },
+				[](MaterialSlot& materialSlot) { ChangeOverrides(materialSlot, [](MaterialOverrides& overrides) { overrides.Material.reset(); }); })
+			.Asset("Material", AssetPaths::GetMaterialFolder().GetRelativePath().c_str(), (std::string("*") + AssetPaths::k_materialExtension).c_str())
+			.Thumbnail<MaterialSlot>([](const MaterialSlot& materialSlot) { return GetTexturePreview(materialSlot, MaterialInstance::TEXTURE_SLOT_DIFFUSE); })
+			.ToolTip("The material asset it draws with; the values below can be overridden on top of it");
 		slot.Value<std::string>("Shader", [](const MaterialSlot& materialSlot)
 			{
 				const PixelShader* const shader = materialSlot.GetMaterial().GetPixelShader();
@@ -370,6 +383,27 @@ void RenderComponent::GatherResourceDependencies(const rapidjson::Value& compone
 	if (resourcePath != componentData.MemberEnd() && resourcePath->value.IsString())
 	{
 		outDependencies.Add<StaticMeshResource>(resourcePath->value.GetString());
+	}
+
+	// What its material overrides swap in, so applying them is a cache hit too
+	const rapidjson::Value::ConstMemberIterator overridesData = componentData.FindMember("MaterialOverrides");
+	if (overridesData != componentData.MemberEnd() && overridesData->value.IsObject())
+	{
+		for (rapidjson::Value::ConstMemberIterator it = overridesData->value.MemberBegin(); it != overridesData->value.MemberEnd(); ++it)
+		{
+			const MaterialOverrides overrides = MaterialOverrides::Deserialize(it->value);
+			if (overrides.Material.has_value())
+			{
+				outDependencies.Add<MaterialResource>(overrides.Material->GetRelativePath());
+			}
+			for (const std::optional<Filepath>& texture : overrides.Textures)
+			{
+				if (texture.has_value() && texture->IsValid())
+				{
+					outDependencies.Add<Texture2D>(texture->GetRelativePath());
+				}
+			}
+		}
 	}
 }
 

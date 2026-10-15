@@ -19,4 +19,10 @@ namespace AssetPaths
 		static const Filepath s_meshFolder("ProjectData/Mesh");
 		return s_meshFolder;
 	}
+
+	const Filepath& GetMaterialFolder()
+	{
+		static const Filepath s_materialFolder("ProjectData/Material");
+		return s_materialFolder;
+	}
 }

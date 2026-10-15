@@ -18,13 +18,22 @@ namespace
 {
 	using EBlendMode = MaterialValues::EBlendMode;
 
-	// An instance of a mesh with a slot for each name and no geometry
+	// The material asset a test mesh's slot is made from
+	Filepath GetMaterialPath(const std::string& name)
+	{
+		return Filepath("ProjectData/Material/Test/" + name + ".materialasset");
+	}
+
+	// An instance of a mesh with a slot for each name, made from the material asset GetMaterialPath names, and no
+	// geometry
 	std::shared_ptr<StaticMeshInstance> MakeInstance(const std::vector<std::string>& slotNames)
 	{
 		std::vector<StaticMesh::Slot> slots;
 		for (const std::string& name : slotNames)
 		{
-			slots.emplace_back().Name = name;
+			StaticMesh::Slot& slot = slots.emplace_back();
+			slot.Name = name;
+			slot.MaterialPath = GetMaterialPath(name);
 		}
 		return StaticMeshInstance::Create(StaticMesh::Create("Test", std::vector<StaticMesh::SubMesh>(), std::move(slots)));
 	}
@@ -117,6 +126,50 @@ TEST_CASE("Loading overrides ignores names it doesn't know")
 	{
 		CHECK_FALSE(texture.has_value());
 	}
+}
+
+TEST_CASE("Swapping in a material is an override of its own, kept and saved, that leaves the values to that material")
+{
+	MaterialOverrides overrides;
+	overrides.Material = GetMaterialPath("Other");
+	CHECK_FALSE(overrides.IsEmpty());
+	CHECK_FALSE(overrides.ChangesValues());
+
+	MaterialValues base;
+	base.Shininess = 16.0f;
+	CHECK(overrides.ApplyTo(base).Shininess == doctest::Approx(16.0f));
+
+	overrides.Opacity = 0.5f;
+	CHECK(overrides.ChangesValues());
+
+	const MaterialOverrides loaded = RoundTrip(overrides);
+	REQUIRE(loaded.Material.has_value());
+	CHECK(loaded.Material->GetRelativePath() == GetMaterialPath("Other").GetRelativePath());
+	CHECK(loaded.Opacity == doctest::Approx(0.5f));
+
+	// An empty path isn't a material
+	rapidjson::Document document;
+	document.Parse(R"({ "Material": "" })");
+	REQUIRE_FALSE(document.HasParseError());
+	CHECK(MaterialOverrides::Deserialize(document).IsEmpty());
+}
+
+TEST_CASE("A slot draws its mesh's material asset until its overrides swap another in")
+{
+	std::shared_ptr<StaticMeshInstance> instance = MakeInstance({ "glass", "bricks" });
+	const MaterialSlot& glass = instance->GetMaterialSlots()[0];
+	CHECK(glass.GetMaterialPath().GetRelativePath() == GetMaterialPath("glass").GetRelativePath());
+
+	MaterialOverridesByName overrides;
+	overrides["glass"].Material = GetMaterialPath("Other");
+	instance->SetOverrides(overrides);
+	CHECK(glass.GetMaterialPath().GetRelativePath() == GetMaterialPath("Other").GetRelativePath());
+	// Kept with the others, though no value is overridden
+	CHECK(instance->GetOverrides().count("glass") == 1);
+
+	instance->SetOverrides(MaterialOverridesByName());
+	CHECK(glass.GetMaterialPath().GetRelativePath() == GetMaterialPath("glass").GetRelativePath());
+	CHECK(instance->GetOverrides().empty());
 }
 
 TEST_CASE("A mesh instance's overrides go onto its slots by name, and ones for slots it hasn't got are kept")

@@ -138,6 +138,10 @@ bool StaticMeshResource::FinalizeStep()
 		StaticMesh::Slot& slot = slots.emplace_back();
 		slot.Name = pendingMaterial.Name;
 		slot.Material = MaterialInstance::Create(pendingMaterial.Data);
+		if (!pendingMaterial.Path.empty())
+		{
+			slot.MaterialPath = Filepath(pendingMaterial.Path);
+		}
 	}
 
 	m_mesh = StaticMesh::Create(m_meshName, std::move(m_finalizedSubmeshes), std::move(slots), std::move(m_pendingPlacements));
