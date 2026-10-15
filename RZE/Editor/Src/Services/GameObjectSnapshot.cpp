@@ -13,6 +13,34 @@ namespace
 		return property.Set && !property.IsExclusive && !property.IsEditorOnly;
 	}
 
+	// The copied properties of each element of object's editable Arrays (and theirs, nested), whose properties are
+	// type's, with their paths from the component; parentPath is the path to object's Array, or empty for the
+	// component itself
+	void TakeElementValues(const TypeDescription& type, void* object, const PropertyPath* parentPath, const std::string& elementKey,
+		std::vector<std::pair<PropertyPath, PropertyValue>>& outValues)
+	{
+		for (size_t propertyIndex = 0; propertyIndex < type.Properties.size(); ++propertyIndex)
+		{
+			const PropertyDescriptor& property = type.Properties[propertyIndex];
+			const PropertyPath path = parentPath != nullptr ? parentPath->Nested(elementKey, propertyIndex) : PropertyPath(propertyIndex);
+
+			if (parentPath != nullptr && IsCopied(property))
+			{
+				outValues.emplace_back(path, property.Get(object));
+			}
+
+			if (property.Type == EPropertyType::Array && property.HasEditableElements())
+			{
+				const std::vector<ObjectRef> elements = std::get<std::vector<ObjectRef>>(property.GetMutable(object));
+				for (size_t elementIndex = 0; elementIndex < elements.size(); ++elementIndex)
+				{
+					const ObjectRef& element = elements[elementIndex];
+					TakeElementValues(*element.Type, element.MutableObject, &path, ComponentPropertyRegistry::GetElementKey(element, elementIndex), outValues);
+				}
+			}
+		}
+	}
+
 	// The object's component of this type, adding one if it hasn't got one (every object starts with a Transform)
 	GameObjectComponentBase* FindOrAddComponent(GameObject& gameObject, GameObjectComponentID id)
 	{
@@ -45,18 +73,22 @@ namespace Editor
 			componentValues.ID = component->m_id;
 
 			// A component type without a description has nothing to copy, but the copy still gets one
-			const std::vector<PropertyDescriptor>* const properties = ComponentPropertyRegistry::GetProperties(component->m_id);
-			if (properties != nullptr)
+			const ComponentPropertyRegistry::ComponentDescription* const description = ComponentPropertyRegistry::GetDescription(component->m_id);
+			if (description != nullptr)
 			{
-				const void* const object = ComponentPropertyRegistry::GetDescribedObject(*component);
-				for (size_t index = 0; index < properties->size(); ++index)
+				void* const object = description->ToObject(*component);
+				const std::vector<PropertyDescriptor>& properties = description->Type->Properties;
+				for (size_t index = 0; index < properties.size(); ++index)
 				{
-					const PropertyDescriptor& property = (*properties)[index];
+					const PropertyDescriptor& property = properties[index];
 					if (IsCopied(property))
 					{
-						componentValues.Values.emplace_back(index, property.Get(object));
+						componentValues.Values.emplace_back(PropertyPath(index), property.Get(object));
 					}
 				}
+
+				// After the component's own, so they're set once the elements exist
+				TakeElementValues(*description->Type, object, nullptr, std::string(), componentValues.Values);
 			}
 
 			snapshot.m_components.push_back(std::move(componentValues));
@@ -82,11 +114,14 @@ namespace Editor
 				continue;
 			}
 
-			const std::vector<PropertyDescriptor>& properties = *ComponentPropertyRegistry::GetProperties(componentValues.ID);
-			void* const object = ComponentPropertyRegistry::GetDescribedObject(*component);
-			for (const std::pair<size_t, PropertyValue>& value : componentValues.Values)
+			for (const std::pair<PropertyPath, PropertyValue>& value : componentValues.Values)
 			{
-				properties[value.first].Set(object, value.second);
+				// Skipped if the copy hasn't got the element
+				const ComponentPropertyRegistry::ResolvedProperty resolved = ComponentPropertyRegistry::Resolve(*component, value.first);
+				if (resolved.IsValid())
+				{
+					resolved.Property->Set(resolved.Object, value.second);
+				}
 			}
 		}
 

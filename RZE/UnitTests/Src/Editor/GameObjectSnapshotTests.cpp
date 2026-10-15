@@ -172,3 +172,23 @@ TEST_CASE_FIXTURE(SnapshotFixture, "TakeSnapshots copies an object under another
 
 	CHECK(snapshots.size() == 2);
 }
+
+TEST_CASE_FIXTURE(SnapshotFixture, "A copy takes its original's elements' values, once it has the elements")
+{
+	GameObjectPtr original = AddWithTestComponent("Crate");
+	GameObjectComponentPtr<TestComponent> component = original->GetComponent<TestComponent>();
+	component->SetPartCount(2);
+	component->GetParts()[1].SetWeight(4.0f);
+	component->GetParts()[0].SetLocked(true);
+
+	GameObjectPtr copy = Paste(original);
+
+	GameObjectComponentPtr<TestComponent> copied = copy->GetComponent<TestComponent>();
+	REQUIRE(copied != nullptr);
+	// The count is copied first, which makes the parts the weights then go to
+	REQUIRE(copied->GetParts().size() == 2);
+	CHECK(copied->GetParts()[1].GetWeight() == 4.0f);
+	CHECK(copied->GetParts()[0].GetWeight() == 1.0f);
+	// EditorOnly, like a component's own
+	CHECK_FALSE(copied->GetParts()[0].IsLocked());
+}

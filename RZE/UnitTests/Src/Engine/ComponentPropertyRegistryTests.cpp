@@ -86,3 +86,79 @@ TEST_CASE("Only properties with a setter that aren't ReadOnly are editable")
 	CHECK_FALSE(doubledSize.IsEditable());
 	CHECK(doubledSize.Set == nullptr);
 }
+
+TEST_CASE("An editable Array's elements are described by the component and keyed")
+{
+	RegisterTestComponents();
+	const std::vector<PropertyDescriptor>& properties = *ComponentPropertyRegistry::GetProperties(TestComponent::GetID());
+	const PropertyDescriptor& parts = properties[TestComponent::Parts];
+	REQUIRE(parts.Type == EPropertyType::Array);
+	CHECK(parts.HasEditableElements());
+	REQUIRE(parts.ElementType != nullptr);
+	CHECK(parts.ElementType->Properties.size() == 2);
+
+	TestComponent component;
+	component.SetPartCount(2);
+	void* const object = ComponentPropertyRegistry::GetDescribedObject(component);
+
+	// Reading gives each element's key, and no way to write it
+	const std::vector<ObjectRef> read = std::get<std::vector<ObjectRef>>(parts.Get(object));
+	REQUIRE(read.size() == 2);
+	CHECK(read[1].Key == "Part1");
+	CHECK(read[1].Type == parts.ElementType.get());
+	CHECK(read[1].MutableObject == nullptr);
+
+	const std::vector<ObjectRef> writable = std::get<std::vector<ObjectRef>>(parts.GetMutable(object));
+	REQUIRE(writable.size() == 2);
+	CHECK(writable[1].MutableObject == &component.GetParts()[1]);
+}
+
+TEST_CASE("A path leads to a component's own property, or into an editable Array's element by its key")
+{
+	RegisterTestComponents();
+	TestComponent component;
+	component.SetPartCount(3);
+
+	const ComponentPropertyRegistry::ResolvedProperty speed = ComponentPropertyRegistry::Resolve(component, PropertyPath(TestComponent::Speed));
+	REQUIRE(speed.IsValid());
+	CHECK(speed.Property->Name == "Speed");
+	speed.Property->Set(speed.Object, PropertyValue(6.0f));
+	CHECK(component.GetSpeed() == 6.0f);
+
+	const PropertyPath weight = PropertyPath(TestComponent::Parts).Nested("Part1", TestComponent::PartWeight);
+	const ComponentPropertyRegistry::ResolvedProperty resolved = ComponentPropertyRegistry::Resolve(component, weight);
+	REQUIRE(resolved.IsValid());
+	CHECK(resolved.Property->Name == "Weight");
+	resolved.Property->Set(resolved.Object, PropertyValue(5.0f));
+	CHECK(component.GetParts()[1].GetWeight() == 5.0f);
+	CHECK(component.GetParts()[0].GetWeight() == 1.0f);
+}
+
+TEST_CASE("A path leads nowhere once its element is gone, or through anything but an editable Array")
+{
+	RegisterTestComponents();
+	TestComponent component;
+	component.SetPartCount(2);
+
+	const PropertyPath secondWeight = PropertyPath(TestComponent::Parts).Nested("Part1", TestComponent::PartWeight);
+	CHECK(ComponentPropertyRegistry::Resolve(component, secondWeight).IsValid());
+
+	component.SetPartCount(1);
+	CHECK_FALSE(ComponentPropertyRegistry::Resolve(component, secondWeight).IsValid());
+
+	CHECK_FALSE(ComponentPropertyRegistry::Resolve(component, PropertyPath(TestComponent::Speed).Nested("Part0", 0)).IsValid());
+	CHECK_FALSE(ComponentPropertyRegistry::Resolve(component, PropertyPath(TestComponent::Count)).IsValid());
+	CHECK_FALSE(ComponentPropertyRegistry::Resolve(component, PropertyPath()).IsValid());
+}
+
+TEST_CASE("Paths are equal when they lead through the same properties and elements")
+{
+	const PropertyPath weight = PropertyPath(TestComponent::Parts).Nested("Part1", TestComponent::PartWeight);
+	CHECK(weight == PropertyPath(TestComponent::Parts).Nested("Part1", TestComponent::PartWeight));
+	CHECK(weight != PropertyPath(TestComponent::Parts).Nested("Part0", TestComponent::PartWeight));
+	CHECK(weight != PropertyPath(TestComponent::Parts).Nested("Part1", TestComponent::PartLocked));
+	CHECK(weight != PropertyPath(TestComponent::Parts));
+	CHECK(weight.IsNested());
+	CHECK_FALSE(PropertyPath(TestComponent::Speed).IsNested());
+	CHECK(PropertyPath(TestComponent::Speed) == PropertyPath(TestComponent::Speed));
+}

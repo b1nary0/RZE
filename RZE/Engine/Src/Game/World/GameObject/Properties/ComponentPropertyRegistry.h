@@ -2,6 +2,7 @@
 
 #include <Game/World/GameObject/GameObjectDefinitions.h>
 #include <Game/World/GameObject/Properties/PropertyBuilder.h>
+#include <Game/World/GameObject/Properties/PropertyPath.h>
 
 #include <type_traits>
 #include <utility>
@@ -34,6 +35,20 @@ namespace ComponentPropertyRegistry
 
 	// The component as its description's object, for PropertyDescriptor::Get/Set; null if its type isn't described
 	void* GetDescribedObject(GameObjectComponentBase& component);
+
+	// Where a PropertyPath leads on a component: the property, and the object to Get or Set it on
+	struct ResolvedProperty
+	{
+		// Null when the path leads nowhere: its element is gone, or a step isn't an editable Array
+		const PropertyDescriptor* Property = nullptr;
+		void* Object = nullptr;
+
+		bool IsValid() const { return Property != nullptr; }
+	};
+	ResolvedProperty Resolve(GameObjectComponentBase& component, const PropertyPath& path);
+
+	// How a PropertyPath refers to an Array element: its Key, or its index when it has none
+	std::string GetElementKey(const ObjectRef& element, size_t elementIndex);
 
 	template <typename TComponent>
 	void Register()

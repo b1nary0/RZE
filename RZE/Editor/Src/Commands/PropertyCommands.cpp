@@ -51,10 +51,13 @@ namespace
 	class SetPropertyRecord : public Editor::UndoRecord
 	{
 	public:
-		SetPropertyRecord(ObjectGUID guid, GameObjectComponentID componentID, size_t propertyIndex, PropertyValue before, PropertyValue after)
+		// propertyName is the name of the property path leads to, for the Edit menu
+		SetPropertyRecord(ObjectGUID guid, GameObjectComponentID componentID, const PropertyPath& path, const std::string& propertyName,
+			PropertyValue&& before, PropertyValue&& after)
 			: m_guid(guid)
 			, m_componentID(componentID)
-			, m_propertyIndex(propertyIndex)
+			, m_path(path)
+			, m_propertyName(propertyName)
 			, m_before(std::move(before))
 			, m_after(std::move(after))
 		{
@@ -83,14 +86,14 @@ namespace
 
 		std::string GetName() const override
 		{
-			return "Change " + GetProperty(m_componentID, m_propertyIndex).Name;
+			return "Change " + m_propertyName;
 		}
 
 		bool TryMerge(const Editor::UndoRecord& newer) override
 		{
 			const SetPropertyRecord* const newerProperty = dynamic_cast<const SetPropertyRecord*>(&newer);
 			if (newerProperty == nullptr || newerProperty->m_guid != m_guid
-				|| newerProperty->m_componentID != m_componentID || newerProperty->m_propertyIndex != m_propertyIndex)
+				|| newerProperty->m_componentID != m_componentID || newerProperty->m_path != m_path)
 			{
 				return false;
 			}
@@ -100,19 +103,27 @@ namespace
 		}
 
 	private:
+		// Does nothing if the object, component or (for a nested property) element is gone
 		void Apply(ObjectGUID guid, const PropertyValue& value)
 		{
 			const GameObjectComponentPtr<GameObjectComponentBase> component = Editor::UndoTargets::FindComponent(guid, m_componentID);
-			if (component != nullptr)
+			if (component == nullptr)
 			{
-				GetProperty(m_componentID, m_propertyIndex).Set(ComponentPropertyRegistry::GetDescribedObject(**component), value);
+				return;
+			}
+
+			const ComponentPropertyRegistry::ResolvedProperty resolved = ComponentPropertyRegistry::Resolve(**component, m_path);
+			if (resolved.IsValid())
+			{
+				resolved.Property->Set(resolved.Object, value);
 			}
 		}
 
 	private:
 		ObjectGUID m_guid;
 		GameObjectComponentID m_componentID;
-		size_t m_propertyIndex;
+		PropertyPath m_path;
+		std::string m_propertyName;
 		PropertyValue m_before;
 		PropertyValue m_after;
 		ObjectGUID m_previousHolder = ObjectGUIDs::k_invalid;
@@ -121,10 +132,10 @@ namespace
 
 namespace Editor
 {
-	SetPropertyCommand::SetPropertyCommand(GameObjectComponentPtr<GameObjectComponentBase> component, size_t propertyIndex, PropertyValue value, InteractionID interaction)
+	SetPropertyCommand::SetPropertyCommand(const GameObjectComponentPtr<GameObjectComponentBase>& component, const PropertyPath& path, PropertyValue&& value, InteractionID interaction)
 		: EditorCommand(interaction)
 		, m_component(component)
-		, m_propertyIndex(propertyIndex)
+		, m_path(path)
 		, m_value(std::move(value))
 	{
 	}
@@ -136,27 +147,32 @@ namespace Editor
 			return false;
 		}
 
-		const GameObjectComponentID componentID = m_component->m_id;
-		const PropertyDescriptor& property = GetProperty(componentID, m_propertyIndex);
-		AssertMsg(property.IsEditable(), "Read-only properties can't be set");
+		const ComponentPropertyRegistry::ResolvedProperty resolved = ComponentPropertyRegistry::Resolve(**m_component, m_path);
+		if (!resolved.IsValid())
+		{
+			return false;
+		}
 
-		void* const object = ComponentPropertyRegistry::GetDescribedObject(**m_component);
+		const PropertyDescriptor& property = *resolved.Property;
+		AssertMsg(property.IsEditable(), "Read-only properties can't be set");
+		AssertMsg(!property.IsExclusive || !m_path.IsNested(), "Only a component's own properties can be Exclusive");
 
 		// A view setting rather than part of the scene: applied, but not undoable and doesn't count as a change
 		if (property.IsEditorOnly)
 		{
-			property.Set(object, m_value);
+			property.Set(resolved.Object, m_value);
 			return false;
 		}
 
+		const GameObjectComponentID componentID = m_component->m_id;
 		std::unique_ptr<SetPropertyRecord> record = std::make_unique<SetPropertyRecord>(
-			m_component->GetOwner()->GetGUID(), componentID, m_propertyIndex, property.Get(object), m_value);
+			m_component->GetOwner()->GetGUID(), componentID, m_path, property.Name, property.Get(resolved.Object), PropertyValue(m_value));
 		if (property.IsExclusive)
 		{
-			record->SetPreviousHolder(FindExclusiveHolder(componentID, m_propertyIndex));
+			record->SetPreviousHolder(FindExclusiveHolder(componentID, m_path.GetSteps().front().PropertyIndex));
 		}
 
-		property.Set(object, m_value);
+		property.Set(resolved.Object, m_value);
 		SetUndoRecord(std::move(record));
 		return true;
 	}

@@ -3,6 +3,7 @@
 #include <Game/World/GameObject/GameObjectDefinitions.h>
 #include <Game/World/GameObject/ObjectGUID.h>
 #include <Game/World/GameObject/Properties/PropertyDescriptor.h>
+#include <Game/World/GameObject/Properties/PropertyPath.h>
 
 #include <functional>
 #include <string>
@@ -30,7 +31,9 @@ namespace Editor
 	public:
 		// Copies every property with a setter (see PropertyDescriptor::Set), ReadOnly ones included, except:
 		// Exclusive ones, so a copy never takes over from the original (e.g. as the main camera), and EditorOnly
-		// view settings.
+		// view settings. That includes the properties of editable Arrays' elements, which are set after the
+		// component's own (which may be what creates the elements, e.g. a mesh's material slots); an element the copy
+		// doesn't have is skipped.
 		static GameObjectSnapshot Take(GameObject& gameObject);
 
 		// Adds a new object (and its children) to scene, under parent if it isn't null, and returns it. Each object is
@@ -44,8 +47,8 @@ namespace Editor
 		struct ComponentValues
 		{
 			GameObjectComponentID ID;
-			// Index into the component type's properties, and the value
-			std::vector<std::pair<size_t, PropertyValue>> Values;
+			// The component's own properties first, then its elements', each with where it goes
+			std::vector<std::pair<PropertyPath, PropertyValue>> Values;
 		};
 
 	private:

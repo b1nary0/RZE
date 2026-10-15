@@ -121,6 +121,11 @@ namespace Editor
 		}
 	}
 
+	PropertyPath PropertyInspector::PathPrefix::PathTo(size_t propertyIndex) const
+	{
+		return Parent != nullptr ? Parent->Nested(ElementKey, propertyIndex) : PropertyPath(propertyIndex);
+	}
+
 	bool PropertyInspector::Draw(EditorContext& context, const ComponentList& components)
 	{
 		if (components.empty() || components.front() == nullptr)
@@ -147,19 +152,20 @@ namespace Editor
 		ImGui::PushID(static_cast<int>(component->GetInstanceID()));
 		if (EditorUI::BeginPropertyTable("##properties", EditorUI::CalcLabelColumnWidth(widestLabel)))
 		{
-			DrawProperties(context, *description->Type, object, &components);
+			DrawProperties(context, *description->Type, object, PathPrefix(), &components);
 			EditorUI::EndPropertyTable();
 		}
 		ImGui::PopID();
 		return true;
 	}
 
-	void PropertyInspector::DrawProperties(EditorContext& context, const TypeDescription& type, const void* object,
+	void PropertyInspector::DrawProperties(EditorContext& context, const TypeDescription& type, const void* object, const PathPrefix& prefix,
 		const ComponentList* editableComponents)
 	{
 		for (size_t propertyIndex = 0; propertyIndex < type.Properties.size(); ++propertyIndex)
 		{
 			const PropertyDescriptor& property = type.Properties[propertyIndex];
+			const PropertyPath path = prefix.PathTo(propertyIndex);
 
 			ImGui::PushID(static_cast<int>(propertyIndex));
 
@@ -169,11 +175,14 @@ namespace Editor
 				const ObjectRef ref = std::get<ObjectRef>(property.Get(object));
 				const std::string displayName = GetDisplayName(ref);
 				const std::string heading = displayName.empty() ? property.Name : property.Name + ": " + displayName;
-				DrawObjectNode(context, heading.c_str(), ref);
+				// Nested objects are read-only; only an editable Array's elements can be edited
+				DrawObjectNode(context, heading.c_str(), ref, PathPrefix(), nullptr);
 			}
 			else if (property.Type == EPropertyType::Array)
 			{
 				const std::vector<ObjectRef> elements = std::get<std::vector<ObjectRef>>(property.Get(object));
+				// The elements can be edited if the Array allows it and these properties can be
+				const ComponentList* const elementComponents = property.HasEditableElements() ? editableComponents : nullptr;
 
 				ImGui::TableNextRow();
 				ImGui::TableSetColumnIndex(0);
@@ -189,9 +198,13 @@ namespace Editor
 							heading = "[" + std::to_string(elementIndex) + "]";
 						}
 
+						PathPrefix elementPrefix;
+						elementPrefix.Parent = &path;
+						elementPrefix.ElementKey = ComponentPropertyRegistry::GetElementKey(element, elementIndex);
+
 						ImGui::PushID(static_cast<int>(elementIndex));
 						ImGui::TableNextRow();
-						DrawObjectNode(context, heading.c_str(), element);
+						DrawObjectNode(context, heading.c_str(), element, elementPrefix, elementComponents);
 						ImGui::PopID();
 					}
 					ImGui::TreePop();
@@ -199,14 +212,14 @@ namespace Editor
 			}
 			else
 			{
-				DrawValueRow(context, property, propertyIndex, object, editableComponents);
+				DrawValueRow(context, property, path, object, editableComponents);
 			}
 
 			ImGui::PopID();
 		}
 	}
 
-	void PropertyInspector::DrawValueRow(EditorContext& context, const PropertyDescriptor& property, size_t propertyIndex, const void* object,
+	void PropertyInspector::DrawValueRow(EditorContext& context, const PropertyDescriptor& property, const PropertyPath& path, const void* object,
 		const ComponentList* editableComponents)
 	{
 		const PropertyDrawers::Drawer drawer = PropertyDrawers::Find(property.Type);
@@ -219,14 +232,21 @@ namespace Editor
 		const PropertyValue before = property.Get(object);
 		PropertyValue value = before;
 
-		// Whether the other selected components' values differ from the first's, which is the one shown
+		// Whether the other selected components' values differ from the first's, which is the one shown. One whose
+		// path leads nowhere (e.g. without the same element) isn't counted.
 		bool isMixed = false;
 		if (editableComponents != nullptr)
 		{
 			for (size_t targetIndex = 1; targetIndex < editableComponents->size() && !isMixed; ++targetIndex)
 			{
 				const GameObjectComponentPtr<GameObjectComponentBase>& target = (*editableComponents)[targetIndex];
-				isMixed = target != nullptr && !AreEqual(before, property.Get(ComponentPropertyRegistry::GetDescribedObject(**target)));
+				if (target == nullptr)
+				{
+					continue;
+				}
+
+				const ComponentPropertyRegistry::ResolvedProperty resolved = ComponentPropertyRegistry::Resolve(**target, path);
+				isMixed = resolved.IsValid() && !AreEqual(before, resolved.Property->Get(resolved.Object));
 			}
 		}
 
@@ -255,7 +275,8 @@ namespace Editor
 			}
 		}
 
-		// Nested objects' properties can't be edited yet: commands only address a component's own properties
+		// Read-only nested objects (editableComponents null) can't be edited: commands only reach a component's own
+		// properties and its editable Arrays' elements
 		const bool isReadOnly = !property.IsEditable() || editableComponents == nullptr || exclusiveReason != nullptr;
 
 		const bool isDisabled = isReadOnly && IsDrawnAsWidget(property.Type);
@@ -278,7 +299,7 @@ namespace Editor
 
 		// The held-edit bookkeeping follows the first component, which every target's edit shares
 		const GameObjectComponentInstanceID instanceID = editableComponents->front()->GetInstanceID();
-		if (isHeld && m_heldEdit.m_component == instanceID && m_heldEdit.m_propertyIndex == propertyIndex)
+		if (isHeld && m_heldEdit.m_component == instanceID && m_heldEdit.m_path == path)
 		{
 			m_isHeldThisFrame = true;
 		}
@@ -288,7 +309,7 @@ namespace Editor
 			return;
 		}
 
-		const InteractionID interaction = GetInteraction(instanceID, propertyIndex, isHeld);
+		const InteractionID interaction = GetInteraction(instanceID, path, isHeld);
 		for (size_t targetIndex = 0; targetIndex < editableComponents->size(); ++targetIndex)
 		{
 			const GameObjectComponentPtr<GameObjectComponentBase>& target = (*editableComponents)[targetIndex];
@@ -297,14 +318,22 @@ namespace Editor
 				continue;
 			}
 
-			PropertyValue targetValue = targetIndex == 0
-				? value
-				: ApplyEdit(before, value, property.Get(ComponentPropertyRegistry::GetDescribedObject(**target)));
-			context.GetCommands().Push<SetPropertyCommand>(target, propertyIndex, std::move(targetValue), interaction);
+			if (targetIndex == 0)
+			{
+				context.GetCommands().Push<SetPropertyCommand>(target, path, PropertyValue(value), interaction);
+				continue;
+			}
+
+			const ComponentPropertyRegistry::ResolvedProperty resolved = ComponentPropertyRegistry::Resolve(**target, path);
+			if (resolved.IsValid())
+			{
+				context.GetCommands().Push<SetPropertyCommand>(target, path, ApplyEdit(before, value, resolved.Property->Get(resolved.Object)), interaction);
+			}
 		}
 	}
 
-	void PropertyInspector::DrawObjectNode(EditorContext& context, const char* heading, const ObjectRef& ref)
+	void PropertyInspector::DrawObjectNode(EditorContext& context, const char* heading, const ObjectRef& ref, const PathPrefix& prefix,
+		const ComponentList* editableComponents)
 	{
 		ImGui::TableSetColumnIndex(0);
 		if (!ref.IsValid())
@@ -315,12 +344,12 @@ namespace Editor
 
 		if (ImGui::TreeNodeEx("##object", ImGuiTreeNodeFlags_SpanAllColumns, "%s", heading))
 		{
-			DrawProperties(context, *ref.Type, ref.Object, nullptr);
+			DrawProperties(context, *ref.Type, ref.Object, prefix, editableComponents);
 			ImGui::TreePop();
 		}
 	}
 
-	InteractionID PropertyInspector::GetInteraction(GameObjectComponentInstanceID component, size_t propertyIndex, bool isHeld)
+	InteractionID PropertyInspector::GetInteraction(GameObjectComponentInstanceID component, const PropertyPath& path, bool isHeld)
 	{
 		if (!isHeld)
 		{
@@ -328,11 +357,11 @@ namespace Editor
 		}
 
 		const bool isSameEdit = m_heldEdit.m_interaction != k_noInteraction
-			&& m_heldEdit.m_component == component && m_heldEdit.m_propertyIndex == propertyIndex;
+			&& m_heldEdit.m_component == component && m_heldEdit.m_path == path;
 		if (!isSameEdit)
 		{
 			m_heldEdit.m_component = component;
-			m_heldEdit.m_propertyIndex = propertyIndex;
+			m_heldEdit.m_path = path;
 			m_heldEdit.m_interaction = NewInteractionID();
 		}
 

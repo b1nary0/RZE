@@ -208,6 +208,49 @@ public:
 		return descriptor;
 	}
 
+	// A list of nested objects whose properties tools may set, described here by the component rather than by the
+	// elements' own type. getter takes the object and returns a const std::vector<TElement>&; mutableGetter takes it
+	// non-const and returns a std::vector<TElement>&; keyOf takes an element and returns its ObjectRef::Key, which must
+	// stay the same while the element does (e.g. a name), so a PropertyPath still finds it after the list changes;
+	// describe takes a PropertyBuilder<TElement>& and describes the elements' properties, once.
+	template <typename TElement, typename TGetter, typename TMutableGetter, typename TKeyOf, typename TDescribe>
+	PropertyDescriptor& Array(const char* name, TGetter getter, TMutableGetter mutableGetter, TKeyOf keyOf, TDescribe describe)
+	{
+		std::shared_ptr<TypeDescription> elementType = std::make_shared<TypeDescription>();
+		PropertyBuilder<TElement> elementBuilder(*elementType);
+		describe(elementBuilder);
+		const TypeDescription* const type = elementType.get();
+
+		PropertyDescriptor& descriptor = AddDescriptor(name, EPropertyType::Array);
+		descriptor.ElementType = std::move(elementType);
+		descriptor.Get = [getter, keyOf, type](const void* object) -> PropertyValue
+			{
+				std::vector<ObjectRef> refs;
+				for (const TElement& element : getter(*static_cast<const TObject*>(object)))
+				{
+					ObjectRef& ref = refs.emplace_back();
+					ref.Type = type;
+					ref.Object = &element;
+					ref.Key = keyOf(element);
+				}
+				return PropertyValue(std::move(refs));
+			};
+		descriptor.GetMutable = [mutableGetter, keyOf, type](void* object) -> PropertyValue
+			{
+				std::vector<ObjectRef> refs;
+				for (TElement& element : mutableGetter(*static_cast<TObject*>(object)))
+				{
+					ObjectRef& ref = refs.emplace_back();
+					ref.Type = type;
+					ref.Object = &element;
+					ref.MutableObject = &element;
+					ref.Key = keyOf(element);
+				}
+				return PropertyValue(std::move(refs));
+			};
+		return descriptor;
+	}
+
 	// A read-only value worked out by getter, which takes the object and returns a TValue; for values with no
 	// getter of their own (e.g. a texture preview, or a name looked up elsewhere)
 	template <typename TValue, typename TGetter>

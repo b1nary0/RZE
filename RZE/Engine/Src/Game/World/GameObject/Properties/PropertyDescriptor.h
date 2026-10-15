@@ -8,6 +8,7 @@
 #include <Utils/Platform/FilePath.h>
 
 #include <functional>
+#include <memory>
 #include <string>
 #include <variant>
 #include <vector>
@@ -20,8 +21,13 @@ struct ObjectRef
 {
 	const TypeDescription* Type = nullptr;
 	const void* Object = nullptr;
+	// The same object, for writing its properties; only set by an editable nested property's GetMutable
+	void* MutableObject = nullptr;
 	// Shown instead of the type's display name, e.g. a material's texture slot ("Diffuse")
 	std::string Label;
+	// Identifies an Array element from one read to the next (e.g. a material slot's name), so a PropertyPath still
+	// finds it after the list changes; empty means its index (see ComponentPropertyRegistry::GetElementKey)
+	std::string Key;
 
 	bool IsValid() const { return Type != nullptr && Object != nullptr; }
 };
@@ -51,7 +57,7 @@ enum class EPropertyType
 	AssetPath,
 	// Another described object, shown nested; read-only
 	Object,
-	// A list of described objects, each shown nested; read-only
+	// A list of described objects, each shown nested; editable if the property has GetMutable
 	Array,
 	// An image; read-only
 	Texture
@@ -75,6 +81,8 @@ struct PropertyDescriptor
 	// object points at an instance of the described type
 	using Getter = std::function<PropertyValue(const void* object)>;
 	using Setter = std::function<void(void* object, const PropertyValue&)>;
+	// For an editable Array: like Getter, but the refs' MutableObject is set
+	using MutableGetter = std::function<PropertyValue(void* object)>;
 
 	std::string Name;
 	EPropertyType Type = EPropertyType::Float;
@@ -83,6 +91,11 @@ struct PropertyDescriptor
 	// but never write, and copying skips since setting the others reproduces it. State that tools mustn't edit but
 	// that still belongs to the object keeps its setter and is marked ReadOnly instead.
 	Setter Set;
+	// Only for an Array whose elements' properties tools may set (each through a PropertyPath); null otherwise
+	MutableGetter GetMutable;
+	// The elements' description, when the component describes them itself (PropertyBuilder::Array with a describe
+	// function). Owned here so the refs' Type stays valid as long as the component type's description does.
+	std::shared_ptr<const TypeDescription> ElementType;
 
 	// Inclusive limits for numeric types; ignored when Min >= Max
 	float Min = 0.0f;
@@ -110,6 +123,8 @@ struct PropertyDescriptor
 
 	// Whether tools let the user change it
 	bool IsEditable() const { return Set && !IsReadOnly; }
+	// Whether tools can reach into its elements to set their properties
+	bool HasEditableElements() const { return static_cast<bool>(GetMutable); }
 	bool HasRange() const { return Min < Max; }
 
 	PropertyDescriptor& Range(float min, float max) { Min = min; Max = max; return *this; }

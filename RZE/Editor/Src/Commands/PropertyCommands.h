@@ -4,22 +4,24 @@
 
 #include <Game/World/GameObject/GameObjectDefinitions.h>
 #include <Game/World/GameObject/Properties/PropertyDescriptor.h>
+#include <Game/World/GameObject/Properties/PropertyPath.h>
 
 namespace Editor
 {
-	// Sets one of a component's own described properties (ComponentPropertyRegistry) through its setter. Does
-	// nothing if the component has been destroyed.
+	// Sets one of a component's described properties (ComponentPropertyRegistry), or a property of an element of
+	// one of its editable Arrays, through its setter. Does nothing if the component has been destroyed or the path
+	// no longer leads anywhere (e.g. the element is gone).
 	class SetPropertyCommand : public EditorCommand
 	{
 	public:
-		SetPropertyCommand(GameObjectComponentPtr<GameObjectComponentBase> component, size_t propertyIndex, PropertyValue value, InteractionID interaction);
+		SetPropertyCommand(const GameObjectComponentPtr<GameObjectComponentBase>& component, const PropertyPath& path, PropertyValue&& value, InteractionID interaction);
 
 		bool Execute(EditorContext& context) override;
 		const char* GetName() const override { return "Set Property"; }
 
 	private:
 		GameObjectComponentPtr<GameObjectComponentBase> m_component;
-		size_t m_propertyIndex;
+		PropertyPath m_path;
 		PropertyValue m_value;
 	};
 }
