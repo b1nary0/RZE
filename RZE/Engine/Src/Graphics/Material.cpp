@@ -26,55 +26,85 @@ MaterialInstance::~MaterialInstance()
 {
 }
 
+namespace
+{
+	ResourceHandle LoadShader(MaterialInstance::EShader shader)
+	{
+		// @TODO This needs to be reworked. Should have the shader linked with the material asset?
+		switch (shader)
+		{
+		case MaterialInstance::EShader::Full:
+			return RZE().GetResourceHandler().LoadResource<PixelShader>(Filepath("Assets/Shaders/Pixel_NewRenderer.hlsl"), "Pixel_NewRenderer");
+		case MaterialInstance::EShader::Untextured:
+			// @TODO Understand why (at least) Material_47 on sponza object has NO textures - how is this even worth it? If we don't have texures to display what
+			// purpose do we have?
+			return RZE().GetResourceHandler().LoadResource<PixelShader>(Filepath("Assets/Shaders/Pixel_Default_NewRenderer.hlsl"), "Pixel_Default_NewRenderer");
+		default:
+			return RZE().GetResourceHandler().LoadResource<PixelShader>(Filepath("Assets/Shaders/Pixel_NewRenderer_DiffuseOnly.hlsl"), "Pixel_NewRenderer_DiffuseOnly");
+		}
+	}
+}
+
 std::shared_ptr<MaterialInstance> MaterialInstance::Create(const MaterialAssetImporter::MaterialData& materialData)
 {
 	std::shared_ptr<MaterialInstance> materialInstance = std::make_shared<MaterialInstance>(materialData.MaterialName);
+	materialInstance->SetValues(MaterialValues::FromMaterialData(materialData));
+	return materialInstance;
+}
 
-	U8 textureSlot = 0; // #TODO This is a really hacky way to do this. Not safe at all in any other circumstance
-	for (const std::string& texturePath : materialData.TexturePaths)
-	{
-		if (!texturePath.empty())
-		{
-			materialInstance->SetTexture(textureSlot, RZE().GetResourceHandler().LoadResource<Texture2D>(Filepath(texturePath)));
-		}
+MaterialInstance::MaterialParams MaterialInstance::BuildParams(const MaterialValues& values)
+{
+	const bool isBlended = MaterialAssetImporter::IsBlended(values.BlendMode);
 
-		textureSlot++;
-	}
-
-	// @TODO This needs to be reworked. Should have the shader linked with the material asset?
-	if ((materialData.TextureFlags & MaterialAssetImporter::MaterialData::TEXTUREFLAG_ALL) == MaterialAssetImporter::MaterialData::TEXTUREFLAG_ALL)
-	{
-		Filepath fullShaderPath("Assets/Shaders/Pixel_NewRenderer.hlsl");
-		materialInstance->SetShaderTechnique(RZE().GetResourceHandler().LoadResource<PixelShader>(fullShaderPath, "Pixel_NewRenderer"));
-	}
-	else if (materialData.TextureFlags == MaterialAssetImporter::MaterialData::TEXTUREFLAG_NONE)
-	{
-		// @TODO Understand why (at least) Material_47 on sponza object has NO textures - how is this even worth it? If we don't have texures to display what
-		// purpose do we have?
-		Filepath noTextureShaderPath("Assets/Shaders/Pixel_Default_NewRenderer.hlsl");
-		materialInstance->SetShaderTechnique(RZE().GetResourceHandler().LoadResource<PixelShader>(noTextureShaderPath, "Pixel_Default_NewRenderer"));
-	}
-	else
-	{
-		Filepath diffuseOnlyPath("Assets/Shaders/Pixel_NewRenderer_DiffuseOnly.hlsl");
-		materialInstance->SetShaderTechnique(RZE().GetResourceHandler().LoadResource<PixelShader>(diffuseOnlyPath, "Pixel_NewRenderer_DiffuseOnly"));
-	}
-
-	materialInstance->GetProperties().Shininess = materialData.Properties.Shininess;
+	MaterialParams params;
+	params.Shininess = values.Shininess;
 	// The shaders write opacity as the scene's alpha, which PostProcess also reads (background, exposure weight), so
 	// only a material drawn blended gets anything but solid
-	const bool isBlended = MaterialAssetImporter::IsBlended(materialData.BlendMode);
-	materialInstance->GetProperties().Opacity = isBlended ? materialData.Properties.Opacity : 1.0f;
-	materialInstance->GetProperties().HasOpacityMask = (materialData.TextureFlags & MaterialAssetImporter::MaterialData::TEXTUREFLAG_OPACITY) ? 1.0f : 0.0f;
-	materialInstance->GetProperties().HasHeightMap = (materialData.TextureFlags & MaterialAssetImporter::MaterialData::TEXTUREFLAG_HEIGHT) ? 1.0f : 0.0f;
-	materialInstance->GetProperties().OpacityMaskInAlpha = (materialData.TextureFlags & MaterialAssetImporter::MaterialData::TEXTUREFLAG_OPACITY_IN_ALPHA) ? 1.0f : 0.0f;
-	materialInstance->GetProperties().InvertOpacityMask = (materialData.TextureFlags & MaterialAssetImporter::MaterialData::TEXTUREFLAG_INVERT_OPACITY) ? 1.0f : 0.0f;
+	params.Opacity = isBlended ? values.Opacity : 1.0f;
+	params.HasOpacityMask = values.Textures[TEXTURE_SLOT_OPACITY].IsValid() ? 1.0f : 0.0f;
+	params.HasHeightMap = values.Textures[TEXTURE_SLOT_HEIGHT].IsValid() ? 1.0f : 0.0f;
+	params.OpacityMaskInAlpha = values.OpacityMaskInAlpha ? 1.0f : 0.0f;
+	params.InvertOpacityMask = values.InvertOpacityMask ? 1.0f : 0.0f;
 	// A cutout clips at the mask; a blended material fades by it
-	materialInstance->GetProperties().OpacityMaskIsCoverage = isBlended ? 1.0f : 0.0f;
-	materialInstance->CommitPropertyChanges();
-	materialInstance->SetBlendMode(materialData.BlendMode);
+	params.OpacityMaskIsCoverage = isBlended ? 1.0f : 0.0f;
+	return params;
+}
 
-	return materialInstance;
+MaterialInstance::EShader MaterialInstance::ChooseShader(const MaterialValues& values)
+{
+	const bool hasDiffuse = values.Textures[TEXTURE_SLOT_DIFFUSE].IsValid();
+	const bool hasSpecular = values.Textures[TEXTURE_SLOT_SPECULAR].IsValid();
+	const bool hasNormal = values.Textures[TEXTURE_SLOT_NORMAL].IsValid();
+	if (hasDiffuse && hasSpecular && hasNormal)
+	{
+		return EShader::Full;
+	}
+
+	for (const Filepath& texture : values.Textures)
+	{
+		if (texture.IsValid())
+		{
+			return EShader::DiffuseOnly;
+		}
+	}
+	return EShader::Untextured;
+}
+
+void MaterialInstance::SetValues(const MaterialValues& values)
+{
+	m_values = values;
+
+	ResourceHandler& resourceHandler = RZE().GetResourceHandler();
+	for (U8 textureSlot = 0; textureSlot < TEXTURE_SLOT_COUNT; ++textureSlot)
+	{
+		const Filepath& texturePath = m_values.Textures[textureSlot];
+		SetTexture(textureSlot, texturePath.IsValid() ? resourceHandler.LoadResource<Texture2D>(texturePath) : ResourceHandle::EmptyHandle());
+	}
+
+	SetShaderTechnique(LoadShader(ChooseShader(m_values)));
+
+	m_properties = BuildParams(m_values);
+	CommitPropertyChanges();
 }
 
 void MaterialInstance::SetTexture(U8 textureSlot, const ResourceHandle& textureResource)
@@ -151,7 +181,7 @@ void MaterialInstance::DescribeProperties(PropertyBuilder<MaterialInstance>& pro
 		{
 			return std::string(MaterialAssetImporter::GetBlendModeName(material.GetBlendMode()));
 		});
-	properties.Value<float>("Opacity", [](const MaterialInstance& material) { return material.GetProperties().Opacity; });
+	properties.Value<float>("Opacity", [](const MaterialInstance& material) { return material.GetValues().Opacity; });
 
 	// Only the slots that have a texture, each labelled with its slot
 	properties.Array("Textures", [](const MaterialInstance& material)

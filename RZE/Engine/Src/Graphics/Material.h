@@ -2,9 +2,16 @@
 
 #include <Rendering/BufferHandle.h>
 
+#include <EngineCore/Resources/ResourceHandler.h>
+
 #include <Asset/AssetImport/MaterialAssetImporter.h>
 
+#include <Graphics/MaterialValues.h>
+
 #include <array>
+#include <memory>
+#include <string>
+#include <vector>
 
 class PixelShader;
 class ShaderTechnique;
@@ -32,6 +39,18 @@ public:
 		TEXTURE_SLOT_HEIGHT,
 		TEXTURE_SLOT_COUNT
 	};
+	static_assert(TEXTURE_SLOT_COUNT == MaterialValues::k_textureSlotCount, "MaterialValues has a texture per slot");
+
+	// The pixel shader a material draws with, from which textures it has (ChooseShader)
+	enum class EShader
+	{
+		// No textures
+		Untextured,
+		// Some textures, but not all of diffuse, specular and normal
+		DiffuseOnly,
+		// Diffuse, specular and normal
+		Full
+	};
 
 	// #TODO(Josh::Turn into material properties or something; material system?)
 	struct MaterialParams
@@ -57,14 +76,26 @@ public:
 	~MaterialInstance();
 	
 public:
-	// @TODO hoist MaterialData out and use it in MaterialAssetImporter and MaterialInstance (no namespace resolution)
+	// A material asset's material (MaterialValues::FromMaterialData, then SetValues)
 	static std::shared_ptr<MaterialInstance> Create(const MaterialAssetImporter::MaterialData& materialData);
+
+	// The GPU parameters values draw with. Plain values in and out, so it's testable without a GPU.
+	static MaterialParams BuildParams(const MaterialValues& values);
+	// The shader values draw with. Plain values in and out, so it's testable without a GPU.
+	static EShader ChooseShader(const MaterialValues& values);
 
 	// For tools: the material's shader and textures
 	static void DescribeProperties(PropertyBuilder<MaterialInstance>& properties);
 
 	static const char* GetTextureSlotName(TextureSlot textureSlot);
 
+	// The one way a material described by values changes: loads its textures and shader, and works out and uploads
+	// its GPU parameters, so nothing derived from the values can go stale
+	void SetValues(const MaterialValues& values);
+	const MaterialValues& GetValues() const { return m_values; }
+
+	// For materials made in code from textures that aren't files (e.g. GifChatComponent's frames). SetValues sets
+	// the textures and shader itself.
 	void SetTexture(U8 textureSlot, const ResourceHandle& textureResource);
 
 	const ResourceHandle& GetTexture(U8 textureSlot) const;
@@ -75,19 +106,16 @@ public:
 	const std::string& GetName() const { return m_name; }
 
 	// @TODO SetShaderTechnique is actually being set as PixelShader directly until actual techniques are implemented
+	// For materials made in code, like SetTexture
 	void SetShaderTechnique(const ResourceHandle& shaderTechnique);
 	const ResourceHandle& GetShaderResource() const { return m_shaderTechnique; }
 	// The loaded pixel shader, resolved when the technique is set. Use this when drawing.
 	const PixelShader* GetPixelShader() const { return m_pixelShader; }
 
-	MaterialParams& GetProperties() { return m_properties; }
-	const MaterialParams& GetProperties() const { return m_properties; }
-
 	using EBlendMode = MaterialAssetImporter::MaterialData::EBlendMode;
-	EBlendMode GetBlendMode() const { return m_blendMode; }
+	EBlendMode GetBlendMode() const { return m_values.BlendMode; }
 	// Drawn in the forward pass's sorted, blended pass rather than with the opaque draws
-	bool IsBlended() const { return MaterialAssetImporter::IsBlended(m_blendMode); }
-	void SetBlendMode(EBlendMode blendMode) { m_blendMode = blendMode; }
+	bool IsBlended() const { return MaterialAssetImporter::IsBlended(m_values.BlendMode); }
 
 	// @TODO Is this API good?
 	// Commit property changes to GPU buffer
@@ -98,9 +126,10 @@ public:
 private:
 	std::string m_name;
 
+	// What SetValues was last given; the defaults for a material made in code
+	MaterialValues m_values;
+	// Worked out from m_values (BuildParams), except for materials made in code, which keep the defaults
 	MaterialParams m_properties;
-	// CPU side only: decides which pass draws the material, so it isn't part of the GPU parameters
-	EBlendMode m_blendMode = EBlendMode::Opaque;
 
 	ResourceHandle m_shaderTechnique;
 	std::vector<ResourceHandle> m_textureSlots;
