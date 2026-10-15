@@ -16,6 +16,10 @@ MaterialInstance::MaterialInstance(const std::string& name)
 	m_textureSlots.resize(TEXTURE_SLOT_COUNT);
 	
 	m_paramBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(MaterialParams), 16, 1);
+	// The GPU starts with the defaults too, so a material nobody commits (e.g. one made in code) isn't drawn with an
+	// empty buffer: its Opacity would be 0, which the shaders write as alpha, and post-processing then treats it as
+	// background
+	CommitPropertyChanges();
 }
 
 MaterialInstance::~MaterialInstance()
