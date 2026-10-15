@@ -7,12 +7,12 @@
 
 #include <Game/GameScene.h>
 #include <Game/StaticMeshResource.h>
-#include <Game/World/GameObjectComponents/MeshComponentProperties.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
 #include <Game/World/GameObject/GameObject.h>
 
 #include <Graphics/Material.h>
+#include <Graphics/MaterialSlot.h>
 #include <Graphics/RenderScene.h>
 #include <Graphics/Shader.h>
 
@@ -25,21 +25,155 @@ namespace
 	// Distinct so both are readable when drawn together
 	const Vector3D k_meshBoundsColour(1.0f, 0.85f, 0.0f);
 	const Vector3D k_subMeshBoundsColour(0.0f, 0.8f, 1.0f);
+
+	constexpr char k_textureFilter[] = "*.png;*.jpg;*.jpeg;*.tga;*.bmp";
+
+	// Changes one of slot's overrides, leaving the rest as they are
+	template <typename TChange>
+	void ChangeOverrides(MaterialSlot& slot, TChange change)
+	{
+		MaterialOverrides overrides = slot.GetOverrides();
+		change(overrides);
+		slot.SetOverrides(overrides);
+	}
+
+	// One of a material slot's values as an overridable property: shows what the slot draws with, and setting or
+	// resetting it changes the slot's overrides. getValue takes the slot's MaterialValues and returns the value;
+	// getOverride takes its MaterialOverrides (const or not) and returns the matching std::optional.
+	template <typename TValue, typename TGetValue, typename TGetOverride>
+	PropertyDescriptor& DescribeOverridable(PropertyBuilder<MaterialSlot>& slot, const char* name, TGetValue getValue, TGetOverride getOverride)
+	{
+		return slot.Value<TValue>(name,
+			[getValue](const MaterialSlot& materialSlot) { return getValue(materialSlot.GetValues()); },
+			[getOverride](MaterialSlot& materialSlot, const TValue& value)
+			{
+				ChangeOverrides(materialSlot, [&getOverride, &value](MaterialOverrides& overrides) { getOverride(overrides) = value; });
+			})
+			.Overridable<MaterialSlot>(
+				[getOverride](const MaterialSlot& materialSlot) { return getOverride(materialSlot.GetOverrides()).has_value(); },
+				[getOverride](MaterialSlot& materialSlot)
+				{
+					ChangeOverrides(materialSlot, [&getOverride](MaterialOverrides& overrides) { getOverride(overrides).reset(); });
+				});
+	}
+
+	// The texture a slot draws with in textureSlot, as a preview; empty if it has none
+	PropertyTexture GetTexturePreview(const MaterialSlot& slot, U8 textureSlot)
+	{
+		PropertyTexture preview;
+		if (const Texture2D* const texture = slot.GetMaterial().GetTextureResource(textureSlot))
+		{
+			preview.Handle = texture->GetPlatformObject();
+			preview.Size = texture->GetDimensions();
+		}
+		return preview;
+	}
+
+	// The names of every blend mode, in their values' order
+	std::vector<std::string> GetBlendModeNames()
+	{
+		std::vector<std::string> names;
+		for (U8 mode = 0;; ++mode)
+		{
+			const std::string name = MaterialAssetImporter::GetBlendModeName(static_cast<MaterialValues::EBlendMode>(mode));
+			if (name == "Unknown")
+			{
+				return names;
+			}
+			names.push_back(name);
+		}
+	}
+
+	// A material slot's properties: each of its values, overridable, with what it draws with
+	void DescribeMaterialSlot(PropertyBuilder<MaterialSlot>& slot)
+	{
+		using EBlendMode = MaterialValues::EBlendMode;
+
+		slot.DisplayName([](const MaterialSlot& materialSlot) { return materialSlot.GetName(); });
+		slot.Icon([](const MaterialSlot& materialSlot) { return GetTexturePreview(materialSlot, MaterialInstance::TEXTURE_SLOT_DIFFUSE); });
+
+		slot.Enum<EBlendMode>("Blend", GetBlendModeNames(),
+			[](const MaterialSlot& materialSlot) { return materialSlot.GetValues().BlendMode; },
+			[](MaterialSlot& materialSlot, EBlendMode blendMode)
+			{
+				ChangeOverrides(materialSlot, [blendMode](MaterialOverrides& overrides) { overrides.BlendMode = blendMode; });
+			})
+			.Overridable<MaterialSlot>(
+				[](const MaterialSlot& materialSlot) { return materialSlot.GetOverrides().BlendMode.has_value(); },
+				[](MaterialSlot& materialSlot) { ChangeOverrides(materialSlot, [](MaterialOverrides& overrides) { overrides.BlendMode.reset(); }); })
+			.ToolTip("How it covers what's behind it");
+
+		DescribeOverridable<float>(slot, "Opacity",
+			[](const MaterialValues& values) { return values.Opacity; },
+			[](auto& overrides) -> auto& { return overrides.Opacity; })
+			.Range(0.0f, 1.0f).As(EPropertyWidget::Slider).DisplayFormat("%.2f")
+			.EnabledIf<MaterialSlot>([](const MaterialSlot& materialSlot) { return MaterialAssetImporter::IsBlended(materialSlot.GetValues().BlendMode); },
+				"Only blended modes use opacity");
+
+		DescribeOverridable<float>(slot, "Shininess",
+			[](const MaterialValues& values) { return values.Shininess; },
+			[](auto& overrides) -> auto& { return overrides.Shininess; })
+			// Blinn-Phong exponents: imported ones are 4x the source's Phong exponent, so they run into the thousands
+			.Range(0.0f, 16384.0f).As(EPropertyWidget::Drag).StepSize(0.5f).DisplayFormat("%.1f");
+
+		for (U8 textureSlot = 0; textureSlot < MaterialInstance::TEXTURE_SLOT_COUNT; ++textureSlot)
+		{
+			DescribeOverridable<Filepath>(slot, MaterialInstance::GetTextureSlotName(static_cast<MaterialInstance::TextureSlot>(textureSlot)),
+				[textureSlot](const MaterialValues& values) { return values.Textures[textureSlot]; },
+				[textureSlot](auto& overrides) -> auto& { return overrides.Textures[textureSlot]; })
+				.Asset("Texture", "Assets", k_textureFilter)
+				.Preview<MaterialSlot>([textureSlot](const MaterialSlot& materialSlot) { return GetTexturePreview(materialSlot, textureSlot); })
+				.Clearable()
+				.InGroup("Textures");
+		}
+
+		const auto hasOpacityTexture = [](const MaterialSlot& materialSlot)
+			{
+				return materialSlot.GetValues().Textures[MaterialInstance::TEXTURE_SLOT_OPACITY].IsValid();
+			};
+		DescribeOverridable<bool>(slot, "Invert Mask",
+			[](const MaterialValues& values) { return values.InvertOpacityMask; },
+			[](auto& overrides) -> auto& { return overrides.InvertOpacityMask; })
+			.EnabledIf<MaterialSlot>(hasOpacityTexture, "Needs an opacity texture")
+			.ToolTip("The opacity texture's white means see-through");
+		DescribeOverridable<bool>(slot, "Mask In Alpha",
+			[](const MaterialValues& values) { return values.OpacityMaskInAlpha; },
+			[](auto& overrides) -> auto& { return overrides.OpacityMaskInAlpha; })
+			.EnabledIf<MaterialSlot>(hasOpacityTexture, "Needs an opacity texture")
+			.ToolTip("The mask is in the opacity texture's alpha rather than its red");
+
+		slot.Value<std::string>("Shader", [](const MaterialSlot& materialSlot)
+			{
+				const PixelShader* const shader = materialSlot.GetMaterial().GetPixelShader();
+				return shader != nullptr ? shader->GetName() : std::string("(none)");
+			});
+	}
 }
 
 void RenderComponent::DescribeProperties(PropertyBuilder<RenderComponent>& properties)
 {
 	properties.AssetPath("Mesh", &RenderComponent::GetMeshPath, &RenderComponent::LoadMesh)
-		.Asset("RZE MeshAsset", AssetPaths::GetMeshFolder().GetRelativePath().c_str(), (std::string("*") + AssetPaths::k_meshExtension).c_str());
+		.Asset("RZE MeshAsset", AssetPaths::GetMeshFolder().GetRelativePath().c_str(), (std::string("*") + AssetPaths::k_meshExtension).c_str())
+		.Clearable();
 	properties.Vector3("Size", &RenderComponent::GetMeshSize)
 		.DisplayFormat("%.2f m").ToolTip("Along the object's own axes, including its scale");
 	properties.Bool("Draw Mesh Bounds", &RenderComponent::IsDrawingMeshBounds, &RenderComponent::SetDrawMeshBounds).EditorOnly();
 	properties.Bool("Draw Sub-Mesh Bounds", &RenderComponent::IsDrawingSubMeshBounds, &RenderComponent::SetDrawSubMeshBounds).EditorOnly();
-	properties.Array("Materials", [](const RenderComponent& renderComponent)
+	// Each of the mesh's material slots, as this object draws it; editing a value overrides it for this object only
+	properties.Array<MaterialSlot>("Materials",
+		[](const RenderComponent& renderComponent) -> const std::vector<MaterialSlot>&
 		{
-			const StaticMeshInstance* const mesh = renderComponent.GetMesh();
-			return mesh != nullptr ? MakeMaterialSlotRefs(*mesh) : std::vector<ObjectRef>();
-		});
+			static const std::vector<MaterialSlot> s_noSlots;
+			return renderComponent.m_meshInstance != nullptr ? renderComponent.m_meshInstance->GetMaterialSlots() : s_noSlots;
+		},
+		[](RenderComponent& renderComponent) -> std::vector<MaterialSlot>&
+		{
+			// Never added to: a component without a mesh has no slots to edit
+			static std::vector<MaterialSlot> s_noSlots;
+			return renderComponent.m_meshInstance != nullptr ? renderComponent.m_meshInstance->GetMaterialSlots() : s_noSlots;
+		},
+		[](const MaterialSlot& slot) { return slot.GetName(); },
+		&DescribeMaterialSlot);
 }
 
 const Filepath& RenderComponent::GetMeshPath() const

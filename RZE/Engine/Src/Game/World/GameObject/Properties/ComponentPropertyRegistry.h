@@ -50,6 +50,19 @@ namespace ComponentPropertyRegistry
 	// How a PropertyPath refers to an Array element: its Key, or its index when it has none
 	std::string GetElementKey(const ObjectRef& element, size_t elementIndex);
 
+	// Whether property's value on object is part of the object's state, which copies take and undo puts back: it has
+	// a setter, isn't Exclusive (a copy mustn't take over from the original, e.g. as the main camera) or EditorOnly (a
+	// view setting), and, if it's overridable, is overridden (otherwise it comes from the base)
+	bool IsStateValue(const PropertyDescriptor& property, const void* object);
+
+	using PathValues = std::vector<std::pair<PropertyPath, PropertyValue>>;
+	// The state values (IsStateValue) of the elements of the component's editable Arrays, nested ones included, each
+	// with its path. Not the component's own properties.
+	PathValues GetElementStateValues(GameObjectComponentBase& component);
+	// Sets each value whose path still leads somewhere on the component; ones that don't (e.g. an element it hasn't
+	// got) are skipped
+	void SetValues(GameObjectComponentBase& component, const PathValues& values);
+
 	template <typename TComponent>
 	void Register()
 	{

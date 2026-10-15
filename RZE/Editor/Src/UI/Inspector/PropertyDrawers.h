@@ -29,5 +29,13 @@ namespace Editor
 		// The Texture drawer's image, scaled down to fit maxSize pixels (keeping its aspect ratio), or at its own size
 		// if maxSize is 0; for custom inspectors that show images too
 		void DrawTexture(const PropertyTexture& texture, float maxSize = k_defaultMaxTextureSize);
+
+		// The size a thumbnail's hover preview scales images down to fit: large enough to see detail, small enough not
+		// to cover the inspector
+		constexpr float k_thumbnailPreviewSize = 320.0f;
+
+		// texture as a size x size thumbnail (an empty frame without one, keeping its place) that shows it at up to
+		// k_thumbnailPreviewSize, with its dimensions, below and to the left of the cursor while it's hovered
+		void DrawThumbnail(const PropertyTexture& texture, float size);
 	}
 }

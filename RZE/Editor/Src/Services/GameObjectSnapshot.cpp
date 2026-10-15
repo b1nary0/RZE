@@ -8,41 +8,6 @@
 
 namespace
 {
-	// An overridable value is only copied when it's overridden: otherwise it comes from the copy's own base
-	bool IsCopied(const PropertyDescriptor& property, const void* object)
-	{
-		return property.Set && !property.IsExclusive && !property.IsEditorOnly
-			&& (!property.IsOverridable() || property.IsOverridden(object));
-	}
-
-	// The copied properties of each element of object's editable Arrays (and theirs, nested), whose properties are
-	// type's, with their paths from the component; parentPath is the path to object's Array, or empty for the
-	// component itself
-	void TakeElementValues(const TypeDescription& type, void* object, const PropertyPath* parentPath, const std::string& elementKey,
-		std::vector<std::pair<PropertyPath, PropertyValue>>& outValues)
-	{
-		for (size_t propertyIndex = 0; propertyIndex < type.Properties.size(); ++propertyIndex)
-		{
-			const PropertyDescriptor& property = type.Properties[propertyIndex];
-			const PropertyPath path = parentPath != nullptr ? parentPath->Nested(elementKey, propertyIndex) : PropertyPath(propertyIndex);
-
-			if (parentPath != nullptr && IsCopied(property, object))
-			{
-				outValues.emplace_back(path, property.Get(object));
-			}
-
-			if (property.Type == EPropertyType::Array && property.HasEditableElements())
-			{
-				const std::vector<ObjectRef> elements = std::get<std::vector<ObjectRef>>(property.GetMutable(object));
-				for (size_t elementIndex = 0; elementIndex < elements.size(); ++elementIndex)
-				{
-					const ObjectRef& element = elements[elementIndex];
-					TakeElementValues(*element.Type, element.MutableObject, &path, ComponentPropertyRegistry::GetElementKey(element, elementIndex), outValues);
-				}
-			}
-		}
-	}
-
 	// The object's component of this type, adding one if it hasn't got one (every object starts with a Transform)
 	GameObjectComponentBase* FindOrAddComponent(GameObject& gameObject, GameObjectComponentID id)
 	{
@@ -83,14 +48,15 @@ namespace Editor
 				for (size_t index = 0; index < properties.size(); ++index)
 				{
 					const PropertyDescriptor& property = properties[index];
-					if (IsCopied(property, object))
+					if (ComponentPropertyRegistry::IsStateValue(property, object))
 					{
 						componentValues.Values.emplace_back(PropertyPath(index), property.Get(object));
 					}
 				}
 
 				// After the component's own, so they're set once the elements exist
-				TakeElementValues(*description->Type, object, nullptr, std::string(), componentValues.Values);
+				const ComponentPropertyRegistry::PathValues elementValues = ComponentPropertyRegistry::GetElementStateValues(*component);
+				componentValues.Values.insert(componentValues.Values.end(), elementValues.begin(), elementValues.end());
 			}
 
 			snapshot.m_components.push_back(std::move(componentValues));
@@ -116,15 +82,8 @@ namespace Editor
 				continue;
 			}
 
-			for (const std::pair<PropertyPath, PropertyValue>& value : componentValues.Values)
-			{
-				// Skipped if the copy hasn't got the element
-				const ComponentPropertyRegistry::ResolvedProperty resolved = ComponentPropertyRegistry::Resolve(*component, value.first);
-				if (resolved.IsValid())
-				{
-					resolved.Property->Set(resolved.Object, value.second);
-				}
-			}
+			// In order, so the elements exist by the time their values are set; skipped if the copy hasn't got one
+			ComponentPropertyRegistry::SetValues(*component, componentValues.Values);
 		}
 
 		// After the components, so the copy matches the original even if one of them sets it

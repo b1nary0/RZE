@@ -220,3 +220,45 @@ TEST_CASE("An enum is its option's index, with the options' names")
 	CHECK(part.GetShape() == TestPart::EShape::Capsule);
 	CHECK(std::get<int>(shape.Get(&part)) == 2);
 }
+
+TEST_CASE("A component's element state is the elements' values that copies and undo keep, by path")
+{
+	RegisterTestComponents();
+	TestComponent component;
+	component.SetPartCount(2);
+	component.GetParts()[0].SetWeight(3.0f);
+	component.GetParts()[0].SetMass(7.0f);
+	component.GetParts()[1].SetLocked(true);
+
+	const ComponentPropertyRegistry::PathValues values = ComponentPropertyRegistry::GetElementStateValues(component);
+	const auto find = [&values](const PropertyPath& path) -> const PropertyValue*
+		{
+			for (const auto& value : values)
+			{
+				if (value.first == path)
+				{
+					return &value.second;
+				}
+			}
+			return nullptr;
+		};
+
+	const PropertyPath parts(TestComponent::Parts);
+	REQUIRE(find(parts.Nested("Part0", TestComponent::PartWeight)) != nullptr);
+	CHECK(std::get<float>(*find(parts.Nested("Part0", TestComponent::PartWeight))) == 3.0f);
+	// Overridable: only where overridden
+	REQUIRE(find(parts.Nested("Part0", TestComponent::PartMass)) != nullptr);
+	CHECK(find(parts.Nested("Part1", TestComponent::PartMass)) == nullptr);
+	// EditorOnly isn't state
+	CHECK(find(parts.Nested("Part1", TestComponent::PartLocked)) == nullptr);
+	// Nor are the component's own properties
+	CHECK(find(PropertyPath(TestComponent::Speed)) == nullptr);
+
+	// Put back onto a component with fewer parts: what still has somewhere to go
+	TestComponent other;
+	other.SetPartCount(1);
+	ComponentPropertyRegistry::SetValues(other, values);
+	CHECK(other.GetParts()[0].GetWeight() == 3.0f);
+	CHECK(other.GetParts()[0].GetMass() == 7.0f);
+	CHECK(other.GetParts().size() == 1);
+}

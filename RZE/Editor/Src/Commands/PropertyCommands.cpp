@@ -79,6 +79,10 @@ namespace
 		// For an Exclusive property: the object that had it on before, which undo turns it back on for
 		void SetPreviousHolder(ObjectGUID holder) { m_previousHolder = holder; }
 
+		// For a component's own property: its elements' state values before the change, which undo puts back after
+		// the property, since changing it can replace the elements (a new mesh has new material slots) and lose them
+		void SetElementValuesBefore(ComponentPropertyRegistry::PathValues&& values) { m_elementValuesBefore = std::move(values); }
+
 		void Undo(Editor::EditorContext& context) override
 		{
 			// An Exclusive property is turned off by turning it on elsewhere, and its setter does that
@@ -89,6 +93,15 @@ namespace
 			else
 			{
 				Apply(m_guid, m_before);
+			}
+
+			if (!m_elementValuesBefore.empty())
+			{
+				const GameObjectComponentPtr<GameObjectComponentBase> component = Editor::UndoTargets::FindComponent(m_guid, m_componentID);
+				if (component != nullptr)
+				{
+					ComponentPropertyRegistry::SetValues(**component, m_elementValuesBefore);
+				}
 			}
 		}
 
@@ -150,6 +163,7 @@ namespace
 		std::optional<PropertyValue> m_before;
 		std::optional<PropertyValue> m_after;
 		ObjectGUID m_previousHolder = ObjectGUIDs::k_invalid;
+		ComponentPropertyRegistry::PathValues m_elementValuesBefore;
 	};
 }
 
@@ -193,6 +207,10 @@ namespace Editor
 		if (property.IsExclusive)
 		{
 			record->SetPreviousHolder(FindExclusiveHolder(componentID, m_path.GetSteps().front().PropertyIndex));
+		}
+		if (!m_path.IsNested())
+		{
+			record->SetElementValuesBefore(ComponentPropertyRegistry::GetElementStateValues(**m_component));
 		}
 
 		property.Set(resolved.Object, m_value);

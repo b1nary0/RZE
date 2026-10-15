@@ -443,34 +443,32 @@ namespace Editor
 		}
 
 		const TypeDescription& type = *ref.Type;
-		const ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAllColumns | ImGuiTreeNodeFlags_AllowOverlap;
+		const size_t overriddenCount = CountOverridden(type, ref.Object);
 
-		bool isOpen = false;
+		// The arrow, then the icon (if the type has one), then the heading, drawn by hand so the icon sits between
+		const bool isOpen = ImGui::TreeNodeEx("##object", ImGuiTreeNodeFlags_SpanAllColumns | ImGuiTreeNodeFlags_AllowOverlap, "%s", "");
 		if (type.GetIcon)
 		{
-			// The icon between the arrow and the heading
-			isOpen = ImGui::TreeNodeEx("##object", flags, "%s", "");
-			const float iconSize = ImGui::GetTextLineHeight();
 			ImGui::SameLine();
-			const PropertyTexture icon = type.GetIcon(ref.Object);
-			if (icon.Handle.IsValid() && icon.Size.X() > 0.0f && icon.Size.Y() > 0.0f)
-			{
-				PropertyDrawers::DrawTexture(icon, iconSize);
-			}
-			else
-			{
-				ImGui::Dummy(ImVec2(iconSize, iconSize));
-			}
-			ImGui::SameLine();
+			PropertyDrawers::DrawThumbnail(type.GetIcon(ref.Object), ImGui::GetTextLineHeight());
+		}
+		ImGui::SameLine();
+		if (overriddenCount == 0)
+		{
+			// Nothing sits beside it in the value column, so a long heading can run across the row rather than being
+			// cut off at the label column
+			const ImVec2 start = ImGui::GetCursorScreenPos();
+			const float rowRight = ImGui::GetWindowPos().x + ImGui::GetWindowWidth() - ImGui::GetStyle().WindowPadding.x;
+			ImGui::PushClipRect(start, ImVec2(rowRight, start.y + ImGui::GetTextLineHeightWithSpacing()), false);
 			ImGui::TextUnformatted(heading);
+			ImGui::PopClipRect();
 		}
 		else
 		{
-			isOpen = ImGui::TreeNodeEx("##object", flags, "%s", heading);
+			ImGui::TextUnformatted(heading);
 		}
 
 		// How many of its values are overridden, and a button that resets them all
-		const size_t overriddenCount = CountOverridden(type, ref.Object);
 		if (overriddenCount > 0)
 		{
 			ImGui::TableSetColumnIndex(1);

@@ -21,6 +21,8 @@ namespace
 	// Per pixel, for drags without a step
 	constexpr float k_defaultDragSpeed = 0.01f;
 	constexpr size_t k_maxStringLength = 256;
+	// How far a thumbnail's hover preview sits from the cursor, so the cursor doesn't cover its corner
+	constexpr float k_previewCursorOffset = 8.0f;
 
 	const char* GetFormat(const PropertyDescriptor& property)
 	{
@@ -171,19 +173,8 @@ namespace
 		if (property.GetPreview)
 		{
 			const float previewSize = ImGui::GetFrameHeight();
-			const ImVec2 previewStart = ImGui::GetCursorScreenPos();
-			const PropertyTexture preview = property.GetPreview(object);
-			if (preview.Handle.IsValid() && preview.Size.X() > 0.0f && preview.Size.Y() > 0.0f)
-			{
-				Editor::PropertyDrawers::DrawTexture(preview, previewSize);
-			}
-			else
-			{
-				// An empty slot keeps its place, so paths line up whether or not they have an image
-				ImGui::GetWindowDrawList()->AddRect(previewStart, ImVec2(previewStart.x + previewSize, previewStart.y + previewSize),
-					ImGui::GetColorU32(ImGuiCol_Border), ImGui::GetStyle().FrameRounding);
-			}
-			ImGui::SetCursorScreenPos(ImVec2(previewStart.x + previewSize + spacing, previewStart.y));
+			Editor::PropertyDrawers::DrawThumbnail(property.GetPreview(object), previewSize);
+			ImGui::SameLine(0.0f, spacing);
 			width -= previewSize + spacing;
 		}
 
@@ -307,6 +298,51 @@ namespace Editor
 		{
 			const auto it = GetDrawers().find(type);
 			return it != GetDrawers().end() ? it->second : nullptr;
+		}
+
+		void DrawThumbnail(const PropertyTexture& texture, float size)
+		{
+			const bool hasImage = texture.Handle.IsValid() && texture.Size.X() > 0.0f && texture.Size.Y() > 0.0f;
+			if (!hasImage)
+			{
+				// An empty frame keeps the place, so rows line up whether or not they have an image
+				const ImVec2 start = ImGui::GetCursorScreenPos();
+				ImGui::Dummy(ImVec2(size, size));
+				ImGui::GetWindowDrawList()->AddRect(start, ImVec2(start.x + size, start.y + size), ImGui::GetColorU32(ImGuiCol_Border),
+					ImGui::GetStyle().FrameRounding);
+				return;
+			}
+
+			// Square, whatever the image's shape, so thumbnails line up
+			const ImVec2 start = ImGui::GetCursorScreenPos();
+			ImGui::Dummy(ImVec2(size, size));
+			const bool isHovered = ImGui::IsItemHovered();
+			const float scale = size / std::max(texture.Size.X(), texture.Size.Y());
+			const ImVec2 imageSize(texture.Size.X() * scale, texture.Size.Y() * scale);
+			const ImVec2 imageStart(start.x + (size - imageSize.x) * 0.5f, start.y + (size - imageSize.y) * 0.5f);
+			ImGui::GetWindowDrawList()->AddImage((ImTextureID)(intptr_t)texture.Handle.GetTextureData(), imageStart,
+				ImVec2(imageStart.x + imageSize.x, imageStart.y + imageSize.y), ImVec2(0.0f, 0.0f), ImVec2(texture.UVMax.X(), texture.UVMax.Y()));
+
+			if (isHovered)
+			{
+				// Below and to the left of the cursor, the side away from the inspector's other rows and the scene,
+				// moved up if it would run off the bottom. Setting the position stops ImGui keeping it on screen, so
+				// that's done here with the size it will have.
+				const ImGuiStyle& style = ImGui::GetStyle();
+				const float previewScale = std::min(1.0f, k_thumbnailPreviewSize / std::max(texture.Size.X(), texture.Size.Y()));
+				const float previewHeight = texture.Size.Y() * previewScale + style.ItemSpacing.y + ImGui::GetTextLineHeight() + style.WindowPadding.y * 2.0f;
+				const ImGuiViewport* const viewport = ImGui::GetWindowViewport();
+				const ImVec2 mouse = ImGui::GetMousePos();
+				const float bottom = viewport->WorkPos.y + viewport->WorkSize.y;
+				const float y = std::max(viewport->WorkPos.y, std::min(mouse.y + k_previewCursorOffset, bottom - previewHeight));
+				ImGui::SetNextWindowPos(ImVec2(mouse.x - k_previewCursorOffset, y), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
+			}
+			if (isHovered && ImGui::BeginTooltip())
+			{
+				DrawTexture(texture, k_thumbnailPreviewSize);
+				ImGui::TextDisabled("%d x %d", static_cast<int>(texture.Size.X()), static_cast<int>(texture.Size.Y()));
+				ImGui::EndTooltip();
+			}
 		}
 
 		void DrawTexture(const PropertyTexture& texture, float maxSize)
