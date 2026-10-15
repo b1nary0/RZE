@@ -86,11 +86,15 @@ bool MeshAssetImporter::Import(const Filepath& filePath)
 		material.Name = materialPath.empty() ? std::string("Default") : std::filesystem::path(materialPath).stem().string();
 		material.Path = materialPath;
 
-		// Missing materials are tolerated: the submesh gets a default (untextured) material.
+		// Missing materials are tolerated: the submesh gets a default (untextured, grey) material.
 		MaterialAssetImporter materialImporter;
 		if (!materialPath.empty() && materialImporter.Import(Filepath(materialPath)))
 		{
 			material.Data = materialImporter.GetMaterialData();
+		}
+		else
+		{
+			material.Data.Tint = MaterialAssetImporter::GetLegacyTint(MaterialAssetImporter::MaterialData::TEXTUREFLAG_NONE);
 		}
 	}
 

@@ -37,6 +37,17 @@ struct SurfaceData
 // How much of the pixel the material's opacity mask covers, 1 without a mask. A cutout material discards the pixel
 // below AlphaCutoff instead (and returns 1); a blended one returns the mask, to fade by. Diffuse alpha isn't used
 // unless the material says so, because some assets (e.g. Nanosuit) store unrelated data there.
+// The surface's linear colour: the diffuse texture's, tinted, or the tint alone without one
+float3 GetAlbedo(float2 uv)
+{
+	const float3 tint = SRGBToLinear(Tint);
+	if (HasDiffuseMap < 0.5f)
+	{
+		return tint;
+	}
+	return SRGBToLinear(DiffuseMap.Sample(LinearSampler, uv).rgb) * tint;
+}
+
 float ApplyOpacityMask(float2 uv)
 {
 	if (HasOpacityMask < 0.5f)

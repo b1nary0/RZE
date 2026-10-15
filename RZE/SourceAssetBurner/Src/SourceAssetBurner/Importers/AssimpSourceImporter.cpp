@@ -540,10 +540,6 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 			materialData.Properties.Opacity = SourceMaterialRules::ChooseOpacity(transparency);
 		}
 
-		aiColor3D diffColour;
-		if (mat->Get(AI_MATKEY_COLOR_DIFFUSE, diffColour) == AI_SUCCESS)
-		{
-		}
 
 		// #TODO
 		// Not entirely sure what would come in with > 0 of these texture types (though obviously its valid)
@@ -601,6 +597,28 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 		setTexture(aiTextureType_HEIGHT, 4, MaterialData::ETextureFlags::TEXTUREFLAG_HEIGHT);
 
 		materialData.BlendMode = SourceMaterialRules::ChooseBlendMode(maskKind, materialData.Properties.Opacity);
+
+		// Each source gives its colour in its own way; SourceMaterialRules picks the tint
+		{
+			SourceMaterialRules::SourceColour colour;
+			aiColor3D diffuse;
+			if (mat->Get(AI_MATKEY_COLOR_DIFFUSE, diffuse) == AI_SUCCESS)
+			{
+				colour.Diffuse = Vector3D(diffuse.r, diffuse.g, diffuse.b);
+			}
+			// Kept as a raw FBX property, with alpha
+			aiColor4D transmission;
+			if (mat->Get("$raw.3dsMax|Parameters|trans_color", 0, 0, transmission) == AI_SUCCESS)
+			{
+				colour.MaxTransmissionColour = Vector3D(transmission.r, transmission.g, transmission.b);
+			}
+			float transparency = 0.0f;
+			if (mat->Get("$raw.3dsMax|Parameters|transparency", 0, 0, transparency) == AI_SUCCESS)
+			{
+				colour.MaxPhysicalTransparency = transparency;
+			}
+			materialData.Tint = SourceMaterialRules::ChooseTint(colour, !materialData.TexturePaths[0].empty());
+		}
 
 		// #TODO really gross string manip lol
 		const std::string materialFolder = "ProjectData/Material/" + m_assetName + "/";

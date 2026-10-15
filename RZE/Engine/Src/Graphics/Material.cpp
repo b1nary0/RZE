@@ -67,6 +67,10 @@ MaterialInstance::MaterialParams MaterialInstance::BuildParams(const MaterialVal
 	params.InvertOpacityMask = values.InvertOpacityMask ? 1.0f : 0.0f;
 	// A cutout clips at the mask; a blended material fades by it
 	params.OpacityMaskIsCoverage = isBlended ? 1.0f : 0.0f;
+	params.HasDiffuseMap = values.Textures[TEXTURE_SLOT_DIFFUSE].IsValid() ? 1.0f : 0.0f;
+	params.Tint[0] = values.Tint.X();
+	params.Tint[1] = values.Tint.Y();
+	params.Tint[2] = values.Tint.Z();
 	return params;
 }
 

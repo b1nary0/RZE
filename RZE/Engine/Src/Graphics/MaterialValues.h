@@ -2,6 +2,7 @@
 
 #include <Asset/AssetImport/MaterialAssetImporter.h>
 
+#include <Utils/Math/Vector3D.h>
 #include <Utils/Platform/Filepath.h>
 
 #include <array>
@@ -22,6 +23,8 @@ struct MaterialValues
 	// 1 is solid. Only a blended material is see-through by it.
 	float Opacity = 1.0f;
 	float Shininess = 1.0f;
+	// Multiplies the diffuse texture's colour, or is the colour without one; sRGB, each in [0, 1]
+	Vector3D Tint = Vector3D(1.0f, 1.0f, 1.0f);
 	// Indexed by MaterialInstance::TextureSlot; a default (invalid) Filepath for an empty slot
 	std::array<Filepath, k_textureSlotCount> Textures;
 	// The opacity texture's white means see-through rather than solid

@@ -1,4 +1,4 @@
-// Material with only a diffuse map
+// Material with some textures, but not all of diffuse, specular and normal
 #include "Common/ForwardTypes.hlsli"
 #include "Common/Lighting.hlsli"
 
@@ -8,12 +8,10 @@ float4 PSMain(VertexToPixel input) : SV_TARGET
 {
 	const float coverage = ApplyOpacityMask(input.UV);
 
-	float4 diffuseSample = DiffuseMap.Sample(LinearSampler, input.UV);
-
 	float3 vertexNormal = normalize(input.Normal);
 
 	SurfaceData surface;
-	surface.Albedo = SRGBToLinear(diffuseSample.rgb);
+	surface.Albedo = GetAlbedo(input.UV);
 	surface.VertexNormal = vertexNormal;
 	surface.Normal = ApplyHeightMap(vertexNormal, input.WorldPos, input.UV);
 	surface.SpecularIntensity = DefaultSpecularIntensity;

@@ -11,7 +11,7 @@ constexpr U32 k_materialAssetMagic = 0x544D5A52; // "RZMT"
 
 // Writes a .materialasset. The format lives here and in MaterialAssetImporter only:
 //   U32 magic, U16 version,
-//   name (size_t length + bytes), MaterialProperties, U8 texture flags, U8 blend mode,
+//   name (size_t length + bytes), MaterialProperties, U8 texture flags, U8 blend mode, float tint red, green, blue,
 //   size_t texture count, then each texture path (size_t length + bytes)
 class MaterialAssetWriter : public AssetWriter
 {

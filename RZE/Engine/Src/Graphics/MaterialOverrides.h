@@ -21,6 +21,7 @@ struct MaterialOverrides
 	std::optional<MaterialValues::EBlendMode> BlendMode;
 	std::optional<float> Opacity;
 	std::optional<float> Shininess;
+	std::optional<Vector3D> Tint;
 	// Indexed by MaterialInstance::TextureSlot. An overridden slot set to an invalid (default) Filepath is emptied.
 	std::array<std::optional<Filepath>, MaterialValues::k_textureSlotCount> Textures;
 	std::optional<bool> InvertOpacityMask;
@@ -33,8 +34,8 @@ struct MaterialOverrides
 	// Some of the material's values are overridden, rather than only which material it is
 	bool ChangesValues() const;
 
-	// As a JSON object with just the overridden fields: the material by path, the blend mode by name, textures by
-	// slot name (an emptied slot as ""), as scene files keep them
+	// As a JSON object with just the overridden fields: the material by path, the blend mode by name, the tint as
+	// [r, g, b], textures by slot name (an emptied slot as ""), as scene files keep them
 	void Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) const;
 	// What Serialize wrote; fields it doesn't recognise are ignored
 	static MaterialOverrides Deserialize(const rapidjson::Value& data);

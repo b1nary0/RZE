@@ -8,7 +8,8 @@
 namespace
 {
 	// 1: magic + version header; blend mode
-	constexpr uint16_t k_materialAssetVersion = 1;
+	// 2: tint
+	constexpr uint16_t k_materialAssetVersion = 2;
 
 	void WriteString(ByteStream& byteStream, const std::string& string)
 	{
@@ -42,6 +43,7 @@ void MaterialAssetWriter::Write()
 	size_t bufSize = sizeof(U32) + sizeof(uint16_t)
 		+ sizeof(size_t) + m_materialData.MaterialName.size()
 		+ sizeof(MaterialData::MaterialProperties) + sizeof(U8) + sizeof(MaterialData::EBlendMode)
+		+ sizeof(float) * 3
 		+ sizeof(size_t);
 	for (const std::string& texturePath : m_materialData.TexturePaths)
 	{
@@ -57,6 +59,8 @@ void MaterialAssetWriter::Write()
 	byteStream.WriteBytes(&m_materialData.Properties, sizeof(MaterialData::MaterialProperties));
 	byteStream.WriteBytes(&m_materialData.TextureFlags, sizeof(U8));
 	byteStream.WriteBytes(&m_materialData.BlendMode, sizeof(MaterialData::EBlendMode));
+	const float tint[3] = { m_materialData.Tint.X(), m_materialData.Tint.Y(), m_materialData.Tint.Z() };
+	byteStream.WriteBytes(tint, sizeof(tint));
 
 	const size_t textureCount = m_materialData.TexturePaths.size();
 	byteStream.WriteBytes(&textureCount, sizeof(size_t));

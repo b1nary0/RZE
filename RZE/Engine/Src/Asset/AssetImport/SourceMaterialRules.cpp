@@ -23,6 +23,28 @@ namespace SourceMaterialRules
 		return std::clamp(opacity, 0.0f, 1.0f);
 	}
 
+	Vector3D ChooseTint(const SourceColour& source, bool hasDiffuseTexture)
+	{
+		if (hasDiffuseTexture)
+		{
+			return Vector3D(1.0f, 1.0f, 1.0f);
+		}
+
+		const float grey = MaterialAssetImporter::k_untexturedGrey;
+		Vector3D tint = source.Diffuse.value_or(Vector3D(grey, grey, grey));
+		if (source.MaxTransmissionColour.has_value() && source.MaxPhysicalTransparency.has_value())
+		{
+			const float weight = std::clamp(*source.MaxPhysicalTransparency, 0.0f, 1.0f);
+			const Vector3D& transmission = *source.MaxTransmissionColour;
+			tint = Vector3D(
+				tint.X() + (transmission.X() - tint.X()) * weight,
+				tint.Y() + (transmission.Y() - tint.Y()) * weight,
+				tint.Z() + (transmission.Z() - tint.Z()) * weight);
+		}
+
+		return Vector3D(std::clamp(tint.X(), 0.0f, 1.0f), std::clamp(tint.Y(), 0.0f, 1.0f), std::clamp(tint.Z(), 0.0f, 1.0f));
+	}
+
 	MaterialAssetImporter::MaterialData::EBlendMode ChooseBlendMode(EMaskKind mask, float opacity)
 	{
 		using MaterialData = MaterialAssetImporter::MaterialData;

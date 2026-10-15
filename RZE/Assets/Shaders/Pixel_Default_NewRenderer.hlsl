@@ -2,13 +2,13 @@
 #include "Common/ForwardTypes.hlsli"
 #include "Common/Lighting.hlsli"
 
-static const float3 DefaultAlbedo = float3(0.5f, 0.5f, 0.5f); // sRGB
 static const float DefaultSpecularIntensity = 0.5f; // Typical non-metal; see SurfaceData
 
 float4 PSMain(VertexToPixel input) : SV_TARGET
 {
 	SurfaceData surface;
-	surface.Albedo = SRGBToLinear(DefaultAlbedo);
+	// Its tint, since it has no diffuse texture
+	surface.Albedo = GetAlbedo(input.UV);
 	surface.Normal = normalize(input.Normal);
 	surface.VertexNormal = surface.Normal;
 	surface.SpecularIntensity = DefaultSpecularIntensity;

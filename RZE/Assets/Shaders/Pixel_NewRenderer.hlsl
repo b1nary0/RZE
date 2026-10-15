@@ -6,14 +6,13 @@ float4 PSMain(VertexToPixel input) : SV_TARGET
 {
 	const float coverage = ApplyOpacityMask(input.UV);
 
-	float4 diffuseSample = DiffuseMap.Sample(LinearSampler, input.UV);
 	float specularSample = SpecularMap.Sample(LinearSampler, input.UV).r;
 	float3 normalSample = NormalMap.Sample(LinearSampler, input.UV).rgb;
 
 	float3 vertexNormal = normalize(input.Normal);
 
 	SurfaceData surface;
-	surface.Albedo = SRGBToLinear(diffuseSample.rgb);
+	surface.Albedo = GetAlbedo(input.UV);
 	surface.VertexNormal = vertexNormal;
 	surface.Normal = PerturbNormal(vertexNormal, normalize(input.Tangent), normalSample);
 	surface.Normal = ApplyHeightMap(surface.Normal, input.WorldPos, input.UV);

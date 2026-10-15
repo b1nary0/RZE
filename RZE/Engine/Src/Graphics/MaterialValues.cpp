@@ -11,6 +11,7 @@ MaterialValues MaterialValues::FromMaterialData(const MaterialAssetImporter::Mat
 	values.BlendMode = materialData.BlendMode;
 	values.Opacity = materialData.Properties.Opacity;
 	values.Shininess = materialData.Properties.Shininess;
+	values.Tint = materialData.Tint;
 
 	// An empty path stays an invalid Filepath: Filepath("") would resolve to the root folder
 	const size_t textureCount = std::min(materialData.TexturePaths.size(), k_textureSlotCount);

@@ -112,6 +112,13 @@ namespace
 				return shader != nullptr ? shader->GetName() : std::string("(none)");
 			});
 
+		DescribeOverridable<Vector3D>(slot, "Tint",
+			[](const MaterialValues& values) { return values.Tint; },
+			[](auto& overrides) -> auto& { return overrides.Tint; })
+			.As(EPropertyWidget::Colour).Range(0.0f, 1.0f)
+			.ToolTip("Multiplies the diffuse texture's colour, or is the colour without one")
+			.InGroup("Surface");
+
 		slot.Enum<EBlendMode>("Blend", GetBlendModeNames(),
 			[](const MaterialSlot& materialSlot) { return materialSlot.GetValues().BlendMode; },
 			[](MaterialSlot& materialSlot, EBlendMode blendMode)

@@ -113,6 +113,29 @@ TEST_CASE("Overrides survive being saved and loaded, with only what's overridden
 	CHECK(RoundTrip(MaterialOverrides()).IsEmpty());
 }
 
+TEST_CASE("A tint override replaces the material's tint, and is saved and loaded")
+{
+	MaterialValues base;
+	base.Tint = Vector3D(1.0f, 1.0f, 1.0f);
+
+	MaterialOverrides overrides;
+	overrides.Tint = Vector3D(0.5f, 0.25f, 0.0f);
+	CHECK(overrides.ChangesValues());
+	CHECK(overrides.ApplyTo(base).Tint.Y() == doctest::Approx(0.25f));
+
+	const MaterialOverrides loaded = RoundTrip(overrides);
+	REQUIRE(loaded.Tint.has_value());
+	CHECK(loaded.Tint->X() == doctest::Approx(0.5f));
+	CHECK(loaded.Tint->Y() == doctest::Approx(0.25f));
+	CHECK(loaded.Tint->Z() == doctest::Approx(0.0f));
+
+	// Anything but three numbers isn't a tint
+	rapidjson::Document document;
+	document.Parse(R"({ "Tint": [ 1, 0 ] })");
+	REQUIRE_FALSE(document.HasParseError());
+	CHECK_FALSE(MaterialOverrides::Deserialize(document).Tint.has_value());
+}
+
 TEST_CASE("Loading overrides ignores names it doesn't know")
 {
 	rapidjson::Document document;

@@ -11,6 +11,8 @@ cbuffer MaterialBuffer : register(b1)
 	float OpacityMaskInAlpha; // 1 when the cutout is in OpacityMap's alpha (map_d == map_Kd) instead of red
 	float InvertOpacityMask;  // 1 when the mask's white means see-through
 	float OpacityMaskIsCoverage; // 1 for blended materials: the mask fades rather than cuts
+	float HasDiffuseMap; // 1 when DiffuseMap is bound for this material; otherwise Tint alone is its colour
+	float3 Tint; // sRGB; multiplies DiffuseMap, or is the colour without it
 };
 
 // Mirrors LightObject::PropertyBufferLayout (RenderEngine.h)

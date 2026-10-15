@@ -2,6 +2,7 @@
 
 #include <Asset/AssetImport/AssetImporter.h>
 
+#include <Utils/Math/Vector3D.h>
 #include <Utils/PrimitiveDefs.h>
 
 #include <string>
@@ -50,11 +51,20 @@ public:
 		// needs to mature.
 		U8 TextureFlags = TEXTUREFLAG_NONE;
 		EBlendMode BlendMode = EBlendMode::Opaque;
+		// Multiplies the diffuse texture's colour, or is the colour without one; sRGB, each in [0, 1]
+		Vector3D Tint = Vector3D(1.0f, 1.0f, 1.0f);
 		std::vector<std::string> TexturePaths;
 	};
 
+	// The grey an untextured material drew with before tints existed, and the burner's tint for a source that gives
+	// no colour; sRGB
+	static constexpr float k_untexturedGrey = 0.5f;
+
 	// What a material made before blend modes existed (version 0) is: Cutout with an opacity mask, otherwise Opaque
 	static MaterialData::EBlendMode GetLegacyBlendMode(U8 textureFlags);
+	// What a material made before tints existed (versions 0 and 1) drew with: its diffuse texture as it is (white),
+	// or k_untexturedGrey without one
+	static Vector3D GetLegacyTint(U8 textureFlags);
 	static const char* GetBlendModeName(MaterialData::EBlendMode blendMode);
 	// Blends with what's behind it, so it's drawn after everything opaque, sorted, and casts no shadow
 	static bool IsBlended(MaterialData::EBlendMode blendMode);

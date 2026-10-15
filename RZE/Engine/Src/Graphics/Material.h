@@ -67,6 +67,11 @@ public:
 		float InvertOpacityMask{ 0.0f };
 		// 1.0f when the mask is how much of the material shows (blended materials) rather than where it's cut away
 		float OpacityMaskIsCoverage{ 0.0f };
+		// 1.0f when the diffuse slot is set; without it the tint alone is the colour. 1.0f by default, since materials
+		// made in code set their textures themselves (SetTexture) and keep the defaults.
+		float HasDiffuseMap{ 1.0f };
+		// MaterialValues::Tint; HLSL starts a float3 on a new 16-byte register, as here
+		float Tint[3]{ 1.0f, 1.0f, 1.0f };
 		// Keeps the buffer a whole number of 16-byte registers, which is what's uploaded
 		float _pad0{ 0.0f };
 	};

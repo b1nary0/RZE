@@ -13,6 +13,7 @@ namespace
 	constexpr char k_blendModeKey[] = "BlendMode";
 	constexpr char k_opacityKey[] = "Opacity";
 	constexpr char k_shininessKey[] = "Shininess";
+	constexpr char k_tintKey[] = "Tint";
 	constexpr char k_texturesKey[] = "Textures";
 	constexpr char k_invertOpacityMaskKey[] = "InvertOpacityMask";
 	constexpr char k_opacityMaskInAlphaKey[] = "OpacityMaskInAlpha";
@@ -54,6 +55,7 @@ MaterialValues MaterialOverrides::ApplyTo(const MaterialValues& base) const
 	values.BlendMode = BlendMode.value_or(base.BlendMode);
 	values.Opacity = Opacity.value_or(base.Opacity);
 	values.Shininess = Shininess.value_or(base.Shininess);
+	values.Tint = Tint.value_or(base.Tint);
 	for (size_t slot = 0; slot < Textures.size(); ++slot)
 	{
 		if (Textures[slot].has_value())
@@ -80,7 +82,7 @@ bool MaterialOverrides::ChangesValues() const
 			return true;
 		}
 	}
-	return BlendMode || Opacity || Shininess || InvertOpacityMask || OpacityMaskInAlpha;
+	return BlendMode || Opacity || Shininess || Tint || InvertOpacityMask || OpacityMaskInAlpha;
 }
 
 void MaterialOverrides::Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) const
@@ -106,6 +108,15 @@ void MaterialOverrides::Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffe
 	{
 		writer.Key(k_shininessKey);
 		writer.Double(*Shininess);
+	}
+	if (Tint)
+	{
+		writer.Key(k_tintKey);
+		writer.StartArray();
+		writer.Double(Tint->X());
+		writer.Double(Tint->Y());
+		writer.Double(Tint->Z());
+		writer.EndArray();
 	}
 
 	bool hasTextures = false;
@@ -172,6 +183,11 @@ MaterialOverrides MaterialOverrides::Deserialize(const rapidjson::Value& data)
 	if (const rapidjson::Value* const shininess = member(k_shininessKey); shininess != nullptr && shininess->IsNumber())
 	{
 		overrides.Shininess = shininess->GetFloat();
+	}
+	if (const rapidjson::Value* const tint = member(k_tintKey); tint != nullptr && tint->IsArray() && tint->Size() == 3
+		&& (*tint)[0].IsNumber() && (*tint)[1].IsNumber() && (*tint)[2].IsNumber())
+	{
+		overrides.Tint = Vector3D((*tint)[0].GetFloat(), (*tint)[1].GetFloat(), (*tint)[2].GetFloat());
 	}
 	if (const rapidjson::Value* const textures = member(k_texturesKey); textures != nullptr && textures->IsObject())
 	{

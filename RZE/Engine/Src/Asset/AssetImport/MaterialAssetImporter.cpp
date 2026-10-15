@@ -8,12 +8,20 @@
 
 namespace
 {
-	constexpr uint16_t k_materialImporterVersion = 1;
+	// The newest version it reads; it reads every one before too
+	constexpr uint16_t k_materialImporterVersion = 2;
+	// The first with a tint
+	constexpr uint16_t k_tintVersion = 2;
 }
 
 MaterialAssetImporter::MaterialData::EBlendMode MaterialAssetImporter::GetLegacyBlendMode(U8 textureFlags)
 {
 	return (textureFlags & MaterialData::TEXTUREFLAG_OPACITY) ? MaterialData::EBlendMode::Cutout : MaterialData::EBlendMode::Opaque;
+}
+
+Vector3D MaterialAssetImporter::GetLegacyTint(U8 textureFlags)
+{
+	return (textureFlags & MaterialData::TEXTUREFLAG_ALBEDO) ? Vector3D(1.0f, 1.0f, 1.0f) : Vector3D(k_untexturedGrey, k_untexturedGrey, k_untexturedGrey);
 }
 
 const char* MaterialAssetImporter::GetBlendModeName(MaterialData::EBlendMode blendMode)
@@ -54,13 +62,14 @@ bool MaterialAssetImporter::Import(const Filepath& filePath)
 
 	// Version 0 has no header: it starts with its size, which never matches the magic
 	const bool hasHeader = *reinterpret_cast<const U32*>(byteStream.PeekBytes()) == k_materialAssetMagic;
+	uint16_t version = 0;
 	if (hasHeader)
 	{
 		byteStream.PeekBytesAdvance(sizeof(U32));
-		const uint16_t version = ByteStreamUtils::ReadType<uint16_t>(byteStream);
-		if (version != k_materialImporterVersion)
+		version = ByteStreamUtils::ReadType<uint16_t>(byteStream);
+		if (version == 0 || version > k_materialImporterVersion)
 		{
-			RZE_LOG_ARGS("Material asset [%s] has version %u, expected %u.", filePath.GetRelativePath().c_str(), static_cast<U32>(version), static_cast<U32>(k_materialImporterVersion));
+			RZE_LOG_ARGS("Material asset [%s] has version %u, expected 1 to %u.", filePath.GetRelativePath().c_str(), static_cast<U32>(version), static_cast<U32>(k_materialImporterVersion));
 			return false;
 		}
 	}
@@ -75,6 +84,17 @@ bool MaterialAssetImporter::Import(const Filepath& filePath)
 	mMaterialData.BlendMode = hasHeader
 		? ByteStreamUtils::ReadType<MaterialData::EBlendMode>(byteStream)
 		: GetLegacyBlendMode(mMaterialData.TextureFlags);
+	if (version >= k_tintVersion)
+	{
+		const float red = ByteStreamUtils::ReadType<float>(byteStream);
+		const float green = ByteStreamUtils::ReadType<float>(byteStream);
+		const float blue = ByteStreamUtils::ReadType<float>(byteStream);
+		mMaterialData.Tint = Vector3D(red, green, blue);
+	}
+	else
+	{
+		mMaterialData.Tint = GetLegacyTint(mMaterialData.TextureFlags);
+	}
 
 	const size_t textureCount = *reinterpret_cast<size_t*>(byteStream.PeekBytesAdvance(sizeof(size_t)));
 	for (size_t i = 0; i < textureCount; ++i)

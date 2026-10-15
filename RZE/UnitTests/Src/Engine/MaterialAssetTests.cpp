@@ -33,6 +33,25 @@ namespace
 			writeString(path);
 		}
 	}
+
+	// A material asset as the burner wrote them in version 1: the header, then as version 0 with the blend mode after
+	// the flags
+	void WriteVersion1(const Filepath& file, U8 textureFlags)
+	{
+		std::ofstream stream(file.GetAbsolutePath(), std::ios::binary);
+		const auto writeSize = [&stream](size_t size) { stream.write(reinterpret_cast<const char*>(&size), sizeof(size)); };
+
+		const uint16_t version = 1;
+		stream.write(reinterpret_cast<const char*>(&k_materialAssetMagic), sizeof(k_materialAssetMagic));
+		stream.write(reinterpret_cast<const char*>(&version), sizeof(version));
+		writeSize(0); // An empty name
+		const MaterialData::MaterialProperties properties;
+		stream.write(reinterpret_cast<const char*>(&properties), sizeof(properties));
+		stream.write(reinterpret_cast<const char*>(&textureFlags), sizeof(textureFlags));
+		const MaterialData::EBlendMode blendMode = MaterialData::EBlendMode::Opaque;
+		stream.write(reinterpret_cast<const char*>(&blendMode), sizeof(blendMode));
+		writeSize(0); // No textures
+	}
 }
 
 TEST_CASE("A material asset reads back as it was written")
@@ -46,6 +65,7 @@ TEST_CASE("A material asset reads back as it was written")
 	written.Properties.Opacity = 0.25f;
 	written.TextureFlags = MaterialData::TEXTUREFLAG_ALBEDO | MaterialData::TEXTUREFLAG_OPACITY;
 	written.BlendMode = MaterialData::EBlendMode::Transparent;
+	written.Tint = Vector3D(0.88f, 0.96f, 1.0f);
 	written.TexturePaths = { "Assets/Glass_Colour.png", "", "", "Assets/Glass_Mask.png", "" };
 
 	MaterialAssetWriter writer;
@@ -61,7 +81,34 @@ TEST_CASE("A material asset reads back as it was written")
 	CHECK(read.Properties.Opacity == doctest::Approx(0.25f));
 	CHECK(read.TextureFlags == written.TextureFlags);
 	CHECK(read.BlendMode == MaterialData::EBlendMode::Transparent);
+	CHECK(read.Tint.X() == doctest::Approx(0.88f));
+	CHECK(read.Tint.Y() == doctest::Approx(0.96f));
+	CHECK(read.Tint.Z() == doctest::Approx(1.0f));
 	CHECK(read.TexturePaths == written.TexturePaths);
+}
+
+TEST_CASE("A material asset from before tints reads as it drew: its texture as it is, grey without one")
+{
+	const ScopedTestFolder folder("UnitTestsTemp_MaterialAsset");
+
+	const Filepath textured = folder.GetFile("Textured.materialasset");
+	WriteVersion1(textured, MaterialData::TEXTUREFLAG_ALBEDO);
+	MaterialAssetImporter texturedImporter;
+	REQUIRE(texturedImporter.Import(textured));
+	CHECK(texturedImporter.GetMaterialData().Tint.X() == doctest::Approx(1.0f));
+
+	const Filepath untextured = folder.GetFile("Untextured.materialasset");
+	WriteVersion1(untextured, MaterialData::TEXTUREFLAG_NONE);
+	MaterialAssetImporter untexturedImporter;
+	REQUIRE(untexturedImporter.Import(untextured));
+	CHECK(untexturedImporter.GetMaterialData().Tint.X() == doctest::Approx(MaterialAssetImporter::k_untexturedGrey));
+
+	// Version 0 too
+	const Filepath oldest = folder.GetFile("Oldest.materialasset");
+	WriteVersion0(oldest, "Oldest", MaterialData::TEXTUREFLAG_NONE, {});
+	MaterialAssetImporter oldestImporter;
+	REQUIRE(oldestImporter.Import(oldest));
+	CHECK(oldestImporter.GetMaterialData().Tint.Y() == doctest::Approx(MaterialAssetImporter::k_untexturedGrey));
 }
 
 TEST_CASE("Every blend mode survives a write and read")

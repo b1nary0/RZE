@@ -57,6 +57,57 @@ TEST_CASE("A coverage mask blends, even at full opacity")
 	CHECK(SourceMaterialRules::ChooseBlendMode(SourceMaterialRules::EMaskKind::Coverage, 1.0f) == EBlendMode::Transparent);
 }
 
+TEST_CASE("A material with a diffuse texture isn't tinted, whatever colour the source keeps beside it")
+{
+	// Sponza: Kd 0.588 beside map_Kd
+	SourceMaterialRules::SourceColour source;
+	source.Diffuse = Vector3D(0.588f, 0.588f, 0.588f);
+	const Vector3D tint = SourceMaterialRules::ChooseTint(source, true);
+	CHECK(tint.X() == doctest::Approx(1.0f));
+	CHECK(tint.Y() == doctest::Approx(1.0f));
+	CHECK(tint.Z() == doctest::Approx(1.0f));
+}
+
+TEST_CASE("Without a diffuse texture, the tint is the diffuse colour, or grey without one")
+{
+	SourceMaterialRules::SourceColour red;
+	red.Diffuse = Vector3D(0.8f, 0.1f, 0.1f);
+	CHECK(SourceMaterialRules::ChooseTint(red, false).X() == doctest::Approx(0.8f));
+	CHECK(SourceMaterialRules::ChooseTint(red, false).Y() == doctest::Approx(0.1f));
+
+	const Vector3D unsaid = SourceMaterialRules::ChooseTint(SourceMaterialRules::SourceColour(), false);
+	CHECK(unsaid.X() == doctest::Approx(MaterialAssetImporter::k_untexturedGrey));
+	CHECK(unsaid.Z() == doctest::Approx(MaterialAssetImporter::k_untexturedGrey));
+
+	SourceMaterialRules::SourceColour bright;
+	bright.Diffuse = Vector3D(2.0f, -1.0f, 0.5f);
+	CHECK(SourceMaterialRules::ChooseTint(bright, false).X() == doctest::Approx(1.0f));
+	CHECK(SourceMaterialRules::ChooseTint(bright, false).Y() == doctest::Approx(0.0f));
+}
+
+TEST_CASE("3ds Max glass is tinted toward its transmission colour by how much it transmits")
+{
+	// New Sponza's glass: black diffuse, fully transmissive, light blue
+	SourceMaterialRules::SourceColour glass;
+	glass.Diffuse = Vector3D(0.0f, 0.0f, 0.0f);
+	glass.MaxTransmissionColour = Vector3D(0.88f, 0.96f, 1.0f);
+	glass.MaxPhysicalTransparency = 1.0f;
+	const Vector3D glassTint = SourceMaterialRules::ChooseTint(glass, false);
+	CHECK(glassTint.X() == doctest::Approx(0.88f));
+	CHECK(glassTint.Z() == doctest::Approx(1.0f));
+
+	// Half transmissive: halfway between
+	SourceMaterialRules::SourceColour half = glass;
+	half.Diffuse = Vector3D(0.2f, 0.2f, 0.2f);
+	half.MaxPhysicalTransparency = 0.5f;
+	CHECK(SourceMaterialRules::ChooseTint(half, false).X() == doctest::Approx(0.54f));
+
+	// A transmission colour that doesn't transmit changes nothing
+	SourceMaterialRules::SourceColour opaque = half;
+	opaque.MaxPhysicalTransparency = 0.0f;
+	CHECK(SourceMaterialRules::ChooseTint(opaque, false).X() == doctest::Approx(0.2f));
+}
+
 TEST_CASE("Without a mask, anything short of solid blends")
 {
 	CHECK(SourceMaterialRules::ChooseBlendMode(SourceMaterialRules::EMaskKind::None, 0.43f) == EBlendMode::Transparent);
