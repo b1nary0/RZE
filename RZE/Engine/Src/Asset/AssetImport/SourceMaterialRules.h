@@ -2,11 +2,11 @@
 
 #include <Asset/AssetImport/MaterialAssetImporter.h>
 
-#include <algorithm>
 #include <optional>
 
 // How the asset burner turns a source file's material values (OBJ, FBX) into ours. Plain values in and out, so the
-// rules can be tested without Assimp; the burner reads the values from Assimp and passes them here.
+// rules can be tested without Assimp; the burner reads the values from Assimp and passes them here. In the engine
+// library so the burner and the unit tests both link them.
 namespace SourceMaterialRules
 {
 	// What a source declares about how see-through a material is. Each is absent when the source doesn't say.
@@ -30,23 +30,7 @@ namespace SourceMaterialRules
 	// Otherwise solid. Always within [0, 1].
 	// #TODO(Transparency) Maya (Stingray/StandardSurface opacity, transmission) and Blender name theirs differently;
 	// add them here as they turn up.
-	inline float ChooseOpacity(const SourceTransparency& source)
-	{
-		float opacity = 1.0f;
-		if (source.Opacity.has_value())
-		{
-			opacity = *source.Opacity;
-		}
-		else if (source.TransparencyFactor.has_value())
-		{
-			opacity = 1.0f - *source.TransparencyFactor;
-		}
-		else if (source.MaxPhysicalTransparency.has_value())
-		{
-			opacity = 1.0f - *source.MaxPhysicalTransparency;
-		}
-		return std::clamp(opacity, 0.0f, 1.0f);
-	}
+	float ChooseOpacity(const SourceTransparency& source);
 
 	// What a material's opacity mask means, from where the source connects it
 	enum class EMaskKind
@@ -60,17 +44,5 @@ namespace SourceMaterialRules
 
 	// A cutout mask makes a cutout, whatever the opacity: the engine can't clip and fade the same material. A coverage
 	// mask blends, even at full opacity, since the mask itself fades it. Without a mask, anything short of solid blends.
-	inline MaterialAssetImporter::MaterialData::EBlendMode ChooseBlendMode(EMaskKind mask, float opacity)
-	{
-		using MaterialData = MaterialAssetImporter::MaterialData;
-		switch (mask)
-		{
-		case EMaskKind::Cutout:
-			return MaterialData::EBlendMode::Cutout;
-		case EMaskKind::Coverage:
-			return MaterialData::EBlendMode::Transparent;
-		default:
-			return opacity < 1.0f ? MaterialData::EBlendMode::Transparent : MaterialData::EBlendMode::Opaque;
-		}
-	}
+	MaterialAssetImporter::MaterialData::EBlendMode ChooseBlendMode(EMaskKind mask, float opacity);
 }
