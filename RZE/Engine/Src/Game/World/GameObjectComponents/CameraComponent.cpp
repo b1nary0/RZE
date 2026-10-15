@@ -14,6 +14,8 @@
 #include <Utils/Math/Quaternion.h>
 #include <Utils/Reflect/Reflection.h>
 
+#include <algorithm>
+
 CameraComponent::CameraComponent()
 {
 	REFLECT_REGISTER_COMPONENT(CameraComponent);
@@ -235,12 +237,33 @@ void CameraComponent::DescribeProperties(PropertyBuilder<CameraComponent>& prope
 		.ToolTip("The camera the game renders through. Only one camera in the scene can be the main one.");
 	// The ranges keep the setters' asserts (positive FOV and near cull) from firing
 	properties.Float("Field Of View", &CameraComponent::GetFOV, &CameraComponent::SetFOV)
-		.Range(1.0f, 179.0f).StepSize(0.5f).DisplayFormat("%.2f").ToolTip("Vertical, in degrees");
+		.Range(1.0f, 179.0f).StepSize(0.5f).DisplayFormat("%.2f").ToolTip("Vertical, in degrees")
+		.InGroup("Projection");
 	properties.Float("Near Cull", &CameraComponent::GetNearCull, &CameraComponent::SetNearCull)
-		.Range(0.001f, 100.0f).StepSize(0.05f).DisplayFormat("%.3f");
+		.Range(0.001f, 100.0f).StepSize(0.05f).DisplayFormat("%.3f")
+		.InGroup("Projection");
 	properties.Float("Far Cull", &CameraComponent::GetFarCull, &CameraComponent::SetFarCull)
-		.Range(0.01f, 100000.0f).StepSize(1.0f).DisplayFormat("%.2f");
-	properties.Float("Exposure Compensation (EV)", &CameraComponent::GetExposureCompensation, &CameraComponent::SetExposureCompensation)
-		.Range(-4.0f, 4.0f).StepSize(0.05f).DisplayFormat("%.2f").As(EPropertyWidget::Drag);
+		.Range(0.01f, 100000.0f).StepSize(1.0f).DisplayFormat("%.2f")
+		.InGroup("Projection");
+	properties.Float("Compensation", &CameraComponent::GetExposureCompensation, &CameraComponent::SetExposureCompensation)
+		.Range(-4.0f, 4.0f).StepSize(0.05f).DisplayFormat("%.2f EV").As(EPropertyWidget::Drag)
+		.ToolTip("Stops brighter (positive) or darker (negative) than the automatic exposure")
+		.InGroup("Exposure");
+
+	// What the camera sees, rendered into its preview target each time it's shown
+	properties.Preview("Preview", [](CameraComponent& camera)
+		{
+			camera.RenderPreview();
+
+			// The preview only fills part of a larger target
+			const Rendering::RenderTargetTexture& target = camera.GetPreviewTarget();
+			PropertyTexture preview;
+			preview.Handle = target.GetTargetPlatformObject();
+			preview.Size = GetPreviewSize();
+			preview.UVMax = Vector2D(
+				std::min(1.0f, preview.Size.X() / target.GetWidth()),
+				std::min(1.0f, preview.Size.Y() / target.GetHeight()));
+			return preview;
+		});
 }
 

@@ -92,6 +92,13 @@ namespace
 		slot.DisplayName([](const MaterialSlot& materialSlot) { return materialSlot.GetName(); });
 		slot.Icon([](const MaterialSlot& materialSlot) { return GetTexturePreview(materialSlot, MaterialInstance::TEXTURE_SLOT_DIFFUSE); });
 
+		// What it draws with first, then its values in sections
+		slot.Value<std::string>("Shader", [](const MaterialSlot& materialSlot)
+			{
+				const PixelShader* const shader = materialSlot.GetMaterial().GetPixelShader();
+				return shader != nullptr ? shader->GetName() : std::string("(none)");
+			});
+
 		slot.Enum<EBlendMode>("Blend", GetBlendModeNames(),
 			[](const MaterialSlot& materialSlot) { return materialSlot.GetValues().BlendMode; },
 			[](MaterialSlot& materialSlot, EBlendMode blendMode)
@@ -101,20 +108,23 @@ namespace
 			.Overridable<MaterialSlot>(
 				[](const MaterialSlot& materialSlot) { return materialSlot.GetOverrides().BlendMode.has_value(); },
 				[](MaterialSlot& materialSlot) { ChangeOverrides(materialSlot, [](MaterialOverrides& overrides) { overrides.BlendMode.reset(); }); })
-			.ToolTip("How it covers what's behind it");
+			.ToolTip("How it covers what's behind it")
+			.InGroup("Surface");
 
 		DescribeOverridable<float>(slot, "Opacity",
 			[](const MaterialValues& values) { return values.Opacity; },
 			[](auto& overrides) -> auto& { return overrides.Opacity; })
 			.Range(0.0f, 1.0f).As(EPropertyWidget::Slider).DisplayFormat("%.2f")
 			.EnabledIf<MaterialSlot>([](const MaterialSlot& materialSlot) { return MaterialAssetImporter::IsBlended(materialSlot.GetValues().BlendMode); },
-				"Only blended modes use opacity");
+				"Only blended modes use opacity")
+			.InGroup("Surface");
 
 		DescribeOverridable<float>(slot, "Shininess",
 			[](const MaterialValues& values) { return values.Shininess; },
 			[](auto& overrides) -> auto& { return overrides.Shininess; })
 			// Blinn-Phong exponents: imported ones are 4x the source's Phong exponent, so they run into the thousands
-			.Range(0.0f, 16384.0f).As(EPropertyWidget::Drag).StepSize(0.5f).DisplayFormat("%.1f");
+			.Range(0.0f, 16384.0f).As(EPropertyWidget::Drag).StepSize(0.5f).DisplayFormat("%.1f")
+			.InGroup("Surface");
 
 		for (U8 textureSlot = 0; textureSlot < MaterialInstance::TEXTURE_SLOT_COUNT; ++textureSlot)
 		{
@@ -122,7 +132,7 @@ namespace
 				[textureSlot](const MaterialValues& values) { return values.Textures[textureSlot]; },
 				[textureSlot](auto& overrides) -> auto& { return overrides.Textures[textureSlot]; })
 				.Asset("Texture", "Assets", k_textureFilter)
-				.Preview<MaterialSlot>([textureSlot](const MaterialSlot& materialSlot) { return GetTexturePreview(materialSlot, textureSlot); })
+				.Thumbnail<MaterialSlot>([textureSlot](const MaterialSlot& materialSlot) { return GetTexturePreview(materialSlot, textureSlot); })
 				.Clearable()
 				.InGroup("Textures");
 		}
@@ -131,22 +141,18 @@ namespace
 			{
 				return materialSlot.GetValues().Textures[MaterialInstance::TEXTURE_SLOT_OPACITY].IsValid();
 			};
-		DescribeOverridable<bool>(slot, "Invert Mask",
+		DescribeOverridable<bool>(slot, "Invert",
 			[](const MaterialValues& values) { return values.InvertOpacityMask; },
 			[](auto& overrides) -> auto& { return overrides.InvertOpacityMask; })
 			.EnabledIf<MaterialSlot>(hasOpacityTexture, "Needs an opacity texture")
-			.ToolTip("The opacity texture's white means see-through");
-		DescribeOverridable<bool>(slot, "Mask In Alpha",
+			.ToolTip("The opacity texture's white means see-through")
+			.InGroup("Opacity Mask");
+		DescribeOverridable<bool>(slot, "From Alpha",
 			[](const MaterialValues& values) { return values.OpacityMaskInAlpha; },
 			[](auto& overrides) -> auto& { return overrides.OpacityMaskInAlpha; })
 			.EnabledIf<MaterialSlot>(hasOpacityTexture, "Needs an opacity texture")
-			.ToolTip("The mask is in the opacity texture's alpha rather than its red");
-
-		slot.Value<std::string>("Shader", [](const MaterialSlot& materialSlot)
-			{
-				const PixelShader* const shader = materialSlot.GetMaterial().GetPixelShader();
-				return shader != nullptr ? shader->GetName() : std::string("(none)");
-			});
+			.ToolTip("The mask is in the opacity texture's alpha rather than its red")
+			.InGroup("Opacity Mask");
 	}
 }
 
@@ -157,8 +163,10 @@ void RenderComponent::DescribeProperties(PropertyBuilder<RenderComponent>& prope
 		.Clearable();
 	properties.Vector3("Size", &RenderComponent::GetMeshSize)
 		.DisplayFormat("%.2f m").ToolTip("Along the object's own axes, including its scale");
-	properties.Bool("Draw Mesh Bounds", &RenderComponent::IsDrawingMeshBounds, &RenderComponent::SetDrawMeshBounds).EditorOnly();
-	properties.Bool("Draw Sub-Mesh Bounds", &RenderComponent::IsDrawingSubMeshBounds, &RenderComponent::SetDrawSubMeshBounds).EditorOnly();
+	properties.Bool("Mesh Bounds", &RenderComponent::IsDrawingMeshBounds, &RenderComponent::SetDrawMeshBounds).EditorOnly()
+		.InGroup("Debug Draw");
+	properties.Bool("Sub-Mesh Bounds", &RenderComponent::IsDrawingSubMeshBounds, &RenderComponent::SetDrawSubMeshBounds).EditorOnly()
+		.InGroup("Debug Draw");
 	// Each of the mesh's material slots, as this object draws it; editing a value overrides it for this object only
 	properties.Array<MaterialSlot>("Materials",
 		[](const RenderComponent& renderComponent) -> const std::vector<MaterialSlot>&

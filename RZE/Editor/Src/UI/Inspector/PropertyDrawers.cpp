@@ -170,12 +170,12 @@ namespace
 		const float spacing = ImGui::GetStyle().ItemInnerSpacing.x;
 		float width = ImGui::CalcItemWidth();
 
-		if (property.GetPreview)
+		if (property.GetThumbnail)
 		{
-			const float previewSize = ImGui::GetFrameHeight();
-			Editor::PropertyDrawers::DrawThumbnail(property.GetPreview(object), previewSize);
+			const float thumbnailSize = ImGui::GetFrameHeight();
+			Editor::PropertyDrawers::DrawThumbnail(property.GetThumbnail(object), thumbnailSize);
 			ImGui::SameLine(0.0f, spacing);
-			width -= previewSize + spacing;
+			width -= thumbnailSize + spacing;
 		}
 
 		std::string displayPath = path.IsValid() ? path.GetRelativePath() : "(none)";

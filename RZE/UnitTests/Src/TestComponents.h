@@ -80,6 +80,9 @@ public:
 	std::vector<TestPart>& GetParts() { return m_parts; }
 	const std::vector<TestPart>& GetParts() const { return m_parts; }
 
+	// How many times its Preview has been made
+	int GetPreviewsMade() const { return m_previewsMade; }
+
 	static void DescribeProperties(PropertyBuilder<TestComponent>& properties)
 	{
 		properties.Float("Speed", &TestComponent::GetSpeed, &TestComponent::SetSpeed).Range(0.0f, 10.0f).ToolTip("Metres per second");
@@ -110,10 +113,19 @@ public:
 					[](TestPart& testPart, TestPart::EShape shape) { testPart.SetShape(shape); })
 					.InGroup("Physics");
 			});
+		// Made from the component non-const, like a camera rendering into its target: counts itself, and is as wide as
+		// ten times the speed
+		properties.Preview("Preview", [](TestComponent& component)
+			{
+				++component.m_previewsMade;
+				PropertyTexture preview;
+				preview.Size = Vector2D(component.m_speed * 10.0f, 5.0f);
+				return preview;
+			});
 	}
 
 	// Indices into the description, in DescribeProperties' order
-	enum Property : size_t { Speed, DrawDebug, Leader, Serial, DoubledSize, PartCount, Parts, Count };
+	enum Property : size_t { Speed, DrawDebug, Leader, Serial, DoubledSize, PartCount, Parts, Preview, Count };
 	// Indices into a part's description
 	enum PartProperty : size_t { PartWeight, PartLocked, PartMass, PartShape, PartPropertyCount };
 
@@ -123,6 +135,7 @@ private:
 	bool m_isLeader = false;
 	int m_serial = 0;
 	std::vector<TestPart> m_parts;
+	int m_previewsMade = 0;
 };
 
 // A component type with no DescribeProperties

@@ -3,7 +3,6 @@
 #include <UI/Framework/EditorContext.h>
 #include <UI/Framework/EditorUI.h>
 #include <UI/Framework/PanelRegistry.h>
-#include <UI/Inspector/ComponentInspectors.h>
 
 #include <Game/World/GameObject/EditorGameComponentInfoCache.h>
 #include <Game/World/GameObject/GameObject.h>
@@ -113,15 +112,6 @@ namespace Editor
 			const std::string heading = "[ " + component->GetName() + " ]";
 			EditorUI::SectionHeading(heading.c_str());
 			m_propertyInspector.Draw(context, group);
-
-			// Custom sections (e.g. the camera preview) are about one object
-			const ComponentInspectors::Inspector* const customInspector = group.size() == 1 ? ComponentInspectors::Find(component->m_id) : nullptr;
-			if (customInspector != nullptr)
-			{
-				ImGui::PushID(static_cast<int>(component->GetInstanceID()));
-				(*customInspector)(context, **component);
-				ImGui::PopID();
-			}
 			ImGui::Separator();
 		}
 

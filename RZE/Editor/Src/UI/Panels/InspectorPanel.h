@@ -10,7 +10,7 @@
 namespace Editor
 {
 	// The selected GameObjects' components, in EditorComponentCache order. Each shows its described properties
-	// (ComponentPropertyRegistry), then its custom inspector section if it has one (REGISTER_COMPONENT_INSPECTOR).
+	// (ComponentPropertyRegistry).
 	// With several objects selected, only the component types they all have are shown, and edits apply to all of them.
 	class InspectorPanel : public EditorPanel
 	{

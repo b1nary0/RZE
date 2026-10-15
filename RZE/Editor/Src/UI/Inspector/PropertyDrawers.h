@@ -27,7 +27,7 @@ namespace Editor
 		constexpr float k_defaultMaxTextureSize = 256.0f;
 
 		// The Texture drawer's image, scaled down to fit maxSize pixels (keeping its aspect ratio), or at its own size
-		// if maxSize is 0; for custom inspectors that show images too
+		// if maxSize is 0; for other rows that show images too (e.g. a Preview)
 		void DrawTexture(const PropertyTexture& texture, float maxSize = k_defaultMaxTextureSize);
 
 		// The size a thumbnail's hover preview scales images down to fit: large enough to see detail, small enough not

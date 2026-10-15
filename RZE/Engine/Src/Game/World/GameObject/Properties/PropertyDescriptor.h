@@ -62,7 +62,10 @@ enum class EPropertyType
 	// An image; read-only
 	Texture,
 	// One of a fixed set of named options (PropertyDescriptor::EnumNames), as an int: the option's index
-	Enum
+	Enum,
+	// An image made each time tools show it (PropertyDescriptor::MakePreview), e.g. what a camera sees, shown across
+	// the row under a section of its own named after the property. It has no value: nothing to Get, Set, copy or save.
+	Preview
 };
 
 // A hint for how an editor should show the value; types without a matching widget fall back to their default
@@ -87,10 +90,13 @@ struct PropertyDescriptor
 	using MutableGetter = std::function<PropertyValue(void* object)>;
 	using ObjectQuery = std::function<bool(const void* object)>;
 	using ObjectAction = std::function<void(void* object)>;
-	using PreviewGetter = std::function<PropertyTexture(const void* object)>;
+	using ThumbnailGetter = std::function<PropertyTexture(const void* object)>;
+	// Takes the object non-const: making the image can change it (e.g. render into its target)
+	using PreviewMaker = std::function<PropertyTexture(void* object)>;
 
 	std::string Name;
 	EPropertyType Type = EPropertyType::Float;
+	// Null for a Preview, which has no value
 	Getter Get;
 	// Null for a computed property: one worked out from other properties (e.g. a mesh's size), which tools show
 	// but never write, and copying skips since setting the others reproduces it. State that tools mustn't edit but
@@ -126,7 +132,7 @@ struct PropertyDescriptor
 	std::string AssetDirectory;
 	std::string AssetFilter;
 	// For AssetPath properties: a small image of the asset, from the object (e.g. its loaded texture); null for none
-	PreviewGetter GetPreview;
+	ThumbnailGetter GetThumbnail;
 	// For AssetPath properties: tools can clear it (set an empty Filepath)
 	bool IsClearable = false;
 
@@ -147,6 +153,9 @@ struct PropertyDescriptor
 
 	// Shown under a sub-heading of this name, with the properties next to it that share it; empty for none
 	std::string Group;
+
+	// For Preview properties: makes the image, each time it's shown
+	PreviewMaker MakePreview;
 
 	// Whether tools let the user change it
 	bool IsEditable() const { return Set && !IsReadOnly; }
@@ -197,9 +206,9 @@ struct PropertyDescriptor
 
 	// For AssetPath properties: getter takes the object and returns a PropertyTexture of the asset
 	template <typename TObject, typename TGetter>
-	PropertyDescriptor& Preview(TGetter getter)
+	PropertyDescriptor& Thumbnail(TGetter getter)
 	{
-		GetPreview = [getter](const void* object) { return PropertyTexture(getter(*static_cast<const TObject*>(object))); };
+		GetThumbnail = [getter](const void* object) { return PropertyTexture(getter(*static_cast<const TObject*>(object))); };
 		return *this;
 	}
 };

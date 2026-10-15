@@ -40,7 +40,7 @@ $d = '.\.claude\skills\run-rze\driver.ps1'
 & $d launch -Scene DrawLineTest.scene      # waits for the window title, then 5 s for assets to stream in
 & $d shot                                  # -> $env:TEMP\rze-shots\<timestamp>.png
 & $d click -X 60 -Y 95                     # select "NeckMech" in the Scene panel
-& $d click -X 2303 -Y 254                  # tick "Draw Mesh Bounds" in Object Inspector
+& $d click -X 2328 -Y 263                  # tick "Mesh Bounds" (Debug Draw) in Object Inspector
 & $d click -X 2372 -Y 143; & $d key -Keys '^a45{ENTER}'   # set Rotation Y = 45
 & $d shot -Out "$env:TEMP\rze-shots\flow.png"
 & $d alive                                 # running pid=... responding=True
@@ -85,8 +85,8 @@ The editor starts maximized on a 2560-wide monitor. ImGui panels scale with the 
 | Object Inspector: Position X / Y / Z field | (2310 / 2372 / 2435, 102) |
 | Object Inspector: Rotation X / Y / Z field | (2310 / 2372 ✓ / 2435, 143) |
 | Object Inspector: Scale X / Y / Z field | (2310 / 2372 / 2435, 186) |
-| RenderComponent "Draw Mesh Bounds" checkbox | (2303, 254) ✓ |
-| RenderComponent "Draw Sub-Mesh Bounds" checkbox | (2303, 278) ✓ |
+| RenderComponent "Mesh Bounds" checkbox (Debug Draw section) | (2328, 263) |
+| RenderComponent "Sub-Mesh Bounds" checkbox (Debug Draw section) | (2328, 287) ✓ |
 | DrawLineTest: NeckMech translate gizmo, X arrow (after selecting NeckMech) | drag (1555, 1038) → (1755, 1038) moves Position X ≈ +5.9 ✓ |
 
 The top menu bar shows `RenderCommand MemArena: <N> KB`, which is the render command memory used per frame. Compare it before and after a change to check render-path cost: for example, 600 debug-line vertices add about 14 KB.

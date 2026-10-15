@@ -221,6 +221,30 @@ TEST_CASE("An enum is its option's index, with the options' names")
 	CHECK(std::get<int>(shape.Get(&part)) == 2);
 }
 
+TEST_CASE("A preview is made from the object each time it's asked for, and has no value to edit or copy")
+{
+	RegisterTestComponents();
+	const PropertyDescriptor& preview = (*ComponentPropertyRegistry::GetProperties(TestComponent::GetID()))[TestComponent::Preview];
+	CHECK(preview.Name == "Preview");
+	CHECK(preview.Type == EPropertyType::Preview);
+	CHECK_FALSE(preview.Get);
+	CHECK_FALSE(preview.IsEditable());
+
+	TestComponent component;
+	component.SetSpeed(2.0f);
+	void* const object = ComponentPropertyRegistry::GetDescribedObject(component);
+	REQUIRE(preview.MakePreview);
+	CHECK(preview.MakePreview(object).Size.X() == 20.0f);
+	CHECK(component.GetPreviewsMade() == 1);
+
+	// Made again rather than kept, so it follows the object
+	component.SetSpeed(3.0f);
+	CHECK(preview.MakePreview(object).Size.X() == 30.0f);
+	CHECK(component.GetPreviewsMade() == 2);
+
+	CHECK_FALSE(ComponentPropertyRegistry::IsStateValue(preview, object));
+}
+
 TEST_CASE("A component's element state is the elements' values that copies and undo keep, by path")
 {
 	RegisterTestComponents();

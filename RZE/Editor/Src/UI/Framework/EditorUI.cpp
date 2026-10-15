@@ -2,7 +2,10 @@
 
 #include <Utils/Math/Math.h>
 
+#include <ImGui/imgui_internal.h> // ImGui::GetCurrentTable
+
 #include <algorithm>
+#include <cmath>
 
 namespace
 {
@@ -12,6 +15,26 @@ namespace
 
 	// The label column never takes more than this share of a property table
 	constexpr float k_maxLabelColumnFraction = 0.5f;
+
+	// A property section's rule, quieter than a full separator
+	constexpr ImVec4 k_sectionLineColour = ImVec4(1.0f, 1.0f, 1.0f, 0.12f);
+
+	// The right edge of the property table being drawn
+	float GetPropertyRowRight()
+	{
+		return ImGui::GetCurrentTable()->WorkRect.Max.x;
+	}
+
+	// Lets what's drawn next in a property table's label column run across the row to its right edge, and down to
+	// bottom, while keeping it inside the window. Pair with ImGui::PopClipRect.
+	void PushPropertyRowClipRect(float bottom)
+	{
+		// Not intersected with the current clip rect, which is the label column's, but with the table's visible area
+		const ImRect& tableClip = ImGui::GetCurrentTable()->InnerClipRect;
+		const ImVec2 start = ImGui::GetCursorScreenPos();
+		ImGui::PushClipRect(ImVec2(std::max(start.x, tableClip.Min.x), std::max(start.y, tableClip.Min.y)),
+			ImVec2(std::min(GetPropertyRowRight(), tableClip.Max.x), std::min(bottom, tableClip.Max.y)), false);
+	}
 }
 
 namespace Editor
@@ -147,16 +170,14 @@ namespace Editor
 			ImGui::EndTable();
 		}
 
-		void PropertyRow(const char* label, const char* tooltip, float labelIndent)
+		void PropertyRow(const char* label, const char* tooltip, const ImVec4& labelColour)
 		{
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
 			ImGui::AlignTextToFramePadding();
-			if (labelIndent > 0.0f)
-			{
-				ImGui::SetCursorPosX(ImGui::GetCursorPosX() + labelIndent);
-			}
+			ImGui::PushStyleColor(ImGuiCol_Text, labelColour);
 			ImGui::TextUnformatted(label);
+			ImGui::PopStyleColor();
 
 			if (tooltip != nullptr && tooltip[0] != '\0')
 			{
@@ -170,6 +191,47 @@ namespace Editor
 
 			ImGui::TableSetColumnIndex(1);
 			ImGui::SetNextItemWidth(-FLT_MIN);
+		}
+
+		void PropertySectionRow(const char* title)
+		{
+			ImGui::TableNextRow();
+			ImGui::TableSetColumnIndex(0);
+			ImGui::AlignTextToFramePadding();
+
+			const ImVec2 start = ImGui::GetCursorScreenPos();
+			const float right = GetPropertyRowRight();
+			// The text sits FramePadding.y down, so this is as tall as a widget row
+			const float rowHeight = ImGui::GetFrameHeight();
+			PushPropertyRowClipRect(start.y + rowHeight);
+
+			float lineStart = start.x;
+			if (title[0] != '\0')
+			{
+				ImGui::TextDisabled("%s", title);
+				lineStart = ImGui::GetItemRectMax().x + ImGui::GetStyle().ItemSpacing.x;
+			}
+			else
+			{
+				ImGui::Dummy(ImVec2(0.0f, rowHeight));
+			}
+
+			const float lineY = std::floor(start.y + rowHeight * 0.5f) + 0.5f;
+			ImGui::GetWindowDrawList()->AddLine(ImVec2(lineStart, lineY), ImVec2(right, lineY), ImGui::GetColorU32(k_sectionLineColour));
+			ImGui::PopClipRect();
+		}
+
+		float BeginPropertyWideRow()
+		{
+			ImGui::TableNextRow();
+			ImGui::TableSetColumnIndex(0);
+			PushPropertyRowClipRect(FLT_MAX);
+			return GetPropertyRowRight() - ImGui::GetCursorScreenPos().x;
+		}
+
+		void EndPropertyWideRow()
+		{
+			ImGui::PopClipRect();
 		}
 	}
 }

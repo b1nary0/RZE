@@ -64,7 +64,10 @@ namespace Editor
 		void DrawProperties(EditorContext& context, const TypeDescription& type, const void* object, const PathPrefix& prefix,
 			const ComponentList* editableComponents);
 		void DrawValueRow(EditorContext& context, const PropertyDescriptor& property, const PropertyPath& path, const void* object,
-			const ComponentList* editableComponents, float labelIndent);
+			const ComponentList* editableComponents);
+		// A Preview property's image, made from the primary component's object at path. Making it can change the
+		// object, so a read-only nested object (editableComponents null) has none to show.
+		void DrawPreviewRow(const PropertyDescriptor& property, const PropertyPath& path, const ComponentList* editableComponents);
 		// A tree node for a nested object, labelled heading; its properties are drawn inside when open. They're editable
 		// when editableComponents isn't null, addressed through prefix.
 		void DrawObjectNode(EditorContext& context, const char* heading, const ObjectRef& ref, const PathPrefix& prefix,

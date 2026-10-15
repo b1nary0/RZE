@@ -87,9 +87,20 @@ namespace Editor
 		bool BeginPropertyTable(const char* id, float labelColumnWidth);
 		void EndPropertyTable();
 
-		// Starts a row, draws its label in the label column (shown in full on hover when it doesn't fit, or tooltip
-		// if there is one) and moves to the value column, sized for a full-width widget. labelIndent indents the
-		// label, e.g. under a group's sub-heading.
-		void PropertyRow(const char* label, const char* tooltip = nullptr, float labelIndent = 0.0f);
+		// A label's usual colour: softer than the values, so the eye goes to what can be changed
+		constexpr ImVec4 k_labelColour = ImVec4(0.70f, 0.71f, 0.75f, 1.0f);
+
+		// Starts a row, draws its label in labelColour (shown in full on hover when it doesn't fit, or tooltip if
+		// there is one) and moves to the value column, sized for a full-width widget
+		void PropertyRow(const char* label, const char* tooltip = nullptr, const ImVec4& labelColour = k_labelColour);
+
+		// A row across both columns that starts a section of related rows: title, then a line to the row's end. An
+		// empty title draws just the line, e.g. to end a section before rows that aren't in one.
+		void PropertySectionRow(const char* title);
+
+		// Starts a row whose content runs across both columns (e.g. an image) and returns its width. Pair with
+		// EndPropertyWideRow.
+		float BeginPropertyWideRow();
+		void EndPropertyWideRow();
 	}
 }

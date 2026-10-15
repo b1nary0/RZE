@@ -264,6 +264,20 @@ public:
 		return descriptor;
 	}
 
+	// An image made each time tools show it, e.g. what a camera sees, under a section named name. maker takes the
+	// object non-const, since making the image can change it (e.g. render into its target), and returns a
+	// PropertyTexture.
+	template <typename TMaker>
+	PropertyDescriptor& Preview(const char* name, TMaker maker)
+	{
+		PropertyDescriptor& descriptor = AddDescriptor(name, EPropertyType::Preview);
+		descriptor.MakePreview = [maker](void* object) -> PropertyTexture
+			{
+				return PropertyTexture(maker(*static_cast<TObject*>(object)));
+			};
+		return descriptor;
+	}
+
 	// What to call an instance in a tree (e.g. a sub-mesh's name); getter takes the object and returns a string
 	template <typename TGetter>
 	void DisplayName(TGetter getter)

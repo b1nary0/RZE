@@ -197,18 +197,14 @@ namespace Editor
 
 			ImGui::PushID(static_cast<int>(propertyIndex));
 
-			if (property.Group != currentGroup)
+			// Each group starts with its section row, and ungrouped rows after one are set apart by a bare line. A
+			// preview is a section of its own, named after it.
+			const std::string& group = property.Type == EPropertyType::Preview ? property.Name : property.Group;
+			if (group != currentGroup)
 			{
-				currentGroup = property.Group;
-				if (!currentGroup.empty())
-				{
-					ImGui::TableNextRow();
-					ImGui::TableSetColumnIndex(0);
-					ImGui::AlignTextToFramePadding();
-					ImGui::TextDisabled("%s", currentGroup.c_str());
-				}
+				currentGroup = group;
+				EditorUI::PropertySectionRow(currentGroup.c_str());
 			}
-			const float labelIndent = property.Group.empty() ? 0.0f : ImGui::GetStyle().IndentSpacing;
 
 			if (property.Type == EPropertyType::Object)
 			{
@@ -274,9 +270,13 @@ namespace Editor
 					ImGui::TreePop();
 				}
 			}
+			else if (property.Type == EPropertyType::Preview)
+			{
+				DrawPreviewRow(property, path, editableComponents);
+			}
 			else
 			{
-				DrawValueRow(context, property, path, object, editableComponents, labelIndent);
+				DrawValueRow(context, property, path, object, editableComponents);
 			}
 
 			ImGui::PopID();
@@ -284,7 +284,7 @@ namespace Editor
 	}
 
 	void PropertyInspector::DrawValueRow(EditorContext& context, const PropertyDescriptor& property, const PropertyPath& path, const void* object,
-		const ComponentList* editableComponents, float labelIndent)
+		const ComponentList* editableComponents)
 	{
 		const PropertyDrawers::Drawer drawer = PropertyDrawers::Find(property.Type);
 		if (drawer == nullptr)
@@ -317,19 +317,15 @@ namespace Editor
 		const bool isOverridden = property.IsOverridable() && property.IsOverridden(object);
 		if (isMixed)
 		{
-			ImGui::PushStyleColor(ImGuiCol_Text, k_mixedValueColour);
-			EditorUI::PropertyRow(property.Name.c_str(), "Differs across the selection; showing the primary's value", labelIndent);
-			ImGui::PopStyleColor();
+			EditorUI::PropertyRow(property.Name.c_str(), "Differs across the selection; showing the primary's value", k_mixedValueColour);
 		}
 		else if (isOverridden)
 		{
-			ImGui::PushStyleColor(ImGuiCol_Text, EditorUI::k_accentColour);
-			EditorUI::PropertyRow(property.Name.c_str(), property.Tooltip.empty() ? "Overridden" : property.Tooltip.c_str(), labelIndent);
-			ImGui::PopStyleColor();
+			EditorUI::PropertyRow(property.Name.c_str(), property.Tooltip.empty() ? "Overridden" : property.Tooltip.c_str(), EditorUI::k_accentColour);
 		}
 		else
 		{
-			EditorUI::PropertyRow(property.Name.c_str(), property.Tooltip.c_str(), labelIndent);
+			EditorUI::PropertyRow(property.Name.c_str(), property.Tooltip.c_str());
 		}
 
 		// Why it can't be changed at the moment, shown on hover. An exclusive property is turned off by turning it on
@@ -430,6 +426,29 @@ namespace Editor
 				context.GetCommands().Push<SetPropertyCommand>(target, path, ApplyEdit(before, value, resolved.Property->Get(resolved.Object)), interaction);
 			}
 		}
+	}
+
+	void PropertyInspector::DrawPreviewRow(const PropertyDescriptor& property, const PropertyPath& path, const ComponentList* editableComponents)
+	{
+		ComponentPropertyRegistry::ResolvedProperty resolved;
+		if (editableComponents != nullptr && editableComponents->front() != nullptr)
+		{
+			resolved = ComponentPropertyRegistry::Resolve(**editableComponents->front(), path);
+		}
+
+		const float width = EditorUI::BeginPropertyWideRow();
+		if (resolved.IsValid())
+		{
+			const PropertyTexture preview = property.MakePreview(resolved.Object);
+			// At its own size, which it's made for, unless that's wider than the row
+			const float scale = preview.Size.X() > width ? width / preview.Size.X() : 1.0f;
+			PropertyDrawers::DrawTexture(preview, std::max(preview.Size.X(), preview.Size.Y()) * scale);
+		}
+		else
+		{
+			ImGui::TextDisabled("(no preview)");
+		}
+		EditorUI::EndPropertyWideRow();
 	}
 
 	void PropertyInspector::DrawObjectNode(EditorContext& context, const char* heading, const ObjectRef& ref, const PathPrefix& prefix,
