@@ -3,6 +3,7 @@
 
 #include <Game/GameScene.h>
 #include <Game/World/GameObject/GameObject.h>
+#include <Game/World/GameObjectComponents/MeshComponentProperties.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
 #include <Graphics/Material.h>
@@ -174,8 +175,8 @@ void GifChatComponent::CreateRenderObject()
 
 void GifChatComponent::GenerateMesh(const std::shared_ptr<MaterialInstance>& material)
 {
-	std::vector<MeshGeometry> geometryList;
-	MeshGeometry& geo = geometryList.emplace_back();
+	std::vector<StaticMesh::SubMesh> subMeshes;
+	MeshGeometry& geo = subMeshes.emplace_back().Geometry;
 	geo.SetName("GIF_RENDER_MESH");
 
 	MeshVertex topLeft;
@@ -219,9 +220,12 @@ void GifChatComponent::GenerateMesh(const std::shared_ptr<MaterialInstance>& mat
 
 	
 	geo.AllocateData();
-	geo.SetMaterial(material);
 
-	m_mesh = StaticMeshInstance::Create(StaticMesh::Create("GIF_RENDER_MESH", std::move(geometryList)));
+	std::vector<StaticMesh::Slot> slots(1);
+	slots[0].Name = material->GetName();
+	slots[0].Material = material;
+
+	m_mesh = StaticMeshInstance::Create(StaticMesh::Create("GIF_RENDER_MESH", std::move(subMeshes), std::move(slots)));
 }
 
 //
@@ -274,9 +278,9 @@ STBIDEF unsigned char* stbi_xload(stbi__context* s, int* x, int* y, int* frames,
 
 void GifChatComponent::DescribeProperties(PropertyBuilder<GifChatComponent>& properties)
 {
-	properties.Array("Sub-Meshes", [](const GifChatComponent& gifChat)
+	properties.Array("Materials", [](const GifChatComponent& gifChat)
 		{
 			const StaticMeshInstance* const mesh = gifChat.GetMesh();
-			return mesh != nullptr ? MakeObjectRefs(mesh->GetMesh().GetSubMeshes()) : std::vector<ObjectRef>();
+			return mesh != nullptr ? MakeMaterialSlotRefs(*mesh) : std::vector<ObjectRef>();
 		});
 }

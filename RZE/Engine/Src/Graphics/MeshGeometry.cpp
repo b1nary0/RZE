@@ -1,10 +1,6 @@
 #include <StdAfx.h>
 #include <Graphics/MeshGeometry.h>
 
-#include <Graphics/Material.h>
-
-#include <Game/World/GameObject/Properties/PropertyBuilder.h>
-
 #include <Graphics/IndexBuffer.h>
 #include <Graphics/VertexBuffer.h>
 
@@ -143,30 +139,6 @@ void MeshGeometry::SetIndexData(std::vector<U32>&& indices)
 	m_indices = std::move(indices);
 }
 
-void MeshGeometry::SetMaterial(const std::shared_ptr<MaterialInstance>& material)
-{
-	AssertNotNull(material);
-	m_material = material;
-}
-
-std::shared_ptr<const MaterialInstance> MeshGeometry::GetMaterial() const
-{
-	AssertNotNull(m_material);
-	return m_material;
-}
-
-const MaterialInstance& MeshGeometry::GetMaterialRef() const
-{
-	AssertNotNull(m_material);
-	return *m_material;
-}
-
-std::shared_ptr<MaterialInstance> MeshGeometry::GetMaterial()
-{
-	AssertNotNull(m_material);
-	return m_material;
-}
-
 const std::vector<MeshVertex>& MeshGeometry::GetVertices()
 {
 	return m_vertices;
@@ -190,10 +162,4 @@ const std::shared_ptr<VertexBuffer>& MeshGeometry::GetVertexBuffer() const
 const std::shared_ptr<IndexBuffer>& MeshGeometry::GetIndexBuffer() const
 {
 	return m_indexBuffer;
-}
-
-void MeshGeometry::DescribeProperties(PropertyBuilder<MeshGeometry>& properties)
-{
-	properties.DisplayName([](const MeshGeometry& mesh) { return mesh.GetName(); });
-	properties.Object<MaterialInstance>("Material", &MeshGeometry::GetMaterial);
 }

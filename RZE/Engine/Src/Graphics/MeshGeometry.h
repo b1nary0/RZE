@@ -9,10 +9,7 @@
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector3D.h>
 
-class MaterialInstance;
 class IndexBuffer;
-template <typename TObject>
-class PropertyBuilder;
 class VertexBuffer;
 
 struct MeshVertex
@@ -38,9 +35,6 @@ public:
 	MeshGeometry(U32 vertexCount, U32 indexCount);
 	~MeshGeometry();
 
-	// For tools: a sub-mesh shows its name and material
-	static void DescribeProperties(PropertyBuilder<MeshGeometry>& properties);
-
 	// Creates the GPU vertex/index buffers. Main thread only.
 	void AllocateData();
 	// As above, using vertex data already laid out by BuildInterleavedVertexData (e.g. prepared on a worker thread).
@@ -58,13 +52,7 @@ public:
 	void SetIndexData(const std::vector<U32>& indices);
 	void SetIndexData(std::vector<U32>&& indices);
 
-	void SetMaterial(const std::shared_ptr<MaterialInstance>& material);
-
 	const std::string& GetName() const { return m_name; }
-	std::shared_ptr<MaterialInstance> GetMaterial();
-	std::shared_ptr<const MaterialInstance> GetMaterial() const;
-	// For drawing: reads the material without copying the shared_ptr
-	const MaterialInstance& GetMaterialRef() const;
 	const std::vector<MeshVertex>& GetVertices();
 
 	// Object-space box around the vertices, kept up to date as they're added or set; a zero-sized box at the origin
@@ -88,5 +76,4 @@ private:
 
 	std::shared_ptr<VertexBuffer> m_vertexBuffer;
 	std::shared_ptr<IndexBuffer> m_indexBuffer;
-	std::shared_ptr<MaterialInstance> m_material;
 };

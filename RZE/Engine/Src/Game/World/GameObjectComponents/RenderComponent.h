@@ -40,7 +40,7 @@ public:
 	// The one way the component's mesh changes. Draws meshInstance from now on: the render object, if there is one,
 	// keeps its identity and swaps what it draws; one is created if the object is in a scene and had none (otherwise
 	// OnAddToScene creates it). Null removes the mesh. The previous instance is released.
-	void SetMeshInstance(std::shared_ptr<StaticMeshInstance> meshInstance);
+	void SetMeshInstance(const std::shared_ptr<StaticMeshInstance>& meshInstance);
 
 	// The mesh's size along the object's own axes, including its scale; zero without a mesh
 	Vector3D GetMeshSize() const;

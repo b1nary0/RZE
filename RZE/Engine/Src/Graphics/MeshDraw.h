@@ -3,6 +3,7 @@
 #include <Utils/Math/BoundingBox.h>
 #include <Utils/Math/Matrix4x4.h>
 
+class MaterialSlot;
 class MeshGeometry;
 
 // A world transform and its inverse, side by side: uploaded together as the vertex shaders' ObjectBuffer
@@ -17,6 +18,9 @@ struct MatrixMem
 struct MeshDraw
 {
 	const MeshGeometry* Geometry = nullptr;
+	// What the geometry is drawn with: Slot->GetMaterial(). A slot rather than a material, so a slot changing material
+	// (an override set or reset) is drawn without rebuilding the draws.
+	const MaterialSlot* Slot = nullptr;
 	// Where it's drawn, with its inverse after it in memory (a MatrixMem), so it uploads as the ObjectBuffer. For a
 	// sub-mesh at the mesh's origin it's the object's own matrices, shared by every such draw, so comparing pointers
 	// tells a stage when it needs to upload again. Otherwise it's OwnMatrices, which means a MeshDraw can't be copied

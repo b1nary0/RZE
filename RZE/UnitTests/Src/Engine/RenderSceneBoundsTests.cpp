@@ -8,35 +8,49 @@
 #include <Utils/Math/Matrix4x4.h>
 
 #include <memory>
+#include <string>
 #include <vector>
 
-// Meshes are built on the CPU here: their vertices are enough for their bounds, and nothing in these tests draws
+// Meshes are built on the CPU here: their vertices are enough for their bounds, and nothing in these tests draws, so
+// their slots have no material (making one needs the renderer)
 
 namespace
 {
-	// A sub-mesh with a vertex at each corner of box
-	MeshGeometry MakeSubMesh(const BoundingBox& box)
+	// A sub-mesh with a vertex at each corner of box, drawn with slot slotIndex
+	StaticMesh::SubMesh MakeSubMesh(const BoundingBox& box, U32 slotIndex = 0)
 	{
-		MeshGeometry subMesh;
+		StaticMesh::SubMesh subMesh;
+		subMesh.SlotIndex = slotIndex;
 		for (const Vector3D& corner : box.GetCorners())
 		{
 			MeshVertex vertex;
 			vertex.Position = corner;
-			subMesh.AddVertex(vertex);
+			subMesh.Geometry.AddVertex(vertex);
 		}
 		return subMesh;
 	}
 
-	// An instance of a new mesh with a sub-mesh around each box, each placed at the mesh's origin
+	// slotCount slots named "Slot0", "Slot1", ...
+	std::vector<StaticMesh::Slot> MakeSlots(size_t slotCount)
+	{
+		std::vector<StaticMesh::Slot> slots(slotCount);
+		for (size_t slotIndex = 0; slotIndex < slotCount; ++slotIndex)
+		{
+			slots[slotIndex].Name = "Slot" + std::to_string(slotIndex);
+		}
+		return slots;
+	}
+
+	// An instance of a new mesh with a sub-mesh around each box, each placed at the mesh's origin and sharing one slot
 	std::shared_ptr<StaticMeshInstance> MakeMesh(const std::vector<BoundingBox>& subMeshBoxes)
 	{
-		std::vector<MeshGeometry> subMeshes;
+		std::vector<StaticMesh::SubMesh> subMeshes;
 		for (const BoundingBox& box : subMeshBoxes)
 		{
 			subMeshes.push_back(MakeSubMesh(box));
 		}
 
-		return StaticMeshInstance::Create(StaticMesh::Create("Test", std::move(subMeshes)));
+		return StaticMeshInstance::Create(StaticMesh::Create("Test", std::move(subMeshes), MakeSlots(1)));
 	}
 
 	Matrix4x4 MakeTransform(const Vector3D& position, const Vector3D& rotation = Vector3D(), const Vector3D& scale = Vector3D(1.0f))
@@ -127,9 +141,9 @@ TEST_CASE("A sub-mesh placed twice is drawn and bounded at each placement")
 	placements[0].LocalTransform = MakeTransform(Vector3D(-5.0f, 0.0f, 0.0f));
 	placements[1].LocalTransform = MakeTransform(Vector3D(5.0f, 0.0f, 0.0f));
 
-	std::vector<MeshGeometry> subMeshes;
+	std::vector<StaticMesh::SubMesh> subMeshes;
 	subMeshes.push_back(MakeSubMesh(k_unitBox));
-	const std::shared_ptr<const StaticMesh> mesh = StaticMesh::Create("Test", std::move(subMeshes), std::move(placements));
+	const std::shared_ptr<const StaticMesh> mesh = StaticMesh::Create("Test", std::move(subMeshes), MakeSlots(1), std::move(placements));
 	CHECK(mesh->GetSubMeshes().size() == 1);
 	CheckBox(mesh->GetBounds(), Vector3D(-6.0f, -1.0f, -1.0f), Vector3D(6.0f, 1.0f, 1.0f));
 
@@ -223,9 +237,9 @@ TEST_CASE("A scene's bounds follow its objects being added, moved, given new mes
 
 TEST_CASE("Objects drawing the same mesh share it rather than copying it")
 {
-	std::vector<MeshGeometry> subMeshes;
+	std::vector<StaticMesh::SubMesh> subMeshes;
 	subMeshes.push_back(MakeSubMesh(k_unitBox));
-	const std::shared_ptr<const StaticMesh> mesh = StaticMesh::Create("Shared", std::move(subMeshes));
+	const std::shared_ptr<const StaticMesh> mesh = StaticMesh::Create("Shared", std::move(subMeshes), MakeSlots(1));
 
 	RenderScene scene;
 	RenderObjectPtr first = scene.CreateRenderObject(StaticMeshInstance::Create(mesh));
@@ -235,8 +249,11 @@ TEST_CASE("Objects drawing the same mesh share it rather than copying it")
 	// Both draw the mesh's own geometry, each where its object is
 	REQUIRE(first->GetDraws().size() == 1);
 	REQUIRE(second->GetDraws().size() == 1);
-	CHECK(first->GetDraws()[0].Geometry == &mesh->GetSubMeshes()[0]);
-	CHECK(second->GetDraws()[0].Geometry == &mesh->GetSubMeshes()[0]);
+	CHECK(first->GetDraws()[0].Geometry == &mesh->GetSubMeshes()[0].Geometry);
+	CHECK(second->GetDraws()[0].Geometry == &mesh->GetSubMeshes()[0].Geometry);
+	// But each draws with its own object's slots
+	CHECK(first->GetDraws()[0].Slot == &first->GetMeshInstance()->GetMaterialSlots()[0]);
+	CHECK(second->GetDraws()[0].Slot == &second->GetMeshInstance()->GetMaterialSlots()[0]);
 	CheckBox(second->GetDraws()[0].Bounds, Vector3D(9.0f, -1.0f, -1.0f), Vector3D(11.0f, 1.0f, 1.0f));
 
 	scene.ClearObjects();
@@ -263,6 +280,32 @@ TEST_CASE("Swapping an object's mesh keeps the object and lets the old mesh go")
 	CheckBox(object->GetBounds(), Vector3D(-3.0f, 5.0f, 0.0f), Vector3D(3.0f, 6.0f, 1.0f));
 	// Nothing else held the old instance
 	CHECK(oldInstance.expired());
+
+	scene.ClearObjects();
+}
+
+TEST_CASE("Sub-meshes sharing a material share a slot, which their draws point at")
+{
+	// Three sub-meshes, the first and last sharing slot 0
+	std::vector<StaticMesh::SubMesh> subMeshes;
+	subMeshes.push_back(MakeSubMesh(k_unitBox, 0));
+	subMeshes.push_back(MakeSubMesh(k_unitBox, 1));
+	subMeshes.push_back(MakeSubMesh(k_unitBox, 0));
+	const std::shared_ptr<const StaticMesh> mesh = StaticMesh::Create("Slots", std::move(subMeshes), MakeSlots(2));
+
+	const std::shared_ptr<StaticMeshInstance> instance = StaticMeshInstance::Create(mesh);
+	const std::vector<MaterialSlot>& slots = instance->GetMaterialSlots();
+	REQUIRE(slots.size() == 2);
+	CHECK(slots[0].GetName() == "Slot0");
+	CHECK(slots[1].GetName() == "Slot1");
+
+	RenderScene scene;
+	RenderObjectPtr object = scene.CreateRenderObject(instance);
+	const std::vector<MeshDraw>& draws = object->GetDraws();
+	REQUIRE(draws.size() == 3);
+	CHECK(draws[0].Slot == &slots[0]);
+	CHECK(draws[1].Slot == &slots[1]);
+	CHECK(draws[2].Slot == &slots[0]);
 
 	scene.ClearObjects();
 }

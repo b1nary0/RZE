@@ -7,6 +7,7 @@
 
 #include <Game/GameScene.h>
 #include <Game/StaticMeshResource.h>
+#include <Game/World/GameObjectComponents/MeshComponentProperties.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
 #include <Game/World/GameObject/GameObject.h>
@@ -34,10 +35,10 @@ void RenderComponent::DescribeProperties(PropertyBuilder<RenderComponent>& prope
 		.DisplayFormat("%.2f m").ToolTip("Along the object's own axes, including its scale");
 	properties.Bool("Draw Mesh Bounds", &RenderComponent::IsDrawingMeshBounds, &RenderComponent::SetDrawMeshBounds).EditorOnly();
 	properties.Bool("Draw Sub-Mesh Bounds", &RenderComponent::IsDrawingSubMeshBounds, &RenderComponent::SetDrawSubMeshBounds).EditorOnly();
-	properties.Array("Sub-Meshes", [](const RenderComponent& renderComponent)
+	properties.Array("Materials", [](const RenderComponent& renderComponent)
 		{
 			const StaticMeshInstance* const mesh = renderComponent.GetMesh();
-			return mesh != nullptr ? MakeObjectRefs(mesh->GetMesh().GetSubMeshes()) : std::vector<ObjectRef>();
+			return mesh != nullptr ? MakeMaterialSlotRefs(*mesh) : std::vector<ObjectRef>();
 		});
 }
 
@@ -61,12 +62,12 @@ void RenderComponent::LoadMesh(const Filepath& path)
 		meshInstance = StaticMeshResource::CreateInstance(meshResource);
 	}
 
-	SetMeshInstance(std::move(meshInstance));
+	SetMeshInstance(meshInstance);
 }
 
-void RenderComponent::SetMeshInstance(std::shared_ptr<StaticMeshInstance> meshInstance)
+void RenderComponent::SetMeshInstance(const std::shared_ptr<StaticMeshInstance>& meshInstance)
 {
-	m_meshInstance = std::move(meshInstance);
+	m_meshInstance = meshInstance;
 
 	if (m_renderObject != nullptr)
 	{

@@ -59,6 +59,7 @@ bool StaticMeshResource::LoadCPU(const Filepath& filePath)
 		pendingSubmesh.InterleavedVertexData = MeshGeometry::BuildInterleavedVertexData(importedSubmesh.Vertices);
 		pendingSubmesh.Data = std::move(importedSubmesh);
 	}
+	m_pendingMaterials = std::move(meshImporter.GetMaterials());
 	m_pendingPlacements = std::move(meshImporter.GetPlacements());
 
 	m_finalizedSubmeshes.clear();
@@ -73,9 +74,9 @@ bool StaticMeshResource::LoadCPU(const Filepath& filePath)
 
 void StaticMeshResource::RequestDependencies(AsyncResourceBatch& batch) const
 {
-	for (const PendingSubmesh& pendingSubmesh : m_pendingSubmeshes)
+	for (const MeshAssetImporter::ImportedMaterial& pendingMaterial : m_pendingMaterials)
 	{
-		for (const std::string& texturePath : pendingSubmesh.Data.Material.TexturePaths)
+		for (const std::string& texturePath : pendingMaterial.Data.TexturePaths)
 		{
 			if (!texturePath.empty())
 			{
@@ -112,13 +113,12 @@ bool StaticMeshResource::FinalizeStep()
 	{
 		PendingSubmesh& pendingSubmesh = m_pendingSubmeshes[m_nextSubmeshToFinalize];
 
-		MeshGeometry& geometry = m_finalizedSubmeshes.emplace_back();
+		StaticMesh::SubMesh& subMesh = m_finalizedSubmeshes.emplace_back();
+		subMesh.SlotIndex = pendingSubmesh.Data.MaterialIndex;
+		MeshGeometry& geometry = subMesh.Geometry;
 		geometry.SetName(pendingSubmesh.Data.Name);
 		geometry.SetVertexData(std::move(pendingSubmesh.Data.Vertices));
 		geometry.SetIndexData(std::move(pendingSubmesh.Data.Indices));
-		// Texture lookups are cache hits when loaded through AsyncResourceBatch, since RequestDependencies
-		// guarantees the textures are finalized first.
-		geometry.SetMaterial(MaterialInstance::Create(pendingSubmesh.Data.Material));
 		geometry.AllocateData(std::move(pendingSubmesh.InterleavedVertexData));
 
 		++m_nextSubmeshToFinalize;
@@ -129,9 +129,21 @@ bool StaticMeshResource::FinalizeStep()
 		return false;
 	}
 
-	m_mesh = StaticMesh::Create(m_meshName, std::move(m_finalizedSubmeshes), std::move(m_pendingPlacements));
+	// One material per material asset, shared by the submeshes using it. Texture lookups are cache hits when loaded
+	// through AsyncResourceBatch, since RequestDependencies guarantees the textures are finalized first.
+	std::vector<StaticMesh::Slot> slots;
+	slots.reserve(m_pendingMaterials.size());
+	for (const MeshAssetImporter::ImportedMaterial& pendingMaterial : m_pendingMaterials)
+	{
+		StaticMesh::Slot& slot = slots.emplace_back();
+		slot.Name = pendingMaterial.Name;
+		slot.Material = MaterialInstance::Create(pendingMaterial.Data);
+	}
+
+	m_mesh = StaticMesh::Create(m_meshName, std::move(m_finalizedSubmeshes), std::move(slots), std::move(m_pendingPlacements));
 
 	m_pendingSubmeshes.clear();
+	m_pendingMaterials.clear();
 	m_pendingPlacements.clear();
 	m_finalizedSubmeshes.clear();
 	m_nextSubmeshToFinalize = 0;

@@ -92,7 +92,7 @@ public:
 public:
 	// What the object draws; null draws nothing. Its draws and bounds follow the new instance, and the old one is
 	// released unless something else holds it.
-	void SetMeshInstance(std::shared_ptr<const StaticMeshInstance> meshInstance);
+	void SetMeshInstance(const std::shared_ptr<const StaticMeshInstance>& meshInstance);
 	// Null when the object has nothing to draw
 	const std::shared_ptr<const StaticMeshInstance>& GetMeshInstance() const { return m_meshInstance; }
 
@@ -202,7 +202,7 @@ public:
 
 public:
 	// meshInstance may be null (an object with nothing to draw yet)
-	RenderObjectPtr CreateRenderObject(std::shared_ptr<const StaticMeshInstance> meshInstance);
+	RenderObjectPtr CreateRenderObject(const std::shared_ptr<const StaticMeshInstance>& meshInstance);
 	void DestroyRenderObject(RenderObjectPtr& renderObject);
 
 	LightObjectPtr CreateLightObject();

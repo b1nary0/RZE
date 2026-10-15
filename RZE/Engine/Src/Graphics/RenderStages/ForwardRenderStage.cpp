@@ -4,6 +4,7 @@
 #include <Graphics/Frustum.h>
 #include <Graphics/IndexBuffer.h>
 #include <Graphics/Material.h>
+#include <Graphics/MaterialSlot.h>
 #include <Graphics/RenderEngine.h>
 #include <Graphics/Shader.h>
 #include <Graphics/Texture2D.h>
@@ -118,7 +119,7 @@ void ForwardRenderStage::Render(RenderContext& context)
 			}
 
 			// Blended draws wait until everything they could show is drawn
-			if (draw.Geometry->GetMaterialRef().IsBlended())
+			if (draw.Slot->GetMaterial().IsBlended())
 			{
 				TransparentDraw& transparentDraw = m_transparentDraws.emplace_back();
 				transparentDraw.DistanceSquared = (draw.Bounds.GetCentre() - view.Camera.Position).LengthSq();
@@ -145,7 +146,7 @@ void ForwardRenderStage::Render(RenderContext& context)
 		for (const TransparentDraw& transparentDraw : m_transparentDraws)
 		{
 			const MeshDraw& draw = *transparentDraw.Draw;
-			const Rendering::EBlendState blendState = GetBlendState(draw.Geometry->GetMaterialRef().GetBlendMode());
+			const Rendering::EBlendState blendState = GetBlendState(draw.Slot->GetMaterial().GetBlendMode());
 			if (blendState != boundBlendState)
 			{
 				Rendering::Renderer::SetBlendState(blendState);
@@ -208,7 +209,7 @@ void ForwardRenderStage::DrawMesh(const MeshDraw& draw, const Matrix4x4*& upload
 	// @TODO
 	// This is god awful. Just in place while developing shader model.
 	// Should get resolved once the system matures
-	const MaterialInstance& materialInstance = meshGeometry.GetMaterialRef();
+	const MaterialInstance& materialInstance = draw.Slot->GetMaterial();
 	const PixelShader* const pixelShader = materialInstance.GetPixelShader();
 
 	if (pixelShader != boundPixelShader)

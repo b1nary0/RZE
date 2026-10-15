@@ -3,6 +3,7 @@
 
 #include <Graphics/IndexBuffer.h>
 #include <Graphics/Material.h>
+#include <Graphics/MaterialSlot.h>
 #include <Graphics/MeshGeometry.h>
 #include <Graphics/RenderEngine.h>
 #include <Graphics/Shader.h>
@@ -150,7 +151,7 @@ void ShadowRenderStage::RenderShadowMap(const RenderScene& scene, const ShadowMa
 			for (const MeshDraw& draw : renderObject->GetDraws())
 			{
 				const MeshGeometry& meshGeometry = *draw.Geometry;
-				const MaterialInstance& materialInstance = meshGeometry.GetMaterialRef();
+				const MaterialInstance& materialInstance = draw.Slot->GetMaterial();
 
 				// #TODO(Transparency) See-through surfaces cast nothing for now: clear glass casting a solid shadow looks
 				// worse than no shadow. Partial or coloured shadows are future work (Docs/Plans/Transparency.md).

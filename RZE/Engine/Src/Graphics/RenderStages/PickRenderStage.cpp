@@ -4,6 +4,7 @@
 #include <Graphics/Frustum.h>
 #include <Graphics/IndexBuffer.h>
 #include <Graphics/Material.h>
+#include <Graphics/MaterialSlot.h>
 #include <Graphics/MeshGeometry.h>
 #include <Graphics/RenderEngine.h>
 #include <Graphics/Shader.h>
@@ -132,7 +133,7 @@ void PickRenderStage::Render(RenderContext& context)
 			}
 
 			const MeshGeometry& meshGeometry = *draw.Geometry;
-			const MaterialInstance& materialInstance = meshGeometry.GetMaterialRef();
+			const MaterialInstance& materialInstance = draw.Slot->GetMaterial();
 
 			// For cutout materials, as in ShadowRenderStage
 			Rendering::Renderer::SetConstantBufferPS(materialInstance.GetParamBuffer(), 1);

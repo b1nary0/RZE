@@ -1,9 +1,11 @@
 #include <StdAfx.h>
 #include <Graphics/StaticMesh.h>
 
+#include <Graphics/MaterialSlot.h>
+
 #include <Utils/DebugUtils/Debug.h>
 
-std::shared_ptr<const StaticMesh> StaticMesh::Create(std::string name, std::vector<MeshGeometry> subMeshes)
+std::shared_ptr<const StaticMesh> StaticMesh::Create(const std::string& name, std::vector<SubMesh>&& subMeshes, std::vector<Slot>&& slots)
 {
 	std::vector<MeshPlacement> placements(subMeshes.size());
 	for (size_t subMeshIndex = 0; subMeshIndex < placements.size(); ++subMeshIndex)
@@ -11,20 +13,26 @@ std::shared_ptr<const StaticMesh> StaticMesh::Create(std::string name, std::vect
 		placements[subMeshIndex].GeometryIndex = static_cast<U32>(subMeshIndex);
 	}
 
-	return Create(std::move(name), std::move(subMeshes), std::move(placements));
+	return Create(name, std::move(subMeshes), std::move(slots), std::move(placements));
 }
 
-std::shared_ptr<const StaticMesh> StaticMesh::Create(std::string name, std::vector<MeshGeometry> subMeshes, std::vector<MeshPlacement> placements)
+std::shared_ptr<const StaticMesh> StaticMesh::Create(const std::string& name, std::vector<SubMesh>&& subMeshes, std::vector<Slot>&& slots, std::vector<MeshPlacement>&& placements)
 {
 	// The constructor is private, so make_shared can't call it
-	return std::shared_ptr<const StaticMesh>(new StaticMesh(std::move(name), std::move(subMeshes), std::move(placements)));
+	return std::shared_ptr<const StaticMesh>(new StaticMesh(name, std::move(subMeshes), std::move(slots), std::move(placements)));
 }
 
-StaticMesh::StaticMesh(std::string name, std::vector<MeshGeometry> subMeshes, std::vector<MeshPlacement> placements)
-	: m_name(std::move(name))
+StaticMesh::StaticMesh(const std::string& name, std::vector<SubMesh>&& subMeshes, std::vector<Slot>&& slots, std::vector<MeshPlacement>&& placements)
+	: m_name(name)
 	, m_subMeshes(std::move(subMeshes))
+	, m_slots(std::move(slots))
 	, m_placements(std::move(placements))
 {
+	for (const SubMesh& subMesh : m_subMeshes)
+	{
+		AssertExpr(subMesh.SlotIndex < m_slots.size());
+	}
+
 	m_isAtOrigin.resize(m_placements.size());
 	for (size_t placementIndex = 0; placementIndex < m_placements.size(); ++placementIndex)
 	{
@@ -41,19 +49,23 @@ StaticMesh::StaticMesh(std::string name, std::vector<MeshGeometry> subMeshes, st
 
 	for (const MeshPlacement& placement : m_placements)
 	{
-		m_bounds.Grow(m_subMeshes[placement.GeometryIndex].GetBounds().Transformed(placement.LocalTransform));
+		m_bounds.Grow(m_subMeshes[placement.GeometryIndex].Geometry.GetBounds().Transformed(placement.LocalTransform));
 	}
 }
 
-void StaticMesh::BuildDraws(const MatrixMem& objectMatrices, std::vector<MeshDraw>& outDraws) const
+void StaticMesh::BuildDraws(const MatrixMem& objectMatrices, const std::vector<MaterialSlot>& materialSlots, std::vector<MeshDraw>& outDraws) const
 {
+	AssertExpr(materialSlots.size() == m_slots.size());
+
 	outDraws.resize(m_placements.size());
 	for (size_t placementIndex = 0; placementIndex < m_placements.size(); ++placementIndex)
 	{
 		const MeshPlacement& placement = m_placements[placementIndex];
+		const SubMesh& subMesh = m_subMeshes[placement.GeometryIndex];
 		MeshDraw& draw = outDraws[placementIndex];
 
-		draw.Geometry = &m_subMeshes[placement.GeometryIndex];
+		draw.Geometry = &subMesh.Geometry;
+		draw.Slot = &materialSlots[subMesh.SlotIndex];
 		if (m_isAtOrigin[placementIndex])
 		{
 			draw.Transform = &objectMatrices.transform;

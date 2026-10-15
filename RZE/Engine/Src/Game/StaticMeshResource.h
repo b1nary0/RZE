@@ -23,7 +23,7 @@ public:
 	bool LoadCPU(const Filepath& filePath) override;
 	void RequestDependencies(AsyncResourceBatch& batch) const override;
 	ResourceFinalizeCost GetNextFinalizeStepCost() const override;
-	// Finalizes one submesh per step (material + GPU buffers).
+	// Finalizes one submesh per step (GPU buffers), then the materials with the last.
 	bool FinalizeStep() override;
 
 public:
@@ -48,7 +48,8 @@ private:
 
 	// Populated by LoadCPU, consumed by FinalizeStep.
 	std::vector<PendingSubmesh> m_pendingSubmeshes;
-	std::vector<MeshGeometry> m_finalizedSubmeshes;
+	std::vector<MeshAssetImporter::ImportedMaterial> m_pendingMaterials;
+	std::vector<StaticMesh::SubMesh> m_finalizedSubmeshes;
 	std::vector<MeshPlacement> m_pendingPlacements;
 	size_t m_nextSubmeshToFinalize = 0;
 	bool m_isFinalizePending = false;

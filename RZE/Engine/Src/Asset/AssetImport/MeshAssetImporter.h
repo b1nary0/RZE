@@ -17,7 +17,17 @@ public:
 		std::string Name;
 		std::vector<MeshVertex> Vertices;
 		std::vector<U32> Indices;
-		MaterialAssetImporter::MaterialData Material;
+		// Index into GetMaterials()
+		U32 MaterialIndex = 0;
+	};
+
+	// A material asset the mesh uses, read once however many submeshes use it
+	struct ImportedMaterial
+	{
+		// The asset's file name, unique within the mesh; "Default" for submeshes without one
+		std::string Name;
+		// Default (untextured) when the asset is missing
+		MaterialAssetImporter::MaterialData Data;
 	};
 
 public:
@@ -28,11 +38,14 @@ public:
 	virtual bool Import(const Filepath& filePath) override;
 
 	std::vector<ImportedSubmesh>& GetSubmeshes() { return m_submeshes; }
+	// In the order submeshes first use them
+	std::vector<ImportedMaterial>& GetMaterials() { return m_materials; }
 	// Where each submesh is drawn; a submesh can appear more than once. Version 0 assets, which predate
 	// placements, get one identity placement per submesh.
 	std::vector<MeshPlacement>& GetPlacements() { return m_placements; }
 
 private:
 	std::vector<ImportedSubmesh> m_submeshes;
+	std::vector<ImportedMaterial> m_materials;
 	std::vector<MeshPlacement> m_placements;
 };

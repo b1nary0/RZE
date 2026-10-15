@@ -8,6 +8,8 @@
 #include <Utils/Memory/ByteStreamUtils.h>
 
 #include <cstddef>
+#include <filesystem>
+#include <unordered_map>
 
 namespace
 {
@@ -28,6 +30,7 @@ namespace
 bool MeshAssetImporter::Import(const Filepath& filePath)
 {
 	m_submeshes.clear();
+	m_materials.clear();
 	m_placements.clear();
 
 	ByteStream byteStream(filePath.GetRelativePath());
@@ -52,6 +55,9 @@ bool MeshAssetImporter::Import(const Filepath& filePath)
 	}
 	const size_t placementCount = hasPlacements ? ByteStreamUtils::ReadType<size_t>(byteStream) : headerData.MeshCount;
 
+	// Material asset path -> index into m_materials
+	std::unordered_map<std::string, U32> materialIndices;
+
 	m_submeshes.reserve(headerData.MeshCount);
 	for (size_t meshIndex = 0; meshIndex < headerData.MeshCount; ++meshIndex)
 	{
@@ -66,11 +72,24 @@ bool MeshAssetImporter::Import(const Filepath& filePath)
 		const size_t vertexCount = vertexData.size() / (sizeof(MeshVertex) / sizeof(float));
 		submesh.Vertices.assign(vertexDataArray, vertexDataArray + vertexCount);
 
+		auto knownMaterial = materialIndices.find(materialPath);
+		if (knownMaterial != materialIndices.end())
+		{
+			submesh.MaterialIndex = knownMaterial->second;
+			continue;
+		}
+
+		submesh.MaterialIndex = static_cast<U32>(m_materials.size());
+		materialIndices.emplace(materialPath, submesh.MaterialIndex);
+
+		ImportedMaterial& material = m_materials.emplace_back();
+		material.Name = materialPath.empty() ? std::string("Default") : std::filesystem::path(materialPath).stem().string();
+
 		// Missing materials are tolerated: the submesh gets a default (untextured) material.
 		MaterialAssetImporter materialImporter;
-		if (materialImporter.Import(Filepath(materialPath)))
+		if (!materialPath.empty() && materialImporter.Import(Filepath(materialPath)))
 		{
-			submesh.Material = materialImporter.GetMaterialData();
+			material.Data = materialImporter.GetMaterialData();
 		}
 	}
 
@@ -93,6 +112,7 @@ bool MeshAssetImporter::Import(const Filepath& filePath)
 		{
 			RZE_LOG_ARGS("Mesh asset [%s] places submesh %u, but only has %u.", filePath.GetRelativePath().c_str(), placement.GeometryIndex, static_cast<U32>(m_submeshes.size()));
 			m_submeshes.clear();
+			m_materials.clear();
 			m_placements.clear();
 			return false;
 		}
