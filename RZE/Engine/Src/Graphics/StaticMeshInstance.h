@@ -24,7 +24,15 @@ public:
 	const Filepath& GetResourcePath() const;
 
 	// One per mesh slot (StaticMesh::GetSlots), in the same order. Never resized, so draws can point at them.
+	std::vector<MaterialSlot>& GetMaterialSlots() { return m_materialSlots; }
 	const std::vector<MaterialSlot>& GetMaterialSlots() const { return m_materialSlots; }
+
+	// Replaces every slot's overrides with overridesByName's for its name (none for a slot it doesn't name). Ones for
+	// names this mesh has no slot for are kept too, so GetOverrides still has them: swapping to another mesh and back,
+	// or saving, doesn't lose them.
+	void SetOverrides(const MaterialOverridesByName& overridesByName);
+	// Each slot's overrides by its name, for the slots that have any, and the ones kept for slots this mesh hasn't got
+	MaterialOverridesByName GetOverrides() const;
 
 	// See StaticMesh::BuildDraws; the draws use this instance's material slots
 	void BuildDraws(const MatrixMem& objectMatrices, std::vector<MeshDraw>& outDraws) const;
@@ -40,4 +48,6 @@ private:
 	// is a hit) while this instance lives, and gives its path. Empty for a mesh made in code.
 	ResourceHandle m_meshResource;
 	std::vector<MaterialSlot> m_materialSlots;
+	// Overrides SetOverrides was given for slot names this mesh hasn't got
+	MaterialOverridesByName m_unmatchedOverrides;
 };

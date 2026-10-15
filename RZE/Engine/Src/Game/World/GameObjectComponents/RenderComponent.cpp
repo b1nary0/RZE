@@ -65,8 +65,13 @@ void RenderComponent::LoadMesh(const Filepath& path)
 	SetMeshInstance(meshInstance);
 }
 
-void RenderComponent::SetMeshInstance(const std::shared_ptr<StaticMeshInstance>& meshInstance)
+void RenderComponent::SetMeshInstance(const std::shared_ptr<StaticMeshInstance>& meshInstance, EMaterialOverrides overrides)
 {
+	if (overrides == EMaterialOverrides::CarryOver && m_meshInstance != nullptr && meshInstance != nullptr && meshInstance != m_meshInstance)
+	{
+		meshInstance->SetOverrides(m_meshInstance->GetOverrides());
+	}
+
 	m_meshInstance = meshInstance;
 
 	if (m_renderObject != nullptr)
@@ -199,6 +204,20 @@ void RenderComponent::Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>
 	{
 		writer.Key("ResourcePath");
 		writer.String(GetMeshPath().GetRelativePath().c_str());
+
+		// The mesh instance's material overrides: only what's overridden, by slot name
+		const MaterialOverridesByName overrides = m_meshInstance != nullptr ? m_meshInstance->GetOverrides() : MaterialOverridesByName();
+		if (!overrides.empty())
+		{
+			writer.Key("MaterialOverrides");
+			writer.StartObject();
+			for (const auto& [slotName, slotOverrides] : overrides)
+			{
+				writer.Key(slotName.c_str());
+				slotOverrides.Serialize(writer);
+			}
+			writer.EndObject();
+		}
 	}
 	writer.EndObject();
 }
@@ -216,5 +235,17 @@ void RenderComponent::Deserialize(const rapidjson::Value& data)
 {
 	// Preloaded by GatherResourceDependencies during an async scene load, so this is normally a cache hit
 	LoadMesh(Filepath(data["ResourcePath"].GetString()));
+
+	// Onto the mesh instance; dropped if the mesh didn't load
+	const rapidjson::Value::ConstMemberIterator overridesData = data.FindMember("MaterialOverrides");
+	if (m_meshInstance != nullptr && overridesData != data.MemberEnd() && overridesData->value.IsObject())
+	{
+		MaterialOverridesByName overrides;
+		for (rapidjson::Value::ConstMemberIterator it = overridesData->value.MemberBegin(); it != overridesData->value.MemberEnd(); ++it)
+		{
+			overrides[it->name.GetString()] = MaterialOverrides::Deserialize(it->value);
+		}
+		m_meshInstance->SetOverrides(overrides);
+	}
 }
 

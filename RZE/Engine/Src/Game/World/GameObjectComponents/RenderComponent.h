@@ -14,6 +14,17 @@ class StaticMeshInstance;
 class RenderComponent : public GameObjectComponent<RenderComponent>
 {
 public:
+	// What happens to the material overrides (StaticMeshInstance::GetOverrides) when the mesh changes
+	enum class EMaterialOverrides
+	{
+		// The previous instance's overrides go onto the new one by slot name, replacing any it has (the instance keeps
+		// ones for slots it hasn't got). Lost if either instance is null.
+		CarryOver,
+		// The new instance keeps its own overrides
+		UseNew
+	};
+
+public:
 	RenderComponent() = default;
 	~RenderComponent() = default;
 
@@ -34,13 +45,15 @@ public:
 	// The mesh asset's path; empty when there's no mesh, or it was made in code
 	const Filepath& GetMeshPath() const;
 	// Gives the component the mesh asset at path, loading it synchronously through the ResourceHandler (a cache hit
-	// when it was preloaded, as scene loading does), then hands it over with SetMeshInstance. An empty path, or one
-	// that fails to load, leaves the component without a mesh; the path already loaded does nothing.
+	// when it was preloaded, as scene loading does), then hands it over with SetMeshInstance, carrying the material
+	// overrides over. An empty path, or one that fails to load, leaves the component without a mesh; the path already
+	// loaded does nothing.
 	void LoadMesh(const Filepath& path);
 	// The one way the component's mesh changes. Draws meshInstance from now on: the render object, if there is one,
 	// keeps its identity and swaps what it draws; one is created if the object is in a scene and had none (otherwise
-	// OnAddToScene creates it). Null removes the mesh. The previous instance is released.
-	void SetMeshInstance(const std::shared_ptr<StaticMeshInstance>& meshInstance);
+	// OnAddToScene creates it). Null removes the mesh. The previous instance is released. overrides says what happens
+	// to the material overrides.
+	void SetMeshInstance(const std::shared_ptr<StaticMeshInstance>& meshInstance, EMaterialOverrides overrides = EMaterialOverrides::CarryOver);
 
 	// The mesh's size along the object's own axes, including its scale; zero without a mesh
 	Vector3D GetMeshSize() const;
@@ -71,7 +84,8 @@ private:
 	// never change scene
 	RenderScene* m_renderScene = nullptr;
 	RenderObjectPtr m_renderObject;
-	// What it draws; shared with m_renderObject. Holds the mesh asset's resource, keeping it loaded.
+	// What it draws, with this object's material overrides; shared with m_renderObject. Holds the mesh asset's
+	// resource, keeping it loaded.
 	std::shared_ptr<StaticMeshInstance> m_meshInstance;
 
 	// Editor debug toggles; not serialized
