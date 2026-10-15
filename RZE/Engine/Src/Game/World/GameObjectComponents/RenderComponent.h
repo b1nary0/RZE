@@ -53,6 +53,24 @@ public:
 	// keeps its identity and swaps what it draws; one is created if the object is in a scene and had none (otherwise
 	// OnAddToScene creates it). Null removes the mesh. The previous instance is released. overrides says what happens
 	// to the material overrides.
+	//
+	// To swap a mesh at runtime without stalling, load it first with a ResourcePreloadOperation, keeping the
+	// component's handle rather than a pointer, since it can be destroyed while the mesh loads. Once the preload has
+	// finished, if the component's still there and the mesh loaded:
+	//
+	//   ResourceDependencyList resources;
+	//   resources.Add<StaticMeshResource>(path.GetRelativePath());
+	//   preload = std::make_shared<ResourcePreloadOperation>(std::move(resources), EAsyncOperationFlags::Background);
+	//   RZE().GetAsyncOperationManager().Start(preload);
+	//   ...
+	//   if (preload->IsFinished() && renderComponent != nullptr)
+	//   {
+	//       if (std::shared_ptr<StaticMeshInstance> instance = StaticMeshResource::CreateInstance(preload->GetHandle(path)))
+	//       {
+	//           renderComponent->SetMeshInstance(instance);
+	//       }
+	//       preload.reset();
+	//   }
 	void SetMeshInstance(const std::shared_ptr<StaticMeshInstance>& meshInstance, EMaterialOverrides overrides = EMaterialOverrides::CarryOver);
 
 	// The mesh's size along the object's own axes, including its scale; zero without a mesh

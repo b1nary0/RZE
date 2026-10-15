@@ -51,6 +51,8 @@ public:
 
 	// True once every requested resource has either been resolved or has failed.
 	bool IsComplete() const;
+	// Whether the resource at resourcePath was requested (directly or as a dependency) and has loaded
+	bool IsResolved(const Filepath& resourcePath) const;
 
 	U32 GetRequestedCount() const { return static_cast<U32>(m_entries.size()); }
 	U32 GetCPULoadedCount() const { return m_cpuLoadedCount; }

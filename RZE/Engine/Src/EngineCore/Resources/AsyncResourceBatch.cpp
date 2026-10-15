@@ -29,6 +29,12 @@ bool AsyncResourceBatch::IsComplete() const
 	return m_settledCount == m_entries.size();
 }
 
+bool AsyncResourceBatch::IsResolved(const Filepath& resourcePath) const
+{
+	const auto iter = m_entriesByKey.find(ResourceHandler::CreateResourceKey(resourcePath));
+	return iter != m_entriesByKey.end() && iter->second->State == EEntryState::Resolved;
+}
+
 void AsyncResourceBatch::ReleaseHeldResources()
 {
 	m_heldResources.clear();

@@ -8,6 +8,15 @@ ResourcePreloadOperation::ResourcePreloadOperation(ResourceDependencyList resour
 {
 }
 
+ResourceHandle ResourcePreloadOperation::GetHandle(const Filepath& resourcePath) const
+{
+	if (!m_batch.IsResolved(resourcePath))
+	{
+		return ResourceHandle::EmptyHandle();
+	}
+	return RZE().GetResourceHandler().GetHandle(resourcePath);
+}
+
 void ResourcePreloadOperation::OnStart()
 {
 	m_resources.RequestAll(m_batch);
