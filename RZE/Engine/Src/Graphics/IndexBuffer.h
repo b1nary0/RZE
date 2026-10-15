@@ -13,13 +13,11 @@ public:
 	~IndexBuffer() = default;
 
 public:
+	// Uploads indexData to a new GPU buffer. The upload takes its own copy, so indexData can go once this returns.
 	void Initialize(const std::vector<U32>& indexData);
-
-	const std::vector<U32>& GetData() const { return m_localBuffer; }
 
 	const Rendering::IndexBufferHandle& GetPlatformObject() const { return m_gpuBuffer; }
 
 private:
 	Rendering::IndexBufferHandle m_gpuBuffer;
-	std::vector<U32> m_localBuffer;
 };

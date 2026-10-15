@@ -9,7 +9,6 @@ IndexBuffer::IndexBuffer()
 
 void IndexBuffer::Initialize(const std::vector<U32>& indexData)
 {
-	m_localBuffer = std::move(indexData);
-	m_gpuBuffer = Rendering::Renderer::CreateIndexBuffer(m_localBuffer.data(), sizeof(U32), m_localBuffer.size());
+	m_gpuBuffer = Rendering::Renderer::CreateIndexBuffer(indexData.data(), sizeof(U32), indexData.size());
 }
 

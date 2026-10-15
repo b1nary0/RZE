@@ -69,10 +69,10 @@ namespace Rendering
 		static void ImGuiRender();
 
 	public:
-		static VertexBufferHandle CreateVertexBuffer(void* data, size_t dataTypeSize, size_t count, U32 stride);
+		static VertexBufferHandle CreateVertexBuffer(const void* data, size_t dataTypeSize, size_t count, U32 stride);
 		// Created empty; contents are written with UpdateVertexBuffer()
 		static VertexBufferHandle CreateDynamicVertexBuffer(size_t capacityBytes, U32 stride);
-		static IndexBufferHandle CreateIndexBuffer(void* data, size_t dataTypeSize, size_t count);
+		static IndexBufferHandle CreateIndexBuffer(const void* data, size_t dataTypeSize, size_t count);
 		static ConstantBufferHandle CreateConstantBuffer(void* data, size_t dataTypeSize, U32 alignment, size_t count);
 		static TextureBuffer2DHandle CreateTextureBuffer2D(const void* data, const GFXTextureBufferParams& params);
 		

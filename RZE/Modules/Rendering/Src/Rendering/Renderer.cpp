@@ -181,7 +181,7 @@ namespace Rendering
 		m_renderThread.PushCommand(command);
 	}
 
-	VertexBufferHandle Renderer::CreateVertexBuffer(void* data, size_t dataTypeSize, size_t count, U32 stride)
+	VertexBufferHandle Renderer::CreateVertexBuffer(const void* data, size_t dataTypeSize, size_t count, U32 stride)
 	{
 		RenderCommand_CreateVertexBuffer* command = MemArena::AllocType<RenderCommand_CreateVertexBuffer>();
 
@@ -190,7 +190,8 @@ namespace Rendering
 		command->dataTypeSize = dataTypeSize;
 		command->stride = stride;
 
-		command->data = AllocateCommandData(data, dataTypeSize, count);
+		// Copied into the command, so the caller's data can go once this returns
+		command->data = AllocateCommandData(const_cast<void*>(data), dataTypeSize, count);
 		
 		m_renderThread.PushCommand(command);
 
@@ -222,14 +223,15 @@ namespace Rendering
 		m_renderThread.PushCommand(command);
 	}
 
-	IndexBufferHandle Renderer::CreateIndexBuffer(void* data, size_t dataTypeSize, size_t count)
+	IndexBufferHandle Renderer::CreateIndexBuffer(const void* data, size_t dataTypeSize, size_t count)
 	{
 		RenderCommand_CreateIndexBuffer* command = MemArena::AllocType<RenderCommand_CreateIndexBuffer>();
 		command->bufferPtr = std::make_shared<DX11IndexBuffer>();
 		command->dataTypeSize = dataTypeSize;
 		command->count = count;
 
-		command->data = AllocateCommandData(data, dataTypeSize, count);
+		// Copied into the command, so the caller's data can go once this returns
+		command->data = AllocateCommandData(const_cast<void*>(data), dataTypeSize, count);
 
 		m_renderThread.PushCommand(command);
 

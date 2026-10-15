@@ -35,14 +35,16 @@ public:
 	MeshGeometry(U32 vertexCount, U32 indexCount);
 	~MeshGeometry();
 
-	// Creates the GPU vertex/index buffers. Main thread only.
+	// Creates the GPU vertex/index buffers, then frees the CPU copies of the vertices and indices: nothing reads them
+	// once they're uploaded. The bounds stay. Main thread only.
 	void AllocateData();
 	// As above, using vertex data already laid out by BuildInterleavedVertexData (e.g. prepared on a worker thread).
-	void AllocateData(std::vector<float>&& interleavedVertexData);
+	void AllocateData(const std::vector<float>& interleavedVertexData);
 
 	// Converts vertices into the layout the vertex shader expects. Pure CPU work; safe on any thread.
 	static std::vector<float> BuildInterleavedVertexData(const std::vector<MeshVertex>& vertices);
 
+	// Building the geometry, before AllocateData; asserts after it
 	void AddVertex(const MeshVertex& vertex);
 	void AddIndex(U32 index);
 
@@ -53,25 +55,25 @@ public:
 	void SetIndexData(std::vector<U32>&& indices);
 
 	const std::string& GetName() const { return m_name; }
-	const std::vector<MeshVertex>& GetVertices();
 
 	// Object-space box around the vertices, kept up to date as they're added or set; a zero-sized box at the origin
 	// with none
 	const BoundingBox& GetBounds() const { return m_bounds; }
-
-	const std::vector<float>& GetVertexDataRaw() const;
-	const std::vector<U32>& GetIndexDataRaw() const;
 
 	const std::shared_ptr<VertexBuffer>& GetVertexBuffer() const;
 	const std::shared_ptr<IndexBuffer>& GetIndexBuffer() const;
 
 private:
 	void CalculateBounds();
+	// Its vertices and indices are on the GPU, and the CPU copies are gone
+	bool IsAllocated() const { return m_vertexBuffer != nullptr; }
 
 private:
 	std::string m_name;
+	// Only until AllocateData uploads them
 	std::vector<MeshVertex> m_vertices;
 	BoundingBox m_bounds { Vector3D(), Vector3D() };
+	// Only until AllocateData uploads them
 	std::vector<U32> m_indices;
 
 	std::shared_ptr<VertexBuffer> m_vertexBuffer;

@@ -119,7 +119,7 @@ bool StaticMeshResource::FinalizeStep()
 		geometry.SetName(pendingSubmesh.Data.Name);
 		geometry.SetVertexData(std::move(pendingSubmesh.Data.Vertices));
 		geometry.SetIndexData(std::move(pendingSubmesh.Data.Indices));
-		geometry.AllocateData(std::move(pendingSubmesh.InterleavedVertexData));
+		geometry.AllocateData(pendingSubmesh.InterleavedVertexData);
 
 		++m_nextSubmeshToFinalize;
 	}

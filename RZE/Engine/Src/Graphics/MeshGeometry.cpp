@@ -32,7 +32,7 @@ void MeshGeometry::AllocateData()
 	AllocateData(BuildInterleavedVertexData(m_vertices));
 }
 
-void MeshGeometry::AllocateData(std::vector<float>&& interleavedVertexData)
+void MeshGeometry::AllocateData(const std::vector<float>& interleavedVertexData)
 {
 	AssertExpr(m_vertexBuffer == nullptr);
 	AssertExpr(m_indexBuffer == nullptr);
@@ -41,10 +41,14 @@ void MeshGeometry::AllocateData(std::vector<float>&& interleavedVertexData)
 	CalculateBounds();
 
 	m_vertexBuffer = std::make_shared<VertexBuffer>();
-	m_vertexBuffer->Initialize(std::move(interleavedVertexData), sizeof(TempDataLayoutStructure));
+	m_vertexBuffer->Initialize(interleavedVertexData, sizeof(TempDataLayoutStructure));
 
 	m_indexBuffer = std::make_shared<IndexBuffer>();
 	m_indexBuffer->Initialize(m_indices);
+
+	// The uploads took their own copies. Swapped with empty vectors, since clear() keeps the memory.
+	std::vector<MeshVertex>().swap(m_vertices);
+	std::vector<U32>().swap(m_indices);
 }
 
 std::vector<float> MeshGeometry::BuildInterleavedVertexData(const std::vector<MeshVertex>& vertices)
@@ -96,6 +100,7 @@ void MeshGeometry::CalculateBounds()
 
 void MeshGeometry::AddVertex(const MeshVertex& vertex)
 {
+	AssertMsg(!IsAllocated(), "Vertices can't be added once the geometry is on the GPU");
 	m_vertices.push_back(vertex);
 	if (m_vertices.size() == 1)
 	{
@@ -109,6 +114,7 @@ void MeshGeometry::AddVertex(const MeshVertex& vertex)
 
 void MeshGeometry::AddIndex(U32 index)
 {
+	AssertMsg(!IsAllocated(), "Indices can't be added once the geometry is on the GPU");
 	m_indices.push_back(index);
 }
 
@@ -119,39 +125,28 @@ void MeshGeometry::SetName(const std::string& name)
 
 void MeshGeometry::SetVertexData(const std::vector<MeshVertex>& verts)
 {
+	AssertMsg(!IsAllocated(), "Vertices can't be set once the geometry is on the GPU");
 	m_vertices = verts;
 	CalculateBounds();
 }
 
 void MeshGeometry::SetVertexData(std::vector<MeshVertex>&& verts)
 {
+	AssertMsg(!IsAllocated(), "Vertices can't be set once the geometry is on the GPU");
 	m_vertices = std::move(verts);
 	CalculateBounds();
 }
 
 void MeshGeometry::SetIndexData(const std::vector<U32>& indices)
 {
+	AssertMsg(!IsAllocated(), "Indices can't be set once the geometry is on the GPU");
 	m_indices = indices;
 }
 
 void MeshGeometry::SetIndexData(std::vector<U32>&& indices)
 {
+	AssertMsg(!IsAllocated(), "Indices can't be set once the geometry is on the GPU");
 	m_indices = std::move(indices);
-}
-
-const std::vector<MeshVertex>& MeshGeometry::GetVertices()
-{
-	return m_vertices;
-}
-
-const std::vector<float>& MeshGeometry::GetVertexDataRaw() const
-{
-	return m_vertexBuffer->GetData();
-}
-
-const std::vector<U32>& MeshGeometry::GetIndexDataRaw() const
-{
-	return m_indexBuffer->GetData();
 }
 
 const std::shared_ptr<VertexBuffer>& MeshGeometry::GetVertexBuffer() const

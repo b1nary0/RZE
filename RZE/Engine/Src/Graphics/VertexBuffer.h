@@ -10,9 +10,8 @@ public:
 	VertexBuffer();
 	~VertexBuffer();
 
-	void Initialize(std::vector<float>&& localBuffer, U32 stride);
-
-	const std::vector<float>& GetData() const { return m_localBuffer; }
+	// Uploads vertexData to a new GPU buffer. The upload takes its own copy, so vertexData can go once this returns.
+	void Initialize(const std::vector<float>& vertexData, U32 stride);
 
 	const Rendering::VertexBufferHandle& GetPlatformObject() const { return m_gpuBuffer; }
 
@@ -20,6 +19,4 @@ private:
 	// Should we also store the layout or leave that to Renderer?
 	// We still need to know what that layout is when we form this buffer
 	Rendering::VertexBufferHandle m_gpuBuffer;
-	// The CPU buffer for the mesh data
-	std::vector<float> m_localBuffer;
 };
