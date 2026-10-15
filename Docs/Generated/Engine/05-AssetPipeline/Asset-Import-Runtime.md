@@ -28,11 +28,11 @@ void ReleaseResource(ResourceHandle& handle);
 
 `ResourceHandle` is a move-only handle; when the last handle to a resource goes, the resource is released. Resources implement `IResource` (`Utils\Src\Utils\Interfaces\Resource.h`): `Load(path)` and `Release()`, plus the optional async hooks below.
 
-Used for `StaticMeshResource`, `Texture2D`, `VertexShader` / `PixelShader`, and engine config.
+Used for `StaticMeshResource`, `MaterialResource`, `Texture2D`, `VertexShader` / `PixelShader`, and engine config.
 
 ## Async loading, step by step
 
-A resource opts in by returning `true` from `SupportsAsyncLoad()` and splitting its load in two. Today `StaticMeshResource` and `Texture2D` do; anything else requested through a batch falls back to a normal synchronous load.
+A resource opts in by returning `true` from `SupportsAsyncLoad()` and splitting its load in two. Today `StaticMeshResource`, `MaterialResource` and `Texture2D` do; anything else requested through a batch falls back to a normal synchronous load.
 
 ```mermaid
 %%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
@@ -49,14 +49,18 @@ flowchart TD
 ```
 
 - **`LoadCPU`** may not touch the renderer, the `ResourceHandler` or any other engine state; it only reads and decodes.
-- **`GetNextFinalizeStepCost`** tells the batch how big the next step is (bytes copied into the render command arena, bytes uploaded to the GPU), so it can be pushed to a later frame if it won't fit. `StaticMeshResource` finalizes one submesh (material and GPU buffers) per step.
-- Because a mesh's textures are its dependencies, they're always finalized first, so when the mesh builds its materials, its texture lookups are cache hits.
+- **`GetNextFinalizeStepCost`** tells the batch how big the next step is (bytes copied into the render command arena, bytes uploaded to the GPU), so it can be pushed to a later frame if it won't fit. `StaticMeshResource` finalizes one submesh (its GPU buffers) per step, and makes the mesh's materials with the last.
+- Because a mesh's or material's textures are its dependencies, they're always finalized first, so when the materials are made, their texture lookups are cache hits.
 - The batch holds every resolved resource until `ReleaseHeldResources()`, so nothing is unloaded before whoever asked for it picks it up.
 - **Loads in flight are shared.** A batch asking for a resource another batch is already loading (`ResourceHandler::TryBeginAsyncLoad` returns false) waits for that load and takes a handle to the result, instead of reading and uploading it a second time. If the other load fails or is cancelled, the waiting batch loads it itself. This matters once two scenes load at once, e.g. the editor's scene and a thumbnail's.
 
 ### Preloading: `ResourcePreloadOperation`
 
-`ResourcePreloadOperation` (`Engine\Src\EngineCore\Resources\ResourcePreloadOperation.h/.cpp`) loads a list of resources and their dependencies through a batch, then **keeps them loaded for as long as the operation is held**. Whoever started it can then load them synchronously, e.g. `RenderComponent::LoadMesh`, as a cache hit that doesn't stall the main thread. A resource that fails is logged and left out; the operation still succeeds. `HeadlessScene::Preload` uses it for mesh thumbnails.
+`ResourcePreloadOperation` (`Engine\Src\EngineCore\Resources\ResourcePreloadOperation.h/.cpp`) loads a list of resources and their dependencies through a batch, then **keeps them loaded for as long as the operation is held**. Whoever started it can then use them without stalling the main thread:
+- `GetHandle(path)` returns the handle to a resource it was asked for (or one that pulled in) as soon as that has loaded, even while it's still loading others. It returns an empty handle for one that failed, hasn't loaded yet, or wasn't asked for, and loads nothing. The handle is a reference of its own, so it keeps the resource loaded after the operation is gone. This is how a mesh is swapped at runtime: `StaticMeshResource::CreateInstance(handle)`, then `RenderComponent::SetMeshInstance` ([Materials-Meshes-Shaders.md](../04-Rendering/Materials-Meshes-Shaders.md#swapping-a-mesh-at-runtime)).
+- Or load them synchronously, e.g. `RenderComponent::LoadMesh`, as a cache hit.
+
+A resource that fails is logged and left out; the operation still succeeds. `HeadlessScene::Preload` uses it for mesh thumbnails.
 
 ## Releasing resources
 
@@ -117,18 +121,20 @@ sequenceDiagram
 
 Parsing also runs `SceneFormat::Upgrade`, so an older scene file is converted to the current format before anything reads it, and instantiating links each object to its parent by GUID; see [Scene-And-GameObject-Model.md](../03-SceneAndGameObjects/Scene-And-GameObject-Model.md#scene-files).
 
-Components say what they need with a static `GatherResourceDependencies(componentData, outDependencies)` registered with `GameObjectComponentRegistry`; `RenderComponent` lists its mesh. Gathering everything up front is what lets the heavy loading happen before any objects exist.
+Components say what they need with a static `GatherResourceDependencies(componentData, outDependencies)` registered with `GameObjectComponentRegistry`; `RenderComponent` lists its mesh, and the materials and textures its material overrides swap in. Gathering everything up front is what lets the heavy loading happen before any objects exist.
 
 ## Importers (`Engine\Src\Asset\AssetImport\`)
 
-- `MeshAssetImporter` reads the `.meshasset` format back into submesh data.
-- `MaterialAssetImporter` reads `.materialasset` into `MaterialData`, which `MaterialInstance::Create` turns into a material.
-- `StaticMeshResource` (`Engine\Src\Game\StaticMeshResource.h/.cpp`) is the `IResource` that wraps both, and owns the resulting `StaticMeshInstance`. It's what `RenderComponent` holds.
+- `MeshAssetImporter` reads the `.meshasset` format back into submesh data, placements and each submesh's material (name, path and `MaterialData`).
+- `MaterialAssetImporter` reads `.materialasset` (versions 0 to 2) into `MaterialData`, which `MaterialInstance::Create` turns into a material. Older versions read as they drew: version 0 has no blend mode (cutout with an opacity mask, otherwise opaque), and versions 0 and 1 have no tint (white with a diffuse texture, grey without).
+- `StaticMeshResource` (`Engine\Src\Game\StaticMeshResource.h/.cpp`) is the `IResource` for a mesh asset. It makes one shared, immutable `StaticMesh`, and `CreateInstance(handle)` gives each object its own `StaticMeshInstance` of it, holding the handle so the asset stays loaded ([Materials-Meshes-Shaders.md](../04-Rendering/Materials-Meshes-Shaders.md)).
+- `MaterialResource` (`Engine\Src\Graphics\MaterialResource.h/.cpp`) is the `IResource` for one material asset loaded on its own, which a material slot's overrides can swap in.
 
 ## Key files
 
 - `Engine\Src\EngineCore\Resources\ResourceHandler.h/.cpp`, `AsyncResourceBatch.h/.cpp`, `ResourceDependencyList.h`, `ResourcePreloadOperation.h/.cpp`
 - `Engine\Src\EngineCore\Async\` — `AsyncOperation`, `AsyncOperationManager`, `AsyncFrameBudget`, `JobAsyncOperation`, `WeightedProgress`
 - `Engine\Src\Game\SceneLoadOperation.h/.cpp`, `StaticMeshResource.h/.cpp`
+- `Engine\Src\Graphics\MaterialResource.h/.cpp`
 - `Engine\Src\Asset\AssetImport\MeshAssetImporter.h/.cpp`, `MaterialAssetImporter.h/.cpp`
 - `Utils\Src\Utils\Interfaces\Resource.h` — `IResource`

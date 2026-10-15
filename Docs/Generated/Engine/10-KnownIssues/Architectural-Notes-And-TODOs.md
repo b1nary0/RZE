@@ -14,7 +14,7 @@ Rough edges the codebase is candid about (source comments, `#TODO`s), plus a few
 | 6 | No culling or bucketing | Rendering | Medium | **Culling fixed** (10-09); bucketing open |
 | 7 | Linear-scan component lookups | Scene | Low | Open |
 | 8 | Textures aren't burned | Asset pipeline | Medium | Open |
-| 9 | Shadow map misses runtime opacity-map changes | Rendering | Low | Open, noted in source |
+| 9 | Shadow map misses runtime material changes | Rendering | Low | Open, noted in source |
 | 10 | Constant-buffer uploads read past small structs | Renderer | Low | Open |
 | 11 | `LogChannel::Debug`'s colour is out of range | Debug services | Cosmetic | Open |
 | 12 | Camera previews changed the camera temporarily | Components | — | **Fixed** (10-11: editor UI rework) |
@@ -28,6 +28,10 @@ Rough edges the codebase is candid about (source comments, `#TODO`s), plus a few
 | 20 | Every component has `GetLocalBounds`, though few take up space | Components | Low | Open |
 | 21 | `RenderObjectPtr` / `LightObjectPtr` could be copied, and dangled | Rendering | — | **Fixed** (10-13: move-only, lifetime-checked) |
 | 22 | A few long frames remain while thumbnails render | Editor | Low | Open |
+| 23 | Nested types can still describe their own properties | Properties | Low | Open |
+| 24 | `StaticMeshResource` keeps its load state in pending lists | Resources | Low | Open |
+| 25 | Undoing a cleared mesh reloads it synchronously | Editor | Low | Open |
+| 26 | A swapped-in material that's missing is tried twice on scene load | Resources | Cosmetic | Open |
 
 ```mermaid
 quadrantChart
@@ -90,9 +94,9 @@ The 2020 design notes called for both. **Culling** is implemented: objects and t
 
 `AssimpSourceImporter::WriteTextureAsset()` returns `false`. Materials reference textures by path in `Assets\`, and they're decoded at load time rather than conditioned offline (no compression, no pre-built mips). See [Asset-Burning-Pipeline.md](../05-AssetPipeline/Asset-Burning-Pipeline.md).
 
-## 9. Shadow map misses runtime opacity-map changes
+## 9. Shadow map misses runtime material changes
 
-`ShadowRenderStage` only re-renders when the scene's revision (`RenderScene::GetRevision`) changes, and changing a material's opacity map at runtime doesn't bump it. The source notes this gap: the shadow picks up the change at the next scene change. Bump the revision from `MaterialInstance::SetTexture` if it ever matters.
+`ShadowRenderStage` only re-renders when the scene's revision (`RenderScene::GetRevision`) changes, and changing a material at runtime doesn't bump it: its opacity map, or a slot's overrides (`MaterialSlot::SetOverrides`), such as a new blend mode that stops it casting a shadow. The source notes this gap: the shadow picks up the change at the next scene change. Bump the revision when a material or slot changes if it ever matters.
 
 ## 10. Constant-buffer uploads read past small structs
 
@@ -104,7 +108,7 @@ The 2020 design notes called for both. **Culling** is implemented: objects and t
 
 ## 12. Camera previews changed the camera temporarily (fixed)
 
-The old `CameraComponent::OnEditorInspect()` swapped the camera's aspect ratio to render the "Camera View" preview, then restored it. `CameraComponent::RenderPreview()` now builds its own projection and view for the preview and leaves the camera alone; the editor shows the result in a custom inspector section.
+The old `CameraComponent::OnEditorInspect()` swapped the camera's aspect ratio to render the "Camera View" preview, then restored it. `CameraComponent::RenderPreview()` now builds its own projection and view for the preview and leaves the camera alone; the editor shows the result through the camera's `Preview` property.
 
 ## 13. An incremental build once missed a header change
 
@@ -146,6 +150,22 @@ The handles into a `RenderScene` could be copied, so two holders could end up de
 
 Background thumbnail runs keep frames short almost all the time. Over a full run in Release, 3 frames went over 100 ms, the worst at 167 ms, against 962 ms with the old blocking batch. Likely causes are each capture's GPU readback (the render thread waits on the GPU) and resources that don't load asynchronously falling back to a synchronous load. They haven't been profiled yet.
 
+## 23. Nested types can still describe their own properties
+
+Only components should describe properties, since they're what the inspector draws: a nested type is described by the component that owns it (`PropertyBuilder::Array<TElement>`, as `RenderComponent` does for material slots). Nothing enforces it yet. `MaterialInstance` and `Texture2D` still have a `DescribeProperties`, for `GifChatComponent`'s read-only list of its materials. Moving that to the component and making the builder only accept components would close it.
+
+## 24. `StaticMeshResource` keeps its load state in pending lists
+
+Between `LoadCPU` and the last `FinalizeStep`, `StaticMeshResource` holds parallel `m_pending...` vectors (submeshes, materials, placements, finalized submeshes) plus a cursor, and clears them at the end. It works, but the state of a half-loaded mesh is spread over the resource. A small load-state object, created by `LoadCPU` and consumed by finalizing, would make that lifetime explicit.
+
+## 25. Undoing a cleared mesh reloads it synchronously
+
+Clearing a `RenderComponent`'s mesh releases it. Undo sets the path back, which loads it with `RenderComponent::LoadMesh`, synchronously: New Sponza took about 15 s, with the editor not responding. Undo could keep the instance it replaced, or reload through a preload.
+
+## 26. A swapped-in material that's missing is tried twice on scene load
+
+A scene whose material overrides swap in a missing `.materialasset` logs the failure twice: once when the scene load preloads it, then again when the slot applies its override and loads it synchronously. Nothing breaks (the slot draws the mesh's own material), but the log is noisy. The slot could skip a path the preload already failed on.
+
 ## Key files
 
 - `Engine\Src\Game\World\GameObject\GameObjectComponent.h` (1), `GameObject.h` (7)
@@ -160,3 +180,6 @@ Background thumbnail runs keep frames short almost all the time. Over a full run
 - `Engine\Src\Game\World\GameObjectComponents\GifChatComponent.cpp` (18), `Engine\Src\EngineCore\Resources\ResourceHandler.cpp` (19)
 - `Engine\Src\Game\World\GameObject\GameObjectComponent.h` (20), `Engine\Src\Graphics\GraphicsDefines.h` (21)
 - `Editor\Src\Services\ThumbnailRenderer.cpp`, `Engine\Src\Graphics\TextureFile.cpp` (22)
+- `Engine\Src\Game\World\GameObject\Properties\PropertyBuilder.h`, `Engine\Src\Graphics\Material.cpp`, `Texture2D.cpp` (23)
+- `Engine\Src\Game\StaticMeshResource.h/.cpp` (24), `Engine\Src\Game\World\GameObjectComponents\RenderComponent.cpp` (25)
+- `Engine\Src\Graphics\MaterialSlot.cpp` (26)

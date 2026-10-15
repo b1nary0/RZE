@@ -122,6 +122,11 @@ timeline
                : BoundingBox, cached bounds, world matrices worked out when read
                : Thumbnails rendered in the background, as they're needed
                : Settings window (Status-Bar-And-Settings)
+    2026-10-15 : Shared meshes, per-object instances and draws (Materials-Meshes-Shaders)
+               : Material slots, overrides, swaps and tints per object
+               : Editable list elements, overridable and grouped properties (Object Inspector)
+               : Preview properties replace custom inspector sections
+               : Material assets v2 with tints (Asset-Burning-Pipeline)
 ```
 
 | Area | What changed | Read |
@@ -146,6 +151,8 @@ timeline
 | Resources | Loads in flight are shared between batches, and every resource is destroyed only once the render thread is done with it, including at shutdown. | [Asset-Import-Runtime](05-AssetPipeline/Asset-Import-Runtime.md#releasing-resources) |
 | Bounds & transforms | `BoundingBox`; render objects, render scenes and object hierarchies cache their bounds, and moving doesn't rebuild them. World matrices are worked out when read, so they're right without an update. | [Scene-And-GameObject-Model](03-SceneAndGameObjects/Scene-And-GameObject-Model.md#bounds), [Built-In-Components](03-SceneAndGameObjects/Built-In-Components.md#transformcomponent) |
 | Editor chrome | A status bar with background tasks, a status circle, and a history of every step. Edit > Settings opens a window of settings pages (Scene View, Thumbnails). | [Status-Bar-And-Settings](07-Editor/Status-Bar-And-Settings.md) |
+| Meshes & materials | A loaded mesh is one shared `StaticMesh`; each object draws it through its own `StaticMeshInstance`, whose material slots can override any value, swap in another material asset, or tint it, saved with the scene. Meshes free their CPU geometry once uploaded. Meshes swap at runtime through a preload and `SetMeshInstance`. **Re-burn after pulling** for tints (older assets still load as they drew). | [Materials-Meshes-Shaders](04-Rendering/Materials-Meshes-Shaders.md), [Asset-Burning-Pipeline](05-AssetPipeline/Asset-Burning-Pipeline.md) |
+| Inspector, part 2 | Components describe their lists' elements, edited through property paths with undo and multi-select. Properties can be overridable, enums, grouped into sections, disabled for a reason, or previews. A Materials list edits each slot; asset paths show file names with thumbnails and hover previews. | [Object-Inspector-And-Properties](07-Editor/Object-Inspector-And-Properties.md) |
 
 ## Key architectural themes (read this before diving into a section)
 

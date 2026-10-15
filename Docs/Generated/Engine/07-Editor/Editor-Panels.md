@@ -30,7 +30,7 @@ The selection is `EditorSelection`, in the `EditorContext`, so every panel reads
 
 - The **last** object is the **primary** selection. The transform gizmo is on it, the Object Inspector shows its values and the Scene panel's right-click menu acts on it.
 - `Select` / `SetSelection` replace the selection, `Toggle` / `AddToSelection` extend it, `Clear` empties it, `IsSelected` tests one object.
-- Each call that changes it publishes `SelectionChangedEvent`. `SelectionBoundsDisplay` listens and draws every selected object's **mesh bounds** in yellow, through its `RenderComponent`'s "Draw Mesh Bounds" toggle, so the inspector checkbox agrees.
+- Each call that changes it publishes `SelectionChangedEvent`. `SelectionBoundsDisplay` listens and draws every selected object's **mesh bounds** in yellow, through its `RenderComponent`'s "Mesh Bounds" toggle (Debug Draw), so the inspector checkbox agrees.
 - **Escape** (with the SceneView hovered) clears it, and loading or creating a scene clears it.
 
 ```mermaid

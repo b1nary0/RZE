@@ -89,7 +89,7 @@ Optional hooks: `Initialize(context)` (once, after every panel exists), `DrawMen
 
 `PanelManager` creates every registered panel at start-up, sorted by name. Each frame it updates and draws the open ones, builds the Edit, View and Help menu items from their `MenuPath`s, and, when `imgui.ini` has no saved layout, docks each panel into its `DefaultDock` slot.
 
-> **Registration and linking.** `REGISTER_EDITOR_PANEL` (and `REGISTER_COMPONENT_INSPECTOR`, `REGISTER_SETTINGS_PAGE`) register from static initializers that nothing else references. The Editor's code is built as the `EditorLib` static library (so [the unit tests](../01-GettingStarted/Building-And-Running.md#unit-tests) can link it), and a linker drops unreferenced objects from a library, so `Editor` links `EditorLib` with `/WHOLEARCHIVE` to keep them. Anything else that links `EditorLib`, such as `UnitTests`, gets no panels unless it does the same.
+> **Registration and linking.** `REGISTER_EDITOR_PANEL` (and `REGISTER_SETTINGS_PAGE`) register from static initializers that nothing else references. The Editor's code is built as the `EditorLib` static library (so [the unit tests](../01-GettingStarted/Building-And-Running.md#unit-tests) can link it), and a linker drops unreferenced objects from a library, so `Editor` links `EditorLib` with `/WHOLEARCHIVE` to keep them. Anything else that links `EditorLib`, such as `UnitTests`, gets no panels unless it does the same.
 
 ## When things run in a frame
 

@@ -16,7 +16,7 @@ flowchart TD
     subgraph Runtime["Runtime: Engine"]
         Mesh --> RI["MeshAssetImporter /<br/>MaterialAssetImporter"]
         Mat --> RI
-        RI --> Live["StaticMeshInstance +<br/>MaterialInstance"]
+        RI --> Live["StaticMesh +<br/>MaterialInstance"]
     end
     Tex["RZE/Assets/** textures"] -.->|"referenced by path,<br/>not burned"| Live
 ```
@@ -30,13 +30,18 @@ The offline and runtime halves share only the binary format, not code paths. Loa
 .\RZE\_build\debug\SourceAssetBurner.exe <file>     # burn one source file
 ```
 
-It takes about 15 seconds for everything. **`ProjectData/` isn't tracked in git**, so burn once after cloning, and again after pulling any change to the importer, such as the coordinate fix below. Burns are **deterministic**: burning the same source twice gives byte-identical files.
+It takes about a minute for everything (most of it New Sponza's FBX). **`ProjectData/` isn't tracked in git**, so burn once after cloning, and again after pulling any change to the importer, such as the coordinate fix below. Burns are **deterministic**: burning the same source twice gives byte-identical files.
 
 ## What the importer does (`AssimpSourceImporter`)
 
 1. **Read** with Assimp: `aiProcessPreset_TargetRealtime_Fast | aiProcess_FlipUVs | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph | aiProcess_GlobalScale`.
 2. **Walk the node graph** (`ProcessNode` / `ProcessMesh`): per-vertex position, normal, UV and tangent, plus indices, into `MeshData`. Missing normals are tolerated.
-3. **Read materials**: shininess (Assimp 6 reports a raw Phong exponent, ×4 for the engine's Blinn-Phong), opacity, and texture paths. glTF-style materials fall back to `BASE_COLOR` / `NORMAL_CAMERA`. A bit set records which textures exist:
+3. **Read materials**: shininess (Assimp 6 reports a raw Phong exponent, ×4 for the engine's Blinn-Phong), opacity, blend mode, tint and texture paths. glTF-style materials fall back to `BASE_COLOR` / `NORMAL_CAMERA`. Each source says these in its own way, so `SourceMaterialRules` (in the engine library, so it's unit tested) turns what Assimp reads into ours:
+    - **Opacity:** OBJ's opacity first, then FBX's transparency factor, then 3ds Max's physical transparency.
+    - **Blend mode:** a cutout mask makes a cutout, and a coverage mask (3ds Max's `transparency_map`) blends. Without a mask, anything short of solid blends.
+    - **Tint:** white with a diffuse texture, since sources often keep a default grey beside one (Sponza's `Kd 0.588`), which would only darken it. Otherwise the diffuse colour (grey without one), mixed toward 3ds Max's transmission colour (`trans_color`) by how much transmits, so New Sponza's glass is light blue.
+
+    A bit set records which textures exist:
 
     | Flag | Texture |
     |---|---|
@@ -46,6 +51,7 @@ It takes about 15 seconds for everything. **`ProjectData/` isn't tracked in git*
     | `TEXTUREFLAG_OPACITY` | cutout mask |
     | `TEXTUREFLAG_HEIGHT` | height map |
     | `TEXTUREFLAG_OPACITY_IN_ALPHA` | the cutout is the diffuse texture's alpha |
+    | `TEXTUREFLAG_INVERT_OPACITY` | the mask's white means see-through (3ds Max `transparency_map`) |
 
     These flags decide the material's pixel shader at runtime ([Materials-Meshes-Shaders.md](../04-Rendering/Materials-Meshes-Shaders.md)).
 4. **Check the size**: if the model's largest dimension is under 1 cm or over 500 m, it logs a warning that the source probably isn't in metres. It still imports as-is; scale it per instance in the Editor, where the RenderComponent inspector shows the size in metres.
@@ -88,7 +94,22 @@ per mesh:
     index-data length + raw U32 array bytes
 ```
 
-Materials are hand-serialised with `ByteStream` to `ProjectData\Material\<Model>\<Material>.materialasset` (JSON was tried first and was too large).
+Materials are hand-serialised with `ByteStream` to `ProjectData\Material\<Model>\<Material>.materialasset` (JSON was tried first and was too large). The format lives in `MaterialAssetWriter.h` and `MaterialAssetImporter.cpp` only:
+
+```
+U32 magic "RZMT", U16 version (2)
+name (size_t length + bytes), MaterialProperties { Shininess, Opacity }, U8 texture flags, U8 blend mode,
+float tint red, green, blue
+size_t texture count, then each texture path (size_t length + bytes)
+```
+
+| Version | Added | Older files read as |
+|---|---|---|
+| 0 | (no header: starts with its size) | |
+| 1 | magic and version, blend mode | cutout with an opacity mask, opaque without |
+| 2 | tint | white with a diffuse texture, grey (0.5) without: what they drew with |
+
+Older files keep loading, so a re-burn is only needed to pick up the new values.
 
 ## Output layout
 
@@ -101,5 +122,5 @@ This is the "cooked" counterpart of `RZE\Assets\3D\`. The Editor reads it from t
 
 - `SourceAssetBurner\Src\SourceAssetBurner\SourceAssetBurnerMain.cpp`
 - `SourceAssetBurner\Src\SourceAssetBurner\Importers\SourceImporter.h`, `AssimpSourceImporter.h/.cpp`
-- `Engine\Src\Asset\AssetImport\AssetWriter.h`, `MeshAssetWriter.h/.cpp`
+- `Engine\Src\Asset\AssetImport\AssetWriter.h`, `MeshAssetWriter.h/.cpp`, `MaterialAssetWriter.h/.cpp`, `SourceMaterialRules.h/.cpp`
 - `Utils\Src\Utils\Math\Units.h` — the unit and axis conventions
