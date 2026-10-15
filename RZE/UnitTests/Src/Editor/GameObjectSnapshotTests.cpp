@@ -192,3 +192,20 @@ TEST_CASE_FIXTURE(SnapshotFixture, "A copy takes its original's elements' values
 	// EditorOnly, like a component's own
 	CHECK_FALSE(copied->GetParts()[0].IsLocked());
 }
+
+TEST_CASE_FIXTURE(SnapshotFixture, "A copy takes only the overridden values, leaving the rest to its own base")
+{
+	GameObjectPtr original = AddWithTestComponent("Crate");
+	GameObjectComponentPtr<TestComponent> component = original->GetComponent<TestComponent>();
+	component->SetPartCount(2);
+	component->GetParts()[0].SetMass(5.0f);
+
+	GameObjectPtr copy = Paste(original);
+
+	GameObjectComponentPtr<TestComponent> copied = copy->GetComponent<TestComponent>();
+	REQUIRE(copied != nullptr);
+	REQUIRE(copied->GetParts().size() == 2);
+	CHECK(copied->GetParts()[0].IsMassOverridden());
+	CHECK(copied->GetParts()[0].GetMass() == 5.0f);
+	CHECK_FALSE(copied->GetParts()[1].IsMassOverridden());
+}

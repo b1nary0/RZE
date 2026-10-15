@@ -31,6 +31,20 @@ namespace Editor
 		// Shows text as a tooltip while the last item is hovered; does nothing for null or empty text
 		void ItemTooltip(const char* text);
 
+		// Small icons drawn with lines, since the editor's fonts only have Latin glyphs
+		enum class EIcon
+		{
+			// A circular arrow: back to how it was
+			Reset,
+			// A cross: empty it
+			Clear
+		};
+
+		// A square, frame-height button showing icon, with tooltip on hover; true on the frame it's clicked
+		bool IconButton(const char* id, EIcon icon, const char* tooltip = nullptr);
+		// The width an IconButton takes
+		float GetIconButtonWidth();
+
 		// A radio button that selects option into value; true on the frame it's clicked
 		template <typename T>
 		bool RadioOption(const char* label, T& value, T option)
@@ -74,7 +88,8 @@ namespace Editor
 		void EndPropertyTable();
 
 		// Starts a row, draws its label in the label column (shown in full on hover when it doesn't fit, or tooltip
-		// if there is one) and moves to the value column, sized for a full-width widget
-		void PropertyRow(const char* label, const char* tooltip = nullptr);
+		// if there is one) and moves to the value column, sized for a full-width widget. labelIndent indents the
+		// label, e.g. under a group's sub-heading.
+		void PropertyRow(const char* label, const char* tooltip = nullptr, float labelIndent = 0.0f);
 	}
 }

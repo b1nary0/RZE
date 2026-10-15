@@ -8,9 +8,11 @@
 
 namespace
 {
-	bool IsCopied(const PropertyDescriptor& property)
+	// An overridable value is only copied when it's overridden: otherwise it comes from the copy's own base
+	bool IsCopied(const PropertyDescriptor& property, const void* object)
 	{
-		return property.Set && !property.IsExclusive && !property.IsEditorOnly;
+		return property.Set && !property.IsExclusive && !property.IsEditorOnly
+			&& (!property.IsOverridable() || property.IsOverridden(object));
 	}
 
 	// The copied properties of each element of object's editable Arrays (and theirs, nested), whose properties are
@@ -24,7 +26,7 @@ namespace
 			const PropertyDescriptor& property = type.Properties[propertyIndex];
 			const PropertyPath path = parentPath != nullptr ? parentPath->Nested(elementKey, propertyIndex) : PropertyPath(propertyIndex);
 
-			if (parentPath != nullptr && IsCopied(property))
+			if (parentPath != nullptr && IsCopied(property, object))
 			{
 				outValues.emplace_back(path, property.Get(object));
 			}
@@ -81,7 +83,7 @@ namespace Editor
 				for (size_t index = 0; index < properties.size(); ++index)
 				{
 					const PropertyDescriptor& property = properties[index];
-					if (IsCopied(property))
+					if (IsCopied(property, object))
 					{
 						componentValues.Values.emplace_back(PropertyPath(index), property.Get(object));
 					}

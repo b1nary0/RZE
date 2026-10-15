@@ -274,6 +274,47 @@ public:
 			};
 	}
 
+	// A small image shown beside an instance's name; getter takes the object and returns a PropertyTexture
+	template <typename TGetter>
+	void Icon(TGetter getter)
+	{
+		m_description.GetIcon = [getter](const void* object) -> PropertyTexture
+			{
+				return PropertyTexture(getter(*static_cast<const TObject*>(object)));
+			};
+	}
+
+	// A value with no getter and setter of its own (e.g. one worked out from a base and an override): getter takes
+	// the object and returns a TValue, setter takes it non-const and a const TValue&
+	template <typename TValue, typename TGetter, typename TSetter>
+	PropertyDescriptor& Value(const char* name, TGetter getter, TSetter setter)
+	{
+		PropertyDescriptor& descriptor = Value<TValue>(name, getter);
+		descriptor.Set = [setter](void* object, const PropertyValue& value)
+			{
+				setter(*static_cast<TObject*>(object), std::get<TValue>(value));
+			};
+		return descriptor;
+	}
+
+	// One of a fixed set of options, shown as a drop-down. names are the options in the order of TEnum's values,
+	// which must be 0, 1, 2, ...; getter takes the object and returns a TEnum; setter takes it non-const and a TEnum.
+	template <typename TEnum, typename TGetter, typename TSetter>
+	PropertyDescriptor& Enum(const char* name, std::vector<std::string>&& names, TGetter getter, TSetter setter)
+	{
+		PropertyDescriptor& descriptor = AddDescriptor(name, EPropertyType::Enum);
+		descriptor.EnumNames = std::move(names);
+		descriptor.Get = [getter](const void* object) -> PropertyValue
+			{
+				return PropertyValue(static_cast<int>(getter(*static_cast<const TObject*>(object))));
+			};
+		descriptor.Set = [setter](void* object, const PropertyValue& value)
+			{
+				setter(*static_cast<TObject*>(object), static_cast<TEnum>(std::get<int>(value)));
+			};
+		return descriptor;
+	}
+
 private:
 	PropertyDescriptor& AddDescriptor(const char* name, EPropertyType type)
 	{

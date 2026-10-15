@@ -42,7 +42,7 @@ struct PropertyTexture
 };
 
 // A property's value, type-erased so tools can read and write any described type's properties without knowing the
-// type. The alternatives' order matches EPropertyType.
+// type. The alternatives' order matches EPropertyType's, up to Texture; an Enum's value is an int.
 using PropertyValue = std::variant<bool, int, float, Vector3D, Vector4D, std::string, Filepath, ObjectRef, std::vector<ObjectRef>, PropertyTexture>;
 
 enum class EPropertyType
@@ -60,7 +60,9 @@ enum class EPropertyType
 	// A list of described objects, each shown nested; editable if the property has GetMutable
 	Array,
 	// An image; read-only
-	Texture
+	Texture,
+	// One of a fixed set of named options (PropertyDescriptor::EnumNames), as an int: the option's index
+	Enum
 };
 
 // A hint for how an editor should show the value; types without a matching widget fall back to their default
@@ -83,6 +85,9 @@ struct PropertyDescriptor
 	using Setter = std::function<void(void* object, const PropertyValue&)>;
 	// For an editable Array: like Getter, but the refs' MutableObject is set
 	using MutableGetter = std::function<PropertyValue(void* object)>;
+	using ObjectQuery = std::function<bool(const void* object)>;
+	using ObjectAction = std::function<void(void* object)>;
+	using PreviewGetter = std::function<PropertyTexture(const void* object)>;
 
 	std::string Name;
 	EPropertyType Type = EPropertyType::Float;
@@ -120,11 +125,34 @@ struct PropertyDescriptor
 	std::string AssetDescription;
 	std::string AssetDirectory;
 	std::string AssetFilter;
+	// For AssetPath properties: a small image of the asset, from the object (e.g. its loaded texture); null for none
+	PreviewGetter GetPreview;
+	// For AssetPath properties: tools can clear it (set an empty Filepath)
+	bool IsClearable = false;
+
+	// For Enum properties: the options' names, in the order of their values (0, 1, 2, ...)
+	std::vector<std::string> EnumNames;
+
+	// For a value that comes from a base unless the object overrides it (e.g. a material slot's values over the
+	// shared material's): whether it's overridden, and how to go back to the base. Tools mark overridden values and
+	// can reset them, undo can return to "not overridden", and copies only take overridden values. Both null for
+	// anything else.
+	ObjectQuery IsOverridden;
+	ObjectAction Reset;
+
+	// Whether tools let it be changed at the moment (e.g. a material's opacity only matters when it's blended); null
+	// means always. When it isn't, it's shown read-only, with DisabledReason as its tooltip.
+	ObjectQuery IsEnabled;
+	std::string DisabledReason;
+
+	// Shown under a sub-heading of this name, with the properties next to it that share it; empty for none
+	std::string Group;
 
 	// Whether tools let the user change it
 	bool IsEditable() const { return Set && !IsReadOnly; }
 	// Whether tools can reach into its elements to set their properties
 	bool HasEditableElements() const { return static_cast<bool>(GetMutable); }
+	bool IsOverridable() const { return IsOverridden && Reset; }
 	bool HasRange() const { return Min < Max; }
 
 	PropertyDescriptor& Range(float min, float max) { Min = min; Max = max; return *this; }
@@ -142,6 +170,38 @@ struct PropertyDescriptor
 		AssetFilter = filter;
 		return *this;
 	}
+	PropertyDescriptor& Clearable() { IsClearable = true; return *this; }
+	PropertyDescriptor& InGroup(const char* group) { Group = group; return *this; }
+
+	// The typed metadata below takes functions of the described type, TObject, which must be given explicitly, e.g.
+	// .Overridable<MaterialSlot>(...)
+
+	// isOverridden takes the object and returns whether it overrides the value; reset takes it non-const and goes
+	// back to the base. See IsOverridden.
+	template <typename TObject, typename TIsOverridden, typename TReset>
+	PropertyDescriptor& Overridable(TIsOverridden isOverridden, TReset reset)
+	{
+		IsOverridden = [isOverridden](const void* object) { return static_cast<bool>(isOverridden(*static_cast<const TObject*>(object))); };
+		Reset = [reset](void* object) { reset(*static_cast<TObject*>(object)); };
+		return *this;
+	}
+
+	// isEnabled takes the object and returns whether the value can be changed; reason says why it can't
+	template <typename TObject, typename TIsEnabled>
+	PropertyDescriptor& EnabledIf(TIsEnabled isEnabled, const char* reason)
+	{
+		IsEnabled = [isEnabled](const void* object) { return static_cast<bool>(isEnabled(*static_cast<const TObject*>(object))); };
+		DisabledReason = reason;
+		return *this;
+	}
+
+	// For AssetPath properties: getter takes the object and returns a PropertyTexture of the asset
+	template <typename TObject, typename TGetter>
+	PropertyDescriptor& Preview(TGetter getter)
+	{
+		GetPreview = [getter](const void* object) { return PropertyTexture(getter(*static_cast<const TObject*>(object))); };
+		return *this;
+	}
 };
 
 // Everything described about a type: its properties, and optionally a name to show for an instance of it (e.g. a
@@ -149,7 +209,10 @@ struct PropertyDescriptor
 struct TypeDescription
 {
 	using DisplayNameGetter = std::function<std::string(const void* object)>;
+	using IconGetter = std::function<PropertyTexture(const void* object)>;
 
 	std::vector<PropertyDescriptor> Properties;
 	DisplayNameGetter GetDisplayName;
+	// A small image shown beside an instance's name (e.g. a material slot's diffuse texture); null for none
+	IconGetter GetIcon;
 };

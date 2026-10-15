@@ -1,5 +1,7 @@
 #include <UI/Framework/EditorUI.h>
 
+#include <Utils/Math/Math.h>
+
 #include <algorithm>
 
 namespace
@@ -28,6 +30,59 @@ namespace Editor
 			{
 				ImGui::SetTooltip("%s", text);
 			}
+		}
+
+		bool IconButton(const char* id, EIcon icon, const char* tooltip)
+		{
+			const float size = GetIconButtonWidth();
+			const bool isClicked = ImGui::InvisibleButton(id, ImVec2(size, size));
+			const bool isHovered = ImGui::IsItemHovered();
+			ItemTooltip(tooltip);
+
+			ImDrawList* const drawList = ImGui::GetWindowDrawList();
+			const ImVec2 min = ImGui::GetItemRectMin();
+			const ImVec2 max = ImGui::GetItemRectMax();
+			if (isHovered)
+			{
+				drawList->AddRectFilled(min, max, ImGui::GetColorU32(ImGuiCol_ButtonHovered), ImGui::GetStyle().FrameRounding);
+			}
+
+			const ImU32 colour = ImGui::GetColorU32(isHovered ? k_accentHoveredColour : ImGui::GetStyleColorVec4(ImGuiCol_Text));
+			const ImVec2 centre((min.x + max.x) * 0.5f, (min.y + max.y) * 0.5f);
+			const float radius = size * 0.26f;
+			const float thickness = 1.5f;
+
+			switch (icon)
+			{
+			case EIcon::Reset:
+			{
+				// Three quarters of a circle from the top round clockwise to the left, with an arrowhead at the top
+				// pointing back (anticlockwise)
+				const float start = -MathUtils::Pi * 0.5f;
+				drawList->PathArcTo(centre, radius, start, start + MathUtils::Pi * 1.5f, 16);
+				drawList->PathStroke(colour, ImDrawFlags_None, thickness);
+
+				const ImVec2 top(centre.x, centre.y - radius);
+				const float head = radius * 0.7f;
+				drawList->AddTriangleFilled(ImVec2(top.x - head, top.y), ImVec2(top.x + head * 0.35f, top.y - head * 0.65f),
+					ImVec2(top.x + head * 0.35f, top.y + head * 0.65f), colour);
+				break;
+			}
+			case EIcon::Clear:
+			{
+				const float arm = radius * 0.85f;
+				drawList->AddLine(ImVec2(centre.x - arm, centre.y - arm), ImVec2(centre.x + arm, centre.y + arm), colour, thickness);
+				drawList->AddLine(ImVec2(centre.x - arm, centre.y + arm), ImVec2(centre.x + arm, centre.y - arm), colour, thickness);
+				break;
+			}
+			}
+
+			return isClicked;
+		}
+
+		float GetIconButtonWidth()
+		{
+			return ImGui::GetFrameHeight();
 		}
 
 		ImU32 WithAlpha(const ImVec4& colour, float alpha)
@@ -92,11 +147,15 @@ namespace Editor
 			ImGui::EndTable();
 		}
 
-		void PropertyRow(const char* label, const char* tooltip)
+		void PropertyRow(const char* label, const char* tooltip, float labelIndent)
 		{
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
 			ImGui::AlignTextToFramePadding();
+			if (labelIndent > 0.0f)
+			{
+				ImGui::SetCursorPosX(ImGui::GetCursorPosX() + labelIndent);
+			}
 			ImGui::TextUnformatted(label);
 
 			if (tooltip != nullptr && tooltip[0] != '\0')

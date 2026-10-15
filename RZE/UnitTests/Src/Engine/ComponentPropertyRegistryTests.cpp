@@ -95,7 +95,7 @@ TEST_CASE("An editable Array's elements are described by the component and keyed
 	REQUIRE(parts.Type == EPropertyType::Array);
 	CHECK(parts.HasEditableElements());
 	REQUIRE(parts.ElementType != nullptr);
-	CHECK(parts.ElementType->Properties.size() == 2);
+	CHECK(parts.ElementType->Properties.size() == TestComponent::PartPropertyCount);
 
 	TestComponent component;
 	component.SetPartCount(2);
@@ -161,4 +161,62 @@ TEST_CASE("Paths are equal when they lead through the same properties and elemen
 	CHECK(weight.IsNested());
 	CHECK_FALSE(PropertyPath(TestComponent::Speed).IsNested());
 	CHECK(PropertyPath(TestComponent::Speed) == PropertyPath(TestComponent::Speed));
+}
+
+TEST_CASE("An overridable value reports and resets its override")
+{
+	RegisterTestComponents();
+	const std::vector<PropertyDescriptor>& properties = *ComponentPropertyRegistry::GetProperties(TestComponent::GetID());
+	const PropertyDescriptor& mass = properties[TestComponent::Parts].ElementType->Properties[TestComponent::PartMass];
+	REQUIRE(mass.IsOverridable());
+	CHECK(mass.IsEditable());
+	CHECK(mass.Group == "Physics");
+
+	TestPart part("Part0");
+	CHECK_FALSE(mass.IsOverridden(&part));
+	CHECK(std::get<float>(mass.Get(&part)) == TestPart::k_baseMass);
+
+	mass.Set(&part, PropertyValue(5.0f));
+	CHECK(mass.IsOverridden(&part));
+	CHECK(std::get<float>(mass.Get(&part)) == 5.0f);
+
+	mass.Reset(&part);
+	CHECK_FALSE(mass.IsOverridden(&part));
+	CHECK(std::get<float>(mass.Get(&part)) == TestPart::k_baseMass);
+
+	// Nothing else is overridable
+	CHECK_FALSE(properties[TestComponent::Speed].IsOverridable());
+}
+
+TEST_CASE("A value can be disabled for a reason, depending on the object")
+{
+	RegisterTestComponents();
+	const std::vector<PropertyDescriptor>& properties = *ComponentPropertyRegistry::GetProperties(TestComponent::GetID());
+	const PropertyDescriptor& mass = properties[TestComponent::Parts].ElementType->Properties[TestComponent::PartMass];
+	REQUIRE(mass.IsEnabled);
+
+	TestPart part("Part0");
+	CHECK(mass.IsEnabled(&part));
+	part.SetLocked(true);
+	CHECK_FALSE(mass.IsEnabled(&part));
+	CHECK(mass.DisabledReason == "Unlock the part to change its mass");
+
+	// Without a condition, it's always enabled
+	CHECK_FALSE(properties[TestComponent::Speed].IsEnabled);
+}
+
+TEST_CASE("An enum is its option's index, with the options' names")
+{
+	RegisterTestComponents();
+	const std::vector<PropertyDescriptor>& properties = *ComponentPropertyRegistry::GetProperties(TestComponent::GetID());
+	const PropertyDescriptor& shape = properties[TestComponent::Parts].ElementType->Properties[TestComponent::PartShape];
+	REQUIRE(shape.Type == EPropertyType::Enum);
+	REQUIRE(shape.EnumNames.size() == 3);
+	CHECK(shape.EnumNames[2] == "Capsule");
+
+	TestPart part("Part0");
+	CHECK(std::get<int>(shape.Get(&part)) == 0);
+	shape.Set(&part, PropertyValue(2));
+	CHECK(part.GetShape() == TestPart::EShape::Capsule);
+	CHECK(std::get<int>(shape.Get(&part)) == 2);
 }

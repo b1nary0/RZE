@@ -3,6 +3,7 @@
 #include <Services/FolderListing.h>
 #include <Services/Thumbnails.h>
 #include <UI/Framework/EditorContext.h>
+#include <UI/Framework/EditorUI.h>
 
 #include <Utils/Math/Math.h>
 
@@ -35,12 +36,12 @@ namespace
 	// Drags and sliders apply as they move.
 	constexpr ImGuiInputTextFlags k_commitOnEnter = ImGuiInputTextFlags_EnterReturnsTrue;
 
-	bool DrawBool(Editor::EditorContext& context, const PropertyDescriptor& property, PropertyValue& value, bool isReadOnly)
+	bool DrawBool(Editor::EditorContext& context, const PropertyDescriptor& property, const void* object, PropertyValue& value, bool isReadOnly)
 	{
 		return ImGui::Checkbox("##value", &std::get<bool>(value));
 	}
 
-	bool DrawInt(Editor::EditorContext& context, const PropertyDescriptor& property, PropertyValue& value, bool isReadOnly)
+	bool DrawInt(Editor::EditorContext& context, const PropertyDescriptor& property, const void* object, PropertyValue& value, bool isReadOnly)
 	{
 		int& intValue = std::get<int>(value);
 		const int min = static_cast<int>(property.Min);
@@ -68,7 +69,7 @@ namespace
 		return changed;
 	}
 
-	bool DrawFloat(Editor::EditorContext& context, const PropertyDescriptor& property, PropertyValue& value, bool isReadOnly)
+	bool DrawFloat(Editor::EditorContext& context, const PropertyDescriptor& property, const void* object, PropertyValue& value, bool isReadOnly)
 	{
 		float& floatValue = std::get<float>(value);
 
@@ -118,7 +119,7 @@ namespace
 		return changed;
 	}
 
-	bool DrawVector3(Editor::EditorContext& context, const PropertyDescriptor& property, PropertyValue& value, bool isReadOnly)
+	bool DrawVector3(Editor::EditorContext& context, const PropertyDescriptor& property, const void* object, PropertyValue& value, bool isReadOnly)
 	{
 		Vector3D& vector = std::get<Vector3D>(value);
 		if (property.Widget == EPropertyWidget::Colour)
@@ -128,7 +129,7 @@ namespace
 		return DrawFloats(property, vector.GetValuePtr(), 3);
 	}
 
-	bool DrawVector4(Editor::EditorContext& context, const PropertyDescriptor& property, PropertyValue& value, bool isReadOnly)
+	bool DrawVector4(Editor::EditorContext& context, const PropertyDescriptor& property, const void* object, PropertyValue& value, bool isReadOnly)
 	{
 		Vector4D& vector = std::get<Vector4D>(value);
 		if (property.Widget == EPropertyWidget::Colour)
@@ -138,7 +139,7 @@ namespace
 		return DrawFloats(property, vector.GetValuePtr(), 4);
 	}
 
-	bool DrawString(Editor::EditorContext& context, const PropertyDescriptor& property, PropertyValue& value, bool isReadOnly)
+	bool DrawString(Editor::EditorContext& context, const PropertyDescriptor& property, const void* object, PropertyValue& value, bool isReadOnly)
 	{
 		std::string& stringValue = std::get<std::string>(value);
 		if (isReadOnly)
@@ -158,13 +159,33 @@ namespace
 		return false;
 	}
 
-	// The path, and a button that picks a new one in the file browser
-	bool DrawAssetPath(Editor::EditorContext& context, const PropertyDescriptor& property, PropertyValue& value, bool isReadOnly)
+	// A preview of the asset (if the property has one), the path, a button that picks a new one in the file browser,
+	// and one that clears it (if the property allows it). Fits the item width it's given, so the inspector can leave
+	// room beside it.
+	bool DrawAssetPath(Editor::EditorContext& context, const PropertyDescriptor& property, const void* object, PropertyValue& value, bool isReadOnly)
 	{
 		Filepath& path = std::get<Filepath>(value);
+		const float spacing = ImGui::GetStyle().ItemInnerSpacing.x;
+		float width = ImGui::CalcItemWidth();
 
-		const char* const browseLabel = "...";
-		const float browseWidth = ImGui::CalcTextSize(browseLabel).x + ImGui::GetStyle().FramePadding.x * 2.0f;
+		if (property.GetPreview)
+		{
+			const float previewSize = ImGui::GetFrameHeight();
+			const ImVec2 previewStart = ImGui::GetCursorScreenPos();
+			const PropertyTexture preview = property.GetPreview(object);
+			if (preview.Handle.IsValid() && preview.Size.X() > 0.0f && preview.Size.Y() > 0.0f)
+			{
+				Editor::PropertyDrawers::DrawTexture(preview, previewSize);
+			}
+			else
+			{
+				// An empty slot keeps its place, so paths line up whether or not they have an image
+				ImGui::GetWindowDrawList()->AddRect(previewStart, ImVec2(previewStart.x + previewSize, previewStart.y + previewSize),
+					ImGui::GetColorU32(ImGuiCol_Border), ImGui::GetStyle().FrameRounding);
+			}
+			ImGui::SetCursorScreenPos(ImVec2(previewStart.x + previewSize + spacing, previewStart.y));
+			width -= previewSize + spacing;
+		}
 
 		std::string displayPath = path.IsValid() ? path.GetRelativePath() : "(none)";
 		if (isReadOnly)
@@ -174,7 +195,16 @@ namespace
 			return false;
 		}
 
-		ImGui::SetNextItemWidth(std::max(1.0f, ImGui::GetContentRegionAvail().x - browseWidth - ImGui::GetStyle().ItemInnerSpacing.x));
+		const char* const browseLabel = "...";
+		const float browseWidth = ImGui::CalcTextSize(browseLabel).x + ImGui::GetStyle().FramePadding.x * 2.0f;
+		const bool canClear = property.IsClearable && path.IsValid();
+		width -= browseWidth + spacing;
+		if (canClear)
+		{
+			width -= Editor::EditorUI::GetIconButtonWidth() + spacing;
+		}
+
+		ImGui::SetNextItemWidth(std::max(1.0f, width));
 		ImGui::InputText("##path", displayPath.data(), displayPath.size() + 1, ImGuiInputTextFlags_ReadOnly);
 		if (ImGui::IsItemHovered() && path.IsValid())
 		{
@@ -199,11 +229,48 @@ namespace
 			browser.Open(std::move(request));
 		}
 
+		if (canClear)
+		{
+			ImGui::SameLine(0.0f, spacing);
+			if (Editor::EditorUI::IconButton("##clear", Editor::EditorUI::EIcon::Clear, "Clear"))
+			{
+				path = Filepath();
+				return true;
+			}
+		}
+
 		// The pick comes back on a later frame, once the browser closes
 		return browser.ConsumeResult(browseID, path);
 	}
 
-	bool DrawTextureProperty(Editor::EditorContext& context, const PropertyDescriptor& property, PropertyValue& value, bool isReadOnly)
+	// A drop-down of the property's EnumNames
+	bool DrawEnum(Editor::EditorContext& context, const PropertyDescriptor& property, const void* object, PropertyValue& value, bool isReadOnly)
+	{
+		int& index = std::get<int>(value);
+		const bool isKnown = index >= 0 && index < static_cast<int>(property.EnumNames.size());
+
+		bool changed = false;
+		if (ImGui::BeginCombo("##value", isKnown ? property.EnumNames[index].c_str() : "(unknown)"))
+		{
+			for (int option = 0; option < static_cast<int>(property.EnumNames.size()); ++option)
+			{
+				const bool isSelected = option == index;
+				if (ImGui::Selectable(property.EnumNames[option].c_str(), isSelected) && !isSelected)
+				{
+					index = option;
+					changed = true;
+				}
+				if (isSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
+		}
+		return changed;
+	}
+
+	bool DrawTextureProperty(Editor::EditorContext& context, const PropertyDescriptor& property, const void* object, PropertyValue& value, bool isReadOnly)
 	{
 		Editor::PropertyDrawers::DrawTexture(std::get<PropertyTexture>(value));
 		return false;
@@ -221,6 +288,7 @@ namespace
 			{ EPropertyType::String, &DrawString },
 			{ EPropertyType::AssetPath, &DrawAssetPath },
 			{ EPropertyType::Texture, &DrawTextureProperty },
+			{ EPropertyType::Enum, &DrawEnum },
 		};
 		return s_drawers;
 	}

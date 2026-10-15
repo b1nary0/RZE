@@ -13,6 +13,8 @@
 #include <ImGui/imgui_internal.h> // ImGuiItemFlags_MixedValue
 
 #include <algorithm>
+#include <cctype>
+#include <cstring>
 #include <string>
 
 namespace
@@ -28,6 +30,7 @@ namespace
 		case EPropertyType::Float:
 		case EPropertyType::Vector3:
 		case EPropertyType::Vector4:
+		case EPropertyType::Enum:
 			return true;
 		default:
 			return false;
@@ -37,6 +40,28 @@ namespace
 	std::string GetDisplayName(const ObjectRef& ref)
 	{
 		return ref.IsValid() && ref.Type->GetDisplayName ? ref.Type->GetDisplayName(ref.Object) : std::string();
+	}
+
+	// Whether text contains part, ignoring case; true for an empty part
+	bool ContainsIgnoringCase(const std::string& text, const std::string& part)
+	{
+		const auto lower = [](char character) { return static_cast<char>(std::tolower(static_cast<unsigned char>(character))); };
+		return std::search(text.begin(), text.end(), part.begin(), part.end(),
+			[&lower](char a, char b) { return lower(a) == lower(b); }) != text.end();
+	}
+
+	// How many of the type's values object overrides
+	size_t CountOverridden(const TypeDescription& type, const void* object)
+	{
+		size_t count = 0;
+		for (const PropertyDescriptor& property : type.Properties)
+		{
+			if (property.IsOverridable() && property.IsOverridden(object))
+			{
+				++count;
+			}
+		}
+		return count;
 	}
 
 	// A property's label when the selected components' values differ
@@ -162,12 +187,28 @@ namespace Editor
 	void PropertyInspector::DrawProperties(EditorContext& context, const TypeDescription& type, const void* object, const PathPrefix& prefix,
 		const ComponentList* editableComponents)
 	{
+		// The group the rows drawn so far are in, so a sub-heading only starts a group
+		std::string currentGroup;
+
 		for (size_t propertyIndex = 0; propertyIndex < type.Properties.size(); ++propertyIndex)
 		{
 			const PropertyDescriptor& property = type.Properties[propertyIndex];
 			const PropertyPath path = prefix.PathTo(propertyIndex);
 
 			ImGui::PushID(static_cast<int>(propertyIndex));
+
+			if (property.Group != currentGroup)
+			{
+				currentGroup = property.Group;
+				if (!currentGroup.empty())
+				{
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0);
+					ImGui::AlignTextToFramePadding();
+					ImGui::TextDisabled("%s", currentGroup.c_str());
+				}
+			}
+			const float labelIndent = property.Group.empty() ? 0.0f : ImGui::GetStyle().IndentSpacing;
 
 			if (property.Type == EPropertyType::Object)
 			{
@@ -186,7 +227,25 @@ namespace Editor
 
 				ImGui::TableNextRow();
 				ImGui::TableSetColumnIndex(0);
-				const bool isOpen = ImGui::TreeNodeEx("##array", ImGuiTreeNodeFlags_SpanAllColumns, "%s (%d)", property.Name.c_str(), static_cast<int>(elements.size()));
+				const bool isOpen = ImGui::TreeNodeEx("##array", ImGuiTreeNodeFlags_SpanAllColumns | ImGuiTreeNodeFlags_AllowOverlap,
+					"%s (%d)", property.Name.c_str(), static_cast<int>(elements.size()));
+
+				// A long list gets a filter, beside its heading
+				const std::string* filter = nullptr;
+				if (isOpen && elements.size() > k_filterThreshold)
+				{
+					std::string& filterText = m_listFilters[ImGui::GetID("##filter")];
+					ImGui::TableSetColumnIndex(1);
+					ImGui::SetNextItemWidth(-FLT_MIN);
+					char buffer[128];
+					strncpy_s(buffer, filterText.c_str(), _TRUNCATE);
+					if (ImGui::InputTextWithHint("##filter", "Filter", buffer, sizeof(buffer)))
+					{
+						filterText = buffer;
+					}
+					filter = &filterText;
+				}
+
 				if (isOpen)
 				{
 					for (size_t elementIndex = 0; elementIndex < elements.size(); ++elementIndex)
@@ -196,6 +255,11 @@ namespace Editor
 						if (heading.empty())
 						{
 							heading = "[" + std::to_string(elementIndex) + "]";
+						}
+
+						if (filter != nullptr && !ContainsIgnoringCase(heading, *filter))
+						{
+							continue;
 						}
 
 						PathPrefix elementPrefix;
@@ -212,7 +276,7 @@ namespace Editor
 			}
 			else
 			{
-				DrawValueRow(context, property, path, object, editableComponents);
+				DrawValueRow(context, property, path, object, editableComponents, labelIndent);
 			}
 
 			ImGui::PopID();
@@ -220,7 +284,7 @@ namespace Editor
 	}
 
 	void PropertyInspector::DrawValueRow(EditorContext& context, const PropertyDescriptor& property, const PropertyPath& path, const void* object,
-		const ComponentList* editableComponents)
+		const ComponentList* editableComponents, float labelIndent)
 	{
 		const PropertyDrawers::Drawer drawer = PropertyDrawers::Find(property.Type);
 		if (drawer == nullptr)
@@ -250,47 +314,83 @@ namespace Editor
 			}
 		}
 
+		const bool isOverridden = property.IsOverridable() && property.IsOverridden(object);
 		if (isMixed)
 		{
 			ImGui::PushStyleColor(ImGuiCol_Text, k_mixedValueColour);
-			EditorUI::PropertyRow(property.Name.c_str(), "Differs across the selection; showing the primary's value");
+			EditorUI::PropertyRow(property.Name.c_str(), "Differs across the selection; showing the primary's value", labelIndent);
+			ImGui::PopStyleColor();
+		}
+		else if (isOverridden)
+		{
+			ImGui::PushStyleColor(ImGuiCol_Text, EditorUI::k_accentColour);
+			EditorUI::PropertyRow(property.Name.c_str(), property.Tooltip.empty() ? "Overridden" : property.Tooltip.c_str(), labelIndent);
 			ImGui::PopStyleColor();
 		}
 		else
 		{
-			EditorUI::PropertyRow(property.Name.c_str(), property.Tooltip.c_str());
+			EditorUI::PropertyRow(property.Name.c_str(), property.Tooltip.c_str(), labelIndent);
 		}
 
-		// An exclusive property is turned off by turning it on for another object, and can't be on for several at once
-		const char* exclusiveReason = nullptr;
+		// Why it can't be changed at the moment, shown on hover. An exclusive property is turned off by turning it on
+		// for another object, and can't be on for several at once.
+		const char* readOnlyReason = nullptr;
 		if (property.IsExclusive && editableComponents != nullptr)
 		{
 			if (editableComponents->size() > 1)
 			{
-				exclusiveReason = "Only one object can have this on; select just one to change it";
+				readOnlyReason = "Only one object can have this on; select just one to change it";
 			}
 			else if (std::get<bool>(before))
 			{
-				exclusiveReason = "Turn this on for another one to change it";
+				readOnlyReason = "Turn this on for another one to change it";
 			}
+		}
+		if (readOnlyReason == nullptr && property.IsEnabled && !property.IsEnabled(object))
+		{
+			readOnlyReason = property.DisabledReason.c_str();
 		}
 
 		// Read-only nested objects (editableComponents null) can't be edited: commands only reach a component's own
 		// properties and its editable Arrays' elements
-		const bool isReadOnly = !property.IsEditable() || editableComponents == nullptr || exclusiveReason != nullptr;
+		const bool isReadOnly = !property.IsEditable() || editableComponents == nullptr || readOnlyReason != nullptr;
+
+		// An overridden value can be reset even while it can't be changed, from a button beside it
+		const bool canReset = isOverridden && editableComponents != nullptr && property.IsEditable();
+		const float spacing = ImGui::GetStyle().ItemInnerSpacing.x;
+		if (canReset)
+		{
+			ImGui::SetNextItemWidth(-(EditorUI::GetIconButtonWidth() + spacing));
+		}
 
 		const bool isDisabled = isReadOnly && IsDrawnAsWidget(property.Type);
 		ImGui::BeginDisabled(isDisabled);
 		// Checkboxes show a dash for mixed values
 		ImGui::PushItemFlag(ImGuiItemFlags_MixedValue, isMixed);
-		const bool changed = drawer(context, property, value, isReadOnly);
+		const bool changed = drawer(context, property, object, value, isReadOnly);
 		ImGui::PopItemFlag();
 		const bool isHeld = ImGui::IsItemActive();
-		if (exclusiveReason != nullptr && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+		if (readOnlyReason != nullptr && readOnlyReason[0] != '\0' && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
 		{
-			ImGui::SetTooltip("%s", exclusiveReason);
+			ImGui::SetTooltip("%s", readOnlyReason);
 		}
 		ImGui::EndDisabled();
+
+		if (canReset)
+		{
+			ImGui::SameLine(0.0f, spacing);
+			if (EditorUI::IconButton("##reset", EditorUI::EIcon::Reset, "Reset"))
+			{
+				const InteractionID interaction = NewInteractionID();
+				for (const GameObjectComponentPtr<GameObjectComponentBase>& target : *editableComponents)
+				{
+					if (target != nullptr)
+					{
+						context.GetCommands().Push<ResetPropertyCommand>(target, path, interaction);
+					}
+				}
+			}
+		}
 
 		if (editableComponents == nullptr || isReadOnly)
 		{
@@ -342,10 +442,75 @@ namespace Editor
 			return;
 		}
 
-		if (ImGui::TreeNodeEx("##object", ImGuiTreeNodeFlags_SpanAllColumns, "%s", heading))
+		const TypeDescription& type = *ref.Type;
+		const ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAllColumns | ImGuiTreeNodeFlags_AllowOverlap;
+
+		bool isOpen = false;
+		if (type.GetIcon)
 		{
-			DrawProperties(context, *ref.Type, ref.Object, prefix, editableComponents);
+			// The icon between the arrow and the heading
+			isOpen = ImGui::TreeNodeEx("##object", flags, "%s", "");
+			const float iconSize = ImGui::GetTextLineHeight();
+			ImGui::SameLine();
+			const PropertyTexture icon = type.GetIcon(ref.Object);
+			if (icon.Handle.IsValid() && icon.Size.X() > 0.0f && icon.Size.Y() > 0.0f)
+			{
+				PropertyDrawers::DrawTexture(icon, iconSize);
+			}
+			else
+			{
+				ImGui::Dummy(ImVec2(iconSize, iconSize));
+			}
+			ImGui::SameLine();
+			ImGui::TextUnformatted(heading);
+		}
+		else
+		{
+			isOpen = ImGui::TreeNodeEx("##object", flags, "%s", heading);
+		}
+
+		// How many of its values are overridden, and a button that resets them all
+		const size_t overriddenCount = CountOverridden(type, ref.Object);
+		if (overriddenCount > 0)
+		{
+			ImGui::TableSetColumnIndex(1);
+			ImGui::TextColored(EditorUI::k_accentColour, "%d overridden", static_cast<int>(overriddenCount));
+			if (editableComponents != nullptr)
+			{
+				ImGui::SameLine();
+				if (EditorUI::IconButton("##resetAll", EditorUI::EIcon::Reset, "Reset all"))
+				{
+					ResetOverridden(context, type, prefix, *editableComponents);
+				}
+			}
+		}
+
+		if (isOpen)
+		{
+			DrawProperties(context, type, ref.Object, prefix, editableComponents);
 			ImGui::TreePop();
+		}
+	}
+
+	void PropertyInspector::ResetOverridden(EditorContext& context, const TypeDescription& type, const PathPrefix& prefix,
+		const ComponentList& editableComponents)
+	{
+		const InteractionID interaction = NewInteractionID();
+		for (size_t propertyIndex = 0; propertyIndex < type.Properties.size(); ++propertyIndex)
+		{
+			if (!type.Properties[propertyIndex].IsOverridable())
+			{
+				continue;
+			}
+
+			const PropertyPath path = prefix.PathTo(propertyIndex);
+			for (const GameObjectComponentPtr<GameObjectComponentBase>& target : editableComponents)
+			{
+				if (target != nullptr)
+				{
+					context.GetCommands().Push<ResetPropertyCommand>(target, path, interaction);
+				}
+			}
 		}
 	}
 

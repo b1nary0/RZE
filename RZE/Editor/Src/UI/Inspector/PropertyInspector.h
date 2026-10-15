@@ -6,6 +6,7 @@
 #include <Game/World/GameObject/Properties/PropertyPath.h>
 
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 struct ObjectRef;
@@ -26,6 +27,10 @@ namespace Editor
 	// It can edit several components of the same type at once (a multi-selection): values show the first one's,
 	// marked when the others differ, and an edit goes to all of them in one interaction. A nested edit goes to each
 	// component whose path still leads somewhere (e.g. that has the same material slot).
+	//
+	// Overridable values (PropertyDescriptor::IsOverridable) show their label in the accent colour when overridden,
+	// with a button that resets them; an element's header counts its overridden values and resets them all in one
+	// step. Rows sharing a Group sit under its sub-heading, and lists longer than k_filterThreshold get a filter.
 	class PropertyInspector
 	{
 	public:
@@ -59,13 +64,21 @@ namespace Editor
 		void DrawProperties(EditorContext& context, const TypeDescription& type, const void* object, const PathPrefix& prefix,
 			const ComponentList* editableComponents);
 		void DrawValueRow(EditorContext& context, const PropertyDescriptor& property, const PropertyPath& path, const void* object,
-			const ComponentList* editableComponents);
+			const ComponentList* editableComponents, float labelIndent);
 		// A tree node for a nested object, labelled heading; its properties are drawn inside when open. They're editable
 		// when editableComponents isn't null, addressed through prefix.
 		void DrawObjectNode(EditorContext& context, const char* heading, const ObjectRef& ref, const PathPrefix& prefix,
 			const ComponentList* editableComponents);
 
+		// Resets the type's overridable properties, through prefix, on every component, in one interaction; ones that
+		// aren't overridden are left as they are
+		void ResetOverridden(EditorContext& context, const TypeDescription& type, const PathPrefix& prefix, const ComponentList& editableComponents);
+
 		InteractionID GetInteraction(GameObjectComponentInstanceID component, const PropertyPath& path, bool isHeld);
+
+	public:
+		// Lists with more elements than this get a filter
+		static constexpr size_t k_filterThreshold = 8;
 
 	private:
 		// The edit being held (dragged), if any, so its later frames reuse its interaction
@@ -78,5 +91,8 @@ namespace Editor
 
 		HeldEdit m_heldEdit;
 		bool m_isHeldThisFrame = false;
+
+		// Each filtered list's filter text, by the list's ImGui ID
+		std::unordered_map<unsigned int, std::string> m_listFilters;
 	};
 }

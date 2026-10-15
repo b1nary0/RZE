@@ -6,6 +6,7 @@
 
 #include <Utils/Math/Vector3D.h>
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -13,6 +14,11 @@
 class TestPart
 {
 public:
+	enum class EShape { Box, Sphere, Capsule };
+
+	// What Mass is when the part doesn't override it
+	static constexpr float k_baseMass = 2.0f;
+
 	explicit TestPart(const std::string& name) : m_name(name) {}
 
 	const std::string& GetName() const { return m_name; }
@@ -23,10 +29,21 @@ public:
 	bool IsLocked() const { return m_isLocked; }
 	void SetLocked(bool isLocked) { m_isLocked = isLocked; }
 
+	// Overridable: k_baseMass until set
+	float GetMass() const { return m_massOverride.value_or(k_baseMass); }
+	void SetMass(float mass) { m_massOverride = mass; }
+	bool IsMassOverridden() const { return m_massOverride.has_value(); }
+	void ResetMass() { m_massOverride.reset(); }
+
+	EShape GetShape() const { return m_shape; }
+	void SetShape(EShape shape) { m_shape = shape; }
+
 private:
 	std::string m_name;
 	float m_weight = 1.0f;
 	bool m_isLocked = false;
+	std::optional<float> m_massOverride;
+	EShape m_shape = EShape::Box;
 };
 
 // A component with one property of each kind tools treat differently, for tests of the property system and of
@@ -80,13 +97,25 @@ public:
 				part.DisplayName([](const TestPart& testPart) { return testPart.GetName(); });
 				part.Float("Weight", &TestPart::GetWeight, &TestPart::SetWeight);
 				part.Bool("Locked", &TestPart::IsLocked, &TestPart::SetLocked).EditorOnly();
+				part.Value<float>("Mass",
+					[](const TestPart& testPart) { return testPart.GetMass(); },
+					[](TestPart& testPart, const float& mass) { testPart.SetMass(mass); })
+					.Overridable<TestPart>(
+						[](const TestPart& testPart) { return testPart.IsMassOverridden(); },
+						[](TestPart& testPart) { testPart.ResetMass(); })
+					.EnabledIf<TestPart>([](const TestPart& testPart) { return !testPart.IsLocked(); }, "Unlock the part to change its mass")
+					.InGroup("Physics");
+				part.Enum<TestPart::EShape>("Shape", { "Box", "Sphere", "Capsule" },
+					[](const TestPart& testPart) { return testPart.GetShape(); },
+					[](TestPart& testPart, TestPart::EShape shape) { testPart.SetShape(shape); })
+					.InGroup("Physics");
 			});
 	}
 
 	// Indices into the description, in DescribeProperties' order
 	enum Property : size_t { Speed, DrawDebug, Leader, Serial, DoubledSize, PartCount, Parts, Count };
 	// Indices into a part's description
-	enum PartProperty : size_t { PartWeight, PartLocked };
+	enum PartProperty : size_t { PartWeight, PartLocked, PartMass, PartShape, PartPropertyCount };
 
 private:
 	float m_speed = 1.0f;

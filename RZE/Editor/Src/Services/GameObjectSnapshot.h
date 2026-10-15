@@ -30,10 +30,10 @@ namespace Editor
 
 	public:
 		// Copies every property with a setter (see PropertyDescriptor::Set), ReadOnly ones included, except:
-		// Exclusive ones, so a copy never takes over from the original (e.g. as the main camera), and EditorOnly
-		// view settings. That includes the properties of editable Arrays' elements, which are set after the
-		// component's own (which may be what creates the elements, e.g. a mesh's material slots); an element the copy
-		// doesn't have is skipped.
+		// Exclusive ones, so a copy never takes over from the original (e.g. as the main camera), EditorOnly view
+		// settings, and overridable values that aren't overridden (the copy has the same base). That includes the
+		// properties of editable Arrays' elements, which are set after the component's own (which may be what creates
+		// the elements, e.g. a mesh's material slots); an element the copy doesn't have is skipped.
 		static GameObjectSnapshot Take(GameObject& gameObject);
 
 		// Adds a new object (and its children) to scene, under parent if it isn't null, and returns it. Each object is

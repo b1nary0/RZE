@@ -8,6 +8,7 @@
 
 #include <Utils/DebugUtils/Debug.h>
 
+#include <optional>
 #include <vector>
 
 namespace
@@ -48,12 +49,24 @@ namespace
 		return holder;
 	}
 
+	// The property's value on object as undo sees it: none for an overridable property that isn't overridden, since
+	// undoing back to that state means resetting it rather than setting the base's value
+	std::optional<PropertyValue> GetUndoValue(const PropertyDescriptor& property, const void* object)
+	{
+		if (property.IsOverridable() && !property.IsOverridden(object))
+		{
+			return std::nullopt;
+		}
+		return property.Get(object);
+	}
+
 	class SetPropertyRecord : public Editor::UndoRecord
 	{
 	public:
-		// propertyName is the name of the property path leads to, for the Edit menu
+		// propertyName is the name of the property path leads to, for the Edit menu. before and after are none when the
+		// (overridable) property wasn't, or isn't, overridden.
 		SetPropertyRecord(ObjectGUID guid, GameObjectComponentID componentID, const PropertyPath& path, const std::string& propertyName,
-			PropertyValue&& before, PropertyValue&& after)
+			std::optional<PropertyValue>&& before, std::optional<PropertyValue>&& after)
 			: m_guid(guid)
 			, m_componentID(componentID)
 			, m_path(path)
@@ -86,7 +99,7 @@ namespace
 
 		std::string GetName() const override
 		{
-			return "Change " + m_propertyName;
+			return (m_after.has_value() ? "Change " : "Reset ") + m_propertyName;
 		}
 
 		bool TryMerge(const Editor::UndoRecord& newer) override
@@ -103,8 +116,9 @@ namespace
 		}
 
 	private:
-		// Does nothing if the object, component or (for a nested property) element is gone
-		void Apply(ObjectGUID guid, const PropertyValue& value)
+		// Sets value, or resets the property for none. Does nothing if the object, component or (for a nested property)
+		// element is gone.
+		void Apply(ObjectGUID guid, const std::optional<PropertyValue>& value)
 		{
 			const GameObjectComponentPtr<GameObjectComponentBase> component = Editor::UndoTargets::FindComponent(guid, m_componentID);
 			if (component == nullptr)
@@ -113,9 +127,18 @@ namespace
 			}
 
 			const ComponentPropertyRegistry::ResolvedProperty resolved = ComponentPropertyRegistry::Resolve(**component, m_path);
-			if (resolved.IsValid())
+			if (!resolved.IsValid())
 			{
-				resolved.Property->Set(resolved.Object, value);
+				return;
+			}
+
+			if (value.has_value())
+			{
+				resolved.Property->Set(resolved.Object, *value);
+			}
+			else if (resolved.Property->IsOverridable())
+			{
+				resolved.Property->Reset(resolved.Object);
 			}
 		}
 
@@ -124,8 +147,8 @@ namespace
 		GameObjectComponentID m_componentID;
 		PropertyPath m_path;
 		std::string m_propertyName;
-		PropertyValue m_before;
-		PropertyValue m_after;
+		std::optional<PropertyValue> m_before;
+		std::optional<PropertyValue> m_after;
 		ObjectGUID m_previousHolder = ObjectGUIDs::k_invalid;
 	};
 }
@@ -166,13 +189,54 @@ namespace Editor
 
 		const GameObjectComponentID componentID = m_component->m_id;
 		std::unique_ptr<SetPropertyRecord> record = std::make_unique<SetPropertyRecord>(
-			m_component->GetOwner()->GetGUID(), componentID, m_path, property.Name, property.Get(resolved.Object), PropertyValue(m_value));
+			m_component->GetOwner()->GetGUID(), componentID, m_path, property.Name, GetUndoValue(property, resolved.Object), std::optional<PropertyValue>(m_value));
 		if (property.IsExclusive)
 		{
 			record->SetPreviousHolder(FindExclusiveHolder(componentID, m_path.GetSteps().front().PropertyIndex));
 		}
 
 		property.Set(resolved.Object, m_value);
+		SetUndoRecord(std::move(record));
+		return true;
+	}
+
+	ResetPropertyCommand::ResetPropertyCommand(const GameObjectComponentPtr<GameObjectComponentBase>& component, const PropertyPath& path, InteractionID interaction)
+		: EditorCommand(interaction)
+		, m_component(component)
+		, m_path(path)
+	{
+	}
+
+	bool ResetPropertyCommand::Execute(EditorContext& context)
+	{
+		if (m_component == nullptr || !UndoTargets::IsInScene(m_component->GetOwner()))
+		{
+			return false;
+		}
+
+		const ComponentPropertyRegistry::ResolvedProperty resolved = ComponentPropertyRegistry::Resolve(**m_component, m_path);
+		if (!resolved.IsValid())
+		{
+			return false;
+		}
+
+		const PropertyDescriptor& property = *resolved.Property;
+		if (!property.IsOverridable() || !property.IsOverridden(resolved.Object))
+		{
+			return false;
+		}
+		AssertMsg(property.IsEditable(), "Read-only properties can't be reset");
+
+		std::unique_ptr<SetPropertyRecord> record = std::make_unique<SetPropertyRecord>(
+			m_component->GetOwner()->GetGUID(), m_component->m_id, m_path, property.Name, GetUndoValue(property, resolved.Object), std::nullopt);
+
+		property.Reset(resolved.Object);
+		// A view setting isn't part of the scene, so isn't undoable
+		if (property.IsEditorOnly)
+		{
+			return false;
+		}
+
 		SetUndoRecord(std::move(record));
 		return true;
 	}
