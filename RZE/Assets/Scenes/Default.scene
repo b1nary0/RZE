@@ -1,11 +1,16 @@
 {
-    "gameobjects": {
-        "Camera": {
+    "version": 2,
+    "gameobjects": [
+        {
+            "id": "58c73f8e00ae9407",
+            "name": "Camera",
             "components": {
                 "CameraComponent": {
                     "FOV": 65.0,
                     "NearCull": 0.10000000149011612,
-                    "FarCull": 1000.0
+                    "FarCull": 1000.0,
+                    "ExposureCompensation": 0.0,
+                    "MainCamera": true
                 },
                 "TransformComponent": {
                     "Position": [
@@ -26,7 +31,9 @@
                 }
             }
         },
-        "DirectionalLight": {
+        {
+            "id": "dc46ed2e2676e479",
+            "name": "DirectionalLight",
             "components": {
                 "TransformComponent": {
                     "Position": [
@@ -35,18 +42,18 @@
                         15.0
                     ],
                     "Scale": [
-                        1.0,
-                        1.0,
-                        1.0
+                        1.0099048614501954,
+                        1.0099408626556397,
+                        1.0099648237228394
                     ],
                     "Rotation": [
-                        -35.0,
-                        0.0,
-                        25.0
+                        91.84236907958985,
+                        4.125754356384277,
+                        138.9108428955078
                     ]
                 },
                 "DirectionalLightComponent": {
-                    "LightStrength": 2.0,
+                    "LightStrength": 1.0,
                     "LightColour": [
                         1.0,
                         1.0,
@@ -55,5 +62,5 @@
                 }
             }
         }
-    }
+    ]
 }
