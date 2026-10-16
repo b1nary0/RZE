@@ -161,9 +161,24 @@ public:
 	void ClearMouseWheel();
 	void OnMouseDown(const EMouseButton::T button, const Int32 xPos, const Int32 yPos);
 	void OnMouseUp(const EMouseButton::T button, const Int32 xPos, const Int32 yPos);
+	// Lets go of every key and button still down, as if each was released, e.g. when the window loses focus and the
+	// releases would go to another window
+	void ReleaseAll();
+
+	// Once a frame, after the window's messages. When the window has just lost focus, lets go of everything still down
+	// (ReleaseAll), since the releases will go to another window. Then works out IsInteracting. isMouseButtonDown is the
+	// OS's view, which unlike this handler's state can't get stuck down when a button is released outside the window.
+	void UpdateFrameState(bool isWindowFocused, bool isMouseButtonDown);
+	// As of UpdateFrameState: whether this frame had input (a held key repeats, so it counts), or a mouse button is held
+	// while the window is focused
+	bool IsInteracting() const { return mIsInteracting; }
 
 	const MouseState& GetMouseState() const { return mMouseState; }
 	const KeyboardState& GetKeyboardState() const { return mKeyboardState; }
+
+	// How many input events (keys, buttons, wheel turns, and mouse moves that changed the position) the window has given
+	// the handler so far. It only goes up, so a change since last time means there was input in between.
+	U64 GetInputEventCount() const { return mInputEventCount; }
 
 	// #NOTE
 	// Don't use these two functions unless you need to _always_ know the state
@@ -175,6 +190,9 @@ public:
 	void Reset();
 
 private:
+	// One more for GetInputEventCount: the window gave the handler real input (a key, a button, a wheel turn, a move)
+	void CountInputEvent();
+
 	void RaiseKeyEvent(const InputKey& inputKey);
 	void RaiseMouseAxisEvent(const Vector2D& axis, Int32 wheel);
 	void RaiseMouseButtonEvent(const EMouseButton::T button, const EButtonState::T state, const Int32 xPos, const Int32 yPos);
@@ -196,6 +214,12 @@ private:
 private:
 	std::queue<KeyboardAction> mKeyActionQueue;
 	std::queue<MouseAction> mMouseActionQueue;
+
+	U64 mInputEventCount = 0;
+	// For UpdateFrameState: the event count and focus as of the last frame
+	U64 mLastFrameInputEventCount = 0;
+	bool mWasWindowFocused = false;
+	bool mIsInteracting = false;
 
 	// #HACK
 	// This is implemented this way to continue tracking inputs from the OS

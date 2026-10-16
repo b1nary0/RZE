@@ -81,7 +81,6 @@ private:
 	void WaitForNextFrame();
 
 	void PreUpdate(); // Set up anything the new frame will need
-	// Before ImGui's frame starts: async operations, then the application's PreUIUpdate
 	// The UI's part of the frame: the application's PreUIUpdate, then its UpdateUI inside ImGui's frame. Returns how
 	// long the application's two calls took in milliseconds, which is update time for the frame time capture.
 	double UpdateUI();

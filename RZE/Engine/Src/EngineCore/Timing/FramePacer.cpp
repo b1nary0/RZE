@@ -41,7 +41,8 @@ bool FramePacer::TakeUIFrame(double now)
 	const double framePeriod = GetFramePeriod() > 0.0 ? GetFramePeriod() : m_frameTime;
 	const double tolerance = framePeriod * 0.5;
 
-	const bool isDue = uiPeriod <= 0.0 || now + tolerance >= m_nextUIFrame;
+	const bool isInteracting = now - m_lastInteraction <= k_interactionHoldTime;
+	const bool isDue = uiPeriod <= 0.0 || isInteracting || now + tolerance >= m_nextUIFrame;
 	if (!isDue && !m_isUIFrameRequested)
 	{
 		return false;
@@ -50,7 +51,7 @@ bool FramePacer::TakeUIFrame(double now)
 	++m_windowUIFrames;
 
 	// From when this one was due, so the cadence holds. A UI frame over a period late re-bases on now, and so does one
-	// that came early because it was requested.
+	// that came early because it was requested or the user is interacting.
 	if (uiPeriod > 0.0)
 	{
 		const double scheduled = m_nextUIFrame + uiPeriod;

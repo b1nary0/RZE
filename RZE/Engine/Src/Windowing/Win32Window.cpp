@@ -166,6 +166,28 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 	}
 }
 
+namespace
+{
+	// While a mouse button is down the window keeps the mouse, so the release still reaches it when it happens outside
+	// the window (e.g. a drag that ends past its edge)
+	void CaptureMouse(HWND windowHandle)
+	{
+		if (GetCapture() != windowHandle)
+		{
+			SetCapture(windowHandle);
+		}
+	}
+
+	// buttonsDown is the button-up message's wParam, which says which buttons are still down
+	void ReleaseMouseOnceUp(HWND windowHandle, WPARAM buttonsDown)
+	{
+		if ((buttonsDown & (MK_LBUTTON | MK_RBUTTON | MK_MBUTTON)) == 0 && GetCapture() == windowHandle)
+		{
+			ReleaseCapture();
+		}
+	}
+}
+
 void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 {
 	// The wheel only reports deltas, so clear it each frame. Check the proxy state: the raised state is
@@ -226,6 +248,7 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 			const Int32 yPos = GET_Y_LPARAM(msg.lParam);
 
 			inputHandler.OnMouseDown(EMouseButton::MouseButton_Left, xPos, yPos);
+			CaptureMouse(m_osWindowHandleData.windowHandle);
 		}
 		break;
 
@@ -235,6 +258,7 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 			const Int32 yPos = GET_Y_LPARAM(msg.lParam);
 
 			inputHandler.OnMouseUp(EMouseButton::MouseButton_Left, xPos, yPos);
+			ReleaseMouseOnceUp(m_osWindowHandleData.windowHandle, msg.wParam);
 		}
 		break;
 
@@ -244,6 +268,7 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 			const Int32 yPos = GET_Y_LPARAM(msg.lParam);
 
 			inputHandler.OnMouseDown(EMouseButton::MouseButton_Middle, xPos, yPos);
+			CaptureMouse(m_osWindowHandleData.windowHandle);
 		}
 		break;
 
@@ -253,6 +278,7 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 			const Int32 yPos = GET_Y_LPARAM(msg.lParam);
 
 			inputHandler.OnMouseUp(EMouseButton::MouseButton_Middle, xPos, yPos);
+			ReleaseMouseOnceUp(m_osWindowHandleData.windowHandle, msg.wParam);
 		}
 		break;
 
@@ -262,6 +288,7 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 			const Int32 yPos = GET_Y_LPARAM(msg.lParam);
 
 			inputHandler.OnMouseDown(EMouseButton::MouseButton_Right, xPos, yPos);
+			CaptureMouse(m_osWindowHandleData.windowHandle);
 		}
 		break;
 
@@ -271,6 +298,7 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 			const Int32 yPos = GET_Y_LPARAM(msg.lParam);
 
 			inputHandler.OnMouseUp(EMouseButton::MouseButton_Right, xPos, yPos);
+			ReleaseMouseOnceUp(m_osWindowHandleData.windowHandle, msg.wParam);
 		}
 		break;
 
@@ -326,6 +354,14 @@ bool Win32Window::IsFocused() const
 bool Win32Window::IsMinimised() const
 {
 	return IsIconic(m_osWindowHandleData.windowHandle) != FALSE;
+}
+
+bool Win32Window::IsMouseButtonDown() const
+{
+	// The high bit is set while the button is down
+	return (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0
+		|| (GetAsyncKeyState(VK_RBUTTON) & 0x8000) != 0
+		|| (GetAsyncKeyState(VK_MBUTTON) & 0x8000) != 0;
 }
 
 const Win32Window::OSWindowHandleData& Win32Window::GetOSWindowHandleData() const

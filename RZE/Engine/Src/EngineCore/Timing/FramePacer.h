@@ -38,6 +38,9 @@ public:
 	static constexpr double k_idleSafetyMargin = 0.0015;
 	// Seconds of frames that Stats averages over. They're updated once per window, so they stay readable.
 	static constexpr double k_statsWindow = 0.5;
+	// After the last interaction (NoteInteraction), the UI keeps updating every frame for this long, so short pauses in
+	// a drag don't drop it back to the UI frame rate
+	static constexpr double k_interactionHoldTime = 0.25;
 
 public:
 	void SetSettings(const FrameSettings& settings);
@@ -49,12 +52,15 @@ public:
 	void SetIsThrottled(bool isThrottled);
 
 	void BeginFrame(double now);
-	// Whether this frame updates the UI. Always with no UI frame rate; otherwise once the next UI frame is due (within half
-	// a frame, so a UI rate that divides the frame rate gets an even cadence), or when one was requested. Once per frame,
-	// after anything that might request one.
+	// Whether this frame updates the UI. Always with no UI frame rate, or while the user is interacting; otherwise once the
+	// next UI frame is due (within half a frame, so a UI rate that divides the frame rate gets an even cadence), or when
+	// one was requested. Once per frame, after anything that might request one.
 	bool TakeUIFrame(double now);
 	// Makes the next frame a UI frame, e.g. when the window resizes. The first frame always is one.
 	void RequestUIFrame() { m_isUIFrameRequested = true; }
+	// The user is interacting (input this frame, or a mouse button held): every frame updates the UI until
+	// k_interactionHoldTime after the last time this is called, so what's drawn over the scene keeps up
+	void NoteInteraction(double now) { m_lastInteraction = now; }
 
 	// The frame's work is done; until the next BeginFrame counts as idle time
 	void EndFrameWork(double now);
@@ -107,6 +113,8 @@ private:
 	// When the next UI frame is due, on the UI rate's schedule
 	double m_nextUIFrame = 0.0;
 	bool m_isUIFrameRequested = true;
+	// When NoteInteraction was last called; long enough ago to not count until it is
+	double m_lastInteraction = -1000.0;
 
 	Stats m_stats;
 	// The stats window so far

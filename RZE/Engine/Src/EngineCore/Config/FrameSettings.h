@@ -11,6 +11,7 @@ struct FrameSettings
 	// Frames per second while the window is unfocused or minimised; 0 to not throttle
 	double UnfocusedFrameRate = 30.0;
 	// How many times a second the application's UI updates (RZE_Application::PreUIUpdate and UpdateUI); 0 for every
-	// frame. Everything else, including the scene and rendering, still runs every frame.
+	// frame. While the user is interacting it updates every frame anyway (FramePacer::NoteInteraction), and everything
+	// else, including the scene and rendering, always runs every frame.
 	double UIFrameRate = 0.0;
 };

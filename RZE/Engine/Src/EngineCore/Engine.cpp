@@ -90,6 +90,11 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 				OPTICK_EVENT("RZE_Engine::Run");
 
 				PreUpdate();
+				// So the UI keeps up while the user works
+				if (m_inputHandler.IsInteracting())
+				{
+					m_framePacer.NoteInteraction(frameStart);
+				}
 				{
 					OPTICK_EVENT("Update and Render");
 
@@ -359,6 +364,7 @@ const Vector2D& RZE_Engine::GetWindowClientSize() const
 void RZE_Engine::CompileEvents()
 {
 	m_window->CompileInputMessages(m_inputHandler);
+	m_inputHandler.UpdateFrameState(m_window->IsFocused(), m_window->IsMouseButtonDown());
 	m_window->CompileWindowMessages(m_eventHandler);
 }
 

@@ -96,6 +96,7 @@ void InputHandler::OnKeyDown(const Int32 key, bool bIsRepeat)
 	action.State = mProxyKeyboardState.GetButtonState(key);
 
 	mKeyActionQueue.push(std::move(action));
+	CountInputEvent();
 }
 
 void InputHandler::OnKeyUp(const Int32 key)
@@ -109,6 +110,7 @@ void InputHandler::OnKeyUp(const Int32 key)
 	action.State = mProxyKeyboardState.GetButtonState(key);
 
 	mKeyActionQueue.push(std::move(action));
+	CountInputEvent();
 }
 
 void InputHandler::OnMouseMove(const Int32 xPos, const Int32 yPos)
@@ -125,6 +127,7 @@ void InputHandler::OnMouseMove(const Int32 xPos, const Int32 yPos)
 	if (mProxyMouseState.CurPosition != mProxyMouseState.PrevPosition)
 	{
 		mMouseActionQueue.push(std::move(action));
+		CountInputEvent();
 	}
 }
 
@@ -143,6 +146,10 @@ void InputHandler::OnMouseWheel(const Int32 value)
 	action.Wheel = value;
 
 	mMouseActionQueue.push(std::move(action));
+	if (value != 0)
+	{
+		CountInputEvent();
+	}
 }
 
 void InputHandler::ClearMouseWheel()
@@ -163,6 +170,7 @@ void InputHandler::OnMouseDown(const EMouseButton::T button, const Int32 xPos, c
 	action.Wheel = 0;
 
 	mMouseActionQueue.push(std::move(action));
+	CountInputEvent();
 }
 
 void InputHandler::OnMouseUp(const EMouseButton::T button, const Int32 xPos, const Int32 yPos)
@@ -177,6 +185,47 @@ void InputHandler::OnMouseUp(const EMouseButton::T button, const Int32 xPos, con
 	action.Wheel = 0;
 
 	mMouseActionQueue.push(std::move(action));
+	CountInputEvent();
+}
+
+void InputHandler::ReleaseAll()
+{
+	for (Int32 key = 0; key < MAX_KEYCODES_SUPPORTED; ++key)
+	{
+		if (mProxyKeyboardState.CurKeyStates[key])
+		{
+			OnKeyUp(key);
+		}
+	}
+
+	const Int32 xPos = static_cast<Int32>(mProxyMouseState.CurPosition.X());
+	const Int32 yPos = static_cast<Int32>(mProxyMouseState.CurPosition.Y());
+	for (Int32 button = 0; button < MAX_MOUSE_BTN_SUPPORTED; ++button)
+	{
+		if (mProxyMouseState.CurMouseBtnStates[button])
+		{
+			OnMouseUp(static_cast<EMouseButton::T>(button), xPos, yPos);
+		}
+	}
+}
+
+void InputHandler::UpdateFrameState(bool isWindowFocused, bool isMouseButtonDown)
+{
+	if (mWasWindowFocused && !isWindowFocused)
+	{
+		ReleaseAll();
+	}
+	mWasWindowFocused = isWindowFocused;
+
+	const bool hadInput = mInputEventCount != mLastFrameInputEventCount;
+	mLastFrameInputEventCount = mInputEventCount;
+
+	mIsInteracting = hadInput || (isWindowFocused && isMouseButtonDown);
+}
+
+void InputHandler::CountInputEvent()
+{
+	++mInputEventCount;
 }
 
 void InputHandler::Reset()

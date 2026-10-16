@@ -60,6 +60,9 @@ public:
 	// The window the user is working in, i.e. the foreground window
 	bool IsFocused() const;
 	bool IsMinimised() const;
+	// Whether a mouse button is down right now, as the OS sees it. Unlike the input handler's state, it can't get stuck
+	// down when the button is released outside the window.
+	bool IsMouseButtonDown() const;
 
 	const OSWindowHandleData& GetOSWindowHandleData() const;
 

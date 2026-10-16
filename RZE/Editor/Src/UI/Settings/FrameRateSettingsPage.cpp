@@ -70,7 +70,7 @@ namespace Editor
 			optionsX, k_maxFrameRateOptions, "Off", settings.MaxFrameRate);
 		isChanged |= DrawFrameRateOptions("While unfocused", "Frames a second while another window is in front or the editor is minimised. Off runs as usual.",
 			optionsX, k_unfocusedFrameRateOptions, "Off", settings.UnfocusedFrameRate);
-		isChanged |= DrawFrameRateOptions("UI rate", "How many times a second the panels and menus update. The scene view still updates every frame.",
+		isChanged |= DrawFrameRateOptions("UI rate", "How many times a second the panels and menus update while you're not using the mouse or keyboard. While you are, and the scene view always, update every frame.",
 			optionsX, k_uiFrameRateOptions, "Every frame", settings.UIFrameRate);
 
 		if (isChanged)

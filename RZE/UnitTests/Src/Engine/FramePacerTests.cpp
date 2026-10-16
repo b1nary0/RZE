@@ -232,3 +232,56 @@ TEST_CASE("A requested UI frame comes at once, and the UI's cadence carries on f
 	}
 	CHECK(framesToNext == 6);
 }
+
+TEST_CASE("While the user interacts every frame updates the UI, and after a short hold the UI's cadence resumes")
+{
+	FramePacer pacer;
+	FrameSettings settings = MakeSettings(60.0);
+	settings.UIFrameRate = 10.0;
+	pacer.SetSettings(settings);
+
+	const auto frameAt = [&pacer](int frame)
+	{
+		const double now = frame / 60.0;
+		pacer.BeginFrame(now);
+		return pacer.TakeUIFrame(now);
+	};
+
+	CHECK(frameAt(0));
+	CHECK_FALSE(frameAt(1));
+
+	// Input on frames 2 and 3
+	for (int frame = 2; frame <= 3; ++frame)
+	{
+		pacer.NoteInteraction(frame / 60.0);
+		CHECK(frameAt(frame));
+	}
+
+	// Still every frame within the hold time after the last interaction
+	int frame = 4;
+	for (; (frame - 3) / 60.0 < FramePacer::k_interactionHoldTime - 0.01; ++frame)
+	{
+		CHECK(frameAt(frame));
+	}
+
+	// Past the hold, the next UI frame comes a UI period (6 frames) after the last one
+	int lastUIFrame = frame - 1;
+	for (; (frame - 3) / 60.0 <= FramePacer::k_interactionHoldTime + 0.01; ++frame)
+	{
+		if (frameAt(frame))
+		{
+			lastUIFrame = frame;
+		}
+	}
+
+	int nextUIFrame = 0;
+	for (; frame < lastUIFrame + 20; ++frame)
+	{
+		if (frameAt(frame))
+		{
+			nextUIFrame = frame;
+			break;
+		}
+	}
+	CHECK(nextUIFrame == lastUIFrame + 6);
+}
