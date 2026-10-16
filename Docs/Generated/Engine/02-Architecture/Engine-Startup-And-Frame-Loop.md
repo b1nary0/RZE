@@ -96,10 +96,10 @@ sequenceDiagram
     ML->>App: PreRender()
     ML->>RE: Render("Main Render"), Finish()
     opt a UI frame
-        ML->>ML: ResourceHandler::Update()
+        Note over ML,FP: ResourceHandler::Update()
     end
     ML->>Async: TickIdle(spare time)
-    ML->>ML: sleep until the next frame is due
+    Note over ML,FP: sleep until the next frame is due
     ML->>RE: WaitForPresentSlot()
 ```
 
