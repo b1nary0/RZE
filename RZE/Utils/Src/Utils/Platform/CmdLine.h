@@ -14,6 +14,7 @@ namespace CmdLine
 		bool Get(const char* argument, std::string_view& outVal);
 
 		// Returns false if the argument is missing or its value isn't a valid integer. outVal is untouched on failure.
+		// A value that isn't a valid integer is logged, so callers can fall back to their default silently.
 		bool GetInt(const char* argument, int& outVal);
 	};
 }

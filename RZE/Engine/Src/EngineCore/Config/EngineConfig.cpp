@@ -19,6 +19,7 @@ bool EngineConfig::Load(const Filepath& filePath)
 
 	LoadEngineSettings();
 	LoadWindowSettings();
+	LoadFrameSettings();
 
 	// @TODO properly return true/false from this function. for now true is fine but jeapordizes the integrity of the resource system
 	return true;
@@ -38,9 +39,13 @@ const WindowSettings& EngineConfig::GetWindowSettings() const
 	return mWindowSettings;
 }
 
+const FrameSettings& EngineConfig::GetFrameSettings() const
+{
+	return mFrameSettings;
+}
+
 void EngineConfig::LoadEngineSettings()
 {
-	mEngineSettings.bEnableVsync = Conversions::IntFromString(mINIParser.GetValue("EngineSettings", "EnableVsync", 0)) > 0;
 	mEngineSettings.mMSAASampleCount = Conversions::IntFromString(mINIParser.GetValue("EngineSettings", "MSAASampleCount", "1"));
 }
 
@@ -54,6 +59,15 @@ void EngineConfig::LoadWindowSettings()
 	mWindowSettings.mDimensions = Vector2D(width, height);
 	mWindowSettings.mTitle = mINIParser.GetValue("WindowSettings", "WindowTitle", "RZE_Engine");
 	mWindowSettings.mLaunchMonitor = Conversions::IntFromString(mINIParser.GetValue("WindowSettings", "LaunchMonitor", "0"));
+}
+
+void EngineConfig::LoadFrameSettings()
+{
+	// Missing keys keep FrameSettings' defaults
+	const FrameSettings defaults;
+	mFrameSettings.VSync = mINIParser.GetBoolValue("FrameSettings", "EnableVsync", defaults.VSync);
+	mFrameSettings.MaxFrameRate = mINIParser.GetDoubleValue("FrameSettings", "MaxFrameRate", defaults.MaxFrameRate);
+	mFrameSettings.UnfocusedFrameRate = mINIParser.GetDoubleValue("FrameSettings", "UnfocusedFrameRate", defaults.UnfocusedFrameRate);
 }
 
 WindowSettings::WindowSettings()
@@ -85,11 +99,6 @@ EngineSettings::EngineSettings()
 
 EngineSettings::~EngineSettings()
 {
-}
-
-bool EngineSettings::IsVSyncEnabled() const
-{
-	return bEnableVsync;
 }
 
 U32 EngineSettings::GetMSAASampleCount() const

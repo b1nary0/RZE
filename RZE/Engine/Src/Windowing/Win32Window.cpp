@@ -318,6 +318,16 @@ void Win32Window::Show()
 	}
 }
 
+bool Win32Window::IsFocused() const
+{
+	return GetForegroundWindow() == m_osWindowHandleData.windowHandle;
+}
+
+bool Win32Window::IsMinimised() const
+{
+	return IsIconic(m_osWindowHandleData.windowHandle) != FALSE;
+}
+
 const Win32Window::OSWindowHandleData& Win32Window::GetOSWindowHandleData() const
 {
 	return m_osWindowHandleData;

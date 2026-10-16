@@ -9,7 +9,8 @@
 //                            RZE_Engine::PreUIUpdate() + RZE_Engine::Update()
 //   -perfwarmup <seconds>    how long to wait before recording, e.g. for the scene to load (default 10)
 //   -perfduration <seconds>  how long to record (default 15)
-// When the duration is up the samples are written and the engine exits.
+// When the duration is up the samples are written and the engine exits. A capture turns frame pacing off (vsync and
+// frame rate caps) so it measures what frames cost; -vsync and -maxfps still apply (RZE_Engine::InitializeFramePacing).
 class FrameTimeCapture
 {
 public:

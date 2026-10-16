@@ -1,6 +1,7 @@
 #pragma once
 
 #include <EngineCore/Config/Config.h>
+#include <EngineCore/Config/FrameSettings.h>
 
 #include <Utils/PrimitiveDefs.h>
 #include <Utils/Math/Vector2D.h>
@@ -16,11 +17,9 @@ public:
 	~EngineSettings();
 
 public:
-	bool IsVSyncEnabled() const;
 	U32 GetMSAASampleCount() const;
 
 private:
-	bool bEnableVsync;
 	U32 mMSAASampleCount;
 };
 
@@ -53,12 +52,15 @@ public:
 
 	const EngineSettings& GetEngineSettings() const;
 	const WindowSettings& GetWindowSettings() const;
+	const FrameSettings& GetFrameSettings() const;
 
 private:
 	void LoadEngineSettings();
 	void LoadWindowSettings();
+	void LoadFrameSettings();
 
 private:
 	EngineSettings mEngineSettings;
 	WindowSettings mWindowSettings;
+	FrameSettings mFrameSettings;
 };

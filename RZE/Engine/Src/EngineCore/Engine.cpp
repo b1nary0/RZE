@@ -47,7 +47,6 @@ RZE_Engine::RZE_Engine()
 	, m_deltaTime(0.0)
 	, m_frameCount(0)
 {
-	m_frameSamples.resize(MAX_FRAMETIME_SAMPLES);
 }
 
 RZE_Engine::~RZE_Engine()
@@ -63,35 +62,24 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 		AssertNotNull(createApplicationCallback);
 		PostInit(createApplicationCallback);
 
-		HiResTimer programTimer;
-		programTimer.Start();
-		double prevTime = programTimer.GetElapsed<double>();
+		m_programTimer.Start();
 
 		m_frameTimeCapture.Initialize();
+		// After the capture, which turns pacing off
+		InitializeFramePacing();
+
 		double lastUpdateMS = 0.0;
 
 		while (!m_shouldExit)
 		{
 			OPTICK_FRAME("Main");
 
-			double currTime = programTimer.GetElapsed<double>();
-			double frameTime = currTime - prevTime;
-			prevTime = currTime;
+			const double frameStart = m_programTimer.GetElapsed<double>();
+			BeginFrame(frameStart);
 
-			if (m_frameTimeCapture.AddFrame(currTime, frameTime * 1000.0, lastUpdateMS))
+			if (m_frameTimeCapture.AddFrame(frameStart, m_framePacer.GetFrameTime() * 1000.0, lastUpdateMS))
 			{
 				break;
-			}
-
-			m_deltaTime = frameTime;
-			m_frameSamples[m_frameCount % MAX_FRAMETIME_SAMPLES] = static_cast<float>(m_deltaTime);
-
-			const float averageFrametime = CalculateAverageFrametime();
-
-			static float frameTimeBuffer[MAX_FRAMETIME_SAMPLES];
-			for (int idx = 0; idx < MAX_FRAMETIME_SAMPLES; ++idx)
-			{
-				frameTimeBuffer[idx] = m_frameSamples[idx] * 1000.0f;
 			}
 
 			{	
@@ -102,9 +90,9 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 					OPTICK_EVENT("Update and Render");
 
 					// The frame capture's update time covers PreUIUpdate and Update, but not ImGui's NewFrame
-					const double preUIUpdateStart = programTimer.GetElapsed<double>();
+					const double preUIUpdateStart = m_programTimer.GetElapsed<double>();
 					PreUIUpdate();
-					const double preUIUpdateMS = (programTimer.GetElapsed<double>() - preUIUpdateStart) * 1000.0;
+					const double preUIUpdateMS = (m_programTimer.GetElapsed<double>() - preUIUpdateStart) * 1000.0;
 
 					{
 						OPTICK_EVENT("ImGui NewFrame Work");
@@ -115,9 +103,9 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 						ImGuizmo::BeginFrame();
 					}
 
-					const double updateStart = programTimer.GetElapsed<double>();
+					const double updateStart = m_programTimer.GetElapsed<double>();
 					Update();
-					lastUpdateMS = preUIUpdateMS + (programTimer.GetElapsed<double>() - updateStart) * 1000.0;
+					lastUpdateMS = preUIUpdateMS + (m_programTimer.GetElapsed<double>() - updateStart) * 1000.0;
 
 					ImGui::EndFrame();
 
@@ -128,6 +116,8 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 					m_resourceHandler.Update();
 				}
 			}
+
+			WaitForNextFrame();
 
 			++m_frameCount;
 		}
@@ -226,12 +216,7 @@ void RZE_Engine::CreateAndInitializeWindow()
 
 	// Command line overrides the config value
 	params.monitorIndex = windowSettings.GetLaunchMonitor();
-	std::string_view launchMonitorArg;
-	if (CmdLine::Arguments::Get("-launchMonitor", launchMonitorArg)
-		&& !CmdLine::Arguments::GetInt("-launchMonitor", params.monitorIndex))
-	{
-		RZE_LOG_ARGS("-launchMonitor value '%s' is not a valid integer. Using config value %d.", std::string(launchMonitorArg).c_str(), params.monitorIndex);
-	}
+	CmdLine::Arguments::GetInt("-launchMonitor", params.monitorIndex);
 
 	m_window = new Win32Window(params);
 	AssertNotNull(m_window);
@@ -265,16 +250,60 @@ void RZE_Engine::InitializeApplication(Functor<RZE_Application* const> createGam
 	m_application->Start();
 }
 
-float RZE_Engine::CalculateAverageFrametime()
+void RZE_Engine::InitializeFramePacing()
 {
-	float sum = 0.0f;
-	for (float frameSample : m_frameSamples)
+	FrameSettings settings = GetResourceHandler().GetResource<EngineConfig>(m_engineConfig)->GetFrameSettings();
+
+	// A capture measures what frames cost, comparable with captures from before frames were paced, so it runs
+	// unpaced unless the command line asks for pacing too
+	if (m_frameTimeCapture.IsEnabled())
 	{
-		sum += frameSample;
+		settings.VSync = false;
+		settings.MaxFrameRate = 0.0;
+		settings.UnfocusedFrameRate = 0.0;
 	}
 
-	sum /= MAX_FRAMETIME_SAMPLES;
-	return sum;
+	int vsync = 0;
+	if (CmdLine::Arguments::GetInt("-vsync", vsync))
+	{
+		settings.VSync = vsync != 0;
+	}
+
+	int maxFrameRate = 0;
+	if (CmdLine::Arguments::GetInt("-maxfps", maxFrameRate))
+	{
+		settings.MaxFrameRate = static_cast<double>(maxFrameRate);
+	}
+
+	SetFrameSettings(settings);
+}
+
+void RZE_Engine::BeginFrame(double now)
+{
+	m_framePacer.SetIsThrottled(!m_window->IsFocused() || m_window->IsMinimised());
+	m_framePacer.BeginFrame(now);
+
+	m_deltaTime = m_framePacer.GetDeltaTime();
+}
+
+void RZE_Engine::WaitForNextFrame()
+{
+	OPTICK_EVENT();
+
+	{
+		OPTICK_EVENT("Sleep");
+		m_frameSleep.SleepFor(m_framePacer.GetNextFrameStart() - m_programTimer.GetElapsed<double>());
+	}
+}
+
+void RZE_Engine::SetFrameSettings(const FrameSettings& settings)
+{
+	m_framePacer.SetSettings(settings);
+}
+
+const FramePacer& RZE_Engine::GetFramePacer() const
+{
+	return m_framePacer;
 }
 
 

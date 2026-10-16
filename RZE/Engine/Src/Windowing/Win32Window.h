@@ -57,6 +57,10 @@ public:
 
 	void Show();
 
+	// The window the user is working in, i.e. the foreground window
+	bool IsFocused() const;
+	bool IsMinimised() const;
+
 	const OSWindowHandleData& GetOSWindowHandleData() const;
 
 	void RegisterEvents(EventHandler& eventHandler);

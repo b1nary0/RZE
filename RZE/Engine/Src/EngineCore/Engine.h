@@ -13,8 +13,12 @@
 #include <EngineCore/Config/EngineConfig.h>
 #include <EngineCore/Input/InputHandler.h>
 #include <EngineCore/Resources/ResourceHandler.h>
+#include <EngineCore/Timing/FramePacer.h>
 
 #include <Game/GameScene.h>
+
+#include <Utils/Platform/Timers/HiResTimer.h>
+#include <Utils/Platform/Timers/PreciseSleep.h>
 
 class RZE_Application;
 
@@ -44,6 +48,12 @@ public:
 	GameScene&					GetActiveScene();
 	AsyncOperationManager&		GetAsyncOperationManager();
 
+	// When frames start and how long they get. Change its settings through SetFrameSettings.
+	const FramePacer& GetFramePacer() const;
+	// Frame rate caps and vsync, from Engine.ini's [FrameSettings] at start-up
+	void SetFrameSettings(const FrameSettings& settings);
+
+	// What this frame simulates: the time since the previous frame, clamped and evened out (FramePacer::GetDeltaTime)
 	[[nodiscard]]
 	double GetDeltaTime() const { return m_deltaTime; }
 	[[nodiscard]]
@@ -63,6 +73,13 @@ private:
 	void Init();
 	void PostInit(Functor<RZE_Application* const>& createApplicationCallback);
 
+	// Reads [FrameSettings] and the -vsync and -maxfps arguments
+	void InitializeFramePacing();
+	// Top of each frame, once the wait for it is over: the frame's start time and delta time
+	void BeginFrame(double now);
+	// After the frame is handed to the renderer: waits until the next frame is due
+	void WaitForNextFrame();
+
 	void PreUpdate(); // Set up anything the new frame will need
 	// Before ImGui's frame starts: async operations, then the application's PreUIUpdate
 	void PreUIUpdate();
@@ -80,8 +97,6 @@ private:
 	void CreateAndInitializeRenderer();
 
 	void InitializeApplication(Functor<RZE_Application* const> createGameCallback);
-
-	float CalculateAverageFrametime();
 
 private:
 	RZE_Application* m_application;
@@ -106,7 +121,10 @@ private:
 	bool m_isInitialized;
 	bool m_shouldExit;
 
-	std::vector<float> m_frameSamples;
+	// Started when the main loop starts. Frame times are measured on it.
+	HiResTimer m_programTimer;
+	FramePacer m_framePacer;
+	PreciseSleep m_frameSleep;
 
 	FrameTimeCapture m_frameTimeCapture;
 };
