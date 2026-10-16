@@ -79,7 +79,7 @@ void SceneLoadOperation::OnStart()
 	OPTICK_EVENT();
 
 	m_scene.Unload();
-	m_scene.SetCurrentScenePath(m_scenePath);
+	m_scene.BeginLoad(m_scenePath);
 
 	SetStatusText("Reading " + m_scenePath.GetRelativePath() + "...");
 

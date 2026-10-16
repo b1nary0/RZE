@@ -12,6 +12,8 @@
 
 #include <Asset/AssetPaths.h>
 
+#include <Game/GameScene.h>
+
 #include <Rendering/MemArena.h>
 
 #include <Utils/Memory/MemoryUtils.h>
@@ -112,11 +114,17 @@ namespace Editor
 		const bool canBuild = !builder.IsBuilding();
 		if (ImGui::MenuItem("Build Game...", nullptr, false, canBuild))
 		{
-			builder.Build(false);
+			builder.Build();
 		}
-		if (ImGui::MenuItem("Launch Game...", nullptr, false, canBuild))
+		// The game loads the scene's file, so unsaved changes are offered a save first
+		if (ImGui::MenuItem("Launch Game...", nullptr, false, canBuild && canUseScene))
 		{
-			builder.Build(true);
+			unsavedChanges.Request(context, "launching the game", [&scene, &builder]()
+				{
+					// Read once the prompt is done, since saving a new scene gives it its file. A new scene that isn't
+					// saved is still the default one on disk.
+					builder.BuildAndLaunch(scene.HasFilePath() ? scene.GetFilePath() : GameScene::GetDefaultScenePath());
+				});
 		}
 
 		ImGui::Separator();

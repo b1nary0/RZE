@@ -80,9 +80,19 @@ void GameScene::Serialize(const Filepath& filePath)
 	}
 }
 
-void GameScene::Deserialize(const Filepath& filePath)
+void GameScene::BeginLoad(const Filepath& filePath)
 {
 	mCurrentScenePath = filePath;
+
+	if (m_loggingEnabled)
+	{
+		RZE_LOG_ARGS("Loading scene [%s].", filePath.GetRelativePath().c_str());
+	}
+}
+
+void GameScene::Deserialize(const Filepath& filePath)
+{
+	BeginLoad(filePath);
 
 	rapidjson::Document sceneDoc;
 	std::string error;

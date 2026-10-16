@@ -45,6 +45,12 @@ public:
 
 	void SetCurrentScenePath(const Filepath& filePath) { mCurrentScenePath = filePath; }
 	const Filepath& GetCurrentScenePath() const { return mCurrentScenePath; }
+	// Called as a load of filePath into the scene starts, by Deserialize and SceneLoadOperation: makes it the current
+	// scene path, and logs it unless EnableLogging turned that off
+	void BeginLoad(const Filepath& filePath);
+	// Whether the scene logs its loads (BeginLoad). On by default; HeadlessScene turns it off, since its loads are for
+	// off-screen captures, not a scene being played or edited.
+	void EnableLogging(bool enabled) { m_loggingEnabled = enabled; }
 	
 	// The first object in the scene with this name, or null. Names aren't unique (objects are identified by
 	// ObjectGUID), so this is for convenience, e.g. finding a scene's only "Camera".
@@ -128,6 +134,7 @@ private:
 	// Set only by SetMainCamera, alongside the camera's flag
 	GameObjectPtr m_mainCamera;
 	bool m_mainCameraDrivesView = true;
+	bool m_loggingEnabled = true;
 
 	std::function<void()> m_onObjectsChanged;
 };

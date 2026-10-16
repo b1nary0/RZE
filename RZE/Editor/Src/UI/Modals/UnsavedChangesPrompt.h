@@ -8,7 +8,8 @@ namespace Editor
 	class EditorContext;
 
 	// Asks whether to save unsaved scene changes before something that would lose them (New, Load, Exit, closing
-	// the window): Save, Don't Save or Cancel. Owned by EditorContext; EditorApp displays it each frame.
+	// the window) or that reads the scene's file (Launch Game): Save, Don't Save or Cancel. Owned by EditorContext;
+	// EditorApp displays it each frame.
 	class UnsavedChangesPrompt
 	{
 	public:

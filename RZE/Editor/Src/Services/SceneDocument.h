@@ -52,7 +52,7 @@ namespace Editor
 	private:
 		void CreateEditorCamera();
 		void SetModified(bool isModified);
-		// Copies the saved scene to where the game reads it
+		// Marks the undo history saved and publishes SceneSavedEvent
 		void OnSaved();
 
 	private:

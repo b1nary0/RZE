@@ -14,6 +14,18 @@ namespace AssetPaths
 		return Filepath(GetSceneFolder().GetRelativePath() + "/" + fileName);
 	}
 
+	std::string GetSceneName(const Filepath& scene)
+	{
+		const Filepath& sceneFolder = GetSceneFolder();
+		if (!scene.IsInside(sceneFolder) || scene.GetRelativePath().size() == sceneFolder.GetRelativePath().size())
+		{
+			return std::string();
+		}
+
+		// Past the folder and the separator after it
+		return scene.GetRelativePath().substr(sceneFolder.GetRelativePath().size() + 1);
+	}
+
 	const Filepath& GetMeshFolder()
 	{
 		static const Filepath s_meshFolder("ProjectData/Mesh");

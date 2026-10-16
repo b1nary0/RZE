@@ -2,6 +2,8 @@
 
 #include <RZE.h>
 
+#include <Asset/AssetPaths.h>
+
 #include <EngineCore/Async/AsyncOperationManager.h>
 #include <EngineCore/Async/JobAsyncOperation.h>
 #include <EngineCore/Threading/CancellationToken.h>
@@ -64,7 +66,17 @@ namespace
 
 namespace Editor
 {
-	void GameBuilder::Build(bool launchAfterBuild)
+	void GameBuilder::Build()
+	{
+		StartBuild(false, Filepath());
+	}
+
+	void GameBuilder::BuildAndLaunch(const Filepath& scene)
+	{
+		StartBuild(true, scene);
+	}
+
+	void GameBuilder::StartBuild(bool launchAfterBuild, const Filepath& launchScene)
 	{
 		if (IsBuilding())
 		{
@@ -72,9 +84,27 @@ namespace Editor
 			return;
 		}
 
-		DebugServices::Get().Trace(LogChannel::Build, launchAfterBuild ? "Building and launching game..." : "Building Game...");
+		// Worked out here, so a bad scene is reported before the build rather than after it
+		std::string sceneArgument;
+		if (launchAfterBuild)
+		{
+			const std::string sceneName = AssetPaths::GetSceneName(launchScene);
+			if (sceneName.empty())
+			{
+				DebugServices::Get().Trace(LogChannel::Build, "Can't launch into " + launchScene.GetRelativePath() + ": the game only loads scenes in " + AssetPaths::GetSceneFolder().GetRelativePath() + ".");
+				return;
+			}
 
-		JobAsyncOperation::WorkFunction work([launchAfterBuild](AsyncWorkerContext& context) -> bool
+			// Quoted, since _spawnl joins its arguments with spaces and the name may have some
+			sceneArgument = "\"" + sceneName + "\"";
+			DebugServices::Get().Trace(LogChannel::Build, "Building and launching game into scene " + launchScene.GetRelativePath() + "...");
+		}
+		else
+		{
+			DebugServices::Get().Trace(LogChannel::Build, "Building Game...");
+		}
+
+		JobAsyncOperation::WorkFunction work([launchAfterBuild, sceneArgument](AsyncWorkerContext& context) -> bool
 			{
 				static const Filepath buildGameBat("BuildGame.bat");
 				static const Filepath gamePath("_build\\debug\\Game.exe");
@@ -97,7 +127,7 @@ namespace Editor
 				context.SetStatusText("Launching game...");
 				const std::string gameExePath = gamePath.GetAbsolutePath();
 				const std::string quotedGameExePath = "\"" + gameExePath + "\"";
-				if (_spawnl(_P_NOWAIT, gameExePath.c_str(), quotedGameExePath.c_str(), nullptr) == -1)
+				if (_spawnl(_P_NOWAIT, gameExePath.c_str(), quotedGameExePath.c_str(), "-scene", sceneArgument.c_str(), nullptr) == -1)
 				{
 					context.SetErrorText("Failed to launch " + gameExePath + ".");
 					return false;

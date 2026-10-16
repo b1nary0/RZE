@@ -20,6 +20,7 @@ namespace
 HeadlessScene::HeadlessScene()
 	: m_scene(std::make_shared<GameScene>())
 {
+	m_scene->EnableLogging(false);
 }
 
 HeadlessScene::~HeadlessScene()

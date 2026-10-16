@@ -13,6 +13,9 @@ namespace AssetPaths
 	constexpr char k_sceneExtension[] = ".scene";
 	// A scene in GetSceneFolder by its file name, e.g. "Sponza.scene"
 	Filepath GetScene(const std::string& fileName);
+	// The inverse of GetScene: scene's path within GetSceneFolder, e.g. "Sponza.scene" or "Tests\Lights.scene". Empty
+	// if scene isn't in that folder.
+	std::string GetSceneName(const Filepath& scene);
 
 	// Mesh assets, which the asset burner writes (MeshAssetWriter)
 	const Filepath& GetMeshFolder();
