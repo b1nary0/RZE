@@ -49,15 +49,6 @@ namespace
 		return _pclose(pipe);
 	}
 
-	// Traces each line to the editor's build log channel. Main thread only.
-	OutputLineSink MakeBuildTraceSink()
-	{
-		return OutputLineSink([](const std::string& line)
-			{
-				DebugServices::Get().Trace(LogChannel::Build, line);
-			});
-	}
-
 	// Traces each line to the editor's build log channel. Safe from worker threads; lines are marshalled to the main thread.
 	OutputLineSink MakeWorkerBuildTraceSink(AsyncWorkerContext& context)
 	{
@@ -68,12 +59,6 @@ namespace
 						DebugServices::Get().Trace(LogChannel::Build, line);
 					}));
 			});
-	}
-
-	int RunAssetCpy(const OutputLineSink& onOutputLine)
-	{
-		static const Filepath assetCpyPath("AssetCpy.bat");
-		return RunProcessStreamed(assetCpyPath, onOutputLine, nullptr);
 	}
 }
 
@@ -92,7 +77,7 @@ namespace Editor
 		JobAsyncOperation::WorkFunction work([launchAfterBuild](AsyncWorkerContext& context) -> bool
 			{
 				static const Filepath buildGameBat("BuildGame.bat");
-				static const Filepath gamePath("_Build\\Debug\\x64\\RZE_Game.exe");
+				static const Filepath gamePath("_build\\debug\\Game.exe");
 
 				const OutputLineSink traceLine = MakeWorkerBuildTraceSink(context);
 
@@ -108,9 +93,6 @@ namespace Editor
 				{
 					return true;
 				}
-
-				context.SetStatusText("Copying assets...");
-				RunAssetCpy(traceLine);
 
 				context.SetStatusText("Launching game...");
 				const std::string gameExePath = gamePath.GetAbsolutePath();
@@ -143,10 +125,5 @@ namespace Editor
 	bool GameBuilder::IsBuilding() const
 	{
 		return m_buildOperation != nullptr && !m_buildOperation->IsFinished();
-	}
-
-	int GameBuilder::CopyAssets()
-	{
-		return RunAssetCpy(MakeBuildTraceSink());
 	}
 }

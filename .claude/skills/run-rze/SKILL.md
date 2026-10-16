@@ -1,6 +1,6 @@
 ---
 name: run-rze
-description: Build, run, and drive the RZE engine's Editor (RZEStudio). Use when asked to start or launch the editor, build the solution, burn/copy assets, take a screenshot of the editor or scene view, click around the ImGui UI, or verify a rendering/editor change in the running app.
+description: Build, run, and drive the RZE engine's Editor (RZEStudio). Use when asked to start or launch the editor, build the solution, burn assets, take a screenshot of the editor or scene view, click around the ImGui UI, or verify a rendering/editor change in the running app.
 ---
 
 RZE is a Windows-only C++ / DX11 engine with a Dear ImGui editor. An agent drives the running `Editor.exe` with
@@ -23,7 +23,6 @@ Push-Location RZE; & .\GenerateSolutions.bat; Pop-Location
 $msbuild = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -find MSBuild\**\Bin\MSBuild.exe
 & $msbuild RZE\RZE.sln /p:Configuration=Debug /p:Platform=x64 /m /v:minimal /nologo
 & .\RZE\_build\debug\SourceAssetBurner.exe
-cmd /c RZE\AssetCpy.bat
 ```
 
 | step | why |
@@ -31,8 +30,6 @@ cmd /c RZE\AssetCpy.bat
 | `GenerateSolutions.bat` | Sharpmake generates `.sln`/`.vcxproj`, which are gitignored. **Re-run it after adding or removing any source file**, or the new file won't compile. |
 | MSBuild | Builds Debug x64 into `RZE\_build\debug\`. A clean incremental build is fast. |
 | `SourceAssetBurner.exe` | Imports `RZE\Assets\3D\**` into `RZE\ProjectData\` (gitignored). Needed once after cloning. Takes about 15 s and writes into `RZE\ProjectData` wherever you run it from. |
-| `AssetCpy.bat` | Copies `Assets/`, `Config/` and `ProjectData/` into `_build\debug` and `_build\release` with `xcopy /d`, so only newer files. **The build does not do this.** Only `Game.exe` reads these copies; the editor doesn't (see Gotchas). Re-run it before running the Game after editing assets or shaders. |
-
 ## Run (agent path)
 
 ```powershell
@@ -109,7 +106,8 @@ It covers the undo history, parking, copy snapshots, selection, interaction trac
 
 - **Never `ShowWindow(SW_RESTORE)` the editor to focus it.** On a maximized window it un-maximizes it (2560x1369 → 1584x861), the whole ImGui layout reflows, and every coordinate you measured is wrong. The driver only restores when the window is minimized.
 - **Debug draws are stripped from Retail builds.** `DebugDrawRenderStage` (debug lines, bounds boxes, the light's direction line, camera frustums) is only added when `RZE_RETAIL` isn't defined, so Debug and Release both show them.
-- **The editor reads assets from the source tree, not from `_build\<config>`.** `EditorMain.cpp` sets `EDirectoryContext::Tools`, so `Filepath` resolves paths against the folder above `_build\` (e.g. `RZE\Assets\Shaders\...`). Shader edits take effect on the next editor launch with no `AssetCpy.bat`. This also means the shader in `RZE\Assets` is what runs: to capture a "before" image, revert or disable the change in the source file itself, not just in `_build`. `Game.exe` uses `EDirectoryContext::Runtime` and reads from its own folder (`_build\<config>`), so it does need `AssetCpy.bat`.
+- **Everything reads assets from the source tree, not from `_build\<config>`.** The Editor, Game and SourceAssetBurner set `EDirectoryContext::Source`, so `Filepath` resolves paths against the folder above `_build\` (e.g. `RZE\Assets\Shaders\...`), whatever the working directory. Shader and asset edits take effect on the next launch with no copy step. This also means the shader in `RZE\Assets` is what runs: to capture a "before" image, revert or disable the change in the source file itself. Any `Assets\`/`Config\`/`ProjectData\` folders left under `_build\<config>` are stale copies from the old `AssetCpy.bat` and aren't read. `EDirectoryContext::Runtime` (beside the exe) is reserved for a packaged game.
+- **A `Filepath` built during static init resolves before `main` sets the context**, so it points beside the exe. Build paths where they're used, or as function-local statics.
 - **Large screenshots are downscaled when Read.** A 2560-wide PNG shows at 2000 px with a note to "multiply coordinates by 1.28". Measure positions in the displayed image, then multiply by that factor before passing them to `click`.
 - **The window title appears before the scene finishes loading.** Meshes stream in afterwards. `-SettleSeconds` covers this: 5 is enough for DrawLineTest, Sponza needs about 20.
 - **`quit` skips shutdown entirely, so it can't catch a crash on exit.** End at least one run per change with `close`. After editing the scene, `close` stops at the unsaved-changes prompt instead; use `quit` there, or answer the prompt.

@@ -27,10 +27,11 @@ namespace
 		PULP_FICTION_TRAVOLTA
 	};
 
-	Filepath gifFilepaths[] =
+	// Plain strings: a Filepath built at static init would resolve before main sets the directory context
+	const char* const gifPaths[] =
 	{
-		Filepath("Assets/2D/GIFs/friends-joey-tribbiani.gif"),
-		Filepath("Assets/2D/GIFs/pulp_fiction_travolta.gif")
+		"Assets/2D/GIFs/friends-joey-tribbiani.gif",
+		"Assets/2D/GIFs/pulp_fiction_travolta.gif"
 	};
 }
 
@@ -51,7 +52,7 @@ void GifChatComponent::Initialize()
 {
 	m_renderScene = &GetOwner()->GetScene().GetRenderScene();
 
-	Load(gifFilepaths[GifFilepathIndex::PULP_FICTION_TRAVOLTA]);
+	Load(Filepath(gifPaths[GifFilepathIndex::PULP_FICTION_TRAVOLTA]));
 }
 
 void GifChatComponent::OnAddToScene()

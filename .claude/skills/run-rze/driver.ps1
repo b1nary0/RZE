@@ -85,7 +85,7 @@ switch ($Action) {
 		if (Get-Process Editor -ErrorAction SilentlyContinue) { throw 'Editor.exe already running. Run: driver.ps1 quit' }
 		$exe = Join-Path $buildDir 'Editor.exe'
 		if (-not (Test-Path $exe)) { throw "Not built: $exe" }
-		# Working directory must be the build dir: Assets/ and ProjectData/ are resolved relative to it
+		# Assets resolve against the source tree from the exe's path, not the working directory; the build dir is just a tidy cwd
 		$p = Start-Process -FilePath $exe -ArgumentList "-scene $Scene" -WorkingDirectory $buildDir -PassThru
 		$deadline = (Get-Date).AddSeconds($TimeoutSeconds)
 		while ((Get-Date) -lt $deadline) {

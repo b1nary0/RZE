@@ -52,18 +52,17 @@ jobs:
       shell: cmd
       run: call .\RZE\_build\${{matrix.buildconfig}}\SourceAssetBurner.exe
       continue-on-error: false
-      
-    - name: Asset Copy
-      shell: cmd
-      run: call .\RZE\AssetCpy.bat
-      continue-on-error: false
 
+    # The executables read their data from the source tree (the folder above _build), so the archive keeps that layout
     - name: Archive Build
       uses: actions/upload-artifact@v2
       with:
         name: RZE v${{github.run_number}} - ${{matrix.buildconfig}}
         path: |
           RZE/_build/${{matrix.buildconfig}}
+          RZE/Assets
+          RZE/Config
+          RZE/ProjectData
           !_RZE/build/${{matrix.buildconfig}}/*.lib
           !_RZE/build/${{matrix.buildconfig}}/*.pdb
           !_RZE/build/${{matrix.buildconfig}}/*.exp

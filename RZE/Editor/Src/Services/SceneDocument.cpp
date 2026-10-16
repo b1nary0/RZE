@@ -143,7 +143,6 @@ namespace Editor
 	{
 		m_context.GetUndoHistory().MarkSaved();
 		SetModified(false);
-		m_context.GetGameBuilder().CopyAssets();
 		m_context.GetEvents().Publish(SceneSavedEvent{ *this });
 	}
 

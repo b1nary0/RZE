@@ -2,14 +2,13 @@
 
 #include <string>
 
-//
-// @implementation: will do this later, leaving as idea.
-//
-
+// Where relative paths like "Assets/..." resolve to
 enum class EDirectoryContext
 {
+	// Beside the executable, for a packaged game
 	Runtime,
-	Tools
+	// The source tree: the folder above _build\ (or beside the executable when it isn't under _build\)
+	Source
 };
 
 class Filepath

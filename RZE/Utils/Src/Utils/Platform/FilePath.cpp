@@ -22,7 +22,7 @@ Filepath::Filepath(const std::string& path)
 	std::string execPath(buffer);
 	std::replace(execPath.begin(), execPath.end(), '/', '\\');
 
-	if (gDirectoryContext == EDirectoryContext::Tools)
+	if (gDirectoryContext == EDirectoryContext::Source)
 	{
 		size_t pos = execPath.find("_build\\");
 		if (pos == std::string::npos)

@@ -19,7 +19,7 @@ namespace
 
 int main(int argc, char* argv[])
 {
-	Filepath::SetDirectoryContext(EDirectoryContext::Tools);
+	Filepath::SetDirectoryContext(EDirectoryContext::Source);
 	if (argc <= 1)
 	{
 		// Troll Assets/3D and BURN IT ALL
