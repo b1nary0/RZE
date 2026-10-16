@@ -172,11 +172,12 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 	// only refreshed by RaiseEvents(), so it stays stale while the application is stealing input.
 	if (inputHandler.GetProxyMouseState().CurWheelVal != 0)
 	{
-		inputHandler.OnMouseWheel(0);
+		inputHandler.ClearMouseWheel();
 	}
 
+	// Every queued message, not one per frame: with frames capped, one per frame lets input queue up and lag
 	MSG msg;
-	if (PeekMessage(&msg, m_osWindowHandleData.windowHandle, 0, 0, PM_REMOVE))
+	while (PeekMessage(&msg, m_osWindowHandleData.windowHandle, 0, 0, PM_REMOVE))
 	{
 		switch (msg.message)
 		{

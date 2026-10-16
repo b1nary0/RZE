@@ -130,8 +130,9 @@ void InputHandler::OnMouseMove(const Int32 xPos, const Int32 yPos)
 
 void InputHandler::OnMouseWheel(const Int32 value)
 {
+	// Adds up: every queued message is handled each frame, so one frame can bring several wheel messages
 	mProxyMouseState.PrevWheelVal = mProxyMouseState.CurWheelVal;
-	mProxyMouseState.CurWheelVal = value;
+	mProxyMouseState.CurWheelVal += value;
 
 	// This may give slightly incorrect values, 
 	// should keep an eye here to see if we should log the position coming in from windows for mouse wheels
@@ -142,6 +143,12 @@ void InputHandler::OnMouseWheel(const Int32 value)
 	action.Wheel = value;
 
 	mMouseActionQueue.push(std::move(action));
+}
+
+void InputHandler::ClearMouseWheel()
+{
+	mProxyMouseState.PrevWheelVal = mProxyMouseState.CurWheelVal;
+	mProxyMouseState.CurWheelVal = 0;
 }
 
 void InputHandler::OnMouseDown(const EMouseButton::T button, const Int32 xPos, const Int32 yPos)

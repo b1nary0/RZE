@@ -67,8 +67,8 @@ private:
 
 		Vector2D CurPosition;
 		Vector2D PrevPosition;
-		Int32 CurWheelVal;
-		Int32 PrevWheelVal;
+		Int32 CurWheelVal = 0;
+		Int32 PrevWheelVal = 0;
 
 		void Reset()
 		{
@@ -157,6 +157,8 @@ public:
 
 	void OnMouseMove(const Int32 xPos, const Int32 yPos);
 	void OnMouseWheel(const Int32 value);
+	// The wheel only reports deltas: the window clears it at the start of each frame, before that frame's messages
+	void ClearMouseWheel();
 	void OnMouseDown(const EMouseButton::T button, const Int32 xPos, const Int32 yPos);
 	void OnMouseUp(const EMouseButton::T button, const Int32 xPos, const Int32 yPos);
 
