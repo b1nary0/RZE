@@ -96,12 +96,12 @@ sequenceDiagram
 
 | Menu | Items |
 |---|---|
-| File | New Scene..., Load Scene... (the file browser, on `Assets\Scenes`), Save Scene (the file browser in Save mode if the scene is new), Build Game..., Launch Game..., Exit. New, Load and Exit ask about unsaved changes first. |
+| File | New Scene..., Load Scene... (the file browser, on `Assets\Scenes`), Save Scene (the file browser in Save mode if the scene is new), Build Game..., Launch Game... (builds, then starts the Game in the open scene), Exit. New, Load, Launch Game and Exit ask about unsaved changes first. |
 | Edit | Undo "<step>" (Ctrl+Z), Redo "<step>" (Ctrl+Y), Copy (Ctrl+C), Paste (Ctrl+V), Duplicate (Ctrl+D), then the panels registered under Edit: Settings |
 | View | Windows: Log, Object Inspector, Resource Monitor, Scene (built from each panel's `MenuPath`, checked while open) |
 | Help | ImGui Demo |
 
-`MainMenuBar` (`UI\MainMenuBar.h/.cpp`) draws the menus and readouts and handles the Edit shortcuts. File items call `SceneDocument` and `GameBuilder`, through `UnsavedChangesPrompt` where changes could be lost; New and Load are disabled while a load runs, Build and Launch while a build does. Undo and Redo name the step they'd undo ("Undo Delete GameObject") and are greyed out when there's nothing to undo or redo.
+`MainMenuBar` (`UI\MainMenuBar.h/.cpp`) draws the menus and readouts and handles the Edit shortcuts. File items call `SceneDocument` and `GameBuilder`, through `UnsavedChangesPrompt` where changes could be lost; New, Load and Launch Game are disabled while a load runs, Build and Launch while a build does. Undo and Redo name the step they'd undo ("Undo Delete GameObject") and are greyed out when there's nothing to undo or redo.
 
 The right side of the menu bar shows the render command arena's use (`RenderCommand MemArena: current / total`, plus the peak), colour-coded by pressure. It's a quick way to see what a change costs on the render path. Frame times are in the status bar.
 

@@ -58,7 +58,7 @@ Double-clicking an object in the Scene panel calls `FocusOn(bounds)` with the ob
 
 ## Build/Launch workflow
 
-File > **Build Game...** and **Launch Game...** call `GameBuilder::Build(launchAfterBuild)` (`Editor\Src\Services\GameBuilder.h/.cpp`, owned by `EditorContext`). The build runs as an async job (`JobAsyncOperation`), so the Editor keeps running while the Game builds. Both items are greyed out while a build is in progress (`IsBuilding()`), and a second request is ignored with a log line.
+File > **Build Game...** calls `GameBuilder::Build()`, and **Launch Game...** calls `GameBuilder::BuildAndLaunch(scene)` (`Editor\Src\Services\GameBuilder.h/.cpp`, owned by `EditorContext`). The build runs as an async job (`JobAsyncOperation`), so the Editor keeps running while the Game builds. Both items are greyed out while a build is in progress (`IsBuilding()`), and a second request is ignored with a log line.
 
 ```mermaid
 %%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
@@ -68,6 +68,8 @@ sequenceDiagram
     participant Job as Build job (worker thread)
     participant Log as Log panel
     User->>App: File > Launch Game...
+    App->>App: unsaved changes? Save, Don't Save or Cancel
+    App->>App: the scene's name in Assets\Scenes
     App->>Job: start "Build and Launch Game"
     Job->>Job: run BuildGame.bat
     loop each line of output
@@ -76,19 +78,23 @@ sequenceDiagram
     alt build failed
         Job-->>Log: "Build failed with exit code N."
     else build succeeded and launching
-        Job->>Job: start _build\debug\Game.exe (doesn't wait)
+        Job->>Job: start _build\debug\Game.exe -scene "name" (doesn't wait)
         Job-->>Log: "Build and Launch Game succeeded."
     end
 ```
 
 - **Build Game** runs `BuildGame.bat` (MSBuild for the Game project) and stops there.
-- **Launch Game** does the same, then starts `_build\debug\Game.exe` without waiting for it.
+- **Launch Game** does the same, then starts `_build\debug\Game.exe` **into the scene that's open in the editor**, without waiting for it:
+  - It goes through the [unsaved-changes prompt](Editor-Framework.md#the-unsaved-changes-prompt) first, since the Game reads the scene's file. A new scene that was never saved launches as `Default.scene` (`GameScene::GetDefaultScenePath()`). The item is disabled while a scene is loading.
+  - The scene is passed as `-scene "<name>"`, its path inside `Assets\Scenes` (`AssetPaths::GetSceneName`, the inverse of `GetScene`, e.g. `Sponza.scene` or `Tests\Lights.scene`), quoted because `_spawnl` joins its arguments with spaces. It's worked out before the build starts, so a scene outside `Assets\Scenes`, which the Game can't load, is reported in the Build channel straight away and nothing is built.
+  - The Build channel names the scene ("Building and launching game into scene ..."), and the Game logs the scene it loads ([Scene-And-GameObject-Model.md](../03-SceneAndGameObjects/Scene-And-GameObject-Model.md)).
 - **Nothing is copied.** The Game reads `Assets\`, `Config\` and `ProjectData\` from the source tree, like the Editor (`EDirectoryContext::Source`, see [Building-And-Running.md](../01-GettingStarted/Building-And-Running.md)), so it sees a saved scene straight away.
 
 ## Key files
 
 - `Editor\Src\Game\World\GameObjectComponents\EditorCameraComponent.h/.cpp`
 - `Editor\Src\Services\GameBuilder.h/.cpp` — Build Game, Launch Game
+- `Engine\Src\Asset\AssetPaths.h/.cpp` — `GetSceneName`
 - `Editor\Src\Services\SceneDocument.h/.cpp` — creates the editor camera after each load
 - `Editor\Src\UI\MainMenuBar.cpp` — the File menu items
 - `BuildGame.bat`

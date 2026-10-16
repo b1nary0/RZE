@@ -218,7 +218,7 @@ The history also keeps a **save point**: its position at the last save or load. 
 
 ### The unsaved-changes prompt
 
-`UnsavedChangesPrompt` (`UI\Modals\`) guards anything that would lose unsaved changes:
+`UnsavedChangesPrompt` (`UI\Modals\`) guards anything that would lose unsaved changes, or that reads the scene's file (Launch Game):
 
 ```cpp
 context.GetUnsavedChangesPrompt().Request(context, "loading another scene", [&scene]() { /* file browser, then Load */ });
@@ -226,7 +226,7 @@ context.GetUnsavedChangesPrompt().Request(context, "loading another scene", [&sc
 
 - If the scene has no unsaved changes, the action runs straight away.
 - Otherwise a modal asks *"Sponza.scene has unsaved changes. Save them before loading another scene?"*: **Save** (then the action), **Don't Save** (the action), **Cancel** or Escape (nothing). Choosing Save on a new scene opens the file browser in Save mode (`SaveWithPrompt`); cancelling it cancels the action too, so the changes aren't lost. The prompt stays pending (`IsOpen()`) while the browser is up.
-- New, Load and Exit go through it, and so does closing the window: the engine turns the window's close button into `Window_CloseRequested`, and `EditorApp::OnCloseRequested()` returns false and opens the prompt while there are unsaved changes ([App-Shell-Pattern.md](../02-Architecture/App-Shell-Pattern.md)).
+- New, Load, Launch Game and Exit go through it, and so does closing the window: the engine turns the window's close button into `Window_CloseRequested`, and `EditorApp::OnCloseRequested()` returns false and opens the prompt while there are unsaved changes ([App-Shell-Pattern.md](../02-Architecture/App-Shell-Pattern.md)).
 
 ## Events
 
