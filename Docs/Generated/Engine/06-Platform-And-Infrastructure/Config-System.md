@@ -29,7 +29,7 @@ MaxFrameRate=0
 ; Frames per second while the window is unfocused or minimised, 0 to not throttle
 UnfocusedFrameRate=30
 ; How many times a second the UI updates while you're not interacting, 0 for every frame. The scene still updates and renders every frame.
-UIFrameRate=0
+UIFrameRate=15
 
 [WindowSettings]
 WindowWidth=1600

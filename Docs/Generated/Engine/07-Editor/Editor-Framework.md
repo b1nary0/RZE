@@ -123,7 +123,7 @@ sequenceDiagram
 
 `RZE_Application::PreUIUpdate()` is the engine hook that makes the split possible: it runs **before** `ImGui::NewFrame`, so an ImGui call in a panel's `Update()` hits ImGui's own "no frame" assert straight away. Commands are flushed after every panel has drawn and before the scene updates, so changes show in the same frame's render.
 
-Everything in the `opt` box is the UI, which `FrameSettings::UIFrameRate` (the [Frame Rate settings page](Status-Bar-And-Settings.md#pages)) can run less often than the scene. By default every frame is a UI frame, and every frame is one anyway while the user interacts. A frame that skips the UI renders the last one again around this frame's scene, so per-frame scene overlays go in `PreRender`, not `Draw`. What ImGui itself draws over the scene (the gizmo, object icons, the marquee) only moves on UI frames. See [Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md#ui-frame-rate).
+Everything in the `opt` box is the UI, which `FrameSettings::UIFrameRate` (the [Frame Rate settings page](Status-Bar-And-Settings.md#pages)) can run less often than the scene. The checked-in Engine.ini sets 15 a second (with no setting, every frame is a UI frame), and every frame is one anyway while the user interacts. A frame that skips the UI renders the last one again around this frame's scene, so per-frame scene overlays go in `PreRender`, not `Draw`. What ImGui itself draws over the scene (the gizmo, object icons, the marquee) only moves on UI frames. See [Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md#ui-frame-rate).
 
 ## Commands: how panels change the scene
 

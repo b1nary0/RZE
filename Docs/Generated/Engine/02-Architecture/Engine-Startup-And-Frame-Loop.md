@@ -164,12 +164,12 @@ The update is split into a scene part, which runs every frame, and a UI part, wh
 
 `FrameSettings` (`Engine\Src\EngineCore\Config\FrameSettings.h`):
 
-| Setting | Engine.ini `[FrameSettings]` | Command line | Default | Meaning |
+| Setting | Engine.ini `[FrameSettings]` | Command line | Default (Engine.ini) | Meaning |
 |---|---|---|---|---|
-| `VSync` | `EnableVsync` | `-vsync 0/1` | On | Present on the display's refresh |
-| `MaxFrameRate` | `MaxFrameRate` | `-maxfps N` | 0 | The most frames a second; 0 for no cap beyond vsync |
-| `UnfocusedFrameRate` | `UnfocusedFrameRate` | | 30 | Frames a second while the window is unfocused or minimised; 0 to not throttle |
-| `UIFrameRate` | `UIFrameRate` | `-uifps N` | 0 | How many times a second the UI updates; 0 for every frame |
+| `VSync` | `EnableVsync` | `-vsync 0/1` | On (on) | Present on the display's refresh |
+| `MaxFrameRate` | `MaxFrameRate` | `-maxfps N` | 0 (0) | The most frames a second; 0 for no cap beyond vsync |
+| `UnfocusedFrameRate` | `UnfocusedFrameRate` | | 30 (30) | Frames a second while the window is unfocused or minimised; 0 to not throttle |
+| `UIFrameRate` | `UIFrameRate` | `-uifps N` | 0 (15) | How many times a second the UI updates; 0 for every frame |
 
 `RZE_Engine::InitializeFramePacing()` reads them once the main loop's timer has started, with the command line overriding Engine.ini ([Config-System.md](../06-Platform-And-Infrastructure/Config-System.md)). `RZE_Engine::SetFrameSettings()` changes them while running (the Editor's [Frame Rate page](../07-Editor/Status-Bar-And-Settings.md#pages)); it also passes vsync on to the renderer. `GetFramePacer()` reads the settings and the stats.
 
