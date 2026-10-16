@@ -105,7 +105,7 @@ void AsyncOperationManager::Tick()
 
 	m_isTicking = true;
 	{
-		AsyncFrameBudget foregroundBudget = CreateFrameBudget();
+		AsyncFrameBudget foregroundBudget = CreateFrameBudget(m_frameBudgetMS, false);
 		TickEntries(false, foregroundBudget);
 
 		// Only what the foreground left of the render command arena, which is a hard limit
@@ -113,7 +113,9 @@ void AsyncOperationManager::Tick()
 			foregroundBudget.GetArenaBytesRemaining(), foregroundBudget.GetArenaCapacityBytes());
 		TickEntries(true, backgroundBudget);
 
-		m_arenaBytesConsumedLastFrame = foregroundBudget.GetArenaBytesConsumed() + backgroundBudget.GetArenaBytesConsumed();
+		m_arenaBytesConsumedLastFrame = m_idleArenaBytesConsumed + foregroundBudget.GetArenaBytesConsumed() + backgroundBudget.GetArenaBytesConsumed();
+		m_idleArenaBytesConsumed = 0;
+		m_idleUploadBytesConsumed = 0;
 	}
 	m_isTicking = false;
 
@@ -122,6 +124,40 @@ void AsyncOperationManager::Tick()
 	for (const std::shared_ptr<AsyncOperation>& operation : pendingStarts)
 	{
 		StartInternal(operation);
+	}
+}
+
+void AsyncOperationManager::TickIdle(double timeMS)
+{
+	OPTICK_EVENT();
+	AssertExpr(Threading::MainThreadDispatcher::Get().IsMainThread());
+
+	if (m_entries.empty())
+	{
+		return;
+	}
+
+	m_isTicking = true;
+	{
+		AsyncFrameBudget budget = CreateFrameBudget(timeMS, true);
+		TickRunningEntries(false, budget);
+		TickRunningEntries(true, budget);
+
+		m_idleArenaBytesConsumed += budget.GetArenaBytesConsumed();
+		m_idleUploadBytesConsumed += budget.GetUploadBytesConsumed();
+	}
+	m_isTicking = false;
+}
+
+void AsyncOperationManager::TickRunningEntries(bool background, AsyncFrameBudget& budget)
+{
+	for (Entry& entry : m_entries)
+	{
+		AsyncOperation& operation = *entry.Operation;
+		if (operation.IsBackground() == background && !entry.IsFinished && !operation.HasRequestedFinish() && !operation.IsCancellationRequested())
+		{
+			operation.OnTick(budget);
+		}
 	}
 }
 
@@ -218,7 +254,7 @@ void AsyncOperationManager::SetFrameBudget(double timeBudgetMS, size_t uploadBud
 	m_uploadBudgetBytes = uploadBudgetBytes;
 }
 
-AsyncFrameBudget AsyncOperationManager::CreateFrameBudget() const
+AsyncFrameBudget AsyncOperationManager::CreateFrameBudget(double timeBudgetMS, bool isIdle) const
 {
 	// Estimate what the rest of the frame will need from the render command arena by taking last frame's
 	// usage minus what async operations consumed last frame, and hand out what's left.
@@ -227,7 +263,9 @@ AsyncFrameBudget AsyncOperationManager::CreateFrameBudget() const
 	const size_t baselineUsage = lastFrameTotal > m_arenaBytesConsumedLastFrame ? lastFrameTotal - m_arenaBytesConsumedLastFrame : 0;
 
 	const size_t arenaCapacity = arenaSize > k_arenaSafetyMarginBytes ? arenaSize - k_arenaSafetyMarginBytes : 0;
-	const size_t arenaBudget = arenaCapacity > baselineUsage ? arenaCapacity - baselineUsage : 0;
+	const size_t arenaUsage = baselineUsage + m_idleArenaBytesConsumed;
+	const size_t arenaBudget = arenaCapacity > arenaUsage ? arenaCapacity - arenaUsage : 0;
+	const size_t uploadBudget = m_uploadBudgetBytes > m_idleUploadBytesConsumed ? m_uploadBudgetBytes - m_idleUploadBytesConsumed : 0;
 
-	return AsyncFrameBudget(m_frameBudgetMS, m_uploadBudgetBytes, arenaBudget, arenaCapacity);
+	return AsyncFrameBudget(timeBudgetMS, uploadBudget, arenaBudget, arenaCapacity, isIdle);
 }

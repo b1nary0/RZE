@@ -1,5 +1,7 @@
 #include <Services/ThumbnailBatchOperation.h>
 
+#include <EngineCore/Async/AsyncFrameBudget.h>
+
 namespace Editor
 {
 	ThumbnailBatchOperation::ThumbnailBatchOperation(const std::string& name, U32 flags)
@@ -39,7 +41,8 @@ namespace Editor
 
 		case EState::Settling:
 		{
-			if (m_settleFramesLeft-- > 0)
+			// Counts frames, which idle ticks aren't
+			if (budget.IsIdle() || m_settleFramesLeft-- > 0)
 			{
 				break;
 			}

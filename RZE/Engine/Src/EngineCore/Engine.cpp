@@ -22,6 +22,9 @@
 
 namespace
 {
+	// Less spare time than this isn't worth handing to async operations
+	constexpr double k_minIdleWorkMS = 1.0;
+
 	// Forwards RZE_LOG/RZE_LOG_ARGS lines to DebugServices (the editor Log panel). Worker-thread lines are
 	// marshalled to the main thread, since DebugServices must not be traced while it is being iterated.
 	void TraceLogLine(std::string_view line)
@@ -291,6 +294,15 @@ void RZE_Engine::BeginFrame(double now)
 void RZE_Engine::WaitForNextFrame()
 {
 	OPTICK_EVENT();
+
+	// Spare time before the next frame goes to async operations (scene loads, thumbnails and the like). Only frames that
+	// are paced have any; it's after Finish(), so it adds nothing to this frame's latency.
+	const double idleMS = m_framePacer.GetIdleTime(m_programTimer.GetElapsed<double>()) * 1000.0;
+	if (idleMS >= k_minIdleWorkMS)
+	{
+		OPTICK_EVENT("Idle work");
+		m_asyncOperationManager.TickIdle(idleMS);
+	}
 
 	{
 		OPTICK_EVENT("Sleep");

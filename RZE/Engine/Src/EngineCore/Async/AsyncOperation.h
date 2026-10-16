@@ -117,7 +117,8 @@ protected:
 	virtual void OnStart() = 0;
 
 	// Called once per frame while running. Do bounded main-thread work here, respecting the budget,
-	// and call Complete() or Fail() when done.
+	// and call Complete() or Fail() when done. When the frame has spare time it may be called again in the same frame,
+	// with budget.IsIdle() true; count frames only on ticks where it's false.
 	virtual void OnTick(AsyncFrameBudget& budget) = 0;
 
 	// Called once all outstanding jobs have finished, right before the completion callback.

@@ -10,10 +10,13 @@
 // - Time and upload bytes are soft limits: the first unit of work each frame is always allowed so
 //   operations are guaranteed to make progress, even if that unit is larger than the budget.
 // - Arena bytes are a hard limit: Rendering::MemArena asserts if a frame overflows it.
+//
+// Each frame's own tick gets a budget that isn't idle. When the frame has spare time before the next one is due, running
+// operations are ticked again with an idle budget (AsyncOperationManager::TickIdle): extra time within the same frame.
 class AsyncFrameBudget
 {
 public:
-	AsyncFrameBudget(double timeBudgetMS, size_t uploadBudgetBytes, size_t arenaBudgetBytes, size_t arenaCapacityBytes);
+	AsyncFrameBudget(double timeBudgetMS, size_t uploadBudgetBytes, size_t arenaBudgetBytes, size_t arenaCapacityBytes, bool isIdle = false);
 
 public:
 	// True once the soft limits have been spent. Work that has no byte cost should stop when this is true.
@@ -25,9 +28,14 @@ public:
 	// False if the cost could never fit in the arena, even on an otherwise empty frame.
 	bool CanEverAfford(const ResourceFinalizeCost& cost) const;
 
+	// True for a tick from the frame's spare time, which isn't a new frame. Work that counts frames (e.g. waiting a few
+	// frames for something to settle) counts only ticks where this is false.
+	bool IsIdle() const { return m_isIdle; }
+
 	size_t GetArenaBytesConsumed() const { return m_arenaBytesConsumed; }
 	size_t GetArenaBytesRemaining() const { return m_arenaBytesRemaining; }
 	size_t GetArenaCapacityBytes() const { return m_arenaCapacityBytes; }
+	size_t GetUploadBytesConsumed() const { return m_uploadBytesConsumed; }
 
 private:
 	double GetElapsedMS() const;
@@ -40,6 +48,9 @@ private:
 	size_t m_arenaBytesRemaining;
 	size_t m_arenaCapacityBytes;
 	size_t m_arenaBytesConsumed = 0;
+	size_t m_uploadBytesConsumed = 0;
+
+	bool m_isIdle = false;
 
 	bool m_hasConsumedWork = false;
 };

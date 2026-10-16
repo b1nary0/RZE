@@ -3,11 +3,12 @@
 
 #include <algorithm>
 
-AsyncFrameBudget::AsyncFrameBudget(double timeBudgetMS, size_t uploadBudgetBytes, size_t arenaBudgetBytes, size_t arenaCapacityBytes)
+AsyncFrameBudget::AsyncFrameBudget(double timeBudgetMS, size_t uploadBudgetBytes, size_t arenaBudgetBytes, size_t arenaCapacityBytes, bool isIdle)
 	: m_timeBudgetMS(timeBudgetMS)
 	, m_uploadBytesRemaining(uploadBudgetBytes)
 	, m_arenaBytesRemaining(arenaBudgetBytes)
 	, m_arenaCapacityBytes(arenaCapacityBytes)
+	, m_isIdle(isIdle)
 {
 	m_timer.Start();
 }
@@ -34,7 +35,9 @@ bool AsyncFrameBudget::TryConsume(const ResourceFinalizeCost& cost)
 
 	m_arenaBytesRemaining -= cost.ArenaBytes;
 	m_arenaBytesConsumed += cost.ArenaBytes;
-	m_uploadBytesRemaining -= std::min(cost.UploadBytes, m_uploadBytesRemaining);
+	const size_t uploadBytes = std::min(cost.UploadBytes, m_uploadBytesRemaining);
+	m_uploadBytesRemaining -= uploadBytes;
+	m_uploadBytesConsumed += uploadBytes;
 	m_hasConsumedWork = true;
 
 	return true;

@@ -15,6 +15,10 @@ class AsyncFrameBudget;
 // (EAsyncOperationFlags::Background) are ticked after them with a smaller budget of their own and whatever render
 // command memory the foreground left, so they always make some progress but never take much of a frame.
 //
+// When a frame has spare time before the next one is due, TickIdle() gives the running operations some of it, foreground
+// first. It runs after the frame is handed to the renderer, so what it records goes out with the next frame, and that
+// frame's Tick() gets what's left of its allowance.
+//
 // Lifecycle of an operation:
 //   Start() -> OnStart()
 //   Tick()  -> OnTick(budget) each frame until the operation calls Complete()/Fail() or is cancelled
@@ -42,7 +46,12 @@ public:
 	// Cancels all operations and blocks until their worker jobs have finished. Completion callbacks are not fired.
 	void ShutDown();
 
+	// Once per frame, before the frame is built
 	void Tick();
+	// With the frame's spare time, after it's handed to the renderer: ticks running operations again with an idle budget
+	// of timeMS (AsyncFrameBudget::IsIdle). Operations only get more time here; finishing them, their callbacks and
+	// starting new ones stay in Tick().
+	void TickIdle(double timeMS);
 
 public:
 	void Start(const std::shared_ptr<AsyncOperation>& operation);
@@ -66,9 +75,12 @@ private:
 		U32 RetireFramesRemaining = 0;
 	};
 
-	AsyncFrameBudget CreateFrameBudget() const;
+	// The render command arena and uploads left for this frame, less what idle ticks before it used
+	AsyncFrameBudget CreateFrameBudget(double timeBudgetMS, bool isIdle) const;
 	// Ticks the foreground or the background operations, removing those that are done
 	void TickEntries(bool background, AsyncFrameBudget& budget);
+	// Ticks the foreground or the background operations that are still running, and nothing else
+	void TickRunningEntries(bool background, AsyncFrameBudget& budget);
 	void StartInternal(const std::shared_ptr<AsyncOperation>& operation);
 	// Returns true when the entry can be removed.
 	bool TickEntry(Entry& entry, AsyncFrameBudget& budget);
@@ -80,6 +92,9 @@ private:
 	double m_frameBudgetMS;
 	size_t m_uploadBudgetBytes;
 	size_t m_arenaBytesConsumedLastFrame = 0;
+	// What idle ticks used since the last Tick(), all of it part of the frame that Tick() starts
+	size_t m_idleArenaBytesConsumed = 0;
+	size_t m_idleUploadBytesConsumed = 0;
 
 	bool m_isTicking = false;
 	bool m_isShutDown = false;

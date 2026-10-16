@@ -90,3 +90,85 @@ TEST_CASE("A foreground operation that spends its whole budget doesn't stop back
 
 	manager.ShutDown();
 }
+
+TEST_CASE("Idle ticks give running operations more time, foreground first, with an idle budget")
+{
+	AsyncOperationManager manager;
+	manager.Initialize();
+
+	std::vector<std::string> ticks;
+	const auto recordTick = [&ticks](const char* name)
+	{
+		return [&ticks, name](AsyncFrameBudget& budget) { ticks.push_back(std::string(name) + (budget.IsIdle() ? " idle" : "")); };
+	};
+	manager.Start(std::make_shared<TestOperation>("Background", EAsyncOperationFlags::Background, recordTick("Background")));
+	manager.Start(std::make_shared<TestOperation>("Foreground", EAsyncOperationFlags::None, recordTick("Foreground")));
+
+	manager.Tick();
+	manager.TickIdle(5.0);
+	CHECK(ticks == std::vector<std::string>{ "Foreground", "Background", "Foreground idle", "Background idle" });
+
+	manager.ShutDown();
+}
+
+TEST_CASE("Idle ticks don't finish operations; the next frame's tick does")
+{
+	AsyncOperationManager manager;
+	manager.Initialize();
+
+	int idleTicks = 0;
+	std::shared_ptr<TestOperation> operation = std::make_shared<TestOperation>("Done", EAsyncOperationFlags::None,
+		[&idleTicks](AsyncFrameBudget& budget) { idleTicks += budget.IsIdle() ? 1 : 0; });
+	bool completed = false;
+	operation->SetOnCompleted(AsyncOperation::CompletionCallback([&completed](const AsyncOperation&) { completed = true; }));
+	manager.Start(operation);
+	manager.Tick();
+
+	operation->Succeed();
+	manager.TickIdle(5.0);
+	CHECK(idleTicks == 0);
+	CHECK_FALSE(completed);
+
+	manager.Tick();
+	CHECK(completed);
+
+	manager.ShutDown();
+}
+
+TEST_CASE("What idle ticks upload comes out of the next frame's allowance, and the frame after starts afresh")
+{
+	AsyncOperationManager manager;
+	manager.Initialize();
+	manager.SetFrameBudget(100.0, 1024);
+
+	ResourceFinalizeCost bigUpload;
+	bigUpload.UploadBytes = 1000;
+	ResourceFinalizeCost smallUpload;
+	smallUpload.UploadBytes = 100;
+
+	// The first unit of a budget is always allowed, so the second one shows whether the allowance is left
+	bool secondUploadFitted = false;
+	manager.Start(std::make_shared<TestOperation>("Uploads", EAsyncOperationFlags::None,
+		[&](AsyncFrameBudget& budget)
+		{
+			if (budget.IsIdle())
+			{
+				budget.TryConsume(bigUpload);
+				return;
+			}
+			budget.TryConsume(smallUpload);
+			secondUploadFitted = budget.TryConsume(smallUpload);
+		}));
+
+	manager.Tick();
+	CHECK(secondUploadFitted);
+
+	manager.TickIdle(5.0);
+	manager.Tick();
+	CHECK_FALSE(secondUploadFitted);
+
+	manager.Tick();
+	CHECK(secondUploadFitted);
+
+	manager.ShutDown();
+}
