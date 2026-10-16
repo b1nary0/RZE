@@ -46,7 +46,7 @@ A standard Dear ImGui persisted window-layout file, auto-generated/updated by Im
 
 ## Where config lives in the build/asset flow
 
-`AssetCpy.bat` copies the entire `Config\` folder into the build output directory alongside `Assets\` and `ProjectData\` — see [Building-And-Running.md](../01-GettingStarted/Building-And-Running.md).
+Nowhere else: the Editor and the Game both read `Config\` from the source tree (`EDirectoryContext::Source`), so an edit to `Engine.ini` applies on their next launch with no copy step. See [Building-And-Running.md](../01-GettingStarted/Building-And-Running.md).
 
 ## Key files
 

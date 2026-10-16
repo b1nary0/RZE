@@ -76,20 +76,19 @@ sequenceDiagram
     alt build failed
         Job-->>Log: "Build failed with exit code N."
     else build succeeded and launching
-        Job->>Job: copy assets (AssetCpy)
-        Job->>Job: start _Build\Debug\x64\RZE_Game.exe (doesn't wait)
+        Job->>Job: start _build\debug\Game.exe (doesn't wait)
         Job-->>Log: "Build and Launch Game succeeded."
     end
 ```
 
 - **Build Game** runs `BuildGame.bat` (MSBuild for the Game project) and stops there.
-- **Launch Game** does the same, then copies assets and starts the Game without waiting for it.
-- **Save Scene** also copies assets afterwards (`SceneDocument` calls `GameBuilder::CopyAssets()`), so the Game sees the latest scene. The Game, unlike the Editor, reads from its own build folder.
+- **Launch Game** does the same, then starts `_build\debug\Game.exe` without waiting for it.
+- **Nothing is copied.** The Game reads `Assets\`, `Config\` and `ProjectData\` from the source tree, like the Editor (`EDirectoryContext::Source`, see [Building-And-Running.md](../01-GettingStarted/Building-And-Running.md)), so it sees a saved scene straight away.
 
 ## Key files
 
 - `Editor\Src\Game\World\GameObjectComponents\EditorCameraComponent.h/.cpp`
-- `Editor\Src\Services\GameBuilder.h/.cpp` — Build Game, Launch Game, `CopyAssets()`
+- `Editor\Src\Services\GameBuilder.h/.cpp` — Build Game, Launch Game
 - `Editor\Src\Services\SceneDocument.h/.cpp` — creates the editor camera after each load
 - `Editor\Src\UI\MainMenuBar.cpp` — the File menu items
-- `BuildGame.bat`, `AssetCpy.bat`
+- `BuildGame.bat`

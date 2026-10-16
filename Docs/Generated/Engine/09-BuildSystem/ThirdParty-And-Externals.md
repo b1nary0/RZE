@@ -33,7 +33,7 @@ Raw DLLs also present: `OptickCore.dll`, `assimp-vc141-mt.dll` (built from sourc
 
 ## `Tools\` — bundled binaries (not source)
 
-- `Tools\RZEHub.exe` — a custom launcher/dashboard GUI (no source found in this repo — likely maintained separately). Per the README, the intended workflow is: run `RZEHub.exe` → open and build the generated solution → click "Burn Assets" then "Asset Copy" in RZE Hub → start the Editor or Game project. RZEHub appears to be a GUI front-end that invokes `SourceAssetBurner.exe` and `AssetCpy.bat` for you.
+- `Tools\RZEHub.exe` — a custom launcher/dashboard GUI (no source found in this repo — likely maintained separately). Per the README, the intended workflow is: run `RZEHub.exe` → open and build the generated solution → click "Burn Assets" in RZE Hub → start the Editor or Game project. RZEHub appears to be a GUI front-end that invokes `SourceAssetBurner.exe` for you. Its "Asset Copy" button ran `AssetCpy.bat`, which was removed when the Game started reading the source tree, so that button no longer works.
 - `Tools\Assimp\` — `assimp.dll`, `assimp.exe`, `assimp_viewer.exe`.
 - `Tools\Optick\Optick.exe` — the Optick profiler UI.
 - `Tools\Sharpmake\` — the full Sharpmake application (`Sharpmake.Application.exe`, `Sharpmake.dll`, `Sharpmake.Generators.dll`, `Sharpmake.CommonPlatforms.dll`, Roslyn/CodeAnalysis dependencies, plus a macOS variant) — this is what `GenerateSolutions.bat` actually invokes.

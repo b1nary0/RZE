@@ -12,18 +12,17 @@ flowchart TD
     A["GenerateSolutions.bat<br/>(Sharpmake -> RZE.sln + vcxprojs under _project)"] --> B["msbuild RZE.sln<br/>(compiles Engine, Rendering, Utils, Externals, EditorLib,<br/>SourceAssetBurner.exe, Editor.exe, Game.exe, UnitTests.exe)"]
     B --> T["Run UnitTests.exe"]
     T --> C["Burn Assets<br/>Run SourceAssetBurner.exe<br/>(Assets/3D/*.obj -> ProjectData/Mesh + Material/*)"]
-    C --> D["Asset Copy<br/>AssetCpy.bat<br/>(stages Assets/, Config/, ProjectData/ into _build/&lt;config&gt;/)"]
-    D --> E["Run Editor.exe or Game.exe"]
+    C --> E["Run Editor.exe or Game.exe<br/>(both read Assets/, Config/ and ProjectData/<br/>from the source tree)"]
 ```
 
 This exact sequence is confirmed by `.github\workflows\Windows.yml` (the CI pipeline) and matches the manual steps in the README:
 
 1. Run `Tools\RZEHub.exe`
 2. Open and build the generated solution
-3. Click **"Burn Assets"**, then **"Asset Copy"** in RZE Hub
+3. Click **"Burn Assets"** in RZE Hub
 4. Start the Editor or Game project (Game is the default)
 
-RZEHub is a GUI front-end that (per its buttons' names) invokes `SourceAssetBurner.exe` and `AssetCpy.bat` for you rather than requiring the manual commands below.
+RZEHub is a GUI front-end that (per its buttons' names) invokes `SourceAssetBurner.exe` for you rather than requiring the manual commands below. Its **"Asset Copy"** button ran `AssetCpy.bat`, which is gone, so it no longer works; nothing needs copying any more (below). The Hub's source isn't in this repo.
 
 ## Doing it manually (what each step actually runs)
 
@@ -37,7 +36,7 @@ RZEHub is a GUI front-end that (per its buttons' names) invokes `SourceAssetBurn
    ```
    msbuild RZE.sln /property:Configuration=Debug   (or Release)
    ```
-   Or use `RZE\BuildGame.bat` (one line: `msbuild _Project\Game.vcxproj -property:Configuration=Debug -property:Platform=x64`) to build just the Game project quickly. Output lands in `RZE\_build\<config>\`.
+   Or use `RZE\BuildGame.bat` to build just the Game quickly: it finds MSBuild through `vswhere`, so it works outside a Visual Studio developer prompt, and builds `Game\_project\Game_Win64.vcxproj` as Debug|x64. Output lands in `RZE\_build\<config>\`.
 
 3. **Burn assets** (offline asset conditioning — see [05-AssetPipeline/Asset-Burning-Pipeline.md](../05-AssetPipeline/Asset-Burning-Pipeline.md) for what this actually does)
    ```
@@ -45,16 +44,12 @@ RZEHub is a GUI front-end that (per its buttons' names) invokes `SourceAssetBurn
    ```
    With no argument, this walks `Assets\3D\` and converts every `.obj` found into RZE's binary `.meshasset`/`.materialasset` formats under `ProjectData\` (about 15 seconds). `ProjectData\` **isn't tracked in git**, so do this once after cloning, and again after pulling importer changes (for example the 2026-10-10 change that stopped models being mirrored; see [World-Conventions.md](../02-Architecture/World-Conventions.md)).
 
-4. **Copy runtime data to the build output**
-   ```
-   RZE\AssetCpy.bat
-   ```
-   Copies `Assets\`, `Config\`, and `ProjectData\` into whichever of `_build\debug\` / `_build\release\` exist, via `xcopy /y /d /s /f`. Its own header comment calls this "crappy stuff... until a better build pipeline exists" — it's intentionally a stopgap, not a polished asset-cooking step.
+4. **Where the executables find their data.** Nothing is copied into `_build`. The Editor, the Game and `SourceAssetBurner` all set `EDirectoryContext::Source` at start-up, so their relative paths (`Assets\`, `Config\`, `ProjectData\`, and `Logs\` for their logs) resolve against the **source tree**: the folder above `_build\`, or beside the executable when it isn't under `_build\`. Shader, asset, config and scene edits show up on the next launch, in either app. The other context, `EDirectoryContext::Runtime` (beside the executable), is kept for a future packaged game. See [Utils-Library-Reference.md](../06-Platform-And-Infrastructure/Utils-Library-Reference.md).
 
-   **Only the Game needs this.** The Editor reads `Assets\` and `ProjectData\` straight from the source tree (`EDirectoryContext::Tools`), so shader and asset edits show up on its next launch without copying. The Editor runs this copy itself after Save Scene and before Launch Game.
+   A `Filepath` built during static initialisation resolves before `main` sets the context, so build paths when they're used, not in globals.
 
 5. **Run**
-   - Game (default): `_build\<config>\RZE_Game.exe`
+   - Game (default): `_build\<config>\Game.exe`
    - Editor: the built Editor executable in the same output folder
 
 ## Unit tests
@@ -83,13 +78,13 @@ Runs on `windows-2019`, matrix over `debug`/`release`. Steps:
 4. `msbuild RZE/RZE.sln /property:Configuration=<config>`
 5. Run `UnitTests.exe` (a failing test fails the run)
 6. Run `SourceAssetBurner.exe`
-7. Run `AssetCpy.bat`
-8. Archive `_build\<config>` as a build artifact (excluding `.lib`/`.pdb`/`.exp`/`.log`)
+7. Archive `RZE/_build/<config>` (excluding `.lib`/`.pdb`/`.exp`/`.log`) together with `RZE/Assets`, `RZE/Config` and `RZE/ProjectData` as a build artifact. The executables read their data from the source tree, so the archive keeps that layout.
 
 This is the single most authoritative source for "the correct build order" if these docs and the CI config ever diverge — trust the CI file.
 
 ## Key files
 
 - `README.md`
-- `GenerateSolutions.bat`, `BuildGame.bat`, `AssetCpy.bat`
+- `GenerateSolutions.bat`, `BuildGame.bat`
+- `Utils\Src\Utils\Platform\FilePath.h/.cpp` (`EDirectoryContext`)
 - `.github\workflows\Windows.yml`

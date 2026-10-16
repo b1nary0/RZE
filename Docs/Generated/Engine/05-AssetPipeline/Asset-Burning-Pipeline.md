@@ -116,7 +116,7 @@ Older files keep loading, so a re-burn is only needed to pick up the new values.
 - `RZE\ProjectData\Mesh\*.meshasset`
 - `RZE\ProjectData\Material\<ModelName>\*.materialasset`
 
-This is the "cooked" counterpart of `RZE\Assets\3D\`. The Editor reads it from the source tree; the Game reads the copy that `AssetCpy.bat` puts in `_build\<config>` (see [Building-And-Running.md](../01-GettingStarted/Building-And-Running.md)).
+This is the "cooked" counterpart of `RZE\Assets\3D\`. The Editor and the Game both read it from the source tree (see [Building-And-Running.md](../01-GettingStarted/Building-And-Running.md)).
 
 ## Key files
 

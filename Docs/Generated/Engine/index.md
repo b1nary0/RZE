@@ -129,6 +129,7 @@ timeline
                : Material assets v2 with tints (Asset-Burning-Pipeline)
                : Frame pacing, vsync, UI frame rate (Engine-Startup-And-Frame-Loop)
                : Frame stats in the status bar, Frame Rate settings page
+               : Every app reads the source tree, AssetCpy.bat removed (Building-And-Running)
 ```
 
 | Area | What changed | Read |
@@ -156,6 +157,7 @@ timeline
 | Meshes & materials | A loaded mesh is one shared `StaticMesh`; each object draws it through its own `StaticMeshInstance`, whose material slots can override any value, swap in another material asset, or tint it, saved with the scene. Meshes free their CPU geometry once uploaded. Meshes swap at runtime through a preload and `SetMeshInstance`. **Re-burn after pulling** for tints (older assets still load as they drew). | [Materials-Meshes-Shaders](04-Rendering/Materials-Meshes-Shaders.md), [Asset-Burning-Pipeline](05-AssetPipeline/Asset-Burning-Pipeline.md) |
 | Inspector, part 2 | Components describe their lists' elements, edited through property paths with undo and multi-select. Properties can be overridable, enums, grouped into sections, disabled for a reason, or previews. A Materials list edits each slot; asset paths show file names with thumbnails and hover previews. | [Object-Inspector-And-Properties](07-Editor/Object-Inspector-And-Properties.md) |
 | Frame pacing | The main loop is paced: frame rate caps, a slower rate while unfocused, a steadier delta time and real vsync on a flip-model swap chain. Spare frame time goes to async operations. The UI can update less often than the scene (every frame while you interact). Every queued window message is handled each frame, and input is let go when the window loses focus. The status bar shows frame stats; Settings has a Frame Rate page. | [Engine-Startup-And-Frame-Loop](02-Architecture/Engine-Startup-And-Frame-Loop.md#frame-pacing), [Low-Level-Renderer-Module](04-Rendering/Low-Level-Renderer-Module.md#the-swap-chain-and-vsync), [Input-System](06-Platform-And-Infrastructure/Input-System.md#interaction-and-focus), [Status-Bar-And-Settings](07-Editor/Status-Bar-And-Settings.md) |
+| Data location | The Editor, the Game and `SourceAssetBurner` all read `Assets`, `Config` and `ProjectData` from the source tree (`EDirectoryContext::Source`, was `Tools`); nothing is copied into `_build`, and `AssetCpy.bat` is gone. `BuildGame.bat` finds MSBuild itself; Launch Game starts `_build\debug\Game.exe`. | [Building-And-Running](01-GettingStarted/Building-And-Running.md) |
 
 ## Key architectural themes (read this before diving into a section)
 

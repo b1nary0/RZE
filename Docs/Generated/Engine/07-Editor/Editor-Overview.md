@@ -30,7 +30,7 @@ The layout is an ImGui dockspace, saved in `Config\imgui.ini`; without one, each
 
 ## Launching
 
-`Editor\Src\EditorMain.cpp` sets `Filepath::SetDirectoryContext(EDirectoryContext::Tools)`, constructs `Editor::EditorApp`, and calls `Run()`. The Tools context means paths resolve against the **source tree** (`RZE\Assets\...`), not the copied assets in `_build\<config>`, so shader and asset edits show up on the next launch with no copy step.
+`Editor\Src\EditorMain.cpp` sets `Filepath::SetDirectoryContext(EDirectoryContext::Source)`, constructs `Editor::EditorApp`, and calls `Run()`. The Source context means paths resolve against the **source tree** (`RZE\Assets\...`), so shader and asset edits show up on the next launch with no copy step. The Game does the same, so it sees saved scenes straight away.
 
 | Argument | Effect |
 |---|---|
@@ -96,7 +96,7 @@ sequenceDiagram
 
 | Menu | Items |
 |---|---|
-| File | New Scene..., Load Scene... (the file browser, on `Assets\Scenes`), Save Scene (the file browser in Save mode if the scene is new; copies assets afterwards), Build Game..., Launch Game..., Exit. New, Load and Exit ask about unsaved changes first. |
+| File | New Scene..., Load Scene... (the file browser, on `Assets\Scenes`), Save Scene (the file browser in Save mode if the scene is new), Build Game..., Launch Game..., Exit. New, Load and Exit ask about unsaved changes first. |
 | Edit | Undo "<step>" (Ctrl+Z), Redo "<step>" (Ctrl+Y), Copy (Ctrl+C), Paste (Ctrl+V), Duplicate (Ctrl+D), then the panels registered under Edit: Settings |
 | View | Windows: Log, Object Inspector, Resource Monitor, Scene (built from each panel's `MenuPath`, checked while open) |
 | Help | ImGui Demo |

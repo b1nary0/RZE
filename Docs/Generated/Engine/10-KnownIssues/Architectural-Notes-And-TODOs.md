@@ -23,7 +23,7 @@ Rough edges the codebase is candid about (source comments, `#TODO`s), plus a few
 | 15 | No prompt about unsaved changes | Editor | — | **Fixed** (10-12: undo/redo) |
 | 16 | Undoing Add Component brings back a new component | Editor | Low | Open |
 | 17 | Duplicate's undo step is named "Paste" | Editor | Cosmetic | Open |
-| 18 | `GifChatComponent`'s GIF paths resolve against the build folder | Components | Medium | Open |
+| 18 | `GifChatComponent`'s GIF paths resolved against the build folder | Components | — | **Fixed** (10-15: source tree context) |
 | 19 | `ResourceHandler` reads the renderer's frame counter | Resources | Low | Open |
 | 20 | Every component has `GetLocalBounds`, though few take up space | Components | Low | Open |
 | 21 | `RenderObjectPtr` / `LightObjectPtr` could be copied, and dangled | Rendering | — | **Fixed** (10-13: move-only, lifetime-checked) |
@@ -135,9 +135,9 @@ Undo removes an added component (`RemoveComponentByID`) and redo adds a fresh on
 
 Duplicate runs a `PasteGameObjectsCommand`, so Edit > Undo reads "Undo Paste" after a duplicate. Cosmetic; the command could take the step's name.
 
-## 18. `GifChatComponent`'s GIF paths resolve against the build folder
+## 18. `GifChatComponent`'s GIF paths resolved against the build folder (fixed)
 
-`gifFilepaths[]` in `GifChatComponent.cpp` are global `Filepath`s, built during static initialisation, before `EditorMain` sets `EDirectoryContext::Tools`. So in the Editor they point at `_build\<config>\Assets\...` rather than the source tree. It works where `AssetCpy.bat` has copied the assets, though it may load a stale copy. A fresh clone or worktree asserts (`gifData != nullptr`) when it opens `RenderTest.scene`, which is also the Editor's default scene. Fix: build the paths when they're used.
+`GifChatComponent`'s GIF paths were global `Filepath`s, built during static initialisation, before `main` set the directory context, so in the Editor they pointed at `_build\<config>\Assets\...` and a fresh clone asserted on `RenderTest.scene`. They're built when used now, and every app reads the source tree (`EDirectoryContext::Source`), so there's no build-folder copy to go stale. The rule stands: don't build a `Filepath` during static initialisation.
 
 ## 19. `ResourceHandler` reads the renderer's frame counter
 
