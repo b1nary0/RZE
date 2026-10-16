@@ -51,8 +51,11 @@ namespace Editor
 
 	private:
 		void Initialize(EditorContext& context) override;
+		void Update(EditorContext& context) override;
 		void DrawMenuBar(EditorContext& context) override;
 		void Draw(EditorContext& context) override;
+		// The camera frustums and the grid, which are debug lines, so they're drawn into the scene every frame
+		void PreRender(EditorContext& context) override;
 		void OnSceneReset() override;
 		void PushWindowStyle(PanelWindowStyle& style) const override;
 
@@ -68,7 +71,7 @@ namespace Editor
 		void ApplyGizmoToOthers(EditorContext& context, const Vector3D& fromPosition, const Vector3D& fromRotation, const Vector3D& fromScale,
 			const Vector3D& toPosition, const Vector3D& toRotation, const Vector3D& toScale, InteractionID interaction);
 
-		// Icons at each light's and camera's position, plus camera frustums; viewOrigin is the screen-space top-left of the scene image
+		// Icons at each light's and camera's position; viewOrigin is the screen-space top-left of the scene image
 		void DrawObjectIcons(const EditorContext& context, const ImVec2& viewOrigin);
 		// Debug lines along the camera's view volume, from its near plane out to its far plane or a fixed cap, whichever is closer
 		void DrawCameraFrustum(const Vector3D& position, const CameraComponent& camera);
@@ -90,6 +93,9 @@ namespace Editor
 		EditorGrid m_grid;
 
 		std::vector<IconHit> m_iconHits;
+
+		// Whether the last Draw showed the scene image, so PreRender knows whether its lines would be seen
+		bool m_isImageShown = false;
 
 		// Where the left button went down over the scene image; only meaningful while m_isSelecting
 		Vector2D m_selectStart;

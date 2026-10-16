@@ -93,25 +93,22 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 				{
 					OPTICK_EVENT("Update and Render");
 
-					// The frame capture's update time covers PreUIUpdate and Update, but not ImGui's NewFrame
-					const double preUIUpdateStart = m_programTimer.GetElapsed<double>();
-					PreUIUpdate();
-					const double preUIUpdateMS = (m_programTimer.GetElapsed<double>() - preUIUpdateStart) * 1000.0;
-
+					// The frame capture's update time covers the async tick, the application's update and UI, and the scene's
+					// update, but not ImGui's NewFrame
+					double updateStart = m_programTimer.GetElapsed<double>();
 					{
-						OPTICK_EVENT("ImGui NewFrame Work");
-
-						ImGui_ImplDX11_NewFrame();
-						ImGui_ImplWin32_NewFrame();
-						ImGui::NewFrame();
-						ImGuizmo::BeginFrame();
+						OPTICK_EVENT("AsyncOperationManager::Tick");
+						// First, so completion callbacks (e.g. a scene finishing loading) land before the application gathers
+						// this frame's state, rather than between that and the UI being drawn from it
+						m_asyncOperationManager.Tick();
 					}
+					double updateMS = (m_programTimer.GetElapsed<double>() - updateStart) * 1000.0;
 
-					const double updateStart = m_programTimer.GetElapsed<double>();
+					updateMS += UpdateUI();
+
+					updateStart = m_programTimer.GetElapsed<double>();
 					Update();
-					lastUpdateMS = preUIUpdateMS + (m_programTimer.GetElapsed<double>() - updateStart) * 1000.0;
-
-					ImGui::EndFrame();
+					lastUpdateMS = updateMS + (m_programTimer.GetElapsed<double>() - updateStart) * 1000.0;
 
 					m_renderEngine->Render("Main Render");
 					m_renderEngine->Finish();
@@ -388,15 +385,30 @@ void RZE_Engine::LoadEngineConfig()
 	}
 }
 
-void RZE_Engine::PreUIUpdate()
+double RZE_Engine::UpdateUI()
 {
 	OPTICK_EVENT();
 
-	// First, so completion callbacks (e.g. a scene finishing loading) land before the application gathers this
-	// frame's state, rather than between that and the UI being drawn from it
-	m_asyncOperationManager.Tick();
-
+	double start = m_programTimer.GetElapsed<double>();
 	m_application->PreUIUpdate();
+	double applicationMS = (m_programTimer.GetElapsed<double>() - start) * 1000.0;
+
+	{
+		OPTICK_EVENT("ImGui NewFrame Work");
+
+		ImGui_ImplDX11_NewFrame();
+		ImGui_ImplWin32_NewFrame();
+		ImGui::NewFrame();
+		ImGuizmo::BeginFrame();
+	}
+
+	start = m_programTimer.GetElapsed<double>();
+	m_application->UpdateUI();
+	applicationMS += (m_programTimer.GetElapsed<double>() - start) * 1000.0;
+
+	ImGui::EndFrame();
+
+	return applicationMS;
 }
 
 void RZE_Engine::Update()
@@ -405,6 +417,7 @@ void RZE_Engine::Update()
 
 	m_application->Update();
 	m_activeScene->Update();
+	m_application->PreRender();
 }
 
 void RZE_Engine::BeginShutDown()

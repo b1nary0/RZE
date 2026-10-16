@@ -15,7 +15,7 @@ public:
 
 	void Initialize() override;
 	void Start() override;
-	void Update() override;
+	void UpdateUI() override;
 	void ShutDown() override;
 
 	void RegisterInputEvents(InputHandler& inputHandler) override;

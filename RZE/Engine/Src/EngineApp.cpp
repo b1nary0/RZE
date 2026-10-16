@@ -48,7 +48,15 @@ void RZE_Application::PreUIUpdate()
 {
 }
 
+void RZE_Application::UpdateUI()
+{
+}
+
 void RZE_Application::Update()
+{
+}
+
+void RZE_Application::PreRender()
 {
 }
 

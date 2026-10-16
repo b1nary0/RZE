@@ -82,7 +82,11 @@ private:
 
 	void PreUpdate(); // Set up anything the new frame will need
 	// Before ImGui's frame starts: async operations, then the application's PreUIUpdate
-	void PreUIUpdate();
+	// The UI's part of the frame: the application's PreUIUpdate, then its UpdateUI inside ImGui's frame. Returns how
+	// long the application's two calls took in milliseconds, which is update time for the frame time capture.
+	double UpdateUI();
+	// The rest of the frame's update, outside ImGui's frame: the application's Update, the scene's update, then the
+	// application's PreRender
 	void Update();
 
 	void BeginShutDown();

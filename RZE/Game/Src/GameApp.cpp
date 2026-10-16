@@ -80,9 +80,9 @@ void GameApp::Start()
 	camera->AddComponent<PlayerControllerComponent>();
 }
 
-void GameApp::Update()
+void GameApp::UpdateUI()
 {
-	RZE_Application::Update();
+	RZE_Application::UpdateUI();
 
 #ifdef IMGUI_ENABLED
 	ImGui::ShowDemoWindow();

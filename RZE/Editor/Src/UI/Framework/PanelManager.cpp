@@ -77,6 +77,17 @@ namespace Editor
 		}
 	}
 
+	void PanelManager::PreRenderAll(EditorContext& context)
+	{
+		for (std::unique_ptr<EditorPanel>& panel : m_panels)
+		{
+			if (panel->m_isOpen)
+			{
+				panel->PreRender(context);
+			}
+		}
+	}
+
 	void PanelManager::DrawAll(EditorContext& context)
 	{
 		for (std::unique_ptr<EditorPanel>& panel : m_panels)

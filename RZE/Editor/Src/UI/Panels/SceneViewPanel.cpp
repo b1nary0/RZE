@@ -207,12 +207,38 @@ namespace Editor
 			// After the icons so this frame's icon rects are picked against
 			HandleSelectionInput(context, viewOrigin, isImageHovered);
 
-			// Last, so the grid's lines follow the opaque debug lines (frustums) and its depth writes can't hide them
-			GameObjectPtr cameraObject = context.GetEditorCamera();
-			if (cameraObject != nullptr)
+			m_isImageShown = true;
+		}
+	}
+
+	void SceneViewPanel::Update(EditorContext&)
+	{
+		// Draw sets it again if the scene image still shows
+		m_isImageShown = false;
+	}
+
+	void SceneViewPanel::PreRender(EditorContext& context)
+	{
+		if (!m_isImageShown)
+		{
+			return;
+		}
+
+		RZE().GetActiveScene().ForEachGameObject(
+			Functor<void, GameObjectPtr>([this](GameObjectPtr gameObject)
 			{
-				m_grid.Draw(cameraObject->GetTransformComponent()->GetPosition(), context.GetSettings().GetSnapSize());
-			}
+				GameObjectComponentPtr<CameraComponent> camera = gameObject->GetComponent<CameraComponent>();
+				if (camera != nullptr)
+				{
+					DrawCameraFrustum(gameObject->GetTransformComponent()->GetPosition(), **camera);
+				}
+			}));
+
+		// Last, so the grid's lines follow the opaque debug lines (frustums) and its depth writes can't hide them
+		GameObjectPtr cameraObject = context.GetEditorCamera();
+		if (cameraObject != nullptr)
+		{
+			m_grid.Draw(cameraObject->GetTransformComponent()->GetPosition(), context.GetSettings().GetSnapSize());
 		}
 	}
 
@@ -340,8 +366,6 @@ namespace Editor
 				GameObjectComponentPtr<CameraComponent> camera = gameObject->GetComponent<CameraComponent>();
 				if (camera != nullptr)
 				{
-					DrawCameraFrustum(position, **camera);
-
 					ImVec2 center;
 					if (worldToScreen(position, center))
 					{

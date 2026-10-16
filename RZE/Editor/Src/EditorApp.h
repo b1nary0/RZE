@@ -20,7 +20,8 @@ namespace Editor
 		void Initialize() override;
 		void Start() override;
 		void PreUIUpdate() override;
-		void Update() override;
+		void UpdateUI() override;
+		void PreRender() override;
 		void ShutDown() override;
 
 		void ParseArguments(char** arguments, int count) override;

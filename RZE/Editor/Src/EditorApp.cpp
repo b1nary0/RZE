@@ -123,7 +123,14 @@ namespace Editor
 		m_context.GetPanels().UpdateAll(m_context);
 	}
 
-	void EditorApp::Update()
+	void EditorApp::PreRender()
+	{
+		OPTICK_EVENT();
+
+		m_context.GetPanels().PreRenderAll(m_context);
+	}
+
+	void EditorApp::UpdateUI()
 	{
 		OPTICK_EVENT();
 

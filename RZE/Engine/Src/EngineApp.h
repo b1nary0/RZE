@@ -26,11 +26,19 @@ public:
 public:
 	virtual void Run();
 	virtual void Start();
-	// Each frame before ImGui's frame starts (and so before Update), for work that mustn't make ImGui calls.
-	// There's no ImGui frame or current window here, so a stray widget call fails immediately (a null window
-	// access, which a debugger stops on), which keeps UI drawing out of it.
+	// The UI's step before ImGui's frame starts (and so before UpdateUI): gather what the UI shows. No ImGui calls:
+	// there's no ImGui frame or current window here, so a stray widget call fails immediately (a null window access,
+	// which a debugger stops on), which keeps UI drawing out of it.
 	virtual void PreUIUpdate();
+	// Inside ImGui's frame: the application's UI, and applying what it changes (e.g. the editor's commands). Only UI
+	// work goes here; the rest of a frame's work goes in Update.
+	virtual void UpdateUI();
+	// Each frame after the UI and before the scene's update: the application's own per-frame work. Outside ImGui's
+	// frame, so no ImGui calls.
 	virtual void Update();
+	// Each frame after the scene's update, right before the frame is rendered: per-frame scene overlays such as debug
+	// lines, which are cleared after every render. Outside ImGui's frame, so no ImGui calls.
+	virtual void PreRender();
 	virtual void ShutDown();
 
 	// The user asked to close the window. True exits; false keeps running, e.g. to ask about unsaved changes first,

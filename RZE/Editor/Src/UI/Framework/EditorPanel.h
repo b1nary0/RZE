@@ -92,6 +92,11 @@ namespace Editor
 		// The window's contents, between its Begin and End. Only called while the window is open and visible.
 		virtual void Draw(EditorContext& context) = 0;
 
+		// Each frame while the panel is open, after the scene's update and before the frame renders
+		// (EditorApp::PreRender): what goes into the scene every frame, such as debug lines, which are cleared after each
+		// render. No ImGui calls; it's outside ImGui's frame.
+		virtual void PreRender(EditorContext& context) {}
+
 		// The window's menu bar, before Draw. Only called when PanelDesc::WindowFlags includes ImGuiWindowFlags_MenuBar.
 		virtual void DrawMenuBar(EditorContext& context) {}
 
