@@ -19,8 +19,11 @@ namespace Editor
 
 	// The bar along the bottom of the editor. It takes its height out of the viewport's work area, so the dock space
 	// fits above it. It's made of items on either side, each a fixed width: left items go from the left edge and right
-	// items from the right edge, both in the order they're added. It starts with "Ready" on the left and the running
-	// tasks on the right.
+	// items from the right edge, both in the order they're added. It starts with "Ready" and the frame stats on the
+	// left, and the running tasks on the right.
+	//
+	// The frame stats are the frame time, frames per second and idle time per frame, averaged over half a second
+	// (FramePacer::Stats). Hovering splits the idle time into what went to tasks and what was spent waiting.
 	//
 	// The tasks area starts with a circle that says how the tasks are doing at a glance (ETaskStatus): green when the
 	// last one succeeded or none has run, yellow while any is running, orange when the last had warnings or was
@@ -51,6 +54,7 @@ namespace Editor
 		void AddItem(EStatusBarSide side, float width, DrawItem draw);
 
 	private:
+		void DrawFrameStats(const ImVec2& min, const ImVec2& max) const;
 		void DrawTasks(const ImVec2& min, const ImVec2& max);
 		// On hover: a line for each running task, with a dot for how it's going, its name, roughly how long it has left
 		// and how far it's got

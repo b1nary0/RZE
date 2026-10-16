@@ -29,11 +29,7 @@ namespace Editor
 		// How far a paste moves the pasted objects from the originals, in world space: steps times the copied
 		// objects' width (GameObjectClipboard::MeasureWidth) plus a gap, along +X
 		static Vector3D GetPasteOffset(const EditorContext& context, float width, int steps);
+		// The render command arena's use. Frame times are in the status bar.
 		void DrawStatus();
-
-	private:
-		// The frame time readout only updates every few frames so it's readable
-		int m_framesSinceSample = 0;
-		float m_sampledFrameTimeMS = 0.0f;
 	};
 }

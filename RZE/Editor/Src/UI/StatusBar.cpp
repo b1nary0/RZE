@@ -5,10 +5,12 @@
 #include <RZE.h>
 
 #include <EngineCore/Async/AsyncOperationManager.h>
+#include <EngineCore/Timing/FramePacer.h>
 
 #include <ImGui/imgui_internal.h> // BeginViewportSideBar, RenderTextEllipsis
 
 #include <algorithm>
+#include <cstdio>
 #include <ctime>
 #include <string>
 
@@ -22,6 +24,8 @@ namespace
 	constexpr float k_itemGap = 16.0f;
 
 	constexpr float k_readyWidth = 120.0f;
+	// Room for the widest it gets in practice, e.g. 16.7 ms, 240 FPS and 12.5 ms idle
+	constexpr float k_frameStatsWidth = 260.0f;
 	// The tasks box; also the width of the hover panel and the task list above it
 	constexpr float k_tasksBoxWidth = 240.0f;
 	// The circle left of the box that says how the tasks are doing, at a glance
@@ -186,6 +190,11 @@ namespace Editor
 				ImGui::GetWindowDrawList()->AddText(ImVec2(min.x, GetTextTop(min, max)), ImGui::GetColorU32(ImGuiCol_TextDisabled), "Ready");
 			});
 
+		AddItem(EStatusBarSide::Left, k_frameStatsWidth, [this](EditorContext&, const ImVec2& min, const ImVec2& max)
+			{
+				DrawFrameStats(min, max);
+			});
+
 		AddItem(EStatusBarSide::Right, k_tasksWidth, [this](EditorContext&, const ImVec2& min, const ImVec2& max)
 			{
 				DrawTasks(min, max);
@@ -243,6 +252,30 @@ namespace Editor
 		}
 		// Like Begin, whether or not it's open
 		ImGui::End();
+	}
+
+	void StatusBar::DrawFrameStats(const ImVec2& min, const ImVec2& max) const
+	{
+		const FramePacer::Stats& stats = RZE().GetFramePacer().GetStats();
+
+		char text[96];
+		snprintf(text, sizeof(text), "%.1f ms \xC2\xB7 %.0f FPS \xC2\xB7 idle %.1f ms", stats.FrameTimeMS, stats.FramesPerSecond, stats.IdleTimeMS);
+		ImGui::GetWindowDrawList()->AddText(ImVec2(min.x, GetTextTop(min, max)), ImGui::GetColorU32(ImGuiCol_TextDisabled), text);
+
+		ImGui::SetCursorScreenPos(min);
+		ImGui::InvisibleButton("##FrameStats", ImVec2(max.x - min.x, max.y - min.y));
+		if (ImGui::IsItemHovered())
+		{
+			// Just above the bar, lined up with the stats, like the tasks' hover panel rather than following the mouse
+			ImGui::SetNextWindowPos(ImVec2(min.x, min.y - k_panelGap), ImGuiCond_Always, ImVec2(0.0f, 1.0f));
+			ImGui::BeginTooltip();
+			ImGui::Text("%.2f ms a frame, %.1f frames a second", stats.FrameTimeMS, stats.FramesPerSecond);
+			ImGui::Text("%.2f ms of each frame idle:", stats.IdleTimeMS);
+			ImGui::BulletText("%.2f ms on tasks", stats.IdleWorkMS);
+			ImGui::BulletText("%.2f ms waiting for the next frame", std::max(0.0, stats.IdleTimeMS - stats.IdleWorkMS));
+			ImGui::TextDisabled("Averaged over %.1f s. Frames only have idle time with vsync or a frame rate cap.", FramePacer::k_statsWindow);
+			ImGui::EndTooltip();
+		}
 	}
 
 	void StatusBar::DrawTasks(const ImVec2& min, const ImVec2& max)

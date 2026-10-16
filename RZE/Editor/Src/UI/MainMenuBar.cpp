@@ -28,9 +28,6 @@ namespace
 	{
 		return ImGui::IsAnyItemActive() || ImGuizmo::IsUsing();
 	}
-
-	// How many frames the frame time readout holds each sample for
-	constexpr int k_frameTimeSampleInterval = 15;
 }
 
 namespace Editor
@@ -243,21 +240,6 @@ namespace Editor
 	{
 		ImGui::Separator();
 
-		if (m_framesSinceSample > k_frameTimeSampleInterval)
-		{
-			m_sampledFrameTimeMS = RZE().GetDeltaTimeMS();
-			m_framesSinceSample = 0;
-		}
-		else
-		{
-			++m_framesSinceSample;
-		}
-
-		const float imguiCursorPos = ImGui::GetCursorPosX();
-		ImGui::Text("%.1f ms", m_sampledFrameTimeMS);
-
-		ImGui::Separator();
-
 		ImVec4 colour;
 		switch (Rendering::MemArena::GetPressureValue())
 		{
@@ -286,8 +268,6 @@ namespace Editor
 		const float memArenaValue = isArenaInMB ? memArenaSizeMB : memArenaSizeKB;
 		const char* const memArenaSizeMagnitudeStr = isArenaInMB ? "MB" : "KB";
 
-		const ImVec2 textSize = ImGui::CalcTextSize("12.0ms ");
-		ImGui::SameLine(imguiCursorPos + textSize.x);
 		ImGui::Text("RenderCommand MemArena:");
 		ImGui::TextColored(colour, "%.2f KB / %.2f %s", lastFrameSizeKB, memArenaValue, memArenaSizeMagnitudeStr);
 		ImGui::Text("Peak Used: %d KB", static_cast<int>(Rendering::MemArena::GetPeakUsedBytes() / 1024));

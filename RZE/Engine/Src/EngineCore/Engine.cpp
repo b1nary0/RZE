@@ -295,13 +295,17 @@ void RZE_Engine::WaitForNextFrame()
 {
 	OPTICK_EVENT();
 
+	const double workEnd = m_programTimer.GetElapsed<double>();
+	m_framePacer.EndFrameWork(workEnd);
+
 	// Spare time before the next frame goes to async operations (scene loads, thumbnails and the like). Only frames that
 	// are paced have any; it's after Finish(), so it adds nothing to this frame's latency.
-	const double idleMS = m_framePacer.GetIdleTime(m_programTimer.GetElapsed<double>()) * 1000.0;
+	const double idleMS = m_framePacer.GetIdleTime(workEnd) * 1000.0;
 	if (idleMS >= k_minIdleWorkMS)
 	{
 		OPTICK_EVENT("Idle work");
 		m_asyncOperationManager.TickIdle(idleMS);
+		m_framePacer.AddIdleWork(m_programTimer.GetElapsed<double>() - workEnd);
 	}
 
 	{

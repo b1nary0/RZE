@@ -132,3 +132,33 @@ TEST_CASE("With vsync and a known refresh rate, spare time runs to a refresh per
 	// Vsync does the waiting, not the CPU cap
 	CHECK(pacer.GetNextFrameStart() <= 1.0);
 }
+
+TEST_CASE("Stats average over a window of frames, and only change when a window ends")
+{
+	FramePacer pacer;
+	pacer.SetSettings(MakeSettings(64.0));
+
+	// Durations that add up exactly in binary: 1/64 s frames, each idle for 1/256 s of which 1/1024 s is work
+	constexpr double k_frameTime = 1.0 / 64.0;
+	constexpr double k_idleTime = 1.0 / 256.0;
+	constexpr double k_idleWork = 1.0 / 1024.0;
+	const int framesPerWindow = static_cast<int>(FramePacer::k_statsWindow / k_frameTime);
+
+	double now = 0.0;
+	pacer.BeginFrame(now);
+	for (int frame = 0; frame < framesPerWindow; ++frame)
+	{
+		CHECK(pacer.GetStats().FramesPerSecond == 0.0);
+
+		pacer.EndFrameWork(now + k_frameTime - k_idleTime);
+		pacer.AddIdleWork(k_idleWork);
+		now += k_frameTime;
+		pacer.BeginFrame(now);
+	}
+
+	const FramePacer::Stats& stats = pacer.GetStats();
+	CHECK(stats.FrameTimeMS == doctest::Approx(k_frameTime * 1000.0));
+	CHECK(stats.FramesPerSecond == doctest::Approx(64.0));
+	CHECK(stats.IdleTimeMS == doctest::Approx(k_idleTime * 1000.0));
+	CHECK(stats.IdleWorkMS == doctest::Approx(k_idleWork * 1000.0));
+}
