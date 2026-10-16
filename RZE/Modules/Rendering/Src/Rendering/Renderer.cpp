@@ -161,6 +161,11 @@ namespace Rendering
 	void Renderer::ImGuiRender()
 	{
 		ImDrawData* drawData = ImGui::GetDrawData();
+		// Before the first UI frame there's nothing to draw
+		if (drawData == nullptr)
+		{
+			return;
+		}
 
 		// ImGui (1.92+) asks the backend to create/update/destroy textures (e.g. the font atlas when new glyphs
 		// are rasterized). The render thread runs a frame behind on a cloned ImDrawData, so service those

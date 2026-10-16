@@ -40,6 +40,8 @@ void ImGuiRenderStage::Render(RenderContext& context)
 		Rendering::Renderer::SetColourTarget(m_overlayTarget.Get(context).Colour);
 	}
 
+	// On a frame that didn't update the UI (FrameSettings::UIFrameRate), no ImGui frame has begun, so Render() returns
+	// at once and the draw data is still the last UI frame's: the same UI goes out again, around this frame's scene.
 	ImGui::Render();
 	Rendering::Renderer::ImGuiRender();
 

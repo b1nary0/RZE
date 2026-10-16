@@ -270,6 +270,7 @@ namespace Editor
 			ImGui::SetNextWindowPos(ImVec2(min.x, min.y - k_panelGap), ImGuiCond_Always, ImVec2(0.0f, 1.0f));
 			ImGui::BeginTooltip();
 			ImGui::Text("%.2f ms a frame, %.1f frames a second", stats.FrameTimeMS, stats.FramesPerSecond);
+			ImGui::Text("The UI updates %.1f times a second", stats.UIFramesPerSecond);
 			ImGui::Text("%.2f ms of each frame idle:", stats.IdleTimeMS);
 			ImGui::BulletText("%.2f ms on tasks", stats.IdleWorkMS);
 			ImGui::BulletText("%.2f ms waiting for the next frame", std::max(0.0, stats.IdleTimeMS - stats.IdleWorkMS));

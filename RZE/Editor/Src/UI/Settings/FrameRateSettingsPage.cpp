@@ -17,13 +17,14 @@ namespace
 	// Font sizes across, so the options line up under each other
 	constexpr float k_labelWidth = 9.0f;
 
-	// Frames a second; 0 is Off. Engine.ini can set any other rate.
+	// Frames a second; 0 is Off (or for the UI, every frame). Engine.ini can set any other rate.
 	constexpr int k_maxFrameRateOptions[] = { 0, 30, 60, 120, 144, 240 };
 	constexpr int k_unfocusedFrameRateOptions[] = { 0, 10, 15, 30, 60 };
+	constexpr int k_uiFrameRateOptions[] = { 0, 60, 30, 20, 15 };
 
-	// A label, then one radio button per option on its line. True when an option was picked.
+	// A label, then one radio button per option on its line, with zeroLabel for 0. True when an option was picked.
 	template <size_t Count>
-	bool DrawFrameRateOptions(const char* label, const char* tooltip, float optionsX, const int (&options)[Count], double& frameRate)
+	bool DrawFrameRateOptions(const char* label, const char* tooltip, float optionsX, const int (&options)[Count], const char* zeroLabel, double& frameRate)
 	{
 		ImGui::AlignTextToFramePadding();
 		ImGui::TextUnformatted(label);
@@ -36,7 +37,7 @@ namespace
 		for (const int option : options)
 		{
 			ImGui::SameLine();
-			const std::string optionLabel = option == 0 ? std::string("Off") : std::to_string(option);
+			const std::string optionLabel = option == 0 ? std::string(zeroLabel) : std::to_string(option);
 			if (ImGui::RadioButton(optionLabel.c_str(), std::lround(frameRate) == option))
 			{
 				frameRate = static_cast<double>(option);
@@ -66,9 +67,11 @@ namespace Editor
 		isChanged |= ImGui::Checkbox("##VSync", &settings.VSync);
 
 		isChanged |= DrawFrameRateOptions("Max frame rate", "Frames a second at most. Off leaves it to vsync, or uncapped without it.",
-			optionsX, k_maxFrameRateOptions, settings.MaxFrameRate);
+			optionsX, k_maxFrameRateOptions, "Off", settings.MaxFrameRate);
 		isChanged |= DrawFrameRateOptions("While unfocused", "Frames a second while another window is in front or the editor is minimised. Off runs as usual.",
-			optionsX, k_unfocusedFrameRateOptions, settings.UnfocusedFrameRate);
+			optionsX, k_unfocusedFrameRateOptions, "Off", settings.UnfocusedFrameRate);
+		isChanged |= DrawFrameRateOptions("UI rate", "How many times a second the panels and menus update. The scene view still updates every frame.",
+			optionsX, k_uiFrameRateOptions, "Every frame", settings.UIFrameRate);
 
 		if (isChanged)
 		{

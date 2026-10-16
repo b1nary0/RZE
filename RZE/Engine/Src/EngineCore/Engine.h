@@ -73,7 +73,7 @@ private:
 	void Init();
 	void PostInit(Functor<RZE_Application* const>& createApplicationCallback);
 
-	// Reads [FrameSettings] and the -vsync and -maxfps arguments
+	// Reads [FrameSettings] and the -vsync, -maxfps and -uifps arguments
 	void InitializeFramePacing();
 	// Top of each frame, once the wait for it is over: the frame's start time and delta time
 	void BeginFrame(double now);

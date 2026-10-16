@@ -104,7 +104,13 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 					}
 					double updateMS = (m_programTimer.GetElapsed<double>() - updateStart) * 1000.0;
 
-					updateMS += UpdateUI();
+					// With a UI frame rate, only some frames update the UI. The others render the last UI again around this
+					// frame's scene (ImGuiRenderStage), and everything else still runs every frame.
+					const bool isUIFrame = m_framePacer.TakeUIFrame(frameStart);
+					if (isUIFrame)
+					{
+						updateMS += UpdateUI();
+					}
 
 					updateStart = m_programTimer.GetElapsed<double>();
 					Update();
@@ -113,8 +119,13 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 					m_renderEngine->Render("Main Render");
 					m_renderEngine->Finish();
 
-					// After the present, which is what lets the render thread's frame catch up
-					m_resourceHandler.Update();
+					// After the present, which is what lets the render thread's frame catch up. Only after a UI frame: a
+					// frame without one renders the last UI again, which may still show a texture released since, so it's
+					// only destroyed once a newer UI has replaced that one on the render thread.
+					if (isUIFrame)
+					{
+						m_resourceHandler.Update();
+					}
 				}
 			}
 
@@ -262,6 +273,7 @@ void RZE_Engine::InitializeFramePacing()
 		settings.VSync = false;
 		settings.MaxFrameRate = 0.0;
 		settings.UnfocusedFrameRate = 0.0;
+		settings.UIFrameRate = 0.0;
 	}
 
 	int vsync = 0;
@@ -274,6 +286,12 @@ void RZE_Engine::InitializeFramePacing()
 	if (CmdLine::Arguments::GetInt("-maxfps", maxFrameRate))
 	{
 		settings.MaxFrameRate = static_cast<double>(maxFrameRate);
+	}
+
+	int uiFrameRate = 0;
+	if (CmdLine::Arguments::GetInt("-uifps", uiFrameRate))
+	{
+		settings.UIFrameRate = static_cast<double>(uiFrameRate);
 	}
 
 	m_framePacer.SetRefreshRate(Display::GetRefreshRate(m_window->GetOSWindowHandleData().windowHandle));
@@ -367,6 +385,10 @@ void RZE_Engine::RegisterWindowEvents()
 			m_application->OnWindowResize(newSize);
 
 			m_renderEngine->ResizeCanvas(newSize);
+
+			// The application may have replaced what the last UI shows (the editor's scene view target), so this frame
+			// builds a new one
+			m_framePacer.RequestUIFrame();
 
 			// Also sent after a move, which may have taken the window to a monitor with another refresh rate
 			m_framePacer.SetRefreshRate(Display::GetRefreshRate(m_window->GetOSWindowHandleData().windowHandle));

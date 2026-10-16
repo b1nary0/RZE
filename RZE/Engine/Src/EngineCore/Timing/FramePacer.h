@@ -7,6 +7,7 @@
 // can be tested; RZE_Engine does the waiting.
 //
 //   BeginFrame(now)        at the top of each frame, once the wait for it is over
+//   TakeUIFrame(now)       whether this frame updates the UI (FrameSettings::UIFrameRate)
 //   EndFrameWork(now)      after the frame's work; until the next BeginFrame is idle time
 //   GetIdleTime(now)       spare time before the next frame is due
 //   GetNextFrameStart()    when the CPU cap lets the next frame start
@@ -22,6 +23,8 @@ public:
 		double IdleTimeMS = 0.0;
 		// The part of IdleTimeMS spent on work (AddIdleWork); the rest is waiting
 		double IdleWorkMS = 0.0;
+		// How many frames a second updated the UI (TakeUIFrame)
+		double UIFramesPerSecond = 0.0;
 	};
 
 public:
@@ -46,6 +49,13 @@ public:
 	void SetIsThrottled(bool isThrottled);
 
 	void BeginFrame(double now);
+	// Whether this frame updates the UI. Always with no UI frame rate; otherwise once the next UI frame is due (within half
+	// a frame, so a UI rate that divides the frame rate gets an even cadence), or when one was requested. Once per frame,
+	// after anything that might request one.
+	bool TakeUIFrame(double now);
+	// Makes the next frame a UI frame, e.g. when the window resizes. The first frame always is one.
+	void RequestUIFrame() { m_isUIFrameRequested = true; }
+
 	// The frame's work is done; until the next BeginFrame counts as idle time
 	void EndFrameWork(double now);
 	// Seconds of this frame's idle time spent on work, e.g. async operations
@@ -94,10 +104,15 @@ private:
 	double m_frameWorkEnd = -1.0;
 	double m_frameIdleWork = 0.0;
 
+	// When the next UI frame is due, on the UI rate's schedule
+	double m_nextUIFrame = 0.0;
+	bool m_isUIFrameRequested = true;
+
 	Stats m_stats;
 	// The stats window so far
 	int m_windowFrames = 0;
 	double m_windowFrameTime = 0.0;
 	double m_windowIdleTime = 0.0;
 	double m_windowIdleWork = 0.0;
+	int m_windowUIFrames = 0;
 };

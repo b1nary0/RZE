@@ -68,6 +68,7 @@ void EngineConfig::LoadFrameSettings()
 	mFrameSettings.VSync = mINIParser.GetBoolValue("FrameSettings", "EnableVsync", defaults.VSync);
 	mFrameSettings.MaxFrameRate = mINIParser.GetDoubleValue("FrameSettings", "MaxFrameRate", defaults.MaxFrameRate);
 	mFrameSettings.UnfocusedFrameRate = mINIParser.GetDoubleValue("FrameSettings", "UnfocusedFrameRate", defaults.UnfocusedFrameRate);
+	mFrameSettings.UIFrameRate = mINIParser.GetDoubleValue("FrameSettings", "UIFrameRate", defaults.UIFrameRate);
 }
 
 WindowSettings::WindowSettings()

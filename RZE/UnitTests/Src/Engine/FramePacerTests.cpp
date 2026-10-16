@@ -2,6 +2,8 @@
 
 #include <EngineCore/Timing/FramePacer.h>
 
+#include <vector>
+
 namespace
 {
 	FrameSettings MakeSettings(double maxFrameRate, double unfocusedFrameRate = 0.0, bool vsync = false)
@@ -161,4 +163,72 @@ TEST_CASE("Stats average over a window of frames, and only change when a window 
 	CHECK(stats.FramesPerSecond == doctest::Approx(64.0));
 	CHECK(stats.IdleTimeMS == doctest::Approx(k_idleTime * 1000.0));
 	CHECK(stats.IdleWorkMS == doctest::Approx(k_idleWork * 1000.0));
+}
+
+namespace
+{
+	// 60 frames a second with the UI at uiFrameRate, from a first frame at time 0. Returns which of the next frameCount
+	// frames updated the UI, each with up to 0.5 ms of jitter.
+	std::vector<bool> RunUIFrames(FramePacer& pacer, double uiFrameRate, int frameCount)
+	{
+		FrameSettings settings = MakeSettings(60.0);
+		settings.UIFrameRate = uiFrameRate;
+		pacer.SetSettings(settings);
+
+		pacer.BeginFrame(0.0);
+		CHECK(pacer.TakeUIFrame(0.0));
+
+		std::vector<bool> uiFrames;
+		for (int frame = 1; frame <= frameCount; ++frame)
+		{
+			const double jitter = (frame % 3 - 1) * 0.0005;
+			const double now = frame / 60.0 + jitter;
+			pacer.BeginFrame(now);
+			uiFrames.push_back(pacer.TakeUIFrame(now));
+		}
+		return uiFrames;
+	}
+}
+
+TEST_CASE("With no UI frame rate, every frame updates the UI")
+{
+	FramePacer pacer;
+	for (const bool isUIFrame : RunUIFrames(pacer, 0.0, 10))
+	{
+		CHECK(isUIFrame);
+	}
+}
+
+TEST_CASE("A UI rate that divides the frame rate gets an even cadence, despite jitter")
+{
+	FramePacer pacer;
+	const std::vector<bool> uiFrames = RunUIFrames(pacer, 30.0, 60);
+	for (size_t frame = 0; frame < uiFrames.size(); ++frame)
+	{
+		// The first frame was one, so every second frame after it
+		CHECK(uiFrames[frame] == (frame % 2 == 1));
+	}
+}
+
+TEST_CASE("A requested UI frame comes at once, and the UI's cadence carries on from it")
+{
+	FramePacer pacer;
+	RunUIFrames(pacer, 10.0, 2);
+
+	// Between UI frames, which are 6 frames apart at 60 and 10
+	pacer.RequestUIFrame();
+	pacer.BeginFrame(3.0 / 60.0);
+	CHECK(pacer.TakeUIFrame(3.0 / 60.0));
+
+	int framesToNext = 0;
+	for (int frame = 4; frame < 20; ++frame)
+	{
+		pacer.BeginFrame(frame / 60.0);
+		if (pacer.TakeUIFrame(frame / 60.0))
+		{
+			framesToNext = frame - 3;
+			break;
+		}
+	}
+	CHECK(framesToNext == 6);
 }

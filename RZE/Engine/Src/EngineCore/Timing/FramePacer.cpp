@@ -33,6 +33,34 @@ void FramePacer::BeginFrame(double now)
 	ScheduleNextFrame(now);
 }
 
+bool FramePacer::TakeUIFrame(double now)
+{
+	const double uiPeriod = m_settings.UIFrameRate > 0.0 ? 1.0 / m_settings.UIFrameRate : 0.0;
+
+	// Half a frame early counts as due, so jitter doesn't push a UI frame to the frame after
+	const double framePeriod = GetFramePeriod() > 0.0 ? GetFramePeriod() : m_frameTime;
+	const double tolerance = framePeriod * 0.5;
+
+	const bool isDue = uiPeriod <= 0.0 || now + tolerance >= m_nextUIFrame;
+	if (!isDue && !m_isUIFrameRequested)
+	{
+		return false;
+	}
+	m_isUIFrameRequested = false;
+	++m_windowUIFrames;
+
+	// From when this one was due, so the cadence holds. A UI frame over a period late re-bases on now, and so does one
+	// that came early because it was requested.
+	if (uiPeriod > 0.0)
+	{
+		const double scheduled = m_nextUIFrame + uiPeriod;
+		const bool isLate = now - m_nextUIFrame > uiPeriod;
+		m_nextUIFrame = isLate || scheduled > now + uiPeriod + tolerance ? now + uiPeriod : scheduled;
+	}
+
+	return true;
+}
+
 void FramePacer::EndFrameWork(double now)
 {
 	m_frameWorkEnd = now;
@@ -115,11 +143,13 @@ void FramePacer::UpdateStats(double now)
 	m_stats.FramesPerSecond = frames / m_windowFrameTime;
 	m_stats.IdleTimeMS = m_windowIdleTime / frames * 1000.0;
 	m_stats.IdleWorkMS = m_windowIdleWork / frames * 1000.0;
+	m_stats.UIFramesPerSecond = static_cast<double>(m_windowUIFrames) / m_windowFrameTime;
 
 	m_windowFrames = 0;
 	m_windowFrameTime = 0.0;
 	m_windowIdleTime = 0.0;
 	m_windowIdleWork = 0.0;
+	m_windowUIFrames = 0;
 }
 
 void FramePacer::ScheduleNextFrame(double now)
