@@ -150,6 +150,10 @@ namespace Rendering
 		static RenderThread m_renderThread;
 		// DevicePresent hands a frame to the render thread once it's finished the one before
 		static U64 m_recordingFrame;
+		// The last UI frame's copy of ImGui's draw data, drawn again until ImGui begins a new frame
+		static std::shared_ptr<ImDrawData> m_uiDrawData;
+		// ImGui's frame count when m_uiDrawData was copied
+		static int m_uiDrawDataFrame;
 	};
 
 	template<typename TType>

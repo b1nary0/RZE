@@ -93,7 +93,8 @@ namespace Rendering
 	{
 		RenderCommand_ImGuiRender() { type = RenderCommandType::ImGuiRender; }
 
-		ImDrawData* drawData;
+		// Shared with Renderer, which reuses it on frames without a UI update
+		std::shared_ptr<ImDrawData> drawData;
 	};
 
 	struct RenderCommand_BeginFrame : RenderCommand

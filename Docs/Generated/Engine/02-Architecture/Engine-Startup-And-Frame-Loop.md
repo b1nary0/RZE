@@ -184,7 +184,7 @@ A [`-perfcapture`](../06-Platform-And-Infrastructure/Debug-Services-And-Logging.
 
 ### UI frame rate
 
-With `UIFrameRate` set, only some frames are UI frames. Everything else (the async tick, the application's `Update`, the scene's update, `PreRender` and rendering) still runs every frame. On a frame without a UI update, no ImGui frame has begun, so `ImGuiRenderStage`'s `ImGui::Render()` returns at once and the last UI's draw data goes out again around this frame's scene.
+With `UIFrameRate` set, only some frames are UI frames. Everything else (the async tick, the application's `Update`, the scene's update, `PreRender` and rendering) still runs every frame. On a frame without a UI update, no ImGui frame has begun, so `ImGuiRenderStage`'s `ImGui::Render()` returns at once and the last UI's draw data goes out again around this frame's scene. `Renderer::ImGuiRender()` reuses its copy of that draw data rather than copying it again.
 
 `TakeUIFrame(now)` says whether this frame is a UI frame:
 

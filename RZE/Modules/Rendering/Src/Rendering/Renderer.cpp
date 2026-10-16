@@ -27,6 +27,8 @@ namespace Rendering
 {
 	RenderThread Renderer::m_renderThread;
 	U64 Renderer::m_recordingFrame = 0;
+	std::shared_ptr<ImDrawData> Renderer::m_uiDrawData;
+	int Renderer::m_uiDrawDataFrame = -1;
 
 	inline void* AllocateCommandData(void* src, size_t dataTypeSize, size_t count)
 	{
@@ -59,6 +61,7 @@ namespace Rendering
 	void Renderer::Shutdown()
 	{
 		m_renderThread.Shutdown();
+		m_uiDrawData.reset();
 
 		MemArena::Shutdown();
 	}
@@ -158,6 +161,15 @@ namespace Rendering
 		return clone;
 	}
 
+	void DeleteDrawData(ImDrawData* drawData)
+	{
+		for (int i = 0; i < drawData->CmdListsCount; ++i)
+		{
+			IM_DELETE<ImDrawList>(drawData->CmdLists[i]);
+		}
+		delete drawData;
+	}
+
 	void Renderer::ImGuiRender()
 	{
 		ImDrawData* drawData = ImGui::GetDrawData();
@@ -167,34 +179,43 @@ namespace Rendering
 			return;
 		}
 
-		// ImGui (1.92+) asks the backend to create/update/destroy textures (e.g. the font atlas when new glyphs
-		// are rasterized). The render thread runs a frame behind on a cloned ImDrawData, so service those
-		// requests here while the render thread is idle rather than racing it on the ImTextureData.
-		if (drawData->Textures != nullptr)
+		// A frame without a UI update has the same draw data as the last UI frame, so it draws that frame's copy again.
+		// The render thread may still be drawing the old copy when a new one replaces it, so whichever side lets go of a
+		// copy last deletes it.
+		if (ImGui::GetFrameCount() != m_uiDrawDataFrame)
 		{
-			bool hasPendingTextures = false;
-			for (ImTextureData* tex : *drawData->Textures)
+			// ImGui (1.92+) asks the backend to create/update/destroy textures (e.g. the font atlas when new glyphs
+			// are rasterized). The render thread runs a frame behind on a cloned ImDrawData, so service those
+			// requests here while the render thread is idle rather than racing it on the ImTextureData.
+			if (drawData->Textures != nullptr)
 			{
-				hasPendingTextures |= (tex->Status != ImTextureStatus_OK);
+				bool hasPendingTextures = false;
+				for (ImTextureData* tex : *drawData->Textures)
+				{
+					hasPendingTextures |= (tex->Status != ImTextureStatus_OK);
+				}
+
+				if (hasPendingTextures)
+				{
+					m_renderThread.RunWhileIdle([drawData]()
+					{
+						for (ImTextureData* tex : *drawData->Textures)
+						{
+							if (tex->Status != ImTextureStatus_OK)
+							{
+								ImGui_ImplDX11_UpdateTexture(tex);
+							}
+						}
+					});
+				}
 			}
 
-			if (hasPendingTextures)
-			{
-				m_renderThread.RunWhileIdle([drawData]()
-				{
-					for (ImTextureData* tex : *drawData->Textures)
-					{
-						if (tex->Status != ImTextureStatus_OK)
-						{
-							ImGui_ImplDX11_UpdateTexture(tex);
-						}
-					}
-				});
-			}
+			m_uiDrawData = std::shared_ptr<ImDrawData>(CloneDrawData(drawData), &DeleteDrawData);
+			m_uiDrawDataFrame = ImGui::GetFrameCount();
 		}
 
 		RenderCommand_ImGuiRender* command = MemArena::AllocType<RenderCommand_ImGuiRender>();
-		command->drawData = CloneDrawData(drawData);
+		command->drawData = m_uiDrawData;
 
 		m_renderThread.PushCommand(command);
 	}

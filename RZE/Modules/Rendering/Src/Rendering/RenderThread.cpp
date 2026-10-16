@@ -198,13 +198,8 @@ namespace Rendering
 			{
 				RenderCommand_ImGuiRender* cmd = static_cast<RenderCommand_ImGuiRender*>(command);
 
-				ImGui_ImplDX11_RenderDrawData(cmd->drawData);
-
-				for (int i = 0; i < cmd->drawData->CmdListsCount; ++i)
-				{
-					IM_DELETE<ImDrawList>(cmd->drawData->CmdLists[i]);
-				}
-				delete cmd->drawData;
+				// The copy is deleted when the command lets go of it, unless Renderer still holds it for the next frame
+				ImGui_ImplDX11_RenderDrawData(cmd->drawData.get());
 
 				break;
 			}
