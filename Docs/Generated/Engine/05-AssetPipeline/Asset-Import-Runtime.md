@@ -67,7 +67,7 @@ A resource that fails is logged and left out; the operation still succeeds. `Hea
 A resource can't be destroyed the moment its last handle goes: the render thread runs a frame behind, so a command queued this frame (an upload, a draw) may still read its memory. So **every** resource the `ResourceHandler` destroys, whether released or discarded, goes through `DestroyWhenRendered`:
 
 1. It's taken out of the table straight away, tagged with the frame being recorded (`Renderer::GetRecordingFrame()`).
-2. `ResourceHandler::Update()`, once a frame after present, destroys the ones whose frame the render thread has finished (`Renderer::IsFrameProcessed`).
+2. `ResourceHandler::Update()`, after present on every frame that updated the UI, destroys the ones whose frame the render thread has finished (`Renderer::IsFrameProcessed`). Frames that skip the UI ([`UIFrameRate`](../02-Architecture/Engine-Startup-And-Frame-Loop.md#ui-frame-rate)) render the last UI again, which may still show a texture released since, so nothing is destroyed until a newer UI has replaced it.
 3. At shutdown, `DestroyPendingNow()` destroys the rest once the render thread is idle, before the renderer shuts down ([Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md#shutdown)).
 
 So a resource can be released in the same frame it was uploaded or drawn in. Code that releases something no longer has to wait frames itself.
@@ -80,7 +80,7 @@ Long-running work, like loading a scene or building the game, runs as an **`Asyn
 %%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 stateDiagram-v2
     [*] --> Running: Start() / OnStart()
-    Running --> Running: OnTick(budget) each frame<br/>(+ worker jobs via PushWorkerJob)
+    Running --> Running: OnTick(budget) each frame,<br/>again with spare time (idle)<br/>(+ worker jobs via PushWorkerJob)
     Running --> Finishing: Complete() / Fail() / cancel
     Finishing --> Finished: no worker jobs left<br/>OnFinished(state) + completion callback
     Finished --> [*]: 2 frames later: OnCleanup(), released
@@ -88,6 +88,7 @@ stateDiagram-v2
 
 - **Threading rules:** progress, status text and cancellation can be set from any thread. Every hook and the completion callback run on the main thread. The manager won't finish an operation while any of its worker jobs are still running, so jobs can safely capture `this`.
 - **Frame budget** (`AsyncFrameBudget`): shared by the foreground operations each frame. It allows **8 ms** of main-thread time and **16 MB** of GPU uploads (soft limits; the first piece of work each frame always runs, so everything makes progress), and leaves **8 MB** of headroom in the render command arena (a hard limit). Background operations get a budget of their own on top (below).
+- **Idle time:** when a paced frame finishes early, `AsyncOperationManager::TickIdle(ms)` gives the spare time before the next frame to the running operations, foreground before background, right after the frame is handed to the renderer, so it adds nothing to that frame's latency. Its budget says it's idle (`AsyncFrameBudget::IsIdle()`): extra time within the same frame, not a new one, so work that counts frames counts only ticks where it's false (`ThumbnailBatchOperation`'s settle frames do). Idle ticks only give operations more time; finishing them, their callbacks, retiring and starting new ones stay in `Tick()`. What an idle tick records goes out with the next frame, so the upload and arena bytes it uses come out of that frame's allowance. Frames only have idle time with vsync or a frame rate cap ([Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md#waiting-for-the-next-frame)).
 - **Flags** (`EAsyncOperationFlags`, combinable):
 
   | Flag | Meaning |

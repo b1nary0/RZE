@@ -7,9 +7,10 @@ RZE runs on a few kinds of threads:
 flowchart TD
     subgraph Main["Main thread, each frame"]
         D["Step 1<br/>MainThreadDispatcher::Drain()<br/>runs tasks posted by workers"]
-        U["Step 2<br/>AsyncOperationManager::Tick()<br/>then app and scene Update"]
+        U["Step 2<br/>AsyncOperationManager::Tick()<br/>then the UI, app and scene"]
         R["Step 3<br/>RenderEngine queues<br/>this frame's draw commands"]
-        D --> U --> R
+        I["Step 4<br/>TickIdle() with spare time,<br/>then sleep until the next frame"]
+        D --> U --> R --> I
     end
     J["Worker threads (4)<br/>JobScheduler jobs:<br/>file I/O, parsing, builds"]
     X["Render thread<br/>runs last frame's<br/>commands on D3D11"]
@@ -46,7 +47,7 @@ Some work nobody is waiting on, such as rendering thumbnails, shouldn't slow dow
 | **Jobs** (`Threading::EJobLane`) | Taken first | A worker only takes one when no foreground job is queued, and background jobs **never run on every worker at once** (at most `MAX_WORKER_THREADS − 1`), so a foreground job always has a worker free to start on |
 | **Async operations** (`EAsyncOperationFlags::Background`) | Ticked first, sharing the 8 ms budget | Ticked after, with 2 ms and a quarter of the upload allowance of their own; their `PushWorkerJob`s go to the background lane |
 
-An operation flagged `Background` gets both automatically. See [Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md#async-operations) for the flags.
+An operation flagged `Background` gets both automatically. A paced frame's spare time also goes to async operations (`AsyncOperationManager::TickIdle`), foreground first, so background work takes up idle time before the main thread sleeps. See [Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md#async-operations) for the flags.
 
 ## Getting back to the main thread: `MainThreadDispatcher`
 

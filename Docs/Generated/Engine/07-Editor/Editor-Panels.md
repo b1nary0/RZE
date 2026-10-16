@@ -72,7 +72,7 @@ The 3D viewport. It shows the main view's render target with `ImGui::Image` and 
 | **Snapping** | Snap (X) toggle, move step (0.25–1 m) and rotate step (15–90°) in the toolbar; holding Ctrl during a drag inverts the toggle. See [Gizmo-Snapping-And-Grid.md](Gizmo-Snapping-And-Grid.md). |
 | **Grid** | A semi-transparent ground grid on Y = 0 whose squares match the move step and grow as the camera rises, fading with distance. See [Gizmo-Snapping-And-Grid.md](Gizmo-Snapping-And-Grid.md). |
 | **Light and camera icons** | Each `DirectionalLightComponent` draws a sun icon and each `CameraComponent` a movie-camera icon at its position. The primary selection's icon fades to 40% so the gizmo's centre handle shows through. |
-| **Camera frustums** | Each scene camera draws its view volume as debug lines, from the near plane out to its far plane or 1.5 m, whichever is closer, so it reads as a pyramid. |
+| **Camera frustums** | Each scene camera draws its view volume as debug lines, from the near plane out to its far plane or 1.5 m, whichever is closer, so it reads as a pyramid. Drawn every frame in `PreRender`, like the grid, while the scene image shows. |
 | **Picking** | Click, Ctrl+click and marquee selection; see below. |
 
 The hovered flag in `SceneViewportState` decides whether editor input (camera, gizmo keys, Escape) reaches the scene. It's cleared at the start of each frame, so it stays false while the SceneView is hidden.

@@ -8,9 +8,10 @@
 
 ## `EngineConfig` (`EngineConfig.h/.cpp`)
 
-`class EngineConfig final : public Config` — loads `Config\Engine.ini` and exposes two structs:
-- `EngineSettings` — `EnableVsync`, `MSAASampleCount`
-- `WindowSettings` — `WindowTitle`, `WindowWidth`, `WindowHeight`
+`class EngineConfig final : public Config` — loads `Config\Engine.ini` and exposes three structs:
+- `EngineSettings` — `MSAASampleCount`. Nothing reads it today: the renderer's stages pick their own sample counts.
+- `WindowSettings` — `WindowTitle`, `WindowWidth`, `WindowHeight`, `LaunchMonitor`
+- `FrameSettings` (`FrameSettings.h`) — `[FrameSettings]`: `EnableVsync`, `MaxFrameRate`, `UnfocusedFrameRate`, `UIFrameRate`. A missing key keeps the struct's default. See [Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md#frame-pacing).
 
 Loaded once during `RZE_Engine::Init()` via `LoadEngineConfig()` → `ResourceHandler::LoadResource<EngineConfig>()` — it goes through the exact same resource-loading path as meshes/textures ([Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md)), just with a config-file `IResource` implementation instead of a binary asset format.
 
@@ -18,16 +19,26 @@ Loaded once during `RZE_Engine::Init()` via `LoadEngineConfig()` → `ResourceHa
 
 ```ini
 [EngineSettings]
-EnableVsync=1
 MSAASampleCount=8
+
+[FrameSettings]
+; Present on the display's refresh
+EnableVsync=1
+; The most frames per second the loop runs, 0 for no cap beyond vsync
+MaxFrameRate=0
+; Frames per second while the window is unfocused or minimised, 0 to not throttle
+UnfocusedFrameRate=30
+; How many times a second the UI updates while you're not interacting, 0 for every frame. The scene still updates and renders every frame.
+UIFrameRate=0
 
 [WindowSettings]
 WindowWidth=1600
 WindowHeight=900
 WindowTitle=Game Title
+LaunchMonitor=0
 ```
 
-Consumed directly by `CreateAndInitializeWindow()` and `CreateAndInitializeRenderer()` during startup (see [Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md)).
+Read during startup by `CreateAndInitializeWindow()` (`[WindowSettings]`; `-launchMonitor` overrides `LaunchMonitor`) and `InitializeFramePacing()` (`[FrameSettings]`; `-vsync`, `-maxfps` and `-uifps` override it), see [Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md). The frame settings can change while running (`RZE_Engine::SetFrameSettings`, the Editor's Frame Rate page), but nothing writes them back to the file.
 
 ## `Config\imgui.ini`
 
@@ -40,5 +51,5 @@ A standard Dear ImGui persisted window-layout file, auto-generated/updated by Im
 ## Key files
 
 - `Engine\Src\EngineCore\Config\Config.h/.cpp`
-- `Engine\Src\EngineCore\Config\EngineConfig.h/.cpp`
+- `Engine\Src\EngineCore\Config\EngineConfig.h/.cpp`, `FrameSettings.h`
 - `Config\Engine.ini`, `Config\imgui.ini`

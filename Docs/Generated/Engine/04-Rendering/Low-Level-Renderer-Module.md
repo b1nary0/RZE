@@ -78,11 +78,22 @@ gantt
 
 `DevicePresent()` is the hand-off point: it waits until the render thread has finished the previous batch, swaps the queues, and wakes it. A frame's commands therefore run on the GPU one frame after they were queued, which is why results that come back from the GPU (like `ReadTexel`) arrive a frame or two later.
 
+### The swap chain and vsync
+
+`DX11Device` creates the device first (`D3D11CreateDevice`), then the swap chain from the device's own DXGI factory (`CreateSwapChain`):
+
+- **Flip model** (`DXGI_SWAP_EFFECT_FLIP_DISCARD`), two single-sample buffers. Flip model can't be multisampled, and nothing needs it to be: the scene renders into its own targets, and only the final blit and the Editor's UI draw to the back buffer. The back buffer's depth buffer is single-sample to match.
+- **Tearing** (`DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING`) where the system supports it, so a present with vsync off shows at once rather than at the next refresh. Only an unsynced present asks for it.
+- **At most two queued frames** (`SetMaximumFrameLatency(2)`, `k_maxFrameLatency`), since the main thread already records a frame while the render thread runs the previous one. The swap chain's **frame latency waitable object** is signalled when it can take another frame. `RenderThread` takes the handle before its thread starts, so `Renderer::WaitForPresentSlot(timeoutMS)` can wait on it from the main thread without touching the device. The engine waits on it at the end of every frame, before the next one reads input; with vsync on, that wait is what paces frames ([Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md#waiting-for-the-next-frame)).
+- **Sync interval.** `Renderer::SetSyncInterval(interval)` is a render command (`SetSyncInterval`), applied from the next frame the render thread runs: 0 presents at once, 1 on every refresh. `RenderEngine::SetVSync` calls it with `FrameSettings::VSync`.
+- **Present** checks its result and logs a removed or reset device once, with the reason.
+- **Resizing** releases the back buffer view and flushes the context first, because flip model can only resize once nothing references the buffers and D3D11 destroys views lazily, then passes `ResizeBuffers` the flags the swap chain was created with, which flip model requires. Shutdown closes the waitable object and releases the back buffer view before the swap chain.
+
 ## `RenderCommandType` (full list, from `RenderCommand.h`)
 
 | Group | Commands |
 |---|---|
-| Frame / pass | `BeginFrame`, `EndFrame`, `Begin`, `End`, `DevicePresent`, `HandleWindowResize`, `ImGuiRender` |
+| Frame / pass | `BeginFrame`, `EndFrame`, `Begin`, `End`, `DevicePresent`, `HandleWindowResize`, `SetSyncInterval`, `ImGuiRender` |
 | Create | `CreateVertexBuffer` (static or dynamic), `CreateIndexBuffer`, `CreateConstantBuffer`, `CreateTextureBuffer2D`, `CreateVertexShader`, `CreatePixelShader` |
 | Update / release | `UploadDataToBuffer`, `UpdateVertexBuffer`, `ReleaseVertexShader`, `ReleasePixelShader`, `GenerateMips` |
 | Targets | `SetRenderTarget`, `SetRenderTargetBackBuffer`, `SetColourTarget` (colour, optionally with depth), `SetDepthTarget` (depth only, e.g. shadow maps), `ClearRenderTarget`, `ClearRenderTargets`, `ClearDepthStencilBuffer` |
@@ -94,7 +105,7 @@ Every one of these has a matching `RenderCommand_*` POD struct carrying exactly 
 
 ## ImGui integration lives at this layer too
 
-`RenderThread::InitializeImGui()` sets up `imgui_impl_win32`/`imgui_impl_dx11` bound to the `DX11Device`. `Renderer::ImGuiRender()` deep-copies the current frame's `ImDrawData` (since ImGui's `ImDrawData` is only valid until the next frame) and pushes a `RenderCommand_ImGuiRender`, so ImGui draw submission funnels through the exact same command queue/thread as everything else — it isn't a special-cased side path.
+`RenderThread::InitializeImGui()` sets up `imgui_impl_win32`/`imgui_impl_dx11` bound to the `DX11Device`. `Renderer::ImGuiRender()` deep-copies the current frame's `ImDrawData` (since ImGui's `ImDrawData` is only valid until the next frame) and pushes a `RenderCommand_ImGuiRender`, so ImGui draw submission funnels through the exact same command queue/thread as everything else — it isn't a special-cased side path. On a frame that didn't update the UI (`FrameSettings::UIFrameRate`), `ImGui::Render()` returns at once and the draw data is still the last UI frame's, so the same UI is drawn again; before the first UI frame there's none, and `ImGuiRender()` does nothing.
 
 ## Handle types (`BufferHandle.h`, `ShaderHandle.h`)
 
@@ -107,6 +118,7 @@ Everything is a static call on `Rendering::Renderer`, and every call only *queue
 | Area | Calls |
 |---|---|
 | Lifetime | `Initialize`, `Shutdown`, `HandleWindowResize`, `WaitUntilIdle` (blocks until the render thread has run every frame it's been given, e.g. while shutting down) |
+| Presenting | `SetSyncInterval(interval)` (vsync), `WaitForPresentSlot(timeoutMS)` (blocks until the swap chain can queue another frame; false on timeout, e.g. while minimised). See [the swap chain](#the-swap-chain-and-vsync). |
 | Frame tracking | `GetRecordingFrame()` (the frame being recorded, counting up at each `DevicePresent`), `IsFrameProcessed(frame)` (the render thread has run every command pushed up to the end of that frame). `ResourceHandler` uses these to destroy a resource only once nothing queued can still read it ([Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md)). |
 | Frame and passes | `BeginFrame` / `EndFrame`, `Begin(name)` / `End()` (one pass; also resets the rasterizer state and names the pass for PIX), `DevicePresent`, `ImGuiRender` |
 | Resources | `CreateVertexBuffer`, `CreateDynamicVertexBuffer` + `UpdateVertexBuffer`, `CreateIndexBuffer`, `CreateConstantBuffer`, `CreateTextureBuffer2D`, `CreateVertexShader`, `CreatePixelShader`, `Release*Shader`, `UploadDataToBuffer<T>` (copies the data, so a stack variable is fine), `GenerateMips` |

@@ -67,11 +67,21 @@ For frame-level profiling use Optick or PIX instead (see [Low-Level-Renderer-Mod
 
 | Argument | Meaning |
 |---|---|
-| `-perfcapture <file>` | Where to write the samples: one `frameMs,updateMs` line per frame. `updateMs` is `RZE_Engine::PreUIUpdate()` + `Update()`, not ImGui's `NewFrame`. |
+| `-perfcapture <file>` | Where to write the samples: one `frameMs,updateMs` line per frame. `updateMs` is the async operations' tick, the application's `PreUIUpdate`, `UpdateUI`, `Update` and `PreRender`, and the scene's update, but not ImGui's `NewFrame` and `EndFrame` or rendering. |
 | `-perfwarmup <seconds>` | How long to wait before recording, e.g. for the scene to load (default 10) |
 | `-perfduration <seconds>` | How long to record (default 15) |
 
 When the duration is up it writes the file and the engine exits, so a script can launch the Editor or Game on a scene, wait for it to close and compare the files from two builds.
+
+A capture runs **unpaced**, so it measures what frames cost and stays comparable with captures from before frames were paced: vsync, the frame rate caps and the UI frame rate are off, and every frame updates the UI. The pacing arguments still apply if given:
+
+| Argument | Meaning |
+|---|---|
+| `-vsync 0/1` | Vsync off or on, over Engine.ini's `EnableVsync` |
+| `-maxfps <N>` | Frame rate cap, over Engine.ini's `MaxFrameRate`; 0 for none |
+| `-uifps <N>` | UI updates a second, over Engine.ini's `UIFrameRate`; 0 for every frame |
+
+These work without `-perfcapture` too; see [Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md#settings). Integer arguments (`CmdLine::Arguments::GetInt`) log a value that isn't an integer and leave the default in place.
 
 ## Key files
 

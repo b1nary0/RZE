@@ -9,8 +9,10 @@ class RZE_Application {
 public:
     void Run();                                  // kicks off RZE().Run(engineHook)
     virtual void Start();
-    virtual void PreUIUpdate();                  // before ImGui's frame starts; no ImGui calls
-    virtual void Update();
+    virtual void PreUIUpdate();                  // UI frames, before ImGui's frame: gather what the UI shows; no ImGui calls
+    virtual void UpdateUI();                     // UI frames, inside ImGui's frame: the UI and what it changes
+    virtual void Update();                       // every frame, after the UI: the app's own work; no ImGui calls
+    virtual void PreRender();                    // every frame, after the scene's update: debug lines etc.; no ImGui calls
     virtual void ShutDown();
 
     virtual bool OnCloseRequested();               // window close button / Alt+F4; true (default) exits
@@ -26,6 +28,8 @@ public:
 ```
 
 The base `Initialize()` registers the engine's built-in `GameObjectComponent` types (`CameraComponent`, `RenderComponent`, `TransformComponent`, `DirectionalLightComponent`, `GifChatComponent`) through the static `RegisterEngineComponents()`, which code that runs no application (the unit tests) calls itself — subclasses are expected to call the base implementation and then register any product-specific components of their own (e.g. `EditorCameraComponent`).
+
+The four per-frame hooks split each frame into a UI part (`PreUIUpdate`, `UpdateUI`) and a scene part (`Update`, `PreRender`), so the UI can update less often than the scene (`FrameSettings::UIFrameRate`). Both apps' UI is in `UpdateUI`; neither overrides `Update` today, and the Editor draws its grid and camera frustums in `PreRender`. See [Engine-Startup-And-Frame-Loop.md](Engine-Startup-And-Frame-Loop.md#update) for when each runs.
 
 `OnCloseRequested()` is called when the user asks to close the window (its close button, Alt+F4). Returning true, the default, exits. The Editor returns false while the scene has unsaved changes and asks about them first, exiting itself afterwards with `RZE().PostExit()`.
 

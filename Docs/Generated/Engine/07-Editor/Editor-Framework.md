@@ -85,9 +85,9 @@ REGISTER_EDITOR_PANEL(LogPanel);   // in LogPanel.cpp
 | `WindowFlags` | Passed to `Begin`. Include `ImGuiWindowFlags_MenuBar` to get a `DrawMenuBar()` call. |
 | `OwnsWindow` | `Draw()` does its own `Begin`/`End` (the ImGui demo). Use `GetOpenFlag()` for its close button. |
 
-Optional hooks: `Initialize(context)` (once, after every panel exists), `DrawMenuBar(context)`, `OnSceneReset()`, and `PushWindowStyle(style)` (style vars that cover the title bar and tab too).
+Optional hooks: `Initialize(context)` (once, after every panel exists), `DrawMenuBar(context)`, `OnSceneReset()`, `PushWindowStyle(style)` (style vars that cover the title bar and tab too), and `PreRender(context)`: every frame while the panel is open, after the scene's update and before the frame renders, for what goes into the scene every frame, such as debug lines, which are cleared after each render. No ImGui calls there; it's outside ImGui's frame. The SceneView draws the grid and camera frustums in it, but only while its last `Draw` showed the scene image.
 
-`PanelManager` creates every registered panel at start-up, sorted by name. Each frame it updates and draws the open ones, builds the Edit, View and Help menu items from their `MenuPath`s, and, when `imgui.ini` has no saved layout, docks each panel into its `DefaultDock` slot.
+`PanelManager` creates every registered panel at start-up, sorted by name. On each UI frame it updates and draws the open ones (`UpdateAll`, `DrawAll`), and every frame it calls their `PreRender` (`PreRenderAll`). It also builds the Edit, View and Help menu items from their `MenuPath`s, and, when `imgui.ini` has no saved layout, docks each panel into its `DefaultDock` slot.
 
 > **Registration and linking.** `REGISTER_EDITOR_PANEL` (and `REGISTER_SETTINGS_PAGE`) register from static initializers that nothing else references. The Editor's code is built as the `EditorLib` static library (so [the unit tests](../01-GettingStarted/Building-And-Running.md#unit-tests) can link it), and a linker drops unreferenced objects from a library, so `Editor` links `EditorLib` with `/WHOLEARCHIVE` to keep them. Anything else that links `EditorLib`, such as `UnitTests`, gets no panels unless it does the same.
 
@@ -102,22 +102,28 @@ sequenceDiagram
     participant Q as CommandQueue
     participant Scene as GameScene
     Eng->>Eng: PreUpdate - drain worker tasks, input
-    Eng->>Eng: PreUIUpdate - async operations tick
-    Eng->>App: PreUIUpdate()
-    App->>App: context Update - pick results, viewport flag
-    App->>PM: UpdateAll - each open panel's Update()
-    Eng->>Eng: ImGui NewFrame
-    Eng->>App: Update()
-    App->>App: main menu bar, status bar, dockspace
-    App->>PM: DrawAll - each open panel's Draw()
-    App->>Q: Flush - apply this frame's commands,<br/>record them in UndoHistory
-    Q-->>App: SceneModifiedEvent if any ran
-    App->>App: modals - progress, unsaved changes,<br/>file browser
+    Eng->>Eng: async operations tick
+    opt a UI frame
+        Eng->>App: PreUIUpdate()
+        App->>App: context Update - pick results, viewport flag
+        App->>PM: UpdateAll - each open panel's Update()
+        Eng->>Eng: ImGui NewFrame
+        Eng->>App: UpdateUI()
+        App->>App: main menu bar, status bar, dockspace
+        App->>PM: DrawAll - each open panel's Draw()
+        App->>Q: Flush - apply this frame's commands,<br/>record them in UndoHistory
+        Q-->>App: SceneModifiedEvent if any ran
+        App->>App: modals - progress, unsaved changes,<br/>file browser
+    end
     Eng->>Scene: Update()
+    Eng->>App: PreRender()
+    App->>PM: PreRenderAll - grid, camera frustums
     Eng->>Eng: render
 ```
 
 `RZE_Application::PreUIUpdate()` is the engine hook that makes the split possible: it runs **before** `ImGui::NewFrame`, so an ImGui call in a panel's `Update()` hits ImGui's own "no frame" assert straight away. Commands are flushed after every panel has drawn and before the scene updates, so changes show in the same frame's render.
+
+Everything in the `opt` box is the UI, which `FrameSettings::UIFrameRate` (the [Frame Rate settings page](Status-Bar-And-Settings.md#pages)) can run less often than the scene. By default every frame is a UI frame, and every frame is one anyway while the user interacts. A frame that skips the UI renders the last one again around this frame's scene, so per-frame scene overlays go in `PreRender`, not `Draw`. What ImGui itself draws over the scene (the gizmo, object icons, the marquee) only moves on UI frames. See [Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md#ui-frame-rate).
 
 ## Commands: how panels change the scene
 
@@ -291,4 +297,4 @@ Rules:
 - `Editor\Src\UI\Modals\UnsavedChangesPrompt.h/.cpp`, `FileBrowserModal.h/.cpp`
 - `Editor\Src\UI\Settings\` — `SettingsPage`, `SettingsPageRegistry` and the pages
 - `Editor\Src\UI\MainMenuBar.h/.cpp`, `Editor\Src\EditorApp.h/.cpp`
-- `Engine\Src\EngineApp.h` (`PreUIUpdate`), `Engine\Src\EngineCore\Engine.cpp` (frame order)
+- `Engine\Src\EngineApp.h` (`PreUIUpdate`, `UpdateUI`, `Update`, `PreRender`), `Engine\Src\EngineCore\Engine.cpp` (frame order)

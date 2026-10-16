@@ -32,6 +32,11 @@ Rough edges the codebase is candid about (source comments, `#TODO`s), plus a few
 | 24 | `StaticMeshResource` keeps its load state in pending lists | Resources | Low | Open |
 | 25 | Undoing a cleared mesh reloads it synchronously | Editor | Low | Open |
 | 26 | A swapped-in material that's missing is tried twice on scene load | Resources | Cosmetic | Open |
+| 27 | A frame rate cap that doesn't divide the refresh rate paces unevenly under vsync | Frame pacing | Low | Open |
+| 28 | An idle tick can put two big units of async work in one frame | Async | Low | Open |
+| 29 | GPU render targets leak, and the D3D device leaks at exit | Renderer | Medium | Open |
+| 30 | In Debug, the game's key bindings never fire | Game | Medium | Open |
+| 31 | `RenderThread::Shutdown` can race | Renderer | Low | Open |
 
 ```mermaid
 quadrantChart
@@ -76,7 +81,7 @@ This entry used to say the job system was only used by the Editor's build, busy-
 - `MainThreadDispatcher` hands results back to the main thread;
 - scene loading parses and decodes on the workers.
 
-Still true: there's one shared queue, and `MAX_WORKER_THREADS` is a fixed 4 rather than based on the core count. See [Threading-And-Jobs.md](../06-Platform-And-Infrastructure/Threading-And-Jobs.md).
+Still true: `MAX_WORKER_THREADS` is a fixed 4 rather than based on the core count. See [Threading-And-Jobs.md](../06-Platform-And-Infrastructure/Threading-And-Jobs.md).
 
 ## 5. Dead code: `old_RenderCommands.h`
 
@@ -165,6 +170,26 @@ Clearing a `RenderComponent`'s mesh releases it. Undo sets the path back, which 
 ## 26. A swapped-in material that's missing is tried twice on scene load
 
 A scene whose material overrides swap in a missing `.materialasset` logs the failure twice: once when the scene load preloads it, then again when the slot applies its override and loads it synchronously. Nothing breaks (the slot draws the mesh's own material), but the log is noisy. The slot could skip a path the preload already failed on.
+
+## 27. A frame rate cap that doesn't divide the refresh rate paces unevenly under vsync
+
+With vsync on, a `MaxFrameRate` below the refresh rate that doesn't divide it (e.g. 50 on 60 Hz) can only present on refreshes, so frames alternate between one and two refresh periods. When the cap divides the rate, presenting every Nth refresh (sync interval N) would pace evenly. See [Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md#frame-pacing).
+
+## 28. An idle tick can put two big units of async work in one frame
+
+The first unit of work in any budget always runs, even when it's bigger than the budget, and idle ticks get a budget of their own. So a frame's tick and its idle tick can each run one large unit, e.g. an extra ~55 ms frame when a thumbnail run starts. Estimating unit times, or giving idle budgets no free first unit, would avoid it. See [Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md#async-operations).
+
+## 29. GPU render targets leak, and the D3D device leaks at exit
+
+`RenderTargetTexture`'s destructor is empty, so its GPU textures are never released; the Editor leaks its scene view target on every resize. The D3D debug layer also reports about 390 live objects at exit, probably the same cause.
+
+## 30. In Debug, the game's key bindings never fire
+
+`GameApp::ProcessInput` returns `false` in `IMGUI_ENABLED` (Debug) builds, so the engine resets input every frame instead of raising events, and Escape, F1–F3 and the player controller's bindings never fire. See [Game-App.md](../08-Game/Game-App.md).
+
+## 31. `RenderThread::Shutdown` can race
+
+`Shutdown` signals the render thread before it sets `m_shuttingDown`, so the thread can finish a pass and wait again before seeing the flag, leaving `join()` waiting on it. It's a narrow window and hasn't been seen to hang.
 
 ## Key files
 

@@ -4,13 +4,15 @@ Two pieces of Editor chrome: the **status bar** along the bottom, which follows 
 
 ## The status bar
 
-`StatusBar` (`UI\StatusBar.h/.cpp`), owned and drawn by `EditorApp` right after the main menu bar. It takes its height out of the viewport's work area, so the dockspace fits above it. It's made of fixed-width items: **"Ready"** on the left, and the **tasks area** on the right.
+`StatusBar` (`UI\StatusBar.h/.cpp`), owned and drawn by `EditorApp` right after the main menu bar. It takes its height out of the viewport's work area, so the dockspace fits above it. It's made of fixed-width items: **"Ready"** and the **frame stats** on the left, and the **tasks area** on the right.
 
 ```
-| Ready                                          (o) [Rendering thumbnails +1  33%] |
+| Ready   16.7 ms · 60 FPS · idle 9.8 ms         (o) [Rendering thumbnails +1  33%] |
                                                   |   '-- box: fills with the accent colour as the task progresses
                                                   '-- status circle
 ```
+
+**The frame stats** are the frame time, frames a second and idle time per frame, averaged over half a second by the `FramePacer` (`FramePacer::Stats`, [Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md#frame-pacing)). Hovering opens a panel just above them, like the tasks one, with how many times a second the UI updates, and the idle time split into what went to tasks (`AsyncOperationManager::TickIdle`) and what was spent waiting for the next frame. Frames only have idle time with vsync or a frame rate cap. They replace the menu bar's old frame time readout.
 
 It shows every `AsyncOperation` that isn't `Hidden`, except `Blocking` ones, which have the progress modal ([Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md#async-operations)). Today that's thumbnail runs ([Thumbnails-And-File-Browser.md](Thumbnails-And-File-Browser.md)).
 
@@ -53,9 +55,9 @@ So for new long-running work to show up here, make it an `AsyncOperation` that i
 
 ```
 + Settings ------------------------------------------------------------+
-| Scene View   | Thumbnails                                            |
-| >Thumbnails  | ----------------------------------------------------- |
-|              | Thumbnails render in the background, one at a time... |
+| Frame Rate   | Thumbnails                                            |
+| Scene View   | ----------------------------------------------------- |
+| >Thumbnails  | Thumbnails render in the background, one at a time... |
 |              | -- Scenes ------------------------------------------- |
 |              | 7 of 7 up to date                                     |
 |              | In ProjectData\SceneThumbnails                        |
@@ -71,6 +73,7 @@ So for new long-running work to show up here, make it an `AsyncOperation` that i
 
 | Page | Shows |
 |---|---|
+| **Frame Rate** | **Vsync**, the **max frame rate** (Off, 30, 60, 120, 144, 240), the frame rate **while unfocused** (Off, 10, 15, 30, 60) and the **UI rate** (Every frame, 60, 30, 20, 15): how often the panels and menus update while you're not using the mouse or keyboard. They're `FrameSettings`, applied at once through `RZE_Engine::SetFrameSettings`, and last until the editor closes; Engine.ini's `[FrameSettings]` sets them at start-up ([Config-System.md](../06-Platform-And-Infrastructure/Config-System.md)). Engine.ini can set rates the page doesn't list, and then none of its options is picked. |
 | **Scene View** | The gizmo's **move step** (0.25–1 m, also the grid's square size and the paste offset) and **rotate step** (15–90°). These are the same `EditorSettings` values the scene view's toolbar edits, drawn by the same code (`GizmoSnapper::DrawSnapSizeOptions` / `DrawRotationStepOptions`), so the two always agree. See [Gizmo-Snapping-And-Grid.md](Gizmo-Snapping-And-Grid.md). |
 | **Thumbnails** | For scenes and for meshes: how many thumbnails are up to date, out of date and missing, and their folder. **Update** renders the missing and out-of-date ones (greyed out when all are up to date); **Regenerate All** renders every one again. Both queue the work on the background `ThumbnailRenderer`, so the status bar shows it and the editor carries on. The counts (`FindFiles` + `Thumbnails::Survey`) refresh every second while the page is shown. |
 
@@ -97,6 +100,6 @@ Settings last for the session only; nothing is saved between runs yet.
 
 - `Editor\Src\UI\StatusBar.h/.cpp`, `TaskTracker.h/.cpp`
 - `Editor\Src\UI\Panels\SettingsPanel.h/.cpp`
-- `Editor\Src\UI\Settings\SettingsPage.h`, `SettingsPageRegistry.h/.cpp`, `SceneViewSettingsPage.h/.cpp`, `ThumbnailsSettingsPage.h/.cpp`
+- `Editor\Src\UI\Settings\SettingsPage.h`, `SettingsPageRegistry.h/.cpp`, `FrameRateSettingsPage.h/.cpp`, `SceneViewSettingsPage.h/.cpp`, `ThumbnailsSettingsPage.h/.cpp`
 - `Editor\Src\UI\Framework\EditorSettings.h/.cpp`
 - `UnitTests\Src\Editor\TaskTrackerTests.cpp`, `SettingsPageRegistryTests.cpp`

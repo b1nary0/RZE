@@ -43,7 +43,7 @@ flowchart TD
 
 ## The grid (`EditorGrid`)
 
-A semi-transparent grid on the **Y = 0** plane (+Y is up; see [World-Conventions.md](../02-Architecture/World-Conventions.md)), drawn every frame as debug lines around the editor camera.
+A semi-transparent grid on the **Y = 0** plane (+Y is up; see [World-Conventions.md](../02-Architecture/World-Conventions.md)), drawn every frame as debug lines around the editor camera. It's drawn from `SceneViewPanel::PreRender`, outside the UI, so it keeps up with the camera on frames that skip the UI ([Editor-Framework.md](Editor-Framework.md#when-things-run-in-a-frame)).
 
 - **Square size follows the move step**, so snapped objects always land on grid lines.
 - **It grows as the camera rises.** Squares are 10× bigger per level, up to two levels (100× the move step). With a 1 m step: 1 m squares near the ground, 10 m from about 50 m up, 100 m from about 500 m up. The toolbar shows the current size ("1 m squares").
