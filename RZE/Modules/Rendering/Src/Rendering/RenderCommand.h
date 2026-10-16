@@ -40,6 +40,7 @@ namespace Rendering
 		End,
 		DevicePresent,
 		HandleWindowResize,
+		SetSyncInterval,
 		CreateVertexBuffer = 500,
 		CreateIndexBuffer,
 		CreateConstantBuffer,
@@ -129,6 +130,13 @@ namespace Rendering
 		RenderCommand_HandleWindowResize() { type = RenderCommandType::HandleWindowResize; }
 
 		Vector2D size;
+	};
+
+	struct RenderCommand_SetSyncInterval : RenderCommand
+	{
+		RenderCommand_SetSyncInterval() { type = RenderCommandType::SetSyncInterval; }
+
+		U32 interval = 0;
 	};
 
 	struct RenderCommand_CreateVertexBuffer : RenderCommand

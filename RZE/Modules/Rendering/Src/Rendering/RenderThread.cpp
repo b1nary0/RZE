@@ -103,6 +103,8 @@ namespace Rendering
 		m_device = std::make_unique<DX11Device>();
 		m_device->SetWindow(m_windowHandle);
 		m_device->Initialize();
+		// Taken before the thread starts, so the main thread can wait on it without touching the device
+		m_frameLatencyWaitableObject = m_device->GetFrameLatencyWaitableObject();
 
 		InitializeImGui();
 
@@ -134,7 +136,18 @@ namespace Rendering
 		m_thread.join();
 
 		ImGui_ImplDX11_Shutdown();
+		m_frameLatencyWaitableObject = nullptr;
 		m_device->Shutdown();
+	}
+
+	bool RenderThread::WaitForPresentSlot(U32 timeoutMS)
+	{
+		if (m_frameLatencyWaitableObject == nullptr)
+		{
+			return true;
+		}
+
+		return WaitForSingleObjectEx(m_frameLatencyWaitableObject, timeoutMS, TRUE) == WAIT_OBJECT_0;
 	}
 
 	void RenderThread::InitializeImGui()
@@ -248,6 +261,14 @@ namespace Rendering
 
 				const Vector2D& newSize = cmd->size;
 				m_device->HandleWindowResize(static_cast<U32>(newSize.X()), static_cast<U32>(newSize.Y()));
+
+				break;
+			}
+
+			case RenderCommandType::SetSyncInterval:
+			{
+				RenderCommand_SetSyncInterval* cmd = static_cast<RenderCommand_SetSyncInterval*>(command);
+				m_device->SetSyncInterval(cmd->interval);
 
 				break;
 			}

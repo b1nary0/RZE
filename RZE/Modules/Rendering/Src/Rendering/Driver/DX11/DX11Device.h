@@ -6,7 +6,7 @@
 
 struct ID3D11Device;
 struct ID3D11DeviceContext;
-struct IDXGISwapChain;
+struct IDXGISwapChain2;
 struct ID3D11RenderTargetView;
 struct ID3D11RasterizerState;
 struct ID3D11BlendState;
@@ -41,7 +41,11 @@ namespace Rendering
 		ID3D11DeviceContext& GetDeviceContext();
 		
 	public:
+		// 0 presents at once (tearing where the system allows it), 1 on every vertical blank, 2 on every other, and so on
 		void SetSyncInterval(U32 interval);
+		// Signalled when the swap chain can take another frame, i.e. fewer than k_maxFrameLatency are queued. Created
+		// with the swap chain and closed by Shutdown; waiting on it is safe from any thread.
+		void* GetFrameLatencyWaitableObject() const { return mFrameLatencyWaitableObject; }
 		//void SendTextureToBackBuffer(DX11TextureBuffer2D* texture);
 		
 	public:
@@ -71,11 +75,24 @@ namespace Rendering
 		ID3D11Texture2D* mDepthStencilTex;
 
 	private:
-		IDXGISwapChain* mSwapChain;
+		// Frames that may be queued for presenting. Two, since the main thread already records a frame while the render
+		// thread runs the previous one.
+		static constexpr U32 k_maxFrameLatency = 2;
+
+		void CreateSwapChain();
+		void CreateBackBufferDepthStencil(U32 width, U32 height);
+
+	private:
+		IDXGISwapChain2* mSwapChain;
 		ID3D11DeviceContext* mDeviceContext;
 		ID3D11Device* mDevice;
-		
+
 		void* mWindowHandle;
+		void* mFrameLatencyWaitableObject = nullptr;
 		U32 mSyncInterval = 0;
+		// DXGI_SWAP_CHAIN_FLAG_*, which ResizeBuffers must be given again
+		U32 mSwapChainFlags = 0;
+		bool mIsTearingSupported = false;
+		bool mHasReportedDeviceLoss = false;
 	};
 }

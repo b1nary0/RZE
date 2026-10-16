@@ -31,4 +31,7 @@ namespace Display
 
 	// Returns false if index is out of range.
 	bool GetMonitor(int index, MonitorInfo& outInfo);
+
+	// Hz, of the monitor most of the window is on; 0 if it can't be read. Whole numbers, so a 59.94 Hz mode reads 59.
+	double GetRefreshRate(void* windowHandle);
 }

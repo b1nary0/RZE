@@ -4,6 +4,8 @@
 #include <thread>
 #include <vector>
 
+#include <Utils/PrimitiveDefs.h>
+
 namespace Rendering
 {
 	struct RenderCommand;
@@ -23,6 +25,9 @@ namespace Rendering
 
 		// @todo note sure about the future of this, but just getting an idea down
 		void SignalProcess();
+
+		// Blocks until the swap chain can queue another frame, or timeoutMS passes (false). Safe from any thread.
+		bool WaitForPresentSlot(U32 timeoutMS);
 
 		// Blocks until the render thread has finished processing its queue, then runs func on the calling
 		// thread while the render thread is held idle. Use for the rare case where the calling thread
@@ -55,6 +60,8 @@ namespace Rendering
 
 		void* m_windowHandle = nullptr;
 		std::unique_ptr<DX11Device> m_device = nullptr;
+		// The swap chain's frame latency HANDLE (DX11Device::GetFrameLatencyWaitableObject); fixed while the thread runs
+		void* m_frameLatencyWaitableObject = nullptr;
 
 		std::thread m_thread;
 		std::mutex m_updateMutex;

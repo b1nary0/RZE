@@ -66,6 +66,13 @@ namespace Rendering
 
 		static void HandleWindowResize(const Vector2D& newSize);
 
+		// How many vertical blanks each present waits for: 0 presents at once (vsync off), 1 on every refresh (vsync on).
+		// Takes effect from the next frame the render thread runs.
+		static void SetSyncInterval(U32 interval);
+		// Blocks until the swap chain can queue another frame, which keeps at most two frames in flight, or until
+		// timeoutMS passes (false), e.g. while the window is minimised. Call once per frame, before reading its input.
+		static bool WaitForPresentSlot(U32 timeoutMS);
+
 		static void ImGuiRender();
 
 	public:

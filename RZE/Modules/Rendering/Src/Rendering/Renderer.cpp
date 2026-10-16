@@ -107,6 +107,19 @@ namespace Rendering
 		++m_recordingFrame;
 	}
 
+	void Renderer::SetSyncInterval(U32 interval)
+	{
+		RenderCommand_SetSyncInterval* command = MemArena::AllocType<RenderCommand_SetSyncInterval>();
+		command->interval = interval;
+
+		m_renderThread.PushCommand(command);
+	}
+
+	bool Renderer::WaitForPresentSlot(U32 timeoutMS)
+	{
+		return m_renderThread.WaitForPresentSlot(timeoutMS);
+	}
+
 	void Renderer::HandleWindowResize(const Vector2D& newSize)
 	{
 		RenderCommand_HandleWindowResize* command = MemArena::AllocType<RenderCommand_HandleWindowResize>();

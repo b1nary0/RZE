@@ -69,6 +69,21 @@ void RenderEngine::WaitUntilIdle()
 	Rendering::Renderer::WaitUntilIdle();
 }
 
+void RenderEngine::SetVSync(bool enabled)
+{
+	Rendering::Renderer::SetSyncInterval(enabled ? 1 : 0);
+}
+
+void RenderEngine::WaitForPresentSlot()
+{
+	OPTICK_EVENT("Wait | RenderEngine::WaitForPresentSlot");
+
+	// Long enough for any real frame. It runs out when nothing is being presented, e.g. while minimised, and the
+	// frame then goes ahead anyway.
+	constexpr U32 k_timeoutMS = 100;
+	Rendering::Renderer::WaitForPresentSlot(k_timeoutMS);
+}
+
 void RenderEngine::ReleaseRenderStages()
 {
 	m_pipeline->Clear();

@@ -40,50 +40,26 @@ namespace Rendering
 		// left for the device to do essentially is to create the swapchain and create a device, i think.
 		HRESULT hr;
 
-		DXGI_MODE_DESC bufferDesc;
-		ZeroMemory(&bufferDesc, sizeof(DXGI_MODE_DESC));
-
-		bufferDesc.Width = kInitialWidth;
-		bufferDesc.Height = kInitialHeight;
-		bufferDesc.RefreshRate.Denominator = 60;
-		bufferDesc.RefreshRate.Numerator = 1;
-		bufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-		bufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-		bufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-
-		DXGI_SWAP_CHAIN_DESC swapChainDesc;
-		ZeroMemory(&swapChainDesc, sizeof(DXGI_SWAP_CHAIN_DESC));
-
-		swapChainDesc.BufferDesc = bufferDesc;
-		swapChainDesc.SampleDesc.Count = 4;
-		swapChainDesc.SampleDesc.Quality = 0;
-		swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		swapChainDesc.BufferCount = 1;
-		swapChainDesc.OutputWindow = reinterpret_cast<HWND>(mWindowHandle);
-		swapChainDesc.Windowed = true;
-		swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-
 		D3D11_CREATE_DEVICE_FLAG deviceType = D3D11_CREATE_DEVICE_SINGLETHREADED;
 #ifdef _DEBUG
 		deviceType = D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
-		// @TODO only create debug device when running _DEBUG
-		hr = D3D11CreateDeviceAndSwapChain(
-			NULL, 
-			D3D_DRIVER_TYPE_HARDWARE, 
-			NULL, 
+		hr = D3D11CreateDevice(
+			NULL,
+			D3D_DRIVER_TYPE_HARDWARE,
+			NULL,
 			deviceType,
-			NULL, 
-			NULL, 
-			D3D11_SDK_VERSION, 
-			&swapChainDesc, 
-			&mSwapChain, 
-			&mDevice, 
-			NULL, 
+			NULL,
+			0,
+			D3D11_SDK_VERSION,
+			&mDevice,
+			NULL,
 			&mDeviceContext);
 		AssertExpr(hr == S_OK);
-		
+
+		CreateSwapChain();
+
 		ID3D11Texture2D* backBufferTexture;
 		hr = mSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&backBufferTexture);
 		AssertExpr(hr == S_OK);
@@ -92,29 +68,9 @@ namespace Rendering
 		AssertExpr(hr == S_OK);
 
 		backBufferTexture->Release();
-		
-		// DepthStencil
-		{
-			D3D11_TEXTURE2D_DESC depthStencilDesc;
-			ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
 
-			depthStencilDesc.Width = kInitialWidth;
-			depthStencilDesc.Height = kInitialHeight;
-			depthStencilDesc.MipLevels = 1;
-			depthStencilDesc.ArraySize = 1;
-			depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-			depthStencilDesc.SampleDesc.Count = 4;
-			depthStencilDesc.SampleDesc.Quality = 0;
-			depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
-			depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-			depthStencilDesc.CPUAccessFlags = 0;
-			depthStencilDesc.MiscFlags = 0;
-
-			mDevice->CreateTexture2D(&depthStencilDesc, NULL, &mDepthStencilTex);
-			mDevice->CreateDepthStencilView(mDepthStencilTex, NULL, &mDepthStencilView);
-
-			mDeviceContext->OMSetRenderTargets(1, &mRenderTargetView, mDepthStencilView);
-		}
+		CreateBackBufferDepthStencil(kInitialWidth, kInitialHeight);
+		mDeviceContext->OMSetRenderTargets(1, &mRenderTargetView, mDepthStencilView);
 
 		// Raster state
 		{
@@ -209,6 +165,90 @@ namespace Rendering
 		}
 	}
 
+	void DX11Device::CreateSwapChain()
+	{
+		// The swap chain has to come from the factory that made the device
+		IDXGIDevice* dxgiDevice = nullptr;
+		HRESULT hr = mDevice->QueryInterface(__uuidof(IDXGIDevice), reinterpret_cast<void**>(&dxgiDevice));
+		AssertExpr(hr == S_OK);
+
+		IDXGIAdapter* adapter = nullptr;
+		hr = dxgiDevice->GetAdapter(&adapter);
+		AssertExpr(hr == S_OK);
+
+		IDXGIFactory2* factory = nullptr;
+		hr = adapter->GetParent(__uuidof(IDXGIFactory2), reinterpret_cast<void**>(&factory));
+		AssertExpr(hr == S_OK);
+
+		// Tearing lets an unsynced present show at once rather than at the next refresh; variable refresh displays need it too
+		IDXGIFactory5* factory5 = nullptr;
+		if (SUCCEEDED(factory->QueryInterface(__uuidof(IDXGIFactory5), reinterpret_cast<void**>(&factory5))))
+		{
+			BOOL allowTearing = FALSE;
+			mIsTearingSupported = SUCCEEDED(factory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof(allowTearing)))
+				&& allowTearing == TRUE;
+			factory5->Release();
+		}
+
+		mSwapChainFlags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
+		if (mIsTearingSupported)
+		{
+			mSwapChainFlags |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
+		}
+
+		// Flip model, for lower latency and real vsync control in a window. It can't be multisampled, and nothing needs it
+		// to be: the scene renders into its own targets, and only the final blit and the editor's UI draw to the back buffer.
+		DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
+		swapChainDesc.Width = kInitialWidth;
+		swapChainDesc.Height = kInitialHeight;
+		swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		swapChainDesc.SampleDesc.Count = 1;
+		swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+		swapChainDesc.BufferCount = 2;
+		swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
+		swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+		swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
+		swapChainDesc.Flags = mSwapChainFlags;
+
+		IDXGISwapChain1* swapChain = nullptr;
+		hr = factory->CreateSwapChainForHwnd(mDevice, reinterpret_cast<HWND>(mWindowHandle), &swapChainDesc, nullptr, nullptr, &swapChain);
+		AssertExpr(hr == S_OK);
+
+		hr = swapChain->QueryInterface(__uuidof(IDXGISwapChain2), reinterpret_cast<void**>(&mSwapChain));
+		AssertExpr(hr == S_OK);
+		swapChain->Release();
+
+		hr = mSwapChain->SetMaximumFrameLatency(k_maxFrameLatency);
+		AssertExpr(hr == S_OK);
+		mFrameLatencyWaitableObject = mSwapChain->GetFrameLatencyWaitableObject();
+
+		factory->Release();
+		adapter->Release();
+		dxgiDevice->Release();
+	}
+
+	void DX11Device::CreateBackBufferDepthStencil(U32 width, U32 height)
+	{
+		D3D11_TEXTURE2D_DESC depthStencilDesc;
+		ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
+
+		depthStencilDesc.Width = width;
+		depthStencilDesc.Height = height;
+		depthStencilDesc.MipLevels = 1;
+		depthStencilDesc.ArraySize = 1;
+		depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		// Matches the back buffer, which flip model keeps at one sample
+		depthStencilDesc.SampleDesc.Count = 1;
+		depthStencilDesc.SampleDesc.Quality = 0;
+		depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
+		depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+		depthStencilDesc.CPUAccessFlags = 0;
+		depthStencilDesc.MiscFlags = 0;
+
+		mDevice->CreateTexture2D(&depthStencilDesc, NULL, &mDepthStencilTex);
+		mDevice->CreateDepthStencilView(mDepthStencilTex, NULL, &mDepthStencilView);
+	}
+
 	void DX11Device::SetWindow(void* windowHandle)
 	{
 		mWindowHandle = windowHandle;
@@ -216,6 +256,14 @@ namespace Rendering
 
 	void DX11Device::Shutdown()
 	{
+		if (mFrameLatencyWaitableObject != nullptr)
+		{
+			CloseHandle(mFrameLatencyWaitableObject);
+			mFrameLatencyWaitableObject = nullptr;
+		}
+
+		// Before the swap chain, whose back buffer it holds
+		mRenderTargetView->Release();
 		mSwapChain->Release();
 		mDeviceContext->Release();
 		mDevice->Release();
@@ -280,8 +328,12 @@ namespace Rendering
 
 		GetDeviceContext().OMSetRenderTargets(0, 0, 0);
 		mRenderTargetView->Release();
+		// Flip model can only resize once nothing references the buffers, and D3D11 destroys views lazily
+		GetDeviceContext().Flush();
 
-		HRESULT hr = mSwapChain->ResizeBuffers(0, newWidth, newHeight, DXGI_FORMAT_UNKNOWN, 0);
+		// With the flags the swap chain was created with, which flip model requires
+		HRESULT hr = mSwapChain->ResizeBuffers(0, newWidth, newHeight, DXGI_FORMAT_UNKNOWN, mSwapChainFlags);
+		AssertExpr(hr == S_OK);
 
 		ID3D11Texture2D* pBuffer;
 		hr = mSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pBuffer);
@@ -291,23 +343,7 @@ namespace Rendering
 		mDepthStencilView->Release();
 		mDepthStencilTex->Release();
 
-		D3D11_TEXTURE2D_DESC depthStencilDesc;
-		ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
-
-		depthStencilDesc.Width = newWidth;
-		depthStencilDesc.Height = newHeight;
-		depthStencilDesc.MipLevels = 1;
-		depthStencilDesc.ArraySize = 1;
-		depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-		depthStencilDesc.SampleDesc.Count = 4;
-		depthStencilDesc.SampleDesc.Quality = 0;
-		depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
-		depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-		depthStencilDesc.CPUAccessFlags = 0;
-		depthStencilDesc.MiscFlags = 0;
-
-		mDevice->CreateTexture2D(&depthStencilDesc, NULL, &mDepthStencilTex);
-		mDevice->CreateDepthStencilView(mDepthStencilTex, NULL, &mDepthStencilView);
+		CreateBackBufferDepthStencil(newWidth, newHeight);
 	}
 	
 	ID3D11Device& DX11Device::GetHardwareDevice()
@@ -324,7 +360,16 @@ namespace Rendering
 	
 	void DX11Device::Present()
 	{
-		mSwapChain->Present(mSyncInterval, 0);
+		// Tearing is only allowed for an unsynced present
+		const UINT flags = mSyncInterval == 0 && mIsTearingSupported ? DXGI_PRESENT_ALLOW_TEARING : 0;
+		const HRESULT hr = mSwapChain->Present(mSyncInterval, flags);
+
+		if ((hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET) && !mHasReportedDeviceLoss)
+		{
+			mHasReportedDeviceLoss = true;
+			RZE_LOG_ARGS("Present failed: the D3D11 device was %s (reason 0x%08X).", hr == DXGI_ERROR_DEVICE_REMOVED ? "removed" : "reset",
+				static_cast<unsigned int>(mDevice->GetDeviceRemovedReason()));
+		}
 	}
 
 }

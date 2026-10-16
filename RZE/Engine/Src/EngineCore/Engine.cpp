@@ -8,6 +8,7 @@
 
 #include <Graphics/RenderEngine.h>
 
+#include <Windowing/Display.h>
 #include <Windowing/Win32Window.h>
 
 #include <Utils/DebugUtils/Debug.h>
@@ -275,6 +276,7 @@ void RZE_Engine::InitializeFramePacing()
 		settings.MaxFrameRate = static_cast<double>(maxFrameRate);
 	}
 
+	m_framePacer.SetRefreshRate(Display::GetRefreshRate(m_window->GetOSWindowHandleData().windowHandle));
 	SetFrameSettings(settings);
 }
 
@@ -294,11 +296,16 @@ void RZE_Engine::WaitForNextFrame()
 		OPTICK_EVENT("Sleep");
 		m_frameSleep.SleepFor(m_framePacer.GetNextFrameStart() - m_programTimer.GetElapsed<double>());
 	}
+
+	// Last, so input is read as late as possible: with vsync this is what paces frames, and either way it keeps no
+	// more than two frames queued
+	m_renderEngine->WaitForPresentSlot();
 }
 
 void RZE_Engine::SetFrameSettings(const FrameSettings& settings)
 {
 	m_framePacer.SetSettings(settings);
+	m_renderEngine->SetVSync(settings.VSync);
 }
 
 const FramePacer& RZE_Engine::GetFramePacer() const
@@ -347,6 +354,9 @@ void RZE_Engine::RegisterWindowEvents()
 			m_application->OnWindowResize(newSize);
 
 			m_renderEngine->ResizeCanvas(newSize);
+
+			// Also sent after a move, which may have taken the window to a monitor with another refresh rate
+			m_framePacer.SetRefreshRate(Display::GetRefreshRate(m_window->GetOSWindowHandleData().windowHandle));
 		}
 	});
 	m_eventHandler.RegisterForEvent(EEventType::Window, windowCallback);

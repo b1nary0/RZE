@@ -41,6 +41,11 @@ public:
 	// See Rendering::Renderer::WaitUntilIdle
 	void WaitUntilIdle();
 
+	// Presents on every vertical blank, or at once (tearing where allowed)
+	void SetVSync(bool enabled);
+	// Blocks until the swap chain can queue another frame (see Rendering::Renderer::WaitForPresentSlot)
+	void WaitForPresentSlot();
+
 	// Destroys all render stages, releasing any resources they hold, and what they keep for the main scene. Must be
 	// called before ResourceHandler::ShutDown().
 	void ReleaseRenderStages();

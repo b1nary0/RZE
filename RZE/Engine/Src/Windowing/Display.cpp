@@ -69,4 +69,26 @@ namespace Display
 		outInfo = monitors[index];
 		return true;
 	}
+
+	double GetRefreshRate(void* windowHandle)
+	{
+		const HMONITOR monitor = MonitorFromWindow(static_cast<HWND>(windowHandle), MONITOR_DEFAULTTONEAREST);
+
+		MONITORINFOEXA monitorInfo;
+		monitorInfo.cbSize = sizeof(MONITORINFOEXA);
+		if (!GetMonitorInfoA(monitor, &monitorInfo))
+		{
+			return 0.0;
+		}
+
+		DEVMODEA mode = {};
+		mode.dmSize = sizeof(DEVMODEA);
+		if (!EnumDisplaySettingsA(monitorInfo.szDevice, ENUM_CURRENT_SETTINGS, &mode))
+		{
+			return 0.0;
+		}
+
+		// 0 and 1 mean the hardware's default rate, which says nothing about what it is
+		return mode.dmDisplayFrequency > 1 ? static_cast<double>(mode.dmDisplayFrequency) : 0.0;
+	}
 }
