@@ -1,11 +1,16 @@
 {
-    "gameobjects": {
-        "Camera": {
+    "version": 2,
+    "gameobjects": [
+        {
+            "id": "c84da4ae91d8a1c6",
+            "name": "Camera",
             "components": {
                 "CameraComponent": {
                     "FOV": 65.0,
                     "NearCull": 0.10000000149011612,
-                    "FarCull": 1000.0
+                    "FarCull": 1000.0,
+                    "ExposureCompensation": 0.0,
+                    "MainCamera": true
                 },
                 "TransformComponent": {
                     "Position": [
@@ -19,19 +24,21 @@
                         1.0
                     ],
                     "Rotation": [
-                        -10.0761,
+                        -10.07610034942627,
                         -123.65129852294922,
                         0.0
                     ]
                 }
             }
         },
-        "DirectionalLight": {
+        {
+            "id": "7bf8510c6de3c3c5",
+            "name": "DirectionalLight",
             "components": {
                 "TransformComponent": {
                     "Position": [
                         -1.5905404090881348,
-                        1.3467673063278198,
+                        1.3467673063278199,
                         -2.415018081665039
                     ],
                     "Scale": [
@@ -46,7 +53,7 @@
                     ]
                 },
                 "DirectionalLightComponent": {
-                    "LightStrength": 2.0,
+                    "LightStrength": 1.0,
                     "LightColour": [
                         1.0,
                         1.0,
@@ -55,7 +62,9 @@
                 }
             }
         },
-        "Nyra": {
+        {
+            "id": "2e47f3f91523d999",
+            "name": "Nyra",
             "components": {
                 "RenderComponent": {
                     "ResourcePath": "ProjectData\\Mesh\\Nyra.meshasset"
@@ -64,7 +73,7 @@
                     "Position": [
                         0.0,
                         0.0,
-                        0.34369999170303345
+                        0.34369999170303347
                     ],
                     "Scale": [
                         0.04200000315904617,
@@ -79,27 +88,29 @@
                 }
             }
         },
-        "GifChat": {
+        {
+            "id": "709fc454efa20b8f",
+            "name": "GifChat",
             "components": {
                 "TransformComponent": {
                     "Position": [
-                        5.537734031677246,
-                        0.01895877905189991,
-                        -0.7264506220817566
+                        0.317313015460968,
+                        1.1812760829925538,
+                        -0.44030100107192995
                     ],
                     "Scale": [
-                        0.5435767769813538,
-                        0.274399995803833,
-                        0.45640572905540466
+                        0.543576717376709,
+                        0.2743999660015106,
+                        0.45640572905540469
                     ],
                     "Rotation": [
-                        0.0006848121411167085,
-                        -140.78550720214844,
-                        -0.0001579687523189932
+                        -179.99923706054688,
+                        -39.2144889831543,
+                        179.999755859375
                     ]
                 },
                 "GifChatComponent": {}
             }
         }
-    }
+    ]
 }

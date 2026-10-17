@@ -1,6 +1,9 @@
 {
-    "gameobjects": {
-        "Camera": {
+    "version": 2,
+    "gameobjects": [
+        {
+            "id": "ccb75379e4cf78e9",
+            "name": "Camera",
             "components": {
                 "TransformComponent": {
                     "Position": [
@@ -18,10 +21,19 @@
                         0.0,
                         0.0
                     ]
+                },
+                "CameraComponent": {
+                    "FOV": 60.0,
+                    "NearCull": 0.009999999776482582,
+                    "FarCull": 1000.0,
+                    "ExposureCompensation": 0.0,
+                    "MainCamera": false
                 }
             }
         },
-        "DirectionalLight": {
+        {
+            "id": "b3fb716136ae6e72",
+            "name": "DirectionalLight",
             "components": {
                 "TransformComponent": {
                     "Position": [
@@ -50,7 +62,9 @@
                 }
             }
         },
-        "Hangar": {
+        {
+            "id": "7b74a83167349b5b",
+            "name": "Hangar",
             "components": {
                 "RenderComponent": {
                     "ResourcePath": "ProjectData\\Mesh\\Hangar.meshasset"
@@ -59,7 +73,7 @@
                     "Position": [
                         0.0,
                         0.0,
-                        -31.725000381469727
+                        -31.725000381469728
                     ],
                     "Scale": [
                         0.5,
@@ -74,7 +88,9 @@
                 }
             }
         },
-        "Spaceship": {
+        {
+            "id": "4ca57e5b5d307303",
+            "name": "Spaceship",
             "components": {
                 "RenderComponent": {
                     "ResourcePath": "ProjectData\\Mesh\\spaceship.meshasset"
@@ -98,5 +114,5 @@
                 }
             }
         }
-    }
+    ]
 }
