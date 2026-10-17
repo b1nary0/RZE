@@ -7,6 +7,7 @@
 #include <Game/World/GameObject/GameObjectDefinitions.h>
 
 #include <Utils/Math/Vector3D.h>
+#include <Utils/Platform/Filepath.h>
 
 #include <string>
 #include <vector>
@@ -24,6 +25,21 @@ namespace Editor
 
 	private:
 		std::string m_name;
+	};
+
+	// Adds an object named after the mesh asset, showing it at position (world space), and selects it. The mesh loads
+	// synchronously, so a big one stalls the frame it's added in.
+	class CreateMeshObjectCommand : public EditorCommand
+	{
+	public:
+		CreateMeshObjectCommand(const Filepath& mesh, const Vector3D& position);
+
+		bool Execute(EditorContext& context) override;
+		const char* GetName() const override { return "Create Mesh Object"; }
+
+	private:
+		Filepath m_mesh;
+		Vector3D m_position;
 	};
 
 	class RenameGameObjectCommand : public EditorCommand

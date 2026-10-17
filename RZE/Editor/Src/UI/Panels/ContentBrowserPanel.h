@@ -17,7 +17,7 @@ namespace Editor
 {
 	// Browses the project's Assets and ProjectData folders: a folder tree beside a grid of tiles like the file
 	// browser's, with back, forward and up (also the mouse's side buttons and Backspace), search, and right-click
-	// actions on files. Double-clicking a folder opens it, and a scene loads it.
+	// actions on files. Double-clicking a folder opens it, and a scene loads it. Meshes can be dragged into the scene view.
 	class ContentBrowserPanel : public EditorPanel
 	{
 	public:

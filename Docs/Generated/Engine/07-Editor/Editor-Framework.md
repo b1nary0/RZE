@@ -33,7 +33,7 @@ flowchart TD
 | `GetSelection()` → `EditorSelection` | The selected GameObjects, in selection order. The **last** one is the **primary**: what the gizmo moves, the inspector shows first and the right-click menu acts on. Publishes `SelectionChangedEvent`. |
 | `GetEditorCamera()` / `GetEditorCameraComponent()` | The `"EditorCam"` object. Null while a scene is loading. |
 | `GetSceneViewport()` → `SceneViewportState` | Whether the SceneView is hovered (editor input only reaches the scene then) and its size in pixels. |
-| `GetScenePicker()` → `ScenePicker` | GPU picking: `RequestPick(x, y, callback)` asks `PickRenderStage` which object covers a pixel; the callback fires a frame or two later. |
+| `GetScenePicker()` → `ScenePicker` | GPU picking: `RequestPick(x, y, callback)` asks `PickRenderStage` what's at a pixel. A frame or two later the callback gets a `ScenePick`: the object (null for none), the world position of the surface there (unset where nothing is drawn) and the ray from the camera through the pixel. |
 | `GetPanels()` → `PanelManager` | Every registered panel. `Find<T>()` exists for rare cases; prefer sharing state through the context. |
 | `GetSceneDocument()` → `SceneDocument` | New, load, save and save-as for the scene, and whether it has unsaved changes (worked out from the undo history; see [Save point](#the-save-point-and-unsaved-changes)). `SaveWithPrompt(onDone)` saves straight away if the scene has a file; otherwise it opens the file browser in Save mode and calls `onDone(true)` once saved, or `onDone(false)` if the browser is cancelled. |
 | `GetGameBuilder()` → `GameBuilder` | File > Build Game / Launch Game, on a worker thread. See [Editor-Camera-And-Build-Launch.md](Editor-Camera-And-Build-Launch.md). |
@@ -78,7 +78,7 @@ REGISTER_EDITOR_PANEL(LogPanel);   // in LogPanel.cpp
 |---|---|
 | `Name` | Window title and ImGui ID. Renaming a panel loses its saved dock position. |
 | `MenuPath` | Where its checkable menu item goes, starting with a main menu (`"View/Windows/Log"`, `"Help/ImGui Demo"`). Empty leaves it out of the menus. Items are sorted by name. |
-| `DefaultDock` | `Left`, `Right`, `Bottom`, `Center` or `Floating`, for the generated layout. |
+| `DefaultDock` | `Left`, `Right`, `Bottom`, `Center` or `Floating`, for the generated layout, and where a panel added since `imgui.ini` was saved goes (see below). |
 | `DefaultSize` | For a `Floating` panel: its size the first time it opens, centred in the editor (until `imgui.ini` has one). Zero leaves it to ImGui. |
 | `DefaultOpen` | Open on first run. |
 | `Closable` | Shows the close button. A panel that can't close is always open (the SceneView). |
@@ -87,7 +87,13 @@ REGISTER_EDITOR_PANEL(LogPanel);   // in LogPanel.cpp
 
 Optional hooks: `Initialize(context)` (once, after every panel exists), `DrawMenuBar(context)`, `OnSceneReset()`, `PushWindowStyle(style)` (style vars that cover the title bar and tab too), and `PreRender(context)`: every frame while the panel is open, after the scene's update and before the frame renders, for what goes into the scene every frame, such as debug lines, which are cleared after each render. No ImGui calls there; it's outside ImGui's frame. The SceneView draws the grid and camera frustums in it, but only while its last `Draw` showed the scene image.
 
-`PanelManager` creates every registered panel at start-up, sorted by name. On each UI frame it updates and draws the open ones (`UpdateAll`, `DrawAll`), and every frame it calls their `PreRender` (`PreRenderAll`). It also builds the Edit, View and Help menu items from their `MenuPath`s, and, when `imgui.ini` has no saved layout, docks each panel into its `DefaultDock` slot.
+`PanelManager` creates every registered panel at start-up, sorted by name. On each UI frame it updates and draws the open ones (`UpdateAll`, `DrawAll`), and every frame it calls their `PreRender` (`PreRenderAll`). It also builds the Edit, View and Help menu items from their `MenuPath`s, and docks panels:
+
+- **Tab order.** Panels sharing a slot are tabs in a fixed order: the ones open at first (`DefaultOpen`), then the rest, each by name. So the Bottom slot is Content Browser, then Log.
+- **No saved layout.** `BuildDefaultDockLayout` docks each panel into its `DefaultDock` slot in that order and shows each slot's first tab. It sets the tab order explicitly, since ImGui otherwise orders tabs that appear in the same frame as it likes.
+- **A panel `imgui.ini` doesn't know**, e.g. one added since the layout was saved, would otherwise open floating. Before its first `Begin`, `PlaceUnsavedPanel` docks it into the node of a saved panel from the same slot. It takes the place of the first saved panel that comes after it in the tab order, and the tabs from there on move along one; with none after it, it goes last. Tabs the user has rearranged keep their order. It's shown as the selected tab, so a new panel gets noticed. From then on `imgui.ini` remembers it like any other. If no panel from its slot is saved, it's left to ImGui.
+
+This uses ImGui's internal window settings and dock nodes (`imgui_internal.h`), as the DockBuilder calls already do.
 
 > **Registration and linking.** `REGISTER_EDITOR_PANEL` (and `REGISTER_SETTINGS_PAGE`) register from static initializers that nothing else references. The Editor's code is built as the `EditorLib` static library (so [the unit tests](../01-GettingStarted/Building-And-Running.md#unit-tests) can link it), and a linker drops unreferenced objects from a library, so `Editor` links `EditorLib` with `/WHOLEARCHIVE` to keep them. Anything else that links `EditorLib`, such as `UnitTests`, gets no panels unless it does the same.
 
@@ -249,6 +255,7 @@ context.GetEvents().Publish(SceneModifiedEvent{});
 | `SceneModifiedEvent` | `CommandQueue::Flush` | A command in the flush changed the scene |
 | `SceneModifiedStateChangedEvent { Document }` | `SceneDocument` | `IsModified()` flipped |
 | `SelectionChangedEvent { Selection }` | `EditorSelection` | Once per call that actually changed it |
+| `ThumbnailWrittenEvent { Image }` | `ThumbnailRenderJob` | A thumbnail PNG was written |
 
 Current listeners:
 
@@ -259,6 +266,7 @@ Current listeners:
 | `SelectionBoundsDisplay` | Selection changed | Turns mesh bounds on for newly selected objects and off for deselected ones, through `RenderComponent`'s own toggle so the inspector checkbox agrees |
 | `EditorApp` | Loaded, saved, modified state | Sets the window title: `RZEStudio - <file>`, `*` while there are unsaved changes, `Untitled` for a new scene |
 | `ThumbnailRenderer` | Loaded, saved | Renders the scene's thumbnail in the background: after a save always, after a load if it's missing or out of date |
+| `EditorContext`, `ContentBrowserPanel` | Thumbnail written | Reload the tiles showing that image, in the file browser (the context forwards it to `FileBrowserModal::RefreshThumbnail`) and in the Content Browser |
 
 Rules:
 
@@ -295,6 +303,7 @@ Rules:
 - `Editor\Src\Commands\EditorCommand.h`, `CommandQueue.h/.cpp`, `SceneCommands`, `TransformCommands`, `PropertyCommands`, `HistoryCommands`, `UndoRecord`, `ParkedSubtree`
 - `Editor\Src\Services\SceneDocument`, `GameBuilder`, `GameObjectClipboard`, `GameObjectSnapshot`, `SelectionBoundsDisplay`, `UndoHistory`, `ThumbnailRenderer`
 - `Editor\Src\UI\Modals\UnsavedChangesPrompt.h/.cpp`, `FileBrowserModal.h/.cpp`
+- `Editor\Src\UI\Widgets\FileTileGrid.h/.cpp` — the tile grid the file browser and the Content Browser share
 - `Editor\Src\UI\Settings\` — `SettingsPage`, `SettingsPageRegistry` and the pages
 - `Editor\Src\UI\MainMenuBar.h/.cpp`, `Editor\Src\EditorApp.h/.cpp`
 - `Engine\Src\EngineApp.h` (`PreUIUpdate`, `UpdateUI`, `Update`, `PreRender`), `Engine\Src\EngineCore\Engine.cpp` (frame order)

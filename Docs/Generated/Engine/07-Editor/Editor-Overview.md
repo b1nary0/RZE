@@ -17,7 +17,7 @@ Its UI code is organised around an `EditorContext` that panels share, self-regis
 |  NeckMech    |                                                  | objects'      |
 |  M4          |      ground grid                                 | components    |
 +--------------+--------------------------------------------------+---------------+
-| Log   (RZE_LOG output, resource loads, build output)                            |
+| Content Browser | Log    (Assets and ProjectData as tiles; the log as a tab)    |
 +---------------------------------------------------------------------------------+
 | Ready   16.7 ms · 60 FPS · idle 9.8 ms          (o) [Rendering thumbnails  33%] |
 +---------------------------------------------------------------------------------+
@@ -26,7 +26,7 @@ Its UI code is organised around an `EditorContext` that panels share, self-regis
 The layout is an ImGui dockspace, saved in `Config\imgui.ini`; without one, each panel docks where its `PanelDesc::DefaultDock` says. Each panel is described in [Editor-Panels.md](Editor-Panels.md), and the inspector in [Object-Inspector-And-Properties.md](Object-Inspector-And-Properties.md); the camera and the build/launch tools are in [Editor-Camera-And-Build-Launch.md](Editor-Camera-And-Build-Launch.md); gizmo snapping and the ground grid are in [Gizmo-Snapping-And-Grid.md](Gizmo-Snapping-And-Grid.md). Every keyboard and mouse shortcut is in [Editor-Shortcuts.md](Editor-Shortcuts.md).
 
 - The **status bar** along the bottom shows the frame time, frames a second and idle time, and background tasks, their progress and their history; Edit > **Settings** opens the Settings window, whose Frame Rate page sets vsync, the frame rate caps and how often the UI updates. Both are in [Status-Bar-And-Settings.md](Status-Bar-And-Settings.md).
-- Scenes and meshes are picked in a **file browser** of thumbnails, which the editor renders in the background: [Thumbnails-And-File-Browser.md](Thumbnails-And-File-Browser.md).
+- Scenes and meshes are picked in a **file browser** of thumbnails, which the editor renders in the background, and the **Content Browser** panel shows the project's files the same way, with meshes that can be dragged into the scene: [Thumbnails-And-File-Browser.md](Thumbnails-And-File-Browser.md).
 
 ## Launching
 

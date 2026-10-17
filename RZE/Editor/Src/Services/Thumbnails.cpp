@@ -68,12 +68,7 @@ namespace Editor
 
 		bool IsRendered(const Filepath& asset)
 		{
-			return IsScene(asset) || StringUtils::EqualsIgnoringCase(asset.GetExtension(), AssetPaths::k_meshExtension);
-		}
-
-		bool IsScene(const Filepath& asset)
-		{
-			return StringUtils::EqualsIgnoringCase(asset.GetExtension(), AssetPaths::k_sceneExtension);
+			return AssetPaths::IsScene(asset) || AssetPaths::IsMesh(asset);
 		}
 
 		bool IsUpToDate(const Filepath& asset, const Filepath& image)

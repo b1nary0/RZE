@@ -145,10 +145,10 @@ static void ReadTexel(const TextureBuffer2DHandle& texture, U32 x, U32 y, std::s
 static void ReadTexture(const TextureBuffer2DHandle& texture, std::shared_ptr<TextureReadback> result);
 ```
 
-- **`ReadTexel`** copies one texel of a 4-byte-per-texel texture (e.g. the `R32_UINT` format, added for picking) into `TexelReadback::Value` (`Rendering\TexelReadback.h`).
+- **`ReadTexel`** copies one texel of a 4-byte-per-texel texture (e.g. the `R32_UINT` format, added for picking, or a `D24_UNORM_S8_UINT` depth texture) into `TexelReadback::Value` (`Rendering\TexelReadback.h`). D3D only copies a depth texture whole, so one must be 1×1, like the pick stage's.
 - **`ReadTexture`** copies the whole of mip 0 into `TextureReadback` (`Rendering\TextureReadback.h`): `Width`, `Height`, `BytesPerTexel` and `Data`, rows from the top, tightly packed. It copies row by row, since the GPU's row pitch can be wider than a row. `TextureFile::SaveToPNG` uses it to save captures ([Engine-Graphics-Layer.md](Engine-Graphics-Layer.md#capturing-a-view-to-a-file)).
 
-Both go through one helper on the render thread: it creates a `D3D11_USAGE_STAGING` texture the size of the region, `CopySubresourceRegion`s into it, `Map`s it, and hands back the rows with their pitch. The result's `IsReady` is set at the end; callers poll it from any thread, and it's true once the render thread has processed that frame's commands. `Map` waits for the GPU to finish drawing the texture, so these are for occasional reads such as the Editor's click picking (`PickRenderStage`) or saving a thumbnail, not per-frame use.
+Both go through one helper on the render thread: it creates a `D3D11_USAGE_STAGING` texture the size of the region, `CopySubresourceRegion`s into it (with no box when the region is the whole texture, as D3D requires for depth textures), `Map`s it, and hands back the rows with their pitch. The result's `IsReady` is set at the end; callers poll it from any thread, and it's true once the render thread has processed that frame's commands. `Map` waits for the GPU to finish drawing the texture, so these are for occasional reads such as the Editor's click picking (`PickRenderStage`) or saving a thumbnail, not per-frame use.
 
 `R32_UINT` textures are created without `D3D11_RESOURCE_MISC_GENERATE_MIPS`, since integer formats don't support mip generation.
 

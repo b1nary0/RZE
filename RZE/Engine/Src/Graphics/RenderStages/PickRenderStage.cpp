@@ -1,7 +1,6 @@
 #include <StdAfx.h>
 #include <Graphics/RenderStages/PickRenderStage.h>
 
-#include <Graphics/Frustum.h>
 #include <Graphics/IndexBuffer.h>
 #include <Graphics/Material.h>
 #include <Graphics/MaterialSlot.h>
@@ -13,6 +12,8 @@
 
 #include <Rendering/Renderer.h>
 #include <Rendering/Driver/GFXBuffer.h>
+
+#include <Utils/Math/Frustum.h>
 
 void PickRenderStage::Initialize()
 {
@@ -151,6 +152,17 @@ void PickRenderStage::Render(RenderContext& context)
 	}
 
 	Rendering::Renderer::ReadTexel(m_idTarget, 0, 0, pick.Result);
+	if (pick.DepthResult != nullptr)
+	{
+		Rendering::Renderer::ReadTexel(m_depthTarget, 0, 0, pick.DepthResult);
+	}
 
 	Rendering::Renderer::End();
+}
+
+float RenderPickRequest::DecodeDepth(U32 texel)
+{
+	// PickRenderStage's depth target is D24S8: the depth as a 24-bit unorm in the low bits, the stencil above
+	constexpr U32 k_depthMask = 0xFFFFFF;
+	return static_cast<float>(texel & k_depthMask) / static_cast<float>(k_depthMask);
 }

@@ -84,6 +84,9 @@ namespace Editor
 		GameObjectPtr PickIcon(const ImVec2& point) const;
 		// Selects (or with Ctrl, toggles) what a click hit; a miss without Ctrl clears the selection
 		void ApplyClick(EditorSelection& selection, GameObjectPtr hitObject, bool isAdditive);
+		// A mesh asset dragged from the Content Browser onto the scene image adds an object showing it where it's
+		// dropped. Call right after the image.
+		void HandleAssetDrop(EditorContext& context, const ImVec2& viewOrigin);
 
 	private:
 		Vector2D m_dimensions;

@@ -24,6 +24,11 @@ struct RenderPickRequest
 	U32 Y = 0;
 	// Receives the RenderObject pick ID there, or 0 for nothing, a frame or two later
 	std::shared_ptr<Rendering::TexelReadback> Result;
+	// If set, receives the depth of the nearest surface there at the same time, pickable or not; read it with DecodeDepth
+	std::shared_ptr<Rendering::TexelReadback> DepthResult;
+
+	// A DepthResult's depth: 0 at the near plane, 1 at the far plane or where nothing is drawn
+	static float DecodeDepth(U32 texel);
 };
 
 struct RenderViewport

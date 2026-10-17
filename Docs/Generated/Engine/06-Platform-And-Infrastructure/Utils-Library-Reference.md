@@ -26,8 +26,9 @@ All spatial values follow [World-Conventions.md](../02-Architecture/World-Conven
 | `Quaternion.h/.cpp` | Rotations. Built from `eulerRadians`, `FromEulerDegrees`, `FromAngleAxis(angleRadians, axis)` or the rotation between two vectors; `ToEulerDegrees()`, `ToAngleRadians()`, `ToAxis()`, `Inverse()`, `Normalized()`, multiplication by quaternions and vectors. |
 | `Plane.h/.cpp` | `Plane(normal, distance)`, or from `ax + by + cz + d` coefficients (`Vector4D`). `SignedDistance(point)` is positive on the side the normal points to. |
 | `BoundingBox.h/.cpp` | An axis-aligned box. **Empty when made with no arguments**: it holds nothing, and growing it by a point or box makes it exactly that (`IsEmpty()`; growing by an empty box changes nothing). `Around(points)`, `GetCentre`, `GetSize`, `GetRadius` (half the diagonal), `GetCorners` / `GetTransformedCorners(matrix)`, and `Transformed(matrix)`: the axis-aligned box around it once transformed, worked out from the matrix (Arvo's method) instead of 8 corners, for affine transforms. Used for render object, scene and hierarchy bounds, culling and framing. |
-
-`Frustum` (six planes taken from a view-projection matrix, with a box test) lives in the Engine at `Engine\Src\Graphics\Frustum.h`, since only rendering and the Editor use it.
+| `Frustum.h/.cpp` | The six planes of a view volume, taken from a view-projection matrix with D3D's 0..1 depth (Gribb & Hartmann), each normal pointing inwards. `Intersects(box)` is false only when the box is wholly outside one plane (or empty), so a box just off a corner can still pass, which is fine for culling. Used for frustum culling, the pick pass and marquee selection. |
+| `Ray.h/.cpp` | A half-line: `GetOrigin`, `GetDirection` (normalised by the constructor), `GetPoint(distance)`, and `Intersect(plane)`: the point where it meets a `Plane` ahead of its origin, if it does, never when (nearly) parallel. |
+| `ViewProjection.h/.cpp` | From a view's pixels back to the world, for a view-projection matrix with D3D's 0..1 depth. `Unproject(clipSpace, viewSize, pixel, depth)` gives the world position drawn at a pixel and depth: pixel to NDC, then the inverse matrix, then dividing by the result's w. `GetRay(clipSpace, viewSize, pixel)` is the ray from the near plane through the pixel. Pixels count from the top-left, y down, with a pixel's centre at +0.5. Used by the Editor's `ScenePicker` to place dropped meshes. |
 
 ## Memory (`Memory\`)
 
@@ -55,7 +56,7 @@ Covered in depth in [Memory-Management.md](Memory-Management.md): `ByteStream.h/
 
 - `Utils\Src\StdAfx.h` — confirms GLM as the underlying math library
 - `Utils\Src\Utils\PrimitiveDefs.h`, `Utils.h`, `Functor.h`, `StringUtils.h`, `Conversions.h`, `GUID.h`
-- `Utils\Src\Utils\Math\Units.h`, `Math.h`, `Vector2D.h`, `Vector3D.h`, `Vector4D.h`, `Matrix4x4.h`, `Quaternion.h`, `Plane.h`, `BoundingBox.h`
+- `Utils\Src\Utils\Math\Units.h`, `Math.h`, `Vector2D.h`, `Vector3D.h`, `Vector4D.h`, `Matrix4x4.h`, `Quaternion.h`, `Plane.h`, `BoundingBox.h`, `Frustum.h`, `Ray.h`, `ViewProjection.h`
 - `Utils\Src\Utils\Memory\ByteStream.h`, `MemoryUtils.h`
 - `Utils\Src\Utils\Platform\FilePath.h`, `File.h`, `CmdLine.h`, `Timers\HiResTimer.h`
 - `Utils\Src\Utils\Interfaces\Resource.h`

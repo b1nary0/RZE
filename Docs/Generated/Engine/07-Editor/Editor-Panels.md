@@ -7,6 +7,7 @@ Every Editor window is an `EditorPanel` in `Editor\Src\UI\Panels\`, registered w
 | Scene | `ScenePanel` | Left | View > Windows > Scene | yes |
 | SceneView | `SceneViewPanel` | Centre | — | no |
 | Object Inspector | `InspectorPanel` | Right | View > Windows > Object Inspector | yes |
+| Content Browser | `ContentBrowserPanel` | Bottom (first tab) | View > Windows > Content Browser | yes |
 | Log | `LogPanel` | Bottom | View > Windows > Log | yes |
 | Resource Monitor | `ResourceMonitorPanel` | Left (closed at first) | View > Windows > Resource Monitor | yes |
 | ImGui Demo | `ImGuiDemoPanel` | floating (closed at first) | Help > ImGui Demo | yes |
@@ -74,6 +75,7 @@ The 3D viewport. It shows the main view's render target with `ImGui::Image` and 
 | **Light and camera icons** | Each `DirectionalLightComponent` draws a sun icon and each `CameraComponent` a movie-camera icon at its position. The primary selection's icon fades to 40% so the gizmo's centre handle shows through. |
 | **Camera frustums** | Each scene camera draws its view volume as debug lines, from the near plane out to its far plane or 1.5 m, whichever is closer, so it reads as a pyramid. Drawn every frame in `PreRender`, like the grid, while the scene image shows. |
 | **Picking** | Click, Ctrl+click and marquee selection; see below. |
+| **Dropping meshes** | A mesh dragged from the Content Browser adds an object showing it where it's dropped; see below. |
 
 The hovered flag in `SceneViewportState` decides whether editor input (camera, gizmo keys, Escape) reaches the scene. It's cleared at the start of each frame, so it stays false while the SceneView is hidden.
 
@@ -108,6 +110,22 @@ flowchart TD
 - **Click → GPU, pixel-exact.** Icons draw on top of meshes, so their screen rects (recorded each frame in `m_iconHits`) are tested first. Otherwise the panel asks the context's `ScenePicker`, which puts a pick request on the main view and calls back when the readback is ready (`EditorContext::Update` checks each frame). The pick respects occlusion and the exact silhouette: clicking the background inside an object's bounding box selects nothing, and a click goes to whichever object is in front. A pick still in flight is cancelled when the scene unloads. See [Render-Stages.md](../04-Rendering/Render-Stages.md#pickrenderstage).
 - **Marquee → CPU, frustum test.** The rectangle becomes a frustum, and every object with a `RenderComponent` whose **submesh** bounds intersect it is selected. That's how it catches hidden objects; a GPU ID buffer only keeps the nearest object per pixel.
 
+### Dropping meshes
+
+Dragging a `.meshasset` tile from the [Content Browser](#content-browser-contentbrowserpanel) over the scene image highlights it; other files can't be dropped. Letting go adds an object named after the mesh ("Panzer", then "Panzer (1)", ...) with a `RenderComponent` showing it, and selects it. It's one undo step.
+
+Where it goes comes from a GPU pick at the cursor, so it's added a frame or two after the drop (`HandleAssetDrop`):
+
+1. **On the surface under the cursor**, of any object: the pick reads the depth there too, and `ScenePicker` turns it back into a world position. The mesh's pivot goes on that point.
+2. With nothing drawn there, **on the ground** (the plane y = 0, where the grid is), where the ray through the cursor meets it (`Ray::Intersect`), if that's within 100 m.
+3. Otherwise **10 m out** along that ray, e.g. when dropped on the sky.
+
+The drop pushes a `CreateMeshObjectCommand(mesh, position)` (`Commands\SceneCommands`), which adds the object, loads the mesh with `RenderComponent::LoadMesh` and records a `ParkRecord`, like Create GameObject. The load is **synchronous**, so a large mesh that isn't loaded yet stalls the frame it lands in. The maths is in `Utils\Math`: `ViewProjection::Unproject` and `GetRay`, and `Ray` (see [Utils-Library-Reference.md](../06-Platform-And-Infrastructure/Utils-Library-Reference.md)).
+
+## Content Browser (`ContentBrowserPanel`)
+
+Browses the project's `Assets` and `ProjectData` folders: a folder tree beside a grid of tiles like the file browser's, with back, forward and up, search, and right-click actions. Double-clicking a folder opens it, and a scene loads it after asking about unsaved changes. Meshes can be dragged into the SceneView (above). It's the first tab in the bottom dock, beside the Log. See [Thumbnails-And-File-Browser.md](Thumbnails-And-File-Browser.md#the-content-browser-contentbrowserpanel).
+
 ## Log (`LogPanel`)
 
 Shows `DebugServices`' log entries, coloured by channel, and scrolls to the bottom when new ones arrive. Its `Update()` notes whether there are new entries; `Draw()` lists them. Anything can write to it:
@@ -132,8 +150,9 @@ The Settings window: registered settings pages (Scene View, Thumbnails) listed o
 
 ## Key files
 
-- `Editor\Src\UI\Panels\ScenePanel`, `SceneViewPanel`, `InspectorPanel`, `LogPanel`, `ResourceMonitorPanel`, `ImGuiDemoPanel`, `SettingsPanel` (`.h/.cpp`)
+- `Editor\Src\UI\Panels\ScenePanel`, `SceneViewPanel`, `InspectorPanel`, `ContentBrowserPanel`, `LogPanel`, `ResourceMonitorPanel`, `ImGuiDemoPanel`, `SettingsPanel` (`.h/.cpp`)
 - `Editor\Src\UI\Framework\EditorSelection.h/.cpp`, `ScenePicker.h/.cpp`
+- `Editor\Src\Commands\SceneCommands.h/.cpp` — `CreateMeshObjectCommand`
 - `Editor\Src\Services\SelectionBoundsDisplay.h/.cpp`
 - `Editor\Src\UI\Gizmo\GizmoSnapper.h/.cpp`, `EditorGrid.h/.cpp` — see [Gizmo-Snapping-And-Grid.md](Gizmo-Snapping-And-Grid.md)
-- `Engine\Src\Graphics\RenderStages\PickRenderStage.h/.cpp` — the GPU side of click picking
+- `Engine\Src\Graphics\RenderStages\PickRenderStage.h/.cpp` — the GPU side of picking

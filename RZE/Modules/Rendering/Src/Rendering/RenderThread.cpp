@@ -66,6 +66,8 @@ namespace Rendering
 		{
 			D3D11_TEXTURE2D_DESC stagingDesc;
 			texture.GetHWResource()->GetDesc(&stagingDesc);
+			// D3D only copies depth-stencil textures whole, and wants no box for that
+			const bool isWhole = box.left == 0 && box.top == 0 && box.right == stagingDesc.Width && box.bottom == stagingDesc.Height;
 			stagingDesc.Width = box.right - box.left;
 			stagingDesc.Height = box.bottom - box.top;
 			stagingDesc.MipLevels = 1;
@@ -79,7 +81,7 @@ namespace Rendering
 			AssertExpr(hr == S_OK);
 
 			ID3D11DeviceContext& deviceContext = device.GetDeviceContext();
-			deviceContext.CopySubresourceRegion(staging, 0, 0, 0, 0, texture.GetHWResource(), 0, &box);
+			deviceContext.CopySubresourceRegion(staging, 0, 0, 0, 0, texture.GetHWResource(), 0, isWhole ? nullptr : &box);
 
 			D3D11_MAPPED_SUBRESOURCE mapped;
 			hr = deviceContext.Map(staging, 0, D3D11_MAP_READ, 0, &mapped);

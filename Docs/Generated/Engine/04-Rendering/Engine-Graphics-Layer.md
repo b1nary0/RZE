@@ -73,7 +73,7 @@ public:
     Rendering::RenderTargetTexture* Target;  // owned by whoever owns the view
     float ExposureCompensation;              // EV on top of auto-exposure
     bool DrawsDebug = true;                  // debug lines; off for clean captures such as thumbnails
-    std::optional<RenderPickRequest> Pick;   // Editor click picking; cleared after each render
+    std::optional<RenderPickRequest> Pick;   // Editor picking (clicks, drops); cleared after each render
     // + a frame blackboard and a persistent blackboard (see Render-Stages.md)
 };
 ```
@@ -161,5 +161,5 @@ Both object containers erase with swap-and-pop (`ContainerUtils::VectorEraseBack
 - `Engine\Src\Graphics\RenderScene.h/.cpp` — `RenderScene`, `RenderObject`, `LightObject`
 - `Engine\Src\Graphics\RenderView.h` — `RenderView`, `RenderCamera`, `RenderPickRequest`
 - `Engine\Src\Graphics\ViewCapture.h/.cpp`, `TextureFile.h/.cpp` — capturing a view to a PNG
-- `Engine\Src\Graphics\Frustum.h` — the six-plane view frustum used for culling and marquee selection
+- `Utils\Src\Utils\Math\Frustum.h/.cpp` — the six-plane view frustum used for culling and marquee selection (see [Utils-Library-Reference.md](../06-Platform-And-Infrastructure/Utils-Library-Reference.md))
 - `Engine\Src\Graphics\GraphicsDefines.h` — `RenderObjectPtr` / `LightObjectPtr`, move-only and lifetime-checked

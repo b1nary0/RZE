@@ -11,6 +11,8 @@ namespace AssetPaths
 	// Scene files
 	const Filepath& GetSceneFolder();
 	constexpr char k_sceneExtension[] = ".scene";
+	// Whether file is a scene, by its extension, ignoring case
+	bool IsScene(const Filepath& file);
 	// A scene in GetSceneFolder by its file name, e.g. "Sponza.scene"
 	Filepath GetScene(const std::string& fileName);
 	// The inverse of GetScene: scene's path within GetSceneFolder, e.g. "Sponza.scene" or "Tests\Lights.scene". Empty
@@ -20,6 +22,8 @@ namespace AssetPaths
 	// Mesh assets, which the asset burner writes (MeshAssetWriter)
 	const Filepath& GetMeshFolder();
 	constexpr char k_meshExtension[] = ".meshasset";
+	// Whether file is a mesh asset, by its extension, ignoring case
+	bool IsMesh(const Filepath& file);
 
 	// Material assets, which the asset burner writes (MaterialAssetWriter), a folder per mesh
 	const Filepath& GetMaterialFolder();

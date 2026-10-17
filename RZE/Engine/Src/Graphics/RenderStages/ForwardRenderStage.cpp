@@ -1,7 +1,6 @@
 #include <StdAfx.h>
 #include <Graphics/RenderStages/ForwardRenderStage.h>
 
-#include <Graphics/Frustum.h>
 #include <Graphics/IndexBuffer.h>
 #include <Graphics/Material.h>
 #include <Graphics/MaterialSlot.h>
@@ -13,6 +12,7 @@
 #include <Rendering/Renderer.h>
 #include <Rendering/Graphics/RenderTarget.h>
 
+#include <Utils/Math/Frustum.h>
 #include <Utils/Math/Units.h>
 
 #include <algorithm>

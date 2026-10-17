@@ -29,11 +29,6 @@ namespace
 	constexpr float k_meshFieldOfView = 40.0f;
 	// For a scene with no camera of its own, framed from its bounds
 	constexpr float k_sceneFieldOfView = 50.0f;
-
-	bool IsMesh(const Filepath& asset)
-	{
-		return StringUtils::EqualsIgnoringCase(asset.GetExtension(), AssetPaths::k_meshExtension);
-	}
 }
 
 namespace Editor
@@ -72,7 +67,7 @@ namespace Editor
 				m_load = nullptr;
 				m_preload = nullptr;
 
-				if (Thumbnails::IsScene(item))
+				if (AssetPaths::IsScene(item))
 				{
 					m_load = scene.Load(item);
 					m_isMeshStageLoaded = false;
@@ -126,7 +121,7 @@ namespace Editor
 				RenderCamera camera;
 				float exposureCompensation = 0.0f;
 
-				if (IsMesh(item))
+				if (AssetPaths::IsMesh(item))
 				{
 					const BoundingBox bounds = m_meshComponent->GetWorldBounds();
 					if (bounds.IsEmpty())

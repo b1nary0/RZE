@@ -8,6 +8,8 @@
 #include <UI/Framework/PanelRegistry.h>
 #include <UI/Modals/UnsavedChangesPrompt.h>
 
+#include <Asset/AssetPaths.h>
+
 #include <Utils/Platform/Shell.h>
 
 #include <ImGui/imgui.h>
@@ -61,7 +63,7 @@ namespace Editor
 		// Scenes and meshes have theirs rendered; Request ignores anything else
 		options.OnThumbnailMissing = [&context](const Filepath& file) { context.GetThumbnails().Request(file); };
 		options.TileActions = {
-			{ "Load Scene", [this, &context](const Filepath& file) { LoadScene(context, file); }, &Thumbnails::IsScene },
+			{ "Load Scene", [this, &context](const Filepath& file) { LoadScene(context, file); }, &AssetPaths::IsScene },
 			{ "Show in Explorer", [](const Filepath& file) { Shell::ShowInFileBrowser(file); } },
 			{ "Copy Path", [](const Filepath& file) { ImGui::SetClipboardText(file.GetRelativePath().c_str()); } },
 			{ "Refresh Thumbnail", [&context](const Filepath& file) { context.GetThumbnails().Request(file, true); }, &Thumbnails::IsRendered },
@@ -77,6 +79,8 @@ namespace Editor
 					m_refreshRequested = true;
 				}
 			};
+		// Into the scene view, which adds an object showing it (SceneViewPanel)
+		options.CanDrag = &AssetPaths::IsMesh;
 		m_grid.SetOptions(std::move(options));
 
 		m_thumbnailWritten = context.GetEvents().Subscribe<ThumbnailWrittenEvent>([this](const ThumbnailWrittenEvent& event)
@@ -357,7 +361,7 @@ namespace Editor
 		{
 			Navigate(file);
 		}
-		else if (Thumbnails::IsScene(file))
+		else if (AssetPaths::IsScene(file))
 		{
 			LoadScene(context, file);
 		}

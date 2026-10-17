@@ -7,6 +7,7 @@
 #include <RZE.h>
 
 #include <Game/World/GameObject/GameObject.h>
+#include <Game/World/GameObjectComponents/RenderComponent.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
 #include <vector>
@@ -271,6 +272,28 @@ namespace Editor
 	{
 		const GameObjectPtr gameObject = RZE().GetActiveScene().AddGameObject(m_name);
 		SetUndoRecord(std::make_unique<ParkRecord>("Create GameObject", std::vector<ParkedSubtree>{ ParkedSubtree(gameObject) }, false));
+		return true;
+	}
+
+	CreateMeshObjectCommand::CreateMeshObjectCommand(const Filepath& mesh, const Vector3D& position)
+		: m_mesh(mesh)
+		, m_position(position)
+	{
+	}
+
+	bool CreateMeshObjectCommand::Execute(EditorContext& context)
+	{
+		if (!m_mesh.IsValid())
+		{
+			return false;
+		}
+
+		const GameObjectPtr gameObject = RZE().GetActiveScene().AddGameObject(MakeUniqueName(m_mesh.GetStem()));
+		gameObject->GetTransformComponent()->SetPosition(m_position);
+		gameObject->AddComponent<RenderComponent>()->LoadMesh(m_mesh);
+		SetUndoRecord(std::make_unique<ParkRecord>("Create Mesh Object", std::vector<ParkedSubtree>{ ParkedSubtree(gameObject) }, false));
+
+		context.GetSelection().Select(gameObject);
 		return true;
 	}
 

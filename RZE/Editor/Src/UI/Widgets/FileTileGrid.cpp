@@ -194,6 +194,14 @@ namespace Editor
 		}
 		const bool isSelected = entry.Path.GetRelativePath() == m_selected.GetRelativePath();
 
+		if (!entry.IsFolder && m_options.CanDrag && m_options.CanDrag(entry.Path) && ImGui::BeginDragDropSource())
+		{
+			const std::string& path = entry.Path.GetRelativePath();
+			ImGui::SetDragDropPayload(k_assetPathPayload, path.c_str(), path.size() + 1);
+			ImGui::TextUnformatted(entry.Path.GetFileName().c_str());
+			ImGui::EndDragDropSource();
+		}
+
 		if (!entry.IsFolder && HasActionsFor(entry.Path) && ImGui::BeginPopupContextItem("##actions"))
 		{
 			for (const FileTileAction& action : m_options.TileActions)

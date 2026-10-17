@@ -1,6 +1,6 @@
-# Thumbnails & the File Browser
+# Thumbnails, the File Browser & the Content Browser
 
-The Editor opens, saves and picks files in its own **file browser**: a modal grid of large tiles, each showing the file's thumbnail. Scene and mesh thumbnails are rendered by the Editor itself, **in the background**, in a scene of their own, so the scene you're editing is never touched and nothing waits on them.
+The Editor opens, saves and picks files in its own **file browser**: a modal grid of large tiles, each showing the file's thumbnail. The **Content Browser** panel shows the same tiles all the time, for browsing the project, loading scenes and dragging meshes into the scene. Both draw their tiles with one widget, `FileTileGrid`. Scene and mesh thumbnails are rendered by the Editor itself, **in the background**, in a scene of their own, so the scene you're editing is never touched and nothing waits on them.
 
 ```mermaid
 %%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
@@ -18,7 +18,8 @@ flowchart TD
     Q --> Job["ThumbnailRenderJob<br/>one Background operation at a time"]
     Job --> HS["HeadlessScene<br/>load the scene, or stage the mesh"]
     HS --> Cap["ViewCapture 512x512<br/>to ProjectData/...Thumbnails/name.png"]
-    Cap --> FB["FileBrowserModal::RefreshThumbnail<br/>the tile shows it"]
+    Cap --> Ev["ThumbnailWrittenEvent"]
+    Ev --> FB["file browser and Content Browser<br/>reload the tiles that show it"]
 ```
 
 ## The file browser (`FileBrowserModal`)
@@ -94,8 +95,59 @@ context.GetFileBrowser().Open(std::move(request));
 
 Opening while a request is showing replaces it, and the old one is cancelled.
 
-- **Images** load as `Texture2D` the first time a tile shows them; the list clips to the visible rows, so those load first. One that's already loaded (e.g. a texture the open scene uses) is taken straight from the `ResourceHandler`. Otherwise it gets a hidden, background `ResourcePreloadOperation` of its own: the file is decoded on a worker and uploaded in time slices, from the background budget and the frame's idle time, and the tile shows its placeholder until the image is in. They're released when the browser closes, and loads still running are cancelled. `RefreshThumbnail(image)` reloads the tiles that show an image once it has been written again, so a thumbnail that finishes rendering appears while the browser is open.
-- **The listing** is a set of pure functions in `Services\FolderListing.h/.cpp`, covered by the unit tests: `ListFolder(folder, extensions, search)`, `FindFiles(folder, extension)` (recursive), `ParseExtensionFilter`, `ResolveSaveName` and `FormatTimeAgo` ("Just now", "5 minutes ago", a date once it's months old).
+- **The tiles** are a [`FileTileGrid`](#the-tile-grid-filetilegrid), which loads their images in the background. The browser releases them when it closes. `RefreshThumbnail(image)` reloads the tiles that show an image once it has been written again; `EditorContext` calls it on each `ThumbnailWrittenEvent`, so a thumbnail that finishes rendering appears while the browser is open.
+- **The listing** is a set of pure functions in `Services\FolderListing.h/.cpp`, covered by the unit tests: `ListFolder(folder, extensions, search)`, `FindFiles(folder, extension)` (recursive), `ParseExtensionFilter`, `ResolveSaveName` and `FormatTimeAgo` ("Just now", "5 minutes ago", a date once it's months old). `ListSubfolders(folder)` lists the folders in one, by name, for the Content Browser's tree.
+
+## The tile grid (`FileTileGrid`)
+
+`UI\Widgets\FileTileGrid.h/.cpp`: the scrolling grid of tiles that the file browser and the Content Browser each own one of. `Draw(entries, tileSize, size, emptyText)` draws a `FolderListing` in a child window, clipped to the visible rows, and returns what happened that frame: the tile `Clicked` (now the selection) and the one `Activated` (double-clicked). What to do about them is up to the owner.
+
+- **Selection:** `GetSelected` / `SetSelected(file, scrollTo)`. The arrow keys move it while the grid's window is focused and no widget is active.
+- **Images** load as `Texture2D` the first time a tile shows them. One that's already loaded (e.g. a texture the open scene uses) is taken straight from the `ResourceHandler`. Otherwise it gets a hidden, background `ResourcePreloadOperation` of its own: the file is decoded on a worker and uploaded in time slices, from the background budget and the frame's idle time, and the tile shows its placeholder until the image is in. `ReleaseThumbnails()` drops them and cancels loads still running; `RefreshThumbnail(image)` reloads the tiles showing one.
+- `DrawBreadcrumb(root, folder)`, beside it, draws the breadcrumb both use and returns the folder clicked.
+
+| `FileTileGridOptions` field | Meaning |
+|---|---|
+| `ThumbnailFor` | The image a file's tile shows. No function, or an image that doesn't exist, shows the placeholder. |
+| `OnThumbnailMissing` | Called once per file, until the images are released, for a tile whose image doesn't exist yet |
+| `TileActions` | A file's right-click menu: `FileTileAction { Label, Run, AppliesTo }`. `AppliesTo` limits an action to some files (e.g. scenes); empty means every file. Actions run after the tiles are drawn, since they can change what the owner shows. |
+| `DrawBackgroundMenu` | The items of the right-click menu on the grid's empty space; none if it's empty |
+| `CanDrag` | Which files' tiles can be dragged. A dragged tile carries a `k_assetPathPayload` ImGui payload: the file's relative path, null-terminated. Empty means none can. |
+
+## The Content Browser (`ContentBrowserPanel`)
+
+`UI\Panels\ContentBrowserPanel.h/.cpp`: a panel, open from the start as the first tab of the bottom dock, beside the Log (View > Windows > Content Browser).
+
+```
++---------------------------------------------------------------------------------+
+| < > ^  ProjectData / Mesh                          [=o=]  [ Search    ]  (R)    |
++---------------+-----------------------------------------------------------------+
+| v Assets      |  +------+ +------+ +------+ +------+ +------+                   |
+|   > 2D        |  |      | |      | |      | |      | |      |                   |
+|   > 3D        |  +------+ +------+ +------+ +------+ +------+                   |
+|     Scenes    |  Cube     FW190    Hangar   M4A1     Panzer                     |
+| v ProjectData |  2 days   2 days   Yesterday ...                                |
+|     Mesh      |                                                                 |
++---------------+-----------------------------------------------------------------+
+```
+
+- **Roots:** `Assets` and `ProjectData`, each the top of the tree. The breadcrumb starts at whichever holds the current folder, and Up stops there.
+- **Toolbar:** Back, Forward and Up (each greyed out when there's nowhere to go), the breadcrumb, then on the right a tile-size slider (64–234 px, 96 to start), a search box and Refresh.
+- **Folder tree:** the left column, 200 px wide to start and resizable. Clicking a folder goes there, and the arrow opens it. The current folder is highlighted; going somewhere from the tiles opens the tree down to it and scrolls it into view. Each folder's subfolders are read the first time the tree needs them and kept until a refresh.
+- **Tiles:** every file, with the thumbnail for scenes and meshes and the image itself for images. A scene or mesh without a thumbnail has one rendered. Leaving a folder releases its images, so browsing doesn't keep them all.
+- **Refreshing:** the folder is read again on going there, on a search edit, on Refresh and every 2 s while it's shown, so new and deleted files turn up. A thumbnail rendered again reloads its tile (`ThumbnailWrittenEvent`).
+
+| Input | Does |
+|---|---|
+| Double-click, Enter | Opens a folder; loads a scene (asking about unsaved changes first, like File > Load Scene). Other files are just selected. |
+| Backspace | Up a folder |
+| Mouse back / forward buttons (4 / 5), toolbar arrows | Back / Forward through the folders visited |
+| Arrow keys | Move the selection |
+| Right-click a file | **Load Scene** (scenes), **Show in Explorer**, **Copy Path** (the relative path), **Refresh Thumbnail** (scenes and meshes) |
+| Right-click empty space | **Show in Explorer** for the folder, **Refresh** |
+| Drag a mesh onto the SceneView | Adds an object showing it where it's dropped; see [Editor-Panels.md](Editor-Panels.md#dropping-meshes) |
+
+The keys work while the panel is focused and no text field is active; the mouse buttons while it's hovered. Show in Explorer goes through `Shell::ShowInFileBrowser` (`Utils\Platform\Shell.h`), which keeps the Win32 call out of the Editor: it opens Explorer with the file selected, or the folder open. The mouse's side buttons reach ImGui through the engine's input as `EMouseButton::MouseButton_Back` / `MouseButton_Forward`.
 
 ## Thumbnails
 
@@ -158,7 +210,7 @@ For each item:
 
 - The 3 **settle frames** let a newly loaded item's first frames of work (uploads, the shadow map) finish before the capture.
 - The capture is written to `<name>.png.tmp` and moved over the old file, so a cancelled or failed run never leaves half an image.
-- Each thumbnail written refreshes its tile in an open browser.
+- Each thumbnail written publishes `ThumbnailWrittenEvent { Image }`, which reloads its tiles in the file browser and the Content Browser.
 - **What it reports:** "Sponza (3 of 12)" with the progress; a logged step per thumbnail ("Rendered Sponza"); a warning per one that couldn't be ("Couldn't render X: it has no camera and nothing to frame"), after which the run carries on; and at the end "11 rendered, 1 couldn't be". All of it lands in the status bar's history.
 - **Cancelling** (from the status bar) clears the queue. When a run ends, it unloads its headless scene, so nothing stays loaded between runs.
 - **Shutdown:** `EditorApp::ShutDown` calls `ThumbnailRenderer::ShutDown()`, which cancels the run and unloads the scene while the renderer is still up.
@@ -168,7 +220,10 @@ For each item:
 ## Key files
 
 - `Editor\Src\UI\Modals\FileBrowserModal.h/.cpp`
-- `Editor\Src\Services\FolderListing.h/.cpp` — listing, search, save names
+- `Editor\Src\UI\Widgets\FileTileGrid.h/.cpp` — the shared tile grid and breadcrumb
+- `Editor\Src\UI\Panels\ContentBrowserPanel.h/.cpp`
+- `Utils\Src\Utils\Platform\Shell.h/.cpp` — `ShowInFileBrowser`
+- `Editor\Src\Services\FolderListing.h/.cpp` — listing, subfolders, search, save names
 - `Editor\Src\Services\Thumbnails.h/.cpp` — folders, `FindFor`, `IsUpToDate`, `Survey`
 - `Editor\Src\Services\ThumbnailRenderer.h/.cpp` (with `ThumbnailRenderJob`), `ThumbnailQueue.h/.cpp`, `ThumbnailBatchOperation.h/.cpp`, `MeshFraming.h/.cpp`
 - `Editor\Src\UI\Inspector\PropertyDrawers.cpp` — `DrawAssetPath`

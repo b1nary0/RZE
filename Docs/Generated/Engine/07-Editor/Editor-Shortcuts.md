@@ -74,6 +74,11 @@ These work anywhere in the Editor, except that a focused text field keeps its ow
 | **Arrow keys** | File browser | Move the selection through the tiles |
 | **Backspace** | File browser | Up a folder |
 | **Escape** | File browser | Back out of "Replace it?", then close without choosing; in a text field, just leave the field |
+| **Double-click** / **Enter** | Content Browser | Open the folder, or load the scene (asking about unsaved changes first) |
+| **Arrow keys** | Content Browser | Move the selection through the tiles |
+| **Backspace** | Content Browser | Up a folder |
+| **Mouse back / forward** (buttons 4 / 5) | Content Browser hovered | Back / forward through the folders visited |
+| **Drag a mesh tile** onto the SceneView | Content Browser | Add an object showing the mesh where it's dropped |
 
 The File, View and Help menus have no keyboard shortcuts. The SceneView toolbar's tooltips name the shortcut for each control, e.g. "Shortcut (W)".
 
@@ -90,5 +95,7 @@ The File, View and Help menus have no keyboard shortcuts. The SceneView toolbar'
 | Ctrl+Z/Y/Shift+Z, Ctrl+C/V/D | `MainMenuBar::HandleEditShortcuts` (`ImGui::Shortcut` with `ImGuiInputFlags_RouteGlobal`) |
 | Window close | `EditorApp::OnCloseRequested` |
 | File browser | `FileBrowserModal::HandleKeys` |
+| Content Browser | `ContentBrowserPanel::HandleNavigationInput`; arrow keys in `FileTileGrid::HandleArrowKeys` |
+| Dropping a mesh | `SceneViewPanel::HandleAssetDrop` |
 
 When adding a shortcut, check this page for conflicts and add a row here.

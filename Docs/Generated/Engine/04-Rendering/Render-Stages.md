@@ -20,7 +20,7 @@ flowchart TD
     Debug --> DCD2[/"DisplayColourData<br/>+ debug lines"/]
     DCD2 --> ImGui(["ImGuiRenderStage"])
     DCD2 --> Final(["FinalRenderTargetStage<br/>(Game only)"])
-    Pick(["PickRenderStage<br/>(only on a click)"])
+    Pick(["PickRenderStage<br/>(only on a click or drop)"])
 ```
 
 `PickRenderStage` stands apart because it uses no contracts. It renders from the scene alone and hands its result straight back to the Editor (see [Picking](#pickrenderstage)).
@@ -98,7 +98,7 @@ Because stage objects are shared by every view, anything that must carry over be
 | `ShadowRenderStage` | writes `ShadowMapData` | all | Renders the sun's shadow map, but only when the scene or light has changed. |
 | `ForwardRenderStage` | reads `ShadowMapData`, writes `SceneColourData` | all | Draws every visible object, lit, into an HDR target. |
 | `PostProcessRenderStage` | reads `SceneColourData`, writes `DisplayColourData` | all | Eye adaptation, ACES tonemapping, sRGB encode to 8-bit. |
-| `PickRenderStage` | nothing | main | On a click, finds the object under one pixel. |
+| `PickRenderStage` | nothing | main | On a click or drop, finds the object under one pixel and the depth there. |
 | `DebugDrawRenderStage` | modifies `DisplayColourData` | all | Draws debug lines on top, after tonemapping. Not in Retail builds. |
 | `ImGuiRenderStage` | Editor: reads `DisplayColourData`; Game: modifies it | main | Draws ImGui. Added by the app, not the engine. |
 | `FinalRenderTargetStage` | reads `DisplayColourData` | main | Game only: copies the finished image to the back buffer. |
@@ -114,7 +114,7 @@ The engine adds Shadow, Forward, PostProcess, Pick and (outside Retail) DebugDra
 ### `ForwardRenderStage`
 
 - Draws into the view's HDR scene target (`RGBA16_FLOAT`, alpha 0 marks the background) with depth.
-- **Frustum culling** at two levels: whole objects first, then each submesh, using the world-space bounds every `RenderObject` keeps (`Graphics/Frustum.h`).
+- **Frustum culling** at two levels: whole objects first, then each submesh, using the world-space bounds every `RenderObject` keeps (`Frustum`, in `Utils/Math/Frustum.h`).
 - Per-view constants (camera, light, shadow map) are bound once; per object only the world matrix changes. Pixel shaders are only re-bound when the next submesh uses a different one.
 - Shading lives in `Assets/Shaders/Common/Lighting.hlsli`: hemisphere ambient, the sun with soft shadows (`SampleShadow`), normal and height maps, and opacity masks.
 
@@ -137,7 +137,7 @@ flowchart TD
 
 ### `PickRenderStage`
 
-Finds the object at one pixel of the main view for the Editor's click selection. It only does work on frames where `RenderView::Pick` holds a `RenderPickRequest { X, Y, Result }`; `RenderEngine::Render()` clears the request afterwards.
+Finds the object at one pixel of the main view, and how far away its surface is, for the Editor's click selection and for placing meshes dropped into the SceneView. It only does work on frames where `RenderView::Pick` holds a `RenderPickRequest { X, Y, Result, DepthResult }`; `RenderEngine::Render()` clears the request afterwards.
 
 ```mermaid
 %%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
@@ -146,17 +146,18 @@ sequenceDiagram
     participant View as main RenderView
     participant Pick as PickRenderStage
     participant RT as Render thread
-    Ed->>View: Pick = { pixel, TexelReadback }
+    Ed->>View: Pick = { pixel, ID and depth TexelReadbacks }
     Note over Pick: next frame
-    Pick->>Pick: stretch that pixel over a 1x1 R32_UINT target<br/>(Matrix4x4::CreateSubRectProjection)
+    Pick->>Pick: stretch that pixel over a 1x1 R32_UINT target<br/>and a 1x1 depth target<br/>(Matrix4x4::CreateSubRectProjection)
     Pick->>Pick: draw nearby objects' pick IDs<br/>(frustum culling skips the rest)
-    Pick->>RT: Renderer::ReadTexel(target, 0, 0, result)
-    RT->>RT: copy to staging texture, Map, store value
+    Pick->>RT: Renderer::ReadTexel the ID, then the depth
+    RT->>RT: copy to staging textures, Map, store values
     RT-->>Ed: TexelReadback::IsReady = true
-    Ed->>Ed: pick ID - 1 = GameObjectID -> select it
+    Ed->>Ed: pick ID - 1 = GameObjectID<br/>depth -> world position
 ```
 
-- **Cheap by design:** a 1×1 target means nothing to resize with the window, the one-pixel frustum culls nearly everything, and only 4 bytes come back.
+- **Cheap by design:** 1×1 targets mean nothing to resize with the window, the one-pixel frustum culls nearly everything, and only 8 bytes come back.
+- **Depth:** `DepthResult` is optional. It gets the depth target's texel (D24S8), which `RenderPickRequest::DecodeDepth` turns into 0 at the near plane to 1 at the far plane. The depth target is cleared to 1, so 1 means nothing is drawn there. The Editor's `ScenePicker` unprojects it with the camera it asked with (`ViewProjection::Unproject`) to find where the surface is.
 - `Pixel_PickID.hlsl` writes each `RenderObject::GetPickID()`. Objects with ID 0 still draw, so they hide what's behind them. Cutout pixels are clipped as in the shadow pass, so clicks go through them.
 - The readback makes the render thread wait for the GPU, but only on a click frame. See [`ReadTexel`](Low-Level-Renderer-Module.md#reading-back-from-the-gpu-readtexel-and-readtexture).
 

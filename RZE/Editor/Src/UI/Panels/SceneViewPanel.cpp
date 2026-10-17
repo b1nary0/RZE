@@ -6,7 +6,11 @@
 #include <UI/Framework/EditorUI.h>
 #include <UI/Framework/PanelRegistry.h>
 
+#include <Commands/SceneCommands.h>
 #include <Commands/TransformCommands.h>
+#include <UI/Widgets/FileTileGrid.h>
+
+#include <Asset/AssetPaths.h>
 
 #include <Game/World/GameObject/GameObject.h>
 #include <Game/World/GameObjectComponents/CameraComponent.h>
@@ -15,12 +19,15 @@
 #include <Game/World/GameObjectComponents/RenderComponent.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
-#include <Graphics/Frustum.h>
 #include <Graphics/RenderEngine.h>
 #include <Rendering/Graphics/RenderTarget.h>
 
+#include <Utils/Math/Frustum.h>
 #include <Utils/Math/Math.h>
+#include <Utils/Math/Plane.h>
 #include <Utils/Math/Quaternion.h>
+#include <Utils/Math/Ray.h>
+#include <Utils/Math/Units.h>
 
 #include <ImGui/imgui.h>
 #include <imGUI/ImGuizmo.h>
@@ -142,6 +149,7 @@ namespace Editor
 
 			ImGui::Image((ImTextureID)(intptr_t)texture.GetTextureData(), ImVec2(GetDimensions().X(), GetDimensions().Y()), ImVec2(0.0f, 0.0f), ImVec2(uvbx, uvby));
 			const bool isImageHovered = ImGui::IsItemHovered();
+			HandleAssetDrop(context, ImVec2(GetPosition().X(), GetPosition().Y() + cursorPos.y));
 
 			{
 				GameObjectPtr selectedGameObject = selection.GetPrimary();
@@ -516,9 +524,58 @@ namespace Editor
 		// Meshes are picked on the GPU, so the click is applied when the result arrives
 		const U32 pickX = static_cast<U32>(std::min(start.x - viewOrigin.x, GetDimensions().X() - 1.0f));
 		const U32 pickY = static_cast<U32>(std::min(start.y - viewOrigin.y, GetDimensions().Y() - 1.0f));
-		context.GetScenePicker().RequestPick(pickX, pickY, ScenePicker::ResultCallback([this, &selection, isAdditive](GameObjectPtr hitObject)
+		context.GetScenePicker().RequestPick(pickX, pickY, ScenePicker::ResultCallback([this, &selection, isAdditive](const ScenePick& pick)
 			{
-				ApplyClick(selection, hitObject, isAdditive);
+				ApplyClick(selection, pick.Object, isAdditive);
+			}));
+	}
+
+	void SceneViewPanel::HandleAssetDrop(EditorContext& context, const ImVec2& viewOrigin)
+	{
+		if (!ImGui::BeginDragDropTarget())
+		{
+			return;
+		}
+
+		// Only meshes are taken, so anything else shows as not droppable
+		const ImGuiPayload* const dragged = ImGui::GetDragDropPayload();
+		const bool isMesh = dragged != nullptr && dragged->IsDataType(k_assetPathPayload)
+			&& AssetPaths::IsMesh(Filepath(static_cast<const char*>(dragged->Data)));
+		const ImGuiPayload* const dropped = isMesh ? ImGui::AcceptDragDropPayload(k_assetPathPayload) : nullptr;
+		// Copied first: ending the target frees a payload that's been delivered
+		const Filepath mesh = dropped != nullptr ? Filepath(static_cast<const char*>(dropped->Data)) : Filepath();
+		ImGui::EndDragDropTarget();
+		if (!mesh.IsValid())
+		{
+			return;
+		}
+
+		// Where the mesh goes comes from the GPU pick, so it's added once that arrives
+		const ImVec2 mouse = ImGui::GetIO().MousePos;
+		const U32 pickX = static_cast<U32>(MathUtils::Clampf(mouse.x - viewOrigin.x, 0.0f, GetDimensions().X() - 1.0f));
+		const U32 pickY = static_cast<U32>(MathUtils::Clampf(mouse.y - viewOrigin.y, 0.0f, GetDimensions().Y() - 1.0f));
+		context.GetScenePicker().RequestPick(pickX, pickY, ScenePicker::ResultCallback([&context, mesh](const ScenePick& pick)
+			{
+				// On the surface under the cursor; failing that, on the ground if it's not too far off; failing that,
+				// a little way out from the camera
+				constexpr float k_maxGroundDistance = 100.0f;
+				constexpr float k_fallbackDistance = 10.0f;
+
+				// The editor's ground, where its grid is drawn
+				const Plane ground(WorldAxes::Up(), 0.0f);
+
+				Vector3D position = pick.CameraRay.GetPoint(k_fallbackDistance);
+				if (pick.SurfacePosition.has_value())
+				{
+					position = *pick.SurfacePosition;
+				}
+				else if (const std::optional<Vector3D> groundPoint = pick.CameraRay.Intersect(ground);
+					groundPoint.has_value() && (*groundPoint - pick.CameraRay.GetOrigin()).Length() <= k_maxGroundDistance)
+				{
+					position = *groundPoint;
+				}
+
+				context.GetCommands().Push<CreateMeshObjectCommand>(mesh, position);
 			}));
 	}
 

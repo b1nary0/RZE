@@ -42,7 +42,6 @@ namespace Editor
 
 		// Whether asset's thumbnail is rendered (ThumbnailRenderer): scenes and meshes
 		bool IsRendered(const Filepath& asset);
-		bool IsScene(const Filepath& asset);
 
 		// Whether image exists and was written no earlier than asset was last changed
 		bool IsUpToDate(const Filepath& asset, const Filepath& image);

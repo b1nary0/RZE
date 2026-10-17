@@ -19,6 +19,9 @@ class Texture2D;
 
 namespace Editor
 {
+	// The ImGui drag and drop payload a dragged file tile carries: the file's relative path, null-terminated
+	constexpr const char* k_assetPathPayload = "RZE_ASSET_PATH";
+
 	// An entry in a file tile's right-click menu
 	struct FileTileAction
 	{
@@ -41,6 +44,8 @@ namespace Editor
 		std::vector<FileTileAction> TileActions;
 		// The right-click menu on the grid's empty space: its items, drawn inside the popup. None if it's empty.
 		std::function<void()> DrawBackgroundMenu;
+		// Whether a file's tile can be dragged (as a k_assetPathPayload) to a drop target; none can if it's empty
+		std::function<bool(const Filepath& file)> CanDrag;
 	};
 
 	// What happened in a FileTileGrid this frame
