@@ -16,6 +16,11 @@ flowchart LR
 - **`RZE_LOG(msg)`** takes a stream expression (`RZE_LOG("Loaded " << count << " meshes")`).
 - **`RZE_LOG_ARGS(fmt, ...)`** takes `printf` formatting (`RZE_LOG_ARGS("Render pipeline: %s", order.c_str())`), up to 1024 characters.
 - Each line goes to stdout, to the session's log file under `Logs\`, and to the **log sink**. The engine sets the sink (`Debug::SetLogSink`) at start-up so every line also lands in `DebugServices`, which is what the Editor's Log panel shows. Lines logged on worker threads are posted to the main thread first, so `DebugServices` is only ever written from one thread.
+- stdout only shows up when the process has a console; see [The console](#the-console).
+
+### The console
+
+The Editor is a windowed app (`/SUBSYSTEM:WINDOWS`), so it starts without a console. A console app's console opens in Windows Terminal on Windows 11, and that window came up after the Editor's and took the foreground, so the Editor opened unfocused. Its log is in the Log panel and the log file. `-console` opens a console for it: `Debug::OpenConsole()` allocates one and reopens stdout and stderr on it, and its window appears before the Editor's, which still ends up focused. The Game, SourceAssetBurner and UnitTests are console apps.
 
 ### Which builds have what
 
@@ -34,7 +39,7 @@ In Retail, the log macros still "use" their arguments in a dead branch, so varia
 `AssertFalse()`, `AssertEqual(a, b)`, `AssertIsNull(p)`, `AssertNotNull(p)`, `AssertExpr(expr)`, `AssertMsg(expr, "why")`. Debug builds only.
 
 A failing assert:
-1. prints `Assertion failed: <expression>, file <file>, line <n>` (and the message, if any) to stderr;
+1. writes `Assertion failed: <expression>, file <file>, line <n>` (and the message, if any, on a second line) to stderr and to the log, as one entry, so it reaches the log file and the Log panel without a console. An assert that fires while another is being logged, e.g. from the log sink, only goes to stderr, since logging it would recurse or block on the log file's lock;
 2. shows the CRT assert dialog with the **expression and message**, in both console and windowed apps;
 3. if you choose **Retry**, breaks into the debugger on the line of the failing assert (`__debugbreak` sits in the macro, not in a helper function). **Ignore** carries on, and **Abort** quits.
 

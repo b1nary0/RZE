@@ -20,6 +20,10 @@ namespace Debug
 	// Writes to the log file, then forwards to the log sink if one is set.
 	void WriteToLog(const std::string_view str);
 
+	// Opens a console window for a windowed app and points stdout and stderr at it. Does nothing if the process
+	// already has a console. Returns false if one couldn't be opened.
+	bool OpenConsole();
+
 	// Shows the CRT assert dialog (regardless of console/windows subsystem).
 	// Returns true if the caller should break into the debugger.
 	bool ReportAssertFailure(const char* file, int line, const char* expr, const char* msg);

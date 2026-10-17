@@ -47,7 +47,7 @@ public class RZE : Solution {
 | Engine | `Engine\Engine.sharpmake.cs` | static Lib | Utils, Externals, Rendering | `OptickCore`; copies `ThirdParty\Dll\x64\*.dll` to output post-build |
 | SourceAssetBurner | `SourceAssetBurner\SourceAssetBurner.sharpmake.cs` | exe | **Engine only** | `assimp-vc141-mt` |
 | EditorLib | `Editor\Editor.sharpmake.cs` | static Lib | **Engine only** | — (everything in `Editor\Src` except `EditorMain.cpp`; its own intermediate folder, since it shares `Editor\_project` with Editor) |
-| Editor | `Editor\Editor.sharpmake.cs` | exe | **EditorLib only** | links `EditorLib` with `/WHOLEARCHIVE`, so self-registering panels aren't dropped; compiles only `EditorMain.cpp` |
+| Editor | `Editor\Editor.sharpmake.cs` | windowed exe (`SubSystem.Windows`, `/ENTRY:mainCRTStartup` so the entry point is still `main`) | **EditorLib only** | links `EditorLib` with `/WHOLEARCHIVE`, so self-registering panels aren't dropped; compiles only `EditorMain.cpp` |
 | Game | `Game\Game.sharpmake.cs` | exe | **Engine only** | — |
 | UnitTests | `UnitTests\UnitTests.sharpmake.cs` | exe | **EditorLib only** | — (doctest is header-only) |
 

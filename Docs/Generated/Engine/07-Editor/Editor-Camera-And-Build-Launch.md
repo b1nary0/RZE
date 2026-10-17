@@ -83,7 +83,7 @@ sequenceDiagram
     end
 ```
 
-- **Build Game** runs `BuildGame.bat` (MSBuild for the Game project) and stops there.
+- **Build Game** runs `BuildGame.bat` (MSBuild for the Game project) and stops there. It runs through cmd with no window (`CreateProcess` with `CREATE_NO_WINDOW`), and its stdout and stderr both stream into the Build channel through a pipe. It isn't run with `_popen`: the Editor has no console (it's a windowed app, see [Editor-Overview.md](Editor-Overview.md#launching)), so cmd would open a console window that takes focus for as long as the build runs.
 - **Launch Game** does the same, then starts `_build\debug\Game.exe` **into the scene that's open in the editor**, without waiting for it:
   - It goes through the [unsaved-changes prompt](Editor-Framework.md#the-unsaved-changes-prompt) first, since the Game reads the scene's file. A new scene that was never saved launches as `Default.scene` (`GameScene::GetDefaultScenePath()`). The item is disabled while a scene is loading.
   - The scene is passed as `-scene "<name>"`, its path inside `Assets\Scenes` (`AssetPaths::GetSceneName`, the inverse of `GetScene`, e.g. `Sponza.scene` or `Tests\Lights.scene`), quoted because `_spawnl` joins its arguments with spaces. It's worked out before the build starts, so a scene outside `Assets\Scenes`, which the Game can't load, is reported in the Build channel straight away and nothing is built.

@@ -10,45 +10,104 @@
 
 #include <DebugUtils/DebugServices.h>
 
+#include <Utils/Conversions.h>
 #include <Utils/Functor.h>
 #include <Utils/Platform/Filepath.h>
 
 #include <process.h>
-#include <stdio.h>
+#include <Windows.h>
 
 namespace
 {
 	using OutputLineSink = Functor<void, const std::string&>;
 
-	// Runs a process on the calling thread and forwards each line of its stdout (without the trailing newline).
-	// Stops reading early if cancellation is requested. Returns the process exit code, or -1 if it couldn't be started.
+	void ForwardLine(std::string line, const OutputLineSink& onOutputLine)
+	{
+		while (!line.empty() && (line.back() == '\n' || line.back() == '\r'))
+		{
+			line.pop_back();
+		}
+
+		onOutputLine(line);
+	}
+
+	// Runs a process through cmd on the calling thread and forwards each line of its stdout and stderr (without the
+	// trailing newline). Stops reading early if cancellation is requested. Returns the process exit code, or -1 if it
+	// couldn't be started. Not _popen: the editor has no console, so cmd would open a console window that takes focus.
 	int RunProcessStreamed(const Filepath& processPath, const OutputLineSink& onOutputLine, const Threading::CancellationToken* cancellationToken)
 	{
-		FILE* pipe = _popen(processPath.GetAbsolutePath().c_str(), "rt");
-		if (pipe == nullptr)
+		SECURITY_ATTRIBUTES pipeAttributes = {};
+		pipeAttributes.nLength = sizeof(pipeAttributes);
+		pipeAttributes.bInheritHandle = TRUE;
+
+		HANDLE readPipe = nullptr;
+		HANDLE writePipe = nullptr;
+		if (!CreatePipe(&readPipe, &writePipe, &pipeAttributes, 0))
 		{
 			onOutputLine("Failed to start process: " + processPath.GetRelativePath());
 			return -1;
 		}
+		// Only the child's end is inherited
+		SetHandleInformation(readPipe, HANDLE_FLAG_INHERIT, 0);
 
-		char buffer[2048];
-		while (fgets(buffer, sizeof(buffer), pipe) != nullptr)
+		STARTUPINFOW startupInfo = {};
+		startupInfo.cb = sizeof(startupInfo);
+		startupInfo.dwFlags = STARTF_USESTDHANDLES;
+		startupInfo.hStdInput = nullptr;
+		startupInfo.hStdOutput = writePipe;
+		startupInfo.hStdError = writePipe;
+
+		// /s takes the outer quotes off, so a path with spaces stays one argument
+		std::wstring commandLine = L"cmd.exe /s /c \"\"" + Conversions::StringToWString(processPath.GetAbsolutePath()) + L"\"\"";
+
+		PROCESS_INFORMATION processInfo = {};
+		const BOOL bStarted = CreateProcessW(nullptr, commandLine.data(), nullptr, nullptr, TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &startupInfo, &processInfo);
+		// Closed here so the read below ends once the child (and anything it started) exits
+		CloseHandle(writePipe);
+		if (!bStarted)
 		{
-			std::string line(buffer);
-			while (!line.empty() && (line.back() == '\n' || line.back() == '\r'))
-			{
-				line.pop_back();
-			}
+			CloseHandle(readPipe);
+			onOutputLine("Failed to start process: " + processPath.GetRelativePath());
+			return -1;
+		}
 
-			onOutputLine(line);
+		std::string pending;
+		char buffer[2048];
+		DWORD bytesRead = 0;
+		bool bCancelled = false;
+		while (!bCancelled && ReadFile(readPipe, buffer, sizeof(buffer), &bytesRead, nullptr) && bytesRead > 0)
+		{
+			pending.append(buffer, bytesRead);
 
-			if (cancellationToken != nullptr && cancellationToken->IsCancellationRequested())
+			size_t lineEnd;
+			while ((lineEnd = pending.find('\n')) != std::string::npos)
 			{
-				break;
+				ForwardLine(pending.substr(0, lineEnd), onOutputLine);
+				pending.erase(0, lineEnd + 1);
+
+				if (cancellationToken != nullptr && cancellationToken->IsCancellationRequested())
+				{
+					bCancelled = true;
+					break;
+				}
 			}
 		}
 
-		return _pclose(pipe);
+		if (!bCancelled && !pending.empty())
+		{
+			ForwardLine(pending, onOutputLine);
+		}
+
+		// Like _pclose: stop reading, then wait for the process to exit
+		CloseHandle(readPipe);
+		WaitForSingleObject(processInfo.hProcess, INFINITE);
+
+		DWORD exitCode = 0;
+		GetExitCodeProcess(processInfo.hProcess, &exitCode);
+		CloseHandle(processInfo.hThread);
+		CloseHandle(processInfo.hProcess);
+
+		return static_cast<int>(exitCode);
 	}
 
 	// Traces each line to the editor's build log channel. Safe from worker threads; lines are marshalled to the main thread.

@@ -160,7 +160,11 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 		const Display::ScreenRect& workArea = monitorInfo.WorkArea;
 		InternalSetWindowPosition(Vector2D(static_cast<float>(workArea.Left), static_cast<float>(workArea.Top)));
 		// #NOTE(Josh) Gonna put this here for now instead of in Engine.cpp until it has a better home
-		SetWindowPos(GetConsoleWindow(), 0, workArea.Left, workArea.Top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
+		// A windowed app (the Editor) only has a console with -console
+		if (HWND consoleWindow = GetConsoleWindow())
+		{
+			SetWindowPos(consoleWindow, 0, workArea.Left, workArea.Top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
+		}
 
 		QueryClientSize();
 	}
