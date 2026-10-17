@@ -36,11 +36,11 @@ The layout is an ImGui dockspace, saved in `Config\imgui.ini`; without one, each
 |---|---|
 | `-scene <file>` | Opens `Assets/Scenes/<file>` (e.g. `-scene Sponza.scene`). Without it, the Editor opens `Assets/Scenes/RenderTest.scene`. |
 | `-launchMonitor <n>` | Opens the window on monitor *n*, overriding the config's launch monitor. Handled by the engine, so the Game accepts it too. |
-| `-console` | Opens a console showing the log (stdout and stderr). |
+| `-console` | Opens a console showing the log (stdout and stderr). Handled by the engine, so the Game accepts it too. |
 
 `Editor\_project\Editor.args.json` holds presets for these in Visual Studio.
 
-The Editor is built as a windowed app, with `main` kept as its entry point (`/ENTRY:mainCRTStartup`), so it has no console unless `-console` asks for one. As a console app it opened unfocused: Windows Terminal hosted its console, and that window came up after the Editor's and took the foreground. See [Debug-Services-And-Logging.md](../06-Platform-And-Infrastructure/Debug-Services-And-Logging.md#the-console).
+The Editor is built as a windowed app, like the Game, with `main` kept as its entry point (`/ENTRY:mainCRTStartup`), so it has no console unless `-console` asks for one. As a console app it opened unfocused: Windows Terminal hosted its console, and that window came up after the Editor's and took the foreground. See [Debug-Services-And-Logging.md](../06-Platform-And-Infrastructure/Debug-Services-And-Logging.md#the-console).
 
 ## How the Editor fits together
 

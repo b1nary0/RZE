@@ -15,5 +15,6 @@ public class Game : BaseProject
     {
         base.ConfigureAll(conf, target);
         conf.AddPublicDependency<Engine>(target);
+        ConfigureAsWindowedApp(conf);
     }
 }

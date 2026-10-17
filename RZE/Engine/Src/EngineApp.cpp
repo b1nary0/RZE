@@ -133,4 +133,11 @@ Rendering::RenderTargetTexture* RZE_Application::GetRTT()
 void RZE_Application::ParseArguments(char** arguments, int count)
 {
 	CmdLine::Arguments::Initialize(arguments, count);
+
+	// The Editor and the Game are windowed apps with no console of their own
+	std::string_view consoleValue;
+	if (CmdLine::Arguments::Get("-console", consoleValue))
+	{
+		Debug::OpenConsole();
+	}
 }

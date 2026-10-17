@@ -40,6 +40,14 @@ public abstract class BaseProject : Project
         conf.IncludePaths.Add(Globals.IncludeDir);
     }
 
+    // For an exe with a window: no console window opens with it, which on Windows 11 opens in Windows Terminal and
+    // takes focus from the app's window (-console opens one). The entry point stays main().
+    protected static void ConfigureAsWindowedApp(Project.Configuration conf)
+    {
+        conf.Options.Add(Options.Vc.Linker.SubSystem.Windows);
+        conf.AdditionalLinkerOptions.Add("/ENTRY:mainCRTStartup");
+    }
+
     #region Platfoms
 
     [ConfigurePriority(ConfigurePriorities.Platform)]

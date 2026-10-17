@@ -87,6 +87,7 @@ sequenceDiagram
 - **Launch Game** does the same, then starts `_build\debug\Game.exe` **into the scene that's open in the editor**, without waiting for it:
   - It goes through the [unsaved-changes prompt](Editor-Framework.md#the-unsaved-changes-prompt) first, since the Game reads the scene's file. A new scene that was never saved launches as `Default.scene` (`GameScene::GetDefaultScenePath()`). The item is disabled while a scene is loading.
   - The scene is passed as `-scene "<name>"`, its path inside `Assets\Scenes` (`AssetPaths::GetSceneName`, the inverse of `GetScene`, e.g. `Sponza.scene` or `Tests\Lights.scene`), quoted because `_spawnl` joins its arguments with spaces. It's worked out before the build starts, so a scene outside `Assets\Scenes`, which the Game can't load, is reported in the Build channel straight away and nothing is built.
+  - The Game is a windowed app, so no console window opens with it, and its window comes up in front of the editor.
   - The Build channel names the scene ("Building and launching game into scene ..."), and the Game logs the scene it loads ([Scene-And-GameObject-Model.md](../03-SceneAndGameObjects/Scene-And-GameObject-Model.md)).
 - **Nothing is copied.** The Game reads `Assets\`, `Config\` and `ProjectData\` from the source tree, like the Editor (`EDirectoryContext::Source`, see [Building-And-Running.md](../01-GettingStarted/Building-And-Running.md)), so it sees a saved scene straight away.
 

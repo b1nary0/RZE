@@ -45,9 +45,6 @@ public class Editor : BaseProject
         // Panels register themselves from static initializers (REGISTER_EDITOR_PANEL) that nothing references, so
         // the linker would drop them without this
         conf.AdditionalLinkerOptions.Add("/WHOLEARCHIVE:EditorLib.lib");
-        // A windowed app, so no console window opens with it and takes focus from the editor's window (-console opens
-        // one). The entry point stays main().
-        conf.Options.Add(Options.Vc.Linker.SubSystem.Windows);
-        conf.AdditionalLinkerOptions.Add("/ENTRY:mainCRTStartup");
+        ConfigureAsWindowedApp(conf);
     }
 }

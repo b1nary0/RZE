@@ -20,7 +20,7 @@ flowchart LR
 
 ### The console
 
-The Editor is a windowed app (`/SUBSYSTEM:WINDOWS`), so it starts without a console. A console app's console opens in Windows Terminal on Windows 11, and that window came up after the Editor's and took the foreground, so the Editor opened unfocused. Its log is in the Log panel and the log file. `-console` opens a console for it: `Debug::OpenConsole()` allocates one and reopens stdout and stderr on it, and its window appears before the Editor's, which still ends up focused. The Game, SourceAssetBurner and UnitTests are console apps.
+The Editor and the Game are windowed apps (`/SUBSYSTEM:WINDOWS`), so they start without a console. On Windows 11 a console app's console opens in Windows Terminal, and that window came up after the app's own and took the foreground, so they opened unfocused. Their log is in the log file, and the Editor's is in its Log panel too. `-console` opens a console: `RZE_Application::ParseArguments` calls `Debug::OpenConsole()`, which allocates one and reopens stdout and stderr on it. Its window appears before the app's, which still ends up focused. SourceAssetBurner and UnitTests are console apps.
 
 ### Which builds have what
 
