@@ -1,31 +1,18 @@
 #pragma once
 
 #include <Services/FolderListing.h>
-
-#include <EngineCore/Resources/ResourceHandler.h>
+#include <UI/Widgets/FileTileGrid.h>
 
 #include <Utils/Platform/Filepath.h>
 
 #include <ImGui/imgui.h>
 
 #include <functional>
-#include <memory>
 #include <string>
-#include <unordered_map>
 #include <vector>
-
-class ResourcePreloadOperation;
-class Texture2D;
 
 namespace Editor
 {
-	// An entry in a tile's right-click menu
-	struct FileBrowserTileAction
-	{
-		std::string Label;
-		std::function<void(const Filepath& file)> Run;
-	};
-
 	enum class EFileBrowserMode
 	{
 		// Picks an existing file
@@ -57,7 +44,7 @@ namespace Editor
 		// opens, e.g. to have it rendered (RefreshThumbnail shows it once it's written)
 		std::function<void(const Filepath& file)> OnThumbnailMissing;
 		// The right-click menu on a file's tile
-		std::vector<FileBrowserTileAction> TileActions;
+		std::vector<FileTileAction> TileActions;
 
 		// The choice comes back through one of these: OnChosen is called with it, or, for an immediate-mode widget
 		// that has nowhere to keep a callback's result, ConsumeResult hands it to the widget whose ID is RequesterID.
@@ -96,13 +83,10 @@ namespace Editor
 
 	private:
 		void DrawHeader();
-		void DrawBreadcrumb();
 		void DrawTiles();
-		// True if it was double-clicked
-		bool DrawTile(const FolderEntry& entry, int index, const ImVec2& size);
-		void DrawTileImage(const FolderEntry& entry, const ImVec2& min, const ImVec2& max);
 		void DrawFooter();
-		void HandleKeys(int columns);
+		// Escape, Enter and Backspace; the grid handles the arrow keys
+		void HandleKeys();
 
 		void Navigate(const Filepath& folder);
 		void Refresh();
@@ -118,11 +102,6 @@ namespace Editor
 		void SetFileName(const std::string& name);
 		bool IsSaving() const { return m_request.Mode == EFileBrowserMode::Save; }
 
-		// Null while it's loading, or if there's no image. Starts loading it the first time it's asked for.
-		const Texture2D* GetThumbnail(const Filepath& file);
-		// Stops the loads still running and drops the images
-		void ReleaseThumbnails();
-
 		const FolderEntry* GetSelected() const;
 
 	private:
@@ -135,7 +114,8 @@ namespace Editor
 
 		Filepath m_folder;
 		std::vector<FolderEntry> m_entries;
-		Filepath m_selected;
+		// The tiles, their images and the selection
+		FileTileGrid m_grid;
 		char m_search[128] = {};
 		// Escape leaves a text field rather than closing the browser
 		bool m_isTextActive = false;
@@ -148,23 +128,6 @@ namespace Editor
 		// The existing file the typed name would replace, while the footer asks about it
 		Filepath m_pendingReplace;
 		float m_tileSize = 138.0f;
-		bool m_scrollToTop = false;
-		bool m_scrollToSelected = false;
-
-		// An image a tile shows, loaded in the background the first time a tile shows it
-		struct Thumbnail
-		{
-			// Empty while it loads, and for one that doesn't exist or failed to load
-			ResourceHandle Texture;
-			// The load, until it's finished
-			std::shared_ptr<ResourcePreloadOperation> Load;
-		};
-		// The images shown so far, by relative path
-		std::unordered_map<std::string, Thumbnail> m_thumbnails;
-
-		// A tile action picked this frame, run once the tiles are drawn
-		std::function<void(const Filepath&)> m_pendingAction;
-		Filepath m_pendingActionFile;
 
 		// The last answer to a RequesterID request, waiting for ConsumeResult
 		ImGuiID m_resultRequester = 0;

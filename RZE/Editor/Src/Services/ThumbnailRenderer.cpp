@@ -45,12 +45,12 @@ namespace Editor
 		class ThumbnailRenderJob final : public ThumbnailBatchOperation
 		{
 		public:
-			ThumbnailRenderJob(ThumbnailQueue& queue, HeadlessScene& scene, ViewCapture& capture, FileBrowserModal& fileBrowser)
+			ThumbnailRenderJob(ThumbnailQueue& queue, HeadlessScene& scene, ViewCapture& capture, EditorEvents& events)
 				: ThumbnailBatchOperation("Rendering thumbnails", EAsyncOperationFlags::Background)
 				, m_queue(queue)
 				, m_scene(scene)
 				, m_capture(capture)
-				, m_fileBrowser(fileBrowser)
+				, m_events(events)
 			{
 			}
 
@@ -178,7 +178,7 @@ namespace Editor
 
 				if (succeeded)
 				{
-					m_fileBrowser.RefreshThumbnail(Thumbnails::FindFor(item));
+					m_events.Publish(ThumbnailWrittenEvent{ Thumbnails::FindFor(item) });
 				}
 			}
 
@@ -204,7 +204,7 @@ namespace Editor
 			ThumbnailQueue& m_queue;
 			HeadlessScene& m_scene;
 			ViewCapture& m_capture;
-			FileBrowserModal& m_fileBrowser;
+			EditorEvents& m_events;
 
 			// What the item waits for
 			std::shared_ptr<AsyncOperation> m_load;
@@ -304,7 +304,7 @@ namespace Editor
 			return;
 		}
 
-		m_job = std::make_shared<ThumbnailRenderJob>(m_queue, m_scene, m_capture, m_context.GetFileBrowser());
+		m_job = std::make_shared<ThumbnailRenderJob>(m_queue, m_scene, m_capture, m_context.GetEvents());
 		m_job->SetOnCompleted(AsyncOperation::CompletionCallback([this](const AsyncOperation&)
 			{
 				m_job = nullptr;

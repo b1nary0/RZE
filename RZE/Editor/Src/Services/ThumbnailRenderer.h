@@ -23,7 +23,7 @@ namespace Editor
 	// can cancel it). Thumbnails that are up to date are skipped unless forced.
 	//  - A scene is loaded on its own and captured through its main camera, or framed from its bounds if it has none.
 	//  - A mesh is staged with Default.scene's camera and light, and framed from a three-quarter angle.
-	// Each thumbnail written refreshes its tile in an open file browser. A scene's is asked for when it's saved, forced,
+	// Each thumbnail written publishes a ThumbnailWrittenEvent, so browsers showing it reload it. A scene's is asked for when it's saved, forced,
 	// and when it's loaded. Owned by EditorContext.
 	class ThumbnailRenderer
 	{

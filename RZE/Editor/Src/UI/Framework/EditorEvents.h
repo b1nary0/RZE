@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Utils/Platform/Filepath.h>
 #include <Utils/PrimitiveDefs.h>
 
 #include <functional>
@@ -23,6 +24,8 @@ namespace Editor
 	struct SceneModifiedStateChangedEvent { const SceneDocument& Document; };
 	// Once per EditorSelection call that changed it
 	struct SelectionChangedEvent { const EditorSelection& Selection; };
+	// A thumbnail image was written again (ThumbnailRenderer), so anything showing it should reload it
+	struct ThumbnailWrittenEvent { const Filepath& Image; };
 
 	namespace Internal
 	{

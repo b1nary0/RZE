@@ -13,6 +13,10 @@ namespace Editor
 		, m_sceneDocument(*this)
 		, m_thumbnails(*this)
 	{
+		m_thumbnailWritten = m_events.Subscribe<ThumbnailWrittenEvent>([this](const ThumbnailWrittenEvent& event)
+			{
+				m_fileBrowser.RefreshThumbnail(event.Image);
+			});
 	}
 
 	void EditorContext::Update()

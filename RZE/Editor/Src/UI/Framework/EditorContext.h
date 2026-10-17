@@ -115,5 +115,7 @@ namespace Editor
 		UndoHistory m_undoHistory;
 		UnsavedChangesPrompt m_unsavedChangesPrompt;
 		FileBrowserModal m_fileBrowser;
+		// Reloads a thumbnail in the file browser once it's written again. Last, so it's dropped before the browser.
+		EventSubscription m_thumbnailWritten;
 	};
 }
