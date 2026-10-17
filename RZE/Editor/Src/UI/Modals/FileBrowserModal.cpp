@@ -4,6 +4,8 @@
 
 #include <RZE.h>
 
+#include <EngineCore/Resources/ResourcePreloadOperation.h>
+
 #include <Graphics/Texture2D.h>
 
 #include <Utils/StringUtils.h>
@@ -33,9 +35,6 @@ namespace
 	constexpr float k_imageRounding = 4.0f;
 	// Placeholder images narrower than this leave out the "No preview" note
 	constexpr float k_minWidthForNote = 90.0f;
-
-	// Images load synchronously, so a big folder fills in over a few frames rather than stalling one
-	constexpr int k_maxLoadsPerFrame = 2;
 
 	const ImVec4 k_folderColour(0.86f, 0.70f, 0.36f, 1.0f);
 	const ImVec4 k_warningColour(1.0f, 0.78f, 0.35f, 1.0f);
@@ -82,6 +81,7 @@ namespace Editor
 
 		// Opened from Display, since a request can come from inside a menu or a panel, whose ID stack the popup mustn't use
 		m_shouldOpen = true;
+		m_centreOnOpen = true;
 
 		if (replacedCancelled)
 		{
@@ -104,14 +104,22 @@ namespace Editor
 
 	void FileBrowserModal::RefreshThumbnail(const Filepath& image)
 	{
+		const auto it = m_thumbnails.find(image.GetRelativePath());
+		if (it == m_thumbnails.end())
+		{
+			return;
+		}
+
 		// Released, so it's loaded again from the file next time a tile shows it
-		m_thumbnails.erase(image.GetRelativePath());
+		if (it->second.Load != nullptr)
+		{
+			it->second.Load->RequestCancel();
+		}
+		m_thumbnails.erase(it);
 	}
 
 	void FileBrowserModal::Display()
 	{
-		m_loadsThisFrame = 0;
-
 		// Another dialog opened at the root, such as a tile action's unsaved-changes prompt or progress dialog, takes the
 		// browser's place on screen (ImGui keeps one popup per level). The browser waits under it and comes back after.
 		if (m_isOpen && ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId) && !ImGui::IsPopupOpen(k_popupID))
@@ -135,7 +143,11 @@ namespace Editor
 		const ImGuiViewport* const viewport = ImGui::GetMainViewport();
 		const ImVec2 size(std::min(viewport->Size.x, std::max(560.0f, viewport->Size.x * 0.43f)),
 			std::min(viewport->Size.y, std::max(380.0f, viewport->Size.y * 0.47f)));
-		ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+		if (m_centreOnOpen)
+		{
+			ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+			m_centreOnOpen = false;
+		}
 		ImGui::SetNextWindowSize(size, ImGuiCond_Always);
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(k_windowPadding, k_windowPadding));
@@ -145,8 +157,9 @@ namespace Editor
 		ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1.0f, 1.0f, 1.0f, 0.10f));
 		ImGui::PushStyleColor(ImGuiCol_ModalWindowDimBg, ImVec4(0.0f, 0.0f, 0.0f, 0.55f));
 
-		const ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
-			| ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
+		// Dragging any empty part of the header or footer moves it
+		const ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings
+			| ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
 		const bool isVisible = ImGui::BeginPopupModal(k_popupID, nullptr, flags);
 
 		ImGui::PopStyleColor(3);
@@ -273,7 +286,8 @@ namespace Editor
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(k_gridPadding, k_gridPadding));
 		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, k_tileRounding);
 		ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.075f, 0.075f, 0.08f, 1.0f));
-		const bool isChildVisible = ImGui::BeginChild("##tiles", ImVec2(0.0f, -footerHeight), ImGuiChildFlags_AlwaysUseWindowPadding);
+		// Not a handle for moving the browser, so a drag that misses a tile does nothing
+		const bool isChildVisible = ImGui::BeginChild("##tiles", ImVec2(0.0f, -footerHeight), ImGuiChildFlags_AlwaysUseWindowPadding, ImGuiWindowFlags_NoMove);
 		ImGui::PopStyleColor();
 		ImGui::PopStyleVar(2);
 
@@ -779,26 +793,54 @@ namespace Editor
 		auto it = m_thumbnails.find(key);
 		if (it == m_thumbnails.end())
 		{
-			if (m_loadsThisFrame >= k_maxLoadsPerFrame)
+			it = m_thumbnails.emplace(key, Thumbnail()).first;
+			Thumbnail& thumbnail = it->second;
+			if (!image.Exists())
 			{
-				return nullptr;
+				if (m_request.OnThumbnailMissing)
+				{
+					m_request.OnThumbnailMissing(file);
+				}
 			}
-
-			++m_loadsThisFrame;
-			const bool exists = image.Exists();
-			ResourceHandle texture = exists ? RZE().GetResourceHandler().LoadResource<Texture2D>(image) : ResourceHandle::EmptyHandle();
-			it = m_thumbnails.emplace(key, std::move(texture)).first;
-			if (!exists && m_request.OnThumbnailMissing)
+			else
 			{
-				m_request.OnThumbnailMissing(file);
+				// Taken straight away if something else has it loaded. Otherwise it loads in the background, each image
+				// on its own so it's let go of as soon as it's in, and the tile shows the placeholder until then.
+				thumbnail.Texture = RZE().GetResourceHandler().GetHandle(image);
+				if (!thumbnail.Texture.IsValid())
+				{
+					ResourceDependencyList images;
+					images.Add<Texture2D>(key);
+					thumbnail.Load = std::make_shared<ResourcePreloadOperation>(std::move(images), EAsyncOperationFlags::Background | EAsyncOperationFlags::Hidden);
+					RZE().GetAsyncOperationManager().Start(thumbnail.Load);
+				}
 			}
 		}
 
-		return it->second.IsValid() ? RZE().GetResourceHandler().GetResource<Texture2D>(it->second) : nullptr;
+		Thumbnail& thumbnail = it->second;
+		if (thumbnail.Load != nullptr)
+		{
+			thumbnail.Texture = thumbnail.Load->GetHandle(image);
+			// A load that fails is logged, and the tile keeps the placeholder
+			if (thumbnail.Texture.IsValid() || thumbnail.Load->IsFinished())
+			{
+				thumbnail.Load = nullptr;
+			}
+		}
+
+		return thumbnail.Texture.IsValid() ? RZE().GetResourceHandler().GetResource<Texture2D>(thumbnail.Texture) : nullptr;
 	}
 
 	void FileBrowserModal::ReleaseThumbnails()
 	{
+		for (auto& [key, thumbnail] : m_thumbnails)
+		{
+			if (thumbnail.Load != nullptr)
+			{
+				thumbnail.Load->RequestCancel();
+			}
+		}
+
 		// The ResourceHandler keeps a released texture until the render thread has drawn the frames that show it
 		m_thumbnails.clear();
 	}

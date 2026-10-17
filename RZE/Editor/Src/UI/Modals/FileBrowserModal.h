@@ -9,10 +9,12 @@
 #include <ImGui/imgui.h>
 
 #include <functional>
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
+class ResourcePreloadOperation;
 class Texture2D;
 
 namespace Editor
@@ -65,8 +67,9 @@ namespace Editor
 		std::function<void()> OnCancelled;
 	};
 
-	// A modal file browser: a grid of large tiles showing each file's thumbnail, with search and subfolders. Owned by
-	// EditorContext; EditorApp displays it each frame.
+	// A modal file browser: a grid of large tiles showing each file's thumbnail, with search and subfolders. It opens in
+	// the middle of the editor and can be dragged by its header or footer. Owned by EditorContext; EditorApp displays
+	// it each frame.
 	class FileBrowserModal
 	{
 	public:
@@ -115,8 +118,9 @@ namespace Editor
 		void SetFileName(const std::string& name);
 		bool IsSaving() const { return m_request.Mode == EFileBrowserMode::Save; }
 
-		// Null while it's still to be loaded, or if there's no image
+		// Null while it's loading, or if there's no image. Starts loading it the first time it's asked for.
 		const Texture2D* GetThumbnail(const Filepath& file);
+		// Stops the loads still running and drops the images
 		void ReleaseThumbnails();
 
 		const FolderEntry* GetSelected() const;
@@ -125,6 +129,9 @@ namespace Editor
 		FileBrowserRequest m_request;
 		bool m_shouldOpen = false;
 		bool m_isOpen = false;
+		// Open centres it, the next time it's shown. After that it stays where it's dragged to, including while another
+		// dialog takes its place.
+		bool m_centreOnOpen = false;
 
 		Filepath m_folder;
 		std::vector<FolderEntry> m_entries;
@@ -144,9 +151,16 @@ namespace Editor
 		bool m_scrollToTop = false;
 		bool m_scrollToSelected = false;
 
-		// The images loaded so far, by relative path; an empty handle for one that doesn't exist
-		std::unordered_map<std::string, ResourceHandle> m_thumbnails;
-		int m_loadsThisFrame = 0;
+		// An image a tile shows, loaded in the background the first time a tile shows it
+		struct Thumbnail
+		{
+			// Empty while it loads, and for one that doesn't exist or failed to load
+			ResourceHandle Texture;
+			// The load, until it's finished
+			std::shared_ptr<ResourcePreloadOperation> Load;
+		};
+		// The images shown so far, by relative path
+		std::unordered_map<std::string, Thumbnail> m_thumbnails;
 
 		// A tile action picked this frame, run once the tiles are drawn
 		std::function<void(const Filepath&)> m_pendingAction;

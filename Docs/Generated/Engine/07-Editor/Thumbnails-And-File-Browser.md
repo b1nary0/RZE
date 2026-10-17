@@ -50,6 +50,8 @@ The Win32 Open/Save dialogs it replaced have been removed.
 +------------------------------------------------------------------------+
 ```
 
+It opens in the middle of the editor, sized to it, and can be moved by dragging an empty part of the header or footer; the tile area doesn't move it. It stays where it's put until it's opened again.
+
 - **Header:** the title, a tile-size slider (95–234 px) and a search box that keeps the files whose name contains the text, ignoring case.
 - **Breadcrumb:** each folder from the request's `RootFolder` down is a button that goes back up to it. Browsing never leaves the root.
 - **Tiles:** subfolders first, then files, each sorted by name. A file's tile shows its image fitted into a square with rounded corners, its name and how long ago it changed. A file with no image shows a gradient with its extension. Right-clicking a file shows the request's tile actions, e.g. **Refresh Thumbnail**.
@@ -92,7 +94,7 @@ context.GetFileBrowser().Open(std::move(request));
 
 Opening while a request is showing replaces it, and the old one is cancelled.
 
-- **Images** load as `Texture2D` through the `ResourceHandler` as tiles are drawn. Loads are synchronous, so only two happen a frame and a big folder fills in over a few frames. They're released when the browser closes. `RefreshThumbnail(image)` reloads the tiles that show an image once it has been written again, so a thumbnail that finishes rendering appears while the browser is open.
+- **Images** load as `Texture2D` the first time a tile shows them; the list clips to the visible rows, so those load first. One that's already loaded (e.g. a texture the open scene uses) is taken straight from the `ResourceHandler`. Otherwise it gets a hidden, background `ResourcePreloadOperation` of its own: the file is decoded on a worker and uploaded in time slices, from the background budget and the frame's idle time, and the tile shows its placeholder until the image is in. They're released when the browser closes, and loads still running are cancelled. `RefreshThumbnail(image)` reloads the tiles that show an image once it has been written again, so a thumbnail that finishes rendering appears while the browser is open.
 - **The listing** is a set of pure functions in `Services\FolderListing.h/.cpp`, covered by the unit tests: `ListFolder(folder, extensions, search)`, `FindFiles(folder, extension)` (recursive), `ParseExtensionFilter`, `ResolveSaveName` and `FormatTimeAgo` ("Just now", "5 minutes ago", a date once it's months old).
 
 ## Thumbnails
