@@ -85,6 +85,38 @@ namespace Editor
 		return entries;
 	}
 
+	std::vector<Filepath> ListSubfolders(const Filepath& folder)
+	{
+		std::vector<std::string> names;
+
+		std::error_code error;
+		std::filesystem::directory_iterator iterator(folder.GetAbsolutePath(), error);
+		if (error)
+		{
+			return {};
+		}
+
+		for (const std::filesystem::directory_entry& item : iterator)
+		{
+			if (item.is_directory(error))
+			{
+				names.push_back(item.path().filename().string());
+			}
+		}
+
+		std::sort(names.begin(), names.end(), [](const std::string& a, const std::string& b)
+			{
+				return StringUtils::ToLower(a) < StringUtils::ToLower(b);
+			});
+
+		std::vector<Filepath> subfolders;
+		for (const std::string& name : names)
+		{
+			subfolders.emplace_back(folder.GetRelativePath() + "/" + name);
+		}
+		return subfolders;
+	}
+
 	std::vector<Filepath> FindFiles(const Filepath& folder, const std::string& extension)
 	{
 		std::vector<std::string> relativePaths;

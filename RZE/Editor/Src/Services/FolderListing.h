@@ -23,6 +23,9 @@ namespace Editor
 	// it. Empty if the folder doesn't exist.
 	std::vector<FolderEntry> ListFolder(const Filepath& folder, const std::vector<std::string>& extensions, const std::string& searchText = "");
 
+	// The folders directly inside folder, sorted by name ignoring case. Empty if the folder doesn't exist.
+	std::vector<Filepath> ListSubfolders(const Filepath& folder);
+
 	// Every file under folder, in its subfolders too, with extension (e.g. ".scene", ignoring case), sorted by path.
 	// Empty if the folder doesn't exist.
 	std::vector<Filepath> FindFiles(const Filepath& folder, const std::string& extension);

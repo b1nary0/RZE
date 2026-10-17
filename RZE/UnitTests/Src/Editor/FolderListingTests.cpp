@@ -67,6 +67,29 @@ TEST_CASE("ListFolder of a folder that doesn't exist is empty")
 	CHECK(ListFolder(Filepath("UnitTestsTemp_NoSuchFolder"), {}).empty());
 }
 
+TEST_CASE("ListSubfolders lists only the folders directly inside, sorted by name ignoring case")
+{
+	const ScopedTestFolder folder("UnitTestsTemp_FolderListing");
+	folder.AddFolder("Zeta");
+	folder.AddFolder("alpha");
+	folder.AddFolder("alpha/Nested");
+	folder.AddFile("Beta.txt");
+
+	std::vector<std::string> paths;
+	for (const Filepath& subfolder : ListSubfolders(folder.Get()))
+	{
+		paths.push_back(subfolder.GetRelativePath());
+	}
+
+	const std::string root = folder.Get().GetRelativePath();
+	CHECK(paths == std::vector<std::string>{ root + R"(\alpha)", root + R"(\Zeta)" });
+}
+
+TEST_CASE("ListSubfolders of a folder that doesn't exist is empty")
+{
+	CHECK(ListSubfolders(Filepath("UnitTestsTemp_NoSuchFolder")).empty());
+}
+
 TEST_CASE("FormatTimeAgo describes recent times in words and older ones by date")
 {
 	using namespace std::chrono;

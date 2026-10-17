@@ -7,7 +7,7 @@
 #include <Windowing/WinKeyCodes.h>
 
 #define MAX_KEYCODES_SUPPORTED 256
-#define MAX_MOUSE_BTN_SUPPORTED 3
+#define MAX_MOUSE_BTN_SUPPORTED 5
 
 namespace EButtonState
 {
@@ -26,6 +26,10 @@ namespace EMouseButton
 		MouseButton_Left,
 		MouseButton_Right,
 		MouseButton_Middle,
+		// The side buttons (mouse 4 and 5), which usually go back and forward
+		MouseButton_Back,
+		MouseButton_Forward,
+		// Not a button: a queued move or wheel event
 		MouseButton_Move
 	};
 }

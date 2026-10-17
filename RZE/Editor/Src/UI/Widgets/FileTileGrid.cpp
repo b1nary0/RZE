@@ -73,6 +73,7 @@ namespace Editor
 			const ImVec2 cursor = ImGui::GetCursorPos();
 			ImGui::SetCursorPos(ImVec2(cursor.x + (region.x - textSize.x) * 0.5f, cursor.y + (region.y - textSize.y) * 0.5f));
 			ImGui::TextDisabled("%s", emptyText);
+			DrawBackgroundMenu();
 			ImGui::EndChild();
 			return result;
 		}
@@ -126,6 +127,7 @@ namespace Editor
 		}
 
 		ImGui::PopStyleVar();
+		DrawBackgroundMenu();
 		ImGui::EndChild();
 
 		// After the tiles, since an action can change what the grid's owner shows
@@ -192,10 +194,15 @@ namespace Editor
 		}
 		const bool isSelected = entry.Path.GetRelativePath() == m_selected.GetRelativePath();
 
-		if (!entry.IsFolder && !m_options.TileActions.empty() && ImGui::BeginPopupContextItem("##actions"))
+		if (!entry.IsFolder && HasActionsFor(entry.Path) && ImGui::BeginPopupContextItem("##actions"))
 		{
 			for (const FileTileAction& action : m_options.TileActions)
 			{
+				if (action.AppliesTo && !action.AppliesTo(entry.Path))
+				{
+					continue;
+				}
+
 				if (ImGui::MenuItem(action.Label.c_str()))
 				{
 					// Run after the tiles, since an action can change what the grid's owner shows
@@ -384,6 +391,22 @@ namespace Editor
 		}
 
 		return thumbnail.Texture.IsValid() ? RZE().GetResourceHandler().GetResource<Texture2D>(thumbnail.Texture) : nullptr;
+	}
+
+	void FileTileGrid::DrawBackgroundMenu()
+	{
+		// Not over a tile, which has its own menu
+		if (m_options.DrawBackgroundMenu && ImGui::BeginPopupContextWindow("##background", ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
+		{
+			m_options.DrawBackgroundMenu();
+			ImGui::EndPopup();
+		}
+	}
+
+	bool FileTileGrid::HasActionsFor(const Filepath& file) const
+	{
+		return std::any_of(m_options.TileActions.begin(), m_options.TileActions.end(),
+			[&file](const FileTileAction& action) { return !action.AppliesTo || action.AppliesTo(file); });
 	}
 
 	int FileTileGrid::FindSelectedIndex(const std::vector<FolderEntry>& entries) const

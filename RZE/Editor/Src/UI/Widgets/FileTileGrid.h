@@ -24,6 +24,8 @@ namespace Editor
 	{
 		std::string Label;
 		std::function<void(const Filepath& file)> Run;
+		// Shown only for the files this returns true for; every file if it's empty
+		std::function<bool(const Filepath& file)> AppliesTo;
 	};
 
 	// What a FileTileGrid's tiles show, and what they offer
@@ -37,6 +39,8 @@ namespace Editor
 		std::function<void(const Filepath& file)> OnThumbnailMissing;
 		// The right-click menu on a file's tile
 		std::vector<FileTileAction> TileActions;
+		// The right-click menu on the grid's empty space: its items, drawn inside the popup. None if it's empty.
+		std::function<void()> DrawBackgroundMenu;
 	};
 
 	// What happened in a FileTileGrid this frame
@@ -83,6 +87,8 @@ namespace Editor
 		void DrawTile(const FolderEntry& entry, int index, const ImVec2& size, FileTileGridResult& result);
 		void DrawTileImage(const FolderEntry& entry, const ImVec2& min, const ImVec2& max);
 		void HandleArrowKeys(const std::vector<FolderEntry>& entries, int columns);
+		void DrawBackgroundMenu();
+		bool HasActionsFor(const Filepath& file) const;
 
 		// Null while it's loading, or if there's no image. Starts loading it the first time it's asked for.
 		const Texture2D* GetThumbnail(const Filepath& file);

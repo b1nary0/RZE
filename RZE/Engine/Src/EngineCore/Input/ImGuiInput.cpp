@@ -75,7 +75,8 @@ namespace ImGuiInput
 		const auto& mouseState = handler.GetProxyMouseState();
 		io.AddMousePosEvent(mouseState.CurPosition.X(), mouseState.CurPosition.Y());
 
-		for (int mouseBtn = 0; mouseBtn < 3; ++mouseBtn)
+		// EMouseButton's order is ImGui's: left, right, middle, then the side buttons (ImGui's 3 and 4)
+		for (int mouseBtn = 0; mouseBtn < MAX_MOUSE_BTN_SUPPORTED; ++mouseBtn)
 		{
 			io.AddMouseButtonEvent(mouseBtn, mouseState.CurMouseBtnStates[mouseBtn]);
 		}

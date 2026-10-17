@@ -49,6 +49,15 @@ namespace Editor
 		TPanel* Find() const;
 
 	private:
+		// The panels the default layout docks into slot, in their tab order there: open ones first, then by name
+		std::vector<const EditorPanel*> GetPanelsInSlot(EPanelDock slot) const;
+		// Before the first Begin of a docked panel that imgui.ini has no place for, e.g. one added since the layout was
+		// saved: docks it into the node of a saved panel from its PanelDesc::DefaultDock slot, at its place in the
+		// slot's tab order, as the tab that's shown. Does nothing for a panel that has a place, or whose slot has no
+		// saved panel.
+		void PlaceUnsavedPanel(const EditorPanel& panel);
+
+	private:
 		std::vector<std::unique_ptr<EditorPanel>> m_panels;
 		// Calls each panel's OnSceneReset
 		EventSubscription m_sceneUnloading;

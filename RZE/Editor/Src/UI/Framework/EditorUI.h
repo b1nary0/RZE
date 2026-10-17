@@ -37,7 +37,11 @@ namespace Editor
 			// A circular arrow: back to how it was
 			Reset,
 			// A cross: empty it
-			Clear
+			Clear,
+			// Chevrons pointing left, right and up: back, forward and up a level
+			Back,
+			Forward,
+			Up
 		};
 
 		// A square, frame-height button showing icon, with tooltip on hover; true on the frame it's clicked

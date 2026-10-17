@@ -185,7 +185,7 @@ namespace
 	// buttonsDown is the button-up message's wParam, which says which buttons are still down
 	void ReleaseMouseOnceUp(HWND windowHandle, WPARAM buttonsDown)
 	{
-		if ((buttonsDown & (MK_LBUTTON | MK_RBUTTON | MK_MBUTTON)) == 0 && GetCapture() == windowHandle)
+		if ((buttonsDown & (MK_LBUTTON | MK_RBUTTON | MK_MBUTTON | MK_XBUTTON1 | MK_XBUTTON2)) == 0 && GetCapture() == windowHandle)
 		{
 			ReleaseCapture();
 		}
@@ -306,6 +306,29 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 		}
 		break;
 
+		case WM_XBUTTONDOWN:
+		{
+			const Int32 xPos = GET_X_LPARAM(msg.lParam);
+			const Int32 yPos = GET_Y_LPARAM(msg.lParam);
+
+			const EMouseButton::T button = GET_XBUTTON_WPARAM(msg.wParam) == XBUTTON1 ? EMouseButton::MouseButton_Back : EMouseButton::MouseButton_Forward;
+			inputHandler.OnMouseDown(button, xPos, yPos);
+			CaptureMouse(m_osWindowHandleData.windowHandle);
+		}
+		break;
+
+		case WM_XBUTTONUP:
+		{
+			const Int32 xPos = GET_X_LPARAM(msg.lParam);
+			const Int32 yPos = GET_Y_LPARAM(msg.lParam);
+
+			const EMouseButton::T button = GET_XBUTTON_WPARAM(msg.wParam) == XBUTTON1 ? EMouseButton::MouseButton_Back : EMouseButton::MouseButton_Forward;
+			inputHandler.OnMouseUp(button, xPos, yPos);
+			// The low word holds the buttons still down, as for the other buttons
+			ReleaseMouseOnceUp(m_osWindowHandleData.windowHandle, GET_KEYSTATE_WPARAM(msg.wParam));
+		}
+		break;
+
 		case WM_MOUSEWHEEL:
 		{
 			Int32 delta = GET_WHEEL_DELTA_WPARAM(msg.wParam);
@@ -365,7 +388,9 @@ bool Win32Window::IsMouseButtonDown() const
 	// The high bit is set while the button is down
 	return (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0
 		|| (GetAsyncKeyState(VK_RBUTTON) & 0x8000) != 0
-		|| (GetAsyncKeyState(VK_MBUTTON) & 0x8000) != 0;
+		|| (GetAsyncKeyState(VK_MBUTTON) & 0x8000) != 0
+		|| (GetAsyncKeyState(VK_XBUTTON1) & 0x8000) != 0
+		|| (GetAsyncKeyState(VK_XBUTTON2) & 0x8000) != 0;
 }
 
 const Win32Window::OSWindowHandleData& Win32Window::GetOSWindowHandleData() const

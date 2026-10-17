@@ -17,6 +17,27 @@ namespace
 	constexpr float k_leftDockFraction = 0.09f;
 	constexpr float k_rightDockFraction = 0.12f;
 
+	// The ID ImGui gives a docked window's tab (ImGuiWindow::TabId, "#TAB" in the window's ID scope), so a dock node's
+	// shown tab can be picked before the window exists
+	ImGuiID GetTabId(const std::string& windowName)
+	{
+		return ImHashStr("#TAB", 0, ImHashStr(windowName.c_str()));
+	}
+
+	// A window's place among the tabs of its dock node, in its settings and, if it exists, the window. ImGui sorts tabs
+	// that appear in the same frame by it, and imgui.ini keeps it ("DockId=0x...,<order>").
+	void SetDockOrder(ImGuiID windowId, int order)
+	{
+		if (ImGuiWindowSettings* const settings = ImGui::FindWindowSettingsByID(windowId))
+		{
+			settings->DockOrder = static_cast<short>(order);
+		}
+		if (ImGuiWindow* const window = ImGui::FindWindowByID(windowId))
+		{
+			window->DockOrder = static_cast<short>(order);
+		}
+	}
+
 	std::vector<std::string> SplitMenuPath(const std::string& path)
 	{
 		std::vector<std::string> segments;
@@ -118,6 +139,10 @@ namespace Editor
 				ImGui::SetNextWindowSize(desc.DefaultSize, ImGuiCond_FirstUseEver);
 				ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_FirstUseEver, ImVec2(0.5f, 0.5f));
 			}
+			else
+			{
+				PlaceUnsavedPanel(*panel);
+			}
 
 			bool* const isOpen = desc.Closable ? &panel->m_isOpen : nullptr;
 			const bool isVisible = ImGui::Begin(desc.Name.c_str(), isOpen, desc.WindowFlags);
@@ -214,21 +239,122 @@ namespace Editor
 		}
 		slotIds[static_cast<size_t>(EPanelDock::Center)] = centerId;
 
-		// Panels that start open first, so they take the leading tabs in a shared slot
-		for (const bool isDefaultOpen : { true, false })
+		// Each slot's panels as tabs in its order, with the first shown
+		for (size_t slot = 0; slot < static_cast<size_t>(EPanelDock::Count); ++slot)
 		{
-			for (const std::unique_ptr<EditorPanel>& panel : m_panels)
+			const std::vector<const EditorPanel*> panels = GetPanelsInSlot(static_cast<EPanelDock>(slot));
+			if (panels.empty() || slotIds[slot] == 0)
 			{
-				const PanelDesc& desc = panel->m_desc;
-				if (desc.DefaultDock != EPanelDock::Floating && !desc.OwnsWindow && desc.DefaultOpen == isDefaultOpen)
-				{
-					ImGui::DockBuilderDockWindow(desc.Name.c_str(), slotIds[static_cast<size_t>(desc.DefaultDock)]);
-				}
+				continue;
 			}
+
+			for (size_t order = 0; order < panels.size(); ++order)
+			{
+				const std::string& name = panels[order]->m_desc.Name;
+				ImGui::DockBuilderDockWindow(name.c_str(), slotIds[slot]);
+				SetDockOrder(ImHashStr(name.c_str()), static_cast<int>(order));
+			}
+			ImGui::DockBuilderGetNode(slotIds[slot])->SelectedTabId = GetTabId(panels.front()->m_desc.Name);
 		}
 
 		ImGui::DockBuilderFinish(dockspaceId);
 	}
 
+	std::vector<const EditorPanel*> PanelManager::GetPanelsInSlot(EPanelDock slot) const
+	{
+		std::vector<const EditorPanel*> panels;
+		if (slot == EPanelDock::Floating)
+		{
+			return panels;
+		}
 
+		// m_panels is sorted by name; panels that start open come first, so they take the leading tabs
+		for (const bool isDefaultOpen : { true, false })
+		{
+			for (const std::unique_ptr<EditorPanel>& panel : m_panels)
+			{
+				const PanelDesc& desc = panel->m_desc;
+				if (desc.DefaultDock == slot && !desc.OwnsWindow && desc.DefaultOpen == isDefaultOpen)
+				{
+					panels.push_back(panel.get());
+				}
+			}
+		}
+
+		return panels;
+	}
+
+	void PanelManager::PlaceUnsavedPanel(const EditorPanel& panel)
+	{
+		const PanelDesc& desc = panel.m_desc;
+		const ImGuiID windowId = ImHashStr(desc.Name.c_str());
+		// Once its window exists, or once imgui.ini has it (BuildDefaultDockLayout places every docked panel), ImGui
+		// already knows where it goes
+		if (desc.DefaultDock == EPanelDock::Floating || desc.OwnsWindow || ImGui::FindWindowByID(windowId) != nullptr
+			|| ImGui::FindWindowSettingsByID(windowId) != nullptr)
+		{
+			return;
+		}
+
+		// The node of the first saved panel from its slot, and the first saved panel in that node that comes after it
+		const std::vector<const EditorPanel*> slotPanels = GetPanelsInSlot(desc.DefaultDock);
+		const auto self = std::find(slotPanels.begin(), slotPanels.end(), &panel);
+		ImGuiID dockId = 0;
+		const ImGuiWindowSettings* next = nullptr;
+		for (auto it = slotPanels.begin(); it != slotPanels.end(); ++it)
+		{
+			const ImGuiWindowSettings* const settings = ImGui::FindWindowSettingsByID(ImHashStr((*it)->m_desc.Name.c_str()));
+			if (settings == nullptr || settings->DockId == 0 || (dockId != 0 && settings->DockId != dockId))
+			{
+				continue;
+			}
+
+			dockId = settings->DockId;
+			if (it > self && settings->DockOrder >= 0)
+			{
+				next = settings;
+				break;
+			}
+		}
+		if (dockId == 0)
+		{
+			return;
+		}
+
+		// Takes the place of the panel after it, moving that and every later tab in the node along one, or goes last.
+		// Tabs the user has moved stay in their order.
+		ImGuiContext& imgui = *ImGui::GetCurrentContext();
+		int order = 0;
+		if (next != nullptr)
+		{
+			order = next->DockOrder;
+			for (ImGuiWindowSettings* settings = imgui.SettingsWindows.begin(); settings != nullptr; settings = imgui.SettingsWindows.next_chunk(settings))
+			{
+				if (settings->DockId == dockId && settings->DockOrder >= order)
+				{
+					SetDockOrder(settings->ID, settings->DockOrder + 1);
+				}
+			}
+		}
+		else
+		{
+			for (ImGuiWindowSettings* settings = imgui.SettingsWindows.begin(); settings != nullptr; settings = imgui.SettingsWindows.next_chunk(settings))
+			{
+				if (settings->DockId == dockId)
+				{
+					order = std::max(order, settings->DockOrder + 1);
+				}
+			}
+		}
+
+		ImGuiWindowSettings* const settings = ImGui::CreateNewWindowSettings(desc.Name.c_str());
+		settings->DockId = dockId;
+		settings->DockOrder = static_cast<short>(order);
+
+		// Shown, so a panel that's just been added is seen
+		if (ImGuiDockNode* const node = ImGui::DockBuilderGetNode(dockId))
+		{
+			node->SelectedTabId = GetTabId(desc.Name);
+		}
+	}
 }

@@ -98,6 +98,30 @@ namespace Editor
 				drawList->AddLine(ImVec2(centre.x - arm, centre.y + arm), ImVec2(centre.x + arm, centre.y - arm), colour, thickness);
 				break;
 			}
+			case EIcon::Back:
+			case EIcon::Forward:
+			case EIcon::Up:
+			{
+				// Two strokes meeting at the tip, which points the icon's way
+				const float arm = radius * 0.8f;
+				const float half = arm * 0.5f;
+				ImVec2 points[3];
+				if (icon == EIcon::Up)
+				{
+					points[0] = ImVec2(centre.x - arm, centre.y + half);
+					points[1] = ImVec2(centre.x, centre.y - half);
+					points[2] = ImVec2(centre.x + arm, centre.y + half);
+				}
+				else
+				{
+					const float direction = icon == EIcon::Back ? -1.0f : 1.0f;
+					points[0] = ImVec2(centre.x - half * direction, centre.y - arm);
+					points[1] = ImVec2(centre.x + half * direction, centre.y);
+					points[2] = ImVec2(centre.x - half * direction, centre.y + arm);
+				}
+				drawList->AddPolyline(points, 3, colour, ImDrawFlags_None, thickness);
+				break;
+			}
 			}
 
 			return isClicked;
