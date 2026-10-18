@@ -1,5 +1,6 @@
 #include <UI/Panels/ContentBrowserPanel.h>
 
+#include <Services/AssetFiles.h>
 #include <Services/SceneDocument.h>
 #include <Services/ThumbnailRenderer.h>
 #include <Services/Thumbnails.h>
@@ -10,7 +11,10 @@
 
 #include <Asset/AssetPaths.h>
 
+#include <DebugUtils/DebugServices.h>
+
 #include <Utils/Platform/Shell.h>
+#include <Utils/StringUtils.h>
 
 #include <ImGui/imgui.h>
 
@@ -32,15 +36,44 @@ namespace
 	constexpr int k_mouseBack = 3;
 	constexpr int k_mouseForward = 4;
 
+	constexpr char k_deletePopupID[] = "Delete?";
+	constexpr float k_promptButtonWidth = 110.0f;
+
 	bool IsSameFolder(const Filepath& a, const Filepath& b)
 	{
 		return a.GetRelativePath() == b.GetRelativePath();
+	}
+
+	// Why path can't be renamed or deleted, or empty if it can: the open scene is it, or is inside it
+	std::string GetWhyInUse(const Editor::SceneDocument& document, const Filepath& path)
+	{
+		if (!document.HasFilePath())
+		{
+			return std::string();
+		}
+
+		const Filepath& scene = document.GetFilePath();
+		if (StringUtils::EqualsIgnoringCase(scene.GetRelativePath(), path.GetRelativePath()))
+		{
+			return "It's the open scene";
+		}
+		return scene.IsInside(path) ? "The open scene is in it" : std::string();
 	}
 }
 
 namespace Editor
 {
 	REGISTER_EDITOR_PANEL(ContentBrowserPanel);
+
+	struct ContentBrowserPanel::DeletePrompt
+	{
+		Filepath Path;
+		// Opened from Draw, since a request can come from inside a menu, whose ID stack the popup mustn't use
+		bool ShouldOpen = true;
+	};
+
+	ContentBrowserPanel::ContentBrowserPanel() = default;
+	ContentBrowserPanel::~ContentBrowserPanel() = default;
 
 	PanelDesc ContentBrowserPanel::Describe()
 	{
@@ -62,14 +95,25 @@ namespace Editor
 		options.ThumbnailFor = &Thumbnails::FindFor;
 		// Scenes and meshes have theirs rendered; Request ignores anything else
 		options.OnThumbnailMissing = [&context](const Filepath& file) { context.GetThumbnails().Request(file); };
+		const auto whyInUse = [&context](const Filepath& file) { return GetWhyInUse(context.GetSceneDocument(), file); };
 		options.TileActions = {
 			{ "Load Scene", [this, &context](const Filepath& file) { LoadScene(context, file); }, &AssetPaths::IsScene },
 			{ "Show in Explorer", [](const Filepath& file) { Shell::ShowInFileBrowser(file); } },
 			{ "Copy Path", [](const Filepath& file) { ImGui::SetClipboardText(file.GetRelativePath().c_str()); } },
 			{ "Refresh Thumbnail", [&context](const Filepath& file) { context.GetThumbnails().Request(file, true); }, &Thumbnails::IsRendered },
+			{ "Rename", [this](const Filepath& file) { m_grid.BeginRename(file); }, nullptr, "F2",
+				"Anything that refers to it by path, like a scene using a mesh, isn't updated", whyInUse },
+			{ "Delete", [this](const Filepath& file) { RequestDelete(file); }, nullptr, "Delete", "Moves it to the Recycle Bin", whyInUse },
 		};
+		options.ValidateName = [](const FolderEntry& entry, const std::string& name) { return ResolveRename(entry.Path, entry.IsFolder, name).Error; };
+		options.Rename = [this](const FolderEntry& entry, const std::string& name) { Rename(entry, name); };
 		options.DrawBackgroundMenu = [this]()
 			{
+				if (ImGui::MenuItem("New Folder"))
+				{
+					m_createFolderRequested = true;
+				}
+				ImGui::Separator();
 				if (ImGui::MenuItem("Show in Explorer"))
 				{
 					Shell::ShowInFileBrowser(m_folder);
@@ -95,6 +139,12 @@ namespace Editor
 	{
 		HandleNavigationInput(context);
 
+		if (m_createFolderRequested)
+		{
+			m_createFolderRequested = false;
+			CreateFolder();
+		}
+
 		if (m_refreshRequested || std::chrono::steady_clock::now() - m_lastRefresh >= k_refreshInterval)
 		{
 			Refresh();
@@ -116,6 +166,8 @@ namespace Editor
 
 			ImGui::EndTable();
 		}
+
+		DrawDeletePrompt();
 	}
 
 	void ContentBrowserPanel::DrawToolbar()
@@ -279,6 +331,76 @@ namespace Editor
 		{
 			Open(context, m_grid.GetSelected());
 		}
+		else if (ImGui::IsKeyPressed(ImGuiKey_F2, false) || ImGui::IsKeyPressed(ImGuiKey_Delete, false))
+		{
+			// What the tile's menu offers, so the same files are in use
+			const Filepath& selected = m_grid.GetSelected();
+			if (FindEntry(selected) == nullptr || !GetWhyInUse(context.GetSceneDocument(), selected).empty())
+			{
+				return;
+			}
+
+			if (ImGui::IsKeyPressed(ImGuiKey_F2, false))
+			{
+				m_grid.BeginRename(selected);
+			}
+			else
+			{
+				RequestDelete(selected);
+			}
+		}
+	}
+
+	void ContentBrowserPanel::DrawDeletePrompt()
+	{
+		if (m_deletePrompt == nullptr)
+		{
+			return;
+		}
+
+		if (m_deletePrompt->ShouldOpen)
+		{
+			ImGui::OpenPopup(k_deletePopupID);
+			m_deletePrompt->ShouldOpen = false;
+		}
+
+		const ImGuiViewport* const viewport = ImGui::GetMainViewport();
+		ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+
+		const ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings;
+		if (!ImGui::BeginPopupModal(k_deletePopupID, nullptr, flags))
+		{
+			// Closed some other way
+			m_deletePrompt.reset();
+			return;
+		}
+
+		const Filepath path = m_deletePrompt->Path;
+		const FolderEntry* const entry = FindEntry(path);
+		ImGui::Text("Move \"%s\" to the Recycle Bin?", path.GetFileName().c_str());
+		if (entry != nullptr && entry->IsFolder)
+		{
+			ImGui::TextUnformatted("Everything in it goes too.");
+		}
+		ImGui::TextDisabled("Anything that refers to it by path, like a scene using a mesh, isn't updated.");
+		ImGui::Spacing();
+
+		const bool isConfirmed = EditorUI::PrimaryButton("Delete", ImVec2(k_promptButtonWidth, 0.0f))
+			|| ImGui::IsKeyPressed(ImGuiKey_Enter, false) || ImGui::IsKeyPressed(ImGuiKey_KeypadEnter, false);
+		ImGui::SameLine();
+		const bool isCancelled = ImGui::Button("Cancel", ImVec2(k_promptButtonWidth, 0.0f)) || ImGui::IsKeyPressed(ImGuiKey_Escape, false);
+
+		if (isConfirmed || isCancelled)
+		{
+			ImGui::CloseCurrentPopup();
+			m_deletePrompt.reset();
+		}
+		if (isConfirmed)
+		{
+			Delete(path);
+		}
+
+		ImGui::EndPopup();
 	}
 
 	void ContentBrowserPanel::Navigate(const Filepath& folder)
@@ -355,9 +477,8 @@ namespace Editor
 
 	void ContentBrowserPanel::Open(EditorContext& context, const Filepath& file)
 	{
-		const auto entry = std::find_if(m_entries.begin(), m_entries.end(),
-			[&file](const FolderEntry& candidate) { return candidate.Path.GetRelativePath() == file.GetRelativePath(); });
-		if (entry != m_entries.end() && entry->IsFolder)
+		const FolderEntry* const entry = FindEntry(file);
+		if (entry != nullptr && entry->IsFolder)
 		{
 			Navigate(file);
 		}
@@ -377,6 +498,88 @@ namespace Editor
 		}
 
 		context.GetUnsavedChangesPrompt().Request(context, "loading another scene", [&document, scene]() { document.Load(scene); });
+	}
+
+	void ContentBrowserPanel::Rename(const FolderEntry& entry, const std::string& name)
+	{
+		const ResolvedName renamed = ResolveRename(entry.Path, entry.IsFolder, name);
+		if (!renamed.Path.IsValid() || renamed.Path.GetRelativePath() == entry.Path.GetRelativePath())
+		{
+			return;
+		}
+
+		if (!AssetFiles::Rename(entry.Path, renamed.Path))
+		{
+			DebugServices::Get().Trace(LogChannel::Info, "Couldn't rename " + entry.Path.GetRelativePath() + ". Is it open in another program?");
+			return;
+		}
+
+		MoveHistory(entry.Path, renamed.Path);
+		Refresh();
+		m_grid.SetSelected(renamed.Path, true);
+	}
+
+	void ContentBrowserPanel::RequestDelete(const Filepath& path)
+	{
+		m_deletePrompt = std::make_unique<DeletePrompt>();
+		m_deletePrompt->Path = path;
+	}
+
+	void ContentBrowserPanel::Delete(const Filepath& path)
+	{
+		if (!AssetFiles::Delete(path))
+		{
+			DebugServices::Get().Trace(LogChannel::Info, "Couldn't delete " + path.GetRelativePath() + ". Is it open in another program?");
+			return;
+		}
+
+		ForgetHistory(path);
+		m_grid.SetSelected(Filepath(), false);
+		Refresh();
+	}
+
+	void ContentBrowserPanel::CreateFolder()
+	{
+		const Filepath folder = AssetFiles::CreateFolder(m_folder, "New Folder");
+		if (!folder.IsValid())
+		{
+			DebugServices::Get().Trace(LogChannel::Info, "Couldn't make a folder in " + m_folder.GetRelativePath());
+			return;
+		}
+
+		// Listed before its rename starts, which ends if it isn't, so a search mustn't hide it
+		m_search[0] = '\0';
+		Refresh();
+		m_grid.BeginRename(folder);
+	}
+
+	void ContentBrowserPanel::MoveHistory(const Filepath& from, const Filepath& to)
+	{
+		const size_t fromLength = from.GetRelativePath().size();
+		const auto move = [&from, &to, fromLength](Filepath& folder)
+			{
+				if (IsSameFolder(folder, from) || folder.IsInside(from))
+				{
+					folder = Filepath(to.GetRelativePath() + folder.GetRelativePath().substr(fromLength));
+				}
+			};
+
+		std::for_each(m_backHistory.begin(), m_backHistory.end(), move);
+		std::for_each(m_forwardHistory.begin(), m_forwardHistory.end(), move);
+	}
+
+	void ContentBrowserPanel::ForgetHistory(const Filepath& path)
+	{
+		const auto isGone = [&path](const Filepath& folder) { return IsSameFolder(folder, path) || folder.IsInside(path); };
+		m_backHistory.erase(std::remove_if(m_backHistory.begin(), m_backHistory.end(), isGone), m_backHistory.end());
+		m_forwardHistory.erase(std::remove_if(m_forwardHistory.begin(), m_forwardHistory.end(), isGone), m_forwardHistory.end());
+	}
+
+	const FolderEntry* ContentBrowserPanel::FindEntry(const Filepath& path) const
+	{
+		const auto entry = std::find_if(m_entries.begin(), m_entries.end(),
+			[&path](const FolderEntry& candidate) { return candidate.Path.GetRelativePath() == path.GetRelativePath(); });
+		return entry != m_entries.end() ? &*entry : nullptr;
 	}
 
 	const Filepath& ContentBrowserPanel::GetRoot() const

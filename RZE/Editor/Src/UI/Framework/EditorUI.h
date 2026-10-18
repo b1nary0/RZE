@@ -16,11 +16,18 @@ namespace Editor
 		constexpr ImVec4 k_accentHoveredColour = ImVec4(0.36f, 0.66f, 1.0f, 1.0f);
 		constexpr ImVec4 k_accentActiveColour = ImVec4(0.18f, 0.48f, 0.86f, 1.0f);
 
+		// What's wrong with something typed, e.g. a file name that can't be used
+		constexpr ImVec4 k_errorColour = ImVec4(1.0f, 0.45f, 0.40f, 1.0f);
+
 		// colour with its alpha replaced, packed for an ImDrawList
 		ImU32 WithAlpha(const ImVec4& colour, float alpha);
 
 		// A button in the accent colours, for a dialog's main action (Open, Save)
 		bool PrimaryButton(const char* label, const ImVec2& size = ImVec2(0.0f, 0.0f));
+
+		// ImGui::MenuItem, with its shortcut (e.g. "Ctrl+Z"; none if null or empty) ending at the menu's right edge,
+		// inset as far as the labels are from its left. ImGui's own lines shortcuts up on their left instead.
+		bool MenuItem(const char* label, const char* shortcut, bool enabled = true);
 
 		// Text centred on centre, in the current font at fontSize
 		void AddCentredText(ImDrawList* drawList, const ImVec2& centre, float fontSize, ImU32 colour, const char* text);

@@ -33,6 +33,22 @@ bool File::MoveReplacing(const Filepath& from, const Filepath& to)
 	return true;
 }
 
+bool File::Move(const Filepath& from, const Filepath& to)
+{
+	std::error_code error;
+	const std::filesystem::path source(from.GetAbsolutePath());
+	const std::filesystem::path target(to.GetAbsolutePath());
+
+	// Renaming "mesh" to "Mesh" finds itself at the target, since Windows ignores case
+	if (std::filesystem::exists(target, error) && !std::filesystem::equivalent(source, target, error))
+	{
+		return false;
+	}
+
+	std::filesystem::rename(source, target, error);
+	return !error;
+}
+
 void File::SetFilePath(const std::string& path)
 {
 	m_filePath = Filepath(path);

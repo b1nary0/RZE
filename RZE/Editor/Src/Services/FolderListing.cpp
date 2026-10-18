@@ -20,6 +20,22 @@ namespace
 	{
 		return std::to_string(count) + " " + unit + (count == 1 ? "" : "s") + " ago";
 	}
+
+	// Without the spaces and tabs at either end
+	std::string Trim(const std::string& text)
+	{
+		const size_t first = text.find_first_not_of(" \t");
+		const size_t last = text.find_last_not_of(" \t");
+		return first == std::string::npos ? std::string() : text.substr(first, last - first + 1);
+	}
+
+	// name with extension added, unless it already ends with it (ignoring case)
+	std::string WithExtension(const std::string& name, const std::string& extension)
+	{
+		const bool hasExtension = name.size() > extension.size()
+			&& StringUtils::EqualsIgnoringCase(name.substr(name.size() - extension.size()), extension);
+		return hasExtension ? name : name + extension;
+	}
 }
 
 namespace Editor
@@ -179,17 +195,11 @@ namespace Editor
 		return extensions;
 	}
 
-	SaveName ResolveSaveName(const Filepath& folder, const std::string& typedName, const std::string& extension)
+	std::string GetFileNameError(const std::string& name)
 	{
-		SaveName result;
-
-		const size_t first = typedName.find_first_not_of(" \t");
-		const size_t last = typedName.find_last_not_of(" \t");
-		const std::string name = first == std::string::npos ? std::string() : typedName.substr(first, last - first + 1);
 		if (name.empty())
 		{
-			result.Error = "Enter a file name";
-			return result;
+			return "Enter a name";
 		}
 
 		const char* const invalidCharacters = "\\/:*?\"<>|";
@@ -197,21 +207,83 @@ namespace Editor
 			[invalidCharacters](unsigned char c) { return c < 32 || std::strchr(invalidCharacters, c) != nullptr; });
 		if (hasInvalidCharacter)
 		{
-			result.Error = "A file name can't contain \\ / : * ? \" < > |";
-			return result;
+			return "A name can't contain \\ / : * ? \" < > |";
 		}
 
 		// Windows drops a trailing dot, so the file wouldn't be named what was typed
 		if (name.back() == '.')
 		{
-			result.Error = "A file name can't end with a dot";
+			return "A name can't end with a dot";
+		}
+
+		// Device names, which Windows keeps for itself whatever extension follows, e.g. "CON.scene"
+		static const char* const s_reserved[] = { "CON", "PRN", "AUX", "NUL",
+			"COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+			"LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9" };
+		const std::string beforeDot = name.substr(0, name.find('.'));
+		const std::string trimmed = beforeDot.substr(0, beforeDot.find_last_not_of(' ') + 1);
+		const bool isReserved = std::any_of(std::begin(s_reserved), std::end(s_reserved),
+			[&trimmed](const char* reserved) { return StringUtils::EqualsIgnoringCase(trimmed, reserved); });
+		if (isReserved)
+		{
+			return "\"" + trimmed + "\" is a name Windows keeps for itself";
+		}
+
+		return std::string();
+	}
+
+	ResolvedName ResolveSaveName(const Filepath& folder, const std::string& typedName, const std::string& extension)
+	{
+		ResolvedName result;
+
+		const std::string name = Trim(typedName);
+		result.Error = GetFileNameError(name);
+		if (!result.Error.empty())
+		{
 			return result;
 		}
 
-		const bool hasExtension = name.size() > extension.size()
-			&& StringUtils::EqualsIgnoringCase(name.substr(name.size() - extension.size()), extension);
-		result.Path = Filepath(folder.GetRelativePath() + "/" + name + (hasExtension ? "" : extension));
+		result.Path = Filepath(folder.GetRelativePath() + "/" + WithExtension(name, extension));
 		return result;
+	}
+
+	ResolvedName ResolveRename(const Filepath& path, bool isFolder, const std::string& typedName)
+	{
+		ResolvedName result;
+
+		const std::string typed = Trim(typedName);
+		result.Error = GetFileNameError(typed);
+		if (!result.Error.empty())
+		{
+			return result;
+		}
+
+		const std::string name = isFolder ? typed : WithExtension(typed, path.GetExtension());
+		const Filepath renamed(path.GetParentFolder().GetRelativePath() + "/" + name);
+		// Windows ignores case, so a name that only changes case finds the file itself
+		if (!StringUtils::EqualsIgnoringCase(name, path.GetFileName()) && renamed.Exists())
+		{
+			result.Error = "There's already something called \"" + name + "\" here";
+			return result;
+		}
+
+		result.Path = renamed;
+		return result;
+	}
+
+	Filepath MakeUniqueFileName(const Filepath& folder, const std::string& name)
+	{
+		const size_t dot = name.rfind('.');
+		const bool hasExtension = dot != std::string::npos && dot > 0;
+		const std::string stem = hasExtension ? name.substr(0, dot) : name;
+		const std::string extension = hasExtension ? name.substr(dot) : std::string();
+
+		Filepath path(folder.GetRelativePath() + "/" + name);
+		for (int number = 2; path.Exists(); ++number)
+		{
+			path = Filepath(folder.GetRelativePath() + "/" + stem + " " + std::to_string(number) + extension);
+		}
+		return path;
 	}
 
 	std::string FormatTimeAgo(std::chrono::system_clock::time_point time, std::chrono::system_clock::time_point now)

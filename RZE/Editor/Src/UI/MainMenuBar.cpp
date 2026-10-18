@@ -1,6 +1,7 @@
 #include <UI/MainMenuBar.h>
 
 #include <UI/Framework/EditorContext.h>
+#include <UI/Framework/EditorUI.h>
 #include <UI/Modals/UnsavedChangesPrompt.h>
 
 #include <Commands/HistoryCommands.h>
@@ -144,26 +145,26 @@ namespace Editor
 		const UndoHistory& history = context.GetUndoHistory();
 		const std::string undoLabel = history.CanUndo() ? "Undo " + history.GetUndoName() : std::string("Undo");
 		const std::string redoLabel = history.CanRedo() ? "Redo " + history.GetRedoName() : std::string("Redo");
-		if (ImGui::MenuItem(undoLabel.c_str(), "Ctrl+Z", false, canUseScene && history.CanUndo()))
+		if (EditorUI::MenuItem(undoLabel.c_str(), "Ctrl+Z", canUseScene && history.CanUndo()))
 		{
 			context.GetCommands().Push<UndoCommand>();
 		}
-		if (ImGui::MenuItem(redoLabel.c_str(), "Ctrl+Y", false, canUseScene && history.CanRedo()))
+		if (EditorUI::MenuItem(redoLabel.c_str(), "Ctrl+Y", canUseScene && history.CanRedo()))
 		{
 			context.GetCommands().Push<RedoCommand>();
 		}
 
 		ImGui::Separator();
 
-		if (ImGui::MenuItem("Copy", "Ctrl+C", false, canUseScene && hasSelection))
+		if (EditorUI::MenuItem("Copy", "Ctrl+C", canUseScene && hasSelection))
 		{
 			Copy(context);
 		}
-		if (ImGui::MenuItem("Paste", "Ctrl+V", false, canUseScene && context.GetClipboard().HasContents()))
+		if (EditorUI::MenuItem("Paste", "Ctrl+V", canUseScene && context.GetClipboard().HasContents()))
 		{
 			Paste(context);
 		}
-		if (ImGui::MenuItem("Duplicate", "Ctrl+D", false, canUseScene && hasSelection))
+		if (EditorUI::MenuItem("Duplicate", "Ctrl+D", canUseScene && hasSelection))
 		{
 			Duplicate(context);
 		}

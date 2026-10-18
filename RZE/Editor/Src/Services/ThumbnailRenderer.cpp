@@ -271,7 +271,7 @@ namespace Editor
 		}
 
 		request.OnThumbnailMissing = [this](const Filepath& file) { Request(file); };
-		request.TileActions.push_back({ "Refresh Thumbnail", [this](const Filepath& file) { Request(file, true); } });
+		request.TileActions.push_back({ "Refresh Thumbnail", [this](const Filepath& file) { Request(file, true); }, &Thumbnails::IsRendered });
 	}
 
 	void ThumbnailRenderer::ShutDown()

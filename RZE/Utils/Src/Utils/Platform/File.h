@@ -39,6 +39,9 @@ public:
 	// or the new one, never one half-written. False if it couldn't (e.g. while to is open elsewhere), and from is
 	// removed either way.
 	static bool MoveReplacing(const Filepath& from, const Filepath& to);
+	// Moves or renames a file or folder, unless something is already at to. A name that only changes case is allowed.
+	// False if it couldn't, and nothing is moved then.
+	static bool Move(const Filepath& from, const Filepath& to);
 
 	// If setting file path manually, Read() must be called.
 	void SetFilePath(const std::string& path);

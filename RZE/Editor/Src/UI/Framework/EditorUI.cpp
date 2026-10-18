@@ -147,6 +147,30 @@ namespace Editor
 			return isPressed;
 		}
 
+		bool MenuItem(const char* label, const char* shortcut, bool enabled)
+		{
+			ImGuiWindow* const window = ImGui::GetCurrentWindow();
+			const float textY = ImGui::GetCursorScreenPos().y + window->DC.CurrLineTextBaseOffset;
+			const bool isPressed = ImGui::MenuItem(label, nullptr, false, enabled);
+			if (shortcut == nullptr || shortcut[0] == '\0')
+			{
+				return isPressed;
+			}
+
+			// Room for it beside the widest label, as ImGui makes for its own shortcuts; the menu is that wide next frame
+			const float shortcutWidth = ImGui::CalcTextSize(shortcut).x;
+			window->DC.MenuColumns.DeclColumns(0.0f, 0.0f, shortcutWidth, 0.0f);
+
+			if (ImGui::IsItemVisible())
+			{
+				// Faded further while the item's disabled, like its label
+				ImGui::BeginDisabled(!enabled);
+				window->DrawList->AddText(ImVec2(window->WorkRect.Max.x - shortcutWidth, textY), ImGui::GetColorU32(ImGuiCol_TextDisabled), shortcut);
+				ImGui::EndDisabled();
+			}
+			return isPressed;
+		}
+
 		void AddCentredText(ImDrawList* drawList, const ImVec2& centre, float fontSize, ImU32 colour, const char* text)
 		{
 			ImFont* const font = ImGui::GetFont();

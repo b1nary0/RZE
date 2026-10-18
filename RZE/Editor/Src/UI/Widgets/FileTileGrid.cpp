@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstring>
 
 namespace
 {
@@ -30,6 +31,27 @@ namespace
 
 namespace Editor
 {
+	struct FileTileGrid::TileRename
+	{
+		Filepath File;
+		char Name[256] = {};
+		// What's wrong with the name typed; empty if it's fine
+		std::string Error;
+		// Fills the text box with the tile's name on its next draw
+		bool FillBox = true;
+		// The text box takes the keyboard on its next draw, e.g. when it appears
+		bool FocusBox = true;
+	};
+
+	struct FileTileGrid::PendingTileAction
+	{
+		std::function<void(const Filepath&)> Run;
+		Filepath File;
+	};
+
+	FileTileGrid::FileTileGrid() = default;
+	FileTileGrid::~FileTileGrid() = default;
+
 	void FileTileGrid::SetOptions(FileTileGridOptions options)
 	{
 		m_options = std::move(options);
@@ -38,6 +60,12 @@ namespace Editor
 	FileTileGridResult FileTileGrid::Draw(const std::vector<FolderEntry>& entries, float tileSize, const ImVec2& size, const char* emptyText)
 	{
 		FileTileGridResult result;
+
+		// A file renamed or removed from outside the grid ends its rename
+		if (IsRenaming() && std::none_of(entries.begin(), entries.end(), [this](const FolderEntry& entry) { return IsRenaming(entry.Path); }))
+		{
+			m_rename.reset();
+		}
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(k_gridPadding, k_gridPadding));
 		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, k_tileRounding);
@@ -131,11 +159,11 @@ namespace Editor
 		ImGui::EndChild();
 
 		// After the tiles, since an action can change what the grid's owner shows
-		if (m_pendingAction)
+		if (m_pendingAction != nullptr)
 		{
-			const std::function<void(const Filepath&)> action = std::move(m_pendingAction);
-			m_pendingAction = nullptr;
-			action(m_pendingActionFile);
+			// Moved out first, so the action can queue or start something else
+			const std::unique_ptr<PendingTileAction> action = std::move(m_pendingAction);
+			action->Run(action->File);
 		}
 
 		return result;
@@ -145,6 +173,18 @@ namespace Editor
 	{
 		m_selected = file;
 		m_scrollToSelected = scrollTo && file.IsValid();
+	}
+
+	void FileTileGrid::BeginRename(const Filepath& file)
+	{
+		if (!CanRename() || !file.IsValid())
+		{
+			return;
+		}
+
+		m_rename = std::make_unique<TileRename>();
+		m_rename->File = file;
+		SetSelected(file, true);
 	}
 
 	void FileTileGrid::RefreshThumbnail(const Filepath& image)
@@ -180,7 +220,15 @@ namespace Editor
 	void FileTileGrid::DrawTile(const FolderEntry& entry, int index, const ImVec2& size, FileTileGridResult& result)
 	{
 		ImGui::PushID(index);
+		// One item to the layout, even with the rename box placed over it
+		ImGui::BeginGroup();
 
+		const bool isRenaming = IsRenaming(entry.Path);
+		if (isRenaming)
+		{
+			// So the rename box, drawn over it afterwards, takes the mouse
+			ImGui::SetNextItemAllowOverlap();
+		}
 		ImGui::InvisibleButton("##tile", size, ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight);
 		const bool isHovered = ImGui::IsItemHovered();
 		if (ImGui::IsItemActivated())
@@ -202,7 +250,7 @@ namespace Editor
 			ImGui::EndDragDropSource();
 		}
 
-		if (!entry.IsFolder && HasActionsFor(entry.Path) && ImGui::BeginPopupContextItem("##actions"))
+		if (HasActionsFor(entry.Path) && ImGui::BeginPopupContextItem("##actions"))
 		{
 			for (const FileTileAction& action : m_options.TileActions)
 			{
@@ -211,16 +259,21 @@ namespace Editor
 					continue;
 				}
 
-				if (ImGui::MenuItem(action.Label.c_str()))
+				const std::string whyDisabled = action.WhyDisabled ? action.WhyDisabled(entry.Path) : std::string();
+				if (EditorUI::MenuItem(action.Label.c_str(), action.Shortcut.c_str(), whyDisabled.empty()))
 				{
-					// Run after the tiles, since an action can change what the grid's owner shows
-					m_pendingAction = action.Run;
-					m_pendingActionFile = entry.Path;
+					QueueAction(action.Run, entry.Path);
+				}
+
+				const std::string& tooltip = whyDisabled.empty() ? action.Tooltip : whyDisabled;
+				if (!tooltip.empty() && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+				{
+					ImGui::SetTooltip("%s", tooltip.c_str());
 				}
 			}
 			ImGui::EndPopup();
 		}
-		else if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip))
+		else if (!isRenaming && ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip))
 		{
 			ImGui::SetTooltip("%s", entry.Path.GetRelativePath().c_str());
 		}
@@ -249,11 +302,16 @@ namespace Editor
 		const float textRight = max.x - k_imageInset;
 		const float nameY = imageMax.y + 4.0f;
 
-		ImGui::RenderTextEllipsis(drawList, ImVec2(textLeft, nameY), ImVec2(textRight, nameY + lineHeight), textRight,
-			name.c_str(), nullptr, nullptr);
-		ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+		if (!isRenaming)
+		{
+			ImGui::RenderTextEllipsis(drawList, ImVec2(textLeft, nameY), ImVec2(textRight, nameY + lineHeight), textRight,
+				name.c_str(), nullptr, nullptr);
+		}
+		// While renaming, what's wrong with the name typed takes the place of the detail
+		const bool showsError = isRenaming && !m_rename->Error.empty();
+		ImGui::PushStyleColor(ImGuiCol_Text, showsError ? EditorUI::k_errorColour : ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
 		ImGui::RenderTextEllipsis(drawList, ImVec2(textLeft, nameY + lineHeight + 1.0f), ImVec2(textRight, nameY + lineHeight * 2.0f + 1.0f), textRight,
-			detail.c_str(), nullptr, nullptr);
+			showsError ? m_rename->Error.c_str() : detail.c_str(), nullptr, nullptr);
 		ImGui::PopStyleColor();
 
 		if (isSelected)
@@ -265,7 +323,74 @@ namespace Editor
 			drawList->AddRect(min, max, ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, 0.18f)), k_tileRounding, 0, 1.0f);
 		}
 
+		if (isRenaming)
+		{
+			DrawRenameBox(entry, textLeft, textRight, nameY);
+		}
+
+		ImGui::EndGroup();
 		ImGui::PopID();
+	}
+
+	void FileTileGrid::DrawRenameBox(const FolderEntry& entry, float left, float right, float y)
+	{
+		TileRename& rename = *m_rename;
+		const std::string currentName = entry.IsFolder ? entry.Name : entry.Path.GetStem();
+		if (rename.FillBox)
+		{
+			strncpy_s(rename.Name, currentName.c_str(), _TRUNCATE);
+			rename.FillBox = false;
+		}
+
+		// Small enough padding that the box sits where the name was
+		const ImVec2 padding(3.0f, 1.0f);
+		ImGui::SetCursorScreenPos(ImVec2(left - padding.x, y - padding.y));
+		ImGui::SetNextItemWidth(right - left + padding.x * 2.0f);
+		if (rename.FocusBox)
+		{
+			ImGui::SetKeyboardFocusHere();
+			rename.FocusBox = false;
+		}
+
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, padding);
+		ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+		ImGui::PushStyleColor(ImGuiCol_Border, rename.Error.empty() ? EditorUI::k_accentColour : EditorUI::k_errorColour);
+		const bool isEntered = ImGui::InputText("##rename", rename.Name, sizeof(rename.Name), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
+		ImGui::PopStyleColor();
+		ImGui::PopStyleVar(2);
+
+		if (ImGui::IsItemEdited())
+		{
+			rename.Error = m_options.ValidateName(entry, rename.Name);
+		}
+		if (!rename.Error.empty() && ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("%s", rename.Error.c_str());
+		}
+
+		if (isEntered)
+		{
+			rename.Error = m_options.ValidateName(entry, rename.Name);
+			if (!rename.Error.empty())
+			{
+				// Enter let go of the box; it keeps the keyboard until the name is fixed or the rename cancelled
+				rename.FocusBox = true;
+				return;
+			}
+
+			// Copied out, since the rename is over
+			const std::string name = rename.Name;
+			m_rename.reset();
+			if (name != currentName)
+			{
+				QueueAction([this, entry, name](const Filepath&) { m_options.Rename(entry, name); }, entry.Path);
+			}
+		}
+		else if (ImGui::IsItemDeactivated())
+		{
+			// Escape, or a click elsewhere
+			m_rename.reset();
+		}
 	}
 
 	void FileTileGrid::DrawTileImage(const FolderEntry& entry, const ImVec2& min, const ImVec2& max)
@@ -409,6 +534,18 @@ namespace Editor
 			m_options.DrawBackgroundMenu();
 			ImGui::EndPopup();
 		}
+	}
+
+	bool FileTileGrid::IsRenaming(const Filepath& file) const
+	{
+		return m_rename != nullptr && m_rename->File.GetRelativePath() == file.GetRelativePath();
+	}
+
+	void FileTileGrid::QueueAction(const std::function<void(const Filepath&)>& run, const Filepath& file)
+	{
+		m_pendingAction = std::make_unique<PendingTileAction>();
+		m_pendingAction->Run = run;
+		m_pendingAction->File = file;
 	}
 
 	bool FileTileGrid::HasActionsFor(const Filepath& file) const

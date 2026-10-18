@@ -136,10 +136,67 @@ TEST_CASE("ResolveSaveName refuses names Windows can't use")
 
 	for (const char* name : { "", "   ", "a/b", R"(a\b)", "a:b", "a*b", "a?b", "a\"b", "a<b", "a>b", "a|b", "trailing." })
 	{
-		const SaveName saveName = ResolveSaveName(scenes, name, ".scene");
+		const ResolvedName saveName = ResolveSaveName(scenes, name, ".scene");
 		CHECK_MESSAGE(!saveName.Path.IsValid(), name);
 		CHECK_MESSAGE(!saveName.Error.empty(), name);
 	}
+}
+
+TEST_CASE("GetFileNameError refuses Windows' device names, whatever the extension")
+{
+	for (const char* name : { "CON", "con", "Nul.scene", "COM1", "lpt9.txt", "AUX .scene" })
+	{
+		CHECK_MESSAGE(!GetFileNameError(name).empty(), name);
+	}
+	for (const char* name : { "CONSOLE", "Auxiliary.scene", "COM10", "Level 2.scene", "my.con" })
+	{
+		CHECK_MESSAGE(GetFileNameError(name).empty(), name);
+	}
+}
+
+TEST_CASE("ResolveRename keeps a file's extension, and takes a folder's name as it is")
+{
+	const ScopedTestFolder folder("UnitTestsTemp_FolderListing");
+	const Filepath mesh = folder.AddFile("Tank.meshasset");
+	folder.AddFolder("Vehicles");
+	const std::string root = folder.Get().GetRelativePath();
+
+	CHECK(ResolveRename(mesh, false, "Panzer").Path.GetRelativePath() == root + R"(\Panzer.meshasset)");
+	CHECK(ResolveRename(mesh, false, "Panzer.meshasset").Path.GetRelativePath() == root + R"(\Panzer.meshasset)");
+	CHECK(ResolveRename(mesh, false, "  Panzer ").Path.GetRelativePath() == root + R"(\Panzer.meshasset)");
+	CHECK(ResolveRename(folder.GetFile("Vehicles"), true, "Cars.v2").Path.GetRelativePath() == root + R"(\Cars.v2)");
+}
+
+TEST_CASE("ResolveRename refuses a name something else has, but not a change of case")
+{
+	const ScopedTestFolder folder("UnitTestsTemp_FolderListing");
+	const Filepath tank = folder.AddFile("Tank.meshasset");
+	folder.AddFile("Plane.meshasset");
+	folder.AddFolder("Vehicles");
+
+	const ResolvedName taken = ResolveRename(tank, false, "plane");
+	CHECK_FALSE(taken.Path.IsValid());
+	CHECK_FALSE(taken.Error.empty());
+	CHECK_FALSE(ResolveRename(folder.GetFile("Vehicles"), true, "Plane.meshasset").Path.IsValid());
+
+	CHECK(ResolveRename(tank, false, "TANK").Error.empty());
+	CHECK(ResolveRename(tank, false, "Tank").Error.empty());
+	CHECK_FALSE(ResolveRename(tank, false, "a:b").Path.IsValid());
+}
+
+TEST_CASE("MakeUniqueFileName numbers a name that's taken, before its extension")
+{
+	const ScopedTestFolder folder("UnitTestsTemp_FolderListing");
+	const std::string root = folder.Get().GetRelativePath();
+
+	CHECK(MakeUniqueFileName(folder.Get(), "New Folder").GetRelativePath() == root + R"(\New Folder)");
+
+	folder.AddFolder("New Folder");
+	folder.AddFolder("New Folder 2");
+	CHECK(MakeUniqueFileName(folder.Get(), "New Folder").GetRelativePath() == root + R"(\New Folder 3)");
+
+	folder.AddFile("Level.scene");
+	CHECK(MakeUniqueFileName(folder.Get(), "Level.scene").GetRelativePath() == root + R"(\Level 2.scene)");
 }
 
 TEST_CASE("FindFiles finds files with the extension in subfolders too, sorted by path")

@@ -20,7 +20,6 @@ namespace
 	constexpr float k_maxTileSize = 234.0f;
 
 	const ImVec4 k_warningColour(1.0f, 0.78f, 0.35f, 1.0f);
-	const ImVec4 k_errorColour(1.0f, 0.45f, 0.40f, 1.0f);
 }
 
 namespace Editor
@@ -285,7 +284,7 @@ namespace Editor
 		{
 			if (!m_saveError.empty())
 			{
-				ImGui::TextColored(k_errorColour, "%s", m_saveError.c_str());
+				ImGui::TextColored(EditorUI::k_errorColour, "%s", m_saveError.c_str());
 			}
 
 			ImGui::AlignTextToFramePadding();
@@ -399,7 +398,7 @@ namespace Editor
 	void FileBrowserModal::ConfirmSave()
 	{
 		const std::string extension = m_request.Extensions.empty() ? std::string() : m_request.Extensions.front();
-		const SaveName saveName = ResolveSaveName(m_folder, m_fileName, extension);
+		const ResolvedName saveName = ResolveSaveName(m_folder, m_fileName, extension);
 		if (!saveName.Error.empty())
 		{
 			m_saveError = saveName.Error;
