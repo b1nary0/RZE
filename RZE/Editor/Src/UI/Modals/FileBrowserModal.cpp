@@ -101,6 +101,14 @@ namespace Editor
 		m_grid.RefreshThumbnail(image);
 	}
 
+	void FileBrowserModal::RefreshFiles()
+	{
+		if (IsOpen())
+		{
+			Refresh();
+		}
+	}
+
 	void FileBrowserModal::Display()
 	{
 		// Another dialog opened at the root, such as a tile action's unsaved-changes prompt or progress dialog, takes the

@@ -85,6 +85,7 @@ namespace Editor
 
 		// Nothing can restore what's left from a session that didn't close cleanly
 		AssetFiles::EmptyTrash();
+		m_context.GetProjectWatcher().Start();
 
 #ifdef _DEBUG
 		// Undo only sees changes made through commands, so catch anything that changes the scene's objects another way

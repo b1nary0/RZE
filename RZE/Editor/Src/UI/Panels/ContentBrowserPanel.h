@@ -8,7 +8,6 @@
 
 #include <Utils/Platform/Filepath.h>
 
-#include <chrono>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -20,7 +19,8 @@ namespace Editor
 	// browser's, with back, forward and up (also the mouse's side buttons and Backspace), search, and right-click
 	// actions on files and folders. Double-clicking a folder opens it, and a scene loads it. Meshes can be dragged into
 	// the scene view. Files and folders can be renamed (F2), deleted (Delete) and made (New Folder), each of which can
-	// be undone (AssetFileCommands). Names starting with a dot, like the editor's trash, aren't shown.
+	// be undone (AssetFileCommands). Names starting with a dot, like the editor's trash, aren't shown. Changes made
+	// outside the editor show up as they happen (ProjectFilesChangedEvent).
 	class ContentBrowserPanel : public EditorPanel
 	{
 	public:
@@ -47,8 +47,12 @@ namespace Editor
 		void GoUp();
 		// Shows folder without touching the history
 		void ShowFolder(const Filepath& folder);
-		// Reads the current folder and the tree's folders again
+		// Reads the current folder and the tree's folders again. If the folder is gone, shows the nearest one above it
+		// that's still there.
 		void Refresh();
+		// Has the listed scenes' and meshes' thumbnails rendered again where they're older than their file, e.g. a mesh
+		// written again outside the editor
+		void RequestOutdatedThumbnails(EditorContext& context);
 
 		// Opens a folder, or loads a scene; anything else stays selected
 		void Open(EditorContext& context, const Filepath& file);
@@ -69,7 +73,8 @@ namespace Editor
 
 		// The history's folders at or inside from, moved to where they are under to
 		void MoveHistory(const Filepath& from, const Filepath& to);
-		// Drops the history's folders at or inside path
+		// Drops the history's folders at or inside path, and then any that repeat the one beside them or the one shown.
+		// After showing a folder that's still there.
 		void ForgetHistory(const Filepath& path);
 
 		// The current folder's entry for path, or null
@@ -97,8 +102,7 @@ namespace Editor
 		// Opens the tree down to the current folder on the next draw, e.g. after going there from the tiles
 		bool m_revealFolder = true;
 
-		std::chrono::steady_clock::time_point m_lastRefresh;
-		// Refreshed at the start of the next draw, e.g. after the search changes
+		// Refreshed at the start of the next draw, e.g. after the search changes or the files change
 		bool m_refreshRequested = false;
 		// Made at the start of the next draw, outside the menu that asked for it
 		bool m_createFolderRequested = false;
@@ -111,5 +115,6 @@ namespace Editor
 
 		EventSubscription m_thumbnailWritten;
 		EventSubscription m_assetFileChanged;
+		EventSubscription m_projectFilesChanged;
 	};
 }

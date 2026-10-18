@@ -29,6 +29,9 @@ namespace Editor
 	// A file or folder in the project was renamed (From and To), made (no From) or deleted (no To), including by undo
 	// or redo (AssetFileCommands)
 	struct AssetFileChangedEvent { const Filepath& From; const Filepath& To; };
+	// Something in the project's folders changed on disk, from the editor or outside it (ProjectWatcher), so anything
+	// listing files should read them again. Not what changed.
+	struct ProjectFilesChangedEvent {};
 
 	namespace Internal
 	{

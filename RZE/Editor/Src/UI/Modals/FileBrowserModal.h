@@ -78,6 +78,8 @@ namespace Editor
 
 		// Reloads the tiles that show image, e.g. once a thumbnail has been rendered again
 		void RefreshThumbnail(const Filepath& image);
+		// Reads the folder again while it's open, e.g. once a file in it was saved from elsewhere
+		void RefreshFiles();
 
 		// Must be called at the root of the ImGui ID stack (outside any Begin/End pair)
 		void Display();

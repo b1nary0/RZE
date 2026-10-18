@@ -29,9 +29,6 @@ namespace
 	// The folder tree's starting width; the splitter beside it resizes it
 	constexpr float k_treeWidth = 200.0f;
 
-	// The folder is read again this often while the panel is shown, so files added or removed outside it show up
-	constexpr std::chrono::seconds k_refreshInterval(2);
-
 	// ImGui's numbers for the mouse's side buttons
 	constexpr int k_mouseBack = 3;
 	constexpr int k_mouseForward = 4;
@@ -142,6 +139,11 @@ namespace Editor
 			{
 				OnAssetFileChanged(event);
 			});
+		m_projectFilesChanged = context.GetEvents().Subscribe<ProjectFilesChangedEvent>([this](const ProjectFilesChangedEvent&)
+			{
+				// Read when it next draws, so not while it's hidden
+				m_refreshRequested = true;
+			});
 
 		ShowFolder(m_roots.front());
 	}
@@ -158,9 +160,10 @@ namespace Editor
 			CreateFolder(context);
 		}
 
-		if (m_refreshRequested || std::chrono::steady_clock::now() - m_lastRefresh >= k_refreshInterval)
+		if (m_refreshRequested)
 		{
 			Refresh();
+			RequestOutdatedThumbnails(context);
 		}
 
 		DrawToolbar();
@@ -483,10 +486,37 @@ namespace Editor
 
 	void ContentBrowserPanel::Refresh()
 	{
-		m_entries = ListFolder(m_folder, {}, m_search);
-		m_subfolders.clear();
-		m_lastRefresh = std::chrono::steady_clock::now();
 		m_refreshRequested = false;
+		m_subfolders.clear();
+
+		if (!m_folder.Exists())
+		{
+			// The highest folder that went, which took the current one with it
+			Filepath gone = m_folder;
+			Filepath folder = m_folder;
+			while (!IsRoot(folder) && !folder.Exists())
+			{
+				gone = folder;
+				folder = folder.GetParentFolder();
+			}
+			ShowFolder(folder);
+			ForgetHistory(gone);
+			return;
+		}
+
+		m_entries = ListFolder(m_folder, {}, m_search);
+	}
+
+	void ContentBrowserPanel::RequestOutdatedThumbnails(EditorContext& context)
+	{
+		for (const FolderEntry& entry : m_entries)
+		{
+			// Missing ones are asked for as their tiles show (OnThumbnailMissing). Request skips those up to date.
+			if (!entry.IsFolder && Thumbnails::IsRendered(entry.Path) && Thumbnails::FindFor(entry.Path).Exists())
+			{
+				context.GetThumbnails().Request(entry.Path);
+			}
+		}
 	}
 
 	void ContentBrowserPanel::Open(EditorContext& context, const Filepath& file)
@@ -555,11 +585,11 @@ namespace Editor
 			}
 			else
 			{
-				ForgetHistory(event.From);
 				if (isShownFolderChanged)
 				{
 					ShowFolder(event.From.GetParentFolder());
 				}
+				ForgetHistory(event.From);
 			}
 		}
 
@@ -597,8 +627,19 @@ namespace Editor
 	void ContentBrowserPanel::ForgetHistory(const Filepath& path)
 	{
 		const auto isGone = [&path](const Filepath& folder) { return IsSamePath(folder, path) || folder.IsInside(path); };
-		m_backHistory.erase(std::remove_if(m_backHistory.begin(), m_backHistory.end(), isGone), m_backHistory.end());
-		m_forwardHistory.erase(std::remove_if(m_forwardHistory.begin(), m_forwardHistory.end(), isGone), m_forwardHistory.end());
+		const auto forget = [this, &isGone](std::vector<Filepath>& history)
+			{
+				history.erase(std::remove_if(history.begin(), history.end(), isGone), history.end());
+				// With what was between them gone, folders beside each other can be the same, or the one shown, so
+				// going back would seem to do nothing
+				history.erase(std::unique(history.begin(), history.end(), &IsSamePath), history.end());
+				if (!history.empty() && IsSamePath(history.back(), m_folder))
+				{
+					history.pop_back();
+				}
+			};
+		forget(m_backHistory);
+		forget(m_forwardHistory);
 	}
 
 	const FolderEntry* ContentBrowserPanel::FindEntry(const Filepath& path) const

@@ -10,6 +10,7 @@
 
 #include <Services/GameBuilder.h>
 #include <Services/GameObjectClipboard.h>
+#include <Services/ProjectWatcher.h>
 #include <Services/SceneDocument.h>
 #include <Services/ThumbnailRenderer.h>
 #include <Services/SelectionBoundsDisplay.h>
@@ -83,6 +84,8 @@ namespace Editor
 		GameObjectClipboard& GetClipboard() { return m_clipboard; }
 		// Renders scene and mesh thumbnails in the background
 		ThumbnailRenderer& GetThumbnails() { return m_thumbnails; }
+		// Tells when the project's files change on disk (ProjectFilesChangedEvent)
+		ProjectWatcher& GetProjectWatcher() { return m_projectWatcher; }
 
 		// Where panels send scene changes; flushed once per frame after every panel has drawn
 		CommandQueue& GetCommands() { return m_commands; }
@@ -109,13 +112,16 @@ namespace Editor
 		PanelManager m_panels;
 		SceneDocument m_sceneDocument;
 		ThumbnailRenderer m_thumbnails;
+		ProjectWatcher m_projectWatcher;
 		GameBuilder m_gameBuilder;
 		GameObjectClipboard m_clipboard;
 		CommandQueue m_commands;
 		UndoHistory m_undoHistory;
 		UnsavedChangesPrompt m_unsavedChangesPrompt;
 		FileBrowserModal m_fileBrowser;
-		// Reloads a thumbnail in the file browser once it's written again. Last, so it's dropped before the browser.
+		// Reload a thumbnail in the file browser once it's written again, and its files once they change. Last, so
+		// they're dropped before the browser.
 		EventSubscription m_thumbnailWritten;
+		EventSubscription m_projectFilesChanged;
 	};
 }

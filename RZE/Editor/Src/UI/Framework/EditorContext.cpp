@@ -12,10 +12,15 @@ namespace Editor
 		, m_selectionBounds(m_events)
 		, m_sceneDocument(*this)
 		, m_thumbnails(*this)
+		, m_projectWatcher(m_events)
 	{
 		m_thumbnailWritten = m_events.Subscribe<ThumbnailWrittenEvent>([this](const ThumbnailWrittenEvent& event)
 			{
 				m_fileBrowser.RefreshThumbnail(event.Image);
+			});
+		m_projectFilesChanged = m_events.Subscribe<ProjectFilesChangedEvent>([this](const ProjectFilesChangedEvent&)
+			{
+				m_fileBrowser.RefreshFiles();
 			});
 	}
 
@@ -23,6 +28,7 @@ namespace Editor
 	{
 		m_sceneViewport.IsHovered = false;
 		m_scenePicker.Update();
+		m_projectWatcher.Update();
 	}
 
 	void EditorContext::ResetSceneState()
