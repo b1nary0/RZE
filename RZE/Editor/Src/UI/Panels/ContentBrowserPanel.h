@@ -19,7 +19,8 @@ namespace Editor
 	// Browses the project's Assets and ProjectData folders: a folder tree beside a grid of tiles like the file
 	// browser's, with back, forward and up (also the mouse's side buttons and Backspace), search, and right-click
 	// actions on files and folders. Double-clicking a folder opens it, and a scene loads it. Meshes can be dragged into
-	// the scene view. Files and folders can be renamed (F2), deleted to the Recycle Bin (Delete) and made (New Folder).
+	// the scene view. Files and folders can be renamed (F2), deleted (Delete) and made (New Folder), each of which can
+	// be undone (AssetFileCommands). Names starting with a dot, like the editor's trash, aren't shown.
 	class ContentBrowserPanel : public EditorPanel
 	{
 	public:
@@ -37,7 +38,7 @@ namespace Editor
 		void DrawFolderNode(const Filepath& folder);
 		void DrawTiles(EditorContext& context);
 		void HandleNavigationInput(EditorContext& context);
-		void DrawDeletePrompt();
+		void DrawDeletePrompt(EditorContext& context);
 
 		// Goes to folder, adding where it was to the back history
 		void Navigate(const Filepath& folder);
@@ -54,13 +55,17 @@ namespace Editor
 		// Asks about unsaved changes first, like File > Load Scene
 		void LoadScene(EditorContext& context, const Filepath& scene);
 
-		// To the name typed into its tile (FileNames::ResolveRename), keeping the history and selection on it
-		void Rename(const FolderEntry& entry, const std::string& name);
+		// To the name typed into its tile (FileNames::ResolveRename)
+		void Rename(EditorContext& context, const FolderEntry& entry, const std::string& name);
 		// Asks first (DrawDeletePrompt)
 		void RequestDelete(const Filepath& path);
-		void Delete(const Filepath& path);
+		void Delete(EditorContext& context, const Filepath& path);
 		// "New Folder" in the current folder, numbered if taken, then renames it
-		void CreateFolder();
+		void CreateFolder(EditorContext& context);
+
+		// Keeps the folder shown, the history and the selection on what moved, and shows the change straight away,
+		// including from undo or redo
+		void OnAssetFileChanged(const AssetFileChangedEvent& event);
 
 		// The history's folders at or inside from, moved to where they are under to
 		void MoveHistory(const Filepath& from, const Filepath& to);
@@ -97,11 +102,14 @@ namespace Editor
 		bool m_refreshRequested = false;
 		// Made at the start of the next draw, outside the menu that asked for it
 		bool m_createFolderRequested = false;
+		// The folder New Folder just asked for, which starts renaming once it's made; until the next draw
+		Filepath m_renameWhenCreated;
 
 		// What's being asked about deleting, while the prompt is up
 		struct DeletePrompt;
 		std::unique_ptr<DeletePrompt> m_deletePrompt;
 
 		EventSubscription m_thumbnailWritten;
+		EventSubscription m_assetFileChanged;
 	};
 }

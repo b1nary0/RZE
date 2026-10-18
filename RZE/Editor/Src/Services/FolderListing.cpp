@@ -44,6 +44,10 @@ namespace Editor
 			}
 
 			const std::string name = item.path().filename().string();
+			if (name.front() == '.')
+			{
+				continue;
+			}
 			if (!isFolder && !lowerExtensions.empty())
 			{
 				const std::string extension = StringUtils::ToLower(item.path().extension().string());

@@ -23,13 +23,19 @@ namespace Editor
 		// What the Edit menu calls the step, e.g. "Rename"
 		virtual std::string GetName() const = 0;
 
+		// Whether it changes the scene. False for a change elsewhere, like renaming a file: undoing or redoing it doesn't
+		// make the scene differ from its file or change the selection, and it stays in the history when another scene
+		// loads.
+		virtual bool ChangesScene() const { return true; }
+
 		// Within one interaction (e.g. a drag), a later record of the same change to the same target folds into this
 		// one: this keeps its own "before" and takes newer's "after". False if newer is a different change.
 		virtual bool TryMerge(const UndoRecord& newer) { return false; }
 
 		// The history has dropped this record for good: its step went past the cap, or was undone and then replaced
 		// by a new change. For releasing what only undo or redo needed, e.g. destroying objects set aside out of the
-		// scene. Not called when the history is cleared, since that's before the scene unloads, which destroys them.
+		// scene. Not called when the history is cleared, since that's before the scene unloads, which destroys them,
+		// nor when the editor closes.
 		virtual void OnDropped() {}
 	};
 

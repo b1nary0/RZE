@@ -1,5 +1,7 @@
 #include <EditorApp.h>
 
+#include <Services/AssetFiles.h>
+
 #include <Asset/AssetPaths.h>
 
 #include <Game/World/GameObject/EditorGameComponentInfoCache.h>
@@ -80,6 +82,9 @@ namespace Editor
 		StyleSetup();
 
 		m_context.GetPanels().CreatePanels(m_context);
+
+		// Nothing can restore what's left from a session that didn't close cleanly
+		AssetFiles::EmptyTrash();
 
 #ifdef _DEBUG
 		// Undo only sees changes made through commands, so catch anything that changes the scene's objects another way
@@ -193,6 +198,8 @@ namespace Editor
 		RZE().GetActiveScene().SetObjectsChangedCallback(nullptr);
 		// While the renderer and resources are still up
 		m_context.GetThumbnails().ShutDown();
+		// Undo can't restore deleted files once the editor closes
+		AssetFiles::EmptyTrash();
 	}
 
 	void EditorApp::RegisterInputEvents(InputHandler& inputHandler)

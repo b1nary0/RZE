@@ -26,6 +26,9 @@ namespace Editor
 	struct SelectionChangedEvent { const EditorSelection& Selection; };
 	// A thumbnail image was written again (ThumbnailRenderer), so anything showing it should reload it
 	struct ThumbnailWrittenEvent { const Filepath& Image; };
+	// A file or folder in the project was renamed (From and To), made (no From) or deleted (no To), including by undo
+	// or redo (AssetFileCommands)
+	struct AssetFileChangedEvent { const Filepath& From; const Filepath& To; };
 
 	namespace Internal
 	{

@@ -5,6 +5,10 @@
 #include <Services/UndoHistory.h>
 #include <UI/Framework/EditorContext.h>
 
+#include <Game/GameScene.h>
+#include <Game/World/GameObject/GameObject.h>
+
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
@@ -18,18 +22,20 @@ namespace
 	class FakeRecord : public UndoRecord
 	{
 	public:
-		FakeRecord(std::vector<std::string>& log, std::string name, int target, int before, int after)
+		FakeRecord(std::vector<std::string>& log, std::string name, int target, int before, int after, bool changesScene = true)
 			: m_log(log)
 			, m_name(std::move(name))
 			, m_target(target)
 			, m_before(before)
 			, m_after(after)
+			, m_changesScene(changesScene)
 		{
 		}
 
 		void Undo(EditorContext& context) override { Log("undo", m_before); }
 		void Redo(EditorContext& context) override { Log("redo", m_after); }
 		std::string GetName() const override { return m_name; }
+		bool ChangesScene() const override { return m_changesScene; }
 
 		void OnDropped() override { m_log.push_back("dropped " + m_name); }
 
@@ -57,6 +63,7 @@ namespace
 		int m_target;
 		int m_before;
 		int m_after;
+		bool m_changesScene;
 	};
 
 	struct UndoHistoryFixture
@@ -68,6 +75,12 @@ namespace
 		void Record(InteractionID interaction, int target, int before, int after, const char* name = "Change")
 		{
 			History.Record(interaction, std::make_unique<FakeRecord>(Log, name, target, before, after));
+		}
+
+		// A step that changes something other than the scene, like a file
+		void RecordFileStep(int target, int before, int after)
+		{
+			History.Record(k_noInteraction, std::make_unique<FakeRecord>(Log, "File change", target, before, after, false));
 		}
 	};
 
@@ -382,4 +395,93 @@ TEST_CASE_FIXTURE(UndoHistoryFixture, "Clear makes the empty history the save po
 	History.Clear();
 
 	CHECK(History.IsAtSavePoint());
+}
+
+TEST_CASE_FIXTURE(UndoHistoryFixture, "Steps that don't change the scene don't move it off its save point")
+{
+	RecordFileStep(1, 0, 1);
+	CHECK(History.IsAtSavePoint());
+
+	Record(k_noInteraction, 2, 0, 1);
+	CHECK_FALSE(History.IsAtSavePoint());
+
+	History.Undo(Context);
+	CHECK(History.IsAtSavePoint());
+	History.Undo(Context);
+	CHECK(History.IsAtSavePoint());
+}
+
+TEST_CASE_FIXTURE(UndoHistoryFixture, "A save after steps that don't change the scene is reached without them")
+{
+	Record(k_noInteraction, 1, 0, 1);
+	RecordFileStep(2, 0, 1);
+	History.MarkSaved();
+
+	History.Undo(Context);
+	CHECK(History.IsAtSavePoint());
+
+	// Replacing the undone file step keeps the save point where the scene still matches it
+	Record(k_noInteraction, 3, 0, 1);
+	CHECK_FALSE(History.IsAtSavePoint());
+	History.Undo(Context);
+	CHECK(History.IsAtSavePoint());
+}
+
+TEST_CASE_FIXTURE(UndoHistoryFixture, "The save point survives dropping a step past the cap that didn't change the scene")
+{
+	RecordFileStep(0, 0, 1);
+	for (size_t step = 1; step <= UndoHistory::k_maxSteps; ++step)
+	{
+		Record(k_noInteraction, static_cast<int>(step), 0, 1);
+	}
+
+	// The file step was dropped; the start of the history is the scene as it was saved
+	while (History.CanUndo())
+	{
+		History.Undo(Context);
+	}
+	CHECK(History.IsAtSavePoint());
+	CHECK(std::find(Log.begin(), Log.end(), "dropped File change") != Log.end());
+}
+
+TEST_CASE_FIXTURE(UndoHistoryFixture, "Undoing a step that doesn't change the scene leaves the selection alone")
+{
+	GameScene scene;
+	const GameObjectPtr selected = scene.AddGameObject("Selected");
+	Context.GetSelection().Select(selected);
+
+	RecordFileStep(1, 0, 1);
+	History.Undo(Context);
+	History.Redo(Context);
+	CHECK(Context.GetSelection().IsSelected(selected));
+
+	// A scene step puts back its own selection, empty here
+	Record(k_noInteraction, 2, 0, 1);
+	History.Undo(Context);
+	CHECK_FALSE(Context.GetSelection().IsSelected(selected));
+
+	scene.Unload();
+}
+
+TEST_CASE_FIXTURE(UndoHistoryFixture, "Clear keeps the steps that don't change the scene, in order, as undoable or redoable as they were")
+{
+	Record(k_noInteraction, 1, 0, 1);
+	RecordFileStep(2, 0, 1);
+	Record(k_noInteraction, 3, 0, 1);
+	RecordFileStep(4, 0, 1);
+	History.Undo(Context);
+	History.MarkUnrecordedChange();
+	Log.clear();
+
+	History.Clear();
+
+	CHECK(History.IsAtSavePoint());
+	REQUIRE(History.CanUndo());
+	REQUIRE(History.CanRedo());
+	History.Undo(Context);
+	CHECK_FALSE(History.CanUndo());
+	History.Redo(Context);
+	History.Redo(Context);
+	CHECK_FALSE(History.CanRedo());
+	CHECK(Log == std::vector<std::string>{ "undo 2=0", "redo 2=1", "redo 4=1" });
 }

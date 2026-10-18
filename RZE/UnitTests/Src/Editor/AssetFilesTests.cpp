@@ -39,6 +39,29 @@ namespace
 	private:
 		Filepath m_file;
 	};
+
+	// Removes what a test left in the trash when it ends, and the trash itself if that leaves it empty
+	class ScopedTrashCleanup
+	{
+	public:
+		explicit ScopedTrashCleanup(const TrashedItem& item)
+			: m_item(item)
+		{
+		}
+
+		~ScopedTrashCleanup()
+		{
+			std::error_code ignored;
+			if (m_item.IsInTrash())
+			{
+				std::filesystem::remove_all(m_item.InTrash.GetParentFolder().GetParentFolder().GetAbsolutePath(), ignored);
+			}
+			std::filesystem::remove(AssetFiles::GetTrashFolder().GetAbsolutePath(), ignored);
+		}
+
+	private:
+		const TrashedItem& m_item;
+	};
 }
 
 TEST_CASE("AssetFiles::Rename takes a mesh's thumbnail with it")
@@ -70,14 +93,90 @@ TEST_CASE("AssetFiles::Rename changes nothing if the name is taken")
 	CHECK(Thumbnails::FindFor(tank).Exists());
 }
 
-TEST_CASE("AssetFiles::CreateFolder numbers the folder if the name is taken")
+TEST_CASE("AssetFiles::CreateFolder makes a folder, but not over one that's there")
+{
+	const ScopedTestFolder folder("UnitTestsTemp_AssetFiles");
+	const Filepath newFolder = folder.GetFile("New Folder");
+
+	CHECK(AssetFiles::CreateFolder(newFolder));
+	CHECK(std::filesystem::is_directory(newFolder.GetAbsolutePath()));
+	CHECK_FALSE(AssetFiles::CreateFolder(newFolder));
+}
+
+TEST_CASE("AssetFiles::GetWhyInUse refuses the open scene and the folders it's in")
+{
+	const Filepath scene("Assets/Scenes/Level.scene");
+
+	CHECK_FALSE(AssetFiles::GetWhyInUse(Filepath("Assets/Scenes/LEVEL.scene"), scene).empty());
+	CHECK_FALSE(AssetFiles::GetWhyInUse(Filepath("Assets/Scenes"), scene).empty());
+	CHECK(AssetFiles::GetWhyInUse(Filepath("Assets/Scenes/Other.scene"), scene).empty());
+	CHECK(AssetFiles::GetWhyInUse(Filepath("Assets/Scenes/Level.scene"), Filepath()).empty());
+}
+
+TEST_CASE("AssetFiles::MoveToTrash sets a mesh and its thumbnail aside, and RestoreFromTrash puts them back")
+{
+	const ScopedTestFolder folder("UnitTestsTemp_AssetFiles");
+	const Filepath tank = folder.AddFile("UnitTestsTempTank.meshasset");
+	const ScopedRemoval thumbnail(WriteThumbnail(tank));
+
+	const TrashedItem item = AssetFiles::MoveToTrash(tank);
+	const ScopedTrashCleanup cleanup(item);
+
+	REQUIRE(item.IsInTrash());
+	CHECK_FALSE(tank.Exists());
+	CHECK_FALSE(Thumbnails::FindFor(tank).Exists());
+	CHECK(item.InTrash.Exists());
+	CHECK(item.InTrash.GetFileName() == tank.GetFileName());
+	CHECK(item.InTrash.IsInside(AssetFiles::GetTrashFolder()));
+
+	REQUIRE(AssetFiles::RestoreFromTrash(item));
+
+	CHECK(tank.Exists());
+	CHECK(Thumbnails::FindFor(tank).Exists());
+	CHECK_FALSE(item.InTrash.GetParentFolder().GetParentFolder().Exists());
+}
+
+TEST_CASE("AssetFiles::MoveToTrash takes a folder with the thumbnails of the meshes in it")
+{
+	const ScopedTestFolder folder("UnitTestsTemp_AssetFiles");
+	const Filepath tank = folder.AddFile("Vehicles/UnitTestsTempTank.meshasset");
+	const Filepath vehicles = tank.GetParentFolder();
+	const ScopedRemoval thumbnail(WriteThumbnail(tank));
+
+	const TrashedItem item = AssetFiles::MoveToTrash(vehicles);
+	const ScopedTrashCleanup cleanup(item);
+
+	REQUIRE(item.IsInTrash());
+	CHECK_FALSE(vehicles.Exists());
+	CHECK(item.Thumbnails.size() == 1);
+	CHECK_FALSE(Thumbnails::FindFor(tank).Exists());
+
+	REQUIRE(AssetFiles::RestoreFromTrash(item));
+
+	CHECK(tank.Exists());
+	CHECK(Thumbnails::FindFor(tank).Exists());
+}
+
+TEST_CASE("AssetFiles::RestoreFromTrash leaves it in the trash if something else has its name now")
+{
+	const ScopedTestFolder folder("UnitTestsTemp_AssetFiles");
+	const Filepath tank = folder.AddFile("UnitTestsTempTank.meshasset");
+
+	const TrashedItem item = AssetFiles::MoveToTrash(tank);
+	const ScopedTrashCleanup cleanup(item);
+	REQUIRE(item.IsInTrash());
+	folder.AddFile("UnitTestsTempTank.meshasset");
+
+	CHECK_FALSE(AssetFiles::RestoreFromTrash(item));
+	CHECK(item.InTrash.Exists());
+}
+
+TEST_CASE("AssetFiles::MoveToTrash changes nothing for a path that isn't there")
 {
 	const ScopedTestFolder folder("UnitTestsTemp_AssetFiles");
 
-	const Filepath first = AssetFiles::CreateFolder(folder.Get(), "New Folder");
-	const Filepath second = AssetFiles::CreateFolder(folder.Get(), "New Folder");
+	const TrashedItem item = AssetFiles::MoveToTrash(folder.GetFile("Missing.meshasset"));
+	const ScopedTrashCleanup cleanup(item);
 
-	CHECK(first.GetFileName() == "New Folder");
-	CHECK(second.GetFileName() == "New Folder 2");
-	CHECK(std::filesystem::is_directory(second.GetAbsolutePath()));
+	CHECK_FALSE(item.IsInTrash());
 }

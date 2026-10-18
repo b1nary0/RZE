@@ -24,8 +24,8 @@ namespace Editor
 			: m_interaction(interaction) {}
 		virtual ~EditorCommand() = default;
 
-		// Whether it changed what's saved with the scene: false if its target is gone, or it only changed editor state
-		// (e.g. an EditorOnly property)
+		// Whether it changed anything: what's saved with the scene, or the project's files (AssetFileCommands). False if
+		// its target is gone, or it only changed editor state (e.g. an EditorOnly property).
 		virtual bool Execute(EditorContext& context) = 0;
 
 		// For logs

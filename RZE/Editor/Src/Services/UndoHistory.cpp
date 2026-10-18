@@ -4,6 +4,8 @@
 
 #include <Utils/DebugUtils/Debug.h>
 
+#include <algorithm>
+
 namespace Editor
 {
 	void UndoHistory::Record(InteractionID interaction, std::unique_ptr<UndoRecord> record,
@@ -16,6 +18,7 @@ namespace Editor
 		if (joinsLastStep)
 		{
 			m_steps.back().SelectionAfter = std::move(selectionAfter);
+			m_steps.back().ChangesScene = m_steps.back().ChangesScene || record->ChangesScene();
 
 			// The newest records are the likeliest to be the same change (the same object, a frame later)
 			std::vector<std::unique_ptr<UndoRecord>>& records = m_steps.back().Records;
@@ -30,16 +33,17 @@ namespace Editor
 			return;
 		}
 
-		// A new change makes the undone steps unreachable, and the save point with them if it was among them
+		// A new change makes the undone steps unreachable, and the save point with them if it was among them. Unless
+		// they don't change the scene, in which case the scene here is as it was there.
+		if (m_savePoint != k_noSavePoint && m_savePoint > m_position)
+		{
+			m_savePoint = ChangesSceneBetween(m_position, m_savePoint) ? k_noSavePoint : m_position;
+		}
 		for (size_t stepIndex = m_position; stepIndex < m_steps.size(); ++stepIndex)
 		{
 			Drop(m_steps[stepIndex]);
 		}
 		m_steps.erase(m_steps.begin() + m_position, m_steps.end());
-		if (m_savePoint != k_noSavePoint && m_savePoint > m_position)
-		{
-			m_savePoint = k_noSavePoint;
-		}
 
 		Step step;
 		step.Name = record->GetName();
@@ -47,17 +51,24 @@ namespace Editor
 		step.Records.push_back(std::move(record));
 		step.SelectionBefore = std::move(selectionBefore);
 		step.SelectionAfter = std::move(selectionAfter);
+		step.ChangesScene = step.Records.front()->ChangesScene();
 		m_steps.push_back(std::move(step));
 
 		if (m_steps.size() > k_maxSteps)
 		{
+			const bool droppedChangesScene = m_steps.front().ChangesScene;
 			Drop(m_steps.front());
 			m_steps.pop_front();
 
-			// Positions count from the front; the save point is lost if it was before the dropped step
-			if (m_savePoint != k_noSavePoint)
+			// Positions count from the front. The save point is lost if it was before the dropped step, unless that step
+			// didn't change the scene.
+			if (m_savePoint != k_noSavePoint && m_savePoint > 0)
 			{
-				m_savePoint = m_savePoint > 0 ? m_savePoint - 1 : k_noSavePoint;
+				--m_savePoint;
+			}
+			else if (m_savePoint == 0 && droppedChangesScene)
+			{
+				m_savePoint = k_noSavePoint;
 			}
 		}
 
@@ -91,7 +102,10 @@ namespace Editor
 			(*it)->Undo(context);
 		}
 
-		RestoreSelection(context, step.SelectionBefore);
+		if (step.ChangesScene)
+		{
+			RestoreSelection(context, step.SelectionBefore);
+		}
 		return true;
 	}
 
@@ -110,7 +124,10 @@ namespace Editor
 		}
 		++m_position;
 
-		RestoreSelection(context, step.SelectionAfter);
+		if (step.ChangesScene)
+		{
+			RestoreSelection(context, step.SelectionAfter);
+		}
 		return true;
 	}
 
@@ -118,6 +135,16 @@ namespace Editor
 	{
 		CloseStep();
 		m_savePoint = m_position;
+	}
+
+	bool UndoHistory::IsAtSavePoint() const
+	{
+		return m_savePoint != k_noSavePoint && !ChangesSceneBetween(std::min(m_savePoint, m_position), std::max(m_savePoint, m_position));
+	}
+
+	bool UndoHistory::ChangesSceneBetween(size_t first, size_t last) const
+	{
+		return std::any_of(m_steps.begin() + first, m_steps.begin() + last, [](const Step& step) { return step.ChangesScene; });
 	}
 
 	void UndoHistory::RestoreSelection(EditorContext& context, const std::vector<ObjectGUID>& selection)
@@ -144,9 +171,25 @@ namespace Editor
 
 	void UndoHistory::Clear()
 	{
-		m_steps.clear();
-		m_position = 0;
+		std::deque<Step> kept;
+		size_t keptBeforePosition = 0;
+		for (size_t stepIndex = 0; stepIndex < m_steps.size(); ++stepIndex)
+		{
+			if (m_steps[stepIndex].ChangesScene)
+			{
+				continue;
+			}
+
+			if (stepIndex < m_position)
+			{
+				++keptBeforePosition;
+			}
+			kept.push_back(std::move(m_steps[stepIndex]));
+		}
+
+		m_steps = std::move(kept);
+		m_position = keptBeforePosition;
 		m_isLastStepOpen = false;
-		m_savePoint = 0;
+		m_savePoint = m_position;
 	}
 }
