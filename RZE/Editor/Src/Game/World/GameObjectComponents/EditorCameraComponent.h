@@ -8,6 +8,8 @@
 
 #include <Utils/Reflect/Reflection.h>
 
+#include <memory>
+
 class TransformComponent;
 
 class EditorCameraComponent final : public GameObjectComponent<EditorCameraComponent>
@@ -16,7 +18,7 @@ class EditorCameraComponent final : public GameObjectComponent<EditorCameraCompo
 	static constexpr float kMaxDirectionHeldTime = 10.f;
 public:
 	EditorCameraComponent();
-	~EditorCameraComponent() = default;
+	~EditorCameraComponent();
 
 	// GameObjectComponent interface
 public:
@@ -87,11 +89,7 @@ private:
 
 	bool m_isActiveCamera{ false };
 
-	// In-flight FocusOn() animation
-	bool m_isFocusing{ false };
-	float m_focusElapsed{ 0.0f };
-	Vector3D m_focusStartPos;
-	Vector3D m_focusTargetPos;
-	Vector3D m_focusStartForward;
-	Vector3D m_focusTargetForward;
+	// The FocusOn() animation; only while it's playing
+	struct FocusAnimation;
+	std::unique_ptr<FocusAnimation> m_focus;
 };

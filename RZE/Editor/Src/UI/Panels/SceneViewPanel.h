@@ -10,6 +10,7 @@
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector3D.h>
 
+#include <optional>
 #include <vector>
 
 struct ImVec2;
@@ -100,8 +101,7 @@ namespace Editor
 		// Whether the last Draw showed the scene image, so PreRender knows whether its lines would be seen
 		bool m_isImageShown = false;
 
-		// Where the left button went down over the scene image; only meaningful while m_isSelecting
-		Vector2D m_selectStart;
-		bool m_isSelecting = false;
+		// Where the left button went down over the scene image; only while it's held, as a click or a marquee
+		std::optional<Vector2D> m_selectStart;
 	};
 }

@@ -26,6 +26,20 @@ namespace
 
 namespace Editor
 {
+	struct FileBrowserModal::SaveState
+	{
+		char FileName[128] = {};
+		// The file name field takes the keyboard on its next draw
+		bool FocusFileName = true;
+		// Why the typed name can't be saved to, shown over the footer
+		std::string Error;
+		// The existing file the typed name would replace, while the footer asks about it
+		Filepath PendingReplace;
+	};
+
+	FileBrowserModal::FileBrowserModal() = default;
+	FileBrowserModal::~FileBrowserModal() = default;
+
 	void FileBrowserModal::Open(FileBrowserRequest request)
 	{
 		m_grid.ReleaseThumbnails();
@@ -52,12 +66,11 @@ namespace Editor
 
 		Refresh();
 
-		m_saveError.clear();
-		m_pendingReplace = Filepath();
-		if (IsSaving())
+		m_save.reset();
+		if (m_request.Mode == EFileBrowserMode::Save)
 		{
+			m_save = std::make_unique<SaveState>();
 			SetFileName(m_request.InitialSelection.IsValid() ? m_request.InitialSelection.GetStem() : m_request.DefaultFileName);
-			m_focusFileName = true;
 		}
 
 		// Opened from Display, since a request can come from inside a menu or a panel, whose ID stack the popup mustn't use
@@ -140,6 +153,7 @@ namespace Editor
 			// Closed by something other than the browser
 			m_isOpen = false;
 			m_grid.ReleaseThumbnails();
+			m_save.reset();
 			std::function<void()> cancelled = std::move(m_request.OnCancelled);
 			m_request = FileBrowserRequest();
 			if (cancelled)
@@ -210,7 +224,7 @@ namespace Editor
 		}
 
 		const ImGuiStyle& style = ImGui::GetStyle();
-		const bool hasNoticeRow = IsSaving() && !m_saveError.empty() && !m_pendingReplace.IsValid();
+		const bool hasNoticeRow = IsSaving() && !m_save->Error.empty() && !m_save->PendingReplace.IsValid();
 		const float footerHeight = ImGui::GetFrameHeight() + style.ItemSpacing.y * 2.0f + 6.0f
 			+ (hasNoticeRow ? ImGui::GetTextLineHeightWithSpacing() : 0.0f);
 
@@ -264,52 +278,53 @@ namespace Editor
 			isConfirmed = EditorUI::PrimaryButton(m_request.ConfirmLabel.c_str(), ImVec2(k_buttonWidth, 0.0f));
 			ImGui::EndDisabled();
 		}
-		else if (m_pendingReplace.IsValid())
+		else if (m_save->PendingReplace.IsValid())
 		{
 			// Asks in place, rather than in a second popup over this one
 			ImGui::AlignTextToFramePadding();
-			ImGui::TextColored(k_warningColour, "%s already exists. Replace it?", m_pendingReplace.GetFileName().c_str());
+			ImGui::TextColored(k_warningColour, "%s already exists. Replace it?", m_save->PendingReplace.GetFileName().c_str());
 
 			ImGui::SameLine(buttonsX);
 			if (ImGui::Button("Back", ImVec2(k_buttonWidth, 0.0f)))
 			{
-				m_pendingReplace = Filepath();
+				m_save->PendingReplace = Filepath();
 			}
 			ImGui::SameLine();
 			if (EditorUI::PrimaryButton("Replace", ImVec2(k_buttonWidth, 0.0f)))
 			{
-				Choose(m_pendingReplace);
+				Choose(m_save->PendingReplace);
 				return;
 			}
 		}
 		else
 		{
-			if (!m_saveError.empty())
+			SaveState& save = *m_save;
+			if (!save.Error.empty())
 			{
-				ImGui::TextColored(EditorUI::k_errorColour, "%s", m_saveError.c_str());
+				ImGui::TextColored(EditorUI::k_errorColour, "%s", save.Error.c_str());
 			}
 
 			ImGui::AlignTextToFramePadding();
 			ImGui::TextUnformatted("File name");
 			ImGui::SameLine();
 
-			if (m_focusFileName)
+			if (save.FocusFileName)
 			{
 				ImGui::SetKeyboardFocusHere();
-				m_focusFileName = false;
+				save.FocusFileName = false;
 			}
 			ImGui::SetNextItemWidth(std::max(1.0f, buttonsX - ImGui::GetCursorPosX() - style.ItemSpacing.x));
-			const bool isEntered = ImGui::InputText("##fileName", m_fileName, sizeof(m_fileName), ImGuiInputTextFlags_EnterReturnsTrue);
+			const bool isEntered = ImGui::InputText("##fileName", save.FileName, sizeof(save.FileName), ImGuiInputTextFlags_EnterReturnsTrue);
 			if (ImGui::IsItemEdited())
 			{
-				m_saveError.clear();
+				save.Error.clear();
 			}
 			m_isTextActive = m_isTextActive || ImGui::IsItemActive() || ImGui::IsItemDeactivated();
 
 			ImGui::SameLine(buttonsX);
 			isCancelled = ImGui::Button("Cancel", ImVec2(k_buttonWidth, 0.0f));
 			ImGui::SameLine();
-			ImGui::BeginDisabled(m_fileName[0] == 0);
+			ImGui::BeginDisabled(save.FileName[0] == 0);
 			isConfirmed = EditorUI::PrimaryButton(m_request.ConfirmLabel.c_str(), ImVec2(k_buttonWidth, 0.0f)) || isEntered;
 			ImGui::EndDisabled();
 		}
@@ -336,9 +351,9 @@ namespace Editor
 		if (ImGui::IsKeyPressed(ImGuiKey_Escape, false) && !m_isTextActive)
 		{
 			// Backs out of the replace question first
-			if (m_pendingReplace.IsValid())
+			if (IsSaving() && m_save->PendingReplace.IsValid())
 			{
-				m_pendingReplace = Filepath();
+				m_save->PendingReplace = Filepath();
 			}
 			else
 			{
@@ -400,14 +415,14 @@ namespace Editor
 	void FileBrowserModal::ConfirmSave()
 	{
 		const std::string extension = m_request.Extensions.empty() ? std::string() : m_request.Extensions.front();
-		const FileNames::ResolvedName saveName = FileNames::ResolveSave(m_folder, m_fileName, extension);
+		const FileNames::ResolvedName saveName = FileNames::ResolveSave(m_folder, m_save->FileName, extension);
 		if (!saveName.Error.empty())
 		{
-			m_saveError = saveName.Error;
+			m_save->Error = saveName.Error;
 		}
 		else if (saveName.Path.Exists())
 		{
-			m_pendingReplace = saveName.Path;
+			m_save->PendingReplace = saveName.Path;
 		}
 		else
 		{
@@ -448,9 +463,9 @@ namespace Editor
 
 	void FileBrowserModal::SetFileName(const std::string& name)
 	{
-		strncpy_s(m_fileName, name.c_str(), _TRUNCATE);
-		m_saveError.clear();
-		m_pendingReplace = Filepath();
+		strncpy_s(m_save->FileName, name.c_str(), _TRUNCATE);
+		m_save->Error.clear();
+		m_save->PendingReplace = Filepath();
 	}
 
 	void FileBrowserModal::Close()
@@ -459,6 +474,7 @@ namespace Editor
 		m_isOpen = false;
 		m_entries.clear();
 		m_grid.ReleaseThumbnails();
+		m_save.reset();
 	}
 
 	const FolderEntry* FileBrowserModal::GetSelected() const

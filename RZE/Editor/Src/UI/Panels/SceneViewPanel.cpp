@@ -69,7 +69,7 @@ namespace Editor
 	{
 		m_gizmoState.m_drag.Reset();
 		m_iconHits.clear();
-		m_isSelecting = false;
+		m_selectStart.reset();
 	}
 
 	void SceneViewPanel::DrawMenuBar(EditorContext& context)
@@ -467,18 +467,17 @@ namespace Editor
 		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && isImageHovered && !ImGuizmo::IsOver()
 			&& !ImGui::IsMouseDown(ImGuiMouseButton_Right) && !ImGui::IsMouseDown(ImGuiMouseButton_Middle))
 		{
-			m_isSelecting = true;
 			m_selectStart = Vector2D(io.MousePos.x, io.MousePos.y);
 		}
 
-		if (!m_isSelecting)
+		if (!m_selectStart.has_value())
 		{
 			return;
 		}
 
 		// The marquee is kept to the scene image so it maps inside the camera's view
 		const ImVec2 viewMax(viewOrigin.x + GetDimensions().X(), viewOrigin.y + GetDimensions().Y());
-		const ImVec2 start(m_selectStart.X(), m_selectStart.Y());
+		const ImVec2 start(m_selectStart->X(), m_selectStart->Y());
 		const ImVec2 end(MathUtils::Clampf(io.MousePos.x, viewOrigin.x, viewMax.x), MathUtils::Clampf(io.MousePos.y, viewOrigin.y, viewMax.y));
 		const ImVec2 rectMin(std::min(start.x, end.x), std::min(start.y, end.y));
 		const ImVec2 rectMax(std::max(start.x, end.x), std::max(start.y, end.y));
@@ -495,7 +494,7 @@ namespace Editor
 			return;
 		}
 
-		m_isSelecting = false;
+		m_selectStart.reset();
 
 		const bool isAdditive = io.KeyCtrl;
 

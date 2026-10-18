@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <memory>
 #include <string>
 
 namespace Editor
@@ -13,8 +14,8 @@ namespace Editor
 	class UnsavedChangesPrompt
 	{
 	public:
-		UnsavedChangesPrompt() = default;
-		~UnsavedChangesPrompt() = default;
+		UnsavedChangesPrompt();
+		~UnsavedChangesPrompt();
 
 	public:
 		// Runs action straight away if the scene has no unsaved changes. Otherwise opens the prompt, and runs it once
@@ -23,7 +24,7 @@ namespace Editor
 		// prompt (or its save) is open replaces the one it's asking about.
 		void Request(EditorContext& context, std::string actionDescription, std::function<void()> action);
 
-		bool IsOpen() const { return m_pendingAction != nullptr; }
+		bool IsOpen() const { return m_request != nullptr; }
 
 		// Must be called at the root of the ImGui ID stack (outside any Begin/End pair)
 		void Display(EditorContext& context);
@@ -32,9 +33,9 @@ namespace Editor
 		void Finish(bool runAction);
 
 	private:
-		std::string m_actionDescription;
-		std::function<void()> m_pendingAction;
-		bool m_shouldOpen = false;
+		// The action waiting on the answer; only while there's one
+		struct PendingRequest;
+		std::unique_ptr<PendingRequest> m_request;
 		// While the file browser is asking where to save, which then decides whether the action runs
 		bool m_isSaving = false;
 	};

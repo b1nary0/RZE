@@ -37,6 +37,15 @@ namespace
 	constexpr float k_focusMaxElevation = 45.0f;
 }
 
+struct EditorCameraComponent::FocusAnimation
+{
+	float Elapsed{ 0.0f };
+	Vector3D StartPos;
+	Vector3D TargetPos;
+	Vector3D StartForward;
+	Vector3D TargetForward;
+};
+
 const Vector3D& EditorCameraComponent::GetUpDir() const
 {
 	return m_upDir;
@@ -160,20 +169,21 @@ void EditorCameraComponent::FocusOn(const BoundingBox& bounds)
 	const float elevation = MathUtils::Clampf(currentElevation, k_focusMinElevation, k_focusMaxElevation) * MathUtils::ToRadians;
 	const Vector3D targetForward = heading * std::cos(elevation) - WorldAxes::Up() * std::sin(elevation);
 
-	m_focusStartPos = transformComponent->GetPosition();
-	m_focusTargetPos = center - targetForward * distance;
-	m_focusStartForward = m_forward;
-	m_focusTargetForward = targetForward;
-	m_focusElapsed = 0.0f;
+	m_focus = std::make_unique<FocusAnimation>();
+	m_focus->StartPos = transformComponent->GetPosition();
+	m_focus->TargetPos = center - targetForward * distance;
+	m_focus->StartForward = m_forward;
+	m_focus->TargetForward = targetForward;
 	// Orbit around the focused object once the camera arrives
 	m_orbitDistance = distance;
-	m_isFocusing = true;
 }
 
 EditorCameraComponent::EditorCameraComponent()
 {
 	REFLECT_REGISTER_COMPONENT_CHILD(EditorCameraComponent, CameraComponent);
 }
+
+EditorCameraComponent::~EditorCameraComponent() = default;
 
 void EditorCameraComponent::Initialize()
 {
@@ -224,7 +234,7 @@ void EditorCameraComponent::Update()
 
 void EditorCameraComponent::UpdateFocus(GameObjectComponentPtr<TransformComponent>& transfComp)
 {
-	if (!m_isFocusing)
+	if (m_focus == nullptr)
 	{
 		return;
 	}
@@ -235,21 +245,22 @@ void EditorCameraComponent::UpdateFocus(GameObjectComponentPtr<TransformComponen
 		|| inputHandler.GetMouseState().GetButtonState(EMouseButton::MouseButton_Middle) == EButtonState::ButtonState_Pressed
 		|| inputHandler.GetMouseState().CurWheelVal != 0)
 	{
-		m_isFocusing = false;
+		m_focus.reset();
 		return;
 	}
 
-	m_focusElapsed += static_cast<float>(RZE().GetDeltaTime());
-	const float t = MathUtils::Clampf(m_focusElapsed / k_focusDuration, 0.0f, 1.0f);
+	FocusAnimation& focus = *m_focus;
+	focus.Elapsed += static_cast<float>(RZE().GetDeltaTime());
+	const float t = MathUtils::Clampf(focus.Elapsed / k_focusDuration, 0.0f, 1.0f);
 	const float eased = MathUtils::SmoothStep(t);
-	const float rotateEased = MathUtils::SmoothStep(MathUtils::Clampf(m_focusElapsed / k_focusRotateDuration, 0.0f, 1.0f));
+	const float rotateEased = MathUtils::SmoothStep(MathUtils::Clampf(focus.Elapsed / k_focusRotateDuration, 0.0f, 1.0f));
 
-	transfComp->GetPosition() = VectorUtils::Lerp(m_focusStartPos, m_focusTargetPos, eased);
-	SetForward(VectorUtils::Slerp(m_focusStartForward, m_focusTargetForward, rotateEased));
+	transfComp->GetPosition() = VectorUtils::Lerp(focus.StartPos, focus.TargetPos, eased);
+	SetForward(VectorUtils::Slerp(focus.StartForward, focus.TargetForward, rotateEased));
 
 	if (t >= 1.0f)
 	{
-		m_isFocusing = false;
+		m_focus.reset();
 	}
 }
 

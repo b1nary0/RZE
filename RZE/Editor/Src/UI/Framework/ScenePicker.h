@@ -3,18 +3,11 @@
 #include <Game/World/GameObject/GameObjectDefinitions.h>
 
 #include <Utils/Functor.h>
-#include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Ray.h>
-#include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector3D.h>
 
 #include <memory>
 #include <optional>
-
-namespace Rendering
-{
-	struct TexelReadback;
-}
 
 namespace Editor
 {
@@ -37,14 +30,14 @@ namespace Editor
 		using ResultCallback = Functor<void, const ScenePick&>;
 
 	public:
-		ScenePicker() = default;
-		~ScenePicker() = default;
+		ScenePicker();
+		~ScenePicker();
 
 	public:
 		// x and y are relative to the main view's top-left. Replaces any pick still in flight,
 		// whose callback is then never called.
 		void RequestPick(U32 x, U32 y, const ResultCallback& onResult);
-		bool IsPending() const { return m_pendingResult != nullptr; }
+		bool IsPending() const { return m_pending != nullptr; }
 
 		// Delivers the pick in flight if its result has arrived. Once per frame.
 		void Update();
@@ -55,13 +48,8 @@ namespace Editor
 		GameObjectPtr FindObject(U32 pickID) const;
 
 	private:
-		std::shared_ptr<Rendering::TexelReadback> m_pendingResult;
-		std::shared_ptr<Rendering::TexelReadback> m_pendingDepth;
-		ResultCallback m_onResult;
-
-		// The pixel's centre, and the view's camera and size when it was asked for, to turn the depth into a position
-		Vector2D m_pixel;
-		Matrix4x4 m_clipSpace;
-		Vector2D m_viewSize;
+		// The pick in flight, if there is one
+		struct PendingPick;
+		std::unique_ptr<PendingPick> m_pending;
 	};
 }

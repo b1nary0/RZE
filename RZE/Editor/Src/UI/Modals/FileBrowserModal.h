@@ -8,6 +8,7 @@
 #include <ImGui/imgui.h>
 
 #include <functional>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -60,8 +61,8 @@ namespace Editor
 	class FileBrowserModal
 	{
 	public:
-		FileBrowserModal() = default;
-		~FileBrowserModal() = default;
+		FileBrowserModal();
+		~FileBrowserModal();
 
 		FileBrowserModal(const FileBrowserModal&) = delete;
 		FileBrowserModal& operator=(const FileBrowserModal&) = delete;
@@ -100,7 +101,7 @@ namespace Editor
 		// Closes without answering the request
 		void Close();
 		void SetFileName(const std::string& name);
-		bool IsSaving() const { return m_request.Mode == EFileBrowserMode::Save; }
+		bool IsSaving() const { return m_save != nullptr; }
 
 		const FolderEntry* GetSelected() const;
 
@@ -120,14 +121,11 @@ namespace Editor
 		// Escape leaves a text field rather than closing the browser
 		bool m_isTextActive = false;
 
-		// Save mode
-		char m_fileName[128] = {};
-		bool m_focusFileName = false;
-		// Why the typed name can't be saved to, shown over the footer
-		std::string m_saveError;
-		// The existing file the typed name would replace, while the footer asks about it
-		Filepath m_pendingReplace;
 		float m_tileSize = 138.0f;
+
+		// The typed file name and what the footer says about it; only while a Save mode request is open
+		struct SaveState;
+		std::unique_ptr<SaveState> m_save;
 
 		// The last answer to a RequesterID request, waiting for ConsumeResult
 		ImGuiID m_resultRequester = 0;
