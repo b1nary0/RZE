@@ -1,17 +1,22 @@
 {
-    "gameobjects": {
-        "Camera": {
+    "version": 2,
+    "gameobjects": [
+        {
+            "id": "35bb3e7c98147ab7",
+            "name": "Camera",
             "components": {
                 "CameraComponent": {
                     "FOV": 65.0,
                     "NearCull": 0.10000000149011612,
-                    "FarCull": 1000.0
+                    "FarCull": 1000.0,
+                    "ExposureCompensation": 0.0,
+                    "MainCamera": true
                 },
                 "TransformComponent": {
                     "Position": [
                         0.0,
-                        5.0,
-                        10.0
+                        10.434678077697754,
+                        28.091699600219728
                     ],
                     "Scale": [
                         1.0,
@@ -26,7 +31,9 @@
                 }
             }
         },
-        "DirectionalLight": {
+        {
+            "id": "aa3eddb2739a9160",
+            "name": "DirectionalLight",
             "components": {
                 "TransformComponent": {
                     "Position": [
@@ -55,14 +62,16 @@
                 }
             }
         },
-        "NeckMech": {
+        {
+            "id": "beb495a51f52d4f3",
+            "name": "NeckMech",
             "components": {
                 "RenderComponent": {
                     "ResourcePath": "ProjectData\\Mesh\\NeckMechWalker.meshasset"
                 },
                 "TransformComponent": {
                     "Position": [
-                        -22.729938507080079,
+                        -11.213746070861817,
                         10.736211776733399,
                         9.06086540222168
                     ],
@@ -79,29 +88,31 @@
                 }
             }
         },
-        "M4": {
+        {
+            "id": "2e604b8914e4f315",
+            "name": "M4",
             "components": {
+                "RenderComponent": {
+                    "ResourcePath": "ProjectData\\Mesh\\m4a1.meshasset"
+                },
                 "TransformComponent": {
                     "Position": [
-                        42.541439056396487,
-                        17.4096736907959,
-                        -4.407410144805908
+                        24.29683494567871,
+                        9.616438865661621,
+                        -28.982379913330079
                     ],
                     "Scale": [
+                        0.9999989867210388,
                         1.0,
-                        1.0,
-                        1.0
+                        0.9999989867210388
                     ],
                     "Rotation": [
                         0.0,
-                        0.0,
+                        36.51504135131836,
                         0.0
                     ]
-                },
-                "RenderComponent": {
-                    "ResourcePath": "ProjectData\\Mesh\\m4a1.meshasset"
                 }
             }
         }
-    }
+    ]
 }
