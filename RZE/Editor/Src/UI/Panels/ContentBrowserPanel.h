@@ -17,10 +17,11 @@ namespace Editor
 {
 	// Browses the project's Assets and ProjectData folders: a folder tree beside a grid of tiles like the file
 	// browser's, with back, forward and up (also the mouse's side buttons and Backspace), search, and right-click
-	// actions on files and folders. Double-clicking a folder opens it, and a scene loads it. Meshes can be dragged into
-	// the scene view. Files and folders can be renamed (F2), deleted (Delete) and made (New Folder), each of which can
-	// be undone (AssetFileCommands). Names starting with a dot, like the editor's trash, aren't shown. Changes made
-	// outside the editor show up as they happen (ProjectFilesChangedEvent).
+	// actions on files and folders. Double-clicking a folder opens it, and a scene loads it. Files can be dragged onto
+	// the Object Inspector's asset fields that take them, and meshes into the scene view. Files and folders can be
+	// renamed (F2), deleted (Delete) and made (New Folder), each of which can be undone (AssetFileCommands). Names
+	// starting with a dot, like the editor's trash, aren't shown. Changes made outside the editor show up as they
+	// happen (ProjectFilesChangedEvent).
 	class ContentBrowserPanel : public EditorPanel
 	{
 	public:

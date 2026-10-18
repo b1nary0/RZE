@@ -3,6 +3,7 @@
 #include <Services/Thumbnails.h>
 #include <UI/Framework/EditorContext.h>
 #include <UI/Framework/EditorUI.h>
+#include <UI/Widgets/FileTileGrid.h>
 
 #include <Utils/Math/Math.h>
 #include <Utils/Platform/FileNames.h>
@@ -178,15 +179,60 @@ namespace
 		ImGui::SetTooltip("%s", text);
 	}
 
+	// A file dragged from the Content Browser onto the last item, into path if the property takes files like it. One it
+	// doesn't take isn't highlighted, and a tooltip says what it does take.
+	bool AcceptAssetDrop(const PropertyDescriptor& property, Filepath& path)
+	{
+		if (!ImGui::BeginDragDropTarget())
+		{
+			return false;
+		}
+
+		const ImGuiPayload* const dragged = ImGui::GetDragDropPayload();
+		if (dragged == nullptr || !dragged->IsDataType(Editor::k_assetPathPayload))
+		{
+			ImGui::EndDragDropTarget();
+			return false;
+		}
+
+		// Copied first: ending the target frees a payload that's been delivered
+		const Filepath file(static_cast<const char*>(dragged->Data));
+		const std::vector<std::string> extensions = FileNames::ParseExtensionFilter(property.AssetFilter);
+		if (!FileNames::MatchesExtensions(file.GetFileName(), extensions))
+		{
+			std::string takes;
+			for (const std::string& extension : extensions)
+			{
+				takes += (takes.empty() ? "" : ", ") + extension;
+			}
+			SetTooltipAboveCursor((property.Name + " takes " + takes + " files").c_str());
+			ImGui::EndDragDropTarget();
+			return false;
+		}
+
+		const bool isDropped = ImGui::AcceptDragDropPayload(Editor::k_assetPathPayload) != nullptr;
+		ImGui::EndDragDropTarget();
+		if (!isDropped || file.GetRelativePath() == path.GetRelativePath())
+		{
+			return false;
+		}
+
+		path = file;
+		return true;
+	}
+
 	// A preview of the asset (if the property has one), its file name (its relative path shows above the cursor on
 	// hover), a button that picks a new one in the file browser, and one that clears it (if the property allows it).
-	// Fits the item width it's given, so the inspector can leave room beside it.
+	// A file from the Content Browser can be dropped on the preview or the name. Fits the item width it's given, so the
+	// inspector can leave room beside it.
 	bool DrawAssetPath(Editor::EditorContext& context, const PropertyDescriptor& property, const void* object, PropertyValue& value, bool isReadOnly)
 	{
 		Filepath& path = std::get<Filepath>(value);
 		const float spacing = ImGui::GetStyle().ItemInnerSpacing.x;
 		float width = ImGui::CalcItemWidth();
 
+		// The preview and the name, as one drop target
+		ImGui::BeginGroup();
 		if (property.GetThumbnail)
 		{
 			const float thumbnailSize = ImGui::GetFrameHeight();
@@ -204,6 +250,7 @@ namespace
 			{
 				SetTooltipAboveCursor(path.GetRelativePath().c_str());
 			}
+			ImGui::EndGroup();
 			return false;
 		}
 
@@ -221,6 +268,11 @@ namespace
 		if (ImGui::IsItemHovered() && path.IsValid())
 		{
 			SetTooltipAboveCursor(path.GetRelativePath().c_str());
+		}
+		ImGui::EndGroup();
+		if (AcceptAssetDrop(property, path))
+		{
+			return true;
 		}
 
 		ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);

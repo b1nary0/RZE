@@ -98,6 +98,12 @@ namespace FileNames
 		return extensions;
 	}
 
+	bool MatchesExtensions(const std::string& name, const std::vector<std::string>& extensions)
+	{
+		return extensions.empty() || std::any_of(extensions.begin(), extensions.end(),
+			[&name](const std::string& extension) { return StringUtils::EndsWithIgnoringCase(name, extension); });
+	}
+
 	ResolvedName ResolveSave(const Filepath& folder, const std::string& typedName, const std::string& extension)
 	{
 		ResolvedName result;

@@ -1,5 +1,6 @@
 #include <Services/FolderListing.h>
 
+#include <Utils/Platform/FileNames.h>
 #include <Utils/StringUtils.h>
 
 #include <algorithm>
@@ -28,11 +29,6 @@ namespace Editor
 			return entries;
 		}
 
-		std::vector<std::string> lowerExtensions;
-		for (const std::string& extension : extensions)
-		{
-			lowerExtensions.push_back(StringUtils::ToLower(extension));
-		}
 		const std::string lowerSearch = StringUtils::ToLower(searchText);
 
 		for (const std::filesystem::directory_entry& item : iterator)
@@ -48,13 +44,9 @@ namespace Editor
 			{
 				continue;
 			}
-			if (!isFolder && !lowerExtensions.empty())
+			if (!isFolder && !FileNames::MatchesExtensions(name, extensions))
 			{
-				const std::string extension = StringUtils::ToLower(item.path().extension().string());
-				if (std::find(lowerExtensions.begin(), lowerExtensions.end(), extension) == lowerExtensions.end())
-				{
-					continue;
-				}
+				continue;
 			}
 
 			if (!lowerSearch.empty() && StringUtils::ToLower(name).find(lowerSearch) == std::string::npos)

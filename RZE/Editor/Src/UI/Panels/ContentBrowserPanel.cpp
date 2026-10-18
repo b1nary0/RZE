@@ -127,8 +127,9 @@ namespace Editor
 					m_refreshRequested = true;
 				}
 			};
-		// Into the scene view, which adds an object showing it (SceneViewPanel)
-		options.CanDrag = &AssetPaths::IsMesh;
+		// Onto the inspector's asset fields that take it (PropertyDrawers), and a mesh into the scene view, which adds an
+		// object showing it (SceneViewPanel)
+		options.CanDrag = [](const Filepath&) { return true; };
 		m_grid.SetOptions(std::move(options));
 
 		m_thumbnailWritten = context.GetEvents().Subscribe<ThumbnailWrittenEvent>([this](const ThumbnailWrittenEvent& event)

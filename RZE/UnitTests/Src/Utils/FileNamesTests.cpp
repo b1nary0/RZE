@@ -18,6 +18,21 @@ TEST_CASE("FileNames::ParseExtensionFilter turns a file-prompt filter into exten
 	CHECK(FileNames::ParseExtensionFilter("").empty());
 }
 
+TEST_CASE("FileNames::MatchesExtensions matches a name or path ending with one of the extensions, ignoring case")
+{
+	const std::vector<std::string> meshesAndScenes{ ".meshasset", ".scene" };
+
+	CHECK(FileNames::MatchesExtensions("Tank.meshasset", meshesAndScenes));
+	CHECK(FileNames::MatchesExtensions(R"(Assets\Scenes\Level.SCENE)", meshesAndScenes));
+	CHECK_FALSE(FileNames::MatchesExtensions("notes.txt", meshesAndScenes));
+	// The whole extension, dot and all
+	CHECK_FALSE(FileNames::MatchesExtensions("Level.myscene", meshesAndScenes));
+	CHECK_FALSE(FileNames::MatchesExtensions("meshasset", meshesAndScenes));
+
+	// No extensions allows any file
+	CHECK(FileNames::MatchesExtensions("notes.txt", {}));
+}
+
 TEST_CASE("FileNames::ResolveSave adds the extension unless the name already ends with it")
 {
 	const Filepath scenes("Assets/Scenes");

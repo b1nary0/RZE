@@ -23,6 +23,10 @@ namespace FileNames
 	// { ".scene", ".meshasset" }. A filter that allows any file ("*.*", or empty) gives none.
 	std::vector<std::string> ParseExtensionFilter(const std::string& filter);
 
+	// Whether name (a file's name or path) ends with one of extensions (e.g. ".scene"), ignoring case. Any name does
+	// if there are none, like ParseExtensionFilter gives for a filter that allows any file.
+	bool MatchesExtensions(const std::string& name, const std::vector<std::string>& extensions);
+
 	// A path for a typed name: Path is invalid and Error says why if the name can't be used
 	struct ResolvedName
 	{
