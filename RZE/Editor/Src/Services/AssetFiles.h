@@ -19,7 +19,7 @@ namespace Editor
 		// it. False if it couldn't, and nothing changes then.
 		bool Delete(const Filepath& path);
 
-		// Makes a folder in parent called name, or numbered if that's taken (MakeUniqueFileName). Invalid if it couldn't.
+		// Makes a folder in parent called name, or numbered if that's taken (FileNames::MakeUnique). Invalid if it couldn't.
 		Filepath CreateFolder(const Filepath& parent, const std::string& name);
 	}
 }

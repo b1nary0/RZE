@@ -1,11 +1,11 @@
 #include <UI/Inspector/PropertyDrawers.h>
 
-#include <Services/FolderListing.h>
 #include <Services/Thumbnails.h>
 #include <UI/Framework/EditorContext.h>
 #include <UI/Framework/EditorUI.h>
 
 #include <Utils/Math/Math.h>
+#include <Utils/Platform/FileNames.h>
 
 #include <ImGui/imgui.h>
 
@@ -232,7 +232,7 @@ namespace
 			request.Title = "Select " + property.Name;
 			request.ConfirmLabel = "Select";
 			request.RootFolder = Filepath(property.AssetDirectory);
-			request.Extensions = Editor::ParseExtensionFilter(property.AssetFilter);
+			request.Extensions = FileNames::ParseExtensionFilter(property.AssetFilter);
 			request.InitialSelection = path;
 			request.ThumbnailFor = &Editor::Thumbnails::FindFor;
 			// Mesh thumbnails, for one; does nothing for files without rendered thumbnails

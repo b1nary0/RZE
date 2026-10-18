@@ -47,6 +47,19 @@ struct StringUtils
 		return text.size() >= prefix.size() && EqualsIgnoringCase(text.substr(0, prefix.size()), prefix);
 	}
 
+	static bool EndsWithIgnoringCase(const std::string& text, const std::string& suffix)
+	{
+		return text.size() >= suffix.size() && EqualsIgnoringCase(text.substr(text.size() - suffix.size()), suffix);
+	}
+
+	// Without the spaces and tabs at either end
+	static std::string Trim(const std::string& text)
+	{
+		const size_t first = text.find_first_not_of(" \t");
+		const size_t last = text.find_last_not_of(" \t");
+		return first == std::string::npos ? std::string() : text.substr(first, last - first + 1);
+	}
+
 	template<class... Args>
 	static std::string FormatString(const std::string& stringToFormat, Args... args)
 	{

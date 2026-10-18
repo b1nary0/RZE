@@ -2,6 +2,8 @@
 
 #include <UI/Framework/EditorUI.h>
 
+#include <Utils/Platform/FileNames.h>
+
 #include <algorithm>
 #include <cstring>
 
@@ -398,7 +400,7 @@ namespace Editor
 	void FileBrowserModal::ConfirmSave()
 	{
 		const std::string extension = m_request.Extensions.empty() ? std::string() : m_request.Extensions.front();
-		const ResolvedName saveName = ResolveSaveName(m_folder, m_fileName, extension);
+		const FileNames::ResolvedName saveName = FileNames::ResolveSave(m_folder, m_fileName, extension);
 		if (!saveName.Error.empty())
 		{
 			m_saveError = saveName.Error;

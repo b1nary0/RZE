@@ -13,6 +13,8 @@
 
 #include <DebugUtils/DebugServices.h>
 
+#include <Utils/Platform/FileNames.h>
+#include <Utils/Platform/Folders.h>
 #include <Utils/Platform/Shell.h>
 #include <Utils/StringUtils.h>
 
@@ -105,7 +107,7 @@ namespace Editor
 				"Anything that refers to it by path, like a scene using a mesh, isn't updated", whyInUse },
 			{ "Delete", [this](const Filepath& file) { RequestDelete(file); }, nullptr, "Delete", "Moves it to the Recycle Bin", whyInUse },
 		};
-		options.ValidateName = [](const FolderEntry& entry, const std::string& name) { return ResolveRename(entry.Path, entry.IsFolder, name).Error; };
+		options.ValidateName = [](const FolderEntry& entry, const std::string& name) { return FileNames::ResolveRename(entry.Path, entry.IsFolder, name).Error; };
 		options.Rename = [this](const FolderEntry& entry, const std::string& name) { Rename(entry, name); };
 		options.DrawBackgroundMenu = [this]()
 			{
@@ -502,7 +504,7 @@ namespace Editor
 
 	void ContentBrowserPanel::Rename(const FolderEntry& entry, const std::string& name)
 	{
-		const ResolvedName renamed = ResolveRename(entry.Path, entry.IsFolder, name);
+		const FileNames::ResolvedName renamed = FileNames::ResolveRename(entry.Path, entry.IsFolder, name);
 		if (!renamed.Path.IsValid() || renamed.Path.GetRelativePath() == entry.Path.GetRelativePath())
 		{
 			return;
@@ -599,7 +601,7 @@ namespace Editor
 		auto it = m_subfolders.find(folder.GetRelativePath());
 		if (it == m_subfolders.end())
 		{
-			it = m_subfolders.emplace(folder.GetRelativePath(), ListSubfolders(folder)).first;
+			it = m_subfolders.emplace(folder.GetRelativePath(), Folders::ListSubfolders(folder)).first;
 		}
 		return it->second;
 	}

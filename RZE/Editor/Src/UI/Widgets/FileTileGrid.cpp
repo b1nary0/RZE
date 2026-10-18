@@ -9,6 +9,7 @@
 #include <Graphics/Texture2D.h>
 
 #include <Utils/StringUtils.h>
+#include <Utils/TimeUtils.h>
 
 #include <ImGui/imgui_internal.h> // RenderTextEllipsis
 
@@ -297,7 +298,7 @@ namespace Editor
 		// The name, then when it last changed
 		const float lineHeight = ImGui::GetTextLineHeight();
 		const std::string name = entry.IsFolder ? entry.Name : entry.Path.GetStem();
-		const std::string detail = entry.IsFolder ? std::string("Folder") : FormatTimeAgo(entry.ModifiedTime, std::chrono::system_clock::now());
+		const std::string detail = entry.IsFolder ? std::string("Folder") : TimeUtils::FormatTimeAgo(entry.ModifiedTime, std::chrono::system_clock::now());
 		const float textLeft = min.x + k_imageInset + 2.0f;
 		const float textRight = max.x - k_imageInset;
 		const float nameY = imageMax.y + 4.0f;

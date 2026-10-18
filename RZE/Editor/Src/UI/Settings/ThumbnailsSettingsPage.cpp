@@ -3,10 +3,11 @@
 #include <UI/Framework/EditorContext.h>
 #include <UI/Settings/SettingsPageRegistry.h>
 
-#include <Services/FolderListing.h>
 #include <Services/ThumbnailRenderer.h>
 
 #include <Asset/AssetPaths.h>
+
+#include <Utils/Platform/Folders.h>
 
 #include <ImGui/imgui.h>
 
@@ -45,7 +46,7 @@ namespace Editor
 	{
 		for (Kind& kind : m_kinds)
 		{
-			kind.Assets = FindFiles(kind.AssetFolder, kind.Extension);
+			kind.Assets = Folders::FindFiles(kind.AssetFolder, kind.Extension);
 			kind.Counts = Thumbnails::Survey(kind.Assets, *kind.ImageFolder);
 		}
 

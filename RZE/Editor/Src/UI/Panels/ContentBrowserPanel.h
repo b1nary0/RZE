@@ -54,7 +54,7 @@ namespace Editor
 		// Asks about unsaved changes first, like File > Load Scene
 		void LoadScene(EditorContext& context, const Filepath& scene);
 
-		// To the name typed into its tile (ResolveRename), keeping the history and selection on it
+		// To the name typed into its tile (FileNames::ResolveRename), keeping the history and selection on it
 		void Rename(const FolderEntry& entry, const std::string& name);
 		// Asks first (DrawDeletePrompt)
 		void RequestDelete(const Filepath& path);

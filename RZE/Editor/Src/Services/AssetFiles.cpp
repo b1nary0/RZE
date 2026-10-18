@@ -1,11 +1,12 @@
 #include <Services/AssetFiles.h>
 
-#include <Services/FolderListing.h>
 #include <Services/Thumbnails.h>
 
 #include <Asset/AssetPaths.h>
 
 #include <Utils/Platform/File.h>
+#include <Utils/Platform/FileNames.h>
+#include <Utils/Platform/Folders.h>
 #include <Utils/Platform/Shell.h>
 
 #include <filesystem>
@@ -25,7 +26,7 @@ namespace
 		std::vector<Filepath> thumbnails;
 		for (const char* extension : { AssetPaths::k_sceneExtension, AssetPaths::k_meshExtension })
 		{
-			for (const Filepath& asset : Editor::FindFiles(path, extension))
+			for (const Filepath& asset : Folders::FindFiles(path, extension))
 			{
 				thumbnails.push_back(Editor::Thumbnails::FindFor(asset));
 			}
@@ -79,7 +80,7 @@ namespace Editor
 
 		Filepath CreateFolder(const Filepath& parent, const std::string& name)
 		{
-			const Filepath folder = MakeUniqueFileName(parent, name);
+			const Filepath folder = FileNames::MakeUnique(parent, name);
 
 			std::error_code error;
 			return std::filesystem::create_directory(folder.GetAbsolutePath(), error) ? folder : Filepath();
