@@ -79,6 +79,7 @@ Chained on any property:
 | `.EnabledIf<T>(isEnabled, reason)` | Shown read-only, with `reason` as its tooltip, while `isEnabled` says no (opacity only matters for blended materials) |
 | `.Thumbnail<T>(getter)` | For an `AssetPath`: a small image of the asset beside the path (a texture row's loaded texture) |
 | `.Clearable()` | For an `AssetPath`: a button that empties it |
+| `.Preload<TResource>()` | For an `AssetPath`: what the asset loads as (e.g. `StaticMeshResource`). Tools load a new asset in the background first and set it once it's in, so a large one doesn't stall the editor ([below](#asset-fields)). Stored as `PropertyDescriptor::LoadAsset`. |
 
 ### Paths into lists
 
@@ -93,7 +94,7 @@ A property of a component is addressed by a `PropertyPath`: its index, or, for a
 | Component | Properties |
 |---|---|
 | `TransformComponent` | Position (metres, relative to the parent), Rotation (Euler degrees), Scale |
-| `RenderComponent` | Mesh (asset path, clearable; setting it loads the mesh), Size (computed, metres along the object's axes, including scale), **Debug Draw**: Mesh Bounds, Sub-Mesh Bounds (`EditorOnly`), then Materials (editable list, below) |
+| `RenderComponent` | Mesh (asset path, clearable, preloaded as a `StaticMeshResource`; setting it loads the mesh), Size (computed, metres along the object's axes, including scale), **Debug Draw**: Mesh Bounds, Sub-Mesh Bounds (`EditorOnly`), then Materials (editable list, below) |
 | `CameraComponent` | Main Camera (`Exclusive`), **Projection**: Field Of View, Near Cull, Far Cull, **Exposure**: Compensation (EV), then **Preview** |
 | `DirectionalLightComponent` | Colour (colour picker), Strength |
 | `GifChatComponent` | Materials (read-only list of its materials) |
@@ -102,9 +103,9 @@ A property of a component is addressed by a `PropertyPath`: its index, or, for a
 
 | Section | Rows |
 |---|---|
-| | Material (the `.materialasset` it draws; swapping it is an override), Shader (read-only) |
+| | Material (the `.materialasset` it draws, preloaded as a `MaterialResource` with its textures; swapping it is an override), Shader (read-only) |
 | Surface | Tint (colour), Blend (drop-down), Opacity (slider, only for blended modes), Shininess |
-| Textures | Diffuse, Specular, Normal, Opacity, Height (each with a thumbnail and a clear button) |
+| Textures | Diffuse, Specular, Normal, Opacity, Height (each with a thumbnail and a clear button, preloaded as a `Texture2D`) |
 | Opacity Mask | Invert, From Alpha (only with an opacity texture) |
 
 ## The inspector (Editor side)
@@ -125,6 +126,7 @@ A property of a component is addressed by a `PropertyPath`: its index, or, for a
   - **`AssetPath`** shows the file's name, with its relative path in a popup above the cursor on hover, and a thumbnail when it has one.
     - Hovering a thumbnail shows the image at up to 320 px, with its size, below and to the left of the cursor.
     - `...` opens the [file browser](Thumbnails-And-File-Browser.md) on the property's folder and extensions. The choice comes back through `FileBrowserModal::ConsumeResult` with the button's ImGui ID, so it's an ordinary, undoable property change.
+    - A file **dragged from the Content Browser** onto the thumbnail or the name sets it, if it matches the property's filter (`FileNames::MatchesExtensions`), e.g. a mesh onto Mesh. One the field doesn't take isn't highlighted, and a tooltip says what it does take.
   - **`Enum`** is a drop-down.
   - **`Texture`** shows the image, scaled to fit.
   - **`Object` and `Array`** are tree nodes, drawn by the inspector itself, with a filter beside a list longer than 8 elements.
@@ -144,6 +146,19 @@ A property of a component is addressed by a `PropertyPath`: its index, or, for a
   - An edit goes to every selected component in one interaction. A path that leads nowhere on another object (it hasn't got that slot) is skipped.
   - For vectors, only the **axes you changed** are written, so editing X on three objects keeps their own Y and Z.
 
+### Asset fields
+
+An asset path whose property has `.Preload<T>()` (RenderComponent's Mesh, a material slot's Material and textures) loads a new asset **in the background** before it's set, so even a large one doesn't stall the editor:
+
+1. A change from a drop or from `...` becomes a **pending edit** instead of commands (`PropertyInspector::DeferEditUntilLoaded`): the targets, the path, the value before and after, and the asset's [`PendingResource`](../05-AssetPipeline/Asset-Import-Runtime.md#one-resource-pendingresource), loading as "Loading <file>" in the [status bar](Status-Bar-And-Settings.md#the-status-bar).
+2. While it loads, the field keeps its old value with **"Loading..."** beside it.
+3. Once it's in, `InspectorPanel::Update` (`UpdatePendingEdits`, before the panels draw) pushes the `SetPropertyCommand`s for the targets still there, as one interaction, so several selected objects still make one undo step. The commands run at the end of that UI frame, when the setter's load is a cache hit; the inspector holds the asset until then. A load that fails logs "Couldn't load <file>, so it wasn't set." and changes nothing.
+
+- Clearing a field, or choosing an asset that's already loaded, is set straight away as before.
+- A newer change to the same field on the same object replaces one still loading, cancelling its load.
+- A field inside a material slot works the same way, through its `PropertyPath`.
+- Loading another scene (`OnSceneReset`) cancels the pending edits.
+
 ## Adding properties to a component
 
 1. Give the component getters (and setters for editable values). Setters should do whatever a change needs, such as marking state dirty.
@@ -156,7 +171,7 @@ To edit a list the component owns, use `Array<TElement>` and describe the elemen
 
 ## Key files
 
-- `Engine\Src\Game\World\GameObject\Properties\PropertyDescriptor.h` — `PropertyValue`, `EPropertyType`, `EPropertyWidget`, `PropertyDescriptor`, `TypeDescription`, `ObjectRef`, `PropertyTexture`
+- `Engine\Src\Game\World\GameObject\Properties\PropertyDescriptor.h` — `PropertyValue`, `EPropertyType`, `EPropertyWidget`, `PropertyDescriptor` (with `Preload<T>`), `TypeDescription`, `ObjectRef`, `PropertyTexture`
 - `Engine\Src\Game\World\GameObject\Properties\PropertyBuilder.h` — `PropertyBuilder<T>`, `DescribeType<T>()`, `MakeObjectRef(s)`
 - `Engine\Src\Game\World\GameObject\Properties\PropertyPath.h/.cpp`
 - `Engine\Src\Game\World\GameObject\Properties\ComponentPropertyRegistry.h/.cpp`

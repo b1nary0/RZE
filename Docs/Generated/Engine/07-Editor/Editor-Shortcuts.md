@@ -77,8 +77,11 @@ These work anywhere in the Editor, except that a focused text field keeps its ow
 | **Double-click** / **Enter** | Content Browser | Open the folder, or load the scene (asking about unsaved changes first) |
 | **Arrow keys** | Content Browser | Move the selection through the tiles |
 | **Backspace** | Content Browser | Up a folder |
+| **F2** | Content Browser | Rename the selected file or folder: Enter renames, Escape cancels |
+| **Delete** | Content Browser | Delete the selected file or folder, after asking (undoable: it goes to the editor's trash) |
 | **Mouse back / forward** (buttons 4 / 5) | Content Browser hovered | Back / forward through the folders visited |
-| **Drag a mesh tile** onto the SceneView | Content Browser | Add an object showing the mesh where it's dropped |
+| **Drag a mesh tile** onto the SceneView | Content Browser | Load the mesh in the background, then add an object showing it where it's dropped |
+| **Drag a file tile** onto an asset field | Content Browser → Object Inspector | Set it, if the field takes that kind of file; a mesh, material or texture loads in the background first |
 
 The File, View and Help menus have no keyboard shortcuts. The SceneView toolbar's tooltips name the shortcut for each control, e.g. "Shortcut (W)".
 

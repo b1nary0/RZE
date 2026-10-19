@@ -117,14 +117,13 @@ Render objects and render scenes cache their bounds the same way: see [`RenderOb
 | Call | Does |
 |---|---|
 | `Load(scenePath)` | Replaces what's in it with a scene file, loaded in the background (`SceneLoadOperation`). Cancels a load still running. |
-| `Preload<T>(path)` | Loads a resource and its dependencies in the background (`ResourcePreloadOperation`) and keeps it loaded, so an object added later that uses it (e.g. `RenderComponent::LoadMesh`) finds it loaded instead of stalling the main thread. |
-| `ReleasePreloaded()` | Lets go of what was preloaded; what the scene's objects use stays loaded through them. |
 | `AddGameObject` / `RemoveGameObject` | Objects removed are destroyed straight away. |
 | `Capture(capture, camera, exposure, file)` | Renders its `RenderScene` from a camera into a [`ViewCapture`](../04-Rendering/Engine-Graphics-Layer.md#capturing-a-view-to-a-file) and writes a PNG. |
-| `Unload()` | Cancels loads, destroys everything, drops preloads and releases its render state (e.g. its shadow map). Must happen before the engine shuts down. |
+| `Unload()` | Cancels a load still running, destroys everything and releases its render state (e.g. its shadow map). Must happen before the engine shuts down. |
 
 - It's **never updated**. A still capture doesn't need it: world matrices are worked out when read, render objects take their transform when they're made, and lights their direction when they're added.
-- Its loads are `Background | Hidden` [async operations](../06-Platform-And-Infrastructure/Threading-And-Jobs.md#background-work): they never block, and whoever uses the scene reports progress itself.
+- Its loads are `Background | SubStep` [async operations](../05-AssetPipeline/Asset-Import-Runtime.md#async-operations): they never block, and whoever uses the scene reports progress itself.
+- To add an object without stalling, load what it uses first, e.g. a mesh with a [`PendingResource`](../05-AssetPipeline/Asset-Import-Runtime.md#one-resource-pendingresource), so `RenderComponent::LoadMesh` is a cache hit. The thumbnail renderer does, and drives the scene with a [`CaptureBatchOperation`](../07-Editor/Thumbnails-And-File-Browser.md#a-run).
 - Main thread only.
 
 ## Handles: `GameObjectPtr` and `GameObjectComponentPtr<T>`
@@ -208,6 +207,6 @@ flowchart TD
 - `Engine\Src\Game\World\GameObject\GameObjectDefinitions.h`, `LiveIDSet.h`, `ObjectGUID.h/.cpp`
 - `Engine\Src\Game\SceneFormat.h/.cpp` — the file layout, version upgrades, `GameObjectLoader`
 - `Engine\Src\Game\SceneLoadOperation.h/.cpp`
-- `Engine\Src\Game\HeadlessScene.h/.cpp`, `Engine\Src\EngineCore\Resources\ResourcePreloadOperation.h/.cpp`
+- `Engine\Src\Game\HeadlessScene.h/.cpp`, `CaptureBatchOperation.h/.cpp`
 - `Utils\Src\Utils\Math\BoundingBox.h/.cpp`
 - `Assets\Scenes\*.scene` — example serialized scenes (JSON)

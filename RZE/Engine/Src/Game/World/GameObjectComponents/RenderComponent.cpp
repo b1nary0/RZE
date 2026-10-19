@@ -104,6 +104,8 @@ namespace
 				[](const MaterialSlot& materialSlot) { return materialSlot.GetOverrides().Material.has_value(); },
 				[](MaterialSlot& materialSlot) { ChangeOverrides(materialSlot, [](MaterialOverrides& overrides) { overrides.Material.reset(); }); })
 			.Asset("Material", AssetPaths::GetMaterialFolder().GetRelativePath().c_str(), (std::string("*") + AssetPaths::k_materialExtension).c_str())
+			// Its textures load with it
+			.Preload<MaterialResource>()
 			.Thumbnail<MaterialSlot>([](const MaterialSlot& materialSlot) { return GetTexturePreview(materialSlot, MaterialInstance::TEXTURE_SLOT_DIFFUSE); })
 			.ToolTip("The material asset it draws with; the values below can be overridden on top of it");
 		slot.Value<std::string>("Shader", [](const MaterialSlot& materialSlot)
@@ -152,6 +154,7 @@ namespace
 				[textureSlot](const MaterialValues& values) { return values.Textures[textureSlot]; },
 				[textureSlot](auto& overrides) -> auto& { return overrides.Textures[textureSlot]; })
 				.Asset("Texture", "Assets", k_textureFilter)
+				.Preload<Texture2D>()
 				.Thumbnail<MaterialSlot>([textureSlot](const MaterialSlot& materialSlot) { return GetTexturePreview(materialSlot, textureSlot); })
 				.Clearable()
 				.InGroup("Textures");
@@ -180,6 +183,7 @@ void RenderComponent::DescribeProperties(PropertyBuilder<RenderComponent>& prope
 {
 	properties.AssetPath("Mesh", &RenderComponent::GetMeshPath, &RenderComponent::LoadMesh)
 		.Asset("RZE MeshAsset", AssetPaths::GetMeshFolder().GetRelativePath().c_str(), (std::string("*") + AssetPaths::k_meshExtension).c_str())
+		.Preload<StaticMeshResource>()
 		.Clearable();
 	properties.Vector3("Size", &RenderComponent::GetMeshSize)
 		.DisplayFormat("%.2f m").ToolTip("Along the object's own axes, including its scale");

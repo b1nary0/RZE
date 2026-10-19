@@ -141,22 +141,24 @@ The same opacity mask is honoured in three passes: the forward pass, the shadow 
 
 `RenderComponent::SetMeshInstance(instance, overrides)` is the one way a component's mesh changes. The render object keeps its identity and swaps what it draws. `EMaterialOverrides::CarryOver` (the default) moves the previous instance's overrides onto the new one by slot name, and `UseNew` keeps a prepared instance's own.
 
-To swap without stalling, load the mesh first, then swap once it has loaded. The component's mesh never goes through a request on the component itself:
+To swap without stalling, load the mesh first with a [`PendingResource`](../05-AssetPipeline/Asset-Import-Runtime.md#one-resource-pendingresource), then swap once it has loaded. The component's mesh never goes through a request on the component itself:
 
 ```mermaid
 %%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 sequenceDiagram
     participant Game as Game code
-    participant Preload as ResourcePreloadOperation
+    participant Mesh as PendingResource
     participant Comp as RenderComponent
-    Game->>Preload: Start, with the mesh in its list
-    Preload-->>Game: finished, some frames later
-    Game->>Preload: GetHandle(path)
-    Note over Game,Preload: empty if it failed, so check before swapping
-    Game->>Comp: SetMeshInstance(StaticMeshResource::CreateInstance(handle))
+    Game->>Mesh: Load the mesh as a StaticMeshResource
+    Game->>Mesh: IsLoading(), each frame
+    Mesh-->>Game: false once it's in, some frames later
+    Note over Game,Mesh: check HasFailed() first
+    Game->>Comp: SetMeshInstance(StaticMeshResource::CreateInstance(GetHandle()))
 ```
 
 Keep the component's handle rather than a pointer, since the component can be destroyed while the mesh loads ([Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md)).
+
+The editor does the same for an asset set in the Object Inspector or a mesh dropped in the scene view: RenderComponent's Mesh, a material slot's Material and its texture fields declare `.Preload<T>()`, so the asset loads in the background first and the property is set once it's in, when `LoadMesh` or the material swap is a cache hit ([Object-Inspector-And-Properties.md](../07-Editor/Object-Inspector-And-Properties.md#asset-fields)). A swapped material's textures load with it as its dependencies.
 
 ## `Shader` / `Texture2D` / `VertexBuffer` / `IndexBuffer` (`Engine\Src\Graphics\`)
 

@@ -10,6 +10,7 @@
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector3D.h>
 
+#include <memory>
 #include <optional>
 #include <vector>
 
@@ -86,8 +87,11 @@ namespace Editor
 		// Selects (or with Ctrl, toggles) what a click hit; a miss without Ctrl clears the selection
 		void ApplyClick(EditorSelection& selection, GameObjectPtr hitObject, bool isAdditive);
 		// A mesh asset dragged from the Content Browser onto the scene image adds an object showing it where it's
-		// dropped. Call right after the image.
+		// dropped, once the mesh has loaded in the background (UpdateMeshDrops). Call right after the image.
 		void HandleAssetDrop(EditorContext& context, const ImVec2& viewOrigin);
+		// Adds an object for each dropped mesh that has loaded and been placed. Once a UI frame, before the panels draw,
+		// so the command runs later in the same frame (CommandQueue::Flush) while the mesh is still held.
+		void UpdateMeshDrops(EditorContext& context);
 
 	private:
 		Vector2D m_dimensions;
@@ -103,5 +107,11 @@ namespace Editor
 
 		// Where the left button went down over the scene image; only while it's held, as a click or a marquee
 		std::optional<Vector2D> m_selectStart;
+
+		// The meshes dropped that are loading, or are waiting for where they go; only while there are any
+		struct MeshDrops;
+		std::unique_ptr<MeshDrops> m_meshDrops;
+		// Tells drops apart, so a pick that arrives after the scene changed doesn't place a later drop
+		U64 m_nextMeshDropID = 0;
 	};
 }

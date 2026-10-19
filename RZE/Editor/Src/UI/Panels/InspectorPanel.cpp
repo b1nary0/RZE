@@ -36,6 +36,8 @@ namespace Editor
 
 	void InspectorPanel::Update(EditorContext& context)
 	{
+		m_propertyInspector.UpdatePendingEdits(context);
+
 		m_componentGroups.clear();
 
 		const EditorSelection& selection = context.GetSelection();
@@ -90,6 +92,12 @@ namespace Editor
 				m_componentGroups.push_back(std::move(group));
 			}
 		}
+	}
+
+	void InspectorPanel::OnSceneReset()
+	{
+		// They were for the scene that's going
+		m_propertyInspector.CancelPendingEdits();
 	}
 
 	void InspectorPanel::Draw(EditorContext& context)

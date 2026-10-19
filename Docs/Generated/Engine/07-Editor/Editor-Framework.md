@@ -188,6 +188,7 @@ flowchart TD
 **Records.** An `UndoRecord` has `Undo(context)`, `Redo(context)`, `GetName()` (the Edit menu label, "Undo Rename"), and optionally:
 
 - `TryMerge(newer)`: within one interaction, a later record of the same change to the same target folds in, keeping this one's "before" and taking the newer "after". Transform and property records merge on the same GUID (and component and property).
+- `ChangesScene()`: false for a change outside the scene, like the [Content Browser's](Thumbnails-And-File-Browser.md#renaming-deleting-and-new-folders) renames, deletes and new folders (`AssetFileCommands`). A step of such records doesn't move the scene off its save point (or back onto it) and doesn't change the selection.
 - `OnDropped()`: the step left the history for good. The parking records use it to destroy objects still parked.
 
 Records find their targets by **`ObjectGUID`** through `UndoTargets::FindObject` / `FindComponent`, never by handle, so they still work on an object that was deleted and brought back.
@@ -198,7 +199,7 @@ Records find their targets by **`ObjectGUID`** through `UndoTargets::FindObject`
 - A new step drops everything that could be redone (calling `OnDropped`).
 - The history keeps **200 steps** (`k_maxSteps`); past that, the oldest is dropped.
 - Each step stores the selection, as GUIDs, from before its first command and after its last. Undo selects the "before" set, redo the "after" set, leaving out objects that aren't in the scene. Undoing a delete selects the object again.
-- `Clear()` (on scene unload) drops everything **without** `OnDropped`: the scene is about to unload and destroys parked objects itself.
+- `Clear()` (on scene unload) drops the scene's steps **without** `OnDropped`: the scene is about to unload and destroys parked objects itself. Steps that don't change the scene (file renames, deletes, new folders) **stay**, in order, so Ctrl+Z can still undo a rename after loading another scene.
 
 **Shortcuts.** Ctrl+Z, Ctrl+Y and Ctrl+Shift+Z, and Edit > Undo / Redo with the step's name. They push `UndoCommand` / `RedoCommand`, so undo applies at flush time in order with other commands, and they're ignored while a widget or the gizmo is held, so a drag isn't half undone.
 
@@ -220,7 +221,7 @@ Delete, Create (undone) and Paste (undone) all park. Adding a component is undon
 The history also keeps a **save point**: its position at the last save or load. `SceneDocument::IsModified()` is whether the history is somewhere else, rechecked after every flush, so undoing back to the save clears the title's `*`.
 
 - Saving closes the open step, so a drag that carries on past a save is a new change.
-- The save point is lost (the scene stays modified until saved) when the saved state is in a redo branch that a new change replaces, when it's dropped past the cap, or when a command changes the scene **without** an undo record (`MarkUnrecordedChange`). Undo and redo don't count: they only move through the history (`EditorCommand::IsHistoryNavigation`).
+- The save point is lost (the scene stays modified until saved) when the saved state is in a redo branch that a new change replaces, when it's dropped past the cap, or when a command changes the scene **without** an undo record (`MarkUnrecordedChange`). Undo and redo don't count: they only move through the history (`EditorCommand::IsHistoryNavigation`). Nor do steps that don't change the scene: the save point survives undone file steps being replaced, or one being dropped past the cap.
 
 ### The unsaved-changes prompt
 
@@ -256,6 +257,8 @@ context.GetEvents().Publish(SceneModifiedEvent{});
 | `SceneModifiedStateChangedEvent { Document }` | `SceneDocument` | `IsModified()` flipped |
 | `SelectionChangedEvent { Selection }` | `EditorSelection` | Once per call that actually changed it |
 | `ThumbnailWrittenEvent { Image }` | `ThumbnailRenderJob` | A thumbnail PNG was written |
+| `AssetFileChangedEvent { From, To }` | `AssetFileCommands` and their undo/redo | The editor renamed, deleted (`To` empty) or made (`From` empty) a file or folder |
+| `ProjectFilesChangedEvent` | `ProjectWatcher` | Something under `Assets` or `ProjectData` changed on disk, from the editor or outside it; at most every 250 ms |
 
 Current listeners:
 
@@ -267,6 +270,8 @@ Current listeners:
 | `EditorApp` | Loaded, saved, modified state | Sets the window title: `RZEStudio - <file>`, `*` while there are unsaved changes, `Untitled` for a new scene |
 | `ThumbnailRenderer` | Loaded, saved | Renders the scene's thumbnail in the background: after a save always, after a load if it's missing or out of date |
 | `EditorContext`, `ContentBrowserPanel` | Thumbnail written | Reload the tiles showing that image, in the file browser (the context forwards it to `FileBrowserModal::RefreshThumbnail`) and in the Content Browser |
+| `ContentBrowserPanel` | Asset file changed | Read the folder again, follow a renamed or removed folder in Back/Forward, keep the selection on what changed, start renaming a new folder |
+| `ContentBrowserPanel`, `FileBrowserModal` | Project files changed | Read the folder (and tree) again; render thumbnails older than their file again |
 
 Rules:
 
@@ -293,7 +298,8 @@ Rules:
 | Something that reacts to loading, saving, selection or edits | Subscribe to the event, keeping the `EventSubscription` as a member |
 | A shared preference | Add it to `EditorSettings`, and a control for it on a Settings page |
 | A Settings page | Subclass `SettingsPage` (`GetName()`, `Draw(context)`), put `REGISTER_SETTINGS_PAGE` in the `.cpp`, then run `GenerateSolutions.bat`. See [Status-Bar-And-Settings.md](Status-Bar-And-Settings.md#the-settings-window) |
-| Long-running work | An `AsyncOperation`: `Blocking` if the user must wait, `Background` if not. Visible ones show in the status bar, with what they log ([Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md#async-operations)) |
+| Long-running work | An `AsyncOperation`: `Blocking` if the user must wait, `Background` if not, with its kind, and `SubStep` if another operation reports on it. The status bar and Task History show it, with what it logs, as Settings > Background Tasks allows ([Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md#async-operations)) |
+| An asset loaded for the user without stalling | A `PendingResource`, polled from the panel's `Update`; push the command once it's in, and hold the resource until the next `Update` so the command finds it loaded. An asset property gets this from `.Preload<T>()` |
 | A component's inspector fields | Describe its properties; see [Object-Inspector-And-Properties.md](Object-Inspector-And-Properties.md) |
 
 ## Key files
@@ -301,7 +307,9 @@ Rules:
 - `Editor\Src\UI\Framework\EditorContext.h/.cpp`, `EditorSelection`, `EditorSettings`, `EditorEvents`, `ScenePicker`, `InteractionTracker`, `EditorUI`
 - `Editor\Src\UI\Framework\EditorPanel.h/.cpp`, `PanelRegistry.h/.cpp`, `PanelManager.h/.cpp`
 - `Editor\Src\Commands\EditorCommand.h`, `CommandQueue.h/.cpp`, `SceneCommands`, `TransformCommands`, `PropertyCommands`, `HistoryCommands`, `UndoRecord`, `ParkedSubtree`
-- `Editor\Src\Services\SceneDocument`, `GameBuilder`, `GameObjectClipboard`, `GameObjectSnapshot`, `SelectionBoundsDisplay`, `UndoHistory`, `ThumbnailRenderer`
+- `Editor\Src\Commands\AssetFileCommands` — rename, delete and new folder, undoable
+- `Editor\Src\Services\SceneDocument`, `GameBuilder`, `GameObjectClipboard`, `GameObjectSnapshot`, `SelectionBoundsDisplay`, `UndoHistory`, `ThumbnailRenderer`, `ProjectWatcher`, `AssetFiles`
+- `Editor\Src\UI\TaskTracker.h/.cpp` — the background tasks the status bar and Task History show (`EditorContext::GetTasks`)
 - `Editor\Src\UI\Modals\UnsavedChangesPrompt.h/.cpp`, `FileBrowserModal.h/.cpp`
 - `Editor\Src\UI\Widgets\FileTileGrid.h/.cpp` — the tile grid the file browser and the Content Browser share
 - `Editor\Src\UI\Settings\` — `SettingsPage`, `SettingsPageRegistry` and the pages

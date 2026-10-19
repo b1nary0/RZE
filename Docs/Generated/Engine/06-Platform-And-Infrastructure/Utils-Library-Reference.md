@@ -7,7 +7,8 @@
 - `PrimitiveDefs.h` — canonical fixed-width typedefs used everywhere: `Int8/16/32/64`, `Byte`/`U8/16/32/64`, `Float32/64`.
 - `Utils.h` — `ContainerUtils::VectorEraseBack` — O(1) unordered erase (swap-with-back, then pop) used throughout the Engine (e.g. `RenderEngine`'s object containers) instead of `std::vector::erase`, which would shift elements.
 - `Functor.h` — `template<TReturnType, class...Args> class Functor` — a copyable/movable wrapper around `std::function`, used pervasively for input-event callbacks, component factories, and job tasks.
-- `StringUtils.h` — `StringUtils::ExtractFileNameFromPath`, `StringUtils::FormatString<Args...>` (sprintf-style formatting into a `std::string`, fixed 1024-char buffer).
+- `StringUtils.h` — `StringUtils::ExtractFileNameFromPath`, `StringUtils::FormatString<Args...>` (sprintf-style formatting into a `std::string`, fixed 1024-char buffer), `Trim` (spaces and tabs at either end), and ASCII case helpers: `ToLower` / `ToUpper`, `EqualsIgnoringCase`, `StartsWithIgnoringCase` / `EndsWithIgnoringCase`, and `ContainsIgnoringCase(text, part)` (true for an empty part; the Object Inspector's filters and Task History's search use it).
+- `TimeUtils.h/.cpp` — times for people: `FormatTimeAgo(time, now)` ("Just now", "5 minutes ago", "Yesterday", a date once it's a month old; the file tiles use it), `FormatClockTime(time)` (the local time of day, "15:56:32"), and `FormatDuration(seconds)` (short: "8s", "1m 05s", "2h 03m"; task times and time left).
 - `Conversions.h/.cpp` — string/encoding conversions (e.g. `StringToWString`, used for D3DPERF event names in the render thread).
 - `GUID.h/.cpp` — `GUIDHelper::GenerateGUID()`, wrapping Win32 `GUID`/`guiddef.h`.
 
@@ -38,12 +39,17 @@ Covered in depth in [Memory-Management.md](Memory-Management.md): `ByteStream.h/
 
 - `FilePath.h/.cpp` — `class Filepath`: stores both `m_relativePath` and `m_absolutePath`. `EDirectoryContext { Runtime, Source }` — a static, **process-wide** context switch (`Filepath::SetDirectoryContext`) that changes how relative paths resolve. `Source` resolves against the source tree: the folder above `_build\`, or beside the executable when it isn't under `_build\`. The Editor (`EditorMain.cpp`), the Game (`Game\Src\Main.cpp`) and `SourceAssetBurnerMain.cpp` all set it, so they read `Assets\`, `Config\` and `ProjectData\` in place and nothing is copied into `_build`. `Runtime` (beside the executable) is kept for a future packaged game. The context is read when a `Filepath` is built, so one built during static initialisation resolves before `main` sets it; build paths when they're used. Also: `CreateDir`, `FromAbsolutePathStr`, `Exists`, `GetAbsolutePath`/`GetRelativePath`, `GetAbsoluteDirectoryPath`/`GetRelativeDirectoryPath`, `IsValid`.
 - `File.h/.cpp` — `class File` wraps `std::ofstream` with an `EFileOpenMode` (`Append`/`AtEnd`/`Binary`/`Read`/`Write`/`Truncate`/`Closed`, mapped onto `std::ios_base::openmode`), templated `Overwrite<T>`/`Write<T>`, `operator<<`, `Content()`. For writing a file so readers never see half of it: write to `File::GetTemporaryPathFor(path)` (the path plus `.tmp`), then `File::MoveReplacing(temporary, path)` renames it over the old file in one step. It returns false if it couldn't (e.g. the file is open elsewhere) and removes the temporary file either way. Scene saves and PNG writes use it.
+- `File::Move(from, to)` moves or renames a file or folder unless something is already at `to`; a change of case only is allowed. It returns false, moving nothing, if it couldn't. The Content Browser's renames use it.
+- `FileNames.h/.cpp` — the rules for naming files, and what a typed name means as a path: `GetError(name)` (empty, characters Windows can't use, device names like `CON`), `WithExtension`, `MakeUnique(folder, name)` ("New Folder 2"), `ParseExtensionFilter("*.meshasset")`, `MatchesExtensions(name, extensions)` (ignoring case; file filters and drag targets use it), and `ResolveSave` / `ResolveRename`, which turn a typed name into a path or the reason it can't be used.
+- `Folders.h/.cpp` — `Folders::ListSubfolders(folder)` (by name) and `FindFiles(folder, extension)` (recursive).
+- `FolderWatcher.h/.cpp` — whether anything in a folder or under it changed (a file or folder made, renamed or deleted, or a file written), not what. `PollChanged()` doesn't wait, so there's no thread behind it; Windows tells of a change soon after, and may tell of several as one. The Editor's `ProjectWatcher` watches `Assets` and `ProjectData` with it. Move-only.
+- `Shell.h/.cpp` — the Windows shell, kept out of the Editor: `ShowInFileBrowser(path)` (Explorer with the file selected, or the folder open) and `MoveToRecycleBin(path)`.
 - `CmdLine.h/.cpp` — `CmdLine::Arguments::Initialize(argv, argc)`, `Get(name, out std::string_view)` and `GetInt(name, out int)`: simple `-flag value` command-line parsing, used for `-scene` (Editor, Game), `-console` (engine) and `-launchMonitor` (engine).
 - `Timers\HiResTimer.h/.cpp` — high-resolution timer backing `START_TIMED_BLOCK` in `Debug.h`.
 
 ## Interfaces
 
-- `Interfaces\Resource.h` — `class IResource`: `virtual bool Load(const Filepath&)`, `virtual void Release()`, plus a texture-specific `virtual bool Load(const U8* buffer, int width, int height)` overload (called "gross" in its own source comment). This is the contract `ResourceHandler` and every loadable resource type (`StaticMeshResource`, `EngineConfig`, texture resources) build on. It also has optional hooks for asynchronous loading (`SupportsAsyncLoad`, `LoadCPU`, `RequestDependencies`, `GetNextFinalizeStepCost`, `FinalizeStep`). See [Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md).
+- `Interfaces\Resource.h` — `class IResource`: `virtual bool Load(const Filepath&)`, `virtual void Release()`, plus a texture-specific `virtual bool Load(const U8* buffer, int width, int height)` overload (called "gross" in its own source comment). This is the contract `ResourceHandler` and every loadable resource type (`StaticMeshResource`, `EngineConfig`, texture resources) build on. It also has optional hooks for asynchronous loading (`SupportsAsyncLoad`, `LoadCPU`, `RequestDependencies`, `GetNextFinalizeStepCost`, `FinalizeStep`, and `GetFinalizeProgress` for progress displays). See [Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md).
 
 ## Reflection (`Reflect\`) — a second, separate reflection system
 
@@ -55,9 +61,9 @@ Covered in depth in [Memory-Management.md](Memory-Management.md): `ByteStream.h/
 ## Key files
 
 - `Utils\Src\StdAfx.h` — confirms GLM as the underlying math library
-- `Utils\Src\Utils\PrimitiveDefs.h`, `Utils.h`, `Functor.h`, `StringUtils.h`, `Conversions.h`, `GUID.h`
+- `Utils\Src\Utils\PrimitiveDefs.h`, `Utils.h`, `Functor.h`, `StringUtils.h`, `TimeUtils.h`, `Conversions.h`, `GUID.h`
 - `Utils\Src\Utils\Math\Units.h`, `Math.h`, `Vector2D.h`, `Vector3D.h`, `Vector4D.h`, `Matrix4x4.h`, `Quaternion.h`, `Plane.h`, `BoundingBox.h`, `Frustum.h`, `Ray.h`, `ViewProjection.h`
 - `Utils\Src\Utils\Memory\ByteStream.h`, `MemoryUtils.h`
-- `Utils\Src\Utils\Platform\FilePath.h`, `File.h`, `CmdLine.h`, `Timers\HiResTimer.h`
+- `Utils\Src\Utils\Platform\FilePath.h`, `File.h`, `FileNames.h`, `Folders.h`, `FolderWatcher.h`, `Shell.h`, `CmdLine.h`, `Timers\HiResTimer.h`
 - `Utils\Src\Utils\Interfaces\Resource.h`
 - `Utils\Src\Utils\Reflect\Reflection.h`, `ReflectDB.h/.cpp`

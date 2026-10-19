@@ -5,6 +5,8 @@
 #include <EngineCore/Async/AsyncOperationManager.h>
 #include <EngineCore/Resources/PendingResource.h>
 
+#include <Game/World/GameObject/Properties/PropertyDescriptor.h>
+
 #include <Utils/Interfaces/Resource.h>
 #include <Utils/Platform/Filepath.h>
 
@@ -146,4 +148,23 @@ TEST_CASE_FIXTURE(EngineOperations, "Loading again, or moving another pending re
 
 	TickUntilLoaded(pending);
 	CHECK(pending.GetHandle().IsValid());
+}
+
+TEST_CASE_FIXTURE(EngineOperations, "An asset property loads its asset as the resource it says, and only once it says one")
+{
+	PropertyDescriptor property;
+	CHECK_FALSE(property.LoadAsset);
+
+	property.Preload<FakeResource>();
+	REQUIRE(property.LoadAsset);
+
+	PendingResource pending;
+	std::shared_ptr<AsyncOperation> load = property.LoadAsset(pending, k_loadedPath, EAsyncOperationFlags::Background);
+	REQUIRE(load != nullptr);
+	CHECK(load->GetName() == "Loading PendingLoaded.resource");
+	CHECK(load->IsBackground());
+
+	TickUntilLoaded(pending);
+	REQUIRE(pending.GetHandle().IsValid());
+	CHECK(RZE().GetResourceHandler().GetResource<FakeResource>(pending.GetHandle()) != nullptr);
 }

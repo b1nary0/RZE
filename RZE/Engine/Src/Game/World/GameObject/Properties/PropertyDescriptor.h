@@ -1,5 +1,7 @@
 #pragma once
 
+#include <EngineCore/Resources/PendingResource.h>
+
 #include <Rendering/BufferHandle.h>
 
 #include <Utils/Math/Vector2D.h>
@@ -93,6 +95,9 @@ struct PropertyDescriptor
 	using ThumbnailGetter = std::function<PropertyTexture(const void* object)>;
 	// Takes the object non-const: making the image can change it (e.g. render into its target)
 	using PreviewMaker = std::function<PropertyTexture(void* object)>;
+	// Starts loading the asset at path into pending, as the resource it is; flags are EAsyncOperationFlags. Returns the
+	// load, or null if it was already loaded (PendingResource::Load).
+	using AssetLoader = std::function<std::shared_ptr<AsyncOperation>(PendingResource& pending, const Filepath& path, U32 flags)>;
 
 	std::string Name;
 	EPropertyType Type = EPropertyType::Float;
@@ -135,6 +140,9 @@ struct PropertyDescriptor
 	ThumbnailGetter GetThumbnail;
 	// For AssetPath properties: tools can clear it (set an empty Filepath)
 	bool IsClearable = false;
+	// For AssetPath properties: how tools load a new asset in the background before setting it, so setting it then
+	// doesn't stall the main thread (e.g. a large mesh); null sets it straight away. See Preload.
+	AssetLoader LoadAsset;
 
 	// For Enum properties: the options' names, in the order of their values (0, 1, 2, ...)
 	std::vector<std::string> EnumNames;
@@ -181,6 +189,14 @@ struct PropertyDescriptor
 	}
 	PropertyDescriptor& Clearable() { IsClearable = true; return *this; }
 	PropertyDescriptor& InGroup(const char* group) { Group = group; return *this; }
+
+	// For AssetPath properties: TResource is what the asset loads as, e.g. StaticMeshResource. See LoadAsset.
+	template <typename TResource>
+	PropertyDescriptor& Preload()
+	{
+		LoadAsset = [](PendingResource& pending, const Filepath& path, U32 flags) { return pending.Load<TResource>(path, flags); };
+		return *this;
+	}
 
 	// The typed metadata below takes functions of the described type, TObject, which must be given explicitly, e.g.
 	// .Overridable<MaterialSlot>(...)

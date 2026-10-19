@@ -12,6 +12,7 @@ Every Editor window is an `EditorPanel` in `Editor\Src\UI\Panels\`, registered w
 | Resource Monitor | `ResourceMonitorPanel` | Left (closed at first) | View > Windows > Resource Monitor | yes |
 | ImGui Demo | `ImGuiDemoPanel` | floating (closed at first) | Help > ImGui Demo | yes |
 | Settings | `SettingsPanel` | floating, 760×460 (closed at first) | Edit > Settings | yes |
+| Task History | `TaskHistoryPanel` | floating, 820×480 (closed at first) | View > Windows > Task History, or Full history in the status bar | yes |
 
 ```mermaid
 %%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
@@ -59,7 +60,7 @@ Rows take their ImGui IDs from each object's GUID, not its name, so objects with
 
 ## Object Inspector (`InspectorPanel`)
 
-Shows the primary selection's components, each under a `[ ComponentName ]` heading, and edits them. With several objects selected, it shows the components they all share ("3 objects selected; showing the components they share"), marks values that differ, and applies an edit to all of them. It's built entirely from the components' property descriptions; see [Object-Inspector-And-Properties.md](Object-Inspector-And-Properties.md).
+Shows the primary selection's components, each under a `[ ComponentName ]` heading, and edits them. With several objects selected, it shows the components they all share ("3 objects selected; showing the components they share"), marks values that differ, and applies an edit to all of them. It's built entirely from the components' property descriptions; see [Object-Inspector-And-Properties.md](Object-Inspector-And-Properties.md). Files can be dropped onto its asset fields from the Content Browser, and a mesh, material or texture loads in the background before it's set ([Asset fields](Object-Inspector-And-Properties.md#asset-fields)).
 
 ## SceneView (`SceneViewPanel`)
 
@@ -75,7 +76,7 @@ The 3D viewport. It shows the main view's render target with `ImGui::Image` and 
 | **Light and camera icons** | Each `DirectionalLightComponent` draws a sun icon and each `CameraComponent` a movie-camera icon at its position. The primary selection's icon fades to 40% so the gizmo's centre handle shows through. |
 | **Camera frustums** | Each scene camera draws its view volume as debug lines, from the near plane out to its far plane or 1.5 m, whichever is closer, so it reads as a pyramid. Drawn every frame in `PreRender`, like the grid, while the scene image shows. |
 | **Picking** | Click, Ctrl+click and marquee selection; see below. |
-| **Dropping meshes** | A mesh dragged from the Content Browser adds an object showing it where it's dropped; see below. |
+| **Dropping meshes** | A mesh dragged from the Content Browser loads in the background, then adds an object showing it where it's dropped; see below. |
 
 The hovered flag in `SceneViewportState` decides whether editor input (camera, gizmo keys, Escape) reaches the scene. It's cleared at the start of each frame, so it stays false while the SceneView is hidden.
 
@@ -112,19 +113,27 @@ flowchart TD
 
 ### Dropping meshes
 
-Dragging a `.meshasset` tile from the [Content Browser](#content-browser-contentbrowserpanel) over the scene image highlights it; other files can't be dropped. Letting go adds an object named after the mesh ("Panzer", then "Panzer (1)", ...) with a `RenderComponent` showing it, and selects it. It's one undo step.
+Dragging a `.meshasset` tile from the [Content Browser](#content-browser-contentbrowserpanel) over the scene image highlights it; other files can't be dropped. Letting go loads the mesh in the background, then adds an object named after it ("Panzer", then "Panzer (1)", ...) with a `RenderComponent` showing it, and selects it. It's one undo step.
 
-Where it goes comes from a GPU pick at the cursor, so it's added a frame or two after the drop (`HandleAssetDrop`):
+Two things happen at once when it's dropped (`HandleAssetDrop`), and the object is added once both are done:
+
+- **The mesh loads** with a [`PendingResource`](../05-AssetPipeline/Asset-Import-Runtime.md#one-resource-pendingresource), as "Loading Mountain.meshasset" in the [status bar](Status-Bar-And-Settings.md#the-status-bar), so the editor keeps running however large it is. One that's already loaded is taken straight away. One that can't be loaded logs "Couldn't load <file>, so nothing was added."
+- **A GPU pick** at the cursor finds where it goes, a frame or two later:
 
 1. **On the surface under the cursor**, of any object: the pick reads the depth there too, and `ScenePicker` turns it back into a world position. The mesh's pivot goes on that point.
 2. With nothing drawn there, **on the ground** (the plane y = 0, where the grid is), where the ray through the cursor meets it (`Ray::Intersect`), if that's within 100 m.
 3. Otherwise **10 m out** along that ray, e.g. when dropped on the sky.
 
-The drop pushes a `CreateMeshObjectCommand(mesh, position)` (`Commands\SceneCommands`), which adds the object, loads the mesh with `RenderComponent::LoadMesh` and records a `ParkRecord`, like Create GameObject. The load is **synchronous**, so a large mesh that isn't loaded yet stalls the frame it lands in. The maths is in `Utils\Math`: `ViewProjection::Unproject` and `GetRay`, and `Ray` (see [Utils-Library-Reference.md](../06-Platform-And-Infrastructure/Utils-Library-Reference.md)).
+Then `UpdateMeshDrops`, in the panel's `Update` (before the panels draw), pushes a `CreateMeshObjectCommand(mesh, position)` (`Commands\SceneCommands`), which adds the object, loads the mesh with `RenderComponent::LoadMesh` and records a `ParkRecord`, like Create GameObject. The command runs at the end of that UI frame, when the load is a cache hit; the panel holds the mesh until then.
+
+- Several drops in a row each load and land on their own.
+- Loading another scene (`OnSceneReset`) cancels the drops still loading, so nothing lands in the new scene.
+
+The maths is in `Utils\Math`: `ViewProjection::Unproject` and `GetRay`, and `Ray` (see [Utils-Library-Reference.md](../06-Platform-And-Infrastructure/Utils-Library-Reference.md)).
 
 ## Content Browser (`ContentBrowserPanel`)
 
-Browses the project's `Assets` and `ProjectData` folders: a folder tree beside a grid of tiles like the file browser's, with back, forward and up, search, and right-click actions. Double-clicking a folder opens it, and a scene loads it after asking about unsaved changes. Meshes can be dragged into the SceneView (above). It's the first tab in the bottom dock, beside the Log. See [Thumbnails-And-File-Browser.md](Thumbnails-And-File-Browser.md#the-content-browser-contentbrowserpanel).
+Browses the project's `Assets` and `ProjectData` folders: a folder tree beside a grid of tiles like the file browser's, with back, forward and up, search, and right-click actions. Double-clicking a folder opens it, and a scene loads it after asking about unsaved changes. Files and folders can be renamed (F2), deleted (Delete, to the editor's trash) and made (New Folder), all undoable, and changes on disk show as they happen. Meshes can be dragged into the SceneView (above), and any file onto an asset field that takes it. It's the first tab in the bottom dock, beside the Log. See [Thumbnails-And-File-Browser.md](Thumbnails-And-File-Browser.md#the-content-browser-contentbrowserpanel).
 
 ## Log (`LogPanel`)
 
@@ -146,11 +155,15 @@ Dear ImGui's own demo window, from Help > ImGui Demo. It draws its own window (`
 
 ## Settings (`SettingsPanel`)
 
-The Settings window: registered settings pages (Scene View, Thumbnails) listed on the left, the chosen one on the right. See [Status-Bar-And-Settings.md](Status-Bar-And-Settings.md#the-settings-window).
+The Settings window: registered settings pages (Background Tasks, Frame Rate, Scene View, Thumbnails) listed on the left, the chosen one on the right. See [Status-Bar-And-Settings.md](Status-Bar-And-Settings.md#the-settings-window).
+
+## Task History (`TaskHistoryPanel`)
+
+Every background task's history in full: a row per run, newest first, that opens to list everything it did, with search, "Problems only", Copy and Clear. See [Status-Bar-And-Settings.md](Status-Bar-And-Settings.md#task-history).
 
 ## Key files
 
-- `Editor\Src\UI\Panels\ScenePanel`, `SceneViewPanel`, `InspectorPanel`, `ContentBrowserPanel`, `LogPanel`, `ResourceMonitorPanel`, `ImGuiDemoPanel`, `SettingsPanel` (`.h/.cpp`)
+- `Editor\Src\UI\Panels\ScenePanel`, `SceneViewPanel`, `InspectorPanel`, `ContentBrowserPanel`, `LogPanel`, `ResourceMonitorPanel`, `ImGuiDemoPanel`, `SettingsPanel`, `TaskHistoryPanel` (`.h/.cpp`)
 - `Editor\Src\UI\Framework\EditorSelection.h/.cpp`, `ScenePicker.h/.cpp`
 - `Editor\Src\Commands\SceneCommands.h/.cpp` — `CreateMeshObjectCommand`
 - `Editor\Src\Services\SelectionBoundsDisplay.h/.cpp`

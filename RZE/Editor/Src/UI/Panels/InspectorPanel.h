@@ -20,6 +20,7 @@ namespace Editor
 	private:
 		void Update(EditorContext& context) override;
 		void Draw(EditorContext& context) override;
+		void OnSceneReset() override;
 
 	private:
 		// Each entry is one component type the selected objects share: that component on each object, the primary's

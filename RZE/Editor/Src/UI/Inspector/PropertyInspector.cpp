@@ -9,6 +9,10 @@
 #include <Game/World/GameObject/GameObjectComponent.h>
 #include <Game/World/GameObject/Properties/ComponentPropertyRegistry.h>
 
+#include <DebugUtils/DebugServices.h>
+
+#include <EngineCore/Resources/PendingResource.h>
+
 #include <Utils/StringUtils.h>
 
 #include <ImGui/imgui.h>
@@ -21,6 +25,9 @@
 
 namespace
 {
+	// Beside a field whose asset is loading
+	constexpr char k_loadingText[] = "Loading...";
+
 	// Read-only values of these types are drawn as disabled widgets; the rest (text, paths, images) draw read-only
 	// themselves
 	bool IsDrawnAsWidget(EPropertyType type)
@@ -347,10 +354,14 @@ namespace Editor
 
 		// An overridden value can be reset even while it can't be changed, from a button beside it
 		const bool canReset = isOverridden && editableComponents != nullptr && property.IsEditable();
+		const bool isLoading = editableComponents != nullptr && editableComponents->front() != nullptr
+			&& IsEditPending(editableComponents->front()->GetInstanceID(), path);
 		const float spacing = ImGui::GetStyle().ItemInnerSpacing.x;
-		if (canReset)
+		float besideWidth = canReset ? EditorUI::GetIconButtonWidth() + spacing : 0.0f;
+		besideWidth += isLoading ? ImGui::CalcTextSize(k_loadingText).x + spacing : 0.0f;
+		if (besideWidth > 0.0f)
 		{
-			ImGui::SetNextItemWidth(-(EditorUI::GetIconButtonWidth() + spacing));
+			ImGui::SetNextItemWidth(-besideWidth);
 		}
 
 		const bool isDisabled = isReadOnly && IsDrawnAsWidget(property.Type);
@@ -365,6 +376,14 @@ namespace Editor
 			ImGui::SetTooltip("%s", readOnlyReason);
 		}
 		ImGui::EndDisabled();
+
+		if (isLoading)
+		{
+			ImGui::SameLine(0.0f, spacing);
+			ImGui::AlignTextToFramePadding();
+			ImGui::TextDisabled("%s", k_loadingText);
+			EditorUI::ItemTooltip("It's set once it has loaded");
+		}
 
 		if (canReset)
 		{
@@ -399,27 +418,13 @@ namespace Editor
 			return;
 		}
 
-		const InteractionID interaction = GetInteraction(instanceID, path, isHeld);
-		for (size_t targetIndex = 0; targetIndex < editableComponents->size(); ++targetIndex)
+		// An asset that has to load first is set once it's in, so a large one doesn't stall the editor
+		if (DeferEditUntilLoaded(property, path, before, value, *editableComponents))
 		{
-			const GameObjectComponentPtr<GameObjectComponentBase>& target = (*editableComponents)[targetIndex];
-			if (target == nullptr)
-			{
-				continue;
-			}
-
-			if (targetIndex == 0)
-			{
-				context.GetCommands().Push<SetPropertyCommand>(target, path, PropertyValue(value), interaction);
-				continue;
-			}
-
-			const ComponentPropertyRegistry::ResolvedProperty resolved = ComponentPropertyRegistry::Resolve(**target, path);
-			if (resolved.IsValid())
-			{
-				context.GetCommands().Push<SetPropertyCommand>(target, path, ApplyEdit(before, value, resolved.Property->Get(resolved.Object)), interaction);
-			}
+			return;
 		}
+
+		PushEdit(context, *editableComponents, path, before, value, GetInteraction(instanceID, path, isHeld));
 	}
 
 	void PropertyInspector::DrawPreviewRow(const PropertyDescriptor& property, const PropertyPath& path, const ComponentList* editableComponents)
@@ -523,6 +528,153 @@ namespace Editor
 				}
 			}
 		}
+	}
+
+	struct PropertyInspector::PendingEdits
+	{
+		struct Edit
+		{
+			ComponentList Targets;
+			// The first target's, which identifies the field with Path
+			GameObjectComponentInstanceID Component = GameObjectLifetime::k_invalidID;
+			PropertyPath Path;
+			PropertyValue Before;
+			PropertyValue Value;
+			InteractionID Interaction = k_noInteraction;
+			// The asset Value names
+			PendingResource Asset;
+		};
+
+		std::vector<Edit> Edits;
+		// Assets whose edits were pushed this UI frame, held until their commands have run
+		std::vector<PendingResource> HandedOver;
+	};
+
+	PropertyInspector::PropertyInspector() = default;
+
+	PropertyInspector::~PropertyInspector() = default;
+
+	void PropertyInspector::UpdatePendingEdits(EditorContext& context)
+	{
+		if (m_pendingEdits == nullptr)
+		{
+			return;
+		}
+
+		// Their commands ran at the end of the last UI frame
+		m_pendingEdits->HandedOver.clear();
+
+		std::vector<PendingEdits::Edit>& edits = m_pendingEdits->Edits;
+		for (auto edit = edits.begin(); edit != edits.end();)
+		{
+			if (edit->Asset.IsLoading())
+			{
+				++edit;
+				continue;
+			}
+
+			if (edit->Asset.HasFailed())
+			{
+				DebugServices::Get().Trace(LogChannel::Info, "Couldn't load " + edit->Asset.GetPath().GetRelativePath() + ", so it wasn't set.");
+			}
+			else
+			{
+				// Loaded, so the setters take it from the cache rather than loading it on the main thread
+				PushEdit(context, edit->Targets, edit->Path, edit->Before, edit->Value, edit->Interaction);
+				m_pendingEdits->HandedOver.push_back(std::move(edit->Asset));
+			}
+			edit = edits.erase(edit);
+		}
+
+		if (edits.empty() && m_pendingEdits->HandedOver.empty())
+		{
+			m_pendingEdits = nullptr;
+		}
+	}
+
+	void PropertyInspector::CancelPendingEdits()
+	{
+		m_pendingEdits = nullptr;
+	}
+
+	void PropertyInspector::PushEdit(EditorContext& context, const ComponentList& targets, const PropertyPath& path, const PropertyValue& before,
+		const PropertyValue& value, InteractionID interaction)
+	{
+		for (size_t targetIndex = 0; targetIndex < targets.size(); ++targetIndex)
+		{
+			const GameObjectComponentPtr<GameObjectComponentBase>& target = targets[targetIndex];
+			if (target == nullptr)
+			{
+				continue;
+			}
+
+			if (targetIndex == 0)
+			{
+				context.GetCommands().Push<SetPropertyCommand>(target, path, PropertyValue(value), interaction);
+				continue;
+			}
+
+			const ComponentPropertyRegistry::ResolvedProperty resolved = ComponentPropertyRegistry::Resolve(**target, path);
+			if (resolved.IsValid())
+			{
+				context.GetCommands().Push<SetPropertyCommand>(target, path, ApplyEdit(before, value, resolved.Property->Get(resolved.Object)), interaction);
+			}
+		}
+	}
+
+	bool PropertyInspector::DeferEditUntilLoaded(const PropertyDescriptor& property, const PropertyPath& path, const PropertyValue& before,
+		const PropertyValue& value, const ComponentList& targets)
+	{
+		if (!property.LoadAsset || targets.empty() || targets.front() == nullptr)
+		{
+			return false;
+		}
+
+		// A newer edit to the field replaces one still loading, even one that's made now
+		const GameObjectComponentInstanceID component = targets.front()->GetInstanceID();
+		if (m_pendingEdits != nullptr)
+		{
+			std::vector<PendingEdits::Edit>& edits = m_pendingEdits->Edits;
+			edits.erase(std::remove_if(edits.begin(), edits.end(),
+				[component, &path](const PendingEdits::Edit& edit) { return edit.Component == component && edit.Path == path; }), edits.end());
+		}
+
+		// Clearing it loads nothing
+		const Filepath& asset = std::get<Filepath>(value);
+		if (!asset.IsValid())
+		{
+			return false;
+		}
+
+		PendingEdits::Edit edit;
+		if (property.LoadAsset(edit.Asset, asset, EAsyncOperationFlags::Background) == nullptr)
+		{
+			// Already loaded
+			return false;
+		}
+
+		edit.Targets = targets;
+		edit.Component = component;
+		edit.Path = path;
+		edit.Before = before;
+		edit.Value = value;
+		edit.Interaction = NewInteractionID();
+		if (m_pendingEdits == nullptr)
+		{
+			m_pendingEdits = std::make_unique<PendingEdits>();
+		}
+		m_pendingEdits->Edits.push_back(std::move(edit));
+		return true;
+	}
+
+	bool PropertyInspector::IsEditPending(GameObjectComponentInstanceID component, const PropertyPath& path) const
+	{
+		if (m_pendingEdits == nullptr)
+		{
+			return false;
+		}
+		return std::any_of(m_pendingEdits->Edits.begin(), m_pendingEdits->Edits.end(),
+			[component, &path](const PendingEdits::Edit& edit) { return edit.Component == component && edit.Path == path; });
 	}
 
 	InteractionID PropertyInspector::GetInteraction(GameObjectComponentInstanceID component, const PropertyPath& path, bool isHeld)

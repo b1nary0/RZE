@@ -12,6 +12,12 @@
 
 #include <Asset/AssetPaths.h>
 
+#include <DebugUtils/DebugServices.h>
+
+#include <EngineCore/Resources/PendingResource.h>
+
+#include <Game/StaticMeshResource.h>
+
 #include <Game/World/GameObject/GameObject.h>
 #include <Game/World/GameObjectComponents/CameraComponent.h>
 #include <Game/World/GameObjectComponents/DirectionalLightComponent.h>
@@ -34,9 +40,49 @@
 
 #include <algorithm>
 
+namespace
+{
+	// Where a mesh dropped at the pick goes: on the surface under the cursor; failing that, on the ground if it's not too
+	// far off; failing that, a little way out from the camera
+	Vector3D GetDropPosition(const Editor::ScenePick& pick)
+	{
+		constexpr float k_maxGroundDistance = 100.0f;
+		constexpr float k_fallbackDistance = 10.0f;
+
+		// The editor's ground, where its grid is drawn
+		const Plane ground(WorldAxes::Up(), 0.0f);
+
+		if (pick.SurfacePosition.has_value())
+		{
+			return *pick.SurfacePosition;
+		}
+		if (const std::optional<Vector3D> groundPoint = pick.CameraRay.Intersect(ground);
+			groundPoint.has_value() && (*groundPoint - pick.CameraRay.GetOrigin()).Length() <= k_maxGroundDistance)
+		{
+			return *groundPoint;
+		}
+		return pick.CameraRay.GetPoint(k_fallbackDistance);
+	}
+}
+
 namespace Editor
 {
 	REGISTER_EDITOR_PANEL(SceneViewPanel);
+
+	struct SceneViewPanel::MeshDrops
+	{
+		struct Drop
+		{
+			U64 ID = 0;
+			PendingResource Mesh;
+			// Set once the pick arrives
+			std::optional<Vector3D> Position;
+		};
+
+		std::vector<Drop> Drops;
+		// Meshes whose objects were pushed this UI frame, held until their commands have run
+		std::vector<PendingResource> HandedOver;
+	};
 
 	PanelDesc SceneViewPanel::Describe()
 	{
@@ -70,6 +116,8 @@ namespace Editor
 		m_gizmoState.m_drag.Reset();
 		m_iconHits.clear();
 		m_selectStart.reset();
+		// Cancels their loads: they were for the scene that's going
+		m_meshDrops.reset();
 	}
 
 	void SceneViewPanel::DrawMenuBar(EditorContext& context)
@@ -219,10 +267,50 @@ namespace Editor
 		}
 	}
 
-	void SceneViewPanel::Update(EditorContext&)
+	void SceneViewPanel::Update(EditorContext& context)
 	{
 		// Draw sets it again if the scene image still shows
 		m_isImageShown = false;
+
+		UpdateMeshDrops(context);
+	}
+
+	void SceneViewPanel::UpdateMeshDrops(EditorContext& context)
+	{
+		if (m_meshDrops == nullptr)
+		{
+			return;
+		}
+
+		// Their commands ran at the end of the last UI frame
+		m_meshDrops->HandedOver.clear();
+
+		std::vector<MeshDrops::Drop>& drops = m_meshDrops->Drops;
+		for (auto drop = drops.begin(); drop != drops.end();)
+		{
+			if (drop->Mesh.IsLoading() || !drop->Position.has_value())
+			{
+				++drop;
+				continue;
+			}
+
+			if (drop->Mesh.HasFailed())
+			{
+				DebugServices::Get().Trace(LogChannel::Info, "Couldn't load " + drop->Mesh.GetPath().GetRelativePath() + ", so nothing was added.");
+			}
+			else
+			{
+				// Loaded, so the command takes it from the cache rather than loading it on the main thread
+				context.GetCommands().Push<CreateMeshObjectCommand>(drop->Mesh.GetPath(), *drop->Position);
+				m_meshDrops->HandedOver.push_back(std::move(drop->Mesh));
+			}
+			drop = drops.erase(drop);
+		}
+
+		if (drops.empty() && m_meshDrops->HandedOver.empty())
+		{
+			m_meshDrops = nullptr;
+		}
 	}
 
 	void SceneViewPanel::PreRender(EditorContext& context)
@@ -549,32 +637,33 @@ namespace Editor
 			return;
 		}
 
-		// Where the mesh goes comes from the GPU pick, so it's added once that arrives
+		// The mesh loads in the background while the GPU pick finds where it goes; the object's added once both are in
+		if (m_meshDrops == nullptr)
+		{
+			m_meshDrops = std::make_unique<MeshDrops>();
+		}
+		MeshDrops::Drop& drop = m_meshDrops->Drops.emplace_back();
+		drop.ID = m_nextMeshDropID++;
+		drop.Mesh.Load<StaticMeshResource>(mesh);
+
+		const U64 dropID = drop.ID;
 		const ImVec2 mouse = ImGui::GetIO().MousePos;
 		const U32 pickX = static_cast<U32>(MathUtils::Clampf(mouse.x - viewOrigin.x, 0.0f, GetDimensions().X() - 1.0f));
 		const U32 pickY = static_cast<U32>(MathUtils::Clampf(mouse.y - viewOrigin.y, 0.0f, GetDimensions().Y() - 1.0f));
-		context.GetScenePicker().RequestPick(pickX, pickY, ScenePicker::ResultCallback([&context, mesh](const ScenePick& pick)
+		context.GetScenePicker().RequestPick(pickX, pickY, ScenePicker::ResultCallback([this, dropID](const ScenePick& pick)
 			{
-				// On the surface under the cursor; failing that, on the ground if it's not too far off; failing that,
-				// a little way out from the camera
-				constexpr float k_maxGroundDistance = 100.0f;
-				constexpr float k_fallbackDistance = 10.0f;
-
-				// The editor's ground, where its grid is drawn
-				const Plane ground(WorldAxes::Up(), 0.0f);
-
-				Vector3D position = pick.CameraRay.GetPoint(k_fallbackDistance);
-				if (pick.SurfacePosition.has_value())
+				// Gone if the scene changed since
+				if (m_meshDrops == nullptr)
 				{
-					position = *pick.SurfacePosition;
+					return;
 				}
-				else if (const std::optional<Vector3D> groundPoint = pick.CameraRay.Intersect(ground);
-					groundPoint.has_value() && (*groundPoint - pick.CameraRay.GetOrigin()).Length() <= k_maxGroundDistance)
+				for (MeshDrops::Drop& waiting : m_meshDrops->Drops)
 				{
-					position = *groundPoint;
+					if (waiting.ID == dropID)
+					{
+						waiting.Position = GetDropPosition(pick);
+					}
 				}
-
-				context.GetCommands().Push<CreateMeshObjectCommand>(mesh, position);
 			}));
 	}
 

@@ -3,14 +3,14 @@
 #include <UI/Framework/InteractionTracker.h>
 
 #include <Game/World/GameObject/GameObjectDefinitions.h>
+#include <Game/World/GameObject/Properties/PropertyDescriptor.h>
 #include <Game/World/GameObject/Properties/PropertyPath.h>
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-struct ObjectRef;
-struct PropertyDescriptor;
 struct TypeDescription;
 
 namespace Editor
@@ -31,11 +31,15 @@ namespace Editor
 	// Overridable values (PropertyDescriptor::IsOverridable) show their label in the accent colour when overridden,
 	// with a button that resets them; an element's header counts its overridden values and resets them all in one
 	// step. Rows sharing a Group sit under its sub-heading, and lists longer than k_filterThreshold get a filter.
+	//
+	// An asset that has to load before it's set (PropertyDescriptor::LoadAsset), e.g. a large mesh, loads in the
+	// background first: the field shows "Loading..." until it's in, then the edit is made as usual, still one
+	// interaction across the selection. A newer edit to the same field replaces one still loading.
 	class PropertyInspector
 	{
 	public:
-		PropertyInspector() = default;
-		~PropertyInspector() = default;
+		PropertyInspector();
+		~PropertyInspector();
 
 	public:
 		// Around one frame's Draw calls, so a held edit's interaction can end when nothing is held any more
@@ -47,6 +51,12 @@ namespace Editor
 		// components are all the same type; the first is the one whose values are shown. False if the type has no
 		// described properties.
 		bool Draw(EditorContext& context, const ComponentList& components);
+
+		// Makes the edits whose assets have loaded. Once a UI frame, before the panels draw, so the commands run later in
+		// the same frame (CommandQueue::Flush) while the assets are still held.
+		void UpdatePendingEdits(EditorContext& context);
+		// Cancels the edits still loading, e.g. before the scene they're for unloads
+		void CancelPendingEdits();
 
 	private:
 		// Where the properties being drawn are, for addressing edits: the component's own (Parent null), or those of
@@ -79,6 +89,17 @@ namespace Editor
 
 		InteractionID GetInteraction(GameObjectComponentInstanceID component, const PropertyPath& path, bool isHeld);
 
+		// Sets path to value on each target that has it, as one interaction. before is the first target's value, for
+		// working out the others' (ApplyEdit).
+		static void PushEdit(EditorContext& context, const ComponentList& targets, const PropertyPath& path, const PropertyValue& before,
+			const PropertyValue& value, InteractionID interaction);
+		// Loads value's asset first if property needs that, and makes the edit once it's in. False if the edit can be made
+		// now: nothing to load, or it's already loaded.
+		bool DeferEditUntilLoaded(const PropertyDescriptor& property, const PropertyPath& path, const PropertyValue& before, const PropertyValue& value,
+			const ComponentList& targets);
+		// Whether the field at path on component is waiting for its asset
+		bool IsEditPending(GameObjectComponentInstanceID component, const PropertyPath& path) const;
+
 	public:
 		// Lists with more elements than this get a filter
 		static constexpr size_t k_filterThreshold = 8;
@@ -97,5 +118,9 @@ namespace Editor
 
 		// Each filtered list's filter text, by the list's ImGui ID
 		std::unordered_map<unsigned int, std::string> m_listFilters;
+
+		// Edits waiting for their assets to load; only while there are any
+		struct PendingEdits;
+		std::unique_ptr<PendingEdits> m_pendingEdits;
 	};
 }

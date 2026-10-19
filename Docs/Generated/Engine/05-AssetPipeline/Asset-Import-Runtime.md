@@ -9,7 +9,7 @@ There are **two ways to load** a resource:
 | Call | `ResourceHandler::LoadResource<T>(path)` | `AsyncResourceBatch::Request<T>(path)`, inside an `AsyncOperation` |
 | Where the work runs | All on the main thread, right away | File reading and parsing on worker threads; GPU uploads on the main thread, a little each frame |
 | Stalls the frame? | Yes, for the whole load | No; it's time-sliced by a per-frame budget |
-| Used by | One-off loads: shaders, config, picking a mesh in the inspector | **Scene loading** (`SceneLoadOperation`), **preloading** (`ResourcePreloadOperation`) |
+| Used by | One-off loads: shaders, config | **Scene loading** (`SceneLoadOperation`), **preloading** (`ResourcePreloadOperation`), **one resource at a time** (`PendingResource`): the Content Browser's images, thumbnail meshes, assets dropped or picked in the editor |
 
 Both end in the same place: a resource registered in `ResourceHandler`, reached through a `ResourceHandle`.
 
@@ -50,6 +50,7 @@ flowchart TD
 
 - **`LoadCPU`** may not touch the renderer, the `ResourceHandler` or any other engine state; it only reads and decodes.
 - **`GetNextFinalizeStepCost`** tells the batch how big the next step is (bytes copied into the render command arena, bytes uploaded to the GPU), so it can be pushed to a later frame if it won't fit. `StaticMeshResource` finalizes one submesh (its GPU buffers) per step, and makes the mesh's materials with the last.
+- **`GetFinalizeProgress`** (optional) says how far a resource that finalizes in several steps has got, 0 to 1, for progress displays; `StaticMeshResource` counts its submeshes. The batch's `GetSettledAmount()` adds it to the resources already settled (e.g. 2.5 of 4), and `GetCurrentPath()` is the first one it's still waiting on.
 - Because a mesh's or material's textures are its dependencies, they're always finalized first, so when the materials are made, their texture lookups are cache hits.
 - The batch holds every resolved resource until `ReleaseHeldResources()`, so nothing is unloaded before whoever asked for it picks it up.
 - **Loads in flight are shared.** A batch asking for a resource another batch is already loading (`ResourceHandler::TryBeginAsyncLoad` returns false) waits for that load and takes a handle to the result, instead of reading and uploading it a second time. If the other load fails or is cancelled, the waiting batch loads it itself. This matters once two scenes load at once, e.g. the editor's scene and a thumbnail's.
@@ -60,7 +61,30 @@ flowchart TD
 - `GetHandle(path)` returns the handle to a resource it was asked for (or one that pulled in) as soon as that has loaded, even while it's still loading others. It returns an empty handle for one that failed, hasn't loaded yet, or wasn't asked for, and loads nothing. The handle is a reference of its own, so it keeps the resource loaded after the operation is gone. This is how a mesh is swapped at runtime: `StaticMeshResource::CreateInstance(handle)`, then `RenderComponent::SetMeshInstance` ([Materials-Meshes-Shaders.md](../04-Rendering/Materials-Meshes-Shaders.md#swapping-a-mesh-at-runtime)).
 - Or load them synchronously, e.g. `RenderComponent::LoadMesh`, as a cache hit.
 
-A resource that fails is logged and left out; the operation still succeeds. `HeadlessScene::Preload` uses it for mesh thumbnails.
+A resource that fails is logged and left out; the operation still succeeds.
+
+- **Name:** "Preloading resources" unless one is given, e.g. "Loading lion.png". Its kind is `ResourceLoad`.
+- **Progress** counts the files read (60%) and then the resources uploaded (40%), the uploads a part at a time for those that upload in several steps (`GetSettledAmount`), so it moves while a large file loads.
+- **Status:** "Loading assets (n/m)" or "Uploading to GPU (n/m)", with the file it's waiting on on the next line, from the moment it starts.
+
+### One resource: `PendingResource`
+
+`PendingResource` (`Engine\Src\EngineCore\Resources\PendingResource.h/.cpp`) loads **one** resource in the background, for code that polls each frame (a panel, a widget, a batch). Move-only, main thread only.
+
+```cpp
+PendingResource mesh;
+mesh.Load<StaticMeshResource>(path);          // takes it now if it's loaded, or starts "Loading Mountain.meshasset"
+...
+if (!mesh.IsLoading())                        // picks up the handle once it's in; call it each frame while waiting
+{
+    if (mesh.HasFailed()) { /* logged already; e.g. say so */ }
+    else { /* mesh.GetHandle() keeps it loaded for as long as mesh holds it */ }
+}
+```
+
+- `Load<T>(path, flags = Background)` returns the load it started (a `ResourcePreloadOperation` named "Loading <file name>"), e.g. to add to an [`AsyncOperationGroup`](#several-operations-as-one-asyncoperationgroup), or null if it took the resource straight away.
+- `Reset()`, loading something else, moving another `PendingResource` in, or destroying it **cancels** a load that's still running and lets go of the resource.
+- Used by the Content Browser's tiles, the thumbnail renderer's meshes, and the editor's background loads of assets dropped in the scene view or set on an asset field ([Object-Inspector-And-Properties.md](../07-Editor/Object-Inspector-And-Properties.md#asset-fields)). A property says what its asset loads as with `.Preload<T>()`.
 
 ## Releasing resources
 
@@ -88,23 +112,49 @@ stateDiagram-v2
 
 - **Threading rules:** progress, status text and cancellation can be set from any thread. Every hook and the completion callback run on the main thread. The manager won't finish an operation while any of its worker jobs are still running, so jobs can safely capture `this`.
 - **Frame budget** (`AsyncFrameBudget`): shared by the foreground operations each frame. It allows **8 ms** of main-thread time and **16 MB** of GPU uploads (soft limits; the first piece of work each frame always runs, so everything makes progress), and leaves **8 MB** of headroom in the render command arena (a hard limit). Background operations get a budget of their own on top (below).
-- **Idle time:** when a paced frame finishes early, `AsyncOperationManager::TickIdle(ms)` gives the spare time before the next frame to the running operations, foreground before background, right after the frame is handed to the renderer, so it adds nothing to that frame's latency. Its budget says it's idle (`AsyncFrameBudget::IsIdle()`): extra time within the same frame, not a new one, so work that counts frames counts only ticks where it's false (`ThumbnailBatchOperation`'s settle frames do). Idle ticks only give operations more time; finishing them, their callbacks, retiring and starting new ones stay in `Tick()`. What an idle tick records goes out with the next frame, so the upload and arena bytes it uses come out of that frame's allowance. Frames only have idle time with vsync or a frame rate cap ([Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md#waiting-for-the-next-frame)).
+- **Idle time:** when a paced frame finishes early, `AsyncOperationManager::TickIdle(ms)` gives the spare time before the next frame to the running operations, foreground before background, right after the frame is handed to the renderer, so it adds nothing to that frame's latency. Its budget says it's idle (`AsyncFrameBudget::IsIdle()`): extra time within the same frame, not a new one, so work that counts frames counts only ticks where it's false (`CaptureBatchOperation`'s settle frames do). Idle ticks only give operations more time; finishing them, their callbacks, retiring and starting new ones stay in `Tick()`. What an idle tick records goes out with the next frame, so the upload and arena bytes it uses come out of that frame's allowance. Frames only have idle time with vsync or a frame rate cap ([Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md#waiting-for-the-next-frame)).
 - **Flags** (`EAsyncOperationFlags`, combinable):
 
   | Flag | Meaning |
   |---|---|
   | `Blocking` | Blocks the user. The Editor shows its progress modal for the oldest one (`GetBlockingOperation`). |
-  | `Hidden` | Left out of progress displays (`GetVisibleOperations`), e.g. a step another operation already reports on: a scene thumbnail's load, a PNG save. |
+  | `SubStep` | Part of another operation that reports on it, e.g. a thumbnail run's scene load or PNG save, or one image of a folder's "Loading thumbnails". It describes the operation; whether it's shown is up to the [filter](#which-operations-are-shown). |
   | `Background` | Work nobody is waiting on. It's ticked **after** every foreground operation, with **2 ms** of main-thread time and a quarter of the upload allowance of its own, so it always progresses but never takes much of a frame. Its worker jobs go to the [background lane](../06-Platform-And-Infrastructure/Threading-And-Jobs.md#background-work). It keeps going while a `Blocking` operation runs. |
+
+- **Kind** (`EAsyncOperationKind`, a constructor argument, `General` unless given): what the operation does, so displays can pick which kinds to show. Each is a bit of its own.
+
+  | Kind | Operations |
+  |---|---|
+  | `ResourceLoad` | `ResourcePreloadOperation`, so every `PendingResource`; the Content Browser's "Loading thumbnails" |
+  | `SceneLoad` | `SceneLoadOperation` |
+  | `Rendering` | `CaptureBatchOperation`, so thumbnail runs |
+  | `Saving` | Writing a captured image (`TextureFile::SaveToPNG`) |
+  | `General` | Anything else, e.g. building the game (`JobAsyncOperation` takes a kind too) |
 
 - **History:** `LogStep(text)` and `AddWarning(text)` add timestamped entries (`GetLoggedSteps`). A warning doesn't stop the operation, which can still succeed with warnings. The Editor's status bar shows them ([Status-Bar-And-Settings.md](../07-Editor/Status-Bar-And-Settings.md)).
 - **Retiring:** an operation is only released two frames after it finishes, because the render thread may still be using data it submitted (see [Low-Level-Renderer-Module.md](../04-Rendering/Low-Level-Renderer-Module.md)).
-- **Progress:** `WeightedProgress` blends several stages of different cost into one 0–1 value that never goes backwards. Operations flagged `Blocking` get the Editor's progress modal automatically.
+- **Progress:** `WeightedProgress` blends several stages of different cost into one 0–1 value that never goes backwards; a stage is set as a count (`SetStage(done, total)`) or a fraction (`SetStageFraction`). Operations flagged `Blocking` get the Editor's progress modal automatically.
+- **Timing:** the manager stamps an operation when it starts it, and `Finish` when it ends. `GetSecondsRunning()` is 0 before it starts, counts while it runs and stays fixed once it's finished. `EstimateSecondsLeft()` is how long it has left at the rate it's gone so far, once it's at least 5% done (`k_minProgressToEstimate`) and has run a second; the static `EstimateSecondsLeft(seconds, progress)` does the sum for any numbers.
 - **`JobAsyncOperation`** wraps a single worker-thread function (the Editor's Build/Launch uses it).
+
+### Which operations are shown
+
+Operations only describe themselves (their kind, and whether they're a `SubStep`). What a progress display shows is an **`AsyncOperationFilter`** (`Engine\Src\EngineCore\Async\AsyncOperationFilter.h/.cpp`): whether sub-steps and blocking operations show, and a mask of the kinds that do (`ShownKinds`, `ShowsKind`, `SetShowsKind`); `Matches(operation)` is a flag test. Its defaults show everything.
+
+- `AsyncOperationManager::GetVisibleOperations()` gives the running operations the manager's filter matches, oldest first; `GetRunningOperations()` gives them all.
+- The engine sets the filter from Engine.ini's `[BackgroundTasks]` at start-up ([Config-System.md](../06-Platform-And-Infrastructure/Config-System.md)); `SetVisibilityFilter` changes it while running (the Editor's Settings > Background Tasks).
+
+### Several operations as one: `AsyncOperationGroup`
+
+`AsyncOperationGroup` (`Engine\Src\EngineCore\Async\AsyncOperationGroup.h/.cpp`) reports on several operations as one, e.g. a folder's images loading one at a time. Whoever adds an operation (`Add(operation, label)`) starts it too, flagged `SubStep`, so displays show the group in its place.
+
+- **Progress** is how far they've got between them; **status** is "39 of 65 done" with the one it's waiting on. Operations can be added while it runs; it finishes once they've all finished.
+- **History:** each is logged as it ends, by its label: a step when it succeeds ("lion.png"), "lion.png: cancelled" when it's cancelled on its own, a warning when it fails (the group still succeeds). At the end its status counts them, e.g. "17 done, 48 cancelled".
+- Cancelling the group cancels those still running.
 
 ## Loading a scene: `SceneLoadOperation`
 
-`Engine\Src\Game\SceneLoadOperation.h/.cpp` loads a `.scene` file into a `GameScene` in three phases. The engine loads into the active scene, `Blocking`. A [`HeadlessScene`](../03-SceneAndGameObjects/Scene-And-GameObject-Model.md#headlessscene-a-scene-rendered-off-screen) loads into its own, `Background | Hidden`; the operation holds that scene by `shared_ptr`, so it stays alive until the load finishes even if its owner lets go.
+`Engine\Src\Game\SceneLoadOperation.h/.cpp` loads a `.scene` file into a `GameScene` in three phases. The engine loads into the active scene, `Blocking`. A [`HeadlessScene`](../03-SceneAndGameObjects/Scene-And-GameObject-Model.md#headlessscene-a-scene-rendered-off-screen) loads into its own, `Background | SubStep`; the operation holds that scene by `shared_ptr`, so it stays alive until the load finishes even if its owner lets go.
 
 ```mermaid
 %%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
@@ -133,8 +183,9 @@ Components say what they need with a static `GatherResourceDependencies(componen
 
 ## Key files
 
-- `Engine\Src\EngineCore\Resources\ResourceHandler.h/.cpp`, `AsyncResourceBatch.h/.cpp`, `ResourceDependencyList.h`, `ResourcePreloadOperation.h/.cpp`
-- `Engine\Src\EngineCore\Async\` — `AsyncOperation`, `AsyncOperationManager`, `AsyncFrameBudget`, `JobAsyncOperation`, `WeightedProgress`
+- `Engine\Src\EngineCore\Resources\ResourceHandler.h/.cpp`, `AsyncResourceBatch.h/.cpp`, `ResourceDependencyList.h`, `ResourcePreloadOperation.h/.cpp`, `PendingResource.h/.cpp`
+- `Engine\Src\EngineCore\Async\` — `AsyncOperation`, `AsyncOperationManager`, `AsyncOperationFilter`, `AsyncOperationGroup`, `AsyncFrameBudget`, `JobAsyncOperation`, `WeightedProgress`
+- `Engine\Src\Game\CaptureBatchOperation.h/.cpp` — capturing a batch of items off-screen (thumbnails)
 - `Engine\Src\Game\SceneLoadOperation.h/.cpp`, `StaticMeshResource.h/.cpp`
 - `Engine\Src\Graphics\MaterialResource.h/.cpp`
 - `Engine\Src\Asset\AssetImport\MeshAssetImporter.h/.cpp`, `MaterialAssetImporter.h/.cpp`
