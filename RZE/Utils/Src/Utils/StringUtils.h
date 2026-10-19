@@ -42,6 +42,13 @@ struct StringUtils
 			[](unsigned char x, unsigned char y) { return std::tolower(x) == std::tolower(y); });
 	}
 
+	// Whether text contains part anywhere, ignoring case; true for an empty part
+	static bool ContainsIgnoringCase(const std::string& text, const std::string& part)
+	{
+		return std::search(text.begin(), text.end(), part.begin(), part.end(),
+			[](unsigned char x, unsigned char y) { return std::tolower(x) == std::tolower(y); }) != text.end();
+	}
+
 	static bool StartsWithIgnoringCase(const std::string& text, const std::string& prefix)
 	{
 		return text.size() >= prefix.size() && EqualsIgnoringCase(text.substr(0, prefix.size()), prefix);

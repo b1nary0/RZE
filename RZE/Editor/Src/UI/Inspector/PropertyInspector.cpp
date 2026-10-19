@@ -9,6 +9,8 @@
 #include <Game/World/GameObject/GameObjectComponent.h>
 #include <Game/World/GameObject/Properties/ComponentPropertyRegistry.h>
 
+#include <Utils/StringUtils.h>
+
 #include <ImGui/imgui.h>
 #include <ImGui/imgui_internal.h> // ImGuiItemFlags_MixedValue
 
@@ -40,14 +42,6 @@ namespace
 	std::string GetDisplayName(const ObjectRef& ref)
 	{
 		return ref.IsValid() && ref.Type->GetDisplayName ? ref.Type->GetDisplayName(ref.Object) : std::string();
-	}
-
-	// Whether text contains part, ignoring case; true for an empty part
-	bool ContainsIgnoringCase(const std::string& text, const std::string& part)
-	{
-		const auto lower = [](char character) { return static_cast<char>(std::tolower(static_cast<unsigned char>(character))); };
-		return std::search(text.begin(), text.end(), part.begin(), part.end(),
-			[&lower](char a, char b) { return lower(a) == lower(b); }) != text.end();
 	}
 
 	// How many of the type's values object overrides
@@ -253,7 +247,7 @@ namespace Editor
 							heading = "[" + std::to_string(elementIndex) + "]";
 						}
 
-						if (filter != nullptr && !ContainsIgnoringCase(heading, *filter))
+						if (filter != nullptr && !StringUtils::ContainsIgnoringCase(heading, *filter))
 						{
 							continue;
 						}

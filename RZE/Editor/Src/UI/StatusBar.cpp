@@ -1,11 +1,17 @@
 #include <UI/StatusBar.h>
 
+#include <UI/Framework/EditorContext.h>
 #include <UI/Framework/EditorUI.h>
+#include <UI/Panels/TaskHistoryPanel.h>
+#include <UI/TaskColours.h>
+#include <UI/TaskTracker.h>
 
 #include <RZE.h>
 
 #include <EngineCore/Async/AsyncOperationManager.h>
 #include <EngineCore/Timing/FramePacer.h>
+
+#include <Utils/TimeUtils.h>
 
 #include <ImGui/imgui_internal.h> // BeginViewportSideBar, RenderTextEllipsis
 
@@ -53,12 +59,8 @@ namespace
 	// The history's text wraps to the popup's width, which settles over its first frames; it's kept on the newest entry
 	// until then
 	constexpr int k_historyOpeningFrames = 3;
-
-	// The task status colours: the circle, and how the last task went in the box
-	constexpr ImVec4 k_okColour = ImVec4(0.40f, 0.80f, 0.45f, 1.0f);
-	constexpr ImVec4 k_runningColour = ImVec4(0.95f, 0.80f, 0.25f, 1.0f);
-	constexpr ImVec4 k_warningColour = ImVec4(1.0f, 0.60f, 0.20f, 1.0f);
-	constexpr ImVec4 k_errorColour = ImVec4(1.0f, 0.42f, 0.36f, 1.0f);
+	// The history shows each run's last few steps; the Task History window has every one
+	constexpr size_t k_historyStepsPerRun = 5;
 
 	float GetTextTop(const ImVec2& min, const ImVec2& max)
 	{
@@ -89,21 +91,6 @@ namespace
 		ImGui::Dummy(ImVec2(width, ImGui::GetFontSize()));
 	}
 
-	ImVec4 GetStatusColour(Editor::ETaskStatus status)
-	{
-		switch (status)
-		{
-		case Editor::ETaskStatus::Running:
-			return k_runningColour;
-		case Editor::ETaskStatus::Warning:
-			return k_warningColour;
-		case Editor::ETaskStatus::Failed:
-			return k_errorColour;
-		default:
-			return k_okColour;
-		}
-	}
-
 	// How a task went, in a word, for the box
 	const char* GetResultWord(const Editor::TaskTracker::Note& note)
 	{
@@ -115,37 +102,6 @@ namespace
 			return "Failed";
 		default:
 			return "Cancelled";
-		}
-	}
-
-	// Local time, e.g. "15:56:32"
-	std::string FormatTime(std::chrono::system_clock::time_point time)
-	{
-		const std::time_t seconds = std::chrono::system_clock::to_time_t(time);
-		std::tm local = {};
-		localtime_s(&local, &seconds);
-
-		char text[16];
-		std::strftime(text, sizeof(text), "%H:%M:%S", &local);
-		return text;
-	}
-
-	ImVec4 GetHistoryColour(Editor::EHistoryKind kind)
-	{
-		switch (kind)
-		{
-		case Editor::EHistoryKind::Started:
-			return ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled);
-		case Editor::EHistoryKind::Finished:
-			return k_okColour;
-		case Editor::EHistoryKind::Warning:
-		case Editor::EHistoryKind::FinishedWithWarnings:
-		case Editor::EHistoryKind::Cancelled:
-			return k_warningColour;
-		case Editor::EHistoryKind::Failed:
-			return k_errorColour;
-		default:
-			return ImGui::GetStyleColorVec4(ImGuiCol_Text);
 		}
 	}
 
@@ -195,9 +151,9 @@ namespace Editor
 				DrawFrameStats(min, max);
 			});
 
-		AddItem(EStatusBarSide::Right, k_tasksWidth, [this](EditorContext&, const ImVec2& min, const ImVec2& max)
+		AddItem(EStatusBarSide::Right, k_tasksWidth, [this](EditorContext& context, const ImVec2& min, const ImVec2& max)
 			{
-				DrawTasks(min, max);
+				DrawTasks(context, min, max);
 			});
 	}
 
@@ -208,8 +164,6 @@ namespace Editor
 
 	void StatusBar::Draw(EditorContext& context)
 	{
-		m_tasks.Update(RZE().GetAsyncOperationManager().GetVisibleOperations());
-
 		ImGuiViewport* const viewport = ImGui::GetMainViewport();
 		const float height = ImGui::GetFontSize() + k_verticalPadding * 2.0f;
 		const ImGuiWindowFlags flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoSavedSettings;
@@ -279,8 +233,9 @@ namespace Editor
 		}
 	}
 
-	void StatusBar::DrawTasks(const ImVec2& min, const ImVec2& max)
+	void StatusBar::DrawTasks(EditorContext& context, const ImVec2& min, const ImVec2& max)
 	{
+		const TaskTracker& tasks = context.GetTasks();
 		ImDrawList* const drawList = ImGui::GetWindowDrawList();
 
 		// The circle, then a box of its own, so it reads as one control whether or not anything's running. Both answer
@@ -297,10 +252,10 @@ namespace Editor
 			m_historyOpeningFrames = k_historyOpeningFrames;
 		}
 
-		const std::vector<std::shared_ptr<AsyncOperation>>& running = m_tasks.GetRunning();
+		const std::vector<std::shared_ptr<AsyncOperation>>& running = tasks.GetRunning();
 
 		const ImVec2 circleCentre(min.x + k_statusCircleRadius, (boxMin.y + boxMax.y) * 0.5f);
-		drawList->AddCircleFilled(circleCentre, k_statusCircleRadius, ImGui::GetColorU32(GetStatusColour(m_tasks.GetStatus())));
+		drawList->AddCircleFilled(circleCentre, k_statusCircleRadius, ImGui::GetColorU32(TaskColours::ForStatus(tasks.GetStatus())));
 
 		drawList->AddRectFilled(boxMin, boxMax, isHovered ? ImGui::GetColorU32(ImGuiCol_HeaderHovered) : k_boxColour, k_boxRounding);
 		if (!running.empty())
@@ -337,13 +292,13 @@ namespace Editor
 
 			DrawTextLine(drawList, left, right, textTop, ImGui::GetColorU32(ImGuiCol_Text), running.front()->GetName());
 		}
-		else if (const TaskTracker::Note* const note = m_tasks.GetLastNote())
+		else if (const TaskTracker::Note* const note = tasks.GetLastNote())
 		{
 			// Laid out like a running task: how it went is kept whole at the right, in its colour, where the
 			// percentage was. The rest of the result is in the hover panel.
 			const char* const result = GetResultWord(*note);
 			const float resultWidth = ImGui::CalcTextSize(result).x;
-			DrawTextLine(drawList, right - resultWidth, right, textTop, ImGui::GetColorU32(GetStatusColour(m_tasks.GetStatus())), result);
+			DrawTextLine(drawList, right - resultWidth, right, textTop, ImGui::GetColorU32(TaskColours::ForStatus(tasks.GetStatus())), result);
 			right -= resultWidth + k_partGap;
 
 			DrawTextLine(drawList, left, right, textTop, ImGui::GetColorU32(ImGuiCol_TextDisabled), note->Name);
@@ -359,12 +314,12 @@ namespace Editor
 			ImGui::BeginTooltip();
 			if (running.empty())
 			{
-				DrawLastResult();
+				DrawLastResult(tasks);
 				ImGui::TextDisabled("Click for the history");
 			}
 			else
 			{
-				DrawTasksAtAGlance();
+				DrawTasksAtAGlance(tasks);
 				ImGui::TextDisabled("Click to cancel tasks");
 			}
 			ImGui::EndTooltip();
@@ -379,19 +334,19 @@ namespace Editor
 			}
 			if (running.empty())
 			{
-				DrawHistory();
+				DrawHistory(context);
 			}
 			else
 			{
-				DrawRunningTasks();
+				DrawRunningTasks(tasks);
 			}
 			ImGui::EndPopup();
 		}
 	}
 
-	void StatusBar::DrawTasksAtAGlance() const
+	void StatusBar::DrawTasksAtAGlance(const TaskTracker& tasks) const
 	{
-		const std::vector<std::shared_ptr<AsyncOperation>>& running = m_tasks.GetRunning();
+		const std::vector<std::shared_ptr<AsyncOperation>>& running = tasks.GetRunning();
 		ImGui::TextDisabled("%zu %s running", running.size(), running.size() == 1 ? "task" : "tasks");
 
 		// A line each: a dot for how it's going, its name, and on the right how long it has left and how far it's got
@@ -405,14 +360,14 @@ namespace Editor
 			float left = lineMin.x;
 			float right = lineMin.x + width;
 
-			ImVec4 dotColour = k_runningColour;
+			ImVec4 dotColour = TaskColours::k_running;
 			if (operation->IsCancellationRequested())
 			{
 				dotColour = ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled);
 			}
 			else if (operation->HasWarnings())
 			{
-				dotColour = k_warningColour;
+				dotColour = TaskColours::k_warning;
 			}
 			drawList->AddCircleFilled(ImVec2(left + k_glanceDotRadius, textTop + ImGui::GetFontSize() * 0.5f), k_glanceDotRadius, ImGui::GetColorU32(dotColour));
 			left += k_glanceDotRadius * 2.0f + k_partGap;
@@ -432,7 +387,7 @@ namespace Editor
 				DrawTextLine(drawList, right - percentWidth, right, textTop, ImGui::GetColorU32(ImGuiCol_Text), percent);
 				right -= percentWidth + k_partGap;
 
-				const std::optional<double> secondsLeft = TaskTracker::EstimateSecondsLeft(m_tasks.GetSecondsRunning(*operation), progress);
+				const std::optional<double> secondsLeft = TaskTracker::EstimateSecondsLeft(tasks.GetSecondsRunning(*operation), progress);
 				if (secondsLeft.has_value())
 				{
 					const std::string timeLeft = "~" + TaskTracker::FormatDuration(*secondsLeft);
@@ -447,9 +402,9 @@ namespace Editor
 		}
 	}
 
-	void StatusBar::DrawRunningTasks()
+	void StatusBar::DrawRunningTasks(const TaskTracker& tasks)
 	{
-		for (const std::shared_ptr<AsyncOperation>& operation : m_tasks.GetRunning())
+		for (const std::shared_ptr<AsyncOperation>& operation : tasks.GetRunning())
 		{
 			ImGui::PushID(operation.get());
 
@@ -482,10 +437,10 @@ namespace Editor
 		}
 	}
 
-	void StatusBar::DrawLastResult() const
+	void StatusBar::DrawLastResult(const TaskTracker& tasks) const
 	{
 		ImGui::TextDisabled("%s", k_noTasksText);
-		const TaskTracker::Note* const note = m_tasks.GetLastNote();
+		const TaskTracker::Note* const note = tasks.GetLastNote();
 		if (note == nullptr)
 		{
 			return;
@@ -494,8 +449,8 @@ namespace Editor
 		ImGui::Spacing();
 		ImGui::TextDisabled("Last task");
 		ImGui::PushTextWrapPos(0.0f);
-		const ETaskStatus status = m_tasks.GetStatus();
-		ImGui::TextColored(status == ETaskStatus::Ok ? ImGui::GetStyleColorVec4(ImGuiCol_Text) : GetStatusColour(status), "%s", note->Text.c_str());
+		const ETaskStatus status = tasks.GetStatus();
+		ImGui::TextColored(status == ETaskStatus::Ok ? ImGui::GetStyleColorVec4(ImGuiCol_Text) : TaskColours::ForStatus(status), "%s", note->Text.c_str());
 		// Only when there's more than the line above already shows
 		if (note->Details.find('\n') != std::string::npos)
 		{
@@ -504,12 +459,23 @@ namespace Editor
 		ImGui::PopTextWrapPos();
 	}
 
-	void StatusBar::DrawHistory()
+	void StatusBar::DrawHistory(EditorContext& context)
 	{
 		ImGui::TextDisabled("History");
+		const char* const fullHistory = "Full history";
+		ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - ImGui::CalcTextSize(fullHistory).x - ImGui::GetStyle().FramePadding.x * 2.0f);
+		if (ImGui::SmallButton(fullHistory))
+		{
+			if (TaskHistoryPanel* const panel = context.GetPanels().Find<TaskHistoryPanel>())
+			{
+				panel->Show();
+			}
+			ImGui::CloseCurrentPopup();
+		}
+		EditorUI::ItemTooltip("Every task and everything it did, in a window of its own");
 
-		const std::deque<TaskTracker::HistoryEntry>& history = m_tasks.GetHistory();
-		if (history.empty())
+		const TaskTracker& tasks = context.GetTasks();
+		if (tasks.GetHistory().empty())
 		{
 			ImGui::TextDisabled("Nothing has run yet");
 			return;
@@ -520,23 +486,36 @@ namespace Editor
 		const bool wasAtNewest = ImGui::GetScrollY() >= ImGui::GetScrollMaxY() - 1.0f;
 
 		ImGui::PushTextWrapPos(0.0f);
-		const std::string* lastTask = nullptr;
-		for (const TaskTracker::HistoryEntry& entry : history)
+		const std::vector<TaskTracker::HistoryRun> runs = TaskTracker::GroupByRun(tasks.GetHistory());
+		for (size_t runIndex = 0; runIndex < runs.size(); ++runIndex)
 		{
-			// A heading for each run of one task's entries, so they don't each repeat its name
-			if (lastTask == nullptr || *lastTask != entry.Task)
+			const TaskTracker::HistoryRun& run = runs[runIndex];
+			if (runIndex > 0)
 			{
-				if (lastTask != nullptr)
-				{
-					ImGui::Spacing();
-				}
-				ImGui::TextColored(EditorUI::k_headingColour, "%s", entry.Task.c_str());
-				lastTask = &entry.Task;
+				ImGui::Spacing();
 			}
+			ImGui::TextColored(EditorUI::k_headingColour, "%s", run.Task.c_str());
 
-			ImGui::TextDisabled("%s", FormatTime(entry.Time).c_str());
-			ImGui::SameLine();
-			ImGui::TextColored(GetHistoryColour(entry.Kind), "%s", entry.Text.c_str());
+			// Only its last few steps: the earlier ones are counted on a line where they'd be
+			const size_t stepCount = static_cast<size_t>(std::count_if(run.Entries.begin(), run.Entries.end(),
+				[](const TaskTracker::HistoryEntry* entry) { return entry->Kind == EHistoryKind::Step; }));
+			const size_t skippedCount = stepCount > k_historyStepsPerRun ? stepCount - k_historyStepsPerRun : 0;
+			size_t stepsSeen = 0;
+			for (const TaskTracker::HistoryEntry* const entry : run.Entries)
+			{
+				if (entry->Kind == EHistoryKind::Step && stepsSeen++ < skippedCount)
+				{
+					if (stepsSeen == 1)
+					{
+						ImGui::TextDisabled("...and %zu more in the full history", skippedCount);
+					}
+					continue;
+				}
+
+				ImGui::TextDisabled("%s", TimeUtils::FormatClockTime(entry->Time).c_str());
+				ImGui::SameLine();
+				ImGui::TextColored(TaskColours::ForHistory(entry->Kind), "%s", entry->Text.c_str());
+			}
 		}
 		ImGui::PopTextWrapPos();
 

@@ -521,7 +521,7 @@ namespace Editor
 					thumbnail.Load = std::make_shared<ResourcePreloadOperation>(std::move(images), EAsyncOperationFlags::Background | EAsyncOperationFlags::SubStep,
 						"Loading " + image.GetFileName());
 					operationManager.Start(thumbnail.Load);
-					m_thumbnailLoads->Add(thumbnail.Load);
+					m_thumbnailLoads->Add(thumbnail.Load, image.GetFileName());
 				}
 			}
 		}

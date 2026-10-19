@@ -25,11 +25,11 @@ namespace
 
 		~GroupedTasks() { Manager.ShutDown(); }
 
-		std::shared_ptr<TestOperation> Add(const std::string& name)
+		std::shared_ptr<TestOperation> Add(const std::string& name, const std::string& label = std::string())
 		{
 			std::shared_ptr<TestOperation> operation = std::make_shared<TestOperation>(name, EAsyncOperationFlags::Background | EAsyncOperationFlags::SubStep);
 			Manager.Start(operation);
-			Group->Add(operation);
+			Group->Add(operation, label);
 			return operation;
 		}
 	};
@@ -109,4 +109,31 @@ TEST_CASE_FIXTURE(GroupedTasks, "Cancelling a group cancels the operations still
 	CHECK(Group->GetState() == EAsyncOperationState::Cancelled);
 	CHECK(running->IsCancellationRequested());
 	CHECK_FALSE(done->IsCancellationRequested());
+}
+
+TEST_CASE_FIXTURE(GroupedTasks, "A group logs each of its operations as it ends, by its label")
+{
+	std::shared_ptr<TestOperation> loaded = Add("Loading a.png", "a.png");
+	std::shared_ptr<TestOperation> cancelled = Add("Loading b.png", "b.png");
+	std::shared_ptr<TestOperation> failed = Add("Loading c.png", "c.png");
+	std::shared_ptr<TestOperation> unlabelled = Add("Loading d.png");
+	Manager.Tick();
+
+	loaded->Succeed();
+	cancelled->RequestCancel();
+	failed->FailWith("the file is missing");
+	unlabelled->Succeed();
+	Manager.Tick();
+	Manager.Tick();
+	REQUIRE(Group->Succeeded());
+
+	const std::vector<AsyncOperation::LoggedStep> steps = Group->GetLoggedSteps();
+	REQUIRE(steps.size() == 4);
+	CHECK(steps[0].Text == "a.png");
+	CHECK_FALSE(steps[0].IsWarning);
+	CHECK(steps[1].Text == "b.png: cancelled");
+	CHECK_FALSE(steps[1].IsWarning);
+	CHECK(steps[2].Text == "c.png failed: the file is missing");
+	CHECK(steps[2].IsWarning);
+	CHECK(steps[3].Text == "Loading d.png");
 }

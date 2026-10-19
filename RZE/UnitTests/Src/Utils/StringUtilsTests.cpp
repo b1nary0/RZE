@@ -29,3 +29,12 @@ TEST_CASE("StringUtils trims spaces and tabs from both ends only")
 	CHECK(StringUtils::Trim(" \t ").empty());
 	CHECK(StringUtils::Trim("").empty());
 }
+
+TEST_CASE("StringUtils finds a part anywhere in text, ignoring case")
+{
+	CHECK(StringUtils::ContainsIgnoringCase("ceiling_plaster_02_BaseColor.png", "basecolor"));
+	CHECK(StringUtils::ContainsIgnoringCase("Loading thumbnails", "LOADING"));
+	CHECK(StringUtils::ContainsIgnoringCase("lion.png", ""));
+	CHECK_FALSE(StringUtils::ContainsIgnoringCase("lion.png", "lion.jpg"));
+	CHECK_FALSE(StringUtils::ContainsIgnoringCase("", "lion"));
+}

@@ -45,8 +45,9 @@ namespace Editor
 	class TaskTracker
 	{
 	public:
-		// The history keeps this many entries, dropping the oldest
-		static constexpr size_t k_maxHistoryEntries = 1000;
+		// The history keeps this many entries, dropping the oldest. Enough for a session: a folder of thumbnails is a step
+		// per image.
+		static constexpr size_t k_maxHistoryEntries = 20000;
 
 		struct Note
 		{
@@ -70,6 +71,24 @@ namespace Editor
 			std::string Task;
 			// Without the task's name: "Started", the step or warning, or how it ended, e.g. "Failed: <error>"
 			std::string Text;
+			// Which run of a task it's from: a number given out as each task starts, so tasks running at once (even with
+			// the same name) stay apart
+			size_t Run = 0;
+		};
+
+		// One run of a task in the history, from when it started to how it ended
+		struct HistoryRun
+		{
+			size_t Run = 0;
+			// The task's name
+			std::string Task;
+			// Its entries, oldest first. They point into the history, so they're only good until it next changes.
+			std::vector<const HistoryEntry*> Entries;
+
+			// Whether its last entry says how it ended. One that hasn't is still running, or isn't shown any more.
+			bool HasEnded() const;
+			// Whether it failed, was cancelled or warned
+			bool HasProblems() const;
 		};
 
 	public:
@@ -83,6 +102,10 @@ namespace Editor
 		ETaskStatus GetStatus() const;
 		// Oldest first
 		const std::deque<HistoryEntry>& GetHistory() const { return m_history; }
+		// Running tasks carry on into the history afresh
+		void ClearHistory();
+		// The running operation a run of the history is from, or null once it isn't running or shown
+		const AsyncOperation* FindRunning(size_t run) const;
 		// How long a running task has been running for, from when Update first saw it; 0 for one it isn't following
 		double GetSecondsRunning(const AsyncOperation& operation) const;
 
@@ -97,10 +120,15 @@ namespace Editor
 		// Short, e.g. "8s", "1m 05s", "2h 03m"
 		static std::string FormatDuration(double seconds);
 
+		// Whether an entry of this kind says how a task ended
+		static bool IsEnd(EHistoryKind kind);
+		// The history's runs, in the order they started
+		static std::vector<HistoryRun> GroupByRun(const std::deque<HistoryEntry>& history);
+
 	private:
 		// Adds the steps operation has logged since last time to the history
 		void ReadLoggedSteps(const AsyncOperation& operation);
-		void AddToHistory(std::chrono::system_clock::time_point time, EHistoryKind kind, const std::string& task, std::string text);
+		void AddToHistory(std::chrono::system_clock::time_point time, EHistoryKind kind, const std::string& task, std::string&& text, size_t run);
 
 	private:
 		std::vector<std::shared_ptr<AsyncOperation>> m_running;
@@ -110,6 +138,8 @@ namespace Editor
 			std::chrono::steady_clock::time_point Started;
 			// How many of its logged steps are in the history
 			size_t StepsRead = 0;
+			// Its entries' HistoryEntry::Run
+			size_t Run = 0;
 		};
 		std::unordered_map<const AsyncOperation*, Following> m_following;
 
@@ -117,5 +147,6 @@ namespace Editor
 		bool m_hasNote = false;
 
 		std::deque<HistoryEntry> m_history;
+		size_t m_nextRun = 1;
 	};
 }

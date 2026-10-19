@@ -18,6 +18,7 @@
 
 #include <UI/Modals/FileBrowserModal.h>
 #include <UI/Modals/UnsavedChangesPrompt.h>
+#include <UI/TaskTracker.h>
 
 #include <Game/World/GameObject/GameObjectDefinitions.h>
 
@@ -100,6 +101,11 @@ namespace Editor
 		// Picks a file in a modal browser of thumbnail tiles
 		FileBrowserModal& GetFileBrowser() { return m_fileBrowser; }
 
+		// The background tasks shown, and the history of everything they did; for the status bar and the Task History
+		// window. Updated once a UI frame, before anything draws (EditorApp::UpdateUI).
+		TaskTracker& GetTasks() { return m_tasks; }
+		const TaskTracker& GetTasks() const { return m_tasks; }
+
 	private:
 		// First, so it's destroyed last: everything below may hold subscriptions
 		EditorEvents m_events;
@@ -119,6 +125,7 @@ namespace Editor
 		UndoHistory m_undoHistory;
 		UnsavedChangesPrompt m_unsavedChangesPrompt;
 		FileBrowserModal m_fileBrowser;
+		TaskTracker m_tasks;
 		// Reload a thumbnail in the file browser once it's written again, and its files once they change. Last, so
 		// they're dropped before the browser.
 		EventSubscription m_thumbnailWritten;

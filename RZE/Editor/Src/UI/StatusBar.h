@@ -1,7 +1,5 @@
 #pragma once
 
-#include <UI/TaskTracker.h>
-
 #include <ImGui/imgui.h>
 
 #include <functional>
@@ -10,6 +8,7 @@
 namespace Editor
 {
 	class EditorContext;
+	class TaskTracker;
 
 	enum class EStatusBarSide
 	{
@@ -55,17 +54,18 @@ namespace Editor
 
 	private:
 		void DrawFrameStats(const ImVec2& min, const ImVec2& max) const;
-		void DrawTasks(const ImVec2& min, const ImVec2& max);
+		void DrawTasks(EditorContext& context, const ImVec2& min, const ImVec2& max);
 		// On hover: a line for each running task, with a dot for how it's going, its name, roughly how long it has left
 		// and how far it's got
-		void DrawTasksAtAGlance() const;
+		void DrawTasksAtAGlance(const TaskTracker& tasks) const;
 		// On click: each running task's progress and status, and a button to cancel it
-		void DrawRunningTasks();
+		void DrawRunningTasks(const TaskTracker& tasks);
 		// On hover with none running: how the last task went, in full
-		void DrawLastResult() const;
-		// Everything that happened to every task, oldest first, under a heading for each run of one task's entries. It
-		// opens on the newest and follows new ones while it's scrolled to the bottom.
-		void DrawHistory();
+		void DrawLastResult(const TaskTracker& tasks) const;
+		// Everything that happened to every task, oldest first, under a heading for each run of a task, with only its last
+		// few steps; the Task History window has the rest. It opens on the newest and follows new ones while it's scrolled
+		// to the bottom.
+		void DrawHistory(EditorContext& context);
 
 	private:
 		struct Item
@@ -76,7 +76,6 @@ namespace Editor
 		};
 
 		std::vector<Item> m_items;
-		TaskTracker m_tasks;
 		// Frames left to keep the history on its newest entry after it opens, while its wrapped lines settle
 		int m_historyOpeningFrames = 0;
 	};

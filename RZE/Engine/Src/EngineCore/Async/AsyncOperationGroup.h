@@ -11,16 +11,18 @@
 // have. Operations can be added while it runs, until it finishes.
 //
 // It doesn't start them: whoever adds one starts it too, flagged EAsyncOperationFlags::SubStep so progress displays can
-// show the group in its place. One that fails is a warning on the group, which still succeeds. One cancelled on its own
-// just counts as done; cancelling the group cancels those still running.
+// show the group in its place. Each one is logged as it ends, so the group's history lists them all: a step with its
+// label when it succeeds, "<label>: cancelled" when it's cancelled on its own, and a warning when it fails, after which
+// the group still succeeds. Cancelling the group cancels those still running.
 class AsyncOperationGroup final : public AsyncOperation
 {
 public:
 	// flags are EAsyncOperationFlags
 	AsyncOperationGroup(const std::string& name, U32 flags, EAsyncOperationKind kind);
 
-	// Main thread only. Not once the group has finished; start another group for more.
-	void Add(const std::shared_ptr<AsyncOperation>& operation);
+	// Main thread only. Not once the group has finished; start another group for more. label is what its history calls
+	// it, e.g. "lion.png"; the operation's name if it's empty.
+	void Add(const std::shared_ptr<AsyncOperation>& operation, const std::string& label = std::string());
 
 protected:
 	void OnStart() override;
@@ -28,11 +30,17 @@ protected:
 	void OnFinished(EAsyncOperationState finalState) override;
 
 private:
-	// Counts those that have finished since last time, then sets the progress and status
+	// Logs and counts those that have finished since last time, then sets the progress and status
 	void Update();
 
 private:
+	struct Item
+	{
+		std::shared_ptr<AsyncOperation> Operation;
+		std::string Label;
+	};
+
 	// Only until each finishes, so the group doesn't keep what they hold
-	std::vector<std::shared_ptr<AsyncOperation>> m_running;
+	std::vector<Item> m_running;
 	size_t m_doneCount = 0;
 };

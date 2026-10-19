@@ -279,3 +279,82 @@ TEST_CASE("Durations are short")
 	CHECK(TaskTracker::FormatDuration(3599.0) == "59m 59s");
 	CHECK(TaskTracker::FormatDuration(3600.0 * 2 + 180.0) == "2h 03m");
 }
+
+TEST_CASE_FIXTURE(TrackedTasks, "Each run of a task has its own number, so runs at the same time with the same name stay apart")
+{
+	std::shared_ptr<TestOperation> first = Start("Loading thumbnails");
+	std::shared_ptr<TestOperation> second = Start("Loading thumbnails");
+	Frame();
+	first->LogStep("a.png");
+	second->LogStep("b.png");
+	first->Succeed();
+	Frame();
+	second->LogStep("c.png");
+	Frame();
+
+	const std::vector<Editor::TaskTracker::HistoryRun> runs = Editor::TaskTracker::GroupByRun(Tracker.GetHistory());
+	REQUIRE(runs.size() == 2);
+	CHECK(runs[0].Run != runs[1].Run);
+
+	using Kind = Editor::EHistoryKind;
+	REQUIRE(runs[0].Entries.size() == 3);
+	CHECK(runs[0].Entries[0]->Kind == Kind::Started);
+	CHECK(runs[0].Entries[1]->Text == "a.png");
+	CHECK(runs[0].Entries[2]->Kind == Kind::Finished);
+	CHECK(runs[0].HasEnded());
+	CHECK(Tracker.FindRunning(runs[0].Run) == nullptr);
+
+	REQUIRE(runs[1].Entries.size() == 3);
+	CHECK(runs[1].Entries[1]->Text == "b.png");
+	CHECK(runs[1].Entries[2]->Text == "c.png");
+	CHECK_FALSE(runs[1].HasEnded());
+	CHECK(Tracker.FindRunning(runs[1].Run) == second.get());
+
+	second->Succeed();
+	Frame();
+}
+
+TEST_CASE_FIXTURE(TrackedTasks, "A run has problems when it warned, failed or was cancelled")
+{
+	std::shared_ptr<TestOperation> fine = Start("Fine");
+	std::shared_ptr<TestOperation> warned = Start("Warned");
+	std::shared_ptr<TestOperation> failed = Start("Failed");
+	std::shared_ptr<TestOperation> cancelled = Start("Cancelled");
+	Frame();
+	fine->Succeed();
+	warned->AddWarning("Couldn't render SpaceHangar");
+	warned->Succeed();
+	failed->FailWith("Disk full");
+	cancelled->RequestCancel();
+	Frame();
+
+	const std::vector<Editor::TaskTracker::HistoryRun> runs = Editor::TaskTracker::GroupByRun(Tracker.GetHistory());
+	REQUIRE(runs.size() == 4);
+	CHECK_FALSE(runs[0].HasProblems());
+	CHECK(runs[1].HasProblems());
+	CHECK(runs[2].HasProblems());
+	CHECK(runs[3].HasProblems());
+}
+
+TEST_CASE_FIXTURE(TrackedTasks, "Clearing the history forgets it, and a task still running carries on into it")
+{
+	std::shared_ptr<TestOperation> done = Start("Done");
+	std::shared_ptr<TestOperation> running = Start("Running");
+	Frame();
+	done->Succeed();
+	Frame();
+
+	Tracker.ClearHistory();
+	CHECK(Tracker.GetHistory().empty());
+
+	running->LogStep("a.png");
+	running->Succeed();
+	Frame();
+
+	const std::vector<Editor::TaskTracker::HistoryRun> runs = Editor::TaskTracker::GroupByRun(Tracker.GetHistory());
+	REQUIRE(runs.size() == 1);
+	CHECK(runs[0].Task == "Running");
+	REQUIRE(runs[0].Entries.size() == 2);
+	CHECK(runs[0].Entries[0]->Text == "a.png");
+	CHECK(runs[0].HasEnded());
+}

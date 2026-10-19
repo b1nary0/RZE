@@ -49,4 +49,14 @@ namespace TimeUtils
 		std::strftime(buffer, sizeof(buffer), "%b %d, %Y", &local);
 		return buffer;
 	}
+
+	std::string FormatClockTime(std::chrono::system_clock::time_point time)
+	{
+		const std::time_t asTimeT = std::chrono::system_clock::to_time_t(time);
+		std::tm local;
+		localtime_s(&local, &asTimeT);
+		char buffer[16];
+		std::strftime(buffer, sizeof(buffer), "%H:%M:%S", &local);
+		return buffer;
+	}
 }

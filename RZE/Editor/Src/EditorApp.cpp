@@ -144,6 +144,9 @@ namespace Editor
 		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
 		window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
+		// Before anything draws, so the status bar and the panels see the same tasks
+		m_context.GetTasks().Update(RZE().GetAsyncOperationManager().GetVisibleOperations());
+
 		PushFontAtLoadedSize(m_fontMapping.at("din_bold"));
 		m_mainMenuBar.Draw(m_context);
 		m_statusBar.Draw(m_context);

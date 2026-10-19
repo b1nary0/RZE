@@ -57,8 +57,9 @@ namespace Editor
 		{
 			if (m_following.find(operation.get()) == m_following.end())
 			{
-				m_following[operation.get()] = { std::chrono::steady_clock::now(), 0 };
-				AddToHistory(std::chrono::system_clock::now(), EHistoryKind::Started, operation->GetName(), "Started");
+				const size_t run = m_nextRun++;
+				m_following[operation.get()] = { std::chrono::steady_clock::now(), 0, run };
+				AddToHistory(std::chrono::system_clock::now(), EHistoryKind::Started, operation->GetName(), "Started", run);
 			}
 			ReadLoggedSteps(*operation);
 		}
@@ -79,7 +80,7 @@ namespace Editor
 
 				m_lastNote = MakeNote(*operation);
 				m_hasNote = true;
-				AddToHistory(std::chrono::system_clock::now(), GetEndKind(m_lastNote), m_lastNote.Name, GetEndText(m_lastNote));
+				AddToHistory(std::chrono::system_clock::now(), GetEndKind(m_lastNote), m_lastNote.Name, GetEndText(m_lastNote), m_following[operation.get()].Run);
 			}
 			m_following.erase(operation.get());
 		}
@@ -89,21 +90,83 @@ namespace Editor
 
 	void TaskTracker::ReadLoggedSteps(const AsyncOperation& operation)
 	{
-		size_t& stepsRead = m_following[&operation].StepsRead;
-		for (const AsyncOperation::LoggedStep& step : operation.GetLoggedSteps(stepsRead))
+		Following& following = m_following[&operation];
+		for (AsyncOperation::LoggedStep& step : operation.GetLoggedSteps(following.StepsRead))
 		{
-			AddToHistory(step.Time, step.IsWarning ? EHistoryKind::Warning : EHistoryKind::Step, operation.GetName(), step.Text);
-			++stepsRead;
+			AddToHistory(step.Time, step.IsWarning ? EHistoryKind::Warning : EHistoryKind::Step, operation.GetName(), std::move(step.Text), following.Run);
+			++following.StepsRead;
 		}
 	}
 
-	void TaskTracker::AddToHistory(std::chrono::system_clock::time_point time, EHistoryKind kind, const std::string& task, std::string text)
+	void TaskTracker::AddToHistory(std::chrono::system_clock::time_point time, EHistoryKind kind, const std::string& task, std::string&& text, size_t run)
 	{
-		m_history.push_back({ time, kind, task, std::move(text) });
+		m_history.push_back({ time, kind, task, std::move(text), run });
 		while (m_history.size() > k_maxHistoryEntries)
 		{
 			m_history.pop_front();
 		}
+	}
+
+	void TaskTracker::ClearHistory()
+	{
+		m_history.clear();
+	}
+
+	const AsyncOperation* TaskTracker::FindRunning(size_t run) const
+	{
+		for (const std::shared_ptr<AsyncOperation>& operation : m_running)
+		{
+			const auto following = m_following.find(operation.get());
+			if (following != m_following.end() && following->second.Run == run)
+			{
+				return operation.get();
+			}
+		}
+		return nullptr;
+	}
+
+	bool TaskTracker::IsEnd(EHistoryKind kind)
+	{
+		return kind == EHistoryKind::Finished || kind == EHistoryKind::FinishedWithWarnings || kind == EHistoryKind::Failed
+			|| kind == EHistoryKind::Cancelled;
+	}
+
+	std::vector<TaskTracker::HistoryRun> TaskTracker::GroupByRun(const std::deque<HistoryEntry>& history)
+	{
+		std::vector<HistoryRun> runs;
+		// Each run's place in runs
+		std::unordered_map<size_t, size_t> runIndices;
+		for (const HistoryEntry& entry : history)
+		{
+			const auto found = runIndices.find(entry.Run);
+			if (found == runIndices.end())
+			{
+				runIndices.emplace(entry.Run, runs.size());
+				HistoryRun& run = runs.emplace_back();
+				run.Run = entry.Run;
+				run.Task = entry.Task;
+				run.Entries.push_back(&entry);
+			}
+			else
+			{
+				runs[found->second].Entries.push_back(&entry);
+			}
+		}
+		return runs;
+	}
+
+	bool TaskTracker::HistoryRun::HasEnded() const
+	{
+		return !Entries.empty() && IsEnd(Entries.back()->Kind);
+	}
+
+	bool TaskTracker::HistoryRun::HasProblems() const
+	{
+		return std::any_of(Entries.begin(), Entries.end(), [](const HistoryEntry* entry)
+			{
+				return entry->Kind == EHistoryKind::Warning || entry->Kind == EHistoryKind::FinishedWithWarnings
+					|| entry->Kind == EHistoryKind::Failed || entry->Kind == EHistoryKind::Cancelled;
+			});
 	}
 
 	double TaskTracker::GetSecondsRunning(const AsyncOperation& operation) const

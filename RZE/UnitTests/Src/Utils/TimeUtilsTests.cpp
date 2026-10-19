@@ -3,6 +3,7 @@
 #include <Utils/TimeUtils.h>
 
 #include <chrono>
+#include <ctime>
 #include <string>
 
 TEST_CASE("TimeUtils::FormatTimeAgo describes recent times in words and older ones by date")
@@ -18,4 +19,19 @@ TEST_CASE("TimeUtils::FormatTimeAgo describes recent times in words and older on
 	CHECK(TimeUtils::FormatTimeAgo(now - hours(24 * 4), now) == "4 days ago");
 	// A date, e.g. "Mar 02, 2026"
 	CHECK(TimeUtils::FormatTimeAgo(now - hours(24 * 90), now).find(", ") != std::string::npos);
+}
+
+TEST_CASE("TimeUtils::FormatClockTime gives the local time of day")
+{
+	std::tm local = {};
+	local.tm_year = 2026 - 1900;
+	local.tm_mon = 9;
+	local.tm_mday = 19;
+	local.tm_hour = 15;
+	local.tm_min = 6;
+	local.tm_sec = 2;
+	local.tm_isdst = -1;
+	const std::chrono::system_clock::time_point time = std::chrono::system_clock::from_time_t(std::mktime(&local));
+
+	CHECK(TimeUtils::FormatClockTime(time) == "15:06:02");
 }
