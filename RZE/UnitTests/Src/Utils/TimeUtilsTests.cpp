@@ -35,3 +35,13 @@ TEST_CASE("TimeUtils::FormatClockTime gives the local time of day")
 
 	CHECK(TimeUtils::FormatClockTime(time) == "15:06:02");
 }
+
+TEST_CASE("TimeUtils::FormatDuration is short")
+{
+	CHECK(TimeUtils::FormatDuration(0.2) == "0s");
+	CHECK(TimeUtils::FormatDuration(8.4) == "8s");
+	CHECK(TimeUtils::FormatDuration(59.4) == "59s");
+	CHECK(TimeUtils::FormatDuration(65.0) == "1m 05s");
+	CHECK(TimeUtils::FormatDuration(3599.0) == "59m 59s");
+	CHECK(TimeUtils::FormatDuration(3600.0 * 2 + 180.0) == "2h 03m");
+}

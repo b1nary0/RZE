@@ -10,4 +10,7 @@ namespace TimeUtils
 
 	// The local time of day, e.g. "15:56:32"
 	std::string FormatClockTime(std::chrono::system_clock::time_point time);
+
+	// How long something takes, short: "8s", "1m 05s", "2h 03m"
+	std::string FormatDuration(double seconds);
 }

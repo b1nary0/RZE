@@ -2,6 +2,9 @@
 
 #include <Utils/TimeUtils.h>
 
+#include <algorithm>
+#include <cmath>
+#include <cstdio>
 #include <ctime>
 
 namespace
@@ -58,5 +61,24 @@ namespace TimeUtils
 		char buffer[16];
 		std::strftime(buffer, sizeof(buffer), "%H:%M:%S", &local);
 		return buffer;
+	}
+
+	std::string FormatDuration(double seconds)
+	{
+		const long long total = std::max(0LL, static_cast<long long>(std::llround(seconds)));
+		char text[32];
+		if (total < 60)
+		{
+			snprintf(text, sizeof(text), "%llds", total);
+		}
+		else if (total < 3600)
+		{
+			snprintf(text, sizeof(text), "%lldm %02llds", total / 60, total % 60);
+		}
+		else
+		{
+			snprintf(text, sizeof(text), "%lldh %02lldm", total / 3600, (total % 3600) / 60);
+		}
+		return text;
 	}
 }

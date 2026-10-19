@@ -387,10 +387,10 @@ namespace Editor
 				DrawTextLine(drawList, right - percentWidth, right, textTop, ImGui::GetColorU32(ImGuiCol_Text), percent);
 				right -= percentWidth + k_partGap;
 
-				const std::optional<double> secondsLeft = TaskTracker::EstimateSecondsLeft(tasks.GetSecondsRunning(*operation), progress);
+				const std::optional<double> secondsLeft = operation->EstimateSecondsLeft();
 				if (secondsLeft.has_value())
 				{
-					const std::string timeLeft = "~" + TaskTracker::FormatDuration(*secondsLeft);
+					const std::string timeLeft = "~" + TimeUtils::FormatDuration(*secondsLeft);
 					const float timeLeftWidth = ImGui::CalcTextSize(timeLeft.c_str()).x;
 					DrawTextLine(drawList, right - timeLeftWidth, right, textTop, ImGui::GetColorU32(ImGuiCol_TextDisabled), timeLeft);
 					right -= timeLeftWidth + k_partGap;

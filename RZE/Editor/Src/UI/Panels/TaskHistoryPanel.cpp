@@ -47,13 +47,14 @@ namespace
 		return { "Not shown any more", ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled) };
 	}
 
-	// From its first entry to its last, or to now while it's running
+	// How long it's been running, while it is; otherwise from its first entry to its last
 	double GetSecondsTaken(const Editor::TaskTracker& tasks, const Editor::TaskTracker::HistoryRun& run)
 	{
-		const std::chrono::system_clock::time_point end = tasks.FindRunning(run.Run) != nullptr
-			? std::chrono::system_clock::now()
-			: run.Entries.back()->Time;
-		return std::chrono::duration<double>(end - run.Entries.front()->Time).count();
+		if (const AsyncOperation* const running = tasks.FindRunning(run.Run))
+		{
+			return running->GetSecondsRunning();
+		}
+		return std::chrono::duration<double>(run.Entries.back()->Time - run.Entries.front()->Time).count();
 	}
 }
 
@@ -181,7 +182,7 @@ namespace Editor
 		ImGui::TableSetColumnIndex(2);
 		ImGui::TextDisabled("%s", TimeUtils::FormatClockTime(run.Entries.front()->Time).c_str());
 		ImGui::TableSetColumnIndex(3);
-		ImGui::TextDisabled("%s", TaskTracker::FormatDuration(GetSecondsTaken(tasks, run)).c_str());
+		ImGui::TextDisabled("%s", TimeUtils::FormatDuration(GetSecondsTaken(tasks, run)).c_str());
 
 		if (isOpen)
 		{

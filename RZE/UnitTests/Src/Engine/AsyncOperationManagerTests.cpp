@@ -6,8 +6,10 @@
 
 #include <TestOperation.h>
 
+#include <chrono>
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace
@@ -177,6 +179,44 @@ TEST_CASE("What idle ticks upload comes out of the next frame's allowance, and t
 
 	manager.Tick();
 	CHECK(secondUploadFitted);
+
+	manager.ShutDown();
+}
+
+TEST_CASE("Time left is estimated from the rate so far, once an operation has gone on long enough to tell")
+{
+	CHECK_FALSE(AsyncOperation::EstimateSecondsLeft(10.0, 0.0f).has_value());
+	CHECK_FALSE(AsyncOperation::EstimateSecondsLeft(10.0, AsyncOperation::k_minProgressToEstimate * 0.5f).has_value());
+	CHECK_FALSE(AsyncOperation::EstimateSecondsLeft(0.5, 0.5f).has_value());
+
+	REQUIRE(AsyncOperation::EstimateSecondsLeft(10.0, 0.25f).has_value());
+	CHECK(*AsyncOperation::EstimateSecondsLeft(10.0, 0.25f) == doctest::Approx(30.0));
+	CHECK(*AsyncOperation::EstimateSecondsLeft(10.0, 1.0f) == doctest::Approx(0.0));
+}
+
+TEST_CASE("An operation's running time starts when the manager starts it and stops when it finishes")
+{
+	AsyncOperationManager manager;
+	manager.Initialize();
+
+	std::shared_ptr<TestOperation> operation = std::make_shared<TestOperation>("Timed", EAsyncOperationFlags::None);
+	CHECK(operation->GetSecondsRunning() == 0.0);
+	CHECK_FALSE(operation->EstimateSecondsLeft().has_value());
+
+	manager.Start(operation);
+	std::this_thread::sleep_for(std::chrono::milliseconds(20));
+	manager.Tick();
+	const double whileRunning = operation->GetSecondsRunning();
+	CHECK(whileRunning >= 0.02);
+
+	operation->Succeed();
+	manager.Tick();
+	REQUIRE(operation->IsFinished());
+	const double atFinish = operation->GetSecondsRunning();
+	CHECK(atFinish >= whileRunning);
+
+	std::this_thread::sleep_for(std::chrono::milliseconds(20));
+	CHECK(operation->GetSecondsRunning() == atFinish);
 
 	manager.ShutDown();
 }

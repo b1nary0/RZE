@@ -3,7 +3,6 @@
 #include <EngineCore/Async/AsyncOperation.h>
 
 #include <algorithm>
-#include <cmath>
 
 namespace
 {
@@ -58,7 +57,7 @@ namespace Editor
 			if (m_following.find(operation.get()) == m_following.end())
 			{
 				const size_t run = m_nextRun++;
-				m_following[operation.get()] = { std::chrono::steady_clock::now(), 0, run };
+				m_following[operation.get()] = { 0, run };
 				AddToHistory(std::chrono::system_clock::now(), EHistoryKind::Started, operation->GetName(), "Started", run);
 			}
 			ReadLoggedSteps(*operation);
@@ -167,49 +166,6 @@ namespace Editor
 				return entry->Kind == EHistoryKind::Warning || entry->Kind == EHistoryKind::FinishedWithWarnings
 					|| entry->Kind == EHistoryKind::Failed || entry->Kind == EHistoryKind::Cancelled;
 			});
-	}
-
-	double TaskTracker::GetSecondsRunning(const AsyncOperation& operation) const
-	{
-		const auto following = m_following.find(&operation);
-		if (following == m_following.end())
-		{
-			return 0.0;
-		}
-		return std::chrono::duration<double>(std::chrono::steady_clock::now() - following->second.Started).count();
-	}
-
-	std::optional<double> TaskTracker::EstimateSecondsLeft(double secondsRunning, float progress)
-	{
-		if (progress < k_minProgressToEstimate || secondsRunning < 1.0)
-		{
-			return std::nullopt;
-		}
-		if (progress >= 1.0f)
-		{
-			return 0.0;
-		}
-		// At the rate it's gone so far
-		return secondsRunning * (1.0 - progress) / progress;
-	}
-
-	std::string TaskTracker::FormatDuration(double seconds)
-	{
-		const long long total = std::max(0LL, static_cast<long long>(std::llround(seconds)));
-		char text[32];
-		if (total < 60)
-		{
-			snprintf(text, sizeof(text), "%llds", total);
-		}
-		else if (total < 3600)
-		{
-			snprintf(text, sizeof(text), "%lldm %02llds", total / 60, total % 60);
-		}
-		else
-		{
-			snprintf(text, sizeof(text), "%lldh %02lldm", total / 3600, (total % 3600) / 60);
-		}
-		return text;
 	}
 
 	ETaskStatus TaskTracker::GetStatus() const

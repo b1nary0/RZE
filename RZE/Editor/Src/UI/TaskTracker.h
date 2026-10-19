@@ -5,7 +5,6 @@
 #include <chrono>
 #include <deque>
 #include <memory>
-#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -106,19 +105,10 @@ namespace Editor
 		void ClearHistory();
 		// The running operation a run of the history is from, or null once it isn't running or shown
 		const AsyncOperation* FindRunning(size_t run) const;
-		// How long a running task has been running for, from when Update first saw it; 0 for one it isn't following
-		double GetSecondsRunning(const AsyncOperation& operation) const;
 
 		// "<name> finished" (with its status text, if it has any), "<name> finished with warnings: <first warning>",
 		// "<name> failed: <error>" or "<name> cancelled"
 		static Note MakeNote(const AsyncOperation& finished);
-
-		// How long a task that's this far through after this long has left, if it's gone on long enough to tell: at
-		// least k_minProgressToEstimate done, and a second
-		static std::optional<double> EstimateSecondsLeft(double secondsRunning, float progress);
-		static constexpr float k_minProgressToEstimate = 0.05f;
-		// Short, e.g. "8s", "1m 05s", "2h 03m"
-		static std::string FormatDuration(double seconds);
 
 		// Whether an entry of this kind says how a task ended
 		static bool IsEnd(EHistoryKind kind);
@@ -135,7 +125,6 @@ namespace Editor
 
 		struct Following
 		{
-			std::chrono::steady_clock::time_point Started;
 			// How many of its logged steps are in the history
 			size_t StepsRead = 0;
 			// Its entries' HistoryEntry::Run

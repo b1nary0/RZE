@@ -255,31 +255,6 @@ TEST_CASE_FIXTURE(TrackedTasks, "The history keeps every task, however they ende
 	CHECK(Tracker.GetHistory().front().Kind == Kind::Step);
 }
 
-TEST_CASE("Time left is estimated from the rate so far, once a task has gone on long enough to tell")
-{
-	using Editor::TaskTracker;
-
-	CHECK_FALSE(TaskTracker::EstimateSecondsLeft(10.0, 0.0f).has_value());
-	CHECK_FALSE(TaskTracker::EstimateSecondsLeft(10.0, TaskTracker::k_minProgressToEstimate * 0.5f).has_value());
-	CHECK_FALSE(TaskTracker::EstimateSecondsLeft(0.5, 0.5f).has_value());
-
-	REQUIRE(TaskTracker::EstimateSecondsLeft(10.0, 0.25f).has_value());
-	CHECK(*TaskTracker::EstimateSecondsLeft(10.0, 0.25f) == doctest::Approx(30.0));
-	CHECK(*TaskTracker::EstimateSecondsLeft(10.0, 1.0f) == doctest::Approx(0.0));
-}
-
-TEST_CASE("Durations are short")
-{
-	using Editor::TaskTracker;
-
-	CHECK(TaskTracker::FormatDuration(0.2) == "0s");
-	CHECK(TaskTracker::FormatDuration(8.4) == "8s");
-	CHECK(TaskTracker::FormatDuration(59.4) == "59s");
-	CHECK(TaskTracker::FormatDuration(65.0) == "1m 05s");
-	CHECK(TaskTracker::FormatDuration(3599.0) == "59m 59s");
-	CHECK(TaskTracker::FormatDuration(3600.0 * 2 + 180.0) == "2h 03m");
-}
-
 TEST_CASE_FIXTURE(TrackedTasks, "Each run of a task has its own number, so runs at the same time with the same name stay apart")
 {
 	std::shared_ptr<TestOperation> first = Start("Loading thumbnails");

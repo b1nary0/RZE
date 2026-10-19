@@ -92,6 +92,7 @@ void AsyncOperationManager::Start(const std::shared_ptr<AsyncOperation>& operati
 
 void AsyncOperationManager::StartInternal(const std::shared_ptr<AsyncOperation>& operation)
 {
+	operation->m_startTime = std::chrono::steady_clock::now();
 	operation->m_state.store(EAsyncOperationState::Running, std::memory_order_release);
 	m_entries.push_back({ operation });
 

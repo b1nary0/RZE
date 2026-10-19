@@ -1,6 +1,7 @@
 #pragma once
 
 #include <chrono>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -126,6 +127,16 @@ public:
 	// Called exactly once when the operation reaches a terminal state. Not called if the engine shuts down first.
 	void SetOnCompleted(CompletionCallback callback);
 
+	// How long it's been running: 0 before it starts, and how long it took once it's finished
+	double GetSecondsRunning() const;
+	// How long it has left at the rate it's gone so far, if it's gone on long enough to tell (see the static overload)
+	std::optional<double> EstimateSecondsLeft() const;
+
+	// How long something that's this far through after this long has left, if it's gone on long enough to tell: at least
+	// k_minProgressToEstimate done, and a second
+	static std::optional<double> EstimateSecondsLeft(double secondsRunning, float progress);
+	static constexpr float k_minProgressToEstimate = 0.05f;
+
 	Threading::JobHandle PushWorkerJob(Threading::Job::Task task);
 	bool HasOutstandingJobs();
 
@@ -173,5 +184,8 @@ private:
 	// Main thread only
 	std::vector<Threading::JobHandle> m_outstandingJobs;
 	CompletionCallback m_onCompleted;
+	// Set by AsyncOperationManager when it starts the operation, and by Finish
+	std::chrono::steady_clock::time_point m_startTime;
+	std::chrono::steady_clock::time_point m_finishTime;
 	EAsyncOperationState m_requestedFinalState = EAsyncOperationState::NotStarted;
 };

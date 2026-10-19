@@ -150,9 +150,41 @@ void AsyncOperation::Fail(const std::string& reason)
 	}
 }
 
+double AsyncOperation::GetSecondsRunning() const
+{
+	const EAsyncOperationState state = GetState();
+	if (state == EAsyncOperationState::NotStarted)
+	{
+		return 0.0;
+	}
+
+	const std::chrono::steady_clock::time_point end = IsFinished() ? m_finishTime : std::chrono::steady_clock::now();
+	return std::chrono::duration<double>(end - m_startTime).count();
+}
+
+std::optional<double> AsyncOperation::EstimateSecondsLeft() const
+{
+	return EstimateSecondsLeft(GetSecondsRunning(), GetProgress());
+}
+
+std::optional<double> AsyncOperation::EstimateSecondsLeft(double secondsRunning, float progress)
+{
+	if (progress < k_minProgressToEstimate || secondsRunning < 1.0)
+	{
+		return std::nullopt;
+	}
+	if (progress >= 1.0f)
+	{
+		return 0.0;
+	}
+	// At the rate it's gone so far
+	return secondsRunning * (1.0 - progress) / progress;
+}
+
 void AsyncOperation::Finish(EAsyncOperationState finalState)
 {
 	AssertExpr(!IsFinished());
+	m_finishTime = std::chrono::steady_clock::now();
 
 	if (finalState == EAsyncOperationState::Succeeded)
 	{
