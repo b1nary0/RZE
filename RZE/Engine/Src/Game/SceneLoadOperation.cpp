@@ -53,7 +53,7 @@ namespace
 }
 
 SceneLoadOperation::SceneLoadOperation(GameScene& scene, const Filepath& scenePath, U32 flags)
-	: AsyncOperation("Loading Scene", flags)
+	: AsyncOperation("Loading Scene", flags, EAsyncOperationKind::SceneLoad)
 	, m_scene(scene)
 	, m_scenePath(scenePath.IsValid() ? scenePath : GameScene::GetDefaultScenePath())
 	, m_resourceBatch(*this)

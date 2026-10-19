@@ -102,6 +102,11 @@ ResourceFinalizeCost StaticMeshResource::GetNextFinalizeStepCost() const
 	return cost;
 }
 
+float StaticMeshResource::GetFinalizeProgress() const
+{
+	return m_pendingSubmeshes.empty() ? 0.0f : static_cast<float>(m_nextSubmeshToFinalize) / static_cast<float>(m_pendingSubmeshes.size());
+}
+
 bool StaticMeshResource::FinalizeStep()
 {
 	if (!m_isFinalizePending)

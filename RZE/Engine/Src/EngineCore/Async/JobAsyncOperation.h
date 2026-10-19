@@ -31,7 +31,7 @@ public:
 	using WorkFunction = Functor<bool, AsyncWorkerContext&>;
 
 public:
-	JobAsyncOperation(const std::string& name, U32 flags, WorkFunction work);
+	JobAsyncOperation(const std::string& name, U32 flags, WorkFunction work, EAsyncOperationKind kind = EAsyncOperationKind::General);
 
 protected:
 	void OnStart() override;

@@ -25,6 +25,8 @@ public:
 	ResourceFinalizeCost GetNextFinalizeStepCost() const override;
 	// Finalizes one submesh per step (GPU buffers), then the materials with the last.
 	bool FinalizeStep() override;
+	// The share of its submeshes finalized
+	float GetFinalizeProgress() const override;
 
 public:
 	// Null until it has loaded

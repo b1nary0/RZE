@@ -14,7 +14,7 @@
 namespace
 {
 	// Its loads serve background work, which reports on them itself
-	constexpr U32 k_operationFlags = EAsyncOperationFlags::Background | EAsyncOperationFlags::Hidden;
+	constexpr U32 k_operationFlags = EAsyncOperationFlags::Background | EAsyncOperationFlags::SubStep;
 }
 
 HeadlessScene::HeadlessScene()

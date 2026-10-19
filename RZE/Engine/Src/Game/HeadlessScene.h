@@ -21,7 +21,7 @@ struct RenderCamera;
 // It's never updated. Render objects take their transform when they're made and lights their direction when they're
 // added, which is all a still capture needs. Objects removed from it are destroyed straight away.
 //
-// Its loads and preloads are Background and Hidden operations: whoever uses the scene reports on its own progress.
+// Its loads and preloads are Background operations, and SubSteps: whoever uses the scene reports on its own progress.
 //
 // Main thread only. Unload it before the engine shuts down, since it holds resources and render data.
 class HeadlessScene

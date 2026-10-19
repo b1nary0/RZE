@@ -29,6 +29,31 @@ bool AsyncResourceBatch::IsComplete() const
 	return m_settledCount == m_entries.size();
 }
 
+float AsyncResourceBatch::GetSettledAmount() const
+{
+	float amount = static_cast<float>(m_settledCount);
+	for (const std::unique_ptr<Entry>& entry : m_entries)
+	{
+		if (entry->State == EEntryState::Finalizing && entry->Resource != nullptr)
+		{
+			amount += std::clamp(entry->Resource->GetFinalizeProgress(), 0.0f, 1.0f);
+		}
+	}
+	return amount;
+}
+
+std::string AsyncResourceBatch::GetCurrentPath() const
+{
+	for (const std::unique_ptr<Entry>& entry : m_entries)
+	{
+		if (entry->State != EEntryState::Resolved && entry->State != EEntryState::Failed)
+		{
+			return entry->Path.GetRelativePath();
+		}
+	}
+	return std::string();
+}
+
 bool AsyncResourceBatch::IsResolved(const Filepath& resourcePath) const
 {
 	const auto iter = m_entriesByKey.find(ResourceHandler::CreateResourceKey(resourcePath));

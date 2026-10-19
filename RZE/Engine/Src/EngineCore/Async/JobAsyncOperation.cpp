@@ -44,8 +44,8 @@ void AsyncWorkerContext::PostToMainThread(Threading::Job::Task task)
 //
 // JobAsyncOperation
 //
-JobAsyncOperation::JobAsyncOperation(const std::string& name, U32 flags, WorkFunction work)
-	: AsyncOperation(name, flags)
+JobAsyncOperation::JobAsyncOperation(const std::string& name, U32 flags, WorkFunction work, EAsyncOperationKind kind)
+	: AsyncOperation(name, flags, kind)
 	, m_work(std::move(work))
 {
 }

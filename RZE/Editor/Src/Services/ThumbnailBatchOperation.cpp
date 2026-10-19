@@ -5,7 +5,7 @@
 namespace Editor
 {
 	ThumbnailBatchOperation::ThumbnailBatchOperation(const std::string& name, U32 flags)
-		: AsyncOperation(name, flags)
+		: AsyncOperation(name, flags, EAsyncOperationKind::Rendering)
 	{
 	}
 

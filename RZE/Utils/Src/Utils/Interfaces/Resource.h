@@ -46,4 +46,8 @@ public:
 
 	// Main thread. Performs one bounded unit of GPU submission. Returns true once finalization is complete.
 	virtual bool FinalizeStep() { return true; }
+
+	// Main thread. How much of its finalization is done, in [0, 1], for progress displays; for one that takes several
+	// steps. 0 until it's finished, for one that doesn't say.
+	virtual float GetFinalizeProgress() const { return 0.0f; }
 };

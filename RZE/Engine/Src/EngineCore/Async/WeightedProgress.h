@@ -17,6 +17,8 @@ public:
 	U32 AddStage(float weight);
 
 	void SetStage(U32 stage, U32 completed, U32 total);
+	// For a stage measured in parts of items, e.g. 2.5 of 4 resources uploaded: fraction is in [0, 1]
+	void SetStageFraction(U32 stage, float fraction);
 	void MarkStageComplete(U32 stage);
 
 	float Compute() const;
@@ -25,8 +27,8 @@ private:
 	struct Stage
 	{
 		float Weight = 0.0f;
-		U32 Completed = 0;
-		U32 Total = 0;
+		// How much of the stage is done, in [0, 1]
+		float Fraction = 0.0f;
 		bool IsComplete = false;
 	};
 

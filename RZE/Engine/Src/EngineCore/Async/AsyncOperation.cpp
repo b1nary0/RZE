@@ -6,9 +6,10 @@
 
 #include <algorithm>
 
-AsyncOperation::AsyncOperation(const std::string& name, U32 flags)
+AsyncOperation::AsyncOperation(const std::string& name, U32 flags, EAsyncOperationKind kind)
 	: m_name(name)
 	, m_flags(flags)
+	, m_kind(kind)
 {
 }
 

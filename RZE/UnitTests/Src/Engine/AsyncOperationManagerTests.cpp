@@ -23,24 +23,32 @@ namespace
 	}
 }
 
-TEST_CASE("Only running operations that aren't hidden are visible, oldest first")
+TEST_CASE("Running operations the filter matches are visible, oldest first, and every running one is reported")
 {
 	AsyncOperationManager manager;
 	manager.Initialize();
 
 	std::shared_ptr<TestOperation> shown = std::make_shared<TestOperation>("Shown", EAsyncOperationFlags::None);
-	std::shared_ptr<TestOperation> hidden = std::make_shared<TestOperation>("Hidden", EAsyncOperationFlags::Hidden);
+	std::shared_ptr<TestOperation> subStep = std::make_shared<TestOperation>("SubStep", EAsyncOperationFlags::SubStep);
 	std::shared_ptr<TestOperation> background = std::make_shared<TestOperation>("Background", EAsyncOperationFlags::Background);
 	manager.Start(shown);
-	manager.Start(hidden);
+	manager.Start(subStep);
 	manager.Start(background);
 	manager.Tick();
 
+	// Everything shows until the filter says otherwise
+	CHECK(GetNames(manager.GetVisibleOperations()) == std::vector<std::string>{ "Shown", "SubStep", "Background" });
+
+	AsyncOperationFilter filter;
+	filter.ShowSubSteps = false;
+	manager.SetVisibilityFilter(filter);
 	CHECK(GetNames(manager.GetVisibleOperations()) == std::vector<std::string>{ "Shown", "Background" });
+	CHECK(GetNames(manager.GetRunningOperations()) == std::vector<std::string>{ "Shown", "SubStep", "Background" });
 
 	shown->Succeed();
 	manager.Tick();
 	CHECK(GetNames(manager.GetVisibleOperations()) == std::vector<std::string>{ "Background" });
+	CHECK(GetNames(manager.GetRunningOperations()) == std::vector<std::string>{ "SubStep", "Background" });
 
 	manager.ShutDown();
 }

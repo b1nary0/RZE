@@ -4,6 +4,8 @@
 
 #include <RZE.h>
 
+#include <EngineCore/Async/AsyncOperationGroup.h>
+#include <EngineCore/Async/AsyncOperationManager.h>
 #include <EngineCore/Resources/ResourcePreloadOperation.h>
 
 #include <Graphics/Texture2D.h>
@@ -216,6 +218,8 @@ namespace Editor
 
 		// The ResourceHandler keeps a released texture until the render thread has drawn the frames that show it
 		m_thumbnails.clear();
+		// It finishes once the loads it was following have stopped; the next images to load get a task of their own
+		m_thumbnailLoads = nullptr;
 	}
 
 	void FileTileGrid::DrawTile(const FolderEntry& entry, int index, const ImVec2& size, FileTileGridResult& result)
@@ -505,10 +509,19 @@ namespace Editor
 				thumbnail.Texture = RZE().GetResourceHandler().GetHandle(image);
 				if (!thumbnail.Texture.IsValid())
 				{
+					AsyncOperationManager& operationManager = RZE().GetAsyncOperationManager();
+					if (m_thumbnailLoads == nullptr || m_thumbnailLoads->IsFinished())
+					{
+						m_thumbnailLoads = std::make_shared<AsyncOperationGroup>("Loading thumbnails", EAsyncOperationFlags::Background, EAsyncOperationKind::ResourceLoad);
+						operationManager.Start(m_thumbnailLoads);
+					}
+
 					ResourceDependencyList images;
 					images.Add<Texture2D>(key);
-					thumbnail.Load = std::make_shared<ResourcePreloadOperation>(std::move(images), EAsyncOperationFlags::Background | EAsyncOperationFlags::Hidden);
-					RZE().GetAsyncOperationManager().Start(thumbnail.Load);
+					thumbnail.Load = std::make_shared<ResourcePreloadOperation>(std::move(images), EAsyncOperationFlags::Background | EAsyncOperationFlags::SubStep,
+						"Loading " + image.GetFileName());
+					operationManager.Start(thumbnail.Load);
+					m_thumbnailLoads->Add(thumbnail.Load);
 				}
 			}
 		}

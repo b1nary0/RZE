@@ -175,6 +175,7 @@ void RZE_Engine::Init()
 		m_asyncOperationManager.Initialize();
 
 		LoadEngineConfig();
+		m_asyncOperationManager.SetVisibilityFilter(GetResourceHandler().GetResource<EngineConfig>(m_engineConfig)->GetBackgroundTaskFilter());
 
 		CreateAndInitializeWindow();
 

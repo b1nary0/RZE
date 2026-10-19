@@ -4,6 +4,7 @@
 #include <vector>
 
 #include <EngineCore/Async/AsyncOperation.h>
+#include <EngineCore/Async/AsyncOperationFilter.h>
 
 #include <Utils/PrimitiveDefs.h>
 
@@ -59,9 +60,15 @@ public:
 	bool HasBlockingOperation() const;
 	// The oldest running operation flagged as Blocking, or nullptr.
 	const AsyncOperation* GetBlockingOperation() const;
-	// The running operations that aren't Hidden, oldest first, e.g. for a progress display. Shared so the caller can
-	// keep watching one after it finishes, or cancel it.
+	// The running operations the visibility filter matches, oldest first, e.g. for a progress display. Shared so the
+	// caller can keep watching one after it finishes, or cancel it.
 	std::vector<std::shared_ptr<AsyncOperation>> GetVisibleOperations() const;
+	// Every running operation, oldest first, whatever the filter
+	std::vector<std::shared_ptr<AsyncOperation>> GetRunningOperations() const;
+
+	// Which operations GetVisibleOperations gives; the engine sets it from Engine.ini's [BackgroundTasks] at start-up
+	const AsyncOperationFilter& GetVisibilityFilter() const { return m_visibilityFilter; }
+	void SetVisibilityFilter(const AsyncOperationFilter& filter) { m_visibilityFilter = filter; }
 
 	// Main-thread time and GPU upload allowance shared by the foreground operations each frame. Background operations
 	// get k_backgroundFrameBudgetMS and a share of the uploads on top.
@@ -88,6 +95,8 @@ private:
 private:
 	std::vector<Entry> m_entries;
 	std::vector<std::shared_ptr<AsyncOperation>> m_pendingStarts;
+
+	AsyncOperationFilter m_visibilityFilter;
 
 	double m_frameBudgetMS;
 	size_t m_uploadBudgetBytes;

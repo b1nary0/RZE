@@ -74,3 +74,29 @@ TEST_CASE("A preload hands out the resources it loaded, and only those, and its 
 
 	handler.ReleaseResource(other);
 }
+
+TEST_CASE("A preload goes by the name it's given, and says what it's doing from the start")
+{
+	ResourceHandler& handler = RZE().GetResourceHandler();
+	AsyncOperationManager manager;
+	manager.Initialize();
+
+	ResourceDependencyList resources;
+	resources.Add<FakeResource>(k_preloadedPath.GetRelativePath());
+	std::shared_ptr<ResourcePreloadOperation> preload = std::make_shared<ResourcePreloadOperation>(std::move(resources), EAsyncOperationFlags::None, "Loading Preloaded.resource");
+	CHECK(preload->GetName() == "Loading Preloaded.resource");
+	CHECK(preload->GetKind() == EAsyncOperationKind::ResourceLoad);
+
+	manager.Start(preload);
+	manager.Tick();
+	CHECK_FALSE(preload->GetStatusText().empty());
+
+	TickUntilFinished(manager, *preload);
+	REQUIRE(preload->Succeeded());
+	CHECK(preload->GetProgress() == doctest::Approx(1.0f));
+
+	ResourceHandle preloaded = preload->GetHandle(k_preloadedPath);
+	preload.reset();
+	manager.ShutDown();
+	handler.ReleaseResource(preloaded);
+}

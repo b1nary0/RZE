@@ -20,6 +20,7 @@ bool EngineConfig::Load(const Filepath& filePath)
 	LoadEngineSettings();
 	LoadWindowSettings();
 	LoadFrameSettings();
+	LoadBackgroundTaskFilter();
 
 	// @TODO properly return true/false from this function. for now true is fine but jeapordizes the integrity of the resource system
 	return true;
@@ -42,6 +43,11 @@ const WindowSettings& EngineConfig::GetWindowSettings() const
 const FrameSettings& EngineConfig::GetFrameSettings() const
 {
 	return mFrameSettings;
+}
+
+const AsyncOperationFilter& EngineConfig::GetBackgroundTaskFilter() const
+{
+	return mBackgroundTaskFilter;
 }
 
 void EngineConfig::LoadEngineSettings()
@@ -69,6 +75,31 @@ void EngineConfig::LoadFrameSettings()
 	mFrameSettings.MaxFrameRate = mINIParser.GetDoubleValue("FrameSettings", "MaxFrameRate", defaults.MaxFrameRate);
 	mFrameSettings.UnfocusedFrameRate = mINIParser.GetDoubleValue("FrameSettings", "UnfocusedFrameRate", defaults.UnfocusedFrameRate);
 	mFrameSettings.UIFrameRate = mINIParser.GetDoubleValue("FrameSettings", "UIFrameRate", defaults.UIFrameRate);
+}
+
+void EngineConfig::LoadBackgroundTaskFilter()
+{
+	// Missing keys keep AsyncOperationFilter's defaults
+	const AsyncOperationFilter defaults;
+	mBackgroundTaskFilter.ShowSubSteps = mINIParser.GetBoolValue("BackgroundTasks", "ShowSubSteps", defaults.ShowSubSteps);
+	mBackgroundTaskFilter.ShowBlocking = mINIParser.GetBoolValue("BackgroundTasks", "ShowBlocking", defaults.ShowBlocking);
+
+	struct KindKey
+	{
+		const char* Key;
+		EAsyncOperationKind Kind;
+	};
+	const KindKey kindKeys[] = {
+		{ "ShowResourceLoads", EAsyncOperationKind::ResourceLoad },
+		{ "ShowSceneLoads", EAsyncOperationKind::SceneLoad },
+		{ "ShowRendering", EAsyncOperationKind::Rendering },
+		{ "ShowSaving", EAsyncOperationKind::Saving },
+		{ "ShowOther", EAsyncOperationKind::General }
+	};
+	for (const KindKey& kindKey : kindKeys)
+	{
+		mBackgroundTaskFilter.SetShowsKind(kindKey.Kind, mINIParser.GetBoolValue("BackgroundTasks", kindKey.Key, defaults.ShowsKind(kindKey.Kind)));
+	}
 }
 
 WindowSettings::WindowSettings()

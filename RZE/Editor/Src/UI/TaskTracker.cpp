@@ -52,17 +52,8 @@ namespace Editor
 {
 	void TaskTracker::Update(const std::vector<std::shared_ptr<AsyncOperation>>& visibleOperations)
 	{
-		std::vector<std::shared_ptr<AsyncOperation>> running;
-		for (const std::shared_ptr<AsyncOperation>& operation : visibleOperations)
-		{
-			if (!operation->IsBlocking())
-			{
-				running.push_back(operation);
-			}
-		}
-
 		// Those new since last frame have started
-		for (const std::shared_ptr<AsyncOperation>& operation : running)
+		for (const std::shared_ptr<AsyncOperation>& operation : visibleOperations)
 		{
 			if (m_following.find(operation.get()) == m_following.end())
 			{
@@ -72,10 +63,10 @@ namespace Editor
 			ReadLoggedSteps(*operation);
 		}
 
-		// Those gone from the list since last frame have finished
+		// Those gone from the list since last frame have finished, or aren't shown any more
 		for (const std::shared_ptr<AsyncOperation>& operation : m_running)
 		{
-			const bool isStillRunning = std::find(running.begin(), running.end(), operation) != running.end();
+			const bool isStillRunning = std::find(visibleOperations.begin(), visibleOperations.end(), operation) != visibleOperations.end();
 			if (isStillRunning)
 			{
 				continue;
@@ -93,7 +84,7 @@ namespace Editor
 			m_following.erase(operation.get());
 		}
 
-		m_running = std::move(running);
+		m_running = visibleOperations;
 	}
 
 	void TaskTracker::ReadLoggedSteps(const AsyncOperation& operation)

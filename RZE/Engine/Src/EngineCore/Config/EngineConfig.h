@@ -1,5 +1,6 @@
 #pragma once
 
+#include <EngineCore/Async/AsyncOperationFilter.h>
 #include <EngineCore/Config/Config.h>
 #include <EngineCore/Config/FrameSettings.h>
 
@@ -53,14 +54,18 @@ public:
 	const EngineSettings& GetEngineSettings() const;
 	const WindowSettings& GetWindowSettings() const;
 	const FrameSettings& GetFrameSettings() const;
+	// [BackgroundTasks]: which operations progress displays show
+	const AsyncOperationFilter& GetBackgroundTaskFilter() const;
 
 private:
 	void LoadEngineSettings();
 	void LoadWindowSettings();
 	void LoadFrameSettings();
+	void LoadBackgroundTaskFilter();
 
 private:
 	EngineSettings mEngineSettings;
 	WindowSettings mWindowSettings;
 	FrameSettings mFrameSettings;
+	AsyncOperationFilter mBackgroundTaskFilter;
 };

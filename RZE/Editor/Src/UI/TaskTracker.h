@@ -40,7 +40,8 @@ namespace Editor
 
 	// Follows the operations the status bar shows: keeps a short note about the last one to finish until another does,
 	// and a history of everything that happened to each (started, the steps it logged, its warnings, how it ended).
-	// Blocking operations are left out, since the progress modal shows those. Holds no UI, so it can be tested.
+	// Which operations it's given is up to the manager's visibility filter (Settings > Background Tasks). Holds no UI, so
+	// it can be tested.
 	class TaskTracker
 	{
 	public:

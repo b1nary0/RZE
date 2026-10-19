@@ -240,7 +240,20 @@ std::vector<std::shared_ptr<AsyncOperation>> AsyncOperationManager::GetVisibleOp
 	std::vector<std::shared_ptr<AsyncOperation>> operations;
 	for (const Entry& entry : m_entries)
 	{
-		if (!entry.IsFinished && !entry.Operation->IsHidden())
+		if (!entry.IsFinished && m_visibilityFilter.Matches(*entry.Operation))
+		{
+			operations.push_back(entry.Operation);
+		}
+	}
+	return operations;
+}
+
+std::vector<std::shared_ptr<AsyncOperation>> AsyncOperationManager::GetRunningOperations() const
+{
+	std::vector<std::shared_ptr<AsyncOperation>> operations;
+	for (const Entry& entry : m_entries)
+	{
+		if (!entry.IsFinished)
 		{
 			operations.push_back(entry.Operation);
 		}

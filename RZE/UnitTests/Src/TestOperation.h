@@ -10,8 +10,9 @@
 class TestOperation final : public AsyncOperation
 {
 public:
-	TestOperation(const std::string& name, U32 flags, std::function<void(AsyncFrameBudget&)> onTick = nullptr)
-		: AsyncOperation(name, flags)
+	TestOperation(const std::string& name, U32 flags, std::function<void(AsyncFrameBudget&)> onTick = nullptr,
+		EAsyncOperationKind kind = EAsyncOperationKind::General)
+		: AsyncOperation(name, flags, kind)
 		, m_onTick(std::move(onTick)) {}
 
 	// Each takes effect at the manager's next Tick

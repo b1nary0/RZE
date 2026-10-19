@@ -19,8 +19,14 @@ void WeightedProgress::SetStage(U32 stage, U32 completed, U32 total)
 {
 	AssertExpr(stage < m_stageCount);
 
-	m_stages[stage].Completed = completed;
-	m_stages[stage].Total = total;
+	m_stages[stage].Fraction = total > 0 ? std::min(1.0f, static_cast<float>(completed) / static_cast<float>(total)) : 0.0f;
+}
+
+void WeightedProgress::SetStageFraction(U32 stage, float fraction)
+{
+	AssertExpr(stage < m_stageCount);
+
+	m_stages[stage].Fraction = std::clamp(fraction, 0.0f, 1.0f);
 }
 
 void WeightedProgress::MarkStageComplete(U32 stage)
@@ -39,15 +45,7 @@ float WeightedProgress::Compute() const
 	{
 		const Stage& stage = m_stages[stageIndex];
 
-		float fraction = 0.0f;
-		if (stage.IsComplete)
-		{
-			fraction = 1.0f;
-		}
-		else if (stage.Total > 0)
-		{
-			fraction = std::min(1.0f, static_cast<float>(stage.Completed) / static_cast<float>(stage.Total));
-		}
+		const float fraction = stage.IsComplete ? 1.0f : stage.Fraction;
 
 		totalWeight += stage.Weight;
 		weightedSum += stage.Weight * fraction;

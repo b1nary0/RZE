@@ -14,6 +14,7 @@
 #include <unordered_map>
 #include <vector>
 
+class AsyncOperationGroup;
 class ResourcePreloadOperation;
 class Texture2D;
 
@@ -141,6 +142,8 @@ namespace Editor
 		};
 		// The images shown so far, by relative path
 		std::unordered_map<std::string, Thumbnail> m_thumbnails;
+		// The images loading, reported as one task ("Loading thumbnails"); another starts if more load once it's finished
+		std::shared_ptr<AsyncOperationGroup> m_thumbnailLoads;
 
 		// The tile being renamed and the name typed so far; only while a rename is under way
 		struct TileRename;

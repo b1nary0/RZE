@@ -58,8 +58,12 @@ public:
 	U32 GetCPULoadedCount() const { return m_cpuLoadedCount; }
 	U32 GetSettledCount() const { return m_settledCount; }
 	U32 GetFailedCount() const { return m_failedCount; }
+	// The settled count, plus how far those still finalizing have got (IResource::GetFinalizeProgress), e.g. 2.5
+	float GetSettledAmount() const;
 
 	const std::string& GetLastProcessedPath() const { return m_lastProcessedPath; }
+	// The first resource requested that hasn't settled, i.e. what it's waiting on; empty once all have
+	std::string GetCurrentPath() const;
 
 	// Drops the batch's references to resolved resources.
 	void ReleaseHeldResources();

@@ -29,15 +29,31 @@ namespace EAsyncOperationFlags
 		None = 0,
 		// The operation should block user interaction (e.g. the editor shows a modal progress dialog).
 		Blocking = 1 << 0,
-		// Left out of progress displays (AsyncOperationManager::GetVisibleOperations), e.g. a step that another
-		// operation already reports on
-		Hidden = 1 << 1,
+		// Part of another operation that reports on it, e.g. the scene a thumbnail run loads. Progress displays can leave
+		// these out (AsyncOperationFilter::ShowSubSteps).
+		SubStep = 1 << 1,
 		// Work nobody is waiting on, e.g. rendering thumbnails. Ticked after every foreground operation, with a small
 		// budget of its own (AsyncOperationManager::k_backgroundFrameBudgetMS), and its worker jobs go to the
 		// background lane (Threading::EJobLane). It keeps going while a Blocking operation runs.
 		Background = 1 << 2
 	};
 }
+
+// What an operation does, so a progress display can pick which kinds to show. Each is a bit of its own, so a set of
+// kinds is a mask of them (AsyncOperationFilter::ShownKinds).
+enum class EAsyncOperationKind : U32
+{
+	// Anything else, e.g. building the game
+	General = 1 << 0,
+	// Loading resources (ResourcePreloadOperation)
+	ResourceLoad = 1 << 1,
+	// Loading a scene (SceneLoadOperation)
+	SceneLoad = 1 << 2,
+	// Rendering images, e.g. thumbnails
+	Rendering = 1 << 3,
+	// Writing files
+	Saving = 1 << 4
+};
 
 // Base class for long-running work that is spread across worker threads and multiple frames.
 // Operations are owned and driven by AsyncOperationManager.
@@ -55,7 +71,7 @@ public:
 	using CompletionCallback = Functor<void, const AsyncOperation&>;
 
 public:
-	AsyncOperation(const std::string& name, U32 flags);
+	AsyncOperation(const std::string& name, U32 flags, EAsyncOperationKind kind = EAsyncOperationKind::General);
 	virtual ~AsyncOperation();
 
 	AsyncOperation(const AsyncOperation&) = delete;
@@ -65,8 +81,9 @@ public:
 public:
 	const std::string& GetName() const { return m_name; }
 	bool IsBlocking() const { return (m_flags & EAsyncOperationFlags::Blocking) != 0; }
-	bool IsHidden() const { return (m_flags & EAsyncOperationFlags::Hidden) != 0; }
+	bool IsSubStep() const { return (m_flags & EAsyncOperationFlags::SubStep) != 0; }
 	bool IsBackground() const { return (m_flags & EAsyncOperationFlags::Background) != 0; }
+	EAsyncOperationKind GetKind() const { return m_kind; }
 
 	EAsyncOperationState GetState() const { return m_state.load(std::memory_order_acquire); }
 	bool IsFinished() const;
@@ -140,6 +157,7 @@ private:
 private:
 	std::string m_name;
 	U32 m_flags;
+	EAsyncOperationKind m_kind;
 
 	std::atomic<EAsyncOperationState> m_state{ EAsyncOperationState::NotStarted };
 	std::atomic<float> m_progress{ 0.0f };

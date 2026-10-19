@@ -23,13 +23,14 @@ namespace
 	public:
 		SaveTextureOperation(const Rendering::TextureBuffer2DHandle& texture, const Filepath& filepath)
 			// Whoever asked for the image reports on it (e.g. a thumbnail run), and nothing waits on it
-			: AsyncOperation("Saving " + filepath.GetRelativePath(), EAsyncOperationFlags::Background | EAsyncOperationFlags::Hidden)
+			: AsyncOperation("Saving " + filepath.GetRelativePath(), EAsyncOperationFlags::Background | EAsyncOperationFlags::SubStep, EAsyncOperationKind::Saving)
 			, m_filepath(filepath)
 			, m_readback(std::make_shared<Rendering::TextureReadback>())
 		{
 			// Queued now rather than in OnStart (next frame), so it reads what's been drawn so far and not what a
 			// later frame draws over it
 			Rendering::Renderer::ReadTexture(texture, m_readback);
+			SetStatusText("Reading the image back from the GPU");
 		}
 
 	protected:
@@ -50,6 +51,9 @@ namespace
 					return;
 				}
 
+				// Half way: what's left is writing the file
+				SetProgress(0.5f);
+				SetStatusText("Writing " + m_filepath.GetRelativePath());
 				m_writeJob = PushWorkerJob(Threading::Job::Task([this]()
 					{
 						Rendering::TextureReadback& readback = *m_readback;

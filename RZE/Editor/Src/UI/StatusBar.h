@@ -30,7 +30,7 @@ namespace Editor
 	// cancelled, and red when it failed.
 	//
 	// Then comes a small box of its own that's always there, filling with the accent colour as the oldest running task
-	// that isn't blocking progresses (the progress modal shows blocking ones). On its one line it keeps whole how many
+	// progresses. Which tasks it shows is up to Settings > Background Tasks. On its one line it keeps whole how many
 	// others are running ("+2") and the oldest's percentage, and fits its name in what's left. With none running, it
 	// has the last one's name with how it went in that place instead, in the circle's colour ("Done", "Warnings",
 	// "Cancelled" or "Failed"), or "No background tasks" grayed out if there hasn't been one.

@@ -95,22 +95,47 @@ TEST_CASE_FIXTURE(TrackedTasks, "A failed or cancelled task's note says so")
 	CHECK(Tracker.GetLastNote()->Result == EAsyncOperationState::Cancelled);
 }
 
-TEST_CASE_FIXTURE(TrackedTasks, "The last task to finish has the note, and blocking tasks are left to the progress modal")
+TEST_CASE_FIXTURE(TrackedTasks, "The last task to finish has the note, and a blocking task is followed like any other")
 {
 	std::shared_ptr<TestOperation> first = Start("First");
-	std::shared_ptr<TestOperation> second = Start("Second");
 	std::shared_ptr<TestOperation> blocking = Start("Loading Scene", EAsyncOperationFlags::Blocking);
+	std::shared_ptr<TestOperation> second = Start("Second");
 	Frame();
-	CHECK(Tracker.GetRunning().size() == 2);
+	CHECK(Tracker.GetRunning().size() == 3);
 
 	first->Succeed();
 	Frame();
-	second->Succeed();
 	blocking->Succeed();
+	second->Succeed();
 	Frame();
 
 	REQUIRE(Tracker.GetLastNote() != nullptr);
 	CHECK(Tracker.GetLastNote()->Text == "Second finished");
+}
+
+TEST_CASE_FIXTURE(TrackedTasks, "A task the filter stops showing leaves without an ending, and starts again if it's shown again")
+{
+	std::shared_ptr<TestOperation> task = Start("Loading Scene", EAsyncOperationFlags::SubStep);
+	Frame();
+	REQUIRE(Tracker.GetRunning().size() == 1);
+
+	AsyncOperationFilter filter;
+	filter.ShowSubSteps = false;
+	Manager.SetVisibilityFilter(filter);
+	Frame();
+	CHECK(Tracker.GetRunning().empty());
+	CHECK(Tracker.GetLastNote() == nullptr);
+
+	Manager.SetVisibilityFilter(AsyncOperationFilter());
+	Frame();
+	CHECK(Tracker.GetRunning().size() == 1);
+
+	size_t startedCount = 0;
+	for (const Editor::TaskTracker::HistoryEntry& entry : Tracker.GetHistory())
+	{
+		startedCount += entry.Kind == Editor::EHistoryKind::Started ? 1 : 0;
+	}
+	CHECK(startedCount == 2);
 }
 
 TEST_CASE_FIXTURE(TrackedTasks, "A task that succeeds with warnings says so")
