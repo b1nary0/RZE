@@ -2,20 +2,18 @@
 
 #include <EngineCore/Async/AsyncOperationManager.h>
 
-#include <Services/ThumbnailBatchOperation.h>
+#include <Game/CaptureBatchOperation.h>
 
 #include <memory>
 #include <string>
 
-using namespace Editor;
-
 namespace
 {
 	// One item that's ready at once, and records when it's captured
-	class OneItemBatch final : public ThumbnailBatchOperation
+	class OneItemBatch final : public CaptureBatchOperation
 	{
 	public:
-		OneItemBatch() : ThumbnailBatchOperation("Thumbnails", EAsyncOperationFlags::Background) {}
+		OneItemBatch() : CaptureBatchOperation("Capturing", EAsyncOperationFlags::Background) {}
 
 		bool WasCaptured() const { return m_wasCaptured; }
 
@@ -45,7 +43,7 @@ namespace
 	};
 }
 
-TEST_CASE("A thumbnail settles for frames, which idle ticks within a frame don't count as")
+TEST_CASE("A captured item settles for frames, which idle ticks within a frame don't count as")
 {
 	AsyncOperationManager manager;
 	manager.Initialize();

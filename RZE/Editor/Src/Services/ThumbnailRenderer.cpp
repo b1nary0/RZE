@@ -1,7 +1,6 @@
 #include <Services/ThumbnailRenderer.h>
 
 #include <Services/MeshFraming.h>
-#include <Services/ThumbnailBatchOperation.h>
 #include <Services/Thumbnails.h>
 #include <UI/Framework/EditorContext.h>
 #include <UI/Modals/FileBrowserModal.h>
@@ -13,6 +12,7 @@
 #include <EngineCore/Async/AsyncOperationManager.h>
 #include <EngineCore/Resources/PendingResource.h>
 
+#include <Game/CaptureBatchOperation.h>
 #include <Game/GameScene.h>
 #include <Game/StaticMeshResource.h>
 #include <Game/World/GameObject/GameObject.h>
@@ -38,11 +38,11 @@ namespace Editor
 	{
 		// Works through ThumbnailRenderer's queue, in its headless scene, until there's nothing left. What it works with
 		// belongs to the renderer, as it outlives each run.
-		class ThumbnailRenderJob final : public ThumbnailBatchOperation
+		class ThumbnailRenderJob final : public CaptureBatchOperation
 		{
 		public:
 			ThumbnailRenderJob(ThumbnailQueue& queue, HeadlessScene& scene, ViewCapture& capture, EditorEvents& events)
-				: ThumbnailBatchOperation("Rendering thumbnails", EAsyncOperationFlags::Background)
+				: CaptureBatchOperation("Rendering thumbnails", EAsyncOperationFlags::Background)
 				, m_queue(queue)
 				, m_scene(scene)
 				, m_capture(capture)
