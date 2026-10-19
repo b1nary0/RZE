@@ -1,12 +1,9 @@
 #pragma once
 
-#include <EngineCore/Resources/ResourceDependencyList.h>
-
 #include <Game/World/GameObject/GameObjectDefinitions.h>
 
 #include <memory>
 #include <string>
-#include <vector>
 
 class AsyncOperation;
 class Filepath;
@@ -21,7 +18,8 @@ struct RenderCamera;
 // It's never updated. Render objects take their transform when they're made and lights their direction when they're
 // added, which is all a still capture needs. Objects removed from it are destroyed straight away.
 //
-// Its loads and preloads are Background operations, and SubSteps: whoever uses the scene reports on its own progress.
+// Its loads are Background operations, and SubSteps: whoever uses the scene reports on its own progress. Load what an
+// object will use first (e.g. a mesh, with a PendingResource) so adding the object doesn't stall the main thread.
 //
 // Main thread only. Unload it before the engine shuts down, since it holds resources and render data.
 class HeadlessScene
@@ -44,17 +42,8 @@ public:
 	// once the operation succeeds; if it fails, the scene is left empty.
 	std::shared_ptr<AsyncOperation> Load(const Filepath& scenePath);
 
-	// Loads a resource, and whatever it depends on, in the background, and keeps it loaded until Unload. An object
-	// added afterwards that uses it (e.g. through RenderComponent::LoadMesh) then doesn't stall the main thread.
-	template <class TResource>
-	std::shared_ptr<AsyncOperation> Preload(const Filepath& resourcePath);
-	std::shared_ptr<AsyncOperation> Preload(ResourceDependencyList resources);
-
-	// Whether a Load or Preload is still running
+	// Whether a Load is still running
 	bool IsLoading() const;
-	// Lets go of what's been preloaded, cancelling preloads still running. What the scene's objects use stays loaded
-	// through them, e.g. a mesh once a RenderComponent has it.
-	void ReleasePreloaded();
 
 	GameObjectPtr AddGameObject(const std::string& name);
 	// Takes object and its descendants out of the scene and destroys them, and clears object
@@ -64,8 +53,8 @@ public:
 	// (ViewCapture::Capture)
 	std::shared_ptr<AsyncOperation> Capture(ViewCapture& capture, const RenderCamera& camera, float exposureCompensation, const Filepath& filepath);
 
-	// Cancels any load that's still running, destroys everything in the scene, lets go of what was preloaded, and
-	// releases the scene's render state (e.g. its shadow map)
+	// Cancels any load that's still running, destroys everything in the scene, and releases the scene's render state
+	// (e.g. its shadow map)
 	void Unload();
 
 private:
@@ -77,14 +66,4 @@ private:
 	std::shared_ptr<GameScene> m_scene;
 
 	std::shared_ptr<AsyncOperation> m_load;
-	// Each holds what it loaded until it's released
-	std::vector<std::shared_ptr<AsyncOperation>> m_preloads;
 };
-
-template <class TResource>
-std::shared_ptr<AsyncOperation> HeadlessScene::Preload(const Filepath& resourcePath)
-{
-	ResourceDependencyList resources;
-	resources.Add<TResource>(resourcePath.GetRelativePath());
-	return Preload(std::move(resources));
-}

@@ -13,7 +13,8 @@
 // It doesn't start them: whoever adds one starts it too, flagged EAsyncOperationFlags::SubStep so progress displays can
 // show the group in its place. Each one is logged as it ends, so the group's history lists them all: a step with its
 // label when it succeeds, "<label>: cancelled" when it's cancelled on its own, and a warning when it fails, after which
-// the group still succeeds. Cancelling the group cancels those still running.
+// the group still succeeds. Its status at the end counts them, e.g. "17 done, 48 cancelled". Cancelling the group
+// cancels those still running.
 class AsyncOperationGroup final : public AsyncOperation
 {
 public:
@@ -32,6 +33,8 @@ protected:
 private:
 	// Logs and counts those that have finished since last time, then sets the progress and status
 	void Update();
+	// How they went, e.g. "17 done, 48 cancelled"
+	std::string FormatSummary() const;
 
 private:
 	struct Item
@@ -42,5 +45,8 @@ private:
 
 	// Only until each finishes, so the group doesn't keep what they hold
 	std::vector<Item> m_running;
+	// Every one that's finished, however it went
 	size_t m_doneCount = 0;
+	size_t m_cancelledCount = 0;
+	size_t m_failedCount = 0;
 };

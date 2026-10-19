@@ -2,7 +2,6 @@
 #include <Game/HeadlessScene.h>
 
 #include <EngineCore/Async/AsyncOperationManager.h>
-#include <EngineCore/Resources/ResourcePreloadOperation.h>
 
 #include <Game/GameScene.h>
 #include <Game/SceneLoadOperation.h>
@@ -38,38 +37,9 @@ std::shared_ptr<AsyncOperation> HeadlessScene::Load(const Filepath& scenePath)
 	return m_load;
 }
 
-std::shared_ptr<AsyncOperation> HeadlessScene::Preload(ResourceDependencyList resources)
-{
-	std::shared_ptr<AsyncOperation> preload = std::make_shared<ResourcePreloadOperation>(std::move(resources), k_operationFlags);
-	RZE().GetAsyncOperationManager().Start(preload);
-	m_preloads.push_back(preload);
-	return preload;
-}
-
 bool HeadlessScene::IsLoading() const
 {
-	if (m_load != nullptr && !m_load->IsFinished())
-	{
-		return true;
-	}
-
-	for (const std::shared_ptr<AsyncOperation>& preload : m_preloads)
-	{
-		if (!preload->IsFinished())
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-void HeadlessScene::ReleasePreloaded()
-{
-	for (const std::shared_ptr<AsyncOperation>& preload : m_preloads)
-	{
-		preload->RequestCancel();
-	}
-	m_preloads.clear();
+	return m_load != nullptr && !m_load->IsFinished();
 }
 
 GameObjectPtr HeadlessScene::AddGameObject(const std::string& name)
@@ -92,8 +62,6 @@ std::shared_ptr<AsyncOperation> HeadlessScene::Capture(ViewCapture& capture, con
 void HeadlessScene::Unload()
 {
 	CancelLoad();
-
-	ReleasePreloaded();
 
 	m_scene->Unload();
 	m_scene->SetCurrentScenePath(Filepath());

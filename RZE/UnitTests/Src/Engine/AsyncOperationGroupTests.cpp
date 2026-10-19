@@ -94,6 +94,8 @@ TEST_CASE_FIXTURE(GroupedTasks, "A failed operation is a warning on the group, a
 
 	CHECK(Group->Succeeded());
 	CHECK(Group->GetWarningText() == "Loading a.png failed: the file is missing");
+	// Only those that succeeded are done
+	CHECK(Group->GetStatusText() == "0 done, 1 cancelled, 1 failed");
 }
 
 TEST_CASE_FIXTURE(GroupedTasks, "Cancelling a group cancels the operations still running")
@@ -126,6 +128,7 @@ TEST_CASE_FIXTURE(GroupedTasks, "A group logs each of its operations as it ends,
 	Manager.Tick();
 	Manager.Tick();
 	REQUIRE(Group->Succeeded());
+	CHECK(Group->GetStatusText() == "2 done, 1 cancelled, 1 failed");
 
 	const std::vector<AsyncOperation::LoggedStep> steps = Group->GetLoggedSteps();
 	REQUIRE(steps.size() == 4);

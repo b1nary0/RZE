@@ -25,7 +25,7 @@ void AsyncOperationGroup::OnTick(AsyncFrameBudget&)
 
 	if (m_running.empty())
 	{
-		SetStatusText(std::to_string(m_doneCount) + " done");
+		SetStatusText(FormatSummary());
 		Complete();
 	}
 }
@@ -56,9 +56,11 @@ void AsyncOperationGroup::Update()
 		{
 		case EAsyncOperationState::Failed:
 			AddWarning(done->Label + " failed: " + operation.GetErrorText());
+			++m_failedCount;
 			break;
 		case EAsyncOperationState::Cancelled:
 			LogStep(done->Label + ": cancelled");
+			++m_cancelledCount;
 			break;
 		default:
 			LogStep(done->Label);
@@ -87,4 +89,18 @@ void AsyncOperationGroup::Update()
 		status += "\n" + m_running.front().Operation->GetName();
 	}
 	SetStatusText(status);
+}
+
+std::string AsyncOperationGroup::FormatSummary() const
+{
+	std::string summary = std::to_string(m_doneCount - m_cancelledCount - m_failedCount) + " done";
+	if (m_cancelledCount > 0)
+	{
+		summary += ", " + std::to_string(m_cancelledCount) + " cancelled";
+	}
+	if (m_failedCount > 0)
+	{
+		summary += ", " + std::to_string(m_failedCount) + " failed";
+	}
+	return summary;
 }

@@ -6,7 +6,6 @@
 
 #include <EngineCore/Async/AsyncOperationGroup.h>
 #include <EngineCore/Async/AsyncOperationManager.h>
-#include <EngineCore/Resources/ResourcePreloadOperation.h>
 
 #include <Graphics/Texture2D.h>
 
@@ -198,25 +197,14 @@ namespace Editor
 			return;
 		}
 
-		// Released, so it's loaded again from the file next time a tile shows it
-		if (it->second.Load != nullptr)
-		{
-			it->second.Load->RequestCancel();
-		}
+		// Released (cancelling its load), so it's loaded again from the file next time a tile shows it
 		m_thumbnails.erase(it);
 	}
 
 	void FileTileGrid::ReleaseThumbnails()
 	{
-		for (auto& [key, thumbnail] : m_thumbnails)
-		{
-			if (thumbnail.Load != nullptr)
-			{
-				thumbnail.Load->RequestCancel();
-			}
-		}
-
-		// The ResourceHandler keeps a released texture until the render thread has drawn the frames that show it
+		// Cancels the loads still running. The ResourceHandler keeps a released texture until the render thread has drawn
+		// the frames that show it.
 		m_thumbnails.clear();
 		// It finishes once the loads it was following have stopped; the next images to load get a task of their own
 		m_thumbnailLoads = nullptr;
@@ -493,8 +481,7 @@ namespace Editor
 		auto it = m_thumbnails.find(key);
 		if (it == m_thumbnails.end())
 		{
-			it = m_thumbnails.emplace(key, Thumbnail()).first;
-			Thumbnail& thumbnail = it->second;
+			it = m_thumbnails.emplace(key, PendingResource()).first;
 			if (!image.Exists())
 			{
 				if (m_options.OnThumbnailMissing)
@@ -502,42 +489,23 @@ namespace Editor
 					m_options.OnThumbnailMissing(file);
 				}
 			}
-			else
+			// Each image on its own, so it's let go of as soon as it's in, and the tile shows the placeholder until then.
+			// Their loads are reported together, as "Loading thumbnails".
+			else if (const std::shared_ptr<AsyncOperation> load = it->second.Load<Texture2D>(image, EAsyncOperationFlags::Background | EAsyncOperationFlags::SubStep))
 			{
-				// Taken straight away if something else has it loaded. Otherwise it loads in the background, each image
-				// on its own so it's let go of as soon as it's in, and the tile shows the placeholder until then.
-				thumbnail.Texture = RZE().GetResourceHandler().GetHandle(image);
-				if (!thumbnail.Texture.IsValid())
+				if (m_thumbnailLoads == nullptr || m_thumbnailLoads->IsFinished())
 				{
-					AsyncOperationManager& operationManager = RZE().GetAsyncOperationManager();
-					if (m_thumbnailLoads == nullptr || m_thumbnailLoads->IsFinished())
-					{
-						m_thumbnailLoads = std::make_shared<AsyncOperationGroup>("Loading thumbnails", EAsyncOperationFlags::Background, EAsyncOperationKind::ResourceLoad);
-						operationManager.Start(m_thumbnailLoads);
-					}
-
-					ResourceDependencyList images;
-					images.Add<Texture2D>(key);
-					thumbnail.Load = std::make_shared<ResourcePreloadOperation>(std::move(images), EAsyncOperationFlags::Background | EAsyncOperationFlags::SubStep,
-						"Loading " + image.GetFileName());
-					operationManager.Start(thumbnail.Load);
-					m_thumbnailLoads->Add(thumbnail.Load, image.GetFileName());
+					m_thumbnailLoads = std::make_shared<AsyncOperationGroup>("Loading thumbnails", EAsyncOperationFlags::Background, EAsyncOperationKind::ResourceLoad);
+					RZE().GetAsyncOperationManager().Start(m_thumbnailLoads);
 				}
+				m_thumbnailLoads->Add(load, image.GetFileName());
 			}
 		}
 
-		Thumbnail& thumbnail = it->second;
-		if (thumbnail.Load != nullptr)
-		{
-			thumbnail.Texture = thumbnail.Load->GetHandle(image);
-			// A load that fails is logged, and the tile keeps the placeholder
-			if (thumbnail.Texture.IsValid() || thumbnail.Load->IsFinished())
-			{
-				thumbnail.Load = nullptr;
-			}
-		}
-
-		return thumbnail.Texture.IsValid() ? RZE().GetResourceHandler().GetResource<Texture2D>(thumbnail.Texture) : nullptr;
+		// A load that fails is logged, and the tile keeps the placeholder
+		PendingResource& thumbnail = it->second;
+		thumbnail.IsLoading();
+		return thumbnail.GetHandle().IsValid() ? RZE().GetResourceHandler().GetResource<Texture2D>(thumbnail.GetHandle()) : nullptr;
 	}
 
 	void FileTileGrid::DrawBackgroundMenu()

@@ -11,6 +11,7 @@
 #include <Asset/AssetPaths.h>
 
 #include <EngineCore/Async/AsyncOperationManager.h>
+#include <EngineCore/Resources/PendingResource.h>
 
 #include <Game/GameScene.h>
 #include <Game/StaticMeshResource.h>
@@ -65,7 +66,7 @@ namespace Editor
 				HeadlessScene& scene = m_scene;
 				m_item = item;
 				m_load = nullptr;
-				m_preload = nullptr;
+				m_mesh.Reset();
 
 				if (AssetPaths::IsScene(item))
 				{
@@ -80,34 +81,40 @@ namespace Editor
 					m_load = scene.Load(GameScene::GetDefaultScenePath());
 					m_isMeshStageLoaded = true;
 				}
-				m_preload = scene.Preload<StaticMeshResource>(item);
+				// A step of this run, which reports on it
+				m_mesh.Load<StaticMeshResource>(item, EAsyncOperationFlags::Background | EAsyncOperationFlags::SubStep);
 			}
 
 			bool IsItemReady() override
 			{
-				for (const std::shared_ptr<AsyncOperation>& loading : { m_load, m_preload })
+				if (m_load != nullptr)
 				{
-					if (loading == nullptr)
-					{
-						continue;
-					}
-					if (!loading->IsFinished())
+					if (!m_load->IsFinished())
 					{
 						return false;
 					}
-					if (!loading->Succeeded())
+					if (!m_load->Succeeded())
 					{
-						FailItem(loading->GetErrorText().empty() ? "it couldn't be loaded" : loading->GetErrorText());
+						FailItem(m_load->GetErrorText().empty() ? "it couldn't be loaded" : m_load->GetErrorText());
 						return false;
 					}
 				}
 
-				if (m_preload == nullptr || m_meshObject != nullptr)
+				if (AssetPaths::IsScene(m_item) || m_meshObject != nullptr)
 				{
 					return true;
 				}
+				if (m_mesh.IsLoading())
+				{
+					return false;
+				}
+				if (m_mesh.HasFailed())
+				{
+					FailItem("it couldn't be loaded");
+					return false;
+				}
 
-				// Preloaded, so this is a cache hit rather than a load on the main thread
+				// Loaded, so this is a cache hit rather than a load on the main thread
 				HeadlessScene& scene = m_scene;
 				m_meshObject = scene.AddGameObject("ThumbnailMesh");
 				m_meshComponent = m_meshObject->AddComponent<RenderComponent>();
@@ -167,9 +174,9 @@ namespace Editor
 				{
 					m_meshComponent = nullptr;
 					m_scene.RemoveGameObject(m_meshObject);
-					// The object held the mesh while it was needed
-					m_scene.ReleasePreloaded();
 				}
+				// The object held the mesh while it was needed
+				m_mesh.Reset();
 
 				if (succeeded)
 				{
@@ -191,6 +198,7 @@ namespace Editor
 				}
 
 				// Frees what it loaded until it's needed again
+				m_mesh.Reset();
 				m_scene.Unload();
 				m_isMeshStageLoaded = false;
 			}
@@ -201,9 +209,9 @@ namespace Editor
 			ViewCapture& m_capture;
 			EditorEvents& m_events;
 
-			// What the item waits for
+			// What the item waits for: the scene (an item's own, or the stage for meshes), and the mesh
 			std::shared_ptr<AsyncOperation> m_load;
-			std::shared_ptr<AsyncOperation> m_preload;
+			PendingResource m_mesh;
 			// Whether the headless scene holds Default.scene, for staging meshes
 			bool m_isMeshStageLoaded = false;
 

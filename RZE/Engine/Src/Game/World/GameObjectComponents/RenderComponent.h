@@ -54,22 +54,19 @@ public:
 	// OnAddToScene creates it). Null removes the mesh. The previous instance is released. overrides says what happens
 	// to the material overrides.
 	//
-	// To swap a mesh at runtime without stalling, load it first with a ResourcePreloadOperation, keeping the
-	// component's handle rather than a pointer, since it can be destroyed while the mesh loads. Once the preload has
-	// finished, if the component's still there and the mesh loaded:
+	// To swap a mesh at runtime without stalling, load it first with a PendingResource, keeping the component's handle
+	// rather than a pointer, since it can be destroyed while the mesh loads. Once the load is done, if the component's
+	// still there and the mesh loaded:
 	//
-	//   ResourceDependencyList resources;
-	//   resources.Add<StaticMeshResource>(path.GetRelativePath());
-	//   preload = std::make_shared<ResourcePreloadOperation>(std::move(resources), EAsyncOperationFlags::Background);
-	//   RZE().GetAsyncOperationManager().Start(preload);
+	//   mesh.Load<StaticMeshResource>(path);
 	//   ...
-	//   if (preload->IsFinished() && renderComponent != nullptr)
+	//   if (!mesh.IsLoading() && renderComponent != nullptr)
 	//   {
-	//       if (std::shared_ptr<StaticMeshInstance> instance = StaticMeshResource::CreateInstance(preload->GetHandle(path)))
+	//       if (std::shared_ptr<StaticMeshInstance> instance = StaticMeshResource::CreateInstance(mesh.GetHandle()))
 	//       {
 	//           renderComponent->SetMeshInstance(instance);
 	//       }
-	//       preload.reset();
+	//       mesh.Reset();
 	//   }
 	void SetMeshInstance(const std::shared_ptr<StaticMeshInstance>& meshInstance, EMaterialOverrides overrides = EMaterialOverrides::CarryOver);
 

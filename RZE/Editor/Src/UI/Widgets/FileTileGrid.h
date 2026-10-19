@@ -2,7 +2,7 @@
 
 #include <Services/FolderListing.h>
 
-#include <EngineCore/Resources/ResourceHandler.h>
+#include <EngineCore/Resources/PendingResource.h>
 
 #include <Utils/Platform/Filepath.h>
 
@@ -15,7 +15,6 @@
 #include <vector>
 
 class AsyncOperationGroup;
-class ResourcePreloadOperation;
 class Texture2D;
 
 namespace Editor
@@ -132,16 +131,9 @@ namespace Editor
 		bool m_scrollToTop = false;
 		bool m_scrollToSelected = false;
 
-		// An image a tile shows, loaded in the background the first time a tile shows it
-		struct Thumbnail
-		{
-			// Empty while it loads, and for one that doesn't exist or failed to load
-			ResourceHandle Texture;
-			// The load, until it's finished
-			std::shared_ptr<ResourcePreloadOperation> Load;
-		};
-		// The images shown so far, by relative path
-		std::unordered_map<std::string, Thumbnail> m_thumbnails;
+		// The images shown so far, by relative path, each loaded in the background the first time a tile shows it. One that
+		// doesn't exist is never loaded.
+		std::unordered_map<std::string, PendingResource> m_thumbnails;
 		// The images loading, reported as one task ("Loading thumbnails"); another starts if more load once it's finished
 		std::shared_ptr<AsyncOperationGroup> m_thumbnailLoads;
 
