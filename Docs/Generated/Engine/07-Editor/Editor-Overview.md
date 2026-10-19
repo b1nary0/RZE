@@ -63,7 +63,7 @@ flowchart TD
 - **Render stages.** On top of the engine's stages, the Editor adds `ImGuiRenderStage(withEditor = true)`. The `PickRenderStage` that click selection uses is part of the engine and idle unless the Editor asks for a pick. See [Render-Stages.md](../04-Rendering/Render-Stages.md).
 - **Editor camera.** After each load, `SceneDocument::CreateEditorCamera()` adds an `"EditorCam"` object at `(-4, 10, 4)`, aimed at the scene's centre, and hands it to the context (`EditorContext::GetEditorCamera`). It's excluded from saves (`SetIncludeInSave(false)`), hidden from the Scene panel and never copied. It drives the viewport: the scene's main camera is told not to (`GameScene::SetMainCameraDrivesView(false)`), though its exposure still applies.
 - **Input.** `ProcessInput()` forwards mouse and keyboard to ImGui (`ImGuiInput::SubmitInput`, including the wheel and text input) and returns whether the scene view is hovered (`SceneViewportState::IsHovered`). Engine input actions, including the camera controls, only fire while it is, so typing in a panel doesn't fly the camera.
-- **Window title.** `RZEStudio - <scene file>`, with a `*` while the scene has unsaved changes, or `RZEStudio - Untitled` for a new scene. `EditorApp` keeps it up to date from the scene document's events. Undoing back to the last save clears the `*`.
+- **Window title.** `RZEStudio - <scene file>`, with a `*` while the scene has unsaved changes, or `RZEStudio - Untitled` for a new scene. `EditorApp` keeps it up to date from the scene document's events. Undoing back to the last save clears the `*`. It's drawn in the [menu bar](#menu-bar), which is the window's title bar, and shown on the taskbar.
 - **Unsaved changes.** New, Load, Exit and closing the window ask Save / Don't Save / Cancel first while there are unsaved changes ([Editor-Framework.md](Editor-Framework.md#the-unsaved-changes-prompt)).
 
 ## Loading a scene
@@ -105,6 +105,17 @@ sequenceDiagram
 | Help | ImGui Demo |
 
 `MainMenuBar` (`UI\MainMenuBar.h/.cpp`) draws the menus and readouts and handles the Edit shortcuts. File items call `SceneDocument` and `GameBuilder`, through `UnsavedChangesPrompt` where changes could be lost; New, Load and Launch Game are disabled while a load runs, Build and Launch while a build does. Undo and Redo name the step they'd undo ("Undo Delete GameObject") and are greyed out when there's nothing to undo or redo.
+
+### The title bar
+
+The menu bar is also the window's title bar: `EditorApp` turns off the OS's (`Win32Window::SetCustomTitleBar`, [Windowing.md](../06-Platform-And-Infrastructure/Windowing.md)) before maximizing. From left to right it has the logo, the menus, the arena readout, the window's title centred in the space left, and minimize, maximize (restore while maximized) and close buttons, the size of Windows' own. It's 40 px tall at 96 DPI, taller than the OS's title bar (31), to give the logo room, and never shorter than the OS's.
+
+- **Moving and sizing.** Dragging the bar's free space moves the window, double-clicking it maximizes, and its top edge resizes, as with a normal title bar. Hovering the maximize button shows Windows 11's Snap Layouts. While a menu is open the whole bar takes clicks, so a click on it closes the menu rather than moving the window.
+- **`Editor::TitleBar`** (`UI\TitleBar.h/.cpp`), which `MainMenuBar` owns and calls first and last in the bar, draws the logo, the title and the buttons. It collects where the menus and buttons are as they're drawn and gives the window that `TitleBarLayout` at the end of the bar. The title and the button glyphs dim while the window isn't focused.
+- **The logo** is `RZE\logo.png`: the gizmo hexagon, "RZE" and a divider. It's authored at twice the 24 px it's drawn at (ImGui only samples a texture's top mip), and the menus start as far past the divider as the letters are before it. Its source is `RZE\Assets\Editor\logo.svg`, which says how to render it again.
+- **Menu highlights.** A menu's header is hovered anywhere up and down the bar. `MainMenuBar` draws its highlight in place of ImGui's, inset from the bar a little, with [rounded corners](Editor-Framework.md#rounded-corners) and a dark grey edge.
+
+The Game keeps the OS's title bar.
 
 The right side of the menu bar shows the render command arena's use (`RenderCommand MemArena: current / total`, plus the peak), colour-coded by pressure. It's a quick way to see what a change costs on the render path. Frame times are in the status bar.
 
@@ -156,7 +167,7 @@ flowchart TD
 
 - `Editor\Src\EditorMain.cpp`, `Editor\Src\EditorApp.h/.cpp`
 - `Editor\Src\UI\Framework\`, `Editor\Src\Commands\`, `Editor\Src\Services\` — see [Editor-Framework.md](Editor-Framework.md)
-- `Editor\Src\UI\MainMenuBar.h/.cpp`
+- `Editor\Src\UI\MainMenuBar.h/.cpp`, `TitleBar.h/.cpp`, `RZE\logo.png` (source: `RZE\Assets\Editor\logo.svg`)
 - `Editor\Src\Services\GameObjectClipboard.h/.cpp`, `GameObjectSnapshot.h/.cpp`, `Editor\Src\Commands\SceneCommands.cpp` (`PasteGameObjectsCommand`)
 - `Editor\Src\UI\Panels\` — see [Editor-Panels.md](Editor-Panels.md)
 - `Editor\Src\UI\Modals\AsyncOperationModal.h/.cpp`, `UnsavedChangesPrompt.h/.cpp`, `FileBrowserModal.h/.cpp`

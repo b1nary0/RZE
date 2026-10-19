@@ -174,7 +174,7 @@ namespace Editor
 		{
 			ImGui::SetNextItemOpen(true);
 		}
-		const bool isOpen = ImGui::TreeNodeEx(run.Task.c_str(), ImGuiTreeNodeFlags_SpanAllColumns);
+		const bool isOpen = EditorUI::TreeNode(run.Task.c_str(), ImGuiTreeNodeFlags_SpanAllColumns, "%s", run.Task.c_str());
 
 		const RunResult result = GetRunResult(tasks, run);
 		ImGui::TableSetColumnIndex(1);

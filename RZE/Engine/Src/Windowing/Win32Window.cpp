@@ -15,8 +15,6 @@
 
 #include <stdlib.h>
 
-LRESULT CALLBACK WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp);
-
 namespace
 {
 	// Used to link WinProc messages with the window without having to static other class instances etc
@@ -50,6 +48,7 @@ void Win32Window::ResetCursorToCenter()
 
 void Win32Window::SetTitle(const std::string& title)
 {
+	m_title = title;
 	::SetWindowTextA(m_osWindowHandleData.windowHandle, (LPCSTR)title.c_str());
 }
 
@@ -82,7 +81,7 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 	WNDCLASSEX wc;
 	wc.cbSize = sizeof(WNDCLASSEX);
 	wc.style = CS_HREDRAW | CS_VREDRAW; // @NOTE see https://msdn.microsoft.com/en-us/library/windows/desktop/ff729176(v=vs.85).aspx
-	wc.lpfnWndProc = WinProc;
+	wc.lpfnWndProc = WindowProc;
 	wc.cbClsExtra = 0;
 	wc.cbWndExtra = 0;
 	wc.hInstance = GetModuleHandle(nullptr);
@@ -107,6 +106,9 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 			0,
 			GetModuleHandle(0),
 			0);
+
+		// So WindowProc can reach this window's state
+		SetWindowLongPtr(m_osWindowHandleData.windowHandle, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 
 		m_osWindowHandleData.pixelFormatDesc =
 		{
@@ -205,6 +207,11 @@ void Win32Window::CompileInputMessages(InputHandler& inputHandler)
 	MSG msg;
 	while (PeekMessage(&msg, m_osWindowHandleData.windowHandle, 0, 0, PM_REMOVE))
 	{
+		if (m_hasCustomTitleBar && CompileNonClientMouseMessage(msg, inputHandler))
+		{
+			continue;
+		}
+
 		switch (msg.message)
 		{
 		case WM_CHAR:
@@ -479,16 +486,211 @@ void Win32Window::Maximize()
 	QueryClientSize();
 }
 
-LRESULT CALLBACK WinProc(HWND window, unsigned int msg, WPARAM wp, LPARAM lp)
+void Win32Window::Minimize()
+{
+	ShowWindow(m_osWindowHandleData.windowHandle, SW_MINIMIZE);
+}
+
+void Win32Window::Restore()
+{
+	ShowWindow(m_osWindowHandleData.windowHandle, SW_RESTORE);
+
+	QueryClientSize();
+}
+
+bool Win32Window::IsMaximised() const
+{
+	return IsZoomed(m_osWindowHandleData.windowHandle) != FALSE;
+}
+
+void Win32Window::RequestClose()
+{
+	PostMessage(m_osWindowHandleData.windowHandle, WM_CLOSE, 0, 0);
+}
+
+void Win32Window::SetCustomTitleBar(bool isCustom)
+{
+	m_hasCustomTitleBar = isCustom;
+
+	// Has the OS work out the client area again (WM_NCCALCSIZE)
+	SetWindowPos(m_osWindowHandleData.windowHandle, nullptr, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+	QueryClientSize();
+}
+
+void Win32Window::SetTitleBarLayout(TitleBarLayout&& layout)
+{
+	m_titleBarLayout = std::move(layout);
+}
+
+int Win32Window::GetSystemTitleBarHeight() const
+{
+	const UINT dpi = GetDpiForWindow(m_osWindowHandleData.windowHandle);
+	return GetSystemMetricsForDpi(SM_CYCAPTION, dpi) + GetFrameThickness();
+}
+
+float Win32Window::GetDpiScale() const
+{
+	return static_cast<float>(GetDpiForWindow(m_osWindowHandleData.windowHandle)) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
+}
+
+int Win32Window::GetFrameThickness() const
+{
+	const UINT dpi = GetDpiForWindow(m_osWindowHandleData.windowHandle);
+	return GetSystemMetricsForDpi(SM_CYSIZEFRAME, dpi) + GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi);
+}
+
+LRESULT Win32Window::CalculateClientArea(WPARAM wParam, LPARAM lParam)
+{
+	const HWND windowHandle = m_osWindowHandleData.windowHandle;
+	if (wParam == FALSE)
+	{
+		return DefWindowProc(windowHandle, WM_NCCALCSIZE, wParam, lParam);
+	}
+
+	// The OS's sides and bottom stay: they're invisible, and resize the window and cast its shadow. Only the caption
+	// goes, by putting the top back where it was.
+	NCCALCSIZE_PARAMS& params = *reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
+	const LONG top = params.rgrc[0].top;
+	const LRESULT result = DefWindowProc(windowHandle, WM_NCCALCSIZE, wParam, lParam);
+	params.rgrc[0].top = top;
+
+	// A maximized window hangs over the screen's edges by its frame, so the top would be off-screen
+	if (IsZoomed(windowHandle))
+	{
+		params.rgrc[0].top += GetFrameThickness();
+	}
+	return result;
+}
+
+LRESULT Win32Window::HitTest(WPARAM wParam, LPARAM lParam)
+{
+	const HWND windowHandle = m_osWindowHandleData.windowHandle;
+
+	// The OS's own borders: the sides and bottom
+	const LRESULT osHit = DefWindowProc(windowHandle, WM_NCHITTEST, wParam, lParam);
+	if (osHit != HTCLIENT)
+	{
+		return osHit;
+	}
+
+	POINT point = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+	ScreenToClient(windowHandle, &point);
+	RECT clientRect;
+	GetClientRect(windowHandle, &clientRect);
+
+	switch (m_titleBarLayout.HitTest(point.x, point.y, clientRect.right, IsZoomed(windowHandle) != FALSE, GetFrameThickness()))
+	{
+	case ETitleBarHit::Caption:
+		return HTCAPTION;
+	case ETitleBarHit::MaximizeButton:
+		return HTMAXBUTTON;
+	case ETitleBarHit::ResizeTop:
+		return HTTOP;
+	case ETitleBarHit::ResizeTopLeft:
+		return HTTOPLEFT;
+	case ETitleBarHit::ResizeTopRight:
+		return HTTOPRIGHT;
+	case ETitleBarHit::Client:
+	default:
+		return HTCLIENT;
+	}
+}
+
+bool Win32Window::CompileNonClientMouseMessage(const MSG& msg, InputHandler& inputHandler)
+{
+	const HWND windowHandle = m_osWindowHandleData.windowHandle;
+	const auto toClient = [windowHandle](LPARAM screenPosition)
+	{
+		POINT point = { GET_X_LPARAM(screenPosition), GET_Y_LPARAM(screenPosition) };
+		ScreenToClient(windowHandle, &point);
+		return point;
+	};
+
+	switch (msg.message)
+	{
+	case WM_NCMOUSEMOVE:
+	{
+		const POINT point = toClient(msg.lParam);
+		inputHandler.OnMouseMove(point.x, point.y);
+
+		// For WM_NCMOUSELEAVE
+		TRACKMOUSEEVENT track = { sizeof(TRACKMOUSEEVENT), TME_LEAVE | TME_NONCLIENT, windowHandle, 0 };
+		TrackMouseEvent(&track);
+
+		// The OS still sees it, e.g. to show Snap Layouts over the maximize button
+		return false;
+	}
+
+	case WM_NCMOUSELEAVE:
+	{
+		// Wherever the mouse went: outside the client area if it left the window, so the UI stops showing it over the bar
+		POINT point;
+		GetCursorPos(&point);
+		ScreenToClient(windowHandle, &point);
+		inputHandler.OnMouseMove(point.x, point.y);
+		return true;
+	}
+
+	case WM_NCLBUTTONDOWN:
+	case WM_NCLBUTTONDBLCLK:
+	{
+		// The maximize button is the application's: the OS would draw its own over it and track the click itself
+		if (msg.wParam != HTMAXBUTTON)
+		{
+			return false;
+		}
+		const POINT point = toClient(msg.lParam);
+		inputHandler.OnMouseDown(EMouseButton::MouseButton_Left, point.x, point.y);
+		return true;
+	}
+
+	case WM_NCLBUTTONUP:
+	{
+		// Also when it's let go elsewhere on the bar after being pressed on the maximize button, so it isn't left down
+		if (inputHandler.GetProxyMouseState().CurMouseBtnStates[EMouseButton::MouseButton_Left])
+		{
+			const POINT point = toClient(msg.lParam);
+			inputHandler.OnMouseUp(EMouseButton::MouseButton_Left, point.x, point.y);
+		}
+		return msg.wParam == HTMAXBUTTON;
+	}
+
+	default:
+		return false;
+	}
+}
+
+LRESULT CALLBACK Win32Window::WindowProc(HWND window, UINT msg, WPARAM wp, LPARAM lp)
 {
 	// @todo actually solve this instead of this hack
 	// this is so that we can still use WM_SIZE for restore/maximize functionality but also
 	// not get those called for every pixel the size changes.
 	static bool k_isUserResizing = false;
 
+	// Null until CreateWindowEx returns
+	Win32Window* const owner = reinterpret_cast<Win32Window*>(GetWindowLongPtr(window, GWLP_USERDATA));
+
 	// @unfinished - check for values of msg possibly needed
 	switch (msg)
 	{
+	case WM_NCCALCSIZE:
+	{
+		if (owner != nullptr && owner->m_hasCustomTitleBar)
+		{
+			return owner->CalculateClientArea(wp, lp);
+		}
+		return DefWindowProc(window, msg, wp, lp);
+	}
+
+	case WM_NCHITTEST:
+	{
+		if (owner != nullptr && owner->m_hasCustomTitleBar)
+		{
+			return owner->HitTest(wp, lp);
+		}
+		return DefWindowProc(window, msg, wp, lp);
+	}
+
 	case WM_CREATE:
 	{
 		sWindowMessageAdaptor.PushMessage(WindowMessageAdaptor::EMessageType::Window_Create, wp, lp);

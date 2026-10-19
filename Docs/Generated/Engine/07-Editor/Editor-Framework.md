@@ -287,6 +287,18 @@ Rules:
 - `SectionHeading`, `ItemTooltip`, `RadioOption`.
 - **Toolbars:** `ScopedToolbarSpacing` (tight spacing within a group) and `ToolbarGroupSeparator` (a separator with gaps), used by the SceneView's menu bar.
 - **Property tables:** `BeginPropertyTable` / `PropertyRow` / `EndPropertyTable` and `CalcLabelColumnWidth`, the label/value layout of the Object Inspector. Labels too long for their column show in full on hover.
+- **Tree nodes:** `TreeNode(id, flags, format, ...)`, in place of `ImGui::TreeNodeEx`; see below.
+
+### Rounded corners
+
+Windows, popups, fields, buttons, checkboxes, images and highlights have slightly rounded corners: `EditorUI::k_cornerRounding` (3 px), which `EditorApp::StyleSetup` sets as ImGui's rounding for each of them. Scrollbars and tabs keep ImGui's own, rounder corners. Docked panels stay square where they meet.
+
+- **Tree nodes** use `EditorUI::TreeNode`, because ImGui always draws an unframed tree node's highlight square. It hides ImGui's highlight and draws a rounded one behind the node: in the table's background for a node across a table's columns, otherwise on a draw list channel of its own. A plain `ImGui::TreeNodeEx` still works, but its highlight looks out of place, and nothing catches it.
+- **Anything drawn by hand** that should match, such as the menu bar's highlights, uses `k_cornerRounding` itself.
+- **After an ImGui upgrade**, check tree nodes' highlights (the Scene panel, the Content Browser's folders, the inspector's arrays, Task History): `TreeNode` uses ImGui internals (`LastItemData.DisplayRect`, `TablePushBackgroundChannel`).
+- **Not rounded:** the keyboard navigation outline on tree nodes, which ImGui draws square.
+- **Neighbouring selected rows** would look notched (ImGui's warning about `SelectableRounding`). Rows are apart today, so it doesn't show; a list whose selected rows touch would need square highlights.
+- **DPI:** the style's rounding isn't scaled with DPI, like the rest of the style. The menu bar's highlight is.
 
 ## Adding things
 
@@ -301,6 +313,7 @@ Rules:
 | Long-running work | An `AsyncOperation`: `Blocking` if the user must wait, `Background` if not, with its kind, and `SubStep` if another operation reports on it. The status bar and Task History show it, with what it logs, as Settings > Background Tasks allows ([Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md#async-operations)) |
 | An asset loaded for the user without stalling | A `PendingResource`, polled from the panel's `Update`; push the command once it's in, and hold the resource until the next `Update` so the command finds it loaded. An asset property gets this from `.Preload<T>()` |
 | A component's inspector fields | Describe its properties; see [Object-Inspector-And-Properties.md](Object-Inspector-And-Properties.md) |
+| A tree | `EditorUI::TreeNode`, not `ImGui::TreeNodeEx`, so its highlight is rounded like the rest ([Rounded corners](#rounded-corners)) |
 
 ## Key files
 
@@ -313,5 +326,5 @@ Rules:
 - `Editor\Src\UI\Modals\UnsavedChangesPrompt.h/.cpp`, `FileBrowserModal.h/.cpp`
 - `Editor\Src\UI\Widgets\FileTileGrid.h/.cpp` — the tile grid the file browser and the Content Browser share
 - `Editor\Src\UI\Settings\` — `SettingsPage`, `SettingsPageRegistry` and the pages
-- `Editor\Src\UI\MainMenuBar.h/.cpp`, `Editor\Src\EditorApp.h/.cpp`
+- `Editor\Src\UI\MainMenuBar.h/.cpp`, `TitleBar.h/.cpp`, `Editor\Src\EditorApp.h/.cpp` (`StyleSetup`)
 - `Engine\Src\EngineApp.h` (`PreUIUpdate`, `UpdateUI`, `Update`, `PreRender`), `Engine\Src\EngineCore\Engine.cpp` (frame order)

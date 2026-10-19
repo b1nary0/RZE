@@ -70,21 +70,27 @@ Scenes live in `RZE\Assets\Scenes\`:
 - `DrawLineTest.scene`: small; NeckMech (5 sub-meshes), M4, and a directional light.
 - `Sponza.scene`: heavy; Sponza has 25 sub-meshes. Use `-SettleSeconds 20`.
 
-### Layout reference (maximized, 2560x1369 client)
+### Layout reference (maximized, 2560x1392 client)
 
 The editor starts maximized on a 2560-wide monitor. ImGui panels scale with the window, so **re-derive coordinates from a fresh `shot` on any other monitor.**
+
+The editor has no Windows title bar: its menu bar is the title bar (40 px; the OS caption is 31), with the logo, the
+menus, the window's title and its own minimize, maximize and close buttons. The client area starts at the top of the
+screen, and `shot` includes the bar. Rows marked "(+16)" were moved down by the taller bar (it replaced a 24 px menu bar) without being clicked again.
 
 ✓ = clicked through the driver and confirmed. Unmarked = measured from a screenshot only.
 
 | target | client coords |
 |---|---|
-| Scene panel rows (Camera, DirectionalLight, ...) | x≈60, y = 59 + 18·row (row 0 = Camera). NeckMech = row 2 → (60, 95) ✓; Sponza in Sponza.scene → (51, 95) ✓ |
-| Object Inspector: Position X / Y / Z field | (2310 / 2372 / 2435, 102) |
-| Object Inspector: Rotation X / Y / Z field | (2310 / 2372 ✓ / 2435, 143) |
-| Object Inspector: Scale X / Y / Z field | (2310 / 2372 / 2435, 186) |
-| RenderComponent "Mesh Bounds" checkbox (Debug Draw section) | (2328, 263) |
-| RenderComponent "Sub-Mesh Bounds" checkbox (Debug Draw section) | (2328, 287) ✓ |
-| DrawLineTest: NeckMech translate gizmo, X arrow (after selecting NeckMech) | drag (1555, 1038) → (1755, 1038) moves Position X ≈ +5.9 ✓ |
+| Title bar: minimize / maximize (restore) / close buttons | (2445 / 2491 / 2537, 20) (+5). Close asks about unsaved changes, like `close` |
+| Title bar: empty part (moves the window; double-click maximizes) | e.g. (1500, 20) (+5) |
+| Scene panel rows (Camera, DirectionalLight, ...) | x≈38–60, y = 75 + 18·row (row 0 = Camera). M4 = row 3 → (38, 129); NeckMech = row 2 → (60, 111); Sponza in Sponza.scene → (51, 111) (+16) |
+| Object Inspector: Position X / Y / Z field | (2310 / 2372 / 2435, 118) (+16) |
+| Object Inspector: Rotation X / Y / Z field | (2310 / 2372 / 2435, 159) (+16) |
+| Object Inspector: Scale X / Y / Z field | (2310 / 2372 / 2435, 202) (+16) |
+| RenderComponent "Mesh Bounds" checkbox (Debug Draw section) | (2328, 279) (+16) |
+| RenderComponent "Sub-Mesh Bounds" checkbox (Debug Draw section) | (2328, 303) (+16) |
+| DrawLineTest: NeckMech translate gizmo, X arrow (after selecting NeckMech) | measured before the title bar change as drag (1555, 1038) → (1755, 1038); the scene view has since grown, so measure again from a `shot` |
 
 The top menu bar shows `RenderCommand MemArena: <N> KB`, which is the render command memory used per frame. Compare it before and after a change to check render-path cost: for example, 600 debug-line vertices add about 14 KB.
 
@@ -104,7 +110,7 @@ It covers the undo history, parking, copy snapshots, selection, interaction trac
 
 ## Gotchas
 
-- **Never `ShowWindow(SW_RESTORE)` the editor to focus it.** On a maximized window it un-maximizes it (2560x1369 → 1584x861), the whole ImGui layout reflows, and every coordinate you measured is wrong. The driver only restores when the window is minimized.
+- **Never `ShowWindow(SW_RESTORE)` the editor to focus it.** On a maximized window it un-maximizes it (2560x1392 → 1584x892), the whole ImGui layout reflows, and every coordinate you measured is wrong. The driver only restores when the window is minimized.
 - **Debug draws are stripped from Retail builds.** `DebugDrawRenderStage` (debug lines, bounds boxes, the light's direction line, camera frustums) is only added when `RZE_RETAIL` isn't defined, so Debug and Release both show them.
 - **Everything reads assets from the source tree, not from `_build\<config>`.** The Editor, Game and SourceAssetBurner set `EDirectoryContext::Source`, so `Filepath` resolves paths against the folder above `_build\` (e.g. `RZE\Assets\Shaders\...`), whatever the working directory. Shader and asset edits take effect on the next launch with no copy step. This also means the shader in `RZE\Assets` is what runs: to capture a "before" image, revert or disable the change in the source file itself. Any `Assets\`/`Config\`/`ProjectData\` folders left under `_build\<config>` are stale copies from the old `AssetCpy.bat` and aren't read. `EDirectoryContext::Runtime` (beside the exe) is reserved for a packaged game.
 - **A `Filepath` built during static init resolves before `main` sets the context**, so it points beside the exe. Build paths where they're used, or as function-local statics.

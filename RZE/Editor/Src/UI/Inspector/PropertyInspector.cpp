@@ -224,7 +224,7 @@ namespace Editor
 
 				ImGui::TableNextRow();
 				ImGui::TableSetColumnIndex(0);
-				const bool isOpen = ImGui::TreeNodeEx("##array", ImGuiTreeNodeFlags_SpanAllColumns | ImGuiTreeNodeFlags_AllowOverlap,
+				const bool isOpen = EditorUI::TreeNode("##array", ImGuiTreeNodeFlags_SpanAllColumns | ImGuiTreeNodeFlags_AllowOverlap,
 					"%s (%d)", property.Name.c_str(), static_cast<int>(elements.size()));
 
 				// A long list gets a filter, beside its heading
@@ -464,7 +464,7 @@ namespace Editor
 		const size_t overriddenCount = CountOverridden(type, ref.Object);
 
 		// The arrow, then the icon (if the type has one), then the heading, drawn by hand so the icon sits between
-		const bool isOpen = ImGui::TreeNodeEx("##object", ImGuiTreeNodeFlags_SpanAllColumns | ImGuiTreeNodeFlags_AllowOverlap, "%s", "");
+		const bool isOpen = EditorUI::TreeNode("##object", ImGuiTreeNodeFlags_SpanAllColumns | ImGuiTreeNodeFlags_AllowOverlap, "%s", "");
 		if (type.GetIcon)
 		{
 			ImGui::SameLine();

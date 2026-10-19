@@ -9,6 +9,7 @@
 #include <string>
 
 // RZE
+#include <Windowing/TitleBarLayout.h>
 #include <Windowing/WindowMessageAdaptor.h>
 #include <Utils/Math/Vector2D.h>
 
@@ -71,12 +72,41 @@ public:
 	void SetWindowSize(const Vector2D& newSize);
 
 	void Maximize();
+	void Minimize();
+	// Back to its size before it was maximized or minimized
+	void Restore();
+	bool IsMaximised() const;
+	// As if its close button was pressed: the application's OnCloseRequested decides
+	void RequestClose();
+
+	// Leaves out the OS's title bar, for an application that draws its own across the top of the client area. The
+	// window still moves, snaps, resizes and maximizes as usual, from what SetTitleBarLayout says the bar is.
+	void SetCustomTitleBar(bool isCustom);
+	// Where the application's own title bar is, once a UI frame; the OS asks about it as the mouse moves
+	void SetTitleBarLayout(TitleBarLayout&& layout);
+	// The height of the OS's title bar at the window's DPI, for a custom one to match
+	int GetSystemTitleBarHeight() const;
+	// The window's DPI over the standard 96, e.g. 1.25
+	float GetDpiScale() const;
 
 protected:
 
 private:
 
+	static LRESULT CALLBACK WindowProc(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam);
+
 	void Create(const WindowCreationParams& creationProtocol);
+
+	// With a custom title bar: the client area takes the OS caption's place (WM_NCCALCSIZE), and the parts of it
+	// that are the title bar are reported as caption, maximize button or resize border (WM_NCHITTEST)
+	LRESULT CalculateClientArea(WPARAM wParam, LPARAM lParam);
+	LRESULT HitTest(WPARAM wParam, LPARAM lParam);
+	// The mouse over the custom title bar's caption or maximize button sends non-client messages, which reach the
+	// input handler as client ones so the application's UI follows the mouse there too. False lets the OS have the
+	// message as usual.
+	bool CompileNonClientMouseMessage(const MSG& msg, InputHandler& inputHandler);
+	// The invisible resize border's thickness, at the window's DPI
+	int GetFrameThickness() const;
 
 	void ProcessWinProcMessage(const WindowMessageAdaptor::WindowMessageInfo& messageInfo, EventHandler& eventHandler);
 
@@ -97,4 +127,7 @@ private:
 	Vector2D m_pos;
 
 	bool bCursorEnabled;
+
+	bool m_hasCustomTitleBar{ false };
+	TitleBarLayout m_titleBarLayout;
 };

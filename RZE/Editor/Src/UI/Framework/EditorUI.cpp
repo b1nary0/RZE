@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdarg>
 
 namespace
 {
@@ -18,6 +19,17 @@ namespace
 
 	// A property section's rule, quieter than a full separator
 	constexpr ImVec4 k_sectionLineColour = ImVec4(1.0f, 1.0f, 1.0f, 0.12f);
+
+	// The draw list channels around a tree node: its highlight is drawn once ImGui has drawn the node, but goes behind it
+	constexpr int k_highlightChannel = 0;
+	constexpr int k_contentChannel = 1;
+
+	// Shared by every tree node, which merges it before the next one splits it, so its memory is reused
+	ImDrawListSplitter& GetTreeNodeSplitter()
+	{
+		static ImDrawListSplitter splitter;
+		return splitter;
+	}
 
 	// The right edge of the property table being drawn
 	float GetPropertyRowRight()
@@ -169,6 +181,59 @@ namespace Editor
 				ImGui::EndDisabled();
 			}
 			return isPressed;
+		}
+
+		bool TreeNode(const char* id, ImGuiTreeNodeFlags flags, const char* format, ...)
+		{
+			// A node across a table's columns is highlighted in the table's background, which is behind them all. Any
+			// other is drawn on its own channel, so the highlight can go behind it.
+			const bool spansColumns = (flags & ImGuiTreeNodeFlags_SpanAllColumns) != 0 && ImGui::GetCurrentTable() != nullptr;
+			ImDrawList* const drawList = ImGui::GetWindowDrawList();
+			ImDrawListSplitter& splitter = GetTreeNodeSplitter();
+			if (!spansColumns)
+			{
+				splitter.Split(drawList, 2);
+				splitter.SetCurrentChannel(drawList, k_contentChannel);
+			}
+
+			// In place of ImGui's own highlight
+			ImGui::PushStyleColor(ImGuiCol_Header, IM_COL32_BLACK_TRANS);
+			ImGui::PushStyleColor(ImGuiCol_HeaderHovered, IM_COL32_BLACK_TRANS);
+			ImGui::PushStyleColor(ImGuiCol_HeaderActive, IM_COL32_BLACK_TRANS);
+			va_list args;
+			va_start(args, format);
+			const bool isOpen = ImGui::TreeNodeExV(id, flags, format, args);
+			va_end(args);
+			ImGui::PopStyleColor(3);
+
+			const bool isHovered = ImGui::IsItemHovered();
+			const bool isSelected = (flags & ImGuiTreeNodeFlags_Selected) != 0;
+			if (spansColumns)
+			{
+				ImGui::TablePushBackgroundChannel();
+			}
+			else
+			{
+				splitter.SetCurrentChannel(drawList, k_highlightChannel);
+			}
+
+			if (ImGui::IsItemVisible() && (isHovered || isSelected))
+			{
+				// The whole row, which can be wider than the part that's hovered
+				const ImRect& rect = ImGui::GetCurrentContext()->LastItemData.DisplayRect;
+				const ImGuiCol colour = isHovered ? (ImGui::IsItemActive() ? ImGuiCol_HeaderActive : ImGuiCol_HeaderHovered) : ImGuiCol_Header;
+				drawList->AddRectFilled(rect.Min, rect.Max, ImGui::GetColorU32(colour), k_cornerRounding);
+			}
+
+			if (spansColumns)
+			{
+				ImGui::TablePopBackgroundChannel();
+			}
+			else
+			{
+				splitter.Merge(drawList);
+			}
+			return isOpen;
 		}
 
 		void AddCentredText(ImDrawList* drawList, const ImVec2& centre, float fontSize, ImU32 colour, const char* text)

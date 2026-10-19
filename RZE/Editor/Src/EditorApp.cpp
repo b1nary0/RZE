@@ -2,6 +2,8 @@
 
 #include <Services/AssetFiles.h>
 
+#include <UI/Framework/EditorUI.h>
+
 #include <Asset/AssetPaths.h>
 
 #include <Game/World/GameObject/EditorGameComponentInfoCache.h>
@@ -69,6 +71,8 @@ namespace Editor
 		ImGui::GetIO().IniFilename = m_imguiConfigFilepath.GetAbsolutePath().c_str();
 
 		GetWindow()->SetTitle("RZEStudio");
+		// The main menu bar is the title bar
+		GetWindow()->SetCustomTitleBar(true);
 		GetWindow()->Maximize();
 
 		const Vector2D& windowDims = GetWindow()->GetClientSize();
@@ -80,6 +84,8 @@ namespace Editor
 
 		LoadFonts();
 		StyleSetup();
+
+		m_mainMenuBar.Initialize();
 
 		m_context.GetPanels().CreatePanels(m_context);
 
@@ -148,7 +154,7 @@ namespace Editor
 		m_context.GetTasks().Update(RZE().GetAsyncOperationManager().GetVisibleOperations());
 
 		PushFontAtLoadedSize(m_fontMapping.at("din_bold"));
-		m_mainMenuBar.Draw(m_context);
+		m_mainMenuBar.Draw(m_context, *GetWindow());
 		m_statusBar.Draw(m_context);
 
 		// What the menu bar and status bar leave of the window
@@ -202,6 +208,7 @@ namespace Editor
 		RZE().GetActiveScene().SetObjectsChangedCallback(nullptr);
 		// While the renderer and resources are still up
 		m_context.GetThumbnails().ShutDown();
+		m_mainMenuBar.ShutDown();
 		// Undo can't restore deleted files once the editor closes
 		AssetFiles::EmptyTrash();
 	}
@@ -270,8 +277,15 @@ namespace Editor
 	void EditorApp::StyleSetup()
 	{
 		ImGuiStyle& style = ImGui::GetStyle();
-		style.FrameRounding = 0.0f;
-		style.WindowRounding = 0.0f;
+		// Everything ImGui draws with corners. Scrollbars and tabs keep ImGui's own, rounder ones.
+		style.WindowRounding = EditorUI::k_cornerRounding;
+		style.ChildRounding = EditorUI::k_cornerRounding;
+		style.PopupRounding = EditorUI::k_cornerRounding;
+		style.FrameRounding = EditorUI::k_cornerRounding;
+		style.GrabRounding = EditorUI::k_cornerRounding;
+		style.ImageRounding = EditorUI::k_cornerRounding;
+		style.MenuItemRounding = EditorUI::k_cornerRounding;
+		style.SelectableRounding = EditorUI::k_cornerRounding;
 
 		style.Colors[ImGuiCol_Text] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
 		style.Colors[ImGuiCol_TextDisabled] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);

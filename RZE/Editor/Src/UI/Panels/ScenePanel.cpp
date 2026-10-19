@@ -2,6 +2,7 @@
 
 #include <RZE.h>
 #include <UI/Framework/EditorContext.h>
+#include <UI/Framework/EditorUI.h>
 #include <UI/Framework/PanelRegistry.h>
 
 #include <Commands/SceneCommands.h>
@@ -140,7 +141,7 @@ namespace Editor
 
 		// The item code below runs whether or not the node is open, so a collapsed parent can be clicked, dragged and
 		// right-clicked too; only its children and TreePop depend on it being open
-		const bool isOpen = ImGui::TreeNodeEx("##GameObject", nodeFlags, "%s", gameObject->GetName().c_str());
+		const bool isOpen = EditorUI::TreeNode("##GameObject", nodeFlags, "%s", gameObject->GetName().c_str());
 
 		if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
 		{

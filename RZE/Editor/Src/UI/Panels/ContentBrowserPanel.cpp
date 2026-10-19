@@ -287,7 +287,7 @@ namespace Editor
 			ImGui::SetNextItemOpen(true);
 		}
 
-		const bool isOpen = ImGui::TreeNodeEx(folder.GetRelativePath().c_str(), flags, "%s", folder.GetFileName().c_str());
+		const bool isOpen = EditorUI::TreeNode(folder.GetRelativePath().c_str(), flags, "%s", folder.GetFileName().c_str());
 		if (m_revealFolder && isCurrent)
 		{
 			ImGui::SetScrollHereY(0.5f);

@@ -1,13 +1,19 @@
 #pragma once
 
+#include <UI/TitleBar.h>
+
 #include <Utils/Math/Vector3D.h>
+
+class Win32Window;
 
 namespace Editor
 {
 	class EditorContext;
 
-	// The editor's main menu bar: File (scenes, building the game), Edit (copy and paste), the View and Help items
-	// panels register, and frame time and render memory readouts. Also handles the Edit menu's keyboard shortcuts.
+	// The editor's main menu bar, which is also the window's title bar (TitleBar): the logo, File (scenes, building the
+	// game), Edit (copy and paste), the View and Help items panels register, the render memory readout, the window's
+	// title, and its minimize, maximize and close buttons. A little taller than the OS's title bar, for the logo. Also
+	// handles the Edit menu's keyboard shortcuts.
 	class MainMenuBar
 	{
 	public:
@@ -15,7 +21,11 @@ namespace Editor
 		~MainMenuBar() = default;
 
 	public:
-		void Draw(EditorContext& context);
+		// While resources can be loaded and released
+		void Initialize();
+		void ShutDown();
+
+		void Draw(EditorContext& context, Win32Window& window);
 
 	private:
 		void DrawFileMenu(EditorContext& context);
@@ -31,5 +41,8 @@ namespace Editor
 		static Vector3D GetPasteOffset(const EditorContext& context, float width, int steps);
 		// The render command arena's use. Frame times are in the status bar.
 		void DrawStatus();
+
+	private:
+		TitleBar m_titleBar;
 	};
 }

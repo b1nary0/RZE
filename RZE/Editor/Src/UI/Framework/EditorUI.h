@@ -19,6 +19,9 @@ namespace Editor
 		// What's wrong with something typed, e.g. a file name that can't be used
 		constexpr ImVec4 k_errorColour = ImVec4(1.0f, 0.45f, 0.40f, 1.0f);
 
+		// How much the corners of windows, popups, fields and highlights are rounded, at 96 DPI: just enough to soften them
+		constexpr float k_cornerRounding = 3.0f;
+
 		// colour with its alpha replaced, packed for an ImDrawList
 		ImU32 WithAlpha(const ImVec4& colour, float alpha);
 
@@ -28,6 +31,11 @@ namespace Editor
 		// ImGui::MenuItem, with its shortcut (e.g. "Ctrl+Z"; none if null or empty) ending at the menu's right edge,
 		// inset as far as the labels are from its left. ImGui's own lines shortcuts up on their left instead.
 		bool MenuItem(const char* label, const char* shortcut, bool enabled = true);
+
+		// ImGui::TreeNodeEx, with its highlight's corners rounded like everything else's. ImGui always draws an unframed
+		// node's highlight square, so the editor's tree nodes use this instead. It reads the node's row from ImGui's
+		// internals (LastItemData.DisplayRect, TablePushBackgroundChannel), which an ImGui upgrade may change.
+		bool TreeNode(const char* id, ImGuiTreeNodeFlags flags, const char* format, ...) IM_FMTARGS(3);
 
 		// Text centred on centre, in the current font at fontSize
 		void AddCentredText(ImDrawList* drawList, const ImVec2& centre, float fontSize, ImU32 colour, const char* text);

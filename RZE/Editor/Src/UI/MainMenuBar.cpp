@@ -20,8 +20,13 @@
 #include <Utils/Memory/MemoryUtils.h>
 #include <Utils/Platform/Filepath.h>
 
+#include <Windowing/Win32Window.h>
+
 #include <ImGui/imgui.h>
 #include <imGUI/ImGuizmo.h>
+
+#include <algorithm>
+#include <cmath>
 
 namespace
 {
@@ -31,42 +36,141 @@ namespace
 	{
 		return ImGui::IsAnyItemActive() || ImGuizmo::IsUsing();
 	}
+
+	// The bar's height at 96 DPI: taller than the OS's title bar, to give the logo room
+	constexpr float k_barHeight = 40.0f;
+	// A menu's highlight, at 96 DPI: kept this far inside its header at the sides, so neighbours' highlights don't run
+	// together, and this far from the bar's top and bottom; and outlined this thick, so its edge is clear against the bar
+	constexpr float k_highlightInsetX = 1.0f;
+	constexpr float k_highlightInsetY = 4.0f;
+	constexpr float k_highlightBorder = 1.0f;
+	// Darker than the bar, so it edges the highlight without standing out
+	const ImU32 k_highlightBorderColour = IM_COL32(24, 24, 24, 255);
+
+	// The bar's draw list channels: a menu's highlight is drawn once ImGui has drawn its label, but goes behind it
+	constexpr int k_highlightChannel = 0;
+	constexpr int k_contentChannel = 1;
+
+	// What the bar's menus need to draw their highlights
+	struct BarMenuStyle
+	{
+		ImDrawList* DrawList{ nullptr };
+		// The bar's
+		float Top{ 0.0f };
+		float Bottom{ 0.0f };
+		// Above and below the menus' labels
+		float Padding{ 0.0f };
+		// k_highlightInsetX, k_highlightInsetY, k_highlightBorder and EditorUI::k_cornerRounding at the window's DPI
+		float InsetX{ 0.0f };
+		float InsetY{ 0.0f };
+		float Border{ 0.0f };
+		float Rounding{ 0.0f };
+	};
+
+	// A rounded rectangle in the highlight colour, outlined
+	void DrawMenuHighlight(const BarMenuStyle& style, float left, float right, ImU32 colour)
+	{
+		// On whole pixels, so the outline is crisp
+		const ImVec2 min(std::round(left + style.InsetX), std::round(style.Top + style.InsetY));
+		const ImVec2 max(std::round(right - style.InsetX), std::round(style.Bottom - style.InsetY));
+
+		ImDrawList& drawList = *style.DrawList;
+		drawList.ChannelsSetCurrent(k_highlightChannel);
+		drawList.AddRectFilled(min, max, colour, style.Rounding);
+		drawList.AddRect(min, max, k_highlightBorderColour, style.Rounding, 0, style.Border);
+		drawList.ChannelsSetCurrent(k_contentChannel);
+	}
+
+	// BeginMenu for a menu in the bar, hovered anywhere up and down the bar, and highlighted while it's hovered or open
+	bool BeginBarMenu(const BarMenuStyle& style, const char* label)
+	{
+		// A header's box reaches half this above and below its label, so it fills the bar, for hovering too. Popped
+		// before the menu's items, which keep their own spacing.
+		ImGui::PushStyleVarY(ImGuiStyleVar_ItemSpacing, style.Padding * 2.0f);
+		// In place of ImGui's own highlight, which only covers the box
+		ImGui::PushStyleColor(ImGuiCol_Header, IM_COL32_BLACK_TRANS);
+		ImGui::PushStyleColor(ImGuiCol_HeaderHovered, IM_COL32_BLACK_TRANS);
+		ImGui::PushStyleColor(ImGuiCol_HeaderActive, IM_COL32_BLACK_TRANS);
+		const bool isOpen = ImGui::BeginMenu(label);
+		ImGui::PopStyleColor(3);
+		ImGui::PopStyleVar();
+
+		// BeginMenu leaves the header as the last item, even with its menu open
+		const bool isHovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup);
+		if (isOpen || isHovered)
+		{
+			DrawMenuHighlight(style, ImGui::GetItemRectMin().x, ImGui::GetItemRectMax().x, ImGui::GetColorU32(isHovered ? ImGuiCol_HeaderHovered : ImGuiCol_Header));
+		}
+		return isOpen;
+	}
 }
 
 namespace Editor
 {
-	void MainMenuBar::Draw(EditorContext& context)
+	void MainMenuBar::Initialize()
+	{
+		m_titleBar.Initialize();
+	}
+
+	void MainMenuBar::ShutDown()
+	{
+		m_titleBar.ShutDown();
+	}
+
+	void MainMenuBar::Draw(EditorContext& context, Win32Window& window)
 	{
 		HandleEditShortcuts(context);
 
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.5f, 5.0f));
+		// The bar is its font plus this above and below. Never shorter than the OS's title bar.
+		const float height = std::max(static_cast<float>(window.GetSystemTitleBarHeight()), std::round(k_barHeight * window.GetDpiScale()));
+		const float padding = std::max(0.0f, (height - ImGui::GetFontSize()) * 0.5f);
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.5f, padding));
 		if (ImGui::BeginMainMenuBar())
 		{
-			if (ImGui::BeginMenu("File"))
+			BarMenuStyle menuStyle;
+			menuStyle.DrawList = ImGui::GetWindowDrawList();
+			menuStyle.Top = ImGui::GetWindowPos().y;
+			menuStyle.Bottom = menuStyle.Top + ImGui::GetWindowHeight();
+			menuStyle.Padding = padding;
+			menuStyle.InsetX = std::round(k_highlightInsetX * window.GetDpiScale());
+			menuStyle.InsetY = std::round(k_highlightInsetY * window.GetDpiScale());
+			menuStyle.Border = std::max(1.0f, std::round(k_highlightBorder * window.GetDpiScale()));
+			menuStyle.Rounding = EditorUI::k_cornerRounding * window.GetDpiScale();
+			menuStyle.DrawList->ChannelsSplit(2);
+			menuStyle.DrawList->ChannelsSetCurrent(k_contentChannel);
+
+			m_titleBar.Begin(window);
+
+			const float menusLeft = ImGui::GetCursorScreenPos().x;
+			if (BeginBarMenu(menuStyle, "File"))
 			{
 				DrawFileMenu(context);
 				ImGui::EndMenu();
 			}
 
-			if (ImGui::BeginMenu("Edit"))
+			if (BeginBarMenu(menuStyle, "Edit"))
 			{
 				DrawEditMenu(context);
 				ImGui::EndMenu();
 			}
 
-			if (ImGui::BeginMenu("View"))
+			if (BeginBarMenu(menuStyle, "View"))
 			{
 				context.GetPanels().DrawMenuItems("View");
 				ImGui::EndMenu();
 			}
 
-			if (ImGui::BeginMenu("Help"))
+			if (BeginBarMenu(menuStyle, "Help"))
 			{
 				context.GetPanels().DrawMenuItems("Help");
 				ImGui::EndMenu();
 			}
+			m_titleBar.AddControl(menusLeft, ImGui::GetCursorScreenPos().x);
 
 			DrawStatus();
+
+			m_titleBar.End(window);
+			menuStyle.DrawList->ChannelsMerge();
 
 			ImGui::EndMainMenuBar();
 		}

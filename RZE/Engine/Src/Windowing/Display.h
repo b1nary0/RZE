@@ -16,6 +16,8 @@ namespace Display
 
 		int Width() const { return Right - Left; }
 		int Height() const { return Bottom - Top; }
+		// Right and Bottom are just outside it
+		bool Contains(int x, int y) const { return x >= Left && x < Right && y >= Top && y < Bottom; }
 	};
 
 	struct MonitorInfo
