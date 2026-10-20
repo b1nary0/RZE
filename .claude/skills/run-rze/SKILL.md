@@ -92,7 +92,7 @@ screen, and `shot` includes the bar. Rows marked "(+16)" were moved down by the 
 | RenderComponent "Sub-Mesh Bounds" checkbox (Debug Draw section) | (2328, 303) (+16) |
 | DrawLineTest: NeckMech translate gizmo, X arrow (after selecting NeckMech) | measured before the title bar change as drag (1555, 1038) → (1755, 1038); the scene view has since grown, so measure again from a `shot` |
 
-The top menu bar shows `RenderCommand MemArena: <N> KB`, which is the render command memory used per frame. Compare it before and after a change to check render-path cost: for example, 600 debug-line vertices add about 14 KB.
+The status bar at the bottom shows `RenderCommand MemArena: <N> KB`, which is the render command memory used per frame. Compare it before and after a change to check render-path cost: for example, 600 debug-line vertices add about 14 KB.
 
 ## Run (human path)
 

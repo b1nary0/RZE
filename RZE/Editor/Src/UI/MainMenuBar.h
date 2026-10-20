@@ -11,8 +11,7 @@ namespace Editor
 	class EditorContext;
 
 	// The editor's main menu bar, which is also the window's title bar (TitleBar): the logo, File (scenes, building the
-	// game), Edit (copy and paste), the View and Help items panels register, the render memory readout, the window's
-	// title, and its minimize, maximize and close buttons. A little taller than the OS's title bar, for the logo. Also
+	// game), Edit (copy and paste), the View and Help items panels register, the window's title, and its minimize, maximize and close buttons. A little taller than the OS's title bar, for the logo. Also
 	// handles the Edit menu's keyboard shortcuts.
 	class MainMenuBar
 	{
@@ -39,8 +38,6 @@ namespace Editor
 		// How far a paste moves the pasted objects from the originals, in world space: steps times the copied
 		// objects' width (GameObjectClipboard::MeasureWidth) plus a gap, along +X
 		static Vector3D GetPasteOffset(const EditorContext& context, float width, int steps);
-		// The render command arena's use. Frame times are in the status bar.
-		void DrawStatus();
 
 	private:
 		TitleBar m_titleBar;

@@ -13,13 +13,18 @@ namespace Editor
 	enum class EStatusBarSide
 	{
 		Left,
+		Center,
 		Right
 	};
 
 	// The bar along the bottom of the editor. It takes its height out of the viewport's work area, so the dock space
-	// fits above it. It's made of items on either side, each a fixed width: left items go from the left edge and right
-	// items from the right edge, both in the order they're added. It starts with "Ready" and the frame stats on the
-	// left, and the running tasks on the right.
+	// fits above it. It's made of items, each a fixed width: left items go from the left edge and right items from the
+	// right edge, both in the order they're added, and center items sit side by side in the middle of the bar. It
+	// starts with "Ready" and the render command memory on the left, the frame stats in the middle, and the running
+	// tasks on the right.
+	//
+	// The render command memory is how much of the render command arena (Rendering::MemArena) the last frame used, out
+	// of its size, in yellow or red as it fills up, and the most any frame has used.
 	//
 	// The frame stats are the frame time, frames per second and idle time per frame, averaged over half a second
 	// (FramePacer::Stats). Hovering splits the idle time into what went to tasks and what was spent waiting.
@@ -53,6 +58,7 @@ namespace Editor
 		void AddItem(EStatusBarSide side, float width, DrawItem draw);
 
 	private:
+		void DrawRenderMemory(const ImVec2& min, const ImVec2& max) const;
 		void DrawFrameStats(const ImVec2& min, const ImVec2& max) const;
 		void DrawTasks(EditorContext& context, const ImVec2& min, const ImVec2& max);
 		// On hover: a line for each running task, with a dot for how it's going, its name, roughly how long it has left

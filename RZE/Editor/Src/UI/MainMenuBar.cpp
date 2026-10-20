@@ -15,9 +15,6 @@
 
 #include <Game/GameScene.h>
 
-#include <Rendering/MemArena.h>
-
-#include <Utils/Memory/MemoryUtils.h>
 #include <Utils/Platform/Filepath.h>
 
 #include <Windowing/Win32Window.h>
@@ -166,8 +163,6 @@ namespace Editor
 				ImGui::EndMenu();
 			}
 			m_titleBar.AddControl(menusLeft, ImGui::GetCursorScreenPos().x);
-
-			DrawStatus();
 
 			m_titleBar.End(window);
 			menuStyle.DrawList->ChannelsMerge();
@@ -349,40 +344,4 @@ namespace Editor
 		return Vector3D(step * static_cast<float>(steps), 0.0f, 0.0f);
 	}
 
-	void MainMenuBar::DrawStatus()
-	{
-		ImGui::Separator();
-
-		ImVec4 colour;
-		switch (Rendering::MemArena::GetPressureValue())
-		{
-		case Rendering::MemArena::PressureValue::MED:
-			colour = ImVec4(255.0f, 255.0f, 0.0f, 1.0f);
-			break;
-
-		case Rendering::MemArena::PressureValue::HIGH:
-			colour = ImVec4(255.0f, 0.0f, 0.0f, 1.0f);
-			break;
-
-		case Rendering::MemArena::PressureValue::LOW:
-		default:
-			colour = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-			break;
-		}
-
-		const size_t lastFrameAllocationSize = Rendering::MemArena::GetTotalMemoryAllocatedLastFrame();
-		const size_t memArenaTotalSizeBytes = Rendering::MemArena::GetSize();
-
-		const float lastFrameSizeKB = static_cast<float>(lastFrameAllocationSize / 1024);
-		const float memArenaSizeKB = static_cast<float>(memArenaTotalSizeBytes / 1024);
-		const float memArenaSizeMB = static_cast<float>(memArenaTotalSizeBytes / 1024) / 1024;
-
-		const bool isArenaInMB = memArenaTotalSizeBytes >= MemoryUtils::Megabytes(1);
-		const float memArenaValue = isArenaInMB ? memArenaSizeMB : memArenaSizeKB;
-		const char* const memArenaSizeMagnitudeStr = isArenaInMB ? "MB" : "KB";
-
-		ImGui::Text("RenderCommand MemArena:");
-		ImGui::TextColored(colour, "%.2f KB / %.2f %s", lastFrameSizeKB, memArenaValue, memArenaSizeMagnitudeStr);
-		ImGui::Text("Peak Used: %d KB", static_cast<int>(Rendering::MemArena::GetPeakUsedBytes() / 1024));
-	}
 }

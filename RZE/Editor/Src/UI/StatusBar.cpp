@@ -11,6 +11,9 @@
 #include <EngineCore/Async/AsyncOperationManager.h>
 #include <EngineCore/Timing/FramePacer.h>
 
+#include <Rendering/MemArena.h>
+
+#include <Utils/Memory/MemoryUtils.h>
 #include <Utils/TimeUtils.h>
 
 #include <ImGui/imgui_internal.h> // BeginViewportSideBar, RenderTextEllipsis
@@ -30,6 +33,11 @@ namespace
 	constexpr float k_itemGap = 16.0f;
 
 	constexpr float k_readyWidth = 120.0f;
+	// Room for the widest it gets in practice, e.g. 1234.00 KB / 16.00 MB with a peak of 12345 KB
+	constexpr float k_renderMemoryWidth = 400.0f;
+	// The render command memory's use as the arena fills up (Rendering::MemArena::PressureValue)
+	constexpr ImU32 k_mediumPressureColour = IM_COL32(242, 204, 64, 255);
+	constexpr ImU32 k_highPressureColour = IM_COL32(255, 107, 92, 255);
 	// Room for the widest it gets in practice, e.g. 16.7 ms, 240 FPS and 12.5 ms idle
 	constexpr float k_frameStatsWidth = 260.0f;
 	// The tasks box; also the width of the hover panel and the task list above it
@@ -146,7 +154,12 @@ namespace Editor
 				ImGui::GetWindowDrawList()->AddText(ImVec2(min.x, GetTextTop(min, max)), ImGui::GetColorU32(ImGuiCol_TextDisabled), "Ready");
 			});
 
-		AddItem(EStatusBarSide::Left, k_frameStatsWidth, [this](EditorContext&, const ImVec2& min, const ImVec2& max)
+		AddItem(EStatusBarSide::Left, k_renderMemoryWidth, [this](EditorContext&, const ImVec2& min, const ImVec2& max)
+			{
+				DrawRenderMemory(min, max);
+			});
+
+		AddItem(EStatusBarSide::Center, k_frameStatsWidth, [this](EditorContext&, const ImVec2& min, const ImVec2& max)
 			{
 				DrawFrameStats(min, max);
 			});
@@ -181,8 +194,18 @@ namespace Editor
 			const ImVec2 barMax(barMin.x + ImGui::GetWindowWidth(), barMin.y + height);
 			ImGui::GetWindowDrawList()->AddLine(barMin, ImVec2(barMax.x, barMin.y), ImGui::GetColorU32(ImGuiCol_Border));
 
+			float centerWidth = 0.0f;
+			for (const Item& item : m_items)
+			{
+				if (item.Side == EStatusBarSide::Center)
+				{
+					centerWidth += (centerWidth > 0.0f ? k_itemGap : 0.0f) + item.Width;
+				}
+			}
+
 			float left = barMin.x + k_edgePadding;
 			float right = barMax.x - k_edgePadding;
+			float center = barMin.x + (barMax.x - barMin.x - centerWidth) * 0.5f;
 			for (size_t itemIndex = 0; itemIndex < m_items.size(); ++itemIndex)
 			{
 				const Item& item = m_items[itemIndex];
@@ -191,6 +214,11 @@ namespace Editor
 				if (item.Side == EStatusBarSide::Left)
 				{
 					left += item.Width + k_itemGap;
+				}
+				else if (item.Side == EStatusBarSide::Center)
+				{
+					min.x = center;
+					center += item.Width + k_itemGap;
 				}
 				else
 				{
@@ -206,6 +234,44 @@ namespace Editor
 		}
 		// Like Begin, whether or not it's open
 		ImGui::End();
+	}
+
+	void StatusBar::DrawRenderMemory(const ImVec2& min, const ImVec2& max) const
+	{
+		const ImU32 textColour = ImGui::GetColorU32(ImGuiCol_TextDisabled);
+		ImU32 usedColour = textColour;
+		switch (Rendering::MemArena::GetPressureValue())
+		{
+		case Rendering::MemArena::PressureValue::MED:
+			usedColour = k_mediumPressureColour;
+			break;
+		case Rendering::MemArena::PressureValue::HIGH:
+			usedColour = k_highPressureColour;
+			break;
+		default:
+			break;
+		}
+
+		const size_t arenaSizeBytes = Rendering::MemArena::GetSize();
+		const bool isArenaInMB = arenaSizeBytes >= MemoryUtils::Megabytes(1);
+		const float arenaSizeKB = static_cast<float>(arenaSizeBytes / 1024);
+		const float lastFrameKB = static_cast<float>(Rendering::MemArena::GetTotalMemoryAllocatedLastFrame() / 1024);
+		const int peakKB = static_cast<int>(Rendering::MemArena::GetPeakUsedBytes() / 1024);
+
+		char used[64];
+		snprintf(used, sizeof(used), "%.2f KB / %.2f %s", lastFrameKB, isArenaInMB ? arenaSizeKB / 1024.0f : arenaSizeKB, isArenaInMB ? "MB" : "KB");
+		char peak[48];
+		snprintf(peak, sizeof(peak), " \xC2\xB7 peak %d KB", peakKB);
+
+		// The label and peak in the bar's grey, and the use between them in the pressure's colour
+		ImDrawList* const drawList = ImGui::GetWindowDrawList();
+		ImVec2 position(min.x, GetTextTop(min, max));
+		const char label[] = "RenderCommand MemArena: ";
+		drawList->AddText(position, textColour, label);
+		position.x += ImGui::CalcTextSize(label).x;
+		drawList->AddText(position, usedColour, used);
+		position.x += ImGui::CalcTextSize(used).x;
+		drawList->AddText(position, textColour, peak);
 	}
 
 	void StatusBar::DrawFrameStats(const ImVec2& min, const ImVec2& max) const
