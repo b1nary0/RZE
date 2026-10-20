@@ -59,6 +59,7 @@ the window the way a user would:
 | `launch [-Scene X.scene] [-Config debug\|release] [-SettleSeconds 5]` | Starts `Editor.exe -scene X` with the working directory set to `RZE\_build\<config>`. Refuses to start if an editor is already running. |
 | `shot [-Out path.png]` | Captures the client area only. Defaults to `$env:TEMP\rze-shots\`. |
 | `click -X -Y` | Left click. |
+| `dblclick -X -Y` | Two left clicks close enough together to count as a double-click (two `click` calls are too far apart). Double-clicking an object in the Scene panel focuses the camera on it. |
 | `drag -X -Y -X2 -Y2` | Left-button drag in 10 steps. Verified on the translate gizmo's X arrow. |
 | `key -Keys '...'` | `SendKeys` syntax. `'^a<value>{ENTER}'` replaces an ImGui number field. |
 | `info` | Window title and client size. |

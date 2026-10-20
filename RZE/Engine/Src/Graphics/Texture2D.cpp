@@ -25,10 +25,9 @@ bool Texture2D::Load(const Filepath& filePath)
 	return LoadCPU(filePath) && FinalizeStep();
 }
 
-bool Texture2D::Load(const U8* buffer, int width, int height)
+bool Texture2D::Load(Rendering::TexelBuffer&& texels, int width, int height)
 {
-	// Takes the buffer, which must come from stb_image's allocator
-	m_texels = Rendering::TexelBuffer(const_cast<U8*>(buffer), &stbi_image_free);
+	m_texels = std::move(texels);
 	m_width = width;
 	m_height = height;
 

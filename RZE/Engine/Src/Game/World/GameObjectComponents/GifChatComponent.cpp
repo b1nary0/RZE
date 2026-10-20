@@ -33,6 +33,12 @@ namespace
 		"Assets/2D/GIFs/friends-joey-tribbiani.gif",
 		"Assets/2D/GIFs/pulp_fiction_travolta.gif"
 	};
+
+	// Frees a frame's texels, which are allocated with new[]
+	void FreeFrameTexels(void* texels)
+	{
+		delete[] static_cast<U8*>(texels);
+	}
 }
 
 struct GifData
@@ -133,18 +139,10 @@ void GifChatComponent::Load(const Filepath& fp)
 	{
 		Texture2D* frameTexture = new Texture2D();
 
-		// Copy the texture data into a buffer to pass to Texture2D to take ownership of
-		// this is necessary atm because there is no "Instance" layer of resources - just the immutable
-		// resources themselves from ResourceHandler. Since this hacky meme implementation needs to circumvent that
-		// instead of writing a whole new architecture layer, we can't be deleting memory (as will happen when the resource
-		// releases) which we don't own. Essentially we can't allow strong ownership of any memory slice of gifData
-		// because of this exploitation of the resource system.
-		// #TODO
-		// Make ClassDef and ClassInstance to support mutable resources?
-		// Allocated with STBI_MALLOC so Texture2D::Release can free all textures via stbi_image_free
-		U8* textureBuffer = static_cast<U8*>(STBI_MALLOC(frameSizeBytes));
-		memcpy(textureBuffer, gifData + frame * frameSizeBytes, frameSizeBytes);
-		frameTexture->Load(textureBuffer, x, y);
+		// Each frame's texture frees its texels once they're uploaded, so it gets a copy of its slice of the GIF
+		U8* const frameTexels = new U8[frameSizeBytes];
+		memcpy(frameTexels, gifData + frame * frameSizeBytes, frameSizeBytes);
+		frameTexture->Load(Rendering::TexelBuffer(frameTexels, &FreeFrameTexels), x, y);
 
 		m_frames.push_back(RZE().GetResourceHandler().Make("FIRST_FRAME_GIF_" + std::to_string(frame), frameTexture));
 		AssertExpr(m_frames.back().IsValid());

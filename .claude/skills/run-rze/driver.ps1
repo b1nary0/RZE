@@ -15,7 +15,7 @@ One action per invocation; state lives in the running Editor.exe process.
 #>
 param(
 	[Parameter(Mandatory, Position = 0)]
-	[ValidateSet('launch', 'shot', 'click', 'drag', 'key', 'info', 'alive', 'close', 'quit')]
+	[ValidateSet('launch', 'shot', 'click', 'dblclick', 'drag', 'key', 'info', 'alive', 'close', 'quit')]
 	[string] $Action,
 	[string] $Scene = 'DrawLineTest.scene',
 	[ValidateSet('debug', 'release')] [string] $Config = 'debug',
@@ -129,6 +129,16 @@ switch ($Action) {
 		[RzeWin]::mouse_event(0x2, 0, 0, 0, [UIntPtr]::Zero); Start-Sleep -Milliseconds 60
 		[RzeWin]::mouse_event(0x4, 0, 0, 0, [UIntPtr]::Zero); Start-Sleep -Milliseconds 100
 		"clicked $X,$Y"
+	}
+	'dblclick' {
+		# Both clicks from one process: two separate `click` calls are too far apart to count as a double-click
+		$w = Get-Window
+		Focus $w; MoveTo $w $X $Y
+		for ($i = 0; $i -lt 2; $i++) {
+			[RzeWin]::mouse_event(0x2, 0, 0, 0, [UIntPtr]::Zero); Start-Sleep -Milliseconds 30
+			[RzeWin]::mouse_event(0x4, 0, 0, 0, [UIntPtr]::Zero); Start-Sleep -Milliseconds 60
+		}
+		"double-clicked $X,$Y"
 	}
 	'drag' {
 		$w = Get-Window

@@ -23,9 +23,6 @@ public:
 	virtual bool Load(const Filepath& filePath) = 0;
 	virtual void Release() = 0;
 
-	// @TODO This is gross, bespoke texture params on IResource. Figure it out.
-	virtual bool Load(const U8* buffer, int width, int height) { return false; }
-
 	//
 	// Optional two-phase loading, used by AsyncResourceBatch to load resources without stalling the main thread.
 	// Resources that opt in should implement Load() as LoadCPU() followed by FinalizeStep() until it returns true.

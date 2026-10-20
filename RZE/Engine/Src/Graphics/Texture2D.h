@@ -22,7 +22,8 @@ public:
 
 public:
 	bool Load(const Filepath& filePath) final;
-	bool Load(const U8* buffer, int width, int height) final;
+	// From texels already in memory, RGBA8, which it takes and uploads straight away
+	bool Load(Rendering::TexelBuffer&& texels, int width, int height);
 	void Release() final;
 
 	bool SupportsAsyncLoad() const final { return true; }
