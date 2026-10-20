@@ -3,6 +3,7 @@
 #include <Rendering/Rendering.h>
 #include <Rendering/BufferHandle.h>
 #include <Rendering/ShaderHandle.h>
+#include <Rendering/TexelBuffer.h>
 #include <Rendering/TexelReadback.h>
 #include <Rendering/TextureReadback.h>
 #include <Rendering/Driver/ShaderTypes.h>
@@ -179,7 +180,8 @@ namespace Rendering
 		RenderCommand_CreateTextureBuffer2D() { type = RenderCommandType::CreateTextureBuffer2D; }
 
 		GFXTextureBufferParams params;
-		const void* data = nullptr;
+		// Empty for a texture made without contents, e.g. a render target. Freed with the command, once it's run.
+		TexelBuffer texels;
 		std::shared_ptr<DX11TextureBuffer2D> bufferPtr = nullptr;
 	};
 

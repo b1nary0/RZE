@@ -302,7 +302,7 @@ namespace Rendering
 			{
 				RenderCommand_CreateTextureBuffer2D* cmd = static_cast<RenderCommand_CreateTextureBuffer2D*>(command);
 				cmd->bufferPtr->SetDevice(m_device.get());
-				cmd->bufferPtr->Allocate(cmd->data, cmd->params);
+				cmd->bufferPtr->Allocate(cmd->texels.GetTexels(), cmd->params);
 
 				break;
 			}

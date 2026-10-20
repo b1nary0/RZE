@@ -42,7 +42,7 @@ void PickRenderStage::Initialize()
 	idParams.Format = Rendering::ETextureFormat::R32_UINT;
 	idParams.bIsRenderTarget = true;
 	idParams.bIsShaderResource = true;
-	m_idTarget = Rendering::Renderer::CreateTextureBuffer2D(nullptr, idParams);
+	m_idTarget = Rendering::Renderer::CreateTextureBuffer2D(idParams);
 
 	Rendering::GFXTextureBufferParams depthParams = { 0 };
 	depthParams.Width = 1;
@@ -50,7 +50,7 @@ void PickRenderStage::Initialize()
 	depthParams.bIsDepthTexture = true;
 	// Also gives it the SRV that every texture buffer is expected to have
 	depthParams.bIsShaderResource = true;
-	m_depthTarget = Rendering::Renderer::CreateTextureBuffer2D(nullptr, depthParams);
+	m_depthTarget = Rendering::Renderer::CreateTextureBuffer2D(depthParams);
 
 	m_cameraBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(RenderCamera), 128, 1);
 	m_pickBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(PickBufferLayout), 16, 1);

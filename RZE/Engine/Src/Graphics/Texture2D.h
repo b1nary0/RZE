@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Rendering/BufferHandle.h>
+#include <Rendering/TexelBuffer.h>
 
 #include <Utils/PrimitiveDefs.h>
 
@@ -33,7 +34,6 @@ private:
 	void CreateGPUResource();
 
 public:
-	const U8* GetRawData() const { return m_data; }
 	Vector2D GetDimensions() const;
 
 	const Filepath& GetFilepath() const { return m_filepath; }
@@ -43,7 +43,8 @@ public:
 	bool IsOnGPU() const;
 
 private:
-	const U8* m_data;
+	// From loading until they're uploaded, when the upload takes them
+	Rendering::TexelBuffer m_texels;
 
 	Int32 m_width;
 	Int32 m_height;

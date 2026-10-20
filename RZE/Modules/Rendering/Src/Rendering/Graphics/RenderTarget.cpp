@@ -28,7 +28,7 @@ namespace Rendering
 		depthTextureParams.SampleCount = 1;
 		depthTextureParams.SampleQuality = 0;
 
-		m_depthTexture = Rendering::Renderer::CreateTextureBuffer2D(nullptr, depthTextureParams);
+		m_depthTexture = Rendering::Renderer::CreateTextureBuffer2D(depthTextureParams);
 
 		GFXTextureBufferParams targetParams = { 0 };
 		targetParams.bIsRenderTarget = true;
@@ -40,13 +40,13 @@ namespace Rendering
 		targetParams.SampleCount = 1;
 		targetParams.SampleQuality = 0;
 		
-		m_target = Rendering::Renderer::CreateTextureBuffer2D(nullptr, targetParams);
+		m_target = Rendering::Renderer::CreateTextureBuffer2D(targetParams);
 
 		GFXTextureBufferParams sceneTargetParams = targetParams;
 		sceneTargetParams.Format = ETextureFormat::RGBA16_FLOAT;
 		sceneTargetParams.MipLevels = 1;
 
-		m_sceneTarget = Rendering::Renderer::CreateTextureBuffer2D(nullptr, sceneTargetParams);
+		m_sceneTarget = Rendering::Renderer::CreateTextureBuffer2D(sceneTargetParams);
 	}
 
 	RenderTargetHandle RenderTargetTexture::GetTargetPlatformObject() const

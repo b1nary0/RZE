@@ -93,7 +93,7 @@ ShadowRenderStage::ShadowMapState ShadowRenderStage::CreateShadowMapState()
 	shadowMapParams.SampleCount = 1;
 
 	ShadowMapState state;
-	state.ShadowMap = Rendering::Renderer::CreateTextureBuffer2D(nullptr, shadowMapParams);
+	state.ShadowMap = Rendering::Renderer::CreateTextureBuffer2D(shadowMapParams);
 	state.ShadowBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(ShadowBufferLayout), 16, 1);
 	return state;
 }

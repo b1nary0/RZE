@@ -50,7 +50,7 @@ namespace
 		params.MipLevels = 1;
 		params.SampleCount = 1;
 		params.Format = Rendering::ETextureFormat::RG16_FLOAT;
-		return Rendering::Renderer::CreateTextureBuffer2D(nullptr, params);
+		return Rendering::Renderer::CreateTextureBuffer2D(params);
 	}
 }
 
@@ -82,7 +82,7 @@ void PostProcessRenderStage::Initialize()
 	luminanceParams.MipLevels = k_luminanceMipCount;
 	luminanceParams.SampleCount = 1;
 	luminanceParams.Format = Rendering::ETextureFormat::RG16_FLOAT;
-	m_luminance = Rendering::Renderer::CreateTextureBuffer2D(nullptr, luminanceParams);
+	m_luminance = Rendering::Renderer::CreateTextureBuffer2D(luminanceParams);
 
 	m_paramsBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(ParamsLayout), 16, 1);
 }

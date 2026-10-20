@@ -81,7 +81,10 @@ namespace Rendering
 		static VertexBufferHandle CreateDynamicVertexBuffer(size_t capacityBytes, U32 stride);
 		static IndexBufferHandle CreateIndexBuffer(const void* data, size_t dataTypeSize, size_t count);
 		static ConstantBufferHandle CreateConstantBuffer(void* data, size_t dataTypeSize, U32 alignment, size_t count);
-		static TextureBuffer2DHandle CreateTextureBuffer2D(const void* data, const GFXTextureBufferParams& params);
+		// Without contents, e.g. a render target
+		static TextureBuffer2DHandle CreateTextureBuffer2D(const GFXTextureBufferParams& params);
+		// Uploads texels, which are freed once the render thread has made the texture
+		static TextureBuffer2DHandle CreateTextureBuffer2D(TexelBuffer&& texels, const GFXTextureBufferParams& params);
 		
 		static VertexShaderHandle CreateVertexShader(const Filepath& filepath, const ShaderInputLayout& inputLayout);
 		static PixelShaderHandle CreatePixelShader(const Filepath& filepath);

@@ -290,11 +290,16 @@ namespace Rendering
 		return ConstantBufferHandle(command->bufferPtr);
 	}
 
-	TextureBuffer2DHandle Renderer::CreateTextureBuffer2D(const void* data, const GFXTextureBufferParams& params)
+	TextureBuffer2DHandle Renderer::CreateTextureBuffer2D(const GFXTextureBufferParams& params)
+	{
+		return CreateTextureBuffer2D(TexelBuffer(), params);
+	}
+
+	TextureBuffer2DHandle Renderer::CreateTextureBuffer2D(TexelBuffer&& texels, const GFXTextureBufferParams& params)
 	{
 		RenderCommand_CreateTextureBuffer2D* command = MemArena::AllocType<RenderCommand_CreateTextureBuffer2D>();
 		command->bufferPtr = std::make_shared<DX11TextureBuffer2D>();
-		command->data = data;
+		command->texels = std::move(texels);
 		command->params = params;
 
 		m_renderThread.PushCommand(command);
