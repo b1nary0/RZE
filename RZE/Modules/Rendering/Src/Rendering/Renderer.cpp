@@ -16,8 +16,6 @@
 #include <Rendering/Driver/DX11/DX11TextureBuffer2D.h>
 #include <Rendering/Driver/DX11/DX11ShaderTypes.h>
 
-#include <Rendering/Graphics/RenderTarget.h>
-
 #include <imGUI/imgui.h>
 #include <imGUI/imgui_impl_dx11.h>
 
@@ -367,22 +365,11 @@ namespace Rendering
 		m_renderThread.PushCommand(command);
 	}
 
-	// @todo why are we using const RenderTargetTexture* here instead of RenderTargetHandle?
-	void Renderer::SetRenderTarget(const RenderTargetTexture* renderTarget)
+	void Renderer::ClearRenderTargets()
 	{
-		if (renderTarget != nullptr)
-		{
-			RenderCommand_SetRenderTarget* command = MemArena::AllocType<RenderCommand_SetRenderTarget>();
-			command->renderTarget = renderTarget;
+		RenderCommand_ClearRenderTargets* command = MemArena::AllocType<RenderCommand_ClearRenderTargets>();
 
-			m_renderThread.PushCommand(command);
-		}
-		else
-		{
-			RenderCommand_ClearRenderTargets* command = MemArena::AllocType<RenderCommand_ClearRenderTargets>();
-
-			m_renderThread.PushCommand(command);
-		}
+		m_renderThread.PushCommand(command);
 	}
 
 	void Renderer::SetRenderTargetBackBuffer()

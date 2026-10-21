@@ -146,7 +146,7 @@ void PostProcessRenderStage::Render(RenderContext& context)
 
 		Rendering::Renderer::UnsetTextureResource(k_sourceSlot);
 		// Unbind so the texture can be read while its mips are generated
-		Rendering::Renderer::SetRenderTarget(nullptr);
+		Rendering::Renderer::ClearRenderTargets();
 		Rendering::Renderer::GenerateMips(m_luminance);
 	}
 

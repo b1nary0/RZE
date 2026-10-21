@@ -20,7 +20,6 @@ namespace Rendering
 {
 	class DX11Device;
 	class IVertexBuffer;
-	class RenderTargetTexture;
 
 	struct GFXTextureBufferParams;
 	struct TexelReadback;
@@ -100,7 +99,8 @@ namespace Rendering
 		static void ClearDepthStencilBuffer(const TextureBuffer2DHandle& buffer);
 
 	public:
-		static void SetRenderTarget(const RenderTargetTexture* renderTarget);
+		// Unbinds every colour and depth target, e.g. so a target can be read from next
+		static void ClearRenderTargets();
 		static void SetRenderTargetBackBuffer();
 		// Binds only a depth buffer (no colour target), e.g. for shadow map rendering
 		static void SetDepthTarget(const TextureBuffer2DHandle& depthTexture);

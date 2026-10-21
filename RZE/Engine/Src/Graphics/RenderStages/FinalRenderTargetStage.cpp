@@ -35,7 +35,7 @@ void FinalRenderTargetStage::Render(RenderContext& context)
 
 	const DisplayColourData& displayColour = m_displayColourInput.Get(context);
 
-	Rendering::Renderer::SetRenderTarget(nullptr);
+	Rendering::Renderer::ClearRenderTargets();
 	Rendering::Renderer::SetRenderTargetBackBuffer();
 
 	Rendering::Renderer::SetPrimitiveTopology(Rendering::EPrimitiveTopology::TriangleStrip);

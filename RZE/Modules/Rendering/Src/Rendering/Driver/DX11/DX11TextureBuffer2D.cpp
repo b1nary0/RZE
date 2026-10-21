@@ -23,6 +23,17 @@ namespace Rendering
 			AssertFalse();
 			return DXGI_FORMAT_UNKNOWN;
 		}
+
+		// Releases a D3D object, if there is one, and forgets it
+		template <typename TObject>
+		void ReleaseCOM(TObject*& object)
+		{
+			if (object != nullptr)
+			{
+				object->Release();
+				object = nullptr;
+			}
+		}
 	}
 
 	DX11TextureBuffer2D::~DX11TextureBuffer2D()
@@ -150,28 +161,14 @@ namespace Rendering
 
 	void DX11TextureBuffer2D::Release()
 	{
-		AssertNotNull(m_resource);
-		AssertNotNull(m_SRV);
-		AssertNotNull(m_samplerState);
-		
-		// #TODO
-		// The if (!bIsDepthTexture)'s in this function are a result of an infrastructure
-		// that is essentially DX11TextureBuffer2D. Because we don't need a RTV
-		// for a depth texture, we won't have anything allocated here. This should be 
-		// handled by subclassing different types of texture buffer uses (or something)
-		if (!bIsDepthTexture)
-		{
-			AssertNotNull(m_RTV);
-		}
-
-		m_resource->Release();
-		m_SRV->Release();
-		m_samplerState->Release();
-
-		if (!bIsDepthTexture)
-		{
-			m_RTV->Release();
-		}
+		// Only what Allocate made: a depth texture has a depth view and no render target view, and a texture dropped
+		// before the render thread made it has nothing. Each view holds a reference to the texture, so all of them have
+		// to go for it to be freed.
+		ReleaseCOM(m_DSV);
+		ReleaseCOM(m_RTV);
+		ReleaseCOM(m_SRV);
+		ReleaseCOM(m_samplerState);
+		ReleaseCOM(m_resource);
 	}
 
 	void DX11TextureBuffer2D::SetActive(U32 textureSlot)

@@ -4,8 +4,6 @@
 #include <Rendering/MemArena.h>
 #include <Rendering/RenderCommand.h>
 
-#include <Rendering/Graphics/RenderTarget.h>
-
 #include <Rendering/Driver/DX11/DX11.h>
 #include <Rendering/Driver/DX11/DX11Device.h>
 #include <Rendering/Driver/DX11/DX11VertexBuffer.h>
@@ -368,24 +366,6 @@ namespace Rendering
 
 				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 				deviceContext.ClearDepthStencilView(&texturePtr->GetDepthView(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
-				break;
-			}
-
-			case RenderCommandType::SetRenderTarget:
-			{
-				RenderCommand_SetRenderTarget* cmd = static_cast<RenderCommand_SetRenderTarget*>(command);
-				const RenderTargetTexture* renderTarget = cmd->renderTarget;
-
-				RenderTargetHandle target = renderTarget->GetTargetPlatformObject();
-				TextureBuffer2DHandle depthTexture = renderTarget->GetDepthTexturePlatformObject();
-
-				DX11TextureBuffer2D* targetPtr = static_cast<DX11TextureBuffer2D*>(target.m_buffer.get());
-				DX11TextureBuffer2D* depthTexturePtr = static_cast<DX11TextureBuffer2D*>(depthTexture.m_buffer.get());
-
-				ID3D11RenderTargetView* rtv = &targetPtr->GetTargetView();
-				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
-				deviceContext.OMSetRenderTargets(1, &rtv, &depthTexturePtr->GetDepthView());
 
 				break;
 			}

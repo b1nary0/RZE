@@ -29,8 +29,6 @@ namespace Rendering
 	class DX11PixelShader;
 	class DX11Device;
 
-	class RenderTargetTexture;
-
 	enum RenderCommandType
 	{
 		Unset = 0,
@@ -53,7 +51,6 @@ namespace Rendering
 		ReleaseVertexShader,
 		ReleasePixelShader,
 		ClearDepthStencilBuffer,
-		SetRenderTarget,
 		ClearRenderTargets,
 		SetRenderTargetBackBuffer,
 		SetDepthTarget,
@@ -238,13 +235,6 @@ namespace Rendering
 		RenderCommand_ClearDepthStencilBuffer() { type = RenderCommandType::ClearDepthStencilBuffer; }
 
 		TextureBuffer2DHandle bufferHandle;
-	};
-
-	struct RenderCommand_SetRenderTarget : RenderCommand
-	{
-		RenderCommand_SetRenderTarget() { type = RenderCommandType::SetRenderTarget; }
-
-		const RenderTargetTexture* renderTarget;
 	};
 
 	struct RenderCommand_ClearRenderTargets : RenderCommand
