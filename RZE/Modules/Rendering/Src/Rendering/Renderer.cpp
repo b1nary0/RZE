@@ -8,6 +8,7 @@
 // DX11
 #include <Rendering/RenderCommand.h>
 #include <Rendering/MemArena.h>
+#include <Rendering/UIFrameData.h>
 
 #include <Rendering/Driver/DX11/DX11Device.h>
 #include <Rendering/Driver/DX11/DX11ConstantBuffer.h>
@@ -25,8 +26,9 @@ namespace Rendering
 {
 	RenderThread Renderer::m_renderThread;
 	U64 Renderer::m_recordingFrame = 0;
-	std::shared_ptr<ImDrawData> Renderer::m_uiDrawData;
-	int Renderer::m_uiDrawDataFrame = -1;
+	std::shared_ptr<UIFrameData> Renderer::m_uiFrameData;
+	int Renderer::m_uiFrameNumber = -1;
+	std::vector<TextureBuffer2DHandle> Renderer::m_uiTextures;
 
 	inline void* AllocateCommandData(void* src, size_t dataTypeSize, size_t count)
 	{
@@ -59,7 +61,8 @@ namespace Rendering
 	void Renderer::Shutdown()
 	{
 		m_renderThread.Shutdown();
-		m_uiDrawData.reset();
+		m_uiFrameData.reset();
+		m_uiTextures.clear();
 
 		MemArena::Shutdown();
 	}
@@ -129,45 +132,6 @@ namespace Rendering
 		m_renderThread.PushCommand(command);
 	}
 
-	ImDrawData* CloneDrawData(ImDrawData* toClone)
-	{
-		ImDrawData* clone = new ImDrawData();
-		clone->Valid = toClone->Valid;
-		clone->CmdListsCount = toClone->CmdListsCount;
-		clone->TotalIdxCount = toClone->TotalIdxCount;
-		clone->TotalVtxCount = toClone->TotalVtxCount;
-		clone->DisplayPos = toClone->DisplayPos;
-		clone->DisplaySize = toClone->DisplaySize;
-		clone->FramebufferScale = toClone->FramebufferScale;
-
-		clone->CmdLists = toClone->CmdLists;
-		for (int i = 0; i < toClone->CmdListsCount; ++i)
-		{
-			ImDrawList* cmdList = toClone->CmdLists[i]->CloneOutput();
-			// Resolve texture refs to plain IDs so the render thread never reads the main thread's ImTextureData
-			for (ImDrawCmd& drawCmd : cmdList->CmdBuffer)
-			{
-				drawCmd.TexRef = ImTextureRef(drawCmd.GetTexID());
-			}
-			clone->CmdLists[i] = cmdList;
-		}
-
-		clone->OwnerViewport = toClone->OwnerViewport;
-		// Texture requests are handled on the main thread in ImGuiRender(), so the backend must skip them
-		clone->Textures = nullptr;
-
-		return clone;
-	}
-
-	void DeleteDrawData(ImDrawData* drawData)
-	{
-		for (int i = 0; i < drawData->CmdListsCount; ++i)
-		{
-			IM_DELETE<ImDrawList>(drawData->CmdLists[i]);
-		}
-		delete drawData;
-	}
-
 	void Renderer::ImGuiRender()
 	{
 		ImDrawData* drawData = ImGui::GetDrawData();
@@ -179,8 +143,8 @@ namespace Rendering
 
 		// A frame without a UI update has the same draw data as the last UI frame, so it draws that frame's copy again.
 		// The render thread may still be drawing the old copy when a new one replaces it, so whichever side lets go of a
-		// copy last deletes it.
-		if (ImGui::GetFrameCount() != m_uiDrawDataFrame)
+		// copy last deletes it, and lets go of the textures it draws.
+		if (ImGui::GetFrameCount() != m_uiFrameNumber)
 		{
 			// ImGui (1.92+) asks the backend to create/update/destroy textures (e.g. the font atlas when new glyphs
 			// are rasterized). The render thread runs a frame behind on a cloned ImDrawData, so service those
@@ -208,14 +172,20 @@ namespace Rendering
 				}
 			}
 
-			m_uiDrawData = std::shared_ptr<ImDrawData>(CloneDrawData(drawData), &DeleteDrawData);
-			m_uiDrawDataFrame = ImGui::GetFrameCount();
+			m_uiFrameData = std::make_shared<UIFrameData>(*drawData, std::move(m_uiTextures));
+			m_uiTextures.clear();
+			m_uiFrameNumber = ImGui::GetFrameCount();
 		}
 
 		RenderCommand_ImGuiRender* command = MemArena::AllocType<RenderCommand_ImGuiRender>();
-		command->drawData = m_uiDrawData;
+		command->uiFrameData = m_uiFrameData;
 
 		m_renderThread.PushCommand(command);
+	}
+
+	void Renderer::KeepTextureForUI(const TextureBuffer2DHandle& texture)
+	{
+		m_uiTextures.push_back(texture);
 	}
 
 	VertexBufferHandle Renderer::CreateVertexBuffer(const void* data, size_t dataTypeSize, size_t count, U32 stride)

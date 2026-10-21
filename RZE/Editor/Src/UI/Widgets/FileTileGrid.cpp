@@ -417,7 +417,7 @@ namespace Editor
 			const ImVec2 halfSize(dimensions.X() * scale * 0.5f, dimensions.Y() * scale * 0.5f);
 
 			drawList->AddRectFilled(min, max, IM_COL32(20, 20, 22, 255), k_imageRounding);
-			drawList->AddImageRounded((ImTextureID)(intptr_t)texture->GetPlatformObject().GetTextureData(),
+			drawList->AddImageRounded(EditorUI::TextureID(texture->GetPlatformObject()),
 				ImVec2(centre.x - halfSize.x, centre.y - halfSize.y), ImVec2(centre.x + halfSize.x, centre.y + halfSize.y),
 				ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), IM_COL32_WHITE, k_imageRounding);
 			return;

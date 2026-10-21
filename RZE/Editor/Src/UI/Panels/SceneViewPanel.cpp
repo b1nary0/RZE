@@ -195,7 +195,7 @@ namespace Editor
 
 			ImVec2 cursorPos = ImGui::GetCursorPos();
 
-			ImGui::Image((ImTextureID)(intptr_t)texture.GetTextureData(), ImVec2(GetDimensions().X(), GetDimensions().Y()), ImVec2(0.0f, 0.0f), ImVec2(uvbx, uvby));
+			ImGui::Image(EditorUI::TextureID(texture), ImVec2(GetDimensions().X(), GetDimensions().Y()), ImVec2(0.0f, 0.0f), ImVec2(uvbx, uvby));
 			const bool isImageHovered = ImGui::IsItemHovered();
 			HandleAssetDrop(context, ImVec2(GetPosition().X(), GetPosition().Y() + cursorPos.y));
 

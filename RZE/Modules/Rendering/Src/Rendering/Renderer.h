@@ -12,6 +12,7 @@
 
 #include <memory>
 #include <queue>
+#include <vector>
 
 class Vector2D;
 class Vector4D;
@@ -20,6 +21,8 @@ namespace Rendering
 {
 	class DX11Device;
 	class IVertexBuffer;
+
+	class UIFrameData;
 
 	struct GFXTextureBufferParams;
 	struct TexelReadback;
@@ -73,6 +76,9 @@ namespace Rendering
 		static bool WaitForPresentSlot(U32 timeoutMS);
 
 		static void ImGuiRender();
+		// Keeps texture alive while the UI being drawn now is rendered, which goes on until a newer UI replaces it. ImGui
+		// only holds a texture's view as a raw pointer, so call it for each texture the UI draws. Main thread only.
+		static void KeepTextureForUI(const TextureBuffer2DHandle& texture);
 
 	public:
 		static VertexBufferHandle CreateVertexBuffer(const void* data, size_t dataTypeSize, size_t count, U32 stride);
@@ -154,9 +160,11 @@ namespace Rendering
 		// DevicePresent hands a frame to the render thread once it's finished the one before
 		static U64 m_recordingFrame;
 		// The last UI frame's copy of ImGui's draw data, drawn again until ImGui begins a new frame
-		static std::shared_ptr<ImDrawData> m_uiDrawData;
-		// ImGui's frame count when m_uiDrawData was copied
-		static int m_uiDrawDataFrame;
+		static std::shared_ptr<UIFrameData> m_uiFrameData;
+		// ImGui's frame count when m_uiFrameData was copied
+		static int m_uiFrameNumber;
+		// The textures the UI frame being drawn draws, which m_uiFrameData takes when it's copied
+		static std::vector<TextureBuffer2DHandle> m_uiTextures;
 	};
 
 	template<typename TType>

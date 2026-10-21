@@ -3,6 +3,7 @@
 
 #include <Rendering/MemArena.h>
 #include <Rendering/RenderCommand.h>
+#include <Rendering/UIFrameData.h>
 
 #include <Rendering/Driver/DX11/DX11.h>
 #include <Rendering/Driver/DX11/DX11Device.h>
@@ -199,7 +200,7 @@ namespace Rendering
 				RenderCommand_ImGuiRender* cmd = static_cast<RenderCommand_ImGuiRender*>(command);
 
 				// The copy is deleted when the command lets go of it, unless Renderer still holds it for the next frame
-				ImGui_ImplDX11_RenderDrawData(cmd->drawData.get());
+				ImGui_ImplDX11_RenderDrawData(cmd->uiFrameData->GetDrawData());
 
 				break;
 			}

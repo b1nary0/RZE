@@ -1,5 +1,7 @@
 #include <UI/Framework/EditorUI.h>
 
+#include <Rendering/Renderer.h>
+
 #include <Utils/Math/Math.h>
 
 #include <ImGui/imgui_internal.h> // ImGui::GetCurrentTable
@@ -53,6 +55,12 @@ namespace Editor
 {
 	namespace EditorUI
 	{
+		ImTextureID TextureID(const Rendering::TextureBuffer2DHandle& texture)
+		{
+			Rendering::Renderer::KeepTextureForUI(texture);
+			return (ImTextureID)(intptr_t)texture.GetTextureData();
+		}
+
 		void SectionHeading(const char* text)
 		{
 			ImGui::TextColored(k_headingColour, "%s", text);

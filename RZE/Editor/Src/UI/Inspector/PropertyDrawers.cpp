@@ -393,7 +393,7 @@ namespace Editor
 			const float scale = size / std::max(texture.Size.X(), texture.Size.Y());
 			const ImVec2 imageSize(texture.Size.X() * scale, texture.Size.Y() * scale);
 			const ImVec2 imageStart(start.x + (size - imageSize.x) * 0.5f, start.y + (size - imageSize.y) * 0.5f);
-			ImGui::GetWindowDrawList()->AddImage((ImTextureID)(intptr_t)texture.Handle.GetTextureData(), imageStart,
+			ImGui::GetWindowDrawList()->AddImage(EditorUI::TextureID(texture.Handle), imageStart,
 				ImVec2(imageStart.x + imageSize.x, imageStart.y + imageSize.y), ImVec2(0.0f, 0.0f), ImVec2(texture.UVMax.X(), texture.UVMax.Y()));
 
 			if (isHovered)
@@ -428,7 +428,7 @@ namespace Editor
 			}
 
 			const float scale = maxSize > 0.0f ? std::min(1.0f, maxSize / std::max(texture.Size.X(), texture.Size.Y())) : 1.0f;
-			ImGui::Image((ImTextureID)(intptr_t)handle.GetTextureData(), ImVec2(texture.Size.X() * scale, texture.Size.Y() * scale),
+			ImGui::Image(EditorUI::TextureID(handle), ImVec2(texture.Size.X() * scale, texture.Size.Y() * scale),
 				ImVec2(0.0f, 0.0f), ImVec2(texture.UVMax.X(), texture.UVMax.Y()));
 		}
 	}

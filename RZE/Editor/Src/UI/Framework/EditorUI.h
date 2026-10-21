@@ -2,6 +2,11 @@
 
 #include <ImGui/imgui.h>
 
+namespace Rendering
+{
+	class TextureBuffer2DHandle;
+}
+
 // Small ImGui helpers shared by the editor's panels, so the same kinds of controls look and behave the same way
 // everywhere
 namespace Editor
@@ -39,6 +44,10 @@ namespace Editor
 
 		// Text centred on centre, in the current font at fontSize
 		void AddCentredText(ImDrawList* drawList, const ImVec2& centre, float fontSize, ImU32 colour, const char* text);
+
+		// The ID ImGui draws texture by, for ImGui::Image, ImDrawList::AddImage and so on. The UI drawn this frame keeps
+		// texture alive for as long as it's rendered, so draw textures only through this.
+		ImTextureID TextureID(const Rendering::TextureBuffer2DHandle& texture);
 
 		// A heading in k_headingColour with a separator under it
 		void SectionHeading(const char* text);

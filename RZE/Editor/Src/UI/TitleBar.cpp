@@ -1,5 +1,7 @@
 #include <UI/TitleBar.h>
 
+#include <UI/Framework/EditorUI.h>
+
 #include <RZE.h>
 
 #include <Graphics/Texture2D.h>
@@ -177,7 +179,7 @@ namespace Editor
 		// As far from the bar's left edge as from its top
 		const float margin = std::round((barHeight - height) * 0.5f);
 		const ImVec2 min(barMin.x + margin, barMin.y + margin);
-		ImGui::GetWindowDrawList()->AddImage((ImTextureID)(intptr_t)logo->GetPlatformObject().GetTextureData(), min, ImVec2(min.x + width, min.y + height));
+		ImGui::GetWindowDrawList()->AddImage(EditorUI::TextureID(logo->GetPlatformObject()), min, ImVec2(min.x + width, min.y + height));
 
 		// Moves the menus along past it. A menu in the bar puts its label half the item spacing past the cursor.
 		const float menusLeft = min.x + width + std::round(height * k_logoDividerGap) - std::floor(ImGui::GetStyle().ItemSpacing.x * 0.5f);

@@ -17,8 +17,6 @@
 #include <memory>
 
 
-struct ImDrawData;
-
 namespace Rendering
 {
 	class DX11VertexBuffer;
@@ -28,6 +26,7 @@ namespace Rendering
 	class DX11VertexShader;
 	class DX11PixelShader;
 	class DX11Device;
+	class UIFrameData;
 
 	enum RenderCommandType
 	{
@@ -92,7 +91,7 @@ namespace Rendering
 		RenderCommand_ImGuiRender() { type = RenderCommandType::ImGuiRender; }
 
 		// Shared with Renderer, which reuses it on frames without a UI update
-		std::shared_ptr<ImDrawData> drawData;
+		std::shared_ptr<UIFrameData> uiFrameData;
 	};
 
 	struct RenderCommand_BeginFrame : RenderCommand
