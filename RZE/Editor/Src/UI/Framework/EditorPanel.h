@@ -38,6 +38,8 @@ namespace Editor
 		bool DefaultOpen = true;
 		// Shows the window's close button; panels that can't close are always open
 		bool Closable = true;
+		// Other panels can be docked into its node, as a tab or split off to one side. Off for the scene view.
+		bool AcceptsDocking = true;
 		ImGuiWindowFlags WindowFlags = ImGuiWindowFlags_None;
 		// Draw() does its own Begin/End (e.g. ImGui's demo window), so PanelManager doesn't wrap it in a window.
 		// WindowFlags, PushWindowStyle and DrawMenuBar don't apply, and the panel isn't tracked as hovered or focused.

@@ -102,6 +102,8 @@ private:
 	void InitializeApplication(Functor<RZE_Application* const> createGameCallback);
 
 private:
+	// Never deleted. ImGui's context is destroyed after the application's ShutDown, and saves imgui.ini through what the
+	// application gave it (the editor's ini path and settings handlers), so deleting it would have to come after that.
 	RZE_Application* m_application;
 	GameScene* m_activeScene;
 

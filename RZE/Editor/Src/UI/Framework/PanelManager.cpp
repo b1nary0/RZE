@@ -61,34 +61,15 @@ namespace
 		return false;
 	}
 
-	// Removes the node if nothing's docked in it, and then each parent left empty. Its sibling takes the parent's place.
-	// ImGui only moves the windows it has created into the parent, so the ones imgui.ini docks in a sibling that's merged
-	// away are pointed at the parent here.
+	// Removes the node if nothing's docked in it, and then each parent left empty. Its sibling is merged into the parent,
+	// which ImGui points imgui.ini's windows at too.
 	void RemoveEmptyDockNode(ImGuiID nodeId)
 	{
 		ImGuiDockNode* node = ImGui::DockBuilderGetNode(nodeId);
 		while (node != nullptr && node->ParentNode != nullptr && !node->IsCentralNode() && !HasDockedWindows(*node))
 		{
-			const ImGuiDockNode* const parent = node->ParentNode;
-			const ImGuiDockNode* const sibling = parent->ChildNodes[0] == node ? parent->ChildNodes[1] : parent->ChildNodes[0];
-			const ImGuiID parentId = parent->ID;
-			const ImGuiID siblingId = sibling->ID;
-			const bool isSiblingLeaf = sibling->IsLeafNode();
-
+			const ImGuiID parentId = node->ParentNode->ID;
 			ImGui::DockBuilderRemoveNode(node->ID);
-
-			if (isSiblingLeaf)
-			{
-				ImGuiContext& imgui = *ImGui::GetCurrentContext();
-				for (ImGuiWindowSettings* settings = imgui.SettingsWindows.begin(); settings != nullptr; settings = imgui.SettingsWindows.next_chunk(settings))
-				{
-					if (settings->DockId == siblingId)
-					{
-						settings->DockId = parentId;
-					}
-				}
-			}
-
 			node = ImGui::DockBuilderGetNode(parentId);
 		}
 	}
@@ -197,6 +178,14 @@ namespace Editor
 			else
 			{
 				PlaceUnsavedPanel(*panel);
+			}
+
+			if (!desc.AcceptsDocking)
+			{
+				// Applies to whichever node it's docked in, which then shows no drop targets of its own
+				ImGuiWindowClass windowClass;
+				windowClass.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_NoDockingOverMe | ImGuiDockNodeFlags_NoDockingSplit;
+				ImGui::SetNextWindowClass(&windowClass);
 			}
 
 			bool* const isOpen = desc.Closable ? &panel->m_isOpen : nullptr;

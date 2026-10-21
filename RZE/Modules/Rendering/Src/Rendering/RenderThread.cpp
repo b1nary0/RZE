@@ -137,6 +137,10 @@ namespace Rendering
 		m_thread.join();
 
 		ImGui_ImplDX11_Shutdown();
+		ImGui_ImplWin32_Shutdown();
+		// Saves imgui.ini, through io.IniFilename and any settings handlers the application added, which point into the
+		// application. It's never deleted (RZE_Engine::m_application), so they're still there after its ShutDown.
+		ImGui::DestroyContext();
 		m_frameLatencyWaitableObject = nullptr;
 		m_device->Shutdown();
 	}
