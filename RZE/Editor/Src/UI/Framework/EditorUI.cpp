@@ -140,6 +140,26 @@ namespace Editor
 				drawList->AddPolyline(points, 3, colour, ImDrawFlags_None, thickness);
 				break;
 			}
+			case EIcon::Pin:
+			case EIcon::Unpin:
+			{
+				// A pin standing up with its point down, or for Unpin lying on its side with its point to the left: the
+				// head above a crossbar, and the needle below it. Laid out standing, then turned.
+				const bool isLying = icon == EIcon::Unpin;
+				auto place = [&](float x, float y)
+					{
+						return isLying ? ImVec2(centre.x - y * radius, centre.y + x * radius) : ImVec2(centre.x + x * radius, centre.y + y * radius);
+					};
+
+				const float headHalfWidth = 0.4f;
+				const float crossbarHalfWidth = 0.85f;
+				const float crossbarY = 0.15f;
+				drawList->AddQuad(place(-headHalfWidth, -1.0f), place(headHalfWidth, -1.0f), place(headHalfWidth, crossbarY),
+					place(-headHalfWidth, crossbarY), colour, thickness);
+				drawList->AddLine(place(-crossbarHalfWidth, crossbarY), place(crossbarHalfWidth, crossbarY), colour, thickness);
+				drawList->AddLine(place(0.0f, crossbarY), place(0.0f, 1.0f), colour, thickness);
+				break;
+			}
 			}
 
 			return isClicked;

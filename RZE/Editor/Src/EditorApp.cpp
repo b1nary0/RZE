@@ -86,6 +86,7 @@ namespace Editor
 		StyleSetup();
 
 		m_mainMenuBar.Initialize();
+		m_bottomDockArea.Initialize();
 
 		m_context.GetPanels().CreatePanels(m_context);
 

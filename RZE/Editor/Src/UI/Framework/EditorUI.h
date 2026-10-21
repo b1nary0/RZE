@@ -65,7 +65,10 @@ namespace Editor
 			// Chevrons pointing left, right and up: back, forward and up a level
 			Back,
 			Forward,
-			Up
+			Up,
+			// A pin standing up: stays open. Lying on its side: hides itself when not in use.
+			Pin,
+			Unpin
 		};
 
 		// A square, frame-height button showing icon, with tooltip on hover; true on the frame it's clicked
