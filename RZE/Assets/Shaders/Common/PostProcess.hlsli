@@ -22,7 +22,8 @@ cbuffer PostProcessParams : register(b0)
 	float  KeyValue;             // Linear value the scene's log-average luminance is exposed to
 	float  LuminanceMip;         // The luminance texture's 1x1 mip
 	float  Reset;                // > 0.5: jump straight to the measured luminance instead of adapting
-	float2 _pad0;
+	float  AutoExposure;         // > 0.5: expose to the adapted luminance; otherwise the exposure is 1
+	float  _pad0;
 };
 
 #endif // POSTPROCESS_HLSLI

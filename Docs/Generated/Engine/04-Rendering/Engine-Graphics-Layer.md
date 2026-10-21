@@ -71,7 +71,9 @@ public:
     RenderCamera Camera;                     // ClipSpace (projection * view), Position, Viewport
     Vector2D ViewportSize;
     Rendering::RenderTargetTexture* Target;  // owned by whoever owns the view
-    float ExposureCompensation;              // EV on top of auto-exposure
+    bool AutoExposure = true;                // off for a fixed exposure of 1, for lighting whose brightness is known
+    float ExposureCompensation;              // EV on top of the exposure
+    ERenderViewLighting Lighting = Scene;    // Scene: the scene's light and sky. Uniform: even, ignoring the light
     bool DrawsDebug = true;                  // debug lines; off for clean captures such as thumbnails
     std::optional<RenderPickRequest> Pick;   // Editor picking (clicks, drops); cleared after each render
     // + a frame blackboard and a persistent blackboard (see Render-Stages.md)
@@ -105,7 +107,7 @@ flowchart LR
 ```mermaid
 %%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 flowchart TD
-    Cap["ViewCapture::Capture(scene, camera, exposure, file)"] --> Sec["RenderSecondaryView<br/>its own view, DrawsDebug off"]
+    Cap["ViewCapture::Capture(scene, camera, settings, file)"] --> Sec["RenderSecondaryView<br/>its own view, DrawsDebug off"]
     Sec --> Save["TextureFile::SaveToPNG(target, file)"]
     Save --> Read["Renderer::ReadTexture<br/>queued straight after the draw"]
     Read --> Poll["background operation polls<br/>TextureReadback::IsReady"]
@@ -114,6 +116,7 @@ flowchart TD
 
 - `Capture` returns the `AsyncOperation` that writes the file. The image is read back from the commands queued so far, so another capture can follow in the same frame.
 - **No debug lines** (grid, frustums, bounds boxes): its view has `DrawsDebug` off.
+- `ViewCaptureSettings` sets the view's `Lighting`, `AutoExposure` and `ExposureCompensation` for each capture. The defaults light and expose like any other view. Mesh thumbnails use `Uniform` lighting with auto-exposure off ([Thumbnails-And-File-Browser.md](../07-Editor/Thumbnails-And-File-Browser.md#a-run)).
 - `TextureFile` (`Engine\Src\Graphics\TextureFile.h/.cpp`) wraps `stb_image_write`. `WritePNG(file, width, height, rgba)` is safe from any thread. It creates the folder, writes the PNG beside the file and moves it over the file (`File::MoveReplacing`), so readers only ever see a whole image. `SaveToPNG(texture, file)` is the GPU-to-file path above. Its operation is `Background | Hidden`, since whoever asked for the capture reports on it.
 
 ## Frame lifecycle

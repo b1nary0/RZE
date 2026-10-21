@@ -67,8 +67,10 @@ void ShadowRenderStage::Render(RenderContext& context)
 	// scene's revision says one of them changed. That also skips it for every view of the scene after the first
 	// in a frame. Known gap: changing a material's opacity map at runtime doesn't change the revision, so the map
 	// picks that up at the next scene change.
+	// A view lit uniformly ignores the light, so it doesn't need the map.
 	const RenderScene& scene = context.Scene;
-	if (!state.HasRenderedMap || state.RenderedRevision != scene.GetRevision())
+	const bool needsMap = context.View.Lighting == ERenderViewLighting::Scene;
+	if (needsMap && (!state.HasRenderedMap || state.RenderedRevision != scene.GetRevision()))
 	{
 		RenderShadowMap(scene, state);
 		state.RenderedRevision = scene.GetRevision();

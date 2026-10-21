@@ -19,8 +19,9 @@
 
 namespace
 {
-	// Must match ShadowBuffer / ShadowMap registers in Common/PixelResources.hlsli
+	// Must match ShadowBuffer / ViewLightingBuffer / ShadowMap registers in Common/PixelResources.hlsli
 	constexpr U32 k_shadowBufferSlot = 3;
+	constexpr U32 k_viewLightingBufferSlot = 4;
 	constexpr U32 k_shadowMapSlot = 5;
 }
 
@@ -43,6 +44,8 @@ void ForwardRenderStage::Initialize()
 	m_fallbackLight->SetDirection(WorldAxes::Up() * -1.0f);
 	m_fallbackLight->SetColour(Vector4D(0.0f, 0.0f, 0.0f, 1.0f));
 	m_fallbackLight->SetStrength(0.0f);
+
+	m_viewLightingBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(ViewLightingLayout), 16, 1);
 }
 
 void ForwardRenderStage::Setup(RenderStageBuilder& builder)
@@ -76,6 +79,10 @@ void ForwardRenderStage::Render(RenderContext& context)
 	LightObject* const lightObject = scene.GetLightObjects().empty() ? m_fallbackLight.get() : scene.GetLightObjects()[0].get();
 	Rendering::Renderer::UploadDataToBuffer<LightObject::PropertyBufferLayout>(lightObject->GetPropertyBuffer(), &lightObject->GetData());
 
+	ViewLightingLayout viewLighting;
+	viewLighting.UniformLighting = view.Lighting == ERenderViewLighting::Uniform ? 1.0f : 0.0f;
+	Rendering::Renderer::UploadDataToBuffer<ViewLightingLayout>(m_viewLightingBuffer, &viewLighting);
+
 	Rendering::Renderer::SetVertexShader(m_vertexShader->GetPlatformObject());
 	Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetCameraDataBuffer(), 0);
 
@@ -89,6 +96,7 @@ void ForwardRenderStage::Render(RenderContext& context)
 
 	// The same for every draw: bound once, and only the world matrix buffer's contents change per object
 	Rendering::Renderer::SetConstantBufferPS(lightObject->GetPropertyBuffer(), 2);
+	Rendering::Renderer::SetConstantBufferPS(m_viewLightingBuffer, k_viewLightingBufferSlot);
 	Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetWorldMatrixBuffer(), 1);
 
 	// Consecutive draws often share a shader, so it's only set when it changes

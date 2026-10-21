@@ -29,7 +29,8 @@ public:
 		float KeyValue;
 		float LuminanceMip;
 		float Reset;
-		float _pad0[2];
+		float AutoExposure;
+		float _pad0;
 	};
 
 public:

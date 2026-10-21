@@ -226,9 +226,10 @@ For each item:
 
 | | Scene | Mesh |
 |---|---|---|
-| Set up | `HeadlessScene::Load(scene)` | `Default.scene` is loaded as a stage (its camera and light), once for each run of meshes in a row, and the job's own `PendingResource` loads the mesh on workers, as a `SubStep` of the run |
+| Set up | `HeadlessScene::Load(scene)` | `Default.scene` is loaded as a stage, once for each run of meshes in a row (its camera and light aren't used), and the job's own `PendingResource` loads the mesh on workers, as a `SubStep` of the run |
 | Ready when | The load has finished | The stage and the mesh have loaded. Then a `ThumbnailMesh` object with a `RenderComponent` is added; `LoadMesh` is a cache hit. A mesh that can't be loaded fails with "it couldn't be loaded". |
 | Camera | The scene's **main camera** (`CameraComponent::CreateRenderCamera` at 512×512, with its exposure). With no camera, framed from the scene's bounds at a 50° field of view. | `MeshFraming::FrameBounds(bounds, 40°)`: from the front right and a little above (yaw 35°, pitch 20°), as close as it can be with the bounds' sphere still in view, near and far planes just around it |
+| Lighting | The scene's own: its light and shadows, auto-exposed | `Uniform` lighting, so every side the camera sees is lit, at a fixed exposure with auto-exposure off, so a mesh's own colours set its brightness ([Render-Stages.md](../04-Rendering/Render-Stages.md#forwardrenderstage)) |
 | Afterwards | | The mesh object is removed and the job lets go of the mesh |
 
 - The 3 **settle frames** let a newly loaded item's first frames of work (uploads, the shadow map) finish before the capture.

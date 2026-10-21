@@ -75,7 +75,8 @@ namespace Editor
 					return;
 				}
 
-				// Meshes in a row share the stage: Default.scene's camera and light
+				// Meshes in a row share the stage, Default.scene. They're framed and lit by the capture, not by its camera
+				// and light.
 				if (!m_isMeshStageLoaded)
 				{
 					m_load = scene.Load(GameScene::GetDefaultScenePath());
@@ -126,7 +127,7 @@ namespace Editor
 			{
 				ViewCapture& capture = m_capture;
 				RenderCamera camera;
-				float exposureCompensation = 0.0f;
+				ViewCaptureSettings settings;
 
 				if (AssetPaths::IsMesh(item))
 				{
@@ -137,6 +138,11 @@ namespace Editor
 						return;
 					}
 					camera = MeshFraming::FrameBounds(bounds, k_meshFieldOfView, capture.GetSize());
+					// Every side the camera sees is lit, rather than the far side of the stage's light falling into shade.
+					// Its brightness is known, so it isn't exposed to what's measured: a mesh's own colours set how bright
+					// its thumbnail is.
+					settings.Lighting = ERenderViewLighting::Uniform;
+					settings.AutoExposure = false;
 				}
 				else
 				{
@@ -146,7 +152,7 @@ namespace Editor
 					{
 						GameObjectComponentPtr<CameraComponent> cameraComponent = mainCamera->GetComponent<CameraComponent>();
 						camera = cameraComponent->CreateRenderCamera(capture.GetSize());
-						exposureCompensation = cameraComponent->GetExposureCompensation();
+						settings.ExposureCompensation = cameraComponent->GetExposureCompensation();
 					}
 					else if (!scene.GetBounds().IsEmpty())
 					{
@@ -159,7 +165,7 @@ namespace Editor
 					}
 				}
 
-				std::shared_ptr<AsyncOperation> written = m_scene.Capture(capture, camera, exposureCompensation, Thumbnails::FindFor(item));
+				std::shared_ptr<AsyncOperation> written = m_scene.Capture(capture, camera, settings, Thumbnails::FindFor(item));
 				written->SetOnCompleted(AsyncOperation::CompletionCallback([onDone](const AsyncOperation& operation)
 					{
 						onDone(operation.Succeeded(), operation.GetErrorText());

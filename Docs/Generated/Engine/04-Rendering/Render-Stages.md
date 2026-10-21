@@ -55,7 +55,7 @@ flowchart TD
 | Data contract | `Graphics/RenderData/*.h` | A small struct of handles and values deriving `RenderStageData<T>`, e.g. `ShadowMapData { ShadowMap, ShadowParams }`. One header each, so readers depend on the data, not on the stage that makes it. |
 | Port | `Graphics/RenderPorts.h` | What `Setup()` hands back: `RenderInput<T>` (`Get`/`TryGet`), `RenderOutput<T>` (`Publish`), `RenderInOut<T>`. A stage can only touch data it declared. |
 | `RenderPipeline` | `Graphics/RenderPipeline.h/.cpp` | Owns the stages; compiles the declarations when stages change, then runs them in order for a view. |
-| `RenderView` | `Graphics/RenderView.h` | One point of view: camera, viewport size, target, exposure compensation, pick request, and two blackboards. See [Engine-Graphics-Layer.md](Engine-Graphics-Layer.md#views). |
+| `RenderView` | `Graphics/RenderView.h` | One point of view: camera, viewport size, target, lighting (`Scene` or `Uniform`), auto-exposure and exposure compensation, pick request, and two blackboards. See [Engine-Graphics-Layer.md](Engine-Graphics-Layer.md#views). |
 | `RenderContext` | `Graphics/RenderContext.h` | What a stage gets while rendering one view: the view's inputs (read-only), the `RenderScene` being drawn, `DeltaTime`, `Persistent()` (this view's state across frames) and `ScenePersistent()` (this scene's state across frames, shared by every view that renders it). |
 
 ## How the order is worked out
@@ -109,14 +109,16 @@ The engine adds Shadow, Forward, PostProcess, Pick and (outside Retail) DebugDra
 
 - A 4096² shadow map for the directional light **per scene**, kept in the scene's persistent state (`RenderScene`), so a thumbnail's scene and the editor's each have their own. It's **fitted around the bounds of every render object** as seen from the light. It doesn't follow the camera, so it never shimmers as the camera moves.
 - **Cached:** it only re-renders when the scene's revision (`RenderScene::GetRevision`) changes: an object added, removed, moved or re-meshed, or the light turned. On other frames it just republishes the existing map.
+- A view with `Uniform` lighting ignores the light, so it doesn't render the map for it (mesh thumbnails never render one).
 - Casters draw with `ERasterizerState::ShadowCaster` (no culling, so thin geometry still casts, plus slope-scaled depth bias). `Pixel_ShadowCaster.hlsl` clips cutout materials (leaves, chains), so they cast cut-out shadows.
 
 ### `ForwardRenderStage`
 
 - Draws into the view's HDR scene target (`RGBA16_FLOAT`, alpha 0 marks the background) with depth.
 - **Frustum culling** at two levels: whole objects first, then each submesh, using the world-space bounds every `RenderObject` keeps (`Frustum`, in `Utils/Math/Frustum.h`).
-- Per-view constants (camera, light, shadow map) are bound once; per object only the world matrix changes. Pixel shaders are only re-bound when the next submesh uses a different one.
+- Per-view constants (camera, light, shadow map, and the view's lighting in `ViewLightingBuffer`, `b4`) are bound once; per object only the world matrix changes. Pixel shaders are only re-bound when the next submesh uses a different one.
 - Shading lives in `Assets/Shaders/Common/Lighting.hlsli`: hemisphere ambient, the sun with soft shadows (`SampleShadow`), normal and height maps, and opacity masks.
+- With `Uniform` lighting, `ComputeLighting` skips the light and its shadows and lights the surface from an even white environment (`UniformAmbient`), diffuse and reflections alike. Faces are still shaded from 1 facing the camera to `UniformEdgeShade` (0.45) edge-on, as if lit from the camera, since even light alone turns untextured meshes into silhouettes.
 
 ### `PostProcessRenderStage`
 
@@ -133,6 +135,7 @@ flowchart TD
 ```
 
 - **Eye adaptation** moves toward the scene's log-average luminance at about 1.5 s to settle, clamped to −3…+4 EV, then `RenderView::ExposureCompensation` is added on top. Its 1×1 history is ping-ponged between two textures kept in the view's persistent blackboard.
+- A view with `AutoExposure` off skips measuring and adapting, and the tonemap exposes at a fixed 1 (plus `ExposureCompensation`), so what's drawn sets the brightness. Mesh thumbnails use this.
 - The tonemap pass leaves the scene **depth** bound to `DisplayColourData`, so overlays drawn later (debug lines) can still depth-test against the scene.
 
 ### `PickRenderStage`

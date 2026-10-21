@@ -16,7 +16,7 @@ ViewCapture::~ViewCapture()
 {
 }
 
-std::shared_ptr<AsyncOperation> ViewCapture::Capture(RenderScene& scene, const RenderCamera& camera, float exposureCompensation, const Filepath& filepath)
+std::shared_ptr<AsyncOperation> ViewCapture::Capture(RenderScene& scene, const RenderCamera& camera, const ViewCaptureSettings& settings, const Filepath& filepath)
 {
 	if (m_target == nullptr)
 	{
@@ -28,7 +28,9 @@ std::shared_ptr<AsyncOperation> ViewCapture::Capture(RenderScene& scene, const R
 	m_view.Camera = camera;
 	m_view.Camera.Viewport = RenderViewport{ m_size };
 	m_view.ViewportSize = m_size;
-	m_view.ExposureCompensation = exposureCompensation;
+	m_view.Lighting = settings.Lighting;
+	m_view.AutoExposure = settings.AutoExposure;
+	m_view.ExposureCompensation = settings.ExposureCompensation;
 
 	RZE().GetRenderEngine().RenderSecondaryView("View Capture", m_view, scene);
 

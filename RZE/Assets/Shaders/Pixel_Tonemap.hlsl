@@ -17,8 +17,13 @@ float4 PSMain(PS_IN input) : SV_TARGET
 		return float4(BackgroundColour, 1.0f);
 	}
 
-	float averageLuminance = exp(AdaptedLuminance.Load(int3(0, 0, 0)).r);
-	float exposure = clamp(KeyValue / averageLuminance, MinExposure, MaxExposure) * exp2(ExposureCompensation);
+	float exposure = 1.0f;
+	if (AutoExposure > 0.5f)
+	{
+		float averageLuminance = exp(AdaptedLuminance.Load(int3(0, 0, 0)).r);
+		exposure = clamp(KeyValue / averageLuminance, MinExposure, MaxExposure);
+	}
+	exposure *= exp2(ExposureCompensation);
 
 	return float4(LinearToSRGB(TonemapACES(scene.rgb * exposure)), 1.0f);
 }

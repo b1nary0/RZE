@@ -10,6 +10,7 @@ class Filepath;
 class GameScene;
 class ViewCapture;
 struct RenderCamera;
+struct ViewCaptureSettings;
 
 // A GameScene of its own for rendering off-screen, e.g. thumbnails, while the active scene carries on as normal.
 // Nothing in it reaches the active scene, the main view or the editor: its loads run in the background without
@@ -51,7 +52,7 @@ public:
 
 	// Renders the scene from camera into capture as part of the current frame, and saves it to filepath
 	// (ViewCapture::Capture)
-	std::shared_ptr<AsyncOperation> Capture(ViewCapture& capture, const RenderCamera& camera, float exposureCompensation, const Filepath& filepath);
+	std::shared_ptr<AsyncOperation> Capture(ViewCapture& capture, const RenderCamera& camera, const ViewCaptureSettings& settings, const Filepath& filepath);
 
 	// Cancels any load that's still running, destroys everything in the scene, and releases the scene's render state
 	// (e.g. its shadow map)

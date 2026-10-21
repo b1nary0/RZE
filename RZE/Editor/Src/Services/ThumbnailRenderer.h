@@ -22,7 +22,8 @@ namespace Editor
 	// ThumbnailQueue, which one "Rendering thumbnails" operation at a time works through (the status bar shows it and
 	// can cancel it). Thumbnails that are up to date are skipped unless forced.
 	//  - A scene is loaded on its own and captured through its main camera, or framed from its bounds if it has none.
-	//  - A mesh is staged with Default.scene's camera and light, and framed from a three-quarter angle.
+	//  - A mesh is staged in Default.scene, framed from a three-quarter angle, and lit uniformly
+	//    (ERenderViewLighting::Uniform) at a fixed exposure.
 	// Each thumbnail written publishes a ThumbnailWrittenEvent, so browsers showing it reload it. A scene's is asked for when it's saved, forced,
 	// and when it's loaded. Owned by EditorContext.
 	class ThumbnailRenderer

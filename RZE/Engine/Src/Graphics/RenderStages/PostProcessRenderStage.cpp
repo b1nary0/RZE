@@ -126,8 +126,8 @@ void PostProcessRenderStage::Render(RenderContext& context)
 	params.KeyValue = k_keyValue;
 	params.LuminanceMip = static_cast<float>(k_luminanceMipCount - 1);
 	params.Reset = resetAdaptation ? 1.0f : 0.0f;
-	params._pad0[0] = 0.0f;
-	params._pad0[1] = 0.0f;
+	params.AutoExposure = view.AutoExposure ? 1.0f : 0.0f;
+	params._pad0 = 0.0f;
 
 	Rendering::Renderer::UploadDataToBuffer<ParamsLayout>(m_paramsBuffer, &params);
 	Rendering::Renderer::SetConstantBufferPS(m_paramsBuffer, 0);
@@ -135,8 +135,14 @@ void PostProcessRenderStage::Render(RenderContext& context)
 	Rendering::Renderer::SetPrimitiveTopology(Rendering::EPrimitiveTopology::TriangleStrip);
 	Rendering::Renderer::SetVertexShader(m_vertexShader->GetPlatformObject());
 
-	// Log luminance of the scene viewport, averaged down the mip chain
+	// Measuring and adapting only matter to auto-exposure. Without it, the tonemap ignores the adapted luminance.
+	if (view.AutoExposure)
 	{
+		const Rendering::TextureBuffer2DHandle previousAdapted = eyeAdaptation.Adapted[eyeAdaptation.AdaptedIndex];
+		eyeAdaptation.AdaptedIndex = 1 - eyeAdaptation.AdaptedIndex;
+		const Rendering::TextureBuffer2DHandle currentAdapted = eyeAdaptation.Adapted[eyeAdaptation.AdaptedIndex];
+
+		// Log luminance of the scene viewport, averaged down the mip chain
 		Rendering::Renderer::SetColourTarget(m_luminance);
 		Rendering::Renderer::SetViewport({ static_cast<float>(k_luminanceSize), static_cast<float>(k_luminanceSize), 0.0f, 1.0f, 0.0f, 0.0f });
 		Rendering::Renderer::SetPixelShader(m_luminanceShader->GetPlatformObject());
@@ -148,14 +154,8 @@ void PostProcessRenderStage::Render(RenderContext& context)
 		// Unbind so the texture can be read while its mips are generated
 		Rendering::Renderer::ClearRenderTargets();
 		Rendering::Renderer::GenerateMips(m_luminance);
-	}
 
-	const Rendering::TextureBuffer2DHandle previousAdapted = eyeAdaptation.Adapted[eyeAdaptation.AdaptedIndex];
-	eyeAdaptation.AdaptedIndex = 1 - eyeAdaptation.AdaptedIndex;
-	const Rendering::TextureBuffer2DHandle currentAdapted = eyeAdaptation.Adapted[eyeAdaptation.AdaptedIndex];
-
-	// Eye adaptation toward the measured average
-	{
+		// Eye adaptation toward the measured average
 		Rendering::Renderer::SetColourTarget(currentAdapted);
 		Rendering::Renderer::SetViewport({ 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f });
 		Rendering::Renderer::SetPixelShader(m_adaptShader->GetPlatformObject());
@@ -178,7 +178,7 @@ void PostProcessRenderStage::Render(RenderContext& context)
 		Rendering::Renderer::SetViewport({ viewportSize.X(), viewportSize.Y(), 0.0f, 1.0f, 0.0f, 0.0f });
 		Rendering::Renderer::SetPixelShader(m_tonemapShader->GetPlatformObject());
 		Rendering::Renderer::SetTextureResource(sceneColour.Colour, k_sourceSlot);
-		Rendering::Renderer::SetTextureResource(currentAdapted, k_secondarySlot);
+		Rendering::Renderer::SetTextureResource(eyeAdaptation.Adapted[eyeAdaptation.AdaptedIndex], k_secondarySlot);
 
 		Rendering::Renderer::DrawFullScreenQuad();
 

@@ -54,9 +54,9 @@ void HeadlessScene::RemoveGameObject(GameObjectPtr& object)
 	m_scene->ProcessObjectRemoveDeferrals();
 }
 
-std::shared_ptr<AsyncOperation> HeadlessScene::Capture(ViewCapture& capture, const RenderCamera& camera, float exposureCompensation, const Filepath& filepath)
+std::shared_ptr<AsyncOperation> HeadlessScene::Capture(ViewCapture& capture, const RenderCamera& camera, const ViewCaptureSettings& settings, const Filepath& filepath)
 {
-	return capture.Capture(m_scene->GetRenderScene(), camera, exposureCompensation, filepath);
+	return capture.Capture(m_scene->GetRenderScene(), camera, settings, filepath);
 }
 
 void HeadlessScene::Unload()

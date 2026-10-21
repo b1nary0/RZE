@@ -118,7 +118,7 @@ Render objects and render scenes cache their bounds the same way: see [`RenderOb
 |---|---|
 | `Load(scenePath)` | Replaces what's in it with a scene file, loaded in the background (`SceneLoadOperation`). Cancels a load still running. |
 | `AddGameObject` / `RemoveGameObject` | Objects removed are destroyed straight away. |
-| `Capture(capture, camera, exposure, file)` | Renders its `RenderScene` from a camera into a [`ViewCapture`](../04-Rendering/Engine-Graphics-Layer.md#capturing-a-view-to-a-file) and writes a PNG. |
+| `Capture(capture, camera, settings, file)` | Renders its `RenderScene` from a camera into a [`ViewCapture`](../04-Rendering/Engine-Graphics-Layer.md#capturing-a-view-to-a-file), lit and exposed as `ViewCaptureSettings` says, and writes a PNG. |
 | `Unload()` | Cancels a load still running, destroys everything and releases its render state (e.g. its shadow map). Must happen before the engine shuts down. |
 
 - It's **never updated**. A still capture doesn't need it: world matrices are worked out when read, render objects take their transform when they're made, and lights their direction when they're added.

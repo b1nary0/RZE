@@ -32,6 +32,12 @@ cbuffer ShadowBuffer : register(b3)
 	float HasShadows;         // 0 when there is no light to cast from
 };
 
+// Mirrors ForwardRenderStage::ViewLightingLayout (ForwardRenderStage.h)
+cbuffer ViewLightingBuffer : register(b4)
+{
+	float UniformLighting; // 1 to light evenly from every direction instead of by the light and sky (ERenderViewLighting)
+};
+
 // Mirrors MaterialInstance::TextureSlot (Material.h)
 Texture2D DiffuseMap  : register(t0);
 Texture2D SpecularMap : register(t1);

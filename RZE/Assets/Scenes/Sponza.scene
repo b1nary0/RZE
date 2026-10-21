@@ -1,16 +1,21 @@
 {
-    "gameobjects": {
-        "Camera": {
+    "version": 2,
+    "gameobjects": [
+        {
+            "id": "aed0044e2f05b507",
+            "name": "Camera",
             "components": {
                 "CameraComponent": {
                     "FOV": 45.0,
                     "NearCull": 0.10000000149011612,
-                    "FarCull": 1000.0
+                    "FarCull": 1000.0,
+                    "ExposureCompensation": 0.0,
+                    "MainCamera": true
                 },
                 "TransformComponent": {
                     "Position": [
-                        8.443848609924316,
-                        1.5254123210906982,
+                        8.443848609924317,
+                        1.5254123210906983,
                         -1.6829354763031006
                     ],
                     "Scale": [
@@ -19,19 +24,21 @@
                         1.0
                     ],
                     "Rotation": [
-                        -3.9211,
+                        -3.921099901199341,
                         99.80290222167969,
                         0.0
                     ]
                 }
             }
         },
-        "DirectionalLight": {
+        {
+            "id": "e7e49d99b9176ba8",
+            "name": "DirectionalLight",
             "components": {
                 "TransformComponent": {
                     "Position": [
                         6.464437961578369,
-                        10.054780006408691,
+                        10.054780006408692,
                         -1.3609898090362549
                     ],
                     "Scale": [
@@ -55,7 +62,9 @@
                 }
             }
         },
-        "Sponza": {
+        {
+            "id": "0ce550e384fe562b",
+            "name": "Sponza",
             "components": {
                 "RenderComponent": {
                     "ResourcePath": "ProjectData\\Mesh\\sponza.meshasset"
@@ -79,31 +88,35 @@
                 }
             }
         },
-        "Nyra": {
+        {
+            "id": "f183d22f7b8dee34",
+            "name": "Nyra",
             "components": {
                 "RenderComponent": {
                     "ResourcePath": "ProjectData\\Mesh\\Nyra.meshasset"
                 },
                 "TransformComponent": {
                     "Position": [
-                        4.624542236328125,
+                        2.4435884952545168,
                         0.09233822673559189,
-                        0.5113467574119568
+                        -1.3091514110565186
                     ],
                     "Scale": [
-                        0.03815567493438721,
+                        0.038155678659677508,
                         0.03815628960728645,
-                        0.03815567493438721
+                        0.038155678659677508
                     ],
                     "Rotation": [
-                        179.9992218017578,
-                        58.31627655029297,
-                        -179.99989318847657
+                        -0.0013937599724158645,
+                        37.20155334472656,
+                        -0.00006847555778222159
                     ]
                 }
             }
         },
-        "Nanosuit": {
+        {
+            "id": "4b9d01753d523174",
+            "name": "Nanosuit",
             "components": {
                 "RenderComponent": {
                     "ResourcePath": "ProjectData\\Mesh\\Nanosuit.meshasset"
@@ -112,7 +125,7 @@
                     "Position": [
                         4.245475769042969,
                         0.0,
-                        -1.6554216146469116
+                        -1.6554216146469117
                     ],
                     "Scale": [
                         0.09310118108987808,
@@ -127,7 +140,9 @@
                 }
             }
         },
-        "NeckMechWalker": {
+        {
+            "id": "78f7b2da046e2f8d",
+            "name": "NeckMechWalker",
             "components": {
                 "RenderComponent": {
                     "ResourcePath": "ProjectData\\Mesh\\NeckMechWalker.meshasset"
@@ -136,22 +151,24 @@
                     "Position": [
                         0.0,
                         0.0,
-                        0.0
+                        -0.3518766164779663
                     ],
                     "Scale": [
-                        0.22893774509429932,
-                        0.22893774509429932,
-                        0.22893774509429932
+                        0.22893773019313813,
+                        0.22893774509429933,
+                        0.22893773019313813
                     ],
                     "Rotation": [
                         0.0,
-                        44.79999923706055,
+                        44.79999542236328,
                         0.0
                     ]
                 }
             }
         },
-        "Tank": {
+        {
+            "id": "d16511f39232aa50",
+            "name": "Tank",
             "components": {
                 "RenderComponent": {
                     "ResourcePath": "ProjectData\\Mesh\\Panzer.meshasset"
@@ -175,5 +192,5 @@
                 }
             }
         }
-    }
+    ]
 }

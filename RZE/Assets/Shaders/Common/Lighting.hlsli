@@ -16,6 +16,12 @@ static const float  BumpStrength = 10.0f;
 // Kept well below the light strength (~2) so lit and unlit sides read clearly.
 static const float3 AmbientSky    = float3(0.14f, 0.16f, 0.20f);
 static const float3 AmbientGround = float3(0.05f, 0.045f, 0.04f);
+// Linear-space environment for uniform lighting, the same from every direction: a surface shows its albedo, as it
+// would facing a strength-1 light. Auto-exposure sets the final brightness.
+static const float3 UniformAmbient = float3(1.0f, 1.0f, 1.0f);
+// Uniform lighting alone gives every face of a plain mesh the same colour, so it reads as a silhouette. Faces are
+// shaded from 1 facing the camera down to this edge-on, as if lit from the camera, so the shape still shows.
+static const float  UniformEdgeShade = 0.45f;
 // Blinn-Phong exponent treated as a mirror for ambient reflections; log2(2048) = 11
 static const float  MaxShininessLog2 = 11.0f;
 // Specular reflectance at normal incidence = SpecularIntensity * this; 0.5 intensity gives the typical dielectric 0.04
@@ -165,9 +171,14 @@ float3 LightRadiance()
 	return SRGBToLinear(LightColour.rgb) * LightStrength;
 }
 
-// Sky above, ground below. Also used as the environment for ambient reflections.
+// Sky above, ground below, or the same all round with uniform lighting. Also used as the environment for ambient
+// reflections.
 float3 HemisphereAmbient(float3 direction)
 {
+	if (UniformLighting > 0.5f)
+	{
+		return UniformAmbient;
+	}
 	return lerp(AmbientGround, AmbientSky, direction.y * 0.5f + 0.5f);
 }
 
@@ -211,9 +222,15 @@ float3 AmbientLighting(SurfaceData surface, float3 viewDir, float shininess)
 	return diffuse + reflection;
 }
 
-// Returns linear HDR radiance for the scene's directional light
+// Returns linear HDR radiance for the scene's directional light, or for the uniform environment alone
 float3 ComputeLighting(SurfaceData surface, float3 viewDir)
 {
+	if (UniformLighting > 0.5f)
+	{
+		float facing = saturate(dot(surface.Normal, viewDir));
+		return AmbientLighting(surface, viewDir, max(surface.Shininess, 1.0f)) * lerp(UniformEdgeShade, 1.0f, facing);
+	}
+
 	float3 N = surface.Normal;
 	float3 L = -LightDirection;
 	float3 H = normalize(L + viewDir);
