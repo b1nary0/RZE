@@ -59,6 +59,20 @@ sequenceDiagram
 3. **`RenderThread`** runs a dedicated `std::thread` looping `Update()`, waiting on a `std::condition_variable` (`m_updateCondition`/`m_processSignal`). `Renderer::DevicePresent()` calls `SignalProcess()`, which waits for prior processing to finish, calls `MemArena::Cycle()`, swaps `m_producerQueue`/`m_consumerQueue` (classic double-buffered command queue — the header notes these queues are "guaranteed to be contiguous as its backed by MemArena"), then wakes the render thread. `ProcessCommands()` drains the consumer queue via a large `switch (command->type)`, dispatching directly against `ID3D11DeviceContext` calls, and explicitly destructs each command afterward (`command->~RenderCommand()`) — memory is reused via the arena's next `Cycle()`, never `delete`d individually.
 4. This decouples game/render-logic submission from GPU-thread execution — a hand-rolled version of the "render command list"/deferred-context pattern, implemented without D3D11's actual deferred contexts.
 
+### What a command keeps alive
+
+The render thread runs a frame behind, so a command must not point at anything the main thread may free in the meantime. Every command holds what it reads:
+
+| What | Held as |
+|---|---|
+| Buffer contents (`CreateVertexBuffer`, `CreateIndexBuffer`, `CreateConstantBuffer`, `UpdateVertexBuffer`, `UploadDataToBuffer`) | Copied into the arena |
+| A texture's texels (`CreateTextureBuffer2D`) | A `TexelBuffer`, which owns them and frees them with the function they came with (e.g. `stbi_image_free`) when the command is destroyed, once the texture is made |
+| GPU objects: buffers, textures, render targets, shaders | Their handles, which share ownership (`shared_ptr`) |
+| Readback results (`ReadTexel`, `ReadTexture`) | `shared_ptr`s shared with whoever asked |
+| The UI's draw data, and the textures it draws | A [`UIFrameData`](#imgui-integration-lives-at-this-layer-too) shared with `Renderer` |
+
+So whoever queues a command can let go of anything straight after: a resource is destroyed as soon as its last handle goes ([Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md#releasing-resources)), and its GPU objects live on until the last command using them is done. A GPU texture is freed with its last handle: `DX11TextureBuffer2D::Release()` releases each view it made (render target, shader resource and depth views), since each one keeps the texture alive.
+
 ### How the two threads overlap
 
 The double-buffered queue means the game thread builds frame N+1 while the render thread executes frame N:
@@ -96,7 +110,7 @@ gantt
 | Frame / pass | `BeginFrame`, `EndFrame`, `Begin`, `End`, `DevicePresent`, `HandleWindowResize`, `SetSyncInterval`, `ImGuiRender` |
 | Create | `CreateVertexBuffer` (static or dynamic), `CreateIndexBuffer`, `CreateConstantBuffer`, `CreateTextureBuffer2D`, `CreateVertexShader`, `CreatePixelShader` |
 | Update / release | `UploadDataToBuffer`, `UpdateVertexBuffer`, `ReleaseVertexShader`, `ReleasePixelShader`, `GenerateMips` |
-| Targets | `SetRenderTarget`, `SetRenderTargetBackBuffer`, `SetColourTarget` (colour, optionally with depth), `SetDepthTarget` (depth only, e.g. shadow maps), `ClearRenderTarget`, `ClearRenderTargets`, `ClearDepthStencilBuffer` |
+| Targets | `SetRenderTargetBackBuffer`, `SetColourTarget` (colour, optionally with depth), `SetDepthTarget` (depth only, e.g. shadow maps), `ClearRenderTarget`, `ClearRenderTargets`, `ClearDepthStencilBuffer` |
 | Pipeline state | `SetViewport`, `SetInputLayout`, `SetPrimitiveTopology`, `SetRasterizerState`, `SetBlendState`, `SetVertexShader`, `SetPixelShader`, `SetConstantBufferVS`, `SetConstantBufferPS`, `SetVertexBuffer`, `SetIndexBuffer`, `SetTextureResource`, `UnsetTextureResource` |
 | Draw | `Draw`, `DrawIndexed`, `DrawFullScreenQuad` |
 | Readback | `ReadTexel`, `ReadTexture` |
@@ -105,7 +119,9 @@ Every one of these has a matching `RenderCommand_*` POD struct carrying exactly 
 
 ## ImGui integration lives at this layer too
 
-`RenderThread::InitializeImGui()` sets up `imgui_impl_win32`/`imgui_impl_dx11` bound to the `DX11Device`. `Renderer::ImGuiRender()` deep-copies the current frame's `ImDrawData` (since ImGui's `ImDrawData` is only valid until the next frame) and pushes a `RenderCommand_ImGuiRender`, so ImGui draw submission funnels through the exact same command queue/thread as everything else — it isn't a special-cased side path. On a frame that didn't update the UI (`FrameSettings::UIFrameRate`), `ImGui::Render()` returns at once and the draw data is still the last UI frame's, so the same UI is drawn again. `ImGuiRender()` keeps the last UI frame's copy (a `shared_ptr`) and hands that copy to the render thread again until `ImGui::GetFrameCount()` moves on, rather than copying it every frame. The render thread may still be drawing the old copy when a new UI frame replaces it, so whichever thread lets go of a copy last deletes it. Before the first UI frame there's no draw data, and `ImGuiRender()` does nothing.
+`RenderThread::InitializeImGui()` sets up `imgui_impl_win32`/`imgui_impl_dx11` bound to the `DX11Device`. `Renderer::ImGuiRender()` deep-copies the current frame's `ImDrawData` (since ImGui's `ImDrawData` is only valid until the next frame) and pushes a `RenderCommand_ImGuiRender`, so ImGui draw submission funnels through the exact same command queue/thread as everything else — it isn't a special-cased side path. On a frame that didn't update the UI (`FrameSettings::UIFrameRate`), `ImGui::Render()` returns at once and the draw data is still the last UI frame's, so the same UI is drawn again. `ImGuiRender()` keeps the last UI frame's copy and hands that copy to the render thread again until `ImGui::GetFrameCount()` moves on, rather than copying it every frame. Before the first UI frame there's no draw data, and `ImGuiRender()` does nothing.
+
+The copy is a `UIFrameData` (`UIFrameData.h`), shared by `Renderer` and every `RenderCommand_ImGuiRender` that draws it, so whichever lets go last deletes it. ImGui knows a texture only by its view's raw pointer (`ImTextureID`), so the copy also holds the textures it draws: `Renderer::KeepTextureForUI(texture)` adds one to the UI frame being drawn, and `ImGuiRender()` hands that list to the frame's `UIFrameData`. A texture the UI draws stays alive for as long as any copy that draws it can still be drawn, even if its resource was released since. The Editor draws every texture through `EditorUI::TextureID(handle)`, which does this and returns its ID ([Editor-Framework.md](../07-Editor/Editor-Framework.md#shared-ui-helpers-editorui)).
 
 ## Handle types (`BufferHandle.h`, `ShaderHandle.h`)
 
@@ -117,12 +133,11 @@ Everything is a static call on `Rendering::Renderer`, and every call only *queue
 
 | Area | Calls |
 |---|---|
-| Lifetime | `Initialize`, `Shutdown`, `HandleWindowResize`, `WaitUntilIdle` (blocks until the render thread has run every frame it's been given, e.g. while shutting down) |
+| Lifetime | `Initialize`, `Shutdown`, `HandleWindowResize` |
 | Presenting | `SetSyncInterval(interval)` (vsync), `WaitForPresentSlot(timeoutMS)` (blocks until the swap chain can queue another frame; false on timeout, e.g. while minimised). See [the swap chain](#the-swap-chain-and-vsync). |
-| Frame tracking | `GetRecordingFrame()` (the frame being recorded, counting up at each `DevicePresent`), `IsFrameProcessed(frame)` (the render thread has run every command pushed up to the end of that frame). `ResourceHandler` uses these to destroy a resource only once nothing queued can still read it ([Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md)). |
-| Frame and passes | `BeginFrame` / `EndFrame`, `Begin(name)` / `End()` (one pass; also resets the rasterizer state and names the pass for PIX), `DevicePresent`, `ImGuiRender` |
-| Resources | `CreateVertexBuffer`, `CreateDynamicVertexBuffer` + `UpdateVertexBuffer`, `CreateIndexBuffer`, `CreateConstantBuffer`, `CreateTextureBuffer2D`, `CreateVertexShader`, `CreatePixelShader`, `Release*Shader`, `UploadDataToBuffer<T>` (copies the data, so a stack variable is fine), `GenerateMips` |
-| Targets | `SetColourTarget(colour[, depth])`, `SetDepthTarget`, `SetRenderTarget`, `SetRenderTargetBackBuffer`, `ClearRenderTarget`, `ClearDepthStencilBuffer` |
+| Frame and passes | `BeginFrame` / `EndFrame`, `Begin(name)` / `End()` (one pass; also resets the rasterizer state and names the pass for PIX), `DevicePresent`, `ImGuiRender`, `KeepTextureForUI` |
+| Resources | `CreateVertexBuffer`, `CreateDynamicVertexBuffer` + `UpdateVertexBuffer`, `CreateIndexBuffer`, `CreateConstantBuffer`, `CreateTextureBuffer2D(params)` (empty, e.g. a render target) / `CreateTextureBuffer2D(TexelBuffer&&, params)`, `CreateVertexShader`, `CreatePixelShader`, `Release*Shader`, `UploadDataToBuffer<T>` (copies the data, so a stack variable is fine), `GenerateMips` |
+| Targets | `SetColourTarget(colour[, depth])`, `SetDepthTarget`, `ClearRenderTargets` (unbinds every target, e.g. so one can be read from next), `SetRenderTargetBackBuffer`, `ClearRenderTarget`, `ClearDepthStencilBuffer` |
 | State | `SetViewport`, `SetInputLayout`, `SetPrimitiveTopology`, `SetRasterizerState` (`Default` = back-face culling, `ShadowCaster` = no culling + slope-scaled depth bias), `SetBlendState` (`Opaque` = no blending, `AlphaBlend` = source alpha over the target, leaving the target's alpha unchanged), shaders, constant buffers, vertex/index buffers, texture slots |
 | Draw | `Draw`, `DrawIndexed`, `DrawFullScreenQuad` |
 | Readback | `ReadTexel`, `ReadTexture` (below) |
@@ -163,6 +178,8 @@ Both go through one helper on the render thread: it creates a `D3D11_USAGE_STAGI
 - `Modules\Rendering\Src\Rendering\Renderer.h/.cpp`
 - `Modules\Rendering\Src\Rendering\RenderThread.h/.cpp`
 - `Modules\Rendering\Src\Rendering\RenderCommand.h`
+- `Modules\Rendering\Src\Rendering\TexelBuffer.h/.cpp` — texels an upload owns
+- `Modules\Rendering\Src\Rendering\UIFrameData.h/.cpp` — a UI frame's draw data and the textures it draws
 - `Modules\Rendering\Src\Rendering\TexelReadback.h`, `TextureReadback.h`
 - `Modules\Rendering\Src\Rendering\MemArena.h/.cpp`
 - `Modules\Rendering\Src\Rendering\BufferHandle.h/.cpp`, `ShaderHandle.h`

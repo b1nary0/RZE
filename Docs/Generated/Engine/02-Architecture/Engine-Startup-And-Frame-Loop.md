@@ -95,9 +95,6 @@ sequenceDiagram
     ML->>App: Update(), then the scene's Update()
     ML->>App: PreRender()
     ML->>RE: Render("Main Render"), Finish()
-    opt a UI frame
-        Note over ML,FP: ResourceHandler::Update()
-    end
     ML->>Async: TickIdle(spare time)
     Note over ML,FP: sleep until the next frame is due
     ML->>RE: WaitForPresentSlot()
@@ -146,7 +143,7 @@ The update is split into a scene part, which runs every frame, and a UI part, wh
 
 ### Render and present
 
-`RenderEngine::Render("Main Render")` runs the render pipeline for the main view, and `Finish()` hands the frame's commands to the render thread (`DevicePresent`). After that, on UI frames only, `ResourceHandler::Update()` destroys the resources released in earlier frames that the render thread has finished with ([Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md#releasing-resources)). A frame without a UI update renders the last UI again, which may still show a texture released since, so resources are only destroyed once a newer UI has replaced it.
+`RenderEngine::Render("Main Render")` runs the render pipeline for the main view, and `Finish()` hands the frame's commands to the render thread (`DevicePresent`). Nothing waits on the render thread after that: a released resource was already destroyed when its last handle went, and what the render thread still uses is held by its commands ([Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md#releasing-resources)).
 
 ### Waiting for the next frame
 
@@ -198,11 +195,10 @@ With `UIFrameRate` set, only some frames are UI frames. Everything else (the asy
 `BeginShutDown()`, in order:
 1. `AsyncOperationManager::ShutDown()` first, so no async work touches the scene, resources or renderer while they shut down (it cancels operations and waits for their worker jobs; completion callbacks don't fire);
 2. scene shutdown, then app shutdown;
-3. the main scene's `ClearObjects()`, then `ReleaseRenderStages()` (must happen before resources are released);
-4. `RenderEngine::WaitUntilIdle()`, then `ResourceHandler::DestroyPendingNow()`: resources released while shutting down are waiting on the render thread, and they must go **before** the renderer shuts down, since releasing a GPU resource records a render command;
-5. `RenderEngine::Shutdown()`;
-6. `JobScheduler::ShutDown()` (queued jobs are abandoned, running ones finish), clear the log sink, `MainThreadDispatcher::ShutDown()`;
-7. `InternalShutDown()` deletes the scene and renderer, releases the engine config, shuts down the `ResourceHandler`, and deletes the window.
+3. the main scene's `ClearObjects()`, then `ReleaseRenderStages()` (must happen before resources are released). What these release is destroyed as it goes;
+4. `RenderEngine::Shutdown()`, which lets the render thread finish what it was given, then stops it;
+5. `JobScheduler::ShutDown()` (queued jobs are abandoned, running ones finish), clear the log sink, `MainThreadDispatcher::ShutDown()`;
+6. `InternalShutDown()` deletes the scene and renderer, releases the engine config, shuts down the `ResourceHandler`, and deletes the window.
 
 ## Key files
 

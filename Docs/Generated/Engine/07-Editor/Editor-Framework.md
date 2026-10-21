@@ -288,6 +288,7 @@ Rules:
 - **Toolbars:** `ScopedToolbarSpacing` (tight spacing within a group) and `ToolbarGroupSeparator` (a separator with gaps), used by the SceneView's menu bar.
 - **Property tables:** `BeginPropertyTable` / `PropertyRow` / `EndPropertyTable` and `CalcLabelColumnWidth`, the label/value layout of the Object Inspector. Labels too long for their column show in full on hover.
 - **Tree nodes:** `TreeNode(id, flags, format, ...)`, in place of `ImGui::TreeNodeEx`; see below.
+- **Images:** `TextureID(handle)`, the ID to pass `ImGui::Image`, `ImDrawList::AddImage` and the like. It keeps the texture alive for as long as the UI drawn this frame is rendered, so a texture released while it's on screen doesn't go from under the render thread ([Low-Level-Renderer-Module.md](../04-Rendering/Low-Level-Renderer-Module.md#imgui-integration-lives-at-this-layer-too)).
 
 ### Rounded corners
 
@@ -314,6 +315,7 @@ Windows, popups, fields, buttons, checkboxes, images and highlights have slightl
 | An asset loaded for the user without stalling | A `PendingResource`, polled from the panel's `Update`; push the command once it's in, and hold the resource until the next `Update` so the command finds it loaded. An asset property gets this from `.Preload<T>()` |
 | A component's inspector fields | Describe its properties; see [Object-Inspector-And-Properties.md](Object-Inspector-And-Properties.md) |
 | A tree | `EditorUI::TreeNode`, not `ImGui::TreeNodeEx`, so its highlight is rounded like the rest ([Rounded corners](#rounded-corners)) |
+| An image | Pass `EditorUI::TextureID(handle)` as its texture, never a cast of the handle's raw view, so the texture outlives the UI that draws it |
 
 ## Key files
 

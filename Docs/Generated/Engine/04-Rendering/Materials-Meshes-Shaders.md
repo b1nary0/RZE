@@ -164,6 +164,8 @@ The editor does the same for an asset set in the Object Inspector or a mesh drop
 
 Thin engine-side `IResource` wrappers around the lower-level GPU objects exposed by `Modules\Rendering` (`Rendering::VertexShaderHandle`/`PixelShaderHandle`, `Rendering::TextureBuffer2DHandle`, `Rendering::VertexBufferHandle`/`IndexBufferHandle`). These are what `ResourceHandler` loads/caches by file path.
 
+A `Texture2D` hands its texels to the upload as a `TexelBuffer`, so the upload frees them once the render thread has made the texture, and the texture keeps no CPU copy. `Load(TexelBuffer&&, width, height)` makes one from an image already in memory (`GifChatComponent`'s frames), taking ownership of its texels.
+
 ## Key files
 
 - `Engine\Src\Graphics\MeshGeometry.h/.cpp`, `StaticMesh.h/.cpp`, `StaticMeshInstance.h/.cpp`, `MeshDraw.h`

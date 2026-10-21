@@ -24,7 +24,7 @@ Rough edges the codebase is candid about (source comments, `#TODO`s), plus a few
 | 16 | Undoing Add Component brings back a new component | Editor | Low | Open |
 | 17 | Duplicate's undo step is named "Paste" | Editor | Cosmetic | Open |
 | 18 | `GifChatComponent`'s GIF paths resolved against the build folder | Components | — | **Fixed** (10-15: source tree context) |
-| 19 | `ResourceHandler` reads the renderer's frame counter | Resources | Low | Open |
+| 19 | `ResourceHandler` reads the renderer's frame counter | Resources | — | **Fixed** (10-20: resources destroyed straight away) |
 | 20 | Every component has `GetLocalBounds`, though few take up space | Components | Low | Open |
 | 21 | `RenderObjectPtr` / `LightObjectPtr` could be copied, and dangled | Rendering | — | **Fixed** (10-13: move-only, lifetime-checked) |
 | 22 | A few long frames remain while thumbnails render | Editor | Low | Open |
@@ -139,9 +139,9 @@ Duplicate runs a `PasteGameObjectsCommand`, so Edit > Undo reads "Undo Paste" af
 
 `GifChatComponent`'s GIF paths were global `Filepath`s, built during static initialisation, before `main` set the directory context, so in the Editor they pointed at `_build\<config>\Assets\...` and a fresh clone asserted on `RenderTest.scene`. They're built when used now, and every app reads the source tree (`EDirectoryContext::Source`), so there's no build-folder copy to go stale. The rule stands: don't build a `Filepath` during static initialisation.
 
-## 19. `ResourceHandler` reads the renderer's frame counter
+## 19. `ResourceHandler` reads the renderer's frame counter (fixed)
 
-To destroy a resource only once the render thread is done with it ([Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md#releasing-resources)), `ResourceHandler` calls `Rendering::Renderer::GetRecordingFrame` and `IsFrameProcessed` directly. The resource system now knows a renderer detail. Injecting a frame fence or a "destroy when safe" policy would keep the two apart.
+`ResourceHandler` used to destroy a released resource only once the render thread was done with it, by reading `Rendering::Renderer::GetRecordingFrame` and `IsFrameProcessed`, so the resource system knew a renderer detail. Rather than a frame fence, what the render thread uses now lives in its commands: uploaded texels in a `TexelBuffer`, GPU objects by handle, and the textures the UI draws with that UI's frame data. So a resource is destroyed as soon as its last handle goes, and the frame tracking is gone ([Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md#releasing-resources)). `AsyncOperationManager`'s two-frame wait before cleaning up a finished operation went for the same reason.
 
 ## 20. Every component has `GetLocalBounds`, though few take up space
 

@@ -49,7 +49,7 @@ Covered in depth in [Memory-Management.md](Memory-Management.md): `ByteStream.h/
 
 ## Interfaces
 
-- `Interfaces\Resource.h` — `class IResource`: `virtual bool Load(const Filepath&)`, `virtual void Release()`, plus a texture-specific `virtual bool Load(const U8* buffer, int width, int height)` overload (called "gross" in its own source comment). This is the contract `ResourceHandler` and every loadable resource type (`StaticMeshResource`, `EngineConfig`, texture resources) build on. It also has optional hooks for asynchronous loading (`SupportsAsyncLoad`, `LoadCPU`, `RequestDependencies`, `GetNextFinalizeStepCost`, `FinalizeStep`, and `GetFinalizeProgress` for progress displays). See [Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md).
+- `Interfaces\Resource.h` — `class IResource`: `virtual bool Load(const Filepath&)`, `virtual void Release()`. An in-memory image is loaded with `Texture2D::Load(TexelBuffer&&, width, height)` instead, on the texture itself. This is the contract `ResourceHandler` and every loadable resource type (`StaticMeshResource`, `EngineConfig`, texture resources) build on. It also has optional hooks for asynchronous loading (`SupportsAsyncLoad`, `LoadCPU`, `RequestDependencies`, `GetNextFinalizeStepCost`, `FinalizeStep`, and `GetFinalizeProgress` for progress displays). See [Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md).
 
 ## Reflection (`Reflect\`) — a second, separate reflection system
 

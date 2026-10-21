@@ -88,13 +88,11 @@ if (!mesh.IsLoading())                        // picks up the handle once it's i
 
 ## Releasing resources
 
-A resource can't be destroyed the moment its last handle goes: the render thread runs a frame behind, so a command queued this frame (an upload, a draw) may still read its memory. So **every** resource the `ResourceHandler` destroys, whether released or discarded, goes through `DestroyWhenRendered`:
+A resource is released (`IResource::Release()`) and deleted as soon as its last handle goes. `ResourceHandler::ReleaseResource` takes it out of the table and empties the handle first, since releasing it can release the resources it holds (a mesh's textures) in turn, which changes the table. A duplicate passed to `RegisterLoadedResource`, and a resource an `AsyncResourceBatch` discards (its load failed or was cancelled), are destroyed straight away too.
 
-1. It's taken out of the table straight away, tagged with the frame being recorded (`Renderer::GetRecordingFrame()`).
-2. `ResourceHandler::Update()`, after present on every frame that updated the UI, destroys the ones whose frame the render thread has finished (`Renderer::IsFrameProcessed`). Frames that skip the UI ([`UIFrameRate`](../02-Architecture/Engine-Startup-And-Frame-Loop.md#ui-frame-rate)) render the last UI again, which may still show a texture released since, so nothing is destroyed until a newer UI has replaced it.
-3. At shutdown, `DestroyPendingNow()` destroys the rest once the render thread is idle, before the renderer shuts down ([Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md#shutdown)).
+The render thread runs a frame behind, but nothing it uses belongs to the resource any more: its commands hold the data they read, the GPU objects they use, and the textures the UI draws ([Low-Level-Renderer-Module.md](../04-Rendering/Low-Level-Renderer-Module.md#what-a-command-keeps-alive)). So a resource can be released in the same frame it was uploaded or drawn in, and the resource system doesn't depend on the renderer.
 
-So a resource can be released in the same frame it was uploaded or drawn in. Code that releases something no longer has to wait frames itself.
+At shutdown, `ResourceHandler::ShutDown()` releases whatever is still loaded, logging each one still referenced.
 
 ## Async operations
 
@@ -107,12 +105,12 @@ stateDiagram-v2
     Running --> Running: OnTick(budget) each frame,<br/>again with spare time (idle)<br/>(+ worker jobs via PushWorkerJob)
     Running --> Finishing: Complete() / Fail() / cancel
     Finishing --> Finished: no worker jobs left<br/>OnFinished(state) + completion callback
-    Finished --> [*]: 2 frames later: OnCleanup(), released
+    Finished --> [*]: same tick: OnCleanup(), released
 ```
 
 - **Threading rules:** progress, status text and cancellation can be set from any thread. Every hook and the completion callback run on the main thread. The manager won't finish an operation while any of its worker jobs are still running, so jobs can safely capture `this`.
 - **Frame budget** (`AsyncFrameBudget`): shared by the foreground operations each frame. It allows **8 ms** of main-thread time and **16 MB** of GPU uploads (soft limits; the first piece of work each frame always runs, so everything makes progress), and leaves **8 MB** of headroom in the render command arena (a hard limit). Background operations get a budget of their own on top (below).
-- **Idle time:** when a paced frame finishes early, `AsyncOperationManager::TickIdle(ms)` gives the spare time before the next frame to the running operations, foreground before background, right after the frame is handed to the renderer, so it adds nothing to that frame's latency. Its budget says it's idle (`AsyncFrameBudget::IsIdle()`): extra time within the same frame, not a new one, so work that counts frames counts only ticks where it's false (`CaptureBatchOperation`'s settle frames do). Idle ticks only give operations more time; finishing them, their callbacks, retiring and starting new ones stay in `Tick()`. What an idle tick records goes out with the next frame, so the upload and arena bytes it uses come out of that frame's allowance. Frames only have idle time with vsync or a frame rate cap ([Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md#waiting-for-the-next-frame)).
+- **Idle time:** when a paced frame finishes early, `AsyncOperationManager::TickIdle(ms)` gives the spare time before the next frame to the running operations, foreground before background, right after the frame is handed to the renderer, so it adds nothing to that frame's latency. Its budget says it's idle (`AsyncFrameBudget::IsIdle()`): extra time within the same frame, not a new one, so work that counts frames counts only ticks where it's false (`CaptureBatchOperation`'s settle frames do). Idle ticks only give operations more time; finishing and cleaning them up, their callbacks, and starting new ones stay in `Tick()`. What an idle tick records goes out with the next frame, so the upload and arena bytes it uses come out of that frame's allowance. Frames only have idle time with vsync or a frame rate cap ([Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md#waiting-for-the-next-frame)).
 - **Flags** (`EAsyncOperationFlags`, combinable):
 
   | Flag | Meaning |
@@ -132,7 +130,7 @@ stateDiagram-v2
   | `General` | Anything else, e.g. building the game (`JobAsyncOperation` takes a kind too) |
 
 - **History:** `LogStep(text)` and `AddWarning(text)` add timestamped entries (`GetLoggedSteps`). A warning doesn't stop the operation, which can still succeed with warnings. The Editor's status bar shows them ([Status-Bar-And-Settings.md](../07-Editor/Status-Bar-And-Settings.md)).
-- **Retiring:** an operation is only released two frames after it finishes, because the render thread may still be using data it submitted (see [Low-Level-Renderer-Module.md](../04-Rendering/Low-Level-Renderer-Module.md)).
+- **Cleanup:** the manager calls `OnCleanup()` and lets go of an operation in the tick it finishes. The render thread doesn't need anything the operation held: its commands hold what they use ([Low-Level-Renderer-Module.md](../04-Rendering/Low-Level-Renderer-Module.md#what-a-command-keeps-alive)).
 - **Progress:** `WeightedProgress` blends several stages of different cost into one 0–1 value that never goes backwards; a stage is set as a count (`SetStage(done, total)`) or a fraction (`SetStageFraction`). Operations flagged `Blocking` get the Editor's progress modal automatically.
 - **Timing:** the manager stamps an operation when it starts it, and `Finish` when it ends. `GetSecondsRunning()` is 0 before it starts, counts while it runs and stays fixed once it's finished. `EstimateSecondsLeft()` is how long it has left at the rate it's gone so far, once it's at least 5% done (`k_minProgressToEstimate`) and has run a second; the static `EstimateSecondsLeft(seconds, progress)` does the sum for any numbers.
 - **`JobAsyncOperation`** wraps a single worker-thread function (the Editor's Build/Launch uses it).
