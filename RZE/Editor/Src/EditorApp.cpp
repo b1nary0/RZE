@@ -325,9 +325,10 @@ namespace Editor
 		style.Colors[ImGuiCol_ResizeGripActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.95f);
 		style.Colors[ImGuiCol_Tab] = ImVec4(0.17f, 0.17f, 0.17f, 0.86f);
 		style.Colors[ImGuiCol_TabHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.80f);
-		style.Colors[ImGuiCol_TabSelected] = ImVec4(0.37f, 0.37f, 0.37f, 1.00f);
+		// Blue for the focused panel's tab, grey for the tabs other panels are showing
+		style.Colors[ImGuiCol_TabSelected] = ImVec4(0.14f, 0.26f, 0.42f, 1.00f);
 		style.Colors[ImGuiCol_TabDimmed] = ImVec4(0.07f, 0.10f, 0.15f, 0.97f);
-		style.Colors[ImGuiCol_TabDimmedSelected] = ImVec4(0.14f, 0.26f, 0.42f, 1.00f);
+		style.Colors[ImGuiCol_TabDimmedSelected] = ImVec4(0.37f, 0.37f, 0.37f, 1.00f);
 		style.Colors[ImGuiCol_DockingPreview] = ImVec4(0.26f, 0.59f, 0.98f, 0.70f);
 		style.Colors[ImGuiCol_DockingEmptyBg] = ImVec4(0.20f, 0.20f, 0.20f, 1.00f);
 		style.Colors[ImGuiCol_PlotLines] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
