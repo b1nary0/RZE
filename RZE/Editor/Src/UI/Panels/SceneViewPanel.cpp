@@ -94,6 +94,8 @@ namespace Editor
 		// Panels dock around the scene, not into it
 		desc.AcceptsDocking = false;
 		desc.WindowFlags = ImGuiWindowFlags_MenuBar;
+		// So the toolbar's controls don't crowd its edges
+		desc.MenuBarPadding = 6.0f;
 		return desc;
 	}
 

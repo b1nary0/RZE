@@ -46,6 +46,8 @@ namespace Editor
 		// Other panels can be docked into its node, as a tab or split off to one side. Off for the scene view.
 		bool AcceptsDocking = true;
 		ImGuiWindowFlags WindowFlags = ImGuiWindowFlags_None;
+		// Space above and below the menu bar's contents, in pixels, on top of ImGui's. Only for ImGuiWindowFlags_MenuBar.
+		float MenuBarPadding = 0.0f;
 		// Draw() does its own Begin/End (e.g. ImGui's demo window), so PanelManager doesn't wrap it in a window.
 		// WindowFlags, PushWindowStyle and DrawMenuBar don't apply, and the panel isn't tracked as hovered or focused.
 		bool OwnsWindow = false;

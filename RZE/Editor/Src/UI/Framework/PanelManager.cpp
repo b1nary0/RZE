@@ -190,8 +190,15 @@ namespace Editor
 				ImGui::SetNextWindowClass(&windowClass);
 			}
 
+			// ImGui can only start the menu bar's contents lower, which makes the bar that much taller too. So they're
+			// lowered by both paddings, and moved back up by one once the bar begins.
+			ImVec2& menuBarOffset = ImGui::GetCurrentContext()->NextWindowData.MenuBarOffsetMinVal;
+			menuBarOffset.y = desc.MenuBarPadding * 2.0f;
+
 			bool* const isOpen = desc.Closable ? &panel->m_isOpen : nullptr;
 			const bool isVisible = ImGui::Begin(desc.Name.c_str(), isOpen, desc.WindowFlags);
+			// ImGui doesn't clear it after use
+			menuBarOffset.y = 0.0f;
 
 			panel->m_isHovered = isVisible && ImGui::IsWindowHovered();
 			panel->m_isFocused = isVisible && ImGui::IsWindowFocused();
@@ -200,6 +207,8 @@ namespace Editor
 			{
 				if ((desc.WindowFlags & ImGuiWindowFlags_MenuBar) != 0 && ImGui::BeginMenuBar())
 				{
+					const ImVec2 start = ImGui::GetCursorScreenPos();
+					ImGui::SetCursorScreenPos(ImVec2(start.x, start.y - desc.MenuBarPadding));
 					panel->DrawMenuBar(context);
 					ImGui::EndMenuBar();
 				}
