@@ -19,20 +19,27 @@ namespace
 
 namespace Editor
 {
-	void GizmoSnapper::DisplayControls(EditorSettings& settings)
+	void GizmoSnapper::DisplayControls(EditorSettings& settings, int operation)
 	{
 		const EditorUI::ScopedToolbarSpacing spacing;
 
+		// Greyed out rather than hidden, so the centred toolbar doesn't shift. Scaling doesn't snap.
 		EditorUI::ToolbarGroupSeparator();
+		ImGui::BeginDisabled(operation == ImGuizmo::SCALE);
 		ImGui::Checkbox("Snap (X)", &m_isEnabled);
+		ImGui::EndDisabled();
 
 		EditorUI::ToolbarGroupSeparator();
+		ImGui::BeginDisabled(operation != ImGuizmo::TRANSLATE);
 		ImGui::TextUnformatted("Move step:");
 		DrawSnapSizeOptions(settings);
+		ImGui::EndDisabled();
 
 		EditorUI::ToolbarGroupSeparator();
+		ImGui::BeginDisabled(operation != ImGuizmo::ROTATE);
 		ImGui::TextUnformatted("Rotate step:");
 		DrawRotationStepOptions(settings);
+		ImGui::EndDisabled();
 	}
 
 	void GizmoSnapper::DrawSnapSizeOptions(EditorSettings& settings)

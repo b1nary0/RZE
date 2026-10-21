@@ -8,6 +8,7 @@
 #include <Utils/DebugUtils/Debug.h>
 
 #include <algorithm>
+#include <cmath>
 #include <string>
 
 namespace
@@ -23,6 +24,15 @@ namespace
 	ImGuiID GetTabId(const std::string& windowName)
 	{
 		return ImHashStr("#TAB", 0, ImHashStr(windowName.c_str()));
+	}
+
+	// Where the current window's menu bar contents start for them to be centred across it, given how wide they are. Never
+	// left of minLeft, where ImGui starts them, so they start there when the bar's too narrow. On a whole pixel, so the
+	// text stays crisp.
+	float GetCentredMenuBarLeft(float minLeft, float width)
+	{
+		const ImRect bar = ImGui::GetCurrentWindow()->MenuBarRect();
+		return std::max(minLeft, std::floor(bar.GetCenter().x - width * 0.5f));
 	}
 
 	// A window's place among the tabs of its dock node, in its settings and, if it exists, the window. ImGui sorts tabs
@@ -207,9 +217,7 @@ namespace Editor
 			{
 				if ((desc.WindowFlags & ImGuiWindowFlags_MenuBar) != 0 && ImGui::BeginMenuBar())
 				{
-					const ImVec2 start = ImGui::GetCursorScreenPos();
-					ImGui::SetCursorScreenPos(ImVec2(start.x, start.y - desc.MenuBarPadding));
-					panel->DrawMenuBar(context);
+					DrawPanelMenuBar(*panel, context);
 					ImGui::EndMenuBar();
 				}
 
@@ -218,6 +226,40 @@ namespace Editor
 
 			ImGui::End();
 			windowStyle.PopAll();
+		}
+	}
+
+	void PanelManager::DrawPanelMenuBar(EditorPanel& panel, EditorContext& context)
+	{
+		const PanelDesc& desc = panel.m_desc;
+		ImGuiWindow* const window = ImGui::GetCurrentWindow();
+
+		// Where ImGui starts the contents, less the padding it was given below them (see DrawAll)
+		const ImVec2 start = ImGui::GetCursorScreenPos();
+		// Laid out by last time's width, which is all there is before they're drawn
+		const float left = desc.CentreMenuBar ? GetCentredMenuBarLeft(start.x, panel.m_menuBarWidth) : start.x;
+		ImGui::SetCursorScreenPos(ImVec2(left, start.y - desc.MenuBarPadding));
+
+		ImDrawList* const drawList = window->DrawList;
+		const int firstVertex = drawList->VtxBuffer.Size;
+		panel.DrawMenuBar(context);
+
+		if (desc.CentreMenuBar)
+		{
+			// To the right edge of the last item
+			const float width = window->DC.CursorMaxPos.x - left;
+			panel.m_menuBarWidth = width;
+
+			// Moved to where this frame's width puts them, so they aren't off-centre for a frame when it changes (and on
+			// the first frame). They're clicked where they were laid out until the next frame lays them out there too.
+			const float shift = GetCentredMenuBarLeft(start.x, width) - left;
+			if (shift != 0.0f)
+			{
+				for (int i = firstVertex; i < drawList->VtxBuffer.Size; ++i)
+				{
+					drawList->VtxBuffer[i].pos.x += shift;
+				}
+			}
 		}
 	}
 

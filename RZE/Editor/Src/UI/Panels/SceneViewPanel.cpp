@@ -96,6 +96,7 @@ namespace Editor
 		desc.WindowFlags = ImGuiWindowFlags_MenuBar;
 		// So the toolbar's controls don't crowd its edges
 		desc.MenuBarPadding = 6.0f;
+		desc.CentreMenuBar = true;
 		return desc;
 	}
 
@@ -137,19 +138,19 @@ namespace Editor
 			EditorUI::RadioOption("Scale", operation, static_cast<int>(ImGuizmo::SCALE));
 			EditorUI::ItemTooltip("Shortcut (R)");
 
-			// Scaling is always along the object's own axes
-			if (operation != ImGuizmo::SCALE)
-			{
-				int& space = m_gizmoState.m_transformationSpace;
-				EditorUI::ToolbarGroupSeparator();
-				EditorUI::RadioOption("Local", space, static_cast<int>(ImGuizmo::LOCAL));
-				EditorUI::ItemTooltip("Shortcut (Q)");
-				EditorUI::RadioOption("World", space, static_cast<int>(ImGuizmo::WORLD));
-				EditorUI::ItemTooltip("Shortcut (Q)");
-			}
+			// Scaling is always along the object's own axes. Greyed out rather than hidden, so the centred toolbar
+			// doesn't shift.
+			int& space = m_gizmoState.m_transformationSpace;
+			EditorUI::ToolbarGroupSeparator();
+			ImGui::BeginDisabled(operation == ImGuizmo::SCALE);
+			EditorUI::RadioOption("Local", space, static_cast<int>(ImGuizmo::LOCAL));
+			EditorUI::ItemTooltip("Shortcut (Q)");
+			EditorUI::RadioOption("World", space, static_cast<int>(ImGuizmo::WORLD));
+			EditorUI::ItemTooltip("Shortcut (Q)");
+			ImGui::EndDisabled();
 		}
 
-		m_gizmoState.m_snapper.DisplayControls(context.GetSettings());
+		m_gizmoState.m_snapper.DisplayControls(context.GetSettings(), m_gizmoState.m_currentOpMode);
 		m_grid.DisplayControls();
 	}
 

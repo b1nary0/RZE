@@ -67,6 +67,9 @@ namespace Editor
 		// slot's tab order, as the tab that's shown. Does nothing for a panel that has a place, or whose slot has no
 		// saved panel.
 		void PlaceUnsavedPanel(const EditorPanel& panel);
+		// Between BeginMenuBar and EndMenuBar: the panel's menu bar contents, placed by its PanelDesc::MenuBarPadding and
+		// CentreMenuBar
+		void DrawPanelMenuBar(EditorPanel& panel, EditorContext& context);
 
 	private:
 		std::vector<std::unique_ptr<EditorPanel>> m_panels;

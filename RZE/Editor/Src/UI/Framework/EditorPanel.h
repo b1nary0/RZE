@@ -48,6 +48,9 @@ namespace Editor
 		ImGuiWindowFlags WindowFlags = ImGuiWindowFlags_None;
 		// Space above and below the menu bar's contents, in pixels, on top of ImGui's. Only for ImGuiWindowFlags_MenuBar.
 		float MenuBarPadding = 0.0f;
+		// Centres the menu bar's contents across it, or starts them at its left where it's too narrow. Only for
+		// ImGuiWindowFlags_MenuBar.
+		bool CentreMenuBar = false;
 		// Draw() does its own Begin/End (e.g. ImGui's demo window), so PanelManager doesn't wrap it in a window.
 		// WindowFlags, PushWindowStyle and DrawMenuBar don't apply, and the panel isn't tracked as hovered or focused.
 		bool OwnsWindow = false;
@@ -122,5 +125,7 @@ namespace Editor
 		bool m_isOpen = true;
 		bool m_isHovered = false;
 		bool m_isFocused = false;
+		// How wide its menu bar's contents were when last drawn, for PanelDesc::CentreMenuBar. Pixels.
+		float m_menuBarWidth = 0.0f;
 	};
 }
