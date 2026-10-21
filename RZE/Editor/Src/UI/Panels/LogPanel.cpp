@@ -20,15 +20,11 @@ namespace Editor
 		return desc;
 	}
 
-	void LogPanel::Update(EditorContext& context)
-	{
-		const size_t entryCount = DebugServices::Get().GetLogEntries().size();
-		m_hasNewEntries = entryCount > m_lastEntryCount;
-		m_lastEntryCount = entryCount;
-	}
-
 	void LogPanel::Draw(EditorContext& context)
 	{
+		// As of the last frame drawn, before anything new is added below; also holds while the panel was hidden
+		const bool wasAtNewest = ImGui::GetScrollY() >= ImGui::GetScrollMaxY() - 1.0f;
+
 		const std::vector<DebugServices::LogEntry>& logEntries = DebugServices::Get().GetLogEntries();
 		for (auto& logItem : logEntries)
 		{
@@ -37,9 +33,10 @@ namespace Editor
 			ImGui::TextColored(imColor, "%s", logItem.Text.c_str());
 		}
 
-		if (m_hasNewEntries)
+		// Scrolled up to read something: leave it there
+		if (wasAtNewest)
 		{
-			ImGui::SetScrollHereY();
+			ImGui::SetScrollHereY(1.0f);
 		}
 	}
 }
