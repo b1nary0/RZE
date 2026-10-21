@@ -76,6 +76,31 @@ namespace
 		return windows;
 	}
 
+	// Along the top of tab, as ImGui draws one on the selected tab of a focused dock node's tab bar
+	void DrawTabOverline(const ImRect& tab)
+	{
+		const ImGuiStyle& style = ImGui::GetStyle();
+		if (style.TabBarOverlineSize <= 0.0f)
+		{
+			return;
+		}
+
+		ImDrawList* const drawList = ImGui::GetWindowDrawList();
+		const ImU32 colour = ImGui::GetColorU32(ImGuiCol_TabSelectedOverline);
+		const float top = tab.Min.y + ImGui::GetCurrentContext()->CurrentDpiScale;
+		if (style.TabRounding > 0.0f)
+		{
+			const float rounding = style.TabRounding;
+			drawList->PathArcToFast(ImVec2(tab.Min.x + rounding, top + rounding), rounding, 7, 9);
+			drawList->PathArcToFast(ImVec2(tab.Max.x - rounding, top + rounding), rounding, 9, 11);
+			drawList->PathStroke(colour, ImDrawFlags_None, style.TabBarOverlineSize);
+		}
+		else
+		{
+			drawList->AddLine(ImVec2(tab.Min.x - 0.5f, top - 0.5f), ImVec2(tab.Max.x - 0.5f, top - 0.5f), colour, style.TabBarOverlineSize);
+		}
+	}
+
 	// Makes window its node's shown tab. ImGui doesn't when it focuses a docked window.
 	void SelectTab(ImGuiWindow& window)
 	{
@@ -178,8 +203,10 @@ namespace Editor
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(0.0f, 0.0f));
+		// It appears each time it opens. Not taking focus as it does leaves it with the panel it was opened on.
 		const bool isVisible = ImGui::Begin(k_windowName, nullptr,
-			flags | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDocking);
+			flags | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDocking
+				| ImGuiWindowFlags_NoFocusOnAppearing);
 		ImGui::PopStyleVar(4);
 
 		// In front of the main dockspace's panels. Only as it opens: popups opened from its panels go in front of it.
@@ -239,22 +266,32 @@ namespace Editor
 
 		if (isVisible && ImGui::BeginTabBar("##Tabs", ImGuiTabBarFlags_NoTooltip | ImGuiTabBarFlags_FittingPolicyScroll))
 		{
+			// The panel focus is in, or that a focused popup was opened from
+			const ImGuiWindow* const navWindow = ImGui::GetCurrentContext()->NavWindow;
+			const ImGuiWindow* const focusedPanel = navWindow != nullptr ? navWindow->RootWindowPopupTree->RootWindow : nullptr;
+
 			std::vector<ImGuiDockNode*> leaves;
 			CollectLeafNodes(ImGui::DockBuilderGetNode(dockspaceId), leaves);
 			for (const ImGuiDockNode* const node : leaves)
 			{
 				for (ImGuiWindow* const window : GetNodeWindows(*node))
 				{
-					// While it's open, the tabs it's showing look selected
+					// While it's open, the tabs it's showing look as their tabs do in the area: selected, in a focused tab
+					// bar for the focused one, with its overline
 					const bool isShown = m_isOpen && node->SelectedTabId == window->TabId;
+					const bool isFocused = isShown && window == focusedPanel;
 					if (isShown)
 					{
-						ImGui::PushStyleColor(ImGuiCol_Tab, ImGui::GetStyleColorVec4(ImGuiCol_TabSelected));
+						ImGui::PushStyleColor(ImGuiCol_Tab, ImGui::GetStyleColorVec4(isFocused ? ImGuiCol_TabSelected : ImGuiCol_TabDimmedSelected));
 					}
 					const bool isClicked = ImGui::TabItemButton(window->Name);
 					if (isShown)
 					{
 						ImGui::PopStyleColor();
+					}
+					if (isFocused)
+					{
+						DrawTabOverline(ImRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax()));
 					}
 
 					if (isClicked)
