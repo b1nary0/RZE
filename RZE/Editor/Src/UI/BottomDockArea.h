@@ -12,7 +12,7 @@ namespace Editor
 	class EditorContext;
 
 	// The dock area along the bottom of the editor, above the status bar and spanning its full width: the panels whose
-	// PanelDesc::DefaultDock is Bottom (Log, Content Browser) and anything docked beside them. It's a dockspace of its
+	// PanelDesc::DefaultDock is BottomLeft or BottomRight (Content Browser, Log) and anything docked beside them. It's a dockspace of its
 	// own, so it can be drawn in different places without its panels changing dock node. A splitter along its top edge
 	// sets its height. The pin at the end of its tab bar switches between:
 	//
@@ -62,7 +62,8 @@ namespace Editor
 		static void WriteSettings(ImGuiContext* context, ImGuiSettingsHandler* handler, ImGuiTextBuffer* buffer);
 
 	private:
-		bool m_isPinned = true;
+		// Starts auto-hidden, until imgui.ini says otherwise
+		bool m_isPinned = false;
 		// Pixels, below the splitter; 0 until the first Draw sets it from the work area's height. It's drawn smaller while
 		// the work area is too short for it, and back at this height when there's room.
 		float m_height = 0.0f;

@@ -196,7 +196,7 @@ With `UIFrameRate` set, only some frames are UI frames. Everything else (the asy
 1. `AsyncOperationManager::ShutDown()` first, so no async work touches the scene, resources or renderer while they shut down (it cancels operations and waits for their worker jobs; completion callbacks don't fire);
 2. scene shutdown, then app shutdown;
 3. the main scene's `ClearObjects()`, then `ReleaseRenderStages()` (must happen before resources are released). What these release is destroyed as it goes;
-4. `RenderEngine::Shutdown()`, which lets the render thread finish what it was given, then stops it;
+4. `RenderEngine::Shutdown()`, which lets the render thread finish what it was given, then stops it, shuts down ImGui's backends and destroys its context. Destroying the context saves `imgui.ini`, through what the application gave ImGui (the Editor's ini path and settings handlers). The application is never deleted (`RZE_Engine::m_application`), so they're still there; deleting it would have to come after this;
 5. `JobScheduler::ShutDown()` (queued jobs are abandoned, running ones finish), clear the log sink, `MainThreadDispatcher::ShutDown()`;
 6. `InternalShutDown()` deletes the scene and renderer, releases the engine config, shuts down the `ResourceHandler`, and deletes the window.
 

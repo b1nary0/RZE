@@ -23,7 +23,7 @@ namespace Editor
 		PanelDesc desc;
 		desc.Name = "Resource Monitor";
 		desc.MenuPath = "View/Windows/Resource Monitor";
-		desc.DefaultDock = EPanelDock::Left;
+		desc.DefaultDock = EPanelDock::BottomRight;
 		desc.DefaultOpen = false;
 		return desc;
 	}

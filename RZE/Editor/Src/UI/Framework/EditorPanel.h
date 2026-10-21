@@ -8,14 +8,19 @@ namespace Editor
 {
 	class EditorContext;
 
-	// Where a panel docks in the default layout (PanelManager::BuildDefaultDockLayout)
+	// Where a panel docks in the default layout (PanelManager::BuildDefaultDockLayout and BuildBottomDockLayout). An area
+	// with two halves is only split when panels use both; panels in just one of them fill it.
 	enum class EPanelDock
 	{
 		Floating,
+		// A column down the left side
 		Left,
-		Right,
-		// The bottom dock area (BottomDockArea), spanning the full width under the others
-		Bottom,
+		// A column down the right side, in a top and bottom half
+		RightTop,
+		RightBottom,
+		// The bottom dock area (BottomDockArea), spanning the full width under the others, in a left and right half
+		BottomLeft,
+		BottomRight,
 		// What's left in the middle; the scene view
 		Center,
 

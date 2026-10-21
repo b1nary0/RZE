@@ -9,21 +9,22 @@ Its UI code is organised around an `EditorContext` that panels share, self-regis
 ```
 +---------------------------------------------------------------------------------+
 | File Edit View Help |  RenderCommand MemArena: 4 KB / 64 MB  Peak ...           |
-+--------------+--------------------------------------------------+---------------+
-| Scene        | SceneView  (gizmo | snap | grid toolbar)        | Object        |
-|              |                                                  | Inspector     |
-|  Camera      |      3D viewport: the scene, gizmo, light and    |               |
-|  Directional |      camera icons, bounds boxes, marquee         | the selected  |
-|  NeckMech    |                                                  | objects'      |
-|  M4          |      ground grid                                 | components    |
-+--------------+--------------------------------------------------+---------------+
-| Content Browser | Log    (Assets and ProjectData as tiles; the log as a tab)    |
++---------------------------------------------------------------+-----------------+
+| SceneView  (gizmo | snap | grid toolbar)                      | Scene           |
+|                                                               |  Camera         |
+|      3D viewport: the scene, gizmo, light and camera          |  NeckMech ...   |
+|      icons, bounds boxes, marquee                             |                 |
+|                                                               +-----------------+
+|                                                               | Object          |
+|      ground grid                                              | Inspector       |
++---------------------------------------------------------------+-----------------+
+| Content Browser   Log      (the bottom dock area, auto-hidden)            [pin] |
 +---------------------------------------------------------------------------------+
 | Ready   16.7 ms · 60 FPS · idle 9.8 ms          (o) [Rendering thumbnails  33%] |
 +---------------------------------------------------------------------------------+
 ```
 
-The layout is an ImGui dockspace, saved in `Config\imgui.ini`; without one, each panel docks where its `PanelDesc::DefaultDock` says. Each panel is described in [Editor-Panels.md](Editor-Panels.md), and the inspector in [Object-Inspector-And-Properties.md](Object-Inspector-And-Properties.md); the camera and the build/launch tools are in [Editor-Camera-And-Build-Launch.md](Editor-Camera-And-Build-Launch.md); gizmo snapping and the ground grid are in [Gizmo-Snapping-And-Grid.md](Gizmo-Snapping-And-Grid.md). Every keyboard and mouse shortcut is in [Editor-Shortcuts.md](Editor-Shortcuts.md).
+The layout is an ImGui dockspace, saved in `Config\imgui.ini`; without one, each panel docks where its `PanelDesc::DefaultDock` says. Nothing docks into the scene view itself. The panels along the bottom (Content Browser and Log) are in the **bottom dock area**, which starts auto-hidden: a strip of tabs, where clicking one opens the area over the bottom of the scene view until focus goes elsewhere. Its pin keeps it open instead ([Editor-Framework.md](Editor-Framework.md#the-bottom-dock-area)). Each panel is described in [Editor-Panels.md](Editor-Panels.md), and the inspector in [Object-Inspector-And-Properties.md](Object-Inspector-And-Properties.md); the camera and the build/launch tools are in [Editor-Camera-And-Build-Launch.md](Editor-Camera-And-Build-Launch.md); gizmo snapping and the ground grid are in [Gizmo-Snapping-And-Grid.md](Gizmo-Snapping-And-Grid.md). Every keyboard and mouse shortcut is in [Editor-Shortcuts.md](Editor-Shortcuts.md).
 
 - The **status bar** along the bottom shows the frame time, frames a second and idle time, and background tasks, their progress and their history; Edit > **Settings** opens the Settings window, whose Frame Rate page sets vsync, the frame rate caps and how often the UI updates. Both are in [Status-Bar-And-Settings.md](Status-Bar-And-Settings.md).
 - Scenes and meshes are picked in a **file browser** of thumbnails, which the editor renders in the background, and the **Content Browser** panel shows the project's files the same way, with meshes that can be dragged into the scene: [Thumbnails-And-File-Browser.md](Thumbnails-And-File-Browser.md).
@@ -172,5 +173,6 @@ flowchart TD
 - `Editor\Src\UI\Panels\` — see [Editor-Panels.md](Editor-Panels.md)
 - `Editor\Src\UI\Modals\AsyncOperationModal.h/.cpp`, `UnsavedChangesPrompt.h/.cpp`, `FileBrowserModal.h/.cpp`
 - `Editor\Src\UI\StatusBar.h/.cpp`, `TaskTracker.h/.cpp` — see [Status-Bar-And-Settings.md](Status-Bar-And-Settings.md)
+- `Editor\Src\UI\BottomDockArea.h/.cpp` — see [Editor-Framework.md](Editor-Framework.md#the-bottom-dock-area)
 - `Editor\Src\Game\World\GameObjectComponents\EditorCameraComponent.h/.cpp` — see [Editor-Camera-And-Build-Launch.md](Editor-Camera-And-Build-Launch.md)
 - `Engine\Src\Game\SceneLoadOperation.h/.cpp`

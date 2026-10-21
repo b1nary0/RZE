@@ -39,11 +39,11 @@ namespace Editor
 		// name as existing ones are appended to.
 		void DrawMenuItems(const char* mainMenu);
 
-		// Splits the main dockspace into the PanelDesc::DefaultDock slots that panels use, other than Bottom, and docks
-		// each panel into its slot. For when there's no saved layout to restore.
+		// Splits the main dockspace into the PanelDesc::DefaultDock slots that panels use, other than the bottom area's,
+		// and docks each panel into its slot. For when there's no saved layout to restore.
 		void BuildDefaultDockLayout(ImGuiID dockspaceId, const ImVec2& size);
-		// Makes the bottom area's dockspace (BottomDockArea) and docks the Bottom panels into it, for when imgui.ini has
-		// no saved layout for it. A layout saved before the bottom area had a dockspace of its own has them in the main
+		// Makes the bottom area's dockspace (BottomDockArea), split into the BottomLeft and BottomRight slots that panels
+		// use, and docks their panels into it, for when imgui.ini has no saved layout for it. A layout saved before the bottom area had a dockspace of its own has them in the main
 		// dockspace; they're taken out of it, along with the nodes they leave empty.
 		void BuildBottomDockLayout(ImGuiID dockspaceId, const ImVec2& size);
 
@@ -55,6 +55,11 @@ namespace Editor
 	private:
 		// The panels the default layout docks into slot, in their tab order there: open ones first, then by name
 		std::vector<const EditorPanel*> GetPanelsInSlot(EPanelDock slot) const;
+		// Splits an area's node between its two halves, first towards firstDir, if panels use both; otherwise the one
+		// that's used gets the whole node. A half no panel uses is left 0.
+		void SplitArea(ImGuiID areaId, EPanelDock first, EPanelDock second, ImGuiDir firstDir, ImGuiID& firstId, ImGuiID& secondId) const;
+		// Whether any panel, open or not, docks in slot by default
+		bool IsSlotUsed(EPanelDock slot) const;
 		// Docks slot's panels into the node as tabs, in their order there, with the first shown
 		void DockSlotPanels(EPanelDock slot, ImGuiID nodeId) const;
 		// Before the first Begin of a docked panel that imgui.ini has no place for, e.g. one added since the layout was

@@ -57,9 +57,9 @@ public:
     static PanelDesc Describe()
     {
         PanelDesc desc;
-        desc.Name = "Log";                      // window title and ImGui ID; imgui.ini saves the layout under it
-        desc.MenuPath = "View/Windows/Log";     // menu item that opens and closes it
-        desc.DefaultDock = EPanelDock::Bottom;  // where it docks when there's no saved layout
+        desc.Name = "Log";                           // window title and ImGui ID; imgui.ini saves the layout under it
+        desc.MenuPath = "View/Windows/Log";          // menu item that opens and closes it
+        desc.DefaultDock = EPanelDock::BottomRight;  // where it docks when there's no saved layout
         desc.WindowFlags = ImGuiWindowFlags_NoCollapse;
         return desc;
     }
@@ -78,10 +78,11 @@ REGISTER_EDITOR_PANEL(LogPanel);   // in LogPanel.cpp
 |---|---|
 | `Name` | Window title and ImGui ID. Renaming a panel loses its saved dock position. |
 | `MenuPath` | Where its checkable menu item goes, starting with a main menu (`"View/Windows/Log"`, `"Help/ImGui Demo"`). Empty leaves it out of the menus. Items are sorted by name. |
-| `DefaultDock` | `Left`, `Right`, `Bottom`, `Center` or `Floating`, for the generated layout, and where a panel added since `imgui.ini` was saved goes (see below). |
+| `DefaultDock` | `Floating`, `Left`, `RightTop`, `RightBottom`, `BottomLeft`, `BottomRight` or `Center`, for the generated layout, and where a panel added since `imgui.ini` was saved goes (see below). The right column and the [bottom dock area](#the-bottom-dock-area) each have two halves, and are only split when panels use both. |
 | `DefaultSize` | For a `Floating` panel: its size the first time it opens, centred in the editor (until `imgui.ini` has one). Zero leaves it to ImGui. |
 | `DefaultOpen` | Open on first run. |
 | `Closable` | Shows the close button. A panel that can't close is always open (the SceneView). |
+| `AcceptsDocking` | Other panels can dock into its node, as a tab or split off to one side (on by default). The SceneView turns it off, so panels dock around the scene rather than into it: `PanelManager` gives its window a class that sets `NoDockingOverMe` and `NoDockingSplit` on its node, which then shows no drop targets. Dropping on the main dockspace's outer edges still works. |
 | `WindowFlags` | Passed to `Begin`. Include `ImGuiWindowFlags_MenuBar` to get a `DrawMenuBar()` call. |
 | `OwnsWindow` | `Draw()` does its own `Begin`/`End` (the ImGui demo). Use `GetOpenFlag()` for its close button. |
 
@@ -89,11 +90,28 @@ Optional hooks: `Initialize(context)` (once, after every panel exists), `DrawMen
 
 `PanelManager` creates every registered panel at start-up, sorted by name. On each UI frame it updates and draws the open ones (`UpdateAll`, `DrawAll`), and every frame it calls their `PreRender` (`PreRenderAll`). It also builds the Edit, View and Help menu items from their `MenuPath`s, and docks panels:
 
-- **Tab order.** Panels sharing a slot are tabs in a fixed order: the ones open at first (`DefaultOpen`), then the rest, each by name. So the Bottom slot is Content Browser, then Log.
-- **No saved layout.** `BuildDefaultDockLayout` docks each panel into its `DefaultDock` slot in that order and shows each slot's first tab. It sets the tab order explicitly, since ImGui otherwise orders tabs that appear in the same frame as it likes.
+- **Tab order.** Panels sharing a slot are tabs in a fixed order: the ones open at first (`DefaultOpen`), then the rest, each by name. So `BottomRight` is Log, then Resource Monitor.
+- **No saved layout.** `BuildDefaultDockLayout` splits the main dockspace into the columns panels use: `Left`, then the right column (19% of the width), split evenly between `RightTop` and `RightBottom`; `Center` is what's left. `BuildBottomDockLayout` splits the bottom area's dockspace evenly between `BottomLeft` and `BottomRight`. Each panel docks into its slot in that order, and each slot shows its first tab. It sets the tab order explicitly, since ImGui otherwise orders tabs that appear in the same frame as it likes. So the default is the scene view with a column on its right (Scene above Object Inspector), and the bottom area auto-hidden with Content Browser beside Log.
 - **A panel `imgui.ini` doesn't know**, e.g. one added since the layout was saved, would otherwise open floating. Before its first `Begin`, `PlaceUnsavedPanel` docks it into the node of a saved panel from the same slot. It takes the place of the first saved panel that comes after it in the tab order, and the tabs from there on move along one; with none after it, it goes last. Tabs the user has rearranged keep their order. It's shown as the selected tab, so a new panel gets noticed. From then on `imgui.ini` remembers it like any other. If no panel from its slot is saved, it's left to ImGui.
 
 This uses ImGui's internal window settings and dock nodes (`imgui_internal.h`), as the DockBuilder calls already do.
+
+### The bottom dock area
+
+The panels along the bottom (the `BottomLeft` and `BottomRight` slots: Content Browser and Log) are in `BottomDockArea` (`UI\BottomDockArea.h/.cpp`), which `EditorApp` owns and draws after the status bar and before the main dockspace. It's a dockspace of its own (`"BottomDockspace"`), so it can be drawn in different places while its panels stay in the same dock nodes. The pin at the right end of its tab bar switches between two modes:
+
+| Mode | What you see |
+|---|---|
+| **Pinned** | Always open, in a window that takes its height out of the viewport's work area like the status bar, so the main dockspace fits above it. |
+| **Auto-hide** (the default) | A strip of tabs above the status bar, one per panel docked in the area, with the pin at its end. Clicking a tab opens the area **over** the bottom of the main dockspace on that panel, so the scene view keeps its size. Clicking the tab it's showing closes it again. |
+
+- **When it's open.** Auto-hidden, the area is open while focus is in it: one of its panels, or a popup or menu opened from one. When focus goes anywhere else, such as a click on the scene view, it goes back to the strip. Focusing one of its panels some other way, such as Ctrl+Tab, opens it. A drag that started in it, such as an asset on its way to the scene view, keeps it open until it's dropped.
+- **While it's closed** its panels stay docked but aren't drawn: its dockspace is only kept alive (`ImGuiDockNodeFlags_KeepAliveOnly`), so their `Draw` isn't called. ImGui only draws a panel as docked once its dock node has been drawn, so on its first frames closed (starting auto-hidden), the area is drawn out of sight below the viewport.
+- **Height.** A splitter along its top edge sets it, in both modes. It starts at 27% of the work area.
+- **Saved** in `imgui.ini` under `[BottomDockArea][Area]` (`Pinned=`, `Height=`), by a settings handler it registers in `Initialize()`.
+- **Older layouts.** An `imgui.ini` saved before the area had a dockspace of its own has its panels in a split of the main dockspace. `BuildBottomDockLayout` moves them across and removes the nodes they leave empty, so the space goes back to the scene view.
+
+It reads ImGui's dock nodes, windows and focus from `imgui_internal.h`, which an ImGui upgrade may change.
 
 > **Registration and linking.** `REGISTER_EDITOR_PANEL` (and `REGISTER_SETTINGS_PAGE`) register from static initializers that nothing else references. The Editor's code is built as the `EditorLib` static library (so [the unit tests](../01-GettingStarted/Building-And-Running.md#unit-tests) can link it), and a linker drops unreferenced objects from a library, so `Editor` links `EditorLib` with `/WHOLEARCHIVE` to keep them. Anything else that links `EditorLib`, such as `UnitTests`, gets no panels unless it does the same.
 
@@ -115,7 +133,7 @@ sequenceDiagram
         App->>PM: UpdateAll - each open panel's Update()
         Eng->>Eng: ImGui NewFrame
         Eng->>App: UpdateUI()
-        App->>App: main menu bar, status bar, dockspace
+        App->>App: main menu bar, status bar,<br/>bottom dock area, dockspace
         App->>PM: DrawAll - each open panel's Draw()
         App->>Q: Flush - apply this frame's commands,<br/>record them in UndoHistory
         Q-->>App: SceneModifiedEvent if any ran
@@ -321,6 +339,7 @@ Windows, popups, fields, buttons, checkboxes, images and highlights have slightl
 
 - `Editor\Src\UI\Framework\EditorContext.h/.cpp`, `EditorSelection`, `EditorSettings`, `EditorEvents`, `ScenePicker`, `InteractionTracker`, `EditorUI`
 - `Editor\Src\UI\Framework\EditorPanel.h/.cpp`, `PanelRegistry.h/.cpp`, `PanelManager.h/.cpp`
+- `Editor\Src\UI\BottomDockArea.h/.cpp` — the bottom dock area
 - `Editor\Src\Commands\EditorCommand.h`, `CommandQueue.h/.cpp`, `SceneCommands`, `TransformCommands`, `PropertyCommands`, `HistoryCommands`, `UndoRecord`, `ParkedSubtree`
 - `Editor\Src\Commands\AssetFileCommands` — rename, delete and new folder, undoable
 - `Editor\Src\Services\SceneDocument`, `GameBuilder`, `GameObjectClipboard`, `GameObjectSnapshot`, `SelectionBoundsDisplay`, `UndoHistory`, `ThumbnailRenderer`, `ProjectWatcher`, `AssetFiles`

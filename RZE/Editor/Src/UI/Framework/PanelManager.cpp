@@ -12,9 +12,11 @@
 
 namespace
 {
-	// The share of the dockspace each side slot takes. Bottom has a dockspace of its own (BottomDockArea).
+	// The share of the main dockspace each side column takes. The bottom area has a dockspace of its own (BottomDockArea).
 	constexpr float k_leftDockFraction = 0.09f;
-	constexpr float k_rightDockFraction = 0.12f;
+	constexpr float k_rightDockFraction = 0.19f;
+	// The share of an area its first half (top or left) takes, when panels use both halves
+	constexpr float k_firstHalfFraction = 0.5f;
 
 	// The ID ImGui gives a docked window's tab (ImGuiWindow::TabId, "#TAB" in the window's ID scope), so a dock node's
 	// shown tab can be picked before the window exists
@@ -254,28 +256,22 @@ namespace Editor
 
 	void PanelManager::BuildDefaultDockLayout(ImGuiID dockspaceId, const ImVec2& size)
 	{
-		auto isSlotUsed = [this](EPanelDock slot)
-			{
-				return std::any_of(m_panels.begin(), m_panels.end(), [slot](const std::unique_ptr<EditorPanel>& panel)
-					{
-						return panel->m_desc.DefaultDock == slot;
-					});
-			};
-
 		ImGui::DockBuilderRemoveNode(dockspaceId);
 		ImGui::DockBuilderAddNode(dockspaceId, ImGuiDockNodeFlags_DockSpace);
 		ImGui::DockBuilderSetNodeSize(dockspaceId, size);
 
-		// Each split carves a slot off the remaining central node, which ends up as the Center slot
+		// Each column is carved off the remaining central node, which ends up as the Center slot
 		ImGuiID slotIds[static_cast<size_t>(EPanelDock::Count)] = {};
 		ImGuiID centerId = dockspaceId;
-		if (isSlotUsed(EPanelDock::Left))
+		if (IsSlotUsed(EPanelDock::Left))
 		{
 			slotIds[static_cast<size_t>(EPanelDock::Left)] = ImGui::DockBuilderSplitNode(centerId, ImGuiDir_Left, k_leftDockFraction, nullptr, &centerId);
 		}
-		if (isSlotUsed(EPanelDock::Right))
+		if (IsSlotUsed(EPanelDock::RightTop) || IsSlotUsed(EPanelDock::RightBottom))
 		{
-			slotIds[static_cast<size_t>(EPanelDock::Right)] = ImGui::DockBuilderSplitNode(centerId, ImGuiDir_Right, k_rightDockFraction, nullptr, &centerId);
+			const ImGuiID rightId = ImGui::DockBuilderSplitNode(centerId, ImGuiDir_Right, k_rightDockFraction, nullptr, &centerId);
+			SplitArea(rightId, EPanelDock::RightTop, EPanelDock::RightBottom, ImGuiDir_Up,
+				slotIds[static_cast<size_t>(EPanelDock::RightTop)], slotIds[static_cast<size_t>(EPanelDock::RightBottom)]);
 		}
 		slotIds[static_cast<size_t>(EPanelDock::Center)] = centerId;
 
@@ -294,17 +290,31 @@ namespace Editor
 	{
 		// Where imgui.ini has them, from before the bottom area had a dockspace of its own
 		std::vector<ImGuiID> previousNodeIds;
-		for (const EditorPanel* const panel : GetPanelsInSlot(EPanelDock::Bottom))
+		for (const EPanelDock slot : { EPanelDock::BottomLeft, EPanelDock::BottomRight })
 		{
-			if (const ImGuiWindowSettings* const settings = ImGui::FindWindowSettingsByID(ImHashStr(panel->m_desc.Name.c_str())))
+			for (const EditorPanel* const panel : GetPanelsInSlot(slot))
 			{
-				previousNodeIds.push_back(settings->DockId);
+				if (const ImGuiWindowSettings* const settings = ImGui::FindWindowSettingsByID(ImHashStr(panel->m_desc.Name.c_str())))
+				{
+					previousNodeIds.push_back(settings->DockId);
+				}
 			}
 		}
 
 		ImGui::DockBuilderAddNode(dockspaceId, ImGuiDockNodeFlags_DockSpace);
 		ImGui::DockBuilderSetNodeSize(dockspaceId, size);
-		DockSlotPanels(EPanelDock::Bottom, dockspaceId);
+
+		ImGuiID leftId = 0;
+		ImGuiID rightId = 0;
+		SplitArea(dockspaceId, EPanelDock::BottomLeft, EPanelDock::BottomRight, ImGuiDir_Left, leftId, rightId);
+		if (leftId != 0)
+		{
+			DockSlotPanels(EPanelDock::BottomLeft, leftId);
+		}
+		if (rightId != 0)
+		{
+			DockSlotPanels(EPanelDock::BottomRight, rightId);
+		}
 
 		// So the main dockspace doesn't keep an empty space where they were
 		for (const ImGuiID nodeId : previousNodeIds)
@@ -313,6 +323,32 @@ namespace Editor
 		}
 
 		ImGui::DockBuilderFinish(dockspaceId);
+	}
+
+	void PanelManager::SplitArea(ImGuiID areaId, EPanelDock first, EPanelDock second, ImGuiDir firstDir, ImGuiID& firstId, ImGuiID& secondId) const
+	{
+		const bool isFirstUsed = IsSlotUsed(first);
+		const bool isSecondUsed = IsSlotUsed(second);
+		if (isFirstUsed && isSecondUsed)
+		{
+			firstId = ImGui::DockBuilderSplitNode(areaId, firstDir, k_firstHalfFraction, nullptr, &secondId);
+		}
+		else if (isFirstUsed)
+		{
+			firstId = areaId;
+		}
+		else if (isSecondUsed)
+		{
+			secondId = areaId;
+		}
+	}
+
+	bool PanelManager::IsSlotUsed(EPanelDock slot) const
+	{
+		return std::any_of(m_panels.begin(), m_panels.end(), [slot](const std::unique_ptr<EditorPanel>& panel)
+			{
+				return panel->m_desc.DefaultDock == slot;
+			});
 	}
 
 	void PanelManager::DockSlotPanels(EPanelDock slot, ImGuiID nodeId) const

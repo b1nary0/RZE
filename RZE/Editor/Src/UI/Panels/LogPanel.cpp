@@ -15,7 +15,7 @@ namespace Editor
 		PanelDesc desc;
 		desc.Name = "Log";
 		desc.MenuPath = "View/Windows/Log";
-		desc.DefaultDock = EPanelDock::Bottom;
+		desc.DefaultDock = EPanelDock::BottomRight;
 		desc.WindowFlags = ImGuiWindowFlags_NoCollapse;
 		return desc;
 	}

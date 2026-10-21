@@ -4,12 +4,12 @@ Every Editor window is an `EditorPanel` in `Editor\Src\UI\Panels\`, registered w
 
 | Panel (window name) | Class | Default dock | Menu | Closable |
 |---|---|---|---|---|
-| Scene | `ScenePanel` | Left | View > Windows > Scene | yes |
-| SceneView | `SceneViewPanel` | Centre | — | no |
-| Object Inspector | `InspectorPanel` | Right | View > Windows > Object Inspector | yes |
-| Content Browser | `ContentBrowserPanel` | Bottom (first tab) | View > Windows > Content Browser | yes |
-| Log | `LogPanel` | Bottom | View > Windows > Log | yes |
-| Resource Monitor | `ResourceMonitorPanel` | Left (closed at first) | View > Windows > Resource Monitor | yes |
+| Scene | `ScenePanel` | RightTop | View > Windows > Scene | yes |
+| SceneView | `SceneViewPanel` | Centre (nothing docks into it) | — | no |
+| Object Inspector | `InspectorPanel` | RightBottom | View > Windows > Object Inspector | yes |
+| Content Browser | `ContentBrowserPanel` | BottomLeft, in the [bottom dock area](Editor-Framework.md#the-bottom-dock-area) | View > Windows > Content Browser | yes |
+| Log | `LogPanel` | BottomRight, in the bottom dock area (first tab) | View > Windows > Log | yes |
+| Resource Monitor | `ResourceMonitorPanel` | BottomRight, after Log (closed at first) | View > Windows > Resource Monitor | yes |
 | ImGui Demo | `ImGuiDemoPanel` | floating (closed at first) | Help > ImGui Demo | yes |
 | Settings | `SettingsPanel` | floating, 760×460 (closed at first) | Edit > Settings | yes |
 | Project Settings | `ProjectSettingsPanel` | floating, 560×300 (closed at first) | Edit > Project Settings | yes |

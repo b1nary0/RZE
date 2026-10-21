@@ -120,7 +120,7 @@ Opening while a request is showing replaces it, and the old one is cancelled.
 
 ## The Content Browser (`ContentBrowserPanel`)
 
-`UI\Panels\ContentBrowserPanel.h/.cpp`: a panel, open from the start as the first tab of the bottom dock, beside the Log (View > Windows > Content Browser).
+`UI\Panels\ContentBrowserPanel.h/.cpp`: a panel, open from the start in the left half of the [bottom dock area](Editor-Framework.md#the-bottom-dock-area), beside the Log (View > Windows > Content Browser).
 
 ```
 +---------------------------------------------------------------------------------+

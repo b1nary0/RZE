@@ -83,7 +83,7 @@ namespace Editor
 		PanelDesc desc;
 		desc.Name = "Content Browser";
 		desc.MenuPath = "View/Windows/Content Browser";
-		desc.DefaultDock = EPanelDock::Bottom;
+		desc.DefaultDock = EPanelDock::BottomLeft;
 		// The folder tree and the tiles scroll on their own
 		desc.WindowFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
 		return desc;

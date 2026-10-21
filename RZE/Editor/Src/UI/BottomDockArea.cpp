@@ -24,7 +24,7 @@ namespace
 	constexpr char k_heightKey[] = "Height=";
 
 	// The share of the work area it starts with
-	constexpr float k_defaultHeightFraction = 0.22f;
+	constexpr float k_defaultHeightFraction = 0.27f;
 	// The splitter never makes it, or what's left above it, shorter than these. Pixels.
 	constexpr float k_minHeight = 60.0f;
 	constexpr float k_minHeightAbove = 120.0f;

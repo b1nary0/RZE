@@ -74,7 +74,7 @@ The checked-in file is in the layout SimpleINI writes (the blank line before a c
 
 ## `Config\imgui.ini`
 
-A standard Dear ImGui persisted window-layout file, auto-generated/updated by ImGui itself — not hand-authored, and not part of the `EngineConfig`/`Config` class hierarchy. The Editor points ImGui's `io.IniFilename` at this path during `EditorApp::Initialize()`.
+A standard Dear ImGui persisted window-layout file, auto-generated/updated by ImGui itself — not hand-authored, and not part of the `EngineConfig`/`Config` class hierarchy. The Editor points ImGui's `io.IniFilename` at this path during `EditorApp::Initialize()`. ImGui saves it a few seconds after a change, and again on exit when the render thread destroys its context ([Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md#shutdown)). Besides the windows and dock layout, it holds the Editor's own `[BottomDockArea][Area]` section ([Editor-Framework.md](../07-Editor/Editor-Framework.md#the-bottom-dock-area)).
 
 ## Where config lives in the build/asset flow
 

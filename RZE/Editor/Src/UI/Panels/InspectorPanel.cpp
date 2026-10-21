@@ -30,7 +30,7 @@ namespace Editor
 		PanelDesc desc;
 		desc.Name = "Object Inspector";
 		desc.MenuPath = "View/Windows/Object Inspector";
-		desc.DefaultDock = EPanelDock::Right;
+		desc.DefaultDock = EPanelDock::RightBottom;
 		return desc;
 	}
 
