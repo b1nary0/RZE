@@ -23,8 +23,7 @@ class AsyncFrameBudget;
 // Lifecycle of an operation:
 //   Start() -> OnStart()
 //   Tick()  -> OnTick(budget) each frame until the operation calls Complete()/Fail() or is cancelled
-//           -> once no worker jobs are outstanding: OnFinished(state), completion callback
-//           -> k_retireFrameCount frames later: OnCleanup(), operation released
+//           -> once no worker jobs are outstanding: OnFinished(state), completion callback, OnCleanup(), operation released
 class AsyncOperationManager
 {
 public:
@@ -33,9 +32,6 @@ public:
 	static constexpr double k_backgroundFrameBudgetMS = 2.0;
 	// Background operations get this fraction of the upload allowance, on top of the foreground's
 	static constexpr size_t k_backgroundUploadBudgetDivisor = 4;
-	// Render thread processes the previous frame's commands while the main thread builds the next one,
-	// so anything referenced by a submitted command must survive at least this many frames.
-	static constexpr U32 k_retireFrameCount = 2;
 
 public:
 	AsyncOperationManager();
@@ -75,25 +71,19 @@ public:
 	void SetFrameBudget(double timeBudgetMS, size_t uploadBudgetBytes);
 
 private:
-	struct Entry
-	{
-		std::shared_ptr<AsyncOperation> Operation;
-		bool IsFinished = false;
-		U32 RetireFramesRemaining = 0;
-	};
-
 	// The render command arena and uploads left for this frame, less what idle ticks before it used
 	AsyncFrameBudget CreateFrameBudget(double timeBudgetMS, bool isIdle) const;
 	// Ticks the foreground or the background operations, removing those that are done
-	void TickEntries(bool background, AsyncFrameBudget& budget);
+	void TickOperations(bool background, AsyncFrameBudget& budget);
 	// Ticks the foreground or the background operations that are still running, and nothing else
-	void TickRunningEntries(bool background, AsyncFrameBudget& budget);
+	void TickRunningOperations(bool background, AsyncFrameBudget& budget);
 	void StartInternal(const std::shared_ptr<AsyncOperation>& operation);
-	// Returns true when the entry can be removed.
-	bool TickEntry(Entry& entry, AsyncFrameBudget& budget);
+	// Returns true once the operation has finished and been cleaned up, so it can be removed
+	bool TickOperation(AsyncOperation& operation, AsyncFrameBudget& budget);
 
 private:
-	std::vector<Entry> m_entries;
+	// Started and not yet finished
+	std::vector<std::shared_ptr<AsyncOperation>> m_operations;
 	std::vector<std::shared_ptr<AsyncOperation>> m_pendingStarts;
 
 	AsyncOperationFilter m_visibilityFilter;

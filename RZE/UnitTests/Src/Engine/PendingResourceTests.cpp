@@ -49,10 +49,10 @@ namespace
 			}
 		}
 
-		// Long enough for finished operations to be cleaned up and let go of
-		void TickUntilRetired()
+		// Ticks until operation has finished, which is when the manager lets go of it, or gives up
+		void TickUntilFinished(const AsyncOperation& operation)
 		{
-			for (U32 tick = 0; tick <= AsyncOperationManager::k_retireFrameCount + 1; ++tick)
+			for (int tick = 0; tick < 10 && !operation.IsFinished(); ++tick)
 			{
 				Manager.Tick();
 			}
@@ -92,8 +92,10 @@ TEST_CASE_FIXTURE(EngineOperations, "A pending resource loads in the background,
 	CHECK(pending.GetHandle().IsValid());
 	CHECK_FALSE(pending.HasFailed());
 
+	// Once the manager has let go of the load too, the pending resource's handle is all that keeps it loaded
+	TickUntilFinished(*load);
+	REQUIRE(load->IsFinished());
 	load.reset();
-	TickUntilRetired();
 	CHECK(handler.HasResource(k_loadedPath));
 
 	pending.Reset();

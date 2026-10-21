@@ -100,7 +100,7 @@ TEST_CASE("A resource whose async load fails is destroyed straight away")
 	Threading::JobScheduler::Get().ShutDown();
 }
 
-TEST_CASE("A resource that's loaded but never registered is destroyed when its cancelled load is cleaned up")
+TEST_CASE("A resource that's loaded but never registered is destroyed when its load is cancelled")
 {
 	Threading::JobScheduler::Get().Initialize();
 	AsyncOperationManager manager;
@@ -114,10 +114,9 @@ TEST_CASE("A resource that's loaded but never registered is destroyed when its c
 	REQUIRE(g_counts.FinalizeSteps > 0);
 	CHECK(g_counts.Deleted == 0);
 
-	// The manager cleans an operation up a few frames after it finishes (AsyncOperationManager::k_retireFrameCount)
 	preload->RequestCancel();
-	TickUntil(manager, []() { return g_counts.Deleted > 0; });
-	CHECK(preload->IsFinished());
+	TickUntil(manager, [&preload]() { return preload->IsFinished(); });
+	REQUIRE(preload->IsFinished());
 
 	CHECK(g_counts.Released == 1);
 	CHECK(g_counts.Deleted == 1);

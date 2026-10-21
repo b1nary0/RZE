@@ -25,7 +25,7 @@ AsyncOperationManager::AsyncOperationManager()
 
 AsyncOperationManager::~AsyncOperationManager()
 {
-	AssertExpr(m_entries.empty());
+	AssertExpr(m_operations.empty());
 }
 
 void AsyncOperationManager::Initialize()
@@ -42,30 +42,30 @@ void AsyncOperationManager::ShutDown()
 
 	for (std::shared_ptr<AsyncOperation>& operation : m_pendingStarts)
 	{
-		m_entries.push_back({ operation });
+		m_operations.push_back(operation);
 	}
 	m_pendingStarts.clear();
 
-	for (Entry& entry : m_entries)
+	for (const std::shared_ptr<AsyncOperation>& operation : m_operations)
 	{
-		entry.Operation->RequestCancel();
+		operation->RequestCancel();
 	}
 
-	for (Entry& entry : m_entries)
+	for (const std::shared_ptr<AsyncOperation>& operation : m_operations)
 	{
-		for (const Threading::JobHandle& handle : entry.Operation->m_outstandingJobs)
+		for (const Threading::JobHandle& handle : operation->m_outstandingJobs)
 		{
 			Threading::JobScheduler::Get().Wait(handle);
 		}
-		entry.Operation->m_outstandingJobs.clear();
+		operation->m_outstandingJobs.clear();
 
-		if (entry.Operation->GetState() != EAsyncOperationState::NotStarted)
+		if (operation->GetState() != EAsyncOperationState::NotStarted)
 		{
-			entry.Operation->OnCleanup();
+			operation->OnCleanup();
 		}
 	}
 
-	m_entries.clear();
+	m_operations.clear();
 }
 
 void AsyncOperationManager::Start(const std::shared_ptr<AsyncOperation>& operation)
@@ -94,7 +94,7 @@ void AsyncOperationManager::StartInternal(const std::shared_ptr<AsyncOperation>&
 {
 	operation->m_startTime = std::chrono::steady_clock::now();
 	operation->m_state.store(EAsyncOperationState::Running, std::memory_order_release);
-	m_entries.push_back({ operation });
+	m_operations.push_back(operation);
 
 	operation->OnStart();
 }
@@ -107,12 +107,12 @@ void AsyncOperationManager::Tick()
 	m_isTicking = true;
 	{
 		AsyncFrameBudget foregroundBudget = CreateFrameBudget(m_frameBudgetMS, false);
-		TickEntries(false, foregroundBudget);
+		TickOperations(false, foregroundBudget);
 
 		// Only what the foreground left of the render command arena, which is a hard limit
 		AsyncFrameBudget backgroundBudget(k_backgroundFrameBudgetMS, m_uploadBudgetBytes / k_backgroundUploadBudgetDivisor,
 			foregroundBudget.GetArenaBytesRemaining(), foregroundBudget.GetArenaCapacityBytes());
-		TickEntries(true, backgroundBudget);
+		TickOperations(true, backgroundBudget);
 
 		m_arenaBytesConsumedLastFrame = m_idleArenaBytesConsumed + foregroundBudget.GetArenaBytesConsumed() + backgroundBudget.GetArenaBytesConsumed();
 		m_idleArenaBytesConsumed = 0;
@@ -133,7 +133,7 @@ void AsyncOperationManager::TickIdle(double timeMS)
 	OPTICK_EVENT();
 	AssertExpr(Threading::MainThreadDispatcher::Get().IsMainThread());
 
-	if (m_entries.empty())
+	if (m_operations.empty())
 	{
 		return;
 	}
@@ -141,8 +141,8 @@ void AsyncOperationManager::TickIdle(double timeMS)
 	m_isTicking = true;
 	{
 		AsyncFrameBudget budget = CreateFrameBudget(timeMS, true);
-		TickRunningEntries(false, budget);
-		TickRunningEntries(true, budget);
+		TickRunningOperations(false, budget);
+		TickRunningOperations(true, budget);
 
 		m_idleArenaBytesConsumed += budget.GetArenaBytesConsumed();
 		m_idleUploadBytesConsumed += budget.GetUploadBytesConsumed();
@@ -150,51 +150,36 @@ void AsyncOperationManager::TickIdle(double timeMS)
 	m_isTicking = false;
 }
 
-void AsyncOperationManager::TickRunningEntries(bool background, AsyncFrameBudget& budget)
+void AsyncOperationManager::TickRunningOperations(bool background, AsyncFrameBudget& budget)
 {
-	for (Entry& entry : m_entries)
+	for (const std::shared_ptr<AsyncOperation>& operation : m_operations)
 	{
-		AsyncOperation& operation = *entry.Operation;
-		if (operation.IsBackground() == background && !entry.IsFinished && !operation.HasRequestedFinish() && !operation.IsCancellationRequested())
+		if (operation->IsBackground() == background && !operation->HasRequestedFinish() && !operation->IsCancellationRequested())
 		{
-			operation.OnTick(budget);
+			operation->OnTick(budget);
 		}
 	}
 }
 
-void AsyncOperationManager::TickEntries(bool background, AsyncFrameBudget& budget)
+void AsyncOperationManager::TickOperations(bool background, AsyncFrameBudget& budget)
 {
-	// Index-based: StartInternal is deferred while ticking, so m_entries only changes through the erase here.
-	for (size_t entryIndex = 0; entryIndex < m_entries.size();)
+	// Index-based: StartInternal is deferred while ticking, so m_operations only changes through the erase here.
+	for (size_t operationIndex = 0; operationIndex < m_operations.size();)
 	{
-		Entry& entry = m_entries[entryIndex];
-		if (entry.Operation->IsBackground() == background && TickEntry(entry, budget))
+		AsyncOperation& operation = *m_operations[operationIndex];
+		if (operation.IsBackground() == background && TickOperation(operation, budget))
 		{
-			m_entries.erase(m_entries.begin() + entryIndex);
+			m_operations.erase(m_operations.begin() + operationIndex);
 		}
 		else
 		{
-			++entryIndex;
+			++operationIndex;
 		}
 	}
 }
 
-bool AsyncOperationManager::TickEntry(Entry& entry, AsyncFrameBudget& budget)
+bool AsyncOperationManager::TickOperation(AsyncOperation& operation, AsyncFrameBudget& budget)
 {
-	AsyncOperation& operation = *entry.Operation;
-
-	if (entry.IsFinished)
-	{
-		if (entry.RetireFramesRemaining > 0)
-		{
-			--entry.RetireFramesRemaining;
-			return false;
-		}
-
-		operation.OnCleanup();
-		return true;
-	}
-
 	if (!operation.HasRequestedFinish() && !operation.IsCancellationRequested())
 	{
 		operation.OnTick(budget);
@@ -207,15 +192,15 @@ bool AsyncOperationManager::TickEntry(Entry& entry, AsyncFrameBudget& budget)
 	}
 
 	// Wait for worker jobs to drain before finishing; they may still be touching the operation.
-	if (finalState != EAsyncOperationState::NotStarted && !operation.HasOutstandingJobs())
+	if (finalState == EAsyncOperationState::NotStarted || operation.HasOutstandingJobs())
 	{
-		operation.Finish(finalState);
-
-		entry.IsFinished = true;
-		entry.RetireFramesRemaining = k_retireFrameCount;
+		return false;
 	}
 
-	return false;
+	operation.Finish(finalState);
+	// Straight away: what the render thread may still use is held by its commands, not by the operation
+	operation.OnCleanup();
+	return true;
 }
 
 bool AsyncOperationManager::HasBlockingOperation() const
@@ -225,11 +210,11 @@ bool AsyncOperationManager::HasBlockingOperation() const
 
 const AsyncOperation* AsyncOperationManager::GetBlockingOperation() const
 {
-	for (const Entry& entry : m_entries)
+	for (const std::shared_ptr<AsyncOperation>& operation : m_operations)
 	{
-		if (!entry.IsFinished && entry.Operation->IsBlocking())
+		if (operation->IsBlocking())
 		{
-			return entry.Operation.get();
+			return operation.get();
 		}
 	}
 
@@ -239,11 +224,11 @@ const AsyncOperation* AsyncOperationManager::GetBlockingOperation() const
 std::vector<std::shared_ptr<AsyncOperation>> AsyncOperationManager::GetVisibleOperations() const
 {
 	std::vector<std::shared_ptr<AsyncOperation>> operations;
-	for (const Entry& entry : m_entries)
+	for (const std::shared_ptr<AsyncOperation>& operation : m_operations)
 	{
-		if (!entry.IsFinished && m_visibilityFilter.Matches(*entry.Operation))
+		if (m_visibilityFilter.Matches(*operation))
 		{
-			operations.push_back(entry.Operation);
+			operations.push_back(operation);
 		}
 	}
 	return operations;
@@ -251,15 +236,7 @@ std::vector<std::shared_ptr<AsyncOperation>> AsyncOperationManager::GetVisibleOp
 
 std::vector<std::shared_ptr<AsyncOperation>> AsyncOperationManager::GetRunningOperations() const
 {
-	std::vector<std::shared_ptr<AsyncOperation>> operations;
-	for (const Entry& entry : m_entries)
-	{
-		if (!entry.IsFinished)
-		{
-			operations.push_back(entry.Operation);
-		}
-	}
-	return operations;
+	return m_operations;
 }
 
 void AsyncOperationManager::SetFrameBudget(double timeBudgetMS, size_t uploadBudgetBytes)

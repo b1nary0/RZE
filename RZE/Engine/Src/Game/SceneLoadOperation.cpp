@@ -248,8 +248,8 @@ void SceneLoadOperation::OnFinished(EAsyncOperationState finalState)
 
 void SceneLoadOperation::OnCleanup()
 {
-	// By now the components hold their own references, and any GPU uploads that read resource memory have
-	// been processed, so the batch's references and any never-registered resources can safely go.
+	// By now the components hold their own references, so the batch's references and any never-registered resources
+	// can go.
 	m_resourceBatch.DiscardPending();
 	m_resourceBatch.ReleaseHeldResources();
 	m_document.reset();
