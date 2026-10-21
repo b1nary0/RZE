@@ -60,7 +60,8 @@ namespace Editor
 		desc.DefaultDock = EPanelDock::Floating;
 		desc.DefaultSize = ImVec2(560.0f, 300.0f);
 		desc.DefaultOpen = false;
-		desc.WindowFlags = ImGuiWindowFlags_NoCollapse;
+		// A dialog over the editor, not part of its layout
+		desc.WindowFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking;
 		return desc;
 	}
 
