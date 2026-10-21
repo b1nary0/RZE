@@ -272,7 +272,8 @@ namespace Editor
 
 			ImGui::EndTabBar();
 		}
-		if (isVisible)
+		// While it's open, the pin's at the end of the area's own tab bar instead
+		if (isVisible && !m_isOpen)
 		{
 			DrawPinButton(ImGui::GetCurrentWindow()->WorkRect);
 		}
@@ -333,10 +334,11 @@ namespace Editor
 			return false;
 		}
 
-		// Its own window, or a panel docked in it, or a popup opened from either. A panel hidden while the area's closed
-		// isn't inside its window, but is still in its dock nodes.
+		// Its own window or one inside it (the dockspace's host, which clicking the tab bar's empty space or the pin
+		// focuses; a panel docked in it, or a child of one), or a popup opened from any of them. A panel hidden while
+		// the area's closed isn't inside its window, but is still in its dock nodes.
 		ImGuiWindow* const root = navWindow->RootWindowPopupTree;
-		if (root == FindWindow())
+		if (root->RootWindowDockTree == FindWindow())
 		{
 			return true;
 		}

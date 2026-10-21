@@ -44,7 +44,8 @@ namespace Editor
 	private:
 		// The area itself, from top to bottom: the splitter, then the dockspace, height tall below it
 		void DrawArea(ImGuiID dockspaceId, float height, float heightAbove);
-		// Auto-hide's tabs, and the pin. isAreaDrawn: the area's drawn this frame even though it's closed.
+		// Auto-hide's tabs, and the pin while the area's closed. isAreaDrawn: the area's drawn this frame even though it's
+		// closed.
 		void DrawStrip(ImGuiID dockspaceId, bool isAreaDrawn);
 		// At the right end of bar, a tab bar in the current window; switches between pinned and auto-hide
 		void DrawPinButton(const ImRect& bar);
