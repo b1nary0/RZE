@@ -14,7 +14,7 @@ namespace Editor
 		Floating,
 		Left,
 		Right,
-		// Spans the full width under the others
+		// The bottom dock area (BottomDockArea), spanning the full width under the others
 		Bottom,
 		// What's left in the middle; the scene view
 		Center,

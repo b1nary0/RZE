@@ -2,6 +2,7 @@
 
 #include <EngineApp.h>
 
+#include <UI/BottomDockArea.h>
 #include <UI/MainMenuBar.h>
 #include <UI/StatusBar.h>
 #include <UI/Modals/AsyncOperationModal.h>
@@ -48,6 +49,7 @@ namespace Editor
 
 		MainMenuBar m_mainMenuBar;
 		StatusBar m_statusBar;
+		BottomDockArea m_bottomDockArea;
 		AsyncOperationModal m_asyncOperationModal;
 
 		std::unordered_map<std::string, ImFont*> m_fontMapping;

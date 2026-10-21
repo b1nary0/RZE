@@ -39,9 +39,13 @@ namespace Editor
 		// name as existing ones are appended to.
 		void DrawMenuItems(const char* mainMenu);
 
-		// Splits the dockspace into the PanelDesc::DefaultDock slots that panels use and docks each panel into
-		// its slot. For when there's no saved layout to restore.
+		// Splits the main dockspace into the PanelDesc::DefaultDock slots that panels use, other than Bottom, and docks
+		// each panel into its slot. For when there's no saved layout to restore.
 		void BuildDefaultDockLayout(ImGuiID dockspaceId, const ImVec2& size);
+		// Makes the bottom area's dockspace (BottomDockArea) and docks the Bottom panels into it, for when imgui.ini has
+		// no saved layout for it. A layout saved before the bottom area had a dockspace of its own has them in the main
+		// dockspace; they're taken out of it, along with the nodes they leave empty.
+		void BuildBottomDockLayout(ImGuiID dockspaceId, const ImVec2& size);
 
 		// Null if no panel of that type is registered. Prefer sharing state through EditorContext;
 		// this is for the rare case that really needs a specific panel.
@@ -51,6 +55,8 @@ namespace Editor
 	private:
 		// The panels the default layout docks into slot, in their tab order there: open ones first, then by name
 		std::vector<const EditorPanel*> GetPanelsInSlot(EPanelDock slot) const;
+		// Docks slot's panels into the node as tabs, in their order there, with the first shown
+		void DockSlotPanels(EPanelDock slot, ImGuiID nodeId) const;
 		// Before the first Begin of a docked panel that imgui.ini has no place for, e.g. one added since the layout was
 		// saved: docks it into the node of a saved panel from its PanelDesc::DefaultDock slot, at its place in the
 		// slot's tab order, as the tab that's shown. Does nothing for a panel that has a place, or whose slot has no

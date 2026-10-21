@@ -12,8 +12,7 @@
 
 namespace
 {
-	// The share of the dockspace each side slot takes. Bottom is split off first, so it spans the full width.
-	constexpr float k_bottomDockFraction = 0.22f;
+	// The share of the dockspace each side slot takes. Bottom has a dockspace of its own (BottomDockArea).
 	constexpr float k_leftDockFraction = 0.09f;
 	constexpr float k_rightDockFraction = 0.12f;
 
@@ -35,6 +34,62 @@ namespace
 		if (ImGuiWindow* const window = ImGui::FindWindowByID(windowId))
 		{
 			window->DockOrder = static_cast<short>(order);
+		}
+	}
+
+	// Whether any window is docked in node or a node under it, counting windows imgui.ini has docked there that haven't
+	// been created yet
+	bool HasDockedWindows(const ImGuiDockNode& node)
+	{
+		if (!node.Windows.empty())
+		{
+			return true;
+		}
+
+		ImGuiContext& imgui = *ImGui::GetCurrentContext();
+		for (ImGuiWindowSettings* settings = imgui.SettingsWindows.begin(); settings != nullptr; settings = imgui.SettingsWindows.next_chunk(settings))
+		{
+			for (const ImGuiDockNode* docked = ImGui::DockBuilderGetNode(settings->DockId); docked != nullptr; docked = docked->ParentNode)
+			{
+				if (docked == &node)
+				{
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	// Removes the node if nothing's docked in it, and then each parent left empty. Its sibling takes the parent's place.
+	// ImGui only moves the windows it has created into the parent, so the ones imgui.ini docks in a sibling that's merged
+	// away are pointed at the parent here.
+	void RemoveEmptyDockNode(ImGuiID nodeId)
+	{
+		ImGuiDockNode* node = ImGui::DockBuilderGetNode(nodeId);
+		while (node != nullptr && node->ParentNode != nullptr && !node->IsCentralNode() && !HasDockedWindows(*node))
+		{
+			const ImGuiDockNode* const parent = node->ParentNode;
+			const ImGuiDockNode* const sibling = parent->ChildNodes[0] == node ? parent->ChildNodes[1] : parent->ChildNodes[0];
+			const ImGuiID parentId = parent->ID;
+			const ImGuiID siblingId = sibling->ID;
+			const bool isSiblingLeaf = sibling->IsLeafNode();
+
+			ImGui::DockBuilderRemoveNode(node->ID);
+
+			if (isSiblingLeaf)
+			{
+				ImGuiContext& imgui = *ImGui::GetCurrentContext();
+				for (ImGuiWindowSettings* settings = imgui.SettingsWindows.begin(); settings != nullptr; settings = imgui.SettingsWindows.next_chunk(settings))
+				{
+					if (settings->DockId == siblingId)
+					{
+						settings->DockId = parentId;
+					}
+				}
+			}
+
+			node = ImGui::DockBuilderGetNode(parentId);
 		}
 	}
 
@@ -225,10 +280,6 @@ namespace Editor
 		// Each split carves a slot off the remaining central node, which ends up as the Center slot
 		ImGuiID slotIds[static_cast<size_t>(EPanelDock::Count)] = {};
 		ImGuiID centerId = dockspaceId;
-		if (isSlotUsed(EPanelDock::Bottom))
-		{
-			slotIds[static_cast<size_t>(EPanelDock::Bottom)] = ImGui::DockBuilderSplitNode(centerId, ImGuiDir_Down, k_bottomDockFraction, nullptr, &centerId);
-		}
 		if (isSlotUsed(EPanelDock::Left))
 		{
 			slotIds[static_cast<size_t>(EPanelDock::Left)] = ImGui::DockBuilderSplitNode(centerId, ImGuiDir_Left, k_leftDockFraction, nullptr, &centerId);
@@ -239,25 +290,57 @@ namespace Editor
 		}
 		slotIds[static_cast<size_t>(EPanelDock::Center)] = centerId;
 
-		// Each slot's panels as tabs in its order, with the first shown
 		for (size_t slot = 0; slot < static_cast<size_t>(EPanelDock::Count); ++slot)
 		{
-			const std::vector<const EditorPanel*> panels = GetPanelsInSlot(static_cast<EPanelDock>(slot));
-			if (panels.empty() || slotIds[slot] == 0)
+			if (slotIds[slot] != 0)
 			{
-				continue;
+				DockSlotPanels(static_cast<EPanelDock>(slot), slotIds[slot]);
 			}
-
-			for (size_t order = 0; order < panels.size(); ++order)
-			{
-				const std::string& name = panels[order]->m_desc.Name;
-				ImGui::DockBuilderDockWindow(name.c_str(), slotIds[slot]);
-				SetDockOrder(ImHashStr(name.c_str()), static_cast<int>(order));
-			}
-			ImGui::DockBuilderGetNode(slotIds[slot])->SelectedTabId = GetTabId(panels.front()->m_desc.Name);
 		}
 
 		ImGui::DockBuilderFinish(dockspaceId);
+	}
+
+	void PanelManager::BuildBottomDockLayout(ImGuiID dockspaceId, const ImVec2& size)
+	{
+		// Where imgui.ini has them, from before the bottom area had a dockspace of its own
+		std::vector<ImGuiID> previousNodeIds;
+		for (const EditorPanel* const panel : GetPanelsInSlot(EPanelDock::Bottom))
+		{
+			if (const ImGuiWindowSettings* const settings = ImGui::FindWindowSettingsByID(ImHashStr(panel->m_desc.Name.c_str())))
+			{
+				previousNodeIds.push_back(settings->DockId);
+			}
+		}
+
+		ImGui::DockBuilderAddNode(dockspaceId, ImGuiDockNodeFlags_DockSpace);
+		ImGui::DockBuilderSetNodeSize(dockspaceId, size);
+		DockSlotPanels(EPanelDock::Bottom, dockspaceId);
+
+		// So the main dockspace doesn't keep an empty space where they were
+		for (const ImGuiID nodeId : previousNodeIds)
+		{
+			RemoveEmptyDockNode(nodeId);
+		}
+
+		ImGui::DockBuilderFinish(dockspaceId);
+	}
+
+	void PanelManager::DockSlotPanels(EPanelDock slot, ImGuiID nodeId) const
+	{
+		const std::vector<const EditorPanel*> panels = GetPanelsInSlot(slot);
+		if (panels.empty())
+		{
+			return;
+		}
+
+		for (size_t order = 0; order < panels.size(); ++order)
+		{
+			const std::string& name = panels[order]->m_desc.Name;
+			ImGui::DockBuilderDockWindow(name.c_str(), nodeId);
+			SetDockOrder(ImHashStr(name.c_str()), static_cast<int>(order));
+		}
+		ImGui::DockBuilderGetNode(nodeId)->SelectedTabId = GetTabId(panels.front()->m_desc.Name);
 	}
 
 	std::vector<const EditorPanel*> PanelManager::GetPanelsInSlot(EPanelDock slot) const
@@ -288,7 +371,8 @@ namespace Editor
 	{
 		const PanelDesc& desc = panel.m_desc;
 		const ImGuiID windowId = ImHashStr(desc.Name.c_str());
-		// Once its window exists, or once imgui.ini has it (BuildDefaultDockLayout places every docked panel), ImGui
+		// Once its window exists, or once imgui.ini has it (BuildDefaultDockLayout and BuildBottomDockLayout place every
+		// docked panel), ImGui
 		// already knows where it goes
 		if (desc.DefaultDock == EPanelDock::Floating || desc.OwnsWindow || ImGui::FindWindowByID(windowId) != nullptr
 			|| ImGui::FindWindowSettingsByID(windowId) != nullptr)

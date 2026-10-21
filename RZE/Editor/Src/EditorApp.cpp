@@ -156,8 +156,10 @@ namespace Editor
 		PushFontAtLoadedSize(m_fontMapping.at("din_bold"));
 		m_mainMenuBar.Draw(m_context, *GetWindow());
 		m_statusBar.Draw(m_context);
+		// Before the main dockspace's panels, which may be docked in it
+		m_bottomDockArea.Draw(m_context);
 
-		// What the menu bar and status bar leave of the window
+		// What the menu bar, status bar and bottom dock area leave of the window
 		const ImGuiViewport* const viewport = ImGui::GetMainViewport();
 		ImGui::SetNextWindowPos(viewport->WorkPos);
 		ImGui::SetNextWindowSize(viewport->WorkSize);
