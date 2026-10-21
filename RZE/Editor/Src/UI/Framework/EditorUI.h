@@ -37,9 +37,10 @@ namespace Editor
 		// inset as far as the labels are from its left. ImGui's own lines shortcuts up on their left instead.
 		bool MenuItem(const char* label, const char* shortcut, bool enabled = true);
 
-		// ImGui::TreeNodeEx, with its highlight's corners rounded like everything else's. ImGui always draws an unframed
-		// node's highlight square, so the editor's tree nodes use this instead. It reads the node's row from ImGui's
-		// internals (LastItemData.DisplayRect, TablePushBackgroundChannel), which an ImGui upgrade may change.
+		// ImGui::TreeNodeEx, with its highlight's corners rounded like everything else's, and a selected node outlined in
+		// the accent colour. ImGui always draws an unframed node's highlight square, so the editor's tree nodes use this
+		// instead. It reads the node's row from ImGui's internals (LastItemData.DisplayRect, TablePushBackgroundChannel),
+		// which an ImGui upgrade may change.
 		bool TreeNode(const char* id, ImGuiTreeNodeFlags flags, const char* format, ...) IM_FMTARGS(3);
 
 		// Text centred on centre, in the current font at fontSize

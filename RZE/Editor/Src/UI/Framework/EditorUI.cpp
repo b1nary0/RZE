@@ -26,6 +26,9 @@ namespace
 	constexpr int k_highlightChannel = 0;
 	constexpr int k_contentChannel = 1;
 
+	// A selected tree node's outline, in the accent colour: enough to pick it out, quieter than a selected tile's
+	constexpr float k_selectedTreeNodeBorderAlpha = 0.6f;
+
 	// Shared by every tree node, which merges it before the next one splits it, so its memory is reused
 	ImDrawListSplitter& GetTreeNodeSplitter()
 	{
@@ -249,6 +252,10 @@ namespace Editor
 				const ImRect& rect = ImGui::GetCurrentContext()->LastItemData.DisplayRect;
 				const ImGuiCol colour = isHovered ? (ImGui::IsItemActive() ? ImGuiCol_HeaderActive : ImGuiCol_HeaderHovered) : ImGuiCol_Header;
 				drawList->AddRectFilled(rect.Min, rect.Max, ImGui::GetColorU32(colour), k_cornerRounding);
+				if (isSelected)
+				{
+					drawList->AddRect(rect.Min, rect.Max, WithAlpha(k_accentColour, k_selectedTreeNodeBorderAlpha), k_cornerRounding);
+				}
 			}
 
 			if (spansColumns)

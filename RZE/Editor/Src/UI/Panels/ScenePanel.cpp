@@ -19,6 +19,9 @@ namespace
 {
 	constexpr size_t k_maxGameObjectNameSize = 64;
 
+	// Space above and below each object's name, inside its row so a click there still selects it
+	constexpr float k_rowPaddingY = 4.0f;
+
 	// The dragged object's GameObjectID; names aren't unique
 	constexpr char k_gameObjectDragPayload[] = "GameObjectID";
 
@@ -103,6 +106,12 @@ namespace Editor
 			selection.Clear();
 		}
 
+		// A row per GameObject, every other one shaded so they're easier to tell apart
+		if (!ImGui::BeginTable("##Hierarchy", 1, ImGuiTableFlags_RowBg))
+		{
+			return;
+		}
+
 		RZE().GetActiveScene().ForEachGameObject(
 			Functor<void, GameObjectPtr>([this, &context](GameObjectPtr gameObject)
 			{
@@ -119,13 +128,16 @@ namespace Editor
 					DisplayObject(context, gameObject);
 				}
 			}));
+
+		ImGui::EndTable();
 	}
 
 	void ScenePanel::DisplayObject(EditorContext& context, GameObjectPtr gameObject)
 	{
 		EditorSelection& selection = context.GetSelection();
 
-		int nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow;
+		// Clicked anywhere across its row, not just on its name
+		int nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_SpanFullWidth;
 		if (selection.IsSelected(gameObject))
 		{
 			nodeFlags |= ImGuiTreeNodeFlags_Selected;
@@ -138,10 +150,19 @@ namespace Editor
 
 		// Names aren't unique, so the row's IDs come from the GUID; the label is only displayed
 		ImGui::PushID(reinterpret_cast<const void*>(static_cast<uintptr_t>(gameObject->GetGUID())));
+		// The row has no padding of its own: the tree node pads itself to fill it, so a click between two objects lands
+		// on one of them instead of on the panel, which would clear the selection
+		const ImGuiStyle& style = ImGui::GetStyle();
+		ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(style.CellPadding.x, 0.0f));
+		ImGui::TableNextRow();
+		ImGui::PopStyleVar();
+		ImGui::TableSetColumnIndex(0);
 
 		// The item code below runs whether or not the node is open, so a collapsed parent can be clicked, dragged and
 		// right-clicked too; only its children and TreePop depend on it being open
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(style.FramePadding.x, k_rowPaddingY));
 		const bool isOpen = EditorUI::TreeNode("##GameObject", nodeFlags, "%s", gameObject->GetName().c_str());
+		ImGui::PopStyleVar();
 
 		if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
 		{
