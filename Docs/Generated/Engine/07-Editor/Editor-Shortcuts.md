@@ -50,6 +50,14 @@ W/E/R/Q/X are ignored while RMB is held, because those keys fly the camera then.
 
 Details: [Editor-Panels.md](Editor-Panels.md).
 
+## File
+
+| Shortcut | Action |
+|---|---|
+| **Ctrl + S** | Save the scene, as File > Save Scene does: a scene without a file asks for one in the file browser first |
+
+It works anywhere in the Editor, but waits like undo and redo: not while a widget or the gizmo is held, so a drag or an unfinished text edit isn't saved halfway (press Enter to finish the edit first). Not while a scene is loading.
+
 ## Edit
 
 | Shortcut | Action |
@@ -83,7 +91,7 @@ These work anywhere in the Editor, except that a focused text field keeps its ow
 | **Drag a mesh tile** onto the SceneView | Content Browser | Load the mesh in the background, then add an object showing it where it's dropped |
 | **Drag a file tile** onto an asset field | Content Browser → Object Inspector | Set it, if the field takes that kind of file; a mesh, material or texture loads in the background first |
 
-The File, View and Help menus have no keyboard shortcuts. The SceneView toolbar's tooltips name the shortcut for each control, e.g. "Shortcut (W)".
+Save Scene is the File menu's only shortcut, and the View and Help menus have none. The SceneView toolbar's tooltips name the shortcut for each control, e.g. "Shortcut (W)".
 
 ## Where shortcuts are bound
 
@@ -95,7 +103,7 @@ The File, View and Help menus have no keyboard shortcuts. The SceneView toolbar'
 | Picking and marquee | `SceneViewPanel::HandleSelectionInput` |
 | Escape in the SceneView | `EditorApp::RegisterInputEvents` |
 | Scene panel | `ScenePanel::Draw` (ImGui item clicks) |
-| Ctrl+Z/Y/Shift+Z, Ctrl+C/V/D | `MainMenuBar::HandleEditShortcuts` (`ImGui::Shortcut` with `ImGuiInputFlags_RouteGlobal`) |
+| Ctrl+S, Ctrl+Z/Y/Shift+Z, Ctrl+C/V/D | `MainMenuBar::HandleShortcuts` (`ImGui::Shortcut` with `ImGuiInputFlags_RouteGlobal`) |
 | Window close | `EditorApp::OnCloseRequested` |
 | File browser | `FileBrowserModal::HandleKeys` |
 | Content Browser | `ContentBrowserPanel::HandleNavigationInput`; arrow keys in `FileTileGrid::HandleArrowKeys` |

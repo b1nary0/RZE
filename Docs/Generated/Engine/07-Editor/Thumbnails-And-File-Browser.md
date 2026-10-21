@@ -29,7 +29,7 @@ flowchart TD
 | Used for | Opens on | Mode |
 |---|---|---|
 | File > Load Scene... | `Assets\Scenes`, `.scene`, scene thumbnails | Open |
-| Save Scene on a new scene, and Save in the unsaved-changes prompt (`SceneDocument::SaveWithPrompt`) | `Assets\Scenes`, `.scene` | Save |
+| Save Scene (or Ctrl+S) on a new scene, and Save in the unsaved-changes prompt (`SceneDocument::SaveWithPrompt`) | `Assets\Scenes`, `.scene` | Save |
 | An asset path in the Object Inspector (`PropertyDrawers::DrawAssetPath`, e.g. RenderComponent's Mesh) | the property's `AssetDirectory`, with extensions from its `AssetFilter` (`*.meshasset` gives `.meshasset`), mesh thumbnails | Open |
 
 The Win32 Open/Save dialogs it replaced have been removed.

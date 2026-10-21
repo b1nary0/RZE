@@ -29,8 +29,9 @@ namespace Editor
 	private:
 		void DrawFileMenu(EditorContext& context);
 		void DrawEditMenu(EditorContext& context);
-		// Ctrl+C/V/D, unless a focused widget (e.g. a text field) takes them first
-		void HandleEditShortcuts(EditorContext& context);
+		// The menus' shortcuts (Ctrl+S, Ctrl+C/V/D, undo and redo), unless a focused widget (e.g. a text field) takes
+		// them first
+		void HandleShortcuts(EditorContext& context);
 
 		void Copy(EditorContext& context);
 		void Paste(EditorContext& context);

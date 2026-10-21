@@ -99,7 +99,7 @@ sequenceDiagram
 
 | Menu | Items |
 |---|---|
-| File | New Scene..., Load Scene... (the file browser, on `Assets\Scenes`), Save Scene (the file browser in Save mode if the scene is new), Build Game..., Launch Game... (builds, then starts the Game in the open scene), Exit. New, Load, Launch Game and Exit ask about unsaved changes first. |
+| File | New Scene..., Load Scene... (the file browser, on `Assets\Scenes`), Save Scene (Ctrl+S; the file browser in Save mode if the scene is new), Build Game..., Launch Game... (builds, then starts the Game in the open scene), Exit. New, Load, Launch Game and Exit ask about unsaved changes first. |
 | Edit | Undo "<step>" (Ctrl+Z), Redo "<step>" (Ctrl+Y), Copy (Ctrl+C), Paste (Ctrl+V), Duplicate (Ctrl+D), then the panels registered under Edit: Settings |
 | View | Windows: Log, Object Inspector, Resource Monitor, Scene (built from each panel's `MenuPath`, checked while open) |
 | Help | ImGui Demo |

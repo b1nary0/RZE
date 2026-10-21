@@ -27,8 +27,8 @@
 
 namespace
 {
-	// Undo and redo wait while a widget or the gizmo is held, so a drag isn't half undone and then carried on. A text
-	// field being edited also handles Ctrl+Z itself.
+	// Undo, redo and saving wait while a widget or the gizmo is held, so a drag isn't half undone and then carried on,
+	// or saved halfway. A text field being edited also handles Ctrl+Z itself.
 	bool IsEditInProgress()
 	{
 		return ImGui::IsAnyItemActive() || ImGuizmo::IsUsing();
@@ -116,7 +116,7 @@ namespace Editor
 
 	void MainMenuBar::Draw(EditorContext& context, Win32Window& window)
 	{
-		HandleEditShortcuts(context);
+		HandleShortcuts(context);
 
 		// The bar is its font plus this above and below. Never shorter than the OS's title bar.
 		const float height = std::max(static_cast<float>(window.GetSystemTitleBarHeight()), std::round(k_barHeight * window.GetDpiScale()));
@@ -204,7 +204,7 @@ namespace Editor
 				});
 		}
 
-		if (ImGui::MenuItem("Save Scene", nullptr, false, canUseScene))
+		if (EditorUI::MenuItem("Save Scene", "Ctrl+S", canUseScene))
 		{
 			scene.SaveWithPrompt();
 		}
@@ -273,7 +273,7 @@ namespace Editor
 		context.GetPanels().DrawMenuItems("Edit");
 	}
 
-	void MainMenuBar::HandleEditShortcuts(EditorContext& context)
+	void MainMenuBar::HandleShortcuts(EditorContext& context)
 	{
 		if (context.GetSceneDocument().IsLoading())
 		{
@@ -304,6 +304,10 @@ namespace Editor
 				|| ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiMod_Shift | ImGuiKey_Z, ImGuiInputFlags_RouteGlobal))
 			{
 				context.GetCommands().Push<RedoCommand>();
+			}
+			if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_S, ImGuiInputFlags_RouteGlobal))
+			{
+				context.GetSceneDocument().SaveWithPrompt();
 			}
 		}
 	}
