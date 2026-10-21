@@ -76,7 +76,7 @@ void ResourcePreloadOperation::UpdateProgressAndStatus()
 
 void ResourcePreloadOperation::OnCleanup()
 {
-	// Any GPU uploads that read a never-registered resource's memory have been processed by now. What was loaded stays
-	// held until the operation is destroyed.
+	// Destroys what was loaded but never registered, e.g. on cancel. What was registered stays held until the operation is
+	// destroyed.
 	m_batch.DiscardPending();
 }
