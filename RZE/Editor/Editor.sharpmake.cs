@@ -35,6 +35,8 @@ public class Editor : BaseProject
         SourceRootPath = "Src";
         // Everything else is in EditorLib
         SourceFilesFiltersRegex.Add(@"\\EditorMain\.cpp$");
+        // The icon. Outside Src, so the filter above doesn't drop it
+        ResourceFiles.Add(Path.Combine("[project.SharpmakeCsPath]", "Resources", "Editor.rc"));
     }
 
     public override void ConfigureAll(Project.Configuration conf, CommonTarget target)

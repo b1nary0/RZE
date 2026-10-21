@@ -9,6 +9,8 @@ public class Game : BaseProject
     {
         Name = "Game";
         SourceRootPath = "Src";
+        // The icon
+        ResourceFiles.Add(Path.Combine("[project.SharpmakeCsPath]", "Resources", "Game.rc"));
     }
 
     public override void ConfigureAll(Project.Configuration conf, CommonTarget target)

@@ -19,6 +19,16 @@ namespace
 {
 	// Used to link WinProc messages with the window without having to static other class instances etc
 	WindowMessageAdaptor sWindowMessageAdaptor;
+
+	// The executable's icon, from Editor/Resources/Editor.rc and Game/Resources/Game.rc
+	constexpr WORD k_appIconResourceID = 1;
+
+	// The exe's icon at the given system size, or Windows' default when the exe has none
+	HICON LoadAppIcon(int widthMetric, int heightMetric)
+	{
+		HANDLE icon = LoadImage(GetModuleHandle(nullptr), MAKEINTRESOURCE(k_appIconResourceID), IMAGE_ICON, GetSystemMetrics(widthMetric), GetSystemMetrics(heightMetric), LR_DEFAULTCOLOR);
+		return icon != nullptr ? static_cast<HICON>(icon) : LoadIcon(nullptr, IDI_APPLICATION);
+	}
 }
 
 Win32Window::Win32Window(const WindowCreationParams& creationProtocol)
@@ -85,12 +95,13 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 	wc.cbClsExtra = 0;
 	wc.cbWndExtra = 0;
 	wc.hInstance = GetModuleHandle(nullptr);
-	wc.hIcon = LoadIcon(0, IDI_APPLICATION); // @TODO fill this with proper customizable icon
+	wc.hIcon = LoadAppIcon(SM_CXICON, SM_CYICON);
 	wc.hCursor = /*CreateCursor(NULL, 0, 0, 1, 1, CursorMaskAND, CursorMaskXOR);*/ LoadCursor(NULL, IDC_ARROW);  // @TODO fill this with proper customizable cursor
 	wc.hbrBackground = HBRUSH(COLOR_WINDOW + 1); // @NOTE what is this?
 	wc.lpszMenuName = 0;
 	wc.lpszClassName = wStrTitle.c_str(); // @NOTE does this represent what you think it represents?
-	wc.hIconSm = LoadIcon(0, IDI_APPLICATION); // @TODO fill this with proper customizable icon
+	// Its own size, rather than Windows shrinking the large one
+	wc.hIconSm = LoadAppIcon(SM_CXSMICON, SM_CYSMICON);
 
 	if (RegisterClassEx(&wc))
 	{

@@ -1,0 +1,2 @@
+// The executable's icon. Win32Window loads ID 1 for its window class, and Explorer shows the lowest ID on the .exe.
+1 ICON "../../Assets/Application/RZE.ico"
