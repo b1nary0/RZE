@@ -73,8 +73,8 @@ void AsyncResourceBatch::DiscardPending()
 		{
 			AssertMsg(entry->CPUJob.IsComplete(), "Discarding a resource while its CPU load is still running.");
 
-			// Its finalize may have queued uploads before it was cancelled
-			GetResourceHandler().DestroyWhenRendered(entry->Resource.release());
+			entry->Resource->Release();
+			entry->Resource.reset();
 		}
 
 		EndLoad(*entry);
@@ -324,8 +324,8 @@ void AsyncResourceBatch::FailEntry(Entry& entry, const char* reason)
 
 	if (entry.Resource != nullptr)
 	{
-		// A step that ran before it failed may have queued uploads
-		GetResourceHandler().DestroyWhenRendered(entry.Resource.release());
+		entry.Resource->Release();
+		entry.Resource.reset();
 	}
 	EndLoad(entry);
 

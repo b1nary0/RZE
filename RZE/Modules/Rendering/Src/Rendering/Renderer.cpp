@@ -25,7 +25,6 @@
 namespace Rendering
 {
 	RenderThread Renderer::m_renderThread;
-	U64 Renderer::m_recordingFrame = 0;
 	std::shared_ptr<UIFrameData> Renderer::m_uiFrameData;
 	int Renderer::m_uiFrameNumber = -1;
 	std::vector<TextureBuffer2DHandle> Renderer::m_uiTextures;
@@ -67,11 +66,6 @@ namespace Rendering
 		MemArena::Shutdown();
 	}
 
-	void Renderer::WaitUntilIdle()
-	{
-		m_renderThread.RunWhileIdle([]() {});
-	}
-
 	void Renderer::BeginFrame(const char* frameName)
 	{
 		RenderCommand_BeginFrame* command = MemArena::AllocType<RenderCommand_BeginFrame>();
@@ -108,7 +102,6 @@ namespace Rendering
 
 		// Returns once the render thread has finished the previous frame and taken this one
 		m_renderThread.SignalProcess();
-		++m_recordingFrame;
 	}
 
 	void Renderer::SetSyncInterval(U32 interval)

@@ -64,11 +64,6 @@ void RenderEngine::Shutdown()
 	Rendering::Renderer::Shutdown();
 }
 
-void RenderEngine::WaitUntilIdle()
-{
-	Rendering::Renderer::WaitUntilIdle();
-}
-
 void RenderEngine::SetVSync(bool enabled)
 {
 	Rendering::Renderer::SetSyncInterval(enabled ? 1 : 0);

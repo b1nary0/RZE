@@ -123,14 +123,6 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 
 					m_renderEngine->Render("Main Render");
 					m_renderEngine->Finish();
-
-					// After the present, which is what lets the render thread's frame catch up. Only after a UI frame: a
-					// frame without one renders the last UI again, which may still show a texture released since, so it's
-					// only destroyed once a newer UI has replaced that one on the render thread.
-					if (isUIFrame)
-					{
-						m_resourceHandler.Update();
-					}
 				}
 			}
 
@@ -462,12 +454,6 @@ void RZE_Engine::BeginShutDown()
 	//@todo this is a quick fix for the cyclical dependency between Rendering::MemArena and ResourceHandler releasing leftover reasources.
 	m_renderEngine->GetMainScene().ClearObjects();
 	m_renderEngine->ReleaseRenderStages();
-
-	// What was released while shutting down is waiting on the render thread (ResourceHandler::DestroyWhenRendered). It
-	// goes once the render thread has finished its last frame, and before the renderer shuts down, since releasing a
-	// GPU resource records a render command.
-	m_renderEngine->WaitUntilIdle();
-	m_resourceHandler.DestroyPendingNow();
 
 	m_renderEngine->Shutdown();
 

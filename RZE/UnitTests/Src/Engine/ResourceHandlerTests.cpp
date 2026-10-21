@@ -31,10 +31,7 @@ namespace
 	const Filepath k_path("Assets/UnitTests/Counted.resource");
 }
 
-// No renderer runs in the tests, so no frame is ever processed: whatever is waiting on the render thread is only
-// destroyed by ShutDown.
-
-TEST_CASE("A released resource is kept until the render thread is done with it, but can be loaded again straight away")
+TEST_CASE("A released resource is destroyed straight away, and can be loaded again")
 {
 	ResourceHandler handler;
 	ResourceCounts counts;
@@ -42,26 +39,25 @@ TEST_CASE("A released resource is kept until the render thread is done with it, 
 	{
 		ResourceHandle handle = handler.LoadResource<CountedResource>(k_path, &counts);
 		REQUIRE(handle.IsValid());
+		CHECK(counts.Deleted == 0);
 	}
 
 	CHECK_FALSE(handler.HasResource(k_path));
-	handler.Update();
-	CHECK(counts.Released == 0);
-	CHECK(counts.Deleted == 0);
+	CHECK(counts.Released == 1);
+	CHECK(counts.Deleted == 1);
 
 	ResourceCounts reloadCounts;
 	{
 		ResourceHandle reloaded = handler.LoadResource<CountedResource>(k_path, &reloadCounts);
 		CHECK(reloaded.IsValid());
 	}
+	CHECK(reloadCounts.Deleted == 1);
 
 	handler.ShutDown();
-	CHECK(counts.Released == 1);
 	CHECK(counts.Deleted == 1);
-	CHECK(reloadCounts.Deleted == 1);
 }
 
-TEST_CASE("A duplicate registration keeps the first resource and destroys the second only once it's rendered")
+TEST_CASE("A duplicate registration keeps the first resource and destroys the second straight away")
 {
 	ResourceHandler handler;
 	ResourceCounts firstCounts;
@@ -73,16 +69,13 @@ TEST_CASE("A duplicate registration keeps the first resource and destroys the se
 
 		CHECK(duplicate.IsValid());
 		CHECK(handler.GetResource<CountedResource>(duplicate) == handler.GetResource<CountedResource>(first));
-
-		handler.Update();
-		CHECK(duplicateCounts.Deleted == 0);
+		CHECK(duplicateCounts.Released == 1);
+		CHECK(duplicateCounts.Deleted == 1);
 		CHECK(firstCounts.Deleted == 0);
 	}
 
-	handler.ShutDown();
-	CHECK(duplicateCounts.Released == 1);
-	CHECK(duplicateCounts.Deleted == 1);
 	CHECK(firstCounts.Deleted == 1);
+	handler.ShutDown();
 }
 
 TEST_CASE("Only one loader at a time can load a resource asynchronously")

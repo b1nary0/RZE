@@ -38,8 +38,6 @@ public:
 	// Finish() does all the work that the main render phase needs including device present
 	void Finish();
 	void Shutdown();
-	// See Rendering::Renderer::WaitUntilIdle
-	void WaitUntilIdle();
 
 	// Presents on every vertical blank, or at once (tearing where allowed)
 	void SetVSync(bool enabled);

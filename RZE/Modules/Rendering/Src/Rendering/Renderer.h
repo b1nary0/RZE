@@ -56,16 +56,6 @@ namespace Rendering
 
 		static void DevicePresent();
 
-		// The frame whose commands are being pushed now, counting up from 0 at each DevicePresent. The render thread runs a
-		// frame behind, so it can still read memory a command points at (e.g. CreateTextureBuffer2D's texel data) until
-		// IsFrameProcessed is true for the frame the command was pushed in.
-		static U64 GetRecordingFrame() { return m_recordingFrame; }
-		// Whether the render thread has run every command pushed up to the end of frame. Main thread only.
-		static bool IsFrameProcessed(U64 frame) { return frame + 2 <= m_recordingFrame; }
-		// Blocks until the render thread has run every frame it's been given. Until the next DevicePresent it reads
-		// nothing the commands pushed so far point at, e.g. while shutting down. Main thread only.
-		static void WaitUntilIdle();
-
 		static void HandleWindowResize(const Vector2D& newSize);
 
 		// How many vertical blanks each present waits for: 0 presents at once (vsync off), 1 on every refresh (vsync on).
@@ -157,8 +147,6 @@ namespace Rendering
 
 	private:
 		static RenderThread m_renderThread;
-		// DevicePresent hands a frame to the render thread once it's finished the one before
-		static U64 m_recordingFrame;
 		// The last UI frame's copy of ImGui's draw data, drawn again until ImGui begins a new frame
 		static std::shared_ptr<UIFrameData> m_uiFrameData;
 		// ImGui's frame count when m_uiFrameData was copied

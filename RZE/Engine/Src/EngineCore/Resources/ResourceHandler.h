@@ -72,9 +72,6 @@ public:
 	void Init();
 	void ShutDown();
 
-	// Once a frame, after the frame is presented: destroys the released resources the render thread is done with
-	void Update();
-
 	// NOTE: ResourceHandler and ResourceHandle are main-thread only (the table and ref counts are unsynchronized).
 	// Use AsyncResourceBatch to load resources off the main thread.
 
@@ -96,16 +93,9 @@ public:
 	template <class ResourceT, class... Args>
 	ResourceHandle LoadResource(const Filepath& resourcePath, Args... args);
 
+	// Drops the handle's reference, and releases and deletes the resource straight away if it was the last one. What
+	// the render thread may still use (GPU buffers, uploaded texels, textures the UI draws) lives on in its commands.
 	void ReleaseResource(ResourceHandle& resourceHandle);
-
-	// Takes ownership of resource, and releases and deletes it once the render thread can no longer be reading what it
-	// uploaded (see Rendering::Renderer::IsFrameProcessed). Every resource the handler destroys goes through this, so
-	// one can be released in the frame it was uploaded or drawn in.
-	void DestroyWhenRendered(IResource* resource);
-	// Releases and deletes every resource waiting on the render thread straight away. Only while it's idle and won't
-	// be given another frame, i.e. while shutting down, and before the renderer shuts down: releasing a GPU resource
-	// records a render command.
-	void DestroyPendingNow();
 
 	// Async loads in progress, so a second request for a resource waits for the first instead of loading and uploading
 	// it again. loader identifies who's loading it (e.g. an AsyncResourceBatch); only it can end the load. Returns false
@@ -132,14 +122,6 @@ private:
 
 	// #TODO Turn the resource IDs into hashes/guids
 	std::unordered_map<std::string, ResourceSource> mResourceTable;
-
-	struct PendingDestroy
-	{
-		IResource* Resource = nullptr;
-		// Rendering::Renderer::GetRecordingFrame when it was released
-		U64 ReleasedFrame = 0;
-	};
-	std::vector<PendingDestroy> m_pendingDestroys;
 
 	// Resource key -> who's loading it
 	std::unordered_map<std::string, const void*> m_asyncLoads;
