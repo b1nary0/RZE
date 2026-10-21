@@ -286,7 +286,7 @@ Rules:
 
 - `SectionHeading`, `ItemTooltip`, `RadioOption`.
 - **Toolbars:** `ScopedToolbarSpacing` (tight spacing within a group) and `ToolbarGroupSeparator` (a separator with gaps), used by the SceneView's menu bar.
-- **Property tables:** `BeginPropertyTable` / `PropertyRow` / `EndPropertyTable` and `CalcLabelColumnWidth`, the label/value layout of the Object Inspector. Labels too long for their column show in full on hover.
+- **Property tables:** `BeginPropertyTable` / `PropertyRow` / `EndPropertyTable` and `CalcLabelColumnWidth`, the label/value layout of the Object Inspector. Labels too long for their column show in full on hover. `PushPropertyRowClipRect(bottom)` lets something in the label column run across the whole row (a list element's heading) while keeping it inside the table's visible area; a plain `ImGui::PushClipRect(..., false)` would draw it over whatever is below the window.
 - **Tree nodes:** `TreeNode(id, flags, format, ...)`, in place of `ImGui::TreeNodeEx`; see below.
 - **Images:** `TextureID(handle)`, the ID to pass `ImGui::Image`, `ImDrawList::AddImage` and the like. It keeps the texture alive for as long as the UI drawn this frame is rendered, so a texture released while it's on screen doesn't go from under the render thread ([Low-Level-Renderer-Module.md](../04-Rendering/Low-Level-Renderer-Module.md#imgui-integration-lives-at-this-layer-too)).
 

@@ -38,17 +38,6 @@ namespace
 	{
 		return ImGui::GetCurrentTable()->WorkRect.Max.x;
 	}
-
-	// Lets what's drawn next in a property table's label column run across the row to its right edge, and down to
-	// bottom, while keeping it inside the window. Pair with ImGui::PopClipRect.
-	void PushPropertyRowClipRect(float bottom)
-	{
-		// Not intersected with the current clip rect, which is the label column's, but with the table's visible area
-		const ImRect& tableClip = ImGui::GetCurrentTable()->InnerClipRect;
-		const ImVec2 start = ImGui::GetCursorScreenPos();
-		ImGui::PushClipRect(ImVec2(std::max(start.x, tableClip.Min.x), std::max(start.y, tableClip.Min.y)),
-			ImVec2(std::min(GetPropertyRowRight(), tableClip.Max.x), std::min(bottom, tableClip.Max.y)), false);
-	}
 }
 
 namespace Editor
@@ -59,6 +48,15 @@ namespace Editor
 		{
 			Rendering::Renderer::KeepTextureForUI(texture);
 			return (ImTextureID)(intptr_t)texture.GetTextureData();
+		}
+
+		void PushPropertyRowClipRect(float bottom)
+		{
+			// Not intersected with the current clip rect, which is the label column's, but with the table's visible area
+			const ImRect& tableClip = ImGui::GetCurrentTable()->InnerClipRect;
+			const ImVec2 start = ImGui::GetCursorScreenPos();
+			ImGui::PushClipRect(ImVec2(std::max(start.x, tableClip.Min.x), std::max(start.y, tableClip.Min.y)),
+				ImVec2(std::min(GetPropertyRowRight(), tableClip.Max.x), std::min(bottom, tableClip.Max.y)), false);
 		}
 
 		void SectionHeading(const char* text)

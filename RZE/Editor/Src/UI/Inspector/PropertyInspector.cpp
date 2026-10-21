@@ -475,9 +475,7 @@ namespace Editor
 		{
 			// Nothing sits beside it in the value column, so a long heading can run across the row rather than being
 			// cut off at the label column
-			const ImVec2 start = ImGui::GetCursorScreenPos();
-			const float rowRight = ImGui::GetWindowPos().x + ImGui::GetWindowWidth() - ImGui::GetStyle().WindowPadding.x;
-			ImGui::PushClipRect(start, ImVec2(rowRight, start.y + ImGui::GetTextLineHeightWithSpacing()), false);
+			EditorUI::PushPropertyRowClipRect(ImGui::GetCursorScreenPos().y + ImGui::GetTextLineHeightWithSpacing());
 			ImGui::TextUnformatted(heading);
 			ImGui::PopClipRect();
 		}

@@ -126,6 +126,10 @@ namespace Editor
 		// empty title draws just the line, e.g. to end a section before rows that aren't in one.
 		void PropertySectionRow(const char* title);
 
+		// Lets what's drawn next in a property table's label column run across the row to its right edge, and down to
+		// bottom, while keeping it inside the table's visible area. Pair with ImGui::PopClipRect.
+		void PushPropertyRowClipRect(float bottom);
+
 		// Starts a row whose content runs across both columns (e.g. an image) and returns its width. Pair with
 		// EndPropertyWideRow.
 		float BeginPropertyWideRow();
