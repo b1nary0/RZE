@@ -4,7 +4,7 @@
 
 ## `Config` (`Config.h/.cpp`)
 
-`class Config : public IResource` — wraps `CSimpleIniA` (the vendored SimpleINI third-party library) plus a `File`. `Read(filePath)` parses an INI file into an internal `mINIParser`.
+`class Config : public IResource` — wraps `CSimpleIniA` (the vendored SimpleINI third-party library) plus a `File`. `Read(filePath)` parses an INI file into an internal `mINIParser`. `Write(filePath)` saves the parser's values back, keeping the comments `Read` found, as `Key=Value` with no spaces. It writes beside the file first and then moves it over (`File::MoveReplacing`), so a reader never gets half a file. Only `GameConfig` writes today.
 
 ## `EngineConfig` (`EngineConfig.h/.cpp`)
 
@@ -54,16 +54,36 @@ LaunchMonitor=0
 
 Read during startup by `CreateAndInitializeWindow()` (`[WindowSettings]`; `-launchMonitor` overrides `LaunchMonitor`) and `InitializeFramePacing()` (`[FrameSettings]`; `-vsync`, `-maxfps` and `-uifps` override it), see [Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md). The frame settings can change while running (`RZE_Engine::SetFrameSettings`, the Editor's Frame Rate page), and so can the background task filter (`AsyncOperationManager::SetVisibilityFilter`, the Background Tasks page), but nothing writes them back to the file.
 
+## `GameConfig` (`GameConfig.h/.cpp`) and `Config\Game.ini`
+
+`class GameConfig final : public Config` — what the game itself is, as opposed to how the engine runs it. The Editor's [Project Settings](../07-Editor/Editor-Panels.md#project-settings-projectsettingspanel) change it and save it as they go; the Game reads it in `GameApp::Initialize` ([Game-App.md](../08-Game/Game-App.md#lifecycle)).
+
+- `[Game] Icon` (`GetIcon`/`SetIcon`): the image the game's window shows, a path relative to the project root. Empty (an invalid `Filepath`) keeps the executable's icon, the RZE mark ([Windowing.md](Windowing.md#icons)).
+- `Load` on a missing file leaves everything at its default, and `Save` creates it. `Save` writes over the file it was loaded from.
+
+Unlike `EngineConfig` it isn't loaded through the `ResourceHandler`, whose resources are read-only: the Editor's panel and `GameApp` each own one.
+
+```ini
+[Game]
+
+; The game window's icon: a square PNG under Assets, 256 px or larger. Empty for the RZE icon. Set in the editor's Edit > Project Settings.
+Icon=
+```
+
+The checked-in file is in the layout SimpleINI writes (the blank line before a commented key), so saving it only changes the values.
+
 ## `Config\imgui.ini`
 
 A standard Dear ImGui persisted window-layout file, auto-generated/updated by ImGui itself — not hand-authored, and not part of the `EngineConfig`/`Config` class hierarchy. The Editor points ImGui's `io.IniFilename` at this path during `EditorApp::Initialize()`.
 
 ## Where config lives in the build/asset flow
 
-Nowhere else: the Editor and the Game both read `Config\` from the source tree (`EDirectoryContext::Source`), so an edit to `Engine.ini` applies on their next launch with no copy step. See [Building-And-Running.md](../01-GettingStarted/Building-And-Running.md).
+Nowhere else: the Editor and the Game both read `Config\` from the source tree (`EDirectoryContext::Source`), so an edit to `Engine.ini` or `Game.ini` applies on their next launch with no copy step. See [Building-And-Running.md](../01-GettingStarted/Building-And-Running.md).
 
 ## Key files
 
 - `Engine\Src\EngineCore\Config\Config.h/.cpp`
 - `Engine\Src\EngineCore\Config\EngineConfig.h/.cpp`, `FrameSettings.h`; `Engine\Src\EngineCore\Async\AsyncOperationFilter.h/.cpp`
-- `Config\Engine.ini`, `Config\imgui.ini`
+- `Engine\Src\EngineCore\Config\GameConfig.h/.cpp`
+- `Config\Engine.ini`, `Config\Game.ini`, `Config\imgui.ini`
+- `UnitTests\Src\Engine\GameConfigTests.cpp`

@@ -17,6 +17,8 @@ public:
 
 protected:
 	void Read(const Filepath& filePath);
+	// Saves the parser's values, with the comments Read found, over filePath. False if it couldn't.
+	bool Write(const Filepath& filePath) const;
 
 	File mINIFile;
 	CSimpleIniA mINIParser;

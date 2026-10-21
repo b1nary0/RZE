@@ -14,7 +14,9 @@
 #include <Utils/Math/Vector2D.h>
 
 class EventHandler;
+class Filepath;
 class InputHandler;
+class WindowIcon;
 
 class Win32Window
 {
@@ -40,11 +42,15 @@ public:
 	};
 
 	Win32Window(const WindowCreationParams& creationProtocol);
+	~Win32Window();
 
 	void SetCursorEnabled(bool enabled);
 	void ResetCursorToCenter();
 
 	void SetTitle(const std::string& title);
+	// Shows image (e.g. a PNG) as the window's icon, in place of the executable's. False if it couldn't be read, which
+	// leaves the icon as it was.
+	bool SetIcon(const Filepath& image);
 
 	const std::string& GetTitle() const;
 	const Vector2D& GetDimensions() const;
@@ -130,4 +136,7 @@ private:
 
 	bool m_hasCustomTitleBar{ false };
 	TitleBarLayout m_titleBarLayout;
+
+	// From SetIcon; null while the window shows the executable's icon
+	std::unique_ptr<WindowIcon> m_icon;
 };

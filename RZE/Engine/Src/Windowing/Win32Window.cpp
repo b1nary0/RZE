@@ -8,6 +8,7 @@
 #include <Events/EventHandler.h>
 
 #include <Windowing/Display.h>
+#include <Windowing/WindowIcon.h>
 #include <Windowing/WindowMessageAdaptor.h>
 
 #include <Utils/Conversions.h>
@@ -39,6 +40,10 @@ Win32Window::Win32Window(const WindowCreationParams& creationProtocol)
 	Create(creationProtocol);
 }
 
+Win32Window::~Win32Window()
+{
+}
+
 void Win32Window::SetCursorEnabled(bool enabled)
 {
 	bCursorEnabled = enabled;
@@ -60,6 +65,26 @@ void Win32Window::SetTitle(const std::string& title)
 {
 	m_title = title;
 	::SetWindowTextA(m_osWindowHandleData.windowHandle, (LPCSTR)title.c_str());
+}
+
+bool Win32Window::SetIcon(const Filepath& image)
+{
+	const HWND windowHandle = m_osWindowHandleData.windowHandle;
+	std::unique_ptr<WindowIcon> icon = WindowIcon::FromImage(image, GetDpiForWindow(windowHandle));
+	if (icon == nullptr)
+	{
+		return false;
+	}
+
+	SendMessage(windowHandle, WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(icon->GetLarge()));
+	SendMessage(windowHandle, WM_SETICON, ICON_SMALL, reinterpret_cast<LPARAM>(icon->GetSmall()));
+	// The class's too: the taskbar asks the window for its icon, and while the window is too busy to answer (e.g.
+	// loading the first scene) it takes the class's instead, and keeps that
+	SetClassLongPtr(windowHandle, GCLP_HICON, reinterpret_cast<LONG_PTR>(icon->GetLarge()));
+	SetClassLongPtr(windowHandle, GCLP_HICONSM, reinterpret_cast<LONG_PTR>(icon->GetSmall()));
+	// Only now, so the old icons are destroyed once the window has stopped using them
+	m_icon = std::move(icon);
+	return true;
 }
 
 const std::string& Win32Window::GetTitle() const

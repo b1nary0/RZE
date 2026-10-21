@@ -17,6 +17,12 @@ Wraps `HWND`/`HDC`/`HGLRC`/`PIXELFORMATDESCRIPTOR` in an `OSWindowHandleData` st
   - Over those parts the mouse sends non-client messages, so `CompileInputMessages` passes them on as client ones: moves (and leaving the window, through `TrackMouseEvent`), so the UI shows hovers there, and clicks on the maximize button, which aren't dispatched so Windows doesn't draw its own button.
   - `GetSystemTitleBarHeight()` is the height of the OS's title bar at the window's DPI (caption plus frame), the least a custom one should be.
 
+## Icons
+
+- **The executable's icon.** `Editor.exe` and `Game.exe` embed `Assets\Application\RZE.ico` (the RZE mark: the logo's hexagon and gizmo, from `icon.svg` beside it) as icon 1, through `Editor\Resources\Editor.rc` and `Game\Resources\Game.rc` ([Sharpmake-Project-Graph.md](../09-BuildSystem/Sharpmake-Project-Graph.md#per-project-sharpmake-files)). Explorer shows it on the files, and `Create` registers the window class with it, loaded at the system's large and small icon sizes. An exe without one gets Windows' default icon.
+- **`SetIcon(image)`** shows an image file (e.g. a PNG) instead, made by `WindowIcon`. It sends `WM_SETICON` and also sets the class's icons. The taskbar asks the window for its icon, and if the window is too busy to answer (the Game sets its icon just before loading its first scene), it uses the class's and keeps it. It returns false and leaves the icon alone if the image can't be read. The Game uses it for `Game.ini`'s `Icon` ([Config-System.md](Config-System.md#gameconfig-gameconfighcpp-and-configgameini)).
+- **`WindowIcon`** (`WindowIcon.h/.cpp`) owns a large and a small `HICON` at the system sizes for the window's DPI, and destroys them with itself. `ReadImage` loads RGBA texels with stb_image. `MakeSquare` centres the image on a transparent square and scales it to an icon size. Each output texel averages the part of the image it covers, weighted by alpha so transparent texels don't darken edges; it's a free function so the unit tests and the Editor's preview use it too. The icon isn't remade if the window moves to a monitor with a different DPI.
+
 ## `WindowMessageAdaptor` (`WindowMessageAdaptor.h/.cpp`)
 
 An intermediary queue (`EMessageType`: `Create`/`Move`/`Resize`/`Destroy`/`Close`/`Quit`) that decouples the window procedure — `Win32Window::WindowProc`, a private static, as the Win32 API needs — from handling the messages. Messages get pushed from `WindowProc` and later popped and processed by `Win32Window` once a frame. The custom title bar's messages can't wait, since Windows needs their answer straight away, so for those `WindowProc` reaches the window through `GWLP_USERDATA`, which `Create` points at it.
@@ -51,3 +57,5 @@ flowchart TD
 - `Engine\Src\Windowing\Display.h/.cpp`
 - `Engine\Src\Windowing\TitleBarLayout.h/.cpp`
 - `Engine\Src\Windowing\WinKeyCodes.h`
+- `Engine\Src\Windowing\WindowIcon.h/.cpp`; `UnitTests\Src\Engine\WindowIconTests.cpp`
+- `Assets\Application\RZE.ico`, `icon.svg`; `Editor\Resources\Editor.rc`, `Game\Resources\Game.rc`

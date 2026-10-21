@@ -47,8 +47,8 @@ public class RZE : Solution {
 | Engine | `Engine\Engine.sharpmake.cs` | static Lib | Utils, Externals, Rendering | `OptickCore`; copies `ThirdParty\Dll\x64\*.dll` to output post-build |
 | SourceAssetBurner | `SourceAssetBurner\SourceAssetBurner.sharpmake.cs` | exe | **Engine only** | `assimp-vc141-mt` |
 | EditorLib | `Editor\Editor.sharpmake.cs` | static Lib | **Engine only** | — (everything in `Editor\Src` except `EditorMain.cpp`; its own intermediate folder, since it shares `Editor\_project` with Editor) |
-| Editor | `Editor\Editor.sharpmake.cs` | windowed exe | **EditorLib only** | links `EditorLib` with `/WHOLEARCHIVE`, so self-registering panels aren't dropped; compiles only `EditorMain.cpp` |
-| Game | `Game\Game.sharpmake.cs` | windowed exe | **Engine only** | — |
+| Editor | `Editor\Editor.sharpmake.cs` | windowed exe | **EditorLib only** | links `EditorLib` with `/WHOLEARCHIVE`, so self-registering panels aren't dropped; compiles only `EditorMain.cpp`, plus `Resources\Editor.rc` (the icon) through `ResourceFiles` |
+| Game | `Game\Game.sharpmake.cs` | windowed exe | **Engine only** | — ; `Resources\Game.rc` (the icon) through `ResourceFiles` |
 | UnitTests | `UnitTests\UnitTests.sharpmake.cs` | exe | **EditorLib only** | — (doctest is header-only) |
 
 `Game` and `SourceAssetBurner` declare a single explicit dependency, `Engine` (`Editor` and `UnitTests` declare `EditorLib`, which declares `Engine`), rather than also separately declaring `Utils` (and, for `Game`, `Rendering`). This isn't a behavior change: `Engine` itself has `AddPublicDependency<Utils>`/`<Externals>`/`<Rendering>`, and Sharpmake's `AddPublicDependency` propagates a project's public include/lib paths to everything that depends on it — so all three still get full access to `Utils`/`Rendering` headers/libs, just transitively through `Engine` instead of via their own separate declaration.

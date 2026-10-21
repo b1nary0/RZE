@@ -3,6 +3,8 @@
 
 Config::Config()
 {
+	// Writes "Key=Value", as the files are written by hand
+	mINIParser.SetSpaces(false);
 }
 
 Config::~Config()
@@ -31,4 +33,13 @@ void Config::Read(const Filepath& filePath)
 	{
 		RZE_LOG_ARGS("Could not open file at path [%s]", mINIFile.GetPath().GetRelativePath().c_str());
 	}
+}
+
+bool Config::Write(const Filepath& filePath) const
+{
+	// Beside it first, then moved over it, so anything reading it meanwhile never gets half a file
+	const Filepath temporaryPath = File::GetTemporaryPathFor(filePath);
+	const bool wasWritten = mINIParser.SaveFile(temporaryPath.GetAbsolutePath().c_str(), false) == SI_OK;
+
+	return File::MoveReplacing(temporaryPath, filePath) && wasWritten;
 }

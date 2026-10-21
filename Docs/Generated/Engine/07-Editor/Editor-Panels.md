@@ -12,6 +12,7 @@ Every Editor window is an `EditorPanel` in `Editor\Src\UI\Panels\`, registered w
 | Resource Monitor | `ResourceMonitorPanel` | Left (closed at first) | View > Windows > Resource Monitor | yes |
 | ImGui Demo | `ImGuiDemoPanel` | floating (closed at first) | Help > ImGui Demo | yes |
 | Settings | `SettingsPanel` | floating, 760×460 (closed at first) | Edit > Settings | yes |
+| Project Settings | `ProjectSettingsPanel` | floating, 560×300 (closed at first) | Edit > Project Settings | yes |
 | Task History | `TaskHistoryPanel` | floating, 820×480 (closed at first) | View > Windows > Task History, or Full history in the status bar | yes |
 
 ```mermaid
@@ -157,13 +158,22 @@ Dear ImGui's own demo window, from Help > ImGui Demo. It draws its own window (`
 
 The Settings window: registered settings pages (Background Tasks, Frame Rate, Scene View, Thumbnails) listed on the left, the chosen one on the right. See [Status-Bar-And-Settings.md](Status-Bar-And-Settings.md#the-settings-window).
 
+## Project Settings (`ProjectSettingsPanel`)
+
+What the game itself is, saved to `Config\Game.ini` (`GameConfig`, [Config-System.md](../06-Platform-And-Infrastructure/Config-System.md#gameconfig-gameconfighcpp-and-configgameini)) as soon as it changes. Settings, by contrast, are the editor's own and last until it closes. It's a property table with one section for now, **Game**:
+
+- **Icon**: the game window's icon, a PNG under `Assets`. The row is the Object Inspector's [asset path drawer](Object-Inspector-And-Properties.md#asset-fields) (`PropertyDrawers::Find(EPropertyType::AssetPath)`) with a `PropertyDescriptor` the panel builds itself: a thumbnail, the file name, `...` for the file browser, Clear, and drops from the Content Browser.
+- Under it are previews at 16, 32 and 48 px, made with `WindowIcon::MakeSquare` as the game makes its icon. Notes say when the image isn't square, is under 256 px, or can't be read. A failed save shows in red and goes to the log.
+
+When it needs more than a few settings, it can take the Settings window's page list.
+
 ## Task History (`TaskHistoryPanel`)
 
 Every background task's history in full: a row per run, newest first, that opens to list everything it did, with search, "Problems only", Copy and Clear. See [Status-Bar-And-Settings.md](Status-Bar-And-Settings.md#task-history).
 
 ## Key files
 
-- `Editor\Src\UI\Panels\ScenePanel`, `SceneViewPanel`, `InspectorPanel`, `ContentBrowserPanel`, `LogPanel`, `ResourceMonitorPanel`, `ImGuiDemoPanel`, `SettingsPanel`, `TaskHistoryPanel` (`.h/.cpp`)
+- `Editor\Src\UI\Panels\ScenePanel`, `SceneViewPanel`, `InspectorPanel`, `ContentBrowserPanel`, `LogPanel`, `ResourceMonitorPanel`, `ImGuiDemoPanel`, `SettingsPanel`, `ProjectSettingsPanel`, `TaskHistoryPanel` (`.h/.cpp`)
 - `Editor\Src\UI\Framework\EditorSelection.h/.cpp`, `ScenePicker.h/.cpp`
 - `Editor\Src\Commands\SceneCommands.h/.cpp` — `CreateMeshObjectCommand`
 - `Editor\Src\Services\SelectionBoundsDisplay.h/.cpp`

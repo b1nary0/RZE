@@ -1,7 +1,18 @@
 # App icon and Project Settings
 
-Status: Step 1 done. Editor.exe and Game.exe embed `Assets/Application/RZE.ico` and use it for their window, taskbar
-button and Explorer icon. Step 2 (Project Settings and `Config/Game.ini` for the game's own icon) is still to do.
+Status: done. Editor.exe and Game.exe embed `Assets/Application/RZE.ico` and use it for their window, taskbar button
+and Explorer icon. Edit > Project Settings picks the game's own icon, saved to `Config/Game.ini`, and Game.exe shows it.
+Where the build differs from the plan below:
+
+- `GameConfig` isn't loaded through the `ResourceHandler`: its resources are read-only, and the editor has to change
+  it. The panel and `GameApp` each own one.
+- `SetIcon` sets the window class's icons as well as sending `WM_SETICON`. The Game sets its icon just before loading
+  its first scene, the taskbar's request for the new icon timed out, and it kept the class's (the RZE mark).
+- The icon row reuses the Object Inspector's asset path drawer rather than copying it.
+- With no icon chosen, the panel says the game shows the RZE icon rather than previewing it (stb_image can't read
+  the `.ico`).
+- The icon isn't remade when the window changes DPI: the window doesn't handle `WM_DPICHANGED` yet.
+- `Game.ini` paths use backslashes, like every `Filepath`.
 
 ## Context
 

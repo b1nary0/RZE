@@ -4,6 +4,8 @@
 
 #include <Asset/AssetPaths.h>
 
+#include <EngineCore/Config/GameConfig.h>
+
 #include <Game/World/GameObject/GameObject.h>
 #include <Game/World/GameObjectComponents/CameraComponent.h>
 #include <Game/World/GameObjectComponents/PlayerControllerComponent.h>
@@ -48,6 +50,14 @@ void GameApp::ParseArguments(char** arguments, int count)
 void GameApp::Initialize()
 {
 	RZE_Application::Initialize();
+
+	// The game's own icon, from Project Settings; without one the window keeps the executable's
+	GameConfig gameConfig;
+	gameConfig.Load(Filepath("Config/Game.ini"));
+	if (gameConfig.GetIcon().IsValid())
+	{
+		GetWindow()->SetIcon(gameConfig.GetIcon());
+	}
 
 	CreateRenderTarget(GetWindow()->GetClientSize());
 

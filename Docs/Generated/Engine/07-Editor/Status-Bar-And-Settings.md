@@ -121,7 +121,7 @@ REGISTER_SETTINGS_PAGE(MyPage);
 
 Put it in `Editor\Src\UI\Settings\` and run `GenerateSolutions.bat`. The window creates one of each registered page when it's created (`SettingsPageRegistry::CreateAll`, sorted by name). Registration works like panels', so it relies on `Editor` linking `EditorLib` with `/WHOLEARCHIVE` ([Editor-Framework.md](Editor-Framework.md#panels)). A preference more than one place reads goes in `EditorSettings` and gets its control on a page.
 
-Settings last for the session only; nothing is saved between runs yet.
+Settings last for the session only; nothing is saved between runs yet. Settings that describe the game rather than the editor go in [Project Settings](Editor-Panels.md#project-settings-projectsettingspanel), which saves to `Config\Game.ini`.
 
 ## Key files
 
