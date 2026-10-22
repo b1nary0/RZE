@@ -290,18 +290,17 @@ __pycache__/
 *.odx.cs
 *.xsd.cs
 
-RZE/_[Pp]roject/imgui\.ini
+# Generated and per-user project files (Sharpmake's projects, debugger arguments, imgui.ini), in every project's folder
+**/_[Pp]roject/
 !Tools
 !RZE/Engine/ThirdParty
 # Generated locally: burned data, and the editor's rendered thumbnails
 RZE/ProjectData
-RZE/_[Pp]roject/SourceAssetBurner.args.json
-RZE/_[Pp]roject/Project-RZE.index
 RZE/Logs
 # Build output, for every configuration (the generic rules above only catch debug/ and release/)
 RZE/_build/
-RZE/_[Pp]roject/Game.args.json
-RZE/_project/SharpmakeProject_win64.csproj
 
 # Obsidian vault settings for the generated docs
 Docs/Generated/Engine/.obsidian/
+# Working plans and notes, kept locally
+Docs/Plans/
