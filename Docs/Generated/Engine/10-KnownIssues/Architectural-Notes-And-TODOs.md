@@ -16,7 +16,7 @@ Rough edges the codebase is candid about (source comments, `#TODO`s), plus a few
 | 8 | Textures aren't burned | Asset pipeline | Medium | Open |
 | 9 | Shadow map misses runtime material changes | Rendering | Low | Open, noted in source |
 | 10 | Constant-buffer uploads read past small structs | Renderer | Low | Open |
-| 11 | `LogChannel::Debug`'s colour is out of range | Debug services | Cosmetic | Open |
+| 11 | `LogChannel::Debug`'s colour was out of range | Debug services | — | **Fixed** (10-21: log levels) |
 | 12 | Camera previews changed the camera temporarily | Components | — | **Fixed** (10-11: editor UI rework) |
 | 13 | An incremental build once missed a header change | Build | Low | Observed once |
 | 14 | Reparenting in the Scene panel keeps the local transform | Editor | Low | Open |
@@ -37,6 +37,8 @@ Rough edges the codebase is candid about (source comments, `#TODO`s), plus a few
 | 29 | GPU render targets leak, and the D3D device leaks at exit | Renderer | Medium | Open |
 | 30 | In Debug, the game's key bindings never fire | Game | Medium | Open |
 | 31 | `RenderThread::Shutdown` can race | Renderer | Low | Open |
+| 32 | A shader that doesn't compile crashes the app | Renderer | Medium | Open |
+| 33 | The lit pixel shaders compile with an uninitialised-variable warning | Shaders | Cosmetic | Open |
 
 ```mermaid
 quadrantChart
@@ -52,7 +54,6 @@ quadrantChart
     "8 Texture burning": [0.65, 0.62]
     "2 ReflectDB hash": [0.15, 0.35]
     "10 CB over-read": [0.25, 0.25]
-    "11 Log colour": [0.05, 0.1]
     "5 Dead file": [0.05, 0.05]
     "7 Component lookups": [0.4, 0.2]
     "9 Shadow opacity": [0.3, 0.08]
@@ -107,9 +108,9 @@ The 2020 design notes called for both. **Culling** is implemented: objects and t
 
 `Renderer::UploadDataToBuffer<T>` copies the buffer's **aligned** size from the source pointer. For `RenderCamera` (84 bytes, in a 128-byte-aligned buffer), the shadow and pick stages pass a local, so 44 bytes past the struct are copied from the stack into unused padding. It works in practice, but it's undefined behaviour. Fix: copy `sizeof(T)` and zero the rest, or pad the struct to the alignment.
 
-## 11. `LogChannel::Debug`'s colour is out of range
+## 11. `LogChannel::Debug`'s colour was out of range (fixed)
 
-`DebugServices::Initialize()` sets it to (255, 255, 1). Colours are 0–1, so it shows as white like `Info`; yellow was probably intended (1, 1, 0).
+`DebugServices::Initialize()` set it to (255, 255, 1). Colours are 0–1, so Debug lines showed white like `Info`. With the log levels (Debug, Info, Warning, Error), Debug is now the high-volume channel and gets a muted blue-grey; see [Debug-Services-And-Logging.md](../06-Platform-And-Infrastructure/Debug-Services-And-Logging.md).
 
 ## 12. Camera previews changed the camera temporarily (fixed)
 
@@ -191,6 +192,14 @@ The first unit of work in any budget always runs, even when it's bigger than the
 
 `Shutdown` signals the render thread before it sets `m_shuttingDown`, so the thread can finish a pass and wait again before seeing the flag, leaving `join()` waiting on it. It's a narrow window and hasn't been seen to hang.
 
+## 32. A shader that doesn't compile crashes the app
+
+`DX11VertexShader::Create` and `DX11PixelShader::Create` log the compiler's errors (at Error, through `LogCompileMessages`), then pass the compiled blob straight to `CreateVertexShader` / `CreatePixelShader`. When the compile failed the blob is null, so the app crashes with an access violation. The error reaches the log file first, but not the Log panel. A fix would skip creating the shader when `D3DCompileFromFile` fails, and have the resource load fail like any other (a `Texture2D` that won't load already does).
+
+## 33. The lit pixel shaders compile with an uninitialised-variable warning
+
+`Pixel_NewRenderer`, `Pixel_NewRenderer_DiffuseOnly` and `Pixel_Default_NewRenderer` all log `Common/Lighting.hlsli(232,2): warning X4000: use of potentially uninitialized variable (ComputeLighting)` at start-up. Line 232 is the early `return` in `ComputeLighting`'s uniform-lighting branch. FXC raises X4000 for a `return` inside a branch when it can't prove every path sets the result, so it's most likely a false alarm. The shaders render correctly. Writing the result to a local and returning it once, at the end, would silence it. It went unnoticed until shader warnings reached the log (10-21).
+
 ## Key files
 
 - `Engine\Src\Game\World\GameObject\GameObjectComponent.h` (1), `GameObject.h` (7)
@@ -208,3 +217,4 @@ The first unit of work in any budget always runs, even when it's bigger than the
 - `Engine\Src\Game\World\GameObject\Properties\PropertyBuilder.h`, `Engine\Src\Graphics\Material.cpp`, `Texture2D.cpp` (23)
 - `Engine\Src\Game\StaticMeshResource.h/.cpp` (24), `Engine\Src\Game\World\GameObjectComponents\RenderComponent.cpp` (25)
 - `Engine\Src\Graphics\MaterialSlot.cpp` (26)
+- `Modules\Rendering\Src\Rendering\Driver\DX11\DX11ShaderTypes.cpp` (32), `Assets\Shaders\Common\Lighting.hlsli` (33)

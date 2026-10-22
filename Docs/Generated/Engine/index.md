@@ -138,6 +138,8 @@ timeline
                : Real progress for loads, one task per folder, Task History window
                : PendingResource, CaptureBatchOperation, operations timing themselves (Asset-Import-Runtime)
                : Meshes, materials and textures chosen in the editor load in the background
+    2026-10-21 : Log levels Debug, Info, Warning and Error (Debug-Services-And-Logging)
+               : Log panel filter by channel and search text (Editor-Panels)
 ```
 
 | Area | What changed | Read |
@@ -146,7 +148,7 @@ timeline
 | Loading | Scenes load asynchronously: parsing on workers, GPU uploads time-sliced on the main thread. | [Asset-Import-Runtime](05-AssetPipeline/Asset-Import-Runtime.md), [Threading-And-Jobs](06-Platform-And-Infrastructure/Threading-And-Jobs.md) |
 | Content | Assimp 6.0.5, units converted to metres, models no longer mirrored, deterministic burns. **Re-burn after pulling.** | [Asset-Burning-Pipeline](05-AssetPipeline/Asset-Burning-Pipeline.md), [World-Conventions](02-Architecture/World-Conventions.md) |
 | Editor | Orbit/pan/dolly camera, glide-to-frame, light and camera icons, multi-select, click and marquee picking. Gizmo snapping (X, Ctrl to invert) and a fading ground grid. All shortcuts in one table. | [Editor-Panels](07-Editor/Editor-Panels.md), [Editor-Camera-And-Build-Launch](07-Editor/Editor-Camera-And-Build-Launch.md), [Gizmo-Snapping-And-Grid](07-Editor/Gizmo-Snapping-And-Grid.md), [Editor-Shortcuts](07-Editor/Editor-Shortcuts.md) |
-| Diagnostics | `RZE_LOG` in Release and in the Log panel, clearer assert dialogs, PIX markers only when a profiler is attached. `-perfcapture` frame-time recording for A/B comparisons. | [Debug-Services-And-Logging](06-Platform-And-Infrastructure/Debug-Services-And-Logging.md) |
+| Diagnostics | `RZE_LOG` in Release and in the Log panel, clearer assert dialogs, PIX markers only when a profiler is attached. `-perfcapture` frame-time recording for A/B comparisons. Log levels (Debug, Info, Warning, Error) with `[Level]` prefixes in the log file and colours in the Log panel, which filters by channel and search text; shader compile warnings and errors reach the log. | [Debug-Services-And-Logging](06-Platform-And-Infrastructure/Debug-Services-And-Logging.md), [Editor-Panels](07-Editor/Editor-Panels.md#log-logpanel) |
 | Editor framework | Panels share an `EditorContext` and register themselves; each has a data step (`Update`, before ImGui's frame) and a draw step. Scene changes are commands applied once per frame; an event bus reports loads, saves, edits and selection changes. Window title shows unsaved changes. | [Editor-Framework](07-Editor/Editor-Framework.md) |
 | Inspector | Components describe their properties in the Engine with no ImGui; the "Object Inspector" (was "Component View") draws them, nests materials, meshes and textures, and edits several selected objects at once. `OnEditorInspect` is gone. | [Object-Inspector-And-Properties](07-Editor/Object-Inspector-And-Properties.md), [Component-System](03-SceneAndGameObjects/Component-System.md) |
 | Scene model | `GameObjectPtr` / `GameObjectComponentPtr` know when their target is destroyed. Objects have a saved GUID; names can repeat. Scene files are version 2 (an array keyed by GUID); version 1 files convert on load. **Resave scenes to update them.** | [Scene-And-GameObject-Model](03-SceneAndGameObjects/Scene-And-GameObject-Model.md) |

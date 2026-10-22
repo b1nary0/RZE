@@ -60,13 +60,16 @@ public:
         desc.Name = "Log";                           // window title and ImGui ID; imgui.ini saves the layout under it
         desc.MenuPath = "View/Windows/Log";          // menu item that opens and closes it
         desc.DefaultDock = EPanelDock::BottomRight;  // where it docks when there's no saved layout
-        desc.WindowFlags = ImGuiWindowFlags_NoCollapse;
+        desc.WindowFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar;
+        desc.MenuBarPadding = 6.0f;                  // space above and below the menu bar's contents
+        desc.MenuBarSeparator = true;                // a line between the menu bar and the contents
         return desc;
     }
 
 private:
-    void Update(EditorContext& context) override;   // before ImGui's frame: gather what Draw shows
-    void Draw(EditorContext& context) override;     // the window's contents; PanelManager does Begin/End
+    void PushWindowStyle(PanelWindowStyle& style) const override;   // style vars and colours for its window
+    void DrawMenuBar(EditorContext& context) override;              // the menu bar's contents (the log filter)
+    void Draw(EditorContext& context) override;                     // the window's contents; PanelManager does Begin/End
 };
 
 REGISTER_EDITOR_PANEL(LogPanel);   // in LogPanel.cpp
@@ -84,9 +87,12 @@ REGISTER_EDITOR_PANEL(LogPanel);   // in LogPanel.cpp
 | `Closable` | Shows the close button. A panel that can't close is always open (the SceneView). |
 | `AcceptsDocking` | Other panels can dock into its node, as a tab or split off to one side (on by default). The SceneView turns it off, so panels dock around the scene rather than into it: `PanelManager` gives its window a class that sets `NoDockingOverMe` and `NoDockingSplit` on its node, which then shows no drop targets. Dropping on the main dockspace's outer edges still works. |
 | `WindowFlags` | Passed to `Begin`. Include `ImGuiWindowFlags_MenuBar` to get a `DrawMenuBar()` call. |
+| `MenuBarPadding` | Space above and below the menu bar's contents, in pixels, on top of ImGui's (6 for the SceneView's toolbar and the Log's filter). Menu bar only. |
+| `CentreMenuBar` | Centres the menu bar's contents across it, or starts them at its left where it's too narrow (the SceneView's toolbar). Menu bar only. |
+| `MenuBarSeparator` | A line in the theme's separator colour along the bottom of the menu bar, for when the contents below look no different from it, e.g. text on the window's background (the Log). Menu bar only. |
 | `OwnsWindow` | `Draw()` does its own `Begin`/`End` (the ImGui demo). Use `GetOpenFlag()` for its close button. |
 
-Optional hooks: `Initialize(context)` (once, after every panel exists), `DrawMenuBar(context)`, `OnSceneReset()`, `PushWindowStyle(style)` (style vars that cover the title bar and tab too), and `PreRender(context)`: every frame while the panel is open, after the scene's update and before the frame renders, for what goes into the scene every frame, such as debug lines, which are cleared after each render. No ImGui calls there; it's outside ImGui's frame. The SceneView draws the grid and camera frustums in it, but only while its last `Draw` showed the scene image.
+Optional hooks: `Initialize(context)` (once, after every panel exists), `DrawMenuBar(context)`, `OnSceneReset()`, `PushWindowStyle(style)` (style vars and colours that cover the title bar, tab and menu bar too; the Log lightens its menu bar's background with `ImGuiCol_MenuBarBg`), and `PreRender(context)`: every frame while the panel is open, after the scene's update and before the frame renders, for what goes into the scene every frame, such as debug lines, which are cleared after each render. No ImGui calls there; it's outside ImGui's frame. The SceneView draws the grid and camera frustums in it, but only while its last `Draw` showed the scene image.
 
 `PanelManager` creates every registered panel at start-up, sorted by name. On each UI frame it updates and draws the open ones (`UpdateAll`, `DrawAll`), and every frame it calls their `PreRender` (`PreRenderAll`). It also builds the Edit, View and Help menu items from their `MenuPath`s, and docks panels:
 

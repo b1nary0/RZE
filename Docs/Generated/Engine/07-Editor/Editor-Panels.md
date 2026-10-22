@@ -139,11 +139,17 @@ Browses the project's `Assets` and `ProjectData` folders: a folder tree beside a
 
 ## Log (`LogPanel`)
 
-Shows `DebugServices`' log entries, coloured by channel, and scrolls to the bottom when new ones arrive. Its `Update()` notes whether there are new entries; `Draw()` lists them. Anything can write to it:
-- `RZE_LOG` / `RZE_LOG_ARGS` from engine and game code (enabled in Debug and Release, stripped in Retail);
-- resource loads ("Creating resource [...]"), including ones loaded asynchronously;
-- the render pipeline's stage order when it compiles;
+Shows `DebugServices`' log entries, coloured by channel (Error red, Warning orange, Info white, Debug muted, Build grey), and keeps the newest in view while it's scrolled to the bottom. Anything can write to it:
+- the `RZE_LOG` macros from engine, editor and game code, at their level (enabled in Debug and Release, stripped in Retail);
+- resource loads ("Creating resource [...]"), at Debug, including ones loaded asynchronously;
+- the render pipeline's stage order when it compiles, and shader compile warnings and errors;
 - build and launch output, streamed line by line (`LogChannel::Build`).
+
+### Filtering
+
+A search box and a checkbox per channel sit in the panel's menu bar, on a lighter strip with a line under it (`PanelDesc::MenuBarSeparator`, and `ImGuiCol_MenuBarBg` pushed in `PushWindowStyle`), so they're set apart from the log and don't scroll with it. A line shows when its channel is ticked and it contains the search text, ignoring case. **Debug starts unticked**, since its per-resource lines are most of the log. The filter lasts for the session; editor settings aren't saved yet.
+
+The filter is its own class, `LogFilter` (`Editor\Src\UI\Panels\LogFilter.h/.cpp`). The panel only calls its `Draw()` (from `DrawMenuBar`) and `IsShown(entry)` (for each entry in `Draw`), so a shared list filter can replace it without changing how the panel draws.
 
 See [Debug-Services-And-Logging.md](../06-Platform-And-Infrastructure/Debug-Services-And-Logging.md).
 

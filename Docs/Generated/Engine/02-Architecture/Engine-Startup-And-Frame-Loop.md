@@ -58,7 +58,7 @@ flowchart TD
 
 1. **`Init()`**:
    - `Debug::CreateLogFile()`, `DebugServices::Get().Initialize()`
-   - `Threading::MainThreadDispatcher::Get().Initialize()` (records the main thread's ID), then `Debug::SetLogSink(&TraceLogLine)` so every `RZE_LOG` line also reaches `DebugServices` ([Debug-Services-And-Logging.md](../06-Platform-And-Infrastructure/Debug-Services-And-Logging.md))
+   - `Threading::MainThreadDispatcher::Get().Initialize()` (records the main thread's ID), then `Debug::SetLogSink(&TraceLogLine)` so every `RZE_LOG` line also reaches `DebugServices`, on its level's channel ([Debug-Services-And-Logging.md](../06-Platform-And-Infrastructure/Debug-Services-And-Logging.md))
    - `Threading::JobScheduler::Get().Initialize()`, then `m_asyncOperationManager.Initialize()` ([Threading-And-Jobs.md](../06-Platform-And-Infrastructure/Threading-And-Jobs.md))
    - `LoadEngineConfig()` — loads `Config/Engine.ini` as an `EngineConfig` resource
    - `CreateAndInitializeWindow()` — constructs `Win32Window` sized/titled per config
