@@ -97,7 +97,7 @@ Because stage objects are shared by every view, anything that must carry over be
 |---|---|---|---|
 | `ShadowRenderStage` | writes `ShadowMapData` | all | Renders the sun's shadow map, but only when the scene or light has changed. |
 | `ForwardRenderStage` | reads `ShadowMapData`, writes `SceneColourData` | all | Draws every visible object, lit, into an HDR target. |
-| `PostProcessRenderStage` | reads `SceneColourData`, writes `DisplayColourData` | all | Eye adaptation, ACES tonemapping, sRGB encode to 8-bit. |
+| `PostProcessRenderStage` | reads `SceneColourData`, writes `DisplayColourData` | all | Eye adaptation, ACES tonemapping, sRGB encode to 8-bit, FXAA. |
 | `PickRenderStage` | nothing | main | On a click or drop, finds the object under one pixel and the depth there. |
 | `DebugDrawRenderStage` | modifies `DisplayColourData` | all | Draws debug lines on top, after tonemapping. Not in Retail builds. |
 | `ImGuiRenderStage` | Editor: reads `DisplayColourData`; Game: modifies it | main | Draws ImGui. Added by the app, not the engine. |
@@ -122,7 +122,7 @@ The engine adds Shadow, Forward, PostProcess, Pick and (outside Retail) DebugDra
 
 ### `PostProcessRenderStage`
 
-Turns linear HDR colour into something a monitor can show, in three steps:
+Turns linear HDR colour into something a monitor can show, then smooths its jagged edges:
 
 ```mermaid
 %%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
@@ -131,12 +131,36 @@ flowchart TD
     L --> A["Eye adaptation<br/>blend last frame's value<br/>toward the new average"]
     A --> T["Expose x ACES tonemap<br/>x sRGB encode"]
     S --> T
-    T --> D["Display colour<br/>(8-bit)"]
+    T --> Q{"view's AntiAliasing<br/>Off?"}
+    Q -->|yes, straight in| D["Display colour<br/>(8-bit)"]
+    Q -->|no| I["Tonemapped<br/>(8-bit, per view)"]
+    I --> F["FXAA"]
+    F --> D
 ```
 
 - **Eye adaptation** moves toward the scene's log-average luminance at about 1.5 s to settle, clamped to −3…+4 EV, then `RenderView::ExposureCompensation` is added on top. Its 1×1 history is ping-ponged between two textures kept in the view's persistent blackboard.
 - A view with `AutoExposure` off skips measuring and adapting, and the tonemap exposes at a fixed 1 (plus `ExposureCompensation`), so what's drawn sets the brightness. Mesh thumbnails use this.
-- The tonemap pass leaves the scene **depth** bound to `DisplayColourData`, so overlays drawn later (debug lines) can still depth-test against the scene.
+- The tonemap pass leaves the scene **depth** bound to `DisplayColourData`, so overlays drawn later (debug lines) can still depth-test against the scene. So does FXAA, and debug lines are drawn after it, so they aren't smoothed.
+
+#### Anti-aliasing (FXAA)
+
+Unless `RenderView::AntiAliasing` is `Off`, the tonemap draws into an intermediate 8-bit texture (`AntiAliasState`, kept in the view's persistent blackboard and remade when the view's target changes size), and `Pixel_FXAA.hlsl` smooths it into the display target. It's a port of FXAA 3.11 Quality, run on the tonemapped, sRGB-encoded image so its contrast thresholds mean the same in shadow as in sunlight. For each pixel:
+
+1. **Is it an edge?** If the contrast between the pixel and its four neighbours is under `max(EdgeThresholdMin, brightest × EdgeThreshold)`, it passes through unchanged. Most pixels stop here, so texture detail stays sharp.
+2. **Which way does the edge run, and which side is it on?** Second differences over the 3×3 neighbourhood pick horizontal or vertical (they catch one-pixel-thin lines too); the neighbour across the edge with the bigger step picks the side.
+3. **How long is the stair-step?** It samples half a pixel across, exactly on the boundary, where bilinear filtering averages the two pixels, and walks both ways along the edge until that average changes. The search steps grow (Medium: 1, 1.5, 2, 4, then an unsampled 12), and an end not found by the last step is assumed to be that far.
+4. **How far to move the sample?** `0.5 − distance to the nearer end / step length`: about half a pixel at the ends of a step, none in the middle, and none toward an end on the other side of the step. A pixel that stands out from its whole neighbourhood (detail thinner than a pixel) is moved by up to `Subpixel` instead, if that's more.
+5. The pixel's colour is one bilinear sample moved that far across the edge: a blend with its neighbour.
+
+The levels are FXAA 3.11's quality presets (`GetAntiAliasingSettings`, `Graphics/AntiAliasing.h`), uploaded in `PostProcessParams`:
+
+| Level | Preset | EdgeThreshold | EdgeThresholdMin | Subpixel | Search steps (reach) |
+|---|---|---|---|---|---|
+| Low | 10 | 0.250 | 0.0833 | 0.25 | 1.5, 3, 12 (16.5 px) |
+| Medium (default) | 12 | 0.166 | 0.0625 | 0.50 | 1, 1.5, 2, 4, 12 (20.5 px) |
+| High | 39 | 0.125 | 0.0312 | 0.75 | 1 ×5, 1.5, 2 ×4, 4, 8 (26.5 px) |
+
+Higher levels treat fainter contrast as an edge, find the ends of long edges more accurately, and soften more sub-pixel sparkle, at the cost of more texture blur and more samples on edge pixels (5 for a pixel that isn't an edge; at most 14, 18 or 32 for one that is). FXAA works on single frames, so it softens shimmer on thin geometry but doesn't remove it.
 
 ### `PickRenderStage`
 
@@ -206,4 +230,5 @@ Keep per-view, across-frame state in `context.Persistent()`, and add new per-fra
 - `Engine\Src\Graphics\RenderPipeline.h/.cpp`, `RenderPipelineCompiler.h/.cpp`
 - `Engine\Src\Graphics\RenderData\` — `ShadowMapData.h`, `SceneColourData.h`, `DisplayColourData.h`
 - `Engine\Src\Graphics\RenderStages\` — one `.h/.cpp` per stage
-- `Assets\Shaders\` — `Pixel_ShadowCaster`, `Pixel_NewRenderer*`, `Pixel_LuminanceLog`, `Pixel_ExposureAdapt`, `Pixel_Tonemap`, `Pixel_PickID`, `Pixel_Line`
+- `Engine\Src\Graphics\AntiAliasing.h/.cpp` — `EAntiAliasing` levels and their FXAA settings
+- `Assets\Shaders\` — `Pixel_ShadowCaster`, `Pixel_NewRenderer*`, `Pixel_LuminanceLog`, `Pixel_ExposureAdapt`, `Pixel_Tonemap`, `Pixel_FXAA`, `Pixel_PickID`, `Pixel_Line`

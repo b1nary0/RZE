@@ -64,7 +64,7 @@ flowchart TD
    - `CreateAndInitializeWindow()` — constructs `Win32Window` sized/titled per config
    - `m_inputHandler.Initialize()`, `RegisterWindowEvents()` (subscribes to `EEventType::Window` → window resize, destroy, and close requests, which exit if `RZE_Application::OnCloseRequested()` agrees)
    - `m_resourceHandler.Init()`
-   - `CreateAndInitializeRenderer()` — `new RenderEngine`, `Initialize(hwnd)`
+   - `CreateAndInitializeRenderer()` — `new RenderEngine`, `Initialize(hwnd)`, then the main view's anti-aliasing and auto-exposure from Engine.ini's `[Rendering]`
    - Creates and initializes the `GameScene`
 2. **`PostInit(createApplicationCallback)`**: registers key events (ImGui key map), invokes the callback to construct the concrete `RZE_Application`, sets its window, calls `app->Initialize()` (registers all built-in `GameObjectComponent` types via `RegisterEngineComponents()`), then `app->RegisterInputEvents()`, then `app->Start()`, then `m_activeScene->Start()`.
 3. **Before the first frame**: the program timer starts, `FrameTimeCapture::Initialize()` reads the `-perf*` arguments, and `InitializeFramePacing()` reads the [frame settings](#settings), after the capture since a capture turns pacing off, and gives the `FramePacer` the monitor's refresh rate.

@@ -103,7 +103,7 @@ flowchart TD
 | Texture slot | Shader register | Used for |
 |---|---|---|
 | `TEXTURE_SLOT_DIFFUSE` | `t0` `DiffuseMap` | Base colour, multiplied by the tint |
-| `TEXTURE_SLOT_SPECULAR` | `t1` `SpecularMap` | Specular strength |
+| `TEXTURE_SLOT_SPECULAR` | `t1` `SpecularMap` | Specular strength; without one, 0.5 (a typical non-metal) |
 | `TEXTURE_SLOT_NORMAL` | `t2` `NormalMap` | Tangent-space normals |
 | `TEXTURE_SLOT_OPACITY` | `t3` `OpacityMap` | Opacity mask (leaves, chains, decals), in red or alpha |
 | `TEXTURE_SLOT_HEIGHT` | `t4` `HeightMap` | Grayscale height, turned into extra normal detail |
@@ -114,7 +114,7 @@ flowchart TD
 |---|---|
 | `Shininess` | Blinn-Phong exponent |
 | `Opacity` | The material's opacity when it's blended; 1 otherwise, since the scene's alpha is read by post-processing |
-| `HasOpacityMask`, `HasHeightMap`, `HasDiffuseMap` | Whether those textures are set |
+| `HasOpacityMask`, `HasHeightMap`, `HasDiffuseMap`, `HasSpecularMap` | Whether those textures are set |
 | `OpacityMaskInAlpha`, `InvertOpacityMask` | How to read the mask |
 | `OpacityMaskIsCoverage` | 1 for blended materials, where the mask fades rather than cuts |
 | `Tint` | sRGB; multiplies the diffuse texture, or is the colour without one |
@@ -126,14 +126,14 @@ The `Has...` flags matter because texture slots are **not unbound** between draw
 ```mermaid
 %%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 flowchart TD
-    M["Material's textures"] --> Q1{"diffuse + specular<br/>+ normal?"}
-    Q1 -->|yes| Full["Pixel_NewRenderer.hlsl"]
+    M["Material's textures"] --> Q1{"normal map?"}
+    Q1 -->|yes| Normal["Pixel_NewRenderer.hlsl"]
     Q1 -->|no| Q2{"no textures<br/>at all?"}
     Q2 -->|yes| Plain["Pixel_Default_NewRenderer.hlsl"]
     Q2 -->|no| Diff["Pixel_NewRenderer_DiffuseOnly.hlsl"]
 ```
 
-Opacity and height maps work with any of the three, through the flags above. The loaded shader and textures are **resolved when they're set** (`GetPixelShader()`, `GetTextureResource(slot)`), so drawing never looks a resource up by path.
+A normal map is only applied by `Pixel_NewRenderer` (`EShader::NormalMapped`), so any material with one gets it; it reads the diffuse and specular maps only if they're set (`HasDiffuseMap`, `HasSpecularMap`). That covers PBR exports that come with normal maps but roughness/metallic instead of specular maps. Opacity and height maps work with any of the three, through the flags above. The loaded shader and textures are **resolved when they're set** (`GetPixelShader()`, `GetTextureResource(slot)`), so drawing never looks a resource up by path.
 
 The same opacity mask is honoured in three passes: the forward pass, the shadow caster (cut-out shadows) and the pick pass (clicks go through cut-out pixels). Blended materials are drawn after everything opaque, sorted, and cast no shadow ([Render-Stages.md](Render-Stages.md)).
 

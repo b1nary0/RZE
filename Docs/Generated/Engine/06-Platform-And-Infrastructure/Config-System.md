@@ -8,11 +8,12 @@
 
 ## `EngineConfig` (`EngineConfig.h/.cpp`)
 
-`class EngineConfig final : public Config` — loads `Config\Engine.ini` and exposes four structs:
+`class EngineConfig final : public Config` — loads `Config\Engine.ini` and exposes four structs and the rendering settings:
 - `EngineSettings` — `MSAASampleCount`. Nothing reads it today: the renderer's stages pick their own sample counts.
 - `WindowSettings` — `WindowTitle`, `WindowWidth`, `WindowHeight`, `LaunchMonitor`
 - `FrameSettings` (`FrameSettings.h`) — `[FrameSettings]`: `EnableVsync`, `MaxFrameRate`, `UnfocusedFrameRate`, `UIFrameRate`. A missing key keeps the struct's default. See [Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md#frame-pacing).
 - `AsyncOperationFilter` (`EngineCore\Async\AsyncOperationFilter.h`, `GetBackgroundTaskFilter()`) — `[BackgroundTasks]`: which running operations progress displays show (the Editor's status bar). `ShowSubSteps`, `ShowBlocking`, and a key per kind: `ShowResourceLoads`, `ShowSceneLoads`, `ShowRendering`, `ShowSaving`, `ShowOther`. A missing key keeps the default, which shows it. `RZE_Engine::Init` gives it to the `AsyncOperationManager` right after loading the config ([Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md#which-operations-are-shown)).
+- `[Rendering]` (`GetAntiAliasing()`, `GetAutoExposure()`) — the main view's `AntiAliasing` (`Off`, `Low`, `Medium` or `High`, any case; anything else logs a warning and keeps `Medium`) and `AutoExposure`. `RZE_Engine::CreateAndInitializeRenderer()` sets them on the main view once the `RenderEngine` is made ([Render-Stages.md](../04-Rendering/Render-Stages.md#anti-aliasing-fxaa)).
 
 Loaded once during `RZE_Engine::Init()` via `LoadEngineConfig()` → `ResourceHandler::LoadResource<EngineConfig>()` — it goes through the exact same resource-loading path as meshes/textures ([Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md)), just with a config-file `IResource` implementation instead of a binary asset format.
 
@@ -45,6 +46,12 @@ ShowSaving=1
 ; Anything else, e.g. building the game
 ShowOther=1
 
+[Rendering]
+; How much the main view smooths jagged edges (FXAA): Off, Low, Medium or High
+AntiAliasing=Medium
+; Expose the main view to the scene's brightness, adapting over time; 0 for a fixed exposure of 1
+AutoExposure=1
+
 [WindowSettings]
 WindowWidth=1600
 WindowHeight=900
@@ -52,7 +59,7 @@ WindowTitle=Game Title
 LaunchMonitor=0
 ```
 
-Read during startup by `CreateAndInitializeWindow()` (`[WindowSettings]`; `-launchMonitor` overrides `LaunchMonitor`) and `InitializeFramePacing()` (`[FrameSettings]`; `-vsync`, `-maxfps` and `-uifps` override it), see [Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md). The frame settings can change while running (`RZE_Engine::SetFrameSettings`, the Editor's Frame Rate page), and so can the background task filter (`AsyncOperationManager::SetVisibilityFilter`, the Background Tasks page), but nothing writes them back to the file.
+Read during startup by `CreateAndInitializeWindow()` (`[WindowSettings]`; `-launchMonitor` overrides `LaunchMonitor`) and `InitializeFramePacing()` (`[FrameSettings]`; `-vsync`, `-maxfps` and `-uifps` override it), see [Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md). The frame settings can change while running (`RZE_Engine::SetFrameSettings`, the Editor's Frame Rate page), and so can the background task filter (`AsyncOperationManager::SetVisibilityFilter`, the Background Tasks page) and the main view's rendering settings (the Scene View page), but nothing writes them back to the file.
 
 ## `GameConfig` (`GameConfig.h/.cpp`) and `Config\Game.ini`
 

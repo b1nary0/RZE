@@ -73,6 +73,7 @@ public:
     Rendering::RenderTargetTexture* Target;  // owned by whoever owns the view
     bool AutoExposure = true;                // off for a fixed exposure of 1, for lighting whose brightness is known
     float ExposureCompensation;              // EV on top of the exposure
+    EAntiAliasing AntiAliasing = Medium;     // FXAA after tonemapping: Off, Low, Medium or High
     ERenderViewLighting Lighting = Scene;    // Scene: the scene's light and sky. Uniform: even, ignoring the light
     bool DrawsDebug = true;                  // debug lines; off for clean captures such as thumbnails
     std::optional<RenderPickRequest> Pick;   // Editor picking (clicks, drops); cleared after each render

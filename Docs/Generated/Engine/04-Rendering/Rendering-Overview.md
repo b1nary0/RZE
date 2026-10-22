@@ -34,7 +34,7 @@ Assets feeding all this (meshes, materials, textures, shaders) are covered in [M
 
 1. **Shadows.** If anything moved, re-render the sun's shadow map (otherwise reuse it).
 2. **Scene.** Cull objects outside the camera's view, then draw the rest, lit and shadowed, into an HDR image.
-3. **Exposure and tonemapping.** Measure the image's average brightness, ease the exposure toward it, and squeeze HDR into displayable 8-bit colour with ACES.
+3. **Exposure and tonemapping.** Measure the image's average brightness, ease the exposure toward it, and squeeze HDR into displayable 8-bit colour with ACES. Then smooth jagged edges with FXAA.
 4. **Overlays.** Draw debug lines (bounds, camera frustums) on top, depth-tested against the scene.
 5. **UI.** Draw ImGui. The Editor shows the scene inside its scene view panel; the Game copies it to the screen.
 6. **(Editor, on a click) Picking.** Work out which object is under the mouse.
