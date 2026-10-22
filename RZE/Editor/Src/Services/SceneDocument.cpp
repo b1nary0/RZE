@@ -14,8 +14,6 @@
 
 #include <EngineCore/Async/AsyncOperationManager.h>
 
-#include <DebugUtils/DebugServices.h>
-
 #include <Utils/DebugUtils/Debug.h>
 
 namespace Editor
@@ -39,7 +37,7 @@ namespace Editor
 	{
 		if (IsLoading())
 		{
-			DebugServices::Get().Trace(LogChannel::Info, "A scene is already loading.");
+			RZE_LOG_WARNING("A scene is already loading.");
 			return;
 		}
 
@@ -61,7 +59,7 @@ namespace Editor
 				{
 					// Nothing valid to save over
 					m_isUntitled = true;
-					DebugServices::Get().Trace(LogChannel::Info, "Failed to load scene: " + operation.GetErrorText());
+					RZE_LOG_ERROR("Failed to load scene: " << operation.GetErrorText());
 					return;
 				}
 

@@ -74,7 +74,7 @@ void MaterialSlot::UpdateSwappedMaterial()
 	const MaterialResource* const material = resource.IsValid() ? resourceHandler.GetResource<MaterialResource>(resource) : nullptr;
 	if (material == nullptr || material->GetMaterial() == nullptr)
 	{
-		RZE_LOG_ARGS("Material [%s] for slot [%s] didn't load; drawing the mesh's own.", requested.GetRelativePath().c_str(), m_name.c_str());
+		RZE_LOG_WARNING_ARGS("Material [%s] for slot [%s] didn't load; drawing the mesh's own.", requested.GetRelativePath().c_str(), m_name.c_str());
 		return;
 	}
 

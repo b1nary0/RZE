@@ -156,7 +156,7 @@ void SceneLoadOperation::TickLoadingResources(AsyncFrameBudget& budget)
 		if (m_resourceBatch.GetFailedCount() > 0)
 		{
 			// Not fatal: affected objects are created without those resources, same as a synchronous load.
-			RZE_LOG_ARGS("Scene [%s]: %u of %u resources failed to load.", m_scenePath.GetRelativePath().c_str(),
+			RZE_LOG_WARNING_ARGS("Scene [%s]: %u of %u resources failed to load.", m_scenePath.GetRelativePath().c_str(),
 				m_resourceBatch.GetFailedCount(), m_resourceBatch.GetRequestedCount());
 		}
 

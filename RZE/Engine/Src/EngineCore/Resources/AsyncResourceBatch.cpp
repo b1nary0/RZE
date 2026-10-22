@@ -147,7 +147,7 @@ void AsyncResourceBatch::StartLoad(Entry& entry)
 	}
 
 	entry.OwnsLoad = true;
-	RZE_LOG_ARGS("Creating resource [%s]", entry.Key.c_str());
+	RZE_LOG_DEBUG_ARGS("Creating resource [%s]", entry.Key.c_str());
 	StartCPULoad(entry, std::move(resource));
 }
 
@@ -274,7 +274,7 @@ void AsyncResourceBatch::FinalizeReadyEntries(AsyncFrameBudget& budget)
 			const ResourceFinalizeCost cost = entry.Resource->GetNextFinalizeStepCost();
 			if (!budget.CanEverAfford(cost))
 			{
-				RZE_LOG_ARGS("Resource [%s] needs %zu bytes of render command memory in a single step, which exceeds the arena.",
+				RZE_LOG_ERROR_ARGS("Resource [%s] needs %zu bytes of render command memory in a single step, which exceeds the arena.",
 					entry.Key.c_str(), cost.ArenaBytes);
 				FailEntry(entry, "too large to upload");
 				break;
@@ -320,7 +320,7 @@ void AsyncResourceBatch::Register(Entry& entry)
 
 void AsyncResourceBatch::FailEntry(Entry& entry, const char* reason)
 {
-	RZE_LOG_ARGS("Async load of resource [%s] failed: %s", entry.Key.c_str(), reason);
+	RZE_LOG_ERROR_ARGS("Async load of resource [%s] failed: %s", entry.Key.c_str(), reason);
 
 	if (entry.Resource != nullptr)
 	{

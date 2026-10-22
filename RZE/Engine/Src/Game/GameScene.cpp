@@ -76,7 +76,7 @@ void GameScene::Serialize(const Filepath& filePath)
 
 	if (!File::MoveReplacing(temporaryPath, mCurrentScenePath))
 	{
-		RZE_LOG_ARGS("Couldn't save scene [%s].", mCurrentScenePath.GetRelativePath().c_str());
+		RZE_LOG_ERROR_ARGS("Couldn't save scene [%s].", mCurrentScenePath.GetRelativePath().c_str());
 	}
 }
 
@@ -98,7 +98,7 @@ void GameScene::Deserialize(const Filepath& filePath)
 	std::string error;
 	if (!ParseSceneFile(filePath, sceneDoc, error))
 	{
-		RZE_LOG_ARGS("Failed to load scene: %s", error.c_str());
+		RZE_LOG_ERROR_ARGS("Failed to load scene: %s", error.c_str());
 		return;
 	}
 
@@ -409,7 +409,7 @@ void GameScene::ResolveMainCamera()
 			}
 			else
 			{
-				RZE_LOG_ARGS("Scene has more than one main camera; using [%s], not [%s].", firstMain->GetName().c_str(), gameObject->GetName().c_str());
+				RZE_LOG_WARNING_ARGS("Scene has more than one main camera; using [%s], not [%s].", firstMain->GetName().c_str(), gameObject->GetName().c_str());
 			}
 		}
 	}
@@ -432,11 +432,11 @@ void GameScene::ReplaceMainCameraIfGone()
 
 	if (m_mainCamera != nullptr)
 	{
-		RZE_LOG_ARGS("Main camera [%s] is gone; [%s] is the main camera now.", previousName.c_str(), m_mainCamera->GetName().c_str());
+		RZE_LOG_WARNING_ARGS("Main camera [%s] is gone; [%s] is the main camera now.", previousName.c_str(), m_mainCamera->GetName().c_str());
 	}
 	else
 	{
-		RZE_LOG_ARGS("Main camera [%s] is gone, and there's no other camera to replace it.", previousName.c_str());
+		RZE_LOG_WARNING_ARGS("Main camera [%s] is gone, and there's no other camera to replace it.", previousName.c_str());
 	}
 }
 

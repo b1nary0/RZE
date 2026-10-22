@@ -25,7 +25,7 @@ void ResourceHandler::ShutDown()
 		if (resourceSource.IsValid())
 		{
 			++liveResourceCount;
-			RZE_LOG_ARGS("Resource [%s] still referenced at shutdown.", resourceSource.GetResourcePath().GetRelativePath().c_str());
+			RZE_LOG_DEBUG_ARGS("Resource [%s] still referenced at shutdown.", resourceSource.GetResourcePath().GetRelativePath().c_str());
 		}
 
 		// We should always have a resource if it is in the resource table.
@@ -112,7 +112,7 @@ ResourceHandle ResourceHandler::RegisterLoadedResource(const Filepath& resourceP
 	auto iter = mResourceTable.find(resourceKey);
 	if (iter != mResourceTable.end() && iter->second.GetResource() != nullptr)
 	{
-		RZE_LOG_ARGS("Resource [%s] was already registered; discarding the duplicate.", resourceKey.c_str());
+		RZE_LOG_WARNING_ARGS("Resource [%s] was already registered; discarding the duplicate.", resourceKey.c_str());
 		resource->Release();
 		delete resource;
 
@@ -140,7 +140,7 @@ void ResourceHandler::ReleaseResource(ResourceHandle& resourceHandle)
 
 		if (!resourceSource.IsReferenced() && resourceSource.GetResource())
 		{
-			RZE_LOG_ARGS("Releasing resource [%s]", resourceHandle.GetID().c_str());
+			RZE_LOG_DEBUG_ARGS("Releasing resource [%s]", resourceHandle.GetID().c_str());
 
 			// Out of the table and the handle first: releasing it can release the resources it holds (e.g. a mesh's
 			// textures), which changes the table
@@ -157,7 +157,7 @@ void ResourceHandler::ReleaseResource(ResourceHandle& resourceHandle)
 	}
 	else
 	{
-		RZE_LOG_ARGS("Attempting to release resource with key [%s] but it does not currently exist.", resourceHandle.GetID().c_str());
+		RZE_LOG_WARNING_ARGS("Attempting to release resource with key [%s] but it does not currently exist.", resourceHandle.GetID().c_str());
 	}
 }
 
@@ -168,7 +168,7 @@ ResourceHandle ResourceHandler::Make(const std::string& resourceID, IResource* r
 	auto iter = mResourceTable.find(resourceKey);
 	if (iter == mResourceTable.end())
 	{
-		RZE_LOG_ARGS("Making resource [%s]", resourceKey.c_str());
+		RZE_LOG_DEBUG_ARGS("Making resource [%s]", resourceKey.c_str());
 		if (resource)
 		{
 			ResourceSource resourceSource(resource);

@@ -2,7 +2,7 @@
 
 #include <UI/Framework/EditorEvents.h>
 
-#include <DebugUtils/DebugServices.h>
+#include <Utils/DebugUtils/Debug.h>
 
 namespace Editor
 {
@@ -19,7 +19,7 @@ namespace Editor
 			FolderWatcher watcher{ Filepath(folder) };
 			if (!watcher.IsWatching())
 			{
-				DebugServices::Get().Trace(LogChannel::Info, std::string("Can't watch ") + folder + " for changes; use Refresh in the Content Browser to see them.");
+				RZE_LOG_WARNING("Can't watch " << folder << " for changes; use Refresh in the Content Browser to see them.");
 				continue;
 			}
 			m_watchers.push_back(std::move(watcher));

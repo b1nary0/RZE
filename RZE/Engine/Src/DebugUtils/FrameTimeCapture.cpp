@@ -52,7 +52,7 @@ void FrameTimeCapture::Write() const
 	std::ofstream file(m_outputPath);
 	if (!file)
 	{
-		RZE_LOG_ARGS("Frame time capture: couldn't open %s for writing", m_outputPath.c_str());
+		RZE_LOG_ERROR_ARGS("Frame time capture: couldn't open %s for writing", m_outputPath.c_str());
 		return;
 	}
 

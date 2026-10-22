@@ -128,7 +128,7 @@ GameObjectComponentBase* GameObject::AddComponentByID(GameObjectComponentID id)
 		return component;
 	}
 
-	RZE_LOG("Failed to add component as a component of that type already exists");
+	RZE_LOG_WARNING("Failed to add component as a component of that type already exists");
 	return nullptr;
 }
 

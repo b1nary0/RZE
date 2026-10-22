@@ -89,7 +89,7 @@ std::unique_ptr<WindowIcon> WindowIcon::FromImage(const Filepath& image, UINT dp
 	const IconImage source = ReadImage(image);
 	if (source.IsEmpty())
 	{
-		RZE_LOG_ARGS("Couldn't read the window icon [%s]; keeping the executable's icon.", image.GetRelativePath().c_str());
+		RZE_LOG_WARNING_ARGS("Couldn't read the window icon [%s]; keeping the executable's icon.", image.GetRelativePath().c_str());
 		return nullptr;
 	}
 
@@ -97,7 +97,7 @@ std::unique_ptr<WindowIcon> WindowIcon::FromImage(const Filepath& image, UINT dp
 	const HICON smallIcon = CreateIconFromTexels(MakeSquare(source, GetSystemMetricsForDpi(SM_CXSMICON, dpi)));
 	if (largeIcon == nullptr || smallIcon == nullptr)
 	{
-		RZE_LOG_ARGS("Couldn't make the window icon from [%s]; keeping the executable's icon.", image.GetRelativePath().c_str());
+		RZE_LOG_WARNING_ARGS("Couldn't make the window icon from [%s]; keeping the executable's icon.", image.GetRelativePath().c_str());
 		DestroyIcon(largeIcon);
 		DestroyIcon(smallIcon);
 		return nullptr;

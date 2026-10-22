@@ -5,30 +5,38 @@
 #include <Rendering/Driver/DX11/DX11TypeConversion.h>
 
 #include <Utils/Conversions.h>
+#include <Utils/DebugUtils/Debug.h>
 
 #include "Rendering/Driver/ShaderTypes.h"
 
+#include <string_view>
+
 namespace
 {
-	auto errorCB = [](ID3D10Blob* error)
+	// Logs what compiling a shader reported (D3DCompile's error blob): errors if it failed, otherwise warnings
+	void LogCompileMessages(HRESULT hr, ID3D10Blob* messages, const Filepath& filePath)
 	{
-		if (error != nullptr)
+		if (messages == nullptr)
 		{
-			char const* message =
-				static_cast<char const*>(error->GetBufferPointer());
-
-			// Write the warning to the output window when the program is
-			// executing through the Microsoft Visual Studio IDE.
-			size_t const length = strlen(message);
-			std::wstring output = L"";
-			for (size_t i = 0; i < length; ++i)
-			{
-				output += static_cast<wchar_t>(message[i]);
-			}
-			output += L'\n';
-			OutputDebugString(output.c_str());
+			return;
 		}
-	};
+
+		// Without its trailing newline, since the log adds its own
+		std::string_view text = static_cast<const char*>(messages->GetBufferPointer());
+		while (!text.empty() && (text.back() == '\n' || text.back() == '\r'))
+		{
+			text.remove_suffix(1);
+		}
+
+		if (FAILED(hr))
+		{
+			RZE_LOG_ERROR("Couldn't compile shader [" << filePath.GetRelativePath() << "]:\n" << text);
+		}
+		else
+		{
+			RZE_LOG_WARNING("Shader [" << filePath.GetRelativePath() << "] compiled with warnings:\n" << text);
+		}
+	}
 }
 
 namespace Rendering
@@ -50,7 +58,7 @@ namespace Rendering
 		ID3D10Blob* vsBlob = nullptr;
 		
 		hr = D3DCompileFromFile(Conversions::StringToWString(filePath.GetAbsolutePath()).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VSMain", "vs_5_0", 0, 0, &vsBlob, &error);
-		errorCB(error);
+		LogCompileMessages(hr, error, filePath);
 		
 		hr = m_graphicsDevice->GetHardwareDevice().CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, &m_hwShader);
 		
@@ -113,7 +121,7 @@ namespace Rendering
 			"PSMain", "ps_5_0",
 			0, 0,
 			&psBlob, &error);
-		errorCB(error);
+		LogCompileMessages(hr, error, filePath);
 		
 		hr = m_graphicsDevice->GetHardwareDevice().CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), nullptr, &m_hwShader);
 	}

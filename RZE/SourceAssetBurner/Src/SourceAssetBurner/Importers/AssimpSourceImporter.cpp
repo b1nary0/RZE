@@ -90,7 +90,7 @@ aiMatrix4x4 AssimpSourceImporter::GetYUpCorrection(const aiScene& scene)
 		&& upAxis != frontAxis && upAxis != coordAxis && frontAxis != coordAxis;
 	if (!isValid)
 	{
-		RZE_LOG_ARGS("AssimpSourceImporter : WARNING axes (up %d, front %d, coord %d) don't make sense; imported as Y-up", upAxis, frontAxis, coordAxis);
+		RZE_LOG_WARNING_ARGS("AssimpSourceImporter : axes (up %d, front %d, coord %d) don't make sense; imported as Y-up", upAxis, frontAxis, coordAxis);
 		return aiMatrix4x4();
 	}
 
@@ -114,7 +114,7 @@ aiMatrix4x4 AssimpSourceImporter::GetYUpCorrection(const aiScene& scene)
 	}
 	if (correction.Determinant() < 0.0f)
 	{
-		RZE_LOG_ARGS("AssimpSourceImporter : WARNING the source's axes are left-handed; it's mirrored into the engine's");
+		RZE_LOG_WARNING("AssimpSourceImporter : the source's axes are left-handed; it's mirrored into the engine's");
 	}
 
 	return correction;
@@ -193,7 +193,7 @@ std::string AssimpSourceImporter::ResolveTextureFile(const aiScene& scene, const
 		if (texture.mHeight != 0)
 		{
 			// Uncompressed texels would need encoding into an image file first
-			RZE_LOG_ARGS("AssimpSourceImporter : WARNING embedded texture %d [%s] isn't compressed; skipping it", embedded.second, sourcePath.c_str());
+			RZE_LOG_WARNING_ARGS("AssimpSourceImporter : embedded texture %d [%s] isn't compressed; skipping it", embedded.second, sourcePath.c_str());
 			return std::string();
 		}
 
@@ -235,7 +235,7 @@ std::string AssimpSourceImporter::ResolveTextureFile(const aiScene& scene, const
 		}
 	}
 
-	RZE_LOG_ARGS("AssimpSourceImporter : WARNING texture [%s] not found next to [%s]; leaving it out", sourcePath.c_str(), m_filepath.GetRelativePath().c_str());
+	RZE_LOG_WARNING_ARGS("AssimpSourceImporter : texture [%s] not found next to [%s]; leaving it out", sourcePath.c_str(), m_filepath.GetRelativePath().c_str());
 	return std::string();
 }
 
@@ -255,7 +255,7 @@ bool AssimpSourceImporter::Import(const Filepath& filePath)
 	const std::string extension = std::filesystem::path(filePath.GetAbsolutePath()).extension().string();
 	if (!ModelImporter.IsExtensionSupported(extension))
 	{
-		RZE_LOG_ARGS("AssimpSourceImporter : This Assimp build can't read %s files [%s].", extension.c_str(), filePath.GetRelativePath().c_str());
+		RZE_LOG_ERROR_ARGS("AssimpSourceImporter : This Assimp build can't read %s files [%s].", extension.c_str(), filePath.GetRelativePath().c_str());
 		return false;
 	}
 
@@ -280,7 +280,7 @@ bool AssimpSourceImporter::Import(const Filepath& filePath)
 	if (bAssimpNotLoaded)
 	{
 		// #TODO More informative error message.
-		RZE_LOG_ARGS("Failed to load model from [%s].", filePath.GetRelativePath().c_str());
+		RZE_LOG_ERROR_ARGS("Failed to load model from [%s].", filePath.GetRelativePath().c_str());
 		return false;
 	}
 
@@ -293,7 +293,7 @@ bool AssimpSourceImporter::Import(const Filepath& filePath)
 		MeshData& meshData = m_meshes.emplace_back();
 		meshData.MeshName = assimpMesh.mName.C_Str();
 
-		RZE_LOG_ARGS("AssimpSourceImporter : Processing Mesh %u of %u - %s", meshIndex + 1, AssimpScene->mNumMeshes, meshData.MeshName.c_str());
+		RZE_LOG_DEBUG_ARGS("AssimpSourceImporter : Processing Mesh %u of %u - %s", meshIndex + 1, AssimpScene->mNumMeshes, meshData.MeshName.c_str());
 		ProcessMesh(assimpMesh, *AssimpScene, meshData);
 	}
 
@@ -302,7 +302,7 @@ bool AssimpSourceImporter::Import(const Filepath& filePath)
 
 	if (m_placements.empty())
 	{
-		RZE_LOG_ARGS("No meshes placed in [%s].", filePath.GetRelativePath().c_str());
+		RZE_LOG_ERROR_ARGS("No meshes placed in [%s].", filePath.GetRelativePath().c_str());
 		return false;
 	}
 
@@ -332,14 +332,14 @@ bool AssimpSourceImporter::Import(const Filepath& filePath)
 		const float largestExtent = std::max({ extents.X(), extents.Y(), extents.Z() });
 		if (largestExtent < k_minPlausibleExtentMetres || largestExtent > k_maxPlausibleExtentMetres)
 		{
-			RZE_LOG_ARGS("AssimpSourceImporter : WARNING [%s] is %.2f m across; its source unit may not be metres. Imported at 1 unit = 1 m; scale it in the editor.",
+			RZE_LOG_WARNING_ARGS("AssimpSourceImporter : [%s] is %.2f m across; its source unit may not be metres. Imported at 1 unit = 1 m; scale it in the editor.",
 				filePath.GetRelativePath().c_str(), largestExtent);
 		}
 	}
 
 	if (!WriteMeshAsset())
 	{
-		RZE_LOG_ARGS("Failed to write meshasset for [%s]. See logs.", filePath.GetRelativePath().c_str());
+		RZE_LOG_ERROR_ARGS("Failed to write meshasset for [%s]. See logs.", filePath.GetRelativePath().c_str());
 		return false;
 	}
 
@@ -347,7 +347,7 @@ bool AssimpSourceImporter::Import(const Filepath& filePath)
 	{
 		if (!WriteMaterialAsset(dataPair.first, dataPair.second))
 		{
-			RZE_LOG_ARGS("Failed to write materialAsset for [%s]. See logs.", filePath.GetRelativePath().c_str());
+			RZE_LOG_ERROR_ARGS("Failed to write materialAsset for [%s]. See logs.", filePath.GetRelativePath().c_str());
 			return false;
 		}
 	}
@@ -424,7 +424,7 @@ void AssimpSourceImporter::RemoveUnplacedGeometry()
 	{
 		if (!isPlaced[meshIndex])
 		{
-			RZE_LOG_ARGS("AssimpSourceImporter : %s isn't placed by any node; skipping it", m_meshes[meshIndex].MeshName.c_str());
+			RZE_LOG_WARNING_ARGS("AssimpSourceImporter : %s isn't placed by any node; skipping it", m_meshes[meshIndex].MeshName.c_str());
 			continue;
 		}
 

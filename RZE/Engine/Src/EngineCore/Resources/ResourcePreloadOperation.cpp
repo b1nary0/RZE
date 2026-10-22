@@ -44,7 +44,7 @@ void ResourcePreloadOperation::OnTick(AsyncFrameBudget& budget)
 	{
 		if (m_batch.GetFailedCount() > 0)
 		{
-			RZE_LOG_ARGS("Preloading: %u of %u resources failed to load.", m_batch.GetFailedCount(), requestedCount);
+			RZE_LOG_ERROR_ARGS("Preloading: %u of %u resources failed to load.", m_batch.GetFailedCount(), requestedCount);
 		}
 		Complete();
 	}

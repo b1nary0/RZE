@@ -81,7 +81,7 @@ namespace Threading
 			std::lock_guard<std::mutex> lock(m_mutex);
 			if (m_isShuttingDown || !m_isInitialized)
 			{
-				RZE_LOG("JobScheduler::PushJob called while the scheduler is not running. Job abandoned.");
+				RZE_LOG_WARNING("JobScheduler::PushJob called while the scheduler is not running. Job abandoned.");
 				job.Abandon();
 				return JobHandle(state);
 			}

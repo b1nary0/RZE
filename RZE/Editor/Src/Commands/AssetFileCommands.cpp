@@ -4,8 +4,7 @@
 #include <Services/SceneDocument.h>
 #include <UI/Framework/EditorContext.h>
 
-#include <DebugUtils/DebugServices.h>
-
+#include <Utils/DebugUtils/Debug.h>
 #include <Utils/StringUtils.h>
 
 #include <filesystem>
@@ -29,7 +28,7 @@ namespace
 	// e.g. "Couldn't undo deleting Assets/Tank.meshasset. Something else is called that now."
 	void ReportFailure(const std::string& action, const Filepath& path, const std::string& reason)
 	{
-		DebugServices::Get().Trace(LogChannel::Info, "Couldn't " + action + " " + path.GetRelativePath() + ". " + reason + ".");
+		RZE_LOG_ERROR("Couldn't " << action << " " << path.GetRelativePath() << ". " << reason << ".");
 	}
 
 	void PublishChange(EditorContext& context, const Filepath& from, const Filepath& to)

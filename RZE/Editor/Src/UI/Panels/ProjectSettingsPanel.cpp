@@ -151,7 +151,7 @@ namespace Editor
 		else
 		{
 			m_saveError = std::string("Couldn't save ") + k_gameConfigPath + ". Is it open elsewhere, or read-only?";
-			RZE_LOG_ARGS("%s", m_saveError.c_str());
+			RZE_LOG_ERROR_ARGS("%s", m_saveError.c_str());
 		}
 
 		MakePreviews();

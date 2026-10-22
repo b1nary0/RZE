@@ -172,7 +172,7 @@ ResourceHandle ResourceHandler::LoadResource(const Filepath& resourcePath, Args.
 		return existingHandle;
 	}
 
-	RZE_LOG_ARGS("Creating resource [%s]", CreateResourceKey(resourcePath).c_str());
+	RZE_LOG_DEBUG_ARGS("Creating resource [%s]", CreateResourceKey(resourcePath).c_str());
 	IResource* resource = CreateAndLoadResource<ResourceT>(resourcePath, args...);
 	if (resource == nullptr)
 	{
@@ -193,7 +193,7 @@ const ResourceT* ResourceHandler::GetResource(const ResourceHandle& resourceHand
 		return static_cast<ResourceT*>(resourceSource.GetResource());
 	}
 
-	RZE_LOG_ARGS("Resource with key [%s] does not exist. Request it first.", resourceHandle.GetID().c_str());
+	RZE_LOG_ERROR_ARGS("Resource with key [%s] does not exist. Request it first.", resourceHandle.GetID().c_str());
 	return nullptr;
 }
 

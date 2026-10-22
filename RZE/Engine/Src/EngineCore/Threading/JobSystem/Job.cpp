@@ -39,11 +39,11 @@ namespace Threading
 			}
 			catch (const std::exception& e)
 			{
-				RZE_LOG_ARGS("Job threw an exception: %s", e.what());
+				RZE_LOG_ERROR_ARGS("Job threw an exception: %s", e.what());
 			}
 			catch (...)
 			{
-				RZE_LOG("Job threw an unknown exception.");
+				RZE_LOG_ERROR("Job threw an unknown exception.");
 			}
 		}
 

@@ -4,18 +4,30 @@
 #include <string>
 #include <vector>
 #include <mutex>
+#include <type_traits>
 
 #include <Utils/PrimitiveDefs.h>
 #include <Utils/Math/Vector3D.h>
 
+// Info, Debug, Warning and Error are the RZE_LOG levels (Debug::ELogLevel); Build is the editor's build and launch output
 enum class LogChannel
 {
 	Info,
 	Debug,
-	Build
+	Build,
+	Warning,
+	Error,
+
+	Count
 };
 
-constexpr int ChannelCount = 3;
+using LogChannelIndex = std::underlying_type_t<LogChannel>;
+
+// A channel as its underlying value, to index per-channel arrays (sized by LogChannel::Count)
+constexpr LogChannelIndex GetLogChannelIndex(LogChannel channel)
+{
+	return static_cast<LogChannelIndex>(channel);
+}
 
 class DebugServices
 {
@@ -36,7 +48,6 @@ public:
 	}
 
 	void Initialize();
-	void AddData(const std::string& text, const Vector3D& color = Vector3D(1.0f, 1.0f, 0.0f));
 	void Trace(LogChannel channel, const std::string& text);
 
 public:
@@ -48,7 +59,7 @@ private:
 	// #NOTE
 	// Index into mChannelLookup is LogChannel enum. std::vector represents which entry in mDataEntries
 	// is posted to this channel.
-	std::vector<U16> mChannelLookups[ChannelCount];
+	std::vector<U16> mChannelLookups[GetLogChannelIndex(LogChannel::Count)];
 	std::vector<LogEntry> mDataEntries;
 
 	std::mutex mEntryAddMutex;
@@ -57,5 +68,5 @@ private:
 
 	// #NOTE
 	// If LogChannel::Build is tracing, mChannelColours[Build][0] is the r component of the trace colour.
-	float mChannelColours[ChannelCount][3];
+	float mChannelColours[GetLogChannelIndex(LogChannel::Count)][3];
 };

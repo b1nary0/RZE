@@ -55,9 +55,30 @@ namespace Debug
 		g_logSink = sink;
 	}
 
-	void WriteToLog(const std::string_view str)
+	namespace
 	{
-		WriteToLogFile(str);
+		// What a line at this level starts with in stdout and the log file
+		const char* GetLevelPrefix(ELogLevel level)
+		{
+			switch (level)
+			{
+			case ELogLevel::Debug:
+				return "[Debug] ";
+			case ELogLevel::Info:
+				return "[Info] ";
+			case ELogLevel::Warning:
+				return "[Warning] ";
+			case ELogLevel::Error:
+				return "[Error] ";
+			default:
+				return "";
+			}
+		}
+	}
+
+	void WriteToLog(ELogLevel level, const std::string_view str)
+	{
+		WriteToLogFile(std::string(GetLevelPrefix(level)).append(str));
 
 		if (LogSink sink = g_logSink)
 		{
@@ -67,8 +88,16 @@ namespace Debug
 				line.remove_suffix(1);
 			}
 
-			sink(line);
+			sink(level, line);
 		}
+	}
+
+	void Log(ELogLevel level, const std::string_view str)
+	{
+		// One write, so lines from other threads don't land between the prefix and the text
+		const std::string line = std::string(GetLevelPrefix(level)).append(str);
+		fputs(line.c_str(), stdout);
+		WriteToLog(level, str);
 	}
 
 	bool OpenConsole()
@@ -103,7 +132,7 @@ namespace Debug
 			if (!s_bIsLogging)
 			{
 				s_bIsLogging = true;
-				WriteToLog(report);
+				WriteToLog(ELogLevel::Error, report);
 				s_bIsLogging = false;
 			}
 		}

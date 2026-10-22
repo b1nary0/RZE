@@ -5,29 +5,6 @@
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Vector2D.h>
 
-namespace
-{
-	auto errorCB = [](ID3D10Blob* error)
-	{
-		if (error != nullptr)
-		{
-			char const* message =
-				static_cast<char const*>(error->GetBufferPointer());
-
-			// Write the warning to the output window when the program is
-			// executing through the Microsoft Visual Studio IDE.
-			size_t const length = strlen(message);
-			std::wstring output = L"";
-			for (size_t i = 0; i < length; ++i)
-			{
-				output += static_cast<wchar_t>(message[i]);
-			}
-			output += L'\n';
-			OutputDebugString(output.c_str());
-		}
-	};
-}
-
 namespace Rendering
 {
 	const int kInitialWidth = 1600;
@@ -367,7 +344,7 @@ namespace Rendering
 		if ((hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET) && !mHasReportedDeviceLoss)
 		{
 			mHasReportedDeviceLoss = true;
-			RZE_LOG_ARGS("Present failed: the D3D11 device was %s (reason 0x%08X).", hr == DXGI_ERROR_DEVICE_REMOVED ? "removed" : "reset",
+			RZE_LOG_ERROR_ARGS("Present failed: the D3D11 device was %s (reason 0x%08X).", hr == DXGI_ERROR_DEVICE_REMOVED ? "removed" : "reset",
 				static_cast<unsigned int>(mDevice->GetDeviceRemovedReason()));
 		}
 	}

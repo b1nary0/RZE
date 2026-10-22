@@ -25,19 +25,35 @@ namespace
 	// Less spare time than this isn't worth handing to async operations
 	constexpr double k_minIdleWorkMS = 1.0;
 
-	// Forwards RZE_LOG/RZE_LOG_ARGS lines to DebugServices (the editor Log panel). Worker-thread lines are
-	// marshalled to the main thread, since DebugServices must not be traced while it is being iterated.
-	void TraceLogLine(std::string_view line)
+	LogChannel GetLogChannel(Debug::ELogLevel level)
 	{
+		switch (level)
+		{
+		case Debug::ELogLevel::Debug:
+			return LogChannel::Debug;
+		case Debug::ELogLevel::Warning:
+			return LogChannel::Warning;
+		case Debug::ELogLevel::Error:
+			return LogChannel::Error;
+		default:
+			return LogChannel::Info;
+		}
+	}
+
+	// Forwards RZE_LOG lines to DebugServices (the editor Log panel), on their level's channel. Worker-thread lines are
+	// marshalled to the main thread, since DebugServices must not be traced while it is being iterated.
+	void TraceLogLine(Debug::ELogLevel level, std::string_view line)
+	{
+		const LogChannel channel = GetLogChannel(level);
 		if (Threading::MainThreadDispatcher::Get().IsMainThread())
 		{
-			DebugServices::Get().Trace(LogChannel::Info, std::string(line));
+			DebugServices::Get().Trace(channel, std::string(line));
 			return;
 		}
 
-		Threading::MainThreadDispatcher::Get().Post(Threading::Job::Task([text = std::string(line)]()
+		Threading::MainThreadDispatcher::Get().Post(Threading::Job::Task([channel, text = std::string(line)]()
 			{
-				DebugServices::Get().Trace(LogChannel::Info, text);
+				DebugServices::Get().Trace(channel, text);
 			}));
 	}
 }
@@ -135,7 +151,7 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 	}
 	else
 	{
-		RZE_LOG("Initialization Failed.");
+		RZE_LOG_ERROR("Initialization Failed.");
 	}
 }
 
@@ -402,7 +418,7 @@ void RZE_Engine::LoadEngineConfig()
 	const EngineConfig* engineConfig = GetResourceHandler().GetResource<EngineConfig>(m_engineConfig);
 	if (engineConfig->Empty())
 	{
-		RZE_LOG("Engine config could not load. Defaults were used.");
+		RZE_LOG_WARNING("Engine config could not load. Defaults were used.");
 	}
 }
 
@@ -507,9 +523,5 @@ GameScene& RZE_Engine::GetActiveScene()
 AsyncOperationManager& RZE_Engine::GetAsyncOperationManager()
 {
 	return m_asyncOperationManager;
-}
-
-void RZE_Engine::Log(const std::string& text, const Vector3D& color)
-{
 }
 

@@ -31,7 +31,7 @@ void Config::Read(const Filepath& filePath)
 	}
 	else
 	{
-		RZE_LOG_ARGS("Could not open file at path [%s]", mINIFile.GetPath().GetRelativePath().c_str());
+		RZE_LOG_WARNING_ARGS("Could not open file at path [%s]", mINIFile.GetPath().GetRelativePath().c_str());
 	}
 }
 

@@ -696,7 +696,7 @@ namespace Rendering
 
 			default:
 			{
-				RZE_LOG_ARGS("[Rendering::Renderer] Unknown RenderCommandType encountered: %d", command->type);
+				RZE_LOG_ERROR_ARGS("[Rendering::Renderer] Unknown RenderCommandType encountered: %d", command->type);
 				AssertFalse();
 			}
 			}

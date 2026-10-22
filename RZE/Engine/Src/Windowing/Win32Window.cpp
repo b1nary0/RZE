@@ -105,7 +105,7 @@ const Vector2D& Win32Window::GetClientSize() const
 void Win32Window::Create(const WindowCreationParams& creationProtocol)
 {
 	// Interface with WinAPI and create a window -- store useful information.
-	LOG_CONSOLE_ANNOUNCE("[ Creating Win32Window ] Title : %s", m_title.c_str());
+	RZE_LOG_ARGS("Creating window [%s]", m_title.c_str());
 
 	const std::wstring wStrTitle = Conversions::StringToWString(m_title);
 
@@ -171,27 +171,27 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 		m_osWindowHandleData.deviceContext = GetDC(m_osWindowHandleData.windowHandle);
 		if (!m_osWindowHandleData.deviceContext)
 		{
-			RZE_LOG("<Failure retrieving device context>");
+			RZE_LOG_ERROR("<Failure retrieving device context>");
 			AssertFalse();
 		}
 
 		int pixelFormat = ChoosePixelFormat(m_osWindowHandleData.deviceContext, &m_osWindowHandleData.pixelFormatDesc);
 		if (!pixelFormat)
 		{
-			RZE_LOG("<Failure choosing pixel format>");
+			RZE_LOG_ERROR("<Failure choosing pixel format>");
 			AssertFalse();
 		}
 
 		if (!SetPixelFormat(m_osWindowHandleData.deviceContext, pixelFormat, &m_osWindowHandleData.pixelFormatDesc))
 		{
-			RZE_LOG("<Failure setting pixel format>");
+			RZE_LOG_ERROR("<Failure setting pixel format>");
 			AssertFalse();
 		}
 
 		Display::MonitorInfo monitorInfo;
 		if (!Display::GetMonitor(creationProtocol.monitorIndex, monitorInfo))
 		{
-			RZE_LOG_ARGS("Launch monitor %d out of range (%d monitors). Using primary.", creationProtocol.monitorIndex, static_cast<int>(Display::EnumerateMonitors().size()));
+			RZE_LOG_WARNING_ARGS("Launch monitor %d out of range (%d monitors). Using primary.", creationProtocol.monitorIndex, static_cast<int>(Display::EnumerateMonitors().size()));
 			Display::GetMonitor(0, monitorInfo);
 		}
 
@@ -471,7 +471,7 @@ void Win32Window::ProcessWinProcMessage(const WindowMessageAdaptor::WindowMessag
 		}
 		else
 		{
-			RZE_LOG("Setting 0 dimension window size. Could be minimized. Is this expected?");
+			RZE_LOG_WARNING("Setting 0 dimension window size. Could be minimized. Is this expected?");
 		}
 	}
 }

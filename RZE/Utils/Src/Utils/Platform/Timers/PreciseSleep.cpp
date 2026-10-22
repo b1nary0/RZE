@@ -18,7 +18,7 @@ PreciseSleep::PreciseSleep()
 	m_timer = CreateWaitableTimerExW(nullptr, nullptr, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
 	if (m_timer == nullptr)
 	{
-		RZE_LOG("PreciseSleep: no high-resolution waitable timer (Windows 10 1803 or later). Sleeps will spin.");
+		RZE_LOG_WARNING("PreciseSleep: no high-resolution waitable timer (Windows 10 1803 or later). Sleeps will spin.");
 	}
 }
 

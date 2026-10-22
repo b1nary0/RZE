@@ -111,7 +111,7 @@ namespace CmdLine
 			const std::from_chars_result result = std::from_chars(value.data(), end, parsed);
 			if (result.ec != std::errc() || result.ptr != end)
 			{
-				RZE_LOG_ARGS("%s value '%.*s' is not a valid integer, so it was ignored.", argument, static_cast<int>(value.size()), value.data());
+				RZE_LOG_WARNING_ARGS("%s value '%.*s' is not a valid integer, so it was ignored.", argument, static_cast<int>(value.size()), value.data());
 				return false;
 			}
 

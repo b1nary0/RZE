@@ -62,8 +62,6 @@ public:
 	void PostExit();
 
 public:
-	void Log(const std::string& text, const Vector3D& color);
-
 	void SetWindowSize(const Vector2D& newSize);
 
 	const Vector2D& GetWindowClientSize() const;

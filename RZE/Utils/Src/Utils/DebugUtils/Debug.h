@@ -13,12 +13,25 @@ namespace Debug
 	File& GetLogFile();
 	void WriteToLogFile(const std::string_view str);
 
-	// Receives each logged line (without its trailing newline). Called from whichever thread logged it.
-	using LogSink = void(*)(std::string_view line);
+	// How much a log line matters. Debug is for high-volume detail (e.g. a line per resource), Info for start-up,
+	// shutdown and one-off status, Warning for something that recovered or fell back, Error for something that failed.
+	enum class ELogLevel
+	{
+		Debug,
+		Info,
+		Warning,
+		Error
+	};
+
+	// Receives each logged line (without its trailing newline or level prefix). Called from whichever thread logged it.
+	using LogSink = void(*)(ELogLevel level, std::string_view line);
 	void SetLogSink(LogSink sink);
 
-	// Writes to the log file, then forwards to the log sink if one is set.
-	void WriteToLog(const std::string_view str);
+	// Writes to the log file with the level's prefix (e.g. "[Warning] "), then forwards to the log sink if one is set.
+	void WriteToLog(ELogLevel level, const std::string_view str);
+
+	// Writes to stdout with the level's prefix, then to the log (WriteToLog). What the RZE_LOG macros call.
+	void Log(ELogLevel level, const std::string_view str);
 
 	// Opens a console window for a windowed app and points stdout and stderr at it. Does nothing if the process
 	// already has a console. Returns false if one couldn't be opened.
@@ -71,42 +84,28 @@ namespace Debug
 #define RZE_LOGGING_ENABLED
 #endif
 
+// Each level has a stream form, RZE_LOG_<LEVEL>(Msg), e.g. RZE_LOG_WARNING("Loaded " << count << " meshes"), and a printf
+// form, RZE_LOG_<LEVEL>_ARGS(Msg, ...), up to 1024 characters. RZE_LOG and RZE_LOG_ARGS log at Info.
 #ifdef RZE_LOGGING_ENABLED
 
-#define RZE_LOG(Msg) 									\
+#define RZE_LOG_AT(Level, Msg)								\
 {															\
 	std::stringstream ss;									\
 	ss << Msg;												\
 	ss << "\n";												\
 															\
-	fputs(ss.str().c_str(), stdout);						\
-	Debug::WriteToLog(ss.str());							\
+	Debug::Log(Level, ss.str());							\
 }
 
-#define LOG_CONSOLE_ANNOUNCE(Msg, ...) 						\
-{															\
-	std::stringstream ss;									\
-	ss << "[@ ";											\
-	ss << StringUtils::ExtractFileNameFromPath(__FILE__);	\
-	ss << ": ";												\
-	ss << __LINE__;											\
-	ss << "] ";												\
-	ss << Msg;												\
-	ss << "\n";												\
-															\
-	printf_s(ss.str().c_str(), __VA_ARGS__);				\
-}
-
-#define RZE_LOG_ARGS(Msg, ...)							\
+#define RZE_LOG_ARGS_AT(Level, Msg, ...)					\
 {															\
 	std::stringstream ss;									\
 	ss << Msg;											    \
 	ss << "\n";												\
 															\
 	char buf[1024];											\
-	sprintf_s(buf, 1024, ss.str().c_str(), __VA_ARGS__);		\
-	fputs(buf, stdout);										\
-	Debug::WriteToLog(buf);										\
+	sprintf_s(buf, 1024, ss.str().c_str(), __VA_ARGS__);	\
+	Debug::Log(Level, buf);									\
 }
 
 #else
@@ -118,8 +117,17 @@ namespace Debug
 }
 
 // The args are passed to a dead branch so variables that only feed a log line don't warn as unused.
-#define RZE_LOG(Msg) do {} while (0)
-#define RZE_LOG_ARGS(Msg, ...) do { if (false) { Debug::DiscardLogArgs(__VA_ARGS__); } } while (0)
-#define LOG_CONSOLE_ANNOUNCE(Msg, ...) do { if (false) { Debug::DiscardLogArgs(__VA_ARGS__); } } while (0)
+#define RZE_LOG_AT(Level, Msg) do {} while (0)
+#define RZE_LOG_ARGS_AT(Level, Msg, ...) do { if (false) { Debug::DiscardLogArgs(__VA_ARGS__); } } while (0)
 
 #endif
+
+#define RZE_LOG_DEBUG(Msg) RZE_LOG_AT(Debug::ELogLevel::Debug, Msg)
+#define RZE_LOG(Msg) RZE_LOG_AT(Debug::ELogLevel::Info, Msg)
+#define RZE_LOG_WARNING(Msg) RZE_LOG_AT(Debug::ELogLevel::Warning, Msg)
+#define RZE_LOG_ERROR(Msg) RZE_LOG_AT(Debug::ELogLevel::Error, Msg)
+
+#define RZE_LOG_DEBUG_ARGS(Msg, ...) RZE_LOG_ARGS_AT(Debug::ELogLevel::Debug, Msg, __VA_ARGS__)
+#define RZE_LOG_ARGS(Msg, ...) RZE_LOG_ARGS_AT(Debug::ELogLevel::Info, Msg, __VA_ARGS__)
+#define RZE_LOG_WARNING_ARGS(Msg, ...) RZE_LOG_ARGS_AT(Debug::ELogLevel::Warning, Msg, __VA_ARGS__)
+#define RZE_LOG_ERROR_ARGS(Msg, ...) RZE_LOG_ARGS_AT(Debug::ELogLevel::Error, Msg, __VA_ARGS__)

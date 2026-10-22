@@ -56,7 +56,7 @@ bool MaterialAssetImporter::Import(const Filepath& filePath)
 	ByteStream byteStream(filePath.GetRelativePath());
 	if (!byteStream.ReadFromFile(filePath) || byteStream.GetLength() < sizeof(size_t))
 	{
-		RZE_LOG_ARGS("Failed to read material asset [%s].", filePath.GetRelativePath().c_str());
+		RZE_LOG_ERROR_ARGS("Failed to read material asset [%s].", filePath.GetRelativePath().c_str());
 		return false;
 	}
 
@@ -69,7 +69,7 @@ bool MaterialAssetImporter::Import(const Filepath& filePath)
 		version = ByteStreamUtils::ReadType<uint16_t>(byteStream);
 		if (version == 0 || version > k_materialImporterVersion)
 		{
-			RZE_LOG_ARGS("Material asset [%s] has version %u, expected 1 to %u.", filePath.GetRelativePath().c_str(), static_cast<U32>(version), static_cast<U32>(k_materialImporterVersion));
+			RZE_LOG_ERROR_ARGS("Material asset [%s] has version %u, expected 1 to %u.", filePath.GetRelativePath().c_str(), static_cast<U32>(version), static_cast<U32>(k_materialImporterVersion));
 			return false;
 		}
 	}

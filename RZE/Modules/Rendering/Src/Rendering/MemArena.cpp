@@ -31,7 +31,7 @@ namespace Rendering
 			if (s_arenaState.curPos + sizeRequested > s_arenaState.size)
 			{
 				size_t sizeAvailable = s_arenaState.size - s_arenaState.curPos;
-				RZE_LOG_ARGS("Rendering memory arena has run out of space. Size requested: %zu available: %zu ", sizeRequested, sizeAvailable);
+				RZE_LOG_ERROR_ARGS("Rendering memory arena has run out of space. Size requested: %zu available: %zu ", sizeRequested, sizeAvailable);
 				AssertExpr(s_arenaState.curPos + sizeRequested < s_arenaState.size);
 			}
 		}
@@ -60,7 +60,7 @@ namespace Rendering
 
 			if (s_producerBuf != nullptr || s_consumerBuf != nullptr)
 			{
-				RZE_LOG("Rendering memory arena being re-initialized. \
+				RZE_LOG_ERROR("Rendering memory arena being re-initialized. \
 					This is incorrect as the memory should be valid once for the length of a Rendering::Renderer lifetime.");
 				AssertIsNull(s_producerBuf);
 				AssertIsNull(s_consumerBuf);

@@ -76,7 +76,7 @@ void AsyncOperationManager::Start(const std::shared_ptr<AsyncOperation>& operati
 
 	if (m_isShutDown)
 	{
-		RZE_LOG_ARGS("AsyncOperationManager::Start called after shutdown. Operation [%s] ignored.", operation->GetName().c_str());
+		RZE_LOG_WARNING_ARGS("AsyncOperationManager::Start called after shutdown. Operation [%s] ignored.", operation->GetName().c_str());
 		return;
 	}
 

@@ -51,7 +51,7 @@ namespace
 				isValid = false;
 				for (size_t writer : usage.Writers)
 				{
-					RZE_LOG_ARGS("Render pipeline: %s is written by more than one stage, including %s", usage.Name, declarations[writer].StageName);
+					RZE_LOG_ERROR_ARGS("Render pipeline: %s is written by more than one stage, including %s", usage.Name, declarations[writer].StageName);
 				}
 			}
 
@@ -64,7 +64,7 @@ namespace
 				for (size_t dependent : dependents)
 				{
 					isValid = false;
-					RZE_LOG_ARGS("Render pipeline: %s needs %s, but no stage writes it", declarations[dependent].StageName, usage.Name);
+					RZE_LOG_ERROR_ARGS("Render pipeline: %s needs %s, but no stage writes it", declarations[dependent].StageName, usage.Name);
 				}
 				continue;
 			}
@@ -78,7 +78,7 @@ namespace
 					if (declarations[dependent].ViewFilter == ERenderViewFilter::All)
 					{
 						isValid = false;
-						RZE_LOG_ARGS("Render pipeline: %s needs %s in every view, but its writer %s only runs in the main view",
+						RZE_LOG_ERROR_ARGS("Render pipeline: %s needs %s in every view, but its writer %s only runs in the main view",
 							declarations[dependent].StageName, usage.Name, writer.StageName);
 					}
 				}
@@ -146,7 +146,7 @@ namespace
 				{
 					if (!isScheduled[stage])
 					{
-						RZE_LOG_ARGS("Render pipeline: %s is part of a dependency cycle", declarations[stage].StageName);
+						RZE_LOG_ERROR_ARGS("Render pipeline: %s is part of a dependency cycle", declarations[stage].StageName);
 						outOrder.push_back(stage);
 						isScheduled[stage] = true;
 					}

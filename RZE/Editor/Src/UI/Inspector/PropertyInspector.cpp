@@ -9,10 +9,9 @@
 #include <Game/World/GameObject/GameObjectComponent.h>
 #include <Game/World/GameObject/Properties/ComponentPropertyRegistry.h>
 
-#include <DebugUtils/DebugServices.h>
-
 #include <EngineCore/Resources/PendingResource.h>
 
+#include <Utils/DebugUtils/Debug.h>
 #include <Utils/StringUtils.h>
 
 #include <ImGui/imgui.h>
@@ -573,7 +572,7 @@ namespace Editor
 
 			if (edit->Asset.HasFailed())
 			{
-				DebugServices::Get().Trace(LogChannel::Info, "Couldn't load " + edit->Asset.GetPath().GetRelativePath() + ", so it wasn't set.");
+				RZE_LOG_ERROR("Couldn't load " << edit->Asset.GetPath().GetRelativePath() << ", so it wasn't set.");
 			}
 			else
 			{

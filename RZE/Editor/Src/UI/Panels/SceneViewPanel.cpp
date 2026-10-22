@@ -12,8 +12,6 @@
 
 #include <Asset/AssetPaths.h>
 
-#include <DebugUtils/DebugServices.h>
-
 #include <EngineCore/Resources/PendingResource.h>
 
 #include <Game/StaticMeshResource.h>
@@ -28,6 +26,7 @@
 #include <Graphics/RenderEngine.h>
 #include <Rendering/Graphics/RenderTarget.h>
 
+#include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Frustum.h>
 #include <Utils/Math/Math.h>
 #include <Utils/Math/Plane.h>
@@ -301,7 +300,7 @@ namespace Editor
 
 			if (drop->Mesh.HasFailed())
 			{
-				DebugServices::Get().Trace(LogChannel::Info, "Couldn't load " + drop->Mesh.GetPath().GetRelativePath() + ", so nothing was added.");
+				RZE_LOG_ERROR("Couldn't load " << drop->Mesh.GetPath().GetRelativePath() << ", so nothing was added.");
 			}
 			else
 			{
