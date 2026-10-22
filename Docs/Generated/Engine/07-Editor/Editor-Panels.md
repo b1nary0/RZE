@@ -50,6 +50,7 @@ flowchart TD
 A tree of the scene's objects (the editor camera is hidden).
 
 - **Click** selects; **Ctrl+click** adds an object to the selection or removes it.
+- **Shift+click** selects every row from the **anchor** to the clicked one, which becomes the primary; **Ctrl+Shift+click** adds that range to the selection. The anchor is the last row clicked without Shift and stays put, so further Shift+clicks re-range from it. Rows count in on-screen order, so a collapsed parent's children are left out. If the selection was changed elsewhere (e.g. picked in the SceneView), the range starts from the primary; if the anchor is hidden under a collapsed parent, Shift+click acts as a plain click. The range is applied after every row is drawn (`ScenePanel::SelectRange`), since it can end below the clicked row.
 - **Double-click** glides the editor camera to frame the object (`EditorCameraComponent::FocusOn`; see [Editor-Camera-And-Build-Launch.md](Editor-Camera-And-Build-Launch.md)).
 - **Drag and drop** one object onto another to parent it. It keeps its local transform, so it moves if the new parent isn't at the origin (see [10-KnownIssues](../10-KnownIssues/Architectural-Notes-And-TODOs.md)).
 - **Right-click** an object for its menu. The first line is its name: **right-click the name** to rename it (Enter to apply). Then Add Component (every registered type), DetachFromParent (child objects only) and Delete. All of them, and drag-and-drop parenting, can be undone; Delete removes the object's children too, and undo brings them all back in the same order.

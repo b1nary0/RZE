@@ -42,6 +42,8 @@ W/E/R/Q/X are ignored while RMB is held, because those keys fly the camera then.
 | **Escape** | SceneView hovered | Clear the selection |
 | **Click** | Scene panel | Select the object |
 | **Ctrl + click** | Scene panel | Add the object to the selection, or remove it |
+| **Shift + click** | Scene panel | Select the rows from the last row clicked without Shift to this one |
+| **Ctrl + Shift + click** | Scene panel | Add that range to the selection |
 | **Click empty space** | Scene panel | Clear the selection |
 | **Double-click** | Scene panel | Frame the object with the editor camera |
 | **Drag and drop** onto another object | Scene panel | Parent it to that object |
