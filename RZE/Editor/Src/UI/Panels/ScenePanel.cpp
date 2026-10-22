@@ -2,6 +2,7 @@
 
 #include <RZE.h>
 #include <UI/Framework/EditorContext.h>
+#include <UI/Framework/EditorSelection.h>
 #include <UI/Framework/EditorUI.h>
 #include <UI/Framework/PanelRegistry.h>
 
@@ -14,6 +15,9 @@
 #include <Utils/DebugUtils/Debug.h>
 
 #include <ImGui/imgui.h>
+
+#include <algorithm>
+#include <iterator>
 
 namespace
 {
@@ -56,6 +60,7 @@ namespace Editor
 	void ScenePanel::OnSceneReset()
 	{
 		m_isCreatingGameObject = false;
+		m_rangeAnchor = nullptr;
 	}
 
 	void ScenePanel::Draw(EditorContext& context)
@@ -112,6 +117,9 @@ namespace Editor
 			return;
 		}
 
+		m_visibleRows.clear();
+		m_rangeClickTarget = nullptr;
+
 		RZE().GetActiveScene().ForEachGameObject(
 			Functor<void, GameObjectPtr>([this, &context](GameObjectPtr gameObject)
 			{
@@ -130,6 +138,11 @@ namespace Editor
 			}));
 
 		ImGui::EndTable();
+
+		if (m_rangeClickTarget != nullptr)
+		{
+			SelectRange(selection, m_rangeClickTarget, m_isRangeAdded);
+		}
 	}
 
 	void ScenePanel::DisplayObject(EditorContext& context, GameObjectPtr gameObject)
@@ -163,16 +176,28 @@ namespace Editor
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(style.FramePadding.x, k_rowPaddingY));
 		const bool isOpen = EditorUI::TreeNode("##GameObject", nodeFlags, "%s", gameObject->GetName().c_str());
 		ImGui::PopStyleVar();
+		m_visibleRows.push_back(gameObject);
 
 		if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
 		{
-			if (ImGui::GetIO().KeyCtrl)
+			const ImGuiIO& io = ImGui::GetIO();
+			if (io.KeyShift)
 			{
-				selection.Toggle(gameObject);
+				// Ctrl+Shift adds the range to what's already selected
+				m_rangeClickTarget = gameObject;
+				m_isRangeAdded = io.KeyCtrl;
 			}
 			else
 			{
-				selection.Select(gameObject);
+				if (io.KeyCtrl)
+				{
+					selection.Toggle(gameObject);
+				}
+				else
+				{
+					selection.Select(gameObject);
+				}
+				m_rangeAnchor = gameObject;
 			}
 		}
 
@@ -277,5 +302,53 @@ namespace Editor
 		}
 
 		ImGui::PopID();
+	}
+
+	void ScenePanel::SelectRange(EditorSelection& selection, GameObjectPtr target, bool addToSelection)
+	{
+		// The anchor is stale once the selection is changed elsewhere (e.g. picked in the scene view); range from the
+		// primary then instead
+		const GameObjectPtr anchor = selection.IsSelected(m_rangeAnchor) ? m_rangeAnchor : selection.GetPrimary();
+		const auto anchorIt = std::find(m_visibleRows.begin(), m_visibleRows.end(), anchor);
+		const auto targetIt = std::find(m_visibleRows.begin(), m_visibleRows.end(), target);
+		AssertExpr(targetIt != m_visibleRows.end());
+
+		if (anchor == nullptr || anchorIt == m_visibleRows.end())
+		{
+			// Nothing to range from, or it's hidden under a collapsed parent: a plain click
+			selection.Select(target);
+			m_rangeAnchor = target;
+			return;
+		}
+
+		// From the anchor towards the target, so the target is last and becomes the primary
+		std::vector<GameObjectPtr> range;
+		if (anchorIt <= targetIt)
+		{
+			range.assign(anchorIt, targetIt + 1);
+		}
+		else
+		{
+			range.assign(std::make_reverse_iterator(anchorIt + 1), std::make_reverse_iterator(targetIt));
+		}
+
+		if (addToSelection)
+		{
+			// Moved to the end in range order, so the target still becomes the primary
+			std::vector<GameObjectPtr> combined;
+			for (const GameObjectPtr& gameObject : selection.GetAll())
+			{
+				if (std::find(range.begin(), range.end(), gameObject) == range.end())
+				{
+					combined.push_back(gameObject);
+				}
+			}
+			combined.insert(combined.end(), range.begin(), range.end());
+			range = std::move(combined);
+		}
+
+		selection.SetSelection(range);
+		// The anchor stays put, so another Shift+click re-ranges from the same row
+		m_rangeAnchor = anchor;
 	}
 }
