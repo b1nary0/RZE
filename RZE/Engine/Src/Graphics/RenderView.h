@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Graphics/AntiAliasing.h>
 #include <Graphics/RenderBlackboard.h>
 
 #include <Utils/Math/Matrix4x4.h>
@@ -87,6 +88,8 @@ public:
 	bool AutoExposure = true;
 	// EV on top of the exposure
 	float ExposureCompensation = 0.0f;
+	// How much it smooths jagged edges after tonemapping (FXAA, PostProcessRenderStage)
+	EAntiAliasing AntiAliasing = EAntiAliasing::Medium;
 	ERenderViewLighting Lighting = ERenderViewLighting::Scene;
 	// Debug lines (the editor's grid, camera frustums, bounds boxes); off for clean captures such as thumbnails
 	bool DrawsDebug = true;

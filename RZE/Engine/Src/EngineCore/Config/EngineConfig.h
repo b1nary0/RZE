@@ -4,6 +4,8 @@
 #include <EngineCore/Config/Config.h>
 #include <EngineCore/Config/FrameSettings.h>
 
+#include <Graphics/AntiAliasing.h>
+
 #include <Utils/PrimitiveDefs.h>
 #include <Utils/Math/Vector2D.h>
 
@@ -56,16 +58,22 @@ public:
 	const FrameSettings& GetFrameSettings() const;
 	// [BackgroundTasks]: which operations progress displays show
 	const AsyncOperationFilter& GetBackgroundTaskFilter() const;
+	// [Rendering]: the main view's anti-aliasing and auto-exposure at start-up
+	EAntiAliasing GetAntiAliasing() const { return mAntiAliasing; }
+	bool GetAutoExposure() const { return mAutoExposure; }
 
 private:
 	void LoadEngineSettings();
 	void LoadWindowSettings();
 	void LoadFrameSettings();
 	void LoadBackgroundTaskFilter();
+	void LoadRenderingSettings();
 
 private:
 	EngineSettings mEngineSettings;
 	WindowSettings mWindowSettings;
 	FrameSettings mFrameSettings;
 	AsyncOperationFilter mBackgroundTaskFilter;
+	EAntiAliasing mAntiAliasing = EAntiAliasing::Medium;
+	bool mAutoExposure = true;
 };

@@ -21,6 +21,7 @@ bool EngineConfig::Load(const Filepath& filePath)
 	LoadWindowSettings();
 	LoadFrameSettings();
 	LoadBackgroundTaskFilter();
+	LoadRenderingSettings();
 
 	// @TODO properly return true/false from this function. for now true is fine but jeapordizes the integrity of the resource system
 	return true;
@@ -100,6 +101,21 @@ void EngineConfig::LoadBackgroundTaskFilter()
 	{
 		mBackgroundTaskFilter.SetShowsKind(kindKey.Kind, mINIParser.GetBoolValue("BackgroundTasks", kindKey.Key, defaults.ShowsKind(kindKey.Kind)));
 	}
+}
+
+void EngineConfig::LoadRenderingSettings()
+{
+	const char* const antiAliasingName = mINIParser.GetValue("Rendering", "AntiAliasing", GetAntiAliasingName(mAntiAliasing));
+	if (const std::optional<EAntiAliasing> antiAliasing = ParseAntiAliasing(antiAliasingName))
+	{
+		mAntiAliasing = *antiAliasing;
+	}
+	else
+	{
+		RZE_LOG_WARNING_ARGS("Engine.ini's [Rendering] AntiAliasing '%s' isn't Off, Low, Medium or High; using %s.", antiAliasingName, GetAntiAliasingName(mAntiAliasing));
+	}
+
+	mAutoExposure = mINIParser.GetBoolValue("Rendering", "AutoExposure", mAutoExposure);
 }
 
 WindowSettings::WindowSettings()
