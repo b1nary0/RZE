@@ -8,6 +8,11 @@
 
 namespace Editor
 {
+	namespace
+	{
+		constexpr ImVec4 k_filterBarColour = ImVec4(0.19f, 0.19f, 0.19f, 1.0f);
+	}
+
 	REGISTER_EDITOR_PANEL(LogPanel);
 
 	PanelDesc LogPanel::Describe()
@@ -16,8 +21,23 @@ namespace Editor
 		desc.Name = "Log";
 		desc.MenuPath = "View/Windows/Log";
 		desc.DefaultDock = EPanelDock::BottomRight;
-		desc.WindowFlags = ImGuiWindowFlags_NoCollapse;
+		// The filter sits in the menu bar, set apart from the entries and not scrolled with them
+		desc.WindowFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar;
+		// The same space around its controls as the scene view's toolbar
+		desc.MenuBarPadding = 6.0f;
+		desc.MenuBarSeparator = true;
 		return desc;
+	}
+
+	void LogPanel::PushWindowStyle(PanelWindowStyle& style) const
+	{
+		// Lighter than the entries below and darker than the tab above, so the filter reads as its own strip
+		style.Push(ImGuiCol_MenuBarBg, k_filterBarColour);
+	}
+
+	void LogPanel::DrawMenuBar(EditorContext& context)
+	{
+		m_filter.Draw();
 	}
 
 	void LogPanel::Draw(EditorContext& context)
@@ -28,6 +48,11 @@ namespace Editor
 		const std::vector<DebugServices::LogEntry>& logEntries = DebugServices::Get().GetLogEntries();
 		for (auto& logItem : logEntries)
 		{
+			if (!m_filter.IsShown(logItem))
+			{
+				continue;
+			}
+
 			ImVec4 imColor(logItem.TextColor.X(), logItem.TextColor.Y(), logItem.TextColor.Z(), 1.0f);
 			// Log text (e.g. build output) can contain '%', so never use it as the format string.
 			ImGui::TextColored(imColor, "%s", logItem.Text.c_str());

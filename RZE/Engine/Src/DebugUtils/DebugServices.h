@@ -34,6 +34,7 @@ class DebugServices
 public:
 	struct LogEntry
 	{
+		LogChannel Channel = LogChannel::Info;
 		Vector3D TextColor;
 		std::string Text;
 	};

@@ -261,6 +261,15 @@ namespace Editor
 				}
 			}
 		}
+
+		if (desc.MenuBarSeparator)
+		{
+			// The bar's whole width: BeginMenuBar clips to inside its padding
+			const ImRect bar = window->MenuBarRect();
+			drawList->PushClipRect(bar.Min, bar.Max, false);
+			drawList->AddLine(ImVec2(bar.Min.x, bar.Max.y - 1.0f), ImVec2(bar.Max.x, bar.Max.y - 1.0f), ImGui::GetColorU32(ImGuiCol_Separator));
+			drawList->PopClipRect();
+		}
 	}
 
 	void PanelManager::DrawMenuItems(const char* mainMenu)

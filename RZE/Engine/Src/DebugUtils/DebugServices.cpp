@@ -19,6 +19,7 @@ void DebugServices::Trace(LogChannel channel, const std::string& text)
 
 		LogEntry& entry = mDataEntries.emplace_back();
 
+		entry.Channel = channel;
 		entry.Text = text;
 
 		entry.TextColor = Vector3D(

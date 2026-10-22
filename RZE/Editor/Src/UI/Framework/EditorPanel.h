@@ -51,22 +51,27 @@ namespace Editor
 		// Centres the menu bar's contents across it, or starts them at its left where it's too narrow. Only for
 		// ImGuiWindowFlags_MenuBar.
 		bool CentreMenuBar = false;
+		// A line along the bottom of the menu bar, to set it apart from the contents when they're no different (e.g. text
+		// on the window's background). Only for ImGuiWindowFlags_MenuBar.
+		bool MenuBarSeparator = false;
 		// Draw() does its own Begin/End (e.g. ImGui's demo window), so PanelManager doesn't wrap it in a window.
 		// WindowFlags, PushWindowStyle and DrawMenuBar don't apply, and the panel isn't tracked as hovered or focused.
 		bool OwnsWindow = false;
 	};
 
-	// Style vars a panel pushes for its window. They're pushed before Begin and popped after End, so they
-	// cover the title bar and docking tab as well as the contents.
+	// Style vars and colours a panel pushes for its window. They're pushed before Begin and popped after End, so they
+	// cover the title bar, docking tab and menu bar as well as the contents.
 	class PanelWindowStyle
 	{
 	public:
 		void Push(ImGuiStyleVar var, float value);
 		void Push(ImGuiStyleVar var, const ImVec2& value);
+		void Push(ImGuiCol colour, const ImVec4& value);
 		void PopAll();
 
 	private:
-		int m_pushCount = 0;
+		int m_varCount = 0;
+		int m_colourCount = 0;
 	};
 
 	// Base for an editor window. A panel describes its window with a static Describe() and draws its contents in
