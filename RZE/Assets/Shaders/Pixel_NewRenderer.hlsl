@@ -1,12 +1,14 @@
-// Material with diffuse, specular and normal maps
+// Material with a normal map, and diffuse and specular maps if it has them
 #include "Common/ForwardTypes.hlsli"
 #include "Common/Lighting.hlsli"
+
+static const float DefaultSpecularIntensity = 0.5f; // Typical non-metal; see SurfaceData
 
 float4 PSMain(VertexToPixel input) : SV_TARGET
 {
 	const float coverage = ApplyOpacityMask(input.UV);
 
-	float specularSample = SpecularMap.Sample(LinearSampler, input.UV).r;
+	float specularSample = HasSpecularMap > 0.5f ? SpecularMap.Sample(LinearSampler, input.UV).r : DefaultSpecularIntensity;
 	float3 normalSample = NormalMap.Sample(LinearSampler, input.UV).rgb;
 
 	float3 vertexNormal = normalize(input.Normal);

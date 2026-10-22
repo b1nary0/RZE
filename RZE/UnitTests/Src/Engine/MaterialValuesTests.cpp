@@ -134,9 +134,18 @@ TEST_CASE("A material's shader follows its textures")
 
 	CHECK(MaterialInstance::ChooseShader(MaterialValues()) == EShader::Untextured);
 	CHECK(MaterialInstance::ChooseShader(WithTextures({ MaterialInstance::TEXTURE_SLOT_DIFFUSE })) == EShader::DiffuseOnly);
-	// Any texture short of all three of diffuse, specular and normal
+	// Any textures without a normal map
 	CHECK(MaterialInstance::ChooseShader(WithTextures({ MaterialInstance::TEXTURE_SLOT_OPACITY })) == EShader::DiffuseOnly);
-	CHECK(MaterialInstance::ChooseShader(WithTextures({ MaterialInstance::TEXTURE_SLOT_DIFFUSE, MaterialInstance::TEXTURE_SLOT_NORMAL })) == EShader::DiffuseOnly);
-	CHECK(MaterialInstance::ChooseShader(WithTextures({ MaterialInstance::TEXTURE_SLOT_DIFFUSE, MaterialInstance::TEXTURE_SLOT_SPECULAR, MaterialInstance::TEXTURE_SLOT_NORMAL })) == EShader::Full);
-	CHECK(MaterialInstance::ChooseShader(WithTextures({ MaterialInstance::TEXTURE_SLOT_DIFFUSE, MaterialInstance::TEXTURE_SLOT_SPECULAR, MaterialInstance::TEXTURE_SLOT_NORMAL, MaterialInstance::TEXTURE_SLOT_HEIGHT })) == EShader::Full);
+	CHECK(MaterialInstance::ChooseShader(WithTextures({ MaterialInstance::TEXTURE_SLOT_DIFFUSE, MaterialInstance::TEXTURE_SLOT_SPECULAR })) == EShader::DiffuseOnly);
+	// A normal map is applied whatever else there is
+	CHECK(MaterialInstance::ChooseShader(WithTextures({ MaterialInstance::TEXTURE_SLOT_NORMAL })) == EShader::NormalMapped);
+	CHECK(MaterialInstance::ChooseShader(WithTextures({ MaterialInstance::TEXTURE_SLOT_DIFFUSE, MaterialInstance::TEXTURE_SLOT_NORMAL })) == EShader::NormalMapped);
+	CHECK(MaterialInstance::ChooseShader(WithTextures({ MaterialInstance::TEXTURE_SLOT_DIFFUSE, MaterialInstance::TEXTURE_SLOT_SPECULAR, MaterialInstance::TEXTURE_SLOT_NORMAL })) == EShader::NormalMapped);
+	CHECK(MaterialInstance::ChooseShader(WithTextures({ MaterialInstance::TEXTURE_SLOT_DIFFUSE, MaterialInstance::TEXTURE_SLOT_SPECULAR, MaterialInstance::TEXTURE_SLOT_NORMAL, MaterialInstance::TEXTURE_SLOT_HEIGHT })) == EShader::NormalMapped);
+}
+
+TEST_CASE("A material's GPU parameters say whether it has a specular map")
+{
+	CHECK(MaterialInstance::BuildParams(WithTextures({ MaterialInstance::TEXTURE_SLOT_DIFFUSE, MaterialInstance::TEXTURE_SLOT_NORMAL })).HasSpecularMap == doctest::Approx(0.0f));
+	CHECK(MaterialInstance::BuildParams(WithTextures({ MaterialInstance::TEXTURE_SLOT_SPECULAR, MaterialInstance::TEXTURE_SLOT_NORMAL })).HasSpecularMap == doctest::Approx(1.0f));
 }

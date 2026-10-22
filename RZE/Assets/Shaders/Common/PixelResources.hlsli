@@ -13,6 +13,7 @@ cbuffer MaterialBuffer : register(b1)
 	float OpacityMaskIsCoverage; // 1 for blended materials: the mask fades rather than cuts
 	float HasDiffuseMap; // 1 when DiffuseMap is bound for this material; otherwise Tint alone is its colour
 	float3 Tint; // sRGB; multiplies DiffuseMap, or is the colour without it
+	float HasSpecularMap; // 1 when SpecularMap is bound for this material
 };
 
 // Mirrors LightObject::PropertyBufferLayout (RenderEngine.h)

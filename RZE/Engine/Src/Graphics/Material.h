@@ -46,10 +46,10 @@ public:
 	{
 		// No textures
 		Untextured,
-		// Some textures, but not all of diffuse, specular and normal
+		// Some textures, but no normal map
 		DiffuseOnly,
-		// Diffuse, specular and normal
-		Full
+		// A normal map, with or without diffuse and specular maps (HasDiffuseMap, HasSpecularMap)
+		NormalMapped
 	};
 
 	// #TODO(Josh::Turn into material properties or something; material system?)
@@ -72,8 +72,9 @@ public:
 		float HasDiffuseMap{ 1.0f };
 		// MaterialValues::Tint; HLSL starts a float3 on a new 16-byte register, as here
 		float Tint[3]{ 1.0f, 1.0f, 1.0f };
-		// Keeps the buffer a whole number of 16-byte registers, which is what's uploaded
-		float _pad0{ 0.0f };
+		// 1.0f when the specular slot is set; without it the shader uses a typical non-metal's intensity. Fills the
+		// rest of Tint's register, keeping the buffer a whole number of 16-byte registers, which is what's uploaded.
+		float HasSpecularMap{ 0.0f };
 	};
 
 public:

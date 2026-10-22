@@ -1,4 +1,4 @@
-// Material with some textures, but not all of diffuse, specular and normal
+// Material with some textures, but no normal map
 #include "Common/ForwardTypes.hlsli"
 #include "Common/Lighting.hlsli"
 

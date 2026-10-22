@@ -33,7 +33,7 @@ namespace
 		// @TODO This needs to be reworked. Should have the shader linked with the material asset?
 		switch (shader)
 		{
-		case MaterialInstance::EShader::Full:
+		case MaterialInstance::EShader::NormalMapped:
 			return RZE().GetResourceHandler().LoadResource<PixelShader>(Filepath("Assets/Shaders/Pixel_NewRenderer.hlsl"), "Pixel_NewRenderer");
 		case MaterialInstance::EShader::Untextured:
 			// @TODO Understand why (at least) Material_47 on sponza object has NO textures - how is this even worth it? If we don't have texures to display what
@@ -71,17 +71,16 @@ MaterialInstance::MaterialParams MaterialInstance::BuildParams(const MaterialVal
 	params.Tint[0] = values.Tint.X();
 	params.Tint[1] = values.Tint.Y();
 	params.Tint[2] = values.Tint.Z();
+	params.HasSpecularMap = values.Textures[TEXTURE_SLOT_SPECULAR].IsValid() ? 1.0f : 0.0f;
 	return params;
 }
 
 MaterialInstance::EShader MaterialInstance::ChooseShader(const MaterialValues& values)
 {
-	const bool hasDiffuse = values.Textures[TEXTURE_SLOT_DIFFUSE].IsValid();
-	const bool hasSpecular = values.Textures[TEXTURE_SLOT_SPECULAR].IsValid();
-	const bool hasNormal = values.Textures[TEXTURE_SLOT_NORMAL].IsValid();
-	if (hasDiffuse && hasSpecular && hasNormal)
+	// Only that shader applies normal maps; it reads the diffuse and specular maps only if they're there
+	if (values.Textures[TEXTURE_SLOT_NORMAL].IsValid())
 	{
-		return EShader::Full;
+		return EShader::NormalMapped;
 	}
 
 	for (const Filepath& texture : values.Textures)
