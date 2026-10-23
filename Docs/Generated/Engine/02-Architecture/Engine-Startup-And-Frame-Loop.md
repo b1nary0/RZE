@@ -23,11 +23,11 @@ int main(int argc, char* argv[]) {
 }
 ```
 
-`RZE\Editor\Src\EditorMain.cpp` follows the identical shape with `Editor::EditorApp`. `RZE_Application::Run()` (in `EngineApp.cpp`) calls `RZE().Run(engineHook)`, passing a callback that knows how to construct the concrete application subclass.
+`RZE\Editor\Src\EditorMain.cpp` follows the identical shape with `Editor::EditorApp`. `RZE_Application::Run()` (in `EngineApp.cpp`) calls `RZE().Run(engineHook)`, passing a callback that returns the application, which `main` has already constructed.
 
 ## `RZE_Engine` (`Engine\Src\EngineCore\Engine.h` / `.cpp`)
 
-Owns: `RZE_Application* m_application`, `GameScene* m_activeScene`, `Win32Window* m_window`, `ResourceHandler m_resourceHandler`, `EventHandler m_eventHandler`, `InputHandler m_inputHandler`, `std::unique_ptr<RenderEngine> m_renderEngine`, `AsyncOperationManager m_asyncOperationManager`, plus frame timing: `HiResTimer m_programTimer` (started with the main loop; frame times are measured on it), `FramePacer m_framePacer` ([below](#frame-pacing)), `PreciseSleep m_frameSleep`, `FrameTimeCapture m_frameTimeCapture`, `m_deltaTime` and `m_frameCount`.
+Owns: `RZE_Application* m_application`, `GameScene* m_activeScene`, `Win32Window* m_window`, `std::unique_ptr<SplashScreen> m_splashScreen` (only while starting up, and only for an application with a splash screen), `ResourceHandler m_resourceHandler`, `EventHandler m_eventHandler`, `InputHandler m_inputHandler`, `std::unique_ptr<RenderEngine> m_renderEngine`, `AsyncOperationManager m_asyncOperationManager`, plus frame timing: `HiResTimer m_programTimer` (started with the main loop; frame times are measured on it), `FramePacer m_framePacer` ([below](#frame-pacing)), `PreciseSleep m_frameSleep`, `FrameTimeCapture m_frameTimeCapture`, `m_deltaTime` and `m_frameCount`.
 
 Public accessors used as the de-facto service locator: `GetApplication()`, `GetResourceHandler()`, `GetInputHandler()`, `GetRenderEngine()`, `GetAsyncOperationManager()`, `GetActiveScene()`, `GetDeltaTime()`/`GetDeltaTimeMS()`, `GetFramePacer()` / `SetFrameSettings()`, `SetWindowSize()`, `PostExit()`.
 
@@ -36,42 +36,66 @@ Public accessors used as the de-facto service locator: `GetApplication()`, `GetR
 ```mermaid
 %%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 flowchart TD
-    A[RZE_Application::Run] --> B["RZE_Engine::Run(createApplicationCallback)"]
+    A[RZE_Application::Run] --> B["RZE_Engine::Run(createApplicationCallback):<br/>takes the application"]
     B --> C[Init]
     C --> C1[Debug::CreateLogFile / DebugServices::Get.Initialize]
     C1 --> C1b["MainThreadDispatcher::Initialize<br/>+ Debug::SetLogSink<br/>(log lines also go to DebugServices)"]
     C1b --> C2[Threading::JobScheduler::Get.Initialize]
     C2 --> C2b[AsyncOperationManager::Initialize]
     C2b --> C3["LoadEngineConfig (Config/Engine.ini)"]
-    C3 --> C4[CreateAndInitializeWindow — Win32Window]
+    C3 --> C3b["SplashScreen, if the application<br/>has an image (the Editor)"]
+    C3b --> C4["CreateAndInitializeWindow:<br/>Win32Window, made cloaked"]
     C4 --> C5[InputHandler::Initialize + RegisterWindowEvents]
     C5 --> C6[ResourceHandler::Init]
     C6 --> C7["CreateAndInitializeRenderer (new RenderEngine, Initialize(hwnd))"]
     C7 --> C8[Create + Initialize GameScene]
     C8 --> D[PostInit]
-    D --> D1[Register key events + ImGui key map]
-    D1 --> D2["InitializeApplication:<br/>construct the app, then app.Initialize()<br/>(registers components),<br/>app.RegisterInputEvents(), app.Start()"]
+    D --> D2["InitializeApplication:<br/>app.Initialize() (registers components),<br/>app.RegisterInputEvents(), app.Start()"]
     D2 --> D3[GameScene::Start]
-    D3 --> F["Start the program timer,<br/>FrameTimeCapture::Initialize,<br/>InitializeFramePacing"]
-    F --> E[Main Loop]
+    D3 --> W["WaitForStartupLoading:<br/>async operations with no frames,<br/>until app.IsReadyToShow()"]
+    W --> F["Start the program timer,<br/>FrameTimeCapture::Initialize,<br/>InitializeFramePacing"]
+    F --> G["Focus the window, then DrawFirstFrames:<br/>three frames while it's cloaked"]
+    G --> R["Win32Window::Reveal,<br/>then close the splash screen"]
+    R --> E[Main Loop]
 ```
 
-1. **`Init()`**:
+1. **Taking the application.** `Run()` calls the callback first, so start-up can ask the application what it needs (its splash screen image) before it's initialized in `PostInit()`.
+2. **`Init()`**:
    - `Debug::CreateLogFile()`, `DebugServices::Get().Initialize()`
    - `Threading::MainThreadDispatcher::Get().Initialize()` (records the main thread's ID), then `Debug::SetLogSink(&TraceLogLine)` so every `RZE_LOG` line also reaches `DebugServices`, on its level's channel ([Debug-Services-And-Logging.md](../06-Platform-And-Infrastructure/Debug-Services-And-Logging.md))
    - `Threading::JobScheduler::Get().Initialize()`, then `m_asyncOperationManager.Initialize()` ([Threading-And-Jobs.md](../06-Platform-And-Infrastructure/Threading-And-Jobs.md))
    - `LoadEngineConfig()` — loads `Config/Engine.ini` as an `EngineConfig` resource
-   - `CreateAndInitializeWindow()` — constructs `Win32Window` sized/titled per config
+   - The **splash screen**, if `RZE_Application::GetSplashScreenImage()` is a valid path (the Editor's is `logo.png`; the Game has none). It opens as soon as Engine.ini gives it the window title and launch monitor, before the slow parts, and each step from here on shows on it (`SetStartupStatus`). See [Windowing.md](../06-Platform-And-Infrastructure/Windowing.md#splashscreen-splashscreenhcpp).
+   - `CreateAndInitializeWindow()` — constructs `Win32Window` sized/titled per config. It's made **cloaked** ([Windowing.md](../06-Platform-And-Infrastructure/Windowing.md#win32window-win32windowhcpp)): shown, and maximized by the Editor, as usual, with its real size, but not on screen until start-up is done.
    - `m_inputHandler.Initialize()`, `RegisterWindowEvents()` (subscribes to `EEventType::Window` → window resize, destroy, and close requests, which exit if `RZE_Application::OnCloseRequested()` agrees)
    - `m_resourceHandler.Init()`
    - `CreateAndInitializeRenderer()` — `new RenderEngine`, `Initialize(hwnd)`, then the main view's anti-aliasing and auto-exposure from Engine.ini's `[Rendering]`
    - Creates and initializes the `GameScene`
-2. **`PostInit(createApplicationCallback)`**: registers key events (ImGui key map), invokes the callback to construct the concrete `RZE_Application`, sets its window, calls `app->Initialize()` (registers all built-in `GameObjectComponent` types via `RegisterEngineComponents()`), then `app->RegisterInputEvents()`, then `app->Start()`, then `m_activeScene->Start()`.
-3. **Before the first frame**: the program timer starts, `FrameTimeCapture::Initialize()` reads the `-perf*` arguments, and `InitializeFramePacing()` reads the [frame settings](#settings), after the capture since a capture turns pacing off, and gives the `FramePacer` the monitor's refresh rate.
+3. **`PostInit()`**: gives the application its window, calls `app->Initialize()` (registers all built-in `GameObjectComponent` types via `RegisterEngineComponents()`), then `app->RegisterInputEvents()`, then `app->Start()`, then `m_activeScene->Start()`.
+4. **`WaitForStartupLoading()`**: see [loading before the window shows](#loading-before-the-window-shows).
+5. **Before the first frame**: the program timer starts, `FrameTimeCapture::Initialize()` reads the `-perf*` arguments, and `InitializeFramePacing()` reads the [frame settings](#settings), after the capture since a capture turns pacing off, and gives the `FramePacer` the monitor's refresh rate.
+6. **`DrawFirstFrames()`, then the reveal**: see [the first frames](#the-first-frames).
+
+### Loading before the window shows
+
+What an application loads with async operations at start-up (the Editor's start scene, through `SceneDocument::Load`) finishes before its window shows, rather than under a loading dialog in it. `WaitForStartupLoading()` loops until `RZE_Application::IsReadyToShow()` is true (the Editor's is once its scene document has loaded; the base class's always is) or an exit is posted. Each pass:
+
+1. drains `MainThreadDispatcher` (worker threads' log lines) and handles the window's messages, so Windows doesn't take the cloaked window for hung, then resets the input handler, since no input is meant for a window the user can't see;
+2. `AsyncOperationManager::Tick()`, with completion callbacks as usual;
+3. `RenderEngine::Submit()`, which hands what the operations recorded (resource creation, uploads) to the render thread without rendering or presenting a frame ([Low-Level-Renderer-Module.md](../04-Rendering/Low-Level-Renderer-Module.md));
+4. shows the oldest operation that isn't background or a sub-step on the splash screen: its name, the first line of its status, and a progress bar.
+
+Nothing is drawn meanwhile, so operations get 50 ms and 128 MB of uploads a pass (`k_startupLoadingBudgetMS`, `k_startupUploadBudgetBytes`) rather than a frame's 8 ms and 16 MB, and the frame budget is put back afterwards. A pass stays short enough that the window's messages and the splash screen's status keep up. The loop doesn't sleep, so it's for waiting on async operations, not anything else.
+
+### The first frames
+
+The window is still cloaked when the main loop's setup is done. `Win32Window::Focus()` makes it the foreground window first, so the first frames draw it as the one the user is working in (the Editor's title bar draws differently when it isn't). Then `DrawFirstFrames()` runs three frames (`k_firstFrameCount`) through `RunFrame`, each a UI frame (`FramePacer::RequestUIFrame`), waiting for a present slot after each. ImGui builds what they show over those frames: the dock layout on the first, windows that size themselves to their contents are hidden on the frame they first appear, and tabs take their widths from the frame before (with two frames the Editor's tabs still showed cut short). A final `RenderEngine::Submit()` returns once the render thread has finished the last frame, which presents it.
+
+These frames aren't counted: `BeginFrame` isn't called for them, so they have no frame time and no delta time, the frame count doesn't move, and the frame time capture doesn't see them. Then `Win32Window::Reveal()` puts the window on screen, and only after that does the splash screen close, so there's always a window showing. The window appears fully drawn, where it used to open white and then show its frame before its panels.
 
 ## Per-frame loop
 
-Each iteration of `while (!m_shouldExit)` is an Optick frame, and runs these steps in order:
+Each iteration of `while (!m_shouldExit)` is an Optick frame, and runs these steps in order. Everything from the input to handing the frame to the renderer is `RZE_Engine::RunFrame(frameStart)`, which [the first frames](#the-first-frames) run too.
 
 ```mermaid
 %%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
@@ -203,7 +227,8 @@ With `UIFrameRate` set, only some frames are UI frames. Everything else (the asy
 ## Key files
 
 - `Engine\Src\RZE.h` / `RZE.cpp` — global `RZE()` accessor
-- `Engine\Src\EngineCore\Engine.h` / `Engine.cpp` — `RZE_Engine`, the main loop
+- `Engine\Src\EngineCore\Engine.h` / `Engine.cpp` — `RZE_Engine`, start-up and the main loop
+- `Engine\Src\Windowing\SplashScreen.h` / `.cpp` — the splash screen
 - `Engine\Src\EngineCore\Timing\FramePacer.h` / `.cpp`, `Engine\Src\EngineCore\Config\FrameSettings.h` — frame pacing
 - `Utils\Src\Utils\Platform\Timers\PreciseSleep.h` / `.cpp` — the sleep between frames
 - `UnitTests\Src\Engine\FramePacerTests.cpp`

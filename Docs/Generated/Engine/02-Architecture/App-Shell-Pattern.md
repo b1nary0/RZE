@@ -16,6 +16,8 @@ public:
     virtual void ShutDown();
 
     virtual bool OnCloseRequested();               // window close button / Alt+F4; true (default) exits
+    virtual Filepath GetSplashScreenImage() const; // shown while starting up; invalid (default) for none
+    virtual bool IsReadyToShow() const;            // false keeps the window off screen while start-up loads
     virtual void CreateRenderTarget(...) = 0;      // pure virtual
     virtual void OnWindowResize(...) = 0;          // pure virtual
 
@@ -33,6 +35,8 @@ The four per-frame hooks split each frame into a UI part (`PreUIUpdate`, `Update
 
 `OnCloseRequested()` is called when the user asks to close the window (its close button, Alt+F4). Returning true, the default, exits. The Editor returns false while the scene has unsaved changes and asks about them first, exiting itself afterwards with `RZE().PostExit()`.
 
+`GetSplashScreenImage()` and `IsReadyToShow()` shape start-up ([Engine-Startup-And-Frame-Loop.md](Engine-Startup-And-Frame-Loop.md#startup-sequence)). The engine takes the application at the start of `RZE_Engine::Run`, before anything is initialized, so it can ask for the splash screen's image. An invalid path, the default, means no splash screen; the Editor returns `logo.png`, and the Game has none. `IsReadyToShow()` keeps the window off screen while the engine ticks start-up's async operations with no frames. The default is true; the Editor's is false until its start scene has loaded.
+
 `RZE_Application` owns the `Win32Window*` (assigned by the engine after construction) and a `RenderTargetTexture* m_renderTarget` that each subclass is responsible for creating via `CreateRenderTarget()`.
 
 ## Editor vs Game: what differs
@@ -41,7 +45,8 @@ The four per-frame hooks split each frame into a UI part (`PreUIUpdate`, `Update
 |---|---|---|
 | Render target destination | Adds `FinalRenderTargetStage` — blits the offscreen RTT to the actual back buffer/swap chain | Never adds it — stays in an off-screen RTT, displayed inside an ImGui `SceneViewPanel` window instead |
 | ImGui | Only in Debug builds (`#ifdef IMGUI_ENABLED`, defined in `Debug.h`) — shows the ImGui demo window as leftover dev debug | Always on — the entire UI (dockspace, panels, menu bar) is ImGui |
-| Scene loading | Deserializes `-scene` CLI arg or falls back to `Assets/Scenes/RenderTest.scene` | Deserializes `-scene` CLI arg or falls back to `Assets/Scenes/RenderTest.scene` (same fallback, called a "hack" in a code comment) |
+| Scene loading | Deserializes `-scene` CLI arg or falls back to `Assets/Scenes/RenderTest.scene`, synchronously in `Initialize()` | Loads `-scene` CLI arg or falls back to `Assets/Scenes/RenderTest.scene` (same fallback, called a "hack" in a code comment), asynchronously through `SceneDocument::Load` in `Start()` |
+| Start-up | No splash screen. The window shows once `Start()` is done | A splash screen with the logo and what start-up is doing. The window shows once the start scene has loaded (`IsReadyToShow`) |
 | Extra components registered | None beyond the base set | `EditorCameraComponent` (free-fly viewport camera, see [07-Editor](../07-Editor/Editor-Camera-And-Build-Launch.md)) |
 | Player/runtime behavior | `Start()` takes the scene's main camera and attaches a `PlayerControllerComponent` to it at runtime (not scene-serialized) | No player controller; navigation is via the editor camera instead |
 | Closing the window | Exits | Asks about unsaved changes first (`OnCloseRequested`) |

@@ -33,6 +33,8 @@ The layout is an ImGui dockspace, saved in `Config\imgui.ini`; without one, each
 
 `Editor\Src\EditorMain.cpp` sets `Filepath::SetDirectoryContext(EDirectoryContext::Source)`, constructs `Editor::EditorApp`, and calls `Run()`. The Source context means paths resolve against the **source tree** (`RZE\Assets\...`), so shader and asset edits show up on the next launch with no copy step. The Game does the same, so it sees saved scenes straight away.
 
+While it starts, the Editor shows a splash screen with the logo and what start-up is doing, then a progress bar while the start scene loads. Its window appears once the scene has loaded and the first frames are drawn, so it opens ready to use rather than behind a loading dialog ([Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md#startup-sequence)).
+
 | Argument | Effect |
 |---|---|
 | `-scene <file>` | Opens `Assets/Scenes/<file>` (e.g. `-scene Sponza.scene`). Without it, the Editor opens `Assets/Scenes/RenderTest.scene`. |

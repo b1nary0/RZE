@@ -92,6 +92,8 @@ gantt
 
 `DevicePresent()` is the hand-off point: it waits until the render thread has finished the previous batch, swaps the queues, and wakes it. A frame's commands therefore run on the GPU one frame after they were queued, which is why results that come back from the GPU (like `ReadTexel`) arrive a frame or two later.
 
+`Submit()` is the same hand-off with no frame: it hands over what's been recorded so far (resource creation, uploads) without a present. The engine uses it, through `RenderEngine::Submit()`, while it loads before the window shows, and to wait for the render thread to finish the first frames ([Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md#loading-before-the-window-shows)).
+
 ### The swap chain and vsync
 
 `DX11Device` creates the device first (`D3D11CreateDevice`), then the swap chain from the device's own DXGI factory (`CreateSwapChain`):
@@ -135,7 +137,7 @@ Everything is a static call on `Rendering::Renderer`, and every call only *queue
 |---|---|
 | Lifetime | `Initialize`, `Shutdown`, `HandleWindowResize` |
 | Presenting | `SetSyncInterval(interval)` (vsync), `WaitForPresentSlot(timeoutMS)` (blocks until the swap chain can queue another frame; false on timeout, e.g. while minimised). See [the swap chain](#the-swap-chain-and-vsync). |
-| Frame and passes | `BeginFrame` / `EndFrame`, `Begin(name)` / `End()` (one pass; also resets the rasterizer state and names the pass for PIX), `DevicePresent`, `ImGuiRender`, `KeepTextureForUI` |
+| Frame and passes | `BeginFrame` / `EndFrame`, `Begin(name)` / `End()` (one pass; also resets the rasterizer state and names the pass for PIX), `DevicePresent`, `Submit` (the hand-off without a present), `ImGuiRender`, `KeepTextureForUI` |
 | Resources | `CreateVertexBuffer`, `CreateDynamicVertexBuffer` + `UpdateVertexBuffer`, `CreateIndexBuffer`, `CreateConstantBuffer`, `CreateTextureBuffer2D(params)` (empty, e.g. a render target) / `CreateTextureBuffer2D(TexelBuffer&&, params)`, `CreateVertexShader`, `CreatePixelShader`, `Release*Shader`, `UploadDataToBuffer<T>` (copies the data, so a stack variable is fine), `GenerateMips` |
 | Targets | `SetColourTarget(colour[, depth])`, `SetDepthTarget`, `ClearRenderTargets` (unbinds every target, e.g. so one can be read from next), `SetRenderTargetBackBuffer`, `ClearRenderTarget`, `ClearDepthStencilBuffer` |
 | State | `SetViewport`, `SetInputLayout`, `SetPrimitiveTopology`, `SetRasterizerState` (`Default` = back-face culling, `ShadowCaster` = no culling + slope-scaled depth bias), `SetBlendState` (`Opaque` = no blending, `AlphaBlend` = source alpha over the target, leaving the target's alpha unchanged), shaders, constant buffers, vertex/index buffers, texture slots |

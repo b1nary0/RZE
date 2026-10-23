@@ -142,6 +142,7 @@ timeline
                : Log panel filter by channel and search text (Editor-Panels)
     2026-10-22 : Normal maps without specular maps (Materials-Meshes-Shaders)
                : FXAA anti-aliasing, Engine.ini's [Rendering] (Render-Stages)
+               : Editor splash screen, window shown once loaded and drawn (Engine-Startup-And-Frame-Loop)
 ```
 
 | Area | What changed | Read |
@@ -173,6 +174,7 @@ timeline
 | Frame pacing | The main loop is paced: frame rate caps, a slower rate while unfocused, a steadier delta time and real vsync on a flip-model swap chain. Spare frame time goes to async operations. The UI can update less often than the scene (every frame while you interact). Every queued window message is handled each frame, and input is let go when the window loses focus. The status bar shows frame stats; Settings has a Frame Rate page. | [Engine-Startup-And-Frame-Loop](02-Architecture/Engine-Startup-And-Frame-Loop.md#frame-pacing), [Low-Level-Renderer-Module](04-Rendering/Low-Level-Renderer-Module.md#the-swap-chain-and-vsync), [Input-System](06-Platform-And-Infrastructure/Input-System.md#interaction-and-focus), [Status-Bar-And-Settings](07-Editor/Status-Bar-And-Settings.md) |
 | Data location | The Editor, the Game and `SourceAssetBurner` all read `Assets`, `Config` and `ProjectData` from the source tree (`EDirectoryContext::Source`, was `Tools`); nothing is copied into `_build`, and `AssetCpy.bat` is gone. `BuildGame.bat` finds MSBuild itself; Launch Game starts `_build\debug\Game.exe` in the scene that's open in the editor, after offering to save it. | [Building-And-Running](01-GettingStarted/Building-And-Running.md), [Editor-Camera-And-Build-Launch](07-Editor/Editor-Camera-And-Build-Launch.md) |
 | Windowed apps | The Editor and the Game are windowed apps, so they open focused: as console apps, Windows Terminal's console window came up after theirs and took the foreground. `-console` opens a console. Asserts reach the log file and the Log panel. Build Game runs without a window. | [Debug-Services-And-Logging](06-Platform-And-Infrastructure/Debug-Services-And-Logging.md#the-console), [Editor-Camera-And-Build-Launch](07-Editor/Editor-Camera-And-Build-Launch.md) |
+| Start-up | The Editor shows a splash screen with the logo, what start-up is doing and the start scene's progress. The window is made cloaked and only appears once the start scene has loaded and the first frames are drawn, so it opens ready to use instead of white, half drawn or behind a loading dialog. An application opts in with `GetSplashScreenImage` and `IsReadyToShow`; the Game has no splash screen. | [Engine-Startup-And-Frame-Loop](02-Architecture/Engine-Startup-And-Frame-Loop.md#startup-sequence), [Windowing](06-Platform-And-Infrastructure/Windowing.md#splashscreen-splashscreenhcpp), [App-Shell-Pattern](02-Architecture/App-Shell-Pattern.md) |
 
 ## Key architectural themes (read this before diving into a section)
 
