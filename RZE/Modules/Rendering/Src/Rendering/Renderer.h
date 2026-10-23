@@ -55,6 +55,9 @@ namespace Rendering
 		static void End();
 
 		static void DevicePresent();
+		// Hands what's been recorded so far (e.g. uploads) to the render thread with no frame and no present, such as
+		// while loading before the window shows. Like DevicePresent, returns once the render thread has taken it.
+		static void Submit();
 
 		static void HandleWindowResize(const Vector2D& newSize);
 

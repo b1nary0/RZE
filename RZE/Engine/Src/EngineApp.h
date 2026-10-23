@@ -7,6 +7,7 @@
 #include <memory>
 
 class EventHandler;
+class Filepath;
 class Win32Window;
 
 namespace Rendering
@@ -44,6 +45,12 @@ public:
 	// The user asked to close the window. True exits; false keeps running, e.g. to ask about unsaved changes first,
 	// and the application exits later itself (RZE_Engine::PostExit) if it should.
 	virtual bool OnCloseRequested() { return true; }
+
+	// The image a splash screen shows while the engine starts up. Invalid, the default, for no splash screen.
+	virtual Filepath GetSplashScreenImage() const;
+	// Whether start-up is done and the window can be shown, e.g. once the start scene has loaded. Until it is, the
+	// engine ticks async operations with no frames, under the splash screen if there is one. True by default.
+	virtual bool IsReadyToShow() const;
 
 	virtual void CreateRenderTarget(const Vector2D& dimensions) = 0;
 	virtual void OnWindowResize(const Vector2D& newSize) = 0;

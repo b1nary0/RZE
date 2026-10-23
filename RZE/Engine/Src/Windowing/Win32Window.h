@@ -63,6 +63,11 @@ public:
 	void CompileWindowMessages(EventHandler& eventHandler);
 
 	void Show();
+	// Puts it on screen. It's made cloaked: shown, maximized and so on as usual, but the user doesn't see it until this,
+	// so it can be readied (sized, drawn) first.
+	void Reveal();
+	// Makes it the foreground window, the one the user is working in
+	void Focus();
 
 	// The window the user is working in, i.e. the foreground window
 	bool IsFocused() const;

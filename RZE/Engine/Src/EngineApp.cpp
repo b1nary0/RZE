@@ -65,6 +65,16 @@ void RZE_Application::ShutDown()
 
 }
 
+Filepath RZE_Application::GetSplashScreenImage() const
+{
+	return Filepath();
+}
+
+bool RZE_Application::IsReadyToShow() const
+{
+	return true;
+}
+
 bool RZE_Application::ProcessInput(const InputHandler& handler)
 {
 	return true;

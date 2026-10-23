@@ -28,6 +28,8 @@ public class Engine : BaseProject
         conf.LibraryPaths.Add(Globals.ThirdPartyLibDir);
 
         conf.LibraryFiles.Add("OptickCore");
+        // DwmSetWindowAttribute
+        conf.LibraryFiles.Add("dwmapi");
 
         var copyDirBuildStep = new Configuration.BuildStepCopy(
             Globals.ThirdPartyDllDir,

@@ -104,6 +104,11 @@ namespace Rendering
 		m_renderThread.SignalProcess();
 	}
 
+	void Renderer::Submit()
+	{
+		m_renderThread.SignalProcess();
+	}
+
 	void Renderer::SetSyncInterval(U32 interval)
 	{
 		RenderCommand_SetSyncInterval* command = MemArena::AllocType<RenderCommand_SetSyncInterval>();

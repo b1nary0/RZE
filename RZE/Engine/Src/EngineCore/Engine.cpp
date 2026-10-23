@@ -9,9 +9,11 @@
 #include <Graphics/RenderEngine.h>
 
 #include <Windowing/Display.h>
+#include <Windowing/SplashScreen.h>
 #include <Windowing/Win32Window.h>
 
 #include <Utils/DebugUtils/Debug.h>
+#include <Utils/Memory/MemoryUtils.h>
 #include <Utils/Platform/CmdLine.h>
 
 #include <imGUI/imgui_impl_dx11.h>
@@ -24,6 +26,16 @@ namespace
 {
 	// Less spare time than this isn't worth handing to async operations
 	constexpr double k_minIdleWorkMS = 1.0;
+
+	// While start-up loads nothing is drawn, so async operations get far more of each pass than they would of a frame.
+	// The time is short enough that the window's messages and the splash screen's status stay current.
+	constexpr double k_startupLoadingBudgetMS = 50.0;
+	const size_t k_startupUploadBudgetBytes = MemoryUtils::Megabytes(128);
+
+	// Drawn before the window shows. ImGui builds what they show over the first few: the dock layout on the first,
+	// windows that size themselves to their contents are hidden on the frame they first appear, and tabs take their
+	// widths from the frame before.
+	constexpr int k_firstFrameCount = 3;
 
 	LogChannel GetLogChannel(Debug::ELogLevel level)
 	{
@@ -75,18 +87,31 @@ RZE_Engine::~RZE_Engine()
 
 void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 {
+	AssertNotNull(createApplicationCallback);
+	// First, so start-up can ask it what it needs (its splash screen). It's initialized later, in PostInit.
+	m_application = createApplicationCallback();
+	AssertNotNull(m_application);
+
 	Init();
 
 	if (m_isInitialized)
 	{
-		AssertNotNull(createApplicationCallback);
-		PostInit(createApplicationCallback);
+		PostInit();
+		WaitForStartupLoading();
 
 		m_programTimer.Start();
 
 		m_frameTimeCapture.Initialize();
 		// After the capture, which turns pacing off
 		InitializeFramePacing();
+
+		// Before the first frames, so they draw it as the window the user is working in (e.g. the Editor's title bar)
+		m_window->Focus();
+		DrawFirstFrames();
+
+		// Before the splash screen closes, so there's always a window on screen
+		m_window->Reveal();
+		m_splashScreen.reset();
 
 		double lastUpdateMS = 0.0;
 
@@ -102,44 +127,9 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 				break;
 			}
 
-			{	
+			{
 				OPTICK_EVENT("RZE_Engine::Run");
-
-				PreUpdate();
-				// So the UI keeps up while the user works
-				if (m_inputHandler.IsInteracting())
-				{
-					m_framePacer.NoteInteraction(frameStart);
-				}
-				{
-					OPTICK_EVENT("Update and Render");
-
-					// The frame capture's update time covers the async tick, the application's update and UI, and the scene's
-					// update, but not ImGui's NewFrame
-					double updateStart = m_programTimer.GetElapsed<double>();
-					{
-						OPTICK_EVENT("AsyncOperationManager::Tick");
-						// First, so completion callbacks (e.g. a scene finishing loading) land before the application gathers
-						// this frame's state, rather than between that and the UI being drawn from it
-						m_asyncOperationManager.Tick();
-					}
-					double updateMS = (m_programTimer.GetElapsed<double>() - updateStart) * 1000.0;
-
-					// With a UI frame rate, only some frames update the UI. The others render the last UI again around this
-					// frame's scene (ImGuiRenderStage), and everything else still runs every frame.
-					const bool isUIFrame = m_framePacer.TakeUIFrame(frameStart);
-					if (isUIFrame)
-					{
-						updateMS += UpdateUI();
-					}
-
-					updateStart = m_programTimer.GetElapsed<double>();
-					Update();
-					lastUpdateMS = updateMS + (m_programTimer.GetElapsed<double>() - updateStart) * 1000.0;
-
-					m_renderEngine->Render("Main Render");
-					m_renderEngine->Finish();
-				}
+				lastUpdateMS = RunFrame(frameStart);
 			}
 
 			WaitForNextFrame();
@@ -151,6 +141,7 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 	}
 	else
 	{
+		m_splashScreen.reset();
 		RZE_LOG_ERROR("Initialization Failed.");
 	}
 }
@@ -183,8 +174,17 @@ void RZE_Engine::Init()
 		m_asyncOperationManager.Initialize();
 
 		LoadEngineConfig();
-		m_asyncOperationManager.SetVisibilityFilter(GetResourceHandler().GetResource<EngineConfig>(m_engineConfig)->GetBackgroundTaskFilter());
+		const EngineConfig* const engineConfig = GetResourceHandler().GetResource<EngineConfig>(m_engineConfig);
+		m_asyncOperationManager.SetVisibilityFilter(engineConfig->GetBackgroundTaskFilter());
 
+		// As soon as it knows the window's title and monitor, so it's up before the slow parts
+		const Filepath splashScreenImage = m_application->GetSplashScreenImage();
+		if (splashScreenImage.IsValid())
+		{
+			m_splashScreen = std::make_unique<SplashScreen>(splashScreenImage, engineConfig->GetWindowSettings().GetTitle(), GetLaunchMonitor());
+		}
+
+		SetStartupStatus("Creating the window");
 		CreateAndInitializeWindow();
 
 		m_inputHandler.Initialize();
@@ -193,8 +193,10 @@ void RZE_Engine::Init()
 
 		m_resourceHandler.Init();
 
+		SetStartupStatus("Starting the renderer");
 		CreateAndInitializeRenderer();
 
+		SetStartupStatus("Creating the scene");
 		m_activeScene = new GameScene();
 		m_activeScene->Initialize();
 		m_renderEngine->SetMainScene(m_activeScene->GetRenderScene());
@@ -203,13 +205,110 @@ void RZE_Engine::Init()
 	}
 }
 
-void RZE_Engine::PostInit(Functor<RZE_Application* const>& createApplicationCallback)
+void RZE_Engine::PostInit()
 {
 	RZE_LOG("RZE_EngineCore::PostInit() called.");
 
-	InitializeApplication(createApplicationCallback);
+	SetStartupStatus("Starting the application");
+	InitializeApplication();
 
+	SetStartupStatus("Starting the scene");
 	m_activeScene->Start();
+}
+
+void RZE_Engine::WaitForStartupLoading()
+{
+	OPTICK_EVENT();
+
+	SetStartupStatus("Loading");
+
+	const double frameBudgetMS = m_asyncOperationManager.GetFrameBudgetMS();
+	const size_t uploadBudgetBytes = m_asyncOperationManager.GetUploadBudgetBytes();
+	m_asyncOperationManager.SetFrameBudget(k_startupLoadingBudgetMS, k_startupUploadBudgetBytes);
+
+	while (!m_application->IsReadyToShow() && !m_shouldExit)
+	{
+		// Worker threads' log lines, and the window's messages, so Windows doesn't take the window for hung
+		Threading::MainThreadDispatcher::Get().Drain();
+		CompileEvents();
+		m_eventHandler.ProcessEvents();
+		// The window is still cloaked, so there's no input meant for it
+		m_inputHandler.Reset();
+
+		m_asyncOperationManager.Tick();
+		// What the operations recorded, such as uploads
+		m_renderEngine->Submit();
+
+		// The oldest operation anyone is waiting on, e.g. the start scene's load
+		for (const std::shared_ptr<AsyncOperation>& operation : m_asyncOperationManager.GetRunningOperations())
+		{
+			if (!operation->IsBackground() && !operation->IsSubStep())
+			{
+				const std::string statusText = operation->GetStatusText();
+				// Only its first line: the splash screen has room for one
+				SetStartupStatus(operation->GetName() + ": " + statusText.substr(0, statusText.find('\n')), operation->GetProgress());
+				break;
+			}
+		}
+	}
+
+	m_asyncOperationManager.SetFrameBudget(frameBudgetMS, uploadBudgetBytes);
+}
+
+void RZE_Engine::DrawFirstFrames()
+{
+	OPTICK_EVENT();
+
+	for (int frame = 0; frame < k_firstFrameCount; ++frame)
+	{
+		// Each one a UI frame, whatever the UI frame rate
+		m_framePacer.RequestUIFrame();
+		RunFrame(m_programTimer.GetElapsed<double>());
+		m_renderEngine->WaitForPresentSlot();
+	}
+
+	// Returns once the render thread has finished the last frame, which presents it
+	m_renderEngine->Submit();
+}
+
+double RZE_Engine::RunFrame(double frameStart)
+{
+	PreUpdate();
+	// So the UI keeps up while the user works
+	if (m_inputHandler.IsInteracting())
+	{
+		m_framePacer.NoteInteraction(frameStart);
+	}
+
+	OPTICK_EVENT("Update and Render");
+
+	// The frame capture's update time covers the async tick, the application's update and UI, and the scene's update,
+	// but not ImGui's NewFrame
+	double updateStart = m_programTimer.GetElapsed<double>();
+	{
+		OPTICK_EVENT("AsyncOperationManager::Tick");
+		// First, so completion callbacks (e.g. a scene finishing loading) land before the application gathers this
+		// frame's state, rather than between that and the UI being drawn from it
+		m_asyncOperationManager.Tick();
+	}
+	double updateMS = (m_programTimer.GetElapsed<double>() - updateStart) * 1000.0;
+
+	// With a UI frame rate, only some frames update the UI. The others render the last UI again around this frame's
+	// scene (ImGuiRenderStage), and everything else still runs every frame.
+	const bool isUIFrame = m_framePacer.TakeUIFrame(frameStart);
+	if (isUIFrame)
+	{
+		updateMS += UpdateUI();
+	}
+
+	updateStart = m_programTimer.GetElapsed<double>();
+	Update();
+	updateMS += (m_programTimer.GetElapsed<double>() - updateStart) * 1000.0;
+
+	m_renderEngine->Render("Main Render");
+	m_renderEngine->Finish();
+
+	return updateMS;
 }
 
 void RZE_Engine::PreUpdate()
@@ -231,6 +330,30 @@ void RZE_Engine::PreUpdate()
 	} 
 }
 
+int RZE_Engine::GetLaunchMonitor()
+{
+	int monitorIndex = GetResourceHandler().GetResource<EngineConfig>(m_engineConfig)->GetWindowSettings().GetLaunchMonitor();
+	// Command line overrides the config value
+	CmdLine::Arguments::GetInt("-launchMonitor", monitorIndex);
+	return monitorIndex;
+}
+
+void RZE_Engine::SetStartupStatus(const std::string& status)
+{
+	if (m_splashScreen != nullptr)
+	{
+		m_splashScreen->SetStatus(status);
+	}
+}
+
+void RZE_Engine::SetStartupStatus(const std::string& status, float progress)
+{
+	if (m_splashScreen != nullptr)
+	{
+		m_splashScreen->SetStatus(status, progress);
+	}
+}
+
 void RZE_Engine::CreateAndInitializeWindow()
 {
 	const WindowSettings& windowSettings = GetResourceHandler().GetResource<EngineConfig>(m_engineConfig)->GetWindowSettings();
@@ -240,9 +363,7 @@ void RZE_Engine::CreateAndInitializeWindow()
 	params.width = static_cast<int>(windowSettings.GetDimensions().X());
 	params.height = static_cast<int>(windowSettings.GetDimensions().Y());
 
-	// Command line overrides the config value
-	params.monitorIndex = windowSettings.GetLaunchMonitor();
-	CmdLine::Arguments::GetInt("-launchMonitor", params.monitorIndex);
+	params.monitorIndex = GetLaunchMonitor();
 
 	m_window = new Win32Window(params);
 	AssertNotNull(m_window);
@@ -263,11 +384,8 @@ void RZE_Engine::CreateAndInitializeRenderer()
 	m_renderEngine->GetMainView().AutoExposure = engineConfig->GetAutoExposure();
 }
 
-void RZE_Engine::InitializeApplication(Functor<RZE_Application* const> createGameCallback)
+void RZE_Engine::InitializeApplication()
 {
-	m_application = createGameCallback();
-	AssertNotNull(m_application);
-
 	m_application->SetWindow(m_window);
 	m_application->Initialize();
 	m_application->RegisterInputEvents(m_inputHandler);

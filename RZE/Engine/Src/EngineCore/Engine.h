@@ -23,6 +23,7 @@
 class RZE_Application;
 
 class RenderEngine;
+class SplashScreen;
 class Win32Window;
 
 class RZE_Engine
@@ -69,12 +70,20 @@ public:
 private:
 
 	void Init();
-	void PostInit(Functor<RZE_Application* const>& createApplicationCallback);
+	void PostInit();
+	// Ticks async operations, with no frames, until the application is ready to show (RZE_Application::IsReadyToShow)
+	void WaitForStartupLoading();
+	// Draws the first frames while the window is still cloaked, and waits for the last to be presented, so it shows
+	// finished rather than blank or half built
+	void DrawFirstFrames();
 
 	// Reads [FrameSettings] and the -vsync, -maxfps and -uifps arguments
 	void InitializeFramePacing();
 	// Top of each frame, once the wait for it is over: the frame's start time and delta time
 	void BeginFrame(double now);
+	// A frame's work, from input to handing it to the renderer, for the main loop and DrawFirstFrames. Returns how long
+	// the update took in milliseconds, for the frame time capture.
+	double RunFrame(double frameStart);
 	// After the frame is handed to the renderer: waits until the next frame is due
 	void WaitForNextFrame();
 
@@ -94,10 +103,16 @@ private:
 	void RegisterWindowEvents();
 
 	void LoadEngineConfig();
+	// Engine.ini's LaunchMonitor, or -launchMonitor's
+	int GetLaunchMonitor();
+	// Shows what start-up is doing on the splash screen
+	void SetStartupStatus(const std::string& status);
+	// With progress from 0 to 1
+	void SetStartupStatus(const std::string& status, float progress);
 	void CreateAndInitializeWindow();
 	void CreateAndInitializeRenderer();
 
-	void InitializeApplication(Functor<RZE_Application* const> createGameCallback);
+	void InitializeApplication();
 
 private:
 	// Never deleted. ImGui's context is destroyed after the application's ShutDown, and saves imgui.ini through what the
@@ -106,6 +121,9 @@ private:
 	GameScene* m_activeScene;
 
 	Win32Window* m_window;
+	// From once Engine.ini is loaded until start-up is done, if the application has a splash screen
+	// (RZE_Application::GetSplashScreenImage)
+	std::unique_ptr<SplashScreen> m_splashScreen;
 
 	ResourceHandler m_resourceHandler;
 	EventHandler m_eventHandler;

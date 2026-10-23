@@ -14,6 +14,7 @@
 #include <Utils/Conversions.h>
 #include <Utils/DebugUtils/Debug.h>
 
+#include <dwmapi.h>
 #include <stdlib.h>
 
 namespace
@@ -145,6 +146,10 @@ void Win32Window::Create(const WindowCreationParams& creationProtocol)
 
 		// So WindowProc can reach this window's state
 		SetWindowLongPtr(m_osWindowHandleData.windowHandle, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+
+		// Until Reveal. Unlike a hidden window, a cloaked one can be shown and maximized, and has its real size.
+		const BOOL isCloaked = TRUE;
+		DwmSetWindowAttribute(m_osWindowHandleData.windowHandle, DWMWA_CLOAK, &isCloaked, sizeof(isCloaked));
 
 		m_osWindowHandleData.pixelFormatDesc =
 		{
@@ -406,6 +411,17 @@ void Win32Window::CompileWindowMessages(EventHandler& eventHandler)
 	{
 		ProcessWinProcMessage(sWindowMessageAdaptor.GetNextMessage(), eventHandler);
 	}
+}
+
+void Win32Window::Reveal()
+{
+	const BOOL isCloaked = FALSE;
+	DwmSetWindowAttribute(m_osWindowHandleData.windowHandle, DWMWA_CLOAK, &isCloaked, sizeof(isCloaked));
+}
+
+void Win32Window::Focus()
+{
+	SetForegroundWindow(m_osWindowHandleData.windowHandle);
 }
 
 void Win32Window::Show()

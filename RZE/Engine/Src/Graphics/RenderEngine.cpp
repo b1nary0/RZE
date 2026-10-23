@@ -59,6 +59,12 @@ void RenderEngine::Finish()
 	Rendering::Renderer::DevicePresent();
 }
 
+void RenderEngine::Submit()
+{
+	OPTICK_EVENT();
+	Rendering::Renderer::Submit();
+}
+
 void RenderEngine::Shutdown()
 {
 	Rendering::Renderer::Shutdown();

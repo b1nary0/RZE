@@ -32,6 +32,10 @@ namespace Editor
 		void OnWindowResize(const Vector2D& newSize) override;
 		// Asks about unsaved changes first (UnsavedChangesPrompt), which exits once they're dealt with
 		bool OnCloseRequested() override;
+		// The logo
+		Filepath GetSplashScreenImage() const override;
+		// Once the start scene has loaded
+		bool IsReadyToShow() const override;
 
 	protected:
 		void CreateRenderTarget(const Vector2D& dimensions) override;

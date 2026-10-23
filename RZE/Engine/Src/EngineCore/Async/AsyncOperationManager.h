@@ -69,6 +69,8 @@ public:
 	// Main-thread time and GPU upload allowance shared by the foreground operations each frame. Background operations
 	// get k_backgroundFrameBudgetMS and a share of the uploads on top.
 	void SetFrameBudget(double timeBudgetMS, size_t uploadBudgetBytes);
+	double GetFrameBudgetMS() const { return m_frameBudgetMS; }
+	size_t GetUploadBudgetBytes() const { return m_uploadBudgetBytes; }
 
 private:
 	// The render command arena and uploads left for this frame, less what idle ticks before it used

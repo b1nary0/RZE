@@ -195,6 +195,16 @@ namespace Editor
 		ImGui::PopFont();
 	}
 
+	Filepath EditorApp::GetSplashScreenImage() const
+	{
+		return Filepath("logo.png");
+	}
+
+	bool EditorApp::IsReadyToShow() const
+	{
+		return !m_context.GetSceneDocument().IsLoading();
+	}
+
 	bool EditorApp::OnCloseRequested()
 	{
 		if (!m_context.GetSceneDocument().IsModified())

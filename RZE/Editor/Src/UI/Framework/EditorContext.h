@@ -81,6 +81,7 @@ namespace Editor
 		PanelManager& GetPanels() { return m_panels; }
 
 		SceneDocument& GetSceneDocument() { return m_sceneDocument; }
+		const SceneDocument& GetSceneDocument() const { return m_sceneDocument; }
 		GameBuilder& GetGameBuilder() { return m_gameBuilder; }
 		GameObjectClipboard& GetClipboard() { return m_clipboard; }
 		// Renders scene and mesh thumbnails in the background

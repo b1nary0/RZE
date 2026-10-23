@@ -37,6 +37,8 @@ public:
 	void Render(const char* frameName);
 	// Finish() does all the work that the main render phase needs including device present
 	void Finish();
+	// Hands what's been recorded (e.g. uploads) to the render thread without rendering or presenting a frame
+	void Submit();
 	void Shutdown();
 
 	// Presents on every vertical blank, or at once (tearing where allowed)
