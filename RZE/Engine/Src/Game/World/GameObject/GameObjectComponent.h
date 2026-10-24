@@ -46,11 +46,6 @@ namespace GameObjectComponentRegistry
 	// #TODO This should only really be used by load code.
 	const ComponentNameIDMap& GetAllComponentReflectData();
 
-	// #TODO(LegacyLights) Temporary, until every scene is saved with LightComponent: a name the type was saved under
-	// before it was renamed, so loading still finds data saved under it. Null if the type has none.
-	void RegisterLegacyName(GameObjectComponentID id, const char* legacyName);
-	const char* GetLegacyName(GameObjectComponentID id);
-
 	// Reports the resources a component will load when deserialized from componentData, so that scene
 	// loading can preload them off the main thread. Gatherers are called from worker threads: they must only
 	// read componentData and write to outDependencies.

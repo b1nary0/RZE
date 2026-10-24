@@ -89,9 +89,7 @@ void LightComponent::Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>&
 
 void LightComponent::Deserialize(const rapidjson::Value& data)
 {
-	// #TODO(LegacyLights) Only DirectionalLightComponent data has no type, so a missing one means directional. Goes
-	// once every scene is saved as LightComponent; a missing type is then the default, a point light.
-	m_lightType = ELightType::Directional;
+	// Without a type (or with one it doesn't know), it stays what a new light is
 	if (data.HasMember("Type"))
 	{
 		const char* const typeName = data["Type"].GetString();

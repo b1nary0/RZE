@@ -102,9 +102,6 @@ void RZE_Application::RegisterEngineComponents()
 	REGISTER_GAMEOBJECTCOMPONENT(LightComponent);
 	REGISTER_GAMEOBJECTCOMPONENT(GifChatComponent);
 
-	// #TODO(LegacyLights) Scenes saved before lights had types still have their sun under its old name
-	GameObjectComponentRegistry::RegisterLegacyName(LightComponent::GetID(), "DirectionalLightComponent");
-
 	// Lets async scene loading preload these components' resources on worker threads.
 	GameObjectComponentRegistry::SetResourceDependencyGatherer(RenderComponent::GetID(), &RenderComponent::GatherResourceDependencies);
 }

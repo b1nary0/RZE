@@ -48,7 +48,9 @@
                         25.0
                     ]
                 },
-                "DirectionalLightComponent": {
+                "LightComponent": {
+                    "Type": "Directional",
+                    "Range": 10.0,
                     "LightStrength": 2.0,
                     "LightColour": [
                         1.0,

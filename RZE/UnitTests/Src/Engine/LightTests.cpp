@@ -79,13 +79,13 @@ TEST_CASE("A light component keeps its type, range, strength and colour through 
 	CHECK(loaded.GetLightColour().Z() == doctest::Approx(0.75f));
 }
 
-TEST_CASE_FIXTURE(LightScene, "A light saved as a DirectionalLightComponent loads as a directional light")
+TEST_CASE_FIXTURE(LightScene, "A light saved without a type loads as a point light, like a new one")
 {
-	GameObjectPtr object = Load(R"("DirectionalLightComponent": { "LightStrength": 0.5, "LightColour": [1.0, 1.0, 1.0] })");
+	GameObjectPtr object = Load(R"("LightComponent": { "LightStrength": 0.5, "LightColour": [1.0, 1.0, 1.0] })");
 
 	GameObjectComponentPtr<LightComponent> light = object->GetComponent<LightComponent>();
 	REQUIRE(light != nullptr);
-	CHECK(light->GetLightType() == ELightType::Directional);
+	CHECK(light->GetLightType() == ELightType::Point);
 	CHECK(light->GetLightStrength() == doctest::Approx(0.5f));
 }
 
