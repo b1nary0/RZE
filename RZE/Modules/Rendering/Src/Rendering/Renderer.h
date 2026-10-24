@@ -95,14 +95,16 @@ namespace Rendering
 		static void ReleaseVertexShader(VertexShaderHandle& shaderHandle);
 		static void ReleasePixelShader(PixelShaderHandle& shaderHandle);
 
+		// Every slice of a texture array
 		static void ClearDepthStencilBuffer(const TextureBuffer2DHandle& buffer);
 
 	public:
 		// Unbinds every colour and depth target, e.g. so a target can be read from next
 		static void ClearRenderTargets();
 		static void SetRenderTargetBackBuffer();
-		// Binds only a depth buffer (no colour target), e.g. for shadow map rendering
-		static void SetDepthTarget(const TextureBuffer2DHandle& depthTexture);
+		// Binds only a depth buffer (no colour target), e.g. for shadow map rendering. slice picks one slice of a
+		// texture array, e.g. a cube map face (GFXTextureBufferParams::ArraySize); 0 for a single texture.
+		static void SetDepthTarget(const TextureBuffer2DHandle& depthTexture, U32 slice = 0);
 		// Binds a single colour texture, optionally with a depth buffer
 		static void SetColourTarget(const RenderTargetHandle& colourTarget);
 		static void SetColourTarget(const RenderTargetHandle& colourTarget, const TextureBuffer2DHandle& depthTexture);

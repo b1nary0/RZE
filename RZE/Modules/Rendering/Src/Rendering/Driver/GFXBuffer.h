@@ -27,10 +27,15 @@ namespace Rendering
 		U32 MostDetailedMip;
 		// Ignored for depth textures
 		ETextureFormat Format;
+		// How many slices: 0 or 1 for a single texture. A cube map has 6 per cube, in ECubeFace order
+		// (Utils/Math/CubeMap.h), so more than 6 makes a cube array. Arrays can't be multisampled or made with texels.
+		U32 ArraySize;
 		//U32 Usage;
 		bool bIsShaderResource;
 		bool bIsRenderTarget;
 		bool bIsDepthTexture;
+		// Samples as a TextureCube (or TextureCubeArray) rather than a Texture2D(Array)
+		bool bIsCubeMap;
 	};
 
 	class IVertexBuffer

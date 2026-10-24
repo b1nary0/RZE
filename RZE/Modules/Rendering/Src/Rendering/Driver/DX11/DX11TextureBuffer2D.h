@@ -2,6 +2,8 @@
 
 #include <Rendering/Driver/GFXBuffer.h>
 
+#include <vector>
+
 struct ID3D11SamplerState;
 struct ID3D11Texture2D;
 struct ID3D11ShaderResourceView;
@@ -30,7 +32,10 @@ namespace Rendering
 		void SetDevice(DX11Device* device);
 		ID3D11ShaderResourceView& GetResourceView();
 		ID3D11RenderTargetView& GetTargetView();
+		// Every slice of a texture array (e.g. for clearing); the texture itself for a single one
 		ID3D11DepthStencilView& GetDepthView();
+		// One slice, to render depth into it alone; 0 for a single texture
+		ID3D11DepthStencilView& GetDepthSliceView(U32 slice);
 		ID3D11SamplerState& GetSamplerState();
 
 		// #TODO
@@ -47,6 +52,8 @@ namespace Rendering
 		ID3D11ShaderResourceView* m_SRV = nullptr;
 		ID3D11RenderTargetView* m_RTV = nullptr;
 		ID3D11DepthStencilView* m_DSV = nullptr;
+		// A depth texture array's per-slice views; empty for a single texture, whose m_DSV is its one slice
+		std::vector<ID3D11DepthStencilView*> m_sliceDSVs;
 
 		bool bIsDepthTexture { false };
 	};

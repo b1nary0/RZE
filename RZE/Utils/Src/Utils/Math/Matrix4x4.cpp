@@ -51,6 +51,11 @@ Matrix4x4 Matrix4x4::CreateViewMatrix(const Vector3D& eyePos, const Vector3D& ce
 	return Matrix4x4(glm::lookAt(eyePos.GetInternalVec(), centerPos.GetInternalVec(), upDir.GetInternalVec()));
 }
 
+Matrix4x4 Matrix4x4::CreateCubeFaceView(const Vector3D& position, ECubeFace face)
+{
+	return CreateViewMatrix(position, position + CubeMap::GetFaceForward(face), CubeMap::GetFaceUp(face));
+}
+
 Matrix4x4 Matrix4x4::CreatePerspectiveMatrix(const float fovYDegrees, const float aspectRatio, const float nearCull, const float farCull)
 {
 	return Matrix4x4(glm::perspective(fovYDegrees * MathUtils::ToRadians, aspectRatio, nearCull, farCull));

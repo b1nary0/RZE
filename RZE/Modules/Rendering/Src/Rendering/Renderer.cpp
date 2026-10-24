@@ -347,10 +347,11 @@ namespace Rendering
 		m_renderThread.PushCommand(command);
 	}
 
-	void Renderer::SetDepthTarget(const TextureBuffer2DHandle& depthTexture)
+	void Renderer::SetDepthTarget(const TextureBuffer2DHandle& depthTexture, U32 slice)
 	{
 		RenderCommand_SetDepthTarget* command = MemArena::AllocType<RenderCommand_SetDepthTarget>();
 		command->depthTexture = depthTexture;
+		command->slice = slice;
 
 		m_renderThread.PushCommand(command);
 	}

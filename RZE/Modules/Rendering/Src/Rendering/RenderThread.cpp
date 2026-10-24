@@ -402,7 +402,7 @@ namespace Rendering
 				DX11TextureBuffer2D* depthTexturePtr = static_cast<DX11TextureBuffer2D*>(cmd->depthTexture.m_buffer.get());
 
 				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
-				deviceContext.OMSetRenderTargets(0, nullptr, &depthTexturePtr->GetDepthView());
+				deviceContext.OMSetRenderTargets(0, nullptr, &depthTexturePtr->GetDepthSliceView(cmd->slice));
 
 				break;
 			}

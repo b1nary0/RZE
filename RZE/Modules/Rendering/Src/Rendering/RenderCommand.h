@@ -251,6 +251,8 @@ namespace Rendering
 		RenderCommand_SetDepthTarget() { type = RenderCommandType::SetDepthTarget; }
 
 		TextureBuffer2DHandle depthTexture;
+		// Which slice of a texture array; 0 for a single texture
+		U32 slice = 0;
 	};
 
 	struct RenderCommand_SetColourTarget : RenderCommand

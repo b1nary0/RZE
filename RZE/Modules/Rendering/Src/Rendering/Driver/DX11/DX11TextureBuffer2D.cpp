@@ -34,6 +34,96 @@ namespace Rendering
 				object = nullptr;
 			}
 		}
+
+		U32 GetArraySize(const GFXTextureBufferParams& params)
+		{
+			return params.ArraySize > 1 ? params.ArraySize : 1;
+		}
+
+		// Reads the whole texture, as the kind of texture the params make
+		D3D11_SHADER_RESOURCE_VIEW_DESC MakeResourceViewDesc(DXGI_FORMAT format, const GFXTextureBufferParams& params)
+		{
+			const U32 arraySize = GetArraySize(params);
+			const UINT mipLevels = (params.MipLevels == 0) ? -1 : params.MipLevels;
+
+			D3D11_SHADER_RESOURCE_VIEW_DESC desc;
+			ZeroMemory(&desc, sizeof(desc));
+			desc.Format = format;
+
+			if (params.bIsCubeMap && arraySize > 6)
+			{
+				desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBEARRAY;
+				desc.TextureCubeArray.MostDetailedMip = params.MostDetailedMip;
+				desc.TextureCubeArray.MipLevels = mipLevels;
+				desc.TextureCubeArray.First2DArrayFace = 0;
+				desc.TextureCubeArray.NumCubes = arraySize / 6;
+			}
+			else if (params.bIsCubeMap)
+			{
+				desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
+				desc.TextureCube.MostDetailedMip = params.MostDetailedMip;
+				desc.TextureCube.MipLevels = mipLevels;
+			}
+			else if (arraySize > 1)
+			{
+				desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+				desc.Texture2DArray.MostDetailedMip = params.MostDetailedMip;
+				desc.Texture2DArray.MipLevels = mipLevels;
+				desc.Texture2DArray.FirstArraySlice = 0;
+				desc.Texture2DArray.ArraySize = arraySize;
+			}
+			else
+			{
+				desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+				desc.Texture2D.MostDetailedMip = params.MostDetailedMip;
+				desc.Texture2D.MipLevels = mipLevels;
+			}
+			return desc;
+		}
+
+		// Writes sliceCount slices from firstSlice; a single texture (arraySize 1) has the plain 2D view
+		D3D11_DEPTH_STENCIL_VIEW_DESC MakeDepthViewDesc(U32 arraySize, U32 firstSlice, U32 sliceCount)
+		{
+			D3D11_DEPTH_STENCIL_VIEW_DESC desc;
+			ZeroMemory(&desc, sizeof(desc));
+			desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+
+			if (arraySize > 1)
+			{
+				desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+				desc.Texture2DArray.MipSlice = 0;
+				desc.Texture2DArray.FirstArraySlice = firstSlice;
+				desc.Texture2DArray.ArraySize = sliceCount;
+			}
+			else
+			{
+				desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+				desc.Texture2D.MipSlice = 0;
+			}
+			return desc;
+		}
+
+		// As MakeDepthViewDesc, for colour
+		D3D11_RENDER_TARGET_VIEW_DESC MakeTargetViewDesc(DXGI_FORMAT format, U32 arraySize)
+		{
+			D3D11_RENDER_TARGET_VIEW_DESC desc;
+			ZeroMemory(&desc, sizeof(desc));
+			desc.Format = format;
+
+			if (arraySize > 1)
+			{
+				desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
+				desc.Texture2DArray.MipSlice = 0;
+				desc.Texture2DArray.FirstArraySlice = 0;
+				desc.Texture2DArray.ArraySize = arraySize;
+			}
+			else
+			{
+				desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+				desc.Texture2D.MipSlice = 0;
+			}
+			return desc;
+		}
 	}
 
 	DX11TextureBuffer2D::~DX11TextureBuffer2D()
@@ -54,6 +144,10 @@ namespace Rendering
 		sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 		m_device->GetHardwareDevice().CreateSamplerState(&sampDesc, &m_samplerState);
 
+		const U32 arraySize = GetArraySize(params);
+		AssertMsg(!params.bIsCubeMap || arraySize % 6 == 0, "A cube map has 6 slices per cube");
+		AssertMsg(arraySize == 1 || params.SampleCount <= 1, "Texture arrays can't be multisampled");
+
 		// #TODO
 		// lol get rid of this shit
 		if (params.bIsDepthTexture)
@@ -66,35 +160,38 @@ namespace Rendering
 			textureDesc.Width = params.Width;
 			textureDesc.Height = params.Height;
 			textureDesc.MipLevels = 1;
-			textureDesc.ArraySize = 1;
+			textureDesc.ArraySize = arraySize;
 			textureDesc.Format = (params.bIsShaderResource) ? DXGI_FORMAT_R24G8_TYPELESS : DXGI_FORMAT_D24_UNORM_S8_UINT;
 			textureDesc.SampleDesc.Count = 1;
 			textureDesc.SampleDesc.Quality = 0;
 			textureDesc.Usage = D3D11_USAGE_DEFAULT;
 			textureDesc.BindFlags = (params.bIsShaderResource) ? D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE : D3D11_BIND_DEPTH_STENCIL;
 			textureDesc.CPUAccessFlags = 0;
-			textureDesc.MiscFlags = 0;
+			textureDesc.MiscFlags = params.bIsCubeMap ? D3D11_RESOURCE_MISC_TEXTURECUBE : 0;
 
 			HRESULT hr = m_device->GetHardwareDevice().CreateTexture2D(&textureDesc, NULL, &m_resource);
 			AssertExpr(hr == S_OK);
 
-			D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
-			ZeroMemory(&depthStencilViewDesc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
-			depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-			depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-			depthStencilViewDesc.Texture2D.MipSlice = 0;
+			// Every slice, for clearing them all at once
+			const D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc = MakeDepthViewDesc(arraySize, 0, arraySize);
 			hr = m_device->GetHardwareDevice().CreateDepthStencilView(m_resource, &depthStencilViewDesc, &m_DSV);
 			AssertExpr(hr == S_OK);
 
+			// One slice each, for rendering into them one at a time (e.g. a cube's faces)
+			if (arraySize > 1)
+			{
+				m_sliceDSVs.resize(arraySize, nullptr);
+				for (U32 slice = 0; slice < arraySize; ++slice)
+				{
+					const D3D11_DEPTH_STENCIL_VIEW_DESC sliceViewDesc = MakeDepthViewDesc(arraySize, slice, 1);
+					hr = m_device->GetHardwareDevice().CreateDepthStencilView(m_resource, &sliceViewDesc, &m_sliceDSVs[slice]);
+					AssertExpr(hr == S_OK);
+				}
+			}
+
 			if (params.bIsShaderResource)
 			{
-				D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
-				ZeroMemory(&srvDesc, sizeof(srvDesc));
-				srvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
-				srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-				srvDesc.Texture2D.MostDetailedMip = params.MostDetailedMip;
-				srvDesc.Texture2D.MipLevels = (params.MipLevels == 0) ? -1 : params.MipLevels;
-
+				const D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = MakeResourceViewDesc(DXGI_FORMAT_R24_UNORM_X8_TYPELESS, params);
 				hr = m_device->GetHardwareDevice().CreateShaderResourceView(m_resource, &srvDesc, &m_SRV);
 				AssertExpr(hr == S_OK);
 			}
@@ -107,7 +204,7 @@ namespace Rendering
 			textureDesc.Width = params.Width;
 			textureDesc.Height = params.Height;
 			textureDesc.MipLevels = params.MipLevels;
-			textureDesc.ArraySize = 1;
+			textureDesc.ArraySize = arraySize;
 			textureDesc.Format = ConvertToDXGIFormat(params.Format);
 			textureDesc.SampleDesc.Count = params.SampleCount;
 			textureDesc.SampleDesc.Quality = params.SampleQuality;
@@ -122,25 +219,19 @@ namespace Rendering
 
 			textureDesc.BindFlags = bindFlags;
 			textureDesc.CPUAccessFlags = 0;
-			textureDesc.MiscFlags = canGenerateMips ? D3D11_RESOURCE_MISC_GENERATE_MIPS : 0;
+			textureDesc.MiscFlags = (canGenerateMips ? D3D11_RESOURCE_MISC_GENERATE_MIPS : 0)
+				| (params.bIsCubeMap ? D3D11_RESOURCE_MISC_TEXTURECUBE : 0);
 
-			D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
-			ZeroMemory(&srvDesc, sizeof(srvDesc));
-			srvDesc.Format = textureDesc.Format;
-			srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-			srvDesc.Texture2D.MostDetailedMip = params.MostDetailedMip;
-			srvDesc.Texture2D.MipLevels = (params.MipLevels == 0) ? -1 : params.MipLevels;
-
-			D3D11_RENDER_TARGET_VIEW_DESC rtvDesc;
-			rtvDesc.Format = textureDesc.Format;
-			rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-			rtvDesc.Texture2D.MipSlice = 0;
+			const D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = MakeResourceViewDesc(textureDesc.Format, params);
+			const D3D11_RENDER_TARGET_VIEW_DESC rtvDesc = MakeTargetViewDesc(textureDesc.Format, arraySize);
 
 			HRESULT hr = m_device->GetHardwareDevice().CreateTexture2D(&textureDesc, NULL, &m_resource);
 			AssertExpr(hr == S_OK);
 
 			if (data != nullptr)
 			{
+				// Only the first slice would be filled
+				AssertMsg(arraySize == 1, "Texture arrays can't be made with texels");
 				// Row pitch below assumes 4 bytes per texel
 				AssertExpr(params.Format == ETextureFormat::RGBA8_UNORM);
 				U32 rowPitch = (32 * params.Width) / 8;
@@ -164,6 +255,11 @@ namespace Rendering
 		// Only what Allocate made: a depth texture has a depth view and no render target view, and a texture dropped
 		// before the render thread made it has nothing. Each view holds a reference to the texture, so all of them have
 		// to go for it to be freed.
+		for (ID3D11DepthStencilView*& sliceDSV : m_sliceDSVs)
+		{
+			ReleaseCOM(sliceDSV);
+		}
+		m_sliceDSVs.clear();
 		ReleaseCOM(m_DSV);
 		ReleaseCOM(m_RTV);
 		ReleaseCOM(m_SRV);
@@ -210,6 +306,20 @@ namespace Rendering
 	{
 		AssertNotNull(m_DSV);
 		return *m_DSV;
+	}
+
+	ID3D11DepthStencilView& DX11TextureBuffer2D::GetDepthSliceView(U32 slice)
+	{
+		// A single texture's one slice is the whole texture
+		if (m_sliceDSVs.empty())
+		{
+			AssertExpr(slice == 0);
+			return GetDepthView();
+		}
+
+		AssertExpr(slice < m_sliceDSVs.size());
+		AssertNotNull(m_sliceDSVs[slice]);
+		return *m_sliceDSVs[slice];
 	}
 
 	ID3D11SamplerState& DX11TextureBuffer2D::GetSamplerState()
