@@ -44,13 +44,31 @@ cbuffer LightBuffer : register(b2)
 	uint  LightCount;
 };
 
+// Mirrors ShadowRenderStage::k_maxShadowedPointLights (ShadowRenderStage.h)
+#define MAX_SHADOWED_POINT_LIGHTS 8
+
+// Mirrors ShadowRenderStage::PointShadowLayout (ShadowRenderStage.h): how to read one point light's shadow cube
+struct PointShadow
+{
+	// The depth stored for something this far along a cube face's forward is
+	// DepthAtInfinity + DepthDistanceScale / distance
+	float DepthAtInfinity;
+	float DepthDistanceScale;
+	float NormalOffsetPerMetre; // World units to push the lookup along the surface normal, per metre from the light
+	float _Pad;
+};
+
 // Mirrors ShadowRenderStage::ShadowBufferLayout (ShadowRenderStage.h)
 cbuffer ShadowBuffer : register(b3)
 {
+	// The directional light's
 	float4x4 LightViewProjection;
 	float ShadowTexelSize;    // 1 / shadow map resolution
 	float ShadowNormalOffset; // World units to push the lookup along the surface normal
 	float HasShadows;         // 0 when there is no light to cast from
+	float PointShadowTexelSize; // 1 / a point light's cube face resolution
+	// By a point light's ShadowIndex
+	PointShadow PointShadows[MAX_SHADOWED_POINT_LIGHTS];
 };
 
 // Mirrors ForwardRenderStage::ViewLightingLayout (ForwardRenderStage.h)
@@ -67,6 +85,8 @@ Texture2D OpacityMap  : register(t3); // Cutout mask in .r (or .a, see OpacityMa
 Texture2D HeightMap   : register(t4); // Grayscale height in .r; only valid when HasHeightMap is set
 
 Texture2D ShadowMap   : register(t5); // Bound by ForwardRenderStage
+// A cube per shadowed point light, by its ShadowIndex; sample with ToCubeSampleDirection (Lighting.hlsli)
+TextureCubeArray PointShadowCubes : register(t6); // Bound by ForwardRenderStage
 
 SamplerState LinearSampler : register(s0);
 SamplerComparisonState ShadowSampler : register(s1); // LESS_EQUAL compare, border = lit (DX11Device)

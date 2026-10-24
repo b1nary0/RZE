@@ -18,11 +18,13 @@
 
 namespace
 {
-	// Must match LightBuffer / ShadowBuffer / ViewLightingBuffer / ShadowMap registers in Common/PixelResources.hlsli
+	// Must match LightBuffer / ShadowBuffer / ViewLightingBuffer / ShadowMap / PointShadowCubes registers in
+	// Common/PixelResources.hlsli
 	constexpr U32 k_lightBufferSlot = 2;
 	constexpr U32 k_shadowBufferSlot = 3;
 	constexpr U32 k_viewLightingBufferSlot = 4;
 	constexpr U32 k_shadowMapSlot = 5;
+	constexpr U32 k_pointShadowCubesSlot = 6;
 }
 
 void ForwardRenderStage::Initialize()
@@ -84,6 +86,7 @@ void ForwardRenderStage::Render(RenderContext& context)
 
 	Rendering::Renderer::SetConstantBufferPS(sceneLightingData.ShadowBuffer, k_shadowBufferSlot);
 	Rendering::Renderer::SetTextureResource(sceneLightingData.DirectionalShadowMap, k_shadowMapSlot);
+	Rendering::Renderer::SetTextureResource(sceneLightingData.PointShadowCubes, k_pointShadowCubesSlot);
 
 	// The same for every draw: bound once, and only the world matrix buffer's contents change per object
 	Rendering::Renderer::SetConstantBufferPS(sceneLightingData.LightBuffer, k_lightBufferSlot);
@@ -159,8 +162,9 @@ void ForwardRenderStage::Render(RenderContext& context)
 		Rendering::Renderer::SetDepthState(Rendering::EDepthState::ReadWrite);
 	}
 
-	// The shadow map can't stay bound as a shader input while the next frame renders depth into it
+	// The shadow maps can't stay bound as shader inputs while the next frame renders depth into them
 	Rendering::Renderer::UnsetTextureResource(k_shadowMapSlot);
+	Rendering::Renderer::UnsetTextureResource(k_pointShadowCubesSlot);
 
 	m_sceneColourOutput.Publish(context, sceneColourData);
 

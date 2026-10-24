@@ -16,4 +16,6 @@ struct SceneLightingData : RenderStageData<SceneLightingData>
 	// ShadowRenderStage::ShadowBufferLayout
 	Rendering::ConstantBufferHandle ShadowBuffer;
 	Rendering::TextureBuffer2DHandle DirectionalShadowMap;
+	// A cube map array, a cube per shadowed point light (by its ShadowIndex)
+	Rendering::TextureBuffer2DHandle PointShadowCubes;
 };

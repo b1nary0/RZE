@@ -140,7 +140,7 @@ float3 ApplyHeightMap(float3 normal, float3 worldPos, float2 uv)
 // Shadows
 //
 // Fraction of the directional light reaching worldPos: 1 = fully lit, 0 = fully shadowed
-float SampleShadow(float3 worldPos, float3 vertexNormal)
+float SampleDirectionalShadow(float3 worldPos, float3 vertexNormal)
 {
 	if (HasShadows < 0.5f)
 	{
@@ -167,6 +167,48 @@ float SampleShadow(float3 worldPos, float3 vertexNormal)
 		}
 	}
 	return lit / 16.0f;
+}
+
+// The direction to sample a cube texture with to read what was rendered towards worldDirection. D3D's cube is
+// left-handed with +Z forward and ours is right-handed with -Z forward, so Z flips. Mirrors
+// CubeMap::ToSampleDirection (Utils/Math/CubeMap.h).
+float3 ToCubeSampleDirection(float3 worldDirection)
+{
+	return float3(worldDirection.xy, -worldDirection.z);
+}
+
+// Fraction of a shadowed point light reaching worldPos: 1 = fully lit, 0 = fully shadowed
+float SamplePointShadow(Light light, float3 worldPos, float3 vertexNormal)
+{
+	PointShadow shadow = PointShadows[light.ShadowIndex];
+
+	// Push the lookup off the surface so it doesn't shadow itself (acne), by more further out, where texels are bigger
+	float distanceToLight = length(worldPos - light.Position);
+	float3 fromLight = worldPos + vertexNormal * (shadow.NormalOffsetPerMetre * distanceToLight) - light.Position;
+
+	// Each face stores depth by distance along its own forward, which for the face a direction falls in is the
+	// direction's largest component
+	float3 absFromLight = abs(fromLight);
+	float faceDistance = max(absFromLight.x, max(absFromLight.y, absFromLight.z));
+	float depth = shadow.DepthAtInfinity + shadow.DepthDistanceScale / faceDistance;
+
+	// Four hardware-filtered (bilinear 2x2) comparisons around the direction, a texel and a half out across the face,
+	// for a soft edge. The cube's faces join seamlessly, so taps can cross onto the next face.
+	float3 direction = fromLight / faceDistance;
+	float3 side = normalize(cross(direction, abs(direction.y) < 0.99f ? float3(0.0f, 1.0f, 0.0f) : float3(1.0f, 0.0f, 0.0f)));
+	float3 up = cross(side, normalize(direction));
+	// A face is 2 across at a distance of 1 along its forward
+	float tapOffset = 1.5f * 2.0f * PointShadowTexelSize;
+
+	float lit = 0.0f;
+	[unroll]
+	for (int tap = 0; tap < 4; ++tap)
+	{
+		float2 offset = float2(tap & 1 ? 1.0f : -1.0f, tap & 2 ? 1.0f : -1.0f) * tapOffset;
+		float3 tapDirection = direction + side * offset.x + up * offset.y;
+		lit += PointShadowCubes.SampleCmpLevelZero(ShadowSampler, float4(ToCubeSampleDirection(tapDirection), light.ShadowIndex), depth);
+	}
+	return lit / 4.0f;
 }
 
 //
@@ -274,12 +316,19 @@ float3 DirectLighting(SurfaceData surface, float3 viewDir, float3 L, float shini
 float LightShadow(Light light, SurfaceData surface)
 {
 	// One return at the end: FXC warns of an uninitialized return value (X4000) for an early one here, since
-	// SampleShadow loops
+	// the sampling loops
 	float shadow = 1.0f;
-	// Only the directional light has a shadow map so far
-	if (light.Type == LIGHT_TYPE_DIRECTIONAL && light.ShadowIndex >= 0)
+	// Each type has its own kind of shadow map
+	if (light.ShadowIndex >= 0)
 	{
-		shadow = SampleShadow(surface.WorldPos, surface.VertexNormal);
+		if (light.Type == LIGHT_TYPE_POINT)
+		{
+			shadow = SamplePointShadow(light, surface.WorldPos, surface.VertexNormal);
+		}
+		else
+		{
+			shadow = SampleDirectionalShadow(surface.WorldPos, surface.VertexNormal);
+		}
 	}
 	return shadow;
 }
