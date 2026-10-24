@@ -7,7 +7,7 @@
 flowchart TD
     subgraph Game["Game objects (Engine/Src/Game)"]
         RC["RenderComponent"]
-        DL["DirectionalLightComponent"]
+        DL["LightComponent"]
         CAM["CameraComponent /<br/>EditorCameraComponent"]
     end
     SD["RenderScene<br/>one per GameScene: render objects,<br/>lights, debug lines, revision"]
@@ -16,7 +16,7 @@ flowchart TD
     LL["Rendering::Renderer<br/>(Modules/Rendering, render thread)"]
 
     RC -->|"CreateRenderObject / SetTransform"| SD
-    DL -->|"CreateLightObject / SetDirection"| SD
+    DL -->|"CreateLightObject / SetPosition, SetDirection"| SD
     CAM -->|"fills Camera each frame"| MV
     SD --> PL
     MV --> PL
@@ -31,17 +31,17 @@ A **`RenderScene`** (`Engine\Src\Graphics\RenderScene.h/.cpp`) is what one scene
 
 | Holds | Notes |
 |---|---|
-| Render objects, lights | `CreateRenderObject(staticMesh)` / `DestroyRenderObject`, `CreateLightObject()` / `DestroyLightObject`, `ClearObjects()` (render objects only) |
-| Debug lines | `DrawLine` / `DrawWireBox`, kept until `ClearDebugLines()`. `RenderEngine::Render` clears the main scene's once it has drawn them. |
-| `GetRevision()` | A cheap "did anything change?" counter. It goes up when a render object is added, removed, moved or given a new mesh, or when a light changes direction. `ShadowRenderStage` skips re-rendering the scene's shadow map when it hasn't changed. |
+| Render objects, lights | `CreateRenderObject(staticMesh)` / `DestroyRenderObject`, `CreateLightObject(type)` / `DestroyLightObject`, `ClearObjects()` (render objects only). `GetDirectionalLight()` is the first directional light, or null. |
+| Debug lines | `DrawLine` / `DrawWireBox` / `DrawWireSphere`, kept until `ClearDebugLines()`. `RenderEngine::Render` clears the main scene's once it has drawn them. |
+| `GetRevision()` | A cheap "did anything change?" counter. It goes up when a render object is added, removed, moved or given a new mesh, or when a light is added, removed, or changed in a way that moves its shadows: its type, a directional light's direction, a point light's position or range. Colour and strength don't count. `ShadowRenderStage` skips re-rendering the scene's shadow maps when it hasn't changed. |
 | `GetBounds()` | The box around every render object, kept until one is added, removed, moved or given a new mesh, then rebuilt from the objects' boxes when next asked. |
-| Persistent stage state | What stages keep for this scene across frames, whichever view renders it: today, **each scene's own shadow map**. `ReleaseStageState()` drops it; it's made again the next time the scene is rendered. |
+| Persistent stage state | What stages keep for this scene across frames, whichever view renders it: today, **each scene's own light buffer and shadow maps**. `ReleaseStageState()` drops them; they're made again the next time the scene is rendered. |
 
 ### Handles
 
 `CreateRenderObject` and `CreateLightObject` return a **`RenderObjectPtr`** / **`LightObjectPtr`** (`Graphics\GraphicsDefines.h`, one template, `RenderSceneObjectPtr`). Whoever made the object keeps the handle and destroys the object through it (`DestroyRenderObject(handle)` empties it).
 
-- **Move-only**, so each object has one holder (`RenderComponent`, `DirectionalLightComponent`). Code that only looks at an object borrows the holder's handle by reference, e.g. `RenderComponent::GetRenderObject()` returns `const RenderObjectPtr&`.
+- **Move-only**, so each object has one holder (`RenderComponent`, `LightComponent`). Code that only looks at an object borrows the holder's handle by reference, e.g. `RenderComponent::GetRenderObject()` returns `const RenderObjectPtr&`.
 - **Lifetime-checked**, like `GameObjectPtr`. Each object takes an ID that's never reused (`RenderSceneLifetime`, a `LiveIDSet` per kind), and a handle compares equal to `nullptr` once its object is gone, however it went: destroyed through the handle, `ClearObjects`, or the scene being destroyed. Debug builds assert if a dead handle is dereferenced, and destroying through a dead handle just empties it.
 
 `RenderEngine` doesn't own a scene. `SetMainScene(scene)` says which one the main view shows; `RZE_Engine` sets it to the active `GameScene`'s. `RenderEngine::DrawLine` / `DrawWireBox` draw into the main scene, for tools that draw over the main view (the editor's grid and gizmos).
@@ -58,7 +58,37 @@ A **`RenderScene`** (`Engine\Src\Graphics\RenderScene.h/.cpp`) is what one scene
 
 ### `LightObject`
 
-A directional light: `direction` (normalized, the way light travels), `colour` and `strength`, uploaded to a constant buffer (`PropertyBufferLayout`). The forward pass uses the first light. If the scene has none yet (e.g. while it's streaming in), it binds a zero-strength fallback light.
+A light of any type. It holds the data every type shares, and its **type** (`ELightType`) decides which of it is read and which path it takes through lighting and shadows:
+
+| | `Directional` | `Point` |
+|---|---|---|
+| Reads | `direction` (normalized, the way light travels) | `position`, `range` (metres to where it fades to nothing) |
+| Also reads | `colour` (sRGB), `strength` | `colour` (sRGB), `strength` |
+| Falloff | None: the same everywhere | Inverse square over distance as a fraction of the range, windowed to exactly 0 at the range (below) |
+| Shadows | The first one: a 2D map fitted around the scene | The first 8: a cube each, in a cube map array |
+
+It has **no GPU resources of its own**. `ShadowRenderStage` puts every light of a scene into one buffer each frame (see [Render-Stages.md](Render-Stages.md#shadowrenderstage)). `SetType` can change a light's type in place, which is how the inspector's Type drop-down works without remaking it. The `ELightType` values are what the shaders branch on (`LIGHT_TYPE_*`), so new types go at the end.
+
+```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+flowchart TD
+    LC["LightComponent<br/>Type, Colour, Strength, Range"]
+    LO["LightObject in the RenderScene<br/>type + shared data, no GPU resources"]
+    SRS(["ShadowRenderStage"])
+    SLD[/"SceneLightingData<br/>LightBuffer, ShadowBuffer,<br/>sun's map, point light cubes"/]
+    FRS(["ForwardRenderStage"])
+    SH["Lighting.hlsli: per light, the type picks<br/>direction, falloff and shadow lookup;<br/>the BRDF is shared"]
+
+    LC -->|"Update: position, direction from the transform"| LO
+    LO --> SRS
+    SRS -->|"lights every frame, maps on a revision change"| SLD
+    SLD --> FRS
+    FRS --> SH
+```
+
+**Point light falloff.** `strength × f(distance / range)`, with `f(x) = (1 − x⁴)² / (1 + 8x²)`: inverse square, but over the fraction of the range rather than metres, so a longer range reaches further instead of only moving where a physically faded light is cut off. Strength is the brightness right next to the light. `LightObject::CalculatePointFalloff` is the same function on the CPU, for the editor's gizmo; its constant (`k_pointFalloffSharpness`) mirrors `PointFalloffSharpness` in `Lighting.hlsli`.
+
+**Where a point light outshines the ambient light.** `LightObject::CalculateOutshinesAmbientRatio(strength, colour)` is the fraction of the range within which the light lights a surface facing it more than the ambient light does (the sky and ground halfway, as a wall gets them). It grows with strength, up to 1, and is 0 for a light dimmer than the ambient light even next to it. The editor draws it as the inner range sphere. The ambient colours (`k_ambientSky`, `k_ambientGround`) mirror `AmbientSky` and `AmbientGround` in `Lighting.hlsli`.
 
 ## Views
 
@@ -153,7 +183,7 @@ Nothing touches D3D11 on the game thread; every `Renderer::` call just queues a 
 | Lifetime | `Initialize(windowHandle)` (also adds the engine's stages), `Shutdown()`, `ReleaseRenderStages()` (must run before `ResourceHandler::ShutDown()`) |
 | Per frame | `Render(frameName)` (the main view, of the main scene), `Finish()`, `RenderSecondaryView(name, view, scene)` |
 | Scene | `SetMainScene(scene)` / `GetMainScene()`. Objects and lights are made in a [`RenderScene`](#scene-data). |
-| Debug drawing | Into the main scene: `DrawLine(start, end, colour, alpha = 1, fade = {})`, `DrawWireBox(box, transform, colour, alpha = 1)`. `alpha` makes lines semi-transparent; `fade` (`DebugLineFade { centre, start, end }`) fades a line out with each pixel's distance from `centre`, between the `start` and `end` radii (`end` = 0: no fade). The editor grid uses both. |
+| Debug drawing | Into the main scene: `DrawLine(start, end, colour, alpha = 1, fade = {})`, `DrawWireBox(box, transform, colour, alpha = 1)`, `DrawWireSphere(centre, radius, colour, alpha = 1, occludedAlpha = 0)` (three circles, one around each world axis). `alpha` makes lines semi-transparent; `fade` (`DebugLineFade { centre, start, end }`) fades a line out with each pixel's distance from `centre`, between the `start` and `end` radii (`end` = 0: no fade). The editor grid uses both. `occludedAlpha` (`DebugLine::occludedAlpha`) is how opaque a line's parts behind the scene are drawn, so e.g. a light's range still shows through the walls it passes behind; 0 hides them, as for every other line. |
 | Stages | `AddRenderStage<T>(args...)` (see [Render-Stages.md](Render-Stages.md)) |
 | Views & canvas | `GetMainView()`, `ResizeCanvas(size)`, `GetCanvasSize()` |
 
@@ -162,7 +192,8 @@ Both object containers erase with swap-and-pop (`ContainerUtils::VectorEraseBack
 ## Key files
 
 - `Engine\Src\Graphics\RenderEngine.h/.cpp` — `RenderEngine`
-- `Engine\Src\Graphics\RenderScene.h/.cpp` — `RenderScene`, `RenderObject`, `LightObject`
+- `Engine\Src\Graphics\RenderScene.h/.cpp` — `RenderScene`, `RenderObject`, `LightObject`, `ELightType`
+- `Engine\Src\Game\World\GameObjectComponents\LightComponent.h/.cpp` — the component that drives a `LightObject` ([Built-In-Components.md](../03-SceneAndGameObjects/Built-In-Components.md#lightcomponent))
 - `Engine\Src\Graphics\RenderView.h` — `RenderView`, `RenderCamera`, `RenderPickRequest`
 - `Engine\Src\Graphics\ViewCapture.h/.cpp`, `TextureFile.h/.cpp` — capturing a view to a PNG
 - `Utils\Src\Utils\Math\Frustum.h/.cpp` — the six-plane view frustum used for culling and marquee selection (see [Utils-Library-Reference.md](../06-Platform-And-Infrastructure/Utils-Library-Reference.md))

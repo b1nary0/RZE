@@ -7,6 +7,7 @@ All built-in components live under `Engine\Src\Game\World\GameObjectComponents\`
 Every `GameObject` created via `GameScene::CreateGameObject()` gets one automatically. Holds position/rotation/scale and maintains its own parent/child hierarchy (`AttachTo` / `DetachFromParent`), used to compute world transforms relative to a parent transform.
 - **The world matrix is worked out when it's read.** `GetWorldMatrix()` recomputes it from the parent's world matrix and `GetLocalMatrix()` only if it's out of date (`MarkDirty()`, which also marks every child), then keeps it. There's no per-frame `Update()`, so the matrix is right straight after a move, and in a scene that's never updated, such as a [`HeadlessScene`](Scene-And-GameObject-Model.md#headlessscene-a-scene-rendered-off-screen).
 - **Bounds:** moving a child tells its parent's `GameObject` that its hierarchy bounds have changed (`MarkHierarchyBoundsChanged`). A root moving changes nobody's extents, only where they're placed. See [Scene-And-GameObject-Model.md](Scene-And-GameObject-Model.md#bounds).
+- **Axes:** `GetForward()` and `GetUp()` are `WorldAxes::Forward()` (−Z) and `Up()` turned by its own rotation, normalized. Parents' rotations aren't included. `CameraComponent` aims along them, and a directional `LightComponent` shines along `−GetUp()`.
 
 ## `RenderComponent`
 
@@ -25,7 +26,7 @@ Bridges a GameObject to the rendering system. Holds a `StaticMeshInstance` (its 
 ## `CameraComponent`
 
 A scene camera: FOV (degrees), near/far clip (0.1 m / 1000 m in the shipped scenes) and exposure compensation (EV).
-- **Orientation comes from the owner's `TransformComponent` rotation**: −Z is forward, +Y is up. The Editor's rotate gizmo and the Rotation fields aim it; there's no separate look-at state.
+- **Orientation comes from the owner's `TransformComponent` rotation** (`TransformComponent::GetForward/GetUp`): −Z is forward, +Y is up. The Editor's rotate gizmo and the Rotation fields aim it; there's no separate look-at state.
 - When it's the scene's **main camera** ("Main Camera" in the inspector, saved as `"MainCamera"`), `Update()` writes its exposure compensation, and its `ClipSpace` (projection × view, 0..1 depth) and position, into `RZE().GetRenderEngine().GetMainView()`. The matrices are skipped while `GameScene::DoesMainCameraDriveView()` is false, as in the Editor, whose own camera drives the view. A scene can have any number of cameras; only one is main. See [Scene-And-GameObject-Model.md](Scene-And-GameObject-Model.md#the-main-camera).
 - `SetMainCamera(true)` makes it the main camera through `GameScene::SetMainCamera`, which clears the flag on the previous one; `SetMainCamera(false)` clears the role if it has it. The inspector property is `Exclusive`, so it can only be turned on (see [Object-Inspector-And-Properties.md](../07-Editor/Object-Inspector-And-Properties.md#metadata)). A pasted camera is never main.
 - Only the **active scene's** main camera drives the main view; a camera in another scene (for example a thumbnail's `HeadlessScene`) never does.
@@ -34,9 +35,13 @@ A scene camera: FOV (degrees), near/far clip (0.1 m / 1000 m in the shipped scen
 - Its inspector fields (Projection: Field Of View, Near Cull, Far Cull; Exposure: Compensation) go through `SetFOV`, `SetNearCull`, `SetFarCull` and `SetExposureCompensation`. `SetFOV` and `SetNearCull` assert the value is positive, so the inspector's ranges keep them above 0. An active camera rebuilds its matrices every `Update()`, and the preview builds its own each time it renders, so changes show straight away.
 - In the Editor, every scene camera shows a movie-camera icon and its frustum in the scene view.
 
-## `DirectionalLightComponent`
+## `LightComponent`
 
-Wraps a `LightObjectPtr` (strength + `Vector4D` colour, edited through `SetLightStrength` / `SetLightColour`). Creates the light object in its scene's `RenderScene` on `OnAddToScene()`, destroys it on `OnRemoveFromScene()`. Its **direction comes from the owner's transform rotation**; rotating it bumps the render scene's revision, so the shadow map re-renders. In the Editor it shows as a sun icon. See `LightObject` in [Engine-Graphics-Layer.md](../04-Rendering/Engine-Graphics-Layer.md).
+A light of any type (`ELightType`), picked from a drop-down: **Point** (the default, since most lights you add are) or **Directional**. Wraps a `LightObjectPtr` into its own scene's `RenderScene`, created on `OnAddToScene()` and destroyed on `OnRemoveFromScene()`. See [`LightObject`](../04-Rendering/Engine-Graphics-Layer.md#lightobject) for what each type does.
+- **`Update()` pushes everything every frame**: type, position (the transform's), direction (`−TransformComponent::GetUp()`, so a zero rotation is a straight-down sun), range, colour and strength. The light object's setters ignore unchanged values, and only changes that move its shadows bump the scene's revision. Changing the type changes the light in place.
+- **Inspector:** Type (drop-down), Colour (colour picker), Strength (0–100), and Range (0.1–100 m), which is greyed out unless the light is a point light (`EnabledIf`).
+- **Saving:** `"LightComponent": { "Type": "Point" | "Directional", "Range", "LightStrength", "LightColour": [r, g, b] }`. A missing or unknown type loads as a point light, like a new one. Scenes saved before lights had types used `"DirectionalLightComponent"`; every scene in the repo has been rewritten, and that name no longer loads.
+- **Editor:** a sun icon for a directional light, with a red line showing which way it shines; a bulb icon for a point light, with its range drawn as a pale yellow wire sphere and, inside it, an orange one out to where it stops outshining the ambient light (grows with strength). See [Editor-Panels.md](../07-Editor/Editor-Panels.md#sceneview-sceneviewpanel).
 
 ## `PlayerControllerComponent`
 
@@ -57,7 +62,7 @@ Documented in [07-Editor/Editor-Camera-And-Build-Launch.md](../07-Editor/Editor-
 | `TransformComponent` | `RZE_Application::RegisterEngineComponents()` | Yes | — (always present) |
 | `RenderComponent` | `RZE_Application::RegisterEngineComponents()` | Yes | `TransformComponent` (sibling), `RenderEngine`, `ResourceHandler` |
 | `CameraComponent` | `RZE_Application::RegisterEngineComponents()` | Yes | `TransformComponent` (orientation), `RenderEngine::GetMainView()`, `GameScene` (main camera) |
-| `DirectionalLightComponent` | `RZE_Application::RegisterEngineComponents()` | Yes | `RenderEngine` light objects |
+| `LightComponent` | `RZE_Application::RegisterEngineComponents()` | Yes | `TransformComponent` (position, direction), `RenderScene` light objects |
 | `PlayerControllerComponent` | not registered | No — attached at runtime | `InputHandler`, `TransformComponent` |
 | `GifChatComponent` | `RZE_Application::RegisterEngineComponents()` | Yes | — |
 | `EditorCameraComponent` | `Editor::EditorApp::Initialize()` | No — excluded via `SetIncludeInSave(false)` | `CameraComponent` (inheritance — buggy ID), `RenderEngine`, `InputHandler` |
@@ -67,7 +72,7 @@ Documented in [07-Editor/Editor-Camera-And-Build-Launch.md](../07-Editor/Editor-
 - `Engine\Src\Game\World\GameObjectComponents\TransformComponent.h/.cpp`
 - `Engine\Src\Game\World\GameObjectComponents\RenderComponent.h/.cpp`
 - `Engine\Src\Game\World\GameObjectComponents\CameraComponent.h/.cpp`
-- `Engine\Src\Game\World\GameObjectComponents\DirectionalLightComponent.h/.cpp`
+- `Engine\Src\Game\World\GameObjectComponents\LightComponent.h/.cpp`
 - `Engine\Src\Game\World\GameObjectComponents\PlayerControllerComponent.h/.cpp`
 - `Engine\Src\Game\World\GameObjectComponents\GifChatComponent.h/.cpp`
 - `Editor\Src\Game\World\GameObjectComponents\EditorCameraComponent.h/.cpp`

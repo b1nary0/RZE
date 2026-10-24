@@ -11,7 +11,7 @@ Rounded boxes are stages, and the parallelograms between them are the data contr
 ```mermaid
 %%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 flowchart TD
-    Shadow(["ShadowRenderStage"]) --> SMD[/"ShadowMapData<br/>shadow map + params"/]
+    Shadow(["ShadowRenderStage"]) --> SMD[/"SceneLightingData<br/>lights + shadow maps"/]
     SMD --> Forward(["ForwardRenderStage"])
     Forward --> SCD[/"SceneColourData<br/>HDR colour + depth"/]
     SCD --> Post(["PostProcessRenderStage"])
@@ -52,7 +52,7 @@ flowchart TD
 | Piece | File | What it is |
 |---|---|---|
 | `IRenderStage` | `Graphics/RenderStage.h` | A pass: `Initialize()`, `Setup(builder)` to declare its data, `Render(context)` to draw. The header has a step-by-step guide to writing one. |
-| Data contract | `Graphics/RenderData/*.h` | A small struct of handles and values deriving `RenderStageData<T>`, e.g. `ShadowMapData { ShadowMap, ShadowParams }`. One header each, so readers depend on the data, not on the stage that makes it. |
+| Data contract | `Graphics/RenderData/*.h` | A small struct of handles and values deriving `RenderStageData<T>`, e.g. `SceneLightingData { LightBuffer, ShadowBuffer, DirectionalShadowMap, PointShadowCubes }`. One header each, so readers depend on the data, not on the stage that makes it. |
 | Port | `Graphics/RenderPorts.h` | What `Setup()` hands back: `RenderInput<T>` (`Get`/`TryGet`), `RenderOutput<T>` (`Publish`), `RenderInOut<T>`. A stage can only touch data it declared. |
 | `RenderPipeline` | `Graphics/RenderPipeline.h/.cpp` | Owns the stages; compiles the declarations when stages change, then runs them in order for a view. |
 | `RenderView` | `Graphics/RenderView.h` | One point of view: camera, viewport size, target, lighting (`Scene` or `Uniform`), auto-exposure and exposure compensation, pick request, and two blackboards. See [Engine-Graphics-Layer.md](Engine-Graphics-Layer.md#views). |
@@ -89,14 +89,14 @@ Every render is for one `RenderView`. There are two kinds:
 | `MainOnly` stages | Run | Skipped (`PickRenderStage`, `ImGuiRenderStage`, `FinalRenderTargetStage`) |
 | Eye adaptation | Adapts smoothly over time | Exposes instantly |
 
-Because stage objects are shared by every view, anything that must carry over between frames *for one view* (like eye-adaptation history) goes in `context.Persistent()`, not in a stage member. Anything that belongs to *the scene*, whichever view draws it (like the shadow map), goes in `context.ScenePersistent()`.
+Because stage objects are shared by every view, anything that must carry over between frames *for one view* (like eye-adaptation history) goes in `context.Persistent()`, not in a stage member. Anything that belongs to *the scene*, whichever view draws it (like the shadow maps), goes in `context.ScenePersistent()`.
 
 ## The stages
 
 | Stage | Declares | Views | In one line |
 |---|---|---|---|
-| `ShadowRenderStage` | writes `ShadowMapData` | all | Renders the sun's shadow map, but only when the scene or light has changed. |
-| `ForwardRenderStage` | reads `ShadowMapData`, writes `SceneColourData` | all | Draws every visible object, lit, into an HDR target. |
+| `ShadowRenderStage` | writes `SceneLightingData` | all | Uploads the scene's lights, and renders their shadow maps when the scene or a light has changed. |
+| `ForwardRenderStage` | reads `SceneLightingData`, writes `SceneColourData` | all | Draws every visible object, lit, into an HDR target. |
 | `PostProcessRenderStage` | reads `SceneColourData`, writes `DisplayColourData` | all | Eye adaptation, ACES tonemapping, sRGB encode to 8-bit, FXAA. |
 | `PickRenderStage` | nothing | main | On a click or drop, finds the object under one pixel and the depth there. |
 | `DebugDrawRenderStage` | modifies `DisplayColourData` | all | Draws debug lines on top, after tonemapping. Not in Retail builds. |
@@ -107,18 +107,31 @@ The engine adds Shadow, Forward, PostProcess, Pick and (outside Retail) DebugDra
 
 ### `ShadowRenderStage`
 
-- A 4096² shadow map for the directional light **per scene**, kept in the scene's persistent state (`RenderScene`), so a thumbnail's scene and the editor's each have their own. It's **fitted around the bounds of every render object** as seen from the light. It doesn't follow the camera, so it never shimmers as the camera moves.
-- **Cached:** it only re-renders when the scene's revision (`RenderScene::GetRevision`) changes: an object added, removed, moved or re-meshed, or the light turned. On other frames it just republishes the existing map.
-- A view with `Uniform` lighting ignores the light, so it doesn't render the map for it (mesh thumbnails never render one).
-- Casters draw with `ERasterizerState::ShadowCaster` (no culling, so thin geometry still casts, plus slope-scaled depth bias). `Pixel_ShadowCaster.hlsl` clips cutout materials (leaves, chains), so they cast cut-out shadows.
+Turns the scene's lights into what shading reads. Everything it makes is kept **per scene**, in the scene's persistent state (`RenderScene`), so a thumbnail's scene and the editor's each have their own.
+
+- **The light buffer** (`LightBufferLayout`, `b2`): every light, up to `k_maxLights` (16), with its type, position, direction, range, colour, strength and `ShadowIndex` (which of its type's maps it casts into; −1 for none). Uploaded **every time it runs**, since colours and strengths change without changing the revision. Lights past 16 are left out.
+- **Which lights cast shadows:** the first directional light, and the first `k_maxShadowedPointLights` (8) point lights, in scene order. One helper (`ShadowAssigner`) decides it for both the light buffer and the shadow rendering, so the indices the shaders read are the maps that were rendered. Point lights past the 8th still light the scene; a warning is logged once.
+- **Each type has its own kind of map:**
+
+| Type | Map | Fitted to |
+|---|---|---|
+| Directional | One 4096² 2D depth map | The bounds of every render object as seen from the light. It doesn't follow the camera, so it never shimmers as the camera moves. |
+| Point | One cube of a depth cube array (8 cubes, 512² per face, about 48 MB) | Six 90° views from the light (`Matrix4x4::CreateCubeFaceView`), from 0.05 m out to its range, one slice each (`Renderer::SetDepthTarget(cubes, cube × 6 + face)`) |
+
+- **`ShadowBuffer`** (`b3`) says how to read them: the sun's view-projection, texel size and normal offset, and per point light the two numbers that turn a distance along a cube face into the depth stored there (`DepthAtInfinity + DepthDistanceScale / distance`, taken from the faces' projection matrix, so the shader uses the same convention that drew them) and its normal offset per metre.
+- **One way to draw casters:** every view, the sun's and each cube face, goes through `DrawCasters(scene, viewProjection)`, which skips objects and draws outside that view (`Frustum`), e.g. everything behind a cube face.
+- **Cached:** the maps only re-render when the scene's revision (`RenderScene::GetRevision`) changes: an object added, removed, moved or re-meshed, or a light added, removed, or moved in a way that moves its shadows. Then **every** map re-renders; per-light caching is future work. On other frames it just republishes the existing maps.
+- A view with `Uniform` lighting ignores the lights, so it doesn't render the maps for it (mesh thumbnails never render one).
+- Casters draw with `ERasterizerState::ShadowCaster` (no culling, so thin geometry still casts, plus slope-scaled depth bias), which suits the cube faces' perspective too. `Pixel_ShadowCaster.hlsl` clips cutout materials (leaves, chains), so they cast cut-out shadows.
 
 ### `ForwardRenderStage`
 
 - Draws into the view's HDR scene target (`RGBA16_FLOAT`, alpha 0 marks the background) with depth.
 - **Frustum culling** at two levels: whole objects first, then each submesh, using the world-space bounds every `RenderObject` keeps (`Frustum`, in `Utils/Math/Frustum.h`).
-- Per-view constants (camera, light, shadow map, and the view's lighting in `ViewLightingBuffer`, `b4`) are bound once; per object only the world matrix changes. Pixel shaders are only re-bound when the next submesh uses a different one.
-- Shading lives in `Assets/Shaders/Common/Lighting.hlsli`: hemisphere ambient, the sun with soft shadows (`SampleShadow`), normal and height maps, and opacity masks.
-- With `Uniform` lighting, `ComputeLighting` skips the light and its shadows and lights the surface from an even white environment (`UniformAmbient`), diffuse and reflections alike. Faces are still shaded from 1 facing the camera to `UniformEdgeShade` (0.45) edge-on, as if lit from the camera, since even light alone turns untextured meshes into silhouettes.
+- Per-view constants (camera, the lights in `LightBuffer` `b2`, `ShadowBuffer` `b3`, the view's lighting in `ViewLightingBuffer` `b4`, the sun's shadow map `t5` and the point light cubes `t6`) are bound once; per object only the world matrix changes. Pixel shaders are only re-bound when the next submesh uses a different one. Both shadow textures are unbound after the pass, since the next frame may render into them.
+- Shading lives in `Assets/Shaders/Common/Lighting.hlsli`: hemisphere ambient, then for each light, its type picks the direction to it and its falloff (`LightAttenuation`) and its shadow lookup (`LightShadow`), while the diffuse and specular are shared (`DirectLighting`). Plus normal and height maps, and opacity masks.
+- **Shadow lookups by type:** `SampleDirectionalShadow` is a 4×4 grid of filtered comparisons in the sun's map. `SamplePointShadow` turns the surface's direction from the light into the depth to compare with (its largest component is its distance along the face it falls in), and averages four filtered comparisons slightly around that direction. Cube faces join seamlessly in hardware, so those can cross between faces. Cube sampling flips Z (`ToCubeSampleDirection`, see [CubeMap](../06-Platform-And-Infrastructure/Utils-Library-Reference.md)).
+- With `Uniform` lighting, `ComputeLighting` skips the lights and their shadows and lights the surface from an even white environment (`UniformAmbient`), diffuse and reflections alike. Faces are still shaded from 1 facing the camera to `UniformEdgeShade` (0.45) edge-on, as if lit from the camera, since even light alone turns untextured meshes into silhouettes.
 
 ### `PostProcessRenderStage`
 
@@ -190,7 +203,7 @@ sequenceDiagram
 
 ### `DebugDrawRenderStage`
 
-Draws the rendered scene's debug lines, queued with `RenderScene::DrawLine()` / `DrawWireBox()` or `RenderEngine`'s versions for the main scene (bounds boxes, camera frustums, the light's direction, the editor grid), on top of the display colour. A view with `DrawsDebug` off (a `ViewCapture`'s) skips it. They're drawn after tonemapping so they keep their exact colours. They depth-test against the scene. Lines can be semi-transparent: the stage turns on `EBlendState::AlphaBlend` for its draw and restores `Opaque` after. Each vertex also carries an optional distance fade (`FADECENTRE`, `FADERANGE`), which `Pixel_Line.hlsl` applies per pixel; pixels that fade to nothing are clipped so they don't write depth. The queue is cleared after the main view renders, so secondary views drawn earlier in the frame get them too. Compiled out of Retail builds.
+Draws the rendered scene's debug lines, queued with `RenderScene::DrawLine()` / `DrawWireBox()` / `DrawWireSphere()` or `RenderEngine`'s versions for the main scene (bounds boxes, camera frustums, a directional light's direction, point light ranges, the editor grid), on top of the display colour. A view with `DrawsDebug` off (a `ViewCapture`'s) skips it. They're drawn after tonemapping so they keep their exact colours. They depth-test against the scene; lines with a `DebugLine::occludedAlpha` above 0 are then drawn again with the depth test off (`EDepthState::Off`) at that opacity, from a second buffer, so their hidden parts still show, faintly. That also goes over their visible parts, which are already drawn more opaque, so it barely changes those. Lines can be semi-transparent: the stage turns on `EBlendState::AlphaBlend` for its draw and restores `Opaque` after. Each vertex also carries an optional distance fade (`FADECENTRE`, `FADERANGE`), which `Pixel_Line.hlsl` applies per pixel; pixels that fade to nothing are clipped so they don't write depth. The queue is cleared after the main view renders, so secondary views drawn earlier in the frame get them too. Compiled out of Retail builds.
 
 ### `ImGuiRenderStage` and `FinalRenderTargetStage`
 
@@ -228,7 +241,7 @@ Keep per-view, across-frame state in `context.Persistent()`, and add new per-fra
 
 - `Engine\Src\Graphics\RenderStage.h`, `RenderStageBuilder.h`, `RenderPorts.h`, `RenderBlackboard.h`, `RenderContext.h`
 - `Engine\Src\Graphics\RenderPipeline.h/.cpp`, `RenderPipelineCompiler.h/.cpp`
-- `Engine\Src\Graphics\RenderData\` — `ShadowMapData.h`, `SceneColourData.h`, `DisplayColourData.h`
+- `Engine\Src\Graphics\RenderData\` — `SceneLightingData.h`, `SceneColourData.h`, `DisplayColourData.h`
 - `Engine\Src\Graphics\RenderStages\` — one `.h/.cpp` per stage
 - `Engine\Src\Graphics\AntiAliasing.h/.cpp` — `EAntiAliasing` levels and their FXAA settings
 - `Assets\Shaders\` — `Pixel_ShadowCaster`, `Pixel_NewRenderer*`, `Pixel_LuminanceLog`, `Pixel_ExposureAdapt`, `Pixel_Tonemap`, `Pixel_FXAA`, `Pixel_PickID`, `Pixel_Line`

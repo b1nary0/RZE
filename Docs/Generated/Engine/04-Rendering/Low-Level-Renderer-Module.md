@@ -112,7 +112,7 @@ gantt
 | Frame / pass | `BeginFrame`, `EndFrame`, `Begin`, `End`, `DevicePresent`, `HandleWindowResize`, `SetSyncInterval`, `ImGuiRender` |
 | Create | `CreateVertexBuffer` (static or dynamic), `CreateIndexBuffer`, `CreateConstantBuffer`, `CreateTextureBuffer2D`, `CreateVertexShader`, `CreatePixelShader` |
 | Update / release | `UploadDataToBuffer`, `UpdateVertexBuffer`, `ReleaseVertexShader`, `ReleasePixelShader`, `GenerateMips` |
-| Targets | `SetRenderTargetBackBuffer`, `SetColourTarget` (colour, optionally with depth), `SetDepthTarget` (depth only, e.g. shadow maps), `ClearRenderTarget`, `ClearRenderTargets`, `ClearDepthStencilBuffer` |
+| Targets | `SetRenderTargetBackBuffer`, `SetColourTarget` (colour, optionally with depth), `SetDepthTarget` (depth only, e.g. shadow maps; a slice of a texture array), `ClearRenderTarget`, `ClearRenderTargets`, `ClearDepthStencilBuffer` |
 | Pipeline state | `SetViewport`, `SetInputLayout`, `SetPrimitiveTopology`, `SetRasterizerState`, `SetBlendState`, `SetVertexShader`, `SetPixelShader`, `SetConstantBufferVS`, `SetConstantBufferPS`, `SetVertexBuffer`, `SetIndexBuffer`, `SetTextureResource`, `UnsetTextureResource` |
 | Draw | `Draw`, `DrawIndexed`, `DrawFullScreenQuad` |
 | Readback | `ReadTexel`, `ReadTexture` |
@@ -139,12 +139,30 @@ Everything is a static call on `Rendering::Renderer`, and every call only *queue
 | Presenting | `SetSyncInterval(interval)` (vsync), `WaitForPresentSlot(timeoutMS)` (blocks until the swap chain can queue another frame; false on timeout, e.g. while minimised). See [the swap chain](#the-swap-chain-and-vsync). |
 | Frame and passes | `BeginFrame` / `EndFrame`, `Begin(name)` / `End()` (one pass; also resets the rasterizer state and names the pass for PIX), `DevicePresent`, `Submit` (the hand-off without a present), `ImGuiRender`, `KeepTextureForUI` |
 | Resources | `CreateVertexBuffer`, `CreateDynamicVertexBuffer` + `UpdateVertexBuffer`, `CreateIndexBuffer`, `CreateConstantBuffer`, `CreateTextureBuffer2D(params)` (empty, e.g. a render target) / `CreateTextureBuffer2D(TexelBuffer&&, params)`, `CreateVertexShader`, `CreatePixelShader`, `Release*Shader`, `UploadDataToBuffer<T>` (copies the data, so a stack variable is fine), `GenerateMips` |
-| Targets | `SetColourTarget(colour[, depth])`, `SetDepthTarget`, `ClearRenderTargets` (unbinds every target, e.g. so one can be read from next), `SetRenderTargetBackBuffer`, `ClearRenderTarget`, `ClearDepthStencilBuffer` |
+| Targets | `SetColourTarget(colour[, depth])`, `SetDepthTarget(depth, slice = 0)` (one slice of a texture array, e.g. a cube face), `ClearRenderTargets` (unbinds every target, e.g. so one can be read from next), `SetRenderTargetBackBuffer`, `ClearRenderTarget`, `ClearDepthStencilBuffer` (every slice of an array) |
 | State | `SetViewport`, `SetInputLayout`, `SetPrimitiveTopology`, `SetRasterizerState` (`Default` = back-face culling, `ShadowCaster` = no culling + slope-scaled depth bias), `SetBlendState` (`Opaque` = no blending, `AlphaBlend` = source alpha over the target, leaving the target's alpha unchanged), shaders, constant buffers, vertex/index buffers, texture slots |
 | Draw | `Draw`, `DrawIndexed`, `DrawFullScreenQuad` |
 | Readback | `ReadTexel`, `ReadTexture` (below) |
 
 Texture formats (`ETextureFormat`): `RGBA8_UNORM` (default), `RGBA16_FLOAT` (HDR scene colour), `RG16_FLOAT`, `R32_UINT` (integer IDs for picking). Depth textures are `D24_UNORM_S8_UINT`, with an optional shader-readable view.
+
+### Texture arrays and cube maps
+
+`GFXTextureBufferParams::ArraySize` makes a texture of several slices (0 or 1: a single texture, so zero-initialised params are unchanged), and `bIsCubeMap` makes it a cube map, with 6 slices per cube in `ECubeFace` order ([Utils-Library-Reference.md](../06-Platform-And-Infrastructure/Utils-Library-Reference.md), `CubeMap.h`); more than 6 makes a cube array. Depth or colour, `DX11TextureBuffer2D` reads it through the matching shader view:
+
+| `ArraySize` | `bIsCubeMap` | HLSL type |
+|---|---|---|
+| 0 or 1 | no | `Texture2D` |
+| more | no | `Texture2DArray` |
+| 6 | yes | `TextureCube` |
+| 6 × N | yes | `TextureCubeArray` |
+
+- A depth array has a view per slice (`GetDepthSliceView(slice)`), so `SetDepthTarget(texture, slice)` renders into one slice, e.g. a shadow cube's face. `GetDepthView()` covers every slice, so clearing clears them all. A single texture keeps exactly the views it had.
+- A colour array has one render target view over all its slices; there's no per-slice colour target yet, since nothing renders into one (probe capture would).
+- It asserts that a cube's slice count is a multiple of 6, that an array isn't multisampled, and that one isn't made with texels (only the first slice would be filled).
+- The device is created at the highest feature level the GPU has (11_0 on anything current); cube arrays need 10.1.
+
+Point light shadows are the first user ([Render-Stages.md](Render-Stages.md#shadowrenderstage)). The same support serves skyboxes, environment lighting, reflection probes and cascaded sun shadows later.
 
 ### Reusable dynamic buffers (`Engine\Src\Graphics\DynamicVertexBuffer.h`)
 

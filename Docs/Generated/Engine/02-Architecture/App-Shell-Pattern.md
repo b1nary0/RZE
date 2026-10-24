@@ -29,7 +29,7 @@ public:
 };
 ```
 
-The base `Initialize()` registers the engine's built-in `GameObjectComponent` types (`CameraComponent`, `RenderComponent`, `TransformComponent`, `DirectionalLightComponent`, `GifChatComponent`) through the static `RegisterEngineComponents()`, which code that runs no application (the unit tests) calls itself — subclasses are expected to call the base implementation and then register any product-specific components of their own (e.g. `EditorCameraComponent`).
+The base `Initialize()` registers the engine's built-in `GameObjectComponent` types (`CameraComponent`, `RenderComponent`, `TransformComponent`, `LightComponent`, `GifChatComponent`) through the static `RegisterEngineComponents()`, which code that runs no application (the unit tests) calls itself — subclasses are expected to call the base implementation and then register any product-specific components of their own (e.g. `EditorCameraComponent`).
 
 The four per-frame hooks split each frame into a UI part (`PreUIUpdate`, `UpdateUI`) and a scene part (`Update`, `PreRender`), so the UI can update less often than the scene (`FrameSettings::UIFrameRate`). Both apps' UI is in `UpdateUI`; neither overrides `Update` today, and the Editor draws its grid and camera frustums in `PreRender`. See [Engine-Startup-And-Frame-Loop.md](Engine-Startup-And-Frame-Loop.md#update) for when each runs.
 

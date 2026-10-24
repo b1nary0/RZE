@@ -96,7 +96,7 @@ A property of a component is addressed by a `PropertyPath`: its index, or, for a
 | `TransformComponent` | Position (metres, relative to the parent), Rotation (Euler degrees), Scale |
 | `RenderComponent` | Mesh (asset path, clearable, preloaded as a `StaticMeshResource`; setting it loads the mesh), Size (computed, metres along the object's axes, including scale), **Debug Draw**: Mesh Bounds, Sub-Mesh Bounds (`EditorOnly`), then Materials (editable list, below) |
 | `CameraComponent` | Main Camera (`Exclusive`), **Projection**: Field Of View, Near Cull, Far Cull, **Exposure**: Compensation (EV), then **Preview** |
-| `DirectionalLightComponent` | Colour (colour picker), Strength |
+| `LightComponent` | Type (`Enum` drop-down: Directional, Point), Colour (colour picker), Strength, Range (metres, `EnabledIf` the light is a point light) |
 | `GifChatComponent` | Materials (read-only list of its materials) |
 
 `RenderComponent`'s **Materials** are its mesh instance's material slots, keyed by slot name, each with its diffuse texture as its icon. Every row but Shader is overridable for this object only ([Materials-Meshes-Shaders.md](../04-Rendering/Materials-Meshes-Shaders.md#values-overrides-and-slots)):

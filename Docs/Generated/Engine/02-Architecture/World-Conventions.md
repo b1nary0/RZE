@@ -26,11 +26,13 @@ Everything spatial in the engine, the Editor and the content assumes these. The 
            +Z (toward the viewer; the camera looks down -Z)
 ```
 
-`WorldAxes::Right()`, `Up()` and `Forward()` return these directions; use them instead of writing basis vectors by hand. `Units::` has named length constants.
+`WorldAxes::Right()`, `Up()` and `Forward()` return these directions; use them instead of writing basis vectors by hand. `TransformComponent::GetForward()` / `GetUp()` turn them by an object's rotation. `Units::` has named length constants.
+
+**Cube maps are the one place D3D's handedness shows.** D3D lays out a cube's faces for a left-handed world with +Z forward, so the cube's +Z face is our Forward (−Z) and sampling a cube flips Z. `Utils/Math/CubeMap.h` holds that convention (`ECubeFace`, `CubeMap::ToSampleDirection`, `Matrix4x4::CreateCubeFaceView`); go through it rather than building cube face views by hand. See [Utils-Library-Reference.md](../06-Platform-And-Infrastructure/Utils-Library-Reference.md).
 
 ## Why it matters
 
-- **Camera speeds, light ranges and physics-like values** are all tuned in metres. The editor camera flies at 5 m/s, and scene cameras clip at 0.1 m / 1000 m.
+- **Camera speeds, light ranges and physics-like values** are all tuned in metres (a point light's Range is in metres). The editor camera flies at 5 m/s, and scene cameras clip at 0.1 m / 1000 m.
 - **Imported models** are converted to metres when their format declares a unit, and taken as metres otherwise. The burner warns if a model's size is implausible (under 1 cm or over 500 m). See [Asset-Burning-Pipeline.md](../05-AssetPipeline/Asset-Burning-Pipeline.md#units-and-handedness).
 - **The Editor shows sizes in metres** (RenderComponent inspector), so a wrongly scaled mesh can be fixed per instance.
 

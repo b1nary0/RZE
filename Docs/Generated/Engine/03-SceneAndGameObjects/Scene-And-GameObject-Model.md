@@ -52,7 +52,7 @@ Persistence: `Save(writer)` writes the object's entry in the scene format (id, n
 
 `GetComponentHandles(out)` returns lifetime-checked handles to every component, in order, for code that keeps them across frames (the editor's inspector).
 
-A `GameObject` is made with the scene it belongs to and keeps it for life (`GetScene()`). Components take what they need from it in `Initialize()` (e.g. `RenderComponent` and `DirectionalLightComponent` keep the scene's `RenderScene`) rather than looking it up each frame.
+A `GameObject` is made with the scene it belongs to and keeps it for life (`GetScene()`). Components take what they need from it in `Initialize()` (e.g. `RenderComponent` and `LightComponent` keep the scene's `RenderScene`) rather than looking it up each frame.
 
 ## Object relationship diagram
 
@@ -119,9 +119,9 @@ Render objects and render scenes cache their bounds the same way: see [`RenderOb
 | `Load(scenePath)` | Replaces what's in it with a scene file, loaded in the background (`SceneLoadOperation`). Cancels a load still running. |
 | `AddGameObject` / `RemoveGameObject` | Objects removed are destroyed straight away. |
 | `Capture(capture, camera, settings, file)` | Renders its `RenderScene` from a camera into a [`ViewCapture`](../04-Rendering/Engine-Graphics-Layer.md#capturing-a-view-to-a-file), lit and exposed as `ViewCaptureSettings` says, and writes a PNG. |
-| `Unload()` | Cancels a load still running, destroys everything and releases its render state (e.g. its shadow map). Must happen before the engine shuts down. |
+| `Unload()` | Cancels a load still running, destroys everything and releases its render state (e.g. its shadow maps). Must happen before the engine shuts down. |
 
-- It's **never updated**. A still capture doesn't need it: world matrices are worked out when read, render objects take their transform when they're made, and lights their direction when they're added.
+- It's **never updated**. A still capture doesn't need it: world matrices are worked out when read, render objects take their transform when they're made, and lights their position and direction when they're added.
 - Its loads are `Background | SubStep` [async operations](../05-AssetPipeline/Asset-Import-Runtime.md#async-operations): they never block, and whoever uses the scene reports progress itself.
 - To add an object without stalling, load what it uses first, e.g. a mesh with a [`PendingResource`](../05-AssetPipeline/Asset-Import-Runtime.md#one-resource-pendingresource), so `RenderComponent::LoadMesh` is a cache hit. The thumbnail renderer does, and drives the scene with a [`CaptureBatchOperation`](../07-Editor/Thumbnails-And-File-Browser.md#a-run).
 - Main thread only.

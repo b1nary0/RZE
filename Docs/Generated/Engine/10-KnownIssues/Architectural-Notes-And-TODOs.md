@@ -14,7 +14,7 @@ Rough edges the codebase is candid about (source comments, `#TODO`s), plus a few
 | 6 | No culling or bucketing | Rendering | Medium | **Culling fixed** (10-09); bucketing open |
 | 7 | Linear-scan component lookups | Scene | Low | Open |
 | 8 | Textures aren't burned | Asset pipeline | Medium | Open |
-| 9 | Shadow map misses runtime material changes | Rendering | Low | Open, noted in source |
+| 9 | Shadow maps miss runtime material changes | Rendering | Low | Open, noted in source |
 | 10 | Constant-buffer uploads read past small structs | Renderer | Low | Open |
 | 11 | `LogChannel::Debug`'s colour was out of range | Debug services | — | **Fixed** (10-21: log levels) |
 | 12 | Camera previews changed the camera temporarily | Components | — | **Fixed** (10-11: editor UI rework) |
@@ -38,7 +38,8 @@ Rough edges the codebase is candid about (source comments, `#TODO`s), plus a few
 | 30 | In Debug, the game's key bindings never fire | Game | Medium | Open |
 | 31 | `RenderThread::Shutdown` can race | Renderer | Low | Open |
 | 32 | A shader that doesn't compile crashes the app | Renderer | Medium | Open |
-| 33 | The lit pixel shaders compile with an uninitialised-variable warning | Shaders | Cosmetic | Open |
+| 33 | The lit pixel shaders compile with an uninitialised-variable warning | Shaders | — | **Fixed** (10-24: single returns) |
+| 34 | Any light change re-renders every shadow map | Rendering | Low | Open |
 
 ```mermaid
 quadrantChart
@@ -100,9 +101,9 @@ The 2020 design notes called for both. **Culling** is implemented: objects and t
 
 `AssimpSourceImporter::WriteTextureAsset()` returns `false`. Materials reference textures by path in `Assets\`, and they're decoded at load time rather than conditioned offline (no compression, no pre-built mips). See [Asset-Burning-Pipeline.md](../05-AssetPipeline/Asset-Burning-Pipeline.md).
 
-## 9. Shadow map misses runtime material changes
+## 9. Shadow maps miss runtime material changes
 
-`ShadowRenderStage` only re-renders when the scene's revision (`RenderScene::GetRevision`) changes, and changing a material at runtime doesn't bump it: its opacity map, or a slot's overrides (`MaterialSlot::SetOverrides`), such as a new blend mode that stops it casting a shadow. The source notes this gap: the shadow picks up the change at the next scene change. Bump the revision when a material or slot changes if it ever matters.
+`ShadowRenderStage` only re-renders its maps when the scene's revision (`RenderScene::GetRevision`) changes, and changing a material at runtime doesn't bump it: its opacity map, or a slot's overrides (`MaterialSlot::SetOverrides`), such as a new blend mode that stops it casting a shadow. The source notes this gap: the shadows pick up the change at the next scene change. Bump the revision when a material or slot changes if it ever matters.
 
 ## 10. Constant-buffer uploads read past small structs
 
@@ -198,7 +199,11 @@ The first unit of work in any budget always runs, even when it's bigger than the
 
 ## 33. The lit pixel shaders compile with an uninitialised-variable warning
 
-`Pixel_NewRenderer`, `Pixel_NewRenderer_DiffuseOnly` and `Pixel_Default_NewRenderer` all log `Common/Lighting.hlsli(232,2): warning X4000: use of potentially uninitialized variable (ComputeLighting)` at start-up. Line 232 is the early `return` in `ComputeLighting`'s uniform-lighting branch. FXC raises X4000 for a `return` inside a branch when it can't prove every path sets the result, so it's most likely a false alarm. The shaders render correctly. Writing the result to a local and returning it once, at the end, would silence it. It went unnoticed until shader warnings reached the log (10-21).
+**Fixed (10-24).** `Pixel_NewRenderer`, `Pixel_NewRenderer_DiffuseOnly` and `Pixel_Default_NewRenderer` logged `warning X4000: use of potentially uninitialized variable (ComputeLighting)` at start-up, from the early `return` in `ComputeLighting`'s uniform-lighting branch. FXC raises X4000 for a `return` inside a branch of a function that loops when it can't prove every path sets the result: a false alarm, since the shaders rendered correctly. The light loop added a second one, in `LightShadow`. Both now write the result to a local and return it once, at the end.
+
+## 34. Any light change re-renders every shadow map
+
+`ShadowRenderStage` re-renders **all** of a scene's shadow maps whenever its revision changes: the sun's, and six faces for each shadowed point light. So moving one point light (or any render object) costs every shadowed light's passes that frame, and a light that moves every frame re-renders them all every frame. Caching per light (a revision per light, plus which objects each map saw) would let only the touched maps re-render. The limits that go with it are by design for now: only the first directional light and the first 8 point lights cast shadows, at 512² per cube face ([Render-Stages.md](../04-Rendering/Render-Stages.md#shadowrenderstage)).
 
 ## Key files
 
@@ -206,7 +211,7 @@ The first unit of work in any budget always runs, even when it's bigger than the
 - `Utils\Src\Utils\Reflect\ReflectDB.cpp` (2)
 - `Engine\Src\EngineCore\Platform\Memory\BlockAllocator.h` (3)
 - `Modules\Rendering\Src\Rendering\old_RenderCommands.h` (5), `Renderer.h` (10)
-- `Engine\Src\Graphics\RenderEngine.h` (6), `RenderStages\ShadowRenderStage.cpp` (9)
+- `Engine\Src\Graphics\RenderEngine.h` (6), `RenderStages\ShadowRenderStage.cpp` (9, 34), `Assets\Shaders\Common\Lighting.hlsli` (33)
 - `SourceAssetBurner\Src\SourceAssetBurner\Importers\AssimpSourceImporter.cpp` (8)
 - `Engine\Src\DebugUtils\DebugServices.cpp` (11)
 - `Engine\Src\Game\World\GameObjectComponents\CameraComponent.cpp` (12)
