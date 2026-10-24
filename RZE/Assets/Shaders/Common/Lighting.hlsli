@@ -273,38 +273,44 @@ float3 DirectLighting(SurfaceData surface, float3 viewDir, float3 L, float shini
 // Fraction of the light reaching the surface past whatever casts shadows: 1 for a light without a shadow map
 float LightShadow(Light light, SurfaceData surface)
 {
+	// One return at the end: FXC warns of an uninitialized return value (X4000) for an early one here, since
+	// SampleShadow loops
+	float shadow = 1.0f;
 	// Only the directional light has a shadow map so far
 	if (light.Type == LIGHT_TYPE_DIRECTIONAL && light.ShadowIndex >= 0)
 	{
-		return SampleShadow(surface.WorldPos, surface.VertexNormal);
+		shadow = SampleShadow(surface.WorldPos, surface.VertexNormal);
 	}
-	return 1.0f;
+	return shadow;
 }
 
 // Returns linear HDR radiance for the scene's lights, or for the uniform environment alone
 float3 ComputeLighting(SurfaceData surface, float3 viewDir)
 {
-	if (UniformLighting > 0.5f)
-	{
-		float facing = saturate(dot(surface.Normal, viewDir));
-		return AmbientLighting(surface, viewDir, max(surface.Shininess, 1.0f)) * lerp(UniformEdgeShade, 1.0f, facing);
-	}
-
 	float shininess = max(surface.Shininess, 1.0f);
 	float3 colour = AmbientLighting(surface, viewDir, shininess);
 
-	for (uint lightIndex = 0; lightIndex < LightCount; ++lightIndex)
+	// One return at the end: FXC warns of an uninitialized return value (X4000) for an early one before the loop
+	if (UniformLighting > 0.5f)
 	{
-		Light light = Lights[lightIndex];
-
-		float3 L;
-		float attenuation = LightAttenuation(light, surface.WorldPos, L);
-		if (attenuation <= 0.0f)
+		float facing = saturate(dot(surface.Normal, viewDir));
+		colour *= lerp(UniformEdgeShade, 1.0f, facing);
+	}
+	else
+	{
+		for (uint lightIndex = 0; lightIndex < LightCount; ++lightIndex)
 		{
-			continue;
-		}
+			Light light = Lights[lightIndex];
 
-		colour += DirectLighting(surface, viewDir, L, shininess) * LightRadiance(light) * attenuation * LightShadow(light, surface);
+			float3 L;
+			float attenuation = LightAttenuation(light, surface.WorldPos, L);
+			if (attenuation <= 0.0f)
+			{
+				continue;
+			}
+
+			colour += DirectLighting(surface, viewDir, L, shininess) * LightRadiance(light) * attenuation * LightShadow(light, surface);
+		}
 	}
 
 	return colour;
