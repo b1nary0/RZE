@@ -5,7 +5,7 @@
 #include <Graphics/RenderStage.h>
 #include <Graphics/RenderView.h>
 
-#include <string>
+#include <Utils/TimeUtils.h>
 
 RenderPipeline::RenderPipeline() = default;
 RenderPipeline::~RenderPipeline() = default;
@@ -16,12 +16,14 @@ void RenderPipeline::AddStage(std::unique_ptr<IRenderStage> stage)
 
 	stage->Initialize();
 	m_stages.push_back(std::move(stage));
+	m_stageTimes.push_back(0.0);
 	m_isDirty = true;
 }
 
 void RenderPipeline::Clear()
 {
 	m_stages.clear();
+	m_stageTimes.clear();
 	m_compiled = CompiledRenderPipeline();
 	m_isDirty = true;
 }
@@ -38,9 +40,24 @@ void RenderPipeline::Render(RenderView& view, RenderScene& scene, float deltaTim
 		const bool runsInView = m_compiled.Declarations[stageIndex].ViewFilter == ERenderViewFilter::All || view.IsMainView();
 		if (runsInView)
 		{
+			const double stageStart = TimeUtils::GetSeconds();
 			m_stages[stageIndex]->Render(context);
+			m_stageTimes[stageIndex] += TimeUtils::GetSeconds() - stageStart;
 		}
 	}
+}
+
+std::vector<RenderPipeline::StageTime> RenderPipeline::TakeStageTimes()
+{
+	std::vector<StageTime> stageTimes;
+	stageTimes.reserve(m_compiled.ExecutionOrder.size());
+	for (size_t stageIndex : m_compiled.ExecutionOrder)
+	{
+		stageTimes.push_back({ m_stages[stageIndex]->GetName(), m_stageTimes[stageIndex] });
+		m_stageTimes[stageIndex] = 0.0;
+	}
+
+	return stageTimes;
 }
 
 void RenderPipeline::CompileIfDirty()

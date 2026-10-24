@@ -28,6 +28,7 @@ namespace Rendering
 	std::shared_ptr<UIFrameData> Renderer::m_uiFrameData;
 	int Renderer::m_uiFrameNumber = -1;
 	std::vector<TextureBuffer2DHandle> Renderer::m_uiTextures;
+	U32 Renderer::m_drawCallCount = 0;
 
 	inline void* AllocateCommandData(void* src, size_t dataTypeSize, size_t count)
 	{
@@ -120,6 +121,18 @@ namespace Rendering
 	bool Renderer::WaitForPresentSlot(U32 timeoutMS)
 	{
 		return m_renderThread.WaitForPresentSlot(timeoutMS);
+	}
+
+	RenderThread::FrameStats Renderer::GetRenderThreadStats()
+	{
+		return m_renderThread.GetFrameStats();
+	}
+
+	U32 Renderer::TakeDrawCallCount()
+	{
+		const U32 count = m_drawCallCount;
+		m_drawCallCount = 0;
+		return count;
 	}
 
 	void Renderer::HandleWindowResize(const Vector2D& newSize)
@@ -535,6 +548,7 @@ namespace Rendering
 		command->count = count;
 
 		m_renderThread.PushCommand(command);
+		++m_drawCallCount;
 	}
 
 	void Renderer::DrawIndexed(const IndexBufferHandle& indexBuffer)
@@ -543,6 +557,7 @@ namespace Rendering
 		command->indexBuffer = indexBuffer;
 
 		m_renderThread.PushCommand(command);
+		++m_drawCallCount;
 	}
 
 	void Renderer::DrawFullScreenQuad()
@@ -550,5 +565,6 @@ namespace Rendering
 		RenderCommand_DrawFullScreenQuad* command = MemArena::AllocType<RenderCommand_DrawFullScreenQuad>();
 
 		m_renderThread.PushCommand(command);
+		++m_drawCallCount;
 	}
 }

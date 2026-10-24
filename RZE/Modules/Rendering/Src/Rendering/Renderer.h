@@ -67,6 +67,10 @@ namespace Rendering
 		// Blocks until the swap chain can queue another frame, which keeps at most two frames in flight, or until
 		// timeoutMS passes (false), e.g. while the window is minimised. Call once per frame, before reading its input.
 		static bool WaitForPresentSlot(U32 timeoutMS);
+		// How much of each frame the render thread is busy (RenderThread::FrameStats)
+		static RenderThread::FrameStats GetRenderThreadStats();
+		// Draw calls recorded since the last call, then starts over. The UI's aren't counted. Main thread only.
+		static U32 TakeDrawCallCount();
 
 		static void ImGuiRender();
 		// Keeps texture alive while the UI being drawn now is rendered, which goes on until a newer UI replaces it. ImGui
@@ -158,6 +162,8 @@ namespace Rendering
 		static int m_uiFrameNumber;
 		// The textures the UI frame being drawn draws, which m_uiFrameData takes when it's copied
 		static std::vector<TextureBuffer2DHandle> m_uiTextures;
+		// Draw calls recorded since TakeDrawCallCount()
+		static U32 m_drawCallCount;
 	};
 
 	template<typename TType>

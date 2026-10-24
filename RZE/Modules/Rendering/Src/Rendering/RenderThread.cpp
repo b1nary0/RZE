@@ -14,6 +14,7 @@
 #include <Rendering/Driver/DX11/DX11ShaderTypes.h>
 
 #include <Utils/Conversions.h>
+#include <Utils/TimeUtils.h>
 #include <Utils/DebugUtils/Debug.h>
 
 #include <Optick/optick.h>
@@ -155,6 +156,12 @@ namespace Rendering
 		return WaitForSingleObjectEx(m_frameLatencyWaitableObject, timeoutMS, TRUE) == WAIT_OBJECT_0;
 	}
 
+	RenderThread::FrameStats RenderThread::GetFrameStats() const
+	{
+		std::lock_guard lock(m_frameStatsMutex);
+		return m_frameStats;
+	}
+
 	void RenderThread::InitializeImGui()
 	{
 		ImGui::CreateContext();
@@ -190,6 +197,9 @@ namespace Rendering
 	{
 		OPTICK_EVENT();
 		AssertExpr(m_processSignal == true);
+
+		const double batchStart = TimeUtils::GetSeconds();
+		bool hasPresented = false;
 
 		// Marker names are converted to wide strings, so they're only built when a profiler is listening.
 		// Checked once per batch: a batch is a whole frame, so every BeginEvent below still gets its EndEvent.
@@ -250,7 +260,10 @@ namespace Rendering
 			case RenderCommandType::DevicePresent:
 			{
 				OPTICK_EVENT("Device Present");
+				const double presentStart = TimeUtils::GetSeconds();
 				m_device->Present();
+				m_framePresentTime += TimeUtils::GetSeconds() - presentStart;
+				hasPresented = true;
 
 				break;
 			}
@@ -706,6 +719,49 @@ namespace Rendering
 
 		// Keeps the capacity, so steady-state frames don't allocate
 		m_consumerQueue.clear();
+
+		UpdateFrameStats(batchStart, hasPresented);
+	}
+
+	void RenderThread::UpdateFrameStats(double batchStart, bool hasPresented)
+	{
+		const double now = TimeUtils::GetSeconds();
+		m_frameBusyTime += now - batchStart;
+		if (!hasPresented)
+		{
+			return;
+		}
+
+		// The first present only starts the first window
+		if (m_windowStart >= 0.0)
+		{
+			++m_windowFrames;
+			m_windowBusyTime += m_frameBusyTime;
+			m_windowPresentTime += m_framePresentTime;
+		}
+		else
+		{
+			m_windowStart = now;
+		}
+		m_frameBusyTime = 0.0;
+		m_framePresentTime = 0.0;
+
+		if (now - m_windowStart < k_statsWindow || m_windowFrames == 0)
+		{
+			return;
+		}
+
+		const double frames = static_cast<double>(m_windowFrames);
+		{
+			std::lock_guard lock(m_frameStatsMutex);
+			m_frameStats.BusyTimeMS = m_windowBusyTime / frames * 1000.0;
+			m_frameStats.PresentTimeMS = m_windowPresentTime / frames * 1000.0;
+		}
+
+		m_windowStart = now;
+		m_windowFrames = 0;
+		m_windowBusyTime = 0.0;
+		m_windowPresentTime = 0.0;
 	}
 
 	void RenderThread::BeginProfilerEvent(const char* name)

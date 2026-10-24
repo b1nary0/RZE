@@ -13,4 +13,7 @@ namespace TimeUtils
 
 	// How long something takes, short: "8s", "1m 05s", "2h 03m"
 	std::string FormatDuration(double seconds);
+
+	// Seconds on a steady clock from an arbitrary start, for measuring how long things take
+	double GetSeconds();
 }

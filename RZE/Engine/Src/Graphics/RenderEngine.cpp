@@ -11,6 +11,8 @@
 
 #include <Rendering/Renderer.h>
 
+#include <Utils/TimeUtils.h>
+
 #include "Rendering/Graphics/RenderTarget.h"
 
 RenderEngine::RenderEngine()
@@ -42,6 +44,12 @@ void RenderEngine::Render(const char* frameName)
 	OPTICK_EVENT();
 	AssertNotNull(m_mainView.Target);
 
+	const double renderStart = TimeUtils::GetSeconds();
+	if (m_windowStart < 0.0)
+	{
+		m_windowStart = renderStart;
+	}
+
 	Rendering::Renderer::BeginFrame(frameName);
 
 	m_pipeline->Render(m_mainView, GetMainScene(), static_cast<float>(RZE().GetDeltaTime()));
@@ -51,6 +59,10 @@ void RenderEngine::Render(const char* frameName)
 	m_mainView.Pick.reset();
 
 	Rendering::Renderer::EndFrame();
+
+	const double renderEnd = TimeUtils::GetSeconds();
+	m_windowRecordTime += renderEnd - renderStart;
+	UpdateStats(renderEnd);
 }
 
 void RenderEngine::Finish()
@@ -124,14 +136,42 @@ void RenderEngine::RenderSecondaryView(const char* frameName, RenderView& view, 
 	AssertNotNull(view.Target);
 	AssertExpr(view.ViewportSize != Vector2D::ZERO);
 
+	const double renderStart = TimeUtils::GetSeconds();
+
 	Rendering::Renderer::Begin(frameName);
 
 	m_pipeline->Render(view, scene, static_cast<float>(RZE().GetDeltaTime()));
 
 	Rendering::Renderer::End();
+
+	m_windowRecordTime += TimeUtils::GetSeconds() - renderStart;
 }
 
 void RenderEngine::InternalAddRenderStage(IRenderStage* stage)
 {
 	m_pipeline->AddStage(std::unique_ptr<IRenderStage>(stage));
+}
+
+void RenderEngine::UpdateStats(double now)
+{
+	++m_windowFrames;
+	if (now - m_windowStart < k_statsWindow)
+	{
+		return;
+	}
+
+	// The stage times and draw calls build up over the window, so they're taken once at its end
+	const double frames = static_cast<double>(m_windowFrames);
+	m_stats.RecordTimeMS = m_windowRecordTime / frames * 1000.0;
+	m_stats.DrawCalls = static_cast<double>(Rendering::Renderer::TakeDrawCallCount()) / frames;
+
+	m_stats.Stages.clear();
+	for (const RenderPipeline::StageTime& stageTime : m_pipeline->TakeStageTimes())
+	{
+		m_stats.Stages.push_back({ stageTime.Name, stageTime.Seconds / frames * 1000.0 });
+	}
+
+	m_windowStart = now;
+	m_windowFrames = 0;
+	m_windowRecordTime = 0.0;
 }

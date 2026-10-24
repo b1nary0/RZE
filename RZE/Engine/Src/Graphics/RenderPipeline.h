@@ -3,6 +3,7 @@
 #include <Graphics/RenderPipelineCompiler.h>
 
 #include <memory>
+#include <string>
 #include <vector>
 
 class IRenderStage;
@@ -14,6 +15,14 @@ class RenderView;
 class RenderPipeline
 {
 public:
+	// A stage and how long its Render() took, across every view, since the last TakeStageTimes()
+	struct StageTime
+	{
+		std::string Name;
+		double Seconds = 0.0;
+	};
+
+public:
 	RenderPipeline();
 	~RenderPipeline();
 
@@ -24,12 +33,17 @@ public:
 
 	void Render(RenderView& view, RenderScene& scene, float deltaTime);
 
+	// Each stage's time since the last call, in the order they run, then starts them over
+	std::vector<StageTime> TakeStageTimes();
+
 private:
 	void CompileIfDirty();
 
 private:
 	// In the order they were added; the compiled pipeline's indices refer to these
 	std::vector<std::unique_ptr<IRenderStage>> m_stages;
+	// Seconds each stage has spent in Render() since TakeStageTimes(), indexed like m_stages
+	std::vector<double> m_stageTimes;
 	CompiledRenderPipeline m_compiled;
 	bool m_isDirty = true;
 };

@@ -11,7 +11,10 @@
 #include <EngineCore/Async/AsyncOperationManager.h>
 #include <EngineCore/Timing/FramePacer.h>
 
+#include <Graphics/RenderEngine.h>
+
 #include <Rendering/MemArena.h>
+#include <Rendering/Renderer.h>
 
 #include <Utils/Memory/MemoryUtils.h>
 #include <Utils/TimeUtils.h>
@@ -38,8 +41,8 @@ namespace
 	// The render command memory's use as the arena fills up (Rendering::MemArena::PressureValue)
 	constexpr ImU32 k_mediumPressureColour = IM_COL32(242, 204, 64, 255);
 	constexpr ImU32 k_highPressureColour = IM_COL32(255, 107, 92, 255);
-	// Room for the widest it gets in practice, e.g. 16.7 ms, 240 FPS and 12.5 ms idle
-	constexpr float k_frameStatsWidth = 260.0f;
+	// Room for the widest it gets in practice, e.g. 16.7 ms, 240 FPS, 12.5 ms idle and 12.5 ms rendering
+	constexpr float k_frameStatsWidth = 340.0f;
 	// The tasks box; also the width of the hover panel and the task list above it
 	constexpr float k_tasksBoxWidth = 240.0f;
 	// The circle left of the box that says how the tasks are doing, at a glance
@@ -277,9 +280,11 @@ namespace Editor
 	void StatusBar::DrawFrameStats(const ImVec2& min, const ImVec2& max) const
 	{
 		const FramePacer::Stats& stats = RZE().GetFramePacer().GetStats();
+		const RenderEngine::Stats& renderStats = RZE().GetRenderEngine().GetStats();
+		const Rendering::RenderThread::FrameStats renderThreadStats = Rendering::Renderer::GetRenderThreadStats();
 
-		char text[96];
-		snprintf(text, sizeof(text), "%.1f ms \xC2\xB7 %.0f FPS \xC2\xB7 idle %.1f ms", stats.FrameTimeMS, stats.FramesPerSecond, stats.IdleTimeMS);
+		char text[128];
+		snprintf(text, sizeof(text), "%.1f ms \xC2\xB7 %.0f FPS \xC2\xB7 idle %.1f ms \xC2\xB7 render %.1f ms", stats.FrameTimeMS, stats.FramesPerSecond, stats.IdleTimeMS, renderThreadStats.BusyTimeMS);
 		ImGui::GetWindowDrawList()->AddText(ImVec2(min.x, GetTextTop(min, max)), ImGui::GetColorU32(ImGuiCol_TextDisabled), text);
 
 		ImGui::SetCursorScreenPos(min);
@@ -289,11 +294,31 @@ namespace Editor
 			// Just above the bar, lined up with the stats, like the tasks' hover panel rather than following the mouse
 			ImGui::SetNextWindowPos(ImVec2(min.x, min.y - k_panelGap), ImGuiCond_Always, ImVec2(0.0f, 1.0f));
 			ImGui::BeginTooltip();
+			ImGui::SeparatorText("Main thread");
 			ImGui::Text("%.2f ms a frame, %.1f frames a second", stats.FrameTimeMS, stats.FramesPerSecond);
 			ImGui::Text("The UI updates %.1f times a second", stats.UIFramesPerSecond);
 			ImGui::Text("%.2f ms of each frame idle:", stats.IdleTimeMS);
 			ImGui::BulletText("%.2f ms on tasks", stats.IdleWorkMS);
 			ImGui::BulletText("%.2f ms waiting for the next frame", std::max(0.0, stats.IdleTimeMS - stats.IdleWorkMS));
+
+			ImGui::SeparatorText("Rendering");
+			ImGui::Text("%.0f draw calls a frame, not counting the UI", renderStats.DrawCalls);
+			ImGui::Text("%.2f ms of each frame recording the render stages:", renderStats.RecordTimeMS);
+			for (const RenderEngine::Stats::StageTime& stage : renderStats.Stages)
+			{
+				ImGui::BulletText("%.2f ms %s", stage.TimeMS, stage.Name.c_str());
+			}
+
+			// Part of rendering, so it sits under it
+			ImGui::Indent();
+			ImGui::SeparatorText("Render thread");
+			ImGui::Text("%.2f ms of each frame busy:", renderThreadStats.BusyTimeMS);
+			ImGui::BulletText("%.2f ms running commands", std::max(0.0, renderThreadStats.BusyTimeMS - renderThreadStats.PresentTimeMS));
+			ImGui::BulletText("%.2f ms presenting", renderThreadStats.PresentTimeMS);
+			ImGui::Text("%.2f ms waiting for the main thread", std::max(0.0, stats.FrameTimeMS - renderThreadStats.BusyTimeMS));
+			ImGui::Unindent();
+
+			ImGui::Spacing();
 			ImGui::TextDisabled("Averaged over %.1f s. Frames only have idle time with vsync or a frame rate cap.", FramePacer::k_statsWindow);
 			ImGui::EndTooltip();
 		}
