@@ -11,7 +11,6 @@
 
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Math.h>
-#include <Utils/Math/Quaternion.h>
 #include <Utils/Reflect/Reflection.h>
 
 #include <algorithm>
@@ -23,14 +22,12 @@ CameraComponent::CameraComponent()
 
 Vector3D CameraComponent::GetForward() const
 {
-	const Quaternion rotation(m_owner->GetTransformComponent()->GetRotation() * MathUtils::ToRadians);
-	return (rotation * WorldAxes::Forward()).Normalized();
+	return m_owner->GetTransformComponent()->GetForward();
 }
 
 Vector3D CameraComponent::GetUpDir() const
 {
-	const Quaternion rotation(m_owner->GetTransformComponent()->GetRotation() * MathUtils::ToRadians);
-	return (rotation * WorldAxes::Up()).Normalized();
+	return m_owner->GetTransformComponent()->GetUp();
 }
 
 const Matrix4x4& CameraComponent::GetProjectionMatrix() const

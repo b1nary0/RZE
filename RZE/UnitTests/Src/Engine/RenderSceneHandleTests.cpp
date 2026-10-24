@@ -7,8 +7,7 @@
 #include <type_traits>
 #include <utility>
 
-// Lights need the renderer to be made (a constant buffer), so these use render objects. Both handles are the same
-// template, so they behave the same.
+// These use render objects. Light handles are the same template, so they behave the same.
 
 static_assert(!std::is_copy_constructible_v<RenderObjectPtr> && !std::is_copy_assignable_v<RenderObjectPtr>, "One holder per render object");
 static_assert(std::is_nothrow_move_constructible_v<RenderObjectPtr> && std::is_nothrow_move_assignable_v<RenderObjectPtr>, "Handles can be handed over");

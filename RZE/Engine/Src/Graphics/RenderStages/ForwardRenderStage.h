@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Graphics/RenderData/SceneColourData.h>
-#include <Graphics/RenderData/ShadowMapData.h>
+#include <Graphics/RenderData/SceneLightingData.h>
 #include <Graphics/RenderStage.h>
 
 #include <EngineCore/Resources/ResourceHandler.h>
@@ -60,7 +60,7 @@ private:
 	void DrawMesh(const MeshDraw& draw, const Matrix4x4*& uploadedTransform, const PixelShader*& boundPixelShader);
 
 private:
-	RenderInput<ShadowMapData> m_shadowMapInput;
+	RenderInput<SceneLightingData> m_sceneLightingInput;
 	RenderOutput<SceneColourData> m_sceneColourOutput;
 
 	// @TODO temp until ShaderTechniques are properly implemented
@@ -68,8 +68,6 @@ private:
 	ResourceHandle m_vertexShaderResource;
 	const VertexShader* m_vertexShader = nullptr; // @TODO This is just to avoid having to GetResource() in a loop but is more a deficiency of the Resource API
 
-	// Zero-strength light bound when the scene has none (e.g. while a scene is streaming in).
-	std::unique_ptr<LightObject> m_fallbackLight;
 	// How the view being rendered is lit (ViewLightingLayout)
 	Rendering::ConstantBufferHandle m_viewLightingBuffer;
 

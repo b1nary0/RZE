@@ -13,7 +13,8 @@ static const float  AlphaCutoff  = 0.5f;
 // Height-map bump: normal tilt per unit of height change per texel
 static const float  BumpStrength = 10.0f;
 // Linear-space hemisphere ambient: sky colour for up-facing normals, ground colour for down-facing.
-// Kept well below the light strength (~2) so lit and unlit sides read clearly.
+// Kept well below the light strength (~2) so lit and unlit sides read clearly. Mirrored by k_ambientSky and
+// k_ambientGround (RenderScene.cpp) for the editor's point light gizmo.
 static const float3 AmbientSky    = float3(0.14f, 0.16f, 0.20f);
 static const float3 AmbientGround = float3(0.05f, 0.045f, 0.04f);
 // Linear-space environment for uniform lighting, the same from every direction: a surface shows its albedo, as it
@@ -26,6 +27,11 @@ static const float  UniformEdgeShade = 0.45f;
 static const float  MaxShininessLog2 = 11.0f;
 // Specular reflectance at normal incidence = SpecularIntensity * this; 0.5 intensity gives the typical dielectric 0.04
 static const float  SpecularF0Scale = 0.08f;
+// Point light falloff: inverse square over distance as a fraction of the range, so the range sets how far the light
+// reaches. Higher concentrates it nearer the light: at half the range it's 1 / (1 + this / 4) of its strength,
+// before the window that takes it to 0 at the range. Mirrors k_pointFalloffSharpness (RenderScene.cpp), which the
+// editor's range gizmo uses.
+static const float  PointFalloffSharpness = 8.0f;
 
 //
 // Surface
@@ -166,9 +172,32 @@ float SampleShadow(float3 worldPos, float3 vertexNormal)
 //
 // Lighting
 //
-float3 LightRadiance()
+float3 LightRadiance(Light light)
 {
-	return SRGBToLinear(LightColour.rgb) * LightStrength;
+	return SRGBToLinear(light.Colour) * light.Strength;
+}
+
+// How much of the light reaches worldPos, before shadows, and the direction towards the light (outL). The light's
+// type decides both.
+float LightAttenuation(Light light, float3 worldPos, out float3 outL)
+{
+	if (light.Type == LIGHT_TYPE_POINT)
+	{
+		float3 toLight = light.Position - worldPos;
+		float distanceSq = dot(toLight, toLight);
+		outL = toLight * rsqrt(max(distanceSq, 1e-8f));
+
+		// Inverse square in fractions of the range rather than metres, so a longer range reaches further instead of
+		// only moving where a physically faded light is cut off. Windowed so it reaches exactly 0 at the range, and
+		// the 1 + keeps it finite at the light, so Strength is the brightness right next to it.
+		// Mirrors LightObject::CalculatePointFalloff.
+		float rangeRatioSq = distanceSq / max(light.Range * light.Range, 1e-8f);
+		float window = saturate(1.0f - rangeRatioSq * rangeRatioSq);
+		return window * window / (1.0f + PointFalloffSharpness * rangeRatioSq);
+	}
+
+	outL = -light.Direction;
+	return 1.0f;
 }
 
 // Sky above, ground below, or the same all round with uniform lighting. Also used as the environment for ambient
@@ -222,7 +251,37 @@ float3 AmbientLighting(SurfaceData surface, float3 viewDir, float shininess)
 	return diffuse + reflection;
 }
 
-// Returns linear HDR radiance for the scene's directional light, or for the uniform environment alone
+// Diffuse plus specular reflected towards viewDir from a light arriving from direction L, per unit of radiance.
+// Shared by every light type.
+float3 DirectLighting(SurfaceData surface, float3 viewDir, float3 L, float shininess)
+{
+	float3 N = surface.Normal;
+	float3 H = normalize(L + viewDir);
+
+	float NdotL = saturate(dot(N, L));
+	float NdotH = saturate(dot(N, H));
+	float VdotH = saturate(dot(viewDir, H));
+
+	// The specular mask also scales f90 so unmasked areas don't pick up a glancing-angle sheen
+	float fresnel = FresnelSchlick(surface.SpecularIntensity * SpecularF0Scale, surface.SpecularIntensity, VdotH);
+
+	float3 diffuse = surface.Albedo * NdotL;
+	float3 specular = fresnel * BlinnPhongSpecular(NdotH, shininess) * NdotL;
+	return diffuse + specular;
+}
+
+// Fraction of the light reaching the surface past whatever casts shadows: 1 for a light without a shadow map
+float LightShadow(Light light, SurfaceData surface)
+{
+	// Only the directional light has a shadow map so far
+	if (light.Type == LIGHT_TYPE_DIRECTIONAL && light.ShadowIndex >= 0)
+	{
+		return SampleShadow(surface.WorldPos, surface.VertexNormal);
+	}
+	return 1.0f;
+}
+
+// Returns linear HDR radiance for the scene's lights, or for the uniform environment alone
 float3 ComputeLighting(SurfaceData surface, float3 viewDir)
 {
 	if (UniformLighting > 0.5f)
@@ -231,27 +290,24 @@ float3 ComputeLighting(SurfaceData surface, float3 viewDir)
 		return AmbientLighting(surface, viewDir, max(surface.Shininess, 1.0f)) * lerp(UniformEdgeShade, 1.0f, facing);
 	}
 
-	float3 N = surface.Normal;
-	float3 L = -LightDirection;
-	float3 H = normalize(L + viewDir);
-
-	float NdotL = saturate(dot(N, L));
-	float NdotH = saturate(dot(N, H));
-	float VdotH = saturate(dot(viewDir, H));
-
-	float3 radiance = LightRadiance();
-
-	// The specular mask also scales f90 so unmasked areas don't pick up a glancing-angle sheen
-	float fresnel = FresnelSchlick(surface.SpecularIntensity * SpecularF0Scale, surface.SpecularIntensity, VdotH);
 	float shininess = max(surface.Shininess, 1.0f);
+	float3 colour = AmbientLighting(surface, viewDir, shininess);
 
-	float3 diffuse = surface.Albedo * NdotL;
-	float3 specular = fresnel * BlinnPhongSpecular(NdotH, shininess) * NdotL;
-	float3 ambient = AmbientLighting(surface, viewDir, shininess);
+	for (uint lightIndex = 0; lightIndex < LightCount; ++lightIndex)
+	{
+		Light light = Lights[lightIndex];
 
-	float shadow = SampleShadow(surface.WorldPos, surface.VertexNormal);
+		float3 L;
+		float attenuation = LightAttenuation(light, surface.WorldPos, L);
+		if (attenuation <= 0.0f)
+		{
+			continue;
+		}
 
-	return ambient + (diffuse + specular) * radiance * shadow;
+		colour += DirectLighting(surface, viewDir, L, shininess) * LightRadiance(light) * attenuation * LightShadow(light, surface);
+	}
+
+	return colour;
 }
 
 #endif // LIGHTING_HLSLI

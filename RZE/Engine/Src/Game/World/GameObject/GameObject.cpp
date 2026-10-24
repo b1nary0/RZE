@@ -397,7 +397,14 @@ void GameObject::LoadComponents(const rapidjson::Value& entry)
 	const GameObjectComponentRegistry::ComponentNameIDMap& componentInfo = GameObjectComponentRegistry::GetAllComponentReflectData();
 	for (auto& dataPair : componentInfo)
 	{
-		const auto componentData = components->value.FindMember(dataPair.second.c_str());
+		auto componentData = components->value.FindMember(dataPair.second.c_str());
+		// #TODO(LegacyLights) Data saved before the type was renamed
+		const char* const legacyName = GameObjectComponentRegistry::GetLegacyName(dataPair.first);
+		if (componentData == components->value.MemberEnd() && legacyName != nullptr)
+		{
+			componentData = components->value.FindMember(legacyName);
+		}
+
 		if (componentData != components->value.MemberEnd())
 		{
 			GameObjectComponentBase* component = AddComponentByID(dataPair.first);

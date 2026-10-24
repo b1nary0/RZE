@@ -42,6 +42,7 @@ namespace GameObjectComponentRegistry
 	ComponentNameIDMap s_componentTypeRegistry;
 	ComponentFactoryMap s_componentFactories;
 	ResourceDependencyGathererMap s_resourceDependencyGatherers;
+	ComponentNameIDMap s_legacyNames;
 
 	void RegisterComponentType(GameObjectComponentID id, const char* componentName)
 	{
@@ -61,6 +62,17 @@ namespace GameObjectComponentRegistry
 	const ComponentNameIDMap& GetAllComponentReflectData()
 	{
 		return s_componentTypeRegistry;
+	}
+
+	void RegisterLegacyName(GameObjectComponentID id, const char* legacyName)
+	{
+		s_legacyNames.insert({ id, legacyName });
+	}
+
+	const char* GetLegacyName(GameObjectComponentID id)
+	{
+		auto iter = s_legacyNames.find(id);
+		return iter != s_legacyNames.end() ? iter->second.c_str() : nullptr;
 	}
 
 	void SetResourceDependencyGatherer(GameObjectComponentID id, ResourceDependencyGatherer gatherer)

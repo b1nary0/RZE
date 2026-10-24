@@ -10,8 +10,8 @@ class RenderStageBuilder;
 // in IRenderStage::Setup(), and the stage keeps them as members, so a stage's header lists its inputs and
 // outputs, and it can't touch a contract it didn't declare.
 //
-//	m_shadowMap = builder.Reads<ShadowMapData>();				// RenderInput<ShadowMapData>
-//	const ShadowMapData& shadowMap = m_shadowMap.Get(context);
+//	m_sceneLighting = builder.Reads<SceneLightingData>();		// RenderInput<SceneLightingData>
+//	const SceneLightingData& sceneLighting = m_sceneLighting.Get(context);
 //
 // A default-constructed port hasn't been declared, and asserts when used.
 

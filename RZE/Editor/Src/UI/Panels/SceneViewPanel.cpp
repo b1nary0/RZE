@@ -18,8 +18,8 @@
 
 #include <Game/World/GameObject/GameObject.h>
 #include <Game/World/GameObjectComponents/CameraComponent.h>
-#include <Game/World/GameObjectComponents/DirectionalLightComponent.h>
 #include <Game/World/GameObjectComponents/EditorCameraComponent.h>
+#include <Game/World/GameObjectComponents/LightComponent.h>
 #include <Game/World/GameObjectComponents/RenderComponent.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
@@ -61,6 +61,55 @@ namespace
 			return *groundPoint;
 		}
 		return pick.CameraRay.GetPoint(k_fallbackDistance);
+	}
+
+	// Draws a light's icon around center: a sun for a directional light, a bulb for a point light, with alpha scaling
+	// its opacity. Returns how far the icon reaches from center, for its click box.
+	float DrawLightIcon(ImDrawList& drawList, const ImVec2& center, ELightType type, float alpha)
+	{
+		auto withAlpha = [alpha](int r, int g, int b, int a)
+		{
+			return IM_COL32(r, g, b, static_cast<int>(a * alpha));
+		};
+		const ImU32 outlineColour = withAlpha(0, 0, 0, 200);
+
+		if (type == ELightType::Directional)
+		{
+			// Sun: filled disc with eight rays
+			constexpr float k_discRadius = 7.0f;
+			constexpr float k_rayInner = 10.0f;
+			constexpr float k_rayOuter = 15.0f;
+			const ImU32 sunColour = withAlpha(255, 210, 60, 255);
+
+			drawList.AddCircleFilled(center, k_discRadius, sunColour, 16);
+			drawList.AddCircle(center, k_discRadius, outlineColour, 16, 1.5f);
+			for (int ray = 0; ray < 8; ++ray)
+			{
+				const float angle = ray * (MathUtils::Pi / 4.0f);
+				const ImVec2 dir(std::cos(angle), std::sin(angle));
+				drawList.AddLine(
+					ImVec2(center.x + dir.x * k_rayInner, center.y + dir.y * k_rayInner),
+					ImVec2(center.x + dir.x * k_rayOuter, center.y + dir.y * k_rayOuter),
+					sunColour, 2.0f);
+			}
+			return k_rayOuter;
+		}
+
+		// Bulb: round glass over a screw base
+		constexpr float k_glassRadius = 8.0f;
+		const ImU32 glassColour = withAlpha(255, 230, 140, 255);
+		const ImU32 baseColour = withAlpha(175, 175, 185, 255);
+		const ImVec2 glassCenter(center.x, center.y - 3.0f);
+		const ImVec2 baseMin(center.x - 4.5f, center.y + 4.0f);
+		const ImVec2 baseMax(center.x + 4.5f, center.y + 11.0f);
+
+		drawList.AddRectFilled(baseMin, baseMax, baseColour, 1.5f);
+		drawList.AddRect(baseMin, baseMax, outlineColour, 1.5f, 0, 1.5f);
+		drawList.AddLine(ImVec2(baseMin.x, center.y + 7.5f), ImVec2(baseMax.x, center.y + 7.5f), outlineColour, 1.0f);
+		drawList.AddCircleFilled(glassCenter, k_glassRadius, glassColour, 16);
+		drawList.AddCircle(glassCenter, k_glassRadius, outlineColour, 16, 1.5f);
+		// From the top of the glass to the bottom of the base
+		return 11.0f;
 	}
 }
 
@@ -332,9 +381,31 @@ namespace Editor
 				{
 					DrawCameraFrustum(gameObject->GetTransformComponent()->GetPosition(), **camera);
 				}
+
+				// How far a point light reaches, in the bulb icon's colour, and inside it, in orange, how far it outshines
+				// the ambient light, so it grows with the strength. Lights usually sit near walls, so the parts behind
+				// them still show, fainter.
+				GameObjectComponentPtr<LightComponent> light = gameObject->GetComponent<LightComponent>();
+				if (light != nullptr && light->GetLightType() == ELightType::Point)
+				{
+					constexpr float k_occludedAlpha = 0.25f;
+					const Vector3D rangeColour(1.0f, 0.9f, 0.55f);
+					const Vector3D outshinesAmbientColour(1.0f, 0.5f, 0.15f);
+					const Vector3D& position = gameObject->GetTransformComponent()->GetPosition();
+
+					RenderEngine& renderEngine = RZE().GetRenderEngine();
+					renderEngine.DrawWireSphere(position, light->GetRange(), rangeColour, 1.0f, k_occludedAlpha);
+
+					const float outshinesAmbientRatio = LightObject::CalculateOutshinesAmbientRatio(light->GetLightStrength(), light->GetLightColour());
+					if (outshinesAmbientRatio > 0.0f)
+					{
+						renderEngine.DrawWireSphere(position, light->GetRange() * outshinesAmbientRatio, outshinesAmbientColour, 1.0f, k_occludedAlpha);
+					}
+				}
 			}));
 
-		// Last, so the grid's lines follow the opaque debug lines (frustums) and its depth writes can't hide them
+		// Last, so the grid's lines follow the opaque debug lines (frustums, light ranges) and its depth writes can't
+		// hide them
 		GameObjectPtr cameraObject = context.GetEditorCamera();
 		if (cameraObject != nullptr)
 		{
@@ -436,30 +507,14 @@ namespace Editor
 				};
 				const ImU32 outlineColour = withAlpha(0, 0, 0, 200);
 
-				if (gameObject->GetComponent<DirectionalLightComponent>() != nullptr)
+				GameObjectComponentPtr<LightComponent> light = gameObject->GetComponent<LightComponent>();
+				if (light != nullptr)
 				{
 					ImVec2 center;
 					if (worldToScreen(position, center))
 					{
-						// Sun: filled disc with eight rays
-						constexpr float k_discRadius = 7.0f;
-						constexpr float k_rayInner = 10.0f;
-						constexpr float k_rayOuter = 15.0f;
-						const ImU32 sunColour = withAlpha(255, 210, 60, 255);
-
-						drawList->AddCircleFilled(center, k_discRadius, sunColour, 16);
-						drawList->AddCircle(center, k_discRadius, outlineColour, 16, 1.5f);
-						for (int ray = 0; ray < 8; ++ray)
-						{
-							const float angle = ray * (MathUtils::Pi / 4.0f);
-							const ImVec2 dir(std::cos(angle), std::sin(angle));
-							drawList->AddLine(
-								ImVec2(center.x + dir.x * k_rayInner, center.y + dir.y * k_rayInner),
-								ImVec2(center.x + dir.x * k_rayOuter, center.y + dir.y * k_rayOuter),
-								sunColour, 2.0f);
-						}
-
-						m_iconHits.push_back({ gameObject, Vector2D(center.x - k_rayOuter, center.y - k_rayOuter), Vector2D(center.x + k_rayOuter, center.y + k_rayOuter) });
+						const float reach = DrawLightIcon(*drawList, center, light->GetLightType(), alpha);
+						m_iconHits.push_back({ gameObject, Vector2D(center.x - reach, center.y - reach), Vector2D(center.x + reach, center.y + reach) });
 					}
 				}
 

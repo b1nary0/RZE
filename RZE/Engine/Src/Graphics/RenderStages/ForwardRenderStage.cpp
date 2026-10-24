@@ -13,13 +13,13 @@
 #include <Rendering/Graphics/RenderTarget.h>
 
 #include <Utils/Math/Frustum.h>
-#include <Utils/Math/Units.h>
 
 #include <algorithm>
 
 namespace
 {
-	// Must match ShadowBuffer / ViewLightingBuffer / ShadowMap registers in Common/PixelResources.hlsli
+	// Must match LightBuffer / ShadowBuffer / ViewLightingBuffer / ShadowMap registers in Common/PixelResources.hlsli
+	constexpr U32 k_lightBufferSlot = 2;
 	constexpr U32 k_shadowBufferSlot = 3;
 	constexpr U32 k_viewLightingBufferSlot = 4;
 	constexpr U32 k_shadowMapSlot = 5;
@@ -39,18 +39,12 @@ void ForwardRenderStage::Initialize()
 	AssertExpr(m_vertexShaderResource.IsValid());
 	m_vertexShader = RZE().GetResourceHandler().GetResource<VertexShader>(m_vertexShaderResource);
 
-	m_fallbackLight = std::make_unique<LightObject>();
-	m_fallbackLight->Initialize();
-	m_fallbackLight->SetDirection(WorldAxes::Up() * -1.0f);
-	m_fallbackLight->SetColour(Vector4D(0.0f, 0.0f, 0.0f, 1.0f));
-	m_fallbackLight->SetStrength(0.0f);
-
 	m_viewLightingBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(ViewLightingLayout), 16, 1);
 }
 
 void ForwardRenderStage::Setup(RenderStageBuilder& builder)
 {
-	m_shadowMapInput = builder.Reads<ShadowMapData>();
+	m_sceneLightingInput = builder.Reads<SceneLightingData>();
 	m_sceneColourOutput = builder.Writes<SceneColourData>();
 }
 
@@ -62,7 +56,7 @@ void ForwardRenderStage::Render(RenderContext& context)
 
 	const RenderView& view = context.View;
 	const RenderScene& scene = context.Scene;
-	const ShadowMapData& shadowMapData = m_shadowMapInput.Get(context);
+	const SceneLightingData& sceneLightingData = m_sceneLightingInput.Get(context);
 
 	// Linear scene colour; PostProcessRenderStage exposes and tonemaps it into the 8-bit target.
 	// Alpha 0 marks the background, which it fills with the clear colour.
@@ -76,9 +70,6 @@ void ForwardRenderStage::Render(RenderContext& context)
 
 	Rendering::Renderer::UploadDataToBuffer<RenderCamera>(m_vertexShader->GetCameraDataBuffer(), &view.Camera);
 
-	LightObject* const lightObject = scene.GetLightObjects().empty() ? m_fallbackLight.get() : scene.GetLightObjects()[0].get();
-	Rendering::Renderer::UploadDataToBuffer<LightObject::PropertyBufferLayout>(lightObject->GetPropertyBuffer(), &lightObject->GetData());
-
 	ViewLightingLayout viewLighting;
 	viewLighting.UniformLighting = view.Lighting == ERenderViewLighting::Uniform ? 1.0f : 0.0f;
 	Rendering::Renderer::UploadDataToBuffer<ViewLightingLayout>(m_viewLightingBuffer, &viewLighting);
@@ -91,11 +82,11 @@ void ForwardRenderStage::Render(RenderContext& context)
 	Rendering::Renderer::SetInputLayout(m_vertexShader->GetPlatformObject());
 	Rendering::Renderer::SetPrimitiveTopology(Rendering::EPrimitiveTopology::TriangleList);
 
-	Rendering::Renderer::SetConstantBufferPS(shadowMapData.ShadowParams, k_shadowBufferSlot);
-	Rendering::Renderer::SetTextureResource(shadowMapData.ShadowMap, k_shadowMapSlot);
+	Rendering::Renderer::SetConstantBufferPS(sceneLightingData.ShadowBuffer, k_shadowBufferSlot);
+	Rendering::Renderer::SetTextureResource(sceneLightingData.DirectionalShadowMap, k_shadowMapSlot);
 
 	// The same for every draw: bound once, and only the world matrix buffer's contents change per object
-	Rendering::Renderer::SetConstantBufferPS(lightObject->GetPropertyBuffer(), 2);
+	Rendering::Renderer::SetConstantBufferPS(sceneLightingData.LightBuffer, k_lightBufferSlot);
 	Rendering::Renderer::SetConstantBufferPS(m_viewLightingBuffer, k_viewLightingBufferSlot);
 	Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetWorldMatrixBuffer(), 1);
 

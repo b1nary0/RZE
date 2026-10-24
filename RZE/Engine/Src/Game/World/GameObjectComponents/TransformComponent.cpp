@@ -4,6 +4,8 @@
 #include <Game/World/GameObject/GameObject.h>
 
 #include <Utils/Utils.h>
+#include <Utils/Math/Quaternion.h>
+#include <Utils/Math/Units.h>
 
 TransformComponent::TransformComponent(const Vector3D& position)
 {
@@ -86,6 +88,16 @@ const Matrix4x4& TransformComponent::GetWorldMatrix() const
 Matrix4x4 TransformComponent::GetLocalMatrix() const
 {
 	return Matrix4x4::CreateInPlace(m_position, m_scale, m_rotation);
+}
+
+Vector3D TransformComponent::GetForward() const
+{
+	return (Quaternion::FromEulerDegrees(m_rotation) * WorldAxes::Forward()).Normalized();
+}
+
+Vector3D TransformComponent::GetUp() const
+{
+	return (Quaternion::FromEulerDegrees(m_rotation) * WorldAxes::Up()).Normalized();
 }
 
 void TransformComponent::OnLocalTransformChanged()

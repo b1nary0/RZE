@@ -8,10 +8,10 @@ using RenderDataTypeId = const void*;
 // Base for data contracts: the typed packets render stages hand to each other through a RenderView's
 // blackboard. Derive with CRTP and give the contract a name for validation and log messages:
 //
-//	struct ShadowMapData : RenderStageData<ShadowMapData>
+//	struct SceneLightingData : RenderStageData<SceneLightingData>
 //	{
-//		static constexpr const char* k_name = "ShadowMapData";
-//		Rendering::TextureBuffer2DHandle ShadowMap;
+//		static constexpr const char* k_name = "SceneLightingData";
+//		Rendering::TextureBuffer2DHandle DirectionalShadowMap;
 //	};
 //
 // Contracts should be cheap to copy (handles and plain values). Put each in its own header so

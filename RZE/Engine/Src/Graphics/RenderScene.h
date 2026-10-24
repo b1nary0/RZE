@@ -4,8 +4,6 @@
 #include <Graphics/RenderBlackboard.h>
 #include <Graphics/StaticMeshInstance.h>
 
-#include <Rendering/BufferHandle.h>
-
 #include <Utils/Math/BoundingBox.h>
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector3D.h>
@@ -14,62 +12,76 @@
 #include <memory>
 #include <vector>
 
+// How a light shines, which decides how it's lit and shadowed. The shaders branch on the values (Light::Type in
+// Common/PixelResources.hlsli), so new types go at the end.
+enum class ELightType
+{
+	// From one direction everywhere, like the sun; position doesn't matter
+	Directional,
+	// From a point in every direction, fading out by its range
+	Point
+};
+
+// A light in a scene: the data every type shares, read by its type. It has no GPU resources of its own:
+// ShadowRenderStage puts all of a scene's lights into one buffer.
 class LightObject
 {
 	// Hands out m_sceneRevision
 	friend class RenderScene;
 
 public:
-	struct PropertyBufferLayout
-	{
-		Vector3D direction; // World-space, normalized; the direction light travels
-		float _pad0; // Matches HLSL cbuffer packing: float4 can't straddle a 16-byte boundary
-		Vector4D colour;
-		float strength;
-	};
-
-public:
 	// Alive until destroyed (RenderSceneLifetime)
-	LightObject();
+	explicit LightObject(ELightType type);
 	~LightObject();
 
 	LightObject(const LightObject&) = delete;
 	LightObject& operator=(const LightObject&) = delete;
 
-	void Initialize();
-
 	// Never reused, so a LightObjectPtr can tell once this light is gone
 	U32 GetLiveID() const { return m_liveID; }
 
-	void SetDirection(const Vector3D& direction)
-	{
-		if (direction != m_data.direction)
-		{
-			m_data.direction = direction;
-			MarkSceneChanged();
-		}
-	}
-	const Vector3D& GetDirection() const { return m_data.direction; }
+	// The setters below mark the scene changed when the value moves the light's shadows (see MarkSceneChanged)
+	void SetType(ELightType type);
+	ELightType GetType() const { return m_type; }
 
-	void SetStrength(float strength) { m_data.strength = strength; }
-	float GetStrength() const { return m_data.strength; }
+	// World space; only used by point lights
+	void SetPosition(const Vector3D& position);
+	const Vector3D& GetPosition() const { return m_position; }
 
-	void SetColour(const Vector4D& colour) { m_data.colour = colour; }
-	const Vector4D& GetColour() const { return m_data.colour; }
+	// World space, normalized; the direction light travels. Only used by directional lights.
+	void SetDirection(const Vector3D& direction);
+	const Vector3D& GetDirection() const { return m_direction; }
 
-	const PropertyBufferLayout& GetData() { return m_data; }
+	// Distance in metres at which a point light has faded to nothing; only used by point lights
+	void SetRange(float range);
+	float GetRange() const { return m_range; }
 
-	const Rendering::ConstantBufferHandle& GetPropertyBuffer() { return m_propertyBuffer; }
+	// The fraction of its strength a point light gives at rangeRatio (distance / range): 1 at the light, falling to 0
+	// at its range. Mirrors LightAttenuation in Common/Lighting.hlsli.
+	static float CalculatePointFalloff(float rangeRatio);
+	// The rangeRatio within which a point light of this strength and colour (sRGB) lights a surface facing it more
+	// than the ambient light does, so it's the main light there; 0 if it never does. Grows with strength, up to 1.
+	static float CalculateOutshinesAmbientRatio(float strength, const Vector4D& colour);
+
+	void SetStrength(float strength) { m_strength = strength; }
+	float GetStrength() const { return m_strength; }
+
+	// sRGB
+	void SetColour(const Vector4D& colour) { m_colour = colour; }
+	const Vector4D& GetColour() const { return m_colour; }
 
 private:
-	// Only the direction counts: colour and strength don't change anything that's cached (e.g. the shadow map)
+	// For changes that move the light's shadows, so cached shadow maps are made again. Colour and strength don't.
 	void MarkSceneChanged() { if (m_sceneRevision != nullptr) { ++*m_sceneRevision; } }
 
 private:
-	PropertyBufferLayout m_data;
+	ELightType m_type;
+	Vector3D m_position;
+	Vector3D m_direction = Vector3D(0.0f, -1.0f, 0.0f);
+	Vector4D m_colour = Vector4D(1.0f);
+	float m_strength = 1.0f;
+	float m_range = 10.0f;
 
-private:
-	Rendering::ConstantBufferHandle m_propertyBuffer;
 	// RenderScene::GetRevision of the scene this light is in
 	U64* m_sceneRevision = nullptr;
 
@@ -180,6 +192,9 @@ struct DebugLine
 	// 1 is opaque; lower values blend with what's behind
 	float alpha;
 	DebugLineFade fade;
+	// How opaque it's drawn where it's behind the scene, so e.g. a light's range still shows through the walls it
+	// passes behind; 0 hides those parts
+	float occludedAlpha = 0.0f;
 };
 
 typedef std::vector<std::unique_ptr<RenderObject>> RenderObjectContainer;
@@ -205,8 +220,11 @@ public:
 	RenderObjectPtr CreateRenderObject(const std::shared_ptr<const StaticMeshInstance>& meshInstance);
 	void DestroyRenderObject(RenderObjectPtr& renderObject);
 
-	LightObjectPtr CreateLightObject();
+	LightObjectPtr CreateLightObject(ELightType type);
 	void DestroyLightObject(LightObjectPtr& lightObject);
+
+	// The first directional light, or null without one
+	const LightObject* GetDirectionalLight() const;
 
 	// Destroys every render object (not the lights)
 	void ClearObjects();
@@ -216,6 +234,9 @@ public:
 	void DrawLine(const Vector3D& start, const Vector3D& end, const Vector3D& colour = Vector3D(1.0f, 0.0f, 0.0f), float alpha = 1.0f, const DebugLineFade& fade = DebugLineFade());
 	// Draws the 12 edges of an object-space box, transformed into world space by transform
 	void DrawWireBox(const BoundingBox& box, const Matrix4x4& transform, const Vector3D& colour, float alpha = 1.0f);
+	// Draws a world-space sphere as three circles, one around each world axis. occludedAlpha is how opaque its parts
+	// behind the scene are (DebugLine::occludedAlpha).
+	void DrawWireSphere(const Vector3D& centre, float radius, const Vector3D& colour, float alpha = 1.0f, float occludedAlpha = 0.0f);
 	void ClearDebugLines() { m_debugLines.clear(); }
 
 	// Destroys what stages keep for this scene (e.g. its shadow map); they make it again the next time it's rendered

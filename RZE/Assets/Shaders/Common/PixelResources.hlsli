@@ -16,12 +16,32 @@ cbuffer MaterialBuffer : register(b1)
 	float HasSpecularMap; // 1 when SpecularMap is bound for this material
 };
 
-// Mirrors LightObject::PropertyBufferLayout (RenderEngine.h)
+// Mirrors ShadowRenderStage::k_maxLights (ShadowRenderStage.h)
+#define MAX_LIGHTS 16
+
+// Mirrors ELightType (RenderScene.h)
+#define LIGHT_TYPE_DIRECTIONAL 0
+#define LIGHT_TYPE_POINT 1
+
+// Mirrors ShadowRenderStage::LightLayout (ShadowRenderStage.h). Each type reads only what it uses.
+struct Light
+{
+	float3 Position;  // World space; point lights
+	float  Range;     // Metres at which a point light has faded to nothing
+	float3 Direction; // World space, normalized; the direction a directional light's light travels
+	uint   Type;      // LIGHT_TYPE_*
+	float3 Colour;    // sRGB
+	float  Strength;
+	int    ShadowIndex; // Which of its type's shadow maps it casts into; -1 for none
+	// Without it, LightCount would pack into the last light's spare bytes instead of where the C++ layout has it
+	float3 _Pad;
+};
+
+// Mirrors ShadowRenderStage::LightBufferLayout (ShadowRenderStage.h)
 cbuffer LightBuffer : register(b2)
 {
-	float3 LightDirection; // World space, normalized; the direction light travels
-	float4 LightColour;
-	float LightStrength;
+	Light Lights[MAX_LIGHTS];
+	uint  LightCount;
 };
 
 // Mirrors ShadowRenderStage::ShadowBufferLayout (ShadowRenderStage.h)

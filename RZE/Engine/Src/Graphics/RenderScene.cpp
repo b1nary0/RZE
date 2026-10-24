@@ -3,11 +3,11 @@
 
 #include <Game/World/GameObject/LiveIDSet.h>
 
-#include <Rendering/Renderer.h>
-
 #include <Utils/Math/Math.h>
+#include <Utils/Math/Units.h>
 
 #include <algorithm>
+#include <cmath>
 
 namespace
 {
@@ -17,6 +17,24 @@ namespace
 
 	LiveIDSet s_aliveRenderObjects;
 	LiveIDSet s_aliveLightObjects;
+
+	// Mirrors PointFalloffSharpness in Common/Lighting.hlsli
+	constexpr float k_pointFalloffSharpness = 8.0f;
+	// Mirror AmbientSky and AmbientGround in Common/Lighting.hlsli; linear
+	constexpr float k_ambientSky[3] = { 0.14f, 0.16f, 0.20f };
+	constexpr float k_ambientGround[3] = { 0.05f, 0.045f, 0.04f };
+
+	// Rec. 709 weights, for linear colours
+	float Luminance(float r, float g, float b)
+	{
+		return 0.2126f * r + 0.7152f * g + 0.0722f * b;
+	}
+
+	// As SRGBToLinear in Common/ColourSpace.hlsli
+	float SRGBToLinear(float value)
+	{
+		return std::pow(std::max(value, 0.0f), 2.2f);
+	}
 }
 
 namespace RenderSceneLifetime
@@ -37,8 +55,9 @@ namespace RenderSceneLifetime
 	}
 }
 
-LightObject::LightObject()
-	: m_liveID(s_nextLightObjectID++)
+LightObject::LightObject(ELightType type)
+	: m_type(type)
+	, m_liveID(s_nextLightObjectID++)
 {
 	s_aliveLightObjects.Add(m_liveID);
 }
@@ -59,9 +78,82 @@ RenderObject::~RenderObject()
 	s_aliveRenderObjects.Remove(m_liveID);
 }
 
-void LightObject::Initialize()
+void LightObject::SetType(ELightType type)
 {
-	m_propertyBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(PropertyBufferLayout), 16, 1);
+	if (type != m_type)
+	{
+		m_type = type;
+		MarkSceneChanged();
+	}
+}
+
+void LightObject::SetPosition(const Vector3D& position)
+{
+	if (position != m_position)
+	{
+		m_position = position;
+		if (m_type == ELightType::Point)
+		{
+			MarkSceneChanged();
+		}
+	}
+}
+
+void LightObject::SetDirection(const Vector3D& direction)
+{
+	if (direction != m_direction)
+	{
+		m_direction = direction;
+		if (m_type == ELightType::Directional)
+		{
+			MarkSceneChanged();
+		}
+	}
+}
+
+float LightObject::CalculatePointFalloff(float rangeRatio)
+{
+	const float rangeRatioSq = rangeRatio * rangeRatio;
+	const float window = std::clamp(1.0f - rangeRatioSq * rangeRatioSq, 0.0f, 1.0f);
+	return window * window / (1.0f + k_pointFalloffSharpness * rangeRatioSq);
+}
+
+float LightObject::CalculateOutshinesAmbientRatio(float strength, const Vector4D& colour)
+{
+	// What a wall gets: halfway between the sky above and the ground below (HemisphereAmbient)
+	const float ambient = Luminance(
+		(k_ambientSky[0] + k_ambientGround[0]) * 0.5f,
+		(k_ambientSky[1] + k_ambientGround[1]) * 0.5f,
+		(k_ambientSky[2] + k_ambientGround[2]) * 0.5f);
+	// Right next to the light, before falloff (LightRadiance)
+	const float light = strength * Luminance(SRGBToLinear(colour.X()), SRGBToLinear(colour.Y()), SRGBToLinear(colour.Z()));
+
+	if (light <= ambient)
+	{
+		return 0.0f;
+	}
+
+	// The falloff only goes down between the light and its range, so halving the interval homes in on the crossing
+	float low = 0.0f;
+	float high = 1.0f;
+	for (int step = 0; step < 24; ++step)
+	{
+		const float middle = (low + high) * 0.5f;
+		(light * CalculatePointFalloff(middle) > ambient ? low : high) = middle;
+	}
+	return (low + high) * 0.5f;
+}
+
+void LightObject::SetRange(float range)
+{
+	if (range != m_range)
+	{
+		m_range = range;
+		if (m_type == ELightType::Point)
+		{
+			MarkSceneChanged();
+		}
+	}
 }
 
 void RenderObject::SetMeshInstance(const std::shared_ptr<const StaticMeshInstance>& meshInstance)
@@ -193,11 +285,10 @@ void RenderScene::DestroyRenderObject(RenderObjectPtr& renderObject)
 	}
 }
 
-LightObjectPtr RenderScene::CreateLightObject()
+LightObjectPtr RenderScene::CreateLightObject(ELightType type)
 {
-	std::unique_ptr<LightObject>& lightObjectPtr = m_lightObjects.emplace_back(std::make_unique<LightObject>());
+	std::unique_ptr<LightObject>& lightObjectPtr = m_lightObjects.emplace_back(std::make_unique<LightObject>(type));
 	lightObjectPtr->m_sceneRevision = &m_revision;
-	lightObjectPtr->Initialize();
 	++m_revision;
 
 	return LightObjectPtr(lightObjectPtr.get(), lightObjectPtr->GetLiveID());
@@ -238,6 +329,18 @@ void RenderScene::DestroyLightObject(LightObjectPtr& lightObject)
 	}
 }
 
+const LightObject* RenderScene::GetDirectionalLight() const
+{
+	for (const std::unique_ptr<LightObject>& lightObject : m_lightObjects)
+	{
+		if (lightObject->GetType() == ELightType::Directional)
+		{
+			return lightObject.get();
+		}
+	}
+	return nullptr;
+}
+
 void RenderScene::DrawLine(const Vector3D& start, const Vector3D& end, const Vector3D& colour, float alpha, const DebugLineFade& fade)
 {
 	DebugLine line{ start, end, colour, alpha, fade };
@@ -258,6 +361,29 @@ void RenderScene::DrawWireBox(const BoundingBox& box, const Matrix4x4& transform
 			{
 				DrawLine(corners[i], corners[i | axisBit], colour, alpha);
 			}
+		}
+	}
+}
+
+void RenderScene::DrawWireSphere(const Vector3D& centre, float radius, const Vector3D& colour, float alpha, float occludedAlpha)
+{
+	// Enough that a sphere filling the view still reads as round
+	constexpr int k_segmentCount = 48;
+
+	// Each circle is drawn in the plane of two axes
+	const Vector3D axes[3] = { WorldAxes::Right(), WorldAxes::Up(), WorldAxes::Forward() };
+	for (int circle = 0; circle < 3; ++circle)
+	{
+		const Vector3D& u = axes[circle];
+		const Vector3D& v = axes[(circle + 1) % 3];
+
+		Vector3D previous = centre + u * radius;
+		for (int segment = 1; segment <= k_segmentCount; ++segment)
+		{
+			const float angle = segment * (2.0f * MathUtils::Pi / k_segmentCount);
+			const Vector3D next = centre + (u * std::cos(angle) + v * std::sin(angle)) * radius;
+			m_debugLines.push_back({ previous, next, colour, alpha, DebugLineFade(), occludedAlpha });
+			previous = next;
 		}
 	}
 }

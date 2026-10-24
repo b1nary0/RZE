@@ -40,6 +40,9 @@ public:
 	// Where it sits in its parent (its position, rotation and scale), or in the world for a root. Worked out on each
 	// call, rather than kept like GetWorldMatrix.
 	Matrix4x4 GetLocalMatrix() const;
+	// WorldAxes::Forward and Up turned by its own rotation, normalized. Parents' rotations aren't included.
+	Vector3D GetForward() const;
+	Vector3D GetUp() const;
 
 	//
 	// Operations

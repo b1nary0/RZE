@@ -45,6 +45,9 @@ private:
 
 	// All lines for a Render() call are batched into this one buffer
 	DynamicVertexBuffer m_lineBuffer;
+	// The lines drawn again for their parts behind the scene (DebugLine::occludedAlpha)
+	DynamicVertexBuffer m_occludedLineBuffer;
 	// Reused every call so steady state does no heap allocation
 	std::vector<LineVertex> m_scratchVertices;
+	std::vector<LineVertex> m_scratchOccludedVertices;
 };

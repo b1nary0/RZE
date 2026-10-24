@@ -4,8 +4,8 @@
 #include <EngineCore/Engine.h>
 
 #include <Game/World/GameObjectComponents/CameraComponent.h>
-#include <Game/World/GameObjectComponents/DirectionalLightComponent.h>
 #include <Game/World/GameObjectComponents/GifChatComponent.h>
+#include <Game/World/GameObjectComponents/LightComponent.h>
 #include <Game/World/GameObjectComponents/RenderComponent.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
@@ -99,8 +99,11 @@ void RZE_Application::RegisterEngineComponents()
 	REGISTER_GAMEOBJECTCOMPONENT(CameraComponent);
 	REGISTER_GAMEOBJECTCOMPONENT(RenderComponent);
 	REGISTER_GAMEOBJECTCOMPONENT(TransformComponent);
-	REGISTER_GAMEOBJECTCOMPONENT(DirectionalLightComponent);
+	REGISTER_GAMEOBJECTCOMPONENT(LightComponent);
 	REGISTER_GAMEOBJECTCOMPONENT(GifChatComponent);
+
+	// #TODO(LegacyLights) Scenes saved before lights had types still have their sun under its old name
+	GameObjectComponentRegistry::RegisterLegacyName(LightComponent::GetID(), "DirectionalLightComponent");
 
 	// Lets async scene loading preload these components' resources on worker threads.
 	GameObjectComponentRegistry::SetResourceDependencyGatherer(RenderComponent::GetID(), &RenderComponent::GatherResourceDependencies);

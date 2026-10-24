@@ -68,6 +68,10 @@ public:
 	{
 		GetMainScene().DrawWireBox(box, transform, colour, alpha);
 	}
+	void DrawWireSphere(const Vector3D& centre, float radius, const Vector3D& colour, float alpha = 1.0f, float occludedAlpha = 0.0f)
+	{
+		GetMainScene().DrawWireSphere(centre, radius, colour, alpha, occludedAlpha);
+	}
 
 	void ResizeCanvas(const Vector2D& newSize);
 	const Vector2D& GetCanvasSize() const;

@@ -54,7 +54,7 @@ void ShadowRenderStage::Initialize()
 
 void ShadowRenderStage::Setup(RenderStageBuilder& builder)
 {
-	m_shadowMapOutput = builder.Writes<ShadowMapData>();
+	m_sceneLightingOutput = builder.Writes<SceneLightingData>();
 }
 
 void ShadowRenderStage::Render(RenderContext& context)
@@ -77,11 +77,42 @@ void ShadowRenderStage::Render(RenderContext& context)
 		state.HasRenderedMap = true;
 	}
 
-	// Published even without a light: HasShadows = 0 tells the sampling shaders to skip the lookup
-	ShadowMapData shadowMapData;
-	shadowMapData.ShadowMap = state.ShadowMap;
-	shadowMapData.ShadowParams = state.ShadowBuffer;
-	m_shadowMapOutput.Publish(context, shadowMapData);
+	// Every view uploads it, since colours and strengths change without changing the revision. It's small.
+	UploadLights(scene, state);
+
+	// Published even without a light: an empty light buffer, and HasShadows = 0 tells the sampling shaders to skip
+	// the lookup
+	SceneLightingData sceneLightingData;
+	sceneLightingData.LightBuffer = state.LightBuffer;
+	sceneLightingData.ShadowBuffer = state.ShadowBuffer;
+	sceneLightingData.DirectionalShadowMap = state.ShadowMap;
+	m_sceneLightingOutput.Publish(context, sceneLightingData);
+}
+
+void ShadowRenderStage::UploadLights(const RenderScene& scene, const ShadowMapState& state)
+{
+	// The light RenderShadowMap renders the map from
+	const LightObject* const shadowedLight = scene.GetDirectionalLight();
+
+	LightBufferLayout lightData;
+	for (const std::unique_ptr<LightObject>& lightObject : scene.GetLightObjects())
+	{
+		if (lightData.Count == k_maxLights)
+		{
+			break;
+		}
+
+		LightLayout& light = lightData.Lights[lightData.Count++];
+		light.Position = lightObject->GetPosition();
+		light.Range = lightObject->GetRange();
+		light.Direction = lightObject->GetDirection();
+		light.Type = static_cast<U32>(lightObject->GetType());
+		light.Colour = lightObject->GetColour().XYZ();
+		light.Strength = lightObject->GetStrength();
+		light.ShadowIndex = lightObject.get() == shadowedLight ? 0 : -1;
+	}
+
+	Rendering::Renderer::UploadDataToBuffer<LightBufferLayout>(state.LightBuffer, &lightData);
 }
 
 ShadowRenderStage::ShadowMapState ShadowRenderStage::CreateShadowMapState()
@@ -95,6 +126,7 @@ ShadowRenderStage::ShadowMapState ShadowRenderStage::CreateShadowMapState()
 	shadowMapParams.SampleCount = 1;
 
 	ShadowMapState state;
+	state.LightBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(LightBufferLayout), 16, 1);
 	state.ShadowMap = Rendering::Renderer::CreateTextureBuffer2D(shadowMapParams);
 	state.ShadowBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(ShadowBufferLayout), 16, 1);
 	return state;
@@ -118,8 +150,9 @@ void ShadowRenderStage::RenderShadowMap(const RenderScene& scene, const ShadowMa
 	Matrix4x4 lightViewProjection;
 	float worldTexelSize = 0.0f;
 
-	if (!scene.GetLightObjects().empty()
-		&& CalculateLightViewProjection(scene, scene.GetLightObjects()[0]->GetDirection(), lightViewProjection, worldTexelSize))
+	const LightObject* const directionalLight = scene.GetDirectionalLight();
+	if (directionalLight != nullptr
+		&& CalculateLightViewProjection(scene, directionalLight->GetDirection(), lightViewProjection, worldTexelSize))
 	{
 		// Only ClipSpace is used by the caster shaders
 		RenderCamera lightCamera;
