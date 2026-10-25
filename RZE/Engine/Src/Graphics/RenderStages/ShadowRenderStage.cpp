@@ -336,7 +336,7 @@ void ShadowRenderStage::RenderPointShadow(const RenderScene& scene, const LightO
 		const U32 slice = cubeIndex * static_cast<U32>(ECubeFace::Count) + face;
 		Rendering::Renderer::ClearDepthStencilSlice(state.PointShadowCubes, slice);
 		Rendering::Renderer::SetDepthTarget(state.PointShadowCubes, slice);
-		DrawCasters(scene, projection * Matrix4x4::CreateCubeFaceView(light.GetPosition(), static_cast<ECubeFace>(face)));
+		DrawCasters(scene, projection * CubeMap::CreateFaceView(light.GetPosition(), static_cast<ECubeFace>(face)));
 	}
 
 	// The projection stores DepthAtInfinity + DepthDistanceScale / distance, so two distances pin both down

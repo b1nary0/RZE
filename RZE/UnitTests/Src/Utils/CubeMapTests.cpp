@@ -61,7 +61,7 @@ namespace
 	{
 		const Vector3D origin(2.0f, -1.0f, 5.0f);
 		const Matrix4x4 viewProjection = Matrix4x4::CreatePerspectiveMatrixZeroToOne(90.0f, 1.0f, 0.1f, 100.0f)
-			* Matrix4x4::CreateCubeFaceView(origin, face);
+			* CubeMap::CreateFaceView(origin, face);
 		const Vector4D clip = viewProjection * Vector4D(origin + worldDirection, 1.0f);
 
 		FaceTexel texel;
@@ -77,7 +77,7 @@ TEST_CASE("Each cube face's view looks straight down the face's direction")
 	for (U32 faceIndex = 0; faceIndex < static_cast<U32>(ECubeFace::Count); ++faceIndex)
 	{
 		const ECubeFace face = static_cast<ECubeFace>(faceIndex);
-		const Vector4D ahead = Matrix4x4::CreateCubeFaceView(Vector3D(), face) * Vector4D(CubeMap::GetFaceForward(face), 0.0f);
+		const Vector4D ahead = CubeMap::CreateFaceView(Vector3D(), face) * Vector4D(CubeMap::GetFaceForward(face), 0.0f);
 
 		CHECK(ahead.X() == doctest::Approx(0.0f));
 		CHECK(ahead.Y() == doctest::Approx(0.0f));

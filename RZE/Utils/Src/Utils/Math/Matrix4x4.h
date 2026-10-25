@@ -2,7 +2,6 @@
 
 #include <GLM/mat4x4.hpp>
 
-#include <Utils/Math/CubeMap.h>
 #include <Utils/Math/Quaternion.h>
 #include <Utils/Math/Vector3D.h>
 #include <Utils/Math/Vector4D.h>
@@ -18,9 +17,6 @@ public:
 	static Matrix4x4 CreateInPlace(const Vector3D& position, const Vector3D& scale, const Vector3D& eulerDegrees);
 
 	static Matrix4x4 CreateViewMatrix(const Vector3D& eyePos, const Vector3D& centerPos, const Vector3D& upDir);
-	// The view from position through one face of a cube map. With a 90 degree, square projection, what it renders
-	// lines up with the face's slice of a cube texture (Utils/Math/CubeMap.h).
-	static Matrix4x4 CreateCubeFaceView(const Vector3D& position, ECubeFace face);
 	static Matrix4x4 CreatePerspectiveMatrix(const float fovYDegrees, const float aspectRatio, const float nearCull, const float farCull);
 	// As CreatePerspectiveMatrix but outputs D3D's [0, 1] depth range instead of OpenGL's [-1, 1]
 	static Matrix4x4 CreatePerspectiveMatrixZeroToOne(const float fovYDegrees, const float aspectRatio, const float nearCull, const float farCull);

@@ -2,6 +2,7 @@
 #include <Utils/Math/CubeMap.h>
 
 #include <Utils/DebugUtils/Debug.h>
+#include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Units.h>
 #include <Utils/Math/Vector3D.h>
 
@@ -33,6 +34,11 @@ namespace CubeMap
 		case ECubeFace::Down: return WorldAxes::Forward();
 		default: return WorldAxes::Up();
 		}
+	}
+
+	Matrix4x4 CreateFaceView(const Vector3D& position, ECubeFace face)
+	{
+		return Matrix4x4::CreateViewMatrix(position, position + GetFaceForward(face), GetFaceUp(face));
 	}
 
 	Vector3D ToSampleDirection(const Vector3D& worldDirection)
