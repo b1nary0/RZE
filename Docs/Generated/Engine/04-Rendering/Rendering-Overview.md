@@ -32,7 +32,7 @@ Assets feeding all this (meshes, materials, textures, shaders) are covered in [M
 
 ## What a frame does, in plain terms
 
-1. **Lights and shadows.** Upload the scene's lights. If anything moved, re-render the shadow maps: the sun's and a cube for each shadowed point light (otherwise reuse them).
+1. **Lights and shadows.** Upload the scene's lights. Re-render only the shadow maps whose light, or part of the scene, changed: the sun's when anything moved, and a point light's cube when it or something near it moved (otherwise reuse them).
 2. **Scene.** Cull objects outside the camera's view, then draw the rest, lit and shadowed, into an HDR image.
 3. **Exposure and tonemapping.** Measure the image's average brightness, ease the exposure toward it, and squeeze HDR into displayable 8-bit colour with ACES. Then smooth jagged edges with FXAA.
 4. **Overlays.** Draw debug lines (bounds, camera frustums) on top, depth-tested against the scene.

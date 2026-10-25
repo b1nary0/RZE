@@ -120,7 +120,14 @@ Turns the scene's lights into what shading reads. Everything it makes is kept **
 
 - **`ShadowBuffer`** (`b3`) says how to read them: the sun's view-projection, texel size and normal offset, and per point light the two numbers that turn a distance along a cube face into the depth stored there (`DepthAtInfinity + DepthDistanceScale / distance`, taken from the faces' projection matrix, so the shader uses the same convention that drew them) and its normal offset per metre.
 - **One way to draw casters:** every view, the sun's and each cube face, goes through `DrawCasters(scene, viewProjection)`, which skips objects and draws outside that view (`Frustum`), e.g. everything behind a cube face.
-- **Cached:** the maps only re-render when the scene's revision (`RenderScene::GetRevision`) changes: an object added, removed, moved or re-meshed, or a light added, removed, or moved in a way that moves its shadows. Then **every** map re-renders; per-light caching is future work. On other frames it just republishes the existing maps.
+- **Cached per map:** nothing is checked until the scene's revision (`RenderScene::GetRevision`) changes. Then each map is rendered again only if what it shows changed. Each one remembers the light it was rendered for (its live ID) and the revision it was rendered at (`CachedShadowMap`):
+
+| Map | Rendered again when |
+|---|---|
+| A point light's cube | Its slot now has another light, the light's `GetShadowRevision()` is newer (it moved, changed range or type), or a render object changed within position ± range, the box its six faces see (`RenderScene::HaveObjectsChangedWithin`). Only that cube's six faces are cleared (`Renderer::ClearDepthStencilSlice`) and drawn. |
+| The sun's map | Its light changed in the same way, or any render object changed (`GetObjectsRevision()`), since the map is fitted around them all. |
+
+  So moving one point light renders only its cube, and moving an object renders the sun's map plus the cubes of the point lights near it. The `ShadowBuffer` is kept in the scene's state, each map updates its own part, and it's uploaded again only when a map was rendered. Slots go to lights in scene order, so removing or retyping a light renders the cubes whose slot moved to another light. A slot no light has any more keeps what it held: if its light gets it back unchanged, it's reused.
 - A view with `Uniform` lighting ignores the lights, so it doesn't render the maps for it (mesh thumbnails never render one).
 - Casters draw with `ERasterizerState::ShadowCaster` (no culling, so thin geometry still casts, plus slope-scaled depth bias), which suits the cube faces' perspective too. `Pixel_ShadowCaster.hlsl` clips cutout materials (leaves, chains), so they cast cut-out shadows.
 

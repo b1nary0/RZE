@@ -23,7 +23,10 @@ class PixelShader;
 //   the camera moves.
 // - The first k_maxShadowedPointLights point lights: depth all around each, out to its range, in one cube of a cube
 //   map array (Utils/Math/CubeMap.h).
-// The maps are only re-rendered when the scene or a light changes.
+// Each map is kept until something it shows changes, and only that map is rendered again: a point light's cube when
+// the light moves or changes range, or a render object changes within its range; the directional map when its light
+// turns, or any render object changes (it's fitted to them all). A map whose slot goes to another light is rendered
+// again too.
 class ShadowRenderStage : public IRenderStage
 {
 public:
@@ -90,6 +93,17 @@ public:
 	void Render(RenderContext& context) override;
 
 private:
+	// What one shadow map was last rendered for, so it's only rendered again once that changes
+	struct CachedShadowMap
+	{
+		static constexpr U32 k_noLight = ~0u;
+
+		// LightObject::GetLiveID of the light it was rendered for; k_noLight until it's rendered
+		U32 LightID = k_noLight;
+		// RenderScene::GetRevision when it was rendered
+		U64 RenderedRevision = 0;
+	};
+
 	// A scene's light buffer and shadow maps, kept in its ScenePersistent() blackboard so every view of the scene
 	// shares them
 	struct ShadowMapState : RenderStageData<ShadowMapState>
@@ -102,9 +116,15 @@ private:
 		Rendering::TextureBuffer2DHandle PointShadowCubes;
 		Rendering::ConstantBufferHandle ShadowBuffer;
 
-		// RenderScene::GetRevision the map was last rendered for
-		U64 RenderedRevision = 0;
-		bool HasRenderedMap = false;
+		CachedShadowMap DirectionalCache;
+		// By ShadowIndex, like the cubes
+		CachedShadowMap PointCaches[k_maxShadowedPointLights];
+		// What ShadowBuffer holds. Each map updates its own part when it's rendered.
+		ShadowBufferLayout ShadowData = {};
+
+		// RenderScene::GetRevision the maps were last brought up to date for
+		U64 CheckedRevision = 0;
+		bool HasCheckedMaps = false;
 	};
 
 	static ShadowMapState CreateShadowMapState();
@@ -112,8 +132,11 @@ private:
 	// Fills and uploads the scene's light buffer, which changes every frame its lights' colours or strengths do
 	void UploadLights(const RenderScene& scene, const ShadowMapState& state);
 
-	// Renders every shadowed light's map and uploads the ShadowBuffer that says how to read them
-	void RenderShadowMaps(const RenderScene& scene, const ShadowMapState& state);
+	// Renders each shadowed light's map that's out of date, then uploads the ShadowBuffer that says how to read them
+	// if any was
+	void UpdateShadowMaps(const RenderScene& scene, ShadowMapState& state);
+	// Sets up the depth-only state every light's views draw with, and starts the pass
+	void BeginShadowPass();
 	// Into the directional map; false if there's nothing to cast shadows
 	bool RenderDirectionalShadow(const RenderScene& scene, const LightObject& light, const ShadowMapState& state, ShadowBufferLayout& outShadowData);
 	// Into cube cubeIndex of the point light cubes, a face at a time
@@ -133,7 +156,7 @@ private:
 	ResourceHandle m_casterShaderResource;
 	const PixelShader* m_casterShader = nullptr;
 
-	// Only used within one RenderShadowMaps call, so every scene shares it
+	// Only used within one UpdateShadowMaps call, so every scene shares it
 	Rendering::ConstantBufferHandle m_lightCameraBuffer;
 
 	// So a scene with more point lights than can cast shadows says so once, not every time its maps are made

@@ -33,9 +33,13 @@ A **`RenderScene`** (`Engine\Src\Graphics\RenderScene.h/.cpp`) is what one scene
 |---|---|
 | Render objects, lights | `CreateRenderObject(staticMesh)` / `DestroyRenderObject`, `CreateLightObject(type)` / `DestroyLightObject`, `ClearObjects()` (render objects only). `GetDirectionalLight()` is the first directional light, or null. |
 | Debug lines | `DrawLine` / `DrawWireBox` / `DrawWireSphere`, kept until `ClearDebugLines()`. `RenderEngine::Render` clears the main scene's once it has drawn them. |
-| `GetRevision()` | A cheap "did anything change?" counter. It goes up when a render object is added, removed, moved or given a new mesh, or when a light is added, removed, or changed in a way that moves its shadows: its type, a directional light's direction, a point light's position or range. Colour and strength don't count. `ShadowRenderStage` skips re-rendering the scene's shadow maps when it hasn't changed. |
+| `GetRevision()` | A cheap "did anything change?" counter. It goes up when a render object is added, removed, moved or given a new mesh, or when a light is added, removed, or changed in a way that moves its shadows: its type, a directional light's direction, a point light's position or range. Colour and strength don't count. `ShadowRenderStage` skips checking the scene's shadow maps when it hasn't changed. |
+| `GetObjectsRevision()` | The revision of the last render object change alone (lights don't move it). The sun's shadow map is out of date once it's newer than the revision the map was rendered at. |
+| `HaveObjectsChangedWithin(region, sinceRevision)` | Whether a render object was added, removed, moved or given a new mesh within a world-space box after a revision, counting both where it was and where it is. Backed by a `SceneChangeLog` (below). A point light's shadow cube asks it about the box its six faces see. |
 | `GetBounds()` | The box around every render object, kept until one is added, removed, moved or given a new mesh, then rebuilt from the objects' boxes when next asked. |
 | Persistent stage state | What stages keep for this scene across frames, whichever view renders it: today, **each scene's own light buffer and shadow maps**. `ReleaseStageState()` drops them; they're made again the next time the scene is rendered. |
+
+**Where objects changed (`SceneChangeLog`).** Each render object change is logged as world-space boxes stamped with the new revision: a move or a new mesh logs where the object was and where it is as two boxes, so an object that jumps across the scene doesn't mark everything between; a new object logs where it is and a destroyed one where it was. `ClearObjects` counts as a change everywhere. The log keeps the latest 256 changes (`SceneChangeLog::k_capacity`). Asking about a revision from before them answers that it changed, so the answer can be true for a change elsewhere once many objects have moved, but never false for one within the box.
 
 ### Handles
 
@@ -67,7 +71,7 @@ A light of any type. It holds the data every type shares, and its **type** (`ELi
 | Falloff | None: the same everywhere | Inverse square over distance as a fraction of the range, windowed to exactly 0 at the range (below) |
 | Shadows | The first one: a 2D map fitted around the scene | The first 8: a cube each, in a cube map array |
 
-It has **no GPU resources of its own**. `ShadowRenderStage` puts every light of a scene into one buffer each frame (see [Render-Stages.md](Render-Stages.md#shadowrenderstage)). `SetType` can change a light's type in place, which is how the inspector's Type drop-down works without remaking it. The `ELightType` values are what the shaders branch on (`LIGHT_TYPE_*`), so new types go at the end.
+It has **no GPU resources of its own**. `ShadowRenderStage` puts every light of a scene into one buffer each frame (see [Render-Stages.md](Render-Stages.md#shadowrenderstage)). `GetShadowRevision()` is the scene revision when the light was made or its shadows last moved (the same changes that move `GetRevision`), so its shadow map is out of date once that's newer than the revision the map was rendered at. `SetType` can change a light's type in place, which is how the inspector's Type drop-down works without remaking it. The `ELightType` values are what the shaders branch on (`LIGHT_TYPE_*`), so new types go at the end.
 
 ```mermaid
 %%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
@@ -81,7 +85,7 @@ flowchart TD
 
     LC -->|"Update: position, direction from the transform"| LO
     LO --> SRS
-    SRS -->|"lights every frame, maps on a revision change"| SLD
+    SRS -->|"lights every frame,<br/>each map when what<br/>it shows changes"| SLD
     SLD --> FRS
     FRS --> SH
 ```
@@ -193,6 +197,7 @@ Both object containers erase with swap-and-pop (`ContainerUtils::VectorEraseBack
 
 - `Engine\Src\Graphics\RenderEngine.h/.cpp` — `RenderEngine`
 - `Engine\Src\Graphics\RenderScene.h/.cpp` — `RenderScene`, `RenderObject`, `LightObject`, `ELightType`
+- `Engine\Src\Graphics\SceneChangeLog.h/.cpp` — where a scene's render objects changed, by revision
 - `Engine\Src\Game\World\GameObjectComponents\LightComponent.h/.cpp` — the component that drives a `LightObject` ([Built-In-Components.md](../03-SceneAndGameObjects/Built-In-Components.md#lightcomponent))
 - `Engine\Src\Graphics\RenderView.h` — `RenderView`, `RenderCamera`, `RenderPickRequest`
 - `Engine\Src\Graphics\ViewCapture.h/.cpp`, `TextureFile.h/.cpp` — capturing a view to a PNG

@@ -112,7 +112,7 @@ gantt
 | Frame / pass | `BeginFrame`, `EndFrame`, `Begin`, `End`, `DevicePresent`, `HandleWindowResize`, `SetSyncInterval`, `ImGuiRender` |
 | Create | `CreateVertexBuffer` (static or dynamic), `CreateIndexBuffer`, `CreateConstantBuffer`, `CreateTextureBuffer2D`, `CreateVertexShader`, `CreatePixelShader` |
 | Update / release | `UploadDataToBuffer`, `UpdateVertexBuffer`, `ReleaseVertexShader`, `ReleasePixelShader`, `GenerateMips` |
-| Targets | `SetRenderTargetBackBuffer`, `SetColourTarget` (colour, optionally with depth), `SetDepthTarget` (depth only, e.g. shadow maps; a slice of a texture array), `ClearRenderTarget`, `ClearRenderTargets`, `ClearDepthStencilBuffer` |
+| Targets | `SetRenderTargetBackBuffer`, `SetColourTarget` (colour, optionally with depth), `SetDepthTarget` (depth only, e.g. shadow maps; a slice of a texture array), `ClearRenderTarget`, `ClearRenderTargets`, `ClearDepthStencilBuffer`, `ClearDepthStencilSlice` |
 | Pipeline state | `SetViewport`, `SetInputLayout`, `SetPrimitiveTopology`, `SetRasterizerState`, `SetBlendState`, `SetVertexShader`, `SetPixelShader`, `SetConstantBufferVS`, `SetConstantBufferPS`, `SetVertexBuffer`, `SetIndexBuffer`, `SetTextureResource`, `UnsetTextureResource` |
 | Draw | `Draw`, `DrawIndexed`, `DrawFullScreenQuad` |
 | Readback | `ReadTexel`, `ReadTexture` |
@@ -139,7 +139,7 @@ Everything is a static call on `Rendering::Renderer`, and every call only *queue
 | Presenting | `SetSyncInterval(interval)` (vsync), `WaitForPresentSlot(timeoutMS)` (blocks until the swap chain can queue another frame; false on timeout, e.g. while minimised). See [the swap chain](#the-swap-chain-and-vsync). |
 | Frame and passes | `BeginFrame` / `EndFrame`, `Begin(name)` / `End()` (one pass; also resets the rasterizer state and names the pass for PIX), `DevicePresent`, `Submit` (the hand-off without a present), `ImGuiRender`, `KeepTextureForUI` |
 | Resources | `CreateVertexBuffer`, `CreateDynamicVertexBuffer` + `UpdateVertexBuffer`, `CreateIndexBuffer`, `CreateConstantBuffer`, `CreateTextureBuffer2D(params)` (empty, e.g. a render target) / `CreateTextureBuffer2D(TexelBuffer&&, params)`, `CreateVertexShader`, `CreatePixelShader`, `Release*Shader`, `UploadDataToBuffer<T>` (copies the data, so a stack variable is fine), `GenerateMips` |
-| Targets | `SetColourTarget(colour[, depth])`, `SetDepthTarget(depth, slice = 0)` (one slice of a texture array, e.g. a cube face), `ClearRenderTargets` (unbinds every target, e.g. so one can be read from next), `SetRenderTargetBackBuffer`, `ClearRenderTarget`, `ClearDepthStencilBuffer` (every slice of an array) |
+| Targets | `SetColourTarget(colour[, depth])`, `SetDepthTarget(depth, slice = 0)` (one slice of a texture array, e.g. a cube face), `ClearRenderTargets` (unbinds every target, e.g. so one can be read from next), `SetRenderTargetBackBuffer`, `ClearRenderTarget`, `ClearDepthStencilBuffer` (every slice of an array), `ClearDepthStencilSlice(depth, slice)` (one slice, e.g. one light's cube faces, leaving the rest) |
 | State | `SetViewport`, `SetInputLayout`, `SetPrimitiveTopology`, `SetRasterizerState` (`Default` = back-face culling, `ShadowCaster` = no culling + slope-scaled depth bias), `SetBlendState` (`Opaque` = no blending, `AlphaBlend` = source alpha over the target, leaving the target's alpha unchanged), shaders, constant buffers, vertex/index buffers, texture slots |
 | Draw | `Draw`, `DrawIndexed`, `DrawFullScreenQuad` |
 | Readback | `ReadTexel`, `ReadTexture` (below) |

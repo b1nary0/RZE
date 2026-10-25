@@ -63,8 +63,8 @@ RZEHub is a GUI front-end that (per its buttons' names) invokes `SourceAssetBurn
   - `TestOperation.h`: an `AsyncOperation` a test can drive step by step.
 - **What's covered:**
   - Editor: `UndoHistory` (steps, merging, the cap, the redo branch, `OnDropped`, the save point), `ParkedSubtree`, `GameObjectSnapshot` and the clipboard, `EditorSelection` and `InteractionTracker`; the file browser's listing and save names (`FolderListing`); thumbnails (`Thumbnails`, `ThumbnailQueue`) and `MeshFraming`; the status bar's `TaskTracker`; settings pages.
-  - Engine: `ComponentPropertyRegistry`, `GameScene`, `HeadlessScene`, `AsyncOperationManager` and `JobScheduler` (lanes, budgets), `ResourceHandler` (shared loads, deferred destroys), `TextureFile` (PNG round trip, atomic writes), `TransformComponent`, and object and render scene bounds.
-  - Utils: `BoundingBox`.
+  - Engine: `ComponentPropertyRegistry`, `GameScene`, `HeadlessScene`, `AsyncOperationManager` and `JobScheduler` (lanes, budgets), `ResourceHandler` (shared loads, deferred destroys), `TextureFile` (PNG round trip, atomic writes), `TransformComponent`, lights, object and render scene bounds, and `SceneChangeLog`.
+  - Utils: `BoundingBox`, `CubeMap`, `Frustum`, `Ray`, file and string helpers.
 - **No running engine.** Tests build their own `GameScene` and `EditorContext`; `main` (`TestMain.cpp`) only does what tests rely on from start-up: `MainThreadDispatcher::Initialize()` and `RZE_Application::RegisterEngineComponents()`. Code that needs a window or the render engine (e.g. `CameraComponent::OnAddToScene`, finding objects through `RZE().GetActiveScene()`) can't be tested this way.
 - **Asserts fail the test.** In Debug, a CRT report hook turns an engine assert into a failed check in the running test, with the assert's text, instead of a dialog, so a run never waits for input.
 

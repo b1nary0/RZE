@@ -39,7 +39,8 @@ Rough edges the codebase is candid about (source comments, `#TODO`s), plus a few
 | 31 | `RenderThread::Shutdown` can race | Renderer | Low | Open |
 | 32 | A shader that doesn't compile crashes the app | Renderer | Medium | Open |
 | 33 | The lit pixel shaders compile with an uninitialised-variable warning | Shaders | — | **Fixed** (10-24: single returns) |
-| 34 | Any light change re-renders every shadow map | Rendering | Low | Open |
+| 34 | Any light change re-renders every shadow map | Rendering | — | **Fixed** (10-25: per-light shadow caching) |
+| 35 | The sun's shadow map re-renders whenever any object changes | Rendering | Low | Open |
 
 ```mermaid
 quadrantChart
@@ -201,9 +202,13 @@ The first unit of work in any budget always runs, even when it's bigger than the
 
 **Fixed (10-24).** `Pixel_NewRenderer`, `Pixel_NewRenderer_DiffuseOnly` and `Pixel_Default_NewRenderer` logged `warning X4000: use of potentially uninitialized variable (ComputeLighting)` at start-up, from the early `return` in `ComputeLighting`'s uniform-lighting branch. FXC raises X4000 for a `return` inside a branch of a function that loops when it can't prove every path sets the result: a false alarm, since the shaders rendered correctly. The light loop added a second one, in `LightShadow`. Both now write the result to a local and return it once, at the end.
 
-## 34. Any light change re-renders every shadow map
+## 34. Any light change re-renders every shadow map (fixed)
 
-`ShadowRenderStage` re-renders **all** of a scene's shadow maps whenever its revision changes: the sun's, and six faces for each shadowed point light. So moving one point light (or any render object) costs every shadowed light's passes that frame, and a light that moves every frame re-renders them all every frame. Caching per light (a revision per light, plus which objects each map saw) would let only the touched maps re-render. The limits that go with it are by design for now: only the first directional light and the first 8 point lights cast shadows, at 512² per cube face ([Render-Stages.md](../04-Rendering/Render-Stages.md#shadowrenderstage)).
+**Fixed (10-25).** `ShadowRenderStage` used to re-render all of a scene's shadow maps whenever its revision changed, so moving one point light cost every shadowed light's passes. Each map now remembers the light and revision it was rendered at, and is rendered again only when its light's shadows move (`LightObject::GetShadowRevision`), its slot goes to another light, or a render object changes where it can see (`RenderScene::HaveObjectsChangedWithin`, from the scene's `SceneChangeLog`). See [Render-Stages.md](../04-Rendering/Render-Stages.md#shadowrenderstage). The limits are by design for now: only the first directional light and the first 8 point lights cast shadows, at 512² per cube face.
+
+## 35. The sun's shadow map re-renders whenever any object changes
+
+The directional map is fitted around every render object as seen from the light, so `ShadowRenderStage` renders it again whenever any object is added, removed, moved or re-meshed (`RenderScene::GetObjectsRevision`), wherever it is. In Sponza that's a 4096² pass over every caster each frame something moves. Caching it against changes elsewhere would need a fit that doesn't move with every object (e.g. one padded around the scene, re-fitted only when an object leaves it), or cascades that each cache their own region.
 
 ## Key files
 
