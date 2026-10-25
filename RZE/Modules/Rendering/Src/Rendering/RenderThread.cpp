@@ -382,8 +382,9 @@ namespace Rendering
 				RenderCommand_ClearDepthStencilBuffer* cmd = static_cast<RenderCommand_ClearDepthStencilBuffer*>(command);
 				DX11TextureBuffer2D* texturePtr = static_cast<DX11TextureBuffer2D*>(cmd->bufferHandle.m_buffer.get());
 
+				ID3D11DepthStencilView& depthView = cmd->bEverySlice ? texturePtr->GetDepthView() : texturePtr->GetDepthSliceView(cmd->slice);
 				ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
-				deviceContext.ClearDepthStencilView(&texturePtr->GetDepthView(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+				deviceContext.ClearDepthStencilView(&depthView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 				break;
 			}

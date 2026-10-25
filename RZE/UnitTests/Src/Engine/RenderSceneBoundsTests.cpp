@@ -328,3 +328,59 @@ TEST_CASE("An object without a mesh draws nothing and takes up no space")
 
 	scene.ClearObjects();
 }
+
+TEST_CASE("A scene tells where its objects changed: where they were and where they are")
+{
+	RenderScene scene;
+	const BoundingBox atOrigin(Vector3D(-2.0f), Vector3D(2.0f));
+	const BoundingBox atTen(Vector3D(8.0f, -2.0f, -2.0f), Vector3D(12.0f, 2.0f, 2.0f));
+	const BoundingBox between(Vector3D(4.0f, -2.0f, -2.0f), Vector3D(6.0f, 2.0f, 2.0f));
+
+	U64 revision = scene.GetRevision();
+	RenderObjectPtr object = scene.CreateRenderObject(MakeMesh({ k_unitBox }));
+	CHECK(scene.GetObjectsRevision() == scene.GetRevision());
+	CHECK(scene.HaveObjectsChangedWithin(atOrigin, revision));
+	CHECK_FALSE(scene.HaveObjectsChangedWithin(atTen, revision));
+
+	// Moving it touches where it left and where it arrived, not the space between
+	revision = scene.GetRevision();
+	object->SetTransform(MakeTransform(Vector3D(10.0f, 0.0f, 0.0f)));
+	CHECK(scene.HaveObjectsChangedWithin(atOrigin, revision));
+	CHECK(scene.HaveObjectsChangedWithin(atTen, revision));
+	CHECK_FALSE(scene.HaveObjectsChangedWithin(between, revision));
+
+	// So does a new mesh
+	revision = scene.GetRevision();
+	object->SetMeshInstance(MakeMesh({ BoundingBox(Vector3D(-5.0f, -1.0f, -1.0f), Vector3D(-4.0f, 1.0f, 1.0f)) }));
+	CHECK(scene.HaveObjectsChangedWithin(atTen, revision));
+	CHECK(scene.HaveObjectsChangedWithin(between, revision));
+	CHECK_FALSE(scene.HaveObjectsChangedWithin(atOrigin, revision));
+
+	revision = scene.GetRevision();
+	scene.DestroyRenderObject(object);
+	CHECK(scene.HaveObjectsChangedWithin(between, revision));
+	CHECK_FALSE(scene.HaveObjectsChangedWithin(atTen, revision));
+
+	// Clearing changes everywhere, even where nothing was
+	RenderObjectPtr other = scene.CreateRenderObject(MakeMesh({ k_unitBox }));
+	revision = scene.GetRevision();
+	scene.ClearObjects();
+	CHECK(scene.HaveObjectsChangedWithin(atTen, revision));
+	CHECK(scene.GetObjectsRevision() == scene.GetRevision());
+}
+
+TEST_CASE("A light's changes change the scene's revision but not its objects revision")
+{
+	RenderScene scene;
+	RenderObjectPtr object = scene.CreateRenderObject(MakeMesh({ k_unitBox }));
+	const U64 objectsRevision = scene.GetObjectsRevision();
+
+	LightObjectPtr light = scene.CreateLightObject(ELightType::Point);
+	light->SetPosition(Vector3D(3.0f, 0.0f, 0.0f));
+	CHECK(scene.GetRevision() > objectsRevision);
+	CHECK(scene.GetObjectsRevision() == objectsRevision);
+	CHECK_FALSE(scene.HaveObjectsChangedWithin(k_unitBox, objectsRevision));
+
+	scene.DestroyLightObject(light);
+	scene.ClearObjects();
+}

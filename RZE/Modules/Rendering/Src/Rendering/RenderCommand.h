@@ -234,6 +234,9 @@ namespace Rendering
 		RenderCommand_ClearDepthStencilBuffer() { type = RenderCommandType::ClearDepthStencilBuffer; }
 
 		TextureBuffer2DHandle bufferHandle;
+		// Every slice of a texture array, or only slice
+		bool bEverySlice = true;
+		U32 slice = 0;
 	};
 
 	struct RenderCommand_ClearRenderTargets : RenderCommand

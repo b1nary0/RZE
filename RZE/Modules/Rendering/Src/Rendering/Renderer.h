@@ -101,6 +101,8 @@ namespace Rendering
 
 		// Every slice of a texture array
 		static void ClearDepthStencilBuffer(const TextureBuffer2DHandle& buffer);
+		// One slice of a texture array (e.g. a cube map face), leaving the rest as they are
+		static void ClearDepthStencilSlice(const TextureBuffer2DHandle& buffer, U32 slice);
 
 	public:
 		// Unbinds every colour and depth target, e.g. so a target can be read from next

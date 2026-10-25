@@ -94,3 +94,25 @@ TEST_CASE("Transforming a bounding box gives the box around its transformed corn
 		}
 	}
 }
+
+TEST_CASE("Bounding boxes intersect when they overlap or touch, and never when either is empty")
+{
+	const BoundingBox box(Vector3D(0.0f), Vector3D(2.0f));
+
+	CHECK(box.Intersects(box));
+	CHECK(box.Intersects(BoundingBox(Vector3D(1.0f), Vector3D(3.0f))));
+	// Inside it
+	CHECK(box.Intersects(BoundingBox(Vector3D(0.5f), Vector3D(1.5f))));
+	CHECK(BoundingBox(Vector3D(0.5f), Vector3D(1.5f)).Intersects(box));
+	// Sharing a face
+	CHECK(box.Intersects(BoundingBox(Vector3D(2.0f, 0.0f, 0.0f), Vector3D(4.0f, 2.0f, 2.0f))));
+
+	// Apart along one axis only is enough
+	CHECK_FALSE(box.Intersects(BoundingBox(Vector3D(2.5f, 0.0f, 0.0f), Vector3D(4.0f, 2.0f, 2.0f))));
+	CHECK_FALSE(box.Intersects(BoundingBox(Vector3D(0.0f, -3.0f, 0.0f), Vector3D(2.0f, -1.0f, 2.0f))));
+	CHECK_FALSE(box.Intersects(BoundingBox(Vector3D(0.0f, 0.0f, 5.0f), Vector3D(2.0f, 2.0f, 6.0f))));
+
+	CHECK_FALSE(box.Intersects(BoundingBox()));
+	CHECK_FALSE(BoundingBox().Intersects(box));
+	CHECK_FALSE(BoundingBox().Intersects(BoundingBox()));
+}

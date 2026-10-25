@@ -112,6 +112,23 @@ void BoundingBox::Grow(const BoundingBox& box)
 	m_max = VectorUtils::Max(m_max, box.m_max);
 }
 
+bool BoundingBox::Intersects(const BoundingBox& other) const
+{
+	if (IsEmpty() || other.IsEmpty())
+	{
+		return false;
+	}
+
+	for (int axis = 0; axis < 3; ++axis)
+	{
+		if (m_min[axis] > other.m_max[axis] || other.m_min[axis] > m_max[axis])
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
 bool BoundingBox::operator==(const BoundingBox& other) const
 {
 	return m_min == other.m_min && m_max == other.m_max;

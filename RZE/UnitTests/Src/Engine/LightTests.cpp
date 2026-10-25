@@ -215,3 +215,39 @@ TEST_CASE("Only changes that move a light's shadows change the scene's revision"
 
 	scene.DestroyLightObject(light);
 }
+
+TEST_CASE("A light's shadow revision is the scene revision when it was made or its shadows last moved")
+{
+	RenderScene scene;
+	LightObjectPtr first = scene.CreateLightObject(ELightType::Point);
+	CHECK(first->GetShadowRevision() == scene.GetRevision());
+
+	LightObjectPtr second = scene.CreateLightObject(ELightType::Point);
+	const U64 secondRevision = second->GetShadowRevision();
+	CHECK(secondRevision == scene.GetRevision());
+
+	first->SetPosition(Vector3D(2.0f, 0.0f, 0.0f));
+	CHECK(first->GetShadowRevision() == scene.GetRevision());
+	// Only the light that moved
+	CHECK(second->GetShadowRevision() == secondRevision);
+
+	// Colour and strength light differently but cast the same shadows
+	const U64 firstRevision = first->GetShadowRevision();
+	first->SetColour(Vector4D(0.2f));
+	first->SetStrength(9.0f);
+	CHECK(first->GetShadowRevision() == firstRevision);
+
+	first->SetType(ELightType::Directional);
+	CHECK(first->GetShadowRevision() > firstRevision);
+	CHECK(first->GetShadowRevision() == scene.GetRevision());
+
+	scene.DestroyLightObject(first);
+	scene.DestroyLightObject(second);
+}
+
+TEST_CASE("A light in no scene has no shadow revision")
+{
+	LightObject light(ELightType::Point);
+	light.SetPosition(Vector3D(1.0f, 0.0f, 0.0f));
+	CHECK(light.GetShadowRevision() == 0);
+}

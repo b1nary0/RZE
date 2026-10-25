@@ -2,6 +2,7 @@
 
 #include <Graphics/GraphicsDefines.h>
 #include <Graphics/RenderBlackboard.h>
+#include <Graphics/SceneChangeLog.h>
 #include <Graphics/StaticMeshInstance.h>
 
 #include <Utils/Math/BoundingBox.h>
@@ -40,7 +41,7 @@ public:
 	// Never reused, so a LightObjectPtr can tell once this light is gone
 	U32 GetLiveID() const { return m_liveID; }
 
-	// The setters below mark the scene changed when the value moves the light's shadows (see MarkSceneChanged)
+	// The setters below mark the light's shadows changed when the value moves them (see MarkShadowsChanged)
 	void SetType(ELightType type);
 	ELightType GetType() const { return m_type; }
 
@@ -70,9 +71,14 @@ public:
 	void SetColour(const Vector4D& colour) { m_colour = colour; }
 	const Vector4D& GetColour() const { return m_colour; }
 
+	// RenderScene::GetRevision when the light was created or its shadows last moved, so a shadow map rendered at an
+	// older revision is out of date. 0 for a light in no scene.
+	U64 GetShadowRevision() const { return m_shadowRevision; }
+
 private:
-	// For changes that move the light's shadows, so cached shadow maps are made again. Colour and strength don't.
-	void MarkSceneChanged() { if (m_sceneRevision != nullptr) { ++*m_sceneRevision; } }
+	// For changes that move the light's shadows, so its shadow map is made again: a new scene revision, which becomes
+	// the light's shadow revision. Colour and strength don't move them.
+	void MarkShadowsChanged();
 
 private:
 	ELightType m_type;
@@ -84,6 +90,7 @@ private:
 
 	// RenderScene::GetRevision of the scene this light is in
 	U64* m_sceneRevision = nullptr;
+	U64 m_shadowRevision = 0;
 
 	const U32 m_liveID;
 };
@@ -129,8 +136,8 @@ public:
 	U32 GetLiveID() const { return m_liveID; }
 
 private:
-	// It moved or changed mesh: its world bounds are stale, and so is its scene
-	void MarkChanged();
+	// It moved or changed mesh: its world bounds are stale, and so is its scene. oldBounds is GetBounds from before.
+	void MarkChanged(const BoundingBox& oldBounds);
 
 private:
 	// @TODO This will be replaced after a batching system is implemented
@@ -246,9 +253,16 @@ public:
 	const LightObjectContainer& GetLightObjects() const { return m_lightObjects; }
 	const DebugLineContainer& GetDebugLines() const { return m_debugLines; }
 
-	// Changes whenever a render object is added, removed, moved or given a new mesh, or a light changes direction.
-	// Lets stages skip work whose inputs haven't changed (e.g. ShadowRenderStage's shadow map).
+	// Changes whenever a render object is added, removed, moved or given a new mesh, or a light is added, removed or
+	// changed in a way that moves its shadows (LightObject::GetShadowRevision). Lets stages skip work whose inputs
+	// haven't changed (e.g. ShadowRenderStage's shadow maps).
 	U64 GetRevision() const { return m_revision; }
+	// GetRevision when a render object was last added, removed, moved or given a new mesh
+	U64 GetObjectsRevision() const { return m_objectsRevision; }
+	// Whether a render object was added, removed, moved or given a new mesh within region (world space) after
+	// sinceRevision (a GetRevision), counting both where it was and where it is. Can answer true for changes elsewhere
+	// once many objects have changed since (SceneChangeLog), never false for one within.
+	bool HaveObjectsChangedWithin(const BoundingBox& region, U64 sinceRevision) const { return m_changeLog.HasChangedWithin(region, sinceRevision); }
 
 	// Axis-aligned world-space box around every render object; empty without any. Kept until one is added, removed,
 	// moved or given a new mesh, then worked out again from the objects' boxes when next asked.
@@ -256,8 +270,11 @@ public:
 
 private:
 	friend class RenderObject;
-	// A render object was added, removed, moved or given a new mesh
-	void OnRenderObjectChanged();
+	// A render object was added, removed, moved or given a new mesh: it was within oldBounds and is now within
+	// newBounds (either empty if it wasn't or isn't anywhere)
+	void OnRenderObjectChanged(const BoundingBox& oldBounds, const BoundingBox& newBounds);
+	// Every render object changed (e.g. they were all removed)
+	void OnAllRenderObjectsChanged();
 
 private:
 	// @TODO Make not vector or something
@@ -266,6 +283,9 @@ private:
 	LightObjectContainer m_lightObjects;
 	DebugLineContainer m_debugLines;
 	U64 m_revision = 0;
+	U64 m_objectsRevision = 0;
+	// Where render objects changed, by revision
+	SceneChangeLog m_changeLog;
 
 	mutable BoundingBox m_bounds;
 	mutable bool m_isBoundsStale = true;

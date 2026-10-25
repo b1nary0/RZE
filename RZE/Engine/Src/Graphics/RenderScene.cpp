@@ -83,7 +83,7 @@ void LightObject::SetType(ELightType type)
 	if (type != m_type)
 	{
 		m_type = type;
-		MarkSceneChanged();
+		MarkShadowsChanged();
 	}
 }
 
@@ -94,7 +94,7 @@ void LightObject::SetPosition(const Vector3D& position)
 		m_position = position;
 		if (m_type == ELightType::Point)
 		{
-			MarkSceneChanged();
+			MarkShadowsChanged();
 		}
 	}
 }
@@ -106,7 +106,7 @@ void LightObject::SetDirection(const Vector3D& direction)
 		m_direction = direction;
 		if (m_type == ELightType::Directional)
 		{
-			MarkSceneChanged();
+			MarkShadowsChanged();
 		}
 	}
 }
@@ -151,27 +151,37 @@ void LightObject::SetRange(float range)
 		m_range = range;
 		if (m_type == ELightType::Point)
 		{
-			MarkSceneChanged();
+			MarkShadowsChanged();
 		}
+	}
+}
+
+void LightObject::MarkShadowsChanged()
+{
+	if (m_sceneRevision != nullptr)
+	{
+		m_shadowRevision = ++*m_sceneRevision;
 	}
 }
 
 void RenderObject::SetMeshInstance(const std::shared_ptr<const StaticMeshInstance>& meshInstance)
 {
+	const BoundingBox oldBounds = GetBounds();
 	m_meshInstance = meshInstance;
 	const bool hasSubMeshes = m_meshInstance != nullptr && !m_meshInstance->GetMesh().GetSubMeshes().empty();
 	m_localBounds = hasSubMeshes ? m_meshInstance->GetMesh().GetBounds() : BoundingBox();
 	// The draws still point into the old mesh until GetDraws rebuilds them, which is the only way to read them
-	MarkChanged();
+	MarkChanged(oldBounds);
 }
 
 void RenderObject::SetTransform(const Matrix4x4& transform)
 {
 	if (transform != m_matrixMem.transform)
 	{
+		const BoundingBox oldBounds = GetBounds();
 		m_matrixMem.transform = transform;
 		m_matrixMem.invTransform = transform.Inverse();
-		MarkChanged();
+		MarkChanged(oldBounds);
 	}
 }
 
@@ -202,20 +212,20 @@ const std::vector<MeshDraw>& RenderObject::GetDraws() const
 	return m_draws;
 }
 
-void RenderObject::MarkChanged()
+void RenderObject::MarkChanged(const BoundingBox& oldBounds)
 {
 	m_isBoundsStale = true;
 	m_areDrawsStale = true;
 	if (m_scene != nullptr)
 	{
-		m_scene->OnRenderObjectChanged();
+		m_scene->OnRenderObjectChanged(oldBounds, GetBounds());
 	}
 }
 
 void RenderScene::ClearObjects()
 {
 	m_renderObjects.clear();
-	OnRenderObjectChanged();
+	OnAllRenderObjectsChanged();
 }
 
 const BoundingBox& RenderScene::GetBounds() const
@@ -232,10 +242,21 @@ const BoundingBox& RenderScene::GetBounds() const
 	return m_bounds;
 }
 
-void RenderScene::OnRenderObjectChanged()
+void RenderScene::OnRenderObjectChanged(const BoundingBox& oldBounds, const BoundingBox& newBounds)
 {
-	++m_revision;
+	m_objectsRevision = ++m_revision;
 	m_isBoundsStale = true;
+
+	// Logged apart, so an object that jumps across the scene doesn't mark everything between
+	m_changeLog.Add(m_revision, oldBounds);
+	m_changeLog.Add(m_revision, newBounds);
+}
+
+void RenderScene::OnAllRenderObjectsChanged()
+{
+	m_objectsRevision = ++m_revision;
+	m_isBoundsStale = true;
+	m_changeLog.AddEverywhere(m_revision);
 }
 
 RenderObjectPtr RenderScene::CreateRenderObject(const std::shared_ptr<const StaticMeshInstance>& meshInstance)
@@ -270,6 +291,8 @@ void RenderScene::DestroyRenderObject(RenderObjectPtr& renderObject)
 
 	if (iter != renderObjects.end())
 	{
+		const BoundingBox oldBounds = (*iter)->GetBounds();
+
 		if (renderObjects.size() > 1)
 		{
 			std::iter_swap(iter, std::prev(renderObjects.end()));
@@ -281,7 +304,7 @@ void RenderScene::DestroyRenderObject(RenderObjectPtr& renderObject)
 		}
 
 		renderObject = RenderObjectPtr();
-		OnRenderObjectChanged();
+		OnRenderObjectChanged(oldBounds, BoundingBox());
 	}
 }
 
@@ -289,7 +312,7 @@ LightObjectPtr RenderScene::CreateLightObject(ELightType type)
 {
 	std::unique_ptr<LightObject>& lightObjectPtr = m_lightObjects.emplace_back(std::make_unique<LightObject>(type));
 	lightObjectPtr->m_sceneRevision = &m_revision;
-	++m_revision;
+	lightObjectPtr->m_shadowRevision = ++m_revision;
 
 	return LightObjectPtr(lightObjectPtr.get(), lightObjectPtr->GetLiveID());
 }

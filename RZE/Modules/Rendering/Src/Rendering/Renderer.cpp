@@ -346,6 +346,16 @@ namespace Rendering
 		m_renderThread.PushCommand(command);
 	}
 
+	void Renderer::ClearDepthStencilSlice(const TextureBuffer2DHandle& buffer, U32 slice)
+	{
+		RenderCommand_ClearDepthStencilBuffer* command = MemArena::AllocType<RenderCommand_ClearDepthStencilBuffer>();
+		command->bufferHandle = buffer;
+		command->bEverySlice = false;
+		command->slice = slice;
+
+		m_renderThread.PushCommand(command);
+	}
+
 	void Renderer::ClearRenderTargets()
 	{
 		RenderCommand_ClearRenderTargets* command = MemArena::AllocType<RenderCommand_ClearRenderTargets>();

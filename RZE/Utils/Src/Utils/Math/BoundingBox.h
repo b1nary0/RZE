@@ -43,6 +43,9 @@ public:
 	// Growing by an empty box changes nothing
 	void Grow(const BoundingBox& box);
 
+	// Whether the two share any point, touching faces included; an empty box intersects nothing
+	bool Intersects(const BoundingBox& other) const;
+
 	bool operator==(const BoundingBox& other) const;
 	bool operator!=(const BoundingBox& other) const { return !(*this == other); }
 
