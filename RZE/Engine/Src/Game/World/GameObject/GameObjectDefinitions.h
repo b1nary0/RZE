@@ -1,23 +1,25 @@
 #pragma once
 
+#include <Utils/LiveIDAllocator.h>
 #include <Utils/PrimitiveDefs.h>
 
 #include <cstddef>
 
-typedef U32 GameObjectID;
+// Handed out by LiveIDAllocator, so unique within a session but not in creation order
+typedef U64 GameObjectID;
 typedef U32 GameObjectComponentID;
 // Unique per component instance, unlike GameObjectComponentID, which identifies the component's type
-typedef U32 GameObjectComponentInstanceID;
+typedef U64 GameObjectComponentInstanceID;
 
 class GameObject;
 class GameObjectComponentBase;
 
 // Tracks which GameObjects and components are alive, so their handles can tell when they've been destroyed.
-// IDs are never reused, so a handle to a destroyed object stays invalid even if a new one lands at its address.
-// Main thread only, like the rest of the scene.
+// IDs are never handed out twice, so a handle to a destroyed object stays invalid even if a new one lands at its
+// address. Main thread only, like the rest of the scene.
 namespace GameObjectLifetime
 {
-	constexpr U32 k_invalidID = 0xFFFFFFFF;
+	constexpr U64 k_invalidID = LiveIDAllocator::k_invalidID;
 
 	bool IsGameObjectAlive(GameObjectID id);
 	bool IsComponentAlive(GameObjectComponentInstanceID id);

@@ -174,7 +174,8 @@ namespace Editor
 			widestLabel = std::max(widestLabel, ImGui::CalcTextSize(property.Name.c_str()).x);
 		}
 
-		ImGui::PushID(static_cast<int>(component->GetInstanceID()));
+		const GameObjectComponentInstanceID instanceID = component->GetInstanceID();
+		ImGui::PushID(reinterpret_cast<const char*>(&instanceID), reinterpret_cast<const char*>(&instanceID + 1));
 		if (EditorUI::BeginPropertyTable("##properties", EditorUI::CalcLabelColumnWidth(widestLabel)))
 		{
 			DrawProperties(context, *description->Type, object, PathPrefix(), &components);

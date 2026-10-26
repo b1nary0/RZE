@@ -6,17 +6,15 @@
 #include <Game/World/GameObjectComponents/RenderComponent.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
-#include <Utils/LiveIDSet.h>
+#include <Utils/LiveIDAllocator.h>
 #include <Utils/Math/Math.h>
 #include <Utils/Utils.h>
 
 
 namespace
 {
-	// Never reset, so IDs are never reused (see GameObjectLifetime)
-	GameObjectID s_nextObjectID = 0;
-
-	LiveIDSet s_aliveGameObjects;
+	// Hands out every GameObjectID (see GameObjectLifetime)
+	LiveIDAllocator s_aliveGameObjects;
 }
 
 namespace GameObjectLifetime
@@ -40,30 +38,26 @@ GameObjectPtr::GameObjectPtr(GameObject* gameObject)
 
 GameObject::GameObject(GameScene& scene, ObjectGUID guid)
 	: m_scene(scene)
-	, m_id(s_nextObjectID++)
+	, m_id(s_aliveGameObjects.Acquire())
 	, m_guid(guid)
 {
 	m_stateFlags.IsInScene = false;
 	m_stateFlags.IncludeInSave = true;
-
-	s_aliveGameObjects.Add(m_id);
 }
 
 GameObject::GameObject(GameScene& scene, const std::string& name, ObjectGUID guid)
 	: m_scene(scene)
-	, m_id(s_nextObjectID++)
+	, m_id(s_aliveGameObjects.Acquire())
 	, m_guid(guid)
 	, m_name(name)
 {
 	m_stateFlags.IsInScene = false;
 	m_stateFlags.IncludeInSave = true;
-
-	s_aliveGameObjects.Add(m_id);
 }
 
 GameObject::~GameObject()
 {
-	s_aliveGameObjects.Remove(m_id);
+	s_aliveGameObjects.Release(m_id);
 }
 
 void GameObject::Initialize()

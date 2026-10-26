@@ -266,7 +266,7 @@ TEST_CASE("Swapping an object's mesh keeps the object and lets the old mesh go")
 	const std::weak_ptr<StaticMeshInstance> oldInstance = small;
 	RenderObjectPtr object = scene.CreateRenderObject(std::move(small));
 	object->SetTransform(MakeTransform(Vector3D(0.0f, 5.0f, 0.0f)));
-	const U32 liveID = object->GetLiveID();
+	const U64 liveID = object->GetLiveID();
 	REQUIRE(object->GetDraws().size() == 1);
 
 	const BoundingBox left(Vector3D(-3.0f, 0.0f, 0.0f), Vector3D(-2.0f, 1.0f, 1.0f));

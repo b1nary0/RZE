@@ -1,14 +1,12 @@
 #include <StdAfx.h>
 #include <Game/World/GameObject/GameObjectComponent.h>
 
-#include <Utils/LiveIDSet.h>
+#include <Utils/LiveIDAllocator.h>
 
 namespace
 {
-	// Never reset, so instance IDs are never reused (see GameObjectLifetime)
-	GameObjectComponentInstanceID s_nextComponentInstanceID = 0;
-
-	LiveIDSet s_aliveComponents;
+	// Hands out every GameObjectComponentInstanceID (see GameObjectLifetime)
+	LiveIDAllocator s_aliveComponents;
 }
 
 namespace GameObjectLifetime
@@ -25,14 +23,13 @@ namespace GameObjectLifetime
 }
 
 GameObjectComponentBase::GameObjectComponentBase()
-	: m_instanceID(s_nextComponentInstanceID++)
+	: m_instanceID(s_aliveComponents.Acquire())
 {
-	s_aliveComponents.Add(m_instanceID);
 }
 
 GameObjectComponentBase::~GameObjectComponentBase()
 {
-	s_aliveComponents.Remove(m_instanceID);
+	s_aliveComponents.Release(m_instanceID);
 }
 
 namespace GameObjectComponentRegistry

@@ -7,8 +7,6 @@
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/BoundingBox.h>
 
-typedef U32 GameObjectID;
-
 class GameObjectComponentBase;
 class GameScene;
 class TransformComponent;

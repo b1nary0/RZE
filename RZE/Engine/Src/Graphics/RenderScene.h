@@ -38,8 +38,8 @@ public:
 	LightObject(const LightObject&) = delete;
 	LightObject& operator=(const LightObject&) = delete;
 
-	// Never reused, so a LightObjectPtr can tell once this light is gone
-	U32 GetLiveID() const { return m_liveID; }
+	// Never handed out twice, so a LightObjectPtr can tell once this light is gone
+	U64 GetLiveID() const { return m_liveID; }
 
 	// The setters below mark the light's shadows changed when the value moves them (see MarkShadowsChanged)
 	void SetType(ELightType type);
@@ -92,7 +92,7 @@ private:
 	U64* m_sceneRevision = nullptr;
 	U64 m_shadowRevision = 0;
 
-	const U32 m_liveID;
+	const U64 m_liveID;
 };
 
 class RenderObject
@@ -132,8 +132,8 @@ public:
 	void SetPickID(U64 pickID) { m_pickID = pickID; }
 	U64 GetPickID() const { return m_pickID; }
 
-	// Never reused, so a RenderObjectPtr can tell once this object is gone
-	U32 GetLiveID() const { return m_liveID; }
+	// Never handed out twice, so a RenderObjectPtr can tell once this object is gone
+	U64 GetLiveID() const { return m_liveID; }
 
 private:
 	// It moved or changed mesh: its world bounds are stale, and so is its scene. oldBounds is GetBounds from before.
@@ -160,7 +160,7 @@ private:
 	// The scene this object is in
 	RenderScene* m_scene = nullptr;
 
-	const U32 m_liveID;
+	const U64 m_liveID;
 };
 
 //

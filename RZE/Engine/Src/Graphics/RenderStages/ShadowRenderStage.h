@@ -8,6 +8,7 @@
 
 #include <Rendering/BufferHandle.h>
 
+#include <Utils/LiveIDAllocator.h>
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector3D.h>
 
@@ -45,10 +46,10 @@ private:
 	// What one shadow map was last rendered for, so it's only rendered again once that changes
 	struct CachedShadowMap
 	{
-		static constexpr U32 k_noLight = ~0u;
+		static constexpr U64 k_noLight = LiveIDAllocator::k_invalidID;
 
 		// LightObject::GetLiveID of the light it was rendered for; k_noLight until it's rendered
-		U32 LightID = k_noLight;
+		U64 LightID = k_noLight;
 		// RenderScene::GetRevision when it was rendered
 		U64 RenderedRevision = 0;
 	};

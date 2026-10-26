@@ -1,7 +1,7 @@
 #include <StdAfx.h>
 #include <Graphics/RenderScene.h>
 
-#include <Utils/LiveIDSet.h>
+#include <Utils/LiveIDAllocator.h>
 #include <Utils/Math/Math.h>
 #include <Utils/Math/Units.h>
 
@@ -10,12 +10,9 @@
 
 namespace
 {
-	// Never reset, so IDs are never reused (see RenderSceneLifetime)
-	U32 s_nextRenderObjectID = 0;
-	U32 s_nextLightObjectID = 0;
-
-	LiveIDSet s_aliveRenderObjects;
-	LiveIDSet s_aliveLightObjects;
+	// Hand out every render object and light live ID (see RenderSceneLifetime)
+	LiveIDAllocator s_aliveRenderObjects;
+	LiveIDAllocator s_aliveLightObjects;
 
 	// Mirrors PointFalloffSharpness in Common/Lighting.hlsli
 	constexpr float k_pointFalloffSharpness = 8.0f;
@@ -38,12 +35,12 @@ namespace
 
 namespace RenderSceneLifetime
 {
-	bool IsRenderObjectAlive(U32 id)
+	bool IsRenderObjectAlive(U64 id)
 	{
 		return s_aliveRenderObjects.Contains(id);
 	}
 
-	bool IsLightObjectAlive(U32 id)
+	bool IsLightObjectAlive(U64 id)
 	{
 		return s_aliveLightObjects.Contains(id);
 	}
@@ -56,25 +53,23 @@ namespace RenderSceneLifetime
 
 LightObject::LightObject(ELightType type)
 	: m_type(type)
-	, m_liveID(s_nextLightObjectID++)
+	, m_liveID(s_aliveLightObjects.Acquire())
 {
-	s_aliveLightObjects.Add(m_liveID);
 }
 
 LightObject::~LightObject()
 {
-	s_aliveLightObjects.Remove(m_liveID);
+	s_aliveLightObjects.Release(m_liveID);
 }
 
 RenderObject::RenderObject()
-	: m_liveID(s_nextRenderObjectID++)
+	: m_liveID(s_aliveRenderObjects.Acquire())
 {
-	s_aliveRenderObjects.Add(m_liveID);
 }
 
 RenderObject::~RenderObject()
 {
-	s_aliveRenderObjects.Remove(m_liveID);
+	s_aliveRenderObjects.Release(m_liveID);
 }
 
 void LightObject::SetType(ELightType type)

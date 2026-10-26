@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Utils/LiveIDAllocator.h>
 #include <Utils/PrimitiveDefs.h>
 
 #include <cstddef>
@@ -8,14 +9,15 @@ class RenderObject;
 class LightObject;
 
 // Tracks which render objects and lights are alive, so their handles can tell when they've been destroyed, whether
-// through the handle or not (e.g. RenderScene::ClearObjects, or the scene going away). IDs are never reused, so a
-// handle to a destroyed object stays invalid even if a new one lands at its address. Main thread only.
+// through the handle or not (e.g. RenderScene::ClearObjects, or the scene going away). IDs come from a
+// LiveIDAllocator and are never handed out twice, so a handle to a destroyed object stays invalid even if a new one
+// lands at its address. Main thread only.
 namespace RenderSceneLifetime
 {
-	constexpr U32 k_invalidID = 0xFFFFFFFF;
+	constexpr U64 k_invalidID = LiveIDAllocator::k_invalidID;
 
-	bool IsRenderObjectAlive(U32 id);
-	bool IsLightObjectAlive(U32 id);
+	bool IsRenderObjectAlive(U64 id);
+	bool IsLightObjectAlive(U64 id);
 
 	// Debug builds assert that a handle is alive before it's dereferenced
 	void CheckAccess(bool isAlive);
@@ -27,7 +29,7 @@ namespace RenderSceneLifetime
 //
 // Once the object is destroyed the handle is invalid: it compares equal to nullptr and dereferencing it asserts in
 // debug builds.
-template <typename TObject, bool (*IsAlive)(U32)>
+template <typename TObject, bool (*IsAlive)(U64)>
 class RenderSceneObjectPtr
 {
 	friend class RenderScene;
@@ -98,7 +100,7 @@ public:
 	}
 
 private:
-	RenderSceneObjectPtr(TObject* object, U32 id)
+	RenderSceneObjectPtr(TObject* object, U64 id)
 		: m_ptr(object)
 		, m_id(id)
 	{
@@ -122,7 +124,7 @@ private:
 
 private:
 	TObject* m_ptr = nullptr;
-	U32 m_id = RenderSceneLifetime::k_invalidID;
+	U64 m_id = RenderSceneLifetime::k_invalidID;
 };
 
 using RenderObjectPtr = RenderSceneObjectPtr<RenderObject, &RenderSceneLifetime::IsRenderObjectAlive>;
