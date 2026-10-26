@@ -9,6 +9,7 @@
 - `Functor.h` — `template<TReturnType, class...Args> class Functor` — a copyable/movable wrapper around `std::function`, used pervasively for input-event callbacks, component factories, and job tasks.
 - `StringUtils.h` — `StringUtils::ExtractFileNameFromPath`, `StringUtils::FormatString<Args...>` (sprintf-style formatting into a `std::string`, fixed 1024-char buffer), `Trim` (spaces and tabs at either end), and ASCII case helpers: `ToLower` / `ToUpper`, `EqualsIgnoringCase`, `StartsWithIgnoringCase` / `EndsWithIgnoringCase`, and `ContainsIgnoringCase(text, part)` (true for an empty part; the Object Inspector's filters and Task History's search use it).
 - `TimeUtils.h/.cpp` — times for people: `FormatTimeAgo(time, now)` ("Just now", "5 minutes ago", "Yesterday", a date once it's a month old; the file tiles use it), `FormatClockTime(time)` (the local time of day, "15:56:32"), and `FormatDuration(seconds)` (short: "8s", "1m 05s", "2h 03m"; task times and time left).
+- `StatsWindow.h/.cpp` — groups frames into half-second windows (`k_windowSeconds`) for stats shown to people, so they update a couple of times a second and stay readable. A frame runs from one `AddFrame(now)` to the next, and the first only starts the window. `AddFrame` returns true when the window closes; the owner keeps its own sums and turns them into averages with `PerFrame(total)` and `PerSecond(count)`, which describe the window that just closed. `FramePacer` (`FrameStats`), `RenderEngine` (`RenderStats`) and the render thread (`Rendering::RenderThreadStats`) use it.
 - `Conversions.h/.cpp` — string/encoding conversions (e.g. `StringToWString`, used for D3DPERF event names in the render thread).
 - `GUID.h/.cpp` — `GUIDHelper::GenerateGUID()`, wrapping Win32 `GUID`/`guiddef.h`.
 
@@ -62,7 +63,7 @@ Covered in depth in [Memory-Management.md](Memory-Management.md): `ByteStream.h/
 ## Key files
 
 - `Utils\Src\StdAfx.h` — confirms GLM as the underlying math library
-- `Utils\Src\Utils\PrimitiveDefs.h`, `Utils.h`, `Functor.h`, `StringUtils.h`, `TimeUtils.h`, `Conversions.h`, `GUID.h`
+- `Utils\Src\Utils\PrimitiveDefs.h`, `Utils.h`, `Functor.h`, `StringUtils.h`, `TimeUtils.h`, `StatsWindow.h`, `Conversions.h`, `GUID.h`
 - `Utils\Src\Utils\Math\Units.h`, `Math.h`, `Vector2D.h`, `Vector3D.h`, `Vector4D.h`, `Matrix4x4.h`, `Quaternion.h`, `Plane.h`, `BoundingBox.h`, `Frustum.h`, `Ray.h`, `ViewProjection.h`, `CubeMap.h`
 - `Utils\Src\Utils\Memory\ByteStream.h`, `MemoryUtils.h`
 - `Utils\Src\Utils\Platform\FilePath.h`, `File.h`, `FileNames.h`, `Folders.h`, `FolderWatcher.h`, `Shell.h`, `CmdLine.h`, `Timers\HiResTimer.h`

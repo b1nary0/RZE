@@ -192,6 +192,7 @@ Both go through one helper on the render thread: it creates a `D3D11_USAGE_STAGI
 - **Optick:** `OPTICK_EVENT` / `OPTICK_THREAD("Render Thread")` are spread through the render thread and main loop, viewable in the bundled `Tools\Optick\Optick.exe`.
 - **PIX / RenderDoc markers:** each `Renderer::Begin(name)` / `End()` pair becomes a named region (`D3DPERF_BeginEvent`), so captures group draws by pass (`ForwardRenderStage`, `PickRenderStage`, ...). Markers are only built when a profiler is attached (`D3DPERF_GetStatus()` is checked once per batch), so they cost nothing otherwise.
 - **Command memory:** the Editor's menu bar shows `RenderCommand MemArena: <N> KB`, the arena memory used by last frame's commands. Compare it before and after a change to see its render-path cost.
+- **Render thread stats:** `Renderer::GetRenderThreadStats()` (`RenderThreadStats`, safe from any thread) gives how long the render thread is busy per frame, Present included, and the part spent in Present. A frame runs from one present to the next, averaged over a `StatsWindow` that the first present starts. The Editor's status bar shows them.
 
 ## Key files
 

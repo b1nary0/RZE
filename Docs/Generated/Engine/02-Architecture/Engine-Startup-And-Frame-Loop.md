@@ -201,7 +201,7 @@ A [`-perfcapture`](../06-Platform-And-Infrastructure/Debug-Services-And-Logging.
 - **The frame period** is the longer of the CPU cap's period and the refresh period while vsync is on. The cap is `MaxFrameRate`, or the lower of it and `UnfocusedFrameRate` while the window isn't the foreground window or is minimised. The refresh rate comes from `Display::GetRefreshRate`, at start-up and on every `Window_Resize` event, which is also sent after a move to another monitor.
 - **Scheduling.** The next frame is due a cap period after the current one *was due*, not after it started, so small oversleeps don't add up. A frame that starts over a period late re-bases on now instead, so the frames after it don't rush to catch up.
 - **Delta time** (`GetDeltaTime()`, which `RZE().GetDeltaTime()` returns) is the measured frame time, clamped to 100 ms so breakpoints, window drags and load hitches don't make the scene jump. A frame within 10% of the target period simulates the running average of on-time frames instead, so timer jitter doesn't show as uneven motion. The average converges on the real cadence, e.g. 59.94 Hz on a display that reports 59.
-- **Stats** (`GetStats()`), averaged over half a second and updated once per half second so they stay readable: frame time, frames a second, idle time per frame and the part of it spent on async work, and UI frames a second. The Editor's status bar shows them.
+- **Stats** (`GetStats()`, a `FrameStats`), averaged over a `StatsWindow` of half a second and updated once per window so they stay readable: frame time, frames a second, idle time per frame and the part of it spent on async work, and UI frames a second. The first `BeginFrame` only starts the window. The Editor's status bar shows them.
 
 ### UI frame rate
 
