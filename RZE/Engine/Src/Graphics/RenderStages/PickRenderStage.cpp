@@ -98,7 +98,7 @@ void PickRenderStage::Render(RenderContext& context)
 	Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetWorldMatrixBuffer(), 1);
 	Rendering::Renderer::SetConstantBufferPS(m_pickBuffer, 0);
 
-	Rendering::Renderer::SetViewport({ 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f });
+	Rendering::Renderer::SetViewport({ 1.0f, 1.0f });
 	Rendering::Renderer::SetInputLayout(m_vertexShader->GetPlatformObject());
 	Rendering::Renderer::SetPrimitiveTopology(Rendering::EPrimitiveTopology::TriangleList);
 

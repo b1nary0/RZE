@@ -26,7 +26,6 @@ std::shared_ptr<AsyncOperation> ViewCapture::Capture(RenderScene& scene, const R
 	}
 
 	m_view.Camera = camera;
-	m_view.Camera.Viewport = RenderViewport{ m_size };
 	m_view.ViewportSize = m_size;
 	m_view.Lighting = settings.Lighting;
 	m_view.AutoExposure = settings.AutoExposure;

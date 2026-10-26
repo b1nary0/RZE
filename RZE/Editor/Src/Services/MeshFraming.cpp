@@ -51,7 +51,6 @@ namespace Editor
 			RenderCamera camera;
 			camera.ClipSpace = projection * view;
 			camera.Position = eye;
-			camera.Viewport = RenderViewport{ viewportSize };
 			return camera;
 		}
 	}

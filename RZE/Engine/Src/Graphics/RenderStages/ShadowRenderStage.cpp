@@ -316,7 +316,7 @@ bool ShadowRenderStage::RenderDirectionalShadow(const RenderScene& scene, const 
 	outShadowData.NormalOffset = worldTexelSize * k_normalOffsetTexels;
 
 	const float size = static_cast<float>(k_shadowMapSize);
-	Rendering::Renderer::SetViewport({ size, size, 0.0f, 1.0f, 0.0f, 0.0f });
+	Rendering::Renderer::SetViewport({ size, size });
 	Rendering::Renderer::ClearDepthStencilBuffer(state.ShadowMap);
 	Rendering::Renderer::SetDepthTarget(state.ShadowMap);
 	DrawCasters(scene, lightViewProjection);
@@ -328,7 +328,7 @@ void ShadowRenderStage::RenderPointShadow(const RenderScene& scene, const LightO
 	const Matrix4x4 projection = Matrix4x4::CreatePerspectiveMatrixZeroToOne(90.0f, 1.0f, k_pointShadowNear, CalculatePointShadowFar(light));
 
 	const float size = static_cast<float>(k_pointShadowSize);
-	Rendering::Renderer::SetViewport({ size, size, 0.0f, 1.0f, 0.0f, 0.0f });
+	Rendering::Renderer::SetViewport({ size, size });
 
 	// Only this light's faces: the other cubes keep what their lights cast
 	for (U32 face = 0; face < static_cast<U32>(ECubeFace::Count); ++face)

@@ -122,7 +122,6 @@ RenderCamera CameraComponent::CreateRenderCamera(const Vector2D& viewportSize) c
 	const Matrix4x4 view = Matrix4x4::CreateViewMatrix(position, position + GetForward(), GetUpDir());
 
 	RenderCamera renderCam;
-	renderCam.Viewport = RenderViewport{ viewportSize };
 	renderCam.ClipSpace = projection * view;
 	renderCam.Position = position;
 	return renderCam;

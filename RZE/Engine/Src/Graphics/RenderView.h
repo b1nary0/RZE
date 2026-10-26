@@ -32,17 +32,12 @@ struct RenderPickRequest
 	static float DecodeDepth(U64 texel);
 };
 
-struct RenderViewport
-{
-	Vector2D Size;
-};
-
+// Uploaded as is as the shaders' CameraBuffer (Common/VertexResources.hlsli), so the two must match. The view's size is
+// RenderView::ViewportSize.
 struct RenderCamera
 {
-	// @TODO integrate with viewport maybe
 	Matrix4x4 ClipSpace;
 	Vector3D Position;
-	RenderViewport Viewport;
 };
 
 enum class ERenderViewKind

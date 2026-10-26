@@ -80,7 +80,7 @@ void ForwardRenderStage::Render(RenderContext& context)
 	Rendering::Renderer::SetVertexShader(m_vertexShader->GetPlatformObject());
 	Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetCameraDataBuffer(), 0);
 
-	Rendering::Renderer::SetViewport({ view.ViewportSize.X(), view.ViewportSize.Y(), 0.0f, 1.0f, 0.0f, 0.0f});
+	Rendering::Renderer::SetViewport({ view.ViewportSize.X(), view.ViewportSize.Y() });
 
 	Rendering::Renderer::SetInputLayout(m_vertexShader->GetPlatformObject());
 	Rendering::Renderer::SetPrimitiveTopology(Rendering::EPrimitiveTopology::TriangleList);

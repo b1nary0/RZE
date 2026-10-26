@@ -32,13 +32,15 @@ namespace Rendering
 		Off        // Neither tests nor writes
 	};
 
+	// By default the full depth range from the target's top-left corner, so most passes only give the size:
+	// SetViewport({ width, height })
 	struct ViewportParams
 	{
-		float Width;
-		float Height;
-		float MinDepth;
-		float MaxDepth;
-		float TopLeftX;
-		float TopLeftY;
+		float Width = 0.0f;
+		float Height = 0.0f;
+		float MinDepth = 0.0f;
+		float MaxDepth = 1.0f;
+		float TopLeftX = 0.0f;
+		float TopLeftY = 0.0f;
 	};
 }

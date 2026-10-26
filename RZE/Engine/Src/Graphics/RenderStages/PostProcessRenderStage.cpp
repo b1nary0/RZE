@@ -180,7 +180,7 @@ void PostProcessRenderStage::Render(RenderContext& context)
 
 		// Log luminance of the scene viewport, averaged down the mip chain
 		Rendering::Renderer::SetColourTarget(m_luminance);
-		Rendering::Renderer::SetViewport({ static_cast<float>(k_luminanceSize), static_cast<float>(k_luminanceSize), 0.0f, 1.0f, 0.0f, 0.0f });
+		Rendering::Renderer::SetViewport({ static_cast<float>(k_luminanceSize), static_cast<float>(k_luminanceSize) });
 		Rendering::Renderer::SetPixelShader(m_luminanceShader->GetPlatformObject());
 		Rendering::Renderer::SetTextureResource(sceneColour.Colour, k_sourceSlot);
 
@@ -193,7 +193,7 @@ void PostProcessRenderStage::Render(RenderContext& context)
 
 		// Eye adaptation toward the measured average
 		Rendering::Renderer::SetColourTarget(currentAdapted);
-		Rendering::Renderer::SetViewport({ 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f });
+		Rendering::Renderer::SetViewport({ 1.0f, 1.0f });
 		Rendering::Renderer::SetPixelShader(m_adaptShader->GetPlatformObject());
 		Rendering::Renderer::SetTextureResource(m_luminance, k_sourceSlot);
 		Rendering::Renderer::SetTextureResource(previousAdapted, k_secondarySlot);
@@ -209,7 +209,7 @@ void PostProcessRenderStage::Render(RenderContext& context)
 	DisplayColourData displayColour;
 	displayColour.Colour = renderTarget.GetTargetPlatformObject();
 	displayColour.Depth = sceneColour.Depth;
-	Rendering::Renderer::SetViewport({ viewportSize.X(), viewportSize.Y(), 0.0f, 1.0f, 0.0f, 0.0f });
+	Rendering::Renderer::SetViewport({ viewportSize.X(), viewportSize.Y() });
 	// Into whichever colour target is set
 	const auto drawTonemap = [this, &sceneColour, &eyeAdaptation]()
 	{
