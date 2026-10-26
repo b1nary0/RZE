@@ -108,7 +108,7 @@ The 2020 design notes called for both. **Culling** is implemented: objects and t
 
 ## 10. Constant-buffer uploads read past small structs
 
-`Renderer::UploadDataToBuffer<T>` copies the buffer's **aligned** size from the source pointer. For `RenderCamera` (84 bytes, in a 128-byte-aligned buffer), the shadow and pick stages pass a local, so 44 bytes past the struct are copied from the stack into unused padding. It works in practice, but it's undefined behaviour. Fix: copy `sizeof(T)` and zero the rest, or pad the struct to the alignment.
+`Renderer::UploadDataToBuffer<T>` copies the buffer's **aligned** size from the source pointer. For `RenderCamera` (76 bytes, in a 128-byte-aligned buffer), the shadow and pick stages pass a local, so 52 bytes past the struct are copied from the stack into unused padding. It works in practice, but it's undefined behaviour. Fix: copy `sizeof(T)` and zero the rest, or pad the struct to the alignment.
 
 ## 11. `LogChannel::Debug`'s colour was out of range (fixed)
 

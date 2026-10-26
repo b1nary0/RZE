@@ -102,7 +102,7 @@ A **`RenderView`** is one point of view to render the scene from. Its owner fill
 class RenderView
 {
 public:
-    RenderCamera Camera;                     // ClipSpace (projection * view), Position, Viewport
+    RenderCamera Camera;                     // ClipSpace (projection * view), Position; mirrors the shaders' CameraBuffer
     Vector2D ViewportSize;
     Rendering::RenderTargetTexture* Target;  // owned by whoever owns the view
     bool AutoExposure = true;                // off for a fixed exposure of 1, for lighting whose brightness is known
