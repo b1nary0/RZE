@@ -86,5 +86,5 @@ This is the single most authoritative source for "the correct build order" if th
 
 - `README.md`
 - `GenerateSolutions.bat`, `BuildGame.bat`
-- `Utils\Src\Utils\Platform\FilePath.h/.cpp` (`EDirectoryContext`)
+- `Utils\Src\Utils\Platform\Filepath.h/.cpp` (`EDirectoryContext`)
 - `.github\workflows\Windows.yml`

@@ -12,7 +12,7 @@
 #include <Utils/PrimitiveDefs.h>
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector4D.h>
-#include <Utils/Platform/FilePath.h>
+#include <Utils/Platform/Filepath.h>
 
 #include <memory>
 
