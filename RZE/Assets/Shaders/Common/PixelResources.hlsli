@@ -16,14 +16,14 @@ cbuffer MaterialBuffer : register(b1)
 	float HasSpecularMap; // 1 when SpecularMap is bound for this material
 };
 
-// Mirrors k_maxLights (Graphics/GraphicsLayouts.h)
+// Mirrors GraphicsLayouts::k_maxLights (Graphics/GraphicsLayouts.h)
 #define MAX_LIGHTS 16
 
 // Mirrors ELightType (RenderScene.h)
 #define LIGHT_TYPE_DIRECTIONAL 0
 #define LIGHT_TYPE_POINT 1
 
-// Mirrors LightLayout (Graphics/GraphicsLayouts.h). Each type reads only what it uses.
+// Mirrors GraphicsLayouts::LightLayout (Graphics/GraphicsLayouts.h). Each type reads only what it uses.
 struct Light
 {
 	float3 Position;  // World space; point lights
@@ -37,17 +37,17 @@ struct Light
 	float3 _Pad;
 };
 
-// Mirrors LightBufferLayout (Graphics/GraphicsLayouts.h)
+// Mirrors GraphicsLayouts::LightBufferLayout (Graphics/GraphicsLayouts.h)
 cbuffer LightBuffer : register(b2)
 {
 	Light Lights[MAX_LIGHTS];
 	uint  LightCount;
 };
 
-// Mirrors k_maxShadowedPointLights (Graphics/GraphicsLayouts.h)
+// Mirrors GraphicsLayouts::k_maxShadowedPointLights (Graphics/GraphicsLayouts.h)
 #define MAX_SHADOWED_POINT_LIGHTS 8
 
-// Mirrors PointShadowLayout (Graphics/GraphicsLayouts.h): how to read one point light's shadow cube
+// Mirrors GraphicsLayouts::PointShadowLayout (Graphics/GraphicsLayouts.h): how to read one point light's shadow cube
 struct PointShadow
 {
 	// The depth stored for something this far along a cube face's forward is
@@ -58,7 +58,7 @@ struct PointShadow
 	float _Pad;
 };
 
-// Mirrors ShadowBufferLayout (Graphics/GraphicsLayouts.h)
+// Mirrors GraphicsLayouts::ShadowBufferLayout (Graphics/GraphicsLayouts.h)
 cbuffer ShadowBuffer : register(b3)
 {
 	// The directional light's
@@ -71,7 +71,7 @@ cbuffer ShadowBuffer : register(b3)
 	PointShadow PointShadows[MAX_SHADOWED_POINT_LIGHTS];
 };
 
-// Mirrors ViewLightingLayout (Graphics/GraphicsLayouts.h)
+// Mirrors GraphicsLayouts::ViewLightingLayout (Graphics/GraphicsLayouts.h)
 cbuffer ViewLightingBuffer : register(b4)
 {
 	float UniformLighting; // 1 to light evenly from every direction instead of by the light and sky (ERenderViewLighting)

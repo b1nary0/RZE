@@ -56,7 +56,7 @@ namespace
 				return -1;
 
 			case ELightType::Point:
-				if (m_nextCube < static_cast<Int32>(k_maxShadowedPointLights))
+				if (m_nextCube < static_cast<Int32>(GraphicsLayouts::k_maxShadowedPointLights))
 				{
 					return m_nextCube++;
 				}
@@ -151,15 +151,15 @@ void ShadowRenderStage::UploadLights(const RenderScene& scene, const ShadowMapSt
 {
 	ShadowAssigner shadowAssigner;
 
-	LightBufferLayout lightData;
+	GraphicsLayouts::LightBufferLayout lightData;
 	for (const std::unique_ptr<LightObject>& lightObject : scene.GetLightObjects())
 	{
-		if (lightData.Count == k_maxLights)
+		if (lightData.Count == GraphicsLayouts::k_maxLights)
 		{
 			break;
 		}
 
-		LightLayout& light = lightData.Lights[lightData.Count++];
+		GraphicsLayouts::LightLayout& light = lightData.Lights[lightData.Count++];
 		light.Position = lightObject->GetPosition();
 		light.Range = lightObject->GetRange();
 		light.Direction = lightObject->GetDirection();
@@ -169,7 +169,7 @@ void ShadowRenderStage::UploadLights(const RenderScene& scene, const ShadowMapSt
 		light.ShadowIndex = shadowAssigner.Assign(*lightObject);
 	}
 
-	Rendering::Renderer::UploadDataToBuffer<LightBufferLayout>(state.LightBuffer, &lightData);
+	Rendering::Renderer::UploadDataToBuffer<GraphicsLayouts::LightBufferLayout>(state.LightBuffer, &lightData);
 }
 
 ShadowRenderStage::ShadowMapState ShadowRenderStage::CreateShadowMapState()
@@ -185,14 +185,14 @@ ShadowRenderStage::ShadowMapState ShadowRenderStage::CreateShadowMapState()
 	Rendering::GFXTextureBufferParams pointShadowParams = shadowMapParams;
 	pointShadowParams.Width = k_pointShadowSize;
 	pointShadowParams.Height = k_pointShadowSize;
-	pointShadowParams.ArraySize = static_cast<U32>(ECubeFace::Count) * k_maxShadowedPointLights;
+	pointShadowParams.ArraySize = static_cast<U32>(ECubeFace::Count) * GraphicsLayouts::k_maxShadowedPointLights;
 	pointShadowParams.bIsCubeMap = true;
 
 	ShadowMapState state;
-	state.LightBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(LightBufferLayout), 16, 1);
+	state.LightBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(GraphicsLayouts::LightBufferLayout), 16, 1);
 	state.ShadowMap = Rendering::Renderer::CreateTextureBuffer2D(shadowMapParams);
 	state.PointShadowCubes = Rendering::Renderer::CreateTextureBuffer2D(pointShadowParams);
-	state.ShadowBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(ShadowBufferLayout), 16, 1);
+	state.ShadowBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(GraphicsLayouts::ShadowBufferLayout), 16, 1);
 
 	state.ShadowData.TexelSize = 1.0f / static_cast<float>(k_shadowMapSize);
 	state.ShadowData.PointTexelSize = 1.0f / static_cast<float>(k_pointShadowSize);
@@ -231,7 +231,7 @@ void ShadowRenderStage::UpdateShadowMaps(const RenderScene& scene, ShadowMapStat
 	U32 lightCount = 0;
 	for (const std::unique_ptr<LightObject>& lightObject : scene.GetLightObjects())
 	{
-		if (lightCount++ == k_maxLights)
+		if (lightCount++ == GraphicsLayouts::k_maxLights)
 		{
 			break;
 		}
@@ -259,7 +259,7 @@ void ShadowRenderStage::UpdateShadowMaps(const RenderScene& scene, ShadowMapStat
 			{
 				if (!m_hasWarnedOfUnshadowedPointLights)
 				{
-					RZE_LOG_WARNING_ARGS("More than %u point lights: the rest light the scene without shadows.", k_maxShadowedPointLights);
+					RZE_LOG_WARNING_ARGS("More than %u point lights: the rest light the scene without shadows.", GraphicsLayouts::k_maxShadowedPointLights);
 					m_hasWarnedOfUnshadowedPointLights = true;
 				}
 				break;
@@ -283,7 +283,7 @@ void ShadowRenderStage::UpdateShadowMaps(const RenderScene& scene, ShadowMapStat
 
 	if (hasBegun)
 	{
-		Rendering::Renderer::UploadDataToBuffer<ShadowBufferLayout>(state.ShadowBuffer, &state.ShadowData);
+		Rendering::Renderer::UploadDataToBuffer<GraphicsLayouts::ShadowBufferLayout>(state.ShadowBuffer, &state.ShadowData);
 		Rendering::Renderer::End();
 	}
 }
@@ -303,7 +303,7 @@ void ShadowRenderStage::BeginShadowPass()
 	Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetWorldMatrixBuffer(), 1);
 }
 
-bool ShadowRenderStage::RenderDirectionalShadow(const RenderScene& scene, const LightObject& light, const ShadowMapState& state, ShadowBufferLayout& outShadowData)
+bool ShadowRenderStage::RenderDirectionalShadow(const RenderScene& scene, const LightObject& light, const ShadowMapState& state, GraphicsLayouts::ShadowBufferLayout& outShadowData)
 {
 	Matrix4x4 lightViewProjection;
 	float worldTexelSize = 0.0f;
@@ -323,7 +323,7 @@ bool ShadowRenderStage::RenderDirectionalShadow(const RenderScene& scene, const 
 	return true;
 }
 
-void ShadowRenderStage::RenderPointShadow(const RenderScene& scene, const LightObject& light, U32 cubeIndex, const ShadowMapState& state, PointShadowLayout& outShadow)
+void ShadowRenderStage::RenderPointShadow(const RenderScene& scene, const LightObject& light, U32 cubeIndex, const ShadowMapState& state, GraphicsLayouts::PointShadowLayout& outShadow)
 {
 	const Matrix4x4 projection = Matrix4x4::CreatePerspectiveMatrixZeroToOne(90.0f, 1.0f, k_pointShadowNear, CalculatePointShadowFar(light));
 

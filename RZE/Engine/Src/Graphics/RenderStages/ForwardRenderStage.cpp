@@ -42,7 +42,7 @@ void ForwardRenderStage::Initialize()
 	AssertExpr(m_vertexShaderResource.IsValid());
 	m_vertexShader = RZE().GetResourceHandler().GetResource<VertexShader>(m_vertexShaderResource);
 
-	m_viewLightingBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(ViewLightingLayout), 16, 1);
+	m_viewLightingBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(GraphicsLayouts::ViewLightingLayout), 16, 1);
 }
 
 void ForwardRenderStage::Setup(RenderStageBuilder& builder)
@@ -73,9 +73,9 @@ void ForwardRenderStage::Render(RenderContext& context)
 
 	Rendering::Renderer::UploadDataToBuffer<RenderCamera>(m_vertexShader->GetCameraDataBuffer(), &view.Camera);
 
-	ViewLightingLayout viewLighting;
+	GraphicsLayouts::ViewLightingLayout viewLighting;
 	viewLighting.UniformLighting = view.Lighting == ERenderViewLighting::Uniform ? 1.0f : 0.0f;
-	Rendering::Renderer::UploadDataToBuffer<ViewLightingLayout>(m_viewLightingBuffer, &viewLighting);
+	Rendering::Renderer::UploadDataToBuffer<GraphicsLayouts::ViewLightingLayout>(m_viewLightingBuffer, &viewLighting);
 
 	Rendering::Renderer::SetVertexShader(m_vertexShader->GetPlatformObject());
 	Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetCameraDataBuffer(), 0);

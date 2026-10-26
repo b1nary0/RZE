@@ -67,9 +67,9 @@ private:
 
 		CachedShadowMap DirectionalCache;
 		// By ShadowIndex, like the cubes
-		CachedShadowMap PointCaches[k_maxShadowedPointLights];
+		CachedShadowMap PointCaches[GraphicsLayouts::k_maxShadowedPointLights];
 		// What ShadowBuffer holds. Each map updates its own part when it's rendered.
-		ShadowBufferLayout ShadowData = {};
+		GraphicsLayouts::ShadowBufferLayout ShadowData = {};
 
 		// RenderScene::GetRevision the maps were last brought up to date for
 		U64 CheckedRevision = 0;
@@ -87,9 +87,9 @@ private:
 	// Sets up the depth-only state every light's views draw with, and starts the pass
 	void BeginShadowPass();
 	// Into the directional map; false if there's nothing to cast shadows
-	bool RenderDirectionalShadow(const RenderScene& scene, const LightObject& light, const ShadowMapState& state, ShadowBufferLayout& outShadowData);
+	bool RenderDirectionalShadow(const RenderScene& scene, const LightObject& light, const ShadowMapState& state, GraphicsLayouts::ShadowBufferLayout& outShadowData);
 	// Into cube cubeIndex of the point light cubes, a face at a time
-	void RenderPointShadow(const RenderScene& scene, const LightObject& light, U32 cubeIndex, const ShadowMapState& state, PointShadowLayout& outShadow);
+	void RenderPointShadow(const RenderScene& scene, const LightObject& light, U32 cubeIndex, const ShadowMapState& state, GraphicsLayouts::PointShadowLayout& outShadow);
 	// Depth of every opaque caster that's in view, into the bound depth target. Shared by every light type's views.
 	void DrawCasters(const RenderScene& scene, const Matrix4x4& viewProjection);
 
