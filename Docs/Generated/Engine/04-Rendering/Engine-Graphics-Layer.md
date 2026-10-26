@@ -203,3 +203,4 @@ Both object containers erase with swap-and-pop (`ContainerUtils::VectorEraseBack
 - `Engine\Src\Graphics\ViewCapture.h/.cpp`, `TextureFile.h/.cpp` — capturing a view to a PNG
 - `Utils\Src\Utils\Math\Frustum.h/.cpp` — the six-plane view frustum used for culling and marquee selection (see [Utils-Library-Reference.md](../06-Platform-And-Infrastructure/Utils-Library-Reference.md))
 - `Engine\Src\Graphics\GraphicsDefines.h` — `RenderObjectPtr` / `LightObjectPtr`, move-only and lifetime-checked
+- `Engine\Src\Graphics\GraphicsLayouts.h` — the light and shadow buffer layouts shading reads (`LightLayout`, `ShadowBufferLayout`, ...), shared by the render stages (see [Render-Stages.md](Render-Stages.md#shadowrenderstage))

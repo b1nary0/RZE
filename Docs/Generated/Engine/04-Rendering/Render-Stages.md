@@ -116,9 +116,10 @@ Turns the scene's lights into what shading reads. Everything it makes is kept **
 | Type | Map | Fitted to |
 |---|---|---|
 | Directional | One 4096² 2D depth map | The bounds of every render object as seen from the light. It doesn't follow the camera, so it never shimmers as the camera moves. |
-| Point | One cube of a depth cube array (8 cubes, 512² per face, about 48 MB) | Six 90° views from the light (`Matrix4x4::CreateCubeFaceView`), from 0.05 m out to its range, one slice each (`Renderer::SetDepthTarget(cubes, cube × 6 + face)`) |
+| Point | One cube of a depth cube array (8 cubes, 512² per face, about 48 MB) | Six 90° views from the light (`CubeMap::CreateFaceView`), from 0.05 m out to its range, one slice each (`Renderer::SetDepthTarget(cubes, cube × 6 + face)`) |
 
 - **`ShadowBuffer`** (`b3`) says how to read them: the sun's view-projection, texel size and normal offset, and per point light the two numbers that turn a distance along a cube face into the depth stored there (`DepthAtInfinity + DepthDistanceScale / distance`, taken from the faces' projection matrix, so the shader uses the same convention that drew them) and its normal offset per metre.
+- **The layouts** of both buffers (`LightLayout`, `LightBufferLayout`, `PointShadowLayout`, `ShadowBufferLayout`) and the two limits are in `Graphics/GraphicsLayouts.h`, not in the stage, since lighting isn't this stage's alone.
 - **One way to draw casters:** every view, the sun's and each cube face, goes through `DrawCasters(scene, viewProjection)`, which skips objects and draws outside that view (`Frustum`), e.g. everything behind a cube face.
 - **Cached per map:** nothing is checked until the scene's revision (`RenderScene::GetRevision`) changes. Then each map is rendered again only if what it shows changed. Each one remembers the light it was rendered for (its live ID) and the revision it was rendered at (`CachedShadowMap`):
 
@@ -250,5 +251,6 @@ Keep per-view, across-frame state in `context.Persistent()`, and add new per-fra
 - `Engine\Src\Graphics\RenderPipeline.h/.cpp`, `RenderPipelineCompiler.h/.cpp`
 - `Engine\Src\Graphics\RenderData\` — `SceneLightingData.h`, `SceneColourData.h`, `DisplayColourData.h`
 - `Engine\Src\Graphics\RenderStages\` — one `.h/.cpp` per stage
+- `Engine\Src\Graphics\GraphicsLayouts.h` — the CPU side of shader buffers the stages share: the light and shadow layouts and their limits, and `ViewLightingLayout`. A layout only one stage's shaders use stays in that stage (`PickRenderStage::PickBufferLayout`, `PostProcessRenderStage::ParamsLayout`); put new ones by the same rule.
 - `Engine\Src\Graphics\AntiAliasing.h/.cpp` — `EAntiAliasing` levels and their FXAA settings
 - `Assets\Shaders\` — `Pixel_ShadowCaster`, `Pixel_NewRenderer*`, `Pixel_LuminanceLog`, `Pixel_ExposureAdapt`, `Pixel_Tonemap`, `Pixel_FXAA`, `Pixel_PickID`, `Pixel_Line`
