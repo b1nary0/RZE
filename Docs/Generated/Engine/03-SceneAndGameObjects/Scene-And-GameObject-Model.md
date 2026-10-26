@@ -23,7 +23,7 @@ Key API:
 ## `GameObject` (`Engine\Src\Game\World\GameObject\GameObject.h` / `.cpp`)
 
 The "entity." Holds:
-- `GameObjectID m_id` — unique within a session, never reused; what handles check liveness by
+- `GameObjectID m_id` — a 64-bit ID, never handed out twice in a session; what handles check liveness by
 - `const ObjectGUID m_guid` — a random 64-bit ID, saved with the object, so it identifies the object across sessions (see [Identity](#identity-guids-and-names))
 - `std::string m_name` — a label; doesn't have to be unique
 - `ComponentList m_components` — `typedef std::vector<GameObjectComponentBase*> ComponentList`
@@ -130,8 +130,10 @@ Render objects and render scenes cache their bounds the same way: see [`RenderOb
 
 Defined in `Game\World\GameObject\GameObjectDefinitions.h`. Non-owning handles with private raw-pointer constructors (only `GameObject` and `GameScene` can make them), and **lifetime-checked**:
 
-- Each holds the pointer plus the object's (or component's) ID. IDs are handed out in increasing order and **never reused**.
-- `LiveIDSet` keeps one bit per ID ever handed out (8 KB per 65536 IDs), set while the object is alive. Checking a handle is a single array read.
+- Each holds the pointer plus the object's (or component's) 64-bit ID, which a `LiveIDAllocator` (`Utils\Src\Utils\LiveIDAllocator.h`) hands out in the constructor and takes back in the destructor. GameObjects and components each have one.
+- An ID is a **slot index** (low 32 bits) and that slot's **generation** (high 32 bits). Each live object holds one slot. Destroying it bumps the slot's generation, so the old ID stops matching, and a new object reuses the slot (most recently freed first). A slot is retired once its 2³² generations run out, so **no ID is ever handed out twice**. IDs aren't in creation order.
+- Checking a handle is a single array read and compare. Memory follows the most objects ever alive at once, 8 bytes each, not how many were ever made.
+- Each allocator is made on first use and never destroyed, so objects made during static initialization or destroyed after `main` returns are still tracked.
 - Once its target is destroyed, a handle **compares equal to `nullptr`** and `IsValid()` is false, even if a new object lands at the same address. Debug builds assert if a dead handle is dereferenced.
 - Two handles are equal when they refer to the same object.
 
@@ -158,9 +160,9 @@ A scene can have any number of cameras; one of them is the **main camera**, whic
 
 | | `GameObjectID` (`GetID()`) | `ObjectGUID` (`GetGUID()`) | Name |
 |---|---|---|---|
-| What | session counter | random 64-bit, `Game\World\GameObject\ObjectGUID.h` | free text |
+| What | 64-bit slot + generation (`LiveIDAllocator`) | random 64-bit, `Game\World\GameObject\ObjectGUID.h` | free text |
 | Saved | no | yes, as 16 hex digits | yes |
-| Unique | yes, never reused | yes within a scene | **no** |
+| Unique | yes within a session, never handed out twice | yes within a scene | **no** |
 | Use it for | handles, picking IDs | finding an object, parent links in files | display |
 
 - The scene chooses each object's GUID and passes it to the constructor; it never changes afterwards. A new object gets `GenerateFreeGUID()`. A loaded object keeps its saved GUID if no object in the scene has it, otherwise it gets a new one (`ChooseGUID`) — which is how pasting a copy of an object that's still in the scene works.
@@ -204,7 +206,8 @@ flowchart TD
 
 - `Engine\Src\Game\GameScene.h` / `.cpp`
 - `Engine\Src\Game\World\GameObject\GameObject.h` / `.cpp`
-- `Engine\Src\Game\World\GameObject\GameObjectDefinitions.h`, `LiveIDSet.h`, `ObjectGUID.h/.cpp`
+- `Engine\Src\Game\World\GameObject\GameObjectDefinitions.h`, `ObjectGUID.h/.cpp`
+- `Utils\Src\Utils\LiveIDAllocator.h/.cpp` — hands out and checks object IDs
 - `Engine\Src\Game\SceneFormat.h/.cpp` — the file layout, version upgrades, `GameObjectLoader`
 - `Engine\Src\Game\SceneLoadOperation.h/.cpp`
 - `Engine\Src\Game\HeadlessScene.h/.cpp`, `CaptureBatchOperation.h/.cpp`

@@ -13,15 +13,20 @@
 
 namespace
 {
-	// Hands out every GameObjectID (see GameObjectLifetime)
-	LiveIDAllocator s_aliveGameObjects;
+	// Hands out every GameObjectID (see GameObjectLifetime). Made on first use and never destroyed, so it works for
+	// objects made during static initialization or destroyed after main returns.
+	LiveIDAllocator& AliveGameObjects()
+	{
+		static LiveIDAllocator* const s_allocator = new LiveIDAllocator();
+		return *s_allocator;
+	}
 }
 
 namespace GameObjectLifetime
 {
 	bool IsGameObjectAlive(GameObjectID id)
 	{
-		return s_aliveGameObjects.Contains(id);
+		return AliveGameObjects().Contains(id);
 	}
 
 	void CheckGameObjectAccess(GameObjectID id)
@@ -38,7 +43,7 @@ GameObjectPtr::GameObjectPtr(GameObject* gameObject)
 
 GameObject::GameObject(GameScene& scene, ObjectGUID guid)
 	: m_scene(scene)
-	, m_id(s_aliveGameObjects.Acquire())
+	, m_id(AliveGameObjects().Acquire())
 	, m_guid(guid)
 {
 	m_stateFlags.IsInScene = false;
@@ -47,7 +52,7 @@ GameObject::GameObject(GameScene& scene, ObjectGUID guid)
 
 GameObject::GameObject(GameScene& scene, const std::string& name, ObjectGUID guid)
 	: m_scene(scene)
-	, m_id(s_aliveGameObjects.Acquire())
+	, m_id(AliveGameObjects().Acquire())
 	, m_guid(guid)
 	, m_name(name)
 {
@@ -57,7 +62,7 @@ GameObject::GameObject(GameScene& scene, const std::string& name, ObjectGUID gui
 
 GameObject::~GameObject()
 {
-	s_aliveGameObjects.Release(m_id);
+	AliveGameObjects().Release(m_id);
 }
 
 void GameObject::Initialize()

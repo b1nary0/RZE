@@ -21,7 +21,7 @@ public:
 };
 ```
 
-Each component instance also has a `GameObjectComponentInstanceID`, unique and never reused, which `GameObjectComponentPtr` handles check to know whether the component is still alive (see [Scene-And-GameObject-Model.md](Scene-And-GameObject-Model.md#handles-gameobjectptr-and-gameobjectcomponentptrt)).
+Each component instance also has a `GameObjectComponentInstanceID`, a 64-bit ID never handed out twice, which `GameObjectComponentPtr` handles check to know whether the component is still alive (see [Scene-And-GameObject-Model.md](Scene-And-GameObject-Model.md#handles-gameobjectptr-and-gameobjectcomponentptrt)).
 
 The base class has **no editor code**. The editor's inspector is driven by **property descriptions**: a component type lists its properties in a static `DescribeProperties(PropertyBuilder<T>&)`, from its own getters and setters, with no ImGui. See [Object-Inspector-And-Properties.md](../07-Editor/Object-Inspector-And-Properties.md).
 

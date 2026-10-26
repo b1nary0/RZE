@@ -46,7 +46,7 @@ A **`RenderScene`** (`Engine\Src\Graphics\RenderScene.h/.cpp`) is what one scene
 `CreateRenderObject` and `CreateLightObject` return a **`RenderObjectPtr`** / **`LightObjectPtr`** (`Graphics\GraphicsDefines.h`, one template, `RenderSceneObjectPtr`). Whoever made the object keeps the handle and destroys the object through it (`DestroyRenderObject(handle)` empties it).
 
 - **Move-only**, so each object has one holder (`RenderComponent`, `LightComponent`). Code that only looks at an object borrows the holder's handle by reference, e.g. `RenderComponent::GetRenderObject()` returns `const RenderObjectPtr&`.
-- **Lifetime-checked**, like `GameObjectPtr`. Each object takes an ID that's never reused (`RenderSceneLifetime`, a `LiveIDSet` per kind), and a handle compares equal to `nullptr` once its object is gone, however it went: destroyed through the handle, `ClearObjects`, or the scene being destroyed. Debug builds assert if a dead handle is dereferenced, and destroying through a dead handle just empties it.
+- **Lifetime-checked**, like `GameObjectPtr`. Each object takes a 64-bit ID that's never handed out twice (`RenderSceneLifetime`: one `LiveIDAllocator` shared by render objects and lights, made on first use and never destroyed; see [Handles](../03-SceneAndGameObjects/Scene-And-GameObject-Model.md#handles-gameobjectptr-and-gameobjectcomponentptrt)). A handle compares equal to `nullptr` once its object is gone, however it went: destroyed through the handle, `ClearObjects`, or the scene being destroyed. Debug builds assert if a dead handle is dereferenced, and destroying through a dead handle just empties it.
 
 `RenderEngine` doesn't own a scene. `SetMainScene(scene)` says which one the main view shows; `RZE_Engine` sets it to the active `GameScene`'s. `RenderEngine::DrawLine` / `DrawWireBox` draw into the main scene, for tools that draw over the main view (the editor's grid and gizmos).
 
@@ -58,7 +58,7 @@ A **`RenderScene`** (`Engine\Src\Graphics\RenderScene.h/.cpp`) is what one scene
 | `MatrixMem { transform, invTransform }` | `SetTransform()` is called every frame by `RenderComponent`, but returns early if the matrix hasn't changed. |
 | Draws | `GetDraws()`: one `MeshDraw` per placed sub-mesh, with its geometry, the material slot it draws with, its world transform, and 8 world-space corners plus the box around them. |
 | Bounds | `GetLocalBounds()`: the mesh's box in the object's own space, which only changes with the mesh. `GetBounds()`: that box placed in the world as an axis-aligned `BoundingBox`. The world boxes and the draws are **worked out when asked** after the object moves or changes mesh (`MarkChanged()`), not on every move. Used for frustum culling, shadow fitting, framing thumbnails, the Editor's marquee selection and its bounds boxes. |
-| Pick ID | `SetPickID()` / `GetPickID()`. What `PickRenderStage` writes for this object's pixels. `RenderComponent` sets it to its owner's `GameObjectID + 1`, so 0 means "nothing pickable". |
+| Pick ID | `SetPickID()` / `GetPickID()`, a U64. What `PickRenderStage` writes for this object's pixels. `RenderComponent` sets it to its owner's `GameObjectID + 1`, so 0 means "nothing pickable". |
 
 ### `LightObject`
 

@@ -196,7 +196,7 @@ sequenceDiagram
     participant RT as Render thread
     Ed->>View: Pick = { pixel, ID and depth TexelReadbacks }
     Note over Pick: next frame
-    Pick->>Pick: stretch that pixel over a 1x1 R32_UINT target<br/>and a 1x1 depth target<br/>(Matrix4x4::CreateSubRectProjection)
+    Pick->>Pick: stretch that pixel over a 1x1 R32G32_UINT target<br/>and a 1x1 depth target<br/>(Matrix4x4::CreateSubRectProjection)
     Pick->>Pick: draw nearby objects' pick IDs<br/>(frustum culling skips the rest)
     Pick->>RT: Renderer::ReadTexel the ID, then the depth
     RT->>RT: copy to staging textures, Map, store values
@@ -204,7 +204,8 @@ sequenceDiagram
     Ed->>Ed: pick ID - 1 = GameObjectID<br/>depth -> world position
 ```
 
-- **Cheap by design:** 1×1 targets mean nothing to resize with the window, the one-pixel frustum culls nearly everything, and only 8 bytes come back.
+- **Cheap by design:** 1×1 targets mean nothing to resize with the window, the one-pixel frustum culls nearly everything, and only 12 bytes come back (the 8-byte ID and the 4-byte depth).
+- **64-bit IDs:** pick IDs are U64 because `GameObjectID` is, so the ID target is `R32G32_UINT` and `Pixel_PickID.hlsl` writes a `uint2`, low half then high.
 - **Depth:** `DepthResult` is optional. It gets the depth target's texel (D24S8), which `RenderPickRequest::DecodeDepth` turns into 0 at the near plane to 1 at the far plane. The depth target is cleared to 1, so 1 means nothing is drawn there. The Editor's `ScenePicker` unprojects it with the camera it asked with (`ViewProjection::Unproject`) to find where the surface is.
 - `Pixel_PickID.hlsl` writes each `RenderObject::GetPickID()`. Objects with ID 0 still draw, so they hide what's behind them. Cutout pixels are clipped as in the shadow pass, so clicks go through them.
 - The readback makes the render thread wait for the GPU, but only on a click frame. See [`ReadTexel`](Low-Level-Renderer-Module.md#reading-back-from-the-gpu-readtexel-and-readtexture).

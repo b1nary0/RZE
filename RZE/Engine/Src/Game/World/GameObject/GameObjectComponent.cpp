@@ -5,15 +5,20 @@
 
 namespace
 {
-	// Hands out every GameObjectComponentInstanceID (see GameObjectLifetime)
-	LiveIDAllocator s_aliveComponents;
+	// Hands out every GameObjectComponentInstanceID (see GameObjectLifetime). Made on first use and never destroyed,
+	// so it works for components made during static initialization or destroyed after main returns.
+	LiveIDAllocator& AliveComponents()
+	{
+		static LiveIDAllocator* const s_allocator = new LiveIDAllocator();
+		return *s_allocator;
+	}
 }
 
 namespace GameObjectLifetime
 {
 	bool IsComponentAlive(GameObjectComponentInstanceID id)
 	{
-		return s_aliveComponents.Contains(id);
+		return AliveComponents().Contains(id);
 	}
 
 	void CheckComponentAccess(GameObjectComponentInstanceID id)
@@ -23,13 +28,13 @@ namespace GameObjectLifetime
 }
 
 GameObjectComponentBase::GameObjectComponentBase()
-	: m_instanceID(s_aliveComponents.Acquire())
+	: m_instanceID(AliveComponents().Acquire())
 {
 }
 
 GameObjectComponentBase::~GameObjectComponentBase()
 {
-	s_aliveComponents.Release(m_instanceID);
+	AliveComponents().Release(m_instanceID);
 }
 
 namespace GameObjectComponentRegistry

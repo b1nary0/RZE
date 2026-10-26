@@ -10,8 +10,13 @@
 
 namespace
 {
-	// Hands out every render object and light live ID (see RenderSceneLifetime)
-	LiveIDAllocator s_aliveObjects;
+	// Hands out every render object and light live ID (see RenderSceneLifetime). Made on first use and never destroyed,
+	// so it works for objects made during static initialization or destroyed after main returns.
+	LiveIDAllocator& AliveObjects()
+	{
+		static LiveIDAllocator* const s_allocator = new LiveIDAllocator();
+		return *s_allocator;
+	}
 
 	// Mirrors PointFalloffSharpness in Common/Lighting.hlsli
 	constexpr float k_pointFalloffSharpness = 8.0f;
@@ -36,7 +41,7 @@ namespace RenderSceneLifetime
 {
 	bool IsAlive(U64 id)
 	{
-		return s_aliveObjects.Contains(id);
+		return AliveObjects().Contains(id);
 	}
 
 	void CheckAccess(U64 id)
@@ -47,23 +52,23 @@ namespace RenderSceneLifetime
 
 LightObject::LightObject(ELightType type)
 	: m_type(type)
-	, m_liveID(s_aliveObjects.Acquire())
+	, m_liveID(AliveObjects().Acquire())
 {
 }
 
 LightObject::~LightObject()
 {
-	s_aliveObjects.Release(m_liveID);
+	AliveObjects().Release(m_liveID);
 }
 
 RenderObject::RenderObject()
-	: m_liveID(s_aliveObjects.Acquire())
+	: m_liveID(AliveObjects().Acquire())
 {
 }
 
 RenderObject::~RenderObject()
 {
-	s_aliveObjects.Release(m_liveID);
+	AliveObjects().Release(m_liveID);
 }
 
 void LightObject::SetType(ELightType type)
