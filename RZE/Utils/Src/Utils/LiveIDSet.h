@@ -4,7 +4,8 @@
 
 #include <vector>
 
-// The set of live IDs, for IDs that are handed out in increasing order and never reused (GameObjectLifetime).
+// The set of live IDs, for IDs that are handed out in increasing order and never reused, so a handle holding a
+// destroyed object's ID stays invalid even if a new object lands at its address (e.g. GameObjectLifetime).
 // One bit per ID ever handed out, so a lookup is a single array read rather than a hash lookup; it only grows,
 // by 8 KB per 65536 IDs.
 class LiveIDSet

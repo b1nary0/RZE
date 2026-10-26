@@ -2,11 +2,11 @@
 #include <Game/World/GameObject/GameObject.h>
 
 #include <Game/World/GameObject/GameObjectComponent.h>
-#include <Game/World/GameObject/LiveIDSet.h>
 
 #include <Game/World/GameObjectComponents/RenderComponent.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
+#include <Utils/LiveIDSet.h>
 #include <Utils/Math/Math.h>
 #include <Utils/Utils.h>
 

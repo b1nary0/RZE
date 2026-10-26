@@ -1,8 +1,7 @@
 #include <StdAfx.h>
 #include <Graphics/RenderScene.h>
 
-#include <Game/World/GameObject/LiveIDSet.h>
-
+#include <Utils/LiveIDSet.h>
 #include <Utils/Math/Math.h>
 #include <Utils/Math/Units.h>
 

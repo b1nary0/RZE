@@ -1,6 +1,7 @@
 #include <StdAfx.h>
 #include <Game/World/GameObject/GameObjectComponent.h>
-#include <Game/World/GameObject/LiveIDSet.h>
+
+#include <Utils/LiveIDSet.h>
 
 namespace
 {
