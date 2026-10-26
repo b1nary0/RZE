@@ -47,13 +47,6 @@ public:
 	// How a blended material combines with what's behind it. Opaque for materials that aren't blended.
 	static Rendering::EBlendState GetBlendState(MaterialAssetImporter::MaterialData::EBlendMode blendMode);
 
-	// Mirrors ViewLightingBuffer in Common/PixelResources.hlsli
-	struct ViewLightingLayout
-	{
-		float UniformLighting = 0.0f; // 1 for ERenderViewLighting::Uniform
-		float _pad[3] = {}; // A cbuffer is a whole number of 16-byte registers
-	};
-
 private:
 	// Binds the draw's transform, material and buffers and draws it. Only uploads the transform and sets the shader
 	// when they differ from the last draw's, which the two pointers track across calls.

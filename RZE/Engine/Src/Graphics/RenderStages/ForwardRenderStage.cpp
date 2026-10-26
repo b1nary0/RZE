@@ -1,6 +1,7 @@
 #include <StdAfx.h>
 #include <Graphics/RenderStages/ForwardRenderStage.h>
 
+#include <Graphics/GraphicsLayouts.h>
 #include <Graphics/IndexBuffer.h>
 #include <Graphics/Material.h>
 #include <Graphics/MaterialSlot.h>

@@ -11,9 +11,9 @@ struct SceneLightingData : RenderStageData<SceneLightingData>
 {
 	static constexpr const char* k_name = "SceneLightingData";
 
-	// ShadowRenderStage::LightBufferLayout
+	// LightBufferLayout (Graphics/GraphicsLayouts.h)
 	Rendering::ConstantBufferHandle LightBuffer;
-	// ShadowRenderStage::ShadowBufferLayout
+	// ShadowBufferLayout (Graphics/GraphicsLayouts.h)
 	Rendering::ConstantBufferHandle ShadowBuffer;
 	Rendering::TextureBuffer2DHandle DirectionalShadowMap;
 	// A cube map array, a cube per shadowed point light (by its ShadowIndex)

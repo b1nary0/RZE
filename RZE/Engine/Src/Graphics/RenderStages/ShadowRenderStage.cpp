@@ -56,7 +56,7 @@ namespace
 				return -1;
 
 			case ELightType::Point:
-				if (m_nextCube < static_cast<Int32>(ShadowRenderStage::k_maxShadowedPointLights))
+				if (m_nextCube < static_cast<Int32>(k_maxShadowedPointLights))
 				{
 					return m_nextCube++;
 				}
