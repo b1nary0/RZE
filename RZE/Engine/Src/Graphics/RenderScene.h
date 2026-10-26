@@ -38,7 +38,7 @@ public:
 	LightObject(const LightObject&) = delete;
 	LightObject& operator=(const LightObject&) = delete;
 
-	// Never handed out twice, so a LightObjectPtr can tell once this light is gone
+	// Never handed out twice, to a light or a render object, so a LightObjectPtr can tell once this light is gone
 	U64 GetLiveID() const { return m_liveID; }
 
 	// The setters below mark the light's shadows changed when the value moves them (see MarkShadowsChanged)
@@ -132,7 +132,7 @@ public:
 	void SetPickID(U64 pickID) { m_pickID = pickID; }
 	U64 GetPickID() const { return m_pickID; }
 
-	// Never handed out twice, so a RenderObjectPtr can tell once this object is gone
+	// Never handed out twice, to a render object or a light, so a RenderObjectPtr can tell once this object is gone
 	U64 GetLiveID() const { return m_liveID; }
 
 private:

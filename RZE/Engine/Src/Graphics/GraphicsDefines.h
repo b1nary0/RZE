@@ -9,18 +9,17 @@ class RenderObject;
 class LightObject;
 
 // Tracks which render objects and lights are alive, so their handles can tell when they've been destroyed, whether
-// through the handle or not (e.g. RenderScene::ClearObjects, or the scene going away). IDs come from a
-// LiveIDAllocator and are never handed out twice, so a handle to a destroyed object stays invalid even if a new one
+// through the handle or not (e.g. RenderScene::ClearObjects, or the scene going away). Both kinds share one
+// LiveIDAllocator, and no ID is handed out twice, so a handle to a destroyed object stays invalid even if a new one
 // lands at its address. Main thread only.
 namespace RenderSceneLifetime
 {
 	constexpr U64 k_invalidID = LiveIDAllocator::k_invalidID;
 
-	bool IsRenderObjectAlive(U64 id);
-	bool IsLightObjectAlive(U64 id);
+	bool IsAlive(U64 id);
 
 	// Debug builds assert that a handle is alive before it's dereferenced
-	void CheckAccess(bool isAlive);
+	void CheckAccess(U64 id);
 }
 
 // The handle to an object in a RenderScene, held by whatever made it (e.g. RenderComponent), which destroys it through
@@ -29,7 +28,7 @@ namespace RenderSceneLifetime
 //
 // Once the object is destroyed the handle is invalid: it compares equal to nullptr and dereferencing it asserts in
 // debug builds.
-template <typename TObject, bool (*IsAlive)(U64)>
+template <typename TObject>
 class RenderSceneObjectPtr
 {
 	friend class RenderScene;
@@ -63,7 +62,7 @@ public:
 	// False once the object has been destroyed
 	bool IsValid() const
 	{
-		return m_ptr != nullptr && IsAlive(m_id);
+		return m_ptr != nullptr && RenderSceneLifetime::IsAlive(m_id);
 	}
 
 	TObject* operator->()
@@ -117,7 +116,7 @@ private:
 #ifdef _DEBUG
 		if (m_ptr != nullptr)
 		{
-			RenderSceneLifetime::CheckAccess(IsAlive(m_id));
+			RenderSceneLifetime::CheckAccess(m_id);
 		}
 #endif
 	}
@@ -127,5 +126,5 @@ private:
 	U64 m_id = RenderSceneLifetime::k_invalidID;
 };
 
-using RenderObjectPtr = RenderSceneObjectPtr<RenderObject, &RenderSceneLifetime::IsRenderObjectAlive>;
-using LightObjectPtr = RenderSceneObjectPtr<LightObject, &RenderSceneLifetime::IsLightObjectAlive>;
+using RenderObjectPtr = RenderSceneObjectPtr<RenderObject>;
+using LightObjectPtr = RenderSceneObjectPtr<LightObject>;

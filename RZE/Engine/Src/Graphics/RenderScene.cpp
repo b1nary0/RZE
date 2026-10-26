@@ -10,9 +10,8 @@
 
 namespace
 {
-	// Hand out every render object and light live ID (see RenderSceneLifetime)
-	LiveIDAllocator s_aliveRenderObjects;
-	LiveIDAllocator s_aliveLightObjects;
+	// Hands out every render object and light live ID (see RenderSceneLifetime)
+	LiveIDAllocator s_aliveObjects;
 
 	// Mirrors PointFalloffSharpness in Common/Lighting.hlsli
 	constexpr float k_pointFalloffSharpness = 8.0f;
@@ -35,41 +34,36 @@ namespace
 
 namespace RenderSceneLifetime
 {
-	bool IsRenderObjectAlive(U64 id)
+	bool IsAlive(U64 id)
 	{
-		return s_aliveRenderObjects.Contains(id);
+		return s_aliveObjects.Contains(id);
 	}
 
-	bool IsLightObjectAlive(U64 id)
+	void CheckAccess(U64 id)
 	{
-		return s_aliveLightObjects.Contains(id);
-	}
-
-	void CheckAccess(bool isAlive)
-	{
-		AssertMsg(isAlive, "Render scene handle dereferenced after its object was destroyed");
+		AssertMsg(IsAlive(id), "Render scene handle dereferenced after its object was destroyed");
 	}
 }
 
 LightObject::LightObject(ELightType type)
 	: m_type(type)
-	, m_liveID(s_aliveLightObjects.Acquire())
+	, m_liveID(s_aliveObjects.Acquire())
 {
 }
 
 LightObject::~LightObject()
 {
-	s_aliveLightObjects.Release(m_liveID);
+	s_aliveObjects.Release(m_liveID);
 }
 
 RenderObject::RenderObject()
-	: m_liveID(s_aliveRenderObjects.Acquire())
+	: m_liveID(s_aliveObjects.Acquire())
 {
 }
 
 RenderObject::~RenderObject()
 {
-	s_aliveRenderObjects.Release(m_liveID);
+	s_aliveObjects.Release(m_liveID);
 }
 
 void LightObject::SetType(ELightType type)
