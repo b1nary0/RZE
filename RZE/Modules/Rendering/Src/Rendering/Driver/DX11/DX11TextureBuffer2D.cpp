@@ -18,6 +18,7 @@ namespace Rendering
 			case ETextureFormat::RGBA16_FLOAT: return DXGI_FORMAT_R16G16B16A16_FLOAT;
 			case ETextureFormat::RG16_FLOAT: return DXGI_FORMAT_R16G16_FLOAT;
 			case ETextureFormat::R32_UINT: return DXGI_FORMAT_R32_UINT;
+			case ETextureFormat::RG32_UINT: return DXGI_FORMAT_R32G32_UINT;
 			}
 
 			AssertFalse();
@@ -215,7 +216,7 @@ namespace Rendering
 			if (params.bIsRenderTarget) bindFlags = (bindFlags | D3D11_BIND_RENDER_TARGET);
 
 			// Integer formats don't support mip generation, and creating one with the flag fails
-			const bool canGenerateMips = params.Format != ETextureFormat::R32_UINT;
+			const bool canGenerateMips = params.Format != ETextureFormat::R32_UINT && params.Format != ETextureFormat::RG32_UINT;
 
 			textureDesc.BindFlags = bindFlags;
 			textureDesc.CPUAccessFlags = 0;

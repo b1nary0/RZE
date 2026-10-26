@@ -11,6 +11,7 @@ namespace Rendering
 	struct TexelReadback
 	{
 		std::atomic<bool> IsReady = false;
-		U32 Value = 0;
+		// The texel's bytes, zero-extended: e.g. a 4-byte texel fills the low 32 bits
+		U64 Value = 0;
 	};
 }

@@ -29,7 +29,7 @@ struct RenderPickRequest
 	std::shared_ptr<Rendering::TexelReadback> DepthResult;
 
 	// A DepthResult's depth: 0 at the near plane, 1 at the far plane or where nothing is drawn
-	static float DecodeDepth(U32 texel);
+	static float DecodeDepth(U64 texel);
 };
 
 struct RenderViewport

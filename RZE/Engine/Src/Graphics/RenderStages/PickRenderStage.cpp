@@ -39,7 +39,7 @@ void PickRenderStage::Initialize()
 	idParams.Height = 1;
 	idParams.MipLevels = 1;
 	idParams.SampleCount = 1;
-	idParams.Format = Rendering::ETextureFormat::R32_UINT;
+	idParams.Format = Rendering::ETextureFormat::RG32_UINT;
 	idParams.bIsRenderTarget = true;
 	idParams.bIsShaderResource = true;
 	m_idTarget = Rendering::Renderer::CreateTextureBuffer2D(idParams);
@@ -113,7 +113,7 @@ void PickRenderStage::Render(RenderContext& context)
 		}
 
 		// Objects without an ID are still drawn, so they hide what's behind them
-		const PickBufferLayout pickData = { renderObject->GetPickID(), { 0, 0, 0 } };
+		const PickBufferLayout pickData = { renderObject->GetPickID(), { 0, 0 } };
 		Rendering::Renderer::UploadDataToBuffer<PickBufferLayout>(m_pickBuffer, &pickData);
 
 		// As in ForwardRenderStage: only uploaded when the draw's transform changes
@@ -160,9 +160,9 @@ void PickRenderStage::Render(RenderContext& context)
 	Rendering::Renderer::End();
 }
 
-float RenderPickRequest::DecodeDepth(U32 texel)
+float RenderPickRequest::DecodeDepth(U64 texel)
 {
 	// PickRenderStage's depth target is D24S8: the depth as a 24-bit unorm in the low bits, the stencil above
-	constexpr U32 k_depthMask = 0xFFFFFF;
+	constexpr U64 k_depthMask = 0xFFFFFF;
 	return static_cast<float>(texel & k_depthMask) / static_cast<float>(k_depthMask);
 }

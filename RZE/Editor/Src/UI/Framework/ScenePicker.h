@@ -45,7 +45,7 @@ namespace Editor
 		void Cancel();
 
 	private:
-		GameObjectPtr FindObject(U32 pickID) const;
+		GameObjectPtr FindObject(U64 pickID) const;
 
 	private:
 		// The pick in flight, if there is one

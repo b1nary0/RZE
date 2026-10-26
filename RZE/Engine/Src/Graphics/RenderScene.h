@@ -129,8 +129,8 @@ public:
 	const std::vector<MeshDraw>& GetDraws() const;
 
 	// What PickRenderStage writes for this object's pixels; 0 means nothing pickable
-	void SetPickID(U32 pickID) { m_pickID = pickID; }
-	U32 GetPickID() const { return m_pickID; }
+	void SetPickID(U64 pickID) { m_pickID = pickID; }
+	U64 GetPickID() const { return m_pickID; }
 
 	// Never reused, so a RenderObjectPtr can tell once this object is gone
 	U32 GetLiveID() const { return m_liveID; }
@@ -155,7 +155,7 @@ private:
 	mutable std::vector<MeshDraw> m_draws;
 	mutable bool m_areDrawsStale = true;
 
-	U32 m_pickID = 0;
+	U64 m_pickID = 0;
 
 	// The scene this object is in
 	RenderScene* m_scene = nullptr;

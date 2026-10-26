@@ -48,8 +48,11 @@ namespace Rendering
 			case DXGI_FORMAT_R8G8B8A8_UNORM:
 			case DXGI_FORMAT_R16G16_FLOAT:
 			case DXGI_FORMAT_R32_UINT:
+			// Depth-stencil targets that can also be read by shaders (DX11TextureBuffer2D)
+			case DXGI_FORMAT_R24G8_TYPELESS:
 				return 4;
 			case DXGI_FORMAT_R16G16B16A16_FLOAT:
+			case DXGI_FORMAT_R32G32_UINT:
 				return 8;
 
 			default:
@@ -455,10 +458,16 @@ namespace Rendering
 				RenderCommand_ReadTexel* cmd = static_cast<RenderCommand_ReadTexel*>(command);
 				DX11TextureBuffer2D* texturePtr = static_cast<DX11TextureBuffer2D*>(cmd->texture.m_buffer.get());
 
+				D3D11_TEXTURE2D_DESC desc;
+				texturePtr->GetHWResource()->GetDesc(&desc);
+				const U32 bytesPerTexel = GetBytesPerTexel(desc.Format);
+				AssertExpr(bytesPerTexel <= sizeof(cmd->result->Value));
+
 				const D3D11_BOX texel = { cmd->x, cmd->y, 0, cmd->x + 1, cmd->y + 1, 1 };
-				ReadBackRegion(*m_device, *texturePtr, texel, [cmd](const D3D11_MAPPED_SUBRESOURCE& mapped)
+				ReadBackRegion(*m_device, *texturePtr, texel, [cmd, bytesPerTexel](const D3D11_MAPPED_SUBRESOURCE& mapped)
 					{
-						memcpy(&cmd->result->Value, mapped.pData, sizeof(U32));
+						cmd->result->Value = 0;
+						memcpy(&cmd->result->Value, mapped.pData, bytesPerTexel);
 					});
 
 				cmd->result->IsReady.store(true, std::memory_order_release);

@@ -16,11 +16,11 @@ class PixelShader;
 class PickRenderStage : public IRenderStage
 {
 public:
-	// Mirrors PickBuffer in Pixel_PickID.hlsl
+	// Mirrors PickBuffer in Pixel_PickID.hlsl, where PickID is a uint2 (low half, high half)
 	struct PickBufferLayout
 	{
-		U32 PickID;
-		U32 _pad[3];
+		U64 PickID;
+		U32 _pad[2];
 	};
 
 public:

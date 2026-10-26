@@ -81,7 +81,7 @@ namespace Editor
 		m_pending.reset();
 	}
 
-	GameObjectPtr ScenePicker::FindObject(U32 pickID) const
+	GameObjectPtr ScenePicker::FindObject(U64 pickID) const
 	{
 		GameObjectPtr hitObject;
 		if (pickID == 0)

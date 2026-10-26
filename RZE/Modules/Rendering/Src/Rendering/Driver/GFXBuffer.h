@@ -11,7 +11,9 @@ namespace Rendering
 		RGBA16_FLOAT,
 		RG16_FLOAT,
 		// Integer IDs, e.g. for picking; can't be filtered or have mips generated
-		R32_UINT
+		R32_UINT,
+		// A 64-bit integer ID as two halves, low then high; otherwise like R32_UINT
+		RG32_UINT
 	};
 
 	// This isn't the complete answer to this atm, but will do for now
