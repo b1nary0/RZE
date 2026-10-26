@@ -76,8 +76,6 @@ RZE_Engine::RZE_Engine()
 	, m_renderEngine(nullptr)
 	, m_shouldExit(false)
 	, m_isInitialized(false)
-	, m_deltaTime(0.0)
-	, m_frameCount(0)
 {
 }
 
@@ -133,8 +131,6 @@ void RZE_Engine::Run(Functor<RZE_Application* const>& createApplicationCallback)
 			}
 
 			WaitForNextFrame();
-
-			++m_frameCount;
 		}
 
 		BeginShutDown();
@@ -437,8 +433,6 @@ void RZE_Engine::BeginFrame(double now)
 {
 	m_framePacer.SetIsThrottled(!m_window->IsFocused() || m_window->IsMinimised());
 	m_framePacer.BeginFrame(now);
-
-	m_deltaTime = m_framePacer.GetDeltaTime();
 }
 
 void RZE_Engine::WaitForNextFrame()

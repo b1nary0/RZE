@@ -43,14 +43,6 @@ namespace Rendering
 		return dst;
 	}
 
-	Renderer::Renderer()
-	{
-	}
-
-	Renderer::~Renderer()
-	{
-	}
-
 	void Renderer::Initialize(void* windowHandle)
 	{
 		MemArena::InitializeArena(MEM_ARENA_SIZE);

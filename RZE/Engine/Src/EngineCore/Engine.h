@@ -45,7 +45,7 @@ public:
 	// All of these gets might be best to hide behind a cpp. Or static engine in CPP memory with accessor in h.
 	ResourceHandler&			GetResourceHandler();
 	InputHandler&				GetInputHandler();
-	RenderEngine&			GetRenderEngine();
+	RenderEngine&				GetRenderEngine();
 	GameScene&					GetActiveScene();
 	AsyncOperationManager&		GetAsyncOperationManager();
 
@@ -56,9 +56,9 @@ public:
 
 	// What this frame simulates: the time since the previous frame, clamped and evened out (FramePacer::GetDeltaTime)
 	[[nodiscard]]
-	double GetDeltaTime() const { return m_deltaTime; }
+	double GetDeltaTime() const { return m_framePacer.GetDeltaTime(); }
 	[[nodiscard]]
-	float GetDeltaTimeMS() const { return static_cast<float>(m_deltaTime * 1000); }
+	float GetDeltaTimeMS() const { return static_cast<float>(GetDeltaTime() * 1000); }
 	
 	void PostExit();
 
@@ -136,9 +136,6 @@ private:
 	
 	// PODs
 private:
-	double m_deltaTime;
-	U64 m_frameCount;
-
 	bool m_isInitialized;
 	bool m_shouldExit;
 

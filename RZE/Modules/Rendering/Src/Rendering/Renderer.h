@@ -11,7 +11,6 @@
 #include <Utils/Platform/Filepath.h>
 
 #include <memory>
-#include <queue>
 #include <vector>
 
 class Vector2D;
@@ -29,19 +28,12 @@ namespace Rendering
 	struct TextureReadback;
 	struct ViewportParams;
 	
+	// All static: the render thread and the UI's frame data are shared by the whole process
 	class Renderer
 	{
-	private:
-		struct RenderState
-		{
-			// This will get filled out per Begin/End call
-		};
-
-		// Constructors
 	public:
-		Renderer();
-		~Renderer();
-		
+		Renderer() = delete;
+
 	public:
 		static void Initialize(void* mWindowHandle);
 		static void Shutdown();

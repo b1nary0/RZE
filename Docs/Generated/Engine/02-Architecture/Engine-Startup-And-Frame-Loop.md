@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
 
 ## `RZE_Engine` (`Engine\Src\EngineCore\Engine.h` / `.cpp`)
 
-Owns: `RZE_Application* m_application`, `GameScene* m_activeScene`, `Win32Window* m_window`, `std::unique_ptr<SplashScreen> m_splashScreen` (only while starting up, and only for an application with a splash screen), `ResourceHandler m_resourceHandler`, `EventHandler m_eventHandler`, `InputHandler m_inputHandler`, `std::unique_ptr<RenderEngine> m_renderEngine`, `AsyncOperationManager m_asyncOperationManager`, plus frame timing: `HiResTimer m_programTimer` (started with the main loop; frame times are measured on it), `FramePacer m_framePacer` ([below](#frame-pacing)), `PreciseSleep m_frameSleep`, `FrameTimeCapture m_frameTimeCapture`, `m_deltaTime` and `m_frameCount`.
+Owns: `RZE_Application* m_application`, `GameScene* m_activeScene`, `Win32Window* m_window`, `std::unique_ptr<SplashScreen> m_splashScreen` (only while starting up, and only for an application with a splash screen), `ResourceHandler m_resourceHandler`, `EventHandler m_eventHandler`, `InputHandler m_inputHandler`, `std::unique_ptr<RenderEngine> m_renderEngine`, `AsyncOperationManager m_asyncOperationManager`, plus frame timing: `HiResTimer m_programTimer` (started with the main loop; frame times are measured on it), `FramePacer m_framePacer` ([below](#frame-pacing)), `PreciseSleep m_frameSleep` and `FrameTimeCapture m_frameTimeCapture`. `GetDeltaTime()` reads the FramePacer's.
 
 Public accessors used as the de-facto service locator: `GetApplication()`, `GetResourceHandler()`, `GetInputHandler()`, `GetRenderEngine()`, `GetAsyncOperationManager()`, `GetActiveScene()`, `GetDeltaTime()`/`GetDeltaTimeMS()`, `GetFramePacer()` / `SetFrameSettings()`, `SetWindowSize()`, `PostExit()`.
 

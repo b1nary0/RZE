@@ -40,11 +40,7 @@ public:
 	RenderEngine();
 	~RenderEngine();
 	RenderEngine(const RenderEngine&) = delete;
-	RenderEngine(const RenderEngine&&) = delete;
-
-public:
-	void operator=(const RenderEngine&) = delete;
-	void operator=(const RenderEngine&&) = delete;
+	RenderEngine& operator=(const RenderEngine&) = delete;
 
 public:
 	void Initialize(void* windowHandle);

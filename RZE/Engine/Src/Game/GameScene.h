@@ -1,6 +1,5 @@
 #pragma once
 
-// @TODO When GameObjectPtr doesnt live in GameObject.h remove this include
 #include <Game/World/GameObject/GameObjectDefinitions.h>
 #include <Game/World/GameObject/ObjectGUID.h>
 
@@ -19,12 +18,12 @@ class GameScene final
 {
 public:
 	GameScene();
-	virtual ~GameScene();
+	~GameScene();
 
 public:
-	virtual void Start();
-	virtual void Update();
-	virtual void ShutDown();
+	void Start();
+	void Update();
+	void ShutDown();
 
 	void Initialize();
 
@@ -43,8 +42,8 @@ public:
 	// one, and adds it to the scene. Its parent link in the entry is ignored; GameObjectLoader resolves those.
 	GameObjectPtr DeserializeGameObject(const rapidjson::Value& entry, GameObjectPtr parent);
 
-	void SetCurrentScenePath(const Filepath& filePath) { mCurrentScenePath = filePath; }
-	const Filepath& GetCurrentScenePath() const { return mCurrentScenePath; }
+	void SetCurrentScenePath(const Filepath& filePath) { m_currentScenePath = filePath; }
+	const Filepath& GetCurrentScenePath() const { return m_currentScenePath; }
 	// Called as a load of filePath into the scene starts, by Deserialize and SceneLoadOperation: makes it the current
 	// scene path, and logs it unless EnableLogging turned that off
 	void BeginLoad(const Filepath& filePath);
@@ -117,7 +116,7 @@ private:
 
 
 private:
-	Filepath mCurrentScenePath;
+	Filepath m_currentScenePath;
 
 	// First, so it outlives the objects whose components draw into it
 	std::unique_ptr<RenderScene> m_renderScene;
