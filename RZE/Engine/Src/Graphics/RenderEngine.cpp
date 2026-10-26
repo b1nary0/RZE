@@ -44,11 +44,9 @@ void RenderEngine::Render(const char* frameName)
 	OPTICK_EVENT();
 	AssertNotNull(m_mainView.Target);
 
+	// Before recording, so a window's stage times and draw calls are its own frames'
 	const double renderStart = TimeUtils::GetSeconds();
-	if (m_windowStart < 0.0)
-	{
-		m_windowStart = renderStart;
-	}
+	UpdateStats(renderStart);
 
 	Rendering::Renderer::BeginFrame(frameName);
 
@@ -60,9 +58,7 @@ void RenderEngine::Render(const char* frameName)
 
 	Rendering::Renderer::EndFrame();
 
-	const double renderEnd = TimeUtils::GetSeconds();
-	m_windowRecordTime += renderEnd - renderStart;
-	UpdateStats(renderEnd);
+	m_windowRecordTime += TimeUtils::GetSeconds() - renderStart;
 }
 
 void RenderEngine::Finish()
@@ -154,24 +150,20 @@ void RenderEngine::InternalAddRenderStage(IRenderStage* stage)
 
 void RenderEngine::UpdateStats(double now)
 {
-	++m_windowFrames;
-	if (now - m_windowStart < k_statsWindow)
+	if (!m_statsWindow.AddFrame(now))
 	{
 		return;
 	}
 
 	// The stage times and draw calls build up over the window, so they're taken once at its end
-	const double frames = static_cast<double>(m_windowFrames);
-	m_stats.RecordTimeMS = m_windowRecordTime / frames * 1000.0;
-	m_stats.DrawCalls = static_cast<double>(Rendering::Renderer::TakeDrawCallCount()) / frames;
+	m_stats.RecordTimeMS = m_statsWindow.PerFrame(m_windowRecordTime) * 1000.0;
+	m_stats.DrawCalls = m_statsWindow.PerFrame(static_cast<double>(Rendering::Renderer::TakeDrawCallCount()));
 
 	m_stats.Stages.clear();
-	for (const RenderPipeline::StageTime& stageTime : m_pipeline->TakeStageTimes())
+	for (const RenderStageTime& stageTime : m_pipeline->TakeStageTimes())
 	{
-		m_stats.Stages.push_back({ stageTime.Name, stageTime.Seconds / frames * 1000.0 });
+		m_stats.Stages.push_back({ stageTime.Name, m_statsWindow.PerFrame(stageTime.TimeMS) });
 	}
 
-	m_windowStart = now;
-	m_windowFrames = 0;
 	m_windowRecordTime = 0.0;
 }

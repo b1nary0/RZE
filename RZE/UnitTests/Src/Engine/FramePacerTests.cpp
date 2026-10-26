@@ -144,7 +144,7 @@ TEST_CASE("Stats average over a window of frames, and only change when a window 
 	constexpr double k_frameTime = 1.0 / 64.0;
 	constexpr double k_idleTime = 1.0 / 256.0;
 	constexpr double k_idleWork = 1.0 / 1024.0;
-	const int framesPerWindow = static_cast<int>(FramePacer::k_statsWindow / k_frameTime);
+	const int framesPerWindow = static_cast<int>(StatsWindow::k_windowSeconds / k_frameTime);
 
 	double now = 0.0;
 	pacer.BeginFrame(now);
@@ -158,7 +158,7 @@ TEST_CASE("Stats average over a window of frames, and only change when a window 
 		pacer.BeginFrame(now);
 	}
 
-	const FramePacer::Stats& stats = pacer.GetStats();
+	const FrameStats& stats = pacer.GetStats();
 	CHECK(stats.FrameTimeMS == doctest::Approx(k_frameTime * 1000.0));
 	CHECK(stats.FramesPerSecond == doctest::Approx(64.0));
 	CHECK(stats.IdleTimeMS == doctest::Approx(k_idleTime * 1000.0));

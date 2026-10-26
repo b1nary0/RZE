@@ -159,10 +159,10 @@ namespace Rendering
 		return WaitForSingleObjectEx(m_frameLatencyWaitableObject, timeoutMS, TRUE) == WAIT_OBJECT_0;
 	}
 
-	RenderThread::FrameStats RenderThread::GetFrameStats() const
+	RenderThreadStats RenderThread::GetStats() const
 	{
-		std::lock_guard lock(m_frameStatsMutex);
-		return m_frameStats;
+		std::lock_guard lock(m_statsMutex);
+		return m_stats;
 	}
 
 	void RenderThread::InitializeImGui()
@@ -730,10 +730,10 @@ namespace Rendering
 		// Keeps the capacity, so steady-state frames don't allocate
 		m_consumerQueue.clear();
 
-		UpdateFrameStats(batchStart, hasPresented);
+		UpdateStats(batchStart, hasPresented);
 	}
 
-	void RenderThread::UpdateFrameStats(double batchStart, bool hasPresented)
+	void RenderThread::UpdateStats(double batchStart, bool hasPresented)
 	{
 		const double now = TimeUtils::GetSeconds();
 		m_frameBusyTime += now - batchStart;
@@ -743,33 +743,25 @@ namespace Rendering
 		}
 
 		// The first present only starts the first window
-		if (m_windowStart >= 0.0)
+		if (m_statsWindow.HasStarted())
 		{
-			++m_windowFrames;
 			m_windowBusyTime += m_frameBusyTime;
 			m_windowPresentTime += m_framePresentTime;
-		}
-		else
-		{
-			m_windowStart = now;
 		}
 		m_frameBusyTime = 0.0;
 		m_framePresentTime = 0.0;
 
-		if (now - m_windowStart < k_statsWindow || m_windowFrames == 0)
+		if (!m_statsWindow.AddFrame(now))
 		{
 			return;
 		}
 
-		const double frames = static_cast<double>(m_windowFrames);
 		{
-			std::lock_guard lock(m_frameStatsMutex);
-			m_frameStats.BusyTimeMS = m_windowBusyTime / frames * 1000.0;
-			m_frameStats.PresentTimeMS = m_windowPresentTime / frames * 1000.0;
+			std::lock_guard lock(m_statsMutex);
+			m_stats.BusyTimeMS = m_statsWindow.PerFrame(m_windowBusyTime) * 1000.0;
+			m_stats.PresentTimeMS = m_statsWindow.PerFrame(m_windowPresentTime) * 1000.0;
 		}
 
-		m_windowStart = now;
-		m_windowFrames = 0;
 		m_windowBusyTime = 0.0;
 		m_windowPresentTime = 0.0;
 	}

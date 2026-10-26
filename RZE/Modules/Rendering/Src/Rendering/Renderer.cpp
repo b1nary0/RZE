@@ -123,9 +123,9 @@ namespace Rendering
 		return m_renderThread.WaitForPresentSlot(timeoutMS);
 	}
 
-	RenderThread::FrameStats Renderer::GetRenderThreadStats()
+	RenderThreadStats Renderer::GetRenderThreadStats()
 	{
-		return m_renderThread.GetFrameStats();
+		return m_renderThread.GetStats();
 	}
 
 	U32 Renderer::TakeDrawCallCount()

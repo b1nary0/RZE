@@ -25,8 +25,8 @@ void FramePacer::BeginFrame(double now)
 	{
 		m_frameTime = now - m_frameStart;
 		UpdateDeltaTime(GetFramePeriod());
-		UpdateStats(now);
 	}
+	UpdateStats(now);
 	m_hasStarted = true;
 	m_frameStart = now;
 
@@ -123,31 +123,30 @@ void FramePacer::UpdateDeltaTime(double framePeriod)
 
 void FramePacer::UpdateStats(double now)
 {
-	++m_windowFrames;
-	m_windowFrameTime += m_frameTime;
-	if (m_frameWorkEnd >= 0.0)
+	// Before the first frame there's no frame to add to
+	if (m_statsWindow.HasStarted())
 	{
-		m_windowIdleTime += now - m_frameWorkEnd;
+		if (m_frameWorkEnd >= 0.0)
+		{
+			m_windowIdleTime += now - m_frameWorkEnd;
+		}
+		m_windowIdleWork += m_frameIdleWork;
 	}
-	m_windowIdleWork += m_frameIdleWork;
 
 	m_frameWorkEnd = -1.0;
 	m_frameIdleWork = 0.0;
 
-	if (m_windowFrameTime < k_statsWindow)
+	if (!m_statsWindow.AddFrame(now))
 	{
 		return;
 	}
 
-	const double frames = static_cast<double>(m_windowFrames);
-	m_stats.FrameTimeMS = m_windowFrameTime / frames * 1000.0;
-	m_stats.FramesPerSecond = frames / m_windowFrameTime;
-	m_stats.IdleTimeMS = m_windowIdleTime / frames * 1000.0;
-	m_stats.IdleWorkMS = m_windowIdleWork / frames * 1000.0;
-	m_stats.UIFramesPerSecond = static_cast<double>(m_windowUIFrames) / m_windowFrameTime;
+	m_stats.FrameTimeMS = m_statsWindow.PerFrame(m_statsWindow.GetSeconds()) * 1000.0;
+	m_stats.FramesPerSecond = m_statsWindow.PerSecond(m_statsWindow.GetFrameCount());
+	m_stats.IdleTimeMS = m_statsWindow.PerFrame(m_windowIdleTime) * 1000.0;
+	m_stats.IdleWorkMS = m_statsWindow.PerFrame(m_windowIdleWork) * 1000.0;
+	m_stats.UIFramesPerSecond = m_statsWindow.PerSecond(m_windowUIFrames);
 
-	m_windowFrames = 0;
-	m_windowFrameTime = 0.0;
 	m_windowIdleTime = 0.0;
 	m_windowIdleWork = 0.0;
 	m_windowUIFrames = 0;

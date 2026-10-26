@@ -47,13 +47,13 @@ void RenderPipeline::Render(RenderView& view, RenderScene& scene, float deltaTim
 	}
 }
 
-std::vector<RenderPipeline::StageTime> RenderPipeline::TakeStageTimes()
+std::vector<RenderStageTime> RenderPipeline::TakeStageTimes()
 {
-	std::vector<StageTime> stageTimes;
+	std::vector<RenderStageTime> stageTimes;
 	stageTimes.reserve(m_compiled.ExecutionOrder.size());
 	for (size_t stageIndex : m_compiled.ExecutionOrder)
 	{
-		stageTimes.push_back({ m_stages[stageIndex]->GetName(), m_stageTimes[stageIndex] });
+		stageTimes.push_back({ m_stages[stageIndex]->GetName(), m_stageTimes[stageIndex] * 1000.0 });
 		m_stageTimes[stageIndex] = 0.0;
 	}
 

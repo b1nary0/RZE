@@ -67,8 +67,8 @@ namespace Rendering
 		// Blocks until the swap chain can queue another frame, which keeps at most two frames in flight, or until
 		// timeoutMS passes (false), e.g. while the window is minimised. Call once per frame, before reading its input.
 		static bool WaitForPresentSlot(U32 timeoutMS);
-		// How much of each frame the render thread is busy (RenderThread::FrameStats)
-		static RenderThread::FrameStats GetRenderThreadStats();
+		// How much of each frame the render thread is busy
+		static RenderThreadStats GetRenderThreadStats();
 		// Draw calls recorded since the last call, then starts over. The UI's aren't counted. Main thread only.
 		static U32 TakeDrawCallCount();
 

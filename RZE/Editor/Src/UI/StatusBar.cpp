@@ -17,6 +17,7 @@
 #include <Rendering/Renderer.h>
 
 #include <Utils/Memory/MemoryUtils.h>
+#include <Utils/StatsWindow.h>
 #include <Utils/TimeUtils.h>
 
 #include <ImGui/imgui_internal.h> // BeginViewportSideBar, RenderTextEllipsis
@@ -279,9 +280,9 @@ namespace Editor
 
 	void StatusBar::DrawFrameStats(const ImVec2& min, const ImVec2& max) const
 	{
-		const FramePacer::Stats& stats = RZE().GetFramePacer().GetStats();
-		const RenderEngine::Stats& renderStats = RZE().GetRenderEngine().GetStats();
-		const Rendering::RenderThread::FrameStats renderThreadStats = Rendering::Renderer::GetRenderThreadStats();
+		const FrameStats& stats = RZE().GetFramePacer().GetStats();
+		const RenderStats& renderStats = RZE().GetRenderEngine().GetStats();
+		const Rendering::RenderThreadStats renderThreadStats = Rendering::Renderer::GetRenderThreadStats();
 
 		char text[128];
 		snprintf(text, sizeof(text), "%.1f ms \xC2\xB7 %.0f FPS \xC2\xB7 idle %.1f ms \xC2\xB7 render %.1f ms", stats.FrameTimeMS, stats.FramesPerSecond, stats.IdleTimeMS, renderThreadStats.BusyTimeMS);
@@ -304,7 +305,7 @@ namespace Editor
 			ImGui::SeparatorText("Rendering");
 			ImGui::Text("%.0f draw calls a frame, not counting the UI", renderStats.DrawCalls);
 			ImGui::Text("%.2f ms of each frame recording the render stages:", renderStats.RecordTimeMS);
-			for (const RenderEngine::Stats::StageTime& stage : renderStats.Stages)
+			for (const RenderStageTime& stage : renderStats.Stages)
 			{
 				ImGui::BulletText("%.2f ms %s", stage.TimeMS, stage.Name.c_str());
 			}
@@ -319,7 +320,7 @@ namespace Editor
 			ImGui::Unindent();
 
 			ImGui::Spacing();
-			ImGui::TextDisabled("Averaged over %.1f s. Frames only have idle time with vsync or a frame rate cap.", FramePacer::k_statsWindow);
+			ImGui::TextDisabled("Averaged over %.1f s. Frames only have idle time with vsync or a frame rate cap.", StatsWindow::k_windowSeconds);
 			ImGui::EndTooltip();
 		}
 	}

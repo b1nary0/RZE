@@ -2,6 +2,21 @@
 
 #include <EngineCore/Config/FrameSettings.h>
 
+#include <Utils/StatsWindow.h>
+
+// The main thread's frames (FramePacer), averaged over a StatsWindow, for display
+struct FrameStats
+{
+	double FrameTimeMS = 0.0;
+	double FramesPerSecond = 0.0;
+	// Per frame, from the end of its work to the next frame's start
+	double IdleTimeMS = 0.0;
+	// The part of IdleTimeMS spent on work (FramePacer::AddIdleWork); the rest is waiting
+	double IdleWorkMS = 0.0;
+	// How many frames a second updated the UI (FramePacer::TakeUIFrame)
+	double UIFramesPerSecond = 0.0;
+};
+
 // Decides when frames start and how much time each one gets: the frame-rate caps, the delta time a frame simulates,
 // and the spare time left before the next frame. Only the timing logic, given the time in seconds by its caller so it
 // can be tested; RZE_Engine does the waiting.
@@ -14,20 +29,6 @@
 class FramePacer
 {
 public:
-	// Averages over the last k_statsWindow seconds of frames, for display
-	struct Stats
-	{
-		double FrameTimeMS = 0.0;
-		double FramesPerSecond = 0.0;
-		// Per frame, from the end of its work to the next frame's start
-		double IdleTimeMS = 0.0;
-		// The part of IdleTimeMS spent on work (AddIdleWork); the rest is waiting
-		double IdleWorkMS = 0.0;
-		// How many frames a second updated the UI (TakeUIFrame)
-		double UIFramesPerSecond = 0.0;
-	};
-
-public:
 	// Delta time never exceeds this, so breakpoints, window drags and load hitches don't make the scene jump
 	static constexpr double k_maxDeltaTime = 0.1;
 	// A frame within this fraction of the target period counts as on time, and simulates the measured period
@@ -36,8 +37,6 @@ public:
 	static constexpr double k_periodSmoothing = 0.05;
 	// Spare time ends this early, so whatever runs in it can't make the next frame late
 	static constexpr double k_idleSafetyMargin = 0.0015;
-	// Seconds of frames that Stats averages over. They're updated once per window, so they stay readable.
-	static constexpr double k_statsWindow = 0.5;
 	// After the last interaction (NoteInteraction), the UI keeps updating every frame for this long, so short pauses in
 	// a drag don't drop it back to the UI frame rate
 	static constexpr double k_interactionHoldTime = 0.25;
@@ -79,7 +78,7 @@ public:
 	double GetIdleTime(double now) const;
 
 	// Zero until the first window of frames has passed
-	const Stats& GetStats() const { return m_stats; }
+	const FrameStats& GetStats() const { return m_stats; }
 
 private:
 	// Seconds between frame starts the CPU cap aims for; 0 for no cap
@@ -89,7 +88,7 @@ private:
 
 	void UpdateDeltaTime(double framePeriod);
 	void ScheduleNextFrame(double now);
-	// Adds the frame that just ended to the stats window, which closes once it holds k_statsWindow seconds
+	// Adds the frame that just ended to the stats window; the first frame only starts it
 	void UpdateStats(double now);
 
 private:
@@ -116,10 +115,9 @@ private:
 	// When NoteInteraction was last called; long enough ago to not count until it is
 	double m_lastInteraction = -1000.0;
 
-	Stats m_stats;
+	FrameStats m_stats;
+	StatsWindow m_statsWindow;
 	// The stats window so far
-	int m_windowFrames = 0;
-	double m_windowFrameTime = 0.0;
 	double m_windowIdleTime = 0.0;
 	double m_windowIdleWork = 0.0;
 	int m_windowUIFrames = 0;

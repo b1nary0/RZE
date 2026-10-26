@@ -27,9 +27,9 @@ namespace Editor
 	// of its size, in yellow or red as it fills up, and the most any frame has used.
 	//
 	// The frame stats are the frame time, frames per second and idle time per frame, averaged over half a second
-	// (FramePacer::Stats), and how long the render thread is busy each frame (Rendering::RenderThread::FrameStats).
+	// (FrameStats, StatsWindow), and how long the render thread is busy each frame (Rendering::RenderThreadStats).
 	// Hovering splits the idle time into what went to tasks and what was spent waiting. Under Rendering it shows the
-	// draw calls and how long each render stage takes to record (RenderEngine::Stats), and under that, the render
+	// draw calls and how long each render stage takes to record (RenderStats), and under that, the render
 	// thread's busy time split into running commands and presenting, with how long it waits for the main thread.
 	//
 	// The tasks area starts with a circle that says how the tasks are doing at a glance (ETaskStatus): green when the

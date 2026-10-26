@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Graphics/GraphicsDefines.h>
+#include <Graphics/RenderPipeline.h>
 #include <Graphics/RenderScene.h>
 #include <Graphics/RenderView.h>
 
@@ -10,8 +11,8 @@
 #include <Utils/Math/Vector2D.h>
 #include <Utils/Math/Vector3D.h>
 #include <Utils/Math/Vector4D.h>
+#include <Utils/StatsWindow.h>
 
-#include <string>
 #include <vector>
 
 namespace Rendering
@@ -20,33 +21,21 @@ namespace Rendering
 }
 
 class IRenderStage;
-class RenderPipeline;
+
+// RenderEngine's frames, averaged over a StatsWindow, for display. Measured on the main thread, where the render stages
+// record commands for the render thread. A frame runs from one Render() to the next.
+struct RenderStats
+{
+	// Per frame, recording every view's render stages
+	double RecordTimeMS = 0.0;
+	// Each stage's part of RecordTimeMS per frame, in the order they run
+	std::vector<RenderStageTime> Stages;
+	// Per frame, not counting the UI's
+	double DrawCalls = 0.0;
+};
 
 class RenderEngine
 {
-public:
-	// Averages over the last k_statsWindow seconds of frames, for display. Measured on the main thread, where the
-	// render stages record commands for the render thread. A frame runs from one Render() to the next.
-	struct Stats
-	{
-		struct StageTime
-		{
-			std::string Name;
-			double TimeMS = 0.0;
-		};
-
-		// Per frame, recording every view's render stages
-		double RecordTimeMS = 0.0;
-		// Each stage's part of RecordTimeMS, across every view it renders, in the order they run
-		std::vector<StageTime> Stages;
-		// Per frame, not counting the UI's
-		double DrawCalls = 0.0;
-	};
-
-	// Seconds of frames that Stats averages over, like FramePacer::k_statsWindow. They're updated once per window, so
-	// they stay readable.
-	static constexpr double k_statsWindow = 0.5;
-
 public:
 	RenderEngine();
 	~RenderEngine();
@@ -110,11 +99,11 @@ public:
 	void RenderSecondaryView(const char* frameName, RenderView& view, RenderScene& scene);
 
 	// Empty until the first window of frames has passed. Main thread only.
-	const Stats& GetStats() const { return m_stats; }
+	const RenderStats& GetStats() const { return m_stats; }
 
 private:
 	void InternalAddRenderStage(IRenderStage* stage);
-	// Adds the frame that just rendered to the stats window, which closes once it spans k_statsWindow seconds
+	// Ends the stats window's frame as the next one starts rendering; the first frame only starts the window
 	void UpdateStats(double now);
 
 private:
@@ -125,10 +114,9 @@ private:
 	RenderView m_mainView { ERenderViewKind::Main };
 	std::unique_ptr<RenderPipeline> m_pipeline;
 
-	Stats m_stats;
-	// The stats window so far. It starts with the first frame; negative before it.
-	double m_windowStart = -1.0;
-	int m_windowFrames = 0;
+	RenderStats m_stats;
+	StatsWindow m_statsWindow;
+	// The stats window so far
 	double m_windowRecordTime = 0.0;
 };
 
