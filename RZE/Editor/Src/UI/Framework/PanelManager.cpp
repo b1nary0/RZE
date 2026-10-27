@@ -157,6 +157,14 @@ namespace Editor
 		}
 	}
 
+	void PanelManager::ShutDownAll(EditorContext& context)
+	{
+		for (std::unique_ptr<EditorPanel>& panel : m_panels)
+		{
+			panel->ShutDown(context);
+		}
+	}
+
 	void PanelManager::DrawAll(EditorContext& context)
 	{
 		for (std::unique_ptr<EditorPanel>& panel : m_panels)

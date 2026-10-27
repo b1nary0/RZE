@@ -124,6 +124,11 @@ namespace Editor
 		m_meshDrops.reset();
 	}
 
+	void SceneViewPanel::ShutDown(EditorContext& context)
+	{
+		m_meshDrops.reset();
+	}
+
 	void SceneViewPanel::DrawMenuBar(EditorContext& context)
 	{
 		{

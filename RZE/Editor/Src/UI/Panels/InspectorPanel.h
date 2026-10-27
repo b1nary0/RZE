@@ -21,6 +21,8 @@ namespace Editor
 		void Update(EditorContext& context) override;
 		void Draw(EditorContext& context) override;
 		void OnSceneReset() override;
+		// Cancels asset fields' edits still waiting on their asset to load
+		void ShutDown(EditorContext& context) override;
 
 	private:
 		// Each entry is one component type the selected objects share: that component on each object, the primary's

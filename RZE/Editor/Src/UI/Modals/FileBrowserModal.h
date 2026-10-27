@@ -85,6 +85,9 @@ namespace Editor
 		// Must be called at the root of the ImGui ID stack (outside any Begin/End pair)
 		void Display();
 
+		// As the editor closes, while resources are still up: lets go of the tiles' images, in case it's open
+		void ShutDown();
+
 	private:
 		void DrawHeader();
 		void DrawTiles();

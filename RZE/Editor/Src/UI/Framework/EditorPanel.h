@@ -120,6 +120,11 @@ namespace Editor
 		// Before the scene unloads (SceneUnloadingEvent). Drop anything that refers to the current scene.
 		virtual void OnSceneReset() {}
 
+		// Once, as the editor closes (EditorApp::ShutDown), while the renderer and resources are still up: let go of
+		// anything loaded, e.g. tile images. Panels are never destroyed (the application isn't), so anything still held
+		// after this is reported as live by ResourceHandler::ShutDown.
+		virtual void ShutDown(EditorContext& context) {}
+
 		virtual void PushWindowStyle(PanelWindowStyle& style) const {}
 
 		// For PanelDesc::OwnsWindow panels to pass to their own Begin, so its close button closes the panel

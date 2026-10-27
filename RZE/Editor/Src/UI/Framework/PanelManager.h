@@ -34,6 +34,9 @@ namespace Editor
 		// Each open panel's PreRender. After the scene's update, outside ImGui's frame.
 		void PreRenderAll(EditorContext& context);
 
+		// Every panel's ShutDown, open or not. Once, as the editor closes.
+		void ShutDownAll(EditorContext& context);
+
 		// A checkable item per panel whose PanelDesc::MenuPath starts with mainMenu (e.g. "View"), nested in
 		// submenus by the rest of its path. Call inside that main menu's BeginMenu/EndMenu; submenus with the same
 		// name as existing ones are appended to.

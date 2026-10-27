@@ -94,6 +94,13 @@ REGISTER_EDITOR_PANEL(LogPanel);   // in LogPanel.cpp
 
 Optional hooks: `Initialize(context)` (once, after every panel exists), `DrawMenuBar(context)`, `OnSceneReset()`, `PushWindowStyle(style)` (style vars and colours that cover the title bar, tab and menu bar too; the Log lightens its menu bar's background with `ImGuiCol_MenuBarBg`), and `PreRender(context)`: every frame while the panel is open, after the scene's update and before the frame renders, for what goes into the scene every frame, such as debug lines, which are cleared after each render. No ImGui calls there; it's outside ImGui's frame. The SceneView draws the grid and camera frustums in it, but only while its last `Draw` showed the scene image.
 
+`ShutDown(context)` runs once for every panel, open or not, as the editor closes (`EditorApp::ShutDown`, through `PanelManager::ShutDownAll`), while the renderer and resources are still up. Panels are never destroyed, because the application isn't (ImGui saves its settings through it on exit). So a panel lets go of what it loaded here, or `ResourceHandler::ShutDown` reports it as live:
+- the Content Browser releases its tile images
+- the SceneView cancels mesh drops still loading
+- the Inspector cancels asset edits still waiting on their asset
+
+The file browser modal does the same in its own `ShutDown`.
+
 `PanelManager` creates every registered panel at start-up, sorted by name. On each UI frame it updates and draws the open ones (`UpdateAll`, `DrawAll`), and every frame it calls their `PreRender` (`PreRenderAll`). It also builds the Edit, View and Help menu items from their `MenuPath`s, and docks panels:
 
 - **Tab order.** Panels sharing a slot are tabs in a fixed order: the ones open at first (`DefaultOpen`), then the rest, each by name. So `BottomRight` is Log, then Resource Monitor.

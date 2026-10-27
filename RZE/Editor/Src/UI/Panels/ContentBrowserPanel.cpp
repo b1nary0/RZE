@@ -141,6 +141,11 @@ namespace Editor
 		m_navigator.Reset({ Filepath("Assets"), Filepath("ProjectData") }, {});
 	}
 
+	void ContentBrowserPanel::ShutDown(EditorContext& context)
+	{
+		m_grid.ReleaseThumbnails();
+	}
+
 	void ContentBrowserPanel::Draw(EditorContext& context)
 	{
 		HandleNavigationInput(context);

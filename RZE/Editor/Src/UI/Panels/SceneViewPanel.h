@@ -59,6 +59,8 @@ namespace Editor
 		// The camera frustums and the grid, which are debug lines, so they're drawn into the scene every frame
 		void PreRender(EditorContext& context) override;
 		void OnSceneReset() override;
+		// Cancels meshes still loading for a drop, and lets go of those just handed over
+		void ShutDown(EditorContext& context) override;
 		void PushWindowStyle(PanelWindowStyle& style) const override;
 
 		// W/E/R/Q/X gizmo shortcuts. They only reach the panel while the SceneView is hovered (EditorApp::ProcessInput).

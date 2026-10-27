@@ -100,6 +100,11 @@ namespace Editor
 		m_propertyInspector.CancelPendingEdits();
 	}
 
+	void InspectorPanel::ShutDown(EditorContext& context)
+	{
+		m_propertyInspector.CancelPendingEdits();
+	}
+
 	void InspectorPanel::Draw(EditorContext& context)
 	{
 		m_propertyInspector.BeginFrame();

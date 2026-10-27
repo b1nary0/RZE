@@ -220,8 +220,10 @@ namespace Editor
 	void EditorApp::ShutDown()
 	{
 		RZE().GetActiveScene().SetObjectsChangedCallback(nullptr);
-		// While the renderer and resources are still up
+		// While the renderer and resources are still up, so nothing the editor loaded is still held when the resources go
 		m_context.GetThumbnails().ShutDown();
+		m_context.GetPanels().ShutDownAll(m_context);
+		m_context.GetFileBrowser().ShutDown();
 		m_mainMenuBar.ShutDown();
 		// Undo can't restore deleted files once the editor closes
 		AssetFiles::EmptyTrash();

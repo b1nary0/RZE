@@ -103,6 +103,11 @@ namespace Editor
 		m_grid.RefreshThumbnail(image);
 	}
 
+	void FileBrowserModal::ShutDown()
+	{
+		m_grid.ReleaseThumbnails();
+	}
+
 	void FileBrowserModal::RefreshFiles()
 	{
 		if (IsOpen())

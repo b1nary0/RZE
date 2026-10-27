@@ -33,6 +33,8 @@ namespace Editor
 	private:
 		void Initialize(EditorContext& context) override;
 		void Draw(EditorContext& context) override;
+		// Lets go of the tiles' images
+		void ShutDown(EditorContext& context) override;
 
 		void DrawToolbar();
 		void DrawFolderTree();
