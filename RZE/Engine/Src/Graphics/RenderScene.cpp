@@ -37,17 +37,19 @@ namespace
 	}
 }
 
-namespace RenderSceneLifetime
+bool RenderSceneLifetime::IsAlive(U64 id)
 {
-	bool IsAlive(U64 id)
-	{
-		return AliveObjects().Contains(id);
-	}
+	return AliveObjects().Contains(id);
+}
 
-	void CheckAccess(U64 id)
-	{
-		AssertMsg(IsAlive(id), "Render scene handle dereferenced after its object was destroyed");
-	}
+U64 RenderSceneLifetime::GetID(const RenderObject* renderObject)
+{
+	return renderObject->GetLiveID();
+}
+
+U64 RenderSceneLifetime::GetID(const LightObject* lightObject)
+{
+	return lightObject->GetLiveID();
 }
 
 LightObject::LightObject(ELightType type)
@@ -261,7 +263,7 @@ RenderObjectPtr RenderScene::CreateRenderObject(const std::shared_ptr<const Stat
 	// Marks the scene changed
 	renderObjectPtr->SetMeshInstance(meshInstance);
 
-	return RenderObjectPtr(renderObjectPtr.get(), renderObjectPtr->GetLiveID());
+	return RenderObjectPtr(renderObjectPtr.get());
 }
 
 void RenderScene::DestroyRenderObject(RenderObjectPtr& renderObject)
@@ -279,7 +281,7 @@ void RenderScene::DestroyRenderObject(RenderObjectPtr& renderObject)
 	auto iter = std::find_if(renderObjects.begin(), renderObjects.end(),
 		[&renderObject](const std::unique_ptr<RenderObject>& other)
 		{
-			return renderObject.m_ptr == other.get();
+			return renderObject == other.get();
 		});
 
 	if (iter != renderObjects.end())
@@ -307,7 +309,7 @@ LightObjectPtr RenderScene::CreateLightObject(ELightType type)
 	lightObjectPtr->m_sceneRevision = &m_revision;
 	lightObjectPtr->m_shadowRevision = ++m_revision;
 
-	return LightObjectPtr(lightObjectPtr.get(), lightObjectPtr->GetLiveID());
+	return LightObjectPtr(lightObjectPtr.get());
 }
 
 void RenderScene::DestroyLightObject(LightObjectPtr& lightObject)
@@ -325,7 +327,7 @@ void RenderScene::DestroyLightObject(LightObjectPtr& lightObject)
 	auto iter = std::find_if(lightObjects.begin(), lightObjects.end(),
 		[&lightObject](const std::unique_ptr<LightObject>& other)
 		{
-			return lightObject.m_ptr == other.get();
+			return lightObject == other.get();
 		});
 
 	if (iter != lightObjects.end())

@@ -164,7 +164,7 @@ GameObjectComponentPtr<TComponentType> GameObject::GetComponent()
 
 	if (it != m_components.end())
 	{
-		return static_cast<TComponentType*>(*it);
+		return GameObjectComponentPtr<TComponentType>(static_cast<TComponentType*>(*it));
 	}
 
 	return nullptr;
@@ -200,7 +200,7 @@ GameObjectComponentPtr<TComponentType> GameObject::AddComponent(Args... args)
 		MarkHierarchyBoundsChanged();
 
 		// #TODO Initialize here
-		return component;
+		return GameObjectComponentPtr<TComponentType>(component);
 	}
 
 	RZE_LOG_WARNING_ARGS("Failed to add component %s as a component of that type already exists", TComponentType::GetComponentName());

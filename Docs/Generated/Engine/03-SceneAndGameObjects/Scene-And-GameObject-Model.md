@@ -128,14 +128,14 @@ Render objects and render scenes cache their bounds the same way: see [`RenderOb
 
 ## Handles: `GameObjectPtr` and `GameObjectComponentPtr<T>`
 
-Defined in `Game\World\GameObject\GameObjectDefinitions.h`. Non-owning handles with private raw-pointer constructors (only `GameObject` and `GameScene` can make them), and **lifetime-checked**:
+Defined in `Game\World\GameObject\GameObjectDefinitions.h` as aliases of `LiveObjectPtr` (`Utils\Src\Utils\LiveObjectPtr.h`), with the `GameObjectLifetime` and `GameObjectComponentLifetime` policies. Non-owning: any code holding a live object or component can make a handle to it (`GameObjectPtr(object)`, explicit), since the handle reads the ID from the object. Copying keeps both handles valid; moving leaves the source null. They're **lifetime-checked**:
 
 - Each holds the pointer plus the object's (or component's) 64-bit ID, which a `LiveIDAllocator` (`Utils\Src\Utils\LiveIDAllocator.h`) hands out in the constructor and takes back in the destructor. GameObjects and components each have one.
 - An ID is a **slot index** (low 32 bits) and that slot's **generation** (high 32 bits). Each live object holds one slot. Destroying it bumps the slot's generation, so the old ID stops matching, and a new object reuses the slot (most recently freed first). A slot is retired once its 2³² generations run out, so **no ID is ever handed out twice**. IDs aren't in creation order.
 - Checking a handle is a single array read and compare. Memory follows the most objects ever alive at once, 8 bytes each, not how many were ever made.
 - Each allocator is made on first use and never destroyed, so objects made during static initialization or destroyed after `main` returns are still tracked.
 - Once its target is destroyed, a handle **compares equal to `nullptr`** and `IsValid()` is false, even if a new object lands at the same address. Debug builds assert if a dead handle is dereferenced.
-- Two handles are equal when they refer to the same object.
+- Two handles are equal when they refer to the same object. A handle also compares with a raw pointer, from either side (`handle == object`): equal while its object is alive and is that object, so a dead handle matches only null, even if a new object has its address. Comparing never asserts.
 
 So code can hold handles across frames (the editor's selection, queued commands, a component's owner) and test them with `== nullptr` before use. A handle to an object that's [out of the scene](#in-the-scene-and-out-of-it) but not destroyed is still valid, so code that might hold one also checks `IsInScene()`. Main thread only, like the rest of the scene.
 
@@ -208,6 +208,7 @@ flowchart TD
 - `Engine\Src\Game\World\GameObject\GameObject.h` / `.cpp`
 - `Engine\Src\Game\World\GameObject\GameObjectDefinitions.h`, `ObjectGUID.h/.cpp`
 - `Utils\Src\Utils\LiveIDAllocator.h/.cpp` — hands out and checks object IDs
+- `Utils\Src\Utils\LiveObjectPtr.h/.cpp` — `LiveObjectPtr` / `UniqueLiveObjectPtr`, the handle templates
 - `Engine\Src\Game\SceneFormat.h/.cpp` — the file layout, version upgrades, `GameObjectLoader`
 - `Engine\Src\Game\SceneLoadOperation.h/.cpp`
 - `Engine\Src\Game\HeadlessScene.h/.cpp`, `CaptureBatchOperation.h/.cpp`

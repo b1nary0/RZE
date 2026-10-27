@@ -108,7 +108,7 @@ namespace Editor
 		// The edit being held (dragged), if any, so its later frames reuse its interaction
 		struct HeldEdit
 		{
-			GameObjectComponentInstanceID m_component = GameObjectLifetime::k_invalidID;
+			GameObjectComponentInstanceID m_component = LiveIDAllocator::k_invalidID;
 			PropertyPath m_path;
 			InteractionID m_interaction = k_noInteraction;
 		};

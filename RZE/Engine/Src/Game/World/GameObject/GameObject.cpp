@@ -22,23 +22,14 @@ namespace
 	}
 }
 
-namespace GameObjectLifetime
+bool GameObjectLifetime::IsAlive(GameObjectID id)
 {
-	bool IsGameObjectAlive(GameObjectID id)
-	{
-		return AliveGameObjects().Contains(id);
-	}
-
-	void CheckGameObjectAccess(GameObjectID id)
-	{
-		AssertMsg(IsGameObjectAlive(id), "GameObjectPtr dereferenced after its GameObject was destroyed");
-	}
+	return AliveGameObjects().Contains(id);
 }
 
-GameObjectPtr::GameObjectPtr(GameObject* gameObject)
-	: m_ptr(gameObject)
-	, m_id(gameObject != nullptr ? gameObject->GetID() : GameObjectLifetime::k_invalidID)
+GameObjectID GameObjectLifetime::GetID(const GameObject* gameObject)
 {
+	return gameObject->GetID();
 }
 
 GameObject::GameObject(GameScene& scene, ObjectGUID guid)
@@ -250,7 +241,7 @@ int GameObject::GetChildIndex(const GameObject* child) const
 {
 	for (size_t index = 0; index < m_children.size(); ++index)
 	{
-		if (m_children[index].m_ptr == child)
+		if (m_children[index] == child)
 		{
 			return static_cast<int>(index);
 		}
@@ -328,7 +319,7 @@ void GameObject::AddChild(GameObject* child, int childIndex)
 	}
 	else
 	{
-		m_children.push_back(child);
+		m_children.push_back(GameObjectPtr(child));
 	}
 	MarkHierarchyBoundsChanged();
 	// @todo OnChildAdded/OnAttachToParent signal

@@ -233,7 +233,7 @@ void GameScene::AddGameObject(std::unique_ptr<GameObject>&& gameObject)
 
 void GameScene::AddGameObject(const GameObjectPtr& gameObject)
 {
-	AddGameObject(std::unique_ptr<GameObject>(gameObject.m_ptr));
+	AddGameObject(std::unique_ptr<GameObject>(gameObject.Get()));
 }
 
 void GameScene::ProcessObjectRemoveDeferrals()

@@ -534,7 +534,7 @@ namespace Editor
 		{
 			ComponentList Targets;
 			// The first target's, which identifies the field with Path
-			GameObjectComponentInstanceID Component = GameObjectLifetime::k_invalidID;
+			GameObjectComponentInstanceID Component = LiveIDAllocator::k_invalidID;
 			PropertyPath Path;
 			PropertyValue Before;
 			PropertyValue Value;
