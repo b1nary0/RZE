@@ -402,6 +402,8 @@ void IrradianceProbeStage::Render(RenderContext& context)
 				Rendering::Renderer::UnsetUnorderedAccess(0);
 				Rendering::Renderer::UnsetTextureResourceCS(k_captureAtlasSlot);
 
+				context.WorkCounts.IrradianceProbesCaptured += captured.Count;
+				context.WorkCounts.IrradianceCaptureDraws += draws;
 				state.CaptureDraws += draws;
 				++state.CaptureFrames;
 				if (state.CaptureQueue.empty() && !state.HasLoggedCaptures)
@@ -487,6 +489,7 @@ void IrradianceProbeStage::Render(RenderContext& context)
 				Rendering::Renderer::SetTextureResourceCS(state.Atlas, k_captureAtlasSlot);
 
 				Rendering::Renderer::Dispatch(relit.Count);
+				context.WorkCounts.IrradianceProbesRelit += relit.Count;
 
 				// The shadow maps are drawn into and the probes copied over next frame
 				for (U32 channel = 0; channel < 3; ++channel)

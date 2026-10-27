@@ -19,6 +19,24 @@
 
 #include "Rendering/Graphics/RenderTarget.h"
 
+namespace
+{
+	RenderWorkCounts PerFrame(const StatsWindow& window, const RenderWorkCounts& totals)
+	{
+		RenderWorkCounts perFrame;
+		perFrame.IrradianceProbesCaptured = window.PerFrame(totals.IrradianceProbesCaptured);
+		perFrame.IrradianceCaptureDraws = window.PerFrame(totals.IrradianceCaptureDraws);
+		perFrame.IrradianceProbesRelit = window.PerFrame(totals.IrradianceProbesRelit);
+		perFrame.ReflectionProbesCaptured = window.PerFrame(totals.ReflectionProbesCaptured);
+		perFrame.ReflectionCaptureDraws = window.PerFrame(totals.ReflectionCaptureDraws);
+		perFrame.ReflectionProbesRelit = window.PerFrame(totals.ReflectionProbesRelit);
+		perFrame.SunShadowMapsRendered = window.PerFrame(totals.SunShadowMapsRendered);
+		perFrame.PointShadowFacesRendered = window.PerFrame(totals.PointShadowFacesRendered);
+		perFrame.ShadowDraws = window.PerFrame(totals.ShadowDraws);
+		return perFrame;
+	}
+}
+
 RenderEngine::RenderEngine()
 	: m_pipeline(std::make_unique<RenderPipeline>())
 {
@@ -167,6 +185,7 @@ void RenderEngine::UpdateStats(double now)
 	// The stage times and draw calls build up over the window, so they're taken once at its end
 	m_stats.RecordTimeMS = m_statsWindow.PerFrame(m_windowRecordTime) * 1000.0;
 	m_stats.DrawCalls = m_statsWindow.PerFrame(static_cast<double>(Rendering::Renderer::TakeDrawCallCount()));
+	m_stats.Work = PerFrame(m_statsWindow, m_pipeline->TakeWorkCounts());
 
 	m_stats.Stages.clear();
 	for (const RenderStageTime& stageTime : m_pipeline->TakeStageTimes())

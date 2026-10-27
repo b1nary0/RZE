@@ -125,7 +125,7 @@ void ShadowRenderStage::Render(RenderContext& context)
 	const bool needsMap = context.View.Lighting == ERenderViewLighting::Scene;
 	if (needsMap && (!state.HasCheckedMaps || state.CheckedRevision != scene.GetRevision()))
 	{
-		UpdateShadowMaps(scene, state);
+		UpdateShadowMaps(scene, state, context.WorkCounts);
 		state.CheckedRevision = scene.GetRevision();
 		state.HasCheckedMaps = true;
 	}
@@ -195,7 +195,7 @@ ShadowRenderStage::ShadowMapState ShadowRenderStage::CreateShadowMapState()
 	return state;
 }
 
-void ShadowRenderStage::UpdateShadowMaps(const RenderScene& scene, ShadowMapState& state)
+void ShadowRenderStage::UpdateShadowMaps(const RenderScene& scene, ShadowMapState& state, RenderWorkCounts& workCounts)
 {
 	OPTICK_EVENT();
 
@@ -243,7 +243,7 @@ void ShadowRenderStage::UpdateShadowMaps(const RenderScene& scene, ShadowMapStat
 			if (shadowIndex >= 0 && (isLightChanged(cache, light) || scene.GetObjectsRevision() > cache.RenderedRevision))
 			{
 				beginOnce();
-				state.ShadowData.HasShadows = RenderDirectionalShadow(scene, light, state, state.ShadowData) ? 1.0f : 0.0f;
+				state.ShadowData.HasShadows = RenderDirectionalShadow(scene, light, state, state.ShadowData, workCounts) ? 1.0f : 0.0f;
 				markRendered(cache, light);
 			}
 			break;
@@ -269,7 +269,7 @@ void ShadowRenderStage::UpdateShadowMaps(const RenderScene& scene, ShadowMapStat
 			if (isLightChanged(cache, light) || scene.HaveObjectsChangedWithin(seen, cache.RenderedRevision))
 			{
 				beginOnce();
-				RenderPointShadow(scene, light, static_cast<U32>(shadowIndex), state, state.ShadowData.PointShadows[shadowIndex]);
+				RenderPointShadow(scene, light, static_cast<U32>(shadowIndex), state, state.ShadowData.PointShadows[shadowIndex], workCounts);
 				markRendered(cache, light);
 			}
 			break;
@@ -299,7 +299,7 @@ void ShadowRenderStage::BeginShadowPass()
 	Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetWorldMatrixBuffer(), 1);
 }
 
-bool ShadowRenderStage::RenderDirectionalShadow(const RenderScene& scene, const LightObject& light, const ShadowMapState& state, GraphicsLayouts::ShadowBufferLayout& outShadowData)
+bool ShadowRenderStage::RenderDirectionalShadow(const RenderScene& scene, const LightObject& light, const ShadowMapState& state, GraphicsLayouts::ShadowBufferLayout& outShadowData, RenderWorkCounts& workCounts)
 {
 	Matrix4x4 lightViewProjection;
 	float worldTexelSize = 0.0f;
@@ -315,11 +315,12 @@ bool ShadowRenderStage::RenderDirectionalShadow(const RenderScene& scene, const 
 	Rendering::Renderer::SetViewport({ size, size });
 	Rendering::Renderer::ClearDepthStencilBuffer(state.ShadowMap);
 	Rendering::Renderer::SetDepthTarget(state.ShadowMap);
-	DrawCasters(scene, lightViewProjection);
+	workCounts.ShadowDraws += DrawCasters(scene, lightViewProjection);
+	++workCounts.SunShadowMapsRendered;
 	return true;
 }
 
-void ShadowRenderStage::RenderPointShadow(const RenderScene& scene, const LightObject& light, U32 cubeIndex, const ShadowMapState& state, GraphicsLayouts::PointShadowLayout& outShadow)
+void ShadowRenderStage::RenderPointShadow(const RenderScene& scene, const LightObject& light, U32 cubeIndex, const ShadowMapState& state, GraphicsLayouts::PointShadowLayout& outShadow, RenderWorkCounts& workCounts)
 {
 	const Matrix4x4 projection = Matrix4x4::CreatePerspectiveMatrixZeroToOne(90.0f, 1.0f, k_pointShadowNear, CalculatePointShadowFar(light));
 
@@ -332,7 +333,8 @@ void ShadowRenderStage::RenderPointShadow(const RenderScene& scene, const LightO
 		const U32 slice = cubeIndex * static_cast<U32>(ECubeFace::Count) + face;
 		Rendering::Renderer::ClearDepthStencilSlice(state.PointShadowCubes, slice);
 		Rendering::Renderer::SetDepthTarget(state.PointShadowCubes, slice);
-		DrawCasters(scene, projection * CubeMap::CreateFaceView(light.GetPosition(), static_cast<ECubeFace>(face)));
+		workCounts.ShadowDraws += DrawCasters(scene, projection * CubeMap::CreateFaceView(light.GetPosition(), static_cast<ECubeFace>(face)));
+		++workCounts.PointShadowFacesRendered;
 	}
 
 	// The projection stores DepthAtInfinity + DepthDistanceScale / distance, so two distances pin both down
@@ -345,7 +347,7 @@ void ShadowRenderStage::RenderPointShadow(const RenderScene& scene, const LightO
 	outShadow.NormalOffsetPerMetre = 2.0f / size * k_normalOffsetTexels;
 }
 
-void ShadowRenderStage::DrawCasters(const RenderScene& scene, const Matrix4x4& viewProjection)
+U32 ShadowRenderStage::DrawCasters(const RenderScene& scene, const Matrix4x4& viewProjection)
 {
 	// Only ClipSpace is used by the caster shaders
 	RenderCamera lightCamera;
@@ -354,6 +356,7 @@ void ShadowRenderStage::DrawCasters(const RenderScene& scene, const Matrix4x4& v
 
 	// Objects and draws entirely outside the view can't cast into it (e.g. behind a cube face)
 	const Frustum frustum(viewProjection);
+	U32 drawCount = 0;
 
 	for (const auto& renderObject : scene.GetRenderObjects())
 	{
@@ -397,8 +400,11 @@ void ShadowRenderStage::DrawCasters(const RenderScene& scene, const Matrix4x4& v
 			Rendering::Renderer::SetIndexBuffer(indexBuffer);
 
 			Rendering::Renderer::DrawIndexed(indexBuffer);
+			++drawCount;
 		}
 	}
+
+	return drawCount;
 }
 
 bool ShadowRenderStage::CalculateLightViewProjection(const RenderScene& scene, const Vector3D& lightDirection, Matrix4x4& outViewProjection, float& outWorldTexelSize) const

@@ -14,6 +14,7 @@
 
 class LightObject;
 class RenderScene;
+struct RenderWorkCounts;
 class VertexShader;
 class PixelShader;
 
@@ -83,16 +84,17 @@ private:
 	void UploadLights(const RenderScene& scene, const ShadowMapState& state);
 
 	// Renders each shadowed light's map that's out of date, then uploads the ShadowBuffer that says how to read them
-	// if any was
-	void UpdateShadowMaps(const RenderScene& scene, ShadowMapState& state);
+	// if any was. Counts what it renders into workCounts.
+	void UpdateShadowMaps(const RenderScene& scene, ShadowMapState& state, RenderWorkCounts& workCounts);
 	// Sets up the depth-only state every light's views draw with, and starts the pass
 	void BeginShadowPass();
 	// Into the directional map; false if there's nothing to cast shadows
-	bool RenderDirectionalShadow(const RenderScene& scene, const LightObject& light, const ShadowMapState& state, GraphicsLayouts::ShadowBufferLayout& outShadowData);
+	bool RenderDirectionalShadow(const RenderScene& scene, const LightObject& light, const ShadowMapState& state, GraphicsLayouts::ShadowBufferLayout& outShadowData, RenderWorkCounts& workCounts);
 	// Into cube cubeIndex of the point light cubes, a face at a time
-	void RenderPointShadow(const RenderScene& scene, const LightObject& light, U32 cubeIndex, const ShadowMapState& state, GraphicsLayouts::PointShadowLayout& outShadow);
+	void RenderPointShadow(const RenderScene& scene, const LightObject& light, U32 cubeIndex, const ShadowMapState& state, GraphicsLayouts::PointShadowLayout& outShadow, RenderWorkCounts& workCounts);
 	// Depth of every opaque caster that's in view, into the bound depth target. Shared by every light type's views.
-	void DrawCasters(const RenderScene& scene, const Matrix4x4& viewProjection);
+	// Returns how many draws it made.
+	U32 DrawCasters(const RenderScene& scene, const Matrix4x4& viewProjection);
 
 	// Returns false if there's nothing to cast shadows
 	bool CalculateLightViewProjection(const RenderScene& scene, const Vector3D& lightDirection, Matrix4x4& outViewProjection, float& outWorldTexelSize) const;

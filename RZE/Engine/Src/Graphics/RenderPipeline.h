@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Graphics/RenderPipelineCompiler.h>
+#include <Graphics/RenderWorkCounts.h>
 
 #include <memory>
 #include <string>
@@ -35,6 +36,8 @@ public:
 
 	// Each stage's time since the last call, in the order they run, then starts them over
 	std::vector<RenderStageTime> TakeStageTimes();
+	// What the stages have counted since the last call (RenderContext::WorkCounts), then starts them over
+	RenderWorkCounts TakeWorkCounts();
 
 private:
 	void CompileIfDirty();
@@ -44,6 +47,8 @@ private:
 	std::vector<std::unique_ptr<IRenderStage>> m_stages;
 	// Seconds each stage has spent in Render() since TakeStageTimes(), indexed like m_stages
 	std::vector<double> m_stageTimes;
+	// Since TakeWorkCounts()
+	RenderWorkCounts m_workCounts;
 	CompiledRenderPipeline m_compiled;
 	bool m_isDirty = true;
 };

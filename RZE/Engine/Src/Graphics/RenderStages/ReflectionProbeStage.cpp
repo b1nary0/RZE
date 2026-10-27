@@ -213,7 +213,8 @@ void ReflectionProbeStage::Render(RenderContext& context)
 				Rendering::Renderer::ClearDepthStencilBuffer(state.ScratchDepth);
 				// Far enough to see across the whole scene from anywhere in it
 				const float farDistance = std::max(scene.GetBounds().GetRadius() * 2.0f, 1.0f);
-				m_capture.Capture(scene, probe.GetPosition(), farDistance, 0, 0);
+				context.WorkCounts.ReflectionCaptureDraws += m_capture.Capture(scene, probe.GetPosition(), farDistance, 0, 0);
+				++context.WorkCounts.ReflectionProbesCaptured;
 				Rendering::Renderer::ClearRenderTargets();
 				Rendering::Renderer::CopyTextureRegion(state.Scratch, 0, 0, k_probeWidth, k_faceSize, state.Atlas, 0, slot * k_faceSize);
 				Rendering::Renderer::End();
@@ -270,6 +271,7 @@ void ReflectionProbeStage::Render(RenderContext& context)
 				Rendering::Renderer::SetTextureResourceCS(state.Atlas, k_captureAtlasSlot);
 				Rendering::Renderer::SetUnorderedAccess(state.Radiance, 0, 0);
 				Rendering::Renderer::Dispatch(DivideRoundingUp(k_faceSize, k_groupSize), DivideRoundingUp(k_faceSize, k_groupSize), relit.Count * ProbeCapture::k_faceCount);
+				context.WorkCounts.ReflectionProbesRelit += relit.Count;
 				Rendering::Renderer::UnsetUnorderedAccess(0);
 				for (U32 slot : { k_shadowMapSlot, k_pointShadowCubesSlot, k_shRedSlot, k_shRedSlot + 1, k_shRedSlot + 2, k_visibilitySlot, k_captureAtlasSlot })
 				{

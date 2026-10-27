@@ -33,7 +33,7 @@ void RenderPipeline::Render(RenderView& view, RenderScene& scene, float deltaTim
 	CompileIfDirty();
 
 	view.m_frame.BeginFrame();
-	RenderContext context(view, scene, deltaTime, frameIndex);
+	RenderContext context(view, scene, deltaTime, frameIndex, m_workCounts);
 
 	for (size_t stageIndex : m_compiled.ExecutionOrder)
 	{
@@ -58,6 +58,13 @@ std::vector<RenderStageTime> RenderPipeline::TakeStageTimes()
 	}
 
 	return stageTimes;
+}
+
+RenderWorkCounts RenderPipeline::TakeWorkCounts()
+{
+	const RenderWorkCounts workCounts = m_workCounts;
+	m_workCounts = RenderWorkCounts();
+	return workCounts;
 }
 
 void RenderPipeline::CompileIfDirty()

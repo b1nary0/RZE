@@ -5,6 +5,7 @@
 #include <Graphics/RenderPipeline.h>
 #include <Graphics/RenderScene.h>
 #include <Graphics/RenderView.h>
+#include <Graphics/RenderWorkCounts.h>
 
 #include <Rendering/BufferHandle.h>
 
@@ -33,6 +34,8 @@ struct RenderStats
 	std::vector<RenderStageTime> Stages;
 	// Per frame, not counting the UI's
 	double DrawCalls = 0.0;
+	// Per frame: the probe captures and relights and the shadow maps that scene changes caused
+	RenderWorkCounts Work;
 };
 
 class RenderEngine
