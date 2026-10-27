@@ -62,55 +62,6 @@ namespace
 		}
 		return pick.CameraRay.GetPoint(k_fallbackDistance);
 	}
-
-	// Draws a light's icon around center: a sun for a directional light, a bulb for a point light, with alpha scaling
-	// its opacity. Returns how far the icon reaches from center, for its click box.
-	float DrawLightIcon(ImDrawList& drawList, const ImVec2& center, ELightType type, float alpha)
-	{
-		auto withAlpha = [alpha](int r, int g, int b, int a)
-		{
-			return IM_COL32(r, g, b, static_cast<int>(a * alpha));
-		};
-		const ImU32 outlineColour = withAlpha(0, 0, 0, 200);
-
-		if (type == ELightType::Directional)
-		{
-			// Sun: filled disc with eight rays
-			constexpr float k_discRadius = 7.0f;
-			constexpr float k_rayInner = 10.0f;
-			constexpr float k_rayOuter = 15.0f;
-			const ImU32 sunColour = withAlpha(255, 210, 60, 255);
-
-			drawList.AddCircleFilled(center, k_discRadius, sunColour, 16);
-			drawList.AddCircle(center, k_discRadius, outlineColour, 16, 1.5f);
-			for (int ray = 0; ray < 8; ++ray)
-			{
-				const float angle = ray * (MathUtils::Pi / 4.0f);
-				const ImVec2 dir(std::cos(angle), std::sin(angle));
-				drawList.AddLine(
-					ImVec2(center.x + dir.x * k_rayInner, center.y + dir.y * k_rayInner),
-					ImVec2(center.x + dir.x * k_rayOuter, center.y + dir.y * k_rayOuter),
-					sunColour, 2.0f);
-			}
-			return k_rayOuter;
-		}
-
-		// Bulb: round glass over a screw base
-		constexpr float k_glassRadius = 8.0f;
-		const ImU32 glassColour = withAlpha(255, 230, 140, 255);
-		const ImU32 baseColour = withAlpha(175, 175, 185, 255);
-		const ImVec2 glassCenter(center.x, center.y - 3.0f);
-		const ImVec2 baseMin(center.x - 4.5f, center.y + 4.0f);
-		const ImVec2 baseMax(center.x + 4.5f, center.y + 11.0f);
-
-		drawList.AddRectFilled(baseMin, baseMax, baseColour, 1.5f);
-		drawList.AddRect(baseMin, baseMax, outlineColour, 1.5f, 0, 1.5f);
-		drawList.AddLine(ImVec2(baseMin.x, center.y + 7.5f), ImVec2(baseMax.x, center.y + 7.5f), outlineColour, 1.0f);
-		drawList.AddCircleFilled(glassCenter, k_glassRadius, glassColour, 16);
-		drawList.AddCircle(glassCenter, k_glassRadius, outlineColour, 16, 1.5f);
-		// From the top of the glass to the bottom of the base
-		return 11.0f;
-	}
 }
 
 namespace Editor
@@ -501,52 +452,25 @@ namespace Editor
 				// The selected object's icon sits on top of its gizmo; fade it so the gizmo's centre handle shows through
 				const bool isSelected = selectedGameObject != nullptr && gameObject == selectedGameObject;
 				const float alpha = isSelected ? 0.4f : 1.0f;
-				auto withAlpha = [alpha](int r, int g, int b, int a)
+				auto drawIcon = [&](EditorUI::EObjectIcon icon)
 				{
-					return IM_COL32(r, g, b, static_cast<int>(a * alpha));
+					ImVec2 centre;
+					if (worldToScreen(position, centre))
+					{
+						const EditorUI::IconBounds bounds = EditorUI::DrawObjectIcon(*drawList, centre, icon, alpha);
+						m_iconHits.push_back({ gameObject, Vector2D(bounds.Min.x, bounds.Min.y), Vector2D(bounds.Max.x, bounds.Max.y) });
+					}
 				};
-				const ImU32 outlineColour = withAlpha(0, 0, 0, 200);
 
 				GameObjectComponentPtr<LightComponent> light = gameObject->GetComponent<LightComponent>();
 				if (light != nullptr)
 				{
-					ImVec2 center;
-					if (worldToScreen(position, center))
-					{
-						const float reach = DrawLightIcon(*drawList, center, light->GetLightType(), alpha);
-						m_iconHits.push_back({ gameObject, Vector2D(center.x - reach, center.y - reach), Vector2D(center.x + reach, center.y + reach) });
-					}
+					drawIcon(light->GetLightType() == ELightType::Directional ? EditorUI::EObjectIcon::Sun : EditorUI::EObjectIcon::Bulb);
 				}
 
-				GameObjectComponentPtr<CameraComponent> camera = gameObject->GetComponent<CameraComponent>();
-				if (camera != nullptr)
+				if (gameObject->GetComponent<CameraComponent>() != nullptr)
 				{
-					ImVec2 center;
-					if (worldToScreen(position, center))
-					{
-						// Movie camera: body, two film reels on top, lens on the right
-						constexpr float k_reelRadius = 6.0f;
-						const ImU32 cameraColour = withAlpha(200, 215, 235, 255);
-						const ImVec2 bodyMin(center.x - 15.0f, center.y - 6.0f);
-						const ImVec2 bodyMax(center.x + 6.0f, center.y + 9.0f);
-						const ImVec2 reelA(center.x - 9.0f, center.y - 12.0f);
-						const ImVec2 reelB(center.x + 1.5f, center.y - 12.0f);
-						const ImVec2 lensA(center.x + 6.0f, center.y + 1.5f);
-						const ImVec2 lensB(center.x + 16.0f, center.y - 6.0f);
-						const ImVec2 lensC(center.x + 16.0f, center.y + 9.0f);
-
-						drawList->AddCircleFilled(reelA, k_reelRadius, cameraColour, 12);
-						drawList->AddCircle(reelA, k_reelRadius, outlineColour, 12, 1.5f);
-						drawList->AddCircleFilled(reelB, k_reelRadius, cameraColour, 12);
-						drawList->AddCircle(reelB, k_reelRadius, outlineColour, 12, 1.5f);
-						drawList->AddTriangleFilled(lensA, lensB, lensC, cameraColour);
-						drawList->AddTriangle(lensA, lensB, lensC, outlineColour, 1.5f);
-						drawList->AddRectFilled(bodyMin, bodyMax, cameraColour, 1.5f);
-						drawList->AddRect(bodyMin, bodyMax, outlineColour, 1.5f, 0, 1.5f);
-
-						// From the reels' tops to the lens's right edge
-						m_iconHits.push_back({ gameObject, Vector2D(bodyMin.x, reelA.y - k_reelRadius), Vector2D(lensB.x, bodyMax.y) });
-					}
+					drawIcon(EditorUI::EObjectIcon::Camera);
 				}
 			}));
 	}

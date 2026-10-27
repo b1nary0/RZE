@@ -173,6 +173,85 @@ namespace Editor
 			return ImGui::GetFrameHeight();
 		}
 
+		IconBounds DrawObjectIcon(ImDrawList& drawList, const ImVec2& centre, EObjectIcon icon, float alpha, float scale)
+		{
+			auto withAlpha = [alpha](int r, int g, int b, int a)
+			{
+				return IM_COL32(r, g, b, static_cast<int>(a * alpha));
+			};
+			// An offset from centre, at the icon's scale
+			auto at = [&centre, scale](float x, float y)
+			{
+				return ImVec2(centre.x + x * scale, centre.y + y * scale);
+			};
+			const ImU32 outlineColour = withAlpha(0, 0, 0, 200);
+
+			switch (icon)
+			{
+			case EObjectIcon::Sun:
+			{
+				const float discRadius = 7.0f * scale;
+				const float rayInner = 10.0f * scale;
+				const float rayOuter = 15.0f * scale;
+				const ImU32 sunColour = withAlpha(255, 210, 60, 255);
+
+				drawList.AddCircleFilled(centre, discRadius, sunColour, 16);
+				drawList.AddCircle(centre, discRadius, outlineColour, 16, 1.5f);
+				for (int ray = 0; ray < 8; ++ray)
+				{
+					const float angle = ray * (MathUtils::Pi / 4.0f);
+					const ImVec2 dir(std::cos(angle), std::sin(angle));
+					drawList.AddLine(
+						ImVec2(centre.x + dir.x * rayInner, centre.y + dir.y * rayInner),
+						ImVec2(centre.x + dir.x * rayOuter, centre.y + dir.y * rayOuter),
+						sunColour, 2.0f);
+				}
+				return { ImVec2(centre.x - rayOuter, centre.y - rayOuter), ImVec2(centre.x + rayOuter, centre.y + rayOuter) };
+			}
+			case EObjectIcon::Bulb:
+			{
+				const float glassRadius = 8.0f * scale;
+				const ImU32 glassColour = withAlpha(255, 230, 140, 255);
+				const ImU32 baseColour = withAlpha(175, 175, 185, 255);
+				const ImVec2 glassCentre = at(0.0f, -3.0f);
+				const ImVec2 baseMin = at(-4.5f, 4.0f);
+				const ImVec2 baseMax = at(4.5f, 11.0f);
+
+				drawList.AddRectFilled(baseMin, baseMax, baseColour, 1.5f);
+				drawList.AddRect(baseMin, baseMax, outlineColour, 1.5f, 0, 1.5f);
+				drawList.AddLine(ImVec2(baseMin.x, at(0.0f, 7.5f).y), ImVec2(baseMax.x, at(0.0f, 7.5f).y), outlineColour, 1.0f);
+				drawList.AddCircleFilled(glassCentre, glassRadius, glassColour, 16);
+				drawList.AddCircle(glassCentre, glassRadius, outlineColour, 16, 1.5f);
+				// From the top of the glass to the bottom of the base, as a square
+				return { at(-11.0f, -11.0f), at(11.0f, 11.0f) };
+			}
+			case EObjectIcon::Camera:
+			default:
+			{
+				const float reelRadius = 6.0f * scale;
+				const ImU32 cameraColour = withAlpha(200, 215, 235, 255);
+				const ImVec2 bodyMin = at(-15.0f, -6.0f);
+				const ImVec2 bodyMax = at(6.0f, 9.0f);
+				const ImVec2 reelA = at(-9.0f, -12.0f);
+				const ImVec2 reelB = at(1.5f, -12.0f);
+				const ImVec2 lensA = at(6.0f, 1.5f);
+				const ImVec2 lensB = at(16.0f, -6.0f);
+				const ImVec2 lensC = at(16.0f, 9.0f);
+
+				drawList.AddCircleFilled(reelA, reelRadius, cameraColour, 12);
+				drawList.AddCircle(reelA, reelRadius, outlineColour, 12, 1.5f);
+				drawList.AddCircleFilled(reelB, reelRadius, cameraColour, 12);
+				drawList.AddCircle(reelB, reelRadius, outlineColour, 12, 1.5f);
+				drawList.AddTriangleFilled(lensA, lensB, lensC, cameraColour);
+				drawList.AddTriangle(lensA, lensB, lensC, outlineColour, 1.5f);
+				drawList.AddRectFilled(bodyMin, bodyMax, cameraColour, 1.5f);
+				drawList.AddRect(bodyMin, bodyMax, outlineColour, 1.5f, 0, 1.5f);
+				// From the reels' tops to the lens's right edge
+				return { ImVec2(bodyMin.x, reelA.y - reelRadius), ImVec2(lensB.x, bodyMax.y) };
+			}
+			}
+		}
+
 		ImU32 WithAlpha(const ImVec4& colour, float alpha)
 		{
 			return ImGui::GetColorU32(ImVec4(colour.x, colour.y, colour.z, alpha));

@@ -351,6 +351,7 @@ Windows, popups, fields, buttons, checkboxes, images and highlights have slightl
 | A component's inspector fields | Describe its properties; see [Object-Inspector-And-Properties.md](Object-Inspector-And-Properties.md) |
 | A tree | `EditorUI::TreeNode`, not `ImGui::TreeNodeEx`, so its highlight is rounded like the rest ([Rounded corners](#rounded-corners)) |
 | An image | Pass `EditorUI::TextureID(handle)` as its texture, never a cast of the handle's raw view, so the texture outlives the UI that draws it |
+| An icon | On a button: `EditorUI::IconButton` with an `EIcon` (single-colour line glyphs, since the fonts only have Latin glyphs). For a kind of object (a light, a camera): `EditorUI::DrawObjectIcon` with an `EObjectIcon`, filled in its own colours, at any `scale`, as the scene view draws them |
 
 ## Key files
 

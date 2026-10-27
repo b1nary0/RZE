@@ -65,6 +65,28 @@ namespace Editor
 		// The width an IconButton takes
 		float GetIconButtonWidth();
 
+		// Pictures of kinds of object, filled in their own colours with dark outlines, e.g. over a light or a camera in
+		// the scene view. Unlike EIcon they aren't drawn on buttons.
+		enum class EObjectIcon
+		{
+			// A directional light: a disc with eight rays
+			Sun,
+			// A point light: round glass over a screw base
+			Bulb,
+			// A camera: a movie camera's body with two film reels on top and its lens to the right
+			Camera
+		};
+
+		// Screen-space box around a drawn object icon, to click it by
+		struct IconBounds
+		{
+			ImVec2 Min;
+			ImVec2 Max;
+		};
+
+		// Draws icon around centre at its usual size (about 30 px across) times scale, with alpha scaling its opacity
+		IconBounds DrawObjectIcon(ImDrawList& drawList, const ImVec2& centre, EObjectIcon icon, float alpha, float scale = 1.0f);
+
 		// A radio button that selects option into value; true on the frame it's clicked
 		template <typename T>
 		bool RadioOption(const char* label, T& value, T option)
