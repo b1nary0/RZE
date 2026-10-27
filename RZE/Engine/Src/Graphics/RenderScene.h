@@ -79,6 +79,9 @@ public:
 	// sinceRevision (a GetRevision), counting both where it was and where it is. Can answer true for changes nearby
 	// once many objects have changed since (SceneChangeLog merges their boxes), never false for one within.
 	bool HaveObjectsChangedWithin(const BoundingBox& region, U64 sinceRevision) const { return m_changeLog.HasChangedWithin(region, sinceRevision); }
+	// Where render objects were added, removed, moved or given a new mesh, by revision (both where each was and where it
+	// is), for anything kept from part of the scene that needs to find which part changed
+	const SceneChangeLog& GetObjectChanges() const { return m_changeLog; }
 	// Where lights were added, removed or changed how they light the scene, by revision: where a point light reached
 	// before and after (LightObject::GetReach), or everywhere for a directional light. For anything lit with the
 	// lights that's kept (e.g. probes), so it can tell which part to light again.

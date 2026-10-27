@@ -17,6 +17,14 @@ struct IrradianceProbeGrid
 	// What the probe textures are made for: 8192 probes is 32 x 8 x 32
 	static constexpr U32 k_maxProbes = 8192;
 
+	// The probes from Min to Max along each axis (x, y, z), both included
+	struct ProbeRange
+	{
+		U32 Min[3] = { 0, 0, 0 };
+		U32 Max[3] = { 0, 0, 0 };
+		bool IsEmpty = true;
+	};
+
 	// The probe with the lowest x, y and z
 	Vector3D Origin;
 	float Spacing = 0.0f;
@@ -33,4 +41,6 @@ struct IrradianceProbeGrid
 	Vector3D GetProbePosition(U32 x, U32 y, U32 z) const;
 	// Of probe x + CountX * (y + CountY * z), the order the probe textures and shaders number them in
 	Vector3D GetProbePosition(U32 probe) const;
+	// The probes inside box (world space, sides included); empty if there are none, e.g. box is empty or misses the grid
+	ProbeRange GetProbesWithin(const BoundingBox& box) const;
 };

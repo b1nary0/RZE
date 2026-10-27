@@ -5,14 +5,15 @@
 
 #include <algorithm>
 #include <cmath>
-#include <numeric>
 
 namespace
 {
 	// Probes within this many spacings of the camera along each axis are relit every frame
 	constexpr int k_nearProbes = 2;
-	// Probes within this many spacings of an object that changed are captured again
-	constexpr float k_recaptureRadiusSpacings = 5.0f;
+	// How far probes are captured again around a change: this many times its radius, within these many spacings
+	constexpr float k_recaptureReachPerRadius = 2.0f;
+	constexpr float k_minRecaptureReachSpacings = 2.0f;
+	constexpr float k_maxRecaptureReachSpacings = 5.0f;
 
 	constexpr U64 k_neverFrame = ~0ull;
 
@@ -49,9 +50,13 @@ bool IrradianceProbeScheduler::FitGrid(const RenderScene& scene, U32 targetProbe
 	m_captured.assign(probeCount, false);
 	m_queued.assign(probeCount, true);
 	m_relitFrame.assign(probeCount, k_neverFrame);
-	m_captureQueue.resize(probeCount);
-	std::iota(m_captureQueue.begin(), m_captureQueue.end(), 0u);
-	SortCaptureQueue(cameraPosition);
+	m_recaptureQueue.clear();
+	m_fillQueue.resize(probeCount);
+	for (U32 probe = 0; probe < probeCount; ++probe)
+	{
+		m_fillQueue[probe] = { (m_grid.GetProbePosition(probe) - cameraPosition).Length(), probe };
+	}
+	std::make_heap(m_fillQueue.begin(), m_fillQueue.end(), &IsFurther);
 
 	m_nextRelight = 0;
 	m_checkedRevision = scene.GetRevision();
@@ -65,37 +70,55 @@ void IrradianceProbeScheduler::QueueChangedProbes(const RenderScene& scene, cons
 		return;
 	}
 
-	const Vector3D reach(m_grid.Spacing * k_recaptureRadiusSpacings);
-	bool hasQueued = false;
-	for (U32 probe = 0; probe < m_grid.GetProbeCount(); ++probe)
+	const auto queueWithinReach = [this, &cameraPosition](const BoundingBox& changedBounds)
 	{
-		if (!m_captured[probe] || m_queued[probe])
+		const Vector3D reach(GetRecaptureReach(changedBounds));
+		const IrradianceProbeGrid::ProbeRange range = m_grid.GetProbesWithin(BoundingBox(changedBounds.GetMin() - reach, changedBounds.GetMax() + reach));
+		if (range.IsEmpty)
 		{
-			continue;
+			return;
 		}
 
-		const Vector3D position = m_grid.GetProbePosition(probe);
-		if (scene.HaveObjectsChangedWithin(BoundingBox(position - reach, position + reach), m_checkedRevision))
+		for (U32 z = range.Min[2]; z <= range.Max[2]; ++z)
 		{
-			m_captureQueue.push_back(probe);
-			m_queued[probe] = true;
-			hasQueued = true;
+			for (U32 y = range.Min[1]; y <= range.Max[1]; ++y)
+			{
+				for (U32 x = range.Min[0]; x <= range.Max[0]; ++x)
+				{
+					const U32 probe = x + m_grid.CountX * (y + m_grid.CountY * z);
+					if (m_captured[probe] && !m_queued[probe])
+					{
+						QueueRecapture(probe, cameraPosition);
+					}
+				}
+			}
+		}
+	};
+
+	// Where isn't known: everything that's been captured
+	if (!scene.GetObjectChanges().ForEachChangeSince(m_checkedRevision, queueWithinReach))
+	{
+		for (U32 probe = 0; probe < m_grid.GetProbeCount(); ++probe)
+		{
+			if (m_captured[probe] && !m_queued[probe])
+			{
+				QueueRecapture(probe, cameraPosition);
+			}
 		}
 	}
 
 	m_checkedRevision = scene.GetRevision();
-	if (hasQueued)
-	{
-		SortCaptureQueue(cameraPosition);
-	}
 }
 
 U32 IrradianceProbeScheduler::TakeCapture()
 {
 	AssertExpr(HasCaptureWaiting());
 
-	const U32 probe = m_captureQueue.back();
-	m_captureQueue.pop_back();
+	// In turn while both are waiting
+	const bool takesRecapture = m_fillQueue.empty() || (!m_recaptureQueue.empty() && m_takesRecaptureNext);
+	m_takesRecaptureNext = !takesRecapture;
+
+	const U32 probe = PopNearest(takesRecapture ? m_recaptureQueue : m_fillQueue);
 	m_queued[probe] = false;
 	return probe;
 }
@@ -155,14 +178,25 @@ void IrradianceProbeScheduler::ListRelights(U32 budget, const Vector3D& cameraPo
 	}
 }
 
-void IrradianceProbeScheduler::SortCaptureQueue(const Vector3D& cameraPosition)
+float IrradianceProbeScheduler::GetRecaptureReach(const BoundingBox& changedBounds) const
 {
-	std::vector<float> distances(m_grid.GetProbeCount(), 0.0f);
-	for (U32 probe : m_captureQueue)
-	{
-		distances[probe] = (m_grid.GetProbePosition(probe) - cameraPosition).Length();
-	}
-	std::sort(m_captureQueue.begin(), m_captureQueue.end(), [&distances](U32 a, U32 b) { return distances[a] > distances[b]; });
+	return std::clamp(changedBounds.GetRadius() * k_recaptureReachPerRadius,
+		m_grid.Spacing * k_minRecaptureReachSpacings, m_grid.Spacing * k_maxRecaptureReachSpacings);
+}
+
+U32 IrradianceProbeScheduler::PopNearest(CaptureQueue& queue)
+{
+	std::pop_heap(queue.begin(), queue.end(), &IsFurther);
+	const U32 probe = queue.back().Probe;
+	queue.pop_back();
+	return probe;
+}
+
+void IrradianceProbeScheduler::QueueRecapture(U32 probe, const Vector3D& cameraPosition)
+{
+	m_recaptureQueue.push_back({ (m_grid.GetProbePosition(probe) - cameraPosition).Length(), probe });
+	std::push_heap(m_recaptureQueue.begin(), m_recaptureQueue.end(), &IsFurther);
+	m_queued[probe] = true;
 }
 
 void IrradianceProbeScheduler::AddToRelight(U32 probe, U64 frameIndex, GraphicsLayouts::ProbeListLayout& list)

@@ -300,7 +300,7 @@ void IrradianceProbeStage::Render(RenderContext& context)
 				context.WorkCounts.IrradianceCaptureDraws += draws;
 				state.CaptureDraws += draws;
 				++state.CaptureFrames;
-				if (!scheduler.HasCaptureWaiting() && !state.HasLoggedCaptures)
+				if (!scheduler.IsFilling() && !state.HasLoggedCaptures)
 				{
 					state.HasLoggedCaptures = true;
 					RZE_LOG_ARGS("Irradiance probes: captured %u (%u x %u x %u, %.2f m apart) over %u frames, %.1f draws a face",
