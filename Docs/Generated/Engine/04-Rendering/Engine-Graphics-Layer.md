@@ -8,15 +8,17 @@ flowchart TD
     subgraph Game["Game objects (Engine/Src/Game)"]
         RC["RenderComponent"]
         DL["LightComponent"]
+        RPC["ReflectionProbeComponent"]
         CAM["CameraComponent /<br/>EditorCameraComponent"]
     end
-    SD["RenderScene<br/>one per GameScene: render objects,<br/>lights, debug lines, revision"]
+    SD["RenderScene<br/>one per GameScene: render objects,<br/>lights, reflection probes,<br/>debug lines, revision"]
     MV["RenderEngine's main RenderView<br/>camera, viewport, target"]
     PL["RenderEngine's RenderPipeline<br/>+ render stages"]
     LL["Rendering::Renderer<br/>(Modules/Rendering, render thread)"]
 
     RC -->|"CreateRenderObject / SetTransform"| SD
     DL -->|"CreateLightObject / SetPosition, SetDirection"| SD
+    RPC -->|"CreateReflectionProbe / SetPosition, SetExtents"| SD
     CAM -->|"fills Camera each frame"| MV
     SD --> PL
     MV --> PL
@@ -32,21 +34,22 @@ A **`RenderScene`** (`Engine\Src\Graphics\RenderScene.h/.cpp`) is what one scene
 | Holds | Notes |
 |---|---|
 | Render objects, lights | `CreateRenderObject(staticMesh)` / `DestroyRenderObject`, `CreateLightObject(type)` / `DestroyLightObject`, `ClearObjects()` (render objects only). `GetDirectionalLight()` is the first directional light, or null. |
+| Reflection probes | `CreateReflectionProbe()` / `DestroyReflectionProbe`, `GetReflectionProbes()` in the order they were made, which is the order `ReflectionProbeStage` gives them its 16 slots (below). |
 | Debug lines | `DrawLine` / `DrawWireBox` / `DrawWireSphere`, kept until `ClearDebugLines()`. `RenderEngine::Render` clears the main scene's once it has drawn them. |
-| `GetRevision()` | A cheap "did anything change?" counter. It goes up when a render object is added, removed, moved or given a new mesh, or when a light is added, removed, or changed in a way that moves its shadows: its type, a directional light's direction, a point light's position or range. Colour and strength don't count. `ShadowRenderStage` skips checking the scene's shadow maps when it hasn't changed. |
+| `GetRevision()` | A cheap "did anything change?" counter. It goes up when a render object is added, removed, moved or given a new mesh, when a light is added, removed, or changed in a way that moves its shadows (its type, a directional light's direction, a point light's position or range; colour and strength don't count), or when a reflection probe is added, removed, moved or resized. `ShadowRenderStage` skips checking the scene's shadow maps when it hasn't changed. |
 | `GetObjectsRevision()` | The revision of the last render object change alone (lights don't move it). The sun's shadow map is out of date once it's newer than the revision the map was rendered at. |
 | `HaveObjectsChangedWithin(region, sinceRevision)` | Whether a render object was added, removed, moved or given a new mesh within a world-space box after a revision, counting both where it was and where it is. Backed by a `SceneChangeLog` (below). A point light's shadow cube asks it about the box its six faces see. |
 | `GetBounds()` | The box around every render object, kept until one is added, removed, moved or given a new mesh, then rebuilt from the objects' boxes when next asked. |
-| Persistent stage state | What stages keep for this scene across frames, whichever view renders it: today, **each scene's own light buffer and shadow maps**. `ReleaseStageState()` drops them; they're made again the next time the scene is rendered. |
+| Persistent stage state | What stages keep for this scene across frames, whichever view renders it: **each scene's own light buffer and shadow maps, and its irradiance and reflection probes**. `ReleaseStageState()` drops them; they're made again the next time the scene is rendered. |
 
 **Where objects changed (`SceneChangeLog`).** Each render object change is logged as world-space boxes stamped with the new revision: a move or a new mesh logs where the object was and where it is as two boxes, so an object that jumps across the scene doesn't mark everything between; a new object logs where it is and a destroyed one where it was. `ClearObjects` counts as a change everywhere. The log keeps the latest 256 changes (`SceneChangeLog::k_capacity`). Asking about a revision from before them answers that it changed, so the answer can be true for a change elsewhere once many objects have moved, but never false for one within the box.
 
 ### Handles
 
-`CreateRenderObject` and `CreateLightObject` return a **`RenderObjectPtr`** / **`LightObjectPtr`** (`Graphics\GraphicsDefines.h`: `UniqueLiveObjectPtr` from `Utils\Src\Utils\LiveObjectPtr.h`, with the `RenderSceneLifetime` policy). Whoever made the object keeps the handle and destroys the object through it (`DestroyRenderObject(handle)` empties it).
+`CreateRenderObject`, `CreateLightObject` and `CreateReflectionProbe` return a **`RenderObjectPtr`** / **`LightObjectPtr`** / **`ReflectionProbeObjectPtr`** (`Graphics\GraphicsDefines.h`: `UniqueLiveObjectPtr` from `Utils\Src\Utils\LiveObjectPtr.h`, with the `RenderSceneLifetime` policy). Whoever made the object keeps the handle and destroys the object through it (`DestroyRenderObject(handle)` empties it).
 
-- **Move-only**, so each object has one holder (`RenderComponent`, `LightComponent`). Code that only looks at an object borrows the holder's handle by reference, e.g. `RenderComponent::GetRenderObject()` returns `const RenderObjectPtr&`.
-- **Lifetime-checked**, like `GameObjectPtr`. Each object takes a 64-bit ID that's never handed out twice (`RenderSceneLifetime`: one `LiveIDAllocator` shared by render objects and lights, made on first use and never destroyed; see [Handles](../03-SceneAndGameObjects/Scene-And-GameObject-Model.md#handles-gameobjectptr-and-gameobjectcomponentptrt)). A handle compares equal to `nullptr` once its object is gone, however it went: destroyed through the handle, `ClearObjects`, or the scene being destroyed. Debug builds assert if a dead handle is dereferenced, and destroying through a dead handle just empties it.
+- **Move-only**, so each object has one holder (`RenderComponent`, `LightComponent`, `ReflectionProbeComponent`). Code that only looks at an object borrows the holder's handle by reference, e.g. `RenderComponent::GetRenderObject()` returns `const RenderObjectPtr&`.
+- **Lifetime-checked**, like `GameObjectPtr`. Each object takes a 64-bit ID that's never handed out twice (`RenderSceneLifetime`: one `LiveIDAllocator` shared by render objects, lights and reflection probes, made on first use and never destroyed; see [Handles](../03-SceneAndGameObjects/Scene-And-GameObject-Model.md#handles-gameobjectptr-and-gameobjectcomponentptrt)). A handle compares equal to `nullptr` once its object is gone, however it went: destroyed through the handle, `ClearObjects`, or the scene being destroyed. Debug builds assert if a dead handle is dereferenced, and destroying through a dead handle just empties it.
 
 `RenderEngine` doesn't own a scene. `SetMainScene(scene)` says which one the main view shows; `RZE_Engine` sets it to the active `GameScene`'s. `RenderEngine::DrawLine` / `DrawWireBox` draw into the main scene, for tools that draw over the main view (the editor's grid and gizmos).
 
@@ -81,7 +84,7 @@ flowchart TD
     SRS(["ShadowRenderStage"])
     SLD[/"SceneLightingData<br/>LightBuffer, ShadowBuffer,<br/>sun's map, point light cubes"/]
     FRS(["ForwardRenderStage"])
-    SH["Lighting.hlsli: per light, the type picks<br/>direction, falloff and shadow lookup;<br/>the BRDF is shared"]
+    SH["LightResources.hlsli:<br/>per light, the type picks<br/>direction, falloff and<br/>shadow lookup<br/>Lighting.hlsli: the BRDF"]
 
     LC -->|"Update: position, direction from the transform"| LO
     LO --> SRS
@@ -90,9 +93,13 @@ flowchart TD
     FRS --> SH
 ```
 
-**Point light falloff.** `strength × f(distance / range)`, with `f(x) = (1 − x⁴)² / (1 + 8x²)`: inverse square, but over the fraction of the range rather than metres, so a longer range reaches further instead of only moving where a physically faded light is cut off. Strength is the brightness right next to the light. `LightObject::CalculatePointFalloff` is the same function on the CPU, for the editor's gizmo; its constant (`k_pointFalloffSharpness`) mirrors `PointFalloffSharpness` in `Lighting.hlsli`.
+**Point light falloff.** `strength × f(distance / range)`, with `f(x) = (1 − x⁴)² / (1 + 8x²)`: inverse square, but over the fraction of the range rather than metres, so a longer range reaches further instead of only moving where a physically faded light is cut off. Strength is the brightness right next to the light. `LightObject::CalculatePointFalloff` is the same function on the CPU, for the editor's gizmo; its constant (`k_pointFalloffSharpness`) mirrors `PointFalloffSharpness` in `Common/LightResources.hlsli`.
 
-**Where a point light outshines the ambient light.** `LightObject::CalculateOutshinesAmbientRatio(strength, colour)` is the fraction of the range within which the light lights a surface facing it more than the ambient light does (the sky and ground halfway, as a wall gets them). It grows with strength, up to 1, and is 0 for a light dimmer than the ambient light even next to it. The editor draws it as the inner range sphere. The ambient colours (`k_ambientSky`, `k_ambientGround`) mirror `AmbientSky` and `AmbientGround` in `Lighting.hlsli`.
+**Where a point light outshines the ambient light.** `LightObject::CalculateOutshinesAmbientRatio(strength, colour)` is the fraction of the range within which the light lights a surface facing it more than the ambient light does (the sky and ground halfway, as a wall gets them). It grows with strength, up to 1, and is 0 for a light dimmer than the ambient light even next to it. The editor draws it as the inner range sphere. The ambient colours (`k_ambientSky`, `k_ambientGround`) mirror `AmbientSky` and `AmbientGround` in `Common/LightResources.hlsli`, the sky's colours, which only light surfaces directly where no irradiance probe has been lit.
+
+### `ReflectionProbeObject`
+
+A point that captures its surroundings for glossy surfaces to reflect, and the box it's used in: centred on it, along the world's axes, sized to the room so reflections can be projected onto its sides. `ReflectionProbeComponent` (Size, Blend Distance) places one at its object's position; the editor shows it as a shiny-ball icon with its box. Like a light, it has no GPU resources of its own; `ReflectionProbeStage` keeps a scene's together ([Render-Stages.md](Render-Stages.md#reflectionprobestage)). It's given the scene's revision counter when it's made, and moving or resizing it advances it, so its captures can tell they're out of date (`GetRevision()`).
 
 ## Views
 
@@ -102,12 +109,16 @@ A **`RenderView`** is one point of view to render the scene from. Its owner fill
 class RenderView
 {
 public:
-    RenderCamera Camera;                     // ClipSpace (projection * view), Position; mirrors the shaders' CameraBuffer
+    RenderCamera Camera;                     // ClipSpace (projection * view), Position, then Projection alone;
+                                             // the shaders' CameraBuffer reads up to Position
     Vector2D ViewportSize;
     Rendering::RenderTargetTexture* Target;  // owned by whoever owns the view
     bool AutoExposure = true;                // off for a fixed exposure of 1, for lighting whose brightness is known
     float ExposureCompensation;              // EV on top of the exposure
     EAntiAliasing AntiAliasing = Medium;     // FXAA after tonemapping: Off, Low, Medium or High
+    EAmbientOcclusion AmbientOcclusion = Medium; // GTAO: Off, Low, Medium or High
+    bool GlobalIllumination = true;          // indirect light from the scene's probes; off for the hemisphere ambient
+    ERenderViewDebug Debug = Lit;            // Lit, or one part of the lighting alone: AmbientOcclusion, IndirectDiffuse
     ERenderViewLighting Lighting = Scene;    // Scene: the scene's light and sky. Uniform: even, ignoring the light
     bool DrawsDebug = true;                  // debug lines; off for clean captures such as thumbnails
     std::optional<RenderPickRequest> Pick;   // Editor picking (clicks, drops); cleared after each render
@@ -132,7 +143,8 @@ flowchart LR
     end
 ```
 
-- `GetMainView()` returns the main view. The app sets its `Target` and `ViewportSize` (the Editor sizes it to the scene view panel); the active scene's main camera fills in `Camera` every frame.
+- `GetMainView()` returns the main view. The app sets its `Target` and `ViewportSize` (the Editor sizes it to the scene view panel); the active scene's main camera fills in `Camera` every frame. Engine.ini's `[Rendering]` sets its `AntiAliasing`, `AmbientOcclusion`, `GlobalIllumination` and `AutoExposure` at start-up, and the Editor's Scene View settings change them, and `Debug`, while it runs.
+- A camera that renders a view fills in `RenderCamera::Projection` as well as `ClipSpace` (`CameraComponent`, `EditorCameraComponent`, `MeshFraming`). A view without a perspective projection there gets no ambient occlusion.
 - `RenderSecondaryView(name, view, scene)` renders a scene into another view as part of the current frame. `CameraComponent` uses this for the "Camera View" preview it draws in the Editor's inspector (`CameraComponent::RenderPreview`, called by the camera's `Preview` property each frame the inspector shows it), so a preview is only rendered while that camera is selected. Stages marked `MainOnly` (picking, ImGui, the final blit) skip secondary views.
 
 ## Capturing a view to a file
@@ -151,6 +163,7 @@ flowchart TD
 
 - `Capture` returns the `AsyncOperation` that writes the file. The image is read back from the commands queued so far, so another capture can follow in the same frame.
 - **No debug lines** (grid, frustums, bounds boxes): its view has `DrawsDebug` off.
+- Its view has `GlobalIllumination` off: one frame is too few for probes to capture and settle, so a capture lights with the hemisphere ambient, and the scene doesn't get probe textures it would only use once.
 - `ViewCaptureSettings` sets the view's `Lighting`, `AutoExposure` and `ExposureCompensation` for each capture. The defaults light and expose like any other view. Mesh thumbnails use `Uniform` lighting with auto-exposure off ([Thumbnails-And-File-Browser.md](../07-Editor/Thumbnails-And-File-Browser.md#a-run)).
 - `TextureFile` (`Engine\Src\Graphics\TextureFile.h/.cpp`) wraps `stb_image_write`. `WritePNG(file, width, height, rgba)` is safe from any thread. It creates the folder, writes the PNG beside the file and moves it over the file (`File::MoveReplacing`), so readers only ever see a whole image. `SaveToPNG(texture, file)` is the GPU-to-file path above. Its operation is `Background | Hidden`, since whoever asked for the capture reports on it.
 
@@ -168,9 +181,9 @@ sequenceDiagram
     Note over Main,RE: game objects update<br/>(transforms, camera, debug lines)
     Main->>RE: Render("Main Render")
     RE->>R: BeginFrame
-    RE->>PL: Render(main view, main scene)
+    RE->>PL: Render(main view, main scene, frame index)
     PL->>R: each stage queues draw commands
-    RE->>RE: clear the main scene's debug lines and the pick request
+    RE->>RE: next frame index, then clear the main scene's<br/>debug lines and the pick request
     RE->>R: EndFrame
     Main->>RE: Finish()
     RE->>R: DevicePresent()
@@ -179,6 +192,8 @@ sequenceDiagram
 ```
 
 Nothing touches D3D11 on the game thread; every `Renderer::` call just queues a command for the render thread (see [Low-Level-Renderer-Module.md](Low-Level-Renderer-Module.md)).
+
+Every render gets the frame's index (`RenderContext::FrameIndex`), the same for each view in the frame: secondary views render before the main view, and the index moves on after it. Stages use it to do a scene's work once a frame, whichever view draws it first (the probes).
 
 ## API summary
 
@@ -191,6 +206,7 @@ Nothing touches D3D11 on the game thread; every `Renderer::` call just queues a 
 | Stages | `AddRenderStage<T>(args...)` (see [Render-Stages.md](Render-Stages.md)) |
 | Stats | `GetStats()` (`RenderStats`, main thread only): per frame, the time recording every view's render stages, each stage's part of it (`RenderStageTime`, from `RenderPipeline::TakeStageTimes()`), and draw calls not counting the UI's. Averaged over a `StatsWindow`; a frame runs from one `Render()` to the next, and the window is updated as `Render()` starts, before recording. The Editor's status bar shows them. |
 | Views & canvas | `GetMainView()`, `ResizeCanvas(size)`, `GetCanvasSize()` |
+| Probe budgets | `GetGlobalIlluminationSettings()` / `SetGlobalIlluminationSettings(settings)`: `GlobalIlluminationSettings` (`Graphics/GlobalIllumination.h`), the probe count and the capture and relight budgets for every scene, from Engine.ini's `[Rendering]` `ProbeTargetCount`, `ProbeCaptureDrawBudget` and `ProbeRelightBudget`. `IrradianceProbeStage` reads them each frame. |
 
 Both object containers erase with swap-and-pop (`ContainerUtils::VectorEraseBack`), since their order doesn't matter.
 
@@ -200,11 +216,13 @@ Both object containers erase with swap-and-pop (`ContainerUtils::VectorEraseBack
 - `Engine\Src\Graphics\RenderScene.h/.cpp` — `RenderScene` (and `RenderSceneLifetime`'s ID allocator)
 - `Engine\Src\Graphics\RenderObject.h/.cpp` — `RenderObject`
 - `Engine\Src\Graphics\LightObject.h/.cpp` — `LightObject`, `ELightType`
+- `Engine\Src\Graphics\ReflectionProbeObject.h/.cpp` — `ReflectionProbeObject`, and `Engine\Src\Game\World\GameObjectComponents\ReflectionProbeComponent.h/.cpp`, the component that places one
+- `Engine\Src\Graphics\GlobalIllumination.h` — `GlobalIlluminationSettings`
 - `Engine\Src\Graphics\DebugLine.h` — `DebugLine`, `DebugLineFade`
 - `Engine\Src\Graphics\SceneChangeLog.h/.cpp` — where a scene's render objects changed, by revision
 - `Engine\Src\Game\World\GameObjectComponents\LightComponent.h/.cpp` — the component that drives a `LightObject` ([Built-In-Components.md](../03-SceneAndGameObjects/Built-In-Components.md#lightcomponent))
-- `Engine\Src\Graphics\RenderView.h` — `RenderView`, `RenderCamera`, `RenderPickRequest`
+- `Engine\Src\Graphics\RenderView.h` — `RenderView`, `RenderCamera`, `RenderPickRequest`, `ERenderViewDebug`
 - `Engine\Src\Graphics\ViewCapture.h/.cpp`, `TextureFile.h/.cpp` — capturing a view to a PNG
 - `Utils\Src\Utils\Math\Frustum.h/.cpp` — the six-plane view frustum used for culling and marquee selection (see [Utils-Library-Reference.md](../06-Platform-And-Infrastructure/Utils-Library-Reference.md))
-- `Engine\Src\Graphics\GraphicsDefines.h` — `RenderSceneLifetime` and the `RenderObjectPtr` / `LightObjectPtr` aliases, move-only and lifetime-checked
+- `Engine\Src\Graphics\GraphicsDefines.h` — `RenderSceneLifetime` and the `RenderObjectPtr` / `LightObjectPtr` / `ReflectionProbeObjectPtr` aliases, move-only and lifetime-checked
 - `Engine\Src\Graphics\GraphicsLayouts.h` — the shader buffer layouts the render stages share: lights and shadows (`GraphicsLayouts::LightLayout`, `GraphicsLayouts::ShadowBufferLayout`, ...), an object's matrices (`ObjectBufferLayout`) and a material's parameters (`MaterialBufferLayout`) (see [Render-Stages.md](Render-Stages.md#shadowrenderstage))

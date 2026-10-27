@@ -10,7 +10,7 @@ This is a self-contained, DirectX 11–backed rendering library, deliberately de
 - `RenderCommand.h` — `RenderCommandType` (an `enum class`) + one POD struct per command, all deriving `RenderCommand`.
 - `MemArena.h` / `.cpp` — the frame-scoped bump allocator backing every render command.
 - `BufferHandle.h`/`.cpp`, `ShaderHandle.h` — opaque `shared_ptr`-wrapping handle types.
-- `Driver/` — hardware abstraction interfaces (`IGFXDevice`, `IVertexBuffer`/`IIndexBuffer`/`IConstantBuffer`/`ITextureBuffer2D`, `IVertexShader`/`IPixelShader`) plus the concrete `Driver/DX11/` implementations (`DX11Device`, `DX11VertexBuffer`, `DX11IndexBuffer`, `DX11ConstantBuffer`, `DX11TextureBuffer2D`, `DX11VertexShader`/`DX11PixelShader`, `DX11TypeConversion`).
+- `Driver/` — hardware abstraction interfaces (`IGFXDevice`, `IVertexBuffer`/`IIndexBuffer`/`IConstantBuffer`/`ITextureBuffer2D`, `IVertexShader`/`IPixelShader`/`IComputeShader`) plus the concrete `Driver/DX11/` implementations (`DX11Device`, `DX11VertexBuffer`, `DX11IndexBuffer`, `DX11ConstantBuffer`, `DX11TextureBuffer2D`, `DX11VertexShader`/`DX11PixelShader`/`DX11ComputeShader`, `DX11TypeConversion`).
 - `Graphics/` — `RenderTarget.h/.cpp` (`RenderTargetTexture`, used by both Editor and Game as their "screen" surface) and `Texture.h/.cpp` (`TexturePack`, a texture-array abstraction).
 
 ## The command-buffer render thread pattern
@@ -110,10 +110,11 @@ gantt
 | Group | Commands |
 |---|---|
 | Frame / pass | `BeginFrame`, `EndFrame`, `Begin`, `End`, `DevicePresent`, `HandleWindowResize`, `SetSyncInterval`, `ImGuiRender` |
-| Create | `CreateVertexBuffer` (static or dynamic), `CreateIndexBuffer`, `CreateConstantBuffer`, `CreateTextureBuffer2D`, `CreateVertexShader`, `CreatePixelShader` |
-| Update / release | `UploadDataToBuffer`, `UpdateVertexBuffer`, `ReleaseVertexShader`, `ReleasePixelShader`, `GenerateMips` |
+| Create | `CreateVertexBuffer` (static or dynamic), `CreateIndexBuffer`, `CreateConstantBuffer`, `CreateTextureBuffer2D`, `CreateVertexShader`, `CreatePixelShader`, `CreateComputeShader` |
+| Update / release | `UploadDataToBuffer`, `UpdateVertexBuffer`, `ReleaseVertexShader`, `ReleasePixelShader`, `ReleaseComputeShader`, `GenerateMips`, `CopyTexture`, `CopyTextureRegion` |
 | Targets | `SetRenderTargetBackBuffer`, `SetColourTarget` (colour, optionally with depth), `SetDepthTarget` (depth only, e.g. shadow maps; a slice of a texture array), `ClearRenderTarget`, `ClearRenderTargets`, `ClearDepthStencilBuffer`, `ClearDepthStencilSlice` |
-| Pipeline state | `SetViewport`, `SetInputLayout`, `SetPrimitiveTopology`, `SetRasterizerState`, `SetBlendState`, `SetVertexShader`, `SetPixelShader`, `SetConstantBufferVS`, `SetConstantBufferPS`, `SetVertexBuffer`, `SetIndexBuffer`, `SetTextureResource`, `UnsetTextureResource` |
+| Pipeline state | `SetViewport`, `SetInputLayout`, `SetPrimitiveTopology`, `SetRasterizerState`, `SetBlendState`, `SetDepthState`, `SetVertexShader`, `SetPixelShader`, `UnsetPixelShader`, `SetConstantBufferVS`, `SetConstantBufferPS`, `SetVertexBuffer`, `SetIndexBuffer`, `SetTextureResource`, `UnsetTextureResource` |
+| Compute | `SetComputeShader`, `SetConstantBufferCS`, `SetTextureResourceCS`, `UnsetTextureResourceCS`, `SetUnorderedAccess`, `UnsetUnorderedAccess`, `Dispatch` |
 | Draw | `Draw`, `DrawIndexed`, `DrawFullScreenQuad` |
 | Readback | `ReadTexel`, `ReadTexture` |
 
@@ -127,7 +128,7 @@ The copy is a `UIFrameData` (`UIFrameData.h`), shared by `Renderer` and every `R
 
 ## Handle types (`BufferHandle.h`, `ShaderHandle.h`)
 
-`VertexBufferHandle`, `IndexBufferHandle`, `ConstantBufferHandle`, `TextureBuffer2DHandle`/`RenderTargetHandle`, `VertexShaderHandle`, `PixelShaderHandle` — thin `shared_ptr`-wrapping types with **private constructors**, friended only to `Renderer`/`RenderThread`. Game/engine code can hold and pass these around freely but can never construct one itself or reach into the underlying DX11 object — this is the opaque-handle idiom used consistently across RZE (see also `GameObjectPtr`/`RenderObjectPtr` in the Engine layer).
+`VertexBufferHandle`, `IndexBufferHandle`, `ConstantBufferHandle`, `TextureBuffer2DHandle`/`RenderTargetHandle`, `VertexShaderHandle`, `PixelShaderHandle`, `ComputeShaderHandle` — thin `shared_ptr`-wrapping types with **private constructors**, friended only to `Renderer`/`RenderThread`. Game/engine code can hold and pass these around freely but can never construct one itself or reach into the underlying DX11 object — this is the opaque-handle idiom used consistently across RZE (see also `GameObjectPtr`/`RenderObjectPtr` in the Engine layer).
 
 ## Public `Renderer` API surface
 
@@ -138,13 +139,27 @@ Everything is a static call on `Rendering::Renderer`, and every call only *queue
 | Lifetime | `Initialize`, `Shutdown`, `HandleWindowResize` |
 | Presenting | `SetSyncInterval(interval)` (vsync), `WaitForPresentSlot(timeoutMS)` (blocks until the swap chain can queue another frame; false on timeout, e.g. while minimised). See [the swap chain](#the-swap-chain-and-vsync). |
 | Frame and passes | `BeginFrame` / `EndFrame`, `Begin(name)` / `End()` (one pass; also resets the rasterizer state and names the pass for PIX), `DevicePresent`, `Submit` (the hand-off without a present), `ImGuiRender`, `KeepTextureForUI` |
-| Resources | `CreateVertexBuffer`, `CreateDynamicVertexBuffer` + `UpdateVertexBuffer`, `CreateIndexBuffer`, `CreateConstantBuffer`, `CreateTextureBuffer2D(params)` (empty, e.g. a render target) / `CreateTextureBuffer2D(TexelBuffer&&, params)`, `CreateVertexShader`, `CreatePixelShader`, `Release*Shader`, `UploadDataToBuffer<T>` (copies the data, so a stack variable is fine), `GenerateMips` |
+| Resources | `CreateVertexBuffer`, `CreateDynamicVertexBuffer` + `UpdateVertexBuffer`, `CreateIndexBuffer`, `CreateConstantBuffer`, `CreateTextureBuffer2D(params)` (empty, e.g. a render target) / `CreateTextureBuffer2D(TexelBuffer&&, params)`, `CreateVertexShader`, `CreatePixelShader`, `CreateComputeShader`, `Release*Shader`, `UploadDataToBuffer<T>` (copies the data, so a stack variable is fine), `GenerateMips` |
+| Copies | `CopyTexture(source, destination)` (every slice and mip; the two must match in size, format, slices and mips, e.g. keeping last frame's probe lighting), `CopyTextureRegion(source, x, y, width, height, destination, x, y)` (a rectangle of mip 0's first slice, between textures of one format, e.g. a probe's capture into its scene's atlas) |
 | Targets | `SetColourTarget(colour[, depth])`, `SetDepthTarget(depth, slice = 0)` (one slice of a texture array, e.g. a cube face), `ClearRenderTargets` (unbinds every target, e.g. so one can be read from next), `SetRenderTargetBackBuffer`, `ClearRenderTarget`, `ClearDepthStencilBuffer` (every slice of an array), `ClearDepthStencilSlice(depth, slice)` (one slice, e.g. one light's cube faces, leaving the rest) |
-| State | `SetViewport`, `SetInputLayout`, `SetPrimitiveTopology`, `SetRasterizerState` (`Default` = back-face culling, `ShadowCaster` = no culling + slope-scaled depth bias), `SetBlendState` (`Opaque` = no blending, `AlphaBlend` = source alpha over the target, leaving the target's alpha unchanged), shaders, constant buffers, vertex/index buffers, texture slots |
+| State | `SetViewport`, `SetInputLayout`, `SetPrimitiveTopology`, `SetRasterizerState` (`Default` = back-face culling, `ShadowCaster` = no culling + slope-scaled depth bias, `NoCull` = no culling or bias, for probe captures, which tell back faces apart), `SetBlendState` (`Opaque` = no blending, `AlphaBlend` = source alpha over the target, leaving the target's alpha unchanged, and `Premultiplied`, `Additive`, `Multiply`), `SetDepthState` (`ReadWrite`, `ReadOnly`, `ReadOnlyLessEqual` = tests equal-or-nearer without writing, for drawing over the depth prepass, `Off`; stays bound, so set it back to `ReadWrite`), shaders (`UnsetPixelShader` draws depth only), constant buffers, vertex/index buffers, texture slots |
+| Compute | `SetComputeShader`, `SetConstantBufferCS`, `SetTextureResourceCS` / `UnsetTextureResourceCS`, `SetUnorderedAccess(texture, slot, mip = 0)` / `UnsetUnorderedAccess(slot)`, `Dispatch(groupsX, groupsY = 1, groupsZ = 1)` ([below](#compute-shaders-and-unordered-access)) |
 | Draw | `Draw`, `DrawIndexed`, `DrawFullScreenQuad` |
 | Readback | `ReadTexel`, `ReadTexture` (below) |
 
-Texture formats (`ETextureFormat`): `RGBA8_UNORM` (default), `RGBA16_FLOAT` (HDR scene colour), `RG16_FLOAT`, `R32_UINT` (integer IDs), `RG32_UINT` (64-bit integer IDs as two halves, low then high; the pick target). Depth textures are `D24_UNORM_S8_UINT`, with an optional shader-readable view.
+Texture formats (`ETextureFormat`): `RGBA8_UNORM` (default), `RGBA16_FLOAT` (HDR scene colour), `RG16_FLOAT`, `R32_UINT` (integer IDs), `RG32_UINT` (64-bit integer IDs as two halves, low then high; the pick target, and probe captures' packed surfaces), and single channels: `R8_UNORM` (ambient occlusion), `R16_FLOAT` and `R32_FLOAT` (linear depth). Depth textures are `D24_UNORM_S8_UINT`, with an optional shader-readable view.
+
+A texture always has a shader resource view. Only a render target (`bIsRenderTarget`) gets a render target view and has its mips generated (`GenerateMips`; never for the integer formats); `bIsUnorderedAccess` gives it a view per mip that compute shaders can write.
+
+Pixel and compute shaders get the same samplers: `s0`, linear and wrapping, is bound with each texture; every `Begin()` binds `s1`, the shadow maps' comparison sampler, and `s2`, linear with clamped edges, for screen-sized and probe textures whose edges mustn't wrap.
+
+### Compute shaders and unordered access
+
+`CreateComputeShader(path)` compiles a `.hlsl` file's `CSMain` for `cs_5_0`. A failed compile logs its errors and leaves the shader empty, so its dispatches do nothing. Compute has its own slots: `SetConstantBufferCS`, `SetTextureResourceCS` for reading, and `SetUnorderedAccess(texture, slot, mip)` for writing one mip of a texture, every slice of it, as a `RWTexture2D` (or `RWTexture2DArray`) at `u<slot>`. `Dispatch` runs the bound shader over thread groups.
+
+- **One binding at a time.** D3D11 won't bind a texture to be read and written at once: binding it one way silently unbinds it the other. A pass unsets what it wrote (`UnsetUnorderedAccess`) before the next reads it, and unsets what it read before writing it.
+- **Typed loads.** A shader can only read from an unordered-access texture for `R32_UINT` and `R32_FLOAT` formats; others are write-only, so passes that read and write (the probes' relighting) read last frame's copy as a texture instead (`CopyTexture`).
+- Ambient occlusion, the probes' lighting and visibility, and the reflection probes' cubes are made this way ([Render-Stages.md](Render-Stages.md)).
 
 ### Texture arrays and cube maps
 
@@ -158,11 +173,11 @@ Texture formats (`ETextureFormat`): `RGBA8_UNORM` (default), `RGBA16_FLOAT` (HDR
 | 6 × N | yes | `TextureCubeArray` |
 
 - A depth array has a view per slice (`GetDepthSliceView(slice)`), so `SetDepthTarget(texture, slice)` renders into one slice, e.g. a shadow cube's face. `GetDepthView()` covers every slice, so clearing clears them all. A single texture keeps exactly the views it had.
-- A colour array has one render target view over all its slices; there's no per-slice colour target yet, since nothing renders into one (probe capture would).
+- A colour array has one render target view over all its slices, and no per-slice target. Nothing renders into one slice: probes capture into one 2D atlas a face per viewport, and compute writes the slices of the reflection cubes and the probes' textures through unordered access.
 - It asserts that a cube's slice count is a multiple of 6, that an array isn't multisampled, and that one isn't made with texels (only the first slice would be filled).
 - The device is created at the highest feature level the GPU has (11_0 on anything current); cube arrays need 10.1.
 
-Point light shadows are the first user ([Render-Stages.md](Render-Stages.md#shadowrenderstage)). The same support serves skyboxes, environment lighting, reflection probes and cascaded sun shadows later.
+Point light shadows use it ([Render-Stages.md](Render-Stages.md#shadowrenderstage)), and reflection probes keep a scene's cubes in one cube array, mipped by roughness ([Render-Stages.md](Render-Stages.md#reflectionprobestage)). The same support serves skyboxes and cascaded sun shadows later.
 
 ### Reusable dynamic buffers (`Engine\Src\Graphics\DynamicVertexBuffer.h`)
 
@@ -180,7 +195,7 @@ static void ReadTexel(const TextureBuffer2DHandle& texture, U32 x, U32 y, std::s
 static void ReadTexture(const TextureBuffer2DHandle& texture, std::shared_ptr<TextureReadback> result);
 ```
 
-- **`ReadTexel`** copies one texel, of up to 8 bytes, into `TexelReadback::Value` (`Rendering\TexelReadback.h`), a U64 filled from the low bytes up. It reads as many bytes as the texture's format has (`GetBytesPerTexel`): 8 for the pick stage's `RG32_UINT` ID target, 4 for a shader-readable `D24_UNORM_S8_UINT` depth texture. D3D only copies a depth texture whole, so one must be 1×1, like the pick stage's.
+- **`ReadTexel`** copies one texel, of up to 8 bytes, into `TexelReadback::Value` (`Rendering\TexelReadback.h`), a U64 filled from the low bytes up. It reads as many bytes as the texture's format has (`GetBytesPerTexel`): 8 for the pick stage's `RG32_UINT` ID target and `RGBA16_FLOAT`, 4 for a shader-readable `D24_UNORM_S8_UINT` depth texture and the other 32-bit formats, 2 for `R16_FLOAT`, 1 for `R8_UNORM`. D3D only copies a depth texture whole, so one must be 1×1, like the pick stage's.
 - **`ReadTexture`** copies the whole of mip 0 into `TextureReadback` (`Rendering\TextureReadback.h`): `Width`, `Height`, `BytesPerTexel` and `Data`, rows from the top, tightly packed. It copies row by row, since the GPU's row pitch can be wider than a row. `TextureFile::SaveToPNG` uses it to save captures ([Engine-Graphics-Layer.md](Engine-Graphics-Layer.md#capturing-a-view-to-a-file)).
 
 Both go through one helper on the render thread: it creates a `D3D11_USAGE_STAGING` texture the size of the region, `CopySubresourceRegion`s into it (with no box when the region is the whole texture, as D3D requires for depth textures), `Map`s it, and hands back the rows with their pitch. The result's `IsReady` is set at the end; callers poll it from any thread, and it's true once the render thread has processed that frame's commands. `Map` waits for the GPU to finish drawing the texture, so these are for occasional reads such as the Editor's click picking (`PickRenderStage`) or saving a thumbnail, not per-frame use.
@@ -204,6 +219,7 @@ Both go through one helper on the render thread: it creates a `D3D11_USAGE_STAGI
 - `Modules\Rendering\Src\Rendering\TexelReadback.h`, `TextureReadback.h`
 - `Modules\Rendering\Src\Rendering\MemArena.h/.cpp`
 - `Modules\Rendering\Src\Rendering\BufferHandle.h/.cpp`, `ShaderHandle.h`
-- `Modules\Rendering\Src\Rendering\Driver\GFXDevice.h`, `GFXBuffer.h`, `ShaderTypes.h`, `TypeDefines.h`
+- `Modules\Rendering\Src\Rendering\RenderingDefines.h` — the rasterizer, blend and depth states, `ViewportParams`
+- `Modules\Rendering\Src\Rendering\Driver\GFXDevice.h`, `GFXBuffer.h` (`ETextureFormat`, `GFXTextureBufferParams`), `ShaderTypes.h`, `TypeDefines.h`
 - `Modules\Rendering\Src\Rendering\Driver\DX11\DX11Device.h/.cpp` (+ sibling DX11* files): the device, swap chain, and the blend, depth and rasterizer states each enum asks for (`GetBlendState`, `GetDepthState`, `GetRasterizerState`)
 - `Modules\Rendering\Src\Rendering\Graphics\RenderTarget.h/.cpp`, `Texture.h/.cpp`

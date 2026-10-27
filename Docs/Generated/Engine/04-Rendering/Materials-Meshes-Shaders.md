@@ -176,4 +176,4 @@ A `Texture2D` hands its texels to the upload as a `TexelBuffer`, so the upload f
 - `Engine\Src\Graphics\RenderObject.h/.cpp` (`RenderObject`)
 - `Engine\Src\Graphics\Shader.h/.cpp`, `Texture2D.h/.cpp`, `VertexBuffer.h/.cpp`, `IndexBuffer.h/.cpp`
 - `Engine\Src\Game\StaticMeshResource.h/.cpp`
-- `Assets\Shaders\Common\PixelResources.hlsli`, `Lighting.hlsli`, and the three `Pixel_*NewRenderer*.hlsl`
+- `Assets\Shaders\Common\PixelResources.hlsli` (the material, and through its includes the lights, shadows and probes: `LightResources.hlsli`, `IrradianceVolume.hlsli`, `ReflectionProbes.hlsli`), `Lighting.hlsli`, and the three `Pixel_*NewRenderer*.hlsl`
