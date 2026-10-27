@@ -81,13 +81,22 @@ namespace Editor
 		}
 
 		ImGui::AlignTextToFramePadding();
-		ImGui::TextUnformatted("Show ambient occlusion");
-		ImGui::SetItemTooltip("Shows the ambient occlusion alone instead of the lit scene: white where nothing occludes, darker in creases.");
+		ImGui::TextUnformatted("Show");
+		ImGui::SetItemTooltip("What the scene view shows: the lit scene, or one part of its lighting alone. Ambient occlusion is white where nothing occludes; indirect light is what the probes or the sky would put on a white surface.");
 		ImGui::SameLine(optionsX);
-		bool showsAmbientOcclusion = mainView.Debug == ERenderViewDebug::AmbientOcclusion;
-		if (ImGui::Checkbox("##ShowAmbientOcclusion", &showsAmbientOcclusion))
+		ImGui::Dummy(ImVec2(0.0f, 0.0f));
+		struct DebugOption
 		{
-			mainView.Debug = showsAmbientOcclusion ? ERenderViewDebug::AmbientOcclusion : ERenderViewDebug::Lit;
+			const char* Label;
+			ERenderViewDebug Debug;
+		};
+		for (const DebugOption& option : { DebugOption{ "Lit", ERenderViewDebug::Lit }, DebugOption{ "Ambient occlusion##Show", ERenderViewDebug::AmbientOcclusion }, DebugOption{ "Indirect light", ERenderViewDebug::IndirectDiffuse } })
+		{
+			ImGui::SameLine();
+			if (ImGui::RadioButton(option.Label, mainView.Debug == option.Debug))
+			{
+				mainView.Debug = option.Debug;
+			}
 		}
 
 		ImGui::AlignTextToFramePadding();

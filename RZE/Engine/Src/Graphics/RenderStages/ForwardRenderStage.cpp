@@ -20,14 +20,18 @@
 
 namespace
 {
-	// Must match LightBuffer / ShadowBuffer / ViewLightingBuffer / ShadowMap / PointShadowCubes / AmbientOcclusionMap
-	// registers in Common/PixelResources.hlsli
+	// Must match LightBuffer / ShadowBuffer / ViewLightingBuffer / IrradianceVolume / ShadowMap / PointShadowCubes /
+	// AmbientOcclusionMap / ProbeSH registers in Common/PixelResources.hlsli and the files it includes
 	constexpr U32 k_lightBufferSlot = 2;
 	constexpr U32 k_shadowBufferSlot = 3;
 	constexpr U32 k_viewLightingBufferSlot = 4;
+	constexpr U32 k_irradianceVolumeSlot = 5;
 	constexpr U32 k_shadowMapSlot = 5;
 	constexpr U32 k_pointShadowCubesSlot = 6;
 	constexpr U32 k_ambientOcclusionSlot = 7;
+	constexpr U32 k_probeSHRedSlot = 8;
+	constexpr U32 k_probeSHGreenSlot = 9;
+	constexpr U32 k_probeSHBlueSlot = 10;
 }
 
 void ForwardRenderStage::Initialize()
@@ -50,6 +54,7 @@ void ForwardRenderStage::Setup(RenderStageBuilder& builder)
 	m_sceneLightingInput = builder.Reads<SceneLightingData>();
 	m_sceneDepthInput = builder.Reads<SceneDepthData>();
 	m_ambientOcclusionInput = builder.Reads<AmbientOcclusionData>();
+	m_sceneIrradianceInput = builder.Reads<SceneIrradianceData>();
 	m_sceneColourOutput = builder.Writes<SceneColourData>();
 }
 
@@ -81,6 +86,7 @@ void ForwardRenderStage::Render(RenderContext& context)
 
 	GraphicsLayouts::ViewLightingLayout viewLighting;
 	viewLighting.UniformLighting = view.Lighting == ERenderViewLighting::Uniform ? 1.0f : 0.0f;
+	viewLighting.ShowIndirectDiffuse = view.Debug == ERenderViewDebug::IndirectDiffuse ? 1.0f : 0.0f;
 	Rendering::Renderer::UploadDataToBuffer<GraphicsLayouts::ViewLightingLayout>(m_viewLightingBuffer, &viewLighting);
 
 	Rendering::Renderer::SetVertexShader(m_vertexShader->GetPlatformObject());
@@ -96,6 +102,11 @@ void ForwardRenderStage::Render(RenderContext& context)
 	Rendering::Renderer::SetTextureResource(sceneLightingData.PointShadowCubes, k_pointShadowCubesSlot);
 	const AmbientOcclusionData& ambientOcclusion = m_ambientOcclusionInput.Get(context);
 	Rendering::Renderer::SetTextureResource(ambientOcclusion.Visibility, k_ambientOcclusionSlot);
+	const SceneIrradianceData& irradiance = m_sceneIrradianceInput.Get(context);
+	Rendering::Renderer::SetConstantBufferPS(irradiance.VolumeBuffer, k_irradianceVolumeSlot);
+	Rendering::Renderer::SetTextureResource(irradiance.SHRed, k_probeSHRedSlot);
+	Rendering::Renderer::SetTextureResource(irradiance.SHGreen, k_probeSHGreenSlot);
+	Rendering::Renderer::SetTextureResource(irradiance.SHBlue, k_probeSHBlueSlot);
 
 	// The same for every draw: bound once, and only the world matrix buffer's contents change per object
 	Rendering::Renderer::SetConstantBufferPS(sceneLightingData.LightBuffer, k_lightBufferSlot);
@@ -176,10 +187,13 @@ void ForwardRenderStage::Render(RenderContext& context)
 	Rendering::Renderer::SetDepthState(Rendering::EDepthState::ReadWrite);
 
 	// The shadow maps can't stay bound as shader inputs while the next frame renders depth into them, nor the ambient
-	// occlusion while the next frame's is written
+	// occlusion and the probes while the next frame's are written
 	Rendering::Renderer::UnsetTextureResource(k_shadowMapSlot);
 	Rendering::Renderer::UnsetTextureResource(k_pointShadowCubesSlot);
 	Rendering::Renderer::UnsetTextureResource(k_ambientOcclusionSlot);
+	Rendering::Renderer::UnsetTextureResource(k_probeSHRedSlot);
+	Rendering::Renderer::UnsetTextureResource(k_probeSHGreenSlot);
+	Rendering::Renderer::UnsetTextureResource(k_probeSHBlueSlot);
 
 	m_sceneColourOutput.Publish(context, sceneColourData);
 

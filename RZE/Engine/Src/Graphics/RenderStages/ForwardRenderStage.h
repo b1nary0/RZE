@@ -3,6 +3,7 @@
 #include <Graphics/RenderData/AmbientOcclusionData.h>
 #include <Graphics/RenderData/SceneColourData.h>
 #include <Graphics/RenderData/SceneDepthData.h>
+#include <Graphics/RenderData/SceneIrradianceData.h>
 #include <Graphics/RenderData/SceneLightingData.h>
 #include <Graphics/RenderStage.h>
 
@@ -53,6 +54,7 @@ private:
 	RenderInput<SceneLightingData> m_sceneLightingInput;
 	RenderInput<SceneDepthData> m_sceneDepthInput;
 	RenderInput<AmbientOcclusionData> m_ambientOcclusionInput;
+	RenderInput<SceneIrradianceData> m_sceneIrradianceInput;
 	RenderOutput<SceneColourData> m_sceneColourOutput;
 
 	// @TODO temp until ShaderTechniques are properly implemented

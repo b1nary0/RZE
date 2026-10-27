@@ -62,7 +62,9 @@ enum class ERenderViewDebug
 {
 	Lit,
 	// The ambient occlusion alone, white where nothing occludes (AmbientOcclusionStage)
-	AmbientOcclusion
+	AmbientOcclusion,
+	// The light arriving indirectly, from the probes or the sky, as it would light a white surface
+	IndirectDiffuse
 };
 
 // One point of view to render the scene from. Its owner fills in the inputs; render stages read them

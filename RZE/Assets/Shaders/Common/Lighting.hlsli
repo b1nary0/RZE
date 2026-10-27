@@ -12,11 +12,6 @@
 static const float  AlphaCutoff  = 0.5f;
 // Height-map bump: normal tilt per unit of height change per texel
 static const float  BumpStrength = 10.0f;
-// Linear-space hemisphere ambient: sky colour for up-facing normals, ground colour for down-facing.
-// Kept well below the light strength (~2) so lit and unlit sides read clearly. Mirrored by k_ambientSky and
-// k_ambientGround (RenderScene.cpp) for the editor's point light gizmo.
-static const float3 AmbientSky    = float3(0.14f, 0.16f, 0.20f);
-static const float3 AmbientGround = float3(0.05f, 0.045f, 0.04f);
 // Linear-space environment for uniform lighting, the same from every direction: a surface shows its albedo, as it
 // would facing a strength-1 light. Auto-exposure sets the final brightness.
 static const float3 UniformAmbient = float3(1.0f, 1.0f, 1.0f);
@@ -27,11 +22,6 @@ static const float  UniformEdgeShade = 0.45f;
 static const float  MaxShininessLog2 = 11.0f;
 // Specular reflectance at normal incidence = SpecularIntensity * this; 0.5 intensity gives the typical dielectric 0.04
 static const float  SpecularF0Scale = 0.08f;
-// Point light falloff: inverse square over distance as a fraction of the range, so the range sets how far the light
-// reaches. Higher concentrates it nearer the light: at half the range it's 1 / (1 + this / 4) of its strength,
-// before the window that takes it to 0 at the range. Mirrors k_pointFalloffSharpness (RenderScene.cpp), which the
-// editor's range gizmo uses.
-static const float  PointFalloffSharpness = 8.0f;
 
 //
 // Surface
@@ -147,111 +137,8 @@ float3 ApplyHeightMap(float3 normal, float3 worldPos, float2 uv)
 }
 
 //
-// Shadows
-//
-// Fraction of the directional light reaching worldPos: 1 = fully lit, 0 = fully shadowed
-float SampleDirectionalShadow(float3 worldPos, float3 vertexNormal)
-{
-	if (HasShadows < 0.5f)
-	{
-		return 1.0f;
-	}
-
-	// Push the lookup off the surface so it doesn't shadow itself (acne)
-	float3 offsetPos = worldPos + vertexNormal * ShadowNormalOffset;
-	float4 lightClip = mul(LightViewProjection, float4(offsetPos, 1.0f));
-	float3 lightNDC = lightClip.xyz / lightClip.w;
-
-	float2 uv = float2(lightNDC.x * 0.5f + 0.5f, -lightNDC.y * 0.5f + 0.5f);
-
-	// 4x4 grid of hardware-filtered (bilinear 2x2) comparisons: a smooth ~5x5 texel penumbra
-	float lit = 0.0f;
-	[unroll]
-	for (int y = 0; y < 4; ++y)
-	{
-		[unroll]
-		for (int x = 0; x < 4; ++x)
-		{
-			float2 offset = (float2(x, y) - 1.5f) * ShadowTexelSize;
-			lit += ShadowMap.SampleCmpLevelZero(ShadowSampler, uv + offset, lightNDC.z);
-		}
-	}
-	return lit / 16.0f;
-}
-
-// The direction to sample a cube texture with to read what was rendered towards worldDirection. D3D's cube is
-// left-handed with +Z forward and ours is right-handed with -Z forward, so Z flips. Mirrors
-// CubeMap::ToSampleDirection (Utils/Math/CubeMap.h).
-float3 ToCubeSampleDirection(float3 worldDirection)
-{
-	return float3(worldDirection.xy, -worldDirection.z);
-}
-
-// Fraction of a shadowed point light reaching worldPos: 1 = fully lit, 0 = fully shadowed
-float SamplePointShadow(Light light, float3 worldPos, float3 vertexNormal)
-{
-	PointShadow shadow = PointShadows[light.ShadowIndex];
-
-	// Push the lookup off the surface so it doesn't shadow itself (acne), by more further out, where texels are bigger
-	float distanceToLight = length(worldPos - light.Position);
-	float3 fromLight = worldPos + vertexNormal * (shadow.NormalOffsetPerMetre * distanceToLight) - light.Position;
-
-	// Each face stores depth by distance along its own forward, which for the face a direction falls in is the
-	// direction's largest component
-	float3 absFromLight = abs(fromLight);
-	float faceDistance = max(absFromLight.x, max(absFromLight.y, absFromLight.z));
-	float depth = shadow.DepthAtInfinity + shadow.DepthDistanceScale / faceDistance;
-
-	// Four hardware-filtered (bilinear 2x2) comparisons around the direction, a texel and a half out across the face,
-	// for a soft edge. The cube's faces join seamlessly, so taps can cross onto the next face.
-	float3 direction = fromLight / faceDistance;
-	float3 side = normalize(cross(direction, abs(direction.y) < 0.99f ? float3(0.0f, 1.0f, 0.0f) : float3(1.0f, 0.0f, 0.0f)));
-	float3 up = cross(side, normalize(direction));
-	// A face is 2 across at a distance of 1 along its forward
-	float tapOffset = 1.5f * 2.0f * PointShadowTexelSize;
-
-	float lit = 0.0f;
-	[unroll]
-	for (int tap = 0; tap < 4; ++tap)
-	{
-		float2 offset = float2(tap & 1 ? 1.0f : -1.0f, tap & 2 ? 1.0f : -1.0f) * tapOffset;
-		float3 tapDirection = direction + side * offset.x + up * offset.y;
-		lit += PointShadowCubes.SampleCmpLevelZero(ShadowSampler, float4(ToCubeSampleDirection(tapDirection), light.ShadowIndex), depth);
-	}
-	return lit / 4.0f;
-}
-
-//
 // Lighting
 //
-float3 LightRadiance(Light light)
-{
-	return SRGBToLinear(light.Colour) * light.Strength;
-}
-
-// How much of the light reaches worldPos, before shadows, and the direction towards the light (outL). The light's
-// type decides both.
-float LightAttenuation(Light light, float3 worldPos, out float3 outL)
-{
-	if (light.Type == LIGHT_TYPE_POINT)
-	{
-		float3 toLight = light.Position - worldPos;
-		float distanceSq = dot(toLight, toLight);
-		outL = toLight * rsqrt(max(distanceSq, 1e-8f));
-
-		// Inverse square in fractions of the range rather than metres, so a longer range reaches further instead of
-		// only moving where a physically faded light is cut off. Windowed so it reaches exactly 0 at the range, and
-		// the 1 + keeps it finite at the light, so Strength is the brightness right next to it.
-		// Mirrors LightObject::CalculatePointFalloff.
-		float rangeRatioSq = distanceSq / max(light.Range * light.Range, 1e-8f);
-		float window = saturate(1.0f - rangeRatioSq * rangeRatioSq);
-		return window * window / (1.0f + PointFalloffSharpness * rangeRatioSq);
-	}
-
-	outL = -light.Direction;
-	return 1.0f;
-}
-
 // Sky above, ground below, or the same all round with uniform lighting. Also used as the environment for ambient
 // reflections.
 float3 HemisphereAmbient(float3 direction)
@@ -260,7 +147,19 @@ float3 HemisphereAmbient(float3 direction)
 	{
 		return UniformAmbient;
 	}
-	return lerp(AmbientGround, AmbientSky, direction.y * 0.5f + 0.5f);
+	return SkyRadiance(direction);
+}
+
+// The light arriving indirectly at a surface facing normal, as it would light a white diffuse surface: from the
+// irradiance probes where they've been lit, otherwise from the hemisphere
+float3 IndirectDiffuse(float3 worldPos, float3 normal)
+{
+	float3 irradiance;
+	if (UniformLighting > 0.5f || !SampleProbeIrradiance(worldPos, normal, irradiance))
+	{
+		return HemisphereAmbient(normal);
+	}
+	return irradiance;
 }
 
 // Schlick's Fresnel approximation: reflectance rises from f0 to f90 at glancing angles
@@ -322,7 +221,7 @@ float3 AmbientLighting(SurfaceData surface, float3 viewDir, float shininess)
 	float specularOcclusion = SpecularOcclusion(NdotV, surface.AmbientOcclusion, 1.0f - gloss);
 
 	// Light that reflects off the surface isn't also scattered as diffuse
-	float3 diffuse = HemisphereAmbient(N) * surface.Albedo * (1.0f - fresnel) * diffuseOcclusion;
+	float3 diffuse = IndirectDiffuse(surface.WorldPos, N) * surface.Albedo * (1.0f - fresnel) * diffuseOcclusion;
 	float3 reflection = environment * fresnel * reflectionWeight * specularOcclusion;
 
 	return diffuse + reflection;
@@ -347,27 +246,6 @@ float3 DirectLighting(SurfaceData surface, float3 viewDir, float3 L, float shini
 	return diffuse + specular;
 }
 
-// Fraction of the light reaching the surface past whatever casts shadows: 1 for a light without a shadow map
-float LightShadow(Light light, SurfaceData surface)
-{
-	// One return at the end: FXC warns of an uninitialized return value (X4000) for an early one here, since
-	// the sampling loops
-	float shadow = 1.0f;
-	// Each type has its own kind of shadow map
-	if (light.ShadowIndex >= 0)
-	{
-		if (light.Type == LIGHT_TYPE_POINT)
-		{
-			shadow = SamplePointShadow(light, surface.WorldPos, surface.VertexNormal);
-		}
-		else
-		{
-			shadow = SampleDirectionalShadow(surface.WorldPos, surface.VertexNormal);
-		}
-	}
-	return shadow;
-}
-
 // Returns linear HDR radiance for the scene's lights, or for the uniform environment alone
 float3 ComputeLighting(SurfaceData surface, float3 viewDir)
 {
@@ -375,7 +253,12 @@ float3 ComputeLighting(SurfaceData surface, float3 viewDir)
 	float3 colour = AmbientLighting(surface, viewDir, shininess);
 
 	// One return at the end: FXC warns of an uninitialized return value (X4000) for an early one before the loop
-	if (UniformLighting > 0.5f)
+	if (ShowIndirectDiffuse > 0.5f)
+	{
+		// ERenderViewDebug::IndirectDiffuse: what the ambient light alone would do to a white surface, occlusion included
+		colour = IndirectDiffuse(surface.WorldPos, surface.Normal) * MultiBounceAmbientOcclusion(surface.AmbientOcclusion, 1.0f);
+	}
+	else if (UniformLighting > 0.5f)
 	{
 		float facing = saturate(dot(surface.Normal, viewDir));
 		colour *= lerp(UniformEdgeShade, 1.0f, facing);
@@ -393,7 +276,7 @@ float3 ComputeLighting(SurfaceData surface, float3 viewDir)
 				continue;
 			}
 
-			colour += DirectLighting(surface, viewDir, L, shininess) * LightRadiance(light) * attenuation * LightShadow(light, surface);
+			colour += DirectLighting(surface, viewDir, L, shininess) * LightRadiance(light) * attenuation * LightShadow(light, surface.WorldPos, surface.VertexNormal);
 		}
 	}
 

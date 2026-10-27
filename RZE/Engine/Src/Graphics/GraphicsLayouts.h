@@ -64,7 +64,24 @@ namespace GraphicsLayouts
 	struct ViewLightingLayout
 	{
 		float UniformLighting = 0.0f; // 1 for ERenderViewLighting::Uniform
-		float _pad[3] = {}; // A cbuffer is a whole number of 16-byte registers
+		float ShowIndirectDiffuse = 0.0f; // 1 for ERenderViewDebug::IndirectDiffuse: the indirect light alone, unlit by albedo
+		float _pad[2] = {}; // A cbuffer is a whole number of 16-byte registers
+	};
+
+	// Mirrors IrradianceVolume in Common/IrradianceVolume.hlsli: where the scene's irradiance probes are
+	// (IrradianceProbeGrid) and how many can be read. Probe i is at x = i % CountX, y = (i / CountX) % CountY,
+	// z = i / (CountX * CountY), texel (x, y) of slice z in the spherical harmonics textures.
+	struct IrradianceVolumeLayout
+	{
+		float Origin[3] = {};
+		float Spacing = 0.0f;
+		U32 Counts[3] = {};
+		// Probes 0 to this - 1 have been lit; the rest aren't read. 0 for none, which leaves the hemisphere ambient.
+		U32 ValidProbeCount = 0;
+		// World units to push a lookup off its surface along the normal, so a surface between probes isn't lit by the
+		// probes on its own plane alone
+		float NormalBias = 0.0f;
+		float _pad[3] = {};
 	};
 
 	// Mirrors ObjectBuffer in Common/VertexResources.hlsli: a world transform and its inverse, side by side, uploaded
