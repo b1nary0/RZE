@@ -20,13 +20,14 @@
 
 namespace
 {
-	// Must match LightBuffer / ShadowBuffer / ViewLightingBuffer / ShadowMap / PointShadowCubes registers in
-	// Common/PixelResources.hlsli
+	// Must match LightBuffer / ShadowBuffer / ViewLightingBuffer / ShadowMap / PointShadowCubes / AmbientOcclusionMap
+	// registers in Common/PixelResources.hlsli
 	constexpr U32 k_lightBufferSlot = 2;
 	constexpr U32 k_shadowBufferSlot = 3;
 	constexpr U32 k_viewLightingBufferSlot = 4;
 	constexpr U32 k_shadowMapSlot = 5;
 	constexpr U32 k_pointShadowCubesSlot = 6;
+	constexpr U32 k_ambientOcclusionSlot = 7;
 }
 
 void ForwardRenderStage::Initialize()
@@ -48,6 +49,7 @@ void ForwardRenderStage::Setup(RenderStageBuilder& builder)
 {
 	m_sceneLightingInput = builder.Reads<SceneLightingData>();
 	m_sceneDepthInput = builder.Reads<SceneDepthData>();
+	m_ambientOcclusionInput = builder.Reads<AmbientOcclusionData>();
 	m_sceneColourOutput = builder.Writes<SceneColourData>();
 }
 
@@ -92,6 +94,8 @@ void ForwardRenderStage::Render(RenderContext& context)
 	Rendering::Renderer::SetConstantBufferPS(sceneLightingData.ShadowBuffer, k_shadowBufferSlot);
 	Rendering::Renderer::SetTextureResource(sceneLightingData.DirectionalShadowMap, k_shadowMapSlot);
 	Rendering::Renderer::SetTextureResource(sceneLightingData.PointShadowCubes, k_pointShadowCubesSlot);
+	const AmbientOcclusionData& ambientOcclusion = m_ambientOcclusionInput.Get(context);
+	Rendering::Renderer::SetTextureResource(ambientOcclusion.Visibility, k_ambientOcclusionSlot);
 
 	// The same for every draw: bound once, and only the world matrix buffer's contents change per object
 	Rendering::Renderer::SetConstantBufferPS(sceneLightingData.LightBuffer, k_lightBufferSlot);
@@ -148,6 +152,8 @@ void ForwardRenderStage::Render(RenderContext& context)
 		// #TODO(Transparency) Over empty background (scene alpha 0) the blend leaves alpha 0, so PostProcess paints
 		// the background colour there and the surface vanishes. Needs the background handled before blending.
 		Rendering::Renderer::SetDepthState(Rendering::EDepthState::ReadOnly);
+		// The ambient occlusion is of what's behind them: they aren't in the depth it was computed from
+		Rendering::Renderer::SetTextureResource(ambientOcclusion.Unoccluded, k_ambientOcclusionSlot);
 
 		// Sorted by distance, not by mode, so the blend state is only set when it changes from the last draw's
 		Rendering::EBlendState boundBlendState = Rendering::EBlendState::Opaque;
@@ -169,9 +175,11 @@ void ForwardRenderStage::Render(RenderContext& context)
 
 	Rendering::Renderer::SetDepthState(Rendering::EDepthState::ReadWrite);
 
-	// The shadow maps can't stay bound as shader inputs while the next frame renders depth into them
+	// The shadow maps can't stay bound as shader inputs while the next frame renders depth into them, nor the ambient
+	// occlusion while the next frame's is written
 	Rendering::Renderer::UnsetTextureResource(k_shadowMapSlot);
 	Rendering::Renderer::UnsetTextureResource(k_pointShadowCubesSlot);
+	Rendering::Renderer::UnsetTextureResource(k_ambientOcclusionSlot);
 
 	m_sceneColourOutput.Publish(context, sceneColourData);
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Graphics/RenderData/AmbientOcclusionData.h>
 #include <Graphics/RenderData/SceneColourData.h>
 #include <Graphics/RenderData/SceneDepthData.h>
 #include <Graphics/RenderData/SceneLightingData.h>
@@ -51,6 +52,7 @@ private:
 private:
 	RenderInput<SceneLightingData> m_sceneLightingInput;
 	RenderInput<SceneDepthData> m_sceneDepthInput;
+	RenderInput<AmbientOcclusionData> m_ambientOcclusionInput;
 	RenderOutput<SceneColourData> m_sceneColourOutput;
 
 	// @TODO temp until ShaderTechniques are properly implemented

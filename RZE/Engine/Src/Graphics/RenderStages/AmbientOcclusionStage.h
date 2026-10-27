@@ -64,6 +64,6 @@ private:
 	TypedResourceHandle<ComputeShader> m_denoiseShader;
 
 	Rendering::ConstantBufferHandle m_paramsBuffer;
-	// What views without ambient occlusion publish
+	// What views without ambient occlusion publish, and AmbientOcclusionData::Unoccluded
 	Rendering::TextureBuffer2DHandle m_white;
 };

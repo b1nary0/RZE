@@ -87,6 +87,8 @@ Texture2D HeightMap   : register(t4); // Grayscale height in .r; only valid when
 Texture2D ShadowMap   : register(t5); // Bound by ForwardRenderStage
 // A cube per shadowed point light, by its ShadowIndex; sample with ToCubeSampleDirection (Lighting.hlsli)
 TextureCubeArray PointShadowCubes : register(t6); // Bound by ForwardRenderStage
+// The view's ambient occlusion, 1 = nothing occludes (AmbientOcclusionStage); read with SampleAmbientOcclusion (Lighting.hlsli)
+Texture2D<float> AmbientOcclusionMap : register(t7); // Bound by ForwardRenderStage
 
 SamplerState LinearSampler : register(s0);
 SamplerComparisonState ShadowSampler : register(s1); // LESS_EQUAL compare, border = lit (DX11Device)

@@ -17,6 +17,7 @@ float4 PSMain(VertexToPixel input) : SV_TARGET
 	surface.SpecularIntensity = DefaultSpecularIntensity;
 	surface.Shininess = Shininess;
 	surface.WorldPos = input.WorldPos;
+	surface.AmbientOcclusion = SampleAmbientOcclusion(input.Position.xy);
 
 	float3 viewDir = normalize(input.CameraPos - input.WorldPos);
 	float3 colour = ComputeLighting(surface, viewDir);

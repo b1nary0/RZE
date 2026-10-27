@@ -110,6 +110,7 @@ void AmbientOcclusionStage::Render(RenderContext& context)
 	{
 		AmbientOcclusionData white;
 		white.Visibility = m_white;
+		white.Unoccluded = m_white;
 		m_ambientOcclusionOutput.Publish(context, white);
 		return;
 	}
@@ -223,6 +224,7 @@ void AmbientOcclusionStage::Render(RenderContext& context)
 
 	AmbientOcclusionData ambientOcclusion;
 	ambientOcclusion.Visibility = state.Visibility;
+	ambientOcclusion.Unoccluded = m_white;
 	m_ambientOcclusionOutput.Publish(context, ambientOcclusion);
 
 	Rendering::Renderer::End();

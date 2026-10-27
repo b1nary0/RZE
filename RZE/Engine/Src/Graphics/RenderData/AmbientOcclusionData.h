@@ -13,4 +13,7 @@ struct AmbientOcclusionData : RenderStageData<AmbientOcclusionData>
 	static constexpr const char* k_name = "AmbientOcclusionData";
 
 	Rendering::TextureBuffer2DHandle Visibility;
+	// 1x1 white: for passes the ambient occlusion doesn't apply to, e.g. blended surfaces, which aren't in the depth
+	// it was computed from
+	Rendering::TextureBuffer2DHandle Unoccluded;
 };

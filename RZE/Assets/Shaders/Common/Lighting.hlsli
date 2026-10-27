@@ -44,7 +44,17 @@ struct SurfaceData
 	float  SpecularIntensity; // 0..1 specular mask; 0.5 is a typical non-metal
 	float  Shininess;
 	float3 WorldPos;
+	float  AmbientOcclusion;  // 0..1 of the indirect light reaching the surface past nearby geometry; SampleAmbientOcclusion
 };
+
+// The view's ambient occlusion at a pixel (SV_Position.xy). Clamped to the texture, so the 1x1 white one of a view
+// without ambient occlusion reads 1 everywhere.
+float SampleAmbientOcclusion(float2 pixelPosition)
+{
+	uint2 size;
+	AmbientOcclusionMap.GetDimensions(size.x, size.y);
+	return AmbientOcclusionMap.Load(int3(min(uint2(pixelPosition), size - 1), 0));
+}
 
 // How much of the pixel the material's opacity mask covers, 1 without a mask. A cutout material discards the pixel
 // below AlphaCutoff instead (and returns 1); a blended one returns the mask, to fade by. Diffuse alpha isn't used
@@ -266,6 +276,26 @@ float BlinnPhongSpecular(float NdotH, float shininess)
 	return (shininess + 8.0f) / 8.0f * pow(NdotH, shininess);
 }
 
+// Ambient occlusion counts light blocked on its way in, but some of it bounces off the occluding surfaces back in. A fit of
+// how much, by albedo (Jimenez et al. 2016, "Practical Real-Time Strategies for Accurate Indirect Occlusion"), so bright
+// surfaces don't go grey in their creases. Capped at 1: the fit is a hair over it where nothing occludes.
+float3 MultiBounceAmbientOcclusion(float visibility, float3 albedo)
+{
+	const float3 a = 2.0404f * albedo - 0.3324f;
+	const float3 b = -4.7951f * albedo + 0.6417f;
+	const float3 c = 2.7552f * albedo + 0.6903f;
+	return min(max(visibility, ((visibility * a + b) * visibility + c) * visibility), 1.0f);
+}
+
+// How much of a reflection the ambient occlusion blocks: little looking straight at a surface, more at glancing angles
+// and for glossier ones, whose reflection comes from a narrower cone (Lagarde and de Rousiers 2014, "Moving Frostbite to
+// PBR"). roughness is 0 (mirror) to 1.
+float SpecularOcclusion(float NdotV, float visibility, float roughness)
+{
+	// The base is never negative; the max tells the compiler so
+	return saturate(pow(max(NdotV + visibility, 0.0f), exp2(-16.0f * roughness - 1.0f)) - 1.0f + visibility);
+}
+
 // Hemisphere ambient, diffuse plus reflection. Without the reflection, glossy dark materials in shade
 // (black armour, iron) render as albedo x ambient, which is near black, when they'd really mirror their surroundings.
 float3 AmbientLighting(SurfaceData surface, float3 viewDir, float shininess)
@@ -282,13 +312,18 @@ float3 AmbientLighting(SurfaceData surface, float3 viewDir, float shininess)
 	float f0 = surface.SpecularIntensity * SpecularF0Scale;
 	float fresnel = FresnelSchlick(f0, lerp(f0, surface.SpecularIntensity, gloss), NdotV);
 
-	// Stand-in for specular occlusion: nothing blocks the hemisphere, so a broad, rough lobe would
-	// otherwise put a grey sheen over every crevice and wash out coloured materials like rust
+	// Stand-in for occlusion at a larger scale than the ambient occlusion sees (about half a metre): nothing blocks the
+	// hemisphere, so a broad, rough lobe would otherwise put a grey sheen over every crevice and wash out coloured
+	// materials like rust. To go once probes occlude the sky (Docs/Plans/SSAOAndGlobalIllumination.md).
 	float reflectionWeight = gloss * gloss;
 
+	// Indirect light only: direct lights have their shadows
+	float3 diffuseOcclusion = MultiBounceAmbientOcclusion(surface.AmbientOcclusion, surface.Albedo);
+	float specularOcclusion = SpecularOcclusion(NdotV, surface.AmbientOcclusion, 1.0f - gloss);
+
 	// Light that reflects off the surface isn't also scattered as diffuse
-	float3 diffuse = HemisphereAmbient(N) * surface.Albedo * (1.0f - fresnel);
-	float3 reflection = environment * fresnel * reflectionWeight;
+	float3 diffuse = HemisphereAmbient(N) * surface.Albedo * (1.0f - fresnel) * diffuseOcclusion;
+	float3 reflection = environment * fresnel * reflectionWeight * specularOcclusion;
 
 	return diffuse + reflection;
 }
