@@ -3,6 +3,8 @@
 
 #include <Utils/Conversions.h>
 
+#include <algorithm>
+
 EngineConfig::EngineConfig()
 {
 
@@ -126,6 +128,13 @@ void EngineConfig::LoadRenderingSettings()
 	}
 
 	mAutoExposure = mINIParser.GetBoolValue("Rendering", "AutoExposure", mAutoExposure);
+
+	mGlobalIllumination = mINIParser.GetBoolValue("Rendering", "GlobalIllumination", mGlobalIllumination);
+	// At least 1 of each, so a misread value can't stop the probes from ever finishing
+	GlobalIlluminationSettings& probes = mGlobalIlluminationSettings;
+	probes.TargetProbeCount = static_cast<U32>(std::max(1L, mINIParser.GetLongValue("Rendering", "ProbeTargetCount", static_cast<long>(probes.TargetProbeCount))));
+	probes.CaptureDrawBudget = static_cast<U32>(std::max(1L, mINIParser.GetLongValue("Rendering", "ProbeCaptureDrawBudget", static_cast<long>(probes.CaptureDrawBudget))));
+	probes.RelightBudget = static_cast<U32>(std::max(1L, mINIParser.GetLongValue("Rendering", "ProbeRelightBudget", static_cast<long>(probes.RelightBudget))));
 }
 
 WindowSettings::WindowSettings()

@@ -6,6 +6,7 @@
 
 #include <Graphics/AmbientOcclusion.h>
 #include <Graphics/AntiAliasing.h>
+#include <Graphics/GlobalIllumination.h>
 
 #include <Utils/PrimitiveDefs.h>
 #include <Utils/Math/Vector2D.h>
@@ -63,6 +64,9 @@ public:
 	EAntiAliasing GetAntiAliasing() const { return mAntiAliasing; }
 	EAmbientOcclusion GetAmbientOcclusion() const { return mAmbientOcclusion; }
 	bool GetAutoExposure() const { return mAutoExposure; }
+	// [Rendering]: whether the main view uses the irradiance probes, and how much work they get
+	bool GetGlobalIllumination() const { return mGlobalIllumination; }
+	const GlobalIlluminationSettings& GetGlobalIlluminationSettings() const { return mGlobalIlluminationSettings; }
 
 private:
 	void LoadEngineSettings();
@@ -79,4 +83,6 @@ private:
 	EAntiAliasing mAntiAliasing = EAntiAliasing::Medium;
 	EAmbientOcclusion mAmbientOcclusion = EAmbientOcclusion::Medium;
 	bool mAutoExposure = true;
+	bool mGlobalIllumination = true;
+	GlobalIlluminationSettings mGlobalIlluminationSettings;
 };

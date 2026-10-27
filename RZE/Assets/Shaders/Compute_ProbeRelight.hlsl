@@ -1,6 +1,6 @@
 // Irradiance probe relighting (IrradianceProbeStage): lights what each probe captured (ProbeCapture) with the scene's
 // lights as they are now, and projects the light arriving from every direction onto spherical harmonics. A thread group
-// per probe; each thread takes every 64th texel of it, then the group adds up.
+// per listed probe (ProbeList, Common/Probes.hlsli); each thread takes every 64th texel of it, then the group adds up.
 //
 // A captured surface is lit by the lights, past their shadows, and by the probes' light from last frame (bound as the
 // volume), so the light bounces once more each frame. The sky lights what sees nothing; back faces, inside or under
@@ -8,15 +8,6 @@
 #include "Common/LightResources.hlsli"
 #include "Common/IrradianceVolume.hlsli"
 #include "Common/Probes.hlsli"
-
-// Mirrors IrradianceProbeStage::RelightParamsLayout
-cbuffer RelightParams : register(b6)
-{
-	uint FirstProbe;        // The batch is this and the probes after it, wrapping round at RelightRange
-	uint RelightRange;
-	uint FaceSize;          // Texels across a capture face
-	uint AtlasProbesPerRow;
-};
 
 // After the volume's t8 to t11
 Texture2D<uint2> CaptureAtlas : register(t13);
@@ -63,7 +54,7 @@ float3 SurfaceRadiance(ProbeSurface surface, float3 worldPos)
 [numthreads(RELIGHT_THREADS, 1, 1)]
 void CSMain(uint3 groupID : SV_GroupID, uint threadIndex : SV_GroupIndex)
 {
-	const uint probe = (FirstProbe + groupID.x) % RelightRange;
+	const uint probe = GetListedProbe(groupID.x);
 	const int3 coordinates = ProbeCoordinates(probe);
 	const float3 probePosition = VolumeOrigin + float3(coordinates) * VolumeSpacing;
 

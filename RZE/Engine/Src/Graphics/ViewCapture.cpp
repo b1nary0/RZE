@@ -30,6 +30,8 @@ std::shared_ptr<AsyncOperation> ViewCapture::Capture(RenderScene& scene, const R
 	m_view.Lighting = settings.Lighting;
 	m_view.AutoExposure = settings.AutoExposure;
 	m_view.ExposureCompensation = settings.ExposureCompensation;
+	// One frame is too few for probes to capture and settle
+	m_view.GlobalIllumination = false;
 
 	RZE().GetRenderEngine().RenderSecondaryView("View Capture", m_view, scene);
 

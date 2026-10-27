@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Graphics/GlobalIllumination.h>
 #include <Graphics/GraphicsDefines.h>
 #include <Graphics/RenderPipeline.h>
 #include <Graphics/RenderScene.h>
@@ -90,6 +91,10 @@ public:
 	// The view presented to the user. Its owner (the app and the active camera) fills in its inputs.
 	RenderView& GetMainView() { return m_mainView; }
 
+	// The irradiance probes' budgets, for every scene; read by IrradianceProbeStage each frame
+	const GlobalIlluminationSettings& GetGlobalIlluminationSettings() const { return m_globalIlluminationSettings; }
+	void SetGlobalIlluminationSettings(const GlobalIlluminationSettings& settings) { m_globalIlluminationSettings = settings; }
+
 	// Renders scene into a secondary view (e.g. a camera preview or a thumbnail) as part of the current frame. The view
 	// must have a Target.
 	void RenderSecondaryView(const char* frameName, RenderView& view, RenderScene& scene);
@@ -109,6 +114,9 @@ private:
 
 	RenderView m_mainView { ERenderViewKind::Main };
 	std::unique_ptr<RenderPipeline> m_pipeline;
+	// Advanced after the main view renders; secondary views rendered before it in the frame share its index
+	U64 m_frameIndex = 0;
+	GlobalIlluminationSettings m_globalIlluminationSettings;
 
 	RenderStats m_stats;
 	StatsWindow m_statsWindow;

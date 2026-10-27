@@ -96,4 +96,21 @@ ProbeSurface UnpackProbeSurface(uint2 packed)
 	return surface;
 }
 
+// The probes a compute pass works on (Compute_ProbeVisibility, Compute_ProbeRelight): a thread group each, in this
+// order. Mirrors IrradianceProbeStage::ProbeListLayout.
+#define MAX_PROBE_LIST 512
+cbuffer ProbeList : register(b6)
+{
+	uint  ProbeListCount;
+	uint  FaceSize;          // Texels across a capture face
+	uint  AtlasProbesPerRow; // In the capture atlas
+	uint  _ProbeListPad;
+	uint4 ProbeListEntries[MAX_PROBE_LIST / 4];
+};
+
+uint GetListedProbe(uint index)
+{
+	return ProbeListEntries[index / 4][index % 4];
+}
+
 #endif // PROBES_HLSLI

@@ -101,6 +101,9 @@ public:
 	EAntiAliasing AntiAliasing = EAntiAliasing::Medium;
 	// How much creases and corners darken the indirect light (GTAO, AmbientOcclusionStage)
 	EAmbientOcclusion AmbientOcclusion = EAmbientOcclusion::Medium;
+	// Indirect light from the scene's irradiance probes (IrradianceProbeStage); off, the hemisphere ambient. Off for
+	// views that render once, such as captures: probes take frames to capture and settle.
+	bool GlobalIllumination = true;
 	ERenderViewDebug Debug = ERenderViewDebug::Lit;
 	ERenderViewLighting Lighting = ERenderViewLighting::Scene;
 	// Debug lines (the editor's grid, camera frustums, bounds boxes); off for clean captures such as thumbnails

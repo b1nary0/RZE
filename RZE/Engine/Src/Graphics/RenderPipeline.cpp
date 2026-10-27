@@ -28,12 +28,12 @@ void RenderPipeline::Clear()
 	m_isDirty = true;
 }
 
-void RenderPipeline::Render(RenderView& view, RenderScene& scene, float deltaTime)
+void RenderPipeline::Render(RenderView& view, RenderScene& scene, float deltaTime, U64 frameIndex)
 {
 	CompileIfDirty();
 
 	view.m_frame.BeginFrame();
-	RenderContext context(view, scene, deltaTime);
+	RenderContext context(view, scene, deltaTime, frameIndex);
 
 	for (size_t stageIndex : m_compiled.ExecutionOrder)
 	{

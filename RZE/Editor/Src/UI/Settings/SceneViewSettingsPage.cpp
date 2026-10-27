@@ -81,6 +81,12 @@ namespace Editor
 		}
 
 		ImGui::AlignTextToFramePadding();
+		ImGui::TextUnformatted("Global illumination");
+		ImGui::SetItemTooltip("Indirect light from the scene's irradiance probes, which capture the scene around them and bounce the lights' light. Off, the ambient light is a flat sky and ground.");
+		ImGui::SameLine(optionsX);
+		ImGui::Checkbox("##GlobalIllumination", &mainView.GlobalIllumination);
+
+		ImGui::AlignTextToFramePadding();
 		ImGui::TextUnformatted("Show");
 		ImGui::SetItemTooltip("What the scene view shows: the lit scene, or one part of its lighting alone. Ambient occlusion is white where nothing occludes; indirect light is what the probes or the sky would put on a white surface.");
 		ImGui::SameLine(optionsX);

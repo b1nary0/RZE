@@ -10,29 +10,39 @@
 #include <Rendering/BufferHandle.h>
 
 class ComputeShader;
+struct GlobalIlluminationSettings;
 
 // The scene's irradiance probes (Docs/Plans/SSAOAndGlobalIllumination.md, Part 3): a grid fitted to the scene
-// (IrradianceProbeGrid), each probe capturing the surfaces around it (ProbeCapture) a batch a frame, with a visibility
-// map of how far it sees in each direction (Compute_ProbeVisibility), then relit a batch a frame with the scene's lights
-// and last frame's probes (Compute_ProbeRelight) into spherical harmonics, which the forward pass reads for its ambient
-// light. Captures restart when the scene's bounds change.
+// (IrradianceProbeGrid). Each frame, within its budgets (GlobalIlluminationSettings):
+//   - Probes waiting to be captured are, nearest the camera first (ProbeCapture), each with a visibility map of how far
+//     it sees in each direction (Compute_ProbeVisibility). They wait when the grid is fitted, and when objects within a
+//     few spacings of them change.
+//   - Probes are relit with the scene's lights and last frame's probes (Compute_ProbeRelight) into spherical harmonics:
+//     those just captured, those near the camera, then the rest in turn.
+// The forward pass reads them for its ambient light. The grid is fitted again when the scene's bounds move by more
+// than a spacing.
 //
-// Publishes SceneIrradianceData in every view; only the main view captures and relights. A scene the main view hasn't
-// drawn has no probes, and its views fall back to the hemisphere ambient.
+// The work is done once a frame for each scene, by whichever view renders it first; every view of the scene reads it.
+// Views without global illumination (RenderView::GlobalIllumination, Uniform lighting) get none, and the hemisphere
+// ambient.
 class IrradianceProbeStage : public IRenderStage
 {
 public:
-	// Mirrors RelightParams in Compute_ProbeRelight.hlsl
-	struct RelightParamsLayout
+	// Mirrors ProbeList in Common/Probes.hlsli
+	struct ProbeListLayout
 	{
-		U32 FirstProbe;
-		U32 RelightRange;
-		U32 FaceSize;
-		U32 AtlasProbesPerRow;
+		static constexpr U32 k_maxProbes = 512;
+
+		U32 Count = 0;
+		U32 FaceSize = 0;
+		U32 AtlasProbesPerRow = 0;
+		U32 _pad = 0;
+		U32 Probes[k_maxProbes] = {};
 	};
 
 public:
-	IrradianceProbeStage();
+	// settings: RenderEngine's, read each frame
+	explicit IrradianceProbeStage(const GlobalIlluminationSettings* settings);
 	~IrradianceProbeStage() override = default;
 
 public:
@@ -43,13 +53,15 @@ public:
 	void Render(RenderContext& context) override;
 
 private:
+	const GlobalIlluminationSettings* m_settings;
+
 	RenderInput<SceneLightingData> m_sceneLightingInput;
 	RenderOutput<SceneIrradianceData> m_sceneIrradianceOutput;
 
 	ProbeCapture m_capture;
 	TypedResourceHandle<ComputeShader> m_relightShader;
 	TypedResourceHandle<ComputeShader> m_visibilityShader;
-	Rendering::ConstantBufferHandle m_relightParamsBuffer;
+	Rendering::ConstantBufferHandle m_probeListBuffer;
 	// GraphicsLayouts::IrradianceVolumeLayout, uploaded for each view rendered
 	Rendering::ConstantBufferHandle m_volumeBuffer;
 	// Bound where there are no probes to read, so the forward pass always has textures of the right kind

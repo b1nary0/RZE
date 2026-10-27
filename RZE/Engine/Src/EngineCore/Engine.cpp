@@ -379,6 +379,8 @@ void RZE_Engine::CreateAndInitializeRenderer()
 	m_renderEngine->GetMainView().AntiAliasing = engineConfig->GetAntiAliasing();
 	m_renderEngine->GetMainView().AmbientOcclusion = engineConfig->GetAmbientOcclusion();
 	m_renderEngine->GetMainView().AutoExposure = engineConfig->GetAutoExposure();
+	m_renderEngine->GetMainView().GlobalIllumination = engineConfig->GetGlobalIllumination();
+	m_renderEngine->SetGlobalIlluminationSettings(engineConfig->GetGlobalIlluminationSettings());
 }
 
 void RZE_Engine::InitializeApplication()

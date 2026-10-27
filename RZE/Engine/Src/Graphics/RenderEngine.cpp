@@ -34,7 +34,7 @@ void RenderEngine::Initialize(void* windowHandle)
 	AddRenderStage<ShadowRenderStage>();
 	AddRenderStage<DepthPrepassStage>();
 	AddRenderStage<AmbientOcclusionStage>();
-	AddRenderStage<IrradianceProbeStage>();
+	AddRenderStage<IrradianceProbeStage>(&m_globalIlluminationSettings);
 	AddRenderStage<ForwardRenderStage>();
 	AddRenderStage<PostProcessRenderStage>();
 	AddRenderStage<PickRenderStage>();
@@ -56,7 +56,8 @@ void RenderEngine::Render(const char* frameName)
 
 	Rendering::Renderer::BeginFrame(frameName);
 
-	m_pipeline->Render(m_mainView, GetMainScene(), static_cast<float>(RZE().GetDeltaTime()));
+	m_pipeline->Render(m_mainView, GetMainScene(), static_cast<float>(RZE().GetDeltaTime()), m_frameIndex);
+	++m_frameIndex;
 
 	// Secondary views rendered earlier this frame have drawn them too
 	GetMainScene().ClearDebugLines();
@@ -142,7 +143,7 @@ void RenderEngine::RenderSecondaryView(const char* frameName, RenderView& view, 
 
 	Rendering::Renderer::Begin(frameName);
 
-	m_pipeline->Render(view, scene, static_cast<float>(RZE().GetDeltaTime()));
+	m_pipeline->Render(view, scene, static_cast<float>(RZE().GetDeltaTime()), m_frameIndex);
 
 	Rendering::Renderer::End();
 

@@ -18,10 +18,11 @@ class RenderContext
 	template <typename T> friend class RenderInOut;
 
 public:
-	RenderContext(RenderView& view, RenderScene& scene, float deltaTime)
+	RenderContext(RenderView& view, RenderScene& scene, float deltaTime, U64 frameIndex)
 		: View(view)
 		, Scene(scene)
 		, DeltaTime(deltaTime)
+		, FrameIndex(frameIndex)
 		, m_view(view)
 		, m_scene(scene) {}
 
@@ -35,6 +36,9 @@ public:
 	const RenderScene& Scene;
 	// Seconds since the previous frame
 	const float DeltaTime;
+	// Counts frames: the same for every view rendered in one frame, so a stage can do a scene's work once a frame
+	// whichever view draws it first
+	const U64 FrameIndex;
 
 	// This view's state that lasts across frames. Each value should only be used by the stage that owns it.
 	RenderBlackboard& Persistent() { return m_view.m_persistent; }

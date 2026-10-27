@@ -30,7 +30,8 @@ public:
 	void AddStage(std::unique_ptr<IRenderStage> stage);
 	void Clear();
 
-	void Render(RenderView& view, RenderScene& scene, float deltaTime);
+	// frameIndex: RenderEngine's, the same for every view rendered in one frame
+	void Render(RenderView& view, RenderScene& scene, float deltaTime, U64 frameIndex);
 
 	// Each stage's time since the last call, in the order they run, then starts them over
 	std::vector<RenderStageTime> TakeStageTimes();

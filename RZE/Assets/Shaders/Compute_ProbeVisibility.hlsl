@@ -1,19 +1,11 @@
 // Irradiance probe visibility (IrradianceProbeStage), right after a batch is captured: for each direction around the
 // probe, the mean and mean squared distance to what it sees, as an octahedral map (Common/IrradianceVolume.hlsli), so
-// sampling can tell when a surface is hidden from a probe. A thread group per probe, a thread per map texel.
+// sampling can tell when a surface is hidden from a probe. A thread group per listed probe (ProbeList, Common/Probes.hlsli),
+// a thread per map texel.
 //
 // A probe that sees mostly back faces is inside geometry: its map is all 0, which marks it inactive.
 #include "Common/IrradianceVolume.hlsli"
 #include "Common/Probes.hlsli"
-
-// Mirrors IrradianceProbeStage::RelightParamsLayout, as the relighting's; RelightRange is unused here
-cbuffer VisibilityParams : register(b6)
-{
-	uint FirstProbe;        // The batch is this and the probes after it
-	uint _RelightRange;
-	uint FaceSize;          // Texels across a capture face
-	uint AtlasProbesPerRow; // In the capture atlas
-};
 
 Texture2D<uint2> CaptureAtlas : register(t13);
 
@@ -30,7 +22,7 @@ groupshared uint g_backFaces;
 [numthreads(VISIBILITY_SIZE, VISIBILITY_SIZE, 1)]
 void CSMain(uint3 groupID : SV_GroupID, uint2 threadPosition : SV_GroupThreadID, uint threadIndex : SV_GroupIndex)
 {
-	const uint probe = FirstProbe + groupID.x;
+	const uint probe = GetListedProbe(groupID.x);
 	if (threadIndex == 0)
 	{
 		g_backFaces = 0;

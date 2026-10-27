@@ -16,7 +16,7 @@ cbuffer IrradianceVolume : register(b5)
 	float3 VolumeOrigin;
 	float  VolumeSpacing;
 	uint3  VolumeCounts;
-	uint   ValidProbeCount;
+	uint   ValidProbeCount;          // 0 to leave the hemisphere ambient; probes not captured yet are inactive
 	float  VolumeNormalBias;
 	uint   VisibilityProbesPerRow;   // In the visibility atlas
 	float  VisibilityMaxDistance;    // Distances are clamped to this, and what sees nothing counts as this far
