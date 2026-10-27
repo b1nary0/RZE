@@ -14,7 +14,7 @@ MaterialValues MaterialValues::FromMaterialData(const MaterialAssetImporter::Mat
 	values.Tint = materialData.Tint;
 
 	// An empty path stays an invalid Filepath: Filepath("") would resolve to the root folder
-	const size_t textureCount = std::min(materialData.TexturePaths.size(), k_textureSlotCount);
+	const size_t textureCount = std::min(materialData.TexturePaths.size(), static_cast<size_t>(TEXTURE_SLOT_COUNT));
 	for (size_t textureSlot = 0; textureSlot < textureCount; ++textureSlot)
 	{
 		const std::string& texturePath = materialData.TexturePaths[textureSlot];

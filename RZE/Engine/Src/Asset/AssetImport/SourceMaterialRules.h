@@ -64,5 +64,5 @@ namespace SourceMaterialRules
 
 	// A cutout mask makes a cutout, whatever the opacity: the engine can't clip and fade the same material. A coverage
 	// mask blends, even at full opacity, since the mask itself fades it. Without a mask, anything short of solid blends.
-	MaterialAssetImporter::MaterialData::EBlendMode ChooseBlendMode(EMaskKind mask, float opacity);
+	EBlendMode ChooseBlendMode(EMaskKind mask, float opacity);
 }

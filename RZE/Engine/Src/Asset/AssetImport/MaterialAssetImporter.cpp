@@ -14,40 +14,14 @@ namespace
 	constexpr uint16_t k_tintVersion = 2;
 }
 
-MaterialAssetImporter::MaterialData::EBlendMode MaterialAssetImporter::GetLegacyBlendMode(U8 textureFlags)
+EBlendMode MaterialAssetImporter::GetLegacyBlendMode(U8 textureFlags)
 {
-	return (textureFlags & MaterialData::TEXTUREFLAG_OPACITY) ? MaterialData::EBlendMode::Cutout : MaterialData::EBlendMode::Opaque;
+	return (textureFlags & MaterialData::TEXTUREFLAG_OPACITY) ? EBlendMode::Cutout : EBlendMode::Opaque;
 }
 
 Vector3D MaterialAssetImporter::GetLegacyTint(U8 textureFlags)
 {
 	return (textureFlags & MaterialData::TEXTUREFLAG_ALBEDO) ? Vector3D(1.0f, 1.0f, 1.0f) : Vector3D(k_untexturedGrey, k_untexturedGrey, k_untexturedGrey);
-}
-
-const char* MaterialAssetImporter::GetBlendModeName(MaterialData::EBlendMode blendMode)
-{
-	switch (blendMode)
-	{
-	case MaterialData::EBlendMode::Opaque:
-		return "Opaque";
-	case MaterialData::EBlendMode::Cutout:
-		return "Cutout";
-	case MaterialData::EBlendMode::Transparent:
-		return "Transparent";
-	case MaterialData::EBlendMode::Premultiplied:
-		return "Premultiplied";
-	case MaterialData::EBlendMode::Additive:
-		return "Additive";
-	case MaterialData::EBlendMode::Multiply:
-		return "Multiply";
-	default:
-		return "Unknown";
-	}
-}
-
-bool MaterialAssetImporter::IsBlended(MaterialData::EBlendMode blendMode)
-{
-	return blendMode != MaterialData::EBlendMode::Opaque && blendMode != MaterialData::EBlendMode::Cutout;
 }
 
 bool MaterialAssetImporter::Import(const Filepath& filePath)
@@ -82,7 +56,7 @@ bool MaterialAssetImporter::Import(const Filepath& filePath)
 	mMaterialData.Properties = ByteStreamUtils::ReadType<MaterialData::MaterialProperties>(byteStream);
 	mMaterialData.TextureFlags = ByteStreamUtils::ReadType<U8>(byteStream);
 	mMaterialData.BlendMode = hasHeader
-		? ByteStreamUtils::ReadType<MaterialData::EBlendMode>(byteStream)
+		? ByteStreamUtils::ReadType<EBlendMode>(byteStream)
 		: GetLegacyBlendMode(mMaterialData.TextureFlags);
 	if (version >= k_tintVersion)
 	{

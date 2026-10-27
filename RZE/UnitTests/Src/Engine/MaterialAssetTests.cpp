@@ -48,7 +48,7 @@ namespace
 		const MaterialData::MaterialProperties properties;
 		stream.write(reinterpret_cast<const char*>(&properties), sizeof(properties));
 		stream.write(reinterpret_cast<const char*>(&textureFlags), sizeof(textureFlags));
-		const MaterialData::EBlendMode blendMode = MaterialData::EBlendMode::Opaque;
+		const EBlendMode blendMode = EBlendMode::Opaque;
 		stream.write(reinterpret_cast<const char*>(&blendMode), sizeof(blendMode));
 		writeSize(0); // No textures
 	}
@@ -64,7 +64,7 @@ TEST_CASE("A material asset reads back as it was written")
 	written.Properties.Shininess = 64.0f;
 	written.Properties.Opacity = 0.25f;
 	written.TextureFlags = MaterialData::TEXTUREFLAG_ALBEDO | MaterialData::TEXTUREFLAG_OPACITY;
-	written.BlendMode = MaterialData::EBlendMode::Transparent;
+	written.BlendMode = EBlendMode::Transparent;
 	written.Tint = Vector3D(0.88f, 0.96f, 1.0f);
 	written.TexturePaths = { "Assets/Glass_Colour.png", "", "", "Assets/Glass_Mask.png", "" };
 
@@ -80,7 +80,7 @@ TEST_CASE("A material asset reads back as it was written")
 	CHECK(read.Properties.Shininess == doctest::Approx(64.0f));
 	CHECK(read.Properties.Opacity == doctest::Approx(0.25f));
 	CHECK(read.TextureFlags == written.TextureFlags);
-	CHECK(read.BlendMode == MaterialData::EBlendMode::Transparent);
+	CHECK(read.BlendMode == EBlendMode::Transparent);
 	CHECK(read.Tint.X() == doctest::Approx(0.88f));
 	CHECK(read.Tint.Y() == doctest::Approx(0.96f));
 	CHECK(read.Tint.Z() == doctest::Approx(1.0f));
@@ -115,17 +115,17 @@ TEST_CASE("Every blend mode survives a write and read")
 {
 	const ScopedTestFolder folder("UnitTestsTemp_MaterialAsset");
 
-	const MaterialData::EBlendMode modes[] =
+	const EBlendMode modes[] =
 	{
-		MaterialData::EBlendMode::Opaque, MaterialData::EBlendMode::Cutout, MaterialData::EBlendMode::Transparent,
-		MaterialData::EBlendMode::Premultiplied, MaterialData::EBlendMode::Additive, MaterialData::EBlendMode::Multiply
+		EBlendMode::Opaque, EBlendMode::Cutout, EBlendMode::Transparent,
+		EBlendMode::Premultiplied, EBlendMode::Additive, EBlendMode::Multiply
 	};
-	for (const MaterialData::EBlendMode mode : modes)
+	for (const EBlendMode mode : modes)
 	{
-		CAPTURE(MaterialAssetImporter::GetBlendModeName(mode));
+		CAPTURE(GetBlendModeName(mode));
 
 		MaterialData written;
-		written.MaterialName = MaterialAssetImporter::GetBlendModeName(mode);
+		written.MaterialName = GetBlendModeName(mode);
 		written.BlendMode = mode;
 
 		const Filepath file = folder.GetFile(written.MaterialName + ".materialasset");
@@ -150,7 +150,7 @@ TEST_CASE("A material asset from before blend modes reads as cutout with a mask,
 	MaterialAssetImporter maskedImporter;
 	REQUIRE(maskedImporter.Import(masked));
 	CHECK(maskedImporter.GetMaterialData().MaterialName == "Leaf");
-	CHECK(maskedImporter.GetMaterialData().BlendMode == MaterialData::EBlendMode::Cutout);
+	CHECK(maskedImporter.GetMaterialData().BlendMode == EBlendMode::Cutout);
 	CHECK(maskedImporter.GetMaterialData().TexturePaths[3] == "Assets/Leaf_Mask.png");
 
 	const Filepath plain = folder.GetFile("Stone.materialasset");
@@ -158,6 +158,6 @@ TEST_CASE("A material asset from before blend modes reads as cutout with a mask,
 
 	MaterialAssetImporter plainImporter;
 	REQUIRE(plainImporter.Import(plain));
-	CHECK(plainImporter.GetMaterialData().BlendMode == MaterialData::EBlendMode::Opaque);
+	CHECK(plainImporter.GetMaterialData().BlendMode == EBlendMode::Opaque);
 	CHECK(plainImporter.GetMaterialData().TexturePaths.size() == 1);
 }

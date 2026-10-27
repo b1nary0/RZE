@@ -6,8 +6,6 @@
 
 #include <EngineCore/Resources/ResourceHandler.h>
 
-#include <Asset/AssetImport/MaterialAssetImporter.h>
-
 #include <Rendering/RenderingDefines.h>
 
 #include <vector>
@@ -43,9 +41,6 @@ public:
 	// Farthest first, so nearer surfaces blend over farther ones. Per draw, not per triangle: overlapping parts of
 	// one draw can still blend in the wrong order.
 	static void SortBackToFront(std::vector<TransparentDraw>& draws);
-
-	// How a blended material combines with what's behind it. Opaque for materials that aren't blended.
-	static Rendering::EBlendState GetBlendState(MaterialAssetImporter::MaterialData::EBlendMode blendMode);
 
 private:
 	// Binds the draw's transform, material and buffers and draws it. Only uploads the transform and sets the shader

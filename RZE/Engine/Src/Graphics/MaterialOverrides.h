@@ -18,12 +18,12 @@ struct MaterialOverrides
 	// A material asset drawn instead of the mesh's own; the values below go on top of it. Not a value, so ApplyTo
 	// leaves it to whoever picks the material (MaterialSlot).
 	std::optional<Filepath> Material;
-	std::optional<MaterialValues::EBlendMode> BlendMode;
+	std::optional<EBlendMode> BlendMode;
 	std::optional<float> Opacity;
 	std::optional<float> Shininess;
 	std::optional<Vector3D> Tint;
-	// Indexed by MaterialInstance::TextureSlot. An overridden slot set to an invalid (default) Filepath is emptied.
-	std::array<std::optional<Filepath>, MaterialValues::k_textureSlotCount> Textures;
+	// Indexed by ETextureSlot. An overridden slot set to an invalid (default) Filepath is emptied.
+	std::array<std::optional<Filepath>, TEXTURE_SLOT_COUNT> Textures;
 	std::optional<bool> InvertOpacityMask;
 	std::optional<bool> OpacityMaskInAlpha;
 

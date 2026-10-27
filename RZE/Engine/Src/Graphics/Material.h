@@ -30,17 +30,6 @@ class MaterialInstance
 {
 	friend class MaterialDatabase;
 public:
-	enum TextureSlot : U8
-	{
-		TEXTURE_SLOT_DIFFUSE,
-		TEXTURE_SLOT_SPECULAR,
-		TEXTURE_SLOT_NORMAL,
-		TEXTURE_SLOT_OPACITY,
-		TEXTURE_SLOT_HEIGHT,
-		TEXTURE_SLOT_COUNT
-	};
-	static_assert(TEXTURE_SLOT_COUNT == MaterialValues::k_textureSlotCount, "MaterialValues has a texture per slot");
-
 	// The pixel shader a material draws with, from which textures it has (ChooseShader)
 	enum class EShader
 	{
@@ -93,8 +82,6 @@ public:
 	// For tools: the material's shader and textures
 	static void DescribeProperties(PropertyBuilder<MaterialInstance>& properties);
 
-	static const char* GetTextureSlotName(TextureSlot textureSlot);
-
 	// The one way a material described by values changes: loads its textures and shader, and works out and uploads
 	// its GPU parameters, so nothing derived from the values can go stale
 	void SetValues(const MaterialValues& values);
@@ -118,10 +105,9 @@ public:
 	// The loaded pixel shader, resolved when the technique is set. Use this when drawing.
 	const PixelShader* GetPixelShader() const { return m_pixelShader; }
 
-	using EBlendMode = MaterialAssetImporter::MaterialData::EBlendMode;
 	EBlendMode GetBlendMode() const { return m_values.BlendMode; }
 	// Drawn in the forward pass's sorted, blended pass rather than with the opaque draws
-	bool IsBlended() const { return MaterialAssetImporter::IsBlended(m_values.BlendMode); }
+	bool IsBlended() const { return ::IsBlended(m_values.BlendMode); }
 
 	// @TODO Is this API good?
 	// Commit property changes to GPU buffer

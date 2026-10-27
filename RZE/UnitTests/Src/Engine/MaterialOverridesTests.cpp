@@ -16,7 +16,6 @@
 
 namespace
 {
-	using EBlendMode = MaterialValues::EBlendMode;
 
 	// The material asset a test mesh's slot is made from
 	Filepath GetMaterialPath(const std::string& name)
@@ -65,25 +64,25 @@ TEST_CASE("Overrides replace only the values they set")
 	base.BlendMode = EBlendMode::Opaque;
 	base.Opacity = 1.0f;
 	base.Shininess = 16.0f;
-	base.Textures[MaterialInstance::TEXTURE_SLOT_DIFFUSE] = Filepath("Assets/Textures/Base.png");
-	base.Textures[MaterialInstance::TEXTURE_SLOT_NORMAL] = Filepath("Assets/Textures/Normal.png");
+	base.Textures[TEXTURE_SLOT_DIFFUSE] = Filepath("Assets/Textures/Base.png");
+	base.Textures[TEXTURE_SLOT_NORMAL] = Filepath("Assets/Textures/Normal.png");
 
 	MaterialOverrides overrides;
 	CHECK(overrides.IsEmpty());
 	overrides.BlendMode = EBlendMode::Transparent;
 	overrides.Opacity = 0.3f;
-	overrides.Textures[MaterialInstance::TEXTURE_SLOT_DIFFUSE] = Filepath("Assets/Textures/Other.png");
+	overrides.Textures[TEXTURE_SLOT_DIFFUSE] = Filepath("Assets/Textures/Other.png");
 	// Overridden to nothing: emptied
-	overrides.Textures[MaterialInstance::TEXTURE_SLOT_NORMAL] = Filepath();
+	overrides.Textures[TEXTURE_SLOT_NORMAL] = Filepath();
 	CHECK_FALSE(overrides.IsEmpty());
 
 	const MaterialValues values = overrides.ApplyTo(base);
 	CHECK(values.BlendMode == EBlendMode::Transparent);
 	CHECK(values.Opacity == doctest::Approx(0.3f));
 	CHECK(values.Shininess == doctest::Approx(16.0f));
-	CHECK(values.Textures[MaterialInstance::TEXTURE_SLOT_DIFFUSE].GetRelativePath() == Filepath("Assets/Textures/Other.png").GetRelativePath());
-	CHECK_FALSE(values.Textures[MaterialInstance::TEXTURE_SLOT_NORMAL].IsValid());
-	CHECK_FALSE(values.Textures[MaterialInstance::TEXTURE_SLOT_SPECULAR].IsValid());
+	CHECK(values.Textures[TEXTURE_SLOT_DIFFUSE].GetRelativePath() == Filepath("Assets/Textures/Other.png").GetRelativePath());
+	CHECK_FALSE(values.Textures[TEXTURE_SLOT_NORMAL].IsValid());
+	CHECK_FALSE(values.Textures[TEXTURE_SLOT_SPECULAR].IsValid());
 
 	CHECK(MaterialOverrides().ApplyTo(base).Shininess == doctest::Approx(16.0f));
 }
@@ -93,20 +92,20 @@ TEST_CASE("Overrides survive being saved and loaded, with only what's overridden
 	MaterialOverrides overrides;
 	overrides.BlendMode = EBlendMode::Additive;
 	overrides.Shininess = 8.0f;
-	overrides.Textures[MaterialInstance::TEXTURE_SLOT_OPACITY] = Filepath("Assets/Textures/Mask.png");
-	overrides.Textures[MaterialInstance::TEXTURE_SLOT_HEIGHT] = Filepath();
+	overrides.Textures[TEXTURE_SLOT_OPACITY] = Filepath("Assets/Textures/Mask.png");
+	overrides.Textures[TEXTURE_SLOT_HEIGHT] = Filepath();
 	overrides.InvertOpacityMask = true;
 
 	const MaterialOverrides loaded = RoundTrip(overrides);
 	CHECK(loaded.BlendMode == EBlendMode::Additive);
 	CHECK(loaded.Shininess == doctest::Approx(8.0f));
 	CHECK_FALSE(loaded.Opacity.has_value());
-	REQUIRE(loaded.Textures[MaterialInstance::TEXTURE_SLOT_OPACITY].has_value());
-	CHECK(loaded.Textures[MaterialInstance::TEXTURE_SLOT_OPACITY]->GetRelativePath() == Filepath("Assets/Textures/Mask.png").GetRelativePath());
+	REQUIRE(loaded.Textures[TEXTURE_SLOT_OPACITY].has_value());
+	CHECK(loaded.Textures[TEXTURE_SLOT_OPACITY]->GetRelativePath() == Filepath("Assets/Textures/Mask.png").GetRelativePath());
 	// An emptied slot stays emptied, not unset
-	REQUIRE(loaded.Textures[MaterialInstance::TEXTURE_SLOT_HEIGHT].has_value());
-	CHECK_FALSE(loaded.Textures[MaterialInstance::TEXTURE_SLOT_HEIGHT]->IsValid());
-	CHECK_FALSE(loaded.Textures[MaterialInstance::TEXTURE_SLOT_DIFFUSE].has_value());
+	REQUIRE(loaded.Textures[TEXTURE_SLOT_HEIGHT].has_value());
+	CHECK_FALSE(loaded.Textures[TEXTURE_SLOT_HEIGHT]->IsValid());
+	CHECK_FALSE(loaded.Textures[TEXTURE_SLOT_DIFFUSE].has_value());
 	CHECK(loaded.InvertOpacityMask == true);
 	CHECK_FALSE(loaded.OpacityMaskInAlpha.has_value());
 

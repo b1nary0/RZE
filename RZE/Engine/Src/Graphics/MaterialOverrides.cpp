@@ -7,7 +7,6 @@
 
 namespace
 {
-	using EBlendMode = MaterialValues::EBlendMode;
 
 	constexpr char k_materialKey[] = "Material";
 	constexpr char k_blendModeKey[] = "BlendMode";
@@ -23,7 +22,7 @@ namespace
 	{
 		for (U8 mode = 0;; ++mode)
 		{
-			const char* const modeName = MaterialAssetImporter::GetBlendModeName(static_cast<EBlendMode>(mode));
+			const char* const modeName = GetBlendModeName(static_cast<EBlendMode>(mode));
 			if (std::strcmp(modeName, "Unknown") == 0)
 			{
 				return std::nullopt;
@@ -38,9 +37,9 @@ namespace
 	// The texture slot GetTextureSlotName calls name, if there is one
 	std::optional<size_t> FindTextureSlot(const char* name)
 	{
-		for (U8 slot = 0; slot < MaterialInstance::TEXTURE_SLOT_COUNT; ++slot)
+		for (U8 slot = 0; slot < TEXTURE_SLOT_COUNT; ++slot)
 		{
-			if (std::strcmp(MaterialInstance::GetTextureSlotName(static_cast<MaterialInstance::TextureSlot>(slot)), name) == 0)
+			if (std::strcmp(GetTextureSlotName(static_cast<ETextureSlot>(slot)), name) == 0)
 			{
 				return slot;
 			}
@@ -97,7 +96,7 @@ void MaterialOverrides::Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffe
 	if (BlendMode)
 	{
 		writer.Key(k_blendModeKey);
-		writer.String(MaterialAssetImporter::GetBlendModeName(*BlendMode));
+		writer.String(GetBlendModeName(*BlendMode));
 	}
 	if (Opacity)
 	{
@@ -132,7 +131,7 @@ void MaterialOverrides::Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffe
 		{
 			if (Textures[slot].has_value())
 			{
-				writer.Key(MaterialInstance::GetTextureSlotName(static_cast<MaterialInstance::TextureSlot>(slot)));
+				writer.Key(GetTextureSlotName(static_cast<ETextureSlot>(slot)));
 				writer.String(Textures[slot]->IsValid() ? Textures[slot]->GetRelativePath().c_str() : "");
 			}
 		}

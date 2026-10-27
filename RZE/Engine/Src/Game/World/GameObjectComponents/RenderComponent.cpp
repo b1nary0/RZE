@@ -76,7 +76,7 @@ namespace
 		std::vector<std::string> names;
 		for (U8 mode = 0;; ++mode)
 		{
-			const std::string name = MaterialAssetImporter::GetBlendModeName(static_cast<MaterialValues::EBlendMode>(mode));
+			const std::string name = GetBlendModeName(static_cast<EBlendMode>(mode));
 			if (name == "Unknown")
 			{
 				return names;
@@ -88,10 +88,9 @@ namespace
 	// A material slot's properties: each of its values, overridable, with what it draws with
 	void DescribeMaterialSlot(PropertyBuilder<MaterialSlot>& slot)
 	{
-		using EBlendMode = MaterialValues::EBlendMode;
 
 		slot.DisplayName([](const MaterialSlot& materialSlot) { return materialSlot.GetName(); });
-		slot.Icon([](const MaterialSlot& materialSlot) { return GetTexturePreview(materialSlot, MaterialInstance::TEXTURE_SLOT_DIFFUSE); });
+		slot.Icon([](const MaterialSlot& materialSlot) { return GetTexturePreview(materialSlot, TEXTURE_SLOT_DIFFUSE); });
 
 		// What it draws with first, then its values in sections
 		slot.Value<Filepath>("Material",
@@ -106,7 +105,7 @@ namespace
 			.Asset("Material", AssetPaths::GetMaterialFolder().GetRelativePath().c_str(), (std::string("*") + AssetPaths::k_materialExtension).c_str())
 			// Its textures load with it
 			.Preload<MaterialResource>()
-			.Thumbnail<MaterialSlot>([](const MaterialSlot& materialSlot) { return GetTexturePreview(materialSlot, MaterialInstance::TEXTURE_SLOT_DIFFUSE); })
+			.Thumbnail<MaterialSlot>([](const MaterialSlot& materialSlot) { return GetTexturePreview(materialSlot, TEXTURE_SLOT_DIFFUSE); })
 			.ToolTip("The material asset it draws with; the values below can be overridden on top of it");
 		slot.Value<std::string>("Shader", [](const MaterialSlot& materialSlot)
 			{
@@ -137,7 +136,7 @@ namespace
 			[](const MaterialValues& values) { return values.Opacity; },
 			[](auto& overrides) -> auto& { return overrides.Opacity; })
 			.Range(0.0f, 1.0f).As(EPropertyWidget::Slider).DisplayFormat("%.2f")
-			.EnabledIf<MaterialSlot>([](const MaterialSlot& materialSlot) { return MaterialAssetImporter::IsBlended(materialSlot.GetValues().BlendMode); },
+			.EnabledIf<MaterialSlot>([](const MaterialSlot& materialSlot) { return IsBlended(materialSlot.GetValues().BlendMode); },
 				"Only blended modes use opacity")
 			.InGroup("Surface");
 
@@ -148,9 +147,9 @@ namespace
 			.Range(0.0f, 16384.0f).As(EPropertyWidget::Drag).StepSize(0.5f).DisplayFormat("%.1f")
 			.InGroup("Surface");
 
-		for (U8 textureSlot = 0; textureSlot < MaterialInstance::TEXTURE_SLOT_COUNT; ++textureSlot)
+		for (U8 textureSlot = 0; textureSlot < TEXTURE_SLOT_COUNT; ++textureSlot)
 		{
-			DescribeOverridable<Filepath>(slot, MaterialInstance::GetTextureSlotName(static_cast<MaterialInstance::TextureSlot>(textureSlot)),
+			DescribeOverridable<Filepath>(slot, GetTextureSlotName(static_cast<ETextureSlot>(textureSlot)),
 				[textureSlot](const MaterialValues& values) { return values.Textures[textureSlot]; },
 				[textureSlot](auto& overrides) -> auto& { return overrides.Textures[textureSlot]; })
 				.Asset("Texture", "Assets", k_textureFilter)
@@ -162,7 +161,7 @@ namespace
 
 		const auto hasOpacityTexture = [](const MaterialSlot& materialSlot)
 			{
-				return materialSlot.GetValues().Textures[MaterialInstance::TEXTURE_SLOT_OPACITY].IsValid();
+				return materialSlot.GetValues().Textures[TEXTURE_SLOT_OPACITY].IsValid();
 			};
 		DescribeOverridable<bool>(slot, "Invert",
 			[](const MaterialValues& values) { return values.InvertOpacityMask; },

@@ -100,6 +100,8 @@ flowchart TD
 
 `SetValues(values)` is the one way a described material changes. It loads the textures and the shader, and works out and uploads the GPU parameters, so nothing derived from the values can go stale. `Create(materialData)` makes a material asset's material. Materials made in code (`GifChatComponent`'s frames) use `SetTexture`/`SetShaderTechnique` directly and keep the default parameters.
 
+The texture slots (`ETextureSlot`) and blend modes (`EBlendMode`) are in `Engine\Src\Graphics\MaterialDefines.h`, with `GetTextureSlotName`, `GetBlendModeName`, `IsBlended` and `ToBlendState` (the GPU blend state a blend mode draws with). Runtime code uses them without reaching into the asset importer, which keeps only the asset format (texture flags, legacy versions).
+
 | Texture slot | Shader register | Used for |
 |---|---|---|
 | `TEXTURE_SLOT_DIFFUSE` | `t0` `DiffuseMap` | Base colour, multiplied by the tint |
@@ -169,6 +171,7 @@ A `Texture2D` hands its texels to the upload as a `TexelBuffer`, so the upload f
 ## Key files
 
 - `Engine\Src\Graphics\MeshGeometry.h/.cpp`, `StaticMesh.h/.cpp`, `StaticMeshInstance.h/.cpp`, `MeshDraw.h`
+- `Engine\Src\Graphics\MaterialDefines.h/.cpp` — `EBlendMode`, `ETextureSlot` and their helpers
 - `Engine\Src\Graphics\Material.h/.cpp`, `MaterialValues.h/.cpp`, `MaterialOverrides.h/.cpp`, `MaterialSlot.h/.cpp`, `MaterialResource.h/.cpp`
 - `Engine\Src\Graphics\RenderObject.h/.cpp` (`RenderObject`)
 - `Engine\Src\Graphics\Shader.h/.cpp`, `Texture2D.h/.cpp`, `VertexBuffer.h/.cpp`, `IndexBuffer.h/.cpp`

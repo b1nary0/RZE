@@ -54,7 +54,7 @@ std::shared_ptr<MaterialInstance> MaterialInstance::Create(const MaterialAssetIm
 
 MaterialInstance::MaterialParams MaterialInstance::BuildParams(const MaterialValues& values)
 {
-	const bool isBlended = MaterialAssetImporter::IsBlended(values.BlendMode);
+	const bool isBlended = ::IsBlended(values.BlendMode);
 
 	MaterialParams params;
 	params.Shininess = values.Shininess;
@@ -149,25 +149,6 @@ const Rendering::ConstantBufferHandle& MaterialInstance::GetParamBuffer() const
 	return m_paramBuffer;
 }
 
-const char* MaterialInstance::GetTextureSlotName(TextureSlot textureSlot)
-{
-	switch (textureSlot)
-	{
-	case TEXTURE_SLOT_DIFFUSE:
-		return "Diffuse";
-	case TEXTURE_SLOT_SPECULAR:
-		return "Specular";
-	case TEXTURE_SLOT_NORMAL:
-		return "Normal";
-	case TEXTURE_SLOT_OPACITY:
-		return "Opacity";
-	case TEXTURE_SLOT_HEIGHT:
-		return "Height";
-	default:
-		return "None";
-	}
-}
-
 void MaterialInstance::DescribeProperties(PropertyBuilder<MaterialInstance>& properties)
 {
 	properties.DisplayName([](const MaterialInstance& material) { return material.GetName(); });
@@ -182,7 +163,7 @@ void MaterialInstance::DescribeProperties(PropertyBuilder<MaterialInstance>& pro
 	// mode needs an enum property type (PropertyBuilder has none)
 	properties.Value<std::string>("Blend Mode", [](const MaterialInstance& material)
 		{
-			return std::string(MaterialAssetImporter::GetBlendModeName(material.GetBlendMode()));
+			return std::string(GetBlendModeName(material.GetBlendMode()));
 		});
 	properties.Value<float>("Opacity", [](const MaterialInstance& material) { return material.GetValues().Opacity; });
 
@@ -194,7 +175,7 @@ void MaterialInstance::DescribeProperties(PropertyBuilder<MaterialInstance>& pro
 			{
 				if (const Texture2D* const texture = material.GetTextureResource(textureSlot))
 				{
-					textures.push_back(MakeObjectRef(texture, GetTextureSlotName(static_cast<TextureSlot>(textureSlot))));
+					textures.push_back(MakeObjectRef(texture, GetTextureSlotName(static_cast<ETextureSlot>(textureSlot))));
 				}
 			}
 			return textures;

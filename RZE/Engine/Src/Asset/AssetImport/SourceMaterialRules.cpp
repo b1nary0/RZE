@@ -45,17 +45,17 @@ namespace SourceMaterialRules
 		return Vector3D(std::clamp(tint.X(), 0.0f, 1.0f), std::clamp(tint.Y(), 0.0f, 1.0f), std::clamp(tint.Z(), 0.0f, 1.0f));
 	}
 
-	MaterialAssetImporter::MaterialData::EBlendMode ChooseBlendMode(EMaskKind mask, float opacity)
+	EBlendMode ChooseBlendMode(EMaskKind mask, float opacity)
 	{
 		using MaterialData = MaterialAssetImporter::MaterialData;
 		switch (mask)
 		{
 		case EMaskKind::Cutout:
-			return MaterialData::EBlendMode::Cutout;
+			return EBlendMode::Cutout;
 		case EMaskKind::Coverage:
-			return MaterialData::EBlendMode::Transparent;
+			return EBlendMode::Transparent;
 		default:
-			return opacity < 1.0f ? MaterialData::EBlendMode::Transparent : MaterialData::EBlendMode::Opaque;
+			return opacity < 1.0f ? EBlendMode::Transparent : EBlendMode::Opaque;
 		}
 	}
 }

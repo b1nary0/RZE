@@ -3,7 +3,6 @@
 #include <Asset/AssetImport/SourceMaterialRules.h>
 
 using SourceMaterialRules::SourceTransparency;
-using EBlendMode = MaterialAssetImporter::MaterialData::EBlendMode;
 
 TEST_CASE("A source that says nothing about transparency is solid")
 {

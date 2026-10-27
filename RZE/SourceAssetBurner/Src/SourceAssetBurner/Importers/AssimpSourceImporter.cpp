@@ -496,12 +496,9 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 			return;
 		}
 
-		// #TODO
-		// This is just temp
-		const int kTextureTypeCount = 5;
-
+		// One path per texture slot, empty for an unused one
 		MaterialData materialData;
-		materialData.TexturePaths.resize(kTextureTypeCount);
+		materialData.TexturePaths.resize(TEXTURE_SLOT_COUNT);
 
 		const aiMaterial* mat = scene.mMaterials[mesh.mMaterialIndex];
 		aiString matName;
@@ -549,7 +546,7 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 		const aiTextureType normalType = mat->GetTextureCount(aiTextureType_NORMALS) > 0 ? aiTextureType_NORMALS : aiTextureType_NORMAL_CAMERA;
 
 		// Each slot only counts as used once its texture is found
-		const auto setTexture = [this, &scene, mat, &materialData](aiTextureType type, size_t slot, U8 flag)
+		const auto setTexture = [this, &scene, mat, &materialData](aiTextureType type, ETextureSlot slot, U8 flag)
 		{
 			materialData.TexturePaths[slot] = ResolveTexturePath(scene, *mat, type);
 			if (!materialData.TexturePaths[slot].empty())
@@ -558,13 +555,13 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 			}
 		};
 
-		setTexture(albedoType, 0, MaterialData::ETextureFlags::TEXTUREFLAG_ALBEDO);
-		setTexture(aiTextureType_SPECULAR, 1, MaterialData::ETextureFlags::TEXTUREFLAG_SPECULAR);
-		setTexture(normalType, 2, MaterialData::ETextureFlags::TEXTUREFLAG_NORMAL);
+		setTexture(albedoType, TEXTURE_SLOT_DIFFUSE, MaterialData::ETextureFlags::TEXTUREFLAG_ALBEDO);
+		setTexture(aiTextureType_SPECULAR, TEXTURE_SLOT_SPECULAR, MaterialData::ETextureFlags::TEXTUREFLAG_SPECULAR);
+		setTexture(normalType, TEXTURE_SLOT_NORMAL, MaterialData::ETextureFlags::TEXTUREFLAG_NORMAL);
 
 		// Cutout mask (map_d in .mtl)
-		setTexture(aiTextureType_OPACITY, 3, MaterialData::ETextureFlags::TEXTUREFLAG_OPACITY);
-		SourceMaterialRules::EMaskKind maskKind = materialData.TexturePaths[3].empty()
+		setTexture(aiTextureType_OPACITY, TEXTURE_SLOT_OPACITY, MaterialData::ETextureFlags::TEXTUREFLAG_OPACITY);
+		SourceMaterialRules::EMaskKind maskKind = materialData.TexturePaths[TEXTURE_SLOT_OPACITY].empty()
 			? SourceMaterialRules::EMaskKind::None
 			: SourceMaterialRules::EMaskKind::Cutout;
 
@@ -574,7 +571,7 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 			const SourceMask maxMask = FindMaxPhysicalMask(scene, *mat);
 			if (maxMask.Kind != SourceMaterialRules::EMaskKind::None)
 			{
-				materialData.TexturePaths[3] = maxMask.Path;
+				materialData.TexturePaths[TEXTURE_SLOT_OPACITY] = maxMask.Path;
 				materialData.TextureFlags |= MaterialData::ETextureFlags::TEXTUREFLAG_OPACITY;
 				if (maxMask.IsInverted)
 				{
@@ -588,13 +585,14 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 		// read, and an untextured material draws the default grey (Docs/Plans/Transparency.md).
 
 		// map_d pointing at the diffuse texture means "use the diffuse alpha"; a dedicated mask stores it in its colour channels
-		if (!materialData.TexturePaths[3].empty() && materialData.TexturePaths[3] == materialData.TexturePaths[0])
+		const std::string& opacityPath = materialData.TexturePaths[TEXTURE_SLOT_OPACITY];
+		if (!opacityPath.empty() && opacityPath == materialData.TexturePaths[TEXTURE_SLOT_DIFFUSE])
 		{
 			materialData.TextureFlags |= MaterialData::ETextureFlags::TEXTUREFLAG_OPACITY_IN_ALPHA;
 		}
 
 		// Grayscale height/bump map (map_bump in .mtl). Distinct from tangent-space normal maps (map_Kn).
-		setTexture(aiTextureType_HEIGHT, 4, MaterialData::ETextureFlags::TEXTUREFLAG_HEIGHT);
+		setTexture(aiTextureType_HEIGHT, TEXTURE_SLOT_HEIGHT, MaterialData::ETextureFlags::TEXTUREFLAG_HEIGHT);
 
 		materialData.BlendMode = SourceMaterialRules::ChooseBlendMode(maskKind, materialData.Properties.Opacity);
 
@@ -617,7 +615,7 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 			{
 				colour.MaxPhysicalTransparency = transparency;
 			}
-			materialData.Tint = SourceMaterialRules::ChooseTint(colour, !materialData.TexturePaths[0].empty());
+			materialData.Tint = SourceMaterialRules::ChooseTint(colour, !materialData.TexturePaths[TEXTURE_SLOT_DIFFUSE].empty());
 		}
 
 		// #TODO really gross string manip lol

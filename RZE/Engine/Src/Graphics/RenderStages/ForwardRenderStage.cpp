@@ -4,6 +4,7 @@
 #include <Graphics/GraphicsLayouts.h>
 #include <Graphics/IndexBuffer.h>
 #include <Graphics/Material.h>
+#include <Graphics/MaterialDefines.h>
 #include <Graphics/MaterialSlot.h>
 #include <Graphics/RenderEngine.h>
 #include <Graphics/Shader.h>
@@ -149,7 +150,7 @@ void ForwardRenderStage::Render(RenderContext& context)
 		for (const TransparentDraw& transparentDraw : m_transparentDraws)
 		{
 			const MeshDraw& draw = *transparentDraw.Draw;
-			const Rendering::EBlendState blendState = GetBlendState(draw.Slot->GetMaterial().GetBlendMode());
+			const Rendering::EBlendState blendState = ToBlendState(draw.Slot->GetMaterial().GetBlendMode());
 			if (blendState != boundBlendState)
 			{
 				Rendering::Renderer::SetBlendState(blendState);
@@ -180,24 +181,6 @@ void ForwardRenderStage::SortBackToFront(std::vector<TransparentDraw>& draws)
 		});
 }
 
-Rendering::EBlendState ForwardRenderStage::GetBlendState(MaterialAssetImporter::MaterialData::EBlendMode blendMode)
-{
-	using EBlendMode = MaterialAssetImporter::MaterialData::EBlendMode;
-	switch (blendMode)
-	{
-	case EBlendMode::Transparent:
-		return Rendering::EBlendState::AlphaBlend;
-	case EBlendMode::Premultiplied:
-		return Rendering::EBlendState::Premultiplied;
-	case EBlendMode::Additive:
-		return Rendering::EBlendState::Additive;
-	case EBlendMode::Multiply:
-		return Rendering::EBlendState::Multiply;
-	default:
-		return Rendering::EBlendState::Opaque;
-	}
-}
-
 void ForwardRenderStage::DrawMesh(const MeshDraw& draw, const Matrix4x4*& uploadedTransform, const PixelShader*& boundPixelShader)
 {
 	const MeshGeometry& meshGeometry = *draw.Geometry;
@@ -224,7 +207,7 @@ void ForwardRenderStage::DrawMesh(const MeshDraw& draw, const Matrix4x4*& upload
 	Rendering::Renderer::SetConstantBufferPS(materialInstance.GetParamBuffer(), 1);
 
 	// @TODO Really need to get to texture infrastructure refactor soon - 2/6/2022
-	for (U8 textureSlot = 0; textureSlot < MaterialInstance::TextureSlot::TEXTURE_SLOT_COUNT; ++textureSlot)
+	for (U8 textureSlot = 0; textureSlot < TEXTURE_SLOT_COUNT; ++textureSlot)
 	{
 		if (const Texture2D* const texture = materialInstance.GetTextureResource(textureSlot))
 		{

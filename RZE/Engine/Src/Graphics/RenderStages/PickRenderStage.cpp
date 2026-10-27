@@ -138,9 +138,9 @@ void PickRenderStage::Render(RenderContext& context)
 
 			// For cutout materials, as in ShadowRenderStage
 			Rendering::Renderer::SetConstantBufferPS(materialInstance.GetParamBuffer(), 1);
-			if (const Texture2D* const opacityMap = materialInstance.GetTextureResource(MaterialInstance::TEXTURE_SLOT_OPACITY))
+			if (const Texture2D* const opacityMap = materialInstance.GetTextureResource(TEXTURE_SLOT_OPACITY))
 			{
-				Rendering::Renderer::SetTextureResource(opacityMap->GetPlatformObject(), MaterialInstance::TEXTURE_SLOT_OPACITY);
+				Rendering::Renderer::SetTextureResource(opacityMap->GetPlatformObject(), TEXTURE_SLOT_OPACITY);
 			}
 
 			const Rendering::IndexBufferHandle& indexBuffer = meshGeometry.GetIndexBuffer()->GetPlatformObject();

@@ -2,6 +2,8 @@
 
 #include <Asset/AssetImport/AssetImporter.h>
 
+#include <Graphics/MaterialDefines.h>
+
 #include <Utils/Math/Vector3D.h>
 #include <Utils/PrimitiveDefs.h>
 
@@ -28,22 +30,11 @@ public:
 			TEXTUREFLAG_ALL = TEXTUREFLAG_ALBEDO | TEXTUREFLAG_SPECULAR | TEXTUREFLAG_NORMAL
 		};
 
-		// How the material covers what's behind it (Docs/Plans/Transparency.md). Stored as a byte; append new modes.
-		enum class EBlendMode : U8
-		{
-			Opaque,      // Hides what's behind it
-			Cutout,      // Opaque where its opacity mask passes AlphaCutoff, absent elsewhere
-			Transparent, // See-through by Properties.Opacity: src * a + dst * (1 - a)
-			Premultiplied, // For colour already multiplied by its alpha: src + dst * (1 - a)
-			Additive,    // Adds its colour, scaled by opacity, to what's behind (glows, light shafts): src * a + dst
-			Multiply     // Darkens what's behind by its colour (grime): src * dst. #TODO(Transparency) ignores opacity
-		};
-
 		std::string MaterialName;
 		struct MaterialProperties
 		{
-			float Shininess = 0.0f;;
-			// 1 is solid. Only a Transparent material is see-through by it.
+			float Shininess = 0.0f;
+			// 1 is solid. Only a Transparent material (EBlendMode) is see-through by it.
 			float Opacity = 1.0f;
 		} Properties;
 		// #TODO These flags inform which texture types are used by this material
@@ -61,13 +52,10 @@ public:
 	static constexpr float k_untexturedGrey = 0.5f;
 
 	// What a material made before blend modes existed (version 0) is: Cutout with an opacity mask, otherwise Opaque
-	static MaterialData::EBlendMode GetLegacyBlendMode(U8 textureFlags);
+	static EBlendMode GetLegacyBlendMode(U8 textureFlags);
 	// What a material made before tints existed (versions 0 and 1) drew with: its diffuse texture as it is (white),
 	// or k_untexturedGrey without one
 	static Vector3D GetLegacyTint(U8 textureFlags);
-	static const char* GetBlendModeName(MaterialData::EBlendMode blendMode);
-	// Blends with what's behind it, so it's drawn after everything opaque, sorted, and casts no shadow
-	static bool IsBlended(MaterialData::EBlendMode blendMode);
 
 public:
 	MaterialAssetImporter() = default;
