@@ -519,6 +519,13 @@ namespace Rendering
 		m_renderThread.PushCommand(command);
 	}
 
+	void Renderer::UnsetPixelShader()
+	{
+		RenderCommand_UnsetPixelShader* command = MemArena::AllocType<RenderCommand_UnsetPixelShader>();
+
+		m_renderThread.PushCommand(command);
+	}
+
 	void Renderer::SetConstantBufferVS(const ConstantBufferHandle& buffer, U32 bufferSlot)
 	{
 		RenderCommand_SetConstantBufferVS* command = MemArena::AllocType<RenderCommand_SetConstantBufferVS>();

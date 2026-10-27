@@ -71,6 +71,7 @@ namespace Rendering
 		// EDepthState::ReadOnly and Off; EDepthState::ReadWrite binds no depth-stencil state, D3D's default
 		// (test with LESS, write)
 		ID3D11DepthStencilState* mDepthReadOnlyState;
+		ID3D11DepthStencilState* mDepthReadOnlyLessEqualState;
 		ID3D11DepthStencilState* mDepthOffState;
 
 		// Depth-comparison sampler for shadow maps; bound to PS and CS slot s1 at every Begin()

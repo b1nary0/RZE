@@ -136,6 +136,8 @@ namespace Rendering
 
 		static void SetVertexShader(const VertexShaderHandle& vertexShader);
 		static void SetPixelShader(const PixelShaderHandle& pixelShader);
+		// Draws with no pixel shader, e.g. depth-only passes where nothing needs clipping
+		static void UnsetPixelShader();
 
 		static void SetConstantBufferVS(const ConstantBufferHandle& buffer, U32 bufferSlot);
 		static void SetConstantBufferPS(const ConstantBufferHandle& buffer, U32 bufferSlot);

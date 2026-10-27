@@ -47,6 +47,7 @@ void ForwardRenderStage::Initialize()
 void ForwardRenderStage::Setup(RenderStageBuilder& builder)
 {
 	m_sceneLightingInput = builder.Reads<SceneLightingData>();
+	m_sceneDepthInput = builder.Reads<SceneDepthData>();
 	m_sceneColourOutput = builder.Writes<SceneColourData>();
 }
 
@@ -64,11 +65,15 @@ void ForwardRenderStage::Render(RenderContext& context)
 	// Alpha 0 marks the background, which it fills with the clear colour.
 	SceneColourData sceneColourData;
 	sceneColourData.Colour = view.Target->GetSceneTargetPlatformObject();
-	sceneColourData.Depth = view.Target->GetDepthTexturePlatformObject();
+	// Already holds everything that isn't blended (DepthPrepassStage), so it isn't cleared
+	sceneColourData.Depth = m_sceneDepthInput.Get(context).Depth;
 
 	Rendering::Renderer::SetColourTarget(sceneColourData.Colour, sceneColourData.Depth);
 	Rendering::Renderer::ClearRenderTarget(sceneColourData.Colour, Vector4D(0.0f, 0.0f, 0.0f, 0.0f));
-	Rendering::Renderer::ClearDepthStencilBuffer(sceneColourData.Depth);
+
+	// Each pixel passes only for the surface the prepass left nearest there, so it's shaded once. Nothing needs
+	// writing: the prepass wrote the same depths.
+	Rendering::Renderer::SetDepthState(Rendering::EDepthState::ReadOnlyLessEqual);
 
 	Rendering::Renderer::UploadDataToBuffer<RenderCamera>(m_vertexShader->GetCameraDataBuffer(), &view.Camera);
 
@@ -138,7 +143,8 @@ void ForwardRenderStage::Render(RenderContext& context)
 		SortBackToFront(m_transparentDraws);
 
 		// Blended over what's behind, and tested against depth without writing it, so one see-through surface
-		// doesn't hide another behind it.
+		// doesn't hide another behind it. Strictly nearer, as before the prepass: a surface at exactly the depth of
+		// the opaque one behind it stays hidden.
 		// #TODO(Transparency) Over empty background (scene alpha 0) the blend leaves alpha 0, so PostProcess paints
 		// the background colour there and the surface vanishes. Needs the background handled before blending.
 		Rendering::Renderer::SetDepthState(Rendering::EDepthState::ReadOnly);
@@ -159,8 +165,9 @@ void ForwardRenderStage::Render(RenderContext& context)
 		}
 
 		Rendering::Renderer::SetBlendState(Rendering::EBlendState::Opaque);
-		Rendering::Renderer::SetDepthState(Rendering::EDepthState::ReadWrite);
 	}
+
+	Rendering::Renderer::SetDepthState(Rendering::EDepthState::ReadWrite);
 
 	// The shadow maps can't stay bound as shader inputs while the next frame renders depth into them
 	Rendering::Renderer::UnsetTextureResource(k_shadowMapSlot);

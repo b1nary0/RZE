@@ -358,6 +358,12 @@ namespace Rendering
 		command.shaderHandle.m_shader->SetActive();
 	}
 
+	void RenderThread::Execute(RenderCommand_UnsetPixelShader&)
+	{
+		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+		deviceContext.PSSetShader(nullptr, nullptr, 0);
+	}
+
 	void RenderThread::Execute(RenderCommand_SetComputeShader& command)
 	{
 		command.shaderHandle.m_shader->SetActive();

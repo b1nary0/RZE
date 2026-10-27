@@ -118,6 +118,9 @@ namespace Rendering
 			depthDesc.DepthFunc = D3D11_COMPARISON_LESS;
 			mDevice->CreateDepthStencilState(&depthDesc, &mDepthReadOnlyState);
 
+			depthDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+			mDevice->CreateDepthStencilState(&depthDesc, &mDepthReadOnlyLessEqualState);
+
 			depthDesc.DepthEnable = FALSE;
 			mDevice->CreateDepthStencilState(&depthDesc, &mDepthOffState);
 		}
@@ -269,6 +272,7 @@ namespace Rendering
 		mAdditiveBlendState->Release();
 		mMultiplyBlendState->Release();
 		mDepthReadOnlyState->Release();
+		mDepthReadOnlyLessEqualState->Release();
 		mDepthOffState->Release();
 		mShadowSamplerState->Release();
 		mLinearClampSamplerState->Release();
@@ -392,6 +396,8 @@ namespace Rendering
 		{
 		case EDepthState::ReadOnly:
 			return mDepthReadOnlyState;
+		case EDepthState::ReadOnlyLessEqual:
+			return mDepthReadOnlyLessEqualState;
 		case EDepthState::Off:
 			return mDepthOffState;
 		default:

@@ -107,6 +107,7 @@ namespace Rendering
 		void Execute(RenderCommand_SetDepthState& command);
 		void Execute(RenderCommand_SetVertexShader& command);
 		void Execute(RenderCommand_SetPixelShader& command);
+		void Execute(RenderCommand_UnsetPixelShader& command);
 		void Execute(RenderCommand_SetComputeShader& command);
 		void Execute(RenderCommand_SetConstantBufferVS& command);
 		void Execute(RenderCommand_SetConstantBufferPS& command);

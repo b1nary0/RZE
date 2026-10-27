@@ -173,6 +173,7 @@ namespace Rendering
 			case RenderCommandType::SetDepthState: Execute(static_cast<RenderCommand_SetDepthState&>(*command)); break;
 			case RenderCommandType::SetVertexShader: Execute(static_cast<RenderCommand_SetVertexShader&>(*command)); break;
 			case RenderCommandType::SetPixelShader: Execute(static_cast<RenderCommand_SetPixelShader&>(*command)); break;
+			case RenderCommandType::UnsetPixelShader: Execute(static_cast<RenderCommand_UnsetPixelShader&>(*command)); break;
 			case RenderCommandType::SetComputeShader: Execute(static_cast<RenderCommand_SetComputeShader&>(*command)); break;
 			case RenderCommandType::SetConstantBufferVS: Execute(static_cast<RenderCommand_SetConstantBufferVS&>(*command)); break;
 			case RenderCommandType::SetConstantBufferPS: Execute(static_cast<RenderCommand_SetConstantBufferPS&>(*command)); break;

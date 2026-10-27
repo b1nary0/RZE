@@ -4,6 +4,7 @@
 #include <Graphics/RenderPipeline.h>
 #include <Graphics/RenderStage.h>
 #include <Graphics/RenderStages/DebugDrawRenderStage.h>
+#include <Graphics/RenderStages/DepthPrepassStage.h>
 #include <Graphics/RenderStages/ForwardRenderStage.h>
 #include <Graphics/RenderStages/PickRenderStage.h>
 #include <Graphics/RenderStages/PostProcessRenderStage.h>
@@ -29,6 +30,7 @@ void RenderEngine::Initialize(void* windowHandle)
 	Rendering::Renderer::Initialize(windowHandle);
 	
 	AddRenderStage<ShadowRenderStage>();
+	AddRenderStage<DepthPrepassStage>();
 	AddRenderStage<ForwardRenderStage>();
 	AddRenderStage<PostProcessRenderStage>();
 	AddRenderStage<PickRenderStage>();

@@ -68,6 +68,7 @@ namespace Rendering
 		SetDepthState,
 		SetVertexShader,
 		SetPixelShader,
+		UnsetPixelShader,
 		SetComputeShader,
 		SetConstantBufferVS,
 		SetConstantBufferPS,
@@ -388,6 +389,11 @@ namespace Rendering
 		RenderCommand_SetPixelShader() { type = RenderCommandType::SetPixelShader; }
 
 		PixelShaderHandle shaderHandle;
+	};
+
+	struct RenderCommand_UnsetPixelShader : RenderCommand
+	{
+		RenderCommand_UnsetPixelShader() { type = RenderCommandType::UnsetPixelShader; }
 	};
 
 	struct RenderCommand_SetComputeShader : RenderCommand
