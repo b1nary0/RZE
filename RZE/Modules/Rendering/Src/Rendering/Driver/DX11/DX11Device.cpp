@@ -349,4 +349,38 @@ namespace Rendering
 		}
 	}
 
+	ID3D11RasterizerState* DX11Device::GetRasterizerState(ERasterizerState state) const
+	{
+		return state == ERasterizerState::ShadowCaster ? mShadowCasterRasterState : mRasterState;
+	}
+
+	ID3D11BlendState* DX11Device::GetBlendState(EBlendState state) const
+	{
+		switch (state)
+		{
+		case EBlendState::AlphaBlend:
+			return mAlphaBlendState;
+		case EBlendState::Premultiplied:
+			return mPremultipliedBlendState;
+		case EBlendState::Additive:
+			return mAdditiveBlendState;
+		case EBlendState::Multiply:
+			return mMultiplyBlendState;
+		default:
+			return nullptr;
+		}
+	}
+
+	ID3D11DepthStencilState* DX11Device::GetDepthState(EDepthState state) const
+	{
+		switch (state)
+		{
+		case EDepthState::ReadOnly:
+			return mDepthReadOnlyState;
+		case EDepthState::Off:
+			return mDepthOffState;
+		default:
+			return nullptr;
+		}
+	}
 }

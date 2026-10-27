@@ -4,13 +4,13 @@
 #include <thread>
 #include <vector>
 
+#include <Rendering/RenderCommand.h>
+
 #include <Utils/PrimitiveDefs.h>
 #include <Utils/StatsWindow.h>
 
 namespace Rendering
 {
-	struct RenderCommand;
-
 	class DX11Device;
 
 	// The render thread's frames, averaged over a StatsWindow, for display. A frame runs from one present to the next;
@@ -62,6 +62,63 @@ namespace Rendering
 		void ProcessCommands();
 		// Adds the batch of commands that started at batchStart to the current frame, which ends if the batch presented
 		void UpdateStats(double batchStart, bool hasPresented);
+
+		// What each command does (RenderThreadCommands.cpp). ProcessCommands calls the one for its type.
+		// The frame
+		void Execute(RenderCommand_ImGuiRender& command);
+		void Execute(RenderCommand_BeginFrame& command);
+		void Execute(RenderCommand_EndFrame& command);
+		void Execute(RenderCommand_Begin& command);
+		void Execute(RenderCommand_End& command);
+		void Execute(RenderCommand_DevicePresent& command);
+		void Execute(RenderCommand_HandleWindowResize& command);
+		void Execute(RenderCommand_SetSyncInterval& command);
+
+		// Resources
+		void Execute(RenderCommand_CreateVertexBuffer& command);
+		void Execute(RenderCommand_CreateIndexBuffer& command);
+		void Execute(RenderCommand_CreateConstantBuffer& command);
+		void Execute(RenderCommand_CreateTextureBuffer2D& command);
+		void Execute(RenderCommand_CreateVertexShader& command);
+		void Execute(RenderCommand_CreatePixelShader& command);
+		void Execute(RenderCommand_UploadDataToBuffer& command);
+		void Execute(RenderCommand_UpdateVertexBuffer& command);
+		void Execute(RenderCommand_ReleaseVertexShader& command);
+		void Execute(RenderCommand_ReleasePixelShader& command);
+
+		// Targets
+		void Execute(RenderCommand_ClearDepthStencilBuffer& command);
+		void Execute(RenderCommand_ClearRenderTargets& command);
+		void Execute(RenderCommand_SetRenderTargetBackBuffer& command);
+		void Execute(RenderCommand_SetDepthTarget& command);
+		void Execute(RenderCommand_SetColourTarget& command);
+		void Execute(RenderCommand_GenerateMips& command);
+		void Execute(RenderCommand_ClearRenderTarget& command);
+
+		// Pipeline state
+		void Execute(RenderCommand_SetViewport& command);
+		void Execute(RenderCommand_SetInputLayout& command);
+		void Execute(RenderCommand_SetPrimitiveTopology& command);
+		void Execute(RenderCommand_SetRasterizerState& command);
+		void Execute(RenderCommand_SetBlendState& command);
+		void Execute(RenderCommand_SetDepthState& command);
+		void Execute(RenderCommand_SetVertexShader& command);
+		void Execute(RenderCommand_SetPixelShader& command);
+		void Execute(RenderCommand_SetConstantBufferVS& command);
+		void Execute(RenderCommand_SetConstantBufferPS& command);
+		void Execute(RenderCommand_SetVertexBuffer& command);
+		void Execute(RenderCommand_SetIndexBuffer& command);
+		void Execute(RenderCommand_SetTextureResource& command);
+		void Execute(RenderCommand_UnsetTextureResource& command);
+
+		// Draws
+		void Execute(RenderCommand_Draw& command);
+		void Execute(RenderCommand_DrawIndexed& command);
+		void Execute(RenderCommand_DrawFullScreenQuad& command);
+
+		// Reading back
+		void Execute(RenderCommand_ReadTexel& command);
+		void Execute(RenderCommand_ReadTexture& command);
 
 		// Named regions for PIX and similar tools; no-ops when no profiler is attached
 		void BeginProfilerEvent(const char* name);

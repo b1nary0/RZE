@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Rendering/Driver/GFXDevice.h>
+#include <Rendering/RenderingDefines.h>
 
 #include <Utils/PrimitiveDefs.h>
 
@@ -50,6 +51,12 @@ namespace Rendering
 		
 	public:
 		void HandleWindowResize(U32 newWidth, U32 newHeight);
+
+		// The state each enum asks for; null for the one D3D draws with when none is bound (EBlendState::Opaque,
+		// EDepthState::ReadWrite)
+		ID3D11RasterizerState* GetRasterizerState(ERasterizerState state) const;
+		ID3D11BlendState* GetBlendState(EBlendState state) const;
+		ID3D11DepthStencilState* GetDepthState(EDepthState state) const;
 		
 	public:
 		ID3D11RasterizerState* mRasterState;

@@ -6,12 +6,12 @@ This is a self-contained, DirectX 11–backed rendering library, deliberately de
 
 - `Renderer.h` / `.cpp` — the public static-method facade (`class Renderer`, no instance state besides a static `RenderThread`). This is the only entry point game/engine code should call.
 - `RenderThread.h` / `.cpp` — worker thread owning the actual `DX11Device` and executing queued commands.
-- `RenderCommand.h` — `RenderCommandType` enum + one POD struct per command, all deriving `RenderCommand`.
+- `RenderThreadCommands.cpp` — what each command does on the render thread: one private `RenderThread::Execute` overload per command, with the read-back helpers.
+- `RenderCommand.h` — `RenderCommandType` (an `enum class`) + one POD struct per command, all deriving `RenderCommand`.
 - `MemArena.h` / `.cpp` — the frame-scoped bump allocator backing every render command.
 - `BufferHandle.h`/`.cpp`, `ShaderHandle.h` — opaque `shared_ptr`-wrapping handle types.
 - `Driver/` — hardware abstraction interfaces (`IGFXDevice`, `IVertexBuffer`/`IIndexBuffer`/`IConstantBuffer`/`ITextureBuffer2D`, `IVertexShader`/`IPixelShader`) plus the concrete `Driver/DX11/` implementations (`DX11Device`, `DX11VertexBuffer`, `DX11IndexBuffer`, `DX11ConstantBuffer`, `DX11TextureBuffer2D`, `DX11VertexShader`/`DX11PixelShader`, `DX11TypeConversion`).
 - `Graphics/` — `RenderTarget.h/.cpp` (`RenderTargetTexture`, used by both Editor and Game as their "screen" surface) and `Texture.h/.cpp` (`TexturePack`, a texture-array abstraction).
-- `old_RenderCommands.h` — vestigial dead code from a prior command-struct design, not referenced anywhere current (see [10-KnownIssues](../10-KnownIssues/Architectural-Notes-And-TODOs.md)).
 
 ## The command-buffer render thread pattern
 
@@ -49,14 +49,14 @@ sequenceDiagram
     RT->>RT: set m_processSignal, wake render thread
     loop drain consumerQueue
         RT->>Cons: pop RenderCommand*
-        RT->>DX11: dispatch via switch(command->type)
+        RT->>DX11: Execute(command), by command->type
         RT->>RT: command->~RenderCommand() (arena memory reused, not delete'd)
     end
 ```
 
 1. **`MemArena`** — a bump allocator with a fixed 64MB size (`MemoryUtils::Megabytes(64)`, set in `Renderer::Initialize`). `MemArena::AllocType<T>()` placement-news a `T` inside arena memory. Tracks a pressure level (`PressureValue::LOW`/`MED`/`HIGH`), last-frame allocation size, and peak usage — surfaced live in the Editor's menu bar memory readout.
 2. Every `Renderer::*` static call allocates a `RenderCommand_*` struct out of the arena, fills in parameters (deep-copying transient data where needed), and pushes it onto `RenderThread::m_producerQueue` via `PushCommand`. Creation calls (`CreateVertexBuffer`, `CreateVertexShader`, etc.) synchronously return a caller-visible handle wrapping a `shared_ptr` to the concrete DX11 object — but that object is only populated **later**, asynchronously, when the render thread actually executes the command (`cmd->bufferPtr->Allocate(...)`). Callers get a handle immediately and must not assume the resource is ready before the render thread has processed it.
-3. **`RenderThread`** runs a dedicated `std::thread` looping `Update()`, waiting on a `std::condition_variable` (`m_updateCondition`/`m_processSignal`). `Renderer::DevicePresent()` calls `SignalProcess()`, which waits for prior processing to finish, calls `MemArena::Cycle()`, swaps `m_producerQueue`/`m_consumerQueue` (classic double-buffered command queue — the header notes these queues are "guaranteed to be contiguous as its backed by MemArena"), then wakes the render thread. `ProcessCommands()` drains the consumer queue via a large `switch (command->type)`, dispatching directly against `ID3D11DeviceContext` calls, and explicitly destructs each command afterward (`command->~RenderCommand()`) — memory is reused via the arena's next `Cycle()`, never `delete`d individually.
+3. **`RenderThread`** runs a dedicated `std::thread` looping `Update()`, waiting on a `std::condition_variable` (`m_updateCondition`/`m_processSignal`). `Renderer::DevicePresent()` calls `SignalProcess()`, which waits for prior processing to finish, calls `MemArena::Cycle()`, swaps `m_producerQueue`/`m_consumerQueue` (classic double-buffered command queue — the header notes these queues are "guaranteed to be contiguous as its backed by MemArena"), then wakes the render thread. `ProcessCommands()` drains the consumer queue with a `switch (command->type)` that hands each command to its own `Execute` overload (`RenderThreadCommands.cpp`), which makes the `ID3D11DeviceContext` calls, and explicitly destructs each command afterward (`command->~RenderCommand()`) — memory is reused via the arena's next `Cycle()`, never `delete`d individually.
 4. This decouples game/render-logic submission from GPU-thread execution — a hand-rolled version of the "render command list"/deferred-context pattern, implemented without D3D11's actual deferred contexts.
 
 ### What a command keeps alive
@@ -197,7 +197,7 @@ Both go through one helper on the render thread: it creates a `D3D11_USAGE_STAGI
 ## Key files
 
 - `Modules\Rendering\Src\Rendering\Renderer.h/.cpp`
-- `Modules\Rendering\Src\Rendering\RenderThread.h/.cpp`
+- `Modules\Rendering\Src\Rendering\RenderThread.h/.cpp`, `RenderThreadCommands.cpp`
 - `Modules\Rendering\Src\Rendering\RenderCommand.h`
 - `Modules\Rendering\Src\Rendering\TexelBuffer.h/.cpp` — texels an upload owns
 - `Modules\Rendering\Src\Rendering\UIFrameData.h/.cpp` — a UI frame's draw data and the textures it draws
@@ -205,5 +205,5 @@ Both go through one helper on the render thread: it creates a `D3D11_USAGE_STAGI
 - `Modules\Rendering\Src\Rendering\MemArena.h/.cpp`
 - `Modules\Rendering\Src\Rendering\BufferHandle.h/.cpp`, `ShaderHandle.h`
 - `Modules\Rendering\Src\Rendering\Driver\GFXDevice.h`, `GFXBuffer.h`, `ShaderTypes.h`, `TypeDefines.h`
-- `Modules\Rendering\Src\Rendering\Driver\DX11\DX11Device.h/.cpp` (+ sibling DX11* files)
+- `Modules\Rendering\Src\Rendering\Driver\DX11\DX11Device.h/.cpp` (+ sibling DX11* files): the device, swap chain, and the blend, depth and rasterizer states each enum asks for (`GetBlendState`, `GetDepthState`, `GetRasterizerState`)
 - `Modules\Rendering\Src\Rendering\Graphics\RenderTarget.h/.cpp`, `Texture.h/.cpp`

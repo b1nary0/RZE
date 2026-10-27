@@ -28,7 +28,7 @@ namespace Rendering
 	class DX11Device;
 	class UIFrameData;
 
-	enum RenderCommandType
+	enum class RenderCommandType
 	{
 		Unset = 0,
 		ImGuiRender,

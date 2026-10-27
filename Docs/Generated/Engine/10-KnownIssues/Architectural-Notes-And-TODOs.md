@@ -10,7 +10,7 @@ Rough edges the codebase is candid about (source comments, `#TODO`s), plus a few
 | 2 | `ReflectDB` hashes string *pointers* | Utils / reflection | Low | Open |
 | 3 | `BlockAllocator` exists but isn't used | Memory | Low | Open |
 | 4 | Job system was underused, busy-waited and couldn't return results | Threading | — | **Fixed** (10-09: async loading) |
-| 5 | Dead `old_RenderCommands.h` | Renderer | Cosmetic | Open |
+| 5 | Dead `old_RenderCommands.h` | Renderer | Cosmetic | **Fixed** (10-26: deleted) |
 | 6 | No culling or bucketing | Rendering | Medium | **Culling fixed** (10-09); bucketing open |
 | 7 | Linear-scan component lookups | Scene | Low | Open |
 | 8 | Textures aren't burned | Asset pipeline | Medium | Open |
@@ -86,9 +86,9 @@ This entry used to say the job system was only used by the Editor's build, busy-
 
 Still true: `MAX_WORKER_THREADS` is a fixed 4 rather than based on the core count. See [Threading-And-Jobs.md](../06-Platform-And-Infrastructure/Threading-And-Jobs.md).
 
-## 5. Dead code: `old_RenderCommands.h`
+## 5. Dead code: `old_RenderCommands.h` (fixed)
 
-Command structs from an earlier design, referenced by nothing. Safe to delete.
+Command structs from an earlier design, referenced by nothing. Deleted on 10-26.
 
 ## 6. Culling (fixed) and bucketing (open)
 
@@ -215,7 +215,7 @@ The directional map is fitted around every render object as seen from the light,
 - `Engine\Src\Game\World\GameObject\GameObjectComponent.h` (1), `GameObject.h` (7)
 - `Utils\Src\Utils\Reflect\ReflectDB.cpp` (2)
 - `Engine\Src\EngineCore\Platform\Memory\BlockAllocator.h` (3)
-- `Modules\Rendering\Src\Rendering\old_RenderCommands.h` (5), `Renderer.h` (10)
+- `Modules\Rendering\Src\Rendering\Renderer.h` (10)
 - `Engine\Src\Graphics\RenderEngine.h` (6), `RenderStages\ShadowRenderStage.cpp` (9, 34), `Assets\Shaders\Common\Lighting.hlsli` (33)
 - `SourceAssetBurner\Src\SourceAssetBurner\Importers\AssimpSourceImporter.cpp` (8)
 - `Engine\Src\DebugUtils\DebugServices.cpp` (11)
