@@ -114,6 +114,10 @@ namespace Rendering
 		static void GenerateMips(const TextureBuffer2DHandle& texture);
 		// Copies every slice and mip of source into destination, which must have the same size, format, slices and mips
 		static void CopyTexture(const TextureBuffer2DHandle& source, const TextureBuffer2DHandle& destination);
+		// Copies a width x height rectangle of source's mip 0 (its first slice) to destination's, at destinationX,
+		// destinationY. The two must have the same format.
+		static void CopyTextureRegion(const TextureBuffer2DHandle& source, U32 sourceX, U32 sourceY, U32 width, U32 height,
+			const TextureBuffer2DHandle& destination, U32 destinationX, U32 destinationY);
 		// Copies one texel of a 4-byte-per-texel texture back to the CPU once the GPU has drawn it. The render
 		// thread waits on the GPU for it, so keep it to occasional reads such as picking.
 		static void ReadTexel(const TextureBuffer2DHandle& texture, U32 x, U32 y, std::shared_ptr<TexelReadback> result);

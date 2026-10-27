@@ -12,7 +12,8 @@ namespace Rendering
 	enum class ERasterizerState
 	{
 		Default,      // Back-face culling
-		ShadowCaster  // No culling (thin geometry still casts) + slope-scaled depth bias
+		ShadowCaster, // No culling (thin geometry still casts) + slope-scaled depth bias
+		NoCull        // No culling and no bias, e.g. for probe captures, which tell back faces apart (SV_IsFrontFace)
 	};
 
 	enum class EBlendState

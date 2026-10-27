@@ -59,6 +59,7 @@ namespace Rendering
 		SetColourTarget,
 		GenerateMips,
 		CopyTexture,
+		CopyTextureRegion,
 		ClearRenderTarget,
 		SetViewport,
 		SetInputLayout,
@@ -307,6 +308,20 @@ namespace Rendering
 
 		TextureBuffer2DHandle source;
 		TextureBuffer2DHandle destination;
+	};
+
+	struct RenderCommand_CopyTextureRegion : RenderCommand
+	{
+		RenderCommand_CopyTextureRegion() { type = RenderCommandType::CopyTextureRegion; }
+
+		TextureBuffer2DHandle source;
+		U32 sourceX = 0;
+		U32 sourceY = 0;
+		U32 width = 0;
+		U32 height = 0;
+		TextureBuffer2DHandle destination;
+		U32 destinationX = 0;
+		U32 destinationY = 0;
 	};
 
 	struct RenderCommand_ReadTexel : RenderCommand

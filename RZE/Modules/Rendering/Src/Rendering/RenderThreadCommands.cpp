@@ -292,6 +292,16 @@ namespace Rendering
 		deviceContext.CopyResource(destinationPtr->GetHWResource(), sourcePtr->GetHWResource());
 	}
 
+	void RenderThread::Execute(RenderCommand_CopyTextureRegion& command)
+	{
+		DX11TextureBuffer2D* sourcePtr = static_cast<DX11TextureBuffer2D*>(command.source.m_buffer.get());
+		DX11TextureBuffer2D* destinationPtr = static_cast<DX11TextureBuffer2D*>(command.destination.m_buffer.get());
+
+		const D3D11_BOX box = { command.sourceX, command.sourceY, 0, command.sourceX + command.width, command.sourceY + command.height, 1 };
+		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+		deviceContext.CopySubresourceRegion(destinationPtr->GetHWResource(), 0, command.destinationX, command.destinationY, 0, sourcePtr->GetHWResource(), 0, &box);
+	}
+
 	void RenderThread::Execute(RenderCommand_ClearRenderTarget& command)
 	{
 		DX11TextureBuffer2D* texturePtr = static_cast<DX11TextureBuffer2D*>(command.renderTarget.m_buffer.get());

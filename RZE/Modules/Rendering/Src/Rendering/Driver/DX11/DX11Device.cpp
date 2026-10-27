@@ -78,6 +78,18 @@ namespace Rendering
 			mDevice->CreateRasterizerState(&rasterDesc, &mShadowCasterRasterState);
 		}
 
+		// No-cull raster state: as the default but both sides drawn
+		{
+			D3D11_RASTERIZER_DESC rasterDesc;
+			ZeroMemory(&rasterDesc, sizeof(rasterDesc));
+			rasterDesc.FillMode = D3D11_FILL_SOLID;
+			rasterDesc.CullMode = D3D11_CULL_NONE;
+			// As the default, so SV_IsFrontFace means the same
+			rasterDesc.FrontCounterClockwise = TRUE;
+
+			mDevice->CreateRasterizerState(&rasterDesc, &mNoCullRasterState);
+		}
+
 		// Alpha blend state
 		{
 			D3D11_BLEND_DESC blendDesc;
@@ -267,6 +279,7 @@ namespace Rendering
 
 		mRasterState->Release();
 		mShadowCasterRasterState->Release();
+		mNoCullRasterState->Release();
 		mAlphaBlendState->Release();
 		mPremultipliedBlendState->Release();
 		mAdditiveBlendState->Release();
@@ -370,7 +383,15 @@ namespace Rendering
 
 	ID3D11RasterizerState* DX11Device::GetRasterizerState(ERasterizerState state) const
 	{
-		return state == ERasterizerState::ShadowCaster ? mShadowCasterRasterState : mRasterState;
+		switch (state)
+		{
+		case ERasterizerState::ShadowCaster:
+			return mShadowCasterRasterState;
+		case ERasterizerState::NoCull:
+			return mNoCullRasterState;
+		default:
+			return mRasterState;
+		}
 	}
 
 	ID3D11BlendState* DX11Device::GetBlendState(EBlendState state) const

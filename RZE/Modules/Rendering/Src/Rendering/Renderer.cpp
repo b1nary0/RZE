@@ -426,6 +426,22 @@ namespace Rendering
 		m_renderThread.PushCommand(command);
 	}
 
+	void Renderer::CopyTextureRegion(const TextureBuffer2DHandle& source, U32 sourceX, U32 sourceY, U32 width, U32 height,
+		const TextureBuffer2DHandle& destination, U32 destinationX, U32 destinationY)
+	{
+		RenderCommand_CopyTextureRegion* command = MemArena::AllocType<RenderCommand_CopyTextureRegion>();
+		command->source = source;
+		command->sourceX = sourceX;
+		command->sourceY = sourceY;
+		command->width = width;
+		command->height = height;
+		command->destination = destination;
+		command->destinationX = destinationX;
+		command->destinationY = destinationY;
+
+		m_renderThread.PushCommand(command);
+	}
+
 	void Renderer::ReadTexel(const TextureBuffer2DHandle& texture, U32 x, U32 y, std::shared_ptr<TexelReadback> result)
 	{
 		RenderCommand_ReadTexel* command = MemArena::AllocType<RenderCommand_ReadTexel>();

@@ -96,6 +96,7 @@ namespace Rendering
 		void Execute(RenderCommand_SetColourTarget& command);
 		void Execute(RenderCommand_GenerateMips& command);
 		void Execute(RenderCommand_CopyTexture& command);
+		void Execute(RenderCommand_CopyTextureRegion& command);
 		void Execute(RenderCommand_ClearRenderTarget& command);
 
 		// Pipeline state

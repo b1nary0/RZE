@@ -61,6 +61,7 @@ namespace Rendering
 	public:
 		ID3D11RasterizerState* mRasterState;
 		ID3D11RasterizerState* mShadowCasterRasterState;
+		ID3D11RasterizerState* mNoCullRasterState;
 
 		// EBlendState::AlphaBlend and the others; EBlendState::Opaque binds no blend state, D3D's default
 		ID3D11BlendState* mAlphaBlendState;
