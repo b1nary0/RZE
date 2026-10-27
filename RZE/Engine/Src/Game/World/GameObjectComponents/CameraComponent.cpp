@@ -124,6 +124,7 @@ RenderCamera CameraComponent::CreateRenderCamera(const Vector2D& viewportSize) c
 	RenderCamera renderCam;
 	renderCam.ClipSpace = projection * view;
 	renderCam.Position = position;
+	renderCam.Projection = projection;
 	return renderCam;
 }
 
@@ -181,6 +182,7 @@ void CameraComponent::Update()
 		RenderCamera& renderCamera = RZE().GetRenderEngine().GetMainView().Camera;
 		renderCamera.Position = transformComponent->GetPosition();
 		renderCamera.ClipSpace = GetProjectionMatrix() * GetViewMatrix();
+		renderCamera.Projection = GetProjectionMatrix();
 	}
 }
 

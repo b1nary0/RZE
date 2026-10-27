@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Graphics/AntiAliasing.h>
+#include <Graphics/RenderData/AmbientOcclusionData.h>
 #include <Graphics/RenderData/DisplayColourData.h>
 #include <Graphics/RenderData/SceneColourData.h>
 #include <Graphics/RenderStage.h>
@@ -59,6 +60,8 @@ public:
 
 private:
 	RenderInput<SceneColourData> m_sceneColourInput;
+	// Only shown, for RenderView::Debug's AmbientOcclusion
+	RenderInput<AmbientOcclusionData> m_ambientOcclusionInput;
 	RenderOutput<DisplayColourData> m_displayColourOutput;
 
 	TypedResourceHandle<VertexShader> m_vertexShader;
@@ -70,6 +73,7 @@ private:
 	TypedResourceHandle<PixelShader> m_tonemapShader;
 
 	TypedResourceHandle<PixelShader> m_antiAliasShader;
+	TypedResourceHandle<PixelShader> m_debugAmbientOcclusionShader;
 
 	// Weighted log-luminance (r) and weight (g); its 1x1 mip holds the scene average.
 	// Only used within a Render() call, so shared by every view. Eye-adaptation history is per view.

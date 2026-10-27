@@ -94,6 +94,8 @@ void PostProcessRenderStage::Initialize()
 
 	m_antiAliasShader = LoadPixelShader("Pixel_FXAA");
 
+	m_debugAmbientOcclusionShader = LoadPixelShader("Pixel_DebugAmbientOcclusion");
+
 	Rendering::GFXTextureBufferParams luminanceParams = { 0 };
 	luminanceParams.bIsRenderTarget = true;
 	luminanceParams.bIsShaderResource = true;
@@ -110,6 +112,7 @@ void PostProcessRenderStage::Initialize()
 void PostProcessRenderStage::Setup(RenderStageBuilder& builder)
 {
 	m_sceneColourInput = builder.Reads<SceneColourData>();
+	m_ambientOcclusionInput = builder.Reads<AmbientOcclusionData>();
 	m_displayColourOutput = builder.Writes<DisplayColourData>();
 }
 
@@ -238,6 +241,18 @@ void PostProcessRenderStage::Render(RenderContext& context)
 	{
 		Rendering::Renderer::SetColourTarget(displayColour.Colour);
 		drawTonemap();
+	}
+
+	// Over the finished image, so what's shown is exactly the pass's output
+	if (view.Debug == ERenderViewDebug::AmbientOcclusion)
+	{
+		Rendering::Renderer::SetColourTarget(displayColour.Colour);
+		Rendering::Renderer::SetPixelShader(m_debugAmbientOcclusionShader->GetPlatformObject());
+		Rendering::Renderer::SetTextureResource(m_ambientOcclusionInput.Get(context).Visibility, k_sourceSlot);
+
+		Rendering::Renderer::DrawFullScreenQuad();
+
+		Rendering::Renderer::UnsetTextureResource(k_sourceSlot);
 	}
 
 	m_displayColourOutput.Publish(context, displayColour);

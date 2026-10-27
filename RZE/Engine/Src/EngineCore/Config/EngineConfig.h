@@ -4,6 +4,7 @@
 #include <EngineCore/Config/Config.h>
 #include <EngineCore/Config/FrameSettings.h>
 
+#include <Graphics/AmbientOcclusion.h>
 #include <Graphics/AntiAliasing.h>
 
 #include <Utils/PrimitiveDefs.h>
@@ -58,8 +59,9 @@ public:
 	const FrameSettings& GetFrameSettings() const;
 	// [BackgroundTasks]: which operations progress displays show
 	const AsyncOperationFilter& GetBackgroundTaskFilter() const;
-	// [Rendering]: the main view's anti-aliasing and auto-exposure at start-up
+	// [Rendering]: the main view's anti-aliasing, ambient occlusion and auto-exposure at start-up
 	EAntiAliasing GetAntiAliasing() const { return mAntiAliasing; }
+	EAmbientOcclusion GetAmbientOcclusion() const { return mAmbientOcclusion; }
 	bool GetAutoExposure() const { return mAutoExposure; }
 
 private:
@@ -75,5 +77,6 @@ private:
 	FrameSettings mFrameSettings;
 	AsyncOperationFilter mBackgroundTaskFilter;
 	EAntiAliasing mAntiAliasing = EAntiAliasing::Medium;
+	EAmbientOcclusion mAmbientOcclusion = EAmbientOcclusion::Medium;
 	bool mAutoExposure = true;
 };

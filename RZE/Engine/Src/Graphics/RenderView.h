@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Graphics/AmbientOcclusion.h>
 #include <Graphics/AntiAliasing.h>
 #include <Graphics/RenderBlackboard.h>
 
@@ -32,12 +33,15 @@ struct RenderPickRequest
 	static float DecodeDepth(U64 texel);
 };
 
-// Uploaded as is as the shaders' CameraBuffer (Common/VertexResources.hlsli), so the two must match. The view's size is
-// RenderView::ViewportSize.
+// Uploaded as is as the shaders' CameraBuffer (Common/VertexResources.hlsli), which reads the members up to Position, so
+// those must match it. The view's size is RenderView::ViewportSize.
 struct RenderCamera
 {
 	Matrix4x4 ClipSpace;
 	Vector3D Position;
+	// The perspective part of ClipSpace on its own, for passes that rebuild positions from depth (ambient occlusion).
+	// Left as it is (not a perspective), those passes skip the view.
+	Matrix4x4 Projection;
 };
 
 enum class ERenderViewKind
@@ -51,6 +55,14 @@ enum class ERenderViewLighting
 {
 	Scene,		// By the scene's directional light and its shadows, over a sky and ground ambient
 	Uniform		// Evenly from every direction, ignoring the scene's light, e.g. so a mesh thumbnail shows all of the mesh
+};
+
+// What a view shows: the lit scene, or one of the passes that make it, for checking that pass
+enum class ERenderViewDebug
+{
+	Lit,
+	// The ambient occlusion alone, white where nothing occludes (AmbientOcclusionStage)
+	AmbientOcclusion
 };
 
 // One point of view to render the scene from. Its owner fills in the inputs; render stages read them
@@ -85,6 +97,9 @@ public:
 	float ExposureCompensation = 0.0f;
 	// How much it smooths jagged edges after tonemapping (FXAA, PostProcessRenderStage)
 	EAntiAliasing AntiAliasing = EAntiAliasing::Medium;
+	// How much creases and corners darken the indirect light (GTAO, AmbientOcclusionStage)
+	EAmbientOcclusion AmbientOcclusion = EAmbientOcclusion::Medium;
+	ERenderViewDebug Debug = ERenderViewDebug::Lit;
 	ERenderViewLighting Lighting = ERenderViewLighting::Scene;
 	// Debug lines (the editor's grid, camera frustums, bounds boxes); off for clean captures such as thumbnails
 	bool DrawsDebug = true;

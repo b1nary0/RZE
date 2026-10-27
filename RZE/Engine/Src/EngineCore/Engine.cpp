@@ -377,6 +377,7 @@ void RZE_Engine::CreateAndInitializeRenderer()
 	m_renderEngine->Initialize(m_window->GetOSWindowHandleData().windowHandle);
 	const EngineConfig* const engineConfig = GetResourceHandler().GetResource<EngineConfig>(m_engineConfig);
 	m_renderEngine->GetMainView().AntiAliasing = engineConfig->GetAntiAliasing();
+	m_renderEngine->GetMainView().AmbientOcclusion = engineConfig->GetAmbientOcclusion();
 	m_renderEngine->GetMainView().AutoExposure = engineConfig->GetAutoExposure();
 }
 

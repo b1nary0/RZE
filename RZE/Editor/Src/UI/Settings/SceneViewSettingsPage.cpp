@@ -6,15 +6,18 @@
 
 #include <RZE.h>
 
+#include <Graphics/AmbientOcclusion.h>
 #include <Graphics/AntiAliasing.h>
 #include <Graphics/RenderEngine.h>
 
 #include <ImGui/imgui.h>
 
+#include <string>
+
 namespace
 {
 	// Font sizes across, so the options line up under each other
-	constexpr float k_labelWidth = 7.0f;
+	constexpr float k_labelWidth = 11.0f;
 }
 
 namespace Editor
@@ -59,6 +62,32 @@ namespace Editor
 			{
 				mainView.AntiAliasing = static_cast<EAntiAliasing>(level);
 			}
+		}
+
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextUnformatted("Ambient occlusion");
+		ImGui::SetItemTooltip("How much creases and corners darken the light that isn't direct (GTAO). Higher levels search more directions around each pixel, for less noise.");
+		ImGui::SameLine(optionsX);
+		ImGui::Dummy(ImVec2(0.0f, 0.0f));
+		for (int level = 0; level < static_cast<int>(EAmbientOcclusion::Count); ++level)
+		{
+			ImGui::SameLine();
+			// ## keeps their IDs apart from the anti-aliasing buttons, which have the same names
+			const std::string label = std::string(GetAmbientOcclusionName(static_cast<EAmbientOcclusion>(level))) + "##AmbientOcclusion";
+			if (ImGui::RadioButton(label.c_str(), mainView.AmbientOcclusion == static_cast<EAmbientOcclusion>(level)))
+			{
+				mainView.AmbientOcclusion = static_cast<EAmbientOcclusion>(level);
+			}
+		}
+
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextUnformatted("Show ambient occlusion");
+		ImGui::SetItemTooltip("Shows the ambient occlusion alone instead of the lit scene: white where nothing occludes, darker in creases.");
+		ImGui::SameLine(optionsX);
+		bool showsAmbientOcclusion = mainView.Debug == ERenderViewDebug::AmbientOcclusion;
+		if (ImGui::Checkbox("##ShowAmbientOcclusion", &showsAmbientOcclusion))
+		{
+			mainView.Debug = showsAmbientOcclusion ? ERenderViewDebug::AmbientOcclusion : ERenderViewDebug::Lit;
 		}
 
 		ImGui::AlignTextToFramePadding();

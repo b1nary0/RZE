@@ -115,6 +115,16 @@ void EngineConfig::LoadRenderingSettings()
 		RZE_LOG_WARNING_ARGS("Engine.ini's [Rendering] AntiAliasing '%s' isn't Off, Low, Medium or High; using %s.", antiAliasingName, GetAntiAliasingName(mAntiAliasing));
 	}
 
+	const char* const ambientOcclusionName = mINIParser.GetValue("Rendering", "AmbientOcclusion", GetAmbientOcclusionName(mAmbientOcclusion));
+	if (const std::optional<EAmbientOcclusion> ambientOcclusion = ParseAmbientOcclusion(ambientOcclusionName))
+	{
+		mAmbientOcclusion = *ambientOcclusion;
+	}
+	else
+	{
+		RZE_LOG_WARNING_ARGS("Engine.ini's [Rendering] AmbientOcclusion '%s' isn't Off, Low, Medium or High; using %s.", ambientOcclusionName, GetAmbientOcclusionName(mAmbientOcclusion));
+	}
+
 	mAutoExposure = mINIParser.GetBoolValue("Rendering", "AutoExposure", mAutoExposure);
 }
 
