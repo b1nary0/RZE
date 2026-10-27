@@ -20,7 +20,7 @@ struct GlobalIlluminationSettings;
 //   - Probes are relit with the scene's lights and last frame's probes (Compute_ProbeRelight) into spherical harmonics:
 //     those just captured, those near the camera, then the rest in turn.
 // The forward pass reads them for its ambient light. The grid is fitted again when the scene's bounds move by more
-// than a spacing.
+// than a spacing. Which probes, and when, is IrradianceProbeScheduler's choice; this stage does the GPU work.
 //
 // The work is done once a frame for each scene, by whichever view renders it first; every view of the scene reads it.
 // Views without global illumination (RenderView::GlobalIllumination, Uniform lighting) get none, and the hemisphere

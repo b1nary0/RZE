@@ -75,3 +75,11 @@ Vector3D IrradianceProbeGrid::GetProbePosition(U32 x, U32 y, U32 z) const
 {
 	return Origin + Vector3D(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)) * Spacing;
 }
+
+Vector3D IrradianceProbeGrid::GetProbePosition(U32 probe) const
+{
+	const U32 x = probe % CountX;
+	const U32 y = (probe / CountX) % CountY;
+	const U32 z = probe / (CountX * CountY);
+	return GetProbePosition(x, y, z);
+}

@@ -31,4 +31,6 @@ struct IrradianceProbeGrid
 	U32 GetProbeCount() const { return CountX * CountY * CountZ; }
 	bool IsEmpty() const { return GetProbeCount() == 0; }
 	Vector3D GetProbePosition(U32 x, U32 y, U32 z) const;
+	// Of probe x + CountX * (y + CountY * z), the order the probe textures and shaders number them in
+	Vector3D GetProbePosition(U32 probe) const;
 };
