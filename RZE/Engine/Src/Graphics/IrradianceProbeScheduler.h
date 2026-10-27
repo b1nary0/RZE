@@ -2,6 +2,7 @@
 
 #include <Graphics/GraphicsLayouts.h>
 #include <Graphics/IrradianceProbeGrid.h>
+#include <Graphics/SettlingRegions.h>
 
 #include <Utils/Math/BoundingBox.h>
 #include <Utils/Math/Vector3D.h>
@@ -17,8 +18,9 @@ class RenderScene;
 //     spacing. Then every probe waits to be captured and none is lit. Movable objects aren't captured
 //     (ERenderMobility), so they change nothing here.
 //   - Probes wait to be captured, nearest the camera first, from when the grid is fitted, and again when render
-//     objects within a few spacings of them change (more for bigger objects). Probes never captured and probes
-//     captured again take turns, so something changing near the camera can't hold up the rest of the grid.
+//     objects within a few spacings of them change (more for bigger objects), once those have stayed still for a few
+//     frames. Probes never captured and probes captured again take turns, so something changing near the camera
+//     can't hold up the rest of the grid.
 //   - Each frame's relighting lists the probes just captured, then those around the camera, then the rest in turn.
 class IrradianceProbeScheduler
 {
@@ -27,10 +29,11 @@ public:
 	// never was). True if it did, so the probes' textures are made again: every probe is then waiting to be captured,
 	// nearest cameraPosition first, and none is lit.
 	bool FitGrid(const RenderScene& scene, U32 targetProbeCount, const Vector3D& cameraPosition);
-	// Queues the captured probes within reach of Static render objects that changed since last time (GetRecaptureReach of
-	// where each was and where it is), or every captured probe if the scene doesn't know where they changed. They keep
-	// their old captures until they're captured again.
-	void QueueChangedProbes(const RenderScene& scene, const Vector3D& cameraPosition);
+	// Queues the captured probes within reach of Static render objects that changed (GetRecaptureReach of where each
+	// was and where it is), once nothing within that reach has changed for settleFrames frames by frameIndex; or every
+	// captured probe at once if the scene doesn't know where they changed. They keep their old captures until they're
+	// captured again.
+	void QueueChangedProbes(const RenderScene& scene, const Vector3D& cameraPosition, U64 frameIndex, U32 settleFrames);
 
 	bool HasCaptureWaiting() const { return !m_fillQueue.empty() || !m_recaptureQueue.empty(); }
 	// Whether probes are still waiting for their first capture since the grid was fitted
@@ -89,4 +92,6 @@ private:
 	U32 m_nextRelight = 0;
 	// The scene's GetRevision when changed objects were last looked for
 	U64 m_checkedRevision = 0;
+	// Within reach of changes that haven't settled yet
+	SettlingRegions m_unsettled;
 };

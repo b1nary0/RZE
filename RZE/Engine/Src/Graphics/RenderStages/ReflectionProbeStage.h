@@ -11,11 +11,13 @@
 #include <Rendering/BufferHandle.h>
 
 class ComputeShader;
+struct GlobalIlluminationSettings;
 
 // The scene's reflection probes (ReflectionProbeObject, Docs/Plans/SSAOAndGlobalIllumination.md, Part 4): the first
 // GraphicsLayouts::k_maxReflectionProbes the scene made, a slot each. Each frame:
-//   - At most one probe is captured (ProbeCapture, 128 texels a face, in CubeMap's layout): a new one, one that moved
-//     or was resized, or one whose box an object changed in.
+//   - At most one probe is captured (ProbeCapture, 128 texels a face, in CubeMap's layout): a new one, or one that
+//     moved or was resized, or whose box a Static object changed in, once that has stayed still for
+//     GlobalIlluminationSettings::RecaptureSettleFrames.
 //   - Up to two are relit, it and then the others in turn (Compute_ReflectionRelight), with the scene's lights and
 //     irradiance probes, into a radiance cube array, which then gets its mips.
 //   - Their prefiltered cubes are made from that (Compute_ReflectionPrefilter): a mip per gloss.
@@ -40,7 +42,8 @@ public:
 	};
 
 public:
-	ReflectionProbeStage();
+	// settings: RenderEngine's, read each frame
+	explicit ReflectionProbeStage(const GlobalIlluminationSettings* settings);
 	~ReflectionProbeStage() override = default;
 
 public:
@@ -51,6 +54,8 @@ public:
 	void Render(RenderContext& context) override;
 
 private:
+	const GlobalIlluminationSettings* m_settings;
+
 	RenderInput<SceneLightingData> m_sceneLightingInput;
 	RenderInput<SceneIrradianceData> m_sceneIrradianceInput;
 	RenderOutput<SceneReflectionData> m_sceneReflectionOutput;

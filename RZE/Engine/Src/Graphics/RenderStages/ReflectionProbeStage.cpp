@@ -1,8 +1,10 @@
 #include <StdAfx.h>
 #include <Graphics/RenderStages/ReflectionProbeStage.h>
 
+#include <Graphics/GlobalIllumination.h>
 #include <Graphics/GraphicsLayouts.h>
 #include <Graphics/RenderEngine.h>
+#include <Graphics/SettlingRegions.h>
 #include <Graphics/Shader.h>
 
 #include <Rendering/Renderer.h>
@@ -52,9 +54,11 @@ namespace
 		{
 			// The probe in the slot (ReflectionProbeObject::GetLiveID), 0 for none
 			U64 LiveID = 0;
-			// The scene's GetRevision when it was captured
-			U64 CapturedRevision = 0;
+			// The probe's GetRevision when it was last seen moved or resized
+			U64 ProbeRevision = 0;
 			bool IsCaptured = false;
+			// Whether a change it sees has settled since it was captured, so it's captured again
+			bool IsStale = false;
 			// Whether its prefiltered cube has been made, so the forward pass can reflect it
 			bool IsLit = false;
 		};
@@ -71,6 +75,13 @@ namespace
 		std::array<Slot, k_maxProbes> Slots;
 		// The next slot to relight in turn
 		U32 NextRelight = 0;
+		// Where Static objects and the probes changed, until they've stayed still for long enough to capture again
+		// (GlobalIlluminationSettings::RecaptureSettleFrames)
+		SettlingRegions Unsettled;
+		// The scene's GetRevision when changed objects were last looked for; from when the state was made, as new
+		// probes are captured anyway
+		U64 CheckedRevision = 0;
+		bool HasCheckedChanges = false;
 		// The frame the probes were last updated in (RenderContext::FrameIndex), so it's once a frame
 		U64 UpdatedFrame = k_neverFrame;
 	};
@@ -129,11 +140,62 @@ namespace
 	{
 		return (value + divisor - 1) / divisor;
 	}
+
+	// Marks stale the captured probes a change has settled in since last time: Static objects that changed in their
+	// boxes, or the probes themselves moved or resized, once nothing there has changed for settleFrames frames
+	void MarkStaleProbes(const RenderScene& scene, U64 frameIndex, U32 settleFrames, ReflectionProbeState& state)
+	{
+		const ReflectionProbeContainer& probes = scene.GetReflectionProbes();
+		const U32 probeCount = std::min(static_cast<U32>(probes.size()), k_maxProbes);
+
+		// Static objects changing: Movable ones aren't captured
+		if (state.HasCheckedChanges && scene.GetStaticObjectsRevision() > state.CheckedRevision)
+		{
+			const auto touch = [&state, frameIndex](const BoundingBox& changedBounds) { state.Unsettled.Touch(changedBounds, frameIndex); };
+			// Where isn't known: every probe, at once
+			if (!scene.GetStaticChanges().ForEachChangeSince(state.CheckedRevision, touch))
+			{
+				state.Unsettled.Clear();
+				for (ReflectionProbeState::Slot& slotState : state.Slots)
+				{
+					slotState.IsStale = true;
+				}
+			}
+		}
+		state.CheckedRevision = scene.GetRevision();
+		state.HasCheckedChanges = true;
+
+		// Probes moved or resized: where they are now
+		for (U32 slot = 0; slot < probeCount; ++slot)
+		{
+			ReflectionProbeState::Slot& slotState = state.Slots[slot];
+			const ReflectionProbeObject& probe = *probes[slot];
+			if (slotState.IsCaptured && probe.GetRevision() != slotState.ProbeRevision)
+			{
+				slotState.ProbeRevision = probe.GetRevision();
+				state.Unsettled.Touch(probe.GetBox(), frameIndex);
+			}
+		}
+
+		// Once still for long enough, the probes whose boxes they're in
+		state.Unsettled.TakeSettled(frameIndex, settleFrames, [&state, &probes, probeCount](const BoundingBox& settled)
+		{
+			for (U32 slot = 0; slot < probeCount; ++slot)
+			{
+				if (probes[slot]->GetBox().Intersects(settled))
+				{
+					state.Slots[slot].IsStale = true;
+				}
+			}
+		});
+	}
 }
 
-ReflectionProbeStage::ReflectionProbeStage()
-	: m_capture(k_faceSize, ProbeCapture::EProbeFaces::CubeMap)
+ReflectionProbeStage::ReflectionProbeStage(const GlobalIlluminationSettings* settings)
+	: m_settings(settings)
+	, m_capture(k_faceSize, ProbeCapture::EProbeFaces::CubeMap)
 {
+	AssertNotNull(m_settings);
 }
 
 void ReflectionProbeStage::Initialize()
@@ -190,20 +252,18 @@ void ReflectionProbeStage::Render(RenderContext& context)
 				}
 			}
 
+			MarkStaleProbes(scene, context.FrameIndex, m_settings->RecaptureSettleFrames, state);
+
 			GraphicsLayouts::ProbeListLayout relit;
 			relit.FaceSize = k_faceSize;
 			relit.AtlasProbesPerRow = 1;
 
-			// One capture a frame: the first probe that's new, moved or resized, or had a Static object change in its
-			// box (Movable ones aren't captured)
+			// One capture a frame: the first probe that's new, or stale
 			for (U32 slot = 0; slot < probeCount; ++slot)
 			{
 				ReflectionProbeState::Slot& slotState = state.Slots[slot];
 				const ReflectionProbeObject& probe = *probes[slot];
-				const bool isOutOfDate = !slotState.IsCaptured
-					|| probe.GetRevision() > slotState.CapturedRevision
-					|| scene.GetStaticChanges().HasChangedWithin(probe.GetBox(), slotState.CapturedRevision);
-				if (!isOutOfDate)
+				if (slotState.IsCaptured && !slotState.IsStale)
 				{
 					continue;
 				}
@@ -221,7 +281,8 @@ void ReflectionProbeStage::Render(RenderContext& context)
 				Rendering::Renderer::End();
 
 				slotState.IsCaptured = true;
-				slotState.CapturedRevision = scene.GetRevision();
+				slotState.IsStale = false;
+				slotState.ProbeRevision = probe.GetRevision();
 				relit.Probes[relit.Count++] = slot;
 				break;
 			}

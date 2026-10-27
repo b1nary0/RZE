@@ -15,8 +15,8 @@ struct GlobalIlluminationSettings;
 // The scene's irradiance probes (Docs/Plans/SSAOAndGlobalIllumination.md, Part 3): a grid fitted to the scene
 // (IrradianceProbeGrid). Each frame, within its budgets (GlobalIlluminationSettings):
 //   - Probes waiting to be captured are, nearest the camera first (ProbeCapture), each with a visibility map of how far
-//     it sees in each direction (Compute_ProbeVisibility). They wait when the grid is fitted, and when objects within a
-//     few spacings of them change.
+//     it sees in each direction (Compute_ProbeVisibility). They wait when the grid is fitted, and when Static objects
+//     within a few spacings of them change, once those have stayed still for a few frames.
 //   - Probes are relit with the scene's lights and last frame's probes (Compute_ProbeRelight) into spherical harmonics:
 //     those just captured, those near the camera, then the rest in turn.
 // The forward pass reads them for its ambient light. The grid is fitted again when the scene's bounds move by more

@@ -135,6 +135,7 @@ void EngineConfig::LoadRenderingSettings()
 	probes.TargetProbeCount = static_cast<U32>(std::max(1L, mINIParser.GetLongValue("Rendering", "ProbeTargetCount", static_cast<long>(probes.TargetProbeCount))));
 	probes.CaptureDrawBudget = static_cast<U32>(std::max(1L, mINIParser.GetLongValue("Rendering", "ProbeCaptureDrawBudget", static_cast<long>(probes.CaptureDrawBudget))));
 	probes.RelightBudget = static_cast<U32>(std::max(1L, mINIParser.GetLongValue("Rendering", "ProbeRelightBudget", static_cast<long>(probes.RelightBudget))));
+	probes.RecaptureSettleFrames = static_cast<U32>(std::max(0L, mINIParser.GetLongValue("Rendering", "ProbeRecaptureSettleFrames", static_cast<long>(probes.RecaptureSettleFrames))));
 }
 
 WindowSettings::WindowSettings()

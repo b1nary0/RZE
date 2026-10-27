@@ -8,9 +8,10 @@
 
 // Where a scene's render objects changed, and when (by RenderScene::GetRevision), so something cached from part of
 // the scene (e.g. a point light's shadow cube) can tell whether that part changed since it was made. It keeps at most
-// k_capacity changes: past that, the two neighbouring changes whose merged box is smallest become one box around both,
-// at the newer revision, so what changed is never lost, only told apart less finely. Smallest rather than oldest, so a
-// box around much of the scene (e.g. from loading it) isn't kept alive by merging every new change into it.
+// k_capacity changes: past that, two neighbouring changes become one box around both, at the newer revision, so what
+// changed is never lost, only told apart less finely. The pair merged is the one that marks the least as changed that
+// wasn't at the newer revision, so an object's old and new bounds merge first, and a box around much of the scene
+// (e.g. from loading it) is never given a new change's revision.
 class SceneChangeLog
 {
 public:
@@ -37,10 +38,11 @@ private:
 	void Forget(U64 revision);
 	// Whether the log no longer tells what changed after sinceRevision
 	bool HasForgottenSince(U64 sinceRevision) const;
-	// Makes room for one more change: merges the neighbouring pair whose box around both has the least surface area
-	void MergeClosestPair();
-	// The surface area of the box around changes index and index + 1
-	float CalculateMergedArea(size_t index) const;
+	// Makes room for one more change: merges the neighbouring pair that costs least (CalculateMergeCost)
+	void MergeCheapestPair();
+	// What merging changes index and index + 1 marks as changed that wasn't at the newer one's revision: the surface
+	// area of the box around both, less the newer one's
+	float CalculateMergeCost(size_t index) const;
 
 private:
 	struct Change
@@ -51,7 +53,7 @@ private:
 
 	// Oldest first
 	std::vector<Change> m_changes;
-	// By pair of neighbours, CalculateMergedArea(index), kept so a merge only works out the pairs it changed
-	std::vector<float> m_mergedAreas;
+	// By pair of neighbours, CalculateMergeCost(index), kept so a merge only works out the pairs it changed
+	std::vector<float> m_mergeCosts;
 	U64 m_forgottenRevision = 0;
 };

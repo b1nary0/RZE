@@ -244,7 +244,7 @@ void IrradianceProbeStage::Render(RenderContext& context)
 			{
 				ResetForGrid(state);
 			}
-			scheduler.QueueChangedProbes(scene, cameraPosition);
+			scheduler.QueueChangedProbes(scene, cameraPosition, context.FrameIndex, settings.RecaptureSettleFrames);
 
 			const IrradianceProbeGrid& grid = scheduler.GetGrid();
 			const U32 probeCount = grid.GetProbeCount();

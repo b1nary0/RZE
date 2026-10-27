@@ -156,7 +156,7 @@ TEST_CASE_FIXTURE(ProbeScene, "Moving an object queues the captured probes withi
 
 	// Not captured yet: already waiting, so not queued again
 	MoveProp(Vector3D(-14.0f, 1.0f, -15.0f));
-	scheduler.QueueChangedProbes(Scene, Vector3D());
+	scheduler.QueueChangedProbes(Scene, Vector3D(), 0, 0);
 	IrradianceProbeScheduler copy = scheduler;
 	CHECK(TakeAll(copy).size() == grid.GetProbeCount());
 
@@ -167,7 +167,7 @@ TEST_CASE_FIXTURE(ProbeScene, "Moving an object queues the captured probes withi
 	const BoundingBox before = Prop->GetBounds();
 	MoveProp(Vector3D(-13.0f, 1.0f, -15.0f));
 	const BoundingBox after = Prop->GetBounds();
-	scheduler.QueueChangedProbes(Scene, Vector3D());
+	scheduler.QueueChangedProbes(Scene, Vector3D(), 0, 0);
 
 	const std::set<U32> queued = TakeAll(scheduler);
 	CHECK_FALSE(queued.empty());
@@ -181,7 +181,7 @@ TEST_CASE_FIXTURE(ProbeScene, "Moving an object queues the captured probes withi
 	CHECK(queued.size() == expected);
 
 	// Nothing changed since
-	scheduler.QueueChangedProbes(Scene, Vector3D());
+	scheduler.QueueChangedProbes(Scene, Vector3D(), 0, 0);
 	CHECK_FALSE(scheduler.HasCaptureWaiting());
 }
 
@@ -201,13 +201,13 @@ TEST_CASE_FIXTURE(ProbeScene, "A bigger change reaches further, from two spacing
 	CHECK(scheduler.GetRecaptureReach(Wall->GetBounds()) <= spacing * 5.0f + 0.001f);
 	CHECK(scheduler.GetRecaptureReach(BoundingBox(Vector3D(-100.0f), Vector3D(100.0f))) == doctest::Approx(spacing * 5.0f));
 
-	// So moving the wall queues more than moving the prop
+	// So moving the wall a step queues more than moving the prop a step
 	CaptureAll(scheduler);
-	MoveProp(Vector3D(0.0f, 1.0f, 0.0f));
-	scheduler.QueueChangedProbes(Scene, Vector3D());
+	MoveProp(Vector3D(-14.0f, 1.0f, -15.0f));
+	scheduler.QueueChangedProbes(Scene, Vector3D(), 0, 0);
 	const size_t propProbes = TakeAll(scheduler).size();
 	MoveWall(Vector3D(5.0f, 3.0f, 11.0f));
-	scheduler.QueueChangedProbes(Scene, Vector3D());
+	scheduler.QueueChangedProbes(Scene, Vector3D(), 0, 0);
 	CHECK(TakeAll(scheduler).size() > propProbes * 2);
 }
 
@@ -225,7 +225,7 @@ TEST_CASE_FIXTURE(ProbeScene, "Probes captured again don't hold up those never c
 	for (; frames < probeCount && captured < probeCount; ++frames)
 	{
 		MoveProp(camera + Vector3D(frames % 2 == 0 ? 0.5f : -0.5f, 0.0f, 0.0f));
-		scheduler.QueueChangedProbes(Scene, camera);
+		scheduler.QueueChangedProbes(Scene, camera, frames, 0);
 		for (U32 capture = 0; capture < 8 && scheduler.HasCaptureWaiting(); ++capture)
 		{
 			const U32 probe = scheduler.TakeCapture();
@@ -240,6 +240,46 @@ TEST_CASE_FIXTURE(ProbeScene, "Probes captured again don't hold up those never c
 	CHECK(frames <= probeCount / 4 + 1);
 }
 
+TEST_CASE_FIXTURE(ProbeScene, "Probes are captured again only once what changed near them has stayed still")
+{
+	IrradianceProbeScheduler scheduler;
+	REQUIRE(scheduler.FitGrid(Scene, k_targetProbes, Vector3D()));
+	CaptureAll(scheduler);
+	constexpr U32 k_settleFrames = 8;
+
+	// Dragged a little every frame: nothing is captured again
+	U64 frame = 1;
+	for (; frame <= 30; ++frame)
+	{
+		MoveProp(Vector3D(-15.0f + static_cast<float>(frame) * 0.1f, 1.0f, -15.0f));
+		scheduler.QueueChangedProbes(Scene, Vector3D(), frame, k_settleFrames);
+		CHECK_FALSE(scheduler.HasCaptureWaiting());
+	}
+
+	// Let go at frame 30: still waiting until it's been still for long enough
+	const U64 letGo = frame - 1;
+	for (; frame < letGo + k_settleFrames; ++frame)
+	{
+		scheduler.QueueChangedProbes(Scene, Vector3D(), frame, k_settleFrames);
+		CHECK_FALSE(scheduler.HasCaptureWaiting());
+	}
+	scheduler.QueueChangedProbes(Scene, Vector3D(), frame, k_settleFrames);
+	const std::set<U32> queued = TakeAll(scheduler);
+	CHECK_FALSE(queued.empty());
+
+	// Around everywhere it was dragged through, and only there
+	BoundingBox dragged = Prop->GetBounds();
+	dragged.Grow(BoundingBox(Vector3D(-15.4f, 0.5f, -15.5f), Vector3D(-14.4f, 1.5f, -14.5f)));
+	for (U32 probe : queued)
+	{
+		CHECK(IsWithinReach(scheduler, probe, dragged));
+	}
+
+	// Once
+	scheduler.QueueChangedProbes(Scene, Vector3D(), frame + 1, k_settleFrames);
+	CHECK_FALSE(scheduler.HasCaptureWaiting());
+}
+
 TEST_CASE_FIXTURE(ProbeScene, "When the scene doesn't know where objects changed, every captured probe is captured again")
 {
 	IrradianceProbeScheduler scheduler;
@@ -247,7 +287,7 @@ TEST_CASE_FIXTURE(ProbeScene, "When the scene doesn't know where objects changed
 	CaptureAll(scheduler);
 
 	Scene.ClearObjects();
-	scheduler.QueueChangedProbes(Scene, Vector3D());
+	scheduler.QueueChangedProbes(Scene, Vector3D(), 0, 0);
 	CHECK(TakeAll(scheduler).size() == scheduler.GetGrid().GetProbeCount());
 }
 

@@ -54,7 +54,7 @@ void RenderEngine::Initialize(void* windowHandle)
 	AddRenderStage<DepthPrepassStage>();
 	AddRenderStage<AmbientOcclusionStage>();
 	AddRenderStage<IrradianceProbeStage>(&m_globalIlluminationSettings);
-	AddRenderStage<ReflectionProbeStage>();
+	AddRenderStage<ReflectionProbeStage>(&m_globalIlluminationSettings);
 	AddRenderStage<ForwardRenderStage>();
 	AddRenderStage<PostProcessRenderStage>();
 	AddRenderStage<PickRenderStage>();

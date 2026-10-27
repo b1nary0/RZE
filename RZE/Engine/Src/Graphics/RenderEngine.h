@@ -94,7 +94,7 @@ public:
 	// The view presented to the user. Its owner (the app and the active camera) fills in its inputs.
 	RenderView& GetMainView() { return m_mainView; }
 
-	// The irradiance probes' budgets, for every scene; read by IrradianceProbeStage each frame
+	// The probes' budgets, for every scene; read by IrradianceProbeStage and ReflectionProbeStage each frame
 	const GlobalIlluminationSettings& GetGlobalIlluminationSettings() const { return m_globalIlluminationSettings; }
 	void SetGlobalIlluminationSettings(const GlobalIlluminationSettings& settings) { m_globalIlluminationSettings = settings; }
 

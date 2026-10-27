@@ -89,6 +89,34 @@ TEST_CASE("A scene change log doesn't keep a big old change alive by merging new
 	CHECK(log.HasChangedWithin(corner, SceneChangeLog::k_capacity * 4 - 1));
 }
 
+TEST_CASE("A scene change log doesn't give a big old change a new change's revision")
+{
+	SceneChangeLog log;
+
+	// Loading a scene: the log fills up and merges into a few big boxes, the last one around where the new changes are
+	for (U64 revision = 1; revision <= SceneChangeLog::k_capacity * 4; ++revision)
+	{
+		const float x = static_cast<float>(revision % 64) * 2.0f;
+		log.Add(revision, MakeBox(Vector3D(x, 0.0f, static_cast<float>(revision / 64) * 2.0f)));
+	}
+	const U64 loaded = SceneChangeLog::k_capacity * 4;
+
+	// Something small moving a little, several times, where the last of the loading was
+	const Vector3D corner(126.0f, 0.0f, 30.0f);
+	for (U64 revision = loaded + 1; revision <= loaded + 20; ++revision)
+	{
+		log.Add(revision, MakeBox(corner));
+		log.Add(revision, MakeBox(corner + Vector3D(0.1f, 0.0f, 0.0f)));
+	}
+
+	// What saw the loading only sees the small change
+	CHECK(log.HasChangedWithin(MakeBox(corner), loaded));
+	for (float x = 0.0f; x < 120.0f; x += 2.0f)
+	{
+		CHECK_FALSE(log.HasChangedWithin(MakeBox(Vector3D(x, 0.0f, 30.0f)), loaded));
+	}
+}
+
 TEST_CASE("A scene change log lists the changes after a revision, newest first")
 {
 	SceneChangeLog log;

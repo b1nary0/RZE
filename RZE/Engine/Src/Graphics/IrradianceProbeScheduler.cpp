@@ -61,21 +61,15 @@ bool IrradianceProbeScheduler::FitGrid(const RenderScene& scene, U32 targetProbe
 
 	m_nextRelight = 0;
 	m_checkedRevision = scene.GetRevision();
+	m_unsettled.Clear();
 	return true;
 }
 
-void IrradianceProbeScheduler::QueueChangedProbes(const RenderScene& scene, const Vector3D& cameraPosition)
+void IrradianceProbeScheduler::QueueChangedProbes(const RenderScene& scene, const Vector3D& cameraPosition, U64 frameIndex, U32 settleFrames)
 {
-	// Movable objects aren't captured, so only Static ones change what the probes see
-	if (scene.GetStaticObjectsRevision() <= m_checkedRevision)
+	const auto queueWithin = [this, &cameraPosition](const BoundingBox& region)
 	{
-		return;
-	}
-
-	const auto queueWithinReach = [this, &cameraPosition](const BoundingBox& changedBounds)
-	{
-		const Vector3D reach(GetRecaptureReach(changedBounds));
-		const IrradianceProbeGrid::ProbeRange range = m_grid.GetProbesWithin(BoundingBox(changedBounds.GetMin() - reach, changedBounds.GetMax() + reach));
+		const IrradianceProbeGrid::ProbeRange range = m_grid.GetProbesWithin(region);
 		if (range.IsEmpty)
 		{
 			return;
@@ -97,19 +91,31 @@ void IrradianceProbeScheduler::QueueChangedProbes(const RenderScene& scene, cons
 		}
 	};
 
-	// Where isn't known: everything that's been captured
-	if (!scene.GetStaticChanges().ForEachChangeSince(m_checkedRevision, queueWithinReach))
+	// Movable objects aren't captured, so only Static ones change what the probes see
+	if (scene.GetStaticObjectsRevision() > m_checkedRevision)
 	{
-		for (U32 probe = 0; probe < m_grid.GetProbeCount(); ++probe)
+		const auto touchReach = [this, frameIndex](const BoundingBox& changedBounds)
 		{
-			if (m_captured[probe] && !m_queued[probe])
+			const Vector3D reach(GetRecaptureReach(changedBounds));
+			m_unsettled.Touch(BoundingBox(changedBounds.GetMin() - reach, changedBounds.GetMax() + reach), frameIndex);
+		};
+
+		// Where isn't known: everything that's been captured, at once
+		if (!scene.GetStaticChanges().ForEachChangeSince(m_checkedRevision, touchReach))
+		{
+			m_unsettled.Clear();
+			for (U32 probe = 0; probe < m_grid.GetProbeCount(); ++probe)
 			{
-				QueueRecapture(probe, cameraPosition);
+				if (m_captured[probe] && !m_queued[probe])
+				{
+					QueueRecapture(probe, cameraPosition);
+				}
 			}
 		}
+		m_checkedRevision = scene.GetRevision();
 	}
 
-	m_checkedRevision = scene.GetRevision();
+	m_unsettled.TakeSettled(frameIndex, settleFrames, queueWithin);
 }
 
 U32 IrradianceProbeScheduler::TakeCapture()
