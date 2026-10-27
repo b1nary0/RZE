@@ -9,6 +9,7 @@ struct ID3D11Texture2D;
 struct ID3D11ShaderResourceView;
 struct ID3D11RenderTargetView;
 struct ID3D11DepthStencilView;
+struct ID3D11UnorderedAccessView;
 
 namespace Rendering
 {
@@ -37,6 +38,8 @@ namespace Rendering
 		ID3D11DepthStencilView& GetDepthView();
 		// One slice, to render depth into it alone; 0 for a single texture
 		ID3D11DepthStencilView& GetDepthSliceView(U32 slice);
+		// Every slice of one mip, for compute shaders to write; only for textures made with bIsUnorderedAccess
+		ID3D11UnorderedAccessView& GetUnorderedAccessView(U32 mip);
 		ID3D11SamplerState& GetSamplerState();
 
 		// #TODO
@@ -55,6 +58,8 @@ namespace Rendering
 		ID3D11DepthStencilView* m_DSV = nullptr;
 		// A depth texture array's per-slice views; empty for a single texture, whose m_DSV is its one slice
 		std::vector<ID3D11DepthStencilView*> m_sliceDSVs;
+		// One per mip, each covering every slice; empty unless made with bIsUnorderedAccess
+		std::vector<ID3D11UnorderedAccessView*> m_mipUAVs;
 
 		bool bIsDepthTexture { false };
 	};

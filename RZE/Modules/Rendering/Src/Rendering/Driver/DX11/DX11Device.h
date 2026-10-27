@@ -73,8 +73,11 @@ namespace Rendering
 		ID3D11DepthStencilState* mDepthReadOnlyState;
 		ID3D11DepthStencilState* mDepthOffState;
 
-		// Depth-comparison sampler for shadow maps; bound to PS slot s1 at every Begin()
+		// Depth-comparison sampler for shadow maps; bound to PS and CS slot s1 at every Begin()
 		ID3D11SamplerState* mShadowSamplerState;
+		// Linear filtering that clamps at the edges, for screen-sized textures and probe data; bound to PS and CS slot s2
+		// at every Begin()
+		ID3D11SamplerState* mLinearClampSamplerState;
 
 		ID3D11DepthStencilView* mDepthStencilView;
 		ID3D11RenderTargetView* mRenderTargetView;

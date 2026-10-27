@@ -95,6 +95,7 @@ namespace Rendering
 		void Execute(RenderCommand_SetDepthTarget& command);
 		void Execute(RenderCommand_SetColourTarget& command);
 		void Execute(RenderCommand_GenerateMips& command);
+		void Execute(RenderCommand_CopyTexture& command);
 		void Execute(RenderCommand_ClearRenderTarget& command);
 
 		// Pipeline state
@@ -116,6 +117,8 @@ namespace Rendering
 		void Execute(RenderCommand_UnsetTextureResource& command);
 		void Execute(RenderCommand_SetTextureResourceCS& command);
 		void Execute(RenderCommand_UnsetTextureResourceCS& command);
+		void Execute(RenderCommand_SetUnorderedAccess& command);
+		void Execute(RenderCommand_UnsetUnorderedAccess& command);
 
 		// Draws
 		void Execute(RenderCommand_Draw& command);

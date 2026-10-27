@@ -44,9 +44,14 @@ namespace Rendering
 		{
 			switch (format)
 			{
+			case DXGI_FORMAT_R8_UNORM:
+				return 1;
+			case DXGI_FORMAT_R16_FLOAT:
+				return 2;
 			case DXGI_FORMAT_R8G8B8A8_UNORM:
 			case DXGI_FORMAT_R16G16_FLOAT:
 			case DXGI_FORMAT_R32_UINT:
+			case DXGI_FORMAT_R32_FLOAT:
 			// Depth-stencil targets that can also be read by shaders (DX11TextureBuffer2D)
 			case DXGI_FORMAT_R24G8_TYPELESS:
 				return 4;
@@ -120,6 +125,8 @@ namespace Rendering
 		deviceContext.RSSetState(m_device->mRasterState);
 		deviceContext.PSSetSamplers(1, 1, &m_device->mShadowSamplerState);
 		deviceContext.CSSetSamplers(1, 1, &m_device->mShadowSamplerState);
+		deviceContext.PSSetSamplers(2, 1, &m_device->mLinearClampSamplerState);
+		deviceContext.CSSetSamplers(2, 1, &m_device->mLinearClampSamplerState);
 	}
 
 	void RenderThread::Execute(RenderCommand_End&)
@@ -276,6 +283,15 @@ namespace Rendering
 		deviceContext.GenerateMips(&texturePtr->GetResourceView());
 	}
 
+	void RenderThread::Execute(RenderCommand_CopyTexture& command)
+	{
+		DX11TextureBuffer2D* sourcePtr = static_cast<DX11TextureBuffer2D*>(command.source.m_buffer.get());
+		DX11TextureBuffer2D* destinationPtr = static_cast<DX11TextureBuffer2D*>(command.destination.m_buffer.get());
+
+		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+		deviceContext.CopyResource(destinationPtr->GetHWResource(), sourcePtr->GetHWResource());
+	}
+
 	void RenderThread::Execute(RenderCommand_ClearRenderTarget& command)
 	{
 		DX11TextureBuffer2D* texturePtr = static_cast<DX11TextureBuffer2D*>(command.renderTarget.m_buffer.get());
@@ -396,6 +412,22 @@ namespace Rendering
 		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 
 		deviceContext.CSSetShaderResources(command.textureSlot, 1, &nullSRV);
+	}
+
+	void RenderThread::Execute(RenderCommand_SetUnorderedAccess& command)
+	{
+		DX11TextureBuffer2D* texturePtr = static_cast<DX11TextureBuffer2D*>(command.texture.m_buffer.get());
+
+		ID3D11UnorderedAccessView* uav = &texturePtr->GetUnorderedAccessView(command.mip);
+		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+		deviceContext.CSSetUnorderedAccessViews(command.slot, 1, &uav, nullptr);
+	}
+
+	void RenderThread::Execute(RenderCommand_UnsetUnorderedAccess& command)
+	{
+		ID3D11UnorderedAccessView* nullUAV = nullptr;
+		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+		deviceContext.CSSetUnorderedAccessViews(command.slot, 1, &nullUAV, nullptr);
 	}
 
 	void RenderThread::Execute(RenderCommand_Draw& command)

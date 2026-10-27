@@ -13,7 +13,11 @@ namespace Rendering
 		// Integer IDs, e.g. for picking; can't be filtered or have mips generated
 		R32_UINT,
 		// A 64-bit integer ID as two halves, low then high; otherwise like R32_UINT
-		RG32_UINT
+		RG32_UINT,
+		// Single channels, e.g. ambient occlusion (R8) or linear depth (R16, R32)
+		R8_UNORM,
+		R16_FLOAT,
+		R32_FLOAT
 	};
 
 	// This isn't the complete answer to this atm, but will do for now
@@ -35,6 +39,8 @@ namespace Rendering
 		//U32 Usage;
 		bool bIsShaderResource;
 		bool bIsRenderTarget;
+		// Compute shaders can write it, one mip at a time (Renderer::SetUnorderedAccess). Not for depth textures.
+		bool bIsUnorderedAccess;
 		bool bIsDepthTexture;
 		// Samples as a TextureCube (or TextureCubeArray) rather than a Texture2D(Array)
 		bool bIsCubeMap;

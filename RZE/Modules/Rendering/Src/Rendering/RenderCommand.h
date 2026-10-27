@@ -58,6 +58,7 @@ namespace Rendering
 		SetDepthTarget,
 		SetColourTarget,
 		GenerateMips,
+		CopyTexture,
 		ClearRenderTarget,
 		SetViewport,
 		SetInputLayout,
@@ -77,6 +78,8 @@ namespace Rendering
 		UnsetTextureResource,
 		SetTextureResourceCS,
 		UnsetTextureResourceCS,
+		SetUnorderedAccess,
+		UnsetUnorderedAccess,
 		Draw,
 		DrawIndexed,
 		DrawFullScreenQuad,
@@ -297,6 +300,14 @@ namespace Rendering
 		TextureBuffer2DHandle texture;
 	};
 
+	struct RenderCommand_CopyTexture : RenderCommand
+	{
+		RenderCommand_CopyTexture() { type = RenderCommandType::CopyTexture; }
+
+		TextureBuffer2DHandle source;
+		TextureBuffer2DHandle destination;
+	};
+
 	struct RenderCommand_ReadTexel : RenderCommand
 	{
 		RenderCommand_ReadTexel() { type = RenderCommandType::ReadTexel; }
@@ -453,6 +464,22 @@ namespace Rendering
 		RenderCommand_UnsetTextureResourceCS() { type = RenderCommandType::UnsetTextureResourceCS; }
 
 		U32 textureSlot;
+	};
+
+	struct RenderCommand_SetUnorderedAccess : RenderCommand
+	{
+		RenderCommand_SetUnorderedAccess() { type = RenderCommandType::SetUnorderedAccess; }
+
+		TextureBuffer2DHandle texture;
+		U32 slot = 0;
+		U32 mip = 0;
+	};
+
+	struct RenderCommand_UnsetUnorderedAccess : RenderCommand
+	{
+		RenderCommand_UnsetUnorderedAccess() { type = RenderCommandType::UnsetUnorderedAccess; }
+
+		U32 slot = 0;
 	};
 
 	struct RenderCommand_Draw : RenderCommand

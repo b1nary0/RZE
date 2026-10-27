@@ -163,6 +163,7 @@ namespace Rendering
 			case RenderCommandType::SetDepthTarget: Execute(static_cast<RenderCommand_SetDepthTarget&>(*command)); break;
 			case RenderCommandType::SetColourTarget: Execute(static_cast<RenderCommand_SetColourTarget&>(*command)); break;
 			case RenderCommandType::GenerateMips: Execute(static_cast<RenderCommand_GenerateMips&>(*command)); break;
+			case RenderCommandType::CopyTexture: Execute(static_cast<RenderCommand_CopyTexture&>(*command)); break;
 			case RenderCommandType::ClearRenderTarget: Execute(static_cast<RenderCommand_ClearRenderTarget&>(*command)); break;
 			case RenderCommandType::SetViewport: Execute(static_cast<RenderCommand_SetViewport&>(*command)); break;
 			case RenderCommandType::SetInputLayout: Execute(static_cast<RenderCommand_SetInputLayout&>(*command)); break;
@@ -182,6 +183,8 @@ namespace Rendering
 			case RenderCommandType::UnsetTextureResource: Execute(static_cast<RenderCommand_UnsetTextureResource&>(*command)); break;
 			case RenderCommandType::SetTextureResourceCS: Execute(static_cast<RenderCommand_SetTextureResourceCS&>(*command)); break;
 			case RenderCommandType::UnsetTextureResourceCS: Execute(static_cast<RenderCommand_UnsetTextureResourceCS&>(*command)); break;
+			case RenderCommandType::SetUnorderedAccess: Execute(static_cast<RenderCommand_SetUnorderedAccess&>(*command)); break;
+			case RenderCommandType::UnsetUnorderedAccess: Execute(static_cast<RenderCommand_UnsetUnorderedAccess&>(*command)); break;
 			case RenderCommandType::Draw: Execute(static_cast<RenderCommand_Draw&>(*command)); break;
 			case RenderCommandType::DrawIndexed: Execute(static_cast<RenderCommand_DrawIndexed&>(*command)); break;
 			case RenderCommandType::DrawFullScreenQuad: Execute(static_cast<RenderCommand_DrawFullScreenQuad&>(*command)); break;

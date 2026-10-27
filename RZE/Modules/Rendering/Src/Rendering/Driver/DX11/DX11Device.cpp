@@ -140,6 +140,20 @@ namespace Rendering
 
 			mDevice->CreateSamplerState(&samplerDesc, &mShadowSamplerState);
 		}
+
+		// Linear clamp sampler
+		{
+			D3D11_SAMPLER_DESC samplerDesc;
+			ZeroMemory(&samplerDesc, sizeof(samplerDesc));
+			samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+			samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+			samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+			samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+			samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+			samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+			mDevice->CreateSamplerState(&samplerDesc, &mLinearClampSamplerState);
+		}
 	}
 
 	void DX11Device::CreateSwapChain()
@@ -257,6 +271,7 @@ namespace Rendering
 		mDepthReadOnlyState->Release();
 		mDepthOffState->Release();
 		mShadowSamplerState->Release();
+		mLinearClampSamplerState->Release();
 	}
 
 	void DX11Device::SetSyncInterval(U32 interval)

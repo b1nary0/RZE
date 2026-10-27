@@ -19,6 +19,9 @@ namespace Rendering
 			case ETextureFormat::RG16_FLOAT: return DXGI_FORMAT_R16G16_FLOAT;
 			case ETextureFormat::R32_UINT: return DXGI_FORMAT_R32_UINT;
 			case ETextureFormat::RG32_UINT: return DXGI_FORMAT_R32G32_UINT;
+			case ETextureFormat::R8_UNORM: return DXGI_FORMAT_R8_UNORM;
+			case ETextureFormat::R16_FLOAT: return DXGI_FORMAT_R16_FLOAT;
+			case ETextureFormat::R32_FLOAT: return DXGI_FORMAT_R32_FLOAT;
 			}
 
 			AssertFalse();
@@ -125,6 +128,29 @@ namespace Rendering
 			}
 			return desc;
 		}
+
+		// Every slice of one mip, for compute shaders to write. Arrays (cube maps among them) are written as a
+		// RWTexture2DArray, a slice per face.
+		D3D11_UNORDERED_ACCESS_VIEW_DESC MakeUnorderedAccessViewDesc(DXGI_FORMAT format, U32 arraySize, U32 mip)
+		{
+			D3D11_UNORDERED_ACCESS_VIEW_DESC desc;
+			ZeroMemory(&desc, sizeof(desc));
+			desc.Format = format;
+
+			if (arraySize > 1)
+			{
+				desc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2DARRAY;
+				desc.Texture2DArray.MipSlice = mip;
+				desc.Texture2DArray.FirstArraySlice = 0;
+				desc.Texture2DArray.ArraySize = arraySize;
+			}
+			else
+			{
+				desc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
+				desc.Texture2D.MipSlice = mip;
+			}
+			return desc;
+		}
 	}
 
 	DX11TextureBuffer2D::~DX11TextureBuffer2D()
@@ -214,9 +240,12 @@ namespace Rendering
 			UINT bindFlags = 0;
 			if (params.bIsShaderResource) bindFlags = (bindFlags | D3D11_BIND_SHADER_RESOURCE);
 			if (params.bIsRenderTarget) bindFlags = (bindFlags | D3D11_BIND_RENDER_TARGET);
+			if (params.bIsUnorderedAccess) bindFlags = (bindFlags | D3D11_BIND_UNORDERED_ACCESS);
 
-			// Integer formats don't support mip generation, and creating one with the flag fails
-			const bool canGenerateMips = params.Format != ETextureFormat::R32_UINT && params.Format != ETextureFormat::RG32_UINT;
+			// Mip generation renders into each mip, so it needs a render target, and integer formats don't support it:
+			// creating a texture with the flag fails otherwise
+			const bool canGenerateMips = params.bIsRenderTarget
+				&& params.Format != ETextureFormat::R32_UINT && params.Format != ETextureFormat::RG32_UINT;
 
 			textureDesc.BindFlags = bindFlags;
 			textureDesc.CPUAccessFlags = 0;
@@ -239,10 +268,28 @@ namespace Rendering
 				m_device->GetDeviceContext().UpdateSubresource(m_resource, 0, NULL, data, rowPitch, 0);
 			}
 
-			hr = m_device->GetHardwareDevice().CreateRenderTargetView(m_resource, &rtvDesc, &m_RTV);
-			AssertExpr(hr == S_OK);
+			if (params.bIsRenderTarget)
+			{
+				hr = m_device->GetHardwareDevice().CreateRenderTargetView(m_resource, &rtvDesc, &m_RTV);
+				AssertExpr(hr == S_OK);
+			}
 			hr = m_device->GetHardwareDevice().CreateShaderResourceView(m_resource, &srvDesc, &m_SRV);
 			AssertExpr(hr == S_OK);
+
+			if (params.bIsUnorderedAccess)
+			{
+				// MipLevels 0 asks for the whole chain, so the texture says how many it got
+				D3D11_TEXTURE2D_DESC createdDesc;
+				m_resource->GetDesc(&createdDesc);
+
+				m_mipUAVs.resize(createdDesc.MipLevels, nullptr);
+				for (U32 mip = 0; mip < createdDesc.MipLevels; ++mip)
+				{
+					const D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = MakeUnorderedAccessViewDesc(textureDesc.Format, arraySize, mip);
+					hr = m_device->GetHardwareDevice().CreateUnorderedAccessView(m_resource, &uavDesc, &m_mipUAVs[mip]);
+					AssertExpr(hr == S_OK);
+				}
+			}
 
 			if (canGenerateMips)
 			{
@@ -261,6 +308,11 @@ namespace Rendering
 			ReleaseCOM(sliceDSV);
 		}
 		m_sliceDSVs.clear();
+		for (ID3D11UnorderedAccessView*& mipUAV : m_mipUAVs)
+		{
+			ReleaseCOM(mipUAV);
+		}
+		m_mipUAVs.clear();
 		ReleaseCOM(m_DSV);
 		ReleaseCOM(m_RTV);
 		ReleaseCOM(m_SRV);
@@ -328,6 +380,13 @@ namespace Rendering
 		AssertExpr(slice < m_sliceDSVs.size());
 		AssertNotNull(m_sliceDSVs[slice]);
 		return *m_sliceDSVs[slice];
+	}
+
+	ID3D11UnorderedAccessView& DX11TextureBuffer2D::GetUnorderedAccessView(U32 mip)
+	{
+		AssertMsg(mip < m_mipUAVs.size(), "Only textures made with bIsUnorderedAccess have UAVs, one per mip");
+		AssertNotNull(m_mipUAVs[mip]);
+		return *m_mipUAVs[mip];
 	}
 
 	ID3D11SamplerState& DX11TextureBuffer2D::GetSamplerState()

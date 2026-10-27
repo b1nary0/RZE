@@ -417,6 +417,15 @@ namespace Rendering
 		m_renderThread.PushCommand(command);
 	}
 
+	void Renderer::CopyTexture(const TextureBuffer2DHandle& source, const TextureBuffer2DHandle& destination)
+	{
+		RenderCommand_CopyTexture* command = MemArena::AllocType<RenderCommand_CopyTexture>();
+		command->source = source;
+		command->destination = destination;
+
+		m_renderThread.PushCommand(command);
+	}
+
 	void Renderer::ReadTexel(const TextureBuffer2DHandle& texture, U32 x, U32 y, std::shared_ptr<TexelReadback> result)
 	{
 		RenderCommand_ReadTexel* command = MemArena::AllocType<RenderCommand_ReadTexel>();
@@ -619,6 +628,24 @@ namespace Rendering
 	{
 		RenderCommand_UnsetTextureResourceCS* command = MemArena::AllocType<RenderCommand_UnsetTextureResourceCS>();
 		command->textureSlot = textureSlot;
+
+		m_renderThread.PushCommand(command);
+	}
+
+	void Renderer::SetUnorderedAccess(const TextureBuffer2DHandle& texture, U32 slot, U32 mip)
+	{
+		RenderCommand_SetUnorderedAccess* command = MemArena::AllocType<RenderCommand_SetUnorderedAccess>();
+		command->texture = texture;
+		command->slot = slot;
+		command->mip = mip;
+
+		m_renderThread.PushCommand(command);
+	}
+
+	void Renderer::UnsetUnorderedAccess(U32 slot)
+	{
+		RenderCommand_UnsetUnorderedAccess* command = MemArena::AllocType<RenderCommand_UnsetUnorderedAccess>();
+		command->slot = slot;
 
 		m_renderThread.PushCommand(command);
 	}

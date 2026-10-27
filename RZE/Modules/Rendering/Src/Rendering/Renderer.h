@@ -112,6 +112,8 @@ namespace Rendering
 
 		// Fills the texture's mip chain from mip 0
 		static void GenerateMips(const TextureBuffer2DHandle& texture);
+		// Copies every slice and mip of source into destination, which must have the same size, format, slices and mips
+		static void CopyTexture(const TextureBuffer2DHandle& source, const TextureBuffer2DHandle& destination);
 		// Copies one texel of a 4-byte-per-texel texture back to the CPU once the GPU has drawn it. The render
 		// thread waits on the GPU for it, so keep it to occasional reads such as picking.
 		static void ReadTexel(const TextureBuffer2DHandle& texture, U32 x, U32 y, std::shared_ptr<TexelReadback> result);
@@ -150,12 +152,18 @@ namespace Rendering
 
 	public:
 		// Compute shaders have their own constant buffer, texture and sampler slots, apart from the pixel shader's.
-		// Samplers match the pixel shader's: s0 comes with each texture, s1 is the shadow comparison sampler.
-		// A texture can't be read here while it's bound as a render target, so unbind it from one before the other.
+		// Samplers match the pixel shader's: s0 comes with each texture, s1 is the shadow comparison sampler and s2 is
+		// linear with clamped edges.
+		// D3D11 won't bind one texture both to be read (a texture slot) and to be written (a render target or an
+		// unordered access slot): binding it one way silently unbinds it the other. Unset it from one before the other.
 		static void SetComputeShader(const ComputeShaderHandle& computeShader);
 		static void SetConstantBufferCS(const ConstantBufferHandle& buffer, U32 bufferSlot);
 		static void SetTextureResourceCS(const TextureBuffer2DHandle& texture, U32 textureSlot);
 		static void UnsetTextureResourceCS(U32 textureSlot);
+		// Lets the compute shader write one mip of texture, every slice of it, as a RWTexture2D (or RWTexture2DArray for
+		// an array) at register u<slot>. The texture must be made with bIsUnorderedAccess.
+		static void SetUnorderedAccess(const TextureBuffer2DHandle& texture, U32 slot, U32 mip = 0);
+		static void UnsetUnorderedAccess(U32 slot);
 		// Runs the bound compute shader over groupsX x groupsY x groupsZ thread groups
 		static void Dispatch(U32 groupsX, U32 groupsY = 1, U32 groupsZ = 1);
 
