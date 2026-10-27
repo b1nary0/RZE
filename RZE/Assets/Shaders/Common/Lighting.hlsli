@@ -206,15 +206,17 @@ float3 AmbientLighting(SurfaceData surface, float3 viewDir, float shininess)
 	float gloss = saturate(log2(shininess) / MaxShininessLog2);
 
 	float3 R = reflect(-viewDir, N);
-	float3 environment = HemisphereAmbient(normalize(lerp(N, R, gloss)));
+	// The reflection probes around the surface; the hemisphere where they don't cover it
+	float probeCoverage;
+	float3 environment = ReflectionEnvironment(surface.WorldPos, R, gloss, HemisphereAmbient(normalize(lerp(N, R, gloss))), probeCoverage);
 
 	float f0 = surface.SpecularIntensity * SpecularF0Scale;
 	float fresnel = FresnelSchlick(f0, lerp(f0, surface.SpecularIntensity, gloss), NdotV);
 
 	// Stand-in for occlusion at a larger scale than the ambient occlusion sees (about half a metre): nothing blocks the
 	// hemisphere, so a broad, rough lobe would otherwise put a grey sheen over every crevice and wash out coloured
-	// materials like rust. To go once probes occlude the sky (Docs/Plans/SSAOAndGlobalIllumination.md).
-	float reflectionWeight = gloss * gloss;
+	// materials like rust. Not needed where reflection probes cover the surface: what they captured is occluded.
+	float reflectionWeight = lerp(gloss * gloss, 1.0f, probeCoverage);
 
 	// Indirect light only: direct lights have their shadows
 	float3 diffuseOcclusion = MultiBounceAmbientOcclusion(surface.AmbientOcclusion, surface.Albedo);

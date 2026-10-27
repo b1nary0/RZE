@@ -3,8 +3,10 @@
 
 // The lights, shadow maps and sky (b2, b3, t5, t6, s1)
 #include "Common/LightResources.hlsli"
-// The irradiance probes (b5, t8 to t10)
+// The irradiance probes (b5, t8 to t11)
 #include "Common/IrradianceVolume.hlsli"
+// The reflection probes (b7, t12)
+#include "Common/ReflectionProbes.hlsli"
 
 // Mirrors GraphicsLayouts::MaterialBufferLayout (Graphics/GraphicsLayouts.h)
 cbuffer MaterialBuffer : register(b1)

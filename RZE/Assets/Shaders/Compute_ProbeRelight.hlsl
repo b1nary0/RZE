@@ -8,6 +8,7 @@
 #include "Common/LightResources.hlsli"
 #include "Common/IrradianceVolume.hlsli"
 #include "Common/Probes.hlsli"
+#include "Common/ProbeLighting.hlsli"
 
 // After the volume's t8 to t11
 Texture2D<uint2> CaptureAtlas : register(t13);
@@ -22,34 +23,6 @@ groupshared float4 g_red[RELIGHT_THREADS];
 groupshared float4 g_green[RELIGHT_THREADS];
 groupshared float4 g_blue[RELIGHT_THREADS];
 groupshared float  g_solidAngle[RELIGHT_THREADS];
-
-// The light leaving a captured surface towards the probe (per unit albedo conventions as the forward pass: no 1/pi)
-float3 SurfaceRadiance(ProbeSurface surface, float3 worldPos)
-{
-	float3 direct = 0.0f;
-	for (uint lightIndex = 0; lightIndex < LightCount; ++lightIndex)
-	{
-		Light light = Lights[lightIndex];
-
-		float3 L;
-		const float attenuation = LightAttenuation(light, worldPos, L);
-		if (attenuation <= 0.0f)
-		{
-			continue;
-		}
-
-		direct += saturate(dot(surface.Normal, L)) * LightRadiance(light) * attenuation * LightShadow(light, worldPos, surface.Normal);
-	}
-
-	// Last frame's probes, or the sky and ground as the forward pass falls back to
-	float3 indirect;
-	if (!SampleProbeIrradiance(worldPos, surface.Normal, indirect))
-	{
-		indirect = SkyRadiance(surface.Normal);
-	}
-
-	return surface.Albedo * (direct + indirect);
-}
 
 [numthreads(RELIGHT_THREADS, 1, 1)]
 void CSMain(uint3 groupID : SV_GroupID, uint threadIndex : SV_GroupIndex)

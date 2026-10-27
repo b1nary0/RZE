@@ -28,19 +28,6 @@ struct GlobalIlluminationSettings;
 class IrradianceProbeStage : public IRenderStage
 {
 public:
-	// Mirrors ProbeList in Common/Probes.hlsli
-	struct ProbeListLayout
-	{
-		static constexpr U32 k_maxProbes = 512;
-
-		U32 Count = 0;
-		U32 FaceSize = 0;
-		U32 AtlasProbesPerRow = 0;
-		U32 _pad = 0;
-		U32 Probes[k_maxProbes] = {};
-	};
-
-public:
 	// settings: RenderEngine's, read each frame
 	explicit IrradianceProbeStage(const GlobalIlluminationSettings* settings);
 	~IrradianceProbeStage() override = default;

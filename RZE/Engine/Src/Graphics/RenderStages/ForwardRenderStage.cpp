@@ -21,7 +21,7 @@
 namespace
 {
 	// Must match LightBuffer / ShadowBuffer / ViewLightingBuffer / IrradianceVolume / ShadowMap / PointShadowCubes /
-	// AmbientOcclusionMap / ProbeSH registers in Common/PixelResources.hlsli and the files it includes
+	// AmbientOcclusionMap / ProbeSH / ReflectionProbes registers in Common/PixelResources.hlsli and the files it includes
 	constexpr U32 k_lightBufferSlot = 2;
 	constexpr U32 k_shadowBufferSlot = 3;
 	constexpr U32 k_viewLightingBufferSlot = 4;
@@ -33,6 +33,8 @@ namespace
 	constexpr U32 k_probeSHGreenSlot = 9;
 	constexpr U32 k_probeSHBlueSlot = 10;
 	constexpr U32 k_probeVisibilitySlot = 11;
+	constexpr U32 k_reflectionProbesSlot = 7;
+	constexpr U32 k_reflectionCubesSlot = 12;
 }
 
 void ForwardRenderStage::Initialize()
@@ -56,6 +58,7 @@ void ForwardRenderStage::Setup(RenderStageBuilder& builder)
 	m_sceneDepthInput = builder.Reads<SceneDepthData>();
 	m_ambientOcclusionInput = builder.Reads<AmbientOcclusionData>();
 	m_sceneIrradianceInput = builder.Reads<SceneIrradianceData>();
+	m_sceneReflectionInput = builder.Reads<SceneReflectionData>();
 	m_sceneColourOutput = builder.Writes<SceneColourData>();
 }
 
@@ -109,6 +112,9 @@ void ForwardRenderStage::Render(RenderContext& context)
 	Rendering::Renderer::SetTextureResource(irradiance.SHGreen, k_probeSHGreenSlot);
 	Rendering::Renderer::SetTextureResource(irradiance.SHBlue, k_probeSHBlueSlot);
 	Rendering::Renderer::SetTextureResource(irradiance.Visibility, k_probeVisibilitySlot);
+	const SceneReflectionData& reflection = m_sceneReflectionInput.Get(context);
+	Rendering::Renderer::SetConstantBufferPS(reflection.ProbeBuffer, k_reflectionProbesSlot);
+	Rendering::Renderer::SetTextureResource(reflection.Cubes, k_reflectionCubesSlot);
 
 	// The same for every draw: bound once, and only the world matrix buffer's contents change per object
 	Rendering::Renderer::SetConstantBufferPS(sceneLightingData.LightBuffer, k_lightBufferSlot);
@@ -197,6 +203,7 @@ void ForwardRenderStage::Render(RenderContext& context)
 	Rendering::Renderer::UnsetTextureResource(k_probeSHGreenSlot);
 	Rendering::Renderer::UnsetTextureResource(k_probeSHBlueSlot);
 	Rendering::Renderer::UnsetTextureResource(k_probeVisibilitySlot);
+	Rendering::Renderer::UnsetTextureResource(k_reflectionCubesSlot);
 
 	m_sceneColourOutput.Publish(context, sceneColourData);
 

@@ -44,6 +44,11 @@ U64 RenderSceneLifetime::GetID(const LightObject* lightObject)
 	return lightObject->GetLiveID();
 }
 
+U64 RenderSceneLifetime::GetID(const ReflectionProbeObject* reflectionProbe)
+{
+	return reflectionProbe->GetLiveID();
+}
+
 void RenderScene::ClearObjects()
 {
 	m_renderObjects.clear();
@@ -127,6 +132,35 @@ void RenderScene::DestroyRenderObject(RenderObjectPtr& renderObject)
 
 		renderObject = RenderObjectPtr();
 		OnRenderObjectChanged(oldBounds, BoundingBox());
+	}
+}
+
+ReflectionProbeObjectPtr RenderScene::CreateReflectionProbe()
+{
+	std::unique_ptr<ReflectionProbeObject>& reflectionProbe = m_reflectionProbes.emplace_back(std::make_unique<ReflectionProbeObject>(m_revision));
+	return ReflectionProbeObjectPtr(reflectionProbe.get());
+}
+
+void RenderScene::DestroyReflectionProbe(ReflectionProbeObjectPtr& reflectionProbe)
+{
+	// Already gone: its address may belong to a new probe by now, so it isn't searched for
+	if (!reflectionProbe.IsValid())
+	{
+		reflectionProbe = ReflectionProbeObjectPtr();
+		return;
+	}
+
+	// In the order they were made, which is the order ReflectionProbeStage gives them its slots
+	auto iter = std::find_if(m_reflectionProbes.begin(), m_reflectionProbes.end(),
+		[&reflectionProbe](const std::unique_ptr<ReflectionProbeObject>& other)
+		{
+			return reflectionProbe == other.get();
+		});
+	if (iter != m_reflectionProbes.end())
+	{
+		m_reflectionProbes.erase(iter);
+		reflectionProbe = ReflectionProbeObjectPtr();
+		++m_revision;
 	}
 }
 

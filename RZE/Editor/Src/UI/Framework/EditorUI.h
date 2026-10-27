@@ -74,7 +74,9 @@ namespace Editor
 			// A point light: round glass over a screw base
 			Bulb,
 			// A camera: a movie camera's body with two film reels on top and its lens to the right
-			Camera
+			Camera,
+			// A reflection probe: a mirrored ball with a highlight
+			ReflectionProbe
 		};
 
 		// Screen-space box around a drawn object icon, to click it by

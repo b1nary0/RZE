@@ -10,6 +10,7 @@
 #include <Graphics/RenderStages/IrradianceProbeStage.h>
 #include <Graphics/RenderStages/PickRenderStage.h>
 #include <Graphics/RenderStages/PostProcessRenderStage.h>
+#include <Graphics/RenderStages/ReflectionProbeStage.h>
 #include <Graphics/RenderStages/ShadowRenderStage.h>
 
 #include <Rendering/Renderer.h>
@@ -35,6 +36,7 @@ void RenderEngine::Initialize(void* windowHandle)
 	AddRenderStage<DepthPrepassStage>();
 	AddRenderStage<AmbientOcclusionStage>();
 	AddRenderStage<IrradianceProbeStage>(&m_globalIlluminationSettings);
+	AddRenderStage<ReflectionProbeStage>();
 	AddRenderStage<ForwardRenderStage>();
 	AddRenderStage<PostProcessRenderStage>();
 	AddRenderStage<PickRenderStage>();

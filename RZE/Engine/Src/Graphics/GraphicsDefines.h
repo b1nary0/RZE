@@ -5,6 +5,7 @@
 
 class RenderObject;
 class LightObject;
+class ReflectionProbeObject;
 
 // Which render objects and lights are alive, for their handles (UniqueLiveObjectPtr), whether they were destroyed
 // through the handle or not (e.g. RenderScene::ClearObjects, or the scene going away). Both kinds share one
@@ -15,6 +16,7 @@ struct RenderSceneLifetime
 	static bool IsAlive(U64 id);
 	static U64 GetID(const RenderObject* renderObject);
 	static U64 GetID(const LightObject* lightObject);
+	static U64 GetID(const ReflectionProbeObject* reflectionProbe);
 
 	// For RenderObject and LightObject: an ID alive from construction until it's released on destruction
 	static U64 Acquire();
@@ -25,3 +27,4 @@ struct RenderSceneLifetime
 // RenderScene::DestroyRenderObject / DestroyLightObject. Invalid (and equal to nullptr) once the object is destroyed.
 using RenderObjectPtr = UniqueLiveObjectPtr<RenderObject, RenderSceneLifetime>;
 using LightObjectPtr = UniqueLiveObjectPtr<LightObject, RenderSceneLifetime>;
+using ReflectionProbeObjectPtr = UniqueLiveObjectPtr<ReflectionProbeObject, RenderSceneLifetime>;

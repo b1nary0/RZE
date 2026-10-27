@@ -15,12 +15,21 @@ class VertexShader;
 // side, the nearest surface each texel sees (albedo, normal, distance, and whether it's a back face) packed into an
 // RG32_UINT texel (Pixel_ProbeCapture.hlsl, Common/Probes.hlsli). Texels that see nothing stay as cleared (0): the sky.
 //
-// The faces are plain look-at views, not CubeMap's, which are mirrored to suit D3D's cube sampling: mirroring flips
-// triangles' winding and so which side is the back. The captures are read texel by texel, never as a cube.
+// The faces are plain look-at views, so back faces show as back faces (SV_IsFrontFace), in one of two layouts:
+// EProbeFaces::Probe's own (GetFaceBasis), read texel by texel, or CubeMap's, whose faces are a cube texture's slices,
+// so a capture's texels are a cube's texels (reflection probes).
 class ProbeCapture
 {
 public:
 	static constexpr U32 k_faceCount = 6;
+
+	enum class EProbeFaces
+	{
+		// GetFaceBasis; irradiance probes
+		Probe,
+		// CubeMap::GetFaceForward and GetFaceUp, in ECubeFace order; reflection probes
+		CubeMap
+	};
 
 	// Mirrors ProbeCaptureBuffer in Pixel_ProbeCapture.hlsl
 	struct ParamsLayout
@@ -43,7 +52,7 @@ public:
 
 public:
 	// faceSize: texels across each face
-	explicit ProbeCapture(U32 faceSize);
+	ProbeCapture(U32 faceSize, EProbeFaces faces);
 
 	void Initialize();
 
@@ -56,6 +65,7 @@ public:
 
 private:
 	U32 m_faceSize;
+	EProbeFaces m_faces;
 
 	// The forward pass's, so surfaces are where it draws them
 	TypedResourceHandle<VertexShader> m_vertexShader;

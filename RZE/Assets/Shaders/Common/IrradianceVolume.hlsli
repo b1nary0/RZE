@@ -8,6 +8,7 @@
 // Each probe also has a visibility map (Compute_ProbeVisibility.hlsl): the mean and mean squared distance to what it
 // sees, by direction, so a probe on the far side of a wall from a surface doesn't light it (DDGI's Chebyshev test).
 
+#include "Common/LightResources.hlsli"
 #include "Common/Probes.hlsli"
 
 // Mirrors GraphicsLayouts::IrradianceVolumeLayout (Graphics/GraphicsLayouts.h)
@@ -31,7 +32,6 @@ Texture2DArray<float4> ProbeSHBlue  : register(t10);
 // mean squared distance in .g, with a 1-texel border copied from across its edges so bilinear filtering wraps. All 0 for
 // an inactive probe, one inside geometry.
 Texture2D<float2> ProbeVisibility : register(t11);
-SamplerState ProbeVisibilitySampler : register(s2); // Linear, clamped (DX11Device)
 
 // Mirrors IrradianceProbeStage's k_visibilitySize
 #define VISIBILITY_SIZE 8
@@ -56,7 +56,7 @@ float ProbeVisibilityWeight(uint probe, float3 direction, float distance)
 	uint2 atlasSize;
 	ProbeVisibility.GetDimensions(atlasSize.x, atlasSize.y);
 	const float2 texel = float2(ProbeVisibilityCorner(probe)) + 1.0f + (OctahedralEncode(direction) * 0.5f + 0.5f) * VISIBILITY_SIZE;
-	const float2 moments = ProbeVisibility.SampleLevel(ProbeVisibilitySampler, texel / float2(atlasSize), 0.0f);
+	const float2 moments = ProbeVisibility.SampleLevel(LinearClampSampler, texel / float2(atlasSize), 0.0f);
 
 	const float mean = moments.r;
 	if (distance <= mean)

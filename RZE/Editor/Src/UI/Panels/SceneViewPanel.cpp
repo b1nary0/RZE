@@ -20,6 +20,7 @@
 #include <Game/World/GameObjectComponents/CameraComponent.h>
 #include <Game/World/GameObjectComponents/EditorCameraComponent.h>
 #include <Game/World/GameObjectComponents/LightComponent.h>
+#include <Game/World/GameObjectComponents/ReflectionProbeComponent.h>
 #include <Game/World/GameObjectComponents/RenderComponent.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
@@ -358,6 +359,15 @@ namespace Editor
 						renderEngine.DrawWireSphere(position, light->GetRange() * outshinesAmbientRatio, outshinesAmbientColour, 1.0f, k_occludedAlpha);
 					}
 				}
+
+				// The box a reflection probe is used in, in the probe icon's colour
+				GameObjectComponentPtr<ReflectionProbeComponent> reflectionProbe = gameObject->GetComponent<ReflectionProbeComponent>();
+				if (reflectionProbe != nullptr)
+				{
+					const Vector3D halfSize = reflectionProbe->GetSize() * 0.5f;
+					const Vector3D& position = gameObject->GetTransformComponent()->GetPosition();
+					RZE().GetRenderEngine().DrawWireBox(BoundingBox(position - halfSize, position + halfSize), Matrix4x4::IDENTITY, Vector3D(0.6f, 0.75f, 0.95f));
+				}
 			}));
 
 		// Last, so the grid's lines follow the opaque debug lines (frustums, light ranges) and its depth writes can't
@@ -476,6 +486,11 @@ namespace Editor
 				if (gameObject->GetComponent<CameraComponent>() != nullptr)
 				{
 					drawIcon(EditorUI::EObjectIcon::Camera);
+				}
+
+				if (gameObject->GetComponent<ReflectionProbeComponent>() != nullptr)
+				{
+					drawIcon(EditorUI::EObjectIcon::ReflectionProbe);
 				}
 			}));
 	}

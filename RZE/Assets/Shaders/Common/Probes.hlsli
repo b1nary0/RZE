@@ -34,6 +34,35 @@ float3 ProbeTexelDirection(uint face, uint2 texel, uint faceSize)
 	return normalize(forward + ndc.x * right + ndc.y * up);
 }
 
+// A cube texture's slices, as CubeMap lays them out (CubeMap::GetFaceForward and GetFaceUp, Utils/Math/CubeMap.h): +X,
+// -X, +Y, -Y, -Z (Forward), +Z (Back). Reflection probes capture in this layout (ProbeCapture::EProbeFaces::CubeMap), so
+// their texels are a cube's; sample the cube with ToCubeSampleDirection (Common/LightResources.hlsli).
+static const float3 CubeFaceForward[PROBE_FACE_COUNT] =
+{
+	float3(1.0f, 0.0f, 0.0f), float3(-1.0f, 0.0f, 0.0f),
+	float3(0.0f, 1.0f, 0.0f), float3(0.0f, -1.0f, 0.0f),
+	float3(0.0f, 0.0f, -1.0f), float3(0.0f, 0.0f, 1.0f)
+};
+static const float3 CubeFaceUp[PROBE_FACE_COUNT] =
+{
+	float3(0.0f, 1.0f, 0.0f), float3(0.0f, 1.0f, 0.0f),
+	float3(0.0f, 0.0f, 1.0f), float3(0.0f, 0.0f, -1.0f),
+	float3(0.0f, 1.0f, 0.0f), float3(0.0f, 1.0f, 0.0f)
+};
+
+// The world direction through the centre of texel (x, y) of a cube slice, as ProbeTexelDirection does for a probe face
+float3 CubeTexelDirection(uint face, uint2 texel, uint faceSize)
+{
+	const float3 forward = CubeFaceForward[face];
+	const float3 right = normalize(cross(forward, CubeFaceUp[face]));
+	const float3 up = cross(right, forward);
+	const float2 ndc = float2(2.0f * (texel.x + 0.5f) / faceSize - 1.0f, 1.0f - 2.0f * (texel.y + 0.5f) / faceSize);
+	return normalize(forward + ndc.x * right + ndc.y * up);
+}
+
+// Mips of a reflection probe's prefiltered cube: mip 0 is mirror-sharp, each further one a wider lobe (Compute_ReflectionPrefilter)
+#define REFLECTION_MIP_COUNT 6
+
 // Mirrors Octahedral::Encode: a unit direction to -1..1 on both axes
 float2 OctahedralEncode(float3 direction)
 {

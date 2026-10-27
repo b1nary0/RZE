@@ -12,6 +12,7 @@
 
 #include <Rendering/Renderer.h>
 
+#include <Utils/Math/CubeMap.h>
 #include <Utils/Math/Frustum.h>
 #include <Utils/Math/Matrix4x4.h>
 
@@ -49,8 +50,9 @@ Vector3D ProbeCapture::GetTexelDirection(U32 face, U32 x, U32 y, U32 faceSize)
 	return (basis.Forward + right * ndcX + up * ndcY).Normalized();
 }
 
-ProbeCapture::ProbeCapture(U32 faceSize)
+ProbeCapture::ProbeCapture(U32 faceSize, EProbeFaces faces)
 	: m_faceSize(faceSize)
+	, m_faces(faces)
 {
 }
 
@@ -93,7 +95,8 @@ U32 ProbeCapture::Capture(const RenderScene& scene, const Vector3D& position, fl
 	U32 drawCount = 0;
 	for (U32 face = 0; face < k_faceCount; ++face)
 	{
-		const FaceBasis basis = GetFaceBasis(face);
+		const ECubeFace cubeFace = static_cast<ECubeFace>(face);
+		const FaceBasis basis = m_faces == EProbeFaces::Probe ? GetFaceBasis(face) : FaceBasis{ CubeMap::GetFaceForward(cubeFace), CubeMap::GetFaceUp(cubeFace) };
 
 		RenderCamera camera;
 		camera.Projection = projection;

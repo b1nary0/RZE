@@ -225,6 +225,20 @@ namespace Editor
 				// From the top of the glass to the bottom of the base, as a square
 				return { at(-11.0f, -11.0f), at(11.0f, 11.0f) };
 			}
+			case EObjectIcon::ReflectionProbe:
+			{
+				const float ballRadius = 10.0f * scale;
+				const ImU32 ballColour = withAlpha(150, 165, 185, 255);
+				const ImU32 shadeColour = withAlpha(95, 105, 125, 255);
+				const ImU32 highlightColour = withAlpha(245, 250, 255, 255);
+
+				drawList.AddCircleFilled(centre, ballRadius, ballColour, 20);
+				// The lower right in shade and a bright spot upper left, so it reads as a shiny sphere
+				drawList.AddCircleFilled(at(2.5f, 2.5f), 6.5f * scale, shadeColour, 16);
+				drawList.AddCircleFilled(at(-3.5f, -3.5f), 3.0f * scale, highlightColour, 12);
+				drawList.AddCircle(centre, ballRadius, outlineColour, 20, 1.5f);
+				return { ImVec2(centre.x - ballRadius, centre.y - ballRadius), ImVec2(centre.x + ballRadius, centre.y + ballRadius) };
+			}
 			case EObjectIcon::Camera:
 			default:
 			{

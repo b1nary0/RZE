@@ -67,6 +67,8 @@ Texture2D ShadowMap : register(t5); // Bound by ForwardRenderStage and Irradianc
 TextureCubeArray PointShadowCubes : register(t6); // Bound by ForwardRenderStage and IrradianceProbeStage
 
 SamplerComparisonState ShadowSampler : register(s1); // LESS_EQUAL compare, border = lit (DX11Device)
+// Linear, clamped at the edges (DX11Device); for the probes' textures
+SamplerState LinearClampSampler : register(s2);
 
 // Linear-space hemisphere ambient: sky colour for up-facing normals, ground colour for down-facing.
 // Kept well below the light strength (~2) so lit and unlit sides read clearly. Mirrored by k_ambientSky and

@@ -287,7 +287,7 @@ namespace
 		}
 	}
 
-	void AddToRelight(IrradianceProbeState& state, IrradianceProbeStage::ProbeListLayout& list, U32 probe, U64 frameIndex)
+	void AddToRelight(IrradianceProbeState& state, GraphicsLayouts::ProbeListLayout& list, U32 probe, U64 frameIndex)
 	{
 		list.Probes[list.Count++] = probe;
 		state.RelitFrame[probe] = frameIndex;
@@ -296,7 +296,7 @@ namespace
 
 IrradianceProbeStage::IrradianceProbeStage(const GlobalIlluminationSettings* settings)
 	: m_settings(settings)
-	, m_capture(k_faceSize)
+	, m_capture(k_faceSize, ProbeCapture::EProbeFaces::Probe)
 {
 	AssertNotNull(m_settings);
 }
@@ -306,7 +306,7 @@ void IrradianceProbeStage::Initialize()
 	m_capture.Initialize();
 	m_relightShader = LoadComputeShader("Compute_ProbeRelight");
 	m_visibilityShader = LoadComputeShader("Compute_ProbeVisibility");
-	m_probeListBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(ProbeListLayout), 16, 1);
+	m_probeListBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(GraphicsLayouts::ProbeListLayout), 16, 1);
 	m_volumeBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(GraphicsLayouts::IrradianceVolumeLayout), 16, 1);
 	m_placeholderSH = CreateSHTexture(1, 1, 2);
 	m_placeholderVisibility = CreateVisibilityTexture(1, 1);
@@ -352,7 +352,7 @@ void IrradianceProbeStage::Render(RenderContext& context)
 
 			const U32 probeCount = state.Grid.GetProbeCount();
 
-			ProbeListLayout captured;
+			GraphicsLayouts::ProbeListLayout captured;
 			captured.FaceSize = k_faceSize;
 			captured.AtlasProbesPerRow = k_atlasProbesPerRow;
 			if (!state.CaptureQueue.empty())
@@ -391,7 +391,7 @@ void IrradianceProbeStage::Render(RenderContext& context)
 				// Their visibility maps, from what they just captured
 				const GraphicsLayouts::IrradianceVolumeLayout gridVolume = MakeVolumeLayout(state.Grid, probeCount);
 				Rendering::Renderer::UploadDataToBuffer<GraphicsLayouts::IrradianceVolumeLayout>(m_volumeBuffer, &gridVolume);
-				Rendering::Renderer::UploadDataToBuffer<ProbeListLayout>(m_probeListBuffer, &captured);
+				Rendering::Renderer::UploadDataToBuffer<GraphicsLayouts::ProbeListLayout>(m_probeListBuffer, &captured);
 
 				Rendering::Renderer::SetComputeShader(m_visibilityShader->GetPlatformObject());
 				Rendering::Renderer::SetConstantBufferCS(m_volumeBuffer, k_volumeBufferSlot);
@@ -414,13 +414,13 @@ void IrradianceProbeStage::Render(RenderContext& context)
 			}
 
 			// Relit: the probes just captured, then those near the camera, then the rest in turn, up to the budget
-			ProbeListLayout relit = captured;
+			GraphicsLayouts::ProbeListLayout relit = captured;
 			const U64 frameIndex = context.FrameIndex;
 			for (U32 slot = 0; slot < relit.Count; ++slot)
 			{
 				state.RelitFrame[relit.Probes[slot]] = frameIndex;
 			}
-			const U32 budget = std::max(std::min(settings.RelightBudget, ProbeListLayout::k_maxProbes), relit.Count);
+			const U32 budget = std::max(std::min(settings.RelightBudget, GraphicsLayouts::ProbeListLayout::k_maxProbes), relit.Count);
 
 			if (probeCount > 0)
 			{
@@ -469,7 +469,7 @@ void IrradianceProbeStage::Render(RenderContext& context)
 
 				const GraphicsLayouts::IrradianceVolumeLayout previousVolume = MakeVolumeLayout(state.Grid, probeCount);
 				Rendering::Renderer::UploadDataToBuffer<GraphicsLayouts::IrradianceVolumeLayout>(m_volumeBuffer, &previousVolume);
-				Rendering::Renderer::UploadDataToBuffer<ProbeListLayout>(m_probeListBuffer, &relit);
+				Rendering::Renderer::UploadDataToBuffer<GraphicsLayouts::ProbeListLayout>(m_probeListBuffer, &relit);
 
 				Rendering::Renderer::SetComputeShader(m_relightShader->GetPlatformObject());
 				Rendering::Renderer::SetConstantBufferCS(sceneLighting.LightBuffer, k_lightBufferSlot);

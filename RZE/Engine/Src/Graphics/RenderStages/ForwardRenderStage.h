@@ -5,6 +5,7 @@
 #include <Graphics/RenderData/SceneDepthData.h>
 #include <Graphics/RenderData/SceneIrradianceData.h>
 #include <Graphics/RenderData/SceneLightingData.h>
+#include <Graphics/RenderData/SceneReflectionData.h>
 #include <Graphics/RenderStage.h>
 
 #include <EngineCore/Resources/TypedResourceHandle.h>
@@ -55,6 +56,7 @@ private:
 	RenderInput<SceneDepthData> m_sceneDepthInput;
 	RenderInput<AmbientOcclusionData> m_ambientOcclusionInput;
 	RenderInput<SceneIrradianceData> m_sceneIrradianceInput;
+	RenderInput<SceneReflectionData> m_sceneReflectionInput;
 	RenderOutput<SceneColourData> m_sceneColourOutput;
 
 	// @TODO temp until ShaderTechniques are properly implemented

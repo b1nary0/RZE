@@ -68,6 +68,43 @@ namespace GraphicsLayouts
 		float _pad[2] = {}; // A cbuffer is a whole number of 16-byte registers
 	};
 
+	// Mirrors ProbeList in Common/Probes.hlsli: the probes a probe compute pass works on, a thread group each (or six
+	// for a reflection probe's faces), and how their captures are laid out
+	struct ProbeListLayout
+	{
+		static constexpr U32 k_maxProbes = 512;
+
+		U32 Count = 0;
+		U32 FaceSize = 0;
+		U32 AtlasProbesPerRow = 0;
+		U32 _pad = 0;
+		U32 Probes[k_maxProbes] = {};
+	};
+
+	// The most reflection probes a scene uses at once (the first made); mirrors MAX_REFLECTION_PROBES in
+	// Common/ReflectionProbes.hlsli
+	constexpr U32 k_maxReflectionProbes = 16;
+
+	// Mirrors ReflectionProbe in Common/ReflectionProbes.hlsli: one probe's box and where its cube is
+	struct ReflectionProbeLayout
+	{
+		float BoxMin[3] = {};
+		float BlendDistance = 0.0f;
+		float BoxMax[3] = {};
+		// Which cube of the cube array is the probe's
+		float Slot = 0.0f;
+		float Position[3] = {};
+		float _pad = 0.0f;
+	};
+
+	// Mirrors ReflectionProbes in Common/ReflectionProbes.hlsli: the scene's reflection probes the forward pass reads
+	struct ReflectionProbeBufferLayout
+	{
+		U32 Count = 0;
+		U32 _pad[3] = {};
+		ReflectionProbeLayout Probes[k_maxReflectionProbes];
+	};
+
 	// Mirrors IrradianceVolume in Common/IrradianceVolume.hlsli: where the scene's irradiance probes are
 	// (IrradianceProbeGrid) and how many can be read. Probe i is at x = i % CountX, y = (i / CountX) % CountY,
 	// z = i / (CountX * CountY), texel (x, y) of slice z in the spherical harmonics textures.

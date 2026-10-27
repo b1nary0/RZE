@@ -3,6 +3,7 @@
 #include <Graphics/DebugLine.h>
 #include <Graphics/GraphicsDefines.h>
 #include <Graphics/LightObject.h>
+#include <Graphics/ReflectionProbeObject.h>
 #include <Graphics/RenderBlackboard.h>
 #include <Graphics/RenderObject.h>
 #include <Graphics/SceneChangeLog.h>
@@ -17,6 +18,7 @@
 
 typedef std::vector<std::unique_ptr<RenderObject>> RenderObjectContainer;
 typedef std::vector<std::unique_ptr<LightObject>> LightObjectContainer;
+typedef std::vector<std::unique_ptr<ReflectionProbeObject>> ReflectionProbeContainer;
 
 // What one scene draws: its render objects, lights and debug lines. Each GameScene's components put theirs in a
 // scene like this, and any view can render any scene (RenderEngine::Render, RenderSecondaryView), so a scene can be
@@ -43,6 +45,9 @@ public:
 	// The first directional light, or null without one
 	const LightObject* GetDirectionalLight() const;
 
+	ReflectionProbeObjectPtr CreateReflectionProbe();
+	void DestroyReflectionProbe(ReflectionProbeObjectPtr& reflectionProbe);
+
 	// Destroys every render object (not the lights)
 	void ClearObjects();
 
@@ -61,10 +66,12 @@ public:
 
 	const RenderObjectContainer& GetRenderObjects() const { return m_renderObjects; }
 	const LightObjectContainer& GetLightObjects() const { return m_lightObjects; }
+	const ReflectionProbeContainer& GetReflectionProbes() const { return m_reflectionProbes; }
 	const DebugLineContainer& GetDebugLines() const { return m_debugLines; }
 
-	// Changes whenever a render object is added, removed, moved or given a new mesh, or a light is added, removed or
-	// changed in a way that moves its shadows (LightObject::GetShadowRevision). Lets stages skip work whose inputs
+	// Changes whenever a render object is added, removed, moved or given a new mesh, a light is added, removed or
+	// changed in a way that moves its shadows (LightObject::GetShadowRevision), or a reflection probe is added, removed,
+	// moved or resized. Lets stages skip work whose inputs
 	// haven't changed (e.g. ShadowRenderStage's shadow maps).
 	U64 GetRevision() const { return m_revision; }
 	// GetRevision when a render object was last added, removed, moved or given a new mesh
@@ -91,6 +98,7 @@ private:
 	RenderObjectContainer m_renderObjects;
 	// @TODO Maybe move light stuff into its own area?
 	LightObjectContainer m_lightObjects;
+	ReflectionProbeContainer m_reflectionProbes;
 	DebugLineContainer m_debugLines;
 	U64 m_revision = 0;
 	U64 m_objectsRevision = 0;
