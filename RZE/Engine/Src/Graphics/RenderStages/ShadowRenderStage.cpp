@@ -97,13 +97,9 @@ void ShadowRenderStage::Initialize()
 		{ "TANGENT", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 32 }
 	};
 
-	m_vertexShaderResource = RZE().GetResourceHandler().LoadResource<VertexShader>(Filepath("Assets/Shaders/Vertex_NewRenderer.hlsl"), "Vertex_NewRenderer", inputLayout);
-	AssertExpr(m_vertexShaderResource.IsValid());
-	m_vertexShader = RZE().GetResourceHandler().GetResource<VertexShader>(m_vertexShaderResource);
+	m_vertexShader = LoadVertexShader("Vertex_NewRenderer", inputLayout);
 
-	m_casterShaderResource = RZE().GetResourceHandler().LoadResource<PixelShader>(Filepath("Assets/Shaders/Pixel_ShadowCaster.hlsl"), "Pixel_ShadowCaster");
-	AssertExpr(m_casterShaderResource.IsValid());
-	m_casterShader = RZE().GetResourceHandler().GetResource<PixelShader>(m_casterShaderResource);
+	m_casterShader = LoadPixelShader("Pixel_ShadowCaster");
 
 	// Separate from the vertex shader's own camera buffer so the forward pass's camera isn't overwritten
 	m_lightCameraBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(RenderCamera), 128, 1);

@@ -1,6 +1,8 @@
 #include <StdAfx.h>
 #include <Graphics/Shader.h>
 
+#include <Asset/AssetPaths.h>
+
 #include <Graphics/RenderEngine.h>
 
 #include <Graphics/Material.h>
@@ -60,4 +62,18 @@ void ShaderTechnique::Release()
 {
 	// #TODO
 	// Write this function le-mao
+}
+
+TypedResourceHandle<VertexShader> LoadVertexShader(const std::string& name, const Rendering::ShaderInputLayout& inputLayout)
+{
+	ResourceHandle handle = RZE().GetResourceHandler().LoadResource<VertexShader>(AssetPaths::GetShader(name), name, inputLayout);
+	AssertExpr(handle.IsValid());
+	return TypedResourceHandle<VertexShader>(std::move(handle));
+}
+
+TypedResourceHandle<PixelShader> LoadPixelShader(const std::string& name)
+{
+	ResourceHandle handle = RZE().GetResourceHandler().LoadResource<PixelShader>(AssetPaths::GetShader(name), name);
+	AssertExpr(handle.IsValid());
+	return TypedResourceHandle<PixelShader>(std::move(handle));
 }

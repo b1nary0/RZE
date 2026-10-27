@@ -30,6 +30,8 @@ void ReleaseResource(ResourceHandle& handle);
 
 Used for `StaticMeshResource`, `MaterialResource`, `Texture2D`, `VertexShader` / `PixelShader`, and engine config.
 
+**`TypedResourceHandle<T>`** (`Engine\Src\EngineCore\Resources\TypedResourceHandle.h`) holds a `ResourceHandle` together with its resource, resolved once, for code that loads something up front and uses it often. Render stages hold their shaders in them, and `MaterialInstance` holds its shader and textures. `Get()` and `->` give the resource. It's move-only, holding it keeps the resource loaded, and `Reset()` or destroying it lets go; moving it leaves the source empty. It's built from a handle (`TypedResourceHandle<Texture2D>(handle)`), and `GetHandle()` gives the handle back. It's the synchronous counterpart of `PendingResource`. Shaders load with `LoadVertexShader(name, inputLayout)` / `LoadPixelShader(name)` (`Graphics\Shader.h`), where `name` is the file's stem in `AssetPaths::GetShaderFolder()` (`Assets\Shaders`); both assert the shader loaded.
+
 ## Async loading, step by step
 
 A resource opts in by returning `true` from `SupportsAsyncLoad()` and splitting its load in two. Today `StaticMeshResource`, `MaterialResource` and `Texture2D` do; anything else requested through a batch falls back to a normal synchronous load.
@@ -181,7 +183,8 @@ Components say what they need with a static `GatherResourceDependencies(componen
 
 ## Key files
 
-- `Engine\Src\EngineCore\Resources\ResourceHandler.h/.cpp`, `AsyncResourceBatch.h/.cpp`, `ResourceDependencyList.h`, `ResourcePreloadOperation.h/.cpp`, `PendingResource.h/.cpp`
+- `Engine\Src\EngineCore\Resources\ResourceHandler.h/.cpp`, `AsyncResourceBatch.h/.cpp`, `ResourceDependencyList.h`, `ResourcePreloadOperation.h/.cpp`, `PendingResource.h/.cpp`, `TypedResourceHandle.h`
+- `Engine\Src\Asset\AssetPaths.h/.cpp` — where each kind of asset lives, including shaders (`GetShader(name)`)
 - `Engine\Src\EngineCore\Async\` — `AsyncOperation`, `AsyncOperationManager`, `AsyncOperationFilter`, `AsyncOperationGroup`, `AsyncFrameBudget`, `JobAsyncOperation`, `WeightedProgress`
 - `Engine\Src\Game\CaptureBatchOperation.h/.cpp` — capturing a batch of items off-screen (thumbnails)
 - `Engine\Src\Game\SceneLoadOperation.h/.cpp`, `StaticMeshResource.h/.cpp`

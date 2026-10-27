@@ -1,5 +1,7 @@
 #pragma once
 
+#include <EngineCore/Resources/TypedResourceHandle.h>
+
 #include <Rendering/BufferHandle.h>
 #include <Rendering/ShaderHandle.h>
 
@@ -56,6 +58,10 @@ private:
 	Rendering::PixelShaderHandle m_shader;
 };
 
+// Loads a shader from AssetPaths::GetShader(name). name is the file's stem, e.g. "Pixel_FXAA", and is also the shader's
+// name (GetName). Asserts it loaded.
+TypedResourceHandle<VertexShader> LoadVertexShader(const std::string& name, const Rendering::ShaderInputLayout& inputLayout);
+TypedResourceHandle<PixelShader> LoadPixelShader(const std::string& name);
 
 // @TODO
 // IResource should be removed, this class should be an aggregate

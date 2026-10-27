@@ -5,7 +5,7 @@
 #include <Graphics/RenderData/SceneColourData.h>
 #include <Graphics/RenderStage.h>
 
-#include <EngineCore/Resources/ResourceHandler.h>
+#include <EngineCore/Resources/TypedResourceHandle.h>
 
 #include <Rendering/BufferHandle.h>
 
@@ -61,20 +61,15 @@ private:
 	RenderInput<SceneColourData> m_sceneColourInput;
 	RenderOutput<DisplayColourData> m_displayColourOutput;
 
-	ResourceHandle m_vertexShaderResource;
-	const VertexShader* m_vertexShader = nullptr;
+	TypedResourceHandle<VertexShader> m_vertexShader;
 
-	ResourceHandle m_luminanceShaderResource;
-	const PixelShader* m_luminanceShader = nullptr;
+	TypedResourceHandle<PixelShader> m_luminanceShader;
 
-	ResourceHandle m_adaptShaderResource;
-	const PixelShader* m_adaptShader = nullptr;
+	TypedResourceHandle<PixelShader> m_adaptShader;
 
-	ResourceHandle m_tonemapShaderResource;
-	const PixelShader* m_tonemapShader = nullptr;
+	TypedResourceHandle<PixelShader> m_tonemapShader;
 
-	ResourceHandle m_antiAliasShaderResource;
-	const PixelShader* m_antiAliasShader = nullptr;
+	TypedResourceHandle<PixelShader> m_antiAliasShader;
 
 	// Weighted log-luminance (r) and weight (g); its 1x1 mip holds the scene average.
 	// Only used within a Render() call, so shared by every view. Eye-adaptation history is per view.

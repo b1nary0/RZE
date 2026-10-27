@@ -1,5 +1,7 @@
 #pragma once
 
+#include <EngineCore/Resources/TypedResourceHandle.h>
+
 #include <Graphics/DynamicVertexBuffer.h>
 #include <Graphics/RenderData/DisplayColourData.h>
 #include <Graphics/RenderStage.h>
@@ -37,11 +39,9 @@ private:
 
 	// @TODO temp until ShaderTechniques are properly implemented
 // (could be a while)
-	ResourceHandle m_vertexShaderResource;
-	const VertexShader* m_vertexShader = nullptr; // @TODO This is just to avoid having to GetResource() in a loop but is more a deficiency of the Resource API
+	TypedResourceHandle<VertexShader> m_vertexShader;
 
-	ResourceHandle m_lineShaderResource;
-	const PixelShader* m_lineShader = nullptr;
+	TypedResourceHandle<PixelShader> m_lineShader;
 
 	// All lines for a Render() call are batched into this one buffer
 	DynamicVertexBuffer m_lineBuffer;

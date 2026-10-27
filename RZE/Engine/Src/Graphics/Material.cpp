@@ -13,8 +13,6 @@
 MaterialInstance::MaterialInstance(const std::string& name)
 	: m_name(name)
 {
-	m_textureSlots.resize(TEXTURE_SLOT_COUNT);
-	
 	m_paramBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(GraphicsLayouts::MaterialBufferLayout), 16, 1);
 	// The GPU starts with the defaults too, so a material nobody commits (e.g. one made in code) isn't drawn with an
 	// empty buffer: its Opacity would be 0, which the shaders write as alpha, and post-processing then treats it as
@@ -28,19 +26,19 @@ MaterialInstance::~MaterialInstance()
 
 namespace
 {
-	ResourceHandle LoadShader(MaterialInstance::EShader shader)
+	TypedResourceHandle<PixelShader> LoadShader(MaterialInstance::EShader shader)
 	{
 		// @TODO This needs to be reworked. Should have the shader linked with the material asset?
 		switch (shader)
 		{
 		case MaterialInstance::EShader::NormalMapped:
-			return RZE().GetResourceHandler().LoadResource<PixelShader>(Filepath("Assets/Shaders/Pixel_NewRenderer.hlsl"), "Pixel_NewRenderer");
+			return LoadPixelShader("Pixel_NewRenderer");
 		case MaterialInstance::EShader::Untextured:
 			// @TODO Understand why (at least) Material_47 on sponza object has NO textures - how is this even worth it? If we don't have texures to display what
 			// purpose do we have?
-			return RZE().GetResourceHandler().LoadResource<PixelShader>(Filepath("Assets/Shaders/Pixel_Default_NewRenderer.hlsl"), "Pixel_Default_NewRenderer");
+			return LoadPixelShader("Pixel_Default_NewRenderer");
 		default:
-			return RZE().GetResourceHandler().LoadResource<PixelShader>(Filepath("Assets/Shaders/Pixel_NewRenderer_DiffuseOnly.hlsl"), "Pixel_NewRenderer_DiffuseOnly");
+			return LoadPixelShader("Pixel_NewRenderer_DiffuseOnly");
 		}
 	}
 }
@@ -104,7 +102,7 @@ void MaterialInstance::SetValues(const MaterialValues& values)
 		SetTexture(textureSlot, texturePath.IsValid() ? resourceHandler.LoadResource<Texture2D>(texturePath) : ResourceHandle::EmptyHandle());
 	}
 
-	SetShaderTechnique(LoadShader(ChooseShader(m_values)));
+	m_pixelShader = LoadShader(ChooseShader(m_values));
 
 	m_bufferData = BuildBufferData(m_values);
 	CommitPropertyChanges();
@@ -113,30 +111,24 @@ void MaterialInstance::SetValues(const MaterialValues& values)
 void MaterialInstance::SetTexture(U8 textureSlot, const ResourceHandle& textureResource)
 {
 	AssertExpr(textureSlot < TEXTURE_SLOT_COUNT);
-	m_textureSlots[textureSlot] = textureResource;
-	m_textureResources[textureSlot] = textureResource.IsValid()
-		? RZE().GetResourceHandler().GetResource<Texture2D>(textureResource)
-		: nullptr;
+	m_textures[textureSlot] = TypedResourceHandle<Texture2D>(textureResource);
 }
 
 const ResourceHandle& MaterialInstance::GetTexture(U8 textureSlot) const
 {
 	AssertExpr(textureSlot < TEXTURE_SLOT_COUNT);
-	return m_textureSlots[textureSlot];
+	return m_textures[textureSlot].GetHandle();
 }
 
 const Texture2D* MaterialInstance::GetTextureResource(U8 textureSlot) const
 {
 	AssertExpr(textureSlot < TEXTURE_SLOT_COUNT);
-	return m_textureResources[textureSlot];
+	return m_textures[textureSlot].Get();
 }
 
 void MaterialInstance::SetShaderTechnique(const ResourceHandle& shaderTechnique)
 {
-	m_shaderTechnique = shaderTechnique;
-	m_pixelShader = shaderTechnique.IsValid()
-		? RZE().GetResourceHandler().GetResource<PixelShader>(shaderTechnique)
-		: nullptr;
+	m_pixelShader = TypedResourceHandle<PixelShader>(shaderTechnique);
 }
 
 void MaterialInstance::CommitPropertyChanges()

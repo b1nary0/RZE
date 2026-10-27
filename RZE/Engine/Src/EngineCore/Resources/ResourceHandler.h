@@ -127,9 +127,8 @@ private:
 	std::unordered_map<std::string, const void*> m_asyncLoads;
 };
 
-// #TODO
-// Investigate templating this class so it can be stored as
-// ResourceHandle<ResourceType> 
+// A counted reference to a resource in ResourceHandler. TypedResourceHandle (TypedResourceHandle.h) holds one by its
+// resource's type, with the resource resolved.
 class ResourceHandle
 {
 	friend class ResourceHandler;
@@ -145,6 +144,8 @@ public:
 	bool IsValid() const;
 	const std::string& GetID() const;
 	const Filepath& GetResourcePath() const;
+	// The resource this holds, or null when empty
+	const IResource* GetResource() const;
 
 	bool operator==(const ResourceHandle& rhs);
 	ResourceHandle& operator=(const ResourceHandle& rhs);

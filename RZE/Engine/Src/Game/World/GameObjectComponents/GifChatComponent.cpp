@@ -151,13 +151,11 @@ void GifChatComponent::Load(const Filepath& fp)
 	// Frames own copies of their data now
 	stbi_image_free(gifData);
 
-	ResourceHandle shader = 
-		RZE().GetResourceHandler().LoadResource<PixelShader>(Filepath("Assets/Shaders/Pixel_NewRenderer_DiffuseOnly.hlsl"), "Pixel_NewRenderer_DiffuseOnly");
-	AssertExpr(shader.IsValid());
+	const TypedResourceHandle<PixelShader> shader = LoadPixelShader("Pixel_NewRenderer_DiffuseOnly");
 
 	m_material = std::make_shared<MaterialInstance>("GifMaterial");
 	m_material->SetTexture(0, m_frames[m_currentDisplayingFrame]);
-	m_material->SetShaderTechnique(shader);
+	m_material->SetShaderTechnique(shader.GetHandle());
 
 	GenerateMesh(m_material);
 

@@ -15,13 +15,9 @@ void DebugDrawRenderStage::Initialize()
 		{ "FADERANGE", Rendering::EDataFormat::R32G32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 40 },
 	};
 
-	m_vertexShaderResource = RZE().GetResourceHandler().LoadResource<VertexShader>(Filepath("Assets/Shaders/Vertex_Line.hlsl"), "Vertex_Line", inputLayout);
-	AssertExpr(m_vertexShaderResource.IsValid());
-	m_vertexShader = RZE().GetResourceHandler().GetResource<VertexShader>(m_vertexShaderResource);
+	m_vertexShader = LoadVertexShader("Vertex_Line", inputLayout);
 
-	m_lineShaderResource = RZE().GetResourceHandler().LoadResource<PixelShader>(Filepath("Assets/Shaders/Pixel_Line.hlsl"), "Pixel_Line");
-	AssertExpr(m_lineShaderResource.IsValid());
-	m_lineShader = RZE().GetResourceHandler().GetResource<PixelShader>(m_lineShaderResource);
+	m_lineShader = LoadPixelShader("Pixel_Line");
 
 	// 128 lines minimum; shrink window of 300 Render() calls is ~5s at 60Hz with a single view
 	m_lineBuffer.Initialize(sizeof(LineVertex), BufferCapacitySettings{ 256, 300, 4 });

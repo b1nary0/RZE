@@ -39,9 +39,7 @@ void ForwardRenderStage::Initialize()
 		{ "TANGENT", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 32 }
 	};
 
-	m_vertexShaderResource = RZE().GetResourceHandler().LoadResource<VertexShader>(Filepath("Assets/Shaders/Vertex_NewRenderer.hlsl"), "Vertex_NewRenderer", inputLayout);
-	AssertExpr(m_vertexShaderResource.IsValid());
-	m_vertexShader = RZE().GetResourceHandler().GetResource<VertexShader>(m_vertexShaderResource);
+	m_vertexShader = LoadVertexShader("Vertex_NewRenderer", inputLayout);
 
 	m_viewLightingBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(GraphicsLayouts::ViewLightingLayout), 16, 1);
 }

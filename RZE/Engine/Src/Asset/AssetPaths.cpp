@@ -49,4 +49,15 @@ namespace AssetPaths
 		static const Filepath s_materialFolder("ProjectData/Material");
 		return s_materialFolder;
 	}
+
+	const Filepath& GetShaderFolder()
+	{
+		static const Filepath s_shaderFolder("Assets/Shaders");
+		return s_shaderFolder;
+	}
+
+	Filepath GetShader(const std::string& name)
+	{
+		return Filepath(GetShaderFolder().GetRelativePath() + "/" + name + k_shaderExtension);
+	}
 }

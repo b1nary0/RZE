@@ -98,7 +98,7 @@ flowchart TD
 
 ### `MaterialInstance` (`Engine\Src\Graphics\Material.h`)
 
-`SetValues(values)` is the one way a described material changes. It loads the textures and the shader, and works out and uploads the GPU parameters, so nothing derived from the values can go stale. `Create(materialData)` makes a material asset's material. Materials made in code (`GifChatComponent`'s frames) use `SetTexture`/`SetShaderTechnique` directly and keep the default parameters.
+`SetValues(values)` is the one way a described material changes. It loads the textures and the shader, and works out and uploads the GPU parameters, so nothing derived from the values can go stale. `Create(materialData)` makes a material asset's material. Materials made in code (`GifChatComponent`'s frames) use `SetTexture`/`SetShaderTechnique` directly and keep the default parameters. The shader and each texture slot are held as `TypedResourceHandle`s ([Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md#resourcehandler-enginesrcenginecoreresources)), so `GetPixelShader()` and `GetTextureResource(slot)` hand back the loaded resource without a lookup. The pixel shader is picked by `ChooseShader` and loaded with `LoadPixelShader`.
 
 The texture slots (`ETextureSlot`) and blend modes (`EBlendMode`) are in `Engine\Src\Graphics\MaterialDefines.h`, with `GetTextureSlotName`, `GetBlendModeName`, `IsBlended` and `ToBlendState` (the GPU blend state a blend mode draws with). Runtime code uses them without reaching into the asset importer, which keeps only the asset format (texture flags, legacy versions).
 

@@ -84,25 +84,15 @@ void PostProcessRenderStage::Initialize()
 {
 	Rendering::ShaderInputLayout inputLayout = {};
 
-	m_vertexShaderResource = RZE().GetResourceHandler().LoadResource<VertexShader>(Filepath("Assets/Shaders/Vertex_RenderTargetQuad.hlsl"), "Vertex_RenderTargetQuad", inputLayout);
-	AssertExpr(m_vertexShaderResource.IsValid());
-	m_vertexShader = RZE().GetResourceHandler().GetResource<VertexShader>(m_vertexShaderResource);
+	m_vertexShader = LoadVertexShader("Vertex_RenderTargetQuad", inputLayout);
 
-	m_luminanceShaderResource = RZE().GetResourceHandler().LoadResource<PixelShader>(Filepath("Assets/Shaders/Pixel_LuminanceLog.hlsl"), "Pixel_LuminanceLog");
-	AssertExpr(m_luminanceShaderResource.IsValid());
-	m_luminanceShader = RZE().GetResourceHandler().GetResource<PixelShader>(m_luminanceShaderResource);
+	m_luminanceShader = LoadPixelShader("Pixel_LuminanceLog");
 
-	m_adaptShaderResource = RZE().GetResourceHandler().LoadResource<PixelShader>(Filepath("Assets/Shaders/Pixel_ExposureAdapt.hlsl"), "Pixel_ExposureAdapt");
-	AssertExpr(m_adaptShaderResource.IsValid());
-	m_adaptShader = RZE().GetResourceHandler().GetResource<PixelShader>(m_adaptShaderResource);
+	m_adaptShader = LoadPixelShader("Pixel_ExposureAdapt");
 
-	m_tonemapShaderResource = RZE().GetResourceHandler().LoadResource<PixelShader>(Filepath("Assets/Shaders/Pixel_Tonemap.hlsl"), "Pixel_Tonemap");
-	AssertExpr(m_tonemapShaderResource.IsValid());
-	m_tonemapShader = RZE().GetResourceHandler().GetResource<PixelShader>(m_tonemapShaderResource);
+	m_tonemapShader = LoadPixelShader("Pixel_Tonemap");
 
-	m_antiAliasShaderResource = RZE().GetResourceHandler().LoadResource<PixelShader>(Filepath("Assets/Shaders/Pixel_FXAA.hlsl"), "Pixel_FXAA");
-	AssertExpr(m_antiAliasShaderResource.IsValid());
-	m_antiAliasShader = RZE().GetResourceHandler().GetResource<PixelShader>(m_antiAliasShaderResource);
+	m_antiAliasShader = LoadPixelShader("Pixel_FXAA");
 
 	Rendering::GFXTextureBufferParams luminanceParams = { 0 };
 	luminanceParams.bIsRenderTarget = true;

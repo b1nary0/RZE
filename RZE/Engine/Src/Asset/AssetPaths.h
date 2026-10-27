@@ -28,4 +28,10 @@ namespace AssetPaths
 	// Material assets, which the asset burner writes (MaterialAssetWriter), a folder per mesh
 	const Filepath& GetMaterialFolder();
 	constexpr char k_materialExtension[] = ".materialasset";
+
+	// HLSL shaders, which the render stages and materials load (LoadVertexShader, LoadPixelShader)
+	const Filepath& GetShaderFolder();
+	constexpr char k_shaderExtension[] = ".hlsl";
+	// A shader in GetShaderFolder by its name, the file's stem, e.g. "Pixel_FXAA"
+	Filepath GetShader(const std::string& name);
 }

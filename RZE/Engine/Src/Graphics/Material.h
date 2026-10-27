@@ -3,6 +3,7 @@
 #include <Rendering/BufferHandle.h>
 
 #include <EngineCore/Resources/ResourceHandler.h>
+#include <EngineCore/Resources/TypedResourceHandle.h>
 
 #include <Asset/AssetImport/MaterialAssetImporter.h>
 
@@ -77,9 +78,9 @@ public:
 	// @TODO SetShaderTechnique is actually being set as PixelShader directly until actual techniques are implemented
 	// For materials made in code, like SetTexture
 	void SetShaderTechnique(const ResourceHandle& shaderTechnique);
-	const ResourceHandle& GetShaderResource() const { return m_shaderTechnique; }
+	const ResourceHandle& GetShaderResource() const { return m_pixelShader.GetHandle(); }
 	// The loaded pixel shader, resolved when the technique is set. Use this when drawing.
-	const PixelShader* GetPixelShader() const { return m_pixelShader; }
+	const PixelShader* GetPixelShader() const { return m_pixelShader.Get(); }
 
 	EBlendMode GetBlendMode() const { return m_values.BlendMode; }
 	// Drawn in the forward pass's sorted, blended pass rather than with the opaque draws
@@ -99,12 +100,9 @@ private:
 	// Worked out from m_values (BuildBufferData), except for materials made in code, which keep the defaults
 	GraphicsLayouts::MaterialBufferLayout m_bufferData;
 
-	ResourceHandle m_shaderTechnique;
-	std::vector<ResourceHandle> m_textureSlots;
-
-	// Resolved from the handles above when they're set. The handles keep the resources loaded, so these stay valid.
-	const PixelShader* m_pixelShader = nullptr;
-	std::array<const Texture2D*, TEXTURE_SLOT_COUNT> m_textureResources {};
+	// Each keeps its resource loaded and resolved, so drawing doesn't look anything up by path
+	TypedResourceHandle<PixelShader> m_pixelShader;
+	std::array<TypedResourceHandle<Texture2D>, TEXTURE_SLOT_COUNT> m_textures;
 
 	Rendering::ConstantBufferHandle m_paramBuffer;
 };

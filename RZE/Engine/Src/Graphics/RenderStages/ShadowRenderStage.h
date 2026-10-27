@@ -4,7 +4,7 @@
 #include <Graphics/RenderData/SceneLightingData.h>
 #include <Graphics/RenderStage.h>
 
-#include <EngineCore/Resources/ResourceHandler.h>
+#include <EngineCore/Resources/TypedResourceHandle.h>
 
 #include <Rendering/BufferHandle.h>
 
@@ -100,11 +100,9 @@ private:
 private:
 	RenderOutput<SceneLightingData> m_sceneLightingOutput;
 
-	ResourceHandle m_vertexShaderResource;
-	const VertexShader* m_vertexShader = nullptr;
+	TypedResourceHandle<VertexShader> m_vertexShader;
 
-	ResourceHandle m_casterShaderResource;
-	const PixelShader* m_casterShader = nullptr;
+	TypedResourceHandle<PixelShader> m_casterShader;
 
 	// Only used within one UpdateShadowMaps call, so every scene shares it
 	Rendering::ConstantBufferHandle m_lightCameraBuffer;

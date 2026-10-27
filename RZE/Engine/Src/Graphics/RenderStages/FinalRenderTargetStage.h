@@ -1,5 +1,7 @@
 #pragma once
 
+#include <EngineCore/Resources/TypedResourceHandle.h>
+
 #include <Graphics/RenderData/DisplayColourData.h>
 #include <Graphics/RenderStage.h>
 
@@ -21,9 +23,7 @@ public:
 private:
 	RenderInput<DisplayColourData> m_displayColourInput;
 
-	ResourceHandle m_vertexShaderResource;
-	const VertexShader* m_vertexShader = nullptr;
+	TypedResourceHandle<VertexShader> m_vertexShader;
 
-	ResourceHandle m_pixelShaderResource;
-	const PixelShader* m_pixelShader;
+	TypedResourceHandle<PixelShader> m_pixelShader;
 };

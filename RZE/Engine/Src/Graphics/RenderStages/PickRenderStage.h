@@ -2,7 +2,7 @@
 
 #include <Graphics/RenderStage.h>
 
-#include <EngineCore/Resources/ResourceHandler.h>
+#include <EngineCore/Resources/TypedResourceHandle.h>
 
 #include <Rendering/BufferHandle.h>
 
@@ -35,11 +35,9 @@ public:
 	void Render(RenderContext& context) override;
 
 private:
-	ResourceHandle m_vertexShaderResource;
-	const VertexShader* m_vertexShader = nullptr;
+	TypedResourceHandle<VertexShader> m_vertexShader;
 
-	ResourceHandle m_pixelShaderResource;
-	const PixelShader* m_pixelShader = nullptr;
+	TypedResourceHandle<PixelShader> m_pixelShader;
 
 	Rendering::RenderTargetHandle m_idTarget;
 	Rendering::TextureBuffer2DHandle m_depthTarget;

@@ -258,6 +258,11 @@ const Filepath& ResourceHandle::GetResourcePath() const
 	return mResourceSource->GetResourcePath();
 }
 
+const IResource* ResourceHandle::GetResource() const
+{
+	return mResourceSource != nullptr ? mResourceSource->GetResource() : nullptr;
+}
+
 void ResourceHandle::operator=(ResourceHandle&& rhs)
 {
 	if (this == &rhs)

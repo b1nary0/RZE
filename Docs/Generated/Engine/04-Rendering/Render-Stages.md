@@ -242,7 +242,8 @@ Both are `MainOnly`: `ImGui::Render()` ends ImGui's frame, so it can only run on
     }
     ```
 
-3. Register it: `RZE().GetRenderEngine().AddRenderStage<MyStage>()`. Where it lands in the order follows from the declarations; check the logged `Render pipeline:` line.
+3. Load its shaders in `Initialize()` into `TypedResourceHandle` members, by the file's stem in `Assets/Shaders`: `m_pixelShader = LoadPixelShader("Pixel_Tonemap");` (and `LoadVertexShader(name, inputLayout)`). Draw with `m_pixelShader->GetPlatformObject()`. The members keep the shaders loaded until the stage is destroyed.
+4. Register it: `RZE().GetRenderEngine().AddRenderStage<MyStage>()`. Where it lands in the order follows from the declarations; check the logged `Render pipeline:` line.
 
 Keep per-view, across-frame state in `context.Persistent()`, and add new per-frame inputs to `RenderView`/`RenderContext` rather than reading globals.
 

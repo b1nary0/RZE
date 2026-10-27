@@ -26,13 +26,9 @@ void PickRenderStage::Initialize()
 		{ "TANGENT", Rendering::EDataFormat::R32G32B32_FLOAT, Rendering::EDataClassification::PER_VERTEX, 32 }
 	};
 
-	m_vertexShaderResource = RZE().GetResourceHandler().LoadResource<VertexShader>(Filepath("Assets/Shaders/Vertex_NewRenderer.hlsl"), "Vertex_NewRenderer", inputLayout);
-	AssertExpr(m_vertexShaderResource.IsValid());
-	m_vertexShader = RZE().GetResourceHandler().GetResource<VertexShader>(m_vertexShaderResource);
+	m_vertexShader = LoadVertexShader("Vertex_NewRenderer", inputLayout);
 
-	m_pixelShaderResource = RZE().GetResourceHandler().LoadResource<PixelShader>(Filepath("Assets/Shaders/Pixel_PickID.hlsl"), "Pixel_PickID");
-	AssertExpr(m_pixelShaderResource.IsValid());
-	m_pixelShader = RZE().GetResourceHandler().GetResource<PixelShader>(m_pixelShaderResource);
+	m_pixelShader = LoadPixelShader("Pixel_PickID");
 
 	Rendering::GFXTextureBufferParams idParams = { 0 };
 	idParams.Width = 1;

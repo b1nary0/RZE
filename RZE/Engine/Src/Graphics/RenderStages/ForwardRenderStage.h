@@ -4,7 +4,7 @@
 #include <Graphics/RenderData/SceneLightingData.h>
 #include <Graphics/RenderStage.h>
 
-#include <EngineCore/Resources/ResourceHandler.h>
+#include <EngineCore/Resources/TypedResourceHandle.h>
 
 #include <Rendering/RenderingDefines.h>
 
@@ -53,8 +53,7 @@ private:
 
 	// @TODO temp until ShaderTechniques are properly implemented
 // (could be a while)
-	ResourceHandle m_vertexShaderResource;
-	const VertexShader* m_vertexShader = nullptr; // @TODO This is just to avoid having to GetResource() in a loop but is more a deficiency of the Resource API
+	TypedResourceHandle<VertexShader> m_vertexShader;
 
 	// How the view being rendered is lit (ViewLightingLayout)
 	Rendering::ConstantBufferHandle m_viewLightingBuffer;

@@ -15,3 +15,8 @@ TEST_CASE("IsScene and IsMesh go by the extension, ignoring case")
 	// No extension at all, e.g. a folder
 	CHECK_FALSE(AssetPaths::IsMesh(Filepath("ProjectData/Mesh")));
 }
+
+TEST_CASE("A shader is found by its name, the file's stem, in the shader folder")
+{
+	CHECK(AssetPaths::GetShader("Pixel_FXAA").GetRelativePath() == Filepath("Assets/Shaders/Pixel_FXAA.hlsl").GetRelativePath());
+}
