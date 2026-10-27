@@ -130,7 +130,7 @@ void ShadowRenderStage::Render(RenderContext& context)
 		state.HasCheckedMaps = true;
 	}
 
-	// Every view uploads it, since colours and strengths change without changing the revision. It's small.
+	// Every view uploads it: it's small.
 	UploadLights(scene, state);
 
 	// Published even without a light: an empty light buffer, and HasShadows = 0 tells the sampling shaders to skip

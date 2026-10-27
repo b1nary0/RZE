@@ -168,7 +168,9 @@ LightObjectPtr RenderScene::CreateLightObject(ELightType type)
 {
 	std::unique_ptr<LightObject>& lightObjectPtr = m_lightObjects.emplace_back(std::make_unique<LightObject>(type));
 	lightObjectPtr->m_sceneRevision = &m_revision;
-	lightObjectPtr->m_shadowRevision = ++m_revision;
+	lightObjectPtr->m_lightChanges = &m_lightChanges;
+	// Lights where it reaches from now on
+	lightObjectPtr->MarkChanged(true);
 
 	return LightObjectPtr(lightObjectPtr.get());
 }
@@ -193,6 +195,9 @@ void RenderScene::DestroyLightObject(LightObjectPtr& lightObject)
 
 	if (iter != lightObjects.end())
 	{
+		// No longer lights where it reached
+		(*iter)->MarkChanged(true);
+
 		if (lightObjects.size() > 1)
 		{
 			std::iter_swap(iter, std::prev(lightObjects.end()));
@@ -204,7 +209,6 @@ void RenderScene::DestroyLightObject(LightObjectPtr& lightObject)
 		}
 
 		lightObject = LightObjectPtr();
-		++m_revision;
 	}
 }
 

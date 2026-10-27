@@ -70,9 +70,8 @@ public:
 	const DebugLineContainer& GetDebugLines() const { return m_debugLines; }
 
 	// Changes whenever a render object is added, removed, moved or given a new mesh, a light is added, removed or
-	// changed in a way that moves its shadows (LightObject::GetShadowRevision), or a reflection probe is added, removed,
-	// moved or resized. Lets stages skip work whose inputs
-	// haven't changed (e.g. ShadowRenderStage's shadow maps).
+	// changes how it lights the scene (LightObject::GetLightingRevision), or a reflection probe is added, removed,
+	// moved or resized. Lets stages skip work whose inputs haven't changed (e.g. ShadowRenderStage's shadow maps).
 	U64 GetRevision() const { return m_revision; }
 	// GetRevision when a render object was last added, removed, moved or given a new mesh
 	U64 GetObjectsRevision() const { return m_objectsRevision; }
@@ -80,6 +79,10 @@ public:
 	// sinceRevision (a GetRevision), counting both where it was and where it is. Can answer true for changes nearby
 	// once many objects have changed since (SceneChangeLog merges their boxes), never false for one within.
 	bool HaveObjectsChangedWithin(const BoundingBox& region, U64 sinceRevision) const { return m_changeLog.HasChangedWithin(region, sinceRevision); }
+	// Where lights were added, removed or changed how they light the scene, by revision: where a point light reached
+	// before and after (LightObject::GetReach), or everywhere for a directional light. For anything lit with the
+	// lights that's kept (e.g. probes), so it can tell which part to light again.
+	const SceneChangeLog& GetLightChanges() const { return m_lightChanges; }
 
 	// Axis-aligned world-space box around every render object; empty without any. Kept until one is added, removed,
 	// moved or given a new mesh, then worked out again from the objects' boxes when next asked.
@@ -104,6 +107,8 @@ private:
 	U64 m_objectsRevision = 0;
 	// Where render objects changed, by revision
 	SceneChangeLog m_changeLog;
+	// Where lights changed, by revision; each light logs its own changes into it
+	SceneChangeLog m_lightChanges;
 
 	mutable BoundingBox m_bounds;
 	mutable bool m_isBoundsStale = true;

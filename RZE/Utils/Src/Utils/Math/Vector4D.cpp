@@ -112,6 +112,16 @@ Vector4D Vector4D::operator-(const Vector4D& rhs) const
 	return Vector4D(subVec.x, subVec.y, subVec.z, subVec.w);
 }
 
+bool Vector4D::operator==(const Vector4D& rhs) const
+{
+	return mVec == rhs.mVec;
+}
+
+bool Vector4D::operator!=(const Vector4D& rhs) const
+{
+	return mVec != rhs.mVec;
+}
+
 float Vector4D::operator[](int index) const
 {
 	return mVec[index];
