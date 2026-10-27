@@ -13,8 +13,9 @@ class RenderScene;
 
 // Which of a scene's irradiance probes IrradianceProbeStage captures and relights each frame, and the grid they're on.
 // CPU only, so it can be tested without a renderer; the stage does the GPU work it picks.
-//   - The grid is fitted to the scene's bounds, and fitted again when they move by more than a spacing. Then every
-//     probe waits to be captured and none is lit.
+//   - The grid is fitted to the bounds of the scene's Static objects, and fitted again when they move by more than a
+//     spacing. Then every probe waits to be captured and none is lit. Movable objects aren't captured
+//     (ERenderMobility), so they change nothing here.
 //   - Probes wait to be captured, nearest the camera first, from when the grid is fitted, and again when render
 //     objects within a few spacings of them change (more for bigger objects). Probes never captured and probes
 //     captured again take turns, so something changing near the camera can't hold up the rest of the grid.
@@ -22,11 +23,11 @@ class RenderScene;
 class IrradianceProbeScheduler
 {
 public:
-	// Fits the grid to scene's bounds if they've moved by more than a spacing since it was last fitted (or it never
-	// was). True if it did, so the probes' textures are made again: every probe is then waiting to be captured,
+	// Fits the grid to scene's Static bounds if they've moved by more than a spacing since it was last fitted (or it
+	// never was). True if it did, so the probes' textures are made again: every probe is then waiting to be captured,
 	// nearest cameraPosition first, and none is lit.
 	bool FitGrid(const RenderScene& scene, U32 targetProbeCount, const Vector3D& cameraPosition);
-	// Queues the captured probes within reach of render objects that changed since last time (GetRecaptureReach of
+	// Queues the captured probes within reach of Static render objects that changed since last time (GetRecaptureReach of
 	// where each was and where it is), or every captured probe if the scene doesn't know where they changed. They keep
 	// their old captures until they're captured again.
 	void QueueChangedProbes(const RenderScene& scene, const Vector3D& cameraPosition);

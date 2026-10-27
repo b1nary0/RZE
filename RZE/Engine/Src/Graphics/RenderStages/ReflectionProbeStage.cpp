@@ -194,14 +194,15 @@ void ReflectionProbeStage::Render(RenderContext& context)
 			relit.FaceSize = k_faceSize;
 			relit.AtlasProbesPerRow = 1;
 
-			// One capture a frame: the first probe that's new, moved or resized, or had an object change in its box
+			// One capture a frame: the first probe that's new, moved or resized, or had a Static object change in its
+			// box (Movable ones aren't captured)
 			for (U32 slot = 0; slot < probeCount; ++slot)
 			{
 				ReflectionProbeState::Slot& slotState = state.Slots[slot];
 				const ReflectionProbeObject& probe = *probes[slot];
 				const bool isOutOfDate = !slotState.IsCaptured
 					|| probe.GetRevision() > slotState.CapturedRevision
-					|| scene.HaveObjectsChangedWithin(probe.GetBox(), slotState.CapturedRevision);
+					|| scene.GetStaticChanges().HasChangedWithin(probe.GetBox(), slotState.CapturedRevision);
 				if (!isOutOfDate)
 				{
 					continue;

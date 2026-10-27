@@ -57,8 +57,8 @@ public:
 	void Initialize();
 
 	// Draws the probe at position's faces into the bound colour and depth targets, side by side from (left, top),
-	// faceSize * k_faceCount wide. Leaves out what's further than farDistance, blended draws, and draws smaller than a
-	// texel. Returns how many draws it made.
+	// faceSize * k_faceCount wide. Leaves out Movable objects, what's further than farDistance, blended draws, and
+	// draws smaller than a texel. Returns how many draws it made.
 	U32 Capture(const RenderScene& scene, const Vector3D& position, float farDistance, U32 left, U32 top);
 
 	U32 GetFaceSize() const { return m_faceSize; }

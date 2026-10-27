@@ -38,12 +38,13 @@ namespace
 
 bool IrradianceProbeScheduler::FitGrid(const RenderScene& scene, U32 targetProbeCount, const Vector3D& cameraPosition)
 {
-	if (!HaveBoundsMoved(m_fittedBounds, scene.GetBounds(), m_grid.Spacing))
+	// Static objects alone, so what moves doesn't fit the grid again
+	if (!HaveBoundsMoved(m_fittedBounds, scene.GetStaticBounds(), m_grid.Spacing))
 	{
 		return false;
 	}
 
-	m_fittedBounds = scene.GetBounds();
+	m_fittedBounds = scene.GetStaticBounds();
 	m_grid = IrradianceProbeGrid::Fit(m_fittedBounds, targetProbeCount);
 
 	const U32 probeCount = m_grid.GetProbeCount();
@@ -65,7 +66,8 @@ bool IrradianceProbeScheduler::FitGrid(const RenderScene& scene, U32 targetProbe
 
 void IrradianceProbeScheduler::QueueChangedProbes(const RenderScene& scene, const Vector3D& cameraPosition)
 {
-	if (scene.GetObjectsRevision() <= m_checkedRevision)
+	// Movable objects aren't captured, so only Static ones change what the probes see
+	if (scene.GetStaticObjectsRevision() <= m_checkedRevision)
 	{
 		return;
 	}
@@ -96,7 +98,7 @@ void IrradianceProbeScheduler::QueueChangedProbes(const RenderScene& scene, cons
 	};
 
 	// Where isn't known: everything that's been captured
-	if (!scene.GetObjectChanges().ForEachChangeSince(m_checkedRevision, queueWithinReach))
+	if (!scene.GetStaticChanges().ForEachChangeSince(m_checkedRevision, queueWithinReach))
 	{
 		for (U32 probe = 0; probe < m_grid.GetProbeCount(); ++probe)
 		{

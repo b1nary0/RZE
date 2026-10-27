@@ -116,7 +116,8 @@ U32 ProbeCapture::Capture(const RenderScene& scene, const Vector3D& position, fl
 
 		for (const auto& renderObject : scene.GetRenderObjects())
 		{
-			if (!frustum.Intersects(renderObject->GetBounds()))
+			// Movable objects are lit by the probes, not captured into them
+			if (renderObject->GetMobility() == ERenderMobility::Movable || !frustum.Intersects(renderObject->GetBounds()))
 			{
 				continue;
 			}

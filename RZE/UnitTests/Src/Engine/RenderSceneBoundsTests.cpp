@@ -384,3 +384,74 @@ TEST_CASE("A light's changes change the scene's revision but not its objects rev
 	scene.DestroyLightObject(light);
 	scene.ClearObjects();
 }
+
+TEST_CASE("Static and Movable objects' changes are told apart, and Movable ones are left out of the static bounds")
+{
+	RenderScene scene;
+	const BoundingBox atOrigin(Vector3D(-2.0f), Vector3D(2.0f));
+	const BoundingBox atTen(Vector3D(8.0f, -2.0f, -2.0f), Vector3D(12.0f, 2.0f, 2.0f));
+
+	RenderObjectPtr wall = scene.CreateRenderObject(MakeMesh({ k_unitBox }));
+	RenderObjectPtr prop = scene.CreateRenderObject(MakeMesh({ k_unitBox }));
+	CHECK(prop->GetMobility() == ERenderMobility::Static);
+	prop->SetMobility(ERenderMobility::Movable);
+
+	// The prop moves: everything sees an object change, but nothing Static changed
+	const U64 staticRevision = scene.GetStaticObjectsRevision();
+	U64 revision = scene.GetRevision();
+	prop->SetTransform(MakeTransform(Vector3D(10.0f, 0.0f, 0.0f)));
+	CHECK(scene.GetObjectsRevision() == scene.GetRevision());
+	CHECK(scene.GetStaticObjectsRevision() == staticRevision);
+	CHECK(scene.HaveObjectsChangedWithin(atTen, revision));
+	CHECK(scene.GetMovableChanges().HasChangedWithin(atTen, revision));
+	CHECK_FALSE(scene.GetStaticChanges().HasChangedWithin(atTen, revision));
+	CHECK_FALSE(scene.GetStaticChanges().HasChangedWithin(atOrigin, revision));
+
+	CheckBox(scene.GetBounds(), Vector3D(-1.0f), Vector3D(11.0f, 1.0f, 1.0f));
+	CheckBox(scene.GetStaticBounds(), Vector3D(-1.0f), Vector3D(1.0f));
+
+	// The wall moves: a Static change
+	revision = scene.GetRevision();
+	wall->SetTransform(MakeTransform(Vector3D(0.0f, 0.0f, 0.5f)));
+	CHECK(scene.GetStaticObjectsRevision() == scene.GetRevision());
+	CHECK(scene.GetStaticChanges().HasChangedWithin(atOrigin, revision));
+	CHECK_FALSE(scene.GetMovableChanges().HasChangedWithin(atOrigin, revision));
+	CheckBox(scene.GetStaticBounds(), Vector3D(-1.0f, -1.0f, -0.5f), Vector3D(1.0f, 1.0f, 1.5f));
+
+	// Destroying the prop is a Movable change
+	revision = scene.GetRevision();
+	scene.DestroyRenderObject(prop);
+	CHECK(scene.GetMovableChanges().HasChangedWithin(atTen, revision));
+	CHECK_FALSE(scene.GetStaticChanges().HasChangedWithin(atTen, revision));
+
+	scene.DestroyRenderObject(wall);
+}
+
+TEST_CASE("An object changing mobility changes both kinds where it is, and the static bounds")
+{
+	RenderScene scene;
+	const BoundingBox atTen(Vector3D(8.0f, -2.0f, -2.0f), Vector3D(12.0f, 2.0f, 2.0f));
+
+	RenderObjectPtr wall = scene.CreateRenderObject(MakeMesh({ k_unitBox }));
+	RenderObjectPtr prop = scene.CreateRenderObject(MakeMesh({ k_unitBox }));
+	prop->SetTransform(MakeTransform(Vector3D(10.0f, 0.0f, 0.0f)));
+	CheckBox(scene.GetStaticBounds(), Vector3D(-1.0f), Vector3D(11.0f, 1.0f, 1.0f));
+
+	U64 revision = scene.GetRevision();
+	prop->SetMobility(ERenderMobility::Movable);
+	CHECK(scene.GetStaticObjectsRevision() == scene.GetRevision());
+	CHECK(scene.GetStaticChanges().HasChangedWithin(atTen, revision));
+	CHECK(scene.GetMovableChanges().HasChangedWithin(atTen, revision));
+	CheckBox(scene.GetStaticBounds(), Vector3D(-1.0f), Vector3D(1.0f));
+
+	// Setting what it already has changes nothing
+	revision = scene.GetRevision();
+	prop->SetMobility(ERenderMobility::Movable);
+	CHECK(scene.GetRevision() == revision);
+
+	prop->SetMobility(ERenderMobility::Static);
+	CheckBox(scene.GetStaticBounds(), Vector3D(-1.0f), Vector3D(11.0f, 1.0f, 1.0f));
+
+	scene.ClearObjects();
+	CHECK(scene.GetStaticBounds().IsEmpty());
+}
