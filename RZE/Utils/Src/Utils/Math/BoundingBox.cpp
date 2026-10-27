@@ -50,6 +50,17 @@ float BoundingBox::GetRadius() const
 	return GetSize().Length() * 0.5f;
 }
 
+float BoundingBox::GetSurfaceArea() const
+{
+	if (IsEmpty())
+	{
+		return 0.0f;
+	}
+
+	const Vector3D size = GetSize();
+	return 2.0f * (size.X() * size.Y() + size.Y() * size.Z() + size.Z() * size.X());
+}
+
 BoundingBox::Corners BoundingBox::GetCorners() const
 {
 	Corners corners;

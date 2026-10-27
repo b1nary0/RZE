@@ -77,8 +77,8 @@ public:
 	// GetRevision when a render object was last added, removed, moved or given a new mesh
 	U64 GetObjectsRevision() const { return m_objectsRevision; }
 	// Whether a render object was added, removed, moved or given a new mesh within region (world space) after
-	// sinceRevision (a GetRevision), counting both where it was and where it is. Can answer true for changes elsewhere
-	// once many objects have changed since (SceneChangeLog), never false for one within.
+	// sinceRevision (a GetRevision), counting both where it was and where it is. Can answer true for changes nearby
+	// once many objects have changed since (SceneChangeLog merges their boxes), never false for one within.
 	bool HaveObjectsChangedWithin(const BoundingBox& region, U64 sinceRevision) const { return m_changeLog.HasChangedWithin(region, sinceRevision); }
 
 	// Axis-aligned world-space box around every render object; empty without any. Kept until one is added, removed,

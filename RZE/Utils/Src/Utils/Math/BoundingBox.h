@@ -31,6 +31,8 @@ public:
 	Vector3D GetSize() const;
 	// Half its diagonal: the radius of the sphere through its corners
 	float GetRadius() const;
+	// The area of its six sides; 0 for an empty box
+	float GetSurfaceArea() const;
 
 	Corners GetCorners() const;
 	// Its corners once transformed, e.g. from an object's own space to the world

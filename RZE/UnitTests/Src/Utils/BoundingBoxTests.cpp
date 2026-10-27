@@ -34,13 +34,16 @@ TEST_CASE("A bounding box grows to hold points and other boxes, but not empty on
 	CHECK(empty == before);
 }
 
-TEST_CASE("A bounding box's centre, size, radius and corners")
+TEST_CASE("A bounding box's centre, size, radius, surface area and corners")
 {
 	const BoundingBox box(Vector3D(-1.0f, 0.0f, 2.0f), Vector3D(3.0f, 2.0f, 6.0f));
 
 	CHECK(box.GetCentre() == Vector3D(1.0f, 1.0f, 4.0f));
 	CHECK(box.GetSize() == Vector3D(4.0f, 2.0f, 4.0f));
 	CHECK(box.GetRadius() == doctest::Approx(3.0f));
+	// 2 x (4 x 2 + 2 x 4 + 4 x 4)
+	CHECK(box.GetSurfaceArea() == doctest::Approx(64.0f));
+	CHECK(BoundingBox().GetSurfaceArea() == 0.0f);
 
 	const BoundingBox::Corners corners = box.GetCorners();
 	CHECK(corners[0] == box.GetMin());

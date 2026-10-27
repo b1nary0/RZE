@@ -4,6 +4,8 @@
 
 #include <Utils/Math/BoundingBox.h>
 
+#include <vector>
+
 namespace
 {
 	// A metre-wide box with its lowest corner at corner
@@ -43,22 +45,88 @@ TEST_CASE("A scene change log ignores empty bounds")
 	CHECK_FALSE(log.HasChangedWithin(BoundingBox(Vector3D(-1000.0f), Vector3D(1000.0f)), 0));
 }
 
-TEST_CASE("Once a scene change log is full, revisions from before what it kept count as changed everywhere")
+TEST_CASE("Once a scene change log is full, it merges the neighbouring changes closest together")
 {
 	SceneChangeLog log;
-	const BoundingBox elsewhere(Vector3D(-10.0f), Vector3D(-5.0f));
 
+	// Ten metres apart, but the changes at revisions 6 and 7 are next to each other
 	for (U64 revision = 1; revision <= SceneChangeLog::k_capacity; ++revision)
 	{
-		log.Add(revision, MakeBox(Vector3D(0.0f)));
+		const float x = revision == 7 ? 51.0f : static_cast<float>(revision) * 10.0f - 10.0f;
+		log.Add(revision, MakeBox(Vector3D(x, 0.0f, 0.0f)));
 	}
-	CHECK_FALSE(log.HasChangedWithin(elsewhere, 0));
+	log.Add(SceneChangeLog::k_capacity + 1, MakeBox(Vector3D(-1000.0f)));
 
-	// Revision 1 is forgotten
-	log.Add(SceneChangeLog::k_capacity + 1, MakeBox(Vector3D(0.0f)));
-	CHECK(log.HasChangedWithin(elsewhere, 0));
-	CHECK_FALSE(log.HasChangedWithin(elsewhere, 1));
-	CHECK_FALSE(log.HasChangedWithin(elsewhere, 2));
+	// Nothing is forgotten, and the rest are still told apart
+	CHECK_FALSE(log.HasChangedWithin(MakeBox(Vector3D(-500.0f)), 0));
+	CHECK(log.HasChangedWithin(MakeBox(Vector3D(0.0f)), 0));
+	CHECK_FALSE(log.HasChangedWithin(MakeBox(Vector3D(5.0f, 0.0f, 0.0f)), 0));
+
+	// The two merged into one at the newer revision, so it counts for anything that hadn't seen both
+	CHECK(log.HasChangedWithin(MakeBox(Vector3D(50.0f, 0.0f, 0.0f)), 6));
+	CHECK_FALSE(log.HasChangedWithin(MakeBox(Vector3D(50.0f, 0.0f, 0.0f)), 7));
+
+	U32 visited = 0;
+	CHECK(log.ForEachChangeSince(0, [&visited](const BoundingBox&) { ++visited; }));
+	CHECK(visited == SceneChangeLog::k_capacity);
+}
+
+TEST_CASE("A scene change log doesn't keep a big old change alive by merging new ones into it")
+{
+	SceneChangeLog log;
+	// e.g. the whole scene, from loading it
+	log.Add(1, BoundingBox(Vector3D(-50.0f), Vector3D(50.0f)));
+
+	// Far more than fit, all in one corner, as when many objects move together every frame
+	const BoundingBox corner = MakeBox(Vector3D(40.0f));
+	for (U64 revision = 2; revision <= SceneChangeLog::k_capacity * 4; ++revision)
+	{
+		log.Add(revision, corner);
+	}
+
+	// What saw the load only sees the corner change since
+	CHECK_FALSE(log.HasChangedWithin(MakeBox(Vector3D(-10.0f)), 1));
+	CHECK(log.HasChangedWithin(corner, SceneChangeLog::k_capacity * 4 - 1));
+}
+
+TEST_CASE("A scene change log lists the changes after a revision, newest first")
+{
+	SceneChangeLog log;
+	log.Add(2, MakeBox(Vector3D(0.0f)));
+	log.Add(2, MakeBox(Vector3D(10.0f)));
+	log.Add(5, MakeBox(Vector3D(20.0f)));
+
+	std::vector<float> corners;
+	const auto visit = [&corners](const BoundingBox& bounds) { corners.push_back(bounds.GetMin().X()); };
+
+	CHECK(log.ForEachChangeSince(0, visit));
+	CHECK(corners == std::vector<float>{ 20.0f, 10.0f, 0.0f });
+
+	// Changes at the revision asked about were already seen
+	corners.clear();
+	CHECK(log.ForEachChangeSince(2, visit));
+	CHECK(corners == std::vector<float>{ 20.0f });
+
+	corners.clear();
+	CHECK(log.ForEachChangeSince(5, visit));
+	CHECK(corners.empty());
+}
+
+TEST_CASE("A scene change log can't list changes from before a change everywhere")
+{
+	SceneChangeLog log;
+	log.Add(1, MakeBox(Vector3D(0.0f)));
+	log.AddEverywhere(3);
+	log.Add(4, MakeBox(Vector3D(10.0f)));
+
+	U32 visited = 0;
+	const auto visit = [&visited](const BoundingBox&) { ++visited; };
+
+	CHECK_FALSE(log.ForEachChangeSince(2, visit));
+	CHECK(visited == 0);
+
+	CHECK(log.ForEachChangeSince(3, visit));
+	CHECK(visited == 1);
 }
 
 TEST_CASE("A change everywhere counts as a change in every region, for revisions before it")
