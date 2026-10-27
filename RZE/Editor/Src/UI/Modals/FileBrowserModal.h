@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Services/FolderListing.h>
+#include <Services/FolderNavigator.h>
 #include <UI/Widgets/FileTileGrid.h>
 
 #include <Utils/Platform/Filepath.h>
@@ -55,8 +55,9 @@ namespace Editor
 		std::function<void()> OnCancelled;
 	};
 
-	// A modal file browser: a grid of large tiles showing each file's thumbnail, with search and subfolders. It opens in
-	// the middle of the editor and can be dragged by its header or footer. Owned by EditorContext; EditorApp displays
+	// A modal file browser: a grid of large tiles showing each file's thumbnail, with search, subfolders, and back, forward
+	// and up (also the mouse's side buttons and Backspace). It opens in the middle of the editor and can be dragged by its
+	// header or footer. Owned by EditorContext; EditorApp displays
 	// it each frame.
 	class FileBrowserModal
 	{
@@ -88,16 +89,14 @@ namespace Editor
 		void DrawHeader();
 		void DrawTiles();
 		void DrawFooter();
-		// Escape, Enter and Backspace; the grid handles the arrow keys
+		// Escape, Enter and Backspace, and the mouse's side buttons; the grid handles the arrow keys
 		void HandleKeys();
 
-		void Navigate(const Filepath& folder);
-		void Refresh();
 		// Opens the selected folder, or chooses the selected file (Open mode) or the typed name (Save mode)
 		void ConfirmSelection();
 		// Save mode: saves to the typed name, asking first if that replaces a file
 		void ConfirmSave();
-		// By value: closing clears the entries a selected path would point into
+		// By value: a selected path points into the entries, which closing or navigating can change
 		void Choose(Filepath file);
 		void Cancel();
 		// Closes without answering the request
@@ -115,11 +114,10 @@ namespace Editor
 		// dialog takes its place.
 		bool m_centreOnOpen = false;
 
-		Filepath m_folder;
-		std::vector<FolderEntry> m_entries;
+		// The folder shown, its entries, the search and the history, within the request's RootFolder
+		FolderNavigator m_navigator;
 		// The tiles, their images and the selection
 		FileTileGrid m_grid;
-		char m_search[128] = {};
 		// Escape leaves a text field rather than closing the browser
 		bool m_isTextActive = false;
 

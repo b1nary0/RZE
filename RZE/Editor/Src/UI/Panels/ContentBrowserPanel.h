@@ -4,7 +4,7 @@
 #include <UI/Framework/EditorPanel.h>
 #include <UI/Widgets/FileTileGrid.h>
 
-#include <Services/FolderListing.h>
+#include <Services/FolderNavigator.h>
 
 #include <Utils/Platform/Filepath.h>
 
@@ -41,15 +41,8 @@ namespace Editor
 		void HandleNavigationInput(EditorContext& context);
 		void DrawDeletePrompt(EditorContext& context);
 
-		// Goes to folder, adding where it was to the back history
-		void Navigate(const Filepath& folder);
-		void GoBack();
-		void GoForward();
-		void GoUp();
-		// Shows folder without touching the history
-		void ShowFolder(const Filepath& folder);
 		// Reads the current folder and the tree's folders again. If the folder is gone, shows the nearest one above it
-		// that's still there.
+		// that's still there (FolderNavigator::Refresh).
 		void Refresh();
 		// Has the listed scenes' and meshes' thumbnails rendered again where they're older than their file, e.g. a mesh
 		// written again outside the editor
@@ -72,30 +65,13 @@ namespace Editor
 		// including from undo or redo
 		void OnAssetFileChanged(const AssetFileChangedEvent& event);
 
-		// The history's folders at or inside from, moved to where they are under to
-		void MoveHistory(const Filepath& from, const Filepath& to);
-		// Drops the history's folders at or inside path, and then any that repeat the one beside them or the one shown.
-		// After showing a folder that's still there.
-		void ForgetHistory(const Filepath& path);
-
-		// The current folder's entry for path, or null
-		const FolderEntry* FindEntry(const Filepath& path) const;
-
-		// The root the current folder is in
-		const Filepath& GetRoot() const;
-		bool IsRoot(const Filepath& folder) const;
 		// Read the first time a tree node needs them, then kept until Refresh
 		const std::vector<Filepath>& GetSubfolders(const Filepath& folder);
 
 	private:
-		std::vector<Filepath> m_roots;
-		Filepath m_folder;
-		std::vector<Filepath> m_backHistory;
-		std::vector<Filepath> m_forwardHistory;
-
-		std::vector<FolderEntry> m_entries;
+		// The folder shown, its entries, the search and the history
+		FolderNavigator m_navigator;
 		FileTileGrid m_grid;
-		char m_search[128] = {};
 		float m_tileSize = 96.0f;
 
 		// The tree's subfolders, by the relative path of the folder they're in

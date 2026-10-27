@@ -54,7 +54,7 @@ The Win32 Open/Save dialogs it replaced have been removed.
 It opens in the middle of the editor, sized to it, and can be moved by dragging an empty part of the header or footer; the tile area doesn't move it. It stays where it's put until it's opened again.
 
 - **Header:** the title, a tile-size slider (95–234 px) and a search box that keeps the files whose name contains the text, ignoring case.
-- **Breadcrumb:** each folder from the request's `RootFolder` down is a button that goes back up to it. Browsing never leaves the root.
+- **Breadcrumb:** Back, Forward and Up (each greyed out when there's nowhere to go), then each folder from the request's `RootFolder` down as a button that goes back up to it. Browsing never leaves the root.
 - **Tiles:** subfolders first, then files, each sorted by name. A file's tile shows its image fitted into a square with rounded corners, its name and how long ago it changed. A file with no image shows a gradient with its extension. Right-clicking a file shows the request's tile actions, e.g. **Refresh Thumbnail**.
 - **Footer:** the selected file's path, then Cancel and the confirm button (disabled with nothing selected).
 - **Save mode** adds a file name field, prefilled with the selection or "Untitled". Clicking a tile copies its name in. The name goes through `ResolveSaveName`, which trims it, adds the extension if it's missing and rejects empty names or characters Windows can't use; the reason shows above the footer. Choosing an existing file asks *"Sponza.scene already exists. Replace it?"* in the footer, rather than in a second popup.
@@ -63,7 +63,8 @@ It opens in the middle of the editor, sized to it, and can be moved by dragging 
 |---|---|
 | Double-click, Enter | Opens a folder, or chooses the file (Save mode: saves to the typed name) |
 | Arrow keys | Move the selection through the grid |
-| Backspace | Up a folder, until the root |
+| Backspace | Up a folder, until the root, selecting the folder it came out of |
+| Mouse back / forward buttons (4 / 5), header arrows | Back / Forward through the folders visited |
 | Escape | Backs out of the replace question, then closes without choosing. In a text field, it only leaves the field. |
 
 ### Asking for a file
@@ -96,8 +97,18 @@ context.GetFileBrowser().Open(std::move(request));
 Opening while a request is showing replaces it, and the old one is cancelled.
 
 - **The tiles** are a [`FileTileGrid`](#the-tile-grid-filetilegrid), which loads their images in the background. The browser releases them when it closes. `RefreshThumbnail(image)` reloads the tiles that show an image once it has been written again; `EditorContext` calls it on each `ThumbnailWrittenEvent`, so a thumbnail that finishes rendering appears while the browser is open.
+- **Where it is** is a `FolderNavigator`, the same as the [Content Browser](#the-content-browser-contentbrowserpanel)'s ([below](#folder-navigation-foldernavigator)). If the folder shown is deleted while it's open, it moves up to the nearest folder still there.
 - **The listing** is `ListFolder(folder, extensions, search)` in `Services\FolderListing.h/.cpp`, unit tested: a folder's `FolderEntry`s, subfolders first, without names starting with a dot (like the trash). What it builds on is general and lives in Utils ([Utils-Library-Reference.md](../06-Platform-And-Infrastructure/Utils-Library-Reference.md)): `FileNames` for the naming rules (`GetError`, `ResolveSave`, `ResolveRename`, `MakeUnique`, `ParseExtensionFilter`, `MatchesExtensions`), `Folders::ListSubfolders` for the tree, and `TimeUtils::FormatTimeAgo` ("Just now", "5 minutes ago", a date once it's months old).
 - **Changes on disk** show while it's open: it reads its folder again on each `ProjectFilesChangedEvent` ([below](#refreshing)).
+
+## Folder navigation (`FolderNavigator`)
+
+`Services\FolderNavigator.h/.cpp`, unit tested: which folder a browser shows and what's in it, with no ImGui. Both browsers draw from one.
+
+- **What it holds:** the folder, its entries (`ListFolder`), the search (a buffer a text field edits in place), and the back and forward history, within its roots. The Content Browser has two roots (Assets and ProjectData); the file browser has the request's `RootFolder`.
+- **Moving:** `Navigate` adds where it was to the back history and clears forward. `GoBack` and `GoForward` retrace the history. `GoUp` stops at a root and returns the folder it came out of, so the browser can select it. Going to another folder clears the search.
+- **When folders change:** `Refresh` reads the folder again, and if it's gone, shows the nearest folder above it that's still there and forgets the gone ones from the history. `OnPathChanged(from, to)` makes the folder shown and the history follow a rename, or forget a delete. `FollowRename` works out where a path is after a rename.
+- **The browser's side:** `SetOnFolderShown` runs after the folder shown changes, so a browser can drop its old tiles' images and scroll to the top. `DrawFolderNavigationButtons` (in `FileTileGrid.h`) draws the Back, Forward and Up row both browsers show. `GoUpAndSelect` is Up and Backspace.
 
 ## The tile grid (`FileTileGrid`)
 
@@ -249,6 +260,7 @@ For each item:
 - `Editor\Src\Commands\AssetFileCommands.h/.cpp`, `Editor\Src\Services\AssetFiles.h/.cpp` — rename, delete, new folder, the trash
 - `Editor\Src\Services\ProjectWatcher.h/.cpp`, `Utils\Src\Utils\Platform\FolderWatcher.h/.cpp` — changes on disk
 - `Utils\Src\Utils\Platform\Shell.h/.cpp` — `ShowInFileBrowser`, `MoveToRecycleBin`
+- `Editor\Src\Services\FolderNavigator.h/.cpp` — the folder a browser shows, its search and history
 - `Editor\Src\Services\FolderListing.h/.cpp` — `ListFolder`; `Utils\Src\Utils\Platform\FileNames.h/.cpp`, `Folders.h/.cpp` — naming rules, subfolders
 - `Editor\Src\Services\Thumbnails.h/.cpp` — folders, `FindFor`, `IsUpToDate`, `Survey`
 - `Editor\Src\Services\ThumbnailRenderer.h/.cpp` (with `ThumbnailRenderJob`), `ThumbnailQueue.h/.cpp`, `MeshFraming.h/.cpp`

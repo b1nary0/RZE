@@ -36,21 +36,6 @@ namespace
 	constexpr char k_deletePopupID[] = "Delete?";
 	constexpr float k_promptButtonWidth = 110.0f;
 
-	bool IsSamePath(const Filepath& a, const Filepath& b)
-	{
-		return a.GetRelativePath() == b.GetRelativePath();
-	}
-
-	// Where path is once from is renamed to to: moved with it if it's from or inside it, otherwise as it was
-	Filepath FollowRename(const Filepath& path, const Filepath& from, const Filepath& to)
-	{
-		if (!IsSamePath(path, from) && !path.IsInside(from))
-		{
-			return path;
-		}
-		return Filepath(to.GetRelativePath() + path.GetRelativePath().substr(from.GetRelativePath().size()));
-	}
-
 	// Why path can't be renamed or deleted, or empty if it can (AssetFiles::GetWhyInUse)
 	std::string GetWhyInUse(const Editor::SceneDocument& document, const Filepath& path)
 	{
@@ -91,8 +76,14 @@ namespace Editor
 
 	void ContentBrowserPanel::Initialize(EditorContext& context)
 	{
-		// Here rather than at static initialization, so they resolve against the project folder
-		m_roots = { Filepath("Assets"), Filepath("ProjectData") };
+		m_navigator.SetOnFolderShown([this]()
+			{
+				// Only this folder's images are kept
+				m_grid.ReleaseThumbnails();
+				m_grid.SetSelected(Filepath(), false);
+				m_grid.ScrollToTop();
+				m_revealFolder = true;
+			});
 
 		FileTileGridOptions options;
 		options.ThumbnailFor = &Thumbnails::FindFor;
@@ -120,7 +111,7 @@ namespace Editor
 				ImGui::Separator();
 				if (ImGui::MenuItem("Show in Explorer"))
 				{
-					Shell::ShowInFileBrowser(m_folder);
+					Shell::ShowInFileBrowser(m_navigator.GetFolder());
 				}
 				if (ImGui::MenuItem("Refresh"))
 				{
@@ -146,7 +137,8 @@ namespace Editor
 				m_refreshRequested = true;
 			});
 
-		ShowFolder(m_roots.front());
+		// Here rather than at static initialization, so they resolve against the project folder
+		m_navigator.Reset({ Filepath("Assets"), Filepath("ProjectData") }, {});
 	}
 
 	void ContentBrowserPanel::Draw(EditorContext& context)
@@ -192,35 +184,10 @@ namespace Editor
 		const ImGuiStyle& style = ImGui::GetStyle();
 		const float right = ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x;
 
-		{
-			EditorUI::ScopedToolbarSpacing spacing;
-
-			ImGui::BeginDisabled(m_backHistory.empty());
-			if (EditorUI::IconButton("##back", EditorUI::EIcon::Back, "Back (mouse 4)"))
-			{
-				GoBack();
-			}
-			ImGui::EndDisabled();
-
-			ImGui::SameLine();
-			ImGui::BeginDisabled(m_forwardHistory.empty());
-			if (EditorUI::IconButton("##forward", EditorUI::EIcon::Forward, "Forward (mouse 5)"))
-			{
-				GoForward();
-			}
-			ImGui::EndDisabled();
-
-			ImGui::SameLine();
-			ImGui::BeginDisabled(IsRoot(m_folder));
-			if (EditorUI::IconButton("##up", EditorUI::EIcon::Up, "Up a folder (Backspace)"))
-			{
-				GoUp();
-			}
-			ImGui::EndDisabled();
-		}
+		DrawFolderNavigationButtons(m_navigator, m_grid);
 
 		ImGui::SameLine();
-		const Filepath navigateTo = DrawBreadcrumb(GetRoot(), m_folder);
+		const Filepath navigateTo = DrawBreadcrumb(m_navigator.GetRoot(), m_navigator.GetFolder());
 
 		// Tile size, search and refresh, on the right
 		ImGui::SameLine(right - k_sizeSliderWidth - k_searchWidth - EditorUI::GetIconButtonWidth() - style.ItemSpacing.x * 2.0f);
@@ -230,7 +197,7 @@ namespace Editor
 
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(k_searchWidth);
-		if (ImGui::InputTextWithHint("##search", "Search", m_search, sizeof(m_search)))
+		if (ImGui::InputTextWithHint("##search", "Search", m_navigator.GetSearchBuffer(), m_navigator.GetSearchBufferSize()))
 		{
 			m_refreshRequested = true;
 			m_grid.ScrollToTop();
@@ -245,7 +212,7 @@ namespace Editor
 		// After the toolbar, so it isn't drawn for one folder and acted on for another
 		if (navigateTo.IsValid())
 		{
-			Navigate(navigateTo);
+			m_navigator.Navigate(navigateTo);
 		}
 	}
 
@@ -253,7 +220,7 @@ namespace Editor
 	{
 		if (ImGui::BeginChild("##folders", ImVec2(0.0f, 0.0f)))
 		{
-			for (const Filepath& root : m_roots)
+			for (const Filepath& root : m_navigator.GetRoots())
 			{
 				DrawFolderNode(root);
 			}
@@ -265,7 +232,7 @@ namespace Editor
 	void ContentBrowserPanel::DrawFolderNode(const Filepath& folder)
 	{
 		const std::vector<Filepath>& subfolders = GetSubfolders(folder);
-		const bool isCurrent = IsSamePath(folder, m_folder);
+		const bool isCurrent = folder == m_navigator.GetFolder();
 
 		ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
 		if (isCurrent)
@@ -276,13 +243,13 @@ namespace Editor
 		{
 			flags |= ImGuiTreeNodeFlags_Leaf;
 		}
-		if (IsRoot(folder))
+		if (m_navigator.IsRoot(folder))
 		{
 			flags |= ImGuiTreeNodeFlags_DefaultOpen;
 		}
 
 		// Opens each folder above the current one, e.g. after going there from the tiles
-		if (m_revealFolder && !isCurrent && m_folder.IsInside(folder))
+		if (m_revealFolder && !isCurrent && m_navigator.GetFolder().IsInside(folder))
 		{
 			ImGui::SetNextItemOpen(true);
 		}
@@ -294,7 +261,7 @@ namespace Editor
 		}
 		if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen() && !isCurrent)
 		{
-			Navigate(folder);
+			m_navigator.Navigate(folder);
 		}
 
 		if (isOpen)
@@ -310,8 +277,8 @@ namespace Editor
 
 	void ContentBrowserPanel::DrawTiles(EditorContext& context)
 	{
-		const char* const emptyText = m_search[0] != '\0' ? "Nothing here matches the search" : "This folder is empty";
-		const FileTileGridResult result = m_grid.Draw(m_entries, m_tileSize, ImVec2(0.0f, 0.0f), emptyText);
+		const char* const emptyText = m_navigator.HasSearch() ? "Nothing here matches the search" : "This folder is empty";
+		const FileTileGridResult result = m_grid.Draw(m_navigator.GetEntries(), m_tileSize, ImVec2(0.0f, 0.0f), emptyText);
 
 		if (result.Activated.IsValid())
 		{
@@ -326,11 +293,11 @@ namespace Editor
 		{
 			if (ImGui::IsMouseClicked(k_mouseBack))
 			{
-				GoBack();
+				m_navigator.GoBack();
 			}
 			else if (ImGui::IsMouseClicked(k_mouseForward))
 			{
-				GoForward();
+				m_navigator.GoForward();
 			}
 		}
 
@@ -342,7 +309,7 @@ namespace Editor
 
 		if (ImGui::IsKeyPressed(ImGuiKey_Backspace, false))
 		{
-			GoUp();
+			GoUpAndSelect(m_navigator, m_grid);
 		}
 		else if ((ImGui::IsKeyPressed(ImGuiKey_Enter, false) || ImGui::IsKeyPressed(ImGuiKey_KeypadEnter, false)) && m_grid.GetSelected().IsValid())
 		{
@@ -352,7 +319,7 @@ namespace Editor
 		{
 			// What the tile's menu offers, so the same files are in use
 			const Filepath& selected = m_grid.GetSelected();
-			if (FindEntry(selected) == nullptr || !GetWhyInUse(context.GetSceneDocument(), selected).empty())
+			if (m_navigator.FindEntry(selected) == nullptr || !GetWhyInUse(context.GetSceneDocument(), selected).empty())
 			{
 				return;
 			}
@@ -393,7 +360,7 @@ namespace Editor
 		}
 
 		const Filepath path = m_deletePrompt->Path;
-		const FolderEntry* const entry = FindEntry(path);
+		const FolderEntry* const entry = m_navigator.FindEntry(path);
 		ImGui::Text("Delete \"%s\"?", path.GetFileName().c_str());
 		if (entry != nullptr && entry->IsFolder)
 		{
@@ -421,96 +388,16 @@ namespace Editor
 		ImGui::EndPopup();
 	}
 
-	void ContentBrowserPanel::Navigate(const Filepath& folder)
-	{
-		if (IsSamePath(folder, m_folder))
-		{
-			return;
-		}
-
-		m_backHistory.push_back(m_folder);
-		m_forwardHistory.clear();
-		ShowFolder(folder);
-	}
-
-	void ContentBrowserPanel::GoBack()
-	{
-		if (m_backHistory.empty())
-		{
-			return;
-		}
-
-		m_forwardHistory.push_back(m_folder);
-		const Filepath folder = m_backHistory.back();
-		m_backHistory.pop_back();
-		ShowFolder(folder);
-	}
-
-	void ContentBrowserPanel::GoForward()
-	{
-		if (m_forwardHistory.empty())
-		{
-			return;
-		}
-
-		m_backHistory.push_back(m_folder);
-		const Filepath folder = m_forwardHistory.back();
-		m_forwardHistory.pop_back();
-		ShowFolder(folder);
-	}
-
-	void ContentBrowserPanel::GoUp()
-	{
-		if (IsRoot(m_folder))
-		{
-			return;
-		}
-
-		// Selects the folder it came out of, so it's easy to see where it was
-		const Filepath child = m_folder;
-		Navigate(m_folder.GetParentFolder());
-		m_grid.SetSelected(child, true);
-	}
-
-	void ContentBrowserPanel::ShowFolder(const Filepath& folder)
-	{
-		m_folder = folder;
-		m_search[0] = '\0';
-		// Only this folder's images are kept
-		m_grid.ReleaseThumbnails();
-		m_grid.SetSelected(Filepath(), false);
-		m_grid.ScrollToTop();
-		m_revealFolder = true;
-
-		m_entries = ListFolder(m_folder, {}, m_search);
-	}
-
 	void ContentBrowserPanel::Refresh()
 	{
 		m_refreshRequested = false;
 		m_subfolders.clear();
-
-		if (!m_folder.Exists())
-		{
-			// The highest folder that went, which took the current one with it
-			Filepath gone = m_folder;
-			Filepath folder = m_folder;
-			while (!IsRoot(folder) && !folder.Exists())
-			{
-				gone = folder;
-				folder = folder.GetParentFolder();
-			}
-			ShowFolder(folder);
-			ForgetHistory(gone);
-			return;
-		}
-
-		m_entries = ListFolder(m_folder, {}, m_search);
+		m_navigator.Refresh();
 	}
 
 	void ContentBrowserPanel::RequestOutdatedThumbnails(EditorContext& context)
 	{
-		for (const FolderEntry& entry : m_entries)
+		for (const FolderEntry& entry : m_navigator.GetEntries())
 		{
 			// Missing ones are asked for as their tiles show (OnThumbnailMissing). Request skips those up to date.
 			if (!entry.IsFolder && Thumbnails::IsRendered(entry.Path) && Thumbnails::FindFor(entry.Path).Exists())
@@ -522,10 +409,10 @@ namespace Editor
 
 	void ContentBrowserPanel::Open(EditorContext& context, const Filepath& file)
 	{
-		const FolderEntry* const entry = FindEntry(file);
+		const FolderEntry* const entry = m_navigator.FindEntry(file);
 		if (entry != nullptr && entry->IsFolder)
 		{
-			Navigate(file);
+			m_navigator.Navigate(file);
 		}
 		else if (AssetPaths::IsScene(file))
 		{
@@ -548,7 +435,7 @@ namespace Editor
 	void ContentBrowserPanel::Rename(EditorContext& context, const FolderEntry& entry, const std::string& name)
 	{
 		const FileNames::ResolvedName renamed = FileNames::ResolveRename(entry.Path, entry.IsFolder, name);
-		if (renamed.Path.IsValid() && !IsSamePath(renamed.Path, entry.Path))
+		if (renamed.Path.IsValid() && renamed.Path != entry.Path)
 		{
 			context.GetCommands().Push<RenameAssetCommand>(entry.Path, renamed.Path);
 		}
@@ -567,7 +454,7 @@ namespace Editor
 
 	void ContentBrowserPanel::CreateFolder(EditorContext& context)
 	{
-		m_renameWhenCreated = FileNames::MakeUnique(m_folder, "New Folder");
+		m_renameWhenCreated = FileNames::MakeUnique(m_navigator.GetFolder(), "New Folder");
 		context.GetCommands().Push<CreateFolderCommand>(m_renameWhenCreated);
 	}
 
@@ -575,38 +462,22 @@ namespace Editor
 	{
 		if (event.From.IsValid())
 		{
-			const bool isShownFolderChanged = IsSamePath(m_folder, event.From) || m_folder.IsInside(event.From);
-			if (event.To.IsValid())
-			{
-				MoveHistory(event.From, event.To);
-				if (isShownFolderChanged)
-				{
-					ShowFolder(FollowRename(m_folder, event.From, event.To));
-				}
-			}
-			else
-			{
-				if (isShownFolderChanged)
-				{
-					ShowFolder(event.From.GetParentFolder());
-				}
-				ForgetHistory(event.From);
-			}
+			m_navigator.OnPathChanged(event.From, event.To);
 		}
 
-		const bool isNewFolder = event.To.IsValid() && IsSamePath(event.To, m_renameWhenCreated);
+		const bool isNewFolder = event.To.IsValid() && event.To == m_renameWhenCreated;
 		if (isNewFolder)
 		{
 			// Listed before its rename starts, which ends if it isn't, so a search mustn't hide it
-			m_search[0] = '\0';
+			m_navigator.ClearSearch();
 		}
 		Refresh();
 
-		if (event.To.IsValid() && IsSamePath(event.To.GetParentFolder(), m_folder))
+		if (event.To.IsValid() && event.To.GetParentFolder() == m_navigator.GetFolder())
 		{
 			m_grid.SetSelected(event.To, true);
 		}
-		else if (event.From.IsValid() && IsSamePath(m_grid.GetSelected(), event.From))
+		else if (event.From.IsValid() && m_grid.GetSelected() == event.From)
 		{
 			m_grid.SetSelected(Filepath(), false);
 		}
@@ -616,50 +487,6 @@ namespace Editor
 			m_grid.BeginRename(event.To);
 			m_renameWhenCreated = Filepath();
 		}
-	}
-
-	void ContentBrowserPanel::MoveHistory(const Filepath& from, const Filepath& to)
-	{
-		const auto move = [&from, &to](Filepath& folder) { folder = FollowRename(folder, from, to); };
-		std::for_each(m_backHistory.begin(), m_backHistory.end(), move);
-		std::for_each(m_forwardHistory.begin(), m_forwardHistory.end(), move);
-	}
-
-	void ContentBrowserPanel::ForgetHistory(const Filepath& path)
-	{
-		const auto isGone = [&path](const Filepath& folder) { return IsSamePath(folder, path) || folder.IsInside(path); };
-		const auto forget = [this, &isGone](std::vector<Filepath>& history)
-			{
-				history.erase(std::remove_if(history.begin(), history.end(), isGone), history.end());
-				// With what was between them gone, folders beside each other can be the same, or the one shown, so
-				// going back would seem to do nothing
-				history.erase(std::unique(history.begin(), history.end(), &IsSamePath), history.end());
-				if (!history.empty() && IsSamePath(history.back(), m_folder))
-				{
-					history.pop_back();
-				}
-			};
-		forget(m_backHistory);
-		forget(m_forwardHistory);
-	}
-
-	const FolderEntry* ContentBrowserPanel::FindEntry(const Filepath& path) const
-	{
-		const auto entry = std::find_if(m_entries.begin(), m_entries.end(),
-			[&path](const FolderEntry& candidate) { return candidate.Path.GetRelativePath() == path.GetRelativePath(); });
-		return entry != m_entries.end() ? &*entry : nullptr;
-	}
-
-	const Filepath& ContentBrowserPanel::GetRoot() const
-	{
-		const auto root = std::find_if(m_roots.begin(), m_roots.end(),
-			[this](const Filepath& candidate) { return IsSamePath(m_folder, candidate) || m_folder.IsInside(candidate); });
-		return root != m_roots.end() ? *root : m_roots.front();
-	}
-
-	bool ContentBrowserPanel::IsRoot(const Filepath& folder) const
-	{
-		return std::any_of(m_roots.begin(), m_roots.end(), [&folder](const Filepath& root) { return IsSamePath(folder, root); });
 	}
 
 	const std::vector<Filepath>& ContentBrowserPanel::GetSubfolders(const Filepath& folder)

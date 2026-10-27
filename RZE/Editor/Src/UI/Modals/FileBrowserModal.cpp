@@ -18,6 +18,10 @@ namespace
 	constexpr float k_sizeSliderWidth = 68.0f;
 	constexpr float k_buttonWidth = 74.0f;
 
+	// ImGui's numbers for the mouse's side buttons
+	constexpr int k_mouseBack = 3;
+	constexpr int k_mouseForward = 4;
+
 	constexpr float k_minTileSize = 95.0f;
 	constexpr float k_maxTileSize = 234.0f;
 
@@ -37,7 +41,11 @@ namespace Editor
 		Filepath PendingReplace;
 	};
 
-	FileBrowserModal::FileBrowserModal() = default;
+	FileBrowserModal::FileBrowserModal()
+	{
+		m_navigator.SetOnFolderShown([this]() { m_grid.ScrollToTop(); });
+	}
+
 	FileBrowserModal::~FileBrowserModal() = default;
 
 	void FileBrowserModal::Open(FileBrowserRequest request)
@@ -48,23 +56,17 @@ namespace Editor
 		std::function<void()> replacedCancelled = IsOpen() ? std::move(m_request.OnCancelled) : nullptr;
 
 		m_request = std::move(request);
-		m_folder = m_request.RootFolder;
 		m_grid.SetSelected(Filepath(), false);
 		m_grid.SetOptions({ m_request.ThumbnailFor, m_request.OnThumbnailMissing, m_request.TileActions });
-		m_search[0] = '\0';
 
 		// Starts in the initial selection's folder if that's inside the root
-		if (m_request.InitialSelection.IsValid() && m_request.InitialSelection.GetParentFolder().IsInside(m_request.RootFolder))
+		const Filepath selectionFolder = m_request.InitialSelection.IsValid() ? m_request.InitialSelection.GetParentFolder() : Filepath();
+		const bool startsAtSelection = selectionFolder.IsValid() && selectionFolder.IsInside(m_request.RootFolder);
+		m_navigator.Reset({ m_request.RootFolder }, m_request.Extensions, startsAtSelection ? selectionFolder : Filepath());
+		if (startsAtSelection)
 		{
-			m_folder = m_request.InitialSelection.GetParentFolder();
 			m_grid.SetSelected(m_request.InitialSelection, true);
 		}
-		else
-		{
-			m_grid.ScrollToTop();
-		}
-
-		Refresh();
 
 		m_save.reset();
 		if (m_request.Mode == EFileBrowserMode::Save)
@@ -105,7 +107,7 @@ namespace Editor
 	{
 		if (IsOpen())
 		{
-			Refresh();
+			m_navigator.Refresh();
 		}
 	}
 
@@ -193,10 +195,12 @@ namespace Editor
 		ImGui::TextUnformatted(m_request.Title.c_str());
 		ImGui::PopFont();
 
-		const Filepath navigateTo = DrawBreadcrumb(m_request.RootFolder, m_folder);
+		DrawFolderNavigationButtons(m_navigator, m_grid);
+		ImGui::SameLine();
+		const Filepath navigateTo = DrawBreadcrumb(m_navigator.GetRoot(), m_navigator.GetFolder());
 		if (navigateTo.IsValid())
 		{
-			Navigate(navigateTo);
+			m_navigator.Navigate(navigateTo);
 		}
 
 		const float headerBottom = ImGui::GetCursorPosY();
@@ -212,9 +216,9 @@ namespace Editor
 
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(k_searchWidth);
-		if (ImGui::InputTextWithHint("##search", "Search", m_search, sizeof(m_search)))
+		if (ImGui::InputTextWithHint("##search", "Search", m_navigator.GetSearchBuffer(), m_navigator.GetSearchBufferSize()))
 		{
-			Refresh();
+			m_navigator.Refresh();
 			m_grid.ScrollToTop();
 		}
 		m_isTextActive = ImGui::IsItemActive() || ImGui::IsItemDeactivated();
@@ -236,8 +240,8 @@ namespace Editor
 		const float footerHeight = ImGui::GetFrameHeight() + style.ItemSpacing.y * 2.0f + 6.0f
 			+ (hasNoticeRow ? ImGui::GetTextLineHeightWithSpacing() : 0.0f);
 
-		const char* const emptyText = m_search[0] != '\0' ? "Nothing here matches the search" : "This folder is empty";
-		const FileTileGridResult result = m_grid.Draw(m_entries, m_tileSize, ImVec2(0.0f, -footerHeight), emptyText);
+		const char* const emptyText = m_navigator.HasSearch() ? "Nothing here matches the search" : "This folder is empty";
+		const FileTileGridResult result = m_grid.Draw(m_navigator.GetEntries(), m_tileSize, ImVec2(0.0f, -footerHeight), emptyText);
 
 		// Save mode: clicking a file copies its name in
 		if (result.Clicked.IsValid() && IsSaving())
@@ -356,6 +360,19 @@ namespace Editor
 
 	void FileBrowserModal::HandleKeys()
 	{
+		// The side buttons work wherever the mouse is over the browser
+		if (ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows))
+		{
+			if (ImGui::IsMouseClicked(k_mouseBack))
+			{
+				m_navigator.GoBack();
+			}
+			else if (ImGui::IsMouseClicked(k_mouseForward))
+			{
+				m_navigator.GoForward();
+			}
+		}
+
 		if (ImGui::IsKeyPressed(ImGuiKey_Escape, false) && !m_isTextActive)
 		{
 			// Backs out of the replace question first
@@ -382,23 +399,10 @@ namespace Editor
 			return;
 		}
 
-		if (ImGui::IsKeyPressed(ImGuiKey_Backspace, false) && m_folder.GetRelativePath() != m_request.RootFolder.GetRelativePath())
+		if (ImGui::IsKeyPressed(ImGuiKey_Backspace, false))
 		{
-			Navigate(m_folder.GetParentFolder());
+			GoUpAndSelect(m_navigator, m_grid);
 		}
-	}
-
-	void FileBrowserModal::Navigate(const Filepath& folder)
-	{
-		m_folder = folder;
-		m_search[0] = '\0';
-		Refresh();
-		m_grid.ScrollToTop();
-	}
-
-	void FileBrowserModal::Refresh()
-	{
-		m_entries = ListFolder(m_folder, m_request.Extensions, m_search);
 	}
 
 	void FileBrowserModal::ConfirmSelection()
@@ -408,7 +412,7 @@ namespace Editor
 		{
 			const Filepath folder = selected->Path;
 			m_grid.SetSelected(Filepath(), false);
-			Navigate(folder);
+			m_navigator.Navigate(folder);
 		}
 		else if (IsSaving())
 		{
@@ -423,7 +427,7 @@ namespace Editor
 	void FileBrowserModal::ConfirmSave()
 	{
 		const std::string extension = m_request.Extensions.empty() ? std::string() : m_request.Extensions.front();
-		const FileNames::ResolvedName saveName = FileNames::ResolveSave(m_folder, m_save->FileName, extension);
+		const FileNames::ResolvedName saveName = FileNames::ResolveSave(m_navigator.GetFolder(), m_save->FileName, extension);
 		if (!saveName.Error.empty())
 		{
 			m_save->Error = saveName.Error;
@@ -480,7 +484,6 @@ namespace Editor
 	{
 		ImGui::CloseCurrentPopup();
 		m_isOpen = false;
-		m_entries.clear();
 		m_grid.ReleaseThumbnails();
 		m_save.reset();
 	}
@@ -488,13 +491,6 @@ namespace Editor
 	const FolderEntry* FileBrowserModal::GetSelected() const
 	{
 		const Filepath& selectedPath = m_grid.GetSelected();
-		if (!selectedPath.IsValid())
-		{
-			return nullptr;
-		}
-
-		const auto it = std::find_if(m_entries.begin(), m_entries.end(),
-			[&selectedPath](const FolderEntry& entry) { return entry.Path.GetRelativePath() == selectedPath.GetRelativePath(); });
-		return it != m_entries.end() ? &*it : nullptr;
+		return selectedPath.IsValid() ? m_navigator.FindEntry(selectedPath) : nullptr;
 	}
 }

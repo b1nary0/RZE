@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Services/FolderListing.h>
+#include <Services/FolderNavigator.h>
 
 #include <EngineCore/Resources/PendingResource.h>
 
@@ -149,4 +149,10 @@ namespace Editor
 	// The breadcrumb from root down to folder: a button for each folder above, then folder's name. Returns the folder
 	// whose button was clicked, or an invalid path.
 	Filepath DrawBreadcrumb(const Filepath& root, const Filepath& folder);
+
+	// Back, forward and up buttons for navigator, one after another on a line, each disabled when it can't go there.
+	// Up selects the folder it came out of (GoUpAndSelect).
+	void DrawFolderNavigationButtons(FolderNavigator& navigator, FileTileGrid& grid);
+	// Up a folder, selecting the one it came out of in grid, so it's easy to see where it was. Nothing at a root.
+	void GoUpAndSelect(FolderNavigator& navigator, FileTileGrid& grid);
 }

@@ -233,7 +233,7 @@ namespace Editor
 		{
 			result.Activated = entry.Path;
 		}
-		const bool isSelected = entry.Path.GetRelativePath() == m_selected.GetRelativePath();
+		const bool isSelected = entry.Path == m_selected;
 
 		if (!entry.IsFolder && m_options.CanDrag && m_options.CanDrag(entry.Path) && ImGui::BeginDragDropSource())
 		{
@@ -520,7 +520,7 @@ namespace Editor
 
 	bool FileTileGrid::IsRenaming(const Filepath& file) const
 	{
-		return m_rename != nullptr && m_rename->File.GetRelativePath() == file.GetRelativePath();
+		return m_rename != nullptr && m_rename->File == file;
 	}
 
 	void FileTileGrid::QueueAction(const std::function<void(const Filepath&)>& run, const Filepath& file)
@@ -544,7 +544,7 @@ namespace Editor
 		}
 
 		const auto it = std::find_if(entries.begin(), entries.end(),
-			[this](const FolderEntry& entry) { return entry.Path.GetRelativePath() == m_selected.GetRelativePath(); });
+			[this](const FolderEntry& entry) { return entry.Path == m_selected; });
 		return it != entries.end() ? static_cast<int>(it - entries.begin()) : -1;
 	}
 
@@ -592,5 +592,42 @@ namespace Editor
 		ImGui::PopStyleVar(2);
 
 		return navigateTo;
+	}
+
+	void DrawFolderNavigationButtons(FolderNavigator& navigator, FileTileGrid& grid)
+	{
+		EditorUI::ScopedToolbarSpacing spacing;
+
+		ImGui::BeginDisabled(!navigator.CanGoBack());
+		if (EditorUI::IconButton("##back", EditorUI::EIcon::Back, "Back (mouse 4)"))
+		{
+			navigator.GoBack();
+		}
+		ImGui::EndDisabled();
+
+		ImGui::SameLine();
+		ImGui::BeginDisabled(!navigator.CanGoForward());
+		if (EditorUI::IconButton("##forward", EditorUI::EIcon::Forward, "Forward (mouse 5)"))
+		{
+			navigator.GoForward();
+		}
+		ImGui::EndDisabled();
+
+		ImGui::SameLine();
+		ImGui::BeginDisabled(!navigator.CanGoUp());
+		if (EditorUI::IconButton("##up", EditorUI::EIcon::Up, "Up a folder (Backspace)"))
+		{
+			GoUpAndSelect(navigator, grid);
+		}
+		ImGui::EndDisabled();
+	}
+
+	void GoUpAndSelect(FolderNavigator& navigator, FileTileGrid& grid)
+	{
+		const Filepath child = navigator.GoUp();
+		if (child.IsValid())
+		{
+			grid.SetSelected(child, true);
+		}
 	}
 }
