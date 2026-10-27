@@ -72,7 +72,7 @@ A singleton in-memory log (`DebugServices::Get()`), with a channel per log level
 | `LogChannel::Warning` | `RZE_LOG_WARNING` | orange (1, 0.60, 0.20) |
 | `LogChannel::Error` | `RZE_LOG_ERROR`, failed asserts | red (1, 0.42, 0.36) |
 
-Warning and Error use the same colours as the Editor's task colours (`Editor\Src\UI\TaskColours.h`), repeated in the Engine since it can't include Editor headers.
+Warning and Error use the same colours as the Editor's status colours (`EditorStyle::k_warningColour` and `k_errorColour`, `Editor\Src\UI\Framework\EditorStyle.h`), repeated in the Engine since it can't include Editor headers.
 
 `Trace(channel, text)` adds an entry in the channel's colour. Each `LogEntry` keeps its `Channel` as well as its colour and text, which is what the Log panel filters by. `LogChannel::Count` is the number of channels; `GetLogChannelIndex(channel)` gives a channel's underlying value (`LogChannelIndex`), for indexing per-channel arrays. Main-thread only: post from other threads with `MainThreadDispatcher` (the log sink already does this).
 

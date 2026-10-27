@@ -1,5 +1,7 @@
 #pragma once
 
+#include <UI/Framework/EditorStyle.h>
+
 #include <ImGui/imgui.h>
 
 namespace Rendering
@@ -13,20 +15,6 @@ namespace Editor
 {
 	namespace EditorUI
 	{
-		// Section headings, e.g. each component in the Object Inspector
-		constexpr ImVec4 k_headingColour = ImVec4(0.65f, 0.65f, 1.0f, 1.0f);
-
-		// What's selected or confirms, e.g. a selected tile's outline or a dialog's main button
-		constexpr ImVec4 k_accentColour = ImVec4(0.26f, 0.59f, 0.98f, 1.0f);
-		constexpr ImVec4 k_accentHoveredColour = ImVec4(0.36f, 0.66f, 1.0f, 1.0f);
-		constexpr ImVec4 k_accentActiveColour = ImVec4(0.18f, 0.48f, 0.86f, 1.0f);
-
-		// What's wrong with something typed, e.g. a file name that can't be used
-		constexpr ImVec4 k_errorColour = ImVec4(1.0f, 0.45f, 0.40f, 1.0f);
-
-		// How much the corners of windows, popups, fields and highlights are rounded, at 96 DPI: just enough to soften them
-		constexpr float k_cornerRounding = 3.0f;
-
 		// colour with its alpha replaced, packed for an ImDrawList
 		ImU32 WithAlpha(const ImVec4& colour, float alpha);
 
@@ -50,7 +38,7 @@ namespace Editor
 		// texture alive for as long as it's rendered, so draw textures only through this.
 		ImTextureID TextureID(const Rendering::TextureBuffer2DHandle& texture);
 
-		// A heading in k_headingColour with a separator under it
+		// A heading in EditorStyle::k_headingColour with a separator under it
 		void SectionHeading(const char* text);
 
 		// Shows text as a tooltip while the last item is hovered; does nothing for null or empty text
@@ -119,12 +107,9 @@ namespace Editor
 		bool BeginPropertyTable(const char* id, float labelColumnWidth);
 		void EndPropertyTable();
 
-		// A label's usual colour: softer than the values, so the eye goes to what can be changed
-		constexpr ImVec4 k_labelColour = ImVec4(0.70f, 0.71f, 0.75f, 1.0f);
-
 		// Starts a row, draws its label in labelColour (shown in full on hover when it doesn't fit, or tooltip if
 		// there is one) and moves to the value column, sized for a full-width widget
-		void PropertyRow(const char* label, const char* tooltip = nullptr, const ImVec4& labelColour = k_labelColour);
+		void PropertyRow(const char* label, const char* tooltip = nullptr, const ImVec4& labelColour = EditorStyle::k_labelColour);
 
 		// A row across both columns that starts a section of related rows: title, then a line to the row's end. An
 		// empty title draws just the line, e.g. to end a section before rows that aren't in one.

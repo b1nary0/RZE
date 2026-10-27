@@ -39,9 +39,6 @@ namespace
 	constexpr float k_readyWidth = 120.0f;
 	// Room for the widest it gets in practice, e.g. 1234.00 KB / 16.00 MB with a peak of 12345 KB
 	constexpr float k_renderMemoryWidth = 400.0f;
-	// The render command memory's use as the arena fills up (Rendering::MemArena::PressureValue)
-	constexpr ImU32 k_mediumPressureColour = IM_COL32(242, 204, 64, 255);
-	constexpr ImU32 k_highPressureColour = IM_COL32(255, 107, 92, 255);
 	// Room for the widest it gets in practice, e.g. 16.7 ms, 240 FPS, 12.5 ms idle and 12.5 ms rendering
 	constexpr float k_frameStatsWidth = 340.0f;
 	// The tasks box; also the width of the hover panel and the task list above it
@@ -127,7 +124,7 @@ namespace
 	{
 		const float progress = operation.GetProgress();
 		// The accent, like the box's own progress
-		ImGui::PushStyleColor(ImGuiCol_PlotHistogram, Editor::EditorUI::k_accentColour);
+		ImGui::PushStyleColor(ImGuiCol_PlotHistogram, Editor::EditorStyle::k_accentColour);
 		ImGui::ProgressBar(progress, ImVec2(-FLT_MIN, 0.0f), FormatPercent(progress).c_str());
 		ImGui::PopStyleColor();
 
@@ -247,10 +244,10 @@ namespace Editor
 		switch (Rendering::MemArena::GetPressureValue())
 		{
 		case Rendering::MemArena::PressureValue::MED:
-			usedColour = k_mediumPressureColour;
+			usedColour = ImGui::ColorConvertFloat4ToU32(EditorStyle::k_runningColour);
 			break;
 		case Rendering::MemArena::PressureValue::HIGH:
-			usedColour = k_highPressureColour;
+			usedColour = ImGui::ColorConvertFloat4ToU32(EditorStyle::k_errorColour);
 			break;
 		default:
 			break;
@@ -356,7 +353,7 @@ namespace Editor
 			if (progress > 0.0f)
 			{
 				const ImVec2 fillMax(boxMin.x + (boxMax.x - boxMin.x) * progress, boxMax.y);
-				drawList->AddRectFilled(boxMin, fillMax, EditorUI::WithAlpha(EditorUI::k_accentColour, k_progressFillAlpha), k_boxRounding);
+				drawList->AddRectFilled(boxMin, fillMax, EditorUI::WithAlpha(EditorStyle::k_accentColour, k_progressFillAlpha), k_boxRounding);
 			}
 		}
 		drawList->AddRect(boxMin, boxMax, ImGui::GetColorU32(ImGuiCol_Border), k_boxRounding);
@@ -452,14 +449,14 @@ namespace Editor
 			float left = lineMin.x;
 			float right = lineMin.x + width;
 
-			ImVec4 dotColour = TaskColours::k_running;
+			ImVec4 dotColour = EditorStyle::k_runningColour;
 			if (operation->IsCancellationRequested())
 			{
 				dotColour = ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled);
 			}
 			else if (operation->HasWarnings())
 			{
-				dotColour = TaskColours::k_warning;
+				dotColour = EditorStyle::k_warningColour;
 			}
 			drawList->AddCircleFilled(ImVec2(left + k_glanceDotRadius, textTop + ImGui::GetFontSize() * 0.5f), k_glanceDotRadius, ImGui::GetColorU32(dotColour));
 			left += k_glanceDotRadius * 2.0f + k_partGap;
@@ -586,7 +583,7 @@ namespace Editor
 			{
 				ImGui::Spacing();
 			}
-			ImGui::TextColored(EditorUI::k_headingColour, "%s", run.Task.c_str());
+			ImGui::TextColored(EditorStyle::k_headingColour, "%s", run.Task.c_str());
 
 			// Only its last few steps: the earlier ones are counted on a line where they'd be
 			const size_t stepCount = static_cast<size_t>(std::count_if(run.Entries.begin(), run.Entries.end(),

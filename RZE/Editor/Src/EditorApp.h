@@ -42,7 +42,6 @@ namespace Editor
 
 	private:
 		void LoadFonts();
-		void StyleSetup();
 
 		// "RZEStudio - <scene file>", with a * while it has unsaved changes. Drawn in the main menu bar, which is the title
 		// bar, and shown on the taskbar.

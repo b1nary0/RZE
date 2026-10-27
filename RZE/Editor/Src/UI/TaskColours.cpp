@@ -9,13 +9,13 @@ namespace Editor
 			switch (status)
 			{
 			case ETaskStatus::Running:
-				return k_running;
+				return EditorStyle::k_runningColour;
 			case ETaskStatus::Warning:
-				return k_warning;
+				return EditorStyle::k_warningColour;
 			case ETaskStatus::Failed:
-				return k_error;
+				return EditorStyle::k_errorColour;
 			default:
-				return k_ok;
+				return EditorStyle::k_okColour;
 			}
 		}
 
@@ -26,13 +26,13 @@ namespace Editor
 			case EHistoryKind::Started:
 				return ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled);
 			case EHistoryKind::Finished:
-				return k_ok;
+				return EditorStyle::k_okColour;
 			case EHistoryKind::Warning:
 			case EHistoryKind::FinishedWithWarnings:
 			case EHistoryKind::Cancelled:
-				return k_warning;
+				return EditorStyle::k_warningColour;
 			case EHistoryKind::Failed:
-				return k_error;
+				return EditorStyle::k_errorColour;
 			default:
 				return ImGui::GetStyleColorVec4(ImGuiCol_Text);
 			}

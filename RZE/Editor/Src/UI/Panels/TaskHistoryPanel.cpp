@@ -36,7 +36,7 @@ namespace
 		{
 			char text[32];
 			snprintf(text, sizeof(text), "Running, %d%%", static_cast<int>(running->GetProgress() * 100.0f));
-			return { text, Editor::TaskColours::k_running };
+			return { text, Editor::EditorStyle::k_runningColour };
 		}
 		if (run.HasEnded())
 		{

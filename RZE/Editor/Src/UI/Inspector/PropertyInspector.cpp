@@ -322,7 +322,7 @@ namespace Editor
 		}
 		else if (isOverridden)
 		{
-			EditorUI::PropertyRow(property.Name.c_str(), property.Tooltip.empty() ? "Overridden" : property.Tooltip.c_str(), EditorUI::k_accentColour);
+			EditorUI::PropertyRow(property.Name.c_str(), property.Tooltip.empty() ? "Overridden" : property.Tooltip.c_str(), EditorStyle::k_accentColour);
 		}
 		else
 		{
@@ -488,7 +488,7 @@ namespace Editor
 		if (overriddenCount > 0)
 		{
 			ImGui::TableSetColumnIndex(1);
-			ImGui::TextColored(EditorUI::k_accentColour, "%d overridden", static_cast<int>(overriddenCount));
+			ImGui::TextColored(EditorStyle::k_accentColour, "%d overridden", static_cast<int>(overriddenCount));
 			if (editableComponents != nullptr)
 			{
 				ImGui::SameLine();

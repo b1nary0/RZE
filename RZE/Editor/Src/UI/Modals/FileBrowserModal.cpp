@@ -309,7 +309,7 @@ namespace Editor
 			SaveState& save = *m_save;
 			if (!save.Error.empty())
 			{
-				ImGui::TextColored(EditorUI::k_errorColour, "%s", save.Error.c_str());
+				ImGui::TextColored(EditorStyle::k_errorColour, "%s", save.Error.c_str());
 			}
 
 			ImGui::AlignTextToFramePadding();

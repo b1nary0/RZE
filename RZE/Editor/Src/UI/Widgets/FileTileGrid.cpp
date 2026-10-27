@@ -275,7 +275,7 @@ namespace Editor
 		const ImVec2 max = ImGui::GetItemRectMax();
 		ImDrawList* const drawList = ImGui::GetWindowDrawList();
 
-		const ImU32 background = isSelected ? EditorUI::WithAlpha(EditorUI::k_accentColour, 0.18f) : ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, isHovered ? 0.07f : 0.03f));
+		const ImU32 background = isSelected ? EditorUI::WithAlpha(EditorStyle::k_accentColour, 0.18f) : ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, isHovered ? 0.07f : 0.03f));
 		drawList->AddRectFilled(min, max, background, k_tileRounding);
 
 		const ImVec2 imageMin(min.x + k_imageInset, min.y + k_imageInset);
@@ -302,14 +302,14 @@ namespace Editor
 		}
 		// While renaming, what's wrong with the name typed takes the place of the detail
 		const bool showsError = isRenaming && !m_rename->Error.empty();
-		ImGui::PushStyleColor(ImGuiCol_Text, showsError ? EditorUI::k_errorColour : ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+		ImGui::PushStyleColor(ImGuiCol_Text, showsError ? EditorStyle::k_errorColour : ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
 		ImGui::RenderTextEllipsis(drawList, ImVec2(textLeft, nameY + lineHeight + 1.0f), ImVec2(textRight, nameY + lineHeight * 2.0f + 1.0f), textRight,
 			showsError ? m_rename->Error.c_str() : detail.c_str(), nullptr, nullptr);
 		ImGui::PopStyleColor();
 
 		if (isSelected)
 		{
-			drawList->AddRect(min, max, EditorUI::WithAlpha(EditorUI::k_accentColour, 1.0f), k_tileRounding, 0, 2.0f);
+			drawList->AddRect(min, max, EditorUI::WithAlpha(EditorStyle::k_accentColour, 1.0f), k_tileRounding, 0, 2.0f);
 		}
 		else if (isHovered)
 		{
@@ -347,7 +347,7 @@ namespace Editor
 
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, padding);
 		ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
-		ImGui::PushStyleColor(ImGuiCol_Border, rename.Error.empty() ? EditorUI::k_accentColour : EditorUI::k_errorColour);
+		ImGui::PushStyleColor(ImGuiCol_Border, rename.Error.empty() ? EditorStyle::k_accentColour : EditorStyle::k_errorColour);
 		const bool isEntered = ImGui::InputText("##rename", rename.Name, sizeof(rename.Name), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
 		ImGui::PopStyleColor();
 		ImGui::PopStyleVar(2);

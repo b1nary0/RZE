@@ -64,7 +64,7 @@ namespace Editor
 
 		void SectionHeading(const char* text)
 		{
-			ImGui::TextColored(k_headingColour, "%s", text);
+			ImGui::TextColored(EditorStyle::k_headingColour, "%s", text);
 			ImGui::Separator();
 		}
 
@@ -91,7 +91,7 @@ namespace Editor
 				drawList->AddRectFilled(min, max, ImGui::GetColorU32(ImGuiCol_ButtonHovered), ImGui::GetStyle().FrameRounding);
 			}
 
-			const ImU32 colour = ImGui::GetColorU32(isHovered ? k_accentHoveredColour : ImGui::GetStyleColorVec4(ImGuiCol_Text));
+			const ImU32 colour = ImGui::GetColorU32(isHovered ? EditorStyle::k_accentHoveredColour : ImGui::GetStyleColorVec4(ImGuiCol_Text));
 			const ImVec2 centre((min.x + max.x) * 0.5f, (min.y + max.y) * 0.5f);
 			const float radius = size * 0.26f;
 			const float thickness = 1.5f;
@@ -180,9 +180,9 @@ namespace Editor
 
 		bool PrimaryButton(const char* label, const ImVec2& size)
 		{
-			ImGui::PushStyleColor(ImGuiCol_Button, k_accentColour);
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, k_accentHoveredColour);
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, k_accentActiveColour);
+			ImGui::PushStyleColor(ImGuiCol_Button, EditorStyle::k_accentColour);
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, EditorStyle::k_accentHoveredColour);
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, EditorStyle::k_accentActiveColour);
 			const bool isPressed = ImGui::Button(label, size);
 			ImGui::PopStyleColor(3);
 			return isPressed;
@@ -251,10 +251,10 @@ namespace Editor
 				// The whole row, which can be wider than the part that's hovered
 				const ImRect& rect = ImGui::GetCurrentContext()->LastItemData.DisplayRect;
 				const ImGuiCol colour = isHovered ? (ImGui::IsItemActive() ? ImGuiCol_HeaderActive : ImGuiCol_HeaderHovered) : ImGuiCol_Header;
-				drawList->AddRectFilled(rect.Min, rect.Max, ImGui::GetColorU32(colour), k_cornerRounding);
+				drawList->AddRectFilled(rect.Min, rect.Max, ImGui::GetColorU32(colour), EditorStyle::k_cornerRounding);
 				if (isSelected)
 				{
-					drawList->AddRect(rect.Min, rect.Max, WithAlpha(k_accentColour, k_selectedTreeNodeBorderAlpha), k_cornerRounding);
+					drawList->AddRect(rect.Min, rect.Max, WithAlpha(EditorStyle::k_accentColour, k_selectedTreeNodeBorderAlpha), EditorStyle::k_cornerRounding);
 				}
 			}
 

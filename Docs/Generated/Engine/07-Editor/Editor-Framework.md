@@ -314,9 +314,20 @@ Rules:
 - **Tree nodes:** `TreeNode(id, flags, format, ...)`, in place of `ImGui::TreeNodeEx`; see below.
 - **Images:** `TextureID(handle)`, the ID to pass `ImGui::Image`, `ImDrawList::AddImage` and the like. It keeps the texture alive for as long as the UI drawn this frame is rendered, so a texture released while it's on screen doesn't go from under the render thread ([Low-Level-Renderer-Module.md](../04-Rendering/Low-Level-Renderer-Module.md#imgui-integration-lives-at-this-layer-too)).
 
+### Style
+
+The editor's shared colours and metrics are in `EditorStyle` (`UI\Framework\EditorStyle.h`):
+- headings: `k_headingColour`
+- the accent and its hovered and active shades: `k_accentColour` and the two shade constants
+- labels: `k_labelColour`
+- the status colours: `k_okColour`, `k_runningColour`, `k_warningColour`, `k_errorColour`
+- the corner rounding: `k_cornerRounding`
+
+`EditorStyle::Apply()` sets ImGui's style from them once, at start-up. The status colours serve the tasks (`TaskColours` picks one per task status), the render command memory's pressure in the status bar, and error text such as a file name that can't be used. Panels use these constants rather than their own literals, so a colour changes in one place.
+
 ### Rounded corners
 
-Windows, popups, fields, buttons, checkboxes, images and highlights have slightly rounded corners: `EditorUI::k_cornerRounding` (3 px), which `EditorApp::StyleSetup` sets as ImGui's rounding for each of them. Scrollbars and tabs keep ImGui's own, rounder corners. Docked panels stay square where they meet.
+Windows, popups, fields, buttons, checkboxes, images and highlights have slightly rounded corners: `EditorStyle::k_cornerRounding` (3 px), which `EditorStyle::Apply` sets as ImGui's rounding for each of them. Scrollbars and tabs keep ImGui's own, rounder corners. Docked panels stay square where they meet.
 
 - **Tree nodes** use `EditorUI::TreeNode`, because ImGui always draws an unframed tree node's highlight square. It hides ImGui's highlight and draws a rounded one behind the node: in the table's background for a node across a table's columns, otherwise on a draw list channel of its own. A plain `ImGui::TreeNodeEx` still works, but its highlight looks out of place, and nothing catches it.
 - **Anything drawn by hand** that should match, such as the menu bar's highlights, uses `k_cornerRounding` itself.
@@ -353,5 +364,6 @@ Windows, popups, fields, buttons, checkboxes, images and highlights have slightl
 - `Editor\Src\UI\Modals\UnsavedChangesPrompt.h/.cpp`, `FileBrowserModal.h/.cpp`
 - `Editor\Src\UI\Widgets\FileTileGrid.h/.cpp` — the tile grid the file browser and the Content Browser share
 - `Editor\Src\UI\Settings\` — `SettingsPage`, `SettingsPageRegistry` and the pages
-- `Editor\Src\UI\MainMenuBar.h/.cpp`, `TitleBar.h/.cpp`, `Editor\Src\EditorApp.h/.cpp` (`StyleSetup`)
+- `Editor\Src\UI\MainMenuBar.h/.cpp`, `TitleBar.h/.cpp`, `Editor\Src\EditorApp.h/.cpp`
+- `Editor\Src\UI\Framework\EditorStyle.h/.cpp` — the shared colours and metrics, and ImGui's style (`Apply`)
 - `Engine\Src\EngineApp.h` (`PreUIUpdate`, `UpdateUI`, `Update`, `PreRender`), `Engine\Src\EngineCore\Engine.cpp` (frame order)

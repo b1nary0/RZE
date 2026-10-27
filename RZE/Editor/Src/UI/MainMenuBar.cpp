@@ -57,7 +57,7 @@ namespace
 		float Bottom{ 0.0f };
 		// Above and below the menus' labels
 		float Padding{ 0.0f };
-		// k_highlightInsetX, k_highlightInsetY, k_highlightBorder and EditorUI::k_cornerRounding at the window's DPI
+		// k_highlightInsetX, k_highlightInsetY, k_highlightBorder and EditorStyle::k_cornerRounding at the window's DPI
 		float InsetX{ 0.0f };
 		float InsetY{ 0.0f };
 		float Border{ 0.0f };
@@ -132,7 +132,7 @@ namespace Editor
 			menuStyle.InsetX = std::round(k_highlightInsetX * window.GetDpiScale());
 			menuStyle.InsetY = std::round(k_highlightInsetY * window.GetDpiScale());
 			menuStyle.Border = std::max(1.0f, std::round(k_highlightBorder * window.GetDpiScale()));
-			menuStyle.Rounding = EditorUI::k_cornerRounding * window.GetDpiScale();
+			menuStyle.Rounding = EditorStyle::k_cornerRounding * window.GetDpiScale();
 			menuStyle.DrawList->ChannelsSplit(2);
 			menuStyle.DrawList->ChannelsSetCurrent(k_contentChannel);
 

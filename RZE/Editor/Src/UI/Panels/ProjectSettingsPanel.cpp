@@ -108,7 +108,7 @@ namespace Editor
 		}
 		else if (m_iconWidth == 0)
 		{
-			ImGui::TextColored(EditorUI::k_errorColour, "Couldn't read this image. The game shows the RZE icon.");
+			ImGui::TextColored(EditorStyle::k_errorColour, "Couldn't read this image. The game shows the RZE icon.");
 		}
 		else
 		{
@@ -137,7 +137,7 @@ namespace Editor
 
 		if (!m_saveError.empty())
 		{
-			ImGui::TextColored(EditorUI::k_errorColour, "%s", m_saveError.c_str());
+			ImGui::TextColored(EditorStyle::k_errorColour, "%s", m_saveError.c_str());
 		}
 	}
 
