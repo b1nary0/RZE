@@ -57,6 +57,8 @@ namespace Rendering
 		virtual void Release() = 0;
 		virtual void SetActive() = 0;
 		virtual void SetInputLayout() = 0;
+		// False until created, and when it failed to compile
+		virtual bool IsCreated() const = 0;
 	};
 
 	// @TODO move into it's own file?
@@ -82,5 +84,7 @@ namespace Rendering
 		virtual void Release() = 0;
 
 		virtual void SetActive() = 0;
+		// False until created, and when it failed to compile
+		virtual bool IsCreated() const = 0;
 	};
 }

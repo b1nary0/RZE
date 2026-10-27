@@ -10,6 +10,7 @@
 #include "Rendering/Driver/ShaderTypes.h"
 
 #include <string_view>
+#include <vector>
 
 namespace
 {
@@ -53,32 +54,69 @@ namespace Rendering
 
 	void DX11VertexShader::Create(const Filepath& filePath, const ShaderInputLayout& inputLayout)
 	{
-		HRESULT hr;
-		ID3D10Blob* error = nullptr;;
 		ID3D10Blob* vsBlob = nullptr;
-		
-		hr = D3DCompileFromFile(Conversions::StringToWString(filePath.GetAbsolutePath()).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VSMain", "vs_5_0", 0, 0, &vsBlob, &error);
-		LogCompileMessages(hr, error, filePath);
-		
-		hr = m_graphicsDevice->GetHardwareDevice().CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, &m_hwShader);
-		
-		std::unique_ptr<D3D11_INPUT_ELEMENT_DESC> inputLayoutStructure = std::unique_ptr<D3D11_INPUT_ELEMENT_DESC>(new D3D11_INPUT_ELEMENT_DESC[inputLayout.GetDataCount()]);
+		ID3D10Blob* error = nullptr;
 
+		HRESULT hr = D3DCompileFromFile(
+			Conversions::StringToWString(filePath.GetAbsolutePath()).c_str(),
+			nullptr,
+			D3D_COMPILE_STANDARD_FILE_INCLUDE,
+			"VSMain", "vs_5_0",
+			0, 0,
+			&vsBlob, &error);
+		LogCompileMessages(hr, error, filePath);
+		if (error != nullptr)
+		{
+			error->Release();
+		}
+
+		if (FAILED(hr))
+		{
+			return;
+		}
+
+		hr = m_graphicsDevice->GetHardwareDevice().CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, &m_hwShader);
+		AssertExpr(hr == S_OK);
+
+		// Shaders that make their own vertices (from SV_VertexID) take no vertex buffer, so no layout: D3D won't make an
+		// empty one, and draws without one are what they want
+		if (inputLayout.GetDataCount() == 0)
+		{
+			vsBlob->Release();
+			return;
+		}
+
+		std::vector<D3D11_INPUT_ELEMENT_DESC> inputElements;
+		inputElements.reserve(inputLayout.GetDataCount());
 		for (size_t i = 0; i < inputLayout.GetDataCount(); ++i)
 		{
 			const ShaderInputLayout::ShaderInputLayoutData& layoutData = inputLayout[i];
-			inputLayoutStructure.get()[i] = {layoutData.Name.c_str(), 0, ConvertToDXGIFormat(layoutData.DataFormat), 0, static_cast<U32>(layoutData.Offset), ConvertToD3D11InputClassification(layoutData.DataClassification), 0};
+			inputElements.push_back({layoutData.Name.c_str(), 0, ConvertToDXGIFormat(layoutData.DataFormat), 0, static_cast<U32>(layoutData.Offset), ConvertToD3D11InputClassification(layoutData.DataClassification), 0});
 		}
 
-		UINT numLayoutElements = static_cast<UINT>(inputLayout.GetDataCount());
+		hr = m_graphicsDevice->GetHardwareDevice().CreateInputLayout(inputElements.data(), static_cast<UINT>(inputElements.size()), vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &m_hwInputLayout);
+		vsBlob->Release();
 
-		hr = m_graphicsDevice->GetHardwareDevice().CreateInputLayout(inputLayoutStructure.get(), numLayoutElements, vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &m_hwInputLayout);
+		// The shader's inputs don't match the layout the engine gives it, e.g. after editing them in the .hlsl
+		if (FAILED(hr))
+		{
+			RZE_LOG_ERROR("Shader [" << filePath.GetRelativePath() << "] doesn't take the vertex layout it's given");
+			Release();
+		}
 	}
 
 	void DX11VertexShader::Release()
 	{
-		AssertNotNull(m_hwShader);
-		m_hwShader->Release();
+		if (m_hwInputLayout != nullptr)
+		{
+			m_hwInputLayout->Release();
+			m_hwInputLayout = nullptr;
+		}
+		if (m_hwShader != nullptr)
+		{
+			m_hwShader->Release();
+			m_hwShader = nullptr;
+		}
 	}
 
 	void DX11VertexShader::SetActive()
@@ -113,8 +151,7 @@ namespace Rendering
 		ID3D10Blob* psBlob = nullptr;
 		ID3D10Blob* error = nullptr;
 
-		HRESULT hr;
-		hr = D3DCompileFromFile(
+		HRESULT hr = D3DCompileFromFile(
 			Conversions::StringToWString(filePath.GetAbsolutePath()).c_str(),
 			nullptr,
 			D3D_COMPILE_STANDARD_FILE_INCLUDE,
@@ -122,14 +159,28 @@ namespace Rendering
 			0, 0,
 			&psBlob, &error);
 		LogCompileMessages(hr, error, filePath);
-		
+		if (error != nullptr)
+		{
+			error->Release();
+		}
+
+		if (FAILED(hr))
+		{
+			return;
+		}
+
 		hr = m_graphicsDevice->GetHardwareDevice().CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), nullptr, &m_hwShader);
+		AssertExpr(hr == S_OK);
+		psBlob->Release();
 	}
 
 	void DX11PixelShader::Release()
 	{
-		AssertNotNull(m_hwShader);
-		m_hwShader->Release();
+		if (m_hwShader != nullptr)
+		{
+			m_hwShader->Release();
+			m_hwShader = nullptr;
+		}
 	}
 
 	void DX11PixelShader::SetActive()

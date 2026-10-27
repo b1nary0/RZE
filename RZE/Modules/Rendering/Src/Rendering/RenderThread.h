@@ -160,6 +160,11 @@ namespace Rendering
 		// Whether a profiler (e.g. PIX) is listening for D3DPERF markers; refreshed for each batch of commands
 		bool m_emitProfilerMarkers = false;
 
+		// Whether the bound vertex and compute shaders were created. A shader that failed to compile is empty
+		// (DX11ShaderTypes), and draws and dispatches without one are skipped: drivers can hang on them.
+		bool m_vertexShaderBound = false;
+		bool m_computeShaderBound = false;
+
 		// The frame so far, on the render thread, since the last present
 		double m_frameBusyTime = 0.0;
 		double m_framePresentTime = 0.0;

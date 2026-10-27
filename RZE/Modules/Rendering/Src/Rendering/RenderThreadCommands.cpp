@@ -361,6 +361,7 @@ namespace Rendering
 	void RenderThread::Execute(RenderCommand_SetVertexShader& command)
 	{
 		command.shaderHandle.m_shader->SetActive();
+		m_vertexShaderBound = command.shaderHandle.m_shader->IsCreated();
 	}
 
 	void RenderThread::Execute(RenderCommand_SetPixelShader& command)
@@ -377,6 +378,7 @@ namespace Rendering
 	void RenderThread::Execute(RenderCommand_SetComputeShader& command)
 	{
 		command.shaderHandle.m_shader->SetActive();
+		m_computeShaderBound = command.shaderHandle.m_shader->IsCreated();
 	}
 
 	void RenderThread::Execute(RenderCommand_SetConstantBufferVS& command)
@@ -448,24 +450,44 @@ namespace Rendering
 
 	void RenderThread::Execute(RenderCommand_Draw& command)
 	{
+		if (!m_vertexShaderBound)
+		{
+			return;
+		}
+
 		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 		deviceContext.Draw(command.count, 0);
 	}
 
 	void RenderThread::Execute(RenderCommand_DrawIndexed& command)
 	{
+		if (!m_vertexShaderBound)
+		{
+			return;
+		}
+
 		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 		deviceContext.DrawIndexed(command.indexBuffer.m_buffer->GetIndexCount(), 0, 0);
 	}
 
 	void RenderThread::Execute(RenderCommand_DrawFullScreenQuad&)
 	{
+		if (!m_vertexShaderBound)
+		{
+			return;
+		}
+
 		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 		deviceContext.Draw(4, 0);
 	}
 
 	void RenderThread::Execute(RenderCommand_Dispatch& command)
 	{
+		if (!m_computeShaderBound)
+		{
+			return;
+		}
+
 		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 		deviceContext.Dispatch(command.groupsX, command.groupsY, command.groupsZ);
 	}
