@@ -71,4 +71,16 @@ namespace Rendering
 
 		virtual void SetActive() = 0;
 	};
+
+	class IComputeShader
+	{
+	public:
+		IComputeShader() = default;
+		virtual ~IComputeShader() = default;
+
+		virtual void Create(const Filepath& filePath) = 0;
+		virtual void Release() = 0;
+
+		virtual void SetActive() = 0;
+	};
 }

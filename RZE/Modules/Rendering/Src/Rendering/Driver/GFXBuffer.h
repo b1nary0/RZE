@@ -81,6 +81,7 @@ namespace Rendering
 
 		virtual void SetActiveVS(U32 bufferSlot) = 0;
 		virtual void SetActivePS(U32 bufferSlot) = 0;
+		virtual void SetActiveCS(U32 bufferSlot) = 0;
 
 		virtual U32 GetAlignment() { return 0; }
 	};
@@ -105,6 +106,8 @@ namespace Rendering
 		virtual void Release() = 0;
 
 		virtual void SetActive(U32 textureSlot) = 0;
+		// As SetActive, for compute shaders
+		virtual void SetActiveCS(U32 textureSlot) = 0;
 
 		virtual void* GetTextureData() = 0;
 

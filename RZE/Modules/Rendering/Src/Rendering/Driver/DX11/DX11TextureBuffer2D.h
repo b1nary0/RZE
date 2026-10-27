@@ -25,6 +25,7 @@ namespace Rendering
 		void Allocate(const void* data, const GFXTextureBufferParams& params) override;
 		void Release() override;
 		void SetActive(U32 textureSlot) override;
+		void SetActiveCS(U32 textureSlot) override;
 		void* GetTextureData() override;
 		bool IsValid() override;
 

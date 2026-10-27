@@ -119,6 +119,7 @@ namespace Rendering
 		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 		deviceContext.RSSetState(m_device->mRasterState);
 		deviceContext.PSSetSamplers(1, 1, &m_device->mShadowSamplerState);
+		deviceContext.CSSetSamplers(1, 1, &m_device->mShadowSamplerState);
 	}
 
 	void RenderThread::Execute(RenderCommand_End&)
@@ -183,6 +184,12 @@ namespace Rendering
 		command.bufferPtr->Create(command.filepath);
 	}
 
+	void RenderThread::Execute(RenderCommand_CreateComputeShader& command)
+	{
+		command.bufferPtr->SetDevice(m_device.get());
+		command.bufferPtr->Create(command.filepath);
+	}
+
 	void RenderThread::Execute(RenderCommand_UploadDataToBuffer& command)
 	{
 		DX11ConstantBuffer* cbuf = static_cast<DX11ConstantBuffer*>(command.bufferHandle.m_buffer.get());
@@ -203,6 +210,11 @@ namespace Rendering
 	}
 
 	void RenderThread::Execute(RenderCommand_ReleasePixelShader& command)
+	{
+		command.shaderHandle.m_shader.reset();
+	}
+
+	void RenderThread::Execute(RenderCommand_ReleaseComputeShader& command)
 	{
 		command.shaderHandle.m_shader.reset();
 	}
@@ -330,6 +342,11 @@ namespace Rendering
 		command.shaderHandle.m_shader->SetActive();
 	}
 
+	void RenderThread::Execute(RenderCommand_SetComputeShader& command)
+	{
+		command.shaderHandle.m_shader->SetActive();
+	}
+
 	void RenderThread::Execute(RenderCommand_SetConstantBufferVS& command)
 	{
 		command.bufferHandle.m_buffer->SetActiveVS(command.bufferSlot);
@@ -338,6 +355,11 @@ namespace Rendering
 	void RenderThread::Execute(RenderCommand_SetConstantBufferPS& command)
 	{
 		command.bufferHandle.m_buffer->SetActivePS(command.bufferSlot);
+	}
+
+	void RenderThread::Execute(RenderCommand_SetConstantBufferCS& command)
+	{
+		command.bufferHandle.m_buffer->SetActiveCS(command.bufferSlot);
 	}
 
 	void RenderThread::Execute(RenderCommand_SetVertexBuffer& command)
@@ -363,6 +385,19 @@ namespace Rendering
 		deviceContext.PSSetShaderResources(command.textureSlot, 1, &nullSRV);
 	}
 
+	void RenderThread::Execute(RenderCommand_SetTextureResourceCS& command)
+	{
+		command.bufferHandle.m_buffer->SetActiveCS(command.bufferSlot);
+	}
+
+	void RenderThread::Execute(RenderCommand_UnsetTextureResourceCS& command)
+	{
+		ID3D11ShaderResourceView* nullSRV = nullptr;
+		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+
+		deviceContext.CSSetShaderResources(command.textureSlot, 1, &nullSRV);
+	}
+
 	void RenderThread::Execute(RenderCommand_Draw& command)
 	{
 		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
@@ -379,6 +414,12 @@ namespace Rendering
 	{
 		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 		deviceContext.Draw(4, 0);
+	}
+
+	void RenderThread::Execute(RenderCommand_Dispatch& command)
+	{
+		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+		deviceContext.Dispatch(command.groupsX, command.groupsY, command.groupsZ);
 	}
 
 	void RenderThread::Execute(RenderCommand_ReadTexel& command)

@@ -43,6 +43,12 @@ namespace Rendering
 		deviceContext.PSSetConstantBuffers(bufferSlot, 1, &m_buffer);
 	}
 
+	void DX11ConstantBuffer::SetActiveCS(U32 bufferSlot)
+	{
+		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+		deviceContext.CSSetConstantBuffers(bufferSlot, 1, &m_buffer);
+	}
+
 	U32 DX11ConstantBuffer::GetAlignment()
 	{
 		return m_alignment;

@@ -81,10 +81,12 @@ namespace Rendering
 		void Execute(RenderCommand_CreateTextureBuffer2D& command);
 		void Execute(RenderCommand_CreateVertexShader& command);
 		void Execute(RenderCommand_CreatePixelShader& command);
+		void Execute(RenderCommand_CreateComputeShader& command);
 		void Execute(RenderCommand_UploadDataToBuffer& command);
 		void Execute(RenderCommand_UpdateVertexBuffer& command);
 		void Execute(RenderCommand_ReleaseVertexShader& command);
 		void Execute(RenderCommand_ReleasePixelShader& command);
+		void Execute(RenderCommand_ReleaseComputeShader& command);
 
 		// Targets
 		void Execute(RenderCommand_ClearDepthStencilBuffer& command);
@@ -104,17 +106,24 @@ namespace Rendering
 		void Execute(RenderCommand_SetDepthState& command);
 		void Execute(RenderCommand_SetVertexShader& command);
 		void Execute(RenderCommand_SetPixelShader& command);
+		void Execute(RenderCommand_SetComputeShader& command);
 		void Execute(RenderCommand_SetConstantBufferVS& command);
 		void Execute(RenderCommand_SetConstantBufferPS& command);
+		void Execute(RenderCommand_SetConstantBufferCS& command);
 		void Execute(RenderCommand_SetVertexBuffer& command);
 		void Execute(RenderCommand_SetIndexBuffer& command);
 		void Execute(RenderCommand_SetTextureResource& command);
 		void Execute(RenderCommand_UnsetTextureResource& command);
+		void Execute(RenderCommand_SetTextureResourceCS& command);
+		void Execute(RenderCommand_UnsetTextureResourceCS& command);
 
 		// Draws
 		void Execute(RenderCommand_Draw& command);
 		void Execute(RenderCommand_DrawIndexed& command);
 		void Execute(RenderCommand_DrawFullScreenQuad& command);
+
+		// Compute
+		void Execute(RenderCommand_Dispatch& command);
 
 		// Reading back
 		void Execute(RenderCommand_ReadTexel& command);

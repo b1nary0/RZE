@@ -143,4 +143,62 @@ namespace Rendering
 		AssertNotNull(graphicsDevice);
 		m_graphicsDevice = graphicsDevice;
 	}
+
+	DX11ComputeShader::DX11ComputeShader()
+	{
+	}
+
+	DX11ComputeShader::~DX11ComputeShader()
+	{
+		Release();
+	}
+
+	void DX11ComputeShader::Create(const Filepath& filePath)
+	{
+		ID3D10Blob* csBlob = nullptr;
+		ID3D10Blob* error = nullptr;
+
+		HRESULT hr = D3DCompileFromFile(
+			Conversions::StringToWString(filePath.GetAbsolutePath()).c_str(),
+			nullptr,
+			D3D_COMPILE_STANDARD_FILE_INCLUDE,
+			"CSMain", "cs_5_0",
+			0, 0,
+			&csBlob, &error);
+		LogCompileMessages(hr, error, filePath);
+		if (error != nullptr)
+		{
+			error->Release();
+		}
+
+		if (FAILED(hr))
+		{
+			return;
+		}
+
+		hr = m_graphicsDevice->GetHardwareDevice().CreateComputeShader(csBlob->GetBufferPointer(), csBlob->GetBufferSize(), nullptr, &m_hwShader);
+		AssertExpr(hr == S_OK);
+		csBlob->Release();
+	}
+
+	void DX11ComputeShader::Release()
+	{
+		if (m_hwShader != nullptr)
+		{
+			m_hwShader->Release();
+			m_hwShader = nullptr;
+		}
+	}
+
+	void DX11ComputeShader::SetActive()
+	{
+		ID3D11DeviceContext& deviceContext = m_graphicsDevice->GetDeviceContext();
+		deviceContext.CSSetShader(m_hwShader, nullptr, 0);
+	}
+
+	void DX11ComputeShader::SetDevice(DX11Device* graphicsDevice)
+	{
+		AssertNotNull(graphicsDevice);
+		m_graphicsDevice = graphicsDevice;
+	}
 }

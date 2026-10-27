@@ -24,6 +24,7 @@ namespace Rendering
 
 		void SetActiveVS(U32 bufferSlot) override;
 		void SetActivePS(U32 bufferSlot) override;
+		void SetActiveCS(U32 bufferSlot) override;
 
 		U32 GetAlignment() override;
 

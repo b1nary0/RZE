@@ -82,6 +82,8 @@ namespace Rendering
 		
 		static VertexShaderHandle CreateVertexShader(const Filepath& filepath, const ShaderInputLayout& inputLayout);
 		static PixelShaderHandle CreatePixelShader(const Filepath& filepath);
+		// Compiles CSMain as cs_5_0
+		static ComputeShaderHandle CreateComputeShader(const Filepath& filepath);
 
 		template <typename TType>
 		static void UploadDataToBuffer(const ConstantBufferHandle& buffer, const void* data);
@@ -90,6 +92,7 @@ namespace Rendering
 
 		static void ReleaseVertexShader(VertexShaderHandle& shaderHandle);
 		static void ReleasePixelShader(PixelShaderHandle& shaderHandle);
+		static void ReleaseComputeShader(ComputeShaderHandle& shaderHandle);
 
 		// Every slice of a texture array
 		static void ClearDepthStencilBuffer(const TextureBuffer2DHandle& buffer);
@@ -144,6 +147,17 @@ namespace Rendering
 		static void Draw(const VertexBufferHandle& vertexBuffer, size_t count);
 		static void DrawIndexed(const IndexBufferHandle& indexBuffer);
 		static void DrawFullScreenQuad();
+
+	public:
+		// Compute shaders have their own constant buffer, texture and sampler slots, apart from the pixel shader's.
+		// Samplers match the pixel shader's: s0 comes with each texture, s1 is the shadow comparison sampler.
+		// A texture can't be read here while it's bound as a render target, so unbind it from one before the other.
+		static void SetComputeShader(const ComputeShaderHandle& computeShader);
+		static void SetConstantBufferCS(const ConstantBufferHandle& buffer, U32 bufferSlot);
+		static void SetTextureResourceCS(const TextureBuffer2DHandle& texture, U32 textureSlot);
+		static void UnsetTextureResourceCS(U32 textureSlot);
+		// Runs the bound compute shader over groupsX x groupsY x groupsZ thread groups
+		static void Dispatch(U32 groupsX, U32 groupsY = 1, U32 groupsZ = 1);
 
 	private:
 		static void InternalUploadDataToBuffer(const ConstantBufferHandle& buffer, const void* data, size_t dataSize);

@@ -4,6 +4,7 @@
 
 struct ID3D11VertexShader;
 struct ID3D11PixelShader;
+struct ID3D11ComputeShader;
 struct ID3D11InputLayout;
 
 namespace Rendering
@@ -49,5 +50,25 @@ namespace Rendering
 	private:
 		ID3D11PixelShader* m_hwShader = nullptr;
 		DX11Device* m_graphicsDevice;
+	};
+
+	class DX11ComputeShader : public IComputeShader
+	{
+	public:
+		DX11ComputeShader();
+		~DX11ComputeShader() override;
+
+	public:
+		// Compiles CSMain as cs_5_0. A compile error is logged and leaves the shader empty.
+		void Create(const Filepath& filePath) override;
+		void Release() override;
+		void SetActive() override;
+
+	public:
+		void SetDevice(DX11Device* graphicsDevice);
+
+	private:
+		ID3D11ComputeShader* m_hwShader = nullptr;
+		DX11Device* m_graphicsDevice = nullptr;
 	};
 }

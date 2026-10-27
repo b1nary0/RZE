@@ -43,6 +43,18 @@ const Rendering::PixelShaderHandle& PixelShader::GetPlatformObject() const
 	return m_shader;
 }
 
+bool ComputeShader::Load(const Filepath& filePath)
+{
+	m_shader = Rendering::Renderer::CreateComputeShader(filePath);
+
+	return m_shader.IsValid();
+}
+
+void ComputeShader::Release()
+{
+	Rendering::Renderer::ReleaseComputeShader(m_shader);
+}
+
 ShaderTechnique::ShaderTechnique(const std::string& name)
 	: m_name(name)
 {
@@ -76,4 +88,11 @@ TypedResourceHandle<PixelShader> LoadPixelShader(const std::string& name)
 	ResourceHandle handle = RZE().GetResourceHandler().LoadResource<PixelShader>(AssetPaths::GetShader(name), name);
 	AssertExpr(handle.IsValid());
 	return TypedResourceHandle<PixelShader>(std::move(handle));
+}
+
+TypedResourceHandle<ComputeShader> LoadComputeShader(const std::string& name)
+{
+	ResourceHandle handle = RZE().GetResourceHandler().LoadResource<ComputeShader>(AssetPaths::GetShader(name), name);
+	AssertExpr(handle.IsValid());
+	return TypedResourceHandle<ComputeShader>(std::move(handle));
 }

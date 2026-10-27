@@ -151,10 +151,12 @@ namespace Rendering
 			case RenderCommandType::CreateTextureBuffer2D: Execute(static_cast<RenderCommand_CreateTextureBuffer2D&>(*command)); break;
 			case RenderCommandType::CreateVertexShader: Execute(static_cast<RenderCommand_CreateVertexShader&>(*command)); break;
 			case RenderCommandType::CreatePixelShader: Execute(static_cast<RenderCommand_CreatePixelShader&>(*command)); break;
+			case RenderCommandType::CreateComputeShader: Execute(static_cast<RenderCommand_CreateComputeShader&>(*command)); break;
 			case RenderCommandType::UploadDataToBuffer: Execute(static_cast<RenderCommand_UploadDataToBuffer&>(*command)); break;
 			case RenderCommandType::UpdateVertexBuffer: Execute(static_cast<RenderCommand_UpdateVertexBuffer&>(*command)); break;
 			case RenderCommandType::ReleaseVertexShader: Execute(static_cast<RenderCommand_ReleaseVertexShader&>(*command)); break;
 			case RenderCommandType::ReleasePixelShader: Execute(static_cast<RenderCommand_ReleasePixelShader&>(*command)); break;
+			case RenderCommandType::ReleaseComputeShader: Execute(static_cast<RenderCommand_ReleaseComputeShader&>(*command)); break;
 			case RenderCommandType::ClearDepthStencilBuffer: Execute(static_cast<RenderCommand_ClearDepthStencilBuffer&>(*command)); break;
 			case RenderCommandType::ClearRenderTargets: Execute(static_cast<RenderCommand_ClearRenderTargets&>(*command)); break;
 			case RenderCommandType::SetRenderTargetBackBuffer: Execute(static_cast<RenderCommand_SetRenderTargetBackBuffer&>(*command)); break;
@@ -170,15 +172,20 @@ namespace Rendering
 			case RenderCommandType::SetDepthState: Execute(static_cast<RenderCommand_SetDepthState&>(*command)); break;
 			case RenderCommandType::SetVertexShader: Execute(static_cast<RenderCommand_SetVertexShader&>(*command)); break;
 			case RenderCommandType::SetPixelShader: Execute(static_cast<RenderCommand_SetPixelShader&>(*command)); break;
+			case RenderCommandType::SetComputeShader: Execute(static_cast<RenderCommand_SetComputeShader&>(*command)); break;
 			case RenderCommandType::SetConstantBufferVS: Execute(static_cast<RenderCommand_SetConstantBufferVS&>(*command)); break;
 			case RenderCommandType::SetConstantBufferPS: Execute(static_cast<RenderCommand_SetConstantBufferPS&>(*command)); break;
+			case RenderCommandType::SetConstantBufferCS: Execute(static_cast<RenderCommand_SetConstantBufferCS&>(*command)); break;
 			case RenderCommandType::SetVertexBuffer: Execute(static_cast<RenderCommand_SetVertexBuffer&>(*command)); break;
 			case RenderCommandType::SetIndexBuffer: Execute(static_cast<RenderCommand_SetIndexBuffer&>(*command)); break;
 			case RenderCommandType::SetTextureResource: Execute(static_cast<RenderCommand_SetTextureResource&>(*command)); break;
 			case RenderCommandType::UnsetTextureResource: Execute(static_cast<RenderCommand_UnsetTextureResource&>(*command)); break;
+			case RenderCommandType::SetTextureResourceCS: Execute(static_cast<RenderCommand_SetTextureResourceCS&>(*command)); break;
+			case RenderCommandType::UnsetTextureResourceCS: Execute(static_cast<RenderCommand_UnsetTextureResourceCS&>(*command)); break;
 			case RenderCommandType::Draw: Execute(static_cast<RenderCommand_Draw&>(*command)); break;
 			case RenderCommandType::DrawIndexed: Execute(static_cast<RenderCommand_DrawIndexed&>(*command)); break;
 			case RenderCommandType::DrawFullScreenQuad: Execute(static_cast<RenderCommand_DrawFullScreenQuad&>(*command)); break;
+			case RenderCommandType::Dispatch: Execute(static_cast<RenderCommand_Dispatch&>(*command)); break;
 			case RenderCommandType::ReadTexel: Execute(static_cast<RenderCommand_ReadTexel&>(*command)); break;
 			case RenderCommandType::ReadTexture: Execute(static_cast<RenderCommand_ReadTexture&>(*command)); break;
 

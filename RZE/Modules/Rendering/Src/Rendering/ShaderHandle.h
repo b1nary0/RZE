@@ -42,4 +42,22 @@ namespace Rendering
 
 		std::shared_ptr<IPixelShader> m_shader;
 	};
+
+	class ComputeShaderHandle
+	{
+		friend class Renderer;
+		friend class RenderThread;
+
+	public:
+		ComputeShaderHandle() = default;
+		virtual ~ComputeShaderHandle() = default;
+
+		bool IsValid() { return m_shader != nullptr; }
+
+	private:
+		ComputeShaderHandle(const std::shared_ptr<IComputeShader>& shader)
+			: m_shader(shader) {}
+
+		std::shared_ptr<IComputeShader> m_shader;
+	};
 }

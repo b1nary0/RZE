@@ -25,6 +25,7 @@ namespace Rendering
 	class DX11TextureBuffer2D;
 	class DX11VertexShader;
 	class DX11PixelShader;
+	class DX11ComputeShader;
 	class DX11Device;
 	class UIFrameData;
 
@@ -45,10 +46,12 @@ namespace Rendering
 		CreateTextureBuffer2D,
 		CreateVertexShader,
 		CreatePixelShader,
+		CreateComputeShader,
 		UploadDataToBuffer,
 		UpdateVertexBuffer,
 		ReleaseVertexShader,
 		ReleasePixelShader,
+		ReleaseComputeShader,
 		ClearDepthStencilBuffer,
 		ClearRenderTargets,
 		SetRenderTargetBackBuffer,
@@ -64,15 +67,20 @@ namespace Rendering
 		SetDepthState,
 		SetVertexShader,
 		SetPixelShader,
+		SetComputeShader,
 		SetConstantBufferVS,
 		SetConstantBufferPS,
+		SetConstantBufferCS,
 		SetVertexBuffer,
 		SetIndexBuffer,
 		SetTextureResource,
 		UnsetTextureResource,
+		SetTextureResourceCS,
+		UnsetTextureResourceCS,
 		Draw,
 		DrawIndexed,
 		DrawFullScreenQuad,
+		Dispatch,
 		ReadTexel,
 		ReadTexture
 	};
@@ -198,6 +206,14 @@ namespace Rendering
 		std::shared_ptr<DX11PixelShader> bufferPtr = nullptr;
 	};
 
+	struct RenderCommand_CreateComputeShader : RenderCommand
+	{
+		RenderCommand_CreateComputeShader() { type = RenderCommandType::CreateComputeShader; }
+
+		Filepath filepath;
+		std::shared_ptr<DX11ComputeShader> bufferPtr = nullptr;
+	};
+
 	struct RenderCommand_UploadDataToBuffer : RenderCommand
 	{
 		RenderCommand_UploadDataToBuffer() { type = RenderCommandType::UploadDataToBuffer; }
@@ -227,6 +243,13 @@ namespace Rendering
 		RenderCommand_ReleasePixelShader() { type = RenderCommandType::ReleasePixelShader; }
 
 		PixelShaderHandle shaderHandle;
+	};
+
+	struct RenderCommand_ReleaseComputeShader : RenderCommand
+	{
+		RenderCommand_ReleaseComputeShader() { type = RenderCommandType::ReleaseComputeShader; }
+
+		ComputeShaderHandle shaderHandle;
 	};
 
 	struct RenderCommand_ClearDepthStencilBuffer : RenderCommand
@@ -356,6 +379,13 @@ namespace Rendering
 		PixelShaderHandle shaderHandle;
 	};
 
+	struct RenderCommand_SetComputeShader : RenderCommand
+	{
+		RenderCommand_SetComputeShader() { type = RenderCommandType::SetComputeShader; }
+
+		ComputeShaderHandle shaderHandle;
+	};
+
 	struct RenderCommand_SetConstantBufferVS : RenderCommand
 	{
 		RenderCommand_SetConstantBufferVS() { type = RenderCommandType::SetConstantBufferVS; }
@@ -367,6 +397,14 @@ namespace Rendering
 	struct RenderCommand_SetConstantBufferPS : RenderCommand
 	{
 		RenderCommand_SetConstantBufferPS() { type = RenderCommandType::SetConstantBufferPS; }
+
+		ConstantBufferHandle bufferHandle;
+		U32 bufferSlot;
+	};
+
+	struct RenderCommand_SetConstantBufferCS : RenderCommand
+	{
+		RenderCommand_SetConstantBufferCS() { type = RenderCommandType::SetConstantBufferCS; }
 
 		ConstantBufferHandle bufferHandle;
 		U32 bufferSlot;
@@ -402,6 +440,21 @@ namespace Rendering
 		U32 textureSlot;
 	};
 
+	struct RenderCommand_SetTextureResourceCS : RenderCommand
+	{
+		RenderCommand_SetTextureResourceCS() { type = RenderCommandType::SetTextureResourceCS; }
+
+		TextureBuffer2DHandle bufferHandle;
+		U32 bufferSlot;
+	};
+
+	struct RenderCommand_UnsetTextureResourceCS : RenderCommand
+	{
+		RenderCommand_UnsetTextureResourceCS() { type = RenderCommandType::UnsetTextureResourceCS; }
+
+		U32 textureSlot;
+	};
+
 	struct RenderCommand_Draw : RenderCommand
 	{
 		RenderCommand_Draw() { type = RenderCommandType::Draw; }
@@ -420,5 +473,15 @@ namespace Rendering
 	struct RenderCommand_DrawFullScreenQuad : RenderCommand
 	{
 		RenderCommand_DrawFullScreenQuad() { type = RenderCommandType::DrawFullScreenQuad; }
+	};
+
+	struct RenderCommand_Dispatch : RenderCommand
+	{
+		RenderCommand_Dispatch() { type = RenderCommandType::Dispatch; }
+
+		// Thread groups along each axis
+		U32 groupsX = 1;
+		U32 groupsY = 1;
+		U32 groupsZ = 1;
 	};
 }

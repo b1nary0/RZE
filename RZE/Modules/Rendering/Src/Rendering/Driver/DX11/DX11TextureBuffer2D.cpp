@@ -275,6 +275,13 @@ namespace Rendering
 		deviceContext.PSSetSamplers(0, 1, &m_samplerState);
 	}
 
+	void DX11TextureBuffer2D::SetActiveCS(U32 textureSlot)
+	{
+		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+		deviceContext.CSSetShaderResources(textureSlot, 1, &m_SRV);
+		deviceContext.CSSetSamplers(0, 1, &m_samplerState);
+	}
+
 	void* DX11TextureBuffer2D::GetTextureData()
 	{
 		return &GetResourceView();

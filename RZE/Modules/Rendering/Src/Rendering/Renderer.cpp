@@ -301,6 +301,17 @@ namespace Rendering
 		return PixelShaderHandle(command->bufferPtr);
 	}
 
+	ComputeShaderHandle Renderer::CreateComputeShader(const Filepath& filePath)
+	{
+		RenderCommand_CreateComputeShader* command = MemArena::AllocType<RenderCommand_CreateComputeShader>();
+		command->bufferPtr = std::make_shared<DX11ComputeShader>();
+		command->filepath = filePath;
+
+		m_renderThread.PushCommand(command);
+
+		return ComputeShaderHandle(command->bufferPtr);
+	}
+
 	void Renderer::InternalUploadDataToBuffer(const ConstantBufferHandle& buffer, const void* data, size_t dataSize)
 	{
 		RenderCommand_UploadDataToBuffer* command = MemArena::AllocType<RenderCommand_UploadDataToBuffer>();
@@ -325,6 +336,14 @@ namespace Rendering
 	void Renderer::ReleasePixelShader(PixelShaderHandle& shaderHandle)
 	{
 		RenderCommand_ReleasePixelShader* command = MemArena::AllocType<RenderCommand_ReleasePixelShader>();
+		command->shaderHandle = shaderHandle;
+
+		m_renderThread.PushCommand(command);
+	}
+
+	void Renderer::ReleaseComputeShader(ComputeShaderHandle& shaderHandle)
+	{
+		RenderCommand_ReleaseComputeShader* command = MemArena::AllocType<RenderCommand_ReleaseComputeShader>();
 		command->shaderHandle = shaderHandle;
 
 		m_renderThread.PushCommand(command);
@@ -568,5 +587,49 @@ namespace Rendering
 
 		m_renderThread.PushCommand(command);
 		++m_drawCallCount;
+	}
+
+	void Renderer::SetComputeShader(const ComputeShaderHandle& computeShader)
+	{
+		RenderCommand_SetComputeShader* command = MemArena::AllocType<RenderCommand_SetComputeShader>();
+		command->shaderHandle = computeShader;
+
+		m_renderThread.PushCommand(command);
+	}
+
+	void Renderer::SetConstantBufferCS(const ConstantBufferHandle& buffer, U32 bufferSlot)
+	{
+		RenderCommand_SetConstantBufferCS* command = MemArena::AllocType<RenderCommand_SetConstantBufferCS>();
+		command->bufferHandle = buffer;
+		command->bufferSlot = bufferSlot;
+
+		m_renderThread.PushCommand(command);
+	}
+
+	void Renderer::SetTextureResourceCS(const TextureBuffer2DHandle& texture, U32 textureSlot)
+	{
+		RenderCommand_SetTextureResourceCS* command = MemArena::AllocType<RenderCommand_SetTextureResourceCS>();
+		command->bufferHandle = texture;
+		command->bufferSlot = textureSlot;
+
+		m_renderThread.PushCommand(command);
+	}
+
+	void Renderer::UnsetTextureResourceCS(U32 textureSlot)
+	{
+		RenderCommand_UnsetTextureResourceCS* command = MemArena::AllocType<RenderCommand_UnsetTextureResourceCS>();
+		command->textureSlot = textureSlot;
+
+		m_renderThread.PushCommand(command);
+	}
+
+	void Renderer::Dispatch(U32 groupsX, U32 groupsY, U32 groupsZ)
+	{
+		RenderCommand_Dispatch* command = MemArena::AllocType<RenderCommand_Dispatch>();
+		command->groupsX = groupsX;
+		command->groupsY = groupsY;
+		command->groupsZ = groupsZ;
+
+		m_renderThread.PushCommand(command);
 	}
 }

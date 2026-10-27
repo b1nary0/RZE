@@ -58,10 +58,31 @@ private:
 	Rendering::PixelShaderHandle m_shader;
 };
 
+class ComputeShader : public IResource
+{
+public:
+	ComputeShader() = delete;
+	ComputeShader(const std::string& name)
+		: m_name(name) {}
+
+	virtual ~ComputeShader() = default;
+
+	bool Load(const Filepath& filePath) final;
+	void Release() final;
+
+	const std::string& GetName() const { return m_name; }
+	const Rendering::ComputeShaderHandle& GetPlatformObject() const { return m_shader; }
+
+private:
+	const std::string m_name;
+	Rendering::ComputeShaderHandle m_shader;
+};
+
 // Loads a shader from AssetPaths::GetShader(name). name is the file's stem, e.g. "Pixel_FXAA", and is also the shader's
 // name (GetName). Asserts it loaded.
 TypedResourceHandle<VertexShader> LoadVertexShader(const std::string& name, const Rendering::ShaderInputLayout& inputLayout);
 TypedResourceHandle<PixelShader> LoadPixelShader(const std::string& name);
+TypedResourceHandle<ComputeShader> LoadComputeShader(const std::string& name);
 
 // @TODO
 // IResource should be removed, this class should be an aggregate
