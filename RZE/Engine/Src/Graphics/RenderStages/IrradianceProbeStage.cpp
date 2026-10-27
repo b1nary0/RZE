@@ -31,6 +31,15 @@ namespace
 	constexpr U32 k_atlasHeight = (IrradianceProbeGrid::k_maxProbes + k_atlasProbesPerRow - 1) / k_atlasProbesPerRow * k_faceSize;
 	// How far along its normal a surface reads the probes, in spacings
 	constexpr float k_normalBiasSpacings = 0.25f;
+	// Each probe's visibility map: texels a side, plus a border all round (VISIBILITY_SIZE in Common/IrradianceVolume.hlsli)
+	constexpr U32 k_visibilitySize = 8;
+	constexpr U32 k_visibilityStride = k_visibilitySize + 2;
+	constexpr U32 k_visibilityProbesPerRow = 64;
+	constexpr U32 k_visibilityAtlasWidth = k_visibilityProbesPerRow * k_visibilityStride;
+	constexpr U32 k_visibilityAtlasHeight = (IrradianceProbeGrid::k_maxProbes + k_visibilityProbesPerRow - 1) / k_visibilityProbesPerRow * k_visibilityStride;
+	// Distances in the visibility maps are clamped to this many spacings: further than any surface a probe lights
+	// (the far corner of its cell is about 1.7 spacings away), so what matters is told apart
+	constexpr float k_visibilityMaxDistanceSpacings = 2.0f;
 
 	// Must match the registers in Compute_ProbeRelight.hlsl and Common/LightResources.hlsli
 	constexpr U32 k_lightBufferSlot = 2;
@@ -40,7 +49,8 @@ namespace
 	constexpr U32 k_shadowMapSlot = 5;
 	constexpr U32 k_pointShadowCubesSlot = 6;
 	constexpr U32 k_shRedSlot = 8;
-	constexpr U32 k_captureAtlasSlot = 11;
+	constexpr U32 k_visibilitySlot = 11;
+	constexpr U32 k_captureAtlasSlot = 13;
 
 	// A scene's probes, what they've captured and their light, kept in its ScenePersistent() blackboard
 	struct IrradianceProbeState : RenderStageData<IrradianceProbeState>
@@ -59,6 +69,8 @@ namespace
 		// relighting reads while it writes these. Made for Grid.
 		Rendering::TextureBuffer2DHandle SH[3];
 		Rendering::TextureBuffer2DHandle PreviousSH[3];
+		// Every probe's visibility map, at its index's place (k_visibilityProbesPerRow to a row)
+		Rendering::TextureBuffer2DHandle Visibility;
 		// The first probe not yet captured
 		U32 NextCapture = 0;
 		// The first probe of the next relighting batch, once every probe is captured
@@ -109,10 +121,25 @@ namespace
 		return Rendering::Renderer::CreateTextureBuffer2D(params);
 	}
 
+	// Mean and mean squared distance, written by Compute_ProbeVisibility and sampled with filtering
+	Rendering::TextureBuffer2DHandle CreateVisibilityTexture(U32 width, U32 height)
+	{
+		Rendering::GFXTextureBufferParams params = { 0 };
+		params.bIsShaderResource = true;
+		params.bIsUnorderedAccess = true;
+		params.Width = width;
+		params.Height = height;
+		params.MipLevels = 1;
+		params.SampleCount = 1;
+		params.Format = Rendering::ETextureFormat::RG16_FLOAT;
+		return Rendering::Renderer::CreateTextureBuffer2D(params);
+	}
+
 	IrradianceProbeState CreateState()
 	{
 		IrradianceProbeState state;
 		state.Atlas = CreateCaptureTexture(k_atlasWidth, k_atlasHeight, false);
+		state.Visibility = CreateVisibilityTexture(k_visibilityAtlasWidth, k_visibilityAtlasHeight);
 		state.Scratch = CreateCaptureTexture(k_atlasWidth, k_faceSize, true);
 		state.ScratchDepth = CreateDepthTexture(k_atlasWidth, k_faceSize);
 		return state;
@@ -138,6 +165,8 @@ namespace
 		layout.Counts[2] = grid.CountZ;
 		layout.ValidProbeCount = validProbeCount;
 		layout.NormalBias = grid.Spacing * k_normalBiasSpacings;
+		layout.VisibilityProbesPerRow = k_visibilityProbesPerRow;
+		layout.VisibilityMaxDistance = grid.Spacing * k_visibilityMaxDistanceSpacings;
 		return layout;
 	}
 }
@@ -151,9 +180,11 @@ void IrradianceProbeStage::Initialize()
 {
 	m_capture.Initialize();
 	m_relightShader = LoadComputeShader("Compute_ProbeRelight");
+	m_visibilityShader = LoadComputeShader("Compute_ProbeVisibility");
 	m_relightParamsBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(RelightParamsLayout), 16, 1);
 	m_volumeBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(GraphicsLayouts::IrradianceVolumeLayout), 16, 1);
 	m_placeholderSH = CreateSHTexture(1, 1, 2);
+	m_placeholderVisibility = CreateVisibilityTexture(1, 1);
 }
 
 void IrradianceProbeStage::Setup(RenderStageBuilder& builder)
@@ -174,6 +205,7 @@ void IrradianceProbeStage::Render(RenderContext& context)
 	irradiance.SHRed = m_placeholderSH;
 	irradiance.SHGreen = m_placeholderSH;
 	irradiance.SHBlue = m_placeholderSH;
+	irradiance.Visibility = m_placeholderVisibility;
 	GraphicsLayouts::IrradianceVolumeLayout volume;
 
 	// #TODO(Probes) Once per scene per frame, whichever view renders it (step 8). For now the main view does the work,
@@ -233,6 +265,21 @@ void IrradianceProbeStage::Render(RenderContext& context)
 					Rendering::Renderer::CopyTextureRegion(state.Scratch, slot * k_probeWidth, 0, k_probeWidth, k_faceSize, state.Atlas, atlasX, atlasY);
 				}
 
+				// The batch's visibility maps, from what it just captured
+				const GraphicsLayouts::IrradianceVolumeLayout gridVolume = MakeVolumeLayout(state.Grid, 0);
+				Rendering::Renderer::UploadDataToBuffer<GraphicsLayouts::IrradianceVolumeLayout>(m_volumeBuffer, &gridVolume);
+				const RelightParamsLayout visibilityParams = { state.NextCapture, probeCount, k_faceSize, k_atlasProbesPerRow };
+				Rendering::Renderer::UploadDataToBuffer<RelightParamsLayout>(m_relightParamsBuffer, &visibilityParams);
+
+				Rendering::Renderer::SetComputeShader(m_visibilityShader->GetPlatformObject());
+				Rendering::Renderer::SetConstantBufferCS(m_volumeBuffer, k_volumeBufferSlot);
+				Rendering::Renderer::SetConstantBufferCS(m_relightParamsBuffer, k_relightParamsSlot);
+				Rendering::Renderer::SetTextureResourceCS(state.Atlas, k_captureAtlasSlot);
+				Rendering::Renderer::SetUnorderedAccess(state.Visibility, 0);
+				Rendering::Renderer::Dispatch(batchCount);
+				Rendering::Renderer::UnsetUnorderedAccess(0);
+				Rendering::Renderer::UnsetTextureResourceCS(k_captureAtlasSlot);
+
 				state.NextCapture += batchCount;
 				++state.CaptureFrames;
 				if (state.NextCapture == probeCount)
@@ -271,6 +318,7 @@ void IrradianceProbeStage::Render(RenderContext& context)
 					Rendering::Renderer::SetTextureResourceCS(state.PreviousSH[channel], k_shRedSlot + channel);
 					Rendering::Renderer::SetUnorderedAccess(state.SH[channel], channel);
 				}
+				Rendering::Renderer::SetTextureResourceCS(state.Visibility, k_visibilitySlot);
 				Rendering::Renderer::SetTextureResourceCS(state.Atlas, k_captureAtlasSlot);
 
 				Rendering::Renderer::Dispatch(batchCount);
@@ -283,6 +331,7 @@ void IrradianceProbeStage::Render(RenderContext& context)
 				}
 				Rendering::Renderer::UnsetTextureResourceCS(k_shadowMapSlot);
 				Rendering::Renderer::UnsetTextureResourceCS(k_pointShadowCubesSlot);
+				Rendering::Renderer::UnsetTextureResourceCS(k_visibilitySlot);
 				Rendering::Renderer::UnsetTextureResourceCS(k_captureAtlasSlot);
 
 				state.NextRelight = (state.NextRelight + batchCount) % probeCount;
@@ -297,6 +346,7 @@ void IrradianceProbeStage::Render(RenderContext& context)
 			irradiance.SHRed = state.SH[0];
 			irradiance.SHGreen = state.SH[1];
 			irradiance.SHBlue = state.SH[2];
+			irradiance.Visibility = state.Visibility;
 		}
 
 		Rendering::Renderer::End();

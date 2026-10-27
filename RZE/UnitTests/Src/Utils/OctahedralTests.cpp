@@ -45,3 +45,22 @@ TEST_CASE("The octahedral square has +Z in the middle, -Z in the corners and the
 	CHECK(east.X() == doctest::Approx(1.0f));
 	CHECK(east.Y() == doctest::Approx(0.0f));
 }
+
+TEST_CASE("The octahedral square's edges meet themselves mirrored, so a map's border copies across them")
+{
+	// What Compute_ProbeVisibility's border relies on: a left or right edge is the same direction at v and -v, the top
+	// or bottom at u and -u
+	for (float t = -1.0f; t <= 1.0f; t += 0.125f)
+	{
+		for (const float edge : { -1.0f, 1.0f })
+		{
+			const Vector3D side = Octahedral::Decode(Vector2D(edge, t));
+			const Vector3D sideMirrored = Octahedral::Decode(Vector2D(edge, -t));
+			CHECK(VectorUtils::Dot(side, sideMirrored) == doctest::Approx(1.0f).epsilon(0.00001));
+
+			const Vector3D topOrBottom = Octahedral::Decode(Vector2D(t, edge));
+			const Vector3D topOrBottomMirrored = Octahedral::Decode(Vector2D(-t, edge));
+			CHECK(VectorUtils::Dot(topOrBottom, topOrBottomMirrored) == doctest::Approx(1.0f).epsilon(0.00001));
+		}
+	}
+}

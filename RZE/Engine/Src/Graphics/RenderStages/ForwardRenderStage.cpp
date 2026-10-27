@@ -32,6 +32,7 @@ namespace
 	constexpr U32 k_probeSHRedSlot = 8;
 	constexpr U32 k_probeSHGreenSlot = 9;
 	constexpr U32 k_probeSHBlueSlot = 10;
+	constexpr U32 k_probeVisibilitySlot = 11;
 }
 
 void ForwardRenderStage::Initialize()
@@ -107,6 +108,7 @@ void ForwardRenderStage::Render(RenderContext& context)
 	Rendering::Renderer::SetTextureResource(irradiance.SHRed, k_probeSHRedSlot);
 	Rendering::Renderer::SetTextureResource(irradiance.SHGreen, k_probeSHGreenSlot);
 	Rendering::Renderer::SetTextureResource(irradiance.SHBlue, k_probeSHBlueSlot);
+	Rendering::Renderer::SetTextureResource(irradiance.Visibility, k_probeVisibilitySlot);
 
 	// The same for every draw: bound once, and only the world matrix buffer's contents change per object
 	Rendering::Renderer::SetConstantBufferPS(sceneLightingData.LightBuffer, k_lightBufferSlot);
@@ -194,6 +196,7 @@ void ForwardRenderStage::Render(RenderContext& context)
 	Rendering::Renderer::UnsetTextureResource(k_probeSHRedSlot);
 	Rendering::Renderer::UnsetTextureResource(k_probeSHGreenSlot);
 	Rendering::Renderer::UnsetTextureResource(k_probeSHBlueSlot);
+	Rendering::Renderer::UnsetTextureResource(k_probeVisibilitySlot);
 
 	m_sceneColourOutput.Publish(context, sceneColourData);
 

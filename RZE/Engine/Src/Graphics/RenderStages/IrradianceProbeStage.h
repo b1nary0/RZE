@@ -12,9 +12,10 @@
 class ComputeShader;
 
 // The scene's irradiance probes (Docs/Plans/SSAOAndGlobalIllumination.md, Part 3): a grid fitted to the scene
-// (IrradianceProbeGrid), each probe capturing the surfaces around it (ProbeCapture) a batch a frame, then relit a batch
-// a frame with the scene's lights and last frame's probes (Compute_ProbeRelight) into spherical harmonics, which the
-// forward pass reads for its ambient light. Captures restart when the scene's bounds change.
+// (IrradianceProbeGrid), each probe capturing the surfaces around it (ProbeCapture) a batch a frame, with a visibility
+// map of how far it sees in each direction (Compute_ProbeVisibility), then relit a batch a frame with the scene's lights
+// and last frame's probes (Compute_ProbeRelight) into spherical harmonics, which the forward pass reads for its ambient
+// light. Captures restart when the scene's bounds change.
 //
 // Publishes SceneIrradianceData in every view; only the main view captures and relights. A scene the main view hasn't
 // drawn has no probes, and its views fall back to the hemisphere ambient.
@@ -47,9 +48,11 @@ private:
 
 	ProbeCapture m_capture;
 	TypedResourceHandle<ComputeShader> m_relightShader;
+	TypedResourceHandle<ComputeShader> m_visibilityShader;
 	Rendering::ConstantBufferHandle m_relightParamsBuffer;
 	// GraphicsLayouts::IrradianceVolumeLayout, uploaded for each view rendered
 	Rendering::ConstantBufferHandle m_volumeBuffer;
 	// Bound where there are no probes to read, so the forward pass always has textures of the right kind
 	Rendering::TextureBuffer2DHandle m_placeholderSH;
+	Rendering::TextureBuffer2DHandle m_placeholderVisibility;
 };

@@ -81,7 +81,10 @@ namespace GraphicsLayouts
 		// World units to push a lookup off its surface along the normal, so a surface between probes isn't lit by the
 		// probes on its own plane alone
 		float NormalBias = 0.0f;
-		float _pad[3] = {};
+		// The probes' visibility maps: how many to a row of the atlas, and the distance they're clamped to
+		U32 VisibilityProbesPerRow = 1;
+		float VisibilityMaxDistance = 0.0f;
+		float _pad = 0.0f;
 	};
 
 	// Mirrors ObjectBuffer in Common/VertexResources.hlsli: a world transform and its inverse, side by side, uploaded

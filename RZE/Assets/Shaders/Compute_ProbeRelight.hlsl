@@ -18,7 +18,8 @@ cbuffer RelightParams : register(b6)
 	uint AtlasProbesPerRow;
 };
 
-Texture2D<uint2> CaptureAtlas : register(t11);
+// After the volume's t8 to t11
+Texture2D<uint2> CaptureAtlas : register(t13);
 
 RWTexture2DArray<float4> OutSHRed   : register(u0);
 RWTexture2DArray<float4> OutSHGreen : register(u1);
