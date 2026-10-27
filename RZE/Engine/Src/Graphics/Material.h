@@ -6,6 +6,7 @@
 
 #include <Asset/AssetImport/MaterialAssetImporter.h>
 
+#include <Graphics/GraphicsLayouts.h>
 #include <Graphics/MaterialValues.h>
 
 #include <array>
@@ -41,31 +42,6 @@ public:
 		NormalMapped
 	};
 
-	// #TODO(Josh::Turn into material properties or something; material system?)
-	struct MaterialParams
-	{
-		float Shininess{ 1.0f };
-		float Opacity{ 1.0f };
-		// 1.0f when the matching texture slot is set. Unset slots aren't unbound, so the shader needs
-		// these to avoid sampling a previous draw's texture.
-		float HasOpacityMask{ 0.0f };
-		float HasHeightMap{ 0.0f };
-		// 1.0f when the opacity mask is in the texture's alpha channel rather than red
-		float OpacityMaskInAlpha{ 0.0f };
-		// 1.0f when the mask's white means see-through rather than solid
-		float InvertOpacityMask{ 0.0f };
-		// 1.0f when the mask is how much of the material shows (blended materials) rather than where it's cut away
-		float OpacityMaskIsCoverage{ 0.0f };
-		// 1.0f when the diffuse slot is set; without it the tint alone is the colour. 1.0f by default, since materials
-		// made in code set their textures themselves (SetTexture) and keep the defaults.
-		float HasDiffuseMap{ 1.0f };
-		// MaterialValues::Tint; HLSL starts a float3 on a new 16-byte register, as here
-		float Tint[3]{ 1.0f, 1.0f, 1.0f };
-		// 1.0f when the specular slot is set; without it the shader uses a typical non-metal's intensity. Fills the
-		// rest of Tint's register, keeping the buffer a whole number of 16-byte registers, which is what's uploaded.
-		float HasSpecularMap{ 0.0f };
-	};
-
 public:
 	MaterialInstance(const std::string& name);
 	~MaterialInstance();
@@ -75,7 +51,7 @@ public:
 	static std::shared_ptr<MaterialInstance> Create(const MaterialAssetImporter::MaterialData& materialData);
 
 	// The GPU parameters values draw with. Plain values in and out, so it's testable without a GPU.
-	static MaterialParams BuildParams(const MaterialValues& values);
+	static GraphicsLayouts::MaterialBufferLayout BuildBufferData(const MaterialValues& values);
 	// The shader values draw with. Plain values in and out, so it's testable without a GPU.
 	static EShader ChooseShader(const MaterialValues& values);
 
@@ -120,8 +96,8 @@ private:
 
 	// What SetValues was last given; the defaults for a material made in code
 	MaterialValues m_values;
-	// Worked out from m_values (BuildParams), except for materials made in code, which keep the defaults
-	MaterialParams m_properties;
+	// Worked out from m_values (BuildBufferData), except for materials made in code, which keep the defaults
+	GraphicsLayouts::MaterialBufferLayout m_bufferData;
 
 	ResourceHandle m_shaderTechnique;
 	std::vector<ResourceHandle> m_textureSlots;

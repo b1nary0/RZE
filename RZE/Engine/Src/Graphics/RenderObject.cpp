@@ -26,11 +26,11 @@ void RenderObject::SetMeshInstance(const std::shared_ptr<const StaticMeshInstanc
 
 void RenderObject::SetTransform(const Matrix4x4& transform)
 {
-	if (transform != m_matrixMem.transform)
+	if (transform != m_matrices.Transform)
 	{
 		const BoundingBox oldBounds = GetBounds();
-		m_matrixMem.transform = transform;
-		m_matrixMem.invTransform = transform.Inverse();
+		m_matrices.Transform = transform;
+		m_matrices.InvTransform = transform.Inverse();
 		MarkChanged(oldBounds);
 	}
 }
@@ -39,7 +39,7 @@ const BoundingBox& RenderObject::GetBounds() const
 {
 	if (m_isBoundsStale)
 	{
-		m_bounds = m_localBounds.Transformed(m_matrixMem.transform);
+		m_bounds = m_localBounds.Transformed(m_matrices.Transform);
 		m_isBoundsStale = false;
 	}
 	return m_bounds;
@@ -51,7 +51,7 @@ const std::vector<MeshDraw>& RenderObject::GetDraws() const
 	{
 		if (m_meshInstance != nullptr)
 		{
-			m_meshInstance->BuildDraws(m_matrixMem, m_draws);
+			m_meshInstance->BuildDraws(m_matrices, m_draws);
 		}
 		else
 		{

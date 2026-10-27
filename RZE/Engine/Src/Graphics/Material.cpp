@@ -15,7 +15,7 @@ MaterialInstance::MaterialInstance(const std::string& name)
 {
 	m_textureSlots.resize(TEXTURE_SLOT_COUNT);
 	
-	m_paramBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(MaterialParams), 16, 1);
+	m_paramBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(GraphicsLayouts::MaterialBufferLayout), 16, 1);
 	// The GPU starts with the defaults too, so a material nobody commits (e.g. one made in code) isn't drawn with an
 	// empty buffer: its Opacity would be 0, which the shaders write as alpha, and post-processing then treats it as
 	// background
@@ -52,11 +52,11 @@ std::shared_ptr<MaterialInstance> MaterialInstance::Create(const MaterialAssetIm
 	return materialInstance;
 }
 
-MaterialInstance::MaterialParams MaterialInstance::BuildParams(const MaterialValues& values)
+GraphicsLayouts::MaterialBufferLayout MaterialInstance::BuildBufferData(const MaterialValues& values)
 {
 	const bool isBlended = ::IsBlended(values.BlendMode);
 
-	MaterialParams params;
+	GraphicsLayouts::MaterialBufferLayout params;
 	params.Shininess = values.Shininess;
 	// The shaders write opacity as the scene's alpha, which PostProcess also reads (background, exposure weight), so
 	// only a material drawn blended gets anything but solid
@@ -106,7 +106,7 @@ void MaterialInstance::SetValues(const MaterialValues& values)
 
 	SetShaderTechnique(LoadShader(ChooseShader(m_values)));
 
-	m_properties = BuildParams(m_values);
+	m_bufferData = BuildBufferData(m_values);
 	CommitPropertyChanges();
 }
 
@@ -141,7 +141,7 @@ void MaterialInstance::SetShaderTechnique(const ResourceHandle& shaderTechnique)
 
 void MaterialInstance::CommitPropertyChanges()
 {
-	Rendering::Renderer::UploadDataToBuffer<MaterialParams>(m_paramBuffer, &m_properties);
+	Rendering::Renderer::UploadDataToBuffer<GraphicsLayouts::MaterialBufferLayout>(m_paramBuffer, &m_bufferData);
 }
 
 const Rendering::ConstantBufferHandle& MaterialInstance::GetParamBuffer() const

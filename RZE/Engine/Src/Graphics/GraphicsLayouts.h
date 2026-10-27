@@ -66,4 +66,39 @@ namespace GraphicsLayouts
 		float UniformLighting = 0.0f; // 1 for ERenderViewLighting::Uniform
 		float _pad[3] = {}; // A cbuffer is a whole number of 16-byte registers
 	};
+
+	// Mirrors ObjectBuffer in Common/VertexResources.hlsli: a world transform and its inverse, side by side, uploaded
+	// together. RenderObject keeps its own this way, and so does a MeshDraw placed away from its mesh's origin.
+	struct ObjectBufferLayout
+	{
+		Matrix4x4 Transform;
+		Matrix4x4 InvTransform;
+	};
+
+	// Mirrors MaterialBuffer in Common/PixelResources.hlsli. MaterialInstance::BuildBufferData works it out from a
+	// material's values.
+	// #TODO(Josh::Turn into material properties or something; material system?)
+	struct MaterialBufferLayout
+	{
+		float Shininess{ 1.0f };
+		float Opacity{ 1.0f };
+		// 1.0f when the matching texture slot is set. Unset slots aren't unbound, so the shader needs
+		// these to avoid sampling a previous draw's texture.
+		float HasOpacityMask{ 0.0f };
+		float HasHeightMap{ 0.0f };
+		// 1.0f when the opacity mask is in the texture's alpha channel rather than red
+		float OpacityMaskInAlpha{ 0.0f };
+		// 1.0f when the mask's white means see-through rather than solid
+		float InvertOpacityMask{ 0.0f };
+		// 1.0f when the mask is how much of the material shows (blended materials) rather than where it's cut away
+		float OpacityMaskIsCoverage{ 0.0f };
+		// 1.0f when the diffuse slot is set; without it the tint alone is the colour. 1.0f by default, since materials
+		// made in code set their textures themselves (SetTexture) and keep the defaults.
+		float HasDiffuseMap{ 1.0f };
+		// MaterialValues::Tint; HLSL starts a float3 on a new 16-byte register, as here
+		float Tint[3]{ 1.0f, 1.0f, 1.0f };
+		// 1.0f when the specular slot is set; without it the shader uses a typical non-metal's intensity. Fills the
+		// rest of Tint's register, keeping the buffer a whole number of 16-byte registers, which is what's uploaded.
+		float HasSpecularMap{ 0.0f };
+	};
 }

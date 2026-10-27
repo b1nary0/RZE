@@ -53,7 +53,7 @@ StaticMesh::StaticMesh(const std::string& name, std::vector<SubMesh>&& subMeshes
 	}
 }
 
-void StaticMesh::BuildDraws(const MatrixMem& objectMatrices, const std::vector<MaterialSlot>& materialSlots, std::vector<MeshDraw>& outDraws) const
+void StaticMesh::BuildDraws(const GraphicsLayouts::ObjectBufferLayout& objectMatrices, const std::vector<MaterialSlot>& materialSlots, std::vector<MeshDraw>& outDraws) const
 {
 	AssertExpr(materialSlots.size() == m_slots.size());
 
@@ -68,13 +68,13 @@ void StaticMesh::BuildDraws(const MatrixMem& objectMatrices, const std::vector<M
 		draw.Slot = &materialSlots[subMesh.SlotIndex];
 		if (m_isAtOrigin[placementIndex])
 		{
-			draw.Transform = &objectMatrices.transform;
+			draw.Transform = &objectMatrices.Transform;
 		}
 		else
 		{
-			draw.OwnMatrices.transform = objectMatrices.transform * placement.LocalTransform;
-			draw.OwnMatrices.invTransform = draw.OwnMatrices.transform.Inverse();
-			draw.Transform = &draw.OwnMatrices.transform;
+			draw.OwnMatrices.Transform = objectMatrices.Transform * placement.LocalTransform;
+			draw.OwnMatrices.InvTransform = draw.OwnMatrices.Transform.Inverse();
+			draw.Transform = &draw.OwnMatrices.Transform;
 		}
 
 		draw.Corners = draw.Geometry->GetBounds().GetTransformedCorners(*draw.Transform);

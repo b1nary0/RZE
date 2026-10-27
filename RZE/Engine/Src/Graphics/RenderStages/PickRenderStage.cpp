@@ -126,7 +126,7 @@ void PickRenderStage::Render(RenderContext& context)
 				continue;
 			}
 
-			// See ForwardRenderStage: uploads the whole MatrixMem (transform + inverse)
+			// See ForwardRenderStage: uploads the whole ObjectBufferLayout (transform + inverse)
 			if (draw.Transform != uploadedTransform)
 			{
 				Rendering::Renderer::UploadDataToBuffer<Matrix4x4>(m_vertexShader->GetWorldMatrixBuffer(), draw.Transform);

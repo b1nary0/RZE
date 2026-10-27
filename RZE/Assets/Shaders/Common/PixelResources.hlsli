@@ -1,7 +1,7 @@
 #ifndef PIXEL_RESOURCES_HLSLI
 #define PIXEL_RESOURCES_HLSLI
 
-// Mirrors MaterialInstance::MaterialParams (Material.h)
+// Mirrors GraphicsLayouts::MaterialBufferLayout (Graphics/GraphicsLayouts.h)
 cbuffer MaterialBuffer : register(b1)
 {
 	float Shininess;

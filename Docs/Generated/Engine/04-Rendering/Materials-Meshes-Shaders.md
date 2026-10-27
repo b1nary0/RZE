@@ -110,7 +110,7 @@ The texture slots (`ETextureSlot`) and blend modes (`EBlendMode`) are in `Engine
 | `TEXTURE_SLOT_OPACITY` | `t3` `OpacityMap` | Opacity mask (leaves, chains, decals), in red or alpha |
 | `TEXTURE_SLOT_HEIGHT` | `t4` `HeightMap` | Grayscale height, turned into extra normal detail |
 
-`MaterialParams` (constant buffer `b1`, mirrored by `MaterialBuffer` in `Common/PixelResources.hlsli`) is worked out by `BuildParams(values)`, which needs no GPU, so it's tested directly:
+`GraphicsLayouts::MaterialBufferLayout` (constant buffer `b1`, mirrored by `MaterialBuffer` in `Common/PixelResources.hlsli`) is worked out by `BuildBufferData(values)`, which needs no GPU, so it's tested directly:
 
 | Parameter | Meaning |
 |---|---|

@@ -35,7 +35,7 @@ public:
 
 	// Called every frame by RenderComponent, so an unchanged transform returns early
 	void SetTransform(const Matrix4x4& transform);
-	const Matrix4x4& GetTransform() const { return m_matrixMem.transform; }
+	const Matrix4x4& GetTransform() const { return m_matrices.Transform; }
 
 	// The mesh's box in the object's own space; empty without a mesh or sub-meshes. Only changes with the mesh.
 	const BoundingBox& GetLocalBounds() const { return m_localBounds; }
@@ -64,7 +64,7 @@ private:
 	// when skinned meshes are a thing
 	// Held so the mesh its draws point into stays alive
 	std::shared_ptr<const StaticMeshInstance> m_meshInstance;
-	MatrixMem m_matrixMem;
+	GraphicsLayouts::ObjectBufferLayout m_matrices;
 
 	BoundingBox m_localBounds;
 	// Worked out from the transform when asked

@@ -252,6 +252,6 @@ Keep per-view, across-frame state in `context.Persistent()`, and add new per-fra
 - `Engine\Src\Graphics\RenderPipeline.h/.cpp`, `RenderPipelineCompiler.h/.cpp`
 - `Engine\Src\Graphics\RenderData\` — `SceneLightingData.h`, `SceneColourData.h`, `DisplayColourData.h`
 - `Engine\Src\Graphics\RenderStages\` — one `.h/.cpp` per stage
-- `Engine\Src\Graphics\GraphicsLayouts.h` — the CPU side of shader buffers the stages share, in `namespace GraphicsLayouts`: the light and shadow layouts and their limits, and `ViewLightingLayout`. A layout only one stage's shaders use stays in that stage (`PickRenderStage::PickBufferLayout`, `PostProcessRenderStage::ParamsLayout`); put new ones by the same rule.
+- `Engine\Src\Graphics\GraphicsLayouts.h` — the CPU side of shader buffers the stages share, in `namespace GraphicsLayouts`: the light and shadow layouts and their limits, `ViewLightingLayout`, an object's matrices (`ObjectBufferLayout`, the vertex shaders' `ObjectBuffer`) and a material's parameters (`MaterialBufferLayout`, the pixel shaders' `MaterialBuffer`). A layout only one stage's shaders use stays in that stage (`PickRenderStage::PickBufferLayout`, `PostProcessRenderStage::ParamsLayout`); put new ones by the same rule.
 - `Engine\Src\Graphics\AntiAliasing.h/.cpp` — `EAntiAliasing` levels and their FXAA settings
 - `Assets\Shaders\` — `Pixel_ShadowCaster`, `Pixel_NewRenderer*`, `Pixel_LuminanceLog`, `Pixel_ExposureAdapt`, `Pixel_Tonemap`, `Pixel_FXAA`, `Pixel_PickID`, `Pixel_Line`

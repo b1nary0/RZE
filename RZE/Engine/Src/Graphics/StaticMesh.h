@@ -54,7 +54,7 @@ public:
 	// GetSlots() entry): one per placement, in placement order. outDraws points into this mesh, materialSlots and
 	// objectMatrices, so they must outlive outDraws and stay where they are. Reuses outDraws' memory when the count
 	// is unchanged.
-	void BuildDraws(const MatrixMem& objectMatrices, const std::vector<MaterialSlot>& materialSlots, std::vector<MeshDraw>& outDraws) const;
+	void BuildDraws(const GraphicsLayouts::ObjectBufferLayout& objectMatrices, const std::vector<MaterialSlot>& materialSlots, std::vector<MeshDraw>& outDraws) const;
 
 private:
 	StaticMesh(const std::string& name, std::vector<SubMesh>&& subMeshes, std::vector<Slot>&& slots, std::vector<MeshPlacement>&& placements);

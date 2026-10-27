@@ -185,7 +185,7 @@ void ForwardRenderStage::DrawMesh(const MeshDraw& draw, const Matrix4x4*& upload
 {
 	const MeshGeometry& meshGeometry = *draw.Geometry;
 
-	// @note this sends in the address of a transform but fulfils the memory of struct MatrixMem as a whole
+	// @note this sends in the address of a transform but fulfils the memory of a GraphicsLayouts::ObjectBufferLayout as a whole
 	// this should be re-evaluated later to have a better solve for the issue of commands needing access to the data being uploaded's lifetime
 	if (draw.Transform != uploadedTransform)
 	{

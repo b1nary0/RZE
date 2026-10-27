@@ -35,7 +35,7 @@ public:
 	MaterialOverridesByName GetOverrides() const;
 
 	// See StaticMesh::BuildDraws; the draws use this instance's material slots
-	void BuildDraws(const MatrixMem& objectMatrices, std::vector<MeshDraw>& outDraws) const;
+	void BuildDraws(const GraphicsLayouts::ObjectBufferLayout& objectMatrices, std::vector<MeshDraw>& outDraws) const;
 
 private:
 	StaticMeshInstance(const std::shared_ptr<const StaticMesh>& mesh, ResourceHandle&& meshResource);

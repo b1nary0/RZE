@@ -21,7 +21,7 @@ StaticMeshInstance::StaticMeshInstance(const std::shared_ptr<const StaticMesh>& 
 	}
 }
 
-void StaticMeshInstance::BuildDraws(const MatrixMem& objectMatrices, std::vector<MeshDraw>& outDraws) const
+void StaticMeshInstance::BuildDraws(const GraphicsLayouts::ObjectBufferLayout& objectMatrices, std::vector<MeshDraw>& outDraws) const
 {
 	m_mesh->BuildDraws(objectMatrices, m_materialSlots, outDraws);
 }
