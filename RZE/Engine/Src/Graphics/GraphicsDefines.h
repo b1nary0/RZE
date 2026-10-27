@@ -15,6 +15,10 @@ struct RenderSceneLifetime
 	static bool IsAlive(U64 id);
 	static U64 GetID(const RenderObject* renderObject);
 	static U64 GetID(const LightObject* lightObject);
+
+	// For RenderObject and LightObject: an ID alive from construction until it's released on destruction
+	static U64 Acquire();
+	static void Release(U64 id);
 };
 
 // The handle to an object in a RenderScene, held by whatever made it (e.g. RenderComponent), which destroys it through

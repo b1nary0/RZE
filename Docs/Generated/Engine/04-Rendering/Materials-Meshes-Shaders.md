@@ -170,7 +170,7 @@ A `Texture2D` hands its texels to the upload as a `TexelBuffer`, so the upload f
 
 - `Engine\Src\Graphics\MeshGeometry.h/.cpp`, `StaticMesh.h/.cpp`, `StaticMeshInstance.h/.cpp`, `MeshDraw.h`
 - `Engine\Src\Graphics\Material.h/.cpp`, `MaterialValues.h/.cpp`, `MaterialOverrides.h/.cpp`, `MaterialSlot.h/.cpp`, `MaterialResource.h/.cpp`
-- `Engine\Src\Graphics\RenderScene.h/.cpp` (`RenderObject`)
+- `Engine\Src\Graphics\RenderObject.h/.cpp` (`RenderObject`)
 - `Engine\Src\Graphics\Shader.h/.cpp`, `Texture2D.h/.cpp`, `VertexBuffer.h/.cpp`, `IndexBuffer.h/.cpp`
 - `Engine\Src\Game\StaticMeshResource.h/.cpp`
 - `Assets\Shaders\Common\PixelResources.hlsli`, `Lighting.hlsli`, and the three `Pixel_*NewRenderer*.hlsl`

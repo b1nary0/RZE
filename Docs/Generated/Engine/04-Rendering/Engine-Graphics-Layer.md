@@ -197,7 +197,10 @@ Both object containers erase with swap-and-pop (`ContainerUtils::VectorEraseBack
 ## Key files
 
 - `Engine\Src\Graphics\RenderEngine.h/.cpp` — `RenderEngine`
-- `Engine\Src\Graphics\RenderScene.h/.cpp` — `RenderScene`, `RenderObject`, `LightObject`, `ELightType`
+- `Engine\Src\Graphics\RenderScene.h/.cpp` — `RenderScene` (and `RenderSceneLifetime`'s ID allocator)
+- `Engine\Src\Graphics\RenderObject.h/.cpp` — `RenderObject`
+- `Engine\Src\Graphics\LightObject.h/.cpp` — `LightObject`, `ELightType`
+- `Engine\Src\Graphics\DebugLine.h` — `DebugLine`, `DebugLineFade`
 - `Engine\Src\Graphics\SceneChangeLog.h/.cpp` — where a scene's render objects changed, by revision
 - `Engine\Src\Game\World\GameObjectComponents\LightComponent.h/.cpp` — the component that drives a `LightObject` ([Built-In-Components.md](../03-SceneAndGameObjects/Built-In-Components.md#lightcomponent))
 - `Engine\Src\Graphics\RenderView.h` — `RenderView`, `RenderCamera`, `RenderPickRequest`

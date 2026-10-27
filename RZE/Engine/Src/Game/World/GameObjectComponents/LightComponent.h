@@ -1,9 +1,12 @@
 #pragma once
 #include <Game/World/GameObject/GameObjectComponent.h>
 
-#include <Graphics/RenderScene.h>
+#include <Graphics/GraphicsDefines.h>
+#include <Graphics/LightObject.h>
 
 #include <Utils/Math/Vector4D.h>
+
+class RenderScene;
 
 // A light of any type (ELightType), picked from a drop-down; a new one is a point light. A directional light shines
 // along the object's local -Y axis, so a zero rotation is a straight-down sun; a point light shines from the object's
