@@ -35,3 +35,13 @@ TEST_CASE("A filepath is inside a folder it's in or under, ignoring case")
 	CHECK_FALSE(Filepath("Assets").IsInside(scenes));
 	CHECK_FALSE(Filepath().IsInside(scenes));
 }
+
+TEST_CASE("Filepaths are equal when their relative paths are the same, and case counts")
+{
+	CHECK(Filepath("Assets/Scenes/Sponza.scene") == Filepath("Assets/Scenes/Sponza.scene"));
+	CHECK(Filepath() == Filepath());
+	CHECK(Filepath("Assets/Scenes/Sponza.scene") != Filepath("Assets/Scenes/Other.scene"));
+	CHECK(Filepath("Assets/Scenes/Sponza.scene") != Filepath());
+	// A rename that only changes case is a change
+	CHECK(Filepath("Assets/Scenes/Sponza.scene") != Filepath("Assets/Scenes/sponza.scene"));
+}

@@ -71,7 +71,7 @@ TEST_CASE_FIXTURE(EngineOperations, "A pending resource takes one that's already
 	CHECK_FALSE(pending.IsLoading());
 	CHECK(pending.GetHandle().IsValid());
 	CHECK_FALSE(pending.HasFailed());
-	CHECK(pending.GetPath().GetRelativePath() == k_loadedPath.GetRelativePath());
+	CHECK(pending.GetPath() == k_loadedPath);
 
 	pending.Reset();
 	handler.ReleaseResource(loaded);
@@ -138,7 +138,7 @@ TEST_CASE_FIXTURE(EngineOperations, "Loading again, or moving another pending re
 	REQUIRE(second != nullptr);
 	CHECK(first->IsCancellationRequested());
 	CHECK_FALSE(second->IsCancellationRequested());
-	CHECK(pending.GetPath().GetRelativePath() == k_otherPath.GetRelativePath());
+	CHECK(pending.GetPath() == k_otherPath);
 
 	PendingResource other;
 	std::shared_ptr<AsyncOperation> third = other.Load<FakeResource>(k_thirdPath);
@@ -146,7 +146,7 @@ TEST_CASE_FIXTURE(EngineOperations, "Loading again, or moving another pending re
 	pending = std::move(other);
 	CHECK(second->IsCancellationRequested());
 	CHECK_FALSE(third->IsCancellationRequested());
-	CHECK(pending.GetPath().GetRelativePath() == k_thirdPath.GetRelativePath());
+	CHECK(pending.GetPath() == k_thirdPath);
 
 	TickUntilLoaded(pending);
 	CHECK(pending.GetHandle().IsValid());

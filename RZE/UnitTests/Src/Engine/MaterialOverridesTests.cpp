@@ -80,7 +80,7 @@ TEST_CASE("Overrides replace only the values they set")
 	CHECK(values.BlendMode == EBlendMode::Transparent);
 	CHECK(values.Opacity == doctest::Approx(0.3f));
 	CHECK(values.Shininess == doctest::Approx(16.0f));
-	CHECK(values.Textures[TEXTURE_SLOT_DIFFUSE].GetRelativePath() == Filepath("Assets/Textures/Other.png").GetRelativePath());
+	CHECK(values.Textures[TEXTURE_SLOT_DIFFUSE] == Filepath("Assets/Textures/Other.png"));
 	CHECK_FALSE(values.Textures[TEXTURE_SLOT_NORMAL].IsValid());
 	CHECK_FALSE(values.Textures[TEXTURE_SLOT_SPECULAR].IsValid());
 
@@ -101,7 +101,7 @@ TEST_CASE("Overrides survive being saved and loaded, with only what's overridden
 	CHECK(loaded.Shininess == doctest::Approx(8.0f));
 	CHECK_FALSE(loaded.Opacity.has_value());
 	REQUIRE(loaded.Textures[TEXTURE_SLOT_OPACITY].has_value());
-	CHECK(loaded.Textures[TEXTURE_SLOT_OPACITY]->GetRelativePath() == Filepath("Assets/Textures/Mask.png").GetRelativePath());
+	CHECK(*loaded.Textures[TEXTURE_SLOT_OPACITY] == Filepath("Assets/Textures/Mask.png"));
 	// An emptied slot stays emptied, not unset
 	REQUIRE(loaded.Textures[TEXTURE_SLOT_HEIGHT].has_value());
 	CHECK_FALSE(loaded.Textures[TEXTURE_SLOT_HEIGHT]->IsValid());
@@ -166,7 +166,7 @@ TEST_CASE("Swapping in a material is an override of its own, kept and saved, tha
 
 	const MaterialOverrides loaded = RoundTrip(overrides);
 	REQUIRE(loaded.Material.has_value());
-	CHECK(loaded.Material->GetRelativePath() == GetMaterialPath("Other").GetRelativePath());
+	CHECK(*loaded.Material == GetMaterialPath("Other"));
 	CHECK(loaded.Opacity == doctest::Approx(0.5f));
 
 	// An empty path isn't a material
@@ -180,17 +180,17 @@ TEST_CASE("A slot draws its mesh's material asset until its overrides swap anoth
 {
 	std::shared_ptr<StaticMeshInstance> instance = MakeInstance({ "glass", "bricks" });
 	const MaterialSlot& glass = instance->GetMaterialSlots()[0];
-	CHECK(glass.GetMaterialPath().GetRelativePath() == GetMaterialPath("glass").GetRelativePath());
+	CHECK(glass.GetMaterialPath() == GetMaterialPath("glass"));
 
 	MaterialOverridesByName overrides;
 	overrides["glass"].Material = GetMaterialPath("Other");
 	instance->SetOverrides(overrides);
-	CHECK(glass.GetMaterialPath().GetRelativePath() == GetMaterialPath("Other").GetRelativePath());
+	CHECK(glass.GetMaterialPath() == GetMaterialPath("Other"));
 	// Kept with the others, though no value is overridden
 	CHECK(instance->GetOverrides().count("glass") == 1);
 
 	instance->SetOverrides(MaterialOverridesByName());
-	CHECK(glass.GetMaterialPath().GetRelativePath() == GetMaterialPath("glass").GetRelativePath());
+	CHECK(glass.GetMaterialPath() == GetMaterialPath("glass"));
 	CHECK(instance->GetOverrides().empty());
 }
 

@@ -38,7 +38,7 @@ TEST_CASE("GameConfig saves its icon, keeping the file's comments")
 
 	GameConfig reloaded;
 	REQUIRE(reloaded.Load(file));
-	CHECK(reloaded.GetIcon().GetRelativePath() == Filepath("Assets/Icons/Game.png").GetRelativePath());
+	CHECK(reloaded.GetIcon() == Filepath("Assets/Icons/Game.png"));
 	CHECK(ReadText(file).find("; The game window's icon") != std::string::npos);
 
 	// Clearing it saves an empty value, which reads back as no icon
@@ -64,5 +64,5 @@ TEST_CASE("GameConfig without a file has no icon, and Save creates the file")
 
 	GameConfig reloaded;
 	REQUIRE(reloaded.Load(file));
-	CHECK(reloaded.GetIcon().GetRelativePath() == Filepath("Assets/Icons/Game.png").GetRelativePath());
+	CHECK(reloaded.GetIcon() == Filepath("Assets/Icons/Game.png"));
 }

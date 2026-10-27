@@ -72,7 +72,7 @@ namespace
 	{
 		return a.X() == b.X() && a.Y() == b.Y() && a.Z() == b.Z() && a.W() == b.W();
 	}
-	bool AreEqual(const Filepath& a, const Filepath& b) { return a.GetRelativePath() == b.GetRelativePath(); }
+	bool AreEqual(const Filepath& a, const Filepath& b) { return a == b; }
 	bool AreEqual(bool a, bool b) { return a == b; }
 	bool AreEqual(int a, int b) { return a == b; }
 	bool AreEqual(float a, float b) { return a == b; }

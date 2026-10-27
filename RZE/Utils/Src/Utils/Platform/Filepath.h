@@ -41,6 +41,11 @@ public:
 	// Whether this is folder, or anywhere under it. Compares relative paths, ignoring case.
 	bool IsInside(const Filepath& folder) const;
 
+	// Whether both name the same file or folder: the same relative path, exactly. Case counts (unlike IsInside), so a
+	// rename that only changes case is a change.
+	bool operator==(const Filepath& other) const { return m_relativePath == other.m_relativePath; }
+	bool operator!=(const Filepath& other) const { return m_relativePath != other.m_relativePath; }
+
 	bool IsValid() const;
 
 	static void SetDirectoryContext(EDirectoryContext context);

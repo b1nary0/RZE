@@ -212,7 +212,7 @@ namespace
 
 		const bool isDropped = ImGui::AcceptDragDropPayload(Editor::k_assetPathPayload) != nullptr;
 		ImGui::EndDragDropTarget();
-		if (!isDropped || file.GetRelativePath() == path.GetRelativePath())
+		if (!isDropped || file == path)
 		{
 			return false;
 		}

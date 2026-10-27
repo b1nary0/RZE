@@ -33,7 +33,7 @@ TEST_CASE("A material asset's values carry its blend mode, factors, textures and
 	CHECK(values.BlendMode == EBlendMode::Transparent);
 	CHECK(values.Opacity == doctest::Approx(0.61f));
 	CHECK(values.Shininess == doctest::Approx(32.0f));
-	CHECK(values.Textures[TEXTURE_SLOT_DIFFUSE].GetRelativePath() == Filepath("Assets/Textures/Diffuse.png").GetRelativePath());
+	CHECK(values.Textures[TEXTURE_SLOT_DIFFUSE] == Filepath("Assets/Textures/Diffuse.png"));
 	CHECK(values.Textures[TEXTURE_SLOT_OPACITY].IsValid());
 	// Empty paths stay empty slots
 	CHECK_FALSE(values.Textures[TEXTURE_SLOT_SPECULAR].IsValid());

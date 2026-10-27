@@ -215,7 +215,7 @@ const Filepath& RenderComponent::GetMeshPath() const
 
 void RenderComponent::LoadMesh(const Filepath& path)
 {
-	if (path.GetRelativePath() == GetMeshPath().GetRelativePath())
+	if (path == GetMeshPath())
 	{
 		return;
 	}

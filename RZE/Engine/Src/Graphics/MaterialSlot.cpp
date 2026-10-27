@@ -55,7 +55,7 @@ const MaterialInstance* MaterialSlot::GetBaseMaterial() const
 void MaterialSlot::UpdateSwappedMaterial()
 {
 	const Filepath requested = m_overrides.Material.value_or(Filepath());
-	if (requested.GetRelativePath() == m_swappedMaterialPath.GetRelativePath())
+	if (requested == m_swappedMaterialPath)
 	{
 		return;
 	}
