@@ -119,3 +119,21 @@ TEST_CASE("Bounding boxes intersect when they overlap or touch, and never when e
 	CHECK_FALSE(BoundingBox().Intersects(box));
 	CHECK_FALSE(BoundingBox().Intersects(BoundingBox()));
 }
+
+TEST_CASE("A bounding box contains another only if all of it is inside, faces included, and never an empty one")
+{
+	const BoundingBox box(Vector3D(0.0f), Vector3D(2.0f));
+
+	CHECK(box.Contains(box));
+	CHECK(box.Contains(BoundingBox(Vector3D(0.5f), Vector3D(1.5f))));
+	// Touching its faces from inside
+	CHECK(box.Contains(BoundingBox(Vector3D(0.0f, 0.5f, 0.5f), Vector3D(2.0f, 1.5f, 1.5f))));
+	CHECK_FALSE(BoundingBox(Vector3D(0.5f), Vector3D(1.5f)).Contains(box));
+
+	// Out on one side of one axis is enough
+	CHECK_FALSE(box.Contains(BoundingBox(Vector3D(0.5f), Vector3D(1.5f, 2.5f, 1.5f))));
+	CHECK_FALSE(box.Contains(BoundingBox(Vector3D(-0.5f, 0.5f, 0.5f), Vector3D(1.5f))));
+
+	CHECK_FALSE(box.Contains(BoundingBox()));
+	CHECK_FALSE(BoundingBox().Contains(box));
+}

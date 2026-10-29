@@ -404,7 +404,7 @@ void IrradianceProbeStage::Render(RenderContext& context)
 				Rendering::Renderer::SetConstantBufferCS(sceneLighting.ShadowBuffer, k_shadowBufferSlot);
 				Rendering::Renderer::SetConstantBufferCS(m_volumeBuffer, k_volumeBufferSlot);
 				Rendering::Renderer::SetConstantBufferCS(m_probeListBuffer, k_probeListSlot);
-				Rendering::Renderer::SetTextureResourceCS(sceneLighting.DirectionalShadowMap, k_shadowMapSlot);
+				Rendering::Renderer::SetTextureResourceCS(sceneLighting.StaticDirectionalShadowMap, k_shadowMapSlot);
 				Rendering::Renderer::SetTextureResourceCS(sceneLighting.StaticPointShadowCubes, k_pointShadowCubesSlot);
 				for (U32 channel = 0; channel < 3; ++channel)
 				{

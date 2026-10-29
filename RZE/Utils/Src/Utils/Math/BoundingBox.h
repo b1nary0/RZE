@@ -47,6 +47,8 @@ public:
 
 	// Whether the two share any point, touching faces included; an empty box intersects nothing
 	bool Intersects(const BoundingBox& other) const;
+	// Whether every point of other is inside it, faces included; false if either is empty, as with Intersects
+	bool Contains(const BoundingBox& other) const;
 
 	bool operator==(const BoundingBox& other) const;
 	bool operator!=(const BoundingBox& other) const { return !(*this == other); }

@@ -16,6 +16,8 @@ struct SceneLightingData : RenderStageData<SceneLightingData>
 	// GraphicsLayouts::ShadowBufferLayout (Graphics/GraphicsLayouts.h)
 	Rendering::ConstantBufferHandle ShadowBuffer;
 	Rendering::TextureBuffer2DHandle DirectionalShadowMap;
+	// The same with Static casters alone, as StaticPointShadowCubes
+	Rendering::TextureBuffer2DHandle StaticDirectionalShadowMap;
 	// A cube map array, a cube per shadowed point light (by its ShadowIndex)
 	Rendering::TextureBuffer2DHandle PointShadowCubes;
 	// The same with Static casters alone (ERenderMobility), for what's lit to keep, like the probes: Movable objects
