@@ -391,7 +391,7 @@ void ReflectionProbeStage::Render(RenderContext& context)
 				Rendering::Renderer::SetConstantBufferCS(irradiance.VolumeBuffer, k_volumeBufferSlot);
 				Rendering::Renderer::SetConstantBufferCS(m_probeListBuffer, k_probeListSlot);
 				Rendering::Renderer::SetTextureResourceCS(sceneLighting.DirectionalShadowMap, k_shadowMapSlot);
-				Rendering::Renderer::SetTextureResourceCS(sceneLighting.PointShadowCubes, k_pointShadowCubesSlot);
+				Rendering::Renderer::SetTextureResourceCS(sceneLighting.StaticPointShadowCubes, k_pointShadowCubesSlot);
 				Rendering::Renderer::SetTextureResourceCS(irradiance.SHRed, k_shRedSlot);
 				Rendering::Renderer::SetTextureResourceCS(irradiance.SHGreen, k_shRedSlot + 1);
 				Rendering::Renderer::SetTextureResourceCS(irradiance.SHBlue, k_shRedSlot + 2);

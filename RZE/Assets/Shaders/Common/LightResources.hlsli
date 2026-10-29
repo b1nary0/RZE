@@ -122,7 +122,7 @@ float SampleDirectionalShadow(float3 worldPos, float3 vertexNormal)
 
 // The direction to sample a cube texture with to read what was rendered towards worldDirection. D3D's cube is
 // left-handed with +Z forward and ours is right-handed with -Z forward, so Z flips. Mirrors
-// CubeMap::ToSampleDirection (Utils/Math/CubeMap.h).
+// CubeMap::ToSampleDirection (Graphics/CubeMap.h).
 float3 ToCubeSampleDirection(float3 worldDirection)
 {
 	return float3(worldDirection.xy, -worldDirection.z);

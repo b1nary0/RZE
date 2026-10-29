@@ -77,11 +77,6 @@ public:
 	U64 GetObjectsRevision() const { return m_objectsRevision; }
 	// The same for Static render objects alone (ERenderMobility)
 	U64 GetStaticObjectsRevision() const { return m_staticObjectsRevision; }
-	// Whether a render object of either mobility was added, removed, moved or given a new mesh within region (world
-	// space) after sinceRevision (a GetRevision), counting both where it was and where it is. Can answer true for
-	// changes nearby once many objects have changed since (SceneChangeLog merges their boxes), never false for one
-	// within.
-	bool HaveObjectsChangedWithin(const BoundingBox& region, U64 sinceRevision) const;
 	// Where Static and Movable render objects were added, removed, moved or given a new mesh, by revision (both where
 	// each was and where it is), for anything kept from part of the scene that needs to find which part changed. An
 	// object changing mobility is in both.

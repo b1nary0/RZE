@@ -1,6 +1,8 @@
 #include <doctest/doctest.h>
 
-#include <Utils/Math/CubeMap.h>
+#include <Graphics/CubeMap.h>
+
+#include <Utils/Math/BoundingBox.h>
 #include <Utils/Math/Math.h>
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector3D.h>
@@ -115,4 +117,40 @@ TEST_CASE("What a cube face renders is what sampling the cube reads, for every d
 		}
 	}
 	CHECK(checkedCount == 729);
+}
+
+TEST_CASE("A cube face sees a box only if the box reaches into its 90-degree view, in the cube's face order")
+{
+	const Vector3D centre(10.0f, 2.0f, -3.0f);
+	const auto facesSeeing = [&centre](const Vector3D& min, const Vector3D& max)
+	{
+		return CubeMap::GetFacesSeeing(centre, BoundingBox(centre + min, centre + max));
+	};
+	const auto bit = [](ECubeFace face) { return 1u << static_cast<U32>(face); };
+
+	// Small and straight ahead of each face: that face only
+	for (U32 face = 0; face < static_cast<U32>(ECubeFace::Count); ++face)
+	{
+		const Vector3D ahead = CubeMap::GetFaceForward(static_cast<ECubeFace>(face)) * 5.0f;
+		CHECK(facesSeeing(ahead - Vector3D(0.5f), ahead + Vector3D(0.5f)) == 1u << face);
+	}
+
+	// Around the centre: every face
+	CHECK(facesSeeing(Vector3D(-1.0f), Vector3D(1.0f)) == (1u << static_cast<U32>(ECubeFace::Count)) - 1);
+	// Ahead and up at 45 degrees: on the edge between Right and Up, so both
+	CHECK(facesSeeing(Vector3D(5.0f, 4.5f, -0.5f), Vector3D(6.0f, 5.5f, 0.5f)) == (bit(ECubeFace::Right) | bit(ECubeFace::Up)));
+	// Far off to the side of Right's view, though ahead of it: only Up sees it
+	CHECK(facesSeeing(Vector3D(1.0f, 5.0f, -0.5f), Vector3D(2.0f, 6.0f, 0.5f)) == bit(ECubeFace::Up));
+	// Nothing to see
+	CHECK(CubeMap::GetFacesSeeing(centre, BoundingBox()) == 0);
+}
+
+TEST_CASE("A face's view sees nothing behind it")
+{
+	const Vector3D forward = CubeMap::GetFaceForward(ECubeFace::Forward);
+	const Vector3D behind = forward * -5.0f;
+	CHECK_FALSE(CubeMap::IsInFaceView(forward, BoundingBox(behind - Vector3D(0.5f), behind + Vector3D(0.5f))));
+	// Touching the view's plane from behind isn't in front of it
+	CHECK_FALSE(CubeMap::IsInFaceView(forward, BoundingBox(Vector3D(-1.0f, -1.0f, 0.0f), Vector3D(1.0f, 1.0f, 2.0f))));
+	CHECK(CubeMap::IsInFaceView(forward, BoundingBox(Vector3D(-1.0f, -1.0f, -2.0f), Vector3D(1.0f, 1.0f, 2.0f))));
 }

@@ -121,6 +121,9 @@ namespace Rendering
 		// destinationY. The two must have the same format.
 		static void CopyTextureRegion(const TextureBuffer2DHandle& source, U32 sourceX, U32 sourceY, U32 width, U32 height,
 			const TextureBuffer2DHandle& destination, U32 destinationX, U32 destinationY);
+		// Copies the whole of one slice of source's mip 0 into one slice of destination's, which must have the same
+		// size and format. Works for depth textures, which D3D only copies whole (e.g. a cube face of shadow depth).
+		static void CopyTextureSlice(const TextureBuffer2DHandle& source, U32 sourceSlice, const TextureBuffer2DHandle& destination, U32 destinationSlice);
 		// Copies one texel of a 4-byte-per-texel texture back to the CPU once the GPU has drawn it. The render
 		// thread waits on the GPU for it, so keep it to occasional reads such as picking.
 		static void ReadTexel(const TextureBuffer2DHandle& texture, U32 x, U32 y, std::shared_ptr<TexelReadback> result);

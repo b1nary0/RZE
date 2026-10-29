@@ -335,6 +335,23 @@ namespace Rendering
 		deviceContext.CopySubresourceRegion(destinationPtr->GetHWResource(), 0, command.destinationX, command.destinationY, 0, sourcePtr->GetHWResource(), 0, &box);
 	}
 
+	void RenderThread::Execute(RenderCommand_CopyTextureSlice& command)
+	{
+		DX11TextureBuffer2D* sourcePtr = static_cast<DX11TextureBuffer2D*>(command.source.m_buffer.get());
+		DX11TextureBuffer2D* destinationPtr = static_cast<DX11TextureBuffer2D*>(command.destination.m_buffer.get());
+
+		D3D11_TEXTURE2D_DESC sourceDesc;
+		sourcePtr->GetHWResource()->GetDesc(&sourceDesc);
+		D3D11_TEXTURE2D_DESC destinationDesc;
+		destinationPtr->GetHWResource()->GetDesc(&destinationDesc);
+		AssertExpr(command.sourceSlice < sourceDesc.ArraySize && command.destinationSlice < destinationDesc.ArraySize);
+
+		// Whole subresources, with no box, as depth textures need
+		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+		deviceContext.CopySubresourceRegion(destinationPtr->GetHWResource(), D3D11CalcSubresource(0, command.destinationSlice, destinationDesc.MipLevels), 0, 0, 0,
+			sourcePtr->GetHWResource(), D3D11CalcSubresource(0, command.sourceSlice, sourceDesc.MipLevels), nullptr);
+	}
+
 	void RenderThread::Execute(RenderCommand_ClearRenderTarget& command)
 	{
 		DX11TextureBuffer2D* texturePtr = static_cast<DX11TextureBuffer2D*>(command.renderTarget.m_buffer.get());

@@ -25,11 +25,13 @@ class PixelShader;
 //   render object, as seen from the light. It doesn't depend on the camera, so coverage and resolution stay fixed as
 //   the camera moves.
 // - The first k_maxShadowedPointLights point lights: depth all around each, out to its range, in one cube of a cube
-//   map array (Utils/Math/CubeMap.h).
+//   map array (Graphics/CubeMap.h). A second array holds Static casters alone (ERenderMobility), so a face with
+//   Movable casters in it is the Static face copied, with them drawn on top.
 // Each map is kept until something it shows changes, and only that map is rendered again: a point light's cube when
-// the light moves or changes range, or a render object changes within its range; the directional map when its light
-// turns, or any render object changes (it's fitted to them all). A map whose slot goes to another light is rendered
-// again too.
+// the light moves or changes range (every face), or only the faces a render object changed in front of, within its
+// range (a Static one redraws the face's Static casters, a Movable one only copies them again before drawing the
+// Movable ones); the directional map when its light turns, or any render object changes (it's fitted to them all). A
+// map whose slot goes to another light is rendered again too.
 class ShadowRenderStage : public IRenderStage
 {
 public:
@@ -44,6 +46,14 @@ public:
 	void Render(RenderContext& context) override;
 
 private:
+	// Which render objects DrawCasters draws
+	enum class ECasters
+	{
+		All,
+		Static,
+		Movable
+	};
+
 	// What one shadow map was last rendered for, so it's only rendered again once that changes
 	struct CachedShadowMap
 	{
@@ -63,8 +73,9 @@ private:
 
 		Rendering::ConstantBufferHandle LightBuffer;
 		Rendering::TextureBuffer2DHandle ShadowMap;
-		// k_maxShadowedPointLights cubes, one per shadowed point light
+		// k_maxShadowedPointLights cubes, one per shadowed point light, and the same with Static casters alone
 		Rendering::TextureBuffer2DHandle PointShadowCubes;
+		Rendering::TextureBuffer2DHandle StaticPointShadowCubes;
 		Rendering::ConstantBufferHandle ShadowBuffer;
 
 		CachedShadowMap DirectionalCache;
@@ -90,11 +101,13 @@ private:
 	void BeginShadowPass();
 	// Into the directional map; false if there's nothing to cast shadows
 	bool RenderDirectionalShadow(const RenderScene& scene, const LightObject& light, const ShadowMapState& state, GraphicsLayouts::ShadowBufferLayout& outShadowData, RenderWorkCounts& workCounts);
-	// Into cube cubeIndex of the point light cubes, a face at a time
-	void RenderPointShadow(const RenderScene& scene, const LightObject& light, U32 cubeIndex, const ShadowMapState& state, GraphicsLayouts::PointShadowLayout& outShadow, RenderWorkCounts& workCounts);
-	// Depth of every opaque caster that's in view, into the bound depth target. Shared by every light type's views.
-	// Returns how many draws it made.
-	U32 DrawCasters(const RenderScene& scene, const Matrix4x4& viewProjection);
+	// Into cube cubeIndex of the point light cubes: the faces in staticFaces (a bit each, 1 << ECubeFace) have their
+	// Static casters drawn again into the Static cube, and those and the faces in movableFaces are copied from it and
+	// have their Movable casters drawn on top
+	void RenderPointShadow(const RenderScene& scene, const LightObject& light, U32 cubeIndex, U32 staticFaces, U32 movableFaces, const ShadowMapState& state, GraphicsLayouts::PointShadowLayout& outShadow, RenderWorkCounts& workCounts);
+	// Depth of every opaque caster of those kinds that's in view, into the bound depth target. Shared by every light
+	// type's views. Returns how many draws it made.
+	U32 DrawCasters(const RenderScene& scene, const Matrix4x4& viewProjection, ECasters casters);
 
 	// Returns false if there's nothing to cast shadows
 	bool CalculateLightViewProjection(const RenderScene& scene, const Vector3D& lightDirection, Matrix4x4& outViewProjection, float& outWorldTexelSize) const;

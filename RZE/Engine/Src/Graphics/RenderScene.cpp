@@ -86,11 +86,6 @@ const BoundingBox& RenderScene::GetStaticBounds() const
 	return m_staticBounds;
 }
 
-bool RenderScene::HaveObjectsChangedWithin(const BoundingBox& region, U64 sinceRevision) const
-{
-	return m_staticChanges.HasChangedWithin(region, sinceRevision) || m_movableChanges.HasChangedWithin(region, sinceRevision);
-}
-
 void RenderScene::OnRenderObjectChanged(ERenderMobility mobility, const BoundingBox& oldBounds, const BoundingBox& newBounds)
 {
 	m_objectsRevision = ++m_revision;

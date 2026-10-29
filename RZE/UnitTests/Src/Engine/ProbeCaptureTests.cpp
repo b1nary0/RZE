@@ -1,9 +1,9 @@
 #include <doctest/doctest.h>
 
+#include <Graphics/CubeMap.h>
 #include <Graphics/ProbeCapture.h>
 
 #include <Utils/Math/BoundingBox.h>
-#include <Utils/Math/CubeMap.h>
 #include <Utils/Math/Math.h>
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector3D.h>

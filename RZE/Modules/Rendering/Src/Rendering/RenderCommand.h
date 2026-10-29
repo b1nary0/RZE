@@ -60,6 +60,7 @@ namespace Rendering
 		GenerateMips,
 		CopyTexture,
 		CopyTextureRegion,
+		CopyTextureSlice,
 		ClearRenderTarget,
 		SetViewport,
 		SetInputLayout,
@@ -326,6 +327,16 @@ namespace Rendering
 		TextureBuffer2DHandle destination;
 		U32 destinationX = 0;
 		U32 destinationY = 0;
+	};
+
+	struct RenderCommand_CopyTextureSlice : RenderCommand
+	{
+		RenderCommand_CopyTextureSlice() { type = RenderCommandType::CopyTextureSlice; }
+
+		TextureBuffer2DHandle source;
+		U32 sourceSlice = 0;
+		TextureBuffer2DHandle destination;
+		U32 destinationSlice = 0;
 	};
 
 	struct RenderCommand_ReadTexel : RenderCommand

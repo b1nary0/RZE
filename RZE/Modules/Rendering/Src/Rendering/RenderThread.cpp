@@ -166,6 +166,7 @@ namespace Rendering
 			case RenderCommandType::GenerateMips: Execute(static_cast<RenderCommand_GenerateMips&>(*command)); break;
 			case RenderCommandType::CopyTexture: Execute(static_cast<RenderCommand_CopyTexture&>(*command)); break;
 			case RenderCommandType::CopyTextureRegion: Execute(static_cast<RenderCommand_CopyTextureRegion&>(*command)); break;
+			case RenderCommandType::CopyTextureSlice: Execute(static_cast<RenderCommand_CopyTextureSlice&>(*command)); break;
 			case RenderCommandType::ClearRenderTarget: Execute(static_cast<RenderCommand_ClearRenderTarget&>(*command)); break;
 			case RenderCommandType::SetViewport: Execute(static_cast<RenderCommand_SetViewport&>(*command)); break;
 			case RenderCommandType::SetInputLayout: Execute(static_cast<RenderCommand_SetInputLayout&>(*command)); break;

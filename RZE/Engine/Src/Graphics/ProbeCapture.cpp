@@ -1,6 +1,7 @@
 #include <StdAfx.h>
 #include <Graphics/ProbeCapture.h>
 
+#include <Graphics/CubeMap.h>
 #include <Graphics/IndexBuffer.h>
 #include <Graphics/Material.h>
 #include <Graphics/MaterialDefines.h>
@@ -13,7 +14,6 @@
 #include <Rendering/Renderer.h>
 
 #include <Utils/Math/BoundingBox.h>
-#include <Utils/Math/CubeMap.h>
 
 #include <algorithm>
 #include <array>
@@ -28,38 +28,6 @@ namespace
 	constexpr float k_nearDistance = 0.02f;
 	// What the instance buffer starts with, in instances; it doubles when a batch needs more
 	constexpr size_t k_initialInstanceCapacity = 16384;
-
-	// Whether a face looking along forward (one of the axes, either way) might see something in box, relative to the
-	// probe: whether the box reaches into the face's 90-degree pyramid. Conservative, as the pyramid is tested against
-	// the box's extent along each side axis apart.
-	bool IsInFace(const Vector3D& forward, const BoundingBox& relativeBox)
-	{
-		int axis = 0;
-		for (int candidate = 1; candidate < 3; ++candidate)
-		{
-			if (std::abs(forward[candidate]) > std::abs(forward[axis]))
-			{
-				axis = candidate;
-			}
-		}
-
-		// How far ahead of the probe the box reaches
-		const float ahead = forward[axis] > 0.0f ? relativeBox.GetMax()[axis] : -relativeBox.GetMin()[axis];
-		if (ahead <= 0.0f)
-		{
-			return false;
-		}
-
-		// The pyramid is as wide as it's far ahead
-		for (int side = 0; side < 3; ++side)
-		{
-			if (side != axis && (relativeBox.GetMin()[side] > ahead || relativeBox.GetMax()[side] < -ahead))
-			{
-				return false;
-			}
-		}
-		return true;
-	}
 }
 
 struct ProbeCapture::Batch
@@ -164,7 +132,7 @@ U32 ProbeCapture::GetFacesSeeing(const Vector3D& position, const BoundingBox& bo
 	U32 faceMask = 0;
 	for (U32 face = 0; face < k_faceCount; ++face)
 	{
-		if (IsInFace(GetFaceBasisOf(face).Forward, relativeBox))
+		if (CubeMap::IsInFaceView(GetFaceBasisOf(face).Forward, relativeBox))
 		{
 			faceMask |= 1u << face;
 		}
@@ -284,7 +252,7 @@ U32 ProbeCapture::Flush(const RenderScene& scene)
 				const BoundingBox relativeBox(draw.Bounds.GetMin() - probe.Position, draw.Bounds.GetMax() - probe.Position);
 				for (U32 face = 0; face < k_faceCount; ++face)
 				{
-					if (probe.FaceIndices[face] >= 0 && IsInFace(GetFaceBasisOf(face).Forward, relativeBox))
+					if (probe.FaceIndices[face] >= 0 && CubeMap::IsInFaceView(GetFaceBasisOf(face).Forward, relativeBox))
 					{
 						batch.Instances.push_back(static_cast<U32>(probe.FaceIndices[face]));
 					}
