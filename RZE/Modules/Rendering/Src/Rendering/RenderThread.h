@@ -9,6 +9,8 @@
 #include <Utils/PrimitiveDefs.h>
 #include <Utils/StatsWindow.h>
 
+struct ID3D11Texture2D;
+
 namespace Rendering
 {
 	class DX11Device;
@@ -134,6 +136,10 @@ namespace Rendering
 		// Reading back
 		void Execute(RenderCommand_ReadTexel& command);
 		void Execute(RenderCommand_ReadTexture& command);
+		// Fills in the ReadTexture results whose copies the GPU has made, without waiting for the others
+		void FinishTextureReadbacks();
+		// Those still waiting, at shutdown: their results are never ready
+		void ReleaseTextureReadbacks();
 
 		// Named regions for PIX and similar tools; no-ops when no profiler is attached
 		void BeginProfilerEvent(const char* name);
@@ -157,6 +163,14 @@ namespace Rendering
 		std::condition_variable m_updateCondition;
 		bool m_processSignal = false;
 		bool m_shuttingDown = false;
+
+		// A ReadTexture copy the GPU may not have made yet, and where it goes
+		struct PendingTextureReadback
+		{
+			ID3D11Texture2D* Staging = nullptr;
+			std::shared_ptr<TextureReadback> Result;
+		};
+		std::vector<PendingTextureReadback> m_pendingTextureReadbacks;
 
 		// Whether a profiler (e.g. PIX) is listening for D3DPERF markers; refreshed for each batch of commands
 		bool m_emitProfilerMarkers = false;

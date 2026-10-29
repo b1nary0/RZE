@@ -9,10 +9,13 @@
 #include <Graphics/Shader.h>
 
 #include <Rendering/Renderer.h>
+#include <Rendering/TextureReadback.h>
 #include <Rendering/Driver/GFXBuffer.h>
 
 #include <algorithm>
 #include <cmath>
+#include <memory>
+#include <vector>
 
 namespace
 {
@@ -48,8 +51,20 @@ namespace
 	constexpr U32 k_shRedSlot = 8;
 	constexpr U32 k_visibilitySlot = 11;
 	constexpr U32 k_captureAtlasSlot = 13;
+	// UAVs of Compute_ProbeVisibility
+	constexpr U32 k_visibilityOutput = 0;
+	constexpr U32 k_activeOutput = 1;
 
 	constexpr U64 k_neverFrame = ~0ull;
+
+	// Which of a frame's captures are active, as Compute_ProbeVisibility said (a texel each, in list order), on its way
+	// back from the GPU
+	struct ActivityReadback
+	{
+		std::shared_ptr<Rendering::TextureReadback> Readback;
+		U32 Count = 0;
+		U32 Probes[k_maxCapturesPerFrame] = {};
+	};
 
 	// A scene's probes, what they've captured and their light, kept in its ScenePersistent() blackboard
 	struct IrradianceProbeState : RenderStageData<IrradianceProbeState>
@@ -70,6 +85,10 @@ namespace
 		// Every probe's visibility map, at its index's place (k_visibilityProbesPerRow to a row). Cleared to 0 when the
 		// grid is fitted, so a probe reads as inactive until it's captured.
 		Rendering::TextureBuffer2DHandle Visibility;
+		// Compute_ProbeVisibility's word on which of the last captures are active (ActivityReadback), and those read
+		// back but not yet handed to the scheduler
+		Rendering::TextureBuffer2DHandle Activity;
+		std::vector<ActivityReadback> PendingActivity;
 
 		// The frame the probes were last updated in (RenderContext::FrameIndex), so it's once a frame
 		U64 UpdatedFrame = k_neverFrame;
@@ -120,6 +139,21 @@ namespace
 		return Rendering::Renderer::CreateTextureBuffer2D(params);
 	}
 
+	// A texel for each of a frame's captures, written by Compute_ProbeVisibility. A shader resource only because every
+	// texture has a view.
+	Rendering::TextureBuffer2DHandle CreateActivityTexture()
+	{
+		Rendering::GFXTextureBufferParams params = { 0 };
+		params.bIsShaderResource = true;
+		params.bIsUnorderedAccess = true;
+		params.Width = k_maxCapturesPerFrame;
+		params.Height = 1;
+		params.MipLevels = 1;
+		params.SampleCount = 1;
+		params.Format = Rendering::ETextureFormat::R32_UINT;
+		return Rendering::Renderer::CreateTextureBuffer2D(params);
+	}
+
 	// Mean and mean squared distance, written by Compute_ProbeVisibility and sampled with filtering. A render target
 	// too, only so it can be cleared.
 	Rendering::TextureBuffer2DHandle CreateVisibilityTexture(U32 width, U32 height)
@@ -143,6 +177,7 @@ namespace
 		state.Scratch = CreateCaptureTexture(k_maxCapturesPerFrame * k_probeWidth, k_faceSize, true);
 		state.ScratchDepth = CreateDepthTexture(k_maxCapturesPerFrame * k_probeWidth, k_faceSize);
 		state.Visibility = CreateVisibilityTexture(k_visibilityAtlasWidth, k_visibilityAtlasHeight);
+		state.Activity = CreateActivityTexture();
 		return state;
 	}
 
@@ -171,6 +206,8 @@ namespace
 		state.CaptureFrames = 0;
 		state.CaptureDraws = 0;
 		state.HasLoggedCaptures = false;
+		// About the old grid's probes
+		state.PendingActivity.clear();
 
 		const Vector4D zero(0.0f, 0.0f, 0.0f, 0.0f);
 		for (int channel = 0; channel < 3; ++channel)
@@ -187,6 +224,22 @@ namespace
 			Rendering::Renderer::ClearRenderTarget(state.PreviousSH[channel], zero);
 		}
 		Rendering::Renderer::ClearRenderTarget(state.Visibility, zero);
+	}
+
+	// Hands the scheduler which of the earlier captures are active, those that have come back from the GPU
+	void TakeActivity(IrradianceProbeState& state)
+	{
+		std::vector<ActivityReadback>& pending = state.PendingActivity;
+		while (!pending.empty() && pending.front().Readback->IsReady.load(std::memory_order_acquire))
+		{
+			const ActivityReadback& activity = pending.front();
+			const U32* texels = reinterpret_cast<const U32*>(activity.Readback->Data.data());
+			for (U32 slot = 0; slot < activity.Count; ++slot)
+			{
+				state.Scheduler.SetActive(activity.Probes[slot], texels[slot] != 0);
+			}
+			pending.erase(pending.begin());
+		}
 	}
 }
 
@@ -245,6 +298,7 @@ void IrradianceProbeStage::Render(RenderContext& context)
 			{
 				ResetForGrid(state);
 			}
+			TakeActivity(state);
 			scheduler.QueueChangedProbes(scene, cameraPosition, context.FrameIndex, settings.RecaptureSettleFrames);
 
 			const IrradianceProbeGrid& grid = scheduler.GetGrid();
@@ -285,7 +339,8 @@ void IrradianceProbeStage::Render(RenderContext& context)
 					scheduler.MarkCaptured(probe);
 				}
 
-				// Their visibility maps, from what they just captured
+				// Their visibility maps, from what they just captured, and whether they're active, read back for the
+				// scheduler
 				const GraphicsLayouts::IrradianceVolumeLayout gridVolume = MakeVolumeLayout(grid, probeCount);
 				Rendering::Renderer::UploadDataToBuffer<GraphicsLayouts::IrradianceVolumeLayout>(m_volumeBuffer, &gridVolume);
 				Rendering::Renderer::UploadDataToBuffer<GraphicsLayouts::ProbeListLayout>(m_probeListBuffer, &captured);
@@ -294,10 +349,19 @@ void IrradianceProbeStage::Render(RenderContext& context)
 				Rendering::Renderer::SetConstantBufferCS(m_volumeBuffer, k_volumeBufferSlot);
 				Rendering::Renderer::SetConstantBufferCS(m_probeListBuffer, k_probeListSlot);
 				Rendering::Renderer::SetTextureResourceCS(state.Atlas, k_captureAtlasSlot);
-				Rendering::Renderer::SetUnorderedAccess(state.Visibility, 0);
+				Rendering::Renderer::SetUnorderedAccess(state.Visibility, k_visibilityOutput);
+				Rendering::Renderer::SetUnorderedAccess(state.Activity, k_activeOutput);
 				Rendering::Renderer::Dispatch(captured.Count);
-				Rendering::Renderer::UnsetUnorderedAccess(0);
+				Rendering::Renderer::UnsetUnorderedAccess(k_visibilityOutput);
+				Rendering::Renderer::UnsetUnorderedAccess(k_activeOutput);
 				Rendering::Renderer::UnsetTextureResourceCS(k_captureAtlasSlot);
+
+				ActivityReadback activity;
+				activity.Readback = std::make_shared<Rendering::TextureReadback>();
+				activity.Count = captured.Count;
+				std::copy(captured.Probes, captured.Probes + captured.Count, activity.Probes);
+				Rendering::Renderer::ReadTexture(state.Activity, activity.Readback);
+				state.PendingActivity.push_back(std::move(activity));
 
 				context.WorkCounts.IrradianceProbesCaptured += captured.Count;
 				context.WorkCounts.IrradianceCaptureDraws += draws;

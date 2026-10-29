@@ -21,7 +21,8 @@ class RenderScene;
 //     objects within a few spacings of them change (more for bigger objects), once those have stayed still for a few
 //     frames. Probes never captured and probes captured again take turns, so something changing near the camera
 //     can't hold up the rest of the grid.
-//   - Each frame's relighting lists the probes just captured, then those around the camera, then the rest in turn.
+//   - Each frame's relighting lists the probes just captured, then those around the camera, then the rest in turn:
+//     only those that light something, as their captures say (SetActive).
 class IrradianceProbeScheduler
 {
 public:
@@ -44,10 +45,15 @@ public:
 	// Its capture is in place, so it can be relit
 	void MarkCaptured(U32 probe);
 	bool IsCaptured(U32 probe) const { return m_captured[probe]; }
+	// What a capture of probe said, a few frames after it: whether it lights anything (it isn't inside geometry, and
+	// sees a surface near it). An inactive probe isn't relit.
+	void SetActive(U32 probe, bool isActive);
+	// Until a capture says otherwise
+	bool IsActive(U32 probe) const { return m_active[probe]; }
 
 	// Adds this frame's relights to list, after the probes already in it (those just captured): those around
 	// cameraPosition, then the rest in turn, until it holds budget (at most ProbeListLayout::k_maxProbes, at least
-	// what it already holds). Only captured probes, each at most once a frame.
+	// what it already holds). Only captured, active probes, each at most once a frame.
 	void ListRelights(U32 budget, const Vector3D& cameraPosition, U64 frameIndex, GraphicsLayouts::ProbeListLayout& list);
 
 	const IrradianceProbeGrid& GetGrid() const { return m_grid; }
@@ -88,6 +94,8 @@ private:
 	std::vector<bool> m_captured;
 	std::vector<bool> m_queued;
 	std::vector<U64> m_relitFrame;
+	// By probe: whether it lights anything
+	std::vector<bool> m_active;
 	// The next probe to relight in turn
 	U32 m_nextRelight = 0;
 	// The scene's GetRevision when changed objects were last looked for

@@ -65,11 +65,10 @@ namespace Rendering
 			}
 		}
 
-		// Copies a box of a texture's most detailed mip into a staging texture and maps it, waiting for the GPU to
-		// finish drawing it, then calls read(mapped) before unmapping. Reads are rare (a click, a capture), so the
-		// staging copy is made for each one rather than kept around.
-		template <typename ReadFunc>
-		void ReadBackRegion(DX11Device& device, DX11TextureBuffer2D& texture, const D3D11_BOX& box, ReadFunc&& read)
+		// Copies a box of a texture's most detailed mip into a new staging texture, once the GPU has drawn it, for the
+		// caller to map and release. Reads are occasional (a click, a capture, a few texels a frame), so the staging
+		// copy is made for each one rather than kept around.
+		ID3D11Texture2D* CopyToStaging(DX11Device& device, DX11TextureBuffer2D& texture, const D3D11_BOX& box)
 		{
 			D3D11_TEXTURE2D_DESC stagingDesc;
 			texture.GetHWResource()->GetDesc(&stagingDesc);
@@ -87,11 +86,20 @@ namespace Rendering
 			HRESULT hr = device.GetHardwareDevice().CreateTexture2D(&stagingDesc, nullptr, &staging);
 			AssertExpr(hr == S_OK);
 
+			device.GetDeviceContext().CopySubresourceRegion(staging, 0, 0, 0, 0, texture.GetHWResource(), 0, isWhole ? nullptr : &box);
+			return staging;
+		}
+
+		// CopyToStaging, then maps the copy, waiting for the GPU to finish drawing it, and calls read(mapped) before
+		// unmapping
+		template <typename ReadFunc>
+		void ReadBackRegion(DX11Device& device, DX11TextureBuffer2D& texture, const D3D11_BOX& box, ReadFunc&& read)
+		{
+			ID3D11Texture2D* staging = CopyToStaging(device, texture, box);
 			ID3D11DeviceContext& deviceContext = device.GetDeviceContext();
-			deviceContext.CopySubresourceRegion(staging, 0, 0, 0, 0, texture.GetHWResource(), 0, isWhole ? nullptr : &box);
 
 			D3D11_MAPPED_SUBRESOURCE mapped;
-			hr = deviceContext.Map(staging, 0, D3D11_MAP_READ, 0, &mapped);
+			const HRESULT hr = deviceContext.Map(staging, 0, D3D11_MAP_READ, 0, &mapped);
 			AssertExpr(hr == S_OK);
 			read(mapped);
 			deviceContext.Unmap(staging, 0);
@@ -534,20 +542,49 @@ namespace Rendering
 		result.Height = desc.Height;
 		result.BytesPerTexel = GetBytesPerTexel(desc.Format);
 
-		const size_t rowSize = static_cast<size_t>(result.Width) * result.BytesPerTexel;
-		result.Data.resize(rowSize * result.Height);
-
+		// Mapped once the GPU has made the copy (FinishTextureReadbacks), so the render thread doesn't wait for it
 		const D3D11_BOX whole = { 0, 0, 0, desc.Width, desc.Height, 1 };
-		ReadBackRegion(*m_device, *texturePtr, whole, [&result, rowSize](const D3D11_MAPPED_SUBRESOURCE& mapped)
-			{
-				// Mapped rows can be padded past the texture's width
-				const U8* source = static_cast<const U8*>(mapped.pData);
-				for (U32 row = 0; row < result.Height; ++row)
-				{
-					memcpy(&result.Data[row * rowSize], source + static_cast<size_t>(row) * mapped.RowPitch, rowSize);
-				}
-			});
+		m_pendingTextureReadbacks.push_back({ CopyToStaging(*m_device, *texturePtr, whole), command.result });
+	}
 
-		result.IsReady.store(true, std::memory_order_release);
+	void RenderThread::FinishTextureReadbacks()
+	{
+		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+		for (size_t index = 0; index < m_pendingTextureReadbacks.size();)
+		{
+			PendingTextureReadback& pending = m_pendingTextureReadbacks[index];
+			D3D11_MAPPED_SUBRESOURCE mapped;
+			const HRESULT hr = deviceContext.Map(pending.Staging, 0, D3D11_MAP_READ, D3D11_MAP_FLAG_DO_NOT_WAIT, &mapped);
+			if (hr == DXGI_ERROR_WAS_STILL_DRAWING)
+			{
+				++index;
+				continue;
+			}
+			AssertExpr(hr == S_OK);
+
+			TextureReadback& result = *pending.Result;
+			const size_t rowSize = static_cast<size_t>(result.Width) * result.BytesPerTexel;
+			result.Data.resize(rowSize * result.Height);
+			// Mapped rows can be padded past the texture's width
+			const U8* source = static_cast<const U8*>(mapped.pData);
+			for (U32 row = 0; row < result.Height; ++row)
+			{
+				memcpy(&result.Data[row * rowSize], source + static_cast<size_t>(row) * mapped.RowPitch, rowSize);
+			}
+			deviceContext.Unmap(pending.Staging, 0);
+			pending.Staging->Release();
+			result.IsReady.store(true, std::memory_order_release);
+
+			m_pendingTextureReadbacks.erase(m_pendingTextureReadbacks.begin() + static_cast<std::ptrdiff_t>(index));
+		}
+	}
+
+	void RenderThread::ReleaseTextureReadbacks()
+	{
+		for (PendingTextureReadback& pending : m_pendingTextureReadbacks)
+		{
+			pending.Staging->Release();
+		}
+		m_pendingTextureReadbacks.clear();
 	}
 }

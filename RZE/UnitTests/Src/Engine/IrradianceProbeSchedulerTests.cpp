@@ -351,3 +351,33 @@ TEST_CASE_FIXTURE(ProbeScene, "Only captured probes are relit, and no more than 
 	scheduler.ListRelights(100000, Vector3D(), 2, capped);
 	CHECK(capped.Count == GraphicsLayouts::ProbeListLayout::k_maxProbes);
 }
+
+TEST_CASE_FIXTURE(ProbeScene, "Probes that light nothing aren't relit")
+{
+	IrradianceProbeScheduler scheduler;
+	REQUIRE(scheduler.FitGrid(Scene, k_targetProbes, Vector3D()));
+	CaptureAll(scheduler);
+	const U32 probeCount = scheduler.GetGrid().GetProbeCount();
+	REQUIRE(probeCount <= GraphicsLayouts::ProbeListLayout::k_maxProbes * 4);
+	CHECK(scheduler.IsActive(0));
+
+	// Every other probe
+	for (U32 probe = 0; probe < probeCount; probe += 2)
+	{
+		scheduler.SetActive(probe, false);
+	}
+	CHECK_FALSE(scheduler.IsActive(0));
+
+	std::set<U32> relit;
+	for (U64 frame = 1; frame <= 8; ++frame)
+	{
+		GraphicsLayouts::ProbeListLayout list;
+		scheduler.ListRelights(GraphicsLayouts::ProbeListLayout::k_maxProbes, Vector3D(), frame, list);
+		relit.insert(list.Probes, list.Probes + list.Count);
+	}
+	CHECK(relit.size() == probeCount / 2);
+	for (U32 probe : relit)
+	{
+		CHECK(probe % 2 == 1);
+	}
+}

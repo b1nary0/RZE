@@ -51,6 +51,7 @@ bool IrradianceProbeScheduler::FitGrid(const RenderScene& scene, U32 targetProbe
 	m_captured.assign(probeCount, false);
 	m_queued.assign(probeCount, true);
 	m_relitFrame.assign(probeCount, k_neverFrame);
+	m_active.assign(probeCount, true);
 	m_recaptureQueue.clear();
 	m_fillQueue.resize(probeCount);
 	for (U32 probe = 0; probe < probeCount; ++probe)
@@ -136,6 +137,11 @@ void IrradianceProbeScheduler::MarkCaptured(U32 probe)
 	m_captured[probe] = true;
 }
 
+void IrradianceProbeScheduler::SetActive(U32 probe, bool isActive)
+{
+	m_active[probe] = isActive;
+}
+
 void IrradianceProbeScheduler::ListRelights(U32 budget, const Vector3D& cameraPosition, U64 frameIndex, GraphicsLayouts::ProbeListLayout& list)
 {
 	for (U32 slot = 0; slot < list.Count; ++slot)
@@ -166,7 +172,7 @@ void IrradianceProbeScheduler::ListRelights(U32 budget, const Vector3D& cameraPo
 			for (int x = std::max(nearest[0] - k_nearProbes, 0); x <= std::min(nearest[0] + k_nearProbes, counts[0] - 1); ++x)
 			{
 				const U32 probe = static_cast<U32>(x + counts[0] * (y + counts[1] * z));
-				if (list.Count < clampedBudget && m_captured[probe] && m_relitFrame[probe] != frameIndex)
+				if (list.Count < clampedBudget && m_captured[probe] && m_active[probe] && m_relitFrame[probe] != frameIndex)
 				{
 					AddToRelight(probe, frameIndex, list);
 				}
@@ -179,7 +185,7 @@ void IrradianceProbeScheduler::ListRelights(U32 budget, const Vector3D& cameraPo
 	{
 		const U32 probe = m_nextRelight;
 		m_nextRelight = (m_nextRelight + 1) % probeCount;
-		if (m_captured[probe] && m_relitFrame[probe] != frameIndex)
+		if (m_captured[probe] && m_active[probe] && m_relitFrame[probe] != frameIndex)
 		{
 			AddToRelight(probe, frameIndex, list);
 		}

@@ -71,6 +71,7 @@ namespace Rendering
 		// application. It's never deleted (RZE_Engine::m_application), so they're still there after its ShutDown.
 		ImGui::DestroyContext();
 		m_frameLatencyWaitableObject = nullptr;
+		ReleaseTextureReadbacks();
 		m_device->Shutdown();
 	}
 
@@ -207,6 +208,8 @@ namespace Rendering
 
 		// Keeps the capacity, so steady-state frames don't allocate
 		m_consumerQueue.clear();
+
+		FinishTextureReadbacks();
 
 		UpdateStats(batchStart, hasPresented);
 	}
