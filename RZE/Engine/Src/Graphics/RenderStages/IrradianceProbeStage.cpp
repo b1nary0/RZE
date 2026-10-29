@@ -90,8 +90,10 @@ namespace
 		Rendering::TextureBuffer2DHandle Activity;
 		std::vector<ActivityReadback> PendingActivity;
 
-		// The frame the probes were last updated in (RenderContext::FrameIndex), so it's once a frame
+		// The frame the probes were last updated in (RenderContext::FrameIndex), so it's once a frame, and whether
+		// any were relit then
 		U64 UpdatedFrame = k_neverFrame;
+		bool WereRelit = false;
 		// Since the grid was fitted, for the log when every probe has been captured
 		U32 CaptureFrames = 0;
 		U64 CaptureDraws = 0;
@@ -300,6 +302,7 @@ void IrradianceProbeStage::Render(RenderContext& context)
 			}
 			TakeActivity(state);
 			scheduler.QueueChangedProbes(scene, cameraPosition, context.FrameIndex, settings.RecaptureSettleFrames);
+			scheduler.QueueChangedLights(scene, cameraPosition, settings.SettleRelights);
 
 			const IrradianceProbeGrid& grid = scheduler.GetGrid();
 			const U32 probeCount = grid.GetProbeCount();
@@ -376,9 +379,11 @@ void IrradianceProbeStage::Render(RenderContext& context)
 				}
 			}
 
-			// Relit: the probes just captured, then those near the camera, then the rest in turn, up to the budget
+			// Relit while their light is still changing: the probes just captured, then those around changed lights,
+			// those near the camera, then the rest in turn, up to the budget
 			GraphicsLayouts::ProbeListLayout relit = captured;
-			scheduler.ListRelights(settings.RelightBudget, cameraPosition, context.FrameIndex, relit);
+			scheduler.ListRelights(settings.RelightBudget, settings.SettleRelights, cameraPosition, context.FrameIndex, relit);
+			state.WereRelit = relit.Count > 0;
 
 			if (relit.Count > 0)
 			{
@@ -436,6 +441,7 @@ void IrradianceProbeStage::Render(RenderContext& context)
 			irradiance.SHGreen = state.SH[1];
 			irradiance.SHBlue = state.SH[2];
 			irradiance.Visibility = state.Visibility;
+			irradiance.IsChanging = state.WereRelit;
 		}
 	}
 

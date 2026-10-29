@@ -2,6 +2,7 @@
 
 #include <Graphics/GraphicsLayouts.h>
 #include <Graphics/IrradianceProbeScheduler.h>
+#include <Graphics/LightObject.h>
 #include <Graphics/RenderScene.h>
 #include <Graphics/StaticMesh.h>
 #include <Graphics/StaticMeshInstance.h>
@@ -10,6 +11,7 @@
 #include <Utils/Math/Matrix4x4.h>
 
 #include <cmath>
+#include <map>
 #include <memory>
 #include <set>
 #include <vector>
@@ -72,6 +74,7 @@ namespace
 	};
 
 	constexpr U32 k_targetProbes = 1024;
+	constexpr U32 k_settleRelights = 8;
 
 	// Takes and captures every waiting probe
 	void CaptureAll(IrradianceProbeScheduler& scheduler)
@@ -91,6 +94,27 @@ namespace
 			taken.insert(scheduler.TakeCapture());
 		}
 		return taken;
+	}
+
+	// Lists relights frame after frame, from frame on, until none are listed, counting how many times each probe is relit;
+	// frame is left at the first with none
+	std::map<U32, U32> RelightUntilSettled(IrradianceProbeScheduler& scheduler, U32 budget, U32 settleRelights, U64& frame)
+	{
+		std::map<U32, U32> timesRelit;
+		for (U64 first = frame; frame < first + 10000; ++frame)
+		{
+			GraphicsLayouts::ProbeListLayout list;
+			scheduler.ListRelights(budget, settleRelights, Vector3D(), frame, list);
+			if (list.Count == 0)
+			{
+				break;
+			}
+			for (U32 slot = 0; slot < list.Count; ++slot)
+			{
+				++timesRelit[list.Probes[slot]];
+			}
+		}
+		return timesRelit;
 	}
 
 	// Whether probe is within reach of changedBounds, as QueueChangedProbes reaches
@@ -303,7 +327,7 @@ TEST_CASE_FIXTURE(ProbeScene, "Relighting lists the probes just captured, then t
 	GraphicsLayouts::ProbeListLayout list;
 	list.Probes[list.Count++] = 0;
 	list.Probes[list.Count++] = grid.GetProbeCount() - 1;
-	scheduler.ListRelights(200, camera, 1, list);
+	scheduler.ListRelights(200, k_settleRelights, camera, 1, list);
 
 	REQUIRE(list.Count == 200);
 	CHECK(list.Probes[0] == 0);
@@ -330,7 +354,7 @@ TEST_CASE_FIXTURE(ProbeScene, "Relighting lists the probes just captured, then t
 	for (U64 frame = 2; frame < 2 + framesNeeded; ++frame)
 	{
 		GraphicsLayouts::ProbeListLayout next;
-		scheduler.ListRelights(200, camera, frame, next);
+		scheduler.ListRelights(200, k_settleRelights, camera, frame, next);
 		CHECK(next.Count == 200);
 		relit.insert(next.Probes, next.Probes + next.Count);
 	}
@@ -343,12 +367,12 @@ TEST_CASE_FIXTURE(ProbeScene, "Only captured probes are relit, and no more than 
 	REQUIRE(scheduler.FitGrid(Scene, k_targetProbes, Vector3D()));
 
 	GraphicsLayouts::ProbeListLayout none;
-	scheduler.ListRelights(512, Vector3D(), 1, none);
+	scheduler.ListRelights(512, k_settleRelights, Vector3D(), 1, none);
 	CHECK(none.Count == 0);
 
 	CaptureAll(scheduler);
 	GraphicsLayouts::ProbeListLayout capped;
-	scheduler.ListRelights(100000, Vector3D(), 2, capped);
+	scheduler.ListRelights(100000, k_settleRelights, Vector3D(), 2, capped);
 	CHECK(capped.Count == GraphicsLayouts::ProbeListLayout::k_maxProbes);
 }
 
@@ -372,7 +396,7 @@ TEST_CASE_FIXTURE(ProbeScene, "Probes that light nothing aren't relit")
 	for (U64 frame = 1; frame <= 8; ++frame)
 	{
 		GraphicsLayouts::ProbeListLayout list;
-		scheduler.ListRelights(GraphicsLayouts::ProbeListLayout::k_maxProbes, Vector3D(), frame, list);
+		scheduler.ListRelights(GraphicsLayouts::ProbeListLayout::k_maxProbes, k_settleRelights, Vector3D(), frame, list);
 		relit.insert(list.Probes, list.Probes + list.Count);
 	}
 	CHECK(relit.size() == probeCount / 2);
@@ -380,4 +404,103 @@ TEST_CASE_FIXTURE(ProbeScene, "Probes that light nothing aren't relit")
 	{
 		CHECK(probe % 2 == 1);
 	}
+}
+
+TEST_CASE_FIXTURE(ProbeScene, "Relighting stops once every probe has been relit a few times since the last capture, until the next")
+{
+	IrradianceProbeScheduler scheduler;
+	REQUIRE(scheduler.FitGrid(Scene, k_targetProbes, Vector3D()));
+	CaptureAll(scheduler);
+	CHECK(scheduler.IsSettling());
+
+	constexpr U32 k_settle = 3;
+	U64 frame = 1;
+	const std::map<U32, U32> timesRelit = RelightUntilSettled(scheduler, 200, k_settle, frame);
+	CHECK(timesRelit.size() == scheduler.GetGrid().GetProbeCount());
+	for (const auto& [probe, times] : timesRelit)
+	{
+		CHECK(times == k_settle);
+	}
+	CHECK_FALSE(scheduler.IsSettling());
+
+	// Nothing more while nothing changes
+	GraphicsLayouts::ProbeListLayout idle;
+	scheduler.ListRelights(200, k_settle, Vector3D(), frame + 1, idle);
+	CHECK(idle.Count == 0);
+
+	// A capture settles everything again, as does a probe turning off
+	scheduler.MarkCaptured(0);
+	CHECK(scheduler.IsSettling());
+	frame += 2;
+	CHECK(RelightUntilSettled(scheduler, 200, k_settle, frame).size() == scheduler.GetGrid().GetProbeCount());
+	scheduler.SetActive(1, false);
+	CHECK(RelightUntilSettled(scheduler, 200, k_settle, frame).size() == scheduler.GetGrid().GetProbeCount() - 1);
+}
+
+TEST_CASE_FIXTURE(ProbeScene, "A point light changing relights the probes around it first, the nearest the camera if they're more than a frame's budget, and only those")
+{
+	IrradianceProbeScheduler scheduler;
+	const Vector3D camera(-15.0f, 2.0f, -15.0f);
+	REQUIRE(scheduler.FitGrid(Scene, k_targetProbes, camera));
+	CaptureAll(scheduler);
+	U64 frame = 1;
+	RelightUntilSettled(scheduler, 512, k_settleRelights, frame);
+
+	LightObjectPtr light = Scene.CreateLightObject(ELightType::Point);
+	const BoundingBox before = light->GetReach();
+	light->SetRange(3.0f);
+	light->SetPosition(Vector3D(10.0f, 2.0f, 10.0f));
+	BoundingBox reached = before;
+	reached.Grow(light->GetReach());
+
+	scheduler.QueueChangedLights(Scene, camera, k_settleRelights);
+	GraphicsLayouts::ProbeListLayout list;
+	scheduler.ListRelights(512, k_settleRelights, camera, frame, list);
+	REQUIRE(list.Count > 0);
+
+	const IrradianceProbeGrid& grid = scheduler.GetGrid();
+	const Vector3D margin(grid.Spacing * 2.0f + 0.001f);
+	const BoundingBox around(reached.GetMin() - margin, reached.GetMax() + margin);
+	float furthestListed = 0.0f;
+	for (U32 slot = 0; slot < list.Count; ++slot)
+	{
+		const Vector3D position = grid.GetProbePosition(list.Probes[slot]);
+		CHECK(around.Intersects(BoundingBox(position, position)));
+		furthestListed = std::max(furthestListed, (position - camera).Length());
+	}
+
+	// Settles again, then nothing, and none further away was relit: those the first frame's budget didn't reach are
+	// relit next
+	++frame;
+	const std::map<U32, U32> timesRelit = RelightUntilSettled(scheduler, 512, k_settleRelights, frame);
+	CHECK(timesRelit.size() >= list.Count);
+	const std::set<U32> firstListed(list.Probes, list.Probes + list.Count);
+	for (const auto& [probe, times] : timesRelit)
+	{
+		const Vector3D position = grid.GetProbePosition(probe);
+		CHECK(around.Intersects(BoundingBox(position, position)));
+		// Those the first frame's budget didn't reach were no nearer the camera
+		if (firstListed.count(probe) == 0)
+		{
+			CHECK((position - camera).Length() >= furthestListed - 0.001f);
+		}
+	}
+	CHECK_FALSE(scheduler.IsSettling());
+
+	Scene.DestroyLightObject(light);
+}
+
+TEST_CASE_FIXTURE(ProbeScene, "A directional light changing relights every probe")
+{
+	IrradianceProbeScheduler scheduler;
+	REQUIRE(scheduler.FitGrid(Scene, k_targetProbes, Vector3D()));
+	CaptureAll(scheduler);
+	U64 frame = 1;
+	RelightUntilSettled(scheduler, 512, k_settleRelights, frame);
+
+	LightObjectPtr light = Scene.CreateLightObject(ELightType::Directional);
+	scheduler.QueueChangedLights(Scene, Vector3D(), k_settleRelights);
+	CHECK(RelightUntilSettled(scheduler, 512, k_settleRelights, frame).size() == scheduler.GetGrid().GetProbeCount());
+
+	Scene.DestroyLightObject(light);
 }
