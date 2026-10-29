@@ -613,6 +613,17 @@ namespace Rendering
 		++m_drawCallCount;
 	}
 
+	void Renderer::DrawIndexedInstanced(const IndexBufferHandle& indexBuffer, U32 instanceCount, U32 startInstance)
+	{
+		RenderCommand_DrawIndexedInstanced* command = MemArena::AllocType<RenderCommand_DrawIndexedInstanced>();
+		command->indexBuffer = indexBuffer;
+		command->instanceCount = instanceCount;
+		command->startInstance = startInstance;
+
+		m_renderThread.PushCommand(command);
+		++m_drawCallCount;
+	}
+
 	void Renderer::DrawFullScreenQuad()
 	{
 		RenderCommand_DrawFullScreenQuad* command = MemArena::AllocType<RenderCommand_DrawFullScreenQuad>();

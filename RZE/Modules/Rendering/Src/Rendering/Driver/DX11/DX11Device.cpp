@@ -86,6 +86,9 @@ namespace Rendering
 			rasterDesc.CullMode = D3D11_CULL_NONE;
 			// As the default, so SV_IsFrontFace means the same
 			rasterDesc.FrontCounterClockwise = TRUE;
+			// Cut at the near and far planes before rasterizing, so a triangle reaching behind the camera is drawn and
+			// faces as it should even when the view is squeezed into part of the target (ProbeCapture's batches)
+			rasterDesc.DepthClipEnable = TRUE;
 
 			mDevice->CreateRasterizerState(&rasterDesc, &mNoCullRasterState);
 		}

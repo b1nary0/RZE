@@ -125,6 +125,7 @@ namespace Rendering
 		// Draws
 		void Execute(RenderCommand_Draw& command);
 		void Execute(RenderCommand_DrawIndexed& command);
+		void Execute(RenderCommand_DrawIndexedInstanced& command);
 		void Execute(RenderCommand_DrawFullScreenQuad& command);
 
 		// Compute

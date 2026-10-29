@@ -189,6 +189,7 @@ namespace Rendering
 			case RenderCommandType::UnsetUnorderedAccess: Execute(static_cast<RenderCommand_UnsetUnorderedAccess&>(*command)); break;
 			case RenderCommandType::Draw: Execute(static_cast<RenderCommand_Draw&>(*command)); break;
 			case RenderCommandType::DrawIndexed: Execute(static_cast<RenderCommand_DrawIndexed&>(*command)); break;
+			case RenderCommandType::DrawIndexedInstanced: Execute(static_cast<RenderCommand_DrawIndexedInstanced&>(*command)); break;
 			case RenderCommandType::DrawFullScreenQuad: Execute(static_cast<RenderCommand_DrawFullScreenQuad&>(*command)); break;
 			case RenderCommandType::Dispatch: Execute(static_cast<RenderCommand_Dispatch&>(*command)); break;
 			case RenderCommandType::ReadTexel: Execute(static_cast<RenderCommand_ReadTexel&>(*command)); break;

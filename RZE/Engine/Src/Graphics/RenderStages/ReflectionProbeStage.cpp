@@ -57,8 +57,9 @@ namespace
 			// The probe's GetRevision when it was last seen moved or resized
 			U64 ProbeRevision = 0;
 			bool IsCaptured = false;
-			// Whether a change it sees has settled since it was captured, so it's captured again
-			bool IsStale = false;
+			// The faces a change has settled in front of since it was captured (a ProbeCapture face mask), captured
+			// again
+			U32 StaleFaces = 0;
 			// Whether its prefiltered cube has been made, so the forward pass can reflect it
 			bool IsLit = false;
 		};
@@ -141,9 +142,10 @@ namespace
 		return (value + divisor - 1) / divisor;
 	}
 
-	// Marks stale the captured probes a change has settled in since last time: Static objects that changed in their
-	// boxes, or the probes themselves moved or resized, once nothing there has changed for settleFrames frames
-	void MarkStaleProbes(const RenderScene& scene, U64 frameIndex, U32 settleFrames, ReflectionProbeState& state)
+	// Marks stale the faces of the captured probes that a change has settled in front of since last time: Static objects
+	// that changed in their boxes, or the probes themselves moved or resized, once nothing there has changed for
+	// settleFrames frames. capture says which faces see where.
+	void MarkStaleProbes(const RenderScene& scene, U64 frameIndex, U32 settleFrames, const ProbeCapture& capture, ReflectionProbeState& state)
 	{
 		const ReflectionProbeContainer& probes = scene.GetReflectionProbes();
 		const U32 probeCount = std::min(static_cast<U32>(probes.size()), k_maxProbes);
@@ -158,7 +160,7 @@ namespace
 				state.Unsettled.Clear();
 				for (ReflectionProbeState::Slot& slotState : state.Slots)
 				{
-					slotState.IsStale = true;
+					slotState.StaleFaces = ProbeCapture::k_allFaces;
 				}
 			}
 		}
@@ -177,14 +179,15 @@ namespace
 			}
 		}
 
-		// Once still for long enough, the probes whose boxes they're in
-		state.Unsettled.TakeSettled(frameIndex, settleFrames, [&state, &probes, probeCount](const BoundingBox& settled)
+		// Once still for long enough, the faces that see them of the probes whose boxes they're in
+		state.Unsettled.TakeSettled(frameIndex, settleFrames, [&state, &probes, probeCount, &capture](const BoundingBox& settled)
 		{
 			for (U32 slot = 0; slot < probeCount; ++slot)
 			{
-				if (probes[slot]->GetBox().Intersects(settled))
+				const ReflectionProbeObject& probe = *probes[slot];
+				if (probe.GetBox().Intersects(settled))
 				{
-					state.Slots[slot].IsStale = true;
+					state.Slots[slot].StaleFaces |= capture.GetFacesSeeing(probe.GetPosition(), settled);
 				}
 			}
 		});
@@ -252,21 +255,22 @@ void ReflectionProbeStage::Render(RenderContext& context)
 				}
 			}
 
-			MarkStaleProbes(scene, context.FrameIndex, m_settings->RecaptureSettleFrames, state);
+			MarkStaleProbes(scene, context.FrameIndex, m_settings->RecaptureSettleFrames, m_capture, state);
 
 			GraphicsLayouts::ProbeListLayout relit;
 			relit.FaceSize = k_faceSize;
 			relit.AtlasProbesPerRow = 1;
 
-			// One capture a frame: the first probe that's new, or stale
+			// One capture a frame: the first probe that's new (every face), or has stale faces (only those)
 			for (U32 slot = 0; slot < probeCount; ++slot)
 			{
 				ReflectionProbeState::Slot& slotState = state.Slots[slot];
 				const ReflectionProbeObject& probe = *probes[slot];
-				if (slotState.IsCaptured && !slotState.IsStale)
+				if (slotState.IsCaptured && slotState.StaleFaces == 0)
 				{
 					continue;
 				}
+				const U32 faceMask = slotState.IsCaptured ? slotState.StaleFaces : ProbeCapture::k_allFaces;
 
 				Rendering::Renderer::Begin("ReflectionProbeCapture");
 				Rendering::Renderer::SetColourTarget(state.Scratch, state.ScratchDepth);
@@ -274,14 +278,23 @@ void ReflectionProbeStage::Render(RenderContext& context)
 				Rendering::Renderer::ClearDepthStencilBuffer(state.ScratchDepth);
 				// Far enough to see across the whole scene from anywhere in it
 				const float farDistance = std::max(scene.GetBounds().GetRadius() * 2.0f, 1.0f);
-				context.WorkCounts.ReflectionCaptureDraws += m_capture.Capture(scene, probe.GetPosition(), farDistance, 0, 0);
+				m_capture.BeginBatch(k_probeWidth, k_faceSize);
+				m_capture.AddProbe(probe.GetPosition(), farDistance, 0, 0, faceMask);
+				context.WorkCounts.ReflectionCaptureDraws += m_capture.Flush(scene);
 				++context.WorkCounts.ReflectionProbesCaptured;
 				Rendering::Renderer::ClearRenderTargets();
-				Rendering::Renderer::CopyTextureRegion(state.Scratch, 0, 0, k_probeWidth, k_faceSize, state.Atlas, 0, slot * k_faceSize);
+				// Only the faces captured: the others keep what they had
+				for (U32 face = 0; face < ProbeCapture::k_faceCount; ++face)
+				{
+					if ((faceMask & (1u << face)) != 0)
+					{
+						Rendering::Renderer::CopyTextureRegion(state.Scratch, face * k_faceSize, 0, k_faceSize, k_faceSize, state.Atlas, face * k_faceSize, slot * k_faceSize);
+					}
+				}
 				Rendering::Renderer::End();
 
 				slotState.IsCaptured = true;
-				slotState.IsStale = false;
+				slotState.StaleFaces = 0;
 				slotState.ProbeRevision = probe.GetRevision();
 				relit.Probes[relit.Count++] = slot;
 				break;

@@ -8,8 +8,8 @@ struct GlobalIlluminationSettings
 {
 	// About how many probes a scene's grid has, whatever its size (IrradianceProbeGrid::Fit)
 	U32 TargetProbeCount = 4096;
-	// Draws a frame for capturing probes; at about 11 draws a face in Sponza, 4000 is about 60 probes
-	U32 CaptureDrawBudget = 4000;
+	// Probes captured a frame, all in one batch (ProbeCapture), up to the 64 a batch holds
+	U32 CapturesPerFrame = 64;
 	// Probes relit a frame: those just captured and those near the camera first, then the rest in turn
 	U32 RelightBudget = 512;
 	// Frames a Static object must stay still before the irradiance and reflection probes around it are captured again,

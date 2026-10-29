@@ -2,6 +2,8 @@
 
 #include <Graphics/ProbeCapture.h>
 
+#include <Utils/Math/BoundingBox.h>
+#include <Utils/Math/CubeMap.h>
 #include <Utils/Math/Math.h>
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector3D.h>
@@ -11,7 +13,7 @@
 
 namespace
 {
-	// What ProbeCapture::Capture draws a face with
+	// What ProbeCapture draws a face with (Vertex_ProbeCapture.hlsl, before placing it in the target)
 	Matrix4x4 FaceClipSpace(U32 face)
 	{
 		const ProbeCapture::FaceBasis basis = ProbeCapture::GetFaceBasis(face);
@@ -83,5 +85,38 @@ TEST_CASE("The six probe faces see every direction between them")
 		}
 		// Only directions exactly on an edge between faces would be seen by two
 		CHECK(facesSeeing == 1);
+	}
+}
+
+TEST_CASE("A probe face sees a box only if the box reaches into its 90-degree view")
+{
+	const ProbeCapture capture(8, ProbeCapture::EProbeFaces::Probe);
+	const Vector3D probe(10.0f, 2.0f, -3.0f);
+	const auto facesSeeing = [&capture, &probe](const Vector3D& min, const Vector3D& max)
+	{
+		return capture.GetFacesSeeing(probe, BoundingBox(probe + min, probe + max));
+	};
+
+	// A box around the probe: every face
+	CHECK(facesSeeing(Vector3D(-1.0f), Vector3D(1.0f)) == ProbeCapture::k_allFaces);
+	// Small and straight ahead of a face (GetFaceBasis's order: +X, -X, +Y, -Y, +Z, -Z): that face only
+	CHECK(facesSeeing(Vector3D(5.0f, -0.5f, -0.5f), Vector3D(6.0f, 0.5f, 0.5f)) == 1u << 0);
+	CHECK(facesSeeing(Vector3D(-0.5f, 5.0f, -0.5f), Vector3D(0.5f, 6.0f, 0.5f)) == 1u << 2);
+	CHECK(facesSeeing(Vector3D(-0.5f, -0.5f, -6.0f), Vector3D(0.5f, 0.5f, -5.0f)) == 1u << 5);
+	// Ahead and up at 45 degrees: on the edge between +X and +Y, so both
+	CHECK(facesSeeing(Vector3D(5.0f, 4.5f, -0.5f), Vector3D(6.0f, 5.5f, 0.5f)) == ((1u << 0) | (1u << 2)));
+	// Far off to the side of +X's view, though ahead of it: only +Y sees it
+	CHECK(facesSeeing(Vector3D(1.0f, 5.0f, -0.5f), Vector3D(2.0f, 6.0f, 0.5f)) == 1u << 2);
+	CHECK(capture.GetFacesSeeing(probe, BoundingBox()) == 0);
+}
+
+TEST_CASE("Reflection probe faces are told apart in CubeMap's order")
+{
+	const ProbeCapture capture(8, ProbeCapture::EProbeFaces::CubeMap);
+	const Vector3D probe(0.0f);
+	for (U32 face = 0; face < ProbeCapture::k_faceCount; ++face)
+	{
+		const Vector3D ahead = CubeMap::GetFaceForward(static_cast<ECubeFace>(face)) * 5.0f;
+		CHECK(capture.GetFacesSeeing(probe, BoundingBox(ahead - Vector3D(0.5f), ahead + Vector3D(0.5f))) == 1u << face);
 	}
 }

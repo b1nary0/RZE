@@ -154,6 +154,9 @@ namespace Rendering
 
 		static void Draw(const VertexBufferHandle& vertexBuffer, size_t count);
 		static void DrawIndexed(const IndexBufferHandle& indexBuffer);
+		// instanceCount copies of the indexed geometry. Per-instance inputs (ShaderInputLayoutData's PER_INSTANCE) are
+		// read from startInstance on, so one instance buffer can hold many draws' instances.
+		static void DrawIndexedInstanced(const IndexBufferHandle& indexBuffer, U32 instanceCount, U32 startInstance);
 		static void DrawFullScreenQuad();
 
 	public:

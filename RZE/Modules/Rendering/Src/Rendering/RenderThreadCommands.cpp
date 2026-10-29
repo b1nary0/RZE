@@ -470,6 +470,17 @@ namespace Rendering
 		deviceContext.DrawIndexed(command.indexBuffer.m_buffer->GetIndexCount(), 0, 0);
 	}
 
+	void RenderThread::Execute(RenderCommand_DrawIndexedInstanced& command)
+	{
+		if (!m_vertexShaderBound)
+		{
+			return;
+		}
+
+		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+		deviceContext.DrawIndexedInstanced(command.indexBuffer.m_buffer->GetIndexCount(), command.instanceCount, 0, 0, command.startInstance);
+	}
+
 	void RenderThread::Execute(RenderCommand_DrawFullScreenQuad&)
 	{
 		if (!m_vertexShaderBound)

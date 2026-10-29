@@ -91,7 +91,9 @@ namespace Rendering
 		for (size_t i = 0; i < inputLayout.GetDataCount(); ++i)
 		{
 			const ShaderInputLayout::ShaderInputLayoutData& layoutData = inputLayout[i];
-			inputElements.push_back({layoutData.Name.c_str(), 0, ConvertToDXGIFormat(layoutData.DataFormat), 0, static_cast<U32>(layoutData.Offset), ConvertToD3D11InputClassification(layoutData.DataClassification), 0});
+			const bool isPerInstance = layoutData.DataClassification == EDataClassification::PER_INSTANCE;
+			inputElements.push_back({ layoutData.Name.c_str(), 0, ConvertToDXGIFormat(layoutData.DataFormat), layoutData.InputSlot, static_cast<U32>(layoutData.Offset),
+				ConvertToD3D11InputClassification(layoutData.DataClassification), isPerInstance ? 1u : 0u });
 		}
 
 		hr = m_graphicsDevice->GetHardwareDevice().CreateInputLayout(inputElements.data(), static_cast<UINT>(inputElements.size()), vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &m_hwInputLayout);

@@ -17,7 +17,7 @@ struct GlobalIlluminationSettings;
 // GraphicsLayouts::k_maxReflectionProbes the scene made, a slot each. Each frame:
 //   - At most one probe is captured (ProbeCapture, 128 texels a face, in CubeMap's layout): a new one, or one that
 //     moved or was resized, or whose box a Static object changed in, once that has stayed still for
-//     GlobalIlluminationSettings::RecaptureSettleFrames.
+//     GlobalIlluminationSettings::RecaptureSettleFrames. Only the faces that see such a change are captured again.
 //   - Up to two are relit, it and then the others in turn (Compute_ReflectionRelight), with the scene's lights and
 //     irradiance probes, into a radiance cube array, which then gets its mips.
 //   - Their prefiltered cubes are made from that (Compute_ReflectionPrefilter): a mip per gloss.

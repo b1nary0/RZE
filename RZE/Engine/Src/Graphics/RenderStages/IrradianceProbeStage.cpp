@@ -19,8 +19,9 @@ namespace
 	// Texels across a capture face: 6 x 64 = 384 samples a probe, about what DDGI traces per probe
 	constexpr U32 k_faceSize = 8;
 	constexpr U32 k_probeWidth = k_faceSize * ProbeCapture::k_faceCount;
-	// The most probes captured a frame, however few draws they take: what fits side by side in the scratch target
-	constexpr U32 k_maxCapturesPerFrame = 64;
+	// The most probes captured a frame: one batch's worth (ProbeCapture::k_maxBatchFaces), side by side in the scratch
+	// target
+	constexpr U32 k_maxCapturesPerFrame = ProbeCapture::k_maxBatchFaces / ProbeCapture::k_faceCount;
 	// The capture atlas has a row of probes per k_faceSize texels
 	constexpr U32 k_atlasProbesPerRow = 64;
 	constexpr U32 k_atlasWidth = k_atlasProbesPerRow * k_probeWidth;
@@ -262,14 +263,16 @@ void IrradianceProbeStage::Render(RenderContext& context)
 				Rendering::Renderer::ClearRenderTarget(state.Scratch, Vector4D(0.0f, 0.0f, 0.0f, 0.0f));
 				Rendering::Renderer::ClearDepthStencilBuffer(state.ScratchDepth);
 
-				// Nearest first, until the draws or the scratch target run out
-				U32 draws = 0;
-				while (scheduler.HasCaptureWaiting() && captured.Count < k_maxCapturesPerFrame && draws < settings.CaptureDrawBudget)
+				// Nearest first, all drawn together
+				const U32 capturesPerFrame = std::min(settings.CapturesPerFrame, k_maxCapturesPerFrame);
+				m_capture.BeginBatch(k_maxCapturesPerFrame * k_probeWidth, k_faceSize);
+				while (scheduler.HasCaptureWaiting() && captured.Count < capturesPerFrame)
 				{
 					const U32 probe = scheduler.TakeCapture();
-					draws += m_capture.Capture(scene, grid.GetProbePosition(probe), farDistance, captured.Count * k_probeWidth, 0);
+					m_capture.AddProbe(grid.GetProbePosition(probe), farDistance, captured.Count * k_probeWidth, 0);
 					captured.Probes[captured.Count++] = probe;
 				}
+				const U32 draws = m_capture.Flush(scene);
 
 				// Copied out of the scratch target, so it can't still be bound to be drawn into
 				Rendering::Renderer::ClearRenderTargets();
@@ -303,9 +306,9 @@ void IrradianceProbeStage::Render(RenderContext& context)
 				if (!scheduler.IsFilling() && !state.HasLoggedCaptures)
 				{
 					state.HasLoggedCaptures = true;
-					RZE_LOG_ARGS("Irradiance probes: captured %u (%u x %u x %u, %.2f m apart) over %u frames, %.1f draws a face",
+					RZE_LOG_ARGS("Irradiance probes: captured %u (%u x %u x %u, %.2f m apart) over %u frames, %.1f draws a frame",
 						probeCount, grid.CountX, grid.CountY, grid.CountZ, grid.Spacing, state.CaptureFrames,
-						static_cast<double>(state.CaptureDraws) / (static_cast<double>(probeCount) * ProbeCapture::k_faceCount));
+						static_cast<double>(state.CaptureDraws) / static_cast<double>(state.CaptureFrames));
 				}
 			}
 

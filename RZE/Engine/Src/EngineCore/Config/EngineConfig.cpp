@@ -133,7 +133,7 @@ void EngineConfig::LoadRenderingSettings()
 	// At least 1 of each, so a misread value can't stop the probes from ever finishing
 	GlobalIlluminationSettings& probes = mGlobalIlluminationSettings;
 	probes.TargetProbeCount = static_cast<U32>(std::max(1L, mINIParser.GetLongValue("Rendering", "ProbeTargetCount", static_cast<long>(probes.TargetProbeCount))));
-	probes.CaptureDrawBudget = static_cast<U32>(std::max(1L, mINIParser.GetLongValue("Rendering", "ProbeCaptureDrawBudget", static_cast<long>(probes.CaptureDrawBudget))));
+	probes.CapturesPerFrame = static_cast<U32>(std::max(1L, mINIParser.GetLongValue("Rendering", "ProbeCapturesPerFrame", static_cast<long>(probes.CapturesPerFrame))));
 	probes.RelightBudget = static_cast<U32>(std::max(1L, mINIParser.GetLongValue("Rendering", "ProbeRelightBudget", static_cast<long>(probes.RelightBudget))));
 	probes.RecaptureSettleFrames = static_cast<U32>(std::max(0L, mINIParser.GetLongValue("Rendering", "ProbeRecaptureSettleFrames", static_cast<long>(probes.RecaptureSettleFrames))));
 }
