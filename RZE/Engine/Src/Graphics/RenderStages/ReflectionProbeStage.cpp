@@ -406,8 +406,12 @@ void ReflectionProbeStage::Render(RenderContext& context)
 					Rendering::Renderer::UnsetTextureResourceCS(slot);
 				}
 
-				// Its mips, for the prefilter's wider lobes to read from
-				Rendering::Renderer::GenerateMips(state.Radiance);
+				// Their mips, for the prefilter's wider lobes to read from: only the relit cubes', as the whole array
+				// takes about 0.6 ms
+				for (U32 listed = 0; listed < relit.Count; ++listed)
+				{
+					Rendering::Renderer::GenerateMips(state.Radiance, relit.Probes[listed] * ProbeCapture::k_faceCount, ProbeCapture::k_faceCount);
+				}
 
 				// A mip of the prefiltered cubes per gloss, as the forward pass picks them: (1 - gloss) x the last mip
 				Rendering::Renderer::SetComputeShader(m_prefilterShader->GetPlatformObject());

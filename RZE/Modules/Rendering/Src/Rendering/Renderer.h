@@ -112,6 +112,9 @@ namespace Rendering
 
 		// Fills the texture's mip chain from mip 0
 		static void GenerateMips(const TextureBuffer2DHandle& texture);
+		// The same for sliceCount of its slices from firstSlice alone (e.g. one cube of a cube array, 6 slices): the
+		// work is by the slices done, so it's much cheaper than the whole of a big array
+		static void GenerateMips(const TextureBuffer2DHandle& texture, U32 firstSlice, U32 sliceCount);
 		// Copies every slice and mip of source into destination, which must have the same size, format, slices and mips
 		static void CopyTexture(const TextureBuffer2DHandle& source, const TextureBuffer2DHandle& destination);
 		// Copies a width x height rectangle of source's mip 0 (its first slice) to destination's, at destinationX,

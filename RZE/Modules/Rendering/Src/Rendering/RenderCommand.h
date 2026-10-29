@@ -301,6 +301,9 @@ namespace Rendering
 		RenderCommand_GenerateMips() { type = RenderCommandType::GenerateMips; }
 
 		TextureBuffer2DHandle texture;
+		// The slices to fill the mips of; 0 slices for all of them
+		U32 firstSlice = 0;
+		U32 sliceCount = 0;
 	};
 
 	struct RenderCommand_CopyTexture : RenderCommand

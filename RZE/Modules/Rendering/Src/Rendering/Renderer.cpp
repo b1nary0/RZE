@@ -417,6 +417,17 @@ namespace Rendering
 		m_renderThread.PushCommand(command);
 	}
 
+	void Renderer::GenerateMips(const TextureBuffer2DHandle& texture, U32 firstSlice, U32 sliceCount)
+	{
+		AssertExpr(sliceCount > 0);
+		RenderCommand_GenerateMips* command = MemArena::AllocType<RenderCommand_GenerateMips>();
+		command->texture = texture;
+		command->firstSlice = firstSlice;
+		command->sliceCount = sliceCount;
+
+		m_renderThread.PushCommand(command);
+	}
+
 	void Renderer::CopyTexture(const TextureBuffer2DHandle& source, const TextureBuffer2DHandle& destination)
 	{
 		RenderCommand_CopyTexture* command = MemArena::AllocType<RenderCommand_CopyTexture>();

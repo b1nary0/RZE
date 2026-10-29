@@ -288,7 +288,32 @@ namespace Rendering
 		DX11TextureBuffer2D* texturePtr = static_cast<DX11TextureBuffer2D*>(command.texture.m_buffer.get());
 
 		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
-		deviceContext.GenerateMips(&texturePtr->GetResourceView());
+		if (command.sliceCount == 0)
+		{
+			deviceContext.GenerateMips(&texturePtr->GetResourceView());
+			return;
+		}
+
+		// GenerateMips fills what its view covers, so a view of those slices alone, every mip. Made for the call:
+		// it's cheap, and slices change from call to call.
+		D3D11_TEXTURE2D_DESC desc;
+		texturePtr->GetHWResource()->GetDesc(&desc);
+		AssertExpr(command.firstSlice + command.sliceCount <= desc.ArraySize);
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc;
+		ZeroMemory(&viewDesc, sizeof(viewDesc));
+		viewDesc.Format = desc.Format;
+		viewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+		viewDesc.Texture2DArray.MostDetailedMip = 0;
+		viewDesc.Texture2DArray.MipLevels = desc.MipLevels;
+		viewDesc.Texture2DArray.FirstArraySlice = command.firstSlice;
+		viewDesc.Texture2DArray.ArraySize = command.sliceCount;
+
+		ID3D11ShaderResourceView* view = nullptr;
+		const HRESULT hr = m_device->GetHardwareDevice().CreateShaderResourceView(texturePtr->GetHWResource(), &viewDesc, &view);
+		AssertExpr(hr == S_OK);
+		deviceContext.GenerateMips(view);
+		view->Release();
 	}
 
 	void RenderThread::Execute(RenderCommand_CopyTexture& command)
