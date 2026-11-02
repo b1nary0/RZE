@@ -29,11 +29,13 @@ public abstract class BaseProject : Project
     [Configure]
     public virtual void ConfigureAll(Project.Configuration conf, CommonTarget target)
     {
-        conf.ProjectPath = Path.Combine("[project.SharpmakeCsPath]", "_Project");
+        // Lowercase, so they're the same folders on case-sensitive filesystems (Linux) as everywhere else that names
+        // them: committed files in _project (Editor.args.json and others), and _build in .gitignore, CI and Filepath
+        conf.ProjectPath = Path.Combine("[project.SharpmakeCsPath]", "_project");
         conf.ProjectFileName = @"[project.Name]_[target.Platform]";
 
-        conf.TargetPath = Path.Combine(Globals.RootDir, "_Build/[target.Name]/");
-        conf.LibraryPaths.Add(Path.Combine(Globals.RootDir, "_Build/[target.Name]/"));
+        conf.TargetPath = Globals.BuildDir(target);
+        conf.LibraryPaths.Add(Globals.BuildDir(target));
 
         // It seems like you use <> includes a lot, so this is needed per project
         conf.IncludePaths.Add(Path.Combine("[project.SharpmakeCsPath]", "Src"));
@@ -42,16 +44,38 @@ public abstract class BaseProject : Project
 
     // For an exe with a window: no console window opens with it, which on Windows 11 opens in Windows Terminal and
     // takes focus from the app's window (-console opens one). The entry point stays main().
+    // Other platforms have no console/windowed split, so it does nothing there.
     protected static void ConfigureAsWindowedApp(Project.Configuration conf)
     {
+        if (conf.Platform != Platform.win64)
+        {
+            return;
+        }
+
         conf.Options.Add(Options.Vc.Linker.SubSystem.Windows);
         conf.AdditionalLinkerOptions.Add("/ENTRY:mainCRTStartup");
+    }
+
+    // Folders that hold code for only some platforms or graphics APIs. A folder with one of these names, at any depth
+    // under a project's Src, is compiled only where it's listed, so per-platform code needs no #ifdefs. E.g.
+    // Utils/Platform/Windows/Shell.cpp and Utils/Platform/Linux/Shell.cpp implement Utils/Platform/Shell.h.
+    private static readonly string[] k_windowsOnlyFolders = { "Windows", "DX11" };
+    private static readonly string[] k_linuxOnlyFolders = { "Linux", "OpenGL" };
+
+    private static void ExcludeFolders(Configuration conf, string[] folderNames)
+    {
+        foreach (string folderName in folderNames)
+        {
+            // Only below Src, so a folder of that name further up (where the repository was cloned) doesn't exclude
+            // everything
+            conf.SourceFilesBuildExcludeRegex.Add(@"[\\/]Src[\\/](?:[^\\/]+[\\/])*" + folderName + @"[\\/]");
+        }
     }
 
     #region Platfoms
 
     [ConfigurePriority(ConfigurePriorities.Platform)]
-    [Configure(SubPlatformType.x64)]
+    [Configure(Platform.win64)]
     public virtual void ConfigureWin64(Configuration conf, CommonTarget target)
     {
         conf.Options.Add(Options.Vc.Compiler.CppLanguageStandard.CPP17);
@@ -69,6 +93,60 @@ public abstract class BaseProject : Project
         );
 
         conf.Defines.Add("NOMINMAX");
+        // The graphics API the renderer is built for (Rendering/Driver/GFXDeviceFactory)
+        conf.Defines.Add("RZE_GFX_DX11");
+
+        ExcludeFolders(conf, k_linuxOnlyFolders);
+    }
+
+    [ConfigurePriority(ConfigurePriorities.Platform)]
+    [Configure(Platform.linux)]
+    public virtual void ConfigureLinux(Configuration conf, CommonTarget target)
+    {
+        conf.Options.Add(Options.Makefile.General.PlatformToolset.Clang);
+        conf.Options.Add(Options.Makefile.Compiler.CppLanguageStandard.Cpp17);
+        conf.Options.Add(Options.Makefile.Compiler.Rtti.Enable);
+        conf.Options.Add(Options.Makefile.Compiler.Exceptions.Enable);
+
+        // -Wall, but not yet as errors as on Windows: clang warns about things MSVC's /W3 doesn't, and those are
+        // fixed before warnings become errors here too
+        conf.Options.Add(Options.Makefile.Compiler.Warnings.MoreWarnings);
+        conf.Options.Add(Options.Makefile.Compiler.TreatWarningsAsErrors.Disable);
+        // Symbols in every configuration, as Windows has PDBs in every configuration
+        conf.Options.Add(Options.Makefile.Compiler.GenerateDebugInformation.Enable);
+
+        switch (target.Optimization)
+        {
+            case Optimization.Debug:
+                conf.Options.Add(Options.Makefile.Compiler.OptimizationLevel.Disable);
+                break;
+            case Optimization.Release:
+                conf.Options.Add(Options.Makefile.Compiler.OptimizationLevel.Full);
+                break;
+            case Optimization.Retail:
+                conf.Options.Add(Options.Makefile.Compiler.OptimizationLevel.FullWithInlining);
+                // As Windows' Retail (AdvancedVectorExtensions2)
+                conf.AdditionalCompilerOptions.Add("-mavx2");
+                break;
+        }
+
+        conf.AdditionalCompilerOptions.Add("-pthread");
+        conf.AdditionalLinkerOptions.Add("-pthread");
+        // LLD finds symbols in static libraries whatever their order, as MSVC's linker does. GNU ld needs them in
+        // dependency order, but the Makefile generator sorts them by name, and its --start-group option is passed to
+        // clang++ without -Wl, so clang++ rejects it.
+        conf.AdditionalLinkerOptions.Add("-fuse-ld=lld");
+
+        // The graphics API the renderer is built for (Rendering/Driver/GFXDeviceFactory)
+        conf.Defines.Add("RZE_GFX_OPENGL");
+
+        ExcludeFolders(conf, k_windowsOnlyFolders);
+
+        // Editor, Game, UnitTests rather than the generator's default Editor.elf
+        if (conf.Output == Configuration.OutputType.Exe)
+        {
+            conf.TargetFileFullExtension = "";
+        }
     }
 
     #endregion

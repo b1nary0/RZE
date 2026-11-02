@@ -75,6 +75,19 @@ public class CommonTarget : Sharpmake.ITarget
 
                     return new[] { baseTarget };
                 }
+            case Platform.linux:
+                {
+                    // GNU Makefiles (RZE.make, plus one .make per project), built with clang (BaseProject.ConfigureLinux)
+                    var baseTarget = new CommonTarget(
+                        Platform.linux,
+                        DevEnv.make,
+                        Optimization.Debug | Optimization.Release | Optimization.Retail,
+                        DotNetFramework.v4_8,
+                        dotNetOS: 0);
+                    baseTarget.SubPlatform = SubPlatformType.x64;
+
+                    return new[] { baseTarget };
+                }
             default:
                 {
                     throw new NotImplementedException("The platform (" + Util.GetExecutingPlatform() + ") is not currently supported!");

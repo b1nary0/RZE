@@ -11,7 +11,7 @@ public class EditorLib : BaseProject
         Name = "EditorLib";
         SourceRootPath = "Src";
         // The executable's entry point, built by Editor
-        SourceFilesExcludeRegex.Add(@"\\EditorMain\.cpp$");
+        SourceFilesExcludeRegex.Add(@"[\\/]EditorMain\.cpp$");
     }
 
     public override void ConfigureAll(Project.Configuration conf, CommonTarget target)
@@ -35,7 +35,7 @@ public class Editor : BaseProject
         Name = "Editor";
         SourceRootPath = "Src";
         // Everything else is in EditorLib
-        SourceFilesFiltersRegex.Add(@"\\EditorMain\.cpp$");
+        SourceFilesFiltersRegex.Add(@"[\\/]EditorMain\.cpp$");
         // The icon. Outside Src, so the filter above doesn't drop it
         ResourceFiles.Add(Path.Combine("[project.SharpmakeCsPath]", "Resources", "Editor.rc"));
     }
@@ -47,7 +47,17 @@ public class Editor : BaseProject
         conf.AddPublicDependency<EditorLib>(target);
         // Panels register themselves from static initializers (REGISTER_EDITOR_PANEL) that nothing references, so
         // the linker would drop them without this
-        conf.AdditionalLinkerOptions.Add("/WHOLEARCHIVE:EditorLib.lib");
+        if (target.Platform == Platform.win64)
+        {
+            conf.AdditionalLinkerOptions.Add("/WHOLEARCHIVE:EditorLib.lib");
+        }
+        else
+        {
+            // Found through the build folder's -L, which comes first
+            conf.AdditionalLinkerOptions.Add("-Wl,--whole-archive");
+            conf.AdditionalLinkerOptions.Add("-l:libEditorLib.a");
+            conf.AdditionalLinkerOptions.Add("-Wl,--no-whole-archive");
+        }
         ConfigureAsWindowedApp(conf);
     }
 }

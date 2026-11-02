@@ -299,6 +299,8 @@ RZE/ProjectData
 RZE/Logs
 # Build output, for every configuration (the generic rules above only catch debug/ and release/)
 RZE/_build/
+# The Linux solution makefile; each project's .make is in its _project folder, ignored above
+RZE/RZE.make
 
 # Obsidian vault settings for the generated docs
 Docs/Generated/Engine/.obsidian/
