@@ -3,6 +3,7 @@
 #include <Windowing/SplashScreen.h>
 
 #include <Windowing/Display.h>
+#include <Windowing/SplashScreenLayout.h>
 #include <Windowing/WindowIcon.h>
 
 #include <Utils/Platform/Windows/WideStrings.h>
@@ -16,86 +17,23 @@
 
 namespace
 {
+	using namespace SplashScreenLayout;
+
 	constexpr wchar_t k_windowClassName[] = L"RZE_SplashScreen";
 
 	// Sent by the engine, once start-up is done. The window ignores WM_CLOSE, so Alt+F4 doesn't close it.
 	constexpr UINT k_closeMessage = WM_APP;
-
-	// At 96 DPI. The image's texels are pixels at 96 DPI too, so everything scales with the DPI together.
-	constexpr int k_width = 400;
-	constexpr int k_height = 225;
-	constexpr int k_statusMargin = 14;
-	constexpr int k_statusPointSize = 9;
-	// Under the status, which leaves room for it whether it's shown or not
-	constexpr int k_progressBarHeight = 3;
-	constexpr int k_progressBarGap = 6;
-
-	// The Editor's window background (EditorApp::StyleSetup's WindowBg)
-	constexpr COLORREF k_backgroundColour = RGB(33, 33, 33);
-	constexpr COLORREF k_statusColour = RGB(150, 150, 150);
-	// The Editor's progress bars (EditorApp::StyleSetup's PlotHistogram) on a track a little lighter than the background
-	constexpr COLORREF k_progressColour = RGB(230, 179, 0);
-	constexpr COLORREF k_progressTrackColour = RGB(55, 55, 55);
-
-	// SetStatus without a progress bar
-	constexpr float k_noProgress = -1.0f;
-
-	constexpr int k_bytesPerTexel = 4;
 
 	// Windows 11's DWMWA_WINDOW_CORNER_PREFERENCE and DWMWCP_ROUND, which the project's Windows SDK (10.0.18362) predates.
 	// Windows 10 ignores the attribute.
 	constexpr DWORD k_windowCornerPreferenceAttribute = 33;
 	constexpr DWORD k_roundCorners = 2;
 
-	// Adds weight of image's texel at (x, y) to premultiplied: red, green and blue premultiplied by alpha, then alpha,
-	// all out of 255
-	void AddTexel(const IconImage& image, int x, int y, double weight, double(&premultiplied)[4])
+	COLORREF ToColorRef(const Colour& colour)
 	{
-		const size_t index = (static_cast<size_t>(y) * image.Width + x) * k_bytesPerTexel;
-		const double alpha = image.Texels[index + 3];
-		for (int channel = 0; channel < 3; ++channel)
-		{
-			premultiplied[channel] += weight * image.Texels[index + channel] * alpha / 255.0;
-		}
-		premultiplied[3] += weight * alpha;
+		return RGB(colour.R, colour.G, colour.B);
 	}
 
-	// image scaled to width x height (bilinear) and blended over canvas at (left, top). canvas is opaque BGRA texels,
-	// top row first.
-	void DrawImage(const IconImage& image, int left, int top, int width, int height, std::vector<U8>& canvas, int canvasWidth, int canvasHeight)
-	{
-		const double scaleX = static_cast<double>(image.Width) / width;
-		const double scaleY = static_cast<double>(image.Height) / height;
-
-		for (int y = std::max(0, -top); y < height && top + y < canvasHeight; ++y)
-		{
-			const double sourceY = std::clamp((y + 0.5) * scaleY - 0.5, 0.0, image.Height - 1.0);
-			const int y0 = static_cast<int>(sourceY);
-			const int y1 = std::min(y0 + 1, image.Height - 1);
-			const double fractionY = sourceY - y0;
-
-			for (int x = std::max(0, -left); x < width && left + x < canvasWidth; ++x)
-			{
-				const double sourceX = std::clamp((x + 0.5) * scaleX - 0.5, 0.0, image.Width - 1.0);
-				const int x0 = static_cast<int>(sourceX);
-				const int x1 = std::min(x0 + 1, image.Width - 1);
-				const double fractionX = sourceX - x0;
-
-				// Premultiplied, so transparent texels don't darken the edges
-				double premultiplied[4] = {};
-				AddTexel(image, x0, y0, (1.0 - fractionX) * (1.0 - fractionY), premultiplied);
-				AddTexel(image, x1, y0, fractionX * (1.0 - fractionY), premultiplied);
-				AddTexel(image, x0, y1, (1.0 - fractionX) * fractionY, premultiplied);
-				AddTexel(image, x1, y1, fractionX * fractionY, premultiplied);
-
-				U8* const destination = &canvas[(static_cast<size_t>(top + y) * canvasWidth + left + x) * k_bytesPerTexel];
-				const double remaining = 1.0 - premultiplied[3] / 255.0;
-				destination[0] = static_cast<U8>(std::lround(premultiplied[2] + destination[0] * remaining));
-				destination[1] = static_cast<U8>(std::lround(premultiplied[1] + destination[1] * remaining));
-				destination[2] = static_cast<U8>(std::lround(premultiplied[0] + destination[2] * remaining));
-			}
-		}
-	}
 }
 
 struct SplashScreen::State
@@ -227,9 +165,9 @@ void SplashScreen::State::BuildCanvas(int width, int height)
 	Canvas.resize(static_cast<size_t>(width) * height * k_bytesPerTexel);
 	for (size_t texel = 0; texel < Canvas.size(); texel += k_bytesPerTexel)
 	{
-		Canvas[texel + 0] = GetBValue(k_backgroundColour);
-		Canvas[texel + 1] = GetGValue(k_backgroundColour);
-		Canvas[texel + 2] = GetRValue(k_backgroundColour);
+		Canvas[texel + 0] = k_backgroundColour.B;
+		Canvas[texel + 1] = k_backgroundColour.G;
+		Canvas[texel + 2] = k_backgroundColour.R;
 		Canvas[texel + 3] = 255;
 	}
 
@@ -273,7 +211,7 @@ void SplashScreen::State::Paint(HWND window)
 
 	const HGDIOBJ previousFont = SelectObject(bufferDC, Font);
 	SetBkMode(bufferDC, TRANSPARENT);
-	SetTextColor(bufferDC, k_statusColour);
+	SetTextColor(bufferDC, ToColorRef(k_statusColour));
 	const int margin = MulDiv(k_statusMargin, Dpi, USER_DEFAULT_SCREEN_DPI);
 	const int barHeight = MulDiv(k_progressBarHeight, Dpi, USER_DEFAULT_SCREEN_DPI);
 	const int barTop = CanvasHeight - margin - barHeight;
@@ -283,12 +221,12 @@ void SplashScreen::State::Paint(HWND window)
 	if (progress >= 0.0f)
 	{
 		RECT barRect = { margin, barTop, CanvasWidth - margin, barTop + barHeight };
-		const HBRUSH trackBrush = CreateSolidBrush(k_progressTrackColour);
+		const HBRUSH trackBrush = CreateSolidBrush(ToColorRef(k_progressTrackColour));
 		FillRect(bufferDC, &barRect, trackBrush);
 		DeleteObject(trackBrush);
 
 		barRect.right = barRect.left + static_cast<int>(std::lround((barRect.right - barRect.left) * std::min(progress, 1.0f)));
-		const HBRUSH progressBrush = CreateSolidBrush(k_progressColour);
+		const HBRUSH progressBrush = CreateSolidBrush(ToColorRef(k_progressColour));
 		FillRect(bufferDC, &barRect, progressBrush);
 		DeleteObject(progressBrush);
 	}
