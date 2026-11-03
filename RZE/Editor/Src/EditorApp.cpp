@@ -71,7 +71,6 @@ namespace Editor
 		m_imguiConfigFilepath = Filepath("Config/imgui.ini");
 		ImGui::GetIO().IniFilename = m_imguiConfigFilepath.GetAbsolutePath().c_str();
 
-		GetWindow()->SetTitle("RZEStudio");
 		// The main menu bar is the title bar
 		GetWindow()->SetCustomTitleBar(true);
 		GetWindow()->Maximize();
@@ -199,6 +198,11 @@ namespace Editor
 	Filepath EditorApp::GetSplashScreenImage() const
 	{
 		return Filepath("logo.png");
+	}
+
+	std::string EditorApp::GetWindowTitle() const
+	{
+		return "RZEStudio";
 	}
 
 	bool EditorApp::IsReadyToShow() const

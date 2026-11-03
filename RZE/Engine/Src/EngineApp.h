@@ -48,6 +48,8 @@ public:
 
 	// The image a splash screen shows while the engine starts up. Invalid, the default, for no splash screen.
 	virtual Filepath GetSplashScreenImage() const;
+	// The title the splash screen and the window start with. Empty, the default, for the engine config's WindowTitle.
+	virtual std::string GetWindowTitle() const;
 	// Whether start-up is done and the window can be shown, e.g. once the start scene has loaded. Until it is, the
 	// engine ticks async operations with no frames, under the splash screen if there is one. True by default.
 	virtual bool IsReadyToShow() const;

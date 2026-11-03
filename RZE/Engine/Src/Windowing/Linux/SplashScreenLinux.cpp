@@ -3,6 +3,7 @@
 #include <Windowing/SplashScreen.h>
 
 #include <Windowing/Display.h>
+#include <Windowing/Linux/WindowIconLinux.h>
 #include <Windowing/SDLVideo.h>
 #include <Windowing/SplashScreenLayout.h>
 #include <Windowing/WindowIcon.h>
@@ -280,6 +281,8 @@ SplashScreen::SplashScreen(const Filepath& image, const std::string& title, int 
 		RZE_LOG_WARNING("Couldn't make the splash screen's window: " << SDL_GetError());
 		return;
 	}
+	// For wherever the desktop lists it anyway (a taskbar, Alt+Tab)
+	WindowIconLinux::SetDefault(state.Window);
 
 	// Centred on the monitor's work area, where the desktop lets an application place its windows (X11, not Wayland)
 	Display::MonitorInfo monitorInfo;

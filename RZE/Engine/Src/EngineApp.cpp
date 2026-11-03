@@ -71,6 +71,11 @@ Filepath RZE_Application::GetSplashScreenImage() const
 	return Filepath();
 }
 
+std::string RZE_Application::GetWindowTitle() const
+{
+	return std::string();
+}
+
 bool RZE_Application::IsReadyToShow() const
 {
 	return true;

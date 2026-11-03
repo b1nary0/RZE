@@ -34,6 +34,8 @@ namespace Editor
 		bool OnCloseRequested() override;
 		// The logo
 		Filepath GetSplashScreenImage() const override;
+		// "RZEStudio" from the start, splash screen and all, whatever the game's title
+		std::string GetWindowTitle() const override;
 		// Once the start scene has loaded
 		bool IsReadyToShow() const override;
 

@@ -105,6 +105,8 @@ private:
 	void LoadEngineConfig();
 	// Engine.ini's LaunchMonitor, or -launchMonitor's
 	int GetLaunchMonitor();
+	// The application's window title, or else the engine config's
+	std::string GetWindowTitle();
 	// Shows what start-up is doing on the splash screen
 	void SetStartupStatus(const std::string& status);
 	// With progress from 0 to 1

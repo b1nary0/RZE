@@ -2,14 +2,13 @@
 
 #include <Windowing/WindowNative.h>
 
-#include <Windowing/WindowIcon.h>
+#include <Windowing/Linux/WindowIconLinux.h>
 
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Platform/Filepath.h>
 
 #include <SDL3/SDL.h>
 
-#include <algorithm>
 
 struct WindowNative::State
 {
@@ -26,8 +25,6 @@ namespace
 	constexpr int k_captionHeight = 23;
 	constexpr int k_frameThickness = 8;
 
-	// The largest icon made from an image; the desktop scales it down as it needs
-	constexpr int k_maxIconSize = 256;
 
 	// What the mouse is over, for the compositor to move or resize the window (a custom title bar's window has no
 	// decorations of its own). The resize bands lie inside the client area, along its sides and bottom.
@@ -97,6 +94,9 @@ namespace WindowNative
 		(void)width;
 		(void)height;
 		SDL_SetWindowPosition(window, workArea.Left, workArea.Top);
+
+		// Until SetIcon changes it, as Windows' windows have the executable's
+		WindowIconLinux::SetDefault(window);
 		return state;
 	}
 
@@ -147,23 +147,7 @@ namespace WindowNative
 
 	bool SetIcon(State& state, const Filepath& image)
 	{
-		const IconImage source = WindowIcon::ReadImage(image);
-		if (source.IsEmpty())
-		{
-			RZE_LOG_WARNING_ARGS("Couldn't read the window icon [%s]; keeping the executable's icon.", image.GetRelativePath().c_str());
-			return false;
-		}
-
-		IconImage square = WindowIcon::MakeSquare(source, std::min(k_maxIconSize, std::max(source.Width, source.Height)));
-		// RGBA bytes, as the texels are; SDL copies them
-		SDL_Surface* const surface = SDL_CreateSurfaceFrom(square.Width, square.Height, SDL_PIXELFORMAT_RGBA32, square.Texels.data(), square.Width * 4);
-		const bool isSet = surface != nullptr && SDL_SetWindowIcon(state.SdlWindow, surface);
-		SDL_DestroySurface(surface);
-		if (!isSet)
-		{
-			RZE_LOG_WARNING_ARGS("Couldn't make the window icon from [%s]; keeping the executable's icon.", image.GetRelativePath().c_str());
-		}
-		return isSet;
+		return WindowIconLinux::Set(state.SdlWindow, image);
 	}
 
 	bool HandleEvent(State& /*state*/, const SDL_Event& /*event*/, InputHandler& /*inputHandler*/)

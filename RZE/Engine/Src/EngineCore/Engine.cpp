@@ -176,7 +176,7 @@ void RZE_Engine::Init()
 		const Filepath splashScreenImage = m_application->GetSplashScreenImage();
 		if (splashScreenImage.IsValid())
 		{
-			m_splashScreen = std::make_unique<SplashScreen>(splashScreenImage, engineConfig->GetWindowSettings().GetTitle(), GetLaunchMonitor());
+			m_splashScreen = std::make_unique<SplashScreen>(splashScreenImage, GetWindowTitle(), GetLaunchMonitor());
 		}
 
 		SetStartupStatus("Creating the window");
@@ -349,12 +349,18 @@ void RZE_Engine::SetStartupStatus(const std::string& status, float progress)
 	}
 }
 
+std::string RZE_Engine::GetWindowTitle()
+{
+	const std::string applicationTitle = m_application->GetWindowTitle();
+	return !applicationTitle.empty() ? applicationTitle : GetResourceHandler().GetResource<EngineConfig>(m_engineConfig)->GetWindowSettings().GetTitle();
+}
+
 void RZE_Engine::CreateAndInitializeWindow()
 {
 	const WindowSettings& windowSettings = GetResourceHandler().GetResource<EngineConfig>(m_engineConfig)->GetWindowSettings();
 
 	Window::WindowCreationParams params;
-	params.windowTitle = windowSettings.GetTitle();
+	params.windowTitle = GetWindowTitle();
 	params.width = static_cast<int>(windowSettings.GetDimensions().X());
 	params.height = static_cast<int>(windowSettings.GetDimensions().Y());
 
