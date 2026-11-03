@@ -4,7 +4,7 @@
 #include <Rendering/Driver/DX11/DX11Device.h>
 #include <Rendering/Driver/DX11/DX11TypeConversion.h>
 
-#include <Utils/Conversions.h>
+#include <Utils/Platform/Windows/WideStrings.h>
 #include <Utils/DebugUtils/Debug.h>
 
 #include "Rendering/Driver/ShaderTypes.h"

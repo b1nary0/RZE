@@ -5,7 +5,7 @@
 #include <Windowing/Display.h>
 #include <Windowing/WindowIcon.h>
 
-#include <Utils/Conversions.h>
+#include <Utils/Platform/Windows/WideStrings.h>
 
 #include <dwmapi.h>
 

@@ -11,6 +11,7 @@
 #include <Utils/Memory/ByteStream.h>
 
 #include <Utils/DebugUtils/Debug.h>
+#include <Utils/Platform/Platform.h>
 #include <Utils/Math/BoundingBox.h>
 #include <Utils/Math/Math.h>
 #include <Utils/PrimitiveDefs.h>
@@ -36,7 +37,7 @@ namespace
 	{
 		const std::string& assetPath = filePath.GetRelativePath();
 
-		size_t pos = assetPath.find_last_of('\\');
+		size_t pos = assetPath.find_last_of(Platform::k_pathSeparator);
 		std::string assetName = assetPath.substr(pos + 1, assetPath.size());
 		assetName = assetName.substr(0, assetName.find_last_of('.'));
 

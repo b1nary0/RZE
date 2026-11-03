@@ -35,8 +35,8 @@
 #include <Utils/Math/Ray.h>
 #include <Utils/Math/Units.h>
 
-#include <ImGui/imgui.h>
-#include <imGUI/ImGuizmo.h>
+#include <imgui/imgui.h>
+#include <imgui/ImGuizmo.h>
 
 #include <algorithm>
 
@@ -772,28 +772,28 @@ namespace Editor
 				{
 					switch (key.GetKeyCode())
 					{
-					case Win32KeyCode::Key_W:
+					case KeyCode::Key_W:
 						m_gizmoState.m_currentOpMode = ImGuizmo::TRANSLATE;
 						break;
-					case Win32KeyCode::Key_E:
+					case KeyCode::Key_E:
 						m_gizmoState.m_currentOpMode = ImGuizmo::ROTATE;
 						break;
-					case Win32KeyCode::Key_R:
+					case KeyCode::Key_R:
 						m_gizmoState.m_currentOpMode = ImGuizmo::SCALE;
 						break;
-					case Win32KeyCode::Key_Q:
+					case KeyCode::Key_Q:
 						m_gizmoState.m_transformationSpace = (m_gizmoState.m_transformationSpace == ImGuizmo::WORLD) ? ImGuizmo::LOCAL : ImGuizmo::WORLD;
 						break;
-					case Win32KeyCode::Key_X:
+					case KeyCode::Key_X:
 						m_gizmoState.m_snapper.ToggleEnabled();
 						break;
 					}
 				}
 			});
-		inputHandler.BindAction(Win32KeyCode::Key_W, EButtonState::ButtonState_Pressed, keyFunc);
-		inputHandler.BindAction(Win32KeyCode::Key_E, EButtonState::ButtonState_Pressed, keyFunc);
-		inputHandler.BindAction(Win32KeyCode::Key_R, EButtonState::ButtonState_Pressed, keyFunc);
-		inputHandler.BindAction(Win32KeyCode::Key_Q, EButtonState::ButtonState_Pressed, keyFunc);
-		inputHandler.BindAction(Win32KeyCode::Key_X, EButtonState::ButtonState_Pressed, keyFunc);
+		inputHandler.BindAction(KeyCode::Key_W, EButtonState::ButtonState_Pressed, keyFunc);
+		inputHandler.BindAction(KeyCode::Key_E, EButtonState::ButtonState_Pressed, keyFunc);
+		inputHandler.BindAction(KeyCode::Key_R, EButtonState::ButtonState_Pressed, keyFunc);
+		inputHandler.BindAction(KeyCode::Key_Q, EButtonState::ButtonState_Pressed, keyFunc);
+		inputHandler.BindAction(KeyCode::Key_X, EButtonState::ButtonState_Pressed, keyFunc);
 	}
 }

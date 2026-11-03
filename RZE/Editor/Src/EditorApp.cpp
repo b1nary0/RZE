@@ -22,8 +22,8 @@
 #include <Utils/Platform/CmdLine.h>
 #include <Utils/Platform/Filepath.h>
 
-#include <ImGui/imgui.h>
-#include <ImGui/imgui_internal.h> // DockBuilderGetNode
+#include <imgui/imgui.h>
+#include <imgui/imgui_internal.h> // DockBuilderGetNode
 
 #include <Optick/optick.h>
 
@@ -235,7 +235,7 @@ namespace Editor
 		// SEE: EditorApp::ProcessInput return statement. 
 		Functor<void, const InputKey&> keyFunc([this](const InputKey& key)
 			{
-				if (key.GetKeyCode() == Win32KeyCode::Escape)
+				if (key.GetKeyCode() == KeyCode::Escape)
 				{
 					EditorSelection& selection = m_context.GetSelection();
 					if (!selection.IsEmpty())
@@ -244,7 +244,7 @@ namespace Editor
 					}
 				}
 			});
-		inputHandler.BindAction(Win32KeyCode::Escape, EButtonState::ButtonState_Pressed, keyFunc);
+		inputHandler.BindAction(KeyCode::Escape, EButtonState::ButtonState_Pressed, keyFunc);
 	}
 
 	bool EditorApp::ProcessInput(const InputHandler& handler)

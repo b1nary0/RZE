@@ -1,5 +1,7 @@
 #include <doctest/doctest.h>
 
+#include <TestPaths.h>
+
 #include <Services/FolderListing.h>
 
 #include <TestFolder.h>
@@ -38,7 +40,7 @@ TEST_CASE("ListFolder lists subfolders first, then files with the extensions, ea
 	CHECK(GetNames(entries) == std::vector<std::string>{ "alpha", "Zeta", "A.SCENE", "b.scene" });
 	CHECK(entries[0].IsFolder);
 	CHECK_FALSE(entries[2].IsFolder);
-	CHECK(entries[3].Path.GetRelativePath() == folder.Get().GetRelativePath() + "\\b.scene");
+	CHECK(entries[3].Path.GetRelativePath() == folder.Get().GetRelativePath() + NativePath("/b.scene"));
 }
 
 TEST_CASE("ListFolder lists every file when no extensions are given")

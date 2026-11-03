@@ -6,26 +6,20 @@
 #include <EngineApp.h>
 #include <EngineCore/Threading/MainThreadDispatcher.h>
 
-#include <crtdbg.h>
+#include <Utils/DebugUtils/Debug.h>
 
 #include <string>
 
 namespace
 {
 #ifdef _DEBUG
-	// Engine asserts (Debug only) and CRT errors fail the running test instead of opening the CRT dialog, so a run
-	// never waits on someone to click it, e.g. in CI
-	int FailTestOnReport(int reportType, char* message, int* returnValue)
+	// Engine asserts (Debug only), and on Windows the CRT's errors, fail the running test instead of opening a
+	// dialog, so a run never waits on someone to click it, e.g. in CI
+	bool FailTestOnAssert(const char* report)
 	{
-		if (reportType == _CRT_WARN)
-		{
-			return 0;
-		}
-
-		FAIL_CHECK("Assert: " << std::string(message));
+		FAIL_CHECK("Assert: " << std::string(report));
 		// Don't break into the debugger
-		*returnValue = 0;
-		return 1;
+		return false;
 	}
 #endif
 }
@@ -33,7 +27,7 @@ namespace
 int main(int argc, char** argv)
 {
 #ifdef _DEBUG
-	_CrtSetReportHook2(_CRT_RPTHOOK_INSTALL, &FailTestOnReport);
+	Debug::SetAssertFailureHook(&FailTestOnAssert);
 #endif
 
 	// What the engine sets up at startup that tests rely on

@@ -3,7 +3,7 @@
 #include <Services/SceneDocument.h>
 #include <UI/Framework/EditorContext.h>
 
-#include <ImGui/imgui.h>
+#include <imgui/imgui.h>
 
 namespace
 {

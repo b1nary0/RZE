@@ -9,7 +9,7 @@
 #include <Utils/Math/Math.h>
 #include <Utils/Math/Vector3D.h>
 
-#include <ImGui/imgui.h>
+#include <imgui/imgui.h>
 
 #include <algorithm>
 #include <cmath>

@@ -58,7 +58,7 @@ public abstract class BaseProject : Project
 
     // Folders that hold code for only some platforms or graphics APIs. A folder with one of these names, at any depth
     // under a project's Src, is compiled only where it's listed, so per-platform code needs no #ifdefs. E.g.
-    // Utils/Platform/Windows/Shell.cpp and Utils/Platform/Linux/Shell.cpp implement Utils/Platform/Shell.h.
+    // Utils/Platform/Windows/ShellWindows.cpp and Utils/Platform/Linux/ShellLinux.cpp implement Utils/Platform/Shell.h.
     private static readonly string[] k_windowsOnlyFolders = { "Windows", "DX11" };
     private static readonly string[] k_linuxOnlyFolders = { "Linux", "OpenGL" };
 

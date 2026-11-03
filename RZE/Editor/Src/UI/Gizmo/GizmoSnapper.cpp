@@ -5,8 +5,8 @@
 
 #include <Utils/Math/Math.h>
 
-#include <ImGui/imgui.h>
-#include <imGUI/ImGuizmo.h>
+#include <imgui/imgui.h>
+#include <imgui/ImGuizmo.h>
 
 #include <cmath>
 #include <stdio.h>

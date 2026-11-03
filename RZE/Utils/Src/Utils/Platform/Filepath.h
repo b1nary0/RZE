@@ -7,7 +7,7 @@ enum class EDirectoryContext
 {
 	// Beside the executable, for a packaged game
 	Runtime,
-	// The source tree: the folder above _build\ (or beside the executable when it isn't under _build\)
+	// The source tree: the folder above _build (or beside the executable when it isn't under _build)
 	Source
 };
 
@@ -25,6 +25,9 @@ public:
 
 	const std::string& GetAbsolutePath() const;
 	const std::string& GetRelativePath() const;
+	// GetRelativePath as it's written into files that are shared between platforms (scenes), always with '\\', so a
+	// file saved on one platform is the same as one saved on another. Filepath reads either separator.
+	std::string GetSerializedPath() const;
 
 	const std::string GetAbsoluteDirectoryPath() const;
 	const std::string GetRelativeDirectoryPath() const;

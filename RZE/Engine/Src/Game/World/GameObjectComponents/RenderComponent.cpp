@@ -368,7 +368,7 @@ void RenderComponent::Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>
 	writer.StartObject();
 	{
 		writer.Key("ResourcePath");
-		writer.String(GetMeshPath().GetRelativePath().c_str());
+		writer.String(GetMeshPath().GetSerializedPath().c_str());
 
 		// The mesh instance's material overrides: only what's overridden, by slot name
 		const MaterialOverridesByName overrides = m_meshInstance != nullptr ? m_meshInstance->GetOverrides() : MaterialOverridesByName();

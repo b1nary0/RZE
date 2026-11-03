@@ -38,7 +38,7 @@
 #include <Utils/PrimitiveDefs.h>
 
 // IMGUI
-#include <ImGui/imgui.h>
+#include <imgui/imgui.h>
 
 #ifdef RZE_DEBUG
 

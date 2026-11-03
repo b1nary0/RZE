@@ -4,7 +4,7 @@
 
 #include <Utils/Math/Math.h>
 
-#include <ImGui/imgui_internal.h> // ImGui::GetCurrentTable
+#include <imgui/imgui_internal.h> // ImGui::GetCurrentTable
 
 #include <algorithm>
 #include <cmath>

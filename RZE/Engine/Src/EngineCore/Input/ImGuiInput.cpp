@@ -16,51 +16,51 @@ namespace
 		{
 			return static_cast<ImGuiKey>(ImGuiKey_A + (vk - 'A'));
 		}
-		if (vk >= VK_F1 && vk <= VK_F24)
+		if (vk >= KeyCode::F1 && vk <= KeyCode::F24)
 		{
-			return static_cast<ImGuiKey>(ImGuiKey_F1 + (vk - VK_F1));
+			return static_cast<ImGuiKey>(ImGuiKey_F1 + (vk - KeyCode::F1));
 		}
-		if (vk >= VK_NUMPAD0 && vk <= VK_NUMPAD9)
+		if (vk >= KeyCode::Numpad0 && vk <= KeyCode::Numpad9)
 		{
-			return static_cast<ImGuiKey>(ImGuiKey_Keypad0 + (vk - VK_NUMPAD0));
+			return static_cast<ImGuiKey>(ImGuiKey_Keypad0 + (vk - KeyCode::Numpad0));
 		}
 
 		switch (vk)
 		{
-		case VK_TAB: return ImGuiKey_Tab;
-		case VK_LEFT: return ImGuiKey_LeftArrow;
-		case VK_RIGHT: return ImGuiKey_RightArrow;
-		case VK_UP: return ImGuiKey_UpArrow;
-		case VK_DOWN: return ImGuiKey_DownArrow;
-		case VK_PRIOR: return ImGuiKey_PageUp;
-		case VK_NEXT: return ImGuiKey_PageDown;
-		case VK_HOME: return ImGuiKey_Home;
-		case VK_END: return ImGuiKey_End;
-		case VK_INSERT: return ImGuiKey_Insert;
-		case VK_DELETE: return ImGuiKey_Delete;
-		case VK_BACK: return ImGuiKey_Backspace;
-		case VK_SPACE: return ImGuiKey_Space;
-		case VK_RETURN: return ImGuiKey_Enter;
-		case VK_ESCAPE: return ImGuiKey_Escape;
-		case VK_OEM_COMMA: return ImGuiKey_Comma;
-		case VK_OEM_PERIOD: return ImGuiKey_Period;
-		case VK_CAPITAL: return ImGuiKey_CapsLock;
-		case VK_SCROLL: return ImGuiKey_ScrollLock;
-		case VK_NUMLOCK: return ImGuiKey_NumLock;
-		case VK_SNAPSHOT: return ImGuiKey_PrintScreen;
-		case VK_PAUSE: return ImGuiKey_Pause;
-		case VK_DECIMAL: return ImGuiKey_KeypadDecimal;
-		case VK_DIVIDE: return ImGuiKey_KeypadDivide;
-		case VK_MULTIPLY: return ImGuiKey_KeypadMultiply;
-		case VK_SUBTRACT: return ImGuiKey_KeypadSubtract;
-		case VK_ADD: return ImGuiKey_KeypadAdd;
-		// Left Shift/Ctrl/Alt are submitted separately in SubmitInput() since the generic VK_SHIFT etc. alias them.
-		case VK_RSHIFT: return ImGuiKey_RightShift;
-		case VK_RCONTROL: return ImGuiKey_RightCtrl;
-		case VK_RMENU: return ImGuiKey_RightAlt;
-		case VK_LWIN: return ImGuiKey_LeftSuper;
-		case VK_RWIN: return ImGuiKey_RightSuper;
-		case VK_APPS: return ImGuiKey_Menu;
+		case KeyCode::Tab: return ImGuiKey_Tab;
+		case KeyCode::LEFT: return ImGuiKey_LeftArrow;
+		case KeyCode::Right: return ImGuiKey_RightArrow;
+		case KeyCode::Up: return ImGuiKey_UpArrow;
+		case KeyCode::Down: return ImGuiKey_DownArrow;
+		case KeyCode::Prior: return ImGuiKey_PageUp;
+		case KeyCode::Next: return ImGuiKey_PageDown;
+		case KeyCode::Home: return ImGuiKey_Home;
+		case KeyCode::End: return ImGuiKey_End;
+		case KeyCode::Insert: return ImGuiKey_Insert;
+		case KeyCode::Delete: return ImGuiKey_Delete;
+		case KeyCode::Backspace: return ImGuiKey_Backspace;
+		case KeyCode::Space: return ImGuiKey_Space;
+		case KeyCode::Return: return ImGuiKey_Enter;
+		case KeyCode::Escape: return ImGuiKey_Escape;
+		case KeyCode::OEM_Comma: return ImGuiKey_Comma;
+		case KeyCode::OEM_Period: return ImGuiKey_Period;
+		case KeyCode::Capital: return ImGuiKey_CapsLock;
+		case KeyCode::Scroll: return ImGuiKey_ScrollLock;
+		case KeyCode::Numlock: return ImGuiKey_NumLock;
+		case KeyCode::Snapshot: return ImGuiKey_PrintScreen;
+		case KeyCode::Pause: return ImGuiKey_Pause;
+		case KeyCode::Decimal: return ImGuiKey_KeypadDecimal;
+		case KeyCode::Divide: return ImGuiKey_KeypadDivide;
+		case KeyCode::Multiply: return ImGuiKey_KeypadMultiply;
+		case KeyCode::Subtract: return ImGuiKey_KeypadSubtract;
+		case KeyCode::Add: return ImGuiKey_KeypadAdd;
+		// Left Shift/Ctrl/Alt are submitted separately in SubmitInput() since the generic KeyCode::Shift etc. alias them.
+		case KeyCode::RShift: return ImGuiKey_RightShift;
+		case KeyCode::RControl: return ImGuiKey_RightCtrl;
+		case KeyCode::RMenu: return ImGuiKey_RightAlt;
+		case KeyCode::LWin: return ImGuiKey_LeftSuper;
+		case KeyCode::RWin: return ImGuiKey_RightSuper;
+		case KeyCode::Apps: return ImGuiKey_Menu;
 		default: return ImGuiKey_None;
 		}
 	}
@@ -84,7 +84,7 @@ namespace ImGuiInput
 		// CurWheelVal is the raw WM_MOUSEWHEEL delta for this frame (cleared next frame), ImGui wants notches.
 		if (mouseState.CurWheelVal != 0)
 		{
-			io.AddMouseWheelEvent(0.0f, static_cast<float>(mouseState.CurWheelVal) / static_cast<float>(WHEEL_DELTA));
+			io.AddMouseWheelEvent(0.0f, static_cast<float>(mouseState.CurWheelVal) / static_cast<float>(k_mouseWheelNotchDelta));
 		}
 
 		// ImGui drops events that don't change a key's state, so submitting every key each frame is fine.
@@ -98,14 +98,14 @@ namespace ImGuiInput
 			}
 		}
 
-		const bool ctrlDown = keyboardState.IsDownThisFrame(VK_CONTROL) || keyboardState.IsDownThisFrame(VK_LCONTROL);
-		const bool shiftDown = keyboardState.IsDownThisFrame(VK_SHIFT) || keyboardState.IsDownThisFrame(VK_LSHIFT);
-		const bool altDown = keyboardState.IsDownThisFrame(VK_MENU) || keyboardState.IsDownThisFrame(VK_LMENU);
+		const bool ctrlDown = keyboardState.IsDownThisFrame(KeyCode::Control) || keyboardState.IsDownThisFrame(KeyCode::LControl);
+		const bool shiftDown = keyboardState.IsDownThisFrame(KeyCode::Shift) || keyboardState.IsDownThisFrame(KeyCode::LShift);
+		const bool altDown = keyboardState.IsDownThisFrame(KeyCode::Menu) || keyboardState.IsDownThisFrame(KeyCode::LMenu);
 		io.AddKeyEvent(ImGuiKey_LeftCtrl, ctrlDown);
 		io.AddKeyEvent(ImGuiKey_LeftShift, shiftDown);
 		io.AddKeyEvent(ImGuiKey_LeftAlt, altDown);
-		io.AddKeyEvent(ImGuiMod_Ctrl, ctrlDown || keyboardState.IsDownThisFrame(VK_RCONTROL));
-		io.AddKeyEvent(ImGuiMod_Shift, shiftDown || keyboardState.IsDownThisFrame(VK_RSHIFT));
-		io.AddKeyEvent(ImGuiMod_Alt, altDown || keyboardState.IsDownThisFrame(VK_RMENU));
+		io.AddKeyEvent(ImGuiMod_Ctrl, ctrlDown || keyboardState.IsDownThisFrame(KeyCode::RControl));
+		io.AddKeyEvent(ImGuiMod_Shift, shiftDown || keyboardState.IsDownThisFrame(KeyCode::RShift));
+		io.AddKeyEvent(ImGuiMod_Alt, altDown || keyboardState.IsDownThisFrame(KeyCode::RMenu));
 	}
 }

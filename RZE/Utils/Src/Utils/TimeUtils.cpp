@@ -2,6 +2,8 @@
 
 #include <Utils/TimeUtils.h>
 
+#include <Utils/Platform/Platform.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -47,7 +49,7 @@ namespace TimeUtils
 
 		const std::time_t asTimeT = system_clock::to_time_t(time);
 		std::tm local;
-		localtime_s(&local, &asTimeT);
+		Platform::LocalTime(asTimeT, local);
 		char buffer[32];
 		std::strftime(buffer, sizeof(buffer), "%b %d, %Y", &local);
 		return buffer;
@@ -57,7 +59,7 @@ namespace TimeUtils
 	{
 		const std::time_t asTimeT = std::chrono::system_clock::to_time_t(time);
 		std::tm local;
-		localtime_s(&local, &asTimeT);
+		Platform::LocalTime(asTimeT, local);
 		char buffer[16];
 		std::strftime(buffer, sizeof(buffer), "%H:%M:%S", &local);
 		return buffer;

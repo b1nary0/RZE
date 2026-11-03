@@ -1,12 +1,16 @@
 #pragma once
 
-#include "Utils/PrimitiveDefs.h"
+#include <Utils/PrimitiveDefs.h>
 
-namespace Win32KeyCode
+// The engine's key codes. Their values are Windows' virtual-key codes (VK_*), so the Windows window passes its keys
+// through as they are; other platforms' windows translate theirs to these.
+namespace KeyCode
 {
 	enum Type : U8
 	{
 		Control = 0x11,
+		// Alt (VK_MENU)
+		Menu = 0x12,
 		Add = 0x6B,
 		Attn = 0xF6,
 		Backspace = 0x8,

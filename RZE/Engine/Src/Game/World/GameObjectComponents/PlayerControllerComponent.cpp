@@ -16,30 +16,30 @@ void PlayerControllerComponent::Update()
 
 	GameObjectComponentPtr<TransformComponent> transfComp = GetOwner()->GetComponent<TransformComponent>();
 
-	if (inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Key_W) == EButtonState::ButtonState_Pressed
-		|| inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Key_W) == EButtonState::ButtonState_Hold)
+	if (inputHandler.GetKeyboardState().GetButtonState(KeyCode::Key_W) == EButtonState::ButtonState_Pressed
+		|| inputHandler.GetKeyboardState().GetButtonState(KeyCode::Key_W) == EButtonState::ButtonState_Hold)
 	{
 		transfComp->SetPosition(transfComp->GetPosition() + m_forward * speedDelta);
 		hasValidMovementInput = true;
 	}
-	else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_S])
+	else if (inputHandler.GetKeyboardState().CurKeyStates[KeyCode::Key_S])
 	{
 		transfComp->SetPosition(transfComp->GetPosition() - m_forward * speedDelta);
 		hasValidMovementInput = true;
 	}
 
-	if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_A])
+	if (inputHandler.GetKeyboardState().CurKeyStates[KeyCode::Key_A])
 	{
 		transfComp->SetPosition(transfComp->GetPosition() - m_forward.Cross(m_upDir).Normalize() * speedDelta);
 		hasValidMovementInput = true;
 	}
-	else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_D])
+	else if (inputHandler.GetKeyboardState().CurKeyStates[KeyCode::Key_D])
 	{
 		transfComp->SetPosition(transfComp->GetPosition() + m_forward.Cross(m_upDir).Normalize() * speedDelta);
 		hasValidMovementInput = true;
 	}
 
-	if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_1])
+	if (inputHandler.GetKeyboardState().CurKeyStates[KeyCode::Key_1])
 	{
 		// Focus object
 		hasValidMovementInput = true;

@@ -17,8 +17,8 @@
 #include <Rendering/Driver/DX11/DX11TextureBuffer2D.h>
 #include <Rendering/Driver/DX11/DX11ShaderTypes.h>
 
-#include <imGUI/imgui.h>
-#include <imGUI/imgui_impl_dx11.h>
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_dx11.h>
 
 #define MEM_ARENA_SIZE MemoryUtils::Megabytes(2048)
 

@@ -3,7 +3,7 @@
 
 #include <Rendering/Renderer.h>
 
-#include <imGUI/imgui_impl_dx11.h>
+#include <imgui/imgui_impl_dx11.h>
 
 void ImGuiRenderStage::Initialize()
 {

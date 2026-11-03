@@ -16,9 +16,9 @@
 #include <Utils/Memory/MemoryUtils.h>
 #include <Utils/Platform/CmdLine.h>
 
-#include <imGUI/imgui_impl_dx11.h>
-#include <imGUI/imgui_impl_win32.h>
-#include <imGUI/ImGuizmo.h>
+#include <imgui/imgui_impl_dx11.h>
+#include <imgui/imgui_impl_win32.h>
+#include <imgui/ImGuizmo.h>
 
 #include "Windowing/Win32Window.h"
 

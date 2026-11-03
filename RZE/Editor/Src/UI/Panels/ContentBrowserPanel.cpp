@@ -16,7 +16,7 @@
 #include <Utils/Platform/Folders.h>
 #include <Utils/Platform/Shell.h>
 
-#include <ImGui/imgui.h>
+#include <imgui/imgui.h>
 
 #include <algorithm>
 

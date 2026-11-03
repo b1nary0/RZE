@@ -1,5 +1,7 @@
 #include <doctest/doctest.h>
 
+#include <TestPaths.h>
+
 #include <Utils/Platform/Folders.h>
 
 #include <TestFolder.h>
@@ -22,7 +24,7 @@ TEST_CASE("Folders::ListSubfolders lists only the folders directly inside, sorte
 	}
 
 	const std::string root = folder.Get().GetRelativePath();
-	CHECK(paths == std::vector<std::string>{ root + R"(\alpha)", root + R"(\Zeta)" });
+	CHECK(paths == std::vector<std::string>{ root + NativePath("/alpha"), root + NativePath("/Zeta") });
 }
 
 TEST_CASE("Folders::ListSubfolders of a folder that doesn't exist is empty")
@@ -47,7 +49,7 @@ TEST_CASE("Folders::FindFiles finds files with the extension in subfolders too, 
 	}
 
 	const std::string root = folder.Get().GetRelativePath();
-	CHECK(paths == std::vector<std::string>{ root + R"(\A.meshasset)", root + R"(\b.meshasset)", root + R"(\Vehicles\Air\Plane.meshasset)", root + R"(\Vehicles\Tank.MESHASSET)" });
+	CHECK(paths == std::vector<std::string>{ root + NativePath("/A.meshasset"), root + NativePath("/b.meshasset"), root + NativePath("/Vehicles/Air/Plane.meshasset"), root + NativePath("/Vehicles/Tank.MESHASSET") });
 }
 
 TEST_CASE("Folders::FindFiles finds nothing in a folder that doesn't exist")

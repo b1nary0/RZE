@@ -3,7 +3,7 @@
 #include <UI/Framework/PanelRegistry.h>
 #include <UI/Settings/SettingsPageRegistry.h>
 
-#include <ImGui/imgui.h>
+#include <imgui/imgui.h>
 
 namespace
 {

@@ -7,7 +7,7 @@
 #include <Game/World/GameObject/EditorGameComponentInfoCache.h>
 #include <Game/World/GameObject/GameObject.h>
 
-#include <ImGui/imgui.h>
+#include <imgui/imgui.h>
 
 #include <algorithm>
 

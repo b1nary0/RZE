@@ -21,7 +21,7 @@
 #include <Utils/Platform/Filepath.h>
 
 #ifdef IMGUI_ENABLED
-#include <imGUI/imgui.h>
+#include <imgui/imgui.h>
 #include <Graphics/RenderStages/ImGuiRenderStage.h>
 #endif
 
@@ -108,28 +108,28 @@ void GameApp::RegisterInputEvents(InputHandler& inputHandler)
 {
 	Functor<void, const InputKey&> keyFunc([this](const InputKey& key)
 	{
-		if (key.GetKeyCode() == Win32KeyCode::Escape)
+		if (key.GetKeyCode() == KeyCode::Escape)
 		{
 			RZE().PostExit();
 		}
-		else if (key.GetKeyCode() == Win32KeyCode::F1)
+		else if (key.GetKeyCode() == KeyCode::F1)
 		{
 			RZE().SetWindowSize(Vector2D(1280, 720));
 		}
-		else if (key.GetKeyCode() == Win32KeyCode::F2)
+		else if (key.GetKeyCode() == KeyCode::F2)
 		{
 			RZE().SetWindowSize(Vector2D(1600, 900));
 		}
-		else if (key.GetKeyCode() == Win32KeyCode::F3)
+		else if (key.GetKeyCode() == KeyCode::F3)
 		{
 			RZE().SetWindowSize(Vector2D(1920, 1080));
 		}
 	});
-	inputHandler.BindAction(Win32KeyCode::Escape, EButtonState::ButtonState_Pressed, keyFunc);
-	inputHandler.BindAction(Win32KeyCode::F1, EButtonState::ButtonState_Pressed, keyFunc);
-	inputHandler.BindAction(Win32KeyCode::F2, EButtonState::ButtonState_Pressed, keyFunc);
-	inputHandler.BindAction(Win32KeyCode::F3, EButtonState::ButtonState_Pressed, keyFunc);
-	inputHandler.BindAction(Win32KeyCode::Key_K, EButtonState::ButtonState_Pressed, keyFunc);
+	inputHandler.BindAction(KeyCode::Escape, EButtonState::ButtonState_Pressed, keyFunc);
+	inputHandler.BindAction(KeyCode::F1, EButtonState::ButtonState_Pressed, keyFunc);
+	inputHandler.BindAction(KeyCode::F2, EButtonState::ButtonState_Pressed, keyFunc);
+	inputHandler.BindAction(KeyCode::F3, EButtonState::ButtonState_Pressed, keyFunc);
+	inputHandler.BindAction(KeyCode::Key_K, EButtonState::ButtonState_Pressed, keyFunc);
 }
 
 bool GameApp::ProcessInput(const InputHandler& handler)

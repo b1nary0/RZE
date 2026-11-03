@@ -1,6 +1,7 @@
 #include <doctest/doctest.h>
 
 #include <Services/FolderNavigator.h>
+#include <Utils/StringUtils.h>
 
 #include <TestFolder.h>
 
@@ -25,7 +26,7 @@ namespace
 
 	void SetSearch(FolderNavigator& navigator, const char* text)
 	{
-		strncpy_s(navigator.GetSearchBuffer(), navigator.GetSearchBufferSize(), text, _TRUNCATE);
+		StringUtils::CopyTruncated(navigator.GetSearchBuffer(), navigator.GetSearchBufferSize(), text);
 		navigator.Refresh();
 	}
 

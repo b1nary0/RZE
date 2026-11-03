@@ -10,7 +10,7 @@
 #include <Graphics/AntiAliasing.h>
 #include <Graphics/RenderEngine.h>
 
-#include <ImGui/imgui.h>
+#include <imgui/imgui.h>
 
 #include <string>
 

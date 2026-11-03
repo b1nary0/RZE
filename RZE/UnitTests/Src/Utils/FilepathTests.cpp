@@ -1,5 +1,7 @@
 #include <doctest/doctest.h>
 
+#include <TestPaths.h>
+
 #include <Utils/Platform/Filepath.h>
 
 TEST_CASE("A filepath's name, stem and extension")
@@ -17,9 +19,20 @@ TEST_CASE("A filepath's name, stem and extension")
 
 TEST_CASE("A filepath's parent folder")
 {
-	CHECK(Filepath("Assets/Scenes/Sponza.scene").GetParentFolder().GetRelativePath() == R"(Assets\Scenes)");
+	CHECK(Filepath("Assets/Scenes/Sponza.scene").GetParentFolder().GetRelativePath() == NativePath("Assets/Scenes"));
 	CHECK(Filepath("Assets/Scenes").GetParentFolder().GetRelativePath() == "Assets");
 	CHECK_FALSE(Filepath("Assets").GetParentFolder().IsValid());
+}
+
+TEST_CASE("A filepath reads either separator, and is saved with backslashes on every platform")
+{
+	// Scene files store backslashes, code writes forward slashes: both name the same file
+	CHECK(Filepath(R"(ProjectData\Mesh\Tank.meshasset)") == Filepath("ProjectData/Mesh/Tank.meshasset"));
+	CHECK(Filepath(R"(ProjectData\Mesh\Tank.meshasset)").GetRelativePath() == NativePath("ProjectData/Mesh/Tank.meshasset"));
+
+	// So a scene saved on one platform is the same file as one saved on another
+	CHECK(Filepath("ProjectData/Mesh/Tank.meshasset").GetSerializedPath() == R"(ProjectData\Mesh\Tank.meshasset)");
+	CHECK(Filepath(R"(ProjectData\Mesh\Tank.meshasset)").GetSerializedPath() == R"(ProjectData\Mesh\Tank.meshasset)");
 }
 
 TEST_CASE("A filepath is inside a folder it's in or under, ignoring case")

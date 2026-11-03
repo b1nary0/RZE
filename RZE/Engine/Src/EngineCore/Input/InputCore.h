@@ -4,9 +4,11 @@
 
 #include <Utils/PrimitiveDefs.h>
 
-#include <Windowing/WinKeyCodes.h>
+#include <EngineCore/Input/KeyCodes.h>
 
 #define MAX_KEYCODES_SUPPORTED 256
+// What one notch of the mouse wheel adds to MouseState's wheel value (Windows' WHEEL_DELTA)
+constexpr Int32 k_mouseWheelNotchDelta = 120;
 #define MAX_MOUSE_BTN_SUPPORTED 5
 
 namespace EButtonState

@@ -286,41 +286,41 @@ void EditorCameraComponent::KeyboardInput(GameObjectComponentPtr<TransformCompon
 	{
 		bool hasValidMovementInput = false;
 
-		if (inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Key_W) == EButtonState::ButtonState_Pressed
-			|| inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Key_W) == EButtonState::ButtonState_Hold)
+		if (inputHandler.GetKeyboardState().GetButtonState(KeyCode::Key_W) == EButtonState::ButtonState_Pressed
+			|| inputHandler.GetKeyboardState().GetButtonState(KeyCode::Key_W) == EButtonState::ButtonState_Hold)
 		{
 			transfComp->GetPosition() += m_forward * speedDelta;
 			hasValidMovementInput = true;
 		}
-		else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_S])
+		else if (inputHandler.GetKeyboardState().CurKeyStates[KeyCode::Key_S])
 		{
 			transfComp->GetPosition() -= m_forward * speedDelta;
 			hasValidMovementInput = true;
 		}
 
-		if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_A])
+		if (inputHandler.GetKeyboardState().CurKeyStates[KeyCode::Key_A])
 		{
 			transfComp->GetPosition() -= m_forward.Cross(m_upDir).Normalize() * speedDelta;
 			hasValidMovementInput = true;
 		}
-		else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_D])
+		else if (inputHandler.GetKeyboardState().CurKeyStates[KeyCode::Key_D])
 		{
 			transfComp->GetPosition() += m_forward.Cross(m_upDir).Normalize() * speedDelta;
 			hasValidMovementInput = true;
 		}
 
-		if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_E])
+		if (inputHandler.GetKeyboardState().CurKeyStates[KeyCode::Key_E])
 		{
 			transfComp->GetPosition() += m_forward.Cross(m_upDir).Cross(m_forward) * speedDelta;
 			hasValidMovementInput = true;
 		}
-		else if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_Q])
+		else if (inputHandler.GetKeyboardState().CurKeyStates[KeyCode::Key_Q])
 		{
 			transfComp->GetPosition() -= m_forward.Cross(m_upDir).Cross(m_forward) * speedDelta;
 			hasValidMovementInput = true;
 		}
 
-		if (inputHandler.GetKeyboardState().CurKeyStates[Win32KeyCode::Key_1])
+		if (inputHandler.GetKeyboardState().CurKeyStates[KeyCode::Key_1])
 		{
 			// Focus object
 			hasValidMovementInput = true;
@@ -330,16 +330,16 @@ void EditorCameraComponent::KeyboardInput(GameObjectComponentPtr<TransformCompon
 	}
 
 	// #TODO(Josh::Support for special keys CTRL SHIFT etc)
-	if (inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Key_R) == EButtonState::ButtonState_Pressed)
+	if (inputHandler.GetKeyboardState().GetButtonState(KeyCode::Key_R) == EButtonState::ButtonState_Pressed)
 	{
 		m_speed = k_cameraMaxSpeed * 4.0f;
 	}
-	else if (inputHandler.GetKeyboardState().GetButtonState(Win32KeyCode::Space) == EButtonState::ButtonState_Pressed)
+	else if (inputHandler.GetKeyboardState().GetButtonState(KeyCode::Space) == EButtonState::ButtonState_Pressed)
 	{
 		m_speed = k_cameraMaxSpeed / 8.0f;
 	}
 
-	if (!inputHandler.GetKeyboardState().IsDownThisFrame(Win32KeyCode::Space) && !inputHandler.GetKeyboardState().IsDownThisFrame(Win32KeyCode::Key_R))
+	if (!inputHandler.GetKeyboardState().IsDownThisFrame(KeyCode::Space) && !inputHandler.GetKeyboardState().IsDownThisFrame(KeyCode::Key_R))
 	{
 		m_speed = k_cameraMaxSpeed;
 	}
@@ -375,7 +375,7 @@ void EditorCameraComponent::MouseInput(GameObjectComponentPtr<TransformComponent
 		const auto& keyboardState = inputHandler.GetKeyboardState();
 		const Vector3D pivot = position + m_forward * m_orbitDistance;
 
-		if (keyboardState.IsDownThisFrame(Win32KeyCode::Shift))
+		if (keyboardState.IsDownThisFrame(KeyCode::Shift))
 		{
 			// Pan: scale pixels to metres at the pivot's depth so the scene stays under the cursor
 			const float viewportHeight = RZE().GetRenderEngine().GetMainView().ViewportSize.Y();
@@ -387,7 +387,7 @@ void EditorCameraComponent::MouseInput(GameObjectComponentPtr<TransformComponent
 				position += (up * diff.Y() - right * diff.X()) * metresPerPixel;
 			}
 		}
-		else if (keyboardState.IsDownThisFrame(Win32KeyCode::Control))
+		else if (keyboardState.IsDownThisFrame(KeyCode::Control))
 		{
 			// Dolly: drag down to pull away from the pivot, up to push in
 			const float newDistance = std::max(m_orbitDistance * std::exp(diff.Y() * k_dragDollyRate), k_minOrbitDistance);

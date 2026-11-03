@@ -11,7 +11,7 @@
 #include <Windowing/WindowIcon.h>
 #include <Windowing/WindowMessageAdaptor.h>
 
-#include <Utils/Conversions.h>
+#include <Utils/Platform/Windows/WideStrings.h>
 #include <Utils/DebugUtils/Debug.h>
 
 #include <dwmapi.h>

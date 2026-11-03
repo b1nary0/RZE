@@ -14,7 +14,7 @@
 
 #include <Utils/DebugUtils/Debug.h>
 
-#include <ImGui/imgui.h>
+#include <imgui/imgui.h>
 
 #include <algorithm>
 #include <iterator>

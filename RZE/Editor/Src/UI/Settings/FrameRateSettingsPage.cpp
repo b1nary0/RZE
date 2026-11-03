@@ -7,7 +7,7 @@
 #include <EngineCore/Config/FrameSettings.h>
 #include <EngineCore/Timing/FramePacer.h>
 
-#include <ImGui/imgui.h>
+#include <imgui/imgui.h>
 
 #include <cmath>
 #include <string>

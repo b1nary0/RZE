@@ -5,7 +5,7 @@
 #include <RZE.h>
 #include <EngineCore/Resources/ResourceHandler.h>
 
-#include <ImGui/imgui.h>
+#include <imgui/imgui.h>
 
 #include <algorithm>
 

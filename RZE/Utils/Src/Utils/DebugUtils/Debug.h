@@ -1,9 +1,11 @@
 #pragma once
 
+#include <cstdio>
 #include <sstream>
 #include <assert.h>
 
 #include <Utils/Platform/File.h>
+#include <Utils/Platform/Platform.h>
 
 #include <Utils/Platform/Timers/HiResTimer.h>
 
@@ -37,21 +39,27 @@ namespace Debug
 	// already has a console. Returns false if one couldn't be opened.
 	bool OpenConsole();
 
-	// Shows the CRT assert dialog (regardless of console/windows subsystem).
-	// Returns true if the caller should break into the debugger.
+	// Logs a failed assert and reports it the platform's way: on Windows, the CRT assert dialog (regardless of
+	// console/windows subsystem). Returns true if the caller should break into the debugger.
 	bool ReportAssertFailure(const char* file, int line, const char* expr, const char* msg);
+
+	// Called with the report for each failed assert in place of the platform's report (e.g. the dialog), from the
+	// thread that asserted; returns whether to break into the debugger. On Windows it also sees the CRT's own error
+	// reports. For tests, which fail rather than wait on a dialog. Debug only, like asserts.
+	using AssertFailureHook = bool(*)(const char* report);
+	void SetAssertFailureHook(AssertFailureHook hook);
 }
 
 #ifdef _DEBUG
 
-// __debugbreak lives in the macro so the debugger stops at the failing line.
+// The break lives in the macro so the debugger stops at the failing line.
 #define RZE_ASSERT_IMPL(Cond, ExprStr, Msg)										\
 	do {																		\
 		if (!(Cond))															\
 		{																		\
 			if (Debug::ReportAssertFailure(__FILE__, __LINE__, ExprStr, Msg))	\
 			{																	\
-				__debugbreak();													\
+				RZE_DEBUG_BREAK();												\
 			}																	\
 		}																		\
 	} while (0)
@@ -104,7 +112,7 @@ namespace Debug
 	ss << "\n";												\
 															\
 	char buf[1024];											\
-	sprintf_s(buf, 1024, ss.str().c_str(), __VA_ARGS__);	\
+	snprintf(buf, 1024, ss.str().c_str(), __VA_ARGS__);		\
 	Debug::Log(Level, buf);									\
 }
 

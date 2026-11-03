@@ -91,7 +91,7 @@ void MaterialOverrides::Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffe
 	if (Material)
 	{
 		writer.Key(k_materialKey);
-		writer.String(Material->GetRelativePath().c_str());
+		writer.String(Material->GetSerializedPath().c_str());
 	}
 	if (BlendMode)
 	{
@@ -132,7 +132,7 @@ void MaterialOverrides::Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffe
 			if (Textures[slot].has_value())
 			{
 				writer.Key(GetTextureSlotName(static_cast<ETextureSlot>(slot)));
-				writer.String(Textures[slot]->IsValid() ? Textures[slot]->GetRelativePath().c_str() : "");
+				writer.String(Textures[slot]->IsValid() ? Textures[slot]->GetSerializedPath().c_str() : "");
 			}
 		}
 		writer.EndObject();

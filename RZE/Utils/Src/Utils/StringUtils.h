@@ -2,11 +2,33 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstdio>
+#include <cstring>
 #include <string>
+#include <string_view>
 #include <vector>
 
 struct StringUtils
 {
+	// Copies source into the buffer, cut short if it doesn't fit, and always null-terminated (strncpy_s with _TRUNCATE)
+	static void CopyTruncated(char* destination, size_t destinationSize, std::string_view source)
+	{
+		if (destinationSize == 0)
+		{
+			return;
+		}
+
+		const size_t count = std::min(source.size(), destinationSize - 1);
+		std::memcpy(destination, source.data(), count);
+		destination[count] = '\0';
+	}
+
+	template <size_t Size>
+	static void CopyTruncated(char (&destination)[Size], std::string_view source)
+	{
+		CopyTruncated(destination, Size, source);
+	}
+
 	static std::string ExtractFileNameFromPath(const std::string filePath)
 	{
 		const char* const delim = "/\\";
@@ -76,7 +98,7 @@ struct StringUtils
 		 * Also, using magic numbers will have to find better way later.
 		 */
 		std::vector<char> buf(1024);
-		sprintf_s(&buf[0], buf.size(), stringToFormat.c_str(), std::forward<Args>(args)...);
+		snprintf(&buf[0], buf.size(), stringToFormat.c_str(), std::forward<Args>(args)...);
 
 		return std::string(buf.begin(), buf.end());
 	}

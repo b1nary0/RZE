@@ -3,7 +3,7 @@
 #include <UI/Framework/EditorStyle.h>
 #include <UI/TaskTracker.h>
 
-#include <ImGui/imgui.h>
+#include <imgui/imgui.h>
 
 namespace Editor
 {

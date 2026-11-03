@@ -6,15 +6,15 @@
 #include <Rendering/Driver/DX11/DX11.h>
 #include <Rendering/Driver/DX11/DX11Device.h>
 
-#include <Utils/Conversions.h>
+#include <Utils/Platform/Windows/WideStrings.h>
 #include <Utils/TimeUtils.h>
 #include <Utils/DebugUtils/Debug.h>
 
 #include <Optick/optick.h>
 
-#include <ImGui/imgui.h>
-#include <imGUI/imgui_impl_dx11.h>
-#include <imGUI/imgui_impl_win32.h>
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_dx11.h>
+#include <imgui/imgui_impl_win32.h>
 
 #include <d3d9.h>
 
