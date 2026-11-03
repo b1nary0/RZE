@@ -83,6 +83,27 @@ namespace FileNames
 		return false;
 	}
 
+	Filepath FindIgnoringCase(const Filepath& path)
+	{
+		if (path.Exists())
+		{
+			return path;
+		}
+
+		const std::string name = path.GetFileName();
+		const Filepath folder = path.GetParentFolder();
+		std::error_code error;
+		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(folder.GetAbsolutePath(), error))
+		{
+			const std::string entryName = entry.path().filename().string();
+			if (StringUtils::EqualsIgnoringCase(entryName, name))
+			{
+				return Filepath(folder.GetRelativePath() + "/" + entryName);
+			}
+		}
+		return Filepath();
+	}
+
 	Filepath MakeUnique(const Filepath& folder, const std::string& name)
 	{
 		const size_t dot = name.rfind('.');

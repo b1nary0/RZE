@@ -20,6 +20,10 @@ namespace FileNames
 	// itself (e.g. the one being renamed), which only changing case doesn't make something else.
 	bool IsTaken(const Filepath& path, const Filepath& itself = Filepath());
 
+	// What's in path's folder with path's name ignoring case, as Windows would open it; invalid if nothing is. For files
+	// named in data written on Windows, e.g. a texture an .mtl names "controls.tga" that's "Controls.tga" on disk.
+	Filepath FindIgnoringCase(const Filepath& path);
+
 	// A path in folder for a new file or folder called name that nothing has yet (IsTaken): name itself, or with " 2",
 	// " 3", ... before its extension, e.g. "New Folder 2"
 	Filepath MakeUnique(const Filepath& folder, const std::string& name);

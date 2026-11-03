@@ -4,10 +4,17 @@
 
 #include <Game/GameScene.h>
 #include <Game/World/GameObject/GameObject.h>
+#include <Game/World/GameObjectComponents/LightComponent.h>
+#include <Game/World/GameObjectComponents/TransformComponent.h>
 
 #include <Graphics/RenderScene.h>
 
 #include <RapidJSON/document.h>
+#include <RapidJSON/prettywriter.h>
+#include <RapidJSON/stringbuffer.h>
+
+#include <string>
+#include <vector>
 
 namespace
 {
@@ -66,4 +73,44 @@ TEST_CASE_FIXTURE(TwoScenes, "Each scene draws into its own render scene")
 	CHECK(Second.GetRenderScene().GetDebugLines().empty());
 
 	First.GetRenderScene().ClearDebugLines();
+}
+
+TEST_CASE_FIXTURE(TwoScenes, "An object's components load and save in the scene file's order, on every platform")
+{
+	const char* const transform = R"("TransformComponent": {
+		"Position": [0.0, 0.0, 0.0], "Scale": [1.0, 1.0, 1.0], "Rotation": [0.0, 0.0, 0.0] })";
+	const char* const light = R"("LightComponent": {
+		"Type": "Point", "Range": 10.0, "LightStrength": 1.0, "LightColour": [1.0, 1.0, 1.0] })";
+
+	// Both ways round, so neither can pass by matching the registry's own order
+	for (const bool isLightFirst : { true, false })
+	{
+		CAPTURE(isLightFirst);
+		const std::string json = std::string(R"({ "name": "Ordered", "components": { )") +
+			(isLightFirst ? light : transform) + ", " + (isLightFirst ? transform : light) + " } }";
+		rapidjson::Document entry;
+		entry.Parse(json.c_str());
+		REQUIRE_FALSE(entry.HasParseError());
+
+		GameObjectPtr loaded = First.DeserializeGameObject(entry, nullptr);
+		const std::vector<GameObjectComponentID> expected = isLightFirst
+			? std::vector<GameObjectComponentID>{ LightComponent::GetID(), TransformComponent::GetID() }
+			: std::vector<GameObjectComponentID>{ TransformComponent::GetID(), LightComponent::GetID() };
+		std::vector<GameObjectComponentID> order;
+		for (const GameObjectComponentBase* component : loaded->GetComponents())
+		{
+			order.push_back(component->m_id);
+		}
+		CHECK(order == expected);
+
+		rapidjson::StringBuffer buffer;
+		rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
+		loaded->Save(writer);
+		rapidjson::Document saved;
+		saved.Parse(buffer.GetString());
+		REQUIRE_FALSE(saved.HasParseError());
+		const rapidjson::Value& components = saved["components"];
+		REQUIRE(components.MemberCount() == 2);
+		CHECK(std::string(components.MemberBegin()->name.GetString()) == (isLightFirst ? "LightComponent" : "TransformComponent"));
+	}
 }

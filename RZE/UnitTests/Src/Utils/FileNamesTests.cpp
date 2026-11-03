@@ -132,3 +132,13 @@ TEST_CASE("FileNames: a name that differs only in case is taken, on every platfo
 	CHECK_FALSE(FileNames::IsTaken(folder.GetFile("TANK.meshasset"), tank));
 	CHECK_FALSE(FileNames::IsTaken(folder.GetFile("Plane.meshasset")));
 }
+
+TEST_CASE("FileNames::FindIgnoringCase finds a file named in another case, as Windows would open it")
+{
+	const ScopedTestFolder folder("UnitTestsTemp_FileNames");
+	const Filepath controls = folder.AddFile("Controls.tga");
+
+	CHECK(FileNames::FindIgnoringCase(folder.GetFile("controls.TGA")) == controls);
+	CHECK(FileNames::FindIgnoringCase(controls) == controls);
+	CHECK_FALSE(FileNames::FindIgnoringCase(folder.GetFile("Missing.tga")).IsValid());
+}

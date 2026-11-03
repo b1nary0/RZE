@@ -14,6 +14,7 @@
 #include <SDL3/SDL.h>
 
 #include <algorithm>
+#include <cstring>
 #include <string>
 
 namespace Rendering
@@ -44,6 +45,13 @@ namespace Rendering
 			case EDataFormat::R32G32B32A32_FLOAT: return 4;
 			}
 			return 4;
+		}
+
+		// A D24S8 texel as GL reads it (depth in the high 24 bits, stencil in the low 8) in D3D's order (depth in the low
+		// 24 bits), which RenderView::DecodeDepth reads
+		U32 ToD3DDepthStencil(U32 texel)
+		{
+			return (texel >> 8) | ((texel & 0xFFu) << 24);
 		}
 
 		GLTextureBuffer2D& AsGL(ITextureBuffer2D& texture)
@@ -124,6 +132,8 @@ namespace Rendering
 		SetIsBackBufferBound(false);
 		// D3D samples across a cube map's face edges
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+		// Rows read back as tightly as D3D's staging copies give them, whatever their width
+		glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
 		glCreateProgramPipelines(1, &m_graphicsPipeline);
 		glCreateProgramPipelines(1, &m_computePipeline);
@@ -755,14 +765,18 @@ namespace Rendering
 		SetTextureResource(GLShaderTranslator::EStage::Compute, textureSlot, nullptr);
 	}
 
-	void GLDevice::SetUnorderedAccess(ITextureBuffer2D& /*texture*/, U32 /*slot*/, U32 /*mip*/)
+	void GLDevice::SetUnorderedAccess(ITextureBuffer2D& texture, U32 slot, U32 mip)
 	{
-		RZE_GL_NOT_IMPLEMENTED();
+		// Every slice of one mip, written as an array if there's more than one (GLTextureBuffer2D::GetImageTexture). In
+		// its own format: the shaders' images have none, so stores convert to it (GLShaderTranslator).
+		GLTextureBuffer2D& image = AsGL(texture);
+		const GLboolean isArray = image.GetLayerCount() > 1 ? GL_TRUE : GL_FALSE;
+		glBindImageTexture(slot, image.GetImageTexture(), static_cast<GLint>(mip), isArray, 0, GL_WRITE_ONLY, image.GetFormat().InternalFormat);
 	}
 
-	void GLDevice::UnsetUnorderedAccess(U32 /*slot*/)
+	void GLDevice::UnsetUnorderedAccess(U32 slot)
 	{
-		RZE_GL_NOT_IMPLEMENTED();
+		glBindImageTexture(slot, 0, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R8);
 	}
 
 	void GLDevice::Draw(U32 vertexCount)
@@ -777,28 +791,62 @@ namespace Rendering
 		glDrawElements(m_primitiveMode, static_cast<GLsizei>(indexCount), GL_UNSIGNED_INT, nullptr);
 	}
 
-	void GLDevice::Dispatch(U32 /*groupsX*/, U32 /*groupsY*/, U32 /*groupsZ*/)
+	void GLDevice::Dispatch(U32 groupsX, U32 groupsY, U32 groupsZ)
 	{
-		RZE_GL_NOT_IMPLEMENTED();
+		glUseProgram(0);
+		glBindProgramPipeline(m_computePipeline);
+		if (m_computeShader != nullptr)
+		{
+			BindTextures(m_computeShader->GetProgram().GetTranslation(), m_computeTextures);
+		}
+		glDispatchCompute(groupsX, groupsY, groupsZ);
+		// D3D makes a dispatch's writes visible to whatever reads them next; GL waits to be told. Every kind of read, since
+		// what comes next could sample, draw into or copy what was written.
+		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 	}
 
-	void GLDevice::ReadTexel(ITextureBuffer2D& /*texture*/, U32 /*x*/, U32 /*y*/, TexelReadback& result)
+	void GLDevice::ReadTexel(ITextureBuffer2D& texture, U32 x, U32 y, TexelReadback& result)
 	{
-		RZE_GL_NOT_IMPLEMENTED();
-		// Still ready, so nothing waits on it forever
-		result.Value = 0;
+		// From the first mip of the first slice, as DX11Device's; GL waits for the GPU to finish drawing it
+		const GLTextureBuffer2D& gl = AsGL(texture);
+		const GLTextureBuffer2D::Format& format = gl.GetFormat();
+		AssertExpr(format.BytesPerTexel <= sizeof(result.Value));
+
+		U64 texel = 0;
+		glGetTextureSubImage(gl.GetTexture(), 0, static_cast<GLint>(x), static_cast<GLint>(y), 0, 1, 1, 1,
+			format.PixelFormat, format.PixelType, static_cast<GLsizei>(sizeof(texel)), &texel);
+		if (format.IsDepth)
+		{
+			texel = ToD3DDepthStencil(static_cast<U32>(texel));
+		}
+
+		result.Value = texel;
 		result.IsReady.store(true, std::memory_order_release);
 	}
 
 	void GLDevice::ReadTexture(ITextureBuffer2D& texture, TextureReadback& result)
 	{
-		RZE_GL_NOT_IMPLEMENTED();
-		// Zeros the size the texture is, and still ready, so nothing waits on it forever
+		// The first mip of the first slice, rows top first, as DX11Device's
 		const GLTextureBuffer2D& gl = AsGL(texture);
+		const GLTextureBuffer2D::Format& format = gl.GetFormat();
 		result.Width = gl.GetParams().Width;
 		result.Height = gl.GetParams().Height;
-		result.BytesPerTexel = gl.GetFormat().BytesPerTexel;
-		result.Data.assign(static_cast<size_t>(result.Width) * result.Height * result.BytesPerTexel, 0);
+		result.BytesPerTexel = format.BytesPerTexel;
+		result.Data.resize(static_cast<size_t>(result.Width) * result.Height * result.BytesPerTexel);
+
+		glGetTextureSubImage(gl.GetTexture(), 0, 0, 0, 0, static_cast<GLsizei>(result.Width), static_cast<GLsizei>(result.Height), 1,
+			format.PixelFormat, format.PixelType, static_cast<GLsizei>(result.Data.size()), result.Data.data());
+		if (format.IsDepth)
+		{
+			for (size_t offset = 0; offset < result.Data.size(); offset += sizeof(U32))
+			{
+				U32 texel = 0;
+				memcpy(&texel, &result.Data[offset], sizeof(texel));
+				texel = ToD3DDepthStencil(texel);
+				memcpy(&result.Data[offset], &texel, sizeof(texel));
+			}
+		}
+
 		result.IsReady.store(true, std::memory_order_release);
 	}
 }

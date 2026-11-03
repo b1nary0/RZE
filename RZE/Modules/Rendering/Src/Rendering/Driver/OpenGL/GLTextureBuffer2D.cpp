@@ -117,8 +117,28 @@ namespace Rendering
 		}
 	}
 
+	U32 GLTextureBuffer2D::GetImageTexture()
+	{
+		if (m_target != GL_TEXTURE_CUBE_MAP && m_target != GL_TEXTURE_CUBE_MAP_ARRAY)
+		{
+			return m_texture;
+		}
+
+		if (m_arrayView == 0)
+		{
+			glGenTextures(1, &m_arrayView);
+			glTextureView(m_arrayView, GL_TEXTURE_2D_ARRAY, m_texture, m_format.InternalFormat, 0, m_mipCount, 0, m_layerCount);
+		}
+		return m_arrayView;
+	}
+
 	void GLTextureBuffer2D::Release()
 	{
+		if (m_arrayView != 0)
+		{
+			m_device.DeleteLater(GLDevice::EObjectType::Texture, m_arrayView);
+			m_arrayView = 0;
+		}
 		if (m_texture != 0)
 		{
 			m_device.DeleteLater(GLDevice::EObjectType::Texture, m_texture);

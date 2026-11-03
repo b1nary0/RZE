@@ -17,6 +17,7 @@
 #include <Utils/PrimitiveDefs.h>
 
 #include <Utils/Platform/File.h>
+#include <Utils/Platform/FileNames.h>
 
 #include <algorithm>
 #include <cctype>
@@ -233,6 +234,16 @@ std::string AssimpSourceImporter::ResolveTextureFile(const aiScene& scene, const
 		if (candidatePath.Exists())
 		{
 			return candidatePath.GetRelativePath();
+		}
+	}
+
+	// Then as Windows would find them, ignoring the file name's case: models are often authored there
+	for (const std::string& candidate : candidates)
+	{
+		const Filepath found = FileNames::FindIgnoringCase(Filepath(candidate));
+		if (found.IsValid())
+		{
+			return found.GetRelativePath();
 		}
 	}
 

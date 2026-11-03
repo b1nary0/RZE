@@ -95,7 +95,7 @@
             "name": "M4",
             "components": {
                 "RenderComponent": {
-                    "ResourcePath": "ProjectData\\Mesh\\m4a1.meshasset"
+                    "ResourcePath": "ProjectData\\Mesh\\M4A1.meshasset"
                 },
                 "TransformComponent": {
                     "Position": [

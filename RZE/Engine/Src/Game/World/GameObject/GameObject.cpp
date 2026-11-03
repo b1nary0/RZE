@@ -384,14 +384,20 @@ void GameObject::LoadComponents(const rapidjson::Value& entry)
 		return;
 	}
 
+	// In the file's order, which Save writes them back in, so a scene saves the same on every platform. The registry's
+	// own order is its hash map's, which differs between standard libraries.
 	const GameObjectComponentRegistry::ComponentNameIDMap& componentInfo = GameObjectComponentRegistry::GetAllComponentReflectData();
-	for (auto& dataPair : componentInfo)
+	for (const auto& componentData : components->value.GetObject())
 	{
-		const auto componentData = components->value.FindMember(dataPair.second.c_str());
-		if (componentData != components->value.MemberEnd())
+		const auto registered = std::find_if(componentInfo.begin(), componentInfo.end(),
+			[&componentData](const auto& dataPair)
+			{
+				return dataPair.second == componentData.name.GetString();
+			});
+		if (registered != componentInfo.end())
 		{
-			GameObjectComponentBase* component = AddComponentByID(dataPair.first);
-			component->Deserialize(componentData->value);
+			GameObjectComponentBase* component = AddComponentByID(registered->first);
+			component->Deserialize(componentData.value);
 		}
 	}
 }
