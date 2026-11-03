@@ -12,9 +12,14 @@
 #include <Utils/Platform/Filepath.h>
 
 // Its own copy: ImGui's is private to imgui_draw.cpp
+// Someone else's code, compiled here (static, so ImGui's copy doesn't clash): the functions this file doesn't use
+// would fail the build as unused (-Werror)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
 #define STB_TRUETYPE_IMPLEMENTATION
 #define STBTT_STATIC
 #include <imgui/imstb_truetype.h>
+#pragma GCC diagnostic pop
 
 #include <SDL3/SDL.h>
 

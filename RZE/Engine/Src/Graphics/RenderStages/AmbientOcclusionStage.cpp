@@ -34,7 +34,7 @@ namespace
 	// A view's working textures, kept in its Persistent() blackboard and remade when its target changes size
 	struct AmbientOcclusionState : RenderStageData<AmbientOcclusionState>
 	{
-		static constexpr const char* k_name = "AmbientOcclusionState";
+		[[maybe_unused]] static constexpr const char* k_name = "AmbientOcclusionState";
 
 		// View-space distance, with k_depthMipCount mips
 		Rendering::TextureBuffer2DHandle ViewspaceDepth;

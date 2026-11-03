@@ -18,5 +18,5 @@ public:
 
 private:
 	// The OS's timer where it needs one (a waitable timer's HANDLE on Windows), or null
-	void* m_timer = nullptr;
+	[[maybe_unused]] void* m_timer = nullptr;
 };

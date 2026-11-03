@@ -39,7 +39,18 @@ public abstract class BaseProject : Project
 
         // It seems like you use <> includes a lot, so this is needed per project
         conf.IncludePaths.Add(Path.Combine("[project.SharpmakeCsPath]", "Src"));
-        conf.IncludePaths.Add(Globals.IncludeDir);
+        if (target.Platform == Platform.linux)
+        {
+            // Someone else's headers, as system headers, so their warnings don't fail the build (-Werror) where ours
+            // include them. The Makefile generator leaves out IncludeSystemPaths, so it's passed as an option, relative
+            // to the project's folder as the generator writes -I paths.
+            string projectFolder = Path.Combine(SharpmakeCsPath, "_project");
+            conf.AdditionalCompilerOptions.Add("-isystem " + Util.PathGetRelative(projectFolder, Path.GetFullPath(Globals.IncludeDir)));
+        }
+        else
+        {
+            conf.IncludePaths.Add(Globals.IncludeDir);
+        }
     }
 
     // For an exe with a window: no console window opens with it, which on Windows 11 opens in Windows Terminal and
@@ -108,10 +119,12 @@ public abstract class BaseProject : Project
         conf.Options.Add(Options.Makefile.Compiler.Rtti.Enable);
         conf.Options.Add(Options.Makefile.Compiler.Exceptions.Enable);
 
-        // -Wall, but not yet as errors as on Windows: clang warns about things MSVC's /W3 doesn't, and those are
-        // fixed before warnings become errors here too
+        // -Wall, as errors, as Windows' /W3 /WX are
         conf.Options.Add(Options.Makefile.Compiler.Warnings.MoreWarnings);
-        conf.Options.Add(Options.Makefile.Compiler.TreatWarningsAsErrors.Disable);
+        conf.Options.Add(Options.Makefile.Compiler.TreatWarningsAsErrors.Enable);
+        // Except the PCHs' "Compiling ... PCH" #pragma message, which MSVC prints and clang reports as a warning. The
+        // # is escaped for make, where it would start a comment.
+        conf.AdditionalCompilerOptions.Add(@"-Wno-error=\#pragma-messages");
         // Symbols in every configuration, as Windows has PDBs in every configuration
         conf.Options.Add(Options.Makefile.Compiler.GenerateDebugInformation.Enable);
 

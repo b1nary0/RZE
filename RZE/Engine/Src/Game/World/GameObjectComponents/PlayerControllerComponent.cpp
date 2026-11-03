@@ -12,7 +12,6 @@ void PlayerControllerComponent::Update()
 
 	float dt = static_cast<float>(RZE().GetDeltaTime());
 	float speedDelta = m_speed * dt;
-	bool hasValidMovementInput = false;
 
 	GameObjectComponentPtr<TransformComponent> transfComp = GetOwner()->GetComponent<TransformComponent>();
 
@@ -20,29 +19,24 @@ void PlayerControllerComponent::Update()
 		|| inputHandler.GetKeyboardState().GetButtonState(KeyCode::Key_W) == EButtonState::ButtonState_Hold)
 	{
 		transfComp->SetPosition(transfComp->GetPosition() + m_forward * speedDelta);
-		hasValidMovementInput = true;
 	}
 	else if (inputHandler.GetKeyboardState().CurKeyStates[KeyCode::Key_S])
 	{
 		transfComp->SetPosition(transfComp->GetPosition() - m_forward * speedDelta);
-		hasValidMovementInput = true;
 	}
 
 	if (inputHandler.GetKeyboardState().CurKeyStates[KeyCode::Key_A])
 	{
 		transfComp->SetPosition(transfComp->GetPosition() - m_forward.Cross(m_upDir).Normalize() * speedDelta);
-		hasValidMovementInput = true;
 	}
 	else if (inputHandler.GetKeyboardState().CurKeyStates[KeyCode::Key_D])
 	{
 		transfComp->SetPosition(transfComp->GetPosition() + m_forward.Cross(m_upDir).Normalize() * speedDelta);
-		hasValidMovementInput = true;
 	}
 
 	if (inputHandler.GetKeyboardState().CurKeyStates[KeyCode::Key_1])
 	{
 		// Focus object
-		hasValidMovementInput = true;
 	}
 
 	// Mouse Input

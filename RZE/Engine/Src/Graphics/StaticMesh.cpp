@@ -28,7 +28,7 @@ StaticMesh::StaticMesh(const std::string& name, std::vector<SubMesh>&& subMeshes
 	, m_slots(std::move(slots))
 	, m_placements(std::move(placements))
 {
-	for (const SubMesh& subMesh : m_subMeshes)
+	for ([[maybe_unused]] const SubMesh& subMesh : m_subMeshes)
 	{
 		AssertExpr(subMesh.SlotIndex < m_slots.size());
 	}

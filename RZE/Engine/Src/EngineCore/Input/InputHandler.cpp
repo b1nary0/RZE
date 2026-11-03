@@ -166,7 +166,7 @@ void InputHandler::OnMouseDown(const EMouseButton::T button, const Int32 xPos, c
 	MouseAction action;
 	action.Button = button;
 	action.State = mProxyMouseState.GetButtonState(button);
-	action.Position = std::move(Vector2D(xPos, yPos));
+	action.Position = Vector2D(xPos, yPos);
 	action.Wheel = 0;
 
 	mMouseActionQueue.push(std::move(action));
@@ -181,7 +181,7 @@ void InputHandler::OnMouseUp(const EMouseButton::T button, const Int32 xPos, con
 	MouseAction action;
 	action.Button = button;
 	action.State = mProxyMouseState.GetButtonState(button);
-	action.Position = std::move(Vector2D(xPos, yPos));
+	action.Position = Vector2D(xPos, yPos);
 	action.Wheel = 0;
 
 	mMouseActionQueue.push(std::move(action));

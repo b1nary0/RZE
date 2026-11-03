@@ -53,7 +53,7 @@ TEST_CASE("Survey counts thumbnails that are up to date, out of date and missing
 	const ThumbnailFolder images(folder.Get().GetRelativePath() + "/Images");
 
 	// Each image a minute after or before its asset was changed
-	auto addImage = [&folder, &images](const Filepath& asset, bool isNewer)
+	auto addImage = [&folder](const Filepath& asset, bool isNewer)
 		{
 			const Filepath image = folder.AddFile("Images/" + asset.GetStem() + ".png");
 			const std::filesystem::file_time_type assetTime = std::filesystem::last_write_time(asset.GetAbsolutePath());

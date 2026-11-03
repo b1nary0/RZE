@@ -70,11 +70,11 @@ namespace
 }
 
 RZE_Engine::RZE_Engine()
-	: m_window(nullptr)
-	, m_application(nullptr)
+	: m_application(nullptr)
+	, m_window(nullptr)
 	, m_renderEngine(nullptr)
-	, m_shouldExit(false)
 	, m_isInitialized(false)
+	, m_shouldExit(false)
 {
 }
 

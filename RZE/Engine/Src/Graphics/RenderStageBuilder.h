@@ -57,7 +57,7 @@ private:
 	{
 		static_assert(IsRenderStageData<T>, "Render stage data must derive from RenderStageData<T>");
 
-		for (const RenderStageDeclaration::DataAccess& existing : m_declaration.Accesses)
+		for ([[maybe_unused]] const RenderStageDeclaration::DataAccess& existing : m_declaration.Accesses)
 		{
 			AssertMsg(existing.TypeId != T::TypeId(), "A stage may declare each data contract only once");
 		}

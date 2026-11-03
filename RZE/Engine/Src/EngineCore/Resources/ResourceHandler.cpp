@@ -193,9 +193,9 @@ const std::unordered_map<std::string, ResourceHandler::ResourceSource>& Resource
 }
 
 ResourceHandle::ResourceHandle()
-	: mResourceID("NO_RESOURCE")
+	: mHandler(nullptr)
+	, mResourceID("NO_RESOURCE")
 	, mResourceSource(nullptr)
-	, mHandler(nullptr)
 {
 }
 

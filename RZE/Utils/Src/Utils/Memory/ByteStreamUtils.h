@@ -15,7 +15,7 @@ namespace ByteStreamUtils
 
 		delete[] name;
 		name = nullptr;
-		return std::move(string);
+		return string;
 	}
 
 	// #NOTE

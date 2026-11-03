@@ -47,7 +47,6 @@ namespace SourceMaterialRules
 
 	EBlendMode ChooseBlendMode(EMaskKind mask, float opacity)
 	{
-		using MaterialData = MaterialAssetImporter::MaterialData;
 		switch (mask)
 		{
 		case EMaskKind::Cutout:

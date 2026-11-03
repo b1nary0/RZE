@@ -40,7 +40,7 @@ public:
 
 	inline std::string ToString() const
 	{
-		return std::move(StringUtils::FormatString("[X] %f [Y] %f [Z] %f", X(), Y(), Z()));
+		return StringUtils::FormatString("[X] %f [Y] %f [Z] %f", X(), Y(), Z());
 	}
 
 	//

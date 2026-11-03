@@ -33,7 +33,7 @@ namespace
 	// A view's eye-adaptation history, kept in its Persistent() blackboard so every view adapts on its own
 	struct EyeAdaptationState : RenderStageData<EyeAdaptationState>
 	{
-		static constexpr const char* k_name = "EyeAdaptationState";
+		[[maybe_unused]] static constexpr const char* k_name = "EyeAdaptationState";
 
 		// 1x1 adapted log-luminance (r) and has-been-measured flag (g). Ping-ponged: read last frame's, write this frame's.
 		Rendering::TextureBuffer2DHandle Adapted[2];
@@ -46,7 +46,7 @@ namespace
 	// target changes size
 	struct AntiAliasState : RenderStageData<AntiAliasState>
 	{
-		static constexpr const char* k_name = "AntiAliasState";
+		[[maybe_unused]] static constexpr const char* k_name = "AntiAliasState";
 
 		Rendering::TextureBuffer2DHandle Tonemapped;
 		U32 Width = 0;

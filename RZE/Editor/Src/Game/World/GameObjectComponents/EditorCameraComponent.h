@@ -79,7 +79,6 @@ private:
 
 	float m_speed;
 	float m_deltaSpeedRampMultiplier = kMinDirectionHeldTime;
-	float m_wheelZoomSpeed;
 
 	Vector2D m_mousePrevPos;
 	Vector2D m_yawPitch;

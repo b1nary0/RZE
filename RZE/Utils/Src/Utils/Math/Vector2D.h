@@ -29,7 +29,7 @@ public:
 
 	inline std::string ToString() const
 	{
-		return std::move(StringUtils::FormatString("[X] %f [Y] %f", X(), Y()));
+		return StringUtils::FormatString("[X] %f [Y] %f", X(), Y());
 	}
 	
 	//

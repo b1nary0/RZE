@@ -15,7 +15,7 @@ ByteStream::ByteStream(const std::string& name, size_t streamLength)
 	, mStreamLength(streamLength)
 {
 	mBytes = new Byte[streamLength];
-	memset(mBytes, NULL, streamLength);
+	memset(mBytes, 0, streamLength);
 }
 
 ByteStream::~ByteStream()

@@ -106,7 +106,7 @@ void GameApp::ShutDown()
 
 void GameApp::RegisterInputEvents(InputHandler& inputHandler)
 {
-	Functor<void, const InputKey&> keyFunc([this](const InputKey& key)
+	Functor<void, const InputKey&> keyFunc([](const InputKey& key)
 	{
 		if (key.GetKeyCode() == KeyCode::Escape)
 		{
