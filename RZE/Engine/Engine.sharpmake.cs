@@ -33,6 +33,8 @@ public class Engine : BaseProject
             conf.LibraryFiles.Add("OptickCore");
             // DwmSetWindowAttribute
             conf.LibraryFiles.Add("dwmapi");
+            // SetWindowSubclass (Windowing/Windows/WindowNativeWindows.cpp)
+            conf.LibraryFiles.Add("comctl32");
 
             var copyDirBuildStep = new Configuration.BuildStepCopy(
                 Globals.ThirdPartyDllDir,

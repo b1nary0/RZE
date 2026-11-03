@@ -1,36 +1,26 @@
 #pragma once
 
-// winapi
-// @improvement does it suffice to have a pch here or refactor to avoid this in a .h?
-#include <Windows.h>
-
 // std lib
 #include <memory>
 #include <string>
+#include <vector>
 
 // RZE
 #include <Windowing/TitleBarLayout.h>
-#include <Windowing/WindowMessageAdaptor.h>
+#include <Windowing/WindowNativeState.h>
 #include <Utils/Math/Vector2D.h>
+#include <Utils/PrimitiveDefs.h>
 
 class EventHandler;
 class Filepath;
 class InputHandler;
-class WindowIcon;
 
-class Win32Window
+struct SDL_Window;
+
+// The application's window. The same class on every platform: SDL underneath, with the few things SDL doesn't do the
+// same everywhere (WindowNative.h) done natively.
+class Window
 {
-
-private:
-
-	typedef struct OSWindowHandleData
-	{
-		HWND windowHandle;
-		HDC deviceContext;
-		HGLRC renderContext;
-		PIXELFORMATDESCRIPTOR pixelFormatDesc;
-	} OSWindowHandleData;
-
 public:
 
 	struct WindowCreationParams
@@ -41,11 +31,11 @@ public:
 		int				monitorIndex{ 0 };	// 0 = primary monitor
 	};
 
-	Win32Window(const WindowCreationParams& creationProtocol);
-	~Win32Window();
+	Window(const WindowCreationParams& creationProtocol);
+	~Window();
 
-	void SetCursorEnabled(bool enabled);
-	void ResetCursorToCenter();
+	Window(const Window&) = delete;
+	Window& operator=(const Window&) = delete;
 
 	void SetTitle(const std::string& title);
 	// Shows image (e.g. a PNG) as the window's icon, in place of the executable's. False if it couldn't be read, which
@@ -56,15 +46,15 @@ public:
 	const Vector2D& GetDimensions() const;
 	const Vector2D& GetClientSize() const;
 
-	// Compile input messages from Win32 api
+	// Compile input messages from the OS (through SDL)
 	void CompileInputMessages(InputHandler& inputHandler);
 
-	// Compile all other window messages from Win32 api
+	// Compile all other window messages from the OS, gathered by CompileInputMessages
 	void CompileWindowMessages(EventHandler& eventHandler);
 
 	void Show();
-	// Puts it on screen. It's made cloaked: shown, maximized and so on as usual, but the user doesn't see it until this,
-	// so it can be readied (sized, drawn) first.
+	// Puts it on screen. It's made hidden from the user: shown, maximized and so on as usual, but the user doesn't see
+	// it until this, so it can be readied (sized, drawn) first.
 	void Reveal();
 	// Makes it the foreground window, the one the user is working in
 	void Focus();
@@ -76,7 +66,8 @@ public:
 	// down when the button is released outside the window.
 	bool IsMouseButtonDown() const;
 
-	const OSWindowHandleData& GetOSWindowHandleData() const;
+	// The SDL_Window, for code that needs the OS's window (the renderer, Display::GetRefreshRate)
+	void* GetNativeHandle() const;
 
 	void RegisterEvents(EventHandler& eventHandler);
 
@@ -100,48 +91,31 @@ public:
 	// The window's DPI over the standard 96, e.g. 1.25
 	float GetDpiScale() const;
 
-protected:
-
 private:
+	enum class EPendingEvent
+	{
+		Destroy,
+		CloseRequested,
+		Resize
+	};
 
-	static LRESULT CALLBACK WindowProc(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam);
-
-	void Create(const WindowCreationParams& creationProtocol);
-
-	// With a custom title bar: the client area takes the OS caption's place (WM_NCCALCSIZE), and the parts of it
-	// that are the title bar are reported as caption, maximize button or resize border (WM_NCHITTEST)
-	LRESULT CalculateClientArea(WPARAM wParam, LPARAM lParam);
-	LRESULT HitTest(WPARAM wParam, LPARAM lParam);
-	// The mouse over the custom title bar's caption or maximize button sends non-client messages, which reach the
-	// input handler as client ones so the application's UI follows the mouse there too. False lets the OS have the
-	// message as usual.
-	bool CompileNonClientMouseMessage(const MSG& msg, InputHandler& inputHandler);
-	// The invisible resize border's thickness, at the window's DPI
-	int GetFrameThickness() const;
-
-	void ProcessWinProcMessage(const WindowMessageAdaptor::WindowMessageInfo& messageInfo, EventHandler& eventHandler);
-
-	void InternalSetWindowPosition(const Vector2D& pos);
-
-	void InternalSetWindowSize(const Vector2D& size);
-
-	// @note right now (and maybe forever) we need to query winapi to update our client size every time
-	// a change in window happens
 	void QueryClientSize();
+	// Once per pump: many resizes in a row (e.g. while the edge is dragged) are told as one
+	void AddPendingEvent(EPendingEvent pendingEvent);
 
-
-	OSWindowHandleData m_osWindowHandleData;
+	SDL_Window* m_window = nullptr;
+	WindowNative::StatePtr m_native;
+	bool m_isVideoAcquired = false;
 
 	std::string m_title;
 	Vector2D m_dimensions;
 	Vector2D m_clientSize;
-	Vector2D m_pos;
-
-	bool bCursorEnabled;
 
 	bool m_hasCustomTitleBar{ false };
 	TitleBarLayout m_titleBarLayout;
 
-	// From SetIcon; null while the window shows the executable's icon
-	std::unique_ptr<WindowIcon> m_icon;
+	// The window's events from the last CompileInputMessages, for CompileWindowMessages
+	std::vector<EPendingEvent> m_pendingEvents;
+	// Keys released in the same CompileInputMessages they were pressed in, told as released in the next one
+	std::vector<Int32> m_deferredKeyUps;
 };

@@ -2,13 +2,13 @@
 
 #include <RZE.h>
 
-#include <Windowing/Win32Window.h>
+#include <Windowing/Window.h>
 
 #include <memory>
 
 class EventHandler;
 class Filepath;
-class Win32Window;
+class Window;
 
 namespace Rendering
 {
@@ -72,18 +72,18 @@ public:
 protected:
 	virtual void Initialize();
 
-	Win32Window& InternalGetWindow();
+	Window& InternalGetWindow();
 
 	void SetRunning(bool bRunning);
 	void ShowWindow();
 
-	Win32Window* const GetWindow() const;
+	Window* const GetWindow() const;
 
 	std::unique_ptr<Rendering::RenderTargetTexture> m_renderTarget;
 
 private:
-	void SetWindow(Win32Window* const window);
+	void SetWindow(Window* const window);
 	
-	Win32Window* mWindow;
+	Window* mWindow;
 	bool bIsRunning;
 };

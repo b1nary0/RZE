@@ -10,7 +10,7 @@
 #include <Game/World/GameObjectComponents/RenderComponent.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
-#include <Windowing/Win32Window.h>
+#include <Windowing/Window.h>
 
 #include <Rendering/Graphics/RenderTarget.h>
 
@@ -108,7 +108,7 @@ void RZE_Application::RegisterEngineComponents()
 	GameObjectComponentRegistry::SetResourceDependencyGatherer(RenderComponent::GetID(), &RenderComponent::GatherResourceDependencies);
 }
 
-Win32Window& RZE_Application::InternalGetWindow()
+Window& RZE_Application::InternalGetWindow()
 {
 	AssertNotNull(mWindow);
 	return *mWindow;
@@ -125,13 +125,13 @@ void RZE_Application::ShowWindow()
 	mWindow->Show();
 }
 
-void RZE_Application::SetWindow(Win32Window* const window)
+void RZE_Application::SetWindow(Window* const window)
 {
 	AssertNotNull(window);
 	mWindow = window;
 }
 
-Win32Window* const RZE_Application::GetWindow() const
+Window* const RZE_Application::GetWindow() const
 {
 	return mWindow;
 }

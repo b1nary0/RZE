@@ -8,7 +8,7 @@
 
 #include <Utils/Platform/Filepath.h>
 
-#include <Windowing/Win32Window.h>
+#include <Windowing/Window.h>
 
 #include <imgui/imgui.h>
 
@@ -136,7 +136,7 @@ namespace Editor
 		m_logo = ResourceHandle::EmptyHandle();
 	}
 
-	void TitleBar::Begin(const Win32Window& window)
+	void TitleBar::Begin(const Window& window)
 	{
 		m_layout = TitleBarLayout();
 		DrawLogo(window);
@@ -147,7 +147,7 @@ namespace Editor
 		m_layout.Controls.push_back(ToClientRect(ImVec2(left, GetBarMin().y), ImVec2(right, GetBarMax().y)));
 	}
 
-	void TitleBar::End(Win32Window& window)
+	void TitleBar::End(Window& window)
 	{
 		const float buttonsLeft = GetBarMax().x - 3.0f * std::round(k_buttonWidth * window.GetDpiScale());
 		DrawTitle(window, buttonsLeft);
@@ -162,7 +162,7 @@ namespace Editor
 		window.SetTitleBarLayout(std::move(m_layout));
 	}
 
-	void TitleBar::DrawLogo(const Win32Window& window)
+	void TitleBar::DrawLogo(const Window& window)
 	{
 		const Texture2D* const logo = m_logo.IsValid() ? RZE().GetResourceHandler().GetResource<Texture2D>(m_logo) : nullptr;
 		if (logo == nullptr || !logo->IsOnGPU())
@@ -186,7 +186,7 @@ namespace Editor
 		ImGui::SetCursorScreenPos(ImVec2(menusLeft, ImGui::GetCursorScreenPos().y));
 	}
 
-	void TitleBar::DrawTitle(const Win32Window& window, float right)
+	void TitleBar::DrawTitle(const Window& window, float right)
 	{
 		const std::string& title = window.GetTitle();
 		const float margin = k_titleMargin * window.GetDpiScale();
@@ -210,7 +210,7 @@ namespace Editor
 		ImGui::GetWindowDrawList()->AddText(ImGui::GetFont(), ImGui::GetFontSize(), position, colour, title.c_str(), nullptr, 0.0f, &clip);
 	}
 
-	void TitleBar::DrawWindowButtons(Win32Window& window)
+	void TitleBar::DrawWindowButtons(Window& window)
 	{
 		const float dpiScale = window.GetDpiScale();
 		const float width = std::round(k_buttonWidth * dpiScale);

@@ -14,7 +14,6 @@
 
 #include <imgui/imgui.h>
 #include <imgui/imgui_impl_dx11.h>
-#include <imgui/imgui_impl_win32.h>
 
 #include <d3d9.h>
 
@@ -66,7 +65,6 @@ namespace Rendering
 		m_thread.join();
 
 		ImGui_ImplDX11_Shutdown();
-		ImGui_ImplWin32_Shutdown();
 		// Saves imgui.ini, through io.IniFilename and any settings handlers the application added, which point into the
 		// application. It's never deleted (RZE_Engine::m_application), so they're still there after its ShutDown.
 		ImGui::DestroyContext();
@@ -93,7 +91,6 @@ namespace Rendering
 	void RenderThread::InitializeImGui()
 	{
 		ImGui::CreateContext();
-		ImGui_ImplWin32_Init(m_windowHandle);
 		ImGui_ImplDX11_Init(&m_device->GetHardwareDevice(), &m_device->GetDeviceContext());
 	}
 

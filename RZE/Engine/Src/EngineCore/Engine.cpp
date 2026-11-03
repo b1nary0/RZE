@@ -9,18 +9,16 @@
 #include <Graphics/RenderEngine.h>
 
 #include <Windowing/Display.h>
+#include <Windowing/ImGuiPlatform.h>
 #include <Windowing/SplashScreen.h>
-#include <Windowing/Win32Window.h>
+#include <Windowing/Window.h>
 
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Memory/MemoryUtils.h>
 #include <Utils/Platform/CmdLine.h>
 
 #include <imgui/imgui_impl_dx11.h>
-#include <imgui/imgui_impl_win32.h>
 #include <imgui/ImGuizmo.h>
-
-#include "Windowing/Win32Window.h"
 
 namespace
 {
@@ -354,14 +352,14 @@ void RZE_Engine::CreateAndInitializeWindow()
 {
 	const WindowSettings& windowSettings = GetResourceHandler().GetResource<EngineConfig>(m_engineConfig)->GetWindowSettings();
 
-	Win32Window::WindowCreationParams params;
+	Window::WindowCreationParams params;
 	params.windowTitle = windowSettings.GetTitle();
 	params.width = static_cast<int>(windowSettings.GetDimensions().X());
 	params.height = static_cast<int>(windowSettings.GetDimensions().Y());
 
 	params.monitorIndex = GetLaunchMonitor();
 
-	m_window = new Win32Window(params);
+	m_window = new Window(params);
 	AssertNotNull(m_window);
 
 	m_window->RegisterEvents(m_eventHandler);
@@ -374,7 +372,9 @@ void RZE_Engine::CreateAndInitializeRenderer()
 	RZE_LOG("Initializing Renderer");
 
 	m_renderEngine = std::make_unique<RenderEngine>();
-	m_renderEngine->Initialize(m_window->GetOSWindowHandleData().windowHandle);
+	m_renderEngine->Initialize(m_window->GetNativeHandle());
+	// The render engine made ImGui's context
+	ImGuiPlatform::Initialize(*m_window);
 	const EngineConfig* const engineConfig = GetResourceHandler().GetResource<EngineConfig>(m_engineConfig);
 	m_renderEngine->GetMainView().AntiAliasing = engineConfig->GetAntiAliasing();
 	m_renderEngine->GetMainView().AmbientOcclusion = engineConfig->GetAmbientOcclusion();
@@ -428,7 +428,7 @@ void RZE_Engine::InitializeFramePacing()
 		settings.UIFrameRate = static_cast<double>(uiFrameRate);
 	}
 
-	m_framePacer.SetRefreshRate(Display::GetRefreshRate(m_window->GetOSWindowHandleData().windowHandle));
+	m_framePacer.SetRefreshRate(Display::GetRefreshRate(m_window->GetNativeHandle()));
 	SetFrameSettings(settings);
 }
 
@@ -524,7 +524,7 @@ void RZE_Engine::RegisterWindowEvents()
 			m_framePacer.RequestUIFrame();
 
 			// Also sent after a move, which may have taken the window to a monitor with another refresh rate
-			m_framePacer.SetRefreshRate(Display::GetRefreshRate(m_window->GetOSWindowHandleData().windowHandle));
+			m_framePacer.SetRefreshRate(Display::GetRefreshRate(m_window->GetNativeHandle()));
 		}
 	});
 	m_eventHandler.RegisterForEvent(EEventType::Window, windowCallback);
@@ -552,7 +552,7 @@ double RZE_Engine::UpdateUI()
 		OPTICK_EVENT("ImGui NewFrame Work");
 
 		ImGui_ImplDX11_NewFrame();
-		ImGui_ImplWin32_NewFrame();
+		ImGuiPlatform::NewFrame();
 		ImGui::NewFrame();
 		ImGuizmo::BeginFrame();
 	}
@@ -589,6 +589,8 @@ void RZE_Engine::BeginShutDown()
 	m_renderEngine->GetMainScene().ClearObjects();
 	m_renderEngine->ReleaseRenderStages();
 
+	// While ImGui's context is still there: the render engine's shutdown destroys it
+	ImGuiPlatform::Shutdown();
 	m_renderEngine->Shutdown();
 
 	Threading::JobScheduler::Get().ShutDown();

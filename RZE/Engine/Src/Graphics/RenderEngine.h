@@ -44,6 +44,7 @@ public:
 	RenderEngine& operator=(const RenderEngine&) = delete;
 
 public:
+	// windowHandle is the window's SDL_Window (Window::GetNativeHandle)
 	void Initialize(void* windowHandle);
 	// Renders the main view as one frame
 	void Render(const char* frameName);

@@ -1,10 +1,6 @@
 #pragma once
 #pragma message("*********** Compiling Engine PCH... ***********")
 
-// WinAPI
-#include <Windows.h>
-#include <Windowsx.h>
-
 // std lib
 #include <assert.h>
 #include <codecvt>

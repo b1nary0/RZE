@@ -5,6 +5,8 @@
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Vector2D.h>
 
+#include <SDL3/SDL.h>
+
 namespace Rendering
 {
 	const int kInitialWidth = 1600;
@@ -257,7 +259,8 @@ namespace Rendering
 
 	void DX11Device::SetWindow(void* windowHandle)
 	{
-		mWindowHandle = windowHandle;
+		// The SDL window's HWND, which the swap chain presents to
+		mWindowHandle = SDL_GetPointerProperty(SDL_GetWindowProperties(static_cast<SDL_Window*>(windowHandle)), SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
 	}
 
 	void DX11Device::Shutdown()

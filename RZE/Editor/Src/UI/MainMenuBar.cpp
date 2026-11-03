@@ -17,7 +17,7 @@
 
 #include <Utils/Platform/Filepath.h>
 
-#include <Windowing/Win32Window.h>
+#include <Windowing/Window.h>
 
 #include <imgui/imgui.h>
 #include <imgui/ImGuizmo.h>
@@ -114,7 +114,7 @@ namespace Editor
 		m_titleBar.ShutDown();
 	}
 
-	void MainMenuBar::Draw(EditorContext& context, Win32Window& window)
+	void MainMenuBar::Draw(EditorContext& context, Window& window)
 	{
 		HandleShortcuts(context);
 

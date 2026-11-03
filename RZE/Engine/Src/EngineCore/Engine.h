@@ -24,7 +24,7 @@ class RZE_Application;
 
 class RenderEngine;
 class SplashScreen;
-class Win32Window;
+class Window;
 
 class RZE_Engine
 {
@@ -120,7 +120,7 @@ private:
 	RZE_Application* m_application;
 	GameScene* m_activeScene;
 
-	Win32Window* m_window;
+	Window* m_window;
 	// From once Engine.ini is loaded until start-up is done, if the application has a splash screen
 	// (RZE_Application::GetSplashScreenImage)
 	std::unique_ptr<SplashScreen> m_splashScreen;

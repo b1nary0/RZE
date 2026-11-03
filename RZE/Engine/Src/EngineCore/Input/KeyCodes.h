@@ -2,8 +2,8 @@
 
 #include <Utils/PrimitiveDefs.h>
 
-// The engine's key codes. Their values are Windows' virtual-key codes (VK_*), so the Windows window passes its keys
-// through as they are; other platforms' windows translate theirs to these.
+// The engine's key codes. Their values are Windows' virtual-key codes (VK_*), which they always were; the window
+// translates SDL's keys to them (Window.cpp).
 namespace KeyCode
 {
 	enum Type : U8

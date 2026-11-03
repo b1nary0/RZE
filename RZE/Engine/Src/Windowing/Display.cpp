@@ -2,43 +2,23 @@
 
 #include <Windowing/Display.h>
 
-// winapi
-#include <Windows.h>
+#include <Windowing/SDLVideo.h>
+
+#include <SDL3/SDL.h>
 
 // std lib
 #include <algorithm>
 
 namespace
 {
-	Display::ScreenRect ToScreenRect(const RECT& rect)
+	Display::ScreenRect ToScreenRect(const SDL_Rect& rect)
 	{
 		Display::ScreenRect screenRect;
-		screenRect.Left = rect.left;
-		screenRect.Top = rect.top;
-		screenRect.Right = rect.right;
-		screenRect.Bottom = rect.bottom;
+		screenRect.Left = rect.x;
+		screenRect.Top = rect.y;
+		screenRect.Right = rect.x + rect.w;
+		screenRect.Bottom = rect.y + rect.h;
 		return screenRect;
-	}
-
-	BOOL CALLBACK EnumMonitorCallback(HMONITOR monitor, HDC, LPRECT, LPARAM userData)
-	{
-		std::vector<Display::MonitorInfo>& monitors = *reinterpret_cast<std::vector<Display::MonitorInfo>*>(userData);
-
-		MONITORINFOEXA osInfo;
-		osInfo.cbSize = sizeof(MONITORINFOEXA);
-		if (GetMonitorInfoA(monitor, &osInfo))
-		{
-			Display::MonitorInfo info;
-			info.DeviceName = osInfo.szDevice;
-			info.Bounds = ToScreenRect(osInfo.rcMonitor);
-			info.WorkArea = ToScreenRect(osInfo.rcWork);
-			info.bIsPrimary = (osInfo.dwFlags & MONITORINFOF_PRIMARY) != 0;
-
-			monitors.push_back(info);
-		}
-
-		// Continue enumeration
-		return TRUE;
 	}
 }
 
@@ -47,9 +27,36 @@ namespace Display
 	std::vector<MonitorInfo> EnumerateMonitors()
 	{
 		std::vector<MonitorInfo> monitors;
-		EnumDisplayMonitors(nullptr, nullptr, EnumMonitorCallback, reinterpret_cast<LPARAM>(&monitors));
+		const SDLVideo::Scope video;
+		if (!video.IsAcquired())
+		{
+			return monitors;
+		}
 
-		// Guarantee primary monitor is index 0 while keeping OS order for the rest
+		const SDL_DisplayID primary = SDL_GetPrimaryDisplay();
+		int count = 0;
+		SDL_DisplayID* const displays = SDL_GetDisplays(&count);
+		for (int index = 0; index < count; ++index)
+		{
+			SDL_Rect bounds;
+			SDL_Rect workArea;
+			if (!SDL_GetDisplayBounds(displays[index], &bounds) || !SDL_GetDisplayUsableBounds(displays[index], &workArea))
+			{
+				continue;
+			}
+
+			MonitorInfo info;
+			const char* const name = SDL_GetDisplayName(displays[index]);
+			info.DeviceName = name != nullptr ? name : "";
+			info.Bounds = ToScreenRect(bounds);
+			info.WorkArea = ToScreenRect(workArea);
+			info.bIsPrimary = displays[index] == primary;
+			monitors.push_back(info);
+		}
+		SDL_free(displays);
+
+		// SDL already lists the primary first and the rest in the OS's order (EnumDisplayMonitors on Windows); this
+		// keeps that true whatever SDL does
 		std::stable_partition(monitors.begin(), monitors.end(), [](const MonitorInfo& info)
 		{
 			return info.bIsPrimary;
@@ -72,23 +79,11 @@ namespace Display
 
 	double GetRefreshRate(void* windowHandle)
 	{
-		const HMONITOR monitor = MonitorFromWindow(static_cast<HWND>(windowHandle), MONITOR_DEFAULTTONEAREST);
+		SDL_Window* const window = static_cast<SDL_Window*>(windowHandle);
+		const SDL_DisplayID display = SDL_GetDisplayForWindow(window);
+		const SDL_DisplayMode* const mode = display != 0 ? SDL_GetCurrentDisplayMode(display) : nullptr;
 
-		MONITORINFOEXA monitorInfo;
-		monitorInfo.cbSize = sizeof(MONITORINFOEXA);
-		if (!GetMonitorInfoA(monitor, &monitorInfo))
-		{
-			return 0.0;
-		}
-
-		DEVMODEA mode = {};
-		mode.dmSize = sizeof(DEVMODEA);
-		if (!EnumDisplaySettingsA(monitorInfo.szDevice, ENUM_CURRENT_SETTINGS, &mode))
-		{
-			return 0.0;
-		}
-
-		// 0 and 1 mean the hardware's default rate, which says nothing about what it is
-		return mode.dmDisplayFrequency > 1 ? static_cast<double>(mode.dmDisplayFrequency) : 0.0;
+		// 0 means SDL doesn't know it
+		return mode != nullptr && mode->refresh_rate > 0.0f ? static_cast<double>(mode->refresh_rate) : 0.0;
 	}
 }

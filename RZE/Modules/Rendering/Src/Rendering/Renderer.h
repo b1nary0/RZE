@@ -35,6 +35,7 @@ namespace Rendering
 		Renderer() = delete;
 
 	public:
+		// mWindowHandle is the window's SDL_Window
 		static void Initialize(void* mWindowHandle);
 		static void Shutdown();
 

@@ -5,7 +5,7 @@
 
 namespace
 {
-	// Mirrors ImGui_ImplWin32_KeyEventToImGuiKey() from imgui_impl_win32.cpp, which isn't exported.
+	// Mirrors ImGui_ImplWin32_KeyEventToImGuiKey() from ImGui's Win32 backend, since the engine's key codes are Windows'.
 	ImGuiKey VirtualKeyToImGuiKey(int vk)
 	{
 		if (vk >= '0' && vk <= '9')
