@@ -163,8 +163,14 @@ Window::Window(const WindowCreationParams& creationProtocol)
 		Display::GetMonitor(0, monitorInfo);
 	}
 
-	// Hidden until it's shown (Show, Reveal), and sizable like any normal window
-	m_window = SDL_CreateWindow(m_title.c_str(), creationProtocol.width, creationProtocol.height, SDL_WINDOW_HIDDEN | SDL_WINDOW_RESIZABLE);
+	// Hidden until it's shown (Show, Reveal), and sizable like any normal window. OpenGL's needs a pixel format that
+	// allows it, which SDL only gives a window made for it.
+	SDL_WindowFlags flags = SDL_WINDOW_HIDDEN | SDL_WINDOW_RESIZABLE;
+	if (creationProtocol.graphicsAPI == Rendering::EGraphicsAPI::OpenGL)
+	{
+		flags |= SDL_WINDOW_OPENGL;
+	}
+	m_window = SDL_CreateWindow(m_title.c_str(), creationProtocol.width, creationProtocol.height, flags);
 	if (m_window == nullptr)
 	{
 		RZE_LOG_ERROR("<Failure creating the window> " << SDL_GetError());

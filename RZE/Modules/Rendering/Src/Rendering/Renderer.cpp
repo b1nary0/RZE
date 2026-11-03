@@ -5,20 +5,15 @@
 #include <Utils/Memory/MemoryUtils.h>
 #include <Utils/Platform/Filepath.h>
 
-// DX11
 #include <Rendering/RenderCommand.h>
 #include <Rendering/MemArena.h>
 #include <Rendering/UIFrameData.h>
 
-#include <Rendering/Driver/DX11/DX11Device.h>
-#include <Rendering/Driver/DX11/DX11ConstantBuffer.h>
-#include <Rendering/Driver/DX11/DX11IndexBuffer.h>
-#include <Rendering/Driver/DX11/DX11VertexBuffer.h>
-#include <Rendering/Driver/DX11/DX11TextureBuffer2D.h>
-#include <Rendering/Driver/DX11/DX11ShaderTypes.h>
+#include <Rendering/Driver/GFXDevice.h>
+#include <Rendering/Driver/GFXDeviceFactory.h>
+#include <Rendering/ImGui/ImGuiRenderer.h>
 
 #include <imgui/imgui.h>
-#include <imgui/imgui_impl_dx11.h>
 
 #define MEM_ARENA_SIZE MemoryUtils::Megabytes(2048)
 
@@ -162,13 +157,14 @@ namespace Rendering
 
 				if (hasPendingTextures)
 				{
-					m_renderThread.RunWhileIdle([drawData]()
+					IImGuiRenderer& imguiRenderer = m_renderThread.GetImGuiRenderer();
+					m_renderThread.RunWhileIdle([drawData, &imguiRenderer]()
 					{
 						for (ImTextureData* tex : *drawData->Textures)
 						{
 							if (tex->Status != ImTextureStatus_OK)
 							{
-								ImGui_ImplDX11_UpdateTexture(tex);
+								imguiRenderer.UpdateTexture(tex);
 							}
 						}
 					});
@@ -186,6 +182,16 @@ namespace Rendering
 		m_renderThread.PushCommand(command);
 	}
 
+	void Renderer::ImGuiNewFrame()
+	{
+		m_renderThread.GetImGuiRenderer().NewFrame();
+	}
+
+	EGraphicsAPI Renderer::GetGraphicsAPI()
+	{
+		return GFXDeviceFactory::GetGraphicsAPI();
+	}
+
 	void Renderer::KeepTextureForUI(const TextureBuffer2DHandle& texture)
 	{
 		m_uiTextures.push_back(texture);
@@ -195,7 +201,7 @@ namespace Rendering
 	{
 		RenderCommand_CreateVertexBuffer* command = MemArena::AllocType<RenderCommand_CreateVertexBuffer>();
 
-		command->bufferPtr = std::make_shared<DX11VertexBuffer>();
+		command->bufferPtr = m_renderThread.GetDevice().CreateVertexBuffer();
 		command->count = count;
 		command->dataTypeSize = dataTypeSize;
 		command->stride = stride;
@@ -212,7 +218,7 @@ namespace Rendering
 	{
 		RenderCommand_CreateVertexBuffer* command = MemArena::AllocType<RenderCommand_CreateVertexBuffer>();
 
-		command->bufferPtr = std::make_shared<DX11VertexBuffer>();
+		command->bufferPtr = m_renderThread.GetDevice().CreateVertexBuffer();
 		command->count = capacityBytes;
 		command->dataTypeSize = 1;
 		command->stride = stride;
@@ -236,7 +242,7 @@ namespace Rendering
 	IndexBufferHandle Renderer::CreateIndexBuffer(const void* data, size_t dataTypeSize, size_t count)
 	{
 		RenderCommand_CreateIndexBuffer* command = MemArena::AllocType<RenderCommand_CreateIndexBuffer>();
-		command->bufferPtr = std::make_shared<DX11IndexBuffer>();
+		command->bufferPtr = m_renderThread.GetDevice().CreateIndexBuffer();
 		command->dataTypeSize = dataTypeSize;
 		command->count = count;
 
@@ -251,7 +257,7 @@ namespace Rendering
 	ConstantBufferHandle Renderer::CreateConstantBuffer(void* data, size_t dataTypeSize, U32 alignment, size_t count)
 	{
 		RenderCommand_CreateConstantBuffer* command = MemArena::AllocType<RenderCommand_CreateConstantBuffer>();
-		command->bufferPtr = std::make_shared<DX11ConstantBuffer>(alignment);
+		command->bufferPtr = m_renderThread.GetDevice().CreateConstantBuffer(alignment);
 		command->count = count;
 		command->data = AllocateCommandData(data, dataTypeSize, count);
 		command->dataTypeSize = dataTypeSize;
@@ -269,7 +275,7 @@ namespace Rendering
 	TextureBuffer2DHandle Renderer::CreateTextureBuffer2D(TexelBuffer&& texels, const GFXTextureBufferParams& params)
 	{
 		RenderCommand_CreateTextureBuffer2D* command = MemArena::AllocType<RenderCommand_CreateTextureBuffer2D>();
-		command->bufferPtr = std::make_shared<DX11TextureBuffer2D>();
+		command->bufferPtr = m_renderThread.GetDevice().CreateTextureBuffer2D();
 		command->texels = std::move(texels);
 		command->params = params;
 
@@ -281,7 +287,7 @@ namespace Rendering
 	VertexShaderHandle Renderer::CreateVertexShader(const Filepath& filePath, const ShaderInputLayout& inputLayout)
 	{
 		RenderCommand_CreateVertexShader* command = MemArena::AllocType<RenderCommand_CreateVertexShader>();
-		command->bufferPtr = std::make_shared<DX11VertexShader>();
+		command->bufferPtr = m_renderThread.GetDevice().CreateVertexShader();
 		command->shaderInputLayout = inputLayout;
 		command->filepath = filePath;
 
@@ -293,7 +299,7 @@ namespace Rendering
 	PixelShaderHandle Renderer::CreatePixelShader(const Filepath& filePath)
 	{
 		RenderCommand_CreatePixelShader* command = MemArena::AllocType<RenderCommand_CreatePixelShader>();
-		command->bufferPtr = std::make_shared<DX11PixelShader>();
+		command->bufferPtr = m_renderThread.GetDevice().CreatePixelShader();
 		command->filepath = filePath;
 
 		m_renderThread.PushCommand(command);
@@ -304,7 +310,7 @@ namespace Rendering
 	ComputeShaderHandle Renderer::CreateComputeShader(const Filepath& filePath)
 	{
 		RenderCommand_CreateComputeShader* command = MemArena::AllocType<RenderCommand_CreateComputeShader>();
-		command->bufferPtr = std::make_shared<DX11ComputeShader>();
+		command->bufferPtr = m_renderThread.GetDevice().CreateComputeShader();
 		command->filepath = filePath;
 
 		m_renderThread.PushCommand(command);

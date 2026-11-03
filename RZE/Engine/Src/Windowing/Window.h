@@ -8,6 +8,7 @@
 // RZE
 #include <Windowing/TitleBarLayout.h>
 #include <Windowing/WindowNativeState.h>
+#include <Rendering/Driver/GraphicsAPI.h>
 #include <Utils/Math/Vector2D.h>
 #include <Utils/PrimitiveDefs.h>
 
@@ -29,6 +30,8 @@ public:
 		int				width{ -1 };
 		int				height{ -1 };
 		int				monitorIndex{ 0 };	// 0 = primary monitor
+		// What the renderer draws in it with, since SDL makes a window for OpenGL differently
+		Rendering::EGraphicsAPI	graphicsAPI{ Rendering::EGraphicsAPI::DX11 };
 	};
 
 	Window(const WindowCreationParams& creationProtocol);

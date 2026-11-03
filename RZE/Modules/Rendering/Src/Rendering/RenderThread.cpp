@@ -3,19 +3,16 @@
 
 #include <Rendering/MemArena.h>
 
-#include <Rendering/Driver/DX11/DX11.h>
-#include <Rendering/Driver/DX11/DX11Device.h>
+#include <Rendering/Driver/GFXDevice.h>
+#include <Rendering/Driver/GFXDeviceFactory.h>
+#include <Rendering/ImGui/ImGuiRenderer.h>
 
-#include <Utils/Platform/Windows/WideStrings.h>
 #include <Utils/TimeUtils.h>
 #include <Utils/DebugUtils/Debug.h>
 
 #include <Optick/optick.h>
 
 #include <imgui/imgui.h>
-#include <imgui/imgui_impl_dx11.h>
-
-#include <d3d9.h>
 
 namespace Rendering
 {
@@ -29,21 +26,24 @@ namespace Rendering
 
 		m_windowHandle = windowHandle;
 
-		m_device = std::make_unique<DX11Device>();
+		m_device = GFXDeviceFactory::CreateGFXDevice();
 		m_device->SetWindow(m_windowHandle);
 		m_device->Initialize();
-		// Taken before the thread starts, so the main thread can wait on it without touching the device
-		m_frameLatencyWaitableObject = m_device->GetFrameLatencyWaitableObject();
+		m_imguiRenderer = GFXDeviceFactory::CreateImGuiRenderer(*m_device);
 
 		InitializeImGui();
 
+		// The render thread uses the device from here on
+		m_device->DetachFromCurrentThread();
 		auto threadExec = [this]()
 			{
 				OPTICK_THREAD("Render Thread");
+				m_device->AttachToCurrentThread();
 				while (!m_shuttingDown)
 				{
 					Update();
 				}
+				m_device->DetachFromCurrentThread();
 			};
 
 		m_thread = std::thread(threadExec);
@@ -64,22 +64,40 @@ namespace Rendering
 		m_shuttingDown = true;
 		m_thread.join();
 
-		ImGui_ImplDX11_Shutdown();
+		// Back on the main thread for the rest
+		m_device->AttachToCurrentThread();
+		m_imguiRenderer->Shutdown();
 		// Saves imgui.ini, through io.IniFilename and any settings handlers the application added, which point into the
 		// application. It's never deleted (RZE_Engine::m_application), so they're still there after its ShutDown.
 		ImGui::DestroyContext();
-		m_frameLatencyWaitableObject = nullptr;
+		m_imguiRenderer.reset();
 		m_device->Shutdown();
 	}
 
 	bool RenderThread::WaitForPresentSlot(U32 timeoutMS)
 	{
-		if (m_frameLatencyWaitableObject == nullptr)
-		{
-			return true;
-		}
+		return m_device->WaitForPresentSlot(timeoutMS);
+	}
 
-		return WaitForSingleObjectEx(m_frameLatencyWaitableObject, timeoutMS, TRUE) == WAIT_OBJECT_0;
+	void RenderThread::RunWhileIdle(std::function<void()> func)
+	{
+		std::unique_lock waitlock(m_updateMutex);
+		m_updateCondition.wait(waitlock, [this]() { return m_processSignal == false && !m_idleTask; });
+		m_idleTask = std::move(func);
+		m_updateCondition.notify_all();
+		m_updateCondition.wait(waitlock, [this]() { return !m_idleTask; });
+	}
+
+	IGFXDevice& RenderThread::GetDevice()
+	{
+		AssertNotNull(m_device);
+		return *m_device;
+	}
+
+	IImGuiRenderer& RenderThread::GetImGuiRenderer()
+	{
+		AssertNotNull(m_imguiRenderer);
+		return *m_imguiRenderer;
 	}
 
 	RenderThreadStats RenderThread::GetStats() const
@@ -91,7 +109,7 @@ namespace Rendering
 	void RenderThread::InitializeImGui()
 	{
 		ImGui::CreateContext();
-		ImGui_ImplDX11_Init(&m_device->GetHardwareDevice(), &m_device->GetDeviceContext());
+		m_imguiRenderer->Initialize();
 	}
 
 	void RenderThread::Update()
@@ -99,7 +117,17 @@ namespace Rendering
 		std::unique_lock lock(m_updateMutex);
 		{
 			OPTICK_EVENT("Wait");
-			m_updateCondition.wait(lock, [this] { return m_processSignal; });
+			m_updateCondition.wait(lock, [this] { return m_processSignal || m_idleTask; });
+		}
+
+		// RunWhileIdle's caller waits while this runs, holding nothing else
+		if (m_idleTask)
+		{
+			m_idleTask();
+			m_idleTask = nullptr;
+			lock.unlock();
+			m_updateCondition.notify_all();
+			return;
 		}
 
 		if (!m_shuttingDown)
@@ -126,9 +154,9 @@ namespace Rendering
 		const double batchStart = TimeUtils::GetSeconds();
 		bool hasPresented = false;
 
-		// Marker names are converted to wide strings, so they're only built when a profiler is listening.
+		// Markers are only made when a profiler is listening (some APIs convert each name).
 		// Checked once per batch: a batch is a whole frame, so every BeginEvent below still gets its EndEvent.
-		m_emitProfilerMarkers = D3DPERF_GetStatus() != 0;
+		m_emitProfilerMarkers = m_device->IsProfilerAttached();
 
 		for (RenderCommand* command : m_consumerQueue)
 		{
@@ -244,7 +272,7 @@ namespace Rendering
 	{
 		if (m_emitProfilerMarkers)
 		{
-			D3DPERF_BeginEvent(0xffffffff, Conversions::StringToWString(name).c_str());
+			m_device->BeginProfilerEvent(name);
 		}
 	}
 
@@ -252,7 +280,7 @@ namespace Rendering
 	{
 		if (m_emitProfilerMarkers)
 		{
-			D3DPERF_EndEvent();
+			m_device->EndProfilerEvent();
 		}
 	}
 

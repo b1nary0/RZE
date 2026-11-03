@@ -19,14 +19,6 @@
 
 namespace Rendering
 {
-	class DX11VertexBuffer;
-	class DX11IndexBuffer;
-	class DX11ConstantBuffer;
-	class DX11TextureBuffer2D;
-	class DX11VertexShader;
-	class DX11PixelShader;
-	class DX11ComputeShader;
-	class DX11Device;
 	class UIFrameData;
 
 	enum class RenderCommandType
@@ -159,9 +151,7 @@ namespace Rendering
 		size_t count = 0;
 		void* data = nullptr;
 		bool isDynamic = false;
-		// @todo could we not pass VertexBufferHandle here instead to avoid having
-		// dx11 in this file
-		std::shared_ptr<DX11VertexBuffer> bufferPtr = nullptr;
+		std::shared_ptr<IVertexBuffer> bufferPtr = nullptr;
 	};
 
 	struct RenderCommand_CreateIndexBuffer : RenderCommand
@@ -171,7 +161,7 @@ namespace Rendering
 		size_t dataTypeSize = 0;
 		size_t count = 0;
 		void* data = nullptr;
-		std::shared_ptr<DX11IndexBuffer> bufferPtr = nullptr;
+		std::shared_ptr<IIndexBuffer> bufferPtr = nullptr;
 	};
 
 	struct RenderCommand_CreateConstantBuffer : RenderCommand
@@ -181,7 +171,7 @@ namespace Rendering
 		size_t dataTypeSize = 0;
 		size_t count = 0;
 		void* data = nullptr;
-		std::shared_ptr<DX11ConstantBuffer> bufferPtr = nullptr;
+		std::shared_ptr<IConstantBuffer> bufferPtr = nullptr;
 	};
 
 	struct RenderCommand_CreateTextureBuffer2D : RenderCommand
@@ -191,7 +181,7 @@ namespace Rendering
 		GFXTextureBufferParams params;
 		// Empty for a texture made without contents, e.g. a render target. Freed with the command, once it's run.
 		TexelBuffer texels;
-		std::shared_ptr<DX11TextureBuffer2D> bufferPtr = nullptr;
+		std::shared_ptr<ITextureBuffer2D> bufferPtr = nullptr;
 	};
 
 	struct RenderCommand_CreateVertexShader : RenderCommand
@@ -200,7 +190,7 @@ namespace Rendering
 
 		Filepath filepath;
 		ShaderInputLayout shaderInputLayout;
-		std::shared_ptr<DX11VertexShader> bufferPtr = nullptr;
+		std::shared_ptr<IVertexShader> bufferPtr = nullptr;
 	};
 
 	struct RenderCommand_CreatePixelShader : RenderCommand
@@ -208,7 +198,7 @@ namespace Rendering
 		RenderCommand_CreatePixelShader() { type = RenderCommandType::CreatePixelShader; }
 
 		Filepath filepath;
-		std::shared_ptr<DX11PixelShader> bufferPtr = nullptr;
+		std::shared_ptr<IPixelShader> bufferPtr = nullptr;
 	};
 
 	struct RenderCommand_CreateComputeShader : RenderCommand
@@ -216,7 +206,7 @@ namespace Rendering
 		RenderCommand_CreateComputeShader() { type = RenderCommandType::CreateComputeShader; }
 
 		Filepath filepath;
-		std::shared_ptr<DX11ComputeShader> bufferPtr = nullptr;
+		std::shared_ptr<IComputeShader> bufferPtr = nullptr;
 	};
 
 	struct RenderCommand_UploadDataToBuffer : RenderCommand

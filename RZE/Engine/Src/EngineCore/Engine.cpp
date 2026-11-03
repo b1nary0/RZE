@@ -17,8 +17,9 @@
 #include <Utils/Memory/MemoryUtils.h>
 #include <Utils/Platform/CmdLine.h>
 
-#include <imgui/imgui_impl_dx11.h>
 #include <imgui/ImGuizmo.h>
+
+#include <Rendering/Renderer.h>
 
 namespace
 {
@@ -358,6 +359,7 @@ void RZE_Engine::CreateAndInitializeWindow()
 	params.height = static_cast<int>(windowSettings.GetDimensions().Y());
 
 	params.monitorIndex = GetLaunchMonitor();
+	params.graphicsAPI = Rendering::Renderer::GetGraphicsAPI();
 
 	m_window = new Window(params);
 	AssertNotNull(m_window);
@@ -551,7 +553,7 @@ double RZE_Engine::UpdateUI()
 	{
 		OPTICK_EVENT("ImGui NewFrame Work");
 
-		ImGui_ImplDX11_NewFrame();
+		Rendering::Renderer::ImGuiNewFrame();
 		ImGuiPlatform::NewFrame();
 		ImGui::NewFrame();
 		ImGuizmo::BeginFrame();

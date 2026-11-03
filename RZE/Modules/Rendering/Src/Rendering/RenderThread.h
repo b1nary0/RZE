@@ -1,5 +1,8 @@
 #pragma once
 
+#include <condition_variable>
+#include <functional>
+#include <memory>
 #include <mutex>
 #include <thread>
 #include <vector>
@@ -11,7 +14,8 @@
 
 namespace Rendering
 {
-	class DX11Device;
+	class IGFXDevice;
+	class IImGuiRenderer;
 
 	// The render thread's frames, averaged over a StatsWindow, for display. A frame runs from one present to the next;
 	// the frame time itself is the main thread's (FrameStats).
@@ -43,16 +47,15 @@ namespace Rendering
 		// Zero until the first window of frames has passed. Safe from any thread.
 		RenderThreadStats GetStats() const;
 
-		// Blocks until the render thread has finished processing its queue, then runs func on the calling
-		// thread while the render thread is held idle. Use for the rare case where the calling thread
-		// needs exclusive access to the device context.
-		template <typename Func>
-		void RunWhileIdle(Func&& func)
-		{
-			std::unique_lock waitlock(m_updateMutex);
-			m_updateCondition.wait(waitlock, [this]() { return m_processSignal == false; });
-			func();
-		}
+		// Blocks until the render thread has finished processing its queue, then has the render thread run func, and
+		// returns once it has. For the rare work that needs the device between frames: it runs where the device is
+		// attached, with nothing else using it.
+		void RunWhileIdle(std::function<void()> func);
+
+		// The device, for making resources (its Create functions), which is safe from the main thread
+		IGFXDevice& GetDevice();
+		// ImGui's renderer, for RunWhileIdle work and NewFrame
+		IImGuiRenderer& GetImGuiRenderer();
 
 	private:
 		void Update();
@@ -146,9 +149,8 @@ namespace Rendering
 		std::vector<RenderCommand*> m_consumerQueue;
 
 		void* m_windowHandle = nullptr;
-		std::unique_ptr<DX11Device> m_device = nullptr;
-		// The swap chain's frame latency HANDLE (DX11Device::GetFrameLatencyWaitableObject); fixed while the thread runs
-		void* m_frameLatencyWaitableObject = nullptr;
+		std::unique_ptr<IGFXDevice> m_device;
+		std::unique_ptr<IImGuiRenderer> m_imguiRenderer;
 
 		std::thread m_thread;
 		std::mutex m_updateMutex;
@@ -156,8 +158,10 @@ namespace Rendering
 		std::condition_variable m_updateCondition;
 		bool m_processSignal = false;
 		bool m_shuttingDown = false;
+		// RunWhileIdle's work, run by the render thread instead of a batch; empty when there's none
+		std::function<void()> m_idleTask;
 
-		// Whether a profiler (e.g. PIX) is listening for D3DPERF markers; refreshed for each batch of commands
+		// Whether a profiler (e.g. PIX) is listening for markers; refreshed for each batch of commands
 		bool m_emitProfilerMarkers = false;
 
 		// The frame so far, on the render thread, since the last present

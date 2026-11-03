@@ -52,8 +52,13 @@ namespace Rendering
 		IVertexBuffer() = default;
 		virtual ~IVertexBuffer() = default;
 
+		// Must be called before Allocate(). Dynamic buffers are created empty and written via UpdateData().
+		virtual void SetDynamic(bool isDynamic) = 0;
 		virtual void Allocate(const void* data, size_t size, U32 count, U32 stride) = 0;
 		virtual void Release() = 0;
+
+		// Overwrites the buffer's contents. Dynamic buffers only.
+		virtual void UpdateData(const void* data, size_t bytes) = 0;
 
 		// @TODO Index buffers and vertex buffers don't fit this interface very well
 		// Will have to go back to previous implementation of interface for each
@@ -84,6 +89,9 @@ namespace Rendering
 
 		virtual void Allocate(const void* data, size_t size, U32 count) = 0;
 		virtual void Release() = 0;
+
+		// Overwrites the whole buffer with data, which is as big as it
+		virtual void UpdateData(const void* data) = 0;
 
 		virtual void SetActiveVS(U32 bufferSlot) = 0;
 		virtual void SetActivePS(U32 bufferSlot) = 0;

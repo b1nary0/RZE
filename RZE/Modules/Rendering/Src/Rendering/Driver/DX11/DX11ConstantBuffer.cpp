@@ -66,7 +66,7 @@ namespace Rendering
 		return *m_buffer;
 	}
 
-	void DX11ConstantBuffer::UpdateSubresources(const void* data)
+	void DX11ConstantBuffer::UpdateData(const void* data)
 	{
 		m_device->GetDeviceContext().UpdateSubresource(m_buffer, 0, nullptr, data, 0, 0);
 	}

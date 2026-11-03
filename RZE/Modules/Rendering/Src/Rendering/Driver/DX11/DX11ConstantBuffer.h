@@ -32,7 +32,7 @@ namespace Rendering
 		void SetDevice(DX11Device* device);
 		ID3D11Buffer& GetHardwareBuffer();
 
-		void UpdateSubresources(const void* data);
+		void UpdateData(const void* data) override;
 
 	private:
 		U32 m_alignment = 0;

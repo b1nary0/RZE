@@ -6,6 +6,7 @@
 #include <Rendering/RenderCommand.h>
 
 #include <Rendering/RenderThread.h>
+#include <Rendering/Driver/GraphicsAPI.h>
 
 #include <Utils/PrimitiveDefs.h>
 #include <Utils/Platform/Filepath.h>
@@ -18,7 +19,6 @@ class Vector4D;
 
 namespace Rendering
 {
-	class DX11Device;
 	class IVertexBuffer;
 
 	class UIFrameData;
@@ -38,6 +38,9 @@ namespace Rendering
 		// mWindowHandle is the window's SDL_Window
 		static void Initialize(void* mWindowHandle);
 		static void Shutdown();
+
+		// What this build draws with, e.g. for the window, which SDL makes differently for OpenGL. Known before Initialize.
+		static EGraphicsAPI GetGraphicsAPI();
 
 		// API for an entire frame (global state, etc)
 		static void BeginFrame(const char* frameName);
@@ -64,6 +67,9 @@ namespace Rendering
 		static RenderThreadStats GetRenderThreadStats();
 		// Draw calls recorded since the last call, then starts over. The UI's aren't counted. Main thread only.
 		static U32 TakeDrawCallCount();
+
+		// Each UI frame, on the main thread, before ImGui::NewFrame: ImGui's renderer side of the new frame
+		static void ImGuiNewFrame();
 
 		static void ImGuiRender();
 		// Keeps texture alive while the UI being drawn now is rendered, which goes on until a newer UI replaces it. ImGui
