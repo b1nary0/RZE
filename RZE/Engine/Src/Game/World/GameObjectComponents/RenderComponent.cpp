@@ -50,7 +50,8 @@ namespace
 			{
 				ChangeOverrides(materialSlot, [&getOverride, &value](MaterialOverrides& overrides) { getOverride(overrides) = value; });
 			})
-			.Overridable<MaterialSlot>(
+			// template: Value's result depends on TValue, so Overridable has to be named as a template
+			.template Overridable<MaterialSlot>(
 				[getOverride](const MaterialSlot& materialSlot) { return getOverride(materialSlot.GetOverrides()).has_value(); },
 				[getOverride](MaterialSlot& materialSlot)
 				{

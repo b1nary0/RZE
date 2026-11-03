@@ -13,6 +13,9 @@ namespace Editor
 	class ResourceMonitorPanel;
 }
 
+// Before ResourceHandler uses it: a friend declaration alone doesn't declare the name for the rest of the class
+class ResourceHandle;
+
 class ResourceHandler
 {
 	friend class ResourceHandle;
