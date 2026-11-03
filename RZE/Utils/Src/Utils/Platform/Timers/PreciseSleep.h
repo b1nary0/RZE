@@ -1,8 +1,8 @@
 #pragma once
 
-// Puts the calling thread to sleep for a precise length of time, e.g. until the next frame is due. A high-resolution
-// waitable timer covers most of it and a short spin the rest, since timer wake-ups can be up to a millisecond late.
-// Without a high-resolution timer (before Windows 10 1803) it spins the whole time.
+// Puts the calling thread to sleep for a precise length of time, e.g. until the next frame is due. The OS's sleep
+// covers most of it and a short spin the rest, since wake-ups can be up to a millisecond late. On Windows that's a
+// high-resolution waitable timer; without one (before Windows 10 1803) it spins the whole time.
 class PreciseSleep
 {
 public:
@@ -17,6 +17,6 @@ public:
 	void SleepFor(double seconds);
 
 private:
-	// The waitable timer's HANDLE, or null if it couldn't be created
+	// The OS's timer where it needs one (a waitable timer's HANDLE on Windows), or null
 	void* m_timer = nullptr;
 };

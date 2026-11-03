@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-// This program's path, and running others. Per platform: Utils/Platform/<platform>/Process.cpp.
+// This program's path, and running others. Per platform: Utils/Platform/<platform>/Process<platform>.cpp.
 namespace Process
 {
 	// The running executable's full path (found once, then kept)

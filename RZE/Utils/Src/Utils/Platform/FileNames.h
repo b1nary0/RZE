@@ -15,8 +15,13 @@ namespace FileNames
 	// name with extension added unless it already ends with it (ignoring case), e.g. "Level 2" -> "Level 2.scene"
 	std::string WithExtension(const std::string& name, const std::string& extension);
 
-	// A path in folder for a new file or folder called name that nothing has yet: name itself, or with " 2", " 3", ...
-	// before its extension, e.g. "New Folder 2"
+	// Whether something in path's folder already has path's name, ignoring case as Windows does, on every platform: a
+	// project with two names that differ only in case couldn't be used on Windows. Except, if given, the file or folder
+	// itself (e.g. the one being renamed), which only changing case doesn't make something else.
+	bool IsTaken(const Filepath& path, const Filepath& itself = Filepath());
+
+	// A path in folder for a new file or folder called name that nothing has yet (IsTaken): name itself, or with " 2",
+	// " 3", ... before its extension, e.g. "New Folder 2"
 	Filepath MakeUnique(const Filepath& folder, const std::string& name);
 
 	// The extensions in a file-prompt style filter, like a property's asset filter: "*.scene;*.meshasset" gives

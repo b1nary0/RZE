@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <filesystem>
 #include <iterator>
 
 namespace FileNames
@@ -54,6 +55,34 @@ namespace FileNames
 		return hasExtension ? name : name + extension;
 	}
 
+	bool IsTaken(const Filepath& path, const Filepath& itself)
+	{
+		const std::string name = path.GetFileName();
+		std::error_code error;
+		std::filesystem::directory_iterator entries(path.GetParentFolder().GetAbsolutePath(), error);
+		if (error)
+		{
+			return path.Exists();
+		}
+
+		for (const std::filesystem::directory_entry& entry : entries)
+		{
+			if (!StringUtils::EqualsIgnoringCase(entry.path().filename().string(), name))
+			{
+				continue;
+			}
+
+			// The same file, whatever case its path was given in
+			std::error_code notSame;
+			const bool isItself = itself.IsValid() && std::filesystem::equivalent(entry.path(), itself.GetAbsolutePath(), notSame);
+			if (!isItself)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
 	Filepath MakeUnique(const Filepath& folder, const std::string& name)
 	{
 		const size_t dot = name.rfind('.');
@@ -62,7 +91,7 @@ namespace FileNames
 		const std::string extension = hasExtension ? name.substr(dot) : std::string();
 
 		Filepath path(folder.GetRelativePath() + "/" + name);
-		for (int number = 2; path.Exists(); ++number)
+		for (int number = 2; IsTaken(path); ++number)
 		{
 			path = Filepath(folder.GetRelativePath() + "/" + stem + " " + std::to_string(number) + extension);
 		}
@@ -132,8 +161,8 @@ namespace FileNames
 
 		const std::string name = isFolder ? typed : WithExtension(typed, path.GetExtension());
 		const Filepath renamed(path.GetParentFolder().GetRelativePath() + "/" + name);
-		// Windows ignores case, so a name that only changes case finds the file itself
-		if (!StringUtils::EqualsIgnoringCase(name, path.GetFileName()) && renamed.Exists())
+		// A name that only changes case is still the file's own
+		if (IsTaken(renamed, path))
 		{
 			result.Error = "There's already something called \"" + name + "\" here";
 			return result;

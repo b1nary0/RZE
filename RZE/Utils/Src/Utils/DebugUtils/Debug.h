@@ -36,11 +36,12 @@ namespace Debug
 	void Log(ELogLevel level, const std::string_view str);
 
 	// Opens a console window for a windowed app and points stdout and stderr at it. Does nothing if the process
-	// already has a console. Returns false if one couldn't be opened.
+	// already has a console, which on Linux it always does. Returns false if one couldn't be opened.
 	bool OpenConsole();
 
 	// Logs a failed assert and reports it the platform's way: on Windows, the CRT assert dialog (regardless of
-	// console/windows subsystem). Returns true if the caller should break into the debugger.
+	// console/windows subsystem); on Linux, which has no dialog, a break only if a debugger is attached. Returns true
+	// if the caller should break into the debugger.
 	bool ReportAssertFailure(const char* file, int line, const char* expr, const char* msg);
 
 	// Called with the report for each failed assert in place of the platform's report (e.g. the dialog), from the

@@ -117,3 +117,18 @@ TEST_CASE("FileNames::MakeUnique numbers a name that's taken, before its extensi
 	folder.AddFile("Level.scene");
 	CHECK(FileNames::MakeUnique(folder.Get(), "Level.scene").GetRelativePath() == root + NativePath("/Level 2.scene"));
 }
+
+TEST_CASE("FileNames: a name that differs only in case is taken, on every platform")
+{
+	const ScopedTestFolder folder("UnitTestsTemp_FileNames");
+	const std::string root = folder.Get().GetRelativePath();
+	const Filepath tank = folder.AddFile("Tank.meshasset");
+
+	// Windows would see them as the same file
+	CHECK(FileNames::IsTaken(folder.GetFile("tank.MESHASSET")));
+	CHECK(FileNames::MakeUnique(folder.Get(), "tank.meshasset").GetRelativePath() == root + NativePath("/tank 2.meshasset"));
+
+	// But not when it's the file itself
+	CHECK_FALSE(FileNames::IsTaken(folder.GetFile("TANK.meshasset"), tank));
+	CHECK_FALSE(FileNames::IsTaken(folder.GetFile("Plane.meshasset")));
+}
