@@ -104,6 +104,9 @@ namespace Rendering
 		// D3D's conventions (GLDevice's comment); the back buffer is bound, below
 		SetIsBackBufferBound(false);
 
+		glCreateProgramPipelines(1, &m_graphicsPipeline);
+		glCreateProgramPipelines(1, &m_computePipeline);
+
 		int width = 0;
 		int height = 0;
 		SDL_GetWindowSizeInPixels(m_window, &width, &height);
@@ -112,6 +115,9 @@ namespace Rendering
 
 	void GLDevice::Shutdown()
 	{
+		DeleteReleasedObjects();
+		glDeleteProgramPipelines(1, &m_graphicsPipeline);
+		glDeleteProgramPipelines(1, &m_computePipeline);
 		DestroyBackBuffer();
 		if (m_context != nullptr)
 		{
@@ -206,8 +212,65 @@ namespace Rendering
 		m_backBufferColour = 0;
 	}
 
+	void GLDevice::DeleteLater(EObjectType type, U32 name)
+	{
+		std::lock_guard lock(m_releasedObjectsMutex);
+		m_releasedObjects.emplace_back(type, name);
+	}
+
+	void GLDevice::DeleteReleasedObjects()
+	{
+		std::vector<std::pair<EObjectType, U32>> released;
+		{
+			std::lock_guard lock(m_releasedObjectsMutex);
+			released.swap(m_releasedObjects);
+		}
+
+		for (const std::pair<EObjectType, U32>& object : released)
+		{
+			const GLuint name = object.second;
+			switch (object.first)
+			{
+			case EObjectType::Program: glDeleteProgram(name); break;
+			case EObjectType::Buffer: glDeleteBuffers(1, &name); break;
+			case EObjectType::Texture: glDeleteTextures(1, &name); break;
+			case EObjectType::Renderbuffer: glDeleteRenderbuffers(1, &name); break;
+			case EObjectType::Framebuffer: glDeleteFramebuffers(1, &name); break;
+			case EObjectType::Sampler: glDeleteSamplers(1, &name); break;
+			case EObjectType::VertexArray: glDeleteVertexArrays(1, &name); break;
+			}
+		}
+	}
+
+	void GLDevice::SetVertexShader(const GLVertexShader& shader)
+	{
+		m_vertexShader = &shader;
+		glUseProgramStages(m_graphicsPipeline, GL_VERTEX_SHADER_BIT, shader.GetProgram().GetProgram());
+	}
+
+	void GLDevice::SetPixelShader(const GLPixelShader& shader)
+	{
+		m_pixelShader = &shader;
+		glUseProgramStages(m_graphicsPipeline, GL_FRAGMENT_SHADER_BIT, shader.GetProgram().GetProgram());
+	}
+
+	void GLDevice::SetComputeShader(const GLComputeShader& shader)
+	{
+		m_computeShader = &shader;
+		glUseProgramStages(m_computePipeline, GL_COMPUTE_SHADER_BIT, shader.GetProgram().GetProgram());
+	}
+
+	void GLDevice::SetInputLayout(const GLVertexShader& shader)
+	{
+		m_inputLayout = &shader;
+		RZE_GL_NOT_IMPLEMENTED();
+	}
+
 	void GLDevice::Present()
 	{
+		// What the frame let go of, which nothing draws with any more
+		DeleteReleasedObjects();
+
 		if (m_isSyncIntervalChanged)
 		{
 			// 0 presents at once, as D3D's does with tearing
@@ -350,7 +413,8 @@ namespace Rendering
 
 	void GLDevice::UnsetPixelShader()
 	{
-		RZE_GL_NOT_IMPLEMENTED();
+		m_pixelShader = nullptr;
+		glUseProgramStages(m_graphicsPipeline, GL_FRAGMENT_SHADER_BIT, 0);
 	}
 
 	void GLDevice::UnsetTextureResource(U32 /*textureSlot*/)

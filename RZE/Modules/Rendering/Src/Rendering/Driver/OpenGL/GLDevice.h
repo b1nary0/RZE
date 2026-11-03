@@ -4,11 +4,18 @@
 
 #include <Utils/PrimitiveDefs.h>
 
+#include <mutex>
+#include <vector>
+
 struct SDL_Window;
 struct SDL_GLContextState;
 
 namespace Rendering
 {
+	class GLComputeShader;
+	class GLPixelShader;
+	class GLVertexShader;
+
 	// OpenGL 4.5 core, drawn the way Direct3D draws so the engine and its shaders don't change. Depth runs 0 to 1, and
 	// the engine's own targets have the clip space's origin at the upper left (glClipControl), so row 0 of each is its
 	// top, as in D3D: viewports, texture coordinates and readback need no changes.
@@ -80,7 +87,34 @@ namespace Rendering
 		void ReadTexel(ITextureBuffer2D& texture, U32 x, U32 y, TexelReadback& result) override;
 		void ReadTexture(ITextureBuffer2D& texture, TextureReadback& result) override;
 
+	public:
+		// For this backend's resources and shaders
+
+		// A GL object to delete. Resources can be let go on any thread, the main thread among them, which has no GL
+		// context, so they're deleted on the render thread, at the next Present.
+		enum class EObjectType
+		{
+			Program,
+			Buffer,
+			Texture,
+			Renderbuffer,
+			Framebuffer,
+			Sampler,
+			VertexArray
+		};
+		// Safe from any thread
+		void DeleteLater(EObjectType type, U32 name);
+
+		// What the shaders' SetActive and SetInputLayout bind
+		void SetVertexShader(const GLVertexShader& shader);
+		void SetPixelShader(const GLPixelShader& shader);
+		void SetComputeShader(const GLComputeShader& shader);
+		void SetInputLayout(const GLVertexShader& shader);
+
 	private:
+		// What DeleteLater was given, on the render thread
+		void DeleteReleasedObjects();
+
 		void CreateBackBuffer(U32 width, U32 height);
 		void DestroyBackBuffer();
 		// Which way up the bound target is drawn (GLDevice's comment)
@@ -97,6 +131,17 @@ namespace Rendering
 		U32 m_backBufferWidth = 0;
 		U32 m_backBufferHeight = 0;
 		bool m_isBackBufferBound = false;
+
+		// The vertex and pixel programs draws use, and the compute program dispatches use, bound as D3D binds a stage
+		U32 m_graphicsPipeline = 0;
+		U32 m_computePipeline = 0;
+		const GLVertexShader* m_vertexShader = nullptr;
+		const GLPixelShader* m_pixelShader = nullptr;
+		const GLComputeShader* m_computeShader = nullptr;
+		const GLVertexShader* m_inputLayout = nullptr;
+
+		std::mutex m_releasedObjectsMutex;
+		std::vector<std::pair<EObjectType, U32>> m_releasedObjects;
 
 		U32 m_syncInterval = 0;
 		// Set on the window's context at the next Present, on the render thread

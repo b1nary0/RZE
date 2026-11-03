@@ -24,8 +24,11 @@ struct Light
 	float3 Colour;    // sRGB
 	float  Strength;
 	int    ShadowIndex; // Which of its type's shadow maps it casts into; -1 for none
-	// Without it, LightCount would pack into the last light's spare bytes instead of where the C++ layout has it
-	float3 _Pad;
+	// Without it, LightCount would pack into the last light's spare bytes instead of where the C++ layout has it. Three
+	// scalars rather than a float3: GLSL can't place a vector at this offset, and the layout is the same.
+	float _Pad0;
+	float _Pad1;
+	float _Pad2;
 };
 
 // Mirrors GraphicsLayouts::LightBufferLayout (Graphics/GraphicsLayouts.h)

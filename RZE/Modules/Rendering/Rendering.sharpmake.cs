@@ -32,6 +32,8 @@ public class Rendering : BaseProject
         {
             // Built from its source in ThirdParty (OptickCore.sharpmake.cs)
             conf.AddPublicDependency<OptickCore>(target);
+            // HLSL to SPIR-V for the OpenGL renderer's shaders (Driver/OpenGL/GLShaderTranslator)
+            conf.LibraryFiles.Add("libshaderc_shared.so");
         }
     }
 }
