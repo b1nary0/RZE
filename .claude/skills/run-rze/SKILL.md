@@ -1,13 +1,15 @@
 ---
 name: run-rze
-description: Build, run, and drive the RZE engine's Editor (RZEStudio). Use when asked to start or launch the editor, build the solution, burn assets, take a screenshot of the editor or scene view, click around the ImGui UI, or verify a rendering/editor change in the running app.
+description: Build, run, and drive the RZE engine's Editor (RZEStudio) on Windows or Linux. Use when asked to start or launch the editor, build the solution, burn assets, take a screenshot of the editor or scene view, click around the ImGui UI, or verify a rendering/editor change in the running app.
 ---
 
-RZE is a Windows-only C++ / DX11 engine with a Dear ImGui editor. An agent drives the running `Editor.exe` with
-`.claude/skills/run-rze/driver.ps1`: real mouse and keyboard input through user32, plus client-area PNG screenshots.
-Each call does one action; the editor process holds the state between calls.
+RZE is a C++ engine with a Dear ImGui editor: DX11 on Windows, OpenGL on Linux. An agent drives the running Editor
+with real mouse and keyboard input and client-area PNG screenshots. Each call does one action; the editor process holds
+the state between calls.
 
-All paths are relative to the repo root (`C:\dev\RZE`). The commands are PowerShell 5.1.
+- **Windows:** `.claude/skills/run-rze/driver.ps1` (user32 input). The sections below, up to **Linux**, are Windows'.
+  Paths are relative to the repo root (`C:\dev\RZE`); the commands are PowerShell 5.1.
+- **Linux (KDE Plasma, Wayland):** `.claude/skills/run-rze/driver.py`, with the same commands. See **Linux** at the end.
 
 ## Prerequisites
 
@@ -127,3 +129,72 @@ It covers the undo history, parking, copy snapshots, selection, interaction trac
 - **`'GenerateSolutions.bat' is not recognized as an internal or external command`**: you ran it through `cmd /c "cd /d ...\RZE & call GenerateSolutions.bat"` from PowerShell. That failed in this environment even though the file exists. Use `Push-Location RZE; & .\GenerateSolutions.bat` instead.
 - **Clicks land in the wrong place after the first one**: something un-maximized the window. Check `& $d info` for client size. Either re-maximize it or `quit` and `launch` again.
 - **`Editor.exe already running. Run: driver.ps1 quit`**: a previous session left one open. Run `& $d quit`.
+
+## Linux (KDE Plasma on Wayland)
+
+### Build
+
+From the repo root:
+
+```bash
+(cd RZE && ./GenerateSolutions.sh)              # again after adding or removing any source file
+make -C RZE -f RZE.make config=debug -j"$(nproc)"
+./RZE/_build/debug/SourceAssetBurner            # once after cloning; about 4 s
+./RZE/_build/debug/UnitTests                    # exit code 0 = all passed
+```
+
+Setup (once): `sudo dnf install clang lld make dotnet-sdk-8.0 SDL3-devel libshaderc-devel assimp-devel`, as in the README.
+Warnings are errors (`-Werror`), as on Windows.
+
+### Drive
+
+```bash
+d=".claude/skills/run-rze/driver.py"
+$d launch --scene DrawLineTest.scene          # waits for "RZEStudio - ..." in the title, then 5 s for assets
+$d shot                                       # -> $TMPDIR/rze-shots/<timestamp>.png (usually /tmp), client area only
+$d click 2317 123                             # select NeckMech in the Scene panel
+$d click 2444 783; $d key '^a45{ENTER}'       # Rotation Y = 45
+$d log --grep error                           # the Editor's output (stdout and stderr)
+$d close                                      # closes the window as a user would: "closed code=0"
+```
+
+`launch` starts a helper for the session, which holds the virtual input devices and the Editor's process. Every other
+command returns in well under a second. Coordinates are **client-area pixels**, the same space as `shot`'s images; Read
+downscales a 2560-wide image to 2000, so multiply what you measure by 1.28.
+
+| command | what it does |
+|---|---|
+| `launch [--scene X.scene] [--config debug\|release\|retail] [--app Editor\|Game] [--settle 5] [-- args...]` | Starts the app under the driver. Refuses if one is running. |
+| `shot [--out path.png]` | Focuses the app and captures its client area (spectacle). |
+| `click X Y [--button left\|right\|middle]`, `dblclick X Y`, `move X Y` | A click, a double-click, a hover. |
+| `drag X Y X2 Y2 [--button ...]` | A drag in 10 steps. |
+| `scroll X Y N` | N wheel notches at (X, Y); + is away from you (zooms the scene view in). |
+| `key KEYS` | SendKeys syntax, as `driver.ps1` takes: `^` Ctrl, `+` Shift, `%` Alt, `{ENTER}` `{TAB 3}` `{F5}` `{ESC}`, `~` Enter, `{+}` for a literal +. US layout. |
+| `info`, `alive` | The window's title and client area; `running pid=N` or `not running`. |
+| `windows [--all]` | Windows opened since `launch` (e.g. the Game, or Dolphin from "Show in Explorer"). |
+| `close-window CAPTION` | Closes a window opened since `launch`, by its exact caption. Never one that was already open. |
+| `close [--timeout 30]` | Closes the app's window as a user would and waits: `closed code=0`, or an error with the code. Stops at the unsaved-changes prompt (see `shot`), so `quit` after edits. |
+| `quit` | Kills the app, like `driver.ps1 quit`. |
+| `log [-n 40] [--grep TEXT]` | The app's output. A Game launched from the Editor writes here too. |
+| `clip get`, `clip set TEXT` | The system clipboard (wl-paste, wl-copy), to check ImGui's copy and paste. |
+| `optick [--seconds 2] [--out raw.bin]` | Takes an Optick capture over the network, as Optick's viewer does, and counts what arrived. Debug and Release only. |
+
+How it works, and what to know:
+
+- **It moves the real pointer and takes focus**, like `driver.ps1`. Don't use the mouse while it's acting. Before any
+  input it checks, through KWin, that the app's window is active and the point is inside it, so input can't land in
+  another window.
+- **Input is real**: virtual uinput devices (an absolute pointer, so clicks land on the exact pixel, and a keyboard)
+  that KWin treats like any others. Your user needs write access to `/dev/uinput` (an ACL on this machine).
+- **KWin finds, focuses and closes windows** through scripts loaded over D-Bus. It needs a KDE Plasma session; GNOME
+  isn't supported.
+- `close` and `quit` end the session. A Game launched with **File > Launch Game...** shows up in `windows` (caption
+  `Game Title`, from Engine.ini) within a few seconds; `close-window "Game Title"` ends it.
+- **Launch Game with unsaved changes opens the Unsaved Changes prompt**, a modal that ignores clicks elsewhere. The
+  panels look dimmed in `shot` while it's open.
+- **ImGui's `{ESC}` cancels a field's edit**: end a typed value with `{ENTER}`.
+- Delete in the Content Browser moves the file to `ProjectData/.Trash/` (for undo) and on to the system trash
+  (`~/.local/share/Trash`) when the Editor closes.
+- The layout reference above (Windows) holds on Linux too, for a maximized 2560x1398 client area: the Scene panel's
+  rows are at x = 2317, y = 78 / 101 / 123 / 145 (Camera, DirectionalLight, NeckMech, M4 in DrawLineTest); the File
+  menu at (90, 19); the Content Browser tab at (58, 1362).
