@@ -3,6 +3,8 @@
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/PrimitiveDefs.h>
 
+#include <cstring>
+
 #define PRESSURE_LIMIT_MED 60
 #define PRESSURE_LIMIT_HIGH 90
 

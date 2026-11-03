@@ -2,6 +2,8 @@
 
 #include <Utils/PrimitiveDefs.h>
 
+#include <cstddef>
+
 namespace Rendering
 {
 	// Colour texture formats. RGBA8_UNORM is 0 so zero-initialized params keep the default.

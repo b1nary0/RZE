@@ -2,6 +2,8 @@
 
 #include <Utils/PrimitiveDefs.h>
 
+#include <cstddef>
+
 namespace Rendering
 {
 	namespace MemArena
