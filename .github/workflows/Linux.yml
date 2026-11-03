@@ -1,0 +1,52 @@
+name: Linux
+# Workflow file for Linux: Fedora, which packages everything RZE needs (Ubuntu's runners have no SDL3 packages)
+on:
+  push:
+    branches: [master, Sandbox]
+  pull_request:
+    branches: [master, Sandbox]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: fedora:44
+    permissions:
+      actions: read
+      contents: read
+    strategy:
+      matrix:
+        buildconfig: [debug, release]
+
+    steps:
+    # The README's Linux setup, with git for the checkout
+    - name: Install packages
+      run: dnf install -y --setopt=install_weak_deps=False clang lld make dotnet-sdk-8.0 SDL3-devel libshaderc-devel assimp-devel git-core
+
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Generate a new project
+      run: cd RZE && ./GenerateSolutions.sh
+
+    - name: Compile Project
+      run: cd RZE && make -f RZE.make config=${{matrix.buildconfig}} -j"$(nproc)"
+
+    - name: Run Unit Tests
+      run: ./RZE/_build/${{matrix.buildconfig}}/UnitTests
+
+    - name: Burn Assets
+      run: ./RZE/_build/${{matrix.buildconfig}}/SourceAssetBurner
+
+    # The executables read their data from the source tree (the folder above _build), so the archive keeps that layout
+    - name: Archive Build
+      uses: actions/upload-artifact@v4
+      with:
+        name: RZE v${{github.run_number}} - Linux - ${{matrix.buildconfig}}
+        path: |
+          RZE/_build/${{matrix.buildconfig}}
+          RZE/Assets
+          RZE/Config
+          RZE/ProjectData
+          !RZE/_build/${{matrix.buildconfig}}/*.a
+          !RZE/_build/${{matrix.buildconfig}}/*.log

@@ -15,25 +15,26 @@ jobs:
       contents: read
     strategy:
       matrix:
-        os: [windows-2019]
+        os: [windows-2022]
         buildconfig: [debug, release]
         include:
-          - os: windows-2019
+          - os: windows-2022
             shell: cmd
             compiler: cl
             target: Windows
 
     steps:
     - name: Add MSBuild to PATH
-      uses: microsoft/setup-msbuild@v1.0.2
+      uses: microsoft/setup-msbuild@v2
 
     - name: Setup DotNet
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: "5.0.100"
+        # Sharpmake needs .NET 6 or later
+        dotnet-version: "8.0.x"
         
     - name: Checkout
-      uses: actions/checkout@v1
+      uses: actions/checkout@v4
           
     - name: Generate a new project
       shell: cmd
@@ -55,7 +56,7 @@ jobs:
 
     # The executables read their data from the source tree (the folder above _build), so the archive keeps that layout
     - name: Archive Build
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: RZE v${{github.run_number}} - ${{matrix.buildconfig}}
         path: |
@@ -63,7 +64,7 @@ jobs:
           RZE/Assets
           RZE/Config
           RZE/ProjectData
-          !_RZE/build/${{matrix.buildconfig}}/*.lib
-          !_RZE/build/${{matrix.buildconfig}}/*.pdb
-          !_RZE/build/${{matrix.buildconfig}}/*.exp
-          !_RZE/build/${{matrix.buildconfig}}/*.log
+          !RZE/_build/${{matrix.buildconfig}}/*.lib
+          !RZE/_build/${{matrix.buildconfig}}/*.pdb
+          !RZE/_build/${{matrix.buildconfig}}/*.exp
+          !RZE/_build/${{matrix.buildconfig}}/*.log
