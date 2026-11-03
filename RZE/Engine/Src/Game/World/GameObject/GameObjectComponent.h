@@ -5,6 +5,7 @@
 
 #include <Utils/Functor.h>
 #include <Utils/Math/BoundingBox.h>
+#include <Utils/Platform/TypeNames.h>
 
 #include <RapidJSON/document.h>
 #include <RapidJSON/prettywriter.h>
@@ -71,8 +72,7 @@ public:
 	template <class TComponentType>
 	static inline const char* const GetComponentName()
 	{
-		static std::string componentName = typeid(TComponentType).name();
-		componentName = componentName.substr(componentName.find_first_of(' ') + 1, componentName.size());
+		static const std::string componentName = TypeNames::Get(typeid(TComponentType));
 		return componentName.c_str();
 	}
 

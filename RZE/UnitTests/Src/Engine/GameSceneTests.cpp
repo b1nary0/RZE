@@ -114,3 +114,9 @@ TEST_CASE_FIXTURE(TwoScenes, "An object's components load and save in the scene 
 		CHECK(std::string(components.MemberBegin()->name.GetString()) == (isLightFirst ? "LightComponent" : "TransformComponent"));
 	}
 }
+
+TEST_CASE("A component is named as its class is, which the Inspector shows")
+{
+	CHECK(std::string(LightComponent::GetComponentName()) == "LightComponent");
+	CHECK(std::string(TransformComponent::GetComponentName()) == "TransformComponent");
+}
