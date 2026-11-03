@@ -92,13 +92,13 @@ namespace Editor
 		const auto whyInUse = [&context](const Filepath& file) { return GetWhyInUse(context.GetSceneDocument(), file); };
 		options.TileActions = {
 			{ "Load Scene", [this, &context](const Filepath& file) { LoadScene(context, file); }, &AssetPaths::IsScene },
-			{ "Show in Explorer", [](const Filepath& file) { Shell::ShowInFileBrowser(file); } },
+			{ std::string("Show in ") + Shell::GetFileBrowserName(), [](const Filepath& file) { Shell::ShowInFileBrowser(file); } },
 			{ "Copy Path", [](const Filepath& file) { ImGui::SetClipboardText(file.GetRelativePath().c_str()); } },
 			{ "Refresh Thumbnail", [&context](const Filepath& file) { context.GetThumbnails().Request(file, true); }, &Thumbnails::IsRendered },
 			{ "Rename", [this](const Filepath& file) { m_grid.BeginRename(file); }, nullptr, "F2",
 				"Anything that refers to it by path, like a scene using a mesh, isn't updated", whyInUse },
 			{ "Delete", [this](const Filepath& file) { RequestDelete(file); }, nullptr, "Delete",
-				"Undo puts it back; it goes to the Recycle Bin once it drops out of the undo history", whyInUse },
+				std::string("Undo puts it back; it goes to the ") + Shell::GetRecycleBinName() + " once it drops out of the undo history", whyInUse },
 		};
 		options.ValidateName = [](const FolderEntry& entry, const std::string& name) { return FileNames::ResolveRename(entry.Path, entry.IsFolder, name).Error; };
 		options.Rename = [this, &context](const FolderEntry& entry, const std::string& name) { Rename(context, entry, name); };
@@ -109,7 +109,7 @@ namespace Editor
 					m_createFolderRequested = true;
 				}
 				ImGui::Separator();
-				if (ImGui::MenuItem("Show in Explorer"))
+				if (ImGui::MenuItem((std::string("Show in ") + Shell::GetFileBrowserName()).c_str()))
 				{
 					Shell::ShowInFileBrowser(m_navigator.GetFolder());
 				}

@@ -79,6 +79,17 @@ namespace Shell
 		return true;
 	}
 
+	// What KDE, GNOME and the freedesktop specs call them, whichever file manager it is
+	const char* GetFileBrowserName()
+	{
+		return "File Manager";
+	}
+
+	const char* GetRecycleBinName()
+	{
+		return "Trash";
+	}
+
 	bool MoveToRecycleBin(const Filepath& path)
 	{
 		std::error_code error;

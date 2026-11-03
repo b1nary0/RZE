@@ -29,6 +29,16 @@ namespace Shell
 		return reinterpret_cast<INT_PTR>(result) > 32;
 	}
 
+	const char* GetFileBrowserName()
+	{
+		return "Explorer";
+	}
+
+	const char* GetRecycleBinName()
+	{
+		return "Recycle Bin";
+	}
+
 	bool MoveToRecycleBin(const Filepath& path)
 	{
 		std::error_code error;
