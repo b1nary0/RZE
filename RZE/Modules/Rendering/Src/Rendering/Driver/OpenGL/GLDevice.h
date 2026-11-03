@@ -1,10 +1,15 @@
 #pragma once
 
 #include <Rendering/Driver/GFXDevice.h>
+#include <Rendering/Driver/OpenGL/GLShaderTranslator.h>
 
 #include <Utils/PrimitiveDefs.h>
 
+#include <array>
+#include <map>
 #include <mutex>
+#include <set>
+#include <tuple>
 #include <vector>
 
 struct SDL_Window;
@@ -14,15 +19,22 @@ namespace Rendering
 {
 	class GLComputeShader;
 	class GLPixelShader;
+	class GLTextureBuffer2D;
+	class GLVertexBuffer;
 	class GLVertexShader;
 
 	// OpenGL 4.5 core, drawn the way Direct3D draws so the engine and its shaders don't change. Depth runs 0 to 1, and
 	// the engine's own targets have the clip space's origin at the upper left (glClipControl), so row 0 of each is its
-	// top, as in D3D: viewports, texture coordinates and readback need no changes.
+	// top, as in D3D: viewports, texture coordinates and readback need no changes. Front faces are counter-clockwise on
+	// screen, as D3D's rasterizer states have them, under either origin.
 	//
 	// The back buffer is the exception: it's drawn GL's way up (lower-left origin), as the window shows it, and Present
 	// copies it onto the window as it is. What draws to it, the final full-screen copy (which samples by UV) and ImGui
 	// (whose GL backend always draws GL's way up), comes out the right way up with no changes either.
+	//
+	// D3D binds textures to each stage's slots and samplers apart from them; GL binds a texture and a sampler together
+	// to a unit, per program. So the device keeps what's bound to each stage's slots, as D3D's context does, and binds
+	// them for each draw or dispatch where its programs read them (GLShaderTranslator).
 	class GLDevice : public IGFXDevice
 	{
 	public:
@@ -105,13 +117,25 @@ namespace Rendering
 		// Safe from any thread
 		void DeleteLater(EObjectType type, U32 name);
 
-		// What the shaders' SetActive and SetInputLayout bind
+		// What the shaders' and resources' SetActive and SetInputLayout bind
 		void SetVertexShader(const GLVertexShader& shader);
 		void SetPixelShader(const GLPixelShader& shader);
 		void SetComputeShader(const GLComputeShader& shader);
 		void SetInputLayout(const GLVertexShader& shader);
+		void SetVertexBuffer(const GLVertexBuffer& buffer, U32 slot);
+		void SetIndexBuffer(U32 buffer);
+		// texture may be null, which unbinds the slot
+		void SetTextureResource(GLShaderTranslator::EStage stage, U32 slot, const GLTextureBuffer2D* texture);
 
 	private:
+		// D3D's texture registers per stage
+		static constexpr U32 k_textureSlotCount = 16;
+		// The three samplers the shaders' s registers mean (GLDevice.cpp)
+		static constexpr U32 k_samplerCount = 3;
+
+		// A framebuffer with these attached: a colour texture, a depth texture, and which slice of the depth (-1 for all)
+		using FramebufferKey = std::tuple<U32, U32, int>;
+
 		// What DeleteLater was given, on the render thread
 		void DeleteReleasedObjects();
 
@@ -119,6 +143,17 @@ namespace Rendering
 		void DestroyBackBuffer();
 		// Which way up the bound target is drawn (GLDevice's comment)
 		void SetIsBackBufferBound(bool isBackBufferBound);
+		// The engine's targets, each a framebuffer made the first time it's asked for and kept
+		U32 GetFramebuffer(const FramebufferKey& key);
+		void BindFramebuffer(const FramebufferKey& key);
+
+		// Binds stage's slots' textures and samplers where program reads them
+		void BindTextures(const GLShaderTranslator::Result& program, const std::array<U32, k_textureSlotCount>& slots);
+		// Before a draw: the graphics pipeline, its vertex input, and its textures
+		void PrepareDraw();
+		// Once per vertex and pixel shader drawn together: logs if the pixel shader reads an input where the vertex shader
+		// doesn't write it, which D3D matches by semantic and GL by location
+		void CheckVaryings();
 
 	private:
 		SDL_Window* m_window = nullptr;
@@ -132,13 +167,24 @@ namespace Rendering
 		U32 m_backBufferHeight = 0;
 		bool m_isBackBufferBound = false;
 
+		std::map<FramebufferKey, U32> m_framebuffers;
+
 		// The vertex and pixel programs draws use, and the compute program dispatches use, bound as D3D binds a stage
 		U32 m_graphicsPipeline = 0;
 		U32 m_computePipeline = 0;
 		const GLVertexShader* m_vertexShader = nullptr;
 		const GLPixelShader* m_pixelShader = nullptr;
 		const GLComputeShader* m_computeShader = nullptr;
-		const GLVertexShader* m_inputLayout = nullptr;
+		std::set<std::pair<U32, U32>> m_checkedVaryings;
+
+		// The one vertex array, which the input layout and vertex and index buffers are set on
+		U32 m_vertexArray = 0;
+		U32 m_enabledAttributeMask = 0;
+		U32 m_primitiveMode = 0;
+
+		std::array<U32, k_samplerCount> m_samplers = {};
+		std::array<U32, k_textureSlotCount> m_pixelTextures = {};
+		std::array<U32, k_textureSlotCount> m_computeTextures = {};
 
 		std::mutex m_releasedObjectsMutex;
 		std::vector<std::pair<EObjectType, U32>> m_releasedObjects;

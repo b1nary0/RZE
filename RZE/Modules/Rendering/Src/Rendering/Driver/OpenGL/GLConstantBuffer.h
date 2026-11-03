@@ -21,8 +21,13 @@ namespace Rendering
 		void SetActiveCS(U32 bufferSlot) override;
 		U32 GetAlignment() override;
 
+	public:
+		~GLConstantBuffer() override;
+
 	private:
-		[[maybe_unused]] GLDevice& m_device;
+		GLDevice& m_device;
+		U32 m_buffer = 0;
+		size_t m_size = 0;
 		U32 m_alignment = 0;
 	};
 }

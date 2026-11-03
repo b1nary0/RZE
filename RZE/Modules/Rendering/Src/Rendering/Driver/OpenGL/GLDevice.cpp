@@ -13,6 +13,7 @@
 
 #include <SDL3/SDL.h>
 
+#include <algorithm>
 #include <string>
 
 namespace Rendering
@@ -22,29 +23,33 @@ namespace Rendering
 		// As DX11Device::SetRenderTargetBackBuffer clears to
 		constexpr GLfloat k_backBufferClearColour[4] = { 0.25f, 0.45f, 0.65f, 1.0f };
 
-		U32 GetBytesPerTexel(const GFXTextureBufferParams& params)
+		// The samplers the shaders' s registers mean, as the DX11 backend binds them: s0 is the one every texture binds
+		// with itself (linear and wrapping), s1 the shadow maps' comparison, s2 linear and clamped
+		enum ESampler : U32
 		{
-			if (params.bIsDepthTexture)
-			{
-				return 4;
-			}
+			Sampler_LinearWrap,
+			Sampler_ShadowCompare,
+			Sampler_LinearClamp
+		};
 
-			switch (params.Format)
+		// As DX11Device's: a depth-stencil value of 1 and stencil 0, packed as GL_UNSIGNED_INT_24_8 packs them
+		constexpr GLuint k_clearedDepthStencil = 0xFFFFFF00u;
+
+		GLint GetComponentCount(EDataFormat format)
+		{
+			switch (format)
 			{
-			case ETextureFormat::R8_UNORM:
-				return 1;
-			case ETextureFormat::R16_FLOAT:
-				return 2;
-			case ETextureFormat::RGBA16_FLOAT:
-			case ETextureFormat::RG32_UINT:
-				return 8;
-			case ETextureFormat::RGBA8_UNORM:
-			case ETextureFormat::RG16_FLOAT:
-			case ETextureFormat::R32_UINT:
-			case ETextureFormat::R32_FLOAT:
-			default:
-				return 4;
+			case EDataFormat::R32G32_FLOAT: return 2;
+			case EDataFormat::R32G32B32_FLOAT: return 3;
+			case EDataFormat::R32G32B32A32_FLOAT: return 4;
 			}
+			return 4;
+		}
+
+		GLTextureBuffer2D& AsGL(ITextureBuffer2D& texture)
+		{
+			// Every resource the device is given came from its own Create functions
+			return static_cast<GLTextureBuffer2D&>(texture);
 		}
 
 #ifdef _DEBUG
@@ -56,8 +61,22 @@ namespace Rendering
 				return;
 			}
 
-			RZE_LOG_ERROR("OpenGL (" << id << "): " << message);
-			AssertMsg(type != GL_DEBUG_TYPE_ERROR, "An OpenGL call failed (see the log)");
+			switch (type)
+			{
+			case GL_DEBUG_TYPE_ERROR:
+				RZE_LOG_ERROR("OpenGL (" << id << "): " << message);
+				AssertMsg(false, "An OpenGL call failed (see the log)");
+				break;
+			case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+			case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+			case GL_DEBUG_TYPE_PORTABILITY:
+				RZE_LOG_WARNING("OpenGL (" << id << "): " << message);
+				break;
+			default:
+				// The driver's notes on what's slow, e.g. a shader recompiled for the state it's drawn with
+				RZE_LOG_DEBUG("OpenGL (" << id << "): " << message);
+				break;
+			}
 		}
 #endif
 	}
@@ -103,9 +122,42 @@ namespace Rendering
 
 		// D3D's conventions (GLDevice's comment); the back buffer is bound, below
 		SetIsBackBufferBound(false);
+		// D3D samples across a cube map's face edges
+		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
 		glCreateProgramPipelines(1, &m_graphicsPipeline);
 		glCreateProgramPipelines(1, &m_computePipeline);
+		glCreateVertexArrays(1, &m_vertexArray);
+
+		glCreateSamplers(static_cast<GLsizei>(m_samplers.size()), m_samplers.data());
+		// As each DX11TextureBuffer2D's own sampler
+		glSamplerParameteri(m_samplers[Sampler_LinearWrap], GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glSamplerParameteri(m_samplers[Sampler_LinearWrap], GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glSamplerParameteri(m_samplers[Sampler_LinearWrap], GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glSamplerParameteri(m_samplers[Sampler_LinearWrap], GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glSamplerParameteri(m_samplers[Sampler_LinearWrap], GL_TEXTURE_WRAP_R, GL_REPEAT);
+		// As DX11Device's mShadowSamplerState: linear comparison, mip point, and outside the map counts as lit
+		const GLfloat lit[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+		glSamplerParameteri(m_samplers[Sampler_ShadowCompare], GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+		glSamplerParameteri(m_samplers[Sampler_ShadowCompare], GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glSamplerParameteri(m_samplers[Sampler_ShadowCompare], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+		glSamplerParameteri(m_samplers[Sampler_ShadowCompare], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+		glSamplerParameteri(m_samplers[Sampler_ShadowCompare], GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
+		glSamplerParameterfv(m_samplers[Sampler_ShadowCompare], GL_TEXTURE_BORDER_COLOR, lit);
+		glSamplerParameteri(m_samplers[Sampler_ShadowCompare], GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+		glSamplerParameteri(m_samplers[Sampler_ShadowCompare], GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+		// As DX11Device's mLinearClampSamplerState
+		glSamplerParameteri(m_samplers[Sampler_LinearClamp], GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glSamplerParameteri(m_samplers[Sampler_LinearClamp], GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glSamplerParameteri(m_samplers[Sampler_LinearClamp], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glSamplerParameteri(m_samplers[Sampler_LinearClamp], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glSamplerParameteri(m_samplers[Sampler_LinearClamp], GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+		// What D3D draws with before anything's set
+		SetRasterizerState(ERasterizerState::Default);
+		SetBlendState(EBlendState::Opaque);
+		SetDepthState(EDepthState::ReadWrite);
+		m_primitiveMode = GL_TRIANGLES;
 
 		int width = 0;
 		int height = 0;
@@ -116,6 +168,13 @@ namespace Rendering
 	void GLDevice::Shutdown()
 	{
 		DeleteReleasedObjects();
+		for (const std::pair<const FramebufferKey, U32>& framebuffer : m_framebuffers)
+		{
+			glDeleteFramebuffers(1, &framebuffer.second);
+		}
+		m_framebuffers.clear();
+		glDeleteSamplers(static_cast<GLsizei>(m_samplers.size()), m_samplers.data());
+		glDeleteVertexArrays(1, &m_vertexArray);
 		glDeleteProgramPipelines(1, &m_graphicsPipeline);
 		glDeleteProgramPipelines(1, &m_computePipeline);
 		DestroyBackBuffer();
@@ -176,6 +235,166 @@ namespace Rendering
 		return std::make_shared<GLComputeShader>(*this);
 	}
 
+	void GLDevice::DeleteLater(EObjectType type, U32 name)
+	{
+		std::lock_guard lock(m_releasedObjectsMutex);
+		m_releasedObjects.emplace_back(type, name);
+	}
+
+	void GLDevice::DeleteReleasedObjects()
+	{
+		std::vector<std::pair<EObjectType, U32>> released;
+		{
+			std::lock_guard lock(m_releasedObjectsMutex);
+			released.swap(m_releasedObjects);
+		}
+
+		for (const std::pair<EObjectType, U32>& object : released)
+		{
+			const GLuint name = object.second;
+			switch (object.first)
+			{
+			case EObjectType::Program: glDeleteProgram(name); break;
+			case EObjectType::Buffer: glDeleteBuffers(1, &name); break;
+			case EObjectType::Renderbuffer: glDeleteRenderbuffers(1, &name); break;
+			case EObjectType::Framebuffer: glDeleteFramebuffers(1, &name); break;
+			case EObjectType::Sampler: glDeleteSamplers(1, &name); break;
+			case EObjectType::VertexArray: glDeleteVertexArrays(1, &name); break;
+			case EObjectType::Texture:
+			{
+				// And everything still holding it: the framebuffers it's attached to, and the slots it's bound to, as D3D
+				// releases a texture's views and bindings with it
+				for (auto framebuffer = m_framebuffers.begin(); framebuffer != m_framebuffers.end();)
+				{
+					if (std::get<0>(framebuffer->first) == name || std::get<1>(framebuffer->first) == name)
+					{
+						glDeleteFramebuffers(1, &framebuffer->second);
+						framebuffer = m_framebuffers.erase(framebuffer);
+					}
+					else
+					{
+						++framebuffer;
+					}
+				}
+				std::replace(m_pixelTextures.begin(), m_pixelTextures.end(), name, 0u);
+				std::replace(m_computeTextures.begin(), m_computeTextures.end(), name, 0u);
+				glDeleteTextures(1, &name);
+			}
+			break;
+			}
+		}
+	}
+
+	void GLDevice::SetVertexShader(const GLVertexShader& shader)
+	{
+		m_vertexShader = &shader;
+		glUseProgramStages(m_graphicsPipeline, GL_VERTEX_SHADER_BIT, shader.GetProgram().GetProgram());
+	}
+
+	void GLDevice::SetPixelShader(const GLPixelShader& shader)
+	{
+		m_pixelShader = &shader;
+		glUseProgramStages(m_graphicsPipeline, GL_FRAGMENT_SHADER_BIT, shader.GetProgram().GetProgram());
+	}
+
+	void GLDevice::SetComputeShader(const GLComputeShader& shader)
+	{
+		m_computeShader = &shader;
+		glUseProgramStages(m_computePipeline, GL_COMPUTE_SHADER_BIT, shader.GetProgram().GetProgram());
+	}
+
+	void GLDevice::SetInputLayout(const GLVertexShader& shader)
+	{
+		for (U32 location = 0; location < 32; ++location)
+		{
+			if (m_enabledAttributeMask & (1u << location))
+			{
+				glDisableVertexArrayAttrib(m_vertexArray, location);
+			}
+		}
+		m_enabledAttributeMask = 0;
+
+		// From vertex buffer slot 0, the one D3D's input layouts here read from
+		for (const GLVertexShader::Attribute& attribute : shader.GetAttributes())
+		{
+			glEnableVertexArrayAttrib(m_vertexArray, attribute.Location);
+			glVertexArrayAttribFormat(m_vertexArray, attribute.Location, GetComponentCount(attribute.Format), GL_FLOAT, GL_FALSE, attribute.Offset);
+			glVertexArrayAttribBinding(m_vertexArray, attribute.Location, 0);
+			m_enabledAttributeMask |= 1u << attribute.Location;
+			if (attribute.IsPerInstance)
+			{
+				glVertexArrayBindingDivisor(m_vertexArray, 0, 1);
+			}
+		}
+	}
+
+	void GLDevice::SetVertexBuffer(const GLVertexBuffer& buffer, U32 slot)
+	{
+		glVertexArrayVertexBuffer(m_vertexArray, slot, buffer.GetBuffer(), 0, static_cast<GLsizei>(buffer.GetStride()));
+	}
+
+	void GLDevice::SetIndexBuffer(U32 buffer)
+	{
+		glVertexArrayElementBuffer(m_vertexArray, buffer);
+	}
+
+	void GLDevice::SetTextureResource(GLShaderTranslator::EStage stage, U32 slot, const GLTextureBuffer2D* texture)
+	{
+		AssertExpr(slot < k_textureSlotCount);
+		std::array<U32, k_textureSlotCount>& slots = stage == GLShaderTranslator::EStage::Compute ? m_computeTextures : m_pixelTextures;
+		slots[slot] = texture != nullptr ? texture->GetTexture() : 0;
+	}
+
+	void GLDevice::BindTextures(const GLShaderTranslator::Result& program, const std::array<U32, k_textureSlotCount>& slots)
+	{
+		for (const GLShaderTranslator::CombinedSampler& combined : program.CombinedSamplers)
+		{
+			glBindTextureUnit(combined.Unit, slots[combined.TextureSlot]);
+			// A texture only read with Load has no sampler, so its own parameters apply (GLTextureBuffer2D::Allocate)
+			glBindSampler(combined.Unit, combined.SamplerSlot >= 0 ? m_samplers[combined.SamplerSlot] : 0);
+		}
+	}
+
+	void GLDevice::CheckVaryings()
+	{
+		if (m_vertexShader == nullptr || m_pixelShader == nullptr)
+		{
+			return;
+		}
+
+		const std::pair<U32, U32> pair(m_vertexShader->GetProgram().GetProgram(), m_pixelShader->GetProgram().GetProgram());
+		if (!m_checkedVaryings.insert(pair).second)
+		{
+			return;
+		}
+
+		const std::vector<GLShaderTranslator::Varying>& outputs = m_vertexShader->GetProgram().GetTranslation().Outputs;
+		for (const GLShaderTranslator::Varying& input : m_pixelShader->GetProgram().GetTranslation().Inputs)
+		{
+			const bool isWritten = std::any_of(outputs.begin(), outputs.end(), [&input](const GLShaderTranslator::Varying& output)
+				{
+					return output.Semantic == input.Semantic && output.Location == input.Location;
+				});
+			if (!isWritten)
+			{
+				RZE_LOG_ERROR("OpenGL: a pixel shader reads " << input.Semantic << " at location " << input.Location << ", where the vertex shader drawn with it doesn't write it.");
+			}
+		}
+	}
+
+	void GLDevice::PrepareDraw()
+	{
+		// ImGui's renderer uses programs directly, which would take the pipeline's place
+		glUseProgram(0);
+		glBindProgramPipeline(m_graphicsPipeline);
+		glBindVertexArray(m_vertexArray);
+		if (m_pixelShader != nullptr)
+		{
+			BindTextures(m_pixelShader->GetProgram().GetTranslation(), m_pixelTextures);
+		}
+		CheckVaryings();
+	}
+
 	void GLDevice::CreateBackBuffer(U32 width, U32 height)
 	{
 		m_backBufferWidth = width > 0 ? width : 1;
@@ -212,58 +431,57 @@ namespace Rendering
 		m_backBufferColour = 0;
 	}
 
-	void GLDevice::DeleteLater(EObjectType type, U32 name)
+	U32 GLDevice::GetFramebuffer(const FramebufferKey& key)
 	{
-		std::lock_guard lock(m_releasedObjectsMutex);
-		m_releasedObjects.emplace_back(type, name);
-	}
-
-	void GLDevice::DeleteReleasedObjects()
-	{
-		std::vector<std::pair<EObjectType, U32>> released;
+		const auto known = m_framebuffers.find(key);
+		if (known != m_framebuffers.end())
 		{
-			std::lock_guard lock(m_releasedObjectsMutex);
-			released.swap(m_releasedObjects);
+			return known->second;
 		}
 
-		for (const std::pair<EObjectType, U32>& object : released)
+		const GLuint colour = std::get<0>(key);
+		const GLuint depth = std::get<1>(key);
+		const int depthSlice = std::get<2>(key);
+
+		GLuint framebuffer = 0;
+		glCreateFramebuffers(1, &framebuffer);
+		if (colour != 0)
 		{
-			const GLuint name = object.second;
-			switch (object.first)
+			// Every slice of an array, as a D3D render target view of one has
+			glNamedFramebufferTexture(framebuffer, GL_COLOR_ATTACHMENT0, colour, 0);
+			glNamedFramebufferDrawBuffer(framebuffer, GL_COLOR_ATTACHMENT0);
+		}
+		else
+		{
+			glNamedFramebufferDrawBuffer(framebuffer, GL_NONE);
+			glNamedFramebufferReadBuffer(framebuffer, GL_NONE);
+		}
+		if (depth != 0)
+		{
+			if (depthSlice >= 0)
 			{
-			case EObjectType::Program: glDeleteProgram(name); break;
-			case EObjectType::Buffer: glDeleteBuffers(1, &name); break;
-			case EObjectType::Texture: glDeleteTextures(1, &name); break;
-			case EObjectType::Renderbuffer: glDeleteRenderbuffers(1, &name); break;
-			case EObjectType::Framebuffer: glDeleteFramebuffers(1, &name); break;
-			case EObjectType::Sampler: glDeleteSamplers(1, &name); break;
-			case EObjectType::VertexArray: glDeleteVertexArrays(1, &name); break;
+				glNamedFramebufferTextureLayer(framebuffer, GL_DEPTH_STENCIL_ATTACHMENT, depth, 0, depthSlice);
+			}
+			else
+			{
+				glNamedFramebufferTexture(framebuffer, GL_DEPTH_STENCIL_ATTACHMENT, depth, 0);
 			}
 		}
+
+		const GLenum status = glCheckNamedFramebufferStatus(framebuffer, GL_FRAMEBUFFER);
+		if (status != GL_FRAMEBUFFER_COMPLETE)
+		{
+			RZE_LOG_ERROR("OpenGL: a render target can't be drawn to (framebuffer status 0x" << std::hex << status << std::dec << ").");
+		}
+
+		m_framebuffers.emplace(key, framebuffer);
+		return framebuffer;
 	}
 
-	void GLDevice::SetVertexShader(const GLVertexShader& shader)
+	void GLDevice::BindFramebuffer(const FramebufferKey& key)
 	{
-		m_vertexShader = &shader;
-		glUseProgramStages(m_graphicsPipeline, GL_VERTEX_SHADER_BIT, shader.GetProgram().GetProgram());
-	}
-
-	void GLDevice::SetPixelShader(const GLPixelShader& shader)
-	{
-		m_pixelShader = &shader;
-		glUseProgramStages(m_graphicsPipeline, GL_FRAGMENT_SHADER_BIT, shader.GetProgram().GetProgram());
-	}
-
-	void GLDevice::SetComputeShader(const GLComputeShader& shader)
-	{
-		m_computeShader = &shader;
-		glUseProgramStages(m_computePipeline, GL_COMPUTE_SHADER_BIT, shader.GetProgram().GetProgram());
-	}
-
-	void GLDevice::SetInputLayout(const GLVertexShader& shader)
-	{
-		m_inputLayout = &shader;
-		RZE_GL_NOT_IMPLEMENTED();
+		glBindFramebuffer(GL_FRAMEBUFFER, GetFramebuffer(key));
+		SetIsBackBufferBound(false);
 	}
 
 	void GLDevice::Present()
@@ -311,7 +529,8 @@ namespace Rendering
 
 	void GLDevice::BeginDrawSet()
 	{
-		RZE_GL_NOT_IMPLEMENTED();
+		// As DX11Device's: the default rasterizer state. The samplers are bound with each draw's textures (BindTextures).
+		SetRasterizerState(ERasterizerState::Default);
 	}
 
 	bool GLDevice::IsProfilerAttached()
@@ -330,14 +549,26 @@ namespace Rendering
 		glPopDebugGroup();
 	}
 
-	void GLDevice::ClearDepthStencilBuffer(ITextureBuffer2D& /*depthTexture*/, bool /*everySlice*/, U32 /*slice*/)
+	void GLDevice::ClearDepthStencilBuffer(ITextureBuffer2D& depthTexture, bool everySlice, U32 slice)
 	{
-		RZE_GL_NOT_IMPLEMENTED();
+		const GLTextureBuffer2D& texture = AsGL(depthTexture);
+		if (everySlice)
+		{
+			glClearTexImage(texture.GetTexture(), 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, &k_clearedDepthStencil);
+		}
+		else
+		{
+			const GFXTextureBufferParams& params = texture.GetParams();
+			glClearTexSubImage(texture.GetTexture(), 0, 0, 0, static_cast<GLint>(slice), static_cast<GLsizei>(params.Width), static_cast<GLsizei>(params.Height), 1,
+				GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, &k_clearedDepthStencil);
+		}
 	}
 
 	void GLDevice::ClearRenderTargets()
 	{
-		RZE_GL_NOT_IMPLEMENTED();
+		// Nothing bound, as D3D's OMSetRenderTargets with none
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		SetIsBackBufferBound(false);
 	}
 
 	void GLDevice::SetRenderTargetBackBuffer()
@@ -350,36 +581,64 @@ namespace Rendering
 		SetIsBackBufferBound(true);
 	}
 
-	void GLDevice::SetDepthTarget(ITextureBuffer2D& /*depthTexture*/, U32 /*slice*/)
+	void GLDevice::SetDepthTarget(ITextureBuffer2D& depthTexture, U32 slice)
 	{
-		RZE_GL_NOT_IMPLEMENTED();
-		SetIsBackBufferBound(false);
+		// One slice of an array (e.g. a cube's face); a single texture's one slice is the whole texture
+		const GLTextureBuffer2D& depth = AsGL(depthTexture);
+		BindFramebuffer(FramebufferKey(0, depth.GetTexture(), depth.GetLayerCount() > 1 ? static_cast<int>(slice) : -1));
 	}
 
-	void GLDevice::SetColourTarget(ITextureBuffer2D& /*colourTarget*/, ITextureBuffer2D* /*depthTexture*/)
+	void GLDevice::SetColourTarget(ITextureBuffer2D& colourTarget, ITextureBuffer2D* depthTexture)
 	{
-		RZE_GL_NOT_IMPLEMENTED();
-		SetIsBackBufferBound(false);
+		BindFramebuffer(FramebufferKey(AsGL(colourTarget).GetTexture(), depthTexture != nullptr ? AsGL(*depthTexture).GetTexture() : 0, -1));
 	}
 
-	void GLDevice::GenerateMips(ITextureBuffer2D& /*texture*/)
+	void GLDevice::GenerateMips(ITextureBuffer2D& texture)
 	{
-		RZE_GL_NOT_IMPLEMENTED();
+		glGenerateTextureMipmap(AsGL(texture).GetTexture());
 	}
 
-	void GLDevice::CopyTexture(ITextureBuffer2D& /*source*/, ITextureBuffer2D& /*destination*/)
+	void GLDevice::CopyTexture(ITextureBuffer2D& source, ITextureBuffer2D& destination)
 	{
-		RZE_GL_NOT_IMPLEMENTED();
+		// Every mip of every slice, as D3D's CopyResource
+		const GLTextureBuffer2D& from = AsGL(source);
+		const GLTextureBuffer2D& to = AsGL(destination);
+		const GFXTextureBufferParams& params = from.GetParams();
+		const U32 mipCount = std::min(from.GetMipCount(), to.GetMipCount());
+		for (U32 mip = 0; mip < mipCount; ++mip)
+		{
+			const GLsizei width = static_cast<GLsizei>(std::max(params.Width >> mip, 1u));
+			const GLsizei height = static_cast<GLsizei>(std::max(params.Height >> mip, 1u));
+			glCopyImageSubData(from.GetTexture(), from.GetTarget(), static_cast<GLint>(mip), 0, 0, 0,
+				to.GetTexture(), to.GetTarget(), static_cast<GLint>(mip), 0, 0, 0, width, height, static_cast<GLsizei>(from.GetLayerCount()));
+		}
 	}
 
-	void GLDevice::CopyTextureRegion(ITextureBuffer2D& /*source*/, U32 /*sourceX*/, U32 /*sourceY*/, U32 /*width*/, U32 /*height*/, ITextureBuffer2D& /*destination*/, U32 /*destinationX*/, U32 /*destinationY*/)
+	void GLDevice::CopyTextureRegion(ITextureBuffer2D& source, U32 sourceX, U32 sourceY, U32 width, U32 height, ITextureBuffer2D& destination, U32 destinationX, U32 destinationY)
 	{
-		RZE_GL_NOT_IMPLEMENTED();
+		// The first mip of the first slice, as DX11Device's
+		const GLTextureBuffer2D& from = AsGL(source);
+		const GLTextureBuffer2D& to = AsGL(destination);
+		glCopyImageSubData(from.GetTexture(), from.GetTarget(), 0, static_cast<GLint>(sourceX), static_cast<GLint>(sourceY), 0,
+			to.GetTexture(), to.GetTarget(), 0, static_cast<GLint>(destinationX), static_cast<GLint>(destinationY), 0,
+			static_cast<GLsizei>(width), static_cast<GLsizei>(height), 1);
 	}
 
-	void GLDevice::ClearRenderTarget(ITextureBuffer2D& /*renderTarget*/, const Vector4D& /*colour*/)
+	void GLDevice::ClearRenderTarget(ITextureBuffer2D& renderTarget, const Vector4D& colour)
 	{
-		RZE_GL_NOT_IMPLEMENTED();
+		// The first mip of every slice, as a D3D render target view
+		const GLTextureBuffer2D& texture = AsGL(renderTarget);
+		if (texture.GetFormat().IsInteger)
+		{
+			// D3D clears an integer target to the colour's values as integers
+			const GLuint values[4] = { static_cast<GLuint>(colour.X()), static_cast<GLuint>(colour.Y()), static_cast<GLuint>(colour.Z()), static_cast<GLuint>(colour.W()) };
+			glClearTexImage(texture.GetTexture(), 0, GL_RGBA_INTEGER, GL_UNSIGNED_INT, values);
+		}
+		else
+		{
+			const GLfloat values[4] = { colour.X(), colour.Y(), colour.Z(), colour.W() };
+			glClearTexImage(texture.GetTexture(), 0, GL_RGBA, GL_FLOAT, values);
+		}
 	}
 
 	void GLDevice::SetViewport(const ViewportParams& params)
@@ -391,24 +650,93 @@ namespace Rendering
 		glDepthRangeIndexed(0, params.MinDepth, params.MaxDepth);
 	}
 
-	void GLDevice::SetPrimitiveTopology(EPrimitiveTopology /*topology*/)
+	void GLDevice::SetPrimitiveTopology(EPrimitiveTopology topology)
 	{
-		RZE_GL_NOT_IMPLEMENTED();
+		switch (topology)
+		{
+		case EPrimitiveTopology::TriangleStrip: m_primitiveMode = GL_TRIANGLE_STRIP; break;
+		case EPrimitiveTopology::LineList: m_primitiveMode = GL_LINES; break;
+		case EPrimitiveTopology::TriangleList:
+		default: m_primitiveMode = GL_TRIANGLES; break;
+		}
 	}
 
-	void GLDevice::SetRasterizerState(ERasterizerState /*state*/)
+	void GLDevice::SetRasterizerState(ERasterizerState state)
 	{
-		RZE_GL_NOT_IMPLEMENTED();
+		// As DX11Device's rasterizer states: counter-clockwise front faces (GLDevice's comment), and depth clipped
+		// except for shadow casters, whose bias pushes them away from the light
+		glFrontFace(GL_CCW);
+		switch (state)
+		{
+		case ERasterizerState::ShadowCaster:
+			glDisable(GL_CULL_FACE);
+			glEnable(GL_DEPTH_CLAMP);
+			// D3D's DepthBias 1000 and SlopeScaledDepthBias 2.0, in the same units for a 24-bit depth buffer
+			glEnable(GL_POLYGON_OFFSET_FILL);
+			glPolygonOffset(2.0f, 1000.0f);
+			break;
+		case ERasterizerState::NoCull:
+			glDisable(GL_CULL_FACE);
+			glDisable(GL_DEPTH_CLAMP);
+			glDisable(GL_POLYGON_OFFSET_FILL);
+			break;
+		case ERasterizerState::Default:
+		default:
+			glEnable(GL_CULL_FACE);
+			glCullFace(GL_BACK);
+			glDisable(GL_DEPTH_CLAMP);
+			glDisable(GL_POLYGON_OFFSET_FILL);
+			break;
+		}
 	}
 
-	void GLDevice::SetBlendState(EBlendState /*state*/)
+	void GLDevice::SetBlendState(EBlendState state)
 	{
-		RZE_GL_NOT_IMPLEMENTED();
+		// As DX11Device's blend states; each leaves the target's alpha as it was
+		if (state == EBlendState::Opaque)
+		{
+			glDisable(GL_BLEND);
+			return;
+		}
+
+		glEnable(GL_BLEND);
+		glBlendEquation(GL_FUNC_ADD);
+		switch (state)
+		{
+		case EBlendState::Premultiplied: glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ZERO, GL_ONE); break;
+		case EBlendState::Additive: glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE, GL_ZERO, GL_ONE); break;
+		case EBlendState::Multiply: glBlendFuncSeparate(GL_DST_COLOR, GL_ZERO, GL_ZERO, GL_ONE); break;
+		case EBlendState::AlphaBlend:
+		default: glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ZERO, GL_ONE); break;
+		}
 	}
 
-	void GLDevice::SetDepthState(EDepthState /*state*/)
+	void GLDevice::SetDepthState(EDepthState state)
 	{
-		RZE_GL_NOT_IMPLEMENTED();
+		// As DX11Device's depth states
+		switch (state)
+		{
+		case EDepthState::ReadOnly:
+			glEnable(GL_DEPTH_TEST);
+			glDepthFunc(GL_LESS);
+			glDepthMask(GL_FALSE);
+			break;
+		case EDepthState::ReadOnlyLessEqual:
+			glEnable(GL_DEPTH_TEST);
+			glDepthFunc(GL_LEQUAL);
+			glDepthMask(GL_FALSE);
+			break;
+		case EDepthState::Off:
+			glDisable(GL_DEPTH_TEST);
+			glDepthMask(GL_FALSE);
+			break;
+		case EDepthState::ReadWrite:
+		default:
+			glEnable(GL_DEPTH_TEST);
+			glDepthFunc(GL_LESS);
+			glDepthMask(GL_TRUE);
+			break;
+		}
 	}
 
 	void GLDevice::UnsetPixelShader()
@@ -417,14 +745,14 @@ namespace Rendering
 		glUseProgramStages(m_graphicsPipeline, GL_FRAGMENT_SHADER_BIT, 0);
 	}
 
-	void GLDevice::UnsetTextureResource(U32 /*textureSlot*/)
+	void GLDevice::UnsetTextureResource(U32 textureSlot)
 	{
-		RZE_GL_NOT_IMPLEMENTED();
+		SetTextureResource(GLShaderTranslator::EStage::Pixel, textureSlot, nullptr);
 	}
 
-	void GLDevice::UnsetTextureResourceCS(U32 /*textureSlot*/)
+	void GLDevice::UnsetTextureResourceCS(U32 textureSlot)
 	{
-		RZE_GL_NOT_IMPLEMENTED();
+		SetTextureResource(GLShaderTranslator::EStage::Compute, textureSlot, nullptr);
 	}
 
 	void GLDevice::SetUnorderedAccess(ITextureBuffer2D& /*texture*/, U32 /*slot*/, U32 /*mip*/)
@@ -437,14 +765,16 @@ namespace Rendering
 		RZE_GL_NOT_IMPLEMENTED();
 	}
 
-	void GLDevice::Draw(U32 /*vertexCount*/)
+	void GLDevice::Draw(U32 vertexCount)
 	{
-		RZE_GL_NOT_IMPLEMENTED();
+		PrepareDraw();
+		glDrawArrays(m_primitiveMode, 0, static_cast<GLsizei>(vertexCount));
 	}
 
-	void GLDevice::DrawIndexed(U32 /*indexCount*/)
+	void GLDevice::DrawIndexed(U32 indexCount)
 	{
-		RZE_GL_NOT_IMPLEMENTED();
+		PrepareDraw();
+		glDrawElements(m_primitiveMode, static_cast<GLsizei>(indexCount), GL_UNSIGNED_INT, nullptr);
 	}
 
 	void GLDevice::Dispatch(U32 /*groupsX*/, U32 /*groupsY*/, U32 /*groupsZ*/)
@@ -464,10 +794,10 @@ namespace Rendering
 	{
 		RZE_GL_NOT_IMPLEMENTED();
 		// Zeros the size the texture is, and still ready, so nothing waits on it forever
-		const GFXTextureBufferParams& params = static_cast<GLTextureBuffer2D&>(texture).GetParams();
-		result.Width = params.Width;
-		result.Height = params.Height;
-		result.BytesPerTexel = GetBytesPerTexel(params);
+		const GLTextureBuffer2D& gl = AsGL(texture);
+		result.Width = gl.GetParams().Width;
+		result.Height = gl.GetParams().Height;
+		result.BytesPerTexel = gl.GetFormat().BytesPerTexel;
 		result.Data.assign(static_cast<size_t>(result.Width) * result.Height * result.BytesPerTexel, 0);
 		result.IsReady.store(true, std::memory_order_release);
 	}

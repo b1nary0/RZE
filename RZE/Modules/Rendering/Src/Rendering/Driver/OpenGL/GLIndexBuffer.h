@@ -18,8 +18,12 @@ namespace Rendering
 		void SetActive() override;
 		U32 GetIndexCount() override;
 
+	public:
+		~GLIndexBuffer() override;
+
 	private:
-		[[maybe_unused]] GLDevice& m_device;
+		GLDevice& m_device;
+		U32 m_buffer = 0;
 		U32 m_indexCount = 0;
 	};
 }

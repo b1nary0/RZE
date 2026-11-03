@@ -6,10 +6,23 @@ namespace Rendering
 {
 	class GLDevice;
 
+	// A texture, of whatever kind its params make: 2D, a 2D array, a cube, or a cube array
 	class GLTextureBuffer2D : public ITextureBuffer2D
 	{
 	public:
+		// The GL format of an ETextureFormat (or of a depth texture), for making, clearing, copying and reading it
+		struct Format
+		{
+			U32 InternalFormat = 0;
+			U32 PixelFormat = 0;
+			U32 PixelType = 0;
+			U32 BytesPerTexel = 0;
+			bool IsInteger = false;
+			bool IsDepth = false;
+		};
+
 		explicit GLTextureBuffer2D(GLDevice& device);
+		~GLTextureBuffer2D() override;
 
 	// ITextureBuffer2D interface
 	public:
@@ -22,11 +35,21 @@ namespace Rendering
 		bool IsValid() override;
 
 	public:
-		// What it was allocated with
+		U32 GetTexture() const { return m_texture; }
+		U32 GetTarget() const { return m_target; }
+		const Format& GetFormat() const { return m_format; }
 		const GFXTextureBufferParams& GetParams() const { return m_params; }
+		U32 GetLayerCount() const { return m_layerCount; }
+		U32 GetMipCount() const { return m_mipCount; }
 
 	private:
-		[[maybe_unused]] GLDevice& m_device;
+		GLDevice& m_device;
 		GFXTextureBufferParams m_params = {};
+		Format m_format;
+		U32 m_texture = 0;
+		U32 m_target = 0;
+		// Slices, cube faces among them: 6 per cube
+		U32 m_layerCount = 1;
+		U32 m_mipCount = 1;
 	};
 }

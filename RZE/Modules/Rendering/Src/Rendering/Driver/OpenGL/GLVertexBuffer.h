@@ -19,8 +19,17 @@ namespace Rendering
 		void UpdateData(const void* data, size_t bytes) override;
 		void SetActive(U32 bufferSlot) override;
 
+	public:
+		~GLVertexBuffer() override;
+
+		U32 GetBuffer() const { return m_buffer; }
+		U32 GetStride() const { return m_stride; }
+
 	private:
-		[[maybe_unused]] GLDevice& m_device;
+		GLDevice& m_device;
+		U32 m_buffer = 0;
+		U32 m_stride = 0;
+		size_t m_capacityBytes = 0;
 		bool m_isDynamic = false;
 	};
 }

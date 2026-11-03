@@ -16,9 +16,13 @@ namespace Rendering
 {
 	namespace
 	{
-		// The pixel shader's b registers start here among the uniform block bindings (GLShaderTranslator.h). D3D has 14
-		// b registers per stage; GL has at least 72 bindings.
+		// Where each stage's b registers start among the uniform block bindings (GLShaderTranslator.h). D3D has 14 b
+		// registers per stage; GL has at least 72 bindings.
 		constexpr U32 k_pixelUniformBlockBase = 16;
+		constexpr U32 k_computeUniformBlockBase = 32;
+		// Where the vertex shader's combined samplers start among the texture units. GL has at least 32 per draw, and D3D
+		// 16 texture registers per stage.
+		constexpr U32 k_vertexTextureUnitBase = 16;
 
 		std::string ReadFile(const std::filesystem::path& path)
 		{
@@ -185,7 +189,18 @@ namespace Rendering
 	{
 		U32 GetUniformBlockBase(EStage stage)
 		{
-			return stage == EStage::Pixel ? k_pixelUniformBlockBase : 0;
+			switch (stage)
+			{
+			case EStage::Pixel: return k_pixelUniformBlockBase;
+			case EStage::Compute: return k_computeUniformBlockBase;
+			case EStage::Vertex:
+			default: return 0;
+			}
+		}
+
+		U32 GetTextureUnitBase(EStage stage)
+		{
+			return stage == EStage::Vertex ? k_vertexTextureUnitBase : 0;
 		}
 
 		bool Translate(const Filepath& file, EStage stage, Result& outResult, std::string& outErrors)
@@ -211,7 +226,7 @@ namespace Rendering
 				const spirv_cross::VariableID dummySampler = compiler.build_dummy_sampler_for_combined_images();
 				compiler.build_combined_image_samplers();
 
-				U32 unit = 0;
+				U32 unit = GetTextureUnitBase(stage);
 				for (const spirv_cross::CombinedImageSampler& combined : compiler.get_combined_image_samplers())
 				{
 					compiler.set_decoration(combined.combined_id, spv::DecorationBinding, unit);
