@@ -160,6 +160,12 @@ Checks marked **(work)** are Windows-only changes, not tests: ask the user befor
   it back after `close`, `quit` or a dead session (d7f51a6f). `driver.ps1` should do the same, with
   `-KeepImguiIni` to opt out, and SKILL.md updated.
 
+- **H2 (work). driver.ps1: a harness mode.** `driver.py launch --harness` (H5) runs EditorHarness, sends its
+  commands as JSON lines on stdin, and reads `RZEHARNESS {json}` answers from stdout, matched by `id`. It waits for
+  `"maximized":true` from `info` before returning. `driver.ps1` should get the same `-Harness` switch, routing
+  click, dblclick, drag, scroll, key, shot, info and close through it, and add state, object and realinput. Do B2
+  to B8 first, so the harness itself is known to work on Windows.
+
 ## Results
 
 | ID | Date | Commit | Result | Notes |

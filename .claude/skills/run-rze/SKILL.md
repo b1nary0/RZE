@@ -148,8 +148,31 @@ Warnings are errors (`-Werror`), as on Windows.
 
 ### Drive
 
+**Prefer `launch --harness`** for driving the Editor. It runs `EditorHarness` (`RZE/EditorHarness`, the Editor plus
+a harness beside it): input, screenshots and questions go through the app itself, as JSON lines on its stdin.
+- Your cursor never moves, and focus never changes; the session has no input devices at all.
+- The window can be covered or unfocused.
+- `shot` is the frame itself, read back from the back buffer, not a screen capture.
+- `state` and `object` answer what the Editor holds, so checks don't depend on reading pixels.
+- Real mouse and keyboard input is dropped while it runs (`realinput on` lets it through).
+
+Use OS input (no `--harness`) only for what needs the real desktop: the compositor, window decorations and focus,
+Snap Layouts, or RenderDoc's capture key.
+
 ```bash
 d=".claude/skills/run-rze/driver.py"
+$d launch --harness --scene DrawLineTest.scene   # waits until the Editor is maximized, then 5 s for assets
+$d click 2317 123                                # select NeckMech
+$d click 2444 783; $d key '^a45{ENTER}'          # Rotation Y = 45
+$d object NeckMech                               # "rotation": [0, 45, 0], components, parent, GUID
+$d state                                         # scene, modified, selection, undo, objects
+$d shot                                          # the frame itself, UI and all
+$d key '^z'; $d close                            # "closed code=0" once nothing's unsaved
+```
+
+The same commands without `--harness` use real input instead:
+
+```bash
 $d launch --scene DrawLineTest.scene          # waits for "RZEStudio - ..." in the title, then 5 s for assets
 $d shot                                       # -> $TMPDIR/rze-shots/<timestamp>.png (usually /tmp), client area only
 $d click 2317 123                             # select NeckMech in the Scene panel
@@ -164,8 +187,9 @@ downscales a 2560-wide image to 2000, so multiply what you measure by 1.28.
 
 | command | what it does |
 |---|---|
-| `launch [--scene X.scene] [--config debug\|release\|retail] [--app Editor\|Game] [--settle 5] [--keep-imgui-ini] [-- args...]` | Starts the app under the driver. Refuses if one is running. Backs up `RZE/Config/imgui.ini` first (below). |
-| `shot [--out path.png]` | Focuses the app and captures its client area (spectacle). |
+| `launch [--harness] [--scene X.scene] [--config debug\|release\|retail] [--app Editor\|Game] [--settle 5] [--keep-imgui-ini] [-- args...]` | Starts the app under the driver. Refuses if one is running. Backs up `RZE/Config/imgui.ini` first (below). `--harness` runs EditorHarness (above); it's the Editor's only, and can't be combined with `--renderdoc`. |
+| `state`, `object NAME`, `realinput on\|off` | Harness sessions only: the Editor's state (scene, modified, selection, undo, objects); one object's GUID, parent, components and transform; whether the real mouse and keyboard reach the app. |
+| `shot [--out path.png]` | With `--harness`, the frame read back from the back buffer (about 1 s, as it's encoded). Otherwise, it focuses the app and captures its client area (spectacle). |
 | `click X Y [--button left\|right\|middle]`, `dblclick X Y`, `move X Y` | A click, a double-click, a hover. |
 | `drag X Y X2 Y2 [--button ...]` | A drag in 10 steps. |
 | `scroll X Y N` | N wheel notches at (X, Y); + is away from you (zooms the scene view in). |

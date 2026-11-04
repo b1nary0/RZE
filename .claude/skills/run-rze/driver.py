@@ -275,9 +275,11 @@ class Helper:
         self.exit_code = None
         self.window_id = None
         self.windows_at_launch = {w["id"] for w in kwin_windows()}
-        self.origin_size = kwin_desktop_size()
-        self.pointer = VirtualDevice("RZE driver pointer", keys=BUTTONS.values(), abs_size=self.origin_size, wheel=True)
-        self.keyboard = VirtualDevice("RZE driver keyboard", keys=list(range(1, 128)))
+        self.pointer = None
+        self.keyboard = None
+        if not options.get("harness"):
+            self.pointer = VirtualDevice("RZE driver pointer", keys=BUTTONS.values(), abs_size=kwin_desktop_size(), wheel=True)
+            self.keyboard = VirtualDevice("RZE driver keyboard", keys=list(range(1, 128)))
         self.devices_ready_at = time.monotonic() + 0.8
 
         build_dir = os.path.join(ENGINE_ROOT, "_build", options["config"])
@@ -300,9 +302,12 @@ class Helper:
         command += [exe] + options["args"]
         # In a process group of its own, which is everything the session started: the app, renderdoccmd with the
         # app under it, a Game the Editor launched. Ending the session ends all of it.
-        self.process = subprocess.Popen(command, cwd=build_dir, env=environment, stdout=open(APP_LOG, "wb"),
-                                        stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, start_new_session=True)
+        self.process = self._start(command, build_dir, environment)
         threading.Thread(target=self._wait_for_exit, daemon=True).start()
+
+    def _start(self, command, build_dir, environment):
+        return subprocess.Popen(command, cwd=build_dir, env=environment, stdout=open(APP_LOG, "wb"),
+                                stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, start_new_session=True)
 
     def _wait_for_exit(self):
         self.exit_code = self.process.wait()
@@ -472,6 +477,19 @@ class Helper:
                 raise DriverError("No capture after %ds; see the newest /tmp/RenderDoc/*.log" % timeout)
             time.sleep(0.25)
 
+    # The harness's own (HarnessHelper)
+    def cmd_state(self):
+        raise DriverError("state needs a harness session: driver.py launch --harness")
+
+    def cmd_object(self, name):
+        raise DriverError("object needs a harness session: driver.py launch --harness")
+
+    def cmd_realinput(self, on):
+        raise DriverError("realinput needs a harness session: driver.py launch --harness")
+
+    def cmd_wait_settled(self):
+        return "settled"
+
     def cmd_restored_leftover_ini(self):
         return str(self.restored_leftover_ini)
 
@@ -504,8 +522,146 @@ class Helper:
     def shutdown(self):
         self._end_group()
         restore_imgui_ini()
-        self.pointer.close()
-        self.keyboard.close()
+        for device in (self.pointer, self.keyboard):
+            if device is not None:
+                device.close()
+
+
+class HarnessHelper(Helper):
+    """A session with EditorHarness (RZE/EditorHarness): input and screenshots go through the app itself, as JSON lines
+    on its stdin, so the real cursor and focus are left alone and the window may be covered. Its answers come back on
+    stdout as "RZEHARNESS {json}" lines, among its log lines."""
+
+    REPLY_PREFIX = "RZEHARNESS "
+
+    def __init__(self, options):
+        self.replies = {}
+        self.replies_changed = threading.Condition()
+        self.is_ready = False
+        self.next_id = 0
+        Helper.__init__(self, options)
+
+    def _start(self, command, build_dir, environment):
+        process = subprocess.Popen(command, cwd=build_dir, env=environment, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                   stderr=subprocess.STDOUT, start_new_session=True)
+        threading.Thread(target=self._read_output, args=(process.stdout,), daemon=True).start()
+        return process
+
+    def _read_output(self, stdout):
+        with open(APP_LOG, "wb") as log:
+            for raw in stdout:
+                line = raw.decode(errors="replace")
+                if not line.startswith(self.REPLY_PREFIX):
+                    log.write(raw)
+                    log.flush()
+                    continue
+                reply = json.loads(line[len(self.REPLY_PREFIX):])
+                with self.replies_changed:
+                    if reply.get("event") == "ready":
+                        self.is_ready = True
+                    elif "id" in reply:
+                        self.replies[reply["id"]] = reply
+                    self.replies_changed.notify_all()
+        with self.replies_changed:
+            self.replies_changed.notify_all()
+
+    def request(self, command_name, timeout=30, **fields):
+        """Sends one command and waits for its answer; DriverError if the harness says it failed."""
+        if self.exit_code is not None:
+            raise DriverError("The app has exited (code %d)" % self.exit_code)
+        with self.replies_changed:
+            self.next_id += 1
+            request_id = self.next_id
+        self.process.stdin.write((json.dumps(dict(fields, cmd=command_name, id=request_id)) + "\n").encode())
+        self.process.stdin.flush()
+        deadline = time.monotonic() + timeout
+        with self.replies_changed:
+            while request_id not in self.replies:
+                if self.exit_code is not None or time.monotonic() > deadline:
+                    raise DriverError("No answer to %s from the harness%s" % (
+                        command_name, " (it exited)" if self.exit_code is not None else " after %ds" % timeout))
+                self.replies_changed.wait(0.1)
+            reply = self.replies.pop(request_id)
+        if not reply.get("ok"):
+            raise DriverError(reply.get("error", "failed"))
+        return reply
+
+    def _wait_ready(self, timeout=60):
+        deadline = time.monotonic() + timeout
+        with self.replies_changed:
+            while not self.is_ready:
+                if self.exit_code is not None or time.monotonic() > deadline:
+                    raise DriverError("The harness didn't get ready")
+                self.replies_changed.wait(0.1)
+
+    def cmd_wait_settled(self, timeout=15):
+        # The Editor maximizes itself once it's up, and coordinates aren't final until the compositor has done it
+        self._wait_ready()
+        deadline = time.monotonic() + timeout
+        while True:
+            info = self.request("info")
+            if info["maximized"] or time.monotonic() > deadline:
+                return "%dx%d%s" % (info["width"], info["height"], "" if info["maximized"] else " (not maximized)")
+            time.sleep(0.1)
+
+    def cmd_click(self, x, y, button="left", count=1):
+        self.request("dblclick" if count == 2 else "click", x=x, y=y, button=button)
+        return "clicked (%d, %d)" % (x, y)
+
+    def cmd_move(self, x, y):
+        self.request("move", x=x, y=y)
+        return "moved to (%d, %d)" % (x, y)
+
+    def cmd_drag(self, x, y, x2, y2, button="left", steps=10):
+        if button != "left":
+            raise DriverError("The harness drags with the left button only")
+        self.request("drag", x=x, y=y, x2=x2, y2=y2)
+        return "dragged (%d, %d) -> (%d, %d)" % (x, y, x2, y2)
+
+    def cmd_scroll(self, x, y, notches):
+        self.request("scroll", x=x, y=y, notches=notches)
+        return "scrolled %d at (%d, %d)" % (notches, x, y)
+
+    def cmd_key(self, keys):
+        self.request("key", keys=keys)
+        return "typed %s" % json.dumps(keys)
+
+    def cmd_shot(self, out):
+        reply = self.request("shot", path=out)
+        return "%s %dx%d (the frame itself, from the harness)" % (reply["path"], reply["width"], reply["height"])
+
+    def cmd_info(self):
+        info = self.request("info")
+        return "%s client=%dx%d frame=%d (harness; real input %s)" % (
+            info["title"], info["width"], info["height"], info["frame"], "blocked" if info["realInputBlocked"] else "allowed")
+
+    def cmd_state(self):
+        reply = self.request("state")
+        reply.pop("id", None)
+        reply.pop("ok", None)
+        return json.dumps(reply, indent=1)
+
+    def cmd_object(self, name):
+        reply = self.request("object", name=name)
+        reply.pop("id", None)
+        reply.pop("ok", None)
+        return json.dumps(reply, indent=1)
+
+    def cmd_realinput(self, on):
+        self.request("realinput", on=on)
+        return "real input %s" % ("allowed" if on else "blocked")
+
+    def cmd_close(self, timeout):
+        if self.exit_code is None:
+            # As the close button does: unsaved changes are asked about first
+            self.request("quit")
+            deadline = time.monotonic() + timeout
+            while self.exit_code is None and time.monotonic() < deadline:
+                time.sleep(0.1)
+            if self.exit_code is None:
+                raise DriverError("Still running after %ds (an unsaved-changes prompt? see `shot`), then `quit`" % timeout)
+        self._end_group()
+        return "closed code=%d%s" % (self.exit_code, self._restore_note())
 
 
 def renderdoc_captures():
@@ -550,7 +706,7 @@ def png_size(path):
 
 def run_helper(options):
     os.makedirs(STATE_DIR, exist_ok=True)
-    helper = Helper(options)
+    helper = HarnessHelper(options) if options.get("harness") else Helper(options)
     if os.path.exists(SOCKET_PATH):
         os.unlink(SOCKET_PATH)
     server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -687,6 +843,10 @@ def optick_capture(seconds, out_path):
 # ---------------------------------------------------------------------------------------------------------------------
 
 def command_launch(args):
+    if args.harness:
+        if args.app != "Editor" or args.renderdoc:
+            raise DriverError("--harness is the Editor's, and RenderDoc's capture key needs real keys: use one or the other")
+        args.app = "EditorHarness"
     if helper_running():
         raise DriverError("A session is running. Run: driver.py quit (or close)")
     if subprocess.run(["pgrep", "-x", args.app], capture_output=True).returncode == 0:
@@ -699,7 +859,7 @@ def command_launch(args):
     os.makedirs(STATE_DIR, exist_ok=True)
     app_args = (["-scene", args.scene] if args.scene else []) + args.extra
     options = {"app": args.app, "config": args.config, "args": app_args, "renderdoc": args.renderdoc,
-               "keep_imgui_ini": args.keep_imgui_ini}
+               "keep_imgui_ini": args.keep_imgui_ini, "harness": args.harness}
     subprocess.Popen([sys.executable, "-I", os.path.abspath(__file__), "_helper", json.dumps(options)],
                      stdout=open(HELPER_LOG, "wb"), stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
                      start_new_session=True)
@@ -709,7 +869,7 @@ def command_launch(args):
         if time.monotonic() > deadline:
             raise DriverError("The helper didn't start; see %s" % HELPER_LOG)
         time.sleep(0.1)
-    title_prefix = "RZEStudio -" if args.app == "Editor" else ""
+    title_prefix = "RZEStudio -" if args.app in ("Editor", "EditorHarness") else ""
     while True:
         state = send("alive")
         if state.startswith("exited"):
@@ -723,6 +883,7 @@ def command_launch(args):
         if time.monotonic() > deadline:
             raise DriverError("No window after %ds; see `driver.py log`" % args.timeout)
         time.sleep(0.25)
+    send("wait_settled")
     time.sleep(args.settle)
     note = "" if args.keep_imgui_ini else " (imgui.ini backed up%s)" % (
         "; restored a backup a session left" if send("restored_leftover_ini") == "True" else "")
@@ -746,6 +907,8 @@ def main():
     p.add_argument("--renderdoc", action="store_true", help="run under renderdoccmd, for `renderdoc-capture`")
     p.add_argument("--keep-imgui-ini", action="store_true",
                    help="keep the layout the run leaves; by default Config/imgui.ini is put back as it was")
+    p.add_argument("--harness", action="store_true",
+                   help="run EditorHarness: input and shots go through the app, leaving the real cursor and focus alone")
     p.add_argument("extra", nargs="*", help="more arguments for the app, after --")
 
     p = commands.add_parser("shot", help="screenshot the client area")
@@ -785,6 +948,11 @@ def main():
     p = commands.add_parser("optick", help="take an Optick capture over the network, as Optick's viewer does")
     p.add_argument("--seconds", type=float, default=2)
     p.add_argument("--out", help="also save the raw stream here")
+    commands.add_parser("state", help="the Editor's state: scene, modified, selection, undo, objects (--harness)")
+    p = commands.add_parser("object", help="an object's components and transform (--harness)")
+    p.add_argument("name")
+    p = commands.add_parser("realinput", help="let the real mouse and keyboard reach the app, or block them again (--harness)")
+    p.add_argument("state", choices=["on", "off"])
     p = commands.add_parser("renderdoc-capture", help="capture the next frame with RenderDoc (launch --renderdoc)")
     p.add_argument("--timeout", type=int, default=30)
 
@@ -813,6 +981,12 @@ def main():
             print(send("key", keys=args.keys))
         elif c in ("info", "alive", "quit"):
             print("not running" if c == "alive" and not helper_running() else send(c))
+        elif c == "state":
+            print(send("state"))
+        elif c == "object":
+            print(send("object", name=args.name))
+        elif c == "realinput":
+            print(send("realinput", on=args.state == "on"))
         elif c == "windows":
             print(send("windows", all_windows=args.all))
         elif c == "close-window":

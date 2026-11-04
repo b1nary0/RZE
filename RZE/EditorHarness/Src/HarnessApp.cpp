@@ -186,6 +186,8 @@ namespace EditorHarness
 					reply.Int(static_cast<int>(window.GetClientSize().X()));
 					reply.Key("height");
 					reply.Int(static_cast<int>(window.GetClientSize().Y()));
+					reply.Key("maximized");
+					reply.Bool(window.IsMaximised());
 					reply.Key("frame");
 					reply.Uint64(m_frameCount);
 					reply.Key("realInputBlocked");
