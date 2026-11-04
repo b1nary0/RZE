@@ -32,6 +32,11 @@ STATE_DIR = os.path.join(os.environ.get("XDG_RUNTIME_DIR") or tempfile.gettempdi
 SOCKET_PATH = os.path.join(STATE_DIR, "helper.sock")
 APP_LOG = os.path.join(STATE_DIR, "app.log")
 HELPER_LOG = os.path.join(STATE_DIR, "helper.log")
+# Every Editor run rewrites the layout, which often holds one the user means to keep (CLAUDE.md), so a session puts back
+# the file it found. The backup outlives a session that died, and the next launch restores it first.
+IMGUI_INI = os.path.join(ENGINE_ROOT, "Config", "imgui.ini")
+IMGUI_INI_BACKUP = os.path.join(STATE_DIR, "imgui.ini.backup")
+ENGINE_LOGS = os.path.join(ENGINE_ROOT, "Logs")
 SHOT_DIR = os.path.join(tempfile.gettempdir(), "rze-shots")
 
 
@@ -244,9 +249,26 @@ def parse_keys(text):
 # ---------------------------------------------------------------------------------------------------------------------
 # The helper: one per launched session
 
+def restore_imgui_ini():
+    """Puts back the layout a session found, if it has a backup. A copy, so the file gets a new timestamp."""
+    if not os.path.exists(IMGUI_INI_BACKUP):
+        return False
+    shutil.copyfile(IMGUI_INI_BACKUP, IMGUI_INI)
+    os.remove(IMGUI_INI_BACKUP)
+    return True
+
+
+def back_up_imgui_ini():
+    restored = restore_imgui_ini()
+    if os.path.exists(IMGUI_INI):
+        shutil.copyfile(IMGUI_INI, IMGUI_INI_BACKUP)
+    return restored
+
+
 class Helper:
     def __init__(self, options):
         self.options = options
+        self.restored_leftover_ini = False if options.get("keep_imgui_ini") else back_up_imgui_ini()
         self.lock = threading.Lock()
         self.exit_code = None
         self.window_id = None
@@ -403,6 +425,9 @@ class Helper:
         kwin("var w = byId('%s'); if (w) w.closeWindow(); report(1);" % windows[0]["id"])
         return "closed %r" % caption
 
+    def cmd_restored_leftover_ini(self):
+        return str(self.restored_leftover_ini)
+
     def cmd_alive(self):
         if self.exit_code is None:
             return "running pid=%d" % self.process.pid
@@ -417,18 +442,23 @@ class Helper:
                 time.sleep(0.1)
             if self.exit_code is None:
                 raise DriverError("Still running after %ds (an unsaved-changes prompt? see `shot`), then `quit`" % timeout)
-        return "closed code=%d" % self.exit_code
+        return "closed code=%d%s" % (self.exit_code, self._restore_note())
 
     def cmd_quit(self):
         if self.exit_code is None:
             self.process.kill()
             self.process.wait()
-        return "quit"
+        return "quit" + self._restore_note()
+
+    # Once the app has exited, since ImGui saves the layout as it shuts down
+    def _restore_note(self):
+        return "; imgui.ini restored" if restore_imgui_ini() else ""
 
     def shutdown(self):
         if self.exit_code is None:
             self.process.kill()
             self.process.wait()
+        restore_imgui_ini()
         self.pointer.close()
         self.keyboard.close()
 
@@ -589,7 +619,8 @@ def command_launch(args):
         raise DriverError("%s isn't built. Build it first (see SKILL.md)." % exe)
     os.makedirs(STATE_DIR, exist_ok=True)
     app_args = (["-scene", args.scene] if args.scene else []) + args.extra
-    options = {"app": args.app, "config": args.config, "args": app_args, "renderdoc": args.renderdoc}
+    options = {"app": args.app, "config": args.config, "args": app_args, "renderdoc": args.renderdoc,
+               "keep_imgui_ini": args.keep_imgui_ini}
     subprocess.Popen([sys.executable, "-I", os.path.abspath(__file__), "_helper", json.dumps(options)],
                      stdout=open(HELPER_LOG, "wb"), stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
                      start_new_session=True)
@@ -614,7 +645,9 @@ def command_launch(args):
             raise DriverError("No window after %ds; see `driver.py log`" % args.timeout)
         time.sleep(0.25)
     time.sleep(args.settle)
-    return "launched: " + send("info")
+    note = "" if args.keep_imgui_ini else " (imgui.ini backed up%s)" % (
+        "; restored a backup a session left" if send("restored_leftover_ini") == "True" else "")
+    return "launched: " + send("info") + note
 
 
 def default_shot_path():
@@ -632,6 +665,8 @@ def main():
     p.add_argument("--settle", type=float, default=5, help="seconds to wait after the window is up (assets stream in)")
     p.add_argument("--timeout", type=float, default=60)
     p.add_argument("--renderdoc", action="store_true", help="run under renderdoccmd, for `renderdoc-capture`")
+    p.add_argument("--keep-imgui-ini", action="store_true",
+                   help="keep the layout the run leaves; by default Config/imgui.ini is put back as it was")
     p.add_argument("extra", nargs="*", help="more arguments for the app, after --")
 
     p = commands.add_parser("shot", help="screenshot the client area")
@@ -663,6 +698,7 @@ def main():
     commands.add_parser("quit", help="kill the app")
     p = commands.add_parser("log", help="the app's output")
     p.add_argument("-n", type=int, default=40)
+    p.add_argument("--engine", action="store_true", help="the newest RZE/Logs/RZELOG_*.txt instead, the engine's own log")
     p.add_argument("--grep")
     p = commands.add_parser("clip", help="the clipboard: clip get, clip set TEXT")
     p.add_argument("action", choices=["get", "set"])
@@ -704,7 +740,14 @@ def main():
         elif c == "close":
             print(send("close", timeout=args.timeout))
         elif c == "log":
-            with open(APP_LOG, errors="replace") as f:
+            path = APP_LOG
+            if args.engine:
+                logs = [os.path.join(ENGINE_LOGS, f) for f in os.listdir(ENGINE_LOGS) if f.startswith("RZELOG_")]
+                if not logs:
+                    raise DriverError("No logs in %s" % ENGINE_LOGS)
+                path = max(logs, key=os.path.getmtime)
+                print("(%s)" % os.path.relpath(path, REPO))
+            with open(path, errors="replace") as f:
                 lines = f.read().splitlines()
             if args.grep:
                 lines = [l for l in lines if args.grep.lower() in l.lower()]

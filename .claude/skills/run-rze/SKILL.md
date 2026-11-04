@@ -164,7 +164,7 @@ downscales a 2560-wide image to 2000, so multiply what you measure by 1.28.
 
 | command | what it does |
 |---|---|
-| `launch [--scene X.scene] [--config debug\|release\|retail] [--app Editor\|Game] [--settle 5] [-- args...]` | Starts the app under the driver. Refuses if one is running. |
+| `launch [--scene X.scene] [--config debug\|release\|retail] [--app Editor\|Game] [--settle 5] [--keep-imgui-ini] [-- args...]` | Starts the app under the driver. Refuses if one is running. Backs up `RZE/Config/imgui.ini` first (below). |
 | `shot [--out path.png]` | Focuses the app and captures its client area (spectacle). |
 | `click X Y [--button left\|right\|middle]`, `dblclick X Y`, `move X Y` | A click, a double-click, a hover. |
 | `drag X Y X2 Y2 [--button ...]` | A drag in 10 steps. |
@@ -175,11 +175,17 @@ downscales a 2560-wide image to 2000, so multiply what you measure by 1.28.
 | `close-window CAPTION` | Closes a window opened since `launch`, by its exact caption. Never one that was already open. |
 | `close [--timeout 30]` | Closes the app's window as a user would and waits: `closed code=0`, or an error with the code. Stops at the unsaved-changes prompt (see `shot`), so `quit` after edits. |
 | `quit` | Kills the app, like `driver.ps1 quit`. |
-| `log [-n 40] [--grep TEXT]` | The app's output. A Game launched from the Editor writes here too. |
+| `log [-n 40] [--grep TEXT] [--engine]` | The app's output. A Game launched from the Editor writes here too. `--engine` reads the newest `RZE/Logs/RZELOG_*.txt` instead. |
 | `clip get`, `clip set TEXT` | The system clipboard (wl-paste, wl-copy), to check ImGui's copy and paste. |
 | `optick [--seconds 2] [--out raw.bin]` | Takes an Optick capture over the network, as Optick's viewer does, and counts what arrived. Debug and Release only. |
 
 How it works, and what to know:
+
+- **`imgui.ini` is put back after every session.** Each Editor run rewrites `RZE/Config/imgui.ini`, which often holds
+  a layout the user means to keep (CLAUDE.md). `launch` copies it aside; `close` and `quit` restore it once the app has
+  exited (their output says `imgui.ini restored`), and so does the helper if the session ends any other way. If a
+  session died before it could, the next `launch` restores that backup first and says so. Pass `--keep-imgui-ini`
+  only when the run is meant to change the layout.
 
 - **It moves the real pointer and takes focus**, like `driver.ps1`. Don't use the mouse while it's acting. Before any
   input it checks, through KWin, that the app's window is active and the point is inside it, so input can't land in
