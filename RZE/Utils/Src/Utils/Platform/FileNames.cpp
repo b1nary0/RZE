@@ -85,23 +85,32 @@ namespace FileNames
 
 	Filepath FindIgnoringCase(const Filepath& path)
 	{
-		if (path.Exists())
-		{
-			return path;
-		}
-
+		// Look in the folder even when path exists: Windows opens it in any case, but only the name as it is on disk
+		// opens it everywhere
 		const std::string name = path.GetFileName();
 		const Filepath folder = path.GetParentFolder();
 		std::error_code error;
-		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(folder.GetAbsolutePath(), error))
+		std::filesystem::directory_iterator entries(folder.GetAbsolutePath(), error);
+		if (error)
+		{
+			return path.Exists() ? path : Filepath();
+		}
+
+		Filepath found;
+		for (const std::filesystem::directory_entry& entry : entries)
 		{
 			const std::string entryName = entry.path().filename().string();
-			if (StringUtils::EqualsIgnoringCase(entryName, name))
+			if (entryName == name)
 			{
-				return Filepath(folder.GetRelativePath() + "/" + entryName);
+				// Exactly as named, which wins where names that differ only in case can sit side by side
+				return path;
+			}
+			if (!found.IsValid() && StringUtils::EqualsIgnoringCase(entryName, name))
+			{
+				found = Filepath(folder.GetRelativePath() + "/" + entryName);
 			}
 		}
-		return Filepath();
+		return found;
 	}
 
 	Filepath MakeUnique(const Filepath& folder, const std::string& name)

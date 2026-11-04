@@ -5,6 +5,8 @@
 
 #include <Utils/DebugUtils/Debug.h>
 
+#include <algorithm>
+
 std::shared_ptr<const StaticMesh> StaticMesh::Create(const std::string& name, std::vector<SubMesh>&& subMeshes, std::vector<Slot>&& slots)
 {
 	std::vector<MeshPlacement> placements(subMeshes.size());
@@ -28,10 +30,8 @@ StaticMesh::StaticMesh(const std::string& name, std::vector<SubMesh>&& subMeshes
 	, m_slots(std::move(slots))
 	, m_placements(std::move(placements))
 {
-	for ([[maybe_unused]] const SubMesh& subMesh : m_subMeshes)
-	{
-		AssertExpr(subMesh.SlotIndex < m_slots.size());
-	}
+	AssertExpr(std::all_of(m_subMeshes.begin(), m_subMeshes.end(),
+		[this](const SubMesh& subMesh) { return subMesh.SlotIndex < m_slots.size(); }));
 
 	m_isAtOrigin.resize(m_placements.size());
 	for (size_t placementIndex = 0; placementIndex < m_placements.size(); ++placementIndex)
