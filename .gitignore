@@ -306,3 +306,5 @@ RZE/RZE.make
 Docs/Generated/Engine/.obsidian/
 # Working plans and notes, kept locally
 Docs/Plans/
+# Claude Code settings for this machine only
+.claude/settings.local.json
