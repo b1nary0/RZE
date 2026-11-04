@@ -62,6 +62,13 @@ Checks marked **(work)** are Windows-only changes, not tests: ask the user befor
   Linux without being compiled for Windows, so it's the riskiest new code. If it fails, give the error text and any
   D3D debug-layer messages. A path that can't be written must answer `"ok":false` with an error; the harness must
   keep running.
+- **B8. State queries (H4).** In a fresh harness on DrawLineTest:
+  1. `{"id":1,"cmd":"state"}` lists the objects (Camera, DirectionalLight, NeckMech, M4, and EditorCam with
+     `"saved":false`), `"modified":false` and an empty selection.
+  2. Do B4's steps 1 and 2. `state` then shows `"selection":["NeckMech"]`, `"modified":true` and `"canUndo":true`.
+     `{"id":2,"cmd":"object","name":"NeckMech"}` shows `"rotation":[0,45,0]` and the components `RenderComponent`
+     and `TransformComponent`, with no `class ` in front (TypeNames).
+  3. `{"id":3,"cmd":"key","keys":"^z"}`. The rotation is back to `[0,0,0]`, with `"atSavePoint":true`.
 - **B6. Known limit, to confirm.** ImGui's SDL backend reads the real global mouse position when the app is focused
   and the real pointer is over no SDL window (Windows and X11 only; never on Wayland). So focus the harness's window,
   move the real mouse off it, and send `click`. Note whether the click lands where the harness put it, or where the

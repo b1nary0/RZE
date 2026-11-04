@@ -42,6 +42,9 @@ namespace Editor
 	protected:
 		void CreateRenderTarget(const Vector2D& dimensions) override;
 
+		// For an app built on the Editor (EditorHarness) to read the Editor's state
+		EditorContext& GetContext() { return m_context; }
+
 	private:
 		void LoadFonts();
 

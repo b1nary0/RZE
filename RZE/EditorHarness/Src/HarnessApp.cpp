@@ -2,6 +2,19 @@
 
 #include <Windowing/Window.h>
 
+#include <RZE.h>
+
+#include <Game/GameScene.h>
+#include <Game/World/GameObject/GameObject.h>
+#include <Game/World/GameObject/ObjectGUID.h>
+#include <Game/World/GameObjectComponents/TransformComponent.h>
+#include <Services/SceneDocument.h>
+#include <Services/UndoHistory.h>
+#include <UI/Framework/EditorContext.h>
+#include <UI/Framework/EditorSelection.h>
+
+#include <Utils/Functor.h>
+
 #include <Rendering/Renderer.h>
 #include <Rendering/TextureReadback.h>
 
@@ -87,6 +100,29 @@ namespace EditorHarness
 				return false;
 			}
 			return true;
+		}
+
+		void WriteVector(ReplyWriter& reply, const char* key, const Vector3D& value)
+		{
+			reply.Key(key);
+			reply.StartArray();
+			reply.Double(value.X());
+			reply.Double(value.Y());
+			reply.Double(value.Z());
+			reply.EndArray();
+		}
+
+		void WriteNameOrNull(ReplyWriter& reply, const char* key, const GameObjectPtr& object)
+		{
+			reply.Key(key);
+			if (object != nullptr)
+			{
+				reply.String(object->GetName().c_str());
+			}
+			else
+			{
+				reply.Null();
+			}
 		}
 
 		Uint8 ToSDLButton(const std::string& name)
@@ -176,6 +212,98 @@ namespace EditorHarness
 			shot.Readback = std::make_shared<Rendering::TextureReadback>();
 			Rendering::Renderer::ReadBackBuffer(shot.Readback);
 			m_pendingShots.push_back(std::move(shot));
+		}
+		else if (name == "state")
+		{
+			Editor::EditorContext& context = GetContext();
+			const Editor::SceneDocument& document = context.GetSceneDocument();
+			const Editor::UndoHistory& undo = context.GetUndoHistory();
+			std::vector<GameObjectPtr> objects;
+			RZE().GetActiveScene().ForEachGameObject(Functor<void, GameObjectPtr>([&objects](GameObjectPtr object)
+				{
+					objects.push_back(object);
+				}));
+			m_channel.Reply(MakeReply(id, "", [&context, &document, &undo, &objects](ReplyWriter& reply)
+				{
+					reply.Key("scene");
+					if (document.HasFilePath())
+					{
+						reply.String(document.GetFilePath().GetRelativePath().c_str());
+					}
+					else
+					{
+						reply.Null();
+					}
+					reply.Key("modified");
+					reply.Bool(document.IsModified());
+					reply.Key("loading");
+					reply.Bool(document.IsLoading());
+					reply.Key("selection");
+					reply.StartArray();
+					for (const GameObjectPtr& selected : context.GetSelection().GetAll())
+					{
+						reply.String(selected->GetName().c_str());
+					}
+					reply.EndArray();
+					reply.Key("canUndo");
+					reply.Bool(undo.CanUndo());
+					reply.Key("canRedo");
+					reply.Bool(undo.CanRedo());
+					reply.Key("atSavePoint");
+					reply.Bool(undo.IsAtSavePoint());
+					// Every object, the editor's own (its camera) among them: "saved" is whether the scene file has it
+					reply.Key("objects");
+					reply.StartArray();
+					for (const GameObjectPtr& object : objects)
+					{
+						reply.StartObject();
+						reply.Key("name");
+						reply.String(object->GetName().c_str());
+						WriteNameOrNull(reply, "parent", object->GetParent());
+						reply.Key("saved");
+						reply.Bool(object->IncludeInSave());
+						reply.EndObject();
+					}
+					reply.EndArray();
+				}));
+		}
+		else if (name == "object")
+		{
+			if (!command.HasMember("name") || !command["name"].IsString())
+			{
+				m_channel.Reply(MakeReply(id, R"(object needs "name", as the Scene panel shows it)"));
+				return;
+			}
+			const std::string objectName = command["name"].GetString();
+			const GameObjectPtr object = RZE().GetActiveScene().FindGameObjectByName(objectName);
+			if (object == nullptr)
+			{
+				m_channel.Reply(MakeReply(id, "No object called " + objectName));
+				return;
+			}
+			m_channel.Reply(MakeReply(id, "", [&object](ReplyWriter& reply)
+				{
+					reply.Key("name");
+					reply.String(object->GetName().c_str());
+					reply.Key("guid");
+					reply.String(ObjectGUIDs::ToString(object->GetGUID()).c_str());
+					WriteNameOrNull(reply, "parent", object->GetParent());
+					// As the Inspector heads them
+					reply.Key("components");
+					reply.StartArray();
+					for (GameObjectComponentBase* component : object->GetComponents())
+					{
+						reply.String(component->GetName().c_str());
+					}
+					reply.EndArray();
+					const GameObjectComponentPtr<TransformComponent> transform = object->GetComponent<TransformComponent>();
+					if (transform != nullptr)
+					{
+						WriteVector(reply, "position", transform->GetPosition());
+						WriteVector(reply, "rotation", transform->GetRotation());
+						WriteVector(reply, "scale", transform->GetScale());
+					}
+				}));
 		}
 		else if (name == "realinput")
 		{
