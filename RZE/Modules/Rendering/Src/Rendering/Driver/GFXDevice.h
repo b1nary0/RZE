@@ -100,5 +100,7 @@ namespace Rendering
 		// Reading back: waits for the GPU, then fills result and marks it ready
 		virtual void ReadTexel(ITextureBuffer2D& texture, U32 x, U32 y, TexelReadback& result) = 0;
 		virtual void ReadTexture(ITextureBuffer2D& texture, TextureReadback& result) = 0;
+		// The frame as it will be presented (RGBA8, rows top first): before Present, which may discard it
+		virtual void ReadBackBuffer(TextureReadback& result) = 0;
 	};
 }

@@ -50,6 +50,18 @@ Checks marked **(work)** are Windows-only changes, not tests: ask the user befor
   Coordinates are for a maximized 2560x1398 client area (`info`'s width and height); scale them for another size.
 - **B5. Real input is dropped.** While B4's harness runs, click its window's M4 row with the real mouse: nothing should
   change. Send `{"cmd":"realinput","on":true}`, click M4 again, and it's selected.
+- **B7. Screenshots from the back buffer (H3, DX11).** With the harness from B4 running, uncovered, send
+  `{"id":7,"cmd":"shot","path":"C:\\Temp\\rze-shot.png"}` (or any writable path). It answers `"ok":true` with the
+  path, width and height. Open the PNG and check:
+  - it's the whole Editor, UI and all, the right way up;
+  - its colours are right: red stays red, so R and B aren't swapped;
+  - it matches a screenshot of the window, apart from the status bar's frame time.
+
+  Then cover the window with another one and send `shot` again: the PNG still shows the Editor. This is
+  `DX11Device::ReadBackBuffer`, which copies swap-chain buffer 0 before Present (FLIP_DISCARD). It was written on
+  Linux without being compiled for Windows, so it's the riskiest new code. If it fails, give the error text and any
+  D3D debug-layer messages. A path that can't be written must answer `"ok":false` with an error; the harness must
+  keep running.
 - **B6. Known limit, to confirm.** ImGui's SDL backend reads the real global mouse position when the app is focused
   and the real pointer is over no SDL window (Windows and X11 only; never on Wayland). So focus the harness's window,
   move the real mouse off it, and send `click`. Note whether the click lands where the harness put it, or where the

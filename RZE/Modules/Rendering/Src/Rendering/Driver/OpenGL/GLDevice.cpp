@@ -849,4 +849,24 @@ namespace Rendering
 
 		result.IsReady.store(true, std::memory_order_release);
 	}
+
+	void GLDevice::ReadBackBuffer(TextureReadback& result)
+	{
+		result.Width = m_backBufferWidth;
+		result.Height = m_backBufferHeight;
+		result.BytesPerTexel = 4;
+		const size_t rowSize = static_cast<size_t>(result.Width) * result.BytesPerTexel;
+		std::vector<U8> rows(rowSize * result.Height);
+		glGetTextureImage(m_backBufferColour, 0, GL_RGBA, GL_UNSIGNED_BYTE, static_cast<GLsizei>(rows.size()), rows.data());
+
+		// The back buffer is drawn GL's way up (its row 0 is the bottom, as the window shows it), so its rows go in
+		// the other order
+		result.Data.resize(rows.size());
+		for (U32 row = 0; row < result.Height; ++row)
+		{
+			memcpy(&result.Data[static_cast<size_t>(row) * rowSize], &rows[static_cast<size_t>(result.Height - 1 - row) * rowSize], rowSize);
+		}
+
+		result.IsReady.store(true, std::memory_order_release);
+	}
 }

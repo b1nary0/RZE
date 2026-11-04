@@ -218,6 +218,7 @@ namespace Rendering
 			case RenderCommandType::Dispatch: Execute(static_cast<RenderCommand_Dispatch&>(*command)); break;
 			case RenderCommandType::ReadTexel: Execute(static_cast<RenderCommand_ReadTexel&>(*command)); break;
 			case RenderCommandType::ReadTexture: Execute(static_cast<RenderCommand_ReadTexture&>(*command)); break;
+			case RenderCommandType::ReadBackBuffer: Execute(static_cast<RenderCommand_ReadBackBuffer&>(*command)); break;
 
 			default:
 			{

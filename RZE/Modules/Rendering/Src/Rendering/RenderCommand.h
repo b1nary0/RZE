@@ -79,7 +79,8 @@ namespace Rendering
 		DrawFullScreenQuad,
 		Dispatch,
 		ReadTexel,
-		ReadTexture
+		ReadTexture,
+		ReadBackBuffer
 	};
 
 	// @todo a dummy class for storing these all separately just to prove out system.
@@ -329,6 +330,13 @@ namespace Rendering
 		RenderCommand_ReadTexture() { type = RenderCommandType::ReadTexture; }
 
 		TextureBuffer2DHandle texture;
+		std::shared_ptr<TextureReadback> result;
+	};
+
+	struct RenderCommand_ReadBackBuffer : RenderCommand
+	{
+		RenderCommand_ReadBackBuffer() { type = RenderCommandType::ReadBackBuffer; }
+
 		std::shared_ptr<TextureReadback> result;
 	};
 

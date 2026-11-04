@@ -131,6 +131,9 @@ namespace Rendering
 		// Copies the whole of a texture's most detailed mip back to the CPU once the GPU has drawn it. Like ReadTexel,
 		// the render thread waits on the GPU for it, so keep it to one-off reads such as saving a capture to a file.
 		static void ReadTexture(const TextureBuffer2DHandle& texture, std::shared_ptr<TextureReadback> result);
+		// Copies this frame back to the CPU as it will be presented, UI and all: RGBA8, rows top first. Read just
+		// before DevicePresent puts it on the window, so whatever this frame draws is in it. Main thread.
+		static void ReadBackBuffer(const std::shared_ptr<TextureReadback>& result);
 
 		static void ClearRenderTarget(const RenderTargetHandle& renderTarget, const Vector4D& colour);
 
@@ -193,6 +196,8 @@ namespace Rendering
 		static std::vector<TextureBuffer2DHandle> m_uiTextures;
 		// Draw calls recorded since TakeDrawCallCount()
 		static U32 m_drawCallCount;
+		// ReadBackBuffer's requests, which DevicePresent records before it presents
+		static std::vector<std::shared_ptr<TextureReadback>> m_backBufferReadbacks;
 	};
 
 	template<typename TType>

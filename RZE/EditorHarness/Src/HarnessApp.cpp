@@ -2,9 +2,17 @@
 
 #include <Windowing/Window.h>
 
+#include <Rendering/Renderer.h>
+#include <Rendering/TextureReadback.h>
+
+#include <Utils/Platform/Filepath.h>
+
 #include <RapidJSON/stringbuffer.h>
 #include <RapidJSON/writer.h>
 
+#include <STB/stb_image_write.h>
+
+#include <filesystem>
 #include <functional>
 
 namespace EditorHarness
@@ -53,6 +61,34 @@ namespace EditorHarness
 			return true;
 		}
 
+		// A shot's file: absolute as given, or relative to the project. A Filepath can't hold just any absolute path
+		// (only ones in Assets or ProjectData), so this works with std::filesystem.
+		std::filesystem::path ResolveShotPath(const std::string& path)
+		{
+			const std::filesystem::path given(path);
+			return given.is_absolute() ? given : std::filesystem::path(Filepath(path).GetAbsolutePath());
+		}
+
+		// Beside it first, then moved over it, so a reader never sees half an image. False, with outError, if not.
+		bool WritePNG(const std::filesystem::path& path, U32 width, U32 height, const U8* rgba, std::string& outError)
+		{
+			std::error_code error;
+			std::filesystem::create_directories(path.parent_path(), error);
+			const std::filesystem::path temporary = path.string() + ".writing";
+			if (error || stbi_write_png(temporary.string().c_str(), static_cast<int>(width), static_cast<int>(height), 4, rgba, static_cast<int>(width * 4)) == 0)
+			{
+				outError = "Couldn't write " + path.string() + (error ? ": " + error.message() : "");
+				return false;
+			}
+			std::filesystem::rename(temporary, path, error);
+			if (error)
+			{
+				outError = "Couldn't move the image to " + path.string() + ": " + error.message();
+				return false;
+			}
+			return true;
+		}
+
 		Uint8 ToSDLButton(const std::string& name)
 		{
 			if (name == "right")
@@ -80,6 +116,7 @@ namespace EditorHarness
 		}
 
 		m_input.Tick();
+		FinishShots();
 		for (const std::string& line : m_channel.TakeCommands())
 		{
 			RunCommand(line);
@@ -125,6 +162,21 @@ namespace EditorHarness
 			window.RequestClose();
 			m_channel.Reply(MakeReply(id, ""));
 		}
+		else if (name == "shot")
+		{
+			if (!command.HasMember("path") || !command["path"].IsString())
+			{
+				m_channel.Reply(MakeReply(id, R"(shot needs "path", the PNG to write: absolute, or relative to the project)"));
+				return;
+			}
+			// This frame, UI and all, as it's presented; written once it's been read back, a frame or two on
+			PendingShot shot;
+			shot.ID = id;
+			shot.Path = command["path"].GetString();
+			shot.Readback = std::make_shared<Rendering::TextureReadback>();
+			Rendering::Renderer::ReadBackBuffer(shot.Readback);
+			m_pendingShots.push_back(std::move(shot));
+		}
 		else if (name == "realinput")
 		{
 			if (!command.HasMember("on") || !command["on"].IsBool())
@@ -142,6 +194,47 @@ namespace EditorHarness
 			{
 				m_channel.Reply(MakeReply(id, error));
 			}
+		}
+	}
+
+	void HarnessApp::FinishShots()
+	{
+		for (auto shot = m_pendingShots.begin(); shot != m_pendingShots.end();)
+		{
+			Rendering::TextureReadback& readback = *shot->Readback;
+			if (!readback.IsReady.load(std::memory_order_acquire))
+			{
+				++shot;
+				continue;
+			}
+
+			// Opaque, whatever the frame left in alpha
+			for (size_t alpha = 3; alpha < readback.Data.size(); alpha += 4)
+			{
+				readback.Data[alpha] = 255;
+			}
+			const std::filesystem::path path = ResolveShotPath(shot->Path);
+			std::string error;
+			if (readback.BytesPerTexel != 4)
+			{
+				error = "The back buffer isn't RGBA8";
+			}
+			else
+			{
+				WritePNG(path, readback.Width, readback.Height, readback.Data.data(), error);
+			}
+			const U32 width = readback.Width;
+			const U32 height = readback.Height;
+			m_channel.Reply(MakeReply(shot->ID, error, [&path, width, height](ReplyWriter& reply)
+				{
+					reply.Key("path");
+					reply.String(path.string().c_str());
+					reply.Key("width");
+					reply.Uint(width);
+					reply.Key("height");
+					reply.Uint(height);
+				}));
+			shot = m_pendingShots.erase(shot);
 		}
 	}
 

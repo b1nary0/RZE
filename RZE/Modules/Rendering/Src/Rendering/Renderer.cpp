@@ -24,6 +24,7 @@ namespace Rendering
 	int Renderer::m_uiFrameNumber = -1;
 	std::vector<TextureBuffer2DHandle> Renderer::m_uiTextures;
 	U32 Renderer::m_drawCallCount = 0;
+	std::vector<std::shared_ptr<TextureReadback>> Renderer::m_backBufferReadbacks;
 
 	inline void* AllocateCommandData(void* src, size_t dataTypeSize, size_t count)
 	{
@@ -85,6 +86,15 @@ namespace Rendering
 
 	void Renderer::DevicePresent()
 	{
+		// After everything this frame draws, and before Present, which may discard the back buffer (flip model)
+		for (const std::shared_ptr<TextureReadback>& readback : m_backBufferReadbacks)
+		{
+			RenderCommand_ReadBackBuffer* readCommand = MemArena::AllocType<RenderCommand_ReadBackBuffer>();
+			readCommand->result = readback;
+			m_renderThread.PushCommand(readCommand);
+		}
+		m_backBufferReadbacks.clear();
+
 		RenderCommand_DevicePresent* command = MemArena::AllocType<RenderCommand_DevicePresent>();
 		m_renderThread.PushCommand(command);
 
@@ -466,6 +476,11 @@ namespace Rendering
 		command->result = std::move(result);
 
 		m_renderThread.PushCommand(command);
+	}
+
+	void Renderer::ReadBackBuffer(const std::shared_ptr<TextureReadback>& result)
+	{
+		m_backBufferReadbacks.push_back(result);
 	}
 
 	void Renderer::ClearRenderTarget(const RenderTargetHandle& renderTarget, const Vector4D& colour)

@@ -85,6 +85,7 @@ namespace Rendering
 
 		void ReadTexel(ITextureBuffer2D& texture, U32 x, U32 y, TexelReadback& result) override;
 		void ReadTexture(ITextureBuffer2D& texture, TextureReadback& result) override;
+		void ReadBackBuffer(TextureReadback& result) override;
 
 	public:
 		// For this backend's resources and ImGui renderer

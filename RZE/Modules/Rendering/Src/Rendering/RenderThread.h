@@ -136,6 +136,7 @@ namespace Rendering
 		// Reading back
 		void Execute(RenderCommand_ReadTexel& command);
 		void Execute(RenderCommand_ReadTexture& command);
+		void Execute(RenderCommand_ReadBackBuffer& command);
 
 		// Named regions for PIX and similar tools; no-ops when no profiler is attached
 		void BeginProfilerEvent(const char* name);

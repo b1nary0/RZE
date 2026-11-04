@@ -65,10 +65,10 @@ namespace Rendering
 		// finish drawing it, then calls read(mapped) before unmapping. Reads are rare (a click, a capture), so the
 		// staging copy is made for each one rather than kept around.
 		template <typename ReadFunc>
-		void ReadBackRegion(DX11Device& device, DX11TextureBuffer2D& texture, const D3D11_BOX& box, ReadFunc&& read)
+		void ReadBackRegion(DX11Device& device, ID3D11Texture2D& texture, const D3D11_BOX& box, ReadFunc&& read)
 		{
 			D3D11_TEXTURE2D_DESC stagingDesc;
-			texture.GetHWResource()->GetDesc(&stagingDesc);
+			texture.GetDesc(&stagingDesc);
 			// D3D only copies depth-stencil textures whole, and wants no box for that
 			const bool isWhole = box.left == 0 && box.top == 0 && box.right == stagingDesc.Width && box.bottom == stagingDesc.Height;
 			stagingDesc.Width = box.right - box.left;
@@ -84,7 +84,7 @@ namespace Rendering
 			AssertExpr(hr == S_OK);
 
 			ID3D11DeviceContext& deviceContext = device.GetDeviceContext();
-			deviceContext.CopySubresourceRegion(staging, 0, 0, 0, 0, texture.GetHWResource(), 0, isWhole ? nullptr : &box);
+			deviceContext.CopySubresourceRegion(staging, 0, 0, 0, 0, &texture, 0, isWhole ? nullptr : &box);
 
 			D3D11_MAPPED_SUBRESOURCE mapped;
 			hr = deviceContext.Map(staging, 0, D3D11_MAP_READ, 0, &mapped);
@@ -667,7 +667,7 @@ namespace Rendering
 		AssertExpr(bytesPerTexel <= sizeof(result.Value));
 
 		const D3D11_BOX texel = { x, y, 0, x + 1, y + 1, 1 };
-		ReadBackRegion(*this, *texturePtr, texel, [&result, bytesPerTexel](const D3D11_MAPPED_SUBRESOURCE& mapped)
+		ReadBackRegion(*this, *texturePtr->GetHWResource(), texel, [&result, bytesPerTexel](const D3D11_MAPPED_SUBRESOURCE& mapped)
 			{
 				result.Value = 0;
 				memcpy(&result.Value, mapped.pData, bytesPerTexel);
@@ -691,7 +691,7 @@ namespace Rendering
 		result.Data.resize(rowSize * result.Height);
 
 		const D3D11_BOX whole = { 0, 0, 0, desc.Width, desc.Height, 1 };
-		ReadBackRegion(*this, *texturePtr, whole, [&result, rowSize](const D3D11_MAPPED_SUBRESOURCE& mapped)
+		ReadBackRegion(*this, *texturePtr->GetHWResource(), whole, [&result, rowSize](const D3D11_MAPPED_SUBRESOURCE& mapped)
 			{
 				// Mapped rows can be padded past the texture's width
 				const U8* source = static_cast<const U8*>(mapped.pData);
@@ -700,6 +700,37 @@ namespace Rendering
 					memcpy(&result.Data[row * rowSize], source + static_cast<size_t>(row) * mapped.RowPitch, rowSize);
 				}
 			});
+
+		result.IsReady.store(true, std::memory_order_release);
+	}
+
+	void DX11Device::ReadBackBuffer(TextureReadback& result)
+	{
+		// Buffer 0 is the one being drawn, until Present (FLIP_DISCARD) hands it to the window
+		ID3D11Texture2D* backBuffer = nullptr;
+		HRESULT hr = mSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&backBuffer));
+		AssertExpr(hr == S_OK);
+
+		D3D11_TEXTURE2D_DESC desc;
+		backBuffer->GetDesc(&desc);
+		result.Width = desc.Width;
+		result.Height = desc.Height;
+		// R8G8B8A8_UNORM, as the swap chain is made
+		result.BytesPerTexel = GetBytesPerTexel(desc.Format);
+
+		const size_t rowSize = static_cast<size_t>(result.Width) * result.BytesPerTexel;
+		result.Data.resize(rowSize * result.Height);
+
+		const D3D11_BOX whole = { 0, 0, 0, desc.Width, desc.Height, 1 };
+		ReadBackRegion(*this, *backBuffer, whole, [&result, rowSize](const D3D11_MAPPED_SUBRESOURCE& mapped)
+			{
+				const U8* source = static_cast<const U8*>(mapped.pData);
+				for (U32 row = 0; row < result.Height; ++row)
+				{
+					memcpy(&result.Data[row * rowSize], source + static_cast<size_t>(row) * mapped.RowPitch, rowSize);
+				}
+			});
+		backBuffer->Release();
 
 		result.IsReady.store(true, std::memory_order_release);
 	}
