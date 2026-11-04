@@ -16,6 +16,8 @@ using Sharpmake;
 // Applications
 [module: Sharpmake.Include("Editor/Editor.sharpmake.cs")]
 [module: Sharpmake.Include("Game/Game.sharpmake.cs")]
+// Test harnesses, for automation drivers (.claude/skills/run-rze)
+[module: Sharpmake.Include("EditorHarness/EditorHarness.sharpmake.cs")]
 // Tests
 [module: Sharpmake.Include("UnitTests/UnitTests.sharpmake.cs")]
 
@@ -57,6 +59,7 @@ public class RZE : Solution
         conf.AddProject<EditorLib>(target);
         conf.AddProject<Editor>(target);
         conf.AddProject<Game>(target);
+        conf.AddProject<EditorHarness>(target);
         conf.AddProject<UnitTests>(target);
     }
 }

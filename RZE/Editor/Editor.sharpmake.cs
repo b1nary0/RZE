@@ -24,6 +24,24 @@ public class EditorLib : BaseProject
         conf.IncludePaths.Add(Path.Combine(Globals.RootDir, "Utils"));
         conf.AddPublicDependency<Engine>(target);
     }
+
+    // For an executable made from it (Editor, EditorHarness): panels register themselves from static initializers
+    // (REGISTER_EDITOR_PANEL) that nothing references, so the linker would drop them without this
+    public static void LinkWhole(Project.Configuration conf, CommonTarget target)
+    {
+        conf.AddPublicDependency<EditorLib>(target);
+        if (target.Platform == Platform.win64)
+        {
+            conf.AdditionalLinkerOptions.Add("/WHOLEARCHIVE:EditorLib.lib");
+        }
+        else
+        {
+            // Found through the build folder's -L, which comes first
+            conf.AdditionalLinkerOptions.Add("-Wl,--whole-archive");
+            conf.AdditionalLinkerOptions.Add("-l:libEditorLib.a");
+            conf.AdditionalLinkerOptions.Add("-Wl,--no-whole-archive");
+        }
+    }
 }
 
 [Generate]
@@ -44,20 +62,7 @@ public class Editor : BaseProject
     {
         base.ConfigureAll(conf, target);
         conf.IncludePaths.Add(Path.Combine(Globals.RootDir, "Utils"));
-        conf.AddPublicDependency<EditorLib>(target);
-        // Panels register themselves from static initializers (REGISTER_EDITOR_PANEL) that nothing references, so
-        // the linker would drop them without this
-        if (target.Platform == Platform.win64)
-        {
-            conf.AdditionalLinkerOptions.Add("/WHOLEARCHIVE:EditorLib.lib");
-        }
-        else
-        {
-            // Found through the build folder's -L, which comes first
-            conf.AdditionalLinkerOptions.Add("-Wl,--whole-archive");
-            conf.AdditionalLinkerOptions.Add("-l:libEditorLib.a");
-            conf.AdditionalLinkerOptions.Add("-Wl,--no-whole-archive");
-        }
+        EditorLib.LinkWhole(conf, target);
         ConfigureAsWindowedApp(conf);
     }
 }
