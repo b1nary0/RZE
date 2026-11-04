@@ -33,11 +33,11 @@ Each line has a level (`Debug::ELogLevel`), and each level has a stream form and
 - A failed assert is logged at Error (see Asserts, below).
 - stdout only shows up when the process has a console; see [The console](#the-console).
 
-Some messages used to go around the log, and now go through it: shader compile output (`DX11ShaderTypes.cpp`'s `LogCompileMessages`: Error if the compile failed, Warning if it compiled with warnings; it used to go only to Visual Studio's Output window), the Editor's own messages (which reached the Log panel but not the log file), and the window being created (which went to stdout only). Two command-line messages in `CmdLine.cpp` still `printf_s` to stdout only, since they come before the log file exists.
+Some messages used to go around the log, and now go through it: shader compile output (DX11: `DX11ShaderTypes.cpp`'s `LogCompileMessages`, Error if the compile failed and Warning if it compiled with warnings, which used to go only to Visual Studio's Output window; OpenGL: `GLShaderTypes.cpp` logs an Error with the translator's or the driver's message), the Editor's own messages (which reached the Log panel but not the log file), and the window being created (which went to stdout only). Two command-line messages in `CmdLine.cpp` still `printf` to stdout only, since they come before the log file exists.
 
 ### The console
 
-The Editor and the Game are windowed apps (`/SUBSYSTEM:WINDOWS`), so they start without a console. On Windows 11 a console app's console opens in Windows Terminal, and that window came up after the app's own and took the foreground, so they opened unfocused. Their log is in the log file, and the Editor's is in its Log panel too. `-console` opens a console: `RZE_Application::ParseArguments` calls `Debug::OpenConsole()`, which allocates one and reopens stdout and stderr on it. Its window appears before the app's, which still ends up focused. SourceAssetBurner and UnitTests are console apps.
+On Windows, the Editor and the Game are windowed apps (`/SUBSYSTEM:WINDOWS`), so they start without a console. On Windows 11 a console app's console opens in Windows Terminal, and that window came up after the app's own and took the foreground, so they opened unfocused. Their log is in the log file, and the Editor's is in its Log panel too. `-console` opens a console: `RZE_Application::ParseArguments` calls `Debug::OpenConsole()`, which allocates one and reopens stdout and stderr on it. Its window appears before the app's, which still ends up focused. SourceAssetBurner, UnitTests and EditorHarness are console apps. Linux has no such split: every program has the terminal it was started from, if any, and `Debug::OpenConsole()` does nothing and returns true.
 
 ### Which builds have what
 
@@ -57,8 +57,10 @@ In Retail, the log macros still "use" their arguments in a dead branch, so varia
 
 A failing assert:
 1. writes `Assertion failed: <expression>, file <file>, line <n>` (and the message, if any, on a second line) to stderr and to the log at Error, as one entry, so it reaches the log file and the Log panel without a console. An assert that fires while another is being logged, e.g. from the log sink, only goes to stderr, since logging it would recurse or block on the log file's lock;
-2. shows the CRT assert dialog with the **expression and message**, in both console and windowed apps;
-3. if you choose **Retry**, breaks into the debugger on the line of the failing assert (`__debugbreak` sits in the macro, not in a helper function). **Ignore** carries on, and **Abort** quits.
+2. on Windows, shows the CRT assert dialog with the **expression and message**, in both console and windowed apps. **Retry** breaks into the debugger on the line of the failing assert (`RZE_DEBUG_BREAK()` sits in the macro, not in a helper function), **Ignore** carries on, and **Abort** quits;
+3. on Linux, where there's no dialog to ask, breaks there only when a debugger is attached (`TracerPid` in `/proc/self/status`), as Retry would, and otherwise carries on, as Ignore would.
+
+`Debug::SetAssertFailureHook(hook)` puts a function in place of the dialog or the break, on both platforms: the unit tests use it to turn an assert into a failed check ([Building-And-Running.md](../01-GettingStarted/Building-And-Running.md#unit-tests)). It's handed the report and returns whether to break.
 
 ## `DebugServices` (`Engine\Src\DebugUtils\DebugServices.h/.cpp`)
 
@@ -111,10 +113,10 @@ These work without `-perfcapture` too; see [Engine-Startup-And-Frame-Loop.md](..
 
 ## Key files
 
-- `Utils\Src\Utils\DebugUtils\Debug.h/.cpp` — log levels and macros, log file, log sink, assert dialog
+- `Utils/Src/Utils/DebugUtils/Debug.h/.cpp` — log levels and macros, log file, log sink, asserts; the OS half in `Utils/Src/Utils/Platform/Windows/DebugWindows.cpp` and `Linux/DebugLinux.cpp`
 - `Engine\Src\DebugUtils\DebugServices.h/.cpp` — channels and their colours
 - `Editor\Src\UI\Panels\LogPanel.h/.cpp`, `LogFilter.h/.cpp` — the Log panel and its filter (see [Editor-Panels.md](../07-Editor/Editor-Panels.md#log-logpanel))
-- `Modules\Rendering\Src\Rendering\Driver\DX11\DX11ShaderTypes.cpp` — `LogCompileMessages`
+- `Modules/Rendering/Src/Rendering/Driver/DX11/DX11ShaderTypes.cpp` — `LogCompileMessages`; `Driver/OpenGL/GLShaderTypes.cpp`
 - `Engine\Src\DebugUtils\FrameTimeCapture.h/.cpp`
 - `Engine\Src\EngineCore\Engine.cpp` — `TraceLogLine`, the engine's log sink
 - `Utils\Src\Utils\Platform\Timers\HiResTimer.h/.cpp`

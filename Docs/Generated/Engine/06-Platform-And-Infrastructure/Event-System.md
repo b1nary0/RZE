@@ -1,6 +1,6 @@
 # Event System
 
-`Engine\Src\Events\` implements a generic, engine-wide publish/subscribe event bus — distinct from `InputHandler`'s action-binding model ([Input-System.md](Input-System.md)), though both are ultimately fed by the same Win32 message pump via `Win32Window`. It's also separate from the Editor's typed `EditorEvents` (scene loaded, selection changed, ...), described in [Editor-Framework.md](../07-Editor/Editor-Framework.md#events).
+`Engine\Src\Events\` implements a generic, engine-wide publish/subscribe event bus — distinct from `InputHandler`'s action-binding model ([Input-System.md](Input-System.md)), though both are ultimately fed by the window's one pump of SDL events, in `Window` ([Windowing.md](Windowing.md)). It's also separate from the Editor's typed `EditorEvents` (scene loaded, selection changed, ...), described in [Editor-Framework.md](../07-Editor/Editor-Framework.md#events).
 
 ## Types
 
@@ -26,14 +26,14 @@ void ProcessEvents();                                                 // drains 
 
 ## What it's used for today
 
-Primarily window lifecycle notifications: `RZE_Engine::RegisterWindowEvents()` subscribes to `EEventType::Window` so the engine can react to resize (`RenderEngine::ResizeCanvas`) and destroy (`PostExit()`) without those call sites needing to know about `Win32Window` internals directly.
+Primarily window lifecycle notifications: `RZE_Engine::RegisterWindowEvents()` subscribes to `EEventType::Window` so the engine can react to resize (`RenderEngine::ResizeCanvas`) and destroy (`PostExit()`) without those call sites needing to know about the window's internals.
 
 ## Diagram
 
 ```mermaid
 %%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
 flowchart TD
-    Win[Win32Window::CompileWindowMessages] -->|PostWindowEvent| Queue[EventHandler::mEventQueue]
+    Win[Window::CompileWindowMessages] -->|PostWindowEvent| Queue[EventHandler::mEventQueue]
     Queue -->|ProcessEvents each frame| Dispatch{mEventNotifyMap<br/>by eventType}
     Dispatch --> H1["RZE_Engine: resize -> RenderEngine::ResizeCanvas"]
     Dispatch --> H2["RZE_Engine: destroy -> PostExit()"]
