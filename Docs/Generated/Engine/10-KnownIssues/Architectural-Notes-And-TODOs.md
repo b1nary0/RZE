@@ -41,6 +41,10 @@ Rough edges the codebase is candid about (source comments, `#TODO`s), plus a few
 | 33 | The lit pixel shaders compile with an uninitialised-variable warning | Shaders | — | **Fixed** (10-24: single returns) |
 | 34 | Any light change re-renders every shadow map | Rendering | — | **Fixed** (10-25: per-light shadow caching) |
 | 35 | The sun's shadow map re-renders whenever any object changes | Rendering | Low | Open |
+| 36 | Wayland limits the custom title bar and the window | Windowing (Linux) | Low | Open, by design of Wayland |
+| 37 | RenderDoc can't capture the Linux build as it runs normally | Renderer (Linux) | Low | Open, worked around |
+| 38 | An EditorHarness screenshot stalls the Editor for about a second | Harness | Low | Open |
+| 39 | ImGui can follow the real mouse in a focused harness window | Harness | Low | Open, to confirm on Windows |
 
 ```mermaid
 quadrantChart
@@ -196,7 +200,7 @@ The first unit of work in any budget always runs, even when it's bigger than the
 
 ## 32. A shader that doesn't compile crashes the app
 
-`DX11VertexShader::Create` and `DX11PixelShader::Create` log the compiler's errors (at Error, through `LogCompileMessages`), then pass the compiled blob straight to `CreateVertexShader` / `CreatePixelShader`. When the compile failed the blob is null, so the app crashes with an access violation. The error reaches the log file first, but not the Log panel. A fix would skip creating the shader when `D3DCompileFromFile` fails, and have the resource load fail like any other (a `Texture2D` that won't load already does).
+On DX11 only. `DX11VertexShader::Create` and `DX11PixelShader::Create` log the compiler's errors (at Error, through `LogCompileMessages`), then pass the compiled blob straight to `CreateVertexShader` / `CreatePixelShader`. When the compile failed the blob is null, so the app crashes with an access violation. The error reaches the log file first, but not the Log panel. A fix would skip creating the shader when `D3DCompileFromFile` fails, and have the resource load fail like any other (a `Texture2D` that won't load already does). The OpenGL backend already does the first half: a shader that won't translate or link is logged and left empty, so its draws do nothing.
 
 ## 33. The lit pixel shaders compile with an uninitialised-variable warning
 
@@ -209,6 +213,28 @@ The first unit of work in any budget always runs, even when it's bigger than the
 ## 35. The sun's shadow map re-renders whenever any object changes
 
 The directional map is fitted around every render object as seen from the light, so `ShadowRenderStage` renders it again whenever any object is added, removed, moved or re-meshed (`RenderScene::GetObjectsRevision`), wherever it is. In Sponza that's a 4096² pass over every caster each frame something moves. Caching it against changes elsewhere would need a fit that doesn't move with every object (e.g. one padded around the scene, re-fitted only when an object leaves it), or cascades that each cache their own region.
+
+## 36. Wayland limits the custom title bar and the window
+
+On Linux under Wayland, a few things the window does on Windows and X11 can't be done:
+- **double-clicking the custom title bar doesn't maximize**, since SDL takes the press on a draggable region for the move;
+- **the window can't place itself** on the launch monitor's work area, and neither can the splash screen centre itself; the compositor decides;
+- **`IsMinimised()` is always false**, since xdg-shell never reports it (it only throttles frames, and an unfocused window is already throttled);
+- GNOME ignores per-window icons (KDE shows them).
+
+The maximize button still works, and `SDL_VIDEO_DRIVER=x11` (XWayland) restores placement. See [Windowing.md](../06-Platform-And-Infrastructure/Windowing.md#custom-title-bar).
+
+## 37. RenderDoc can't capture the Linux build as it runs normally
+
+RenderDoc turns capturing off for the whole process ("captures disabled") once anything calls GL it doesn't support. SDL draws window surfaces, the splash screen's among them, with its OpenGL renderer when it can, through fixed-function calls (`glMatrixMode`, `glOrtho`, ...). The RenderDoc 1.45 build Fedora packages also reads its capture key only through xlib. `driver.py launch --renderdoc` works around both: it runs the app on XWayland (`SDL_VIDEO_DRIVER=x11`) with SDL's accelerated window surfaces off (`SDL_FRAMEBUFFER_ACCELERATION=0`); a capture started from RenderDoc's own UI needs the same two variables. A fix in the engine would draw the splash screen without SDL's window surface.
+
+## 38. An EditorHarness screenshot stalls the Editor for about a second
+
+The harness's `shot` encodes the 2560×1398 PNG on the main thread (`stbi_write_png`), so that frame takes about a second. Fine for checks; it could upset something timing-sensitive, such as a double-click spread across it. Encoding on a worker would fix it.
+
+## 39. ImGui can follow the real mouse in a focused harness window
+
+`imgui_impl_sdl3` gives ImGui the real global mouse position when the app is focused and the real pointer is over no SDL window, on drivers that support global mouse state (Windows and X11, never Wayland). EditorHarness's mouse input doesn't move the real pointer, so in that case ImGui could see the real pointer instead. Keep the harness's window unfocused, or the real mouse over it; `.claude/WindowsChecks.md` (B6) confirms what Windows does.
 
 ## Key files
 
@@ -228,3 +254,4 @@ The directional map is fitted around every render object as seen from the light,
 - `Engine\Src\Game\StaticMeshResource.h/.cpp` (24), `Engine\Src\Game\World\GameObjectComponents\RenderComponent.cpp` (25)
 - `Engine\Src\Graphics\MaterialSlot.cpp` (26)
 - `Modules\Rendering\Src\Rendering\Driver\DX11\DX11ShaderTypes.cpp` (32), `Assets\Shaders\Common\Lighting.hlsli` (33)
+- `Engine/Src/Windowing/Linux/WindowNativeLinux.cpp` (36), `.claude/skills/run-rze/driver.py` (37), `EditorHarness/Src/HarnessApp.cpp` (38), `HarnessInput.cpp`, `Externals/Src/imgui/imgui_impl_sdl3.cpp` (39)

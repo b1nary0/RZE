@@ -12,7 +12,7 @@ Everything spatial in the engine, the Editor and the content assumes these. The 
 | **Angles people see** | **Degrees**: `TransformComponent` rotation, camera FOV, the inspector, ImGuizmo, scene files. |
 | **Angles in maths** | **Radians** inside trig and math calls. Convert only with `MathUtils::ToRadians` / `ToDegrees`. |
 | **Euler order** | `R = Rz * Ry * Rx`, so X is applied first. This is what `glm::quat(eulerRadians)` builds in `Matrix4x4::CreateInPlace`, and what ImGuizmo's matrix (de)composition uses. |
-| **Clip-space depth** | D3D's **0..1** (`CreatePerspectiveMatrixZeroToOne`), not OpenGL's −1..1. |
+| **Clip-space depth** | D3D's **0..1** (`CreatePerspectiveMatrixZeroToOne`), not OpenGL's usual −1..1, on both APIs: the OpenGL backend sets it (`glClipControl`), and draws the engine's targets D3D's way up too. |
 | **Matrices** | glm, column-major, multiplied `projection * view * world`. |
 | **Triangle winding** | Counter-clockwise front faces, as models are authored. |
 

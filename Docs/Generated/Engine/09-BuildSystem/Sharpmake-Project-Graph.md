@@ -51,7 +51,7 @@ DevEnv (`vs2017`, Kits Root `10.0.18362.0`) and calls `arguments.Generate<RZE>()
   - **Folder tokens.** A folder named `Windows` or `DX11` anywhere under a project's `Src` is compiled only on
     Windows; one named `Linux` or `OpenGL`, only on Linux. Per-platform code therefore needs no `#if`: e.g.
     `Utils/Platform/Windows/ShellWindows.cpp` and `Linux/ShellLinux.cpp` both implement `Shell.h`, and the build
-    picks one.
+    picks one. See [Platforms-And-Graphics-APIs.md](../06-Platform-And-Infrastructure/Platforms-And-Graphics-APIs.md).
   - `ConfigureAsWindowedApp(conf)` builds a Windows exe as a windowed app (`SubSystem.Windows`, with
     `/ENTRY:mainCRTStartup` so the entry point is still `main`); the Editor and the Game use it, so no console window
     opens and takes focus from theirs ([Debug-Services-And-Logging.md](../06-Platform-And-Infrastructure/Debug-Services-And-Logging.md#the-console)).

@@ -175,7 +175,7 @@ The update is split into a scene part, which runs every frame, and a UI part, wh
 
 1. It tells the `FramePacer` the frame's work is done. If the frame is paced and has at least 1 ms to spare before the next one is due (less a 1.5 ms safety margin), `AsyncOperationManager::TickIdle` gets that time ([Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md#async-operations)). It runs after `Finish()`, so it adds nothing to this frame's latency.
 2. `PreciseSleep` sleeps until the CPU cap lets the next frame start: a high-resolution waitable timer, then a spin for the last millisecond, since timer wake-ups can be that late.
-3. `RenderEngine::WaitForPresentSlot()` waits until the swap chain can queue another frame, so at most two are in flight (DX11; on OpenGL, presenting waits for the display itself, so there's never a slot to wait for) ([Low-Level-Renderer-Module.md](../04-Rendering/Low-Level-Renderer-Module.md#the-swap-chain-and-vsync)). It comes last so the next frame reads its input as late as possible, and with vsync it's what paces frames. It gives up after 100 ms, e.g. while the window is minimised and nothing presents.
+3. `RenderEngine::WaitForPresentSlot()` waits until the swap chain can queue another frame, so at most two are in flight (DX11; on OpenGL, presenting waits for the display itself, so there's never a slot to wait for) ([Low-Level-Renderer-Module.md](../04-Rendering/Low-Level-Renderer-Module.md#presenting-and-vsync)). It comes last so the next frame reads its input as late as possible, and with vsync it's what paces frames. It gives up after 100 ms, e.g. while the window is minimised and nothing presents.
 
 ## Frame pacing
 

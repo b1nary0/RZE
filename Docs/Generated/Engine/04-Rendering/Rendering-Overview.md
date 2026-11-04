@@ -1,6 +1,6 @@
 # Rendering: Overview & Design Philosophy
 
-RZE renders with DirectX 11, split into three layers. Each layer only talks to the one below it:
+RZE renders with DirectX 11 on Windows and OpenGL 4.5 on Linux, the same way on both, split into three layers. Each layer only talks to the one below it, and only the bottom one knows the API:
 
 ```mermaid
 %%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
@@ -14,19 +14,19 @@ flowchart TD
         direction LR
         API["Renderer:: static calls"] --> Queue["command queue<br/>(MemArena-backed)"] --> Thread["render thread"]
     end
-    subgraph L3["3 - The GPU API: Driver/DX11"]
+    subgraph L3["3 - The GPU API: the RHI (Driver/)"]
         direction LR
-        Dev["DX11Device, buffers,<br/>textures, shaders"]
+        Dev["IGFXDevice, buffers,<br/>textures, shaders"] --> Backends["DX11Device (Windows)<br/>or GLDevice (Linux)"]
     end
     L1 -->|"draw / state / create commands"| L2
-    L2 -->|"ID3D11DeviceContext calls"| L3
+    L2 -->|"IGFXDevice calls"| L3
 ```
 
 | Layer | Answers | Main types | Read |
 |---|---|---|---|
 | **RenderEngine** | *What* is drawn, in which passes, from which views | `RenderEngine`, `RenderObject`, `RenderView`, `IRenderStage`, `RenderPipeline` | [Engine-Graphics-Layer.md](Engine-Graphics-Layer.md), [Render-Stages.md](Render-Stages.md) |
 | **Renderer** | *How* work reaches the GPU without stalling the game | `Rendering::Renderer`, `RenderThread`, `RenderCommand_*`, handles | [Low-Level-Renderer-Module.md](Low-Level-Renderer-Module.md) |
-| **Driver** | The D3D11 specifics | `DX11Device`, `DX11TextureBuffer2D`, ... | [Low-Level-Renderer-Module.md](Low-Level-Renderer-Module.md) |
+| **Driver** | The graphics API's specifics, behind one interface | `IGFXDevice`; `DX11Device`, `DX11TextureBuffer2D`, ...; `GLDevice`, `GLTextureBuffer2D`, `GLShaderTranslator`, ... | [Low-Level-Renderer-Module.md](Low-Level-Renderer-Module.md#the-rhi-igfxdevice-and-the-backends) |
 
 Assets feeding all this (meshes, materials, textures, shaders) are covered in [Materials-Meshes-Shaders.md](Materials-Meshes-Shaders.md).
 
@@ -45,7 +45,7 @@ All of this is *queued* on the game thread and *executed* on the render thread o
 
 ## Conventions worth knowing
 
-- **Clip-space depth is D3D's 0..1**, not OpenGL's −1..1. Projections come from `Matrix4x4::CreatePerspectiveMatrixZeroToOne` / `CreateOrthoMatrixZeroToOne`, and `Frustum` assumes it.
+- **Clip-space depth is D3D's 0..1**, not OpenGL's usual −1..1, on both APIs: the OpenGL backend sets it with `glClipControl`. Projections come from `Matrix4x4::CreatePerspectiveMatrixZeroToOne` / `CreateOrthoMatrixZeroToOne`, and `Frustum` assumes it.
 - **Matrices are glm, column-major, multiplied `projection * view * world`.** `RenderCamera::ClipSpace` is `projection * view`, and `RenderCamera::Projection` the projection alone (for passes that rebuild positions from depth).
 - **World units are metres, Y is up and the world is right-handed** (`Utils/Math/Units.h`).
 - **HDR until the end.** The forward pass writes linear `RGBA16_FLOAT`; only post-processing converts to 8-bit sRGB.
@@ -60,7 +60,7 @@ The engine's own design notes (`Docs\RenderSystemThoughts.txt`, `Docs\Render_Arc
 |---|---|---|
 | RenderSystem | `RenderEngine` + the `IRenderStage` pipeline | `Engine\Src\Graphics\` |
 | Renderer (called "Diotima" in one internal note) | `Rendering::Renderer` + `RenderThread` | `Modules\Rendering\` |
-| Driver API | `Rendering::DX11Device` and friends | `Modules\Rendering\Src\Rendering\Driver\DX11\` |
+| Driver API | `Rendering::IGFXDevice`, with `DX11Device` or `GLDevice` and friends | `Modules/Rendering/Src/Rendering/Driver/` (`DX11/`, `OpenGL/`) |
 
 The notes list RenderSystem's intended jobs as: keeping render state in sync with component add/remove/modify, **bucketing** RenderObjects into passes (e.g. shadow casters), **culling** to what the view can see, and sending creation/update requests to the Renderer. **Culling is implemented today** (per object and per submesh, in the depth prepass, forward, shadow-fitting, probe capture and pick passes). **Bucketing isn't**: each stage still walks the whole render-object list, and every submesh is its own draw call (see [10-KnownIssues](../10-KnownIssues/Architectural-Notes-And-TODOs.md)).
 
@@ -101,4 +101,4 @@ The same notes end on a question that's still worth keeping in mind: *"Should we
 - [Render-Stages.md](Render-Stages.md) — the pipeline and every stage, with diagrams
 - [Engine-Graphics-Layer.md](Engine-Graphics-Layer.md) — `RenderEngine`, render objects, views, the frame lifecycle
 - [Materials-Meshes-Shaders.md](Materials-Meshes-Shaders.md) — asset representation hierarchy
-- [Low-Level-Renderer-Module.md](Low-Level-Renderer-Module.md) — the command-buffer render thread and DX11 driver layer
+- [Low-Level-Renderer-Module.md](Low-Level-Renderer-Module.md) — the command-buffer render thread, the RHI, and the DX11 and OpenGL backends
