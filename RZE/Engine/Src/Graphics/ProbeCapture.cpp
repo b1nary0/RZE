@@ -1,6 +1,7 @@
 #include <StdAfx.h>
 #include <Graphics/ProbeCapture.h>
 
+#include <Graphics/CubeMap.h>
 #include <Graphics/IndexBuffer.h>
 #include <Graphics/Material.h>
 #include <Graphics/MaterialDefines.h>
@@ -12,7 +13,6 @@
 
 #include <Rendering/Renderer.h>
 
-#include <Utils/Math/CubeMap.h>
 #include <Utils/Math/Frustum.h>
 #include <Utils/Math/Matrix4x4.h>
 

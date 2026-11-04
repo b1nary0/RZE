@@ -101,6 +101,10 @@ flowchart TD
 
 A point that captures its surroundings for glossy surfaces to reflect, and the box it's used in: centred on it, along the world's axes, sized to the room so reflections can be projected onto its sides. `ReflectionProbeComponent` (Size, Blend Distance) places one at its object's position; the editor shows it as a shiny-ball icon with its box. Like a light, it has no GPU resources of its own; `ReflectionProbeStage` keeps a scene's together ([Render-Stages.md](Render-Stages.md#reflectionprobestage)). It's given the scene's revision counter when it's made, and moving or resizing it advances it, so its captures can tell they're out of date (`GetRevision()`).
 
+## Cube maps (`CubeMap.h/.cpp`)
+
+The cube map convention, for anything that renders into or samples a cube. `ECubeFace { Right, Left, Up, Down, Forward, Back }` names the faces by the world direction each looks in, in the order a cube texture stores them (slices 0–5). `CubeMap::GetFaceForward(face)` / `GetFaceUp(face)`, `CreateFaceView(position, face)` (the view through the face, built with `Matrix4x4::CreateViewMatrix`), and `ToSampleDirection(worldDirection)`. D3D's cube is laid out for a left-handed world with +Z forward and ours is right-handed with −Z forward, so the cube's +Z face is our **Forward**, and sampling flips Z. With that, `CubeMap::CreateFaceView` and a 90°, square projection render each face exactly as sampling reads it, unmirrored, so triangles keep their winding (tested over the whole sphere against D3D's face table in `CubeMapTests.cpp`). `ToCubeSampleDirection` in `Common/LightResources.hlsli` mirrors `ToSampleDirection`. Used for point light shadows and reflection probes. It's in the Engine, not `Utils/Math`, because what it encodes is D3D's cube layout, not maths: see [World-Conventions.md](../02-Architecture/World-Conventions.md). The Rendering module only knows a cube texture as six slices per cube (`GFXTextureBufferParams::bIsCubeMap`), in this order.
+
 ## Views
 
 A **`RenderView`** is one point of view to render the scene from. Its owner fills in the inputs; render stages read them.
@@ -224,5 +228,6 @@ Both object containers erase with swap-and-pop (`ContainerUtils::VectorEraseBack
 - `Engine\Src\Graphics\RenderView.h` — `RenderView`, `RenderCamera`, `RenderPickRequest`, `ERenderViewDebug`
 - `Engine\Src\Graphics\ViewCapture.h/.cpp`, `TextureFile.h/.cpp` — capturing a view to a PNG
 - `Utils\Src\Utils\Math\Frustum.h/.cpp` — the six-plane view frustum used for culling and marquee selection (see [Utils-Library-Reference.md](../06-Platform-And-Infrastructure/Utils-Library-Reference.md))
+- `Engine\Src\Graphics\CubeMap.h/.cpp` — `ECubeFace` and the cube map convention
 - `Engine\Src\Graphics\GraphicsDefines.h` — `RenderSceneLifetime` and the `RenderObjectPtr` / `LightObjectPtr` / `ReflectionProbeObjectPtr` aliases, move-only and lifetime-checked
 - `Engine\Src\Graphics\GraphicsLayouts.h` — the shader buffer layouts the render stages share: lights and shadows (`GraphicsLayouts::LightLayout`, `GraphicsLayouts::ShadowBufferLayout`, ...), an object's matrices (`ObjectBufferLayout`) and a material's parameters (`MaterialBufferLayout`) (see [Render-Stages.md](Render-Stages.md#shadowrenderstage))

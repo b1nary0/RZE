@@ -24,7 +24,7 @@ class PixelShader;
 //   render object, as seen from the light. It doesn't depend on the camera, so coverage and resolution stay fixed as
 //   the camera moves.
 // - The first k_maxShadowedPointLights point lights: depth all around each, out to its range, in one cube of a cube
-//   map array (Utils/Math/CubeMap.h).
+//   map array (Graphics/CubeMap.h).
 // Each map is kept until something it shows changes, and only that map is rendered again: a point light's cube when
 // the light moves or changes range, or a render object changes within its range; the directional map when its light
 // turns, or any render object changes (it's fitted to them all). A map whose slot goes to another light is rendered

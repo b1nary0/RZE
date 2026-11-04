@@ -1,6 +1,7 @@
 #include <StdAfx.h>
 #include <Graphics/RenderStages/ShadowRenderStage.h>
 
+#include <Graphics/CubeMap.h>
 #include <Graphics/IndexBuffer.h>
 #include <Graphics/Material.h>
 #include <Graphics/MaterialSlot.h>
@@ -14,7 +15,6 @@
 #include <Rendering/Driver/GFXBuffer.h>
 
 #include <Utils/Math/BoundingBox.h>
-#include <Utils/Math/CubeMap.h>
 #include <Utils/Math/Frustum.h>
 #include <Utils/Math/Math.h>
 

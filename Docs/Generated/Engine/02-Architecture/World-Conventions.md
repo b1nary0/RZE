@@ -28,7 +28,7 @@ Everything spatial in the engine, the Editor and the content assumes these. The 
 
 `WorldAxes::Right()`, `Up()` and `Forward()` return these directions; use them instead of writing basis vectors by hand. `TransformComponent::GetForward()` / `GetUp()` turn them by an object's rotation. `Units::` has named length constants.
 
-**Cube maps are the one place D3D's handedness shows.** D3D lays out a cube's faces for a left-handed world with +Z forward, so the cube's +Z face is our Forward (−Z) and sampling a cube flips Z. `Utils/Math/CubeMap.h` holds that convention (`ECubeFace`, `CubeMap::ToSampleDirection`, `CubeMap::CreateFaceView`); go through it rather than building cube face views by hand. See [Utils-Library-Reference.md](../06-Platform-And-Infrastructure/Utils-Library-Reference.md).
+**Cube maps are the one place D3D's handedness shows.** D3D lays out a cube's faces for a left-handed world with +Z forward, so the cube's +Z face is our Forward (−Z) and sampling a cube flips Z. `Engine/Src/Graphics/CubeMap.h` holds that convention (`ECubeFace`, `CubeMap::ToSampleDirection`, `CubeMap::CreateFaceView`); go through it rather than building cube face views by hand. See [Engine-Graphics-Layer.md](../04-Rendering/Engine-Graphics-Layer.md#cube-maps-cubemaphcpp).
 
 ## Why it matters
 

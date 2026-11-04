@@ -1,6 +1,6 @@
 #include <doctest/doctest.h>
 
-#include <Utils/Math/CubeMap.h>
+#include <Graphics/CubeMap.h>
 #include <Utils/Math/Math.h>
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector3D.h>

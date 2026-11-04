@@ -26,6 +26,11 @@ Checks marked **(work)** are Windows-only changes, not tests: ask the user befor
 - **A2. Unit tests.** `RZE\_build\debug\UnitTests.exe` and `RZE\_build\release\UnitTests.exe`. Expect exit code 0.
 - **A3. Burn.** `RZE\_build\debug\SourceAssetBurner.exe`. Expect success and `git status` showing no change under
   `RZE\ProjectData`.
+- **A4. CubeMap moved to Engine.** `CubeMap.h/.cpp` moved from `Utils/Src/Utils/Math` to `Engine/Src/Graphics`, and
+  its test to `UnitTests/Src/Engine`. After A1, `Engine.vcxproj` lists `CubeMap.cpp` and `Utils.vcxproj` doesn't.
+  `RZE\_build\debug\UnitTests.exe -tc="*cube*"` runs 2 test cases, both passing. Then check DX11 point-light
+  shadows and reflection probes in `Sponza.scene` (the two users): shadows all around each point light, and
+  reflections the right way up.
 
 ### B. EditorHarness (H1: the harness beside the Editor)
 

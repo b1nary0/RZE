@@ -34,7 +34,7 @@ float3 ProbeTexelDirection(uint face, uint2 texel, uint faceSize)
 	return normalize(forward + ndc.x * right + ndc.y * up);
 }
 
-// A cube texture's slices, as CubeMap lays them out (CubeMap::GetFaceForward and GetFaceUp, Utils/Math/CubeMap.h): +X,
+// A cube texture's slices, as CubeMap lays them out (CubeMap::GetFaceForward and GetFaceUp, Engine/Src/Graphics/CubeMap.h): +X,
 // -X, +Y, -Y, -Z (Forward), +Z (Back). Reflection probes capture in this layout (ProbeCapture::EProbeFaces::CubeMap), so
 // their texels are a cube's; sample the cube with ToCubeSampleDirection (Common/LightResources.hlsli).
 static const float3 CubeFaceForward[PROBE_FACE_COUNT] =

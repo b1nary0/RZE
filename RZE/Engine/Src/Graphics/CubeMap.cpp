@@ -1,5 +1,5 @@
 #include <StdAfx.h>
-#include <Utils/Math/CubeMap.h>
+#include <Graphics/CubeMap.h>
 
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Matrix4x4.h>

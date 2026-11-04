@@ -250,7 +250,7 @@ Pixel and compute shaders get the same samplers: `s0`, linear and wrapping, is b
 
 ### Texture arrays and cube maps
 
-`GFXTextureBufferParams::ArraySize` makes a texture of several slices (0 or 1: a single texture, so zero-initialised params are unchanged), and `bIsCubeMap` makes it a cube map, with 6 slices per cube in `ECubeFace` order ([Utils-Library-Reference.md](../06-Platform-And-Infrastructure/Utils-Library-Reference.md), `CubeMap.h`); more than 6 makes a cube array. Depth or colour, it's read through the matching shader type:
+`GFXTextureBufferParams::ArraySize` makes a texture of several slices (0 or 1: a single texture, so zero-initialised params are unchanged), and `bIsCubeMap` makes it a cube map, with 6 slices per cube in D3D's face order (+X, −X, +Y, −Y, +Z, −Z; the Engine names them `ECubeFace`, [Engine-Graphics-Layer.md](Engine-Graphics-Layer.md#cube-maps-cubemaphcpp)); more than 6 makes a cube array. Depth or colour, it's read through the matching shader type:
 
 | `ArraySize` | `bIsCubeMap` | HLSL type | GL texture |
 |---|---|---|---|
