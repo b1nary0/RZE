@@ -38,6 +38,23 @@ Checks marked **(work)** are Windows-only changes, not tests: ask the user befor
   It mustn't hang after the window closes. On Linux, a reader blocked in `std::cin` hung exit, which is why stdin is
   read with `ReadFile` (`HarnessStdinWindows.cpp`).
 
+- **B4. Input without focus or the cursor (H2).** Run EditorHarness as in B2, click another window so it has focus,
+  and keep the mouse still over that window. Then send:
+  1. `{"id":2,"cmd":"click","x":2317,"y":123}` selects NeckMech;
+  2. `{"id":3,"cmd":"click","x":2444,"y":783}` then `{"id":4,"cmd":"key","keys":"^a45{ENTER}"}` makes Rotation Y
+     45, and `info`'s title ends with `*`;
+  3. `{"id":5,"cmd":"dblclick","x":2317,"y":123}` focuses the camera on it;
+  4. `{"id":6,"cmd":"scroll","x":880,"y":600,"notches":-5}` zooms out.
+
+  Each answers `"ok":true` after it has played out. The real cursor doesn't move, and focus stays where it was.
+  Coordinates are for a maximized 2560x1398 client area (`info`'s width and height); scale them for another size.
+- **B5. Real input is dropped.** While B4's harness runs, click its window's M4 row with the real mouse: nothing should
+  change. Send `{"cmd":"realinput","on":true}`, click M4 again, and it's selected.
+- **B6. Known limit, to confirm.** ImGui's SDL backend reads the real global mouse position when the app is focused
+  and the real pointer is over no SDL window (Windows and X11 only; never on Wayland). So focus the harness's window,
+  move the real mouse off it, and send `click`. Note whether the click lands where the harness put it, or where the
+  real mouse is.
+
 ### C. Window and input (Phase 3: SDL replaced Win32Window)
 
 - **C1. Startup.** The splash shows with its status text, then the Editor appears with no white flash (it's cloaked

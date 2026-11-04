@@ -2,26 +2,33 @@
 
 #include <EditorApp.h>
 #include <HarnessChannel.h>
+#include <HarnessInput.h>
 
 #include <Utils/PrimitiveDefs.h>
 
+#include <RapidJSON/document.h>
+
+#include <cstdint>
 #include <string>
 
 namespace EditorHarness
 {
 	// The Editor, run by a driver through HarnessChannel. Each frame's commands run on the main thread before the UI
-	// is built, so they act on the frame as a user's input would.
+	// is built, so they act on the frame as a user's input would. Input commands answer once they've played out.
 	class HarnessApp : public Editor::EditorApp
 	{
 	public:
 		void PreUIUpdate() override;
 
 	private:
-		// The answer to one command line, as JSON
-		std::string RunCommand(const std::string& line);
+		// Answers line, now or once its input has played out
+		void RunCommand(const std::string& line);
+		// False, with outError saying why, if the command's input can't be made
+		bool PlayInput(const std::string& name, const rapidjson::Value& command, int64_t id, std::string& outError);
 
 	private:
 		HarnessChannel m_channel;
+		HarnessInput m_input;
 		U64 m_frameCount = 0;
 	};
 }
