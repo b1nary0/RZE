@@ -347,12 +347,12 @@ Windows, popups, fields, buttons, checkboxes, images and highlights have slightl
 
 | To add | Do |
 |---|---|
-| A panel | Subclass `EditorPanel`, add `Describe()`, `Draw()` (and `Update()` if it has data to prepare), put `REGISTER_EDITOR_PANEL` in the `.cpp`, then run `GenerateSolutions.bat` |
+| A panel | Subclass `EditorPanel`, add `Describe()`, `Draw()` (and `Update()` if it has data to prepare), put `REGISTER_EDITOR_PANEL` in the `.cpp`, then run `GenerateSolutions.bat` (`.sh` on Linux) |
 | A scene change from the UI | Write an `EditorCommand` holding handles; check `UndoTargets::IsInScene` before changing anything, and give it an `UndoRecord` that finds its target by GUID. Push it from `Draw()`, with the interaction ID if it's part of a drag |
 | Something that would lose unsaved changes | Run it through `UnsavedChangesPrompt::Request` |
 | Something that reacts to loading, saving, selection or edits | Subscribe to the event, keeping the `EventSubscription` as a member |
 | A shared preference | Add it to `EditorSettings`, and a control for it on a Settings page |
-| A Settings page | Subclass `SettingsPage` (`GetName()`, `Draw(context)`), put `REGISTER_SETTINGS_PAGE` in the `.cpp`, then run `GenerateSolutions.bat`. See [Status-Bar-And-Settings.md](Status-Bar-And-Settings.md#the-settings-window) |
+| A Settings page | Subclass `SettingsPage` (`GetName()`, `Draw(context)`), put `REGISTER_SETTINGS_PAGE` in the `.cpp`, then run `GenerateSolutions.bat` (`.sh` on Linux). See [Status-Bar-And-Settings.md](Status-Bar-And-Settings.md#the-settings-window) |
 | Long-running work | An `AsyncOperation`: `Blocking` if the user must wait, `Background` if not, with its kind, and `SubStep` if another operation reports on it. The status bar and Task History show it, with what it logs, as Settings > Background Tasks allows ([Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md#async-operations)) |
 | An asset loaded for the user without stalling | A `PendingResource`, polled from the panel's `Update`; push the command once it's in, and hold the resource until the next `Update` so the command finds it loaded. An asset property gets this from `.Preload<T>()` |
 | A component's inspector fields | Describe its properties; see [Object-Inspector-And-Properties.md](Object-Inspector-And-Properties.md) |

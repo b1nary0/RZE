@@ -72,7 +72,7 @@ committed straight into `ThirdParty/`.
   removed when the Game started reading the source tree, so that button no longer works.
 - `Tools/Assimp/`: `assimp.dll`, `assimp.exe`, `assimp_viewer.exe`.
 - `Tools/Optick/Optick.exe`: the Optick profiler's viewer, Windows only. On Linux, `driver.py optick` takes a capture
-  over Optick's network protocol instead (the `run-rze` skill).
+  over Optick's network protocol instead (the `run-rze` skill, [EditorHarness-And-Drivers.md](../07-Editor/EditorHarness-And-Drivers.md)).
 - `Tools/Sharpmake/`: the Sharpmake application (`Sharpmake.Application.exe`/`.dll`, `Sharpmake.dll`,
   `Sharpmake.Generators.dll`, `Sharpmake.CommonPlatforms.dll`, Roslyn dependencies), which `GenerateSolutions.bat` and
   `GenerateSolutions.sh` run.

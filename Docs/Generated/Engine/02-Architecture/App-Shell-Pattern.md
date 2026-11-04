@@ -54,7 +54,7 @@ The four per-frame hooks split each frame into a UI part (`PreUIUpdate`, `Update
 | Extra UI | None (ships without editor tooling) | Full dockspace of self-registering panels (Scene, SceneView, Object Inspector, Log, Resource Monitor), sharing an `EditorContext`; see [Editor-Framework.md](../07-Editor/Editor-Framework.md) |
 | Dev conveniences | F1/F2/F3 resize window to 720p/900p/1080p presets; Escape quits | "Build Game..." / "Launch Game..." menu items that run `BuildGame.bat` (Windows) or `BuildGame.sh` (Linux) and the built game via a background job |
 
-**A third shell, on the Editor's: `EditorHarness`.** `EditorHarness::HarnessApp` (`EditorHarness/Src/`) subclasses `Editor::EditorApp`, so it *is* the Editor, plus commands from an automation driver on stdin, which it runs in `PreUIUpdate` after the Editor's own. It reads the Editor's state through `EditorApp::GetContext()`, a protected accessor kept for an app built on the Editor. See [Building-And-Running.md](../01-GettingStarted/Building-And-Running.md#driving-the-running-editor).
+**A third shell, on the Editor's: `EditorHarness`.** `EditorHarness::HarnessApp` (`EditorHarness/Src/`) subclasses `Editor::EditorApp`, so it *is* the Editor, plus commands from an automation driver on stdin, which it runs in `PreUIUpdate` after the Editor's own. It reads the Editor's state through `EditorApp::GetContext()`, a protected accessor kept for an app built on the Editor. See [EditorHarness-And-Drivers.md](../07-Editor/EditorHarness-And-Drivers.md).
 
 ## Why this split matters
 

@@ -72,7 +72,7 @@ DevEnv (`vs2017`, Kits Root `10.0.18362.0`) and calls `arguments.Generate<RZE>()
 | SourceAssetBurner | `SourceAssetBurner/SourceAssetBurner.sharpmake.cs` | exe | **Engine only** | `assimp-vc141-mt` / `libassimp.so` |
 | EditorLib | `Editor/Editor.sharpmake.cs` | static lib | **Engine only** | — (everything in `Editor/Src` except `EditorMain.cpp`; its own intermediate folder, since it shares `Editor/_project` with Editor) |
 | Editor | `Editor/Editor.sharpmake.cs` | windowed exe | **EditorLib**, through `EditorLib.LinkWhole` | the whole of `EditorLib` (`/WHOLEARCHIVE` / `--whole-archive`), so self-registering panels aren't dropped; compiles only `EditorMain.cpp`, plus `Resources/Editor.rc` (the icon) on Windows |
-| EditorHarness | `EditorHarness/EditorHarness.sharpmake.cs` | console exe | **EditorLib**, through `EditorLib.LinkWhole` | the Editor with a harness for automation drivers |
+| EditorHarness | `EditorHarness/EditorHarness.sharpmake.cs` | console exe | **EditorLib**, through `EditorLib.LinkWhole` | the Editor with a harness for automation drivers ([EditorHarness-And-Drivers](../07-Editor/EditorHarness-And-Drivers.md)) |
 | Game | `Game/Game.sharpmake.cs` | windowed exe | **Engine only** | — ; `Resources/Game.rc` (the icon) on Windows |
 | UnitTests | `UnitTests/UnitTests.sharpmake.cs` | exe | **EditorLib only** | — (doctest is header-only) |
 

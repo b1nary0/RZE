@@ -167,7 +167,7 @@ The folder is read again on going there, on a search edit and on Refresh. Change
 - A scene's or mesh's **thumbnail** is renamed and deleted with it.
 - The **open scene**, and folders holding it, can't be renamed or deleted; the greyed-out items say why.
 
-Each is a command (`Commands\AssetFileCommands.h/.cpp`: `RenameAssetCommand`, `DeleteAssetCommand`, `CreateFolderCommand`), so it's an [undo](Editor-Framework.md#undo-and-redo) step like a scene edit ("Undo Rename File"). The records check the files before acting, e.g. that the old name is still free, and say in the Log why when they can't. Undoing a delete restores the file and its thumbnails from the trash. A deleted file goes on to the Recycle Bin once the history drops its step, and the trash is emptied to the Recycle Bin when the editor starts and closes (`AssetFiles::EmptyTrash`). The commands publish `AssetFileChangedEvent`, which the Content Browser uses to re-read the folder, follow a renamed or removed folder in its history, keep the selection on what changed, and start renaming a new folder.
+Each is a command (`Commands\AssetFileCommands.h/.cpp`: `RenameAssetCommand`, `DeleteAssetCommand`, `CreateFolderCommand`), so it's an [undo](Editor-Framework.md#undo-and-redo) step like a scene edit ("Undo Rename File"). The records check the files before acting, e.g. that the old name is still free, and say in the Log why when they can't. Undoing a delete restores the file and its thumbnails from the trash. A deleted file goes on to the Recycle Bin (the Trash on Linux) once the history drops its step, and the editor's trash is emptied there when the editor starts and closes (`AssetFiles::EmptyTrash`). The system records the editor's trash folder, not the file's own folder, as where it came from. The commands publish `AssetFileChangedEvent`, which the Content Browser uses to re-read the folder, follow a renamed or removed folder in its history, keep the selection on what changed, and start renaming a new folder.
 
 | Input | Does |
 |---|---|
@@ -176,12 +176,12 @@ Each is a command (`Commands\AssetFileCommands.h/.cpp`: `RenameAssetCommand`, `D
 | Mouse back / forward buttons (4 / 5), toolbar arrows | Back / Forward through the folders visited |
 | Arrow keys | Move the selection |
 | F2, Delete | Rename, delete the selected file or folder |
-| Right-click a file or folder | **Load Scene** (scenes), **Show in Explorer**, **Copy Path** (the relative path), **Refresh Thumbnail** (scenes and meshes), **Rename**, **Delete** |
+| Right-click a file or folder | **Load Scene** (scenes), **Show in Explorer** (**Show in File Manager** on Linux), **Copy Path** (the relative path), **Refresh Thumbnail** (scenes and meshes), **Rename**, **Delete** |
 | Right-click empty space | **New Folder**, **Show in Explorer** for the folder, **Refresh** |
 | Drag a mesh onto the SceneView | Loads it in the background, then adds an object showing it where it's dropped; see [Editor-Panels.md](Editor-Panels.md#dropping-meshes) |
 | Drag a file onto an asset field in the Object Inspector | Sets it, if the field takes that kind of file; see [Object-Inspector-And-Properties.md](Object-Inspector-And-Properties.md#asset-fields) |
 
-The keys work while the panel is focused and no text field is active; the mouse buttons while it's hovered. Show in Explorer goes through `Shell::ShowInFileBrowser` (`Utils\Platform\Shell.h`), which keeps the Win32 call out of the Editor: it opens Explorer with the file selected, or the folder open. The mouse's side buttons reach ImGui through the engine's input as `EMouseButton::MouseButton_Back` / `MouseButton_Forward`.
+The keys work while the panel is focused and no text field is active; the mouse buttons while it's hovered. Show in Explorer goes through `Shell::ShowInFileBrowser` (`Utils\Platform\Shell.h`), which keeps the OS calls out of the Editor: it opens the file manager with the file selected, or the folder open. On Windows that's Explorer; on Linux it's the desktop's file manager through D-Bus (`org.freedesktop.FileManager1`), or `xdg-open` on the folder if there's none, on a background thread so the UI never waits for it to start. The menu and the Delete tooltip name them as the desktop does, with `Shell::GetFileBrowserName()` and `GetRecycleBinName()`: "Explorer" and "Recycle Bin" on Windows, "File Manager" and "Trash" on Linux, where `MoveToRecycleBin` runs `gio trash`. The mouse's side buttons reach ImGui through the engine's input as `EMouseButton::MouseButton_Back` / `MouseButton_Forward`.
 
 ## Thumbnails
 
@@ -258,8 +258,8 @@ For each item:
 - `Editor\Src\UI\Widgets\FileTileGrid.h/.cpp` — the shared tile grid and breadcrumb
 - `Editor\Src\UI\Panels\ContentBrowserPanel.h/.cpp`
 - `Editor\Src\Commands\AssetFileCommands.h/.cpp`, `Editor\Src\Services\AssetFiles.h/.cpp` — rename, delete, new folder, the trash
-- `Editor\Src\Services\ProjectWatcher.h/.cpp`, `Utils\Src\Utils\Platform\FolderWatcher.h/.cpp` — changes on disk
-- `Utils\Src\Utils\Platform\Shell.h/.cpp` — `ShowInFileBrowser`, `MoveToRecycleBin`
+- `Editor\Src\Services\ProjectWatcher.h/.cpp`, `Utils\Src\Utils\Platform\FolderWatcher.h` (change notifications on Windows, inotify on Linux) — changes on disk
+- `Utils\Src\Utils\Platform\Shell.h`, `Windows\ShellWindows.cpp`, `Linux\ShellLinux.cpp` — `ShowInFileBrowser`, `MoveToRecycleBin`, `GetFileBrowserName`, `GetRecycleBinName`
 - `Editor\Src\Services\FolderNavigator.h/.cpp` — the folder a browser shows, its search and history
 - `Editor\Src\Services\FolderListing.h/.cpp` — `ListFolder`; `Utils\Src\Utils\Platform\FileNames.h/.cpp`, `Folders.h/.cpp` — naming rules, subfolders
 - `Editor\Src\Services\Thumbnails.h/.cpp` — folders, `FindFor`, `IsUpToDate`, `Survey`

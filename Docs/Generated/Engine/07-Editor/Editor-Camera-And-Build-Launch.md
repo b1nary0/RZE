@@ -71,23 +71,27 @@ sequenceDiagram
     App->>App: unsaved changes? Save, Don't Save or Cancel
     App->>App: the scene's name in Assets\Scenes
     App->>Job: start "Build and Launch Game"
-    Job->>Job: run BuildGame.bat
+    Job->>Job: run BuildGame.bat or BuildGame.sh
     loop each line of output
         Job-->>Log: stream it (LogChannel::Build)
     end
     alt build failed
         Job-->>Log: "Build failed with exit code N."
     else build succeeded and launching
-        Job->>Job: start _build\debug\Game.exe -scene "name" (doesn't wait)
+        Job->>Job: start _build/debug/Game -scene name (doesn't wait)
         Job-->>Log: "Build and Launch Game succeeded."
     end
 ```
 
-- **Build Game** runs `BuildGame.bat` (MSBuild for the Game project) and stops there. It runs through cmd with no window (`CreateProcess` with `CREATE_NO_WINDOW`), and its stdout and stderr both stream into the Build channel through a pipe. It isn't run with `_popen`: the Editor has no console (it's a windowed app, see [Editor-Overview.md](Editor-Overview.md#launching)), so cmd would open a console window that takes focus for as long as the build runs.
-- **Launch Game** does the same, then starts `_build\debug\Game.exe` **into the scene that's open in the editor**, without waiting for it:
+- **Build Game** runs the platform's build script (`Platform::k_buildGameScript`) and stops there:
+  - **Windows:** `BuildGame.bat`, MSBuild for the Game project.
+  - **Linux:** `BuildGame.sh`, `make -f RZE.make config=debug Game`, which builds the libraries the Game needs first, as MSBuild's project references do. It needs the Makefiles from `GenerateSolutions.sh`, and says so if they're missing.
+
+  `Process::RunScript` runs it, and its stdout and stderr both stream into the Build channel through a pipe. On Windows that's cmd with no window (`CreateProcess` with `CREATE_NO_WINDOW`), not `_popen`: the Editor has no console (it's a windowed app, see [Editor-Overview.md](Editor-Overview.md#launching)), so cmd would open a console window that takes focus for as long as the build runs. On Linux it's `/bin/sh` through `posix_spawn`, so the script needs no execute bit.
+- **Launch Game** does the same, then starts `_build/debug/Game` (`Game.exe` on Windows, `Platform::k_executableSuffix`) **into the scene that's open in the editor**, without waiting for it (`Process::Start`):
   - It goes through the [unsaved-changes prompt](Editor-Framework.md#the-unsaved-changes-prompt) first, since the Game reads the scene's file. A new scene that was never saved launches as `Default.scene` (`GameScene::GetDefaultScenePath()`). The item is disabled while a scene is loading.
-  - The scene is passed as `-scene "<name>"`, its path inside `Assets\Scenes` (`AssetPaths::GetSceneName`, the inverse of `GetScene`, e.g. `Sponza.scene` or `Tests\Lights.scene`), quoted because `_spawnl` joins its arguments with spaces. It's worked out before the build starts, so a scene outside `Assets\Scenes`, which the Game can't load, is reported in the Build channel straight away and nothing is built.
-  - The Game is a windowed app, so no console window opens with it, and its window comes up in front of the editor.
+  - The scene is passed as `-scene <name>`, its path inside `Assets\Scenes` (`AssetPaths::GetSceneName`, the inverse of `GetScene`, e.g. `Sponza.scene` or `Tests\Lights.scene`), an argument of its own. On Windows `Process::Start` quotes each argument, because `_spawnv` joins them with spaces; on Linux `posix_spawn` passes them whole, and a background thread reaps the Game when it exits. It's worked out before the build starts, so a scene outside `Assets\Scenes`, which the Game can't load, is reported in the Build channel straight away and nothing is built.
+  - The Game is a windowed app on Windows, so no console window opens with it. Its window comes up in front of the editor.
   - The Build channel names the scene ("Building and launching game into scene ..."), and the Game logs the scene it loads ([Scene-And-GameObject-Model.md](../03-SceneAndGameObjects/Scene-And-GameObject-Model.md)).
 - **Nothing is copied.** The Game reads `Assets\`, `Config\` and `ProjectData\` from the source tree, like the Editor (`EDirectoryContext::Source`, see [Building-And-Running.md](../01-GettingStarted/Building-And-Running.md)), so it sees a saved scene straight away.
 
@@ -98,4 +102,5 @@ sequenceDiagram
 - `Engine\Src\Asset\AssetPaths.h/.cpp` — `GetSceneName`
 - `Editor\Src\Services\SceneDocument.h/.cpp` — creates the editor camera after each load
 - `Editor\Src\UI\MainMenuBar.cpp` — the File menu items
-- `BuildGame.bat`
+- `Utils\Src\Utils\Platform\Process.h` — `RunScript`, `Start`; `Platform.h` — `k_buildGameScript`, `k_executableSuffix`
+- `BuildGame.bat`, `BuildGame.sh`

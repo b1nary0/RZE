@@ -99,7 +99,7 @@ The `run-rze` skill (`.claude/skills/run-rze/`) builds, runs and drives the Edit
 `driver.ps1` on Windows, `driver.py` on Linux. On Linux, `driver.py launch --harness` runs **EditorHarness**, the
 Editor with a harness beside it that takes input, screenshots and state queries as JSON lines on stdin, so the real
 cursor and focus are left alone. `.claude/WindowsChecks.md` lists the checks a Windows machine still has to run for
-changes made on Linux.
+changes made on Linux. See [EditorHarness-And-Drivers.md](../07-Editor/EditorHarness-And-Drivers.md).
 
 ## CI
 
