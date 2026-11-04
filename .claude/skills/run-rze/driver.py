@@ -18,6 +18,7 @@ import fcntl
 import json
 import os
 import shutil
+import signal
 import socket
 import struct
 import subprocess
@@ -37,6 +38,7 @@ HELPER_LOG = os.path.join(STATE_DIR, "helper.log")
 IMGUI_INI = os.path.join(ENGINE_ROOT, "Config", "imgui.ini")
 IMGUI_INI_BACKUP = os.path.join(STATE_DIR, "imgui.ini.backup")
 ENGINE_LOGS = os.path.join(ENGINE_ROOT, "Logs")
+RENDERDOC_DIR = os.path.join(STATE_DIR, "renderdoc")
 SHOT_DIR = os.path.join(tempfile.gettempdir(), "rze-shots")
 
 
@@ -280,17 +282,47 @@ class Helper:
 
         build_dir = os.path.join(ENGINE_ROOT, "_build", options["config"])
         exe = os.path.join(build_dir, options["app"])
-        command = ([] if not options.get("renderdoc") else
-                   ["renderdoccmd", "capture", "--wait-for-exit", "--working-dir", build_dir,
-                    "--capture-file", os.path.join(STATE_DIR, "capture")])
         # Line-buffered, so `log` sees each line as it's written
-        command += ["stdbuf", "-oL", "-eL", exe] + options["args"]
-        self.process = subprocess.Popen(command, cwd=build_dir, stdout=open(APP_LOG, "wb"), stderr=subprocess.STDOUT,
-                                        stdin=subprocess.DEVNULL)
+        command = ["stdbuf", "-oL", "-eL"]
+        environment = dict(os.environ)
+        if options.get("renderdoc"):
+            # RenderDoc turns capturing off for the whole process (its overlay says "captures disabled") once anything
+            # calls GL it doesn't support. The splash's window surface would: SDL draws window surfaces with its
+            # OpenGL renderer when it can, through fixed-function calls (glMatrixMode, glOrtho, ...). So the app runs on
+            # XWayland, where SDL has a native framebuffer for them, and RenderDoc's capture key (read through xlib,
+            # since this build has no Wayland support) works too.
+            shutil.rmtree(RENDERDOC_DIR, ignore_errors=True)
+            os.makedirs(RENDERDOC_DIR)
+            environment["SDL_VIDEO_DRIVER"] = "x11"
+            environment["SDL_FRAMEBUFFER_ACCELERATION"] = "0"
+            command += ["renderdoccmd", "capture", "--wait-for-exit", "--working-dir", build_dir,
+                        "--capture-file", os.path.join(RENDERDOC_DIR, options["app"])]
+        command += [exe] + options["args"]
+        # In a process group of its own, which is everything the session started: the app, renderdoccmd with the
+        # app under it, a Game the Editor launched. Ending the session ends all of it.
+        self.process = subprocess.Popen(command, cwd=build_dir, env=environment, stdout=open(APP_LOG, "wb"),
+                                        stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, start_new_session=True)
         threading.Thread(target=self._wait_for_exit, daemon=True).start()
 
     def _wait_for_exit(self):
         self.exit_code = self.process.wait()
+
+    def _group_alive(self):
+        try:
+            os.killpg(self.process.pid, 0)
+            return True
+        except ProcessLookupError:
+            return False
+
+    def _end_group(self, timeout=10):
+        """Kills whatever the session started that's still running, and waits until it's gone."""
+        if self._group_alive():
+            os.killpg(self.process.pid, signal.SIGKILL)
+        deadline = time.monotonic() + timeout
+        while self._group_alive() and time.monotonic() < deadline:
+            time.sleep(0.05)
+        if self.exit_code is None:
+            self.process.wait()
 
     # The app's windows: the main one is its largest normal window (the splash is smaller, and goes)
     def app_windows(self):
@@ -425,6 +457,21 @@ class Helper:
         kwin("var w = byId('%s'); if (w) w.closeWindow(); report(1);" % windows[0]["id"])
         return "closed %r" % caption
 
+    def cmd_renderdoc_capture(self, timeout):
+        if not self.options.get("renderdoc"):
+            raise DriverError("This session isn't under RenderDoc. Run: driver.py launch --renderdoc")
+        before = set(renderdoc_captures())
+        # RenderDoc's capture key: it captures the next frame the app presents
+        self.cmd_key("{F12}")
+        deadline = time.monotonic() + timeout
+        while True:
+            new = [c for c in renderdoc_captures() if c not in before]
+            if new and file_settled(new[0]):
+                return new[0]
+            if time.monotonic() > deadline:
+                raise DriverError("No capture after %ds; see the newest /tmp/RenderDoc/*.log" % timeout)
+            time.sleep(0.25)
+
     def cmd_restored_leftover_ini(self):
         return str(self.restored_leftover_ini)
 
@@ -442,12 +489,12 @@ class Helper:
                 time.sleep(0.1)
             if self.exit_code is None:
                 raise DriverError("Still running after %ds (an unsaved-changes prompt? see `shot`), then `quit`" % timeout)
+        # Anything it left running (a Game it launched) goes too, before the layout is put back
+        self._end_group()
         return "closed code=%d%s" % (self.exit_code, self._restore_note())
 
     def cmd_quit(self):
-        if self.exit_code is None:
-            self.process.kill()
-            self.process.wait()
+        self._end_group()
         return "quit" + self._restore_note()
 
     # Once the app has exited, since ImGui saves the layout as it shuts down
@@ -455,12 +502,44 @@ class Helper:
         return "; imgui.ini restored" if restore_imgui_ini() else ""
 
     def shutdown(self):
-        if self.exit_code is None:
-            self.process.kill()
-            self.process.wait()
+        self._end_group()
         restore_imgui_ini()
         self.pointer.close()
         self.keyboard.close()
+
+
+def renderdoc_captures():
+    if not os.path.isdir(RENDERDOC_DIR):
+        return []
+    return sorted(os.path.join(RENDERDOC_DIR, f) for f in os.listdir(RENDERDOC_DIR) if f.endswith(".rdc"))
+
+
+def file_settled(path):
+    """Whether RenderDoc has finished writing path: its size holds for a moment."""
+    size = os.path.getsize(path)
+    time.sleep(0.5)
+    return size > 0 and os.path.getsize(path) == size
+
+
+def summarize_capture(path):
+    """The capture's thumbnail beside it, and what it holds, counted from RenderDoc's XML export."""
+    thumbnail = os.path.splitext(path)[0] + ".png"
+    subprocess.run(["renderdoccmd", "thumb", "--out", thumbnail, path], check=True,
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    with tempfile.TemporaryDirectory() as folder:
+        xml = os.path.join(folder, "capture.xml")
+        subprocess.run(["renderdoccmd", "convert", "-f", path, "-o", xml, "-c", "xml"], check=True,
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        import xml.etree.ElementTree as ElementTree
+        names = [chunk.get("name") or "" for chunk in ElementTree.parse(xml).getroot().iter("chunk")]
+    counts = {
+        "draws": sum(1 for n in names if n.startswith("glDraw") or n.startswith("glMultiDraw")),
+        "dispatches": sum(1 for n in names if n.startswith("glDispatchCompute")),
+        "debug groups": sum(1 for n in names if n == "glPushDebugGroup"),
+        "GL calls": len(names),
+    }
+    return "%s (%d KB), thumbnail %s: %s" % (path, os.path.getsize(path) // 1024, thumbnail,
+                                              ", ".join("%s=%d" % kv for kv in counts.items()))
 
 
 def png_size(path):
@@ -706,7 +785,8 @@ def main():
     p = commands.add_parser("optick", help="take an Optick capture over the network, as Optick's viewer does")
     p.add_argument("--seconds", type=float, default=2)
     p.add_argument("--out", help="also save the raw stream here")
-    commands.add_parser("renderdoc-capture", help="take a RenderDoc capture of the next frame (launch --renderdoc)")
+    p = commands.add_parser("renderdoc-capture", help="capture the next frame with RenderDoc (launch --renderdoc)")
+    p.add_argument("--timeout", type=int, default=30)
 
     if len(sys.argv) > 1 and sys.argv[1] == "_helper":
         run_helper(json.loads(sys.argv[2]))
@@ -761,15 +841,12 @@ def main():
         elif c == "optick":
             print(optick_capture(args.seconds, args.out))
         elif c == "renderdoc-capture":
-            print(renderdoc_capture())
+            print(summarize_capture(send("renderdoc_capture", timeout=args.timeout)))
     except DriverError as error:
         print("error: %s" % error, file=sys.stderr)
         return 1
     return 0
 
-
-def renderdoc_capture():
-    raise DriverError("Not written yet: needs renderdoc installed (sudo dnf install renderdoc)")
 
 
 if __name__ == "__main__":

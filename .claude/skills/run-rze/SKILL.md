@@ -178,6 +178,7 @@ downscales a 2560-wide image to 2000, so multiply what you measure by 1.28.
 | `log [-n 40] [--grep TEXT] [--engine]` | The app's output. A Game launched from the Editor writes here too. `--engine` reads the newest `RZE/Logs/RZELOG_*.txt` instead. |
 | `clip get`, `clip set TEXT` | The system clipboard (wl-paste, wl-copy), to check ImGui's copy and paste. |
 | `optick [--seconds 2] [--out raw.bin]` | Takes an Optick capture over the network, as Optick's viewer does, and counts what arrived. Debug and Release only. |
+| `launch --renderdoc ...`, then `renderdoc-capture [--timeout 30]` | Runs the app under `renderdoccmd` (`sudo dnf install renderdoc`), then captures the next frame: presses RenderDoc's capture key (F12), waits for the `.rdc`, saves its thumbnail beside it and counts its draws, dispatches, debug groups and GL calls. Captures go to `$XDG_RUNTIME_DIR/rze-driver/renderdoc/`; open one with `qrenderdoc <file.rdc>`. |
 
 How it works, and what to know:
 
@@ -194,7 +195,13 @@ How it works, and what to know:
   that KWin treats like any others. Your user needs write access to `/dev/uinput` (an ACL on this machine).
 - **KWin finds, focuses and closes windows** through scripts loaded over D-Bus. It needs a KDE Plasma session; GNOME
   isn't supported.
-- `close` and `quit` end the session. A Game launched with **File > Launch Game...** shows up in `windows` (caption
+- **A RenderDoc session runs on XWayland** (`SDL_VIDEO_DRIVER=x11`), with SDL's GL-drawn window surfaces off
+  (`SDL_FRAMEBUFFER_ACCELERATION=0`). RenderDoc disables capturing for the whole process ("captures disabled" in its
+  overlay) once anything calls GL it doesn't support, and SDL draws the splash screen's window surface with
+  fixed-function GL; this RenderDoc build also only reads its capture key through xlib. RenderDoc deletes its log
+  (`/tmp/RenderDoc/*.log`) when the app exits cleanly, so read it while the session runs.
+- `close` and `quit` end the session, and everything it started: the app runs in a process group of its own, so a
+  Game launched from the Editor, or the app under `renderdoccmd`, goes with it. A Game launched with **File > Launch Game...** shows up in `windows` (caption
   `Game Title`, from Engine.ini) within a few seconds; `close-window "Game Title"` ends it.
 - **Launch Game with unsaved changes opens the Unsaved Changes prompt**, a modal that ignores clicks elsewhere. The
   panels look dimmed in `shot` while it's open.
