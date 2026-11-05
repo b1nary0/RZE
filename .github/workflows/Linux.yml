@@ -30,7 +30,7 @@ jobs:
       run: cd RZE && ./GenerateSolutions.sh
 
     - name: Compile Project
-      run: cd RZE && make -f RZE.make config=${{matrix.buildconfig}} -j"$(nproc)"
+      run: cd RZE && make config=${{matrix.buildconfig}} -j"$(nproc)"
 
     - name: Run Unit Tests
       run: ./RZE/_build/${{matrix.buildconfig}}/UnitTests

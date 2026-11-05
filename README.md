@@ -12,7 +12,8 @@ Once you have the repo locally:
 
 1) Install the tools and libraries: `sudo dnf install clang lld make dotnet-sdk-8.0 SDL3-devel libshaderc-devel assimp-devel`
 2) Generate the Makefiles: `cd RZE && ./GenerateSolutions.sh` (again whenever a source file is added or removed)
-3) Build: `make -f RZE.make config=debug -j$(nproc)` (or `release`, `retail`)
+3) Build: `make config=debug -j$(nproc)` (or `release`, `retail`). It compiles every project at once, then links;
+   `make -f RZE.make` is the same build, one project after another
 4) Burn the assets: `./_build/debug/SourceAssetBurner`
 5) Start the Editor or the Game: `./_build/debug/Editor` or `./_build/debug/Game`, optionally with `-scene Sponza.scene`
 

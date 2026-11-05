@@ -3,9 +3,9 @@
 # Makefiles come from GenerateSolutions.sh.
 cd "$(dirname "$0")" || exit 1
 
-if [ ! -f RZE.make ]; then
-	echo "RZE.make not found. Run GenerateSolutions.sh first."
+if [ ! -f Makefile ]; then
+	echo "Makefile not found. Run GenerateSolutions.sh first."
 	exit 1
 fi
 
-exec make -f RZE.make config=debug -j"$(getconf _NPROCESSORS_ONLN)" --no-print-directory Game
+exec make config=debug -j"$(getconf _NPROCESSORS_ONLN)" --no-print-directory Game

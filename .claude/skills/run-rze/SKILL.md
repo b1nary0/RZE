@@ -138,7 +138,7 @@ From the repo root:
 
 ```bash
 (cd RZE && ./GenerateSolutions.sh)              # again after adding or removing any source file
-make -C RZE -f RZE.make config=debug -j"$(nproc)"
+make -C RZE config=debug -j"$(nproc)"           # every project compiles at once, then links
 ./RZE/_build/debug/SourceAssetBurner            # once after cloning; about 4 s
 ./RZE/_build/debug/UnitTests                    # exit code 0 = all passed
 ```
