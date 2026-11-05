@@ -1,64 +1,70 @@
 name: Windows
-# Workflow file for windows
+# Workflow file for Windows: Visual Studio 2026 (v145) and the Windows SDK 10.0.26100, which RZE.sharpmake.cs targets
 on:
+  # Every branch whose workflow file has this trigger (GitHub reads the file from the pushed commit)
   push:
-    branches: [master, Sandbox]
+    paths-ignore: ['Docs/**', '**/*.md', '.claude/**']
   pull_request:
     branches: [master, Sandbox]
+    paths-ignore: ['Docs/**', '**/*.md', '.claude/**']
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A newer push to the same branch or PR cancels the run it supersedes
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-    permissions:
-      actions: read
-      contents: read
+    # Named explicitly, so a change of windows-latest can't move the toolchain
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 60
     strategy:
+      fail-fast: false
       matrix:
-        os: [windows-2022]
-        buildconfig: [debug, release]
-        include:
-          - os: windows-2022
-            shell: cmd
-            compiler: cl
-            target: Windows
+        buildconfig: [debug, release, retail]
 
     steps:
     - name: Add MSBuild to PATH
-      uses: microsoft/setup-msbuild@v2
+      uses: microsoft/setup-msbuild@v3
 
+    # Sharpmake needs .NET 8 or later. Pinned rather than relying on the image's SDKs, which drop .NET 8 after its
+    # end of support
     - name: Setup DotNet
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
-        # Sharpmake needs .NET 8 or later
         dotnet-version: "8.0.x"
-        
+
     - name: Checkout
-      uses: actions/checkout@v4
-          
+      uses: actions/checkout@v7
+
     - name: Generate a new project
       shell: cmd
-      run: cd RZE/ && call GenerateSolutions.bat
-      
+      run: cd RZE && call GenerateSolutions.bat
+
     - name: Compile Project
       shell: cmd
-      run: msbuild -m RZE/RZE.sln /property:Configuration="${{matrix.buildconfig}}"
-      
+      run: msbuild -m RZE/RZE.sln /p:Configuration=${{matrix.buildconfig}} /p:Platform=x64 /nologo
+
     - name: Run Unit Tests
       shell: cmd
-      run: call .\RZE\_build\${{matrix.buildconfig}}\UnitTests.exe
-      continue-on-error: false
+      run: .\RZE\_build\${{matrix.buildconfig}}\UnitTests.exe
 
     - name: Burn Assets
       shell: cmd
-      run: call .\RZE\_build\${{matrix.buildconfig}}\SourceAssetBurner.exe
-      continue-on-error: false
+      run: .\RZE\_build\${{matrix.buildconfig}}\SourceAssetBurner.exe
 
-    # The executables read their data from the source tree (the folder above _build), so the archive keeps that layout
+    # Only builds of the main branches are kept. The executables read their data from the source tree (the folder
+    # above _build), so the archive keeps that layout
     - name: Archive Build
-      uses: actions/upload-artifact@v4
+      if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/look-what-claude-can-do'
+      uses: actions/upload-artifact@v7
       with:
-        name: RZE v${{github.run_number}} - ${{matrix.buildconfig}}
+        name: RZE v${{github.run_number}} - Windows - ${{matrix.buildconfig}}
+        retention-days: 14
         path: |
           RZE/_build/${{matrix.buildconfig}}
           RZE/Assets

@@ -213,15 +213,6 @@ Checks marked **(work)** are Windows-only changes, not tests: ask the user befor
 - **F1. Optick.** With a Debug or Release Editor running, `Tools\Optick\Optick.exe` connects (port 31318) and takes
   a capture with frames in it.
 
-### G. CI
-
-- **G1. Windows.yml.** Its actions were updated: runner `windows-2022`, .NET 8, `upload-artifact@v4`. Pushes to this
-  branch don't start it (it runs on pushes and PRs to `master` and `Sandbox` only), so run it by hand with
-  `gh workflow run Windows.yml --ref look-what-claude-can-do`, if the user agrees, and report the result. It runs this
-  branch's copy of the workflow, which also builds the new Sharpmake hook (A11). Known failure: the runner has no
-  VS 2026 (v145 toolset), which `RZE.sharpmake.cs` targets since the Sharpmake 1.9.1 upgrade, so `Windows.yml` needs
-  a runner image with VS 2026 first.
-
 ### H. Windows-only work (ask the user before starting)
 
 - **H1 (work). driver.ps1: back up imgui.ini.** `driver.py` copies `RZE/Config/imgui.ini` aside at `launch`, and puts
