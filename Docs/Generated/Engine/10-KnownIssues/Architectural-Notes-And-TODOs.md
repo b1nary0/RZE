@@ -36,7 +36,7 @@ Rough edges the codebase is candid about (source comments, `#TODO`s), plus a few
 | 28 | An idle tick can put two big units of async work in one frame | Async | Low | Open |
 | 29 | GPU render targets leak, and the D3D device leaks at exit | Renderer | Medium | Open |
 | 30 | In Debug, the game's key bindings never fire | Game | Medium | Open |
-| 31 | `RenderThread::Shutdown` can race | Renderer | Low | Open |
+| 31 | `RenderThread::Shutdown` could race | Renderer | — | **Fixed** (11-04: the flag is set with the signal, under the lock) |
 | 32 | A shader that doesn't compile crashes the app | Renderer | Medium | Open |
 | 33 | The lit pixel shaders compile with an uninitialised-variable warning | Shaders | — | **Fixed** (10-24: single returns) |
 | 34 | Any light change re-renders every shadow map | Rendering | — | **Fixed** (10-25: per-light shadow caching) |
@@ -194,9 +194,9 @@ The first unit of work in any budget always runs, even when it's bigger than the
 
 `GameApp::ProcessInput` returns `false` in `IMGUI_ENABLED` (Debug) builds, so the engine resets input every frame instead of raising events, and Escape, F1–F3 and the player controller's bindings never fire. See [Game-App.md](../08-Game/Game-App.md).
 
-## 31. `RenderThread::Shutdown` can race
+## 31. `RenderThread::Shutdown` could race (fixed)
 
-`Shutdown` signals the render thread before it sets `m_shuttingDown`, so the thread can finish a pass and wait again before seeing the flag, leaving `join()` waiting on it. It's a narrow window and hasn't been seen to hang.
+**Fixed (11-04).** `Shutdown` used to signal the render thread before it set `m_shuttingDown`, with no lock, so the thread could finish the woken pass, miss the flag and wait again, leaving `join()` waiting for good. It was never seen to hang by itself, but a 200 ms sleep in that gap made it hang every time. `Shutdown` now sets the flag with the signal, under `m_updateMutex`, and `Update()` checks it under the same lock right after waking, returning `false` to end the thread's loop. That relies on `Shutdown` and `RunWhileIdle` running on the same thread, so no idle task is pending when the shutdown signal arrives; both assert they run on the thread that called `Initialize`. See [Low-Level-Renderer-Module.md](../04-Rendering/Low-Level-Renderer-Module.md).
 
 ## 32. A shader that doesn't compile crashes the app
 
