@@ -16,7 +16,9 @@ TEST_CASE("Directions come back from the octahedral square as they went in")
 		const float z = 1.0f - 2.0f * (static_cast<float>(sample) + 0.5f) / static_cast<float>(k_sampleCount);
 		const float radius = std::sqrt(1.0f - z * z);
 		const float angle = goldenAngle * static_cast<float>(sample);
-		const Vector3D direction(std::cos(angle) * radius, std::sin(angle) * radius, z);
+		// Normalized: at angles this large (up to ~2400 rad), MSVC's optimized float sin and cos drift far enough that
+		// the point comes out up to 2e-5 off the unit sphere, which is the test's error, not Encode's or Decode's
+		const Vector3D direction = Vector3D(std::cos(angle) * radius, std::sin(angle) * radius, z).Normalized();
 
 		const Vector2D point = Octahedral::Encode(direction);
 		CHECK(std::abs(point.X()) <= 1.0f);
