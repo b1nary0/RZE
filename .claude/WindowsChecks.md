@@ -84,6 +84,13 @@ Checks marked **(work)** are Windows-only changes, not tests: ask the user befor
   no `ParallelMakefile: wrote` line, and no `RZE\Makefile` appears (`Test-Path RZE\Makefile` is `False`, unless one
   came from a Linux checkout of the same folder). The script compiles on Windows' Sharpmake run, which is its first
   test there: a C# compile error in it fails generation outright, so give its message.
+- **A12. Source order in `BaseProject.PostResolve` leaves the `.vcxproj` files as they were.** `BaseProject` now
+  reorders every project's resolved source files (compiled files first, then by path), so Linux object files are named
+  after their source (`Foo.o`, not `Foo1.o` when `Foo.h` came first on disk). The Visual Studio generator sorts its own
+  copy, so the projects it writes shouldn't change. Before pulling this commit, or in a worktree of the commit before
+  it, run `GenerateSolutions.bat` and copy every `*\_project\*.vcxproj` and `*.vcxproj.filters` aside; then at this
+  commit run it again and compare them (`fc /b`). Expect every file identical, and A1 to build `RZE.sln` with no error
+  from the `SharpmakeProject` (it compiles these scripts against .NET Framework 4.8). List any file that differs.
 
 ### B. EditorHarness (H1: the harness beside the Editor)
 

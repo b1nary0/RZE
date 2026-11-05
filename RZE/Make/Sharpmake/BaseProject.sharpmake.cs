@@ -1,5 +1,8 @@
 ﻿using Sharpmake;
+using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Xml.Linq;
 using static CommonTarget;
 
@@ -96,6 +99,25 @@ public abstract class BaseProject : Project
             // everything
             conf.SourceFilesBuildExcludeRegex.Add(@"[\\/]Src[\\/](?:[^\\/]+[\\/])*" + folderName + @"[\\/]");
         }
+    }
+
+    // Compiled files first, then by path. Sharpmake's Makefile generator (1.9.1 to 1.11.0) numbers each object after the
+    // files before it in this list with the same name, headers included, so where Foo.h came first, Foo.cpp compiled to
+    // Foo1.o. The list was in the filesystem's order: on btrfs, the order the files were created, so a git pull that
+    // rewrote Foo.cpp renamed its object. Now a number counts only compiled files with the same name, and is the same on
+    // every clone. The Visual Studio generator sorts its own copy, so the .vcxproj files don't change. This relies on
+    // Strings, a HashSet, giving values back in the order they were added after a Clear: check both when upgrading
+    // Sharpmake.
+    public override void PostResolve()
+    {
+        base.PostResolve();
+
+        List<string> ordered = ResolvedSourceFiles
+            .OrderBy(file => SourceFilesCompileExtensions.Contains(Path.GetExtension(file)) ? 0 : 1)
+            .ThenBy(file => file, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        ResolvedSourceFiles.Clear();
+        ResolvedSourceFiles.AddRange(ordered);
     }
 
     #region Platfoms
