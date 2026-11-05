@@ -52,6 +52,8 @@ DevEnv (`vs2017`, Kits Root `10.0.18362.0`) and calls `arguments.Generate<RZE>()
     Windows; one named `Linux` or `OpenGL`, only on Linux. Per-platform code therefore needs no `#if`: e.g.
     `Utils/Platform/Windows/ShellWindows.cpp` and `Linux/ShellLinux.cpp` both implement `Shell.h`, and the build
     picks one. See [Platforms-And-Graphics-APIs.md](../06-Platform-And-Infrastructure/Platforms-And-Graphics-APIs.md).
+  - `UsePrecompiledHeader(conf, target, name)` gives a project a precompiled header, `<name>.h` built by
+    `<name>.cpp` in its `Src` ([below](#precompiled-headers)).
   - `ConfigureAsWindowedApp(conf)` builds a Windows exe as a windowed app (`SubSystem.Windows`, with
     `/ENTRY:mainCRTStartup` so the entry point is still `main`); the Editor and the Game use it, so no console window
     opens and takes focus from theirs ([Debug-Services-And-Logging.md](../06-Platform-And-Infrastructure/Debug-Services-And-Logging.md#the-console)).
@@ -94,7 +96,26 @@ Worth knowing if you audit this yourself:
   `conf.IncludePaths.Add(Path.Combine(Globals.RootDir, "Utils"))` line pointing at the `Utils` project root (not
   `Utils/Src`). Given the transitive path already resolves, it looks vestigial.
 
-Engine and Utils both use a precompiled header (`StdAfx.h`/`.cpp`).
+## Precompiled headers
+
+Engine and Utils each have one: `Engine/Src/EnginePCH.h` and `Utils/Src/UtilsPCH.h`, each built by the `.cpp` of the
+same name. No source file includes them. Every file in the project gets the PCH first anyway:
+
+- **Windows:** `UsePrecompiledHeader` adds the header to `ForcedIncludes`, so MSVC builds with `/FI` and `/Yu`, and
+  the PCH's own `.cpp` with `/Yc`.
+- **Linux:** the Makefile generator copies the header into the `obj` folder, builds a `.gch` beside the copy, and
+  compiles every file with `-include` of that copy, which clang turns into `-include-pch`. Nothing more is forced
+  there: another `-include` would look the header up by name through the include paths instead.
+
+A file written on Linux therefore can't build there and then fail on MSVC for lacking the include (C1010).
+
+**Each PCH is named after its project.** Both used to be `StdAfx.h`, and on Linux, Engine's `#include <StdAfx.h>`
+found Utils' header first, as `Utils/Src` comes before Engine's own `Src` in its include paths. Every Engine file then
+parsed Utils' PCH, GLM and all, as text after loading Engine's: about 0.8 s per file, nearly 40% of Engine's compile
+time. MSVC's `/Yu` uses the PCH for everything up to that include without looking the header up, so Windows shouldn't
+have had the problem. A `.cpp` in a project without a PCH got another project's header the same way.
+
+An old Linux build folder needs a `make clean` once after the rename: its dependency files still name `StdAfx.h`.
 
 ## Key files
 
