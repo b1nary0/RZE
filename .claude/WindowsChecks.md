@@ -62,6 +62,22 @@ Checks marked **(work)** are Windows-only changes, not tests: ask the user befor
   had no PCH on Windows before, so their files, the `Windows/` ones in EditorHarness included, are compiled with one
   for the first time. Debug and Release build, the tests pass, and B3 (the harness exits) still holds. Note the clean
   Debug build time of EditorLib and UnitTests next to A8's Engine number.
+- **A10. Do projects compile in parallel? (a measurement, no change behind it).** On Linux, the build ran the
+  projects one after another: no project's files started compiling until the projects it depends on had linked, so on
+  32 cores most of them sat idle (15 s, against 8.5 s once every project compiles at once). Find out whether MSBuild
+  does the same with RZE's solution. Change nothing; just measure and report.
+  1. Note the machine's logical core count (`$env:NUMBER_OF_PROCESSORS`).
+  2. In `Engine.vcxproj` and `EditorLib.vcxproj`, note whether the Debug configuration has
+     `<MultiProcessorCompilation>true</MultiProcessorCompilation>` (`/MP`, files compiled in parallel within one
+     project).
+  3. Clean build: delete every `obj` folder inside a `_project` folder under `RZE` (one per project) and
+     `RZE\_build\debug`, then run, timed with `Measure-Command`:
+     `& $msbuild RZE\RZE.sln /p:Configuration=Debug /p:Platform=x64 /m /v:minimal /nologo
+     /flp:"LogFile=$env:TEMP\rze-msbuild.log;Verbosity=normal;ShowTimestamp" /clp:PerformanceSummary`
+  4. Report the wall clock, and from the log's timestamps, for each of Rendering, Engine, EditorLib and UnitTests:
+     when its first file started compiling and when its `.lib` or `.exe` was written. The question is whether Engine's
+     first compile starts before Rendering's `.lib` is written, and EditorLib's before Engine's. Include the
+     performance summary's per-project table, and attach the lines of the log you read the times from.
 
 ### B. EditorHarness (H1: the harness beside the Editor)
 
