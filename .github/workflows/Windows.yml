@@ -57,6 +57,20 @@ jobs:
       shell: cmd
       run: .\RZE\_build\${{matrix.buildconfig}}\SourceAssetBurner.exe
 
+    # The Editor on DrawLineTest.scene. The runner has no GPU: DX11 runs on the Microsoft Basic Render Driver (WARP)
+    - name: Editor smoke test
+      shell: cmd
+      run: python .github\scripts\editor_smoke.py --config ${{matrix.buildconfig}} --out smoke-out
+
+    - name: Archive smoke test
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: Editor smoke test v${{github.run_number}} - Windows - ${{matrix.buildconfig}}
+        retention-days: 14
+        if-no-files-found: ignore
+        path: smoke-out
+
     # Only builds of the main branches are kept. The executables read their data from the source tree (the folder
     # above _build), so the archive keeps that layout
     - name: Archive Build
