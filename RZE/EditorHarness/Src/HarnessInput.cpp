@@ -79,7 +79,19 @@ namespace EditorHarness
 
 	void HarnessInput::SetRealInputBlocked(bool isBlocked)
 	{
+		const bool isUnblocking = m_isRealInputBlocked && !isBlocked;
 		m_isRealInputBlocked = isBlocked;
+
+		// While blocked, the real mouse's moves were dropped, so the UI still has the mouse where the harness last put
+		// it: a real click before any real move would land there. SDL tracks the real mouse before the filter runs, so
+		// when it's over the window, a move to it is pushed, as a hand's nudge would send.
+		if (isUnblocking && m_window != nullptr && SDL_GetMouseFocus() == m_window)
+		{
+			float x = 0.0f;
+			float y = 0.0f;
+			SDL_GetMouseState(&x, &y);
+			Move(x, y)();
+		}
 	}
 
 	HarnessInput::Step HarnessInput::Move(float x, float y)
