@@ -1,5 +1,6 @@
 #include <Utils/Math/Matrix4x4.h>
 
+#include <GLM/gtc/type_ptr.hpp>
 #include <GLM/gtx/quaternion.hpp>
 #include <GLM/gtx/matrix_decompose.hpp>
 

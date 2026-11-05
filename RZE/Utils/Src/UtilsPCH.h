@@ -1,19 +1,15 @@
 #pragma once
-//#pragma message("*********** Compiling Utils PCH... ***********")
-
-#include <functional>
 
 // std lib
 #include <algorithm>
-#include <assert.h>
-#include <codecvt>
 #include <cstdint>
-#include <locale.h>
-#include <string>
+#include <functional>
 #include <math.h>
+#include <string>
 
-// glm
-#include <GLM/glm.hpp>
-#include <GLM/common.hpp>
-#include <GLM/gtc/matrix_transform.hpp>
-#include <GLM/gtc/type_ptr.hpp>
+// Utils' maths, and through it GLM, which only Utils/Math includes
+#include <Utils/Math/Matrix4x4.h>
+#include <Utils/Math/Quaternion.h>
+#include <Utils/Math/Vector2D.h>
+#include <Utils/Math/Vector3D.h>
+#include <Utils/Math/Vector4D.h>

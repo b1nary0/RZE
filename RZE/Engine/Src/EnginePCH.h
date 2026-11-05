@@ -1,11 +1,7 @@
 #pragma once
-#pragma message("*********** Compiling Engine PCH... ***********")
 
 // std lib
-#include <assert.h>
-#include <codecvt>
 #include <cstdint>
-#include <locale.h>
 #include <string>
 #include <math.h>
 #include <limits>
@@ -40,12 +36,4 @@
 
 #include <DebugUtils/DebugServices.h>
 
-#endif
-
-#ifdef min
-#undef min
-#endif
-
-#ifdef max
-#undef max
 #endif

@@ -137,9 +137,6 @@ public abstract class BaseProject : Project
         // -Wall, as errors, as Windows' /W3 /WX are
         conf.Options.Add(Options.Makefile.Compiler.Warnings.MoreWarnings);
         conf.Options.Add(Options.Makefile.Compiler.TreatWarningsAsErrors.Enable);
-        // Except the PCHs' "Compiling ... PCH" #pragma message, which MSVC prints and clang reports as a warning. The
-        // # is escaped for make, where it would start a comment.
-        conf.AdditionalCompilerOptions.Add(@"-Wno-error=\#pragma-messages");
         // Symbols in every configuration, as Windows has PDBs in every configuration
         conf.Options.Add(Options.Makefile.Compiler.GenerateDebugInformation.Enable);
 

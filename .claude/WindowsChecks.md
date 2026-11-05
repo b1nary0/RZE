@@ -46,6 +46,11 @@ Checks marked **(work)** are Windows-only changes, not tests: ask the user befor
   include another project's `StdAfx.h` and now include only what they use: `Rendering/RenderThread.cpp`,
   `Rendering/RenderThreadCommands.cpp` and `EditorCameraComponent.cpp`. An undeclared standard name in one of them
   is a missing include there.
+- **A7. Smaller PCHs.** `EnginePCH.h` and `UtilsPCH.h` lost `<codecvt>`, `<locale.h>`, `<assert.h>` and the
+  `min`/`max` `#undef`s, and `UtilsPCH.h` includes the Utils math headers instead of `GLM/glm.hpp` and its `gtc`
+  headers. Linux builds, but the Windows-only files (`Platform/Windows/*.cpp`, `Windowing/Windows/*.cpp`) were never
+  compiled against it: an undeclared name in one of them (`std::wstring_convert`, `glm::...`, `assert`) is a missing
+  include there. The build log no longer prints "Compiling Engine PCH".
 
 ### B. EditorHarness (H1: the harness beside the Editor)
 
