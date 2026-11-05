@@ -26,6 +26,7 @@ namespace EditorHarness
 				std::string pending;
 				char buffer[4096];
 				size_t count = 0;
+				bool firstLine = true;
 				while ((count = ReadStandardInput(buffer, sizeof(buffer))) > 0)
 				{
 					pending.append(buffer, count);
@@ -34,6 +35,14 @@ namespace EditorHarness
 					{
 						std::string line = pending.substr(0, end);
 						pending.erase(0, end + 1);
+						// A UTF-8 byte order mark before the first command, which Windows PowerShell 5.1's
+						// Process.Start writes to a redirected stdin
+						static const std::string k_utf8BOM = "\xEF\xBB\xBF";
+						if (firstLine && line.compare(0, k_utf8BOM.size(), k_utf8BOM) == 0)
+						{
+							line.erase(0, k_utf8BOM.size());
+						}
+						firstLine = false;
 						// A Windows console ends its lines with \r\n
 						if (!line.empty() && line.back() == '\r')
 						{
