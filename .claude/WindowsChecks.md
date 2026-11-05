@@ -208,9 +208,11 @@ Checks marked **(work)** are Windows-only changes, not tests: ask the user befor
 
 ### G. CI
 
-- **G1. Windows.yml.** Its actions were updated: runner `windows-2022`, .NET 8, `upload-artifact@v4`. Run it on this
-  branch with `gh workflow run Windows.yml --ref look-what-claude-can-do-linux-port`, if the user agrees, and report
-  the result. Known risk: the runner may lack VS2017's v141 toolset or SDK 10.0.18362, which `RZE.sharpmake.cs` pins.
+- **G1. Windows.yml.** Its actions were updated: runner `windows-2022`, .NET 8, `upload-artifact@v4`. Pushes to this
+  branch don't start it (it runs on pushes and PRs to `master` and `Sandbox` only), so run it by hand with
+  `gh workflow run Windows.yml --ref look-what-claude-can-do`, if the user agrees, and report the result. It runs this
+  branch's copy of the workflow, which also builds the new Sharpmake hook (A11). Known risk: the runner may lack
+  VS2017's v141 toolset or SDK 10.0.18362, which `RZE.sharpmake.cs` pins.
 
 ### H. Windows-only work (ask the user before starting)
 
