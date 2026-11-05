@@ -6,6 +6,7 @@ using Sharpmake;
 [module: Sharpmake.Include("Make/Sharpmake/CommonTarget.sharpmake.cs")]
 [module: Sharpmake.Include("Make/Sharpmake/BaseProject.sharpmake.cs")]
 [module: Sharpmake.Include("Make/Sharpmake/Sharpmake.sharpmake.cs")]
+[module: Sharpmake.Include("Make/Sharpmake/ParallelMakefile.sharpmake.cs")]
 [module: Sharpmake.Include("Engine/Engine.sharpmake.cs")]
 // Libraries
 [module: Sharpmake.Include("Utils/Utils.sharpmake.cs")]
@@ -81,6 +82,7 @@ public static class Main
     public static void SharpmakeMain(Sharpmake.Arguments arguments)
     {
         KitsRootPaths.SetUseKitsRootForDevEnv(DevEnv.vs2017, KitsRootEnum.KitsRoot10, Options.Vc.General.WindowsTargetPlatformVersion.v10_0_18362_0);
+        ParallelMakefile.Register();
         arguments.Generate<RZE>();
     }
 }

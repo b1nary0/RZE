@@ -78,6 +78,12 @@ Checks marked **(work)** are Windows-only changes, not tests: ask the user befor
      when its first file started compiling and when its `.lib` or `.exe` was written. The question is whether Engine's
      first compile starts before Rendering's `.lib` is written, and EditorLib's before Engine's. Include the
      performance summary's per-project table, and attach the lines of the log you read the times from.
+- **A11. The parallel Makefile's generator stays out of the Windows build.** `RZE.sharpmake.cs` now registers a
+  post-generation hook (`Make/Sharpmake/ParallelMakefile.sharpmake.cs`) that writes `RZE/Makefile` for the Linux
+  build. It should do nothing for the `.sln`. In A1, `GenerateSolutions.bat` reports 0 errors and 0 warnings and prints
+  no `ParallelMakefile: wrote` line, and no `RZE\Makefile` appears (`Test-Path RZE\Makefile` is `False`, unless one
+  came from a Linux checkout of the same folder). The script compiles on Windows' Sharpmake run, which is its first
+  test there: a C# compile error in it fails generation outright, so give its message.
 
 ### B. EditorHarness (H1: the harness beside the Editor)
 
