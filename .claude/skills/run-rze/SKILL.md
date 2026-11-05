@@ -7,7 +7,7 @@ RZE is a C++ engine with a Dear ImGui editor: DX11 on Windows, OpenGL on Linux. 
 with real mouse and keyboard input and client-area PNG screenshots. Each call does one action; the editor process holds
 the state between calls.
 
-- **Windows:** `.claude/skills/run-rze/driver.ps1` (user32 input). The sections below, up to **Linux**, are Windows'.
+- **Windows:** `.claude/skills/run-rze/driver.ps1`: user32 input, or EditorHarness with `launch -Harness`. The sections below, up to **Linux**, are Windows'.
   Paths are relative to the repo root (`C:\dev\RZE`); the commands are PowerShell 5.1.
 - **Linux (KDE Plasma, Wayland):** `.claude/skills/run-rze/driver.py`, with the same commands. See **Linux** at the end.
 
@@ -63,6 +63,7 @@ the window the way a user would:
 | `click -X -Y` | Left click. |
 | `dblclick -X -Y` | Two left clicks close enough together to count as a double-click (two `click` calls are too far apart). Double-clicking an object in the Scene panel focuses the camera on it. |
 | `drag -X -Y -X2 -Y2` | Left-button drag in 10 steps. Verified on the translate gizmo's X arrow. |
+| `scroll -X -Y -Notches N` | N wheel notches at (X, Y); + is away from you (zooms the scene view in). |
 | `key -Keys '...'` | `SendKeys` syntax. `'^a<value>{ENTER}'` replaces an ImGui number field. |
 | `info` | Window title and client size. |
 | `alive` | `running pid=N responding=True/False` or `not running`. |
@@ -75,6 +76,49 @@ which often holds a layout the user means to keep (CLAUDE.md). `launch` copies i
 `; imgui.ini restored`). A `close` that stops at the unsaved-changes prompt leaves the backup, since the Editor rewrites
 the file as it exits: answer the prompt, then `quit` restores it. A backup a session left behind is put back by the
 next `launch`, which says so.
+
+### Harness sessions (`launch -Harness`)
+
+**Prefer `launch -Harness`** for driving the Editor, as on Linux. It runs `EditorHarness.exe` (the Editor plus a harness
+beside it, `RZE/EditorHarness`): input, screenshots and questions go through the app itself, as JSON lines on its stdin.
+- Your cursor never moves and focus never changes, and the window can be covered or unfocused.
+- `shot` is the frame itself, read back from the back buffer, not a screen capture.
+- `state` and `object` answer what the Editor holds, so checks don't depend on reading pixels.
+- Real mouse and keyboard input is dropped while it runs (`realinput -On on` lets it through).
+
+Use a plain `launch` only for what needs the real desktop: the title bar, Snap Layouts, focus, real-input checks.
+
+```powershell
+& $d launch -Harness -Scene DrawLineTest.scene   # waits for "ready" and the window to maximize, then 5 s for assets
+& $d click -X 1526 -Y 123                         # select NeckMech (1770x959 client; measure from a shot elsewhere)
+& $d click -X 1654 -Y 563; & $d key -Keys '^a45{ENTER}'   # Rotation Y = 45
+& $d object -Name NeckMech                        # "rotation": [0, 45, 0], components, parent, GUID
+& $d state                                        # scene, modified, selection, undo, objects
+& $d close                                        # stops at the Unsaved Changes prompt (an edit was made):
+& $d shot; & $d click -X 883 -Y 508               #   look at it, click Don't Save, as a person would
+& $d close                                        # closed code=0 (harness); imgui.ini restored
+```
+
+Every command in the table above goes through the harness while a harness session runs, and these work only there:
+
+| command | what it does |
+|---|---|
+| `state` | The Editor's state as JSON: scene, modified, loading, selection, canUndo/canRedo, atSavePoint, objects. |
+| `object -Name N` | One object: GUID, parent, components, position, rotation, scale. |
+| `realinput -On on\|off` | Lets the real mouse and keyboard through, or blocks them again (the default). |
+
+How it works, and what to know:
+- **Each call is its own process**, so `launch -Harness` starts a hidden helper (`driver.ps1 helper`) that holds the
+  harness's stdin and stdout for the session. Calls reach it through the named pipe `rze-driver-harness`; the session is
+  recorded in `%TEMP%\rze-driver\harness-session.json`. The app's other output (its log lines) goes to
+  `%TEMP%\rze-driver\harness-app.log`.
+- **`close` behaves like the close button**: with unsaved changes, it stops at the prompt and leaves the session
+  running. Answer it with `click` on **Don't Save**, unless the task needs the scene saved; the click says
+  `(harness; the app exited)`. Then `close` again ends the session and restores `imgui.ini`.
+- **`quit` ends the session at once**: the helper kills the harness, discarding unsaved changes. Prefer `close`.
+- A harness that exits is still listed by Windows for a moment, so a `launch` right after a `close` waits up to 5 s for
+  it to go before refusing.
+- If the helper dies, it closes its harness on the way out, and the next call finds no session.
 
 Scenes live in `RZE\Assets\Scenes\`:
 - `DrawLineTest.scene`: small; NeckMech (5 sub-meshes), M4, and a directional light.
