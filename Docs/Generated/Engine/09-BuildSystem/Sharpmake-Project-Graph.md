@@ -41,8 +41,7 @@ DevEnv (`vs2017`, Kits Root `10.0.18362.0`) and calls `arguments.Generate<RZE>()
     include paths for the project's own `Src` and `ThirdParty/Include`.
   - **`ConfigureWin64`:** C++17, RTTI, Unicode, exceptions, warning level 3 as errors (4267 off), `NOMINMAX`, and
     `RZE_GFX_DX11`.
-  - **`ConfigureLinux`:** clang (`clang++`), C++17, RTTI, exceptions, `-Wall -Werror` (the PCHs' `#pragma message`
-    stays a warning: `-Wno-error=\#pragma-messages`, escaped for make), symbols in every configuration,
+  - **`ConfigureLinux`:** clang (`clang++`), C++17, RTTI, exceptions, `-Wall -Werror`, symbols in every configuration,
     `-O0`/`-O2`/`-O3 -mavx2` for Debug/Release/Retail, `-pthread`, `RZE_GFX_OPENGL`, and LLD as the linker
     (`-fuse-ld=lld`). LLD finds symbols in static libraries in any order, as MSVC's linker does; GNU ld wouldn't,
     since the generator sorts libraries by name. Executables have no extension. `ThirdParty/Include` is a system
