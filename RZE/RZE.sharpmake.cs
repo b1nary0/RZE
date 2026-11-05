@@ -81,7 +81,7 @@ public static class Main
     [Sharpmake.Main]
     public static void SharpmakeMain(Sharpmake.Arguments arguments)
     {
-        KitsRootPaths.SetUseKitsRootForDevEnv(DevEnv.vs2017, KitsRootEnum.KitsRoot10, Options.Vc.General.WindowsTargetPlatformVersion.v10_0_18362_0);
+        KitsRootPaths.SetUseKitsRootForDevEnv(DevEnv.vs2026, KitsRootEnum.KitsRoot10, Options.Vc.General.WindowsTargetPlatformVersion.v10_0_26100_0);
         ParallelMakefile.Register();
         arguments.Generate<RZE>();
     }

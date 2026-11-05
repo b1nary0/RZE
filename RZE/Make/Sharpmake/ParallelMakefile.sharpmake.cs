@@ -31,7 +31,7 @@ public static class ParallelMakefile
         {
             foreach (List<Solution.Configuration> configurations in solution.SolutionFilesMapping.Values)
             {
-                // Windows' .sln has vs2017 configurations; only the Makefile generator's solution gets one
+                // Windows' .sln has vs2026 configurations; only the Makefile generator's solution gets one
                 if (configurations.Count == 0 || !configurations.All(conf => ((CommonTarget)conf.Target).DevEnv == DevEnv.make))
                 {
                     continue;
