@@ -189,6 +189,16 @@ Checks marked **(work)** are Windows-only changes, not tests: ask the user befor
     and are the right way up.
 - **D4. Game UI.** Launch the Game. Its ImGui demo window is the right way up, with its title bar on top. On Linux this
   needed a GL-only fix; DX11 should already be right.
+- **D5. The D3D11 debug layer's reports reach the log.** Debug builds now read `ID3D11InfoQueue` after every
+  present (`DX11Device::ReportDebugMessages`): corruption and errors log as `[Error] D3D11 (<id>): ...`, warnings as
+  `[Warning] D3D11 (<id>): ...`. Nothing read them before, so these are the first look. CI's smoke test opens `Sponza.scene`
+  on WARP and only watches it load (its Windows Debug job lists any it sees); this check covers a real GPU and what
+  the Editor does after that. In a **Debug** Editor (`driver.ps1 launch -Harness`), open `Sponza.scene` and
+  `RenderPerfTest.scene` (probes and shadows), let each settle 20 s, select an object, open the Content Browser so
+  thumbnails render, then `close`. From the newest
+  `RZE\Logs\RZELOG_*.txt`, report every distinct `D3D11 (` line with how often it came (e.g. `Select-String 'D3D11 \('
+  | Group-Object Line | Sort Count -Desc`), and say which scene or action brought it. Expect no line saying the info
+  queue isn't available. Also check a Release Editor logs no `D3D11 (` line at all.
 
 ### E. Editor features
 

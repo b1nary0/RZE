@@ -17,6 +17,8 @@
 #include <SDL3/SDL.h>
 
 #include <cstring>
+#include <iterator>
+#include <vector>
 
 #include <d3d9.h>
 
@@ -128,6 +130,25 @@ namespace Rendering
 			NULL,
 			&mDeviceContext);
 		AssertExpr(hr == S_OK);
+
+#ifdef _DEBUG
+		// The debug layer only writes its reports to a debugger's output; the info queue holds them for the log. INFO
+		// and MESSAGE, the layer's notes on objects made and destroyed, aren't kept.
+		if (SUCCEEDED(mDevice->QueryInterface(__uuidof(ID3D11InfoQueue), reinterpret_cast<void**>(&mInfoQueue))))
+		{
+			D3D11_MESSAGE_SEVERITY ignoredSeverities[] = { D3D11_MESSAGE_SEVERITY_INFO, D3D11_MESSAGE_SEVERITY_MESSAGE };
+			D3D11_INFO_QUEUE_FILTER filter;
+			ZeroMemory(&filter, sizeof(filter));
+			filter.DenyList.NumSeverities = static_cast<UINT>(std::size(ignoredSeverities));
+			filter.DenyList.pSeverityList = ignoredSeverities;
+			mInfoQueue->AddStorageFilterEntries(&filter);
+		}
+		else
+		{
+			mInfoQueue = nullptr;
+			RZE_LOG_WARNING("The D3D11 debug layer's info queue isn't available, so its reports won't be logged.");
+		}
+#endif
 
 		CreateSwapChain();
 
@@ -263,6 +284,52 @@ namespace Rendering
 
 			mDevice->CreateSamplerState(&samplerDesc, &mLinearClampSamplerState);
 		}
+
+		// What creating the swap chain and the states above reported
+		ReportDebugMessages();
+	}
+
+	void DX11Device::ReportDebugMessages()
+	{
+		if (mInfoQueue == nullptr)
+		{
+			return;
+		}
+
+		// Each message is a D3D11_MESSAGE followed by its text, so it's read into a buffer of the size the queue gives
+		std::vector<Byte> buffer;
+		const UINT64 count = mInfoQueue->GetNumStoredMessages();
+		for (UINT64 index = 0; index < count; ++index)
+		{
+			SIZE_T length = 0;
+			if (FAILED(mInfoQueue->GetMessage(index, nullptr, &length)) || length == 0)
+			{
+				continue;
+			}
+			buffer.resize(length);
+			D3D11_MESSAGE* message = reinterpret_cast<D3D11_MESSAGE*>(buffer.data());
+			if (FAILED(mInfoQueue->GetMessage(index, message, &length)))
+			{
+				continue;
+			}
+
+			switch (message->Severity)
+			{
+			case D3D11_MESSAGE_SEVERITY_CORRUPTION:
+			case D3D11_MESSAGE_SEVERITY_ERROR:
+				RZE_LOG_ERROR("D3D11 (" << static_cast<int>(message->ID) << "): " << message->pDescription);
+				break;
+			case D3D11_MESSAGE_SEVERITY_WARNING:
+				RZE_LOG_WARNING("D3D11 (" << static_cast<int>(message->ID) << "): " << message->pDescription);
+				break;
+			default:
+				// INFO and MESSAGE aren't stored (Initialize)
+				break;
+			}
+		}
+		// The queue can't hand messages over one by one, only be cleared, so one another thread stores between the count
+		// and here is lost. Not clearing would fill it: it holds 1024 by default, and a warning can come every frame.
+		mInfoQueue->ClearStoredMessages();
 	}
 
 	void DX11Device::CreateSwapChain()
@@ -357,6 +424,14 @@ namespace Rendering
 
 	void DX11Device::Shutdown()
 	{
+		// What's come in since the last present, then the queue goes with the device
+		ReportDebugMessages();
+		if (mInfoQueue != nullptr)
+		{
+			mInfoQueue->Release();
+			mInfoQueue = nullptr;
+		}
+
 		if (mFrameLatencyWaitableObject != nullptr)
 		{
 			CloseHandle(mFrameLatencyWaitableObject);
@@ -811,6 +886,8 @@ namespace Rendering
 		// Tearing is only allowed for an unsynced present
 		const UINT flags = mSyncInterval == 0 && mIsTearingSupported ? DXGI_PRESENT_ALLOW_TEARING : 0;
 		const HRESULT hr = mSwapChain->Present(mSyncInterval, flags);
+		// Everything the frame's calls reported
+		ReportDebugMessages();
 
 		if ((hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET) && !mHasReportedDeviceLoss)
 		{

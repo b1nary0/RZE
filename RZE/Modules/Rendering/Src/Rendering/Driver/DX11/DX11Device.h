@@ -7,6 +7,7 @@
 
 struct ID3D11Device;
 struct ID3D11DeviceContext;
+struct ID3D11InfoQueue;
 struct IDXGISwapChain2;
 struct ID3D11RenderTargetView;
 struct ID3D11RasterizerState;
@@ -134,11 +135,16 @@ namespace Rendering
 
 		void CreateSwapChain();
 		void CreateBackBufferDepthStencil(U32 width, U32 height);
+		// Logs what the debug layer has reported since the last call, and clears it. Does nothing without a debug
+		// device.
+		void ReportDebugMessages();
 
 	private:
 		IDXGISwapChain2* mSwapChain;
 		ID3D11DeviceContext* mDeviceContext;
 		ID3D11Device* mDevice;
+		// The debug layer's messages (Debug builds, whose device has D3D11_CREATE_DEVICE_DEBUG); null otherwise
+		ID3D11InfoQueue* mInfoQueue = nullptr;
 
 		void* mWindowHandle;
 		// Signalled when the swap chain can take another frame, i.e. fewer than k_maxFrameLatency are queued. Created
