@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/RenderStages/AmbientOcclusionStage.h>
 
 #include <Graphics/AmbientOcclusion.h>

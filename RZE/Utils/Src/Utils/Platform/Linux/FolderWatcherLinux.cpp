@@ -1,5 +1,3 @@
-#include <StdAfx.h>
-
 #include <Utils/Platform/FolderWatcher.h>
 
 #include <Utils/DebugUtils/Debug.h>

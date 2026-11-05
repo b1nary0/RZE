@@ -1,5 +1,8 @@
-#include <StdAfx.h>
 #include <Game/World/GameObjectComponents/EditorCameraComponent.h>
+
+#include <RZE.h>
+
+#include <EngineCore/Input/InputHandler.h>
 
 #include <Game/GameScene.h>
 #include <Game/World/GameObject/GameObject.h>
@@ -9,6 +12,12 @@
 
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/Math.h>
+
+#include <Optick/optick.h>
+
+#include <algorithm>
+#include <cmath>
+#include <memory>
 
 namespace
 {

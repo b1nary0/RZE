@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <EngineCore/Threading/JobSystem/Job.h>
 
 namespace Threading

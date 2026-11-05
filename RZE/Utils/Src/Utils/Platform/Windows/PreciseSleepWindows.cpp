@@ -1,5 +1,3 @@
-#include <StdAfx.h>
-
 #include <Utils/Platform/Timers/PreciseSleep.h>
 
 #include <Utils/DebugUtils/Debug.h>

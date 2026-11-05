@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/RenderStages/ImGuiRenderStage.h>
 
 #include <Rendering/Renderer.h>

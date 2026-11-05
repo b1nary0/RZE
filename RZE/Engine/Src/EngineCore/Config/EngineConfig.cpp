@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <EngineCore/Config/EngineConfig.h>
 
 #include <Utils/Conversions.h>

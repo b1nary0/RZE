@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <EngineCore/Resources/AsyncResourceBatch.h>
 
 #include <EngineCore/Async/AsyncFrameBudget.h>

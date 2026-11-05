@@ -1,5 +1,3 @@
-#include <StdAfx.h>
-
 #include <Windowing/WindowIcon.h>
 
 #include <Utils/Platform/Filepath.h>

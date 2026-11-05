@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/LightObject.h>
 
 #include <Graphics/GraphicsDefines.h>

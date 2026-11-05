@@ -1,5 +1,3 @@
-#include <StdAfx.h>
-
 #include <Utils/Platform/FileNames.h>
 
 #include <Utils/StringUtils.h>

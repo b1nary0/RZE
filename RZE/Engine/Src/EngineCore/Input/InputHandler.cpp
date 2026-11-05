@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <EngineCore/Input/InputHandler.h>
 
 #include <DebugUtils/DebugServices.h>

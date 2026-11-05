@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <EngineCore/Input/ImGuiInput.h>
 
 #include <EngineCore/Input/InputHandler.h>

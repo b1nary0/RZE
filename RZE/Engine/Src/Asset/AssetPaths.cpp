@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Asset/AssetPaths.h>
 
 #include <Utils/StringUtils.h>

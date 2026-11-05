@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Game/StaticMeshResource.h>
 
 #include <EngineCore/Resources/AsyncResourceBatch.h>

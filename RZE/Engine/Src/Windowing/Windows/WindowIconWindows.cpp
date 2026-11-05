@@ -1,5 +1,3 @@
-#include <StdAfx.h>
-
 #include <Windowing/Windows/WindowIconWindows.h>
 
 #include <Utils/DebugUtils/Debug.h>

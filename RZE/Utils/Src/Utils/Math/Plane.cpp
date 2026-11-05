@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Utils/Math/Plane.h>
 
 #include <Utils/Math/Vector3D.h>

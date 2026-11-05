@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/BufferCapacityPolicy.h>
 
 #include <Utils/DebugUtils/Debug.h>

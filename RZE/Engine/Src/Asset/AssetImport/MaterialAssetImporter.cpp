@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Asset/AssetImport/MaterialAssetImporter.h>
 
 #include <Asset/AssetImport/MaterialAssetWriter.h>

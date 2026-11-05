@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Asset/AssetImport/MeshAssetWriter.h>
 
 #include <Asset/AssetPaths.h>

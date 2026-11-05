@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/RenderStages/ReflectionProbeStage.h>
 
 #include <Graphics/GraphicsLayouts.h>

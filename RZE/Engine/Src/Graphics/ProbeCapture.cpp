@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/ProbeCapture.h>
 
 #include <Graphics/CubeMap.h>

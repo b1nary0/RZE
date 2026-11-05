@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/RenderStages/DepthPrepassStage.h>
 
 #include <Graphics/IndexBuffer.h>

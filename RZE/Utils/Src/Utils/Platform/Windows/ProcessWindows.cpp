@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Utils/Platform/Process.h>
 
 #include <Utils/Platform/Windows/WideStrings.h>

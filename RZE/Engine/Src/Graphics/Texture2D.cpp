@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/Texture2D.h>
 
 #include <Game/World/GameObject/Properties/PropertyBuilder.h>

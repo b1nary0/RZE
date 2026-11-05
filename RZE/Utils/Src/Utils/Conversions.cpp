@@ -1,5 +1,3 @@
-#include <StdAfx.h>
-
 #include <Utils/Conversions.h>
 #include <Utils/Platform/Filepath.h>
 #include <Utils/Platform/Platform.h>

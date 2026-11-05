@@ -67,6 +67,21 @@ public abstract class BaseProject : Project
         conf.AdditionalLinkerOptions.Add("/ENTRY:mainCRTStartup");
     }
 
+    // A precompiled header: <name>.h in the project's Src folder, built by <name>.cpp. Every source file gets it first
+    // without including it. MSVC force-includes it (/FI, with /Yu), and the Makefile generator already does (-include
+    // of the copy it builds the PCH from), so it isn't forced there too: a second -include would find the header by
+    // name instead. Name it after the project: through the include paths, a shared name like StdAfx.h can find another
+    // project's header (Engine's include of StdAfx.h found Utils' on Linux, and parsed it as text in every file).
+    protected static void UsePrecompiledHeader(Configuration conf, CommonTarget target, string name)
+    {
+        conf.PrecompHeader = name + ".h";
+        conf.PrecompSource = name + ".cpp";
+        if (target.Platform == Platform.win64)
+        {
+            conf.ForcedIncludes.Add(name + ".h");
+        }
+    }
+
     // Folders that hold code for only some platforms or graphics APIs. A folder with one of these names, at any depth
     // under a project's Src, is compiled only where it's listed, so per-platform code needs no #ifdefs. E.g.
     // Utils/Platform/Windows/ShellWindows.cpp and Utils/Platform/Linux/ShellLinux.cpp implement Utils/Platform/Shell.h.

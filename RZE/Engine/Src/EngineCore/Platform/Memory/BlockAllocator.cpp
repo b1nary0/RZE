@@ -1,5 +1,3 @@
-#include <StdAfx.h>
-
 #include <EngineCore/Platform/Memory/BlockAllocator.h>
 
 BlockAllocator::BlockAllocator(size_t blockSizeKB /*= ALLOCATOR_DEFAULT_FIXED_SIZE_KB*/, size_t alignment /*= ALLOCATOR_BLOCK_DEFAULT_ALIGNMENT*/)

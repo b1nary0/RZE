@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <DebugUtils/FrameTimeCapture.h>
 
 #include <Utils/Platform/CmdLine.h>

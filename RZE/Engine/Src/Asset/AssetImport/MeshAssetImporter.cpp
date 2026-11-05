@@ -1,5 +1,3 @@
-#include <StdAfx.h>
-
 #include <Asset/AssetImport/MeshAssetImporter.h>
 #include <Asset/AssetImport/MeshAssetWriter.h>
 #include <Asset/AssetImport/MaterialAssetImporter.h>

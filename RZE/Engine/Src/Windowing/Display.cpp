@@ -1,5 +1,3 @@
-#include <StdAfx.h>
-
 #include <Windowing/Display.h>
 
 #include <Windowing/SDLVideo.h>

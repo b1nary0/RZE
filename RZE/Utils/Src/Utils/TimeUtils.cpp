@@ -1,5 +1,3 @@
-#include <StdAfx.h>
-
 #include <Utils/TimeUtils.h>
 
 #include <Utils/Platform/Platform.h>

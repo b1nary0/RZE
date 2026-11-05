@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Game/World/GameObjectComponents/GifChatComponent.h>
 
 #include <Game/GameScene.h>

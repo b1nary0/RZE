@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/TextureFile.h>
 
 #include <EngineCore/Async/AsyncOperation.h>

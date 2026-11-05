@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <EngineCore/Config/GameConfig.h>
 
 namespace

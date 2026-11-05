@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Utils/Platform/TypeNames.h>
 
 #include <cxxabi.h>

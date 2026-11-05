@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/RenderStages/ShadowRenderStage.h>
 
 #include <Graphics/CubeMap.h>

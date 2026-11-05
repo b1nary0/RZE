@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <EngineApp.h>
 
 #include <EngineCore/Engine.h>

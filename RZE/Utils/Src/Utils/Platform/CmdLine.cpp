@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Utils/Platform/CmdLine.h>
 
 #include <Utils/DebugUtils/Debug.h>

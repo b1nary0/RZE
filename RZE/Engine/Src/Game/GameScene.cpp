@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Game/GameScene.h>
 
 #include <Asset/AssetPaths.h>

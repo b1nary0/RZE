@@ -35,6 +35,17 @@ Checks marked **(work)** are Windows-only changes, not tests: ask the user befor
   under the lock, and `Update()` returns whether to keep running (Known Issue #31). In Debug and in Release, run
   `driver.ps1 launch -Scene DrawLineTest.scene` then `driver.ps1 close`, 5 times each. Every `close` prints
   `closed code=0` within a few seconds. A hang (still running after the timeout) is a failure: say which config.
+- **A6. Forced-include PCHs.** `StdAfx.h/.cpp` became `EnginePCH.h/.cpp` and `UtilsPCH.h/.cpp`, and no source file
+  includes them any more: `BaseProject.UsePrecompiledHeader` force-includes them on win64 (`/FI` with `/Yu`). Linux
+  generated these settings, so check them on a real build: after A1, `Engine.vcxproj` has
+  `<ForcedIncludeFiles>EnginePCH.h</ForcedIncludeFiles>` with `<PrecompiledHeader>Use</PrecompiledHeader>`, and
+  `EnginePCH.cpp` has `Create` (Utils the same). Debug and Release build with no C1010 ("unexpected end of file while
+  looking for precompiled header") and no new warnings, and the build log shows the "Compiling Engine PCH" message
+  once per configuration, not once per file. Build from a clean `obj` (delete `RZE\Engine\_project\obj` and
+  `RZE\Utils\_project\obj` first) so no old `StdAfx.pch` is reused. Three files outside Engine and Utils used to
+  include another project's `StdAfx.h` and now include only what they use: `Rendering/RenderThread.cpp`,
+  `Rendering/RenderThreadCommands.cpp` and `EditorCameraComponent.cpp`. An undeclared standard name in one of them
+  is a missing include there.
 
 ### B. EditorHarness (H1: the harness beside the Editor)
 

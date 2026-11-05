@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/MaterialResource.h>
 
 #include <EngineCore/Resources/AsyncResourceBatch.h>

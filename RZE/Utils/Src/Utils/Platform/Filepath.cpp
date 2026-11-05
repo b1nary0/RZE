@@ -1,5 +1,3 @@
-#include <StdAfx.h>
-
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Platform/Filepath.h>
 #include <Utils/Platform/Platform.h>

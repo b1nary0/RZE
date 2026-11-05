@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Game/SceneFormat.h>
 
 #include <Game/GameScene.h>

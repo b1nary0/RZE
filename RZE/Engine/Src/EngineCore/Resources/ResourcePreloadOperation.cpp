@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <EngineCore/Resources/ResourcePreloadOperation.h>
 
 #include <string>

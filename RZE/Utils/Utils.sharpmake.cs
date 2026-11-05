@@ -15,7 +15,6 @@ public class Utils : BaseProject
         base.ConfigureAll(conf, target);
         conf.Output = Configuration.OutputType.Lib;
 
-        conf.PrecompHeader = "StdAfx.h";
-        conf.PrecompSource = "StdAfx.cpp";
+        UsePrecompiledHeader(conf, target, "UtilsPCH");
     }
 }

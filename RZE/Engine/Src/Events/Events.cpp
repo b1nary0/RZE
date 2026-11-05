@@ -1,5 +1,3 @@
-#include "StdAfx.h"
-
 #include "Events.h"
 
 WindowEvent::WindowEvent(const U16 eventSubType)

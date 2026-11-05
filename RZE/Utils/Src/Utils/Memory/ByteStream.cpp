@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Utils/Memory/ByteStream.h>
 
 #include <Utils/DebugUtils/Debug.h>

@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Game/HeadlessScene.h>
 
 #include <EngineCore/Async/AsyncOperationManager.h>

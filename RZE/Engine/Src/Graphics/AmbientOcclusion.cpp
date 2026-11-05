@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/AmbientOcclusion.h>
 
 #include <Utils/StringUtils.h>

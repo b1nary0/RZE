@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/IrradianceProbeGrid.h>
 
 #include <Utils/Math/BoundingBox.h>

@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Game/World/GameObject/GameObject.h>
 
 #include <Game/World/GameObject/GameObjectComponent.h>

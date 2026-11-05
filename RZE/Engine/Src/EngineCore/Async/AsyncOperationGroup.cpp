@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <EngineCore/Async/AsyncOperationGroup.h>
 
 #include <algorithm>

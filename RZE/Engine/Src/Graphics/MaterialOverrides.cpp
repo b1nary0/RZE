@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/MaterialOverrides.h>
 
 #include <Graphics/Material.h>

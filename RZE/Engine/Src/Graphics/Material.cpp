@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/Material.h>
 
 #include <Graphics/Shader.h>

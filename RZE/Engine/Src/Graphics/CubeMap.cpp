@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/CubeMap.h>
 
 #include <Utils/DebugUtils/Debug.h>

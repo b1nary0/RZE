@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <EngineCore/Resources/ResourceHandler.h>
 
 #include <EngineCore/Threading/MainThreadDispatcher.h>

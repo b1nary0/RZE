@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/AntiAliasing.h>
 
 #include <Utils/StringUtils.h>

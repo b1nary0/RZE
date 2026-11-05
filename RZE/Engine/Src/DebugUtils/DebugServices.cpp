@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <DebugUtils/DebugServices.h>
 
 #define MAX_LOG_SIZE 10

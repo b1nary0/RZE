@@ -1,5 +1,3 @@
-#include <StdAfx.h>
-
 #include <Windowing/WindowNative.h>
 
 #include <EngineCore/Input/InputHandler.h>

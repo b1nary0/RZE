@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/Shader.h>
 
 #include <Asset/AssetPaths.h>

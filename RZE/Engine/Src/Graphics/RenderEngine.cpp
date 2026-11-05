@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/RenderEngine.h>
 
 #include <Graphics/RenderPipeline.h>

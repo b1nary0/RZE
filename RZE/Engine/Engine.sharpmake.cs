@@ -19,8 +19,7 @@ public class Engine : BaseProject
         conf.AddPublicDependency<Externals>(target);
         conf.AddPublicDependency<Rendering>(target);
 
-        conf.PrecompHeader = "StdAfx.h";
-        conf.PrecompSource = "StdAfx.cpp";
+        UsePrecompiledHeader(conf, target, "EnginePCH");
 
         conf.IncludePaths.Add("../../Engine/Src");
 

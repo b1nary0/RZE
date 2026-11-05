@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Utils/LiveObjectPtr.h>
 
 #include <Utils/DebugUtils/Debug.h>

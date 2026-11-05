@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Windowing/Linux/WindowIconLinux.h>
 
 #include <Windowing/WindowIcon.h>

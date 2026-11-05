@@ -1,5 +1,3 @@
-#include <StdAfx.h>
-
 #include <Windowing/SplashScreenLayout.h>
 
 #include <Windowing/WindowIcon.h>

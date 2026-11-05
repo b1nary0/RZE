@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/RenderStages/IrradianceProbeStage.h>
 
 #include <Graphics/GlobalIllumination.h>

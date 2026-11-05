@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Game/World/GameObject/GameObjectComponent.h>
 
 #include <Utils/LiveIDAllocator.h>

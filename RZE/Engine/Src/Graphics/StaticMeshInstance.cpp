@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Graphics/StaticMeshInstance.h>
 
 #include <Utils/DebugUtils/Debug.h>

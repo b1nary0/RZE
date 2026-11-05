@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Rendering/RenderThread.h>
 
 #include <Rendering/MemArena.h>

@@ -1,4 +1,3 @@
-#include <StdAfx.h>
 #include <Game/World/GameObject/EditorGameComponentInfoCache.h>
 
 namespace EditorComponentCache
