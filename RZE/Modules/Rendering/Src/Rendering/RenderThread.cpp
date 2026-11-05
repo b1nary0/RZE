@@ -24,6 +24,7 @@ namespace Rendering
 	{
 		AssertNotNull(windowHandle);
 
+		m_controllingThreadID = std::this_thread::get_id();
 		m_windowHandle = windowHandle;
 
 		m_device = GFXDeviceFactory::CreateGFXDevice();
@@ -39,9 +40,10 @@ namespace Rendering
 			{
 				OPTICK_THREAD("Render Thread");
 				m_device->AttachToCurrentThread();
-				while (!m_shuttingDown)
+				bool isRunning = true;
+				while (isRunning)
 				{
-					Update();
+					isRunning = Update();
 				}
 				m_device->DetachFromCurrentThread();
 			};
@@ -51,17 +53,20 @@ namespace Rendering
 
 	void RenderThread::Shutdown()
 	{
+		AssertMsg(std::this_thread::get_id() == m_controllingThreadID,
+			"Shutdown must run on the thread that called Initialize");
+
 		{
-			// @todo need to wrap this it's ugly and see if we can API-ifize our usage of this pattern in general
-			// this block is to ensure the proper shutdown thread synchronization
+			// The flag is set with the signal, under the lock that Update reads it under, so the pass this wakes is the
+			// render thread's last. Set after unlocking, the thread could finish that pass, miss the flag and wait
+			// again, and join() would never return.
 			std::unique_lock waitlock(m_updateMutex);
 			m_updateCondition.wait(waitlock, [this]() { return m_processSignal == false; });
+			m_shuttingDown = true;
 			m_processSignal = true;
-			waitlock.unlock();
-			m_updateCondition.notify_all();
 		}
+		m_updateCondition.notify_all();
 
-		m_shuttingDown = true;
 		m_thread.join();
 
 		// Back on the main thread for the rest
@@ -81,6 +86,10 @@ namespace Rendering
 
 	void RenderThread::RunWhileIdle(std::function<void()> func)
 	{
+		// From another thread, a task could be pending when Shutdown's signal arrives, and Update would never run it
+		AssertMsg(std::this_thread::get_id() == m_controllingThreadID,
+			"RunWhileIdle must run on the thread that called Initialize");
+
 		std::unique_lock waitlock(m_updateMutex);
 		m_updateCondition.wait(waitlock, [this]() { return m_processSignal == false && !m_idleTask; });
 		m_idleTask = std::move(func);
@@ -112,12 +121,18 @@ namespace Rendering
 		m_imguiRenderer->Initialize();
 	}
 
-	void RenderThread::Update()
+	bool RenderThread::Update()
 	{
 		std::unique_lock lock(m_updateMutex);
 		{
 			OPTICK_EVENT("Wait");
 			m_updateCondition.wait(lock, [this] { return m_processSignal || m_idleTask; });
+		}
+
+		// Shutdown's signal brings no batch (the last one ran on the previous signal), and nothing waits on this pass
+		if (m_shuttingDown)
+		{
+			return false;
 		}
 
 		// RunWhileIdle's caller waits while this runs, holding nothing else
@@ -127,17 +142,15 @@ namespace Rendering
 			m_idleTask = nullptr;
 			lock.unlock();
 			m_updateCondition.notify_all();
-			return;
+			return true;
 		}
 
-		if (!m_shuttingDown)
-		{
-			ProcessCommands();
-		}
+		ProcessCommands();
 
 		m_processSignal = false;
 		lock.unlock();
 		m_updateCondition.notify_all();
+		return true;
 	}
 
 	void RenderThread::PushCommand(RenderCommand* command)

@@ -31,6 +31,10 @@ Checks marked **(work)** are Windows-only changes, not tests: ask the user befor
   `RZE\_build\debug\UnitTests.exe -tc="*cube*"` runs 2 test cases, both passing. Then check DX11 point-light
   shadows and reflection probes in `Sponza.scene` (the two users): shadows all around each point light, and
   reflections the right way up.
+- **A5. Render thread shutdown.** `RenderThread::Shutdown` now sets `m_shuttingDown` together with the last signal,
+  under the lock, and `Update()` returns whether to keep running (Known Issue #31). In Debug and in Release, run
+  `driver.ps1 launch -Scene DrawLineTest.scene` then `driver.ps1 close`, 5 times each. Every `close` prints
+  `closed code=0` within a few seconds. A hang (still running after the timeout) is a failure: say which config.
 
 ### B. EditorHarness (H1: the harness beside the Editor)
 

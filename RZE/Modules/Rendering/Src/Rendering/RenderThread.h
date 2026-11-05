@@ -33,6 +33,7 @@ namespace Rendering
 		RenderThread();
 
 	public:
+		// The thread that calls Initialize controls this one: Shutdown and RunWhileIdle must be called from it
 		void Initialize(void* windowHandle);
 		void Shutdown();
 
@@ -49,7 +50,7 @@ namespace Rendering
 
 		// Blocks until the render thread has finished processing its queue, then has the render thread run func, and
 		// returns once it has. For the rare work that needs the device between frames: it runs where the device is
-		// attached, with nothing else using it.
+		// attached, with nothing else using it. Only from the controlling thread.
 		void RunWhileIdle(std::function<void()> func);
 
 		// The device, for making resources (its Create functions), which is safe from the main thread
@@ -58,7 +59,8 @@ namespace Rendering
 		IImGuiRenderer& GetImGuiRenderer();
 
 	private:
-		void Update();
+		// One pass of the render thread: a batch of commands or a RunWhileIdle task. False once Shutdown has signalled.
+		bool Update();
 
 		void InitializeImGui();
 
@@ -154,6 +156,9 @@ namespace Rendering
 		std::unique_ptr<IImGuiRenderer> m_imguiRenderer;
 
 		std::thread m_thread;
+		// The thread that called Initialize. Update relies on Shutdown and RunWhileIdle both running on it, so an idle
+		// task is never pending when the shutdown signal arrives.
+		std::thread::id m_controllingThreadID;
 		std::mutex m_updateMutex;
 
 		std::condition_variable m_updateCondition;
