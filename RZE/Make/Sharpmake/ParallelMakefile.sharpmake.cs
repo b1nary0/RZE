@@ -72,7 +72,9 @@ public static class ParallelMakefile
             .Select(info => new ProjectInfo
             {
                 Name = info.Project.Name,
-                Folder = Path.GetRelativePath(solutionConf.SolutionPath, info.Configuration.ProjectPath).Replace('\\', '/'),
+                // Sharpmake's own, not Path.GetRelativePath: the Visual Studio project for these scripts targets .NET
+                // Framework 4.8, which doesn't have it
+                Folder = Util.PathGetRelative(solutionConf.SolutionPath, info.Configuration.ProjectPath).Replace('\\', '/'),
                 Makefile = Path.GetFileName(info.Configuration.ProjectFullFileNameWithExtension),
                 Dependencies = info.Configuration.ResolvedDependencies.Select(dep => dep.Project.Name).Distinct().OrderBy(name => name, StringComparer.Ordinal).ToList(),
             })
