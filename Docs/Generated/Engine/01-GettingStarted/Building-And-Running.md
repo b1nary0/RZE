@@ -105,18 +105,27 @@ their results. See [EditorHarness-And-Drivers.md](../07-Editor/EditorHarness-And
 
 ## CI
 
-Both run on pushes and pull requests to `master` and `Sandbox`, and on demand, over `debug` and `release`.
+Both run on pushes to any branch, on pull requests to `master` and `Sandbox`, and on demand, over `debug`, `release`
+and `retail`. Pushes and pull requests that only change `Docs/`, Markdown files or `.claude/` don't start them. GitHub
+reads a workflow from the commit that was pushed, so an older branch runs whatever workflow files it has.
+
+- **Matrix:** each configuration is its own job, and one failing doesn't cancel the others (`fail-fast: false`).
+- **Superseded runs:** a newer push to the same branch or pull request cancels the run before it.
+- **Time limit:** a hung job stops after 30 minutes on Linux, 60 on Windows.
+- **Failures:** a failing unit test fails the job, and so does a source the burner can't import (it exits with 1).
 
 | | `Windows.yml` | `Linux.yml` |
 |---|---|---|
-| Runner | `windows-2022`, which has no VS 2026, so the Windows build fails there until it moves to an image that has (`WindowsChecks.md`, G1) | `ubuntu-latest`, in a `fedora:44` container (Ubuntu has no SDL3 packages) |
-| Setup | MSBuild, .NET 8 | `dnf install` of the Linux prerequisites above |
+| Runner | `windows-2025-vs2026`: VS 2026 (v145) and the Windows SDK 10.0.26100 that `RZE.sharpmake.cs` targets. Named explicitly, so a move of `windows-latest` can't change the toolchain | `ubuntu-latest`, in a `fedora:44` container (Ubuntu has no SDL3 packages) |
+| Setup | MSBuild, .NET 8 (pinned, as images drop SDKs after their end of support) | `dnf install` of the Linux prerequisites above |
 | Generate | `GenerateSolutions.bat` | `GenerateSolutions.sh` |
-| Build | `msbuild -m RZE/RZE.sln` | `make config=<config> -j$(nproc)` in `RZE/` |
-| Then | `UnitTests.exe` (a failing test fails the run), `SourceAssetBurner.exe` | `UnitTests`, `SourceAssetBurner` |
+| Build | `msbuild -m RZE/RZE.sln /p:Configuration=<config> /p:Platform=x64` | `make config=<config> -j$(nproc)` in `RZE/` |
+| Then | `UnitTests.exe`, `SourceAssetBurner.exe` | `UnitTests`, `SourceAssetBurner` |
 | Archive | `RZE/_build/<config>` without `.lib`/`.pdb`/`.exp`/`.log`, with `RZE/Assets`, `Config`, `ProjectData` | the same, without `.a`/`.log` |
 
-The executables read their data from the source tree, so the archive keeps that layout.
+Only runs on `master` and `look-what-claude-can-do` upload an archive, one per configuration (about 350-400 MB each,
+mostly `RZE/Assets`), kept for 14 days. The executables read their data from the source tree, so the archive keeps
+that layout.
 
 ## Key files
 

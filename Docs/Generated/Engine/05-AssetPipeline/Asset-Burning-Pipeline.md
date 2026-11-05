@@ -26,9 +26,13 @@ The offline and runtime halves share only the binary format, not code paths. Loa
 ## Running it
 
 ```powershell
-.\RZE\_build\debug\SourceAssetBurner.exe            # burn every .obj under RZE\Assets\3D
+.\RZE\_build\debug\SourceAssetBurner.exe            # burn every .obj and .fbx under RZE\Assets\3D
 .\RZE\_build\debug\SourceAssetBurner.exe <file>     # burn one source file
 ```
+
+It exits with 1 if any source fails to import, or if the one file given isn't there, so a build step (CI's Burn
+Assets) fails with it. A full burn ends with a summary line: `imported N sources`, or `N of M sources failed to
+import`. Retail builds compile logging out, so there it prints nothing, but the exit code is the same.
 
 It takes about a minute for everything (most of it New Sponza's FBX). **`ProjectData/` isn't tracked in git**, so burn once after cloning, and again after pulling any change to the importer, such as the coordinate fix below. Burns are **deterministic**: burning the same source twice gives byte-identical files.
 
