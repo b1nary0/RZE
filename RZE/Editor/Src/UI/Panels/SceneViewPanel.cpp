@@ -166,11 +166,9 @@ namespace Editor
 
 		viewport.IsHovered = IsHovered();
 
-		ImVec2 viewportPos = ImGui::GetWindowPos();
-		if (viewportPos.x != m_position.X() && viewportPos.y != m_position.Y())
-		{
-			m_position.SetXY(viewportPos.x, viewportPos.y);
-		}
+		// Every frame, whichever way the panel moved: picks, icons, drops and the gizmo are placed from it
+		const ImVec2 viewportPos = ImGui::GetWindowPos();
+		m_position.SetXY(viewportPos.x, viewportPos.y);
 
 		ImVec2 viewportDims = ImGui::GetContentRegionAvail();
 		if (viewportDims.x != m_dimensions.X() || viewportDims.y != m_dimensions.Y())
