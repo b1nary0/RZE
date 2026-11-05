@@ -2,7 +2,8 @@
 Drives the RZE Editor (native Win32 + DX11 + Dear ImGui) with real mouse/keyboard input.
 One action per invocation; state lives in the running Editor.exe process.
 
-  driver.ps1 launch [-Scene DrawLineTest.scene] [-Config debug] [-SettleSeconds 5]
+  driver.ps1 launch [-Scene DrawLineTest.scene] [-Config debug] [-SettleSeconds 5] [-KeepImguiIni]
+                                               # backs up RZE\Config\imgui.ini, which close and quit put back
   driver.ps1 shot   [-Out <path.png>]          # client-area screenshot; default $env:TEMP\rze-shots\<timestamp>.png
   driver.ps1 click  -X <int> -Y <int>          # client-area pixel coords (same space as screenshots)
   driver.ps1 drag   -X <int> -Y <int> -X2 <int> -Y2 <int>
@@ -25,12 +26,42 @@ param(
 	[string] $Out,
 	[int] $X, [int] $Y,
 	[int] $X2, [int] $Y2,
-	[string] $Keys
+	[string] $Keys,
+	# launch: keep the layout the run leaves, instead of putting imgui.ini back as it was
+	[switch] $KeepImguiIni
 )
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
 $buildDir = Join-Path $repoRoot "RZE\_build\$Config"
+
+# Every Editor run rewrites imgui.ini, which often holds a layout the user means to keep (CLAUDE.md). launch copies it
+# here, and close and quit put it back once the Editor has exited, as driver.py does. A file, since each call is a
+# process of its own; one a session left (it died before close or quit) is put back by the next launch.
+$imguiIni = Join-Path $repoRoot 'RZE\Config\imgui.ini'
+$imguiIniBackup = Join-Path $env:TEMP 'rze-driver\imgui.ini.backup'
+
+function Restore-ImguiIni {
+	if (-not (Test-Path $imguiIniBackup)) { return $false }
+	Copy-Item $imguiIniBackup $imguiIni -Force
+	# A copy keeps the backup's date; a new one, so nothing mistakes it for the old file
+	(Get-Item $imguiIni).LastWriteTime = Get-Date
+	Remove-Item $imguiIniBackup -Force
+	return $true
+}
+
+function Backup-ImguiIni {
+	$restored = Restore-ImguiIni
+	if (Test-Path $imguiIni) {
+		New-Item -ItemType Directory -Force (Split-Path $imguiIniBackup) | Out-Null
+		Copy-Item $imguiIni $imguiIniBackup -Force
+	}
+	return $restored
+}
+
+function Get-RestoreNote {
+	if (Restore-ImguiIni) { '; imgui.ini restored' } else { '' }
+}
 
 Add-Type -AssemblyName System.Drawing, System.Windows.Forms
 if (-not ('RzeWin' -as [type])) {
@@ -85,20 +116,24 @@ switch ($Action) {
 		if (Get-Process Editor -ErrorAction SilentlyContinue) { throw 'Editor.exe already running. Run: driver.ps1 quit' }
 		$exe = Join-Path $buildDir 'Editor.exe'
 		if (-not (Test-Path $exe)) { throw "Not built: $exe" }
+		# With -KeepImguiIni nothing's backed up, but a backup a dead session left is still put back first
+		$restoredLeftover = if ($KeepImguiIni) { Restore-ImguiIni } else { Backup-ImguiIni }
 		# Assets resolve against the source tree from the exe's path, not the working directory; the build dir is just a tidy cwd
 		$p = Start-Process -FilePath $exe -ArgumentList "-scene $Scene" -WorkingDirectory $buildDir -PassThru
 		$deadline = (Get-Date).AddSeconds($TimeoutSeconds)
 		while ((Get-Date) -lt $deadline) {
 			Start-Sleep -Milliseconds 500
 			$p.Refresh()
-			if ($p.HasExited) { throw "Editor.exe exited during startup (code $($p.ExitCode))" }
+			if ($p.HasExited) { throw "Editor.exe exited during startup (code $($p.ExitCode))$(Get-RestoreNote)" }
 			if ($p.MainWindowTitle -like "*$Scene") { break }
 		}
 		if ($p.MainWindowTitle -notlike "*$Scene") { throw "Timed out waiting for window title to show $Scene (title: '$($p.MainWindowTitle)')" }
 		# Title is set when the load starts; meshes/textures stream in over the following frames
 		Start-Sleep -Seconds $SettleSeconds
 		$w = Get-Window
-		"launched pid=$($p.Id) title='$($p.MainWindowTitle)' client=$($w.Width)x$($w.Height)"
+		$note = if ($KeepImguiIni) { $(if ($restoredLeftover) { ' (restored an imgui.ini backup a session left; this run keeps its layout)' } else { '' }) }
+			else { " (imgui.ini backed up$(if ($restoredLeftover) { '; restored a backup a session left' }))" }
+		"launched pid=$($p.Id) title='$($p.MainWindowTitle)' client=$($w.Width)x$($w.Height)$note"
 	}
 	'info' {
 		$w = Get-Window
@@ -164,22 +199,24 @@ switch ($Action) {
 		# WM_CLOSE: the same path as the window's close button, so the engine runs its whole shutdown
 		[RzeWin]::PostMessage($w.Handle, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero) | Out-Null
 		if (-not $proc.WaitForExit($timeout * 1000)) {
-			# Left open so it can be looked at: an unsaved-changes prompt, a Debug assert dialog, or a hang
-			throw "Editor.exe still running ${timeout}s after close (title: '$((Get-EditorProcess).MainWindowTitle)'). Run: driver.ps1 shot to see why, then driver.ps1 quit"
+			# Left open so it can be looked at: an unsaved-changes prompt, a Debug assert dialog, or a hang. The layout's
+			# put back once it has exited (close again, or quit), since it rewrites imgui.ini as it shuts down.
+			throw "Editor.exe still running ${timeout}s after close (title: '$((Get-EditorProcess).MainWindowTitle)'). Run: driver.ps1 shot to see why, then answer the prompt or driver.ps1 quit"
 		}
+		$restoreNote = Get-RestoreNote
 		if ($proc.ExitCode -ne 0) {
-			throw ("Editor.exe exited with code 0x{0:X8} while shutting down" -f $proc.ExitCode)
+			throw ("Editor.exe exited with code 0x{0:X8} while shutting down{1}" -f $proc.ExitCode, $restoreNote)
 		}
-		'closed code=0'
+		"closed code=0$restoreNote"
 	}
 	'quit' {
 		$proc = Get-Process Editor -ErrorAction SilentlyContinue
-		if (-not $proc) { 'not running'; break }
+		if (-not $proc) { "not running$(Get-RestoreNote)"; break }
 		$proc | Stop-Process -Force -Confirm:$false
 		# Stop-Process returns before the render thread / D3D device finish tearing down; poll until really gone
 		$deadline = (Get-Date).AddSeconds(15)
 		while ((Get-Process Editor -ErrorAction SilentlyContinue) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 250 }
 		if (Get-Process Editor -ErrorAction SilentlyContinue) { throw 'Editor.exe still running 15s after kill' }
-		'quit'
+		"quit$(Get-RestoreNote)"
 	}
 }

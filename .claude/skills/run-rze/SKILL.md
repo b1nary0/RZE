@@ -58,7 +58,7 @@ the window the way a user would:
 
 | command | what it does |
 |---|---|
-| `launch [-Scene X.scene] [-Config debug\|release] [-SettleSeconds 5]` | Starts `Editor.exe -scene X` with the working directory set to `RZE\_build\<config>`. Refuses to start if an editor is already running. |
+| `launch [-Scene X.scene] [-Config debug\|release] [-SettleSeconds 5] [-KeepImguiIni]` | Starts `Editor.exe -scene X` with the working directory set to `RZE\_build\<config>`. Refuses to start if an editor is already running. Backs up `RZE\Config\imgui.ini` first (below); `-KeepImguiIni` keeps the layout the run leaves instead. |
 | `shot [-Out path.png]` | Captures the client area only. Defaults to `$env:TEMP\rze-shots\`. |
 | `click -X -Y` | Left click. |
 | `dblclick -X -Y` | Two left clicks close enough together to count as a double-click (two `click` calls are too far apart). Double-clicking an object in the Scene panel focuses the camera on it. |
@@ -67,7 +67,14 @@ the window the way a user would:
 | `info` | Window title and client size. |
 | `alive` | `running pid=N responding=True/False` or `not running`. |
 | `close [-TimeoutSeconds 30]` | Sends the window `WM_CLOSE`, like its close button, and waits for the process to exit. Prints `closed code=0`. Fails if the editor exits with any other code (a crash while shutting down), or is still open after the timeout. In that case it's left running, so `shot` can show why (the unsaved-changes prompt, a Debug assert dialog), then `quit`. |
-| `quit` | Kills the editor and polls until the process is gone. |
+| `quit` | Kills the editor and polls until the process is gone. Puts `imgui.ini` back, as `close` does; with no editor running, it only does that. |
+
+**`imgui.ini` is put back after every session**, as `driver.py` does. Each Editor run rewrites `RZE\Config\imgui.ini`,
+which often holds a layout the user means to keep (CLAUDE.md). `launch` copies it to
+`%TEMP%\rze-driver\imgui.ini.backup`; `close` and `quit` put it back once the Editor has exited (their output ends
+`; imgui.ini restored`). A `close` that stops at the unsaved-changes prompt leaves the backup, since the Editor rewrites
+the file as it exits: answer the prompt, then `quit` restores it. A backup a session left behind is put back by the
+next `launch`, which says so.
 
 Scenes live in `RZE\Assets\Scenes\`:
 - `DrawLineTest.scene`: small; NeckMech (5 sub-meshes), M4, and a directional light.
@@ -119,7 +126,7 @@ It covers the undo history, parking, copy snapshots, selection, interaction trac
 - **A `Filepath` built during static init resolves before `main` sets the context**, so it points beside the exe. Build paths where they're used, or as function-local statics.
 - **Large screenshots are downscaled when Read.** A 2560-wide PNG shows at 2000 px with a note to "multiply coordinates by 1.28". Measure positions in the displayed image, then multiply by that factor before passing them to `click`.
 - **The window title appears before the scene finishes loading.** Meshes stream in afterwards. `-SettleSeconds` covers this: 5 is enough for DrawLineTest, Sponza needs about 20.
-- **`quit` skips shutdown entirely, so it can't catch a crash on exit.** End at least one run per change with `close`. After editing the scene, `close` stops at the unsaved-changes prompt instead; use `quit` there, or answer the prompt.
+- **`quit` skips shutdown entirely, so it can't catch a crash on exit.** End at least one run per change with `close`. After editing the scene, `close` stops at the unsaved-changes prompt instead: `shot` it and click Don't Save, as a person would (Save only when the task needs the scene saved), then `quit` to put `imgui.ini` back.
 - **`Stop-Process` returns about 2 s before `Editor.exe` actually exits.** The render thread and D3D device are still tearing down. `quit` polls for this; don't `launch` immediately after a bare `Stop-Process`.
 - **The light's line in DrawLineTest is off-screen at load.** Move the DirectionalLight onto NeckMech (Position ≈ -22.7, 14, -9) to see it.
 - **The camera starts inside Sponza.** Bounds boxes there look like long lines crossing the view, not boxes. Use DrawLineTest to judge box shapes.
