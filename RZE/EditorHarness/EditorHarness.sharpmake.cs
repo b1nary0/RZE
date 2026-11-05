@@ -16,6 +16,7 @@ public class EditorHarness : BaseProject
     public override void ConfigureAll(Project.Configuration conf, CommonTarget target)
     {
         base.ConfigureAll(conf, target);
+        UsePrecompiledHeader(conf, target, "EditorHarnessPCH");
         conf.IncludePaths.Add(Path.Combine(Globals.RootDir, "Utils"));
         conf.IncludePaths.Add(Path.Combine(Globals.RootDir, "Editor", "Src"));
         EditorLib.LinkWhole(conf, target);

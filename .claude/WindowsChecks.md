@@ -55,6 +55,13 @@ Checks marked **(work)** are Windows-only changes, not tests: ask the user befor
   `PrimitiveDefs`) and the Utils math headers, and `EnginePCH.h` includes it first instead of its own copies. Debug and
   Release build with no errors or new warnings. Note how long a clean Debug build of `Engine` takes (MSBuild's
   summary or `/clp:PerformanceSummary`), so later changes have a Windows number to compare with.
+- **A9. PCHs for EditorLib, UnitTests and EditorHarness.** Each now force-includes its own PCH (`EditorLibPCH.h` in
+  `Editor/Src`, `UnitTestsPCH.h`, `EditorHarnessPCH.h`), which includes `UtilsPCH.h`. After A1, `EditorLib.vcxproj`,
+  `UnitTests.vcxproj` and `EditorHarness.vcxproj` each have `ForcedIncludeFiles` and `PrecompiledHeader` `Use`, with
+  `Create` on their PCH's `.cpp`, and `Editor.vcxproj` has neither (it builds only `EditorMain.cpp`). These projects
+  had no PCH on Windows before, so their files, the `Windows/` ones in EditorHarness included, are compiled with one
+  for the first time. Debug and Release build, the tests pass, and B3 (the harness exits) still holds. Note the clean
+  Debug build time of EditorLib and UnitTests next to A8's Engine number.
 
 ### B. EditorHarness (H1: the harness beside the Editor)
 

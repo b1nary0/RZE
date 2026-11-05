@@ -18,6 +18,7 @@ public class EditorLib : BaseProject
     {
         base.ConfigureAll(conf, target);
         conf.Output = Configuration.OutputType.Lib;
+        UsePrecompiledHeader(conf, target, "EditorLibPCH");
         // Editor's project is in the same folder, so each needs its own, and each configuration its own within that
         // (target.DirectoryName is the mode, the same for every configuration)
         conf.IntermediatePath = Path.Combine("[conf.ProjectPath]", "obj", "[project.Name]", "[target.Name]");
