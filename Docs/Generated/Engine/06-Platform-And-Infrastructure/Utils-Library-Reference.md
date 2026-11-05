@@ -1,6 +1,6 @@
 # Utils Library Reference
 
-`Utils` (`RZE/Utils/`) is the foundational layer of the entire stack — it has **zero dependencies** on any other RZE project (`Utils.sharpmake.cs` has no `AddPublicDependency` calls at all). Everything else, directly or transitively, depends on it. Built as a static Lib with a precompiled header (`Src\UtilsPCH.h`/`.cpp`, see [Sharpmake-Project-Graph.md](../09-BuildSystem/Sharpmake-Project-Graph.md#precompiled-headers)), which holds the Utils math headers. **GLM** is the math library RZE's own Vector/Matrix/Quaternion types wrap; only `Utils/Math` includes it, each file the GLM headers it uses.
+`Utils` (`RZE/Utils/`) is the foundational layer of the entire stack — it has **zero dependencies** on any other RZE project (`Utils.sharpmake.cs` has no `AddPublicDependency` calls at all). Everything else, directly or transitively, depends on it. Built as a static Lib with a precompiled header (`Src\UtilsPCH.h`/`.cpp`, see [Sharpmake-Project-Graph.md](../09-BuildSystem/Sharpmake-Project-Graph.md#precompiled-headers)), which holds the std, Utils core and Utils math headers every project shares (`EnginePCH.h` includes it first). **GLM** is the math library RZE's own Vector/Matrix/Quaternion types wrap; only `Utils/Math` includes it, each file the GLM headers it uses.
 
 ## Primitives & containers
 
@@ -73,7 +73,7 @@ Covered in depth in [Memory-Management.md](Memory-Management.md): `ByteStream.h/
 
 ## Key files
 
-- `Utils/Src/UtilsPCH.h` — the precompiled header: a few std headers and the Utils math headers
+- `Utils/Src/UtilsPCH.h` — the precompiled header, and the base of Engine's: std containers, Utils core and the Utils math headers
 - `Utils/Src/Utils/PrimitiveDefs.h`, `Utils.h`, `Functor.h`, `StringUtils.h`, `TimeUtils.h`, `StatsWindow.h`, `LiveIDAllocator.h`, `LiveObjectPtr.h`, `Conversions.h`
 - `Utils/Src/Utils/Math/Units.h`, `Math.h`, `Vector2D.h`, `Vector3D.h`, `Vector4D.h`, `Matrix4x4.h`, `Quaternion.h`, `Plane.h`, `BoundingBox.h`, `Frustum.h`, `Ray.h`, `ViewProjection.h`
 - `Utils/Src/Utils/Memory/ByteStream.h`, `MemoryUtils.h`

@@ -116,6 +116,15 @@ have had the problem. A `.cpp` in a project without a PCH got another project's 
 
 An old Linux build folder needs a `make clean` once after the rename: its dependency files still name `StdAfx.h`.
 
+**The PCHs are layered.** `UtilsPCH.h` holds what every project shares, is costly to parse and seldom changes: std
+containers and utilities, Utils core (`Debug`, `File`, `Filepath`, `PrimitiveDefs`) and the Utils math headers, which
+bring GLM. `EnginePCH.h` includes it first, then adds a few std headers and Engine's own (`RZE.h`, `EngineApp.h`,
+ImGui, Optick). On a clean Debug build on Linux this took Engine from 90 s to 64 s of compile time.
+
+The cost is in what an edit rebuilds. Touching `Matrix4x4.h` rebuilds every Utils and Engine file (197 objects,
+against 132), each of them cheaper, so the CPU time is the same and the wall clock about 1 s longer. So a header
+that changes often doesn't belong in `UtilsPCH.h`: an edit to it would rebuild every project that uses it.
+
 ## Key files
 
 - `RZE/RZE.sharpmake.cs`
