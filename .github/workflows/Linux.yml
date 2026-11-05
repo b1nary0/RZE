@@ -50,7 +50,7 @@ jobs:
     - name: Burn Assets
       run: ./RZE/_build/${{matrix.buildconfig}}/SourceAssetBurner
 
-    # The Editor on DrawLineTest.scene, rendered in software on a virtual display
+    # The Editor on Sponza.scene, rendered in software on a virtual display
     - name: Editor smoke test
       env:
         SDL_VIDEO_DRIVER: x11

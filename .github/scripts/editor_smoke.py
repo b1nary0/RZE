@@ -213,12 +213,12 @@ def run(args, harness):
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--config", required=True, choices=["debug", "release", "retail"])
-    parser.add_argument("--scene", default="DrawLineTest.scene", help="in RZE/Assets/Scenes")
-    parser.add_argument("--expect", default="Camera,DirectionalLight,NeckMech,M4",
+    parser.add_argument("--scene", default="Sponza.scene", help="in RZE/Assets/Scenes")
+    parser.add_argument("--expect", default="Camera,DirectionalLight,Sponza,Nyra,Nanosuit,NeckMechWalker,Tank",
                         help="comma-separated objects the scene must have")
     parser.add_argument("--frames", type=int, default=10, help="frames to wait for after loading, before the shot")
     parser.add_argument("--timeout", type=int, default=120, help="seconds for each of ready, loading and frames")
-    parser.add_argument("--exit-timeout", type=int, default=60, help="seconds for the Editor to exit after quit")
+    parser.add_argument("--exit-timeout", type=int, default=120, help="seconds for the Editor to exit after quit")
     parser.add_argument("--out", default="smoke-out", help="folder for app.log and shot.png")
     args = parser.parse_args()
     args.expect = [name for name in args.expect.split(",") if name]

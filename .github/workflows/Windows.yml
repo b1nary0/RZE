@@ -57,7 +57,7 @@ jobs:
       shell: cmd
       run: .\RZE\_build\${{matrix.buildconfig}}\SourceAssetBurner.exe
 
-    # The Editor on DrawLineTest.scene. The runner has no GPU: DX11 runs on the Microsoft Basic Render Driver (WARP)
+    # The Editor on Sponza.scene. The runner has no GPU: DX11 runs on the Microsoft Basic Render Driver (WARP)
     - name: Editor smoke test
       shell: cmd
       run: python .github\scripts\editor_smoke.py --config ${{matrix.buildconfig}} --out smoke-out

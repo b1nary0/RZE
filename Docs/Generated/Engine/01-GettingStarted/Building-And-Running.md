@@ -112,7 +112,8 @@ reads a workflow from the commit that was pushed, so an older branch runs whatev
 - **Matrix:** each configuration is its own job, and one failing doesn't cancel the others (`fail-fast: false`).
 - **Superseded runs:** a newer push to the same branch or pull request cancels the run before it.
 - **Time limit:** a hung job stops after 30 minutes on Linux, 60 on Windows.
-- **Failures:** a failing unit test fails the job, and so does a source the burner can't import (it exits with 1).
+- **Failures:** a failing unit test fails the job, and so does a source the burner can't import (it exits with 1), or
+  an Editor that fails the smoke test (below).
 
 | | `Windows.yml` | `Linux.yml` |
 |---|---|---|
@@ -120,17 +121,45 @@ reads a workflow from the commit that was pushed, so an older branch runs whatev
 | Setup | MSBuild, .NET 8 (pinned, as images drop SDKs after their end of support) | `dnf install` of the Linux prerequisites above |
 | Generate | `GenerateSolutions.bat` | `GenerateSolutions.sh` |
 | Build | `msbuild -m RZE/RZE.sln /p:Configuration=<config> /p:Platform=x64` | `make config=<config> -j$(nproc)` in `RZE/` |
-| Then | `UnitTests.exe`, `SourceAssetBurner.exe` | `UnitTests`, `SourceAssetBurner` |
+| Then | `UnitTests.exe`, `SourceAssetBurner.exe`, the smoke test | `UnitTests`, `SourceAssetBurner`, the smoke test |
+| Smoke test display | The runner's desktop (1024x720 client). No GPU: DX11 runs on the Microsoft Basic Render Driver (WARP) | `xvfb-run` with `SDL_VIDEO_DRIVER=x11` (1600x900 client), OpenGL 4.6 core from Mesa's llvmpipe |
 | Archive | `RZE/_build/<config>` without `.lib`/`.pdb`/`.exp`/`.log`, with `RZE/Assets`, `Config`, `ProjectData` | the same, without `.a`/`.log` |
 
 Only runs on `master` and `look-what-claude-can-do` upload an archive, one per configuration (about 350-400 MB each,
 mostly `RZE/Assets`), kept for 14 days. The executables read their data from the source tree, so the archive keeps
 that layout.
 
+### Editor smoke test
+
+`.github/scripts/editor_smoke.py` starts EditorHarness ([EditorHarness-And-Drivers.md](../07-Editor/EditorHarness-And-Drivers.md))
+on `Sponza.scene` and talks to it over its JSON protocol. It fails the job if:
+
+- the harness isn't ready, or the scene hasn't loaded, within 120 s;
+- the scene open isn't the one asked for, lacks one of its objects (Camera, DirectionalLight, Sponza, Nyra, Nanosuit,
+  NeckMechWalker, Tank), or shows unsaved changes;
+- fewer than 10 frames follow the load (a hung render thread or main loop);
+- the shot fails, or its PNG isn't the client area's size;
+- the Editor doesn't exit with code 0 within 120 s of `quit`, which closes it as the close button does.
+
+Errors and warnings the Editor logs don't fail it: each distinct line is listed once with its count, and annotated on
+the run. Every run uploads `smoke-out` (`app.log`, the Editor's output, and `shot.png`, the frame) as an artifact, kept
+for 14 days. On Linux a run takes about 60 s per configuration: software rendering draws Sponza at a frame every 2-3 s,
+which is enough for a few frames, and the Editor takes about 20 s to shut down. A heavier scene, or one whose objects
+change, needs `--expect` (and maybe `--timeout`) to match.
+
+Run it locally the same way, after a build (it puts `RZE/Config/imgui.ini` back afterwards):
+
+```bash
+python3 .github/scripts/editor_smoke.py --config debug --out /tmp/smoke-out
+```
+
+It opens the Editor's window on your desktop. Options: `--scene`, `--expect` (the objects it must have), `--frames`,
+`--timeout`, `--exit-timeout`.
+
 ## Key files
 
 - `README.md`
 - `RZE/GenerateSolutions.bat`, `RZE/GenerateSolutions.sh`, `RZE/BuildGame.bat`, `RZE/BuildGame.sh`
 - `Utils/Src/Utils/Platform/Filepath.h/.cpp` (`EDirectoryContext`)
-- `.github/workflows/Windows.yml`, `.github/workflows/Linux.yml`
+- `.github/workflows/Windows.yml`, `.github/workflows/Linux.yml`, `.github/scripts/editor_smoke.py`
 - `.claude/skills/run-rze/`, `.claude/WindowsChecks.md`
