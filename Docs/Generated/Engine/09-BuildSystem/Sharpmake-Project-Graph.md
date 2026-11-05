@@ -97,8 +97,16 @@ Worth knowing if you audit this yourself:
 
 ## Precompiled headers
 
-Engine and Utils each have one: `Engine/Src/EnginePCH.h` and `Utils/Src/UtilsPCH.h`, each built by the `.cpp` of the
-same name. No source file includes them. Every file in the project gets the PCH first anyway:
+| Project | PCH (in its `Src`) | Holds |
+|---|---|---|
+| Utils | `UtilsPCH.h` | std containers and utilities, Utils core, the Utils math headers (and so GLM) |
+| Engine | `EnginePCH.h` | `UtilsPCH.h`, then a few std headers, Optick, `RZE.h`, `EngineApp.h`, ImGui |
+| EditorLib | `EditorLibPCH.h` (in `Editor/Src`) | `UtilsPCH.h` |
+| UnitTests | `UnitTestsPCH.h` | `UtilsPCH.h` |
+| EditorHarness | `EditorHarnessPCH.h` | `UtilsPCH.h` |
+
+The Editor, Game and SourceAssetBurner executables, Rendering, Externals and OptickCore have none. Each PCH is built by
+the `.cpp` of the same name. No source file includes it. Every file in the project gets the PCH first anyway:
 
 - **Windows:** `UsePrecompiledHeader` adds the header to `ForcedIncludes`, so MSVC builds with `/FI` and `/Yu`, and
   the PCH's own `.cpp` with `/Yc`.
@@ -119,11 +127,26 @@ An old Linux build folder needs a `make clean` once after the rename: its depend
 **The PCHs are layered.** `UtilsPCH.h` holds what every project shares, is costly to parse and seldom changes: std
 containers and utilities, Utils core (`Debug`, `File`, `Filepath`, `PrimitiveDefs`) and the Utils math headers, which
 bring GLM. `EnginePCH.h` includes it first, then adds a few std headers and Engine's own (`RZE.h`, `EngineApp.h`,
-ImGui, Optick). On a clean Debug build on Linux this took Engine from 90 s to 64 s of compile time.
+ImGui, Optick). EditorLib's, UnitTests' and EditorHarness' PCHs are `UtilsPCH.h` alone: putting `RZE.h` and ImGui in
+them as well saved only 3% more, and `Engine.h` changes in about one commit in eighteen, each time rebuilding every
+EditorLib and UnitTests file.
 
-The cost is in what an edit rebuilds. Touching `Matrix4x4.h` rebuilds every Utils and Engine file (197 objects,
-against 132), each of them cheaper, so the CPU time is the same and the wall clock about 1 s longer. So a header
-that changes often doesn't belong in `UtilsPCH.h`: an edit to it would rebuild every project that uses it.
+Clean Debug build on Linux, compile time in total over all files (`clang -ftime-trace`):
+
+| | Engine | EditorLib | UnitTests | All |
+|---|---|---|---|---|
+| Both PCHs named `StdAfx.h`, only Engine and Utils with one | 148 s | 95 s | 75 s | 379 s |
+| Each named after its project | 90 s | 96 s | 71 s | 313 s |
+| Layered on `UtilsPCH.h` | 64 s | 91 s | 71 s | 279 s |
+| PCHs for EditorLib, UnitTests, EditorHarness | 63 s | 53 s | 44 s | 209 s |
+
+On 32 cores the wall clock hardly changes (about 17 s), because the projects build one after another, each waiting
+for the libraries before it to link. With fewer cores, such as CI's 4, the compile time is what the wall clock pays.
+
+**The cost is in what an edit rebuilds.** A header in `UtilsPCH.h` rebuilds every project that has a PCH: touching
+`Matrix4x4.h` rebuilds 293 objects in 12.1 s, against 132 objects in 8.6 s with no shared PCH. Editing the editor is
+cheaper: a `.cpp` alone 1.7 s to 1.2 s, `EditorContext.h` (28 objects) 3.6 s to 2.8 s. So a header that changes
+often doesn't belong in `UtilsPCH.h`.
 
 ## Key files
 
