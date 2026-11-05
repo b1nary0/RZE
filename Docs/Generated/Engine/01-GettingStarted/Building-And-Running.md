@@ -8,7 +8,7 @@ only the tools differ.
 
 | | Windows | Linux |
 |---|---|---|
-| Tools | Visual Studio with the C++ workload, .NET 6 or later (for Sharpmake) | `sudo dnf install clang lld make dotnet-sdk-8.0` |
+| Tools | Visual Studio with the C++ workload, .NET 8 or later (for Sharpmake) | `sudo dnf install clang lld make dotnet-sdk-8.0` |
 | Libraries | Committed under `ThirdParty\` (SDL3, assimp, Optick, DirectXTK) | `sudo dnf install SDL3-devel libshaderc-devel assimp-devel` |
 | Graphics | Direct3D 11 | An OpenGL 4.5 core driver |
 

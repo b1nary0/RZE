@@ -30,7 +30,7 @@ jobs:
     - name: Setup DotNet
       uses: actions/setup-dotnet@v4
       with:
-        # Sharpmake needs .NET 6 or later
+        # Sharpmake needs .NET 8 or later
         dotnet-version: "8.0.x"
         
     - name: Checkout
