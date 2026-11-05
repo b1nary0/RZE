@@ -1,22 +1,13 @@
 #pragma once
 
-// std lib
-#include <cstdint>
-#include <string>
-#include <math.h>
-#include <limits>
+// The std, Utils and maths layers every project shares
+#include <UtilsPCH.h>
 
-// std io
+// std, beyond UtilsPCH.h's
 #include <cstdio>
 #include <iostream>
-
-// std memory
-#include <memory>
-
-// std containers
-#include <map>
+#include <limits>
 #include <queue>
-#include <vector>
 
 // Optick
 #include <Optick/optick.h>
@@ -25,9 +16,6 @@
 #include <RZE_Config.h>
 #include <RZE.h>
 #include <EngineApp.h>
-#include <Utils/DebugUtils/Debug.h>
-#include <Utils/Platform/Filepath.h>
-#include <Utils/PrimitiveDefs.h>
 
 // IMGUI
 #include <imgui/imgui.h>

@@ -51,6 +51,10 @@ Checks marked **(work)** are Windows-only changes, not tests: ask the user befor
   headers. Linux builds, but the Windows-only files (`Platform/Windows/*.cpp`, `Windowing/Windows/*.cpp`) were never
   compiled against it: an undeclared name in one of them (`std::wstring_convert`, `glm::...`, `assert`) is a missing
   include there. The build log no longer prints "Compiling Engine PCH".
+- **A8. Layered PCHs.** `UtilsPCH.h` now holds std containers, Utils core (`Debug`, `File`, `Filepath`,
+  `PrimitiveDefs`) and the Utils math headers, and `EnginePCH.h` includes it first instead of its own copies. Debug and
+  Release build with no errors or new warnings. Note how long a clean Debug build of `Engine` takes (MSBuild's
+  summary or `/clp:PerformanceSummary`), so later changes have a Windows number to compare with.
 
 ### B. EditorHarness (H1: the harness beside the Editor)
 
