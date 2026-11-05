@@ -161,7 +161,7 @@ so `UnitTests/Src/Engine/TitleBarLayoutTests.cpp` tests it without a window.
 ## Diagram
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     OS["The OS: Win32 messages, or Wayland / X11 events"] --> SDL["SDL's event queue"]
     Hook["Windows: non-client mouse hook<br/>(WindowNativeWindows)"] -->|SDL user events| SDL

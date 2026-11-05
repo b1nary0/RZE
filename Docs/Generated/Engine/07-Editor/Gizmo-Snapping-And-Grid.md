@@ -29,7 +29,7 @@ How each mode snaps:
 Per frame, `SceneViewPanel` calls `PrepareManipulate(settings, operation, mode, ctrlHeld)` before `ImGuizmo::Manipulate` (passing the result as the snap argument), then `Apply(drag, currentPosition, currentRotation, translation, rotation)` on the decomposed result. `drag` is the gizmo's `InteractionTracker`, following `ImGuizmo::IsUsing()`; its start edge is where the starting position and rotation are captured. The snapped result is pushed as a `SetTransformCommand` carrying the drag's interaction ID (see [Editor-Framework.md](Editor-Framework.md#interactions-one-drag-many-commands)). With several objects selected, the others get the same change; see [Editor-Panels.md](Editor-Panels.md#sceneview-sceneviewpanel).
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     Prep["PrepareManipulate<br/>snapping = toggle XOR Ctrl"] --> Local{"Translate in<br/>Local mode?"}
     Local -->|yes| Snap["hand ImGuizmo the move step"]
@@ -62,7 +62,7 @@ Two fades keep the grid from ever popping or showing an edge:
 Only lines out to the fade end are drawn, centred on the camera in whole major cells so they don't slide as it moves. New lines appear beyond the fade and fade in as the camera approaches.
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     A["Low camera<br/>1 m squares, 10 m major"] -->|"rising: 1 m lines fade,<br/>10 m lines dim"| B["10 m squares<br/>100 m major"]
     B -->|"rising: 10 m lines fade,<br/>100 m lines dim"| C["100 m squares<br/>(the cap)"]

@@ -4,20 +4,22 @@ The `run-rze` skill (`.claude/skills/run-rze/`) lets an agent build, run and dri
 take screenshots, ask what it holds, and close it the way a user would. It works in two modes:
 - **OS input:** a driver plays real mouse and keyboard input on the desktop and captures the screen. That's
   `driver.ps1` on Windows (user32) and `driver.py` on Linux (uinput and KWin).
-- **The harness:** `driver.py launch --harness` runs **EditorHarness**, the Editor with a small automation channel
-  beside it. Input, screenshots and questions go through the app itself, as JSON lines on its stdin, so the real cursor
-  and focus are left alone.
+- **The harness:** `driver.py launch --harness` (Linux) or `driver.ps1 launch -Harness` (Windows) runs
+  **EditorHarness**, the Editor with a small automation channel beside it. Input, screenshots and questions go through
+  the app itself, as JSON lines on its stdin, so the real cursor and focus are left alone.
 
 The harness is a test harness, not an engine feature. It's its own executable beside the Editor, and it reaches the
 Editor only through seams that already existed (see [Staying outside the engine](#staying-outside-the-engine)).
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
-    Agent["Agent<br/>one driver.py call per action"] -->|"Unix socket"| Helper["Session helper<br/>(started by launch)"]
-    Helper -->|"OS mode"| OS["uinput pointer + keyboard,<br/>KWin scripts, spectacle"]
+    Agent["Agent<br/>one driver call per action"] -->|"Unix socket (driver.py)<br/>named pipe (driver.ps1)"| Helper["Session helper<br/>(started by launch)"]
+    Agent -->|"OS mode, driver.ps1<br/>(no helper)"| Win["user32 input,<br/>screen capture"]
+    Helper -->|"OS mode, driver.py"| OS["uinput pointer + keyboard,<br/>KWin scripts, spectacle"]
     OS --> Editor["Editor<br/>(window on the desktop)"]
-    Helper -->|"--harness"| Stdin["EditorHarness stdin<br/>one JSON command a line"]
+    Win --> Editor
+    Helper -->|"harness"| Stdin["EditorHarness stdin<br/>one JSON command a line"]
     Stdin --> Harness["HarnessApp::PreUIUpdate<br/>SDL events, readback, state"]
     Harness -->|"RZEHARNESS {json}<br/>on stdout"| Helper
 ```
@@ -31,7 +33,7 @@ flowchart TD
 | Screenshots | The frame itself, read back from the back buffer | A capture of the window's client area |
 | Questions | `state` and `object` answer from the Editor's data | Only what pixels and the log show |
 | What it can't check | The compositor, window decorations, focus and activation, Snap Layouts, RenderDoc's capture key, the Game | Nothing the desktop does, but it's slower and fragile to coordinates |
-| Platforms | Linux now. Windows has EditorHarness, but `driver.ps1` doesn't speak to it yet. | Both |
+| Platforms | Both | Both |
 
 Prefer the harness for anything inside the Editor. Use OS input for what needs the real desktop.
 
@@ -52,6 +54,8 @@ Prefer the harness for anything inside the Editor. Use OS input for what needs t
   `info`'s `title`, `width`, `height`, `maximized`, `frame` and `realInputBlocked`.
 - **stdin is read with the OS's own call** (`read`, `ReadFile`) in `HarnessStdin<Platform>.cpp`, not `std::cin`. A
   thread blocked in `std::getline` holds stdin's lock, and `exit()` flushes every stream, so the Editor hung on exit.
+- **A UTF-8 byte order mark** before the first command is dropped. Windows PowerShell 5.1's `Process.Start` writes
+  one to a redirected stdin, which made the first command "Not a command".
 - When stdin closes, the harness stops reading and the Editor carries on. Closing it is up to `quit`.
 
 ### The commands
@@ -88,6 +92,10 @@ in the Editor knows the difference.
   therefore sees the click's result.
 - **Real input is dropped.** An SDL event filter lets mouse, key and text events through only while the harness is
   pushing, so a hand on the mouse can't disturb a run. `realinput on` turns that off.
+- **Turning real input back on resyncs the mouse.** While blocked, the real mouse's moves are dropped, so the UI still
+  has the mouse where the harness last put it, and a real click before any real move would land there. When
+  `realinput on` arrives and the real cursor is over the window (`SDL_GetMouseFocus`), `SetRealInputBlocked` pushes a
+  move to it (`SDL_GetMouseState`, which SDL keeps up to date before the filter runs), as a nudge of the mouse would.
 - **Unfocused.** Input isn't gated on focus, so it works while another window is active; the Editor then runs at its
   unfocused frame rate (30 fps), and an action takes about 180–290 ms.
 
@@ -125,6 +133,11 @@ The Editor and the Game behave the same whether the harness is built or not.
 - **ImGui can follow the real mouse** while the harness's window is focused and the pointer is over no window of the
   app, on Windows and X11: `imgui_impl_sdl3` reads the global mouse there
   ([known issue 39](../10-KnownIssues/Architectural-Notes-And-TODOs.md#39-imgui-can-follow-the-real-mouse-in-a-focused-harness-window)).
+  Windows' check (B6) didn't see it: with the real pointer over the taskbar, a harness click still landed where the
+  harness put it.
+- **A session that ends with unsaved changes stops at the prompt.** `quit` asks first, as the close button does, and
+  the prompt is answered with a `click` on Don't Save, as a person would. A session left at the prompt with nothing to
+  answer it (its driver gone) has to be stopped by hand.
 - **The Game has no harness.** `GameApp` isn't in a library, so nothing can subclass it yet.
 
 ## The drivers
@@ -150,22 +163,43 @@ holds the Editor's process and, in OS mode, the input devices; every other comma
 
 ### `driver.ps1` (Windows)
 
-The same commands in OS mode, with user32 input and screen captures. Two things it doesn't do yet, both listed in
-`.claude/WindowsChecks.md`: back up `imgui.ini` around a session (H1), and a harness mode (H2).
+Each call is a process of its own, and does one action.
+- **OS mode:** input through user32 (`SetCursorPos`, `mouse_event`, `SendKeys`), and `shot` captures the client area.
+  Each call finds `Editor.exe`'s window and acts on it, so there's no helper. `close` sends `WM_CLOSE`, as the close
+  button does; `quit` kills the process.
+- **Harness mode** (`launch -Harness`) starts a hidden **helper** (`driver.ps1 helper`, a small C# class compiled with
+  `Add-Type`). It holds EditorHarness's stdin and stdout, keeps the `RZEHARNESS` answers by id, and writes the app's
+  other output to `%TEMP%\rze-driver\harness-app.log`. Every other call reaches it through the named pipe
+  `rze-driver-harness`, one request and one answer a line; the session is in `%TEMP%\rze-driver\harness-session.json`.
+  `launch` waits for `ready` and for `info` to say the window is maximized. The helper starts the harness with the
+  console's input encoding set to UTF-8 without a byte order mark, and kills it if the helper itself ends.
+- **The same commands in both:** `click`, `dblclick`, `drag`, `scroll`, `key`, `shot`, `info`, `alive`, `close` and
+  `quit`; harness mode adds `state`, `object` and `realinput`. A click that makes the app exit (Don't Save) reports
+  `the app exited`.
+- **`close` in harness mode** sends `quit` and waits. With unsaved changes it stops at the prompt and leaves the session
+  running, so it can be looked at (`shot`) and answered (`click` on Don't Save); `close` again ends the session.
+- A process that has just exited is still listed by Windows for a moment, so a `launch` right after a `close` waits up
+  to 5 s for it to go.
 
 ### `imgui.ini` is put back
 
-Every Editor run rewrites `RZE/Config/imgui.ini`, which often holds a layout someone means to keep. `driver.py launch`
-copies it aside, and `close` and `quit` restore it once the app has exited; so does the helper if the session ends
-any other way, and the next `launch` restores a backup a dead session left. `--keep-imgui-ini` keeps a run's layout.
+Every Editor run rewrites `RZE/Config/imgui.ini`, which often holds a layout someone means to keep. Both drivers copy
+it aside at `launch` and restore it once the app has exited, and the next `launch` restores a backup a dead session
+left.
+- **`driver.py`**: `close` and `quit` restore it, and so does the helper if the session ends any other way.
+  `--keep-imgui-ini` keeps a run's layout.
+- **`driver.ps1`**: the backup is a file, `%TEMP%\rze-driver\imgui.ini.backup`, since no process lasts the session in OS
+  mode. `close` and `quit` restore it; a `close` that stops at the prompt keeps it until the app has exited.
+  `-KeepImguiIni` keeps a run's layout, but still restores a leftover backup first, at `launch`. (`driver.py` restores
+  a leftover at `close` even with `--keep-imgui-ini`, overwriting the kept layout; noted in `WindowsChecks.md`, H1.)
 
 ## `WindowsChecks.md`
 
 Work done on Linux can't be built or run on Windows there. `.claude/WindowsChecks.md` lists what a Windows machine
 still has to check after it: building and the tests, EditorHarness on Windows, the window and input, DX11 rendering,
-Editor features, profiling, CI, and work items for `driver.ps1`. It's kept up to date on Linux: a check is added with
-each change that affects Windows, and removed once its result is in. On Windows, Claude follows it and records each
-result in its table.
+Editor features, profiling, CI, and work items for `driver.ps1` (both done: H1 and H2). It's kept up to date on Linux:
+a check is added with each change that affects Windows, and removed once its result is in. On Windows, Claude follows
+it and records each result in its table, along with fixes made there and what Linux should rerun.
 
 ## Key files
 

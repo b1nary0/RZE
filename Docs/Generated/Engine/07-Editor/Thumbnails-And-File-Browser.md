@@ -3,7 +3,7 @@
 The Editor opens, saves and picks files in its own **file browser**: a modal grid of large tiles, each showing the file's thumbnail. The **Content Browser** panel shows the same tiles all the time, for browsing the project, loading scenes, renaming, deleting and making folders (all undoable), and dragging files into the scene or onto the Object Inspector's asset fields. Both draw their tiles with one widget, `FileTileGrid`. Scene and mesh thumbnails are rendered by the Editor itself, **in the background**, in a scene of their own, so the scene you're editing is never touched and nothing waits on them.
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     subgraph Ask["What asks for a thumbnail"]
         direction TB
@@ -222,7 +222,7 @@ The keys work while the panel is focused and no text field is active; the mouse 
 `ThumbnailRenderJob` is an `AsyncOperation` flagged **`Background`**, of kind `Rendering`, named "Rendering thumbnails". It doesn't block, it shows in the [status bar](Status-Bar-And-Settings.md#the-status-bar) where it can be cancelled, and its loads use the background job lane. It's a **`CaptureBatchOperation`** (`Engine\Src\Game\CaptureBatchOperation.h/.cpp`): an engine base class that captures a batch of items off-screen, taking each through the same steps, while the subclass says where items come from and how each is set up and captured.
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 stateDiagram-v2
     [*] --> WaitingForItem: TakeNextItem, BeginItem
     WaitingForItem --> Settling: IsItemReady

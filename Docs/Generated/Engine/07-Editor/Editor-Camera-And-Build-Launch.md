@@ -25,7 +25,7 @@ Camera input only works while the mouse is over the scene view. All the Editor's
 Orbit, pan and dolly all work around a **pivot**: a point straight ahead of the camera, `m_orbitDistance` metres away.
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart LR
     Cam(("camera")) -->|"m_orbitDistance metres<br/>along m_forward"| Pivot(("pivot"))
     Orbit["MMB: orbit<br/>the camera circles the pivot"] -.- Pivot
@@ -61,7 +61,7 @@ Double-clicking an object in the Scene panel calls `FocusOn(bounds)` with the ob
 File > **Build Game...** calls `GameBuilder::Build()`, and **Launch Game...** calls `GameBuilder::BuildAndLaunch(scene)` (`Editor\Src\Services\GameBuilder.h/.cpp`, owned by `EditorContext`). The build runs as an async job (`JobAsyncOperation`), so the Editor keeps running while the Game builds. Both items are greyed out while a build is in progress (`IsBuilding()`), and a second request is ignored with a log line.
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 sequenceDiagram
     participant User
     participant App as GameBuilder

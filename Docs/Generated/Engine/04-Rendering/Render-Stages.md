@@ -9,7 +9,7 @@ A frame is drawn by a handful of **render stages**: small, independent passes su
 Rounded boxes are stages, and the parallelograms between them are the data contracts they pass along.
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     Shadow(["ShadowRenderStage"]) --> SMD[/"SceneLightingData<br/>lights + shadow maps"/]
     Prepass(["DepthPrepassStage"]) --> SDD[/"SceneDepthData<br/>depth"/]
@@ -45,7 +45,7 @@ Render pipeline: ShadowRenderStage -> DepthPrepassStage -> AmbientOcclusionStage
 ## The pieces
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     RE["RenderEngine"] -->|owns| RP["RenderPipeline"]
     RE -->|owns| MV
@@ -162,7 +162,7 @@ Draws the depth of everything that isn't blended before any shading, so ambient 
 Ground truth ambient occlusion (GTAO), ported from Intel's XeGTAO, from the prepass's depth: how much creases and corners hide each pixel from the light around it. Three compute passes (`Common/GTAO.hlsli` holds what they share):
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     D["View's depth<br/>(SceneDepthData)"] --> P["Compute_GTAOPrefilterDepths<br/>view-space distance + 4 mips"]
     P --> M["Compute_GTAOMain<br/>horizons in a few directions<br/>per pixel, cosine-weighted"]
@@ -182,7 +182,7 @@ flowchart TD
 Both kinds of probe capture **what surfaces are around them** rarely, and **relight** those captures often, so moving a light costs a compute pass, not draws.
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     subgraph Capture["Capture (draws): when the grid is fitted, or objects change nearby"]
         direction TB
@@ -256,7 +256,7 @@ It publishes `SceneReflectionData`: the lit probes' boxes (`GraphicsLayouts::Ref
 Turns linear HDR colour into something a monitor can show, then smooths its jagged edges:
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     S["Scene colour<br/>(HDR)"] --> L["Log luminance<br/>256x256, mips down to 1x1"]
     L --> A["Eye adaptation<br/>blend last frame's value<br/>toward the new average"]
@@ -299,7 +299,7 @@ Higher levels treat fainter contrast as an edge, find the ends of long edges mor
 Finds the object at one pixel of the main view, and how far away its surface is, for the Editor's click selection and for placing meshes dropped into the SceneView. It only does work on frames where `RenderView::Pick` holds a `RenderPickRequest { X, Y, Result, DepthResult }`; `RenderEngine::Render()` clears the request afterwards.
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 sequenceDiagram
     participant Ed as Editor (SceneViewPanel)
     participant View as main RenderView

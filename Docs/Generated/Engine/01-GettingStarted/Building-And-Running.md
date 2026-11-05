@@ -8,7 +8,7 @@ only the tools differ.
 
 | | Windows | Linux |
 |---|---|---|
-| Tools | Visual Studio with the C++ workload, .NET 8 or later (for Sharpmake) | `sudo dnf install clang lld make dotnet-sdk-8.0` |
+| Tools | Visual Studio 2026 with the C++ workload (the v145 toolset) and Windows SDK 10.0.26100, .NET 8 or later (for Sharpmake) | `sudo dnf install clang lld make dotnet-sdk-8.0` |
 | Libraries | Committed under `ThirdParty\` (SDL3, assimp, Optick, DirectXTK) | `sudo dnf install SDL3-devel libshaderc-devel assimp-devel` |
 | Graphics | Direct3D 11 | An OpenGL 4.5 core driver |
 
@@ -18,9 +18,9 @@ Linux is developed on Fedora 44 under KDE Plasma (Wayland), with an NVIDIA drive
 ## The canonical build sequence
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
-    A["Generate<br/>GenerateSolutions.bat: RZE.sln and .vcxproj files<br/>GenerateSolutions.sh: RZE.make and .make files"] --> B["Compile<br/>Windows: msbuild RZE.sln<br/>Linux: make -f RZE.make config=debug<br/>(Engine, Rendering, Utils, Externals, EditorLib,<br/>SourceAssetBurner, Editor, EditorHarness,<br/>Game, UnitTests)"]
+    A["Generate<br/>GenerateSolutions.bat: RZE.sln and .vcxproj files<br/>GenerateSolutions.sh: Makefile, RZE.make and .make files"] --> B["Compile<br/>Windows: msbuild RZE.sln<br/>Linux: make config=debug<br/>(Engine, Rendering, Utils, Externals, EditorLib,<br/>SourceAssetBurner, Editor, EditorHarness,<br/>Game, UnitTests)"]
     B --> T["Run UnitTests"]
     T --> C["Burn assets<br/>SourceAssetBurner<br/>(Assets/3D/*.obj -> ProjectData/Mesh + Material/*)"]
     C --> E["Run the Editor or the Game<br/>(both read Assets/, Config/ and ProjectData/<br/>from the source tree)"]
@@ -34,19 +34,20 @@ docs and the CI files ever disagree, trust the CI files.
 1. **Generate the projects.** Again after adding or removing any source file: the generated files aren't committed.
    - Windows: `RZE\GenerateSolutions.bat` runs `Tools\Sharpmake\Sharpmake.Application.exe`, producing `RZE.sln` and
      a `.vcxproj` per project under its `_project\` folder.
-   - Linux: `RZE/GenerateSolutions.sh` runs the same Sharpmake with `dotnet`, producing `RZE/RZE.make` and a `.make`
-     per project under its `_project/` folder.
+   - Linux: `RZE/GenerateSolutions.sh` runs the same Sharpmake with `dotnet`, producing `RZE/Makefile` (the build:
+     every project's objects compile at once, then `RZE.make` links), `RZE/RZE.make` (the same build, one project
+     after another) and a `.make` per project under its `_project/` folder.
 
    See [09-BuildSystem/Sharpmake-Project-Graph.md](../09-BuildSystem/Sharpmake-Project-Graph.md).
 
 2. **Compile.** Output lands in `RZE/_build/<config>/` (`debug`, `release` or `retail`).
    - Windows: `msbuild RZE.sln /property:Configuration=Debug`. Warnings are errors (`/W3 /WX`).
-   - Linux: `make -f RZE.make config=debug -j$(nproc)` (or `release`, `retail`), or one project, e.g.
-     `make -f RZE.make config=debug Editor`. Warnings are errors here too (`-Wall -Werror`). Executables have no
+   - Linux: `make config=debug -j$(nproc)` in `RZE/` (or `release`, `retail`), or one project, e.g.
+     `make config=debug Editor`. Warnings are errors here too (`-Wall -Werror`). Executables have no
      extension (`_build/debug/Editor`).
    - **Just the Game:** `RZE/BuildGame.bat` on Windows finds MSBuild through `vswhere` and builds
      `Game/_project/Game_Win64.vcxproj` as Debug|x64. `RZE/BuildGame.sh` on Linux runs
-     `make -f RZE.make config=debug Game`. The Editor's **Build Game** and **Launch Game** run whichever one belongs
+     `make config=debug -j$(nproc) Game`. The Editor's **Build Game** and **Launch Game** run whichever one belongs
      to the platform (see [Editor-Camera-And-Build-Launch.md](../07-Editor/Editor-Camera-And-Build-Launch.md)).
 
 3. **Burn assets** (offline asset conditioning; see
@@ -96,10 +97,11 @@ pick test cases, `-s` to show passing checks). It needs no display, so CI runs i
 ## Driving the running Editor
 
 The `run-rze` skill (`.claude/skills/run-rze/`) builds, runs and drives the Editor for automated checks:
-`driver.ps1` on Windows, `driver.py` on Linux. On Linux, `driver.py launch --harness` runs **EditorHarness**, the
-Editor with a harness beside it that takes input, screenshots and state queries as JSON lines on stdin, so the real
-cursor and focus are left alone. `.claude/WindowsChecks.md` lists the checks a Windows machine still has to run for
-changes made on Linux. See [EditorHarness-And-Drivers.md](../07-Editor/EditorHarness-And-Drivers.md).
+`driver.ps1` on Windows, `driver.py` on Linux. `driver.py launch --harness` and `driver.ps1 launch -Harness` run
+**EditorHarness**, the Editor with a harness beside it that takes input, screenshots and state queries as JSON lines on
+stdin, so the real cursor and focus are left alone. Both drivers put `RZE/Config/imgui.ini` back after a session.
+`.claude/WindowsChecks.md` lists the checks a Windows machine still has to run for changes made on Linux, and records
+their results. See [EditorHarness-And-Drivers.md](../07-Editor/EditorHarness-And-Drivers.md).
 
 ## CI
 
@@ -107,10 +109,10 @@ Both run on pushes and pull requests to `master` and `Sandbox`, and on demand, o
 
 | | `Windows.yml` | `Linux.yml` |
 |---|---|---|
-| Runner | `windows-2022` | `ubuntu-latest`, in a `fedora:44` container (Ubuntu has no SDL3 packages) |
+| Runner | `windows-2022`, which has no VS 2026, so the Windows build fails there until it moves to an image that has (`WindowsChecks.md`, G1) | `ubuntu-latest`, in a `fedora:44` container (Ubuntu has no SDL3 packages) |
 | Setup | MSBuild, .NET 8 | `dnf install` of the Linux prerequisites above |
 | Generate | `GenerateSolutions.bat` | `GenerateSolutions.sh` |
-| Build | `msbuild -m RZE/RZE.sln` | `make -f RZE.make -j$(nproc)` |
+| Build | `msbuild -m RZE/RZE.sln` | `make config=<config> -j$(nproc)` in `RZE/` |
 | Then | `UnitTests.exe` (a failing test fails the run), `SourceAssetBurner.exe` | `UnitTests`, `SourceAssetBurner` |
 | Archive | `RZE/_build/<config>` without `.lib`/`.pdb`/`.exp`/`.log`, with `RZE/Assets`, `Config`, `ProjectData` | the same, without `.a`/`.log` |
 

@@ -16,7 +16,7 @@ The Editor uses **immediate-mode** Dear ImGui throughout. The framework adds str
 `EditorApp` owns one `EditorContext` and hands it to every panel. It owns the editor's state and services:
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     App["EditorApp"] --> Ctx["EditorContext"]
     Ctx --> State["State<br/>EditorSelection, editor camera,<br/>SceneViewportState, EditorSettings"]
@@ -131,7 +131,7 @@ It reads ImGui's dock nodes, windows and focus from `imgui_internal.h`, which an
 ## When things run in a frame
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 sequenceDiagram
     participant Eng as RZE_Engine
     participant App as EditorApp
@@ -206,7 +206,7 @@ A gizmo drag or a dragged number changes a value every frame, and each frame is 
 `UndoHistory` (`Services\UndoHistory`, owned by the context) is a list of **steps**. A step is everything one interaction did: a gizmo drag over three objects is one step holding three records, each with the transform from before the drag and from its end.
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     Cmd["command Execute<br/>changes the scene,<br/>SetUndoRecord"] --> Flush["CommandQueue::Flush<br/>TakeUndoRecord"]
     Flush --> Join{"same interaction as<br/>the open last step?"}

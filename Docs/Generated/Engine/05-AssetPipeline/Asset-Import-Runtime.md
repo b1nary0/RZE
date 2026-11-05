@@ -37,7 +37,7 @@ Used for `StaticMeshResource`, `MaterialResource`, `Texture2D`, `VertexShader` /
 A resource opts in by returning `true` from `SupportsAsyncLoad()` and splitting its load in two. Today `StaticMeshResource`, `MaterialResource` and `Texture2D` do; anything else requested through a batch falls back to a normal synchronous load.
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     Req["batch.Request&lt;T&gt;(path)"] --> Loaded{"already<br/>loaded?"}
     Loaded -->|yes| Ref["just reference it"]
@@ -101,10 +101,14 @@ At shutdown, `ResourceHandler::ShutDown()` releases whatever is still loaded, lo
 Long-running work, like loading a scene or building the game, runs as an **`AsyncOperation`** (`Engine\Src\EngineCore\Async\`), driven by `AsyncOperationManager` (`RZE().GetAsyncOperationManager()`).
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 stateDiagram-v2
     [*] --> Running: Start() / OnStart()
-    Running --> Running: OnTick(budget) each frame,<br/>again with spare time (idle)<br/>(+ worker jobs via PushWorkerJob)
+    note right of Running
+    While running: OnTick(budget) each
+    frame, and again with spare time
+    (idle), plus worker jobs (PushWorkerJob)
+end note
     Running --> Finishing: Complete() / Fail() / cancel
     Finishing --> Finished: no worker jobs left<br/>OnFinished(state) + completion callback
     Finished --> [*]: same tick: OnCleanup(), released
@@ -157,7 +161,7 @@ Operations only describe themselves (their kind, and whether they're a `SubStep`
 `Engine\Src\Game\SceneLoadOperation.h/.cpp` loads a `.scene` file into a `GameScene` in three phases. The engine loads into the active scene, `Blocking`. A [`HeadlessScene`](../03-SceneAndGameObjects/Scene-And-GameObject-Model.md#headlessscene-a-scene-rendered-off-screen) loads into its own, `Background | SubStep`; the operation holds that scene by `shared_ptr`, so it stays alive until the load finishes even if its owner lets go.
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 sequenceDiagram
     participant Main as Main thread
     participant W as Worker threads

@@ -3,7 +3,7 @@
 RZE renders with DirectX 11 on Windows and OpenGL 4.5 on Linux, the same way on both, split into three layers. Each layer only talks to the one below it, and only the bottom one knows the API:
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     subgraph L1["1 - What to draw: RenderEngine (Engine/Src/Graphics, game thread)"]
         direction LR
@@ -67,7 +67,7 @@ The notes list RenderSystem's intended jobs as: keeping render state in sync wit
 ### Layered decomposition (reproduced from `DrawIO\Render_Decomposition_March2021.drawio`)
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     subgraph RenderSystem["RenderSystem (Engine/Src/Graphics)"]
         MC["MeshComponent (RenderComponent)"] --> RN[RenderNode]

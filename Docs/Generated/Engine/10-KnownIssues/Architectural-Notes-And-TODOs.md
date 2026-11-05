@@ -44,7 +44,9 @@ Rough edges the codebase is candid about (source comments, `#TODO`s), plus a few
 | 36 | Wayland limits the custom title bar and the window | Windowing (Linux) | Low | Open, by design of Wayland |
 | 37 | RenderDoc can't capture the Linux build as it runs normally | Renderer (Linux) | Low | Open, worked around |
 | 38 | An EditorHarness screenshot stalls the Editor for about a second | Harness | Low | Open |
-| 39 | ImGui can follow the real mouse in a focused harness window | Harness | Low | Open, to confirm on Windows |
+| 39 | ImGui can follow the real mouse in a focused harness window | Harness | Low | Open; not seen on Windows (B6) |
+| 40 | A file restored from the Recycle Bin lands in the Editor's trash folder | Editor (Content Browser) | Low | Open |
+| 41 | Scene View picks, icons and the gizmo were 40 px high | Editor (Scene View) | — | **Fixed** (11-05: the panel's position is taken every frame) |
 
 ```mermaid
 quadrantChart
@@ -60,8 +62,8 @@ quadrantChart
     "8 Texture burning": [0.65, 0.62]
     "2 ReflectDB hash": [0.15, 0.35]
     "10 CB over-read": [0.25, 0.25]
-    "5 Dead file": [0.05, 0.05]
-    "7 Component lookups": [0.4, 0.2]
+    "5 Dead file": [0.1, 0.06]
+    "7 Component lookups": [0.34, 0.16]
     "9 Shadow opacity": [0.3, 0.08]
 ```
 
@@ -234,7 +236,15 @@ The harness's `shot` encodes the 2560×1398 PNG on the main thread (`stbi_write_
 
 ## 39. ImGui can follow the real mouse in a focused harness window
 
-`imgui_impl_sdl3` gives ImGui the real global mouse position when the app is focused and the real pointer is over no SDL window, on drivers that support global mouse state (Windows and X11, never Wayland). EditorHarness's mouse input doesn't move the real pointer, so in that case ImGui could see the real pointer instead. Keep the harness's window unfocused, or the real mouse over it; `.claude/WindowsChecks.md` (B6) confirms what Windows does.
+`imgui_impl_sdl3` gives ImGui the real global mouse position when the app is focused and the real pointer is over no SDL window, on drivers that support global mouse state (Windows and X11, never Wayland). EditorHarness's mouse input doesn't move the real pointer, so in that case ImGui could see the real pointer instead. Keep the harness's window unfocused, or the real mouse over it. Windows' check (`.claude/WindowsChecks.md`, B6) didn't see it: with the harness's window focused and the real pointer over the taskbar, a harness click still landed where the harness put it.
+
+## 40. A file restored from the Recycle Bin lands in the Editor's trash folder
+
+Deleting in the Content Browser moves the file to `ProjectData/.Trash/<n>/Item/`, so undo can put it back, and sends it to the system trash (the Recycle Bin, or `~/.local/share/Trash`) once it drops out of the undo history or the Editor closes. The system trash then records `ProjectData/.Trash/<n>/Item` as where it came from, not its folder under `Assets`, so restoring it from there puts it in a trash folder the Editor has already emptied, and the Content Browser doesn't show it. Seen on Windows (`WindowsChecks.md`, E4); Linux records the original path the same way, likely with the same result. A fix would send the file to the system trash from its original path (moving it back first), or keep only the undo copy and trash the original at delete time.
+
+## 41. Scene View picks, icons and the gizmo were 40 px high (fixed)
+
+**Fixed (11-05).** `SceneViewPanel` cached the panel's position only when its x **and** y both changed. A Scene View docked at x = 0, which moved only down (under the 40 px title bar), kept y = 0, while the image was drawn 40 px lower. Picks, marquee selection, object icons, mesh drops and the gizmo's rect are all placed from that position, so clicks on the lower part of a mesh missed, and icons and the gizmo sat above their objects. Not specific to a graphics API: plain ImGui screen coordinates. The position is now taken every frame. See [Editor-Panels.md](../07-Editor/Editor-Panels.md).
 
 ## Key files
 
@@ -255,3 +265,4 @@ The harness's `shot` encodes the 2560×1398 PNG on the main thread (`stbi_write_
 - `Engine\Src\Graphics\MaterialSlot.cpp` (26)
 - `Modules\Rendering\Src\Rendering\Driver\DX11\DX11ShaderTypes.cpp` (32), `Assets\Shaders\Common\Lighting.hlsli` (33)
 - `Engine/Src/Windowing/Linux/WindowNativeLinux.cpp` (36), `.claude/skills/run-rze/driver.py` (37), `EditorHarness/Src/HarnessApp.cpp` (38), `HarnessInput.cpp`, `Externals/Src/imgui/imgui_impl_sdl3.cpp` (39)
+- `Editor/Src/UI/Panels/ContentBrowserPanel.cpp`, `Utils/Src/Utils/Platform/Windows/ShellWindows.cpp` (40), `Editor/Src/UI/Panels/SceneViewPanel.cpp` (41)

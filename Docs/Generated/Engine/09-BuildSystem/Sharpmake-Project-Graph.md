@@ -15,12 +15,14 @@ Windows: RZE\GenerateSolutions.bat
 
 Linux:   RZE/GenerateSolutions.sh
   -> dotnet ../Tools/Sharpmake/Sharpmake.Application.dll "/sources('RZE.sharpmake.cs')"
-  -> RZE.make, and a <Project>_Linux.make per project in its _project/ folder
+  -> Makefile (the build), RZE.make (the same build, one project after another),
+     and a <Project>_Linux.make per project in its _project/ folder
 ```
 
 The same bundled Sharpmake 1.9.1 (the release's Windows build) runs on both: it targets .NET 8 and rolls forward
 onto newer runtimes. Run the generator again after adding or removing a source file. On Linux, build the whole
-solution with `make -f RZE.make config=debug` (or `release`, `retail`), or one project by naming it.
+solution with `make config=debug -j$(nproc)` in `RZE/` (or `release`, `retail`), or one project by naming it
+(`make config=debug Game`).
 
 `RZE.sharpmake.cs` is the solution root. It includes the shared files and every project's file, and adds each project
 to the solution: `Engine`, `Rendering`, `Utils`, `SourceAssetBurner`, `Externals`, `EditorLib`, `Editor`, `Game`,
@@ -59,7 +61,15 @@ DevEnv (`vs2026`, which writes the v145 toolset, and Kits Root `10.0.26100.0`) a
     Elsewhere it does nothing.
 - **`Make/Sharpmake/Sharpmake.sharpmake.cs`**: `SharpmakeProjectBase : CSharpProject`, the C# project wrapping
   Sharpmake itself inside the Visual Studio solution (in a "Tools" folder), referencing `Tools/Sharpmake/Sharpmake.dll`
-  and `Sharpmake.Generators.dll` directly, so the solution can be edited and regenerated from inside Visual Studio.
+  and `Sharpmake.Generators.dll` directly, so the solution can be edited and regenerated from inside Visual Studio. It
+  targets .NET Framework 4.8 and compiles the `.sharpmake.cs` files, so they may only use what 4.8 has: Sharpmake
+  itself runs them on .NET 8, where more is available (e.g. `Path.GetRelativePath`, which broke this project's build
+  until `ParallelMakefile` used `Util.PathGetRelative`).
+- **`Make/Sharpmake/ParallelMakefile.sharpmake.cs`**: a post-generation hook (`ParallelMakefile.Register()` in
+  `SharpmakeMain`) that writes `RZE/Makefile` for the Linux build, from the Makefile generator's solution only; the
+  Windows `.sln` gets nothing. Phase 1 compiles every project's precompiled header and objects at once
+  (`Make/Objects.mk`); phase 2 runs `RZE.make`, which only archives and links. It rewrites the file only when its
+  content changes, so its date stays put on a regeneration that changes nothing.
 
 ## Per-project Sharpmake files
 

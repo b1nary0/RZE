@@ -36,7 +36,7 @@ Public accessors used as the de-facto service locator: `GetApplication()`, `GetR
 ## Startup sequence
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
     A[RZE_Application::Run] --> B["RZE_Engine::Run(createApplicationCallback):<br/>takes the application"]
     B --> C[Init]
@@ -100,7 +100,7 @@ These frames aren't counted: `BeginFrame` isn't called for them, so they have no
 Each iteration of `while (!m_shouldExit)` is an Optick frame, and runs these steps in order. Everything from the input to handing the frame to the renderer is `RZE_Engine::RunFrame(frameStart)`, which [the first frames](#the-first-frames) run too.
 
 ```mermaid
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 5px; stroke-linejoin: round; }'}}%%
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 sequenceDiagram
     participant ML as Main Loop
     participant FP as FramePacer
