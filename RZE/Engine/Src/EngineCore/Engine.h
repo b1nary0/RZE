@@ -117,8 +117,9 @@ private:
 	void InitializeApplication();
 
 private:
-	// Never deleted. ImGui's context is destroyed after the application's ShutDown, and saves imgui.ini through what the
-	// application gave it (the editor's ini path and settings handlers), so deleting it would have to come after that.
+	// Not owned: the application whose Run() started the engine (a local in each main). It outlives Run, so it's still
+	// there when ImGui's context is destroyed after the application's ShutDown, and saves imgui.ini through what the
+	// application gave it (the editor's ini path and settings handlers).
 	RZE_Application* m_application;
 	GameScene* m_activeScene;
 

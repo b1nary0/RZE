@@ -73,7 +73,8 @@ namespace Rendering
 		m_device->AttachToCurrentThread();
 		m_imguiRenderer->Shutdown();
 		// Saves imgui.ini, through io.IniFilename and any settings handlers the application added, which point into the
-		// application. It's never deleted (RZE_Engine::m_application), so they're still there after its ShutDown.
+		// application. It's the caller's object and outlives the engine's shutdown, so they're still there after its
+		// ShutDown.
 		ImGui::DestroyContext();
 		m_imguiRenderer.reset();
 		m_device->Shutdown();

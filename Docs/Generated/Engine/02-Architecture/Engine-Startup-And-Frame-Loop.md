@@ -27,7 +27,9 @@ int main(int argc, char* argv[]) {
 
 ## `RZE_Engine` (`Engine\Src\EngineCore\Engine.h` / `.cpp`)
 
-Owns: `RZE_Application* m_application`, `GameScene* m_activeScene`, `Window* m_window`, `std::unique_ptr<SplashScreen> m_splashScreen` (only while starting up, and only for an application with a splash screen), `ResourceHandler m_resourceHandler`, `EventHandler m_eventHandler`, `InputHandler m_inputHandler`, `std::unique_ptr<RenderEngine> m_renderEngine`, `AsyncOperationManager m_asyncOperationManager`, plus frame timing: `HiResTimer m_programTimer` (started with the main loop; frame times are measured on it), `FramePacer m_framePacer` ([below](#frame-pacing)), `PreciseSleep m_frameSleep` and `FrameTimeCapture m_frameTimeCapture`. `GetDeltaTime()` reads the FramePacer's.
+Holds, without owning it, `RZE_Application* m_application`: the application whose `Run()` started the engine, a local in each `main` (`EditorMain.cpp`, `HarnessMain.cpp`, the Game's `Main.cpp`) that's destroyed after `RZE().Run()` returns.
+
+Owns: `GameScene* m_activeScene`, `Window* m_window`, `std::unique_ptr<SplashScreen> m_splashScreen` (only while starting up, and only for an application with a splash screen), `ResourceHandler m_resourceHandler`, `EventHandler m_eventHandler`, `InputHandler m_inputHandler`, `std::unique_ptr<RenderEngine> m_renderEngine`, `AsyncOperationManager m_asyncOperationManager`, plus frame timing: `HiResTimer m_programTimer` (started with the main loop; frame times are measured on it), `FramePacer m_framePacer` ([below](#frame-pacing)), `PreciseSleep m_frameSleep` and `FrameTimeCapture m_frameTimeCapture`. `GetDeltaTime()` reads the FramePacer's.
 
 Public accessors used as the de-facto service locator: `GetApplication()`, `GetResourceHandler()`, `GetInputHandler()`, `GetRenderEngine()`, `GetAsyncOperationManager()`, `GetActiveScene()`, `GetDeltaTime()`/`GetDeltaTimeMS()`, `GetFramePacer()` / `SetFrameSettings()`, `SetWindowSize()`, `PostExit()`.
 
@@ -220,9 +222,10 @@ With `UIFrameRate` set, only some frames are UI frames. Everything else (the asy
 1. `AsyncOperationManager::ShutDown()` first, so no async work touches the scene, resources or renderer while they shut down (it cancels operations and waits for their worker jobs; completion callbacks don't fire);
 2. scene shutdown, then app shutdown;
 3. the main scene's `ClearObjects()`, then `ReleaseRenderStages()` (must happen before resources are released). What these release is destroyed as it goes;
-4. `RenderEngine::Shutdown()`, which lets the render thread finish what it was given, then stops it, shuts down ImGui's backends and destroys its context. Destroying the context saves `imgui.ini`, through what the application gave ImGui (the Editor's ini path and settings handlers). The application is never deleted (`RZE_Engine::m_application`), so they're still there; deleting it would have to come after this;
+4. `RenderEngine::Shutdown()`, which lets the render thread finish what it was given, then stops it, shuts down ImGui's backends and destroys its context. Destroying the context saves `imgui.ini`, through what the application gave ImGui (the Editor's ini path and settings handlers). They're still there: the application isn't the engine's, and outlives all of this (step 7);
 5. `JobScheduler::ShutDown()` (queued jobs are abandoned, running ones finish), clear the log sink, `MainThreadDispatcher::ShutDown()`;
 6. `InternalShutDown()` deletes the scene and renderer, releases the engine config, shuts down the `ResourceHandler`, and deletes the window.
+7. `RZE().Run()` returns, and the application is destroyed when `main` returns. Its destructors run after the renderer and the `ResourceHandler` have shut down, which is safe: what it held is released in its `ShutDown()` (step 2), and a GPU handle can be let go after the device has shut down.
 
 ## Key files
 
