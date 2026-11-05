@@ -18,20 +18,20 @@ Linux:   RZE/GenerateSolutions.sh
   -> RZE.make, and a <Project>_Linux.make per project in its _project/ folder
 ```
 
-The same bundled Sharpmake 0.75 runs on both: it targets .NET 6 and rolls forward onto newer runtimes (.NET 8 on
-Linux and in CI). Run the generator again after adding or removing a source file. On Linux, build the whole
+The same bundled Sharpmake 1.9.1 (the release's Windows build) runs on both: it targets .NET 8 and rolls forward
+onto newer runtimes. Run the generator again after adding or removing a source file. On Linux, build the whole
 solution with `make -f RZE.make config=debug` (or `release`, `retail`), or one project by naming it.
 
 `RZE.sharpmake.cs` is the solution root. It includes the shared files and every project's file, and adds each project
 to the solution: `Engine`, `Rendering`, `Utils`, `SourceAssetBurner`, `Externals`, `EditorLib`, `Editor`, `Game`,
 `EditorHarness` and `UnitTests` on both platforms; `SharpmakeProjectBase` (Visual Studio only) on Windows; and
 `OptickCore` on Linux, where Optick is built from its source (below). `Main.SharpmakeMain` pins the Windows SDK and
-DevEnv (`vs2017`, Kits Root `10.0.18362.0`) and calls `arguments.Generate<RZE>()`.
+DevEnv (`vs2026`, which writes the v145 toolset, and Kits Root `10.0.26100.0`) and calls `arguments.Generate<RZE>()`.
 
 ## Shared build config
 
 - **`Make/Sharpmake/CommonTarget.sharpmake.cs`**: `CommonTarget : ITarget`, with `Optimization` (Debug, Release,
-  Retail) and the target for the machine generating: `win64` with `DevEnv.vs2017`, or `linux` with `DevEnv.make`.
+  Retail) and the target for the machine generating: `win64` with `DevEnv.vs2026`, or `linux` with `DevEnv.make`.
   Any other host throws. `SubPlatformType` is only `x64`, and `Mode` only `Game`: the Editor and Game are separate
   executable projects, not a target axis.
 - **`Make/Sharpmake/BaseProject.sharpmake.cs`**: the abstract `BaseProject : Project` every native project derives
