@@ -3,7 +3,9 @@
 #include <Graphics/RenderPipeline.h>
 #include <Graphics/RenderStage.h>
 #include <Graphics/RenderStages/AmbientOcclusionStage.h>
+#include <Graphics/RenderStages/AntiAliasingStage.h>
 #include <Graphics/RenderStages/DebugDrawRenderStage.h>
+#include <Graphics/RenderStages/DebugViewStage.h>
 #include <Graphics/RenderStages/DepthPrepassStage.h>
 #include <Graphics/RenderStages/ForwardRenderStage.h>
 #include <Graphics/RenderStages/IrradianceProbeStage.h>
@@ -38,6 +40,9 @@ void RenderEngine::Initialize(void* windowHandle)
 	AddRenderStage<ReflectionProbeStage>();
 	AddRenderStage<ForwardRenderStage>();
 	AddRenderStage<PostProcessRenderStage>();
+	AddRenderStage<AntiAliasingStage>();
+	// Before the debug lines, which it would otherwise cover; both modify DisplayColourData, in the order they're added
+	AddRenderStage<DebugViewStage>();
 	AddRenderStage<PickRenderStage>();
 
 	// Available in Debug and Release; only Retail strips it

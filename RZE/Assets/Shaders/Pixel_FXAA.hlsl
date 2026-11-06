@@ -3,8 +3,20 @@
 // sample across the edge by where the pixel sits on that step, so long shallow edges blend smoothly. Detail thinner
 // than a pixel is softened as well. Pixels with little contrast around them pass through, so texture detail stays
 // sharp. How far it searches, how faint an edge counts and how much it softens come from the view's level
-// (PostProcessParams, AntiAliasingSettings).
-#include "Common/PostProcess.hlsli"
+// (FXAAParams, AntiAliasingSettings). Drawn by AntiAliasingStage.
+#include "Common/FullScreenQuad.hlsli"
+
+// Must match AntiAliasingStage::FXAAParamsLayout
+cbuffer FXAAParams : register(b0)
+{
+	float2 ViewportScale;        // Scene viewport size / target size; the viewport is the target's top-left corner
+	float  EdgeThreshold;        // Less contrast than max(EdgeThresholdMin, this x the brightest neighbour's luma) isn't an edge
+	float  EdgeThresholdMin;
+	float  Subpixel;             // How much detail thinner than a pixel is softened, 0 to 1
+	float  SearchStepCount;      // How many of SearchSteps the edge-end search takes
+	float2 _pad0;
+	float4 SearchSteps[3];       // Each search step's distance along the edge, in pixels; 4 per element
+};
 
 Texture2D DisplayTexture : register(t0);
 // Linear filtering: bound with the texture (DX11TextureBuffer2D::SetActive)

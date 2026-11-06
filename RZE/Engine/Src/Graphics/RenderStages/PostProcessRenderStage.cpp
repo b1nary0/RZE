@@ -1,13 +1,12 @@
 #include <Graphics/RenderStages/PostProcessRenderStage.h>
 
+#include <Graphics/FullScreenPass.h>
 #include <Graphics/RenderEngine.h>
 #include <Graphics/Shader.h>
 
 #include <Rendering/Renderer.h>
 #include <Rendering/Driver/GFXBuffer.h>
 #include <Rendering/Graphics/RenderTarget.h>
-
-#include <algorithm>
 
 namespace
 {
@@ -25,10 +24,6 @@ namespace
 	constexpr float k_minExposure = 0.125f;
 	constexpr float k_maxExposure = 16.0f;
 
-	// Must match the register(tN) slots in the post-process shaders
-	constexpr U32 k_sourceSlot = 0;
-	constexpr U32 k_secondarySlot = 1;
-
 	// A view's eye-adaptation history, kept in its Persistent() blackboard so every view adapts on its own
 	struct EyeAdaptationState : RenderStageData<EyeAdaptationState>
 	{
@@ -41,11 +36,11 @@ namespace
 		bool NeedsReset = true;
 	};
 
-	// A view's tonemapped image before anti-aliasing, kept in its Persistent() blackboard and remade when the view's
-	// target changes size
-	struct AntiAliasState : RenderStageData<AntiAliasState>
+	// A view's tonemapped image before anti-aliasing, for views that anti-alias, kept in its Persistent() blackboard and
+	// remade when the view's target changes size
+	struct TonemapTargetState : RenderStageData<TonemapTargetState>
 	{
-		[[maybe_unused]] static constexpr const char* k_name = "AntiAliasState";
+		[[maybe_unused]] static constexpr const char* k_name = "TonemapTargetState";
 
 		Rendering::TextureBuffer2DHandle Tonemapped;
 		U32 Width = 0;
@@ -91,10 +86,6 @@ void PostProcessRenderStage::Initialize()
 
 	m_tonemapShader = LoadPixelShader("Pixel_Tonemap");
 
-	m_antiAliasShader = LoadPixelShader("Pixel_FXAA");
-
-	m_debugAmbientOcclusionShader = LoadPixelShader("Pixel_DebugAmbientOcclusion");
-
 	Rendering::GFXTextureBufferParams luminanceParams = { 0 };
 	luminanceParams.bIsRenderTarget = true;
 	luminanceParams.bIsShaderResource = true;
@@ -111,8 +102,7 @@ void PostProcessRenderStage::Initialize()
 void PostProcessRenderStage::Setup(RenderStageBuilder& builder)
 {
 	m_sceneColourInput = builder.Reads<SceneColourData>();
-	m_ambientOcclusionInput = builder.Reads<AmbientOcclusionData>();
-	m_displayColourOutput = builder.Writes<DisplayColourData>();
+	m_tonemappedColourOutput = builder.Writes<TonemappedColourData>();
 }
 
 void PostProcessRenderStage::Render(RenderContext& context)
@@ -149,13 +139,7 @@ void PostProcessRenderStage::Render(RenderContext& context)
 	params.LuminanceMip = static_cast<float>(k_luminanceMipCount - 1);
 	params.Reset = resetAdaptation ? 1.0f : 0.0f;
 	params.AutoExposure = view.AutoExposure ? 1.0f : 0.0f;
-	const AntiAliasingSettings antiAliasing = GetAntiAliasingSettings(view.AntiAliasing);
-	params.EdgeThreshold = antiAliasing.EdgeThreshold;
-	params.EdgeThresholdMin = antiAliasing.EdgeThresholdMin;
-	params.Subpixel = antiAliasing.Subpixel;
-	params.SearchStepCount = static_cast<float>(antiAliasing.SearchStepCount);
 	params._pad0 = 0.0f;
-	std::copy(antiAliasing.SearchSteps.begin(), antiAliasing.SearchSteps.end(), params.SearchSteps);
 
 	Rendering::Renderer::UploadDataToBuffer<ParamsLayout>(m_paramsBuffer, &params);
 	Rendering::Renderer::SetConstantBufferPS(m_paramsBuffer, 0);
@@ -173,12 +157,7 @@ void PostProcessRenderStage::Render(RenderContext& context)
 		// Log luminance of the scene viewport, averaged down the mip chain
 		Rendering::Renderer::SetColourTarget(m_luminance);
 		Rendering::Renderer::SetViewport({ static_cast<float>(k_luminanceSize), static_cast<float>(k_luminanceSize) });
-		Rendering::Renderer::SetPixelShader(m_luminanceShader->GetPlatformObject());
-		Rendering::Renderer::SetTextureResource(sceneColour.Colour, k_sourceSlot);
-
-		Rendering::Renderer::DrawFullScreenQuad();
-
-		Rendering::Renderer::UnsetTextureResource(k_sourceSlot);
+		DrawFullScreenPass(m_luminanceShader, { sceneColour.Colour });
 		// Unbind so the texture can be read while its mips are generated
 		Rendering::Renderer::ClearRenderTargets();
 		Rendering::Renderer::GenerateMips(m_luminance);
@@ -186,75 +165,35 @@ void PostProcessRenderStage::Render(RenderContext& context)
 		// Eye adaptation toward the measured average
 		Rendering::Renderer::SetColourTarget(currentAdapted);
 		Rendering::Renderer::SetViewport({ 1.0f, 1.0f });
-		Rendering::Renderer::SetPixelShader(m_adaptShader->GetPlatformObject());
-		Rendering::Renderer::SetTextureResource(m_luminance, k_sourceSlot);
-		Rendering::Renderer::SetTextureResource(previousAdapted, k_secondarySlot);
-
-		Rendering::Renderer::DrawFullScreenQuad();
-
-		Rendering::Renderer::UnsetTextureResource(k_sourceSlot);
-		Rendering::Renderer::UnsetTextureResource(k_secondarySlot);
+		DrawFullScreenPass(m_adaptShader, { m_luminance, previousAdapted });
 	}
 
-	// Expose, tonemap and encode into the 8-bit target, through FXAA when the view anti-aliases. No depth bound, so the
-	// quads leave the scene depth intact for overlays that depth-test against it.
-	DisplayColourData displayColour;
-	displayColour.Colour = renderTarget.GetTargetPlatformObject();
-	displayColour.Depth = sceneColour.Depth;
-	Rendering::Renderer::SetViewport({ viewportSize.X(), viewportSize.Y() });
-	// Into whichever colour target is set
-	const auto drawTonemap = [this, &sceneColour, &eyeAdaptation]()
+	// Expose, tonemap and encode into the 8-bit image: straight into the view's target if it doesn't anti-alias, otherwise
+	// into the image AntiAliasingStage smooths into the target. No depth bound, so the quad leaves the scene depth
+	// intact for overlays that depth-test against it.
+	TonemappedColourData tonemapped;
+	tonemapped.Depth = sceneColour.Depth;
+	if (view.AntiAliasing == EAntiAliasing::Off)
 	{
-		Rendering::Renderer::SetPixelShader(m_tonemapShader->GetPlatformObject());
-		Rendering::Renderer::SetTextureResource(sceneColour.Colour, k_sourceSlot);
-		Rendering::Renderer::SetTextureResource(eyeAdaptation.Adapted[eyeAdaptation.AdaptedIndex], k_secondarySlot);
-
-		Rendering::Renderer::DrawFullScreenQuad();
-
-		Rendering::Renderer::UnsetTextureResource(k_sourceSlot);
-		Rendering::Renderer::UnsetTextureResource(k_secondarySlot);
-	};
-
-	if (view.AntiAliasing != EAntiAliasing::Off)
-	{
-		AntiAliasState& antiAlias = context.Persistent().GetOrCreate<AntiAliasState>([]() { return AntiAliasState(); });
-		if (antiAlias.Width != renderTarget.GetWidth() || antiAlias.Height != renderTarget.GetHeight())
-		{
-			antiAlias.Width = renderTarget.GetWidth();
-			antiAlias.Height = renderTarget.GetHeight();
-			antiAlias.Tonemapped = CreateTonemappedTexture(antiAlias.Width, antiAlias.Height);
-		}
-
-		Rendering::Renderer::SetColourTarget(antiAlias.Tonemapped);
-		drawTonemap();
-
-		Rendering::Renderer::SetColourTarget(displayColour.Colour);
-		Rendering::Renderer::SetPixelShader(m_antiAliasShader->GetPlatformObject());
-		Rendering::Renderer::SetTextureResource(antiAlias.Tonemapped, k_sourceSlot);
-
-		Rendering::Renderer::DrawFullScreenQuad();
-
-		Rendering::Renderer::UnsetTextureResource(k_sourceSlot);
+		tonemapped.Colour = renderTarget.GetTargetPlatformObject();
 	}
 	else
 	{
-		Rendering::Renderer::SetColourTarget(displayColour.Colour);
-		drawTonemap();
+		TonemapTargetState& state = context.Persistent().GetOrCreate<TonemapTargetState>([]() { return TonemapTargetState(); });
+		if (state.Width != renderTarget.GetWidth() || state.Height != renderTarget.GetHeight())
+		{
+			state.Width = renderTarget.GetWidth();
+			state.Height = renderTarget.GetHeight();
+			state.Tonemapped = CreateTonemappedTexture(state.Width, state.Height);
+		}
+		tonemapped.Colour = state.Tonemapped;
 	}
 
-	// Over the finished image, so what's shown is exactly the pass's output
-	if (view.Debug == ERenderViewDebug::AmbientOcclusion)
-	{
-		Rendering::Renderer::SetColourTarget(displayColour.Colour);
-		Rendering::Renderer::SetPixelShader(m_debugAmbientOcclusionShader->GetPlatformObject());
-		Rendering::Renderer::SetTextureResource(m_ambientOcclusionInput.Get(context).Visibility, k_sourceSlot);
+	Rendering::Renderer::SetViewport({ viewportSize.X(), viewportSize.Y() });
+	Rendering::Renderer::SetColourTarget(tonemapped.Colour);
+	DrawFullScreenPass(m_tonemapShader, { sceneColour.Colour, eyeAdaptation.Adapted[eyeAdaptation.AdaptedIndex] });
 
-		Rendering::Renderer::DrawFullScreenQuad();
-
-		Rendering::Renderer::UnsetTextureResource(k_sourceSlot);
-	}
-
-	m_displayColourOutput.Publish(context, displayColour);
+	m_tonemappedColourOutput.Publish(context, tonemapped);
 
 	Rendering::Renderer::End();
 }

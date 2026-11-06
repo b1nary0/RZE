@@ -121,6 +121,22 @@ the rest for the user.
     for comparison if it's quick. Expect the working set to be about 4 GB lower than before (Linux: 4.4 GB to 0.3 GB
     resident). Private bytes (commit charge) are expected to stay about 4 GB higher than the working set, since
     Windows charges the whole allocation up front: say if it doesn't.
+- **D8. Anti-aliasing moved to its own stage (the commit after db92fb19).** FXAA left `PostProcessRenderStage` for
+  `AntiAliasingStage`, with its own cbuffer (`FXAAParams` in `Pixel_FXAA.hlsl`, `FXAAParamsLayout`), and
+  `PostProcessParams` lost FXAA's fields. The AO debug view's overlay moved to `DebugViewStage`, and the full-screen
+  passes bind their inputs through `DrawFullScreenPass`. The image must not change. On Linux, Sponza at AA Off, Low,
+  Medium and High and the AO debug view matched the commit before to within the run-to-run noise (at most 215 px of
+  the scene view, at most 4 levels; two runs of one build differ by up to 202 px).
+  - The Debug Editor's log shows `Render pipeline: ... PostProcessRenderStage -> AntiAliasingStage -> DebugViewStage
+    -> PickRenderStage -> DebugDrawRenderStage -> ...`.
+  - On Sponza (`launch -Harness -Scene Sponza.scene -SettleSeconds 20`), open Edit > Settings > Scene View and click
+    through Anti-aliasing Off, Low, Medium and High, then Show: Ambient occlusion and back to Lit, with a `shot` of each
+    (close the Settings window first). Expect FXAA to smooth edges at every level but Off, and the AO view to be grey
+    occlusion over the whole scene view, with the grid and icons on top. If a quick worktree build of db92fb19 is
+    possible, compare the same shots; otherwise judge them by eye.
+  - The game (File > Launch Game...) shows the scene as the editor does: `FinalRenderTargetStage` now draws through
+    `DrawFullScreenPass`.
+  - At a Debug Editor's `close`, no new `D3D11 (` lines (D5), in particular none about a slot or a constant buffer.
 
 ### E. Editor features
 

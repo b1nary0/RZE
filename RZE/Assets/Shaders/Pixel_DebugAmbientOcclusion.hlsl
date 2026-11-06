@@ -1,6 +1,6 @@
-// The ambient occlusion alone, as grey (PostProcessRenderStage, for RenderView::Debug's AmbientOcclusion): white where
-// nothing occludes.
-#include "Common/PostProcess.hlsli"
+// The ambient occlusion alone, as grey (DebugViewStage, for RenderView::Debug's AmbientOcclusion): white where nothing
+// occludes.
+#include "Common/FullScreenQuad.hlsli"
 
 Texture2D<float> AmbientOcclusion : register(t0);
 

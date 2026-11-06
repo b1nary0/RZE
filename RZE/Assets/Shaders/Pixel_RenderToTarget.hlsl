@@ -1,8 +1,4 @@
-struct PS_IN
-{
-	float4 Position : SV_POSITION;
-	float2 UV       : UV;
-};
+#include "Common/FullScreenQuad.hlsli"
 
 Texture2D SourceTexture : register(t0);
 SamplerState LinearSampler : register(s0);
