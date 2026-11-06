@@ -162,6 +162,7 @@ queues GL object names, and the render thread deletes them at the next Present. 
 - **At most two queued frames** (`SetMaximumFrameLatency(2)`, `k_maxFrameLatency`), since the main thread already records a frame while the render thread runs the previous one. The swap chain's **frame latency waitable object** is signalled when it can take another frame. `Renderer::WaitForPresentSlot(timeoutMS)` waits on it from the main thread without touching the device. The engine waits on it at the end of every frame, before the next one reads input; with vsync on, that wait is what paces frames ([Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md#waiting-for-the-next-frame)).
 - **Sync interval.** `Renderer::SetSyncInterval(interval)` is a render command (`SetSyncInterval`), applied from the next frame the render thread runs: 0 presents at once, 1 on every refresh. `RenderEngine::SetVSync` calls it with `FrameSettings::VSync`.
 - **Present** checks its result and logs a removed or reset device once, with the reason.
+- **The debug layer's reports** reach the log in Debug builds. D3D11 has no message callback, so `ReportDebugMessages` reads the device's `ID3D11InfoQueue` after every Present, at the end of `Initialize` and at the start of `Shutdown`, then clears it. Corruption and errors log as `[Error] D3D11 (<id>): ...`, warnings as `[Warning] D3D11 (<id>): ...`; INFO and MESSAGE aren't stored. Unlike GL's errors, they don't assert yet. A message reported by another thread between the read and the clear is lost. Release and Retail have no debug layer, so nothing is read.
 - **Resizing** releases the back buffer view and flushes the context first, because flip model can only resize once nothing references the buffers and D3D11 destroys views lazily, then passes `ResizeBuffers` the flags the swap chain was created with, which flip model requires. Shutdown closes the waitable object and releases the back buffer view before the swap chain.
 
 ### OpenGL: drawn the way Direct3D draws
@@ -180,8 +181,9 @@ changing anything above it:
   (whose GL backend always draws GL's way up), come out the right way up with no changes either.
 - **Presenting waits for the display itself**, so `WaitForPresentSlot` returns at once. The sync interval is set on
   the window's context at the next Present (`SDL_GL_SetSwapInterval`).
-- **The driver's debug messages** reach the log graded by type: errors log as errors and assert, undefined,
-  deprecated and portability messages are warnings, and the rest (e.g. NVIDIA's performance notes) are Debug.
+- **The driver's debug messages** reach the log graded by type: errors log as errors and assert, undefined and
+  deprecated behaviour are warnings, and the rest are Debug: performance notes (e.g. NVIDIA's shader recompiles) and
+  portability notes (Mesa checks every draw against OpenGL ES 3.1's rules, which don't apply to desktop GL 4.5).
 - `GL_TEXTURE_CUBE_MAP_SEAMLESS` is on, as D3D filters across cube faces.
 
 ## `RenderCommandType` (full list, from `RenderCommand.h`)
@@ -282,7 +284,9 @@ In steady state this means no GPU allocations at all.
 The shaders are HLSL (Shader Model 5), in `Assets/Shaders`, and they're the only source: both APIs compile the same
 files at run time, when a shader is created, so a shader edit shows up on the next launch.
 
-- **DX11** compiles them with `D3DCompileFromFile` (`DX11ShaderTypes`): `VSMain`, `PSMain` or `CSMain` for SM 5.
+- **DX11** compiles them with `D3DCompileFromFile` (`DX11ShaderTypes`): `VSMain`, `PSMain` or `CSMain` for SM 5. A
+  vertex shader made with an empty `ShaderInputLayout` (a full-screen pass that reads `SV_VertexID`) gets no input
+  layout, and `SetInputLayout` binds none, which D3D allows for a shader without vertex inputs.
 - **OpenGL** translates them (`GLShaderTranslator`, run by `GLShaderTypes`), in two steps:
   1. **shaderc** compiles the HLSL to SPIR-V, with Vulkan's rules (which allow HLSL's separate textures and samplers),
      HLSL's constant-buffer packing (which the C++ structs that fill them follow), the HLSL semantics kept, no
