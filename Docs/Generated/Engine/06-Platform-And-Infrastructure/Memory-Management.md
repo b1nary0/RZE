@@ -11,12 +11,12 @@ RZE has two independent, unrelated pieces of custom memory management: a mostly-
 
 ## `Modules\Rendering\MemArena` — the one that actually matters
 
-A frame-scoped bump allocator with a fixed 64MB size, backing every `RenderCommand` allocation in the low-level renderer. This is fully described in [Low-Level-Renderer-Module.md](../04-Rendering/Low-Level-Renderer-Module.md) — see that page for `AllocType<T>()`, `Cycle()`, and the pressure-tracking (`PressureValue::LOW`/`MED`/`HIGH`) surfaced live in the Editor's menu bar.
+A frame-scoped bump allocator over two 2048 MB buffers, backing every `RenderCommand` allocation in the low-level renderer. This is fully described in [Low-Level-Renderer-Module.md](../04-Rendering/Low-Level-Renderer-Module.md) — see that page for `AllocType<T>()`, `Cycle()`, and the pressure-tracking (`PressureValue::LOW`/`MED`/`HIGH`) surfaced live in the Editor's status bar.
 
 ## `Utils\Src\Utils\Memory\` — shared low-level helpers
 
 - `ByteStream.h/.cpp` — `ByteStream(name[, streamLength])`, `ReadFromFile(Filepath)`, cursor-based `PeekBytes()`/`PeekBytesAdvance(sizeBytes)`, `ReadBytes`/`WriteBytes`, `GetNumBytesWritten()`. Backs the binary mesh/material asset formats ([Asset-Burning-Pipeline.md](../05-AssetPipeline/Asset-Burning-Pipeline.md)).
-- `MemoryUtils.h/.cpp` — `Kilobytes`/`Megabytes`/`Gigabytes(size_t)` helpers, and `AlignSize(U32 size, U32 boundary)` — used both to size `MemArena` (64MB) and to align constant-buffer uploads in `Rendering::Renderer::InternalUploadDataToBuffer`.
+- `MemoryUtils.h/.cpp` — `Kilobytes`/`Megabytes`/`Gigabytes(size_t)` helpers, and `AlignSize(U32 size, U32 boundary)` — used both to size `MemArena` (2048 MB a buffer) and to align constant-buffer uploads in `Rendering::Renderer::InternalUploadDataToBuffer`.
 
 ## Summary
 
