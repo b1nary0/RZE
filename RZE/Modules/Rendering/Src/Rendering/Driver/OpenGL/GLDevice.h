@@ -131,8 +131,8 @@ namespace Rendering
 	private:
 		// D3D's texture registers per stage
 		static constexpr U32 k_textureSlotCount = 16;
-		// The three samplers the shaders' s registers mean (GLDevice.cpp)
-		static constexpr U32 k_samplerCount = 3;
+		// The four samplers the shaders' s registers mean (GLDevice.cpp's ESampler)
+		static constexpr U32 k_samplerCount = 4;
 
 		// A framebuffer with these attached: a colour texture, a depth texture, and which slice of the depth (-1 for all)
 		using FramebufferKey = std::tuple<U32, U32, int>;

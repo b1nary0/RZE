@@ -137,6 +137,23 @@ the rest for the user.
   - The game (File > Launch Game...) shows the scene as the editor does: `FinalRenderTargetStage` now draws through
     `DrawFullScreenPass`.
   - At a Debug Editor's `close`, no new `D3D11 (` lines (D5), in particular none about a slot or a constant buffer.
+- **D9. RG8 textures, texels in any format, and the s3 sampler (the commit after ed7fea98).** None of this was compiled
+  on Linux: `DX11Device.cpp`, `DX11Device.h`, `DX11.h` and `DX11TextureBuffer2D.cpp` changed. `ETextureFormat` gained
+  `RG8_UNORM` (`DXGI_FORMAT_R8G8_UNORM`). A texture made with texels takes its row pitch from
+  `GetBytesPerTexel(DXGI_FORMAT)`, which moved out of `DX11Device.cpp`'s anonymous namespace, is declared in `DX11.h`,
+  and now knows `R8G8_UNORM` (2). The RGBA8-only assert there is gone. `DX11Device` makes `mPointClampSamplerState`
+  (point, clamped) and binds it at s3 for PS and CS in `BeginDrawSet`, beside s1 and s2. Nothing samples s3 yet (SMAA
+  will). On Linux, Sponza matched ed7fea98 within the noise, and a temporary round trip read back the exact bytes.
+  - It builds (section A). `Shutdown` releases the new sampler; if the debug layer lists live objects at `close`, it
+    isn't among them.
+  - Sponza (`launch -Harness -Scene Sponza.scene -SettleSeconds 20`) looks as before: every texture loaded from disk is
+    RGBA8 and goes through the new pitch (`Width * 4`, as before).
+  - The round trip: temporarily, at the top of `AntiAliasingStage::Render`, make three shader-resource textures with
+    `Renderer::CreateTextureBuffer2D(TexelBuffer(malloc'd bytes, &std::free), params)` (MipLevels 1, SampleCount 1):
+    R8_UNORM 5x3 holding bytes 1..15, RG8_UNORM 3x2 holding 101..112, RGBA8_UNORM 3x2 holding 151..174. Two calls
+    later, `Renderer::ReadTexture` each, and once `IsReady`, log whether `Data` is exactly those bytes. Expect all three
+    to match; a wrong pitch shows as a row starting at the wrong byte. Remove the code afterwards.
+  - At a Debug Editor's `close`, no new `D3D11 (` lines (D5).
 
 ### E. Editor features
 

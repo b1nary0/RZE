@@ -122,6 +122,9 @@ namespace Rendering
 		// Linear filtering that clamps at the edges, for screen-sized textures and probe data; bound to PS and CS slot s2
 		// at every Begin()
 		ID3D11SamplerState* mLinearClampSamplerState;
+		// Nearest texel, clamped at the edges, for reading exact texels at fractional positions; bound to PS and CS slot
+		// s3 at every Begin()
+		ID3D11SamplerState* mPointClampSamplerState;
 
 		ID3D11DepthStencilView* mDepthStencilView;
 		ID3D11RenderTargetView* mRenderTargetView;

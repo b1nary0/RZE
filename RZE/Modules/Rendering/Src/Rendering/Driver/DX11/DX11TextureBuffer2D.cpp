@@ -22,6 +22,7 @@ namespace Rendering
 			case ETextureFormat::R8_UNORM: return DXGI_FORMAT_R8_UNORM;
 			case ETextureFormat::R16_FLOAT: return DXGI_FORMAT_R16_FLOAT;
 			case ETextureFormat::R32_FLOAT: return DXGI_FORMAT_R32_FLOAT;
+			case ETextureFormat::RG8_UNORM: return DXGI_FORMAT_R8G8_UNORM;
 			}
 
 			AssertFalse();
@@ -262,9 +263,8 @@ namespace Rendering
 			{
 				// Only the first slice would be filled
 				AssertMsg(arraySize == 1, "Texture arrays can't be made with texels");
-				// Row pitch below assumes 4 bytes per texel
-				AssertExpr(params.Format == ETextureFormat::RGBA8_UNORM);
-				U32 rowPitch = (32 * params.Width) / 8;
+				// The texels are tightly packed
+				const U32 rowPitch = params.Width * GetBytesPerTexel(textureDesc.Format);
 				m_device->GetDeviceContext().UpdateSubresource(m_resource, 0, NULL, data, rowPitch, 0);
 			}
 

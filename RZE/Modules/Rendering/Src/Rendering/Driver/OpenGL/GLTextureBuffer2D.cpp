@@ -36,6 +36,7 @@ namespace Rendering
 			case ETextureFormat::R8_UNORM: format = { GL_R8, GL_RED, GL_UNSIGNED_BYTE, 1, false, false }; break;
 			case ETextureFormat::R16_FLOAT: format = { GL_R16F, GL_RED, GL_HALF_FLOAT, 2, false, false }; break;
 			case ETextureFormat::R32_FLOAT: format = { GL_R32F, GL_RED, GL_FLOAT, 4, false, false }; break;
+			case ETextureFormat::RG8_UNORM: format = { GL_RG8, GL_RG, GL_UNSIGNED_BYTE, 2, false, false }; break;
 			}
 			return format;
 		}
@@ -105,7 +106,7 @@ namespace Rendering
 		{
 			// Only the first slice would be filled
 			AssertMsg(m_layerCount == 1, "Texture arrays can't be made with texels");
-			AssertExpr(params.Format == ETextureFormat::RGBA8_UNORM);
+			// Tightly packed rows, which GLDevice sets GL_UNPACK_ALIGNMENT for
 			glTextureSubImage2D(m_texture, 0, 0, 0, width, height, m_format.PixelFormat, m_format.PixelType, data);
 		}
 

@@ -25,12 +25,15 @@ namespace Rendering
 		constexpr GLfloat k_backBufferClearColour[4] = { 0.25f, 0.45f, 0.65f, 1.0f };
 
 		// The samplers the shaders' s registers mean, as the DX11 backend binds them: s0 is the one every texture binds
-		// with itself (linear and wrapping), s1 the shadow maps' comparison, s2 linear and clamped
+		// with itself (linear and wrapping), s1 the shadow maps' comparison, s2 linear and clamped, s3 point and clamped
 		enum ESampler : U32
 		{
 			Sampler_LinearWrap,
 			Sampler_ShadowCompare,
-			Sampler_LinearClamp
+			Sampler_LinearClamp,
+			Sampler_PointClamp,
+
+			Sampler_Count
 		};
 
 		// As DX11Device's: a depth-stencil value of 1 and stencil 0, packed as GL_UNSIGNED_INT_24_8 packs them
@@ -132,13 +135,17 @@ namespace Rendering
 		SetIsBackBufferBound(false);
 		// D3D samples across a cube map's face edges
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-		// Rows read back as tightly as D3D's staging copies give them, whatever their width
+		// Rows read back as tightly as D3D's staging copies give them, and upload as tightly as D3D takes them (row
+		// pitch = width x texel size), whatever their width: GL's default starts each row on 4 bytes, which a 1- or
+		// 2-byte format's rows needn't
 		glPixelStorei(GL_PACK_ALIGNMENT, 1);
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
 		glCreateProgramPipelines(1, &m_graphicsPipeline);
 		glCreateProgramPipelines(1, &m_computePipeline);
 		glCreateVertexArrays(1, &m_vertexArray);
 
+		static_assert(Sampler_Count == k_samplerCount, "A sampler for every s register the shaders use");
 		glCreateSamplers(static_cast<GLsizei>(m_samplers.size()), m_samplers.data());
 		// As each DX11TextureBuffer2D's own sampler
 		glSamplerParameteri(m_samplers[Sampler_LinearWrap], GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
@@ -162,6 +169,12 @@ namespace Rendering
 		glSamplerParameteri(m_samplers[Sampler_LinearClamp], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glSamplerParameteri(m_samplers[Sampler_LinearClamp], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glSamplerParameteri(m_samplers[Sampler_LinearClamp], GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		// As DX11Device's mPointClampSamplerState
+		glSamplerParameteri(m_samplers[Sampler_PointClamp], GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+		glSamplerParameteri(m_samplers[Sampler_PointClamp], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glSamplerParameteri(m_samplers[Sampler_PointClamp], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glSamplerParameteri(m_samplers[Sampler_PointClamp], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glSamplerParameteri(m_samplers[Sampler_PointClamp], GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
 		// What D3D draws with before anything's set
 		SetRasterizerState(ERasterizerState::Default);

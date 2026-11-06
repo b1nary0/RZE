@@ -38,31 +38,6 @@ namespace Rendering
 			}
 		}
 
-		U32 GetBytesPerTexel(DXGI_FORMAT format)
-		{
-			switch (format)
-			{
-			case DXGI_FORMAT_R8_UNORM:
-				return 1;
-			case DXGI_FORMAT_R16_FLOAT:
-				return 2;
-			case DXGI_FORMAT_R8G8B8A8_UNORM:
-			case DXGI_FORMAT_R16G16_FLOAT:
-			case DXGI_FORMAT_R32_UINT:
-			case DXGI_FORMAT_R32_FLOAT:
-			// Depth-stencil targets that can also be read by shaders (DX11TextureBuffer2D)
-			case DXGI_FORMAT_R24G8_TYPELESS:
-				return 4;
-			case DXGI_FORMAT_R16G16B16A16_FLOAT:
-			case DXGI_FORMAT_R32G32_UINT:
-				return 8;
-
-			default:
-				AssertMsg(false, "Reading back a texture format with no known texel size");
-				return 0;
-			}
-		}
-
 		// Copies a box of a texture's most detailed mip into a staging texture and maps it, waiting for the GPU to
 		// finish drawing it, then calls read(mapped) before unmapping. Reads are rare (a click, a capture), so the
 		// staging copy is made for each one rather than kept around.
@@ -100,6 +75,32 @@ namespace Rendering
 		DX11TextureBuffer2D& AsDX11(ITextureBuffer2D& texture)
 		{
 			return static_cast<DX11TextureBuffer2D&>(texture);
+		}
+	}
+
+	U32 GetBytesPerTexel(DXGI_FORMAT format)
+	{
+		switch (format)
+		{
+		case DXGI_FORMAT_R8_UNORM:
+			return 1;
+		case DXGI_FORMAT_R16_FLOAT:
+		case DXGI_FORMAT_R8G8_UNORM:
+			return 2;
+		case DXGI_FORMAT_R8G8B8A8_UNORM:
+		case DXGI_FORMAT_R16G16_FLOAT:
+		case DXGI_FORMAT_R32_UINT:
+		case DXGI_FORMAT_R32_FLOAT:
+		// Depth-stencil targets that can also be read by shaders (DX11TextureBuffer2D)
+		case DXGI_FORMAT_R24G8_TYPELESS:
+			return 4;
+		case DXGI_FORMAT_R16G16B16A16_FLOAT:
+		case DXGI_FORMAT_R32G32_UINT:
+			return 8;
+
+		default:
+			AssertMsg(false, "A texture format with no known texel size");
+			return 0;
 		}
 	}
 
@@ -285,6 +286,20 @@ namespace Rendering
 			mDevice->CreateSamplerState(&samplerDesc, &mLinearClampSamplerState);
 		}
 
+		// Point clamp sampler
+		{
+			D3D11_SAMPLER_DESC samplerDesc;
+			ZeroMemory(&samplerDesc, sizeof(samplerDesc));
+			samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+			samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+			samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+			samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+			samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+			samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+			mDevice->CreateSamplerState(&samplerDesc, &mPointClampSamplerState);
+		}
+
 		// What creating the swap chain and the states above reported
 		ReportDebugMessages();
 	}
@@ -459,6 +474,7 @@ namespace Rendering
 		mDepthOffState->Release();
 		mShadowSamplerState->Release();
 		mLinearClampSamplerState->Release();
+		mPointClampSamplerState->Release();
 	}
 
 	void DX11Device::SetSyncInterval(U32 interval)
@@ -535,6 +551,8 @@ namespace Rendering
 		deviceContext.CSSetSamplers(1, 1, &mShadowSamplerState);
 		deviceContext.PSSetSamplers(2, 1, &mLinearClampSamplerState);
 		deviceContext.CSSetSamplers(2, 1, &mLinearClampSamplerState);
+		deviceContext.PSSetSamplers(3, 1, &mPointClampSamplerState);
+		deviceContext.CSSetSamplers(3, 1, &mPointClampSamplerState);
 	}
 
 	bool DX11Device::IsProfilerAttached()

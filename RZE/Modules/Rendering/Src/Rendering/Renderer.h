@@ -168,8 +168,8 @@ namespace Rendering
 
 	public:
 		// Compute shaders have their own constant buffer, texture and sampler slots, apart from the pixel shader's.
-		// Samplers match the pixel shader's: s0 comes with each texture, s1 is the shadow comparison sampler and s2 is
-		// linear with clamped edges.
+		// Samplers match the pixel shader's: s0 comes with each texture, s1 is the shadow comparison sampler, s2 is
+		// linear with clamped edges and s3 is point (nearest texel) with clamped edges.
 		// D3D11 won't bind one texture both to be read (a texture slot) and to be written (a render target or an
 		// unordered access slot): binding it one way silently unbinds it the other. Unset it from one before the other.
 		static void SetComputeShader(const ComputeShaderHandle& computeShader);

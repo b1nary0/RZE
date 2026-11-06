@@ -19,7 +19,9 @@ namespace Rendering
 		// Single channels, e.g. ambient occlusion (R8) or linear depth (R16, R32)
 		R8_UNORM,
 		R16_FLOAT,
-		R32_FLOAT
+		R32_FLOAT,
+		// Two 8-bit channels, e.g. a lookup table
+		RG8_UNORM
 	};
 
 	// This isn't the complete answer to this atm, but will do for now
