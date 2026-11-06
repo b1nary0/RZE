@@ -4,6 +4,7 @@
 #include <Utils/PrimitiveDefs.h>
 
 #include <cstring>
+#include <memory>
 
 #define PRESSURE_LIMIT_MED 60
 #define PRESSURE_LIMIT_HIGH 90
@@ -12,8 +13,8 @@ namespace Rendering
 {
 	namespace MemArena
 	{
-		Byte* s_producerBuf = nullptr;
-		Byte* s_consumerBuf = nullptr;
+		std::unique_ptr<Byte[]> s_producerBuf;
+		std::unique_ptr<Byte[]> s_consumerBuf;
 
 		static struct ArenaState
 		{
@@ -68,11 +69,9 @@ namespace Rendering
 				AssertIsNull(s_consumerBuf);
 			}
 			
-			s_producerBuf = new Byte[size];
-			s_consumerBuf = new Byte[size];
-
-			memset(s_producerBuf, 0, size);
-			memset(s_consumerBuf, 0, size);
+			// make_unique<T[]> value-initializes, so both buffers start zeroed.
+			s_producerBuf = std::make_unique<Byte[]>(size);
+			s_consumerBuf = std::make_unique<Byte[]>(size);
 
 			s_arenaState.size = size;
 		}
@@ -81,11 +80,8 @@ namespace Rendering
 		{
 			AssertMsg(s_consumerBuf != nullptr && s_producerBuf != nullptr, "If one is valid, they must both be valid or something got weird.");
 
-			delete s_producerBuf;
-			s_producerBuf = nullptr;
-
-			delete s_consumerBuf;
-			s_consumerBuf = nullptr;
+			s_producerBuf.reset();
+			s_consumerBuf.reset();
 		}
 
 		void* Alloc(size_t size)
@@ -114,7 +110,7 @@ namespace Rendering
 
 			s_arenaState.pressureValue = CalculatePressureValue();
 
-			std::swap(s_producerBuf, s_consumerBuf);
+			s_producerBuf.swap(s_consumerBuf);
 		}
 
 		size_t GetTotalMemoryAllocatedLastFrame()
