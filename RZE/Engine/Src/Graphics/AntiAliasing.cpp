@@ -7,15 +7,19 @@
 
 namespace
 {
-	// In EAntiAliasing's order
-	constexpr const char* k_names[] = { "Off", "Low", "Medium", "High" };
-	static_assert(sizeof(k_names) / sizeof(k_names[0]) == static_cast<size_t>(EAntiAliasing::Count), "A name for every level");
+	// In EAntiAliasingMethod's order
+	constexpr const char* k_methodNames[] = { "Off", "FXAA" };
+	static_assert(sizeof(k_methodNames) / sizeof(k_methodNames[0]) == static_cast<size_t>(EAntiAliasingMethod::Count), "A name for every method");
 
-	AntiAliasingSettings MakeSettings(float edgeThreshold, float edgeThresholdMin, float subpixel, std::initializer_list<float> searchSteps)
+	// In EAntiAliasingQuality's order
+	constexpr const char* k_qualityNames[] = { "Low", "Medium", "High" };
+	static_assert(sizeof(k_qualityNames) / sizeof(k_qualityNames[0]) == static_cast<size_t>(EAntiAliasingQuality::Count), "A name for every quality");
+
+	FXAASettings MakeFXAASettings(float edgeThreshold, float edgeThresholdMin, float subpixel, std::initializer_list<float> searchSteps)
 	{
-		AssertExpr(searchSteps.size() <= AntiAliasingSettings::k_maxSearchSteps);
+		AssertExpr(searchSteps.size() <= FXAASettings::k_maxSearchSteps);
 
-		AntiAliasingSettings settings;
+		FXAASettings settings;
 		settings.EdgeThreshold = edgeThreshold;
 		settings.EdgeThresholdMin = edgeThresholdMin;
 		settings.Subpixel = subpixel;
@@ -25,7 +29,7 @@ namespace
 	}
 }
 
-float AntiAliasingSettings::GetSearchLength() const
+float FXAASettings::GetSearchLength() const
 {
 	float length = 0.0f;
 	for (int step = 0; step < SearchStepCount; ++step)
@@ -35,36 +39,52 @@ float AntiAliasingSettings::GetSearchLength() const
 	return length;
 }
 
-AntiAliasingSettings GetAntiAliasingSettings(EAntiAliasing level)
+FXAASettings GetFXAASettings(EAntiAliasingQuality quality)
 {
-	// FXAA 3.11's presets and recommended values: higher levels treat fainter contrast as an edge, search further
+	// FXAA 3.11's presets and recommended values: higher qualities treat fainter contrast as an edge, search further
 	// along it in finer steps, and soften more sub-pixel detail
-	switch (level)
+	switch (quality)
 	{
-	case EAntiAliasing::Low:
-		return MakeSettings(0.250f, 0.0833f, 0.25f, { 1.5f, 3.0f, 12.0f });
-	case EAntiAliasing::Medium:
-		return MakeSettings(0.166f, 0.0625f, 0.50f, { 1.0f, 1.5f, 2.0f, 4.0f, 12.0f });
-	case EAntiAliasing::High:
-		return MakeSettings(0.125f, 0.0312f, 0.75f, { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.5f, 2.0f, 2.0f, 2.0f, 2.0f, 4.0f, 8.0f });
+	case EAntiAliasingQuality::Low:
+		return MakeFXAASettings(0.250f, 0.0833f, 0.25f, { 1.5f, 3.0f, 12.0f });
+	case EAntiAliasingQuality::High:
+		return MakeFXAASettings(0.125f, 0.0312f, 0.75f, { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.5f, 2.0f, 2.0f, 2.0f, 2.0f, 4.0f, 8.0f });
+	case EAntiAliasingQuality::Medium:
 	default:
-		return {};
+		return MakeFXAASettings(0.166f, 0.0625f, 0.50f, { 1.0f, 1.5f, 2.0f, 4.0f, 12.0f });
 	}
 }
 
-const EnumNames& GetAntiAliasingNames()
+const EnumNames& GetAntiAliasingMethodNames()
 {
-	static const EnumNames names(k_names);
+	static const EnumNames names(k_methodNames);
 	return names;
 }
 
-const char* GetAntiAliasingName(EAntiAliasing level)
+const char* GetAntiAliasingMethodName(EAntiAliasingMethod method)
 {
-	return GetAntiAliasingNames().GetName(static_cast<size_t>(level));
+	return GetAntiAliasingMethodNames().GetName(static_cast<size_t>(method));
 }
 
-std::optional<EAntiAliasing> ParseAntiAliasing(const std::string& name)
+std::optional<EAntiAliasingMethod> ParseAntiAliasingMethod(const std::string& name)
 {
-	const std::optional<size_t> level = GetAntiAliasingNames().FindIgnoringCase(name);
-	return level ? std::optional<EAntiAliasing>(static_cast<EAntiAliasing>(*level)) : std::nullopt;
+	const std::optional<size_t> method = GetAntiAliasingMethodNames().FindIgnoringCase(name);
+	return method ? std::optional<EAntiAliasingMethod>(static_cast<EAntiAliasingMethod>(*method)) : std::nullopt;
+}
+
+const EnumNames& GetAntiAliasingQualityNames()
+{
+	static const EnumNames names(k_qualityNames);
+	return names;
+}
+
+const char* GetAntiAliasingQualityName(EAntiAliasingQuality quality)
+{
+	return GetAntiAliasingQualityNames().GetName(static_cast<size_t>(quality));
+}
+
+std::optional<EAntiAliasingQuality> ParseAntiAliasingQuality(const std::string& name)
+{
+	const std::optional<size_t> quality = GetAntiAliasingQualityNames().FindIgnoringCase(name);
+	return quality ? std::optional<EAntiAliasingQuality>(static_cast<EAntiAliasingQuality>(*quality)) : std::nullopt;
 }

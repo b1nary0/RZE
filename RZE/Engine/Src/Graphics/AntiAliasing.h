@@ -6,11 +6,19 @@
 
 class EnumNames;
 
-// How much a view smooths jagged edges after tonemapping (FXAA, PostProcessRenderStage). Engine.ini's
-// [Rendering] AntiAliasing sets the main view's at start-up; the editor's Scene View settings change it while running.
-enum class EAntiAliasing
+// How a view smooths jagged edges after tonemapping (AntiAliasingStage)
+enum class EAntiAliasingMethod
 {
 	Off,
+	// Fast approximate (FXAA 3.11, Pixel_FXAA.hlsl): blends across the edges it finds in the final image's luma
+	FXAA,
+
+	Count
+};
+
+// How hard the method works at it
+enum class EAntiAliasingQuality
+{
 	// Only strong edges, the least blur
 	Low,
 	Medium,
@@ -20,8 +28,17 @@ enum class EAntiAliasing
 	Count
 };
 
-// What FXAA (3.11 Quality, Pixel_FXAA.hlsl) does at a level; mirrors the FXAA values in Common/PostProcess.hlsli
-struct AntiAliasingSettings
+// A view's anti-aliasing. Engine.ini's [Rendering] AntiAliasing and AntiAliasingQuality set the main view's at
+// start-up; the editor's Scene View settings change it while running.
+struct AntiAliasingMode
+{
+	EAntiAliasingMethod Method = EAntiAliasingMethod::FXAA;
+	// Unused while the method is Off
+	EAntiAliasingQuality Quality = EAntiAliasingQuality::Medium;
+};
+
+// What FXAA (3.11 Quality, Pixel_FXAA.hlsl) does at a quality; AntiAliasingStage::FXAAParamsLayout carries it
+struct FXAASettings
 {
 	static constexpr int k_maxSearchSteps = 12;
 
@@ -39,14 +56,21 @@ struct AntiAliasingSettings
 	float GetSearchLength() const;
 };
 
-// The FXAA values for a level, from FXAA 3.11's quality presets (Low 10, Medium 12, High 39). Off has none; the stage
-// skips FXAA.
-AntiAliasingSettings GetAntiAliasingSettings(EAntiAliasing level);
+// The FXAA values for a quality, from FXAA 3.11's quality presets (Low 10, Medium 12, High 39)
+FXAASettings GetFXAASettings(EAntiAliasingQuality quality);
 
-// Every level's name, as Engine.ini and the editor show it: "Off", "Low", "Medium", "High"
-const EnumNames& GetAntiAliasingNames();
+// Every method's name, as Engine.ini and the editor show it: "Off", "FXAA"
+const EnumNames& GetAntiAliasingMethodNames();
 
-const char* GetAntiAliasingName(EAntiAliasing level);
+const char* GetAntiAliasingMethodName(EAntiAliasingMethod method);
 
-// A level from its name, ignoring case; none if the name isn't one
-std::optional<EAntiAliasing> ParseAntiAliasing(const std::string& name);
+// A method from its name, ignoring case; none if the name isn't one
+std::optional<EAntiAliasingMethod> ParseAntiAliasingMethod(const std::string& name);
+
+// Every quality's name, as Engine.ini and the editor show it: "Low", "Medium", "High"
+const EnumNames& GetAntiAliasingQualityNames();
+
+const char* GetAntiAliasingQualityName(EAntiAliasingQuality quality);
+
+// A quality from its name, ignoring case; none if the name isn't one
+std::optional<EAntiAliasingQuality> ParseAntiAliasingQuality(const std::string& name);

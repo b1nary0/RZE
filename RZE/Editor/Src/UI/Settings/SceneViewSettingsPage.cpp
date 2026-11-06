@@ -50,15 +50,32 @@ namespace Editor
 
 		ImGui::AlignTextToFramePadding();
 		ImGui::TextUnformatted("Anti-aliasing");
-		ImGui::SetItemTooltip("How much jagged edges are smoothed (FXAA). Higher levels follow long edges further, catch fainter ones, and soften more of the sparkle on thin parts.");
+		ImGui::SetItemTooltip("How jagged edges are smoothed. FXAA blends across the edges it finds in the final image: fast, but it softens some detail.");
 		ImGui::SameLine(optionsX);
 		ImGui::Dummy(ImVec2(0.0f, 0.0f));
 		RenderView& mainView = RZE().GetRenderEngine().GetMainView();
-		size_t antiAliasing = static_cast<size_t>(mainView.AntiAliasing);
-		if (EditorUI::RadioButtonRow("AntiAliasing", GetAntiAliasingNames(), antiAliasing))
+		size_t antiAliasingMethod = static_cast<size_t>(mainView.AntiAliasing.Method);
+		if (EditorUI::RadioButtonRow("AntiAliasing", GetAntiAliasingMethodNames(), antiAliasingMethod))
 		{
-			mainView.AntiAliasing = static_cast<EAntiAliasing>(antiAliasing);
+			mainView.AntiAliasing.Method = static_cast<EAntiAliasingMethod>(antiAliasingMethod);
 		}
+
+		// Quality means nothing with anti-aliasing off, so it's shown but greyed out
+		ImGui::BeginDisabled(mainView.AntiAliasing.Method == EAntiAliasingMethod::Off);
+		ImGui::AlignTextToFramePadding();
+		// Indented, as part of the Anti-aliasing setting
+		ImGui::Indent();
+		ImGui::TextUnformatted("Quality");
+		ImGui::SetItemTooltip("How hard anti-aliasing works. Higher qualities follow long edges further, catch fainter ones, and soften more of the sparkle on thin parts.");
+		ImGui::Unindent();
+		ImGui::SameLine(optionsX);
+		ImGui::Dummy(ImVec2(0.0f, 0.0f));
+		size_t antiAliasingQuality = static_cast<size_t>(mainView.AntiAliasing.Quality);
+		if (EditorUI::RadioButtonRow("AntiAliasingQuality", GetAntiAliasingQualityNames(), antiAliasingQuality))
+		{
+			mainView.AntiAliasing.Quality = static_cast<EAntiAliasingQuality>(antiAliasingQuality);
+		}
+		ImGui::EndDisabled();
 
 		ImGui::AlignTextToFramePadding();
 		ImGui::TextUnformatted("Ambient occlusion");

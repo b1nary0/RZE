@@ -107,7 +107,8 @@ void EngineConfig::LoadBackgroundTaskFilter()
 
 void EngineConfig::LoadRenderingSettings()
 {
-	mAntiAliasing = static_cast<EAntiAliasing>(ReadEnumSetting("Rendering", "AntiAliasing", GetAntiAliasingNames(), static_cast<size_t>(mAntiAliasing)));
+	mAntiAliasing.Method = static_cast<EAntiAliasingMethod>(ReadEnumSetting("Rendering", "AntiAliasing", GetAntiAliasingMethodNames(), static_cast<size_t>(mAntiAliasing.Method)));
+	mAntiAliasing.Quality = static_cast<EAntiAliasingQuality>(ReadEnumSetting("Rendering", "AntiAliasingQuality", GetAntiAliasingQualityNames(), static_cast<size_t>(mAntiAliasing.Quality)));
 	mAmbientOcclusion = static_cast<EAmbientOcclusion>(ReadEnumSetting("Rendering", "AmbientOcclusion", GetAmbientOcclusionNames(), static_cast<size_t>(mAmbientOcclusion)));
 
 	mAutoExposure = mINIParser.GetBoolValue("Rendering", "AutoExposure", mAutoExposure);

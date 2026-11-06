@@ -173,7 +173,7 @@ void PostProcessRenderStage::Render(RenderContext& context)
 	// intact for overlays that depth-test against it.
 	TonemappedColourData tonemapped;
 	tonemapped.Depth = sceneColour.Depth;
-	if (view.AntiAliasing == EAntiAliasing::Off)
+	if (view.AntiAliasing.Method == EAntiAliasingMethod::Off)
 	{
 		tonemapped.Colour = renderTarget.GetTargetPlatformObject();
 	}

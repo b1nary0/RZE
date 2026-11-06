@@ -62,7 +62,7 @@ public:
 	// [BackgroundTasks]: which operations progress displays show
 	const AsyncOperationFilter& GetBackgroundTaskFilter() const;
 	// [Rendering]: the main view's anti-aliasing, ambient occlusion and auto-exposure at start-up
-	EAntiAliasing GetAntiAliasing() const { return mAntiAliasing; }
+	const AntiAliasingMode& GetAntiAliasing() const { return mAntiAliasing; }
 	EAmbientOcclusion GetAmbientOcclusion() const { return mAmbientOcclusion; }
 	bool GetAutoExposure() const { return mAutoExposure; }
 	// [Rendering]: whether the main view uses the irradiance probes, and how much work they get
@@ -85,7 +85,7 @@ private:
 	WindowSettings mWindowSettings;
 	FrameSettings mFrameSettings;
 	AsyncOperationFilter mBackgroundTaskFilter;
-	EAntiAliasing mAntiAliasing = EAntiAliasing::Medium;
+	AntiAliasingMode mAntiAliasing;
 	EAmbientOcclusion mAmbientOcclusion = EAmbientOcclusion::Medium;
 	bool mAutoExposure = true;
 	bool mGlobalIllumination = true;

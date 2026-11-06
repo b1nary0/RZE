@@ -2,8 +2,8 @@
 // FXAA 3.11 Quality: find an edge by luma contrast, search along it for both ends of the stair-step, and move the
 // sample across the edge by where the pixel sits on that step, so long shallow edges blend smoothly. Detail thinner
 // than a pixel is softened as well. Pixels with little contrast around them pass through, so texture detail stays
-// sharp. How far it searches, how faint an edge counts and how much it softens come from the view's level
-// (FXAAParams, AntiAliasingSettings). Drawn by AntiAliasingStage.
+// sharp. How far it searches, how faint an edge counts and how much it softens come from the view's quality
+// (FXAAParams, FXAASettings). Drawn by AntiAliasingStage.
 #include "Common/FullScreenQuad.hlsli"
 
 // Must match AntiAliasingStage::FXAAParamsLayout

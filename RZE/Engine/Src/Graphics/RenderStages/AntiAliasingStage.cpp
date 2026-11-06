@@ -38,11 +38,11 @@ void AntiAliasingStage::Render(RenderContext& context)
 	displayColour.Colour = renderTarget.GetTargetPlatformObject();
 	displayColour.Depth = tonemapped.Depth;
 
-	if (view.AntiAliasing != EAntiAliasing::Off)
+	if (view.AntiAliasing.Method != EAntiAliasingMethod::Off)
 	{
 		Rendering::Renderer::Begin("AntiAliasingStage");
 
-		const AntiAliasingSettings settings = GetAntiAliasingSettings(view.AntiAliasing);
+		const FXAASettings settings = GetFXAASettings(view.AntiAliasing.Quality);
 		FXAAParamsLayout params = {};
 		params.ViewportScale[0] = viewportSize.X() / static_cast<float>(renderTarget.GetWidth());
 		params.ViewportScale[1] = viewportSize.Y() / static_cast<float>(renderTarget.GetHeight());

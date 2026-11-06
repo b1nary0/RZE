@@ -97,8 +97,8 @@ public:
 	bool AutoExposure = true;
 	// EV on top of the exposure
 	float ExposureCompensation = 0.0f;
-	// How much it smooths jagged edges after tonemapping (FXAA, PostProcessRenderStage)
-	EAntiAliasing AntiAliasing = EAntiAliasing::Medium;
+	// How it smooths jagged edges after tonemapping (AntiAliasingStage)
+	AntiAliasingMode AntiAliasing;
 	// How much creases and corners darken the indirect light (GTAO, AmbientOcclusionStage)
 	EAmbientOcclusion AmbientOcclusion = EAmbientOcclusion::Medium;
 	// Indirect light from the scene's irradiance probes (IrradianceProbeStage); off, the hemisphere ambient. Off for

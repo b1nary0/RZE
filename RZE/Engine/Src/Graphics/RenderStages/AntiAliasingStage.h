@@ -24,14 +24,14 @@ public:
 	struct FXAAParamsLayout
 	{
 		float ViewportScale[2];
-		// The view's AntiAliasingSettings
+		// The view's FXAASettings
 		float EdgeThreshold;
 		float EdgeThresholdMin;
 		float Subpixel;
 		float SearchStepCount;
 		float _pad0[2];
 		// Starts on a register, as HLSL's float4 array does
-		float SearchSteps[AntiAliasingSettings::k_maxSearchSteps];
+		float SearchSteps[FXAASettings::k_maxSearchSteps];
 	};
 	static_assert(sizeof(FXAAParamsLayout) % 16 == 0, "Constant buffers are whole 16-byte registers");
 	static_assert(offsetof(FXAAParamsLayout, SearchSteps) % 16 == 0, "HLSL starts the float4 array on a register");
