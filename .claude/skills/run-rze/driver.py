@@ -261,16 +261,18 @@ def restore_imgui_ini():
 
 
 def back_up_imgui_ini():
-    restored = restore_imgui_ini()
     if os.path.exists(IMGUI_INI):
         shutil.copyfile(IMGUI_INI, IMGUI_INI_BACKUP)
-    return restored
 
 
 class Helper:
     def __init__(self, options):
         self.options = options
-        self.restored_leftover_ini = False if options.get("keep_imgui_ini") else back_up_imgui_ini()
+        # A backup a dead session left holds the layout from before it, so it goes back first, even when this run keeps
+        # its layout: left on disk, this session's close would restore it over the kept one. As driver.ps1 does.
+        self.restored_leftover_ini = restore_imgui_ini()
+        if not options.get("keep_imgui_ini"):
+            back_up_imgui_ini()
         self.lock = threading.Lock()
         self.exit_code = None
         self.window_id = None
@@ -885,8 +887,11 @@ def command_launch(args):
         time.sleep(0.25)
     send("wait_settled")
     time.sleep(args.settle)
-    note = "" if args.keep_imgui_ini else " (imgui.ini backed up%s)" % (
-        "; restored a backup a session left" if send("restored_leftover_ini") == "True" else "")
+    restored_leftover = send("restored_leftover_ini") == "True"
+    if args.keep_imgui_ini:
+        note = " (restored an imgui.ini backup a session left; this run keeps its layout)" if restored_leftover else ""
+    else:
+        note = " (imgui.ini backed up%s)" % ("; restored a backup a session left" if restored_leftover else "")
     return "launched: " + send("info") + note
 
 

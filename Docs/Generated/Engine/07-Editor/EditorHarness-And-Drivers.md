@@ -185,21 +185,21 @@ Each call is a process of its own, and does one action.
 
 Every Editor run rewrites `RZE/Config/imgui.ini`, which often holds a layout someone means to keep. Both drivers copy
 it aside at `launch` and restore it once the app has exited, and the next `launch` restores a backup a dead session
-left.
+left. `--keep-imgui-ini` (`-KeepImguiIni`) keeps a run's layout: nothing is backed up, but a dead session's backup is
+still restored first, at `launch`. Left on disk, `close` would restore it over the layout being kept.
 - **`driver.py`**: `close` and `quit` restore it, and so does the helper if the session ends any other way.
-  `--keep-imgui-ini` keeps a run's layout.
 - **`driver.ps1`**: the backup is a file, `%TEMP%\rze-driver\imgui.ini.backup`, since no process lasts the session in OS
   mode. `close` and `quit` restore it; a `close` that stops at the prompt keeps it until the app has exited.
-  `-KeepImguiIni` keeps a run's layout, but still restores a leftover backup first, at `launch`. (`driver.py` restores
-  a leftover at `close` even with `--keep-imgui-ini`, overwriting the kept layout; noted in `WindowsChecks.md`, H1.)
 
 ## `WindowsChecks.md`
 
 Work done on Linux can't be built or run on Windows there. `.claude/WindowsChecks.md` lists what a Windows machine
-still has to check after it: building and the tests, EditorHarness on Windows, the window and input, DX11 rendering,
-Editor features, profiling, CI, and work items for `driver.ps1` (both done: H1 and H2). It's kept up to date on Linux:
-a check is added with each change that affects Windows, and removed once its result is in. On Windows, Claude follows
-it and records each result in its table, along with fixes made there and what Linux should rerun.
+still has to check after it, in sections by area: building and the tests, the window and input, DX11 rendering,
+Editor features and profiling, plus work items (Windows-only changes, started only when the user agrees) when there
+are any. Checks that need someone at the machine are marked (person). It's kept up to date on Linux: a check is added
+with each change that affects Windows, and removed, with its result, once the result is read; earlier results are in
+the file's git history. On Windows, Claude follows it and records each result in its table, along with fixes made
+there and what Linux should rerun.
 
 ## Key files
 

@@ -261,7 +261,8 @@ How it works, and what to know:
   a layout the user means to keep (CLAUDE.md). `launch` copies it aside; `close` and `quit` restore it once the app has
   exited (their output says `imgui.ini restored`), and so does the helper if the session ends any other way. If a
   session died before it could, the next `launch` restores that backup first and says so. Pass `--keep-imgui-ini`
-  only when the run is meant to change the layout.
+  only when the run is meant to change the layout: nothing is backed up, and the layout the run leaves stays (a dead
+  session's backup is still restored first, at `launch`, as `driver.ps1` does).
 
 - **It moves the real pointer and takes focus**, like `driver.ps1`. Don't use the mouse while it's acting. Before any
   input it checks, through KWin, that the app's window is active and the point is inside it, so input can't land in
