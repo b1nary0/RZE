@@ -82,7 +82,7 @@ namespace Rendering
 
 		void Shutdown()
 		{
-			AssertMsg(s_consumer.memory != nullptr && s_producer.memory != nullptr, "If one is valid, they must both be valid or something got weird.");
+			AssertMsg(s_producer.memory != nullptr && s_consumer.memory != nullptr, "MemArena::Shutdown called without InitializeArena");
 
 			// Back to the state before InitializeArena, so it can run again
 			s_producer = ArenaBuffer();
