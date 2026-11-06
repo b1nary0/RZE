@@ -2,6 +2,8 @@
 
 #include <Utils/PrimitiveDefs.h>
 
+#include <cstddef>
+
 namespace MemoryUtils
 {
 	inline size_t Kilobytes(size_t val)
@@ -19,5 +21,6 @@ namespace MemoryUtils
 		return Megabytes(val) * 1024;
 	}
 
-	U32 AlignSize(U32 size, U32 boundary);
+	// Rounds size up to a multiple of boundary, which must be a power of 2
+	size_t AlignSize(size_t size, size_t boundary);
 }

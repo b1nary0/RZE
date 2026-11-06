@@ -30,13 +30,15 @@ namespace Rendering
 		PressureValue GetPressureValue();
 
 		// Zeroed memory that lasts until the render thread has run this frame's commands. When the arena is full, it
-		// comes from the heap instead, and Cycle() logs a warning for the frame.
-		void* Alloc(size_t sizeRequested);
+		// comes from the heap instead, and Cycle() logs a warning for the frame. The default alignment suits any type;
+		// alignment can't be more than that, since the arena's memory and the heap's are only aligned that far.
+		void* Alloc(size_t sizeRequested, size_t alignment = alignof(std::max_align_t));
 
 		template <typename TAlloc>
 		TAlloc* AllocType()
 		{
-			TAlloc* memory = new (Alloc(sizeof(TAlloc))) TAlloc();
+			static_assert(alignof(TAlloc) <= alignof(std::max_align_t), "MemArena can't allocate over-aligned types");
+			TAlloc* memory = new (Alloc(sizeof(TAlloc), alignof(TAlloc))) TAlloc();
 			return memory;
 		}
 	}

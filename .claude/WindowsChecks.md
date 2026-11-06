@@ -98,6 +98,23 @@ the rest for the user.
     Editor on Sponza: expect `[Error] Couldn't compile shader [...]` in the log and no crash in `Create` (an assert
     or D3D error later, from drawing with no shader, is expected). Revert the HLSL and `git diff` it clean.
   - At a Debug Editor's `close`, the log has no new `D3D11 (` lines.
+- **D7. The render command arena (MemArena).** Since 10caafa0 (and 89ab685a, 6e5ea004 and the commit after it),
+  `Rendering::MemArena` owns its buffers with `unique_ptr<Byte[]>`, spills to the heap when it's full instead of
+  writing past the end, and aligns each allocation (`alignof(T)` for commands, `max_align_t` for raw data, which is 8
+  on MSVC and 16 on Linux). `MemoryUtils::AlignSize` takes `size_t` now, so `DX11ConstantBuffer::Allocate` casts its
+  `ByteWidth` to `UINT`.
+  - **Build:** A1 covers `DX11ConstantBuffer.cpp`; expect no C4267 or other warning from it.
+  - **Tests:** `UnitTests.exe -sf="*MemArenaTests*,*MemoryUtilsTests*"` in Debug and Release: expect 10 test cases,
+    all passing.
+    The alignment cases use `alignof(std::max_align_t)`, so they test 8-byte alignment here.
+  - **A full arena on DX11:** in `RZE\Modules\Rendering\Src\Rendering\Renderer.cpp`, change `MEM_ARENA_SIZE` to
+    `MemoryUtils::Megabytes(1)`, build Debug, `driver.ps1 launch -Harness -Scene Sponza.scene -SettleSeconds 20`,
+    `shot`, `close`. Expect: Sponza renders, `closed code=0`, no assert, and `[Warning] Rendering memory arena was
+    full: ...` lines in the newest `RZE\Logs\RZELOG_*.txt` (Linux had 47). Some textures fail with `exceeds the
+    arena`; that's expected at 1 MB, which is under `AsyncOperationManager`'s 8 MB safety margin. Then
+    `git checkout -- RZE/Modules/Rendering/Src/Rendering/Renderer.cpp` (that one file; `git status --short` first),
+    and rebuild.
+  - **At the real size:** a Debug Editor on Sponza, `close`: `closed code=0` and no `arena was full` line.
 
 ### E. Editor features
 

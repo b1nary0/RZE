@@ -16,7 +16,7 @@ namespace Rendering
 		ZeroMemory(&bufferDesc, sizeof(bufferDesc));
 
 		bufferDesc.Usage = D3D11_USAGE_DEFAULT;
-		bufferDesc.ByteWidth = MemoryUtils::AlignSize(size, GetAlignment()) * count;
+		bufferDesc.ByteWidth = static_cast<UINT>(MemoryUtils::AlignSize(size, GetAlignment()) * count);
 		bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 		bufferDesc.CPUAccessFlags = 0;
 		bufferDesc.MiscFlags = 0;

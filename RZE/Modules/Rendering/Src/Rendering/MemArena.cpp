@@ -1,8 +1,10 @@
 #include <Rendering/MemArena.h>
 
 #include <Utils/DebugUtils/Debug.h>
+#include <Utils/Memory/MemoryUtils.h>
 #include <Utils/PrimitiveDefs.h>
 
+#include <cstddef>
 #include <cstring>
 #include <memory>
 #include <utility>
@@ -90,27 +92,40 @@ namespace Rendering
 			s_arenaState = ArenaState();
 		}
 
-		void* Alloc(size_t size)
+		static void AddToFrameTotal(size_t bytes)
 		{
-			s_arenaState.frameTotalMemAllocCurrFrame += size;
+			s_arenaState.frameTotalMemAllocCurrFrame += bytes;
 			if (s_arenaState.peakUsedBytes < s_arenaState.frameTotalMemAllocCurrFrame)
 			{
 				s_arenaState.peakUsedBytes = s_arenaState.frameTotalMemAllocCurrFrame;
 			}
+		}
 
-			// Written as a subtraction so a huge size can't wrap the sum; curPos never passes size
-			if (size > s_arenaState.size - s_arenaState.curPos)
+		void* Alloc(size_t size, size_t alignment)
+		{
+			// Both buffers come from new[], which aligns for max_align_t, so an aligned offset is an aligned address
+			AssertMsg(alignment <= alignof(std::max_align_t), "MemArena can't align past max_align_t");
+			const size_t alignedPos = MemoryUtils::AlignSize(s_arenaState.curPos, alignment);
+
+			// Written without adding to size, so a huge size can't wrap the sum
+			const bool fits = alignedPos <= s_arenaState.size && size <= s_arenaState.size - alignedPos;
+			if (!fits)
 			{
-				// Full: the allocation comes from the heap, zeroed like the arena's, until this buffer is reused
+				// Full: the allocation comes from the heap, zeroed and aligned like the arena's, until this buffer is
+				// reused. It needs no padding.
+				AddToFrameTotal(size);
 				s_arenaState.overflowBytesCurrFrame += size;
 				++s_arenaState.overflowAllocsCurrFrame;
 				s_producer.overflow.push_back(std::make_unique<Byte[]>(size));
 				return s_producer.overflow.back().get();
 			}
 
-			Byte* allocMem = &s_producer.memory[s_arenaState.curPos];
+			// The padding counts as used, so without a spill the frame's total is the arena's position
+			AddToFrameTotal(alignedPos - s_arenaState.curPos + size);
+
+			Byte* allocMem = s_producer.memory.get() + alignedPos;
 			memset(allocMem, 0, size);
-			s_arenaState.curPos += size;
+			s_arenaState.curPos = alignedPos + size;
 
 			return allocMem;
 		}
