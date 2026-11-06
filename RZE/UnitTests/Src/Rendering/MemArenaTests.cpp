@@ -178,3 +178,22 @@ TEST_CASE("An allocation that only its padding pushes past the end of the arena 
 
 	Rendering::MemArena::Shutdown();
 }
+
+TEST_CASE("Arena allocations are zeroed, even where an earlier frame wrote")
+{
+	Rendering::MemArena::InitializeArena(k_arenaSize);
+
+	// The arena's buffers start uninitialized, so only Alloc's zeroing can make this hold
+	Byte* const first = static_cast<Byte*>(Rendering::MemArena::Alloc(k_arenaSize));
+	CHECK(IsFilledWith(first, k_arenaSize, 0));
+	memset(first, 0xCD, k_arenaSize);
+
+	// Back to the same buffer two cycles later
+	Rendering::MemArena::Cycle();
+	Rendering::MemArena::Cycle();
+	Byte* const again = static_cast<Byte*>(Rendering::MemArena::Alloc(k_arenaSize));
+	REQUIRE(again == first);
+	CHECK(IsFilledWith(again, k_arenaSize, 0));
+
+	Rendering::MemArena::Shutdown();
+}

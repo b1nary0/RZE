@@ -115,6 +115,12 @@ the rest for the user.
     `git checkout -- RZE/Modules/Rendering/Src/Rendering/Renderer.cpp` (that one file; `git status --short` first),
     and rebuild.
   - **At the real size:** a Debug Editor on Sponza, `close`: `closed code=0` and no `arena was full` line.
+  - **Memory (since the commit after 7588d9e4):** the arena's two 2048 MB buffers are no longer zeroed at startup, so
+    only the pages frames use become resident. With a Debug Editor on Sponza (`launch -Harness`, settled 20 s), report
+    `Get-Process EditorHarness | Select WorkingSet64, PrivateMemorySize64` in MB, and the same at the commit before
+    for comparison if it's quick. Expect the working set to be about 4 GB lower than before (Linux: 4.4 GB to 0.3 GB
+    resident). Private bytes (commit charge) are expected to stay about 4 GB higher than the working set, since
+    Windows charges the whole allocation up front: say if it doesn't.
 
 ### E. Editor features
 

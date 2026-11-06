@@ -75,9 +75,11 @@ namespace Rendering
 				AssertIsNull(s_consumer.memory);
 			}
 
-			// make_unique<T[]> value-initializes, so both buffers start zeroed.
-			s_producer.memory = std::make_unique<Byte[]>(size);
-			s_consumer.memory = std::make_unique<Byte[]>(size);
+			// Left uninitialized, not make_unique's zeroes: Alloc zeroes each allocation, so nothing reads memory it hasn't
+			// zeroed, and the OS only backs the pages the frames actually use (zeroing all of it made the whole arena
+			// resident).
+			s_producer.memory = std::unique_ptr<Byte[]>(new Byte[size]);
+			s_consumer.memory = std::unique_ptr<Byte[]>(new Byte[size]);
 
 			s_arenaState.size = size;
 		}
