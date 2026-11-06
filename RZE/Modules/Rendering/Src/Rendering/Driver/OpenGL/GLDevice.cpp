@@ -77,11 +77,11 @@ namespace Rendering
 				break;
 			case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
 			case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
-			case GL_DEBUG_TYPE_PORTABILITY:
 				RZE_LOG_WARNING("OpenGL (" << id << "): " << message);
 				break;
 			default:
-				// The driver's notes on what's slow, e.g. a shader recompiled for the state it's drawn with
+				// The driver's notes on what's slow, e.g. a shader recompiled for the state it's drawn with, and portability
+				// notes: Mesa checks every draw against OpenGL ES 3.1's rules, which don't apply to desktop GL 4.5
 				RZE_LOG_DEBUG("OpenGL (" << id << "): " << message);
 				break;
 			}
