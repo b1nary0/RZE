@@ -21,7 +21,7 @@ namespace
 		return image;
 	}
 
-	// Removes a file, if it's there, when the test ends
+	// Removes a file, if it's there, when the test ends, and the folders it was in if that leaves them empty
 	class ScopedRemoval
 	{
 	public:
@@ -34,13 +34,15 @@ namespace
 		{
 			std::error_code ignored;
 			std::filesystem::remove(m_file.GetAbsolutePath(), ignored);
+			RemoveEmptyFolders(m_file.GetParentFolder());
 		}
 
 	private:
 		Filepath m_file;
 	};
 
-	// Removes what a test left in the trash when it ends, and the trash itself if that leaves it empty
+	// Removes what a test left in the trash when it ends, and the trash and the folders above it if that leaves them
+	// empty
 	class ScopedTrashCleanup
 	{
 	public:
@@ -56,7 +58,7 @@ namespace
 			{
 				std::filesystem::remove_all(m_item.InTrash.GetParentFolder().GetParentFolder().GetAbsolutePath(), ignored);
 			}
-			std::filesystem::remove(AssetFiles::GetTrashFolder().GetAbsolutePath(), ignored);
+			RemoveEmptyFolders(AssetFiles::GetTrashFolder());
 		}
 
 	private:

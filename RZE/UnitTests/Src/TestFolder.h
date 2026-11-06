@@ -53,3 +53,8 @@ public:
 private:
 	Filepath m_folder;
 };
+
+// Removes folder, then each folder above it, while they're empty, up to the test executable's folder (not that one).
+// A folder that isn't there is passed over. For tests that write where the editor keeps its own files (the trash,
+// thumbnails), whose folders would otherwise outlive them beside the executable.
+void RemoveEmptyFolders(const Filepath& folder);

@@ -39,6 +39,7 @@ namespace
 			// the tests' own trash, not the editor's.
 			std::error_code ignored;
 			std::filesystem::remove_all(AssetFiles::GetTrashFolder().GetAbsolutePath(), ignored);
+			RemoveEmptyFolders(AssetFiles::GetTrashFolder());
 		}
 
 		bool Run(EditorCommand& command)

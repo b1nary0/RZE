@@ -28,6 +28,10 @@ the rest for the user.
 - **A1. Generate and build.** Run `GenerateSolutions.bat`, then build Debug and Release (`/W3 /WX`). Expect no errors
   or warnings.
 - **A2. Unit tests.** `RZE\_build\debug\UnitTests.exe` and `RZE\_build\release\UnitTests.exe`. Expect exit code 0.
+  **Since the commit after f5faea2e:** the tests that write into the editor's trash and thumbnail folders remove the
+  empty folders they made (`RemoveEmptyFolders`, new `UnitTests/Src/TestFolder.cpp`), so after both runs
+  `RZE\_build\debug\ProjectData` and `RZE\_build\release\ProjectData` don't exist (A10 found an empty one). A tree
+  left by older runs goes in the same run, unless something in it isn't empty: list what's there if so.
 - **A3. Burn.** `RZE\_build\debug\SourceAssetBurner.exe`. Expect exit code 0 (it exits with 1 when an import fails)
   and no `[Error]` line in its output. `RZE\ProjectData` is gitignored, so `git status` can't show what it wrote.
 - **A4. CubeMap's face layout on DX11 (person).** The build part passed (2026-11-05). Left: the two users of
