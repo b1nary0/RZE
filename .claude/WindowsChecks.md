@@ -103,6 +103,19 @@ the rest for the user.
 
 - **E3. Title during the splash.** The title after loading and the Game's title passed (2026-11-05). Left: while the
   splash shows, the Editor's taskbar entry already says `RZEStudio`.
+- **E4. The Recycle Bin restores a deleted asset to its own folder.** Since the commit after 604189cd, an asset
+  deleted in the Content Browser goes to the Recycle Bin from where it was, not from `ProjectData\.Trash`: each trash
+  entry records the path in an `Original` file, and `AssetFiles::Recycle` / `EmptyTrash` move the item back there just
+  before `SHFileOperationW`. Passed on Linux with `gio trash` and KDE's restore.
+  1. Make `RZE\Assets\RecycleProbe.txt` (any text). `driver.ps1 launch -Harness -Scene DrawLineTest.scene`, open the
+     Content Browser, type `RecycleProbe` in its search box, select the file, press Delete and click **Delete**.
+  2. Expect `RZE\ProjectData\.Trash\1\Original` to hold `Assets/RecycleProbe.txt`, and the file to be gone from
+     `Assets`. Then `close`: expect `closed code=0` and no `RZE\ProjectData\.Trash`.
+  3. Find it in the Recycle Bin: `$item = (New-Object -ComObject Shell.Application).NameSpace(10).Items() | ? Name -like 'RecycleProbe*'`.
+     Expect `$item.ExtendedProperty('System.Recycle.DeletedFrom')` to be `...\RZE\Assets`, not `...\ProjectData\.Trash\1\Item`.
+  4. Restore it (`$item.InvokeVerb('undelete')`; if that verb isn't found, Restore in Explorer, **person**). Expect
+     `RZE\Assets\RecycleProbe.txt` back with its text. Then `Remove-Item` it, and check `git status` shows nothing new
+     under `Assets`.
 
 ### F. Profiling
 

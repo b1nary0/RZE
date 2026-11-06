@@ -10,12 +10,15 @@
 #include <Utils/StringUtils.h>
 
 #include <filesystem>
+#include <fstream>
 
 namespace
 {
-	// In each of the trash's numbered folders: the deleted file or folder, and its thumbnails
+	// In each of the trash's numbered folders: the deleted file or folder, its thumbnails, and a text file holding the
+	// path it was at
 	constexpr char k_itemFolder[] = "Item";
 	constexpr char k_thumbnailsFolder[] = "Thumbnails";
+	constexpr char k_originalFile[] = "Original";
 
 	// The rendered thumbnails of path, or of the scenes and meshes anywhere in it if it's a folder
 	std::vector<Filepath> FindThumbnailsOf(const Filepath& path)
@@ -69,6 +72,52 @@ namespace
 	{
 		std::error_code ignored;
 		std::filesystem::remove_all(path.GetAbsolutePath(), ignored);
+	}
+
+	Filepath GetOriginalFile(const Filepath& entry)
+	{
+		return Filepath(entry.GetRelativePath() + "/" + k_originalFile);
+	}
+
+	// Records in entry where its item was, for EmptyTrash. Without it, the item is sent to the Recycle Bin from the trash.
+	void WriteOriginal(const Filepath& entry, const Filepath& original)
+	{
+		std::ofstream(GetOriginalFile(entry).GetAbsolutePath()) << original.GetRelativePath();
+	}
+
+	// Where entry's item was, or invalid if it wasn't recorded
+	Filepath ReadOriginal(const Filepath& entry)
+	{
+		std::ifstream stream(GetOriginalFile(entry).GetAbsolutePath());
+		std::string path;
+		// An empty path would make a valid Filepath, of the executable's folder
+		if (!std::getline(stream, path) || path.empty())
+		{
+			return Filepath();
+		}
+		return Filepath(path);
+	}
+
+	// Sends inTrash to the Recycle Bin from original, where it was, so the Recycle Bin records that folder. It's sent from
+	// the trash instead if original is invalid or another item's, something else has its name now, or the folder it was
+	// in has gone. False if it couldn't, and it's put back in the trash then.
+	bool SendOn(const Filepath& inTrash, const Filepath& original, Editor::AssetFiles::SendToRecycleBin sendToRecycleBin)
+	{
+		// File::Move refuses a name that's taken, and a folder that isn't there
+		const bool isBack = original.IsValid() && original.GetFileName() == inTrash.GetFileName() && File::Move(inTrash, original);
+		if (!isBack)
+		{
+			return sendToRecycleBin(inTrash);
+		}
+
+		if (sendToRecycleBin(original))
+		{
+			return true;
+		}
+
+		// For EmptyTrash to try again; if this fails too, it stays where it was, as an undo would leave it
+		File::Move(original, inTrash);
+		return false;
 	}
 }
 
@@ -147,6 +196,7 @@ namespace Editor
 				return item;
 			}
 			item.InTrash = inTrash;
+			WriteOriginal(entry, path);
 
 			const Filepath thumbnailsFolder(entry.GetRelativePath() + "/" + k_thumbnailsFolder);
 			for (const Filepath& thumbnail : thumbnails)
@@ -194,7 +244,12 @@ namespace Editor
 
 		bool Recycle(const TrashedItem& item)
 		{
-			if (!item.IsInTrash() || !Shell::MoveToRecycleBin(item.InTrash))
+			return Recycle(item, &Shell::MoveToRecycleBin);
+		}
+
+		bool Recycle(const TrashedItem& item, SendToRecycleBin sendToRecycleBin)
+		{
+			if (!item.IsInTrash() || !SendOn(item.InTrash, item.Original, sendToRecycleBin))
 			{
 				return false;
 			}
@@ -206,17 +261,23 @@ namespace Editor
 
 		void EmptyTrash()
 		{
+			EmptyTrash(&Shell::MoveToRecycleBin);
+		}
+
+		void EmptyTrash(SendToRecycleBin sendToRecycleBin)
+		{
 			const Filepath& trash = GetTrashFolder();
 			for (const Filepath& entry : Folders::ListSubfolders(trash))
 			{
 				const Filepath itemFolder(entry.GetRelativePath() + "/" + k_itemFolder);
+				const Filepath original = ReadOriginal(entry);
 				bool isRecycled = true;
 
 				std::error_code error;
 				for (const std::filesystem::directory_entry& item : std::filesystem::directory_iterator(itemFolder.GetAbsolutePath(), error))
 				{
 					const Filepath itemPath(itemFolder.GetRelativePath() + "/" + item.path().filename().string());
-					isRecycled = Shell::MoveToRecycleBin(itemPath) && isRecycled;
+					isRecycled = SendOn(itemPath, original, sendToRecycleBin) && isRecycled;
 				}
 
 				// Left for next time if something in it couldn't go, e.g. it's open in another program

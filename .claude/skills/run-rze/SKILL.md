@@ -283,7 +283,10 @@ How it works, and what to know:
   panels look dimmed in `shot` while it's open.
 - **ImGui's `{ESC}` cancels a field's edit**: end a typed value with `{ENTER}`.
 - Delete in the Content Browser moves the file to `ProjectData/.Trash/` (for undo) and on to the system trash
-  (`~/.local/share/Trash`) when the Editor closes.
+  (`~/.local/share/Trash`) when the Editor closes, from its own folder, so its `.trashinfo` gives the path under
+  `Assets`. To restore one without relying on a desktop's tools, do what the freedesktop.org Trash spec defines as a
+  restore: move `~/.local/share/Trash/files/<name>` to its `Path=` (percent-decoded), then delete
+  `info/<name>.trashinfo`. (`gio trash --restore` needs gvfs, which KDE installs often lack.)
 - The layout reference above (Windows) holds on Linux too, for a maximized 2560x1398 client area: the Scene panel's
   rows are at x = 2317, y = 78 / 101 / 123 / 145 (Camera, DirectionalLight, NeckMech, M4 in DrawLineTest); the File
   menu at (90, 19); the Content Browser tab at (58, 1362).

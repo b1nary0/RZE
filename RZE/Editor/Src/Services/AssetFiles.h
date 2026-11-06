@@ -30,9 +30,13 @@ namespace Editor
 	// using a material, is updated.
 	//
 	// Deleting goes through the editor's trash (ProjectData/.Trash), so it can be undone, and on to the Recycle Bin
-	// once it can't.
+	// once it can't. It goes to the Recycle Bin from where it was, so restoring it there puts it back in the project.
 	namespace AssetFiles
 	{
+		// Moves a file or folder to the Recycle Bin, as Shell::MoveToRecycleBin does, which tests stand in for. False if
+		// it couldn't.
+		using SendToRecycleBin = bool (*)(const Filepath& path);
+
 		// Renames a file or folder to to, in the same folder (File::Move), and a scene's or mesh's thumbnail with it.
 		// False if it couldn't, and nothing changes then.
 		bool Rename(const Filepath& from, const Filepath& to);
@@ -50,12 +54,17 @@ namespace Editor
 		// Puts item, and its thumbnails, back where they were. False if something else has its name now, or it
 		// couldn't be moved; it stays in the trash then.
 		bool RestoreFromTrash(const TrashedItem& item);
-		// Sends item on to the Recycle Bin and deletes its thumbnails, for when it can't be restored any more. False if
-		// it couldn't; EmptyTrash tries again.
+		// Sends item on to the Recycle Bin and deletes its thumbnails, for when it can't be restored any more. It's moved
+		// back where it was first, so the Recycle Bin records that folder, unless something else has its name now or
+		// the folder has gone; it's sent from the trash then. False if it couldn't, and it's left in the trash for
+		// EmptyTrash to try again (or, should that move fail, where it was, as an undo would leave it).
 		bool Recycle(const TrashedItem& item);
-		// Sends everything in the trash to the Recycle Bin, for when nothing can restore it: when the editor starts, in
-		// case it didn't close cleanly, and when it closes
+		bool Recycle(const TrashedItem& item, SendToRecycleBin sendToRecycleBin);
+		// Sends everything in the trash to the Recycle Bin, as Recycle does, for when nothing can restore it: when the
+		// editor starts, in case it didn't close cleanly, and when it closes. Each entry of the trash records where its
+		// item was; one that doesn't is sent from the trash.
 		void EmptyTrash();
+		void EmptyTrash(SendToRecycleBin sendToRecycleBin);
 
 		// Where the trash is, which the Content Browser doesn't show
 		const Filepath& GetTrashFolder();
