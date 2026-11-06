@@ -10,6 +10,7 @@
 #include "Rendering/Driver/ShaderTypes.h"
 
 #include <string_view>
+#include <vector>
 
 namespace
 {
@@ -62,23 +63,32 @@ namespace Rendering
 		
 		hr = m_graphicsDevice->GetHardwareDevice().CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, &m_hwShader);
 		
-		std::unique_ptr<D3D11_INPUT_ELEMENT_DESC> inputLayoutStructure = std::unique_ptr<D3D11_INPUT_ELEMENT_DESC>(new D3D11_INPUT_ELEMENT_DESC[inputLayout.GetDataCount()]);
-
-		for (size_t i = 0; i < inputLayout.GetDataCount(); ++i)
+		// A shader without vertex inputs (a full-screen pass reading SV_VertexID) has no layout: binding none is valid
+		// for it, and creating one with 0 elements makes the debug layer warn
+		if (inputLayout.GetDataCount() > 0)
 		{
-			const ShaderInputLayout::ShaderInputLayoutData& layoutData = inputLayout[i];
-			inputLayoutStructure.get()[i] = {layoutData.Name.c_str(), 0, ConvertToDXGIFormat(layoutData.DataFormat), 0, static_cast<U32>(layoutData.Offset), ConvertToD3D11InputClassification(layoutData.DataClassification), 0};
+			std::vector<D3D11_INPUT_ELEMENT_DESC> inputLayoutStructure;
+			inputLayoutStructure.reserve(inputLayout.GetDataCount());
+			for (size_t i = 0; i < inputLayout.GetDataCount(); ++i)
+			{
+				const ShaderInputLayout::ShaderInputLayoutData& layoutData = inputLayout[i];
+				inputLayoutStructure.push_back({layoutData.Name.c_str(), 0, ConvertToDXGIFormat(layoutData.DataFormat), 0, static_cast<U32>(layoutData.Offset), ConvertToD3D11InputClassification(layoutData.DataClassification), 0});
+			}
+
+			hr = m_graphicsDevice->GetHardwareDevice().CreateInputLayout(inputLayoutStructure.data(), static_cast<UINT>(inputLayoutStructure.size()), vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &m_hwInputLayout);
 		}
-
-		UINT numLayoutElements = static_cast<UINT>(inputLayout.GetDataCount());
-
-		hr = m_graphicsDevice->GetHardwareDevice().CreateInputLayout(inputLayoutStructure.get(), numLayoutElements, vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &m_hwInputLayout);
 	}
 
 	void DX11VertexShader::Release()
 	{
 		AssertNotNull(m_hwShader);
 		m_hwShader->Release();
+
+		if (m_hwInputLayout != nullptr)
+		{
+			m_hwInputLayout->Release();
+			m_hwInputLayout = nullptr;
+		}
 	}
 
 	void DX11VertexShader::SetActive()

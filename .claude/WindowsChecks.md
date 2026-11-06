@@ -199,6 +199,11 @@ Checks marked **(work)** are Windows-only changes, not tests: ask the user befor
   `RZE\Logs\RZELOG_*.txt`, report every distinct `D3D11 (` line with how often it came (e.g. `Select-String 'D3D11 \('
   | Group-Object Line | Sort Count -Desc`), and say which scene or action brought it. Expect no line saying the info
   queue isn't available. Also check a Release Editor logs no `D3D11 (` line at all.
+- **D6. Vertex shaders without inputs, and input layouts released.** `DX11VertexShader::Create` no longer creates an
+  input layout when the shader has no inputs (it binds none), holds the element array in a `std::vector`, and
+  `Release()` now frees the input layout. CI's Windows Debug smoke job should no longer list `D3D11 (420): ...
+  CreateInputLayout ... 0 elements`. On a real GPU, D1's scenes look the same as before, including the full-screen
+  passes (FXAA, GTAO, the final copy). At a Debug Editor's `close`, the log has no new `D3D11 (` lines.
 
 ### E. Editor features
 
