@@ -45,7 +45,7 @@ Rough edges the codebase is candid about (source comments, `#TODO`s), plus a few
 | 37 | RenderDoc can't capture the Linux build as it runs normally | Renderer (Linux) | Low | Open, worked around |
 | 38 | An EditorHarness screenshot stalls the Editor for about a second | Harness | Low | Open |
 | 39 | ImGui can follow the real mouse in a focused harness window | Harness | Low | Open; not seen on Windows (B6) |
-| 40 | A file restored from the Recycle Bin lands in the Editor's trash folder | Editor (Content Browser) | Low | Open |
+| 40 | A file restored from the Recycle Bin landed in the Editor's trash folder | Editor (Content Browser) | — | **Fixed** (11-06: sent from its own folder; Windows to confirm, E4) |
 | 41 | Scene View picks, icons and the gizmo were 40 px high | Editor (Scene View) | — | **Fixed** (11-05: the panel's position is taken every frame) |
 
 ```mermaid
@@ -238,9 +238,11 @@ The harness's `shot` encodes the 2560×1398 PNG on the main thread (`stbi_write_
 
 `imgui_impl_sdl3` gives ImGui the real global mouse position when the app is focused and the real pointer is over no SDL window, on drivers that support global mouse state (Windows and X11, never Wayland). EditorHarness's mouse input doesn't move the real pointer, so in that case ImGui could see the real pointer instead. Keep the harness's window unfocused, or the real mouse over it. Windows' check (`.claude/WindowsChecks.md`, B6) didn't see it: with the harness's window focused and the real pointer over the taskbar, a harness click still landed where the harness put it.
 
-## 40. A file restored from the Recycle Bin lands in the Editor's trash folder
+## 40. A file restored from the Recycle Bin landed in the Editor's trash folder (fixed)
 
-Deleting in the Content Browser moves the file to `ProjectData/.Trash/<n>/Item/`, so undo can put it back, and sends it to the system trash (the Recycle Bin, or `~/.local/share/Trash`) once it drops out of the undo history or the Editor closes. The system trash then records `ProjectData/.Trash/<n>/Item` as where it came from, not its folder under `Assets`, so restoring it from there puts it in a trash folder the Editor has already emptied, and the Content Browser doesn't show it. Seen on Windows (`WindowsChecks.md`, E4); Linux records the original path the same way, likely with the same result. A fix would send the file to the system trash from its original path (moving it back first), or keep only the undo copy and trash the original at delete time.
+Deleting in the Content Browser moves the file to `ProjectData/.Trash/<n>/Item/`, so undo can put it back, and sends it to the system trash (the Recycle Bin, or `~/.local/share/Trash`) once it drops out of the undo history or the Editor closes. The system trash recorded `ProjectData/.Trash/<n>/Item` as where it came from, not its folder under `Assets`, so restoring it from there put it in a trash folder the Editor had already emptied, the Content Browser didn't show it, and the next start sent it to the trash again. Seen on Windows (`WindowsChecks.md`, E4) and on Linux.
+
+**Fixed (11-06).** Each trash entry records the original path in an `Original` file, and `AssetFiles::Recycle` and `EmptyTrash` move the file back there just before sending it on, so the system records its own folder. If the name is taken by then, or the folder has gone, it's sent from the trash as before. Verified on Linux (the `.trashinfo` names `Assets/`, and a restore puts it back); Windows' Recycle Bin is checked by E4. See [Thumbnails-And-File-Browser.md](../07-Editor/Thumbnails-And-File-Browser.md).
 
 ## 41. Scene View picks, icons and the gizmo were 40 px high (fixed)
 

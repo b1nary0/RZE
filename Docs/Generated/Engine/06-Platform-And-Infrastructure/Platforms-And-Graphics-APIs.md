@@ -14,7 +14,7 @@ platform or API compiles.
 | The window's native gaps: custom title bar, first appearance, icons, metrics | `Engine/Src/Windowing/WindowNative.h` (internal to `Window`) | `Windows/WindowNativeWindows.cpp`: a window subclass, the DWM cloak, Snap Layouts | `Linux/WindowNativeLinux.cpp`: borderless with an SDL hit test |
 | The splash screen | `Windowing/SplashScreen.h` | its own thread, GDI | the main thread, SDL's window surface |
 | Icons | `Windowing/WindowIcon.h` (reading images) | `Windows/WindowIconWindows`: `HICON`s | `Linux/WindowIconLinux`: SDL surfaces, `RZE.png` by default |
-| The file manager and trash | `Utils/Platform/Shell.h` | `ShellExecute`, `SHFileOperation` | `FileManager1` over D-Bus, `gio trash` |
+| The file manager and trash | `Utils/Platform/Shell.h` | `ShellExecute`, `SHFileOperation` | `FileManager1` over D-Bus, the freedesktop.org Trash spec |
 | Running programs | `Utils/Platform/Process.h` | `CreateProcess`, `cmd.exe` | `posix_spawn`, `/bin/sh` |
 | Watching folders | `Utils/Platform/FolderWatcher.h` | change notifications | inotify |
 | Precise sleeps | `Utils/Platform/Timers/PreciseSleep.h` | a high-resolution waitable timer | `clock_nanosleep` |

@@ -106,7 +106,7 @@ the rest for the user.
 - **E4. The Recycle Bin restores a deleted asset to its own folder.** Since the commit after 604189cd, an asset
   deleted in the Content Browser goes to the Recycle Bin from where it was, not from `ProjectData\.Trash`: each trash
   entry records the path in an `Original` file, and `AssetFiles::Recycle` / `EmptyTrash` move the item back there just
-  before `SHFileOperationW`. Passed on Linux with `gio trash` and KDE's restore.
+  before `SHFileOperationW`. Passed on Linux, where the Trash is now written by the Editor itself (the freedesktop spec, not `gio`).
   1. Make `RZE\Assets\RecycleProbe.txt` (any text). `driver.ps1 launch -Harness -Scene DrawLineTest.scene`, open the
      Content Browser, type `RecycleProbe` in its search box, select the file, press Delete and click **Delete**.
   2. Expect `RZE\ProjectData\.Trash\1\Original` to hold `Assets/RecycleProbe.txt`, and the file to be gone from

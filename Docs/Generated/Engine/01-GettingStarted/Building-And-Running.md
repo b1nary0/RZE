@@ -83,14 +83,14 @@ pick test cases, `-s` to show passing checks). It needs no display, so CI runs i
 
 - **Project:** `UnitTests/` (`UnitTests.sharpmake.cs`). It links `EditorLib`, the Editor's code as a static library,
   and through it `Engine`, so tests can cover either. Generate again after adding a test file.
-- **Layout:** `UnitTests/Src/Editor/`, `Src/Engine/` and `Src/Utils/` mirror the code under test. Shared helpers:
+- **Layout:** `UnitTests/Src/Editor/`, `Src/Engine/` and `Src/Utils/` mirror the code under test. A `Linux` or `Windows` folder in them is built only on that platform, as in the code (e.g. `Src/Utils/Linux/ShellLinuxTests.cpp`). Shared helpers:
   - `TestComponents.h`: a test component with one property of each kind (`EditorOnly`, `Exclusive`, `ReadOnly`, computed), registered with `RegisterTestComponents()`.
-  - `TestFolder.h`: `ScopedTestFolder`, a scratch folder beside the executable that's emptied at the start and removed at the end.
+  - `TestFolder.h`: `ScopedTestFolder`, a scratch folder beside the executable that's emptied at the start and removed at the end; and `RemoveEmptyFolders(folder)`, which removes a folder and the empty ones above it, up to the executable's, for tests that write where the editor keeps its own files (the trash, thumbnails).
   - `TestOperation.h`: an `AsyncOperation` a test can drive step by step.
 - **What's covered:**
-  - Editor: `UndoHistory` (steps, merging, the cap, the redo branch, `OnDropped`, the save point), `ParkedSubtree`, `GameObjectSnapshot` and the clipboard, `EditorSelection` and `InteractionTracker`; the file browser's listing and save names (`FolderListing`); thumbnails (`Thumbnails`, `ThumbnailQueue`) and `MeshFraming`; the status bar's `TaskTracker`; settings pages.
+  - Editor: `UndoHistory` (steps, merging, the cap, the redo branch, `OnDropped`, the save point), `ParkedSubtree`, `GameObjectSnapshot` and the clipboard, `EditorSelection` and `InteractionTracker`; the file browser's listing and save names (`FolderListing`); thumbnails (`Thumbnails`, `ThumbnailQueue`) and `MeshFraming`; the status bar's `TaskTracker`; settings pages; `AssetFiles` and its commands (renames, the trash, and what goes to the Recycle Bin from where, with a stand-in for it).
   - Engine: `ComponentPropertyRegistry`, `GameScene` (including components loading and saving in the scene file's order), `HeadlessScene`, `AsyncOperationManager` and `JobScheduler` (lanes, budgets), `ResourceHandler` (shared loads, deferred destroys), `TextureFile` (PNG round trip, atomic writes), `TransformComponent`, lights, object and render scene bounds, `SceneChangeLog`, and `CubeMap` (each face renders what sampling the cube reads).
-  - Utils: `BoundingBox`, `Frustum`, `Ray`, file and string helpers, `FileNames` (including names that differ only in case), `TypeNames`.
+  - Utils: `BoundingBox`, `Frustum`, `Ray`, file and string helpers, `FileNames` (including names that differ only in case), `TypeNames`; on Linux, `Shell::MoveToRecycleBin` (the Trash spec, in a test `XDG_DATA_HOME`).
 - **No running engine.** Tests build their own `GameScene` and `EditorContext`; `main` (`TestMain.cpp`) only does what tests rely on from start-up: `MainThreadDispatcher::Initialize()` and `RZE_Application::RegisterEngineComponents()`. Code that needs a window or the render engine (e.g. `CameraComponent::OnAddToScene`, finding objects through `RZE().GetActiveScene()`) can't be tested this way.
 - **Asserts fail the test.** In Debug, `Debug::SetAssertFailureHook` turns an engine assert into a failed check in the running test, with the assert's text, instead of a dialog (Windows) or a break into a debugger (Linux), so a run never waits for input. On Windows it also catches the CRT's own reports.
 
