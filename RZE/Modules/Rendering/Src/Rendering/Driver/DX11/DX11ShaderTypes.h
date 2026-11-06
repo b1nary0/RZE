@@ -18,6 +18,7 @@ namespace Rendering
 		~DX11VertexShader() override;
 
 	public:
+		// Compiles VSMain as vs_5_0. A compile error is logged and leaves the shader empty.
 		void Create(const Filepath& filePath, const ShaderInputLayout& inputLayout) override;
 		void Release() override;
 		void SetActive() override;
@@ -40,6 +41,7 @@ namespace Rendering
 		~DX11PixelShader() override;
 
 	public:
+		// Compiles PSMain as ps_5_0. A compile error is logged and leaves the shader empty.
 		void Create(const Filepath& filePath) override;
 		void Release() override;
 		void SetActive() override;

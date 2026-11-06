@@ -60,8 +60,18 @@ namespace Rendering
 		
 		hr = D3DCompileFromFile(Conversions::StringToWString(filePath.GetAbsolutePath()).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VSMain", "vs_5_0", 0, 0, &vsBlob, &error);
 		LogCompileMessages(hr, error, filePath);
+		if (error != nullptr)
+		{
+			error->Release();
+		}
+
+		if (FAILED(hr))
+		{
+			return;
+		}
 		
 		hr = m_graphicsDevice->GetHardwareDevice().CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, &m_hwShader);
+		AssertExpr(hr == S_OK);
 		
 		// A shader without vertex inputs (a full-screen pass reading SV_VertexID) has no layout: binding none is valid
 		// for it, and creating one with 0 elements makes the debug layer warn
@@ -76,13 +86,20 @@ namespace Rendering
 			}
 
 			hr = m_graphicsDevice->GetHardwareDevice().CreateInputLayout(inputLayoutStructure.data(), static_cast<UINT>(inputLayoutStructure.size()), vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &m_hwInputLayout);
+			AssertExpr(hr == S_OK);
 		}
+
+		// Only now: the input layout is checked against the bytecode's input signature
+		vsBlob->Release();
 	}
 
 	void DX11VertexShader::Release()
 	{
-		AssertNotNull(m_hwShader);
-		m_hwShader->Release();
+		if (m_hwShader != nullptr)
+		{
+			m_hwShader->Release();
+			m_hwShader = nullptr;
+		}
 
 		if (m_hwInputLayout != nullptr)
 		{
@@ -132,14 +149,28 @@ namespace Rendering
 			0, 0,
 			&psBlob, &error);
 		LogCompileMessages(hr, error, filePath);
+		if (error != nullptr)
+		{
+			error->Release();
+		}
+
+		if (FAILED(hr))
+		{
+			return;
+		}
 		
 		hr = m_graphicsDevice->GetHardwareDevice().CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), nullptr, &m_hwShader);
+		AssertExpr(hr == S_OK);
+		psBlob->Release();
 	}
 
 	void DX11PixelShader::Release()
 	{
-		AssertNotNull(m_hwShader);
-		m_hwShader->Release();
+		if (m_hwShader != nullptr)
+		{
+			m_hwShader->Release();
+			m_hwShader = nullptr;
+		}
 	}
 
 	void DX11PixelShader::SetActive()

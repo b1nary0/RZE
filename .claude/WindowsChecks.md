@@ -199,11 +199,15 @@ Checks marked **(work)** are Windows-only changes, not tests: ask the user befor
   `RZE\Logs\RZELOG_*.txt`, report every distinct `D3D11 (` line with how often it came (e.g. `Select-String 'D3D11 \('
   | Group-Object Line | Sort Count -Desc`), and say which scene or action brought it. Expect no line saying the info
   queue isn't available. Also check a Release Editor logs no `D3D11 (` line at all.
-- **D6. Vertex shaders without inputs, and input layouts released.** `DX11VertexShader::Create` no longer creates an
-  input layout when the shader has no inputs (it binds none), holds the element array in a `std::vector`, and
-  `Release()` now frees the input layout. CI's Windows Debug smoke job should no longer list `D3D11 (420): ...
-  CreateInputLayout ... 0 elements`. On a real GPU, D1's scenes look the same as before, including the full-screen
-  passes (FXAA, GTAO, the final copy). At a Debug Editor's `close`, the log has no new `D3D11 (` lines.
+- **D6. Vertex and pixel shader creation.** `DX11VertexShader::Create` no longer creates an input layout for a
+  shader without inputs, and `Release()` frees the input layout (CI confirmed the `D3D11 (420)` warning is gone,
+  d8d276ac). VS and PS `Create` now release their compile blobs, and a failed compile logs and returns instead of
+  dereferencing a null blob. On a real GPU:
+  - D1's scenes look the same as before, including the full-screen passes (FXAA, GTAO, the final copy).
+  - **Compile failure:** add a syntax error to a pixel shader's HLSL (e.g. `Assets/Shaders/Pixel_FXAA.hlsl`), launch a Debug
+    Editor on Sponza: expect `[Error] Couldn't compile shader [...]` in the log and no crash in `Create` (an assert
+    or D3D error later, from drawing with no shader, is expected). Revert the HLSL and `git diff` it clean.
+  - At a Debug Editor's `close`, the log has no new `D3D11 (` lines.
 
 ### E. Editor features
 
