@@ -1,6 +1,7 @@
 #include <EngineCore/Config/EngineConfig.h>
 
 #include <Utils/Conversions.h>
+#include <Utils/EnumNames.h>
 
 #include <algorithm>
 
@@ -106,25 +107,8 @@ void EngineConfig::LoadBackgroundTaskFilter()
 
 void EngineConfig::LoadRenderingSettings()
 {
-	const char* const antiAliasingName = mINIParser.GetValue("Rendering", "AntiAliasing", GetAntiAliasingName(mAntiAliasing));
-	if (const std::optional<EAntiAliasing> antiAliasing = ParseAntiAliasing(antiAliasingName))
-	{
-		mAntiAliasing = *antiAliasing;
-	}
-	else
-	{
-		RZE_LOG_WARNING_ARGS("Engine.ini's [Rendering] AntiAliasing '%s' isn't Off, Low, Medium or High; using %s.", antiAliasingName, GetAntiAliasingName(mAntiAliasing));
-	}
-
-	const char* const ambientOcclusionName = mINIParser.GetValue("Rendering", "AmbientOcclusion", GetAmbientOcclusionName(mAmbientOcclusion));
-	if (const std::optional<EAmbientOcclusion> ambientOcclusion = ParseAmbientOcclusion(ambientOcclusionName))
-	{
-		mAmbientOcclusion = *ambientOcclusion;
-	}
-	else
-	{
-		RZE_LOG_WARNING_ARGS("Engine.ini's [Rendering] AmbientOcclusion '%s' isn't Off, Low, Medium or High; using %s.", ambientOcclusionName, GetAmbientOcclusionName(mAmbientOcclusion));
-	}
+	mAntiAliasing = static_cast<EAntiAliasing>(ReadEnumSetting("Rendering", "AntiAliasing", GetAntiAliasingNames(), static_cast<size_t>(mAntiAliasing)));
+	mAmbientOcclusion = static_cast<EAmbientOcclusion>(ReadEnumSetting("Rendering", "AmbientOcclusion", GetAmbientOcclusionNames(), static_cast<size_t>(mAmbientOcclusion)));
 
 	mAutoExposure = mINIParser.GetBoolValue("Rendering", "AutoExposure", mAutoExposure);
 
@@ -134,6 +118,18 @@ void EngineConfig::LoadRenderingSettings()
 	probes.TargetProbeCount = static_cast<U32>(std::max(1L, mINIParser.GetLongValue("Rendering", "ProbeTargetCount", static_cast<long>(probes.TargetProbeCount))));
 	probes.CaptureDrawBudget = static_cast<U32>(std::max(1L, mINIParser.GetLongValue("Rendering", "ProbeCaptureDrawBudget", static_cast<long>(probes.CaptureDrawBudget))));
 	probes.RelightBudget = static_cast<U32>(std::max(1L, mINIParser.GetLongValue("Rendering", "ProbeRelightBudget", static_cast<long>(probes.RelightBudget))));
+}
+
+size_t EngineConfig::ReadEnumSetting(const char* section, const char* key, const EnumNames& names, size_t current) const
+{
+	const char* const name = mINIParser.GetValue(section, key, names.GetName(current));
+	if (const std::optional<size_t> value = names.FindIgnoringCase(name))
+	{
+		return *value;
+	}
+
+	RZE_LOG_WARNING_ARGS("Engine.ini's [%s] %s '%s' isn't %s; using %s.", section, key, name, names.ListAlternatives().c_str(), names.GetName(current));
+	return current;
 }
 
 WindowSettings::WindowSettings()

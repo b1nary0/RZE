@@ -1,6 +1,7 @@
 #include <UI/Settings/SceneViewSettingsPage.h>
 
 #include <UI/Framework/EditorContext.h>
+#include <UI/Framework/EditorUI.h>
 #include <UI/Gizmo/GizmoSnapper.h>
 #include <UI/Settings/SettingsPageRegistry.h>
 
@@ -11,8 +12,6 @@
 #include <Graphics/RenderEngine.h>
 
 #include <imgui/imgui.h>
-
-#include <string>
 
 namespace
 {
@@ -55,13 +54,10 @@ namespace Editor
 		ImGui::SameLine(optionsX);
 		ImGui::Dummy(ImVec2(0.0f, 0.0f));
 		RenderView& mainView = RZE().GetRenderEngine().GetMainView();
-		for (int level = 0; level < static_cast<int>(EAntiAliasing::Count); ++level)
+		size_t antiAliasing = static_cast<size_t>(mainView.AntiAliasing);
+		if (EditorUI::RadioButtonRow("AntiAliasing", GetAntiAliasingNames(), antiAliasing))
 		{
-			ImGui::SameLine();
-			if (ImGui::RadioButton(GetAntiAliasingName(static_cast<EAntiAliasing>(level)), mainView.AntiAliasing == static_cast<EAntiAliasing>(level)))
-			{
-				mainView.AntiAliasing = static_cast<EAntiAliasing>(level);
-			}
+			mainView.AntiAliasing = static_cast<EAntiAliasing>(antiAliasing);
 		}
 
 		ImGui::AlignTextToFramePadding();
@@ -69,15 +65,10 @@ namespace Editor
 		ImGui::SetItemTooltip("How much creases and corners darken the light that isn't direct (GTAO). Higher levels search more directions around each pixel, for less noise.");
 		ImGui::SameLine(optionsX);
 		ImGui::Dummy(ImVec2(0.0f, 0.0f));
-		for (int level = 0; level < static_cast<int>(EAmbientOcclusion::Count); ++level)
+		size_t ambientOcclusion = static_cast<size_t>(mainView.AmbientOcclusion);
+		if (EditorUI::RadioButtonRow("AmbientOcclusion", GetAmbientOcclusionNames(), ambientOcclusion))
 		{
-			ImGui::SameLine();
-			// ## keeps their IDs apart from the anti-aliasing buttons, which have the same names
-			const std::string label = std::string(GetAmbientOcclusionName(static_cast<EAmbientOcclusion>(level))) + "##AmbientOcclusion";
-			if (ImGui::RadioButton(label.c_str(), mainView.AmbientOcclusion == static_cast<EAmbientOcclusion>(level)))
-			{
-				mainView.AmbientOcclusion = static_cast<EAmbientOcclusion>(level);
-			}
+			mainView.AmbientOcclusion = static_cast<EAmbientOcclusion>(ambientOcclusion);
 		}
 
 		ImGui::AlignTextToFramePadding();

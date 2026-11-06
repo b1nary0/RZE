@@ -1,12 +1,16 @@
 #include <Graphics/AntiAliasing.h>
 
-#include <Utils/StringUtils.h>
+#include <Utils/EnumNames.h>
 
 #include <algorithm>
 #include <initializer_list>
 
 namespace
 {
+	// In EAntiAliasing's order
+	constexpr const char* k_names[] = { "Off", "Low", "Medium", "High" };
+	static_assert(sizeof(k_names) / sizeof(k_names[0]) == static_cast<size_t>(EAntiAliasing::Count), "A name for every level");
+
 	AntiAliasingSettings MakeSettings(float edgeThreshold, float edgeThresholdMin, float subpixel, std::initializer_list<float> searchSteps)
 	{
 		AssertExpr(searchSteps.size() <= AntiAliasingSettings::k_maxSearchSteps);
@@ -48,31 +52,19 @@ AntiAliasingSettings GetAntiAliasingSettings(EAntiAliasing level)
 	}
 }
 
+const EnumNames& GetAntiAliasingNames()
+{
+	static const EnumNames names(k_names);
+	return names;
+}
+
 const char* GetAntiAliasingName(EAntiAliasing level)
 {
-	switch (level)
-	{
-	case EAntiAliasing::Off:
-		return "Off";
-	case EAntiAliasing::Low:
-		return "Low";
-	case EAntiAliasing::Medium:
-		return "Medium";
-	case EAntiAliasing::High:
-		return "High";
-	default:
-		return "";
-	}
+	return GetAntiAliasingNames().GetName(static_cast<size_t>(level));
 }
 
 std::optional<EAntiAliasing> ParseAntiAliasing(const std::string& name)
 {
-	for (int level = 0; level < static_cast<int>(EAntiAliasing::Count); ++level)
-	{
-		if (StringUtils::EqualsIgnoringCase(name, GetAntiAliasingName(static_cast<EAntiAliasing>(level))))
-		{
-			return static_cast<EAntiAliasing>(level);
-		}
-	}
-	return std::nullopt;
+	const std::optional<size_t> level = GetAntiAliasingNames().FindIgnoringCase(name);
+	return level ? std::optional<EAntiAliasing>(static_cast<EAntiAliasing>(*level)) : std::nullopt;
 }

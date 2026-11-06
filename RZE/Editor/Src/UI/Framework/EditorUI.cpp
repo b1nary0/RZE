@@ -2,6 +2,7 @@
 
 #include <Rendering/Renderer.h>
 
+#include <Utils/EnumNames.h>
 #include <Utils/Math/Math.h>
 
 #include <imgui/imgui_internal.h> // ImGui::GetCurrentTable
@@ -367,6 +368,23 @@ namespace Editor
 			ImFont* const font = ImGui::GetFont();
 			const ImVec2 size = font->CalcTextSizeA(fontSize, FLT_MAX, 0.0f, text);
 			drawList->AddText(font, fontSize, ImVec2(centre.x - size.x * 0.5f, centre.y - size.y * 0.5f), colour, text);
+		}
+
+		bool RadioButtonRow(const char* id, const EnumNames& names, size_t& selected)
+		{
+			bool isChanged = false;
+			ImGui::PushID(id);
+			for (size_t value = 0; value < names.GetCount(); ++value)
+			{
+				ImGui::SameLine();
+				if (ImGui::RadioButton(names.GetName(value), selected == value))
+				{
+					selected = value;
+					isChanged = true;
+				}
+			}
+			ImGui::PopID();
+			return isChanged;
 		}
 
 		ScopedToolbarSpacing::ScopedToolbarSpacing()

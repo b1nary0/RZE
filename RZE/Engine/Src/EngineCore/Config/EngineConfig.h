@@ -11,6 +11,7 @@
 #include <Utils/PrimitiveDefs.h>
 #include <Utils/Math/Vector2D.h>
 
+class EnumNames;
 class Filepath;
 
 class EngineSettings
@@ -74,6 +75,10 @@ private:
 	void LoadFrameSettings();
 	void LoadBackgroundTaskFilter();
 	void LoadRenderingSettings();
+
+	// [section] key as one of names (ignoring case), or current if it's missing; warns and returns current if it isn't
+	// one of them
+	size_t ReadEnumSetting(const char* section, const char* key, const EnumNames& names, size_t current) const;
 
 private:
 	EngineSettings mEngineSettings;

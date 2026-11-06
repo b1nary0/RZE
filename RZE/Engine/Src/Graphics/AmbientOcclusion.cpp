@@ -1,6 +1,13 @@
 #include <Graphics/AmbientOcclusion.h>
 
-#include <Utils/StringUtils.h>
+#include <Utils/EnumNames.h>
+
+namespace
+{
+	// In EAmbientOcclusion's order
+	constexpr const char* k_names[] = { "Off", "Low", "Medium", "High" };
+	static_assert(sizeof(k_names) / sizeof(k_names[0]) == static_cast<size_t>(EAmbientOcclusion::Count), "A name for every level");
+}
 
 AmbientOcclusionSettings GetAmbientOcclusionSettings(EAmbientOcclusion level)
 {
@@ -19,31 +26,19 @@ AmbientOcclusionSettings GetAmbientOcclusionSettings(EAmbientOcclusion level)
 	}
 }
 
+const EnumNames& GetAmbientOcclusionNames()
+{
+	static const EnumNames names(k_names);
+	return names;
+}
+
 const char* GetAmbientOcclusionName(EAmbientOcclusion level)
 {
-	switch (level)
-	{
-	case EAmbientOcclusion::Off:
-		return "Off";
-	case EAmbientOcclusion::Low:
-		return "Low";
-	case EAmbientOcclusion::Medium:
-		return "Medium";
-	case EAmbientOcclusion::High:
-		return "High";
-	default:
-		return "";
-	}
+	return GetAmbientOcclusionNames().GetName(static_cast<size_t>(level));
 }
 
 std::optional<EAmbientOcclusion> ParseAmbientOcclusion(const std::string& name)
 {
-	for (int level = 0; level < static_cast<int>(EAmbientOcclusion::Count); ++level)
-	{
-		if (StringUtils::EqualsIgnoringCase(name, GetAmbientOcclusionName(static_cast<EAmbientOcclusion>(level))))
-		{
-			return static_cast<EAmbientOcclusion>(level);
-		}
-	}
-	return std::nullopt;
+	const std::optional<size_t> level = GetAmbientOcclusionNames().FindIgnoringCase(name);
+	return level ? std::optional<EAmbientOcclusion>(static_cast<EAmbientOcclusion>(*level)) : std::nullopt;
 }

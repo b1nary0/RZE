@@ -4,6 +4,8 @@
 #include <optional>
 #include <string>
 
+class EnumNames;
+
 // How much a view smooths jagged edges after tonemapping (FXAA, PostProcessRenderStage). Engine.ini's
 // [Rendering] AntiAliasing sets the main view's at start-up; the editor's Scene View settings change it while running.
 enum class EAntiAliasing
@@ -41,7 +43,9 @@ struct AntiAliasingSettings
 // skips FXAA.
 AntiAliasingSettings GetAntiAliasingSettings(EAntiAliasing level);
 
-// As Engine.ini and the editor show it: "Off", "Low", "Medium", "High"
+// Every level's name, as Engine.ini and the editor show it: "Off", "Low", "Medium", "High"
+const EnumNames& GetAntiAliasingNames();
+
 const char* GetAntiAliasingName(EAntiAliasing level);
 
 // A level from its name, ignoring case; none if the name isn't one
