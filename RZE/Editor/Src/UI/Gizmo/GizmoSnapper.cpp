@@ -1,15 +1,13 @@
 #include <UI/Gizmo/GizmoSnapper.h>
 
 #include <UI/Framework/EditorSettings.h>
-#include <UI/Framework/EditorUI.h>
 
 #include <Utils/Math/Math.h>
 
-#include <imgui/imgui.h>
+#include <imgui/imgui.h> // ImGuizmo.h needs it first
 #include <imgui/ImGuizmo.h>
 
 #include <cmath>
-#include <stdio.h>
 
 namespace
 {
@@ -19,58 +17,6 @@ namespace
 
 namespace Editor
 {
-	void GizmoSnapper::DisplayControls(EditorSettings& settings, int operation)
-	{
-		const EditorUI::ScopedToolbarSpacing spacing;
-
-		// Greyed out rather than hidden, so the centred toolbar doesn't shift. Scaling doesn't snap.
-		EditorUI::ToolbarGroupSeparator();
-		ImGui::BeginDisabled(operation == ImGuizmo::SCALE);
-		ImGui::Checkbox("Snap (X)", &m_isEnabled);
-		ImGui::EndDisabled();
-
-		EditorUI::ToolbarGroupSeparator();
-		ImGui::BeginDisabled(operation != ImGuizmo::TRANSLATE);
-		ImGui::TextUnformatted("Move step:");
-		DrawSnapSizeOptions(settings);
-		ImGui::EndDisabled();
-
-		EditorUI::ToolbarGroupSeparator();
-		ImGui::BeginDisabled(operation != ImGuizmo::ROTATE);
-		ImGui::TextUnformatted("Rotate step:");
-		DrawRotationStepOptions(settings);
-		ImGui::EndDisabled();
-	}
-
-	void GizmoSnapper::DrawSnapSizeOptions(EditorSettings& settings)
-	{
-		for (float snapSize : EditorSettings::k_snapSizeOptions)
-		{
-			char label[32];
-			snprintf(label, sizeof(label), "%g m##SnapSize", snapSize);
-			ImGui::SameLine();
-			if (ImGui::RadioButton(label, settings.GetSnapSize() == snapSize))
-			{
-				settings.SetSnapSize(snapSize);
-			}
-		}
-	}
-
-	void GizmoSnapper::DrawRotationStepOptions(EditorSettings& settings)
-	{
-		for (float rotationStep : EditorSettings::k_rotationStepOptions)
-		{
-			char label[32];
-			// UTF-8 degree sign, spelled out so it doesn't depend on the source file's encoding
-			snprintf(label, sizeof(label), "%g\xC2\xB0##RotationStep", rotationStep);
-			ImGui::SameLine();
-			if (ImGui::RadioButton(label, settings.GetRotationStep() == rotationStep))
-			{
-				settings.SetRotationStep(rotationStep);
-			}
-		}
-	}
-
 	const float* GizmoSnapper::PrepareManipulate(const EditorSettings& settings, int operation, int mode, bool isInverted)
 	{
 		m_snapSize = settings.GetSnapSize();

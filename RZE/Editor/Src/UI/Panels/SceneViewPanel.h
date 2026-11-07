@@ -75,6 +75,8 @@ namespace Editor
 		void ApplyGizmoToOthers(EditorContext& context, const Vector3D& fromPosition, const Vector3D& fromRotation, const Vector3D& fromScale,
 			const Vector3D& toPosition, const Vector3D& toRotation, const Vector3D& toScale, InteractionID interaction);
 
+		// The menu bar's snap toggle and the move and rotate steps. Those the gizmo's operation doesn't use are greyed out.
+		void DrawSnapControls(EditorSettings& settings);
 		// Icons at each light's and camera's position; viewOrigin is the screen-space top-left of the scene image
 		void DrawObjectIcons(const EditorContext& context, const ImVec2& viewOrigin);
 		// Debug lines along the camera's view volume, from its near plane out to its far plane or a fixed cap, whichever is closer

@@ -5,6 +5,8 @@
 #include <imgui/imgui.h>
 
 #include <cstddef>
+#include <string>
+#include <vector>
 
 class EnumNames;
 
@@ -105,11 +107,19 @@ namespace Editor
 			return false;
 		}
 
-		// A radio button per name, on the current line, selecting the value's index into selected; true on the frame one
-		// is clicked. id keeps the buttons apart from other rows with the same names.
-		bool RadioButtonRow(const char* id, const EnumNames& names, size_t& selected);
+		// How the editor shows a length in metres ("0.25 m") and an angle in degrees ("15°"), so options read the same in
+		// every panel
+		std::string FormatMetres(float metres);
+		std::string FormatDegrees(float degrees);
+
+		// A drop-down of labels, as wide as the settings pages' others, selecting an index into selected; true on the
+		// frame one is picked. Closed, it shows the selected label, or unlisted when selected isn't one of them (e.g. a
+		// rate Engine.ini set that the options don't list). id is ImGui's, e.g. "##MaxFrameRate".
+		bool Combo(const char* id, const std::vector<std::string>& labels, size_t& selected, const char* unlisted = "");
+		// The same with a value's name per option
+		bool EnumCombo(const char* id, const EnumNames& names, size_t& selected);
 		// The same for only the first count names, e.g. the qualities a method has
-		bool RadioButtonRow(const char* id, const EnumNames& names, size_t count, size_t& selected);
+		bool EnumCombo(const char* id, const EnumNames& names, size_t count, size_t& selected);
 
 		//
 		// Toolbars (a panel's menu bar): controls in groups, with wide gaps between groups and tight spacing within

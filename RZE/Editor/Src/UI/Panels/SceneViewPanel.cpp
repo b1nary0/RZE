@@ -39,6 +39,8 @@
 #include <imgui/ImGuizmo.h>
 
 #include <algorithm>
+#include <optional>
+#include <string>
 
 namespace
 {
@@ -62,6 +64,25 @@ namespace
 			return *groundPoint;
 		}
 		return pick.CameraRay.GetPoint(k_fallbackDistance);
+	}
+
+	// One radio button per option, labelled by format, on the line of what's before them (e.g. a label). Returns the
+	// option clicked this frame.
+	template <size_t Count>
+	std::optional<float> DrawStepOptions(const char* id, const float (&options)[Count], float value, std::string (*format)(float))
+	{
+		std::optional<float> picked;
+		ImGui::PushID(id);
+		for (const float option : options)
+		{
+			ImGui::SameLine();
+			if (ImGui::RadioButton(format(option).c_str(), value == option))
+			{
+				picked = option;
+			}
+		}
+		ImGui::PopID();
+		return picked;
 	}
 }
 
@@ -155,8 +176,43 @@ namespace Editor
 			ImGui::EndDisabled();
 		}
 
-		m_gizmoState.m_snapper.DisplayControls(context.GetSettings(), m_gizmoState.m_currentOpMode);
+		DrawSnapControls(context.GetSettings());
 		m_grid.DisplayControls();
+	}
+
+	void SceneViewPanel::DrawSnapControls(EditorSettings& settings)
+	{
+		const EditorUI::ScopedToolbarSpacing spacing;
+		const int operation = m_gizmoState.m_currentOpMode;
+		GizmoSnapper& snapper = m_gizmoState.m_snapper;
+
+		// Greyed out rather than hidden, so the centred toolbar doesn't shift. Scaling doesn't snap.
+		EditorUI::ToolbarGroupSeparator();
+		ImGui::BeginDisabled(operation == ImGuizmo::SCALE);
+		bool isSnapping = snapper.IsEnabled();
+		if (ImGui::Checkbox("Snap (X)", &isSnapping))
+		{
+			snapper.ToggleEnabled();
+		}
+		ImGui::EndDisabled();
+
+		EditorUI::ToolbarGroupSeparator();
+		ImGui::BeginDisabled(operation != ImGuizmo::TRANSLATE);
+		ImGui::TextUnformatted("Move step:");
+		if (const std::optional<float> snapSize = DrawStepOptions("SnapSize", EditorSettings::k_snapSizeOptions, settings.GetSnapSize(), &EditorUI::FormatMetres))
+		{
+			settings.SetSnapSize(*snapSize);
+		}
+		ImGui::EndDisabled();
+
+		EditorUI::ToolbarGroupSeparator();
+		ImGui::BeginDisabled(operation != ImGuizmo::ROTATE);
+		ImGui::TextUnformatted("Rotate step:");
+		if (const std::optional<float> rotationStep = DrawStepOptions("RotationStep", EditorSettings::k_rotationStepOptions, settings.GetRotationStep(), &EditorUI::FormatDegrees))
+		{
+			settings.SetRotationStep(*rotationStep);
+		}
+		ImGui::EndDisabled();
 	}
 
 	void SceneViewPanel::Draw(EditorContext& context)
