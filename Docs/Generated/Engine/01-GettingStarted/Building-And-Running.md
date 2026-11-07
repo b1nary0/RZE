@@ -99,7 +99,9 @@ pick test cases, `-s` to show passing checks). It needs no display, so CI runs i
 The `run-rze` skill (`.claude/skills/run-rze/`) builds, runs and drives the Editor for automated checks:
 `driver.ps1` on Windows, `driver.py` on Linux. `driver.py launch --harness` and `driver.ps1 launch -Harness` run
 **EditorHarness**, the Editor with a harness beside it that takes input, screenshots and state queries as JSON lines on
-stdin, so the real cursor and focus are left alone. Both drivers put `RZE/Config/imgui.ini` back after a session.
+stdin, so the real cursor and focus are left alone. On Linux, `launch --harness --nested` runs the session off-screen,
+in a KWin of its own, for smoke tests while the machine is in use. Both drivers put `RZE/Config/imgui.ini` back after
+a session.
 `.claude/WindowsChecks.md` lists the checks a Windows machine still has to run for changes made on Linux, and records
 their results. See [EditorHarness-And-Drivers.md](../07-Editor/EditorHarness-And-Drivers.md).
 

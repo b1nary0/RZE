@@ -33,9 +33,11 @@ flowchart TD
 | Screenshots | The frame itself, read back from the back buffer | A capture of the window's client area |
 | Questions | `state` and `object` answer from the Editor's data | Only what pixels and the log show |
 | What it can't check | The compositor, window decorations, focus and activation, Snap Layouts, RenderDoc's capture key, the Game | Nothing the desktop does, but it's slower and fragile to coordinates |
+| Where it runs | On the desktop, or off-screen in a compositor of its own (`--nested`, Linux) | On the desktop; `--output` picks the monitor (Linux) |
 | Platforms | Both | Both |
 
-Prefer the harness for anything inside the Editor. Use OS input for what needs the real desktop.
+Prefer the harness for anything inside the Editor, and a nested session for a smoke test while the machine is in use.
+Use OS input for what needs the real desktop.
 
 ## EditorHarness
 
@@ -161,6 +163,91 @@ holds the Editor's process and, in OS mode, the input devices; every other comma
 - **The session is cleaned up.** The app runs in a process group of its own, so `close` and `quit` also end a Game it
   launched, or `renderdoccmd` around it.
 
+### Picking the monitor: `--output` (Linux)
+
+Wayland lets no app place its own windows, so the engine's `-launchMonitor` does nothing there: the compositor
+chooses, usually the monitor with the pointer. `launch --output DP-2` asks KWin instead. `outputs` lists the names it
+takes, with each monitor's place on the desktop (`DP-1\t2560,0 2560x1440`), and `launch` checks the name against KWin
+before it starts anything.
+- **The app runs under `Tools/Linux/LaunchOnOutput.py`.** It loads a KWin script that sends the app's windows, matched
+  by PID, to that output, waits until KWin has it running, then `exec`s the app in its own process. The app keeps the
+  PID the script matches, and the driver's process group is unchanged.
+- **The main window, then 3 s.** The script moves each window the app opens until it has moved the main one: the first
+  normal, resizable window (the splash isn't resizable). For 3 s after that, it sends back a window that leaves the
+  output: on XWayland, under `--renderdoc`, SDL applies its own `-launchMonitor` placement after the window is shown.
+  Later windows (the Game, a file manager) open wherever KWin puts them.
+- **A watcher ends it.** KWin scripts have no timers, so a watcher process unloads the script those 3 s after the main
+  window, after a timeout, or once the app has exited, whichever comes first. A script's `print()` is filtered out of
+  KWin's log, so the script reports over D-Bus (`callDBus`) to a name the watcher owns. What it saw is in
+  `$XDG_RUNTIME_DIR/rze-driver/launch-on-output.log`.
+
+### Off-screen sessions: `--nested` (Linux)
+
+`launch --harness --nested` runs a session nobody sees, for smoke tests while someone uses the machine. The helper
+starts a compositor and a D-Bus of the session's own and runs the app there, so no window reaches the desktop, and
+focus and the clipboard are left alone.
+
+```mermaid
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
+flowchart TD
+    Helper["Session helper<br/>(driver.py launch)"]
+    subgraph Group["The nested session's process group (nested.pgid)"]
+        direction TB
+        Bus["dbus-daemon --session<br/>(the group's leader)"]
+        Services["Services the bus starts<br/>(portals, ksecretd, ...)"]
+        KWin["kwin_wayland --virtual<br/>one 2560x1440 output<br/>at 240 Hz"]
+    end
+    subgraph AppGroup["The app's process group"]
+        direction TB
+        App["EditorHarness<br/>on the nested display<br/>(rze-driver-nested)"]
+        Game["A Game it launches"]
+    end
+    Helper -->|"1. starts"| Bus
+    Bus --> Services
+    Bus -->|"2. KWin joins the group<br/>and uses the bus"| KWin
+    Helper -->|"3. starts, then talks to it<br/>on stdin and stdout"| App
+    App -->|"draws to"| KWin
+    App --> Game
+```
+
+- **A bus, then a KWin.** The helper starts `dbus-daemon --session` in a new process group, then `kwin_wayland
+  --virtual` (one 2560×1440 output, no lock screen, no global shortcuts, Wayland socket `rze-driver-nested`) in that
+  group. Both run without the desktop's `WAYLAND_DISPLAY`, `DISPLAY`, `XAUTHORITY` and `DBUS_SESSION_BUS_ADDRESS`, so
+  KWin can't find the desktop's compositor. KWin is up once it owns `org.kde.KWin` on that bus and its socket exists;
+  it has 15 s, and its output is in `$XDG_RUNTIME_DIR/rze-driver/nested.log`.
+- **The app sees only the nested session.** `WAYLAND_DISPLAY` and `DBUS_SESSION_BUS_ADDRESS` point there,
+  `SDL_VIDEO_DRIVER` is `wayland`, and `DISPLAY`, `XAUTHORITY` and the activation tokens are dropped: with no X server
+  in the session, SDL falling back to X11 would open its windows on the desktop's. Whatever the app opens, a Game or a
+  file manager from Show in Explorer, opens in the nested session too.
+- **The driver follows it.** Its KWin scripts (finding the window, `windows`, `close-window`) go to the nested bus, and
+  `clip` runs `wl-copy` and `wl-paste` on the nested display.
+- **240 Hz, as on the desktop.** KWin's virtual backend starts at 60 Hz. The driver adds a custom mode with
+  `kscreen-doctor` and switches to it; KWin rounds it to a CVT timing, which `launch` reports (`2560x1440@239.88`).
+  `--refresh HZ` picks another rate. The app is that KWin's only window, so it's focused and never drops to its
+  unfocused frame rate: with vsync it runs at the output's rate, and a click takes about 80 ms, as on a focused
+  desktop window.
+- **Folders of its own.** KWin and the services its bus starts get fresh `XDG_CONFIG_HOME`, `XDG_DATA_HOME`,
+  `XDG_STATE_HOME` and `XDG_CACHE_HOME` under `rze-driver/nested-home/`, removed when the session ends. With the
+  desktop's, a nested KWin writes its virtual output into `~/.config/kwinoutputconfig.json`, beside the real
+  monitors' layouts.
+- **Ending it.** The bus daemon leads the group, and KWin and the services it and the bus start belong to it, so
+  `close` and `quit` end the whole session once the app has gone. The group's id is kept in
+  `$XDG_RUNTIME_DIR/rze-driver/nested.pgid`, and the next `launch` ends a group a dead helper left, and says so. It
+  checks first that the leader is still a `dbus-daemon`, not a process that reused its PID.
+- **Harness only, on KDE Plasma.** Nothing gives the nested KWin input devices, so a plain `launch` can't drive it, and
+  `--nested` refuses without `--harness`. It has one output of its own, so it refuses `--output` too. It needs
+  `kwin_wayland` and `kscreen-doctor`. Performance A/B runs stay on the desktop (CLAUDE.md).
+
+#### A layout of its own
+
+Where the panels sit depends on the dock layout, the client size and the monitor. A nested session fixes all three:
+one 2560×1440 output, and `.claude/skills/run-rze/nested-imgui.ini` copied over `RZE/Config/imgui.ini` for the session,
+once the user's file has been backed up (it's put back as usual). The coordinates in the skill's nested layout
+reference (`SKILL.md`), each clicked through the harness and checked with `state`, `object` or before-and-after shots,
+therefore hold however the user has arranged their own panels. `--keep-imgui-ini` runs with the user's layout instead,
+as that run is meant to change it. To change the nested layout, copy a layout over `nested-imgui.ini` and measure the
+table again.
+
 ### `driver.ps1` (Windows)
 
 Each call is a process of its own, and does one action.
@@ -187,7 +274,8 @@ Every Editor run rewrites `RZE/Config/imgui.ini`, which often holds a layout som
 it aside at `launch` and restore it once the app has exited, and the next `launch` restores a backup a dead session
 left. `--keep-imgui-ini` (`-KeepImguiIni`) keeps a run's layout: nothing is backed up, but a dead session's backup is
 still restored first, at `launch`. Left on disk, `close` would restore it over the layout being kept.
-- **`driver.py`**: `close` and `quit` restore it, and so does the helper if the session ends any other way.
+- **`driver.py`**: `close` and `quit` restore it, and so does the helper if the session ends any other way. A nested
+  session runs with `nested-imgui.ini` in its place ([A layout of its own](#a-layout-of-its-own)).
 - **`driver.ps1`**: the backup is a file, `%TEMP%\rze-driver\imgui.ini.backup`, since no process lasts the session in OS
   mode. `close` and `quit` restore it; a `close` that stops at the prompt keeps it until the app has exited.
 
@@ -207,5 +295,6 @@ there and what Linux should rerun.
   `HarnessKeys.h/.cpp`, `HarnessMain.cpp`, `HarnessStdin.h` with `Windows/` and `Linux/`
 - `EditorHarness/EditorHarness.sharpmake.cs`
 - `Editor/Src/EditorApp.h` (`GetContext`), `Modules/Rendering/Src/Rendering/Renderer.h` (`ReadBackBuffer`)
-- `.claude/skills/run-rze/SKILL.md`, `driver.py`, `driver.ps1`
+- `.claude/skills/run-rze/SKILL.md`, `driver.py`, `driver.ps1`, `nested-imgui.ini`
+- `Tools/Linux/LaunchOnOutput.py` (`--output`)
 - `.claude/WindowsChecks.md`

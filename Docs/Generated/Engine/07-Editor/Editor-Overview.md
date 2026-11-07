@@ -38,7 +38,7 @@ While it starts, the Editor shows a splash screen with the logo and what start-u
 | Argument | Effect |
 |---|---|
 | `-scene <file>` | Opens `Assets/Scenes/<file>` (e.g. `-scene Sponza.scene`). Without it, the Editor opens `Assets/Scenes/RenderTest.scene`. |
-| `-launchMonitor <n>` | Opens the window on monitor *n*, overriding the config's launch monitor. Handled by the engine, so the Game accepts it too. |
+| `-launchMonitor <n>` | Opens the window on monitor *n*, overriding the config's launch monitor. Handled by the engine, so the Game accepts it too. Does nothing on Wayland, where the compositor places windows; there, `driver.py launch --output` picks the monitor ([EditorHarness-And-Drivers.md](EditorHarness-And-Drivers.md#picking-the-monitor---output-linux)). |
 | `-console` | Opens a console showing the log (stdout and stderr). Handled by the engine, so the Game accepts it too. |
 
 `Editor\_project\Editor.args.json` holds presets for these in Visual Studio.
