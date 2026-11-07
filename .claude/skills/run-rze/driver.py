@@ -40,6 +40,9 @@ IMGUI_INI_BACKUP = os.path.join(STATE_DIR, "imgui.ini.backup")
 ENGINE_LOGS = os.path.join(ENGINE_ROOT, "Logs")
 RENDERDOC_DIR = os.path.join(STATE_DIR, "renderdoc")
 SHOT_DIR = os.path.join(tempfile.gettempdir(), "rze-shots")
+# Puts the app's windows on one monitor, which Wayland doesn't let the app do itself (launch --output)
+LAUNCH_ON_OUTPUT = os.path.join(REPO, "Tools", "Linux", "LaunchOnOutput.py")
+LAUNCH_ON_OUTPUT_LOG = os.path.join(STATE_DIR, "launch-on-output.log")
 
 
 class DriverError(Exception):
@@ -83,7 +86,7 @@ def kwin(body, timeout_ms=3000):
         loop.quit()
 
     node = Gio.DBusNodeInfo.new_for_xml(KWIN_REPLY_XML)
-    registration = bus.register_object("/", node.interfaces[0], on_call, None, None)
+    registration = bus.register_object_with_closures2("/", node.interfaces[0], on_call, None, None)
     owner = Gio.bus_own_name_on_connection(bus, KWIN_REPLY_NAME, Gio.BusNameOwnerFlags.NONE, None, None)
     script = ("function report(v) { callDBus('%s', '/', 'org.rze.Driver', 'Report', JSON.stringify(v)); }\n%s\n%s\n"
               % (KWIN_REPLY_NAME, KWIN_WINDOW_JS, body))
@@ -114,6 +117,17 @@ def kwin(body, timeout_ms=3000):
 
 def kwin_windows():
     return kwin("var out = []; workspace.windowList().forEach(function (w) { out.push(describe(w)); }); report(out);")
+
+
+def kwin_outputs():
+    """The monitors, as KWin names them, each with its x, y, width, height on the desktop."""
+    return kwin("""report(workspace.screens.map(function (s) {
+    return { name: s.name, geometry: [s.geometry.x, s.geometry.y, s.geometry.width, s.geometry.height] };
+}));""")
+
+
+def describe_outputs():
+    return "\n".join("%s\t%d,%d %dx%d" % ((o["name"],) + tuple(o["geometry"])) for o in kwin_outputs())
 
 
 def kwin_desktop_size():
@@ -301,6 +315,11 @@ class Helper:
             environment["SDL_FRAMEBUFFER_ACCELERATION"] = "0"
             command += ["renderdoccmd", "capture", "--wait-for-exit", "--working-dir", build_dir,
                         "--capture-file", os.path.join(RENDERDOC_DIR, options["app"])]
+        if options.get("output"):
+            # Right before the app: it runs the app in its own process, whose PID its KWin script matches. Before
+            # renderdoccmd, it would match renderdoccmd's.
+            command += [sys.executable, "-I", LAUNCH_ON_OUTPUT, "--output", options["output"], "--log", LAUNCH_ON_OUTPUT_LOG,
+                        "--"]
         command += [exe] + options["args"]
         # In a process group of its own, which is everything the session started: the app, renderdoccmd with the
         # app under it, a Game the Editor launched. Ending the session ends all of it.
@@ -853,6 +872,10 @@ def command_launch(args):
         raise DriverError("A session is running. Run: driver.py quit (or close)")
     if subprocess.run(["pgrep", "-x", args.app], capture_output=True).returncode == 0:
         raise DriverError("%s is already running outside the driver. Close it first." % args.app)
+    if args.output:
+        names = [o["name"] for o in kwin_outputs()]
+        if args.output not in names:
+            raise DriverError("No output called %s; KWin has: %s" % (args.output, ", ".join(names)))
     if args.renderdoc and shutil.which("renderdoccmd") is None:
         raise DriverError("renderdoccmd isn't installed: sudo dnf install renderdoc")
     exe = os.path.join(ENGINE_ROOT, "_build", args.config, args.app)
@@ -861,7 +884,7 @@ def command_launch(args):
     os.makedirs(STATE_DIR, exist_ok=True)
     app_args = (["-scene", args.scene] if args.scene else []) + args.extra
     options = {"app": args.app, "config": args.config, "args": app_args, "renderdoc": args.renderdoc,
-               "keep_imgui_ini": args.keep_imgui_ini, "harness": args.harness}
+               "keep_imgui_ini": args.keep_imgui_ini, "harness": args.harness, "output": args.output}
     subprocess.Popen([sys.executable, "-I", os.path.abspath(__file__), "_helper", json.dumps(options)],
                      stdout=open(HELPER_LOG, "wb"), stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
                      start_new_session=True)
@@ -914,7 +937,9 @@ def main():
                    help="keep the layout the run leaves; by default Config/imgui.ini is put back as it was")
     p.add_argument("--harness", action="store_true",
                    help="run EditorHarness: input and shots go through the app, leaving the real cursor and focus alone")
+    p.add_argument("--output", help="the monitor to open on, by KWin's name for it (e.g. DP-2; see `outputs`)")
     p.add_argument("extra", nargs="*", help="more arguments for the app, after --")
+    commands.add_parser("outputs", help="the monitors launch --output takes: name, then x,y widthxheight")
 
     p = commands.add_parser("shot", help="screenshot the client area")
     p.add_argument("--out")
@@ -970,6 +995,8 @@ def main():
         c = args.command
         if c == "launch":
             print(command_launch(args))
+        elif c == "outputs":
+            print(describe_outputs())
         elif c == "shot":
             print(send("shot", out=os.path.abspath(args.out) if args.out else default_shot_path()))
         elif c == "click":

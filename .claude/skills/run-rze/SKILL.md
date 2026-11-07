@@ -238,7 +238,8 @@ downscales a 2560-wide image to 2000, so multiply what you measure by 1.28.
 
 | command | what it does |
 |---|---|
-| `launch [--harness] [--scene X.scene] [--config debug\|release\|retail] [--app Editor\|Game] [--settle 5] [--keep-imgui-ini] [-- args...]` | Starts the app under the driver. Refuses if one is running. Backs up `RZE/Config/imgui.ini` first (below). `--harness` runs EditorHarness (above); it's the Editor's only, and can't be combined with `--renderdoc`. |
+| `launch [--harness] [--scene X.scene] [--config debug\|release\|retail] [--app Editor\|Game] [--settle 5] [--keep-imgui-ini] [--output DP-2] [-- args...]` | Starts the app under the driver. Refuses if one is running. Backs up `RZE/Config/imgui.ini` first (below). `--harness` runs EditorHarness (above); it's the Editor's only, and can't be combined with `--renderdoc`. `--output` opens it on that monitor (below). |
+| `outputs` | The monitors `launch --output` takes, by KWin's name: `DP-1\t2560,0 2560x1440`. |
 | `state`, `object NAME`, `realinput on\|off` | Harness sessions only: the Editor's state (scene, modified, selection, undo, objects); one object's GUID, parent, components and transform; whether the real mouse and keyboard reach the app. |
 | `shot [--out path.png]` | With `--harness`, the frame read back from the back buffer (about 1 s, as it's encoded). Otherwise, it focuses the app and captures its client area (spectacle). |
 | `click X Y [--button left\|right\|middle]`, `dblclick X Y`, `move X Y` | A click, a double-click, a hover. |
@@ -276,6 +277,14 @@ How it works, and what to know:
   overlay) once anything calls GL it doesn't support, and SDL draws the splash screen's window surface with
   fixed-function GL; this RenderDoc build also only reads its capture key through xlib. RenderDoc deletes its log
   (`/tmp/RenderDoc/*.log`) when the app exits cleanly, so read it while the session runs.
+- **`launch --output DP-2` picks the monitor**, which the engine's `-launchMonitor` can't do on Wayland: the compositor
+  places windows there. The app runs under `Tools/Linux/LaunchOnOutput.py`, which loads a KWin script that sends the
+  app's windows (matched by PID) to that output, then runs the app in its own process, so the PID and process group
+  are unchanged. It moves the splash and the main window, and anything that leaves the output within 3 s of the main
+  window appearing (on XWayland, under `--renderdoc`, SDL places the window on its `-launchMonitor` after it's shown).
+  Then it unloads the script. Later windows open wherever KWin puts them. What it saw is in
+  `$XDG_RUNTIME_DIR/rze-driver/launch-on-output.log`. Without `--output`, KWin chooses, usually the monitor with the
+  pointer.
 - `close` and `quit` end the session, and everything it started: the app runs in a process group of its own, so a
   Game launched from the Editor, or the app under `renderdoccmd`, goes with it. A Game launched with **File > Launch Game...** shows up in `windows` (caption
   `Game Title`, from Engine.ini) within a few seconds; `close-window "Game Title"` ends it.
