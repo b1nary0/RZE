@@ -37,7 +37,7 @@ enum class EAntiAliasingQuality
 EAntiAliasingQuality GetHighestQuality(EAntiAliasingMethod method);
 
 // A view's anti-aliasing. Engine.ini's [Rendering] AntiAliasing and AntiAliasingQuality set the main view's at
-// start-up; the editor's Scene View settings change it while running.
+// start-up; the editor's Graphics settings change it while running.
 struct AntiAliasingMode
 {
 	EAntiAliasingMethod Method = EAntiAliasingMethod::SMAA;

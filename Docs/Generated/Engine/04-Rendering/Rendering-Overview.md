@@ -7,7 +7,7 @@ RZE renders with DirectX 11 on Windows and OpenGL 4.5 on Linux, the same way on 
 flowchart TD
     subgraph L1["1 - What to draw: RenderEngine (Engine/Src/Graphics, game thread)"]
         direction LR
-        Scene["Render scene<br/>objects, lights, probes, bounds"] --> Pipe["Render pipeline<br/>Shadow > DepthPrepass ><br/>AO > Probes > Forward ><br/>PostProcess > ..."]
+        Scene["Render scene<br/>objects, lights, probes, bounds"] --> Pipe["Render pipeline<br/>Shadow > DepthPrepass ><br/>AO > Probes > Forward ><br/>PostProcess > AntiAliasing > ..."]
         Views["Views<br/>main + previews"] --> Pipe
     end
     subgraph L2["2 - How to submit it: Rendering::Renderer (Modules/Rendering)"]
@@ -36,7 +36,7 @@ Assets feeding all this (meshes, materials, textures, shaders) are covered in [M
 2. **Depth and ambient occlusion.** Draw the visible objects' depth alone, then work out from it how much creases and corners hide each pixel from the light around it (GTAO, on compute shaders).
 3. **Indirect light.** Capture what's around the scene's irradiance and reflection probes when the scene changes, and relight a budget of them each frame with the current lights, so light bounces and glossy surfaces reflect their surroundings.
 4. **Scene.** Draw the visible objects over that depth, lit by the lights and shadowed, with ambient light from the probes darkened by the ambient occlusion, into an HDR image.
-5. **Exposure and tonemapping.** Measure the image's average brightness, ease the exposure toward it, and squeeze HDR into displayable 8-bit colour with ACES. Then smooth jagged edges with FXAA.
+5. **Exposure and tonemapping.** Measure the image's average brightness, ease the exposure toward it, and squeeze HDR into displayable 8-bit colour with ACES. Then smooth jagged edges: SMAA by default, or FXAA.
 6. **Overlays.** Draw debug lines (bounds, camera frustums) on top, depth-tested against the scene.
 7. **UI.** Draw ImGui. The Editor shows the scene inside its scene view panel; the Game copies it to the screen.
 8. **(Editor, on a click) Picking.** Work out which object is under the mouse.

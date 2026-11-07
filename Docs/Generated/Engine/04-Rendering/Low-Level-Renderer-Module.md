@@ -243,11 +243,13 @@ Everything is a static call on `Rendering::Renderer`, and every call only *queue
 | Draw | `Draw`, `DrawIndexed`, `DrawFullScreenQuad` |
 | Readback | `ReadTexel`, `ReadTexture`, `ReadBackBuffer` (below) |
 
-Texture formats (`ETextureFormat`): `RGBA8_UNORM` (default), `RGBA16_FLOAT` (HDR scene colour), `RG16_FLOAT`, `R32_UINT` (integer IDs), `RG32_UINT` (64-bit integer IDs as two halves, low then high; the pick target, and probe captures' packed surfaces), and single channels: `R8_UNORM` (ambient occlusion), `R16_FLOAT` and `R32_FLOAT` (linear depth). Depth textures are `D24_UNORM_S8_UINT`, with an optional shader-readable view. GL uses the matching sized formats (`GL_RGBA8`, `GL_RGBA16F`, ..., `GL_DEPTH24_STENCIL8`).
+Texture formats (`ETextureFormat`): `RGBA8_UNORM` (default), `RGBA16_FLOAT` (HDR scene colour), `RG16_FLOAT`, `R32_UINT` (integer IDs), `RG32_UINT` (64-bit integer IDs as two halves, low then high; the pick target, and probe captures' packed surfaces), `RG8_UNORM` (SMAA's edges and area texture), and single channels: `R8_UNORM` (ambient occlusion, SMAA's search texture), `R16_FLOAT` and `R32_FLOAT` (linear depth). Depth textures are `D24_UNORM_S8_UINT`, with an optional shader-readable view. GL uses the matching sized formats (`GL_RGBA8`, `GL_RGBA16F`, ..., `GL_DEPTH24_STENCIL8`).
+
+`CreateTextureBuffer2D(TexelBuffer&&, params)` takes texels in the texture's own format, rows tightly packed: each row is `Width × bytes per texel` (`GetBytesPerTexel` on DX11), whatever the width. GL takes rows the same way because `GLDevice` sets both pack and unpack alignment to 1 at start-up; GL's default of 4 would misread the rows of a 1- or 2-byte format whose width isn't a multiple of 4.
 
 A texture always has a shader resource view. Only a render target (`bIsRenderTarget`) gets a render target view and has its mips generated (`GenerateMips`; never for the integer formats); `bIsUnorderedAccess` gives it a view per mip that compute shaders can write.
 
-Pixel and compute shaders get the same samplers: `s0`, linear and wrapping, is bound with each texture; every `Begin()` binds `s1`, the shadow maps' comparison sampler, and `s2`, linear with clamped edges, for screen-sized and probe textures whose edges mustn't wrap. GL has the same three as fixed sampler objects (the comparison one with `GL_COMPARE_REF_TO_TEXTURE`, `LEQUAL` and a border of 1), bound with each texture where a shader reads it ([below](#how-opengl-binds-what-d3d-binds)).
+Pixel and compute shaders get the same samplers: `s0`, linear and wrapping, is bound with each texture; every `Begin()` binds `s1`, the shadow maps' comparison sampler, `s2`, linear with clamped edges, for screen-sized and probe textures whose edges mustn't wrap, and `s3`, point with clamped edges, for reads that must land on exact texels (SMAA's edge detection). GL has the same four as fixed sampler objects (the comparison one with `GL_COMPARE_REF_TO_TEXTURE`, `LEQUAL` and a border of 1), bound with each texture where a shader reads it ([below](#how-opengl-binds-what-d3d-binds)).
 
 ### Compute shaders and unordered access
 

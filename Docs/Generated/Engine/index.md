@@ -157,11 +157,13 @@ timeline
                : SDL window, input and displays on both platforms (Windowing)
                : IGFXDevice RHI with DX11 and OpenGL 4.5 backends, HLSL translated to GLSL (Low-Level-Renderer-Module)
                : EditorHarness and drivers for automated checks (EditorHarness-And-Drivers)
+    2026-11-06 : SMAA beside FXAA, anti-aliasing in its own stage (Render-Stages)
+               : Graphics settings page, drop-downs on every page (Status-Bar-And-Settings)
 ```
 
 | Area | What changed | Read |
 |---|---|---|
-| Rendering | Stages declare the data they read and write; the pipeline orders them. Main and secondary views. Culling, shadow caching, eye adaptation + ACES, FXAA (Off/Low/Medium/High, from Engine.ini's `[Rendering]` or Settings > Scene View). GPU picking stage. | [Render-Stages](04-Rendering/Render-Stages.md), [Engine-Graphics-Layer](04-Rendering/Engine-Graphics-Layer.md) |
+| Rendering | Stages declare the data they read and write; the pipeline orders them. Main and secondary views. Culling, shadow caching, eye adaptation + ACES, anti-aliasing by SMAA (the default, at High) or FXAA at up to four qualities, from Engine.ini's `[Rendering]` or Settings > Graphics. GPU picking stage. | [Render-Stages](04-Rendering/Render-Stages.md), [Engine-Graphics-Layer](04-Rendering/Engine-Graphics-Layer.md) |
 | Lights | One `LightComponent` with a Type drop-down: Point (the default) or Directional. Up to 16 lights, each lit by its type; point lights fall off over their range. The first directional light and the first 8 point lights cast shadows (a fitted 2D map, a cube each), each map rendered again only when its light or what it sees changes. The Rendering module makes texture arrays and cube maps. The editor shows point lights' range and how far they outshine the ambient light. Scenes saved with `DirectionalLightComponent` were rewritten; that name no longer loads. | [Built-In-Components](03-SceneAndGameObjects/Built-In-Components.md#lightcomponent), [Engine-Graphics-Layer](04-Rendering/Engine-Graphics-Layer.md#lightobject), [Render-Stages](04-Rendering/Render-Stages.md#shadowrenderstage), [Low-Level-Renderer-Module](04-Rendering/Low-Level-Renderer-Module.md#texture-arrays-and-cube-maps) |
 | Loading | Scenes load asynchronously: parsing on workers, GPU uploads time-sliced on the main thread. | [Asset-Import-Runtime](05-AssetPipeline/Asset-Import-Runtime.md), [Threading-And-Jobs](06-Platform-And-Infrastructure/Threading-And-Jobs.md) |
 | Content | Assimp 6.0.5, units converted to metres, models no longer mirrored, deterministic burns. **Re-burn after pulling.** | [Asset-Burning-Pipeline](05-AssetPipeline/Asset-Burning-Pipeline.md), [World-Conventions](02-Architecture/World-Conventions.md) |

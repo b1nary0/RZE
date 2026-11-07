@@ -119,7 +119,8 @@ public:
     Rendering::RenderTargetTexture* Target;  // owned by whoever owns the view
     bool AutoExposure = true;                // off for a fixed exposure of 1, for lighting whose brightness is known
     float ExposureCompensation;              // EV on top of the exposure
-    EAntiAliasing AntiAliasing = Medium;     // FXAA after tonemapping: Off, Low, Medium or High
+    AntiAliasingMode AntiAliasing;           // after tonemapping: Method (Off, FXAA, SMAA) and Quality
+                                             // (Low, Medium, High, Ultra); SMAA High by default
     EAmbientOcclusion AmbientOcclusion = Medium; // GTAO: Off, Low, Medium or High
     bool GlobalIllumination = true;          // indirect light from the scene's probes; off for the hemisphere ambient
     ERenderViewDebug Debug = Lit;            // Lit, or one part of the lighting alone: AmbientOcclusion, IndirectDiffuse
@@ -147,7 +148,7 @@ flowchart LR
     end
 ```
 
-- `GetMainView()` returns the main view. The app sets its `Target` and `ViewportSize` (the Editor sizes it to the scene view panel); the active scene's main camera fills in `Camera` every frame. Engine.ini's `[Rendering]` sets its `AntiAliasing`, `AmbientOcclusion`, `GlobalIllumination` and `AutoExposure` at start-up, and the Editor's Scene View settings change them, and `Debug`, while it runs.
+- `GetMainView()` returns the main view. The app sets its `Target` and `ViewportSize` (the Editor sizes it to the scene view panel); the active scene's main camera fills in `Camera` every frame. Engine.ini's `[Rendering]` sets its `AntiAliasing`, `AmbientOcclusion`, `GlobalIllumination` and `AutoExposure` at start-up, and the Editor's Graphics settings change them, and `Debug`, while it runs.
 - A camera that renders a view fills in `RenderCamera::Projection` as well as `ClipSpace` (`CameraComponent`, `EditorCameraComponent`, `MeshFraming`). A view without a perspective projection there gets no ambient occlusion.
 - `RenderSecondaryView(name, view, scene)` renders a scene into another view as part of the current frame. `CameraComponent` uses this for the "Camera View" preview it draws in the Editor's inspector (`CameraComponent::RenderPreview`, called by the camera's `Preview` property each frame the inspector shows it), so a preview is only rendered while that camera is selected. Stages marked `MainOnly` (picking, ImGui, the final blit) skip secondary views.
 

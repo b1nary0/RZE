@@ -6,7 +6,7 @@
 class EnumNames;
 
 // How much a view darkens the indirect light in creases and corners (GTAO, AmbientOcclusionStage). Engine.ini's
-// [Rendering] AmbientOcclusion sets the main view's at start-up; the editor's Scene View settings change it while running.
+// [Rendering] AmbientOcclusion sets the main view's at start-up; the editor's Graphics settings change it while running.
 enum class EAmbientOcclusion
 {
 	Off,
