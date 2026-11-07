@@ -18,6 +18,8 @@ TEST_CASE("Anti-aliasing methods and qualities read back from their names, ignor
 	CHECK(ParseAntiAliasingMethod("fxaa") == EAntiAliasingMethod::FXAA);
 	CHECK(ParseAntiAliasingMethod("OFF") == EAntiAliasingMethod::Off);
 	CHECK(ParseAntiAliasingQuality("high") == EAntiAliasingQuality::High);
+	CHECK(ParseAntiAliasingMethod("smaa") == EAntiAliasingMethod::SMAA);
+	CHECK(ParseAntiAliasingQuality("ULTRA") == EAntiAliasingQuality::Ultra);
 
 	// The old single setting's levels are qualities now, not methods; Off is a method, not a quality
 	CHECK_FALSE(ParseAntiAliasingMethod("Medium").has_value());
@@ -62,4 +64,45 @@ TEST_CASE("FXAA's presets search the distances FXAA 3.11 gives them")
 	CHECK(GetFXAASettings(EAntiAliasingQuality::Medium).GetSearchLength() == doctest::Approx(20.5f));
 	// Preset 39 (High): twelve, mostly one pixel each
 	CHECK(GetFXAASettings(EAntiAliasingQuality::High).GetSearchLength() == doctest::Approx(26.5f));
+}
+
+TEST_CASE("FXAA has no Ultra: it uses High's settings, and its highest quality is High")
+{
+	const FXAASettings high = GetFXAASettings(EAntiAliasingQuality::High);
+	const FXAASettings ultra = GetFXAASettings(EAntiAliasingQuality::Ultra);
+	CHECK(ultra.EdgeThreshold == high.EdgeThreshold);
+	CHECK(ultra.EdgeThresholdMin == high.EdgeThresholdMin);
+	CHECK(ultra.Subpixel == high.Subpixel);
+	CHECK(ultra.SearchStepCount == high.SearchStepCount);
+	CHECK(ultra.SearchSteps == high.SearchSteps);
+
+	CHECK(GetHighestQuality(EAntiAliasingMethod::FXAA) == EAntiAliasingQuality::High);
+	CHECK(GetHighestQuality(EAntiAliasingMethod::SMAA) == EAntiAliasingQuality::Ultra);
+}
+
+TEST_CASE("SMAA's qualities are SMAA.hlsl's presets")
+{
+	const SMAASettings low = GetSMAASettings(EAntiAliasingQuality::Low);
+	CHECK(low.Threshold == doctest::Approx(0.15f));
+	CHECK(low.SearchSteps == 4);
+	CHECK_FALSE(low.DetectsDiagonalsAndCorners);
+
+	const SMAASettings medium = GetSMAASettings(EAntiAliasingQuality::Medium);
+	CHECK(medium.Threshold == doctest::Approx(0.1f));
+	CHECK(medium.SearchSteps == 8);
+	CHECK_FALSE(medium.DetectsDiagonalsAndCorners);
+
+	const SMAASettings high = GetSMAASettings(EAntiAliasingQuality::High);
+	CHECK(high.Threshold == doctest::Approx(0.1f));
+	CHECK(high.SearchSteps == 16);
+	CHECK(high.DetectsDiagonalsAndCorners);
+	CHECK(high.DiagonalSearchSteps == 8);
+	CHECK(high.CornerRounding == doctest::Approx(25.0f));
+
+	const SMAASettings ultra = GetSMAASettings(EAntiAliasingQuality::Ultra);
+	CHECK(ultra.Threshold == doctest::Approx(0.05f));
+	CHECK(ultra.SearchSteps == 32);
+	CHECK(ultra.DetectsDiagonalsAndCorners);
+	CHECK(ultra.DiagonalSearchSteps == 16);
+	CHECK(ultra.CornerRounding == doctest::Approx(25.0f));
 }

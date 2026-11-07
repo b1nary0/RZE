@@ -154,6 +154,27 @@ the rest for the user.
     later, `Renderer::ReadTexture` each, and once `IsReady`, log whether `Data` is exactly those bytes. Expect all three
     to match; a wrong pitch shows as a row starting at the wrong byte. Remove the code afterwards.
   - At a Debug Editor's `close`, no new `D3D11 (` lines (D5).
+- **D10. SMAA (the commit after 3c54e95a).** A second anti-aliasing method in `AntiAliasingStage`: edge detection,
+  blending weights and neighbourhood blending, through `Common/SMAA/SMAA.hlsli` (our setup: `SMAA_CUSTOM_SL`, samplers
+  at s2 and s3, the `SMAAParams` cbuffer) around upstream's `SMAA.hlsl`. **fxc has never compiled these:** the spike
+  and Linux only ran glslang and the GL driver. Shaders compile at start-up, so a failure shows when the Editor
+  starts, not in the build.
+  - At start-up, the Debug Editor's log has no shader compile errors for `Pixel_SMAAEdgeDetection`,
+    `Pixel_SMAABlendingWeights`, `Pixel_SMAABlendingWeightsNoDiagonals` or `Pixel_SMAANeighborhoodBlending`.
+    `SMAA.hlsl` is CRLF with one Latin-1 byte (`0xB7`) in a comment, kept byte for byte; if fxc warns about that byte,
+    note it rather than editing the file. `SMAA.hlsli` includes `../FullScreenQuad.hlsli`, the first `../` include in
+    the shaders.
+  - On Sponza (`launch -Harness -Scene Sponza.scene -SettleSeconds 20`), Edit > Settings > Scene View: Anti-aliasing
+    now offers Off, FXAA and SMAA, and Quality offers Ultra only with SMAA (with FXAA and Ultra set, it shows High).
+    `shot` SMAA Low, Medium, High and Ultra and FXAA High. Expect SMAA to smooth stair-steps (column edges, the arch
+    blocks) while texture detail stays as sharp as with Off; FXAA visibly softens the floor's texture. On Linux, SMAA
+    High changed about 34k pixels of the scene view against Off, and FXAA High about 203k.
+  - Narrow the scene view by dragging the splitter to the Scene panel left (e.g. 550 px), with SMAA Ultra. Expect no
+    line or seam along the scene view's new right edge or its bottom edge.
+  - Select the Camera: its preview in the Object Inspector renders correctly (it's FXAA Medium, the default for other
+    views; to see SMAA there, temporarily set `AntiAliasingMode`'s defaults to SMAA).
+  - At a Debug Editor's `close`, no new `D3D11 (` lines (D5), in particular none about render target and shader
+    resource bindings (the edges and weights textures are each written by one pass and read by the next).
 
 ### E. Editor features
 

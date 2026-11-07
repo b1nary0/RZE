@@ -372,9 +372,14 @@ namespace Editor
 
 		bool RadioButtonRow(const char* id, const EnumNames& names, size_t& selected)
 		{
+			return RadioButtonRow(id, names, names.GetCount(), selected);
+		}
+
+		bool RadioButtonRow(const char* id, const EnumNames& names, size_t count, size_t& selected)
+		{
 			bool isChanged = false;
 			ImGui::PushID(id);
-			for (size_t value = 0; value < names.GetCount(); ++value)
+			for (size_t value = 0; value < std::min(count, names.GetCount()); ++value)
 			{
 				ImGui::SameLine();
 				if (ImGui::RadioButton(names.GetName(value), selected == value))

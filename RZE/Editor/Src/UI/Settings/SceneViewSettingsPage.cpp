@@ -13,6 +13,8 @@
 
 #include <imgui/imgui.h>
 
+#include <algorithm>
+
 namespace
 {
 	// Font sizes across, so the options line up under each other
@@ -50,7 +52,7 @@ namespace Editor
 
 		ImGui::AlignTextToFramePadding();
 		ImGui::TextUnformatted("Anti-aliasing");
-		ImGui::SetItemTooltip("How jagged edges are smoothed. FXAA blends across the edges it finds in the final image: fast, but it softens some detail.");
+		ImGui::SetItemTooltip("How jagged edges are smoothed. FXAA blends across the edges it finds in the final image: the cheapest, but it softens some texture detail. SMAA works out each edge's shape, so it keeps textures sharp, and from High it handles diagonals and corners; it takes three passes.");
 		ImGui::SameLine(optionsX);
 		ImGui::Dummy(ImVec2(0.0f, 0.0f));
 		RenderView& mainView = RZE().GetRenderEngine().GetMainView();
@@ -66,12 +68,15 @@ namespace Editor
 		// Indented, as part of the Anti-aliasing setting
 		ImGui::Indent();
 		ImGui::TextUnformatted("Quality");
-		ImGui::SetItemTooltip("How hard anti-aliasing works. Higher qualities follow long edges further, catch fainter ones, and soften more of the sparkle on thin parts.");
+		ImGui::SetItemTooltip("How hard anti-aliasing works. Higher qualities catch fainter edges and follow long ones further; FXAA's also soften more of the sparkle on thin parts. Ultra is SMAA's only: FXAA uses High.");
 		ImGui::Unindent();
 		ImGui::SameLine(optionsX);
 		ImGui::Dummy(ImVec2(0.0f, 0.0f));
-		size_t antiAliasingQuality = static_cast<size_t>(mainView.AntiAliasing.Quality);
-		if (EditorUI::RadioButtonRow("AntiAliasingQuality", GetAntiAliasingQualityNames(), antiAliasingQuality))
+		// Only the method's qualities. One it doesn't have (FXAA's Ultra) shows as its highest, and stays set for a
+		// method that has it.
+		const size_t highestQuality = static_cast<size_t>(GetHighestQuality(mainView.AntiAliasing.Method));
+		size_t antiAliasingQuality = std::min(static_cast<size_t>(mainView.AntiAliasing.Quality), highestQuality);
+		if (EditorUI::RadioButtonRow("AntiAliasingQuality", GetAntiAliasingQualityNames(), highestQuality + 1, antiAliasingQuality))
 		{
 			mainView.AntiAliasing.Quality = static_cast<EAntiAliasingQuality>(antiAliasingQuality);
 		}

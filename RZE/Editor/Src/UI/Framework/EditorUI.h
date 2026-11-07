@@ -108,6 +108,8 @@ namespace Editor
 		// A radio button per name, on the current line, selecting the value's index into selected; true on the frame one
 		// is clicked. id keeps the buttons apart from other rows with the same names.
 		bool RadioButtonRow(const char* id, const EnumNames& names, size_t& selected);
+		// The same for only the first count names, e.g. the qualities a method has
+		bool RadioButtonRow(const char* id, const EnumNames& names, size_t count, size_t& selected);
 
 		//
 		// Toolbars (a panel's menu bar): controls in groups, with wide gaps between groups and tight spacing within

@@ -8,11 +8,11 @@
 namespace
 {
 	// In EAntiAliasingMethod's order
-	constexpr const char* k_methodNames[] = { "Off", "FXAA" };
+	constexpr const char* k_methodNames[] = { "Off", "FXAA", "SMAA" };
 	static_assert(sizeof(k_methodNames) / sizeof(k_methodNames[0]) == static_cast<size_t>(EAntiAliasingMethod::Count), "A name for every method");
 
 	// In EAntiAliasingQuality's order
-	constexpr const char* k_qualityNames[] = { "Low", "Medium", "High" };
+	constexpr const char* k_qualityNames[] = { "Low", "Medium", "High", "Ultra" };
 	static_assert(sizeof(k_qualityNames) / sizeof(k_qualityNames[0]) == static_cast<size_t>(EAntiAliasingQuality::Count), "A name for every quality");
 
 	FXAASettings MakeFXAASettings(float edgeThreshold, float edgeThresholdMin, float subpixel, std::initializer_list<float> searchSteps)
@@ -27,6 +27,28 @@ namespace
 		std::copy(searchSteps.begin(), searchSteps.end(), settings.SearchSteps.begin());
 		return settings;
 	}
+
+	SMAASettings MakeSMAASettings(float threshold, int searchSteps)
+	{
+		SMAASettings settings;
+		settings.Threshold = threshold;
+		settings.SearchSteps = searchSteps;
+		return settings;
+	}
+
+	SMAASettings MakeSMAASettings(float threshold, int searchSteps, int diagonalSearchSteps, float cornerRounding)
+	{
+		SMAASettings settings = MakeSMAASettings(threshold, searchSteps);
+		settings.DetectsDiagonalsAndCorners = true;
+		settings.DiagonalSearchSteps = diagonalSearchSteps;
+		settings.CornerRounding = cornerRounding;
+		return settings;
+	}
+}
+
+EAntiAliasingQuality GetHighestQuality(EAntiAliasingMethod method)
+{
+	return method == EAntiAliasingMethod::SMAA ? EAntiAliasingQuality::Ultra : EAntiAliasingQuality::High;
 }
 
 float FXAASettings::GetSearchLength() const
@@ -48,10 +70,29 @@ FXAASettings GetFXAASettings(EAntiAliasingQuality quality)
 	case EAntiAliasingQuality::Low:
 		return MakeFXAASettings(0.250f, 0.0833f, 0.25f, { 1.5f, 3.0f, 12.0f });
 	case EAntiAliasingQuality::High:
+	case EAntiAliasingQuality::Ultra:
 		return MakeFXAASettings(0.125f, 0.0312f, 0.75f, { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.5f, 2.0f, 2.0f, 2.0f, 2.0f, 4.0f, 8.0f });
 	case EAntiAliasingQuality::Medium:
 	default:
 		return MakeFXAASettings(0.166f, 0.0625f, 0.50f, { 1.0f, 1.5f, 2.0f, 4.0f, 12.0f });
+	}
+}
+
+SMAASettings GetSMAASettings(EAntiAliasingQuality quality)
+{
+	// SMAA.hlsl's presets: higher qualities treat fainter contrast as an edge and search further along it, and from
+	// High also follow diagonal edges and keep sharp corners
+	switch (quality)
+	{
+	case EAntiAliasingQuality::Low:
+		return MakeSMAASettings(0.15f, 4);
+	case EAntiAliasingQuality::High:
+		return MakeSMAASettings(0.1f, 16, 8, 25.0f);
+	case EAntiAliasingQuality::Ultra:
+		return MakeSMAASettings(0.05f, 32, 16, 25.0f);
+	case EAntiAliasingQuality::Medium:
+	default:
+		return MakeSMAASettings(0.1f, 8);
 	}
 }
 

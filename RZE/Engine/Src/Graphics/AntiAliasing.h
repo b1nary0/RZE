@@ -12,6 +12,9 @@ enum class EAntiAliasingMethod
 	Off,
 	// Fast approximate (FXAA 3.11, Pixel_FXAA.hlsl): blends across the edges it finds in the final image's luma
 	FXAA,
+	// Subpixel morphological (SMAA 1x, Common/SMAA): finds each edge's shape, so it blends only across edges and
+	// keeps texture detail sharp; handles diagonals and corners from High. Three passes.
+	SMAA,
 
 	Count
 };
@@ -24,9 +27,14 @@ enum class EAntiAliasingQuality
 	Medium,
 	// Faint edges too, the smoothest
 	High,
+	// SMAA only: the faintest edges and the longest searches. FXAA uses High's.
+	Ultra,
 
 	Count
 };
+
+// The highest quality the method has: Ultra for SMAA, High for FXAA (and for Off, which has no quality to use)
+EAntiAliasingQuality GetHighestQuality(EAntiAliasingMethod method);
 
 // A view's anti-aliasing. Engine.ini's [Rendering] AntiAliasing and AntiAliasingQuality set the main view's at
 // start-up; the editor's Scene View settings change it while running.
@@ -56,10 +64,29 @@ struct FXAASettings
 	float GetSearchLength() const;
 };
 
-// The FXAA values for a quality, from FXAA 3.11's quality presets (Low 10, Medium 12, High 39)
+// The FXAA values for a quality, from FXAA 3.11's quality presets (Low 10, Medium 12, High 39). Ultra is High.
 FXAASettings GetFXAASettings(EAntiAliasingQuality quality);
 
-// Every method's name, as Engine.ini and the editor show it: "Off", "FXAA"
+// What SMAA (Common/SMAA/SMAA.hlsl) does at a quality; AntiAliasingStage::SMAAParamsLayout carries it
+struct SMAASettings
+{
+	// Less luma contrast than this isn't an edge
+	float Threshold = 0.0f;
+	// How far the search for each end of an edge goes, in steps of 2 pixels
+	int SearchSteps = 0;
+	// Whether it finds diagonal edges and keeps sharp corners (Pixel_SMAABlendingWeights), or only horizontal and
+	// vertical edges (Pixel_SMAABlendingWeightsNoDiagonals)
+	bool DetectsDiagonalsAndCorners = false;
+	// The diagonal search's length, in steps; with DetectsDiagonalsAndCorners only
+	int DiagonalSearchSteps = 0;
+	// How much a sharp corner is kept from being rounded off, 0 to 100; with DetectsDiagonalsAndCorners only
+	float CornerRounding = 0.0f;
+};
+
+// The SMAA values for a quality: SMAA.hlsl's presets, SMAA_PRESET_LOW to SMAA_PRESET_ULTRA
+SMAASettings GetSMAASettings(EAntiAliasingQuality quality);
+
+// Every method's name, as Engine.ini and the editor show it: "Off", "FXAA", "SMAA"
 const EnumNames& GetAntiAliasingMethodNames();
 
 const char* GetAntiAliasingMethodName(EAntiAliasingMethod method);
@@ -67,7 +94,7 @@ const char* GetAntiAliasingMethodName(EAntiAliasingMethod method);
 // A method from its name, ignoring case; none if the name isn't one
 std::optional<EAntiAliasingMethod> ParseAntiAliasingMethod(const std::string& name);
 
-// Every quality's name, as Engine.ini and the editor show it: "Low", "Medium", "High"
+// Every quality's name, as Engine.ini and the editor show it: "Low", "Medium", "High", "Ultra"
 const EnumNames& GetAntiAliasingQualityNames();
 
 const char* GetAntiAliasingQualityName(EAntiAliasingQuality quality);
