@@ -121,7 +121,8 @@ private:
 	// First, so it outlives the objects whose components draw into it
 	std::unique_ptr<RenderScene> m_renderScene;
 
-	// #TODO Implement sparse array to make this faster
+	// In creation order. Removals are batched into one pass a frame (ProcessObjectRemoveDeferrals) and GUID lookups
+	// use m_objectsByGUID, so only FindGameObjectByName scans it.
 	std::vector<std::unique_ptr<GameObject>> m_objectRegistry;
 
 	std::vector<GameObjectPtr> m_objectsToRemove;

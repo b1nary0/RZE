@@ -334,7 +334,7 @@ void RenderComponent::Update()
 		GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
 		AssertMsg(transformComponent != nullptr, "No TransformComponent found. Mesh creation is useless without a location in 3D space.");
 
-		// @TODO Look into ways to avoid this
+		// Cheap when nothing moved: the world matrix is cached, and SetTransform ignores an unchanged one
 		m_renderObject->SetTransform(transformComponent->GetWorldMatrix());
 
 		if (m_drawMeshBounds || m_drawSubMeshBounds)

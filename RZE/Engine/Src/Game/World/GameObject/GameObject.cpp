@@ -95,8 +95,8 @@ bool GameObject::RemoveComponentByID(GameObjectComponentID id)
 
 GameObjectComponentBase* GameObject::AddComponentByID(GameObjectComponentID id)
 {
-	// #TODO Slow function
-
+	// The same linear search as GetComponent, to refuse a second component of one type. Runs once per add (scene
+	// load, editor commands), so load time grows with objects x components per object; see GetComponent for the fix.
 	auto it = std::find_if(m_components.begin(), m_components.end(),
 		[id](const GameObjectComponentBase* component)
 		{
