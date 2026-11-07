@@ -214,7 +214,10 @@ flowchart TD
   --virtual` (one 2560×1440 output, no lock screen, no global shortcuts, Wayland socket `rze-driver-nested`) in that
   group. Both run without the desktop's `WAYLAND_DISPLAY`, `DISPLAY`, `XAUTHORITY` and `DBUS_SESSION_BUS_ADDRESS`, so
   KWin can't find the desktop's compositor. KWin is up once it owns `org.kde.KWin` on that bus and its socket exists;
-  it has 15 s, and its output is in `$XDG_RUNTIME_DIR/rze-driver/nested.log`.
+  it has 15 s, and its output is in `$XDG_RUNTIME_DIR/rze-driver/nested.log`. Then the driver registers that socket
+  with the bus (`UpdateActivationEnvironment`, as Plasma's startup does for the desktop), so the services the bus
+  starts, such as the portals a Qt client asks for, run on the nested display. Without it they'd fall back to
+  `wayland-0` and abort.
 - **The app sees only the nested session.** `WAYLAND_DISPLAY` and `DBUS_SESSION_BUS_ADDRESS` point there,
   `SDL_VIDEO_DRIVER` is `wayland`, and `DISPLAY`, `XAUTHORITY` and the activation tokens are dropped: with no X server
   in the session, SDL falling back to X11 would open its windows on the desktop's. Whatever the app opens, a Game or a
