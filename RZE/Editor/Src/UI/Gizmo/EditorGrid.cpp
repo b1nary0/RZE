@@ -1,19 +1,13 @@
 #include <UI/Gizmo/EditorGrid.h>
 
-#include <UI/Framework/EditorSettings.h>
-#include <UI/Framework/EditorUI.h>
-
 #include <RZE.h>
 #include <Graphics/RenderEngine.h>
 
 #include <Utils/Math/Math.h>
 #include <Utils/Math/Vector3D.h>
 
-#include <imgui/imgui.h>
-
 #include <algorithm>
 #include <cmath>
-#include <stdio.h>
 
 namespace
 {
@@ -42,27 +36,6 @@ namespace
 	const Vector3D k_zAxisColour(0.3f, 0.45f, 0.9f);
 	constexpr float k_axisAlpha = 0.7f;
 
-	// The square size, in metres, for the toolbar
-	constexpr const char* k_squareSizeFormat = "%g m squares";
-
-	// The widest the square size text gets: the squares start at a snap size and grow tenfold up to k_maxLevels times
-	float GetWidestSquareSizeTextWidth()
-	{
-		float widest = 0.0f;
-		for (float snapSize : Editor::EditorSettings::k_snapSizeOptions)
-		{
-			float squareSize = snapSize;
-			for (int level = 0; level <= Editor::EditorGrid::k_maxLevels; ++level)
-			{
-				char text[32];
-				snprintf(text, sizeof(text), k_squareSizeFormat, squareSize);
-				widest = std::max(widest, ImGui::CalcTextSize(text).x);
-				squareSize *= 10.0f;
-			}
-		}
-		return widest;
-	}
-
 	// How many squares of this level the line at index (in squares from the origin) is the boundary of:
 	// 0 for a minor line, 1 for a major line, 2 for a major line of the next level up
 	int GetLineTier(int index)
@@ -90,24 +63,6 @@ namespace
 
 namespace Editor
 {
-	void EditorGrid::DisplayControls()
-	{
-		const EditorUI::ScopedToolbarSpacing spacing;
-
-		EditorUI::ToolbarGroupSeparator();
-		ImGui::Checkbox("Grid", &m_isVisible);
-
-		// So it's clear which level is showing once the squares outgrow the snap size. Shown with the grid hidden too,
-		// and given the room of the widest it gets, so the centred toolbar doesn't shift.
-		ImGui::TextDisabled(k_squareSizeFormat, m_squareSize);
-		const float spare = GetWidestSquareSizeTextWidth() - ImGui::GetItemRectSize().x;
-		if (spare > 0.0f)
-		{
-			ImGui::SameLine(0.0f, 0.0f);
-			ImGui::Dummy(ImVec2(spare, 0.0f));
-		}
-	}
-
 	void EditorGrid::Draw(const Vector3D& cameraPosition, float baseSquareSize)
 	{
 		// Levels as a continuous value, so the fades follow the camera smoothly

@@ -66,6 +66,28 @@ namespace
 		return pick.CameraRay.GetPoint(k_fallbackDistance);
 	}
 
+	// The grid's square size for the toolbar, e.g. "1 m squares"
+	std::string GetSquareSizeText(float squareSize)
+	{
+		return Editor::EditorUI::FormatMetres(squareSize) + " squares";
+	}
+
+	// The widest the square size text gets: the squares start at a snap size and grow tenfold up to k_maxLevels times
+	float GetWidestSquareSizeTextWidth()
+	{
+		float widest = 0.0f;
+		for (const float snapSize : Editor::EditorSettings::k_snapSizeOptions)
+		{
+			float squareSize = snapSize;
+			for (int level = 0; level <= Editor::EditorGrid::k_maxLevels; ++level)
+			{
+				widest = std::max(widest, ImGui::CalcTextSize(GetSquareSizeText(squareSize).c_str()).x);
+				squareSize *= 10.0f;
+			}
+		}
+		return widest;
+	}
+
 	// One radio button per option, labelled by format, on the line of what's before them (e.g. a label). Returns the
 	// option clicked this frame.
 	template <size_t Count>
@@ -177,7 +199,7 @@ namespace Editor
 		}
 
 		DrawSnapControls(context.GetSettings());
-		m_grid.DisplayControls();
+		DrawGridControls();
 	}
 
 	void SceneViewPanel::DrawSnapControls(EditorSettings& settings)
@@ -213,6 +235,28 @@ namespace Editor
 			settings.SetRotationStep(*rotationStep);
 		}
 		ImGui::EndDisabled();
+	}
+
+	void SceneViewPanel::DrawGridControls()
+	{
+		const EditorUI::ScopedToolbarSpacing spacing;
+
+		EditorUI::ToolbarGroupSeparator();
+		bool isVisible = m_grid.IsVisible();
+		if (ImGui::Checkbox("Grid", &isVisible))
+		{
+			m_grid.SetVisible(isVisible);
+		}
+
+		// So it's clear which level is showing once the squares outgrow the snap size. Shown with the grid hidden too,
+		// and given the room of the widest it gets, so the centred toolbar doesn't shift.
+		ImGui::TextDisabled("%s", GetSquareSizeText(m_grid.GetSquareSize()).c_str());
+		const float spare = GetWidestSquareSizeTextWidth() - ImGui::GetItemRectSize().x;
+		if (spare > 0.0f)
+		{
+			ImGui::SameLine(0.0f, 0.0f);
+			ImGui::Dummy(ImVec2(spare, 0.0f));
+		}
 	}
 
 	void SceneViewPanel::Draw(EditorContext& context)

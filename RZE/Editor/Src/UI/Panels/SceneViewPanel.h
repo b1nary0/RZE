@@ -77,6 +77,8 @@ namespace Editor
 
 		// The menu bar's snap toggle and the move and rotate steps. Those the gizmo's operation doesn't use are greyed out.
 		void DrawSnapControls(EditorSettings& settings);
+		// The menu bar's grid toggle and the size of the squares it's showing
+		void DrawGridControls();
 		// Icons at each light's and camera's position; viewOrigin is the screen-space top-left of the scene image
 		void DrawObjectIcons(const EditorContext& context, const ImVec2& viewOrigin);
 		// Debug lines along the camera's view volume, from its near plane out to its far plane or a fixed cap, whichever is closer
