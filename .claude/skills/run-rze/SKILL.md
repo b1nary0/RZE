@@ -212,9 +212,9 @@ Snap Layouts, or RenderDoc's capture key.
 
 ```bash
 d=".claude/skills/run-rze/driver.py"
-$d launch --harness --scene DrawLineTest.scene   # waits until the Editor is maximized, then 5 s for assets
-$d click 2317 123                                # select NeckMech
-$d click 2444 783; $d key '^a45{ENTER}'          # Rotation Y = 45
+$d launch --harness --nested --scene DrawLineTest.scene  # off-screen; waits until maximized, then 5 s for assets
+$d click 2317 123                                # select NeckMech (coordinates: the nested layout reference, below)
+$d click 2444 803; $d key '^a45{ENTER}'          # Rotation Y = 45
 $d object NeckMech                               # "rotation": [0, 45, 0], components, parent, GUID
 $d state                                         # scene, modified, selection, undo, objects
 $d shot                                          # the frame itself, UI and all
@@ -226,8 +226,8 @@ The same commands without `--harness` use real input instead:
 ```bash
 $d launch --scene DrawLineTest.scene          # waits for "RZEStudio - ..." in the title, then 5 s for assets
 $d shot                                       # -> $TMPDIR/rze-shots/<timestamp>.png (usually /tmp), client area only
-$d click 2317 123                             # select NeckMech in the Scene panel
-$d click 2444 783; $d key '^a45{ENTER}'       # Rotation Y = 45
+$d click 2317 123                             # select NeckMech (on the desktop, panels sit where your layout has them:
+$d click 2444 803; $d key '^a45{ENTER}'       #   check these against a `shot`) / Rotation Y = 45
 $d log --grep error                           # the Editor's output (stdout and stderr)
 $d close                                      # closes the window as a user would: "closed code=0"
 ```
@@ -310,6 +310,27 @@ How it works, and what to know:
   `Assets`. To restore one without relying on a desktop's tools, do what the freedesktop.org Trash spec defines as a
   restore: move `~/.local/share/Trash/files/<name>` to its `Path=` (percent-decoded), then delete
   `info/<name>.trashinfo`. (`gio trash --restore` needs gvfs, which KDE installs often lack.)
-- The layout reference above (Windows) holds on Linux too, for a maximized 2560x1398 client area: the Scene panel's
-  rows are at x = 2317, y = 78 / 101 / 123 / 145 (Camera, DirectionalLight, NeckMech, M4 in DrawLineTest); the File
-  menu at (90, 19); the Content Browser tab at (58, 1362).
+- **Where things are** depends on the dock layout, the client size and the monitor. A nested session fixes all
+  three, so its coordinates are exact (below). On the desktop the Editor uses your `RZE/Config/imgui.ini`, which you
+  rearrange, so take positions from a fresh `shot` there.
+
+### Layout reference (nested sessions)
+
+`launch --nested` always gives a 2560x1440 client on one virtual output. It also runs with a layout of its own,
+`.claude/skills/run-rze/nested-imgui.ini`, copied over `RZE/Config/imgui.ini` for the session (your file is backed up
+and put back as usual, and `--keep-imgui-ini` runs with yours instead). So these hold however you've arranged your
+own panels. To change the nested layout, copy a layout over `nested-imgui.ini` and measure this table again.
+
+✓ = clicked through the harness and checked with `state` / `object` (each axis given its own value, so a miss shows),
+or with before/after `shot`s. Unmarked = measured from a `shot` only.
+
+| target | client coords |
+|---|---|
+| Scene panel rows (Camera, DirectionalLight, NeckMech, M4 in DrawLineTest) | x = 2317, y = 78 / 101 / 123 / 145 ✓ |
+| Object Inspector: X / Y / Z fields (after selecting an object) | x = 2372 / 2444 / 2517 ✓ |
+| Object Inspector: Position / Rotation / Scale rows | y = 780 / 803 / 827 ✓ |
+| RenderComponent "Mesh Bounds" / "Sub-Mesh Bounds" checkboxes (NeckMech) | (2404, 956) / (2404, 980) ✓ |
+| File / Edit / View / Help menus | x = 90 ✓ / 130 / 173 / 214, y = 20. `{ESC}` doesn't close a menu (the Editor has no keyboard navigation): click its name again ✓ |
+| File menu items: New Scene, Load Scene, Save Scene, Build Game, Launch Game, Exit | x ≈ 120, y = 55 / 73 / 91 / 114 / 132 / 155 |
+| Bottom dock: Content Browser / Log tabs | (58, 1404) / (133, 1404) ✓ |
+| Title bar: minimize / maximize (restore) / close buttons | (2446 / 2491 / 2537, 20). Maximize moves every coordinate here; close asks about unsaved changes, like `close` |

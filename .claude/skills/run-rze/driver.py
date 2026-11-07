@@ -37,6 +37,9 @@ HELPER_LOG = os.path.join(STATE_DIR, "helper.log")
 # the file it found. The backup outlives a session that died, and the next launch restores it first.
 IMGUI_INI = os.path.join(ENGINE_ROOT, "Config", "imgui.ini")
 IMGUI_INI_BACKUP = os.path.join(STATE_DIR, "imgui.ini.backup")
+# The layout a nested session runs with, in place of the user's, so the coordinates SKILL.md gives for nested sessions
+# hold however the user has arranged the panels since. The user's file is backed up and put back as usual.
+NESTED_IMGUI_INI = os.path.join(os.path.dirname(os.path.abspath(__file__)), "nested-imgui.ini")
 ENGINE_LOGS = os.path.join(ENGINE_ROOT, "Logs")
 RENDERDOC_DIR = os.path.join(STATE_DIR, "renderdoc")
 SHOT_DIR = os.path.join(tempfile.gettempdir(), "rze-shots")
@@ -476,6 +479,9 @@ class Helper:
         self.restored_leftover_ini = restore_imgui_ini()
         if not options.get("keep_imgui_ini"):
             back_up_imgui_ini()
+            # Not with --keep-imgui-ini: that run is meant to change the user's layout, so it starts from it
+            if options.get("nested") and os.path.exists(IMGUI_INI_BACKUP):
+                shutil.copyfile(NESTED_IMGUI_INI, IMGUI_INI)
         self.lock = threading.Lock()
         self.exit_code = None
         self.window_id = None
