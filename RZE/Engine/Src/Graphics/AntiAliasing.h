@@ -40,9 +40,9 @@ EAntiAliasingQuality GetHighestQuality(EAntiAliasingMethod method);
 // start-up; the editor's Scene View settings change it while running.
 struct AntiAliasingMode
 {
-	EAntiAliasingMethod Method = EAntiAliasingMethod::FXAA;
-	// Unused while the method is Off
-	EAntiAliasingQuality Quality = EAntiAliasingQuality::Medium;
+	EAntiAliasingMethod Method = EAntiAliasingMethod::SMAA;
+	// Unused while the method is Off. High is SMAA's first quality that follows diagonals and keeps corners.
+	EAntiAliasingQuality Quality = EAntiAliasingQuality::High;
 };
 
 // What FXAA (3.11 Quality, Pixel_FXAA.hlsl) does at a quality; AntiAliasingStage::FXAAParamsLayout carries it

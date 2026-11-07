@@ -28,11 +28,11 @@ TEST_CASE("Anti-aliasing methods and qualities read back from their names, ignor
 	CHECK_FALSE(ParseAntiAliasingQuality("").has_value());
 }
 
-TEST_CASE("Anti-aliasing defaults to FXAA at Medium")
+TEST_CASE("Anti-aliasing defaults to SMAA at High")
 {
 	const AntiAliasingMode mode;
-	CHECK(mode.Method == EAntiAliasingMethod::FXAA);
-	CHECK(mode.Quality == EAntiAliasingQuality::Medium);
+	CHECK(mode.Method == EAntiAliasingMethod::SMAA);
+	CHECK(mode.Quality == EAntiAliasingQuality::High);
 }
 
 TEST_CASE("Higher FXAA qualities catch fainter edges, search further in finer steps and soften more")

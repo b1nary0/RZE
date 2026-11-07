@@ -171,8 +171,8 @@ the rest for the user.
     High changed about 34k pixels of the scene view against Off, and FXAA High about 203k.
   - Narrow the scene view by dragging the splitter to the Scene panel left (e.g. 550 px), with SMAA Ultra. Expect no
     line or seam along the scene view's new right edge or its bottom edge.
-  - Select the Camera: its preview in the Object Inspector renders correctly (it's FXAA Medium, the default for other
-    views; to see SMAA there, temporarily set `AntiAliasingMode`'s defaults to SMAA).
+  - Select the Camera: its preview in the Object Inspector renders correctly with SMAA (it's SMAA High, the default
+    for other views since the commit after 79165770).
   - At a Debug Editor's `close`, no new `D3D11 (` lines (D5), in particular none about render target and shader
     resource bindings (the edges and weights textures are each written by one pass and read by the next).
 
