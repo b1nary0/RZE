@@ -43,6 +43,21 @@ SHOT_DIR = os.path.join(tempfile.gettempdir(), "rze-shots")
 # Puts the app's windows on one monitor, which Wayland doesn't let the app do itself (launch --output)
 LAUNCH_ON_OUTPUT = os.path.join(REPO, "Tools", "Linux", "LaunchOnOutput.py")
 LAUNCH_ON_OUTPUT_LOG = os.path.join(STATE_DIR, "launch-on-output.log")
+# A nested session's KWin (launch --nested): its Wayland socket, its log, and its process group, kept on disk so the
+# next launch can end one a dead session left
+NESTED_SOCKET = "rze-driver-nested"
+NESTED_LOG = os.path.join(STATE_DIR, "nested.log")
+NESTED_GROUP_FILE = os.path.join(STATE_DIR, "nested.pgid")
+NESTED_SIZE = (2560, 1440)
+NESTED_START_TIMEOUT_S = 15
+# The session's own config, data, state and cache folders (XDG_*_HOME), made fresh for each session. KWin and the
+# services its bus starts write there, not to the desktop's: with the desktop's, a nested KWin records its virtual
+# output in ~/.config/kwinoutputconfig.json, beside the real monitors' layouts.
+NESTED_HOME = os.path.join(STATE_DIR, "nested-home")
+NESTED_XDG_DIRS = {"XDG_CONFIG_HOME": "config", "XDG_DATA_HOME": "data", "XDG_STATE_HOME": "state",
+                   "XDG_CACHE_HOME": "cache"}
+# The virtual output's refresh rate: KWin's virtual backend starts at 60 Hz, and the desktop's monitors here run at 240
+NESTED_REFRESH_HZ = 240
 
 
 class DriverError(Exception):
@@ -72,11 +87,24 @@ function byId(id) {
 """
 
 
+# The D-Bus the driver's KWin scripts go to: None for the desktop's session bus, or a nested session's address
+kwin_bus_address = None
+
+
+def kwin_bus():
+    from gi.repository import Gio
+
+    if kwin_bus_address is None:
+        return Gio.bus_get_sync(Gio.BusType.SESSION)
+    flags = Gio.DBusConnectionFlags.AUTHENTICATION_CLIENT | Gio.DBusConnectionFlags.MESSAGE_BUS_CONNECTION
+    return Gio.DBusConnection.new_for_address_sync(kwin_bus_address, flags, None, None)
+
+
 def kwin(body, timeout_ms=3000):
     """Runs body as a KWin script; it calls report(value) once, and that value is returned."""
     from gi.repository import Gio, GLib
 
-    bus = Gio.bus_get_sync(Gio.BusType.SESSION)
+    bus = kwin_bus()
     result = {}
     loop = GLib.MainLoop()
 
@@ -110,6 +138,8 @@ def kwin(body, timeout_ms=3000):
             Gio.bus_unown_name(owner)
             bus.unregister_object(registration)
             os.unlink(path)
+            if kwin_bus_address is not None:
+                bus.close_sync(None)
     if "json" not in result:
         raise DriverError("KWin didn't answer (is this a KDE Plasma session?)")
     return json.loads(result["json"])
@@ -263,6 +293,165 @@ def parse_keys(text):
 
 
 # ---------------------------------------------------------------------------------------------------------------------
+# Nested sessions (launch --nested): a KWin of the session's own, drawing to an off-screen output, on a D-Bus session of
+# its own. The app's windows, and anything it opens (a Game, a file manager), live there, so nothing reaches the desktop:
+# no window appears, focus and the clipboard are left alone. Harness sessions only, as nothing gives it input devices.
+
+def stop_leftover_nested():
+    """Ends a nested session a dead helper left running. Says whether there was one."""
+    try:
+        with open(NESTED_GROUP_FILE) as f:
+            group = int(f.read())
+    except (OSError, ValueError):
+        return False
+    os.unlink(NESTED_GROUP_FILE)
+    # Only if the group's leader is still the bus daemon this driver started, not a process that reused its PID
+    try:
+        with open("/proc/%d/cmdline" % group, "rb") as f:
+            if not f.read().startswith(b"dbus-daemon\0"):
+                return False
+    except OSError:
+        return False
+    stop_group(group)
+    return True
+
+
+def stop_group(group, timeout=5):
+    """SIGTERM, then SIGKILL once timeout passes, for every process in the group; waits until they're gone."""
+    for sig in (signal.SIGTERM, signal.SIGKILL):
+        try:
+            os.killpg(group, sig)
+        except ProcessLookupError:
+            return
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            try:
+                os.killpg(group, 0)
+            except ProcessLookupError:
+                return
+            time.sleep(0.05)
+
+
+class NestedSession:
+    def __init__(self, refresh_hz):
+        log = open(NESTED_LOG, "wb")
+        # The desktop's, so nothing in the session finds it: KWin would otherwise talk to the desktop's compositor
+        environment = {k: v for k, v in os.environ.items()
+                       if k not in ("WAYLAND_DISPLAY", "DISPLAY", "XAUTHORITY", "DBUS_SESSION_BUS_ADDRESS")}
+        shutil.rmtree(NESTED_HOME, ignore_errors=True)
+        for name, folder in NESTED_XDG_DIRS.items():
+            environment[name] = os.path.join(NESTED_HOME, folder)
+            os.makedirs(environment[name], mode=0o700)
+        self.environment = environment
+        # The group is the bus daemon's, and KWin joins it: ending the group ends the session, with the services the
+        # bus and KWin start (portals, plasma-keyboard, ksecretd). A group, not a session: a process can only join a
+        # group in its own session, and the helper already has a session of its own.
+        self.bus = subprocess.Popen(["dbus-daemon", "--session", "--nofork", "--print-address=1"], env=environment,
+                                    stdout=subprocess.PIPE, stderr=log, stdin=subprocess.DEVNULL, process_group=0)
+        self.group = self.bus.pid
+        with open(NESTED_GROUP_FILE, "w") as f:
+            f.write(str(self.group))
+        try:
+            self.address = self.bus.stdout.readline().decode().strip()
+            if not self.address:
+                raise DriverError("The nested session's D-Bus didn't start; see %s" % NESTED_LOG)
+            environment["DBUS_SESSION_BUS_ADDRESS"] = self.address
+            width, height = NESTED_SIZE
+            self.kwin = subprocess.Popen(["kwin_wayland", "--virtual", "--width", str(width), "--height", str(height),
+                                          "--socket", NESTED_SOCKET, "--no-lockscreen", "--no-global-shortcuts"],
+                                         env=environment, stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
+                                         process_group=self.group)
+            self._wait_for_kwin()
+            self.refresh_hz = self._set_refresh(refresh_hz)
+        except BaseException:
+            self.stop()
+            raise
+
+    def _wait_for_kwin(self):
+        from gi.repository import Gio, GLib
+
+        flags = Gio.DBusConnectionFlags.AUTHENTICATION_CLIENT | Gio.DBusConnectionFlags.MESSAGE_BUS_CONNECTION
+        bus = Gio.DBusConnection.new_for_address_sync(self.address, flags, None, None)
+        socket_path = os.path.join(os.environ["XDG_RUNTIME_DIR"], NESTED_SOCKET)
+        deadline = time.monotonic() + NESTED_START_TIMEOUT_S
+        try:
+            while True:
+                if self.kwin.poll() is not None:
+                    raise DriverError("The nested KWin exited (code %d); see %s" % (self.kwin.returncode, NESTED_LOG))
+                has_owner = bus.call_sync("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus",
+                                          "NameHasOwner", GLib.Variant("(s)", ("org.kde.KWin",)), None,
+                                          Gio.DBusCallFlags.NONE, -1, None).unpack()[0]
+                if has_owner and os.path.exists(socket_path):
+                    return
+                if time.monotonic() > deadline:
+                    raise DriverError("The nested KWin didn't start in %ds; see %s" % (NESTED_START_TIMEOUT_S, NESTED_LOG))
+                time.sleep(0.1)
+        finally:
+            bus.close_sync(None)
+
+    def _kscreen_doctor(self, *arguments):
+        environment = dict(self.environment, WAYLAND_DISPLAY=NESTED_SOCKET)
+        result = subprocess.run(["kscreen-doctor", *arguments], env=environment, capture_output=True, text=True,
+                                timeout=20)
+        if result.returncode != 0:
+            raise DriverError("kscreen-doctor %s failed: %s" % (" ".join(arguments), (result.stderr or result.stdout).strip()))
+        return result.stdout
+
+    def _output(self):
+        outputs = json.loads(self._kscreen_doctor("-j"))["outputs"]
+        if len(outputs) != 1:
+            raise DriverError("The nested KWin has %d outputs, not 1" % len(outputs))
+        return outputs[0]
+
+    def _set_refresh(self, refresh_hz):
+        """Gives the virtual output a mode at refresh_hz (KWin's custom modes) and switches to it; returns the rate it
+        has then, as KWin rounds it to a CVT timing (240 is 239.9x)."""
+        output = self._output()
+        width, height = NESTED_SIZE
+        self._kscreen_doctor("output.%s.addCustomMode.%d.%d.%d.full" % (output["name"], width, height, refresh_hz * 1000))
+        modes = [m for m in self._output()["modes"] if m["size"] == {"width": width, "height": height}]
+        mode = min(modes, key=lambda m: abs(m["refreshRate"] - refresh_hz))
+        self._kscreen_doctor("output.%s.mode.%s" % (output["name"], mode["id"]))
+        current = next(m for m in self._output()["modes"] if m["id"] == self._output()["currentModeId"])
+        if abs(current["refreshRate"] - refresh_hz) > 1:
+            raise DriverError("The nested output is at %.2f Hz, not %d" % (current["refreshRate"], refresh_hz))
+        return current["refreshRate"]
+
+    def apply(self, environment):
+        """Points an app's environment at this session instead of the desktop."""
+        environment["WAYLAND_DISPLAY"] = NESTED_SOCKET
+        environment["DBUS_SESSION_BUS_ADDRESS"] = self.address
+        # Only Wayland: with no X server here, SDL falling back to X11 would open its windows on the desktop's
+        environment["SDL_VIDEO_DRIVER"] = "wayland"
+        for name in ("DISPLAY", "XAUTHORITY", "XDG_ACTIVATION_TOKEN", "DESKTOP_STARTUP_ID"):
+            environment.pop(name, None)
+
+    def stop(self):
+        # KWin and the bus are this process's children, so they're reaped here: until then they'd still count as the
+        # group's, and stop_group would wait them out. What's left after (services the bus started) isn't.
+        children = [p for p in (getattr(self, "kwin", None), self.bus) if p is not None]
+        for sig in (signal.SIGTERM, signal.SIGKILL):
+            try:
+                os.killpg(self.group, sig)
+            except ProcessLookupError:
+                break
+            deadline = time.monotonic() + 5
+            for child in children:
+                try:
+                    child.wait(timeout=max(0.0, deadline - time.monotonic()))
+                except subprocess.TimeoutExpired:
+                    pass
+            if all(child.poll() is not None for child in children):
+                break
+        stop_group(self.group)
+        shutil.rmtree(NESTED_HOME, ignore_errors=True)
+        try:
+            os.unlink(NESTED_GROUP_FILE)
+        except FileNotFoundError:
+            pass
+
+
+# ---------------------------------------------------------------------------------------------------------------------
 # The helper: one per launched session
 
 def restore_imgui_ini():
@@ -290,6 +479,21 @@ class Helper:
         self.lock = threading.Lock()
         self.exit_code = None
         self.window_id = None
+        # As the layout backup is: a dead session's nested KWin goes whatever this session is
+        self.stopped_leftover_nested = stop_leftover_nested()
+        # First, as every KWin script from here on goes to its KWin
+        self.nested = NestedSession(options.get("refresh") or NESTED_REFRESH_HZ) if options.get("nested") else None
+        try:
+            self._start_session(options)
+        except BaseException:
+            if self.nested is not None:
+                self.nested.stop()
+            raise
+
+    def _start_session(self, options):
+        global kwin_bus_address
+        if self.nested is not None:
+            kwin_bus_address = self.nested.address
         self.windows_at_launch = {w["id"] for w in kwin_windows()}
         self.pointer = None
         self.keyboard = None
@@ -320,6 +524,8 @@ class Helper:
             # renderdoccmd, it would match renderdoccmd's.
             command += [sys.executable, "-I", LAUNCH_ON_OUTPUT, "--output", options["output"], "--log", LAUNCH_ON_OUTPUT_LOG,
                         "--"]
+        if self.nested is not None:
+            self.nested.apply(environment)
         command += [exe] + options["args"]
         # In a process group of its own, which is everything the session started: the app, renderdoccmd with the
         # app under it, a Game the Editor launched. Ending the session ends all of it.
@@ -540,12 +746,25 @@ class Helper:
     def _restore_note(self):
         return "; imgui.ini restored" if restore_imgui_ini() else ""
 
+    def cmd_wayland_display(self):
+        """The Wayland display the app is on, for what the client runs itself (wl-copy): "" for the desktop's."""
+        return NESTED_SOCKET if self.nested is not None else ""
+
+    def cmd_nested_mode(self):
+        return "%dx%d@%.2f" % (NESTED_SIZE + (self.nested.refresh_hz,))
+
+    def cmd_stopped_leftover_nested(self):
+        return str(self.stopped_leftover_nested)
+
     def shutdown(self):
         self._end_group()
         restore_imgui_ini()
         for device in (self.pointer, self.keyboard):
             if device is not None:
                 device.close()
+        # Last: the app (and a Game it launched) has gone, with nothing left to draw
+        if self.nested is not None:
+            self.nested.stop()
 
 
 class HarnessHelper(Helper):
@@ -872,6 +1091,14 @@ def command_launch(args):
         raise DriverError("A session is running. Run: driver.py quit (or close)")
     if subprocess.run(["pgrep", "-x", args.app], capture_output=True).returncode == 0:
         raise DriverError("%s is already running outside the driver. Close it first." % args.app)
+    if args.nested and not args.harness:
+        raise DriverError("--nested is for --harness sessions: nothing gives the nested KWin real input devices")
+    if args.nested and args.output:
+        raise DriverError("--nested has one output of its own; --output is for the desktop's monitors")
+    if args.nested and (shutil.which("kwin_wayland") is None or shutil.which("kscreen-doctor") is None):
+        raise DriverError("--nested needs kwin_wayland and kscreen-doctor (KDE Plasma)")
+    if args.refresh is not None and (not args.nested or args.refresh <= 0):
+        raise DriverError("--refresh is the nested output's rate: use it with --nested, above 0")
     if args.output:
         names = [o["name"] for o in kwin_outputs()]
         if args.output not in names:
@@ -884,13 +1111,18 @@ def command_launch(args):
     os.makedirs(STATE_DIR, exist_ok=True)
     app_args = (["-scene", args.scene] if args.scene else []) + args.extra
     options = {"app": args.app, "config": args.config, "args": app_args, "renderdoc": args.renderdoc,
-               "keep_imgui_ini": args.keep_imgui_ini, "harness": args.harness, "output": args.output}
-    subprocess.Popen([sys.executable, "-I", os.path.abspath(__file__), "_helper", json.dumps(options)],
-                     stdout=open(HELPER_LOG, "wb"), stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
-                     start_new_session=True)
+               "keep_imgui_ini": args.keep_imgui_ini, "harness": args.harness, "output": args.output,
+               "nested": args.nested, "refresh": args.refresh}
+    helper = subprocess.Popen([sys.executable, "-I", os.path.abspath(__file__), "_helper", json.dumps(options)],
+                              stdout=open(HELPER_LOG, "wb"), stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
+                              start_new_session=True)
     # The helper is up once its socket answers; the app, once its main window has its title
     deadline = time.monotonic() + args.timeout
     while not helper_running():
+        if helper.poll() is not None:
+            with open(HELPER_LOG, errors="replace") as f:
+                lines = f.read().strip().splitlines()
+            raise DriverError("The helper failed to start: %s (all of it in %s)" % (lines[-1] if lines else "?", HELPER_LOG))
         if time.monotonic() > deadline:
             raise DriverError("The helper didn't start; see %s" % HELPER_LOG)
         time.sleep(0.1)
@@ -915,6 +1147,10 @@ def command_launch(args):
         note = " (restored an imgui.ini backup a session left; this run keeps its layout)" if restored_leftover else ""
     else:
         note = " (imgui.ini backed up%s)" % ("; restored a backup a session left" if restored_leftover else "")
+    if args.nested:
+        note += " (nested: %s, off-screen)" % send("nested_mode")
+    if send("stopped_leftover_nested") == "True":
+        note += " (ended a nested KWin a session left)"
     return "launched: " + send("info") + note
 
 
@@ -938,6 +1174,10 @@ def main():
     p.add_argument("--harness", action="store_true",
                    help="run EditorHarness: input and shots go through the app, leaving the real cursor and focus alone")
     p.add_argument("--output", help="the monitor to open on, by KWin's name for it (e.g. DP-2; see `outputs`)")
+    p.add_argument("--nested", action="store_true",
+                   help="with --harness: run in a KWin of the session's own, off-screen, so nothing reaches the desktop")
+    p.add_argument("--refresh", type=int, help="with --nested: the off-screen output's refresh rate (default %d Hz)"
+                   % NESTED_REFRESH_HZ)
     p.add_argument("extra", nargs="*", help="more arguments for the app, after --")
     commands.add_parser("outputs", help="the monitors launch --output takes: name, then x,y widthxheight")
 
@@ -1039,10 +1279,17 @@ def main():
                 lines = [l for l in lines if args.grep.lower() in l.lower()]
             print("\n".join(lines[-args.n:]))
         elif c == "clip":
+            # The app's clipboard: a nested session's, or the desktop's
+            environment = dict(os.environ)
+            display = send("wayland_display") if helper_running() else ""
+            if display:
+                environment["WAYLAND_DISPLAY"] = display
             if args.action == "get":
-                print(subprocess.run(["wl-paste", "--no-newline"], capture_output=True, text=True).stdout)
+                print(subprocess.run(["wl-paste", "--no-newline"], capture_output=True, text=True, env=environment).stdout)
             else:
-                subprocess.run(["wl-copy", args.text], check=True)
+                # wl-copy stays behind to serve the text; a nested session's compositor ending ends it, noisily
+                subprocess.run(["wl-copy", args.text], check=True, env=environment,
+                               stderr=subprocess.DEVNULL if display else None)
                 print("copied %d characters" % len(args.text))
         elif c == "optick":
             print(optick_capture(args.seconds, args.out))

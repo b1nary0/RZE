@@ -238,7 +238,7 @@ downscales a 2560-wide image to 2000, so multiply what you measure by 1.28.
 
 | command | what it does |
 |---|---|
-| `launch [--harness] [--scene X.scene] [--config debug\|release\|retail] [--app Editor\|Game] [--settle 5] [--keep-imgui-ini] [--output DP-2] [-- args...]` | Starts the app under the driver. Refuses if one is running. Backs up `RZE/Config/imgui.ini` first (below). `--harness` runs EditorHarness (above); it's the Editor's only, and can't be combined with `--renderdoc`. `--output` opens it on that monitor (below). |
+| `launch [--harness] [--scene X.scene] [--config debug\|release\|retail] [--app Editor\|Game] [--settle 5] [--keep-imgui-ini] [--nested [--refresh 240]] [--output DP-2] [-- args...]` | Starts the app under the driver. Refuses if one is running. Backs up `RZE/Config/imgui.ini` first (below). `--harness` runs EditorHarness (above); it's the Editor's only, and can't be combined with `--renderdoc`. `--output` opens it on that monitor, and `--nested` (with `--harness`) off-screen in a KWin of its own (both below). |
 | `outputs` | The monitors `launch --output` takes, by KWin's name: `DP-1\t2560,0 2560x1440`. |
 | `state`, `object NAME`, `realinput on\|off` | Harness sessions only: the Editor's state (scene, modified, selection, undo, objects); one object's GUID, parent, components and transform; whether the real mouse and keyboard reach the app. |
 | `shot [--out path.png]` | With `--harness`, the frame read back from the back buffer (about 1 s, as it's encoded). Otherwise, it focuses the app and captures its client area (spectacle). |
@@ -277,6 +277,20 @@ How it works, and what to know:
   overlay) once anything calls GL it doesn't support, and SDL draws the splash screen's window surface with
   fixed-function GL; this RenderDoc build also only reads its capture key through xlib. RenderDoc deletes its log
   (`/tmp/RenderDoc/*.log`) when the app exits cleanly, so read it while the session runs.
+- **`launch --harness --nested` keeps the desktop out of it**: for smoke tests while you use the machine. The helper
+  starts a KWin of the session's own (`kwin_wayland --virtual`, one 2560x1440 output, nothing on screen) on a D-Bus
+  session of its own, and runs the app there. No window appears, focus and your clipboard are left alone, and whatever
+  the app opens (a Game, a file manager) opens there too. `windows`, `close-window` and `clip` act on the nested
+  session. The app is that KWin's only window, so it's focused and never throttled to `UnfocusedFrameRate`. The
+  virtual output runs at 240 Hz, as the desktop's monitors do here (`--refresh HZ` for another rate; the launch line
+  says what KWin made of it, e.g. `2560x1440@239.88`): KWin's virtual backend starts at 60 Hz, so the driver adds a
+  custom mode with `kscreen-doctor` and switches to it. With vsync the app runs at that rate, and a click is about
+  80 ms, as on a focused desktop window. KWin and the services its bus starts get config, data, state and cache folders
+  of their own (`rze-driver/nested-home/`, made fresh each session): with the desktop's, a nested KWin writes its
+  virtual output into `~/.config/kwinoutputconfig.json`. `close` and `quit` end the whole session, KWin, its bus and the services they started included; a session
+  that died leaves `$XDG_RUNTIME_DIR/rze-driver/nested.pgid`, and the next `launch` ends it and says so. KWin's own
+  output is in `nested.log` beside it. Harness only: nothing gives the nested KWin real input devices, so a plain
+  `launch` can't drive it. Performance A/B runs stay visible on the desktop (CLAUDE.md).
 - **`launch --output DP-2` picks the monitor**, which the engine's `-launchMonitor` can't do on Wayland: the compositor
   places windows there. The app runs under `Tools/Linux/LaunchOnOutput.py`, which loads a KWin script that sends the
   app's windows (matched by PID) to that output, then runs the app in its own process, so the PID and process group
