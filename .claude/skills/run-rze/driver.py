@@ -385,6 +385,11 @@ class NestedSession:
                                           "NameHasOwner", GLib.Variant("(s)", ("org.kde.KWin",)), None,
                                           Gio.DBusCallFlags.NONE, -1, None).unpack()[0]
                 if has_owner and os.path.exists(socket_path):
+                    # Services the bus starts (the portals a Qt client asks for) get its environment, which has no
+                    # display: they'd fall back to wayland-0 and abort. Plasma's startup does the same for the desktop.
+                    bus.call_sync("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus",
+                                  "UpdateActivationEnvironment", GLib.Variant("(a{ss})", ({"WAYLAND_DISPLAY": NESTED_SOCKET},)),
+                                  None, Gio.DBusCallFlags.NONE, -1, None)
                     return
                 if time.monotonic() > deadline:
                     raise DriverError("The nested KWin didn't start in %ds; see %s" % (NESTED_START_TIMEOUT_S, NESTED_LOG))
