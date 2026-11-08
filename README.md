@@ -17,6 +17,8 @@ Once you have the repo locally:
 4) Burn the assets: `./_build/debug/SourceAssetBurner`
 5) Start the Editor or the Game: `./_build/debug/Editor` or `./_build/debug/Game`, optionally with `-scene Sponza.scene`
 
+To build, debug and get IntelliSense in VS Code, open `Tools/Linux/VSCode/RZE.code-workspace` (see the README there).
+
 
 
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/1e7ff76592894b2799776314e66f1f4d)](https://app.codacy.com/manual/b1nary0/RZE?utm_source=github.com&utm_medium=referral&utm_content=b1nary0/RZE&utm_campaign=Badge_Grade_Dashboard)
