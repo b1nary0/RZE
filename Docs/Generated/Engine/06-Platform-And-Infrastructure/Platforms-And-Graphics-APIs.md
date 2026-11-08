@@ -86,7 +86,7 @@ From the repo's `CLAUDE.md`, where they're kept up to date:
 - **Every change keeps both platforms building and their tests passing.** CI builds and tests both
   (`.github/workflows/Windows.yml`, `Linux.yml`). Warnings are errors on both: MSVC's `/W3 /WX`, and clang's
   `-Wall -Werror`.
-- **A variable only an assert reads** is unused in Release, where asserts are empty, and clang rejects that. Put the
+- **A variable only an assert reads** is unused in Retail, where asserts are empty, and clang rejects that. Put the
   whole check in the assert (e.g. `std::all_of` with a lambda). Don't mark a range-for variable `[[maybe_unused]]`:
   MSVC 14.51 crashes on it (C1001).
 - **Name files exactly as they are on disk.** Windows ignores case and Linux doesn't. For names written on Windows,

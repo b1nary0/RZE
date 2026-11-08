@@ -141,7 +141,7 @@ Browses the project's `Assets` and `ProjectData` folders: a folder tree beside a
 ## Log (`LogPanel`)
 
 Shows `DebugServices`' log entries, coloured by channel (Error red, Warning orange, Info white, Debug muted, Build grey), and keeps the newest in view while it's scrolled to the bottom. Anything can write to it:
-- the `RZE_LOG` macros from engine, editor and game code, at their level (enabled in Debug and Release, stripped in Retail);
+- the `RZE_LOG` macros from engine, editor and game code, at their level (enabled in Debug and Development, stripped in Retail);
 - resource loads ("Creating resource [...]"), at Debug, including ones loaded asynchronously;
 - the render pipeline's stage order when it compiles, and shader compile warnings and errors;
 - build and launch output, streamed line by line (`LogChannel::Build`).

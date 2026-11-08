@@ -21,8 +21,8 @@ Linux:   RZE/GenerateSolutions.sh
 
 The same bundled Sharpmake 1.9.1 (the release's Windows build) runs on both: it targets .NET 8 and rolls forward
 onto newer runtimes. Run the generator again after adding or removing a source file. On Linux, build the whole
-solution with `make config=debug -j$(nproc)` in `RZE/` (or `release`, `retail`), or one project by naming it
-(`make config=debug Game`).
+solution with `make -j$(nproc)` in `RZE/` (Development; `config=debug` or `config=retail` for the others), or one
+project by naming it (`make Game`).
 
 `RZE.sharpmake.cs` is the solution root. It includes the shared files and every project's file, and adds each project
 to the solution: `Engine`, `Rendering`, `Utils`, `SourceAssetBurner`, `Externals`, `EditorLib`, `Editor`, `Game`,
@@ -33,9 +33,12 @@ DevEnv (`vs2026`, which writes the v145 toolset, and Kits Root `10.0.26100.0`) a
 ## Shared build config
 
 - **`Make/Sharpmake/CommonTarget.sharpmake.cs`**: `CommonTarget : ITarget`, with `Optimization` (Debug, Release,
-  Retail) and the target for the machine generating: `win64` with `DevEnv.vs2026`, or `linux` with `DevEnv.make`.
-  Any other host throws. `SubPlatformType` is only `x64`, and `Mode` only `Game`: the Editor and Game are separate
-  executable projects, not a target axis.
+  Retail; Sharpmake's names, which are fixed) and the target for the machine generating: `win64` with
+  `DevEnv.vs2026`, or `linux` with `DevEnv.make`. Any other host throws. `SubPlatformType` is only `x64`, and `Mode` only `Game`: the Editor and Game are separate
+  executable projects, not a target axis. `CommonTarget.ConfigurationName` names `Optimization.Release`
+  **Development**, in the solution, as make's `config=` and as its `_build` folder; the other two keep their names. See
+  [Building-And-Running.md](../01-GettingStarted/Building-And-Running.md#configurations) for what each configuration
+  is.
 - **`Make/Sharpmake/BaseProject.sharpmake.cs`**: the abstract `BaseProject : Project` every native project derives
   from.
   - **All platforms:** project files in the project's `_project/` folder as `[project.Name]_[target.Platform]`,
@@ -44,8 +47,9 @@ DevEnv (`vs2026`, which writes the v145 toolset, and Kits Root `10.0.26100.0`) a
   - **`ConfigureWin64`:** C++17, RTTI, Unicode, exceptions, warning level 3 as errors (4267 off), `NOMINMAX`, and
     `RZE_GFX_DX11`.
   - **`ConfigureLinux`:** clang (`clang++`), C++17, RTTI, exceptions, `-Wall -Werror`, symbols in every configuration,
-    `-O0`/`-O2`/`-O3 -mavx2` for Debug/Release/Retail, `-pthread`, `RZE_GFX_OPENGL`, and LLD as the linker
-    (`-fuse-ld=lld`). LLD finds symbols in static libraries in any order, as MSVC's linker does; GNU ld wouldn't,
+    `-O0`/`-O2`/`-O3 -mavx2` for Debug/Development/Retail (Development with `-fno-omit-frame-pointer`, so sampling
+    profilers get whole call stacks: `perf --call-graph fp`, Optick), `-pthread`, `RZE_GFX_OPENGL`, and LLD as the
+    linker (`-fuse-ld=lld`). LLD finds symbols in static libraries in any order, as MSVC's linker does; GNU ld wouldn't,
     since the generator sorts libraries by name. Executables have no extension. `ThirdParty/Include` is a system
     include path (`-isystem`, passed as an option because the Makefile generator ignores `IncludeSystemPaths`), so
     warnings in vendored headers don't fail the build.
@@ -68,8 +72,10 @@ DevEnv (`vs2026`, which writes the v145 toolset, and Kits Root `10.0.26100.0`) a
 - **`Make/Sharpmake/ParallelMakefile.sharpmake.cs`**: a post-generation hook (`ParallelMakefile.Register()` in
   `SharpmakeMain`) that writes `RZE/Makefile` for the Linux build, from the Makefile generator's solution only; the
   Windows `.sln` gets nothing. Phase 1 compiles every project's precompiled header and objects at once
-  (`Make/Objects.mk`); phase 2 runs `RZE.make`, which only archives and links. It rewrites the file only when its
-  content changes, so its date stays put on a regeneration that changes nothing.
+  (`Make/Objects.mk`); phase 2 runs `RZE.make`, which only archives and links. It defaults to Development
+  (`config=development`, marked "(default)" in `make help`), and fails the generation if that name isn't one of the
+  solution's configurations. `RZE.make` and the per-project `.make` files keep Sharpmake's own default, Debug. It
+  rewrites the file only when its content changes, so its date stays put on a regeneration that changes nothing.
 
 ## Per-project Sharpmake files
 

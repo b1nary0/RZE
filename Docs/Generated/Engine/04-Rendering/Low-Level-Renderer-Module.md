@@ -168,12 +168,12 @@ queues GL object names, and the render thread deletes them at the next Present. 
 - **At most two queued frames** (`SetMaximumFrameLatency(2)`, `k_maxFrameLatency`), since the main thread already records a frame while the render thread runs the previous one. The swap chain's **frame latency waitable object** is signalled when it can take another frame. `Renderer::WaitForPresentSlot(timeoutMS)` waits on it from the main thread without touching the device. The engine waits on it at the end of every frame, before the next one reads input; with vsync on, that wait is what paces frames ([Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md#waiting-for-the-next-frame)).
 - **Sync interval.** `Renderer::SetSyncInterval(interval)` is a render command (`SetSyncInterval`), applied from the next frame the render thread runs: 0 presents at once, 1 on every refresh. `RenderEngine::SetVSync` calls it with `FrameSettings::VSync`.
 - **Present** checks its result and logs a removed or reset device once, with the reason.
-- **The debug layer's reports** reach the log in Debug builds. D3D11 has no message callback, so `ReportDebugMessages` reads the device's `ID3D11InfoQueue` after every Present, at the end of `Initialize` and at the start of `Shutdown`, then clears it. Corruption and errors log as `[Error] D3D11 (<id>): ...`, warnings as `[Warning] D3D11 (<id>): ...`; INFO and MESSAGE aren't stored. Unlike GL's errors, they don't assert yet. A message reported by another thread between the read and the clear is lost. Release and Retail have no debug layer, so nothing is read.
+- **The debug layer's reports** reach the log when the device validates ([graphics validation](../06-Platform-And-Infrastructure/Debug-Services-And-Logging.md#graphics-validation): Debug by default, `-gfxvalidation` otherwise; `IGFXDevice::Initialize(validate)`). A validating device is created with `D3D11_CREATE_DEVICE_DEBUG`, any other with `D3D11_CREATE_DEVICE_SINGLETHREADED`. D3D11 has no message callback, so `ReportDebugMessages` reads the device's `ID3D11InfoQueue` after every Present, at the end of `Initialize` and at the start of `Shutdown`, then clears it. Corruption and errors log as `[Error] D3D11 (<id>): ...`, warnings as `[Warning] D3D11 (<id>): ...`; INFO and MESSAGE aren't stored. Unlike GL's errors, they don't assert yet. A message reported by another thread between the read and the clear is lost. Without validation there's no debug layer, and nothing is read; if the device has no info queue, a warning says so and nothing is read either.
 - **Resizing** releases the back buffer view and flushes the context first, because flip model can only resize once nothing references the buffers and D3D11 destroys views lazily, then passes `ResizeBuffers` the flags the swap chain was created with, which flip model requires. Shutdown closes the waitable object and releases the back buffer view before the swap chain.
 
 ### OpenGL: drawn the way Direct3D draws
 
-`GLDevice::Initialize` asks SDL for a **4.5 core** context (with the debug flag in Debug) and loads GL's functions
+`GLDevice::Initialize` asks SDL for a **4.5 core** context (with the debug flag when it validates, as for DX11 above) and loads GL's functions
 through glad. The engine and its shaders assume D3D's conventions throughout, so the GL backend keeps them rather than
 changing anything above it:
 
@@ -187,7 +187,7 @@ changing anything above it:
   (whose GL backend always draws GL's way up), come out the right way up with no changes either.
 - **Presenting waits for the display itself**, so `WaitForPresentSlot` returns at once. The sync interval is set on
   the window's context at the next Present (`SDL_GL_SetSwapInterval`).
-- **The driver's debug messages** reach the log graded by type: errors log as errors and assert, undefined and
+- **The driver's debug messages**, when it validates (a debug context, with `GL_DEBUG_OUTPUT_SYNCHRONOUS` so each arrives on the thread and in the call that caused it), reach the log graded by type: errors log as errors and assert, undefined and
   deprecated behaviour are warnings, and the rest are Debug: performance notes (e.g. NVIDIA's shader recompiles) and
   portability notes (Mesa checks every draw against OpenGL ES 3.1's rules, which don't apply to desktop GL 4.5).
 - `GL_TEXTURE_CUBE_MAP_SEAMLESS` is on, as D3D filters across cube faces.

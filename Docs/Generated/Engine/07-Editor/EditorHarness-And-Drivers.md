@@ -263,6 +263,9 @@ Each call is a process of its own, and does one action.
   `rze-driver-harness`, one request and one answer a line; the session is in `%TEMP%\rze-driver\harness-session.json`.
   `launch` waits for `ready` and for `info` to say the window is maximized. The helper starts the harness with the
   console's input encoding set to UTF-8 without a byte order mark, and kills it if the helper itself ends.
+- **More of the app's command line:** `launch -AppArgs '-gfxvalidation'` adds one string after `-scene`, in both modes,
+  as `driver.py launch -- ...` does. The helper is started with `powershell -File`, which could take a value starting
+  with `-` for a parameter of its own, so `launch -Harness` hands it the string base64-encoded (`-EncodedAppArgs`).
 - **The same commands in both:** `click`, `dblclick`, `drag`, `scroll`, `key`, `shot`, `info`, `alive`, `close` and
   `quit`; harness mode adds `state`, `object` and `realinput`. A click that makes the app exit (Don't Save) reports
   `the app exited`.

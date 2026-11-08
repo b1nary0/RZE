@@ -71,7 +71,7 @@ This one-directional structure is enforced only by which Sharpmake project decla
 
 - `RZE/RZE.sharpmake.cs` — solution root, registers the native projects (10, plus `OptickCore` on Linux; plus the C# `SharpmakeProjectBase` wrapping Sharpmake itself on Windows) against the target for the machine generating: `win64` or `linux`.
 - `RZE/Make/Sharpmake/BaseProject.sharpmake.cs` — abstract `BaseProject : Project` that every native project derives from; centralizes include paths, output paths (`_build/<config>/`), C++17 + RTTI + exceptions, warnings-as-errors, each platform's compiler settings, and the folder tokens that pick per-platform sources.
-- `RZE/Make/Sharpmake/CommonTarget.sharpmake.cs` — defines the build target axes: `SubPlatformType` (only `x64` is active), `Mode` (only `Game` is active — `Editor` mode is commented out), `Optimization` (Debug/Release/Retail).
+- `RZE/Make/Sharpmake/CommonTarget.sharpmake.cs` — defines the build target axes: `SubPlatformType` (only `x64` is active), `Mode` (only `Game` is active — `Editor` mode is commented out), `Optimization` (Debug/Release/Retail, with Release named Development).
 - Per-project `*.sharpmake.cs` files (`Engine/Engine.sharpmake.cs`, `Modules/Rendering/Rendering.sharpmake.cs`, etc.) — each declares its own `AddPublicDependency<T>` calls; see [09-BuildSystem/Sharpmake-Project-Graph.md](../09-BuildSystem/Sharpmake-Project-Graph.md) for the full breakdown.
 
 A `Globals` static class in `RZE.sharpmake.cs` centralizes shared paths: `RootDir`, `IncludeDir` (`ThirdParty/Include/`), `BuildDir(target)` (`_build/<config>/`), `ThirdPartyLibDir`/`ThirdPartyDllDir` (`ThirdParty/Lib(or Dll)/x64/`).

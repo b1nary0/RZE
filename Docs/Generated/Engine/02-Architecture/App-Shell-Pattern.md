@@ -45,7 +45,7 @@ The four per-frame hooks split each frame into a UI part (`PreUIUpdate`, `Update
 | Concern | `GameApp` (`Game\Src\GameApp.h/.cpp`) | `Editor::EditorApp` (`Editor\Src\EditorApp.h/.cpp`) |
 |---|---|---|
 | Render target destination | Adds `FinalRenderTargetStage` — blits the offscreen RTT to the actual back buffer/swap chain | Never adds it — stays in an off-screen RTT, displayed inside an ImGui `SceneViewPanel` window instead |
-| ImGui | Only in Debug builds (`#ifdef IMGUI_ENABLED`, defined in `Debug.h`) — shows the ImGui demo window as leftover dev debug | Always on — the entire UI (dockspace, panels, menu bar) is ImGui |
+| ImGui | In Debug and Development, not Retail (`#ifdef IMGUI_ENABLED`, defined in `DebugConfig.h`) — shows the ImGui demo window as leftover dev debug | Always on — the entire UI (dockspace, panels, menu bar) is ImGui |
 | Scene loading | Deserializes `-scene` CLI arg or falls back to `Assets/Scenes/RenderTest.scene`, synchronously in `Initialize()` | Loads `-scene` CLI arg or falls back to `Assets/Scenes/RenderTest.scene` (same fallback, called a "hack" in a code comment), asynchronously through `SceneDocument::Load` in `Start()` |
 | Start-up | No splash screen. The window shows once `Start()` is done | A splash screen with the logo and what start-up is doing. The window shows once the start scene has loaded (`IsReadyToShow`) |
 | Extra components registered | None beyond the base set | `EditorCameraComponent` (free-fly viewport camera, see [07-Editor](../07-Editor/Editor-Camera-And-Build-Launch.md)) |

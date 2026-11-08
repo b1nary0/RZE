@@ -41,26 +41,31 @@ On Windows, the Editor and the Game are windowed apps (`/SUBSYSTEM:WINDOWS`), so
 
 ### Which builds have what
 
-| | Debug | Release | Retail (`RZE_RETAIL`) |
-|---|---|---|---|
-| The `RZE_LOG` macros, every level | ✓ | ✓ | compiled out |
-| Asserts (`AssertExpr`, `AssertMsg`, ...) | ✓ | compiled out | compiled out |
-| `START_TIMED_BLOCK` | ✓ | — | — |
-| `IMGUI_ENABLED` (Game's ImGui) | ✓ | — | — |
-| `DebugDrawRenderStage` (debug lines) | ✓ | ✓ | compiled out |
+Development is everything Debug is, but optimized. Retail, the build that ships, strips the lot. Each row but the last is a macro in `Utils/Src/Utils/DebugUtils/DebugConfig.h`, defined unless `RZE_RETAIL` is, so code tests what it needs rather than which configuration it's in; the build settings are in [Building-And-Running.md](../01-GettingStarted/Building-And-Running.md#configurations).
 
-In Retail, the log macros still "use" their arguments in a dead branch, so variables that only feed a log line don't cause unused-variable warnings.
+| | Debug | Development | Retail (`RZE_RETAIL`) |
+|---|---|---|---|
+| The `RZE_LOG` macros, every level (`RZE_LOGGING_ENABLED`) | ✓ | ✓ | compiled out |
+| Asserts (`AssertExpr`, `AssertMsg`, ..., `RZE_ASSERTS_ENABLED`) | ✓ | ✓ | compiled out |
+| [`START_TIMED_BLOCK`](#timing-a-block) (with logging) | ✓ | ✓ | compiled out |
+| The Game's ImGui (`IMGUI_ENABLED`) | ✓ | ✓ | — |
+| [`RZE_DISABLE_OPTIMIZATION`](#reading-an-optimized-function-in-the-debugger) (`RZE_OPTIMIZATION_SWITCH_ENABLED`) | ✓ | ✓ | a compile error |
+| [Graphics validation](#graphics-validation) (`RZE_GFX_VALIDATION_AVAILABLE`) | on | `-gfxvalidation` | — |
+| `DebugDrawRenderStage` (debug lines) | ✓ | ✓ | compiled out |
+| The debug CRT's report hook (Windows, `_DEBUG`) | ✓ | — | — |
+
+In Retail, the log macros and `START_TIMED_BLOCK` still "use" their arguments in a dead branch, so variables that only feed a log line don't cause unused-variable warnings.
 
 ## Asserts (`Utils\Src\Utils\DebugUtils\Debug.h`)
 
-`AssertFalse()`, `AssertEqual(a, b)`, `AssertIsNull(p)`, `AssertNotNull(p)`, `AssertExpr(expr)`, `AssertMsg(expr, "why")`. Debug builds only.
+`AssertFalse()`, `AssertEqual(a, b)`, `AssertIsNull(p)`, `AssertNotNull(p)`, `AssertExpr(expr)`, `AssertMsg(expr, "why")`. Debug and Development; Retail compiles them to nothing, so a variable only an assert reads is unused there, which clang rejects: put the whole check inside the assert.
 
 A failing assert:
 1. writes `Assertion failed: <expression>, file <file>, line <n>` (and the message, if any, on a second line) to stderr and to the log at Error, as one entry, so it reaches the log file and the Log panel without a console. An assert that fires while another is being logged, e.g. from the log sink, only goes to stderr, since logging it would recurse or block on the log file's lock;
-2. on Windows, shows the CRT assert dialog with the **expression and message**, in both console and windowed apps. **Retry** breaks into the debugger on the line of the failing assert (`RZE_DEBUG_BREAK()` sits in the macro, not in a helper function), **Ignore** carries on, and **Abort** quits;
+2. on Windows, shows an assert dialog with the **expression and message**, in both console and windowed apps: the debug CRT's in Debug, and in Development, whose release CRT has none, a message box with the same buttons and meanings ("RZE: Assertion Failed"). **Retry** breaks into the debugger on the line of the failing assert (`RZE_DEBUG_BREAK()` sits in the macro, not in a helper function), **Ignore** carries on, and **Abort** quits;
 3. on Linux, where there's no dialog to ask, breaks there only when a debugger is attached (`TracerPid` in `/proc/self/status`), as Retry would, and otherwise carries on, as Ignore would.
 
-`Debug::SetAssertFailureHook(hook)` puts a function in place of the dialog or the break, on both platforms: the unit tests use it to turn an assert into a failed check ([Building-And-Running.md](../01-GettingStarted/Building-And-Running.md#unit-tests)). It's handed the report and returns whether to break.
+`Debug::SetAssertFailureHook(hook)` puts a function in place of the dialog or the break, on both platforms: the unit tests use it to turn an assert into a failed check ([Building-And-Running.md](../01-GettingStarted/Building-And-Running.md#unit-tests)). It's handed the report and returns whether to break. In Windows Debug builds it's installed as the debug CRT's report hook, so it sees the CRT's own errors too.
 
 ## `DebugServices` (`Engine\Src\DebugUtils\DebugServices.h/.cpp`)
 
@@ -82,12 +87,46 @@ Warning and Error use the same colours as the Editor's status colours (`EditorSt
 
 ```cpp
 {
-    START_TIMED_BLOCK("Build navmesh");   // Debug only; ScopedHiResTimer
+    START_TIMED_BLOCK("Build navmesh");   // [Debug] Build navmesh took 12.345678 ms to complete.
+    ...
+    START_TIMED_BLOCK("Write navmesh");   // a second one in the same scope is fine
     ...
 }
 ```
 
+`START_TIMED_BLOCK(name)` declares a `ScopedHiResTimer` (`Utils/Platform/Timers/HiResTimer.h`), which logs at Debug how long the rest of the enclosing scope took, when the scope ends. It's on wherever logging is, Debug and Development. Its variable is named from the line it's on, so a scope can hold any number, one per line; they log in reverse, as the scope unwinds. `TimedBlockTests` covers both.
+
 For frame-level profiling use Optick or PIX instead (see [Low-Level-Renderer-Module.md](../04-Rendering/Low-Level-Renderer-Module.md#profiling)).
+
+## Graphics validation
+
+The graphics API's own checking of every call: on DX11 the **D3D11 debug layer** (`D3D11_CREATE_DEVICE_DEBUG`), whose reports `DX11Device` reads from its info queue into the log; on OpenGL a **debug context** (`SDL_GL_CONTEXT_DEBUG_FLAG`) with synchronous `KHR_debug` output, whose callback logs each report and asserts on errors. See [Low-Level-Renderer-Module.md](../04-Rendering/Low-Level-Renderer-Module.md#presenting-and-vsync) for what each reports and how.
+
+It costs CPU time in every API call, so Development leaves it off unless asked:
+
+| Argument | Meaning |
+|---|---|
+| `-gfxvalidation` | On (the default in Debug) |
+| `-gfxvalidation 0` | Off, e.g. to time a Debug build without it |
+
+`ShouldValidateGraphics` in `Engine.cpp` decides, from `DebugConfig.h`'s `RZE_GFX_VALIDATION_BY_DEFAULT` (Debug) and the command line, and the Engine passes the answer down through `RenderEngine::Initialize`, `Renderer::Initialize` and `RenderThread::Initialize` to `IGFXDevice::Initialize(bool validate)`, so the Rendering module never reads the command line. When it's on, the log says `Graphics validation is on: the graphics API checks every call, which costs CPU time`. Retail never validates, whatever the command line says. The drivers pass it as `driver.ps1 launch -AppArgs '-gfxvalidation'` and `driver.py launch -- -gfxvalidation`.
+
+On Windows the debug layer needs the **Graphics Tools** optional feature; without it, creating a validating device fails.
+
+## Reading an optimized function in the debugger
+
+An optimized function's locals live in registers for parts of it, or are optimized away, and stepping jumps around. Rather than switching the whole build to Debug, wrap the function's definition in its .cpp:
+
+```cpp
+RZE_DISABLE_OPTIMIZATION
+Vector3D Octahedral::Decode(const Vector2D& point)
+{
+    ...
+}
+RZE_ENABLE_OPTIMIZATION
+```
+
+Each goes on a line of its own at file scope, without a semicolon. Between them the compiler doesn't optimize (`#pragma clang optimize off` on Linux, `#pragma optimize("", off)` with warning C4748 suppressed on Windows; `RZE_PRAGMA_OPTIMIZE_OFF/ON` in `Platform.h`), so each local has a fixed stack slot for the whole function and the debugger steps line by line, while the rest of the program stays optimized. **Never commit them:** in Retail, `RZE_DISABLE_OPTIMIZATION` is a `static_assert` that names itself, so a build that ships fails while one is in. `OptimizationSwitchTests` checks a wrapped function still computes the same.
 
 ## Frame time capture
 
@@ -113,10 +152,11 @@ These work without `-perfcapture` too; see [Engine-Startup-And-Frame-Loop.md](..
 
 ## Key files
 
-- `Utils/Src/Utils/DebugUtils/Debug.h/.cpp` — log levels and macros, log file, log sink, asserts; the OS half in `Utils/Src/Utils/Platform/Windows/DebugWindows.cpp` and `Linux/DebugLinux.cpp`
+- `Utils/Src/Utils/DebugUtils/DebugConfig.h` — which debugging aids a build has
+- `Utils/Src/Utils/DebugUtils/Debug.h/.cpp` — log levels and macros, log file, log sink, asserts, `START_TIMED_BLOCK`, `RZE_DISABLE_OPTIMIZATION`; the OS half in `Utils/Src/Utils/Platform/Windows/DebugWindows.cpp` and `Linux/DebugLinux.cpp`
 - `Engine\Src\DebugUtils\DebugServices.h/.cpp` — channels and their colours
 - `Editor\Src\UI\Panels\LogPanel.h/.cpp`, `LogFilter.h/.cpp` — the Log panel and its filter (see [Editor-Panels.md](../07-Editor/Editor-Panels.md#log-logpanel))
 - `Modules/Rendering/Src/Rendering/Driver/DX11/DX11ShaderTypes.cpp` — `LogCompileMessages`; `Driver/OpenGL/GLShaderTypes.cpp`
 - `Engine\Src\DebugUtils\FrameTimeCapture.h/.cpp`
-- `Engine\Src\EngineCore\Engine.cpp` — `TraceLogLine`, the engine's log sink
+- `Engine\Src\EngineCore\Engine.cpp` — `TraceLogLine`, the engine's log sink; `ShouldValidateGraphics`
 - `Utils\Src\Utils\Platform\Timers\HiResTimer.h/.cpp`

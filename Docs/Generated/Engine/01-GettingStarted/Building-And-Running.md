@@ -20,7 +20,7 @@ Linux is developed on Fedora 44 under KDE Plasma (Wayland), with an NVIDIA drive
 ```mermaid
 %%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
-    A["Generate<br/>GenerateSolutions.bat: RZE.sln and .vcxproj files<br/>GenerateSolutions.sh: Makefile, RZE.make and .make files"] --> B["Compile<br/>Windows: msbuild RZE.sln<br/>Linux: make config=debug<br/>(Engine, Rendering, Utils, Externals, EditorLib,<br/>SourceAssetBurner, Editor, EditorHarness,<br/>Game, UnitTests)"]
+    A["Generate<br/>GenerateSolutions.bat: RZE.sln and .vcxproj files<br/>GenerateSolutions.sh: Makefile, RZE.make and .make files"] --> B["Compile<br/>Windows: msbuild RZE.sln<br/>Linux: make<br/>(Development unless config= says otherwise)<br/>(Engine, Rendering, Utils, Externals, EditorLib,<br/>SourceAssetBurner, Editor, EditorHarness,<br/>Game, UnitTests)"]
     B --> T["Run UnitTests"]
     T --> C["Burn assets<br/>SourceAssetBurner<br/>(Assets/3D/*.obj -> ProjectData/Mesh + Material/*)"]
     C --> E["Run the Editor or the Game<br/>(both read Assets/, Config/ and ProjectData/<br/>from the source tree)"]
@@ -40,15 +40,17 @@ docs and the CI files ever disagree, trust the CI files.
 
    See [09-BuildSystem/Sharpmake-Project-Graph.md](../09-BuildSystem/Sharpmake-Project-Graph.md).
 
-2. **Compile.** Output lands in `RZE/_build/<config>/` (`debug`, `release` or `retail`).
-   - Windows: `msbuild RZE.sln /property:Configuration=Debug`. Warnings are errors (`/W3 /WX`).
-   - Linux: `make config=debug -j$(nproc)` in `RZE/` (or `release`, `retail`), or one project, e.g.
-     `make config=debug Editor`. Warnings are errors here too (`-Wall -Werror`). Executables have no
-     extension (`_build/debug/Editor`).
+2. **Compile.** Output lands in `RZE/_build/<config>/` (`debug`, `development` or `retail`; see
+   [Configurations](#configurations)).
+   - Windows: `msbuild RZE.sln /property:Configuration=Development`, or pick the configuration once in Visual Studio,
+     which remembers it. Warnings are errors (`/W3 /WX`).
+   - Linux: `make -j$(nproc)` in `RZE/` builds Development, `config=debug` or `config=retail` the others, and
+     `make Editor` one project. `RZE.make` on its own (`make -f RZE.make`) defaults to Debug, as Sharpmake writes it.
+     Warnings are errors here too (`-Wall -Werror`). Executables have no extension (`_build/development/Editor`).
    - **Just the Game:** `RZE/BuildGame.bat` on Windows finds MSBuild through `vswhere` and builds
-     `Game/_project/Game_Win64.vcxproj` as Debug|x64. `RZE/BuildGame.sh` on Linux runs
-     `make config=debug -j$(nproc) Game`. The Editor's **Build Game** and **Launch Game** run whichever one belongs
-     to the platform (see [Editor-Camera-And-Build-Launch.md](../07-Editor/Editor-Camera-And-Build-Launch.md)).
+     `Game/_project/Game_Win64.vcxproj` as Development|x64. `RZE/BuildGame.sh` on Linux runs
+     `make config=development -j$(nproc) Game`. The Editor's **Build Game** and **Launch Game** run whichever one
+     belongs to the platform (see [Editor-Camera-And-Build-Launch.md](../07-Editor/Editor-Camera-And-Build-Launch.md)).
 
 3. **Burn assets** (offline asset conditioning; see
    [05-AssetPipeline/Asset-Burning-Pipeline.md](../05-AssetPipeline/Asset-Burning-Pipeline.md))
@@ -75,6 +77,30 @@ docs and the CI files ever disagree, trust the CI files.
 5. **Run.** `_build/<config>/Game` (`Game.exe`) or `_build/<config>/Editor` (`Editor.exe`), optionally with
    `-scene Sponza.scene` (a scene in `Assets/Scenes`).
 
+## Configurations
+
+| | Debug | Development | Retail |
+|---|---|---|---|
+| For | Stepping through code the optimizer rearranges | Everyday work and testing | The build that ships |
+| Optimization, Linux | Off (`-O0`) | `-O2`, with frame pointers (`-fno-omit-frame-pointer`) | `-O3 -mavx2` |
+| Optimization, Windows | Off, no inlining | On, inlining only what's marked `inline` | Maximize speed, any inlining, AVX2 |
+| Windows CRT | Debug (`/MDd`) | Release (`/MD`) | Release (`/MD`) |
+| Symbols | ✓ | ✓ | ✓ |
+| Asserts, logging, the Game's ImGui, `START_TIMED_BLOCK`, `RZE_DISABLE_OPTIMIZATION` | ✓ | ✓ | — (`RZE_RETAIL`) |
+| Graphics validation (the D3D11 debug layer, a GL debug context) | On (`-gfxvalidation 0` turns it off) | Off (`-gfxvalidation` turns it on) | — |
+
+- **Development is the default:** `make` in `RZE/`, both `run-rze` drivers, VS Code's default build task and its first
+  launch configurations, and the Editor's Build Game and Launch Game. Use Debug when the debugger's view of an
+  optimized function isn't enough, or wrap just that function in `RZE_DISABLE_OPTIMIZATION`
+  ([Debug-Services-And-Logging.md](../06-Platform-And-Infrastructure/Debug-Services-And-Logging.md#reading-an-optimized-function-in-the-debugger)).
+- **What each has** is decided in `Utils/Src/Utils/DebugUtils/DebugConfig.h` (Debug and Development have every
+  debugging aid, Retail none), and the compiler settings in `Make/Sharpmake/BaseProject.sharpmake.cs`. Besides
+  optimization and validation's default, the debug CRT's own checks (on the heap and in the standard library, which
+  report through its hook) are all Debug has that Development doesn't: Development links the release CRT.
+- **Formerly Release.** Development was called Release until 2026-11-08 (`7439d711`), and only had asserts from
+  `139bfcb1`, the same day. Measurements in these pages that say "Release (now Development)" were taken in it before
+  then.
+
 ## Unit tests
 
 `_build/<config>/UnitTests` runs the unit tests ([doctest](https://github.com/doctest/doctest) 2.4.11, vendored in
@@ -92,7 +118,16 @@ pick test cases, `-s` to show passing checks). It needs no display, so CI runs i
   - Engine: `ComponentPropertyRegistry`, `GameScene` (including components loading and saving in the scene file's order), `HeadlessScene`, `AsyncOperationManager` and `JobScheduler` (lanes, budgets), `ResourceHandler` (shared loads, deferred destroys), `TextureFile` (PNG round trip, atomic writes), `TransformComponent`, lights, object and render scene bounds, `SceneChangeLog`, and `CubeMap` (each face renders what sampling the cube reads).
   - Utils: `BoundingBox`, `Frustum`, `Ray`, file and string helpers, `FileNames` (including names that differ only in case), `TypeNames`; on Linux, `Shell::MoveToRecycleBin` (the Trash spec, in a test `XDG_DATA_HOME`).
 - **No running engine.** Tests build their own `GameScene` and `EditorContext`; `main` (`TestMain.cpp`) only does what tests rely on from start-up: `MainThreadDispatcher::Initialize()` and `RZE_Application::RegisterEngineComponents()`. Code that needs a window or the render engine (e.g. `CameraComponent::OnAddToScene`, finding objects through `RZE().GetActiveScene()`) can't be tested this way.
-- **Asserts fail the test.** In Debug, `Debug::SetAssertFailureHook` turns an engine assert into a failed check in the running test, with the assert's text, instead of a dialog (Windows) or a break into a debugger (Linux), so a run never waits for input. On Windows it also catches the CRT's own reports.
+- **Asserts fail the test.** In Debug and Development, `Debug::SetAssertFailureHook` turns an engine assert into a failed check in the running test, with the assert's text, instead of a dialog (Windows) or a break into a debugger (Linux), so a run never waits for input. On Windows Debug builds it also catches the debug CRT's own reports.
+
+## VS Code on Linux
+
+`Tools/Linux/VSCode/RZE.code-workspace` (open the workspace, not the repository folder) builds, runs and debugs with
+gdb: Ctrl+Shift+B builds Development, and F5 starts the Editor or the unit tests in Development or Debug, each building
+its configuration first. Its IntelliSense reads `compile_commands.json` at the repository root, which
+`Tools/Linux/GenerateCompileCommands.py` writes from the Makefiles (Development's flags unless told otherwise), so it
+sees the build's own defines and include paths; the file is gitignored and the build task regenerates it. Setup is in
+`Tools/Linux/VSCode/README.md`.
 
 ## Driving the running Editor
 
@@ -107,9 +142,10 @@ their results. See [EditorHarness-And-Drivers.md](../07-Editor/EditorHarness-And
 
 ## CI
 
-Both run on pushes to any branch, on pull requests to `master` and `Sandbox`, and on demand, over `debug`, `release`
-and `retail`. Pushes and pull requests that only change `Docs/`, Markdown files or `.claude/` don't start them. GitHub
-reads a workflow from the commit that was pushed, so an older branch runs whatever workflow files it has.
+Both run on pushes to any branch, on pull requests to `master` and `Sandbox`, and on demand, over `debug`,
+`development` and `retail`. Pushes and pull requests that only change `Docs/`, Markdown files or `.claude/` don't
+start them. GitHub reads a workflow from the commit that was pushed, so an older branch runs whatever workflow files it
+has.
 
 - **Matrix:** each configuration is its own job, and one failing doesn't cancel the others (`fail-fast: false`).
 - **Superseded runs:** a newer push to the same branch or pull request cancels the run before it.

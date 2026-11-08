@@ -162,7 +162,7 @@ The handles into a `RenderScene` could be copied, so two holders could end up de
 
 ## 22. A few long frames remain while thumbnails render
 
-Background thumbnail runs keep frames short almost all the time. Over a full run in Release, 3 frames went over 100 ms, the worst at 167 ms, against 962 ms with the old blocking batch. Likely causes are each capture's GPU readback (the render thread waits on the GPU) and resources that don't load asynchronously falling back to a synchronous load. They haven't been profiled yet.
+Background thumbnail runs keep frames short almost all the time. Over a full run in Release (now Development), 3 frames went over 100 ms, the worst at 167 ms, against 962 ms with the old blocking batch. Likely causes are each capture's GPU readback (the render thread waits on the GPU) and resources that don't load asynchronously falling back to a synchronous load. They haven't been profiled yet.
 
 ## 23. Nested types can still describe their own properties
 
@@ -192,9 +192,9 @@ The first unit of work in any budget always runs, even when it's bigger than the
 
 `RenderTargetTexture`'s destructor is empty, so its GPU textures are never released; the Editor leaks its scene view target on every resize. The D3D debug layer also reports about 390 live objects at exit, probably the same cause.
 
-## 30. In Debug, the game's key bindings never fire
+## 30. The game's key bindings never fired with ImGui on (fixed)
 
-`GameApp::ProcessInput` returns `false` in `IMGUI_ENABLED` (Debug) builds, so the engine resets input every frame instead of raising events, and Escape, F1–F3 and the player controller's bindings never fire. See [Game-App.md](../08-Game/Game-App.md).
+**Fixed (11-08, `a9812074`).** `GameApp::ProcessInput` returned `false` in `IMGUI_ENABLED` builds (then Debug only), so the engine reset input every frame instead of raising events, and Escape, F1–F3 and the player controller's bindings never fired. Apps now return an `InputGate` with a flag per device, and the Game keeps a device from the game only while ImGui wants it. That matters more now that Development, the default build, has the Game's ImGui too. See [Game-App.md](../08-Game/Game-App.md).
 
 ## 31. `RenderThread::Shutdown` could race (fixed)
 

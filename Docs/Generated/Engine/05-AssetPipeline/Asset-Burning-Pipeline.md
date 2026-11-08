@@ -26,8 +26,8 @@ The offline and runtime halves share only the binary format, not code paths. Loa
 ## Running it
 
 ```powershell
-.\RZE\_build\debug\SourceAssetBurner.exe            # burn every .obj and .fbx under RZE\Assets\3D
-.\RZE\_build\debug\SourceAssetBurner.exe <file>     # burn one source file
+.\RZE\_build\development\SourceAssetBurner.exe            # burn every .obj and .fbx under RZE\Assets\3D
+.\RZE\_build\development\SourceAssetBurner.exe <file>     # burn one source file
 ```
 
 It exits with 1 if any source fails to import, or if the one file given isn't there, so a build step (CI's Burn

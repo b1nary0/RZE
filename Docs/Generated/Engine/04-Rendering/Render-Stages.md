@@ -160,7 +160,7 @@ Draws the depth of everything that isn't blended before any shading, so ambient 
 
 - Clears the view's depth and draws opaque and cutout draws with `Vertex_NewRenderer`, the forward pass's vertex shader, so the depths match bit for bit. Opaque draws run **no pixel shader** (`Renderer::UnsetPixelShader`); cutouts run `Pixel_DepthPrepass.hlsl`, which only clips. Blended draws are left out: they don't write depth.
 - The same object and submesh culling as the forward pass. Publishes `SceneDepthData { Depth }`.
-- In Sponza (Release, uncapped) it made frames 27% faster, 0.84 to 0.61 ms, since hidden pixels are no longer lit; the extra draws cost the render thread about 0.004 ms.
+- In Sponza (Release, now Development; uncapped) it made frames 27% faster, 0.84 to 0.61 ms, since hidden pixels are no longer lit; the extra draws cost the render thread about 0.004 ms.
 
 ### `AmbientOcclusionStage`
 
@@ -180,7 +180,7 @@ flowchart TD
 - **Differences from XeGTAO:** every texture is read with integer `Load`s at a pixel clamped to the viewport, not sampled by UV, since a view can be the top-left part of a bigger target; normals are made from depth; no bent normals; the noise is fixed per pixel (there's no TAA to average it over frames).
 - It needs the view's projection on its own (`RenderCamera::Projection`), to turn depth back into positions. Views with AO Off, `Uniform` lighting or no perspective projection get a **1x1 white texture** instead, and readers clamp the pixel to the texture's size, so they never need to check.
 - The working textures (depth mips, visibility, edges) are kept per view and remade when its target changes size.
-- Costs 0.29 ms a frame on Medium and 0.44 ms on High in Sponza (Release, uncapped, a 2050x1280 view).
+- Costs 0.29 ms a frame on Medium and 0.44 ms on High in Sponza (Release, now Development; uncapped, a 2050x1280 view).
 
 ### Irradiance and reflection probes
 
@@ -221,7 +221,7 @@ A grid of probes over the scene, whose light the forward pass uses for ambient d
   - When objects change (`RenderScene::GetObjectsRevision`), the probes within 5 spacings of them (`HaveObjectsChangedWithin`) are queued to be captured again; moving Sponza's tank 2 m queues 1144 of 4416.
   - The budgets and the probe count are `GlobalIlluminationSettings` (`Graphics/GlobalIllumination.h`), from Engine.ini's `[Rendering]`, owned by `RenderEngine`.
 - **Publishes** `SceneIrradianceData`: the volume's layout (`GraphicsLayouts::IrradianceVolumeLayout`, `b5`), the SH textures (`t8` to `t10`) and the visibility atlas (`t11`); placeholders, and a probe count of 0, for views without global illumination.
-- Costs 0.25 ms a frame in Sponza (Release, uncapped).
+- Costs 0.25 ms a frame in Sponza (Release, now Development; uncapped).
 
 ### `ReflectionProbeStage`
 
@@ -304,7 +304,7 @@ flowchart TD
 | Texture detail | Softened: texture contrast looks like an edge to it | Kept sharp |
 | Passes | 1 | 3, plus two clears |
 | Qualities | Low, Medium, High (Ultra is used as High) | Low, Medium, High, Ultra |
-| Sponza, uncapped Release, median frame time (Off: 1.401 ms) | Medium 1.455 ms (+3.9%), High 1.466 ms (+4.6%) | High 1.540 ms (+9.9%), Ultra 1.563 ms (+11.6%) |
+| Sponza, uncapped Release (now Development), median frame time (Off: 1.401 ms) | Medium 1.455 ms (+3.9%), High 1.466 ms (+4.6%) | High 1.540 ms (+9.9%), Ultra 1.563 ms (+11.6%) |
 
 On Sponza, SMAA High changes about 34k pixels of the scene view against Off, and FXAA High about 203k: most of FXAA's are texture detail it softens. `GetHighestQuality(method)` gives each method's top quality (Ultra for SMAA, High otherwise), which is what the editor offers. A method keeps a quality it doesn't have: FXAA at Ultra draws as High, and switching to SMAA gets Ultra back.
 
