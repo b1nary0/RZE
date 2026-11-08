@@ -38,15 +38,12 @@ namespace Rendering
 			shaderc_include_result Result = {};
 		};
 
-		// Beside the file including it, then beside the shader being translated, as D3D's standard include looks
-		shaderc_include_result* ResolveInclude(void* shaderFolder, const char* requested, int /*type*/, const char* requesting, size_t /*depth*/)
+		// Beside the shader being translated (Assets/Shaders), never beside the file including it: D3D's standard include
+		// handler doesn't look there, so an include only GL could find would fail on Windows
+		shaderc_include_result* ResolveInclude(void* shaderFolder, const char* requested, int /*type*/, const char* /*requesting*/, size_t /*depth*/)
 		{
 			std::unique_ptr<Include> include = std::make_unique<Include>();
-			std::filesystem::path path = std::filesystem::path(requesting).parent_path() / requested;
-			if (!std::filesystem::exists(path))
-			{
-				path = *static_cast<const std::filesystem::path*>(shaderFolder) / requested;
-			}
+			const std::filesystem::path path = *static_cast<const std::filesystem::path*>(shaderFolder) / requested;
 
 			if (std::filesystem::exists(path))
 			{

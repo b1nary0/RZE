@@ -1,7 +1,7 @@
 // SMAA's second pass: how much each edge pixel blends with its neighbour across the edge, from the edge's shape (its
 // length and where its ends turn) looked up in the area texture. Shared by Pixel_SMAABlendingWeights and
 // Pixel_SMAABlendingWeightsNoDiagonals, which differ only in SMAA_DISABLE_DIAG/CORNER_DETECTION.
-#include "SMAA.hlsli"
+#include "Common/SMAA/SMAA.hlsli"
 
 Texture2D EdgesTexture : register(t0);
 Texture2D AreaTexture : register(t1);

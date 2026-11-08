@@ -11,7 +11,10 @@
 //
 // SMAA_HLSL_4's own setup declares its samplers in Effects syntax without registers, so the porting macros are ours
 // (SMAA_CUSTOM_SL).
-#include "../FullScreenQuad.hlsli"
+//
+// Includes are written from Assets/Shaders, as in every shader: D3D's standard include handler looks beside the shader
+// being compiled and in the working directory, never beside the file doing the including.
+#include "Common/FullScreenQuad.hlsli"
 
 // Must match AntiAliasingStage::SMAAParamsLayout
 cbuffer SMAAParams : register(b0)
@@ -47,7 +50,7 @@ SamplerState PointSampler : register(s3);
 #define SMAA_MAX_SEARCH_STEPS_DIAG MaxSearchStepsDiag
 #define SMAA_CORNER_ROUNDING CornerRounding
 
-#include "SMAA.hlsl"
+#include "Common/SMAA/SMAA.hlsl"
 
 // The pixel's centre in the target's texture coordinates. Not the quad's UV, which spans the viewport, the target's
 // top-left part.
