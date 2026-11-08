@@ -19,7 +19,6 @@ public:
 	// GameObjectComponent interface
 public:
 	void Initialize() override;
-	void OnAddToScene() override;
 	void Update() override;
 
 	void Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override;
@@ -32,11 +31,7 @@ public:
 	Vector3D GetForward() const;
 	Vector3D GetUpDir() const;
 
-	const Matrix4x4& GetProjectionMatrix() const;
-	const Matrix4x4& GetViewMatrix() const;
-
 	float GetFOV() const;
-	float GetAspectRatio() const;
 	float GetNearCull() const;
 	float GetFarCull() const;
 	float GetExposureCompensation() const;
@@ -46,7 +41,6 @@ public:
 	bool IsMainCamera() const;
 
 	void SetFOV(float fov);
-	void SetAspectRatio(float aspectRatio);
 	void SetNearCull(float nearCull);
 	void SetFarCull(float farCull);
 	void SetExposureCompensation(float ev);
@@ -56,29 +50,22 @@ public:
 	void SetMainCamera(bool isMainCamera);
 
 	// What the camera sees, for a view of viewportSize pixels: its field of view and cull distances at that size's
-	// aspect ratio. Leaves the camera's own matrices alone.
+	// aspect ratio. The camera has no aspect ratio of its own: it takes the shape of whatever view it renders into.
 	RenderCamera CreateRenderCamera(const Vector2D& viewportSize) const;
 
-	// Renders what the camera sees into its preview target, at the preview's own aspect ratio. Leaves the
-	// camera's own matrices alone. The result is ready to show once the frame renders.
+	// Renders what the camera sees into its preview target, at the preview's own aspect ratio. The result is ready to
+	// show once the frame renders.
 	void RenderPreview();
 	// What RenderPreview draws into, and the part of it that's used
 	const Rendering::RenderTargetTexture& GetPreviewTarget() const { return *m_renderTarget; }
 	static Vector2D GetPreviewSize();
 
 private:
-	void GenerateCameraMatrices(const Vector3D& position);
-
-private:
 	// The owner's scene; set in Initialize, once the component has an owner, and fixed from then on since objects
 	// never change scene
 	GameScene* m_scene = nullptr;
 
-	Matrix4x4 m_projectionMat;
-	Matrix4x4 m_viewMat;
-
 	float m_fov { 60.0f };
-	float m_aspectRatio { 0.0f }; // #TODO I don't think we're updating this sensibly when the aspect ratio changes...
 	float m_nearCull { 0.01f };
 	float m_farCull { 1000.0f };
 	// EV on top of auto-exposure; lets a scene sit darker (low-key) or brighter (high-key) than the default

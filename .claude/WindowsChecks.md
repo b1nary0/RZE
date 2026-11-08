@@ -94,6 +94,12 @@ the rest for the user.
   3. **(person)** With NeckMech selected and the pointer over the scene view, hold Q for two seconds, past the repeat
      delay: the toolbar's Local/World flips once, not once per repeat.
 
+- **C11. The Game's camera keeps the window's shape (person; the commit after 0bbaedc3).** Cameras no longer store
+  an aspect ratio: they frame the main view's `ViewportSize`, which `GameApp` now also sets at startup (Linux gets two
+  resize events at startup anyway; check Windows doesn't depend on them). Run `RZE\_build\debug\Game.exe`, then drag
+  a window edge to make it much wider, then much taller: Nyra keeps her proportions each time, never stretched. (F1-F3
+  can't resize it: the Game's key bindings never run while ImGui is on, a known bug in the ledger.)
+
 ### D. Rendering on DX11
 
 - **D5. The D3D11 debug layer's reports reach the log.** Debug builds now read `ID3D11InfoQueue` after every

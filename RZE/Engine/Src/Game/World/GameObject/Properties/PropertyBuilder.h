@@ -77,7 +77,7 @@ namespace PropertyBuilderDetail
 //   void CameraComponent::DescribeProperties(PropertyBuilder<CameraComponent>& properties)
 //   {
 //       properties.Float("Field Of View", &CameraComponent::GetFOV, &CameraComponent::SetFOV).Range(1.0f, 179.0f);
-//       properties.Float("Aspect Ratio", &CameraComponent::GetAspectRatio);   // no setter: computed
+//       properties.Float("Horizontal FOV", &CameraComponent::GetHorizontalFOV);   // no setter: computed
 //       properties.Object<MaterialInstance>("Material", &MeshGeometry::GetMaterial);   // a nested described type
 //       properties.Value<std::string>("Shader", [](const MaterialInstance& m) { return ...; });   // computed
 //   }

@@ -275,15 +275,8 @@ namespace Editor
 		{
 			m_dimensions.SetXY(viewportDims.x, viewportDims.y);
 			viewport.Size = m_dimensions;
+			// The cameras frame this size (CameraComponent::CreateRenderCamera, EditorCameraComponent)
 			RZE().GetRenderEngine().GetMainView().ViewportSize = m_dimensions;
-
-			// The editor camera doesn't exist while a scene is loading; it picks up
-			// the viewport size when it's created (SceneDocument::CreateEditorCamera).
-			GameObjectComponentPtr<EditorCameraComponent> cameraComponent = context.GetEditorCameraComponent();
-			if (cameraComponent != nullptr)
-			{
-				cameraComponent->SetAspectRatio(m_dimensions.X() / m_dimensions.Y());
-			}
 		}
 
 		Rendering::RenderTargetTexture* const pRTT = RZE().GetApplication().GetRTT();
@@ -600,8 +593,8 @@ namespace Editor
 		const Vector3D right = forward.Cross(camera.GetUpDir()).Normalized();
 		const Vector3D up = right.Cross(forward);
 
-		// The aspect ratio is only set once the camera is in a scene; fall back to the scene view's
-		const float aspectRatio = camera.GetAspectRatio() > 0.0f ? camera.GetAspectRatio() : GetDimensions().X() / GetDimensions().Y();
+		// A camera takes the shape of the view it renders into: here, the scene view
+		const float aspectRatio = GetDimensions().X() / GetDimensions().Y();
 		const float tanHalfFov = std::tan(camera.GetFOV() * 0.5f * MathUtils::ToRadians);
 
 		// Corner i is on the right if bit 0 is set and on top if bit 1 is set

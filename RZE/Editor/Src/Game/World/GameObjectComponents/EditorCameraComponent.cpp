@@ -80,11 +80,6 @@ float EditorCameraComponent::GetFOV() const
 	return m_fov;
 }
 
-float EditorCameraComponent::GetAspectRatio() const
-{
-	return m_aspectRatio;
-}
-
 float EditorCameraComponent::GetNearCull() const
 {
 	return m_nearCull;
@@ -120,11 +115,6 @@ void EditorCameraComponent::SetFOV(float fov)
 	m_fov = fov;
 }
 
-void EditorCameraComponent::SetAspectRatio(float aspectRatio)
-{
-	m_aspectRatio = aspectRatio;
-}
-
 void EditorCameraComponent::SetNearCull(float nearCull)
 {
 	m_nearCull = nearCull;
@@ -148,10 +138,15 @@ void EditorCameraComponent::FocusOn(const BoundingBox& bounds)
 	const Vector3D center = bounds.GetCentre();
 	const float radius = std::max(bounds.GetRadius(), k_focusMinRadius);
 
-	// Fit the bounding sphere to the narrower of the vertical and horizontal FOVs
+	// Fit the bounding sphere to the narrower of the vertical and horizontal FOVs, at the scene view's shape
 	const float verticalHalfFov = m_fov * 0.5f * MathUtils::ToRadians;
-	const float horizontalHalfFov = std::atan(std::tan(verticalHalfFov) * m_aspectRatio);
-	const float halfFov = std::min(verticalHalfFov, horizontalHalfFov);
+	float halfFov = verticalHalfFov;
+	const Vector2D& viewportSize = RZE().GetRenderEngine().GetMainView().ViewportSize;
+	if (viewportSize.X() > 0.0f && viewportSize.Y() > 0.0f)
+	{
+		const float horizontalHalfFov = std::atan(std::tan(verticalHalfFov) * viewportSize.X() / viewportSize.Y());
+		halfFov = std::min(verticalHalfFov, horizontalHalfFov);
+	}
 	const float distance = (radius / std::sin(halfFov)) * k_focusFramePadding;
 
 	// Keep the heading we approached from, flattened into the XZ plane
@@ -216,7 +211,6 @@ void EditorCameraComponent::Initialize()
 void EditorCameraComponent::OnAddToScene()
 {
 	m_isActiveCamera = true;
-	m_aspectRatio = RZE().GetWindowSize().X() / RZE().GetWindowSize().Y();
 }
 
 void EditorCameraComponent::Update()
@@ -277,7 +271,13 @@ void EditorCameraComponent::GenerateCameraMatrices(const Vector3D& position)
 {
 	OPTICK_EVENT("GenerateCameraMatrices");
 
-	m_projectionMat = Matrix4x4::CreatePerspectiveMatrixZeroToOne(m_fov, m_aspectRatio, m_nearCull, m_farCull);
+	const Vector2D& viewportSize = RZE().GetRenderEngine().GetMainView().ViewportSize;
+	if (viewportSize.X() <= 0.0f || viewportSize.Y() <= 0.0f)
+	{
+		return;
+	}
+
+	m_projectionMat = Matrix4x4::CreatePerspectiveMatrixZeroToOne(m_fov, viewportSize.X() / viewportSize.Y(), m_nearCull, m_farCull);
 	m_viewMat = Matrix4x4::CreateViewMatrix(position, position + m_forward, m_upDir);
 }
 

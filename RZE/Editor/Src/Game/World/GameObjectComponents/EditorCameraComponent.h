@@ -34,7 +34,6 @@ public:
 	const Matrix4x4& GetViewMatrix() const;
 
 	float GetFOV() const;
-	float GetAspectRatio() const;
 	float GetNearCull() const;
 	float GetFarCull() const;
 
@@ -44,7 +43,6 @@ public:
 	void SetForward(const Vector3D& forward);
 
 	void SetFOV(float fov);
-	void SetAspectRatio(float aspectRatio);
 	void SetNearCull(float nearCull);
 	void SetFarCull(float farCull);
 
@@ -54,6 +52,7 @@ public:
 	void FocusOn(const BoundingBox& bounds);
 
 private:
+	// Framed to the main view's size (the scene view); left as they were while it has none
 	void GenerateCameraMatrices(const Vector3D& position);
 
 	void UpdateFocus(GameObjectComponentPtr<TransformComponent>& transfComp);
@@ -73,7 +72,6 @@ private:
 	Matrix4x4 m_viewMat;
 
 	float m_fov{ 70.0f };
-	float m_aspectRatio{ 0.0f }; // #TODO I don't think we're updating this sensibly when the aspect ratio changes...
 	float m_nearCull{ 0.01f };
 	float m_farCull{ 1000.0f };
 

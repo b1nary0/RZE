@@ -29,24 +29,9 @@ Vector3D CameraComponent::GetUpDir() const
 	return m_owner->GetTransformComponent()->GetUp();
 }
 
-const Matrix4x4& CameraComponent::GetProjectionMatrix() const
-{
-	return m_projectionMat;
-}
-
-const Matrix4x4& CameraComponent::GetViewMatrix() const
-{
-	return m_viewMat;
-}
-
 float CameraComponent::GetFOV() const
 {
 	return m_fov;
-}
-
-float CameraComponent::GetAspectRatio() const
-{
-	return m_aspectRatio;
 }
 
 float CameraComponent::GetNearCull() const
@@ -73,12 +58,6 @@ void CameraComponent::SetFOV(float fov)
 {
 	AssertExpr(fov > 0.0f);
 	m_fov = fov;
-}
-
-void CameraComponent::SetAspectRatio(float aspectRatio)
-{
-	AssertExpr(aspectRatio > 0.0f);
-	m_aspectRatio = aspectRatio;
 }
 
 void CameraComponent::SetNearCull(float nearCull)
@@ -116,7 +95,6 @@ RenderCamera CameraComponent::CreateRenderCamera(const Vector2D& viewportSize) c
 {
 	const Vector3D& position = GetOwner()->GetTransformComponent()->GetPosition();
 
-	// Local matrices; the camera's own are for its real viewport
 	const Matrix4x4 projection = Matrix4x4::CreatePerspectiveMatrixZeroToOne(m_fov, viewportSize.X() / viewportSize.Y(), m_nearCull, m_farCull);
 	const Matrix4x4 view = Matrix4x4::CreateViewMatrix(position, position + GetForward(), GetUpDir());
 
@@ -153,11 +131,6 @@ void CameraComponent::Initialize()
 	m_previewView->Target = m_renderTarget.get();
 }
 
-void CameraComponent::OnAddToScene()
-{
-	m_aspectRatio = RZE().GetWindowSize().X() / RZE().GetWindowSize().Y();
-}
-
 void CameraComponent::Update()
 {
 	// Only the active scene is in the main view; another scene's camera is only rendered through explicitly (e.g. for
@@ -170,27 +143,13 @@ void CameraComponent::Update()
 	// Also applies in the editor, whose own camera doesn't carry an exposure
 	RZE().GetRenderEngine().GetMainView().ExposureCompensation = m_exposureCompensation;
 
-	// The Editor's own camera drives the view there instead
-	if (m_scene->DoesMainCameraDriveView())
+	// The Editor's own camera drives the view there instead. Framed to the view's own size, which has none until the
+	// application sizes it: there's nothing to frame until then.
+	RenderView& mainView = RZE().GetRenderEngine().GetMainView();
+	if (m_scene->DoesMainCameraDriveView() && mainView.ViewportSize.X() > 0.0f && mainView.ViewportSize.Y() > 0.0f)
 	{
-		GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
-		AssertMsg(transformComponent != nullptr, "A camera without a transform is useless");
-
-		GenerateCameraMatrices(transformComponent->GetPosition());
-
-		RenderCamera& renderCamera = RZE().GetRenderEngine().GetMainView().Camera;
-		renderCamera.Position = transformComponent->GetPosition();
-		renderCamera.ClipSpace = GetProjectionMatrix() * GetViewMatrix();
-		renderCamera.Projection = GetProjectionMatrix();
+		mainView.Camera = CreateRenderCamera(mainView.ViewportSize);
 	}
-}
-
-void CameraComponent::GenerateCameraMatrices(const Vector3D& position)
-{
-	OPTICK_EVENT("GenerateCameraMatrices");
-	
-	m_projectionMat = Matrix4x4::CreatePerspectiveMatrixZeroToOne(m_fov, m_aspectRatio, m_nearCull, m_farCull);
-	m_viewMat = Matrix4x4::CreateViewMatrix(position, position + GetForward(), GetUpDir());
 }
 
 void CameraComponent::Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer)

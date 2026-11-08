@@ -163,8 +163,6 @@ namespace Editor
 
 		GameObjectComponentPtr<EditorCameraComponent> editorCam = editorCameraObject->AddComponent<EditorCameraComponent>();
 		editorCam->SetAsActiveCamera(true);
-		const Vector2D& viewportSize = m_context.GetSceneViewport().Size;
-		editorCam->SetAspectRatio(viewportSize.X() / viewportSize.Y());
 
 		m_context.SetEditorCamera(editorCameraObject);
 
