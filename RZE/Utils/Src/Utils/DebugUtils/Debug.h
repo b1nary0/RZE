@@ -97,11 +97,16 @@ namespace Debug
 #define RZE_ENABLE_OPTIMIZATION
 #endif
 
-#ifdef _DEBUG
-
-#define START_TIMED_BLOCK(Name)	\
-	ScopedHiResTimer timer(Name);\
-
+// Logs how long the rest of the enclosing scope takes, at Debug level, e.g. START_TIMED_BLOCK("Load scene"). It only
+// logs, so it's on wherever logging is.
+#ifdef RZE_LOGGING_ENABLED
+// Two steps, so __LINE__ becomes its number before it's pasted: one block per line, any number per scope
+#define RZE_TIMED_BLOCK_NAME_IMPL(Line) timedBlock##Line
+#define RZE_TIMED_BLOCK_NAME(Line) RZE_TIMED_BLOCK_NAME_IMPL(Line)
+#define START_TIMED_BLOCK(Name) ScopedHiResTimer RZE_TIMED_BLOCK_NAME(__LINE__)(Name)
+#else
+// The name goes to a dead branch, as with the RZE_LOG macros below, so a variable only it reads doesn't warn as unused
+#define START_TIMED_BLOCK(Name) do { if (false) { Debug::DiscardLogArgs(Name); } } while (0)
 #endif
 
 // Each level has a stream form, RZE_LOG_<LEVEL>(Msg), e.g. RZE_LOG_WARNING("Loaded " << count << " meshes"), and a printf

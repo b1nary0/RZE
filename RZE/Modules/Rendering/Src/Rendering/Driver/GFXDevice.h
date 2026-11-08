@@ -35,7 +35,9 @@ namespace Rendering
 	public:
 		// The window's SDL_Window, which the device presents to; before Initialize
 		virtual void SetWindow(void* windowHandle) = 0;
-		virtual void Initialize() = 0;
+		// validate: the graphics API checks every call (the D3D11 debug layer, an OpenGL debug context) and the device
+		// logs what it reports, asserting on errors. It costs CPU time in every call.
+		virtual void Initialize(bool validate) = 0;
 		virtual void Shutdown() = 0;
 
 		// The device can only be used from one thread at a time on some APIs (e.g. OpenGL's context): the thread that

@@ -39,11 +39,11 @@ namespace Rendering
 		return dst;
 	}
 
-	void Renderer::Initialize(void* windowHandle)
+	void Renderer::Initialize(void* windowHandle, bool validate)
 	{
 		MemArena::InitializeArena(MEM_ARENA_SIZE);
 
-		m_renderThread.Initialize(windowHandle);
+		m_renderThread.Initialize(windowHandle, validate);
 	}
 
 	void Renderer::Shutdown()

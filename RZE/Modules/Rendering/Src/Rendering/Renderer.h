@@ -35,8 +35,8 @@ namespace Rendering
 		Renderer() = delete;
 
 	public:
-		// mWindowHandle is the window's SDL_Window
-		static void Initialize(void* mWindowHandle);
+		// mWindowHandle is the window's SDL_Window. validate: the device checks every call (IGFXDevice::Initialize).
+		static void Initialize(void* mWindowHandle, bool validate);
 		static void Shutdown();
 
 		// What this build draws with, e.g. for the window, which SDL makes differently for OpenGL. Known before Initialize.

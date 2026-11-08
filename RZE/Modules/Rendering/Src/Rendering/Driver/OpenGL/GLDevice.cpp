@@ -63,7 +63,6 @@ namespace Rendering
 			return static_cast<GLTextureBuffer2D&>(texture);
 		}
 
-#ifdef _DEBUG
 		// KHR_debug's reports, which a debug context gives as they happen, on the thread that made the call
 		void GLAPIENTRY ReportDebugMessage(GLenum /*source*/, GLenum type, GLuint id, GLenum severity, GLsizei /*length*/, const GLchar* message, const void* /*userParam*/)
 		{
@@ -89,7 +88,6 @@ namespace Rendering
 				break;
 			}
 		}
-#endif
 	}
 
 	void GLDevice::SetWindow(void* windowHandle)
@@ -97,16 +95,14 @@ namespace Rendering
 		m_window = static_cast<SDL_Window*>(windowHandle);
 	}
 
-	void GLDevice::Initialize()
+	void GLDevice::Initialize(bool validate)
 	{
 		AssertNotNull(m_window);
 
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-#ifdef _DEBUG
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
-#endif
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, validate ? SDL_GL_CONTEXT_DEBUG_FLAG : 0);
 
 		// Current on this thread until DetachFromCurrentThread
 		m_context = SDL_GL_CreateContext(m_window);
@@ -125,11 +121,12 @@ namespace Rendering
 		}
 		RZE_LOG("OpenGL " << reinterpret_cast<const char*>(glGetString(GL_VERSION)) << " on " << reinterpret_cast<const char*>(glGetString(GL_RENDERER)));
 
-#ifdef _DEBUG
-		glEnable(GL_DEBUG_OUTPUT);
-		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-		glDebugMessageCallback(&ReportDebugMessage, nullptr);
-#endif
+		if (validate)
+		{
+			glEnable(GL_DEBUG_OUTPUT);
+			glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+			glDebugMessageCallback(&ReportDebugMessage, nullptr);
+		}
 
 		// D3D's conventions (GLDevice's comment); the back buffer is bound, below
 		SetIsBackBufferBound(false);

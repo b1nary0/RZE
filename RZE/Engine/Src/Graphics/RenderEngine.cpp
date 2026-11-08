@@ -29,9 +29,9 @@ RenderEngine::~RenderEngine()
 {
 }
 
-void RenderEngine::Initialize(void* windowHandle)
+void RenderEngine::Initialize(void* windowHandle, bool validateGraphics)
 {
-	Rendering::Renderer::Initialize(windowHandle);
+	Rendering::Renderer::Initialize(windowHandle, validateGraphics);
 	
 	AddRenderStage<ShadowRenderStage>();
 	AddRenderStage<DepthPrepassStage>();

@@ -162,6 +162,19 @@ the rest for the user.
   4. **(person)** Run `RZE\_build\development\Game.exe -scene DrawLineTest.scene`: the Dear ImGui Demo window shows over
      the scene and takes the mouse. `RZE\_build\retail\Game.exe` shows the scene with no ImGui. (`driver.ps1` has no
      `-App`, so A8's step 5 can't run as written either.)
+- **A14. START_TIMED_BLOCK in Development; graphics validation by flag (the commit after dddb3051).**
+  `START_TIMED_BLOCK` works wherever logging does (new `TimedBlockTests`, which A2 runs). The D3D11 debug layer and its
+  info-queue logging no longer depend on `_DEBUG`: `IGFXDevice::Initialize(bool validate)` gets the Engine's choice,
+  on by default in Debug only (`RZE_GFX_VALIDATION_BY_DEFAULT`, DebugConfig.h). `-gfxvalidation` turns it on, and
+  `-gfxvalidation 0` off; Retail never validates. On Linux the GL debug context followed the flag in all four cases
+  (Development with and without it, Debug with and without `0`), and only then did the driver's reports reach the log.
+  1. A1 builds `DX11Device.cpp` with no warnings in all three configurations (the device flag is now a ternary).
+  2. `driver.ps1 launch -Harness -Config debug -Scene DrawLineTest.scene`, then `close`: the newest log has "Graphics
+     validation is on", and D5's `D3D11 (` lines appear as they did before.
+  3. The same with `-Config development`: no "Graphics validation" line and no `D3D11 (` lines.
+  4. `RZE\_build\development\Editor.exe -scene DrawLineTest.scene -gfxvalidation`, closed with the window's close
+     button: the log has "Graphics validation is on". Without Windows' Graphics Tools feature, creating the device
+     fails (an assert in `DX11Device::Initialize`), as Debug always has; note whether the machine has it.
 
 ### C. Window and input (Phase 3: SDL replaced Win32Window)
 

@@ -34,7 +34,7 @@ namespace Rendering
 	// IGFXDevice interface
 	public:
 		void SetWindow(void* windowHandle) override;
-		void Initialize() override;
+		void Initialize(bool validate) override;
 		void Shutdown() override;
 
 		// D3D11 isn't tied to a thread
@@ -146,7 +146,7 @@ namespace Rendering
 		IDXGISwapChain2* mSwapChain;
 		ID3D11DeviceContext* mDeviceContext;
 		ID3D11Device* mDevice;
-		// The debug layer's messages (Debug builds, whose device has D3D11_CREATE_DEVICE_DEBUG); null otherwise
+		// The debug layer's messages, when Initialize was asked to validate (D3D11_CREATE_DEVICE_DEBUG); null otherwise
 		ID3D11InfoQueue* mInfoQueue = nullptr;
 
 		void* mWindowHandle;

@@ -35,6 +35,30 @@ namespace
 	// widths from the frame before.
 	constexpr int k_firstFrameCount = 3;
 
+	// Whether the renderer's device validates its calls (DebugConfig.h): Debug's default, or -gfxvalidation (on) and
+	// -gfxvalidation 0 (off)
+	bool ShouldValidateGraphics()
+	{
+#ifdef RZE_GFX_VALIDATION_AVAILABLE
+#ifdef RZE_GFX_VALIDATION_BY_DEFAULT
+		bool validate = true;
+#else
+		bool validate = false;
+#endif
+		std::string_view value;
+		if (CmdLine::Arguments::Get("-gfxvalidation", value))
+		{
+			// With no value, on. GetInt leaves it alone then, and logs a value that isn't a number.
+			int enabled = 1;
+			CmdLine::Arguments::GetInt("-gfxvalidation", enabled);
+			validate = enabled != 0;
+		}
+		return validate;
+#else
+		return false;
+#endif
+	}
+
 	LogChannel GetLogChannel(Debug::ELogLevel level)
 	{
 		switch (level)
@@ -372,7 +396,12 @@ void RZE_Engine::CreateAndInitializeRenderer()
 	RZE_LOG("Initializing Renderer");
 
 	m_renderEngine = std::make_unique<RenderEngine>();
-	m_renderEngine->Initialize(m_window->GetNativeHandle());
+	const bool validateGraphics = ShouldValidateGraphics();
+	if (validateGraphics)
+	{
+		RZE_LOG("Graphics validation is on: the graphics API checks every call, which costs CPU time");
+	}
+	m_renderEngine->Initialize(m_window->GetNativeHandle(), validateGraphics);
 	// The render engine made ImGui's context
 	ImGuiPlatform::Initialize(*m_window);
 	const EngineConfig* const engineConfig = GetResourceHandler().GetResource<EngineConfig>(m_engineConfig);

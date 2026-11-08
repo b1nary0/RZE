@@ -107,17 +107,14 @@ namespace Rendering
 	const int kInitialWidth = 1600;
 	const int kInitialHeight = 900;
 
-	void DX11Device::Initialize()
+	void DX11Device::Initialize(bool validate)
 	{
 		// @TODO Need to move a bunch of this code out into RenderEngine
 		// and then do these operations via Rendering::Renderer calls. Really the only thing
 		// left for the device to do essentially is to create the swapchain and create a device, i think.
 		HRESULT hr;
 
-		D3D11_CREATE_DEVICE_FLAG deviceType = D3D11_CREATE_DEVICE_SINGLETHREADED;
-#ifdef _DEBUG
-		deviceType = D3D11_CREATE_DEVICE_DEBUG;
-#endif
+		const D3D11_CREATE_DEVICE_FLAG deviceType = validate ? D3D11_CREATE_DEVICE_DEBUG : D3D11_CREATE_DEVICE_SINGLETHREADED;
 
 		hr = D3D11CreateDevice(
 			NULL,
@@ -132,24 +129,25 @@ namespace Rendering
 			&mDeviceContext);
 		AssertExpr(hr == S_OK);
 
-#ifdef _DEBUG
 		// The debug layer only writes its reports to a debugger's output; the info queue holds them for the log. INFO
 		// and MESSAGE, the layer's notes on objects made and destroyed, aren't kept.
-		if (SUCCEEDED(mDevice->QueryInterface(__uuidof(ID3D11InfoQueue), reinterpret_cast<void**>(&mInfoQueue))))
+		if (validate)
 		{
-			D3D11_MESSAGE_SEVERITY ignoredSeverities[] = { D3D11_MESSAGE_SEVERITY_INFO, D3D11_MESSAGE_SEVERITY_MESSAGE };
-			D3D11_INFO_QUEUE_FILTER filter;
-			ZeroMemory(&filter, sizeof(filter));
-			filter.DenyList.NumSeverities = static_cast<UINT>(std::size(ignoredSeverities));
-			filter.DenyList.pSeverityList = ignoredSeverities;
-			mInfoQueue->AddStorageFilterEntries(&filter);
+			if (SUCCEEDED(mDevice->QueryInterface(__uuidof(ID3D11InfoQueue), reinterpret_cast<void**>(&mInfoQueue))))
+			{
+				D3D11_MESSAGE_SEVERITY ignoredSeverities[] = { D3D11_MESSAGE_SEVERITY_INFO, D3D11_MESSAGE_SEVERITY_MESSAGE };
+				D3D11_INFO_QUEUE_FILTER filter;
+				ZeroMemory(&filter, sizeof(filter));
+				filter.DenyList.NumSeverities = static_cast<UINT>(std::size(ignoredSeverities));
+				filter.DenyList.pSeverityList = ignoredSeverities;
+				mInfoQueue->AddStorageFilterEntries(&filter);
+			}
+			else
+			{
+				mInfoQueue = nullptr;
+				RZE_LOG_WARNING("The D3D11 debug layer's info queue isn't available, so its reports won't be logged.");
+			}
 		}
-		else
-		{
-			mInfoQueue = nullptr;
-			RZE_LOG_WARNING("The D3D11 debug layer's info queue isn't available, so its reports won't be logged.");
-		}
-#endif
 
 		CreateSwapChain();
 

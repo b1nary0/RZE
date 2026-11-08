@@ -44,7 +44,7 @@ namespace Rendering
 	// IGFXDevice interface
 	public:
 		void SetWindow(void* windowHandle) override;
-		void Initialize() override;
+		void Initialize(bool validate) override;
 		void Shutdown() override;
 
 		// The GL context is current on one thread at a time

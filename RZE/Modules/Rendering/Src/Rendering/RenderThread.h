@@ -34,7 +34,7 @@ namespace Rendering
 
 	public:
 		// The thread that calls Initialize controls this one: Shutdown and RunWhileIdle must be called from it
-		void Initialize(void* windowHandle);
+		void Initialize(void* windowHandle, bool validate);
 		void Shutdown();
 
 		void PushCommand(RenderCommand* command);
