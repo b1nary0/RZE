@@ -70,9 +70,11 @@ private:
 		std::bitset<MAX_MOUSE_BTN_SUPPORTED> PrevMouseBtnStates;
 
 		Vector2D CurPosition;
+		// Last frame's position, in the state the app reads (GetMouseState); the proxies leave it unset. Equal to
+		// CurPosition while the app doesn't take the mouse, and in the frame the window first reports a position.
 		Vector2D PrevPosition;
+		// This frame's wheel turns, added up (k_mouseWheelNotchDelta per notch)
 		Int32 CurWheelVal = 0;
-		Int32 PrevWheelVal = 0;
 
 		void Reset()
 		{
@@ -96,6 +98,9 @@ private:
 		{
 			return CurMouseBtnStates[button];
 		}
+
+		// How far the pointer moved since last frame, in client pixels
+		Vector2D GetPositionDelta() const { return CurPosition - PrevPosition; }
 
 		bool IsIdle() const
 		{
@@ -266,4 +271,9 @@ private:
 	std::bitset<MAX_MOUSE_BTN_SUPPORTED> mDeferredMouseBtnReleases;
 	// Where each deferred button release happened
 	std::array<Vector2D, MAX_MOUSE_BTN_SUPPORTED> mDeferredMouseReleasePositions;
+
+	// Whether the window has reported where the pointer is yet, and whether the app's state had that as of its last
+	// frame. Until then the position is a placeholder (0, 0), so the first real one isn't a move away from it.
+	bool mProxyHasMousePosition = false;
+	bool mHasMousePosition = false;
 };

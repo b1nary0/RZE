@@ -148,12 +148,20 @@ the rest for the user.
   unchanged (both devices while the Scene view is hovered). Passed on Linux: unit tests in all three configs, and in
   the harness Escape clears the selection only over the Scene view, R picks Scale, the wheel zooms.
   1. Run `RZE\_build\debug\Game.exe`. F1 / F2 / F3 resize the window to 1280x720 / 1600x900 / 1920x1080.
-  2. Hold W, A, S, D: the camera flies. Move the mouse: it turns (no button needed).
+  2. Hold W, A, S, D: the camera flies. (The mouse only steers which way WASD moves: `PlayerControllerComponent`
+     never turns the view, a known follow-up.)
   3. Put the pointer over ImGui's demo window and press F1: the window resizes (the keyboard still reaches the game).
-     Moving the mouse there still turns the camera: the pointer's position stays current while the mouse is held
-     back, by design, and the controller reads only the position.
   4. Escape quits; exit code 0.
   5. Repeat 1, 2 and 4 with `RZE\_build\release\Game.exe`, which has no ImGui: everything goes to the game.
+- **C13. Mouse movement is a per-frame delta from InputHandler (person; the commit after C12's).**
+  `MouseState::GetPositionDelta()` replaces the two cameras' own previous positions: 0 in the frame the window first
+  reports a position, and while the app doesn't take the mouse. Passed on Linux: unit tests in all three configs, and on
+  the desktop a right-drag turns the editor camera and a middle-drag orbits, with no jump.
+  1. Editor, `DrawLineTest.scene`: right-drag in the scene view turns the camera smoothly; middle-drag orbits;
+     Shift+middle-drag pans; Ctrl+middle-drag dollies. No jump on the first frame of any drag.
+  2. Start a right-drag, move the pointer out over another panel and back while holding: no jump when it comes back.
+  3. Game (Debug): right after launch, hold W without touching the mouse: the camera moves straight ahead (before,
+     its direction depended on where the pointer was when it first moved).
 
 ### D. Rendering on DX11
 

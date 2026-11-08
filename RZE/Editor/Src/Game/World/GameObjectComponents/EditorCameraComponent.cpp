@@ -356,9 +356,7 @@ void EditorCameraComponent::MouseInput(GameObjectComponentPtr<TransformComponent
 {
 	InputHandler& inputHandler = RZE().GetInputHandler();
 
-	const Vector2D& curPos = inputHandler.GetMouseState().CurPosition;
-	const Vector2D diff = curPos - m_mousePrevPos;
-	m_mousePrevPos = curPos;
+	const Vector2D diff = inputHandler.GetMouseState().GetPositionDelta();
 
 	Vector3D& position = transfComp->GetPosition();
 

@@ -78,7 +78,6 @@ private:
 	float m_speed;
 	float m_deltaSpeedRampMultiplier = kMinDirectionHeldTime;
 
-	Vector2D m_mousePrevPos;
 	Vector2D m_yawPitch;
 
 	// Distance along m_forward to the point MMB orbits around; the pivot travels with the camera when flying

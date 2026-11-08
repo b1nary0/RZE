@@ -39,9 +39,7 @@ void PlayerControllerComponent::Update()
 
 	// Mouse Input
 	{
-		const Vector3D& curPos = inputHandler.GetMouseState().CurPosition;
-
-		Vector3D diff = curPos - m_mousePrevPos;
+		Vector3D diff(inputHandler.GetMouseState().GetPositionDelta());
 
 		const float sensitivity = 0.1f;
 		diff *= sensitivity;
@@ -57,7 +55,5 @@ void PlayerControllerComponent::Update()
 
 		m_forward = newForward;
 		m_forward.Normalize();
-
-		m_mousePrevPos = curPos;
 	}
 }

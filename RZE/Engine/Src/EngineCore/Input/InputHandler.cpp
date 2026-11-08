@@ -61,8 +61,12 @@ void InputHandler::RaiseMouseEvents()
 {
 	// As for the keys: Prev is last frame's Cur
 	const std::bitset<MAX_MOUSE_BTN_SUPPORTED> lastFrameMouseBtnStates = mMouseState.CurMouseBtnStates;
+	const Vector2D lastFramePosition = mMouseState.CurPosition;
 	mMouseState = mProxyMouseState;
 	mMouseState.PrevMouseBtnStates = lastFrameMouseBtnStates;
+	// With no position last frame (none reported yet), this frame's: the first one isn't a move
+	mMouseState.PrevPosition = mHasMousePosition ? lastFramePosition : mMouseState.CurPosition;
+	mHasMousePosition = mProxyHasMousePosition;
 
 	while (!mMouseActionQueue.empty())
 	{
@@ -176,8 +180,9 @@ void InputHandler::ReleaseKey(Int32 key)
 
 void InputHandler::OnMouseMove(const Int32 xPos, const Int32 yPos)
 {
-	mProxyMouseState.PrevPosition.SetXY(mProxyMouseState.CurPosition.X(), mProxyMouseState.CurPosition.Y());
+	const Vector2D previousPosition = mProxyMouseState.CurPosition;
 	mProxyMouseState.CurPosition.SetXY(static_cast<float>(xPos), static_cast<float>(yPos));
+	mProxyHasMousePosition = true;
 
 	MouseAction action;
 	action.Button = EMouseButton::MouseButton_Move;
@@ -185,7 +190,7 @@ void InputHandler::OnMouseMove(const Int32 xPos, const Int32 yPos)
 	action.State = EButtonState::ButtonState_Pressed;
 	action.Wheel = 0;
 
-	if (mProxyMouseState.CurPosition != mProxyMouseState.PrevPosition)
+	if (mProxyMouseState.CurPosition != previousPosition)
 	{
 		mMouseActionQueue.push(std::move(action));
 		CountInputEvent();
@@ -195,7 +200,6 @@ void InputHandler::OnMouseMove(const Int32 xPos, const Int32 yPos)
 void InputHandler::OnMouseWheel(const Int32 value)
 {
 	// Adds up: every queued message is handled each frame, so one frame can bring several wheel messages
-	mProxyMouseState.PrevWheelVal = mProxyMouseState.CurWheelVal;
 	mProxyMouseState.CurWheelVal += value;
 
 	// This may give slightly incorrect values, 
@@ -215,7 +219,6 @@ void InputHandler::OnMouseWheel(const Int32 value)
 
 void InputHandler::ClearMouseWheel()
 {
-	mProxyMouseState.PrevWheelVal = mProxyMouseState.CurWheelVal;
 	mProxyMouseState.CurWheelVal = 0;
 }
 
@@ -326,12 +329,12 @@ void InputHandler::ResetMouse()
 	// The wheel too: it's only cleared in the proxy, so a turn in the last frame the app took the mouse would
 	// otherwise be read again every frame until it takes it back (the editor camera would keep dollying)
 	mMouseState.CurWheelVal = 0;
-	mMouseState.PrevWheelVal = 0;
 
-	// Keep the cursor position current while input is gated, otherwise anything tracking
-	// per-frame mouse deltas sees a jump from the stale position once input resumes.
+	// Keep the position current, but with no delta: the pointer doesn't move as far as the app can tell, and once it
+	// takes the mouse again, its first delta is that frame's movement, not everything since
 	mMouseState.CurPosition = mProxyMouseState.CurPosition;
-	mMouseState.PrevPosition = mProxyMouseState.PrevPosition;
+	mMouseState.PrevPosition = mMouseState.CurPosition;
+	mHasMousePosition = mProxyHasMousePosition;
 }
 
 void InputHandler::RaiseKeyEvent(const InputKey& inputKey, EButtonState::T state)

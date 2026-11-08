@@ -305,3 +305,49 @@ TEST_CASE("A wheel turn isn't read again once the app stops taking the mouse")
 	RunFrame(handler, [&handler] { handler.ClearMouseWheel(); }, InputGate{ true, false });
 	CHECK(handler.GetMouseState().CurWheelVal == 0);
 }
+
+TEST_CASE("The pointer's delta is this frame's movement, however many moves arrive, and the first position isn't a move")
+{
+	InputHandler handler;
+	handler.Initialize();
+
+	// The first position the window reports, far from the placeholder (0, 0)
+	RunFrame(handler, [&handler] { handler.OnMouseMove(800, 450); });
+	CHECK(handler.GetMouseState().GetPositionDelta().X() == 0.0f);
+	CHECK(handler.GetMouseState().GetPositionDelta().Y() == 0.0f);
+
+	RunFrame(handler, [&handler]
+		{
+			handler.OnMouseMove(810, 455);
+			handler.OnMouseMove(820, 460);
+		});
+	CHECK(handler.GetMouseState().GetPositionDelta().X() == 20.0f);
+	CHECK(handler.GetMouseState().GetPositionDelta().Y() == 10.0f);
+	CHECK(handler.GetMouseState().PrevPosition.X() == 800.0f);
+
+	// No moves: no delta
+	RunFrame(handler);
+	CHECK(handler.GetMouseState().GetPositionDelta().X() == 0.0f);
+	CHECK(handler.GetMouseState().GetPositionDelta().Y() == 0.0f);
+}
+
+TEST_CASE("While the app doesn't take the mouse the pointer doesn't move as far as it can tell, and taking it back isn't a jump")
+{
+	InputHandler handler;
+	handler.Initialize();
+
+	const InputGate keyboardOnly{ true, false };
+
+	// Held back from the first position on
+	RunFrame(handler, [&handler] { handler.OnMouseMove(100, 100); }, keyboardOnly);
+	RunFrame(handler, [&handler] { handler.OnMouseMove(300, 200); }, keyboardOnly);
+	CHECK(handler.GetMouseState().GetPositionDelta().X() == 0.0f);
+	CHECK(handler.GetMouseState().GetPositionDelta().Y() == 0.0f);
+	// The position is kept current all the same
+	CHECK(handler.GetMouseState().CurPosition.X() == 300.0f);
+
+	// Taken again: only this frame's movement
+	RunFrame(handler, [&handler] { handler.OnMouseMove(310, 200); });
+	CHECK(handler.GetMouseState().GetPositionDelta().X() == 10.0f);
+	CHECK(handler.GetMouseState().GetPositionDelta().Y() == 0.0f);
+}
