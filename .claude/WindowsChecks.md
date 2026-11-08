@@ -162,7 +162,7 @@ the rest for the user.
   4. **(person)** Run `RZE\_build\development\Game.exe -scene DrawLineTest.scene`: the Dear ImGui Demo window shows over
      the scene and takes the mouse. `RZE\_build\retail\Game.exe` shows the scene with no ImGui. (`driver.ps1` has no
      `-App`, so A8's step 5 can't run as written either.)
-- **A14. START_TIMED_BLOCK in Development; graphics validation by flag (the commit after dddb3051).**
+- **A14. START_TIMED_BLOCK in Development; graphics validation by flag (c1217a47), and `driver.ps1 -AppArgs`.**
   `START_TIMED_BLOCK` works wherever logging does (new `TimedBlockTests`, which A2 runs). The D3D11 debug layer and its
   info-queue logging no longer depend on `_DEBUG`: `IGFXDevice::Initialize(bool validate)` gets the Engine's choice,
   on by default in Debug only (`RZE_GFX_VALIDATION_BY_DEFAULT`, DebugConfig.h). `-gfxvalidation` turns it on, and
@@ -172,9 +172,14 @@ the rest for the user.
   2. `driver.ps1 launch -Harness -Config debug -Scene DrawLineTest.scene`, then `close`: the newest log has "Graphics
      validation is on", and D5's `D3D11 (` lines appear as they did before.
   3. The same with `-Config development`: no "Graphics validation" line and no `D3D11 (` lines.
-  4. `RZE\_build\development\Editor.exe -scene DrawLineTest.scene -gfxvalidation`, closed with the window's close
-     button: the log has "Graphics validation is on". Without Windows' Graphics Tools feature, creating the device
-     fails (an assert in `DX11Device::Initialize`), as Debug always has; note whether the machine has it.
+  4. `driver.ps1 launch -Scene DrawLineTest.scene -AppArgs '-gfxvalidation'`, then `close`: launch's line ends with
+     `args='-gfxvalidation'` and the log has "Graphics validation is on". Without Windows' Graphics Tools feature,
+     creating the device fails (an assert in `DX11Device::Initialize`), as Debug always has; note whether the machine
+     has it.
+  5. `-AppArgs` through the harness's helper, which gets it base64-encoded since `powershell -File` could take
+     `-gfxvalidation` for a parameter of its own: `driver.ps1 launch -Harness -Config debug -AppArgs '-gfxvalidation 0'`,
+     then `close`. Launch's line ends with `args='-gfxvalidation 0'`, the log has no "Graphics validation" line, and
+     `$env:TEMP\rze-driver\harness-app.log` shows no parameter error. Without `-AppArgs`, step 2's launch still works.
 
 ### C. Window and input (Phase 3: SDL replaced Win32Window)
 

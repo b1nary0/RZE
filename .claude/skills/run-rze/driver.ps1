@@ -3,7 +3,9 @@ Drives the RZE Editor (native Win32 + DX11 + Dear ImGui) with real mouse/keyboar
 One action per invocation; state lives in the running Editor.exe process.
 
   driver.ps1 launch [-Scene DrawLineTest.scene] [-Config development] [-SettleSeconds 5] [-KeepImguiIni]
-                                               # backs up RZE\Config\imgui.ini, which close and quit put back
+                    [-AppArgs '-gfxvalidation']
+                                               # backs up RZE\Config\imgui.ini, which close and quit put back;
+                                               # -AppArgs is more of the app's command line, after -scene
   driver.ps1 shot   [-Out <path.png>]          # client-area screenshot; default $env:TEMP\rze-shots\<timestamp>.png
   driver.ps1 click  -X <int> -Y <int>          # client-area pixel coords (same space as screenshots)
   driver.ps1 drag   -X <int> -Y <int> -X2 <int> -Y2 <int>
@@ -39,6 +41,10 @@ param(
 	[switch] $KeepImguiIni,
 	# launch: run EditorHarness.exe, and drive it through its stdin
 	[switch] $Harness,
+	# launch: more arguments for the app, as one string after its -scene, e.g. '-gfxvalidation' or '-gfxvalidation 0'
+	[string] $AppArgs,
+	# helper only: -AppArgs, base64-encoded by launch -Harness
+	[string] $EncodedAppArgs,
 	[int] $Notches,
 	[string] $Name,
 	[ValidateSet('on', 'off')] [string] $On
@@ -47,6 +53,12 @@ param(
 $ErrorActionPreference = 'Stop'
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
 $buildDir = Join-Path $repoRoot "RZE\_build\$Config"
+# The helper is started with powershell -File, which gets its arguments with the quotes already stripped and can take
+# one starting with - (as '-gfxvalidation' does) for a parameter name, so launch -Harness hands it -AppArgs encoded
+if ($EncodedAppArgs) { $AppArgs = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($EncodedAppArgs)) }
+# The app's command line, for both launches
+$appCommandLine = "-scene $Scene$(if ($AppArgs) { " $AppArgs" })"
+$appArgsNote = if ($AppArgs) { " args='$AppArgs'" } else { '' }
 
 # Every Editor run rewrites imgui.ini, which often holds a layout the user means to keep (CLAUDE.md). launch copies it
 # here, and close and quit put it back once the Editor has exited, as driver.py does. A file, since each call is a
@@ -371,7 +383,7 @@ function MoveTo($w, $cx, $cy) {
 # The hidden helper of a harness session (launch -Harness starts it); runs until the session ends
 if ($Action -eq 'helper') {
 	Add-Type -TypeDefinition $harnessHelperSource -ReferencedAssemblies System.Core
-	exit [RzeHarnessHelper]::Run((Join-Path $buildDir 'EditorHarness.exe'), "-scene $Scene", $buildDir, $harnessPipeName, $harnessAppLog)
+	exit [RzeHarnessHelper]::Run((Join-Path $buildDir 'EditorHarness.exe'), $appCommandLine, $buildDir, $harnessPipeName, $harnessAppLog)
 }
 
 if ($Action -eq 'launch' -and $Harness) {
@@ -382,8 +394,11 @@ if ($Action -eq 'launch' -and $Harness) {
 	$restoredLeftover = if ($KeepImguiIni) { Restore-ImguiIni } else { Backup-ImguiIni }
 	New-Item -ItemType Directory -Force (Split-Path $harnessStateFile) | Out-Null
 
-	$helper = Start-Process powershell.exe -WindowStyle Hidden -PassThru -ArgumentList @(
-		'-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$PSCommandPath`"", 'helper', '-Config', $Config, '-Scene', $Scene)
+	$helperArgs = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$PSCommandPath`"", 'helper', '-Config', $Config,
+		'-Scene', $Scene)
+	# Only when there are some: Start-Process refuses an empty argument
+	if ($AppArgs) { $helperArgs += '-EncodedAppArgs', [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($AppArgs)) }
+	$helper = Start-Process powershell.exe -WindowStyle Hidden -PassThru -ArgumentList $helperArgs
 	# Up once its pipe answers
 	$alive = $null
 	$deadline = (Get-Date).AddSeconds(30)
@@ -407,7 +422,7 @@ if ($Action -eq 'launch' -and $Harness) {
 	Start-Sleep -Seconds $SettleSeconds
 	$note = if ($KeepImguiIni) { $(if ($restoredLeftover) { ' (restored an imgui.ini backup a session left; this run keeps its layout)' } else { '' }) }
 		else { " (imgui.ini backed up$(if ($restoredLeftover) { '; restored a backup a session left' }))" }
-	"launched harness pid=$($alive.pid) title='$($info.title)' client=$($info.width)x$($info.height)$(if (-not $info.maximized) { ' (not maximized)' })$note"
+	"launched harness pid=$($alive.pid) title='$($info.title)' client=$($info.width)x$($info.height)$(if (-not $info.maximized) { ' (not maximized)' })$appArgsNote$note"
 	exit 0
 }
 
@@ -477,7 +492,7 @@ switch ($Action) {
 		# With -KeepImguiIni nothing's backed up, but a backup a dead session left is still put back first
 		$restoredLeftover = if ($KeepImguiIni) { Restore-ImguiIni } else { Backup-ImguiIni }
 		# Assets resolve against the source tree from the exe's path, not the working directory; the build dir is just a tidy cwd
-		$p = Start-Process -FilePath $exe -ArgumentList "-scene $Scene" -WorkingDirectory $buildDir -PassThru
+		$p = Start-Process -FilePath $exe -ArgumentList $appCommandLine -WorkingDirectory $buildDir -PassThru
 		$deadline = (Get-Date).AddSeconds($TimeoutSeconds)
 		while ((Get-Date) -lt $deadline) {
 			Start-Sleep -Milliseconds 500
@@ -491,7 +506,7 @@ switch ($Action) {
 		$w = Get-Window
 		$note = if ($KeepImguiIni) { $(if ($restoredLeftover) { ' (restored an imgui.ini backup a session left; this run keeps its layout)' } else { '' }) }
 			else { " (imgui.ini backed up$(if ($restoredLeftover) { '; restored a backup a session left' }))" }
-		"launched pid=$($p.Id) title='$($p.MainWindowTitle)' client=$($w.Width)x$($w.Height)$note"
+		"launched pid=$($p.Id) title='$($p.MainWindowTitle)' client=$($w.Width)x$($w.Height)$appArgsNote$note"
 	}
 	'info' {
 		$w = Get-Window
