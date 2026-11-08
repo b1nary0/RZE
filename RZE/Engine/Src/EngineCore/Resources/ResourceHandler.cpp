@@ -18,26 +18,33 @@ void ResourceHandler::Init()
 void ResourceHandler::ShutDown()
 {
 	U32 liveResourceCount = 0;
-	for (auto& resourcePair : mResourceTable)
+	const auto destroy = [&liveResourceCount](ResourceSource& resourceSource)
 	{
-		ResourceSource& resourceSource = resourcePair.second;
 		if (resourceSource.IsValid())
 		{
 			++liveResourceCount;
-			RZE_LOG_DEBUG_ARGS("Resource [%s] still referenced at shutdown.", resourceSource.GetResourcePath().GetRelativePath().c_str());
+			RZE_LOG_DEBUG_ARGS("Resource [%s] still referenced at shutdown.", resourceSource.GetDisplayName().c_str());
 		}
 
 		// We should always have a resource if it is in the resource table.
 		AssertNotNull(resourceSource.GetResource());
 		resourceSource.GetResource()->Release();
 		resourceSource.InternalDestroy();
+	};
+	for (auto& resourcePair : mResourceTable)
+	{
+		destroy(resourcePair.second);
+	}
+	for (auto& unnamedPair : m_unnamedResources)
+	{
+		destroy(*unnamedPair.second);
 	}
 
 	// Just an informative log to notify that we had some referenced resources at the time
 	// ShutDown() was called. This is fine.
 	RZE_LOG_ARGS("ResourceHandler::ShutDown() encountered %u live resources.", liveResourceCount);
 
-	// Entries are intentionally left in the table: live ResourceHandles still point at them and will
+	// Entries, path and unnamed, are intentionally left in place: live ResourceHandles still point at them and will
 	// decrement their ref counts as they are destroyed. The resources themselves are gone (mResource == nullptr),
 	// so those releases are no-ops. The table is freed in ~ResourceHandler, after all handles are gone.
 }
@@ -126,71 +133,86 @@ ResourceHandle ResourceHandler::RegisterLoadedResource(const Filepath& resourceP
 
 void ResourceHandler::ReleaseResource(ResourceHandle& resourceHandle)
 {
-	AssertNotNull(resourceHandle.mResourceSource);
+	ResourceSource* const resourceSource = resourceHandle.mResourceSource;
+	AssertNotNull(resourceSource);
 
-	// Every entry is stored under its own path's key (RegisterLoadedResource, Make), so the entry finds itself
-	const Filepath& resourcePath = resourceHandle.mResourceSource->GetResourcePath();
-	auto iter = mResourceTable.find(CreateResourceKey(resourcePath));
-	AssertMsg(iter != mResourceTable.end() && &iter->second == resourceHandle.mResourceSource, "A handle's entry isn't stored under its own path");
-	if (iter != mResourceTable.end() && &iter->second == resourceHandle.mResourceSource)
+	resourceSource->DecreaseRefCount();
+	// After ShutDown the entry stays but its resource is gone, so there's nothing left to release
+	if (resourceSource->IsReferenced() || resourceSource->GetResource() == nullptr)
 	{
-		ResourceSource& resourceSource = (*iter).second;
-		resourceSource.DecreaseRefCount();
-
-		if (!resourceSource.IsReferenced() && resourceSource.GetResource())
-		{
-			RZE_LOG_DEBUG_ARGS("Releasing resource [%s]", resourcePath.GetRelativePath().c_str());
-
-			// Out of the table and the handle first: releasing it can release the resources it holds (e.g. a mesh's
-			// textures), which changes the table
-			IResource* const resource = resourceSource.GetResource();
-			mResourceTable.erase(iter);
-
-			resourceHandle.mHandler = nullptr;
-			resourceHandle.mResourceSource = nullptr;
-
-			resource->Release();
-			delete resource;
-		}
+		return;
 	}
-	else
-	{
-		RZE_LOG_WARNING_ARGS("Attempting to release resource [%s] but it does not currently exist.", resourcePath.GetRelativePath().c_str());
-	}
+
+	RZE_LOG_DEBUG_ARGS("Releasing resource [%s]", resourceSource->GetDisplayName().c_str());
+
+	// Out of the table and the handle first: releasing it can release the resources it holds (e.g. a mesh's textures),
+	// which changes the table
+	IResource* const resource = resourceSource->GetResource();
+	resourceHandle.mHandler = nullptr;
+	resourceHandle.mResourceSource = nullptr;
+	EraseEntry(*resourceSource);
+
+	resource->Release();
+	delete resource;
 }
 
-ResourceHandle ResourceHandler::Make(const std::string& resourceID, IResource* resource)
+void ResourceHandler::EraseEntry(const ResourceSource& resourceSource)
 {
-	// Keyed by its path like any other entry, so ReleaseResource finds it from that path
-	const Filepath resourcePath(resourceID);
-	const std::string resourceKey = CreateResourceKey(resourcePath);
-
-	auto iter = mResourceTable.find(resourceKey);
-	if (iter == mResourceTable.end())
+	if (resourceSource.IsUnnamed())
 	{
-		RZE_LOG_DEBUG_ARGS("Making resource [%s]", resourceKey.c_str());
-		if (resource)
+		if (m_unnamedResources.erase(&resourceSource) == 0)
 		{
-			ResourceSource resourceSource(resource);
-			resourceSource.m_resourcePath = resourcePath;
-
-			ResourceSource& storedSource = mResourceTable[resourceKey];
-			storedSource = resourceSource;
-			return ResourceHandle(&storedSource, this);
+			AssertMsg(false, "An unnamed resource's entry isn't in the handler");
 		}
-		else
-		{
-			return ResourceHandle::EmptyHandle();
-		}
+		return;
 	}
 
-	ResourceSource& resourceSource = (*iter).second;
-	return ResourceHandle(&resourceSource, this);
+	// Every path entry is stored under its own path's key (RegisterLoadedResource), so the entry finds itself
+	auto iter = mResourceTable.find(CreateResourceKey(resourceSource.GetResourcePath()));
+	if (iter == mResourceTable.end() || &iter->second != &resourceSource)
+	{
+		AssertMsg(false, "A resource's entry isn't stored under its own path");
+		RZE_LOG_WARNING_ARGS("Resource [%s] isn't stored under its own path; leaving its entry.", resourceSource.GetDisplayName().c_str());
+		return;
+	}
+	mResourceTable.erase(iter);
 }
 
-const std::unordered_map<std::string, ResourceHandler::ResourceSource>& ResourceHandler::GetResourceTableInternal() const
+ResourceHandle ResourceHandler::AddUnnamedResource(std::unique_ptr<IResource>&& resource, const std::string& displayName)
 {
-	return mResourceTable;
+	AssertExpr(Threading::MainThreadDispatcher::Get().IsMainThread());
+
+	if (resource == nullptr)
+	{
+		return ResourceHandle::EmptyHandle();
+	}
+
+	std::unique_ptr<ResourceSource> resourceSource = std::make_unique<ResourceSource>(resource.release());
+	resourceSource->m_isUnnamed = true;
+	resourceSource->m_displayName = displayName;
+
+	ResourceSource* const storedSource = resourceSource.get();
+	m_unnamedResources.emplace(storedSource, std::move(resourceSource));
+
+	RZE_LOG_DEBUG_ARGS("Adding unnamed resource [%s]", displayName.c_str());
+	return ResourceHandle(storedSource, this);
+}
+
+size_t ResourceHandler::GetResourceCount() const
+{
+	return mResourceTable.size() + m_unnamedResources.size();
+}
+
+void ResourceHandler::ForEachResource(const std::function<void(const std::string& displayName, int referenceCount, bool isUnnamed)>& visit) const
+{
+	for (const auto& resourcePair : mResourceTable)
+	{
+		visit(resourcePair.second.GetDisplayName(), resourcePair.second.GetRefCount(), false);
+	}
+	for (const auto& unnamedPair : m_unnamedResources)
+	{
+		visit(unnamedPair.second->GetDisplayName(), unnamedPair.second->GetRefCount(), true);
+	}
 }
 
 ResourceHandle::ResourceHandle(ResourceHandler::ResourceSource* resourceSource, ResourceHandler* handler)

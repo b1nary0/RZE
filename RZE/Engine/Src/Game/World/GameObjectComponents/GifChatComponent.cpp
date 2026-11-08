@@ -10,13 +10,14 @@
 #include <Graphics/RenderScene.h>
 #include <Graphics/Texture2D.h>
 
+#include <Utils/Memory/ByteStream.h>
 
-#define STB_IMAGE_IMPLEMENTATION
 #include <STB/stb_image.h>
 
-STBIDEF unsigned char* stbi_xload(stbi__context* s, int* x, int* y, int* frames, int** delays);
-STBIDEF unsigned char* stbi_xload_mem(unsigned char* buffer, int len, int* x, int* y, int* frames, int** delays);
-STBIDEF unsigned char* stbi_xload_file(char const* filename, int* x, int* y, int* frames, int** delays);
+#include <cstring>
+#include <limits>
+#include <memory>
+#include <string>
 
 namespace
 {
@@ -39,11 +40,6 @@ namespace
 		delete[] static_cast<U8*>(texels);
 	}
 }
-
-struct GifData
-{
-	unsigned char* m_data;
-};
 
 GifChatComponent::GifChatComponent()
 {
@@ -119,50 +115,75 @@ void GifChatComponent::Deserialize(const rapidjson::Value& data)
 
 void GifChatComponent::Load(const Filepath& fp)
 {
-	int x = 0;
-	int y = 0;
-	int* delays = nullptr;
-
-	unsigned char* gifData = stbi_xload_file(fp.GetAbsolutePath().c_str(), &x, &y, &m_totalFrames, &delays);
-	AssertNotNull(gifData);
-
-	// Store array data in vector instead of holding raw ptr to data
-	m_frameDelays.reserve(m_totalFrames);
-	for (int frameIdx = 0; frameIdx < m_totalFrames; ++frameIdx)
+	ByteStream fileBytes(fp.GetRelativePath());
+	if (!fileBytes.ReadFromFile(fp) || fileBytes.GetLength() > static_cast<size_t>(std::numeric_limits<int>::max()))
 	{
-		m_frameDelays.push_back(delays[frameIdx]);
+		RZE_LOG_ERROR_ARGS("GifChat couldn't read [%s].", fp.GetRelativePath().c_str());
+		return;
 	}
 
-	const size_t frameSizeBytes = (x * y) * 4;
-	for (int frame = 0; frame < m_totalFrames; ++frame)
+	int width = 0;
+	int height = 0;
+	int frameCount = 0;
+	int channelsInFile = 0;
+	int* delays = nullptr;
+	// Every frame in turn, as RGBA
+	stbi_uc* const frameData = stbi_load_gif_from_memory(fileBytes.GetBytes(), static_cast<int>(fileBytes.GetLength()), &delays,
+		&width, &height, &frameCount, &channelsInFile, STBI_rgb_alpha);
+	if (frameData == nullptr || frameCount <= 0)
 	{
-		Texture2D* frameTexture = new Texture2D();
+		RZE_LOG_ERROR_ARGS("GifChat couldn't decode [%s]: %s.", fp.GetRelativePath().c_str(), stbi_failure_reason());
+		stbi_image_free(frameData);
+		stbi_image_free(delays);
+		return;
+	}
+
+	if (delays != nullptr)
+	{
+		m_frameDelays.assign(delays, delays + frameCount);
+	}
+	else
+	{
+		m_frameDelays.assign(frameCount, 0);
+	}
+	stbi_image_free(delays);
+
+	// Unnamed resources: made here rather than loaded from a file, so nothing can look them up, and each GifChat gets
+	// its own. The name is for the Resource Monitor.
+	const std::string gifName = fp.GetFileName();
+	const size_t frameSizeBytes = static_cast<size_t>(width) * static_cast<size_t>(height) * STBI_rgb_alpha;
+	m_frames.reserve(frameCount);
+	for (int frame = 0; frame < frameCount; ++frame)
+	{
+		std::unique_ptr<Texture2D> frameTexture = std::make_unique<Texture2D>();
 
 		// Each frame's texture frees its texels once they're uploaded, so it gets a copy of its slice of the GIF
 		U8* const frameTexels = new U8[frameSizeBytes];
-		memcpy(frameTexels, gifData + frame * frameSizeBytes, frameSizeBytes);
-		frameTexture->Load(Rendering::TexelBuffer(frameTexels, &FreeFrameTexels), x, y);
+		std::memcpy(frameTexels, frameData + frame * frameSizeBytes, frameSizeBytes);
+		frameTexture->Load(Rendering::TexelBuffer(frameTexels, &FreeFrameTexels), width, height);
 
-		m_frames.push_back(RZE().GetResourceHandler().Make("FIRST_FRAME_GIF_" + std::to_string(frame), frameTexture));
-		AssertExpr(m_frames.back().IsValid());
+		m_frames.push_back(RZE().GetResourceHandler().AddUnnamedResource(std::move(frameTexture), gifName + ", frame " + std::to_string(frame)));
 	}
 
 	// Frames own copies of their data now
-	stbi_image_free(gifData);
-
-	const TypedResourceHandle<PixelShader> shader = LoadPixelShader("Pixel_NewRenderer_DiffuseOnly");
+	stbi_image_free(frameData);
+	m_totalFrames = frameCount;
 
 	m_material = std::make_shared<MaterialInstance>("GifMaterial");
 	m_material->SetTexture(0, m_frames[m_currentDisplayingFrame]);
-	m_material->SetShaderTechnique(shader.GetHandle());
+	m_material->SetPixelShader(LoadPixelShader("Pixel_NewRenderer_DiffuseOnly"));
 
 	GenerateMesh(m_material);
-
-	STBI_FREE(delays);
 }
 
 void GifChatComponent::CreateRenderObject()
 {
+	// The GIF didn't load
+	if (m_mesh == nullptr)
+	{
+		return;
+	}
+
 	GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
 
 	m_meshRenderObject = m_renderScene->CreateRenderObject(m_mesh);
@@ -222,54 +243,6 @@ void GifChatComponent::GenerateMesh(const std::shared_ptr<MaterialInstance>& mat
 	slots[0].Material = material;
 
 	m_mesh = StaticMeshInstance::Create(StaticMesh::Create("GIF_RENDER_MESH", std::move(subMeshes), std::move(slots)));
-}
-
-//
-// STBI STUFF
-// @TODO REMOVE SOON
-//
-STBIDEF unsigned char* stbi_xload_mem(unsigned char* buffer, int len, int* x, int* y, int* frames, int** delays)
-{
-	stbi__context s;
-	stbi__start_mem(&s, buffer, len);
-	return stbi_xload(&s, x, y, frames, delays);
-}
-
-STBIDEF unsigned char* stbi_xload_file(char const* filename, int* x, int* y, int* frames, int** delays)
-{
-	FILE* f;
-	stbi__context s;
-	unsigned char* result = 0;
-
-	if (!(f = stbi__fopen(filename, "rb")))
-		return stbi__errpuc("can't fopen", "Unable to open file");
-
-	stbi__start_file(&s, f);
-	result = stbi_xload(&s, x, y, frames, delays);
-	fclose(f);
-
-	return result;
-}
-
-STBIDEF unsigned char* stbi_xload(stbi__context* s, int* x, int* y, int* frames, int** delays)
-{
-	int comp;
-	unsigned char* result = 0;
-
-	if (stbi__gif_test(s))
-		return static_cast<unsigned char*>(stbi__load_gif_main(s, delays, x, y, frames, &comp, 4));
-
-	stbi__result_info ri;
-	result = static_cast<unsigned char*>(stbi__load_main(s, x, y, &comp, 4, &ri, 8));
-	*frames = !!result;
-
-	if (ri.bits_per_channel != 8) {
-		STBI_ASSERT(ri.bits_per_channel == 16);
-		result = stbi__convert_16_to_8((stbi__uint16*)result, *x, *y, 4);
-		ri.bits_per_channel = 8;
-	}
-
-	return result;
 }
 
 void GifChatComponent::DescribeProperties(PropertyBuilder<GifChatComponent>& properties)

@@ -74,9 +74,8 @@ public:
 
 	const std::string& GetName() const { return m_name; }
 
-	// @TODO SetShaderTechnique is actually being set as PixelShader directly until actual techniques are implemented
-	// For materials made in code, like SetTexture
-	void SetShaderTechnique(const ResourceHandle& shaderTechnique);
+	// For materials made in code, like SetTexture. SetValues sets the shader itself.
+	void SetPixelShader(TypedResourceHandle<PixelShader>&& pixelShader);
 	// The loaded pixel shader, resolved when the technique is set. Use this when drawing.
 	const PixelShader* GetPixelShader() const { return m_pixelShader.Get(); }
 

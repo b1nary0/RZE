@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -8,18 +10,12 @@
 #include <Utils/Interfaces/Resource.h>
 #include <Utils/Platform/Filepath.h>
 
-namespace Editor
-{
-	class ResourceMonitorPanel;
-}
-
 // Before ResourceHandler uses it: a friend declaration alone doesn't declare the name for the rest of the class
 class ResourceHandle;
 
 class ResourceHandler
 {
 	friend class ResourceHandle;
-	friend class Editor::ResourceMonitorPanel;
 
 private:
 	class ResourceSource
@@ -43,7 +39,11 @@ private:
 		void DecreaseRefCount() { --mReferenceCount; }
 
 		IResource* GetResource() { return mResource; }
+		// Empty for an unnamed resource
 		const Filepath& GetResourcePath() const { return m_resourcePath; }
+		bool IsUnnamed() const { return m_isUnnamed; }
+		// What tools and logs show: the relative path, or an unnamed resource's display name
+		const std::string& GetDisplayName() const { return m_isUnnamed ? m_displayName : m_resourcePath.GetRelativePath(); }
 
 		int GetRefCount() const;
 
@@ -62,6 +62,9 @@ private:
 
 		int mReferenceCount;
 		Filepath m_resourcePath;
+		// Unnamed resources (AddUnnamedResource) have no path, only a name for people to read
+		bool m_isUnnamed = false;
+		std::string m_displayName;
 		IResource* mResource = nullptr;
 	};
 
@@ -105,24 +108,35 @@ public:
 	void EndAsyncLoad(const std::string& resourceKey, const void* loader);
 	bool IsAsyncLoadInProgress(const std::string& resourceKey) const;
 
+	// Takes ownership of a resource made in code rather than loaded from a file (e.g. GifChatComponent's frames), so it's
+	// counted, released with its last handle and destroyed at ShutDown like any other. Nothing can look it up:
+	// HasResource and GetHandle never find it, and each call adds a separate resource whatever its display name, which
+	// is only for tools and logs. Empty handle for a null resource.
+	ResourceHandle AddUnnamedResource(std::unique_ptr<IResource>&& resource, const std::string& displayName);
+
 	// The resource the handle holds, as ResourceT; null for an empty handle
 	template <class ResourceT>
 	const ResourceT* GetResource(const ResourceHandle& resourceHandle);
 
-	// @TODO This should be removed when resource instance layer goes in.
-	// Do not rely on this function
-	ResourceHandle Make(const std::string& resourceID, IResource* resource);
+	// For tools: how many resources are held, and each one's display name (GetDisplayName), reference count and
+	// whether it's unnamed, in no particular order
+	size_t GetResourceCount() const;
+	void ForEachResource(const std::function<void(const std::string& displayName, int referenceCount, bool isUnnamed)>& visit) const;
 
 private:
 	template <class ResourceT, class... Args>
 	IResource* CreateAndLoadResource(const Filepath& resourcePath, Args&&... args);
 
-	const std::unordered_map<std::string, ResourceSource>& GetResourceTableInternal() const;
+	// Takes the entry, path or unnamed, out of its container, which destroys it
+	void EraseEntry(const ResourceSource& resourceSource);
 
 	// Key (CreateResourceKey of the entry's path) -> entry. Keys never leave ResourceHandler and AsyncResourceBatch,
 	// and an entry carries its own path for display, so the key's type can change there alone if lookups ever show up
 	// in a profile. Handles point at their entry, so they need no key.
 	std::unordered_map<std::string, ResourceSource> mResourceTable;
+	// Entries for unnamed resources, by address: nothing looks them up by name. unique_ptr, so they stay put as
+	// handles point at them.
+	std::unordered_map<const ResourceSource*, std::unique_ptr<ResourceSource>> m_unnamedResources;
 
 	// Resource key -> who's loading it
 	std::unordered_map<std::string, const void*> m_asyncLoads;
@@ -143,6 +157,7 @@ public:
 	static ResourceHandle EmptyHandle() { return ResourceHandle(); }
 
 	bool IsValid() const;
+	// Empty for an unnamed resource (ResourceHandler::AddUnnamedResource)
 	const Filepath& GetResourcePath() const;
 	// The resource this holds, or null when empty
 	const IResource* GetResource() const;

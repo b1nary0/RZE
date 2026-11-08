@@ -9,8 +9,6 @@
 
 #include <memory>
 
-struct GifData;
-
 class MaterialInstance;
 class RenderObject;
 class RenderScene;
@@ -53,7 +51,8 @@ private:
 	// never change scene
 	RenderScene* m_renderScene = nullptr;
 
-	int m_totalFrames;
+	// 0 until a GIF has loaded
+	int m_totalFrames = 0;
 	int m_currentDisplayingFrame = 0;
 	float m_elapsedMS = 0.0f;
 	std::vector<int> m_frameDelays;

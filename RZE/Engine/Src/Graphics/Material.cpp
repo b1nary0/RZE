@@ -9,6 +9,8 @@
 
 #include <Utils/Memory/MemoryUtils.h>
 
+#include <utility>
+
 MaterialInstance::MaterialInstance(const std::string& name)
 	: m_name(name)
 {
@@ -123,9 +125,9 @@ const Texture2D* MaterialInstance::GetTextureResource(U8 textureSlot) const
 	return m_textures[textureSlot].Get();
 }
 
-void MaterialInstance::SetShaderTechnique(const ResourceHandle& shaderTechnique)
+void MaterialInstance::SetPixelShader(TypedResourceHandle<PixelShader>&& pixelShader)
 {
-	m_pixelShader = TypedResourceHandle<PixelShader>(shaderTechnique);
+	m_pixelShader = std::move(pixelShader);
 }
 
 void MaterialInstance::CommitPropertyChanges()

@@ -43,17 +43,18 @@ namespace Editor
 		m_hasRows = true;
 		m_sinceRefresh.Start();
 
-		// The table is an unordered_map, so copy it out sorted for a stable display
-		const auto& resourceTable = RZE().GetResourceHandler().GetResourceTableInternal();
-		m_rows.resize(resourceTable.size());
+		// The handler keeps them unordered, so copy them out sorted for a stable display
+		const ResourceHandler& resourceHandler = RZE().GetResourceHandler();
+		m_rows.resize(resourceHandler.GetResourceCount());
 
 		size_t rowIndex = 0;
-		for (const auto& resource : resourceTable)
-		{
-			ResourceRow& row = m_rows[rowIndex++];
-			row.m_name = resource.second.GetResourcePath().GetRelativePath();
-			row.m_refCount = resource.second.GetRefCount();
-		}
+		resourceHandler.ForEachResource([this, &rowIndex](const std::string& displayName, int referenceCount, bool isUnnamed)
+			{
+				ResourceRow& row = m_rows[rowIndex++];
+				row.m_name = displayName;
+				row.m_refCount = referenceCount;
+				row.m_isUnnamed = isUnnamed;
+			});
 
 		std::sort(m_rows.begin(), m_rows.end(), [](const ResourceRow& a, const ResourceRow& b)
 			{
@@ -89,6 +90,11 @@ namespace Editor
 
 					ImGui::TableSetColumnIndex(0);
 					ImGui::TextUnformatted(row.m_name.c_str());
+					if (row.m_isUnnamed)
+					{
+						ImGui::SameLine();
+						ImGui::TextDisabled("(unnamed)");
+					}
 
 					ImGui::TableSetColumnIndex(1);
 					ImGui::Text("%d", row.m_refCount);

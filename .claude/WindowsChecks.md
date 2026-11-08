@@ -67,6 +67,16 @@ the rest for the user.
   2. `driver.ps1 launch -Harness -Scene RenderTest.scene -SettleSeconds 10`, then `close`: expect GifChat's frames to
      play, `closed code=0`, and the log to end with "encountered 0 live resources" and no "isn't stored under its own
      path" assert.
+- **A7. Unnamed resources; stb compiled in Externals (the commit after 9d4792e9).** `ResourceHandler::Make` became
+  `AddUnnamedResource`; GifChat decodes with stb's own `stbi_load_gif_from_memory`; stb_image and stb_image_write are
+  compiled once, in `Externals/Src/STB/STB.cpp`, instead of inside GifChatComponent.cpp and TextureFile.cpp. Linux
+  hides Externals' warnings (`-w`); Windows builds it with the engine's MSVC flags, so:
+  1. A1 must build `Externals` with no warnings from `STB.cpp` (stb compiled under the same flags in Engine before).
+  2. `driver.ps1 launch -Harness -Scene RenderTest.scene -SettleSeconds 10`: set GifChat's Rotation to (-90, 0, 0) by
+     double-clicking each field, and expect the GIF to play on the quad. View > Windows > Resource Monitor lists 59
+     "pulp_fiction_travolta.gif, frame N (unnamed)" rows. Undo the three edits, then `close`: `closed code=0` and
+     "encountered 0 live resources".
+  3. Saving a thumbnail still writes a PNG (stb_image_write moved): any Content Browser thumbnail regenerates.
 
 ### C. Window and input (Phase 3: SDL replaced Win32Window)
 

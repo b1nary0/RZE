@@ -5,6 +5,8 @@
 #include <Utils/Interfaces/Resource.h>
 #include <Utils/Platform/Filepath.h>
 
+#include <memory>
+#include <string>
 #include <utility>
 
 namespace
@@ -249,18 +251,66 @@ TEST_CASE("Copied and moved handles each hold one reference, and the last one re
 	handler.ShutDown();
 }
 
-TEST_CASE("A made resource is released through its own path, like a loaded one")
+TEST_CASE("Unnamed resources are separate whatever their names, and nothing finds them by name")
+{
+	ResourceHandler handler;
+	ResourceCounts firstCounts;
+	ResourceCounts secondCounts;
+	ResourceCounts pathCounts;
+	{
+		ResourceHandle first = handler.AddUnnamedResource(std::make_unique<CountedResource>(&firstCounts), "Frame");
+		ResourceHandle second = handler.AddUnnamedResource(std::make_unique<CountedResource>(&secondCounts), "Frame");
+		REQUIRE(first.IsValid());
+		REQUIRE(second.IsValid());
+		CHECK(handler.GetResource<CountedResource>(first) != handler.GetResource<CountedResource>(second));
+		CHECK(first.GetResourcePath().GetRelativePath().empty());
+
+		// Its name is no key: a lookup by it finds nothing, and a file of that name is a resource of its own
+		CHECK_FALSE(handler.HasResource(Filepath("Frame")));
+		CHECK_FALSE(handler.GetHandle(Filepath("Frame")).IsValid());
+		ResourceHandle fromPath = handler.LoadResource<CountedResource>(Filepath("Frame"), &pathCounts);
+		CHECK(handler.GetResource<CountedResource>(fromPath) != handler.GetResource<CountedResource>(first));
+
+		CHECK(handler.GetResourceCount() == 3);
+		int unnamedCount = 0;
+		handler.ForEachResource([&unnamedCount](const std::string& displayName, int referenceCount, bool isUnnamed)
+			{
+				CHECK(displayName == "Frame");
+				CHECK(referenceCount == 1);
+				unnamedCount += isUnnamed ? 1 : 0;
+			});
+		CHECK(unnamedCount == 2);
+	}
+
+	// Each went with its last handle
+	CHECK(firstCounts.Released == 1);
+	CHECK(firstCounts.Deleted == 1);
+	CHECK(secondCounts.Deleted == 1);
+	CHECK(pathCounts.Deleted == 1);
+	CHECK(handler.GetResourceCount() == 0);
+	handler.ShutDown();
+}
+
+TEST_CASE("Shutting down destroys an unnamed resource that's still held, once")
 {
 	ResourceHandler handler;
 	ResourceCounts counts;
 	{
-		// A separator in the ID becomes this platform's, in the key and the entry's path alike
-		ResourceHandle made = handler.Make("UnitTests/Made_0", new CountedResource(&counts));
-		REQUIRE(made.IsValid());
-		CHECK(handler.HasResource(Filepath("UnitTests/Made_0")));
+		ResourceHandle held = handler.AddUnnamedResource(std::make_unique<CountedResource>(&counts), "Held");
+		handler.ShutDown();
+		CHECK(counts.Released == 1);
+		CHECK(counts.Deleted == 1);
 	}
+
+	// Letting go of the handle after ShutDown doesn't release it again
 	CHECK(counts.Released == 1);
 	CHECK(counts.Deleted == 1);
-	CHECK_FALSE(handler.HasResource(Filepath("UnitTests/Made_0")));
+}
+
+TEST_CASE("Adding no unnamed resource gives an empty handle")
+{
+	ResourceHandler handler;
+	CHECK_FALSE(handler.AddUnnamedResource(nullptr, "Nothing").IsValid());
+	CHECK(handler.GetResourceCount() == 0);
 	handler.ShutDown();
 }

@@ -20,6 +20,8 @@ namespace Editor
 		{
 			std::string m_name;
 			int m_refCount = 0;
+			// Made in code (ResourceHandler::AddUnnamedResource): the name isn't a path
+			bool m_isUnnamed = false;
 		};
 
 	private:
