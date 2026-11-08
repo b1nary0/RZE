@@ -12,3 +12,13 @@
 #ifndef RZE_RETAIL
 #define RZE_LOGGING_ENABLED
 #endif
+
+// The Game's ImGui: its render stage, input and demo window (GameApp.cpp). The Editor's is always on.
+#ifndef RZE_RETAIL
+#define IMGUI_ENABLED
+#endif
+
+// RZE_DISABLE_OPTIMIZATION (Debug.h). Without it, the macro is a compile error, so one left in code can't ship.
+#ifndef RZE_RETAIL
+#define RZE_OPTIMIZATION_SWITCH_ENABLED
+#endif

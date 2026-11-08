@@ -13,6 +13,9 @@ driving the editor are covered by the `run-rze` skill (`.claude/skills/run-rze/`
   (`RZE_ASSERTS_ENABLED`, `Utils/DebugUtils/DebugConfig.h`), so a variable only an assert reads is unused in Retail,
   which clang rejects. Put the whole check inside the assert (e.g. `std::all_of` with a lambda)
   instead of marking it.
+- To read the locals of an optimized function in Development, put `RZE_DISABLE_OPTIMIZATION` and
+  `RZE_ENABLE_OPTIMIZATION` (`Utils/DebugUtils/Debug.h`) around its definition in the .cpp. Never commit them: Retail
+  fails to compile while one is in.
 - **Never write `[[maybe_unused]]` on a range-for variable** (`for ([[maybe_unused]] const T& x : xs)`): MSVC 14.51
   crashes on it with C1001.
 - File names: Windows ignores case and Linux doesn't. Name files in code and data exactly as they are on disk. To accept

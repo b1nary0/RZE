@@ -84,12 +84,23 @@ namespace Debug
 
 #endif
 
+// Turns the optimizer off for the functions defined between RZE_DISABLE_OPTIMIZATION and RZE_ENABLE_OPTIMIZATION, so a
+// debugger shows their locals and steps through them line by line in Development, while the rest stays optimized. For
+// debugging on your machine only: write each on a line of its own at file scope, without a semicolon, in a .cpp, around
+// the definitions to debug. Retail fails to compile while one is left in.
+#ifdef RZE_OPTIMIZATION_SWITCH_ENABLED
+#define RZE_DISABLE_OPTIMIZATION RZE_PRAGMA_OPTIMIZE_OFF
+#define RZE_ENABLE_OPTIMIZATION RZE_PRAGMA_OPTIMIZE_ON
+#else
+#define RZE_DISABLE_OPTIMIZATION \
+	static_assert(false, "RZE_DISABLE_OPTIMIZATION is still in this file: remove it and RZE_ENABLE_OPTIMIZATION");
+#define RZE_ENABLE_OPTIMIZATION
+#endif
+
 #ifdef _DEBUG
 
 #define START_TIMED_BLOCK(Name)	\
 	ScopedHiResTimer timer(Name);\
-
-#define IMGUI_ENABLED
 
 #endif
 

@@ -140,6 +140,28 @@ the rest for the user.
      the Game opens in DrawLineTest. Close it with Escape.
   4. **(person)** In Visual Studio, pick Development in the configuration list, close the solution and open it again:
      Development is still selected.
+- **A13. The Game's ImGui in Development; RZE_DISABLE_OPTIMIZATION (the commit after 1c9d7560).** `IMGUI_ENABLED`
+  moved from Debug.h's `_DEBUG` block to `DebugConfig.h`, on unless Retail, so the Game in Development has its ImGui
+  stage, input and demo window. `RZE_DISABLE_OPTIMIZATION` / `RZE_ENABLE_OPTIMIZATION` (Debug.h) turn the optimizer off
+  around function definitions: `RZE_PRAGMA_OPTIMIZE_OFF/ON` in `Platform.h` is `__pragma(optimize("", off/on))` on
+  MSVC, with C4748 (/GS and unoptimized local buffers) disabled in between, and `_Pragma("clang optimize off/on")` on
+  Linux. In Retail the macro is a `static_assert`. On Linux, gdb read every local of a wrapped function at any line in
+  Development, another function in the same file stayed optimized, and Retail stopped at the macro's line.
+  1. A1 builds `UnitTests/Src/Utils/OptimizationSwitchTests.cpp` (new: run `GenerateSolutions.bat`) in Debug and
+     Development with no warnings (its function has a local buffer, for C4748), and Retail leaves it out. A2: in Debug
+     and Development, `UnitTests.exe -tc="RZE_DISABLE*"` runs 1 test case and passes.
+  2. Temporarily remove `__pragma(warning(disable : 4748))` from `Platform.h` and build Development: report whether
+     C4748 appears. If it doesn't, the suppression may not be needed. Put the line back.
+  3. Temporarily wrap `Octahedral::Decode` (`Utils/Src/Utils/Math/Octahedral.cpp`, include
+     `<Utils/DebugUtils/Debug.h>`) in `RZE_DISABLE_OPTIMIZATION` / `RZE_ENABLE_OPTIMIZATION`, each on its own line.
+     Build Retail: expect the `static_assert` error naming the macro, at that line. Build Development.
+     **(person)** Break in `Decode` under the Visual Studio debugger (`UnitTests.exe -tc="Directions come back*"`):
+     the Locals window shows `x`, `y`, `z`, `fold` and `point` with values at every line, while a breakpoint in
+     `Encode` shows its locals optimized away. Then `git status --short`,
+     `git checkout -- RZE/Utils/Src/Utils/Math/Octahedral.cpp`, and rebuild.
+  4. **(person)** Run `RZE\_build\development\Game.exe -scene DrawLineTest.scene`: the Dear ImGui Demo window shows over
+     the scene and takes the mouse. `RZE\_build\retail\Game.exe` shows the scene with no ImGui. (`driver.ps1` has no
+     `-App`, so A8's step 5 can't run as written either.)
 
 ### C. Window and input (Phase 3: SDL replaced Win32Window)
 
