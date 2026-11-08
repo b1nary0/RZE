@@ -89,6 +89,9 @@ driving the editor are covered by the `run-rze` skill (`.claude/skills/run-rze/`
   consumer yet, cost out of proportion, a hidden constraint, a simpler option. Back it with numbers or code
   references, give a recommendation, and let the user decide. Say nothing when nothing would change the decision. Ask
   about the engine's intended use when it decides between options.
+- **The user's suggestions aren't true because the user made them.** Verify each one against the code or a source,
+  every time, before accepting it. Accept it only if it holds up. If it doesn't, or only partly does, say so plainly,
+  with the evidence and what you'd do instead. Disagree on substance, not by reflex: when it holds up, say so and why.
 - **Performance:** after perf-relevant work, ask whether to A/B test and what; don't run it unasked. Use
   `Sponza.scene` (`RenderPerfTest.scene` for probe and shadow performance). A = the commit before, built in a separate
   worktree with the `-perfcapture <file> -perfwarmup <s> -perfduration <s>` flags. Alternate A and B runs, several per
