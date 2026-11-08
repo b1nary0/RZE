@@ -16,7 +16,7 @@ class RenderObject;
 class RenderScene;
 class Texture2D;
 
-class GifChatComponent : public GameObjectComponent<GifChatComponent>
+class GifChatComponent final : public GameObjectComponent<GifChatComponent>
 {
 public:
 	GifChatComponent();

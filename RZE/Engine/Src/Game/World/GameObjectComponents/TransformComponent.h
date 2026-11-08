@@ -5,7 +5,7 @@
 #include <Utils/Math/Matrix4x4.h>
 #include <Utils/Math/Vector3D.h>
 
-class TransformComponent : public GameObjectComponent<TransformComponent>
+class TransformComponent final : public GameObjectComponent<TransformComponent>
 {
 public:
 	TransformComponent() = default;

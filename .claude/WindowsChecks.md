@@ -26,7 +26,8 @@ the rest for the user.
 ### A. Build and tests (each time this file is run)
 
 - **A1. Generate and build.** Run `GenerateSolutions.bat`, then build Debug and Release (`/W3 /WX`). Expect no errors
-  or warnings.
+  or warnings. **Since the commit after 3c2a07d8:** every component class is `final`, and `GameObjectComponent<T>`'s
+  constructor has `static_assert(std::is_final_v<T>)`; expect MSVC to accept both, with no new warnings.
 - **A2. Unit tests.** `RZE\_build\debug\UnitTests.exe` and `RZE\_build\release\UnitTests.exe`. Expect exit code 0.
   **Since the commit after f5faea2e:** the tests that write into the editor's trash and thumbnail folders remove the
   empty folders they made (`RemoveEmptyFolders`, new `UnitTests/Src/TestFolder.cpp`), so after both runs
@@ -175,6 +176,16 @@ the rest for the user.
     for other views since the commit after 79165770).
   - At a Debug Editor's `close`, no new `D3D11 (` lines (D5), in particular none about render target and shader
     resource bindings (the edges and weights textures are each written by one pass and read by the next).
+- **D11. Resizing the window frees the old render target (the commit after 3c2a07d8).** A TODO in
+  `EditorApp::CreateRenderTarget` suspected a leak and was removed: the target's handles hold `shared_ptr`s to the
+  driver textures, and `~DX11TextureBuffer2D` calls `Release()`. Each window resize makes a new target (about 57 MB at
+  2560x1392: RGBA8 colour, RGBA16F scene colour, depth). Nothing reports live D3D objects, so measure GPU memory:
+  1. `driver.ps1 launch -Scene DrawLineTest.scene` (not `-Harness`: this needs the real title bar), let it settle.
+  2. Read `(Get-Counter "\GPU Process Memory(pid_$pid*)\Dedicated Usage").CounterSamples | Measure CookedValue -Sum`
+     for the Editor's PID (`driver.ps1 alive`).
+  3. Click the title bar's maximize/restore button 20 times (each is a resize), wait 2 s, read the counter again.
+  Expect the two readings within about 60 MB of each other (one target's worth of slack); a leak shows as about
+  1 GB more. Then `close`: `closed code=0`.
 
 ### E. Editor features
 

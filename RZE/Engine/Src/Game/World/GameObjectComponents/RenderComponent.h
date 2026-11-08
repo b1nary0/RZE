@@ -11,7 +11,7 @@
 class RenderScene;
 class StaticMeshInstance;
 
-class RenderComponent : public GameObjectComponent<RenderComponent>
+class RenderComponent final : public GameObjectComponent<RenderComponent>
 {
 public:
 	// What happens to the material overrides (StaticMeshInstance::GetOverrides) when the mesh changes

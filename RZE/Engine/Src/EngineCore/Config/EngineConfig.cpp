@@ -25,7 +25,8 @@ bool EngineConfig::Load(const Filepath& filePath)
 	LoadBackgroundTaskFilter();
 	LoadRenderingSettings();
 
-	// @TODO properly return true/false from this function. for now true is fine but jeapordizes the integrity of the resource system
+	// Always true: a missing or partial Engine.ini leaves each setting at its default (Config::Read warns). False would
+	// make LoadResource drop the config, and the engine needs one to start.
 	return true;
 }
 

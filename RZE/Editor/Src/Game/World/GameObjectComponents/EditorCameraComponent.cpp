@@ -215,7 +215,6 @@ void EditorCameraComponent::Initialize()
 
 void EditorCameraComponent::OnAddToScene()
 {
-	// #TODO This wont work long term, just trying to get things rendering with new code
 	m_isActiveCamera = true;
 	m_aspectRatio = RZE().GetWindowSize().X() / RZE().GetWindowSize().Y();
 }

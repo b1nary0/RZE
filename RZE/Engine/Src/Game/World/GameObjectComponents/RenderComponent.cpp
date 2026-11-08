@@ -295,7 +295,6 @@ void RenderComponent::CreateRenderObject()
 
 	if (m_renderObject == nullptr)
 	{
-		// #TODO We should probably make RenderComponent a TransformComponent since a mesh without a transform is useless.
 		GameObjectComponentPtr<TransformComponent> transformComponent = GetOwner()->GetComponent<TransformComponent>();
 		AssertMsg(transformComponent != nullptr, "No TransformComponent found. Mesh creation is useless without a location in 3D space.");
 

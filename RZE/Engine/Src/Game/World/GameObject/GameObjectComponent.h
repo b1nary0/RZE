@@ -12,6 +12,7 @@
 #include <RapidJSON/stringbuffer.h>
 
 #include <string>
+#include <type_traits>
 
 #define REGISTER_GAMEOBJECTCOMPONENT(ComponentType)\
 {\
@@ -24,13 +25,6 @@
 class GameObject;
 class GameObjectComponentBase;
 class ResourceDependencyList;
-
-// @NOTE
-// This stuff doesn't support class hierarchies, and will only ever use the first registered component
-// in any hierarchy. Needs to be refactored to support this. As such, things like CameraComponent
-// are broken because I refactored EditorCameraComponent to inherit from CameraComponent; this
-// means we can't have both a CameraComponent and EditorCameraComponent reflected because the ID will
-// be the same, and the ID is the driving factor behind all recognition of unique classes.
 
 // #TODO Would ideally like to come back to this setup
 namespace GameObjectComponentRegistry
@@ -129,24 +123,16 @@ private:
 	GameObjectComponentInstanceID m_instanceID;
 };
 
-// @NOTE:
-// Pretty sure this is where the "reflection" system is failing for inherited types like
-// EditorCameraComponent : CameraComponent : GameObjectComponent<CameraComponent>.
-// Basically, GameObjectComponent<EditorCameraComponent> never gets called during runtime to fetch
-// the id because ::GetID underneath is static to ::GetComponentTypeID<CameraComponent> even though
-// we've technically registered an ID for EditorCameraComponent. We just never fetch it properly.
-// No matter what, we call GameObjectComponent<EditorCameraComponent>'s version of ::GetComponentTypeID<>
-// because it's the first one that gets registered in that component hierarchy.
-// Feels like we need to disconnect the ID system from GameObjectComponent. Not exactly sure how atm
-// but we can't be driving the ID from functions templated to the type inheriting from GameObjectComponent
-// because it's totally reasonable to have a component B want to extend the behaviour of Component A
-// without having to re-declare itself as a GameObjectComponent.
+// The base of every component type: class MyComponent final : public GameObjectComponent<MyComponent>.
+// Component types must be final. The type ID comes from the type given here, so a class deriving from a component
+// would get its base's ID, and lookups, saving and the registry would take it for the base.
 template <typename TComponentType>
 class GameObjectComponent : public GameObjectComponentBase
 {
 public:
 	GameObjectComponent()
 	{
+		static_assert(std::is_final_v<TComponentType>, "Component types must be final: a subclass would share its base's type ID");
 		m_id = GetID();
 		m_componentName = GetComponentName();
 	}

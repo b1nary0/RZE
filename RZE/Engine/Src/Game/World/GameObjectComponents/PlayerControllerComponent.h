@@ -2,7 +2,7 @@
 
 #include <Game/World/GameObject/GameObjectComponent.h>
 
-class PlayerControllerComponent : public GameObjectComponent<PlayerControllerComponent>
+class PlayerControllerComponent final : public GameObjectComponent<PlayerControllerComponent>
 {
 public:
 	PlayerControllerComponent() = default;

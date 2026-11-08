@@ -45,7 +45,6 @@ namespace EAxisType
 	};
 }
 
-// #TODO(Josh) Don't like this but iterate over later
 namespace EAxisBinding
 {
 	enum T

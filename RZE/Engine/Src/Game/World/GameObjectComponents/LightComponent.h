@@ -11,7 +11,7 @@ class RenderScene;
 // A light of any type (ELightType), picked from a drop-down; a new one is a point light. A directional light shines
 // along the object's local -Y axis, so a zero rotation is a straight-down sun; a point light shines from the object's
 // position.
-class LightComponent : public GameObjectComponent<LightComponent>
+class LightComponent final : public GameObjectComponent<LightComponent>
 {
 public:
 	LightComponent() = default;

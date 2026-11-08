@@ -39,7 +39,8 @@ namespace Rendering
 
 		void PushCommand(RenderCommand* command);
 
-		// @todo note sure about the future of this, but just getting an idea down
+		// Hands the commands pushed since the last call to the render thread. Waits for it to finish the previous batch,
+		// then cycles MemArena, swaps the producer and consumer queues and wakes it. Called once a frame (Renderer).
 		void SignalProcess();
 
 		// Blocks until the swap chain can queue another frame, or timeoutMS passes (false). Safe from any thread.
@@ -145,7 +146,7 @@ namespace Rendering
 		void EndProfilerEvent();
 
 	private:
-		// @note these are guaranteed to be contiguous as its backed by MemArena
+		// The commands themselves live in MemArena, which keeps a batch's memory until the render thread has run it.
 		// Commands run in the order they were pushed. Vectors rather than std::queue so they keep their
 		// capacity between frames: the consumer is cleared, not freed, after its commands run.
 		std::vector<RenderCommand*> m_producerQueue;

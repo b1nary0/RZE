@@ -180,10 +180,9 @@ public:
 	// the handler so far. It only goes up, so a change since last time means there was input in between.
 	U64 GetInputEventCount() const { return mInputEventCount; }
 
-	// #NOTE
-	// Don't use these two functions unless you need to _always_ know the state
-	// and don't want anything controlling your access to it. These will go away eventually
-	// so don't rely on them either.
+	// The input as the window reports it, updated as events arrive. Most code should read GetMouseState and
+	// GetKeyboardState, the snapshot the app sees each frame. These are for readers that must see every event
+	// whatever the app is shown, such as ImGui's input and the window's own handling.
 	const MouseState& GetProxyMouseState() const { return mProxyMouseState; }
 	const KeyboardState& GetProxyKeyboardState() const { return mProxyKeyboardState; }
 
@@ -221,11 +220,9 @@ private:
 	bool mWasWindowFocused = false;
 	bool mIsInteracting = false;
 
-	// #HACK
-	// This is implemented this way to continue tracking inputs from the OS
-	// but decide when to actually release them to the client (e.g when the editor 
-	// wants to deny input to the rest of the app). Eventually this should be implemented
-	// better.
+	// Double-buffered: the proxy states track the OS's input as it arrives, and RaiseEvents copies them into the states
+	// the app reads once a frame. So the handler keeps tracking input even while the app isn't given it (e.g. the
+	// Editor keeping it from the scene).
 	KeyboardState mProxyKeyboardState;
 	MouseState mProxyMouseState;
 

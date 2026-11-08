@@ -15,7 +15,6 @@ void InputHandler::Initialize()
 	mInputKeyRegistry.reserve(MAX_KEYCODES_SUPPORTED);
 	for (U32 keyCodeIdx = 0; keyCodeIdx < MAX_KEYCODES_SUPPORTED; keyCodeIdx++)
 	{
-		// #TODO(Josh) Possibly do a better cast here -- maybe throw in a function too? Do some research
 		mInputKeyRegistry.insert({keyCodeIdx, InputKey(static_cast<unsigned char>(keyCodeIdx), keyCodeIdx)});
 	}
 }
