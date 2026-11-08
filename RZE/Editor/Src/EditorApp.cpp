@@ -94,7 +94,7 @@ namespace Editor
 		AssetFiles::EmptyTrash();
 		m_context.GetProjectWatcher().Start();
 
-#ifdef _DEBUG
+#ifdef RZE_ASSERTS_ENABLED
 		// Undo only sees changes made through commands, so catch anything that changes the scene's objects another way
 		RZE().GetActiveScene().SetObjectsChangedCallback([this]()
 			{

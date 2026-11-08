@@ -102,7 +102,7 @@ namespace Debug
 
 	// OpenConsole and SetAssertFailureHook are per platform (Utils/Platform/<platform>/Debug<platform>.cpp)
 
-#ifdef _DEBUG
+#ifdef RZE_ASSERTS_ENABLED
 	namespace
 	{
 		// Writes an assert's report to stderr and the log. An assert that fires while another is being logged (e.g.

@@ -311,7 +311,7 @@ void GameObject::DetachFromParent()
 
 void GameObject::AddChild(GameObject* child, int childIndex)
 {
-#ifdef _DEBUG
+#ifdef RZE_ASSERTS_ENABLED
 	auto existingChild = std::find_if(m_children.begin(), m_children.end(), [&child](GameObjectPtr gameObject)
 		{
 			return gameObject == child;

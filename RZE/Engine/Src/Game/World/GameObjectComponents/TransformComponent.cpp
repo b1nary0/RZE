@@ -135,7 +135,7 @@ void TransformComponent::DetachFromParent()
 void TransformComponent::AddChild(TransformComponent* child)
 {
 	AssertNotNull(child);
-#if _DEBUG
+#ifdef RZE_ASSERTS_ENABLED
 	auto existingChild = std::find_if(m_children.begin(), m_children.end(), [child](TransformComponent* component)
 		{
 			return component == child;

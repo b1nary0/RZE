@@ -9,8 +9,9 @@ driving the editor are covered by the `run-rze` skill (`.claude/skills/run-rze/`
   (`.github/workflows/Windows.yml`, `Linux.yml`). If you can only build one platform on the machine you're on, say so
   and name what the other needs checked.
 - Warnings are errors on both: MSVC, and clang with `-Wall -Werror` on Linux.
-- Asserts (`AssertExpr`, `AssertMsg`, ...) compile to nothing outside `_DEBUG`, so a variable only an assert reads is
-  unused in Release, which clang rejects. Put the whole check inside the assert (e.g. `std::all_of` with a lambda)
+- Asserts (`AssertExpr`, `AssertMsg`, ...) run in Debug and Release and compile to nothing in Retail
+  (`RZE_ASSERTS_ENABLED`, `Utils/DebugUtils/DebugConfig.h`), so a variable only an assert reads is unused in Retail,
+  which clang rejects. Put the whole check inside the assert (e.g. `std::all_of` with a lambda)
   instead of marking it.
 - **Never write `[[maybe_unused]]` on a range-for variable** (`for ([[maybe_unused]] const T& x : xs)`): MSVC 14.51
   crashes on it with C1001.

@@ -12,9 +12,9 @@
 
 namespace
 {
-#ifdef _DEBUG
-	// Engine asserts (Debug only), and on Windows the CRT's errors, fail the running test instead of opening a
-	// dialog, so a run never waits on someone to click it, e.g. in CI
+#ifdef RZE_ASSERTS_ENABLED
+	// Engine asserts (Debug and Release), and in Windows Debug builds the CRT's errors, fail the running test instead
+	// of opening a dialog, so a run never waits on someone to click it, e.g. in CI
 	bool FailTestOnAssert(const char* report)
 	{
 		FAIL_CHECK("Assert: " << std::string(report));
@@ -26,7 +26,7 @@ namespace
 
 int main(int argc, char** argv)
 {
-#ifdef _DEBUG
+#ifdef RZE_ASSERTS_ENABLED
 	Debug::SetAssertFailureHook(&FailTestOnAssert);
 #endif
 

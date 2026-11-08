@@ -91,6 +91,30 @@ the rest for the user.
      debugger output.
   5. The Game (`launch -App Game -Scene RenderTest.scene`, then `close`): `closed code=0`, 0 live resources.
 
+- **A9. Asserts run in Release (the commit after c77934dd).** `RZE_ASSERTS_ENABLED` (new
+  `Utils/DebugUtils/DebugConfig.h`) is on unless `RZE_RETAIL`, so the assert macros, the test hook, `LiveObjectPtr`'s
+  dead-handle check, the duplicate-child checks and the Editor's "outside a command" check now run in Release. The
+  release CRT has no `_CrtDbgReport`, so `DebugWindows.cpp`'s `ShowAssertReport` has a Release branch: the test hook
+  if one is set, otherwise a `MessageBoxA` with Abort/Retry/Ignore (Abort `std::abort()`s, Retry breaks, Ignore
+  carries on). None of the Windows code was compiled on Linux; on Linux all three configs built and passed 433/433,
+  and Sponza and RenderPerfTest opened and closed in a Release harness with no assert.
+  1. A1 must build Release with no errors or warnings from `DebugWindows.cpp`, and from Windows-only code (DX11,
+     `Platform/Windows`) whose asserts now compile in Release for the first time: a name an assert uses that only
+     exists under `_DEBUG` fails here. Retail must still build (asserts compile out there).
+  2. A2 in Release as usual. Then, temporarily, append to `UnitTests/Src/Utils/ByteStreamTests.cpp`:
+     `TEST_CASE("TempAssertProbe") { AssertMsg(1 + 1 == 3, "probe"); CHECK(true); }`, build, and run
+     `UnitTests.exe -tc=TempAssertProbe` in Debug, Release and Retail. Expect Debug and Release to fail it with
+     `Assert: Assertion failed: 1 + 1 == 3` (no dialog), and Retail to pass it. Then
+     `git checkout -- RZE/UnitTests/Src/Utils/ByteStreamTests.cpp` (`git status --short` first) and rebuild.
+  3. `driver.ps1 launch -Harness -Config release -Scene Sponza.scene -SettleSeconds 20`, then `close`, and the same
+     with `RenderPerfTest.scene`: `closed code=0`, and no `Assertion failed` in the newest `RZE\Logs\RZELOG_*.txt`.
+     List any that come: they're the first asserts Release has ever run.
+  4. **(person)** The Release message box: temporarily add `AssertMsg(false, "probe");` at the top of
+     `EditorApp::Initialize`, build Release, run `RZE\_build\release\Editor.exe` under the Visual Studio debugger:
+     expect a box titled "RZE: Assertion Failed" with the expression, file and line; Retry stops in the debugger on
+     that line, and Ignore carries on to the Editor. Then run it without a debugger and press Abort: the process ends.
+     Revert the line and rebuild.
+
 ### C. Window and input (Phase 3: SDL replaced Win32Window)
 
 - **C1. Startup.** The splash shows with its status text, then the Editor appears with no white flash (it's cloaked

@@ -14,7 +14,7 @@ namespace Debug
 
 	namespace
 	{
-#ifdef _DEBUG
+#ifdef RZE_ASSERTS_ENABLED
 		AssertFailureHook g_assertFailureHook = nullptr;
 
 		bool IsDebuggerAttached()
@@ -36,13 +36,13 @@ namespace Debug
 
 	void SetAssertFailureHook(AssertFailureHook hook)
 	{
-		// Asserts compile out outside Debug, so there's nothing to hook there
-#ifdef _DEBUG
+		// Asserts compile out in Retail, so there's nothing to hook there
+#ifdef RZE_ASSERTS_ENABLED
 		g_assertFailureHook = hook;
 #endif
 	}
 
-#ifdef _DEBUG
+#ifdef RZE_ASSERTS_ENABLED
 	bool ShowAssertReport(const char* /*file*/, int /*line*/, const std::string& /*text*/, const std::string& report)
 	{
 		if (g_assertFailureHook != nullptr)

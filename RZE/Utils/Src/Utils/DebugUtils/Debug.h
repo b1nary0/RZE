@@ -4,6 +4,7 @@
 #include <sstream>
 #include <assert.h>
 
+#include <Utils/DebugUtils/DebugConfig.h>
 #include <Utils/Platform/File.h>
 #include <Utils/Platform/Platform.h>
 
@@ -39,19 +40,19 @@ namespace Debug
 	// already has a console, which on Linux it always does. Returns false if one couldn't be opened.
 	bool OpenConsole();
 
-	// Logs a failed assert and reports it the platform's way: on Windows, the CRT assert dialog (regardless of
-	// console/windows subsystem); on Linux, which has no dialog, a break only if a debugger is attached. Returns true
-	// if the caller should break into the debugger.
+	// Logs a failed assert and reports it the platform's way: on Windows, an Abort/Retry/Ignore dialog (the CRT's in
+	// Debug, a message box with the same buttons in Release), whatever the subsystem; on Linux, which has no dialog,
+	// a break only if a debugger is attached. Returns true if the caller should break into the debugger.
 	bool ReportAssertFailure(const char* file, int line, const char* expr, const char* msg);
 
 	// Called with the report for each failed assert in place of the platform's report (e.g. the dialog), from the
-	// thread that asserted; returns whether to break into the debugger. On Windows it also sees the CRT's own error
-	// reports. For tests, which fail rather than wait on a dialog. Debug only, like asserts.
+	// thread that asserted; returns whether to break into the debugger. In Windows Debug builds it also sees the debug
+	// CRT's own error reports. For tests, which fail rather than wait on a dialog. Not in Retail, like asserts.
 	using AssertFailureHook = bool(*)(const char* report);
 	void SetAssertFailureHook(AssertFailureHook hook);
 }
 
-#ifdef _DEBUG
+#ifdef RZE_ASSERTS_ENABLED
 
 // The break lives in the macro so the debugger stops at the failing line.
 #define RZE_ASSERT_IMPL(Cond, ExprStr, Msg)										\
@@ -72,11 +73,6 @@ namespace Debug
 #define AssertExpr(Expr) RZE_ASSERT_IMPL(Expr, #Expr, nullptr)
 #define AssertMsg(Expr, Msg) RZE_ASSERT_IMPL(Expr, #Expr, Msg)
 
-#define START_TIMED_BLOCK(Name)	\
-	ScopedHiResTimer timer(Name);\
-
-#define IMGUI_ENABLED
-
 #else
 
 #define AssertFalse()
@@ -88,9 +84,13 @@ namespace Debug
 
 #endif
 
-// Logging is available in Debug and Release; only Retail strips it.
-#ifndef RZE_RETAIL
-#define RZE_LOGGING_ENABLED
+#ifdef _DEBUG
+
+#define START_TIMED_BLOCK(Name)	\
+	ScopedHiResTimer timer(Name);\
+
+#define IMGUI_ENABLED
+
 #endif
 
 // Each level has a stream form, RZE_LOG_<LEVEL>(Msg), e.g. RZE_LOG_WARNING("Loaded " << count << " meshes"), and a printf
