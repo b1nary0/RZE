@@ -51,7 +51,7 @@ namespace Editor
 		for (const auto& resource : resourceTable)
 		{
 			ResourceRow& row = m_rows[rowIndex++];
-			row.m_name = resource.first;
+			row.m_name = resource.second.GetResourcePath().GetRelativePath();
 			row.m_refCount = resource.second.GetRefCount();
 		}
 

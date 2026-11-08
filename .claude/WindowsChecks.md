@@ -59,6 +59,14 @@ the rest for the user.
   2. A2 covers the new tests (`ByteStreamTests`, `MeshAssetTests`, the material truncation tests), in Release too.
   3. `driver.ps1 launch -Harness -Scene Sponza.scene -SettleSeconds 20`: expect 9 objects, textured, and no
      "shorter than its contents" lines in the log.
+- **A6. Resource keys are relative paths (the commit after 6f246ec9).** A resource's key is now its relative path,
+  extension kept, which on Windows has `\` separators; handles hold no key. On Linux, DrawLineTest, RenderTest and
+  Sponza released every resource they made (39, 94 and 109) with no "already registered" or "does not currently
+  exist" lines.
+  1. A2 covers the new `ResourceHandlerTests` cases, including a `Make` ID with a `/` in it.
+  2. `driver.ps1 launch -Harness -Scene RenderTest.scene -SettleSeconds 10`, then `close`: expect GifChat's frames to
+     play, `closed code=0`, and the log to end with "encountered 0 live resources" and no "isn't stored under its own
+     path" assert.
 
 ### C. Window and input (Phase 3: SDL replaced Win32Window)
 

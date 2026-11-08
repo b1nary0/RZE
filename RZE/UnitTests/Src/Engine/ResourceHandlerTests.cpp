@@ -5,6 +5,8 @@
 #include <Utils/Interfaces/Resource.h>
 #include <Utils/Platform/Filepath.h>
 
+#include <utility>
+
 namespace
 {
 	struct ResourceCounts
@@ -169,5 +171,96 @@ TEST_CASE("Only one loader at a time can load a resource asynchronously")
 	CHECK(handler.TryBeginAsyncLoad(key, &secondLoader));
 
 	handler.EndAsyncLoad(key, &secondLoader);
+	handler.ShutDown();
+}
+
+TEST_CASE("Paths that differ only by extension, a separator or a dot are different resources")
+{
+	// Each pair shared a key when keys dropped the extension and every dot, and turned separators and spaces into dots
+	const std::pair<Filepath, Filepath> pairs[] = {
+		{ Filepath("Assets/UnitTests/Background.jpg"), Filepath("Assets/UnitTests/Background.png") },
+		{ Filepath("Assets/UnitTests/b c.png"), Filepath("Assets/UnitTests/b/c.png") },
+		{ Filepath("Assets/UnitTests/v1.2/Rock.png"), Filepath("Assets/UnitTests/v12/Rock.png") },
+	};
+
+	for (const std::pair<Filepath, Filepath>& pathPair : pairs)
+	{
+		const Filepath& firstPath = pathPair.first;
+		const Filepath& secondPath = pathPair.second;
+		CAPTURE(firstPath.GetRelativePath());
+		ResourceHandler handler;
+		ResourceCounts firstCounts;
+		ResourceCounts secondCounts;
+		{
+			ResourceHandle first = handler.LoadResource<CountedResource>(firstPath, &firstCounts);
+			{
+				ResourceHandle second = handler.LoadResource<CountedResource>(secondPath, &secondCounts);
+				REQUIRE(first.IsValid());
+				REQUIRE(second.IsValid());
+				CHECK(handler.GetResource<CountedResource>(first) != handler.GetResource<CountedResource>(second));
+				CHECK(first.GetResourcePath().GetRelativePath() == firstPath.GetRelativePath());
+				CHECK(second.GetResourcePath().GetRelativePath() == secondPath.GetRelativePath());
+			}
+
+			// Releasing one leaves the other
+			CHECK(secondCounts.Deleted == 1);
+			CHECK(firstCounts.Deleted == 0);
+			CHECK(handler.HasResource(firstPath));
+			CHECK_FALSE(handler.HasResource(secondPath));
+		}
+		CHECK(firstCounts.Deleted == 1);
+		handler.ShutDown();
+	}
+}
+
+TEST_CASE("An empty path is a key like any other")
+{
+	ResourceHandler handler;
+	CHECK_FALSE(handler.HasResource(Filepath()));
+	CHECK_FALSE(handler.GetHandle(Filepath()).IsValid());
+	handler.ShutDown();
+}
+
+TEST_CASE("Copied and moved handles each hold one reference, and the last one releases the resource")
+{
+	ResourceHandler handler;
+	ResourceCounts counts;
+
+	ResourceHandle loaded = handler.LoadResource<CountedResource>(k_path, &counts);
+	ResourceHandle copied;
+	copied = loaded;
+	ResourceHandle moveConstructed(std::move(loaded));
+	CHECK_FALSE(loaded.IsValid());
+	CHECK(copied.IsValid());
+	CHECK(moveConstructed.IsValid());
+
+	copied = ResourceHandle::EmptyHandle();
+	CHECK(counts.Deleted == 0);
+
+	ResourceHandle moveAssigned;
+	moveAssigned = std::move(moveConstructed);
+	CHECK_FALSE(moveConstructed.IsValid());
+	CHECK(counts.Deleted == 0);
+
+	moveAssigned = ResourceHandle::EmptyHandle();
+	CHECK(counts.Released == 1);
+	CHECK(counts.Deleted == 1);
+	CHECK_FALSE(handler.HasResource(k_path));
+	handler.ShutDown();
+}
+
+TEST_CASE("A made resource is released through its own path, like a loaded one")
+{
+	ResourceHandler handler;
+	ResourceCounts counts;
+	{
+		// A separator in the ID becomes this platform's, in the key and the entry's path alike
+		ResourceHandle made = handler.Make("UnitTests/Made_0", new CountedResource(&counts));
+		REQUIRE(made.IsValid());
+		CHECK(handler.HasResource(Filepath("UnitTests/Made_0")));
+	}
+	CHECK(counts.Released == 1);
+	CHECK(counts.Deleted == 1);
+	CHECK_FALSE(handler.HasResource(Filepath("UnitTests/Made_0")));
 	handler.ShutDown();
 }

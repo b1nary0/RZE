@@ -71,7 +71,7 @@ bool ResourceHandler::IsAsyncLoadInProgress(const std::string& resourceKey) cons
 
 std::string ResourceHandler::CreateResourceKey(const Filepath& resourcePath)
 {
-	return Conversions::CreateResourceKeyFromPath(resourcePath.GetRelativePath());
+	return resourcePath.GetRelativePath();
 }
 
 bool ResourceHandler::HasResource(const Filepath& resourcePath) const
@@ -93,7 +93,7 @@ ResourceHandle ResourceHandler::GetHandle(const Filepath& resourcePath)
 		return ResourceHandle::EmptyHandle();
 	}
 
-	return ResourceHandle(resourceKey, &iter->second, this);
+	return ResourceHandle(&iter->second, this);
 }
 
 ResourceHandle ResourceHandler::RegisterLoadedResource(const Filepath& resourcePath, IResource* resource)
@@ -110,7 +110,7 @@ ResourceHandle ResourceHandler::RegisterLoadedResource(const Filepath& resourceP
 		resource->Release();
 		delete resource;
 
-		return ResourceHandle(resourceKey, &iter->second, this);
+		return ResourceHandle(&iter->second, this);
 	}
 
 	ResourceSource resourceSource(resource);
@@ -121,20 +121,25 @@ ResourceHandle ResourceHandler::RegisterLoadedResource(const Filepath& resourceP
 	ResourceSource& storedSource = mResourceTable[resourceKey];
 	storedSource = resourceSource;
 
-	return ResourceHandle(resourceKey, &storedSource, this);
+	return ResourceHandle(&storedSource, this);
 }
 
 void ResourceHandler::ReleaseResource(ResourceHandle& resourceHandle)
 {
-	auto iter = mResourceTable.find(resourceHandle.GetID());
-	if (iter != mResourceTable.end())
+	AssertNotNull(resourceHandle.mResourceSource);
+
+	// Every entry is stored under its own path's key (RegisterLoadedResource, Make), so the entry finds itself
+	const Filepath& resourcePath = resourceHandle.mResourceSource->GetResourcePath();
+	auto iter = mResourceTable.find(CreateResourceKey(resourcePath));
+	AssertMsg(iter != mResourceTable.end() && &iter->second == resourceHandle.mResourceSource, "A handle's entry isn't stored under its own path");
+	if (iter != mResourceTable.end() && &iter->second == resourceHandle.mResourceSource)
 	{
 		ResourceSource& resourceSource = (*iter).second;
 		resourceSource.DecreaseRefCount();
 
 		if (!resourceSource.IsReferenced() && resourceSource.GetResource())
 		{
-			RZE_LOG_DEBUG_ARGS("Releasing resource [%s]", resourceHandle.GetID().c_str());
+			RZE_LOG_DEBUG_ARGS("Releasing resource [%s]", resourcePath.GetRelativePath().c_str());
 
 			// Out of the table and the handle first: releasing it can release the resources it holds (e.g. a mesh's
 			// textures), which changes the table
@@ -143,7 +148,6 @@ void ResourceHandler::ReleaseResource(ResourceHandle& resourceHandle)
 
 			resourceHandle.mHandler = nullptr;
 			resourceHandle.mResourceSource = nullptr;
-			resourceHandle.mResourceID = "NO_RESOURCE";
 
 			resource->Release();
 			delete resource;
@@ -151,13 +155,15 @@ void ResourceHandler::ReleaseResource(ResourceHandle& resourceHandle)
 	}
 	else
 	{
-		RZE_LOG_WARNING_ARGS("Attempting to release resource with key [%s] but it does not currently exist.", resourceHandle.GetID().c_str());
+		RZE_LOG_WARNING_ARGS("Attempting to release resource [%s] but it does not currently exist.", resourcePath.GetRelativePath().c_str());
 	}
 }
 
 ResourceHandle ResourceHandler::Make(const std::string& resourceID, IResource* resource)
 {
-	std::string resourceKey = resourceID;
+	// Keyed by its path like any other entry, so ReleaseResource finds it from that path
+	const Filepath resourcePath(resourceID);
+	const std::string resourceKey = CreateResourceKey(resourcePath);
 
 	auto iter = mResourceTable.find(resourceKey);
 	if (iter == mResourceTable.end())
@@ -166,10 +172,11 @@ ResourceHandle ResourceHandler::Make(const std::string& resourceID, IResource* r
 		if (resource)
 		{
 			ResourceSource resourceSource(resource);
-			resourceSource.m_resourcePath = Filepath(resourceID);
+			resourceSource.m_resourcePath = resourcePath;
 
-			mResourceTable[resourceKey] = resourceSource;
-			return ResourceHandle(resourceKey, &mResourceTable[resourceKey], this);
+			ResourceSource& storedSource = mResourceTable[resourceKey];
+			storedSource = resourceSource;
+			return ResourceHandle(&storedSource, this);
 		}
 		else
 		{
@@ -178,7 +185,7 @@ ResourceHandle ResourceHandler::Make(const std::string& resourceID, IResource* r
 	}
 
 	ResourceSource& resourceSource = (*iter).second;
-	return ResourceHandle(resourceKey, &resourceSource, this);
+	return ResourceHandle(&resourceSource, this);
 }
 
 const std::unordered_map<std::string, ResourceHandler::ResourceSource>& ResourceHandler::GetResourceTableInternal() const
@@ -186,17 +193,9 @@ const std::unordered_map<std::string, ResourceHandler::ResourceSource>& Resource
 	return mResourceTable;
 }
 
-ResourceHandle::ResourceHandle()
-	: mHandler(nullptr)
-	, mResourceID("NO_RESOURCE")
-	, mResourceSource(nullptr)
-{
-}
-
-ResourceHandle::ResourceHandle(const std::string& resourceID, ResourceHandler::ResourceSource* resourceSource, ResourceHandler* handler)
+ResourceHandle::ResourceHandle(ResourceHandler::ResourceSource* resourceSource, ResourceHandler* handler)
 {
 	mHandler = handler;
-	mResourceID = resourceID;
 	mResourceSource = resourceSource;
 
 	// Only the handler makes these, for an entry in its table. Empty handles come from the default constructor.
@@ -206,9 +205,6 @@ ResourceHandle::ResourceHandle(const std::string& resourceID, ResourceHandler::R
 
 ResourceHandle::ResourceHandle(ResourceHandle&& rhs)
 {
-	mResourceID = rhs.mResourceID;
-	rhs.mResourceID = "NO_RESOURCE";
-
 	mResourceSource = rhs.mResourceSource;
 	rhs.mResourceSource = nullptr;
 
@@ -229,20 +225,13 @@ void ResourceHandle::ReleaseHeldResource()
 		mHandler->ReleaseResource(*this);
 	}
 
-	mResourceID = "NO_RESOURCE";
 	mResourceSource = nullptr;
 	mHandler = nullptr;
 }
 
 bool ResourceHandle::IsValid() const
 {
-	return !mResourceID.empty()
-		&& (mResourceSource != nullptr && mResourceSource->IsValid());
-}
-
-const std::string& ResourceHandle::GetID() const
-{
-	return mResourceID;
+	return mResourceSource != nullptr && mResourceSource->IsValid();
 }
 
 const Filepath& ResourceHandle::GetResourcePath() const
@@ -263,9 +252,6 @@ void ResourceHandle::operator=(ResourceHandle&& rhs)
 	}
 
 	ReleaseHeldResource();
-
-	mResourceID = rhs.mResourceID;
-	rhs.mResourceID = "NO_RESOURCE";
 
 	mResourceSource = rhs.mResourceSource;
 	rhs.mResourceSource = nullptr;
@@ -289,16 +275,10 @@ ResourceHandle& ResourceHandle::operator=(const ResourceHandle& rhs)
 
 	ReleaseHeldResource();
 
-	mResourceID = rhs.mResourceID;
 	mResourceSource = rhs.mResourceSource;
 	mHandler = rhs.mHandler;
 
 	return *this;
-}
-
-bool ResourceHandle::operator==(const ResourceHandle& rhs)
-{
-	return rhs.mResourceID == mResourceID;
 }
 
 int ResourceHandler::ResourceSource::GetRefCount() const

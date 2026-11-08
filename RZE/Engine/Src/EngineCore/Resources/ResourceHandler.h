@@ -1,9 +1,9 @@
 #pragma once
 
+#include <string>
 #include <unordered_map>
 #include <vector>
 
-#include <Utils/Conversions.h>
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Interfaces/Resource.h>
 #include <Utils/Platform/Filepath.h>
@@ -65,8 +65,6 @@ private:
 		IResource* mResource = nullptr;
 	};
 
-	typedef std::pair<std::string, ResourceSource> ResourcePair;
-
 
 public:
 	ResourceHandler();
@@ -78,7 +76,8 @@ public:
 	// NOTE: ResourceHandler and ResourceHandle are main-thread only (the table and ref counts are unsynchronized).
 	// Use AsyncResourceBatch to load resources off the main thread.
 
-	// The key a resource path is stored under. Paths that map to the same key refer to the same resource.
+	// The key a resource path is stored under: its relative path, extension and all, with this platform's separators
+	// (Filepath turns either into them). Matching is exact, so name files as they are on disk.
 	static std::string CreateResourceKey(const Filepath& resourcePath);
 
 	bool HasResource(const Filepath& resourcePath) const;
@@ -120,9 +119,9 @@ private:
 
 	const std::unordered_map<std::string, ResourceSource>& GetResourceTableInternal() const;
 
-
-
-	// #TODO Turn the resource IDs into hashes/guids
+	// Key (CreateResourceKey of the entry's path) -> entry. Keys never leave ResourceHandler and AsyncResourceBatch,
+	// and an entry carries its own path for display, so the key's type can change there alone if lookups ever show up
+	// in a profile. Handles point at their entry, so they need no key.
 	std::unordered_map<std::string, ResourceSource> mResourceTable;
 
 	// Resource key -> who's loading it
@@ -136,7 +135,7 @@ class ResourceHandle
 	friend class ResourceHandler;
 
 public:
-	ResourceHandle();
+	ResourceHandle() = default;
 	ResourceHandle(ResourceHandle&& rhs);
 	ResourceHandle(const ResourceHandle& rhs) = delete;
 	~ResourceHandle();
@@ -144,24 +143,22 @@ public:
 	static ResourceHandle EmptyHandle() { return ResourceHandle(); }
 
 	bool IsValid() const;
-	const std::string& GetID() const;
 	const Filepath& GetResourcePath() const;
 	// The resource this holds, or null when empty
 	const IResource* GetResource() const;
 
-	bool operator==(const ResourceHandle& rhs);
 	ResourceHandle& operator=(const ResourceHandle& rhs);
 	void operator=(ResourceHandle&& rhs);
 
 private:
-	ResourceHandle(const std::string& resourceID, ResourceHandler::ResourceSource* resourceSource, ResourceHandler* handler);
+	ResourceHandle(ResourceHandler::ResourceSource* resourceSource, ResourceHandler* handler);
 
 	// Drops this handle's reference and resets it to empty.
 	void ReleaseHeldResource();
 
-	ResourceHandler* mHandler;
-	std::string mResourceID; // #TODO Turn this into a hash
-	ResourceHandler::ResourceSource* mResourceSource;
+	ResourceHandler* mHandler = nullptr;
+	// Its entry in the handler's table, which stays put while handles point at it
+	ResourceHandler::ResourceSource* mResourceSource = nullptr;
 };
 
 template <class ResourceT, class... Args>
@@ -175,7 +172,7 @@ ResourceHandle ResourceHandler::LoadResource(const Filepath& resourcePath, Args.
 		return existingHandle;
 	}
 
-	RZE_LOG_DEBUG_ARGS("Creating resource [%s]", CreateResourceKey(resourcePath).c_str());
+	RZE_LOG_DEBUG_ARGS("Creating resource [%s]", resourcePath.GetRelativePath().c_str());
 	IResource* resource = CreateAndLoadResource<ResourceT>(resourcePath, args...);
 	if (resource == nullptr)
 	{
