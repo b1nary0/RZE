@@ -106,6 +106,7 @@ public:
 	void EndAsyncLoad(const std::string& resourceKey, const void* loader);
 	bool IsAsyncLoadInProgress(const std::string& resourceKey) const;
 
+	// The resource the handle holds, as ResourceT; null for an empty handle
 	template <class ResourceT>
 	const ResourceT* GetResource(const ResourceHandle& resourceHandle);
 
@@ -187,22 +188,14 @@ ResourceHandle ResourceHandler::LoadResource(const Filepath& resourcePath, Args.
 template <class ResourceT>
 const ResourceT* ResourceHandler::GetResource(const ResourceHandle& resourceHandle)
 {
-	// @TODO We dont actually need to do this. We can use our friendship with ResourceHandle to reach into its privates
-	auto iter = mResourceTable.find(resourceHandle.GetID());
-	if (iter != mResourceTable.end())
-	{
-		ResourceSource& resourceSource = (*iter).second;
-		return static_cast<ResourceT*>(resourceSource.GetResource());
-	}
-
-	RZE_LOG_ERROR_ARGS("Resource with key [%s] does not exist. Request it first.", resourceHandle.GetID().c_str());
-	return nullptr;
+	// The handle points at its entry in the table, so there's no key to look up
+	return static_cast<const ResourceT*>(resourceHandle.GetResource());
 }
 
 template <class ResourceT, class... Args>
 IResource* ResourceHandler::CreateAndLoadResource(const Filepath& resourcePath, Args&&... args)
 {
-	IResource* resource = new ResourceT(args...);//new (mAllocator.Allocate(sizeof(ResourceT))) ResourceT;
+	IResource* resource = new ResourceT(args...);
 	AssertNotNull(resource);
 	if (resource->Load(resourcePath))
 	{

@@ -16,7 +16,7 @@ namespace
 	U32 GetInspectorOrder(const GameObjectComponentBase& component)
 	{
 		const EditorComponentCache::ComponentInfoMap& componentInfo = EditorComponentCache::GetAllComponentsInfo();
-		const auto it = componentInfo.find(component.m_id);
+		const auto it = componentInfo.find(component.GetTypeID());
 		return it != componentInfo.end() ? it->second.Order : EditorComponentCache::kDefaultSortingOrder;
 	}
 }
@@ -77,7 +77,7 @@ namespace Editor
 				const auto match = std::find_if(components.begin(), components.end(),
 					[&component](const GameObjectComponentPtr<GameObjectComponentBase>& other)
 					{
-						return other->m_id == component->m_id;
+						return other->GetTypeID() == component->GetTypeID();
 					});
 				if (match == components.end())
 				{

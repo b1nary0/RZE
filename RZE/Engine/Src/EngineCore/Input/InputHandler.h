@@ -87,6 +87,11 @@ private:
 			return buttonState;
 		}
 
+		bool IsDownThisFrame(EMouseButton::T button) const
+		{
+			return CurMouseBtnStates[button];
+		}
+
 		bool IsIdle() const
 		{
 			std::bitset<MAX_MOUSE_BTN_SUPPORTED> idleState(0);

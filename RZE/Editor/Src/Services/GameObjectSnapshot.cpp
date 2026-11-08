@@ -13,7 +13,7 @@ namespace
 	{
 		for (GameObjectComponentBase* component : gameObject.GetComponents())
 		{
-			if (component->m_id == id)
+			if (component->GetTypeID() == id)
 			{
 				return component;
 			}
@@ -37,10 +37,10 @@ namespace Editor
 		for (GameObjectComponentBase* component : gameObject.GetComponents())
 		{
 			ComponentValues componentValues;
-			componentValues.ID = component->m_id;
+			componentValues.ID = component->GetTypeID();
 
 			// A component type without a description has nothing to copy, but the copy still gets one
-			const ComponentPropertyRegistry::ComponentDescription* const description = ComponentPropertyRegistry::GetDescription(component->m_id);
+			const ComponentPropertyRegistry::ComponentDescription* const description = ComponentPropertyRegistry::GetDescription(component->GetTypeID());
 			if (description != nullptr)
 			{
 				void* const object = description->ToObject(*component);

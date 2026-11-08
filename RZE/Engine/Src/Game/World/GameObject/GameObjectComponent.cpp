@@ -23,8 +23,9 @@ GameObjectComponentInstanceID GameObjectComponentLifetime::GetID(const GameObjec
 	return component->GetInstanceID();
 }
 
-GameObjectComponentBase::GameObjectComponentBase()
-	: m_instanceID(AliveComponents().Acquire())
+GameObjectComponentBase::GameObjectComponentBase(GameObjectComponentID typeID)
+	: m_typeID(typeID)
+	, m_instanceID(AliveComponents().Acquire())
 {
 }
 

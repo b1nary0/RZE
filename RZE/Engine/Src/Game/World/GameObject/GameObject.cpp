@@ -74,7 +74,7 @@ bool GameObject::RemoveComponentByID(GameObjectComponentID id)
 	auto it = std::find_if(m_components.begin(), m_components.end(),
 		[id](const GameObjectComponentBase* component)
 		{
-			return id == component->m_id;
+			return id == component->GetTypeID();
 		});
 
 	if (it == m_components.end())
@@ -100,7 +100,7 @@ GameObjectComponentBase* GameObject::AddComponentByID(GameObjectComponentID id)
 	auto it = std::find_if(m_components.begin(), m_components.end(),
 		[id](const GameObjectComponentBase* component)
 		{
-			return id == component->m_id;
+			return id == component->GetTypeID();
 		});
 
 	if (it == m_components.end())

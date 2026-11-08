@@ -159,7 +159,7 @@ namespace Editor
 		}
 
 		const GameObjectComponentPtr<GameObjectComponentBase>& component = components.front();
-		const ComponentPropertyRegistry::ComponentDescription* const description = ComponentPropertyRegistry::GetDescription(component->m_id);
+		const ComponentPropertyRegistry::ComponentDescription* const description = ComponentPropertyRegistry::GetDescription(component->GetTypeID());
 		if (description == nullptr || description->Type->Properties.empty())
 		{
 			return false;

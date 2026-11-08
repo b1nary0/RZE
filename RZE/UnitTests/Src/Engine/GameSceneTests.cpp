@@ -94,12 +94,12 @@ TEST_CASE_FIXTURE(TwoScenes, "An object's components load and save in the scene 
 
 		GameObjectPtr loaded = First.DeserializeGameObject(entry, nullptr);
 		const std::vector<GameObjectComponentID> expected = isLightFirst
-			? std::vector<GameObjectComponentID>{ LightComponent::GetID(), TransformComponent::GetID() }
-			: std::vector<GameObjectComponentID>{ TransformComponent::GetID(), LightComponent::GetID() };
+			? std::vector<GameObjectComponentID>{ LightComponent::StaticTypeID(), TransformComponent::StaticTypeID() }
+			: std::vector<GameObjectComponentID>{ TransformComponent::StaticTypeID(), LightComponent::StaticTypeID() };
 		std::vector<GameObjectComponentID> order;
 		for (const GameObjectComponentBase* component : loaded->GetComponents())
 		{
-			order.push_back(component->m_id);
+			order.push_back(component->GetTypeID());
 		}
 		CHECK(order == expected);
 

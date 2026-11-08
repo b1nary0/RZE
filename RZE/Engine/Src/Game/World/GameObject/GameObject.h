@@ -163,7 +163,7 @@ GameObjectComponentPtr<TComponentType> GameObject::GetComponent()
 	auto it = std::find_if(m_components.begin(), m_components.end(),
 		[](const GameObjectComponentBase* component)
 		{
-			return TComponentType::GetID() == component->m_id;
+			return TComponentType::StaticTypeID() == component->GetTypeID();
 		});
 
 	if (it != m_components.end())
@@ -177,7 +177,7 @@ GameObjectComponentPtr<TComponentType> GameObject::GetComponent()
 template <typename TComponentType>
 void GameObject::RemoveComponent()
 {
-	RemoveComponentByID(TComponentType::GetID());
+	RemoveComponentByID(TComponentType::StaticTypeID());
 }
 
 template <typename TComponentType, typename ... Args>
@@ -188,7 +188,7 @@ GameObjectComponentPtr<TComponentType> GameObject::AddComponent(Args... args)
 	auto it = std::find_if(m_components.begin(), m_components.end(),
 		[](const GameObjectComponentBase* component)
 		{
-			return TComponentType::GetID() == component->m_id;
+			return TComponentType::StaticTypeID() == component->GetTypeID();
 		});
 
 	if (it == m_components.end())

@@ -250,8 +250,8 @@ void EditorCameraComponent::UpdateFocus(GameObjectComponentPtr<TransformComponen
 
 	// Any manual look, orbit, pan or zoom takes over from the animation
 	InputHandler& inputHandler = RZE().GetInputHandler();
-	if (inputHandler.GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Pressed
-		|| inputHandler.GetMouseState().GetButtonState(EMouseButton::MouseButton_Middle) == EButtonState::ButtonState_Pressed
+	if (inputHandler.GetMouseState().IsDownThisFrame(EMouseButton::MouseButton_Right)
+		|| inputHandler.GetMouseState().IsDownThisFrame(EMouseButton::MouseButton_Middle)
 		|| inputHandler.GetMouseState().CurWheelVal != 0)
 	{
 		m_focus.reset();
@@ -289,46 +289,46 @@ void EditorCameraComponent::KeyboardInput(GameObjectComponentPtr<TransformCompon
 
 	float speedDelta = (m_speed * m_deltaSpeedRampMultiplier) * dt;
 
-	// TODO(Josh::The extra condition here for hold is because of the frame delay for ::Hold. Should fix eventually.)
-	if (inputHandler.GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Pressed)
+	// Whether each key is down, read straight from the state. GetButtonState's Hold isn't "down since last frame": it
+	// starts with the OS's first key repeat, so a held key reads Pressed until then.
+	if (inputHandler.GetMouseState().IsDownThisFrame(EMouseButton::MouseButton_Right))
 	{
 		bool hasValidMovementInput = false;
 
-		if (inputHandler.GetKeyboardState().GetButtonState(KeyCode::Key_W) == EButtonState::ButtonState_Pressed
-			|| inputHandler.GetKeyboardState().GetButtonState(KeyCode::Key_W) == EButtonState::ButtonState_Hold)
+		if (inputHandler.GetKeyboardState().IsDownThisFrame(KeyCode::Key_W))
 		{
 			transfComp->GetPosition() += m_forward * speedDelta;
 			hasValidMovementInput = true;
 		}
-		else if (inputHandler.GetKeyboardState().CurKeyStates[KeyCode::Key_S])
+		else if (inputHandler.GetKeyboardState().IsDownThisFrame(KeyCode::Key_S))
 		{
 			transfComp->GetPosition() -= m_forward * speedDelta;
 			hasValidMovementInput = true;
 		}
 
-		if (inputHandler.GetKeyboardState().CurKeyStates[KeyCode::Key_A])
+		if (inputHandler.GetKeyboardState().IsDownThisFrame(KeyCode::Key_A))
 		{
 			transfComp->GetPosition() -= m_forward.Cross(m_upDir).Normalize() * speedDelta;
 			hasValidMovementInput = true;
 		}
-		else if (inputHandler.GetKeyboardState().CurKeyStates[KeyCode::Key_D])
+		else if (inputHandler.GetKeyboardState().IsDownThisFrame(KeyCode::Key_D))
 		{
 			transfComp->GetPosition() += m_forward.Cross(m_upDir).Normalize() * speedDelta;
 			hasValidMovementInput = true;
 		}
 
-		if (inputHandler.GetKeyboardState().CurKeyStates[KeyCode::Key_E])
+		if (inputHandler.GetKeyboardState().IsDownThisFrame(KeyCode::Key_E))
 		{
 			transfComp->GetPosition() += m_forward.Cross(m_upDir).Cross(m_forward) * speedDelta;
 			hasValidMovementInput = true;
 		}
-		else if (inputHandler.GetKeyboardState().CurKeyStates[KeyCode::Key_Q])
+		else if (inputHandler.GetKeyboardState().IsDownThisFrame(KeyCode::Key_Q))
 		{
 			transfComp->GetPosition() -= m_forward.Cross(m_upDir).Cross(m_forward) * speedDelta;
 			hasValidMovementInput = true;
 		}
 
-		if (inputHandler.GetKeyboardState().CurKeyStates[KeyCode::Key_1])
+		if (inputHandler.GetKeyboardState().IsDownThisFrame(KeyCode::Key_1))
 		{
 			// Focus object
 			hasValidMovementInput = true;
@@ -338,11 +338,11 @@ void EditorCameraComponent::KeyboardInput(GameObjectComponentPtr<TransformCompon
 	}
 
 	// #TODO(Josh::Support for special keys CTRL SHIFT etc)
-	if (inputHandler.GetKeyboardState().GetButtonState(KeyCode::Key_R) == EButtonState::ButtonState_Pressed)
+	if (inputHandler.GetKeyboardState().IsDownThisFrame(KeyCode::Key_R))
 	{
 		m_speed = k_cameraMaxSpeed * 4.0f;
 	}
-	else if (inputHandler.GetKeyboardState().GetButtonState(KeyCode::Space) == EButtonState::ButtonState_Pressed)
+	else if (inputHandler.GetKeyboardState().IsDownThisFrame(KeyCode::Space))
 	{
 		m_speed = k_cameraMaxSpeed / 8.0f;
 	}
@@ -373,12 +373,12 @@ void EditorCameraComponent::MouseInput(GameObjectComponentPtr<TransformComponent
 		m_orbitDistance = std::max(m_orbitDistance - step, k_minOrbitDistance);
 	}
 
-	if (inputHandler.GetMouseState().CurMouseBtnStates[EMouseButton::MouseButton_Right])
+	if (inputHandler.GetMouseState().IsDownThisFrame(EMouseButton::MouseButton_Right))
 	{
 		const bool withSensitivity = true;
 		CalculateNewForward(diff, withSensitivity);
 	}
-	else if (inputHandler.GetMouseState().CurMouseBtnStates[EMouseButton::MouseButton_Middle] && (diff.X() != 0.0f || diff.Y() != 0.0f))
+	else if (inputHandler.GetMouseState().IsDownThisFrame(EMouseButton::MouseButton_Middle) && (diff.X() != 0.0f || diff.Y() != 0.0f))
 	{
 		const auto& keyboardState = inputHandler.GetKeyboardState();
 		const Vector3D pivot = position + m_forward * m_orbitDistance;

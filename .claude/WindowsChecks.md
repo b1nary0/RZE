@@ -209,6 +209,13 @@ the rest for the user.
   4. Restore it (`$item.InvokeVerb('undelete')`; if that verb isn't found, Restore in Explorer, **person**). Expect
      `RZE\Assets\RecycleProbe.txt` back with its text. Then `Remove-Item` it, and check `git status` shows nothing new
      under `Assets`.
+- **E5. Flying the editor camera (person; the commit after 2fddb1f2).** `EditorCameraComponent` now asks whether each
+  key and mouse button is down (`IsDownThisFrame`) instead of comparing `GetButtonState` with Pressed (and, for W,
+  Hold). The harness can't hold a button while pressing keys, so this needs hands. With the right mouse button held
+  in the scene view, hold each of W, A, S, D, Q and E for over a second, past the keyboard's repeat delay: expect
+  smooth movement the whole time, with no stop or stutter when key repeat starts. Holding R speeds it up and Space
+  slows it down for as long as they're held. Right-drag looks around, middle-drag orbits (Shift pans, Ctrl dollies),
+  and either one stops a double-click focus animation part way.
 
 ### F. Profiling
 

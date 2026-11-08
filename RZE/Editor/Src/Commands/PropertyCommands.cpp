@@ -38,7 +38,7 @@ namespace
 				gameObject->GetComponentHandles(components);
 				for (const GameObjectComponentPtr<GameObjectComponentBase>& component : components)
 				{
-					if (component->m_id == componentID
+					if (component->GetTypeID() == componentID
 						&& std::get<bool>(property.Get(ComponentPropertyRegistry::GetDescribedObject(**component))))
 					{
 						holder = gameObject->GetGUID();
@@ -201,7 +201,7 @@ namespace Editor
 			return false;
 		}
 
-		const GameObjectComponentID componentID = m_component->m_id;
+		const GameObjectComponentID componentID = m_component->GetTypeID();
 		std::unique_ptr<SetPropertyRecord> record = std::make_unique<SetPropertyRecord>(
 			m_component->GetOwner()->GetGUID(), componentID, m_path, property.Name, GetUndoValue(property, resolved.Object), std::optional<PropertyValue>(m_value));
 		if (property.IsExclusive)
@@ -246,7 +246,7 @@ namespace Editor
 		AssertMsg(property.IsEditable(), "Read-only properties can't be reset");
 
 		std::unique_ptr<SetPropertyRecord> record = std::make_unique<SetPropertyRecord>(
-			m_component->GetOwner()->GetGUID(), m_component->m_id, m_path, property.Name, GetUndoValue(property, resolved.Object), std::nullopt);
+			m_component->GetOwner()->GetGUID(), m_component->GetTypeID(), m_path, property.Name, GetUndoValue(property, resolved.Object), std::nullopt);
 
 		property.Reset(resolved.Object);
 		// A view setting isn't part of the scene, so isn't undoable

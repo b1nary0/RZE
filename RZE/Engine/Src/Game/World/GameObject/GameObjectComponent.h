@@ -17,8 +17,8 @@
 #define REGISTER_GAMEOBJECTCOMPONENT(ComponentType)\
 {\
 	GameObjectComponentTypeID<GameObjectComponentBase>::GetComponentTypeID<ComponentType>();	\
-	GameObjectComponentRegistry::RegisterComponentType(ComponentType::GetID(), #ComponentType);\
-	GameObjectComponentRegistry::AddComponentFactory(ComponentType::GetID(), Functor<GameObjectComponentBase*>([]() { return new ComponentType();}));\
+	GameObjectComponentRegistry::RegisterComponentType(ComponentType::StaticTypeID(), #ComponentType);\
+	GameObjectComponentRegistry::AddComponentFactory(ComponentType::StaticTypeID(), Functor<GameObjectComponentBase*>([]() { return new ComponentType();}));\
 	ComponentPropertyRegistry::Register<ComponentType>();\
 }
 
@@ -81,7 +81,7 @@ GameObjectComponentID GameObjectComponentTypeID<TComponentBase>::s_nextComponent
 class GameObjectComponentBase
 {
 public:
-	GameObjectComponentBase();
+	explicit GameObjectComponentBase(GameObjectComponentID typeID);
 	virtual ~GameObjectComponentBase();
 
 	// The instance ID is what GameObjectComponentPtr tracks the component's lifetime by, so it must stay unique to one instance
@@ -111,15 +111,15 @@ public:
 	const std::string& GetName() { return m_componentName; }
 
 	GameObjectComponentInstanceID GetInstanceID() const { return m_instanceID; }
-
-public:
-	GameObjectComponentID m_id; // #TODO For now
+	// This component's type, for code holding it as a GameObjectComponentBase. The same as its type's StaticTypeID().
+	GameObjectComponentID GetTypeID() const { return m_typeID; }
 
 protected:
 	std::string m_componentName;
 	GameObjectPtr m_owner;
 
 private:
+	const GameObjectComponentID m_typeID;
 	GameObjectComponentInstanceID m_instanceID;
 };
 
@@ -131,16 +131,17 @@ class GameObjectComponent : public GameObjectComponentBase
 {
 public:
 	GameObjectComponent()
+		: GameObjectComponentBase(StaticTypeID())
 	{
 		static_assert(std::is_final_v<TComponentType>, "Component types must be final: a subclass would share its base's type ID");
-		m_id = GetID();
 		m_componentName = GetComponentName();
 	}
 
 	virtual ~GameObjectComponent() = default;
 
 public:
-	static GameObjectComponentID GetID()
+	// TComponentType's ID, from the type alone. An instance held as a GameObjectComponentBase answers GetTypeID().
+	static GameObjectComponentID StaticTypeID()
 	{
 		return GameObjectComponentTypeID<GameObjectComponentBase>::GetComponentTypeID<TComponentType>();
 	}

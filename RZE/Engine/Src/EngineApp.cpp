@@ -109,7 +109,7 @@ void RZE_Application::RegisterEngineComponents()
 	REGISTER_GAMEOBJECTCOMPONENT(GifChatComponent);
 
 	// Lets async scene loading preload these components' resources on worker threads.
-	GameObjectComponentRegistry::SetResourceDependencyGatherer(RenderComponent::GetID(), &RenderComponent::GatherResourceDependencies);
+	GameObjectComponentRegistry::SetResourceDependencyGatherer(RenderComponent::StaticTypeID(), &RenderComponent::GatherResourceDependencies);
 }
 
 Window& RZE_Application::InternalGetWindow()
