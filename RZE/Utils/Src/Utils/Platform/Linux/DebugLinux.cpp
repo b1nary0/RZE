@@ -14,9 +14,9 @@ namespace Debug
 
 	namespace
 	{
+#ifdef _DEBUG
 		AssertFailureHook g_assertFailureHook = nullptr;
 
-#ifdef _DEBUG
 		bool IsDebuggerAttached()
 		{
 			// The kernel names the process tracing this one, 0 for none
@@ -36,7 +36,10 @@ namespace Debug
 
 	void SetAssertFailureHook(AssertFailureHook hook)
 	{
+		// Asserts compile out outside Debug, so there's nothing to hook there
+#ifdef _DEBUG
 		g_assertFailureHook = hook;
+#endif
 	}
 
 #ifdef _DEBUG
