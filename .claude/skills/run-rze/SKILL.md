@@ -23,14 +23,14 @@ From the repo root, in this order:
 ```powershell
 Push-Location RZE; & .\GenerateSolutions.bat; Pop-Location
 $msbuild = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -find MSBuild\**\Bin\MSBuild.exe
-& $msbuild RZE\RZE.sln /p:Configuration=Debug /p:Platform=x64 /m /v:minimal /nologo
-& .\RZE\_build\debug\SourceAssetBurner.exe
+& $msbuild RZE\RZE.sln /p:Configuration=Development /p:Platform=x64 /m /v:minimal /nologo
+& .\RZE\_build\development\SourceAssetBurner.exe
 ```
 
 | step | why |
 |---|---|
 | `GenerateSolutions.bat` | Sharpmake generates `.sln`/`.vcxproj`, which are gitignored. **Re-run it after adding or removing any source file**, or the new file won't compile. |
-| MSBuild | Builds Debug x64 into `RZE\_build\debug\`. A clean incremental build is fast. |
+| MSBuild | Builds Development x64 (optimized, with asserts, logging and symbols) into `RZE\_build\development\`, what the driver runs unless `-Config` says otherwise. Use `/p:Configuration=Debug` (`RZE\_build\debug\`) to step through code the optimizer rearranges. A clean incremental build is fast. |
 | `SourceAssetBurner.exe` | Imports `RZE\Assets\3D\**` into `RZE\ProjectData\` (gitignored). Needed once after cloning. Takes about 15 s and writes into `RZE\ProjectData` wherever you run it from. |
 ## Run (agent path)
 
@@ -58,7 +58,7 @@ the window the way a user would:
 
 | command | what it does |
 |---|---|
-| `launch [-Scene X.scene] [-Config debug\|development] [-SettleSeconds 5] [-KeepImguiIni]` | Starts `Editor.exe -scene X` with the working directory set to `RZE\_build\<config>`. Refuses to start if an editor is already running. Backs up `RZE\Config\imgui.ini` first (below); `-KeepImguiIni` keeps the layout the run leaves instead. |
+| `launch [-Scene X.scene] [-Config debug\|development\|retail] [-SettleSeconds 5] [-KeepImguiIni]` | Starts `Editor.exe -scene X` with the working directory set to `RZE\_build\<config>` (`development` by default). Refuses to start if an editor is already running. Backs up `RZE\Config\imgui.ini` first (below); `-KeepImguiIni` keeps the layout the run leaves instead. |
 | `shot [-Out path.png]` | Captures the client area only. Defaults to `$env:TEMP\rze-shots\`. |
 | `click -X -Y` | Left click. |
 | `dblclick -X -Y` | Two left clicks close enough together to count as a double-click (two `click` calls are too far apart). Double-clicking an object in the Scene panel focuses the camera on it. |
@@ -67,7 +67,7 @@ the window the way a user would:
 | `key -Keys '...'` | `SendKeys` syntax. `'^a<value>{ENTER}'` replaces an ImGui number field. |
 | `info` | Window title and client size. |
 | `alive` | `running pid=N responding=True/False` or `not running`. |
-| `close [-TimeoutSeconds 30]` | Sends the window `WM_CLOSE`, like its close button, and waits for the process to exit. Prints `closed code=0`. Fails if the editor exits with any other code (a crash while shutting down), or is still open after the timeout. In that case it's left running, so `shot` can show why (the unsaved-changes prompt, a Debug assert dialog), then `quit`. |
+| `close [-TimeoutSeconds 30]` | Sends the window `WM_CLOSE`, like its close button, and waits for the process to exit. Prints `closed code=0`. Fails if the editor exits with any other code (a crash while shutting down), or is still open after the timeout. In that case it's left running, so `shot` can show why (the unsaved-changes prompt, an assert dialog), then `quit`. |
 | `quit` | Kills the editor and polls until the process is gone. Puts `imgui.ini` back, as `close` does; with no editor running, it only does that. |
 
 **`imgui.ini` is put back after every session**, as `driver.py` does. Each Editor run rewrites `RZE\Config\imgui.ini`,
@@ -157,7 +157,7 @@ Open `RZE\RZE.sln` in Visual Studio, set **Editor** as the startup project, and 
 The solution builds `UnitTests.exe` (doctest). Run it after any Editor or Engine change:
 
 ```powershell
-& .\RZE\_build\debug\UnitTests.exe    # exit code 0 = all passed; -tc="Undo*" runs matching test cases
+& .\RZE\_build\development\UnitTests.exe    # exit code 0 = all passed; -tc="Undo*" runs matching test cases
 ```
 
 It covers the undo history, parking, copy snapshots, selection, interaction tracking and the property registry, with no running engine. CI (`.github/workflows/Windows.yml`) runs it in Debug and Development after the build. Anything that needs a window or the renderer (selection restore, the main camera, rendering) still means building, then driving the editor as above.
@@ -189,9 +189,9 @@ From the repo root:
 
 ```bash
 (cd RZE && ./GenerateSolutions.sh)              # again after adding or removing any source file
-make -C RZE config=debug -j"$(nproc)"           # every project compiles at once, then links
-./RZE/_build/debug/SourceAssetBurner            # once after cloning; about 4 s
-./RZE/_build/debug/UnitTests                    # exit code 0 = all passed
+make -C RZE -j"$(nproc)"                        # Development; config=debug or config=retail for the others
+./RZE/_build/development/SourceAssetBurner      # once after cloning; about 4 s
+./RZE/_build/development/UnitTests              # exit code 0 = all passed
 ```
 
 Setup (once): `sudo dnf install clang lld make dotnet-sdk-8.0 SDL3-devel libshaderc-devel assimp-devel`, as in the README.
@@ -238,7 +238,7 @@ downscales a 2560-wide image to 2000, so multiply what you measure by 1.28.
 
 | command | what it does |
 |---|---|
-| `launch [--harness] [--scene X.scene] [--config debug\|development\|retail] [--app Editor\|Game] [--settle 5] [--keep-imgui-ini] [--nested [--refresh 240]] [--output DP-2] [-- args...]` | Starts the app under the driver. Refuses if one is running. Backs up `RZE/Config/imgui.ini` first (below). `--harness` runs EditorHarness (above); it's the Editor's only, and can't be combined with `--renderdoc`. `--output` opens it on that monitor, and `--nested` (with `--harness`) off-screen in a KWin of its own (both below). |
+| `launch [--harness] [--scene X.scene] [--config debug\|development\|retail] [--app Editor\|Game] [--settle 5] [--keep-imgui-ini] [--nested [--refresh 240]] [--output DP-2] [-- args...]` | Starts the app under the driver, from `_build/<config>` (`development` by default). Refuses if one is running. Backs up `RZE/Config/imgui.ini` first (below). `--harness` runs EditorHarness (above); it's the Editor's only, and can't be combined with `--renderdoc`. `--output` opens it on that monitor, and `--nested` (with `--harness`) off-screen in a KWin of its own (both below). |
 | `outputs` | The monitors `launch --output` takes, by KWin's name: `DP-1\t2560,0 2560x1440`. |
 | `state`, `object NAME`, `realinput on\|off` | Harness sessions only: the Editor's state (scene, modified, selection, undo, objects); one object's GUID, parent, components and transform; whether the real mouse and keyboard reach the app. |
 | `shot [--out path.png]` | With `--harness`, the frame read back from the back buffer (about 1 s, as it's encoded). Otherwise, it focuses the app and captures its client area (spectacle). |

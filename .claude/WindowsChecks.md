@@ -127,6 +127,19 @@ the rest for the user.
      `driver.ps1 launch -Harness -Config development -Scene DrawLineTest.scene`, then `close`, gives `closed code=0`.
   3. An old `RZE\_build\release\` (and `_project\obj\...\Release` folders) are stale: delete them after the build.
   4. CI's Windows job now has a `development` leg in place of `release`; note whether it passed on the pushed commit.
+- **A12. Development is the default (the commit after 7439d711).** `driver.ps1 -Config` defaults to `development`
+  and now accepts `retail`, and the skill's MSBuild and test commands use Development. The Editor's Build Game and
+  Launch Game build and start Development: `BuildGame.bat` builds `Configuration=Development`, and `GameBuilder.cpp`
+  starts `_build\development\Game.exe`. On Linux, `make` with no `config=`, `BuildGame.sh` and Launch Game do the same.
+  1. `driver.ps1 launch -Harness -Scene DrawLineTest.scene` with no `-Config` runs `RZE\_build\development\Editor.exe`
+     (or EditorHarness; check the process's path), then `close`: `closed code=0`.
+  2. `driver.ps1 launch -Harness -Config retail -Scene DrawLineTest.scene`, then `close`: `closed code=0`. The driver
+     has never run Retail on Windows before, so report what fails if it doesn't.
+  3. `RZE\BuildGame.bat` from a plain PowerShell (no developer prompt): exit code 0, and
+     `RZE\_build\development\Game.exe` has the build's time. Then, in the Editor with DrawLineTest open, Launch Game:
+     the Game opens in DrawLineTest. Close it with Escape.
+  4. **(person)** In Visual Studio, pick Development in the configuration list, close the solution and open it again:
+     Development is still selected.
 
 ### C. Window and input (Phase 3: SDL replaced Win32Window)
 

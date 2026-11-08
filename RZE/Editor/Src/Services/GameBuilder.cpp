@@ -91,7 +91,8 @@ namespace Editor
 		JobAsyncOperation::WorkFunction work([launchAfterBuild, sceneArgument](AsyncWorkerContext& context) -> bool
 			{
 				static const Filepath buildGameScript(Platform::k_buildGameScript);
-				static const Filepath gamePath(std::string("_build/debug/Game") + Platform::k_executableSuffix);
+				// The configuration BuildGame.bat and BuildGame.sh build
+				static const Filepath gamePath(std::string("_build/development/Game") + Platform::k_executableSuffix);
 
 				const OutputLineSink traceLine = MakeWorkerBuildTraceSink(context);
 

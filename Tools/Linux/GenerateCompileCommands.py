@@ -80,7 +80,7 @@ def project_entries(directory, makefile, config):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--config", default="debug", choices=["debug", "development", "retail"])
+    parser.add_argument("--config", default="development", choices=["debug", "development", "retail"])
     parser.add_argument("--output", default=os.path.join(REPO_ROOT, "compile_commands.json"))
     args = parser.parse_args()
 

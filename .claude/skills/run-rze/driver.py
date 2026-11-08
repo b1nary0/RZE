@@ -1175,7 +1175,7 @@ def main():
 
     p = commands.add_parser("launch", help="start the Editor (or Game) under the driver")
     p.add_argument("--scene", help="e.g. DrawLineTest.scene")
-    p.add_argument("--config", default="debug", choices=["debug", "development", "retail"])
+    p.add_argument("--config", default="development", choices=["debug", "development", "retail"])
     p.add_argument("--app", default="Editor", choices=["Editor", "Game"])
     p.add_argument("--settle", type=float, default=5, help="seconds to wait after the window is up (assets stream in)")
     p.add_argument("--timeout", type=float, default=60)

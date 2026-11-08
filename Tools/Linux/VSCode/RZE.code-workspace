@@ -1,6 +1,7 @@
 // VS Code on Linux: open this file (code Tools/Linux/VSCode/RZE.code-workspace), not the repository folder.
-// Ctrl+Shift+B builds Debug through the Sharpmake Makefiles, F5 debugs the Editor or UnitTests with gdb, and
-// IntelliSense reads compile_commands.json, which every Debug build regenerates (Tools/Linux/GenerateCompileCommands.py).
+// Ctrl+Shift+B builds Development (optimized, with asserts and symbols) through the Sharpmake Makefiles, F5 debugs the
+// Editor or UnitTests with gdb, in Development or Debug, and IntelliSense reads compile_commands.json, which every
+// Development build regenerates (Tools/Linux/GenerateCompileCommands.py).
 // Setup (once) is in README.md. Settings of your own go in your user settings or the repository's .vscode/.
 {
     "folders": [
@@ -35,15 +36,15 @@
                 "label": "RZE: compile_commands.json",
                 "detail": "Regenerates compile_commands.json from the Makefiles (a dry run: nothing compiles)",
                 "type": "shell",
-                "command": "python3 Tools/Linux/GenerateCompileCommands.py --config debug",
+                "command": "python3 Tools/Linux/GenerateCompileCommands.py --config development",
                 "options": { "cwd": "${workspaceFolder:RZE}" },
                 "problemMatcher": [],
                 "presentation": { "reveal": "silent" }
             },
             {
-                "label": "RZE: build debug",
+                "label": "RZE: build development",
                 "type": "shell",
-                "command": "make -C RZE config=debug -j\"$(nproc)\"",
+                "command": "make -C RZE config=development -j\"$(nproc)\"",
                 "dependsOn": "RZE: compile_commands.json",
                 "options": {
                     "cwd": "${workspaceFolder:RZE}",
@@ -55,9 +56,10 @@
                 "group": { "kind": "build", "isDefault": true }
             },
             {
-                "label": "RZE: build development",
+                "label": "RZE: build debug",
+                "detail": "Unoptimized, for stepping through code the optimizer rearranges",
                 "type": "shell",
-                "command": "make -C RZE config=development -j\"$(nproc)\"",
+                "command": "make -C RZE config=debug -j\"$(nproc)\"",
                 "options": {
                     "cwd": "${workspaceFolder:RZE}",
                     "env": { "CXXFLAGS": "-fdiagnostics-absolute-paths -fdiagnostics-color=always" }
@@ -66,20 +68,20 @@
                 "group": "build"
             },
             {
-                "label": "RZE: unit tests (debug)",
+                "label": "RZE: unit tests",
                 "type": "shell",
-                "command": "./RZE/_build/debug/UnitTests",
-                "dependsOn": "RZE: build debug",
+                "command": "./RZE/_build/development/UnitTests",
+                "dependsOn": "RZE: build development",
                 "options": { "cwd": "${workspaceFolder:RZE}" },
                 "problemMatcher": [],
                 "group": { "kind": "test", "isDefault": true }
             },
             {
-                "label": "RZE: burn assets (debug)",
+                "label": "RZE: burn assets",
                 "detail": "SourceAssetBurner: once after cloning, and after changing source assets",
                 "type": "shell",
-                "command": "./RZE/_build/debug/SourceAssetBurner",
-                "dependsOn": "RZE: build debug",
+                "command": "./RZE/_build/development/SourceAssetBurner",
+                "dependsOn": "RZE: build development",
                 "options": { "cwd": "${workspaceFolder:RZE}" },
                 "problemMatcher": []
             },
@@ -87,7 +89,7 @@
                 "label": "RZE: generate Makefiles",
                 "detail": "Sharpmake: again after adding or removing a source file",
                 "type": "shell",
-                "command": "./GenerateSolutions.sh && python3 ../Tools/Linux/GenerateCompileCommands.py --config debug",
+                "command": "./GenerateSolutions.sh && python3 ../Tools/Linux/GenerateCompileCommands.py --config development",
                 "options": { "cwd": "${workspaceFolder:RZE}/RZE" },
                 "problemMatcher": []
             }
@@ -97,6 +99,34 @@
     "launch": {
         "version": "0.2.0",
         "configurations": [
+            {
+                "name": "Editor (development)",
+                "type": "cppdbg",
+                "request": "launch",
+                "program": "${workspaceFolder:RZE}/RZE/_build/development/Editor",
+                "args": [ "-scene", "${input:scene}" ],
+                "cwd": "${workspaceFolder:RZE}/RZE/_build/development",
+                "MIMode": "gdb",
+                "miDebuggerPath": "/usr/bin/gdb",
+                "setupCommands": [
+                    { "description": "Pretty-print STL types", "text": "-enable-pretty-printing", "ignoreFailures": true }
+                ],
+                "preLaunchTask": "RZE: build development"
+            },
+            {
+                "name": "UnitTests (development)",
+                "type": "cppdbg",
+                "request": "launch",
+                "program": "${workspaceFolder:RZE}/RZE/_build/development/UnitTests",
+                "args": [ "-tc=${input:testCases}" ],
+                "cwd": "${workspaceFolder:RZE}/RZE/_build/development",
+                "MIMode": "gdb",
+                "miDebuggerPath": "/usr/bin/gdb",
+                "setupCommands": [
+                    { "description": "Pretty-print STL types", "text": "-enable-pretty-printing", "ignoreFailures": true }
+                ],
+                "preLaunchTask": "RZE: build development"
+            },
             {
                 "name": "Editor (debug)",
                 "type": "cppdbg",
