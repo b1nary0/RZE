@@ -60,8 +60,9 @@ namespace Rendering
 		// only the stages drawn together need their own: the pixel shader's from 0, the vertex shader's from 16.
 		U32 GetTextureUnitBase(EStage stage);
 
-		// The shader at file, whose entry point is VSMain, PSMain or CSMain as on D3D. Includes are found beside the file
-		// including them, then beside file. False, with outErrors saying why, if it can't be made GLSL.
+		// The shader at file, whose entry point is VSMain, PSMain or CSMain as on D3D. Includes are found beside file
+		// only (Assets/Shaders), never beside the file including them, as D3D's standard include handler looks. False,
+		// with outErrors saying why, if it can't be made GLSL.
 		bool Translate(const Filepath& file, EStage stage, Result& outResult, std::string& outErrors);
 	}
 }
