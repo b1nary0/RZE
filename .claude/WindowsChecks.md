@@ -48,6 +48,18 @@ the rest for the user.
   - **Reflection probes:** no scene has one. Add a `ReflectionProbeComponent` to an object in `Sponza.scene` by hand
     and don't save: the reflections are the right way up and the sky is on top.
 
+- **A5. Asset readers fail cleanly; burns are byte-identical (the commit after 10407443).** `ByteStream` fails
+  instead of reading or writing past its end, `ByteStreamUtils` checks sizes before allocating, and the importers
+  reject a truncated or corrupt `.meshasset`/`.materialasset`. On Linux, 72 burned assets hashed the same before and
+  after, and the new tests passed in Debug and Release. MSVC's `size_t`, padding and `EBlendMode` size are what could
+  differ:
+  1. Before building the new commit, burn with the old one and hash: `Get-ChildItem RZE\ProjectData -Recurse -Include
+     *.meshasset,*.materialasset | Get-FileHash | Sort-Object Path | Out-File $env:TEMP\hash_before.txt`. Burn again
+     with the new build (A3) and hash to `hash_after.txt`; expect `Compare-Object` to find no difference.
+  2. A2 covers the new tests (`ByteStreamTests`, `MeshAssetTests`, the material truncation tests), in Release too.
+  3. `driver.ps1 launch -Harness -Scene Sponza.scene -SettleSeconds 20`: expect 9 objects, textured, and no
+     "shorter than its contents" lines in the log.
+
 ### C. Window and input (Phase 3: SDL replaced Win32Window)
 
 - **C1. Startup.** The splash shows with its status text, then the Editor appears with no white flash (it's cloaked

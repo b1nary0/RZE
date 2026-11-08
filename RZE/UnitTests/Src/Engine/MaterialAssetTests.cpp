@@ -7,7 +7,9 @@
 
 #include <TestFolder.h>
 
+#include <cstring>
 #include <fstream>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -160,4 +162,67 @@ TEST_CASE("A material asset from before blend modes reads as cutout with a mask,
 	REQUIRE(plainImporter.Import(plain));
 	CHECK(plainImporter.GetMaterialData().BlendMode == EBlendMode::Opaque);
 	CHECK(plainImporter.GetMaterialData().TexturePaths.size() == 1);
+}
+
+namespace
+{
+	// A material with a name and textures, through the real writer
+	void WriteGlass(const Filepath& file)
+	{
+		MaterialData written;
+		written.MaterialName = "Glass";
+		written.TextureFlags = MaterialData::TEXTUREFLAG_ALBEDO;
+		written.TexturePaths = { "Assets/Glass_Colour.png", "Assets/Glass_Mask.png" };
+
+		MaterialAssetWriter writer;
+		writer.SetOutputPath(file);
+		writer.SetMaterialData(written);
+		writer.Write();
+	}
+
+	void CheckFailsCleanly(const Filepath& file)
+	{
+		MaterialAssetImporter importer;
+		CHECK_FALSE(importer.Import(file));
+		CHECK(importer.GetMaterialData().MaterialName.empty());
+		CHECK(importer.GetMaterialData().TexturePaths.empty());
+	}
+}
+
+TEST_CASE("A material asset cut short anywhere fails to import, and leaves nothing behind")
+{
+	const ScopedTestFolder folder("UnitTestsTemp_MaterialAsset");
+	const Filepath file = folder.GetFile("Glass.materialasset");
+	WriteGlass(file);
+	MaterialAssetImporter whole;
+	REQUIRE(whole.Import(file));
+
+	const Filepath truncated = folder.GetFile("Truncated.materialasset");
+	ForEachTruncation(file, truncated, [&truncated](size_t length)
+		{
+			CAPTURE(length);
+			CheckFailsCleanly(truncated);
+		});
+}
+
+TEST_CASE("A material asset whose texture count can't fit in the file fails")
+{
+	const ScopedTestFolder folder("UnitTestsTemp_MaterialAsset");
+	const Filepath file = folder.GetFile("Corrupt.materialasset");
+
+	// No textures, so the count is the last thing in the file
+	MaterialData written;
+	written.MaterialName = "Corrupt";
+	MaterialAssetWriter writer;
+	writer.SetOutputPath(file);
+	writer.SetMaterialData(written);
+	writer.Write();
+
+	const size_t huge = std::numeric_limits<size_t>::max();
+	{
+		std::fstream stream(file.GetAbsolutePath(), std::ios::binary | std::ios::in | std::ios::out);
+		stream.seekp(-static_cast<std::streamoff>(sizeof(size_t)), std::ios::end);
+		stream.write(reinterpret_cast<const char*>(&huge), sizeof(huge));
+	}
+	CheckFailsCleanly(file);
 }

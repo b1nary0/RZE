@@ -13,8 +13,6 @@
 namespace
 {
 	constexpr uint16_t k_meshAssetVersion = 1;
-
-	constexpr size_t k_placementSizeBytes = sizeof(U32) + sizeof(float) * 16;
 }
 
 void MeshAssetWriter::SetMeshData(std::vector<MeshData>&& meshData)
@@ -64,10 +62,6 @@ void MeshAssetWriter::Write()
 		Filepath::CreateDir(outputPath.GetAbsoluteDirectoryPath());
 	}
 
-	File outputFile(outputPath);
-	constexpr File::EFileOpenMode::Value k_openMode = static_cast<File::EFileOpenMode::Value>(File::EFileOpenMode::Write | File::EFileOpenMode::Binary);
-	outputFile.Open(k_openMode);
-
 	size_t bufSize = 0;
 	for (auto& mesh : m_meshes)
 	{
@@ -80,7 +74,7 @@ void MeshAssetWriter::Write()
 	// (file header + (nameSizeBytes + vertexDataSizeBytes + materialPathSizeBytes + indexDataSizeBytes) * meshCount
 	const size_t meshCount = m_meshes.size();
 	bufSize += sizeof(MeshAssetFileHeader) + ((sizeof(size_t) * 4) * meshCount);
-	bufSize += k_placementSizeBytes * m_placements.size();
+	bufSize += k_meshAssetPlacementSizeBytes * m_placements.size();
 
 	// Written as raw bytes, so clear the padding after AssetVersion too; otherwise identical burns differ
 	MeshAssetFileHeader header;
@@ -120,7 +114,18 @@ void MeshAssetWriter::Write()
 		byteStream.WriteBytes(placement.LocalTransform.GetValuePtr(), sizeof(float) * 16);
 	}
 
-	AssertExpr(byteStream.GetNumBytesWritten() == bufSize);
+	// A miscounted bufSize is a bug here, but a short asset mustn't replace a good one, so the old file is kept
+	AssertExpr(!byteStream.HasFailed() && byteStream.GetNumBytesWritten() == bufSize);
+	if (byteStream.HasFailed() || byteStream.GetNumBytesWritten() != bufSize)
+	{
+		RZE_LOG_ERROR_ARGS("MeshAssetWriter : %s not written: its data didn't fill the %zu bytes counted for it.", outputPath.GetRelativePath().c_str(), bufSize);
+		return;
+	}
+
+	// Only now: opening it to write empties it
+	File outputFile(outputPath);
+	constexpr File::EFileOpenMode::Value k_openMode = static_cast<File::EFileOpenMode::Value>(File::EFileOpenMode::Write | File::EFileOpenMode::Binary);
+	outputFile.Open(k_openMode);
 
 	const Byte* bytes = byteStream.GetBytes();
 	for (size_t byteIndex = 0; byteIndex < byteStream.GetNumBytesWritten(); ++byteIndex)

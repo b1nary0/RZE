@@ -1,46 +1,38 @@
 #pragma once
 
-#include <string>
+#include <Utils/Memory/ByteStream.h>
 
+#include <string>
+#include <type_traits>
+#include <vector>
+
+// Reads what the asset writers write: a value as its bytes, and a string or an array as its size in bytes (a size_t)
+// followed by the bytes. When the data runs out, or a size can't be right, they fail the stream
+// (ByteStream::HasFailed) and give a zeroed or empty value, without allocating what the size claims.
 namespace ByteStreamUtils
 {
-	inline std::string ReadString(ByteStream& byteStream)
-	{
-		size_t nameSizeBytes = *reinterpret_cast<size_t*>(byteStream.PeekBytesAdvance(sizeof(size_t)));
+	std::string ReadString(ByteStream& byteStream);
 
-		unsigned char* name = new unsigned char[nameSizeBytes + 1];
-		byteStream.ReadBytes(name, nameSizeBytes);
-		name[nameSizeBytes] = '\0';
-		std::string string((char*)name);
+	// For ReadArray: reads an array's size in bytes and gives how many elements it holds. 0, failing the stream, if
+	// it's more than what's left or not a whole number of elements.
+	size_t ReadArrayCount(ByteStream& byteStream, size_t elementSizeBytes);
 
-		delete[] name;
-		name = nullptr;
-		return string;
-	}
-
-	// #NOTE
-	// ReadArray will only work on POD types. How could you know the length of a dynamically allocated array
-	// like a string? If you can't rely on sizeof(TDataType) then this function will fail.
-	template<typename TDataType>
-	inline std::vector<TDataType> ReadArray(ByteStream& byteStream)
-	{
-		size_t dataSizeBytes = *reinterpret_cast<size_t*>(byteStream.PeekBytesAdvance(sizeof(size_t)));
-
-		std::vector<TDataType> dataVec;
-		dataVec.resize(dataSizeBytes / sizeof(TDataType));
-		byteStream.ReadBytes((Byte*)dataVec.data(), dataSizeBytes);
-
-		return dataVec;
-	}
-
-	// #NOTE
-	// ReadType will only work on POD types. How could you know the length of a dynamically allocated array
-	// like a string? If you can't rely on sizeof(TType) then this function will fail.
+	// Copied out of the stream, so the bytes needn't be aligned for TType
 	template<typename TType>
-	inline TType ReadType(ByteStream& byteStream)
+	TType ReadType(ByteStream& byteStream)
 	{
-		TType* data =
-			reinterpret_cast<TType*>(byteStream.PeekBytesAdvance(sizeof(TType)));
-		return *data;
+		static_assert(std::is_trivially_copyable_v<TType>, "ReadType copies bytes, so only trivially copyable types can be read");
+		TType value{};
+		byteStream.ReadBytes(&value, sizeof(TType));
+		return value;
+	}
+
+	template<typename TDataType>
+	std::vector<TDataType> ReadArray(ByteStream& byteStream)
+	{
+		static_assert(std::is_trivially_copyable_v<TDataType>, "ReadArray copies bytes, so only trivially copyable types can be read");
+		std::vector<TDataType> data(ReadArrayCount(byteStream, sizeof(TDataType)));
+		byteStream.ReadBytes(data.data(), data.size() * sizeof(TDataType));
+		return data;
 	}
 }

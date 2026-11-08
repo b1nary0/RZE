@@ -5,8 +5,6 @@
 
 #include <Graphics/MeshGeometry.h>
 
-class ByteStream;
-
 // Reads a .meshasset (and the material assets it references) into plain CPU data.
 // Does no GPU or ResourceHandler work, so it is safe to run on a worker thread.
 class MeshAssetImporter : public AssetImporter
@@ -45,6 +43,12 @@ public:
 	// Where each submesh is drawn; a submesh can appear more than once. Version 0 assets, which predate
 	// placements, get one identity placement per submesh.
 	std::vector<MeshPlacement>& GetPlacements() { return m_placements; }
+
+private:
+	void Clear();
+	// For a file shorter than its contents say, or holding a size that can't be right: logs it, clears what was read
+	// and returns false
+	bool FailImport(const Filepath& filePath);
 
 private:
 	std::vector<ImportedSubmesh> m_submeshes;

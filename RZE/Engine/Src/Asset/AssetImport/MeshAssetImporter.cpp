@@ -23,13 +23,16 @@ namespace
 		size_t MeshCount;
 	};
 	static_assert(offsetof(MeshAssetFileHeader, PlacementCount) == sizeof(MeshAssetFileHeaderV0));
+
+	// The least a submesh takes in the file: the sizes of its name, material path, vertices and indices
+	constexpr size_t k_minSubmeshSizeBytes = sizeof(size_t) * 4;
+	constexpr size_t k_floatsPerVertex = sizeof(MeshVertex) / sizeof(float);
+	static_assert(sizeof(MeshVertex) % sizeof(float) == 0);
 }
 
 bool MeshAssetImporter::Import(const Filepath& filePath)
 {
-	m_submeshes.clear();
-	m_materials.clear();
-	m_placements.clear();
+	Clear();
 
 	ByteStream byteStream(filePath.GetRelativePath());
 	if (!byteStream.ReadFromFile(filePath) || byteStream.GetLength() < sizeof(MeshAssetFileHeaderV0))
@@ -53,6 +56,17 @@ bool MeshAssetImporter::Import(const Filepath& filePath)
 	}
 	const size_t placementCount = hasPlacements ? ByteStreamUtils::ReadType<size_t>(byteStream) : headerData.MeshCount;
 
+	// Counts that can't fit in what's left are wrong, not just short. Checked before anything is reserved for them,
+	// and before the loops, which they bound. The header's length was checked above, so reading it can't have failed.
+	const size_t placementBytesEach = hasPlacements ? k_meshAssetPlacementSizeBytes : 0;
+	const size_t remainingBytes = byteStream.GetRemainingLength();
+	if (headerData.MeshCount > remainingBytes / k_minSubmeshSizeBytes
+		|| (hasPlacements && placementCount > remainingBytes / placementBytesEach)
+		|| headerData.MeshCount * k_minSubmeshSizeBytes + placementCount * placementBytesEach > remainingBytes)
+	{
+		return FailImport(filePath);
+	}
+
 	// Material asset path -> index into m_materials
 	std::unordered_map<std::string, U32> materialIndices;
 
@@ -65,9 +79,14 @@ bool MeshAssetImporter::Import(const Filepath& filePath)
 		std::string materialPath = ByteStreamUtils::ReadString(byteStream);
 		std::vector<float> vertexData = ByteStreamUtils::ReadArray<float>(byteStream);
 		submesh.Indices = ByteStreamUtils::ReadArray<U32>(byteStream);
+		// Cut short, or vertex data that isn't a whole number of vertices
+		if (byteStream.HasFailed() || vertexData.size() % k_floatsPerVertex != 0)
+		{
+			return FailImport(filePath);
+		}
 
 		const MeshVertex* const vertexDataArray = reinterpret_cast<const MeshVertex*>(vertexData.data());
-		const size_t vertexCount = vertexData.size() / (sizeof(MeshVertex) / sizeof(float));
+		const size_t vertexCount = vertexData.size() / k_floatsPerVertex;
 		submesh.Vertices.assign(vertexDataArray, vertexDataArray + vertexCount);
 
 		auto knownMaterial = materialIndices.find(materialPath);
@@ -108,18 +127,34 @@ bool MeshAssetImporter::Import(const Filepath& filePath)
 
 		placement.GeometryIndex = ByteStreamUtils::ReadType<U32>(byteStream);
 		float localTransform[16];
-		byteStream.ReadBytes(reinterpret_cast<Byte*>(localTransform), sizeof(localTransform));
+		byteStream.ReadBytes(localTransform, sizeof(localTransform));
 		placement.LocalTransform = Matrix4x4::FromValuePtr(localTransform);
+		if (byteStream.HasFailed())
+		{
+			return FailImport(filePath);
+		}
 
 		if (placement.GeometryIndex >= m_submeshes.size())
 		{
 			RZE_LOG_ERROR_ARGS("Mesh asset [%s] places submesh %u, but only has %u.", filePath.GetRelativePath().c_str(), placement.GeometryIndex, static_cast<U32>(m_submeshes.size()));
-			m_submeshes.clear();
-			m_materials.clear();
-			m_placements.clear();
+			Clear();
 			return false;
 		}
 	}
 
 	return true;
+}
+
+void MeshAssetImporter::Clear()
+{
+	m_submeshes.clear();
+	m_materials.clear();
+	m_placements.clear();
+}
+
+bool MeshAssetImporter::FailImport(const Filepath& filePath)
+{
+	RZE_LOG_ERROR_ARGS("Mesh asset [%s] is shorter than its contents say, or holds a size that can't be right.", filePath.GetRelativePath().c_str());
+	Clear();
+	return false;
 }

@@ -10,8 +10,6 @@
 #include <string>
 #include <vector>
 
-class ByteStream;
-
 class MaterialAssetImporter : public AssetImporter
 {
 public:
@@ -68,9 +66,9 @@ public:
 	MaterialData GetMaterialData() { return mMaterialData; }
 
 private:
-	std::string ReadName(ByteStream& byteStream);
-	MaterialData::MaterialProperties ReadMaterialProperties(ByteStream& byteStream);
-	U8 ReadTextureFlags(ByteStream& byteStream);
+	// For a file shorter than its contents say, or holding a size that can't be right: logs it, resets the data and
+	// returns false
+	bool FailImport(const Filepath& filePath);
 
 private:
 	MaterialData mMaterialData;

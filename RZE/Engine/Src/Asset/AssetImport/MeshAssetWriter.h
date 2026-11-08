@@ -21,6 +21,9 @@ struct MeshAssetFileHeader
 	size_t PlacementCount;
 };
 
+// One placement in the file
+constexpr size_t k_meshAssetPlacementSizeBytes = sizeof(U32) + sizeof(float) * 16;
+
 class MeshAssetWriter : public AssetWriter
 {
 public:
