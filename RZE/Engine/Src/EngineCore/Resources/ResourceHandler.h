@@ -78,8 +78,6 @@ public:
 	// NOTE: ResourceHandler and ResourceHandle are main-thread only (the table and ref counts are unsynchronized).
 	// Use AsyncResourceBatch to load resources off the main thread.
 
-	ResourceHandle GetEmptyResourceHandle();
-
 	// The key a resource path is stored under. Paths that map to the same key refer to the same resource.
 	static std::string CreateResourceKey(const Filepath& resourcePath);
 

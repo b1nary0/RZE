@@ -83,24 +83,3 @@ private:
 TypedResourceHandle<VertexShader> LoadVertexShader(const std::string& name, const Rendering::ShaderInputLayout& inputLayout);
 TypedResourceHandle<PixelShader> LoadPixelShader(const std::string& name);
 TypedResourceHandle<ComputeShader> LoadComputeShader(const std::string& name);
-
-// @TODO
-// IResource should be removed, this class should be an aggregate
-// of a shader pipeline that describes a certain technique composed of
-// n-many shader types or is some sort of resource that is compiled to be aggregate
-class ShaderTechnique : public IResource
-{
-public:
-	ShaderTechnique() = delete;
-	ShaderTechnique(const std::string& name);
-	virtual ~ShaderTechnique() = default;
-
-	bool Load(const Filepath& filePath) final;
-	void Release() final;
-	
-	const std::string& GetName() const { return m_name; }
-
-private:
-	const std::string m_name;
-	// Inputs?
-};

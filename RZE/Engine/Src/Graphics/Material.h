@@ -16,7 +16,6 @@
 #include <vector>
 
 class PixelShader;
-class ShaderTechnique;
 class Texture2D;
 template <typename TObject>
 class PropertyBuilder;
@@ -78,7 +77,6 @@ public:
 	// @TODO SetShaderTechnique is actually being set as PixelShader directly until actual techniques are implemented
 	// For materials made in code, like SetTexture
 	void SetShaderTechnique(const ResourceHandle& shaderTechnique);
-	const ResourceHandle& GetShaderResource() const { return m_pixelShader.GetHandle(); }
 	// The loaded pixel shader, resolved when the technique is set. Use this when drawing.
 	const PixelShader* GetPixelShader() const { return m_pixelShader.Get(); }
 

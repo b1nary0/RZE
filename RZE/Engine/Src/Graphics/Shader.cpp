@@ -54,27 +54,6 @@ void ComputeShader::Release()
 	Rendering::Renderer::ReleaseComputeShader(m_shader);
 }
 
-ShaderTechnique::ShaderTechnique(const std::string& name)
-	: m_name(name)
-{
-}
-
-bool ShaderTechnique::Load(const Filepath& filePath)
-{
-	if (filePath.IsValid())
-	{
-		return true;
-	}
-
-	return false;
-}
-
-void ShaderTechnique::Release()
-{
-	// #TODO
-	// Write this function le-mao
-}
-
 TypedResourceHandle<VertexShader> LoadVertexShader(const std::string& name, const Rendering::ShaderInputLayout& inputLayout)
 {
 	ResourceHandle handle = RZE().GetResourceHandler().LoadResource<VertexShader>(AssetPaths::GetShader(name), name, inputLayout);

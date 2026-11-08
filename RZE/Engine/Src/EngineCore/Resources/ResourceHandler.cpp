@@ -69,11 +69,6 @@ bool ResourceHandler::IsAsyncLoadInProgress(const std::string& resourceKey) cons
 	return m_asyncLoads.find(resourceKey) != m_asyncLoads.end();
 }
 
-ResourceHandle ResourceHandler::GetEmptyResourceHandle()
-{
-	return ResourceHandle("", nullptr, this);
-}
-
 std::string ResourceHandler::CreateResourceKey(const Filepath& resourcePath)
 {
 	return Conversions::CreateResourceKeyFromPath(resourcePath.GetRelativePath());
@@ -204,11 +199,9 @@ ResourceHandle::ResourceHandle(const std::string& resourceID, ResourceHandler::R
 	mResourceID = resourceID;
 	mResourceSource = resourceSource;
 
-	// #TODO(Josh::Quick fix for ::EmptyHandle but really this shouldn't happen. Revisit.)
-	if (resourceSource != nullptr)
-	{
-		mResourceSource->IncreaseRefCount();
-	}
+	// Only the handler makes these, for an entry in its table. Empty handles come from the default constructor.
+	AssertNotNull(mResourceSource);
+	mResourceSource->IncreaseRefCount();
 }
 
 ResourceHandle::ResourceHandle(ResourceHandle&& rhs)

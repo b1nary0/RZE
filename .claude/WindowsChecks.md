@@ -28,6 +28,11 @@ the rest for the user.
 - **A1. Generate and build.** Run `GenerateSolutions.bat`, then build Debug and Release (`/W3 /WX`). Expect no errors
   or warnings. **Since the commit after 3c2a07d8:** every component class is `final`, and `GameObjectComponent<T>`'s
   constructor has `static_assert(std::is_final_v<T>)`; expect MSVC to accept both, with no new warnings.
+  **Since the commit after 293171bb:** `Engine/Src/EngineCore/Platform/Memory/` (Memory.h, BlockAllocator.h/.cpp) is
+  deleted, so `GenerateSolutions.bat` must run before building, or the old `.vcxproj` still lists the missing files.
+  The math vectors lost `ToString` and StringUtils lost `FormatString`; their includes were left as they were, so
+  nothing should depend on a header MSVC no longer pulls in. Report any "cannot open include file" or missing
+  `std::` name.
 - **A2. Unit tests.** `RZE\_build\debug\UnitTests.exe` and `RZE\_build\release\UnitTests.exe`. Expect exit code 0.
   **Since the commit after f5faea2e:** the tests that write into the editor's trash and thumbnail folders remove the
   empty folders they made (`RemoveEmptyFolders`, new `UnitTests/Src/TestFolder.cpp`), so after both runs
