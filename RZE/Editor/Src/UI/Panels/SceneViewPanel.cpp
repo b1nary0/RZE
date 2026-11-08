@@ -866,7 +866,8 @@ namespace Editor
 
 		Functor<void, const InputKey&> keyFunc([this, &inputHandler](const InputKey& key)
 			{
-				if (inputHandler.GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) != EButtonState::ButtonState_Pressed)
+				// Not while flying the camera, which uses the same keys
+				if (!inputHandler.GetMouseState().IsDownThisFrame(EMouseButton::MouseButton_Right))
 				{
 					switch (key.GetKeyCode())
 					{

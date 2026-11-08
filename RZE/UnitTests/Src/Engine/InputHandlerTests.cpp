@@ -35,8 +35,10 @@ TEST_CASE("The input event count goes up for real input only")
 
 	handler.OnMouseWheel(120);
 	handler.OnMouseDown(EMouseButton::MouseButton_Left, 10, 20);
-	handler.OnMouseUp(EMouseButton::MouseButton_Left, 10, 20);
 	handler.OnKeyDown('W', false);
+	// A frame on, so the releases aren't deferred
+	handler.BeginFrame();
+	handler.OnMouseUp(EMouseButton::MouseButton_Left, 10, 20);
 	handler.OnKeyUp('W');
 	CHECK(handler.GetInputEventCount() == count + 5);
 }
@@ -104,4 +106,148 @@ TEST_CASE("Losing focus lets go of everything still down")
 	handler.UpdateFrameState(false, false);
 	CHECK(handler.GetProxyKeyboardState().IsIdle());
 	CHECK(handler.GetProxyMouseState().IsIdle());
+}
+
+namespace
+{
+	// One frame as the engine runs it: a new frame's input, the window's events, then the app's snapshot
+	template <typename TEvents>
+	void RunFrame(InputHandler& handler, TEvents&& events)
+	{
+		handler.BeginFrame();
+		events();
+		handler.RaiseEvents();
+	}
+
+	void RunFrame(InputHandler& handler)
+	{
+		RunFrame(handler, [] {});
+	}
+}
+
+TEST_CASE("A held key reads Pressed for one frame, then Hold, whether or not the OS repeats it")
+{
+	InputHandler handler;
+	handler.Initialize();
+
+	RunFrame(handler, [&handler] { handler.OnKeyDown('W', false); });
+	CHECK(handler.GetKeyboardState().GetButtonState('W') == EButtonState::ButtonState_Pressed);
+	CHECK_FALSE(handler.GetKeyboardState().WasDownLastFrame('W'));
+
+	RunFrame(handler);
+	CHECK(handler.GetKeyboardState().GetButtonState('W') == EButtonState::ButtonState_Hold);
+	CHECK(handler.GetKeyboardState().WasDownLastFrame('W'));
+
+	RunFrame(handler, [&handler] { handler.OnKeyDown('W', true); });
+	CHECK(handler.GetKeyboardState().GetButtonState('W') == EButtonState::ButtonState_Hold);
+
+	RunFrame(handler, [&handler] { handler.OnKeyUp('W'); });
+	CHECK(handler.GetKeyboardState().GetButtonState('W') == EButtonState::ButtonState_Released);
+	CHECK(handler.GetKeyboardState().WasDownLastFrame('W'));
+}
+
+TEST_CASE("A held mouse button reads Pressed for one frame, then Hold")
+{
+	InputHandler handler;
+	handler.Initialize();
+
+	RunFrame(handler, [&handler] { handler.OnMouseDown(EMouseButton::MouseButton_Right, 10, 20); });
+	CHECK(handler.GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Pressed);
+	CHECK(handler.GetMouseState().IsDownThisFrame(EMouseButton::MouseButton_Right));
+
+	RunFrame(handler);
+	CHECK(handler.GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Hold);
+
+	RunFrame(handler, [&handler] { handler.OnMouseUp(EMouseButton::MouseButton_Right, 10, 20); });
+	CHECK(handler.GetMouseState().GetButtonState(EMouseButton::MouseButton_Right) == EButtonState::ButtonState_Released);
+}
+
+TEST_CASE("A key or button released in the frame it was pressed in is seen down for that frame")
+{
+	InputHandler handler;
+	handler.Initialize();
+
+	RunFrame(handler, [&handler]
+		{
+			handler.OnKeyDown('W', false);
+			handler.OnKeyUp('W');
+			handler.OnMouseDown(EMouseButton::MouseButton_Left, 10, 20);
+			handler.OnMouseUp(EMouseButton::MouseButton_Left, 30, 40);
+		});
+	CHECK(handler.GetKeyboardState().GetButtonState('W') == EButtonState::ButtonState_Pressed);
+	CHECK(handler.GetMouseState().GetButtonState(EMouseButton::MouseButton_Left) == EButtonState::ButtonState_Pressed);
+	// ImGui reads the proxies, so they keep it down too
+	CHECK(handler.GetProxyKeyboardState().IsDownThisFrame('W'));
+	CHECK(handler.GetProxyMouseState().IsDownThisFrame(EMouseButton::MouseButton_Left));
+
+	// Let go at the start of the next frame, and that counts as input then
+	const U64 count = handler.GetInputEventCount();
+	RunFrame(handler);
+	CHECK(handler.GetKeyboardState().GetButtonState('W') == EButtonState::ButtonState_Released);
+	CHECK(handler.GetMouseState().GetButtonState(EMouseButton::MouseButton_Left) == EButtonState::ButtonState_Released);
+	CHECK(handler.GetInputEventCount() == count + 2);
+
+	// Released in a later frame than the press: at once
+	RunFrame(handler, [&handler] { handler.OnKeyDown('W', false); });
+	handler.BeginFrame();
+	handler.OnKeyUp('W');
+	CHECK_FALSE(handler.GetProxyKeyboardState().IsDownThisFrame('W'));
+}
+
+TEST_CASE("A key pressed again before its deferred release stays down")
+{
+	InputHandler handler;
+	handler.Initialize();
+
+	RunFrame(handler, [&handler]
+		{
+			handler.OnKeyDown('W', false);
+			handler.OnKeyUp('W');
+			handler.OnKeyDown('W', false);
+		});
+	RunFrame(handler);
+	RunFrame(handler);
+	CHECK(handler.GetKeyboardState().GetButtonState('W') == EButtonState::ButtonState_Hold);
+}
+
+TEST_CASE("Losing focus lets go at once, even of what was pressed this frame")
+{
+	InputHandler handler;
+	handler.Initialize();
+
+	handler.BeginFrame();
+	handler.OnKeyDown('W', false);
+	handler.OnKeyUp('W');
+	handler.ReleaseAll();
+	CHECK(handler.GetProxyKeyboardState().IsIdle());
+
+	// Nothing left over for the next frame to let go of
+	const U64 count = handler.GetInputEventCount();
+	handler.BeginFrame();
+	CHECK(handler.GetInputEventCount() == count);
+}
+
+TEST_CASE("A Pressed binding runs once a press, not for the OS's repeats, even when they arrive in the same frame")
+{
+	InputHandler handler;
+	handler.Initialize();
+
+	int pressCount = 0;
+	handler.BindAction('E', EButtonState::ButtonState_Pressed, Functor<void, const InputKey&>([&pressCount](const InputKey&) { ++pressCount; }));
+
+	// A stalled frame: the press and its first repeats come together
+	RunFrame(handler, [&handler]
+		{
+			handler.OnKeyDown('E', false);
+			handler.OnKeyDown('E', true);
+			handler.OnKeyDown('E', true);
+		});
+	CHECK(pressCount == 1);
+
+	RunFrame(handler, [&handler] { handler.OnKeyDown('E', true); });
+	CHECK(pressCount == 1);
+
+	RunFrame(handler, [&handler] { handler.OnKeyUp('E'); });
+	RunFrame(handler, [&handler] { handler.OnKeyDown('E', false); });
+	CHECK(pressCount == 2);
 }

@@ -15,7 +15,6 @@
 
 // std lib
 #include <algorithm>
-#include <bitset>
 #include <cmath>
 
 namespace
@@ -230,15 +229,8 @@ void Window::CompileInputMessages(InputHandler& inputHandler)
 		inputHandler.ClearMouseWheel();
 	}
 
-	// The engine sees keys as down or up each frame, so a key pressed and released in one pump would never be seen
-	// down. That happens with fast typing at a low frame rate, or when the OS hands over a press and its release
-	// together, as KDE does for keys that type text while text input is on. Their releases are told now, a frame on.
-	for (const Int32 keyCode : m_deferredKeyUps)
-	{
-		inputHandler.OnKeyUp(keyCode);
-	}
-	m_deferredKeyUps.clear();
-	std::bitset<256> pressedThisPump;
+	// Lets go of what was released in the frame it was pressed in, now that the app has seen it down
+	inputHandler.BeginFrame();
 
 	const SDL_WindowID windowID = SDL_GetWindowID(m_window);
 
@@ -268,7 +260,6 @@ void Window::CompileInputMessages(InputHandler& inputHandler)
 			if (event.key.windowID == windowID && keyCode != 0)
 			{
 				inputHandler.OnKeyDown(keyCode, event.key.repeat);
-				pressedThisPump.set(static_cast<size_t>(keyCode));
 			}
 		}
 		break;
@@ -278,14 +269,7 @@ void Window::CompileInputMessages(InputHandler& inputHandler)
 			const Int32 keyCode = ToKeyCode(event.key.key, event.key.mod);
 			if (event.key.windowID == windowID && keyCode != 0)
 			{
-				if (pressedThisPump.test(static_cast<size_t>(keyCode)))
-				{
-					m_deferredKeyUps.push_back(keyCode);
-				}
-				else
-				{
-					inputHandler.OnKeyUp(keyCode);
-				}
+				inputHandler.OnKeyUp(keyCode);
 			}
 		}
 		break;

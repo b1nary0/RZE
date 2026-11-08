@@ -80,6 +80,19 @@ the rest for the user.
   - The frame rate holds at the monitor's rate. Q28 made refresh rates exact, e.g. 59.94, not 59.
 - **C9. Monitors.** With `LaunchMonitor` set in `Engine.ini`, the Editor opens on that monitor at its work area's
   top-left. `-console` puts the console beside it.
+- **C10. Input states (the commit after e0ac50fe).** `InputHandler` now counts Pressed/Hold in frames rather than
+  events, gives bindings each event's own state (an OS key repeat is Hold), and keeps a key or button released in
+  the frame it was pressed in down until the next frame, for keys and now mouse buttons too. That deferral moved
+  from `Window` into `InputHandler::BeginFrame`, so it also covers `WindowNativeWindows.cpp`'s title-bar path, which
+  calls `OnMouseDown`/`OnMouseUp` directly. Passed on Linux: unit tests, and in the harness the gizmo shortcuts
+  (W/E/R), Escape clearing the selection, and typing into a field.
+  1. `driver.ps1 launch -Harness -Scene DrawLineTest.scene`: select NeckMech, press E, R, W; expect the toolbar's
+     Rotate, Scale, Translate to be picked in turn. Esc clears the selection.
+  2. **(person)** Click the title bar's maximize button as fast as you can, several times: each click restores or
+     maximizes. Then fly the camera (E5) and press E while the right button is held: the camera moves up and the
+     gizmo stays as it was.
+  3. **(person)** With NeckMech selected and the pointer over the scene view, hold Q for two seconds, past the repeat
+     delay: the toolbar's Local/World flips once, not once per repeat.
 
 ### D. Rendering on DX11
 
@@ -209,7 +222,7 @@ the rest for the user.
   4. Restore it (`$item.InvokeVerb('undelete')`; if that verb isn't found, Restore in Explorer, **person**). Expect
      `RZE\Assets\RecycleProbe.txt` back with its text. Then `Remove-Item` it, and check `git status` shows nothing new
      under `Assets`.
-- **E5. Flying the editor camera (person; the commit after 2fddb1f2).** `EditorCameraComponent` now asks whether each
+- **E5. Flying the editor camera (person; e0ac50fe).** `EditorCameraComponent` now asks whether each
   key and mouse button is down (`IsDownThisFrame`) instead of comparing `GetButtonState` with Pressed (and, for W,
   Hold). The harness can't hold a button while pressing keys, so this needs hands. With the right mouse button held
   in the scene view, hold each of W, A, S, D, Q and E for over a second, past the keyboard's repeat delay: expect

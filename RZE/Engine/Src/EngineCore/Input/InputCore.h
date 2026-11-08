@@ -11,6 +11,8 @@
 constexpr Int32 k_mouseWheelNotchDelta = 120;
 #define MAX_MOUSE_BTN_SUPPORTED 5
 
+// For an input event (a binding): a press, a release, or the OS repeating a held key. For the state the app reads
+// each frame (InputHandler::GetKeyboardState().GetButtonState): the first frame down, up, or down for more than a frame.
 namespace EButtonState
 {
 	enum T : Int32

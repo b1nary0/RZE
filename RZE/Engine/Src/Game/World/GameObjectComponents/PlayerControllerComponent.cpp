@@ -14,26 +14,25 @@ void PlayerControllerComponent::Update()
 
 	GameObjectComponentPtr<TransformComponent> transfComp = GetOwner()->GetComponent<TransformComponent>();
 
-	if (inputHandler.GetKeyboardState().GetButtonState(KeyCode::Key_W) == EButtonState::ButtonState_Pressed
-		|| inputHandler.GetKeyboardState().GetButtonState(KeyCode::Key_W) == EButtonState::ButtonState_Hold)
+	if (inputHandler.GetKeyboardState().IsDownThisFrame(KeyCode::Key_W))
 	{
 		transfComp->SetPosition(transfComp->GetPosition() + m_forward * speedDelta);
 	}
-	else if (inputHandler.GetKeyboardState().CurKeyStates[KeyCode::Key_S])
+	else if (inputHandler.GetKeyboardState().IsDownThisFrame(KeyCode::Key_S))
 	{
 		transfComp->SetPosition(transfComp->GetPosition() - m_forward * speedDelta);
 	}
 
-	if (inputHandler.GetKeyboardState().CurKeyStates[KeyCode::Key_A])
+	if (inputHandler.GetKeyboardState().IsDownThisFrame(KeyCode::Key_A))
 	{
 		transfComp->SetPosition(transfComp->GetPosition() - m_forward.Cross(m_upDir).Normalize() * speedDelta);
 	}
-	else if (inputHandler.GetKeyboardState().CurKeyStates[KeyCode::Key_D])
+	else if (inputHandler.GetKeyboardState().IsDownThisFrame(KeyCode::Key_D))
 	{
 		transfComp->SetPosition(transfComp->GetPosition() + m_forward.Cross(m_upDir).Normalize() * speedDelta);
 	}
 
-	if (inputHandler.GetKeyboardState().CurKeyStates[KeyCode::Key_1])
+	if (inputHandler.GetKeyboardState().IsDownThisFrame(KeyCode::Key_1))
 	{
 		// Focus object
 	}

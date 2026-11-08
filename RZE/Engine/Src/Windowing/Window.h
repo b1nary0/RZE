@@ -119,6 +119,4 @@ private:
 
 	// The window's events from the last CompileInputMessages, for CompileWindowMessages
 	std::vector<EPendingEvent> m_pendingEvents;
-	// Keys released in the same CompileInputMessages they were pressed in, told as released in the next one
-	std::vector<Int32> m_deferredKeyUps;
 };

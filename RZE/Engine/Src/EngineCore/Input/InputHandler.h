@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <bitset>
 #include <queue>
 #include <unordered_map>
@@ -20,6 +21,8 @@ public:
 	typedef Functor<void, const InputKey&> KeyActionFunc;
 
 private:
+	// Cur is what's down now. Prev is what was down the frame before; only the states the app reads each frame
+	// (GetKeyboardState, GetMouseState) keep it, not the proxies.
 	struct KeyboardState
 	{
 		std::bitset<MAX_KEYCODES_SUPPORTED> CurKeyStates;
@@ -31,6 +34,7 @@ private:
 			PrevKeyStates.reset();
 		}
 
+		// Pressed the first frame it's down, Hold from the second, Released while it's up
 		EButtonState::T GetButtonState(Int32 key) const
 		{
 			EButtonState::T buttonState = CurKeyStates[key] ? EButtonState::ButtonState_Pressed : EButtonState::ButtonState_Released;
@@ -76,6 +80,7 @@ private:
 			PrevMouseBtnStates.reset();
 		}
 
+		// Pressed the first frame it's down, Hold from the second, Released while it's up
 		EButtonState::T GetButtonState(EMouseButton::T button) const
 		{
 			EButtonState::T buttonState = CurMouseBtnStates[button] ? EButtonState::ButtonState_Pressed : EButtonState::ButtonState_Released;
@@ -157,7 +162,15 @@ public:
 	void BindAxis(EAxisBinding::T bindingType, EAxisType::T axisType, Functor<void, const Vector3D&, Int32> func);
 	void BindMouseAction(EMouseButton::T button, EButtonState::T state, MouseActionFunc func);
 
-	void OnKeyDown(const Int32 key, bool bIsRepeat);
+	// At the start of each frame's input, before the window's messages. Lets go of the keys and buttons released in
+	// the frame they were pressed in (see OnKeyUp).
+	void BeginFrame();
+
+	// isRepeat: the OS repeating a held key, which raises Hold rather than Pressed
+	void OnKeyDown(const Int32 key, bool isRepeat);
+	// A key released in the same frame it was pressed in stays down until the next BeginFrame, so the app sees every
+	// press for at least a frame. That happens with fast typing at a low frame rate, or when the OS hands over a press
+	// and its release together, as KDE does for keys that type text while text input is on. OnMouseUp does the same.
 	void OnKeyUp(const Int32 key);
 
 	void OnMouseMove(const Int32 xPos, const Int32 yPos);
@@ -167,7 +180,7 @@ public:
 	void OnMouseDown(const EMouseButton::T button, const Int32 xPos, const Int32 yPos);
 	void OnMouseUp(const EMouseButton::T button, const Int32 xPos, const Int32 yPos);
 	// Lets go of every key and button still down, as if each was released, e.g. when the window loses focus and the
-	// releases would go to another window
+	// releases would go to another window. At once, even those pressed this frame.
 	void ReleaseAll();
 
 	// Once a frame, after the window's messages. When the window has just lost focus, lets go of everything still down
@@ -197,7 +210,11 @@ private:
 	// One more for GetInputEventCount: the window gave the handler real input (a key, a button, a wheel turn, a move)
 	void CountInputEvent();
 
-	void RaiseKeyEvent(const InputKey& inputKey);
+	// Lets go at once, whichever frame it was pressed in
+	void ReleaseKey(Int32 key);
+	void ReleaseMouseButton(EMouseButton::T button, Int32 xPos, Int32 yPos);
+
+	void RaiseKeyEvent(const InputKey& inputKey, EButtonState::T state);
 	void RaiseMouseAxisEvent(const Vector2D& axis, Int32 wheel);
 	void RaiseMouseButtonEvent(const EMouseButton::T button, const EButtonState::T state, const Int32 xPos, const Int32 yPos);
 
@@ -233,4 +250,12 @@ private:
 
 	KeyboardState mKeyboardState;
 	MouseState mMouseState;
+
+	// Pressed since BeginFrame, and released since then too: they're let go at the next BeginFrame (OnKeyUp)
+	std::bitset<MAX_KEYCODES_SUPPORTED> mKeysPressedThisFrame;
+	std::bitset<MAX_KEYCODES_SUPPORTED> mDeferredKeyReleases;
+	std::bitset<MAX_MOUSE_BTN_SUPPORTED> mMouseBtnsPressedThisFrame;
+	std::bitset<MAX_MOUSE_BTN_SUPPORTED> mDeferredMouseBtnReleases;
+	// Where each deferred button release happened
+	std::array<Vector2D, MAX_MOUSE_BTN_SUPPORTED> mDeferredMouseReleasePositions;
 };

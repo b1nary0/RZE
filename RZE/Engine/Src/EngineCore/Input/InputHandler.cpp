@@ -21,8 +21,13 @@ void InputHandler::Initialize()
 
 void InputHandler::RaiseEvents()
 {
+	// Prev becomes last frame's Cur, so GetButtonState and WasDownLastFrame count frames, however many events came
+	mKeyboardState.PrevKeyStates = mKeyboardState.CurKeyStates;
+	mKeyboardState.CurKeyStates = mProxyKeyboardState.CurKeyStates;
+
+	const std::bitset<MAX_MOUSE_BTN_SUPPORTED> lastFrameMouseBtnStates = mMouseState.CurMouseBtnStates;
 	mMouseState = mProxyMouseState;
-	mKeyboardState = mProxyKeyboardState;
+	mMouseState.PrevMouseBtnStates = lastFrameMouseBtnStates;
 
 	while (!mKeyActionQueue.empty())
 	{
@@ -30,7 +35,7 @@ void InputHandler::RaiseEvents()
 		mKeyActionQueue.pop();
 
 		AssertExpr(action.Key.IsValid());
-		RaiseKeyEvent(action.Key);
+		RaiseKeyEvent(action.Key, action.State);
 	}
 
 	while (!mMouseActionQueue.empty())
@@ -75,23 +80,46 @@ void InputHandler::BindMouseAction(EMouseButton::T button, EButtonState::T state
 	mMouseBtnBindings[button].emplace_back(button, state, func);
 }
 
-void InputHandler::OnKeyDown(const Int32 key, bool bIsRepeat)
+void InputHandler::BeginFrame()
 {
-	/* 
-	 * This function should take the "raw" input and translate it into
-	 * the first step of the abstraction process. Possibly immediately into a {Key}
-	 * that we can then store in some state.
-	 * Possibly send this info off to another processing stage? Should this class be
-	 * an intermediate?
-	 */
+	mKeysPressedThisFrame.reset();
+	mMouseBtnsPressedThisFrame.reset();
 
-	mProxyKeyboardState.PrevKeyStates[key] = mProxyKeyboardState.CurKeyStates[key];
+	const std::bitset<MAX_KEYCODES_SUPPORTED> deferredKeyReleases = mDeferredKeyReleases;
+	mDeferredKeyReleases.reset();
+	for (Int32 key = 0; key < MAX_KEYCODES_SUPPORTED; ++key)
+	{
+		if (deferredKeyReleases[key])
+		{
+			ReleaseKey(key);
+		}
+	}
+
+	const std::bitset<MAX_MOUSE_BTN_SUPPORTED> deferredMouseBtnReleases = mDeferredMouseBtnReleases;
+	mDeferredMouseBtnReleases.reset();
+	for (Int32 button = 0; button < MAX_MOUSE_BTN_SUPPORTED; ++button)
+	{
+		if (deferredMouseBtnReleases[button])
+		{
+			const Vector2D& position = mDeferredMouseReleasePositions[button];
+			ReleaseMouseButton(static_cast<EMouseButton::T>(button), static_cast<Int32>(position.X()), static_cast<Int32>(position.Y()));
+		}
+	}
+}
+
+void InputHandler::OnKeyDown(const Int32 key, bool isRepeat)
+{
 	mProxyKeyboardState.CurKeyStates[key] = true;
+	// Down again before its release was let go: it's held, so that release no longer happens
+	mDeferredKeyReleases[key] = false;
+	if (!isRepeat)
+	{
+		mKeysPressedThisFrame[key] = true;
+	}
 
- 	InputKey& inputKey = mInputKeyRegistry[key];
 	KeyboardAction action;
-	action.Key = inputKey;
-	action.State = mProxyKeyboardState.GetButtonState(key);
+	action.Key = mInputKeyRegistry[key];
+	action.State = isRepeat ? EButtonState::ButtonState_Hold : EButtonState::ButtonState_Pressed;
 
 	mKeyActionQueue.push(std::move(action));
 	CountInputEvent();
@@ -99,13 +127,22 @@ void InputHandler::OnKeyDown(const Int32 key, bool bIsRepeat)
 
 void InputHandler::OnKeyUp(const Int32 key)
 {
-	mProxyKeyboardState.PrevKeyStates[key] = mProxyKeyboardState.CurKeyStates[key];
+	if (mKeysPressedThisFrame[key])
+	{
+		mDeferredKeyReleases[key] = true;
+		return;
+	}
+
+	ReleaseKey(key);
+}
+
+void InputHandler::ReleaseKey(Int32 key)
+{
 	mProxyKeyboardState.CurKeyStates[key] = false;
 
-	InputKey& inputKey = mInputKeyRegistry[key];
 	KeyboardAction action;
-	action.Key = inputKey;
-	action.State = mProxyKeyboardState.GetButtonState(key);
+	action.Key = mInputKeyRegistry[key];
+	action.State = EButtonState::ButtonState_Released;
 
 	mKeyActionQueue.push(std::move(action));
 	CountInputEvent();
@@ -158,12 +195,14 @@ void InputHandler::ClearMouseWheel()
 
 void InputHandler::OnMouseDown(const EMouseButton::T button, const Int32 xPos, const Int32 yPos)
 {
-	mProxyMouseState.PrevMouseBtnStates[button] = mProxyMouseState.CurMouseBtnStates[button];
 	mProxyMouseState.CurMouseBtnStates[button] = true;
+	// Down again before its release was let go: it's held, so that release no longer happens
+	mDeferredMouseBtnReleases[button] = false;
+	mMouseBtnsPressedThisFrame[button] = true;
 
 	MouseAction action;
 	action.Button = button;
-	action.State = mProxyMouseState.GetButtonState(button);
+	action.State = EButtonState::ButtonState_Pressed;
 	action.Position = Vector2D(xPos, yPos);
 	action.Wheel = 0;
 
@@ -173,12 +212,23 @@ void InputHandler::OnMouseDown(const EMouseButton::T button, const Int32 xPos, c
 
 void InputHandler::OnMouseUp(const EMouseButton::T button, const Int32 xPos, const Int32 yPos)
 {
-	mProxyMouseState.PrevMouseBtnStates[button] = mProxyMouseState.CurMouseBtnStates[button];
+	if (mMouseBtnsPressedThisFrame[button])
+	{
+		mDeferredMouseBtnReleases[button] = true;
+		mDeferredMouseReleasePositions[button] = Vector2D(xPos, yPos);
+		return;
+	}
+
+	ReleaseMouseButton(button, xPos, yPos);
+}
+
+void InputHandler::ReleaseMouseButton(EMouseButton::T button, Int32 xPos, Int32 yPos)
+{
 	mProxyMouseState.CurMouseBtnStates[button] = false;
 
 	MouseAction action;
 	action.Button = button;
-	action.State = mProxyMouseState.GetButtonState(button);
+	action.State = EButtonState::ButtonState_Released;
 	action.Position = Vector2D(xPos, yPos);
 	action.Wheel = 0;
 
@@ -188,11 +238,15 @@ void InputHandler::OnMouseUp(const EMouseButton::T button, const Int32 xPos, con
 
 void InputHandler::ReleaseAll()
 {
+	// Deferred releases are of keys and buttons still down, so the loops below let go of them too
+	mDeferredKeyReleases.reset();
+	mDeferredMouseBtnReleases.reset();
+
 	for (Int32 key = 0; key < MAX_KEYCODES_SUPPORTED; ++key)
 	{
 		if (mProxyKeyboardState.CurKeyStates[key])
 		{
-			OnKeyUp(key);
+			ReleaseKey(key);
 		}
 	}
 
@@ -202,7 +256,7 @@ void InputHandler::ReleaseAll()
 	{
 		if (mProxyMouseState.CurMouseBtnStates[button])
 		{
-			OnMouseUp(static_cast<EMouseButton::T>(button), xPos, yPos);
+			ReleaseMouseButton(static_cast<EMouseButton::T>(button), xPos, yPos);
 		}
 	}
 }
@@ -240,14 +294,13 @@ void InputHandler::Reset()
 	mMouseState.PrevPosition = mProxyMouseState.PrevPosition;
 }
 
-void InputHandler::RaiseKeyEvent(const InputKey& inputKey)
+void InputHandler::RaiseKeyEvent(const InputKey& inputKey, EButtonState::T state)
 {
-	EButtonState::T buttonState = mProxyKeyboardState.GetButtonState(inputKey.GetKeyCode());
 	auto bindingIt = mKeyboardBindings.find(inputKey.GetKeyCode());
 	if (bindingIt != mKeyboardBindings.end())
 	{
 	 	KeyboardActionBinding& actionBinding = (*bindingIt).second;
-	 	if (actionBinding.State == buttonState)
+	 	if (actionBinding.State == state)
 	 	{
 	 		actionBinding.Func(inputKey);
 	 	}

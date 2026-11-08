@@ -289,8 +289,7 @@ void EditorCameraComponent::KeyboardInput(GameObjectComponentPtr<TransformCompon
 
 	float speedDelta = (m_speed * m_deltaSpeedRampMultiplier) * dt;
 
-	// Whether each key is down, read straight from the state. GetButtonState's Hold isn't "down since last frame": it
-	// starts with the OS's first key repeat, so a held key reads Pressed until then.
+	// For as long as each key is down: GetButtonState's Pressed is only its first frame
 	if (inputHandler.GetMouseState().IsDownThisFrame(EMouseButton::MouseButton_Right))
 	{
 		bool hasValidMovementInput = false;
