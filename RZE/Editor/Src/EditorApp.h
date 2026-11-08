@@ -27,7 +27,7 @@ namespace Editor
 
 		void ParseArguments(char** arguments, int count) override;
 		void RegisterInputEvents(InputHandler& inputHandler) override;
-		bool ProcessInput(const InputHandler& handler) override;
+		InputGate ProcessInput(const InputHandler& handler) override;
 
 		void OnWindowResize(const Vector2D& newSize) override;
 		// Asks about unsaved changes first (UnsavedChangesPrompt), which exits once they're dealt with

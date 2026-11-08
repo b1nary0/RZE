@@ -110,13 +110,14 @@ TEST_CASE("Losing focus lets go of everything still down")
 
 namespace
 {
-	// One frame as the engine runs it: a new frame's input, the window's events, then the app's snapshot
+	// One frame as the engine runs it: a new frame's input, the window's events, then the app's snapshot of the devices
+	// the gate lets through (both by default)
 	template <typename TEvents>
-	void RunFrame(InputHandler& handler, TEvents&& events)
+	void RunFrame(InputHandler& handler, TEvents&& events, const InputGate& gate = InputGate{})
 	{
 		handler.BeginFrame();
 		events();
-		handler.RaiseEvents();
+		handler.RaiseEvents(gate);
 	}
 
 	void RunFrame(InputHandler& handler)
@@ -250,4 +251,57 @@ TEST_CASE("A Pressed binding runs once a press, not for the OS's repeats, even w
 	RunFrame(handler, [&handler] { handler.OnKeyUp('E'); });
 	RunFrame(handler, [&handler] { handler.OnKeyDown('E', false); });
 	CHECK(pressCount == 2);
+}
+
+TEST_CASE("Each device's input reaches the app only in frames the app takes that device")
+{
+	InputHandler handler;
+	handler.Initialize();
+
+	int keyCount = 0;
+	int clickCount = 0;
+	handler.BindAction('E', EButtonState::ButtonState_Pressed, Functor<void, const InputKey&>([&keyCount](const InputKey&) { ++keyCount; }));
+	handler.BindMouseAction(EMouseButton::MouseButton_Left, EButtonState::ButtonState_Pressed, InputHandler::MouseActionFunc([&clickCount](Int32, Int32) { ++clickCount; }));
+
+	const InputGate keyboardOnly{ true, false };
+	const InputGate mouseOnly{ false, true };
+
+	// The keyboard goes through, the mouse is held back: e.g. the Game with the cursor over an ImGui window
+	RunFrame(handler, [&handler]
+		{
+			handler.OnKeyDown('E', false);
+			handler.OnMouseDown(EMouseButton::MouseButton_Left, 10, 20);
+		}, keyboardOnly);
+	CHECK(keyCount == 1);
+	CHECK(clickCount == 0);
+	CHECK(handler.GetKeyboardState().GetButtonState('E') == EButtonState::ButtonState_Pressed);
+	CHECK(handler.GetMouseState().IsIdle());
+
+	// Both still held. The mouse is taken now: its button reads as just pressed, but the press was dropped with its
+	// frame, so its binding doesn't fire late. The keyboard is held back and reads idle.
+	RunFrame(handler, [] {}, mouseOnly);
+	CHECK(clickCount == 0);
+	CHECK(handler.GetMouseState().GetButtonState(EMouseButton::MouseButton_Left) == EButtonState::ButtonState_Pressed);
+	CHECK(handler.GetKeyboardState().IsIdle());
+	CHECK(keyCount == 1);
+
+	// Both taken: the key, held back last frame, reads as just pressed again; the button has been seen for a frame
+	RunFrame(handler);
+	CHECK(handler.GetKeyboardState().GetButtonState('E') == EButtonState::ButtonState_Pressed);
+	CHECK(handler.GetMouseState().GetButtonState(EMouseButton::MouseButton_Left) == EButtonState::ButtonState_Hold);
+	CHECK(keyCount == 1);
+	CHECK(clickCount == 0);
+}
+
+TEST_CASE("A wheel turn isn't read again once the app stops taking the mouse")
+{
+	InputHandler handler;
+	handler.Initialize();
+
+	RunFrame(handler, [&handler] { handler.OnMouseWheel(120); });
+	CHECK(handler.GetMouseState().CurWheelVal == 120);
+
+	// The window clears the wheel at the start of each frame
+	RunFrame(handler, [&handler] { handler.ClearMouseWheel(); }, InputGate{ true, false });
+	CHECK(handler.GetMouseState().CurWheelVal == 0);
 }

@@ -20,7 +20,7 @@ public:
 
 	void RegisterInputEvents(InputHandler& inputHandler) override;
 
-	bool ProcessInput(const InputHandler& handler) override;
+	InputGate ProcessInput(const InputHandler& handler) override;
 
 	void OnWindowResize(const Vector2D& newSize) override;
 

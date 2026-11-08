@@ -19,15 +19,33 @@ void InputHandler::Initialize()
 	}
 }
 
-void InputHandler::RaiseEvents()
+void InputHandler::RaiseEvents(const InputGate& gate)
+{
+	// Keyboard first, then mouse, so a frame's key bindings fire before its mouse bindings
+	if (gate.Keyboard)
+	{
+		RaiseKeyboardEvents();
+	}
+	else
+	{
+		ResetKeyboard();
+	}
+
+	if (gate.Mouse)
+	{
+		RaiseMouseEvents();
+	}
+	else
+	{
+		ResetMouse();
+	}
+}
+
+void InputHandler::RaiseKeyboardEvents()
 {
 	// Prev becomes last frame's Cur, so GetButtonState and WasDownLastFrame count frames, however many events came
 	mKeyboardState.PrevKeyStates = mKeyboardState.CurKeyStates;
 	mKeyboardState.CurKeyStates = mProxyKeyboardState.CurKeyStates;
-
-	const std::bitset<MAX_MOUSE_BTN_SUPPORTED> lastFrameMouseBtnStates = mMouseState.CurMouseBtnStates;
-	mMouseState = mProxyMouseState;
-	mMouseState.PrevMouseBtnStates = lastFrameMouseBtnStates;
 
 	while (!mKeyActionQueue.empty())
 	{
@@ -37,6 +55,14 @@ void InputHandler::RaiseEvents()
 		AssertExpr(action.Key.IsValid());
 		RaiseKeyEvent(action.Key, action.State);
 	}
+}
+
+void InputHandler::RaiseMouseEvents()
+{
+	// As for the keys: Prev is last frame's Cur
+	const std::bitset<MAX_MOUSE_BTN_SUPPORTED> lastFrameMouseBtnStates = mMouseState.CurMouseBtnStates;
+	mMouseState = mProxyMouseState;
+	mMouseState.PrevMouseBtnStates = lastFrameMouseBtnStates;
 
 	while (!mMouseActionQueue.empty())
 	{
@@ -282,11 +308,25 @@ void InputHandler::CountInputEvent()
 
 void InputHandler::Reset()
 {
-	std::queue<MouseAction>().swap(mMouseActionQueue);
-	std::queue<KeyboardAction>().swap(mKeyActionQueue);
+	ResetKeyboard();
+	ResetMouse();
+}
 
-	mMouseState.Reset();
+void InputHandler::ResetKeyboard()
+{
+	std::queue<KeyboardAction>().swap(mKeyActionQueue);
 	mKeyboardState.Reset();
+}
+
+void InputHandler::ResetMouse()
+{
+	std::queue<MouseAction>().swap(mMouseActionQueue);
+	mMouseState.Reset();
+
+	// The wheel too: it's only cleared in the proxy, so a turn in the last frame the app took the mouse would
+	// otherwise be read again every frame until it takes it back (the editor camera would keep dollying)
+	mMouseState.CurWheelVal = 0;
+	mMouseState.PrevWheelVal = 0;
 
 	// Keep the cursor position current while input is gated, otherwise anything tracking
 	// per-frame mouse deltas sees a jump from the stale position once input resumes.

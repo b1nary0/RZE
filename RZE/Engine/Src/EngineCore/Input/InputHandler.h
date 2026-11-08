@@ -156,7 +156,9 @@ public:
 public:
 	void Initialize();
 
-	void RaiseEvents();
+	// Once a frame: gives the app the input of each device the gate lets through (its state, and its bindings fire),
+	// and clears the others' (Reset, for that device)
+	void RaiseEvents(const InputGate& gate);
 
 	void BindAction(Int32 keyCode, EButtonState::T buttonState, KeyActionFunc func);
 	void BindAxis(EAxisBinding::T bindingType, EAxisType::T axisType, Functor<void, const Vector3D&, Int32> func);
@@ -204,9 +206,15 @@ public:
 	const MouseState& GetProxyMouseState() const { return mProxyMouseState; }
 	const KeyboardState& GetProxyKeyboardState() const { return mProxyKeyboardState; }
 
+	// Drops both devices' queued events and clears the state the app reads, e.g. while there's no window to take input
 	void Reset();
 
 private:
+	void RaiseKeyboardEvents();
+	void RaiseMouseEvents();
+	void ResetKeyboard();
+	void ResetMouse();
+
 	// One more for GetInputEventCount: the window gave the handler real input (a key, a button, a wheel turn, a move)
 	void CountInputEvent();
 

@@ -80,9 +80,9 @@ bool RZE_Application::IsReadyToShow() const
 	return true;
 }
 
-bool RZE_Application::ProcessInput(const InputHandler& handler)
+InputGate RZE_Application::ProcessInput(const InputHandler& handler)
 {
-	return true;
+	return InputGate{};
 }
 
 void RZE_Application::RegisterInputEvents(InputHandler& inputHandler)

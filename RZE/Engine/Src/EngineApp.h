@@ -2,6 +2,8 @@
 
 #include <RZE.h>
 
+#include <EngineCore/Input/InputCore.h>
+
 #include <Windowing/Window.h>
 
 #include <memory>
@@ -57,8 +59,9 @@ public:
 	virtual void CreateRenderTarget(const Vector2D& dimensions) = 0;
 	virtual void OnWindowResize(const Vector2D& newSize) = 0;
 
-	// Returning TRUE will fire callbacks registered with RZE. Returning FALSE steals input from the engine.
-	virtual bool ProcessInput(const InputHandler& handler);
+	// Once a frame, before the bindings fire: which devices' input goes to the bindings and the state the app reads.
+	// The default takes both.
+	virtual InputGate ProcessInput(const InputHandler& handler);
 
 	virtual void ParseArguments(char** arguments, int count);
 

@@ -141,7 +141,19 @@ the rest for the user.
   an aspect ratio: they frame the main view's `ViewportSize`, which `GameApp` now also sets at startup (Linux gets two
   resize events at startup anyway; check Windows doesn't depend on them). Run `RZE\_build\debug\Game.exe`, then drag
   a window edge to make it much wider, then much taller: Nyra keeps her proportions each time, never stretched. (F1-F3
-  can't resize it: the Game's key bindings never run while ImGui is on, a known bug in the ledger.)
+  resize it too, once C12's fix is in.)
+- **C12. The Game takes keyboard and mouse separately (person; the commit after bc8ba734).** The app's input answer
+  is now per device (`InputGate`). The Debug Game used to drop all input whenever ImGui was on, so its bindings and
+  `PlayerControllerComponent` never ran; now each device goes to the game unless ImGui wants it. The Editor's gate is
+  unchanged (both devices while the Scene view is hovered). Passed on Linux: unit tests in all three configs, and in
+  the harness Escape clears the selection only over the Scene view, R picks Scale, the wheel zooms.
+  1. Run `RZE\_build\debug\Game.exe`. F1 / F2 / F3 resize the window to 1280x720 / 1600x900 / 1920x1080.
+  2. Hold W, A, S, D: the camera flies. Move the mouse: it turns (no button needed).
+  3. Put the pointer over ImGui's demo window and press F1: the window resizes (the keyboard still reaches the game).
+     Moving the mouse there still turns the camera: the pointer's position stays current while the mouse is held
+     back, by design, and the controller reads only the position.
+  4. Escape quits; exit code 0.
+  5. Repeat 1, 2 and 4 with `RZE\_build\release\Game.exe`, which has no ImGui: everything goes to the game.
 
 ### D. Rendering on DX11
 

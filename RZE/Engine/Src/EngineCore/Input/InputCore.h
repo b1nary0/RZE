@@ -55,6 +55,14 @@ namespace EAxisBinding
 	};
 }
 
+// Which devices' input the app takes this frame (RZE_Application::ProcessInput). A device it doesn't take is cleared
+// for the frame: none of its bindings fire, and its state reads as idle.
+struct InputGate
+{
+	bool Keyboard = true;
+	bool Mouse = true;
+};
+
 class InputKey
 {
 public:

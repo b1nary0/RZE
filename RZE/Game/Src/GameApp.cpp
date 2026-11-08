@@ -130,18 +130,19 @@ void GameApp::RegisterInputEvents(InputHandler& inputHandler)
 	inputHandler.BindAction(KeyCode::F1, EButtonState::ButtonState_Pressed, keyFunc);
 	inputHandler.BindAction(KeyCode::F2, EButtonState::ButtonState_Pressed, keyFunc);
 	inputHandler.BindAction(KeyCode::F3, EButtonState::ButtonState_Pressed, keyFunc);
-	inputHandler.BindAction(KeyCode::Key_K, EButtonState::ButtonState_Pressed, keyFunc);
 }
 
-bool GameApp::ProcessInput(const InputHandler& handler)
+InputGate GameApp::ProcessInput(const InputHandler& handler)
 {
 #ifdef IMGUI_ENABLED
 	ImGuiInput::SubmitInput(handler);
 
-	return false;
-#endif
-
+	// Each device goes to the game unless ImGui is using it: the keyboard while typing in a field, the mouse over a window
+	const ImGuiIO& io = ImGui::GetIO();
+	return InputGate{ !io.WantCaptureKeyboard, !io.WantCaptureMouse };
+#else
 	return RZE_Application::ProcessInput(handler);
+#endif
 }
 
 void GameApp::OnWindowResize(const Vector2D& newSize)

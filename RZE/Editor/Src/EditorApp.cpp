@@ -251,11 +251,13 @@ namespace Editor
 		inputHandler.BindAction(KeyCode::Escape, EButtonState::ButtonState_Pressed, keyFunc);
 	}
 
-	bool EditorApp::ProcessInput(const InputHandler& handler)
+	InputGate EditorApp::ProcessInput(const InputHandler& handler)
 	{
 		ImGuiInput::SubmitInput(handler);
 
-		return m_context.GetSceneViewport().IsHovered;
+		// The scene (editor camera, gizmo shortcuts) only gets input while the Scene view is hovered
+		const bool isSceneHovered = m_context.GetSceneViewport().IsHovered;
+		return InputGate{ isSceneHovered, isSceneHovered };
 	}
 
 	void EditorApp::OnWindowResize(const Vector2D& newSize)

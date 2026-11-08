@@ -314,14 +314,7 @@ void RZE_Engine::PreUpdate()
 	CompileEvents();
 	m_eventHandler.ProcessEvents();
 
-	if (m_application->ProcessInput(m_inputHandler))
-	{
-		m_inputHandler.RaiseEvents();
-	}
-	else
-	{
-		m_inputHandler.Reset();
-	} 
+	m_inputHandler.RaiseEvents(m_application->ProcessInput(m_inputHandler));
 }
 
 int RZE_Engine::GetLaunchMonitor()
