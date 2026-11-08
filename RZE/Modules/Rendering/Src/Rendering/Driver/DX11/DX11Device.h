@@ -117,6 +117,9 @@ namespace Rendering
 		ID3D11DepthStencilState* mDepthReadOnlyLessEqualState;
 		ID3D11DepthStencilState* mDepthOffState;
 
+		// Linear filtering that repeats, for materials' and other ordinary textures; bound to PS and CS slot s0 at every
+		// Begin(), so a draw that binds no texture still has one (GLDevice's Sampler_LinearWrap)
+		ID3D11SamplerState* mLinearWrapSamplerState;
 		// Depth-comparison sampler for shadow maps; bound to PS and CS slot s1 at every Begin()
 		ID3D11SamplerState* mShadowSamplerState;
 		// Linear filtering that clamps at the edges, for screen-sized textures and probe data; bound to PS and CS slot s2

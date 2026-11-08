@@ -4,7 +4,6 @@
 
 #include <vector>
 
-struct ID3D11SamplerState;
 struct ID3D11Texture2D;
 struct ID3D11ShaderResourceView;
 struct ID3D11RenderTargetView;
@@ -40,7 +39,6 @@ namespace Rendering
 		ID3D11DepthStencilView& GetDepthSliceView(U32 slice);
 		// Every slice of one mip, for compute shaders to write; only for textures made with bIsUnorderedAccess
 		ID3D11UnorderedAccessView& GetUnorderedAccessView(U32 mip);
-		ID3D11SamplerState& GetSamplerState();
 
 		// #TODO
 		// This is probably causing an API naming consistency apocolypse but I think
@@ -51,7 +49,6 @@ namespace Rendering
 		DX11Device* m_device = nullptr;
 
 		ID3D11Texture2D* m_resource = nullptr;
-		ID3D11SamplerState* m_samplerState = nullptr;
 
 		ID3D11ShaderResourceView* m_SRV = nullptr;
 		ID3D11RenderTargetView* m_RTV = nullptr;

@@ -161,17 +161,6 @@ namespace Rendering
 
 	void DX11TextureBuffer2D::Allocate(const void* data, const GFXTextureBufferParams& params)
 	{
-		D3D11_SAMPLER_DESC sampDesc;
-		ZeroMemory(&sampDesc, sizeof(sampDesc));
-		sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-		sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-		sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-		sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-		sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-		sampDesc.MinLOD = 0;
-		sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
-		m_device->GetHardwareDevice().CreateSamplerState(&sampDesc, &m_samplerState);
-
 		const U32 arraySize = GetArraySize(params);
 		AssertMsg(!params.bIsCubeMap || arraySize % 6 == 0, "A cube map has 6 slices per cube");
 		AssertMsg(arraySize == 1 || params.SampleCount <= 1, "Texture arrays can't be multisampled");
@@ -316,22 +305,20 @@ namespace Rendering
 		ReleaseCOM(m_DSV);
 		ReleaseCOM(m_RTV);
 		ReleaseCOM(m_SRV);
-		ReleaseCOM(m_samplerState);
 		ReleaseCOM(m_resource);
 	}
 
 	void DX11TextureBuffer2D::SetActive(U32 textureSlot)
 	{
 		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
+		// Sampled through s0, which DX11Device binds for every draw set
 		deviceContext.PSSetShaderResources(textureSlot, 1, &m_SRV);
-		deviceContext.PSSetSamplers(0, 1, &m_samplerState);
 	}
 
 	void DX11TextureBuffer2D::SetActiveCS(U32 textureSlot)
 	{
 		ID3D11DeviceContext& deviceContext = m_device->GetDeviceContext();
 		deviceContext.CSSetShaderResources(textureSlot, 1, &m_SRV);
-		deviceContext.CSSetSamplers(0, 1, &m_samplerState);
 	}
 
 	void* DX11TextureBuffer2D::GetTextureData()
@@ -387,12 +374,6 @@ namespace Rendering
 		AssertMsg(mip < m_mipUAVs.size(), "Only textures made with bIsUnorderedAccess have UAVs, one per mip");
 		AssertNotNull(m_mipUAVs[mip]);
 		return *m_mipUAVs[mip];
-	}
-
-	ID3D11SamplerState& DX11TextureBuffer2D::GetSamplerState()
-	{
-		AssertNotNull(m_samplerState);
-		return *m_samplerState;
 	}
 
 	ID3D11Texture2D* DX11TextureBuffer2D::GetHWResource()

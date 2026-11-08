@@ -251,6 +251,20 @@ namespace Rendering
 			mDevice->CreateDepthStencilState(&depthDesc, &mDepthOffState);
 		}
 
+		// Linear wrap sampler
+		{
+			D3D11_SAMPLER_DESC samplerDesc;
+			ZeroMemory(&samplerDesc, sizeof(samplerDesc));
+			samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+			samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+			samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+			samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+			samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+			samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+			mDevice->CreateSamplerState(&samplerDesc, &mLinearWrapSamplerState);
+		}
+
 		// Shadow comparison sampler
 		{
 			D3D11_SAMPLER_DESC samplerDesc;
@@ -470,6 +484,7 @@ namespace Rendering
 		mDepthReadOnlyState->Release();
 		mDepthReadOnlyLessEqualState->Release();
 		mDepthOffState->Release();
+		mLinearWrapSamplerState->Release();
 		mShadowSamplerState->Release();
 		mLinearClampSamplerState->Release();
 		mPointClampSamplerState->Release();
@@ -545,6 +560,8 @@ namespace Rendering
 		// @note past josh wtf api are you talking about
 		ID3D11DeviceContext& deviceContext = GetDeviceContext();
 		deviceContext.RSSetState(mRasterState);
+		deviceContext.PSSetSamplers(0, 1, &mLinearWrapSamplerState);
+		deviceContext.CSSetSamplers(0, 1, &mLinearWrapSamplerState);
 		deviceContext.PSSetSamplers(1, 1, &mShadowSamplerState);
 		deviceContext.CSSetSamplers(1, 1, &mShadowSamplerState);
 		deviceContext.PSSetSamplers(2, 1, &mLinearClampSamplerState);

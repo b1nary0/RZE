@@ -144,7 +144,7 @@ namespace Rendering
 
 		static_assert(Sampler_Count == k_samplerCount, "A sampler for every s register the shaders use");
 		glCreateSamplers(static_cast<GLsizei>(m_samplers.size()), m_samplers.data());
-		// As each DX11TextureBuffer2D's own sampler
+		// As DX11Device's mLinearWrapSamplerState
 		glSamplerParameteri(m_samplers[Sampler_LinearWrap], GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glSamplerParameteri(m_samplers[Sampler_LinearWrap], GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glSamplerParameteri(m_samplers[Sampler_LinearWrap], GL_TEXTURE_WRAP_S, GL_REPEAT);

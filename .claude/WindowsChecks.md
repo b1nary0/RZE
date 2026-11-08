@@ -42,6 +42,15 @@ Things to know on this machine (2026-11-08):
   scene renders, `closed code=0`, the log has no `[Error]` line and ends "encountered 0 live resources". Shaders
   compile at start-up, so this is where an fxc failure shows.
 
+### Harness checks for new changes
+
+- **D12. One s0 sampler, owned by the device.** `DX11Device` now creates a linear-wrap sampler and binds it at s0
+  (pixel and compute) in `BeginDrawSet`, next to s1 to s3. `DX11TextureBuffer2D` no longer creates or binds one of its
+  own (the per-texture samplers were all the same linear-wrap). 1: A1's builds cover it. 2: Debug `RenderPerfTest.scene`,
+  settled 20 s: **0** `D3D11 (352)` "expects a Sampler to be set at Slot 0" lines (899 before), and none on RenderTest
+  or DrawLineTest. 3: Debug Sponza: textured as before (compare with a shot from the commit before if it's in doubt),
+  and the arches' textures still repeat across tiled surfaces. 4: `close` gives `closed code=0` and 0 live resources.
+
 ### Hands-on session 1: Visual Studio and the debugger (person)
 
 One Visual Studio session covers these. Each temporary edit is reverted (`git status --short` first, then
@@ -132,6 +141,5 @@ All 2026-11-08 rows are at eaf66bf4, those marked "+ fix" with the D10 fix (b175
 
 | ID | Date | Commit | Result | Notes |
 |---|---|---|---|---|
-| D5 | 2026-11-08 | eaf66bf4 + fix | pass, 1 warning | Debug with "Graphics validation is on", no "info queue isn't available" line. Sponza (object selected, Content Browser open): **0** `D3D11 (` lines. RenderPerfTest: 899 × `[Warning] D3D11 (352): ID3D11DeviceContext::DrawIndexed: The Pixel Shader unit expects a Sampler to be set at Slot 0, but none is bound` (also 3 on RenderTest with thumbnails, 8 on DrawLineTest). s0 is only bound by a texture's own sampler (`DX11TextureBuffer2D.cpp:327`), and `PixelResources.hlsli` declares s0, so an untextured draw (RenderPerfTest's pillars) has none. Harmless (the default sampler), probably old. Development (Sponza, RenderPerfTest): no `D3D11 (` line and no "Graphics validation" line. |
 | D7 | 2026-11-08 | eaf66bf4 + fix | pass, with a Debug caveat | 1 MB arena (temporary, reverted and rebuilt), Debug Sponza: renders, `closed code=0`, no assert, 4 `arena was full` warnings (e.g. `11069 KB in 197 allocations went to the heap this frame (arena size 1024 KB)`; Linux had 47), 80 `exceeds the arena`. Real size: no `arena was full`. Memory, Sponza settled 20 s: **Debug** working set 5320 MB, private 5280 MB; **Development** working set 1234 MB, private 5279 MB. Development matches the expectation (working set about 4 GB under private bytes). Debug doesn't, because `MemArena.cpp:81` allocates with `new Byte[size]` and the Debug CRT fills every new block (0xCD), touching all 4 GB. |
 | A13 | 2026-11-08 | eaf66bf4 | pass | 1: see A1/A2. 2: without `__pragma(warning(disable : 4748))`, Development rebuilt `OptimizationSwitchTests.cpp` with **no C4748** (the suppression looks unneeded on x64); restored and rebuilt. 3: `Decode` wrapped (temporary): Retail fails with `Octahedral.cpp(37,1): error C2338: static assertion failed: 'RZE_DISABLE_OPTIMIZATION is still in this file: remove it and RZE_ENABLE_OPTIMIZATION'` at the macro's line; Development builds with no warning and passes `Directions come back*`; reverted and rebuilt. 4: the Development Game shows the Dear ImGui demo window over DrawLineTest. |
