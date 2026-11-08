@@ -169,6 +169,9 @@ public abstract class BaseProject : Project
                 break;
             case Optimization.Release:
                 conf.Options.Add(Options.Makefile.Compiler.OptimizationLevel.Full);
+                // Frame pointers, so sampling profilers (perf --call-graph fp, Optick) get whole call stacks from an
+                // optimized build. Measured within noise on RenderPerfTest (update +1.0%, inside run-to-run spread).
+                conf.AdditionalCompilerOptions.Add("-fno-omit-frame-pointer");
                 break;
             case Optimization.Retail:
                 conf.Options.Add(Options.Makefile.Compiler.OptimizationLevel.FullWithInlining);

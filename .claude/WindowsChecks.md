@@ -303,6 +303,28 @@ the rest for the user.
 
 - **F1. Optick capture (person).** The Editor's port (31318) accepting a connection passed (2026-11-05). Left: with
   a Debug or Release Editor running, `Tools\Optick\Optick.exe` connects and takes a capture with frames in it.
+- **F2. What `/Ob1` costs Windows Release (measurement; the commit after 103ab018).** `BaseProject.ConfigureRelease`
+  sets `Inline.OnlyInline` (`/Ob1`: only functions marked `inline`), over Sharpmake's Release default `AnySuitable`
+  (`/Ob2`). On Linux, the clang counterpart (`-finline-hint-functions`) cost Release **+38% update time** (0.582 to
+  0.804 ms mean) on `RenderPerfTest.scene`, with frame time unchanged (GPU-bound at about 2.0 ms). This measures
+  whether Windows pays the same, to decide between keeping `/Ob1` (easier stepping in Release) and `/Ob2`. Nothing is
+  committed.
+  1. Build Release as it is, then copy `RZE\_build\release\Editor.exe` into a new `RZE\_build\perf-Ob1\` (the exe finds
+     the source tree from the `_build\` in its path, so it runs from there).
+  2. Temporarily change `Inline.OnlyInline` to `Inline.AnySuitable` in `ConfigureRelease`
+     (`RZE/Make/Sharpmake/BaseProject.sharpmake.cs`), run `GenerateSolutions.bat`, **Rebuild** Release (`/t:Rebuild`),
+     copy the exe into `RZE\_build\perf-Ob2\`. Then `git checkout -- RZE/Make/Sharpmake/BaseProject.sharpmake.cs`
+     (`git status --short` first), run `GenerateSolutions.bat` again and Rebuild Release, so `_build\release` is back
+     to `/Ob1`.
+  3. Back up `RZE\Config\imgui.ini`. Run Ob1, Ob2, Ob1, Ob2, Ob1, Ob2 on the same monitor, copying the backup over
+     `imgui.ini` before each run, with the working directory at the exe's folder:
+     `.\Editor.exe -scene RenderPerfTest.scene -perfcapture <out>.csv -perfwarmup 20 -perfduration 30`. The capture
+     turns vsync off and exits by itself. Each line of the CSV is `frameMs,updateMs`. Restore `imgui.ini` at the end
+     and delete the two `perf-*` folders.
+  4. Report frame time and update time for each side: mean, median, p95 and p99 (averaged over its 3 runs), the
+     spread (the range of the run means as a % of their mean), and the % change from Ob1 to Ob2. Say plainly when a
+     difference is within the spread. Optionally **(person)**: in Visual Studio, step through
+     `LightComponent::Update` (`LightComponent.cpp`, 16 lights in the scene) in each build and say whether `/Ob2` makes stepping noticeably worse.
 
 ## Results
 
