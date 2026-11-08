@@ -40,6 +40,8 @@ public:
 	// The components should be self-contained state that will initialize themselves and
 	// set up objects from their end.
 	void Initialize();
+	// Uninitializes and destroys every component. Once the object is out of the scene (OnRemoveFromScene), and before
+	// it's destroyed: whatever destroys a GameObject (GameScene) calls this first, and the destructor asserts it did.
 	void Uninitialize();
 
 public:

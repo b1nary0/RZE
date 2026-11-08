@@ -131,6 +131,13 @@ void CameraComponent::Initialize()
 	m_previewView->Target = m_renderTarget.get();
 }
 
+void CameraComponent::Uninitialize()
+{
+	// The view first: it points at the target
+	m_previewView.reset();
+	m_renderTarget.reset();
+}
+
 void CameraComponent::Update()
 {
 	// Only the active scene is in the main view; another scene's camera is only rendered through explicitly (e.g. for

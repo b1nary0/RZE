@@ -77,6 +77,19 @@ the rest for the user.
      "pulp_fiction_travolta.gif, frame N (unnamed)" rows. Undo the three edits, then `close`: `closed code=0` and
      "encountered 0 live resources".
   3. Saving a thumbnail still writes a PNG (stb_image_write moved): any Content Browser thumbnail regenerates.
+- **A8. One teardown path; components get Uninitialize (the commit after 602c8030).** `GameScene::ShutDown` is gone:
+  shutdown calls `Unload`, so every object leaves the scene (destroying render objects, lights and probes) before the
+  renderer shuts down, and `Engine.cpp` asserts the main render scene is empty. Components have `Uninitialize`;
+  CameraComponent releases its preview render target there and GifChat its frames. DX11 releases GPU objects in a
+  different order than before, so:
+  1. A1/A2 as usual (MSVC `/WX` on the new pure virtual and the structured binding in `GameScene::AddGameObject`);
+     the GameObjectLifecycle tests pass.
+  2. `driver.ps1 launch -Harness -Scene Sponza.scene -SettleSeconds 20`, then `close`: `closed code=0`, no assert
+     dialog, and the log ends "encountered 0 live resources". Linux released 109 resources at shutdown.
+  3. The same with `RenderTest.scene` (GifChat, cameras): 94 released, 59 of them GIF frames, 0 live.
+  4. File > New Scene with DrawLineTest open, then `close`: no assert, no D3D11 debug-layer live-object report in the
+     debugger output.
+  5. The Game (`launch -App Game -Scene RenderTest.scene`, then `close`): `closed code=0`, 0 live resources.
 
 ### C. Window and input (Phase 3: SDL replaced Win32Window)
 

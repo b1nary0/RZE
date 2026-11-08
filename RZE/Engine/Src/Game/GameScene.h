@@ -23,7 +23,6 @@ public:
 public:
 	void Start();
 	void Update();
-	void ShutDown();
 
 	void Initialize();
 
@@ -31,6 +30,8 @@ public:
 	void Serialize(const Filepath& filePath);
 	// Synchronous load. See SceneLoadOperation for the asynchronous equivalent.
 	void Deserialize(const Filepath& filePath);
+	// Destroys every object: all of them leave the scene, which empties the render scene, then all are uninitialized.
+	// Used between scenes and at shutdown alike.
 	void Unload();
 
 	static const Filepath& GetDefaultScenePath();

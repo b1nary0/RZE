@@ -589,11 +589,18 @@ void RZE_Engine::BeginShutDown()
 	// First, so no async work is touching the scene, resources or renderer while they shut down.
 	m_asyncOperationManager.ShutDown();
 
-	m_activeScene->ShutDown();
+	// Takes every object out of the scene, as between scenes, so the render scene's objects, lights and probes, and the
+	// resources they hold, are gone while the renderer and ResourceHandler they release into are still up
+	m_activeScene->Unload();
 	m_application->ShutDown();
 
-	//@todo this is a quick fix for the cyclical dependency between Rendering::MemArena and ResourceHandler releasing leftover reasources.
-	m_renderEngine->GetMainScene().ClearObjects();
+	// Anything left here was put in by something other than a component, or a component didn't take it out
+	RenderScene& mainScene = m_renderEngine->GetMainScene();
+	AssertMsg(mainScene.GetRenderObjects().empty() && mainScene.GetLightObjects().empty() && mainScene.GetReflectionProbes().empty(),
+		"The main render scene still holds objects after the scene unloaded");
+	// The safety net where asserts compile out: render objects left until the scene is deleted, after the renderer,
+	// would release their resources into a ResourceHandler that's shut down
+	mainScene.ClearObjects();
 	m_renderEngine->ReleaseRenderStages();
 
 	// While ImGui's context is still there: the render engine's shutdown destroys it

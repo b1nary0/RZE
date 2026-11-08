@@ -89,7 +89,13 @@ public:
 	GameObjectComponentBase& operator=(const GameObjectComponentBase&) = delete;
 
 public:
+	// Initialize runs once the component has an owner, and acquires what the component needs for itself (e.g. a
+	// render target). Uninitialize releases it, once the component is out of the scene and before it's destroyed:
+	// GameObject calls it when the component is removed or the object is uninitialized, so a destructor has nothing
+	// left to do. OnAddToScene and OnRemoveFromScene, in between, put the component's render-side objects (render
+	// objects, lights, probes) in its scene and take them out, and can run any number of times.
 	virtual void Initialize() = 0;
+	virtual void Uninitialize() = 0;
 	virtual void OnAddToScene() = 0;
 	virtual void OnRemoveFromScene() = 0;
 
@@ -152,6 +158,7 @@ public:
 	}
 
 	void Initialize() override {}
+	void Uninitialize() override {}
 	void OnAddToScene() override {}
 	void OnRemoveFromScene() override {}
 

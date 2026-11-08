@@ -52,6 +52,7 @@ GameObject::GameObject(GameScene& scene, const std::string& name, ObjectGUID gui
 
 GameObject::~GameObject()
 {
+	AssertMsg(m_components.empty(), "GameObject destroyed without Uninitialize: its components were never released");
 	AliveGameObjects().Release(m_id);
 }
 
@@ -61,9 +62,16 @@ void GameObject::Initialize()
 
 void GameObject::Uninitialize()
 {
-	for (auto& component : m_components)
+	AssertMsg(!m_stateFlags.IsInScene, "GameObject uninitialized while it's still in the scene: call OnRemoveFromScene first");
+
+	// Newest first, so the TransformComponent, added first, is there for the others' Uninitialize. All of them before
+	// any is deleted, so each can still reach the rest.
+	for (auto it = m_components.rbegin(); it != m_components.rend(); ++it)
 	{
-		// @TODO component->Uninitialize here?
+		(*it)->Uninitialize();
+	}
+	for (GameObjectComponentBase* component : m_components)
+	{
 		delete component;
 	}
 	m_components.clear();
@@ -87,6 +95,7 @@ bool GameObject::RemoveComponentByID(GameObjectComponentID id)
 	{
 		component->OnRemoveFromScene();
 	}
+	component->Uninitialize();
 	m_components.erase(it);
 	delete component;
 	MarkHierarchyBoundsChanged();

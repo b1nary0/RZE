@@ -19,6 +19,8 @@ public:
 	// GameObjectComponent interface
 public:
 	void Initialize() override;
+	// Releases the preview's render target and view
+	void Uninitialize() override;
 	void Update() override;
 
 	void Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) override;

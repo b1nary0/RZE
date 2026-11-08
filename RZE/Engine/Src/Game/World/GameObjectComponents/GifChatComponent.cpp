@@ -45,15 +45,23 @@ GifChatComponent::GifChatComponent()
 {
 }
 
-GifChatComponent::~GifChatComponent()
-{
-}
-
 void GifChatComponent::Initialize()
 {
 	m_renderScene = &GetOwner()->GetScene().GetRenderScene();
 
 	Load(Filepath(gifPaths[GifFilepathIndex::PULP_FICTION_TRAVOLTA]));
+}
+
+void GifChatComponent::Uninitialize()
+{
+	// The mesh holds the material, and the material a frame
+	m_mesh.reset();
+	m_material.reset();
+	m_frames.clear();
+	m_frameDelays.clear();
+	m_totalFrames = 0;
+	m_currentDisplayingFrame = 0;
+	m_elapsedMS = 0.0f;
 }
 
 void GifChatComponent::OnAddToScene()

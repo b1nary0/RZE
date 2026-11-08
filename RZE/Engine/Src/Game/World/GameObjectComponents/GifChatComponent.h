@@ -18,7 +18,6 @@ class GifChatComponent final : public GameObjectComponent<GifChatComponent>
 {
 public:
 	GifChatComponent();
-	~GifChatComponent() override;
 
 	//
 	// GameObjectComponent interface
@@ -27,6 +26,8 @@ public:
 	static void DescribeProperties(PropertyBuilder<GifChatComponent>& properties);
 
 	void Initialize() override;
+	// Releases the GIF's frames, material and mesh
+	void Uninitialize() override;
 	void OnAddToScene() override;
 	void OnRemoveFromScene() override;
 
