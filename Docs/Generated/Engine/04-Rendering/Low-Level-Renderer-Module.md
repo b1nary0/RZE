@@ -292,13 +292,22 @@ In steady state this means no GPU allocations at all.
 The shaders are HLSL (Shader Model 5), in `Assets/Shaders`, and they're the only source: both APIs compile the same
 files at run time, when a shader is created, so a shader edit shows up on the next launch.
 
-- **DX11** compiles them with `D3DCompileFromFile` (`DX11ShaderTypes`): `VSMain`, `PSMain` or `CSMain` for SM 5. A
-  vertex shader made with an empty `ShaderInputLayout` (a full-screen pass that reads `SV_VertexID`) gets no input
-  layout, and `SetInputLayout` binds none, which D3D allows for a shader without vertex inputs.
+**Includes are written from `Assets/Shaders`**, in every file, however deep it is: `#include "Common/Lighting.hlsli"`,
+and from inside `Common/SMAA/`, `#include "Common/SMAA/SMAA.hlsli"`, never `"SMAA.hlsli"` or `"../FullScreenQuad.hlsli"`.
+D3D's standard include handler looks beside the shader being compiled and in the working directory, never beside the
+file doing the including, and GL looks only beside the shader, so both find the same files. A path relative to the
+including file fails on both.
+
+- **DX11** compiles them with `D3DCompileFromFile` (`DX11ShaderTypes`): `VSMain`, `PSMain` or `CSMain` for SM 5, with
+  `D3D_COMPILE_STANDARD_FILE_INCLUDE`. A failed compile logs fxc's errors (`[Error] Couldn't compile shader [...]`) and
+  leaves the shader null, so a pass drawn with it writes no colour: with the default SMAA's shaders failing, the
+  whole scene view came out blank. A vertex shader made with an empty `ShaderInputLayout` (a
+  full-screen pass that reads `SV_VertexID`) gets no input layout, and `SetInputLayout` binds none, which D3D allows
+  for a shader without vertex inputs.
 - **OpenGL** translates them (`GLShaderTranslator`, run by `GLShaderTypes`), in two steps:
   1. **shaderc** compiles the HLSL to SPIR-V, with Vulkan's rules (which allow HLSL's separate textures and samplers),
      HLSL's constant-buffer packing (which the C++ structs that fill them follow), the HLSL semantics kept, no
-     optimization, `RZE_SPIRV=1` defined, and includes found beside the including file, then beside the shader.
+     optimization, `RZE_SPIRV=1` defined, and includes found beside the shader (`ResolveInclude`), as D3D finds them.
   2. **SPIRV-Cross** writes the SPIR-V out as GLSL 4.50, one separable program per stage, bound into a program
      pipeline, as D3D binds stages separately. A few things HLSL allows and GLSL doesn't are written the GLSL way: a
      compare on a cube array at mip 0 uses `texture()` (GLSL has no `textureLod` for `samplerCubeArrayShadow`), and

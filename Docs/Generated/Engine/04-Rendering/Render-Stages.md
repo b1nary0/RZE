@@ -332,6 +332,8 @@ Higher qualities treat fainter contrast as an edge, find the ends of long edges 
 
 SMAA 1x (Jimenez et al.), upstream `iryoku/smaa` at `71c806a8`. `Assets/Shaders/Common/SMAA/SMAA.hlsl` is upstream's file byte for byte, CRLF line endings and one Latin-1 byte included, so it stays diffable with upstream: don't edit or normalise it. `Common/SMAA/SMAA.hlsli` sets it up for the engine instead:
 
+- **Its includes start at `Assets/Shaders`** (`Common/FullScreenQuad.hlsli`, `Common/SMAA/SMAA.hlsl`), as every shader's do, though the files sit beside it: fxc never looks beside the including file ([Low-Level-Renderer-Module.md](Low-Level-Renderer-Module.md#shaders-hlsl-on-both-apis)).
+
 - **Its own porting macros** (`SMAA_CUSTOM_SL`): upstream's HLSL 4 setup declares samplers in Effects syntax, without registers. Ours sample through `s2` (linear, clamped) and `s3` (point, clamped).
 - **The preset from a cbuffer** (`SMAAParams`, `b0`, mirrored by `AntiAliasingStage::SMAAParamsLayout`): the target's metrics, the threshold, and the search steps and corner rounding, so one shader serves every quality and the loops' limits are read at run time. Only diagonal and corner detection are compile-time.
 - **`SMAATexcoord`**: a pixel's centre in the *target's* texture coordinates (`SV_Position × 1 / target size`), not the quad's UV, which spans the viewport (the target's top-left part).

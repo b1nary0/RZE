@@ -34,10 +34,10 @@ Rough edges the codebase is candid about (source comments, `#TODO`s), plus a few
 | 26 | A swapped-in material that's missing is tried twice on scene load | Resources | Cosmetic | Open |
 | 27 | A frame rate cap that doesn't divide the refresh rate paces unevenly under vsync | Frame pacing | Low | Open |
 | 28 | An idle tick can put two big units of async work in one frame | Async | Low | Open |
-| 29 | GPU render targets leak, and the D3D device leaks at exit | Renderer | Medium | Open |
+| 29 | The D3D device may leak at exit | Renderer | Medium | Open (the render-target leak on resize was disproved, 11-08) |
 | 30 | In Debug, the game's key bindings never fire | Game | Medium | Open |
 | 31 | `RenderThread::Shutdown` could race | Renderer | — | **Fixed** (11-04: the flag is set with the signal, under the lock) |
-| 32 | A shader that doesn't compile crashes the app | Renderer | Medium | Open |
+| 32 | A shader that doesn't compile crashes the app | Renderer | — | **Fixed** (11-05: the failed compile logs and leaves the shader null) |
 | 33 | The lit pixel shaders compile with an uninitialised-variable warning | Shaders | — | **Fixed** (10-24: single returns) |
 | 34 | Any light change re-renders every shadow map | Rendering | — | **Fixed** (10-25: per-light shadow caching) |
 | 35 | The sun's shadow map re-renders whenever any object changes | Rendering | Low | Open |
@@ -188,9 +188,11 @@ With vsync on, a `MaxFrameRate` below the refresh rate that doesn't divide it (e
 
 The first unit of work in any budget always runs, even when it's bigger than the budget, and idle ticks get a budget of their own. So a frame's tick and its idle tick can each run one large unit, e.g. an extra ~55 ms frame when a thumbnail run starts. Estimating unit times, or giving idle budgets no free first unit, would avoid it. See [Asset-Import-Runtime.md](../05-AssetPipeline/Asset-Import-Runtime.md#async-operations).
 
-## 29. GPU render targets leak, and the D3D device leaks at exit
+## 29. The D3D device may leak at exit
 
-`RenderTargetTexture`'s destructor is empty, so its GPU textures are never released; the Editor leaks its scene view target on every resize. The D3D debug layer also reports about 390 live objects at exit, probably the same cause.
+The D3D debug layer was seen to report about 390 live objects at exit. That's still to be checked under a debugger (`.claude/WindowsChecks.md`, A8.4), since the report goes to the debugger's output, not the info queue the log reads.
+
+This entry used to say render targets leak too, with the Editor leaking its scene view target on every resize, because `RenderTargetTexture`'s destructor is empty. They don't: the target's handles hold `shared_ptr`s to the driver textures, and `~DX11TextureBuffer2D` calls `Release()`. On 11-08, 20 maximize/restore resizes of the Editor left its GPU memory at 488 MB, unchanged.
 
 ## 30. The game's key bindings never fired with ImGui on (fixed)
 
@@ -200,9 +202,9 @@ The first unit of work in any budget always runs, even when it's bigger than the
 
 **Fixed (11-04).** `Shutdown` used to signal the render thread before it set `m_shuttingDown`, with no lock, so the thread could finish the woken pass, miss the flag and wait again, leaving `join()` waiting for good. It was never seen to hang by itself, but a 200 ms sleep in that gap made it hang every time. `Shutdown` now sets the flag with the signal, under `m_updateMutex`, and `Update()` checks it under the same lock right after waking, returning `false` to end the thread's loop. That relies on `Shutdown` and `RunWhileIdle` running on the same thread, so no idle task is pending when the shutdown signal arrives; both assert they run on the thread that called `Initialize`. See [Low-Level-Renderer-Module.md](../04-Rendering/Low-Level-Renderer-Module.md).
 
-## 32. A shader that doesn't compile crashes the app
+## 32. A shader that doesn't compile crashes the app (fixed)
 
-On DX11 only. `DX11VertexShader::Create` and `DX11PixelShader::Create` log the compiler's errors (at Error, through `LogCompileMessages`), then pass the compiled blob straight to `CreateVertexShader` / `CreatePixelShader`. When the compile failed the blob is null, so the app crashes with an access violation. The error reaches the log file first, but not the Log panel. A fix would skip creating the shader when `D3DCompileFromFile` fails, and have the resource load fail like any other (a `Texture2D` that won't load already does). The OpenGL backend already does the first half: a shader that won't translate or link is logged and left empty, so its draws do nothing.
+**Fixed (11-05, `ce15cced`).** On DX11, `DX11VertexShader::Create` and `DX11PixelShader::Create` used to pass the compiled blob straight to `CreateVertexShader` / `CreatePixelShader`, so a failed compile, whose blob is null, crashed with an access violation. They now log fxc's errors (`[Error] Couldn't compile shader [...]`, through `LogCompileMessages`) and return, leaving the shader null, as `DX11ComputeShader` and the OpenGL backend do. On 11-08 four SMAA shaders failing at once (their includes) were logged and the Editor ran on and closed cleanly. Still open: the resource load doesn't fail, so a pass drawn with the null shader just writes no colour. With SMAA the default anti-aliasing, that left the whole scene view blank with nothing on screen saying why.
 
 ## 33. The lit pixel shaders compile with an uninitialised-variable warning
 
