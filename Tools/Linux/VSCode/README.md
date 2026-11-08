@@ -21,7 +21,7 @@ VS Code lists it under File > Open Recent afterwards. When it asks, install the 
 |---|---|
 | Ctrl+Shift+B | **RZE: build debug**: `make -C RZE config=debug`, after regenerating `compile_commands.json`. Errors open in the Problems panel. |
 | F5 | **Editor (debug)** (asks which scene to open) or **UnitTests (debug)** (asks which test cases), with gdb. Both build first. |
-| Tasks | **build release**, **unit tests (debug)**, **burn assets (debug)**, **generate Makefiles** (again after adding or removing a source file), **compile_commands.json**. |
+| Tasks | **build development**, **unit tests (debug)**, **burn assets (debug)**, **generate Makefiles** (again after adding or removing a source file), **compile_commands.json**. |
 | IntelliSense | Reads `compile_commands.json` at the repository root, written by `Tools/Linux/GenerateCompileCommands.py` from the Makefiles, so it uses the build's own flags. The file is gitignored. |
 
 Settings of your own go in your VS Code user settings, or in the repository's `.vscode/`, which is untracked.

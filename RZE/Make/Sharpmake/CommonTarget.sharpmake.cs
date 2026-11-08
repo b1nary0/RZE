@@ -95,13 +95,27 @@ public class CommonTarget : Sharpmake.ITarget
         }
     }
 
+    // What a configuration is called: in the solution, as make's config= (lowercased), and as its _build folder.
+    // Sharpmake's Optimization values are fixed, so Release is named here: Development, an optimized build that keeps
+    // the debugging aids (asserts, logging, symbols). Retail is the build that ships.
+    public static string ConfigurationName(Optimization optimization)
+    {
+        switch (optimization)
+        {
+            case Optimization.Release:
+                return "Development";
+            default:
+                return optimization.ToString();
+        }
+    }
+
     public override string Name
     {
         get
         {
             var nameParts = new List<string>
             {
-                Optimization.ToString(),
+                ConfigurationName(Optimization),
             };
             return string.Join("_", nameParts);
         }

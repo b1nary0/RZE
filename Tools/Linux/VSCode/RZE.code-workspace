@@ -55,9 +55,9 @@
                 "group": { "kind": "build", "isDefault": true }
             },
             {
-                "label": "RZE: build release",
+                "label": "RZE: build development",
                 "type": "shell",
-                "command": "make -C RZE config=release -j\"$(nproc)\"",
+                "command": "make -C RZE config=development -j\"$(nproc)\"",
                 "options": {
                     "cwd": "${workspaceFolder:RZE}",
                     "env": { "CXXFLAGS": "-fdiagnostics-absolute-paths -fdiagnostics-color=always" }

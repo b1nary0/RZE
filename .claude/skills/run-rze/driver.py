@@ -1052,7 +1052,7 @@ def optick_capture(seconds, out_path):
         except OSError:
             continue
     if connection is None:
-        raise DriverError("Nothing is listening on ports %d-%d (is a Debug or Release build running?)" % (OPTICK_PORT, OPTICK_PORT + 3))
+        raise DriverError("Nothing is listening on ports %d-%d (is a Debug or Development build running?)" % (OPTICK_PORT, OPTICK_PORT + 3))
     # mode, category mask, sampling frequency, frame limit, time limit, spike limit (u32 each), memory limit (u64),
     # then the root password, an empty string (an i32 length)
     settings = struct.pack("<IIIIIIQi", OPTICK_INSTRUMENTATION, 0xFFFFFFFF, 0, 0, 0, 0, 0, 0)
@@ -1175,7 +1175,7 @@ def main():
 
     p = commands.add_parser("launch", help="start the Editor (or Game) under the driver")
     p.add_argument("--scene", help="e.g. DrawLineTest.scene")
-    p.add_argument("--config", default="debug", choices=["debug", "release", "retail"])
+    p.add_argument("--config", default="debug", choices=["debug", "development", "retail"])
     p.add_argument("--app", default="Editor", choices=["Editor", "Game"])
     p.add_argument("--settle", type=float, default=5, help="seconds to wait after the window is up (assets stream in)")
     p.add_argument("--timeout", type=float, default=60)

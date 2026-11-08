@@ -45,7 +45,7 @@ void RenderEngine::Initialize(void* windowHandle)
 	AddRenderStage<DebugViewStage>();
 	AddRenderStage<PickRenderStage>();
 
-	// Available in Debug and Release; only Retail strips it
+	// Available in Debug and Development; only Retail strips it
 #ifndef RZE_RETAIL
 	AddRenderStage<DebugDrawRenderStage>();
 #endif

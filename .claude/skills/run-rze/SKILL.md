@@ -58,7 +58,7 @@ the window the way a user would:
 
 | command | what it does |
 |---|---|
-| `launch [-Scene X.scene] [-Config debug\|release] [-SettleSeconds 5] [-KeepImguiIni]` | Starts `Editor.exe -scene X` with the working directory set to `RZE\_build\<config>`. Refuses to start if an editor is already running. Backs up `RZE\Config\imgui.ini` first (below); `-KeepImguiIni` keeps the layout the run leaves instead. |
+| `launch [-Scene X.scene] [-Config debug\|development] [-SettleSeconds 5] [-KeepImguiIni]` | Starts `Editor.exe -scene X` with the working directory set to `RZE\_build\<config>`. Refuses to start if an editor is already running. Backs up `RZE\Config\imgui.ini` first (below); `-KeepImguiIni` keeps the layout the run leaves instead. |
 | `shot [-Out path.png]` | Captures the client area only. Defaults to `$env:TEMP\rze-shots\`. |
 | `click -X -Y` | Left click. |
 | `dblclick -X -Y` | Two left clicks close enough together to count as a double-click (two `click` calls are too far apart). Double-clicking an object in the Scene panel focuses the camera on it. |
@@ -160,12 +160,12 @@ The solution builds `UnitTests.exe` (doctest). Run it after any Editor or Engine
 & .\RZE\_build\debug\UnitTests.exe    # exit code 0 = all passed; -tc="Undo*" runs matching test cases
 ```
 
-It covers the undo history, parking, copy snapshots, selection, interaction tracking and the property registry, with no running engine. CI (`.github/workflows/Windows.yml`) runs it in Debug and Release after the build. Anything that needs a window or the renderer (selection restore, the main camera, rendering) still means building, then driving the editor as above.
+It covers the undo history, parking, copy snapshots, selection, interaction tracking and the property registry, with no running engine. CI (`.github/workflows/Windows.yml`) runs it in Debug and Development after the build. Anything that needs a window or the renderer (selection restore, the main camera, rendering) still means building, then driving the editor as above.
 
 ## Gotchas
 
 - **Never `ShowWindow(SW_RESTORE)` the editor to focus it.** On a maximized window it un-maximizes it (2560x1392 → 1584x892), the whole ImGui layout reflows, and every coordinate you measured is wrong. The driver only restores when the window is minimized.
-- **Debug draws are stripped from Retail builds.** `DebugDrawRenderStage` (debug lines, bounds boxes, the light's direction line, camera frustums) is only added when `RZE_RETAIL` isn't defined, so Debug and Release both show them.
+- **Debug draws are stripped from Retail builds.** `DebugDrawRenderStage` (debug lines, bounds boxes, the light's direction line, camera frustums) is only added when `RZE_RETAIL` isn't defined, so Debug and Development both show them.
 - **Everything reads assets from the source tree, not from `_build\<config>`.** The Editor, Game and SourceAssetBurner set `EDirectoryContext::Source`, so `Filepath` resolves paths against the folder above `_build\` (e.g. `RZE\Assets\Shaders\...`), whatever the working directory. Shader and asset edits take effect on the next launch with no copy step. This also means the shader in `RZE\Assets` is what runs: to capture a "before" image, revert or disable the change in the source file itself. Any `Assets\`/`Config\`/`ProjectData\` folders left under `_build\<config>` are stale copies from the old `AssetCpy.bat`, or empty `ProjectData\` trees the unit tests left before they cleaned up after themselves, and aren't read. `EDirectoryContext::Runtime` (beside the exe) is reserved for a packaged game.
 - **A `Filepath` built during static init resolves before `main` sets the context**, so it points beside the exe. Build paths where they're used, or as function-local statics.
 - **Large screenshots are downscaled when Read.** A 2560-wide PNG shows at 2000 px with a note to "multiply coordinates by 1.28". Measure positions in the displayed image, then multiply by that factor before passing them to `click`.
@@ -238,7 +238,7 @@ downscales a 2560-wide image to 2000, so multiply what you measure by 1.28.
 
 | command | what it does |
 |---|---|
-| `launch [--harness] [--scene X.scene] [--config debug\|release\|retail] [--app Editor\|Game] [--settle 5] [--keep-imgui-ini] [--nested [--refresh 240]] [--output DP-2] [-- args...]` | Starts the app under the driver. Refuses if one is running. Backs up `RZE/Config/imgui.ini` first (below). `--harness` runs EditorHarness (above); it's the Editor's only, and can't be combined with `--renderdoc`. `--output` opens it on that monitor, and `--nested` (with `--harness`) off-screen in a KWin of its own (both below). |
+| `launch [--harness] [--scene X.scene] [--config debug\|development\|retail] [--app Editor\|Game] [--settle 5] [--keep-imgui-ini] [--nested [--refresh 240]] [--output DP-2] [-- args...]` | Starts the app under the driver. Refuses if one is running. Backs up `RZE/Config/imgui.ini` first (below). `--harness` runs EditorHarness (above); it's the Editor's only, and can't be combined with `--renderdoc`. `--output` opens it on that monitor, and `--nested` (with `--harness`) off-screen in a KWin of its own (both below). |
 | `outputs` | The monitors `launch --output` takes, by KWin's name: `DP-1\t2560,0 2560x1440`. |
 | `state`, `object NAME`, `realinput on\|off` | Harness sessions only: the Editor's state (scene, modified, selection, undo, objects); one object's GUID, parent, components and transform; whether the real mouse and keyboard reach the app. |
 | `shot [--out path.png]` | With `--harness`, the frame read back from the back buffer (about 1 s, as it's encoded). Otherwise, it focuses the app and captures its client area (spectacle). |
@@ -253,7 +253,7 @@ downscales a 2560-wide image to 2000, so multiply what you measure by 1.28.
 | `quit` | Kills the app, like `driver.ps1 quit`. |
 | `log [-n 40] [--grep TEXT] [--engine]` | The app's output. A Game launched from the Editor writes here too. `--engine` reads the newest `RZE/Logs/RZELOG_*.txt` instead. |
 | `clip get`, `clip set TEXT` | The system clipboard (wl-paste, wl-copy), to check ImGui's copy and paste. |
-| `optick [--seconds 2] [--out raw.bin]` | Takes an Optick capture over the network, as Optick's viewer does, and counts what arrived. Debug and Release only. |
+| `optick [--seconds 2] [--out raw.bin]` | Takes an Optick capture over the network, as Optick's viewer does, and counts what arrived. Debug and Development only. |
 | `launch --renderdoc ...`, then `renderdoc-capture [--timeout 30]` | Runs the app under `renderdoccmd` (`sudo dnf install renderdoc`), then captures the next frame: presses RenderDoc's capture key (F12), waits for the `.rdc`, saves its thumbnail beside it and counts its draws, dispatches, debug groups and GL calls. Captures go to `$XDG_RUNTIME_DIR/rze-driver/renderdoc/`; open one with `qrenderdoc <file.rdc>`. |
 
 How it works, and what to know:

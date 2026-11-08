@@ -69,7 +69,7 @@ public class Globals
 {
     public static string RootDir = "./";
     public static string IncludeDir { get { return RootDir + "ThirdParty/Include/"; } }
-    // Where every project's output goes: _build/debug, _build/release, _build/retail
+    // Where every project's output goes: _build/debug, _build/development, _build/retail
     public static string BuildDir(CommonTarget target) { return Path.Combine(RootDir, "_build", target.Name.ToLowerInvariant()) + "/"; }
     public static string ThirdPartyLibDir { get { return Path.Combine(RootDir, "ThirdParty/Lib/x64/"); } }
     public static string ThirdPartyDllDir { get { return Path.Combine(RootDir, "ThirdParty/Dll/x64/"); } }

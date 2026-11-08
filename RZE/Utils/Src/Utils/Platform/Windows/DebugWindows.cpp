@@ -51,7 +51,7 @@ namespace Debug
 	void SetAssertFailureHook(AssertFailureHook hook)
 	{
 		// In Debug the hook goes through the debug CRT's report hook, so it also sees the CRT's own errors. The release
-		// CRT has no reports, so in Release ShowAssertReport calls the hook itself.
+		// CRT has no reports, so in Development ShowAssertReport calls the hook itself.
 #ifdef _DEBUG
 		if (g_assertFailureHook != nullptr)
 		{
@@ -70,7 +70,7 @@ namespace Debug
 	}
 
 #ifdef RZE_ASSERTS_ENABLED
-	// report is the logged line, which only Release's hook call uses: the CRT's dialog doesn't show it
+	// report is the logged line, which only Development's hook call uses: the CRT's dialog doesn't show it
 	bool ShowAssertReport(const char* file, int line, const std::string& text, [[maybe_unused]] const std::string& report)
 	{
 #ifdef _DEBUG

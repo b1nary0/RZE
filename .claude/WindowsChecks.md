@@ -25,18 +25,18 @@ the rest for the user.
 
 ### A. Build and tests (each time this file is run)
 
-- **A1. Generate and build.** Run `GenerateSolutions.bat`, then build Debug and Release (`/W3 /WX`). Expect no errors
-  or warnings. **Since the commit after 3c2a07d8:** every component class is `final`, and `GameObjectComponent<T>`'s
-  constructor has `static_assert(std::is_final_v<T>)`; expect MSVC to accept both, with no new warnings.
-  **Since the commit after 293171bb:** `Engine/Src/EngineCore/Platform/Memory/` (Memory.h, BlockAllocator.h/.cpp) is
-  deleted, so `GenerateSolutions.bat` must run before building, or the old `.vcxproj` still lists the missing files.
-  The math vectors lost `ToString` and StringUtils lost `FormatString`; their includes were left as they were, so
-  nothing should depend on a header MSVC no longer pulls in. Report any "cannot open include file" or missing
-  `std::` name.
-- **A2. Unit tests.** `RZE\_build\debug\UnitTests.exe` and `RZE\_build\release\UnitTests.exe`. Expect exit code 0.
+- **A1. Generate and build.** Run `GenerateSolutions.bat`, then build Debug and Development (`/W3 /WX`; Development was
+  called Release before the commit after 139bfcb1). Expect no errors or warnings. **Since the commit after 3c2a07d8:**
+  every component class is `final`, and `GameObjectComponent<T>`'s constructor has `static_assert(std::is_final_v<T>)`;
+  expect MSVC to accept both, with no new warnings. **Since the commit after 293171bb:**
+  `Engine/Src/EngineCore/Platform/Memory/` (Memory.h, BlockAllocator.h/.cpp) is deleted, so `GenerateSolutions.bat` must
+  run before building, or the old `.vcxproj` still lists the missing files. The math vectors lost `ToString` and
+  StringUtils lost `FormatString`; their includes were left as they were, so nothing should depend on a header MSVC no
+  longer pulls in. Report any "cannot open include file" or missing `std::` name.
+- **A2. Unit tests.** `RZE\_build\debug\UnitTests.exe` and `RZE\_build\development\UnitTests.exe`. Expect exit code 0.
   **Since the commit after f5faea2e:** the tests that write into the editor's trash and thumbnail folders remove the
   empty folders they made (`RemoveEmptyFolders`, new `UnitTests/Src/TestFolder.cpp`), so after both runs
-  `RZE\_build\debug\ProjectData` and `RZE\_build\release\ProjectData` don't exist (A10 found an empty one). A tree
+  `RZE\_build\debug\ProjectData` and `RZE\_build\development\ProjectData` don't exist (A10 found an empty one). A tree
   left by older runs goes in the same run, unless something in it isn't empty: list what's there if so.
 - **A3. Burn.** `RZE\_build\debug\SourceAssetBurner.exe`. Expect exit code 0 (it exits with 1 when an import fails)
   and no `[Error]` line in its output. `RZE\ProjectData` is gitignored, so `git status` can't show what it wrote.
@@ -56,7 +56,7 @@ the rest for the user.
   1. Before building the new commit, burn with the old one and hash: `Get-ChildItem RZE\ProjectData -Recurse -Include
      *.meshasset,*.materialasset | Get-FileHash | Sort-Object Path | Out-File $env:TEMP\hash_before.txt`. Burn again
      with the new build (A3) and hash to `hash_after.txt`; expect `Compare-Object` to find no difference.
-  2. A2 covers the new tests (`ByteStreamTests`, `MeshAssetTests`, the material truncation tests), in Release too.
+  2. A2 covers the new tests (`ByteStreamTests`, `MeshAssetTests`, the material truncation tests), in Development too.
   3. `driver.ps1 launch -Harness -Scene Sponza.scene -SettleSeconds 20`: expect 9 objects, textured, and no
      "shorter than its contents" lines in the log.
 - **A6. Resource keys are relative paths (the commit after 6f246ec9).** A resource's key is now its relative path,
@@ -91,29 +91,42 @@ the rest for the user.
      debugger output.
   5. The Game (`launch -App Game -Scene RenderTest.scene`, then `close`): `closed code=0`, 0 live resources.
 
-- **A9. Asserts run in Release (the commit after c77934dd).** `RZE_ASSERTS_ENABLED` (new
-  `Utils/DebugUtils/DebugConfig.h`) is on unless `RZE_RETAIL`, so the assert macros, the test hook, `LiveObjectPtr`'s
-  dead-handle check, the duplicate-child checks and the Editor's "outside a command" check now run in Release. The
-  release CRT has no `_CrtDbgReport`, so `DebugWindows.cpp`'s `ShowAssertReport` has a Release branch: the test hook
-  if one is set, otherwise a `MessageBoxA` with Abort/Retry/Ignore (Abort `std::abort()`s, Retry breaks, Ignore
-  carries on). None of the Windows code was compiled on Linux; on Linux all three configs built and passed 433/433,
-  and Sponza and RenderPerfTest opened and closed in a Release harness with no assert.
-  1. A1 must build Release with no errors or warnings from `DebugWindows.cpp`, and from Windows-only code (DX11,
-     `Platform/Windows`) whose asserts now compile in Release for the first time: a name an assert uses that only
+- **A9. Asserts run in Development (the commit after c77934dd; Development was Release then).** `RZE_ASSERTS_ENABLED`
+  (new `Utils/DebugUtils/DebugConfig.h`) is on unless `RZE_RETAIL`, so the assert macros, the test hook,
+  `LiveObjectPtr`'s dead-handle check, the duplicate-child checks and the Editor's "outside a command" check now run in
+  Development. The release CRT has no `_CrtDbgReport`, so `DebugWindows.cpp`'s `ShowAssertReport` has a non-Debug
+  branch: the test hook if one is set, otherwise a `MessageBoxA` with Abort/Retry/Ignore (Abort `std::abort()`s, Retry
+  breaks, Ignore carries on). None of the Windows code was compiled on Linux; on Linux all three configs built and
+  passed 433/433, and Sponza and RenderPerfTest opened and closed in a Development harness with no assert.
+  1. A1 must build Development with no errors or warnings from `DebugWindows.cpp`, and from Windows-only code (DX11,
+     `Platform/Windows`) whose asserts now compile in Development for the first time: a name an assert uses that only
      exists under `_DEBUG` fails here. Retail must still build (asserts compile out there).
-  2. A2 in Release as usual. Then, temporarily, append to `UnitTests/Src/Utils/ByteStreamTests.cpp`:
+  2. A2 in Development as usual. Then, temporarily, append to `UnitTests/Src/Utils/ByteStreamTests.cpp`:
      `TEST_CASE("TempAssertProbe") { AssertMsg(1 + 1 == 3, "probe"); CHECK(true); }`, build, and run
-     `UnitTests.exe -tc=TempAssertProbe` in Debug, Release and Retail. Expect Debug and Release to fail it with
+     `UnitTests.exe -tc=TempAssertProbe` in Debug, Development and Retail. Expect Debug and Development to fail it with
      `Assert: Assertion failed: 1 + 1 == 3` (no dialog), and Retail to pass it. Then
      `git checkout -- RZE/UnitTests/Src/Utils/ByteStreamTests.cpp` (`git status --short` first) and rebuild.
-  3. `driver.ps1 launch -Harness -Config release -Scene Sponza.scene -SettleSeconds 20`, then `close`, and the same
+  3. `driver.ps1 launch -Harness -Config development -Scene Sponza.scene -SettleSeconds 20`, then `close`, and the same
      with `RenderPerfTest.scene`: `closed code=0`, and no `Assertion failed` in the newest `RZE\Logs\RZELOG_*.txt`.
-     List any that come: they're the first asserts Release has ever run.
-  4. **(person)** The Release message box: temporarily add `AssertMsg(false, "probe");` at the top of
-     `EditorApp::Initialize`, build Release, run `RZE\_build\release\Editor.exe` under the Visual Studio debugger:
-     expect a box titled "RZE: Assertion Failed" with the expression, file and line; Retry stops in the debugger on
-     that line, and Ignore carries on to the Editor. Then run it without a debugger and press Abort: the process ends.
-     Revert the line and rebuild.
+     List any that come: they're the first asserts Development has ever run.
+  4. **(person)** The Development message box: temporarily add `AssertMsg(false, "probe");` at the top of
+     `EditorApp::Initialize`, build Development, run `RZE\_build\development\Editor.exe` under the Visual Studio
+     debugger: expect a box titled "RZE: Assertion Failed" with the expression, file and line; Retry stops in the
+     debugger on that line, and Ignore carries on to the Editor. Then run it without a debugger and press Abort: the
+     process ends. Revert the line and rebuild.
+
+- **A11. Release is now called Development (the commit after 139bfcb1).** `CommonTarget.ConfigurationName` names
+  Sharpmake's `Optimization.Release` "Development"; project and solution configurations both take their name from
+  the target (`[target.Name]`). Nothing about the build changed, only its name. On Linux the Makefiles'
+  `config=development` builds into `_build/development`, and `make help` lists debug, development and retail. The
+  `.sln` isn't generated on Linux, so:
+  1. After `GenerateSolutions.bat`, `RZE.sln`'s `SolutionConfigurationPlatforms` lists `Debug|x64`, `Development|x64`
+     and `Retail|x64`, with no `Release`, and each project's `.vcxproj` has a `Development|x64` configuration that the
+     solution's Development maps to (Configuration Manager in Visual Studio shows Development for every project).
+  2. `msbuild RZE\RZE.sln /p:Configuration=Development /p:Platform=x64` builds into `RZE\_build\development\`, and
+     `driver.ps1 launch -Harness -Config development -Scene DrawLineTest.scene`, then `close`, gives `closed code=0`.
+  3. An old `RZE\_build\release\` (and `_project\obj\...\Release` folders) are stale: delete them after the build.
+  4. CI's Windows job now has a `development` leg in place of `release`; note whether it passed on the pushed commit.
 
 ### C. Window and input (Phase 3: SDL replaced Win32Window)
 
@@ -176,7 +189,7 @@ the rest for the user.
      never turns the view, a known follow-up.)
   3. Put the pointer over ImGui's demo window and press F1: the window resizes (the keyboard still reaches the game).
   4. Escape quits; exit code 0.
-  5. Repeat 1, 2 and 4 with `RZE\_build\release\Game.exe`, which has no ImGui: everything goes to the game.
+  5. Repeat 1, 2 and 4 with `RZE\_build\development\Game.exe`, which has no ImGui: everything goes to the game.
 - **C13. Mouse movement is a per-frame delta from InputHandler (person; the commit after C12's).**
   `MouseState::GetPositionDelta()` replaces the two cameras' own previous positions: 0 in the frame the window first
   reports a position, and while the app doesn't take the mouse. Passed on Linux: unit tests in all three configs, and on
@@ -198,7 +211,7 @@ the rest for the user.
   thumbnails render, then `close`. From the newest
   `RZE\Logs\RZELOG_*.txt`, report every distinct `D3D11 (` line with how often it came (e.g. `Select-String 'D3D11 \('
   | Group-Object Line | Sort Count -Desc`), and say which scene or action brought it. Expect no line saying the info
-  queue isn't available. Also check a Release Editor logs no `D3D11 (` line at all.
+  queue isn't available. Also check a Development Editor logs no `D3D11 (` line at all.
 - **D6. Vertex and pixel shader creation.** `DX11VertexShader::Create` no longer creates an input layout for a
   shader without inputs, and `Release()` frees the input layout (CI confirmed the `D3D11 (420)` warning is gone,
   d8d276ac). VS and PS `Create` now release their compile blobs, and a failed compile logs and returns instead of
@@ -216,7 +229,7 @@ the rest for the user.
   on MSVC and 16 on Linux). `MemoryUtils::AlignSize` takes `size_t` now, so `DX11ConstantBuffer::Allocate` casts its
   `ByteWidth` to `UINT`.
   - **Build:** A1 covers `DX11ConstantBuffer.cpp`; expect no C4267 or other warning from it.
-  - **Tests:** `UnitTests.exe -sf="*MemArenaTests*,*MemoryUtilsTests*"` in Debug and Release: expect 10 test cases,
+  - **Tests:** `UnitTests.exe -sf="*MemArenaTests*,*MemoryUtilsTests*"` in Debug and Development: expect 10 test cases,
     all passing.
     The alignment cases use `alignof(std::max_align_t)`, so they test 8-byte alignment here.
   - **A full arena on DX11:** in `RZE\Modules\Rendering\Src\Rendering\Renderer.cpp`, change `MEM_ARENA_SIZE` to
@@ -326,29 +339,30 @@ the rest for the user.
 ### F. Profiling
 
 - **F1. Optick capture (person).** The Editor's port (31318) accepting a connection passed (2026-11-05). Left: with
-  a Debug or Release Editor running, `Tools\Optick\Optick.exe` connects and takes a capture with frames in it.
-- **F2. What `/Ob1` costs Windows Release (measurement; the commit after 103ab018).** `BaseProject.ConfigureRelease`
-  sets `Inline.OnlyInline` (`/Ob1`: only functions marked `inline`), over Sharpmake's Release default `AnySuitable`
-  (`/Ob2`). On Linux, the clang counterpart (`-finline-hint-functions`) cost Release **+38% update time** (0.582 to
-  0.804 ms mean) on `RenderPerfTest.scene`, with frame time unchanged (GPU-bound at about 2.0 ms). This measures
-  whether Windows pays the same, to decide between keeping `/Ob1` (easier stepping in Release) and `/Ob2`. Nothing is
-  committed.
-  1. Build Release as it is, then copy `RZE\_build\release\Editor.exe` into a new `RZE\_build\perf-Ob1\` (the exe finds
-     the source tree from the `_build\` in its path, so it runs from there).
+  a Debug or Development Editor running, `Tools\Optick\Optick.exe` connects and takes a capture with frames in it.
+- **F2. What `/Ob1` costs Windows Development (measurement; the commit after 103ab018, when it was called Release).**
+  `BaseProject.ConfigureRelease` sets `Inline.OnlyInline` (`/Ob1`: only functions marked `inline`), over Sharpmake's
+  Release default `AnySuitable` (`/Ob2`). On Linux, the clang counterpart (`-finline-hint-functions`) cost Linux Release
+  (now Development) **+38% update time** (0.582 to 0.804 ms mean) on `RenderPerfTest.scene`, with frame time unchanged
+  (GPU-bound at about 2.0 ms). This measures whether Windows pays the same, to decide between keeping `/Ob1` (easier
+  stepping in Development) and `/Ob2`. Nothing is committed.
+  1. Build Development as it is, then copy `RZE\_build\development\Editor.exe` into a new `RZE\_build\perf-Ob1\` (the
+     exe finds the source tree from the `_build\` in its path, so it runs from there).
   2. Temporarily change `Inline.OnlyInline` to `Inline.AnySuitable` in `ConfigureRelease`
-     (`RZE/Make/Sharpmake/BaseProject.sharpmake.cs`), run `GenerateSolutions.bat`, **Rebuild** Release (`/t:Rebuild`),
-     copy the exe into `RZE\_build\perf-Ob2\`. Then `git checkout -- RZE/Make/Sharpmake/BaseProject.sharpmake.cs`
-     (`git status --short` first), run `GenerateSolutions.bat` again and Rebuild Release, so `_build\release` is back
-     to `/Ob1`.
+     (`RZE/Make/Sharpmake/BaseProject.sharpmake.cs`), run `GenerateSolutions.bat`, **Rebuild** Development
+     (`/t:Rebuild`), copy the exe into `RZE\_build\perf-Ob2\`. Then `git checkout --
+     RZE/Make/Sharpmake/BaseProject.sharpmake.cs` (`git status --short` first), run `GenerateSolutions.bat` again and
+     Rebuild Development, so `_build\development` is back to `/Ob1`.
   3. Back up `RZE\Config\imgui.ini`. Run Ob1, Ob2, Ob1, Ob2, Ob1, Ob2 on the same monitor, copying the backup over
      `imgui.ini` before each run, with the working directory at the exe's folder:
      `.\Editor.exe -scene RenderPerfTest.scene -perfcapture <out>.csv -perfwarmup 20 -perfduration 30`. The capture
      turns vsync off and exits by itself. Each line of the CSV is `frameMs,updateMs`. Restore `imgui.ini` at the end
      and delete the two `perf-*` folders.
-  4. Report frame time and update time for each side: mean, median, p95 and p99 (averaged over its 3 runs), the
-     spread (the range of the run means as a % of their mean), and the % change from Ob1 to Ob2. Say plainly when a
-     difference is within the spread. Optionally **(person)**: in Visual Studio, step through
-     `LightComponent::Update` (`LightComponent.cpp`, 16 lights in the scene) in each build and say whether `/Ob2` makes stepping noticeably worse.
+  4. Report frame time and update time for each side: mean, median, p95 and p99 (averaged over its 3 runs), the spread
+     (the range of the run means as a % of their mean), and the % change from Ob1 to Ob2. Say plainly when a difference
+     is within the spread. Optionally **(person)**: in Visual Studio, step through `LightComponent::Update`
+     (`LightComponent.cpp`, 16 lights in the scene) in each build and say whether `/Ob2` makes stepping noticeably
+     worse.
 
 ## Results
 

@@ -13,8 +13,8 @@
 namespace
 {
 #ifdef RZE_ASSERTS_ENABLED
-	// Engine asserts (Debug and Release), and in Windows Debug builds the CRT's errors, fail the running test instead
-	// of opening a dialog, so a run never waits on someone to click it, e.g. in CI
+	// Engine asserts (Debug and Development), and in Windows Debug builds the CRT's errors, fail the running test
+	// instead of opening a dialog, so a run never waits on someone to click it, e.g. in CI
 	bool FailTestOnAssert(const char* report)
 	{
 		FAIL_CHECK("Assert: " << std::string(report));

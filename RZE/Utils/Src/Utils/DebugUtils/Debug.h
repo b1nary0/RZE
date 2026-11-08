@@ -41,7 +41,7 @@ namespace Debug
 	bool OpenConsole();
 
 	// Logs a failed assert and reports it the platform's way: on Windows, an Abort/Retry/Ignore dialog (the CRT's in
-	// Debug, a message box with the same buttons in Release), whatever the subsystem; on Linux, which has no dialog,
+	// Debug, a message box with the same buttons in Development), whatever the subsystem; on Linux, which has no dialog,
 	// a break only if a debugger is attached. Returns true if the caller should break into the debugger.
 	bool ReportAssertFailure(const char* file, int line, const char* expr, const char* msg);
 

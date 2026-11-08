@@ -25,7 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        buildconfig: [debug, release, retail]
+        buildconfig: [debug, development, retail]
 
     steps:
     # The README's Linux setup, with git for the checkout, and a display with software OpenGL (Mesa's llvmpipe) for

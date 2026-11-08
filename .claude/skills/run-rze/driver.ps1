@@ -27,7 +27,7 @@ param(
 	[ValidateSet('launch', 'shot', 'click', 'dblclick', 'drag', 'scroll', 'key', 'info', 'alive', 'close', 'quit', 'state', 'object', 'realinput', 'helper')]
 	[string] $Action,
 	[string] $Scene = 'DrawLineTest.scene',
-	[ValidateSet('debug', 'release')] [string] $Config = 'debug',
+	[ValidateSet('debug', 'development')] [string] $Config = 'debug',
 	[int] $SettleSeconds = 5,
 	# launch: how long to wait for the window. close: how long to wait for the process to exit (30 unless given).
 	[int] $TimeoutSeconds = 90,

@@ -24,7 +24,7 @@ namespace Rendering
 		}
 
 		// Without its trailing newlines, since the log adds its own
-		// Only the log uses it, which Release builds may leave out
+		// Only the log uses it, which Retail builds leave out
 		[[maybe_unused]] std::string TrimEnd(std::string text)
 		{
 			while (!text.empty() && (text.back() == '\n' || text.back() == '\r'))

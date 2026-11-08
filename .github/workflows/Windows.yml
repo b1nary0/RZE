@@ -25,7 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        buildconfig: [debug, release, retail]
+        buildconfig: [debug, development, retail]
 
     steps:
     - name: Add MSBuild to PATH

@@ -10,7 +10,7 @@ which only exists after a build and has a .gch beside it. The entries here inclu
 work before the first build and tools never try to read a .gch from another compiler version.
 
 Usage:
-  GenerateCompileCommands.py [--config debug|release|retail] [--output path]
+  GenerateCompileCommands.py [--config debug|development|retail] [--output path]
 """
 
 import argparse
@@ -80,7 +80,7 @@ def project_entries(directory, makefile, config):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--config", default="debug", choices=["debug", "release", "retail"])
+    parser.add_argument("--config", default="debug", choices=["debug", "development", "retail"])
     parser.add_argument("--output", default=os.path.join(REPO_ROOT, "compile_commands.json"))
     args = parser.parse_args()
 

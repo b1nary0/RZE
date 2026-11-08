@@ -212,7 +212,7 @@ def run(args, harness):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    parser.add_argument("--config", required=True, choices=["debug", "release", "retail"])
+    parser.add_argument("--config", required=True, choices=["debug", "development", "retail"])
     parser.add_argument("--scene", default="Sponza.scene", help="in RZE/Assets/Scenes")
     parser.add_argument("--expect", default="Camera,DirectionalLight,Sponza,Nyra,Nanosuit,NeckMechWalker,Tank",
                         help="comma-separated objects the scene must have")
