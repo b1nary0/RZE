@@ -75,6 +75,15 @@ Things to know on this machine (2026-11-08):
   alternately throughout. 2: DrawLineTest, drag M4 onto NeckMech, expand NeckMech: M4 shows under it, indented one
   level; scroll so NeckMech is just off the top if the panel allows, M4 stays indented; Ctrl+Z puts M4 back as a root.
   `close` gives `closed code=0`.
+- **A18. OscillatorComponent, a development-only component.** New `Engine/Src/Game/World/GameObjectComponents/
+  OscillatorComponent.{h,cpp}`, the whole file inside `#ifdef RZE_DEVEL`, registered in `EngineApp.cpp` the same way.
+  Run `GenerateSolutions.bat` first (new files). 1: A1's three builds (MSVC compiles the empty Retail translation unit
+  and the `std::fmod`/`std::sin` code). 2: tests: 443 test cases in Debug and Development (7 new, `-sf="*Oscillator*"`),
+  435 in Retail. 3: Retail `Game.exe` has no `OscillatorComponent` (e.g. `findstr /m OscillatorComponent
+  RZE\_build\retail\Game.exe` finds nothing). 4: Development Editor, open any scene, Add Component > OscillatorComponent
+  on an object: it bobs 1 m up and down every 2 s; untick Enabled, it goes back to where it was. Ctrl+Z, close without
+  saving. Also new: Optick scopes in `ScenePanel::Draw`, `SceneViewPanel::PreRender` and `DrawObjectIcons`, covered by
+  the builds.
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 

@@ -5,6 +5,7 @@
 #include <Game/World/GameObjectComponents/CameraComponent.h>
 #include <Game/World/GameObjectComponents/GifChatComponent.h>
 #include <Game/World/GameObjectComponents/LightComponent.h>
+#include <Game/World/GameObjectComponents/OscillatorComponent.h>
 #include <Game/World/GameObjectComponents/ReflectionProbeComponent.h>
 #include <Game/World/GameObjectComponents/RenderComponent.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
@@ -107,6 +108,9 @@ void RZE_Application::RegisterEngineComponents()
 	REGISTER_GAMEOBJECTCOMPONENT(LightComponent);
 	REGISTER_GAMEOBJECTCOMPONENT(ReflectionProbeComponent);
 	REGISTER_GAMEOBJECTCOMPONENT(GifChatComponent);
+#ifdef RZE_DEVEL
+	REGISTER_GAMEOBJECTCOMPONENT(OscillatorComponent);
+#endif
 
 	// Lets async scene loading preload these components' resources on worker threads.
 	GameObjectComponentRegistry::SetResourceDependencyGatherer(RenderComponent::StaticTypeID(), &RenderComponent::GatherResourceDependencies);

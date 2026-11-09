@@ -38,6 +38,8 @@
 #include <imgui/imgui.h>
 #include <imgui/ImGuizmo.h>
 
+#include <Optick/optick.h>
+
 #include <algorithm>
 #include <optional>
 #include <string>
@@ -416,6 +418,9 @@ namespace Editor
 
 	void SceneViewPanel::PreRender(EditorContext& context)
 	{
+		// Its own scope, as it visits every object: a profile can take it off the frame to measure the scene itself
+		OPTICK_EVENT();
+
 		if (!m_isImageShown)
 		{
 			return;
@@ -519,6 +524,9 @@ namespace Editor
 
 	void SceneViewPanel::DrawObjectIcons(const EditorContext& context, const ImVec2& viewOrigin)
 	{
+		// Its own scope, as it visits every object: a profile can take it off the frame to measure the scene itself
+		OPTICK_EVENT();
+
 		m_iconHits.clear();
 
 		// The camera is empty while a scene loads

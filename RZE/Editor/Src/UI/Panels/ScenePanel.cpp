@@ -16,6 +16,8 @@
 
 #include <imgui/imgui.h>
 
+#include <Optick/optick.h>
+
 #include <algorithm>
 #include <climits>
 #include <iterator>
@@ -151,6 +153,9 @@ namespace Editor
 
 	void ScenePanel::Draw(EditorContext& context)
 	{
+		// Its own scope, as it grows with the scene: a profile can take it off the frame to measure the scene itself
+		OPTICK_EVENT();
+
 		EditorSelection& selection = context.GetSelection();
 
 		// Only over empty space: a row opens its own menu (DisplayObject). Creating doesn't use the selection, so this

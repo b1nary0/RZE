@@ -13,6 +13,7 @@ Usage: driver.py <command> [options]; driver.py <command> -h for each command's 
 """
 
 import argparse
+import bisect
 import datetime
 import fcntl
 import json
@@ -1088,7 +1089,135 @@ def optick_capture(seconds, out_path):
     if not counts.get("EventFrame"):
         raise DriverError("The capture had no event frames: %s" % counts)
     return "captured %d bytes: %s%s" % (total, ", ".join("%s=%d" % kv for kv in sorted(counts.items())),
-                                         ("; raw stream in " + out_path) if out_path else "")
+                                         ("; raw stream in " + out_path) if out_path else ""), bytes(raw)
+
+
+class OptickReader:
+    """Reads the fields of one response's payload, as Optick's OutputDataStream wrote them (optick_serialization.cpp)"""
+
+    def __init__(self, data):
+        self.data, self.at = data, 0
+
+    def take(self, fmt):
+        values = struct.unpack_from("<" + fmt, self.data, self.at)
+        self.at += struct.calcsize("<" + fmt)
+        return values if len(values) > 1 else values[0]
+
+    def string(self):
+        length = self.take("I")
+        text = self.data[self.at:self.at + length].decode("utf-8", "replace")
+        self.at += length
+        return text
+
+
+def optick_decode(raw):
+    """The main thread's frames and scopes from a raw capture stream: (frequency, frames, events), where frames are
+    (start, finish) ticks of each CPU frame and events (start, finish, name) of every main-thread scope"""
+    frequency, main_thread, names, frames, events_by_thread = None, None, [], [], {}
+    at = 0
+    while at + 12 <= len(raw):
+        _, size, response_type, _ = struct.unpack_from("<IIHH", raw, at)
+        payload = raw[at + 12:at + 12 + size]
+        at += 12 + size
+        reader = OptickReader(payload)
+        if response_type == 0:  # FrameDescriptionBoard: Core::DumpBoard
+            reader.take("I")  # board number
+            frequency = reader.take("q")
+            reader.take("QI")  # origin, precision
+            reader.take("qq")  # time slice
+            for _ in range(reader.take("I")):  # threads: id, process id, name, max depth, priority, mask
+                reader.take("QI")
+                reader.string()
+                reader.take("iiI")
+            for _ in range(reader.take("I")):  # fibers
+                reader.take("Q")
+            main_thread = reader.take("I")
+            for _ in range(reader.take("I")):  # event descriptions, in index order
+                name = reader.string()
+                reader.string()  # file
+                reader.take("IIIfB")  # line, filter, colour, budget, flags
+                names.append(name)
+        elif response_type == 259:  # FramesPack: frames of each FrameType, CPU first
+            reader.take("I")  # board number
+            if reader.take("I") > 0:
+                for _ in range(reader.take("I")):
+                    start, finish, _, _ = reader.take("qqIQ")
+                    frames.append((start, finish))
+        elif response_type == 1:  # EventFrame: ScopeData, a header then its categories and events
+            _, thread, _, _, _ = reader.take("Iiiqq")
+            # Categories, a copy of the coloured events. Not "at += take()": that reads at before take moves it.
+            categories = reader.take("I")
+            reader.at += categories * 20
+            thread_events = events_by_thread.setdefault(thread, [])
+            for _ in range(reader.take("I")):
+                thread_events.append(reader.take("qqI"))
+    if frequency is None or not frames:
+        raise DriverError("The capture had no description board or no frames")
+    events = [(start, finish, names[index] if index < len(names) else "?")
+              for start, finish, index in events_by_thread.get(main_thread, []) if finish >= start]
+    return frequency, sorted(frames), events
+
+
+def optick_report(raw, scopes, subtract, top):
+    """Per frame: its time, the time in each of scopes, and the frame less the time in subtract; then the main
+    thread's top scopes by time a frame. A scope given matches every scope whose name contains it, since OPTICK_EVENT()
+    names a scope by its whole signature, which differs between compilers ("void GameScene::Update()" with clang,
+    "void __cdecl GameScene::Update(void)" with MSVC): "GameScene::Update(" picks out one function. Scopes inside
+    another that matches the same name count once."""
+    frequency, frames, events = optick_decode(raw)
+    to_ms = 1000.0 / frequency
+    starts = [start for start, _ in frames]
+    wanted = list(dict.fromkeys(scopes + subtract))
+    matches = {}
+
+    # Each event's frame, by its start; time in a name counts only its outermost scopes
+    per_frame = [dict() for _ in frames]
+    totals = {}
+    open_until = {}
+    for start, finish, name in sorted(events):
+        frame = bisect.bisect_right(starts, start) - 1
+        if frame < 0 or start > frames[frame][1]:
+            continue
+        if name not in matches:
+            matches[name] = [scope for scope in wanted if scope in name]
+        duration = (finish - start) * to_ms
+        for key in [name] + matches[name]:
+            if open_until.get(key, -1) > start:
+                continue
+            open_until[key] = finish
+            per_frame[frame][key] = per_frame[frame].get(key, 0.0) + duration
+            if key == name:
+                totals[name] = totals.get(name, 0.0) + duration
+
+    def stats(values):
+        ordered = sorted(values)
+        count = len(ordered)
+        return "mean %.2f  median %.2f  p95 %.2f  p99 %.2f ms" % (
+            sum(ordered) / count, ordered[count // 2], ordered[min(count - 1, int(count * 0.95))],
+            ordered[min(count - 1, int(count * 0.99))])
+
+    # The first and last frames are cut by the capture's start and stop
+    kept = range(1, len(frames) - 1) if len(frames) > 2 else range(len(frames))
+    frame_ms = [(frames[i][1] - frames[i][0]) * to_ms for i in kept]
+    lines = ["%d frames: %s" % (len(frame_ms), stats(frame_ms))]
+    for name in scopes:
+        values = [per_frame[i].get(name, 0.0) for i in kept]
+        share = 100.0 * sum(values) / sum(frame_ms)
+        lines.append("%s: %s, %.1f%% of frame time, in %d frames" % (
+            name, stats(values), share, sum(1 for v in values if v > 0)))
+    if subtract:
+        values = [frame_ms[n] - sum(per_frame[i].get(name, 0.0) for name in subtract) for n, i in enumerate(kept)]
+        lines.append("frame less %s: %s" % (" and ".join(subtract), stats(values)))
+        for name in scopes:
+            if name in subtract:
+                continue
+            share = 100.0 * sum(per_frame[i].get(name, 0.0) for i in kept) / sum(values)
+            lines.append("%s: %.1f%% of frame time less %s" % (name, share, " and ".join(subtract)))
+    if top:
+        lines.append("main thread's top scopes, ms a frame:")
+        for name, total in sorted(totals.items(), key=lambda item: -item[1])[:top]:
+            lines.append("  %8.3f  %s" % (total / len(frames), name))
+    return "\n".join(lines)
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -1229,6 +1358,9 @@ def main():
     p = commands.add_parser("optick", help="take an Optick capture over the network, as Optick's viewer does")
     p.add_argument("--seconds", type=float, default=2)
     p.add_argument("--out", help="also save the raw stream here")
+    p.add_argument("--scopes", default="", help="comma-separated scope names to time a frame, e.g. GameScene::Update")
+    p.add_argument("--subtract", default="", help="comma-separated scope names whose time to take off each frame's")
+    p.add_argument("--top", type=int, default=0, help="also list the main thread's N costliest scopes")
     commands.add_parser("state", help="the Editor's state: scene, modified, selection, undo, objects (--harness)")
     p = commands.add_parser("object", help="an object's components and transform (--harness)")
     p.add_argument("name")
@@ -1303,7 +1435,12 @@ def main():
                                stderr=subprocess.DEVNULL if display else None)
                 print("copied %d characters" % len(args.text))
         elif c == "optick":
-            print(optick_capture(args.seconds, args.out))
+            summary, raw = optick_capture(args.seconds, args.out)
+            print(summary)
+            scopes = [name for name in args.scopes.split(",") if name]
+            subtract = [name for name in args.subtract.split(",") if name]
+            if scopes or subtract or args.top:
+                print(optick_report(raw, scopes + [name for name in subtract if name not in scopes], subtract, args.top))
         elif c == "renderdoc-capture":
             print(summarize_capture(send("renderdoc_capture", timeout=args.timeout)))
     except DriverError as error:
