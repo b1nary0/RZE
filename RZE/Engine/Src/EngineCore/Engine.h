@@ -1,7 +1,5 @@
 #pragma once
 
-#include <RZE_Config.h>
-
 #include <Utils/Platform/File.h>
 
 // @todo:josh this is where the weird include-before issue is

@@ -13,7 +13,10 @@
 #include <RapidJSON/prettywriter.h>
 #include <RapidJSON/stringbuffer.h>
 
+#include <Utils/DebugUtils/Debug.h>
+
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace
@@ -113,6 +116,45 @@ TEST_CASE_FIXTURE(TwoScenes, "An object's components load and save in the scene 
 		REQUIRE(components.MemberCount() == 2);
 		CHECK(std::string(components.MemberBegin()->name.GetString()) == (isLightFirst ? "LightComponent" : "TransformComponent"));
 	}
+}
+
+namespace
+{
+	std::vector<std::string> g_warnings;
+
+	void CollectWarnings(Debug::ELogLevel level, std::string_view line)
+	{
+		if (level == Debug::ELogLevel::Warning)
+		{
+			g_warnings.emplace_back(line);
+		}
+	}
+}
+
+TEST_CASE_FIXTURE(TwoScenes, "A component this build doesn't have is skipped with a warning, and the rest still loads")
+{
+	rapidjson::Document entry;
+	entry.Parse(R"({ "name": "Renamed", "components": {
+		"NoSuchComponent": { "Speed": 1.0 },
+		"TransformComponent": { "Position": [1.0, 2.0, 3.0], "Scale": [1.0, 1.0, 1.0], "Rotation": [0.0, 0.0, 0.0] } } })");
+	REQUIRE_FALSE(entry.HasParseError());
+
+	g_warnings.clear();
+	Debug::SetLogSink(&CollectWarnings);
+	GameObjectPtr loaded = First.DeserializeGameObject(entry, nullptr);
+	Debug::SetLogSink(nullptr);
+
+	REQUIRE(loaded->GetComponents().size() == 1);
+	CHECK(loaded->GetComponents()[0]->GetTypeID() == TransformComponent::StaticTypeID());
+	CHECK(loaded->GetTransformComponent()->GetPosition() == Vector3D(1.0f, 2.0f, 3.0f));
+
+#ifdef RZE_LOGGING_ENABLED
+	REQUIRE(g_warnings.size() == 1);
+	CHECK(g_warnings[0].find("[Renamed]") != std::string::npos);
+	CHECK(g_warnings[0].find("[NoSuchComponent]") != std::string::npos);
+#else
+	CHECK(g_warnings.empty());
+#endif
 }
 
 TEST_CASE("A component is named as its class is, which the Inspector shows")

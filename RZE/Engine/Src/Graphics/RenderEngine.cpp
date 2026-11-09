@@ -16,6 +16,7 @@
 
 #include <Rendering/Renderer.h>
 
+#include <Utils/DebugUtils/DebugConfig.h>
 #include <Utils/TimeUtils.h>
 
 #include "Rendering/Graphics/RenderTarget.h"
@@ -45,8 +46,7 @@ void RenderEngine::Initialize(void* windowHandle, bool validateGraphics)
 	AddRenderStage<DebugViewStage>();
 	AddRenderStage<PickRenderStage>();
 
-	// Available in Debug and Development; only Retail strips it
-#ifndef RZE_RETAIL
+#ifdef RZE_DEBUG_DRAW_ENABLED
 	AddRenderStage<DebugDrawRenderStage>();
 #endif
 }

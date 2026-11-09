@@ -62,6 +62,12 @@ Things to know on this machine (2026-11-08):
   A1's Development build compiles `OptimizationSwitchTests.cpp` with no C4748 and passes `-tc="RZE_DISABLE*"`. 2:
   temporarily wrap `Octahedral::Decode` in `RZE_DISABLE_OPTIMIZATION` / `RZE_ENABLE_OPTIMIZATION` (as A13.3 did), build
   Development: no warning; revert and rebuild.
+- **A16. RZE_DEVEL is the root switch; RZE_Config.h is gone.** `DebugConfig.h` defines `RZE_DEVEL` (Debug and
+  Development), and every switch there, plus the new `RZE_DEBUG_DRAW_ENABLED` (`RenderEngine.cpp`), comes from it.
+  `RZE_Config.h` (its always-1 `RZE_DEBUG`) and `EnginePCH.h`'s DebugServices include were deleted. 1: A1's three
+  builds cover the deleted header and PCH include (MSVC's PCH differs from clang's). 2: A2's counts match Linux:
+  436 test cases in Debug and Development, 435 in Retail. 3: Development DrawLineTest shows the grid and axis lines
+  (debug lines), and Retail `Game.exe -scene DrawLineTest.scene` runs with `closed code=0`.
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 

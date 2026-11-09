@@ -407,5 +407,10 @@ void GameObject::LoadComponents(const rapidjson::Value& entry)
 			GameObjectComponentBase* component = AddComponentByID(registered->first);
 			component->Deserialize(componentData.value);
 		}
+		else
+		{
+			// Renamed, removed, or compiled out of this build (RZE_DEVEL); saving the scene now drops it for good
+			RZE_LOG_WARNING_ARGS("[%s] has a component this build doesn't have, [%s]; it was skipped.", m_name.c_str(), componentData.name.GetString());
+		}
 	}
 }
