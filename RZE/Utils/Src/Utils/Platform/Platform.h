@@ -26,11 +26,11 @@
 #endif
 
 // The optimizer off, then back to the command line's settings, for the functions defined between them. Code uses
-// Debug.h's RZE_DISABLE_OPTIMIZATION, which Retail rejects. MSVC's C4748 (/GS can't guard the local buffers of a
-// function the optimizer is off for) would be an error under /WX, so it's off in between.
+// Debug.h's RZE_DISABLE_OPTIMIZATION, which Retail rejects. MSVC's old C4748 (/GS can't guard the local buffers of a
+// function the optimizer is off for) isn't emitted by the x64 toolsets RZE builds with, so nothing is suppressed.
 #if RZE_PLATFORM_WINDOWS
-#define RZE_PRAGMA_OPTIMIZE_OFF __pragma(optimize("", off)) __pragma(warning(push)) __pragma(warning(disable : 4748))
-#define RZE_PRAGMA_OPTIMIZE_ON __pragma(warning(pop)) __pragma(optimize("", on))
+#define RZE_PRAGMA_OPTIMIZE_OFF __pragma(optimize("", off))
+#define RZE_PRAGMA_OPTIMIZE_ON __pragma(optimize("", on))
 #else
 #define RZE_PRAGMA_OPTIMIZE_OFF _Pragma("clang optimize off")
 #define RZE_PRAGMA_OPTIMIZE_ON _Pragma("clang optimize on")

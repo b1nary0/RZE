@@ -12,7 +12,8 @@ namespace
 {
 RZE_DISABLE_OPTIMIZATION
 
-	// A local buffer, which MSVC's /GS warns about in a function the optimizer is off for (C4748)
+	// A local buffer, which old MSVC toolsets warned about in a function the optimizer is off for (C4748), so a
+	// toolset that brings the warning back fails here under /WX
 	int SumOfDigits(int value)
 	{
 		char digits[16];

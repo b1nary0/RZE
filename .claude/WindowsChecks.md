@@ -55,6 +55,11 @@ Things to know on this machine (2026-11-08):
   the same measurement (Debug and Development, Sponza, 20 s): both should be about 3.9 GB lower in private bytes, and
   Debug's working set too. 2: the status bar reads `/ 64.00 MB`, with a peak near Linux's 12090 KB (Sponza) and 3006
   KB (RenderPerfTest). 3: no `arena was full` or `exceeds the arena` line in either log. 4: `closed code=0`, 0 live.
+- **A15. No C4748 suppression.** `RZE_PRAGMA_OPTIMIZE_OFF/ON` (`Platform.h`) is now only `optimize("", off/on)`: A13
+  saw no C4748 on x64 without the suppression, and Microsoft's current warning tables (MSVC 14.0 on) don't list it. 1:
+  A1's Development build compiles `OptimizationSwitchTests.cpp` with no C4748 and passes `-tc="RZE_DISABLE*"`. 2:
+  temporarily wrap `Octahedral::Decode` in `RZE_DISABLE_OPTIMIZATION` / `RZE_ENABLE_OPTIMIZATION` (as A13.3 did), build
+  Development: no warning; revert and rebuild.
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 
@@ -146,4 +151,3 @@ All 2026-11-08 rows are at eaf66bf4, those marked "+ fix" with the D10 fix (b175
 
 | ID | Date | Commit | Result | Notes |
 |---|---|---|---|---|
-| A13 | 2026-11-08 | eaf66bf4 | pass | 1: see A1/A2. 2: without `__pragma(warning(disable : 4748))`, Development rebuilt `OptimizationSwitchTests.cpp` with **no C4748** (the suppression looks unneeded on x64); restored and rebuilt. 3: `Decode` wrapped (temporary): Retail fails with `Octahedral.cpp(37,1): error C2338: static assertion failed: 'RZE_DISABLE_OPTIMIZATION is still in this file: remove it and RZE_ENABLE_OPTIMIZATION'` at the macro's line; Development builds with no warning and passes `Directions come back*`; reverted and rebuilt. 4: the Development Game shows the Dear ImGui demo window over DrawLineTest. |
