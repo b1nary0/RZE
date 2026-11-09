@@ -41,7 +41,7 @@ void MaterialAssetWriter::SetOutputPath(const Filepath& outputPath)
 	m_outputPath = outputPath;
 }
 
-void MaterialAssetWriter::Write()
+bool MaterialAssetWriter::Write()
 {
 	AssertExpr(m_outputPath.IsValid());
 
@@ -88,11 +88,15 @@ void MaterialAssetWriter::Write()
 	if (byteStream.HasFailed() || byteStream.GetNumBytesWritten() != bufSize)
 	{
 		RZE_LOG_ERROR_ARGS("MaterialAssetWriter : %s not written: its data didn't fill the %zu bytes counted for it.", m_outputPath.GetRelativePath().c_str(), bufSize);
-		return;
+		return false;
 	}
 
 	File outputFile(m_outputPath);
-	outputFile.Open(static_cast<File::EFileOpenMode::Value>(File::EFileOpenMode::Write | File::EFileOpenMode::Binary));
+	if (!outputFile.Open(static_cast<File::EFileOpenMode::Value>(File::EFileOpenMode::Write | File::EFileOpenMode::Binary)))
+	{
+		RZE_LOG_ERROR_ARGS("MaterialAssetWriter : %s not written: it couldn't be opened for writing.", m_outputPath.GetRelativePath().c_str());
+		return false;
+	}
 	const Byte* const bytes = byteStream.GetBytes();
 	for (size_t byteIndex = 0; byteIndex < byteStream.GetNumBytesWritten(); ++byteIndex)
 	{
@@ -101,4 +105,5 @@ void MaterialAssetWriter::Write()
 	outputFile.Close();
 
 	RZE_LOG_ARGS("MaterialAssetWriter : %s written.", m_outputPath.GetRelativePath().c_str());
+	return true;
 }

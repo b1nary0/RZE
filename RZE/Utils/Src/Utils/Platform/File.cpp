@@ -1,8 +1,7 @@
 #include <Utils/Platform/File.h>
 
-#include <Utils/DebugUtils/Debug.h>
-
 #include <filesystem>
+#include <sstream>
 
 File::File(const Filepath& filePath, bool createIfNotExist)
 	: m_filePath(filePath)
@@ -73,8 +72,6 @@ bool File::Open(EFileOpenMode::Value fileOpenMode)
 		m_isOpen = m_fileStream.is_open();
 		if (!m_isOpen)
 		{
-			// #TODO Log error
-			//RZE_LOG_ARGS("File with path [%s] failed to open.", m_filePath.GetRelativePath().c_str());
 			return false;
 		}
 
@@ -112,10 +109,6 @@ bool File::Read()
 			m_data = stringStream.str();
 			Close();
 		}
-		else
-		{
-			// #TODO Log Error
-		}
 	}
 
 	return m_isOpen;
@@ -145,11 +138,7 @@ bool File::Overwrite()
 		}
 
 		bSuccess = Open(EFileOpenMode::Write);
-
-		if (bSuccess)
-		{
-			Close();
-		}
+		Close();
 	}
 
 	return bSuccess;

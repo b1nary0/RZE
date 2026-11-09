@@ -123,7 +123,7 @@ TEST_CASE("MeshAssetWriter writes material paths in the serialized form, and the
 	MeshAssetWriter writer;
 	writer.SetAssetName("UnitTestsTemp_MeshAssetWriter");
 	writer.SetMeshData(std::move(meshes));
-	writer.Write();
+	CHECK(writer.Write());
 
 	// The writer always writes into the project's mesh folder
 	const Filepath file = AssetPaths::GetMesh("UnitTestsTemp_MeshAssetWriter");
@@ -138,6 +138,27 @@ TEST_CASE("MeshAssetWriter writes material paths in the serialized form, and the
 		CHECK(materials[1].Path.empty());
 		CHECK(materials[1].Name == "Default");
 	}
+
+	std::error_code ignored;
+	std::filesystem::remove(file.GetAbsolutePath(), ignored);
+	RemoveEmptyFolders(file.GetParentFolder());
+}
+
+TEST_CASE("MeshAssetWriter returns false when it can't open its file, and leaves what's there")
+{
+	// A folder where the file would go, in the project's mesh folder, where the writer always writes
+	const Filepath file = AssetPaths::GetMesh("UnitTestsTemp_Blocked");
+	std::filesystem::create_directories(file.GetAbsolutePath());
+
+	std::vector<MeshData> meshes(1);
+	meshes[0].MeshName = "Triangle";
+	meshes[0].VertexDataArray.resize(3);
+	meshes[0].IndexArray = { 0, 1, 2 };
+	MeshAssetWriter writer;
+	writer.SetAssetName("UnitTestsTemp_Blocked");
+	writer.SetMeshData(std::move(meshes));
+	CHECK_FALSE(writer.Write());
+	CHECK(std::filesystem::is_directory(file.GetAbsolutePath()));
 
 	std::error_code ignored;
 	std::filesystem::remove(file.GetAbsolutePath(), ignored);

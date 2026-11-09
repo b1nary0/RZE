@@ -21,7 +21,7 @@ public:
 	void SetMaterialData(const MaterialAssetImporter::MaterialData& materialData);
 	void SetOutputPath(const Filepath& outputPath);
 
-	void Write() override;
+	bool Write() override;
 
 private:
 	MaterialAssetImporter::MaterialData m_materialData;

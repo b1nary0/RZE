@@ -8,6 +8,7 @@
 #include <TestFolder.h>
 
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <limits>
 #include <string>
@@ -73,7 +74,7 @@ TEST_CASE("A material asset reads back as it was written")
 	MaterialAssetWriter writer;
 	writer.SetOutputPath(file);
 	writer.SetMaterialData(written);
-	writer.Write();
+	REQUIRE(writer.Write());
 
 	MaterialAssetImporter importer;
 	REQUIRE(importer.Import(file));
@@ -135,7 +136,7 @@ TEST_CASE("Every blend mode survives a write and read")
 		MaterialAssetWriter writer;
 		writer.SetOutputPath(file);
 		writer.SetMaterialData(written);
-		writer.Write();
+		REQUIRE(writer.Write());
 
 		MaterialAssetImporter importer;
 		REQUIRE(importer.Import(file));
@@ -178,7 +179,7 @@ namespace
 		MaterialAssetWriter writer;
 		writer.SetOutputPath(file);
 		writer.SetMaterialData(written);
-		writer.Write();
+		REQUIRE(writer.Write());
 	}
 
 	void CheckFailsCleanly(const Filepath& file)
@@ -188,6 +189,22 @@ namespace
 		CHECK(importer.GetMaterialData().MaterialName.empty());
 		CHECK(importer.GetMaterialData().TexturePaths.empty());
 	}
+}
+
+TEST_CASE("MaterialAssetWriter returns false when it can't open its file, and leaves what's there")
+{
+	const ScopedTestFolder folder("UnitTestsTemp_MaterialAsset");
+	// A folder where the file would go
+	folder.AddFolder("Blocked.materialasset");
+	const Filepath file = folder.GetFile("Blocked.materialasset");
+
+	MaterialData written;
+	written.MaterialName = "Blocked";
+	MaterialAssetWriter writer;
+	writer.SetOutputPath(file);
+	writer.SetMaterialData(written);
+	CHECK_FALSE(writer.Write());
+	CHECK(std::filesystem::is_directory(file.GetAbsolutePath()));
 }
 
 TEST_CASE("A material asset cut short anywhere fails to import, and leaves nothing behind")
@@ -217,7 +234,7 @@ TEST_CASE("A material asset whose texture count can't fit in the file fails")
 	MaterialAssetWriter writer;
 	writer.SetOutputPath(file);
 	writer.SetMaterialData(written);
-	writer.Write();
+	REQUIRE(writer.Write());
 
 	const size_t huge = std::numeric_limits<size_t>::max();
 	{

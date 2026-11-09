@@ -39,7 +39,7 @@ public:
 	void SetPlacements(std::vector<MeshPlacement>&& placements);
 	void SetAssetName(const std::string& assetName);
 
-	void Write() override;
+	bool Write() override;
 
 private:
 	std::vector<MeshData> m_meshes;

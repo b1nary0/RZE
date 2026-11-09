@@ -104,6 +104,14 @@ Things to know on this machine (2026-11-08):
   and only by `/` becoming `\`. 3: 449 test cases in Debug and Development, 441 in Retail. 4: Development Editor on
   RenderPerfTest.scene (pillars keep their own tints: the `DefaultMaterial` overrides found their slot) and
   Sponza.scene (textured), no errors in the log, `close` gives `closed code=0`.
+- **A22. Asset writers report a file they couldn't open.** `AssetWriter::Write` returns bool; the mesh and material
+  writers, the burner's embedded-texture write and `GameScene::Serialize` check `File::Open`. 1: 451 test cases in
+  Debug and Development, 443 in Retail (2 new: a writer whose file is blocked by a folder returns false). 2: Mark
+  `RZE\ProjectData\Material\Cube\DefaultMaterial.materialasset` read-only (Properties > Read-only), run A3's burn:
+  exit code 1, `[Error] MaterialAssetWriter : ... not written: it couldn't be opened for writing.` and `1 of N
+  sources failed`. Clear Read-only and burn again: exit 0. 3: Development Editor, DrawLineTest.scene: change NeckMech's
+  Rotation Y, Ctrl+S (the file has the new value, no `.tmp` left in `Assets\Scenes`), Ctrl+Z, Ctrl+S: `git status`
+  shows the scene unchanged.
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 

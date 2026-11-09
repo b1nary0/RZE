@@ -66,11 +66,13 @@ void GameScene::Serialize(const Filepath& filePath)
 	// Beside it first, then moved over it, so a load reading it meanwhile (e.g. a background thumbnail render) never
 	// gets half a scene
 	const Filepath temporaryPath = File::GetTemporaryPathFor(m_currentScenePath);
-	File sceneFile;
-	sceneFile.SetFilePath(temporaryPath.GetRelativePath());
-	sceneFile.Open(File::EFileOpenMode::Write);
+	File sceneFile(temporaryPath);
+	if (!sceneFile.Open(File::EFileOpenMode::Write))
+	{
+		RZE_LOG_ERROR_ARGS("Couldn't save scene [%s]: [%s] couldn't be opened for writing.", m_currentScenePath.GetRelativePath().c_str(), temporaryPath.GetRelativePath().c_str());
+		return;
+	}
 	sceneFile.Write(buf.GetString());
-	AssertExpr(sceneFile.IsValid());
 	sceneFile.Close();
 
 	if (!File::MoveReplacing(temporaryPath, m_currentScenePath))

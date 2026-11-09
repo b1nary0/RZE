@@ -36,7 +36,7 @@ void MeshAssetWriter::SetAssetName(const std::string& assetName)
 	m_assetName = assetName;
 }
 
-void MeshAssetWriter::Write()
+bool MeshAssetWriter::Write()
 {
 	AssertExpr(m_meshes.size() > 0);
 	AssertExpr(!m_assetName.empty());
@@ -125,13 +125,17 @@ void MeshAssetWriter::Write()
 	if (byteStream.HasFailed() || byteStream.GetNumBytesWritten() != bufSize)
 	{
 		RZE_LOG_ERROR_ARGS("MeshAssetWriter : %s not written: its data didn't fill the %zu bytes counted for it.", outputPath.GetRelativePath().c_str(), bufSize);
-		return;
+		return false;
 	}
 
 	// Only now: opening it to write empties it
 	File outputFile(outputPath);
 	constexpr File::EFileOpenMode::Value k_openMode = static_cast<File::EFileOpenMode::Value>(File::EFileOpenMode::Write | File::EFileOpenMode::Binary);
-	outputFile.Open(k_openMode);
+	if (!outputFile.Open(k_openMode))
+	{
+		RZE_LOG_ERROR_ARGS("MeshAssetWriter : %s not written: it couldn't be opened for writing.", outputPath.GetRelativePath().c_str());
+		return false;
+	}
 
 	const Byte* bytes = byteStream.GetBytes();
 	for (size_t byteIndex = 0; byteIndex < byteStream.GetNumBytesWritten(); ++byteIndex)
@@ -142,4 +146,5 @@ void MeshAssetWriter::Write()
 	outputFile.Close();
 
 	RZE_LOG_ARGS("MeshAssetWriter : %s written.", outputPath.GetRelativePath().c_str());
+	return true;
 }

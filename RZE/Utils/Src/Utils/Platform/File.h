@@ -27,10 +27,7 @@ public:
 
 public:
 	File() = default;
-	// #TODO
-	// Hacky constructor to read from non-runtime asset paths
-	// until the Filepath infrastructure understands different directory
-	// contexts.
+	// With createIfNotExist, makes the file's folder if the file isn't there yet
 	File(const Filepath& filePath, bool createIfNotExist = false);
 
 	// Where to write a file first, so it can be put in place with MoveReplacing once it's whole: path with ".tmp" on
@@ -47,57 +44,43 @@ public:
 	void SetFilePath(const std::string& path);
 	const Filepath& GetPath() const;
 
+	// Open, Read and the writes return false when they fail, and the caller reports it, with what it was doing: File
+	// doesn't log, since the log file is written through it, and some callers expect a file to be missing (Config)
 	bool Open(EFileOpenMode::Value fileOpenMode);
 	void Close();
 	bool Read();
+	// Empties the file
 	bool Overwrite();
 
 	// Ensures the file meets standards of a file
 	bool IsValid() const;
 	bool Empty() const;
 
-	// Overwrites with content of Data
+	// Replaces the file's content with data
 	template <typename T>
-	void Overwrite(const T& data)
+	bool Overwrite(const T& data)
 	{
-		if (IsValid())
+		if (!Open(EFileOpenMode::Write))
 		{
-			if (m_isOpen)
-			{
-				Close();
-			}
-
-			Open(EFileOpenMode::Write);
-
-			if (m_isOpen)
-			{
-				m_fileStream << data;
-				Close();
-			}
-			else
-			{
-				// #TODO Log Error
-			}
+			return false;
 		}
+
+		m_fileStream << data;
+		Close();
+		return true;
 	}
 
-	// Check for if the file has nothing in it, or didn't load properly
-
-	// Appends
+	// Writes data where the file is (its end, when opened to Append); false if the file isn't open
 	template <typename T>
-	void Write(const T& data)
+	bool Write(const T& data)
 	{
-		if (IsValid())
+		if (!m_isOpen)
 		{
-			if (m_isOpen)
-			{
-				m_fileStream << data;
-			}
-			else
-			{
-				// Error
-			}
+			return false;
 		}
+
+		m_fileStream << data;
+		return true;
 	}
 
 	const std::string& Content();

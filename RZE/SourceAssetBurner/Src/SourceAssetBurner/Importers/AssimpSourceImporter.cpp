@@ -200,7 +200,11 @@ std::string AssimpSourceImporter::ResolveTextureFile(const aiScene& scene, const
 		const Filepath outputPath(sourceDirectory + m_assetName + "_embedded_" + std::to_string(embedded.second) + "." + extension);
 
 		File outputFile(outputPath);
-		outputFile.Open(static_cast<File::EFileOpenMode::Value>(File::EFileOpenMode::Write | File::EFileOpenMode::Binary));
+		if (!outputFile.Open(static_cast<File::EFileOpenMode::Value>(File::EFileOpenMode::Write | File::EFileOpenMode::Binary)))
+		{
+			RZE_LOG_WARNING_ARGS("AssimpSourceImporter : couldn't write embedded texture %d to [%s]; leaving it out", embedded.second, outputPath.GetRelativePath().c_str());
+			return std::string();
+		}
 		const Byte* const bytes = reinterpret_cast<const Byte*>(texture.pcData);
 		for (U32 byteIndex = 0; byteIndex < texture.mWidth; ++byteIndex)
 		{
@@ -646,9 +650,7 @@ bool AssimpSourceImporter::WriteMeshAsset()
 	assetWriter.SetMeshData(std::move(m_meshes));
 	assetWriter.SetPlacements(std::move(m_placements));
 
-	assetWriter.Write();
-
-	return true;
+	return assetWriter.Write();
 }
 
 bool AssimpSourceImporter::WriteMaterialAsset(const std::string& relativePath, const MaterialData& materialData)
@@ -658,9 +660,8 @@ bool AssimpSourceImporter::WriteMaterialAsset(const std::string& relativePath, c
 	MaterialAssetWriter assetWriter;
 	assetWriter.SetOutputPath(Filepath(relativePath));
 	assetWriter.SetMaterialData(materialData);
-	assetWriter.Write();
 
-	return true;
+	return assetWriter.Write();
 }
 
 bool AssimpSourceImporter::WriteTextureAsset()

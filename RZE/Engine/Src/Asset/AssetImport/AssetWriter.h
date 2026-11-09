@@ -7,5 +7,6 @@ public:
 	virtual ~AssetWriter() = default;
 
 public:
-	virtual void Write() = 0;
+	// True once the asset's file is written. On false the writer has logged why, and any file already there is kept.
+	virtual bool Write() = 0;
 };
