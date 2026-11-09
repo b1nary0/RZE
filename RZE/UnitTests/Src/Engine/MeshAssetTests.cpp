@@ -2,6 +2,7 @@
 
 #include <Asset/AssetImport/MeshAssetImporter.h>
 #include <Asset/AssetImport/MeshAssetWriter.h>
+#include <Asset/AssetPaths.h>
 
 #include <Utils/Platform/Filepath.h>
 
@@ -9,6 +10,7 @@
 
 #include <cstddef>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <limits>
 #include <string>
@@ -104,6 +106,42 @@ TEST_CASE("A mesh asset reads back as it was written")
 	CHECK(importer.GetMaterials().size() == 1);
 	REQUIRE(importer.GetPlacements().size() == 1);
 	CHECK(importer.GetPlacements()[0].GeometryIndex == 0);
+}
+
+TEST_CASE("MeshAssetWriter writes material paths in the serialized form, and the importer names materials from them")
+{
+	MeshData withMaterial;
+	withMaterial.MeshName = "Hull";
+	withMaterial.MaterialPath = AssetPaths::GetMaterial("UnitTestsTemp", "Hull_Paint");
+	withMaterial.VertexDataArray.resize(3);
+	withMaterial.IndexArray = { 0, 1, 2 };
+	MeshData withoutMaterial = withMaterial;
+	withoutMaterial.MeshName = "Hatch";
+	withoutMaterial.MaterialPath = Filepath();
+
+	std::vector<MeshData> meshes{ withMaterial, withoutMaterial };
+	MeshAssetWriter writer;
+	writer.SetAssetName("UnitTestsTemp_MeshAssetWriter");
+	writer.SetMeshData(std::move(meshes));
+	writer.Write();
+
+	// The writer always writes into the project's mesh folder
+	const Filepath file = AssetPaths::GetMesh("UnitTestsTemp_MeshAssetWriter");
+	MeshAssetImporter importer;
+	CHECK(importer.Import(file));
+	const std::vector<MeshAssetImporter::ImportedMaterial>& materials = importer.GetMaterials();
+	CHECK(materials.size() == 2);
+	if (materials.size() == 2)
+	{
+		CHECK(materials[0].Path == "ProjectData\\Material\\UnitTestsTemp\\Hull_Paint.materialasset");
+		CHECK(materials[0].Name == "Hull_Paint");
+		CHECK(materials[1].Path.empty());
+		CHECK(materials[1].Name == "Default");
+	}
+
+	std::error_code ignored;
+	std::filesystem::remove(file.GetAbsolutePath(), ignored);
+	RemoveEmptyFolders(file.GetParentFolder());
 }
 
 TEST_CASE("A mesh asset cut short anywhere fails to import, and leaves nothing behind")

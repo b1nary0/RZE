@@ -16,6 +16,19 @@ namespace
 		byteStream.WriteBytes(&sizeBytes, sizeof(size_t));
 		byteStream.WriteBytes(string.data(), sizeBytes);
 	}
+
+	// The texture paths as the file holds them: the serialized form, with an unused slot's empty path kept empty
+	// (Filepath("") would be the root folder)
+	std::vector<std::string> GetTexturePathsInFile(const std::vector<std::string>& texturePaths)
+	{
+		std::vector<std::string> inFile;
+		inFile.reserve(texturePaths.size());
+		for (const std::string& texturePath : texturePaths)
+		{
+			inFile.push_back(texturePath.empty() ? std::string() : Filepath(texturePath).GetSerializedPath());
+		}
+		return inFile;
+	}
 }
 
 void MaterialAssetWriter::SetMaterialData(const MaterialAssetImporter::MaterialData& materialData)
@@ -39,12 +52,14 @@ void MaterialAssetWriter::Write()
 
 	using MaterialData = MaterialAssetImporter::MaterialData;
 
+	const std::vector<std::string> texturePaths = GetTexturePathsInFile(m_materialData.TexturePaths);
+
 	size_t bufSize = sizeof(U32) + sizeof(uint16_t)
 		+ sizeof(size_t) + m_materialData.MaterialName.size()
 		+ sizeof(MaterialData::MaterialProperties) + sizeof(U8) + sizeof(EBlendMode)
 		+ sizeof(float) * 3
 		+ sizeof(size_t);
-	for (const std::string& texturePath : m_materialData.TexturePaths)
+	for (const std::string& texturePath : texturePaths)
 	{
 		bufSize += sizeof(size_t) + texturePath.size();
 	}
@@ -61,9 +76,9 @@ void MaterialAssetWriter::Write()
 	const float tint[3] = { m_materialData.Tint.X(), m_materialData.Tint.Y(), m_materialData.Tint.Z() };
 	byteStream.WriteBytes(tint, sizeof(tint));
 
-	const size_t textureCount = m_materialData.TexturePaths.size();
+	const size_t textureCount = texturePaths.size();
 	byteStream.WriteBytes(&textureCount, sizeof(size_t));
-	for (const std::string& texturePath : m_materialData.TexturePaths)
+	for (const std::string& texturePath : texturePaths)
 	{
 		WriteString(byteStream, texturePath);
 	}

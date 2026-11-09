@@ -82,7 +82,7 @@ namespace
 	// Records in entry where its item was, for EmptyTrash. Without it, the item is sent to the Recycle Bin from the trash.
 	void WriteOriginal(const Filepath& entry, const Filepath& original)
 	{
-		std::ofstream(GetOriginalFile(entry).GetAbsolutePath()) << original.GetRelativePath();
+		std::ofstream(GetOriginalFile(entry).GetAbsolutePath()) << original.GetSerializedPath();
 	}
 
 	// Where entry's item was, or invalid if it wasn't recorded

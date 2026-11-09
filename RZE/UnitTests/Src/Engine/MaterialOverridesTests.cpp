@@ -1,5 +1,7 @@
 #include <doctest/doctest.h>
 
+#include <Asset/AssetPaths.h>
+
 #include <Game/World/GameObjectComponents/RenderComponent.h>
 
 #include <Graphics/Material.h>
@@ -20,7 +22,7 @@ namespace
 	// The material asset a test mesh's slot is made from
 	Filepath GetMaterialPath(const std::string& name)
 	{
-		return Filepath("ProjectData/Material/Test/" + name + ".materialasset");
+		return AssetPaths::GetMaterial("Test", name);
 	}
 
 	// An instance of a mesh with a slot for each name, made from the material asset GetMaterialPath names, and no

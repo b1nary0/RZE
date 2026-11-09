@@ -40,6 +40,8 @@ TEST_CASE("GameConfig saves its icon, keeping the file's comments")
 	REQUIRE(reloaded.Load(file));
 	CHECK(reloaded.GetIcon() == Filepath("Assets/Icons/Game.png"));
 	CHECK(ReadText(file).find("; The game window's icon") != std::string::npos);
+	// The serialized form, the same whichever platform saved it
+	CHECK(ReadText(file).find("Assets\\Icons\\Game.png") != std::string::npos);
 
 	// Clearing it saves an empty value, which reads back as no icon
 	reloaded.SetIcon(Filepath());

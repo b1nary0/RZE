@@ -7,6 +7,7 @@
 
 #include <Asset/AssetImport/MaterialAssetWriter.h>
 #include <Asset/AssetImport/SourceMaterialRules.h>
+#include <Asset/AssetPaths.h>
 
 #include <Utils/Memory/ByteStream.h>
 
@@ -26,10 +27,6 @@
 
 namespace
 {
-	// #TODO
-	// Move these into a common file. They will be used across different classes
-	constexpr char kMaterialAssetSuffix[] = { ".materialasset" };
-
 	// A model whose largest extent falls outside this range was probably authored in another unit
 	constexpr float k_minPlausibleExtentMetres = 0.01f;
 	constexpr float k_maxPlausibleExtentMetres = 500.0f;
@@ -629,18 +626,16 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 			materialData.Tint = SourceMaterialRules::ChooseTint(colour, !materialData.TexturePaths[TEXTURE_SLOT_DIFFUSE].empty());
 		}
 
-		// #TODO really gross string manip lol
-		const std::string materialFolder = "ProjectData/Material/" + m_assetName + "/";
-		std::string assetFilepathRelative = materialFolder + materialData.MaterialName + kMaterialAssetSuffix;
+		Filepath materialPath = AssetPaths::GetMaterial(m_assetName, materialData.MaterialName);
 		// Another material already has this name: keep both by telling this one apart by its index
-		if (m_materialTable.count(assetFilepathRelative))
+		if (m_materialTable.count(materialPath.GetRelativePath()))
 		{
-			assetFilepathRelative = materialFolder + materialData.MaterialName + "_" + std::to_string(mesh.mMaterialIndex) + kMaterialAssetSuffix;
+			materialPath = AssetPaths::GetMaterial(m_assetName, materialData.MaterialName + "_" + std::to_string(mesh.mMaterialIndex));
 		}
 
-		outMeshData.MaterialPath = assetFilepathRelative;
-		m_materialPaths[mesh.mMaterialIndex] = assetFilepathRelative;
-		m_materialTable[assetFilepathRelative] = std::move(materialData);
+		outMeshData.MaterialPath = materialPath;
+		m_materialPaths[mesh.mMaterialIndex] = materialPath;
+		m_materialTable[materialPath.GetRelativePath()] = std::move(materialData);
 	}
 }
 

@@ -43,10 +43,20 @@ namespace AssetPaths
 		return StringUtils::EqualsIgnoringCase(file.GetExtension(), k_meshExtension);
 	}
 
+	Filepath GetMesh(const std::string& name)
+	{
+		return Filepath(GetMeshFolder().GetRelativePath() + "/" + name + k_meshExtension);
+	}
+
 	const Filepath& GetMaterialFolder()
 	{
 		static const Filepath s_materialFolder("ProjectData/Material");
 		return s_materialFolder;
+	}
+
+	Filepath GetMaterial(const std::string& meshName, const std::string& materialName)
+	{
+		return Filepath(GetMaterialFolder().GetRelativePath() + "/" + meshName + "/" + materialName + k_materialExtension);
 	}
 
 	const Filepath& GetShaderFolder()

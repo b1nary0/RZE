@@ -177,6 +177,21 @@ TEST_CASE("AssetFiles::MoveToTrash sets a mesh and its thumbnail aside, and Rest
 	CHECK_FALSE(item.InTrash.GetParentFolder().GetParentFolder().Exists());
 }
 
+TEST_CASE("AssetFiles::MoveToTrash records where the item was in the serialized form")
+{
+	const ScopedTestFolder folder("UnitTestsTemp_AssetFiles");
+	const Filepath tank = folder.AddFile("UnitTestsTempTank.meshasset");
+
+	const TrashedItem item = AssetFiles::MoveToTrash(tank);
+	const ScopedTrashCleanup cleanup(item);
+	REQUIRE(item.IsInTrash());
+
+	std::ifstream original(Filepath(GetTrashEntry(item).GetRelativePath() + "/Original").GetAbsolutePath());
+	std::string recorded;
+	std::getline(original, recorded);
+	CHECK(recorded == tank.GetSerializedPath());
+}
+
 TEST_CASE("AssetFiles::MoveToTrash takes a folder with the thumbnails of the meshes in it")
 {
 	const ScopedTestFolder folder("UnitTestsTemp_AssetFiles");

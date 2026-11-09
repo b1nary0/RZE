@@ -71,6 +71,6 @@ private:
 	// Material asset path -> its data: the material assets to write once the mesh asset is written
 	std::unordered_map<std::string, MaterialData> m_materialTable;
 	// Assimp material index -> its material asset's path. Two materials can share a name, so they're told apart by index.
-	std::unordered_map<U32, std::string> m_materialPaths;
+	std::unordered_map<U32, Filepath> m_materialPaths;
 	std::vector<Filepath> m_textures;
 };

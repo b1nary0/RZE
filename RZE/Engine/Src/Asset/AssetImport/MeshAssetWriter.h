@@ -3,10 +3,13 @@
 #include <Asset/AssetImport/AssetWriter.h>
 #include <Graphics/MeshGeometry.h>
 
+#include <Utils/Platform/Filepath.h>
+
 struct MeshData
 {
 	std::string MeshName;
-	std::string MaterialPath;
+	// Invalid for a mesh without a material
+	Filepath MaterialPath;
 	std::vector<MeshVertex> VertexDataArray;
 	std::vector<U32> IndexArray;
 };

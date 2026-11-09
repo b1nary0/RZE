@@ -13,6 +13,12 @@
 namespace
 {
 	constexpr uint16_t k_meshAssetVersion = 1;
+
+	// The material path as the file holds it: the serialized form, or empty for none
+	std::string GetMaterialPathInFile(const MeshData& mesh)
+	{
+		return mesh.MaterialPath.IsValid() ? mesh.MaterialPath.GetSerializedPath() : std::string();
+	}
 }
 
 void MeshAssetWriter::SetMeshData(std::vector<MeshData>&& meshData)
@@ -55,8 +61,7 @@ void MeshAssetWriter::Write()
 		AssertExpr(std::find(isPlaced.begin(), isPlaced.end(), false) == isPlaced.end());
 	}
 
-	// #TODO really gross string manip lol
-	const Filepath outputPath(AssetPaths::GetMeshFolder().GetRelativePath() + "/" + m_assetName + AssetPaths::k_meshExtension);
+	const Filepath outputPath = AssetPaths::GetMesh(m_assetName);
 	if (!outputPath.Exists())
 	{
 		Filepath::CreateDir(outputPath.GetAbsoluteDirectoryPath());
@@ -66,7 +71,7 @@ void MeshAssetWriter::Write()
 	for (auto& mesh : m_meshes)
 	{
 		bufSize += mesh.MeshName.size();
-		bufSize += mesh.MaterialPath.size();
+		bufSize += GetMaterialPathInFile(mesh).size();
 		bufSize += sizeof(MeshVertex) * mesh.VertexDataArray.size();
 		bufSize += sizeof(U32) * mesh.IndexArray.size();
 	}
@@ -95,9 +100,10 @@ void MeshAssetWriter::Write()
 		byteStream.WriteBytes(&nameSizeBytes, sizeof(size_t));
 		byteStream.WriteBytes(mesh.MeshName.data(), nameSizeBytes);
 
-		const size_t materialPathSizeBytes = mesh.MaterialPath.size();
+		const std::string materialPath = GetMaterialPathInFile(mesh);
+		const size_t materialPathSizeBytes = materialPath.size();
 		byteStream.WriteBytes(&materialPathSizeBytes, sizeof(size_t));
-		byteStream.WriteBytes(mesh.MaterialPath.data(), materialPathSizeBytes);
+		byteStream.WriteBytes(materialPath.data(), materialPathSizeBytes);
 
 		const size_t vertexDataSizeBytes = sizeof(MeshVertex) * mesh.VertexDataArray.size();
 		byteStream.WriteBytes(&vertexDataSizeBytes, sizeof(size_t));

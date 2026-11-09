@@ -25,8 +25,8 @@ public:
 
 	const std::string& GetAbsolutePath() const;
 	const std::string& GetRelativePath() const;
-	// GetRelativePath as it's written into files that are shared between platforms (scenes), always with '\\', so a
-	// file saved on one platform is the same as one saved on another. Filepath reads either separator.
+	// GetRelativePath as every path written into a file holds it (scenes, assets, configs), always with '\\', so a
+	// file written on one platform is the same as one written on another. Filepath reads either separator.
 	std::string GetSerializedPath() const;
 
 	const std::string GetAbsoluteDirectoryPath() const;

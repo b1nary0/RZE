@@ -20,3 +20,10 @@ TEST_CASE("A shader is found by its name, the file's stem, in the shader folder"
 {
 	CHECK(AssetPaths::GetShader("Pixel_FXAA") == Filepath("Assets/Shaders/Pixel_FXAA.hlsl"));
 }
+
+TEST_CASE("A mesh asset is found by its name, and a material asset by its mesh's name and its own")
+{
+	CHECK(AssetPaths::GetMesh("Tank") == Filepath("ProjectData/Mesh/Tank.meshasset"));
+	CHECK(AssetPaths::GetMaterial("Tank", "Hull") == Filepath("ProjectData/Material/Tank/Hull.materialasset"));
+	CHECK(AssetPaths::IsMesh(AssetPaths::GetMesh("Tank")));
+}

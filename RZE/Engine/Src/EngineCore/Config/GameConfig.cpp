@@ -39,7 +39,7 @@ const Filepath& GameConfig::GetIcon() const
 void GameConfig::SetIcon(const Filepath& icon)
 {
 	mIcon = icon;
-	mINIParser.SetValue(k_gameSection, k_iconKey, icon.IsValid() ? icon.GetRelativePath().c_str() : "");
+	mINIParser.SetValue(k_gameSection, k_iconKey, icon.IsValid() ? icon.GetSerializedPath().c_str() : "");
 }
 
 bool GameConfig::Save() const

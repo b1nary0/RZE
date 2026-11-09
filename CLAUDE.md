@@ -20,6 +20,9 @@ driving the editor are covered by the `run-rze` skill (`.claude/skills/run-rze/`
   crashes on it with C1001.
 - File names: Windows ignores case and Linux doesn't. Name files in code and data exactly as they are on disk. To accept
   names written on Windows, use `FileNames::FindIgnoringCase` / `IsTaken`.
+- **Paths written into files** (scenes, assets, configs) use `Filepath::GetSerializedPath()`, always `\`, so a file is
+  the same whichever platform wrote it. Read a stored path through `Filepath`, never `std::filesystem::path` on the raw
+  string: on Linux that doesn't split on `\` (`stem()` returns the whole path).
 
 ## Code conventions
 

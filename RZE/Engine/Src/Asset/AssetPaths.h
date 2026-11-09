@@ -24,10 +24,15 @@ namespace AssetPaths
 	constexpr char k_meshExtension[] = ".meshasset";
 	// Whether file is a mesh asset, by its extension, ignoring case
 	bool IsMesh(const Filepath& file);
+	// A mesh asset in GetMeshFolder by its name, the file's stem, e.g. "Tank"
+	Filepath GetMesh(const std::string& name);
 
 	// Material assets, which the asset burner writes (MaterialAssetWriter), a folder per mesh
 	const Filepath& GetMaterialFolder();
 	constexpr char k_materialExtension[] = ".materialasset";
+	// A material asset in its mesh's folder in GetMaterialFolder, by the mesh's name and the material's, e.g. "Tank"
+	// and "Hull"
+	Filepath GetMaterial(const std::string& meshName, const std::string& materialName);
 
 	// HLSL shaders, which the render stages and materials load (LoadVertexShader, LoadPixelShader)
 	const Filepath& GetShaderFolder();

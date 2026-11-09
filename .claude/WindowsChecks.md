@@ -96,6 +96,14 @@ Things to know on this machine (2026-11-08):
   include moved to the top. Check MSVC the same way: temporarily move `#include <Events/EventHandler.h>` above
   `#include <Utils/Platform/File.h>` in `Engine.h`, build Development (A1): no errors or warnings. Put the line back
   (`git checkout -- RZE/Engine/Src/EngineCore/Engine.h` after `git status --short`, then `touch` it).
+- **A21. Every path written into a file is in the serialized form (`\`).** Mesh assets' material paths, material
+  assets' texture paths, Game.ini's Icon and the trash's `Original` records now go through
+  `Filepath::GetSerializedPath()`; `MeshAssetImporter` names a material by `Filepath::GetStem()`. 1 (before building):
+  copy `RZE\ProjectData` aside. 2: build, then A3's burn, and compare with the copy: the same files and sizes; on
+  Windows only `.meshasset` files should differ (their material paths had `/`; texture paths were already `\` here),
+  and only by `/` becoming `\`. 3: 449 test cases in Debug and Development, 441 in Retail. 4: Development Editor on
+  RenderPerfTest.scene (pillars keep their own tints: the `DefaultMaterial` overrides found their slot) and
+  Sponza.scene (textured), no errors in the log, `close` gives `closed code=0`.
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 

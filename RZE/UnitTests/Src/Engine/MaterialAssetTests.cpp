@@ -86,7 +86,8 @@ TEST_CASE("A material asset reads back as it was written")
 	CHECK(read.Tint.X() == doctest::Approx(0.88f));
 	CHECK(read.Tint.Y() == doctest::Approx(0.96f));
 	CHECK(read.Tint.Z() == doctest::Approx(1.0f));
-	CHECK(read.TexturePaths == written.TexturePaths);
+	// Written in the serialized form, with the unused slots left empty
+	CHECK(read.TexturePaths == std::vector<std::string>{ "Assets\\Glass_Colour.png", "", "", "Assets\\Glass_Mask.png", "" });
 }
 
 TEST_CASE("A material asset from before tints reads as it drew: its texture as it is, grey without one")
