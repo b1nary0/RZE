@@ -67,43 +67,42 @@ namespace Editor
 	{
 		EditorSelection& selection = context.GetSelection();
 
-		if (selection.IsEmpty())
+		// Only over empty space: a row opens its own menu (DisplayObject). Creating doesn't use the selection, so this
+		// opens whatever is selected
+		if (ImGui::BeginPopupContextWindow("SceneMenu", ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
 		{
-			if (ImGui::BeginPopupContextWindow("SceneMenu"))
+			if (ImGui::MenuItem("Create GameObject"))
 			{
-				if (ImGui::MenuItem("Create GameObject"))
-				{
-					m_isCreatingGameObject = true;
-				}
-
-				ImGui::EndPopup();
+				m_isCreatingGameObject = true;
 			}
 
-			if (m_isCreatingGameObject)
-			{
-				ImGuiWindowFlags windowFlags =
-					ImGuiWindowFlags_AlwaysAutoResize
-				| ImGuiWindowFlags_NoResize
-				| ImGuiWindowFlags_NoMove
-				| ImGuiWindowFlags_NoCollapse;
-				// @TODO Figure out why GetCursorScreenPos() doesnt give the actual position (it gets drawn at the top)
-				ImGui::SetNextWindowPos(ImGui::GetCursorScreenPos());
-				if (ImGui::Begin("GameObjectNameCreate", &m_isCreatingGameObject, windowFlags))
-				{
-					char name[k_maxGameObjectNameSize] = { 0 };
-					if (ImGui::InputText("GameObject Name", name, k_maxGameObjectNameSize, ImGuiInputTextFlags_EnterReturnsTrue))
-					{
-						context.GetCommands().Push<CreateGameObjectCommand>(name);
-						m_isCreatingGameObject = false;
-					}
+			ImGui::EndPopup();
+		}
 
-					if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && ImGui::IsKeyPressed(ImGuiKey_Escape, false))
-					{
-						m_isCreatingGameObject = false;
-					}
+		if (m_isCreatingGameObject)
+		{
+			ImGuiWindowFlags windowFlags =
+				ImGuiWindowFlags_AlwaysAutoResize
+			| ImGuiWindowFlags_NoResize
+			| ImGuiWindowFlags_NoMove
+			| ImGuiWindowFlags_NoCollapse;
+			// @TODO Figure out why GetCursorScreenPos() doesnt give the actual position (it gets drawn at the top)
+			ImGui::SetNextWindowPos(ImGui::GetCursorScreenPos());
+			if (ImGui::Begin("GameObjectNameCreate", &m_isCreatingGameObject, windowFlags))
+			{
+				char name[k_maxGameObjectNameSize] = { 0 };
+				if (ImGui::InputText("GameObject Name", name, k_maxGameObjectNameSize, ImGuiInputTextFlags_EnterReturnsTrue))
+				{
+					context.GetCommands().Push<CreateGameObjectCommand>(name);
+					m_isCreatingGameObject = false;
 				}
-				ImGui::End();
+
+				if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && ImGui::IsKeyPressed(ImGuiKey_Escape, false))
+				{
+					m_isCreatingGameObject = false;
+				}
 			}
+			ImGui::End();
 		}
 
 		if (ImGui::IsAnyMouseDown() && (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) && !selection.IsEmpty())
@@ -201,6 +200,14 @@ namespace Editor
 			}
 		}
 
+		// The menu acts on this row, so an unselected row is selected first and the Inspector shows what the menu will
+		// change. A selected row keeps the selection, so a multi-selection isn't lost
+		if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && !selection.IsSelected(gameObject))
+		{
+			selection.Select(gameObject);
+			m_rangeAnchor = gameObject;
+		}
+
 		if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 		{
 			BoundingBox bounds = gameObject->GetHierarchyBounds();
@@ -238,53 +245,49 @@ namespace Editor
 			ImGui::EndDragDropTarget();
 		}
 
-		if (!selection.IsEmpty())
+		if (ImGui::BeginPopupContextItem("GameObjectMenu"))
 		{
-			GameObjectPtr gameObject = selection.GetPrimary();
-			if (ImGui::BeginPopupContextItem("GameObjectMenu"))
+			ImGui::TextUnformatted(gameObject->GetName().c_str());
+			if (ImGui::BeginPopupContextItem("Rename"))
 			{
-				ImGui::TextUnformatted(gameObject->GetName().c_str());
-				if (ImGui::BeginPopupContextItem("Rename"))
+				char name[k_maxGameObjectNameSize];
+				memcpy(name, gameObject->GetName().c_str(), k_maxGameObjectNameSize);
+				if (ImGui::InputText("##gameObject_rename", name, k_maxGameObjectNameSize, ImGuiInputTextFlags_EnterReturnsTrue))
 				{
-					char name[k_maxGameObjectNameSize];
-					memcpy(name, gameObject->GetName().c_str(), k_maxGameObjectNameSize);
-					if (ImGui::InputText("##gameObject_rename", name, k_maxGameObjectNameSize, ImGuiInputTextFlags_EnterReturnsTrue))
-					{
-						context.GetCommands().Push<RenameGameObjectCommand>(gameObject, name);
-					}
-					ImGui::EndPopup();
+					context.GetCommands().Push<RenameGameObjectCommand>(gameObject, name);
 				}
-				ImGui::Separator();
-
-				if (ImGui::BeginMenu("Add Component"))
-				{
-					const GameObjectComponentRegistry::ComponentNameIDMap& componentReflectData = GameObjectComponentRegistry::GetAllComponentReflectData();
-					for (auto& pair : componentReflectData)
-					{
-						if (ImGui::MenuItem(pair.second.c_str()))
-						{
-							context.GetCommands().Push<AddComponentCommand>(gameObject, pair.first);
-						}
-					}
-
-					ImGui::EndMenu();
-				}
-
-				if (!gameObject->IsRoot())
-				{
-					if (ImGui::MenuItem("DetachFromParent"))
-					{
-						context.GetCommands().Push<DetachFromParentCommand>(gameObject);
-					}
-				}
-
-				if (ImGui::MenuItem("Delete"))
-				{
-					context.GetCommands().Push<DeleteGameObjectCommand>(gameObject);
-				}
-
 				ImGui::EndPopup();
 			}
+			ImGui::Separator();
+
+			if (ImGui::BeginMenu("Add Component"))
+			{
+				const GameObjectComponentRegistry::ComponentNameIDMap& componentReflectData = GameObjectComponentRegistry::GetAllComponentReflectData();
+				for (auto& pair : componentReflectData)
+				{
+					if (ImGui::MenuItem(pair.second.c_str()))
+					{
+						context.GetCommands().Push<AddComponentCommand>(gameObject, pair.first);
+					}
+				}
+
+				ImGui::EndMenu();
+			}
+
+			if (!gameObject->IsRoot())
+			{
+				if (ImGui::MenuItem("DetachFromParent"))
+				{
+					context.GetCommands().Push<DetachFromParentCommand>(gameObject);
+				}
+			}
+
+			if (ImGui::MenuItem("Delete"))
+			{
+				context.GetCommands().Push<DeleteGameObjectCommand>(gameObject);
+			}
+
+			ImGui::EndPopup();
 		}
 
 		if (isOpen)
