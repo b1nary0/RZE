@@ -7,6 +7,8 @@
 #include <Utils/DebugUtils/Debug.h>
 #include <Utils/Math/BoundingBox.h>
 
+#include <type_traits>
+
 class GameObjectComponentBase;
 class GameScene;
 class TransformComponent;
@@ -88,6 +90,8 @@ public:
 	// Lifetime-checked handles to every component, in the same order as GetComponents
 	void GetComponentHandles(std::vector<GameObjectComponentPtr<GameObjectComponentBase>>& outHandles) const;
 
+	// Every object has one from creation (GameScene::CreateGameObject, or first in a scene file) to Uninitialize. Kept
+	// as it's added rather than searched for, as is GetComponent<TransformComponent>.
 	GameObjectComponentPtr<TransformComponent> GetTransformComponent();
 
 	bool IsInScene() { return m_stateFlags.IsInScene; }
@@ -101,7 +105,9 @@ public:
 	void MarkHierarchyBoundsChanged();
 
 	// Attachment
-	bool IsRoot();
+	// Its TransformComponent's parent is always its parent's (AddChild and RemoveChild attach and detach it), so this
+	// doesn't need to look at the transform
+	bool IsRoot() const { return m_parent == nullptr; }
 	// Null for a root object
 	GameObjectPtr GetParent() const { return m_parent; }
 
@@ -123,6 +129,9 @@ public:
 
 
 private:
+	// Keeps m_transformComponent once one is in m_components; every add calls it, whatever the type
+	void TrackAddedComponent(GameObjectComponentBase* component);
+
 	void AddChild(GameObject* child, int childIndex);
 	void RemoveChild(GameObject* child);
 
@@ -148,6 +157,9 @@ private:
 	GameObjectPtr m_parent = nullptr;
 	std::vector<GameObjectPtr> m_children;
 
+	// Null until its TransformComponent is added, and after Uninitialize; set by TrackAddedComponent
+	TransformComponent* m_transformComponent = nullptr;
+
 	// GetLocalHierarchyBounds' extents, worked out again when they're stale
 	BoundingBox m_localHierarchyBounds;
 	bool m_isHierarchyBoundsStale = true;
@@ -156,24 +168,30 @@ private:
 template <typename TComponentType>
 GameObjectComponentPtr<TComponentType> GameObject::GetComponent()
 {
-	// Linear search through this object's components by type ID. Cheap while objects have a few components (the
-	// shipped scenes have 2-3), but it doesn't scale: a call costs O(components on the object), and the components
-	// that fetch their TransformComponent every frame (RenderComponent, LightComponent, CameraComponent, ...)
-	// multiply that by the number of objects. Large scenes, or objects with many components, will make it a
-	// measurable per-frame cost. The fix then: index components by type ID, or keep a direct pointer to the
-	// TransformComponent every object has.
-	auto it = std::find_if(m_components.begin(), m_components.end(),
-		[](const GameObjectComponentBase* component)
-		{
-			return TComponentType::StaticTypeID() == component->GetTypeID();
-		});
-
-	if (it != m_components.end())
+	// The TransformComponent, which most per-frame lookups are for, is kept as it's added. Anything else is a linear
+	// search by type ID: cheap with a few components an object, as the shipped scenes have, but a call costs
+	// O(components on the object), so a component type fetched every frame by every object would want indexing by
+	// type ID.
+	// An else, so MSVC doesn't take the search for unreachable code (C4702) when it's the TransformComponent
+	if constexpr (std::is_same_v<TComponentType, TransformComponent>)
 	{
-		return GameObjectComponentPtr<TComponentType>(static_cast<TComponentType*>(*it));
+		return m_transformComponent != nullptr ? GameObjectComponentPtr<TComponentType>(m_transformComponent) : nullptr;
 	}
+	else
+	{
+		auto it = std::find_if(m_components.begin(), m_components.end(),
+			[](const GameObjectComponentBase* component)
+			{
+				return TComponentType::StaticTypeID() == component->GetTypeID();
+			});
 
-	return nullptr;
+		if (it != m_components.end())
+		{
+			return GameObjectComponentPtr<TComponentType>(static_cast<TComponentType*>(*it));
+		}
+
+		return nullptr;
+	}
 }
 
 template <typename TComponentType>
@@ -197,6 +215,7 @@ GameObjectComponentPtr<TComponentType> GameObject::AddComponent(Args... args)
 	{
 		TComponentType* component = new TComponentType(std::forward<Args>(args)...);
 		m_components.push_back(component);
+		TrackAddedComponent(component);
 		component->SetOwner(GameObjectPtr(this));
 		component->Initialize();
 		if (m_stateFlags.IsInScene)

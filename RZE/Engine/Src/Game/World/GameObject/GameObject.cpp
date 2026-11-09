@@ -75,10 +75,18 @@ void GameObject::Uninitialize()
 		delete component;
 	}
 	m_components.clear();
+	m_transformComponent = nullptr;
 }
 
 bool GameObject::RemoveComponentByID(GameObjectComponentID id)
 {
+	// Everything assumes an object has its TransformComponent until it's uninitialized
+	AssertMsg(id != TransformComponent::StaticTypeID(), "An object's TransformComponent can't be removed");
+	if (id == TransformComponent::StaticTypeID())
+	{
+		return false;
+	}
+
 	auto it = std::find_if(m_components.begin(), m_components.end(),
 		[id](const GameObjectComponentBase* component)
 		{
@@ -118,6 +126,7 @@ GameObjectComponentBase* GameObject::AddComponentByID(GameObjectComponentID id)
 		component->SetOwner(GameObjectPtr(this));
 		component->Initialize();
 		m_components.push_back(component);
+		TrackAddedComponent(component);
 		if (m_stateFlags.IsInScene)
 		{
 			component->OnAddToScene();
@@ -142,12 +151,16 @@ void GameObject::GetComponentHandles(std::vector<GameObjectComponentPtr<GameObje
 
 GameObjectComponentPtr<TransformComponent> GameObject::GetTransformComponent()
 {
-	// @todo should store GameObjectComponent<TransformComponent> as member variable 
-	// to avoid doing the search incurred by GetComponent<>
-	GameObjectComponentPtr<TransformComponent> transformComponent = GetComponent<TransformComponent>();
-	AssertMsg(transformComponent != nullptr, "Illegal for GameObject to not have TransformComponent at any time.");
+	AssertMsg(m_transformComponent != nullptr, "Illegal for GameObject to not have TransformComponent at any time.");
+	return GameObjectComponentPtr<TransformComponent>(m_transformComponent);
+}
 
-	return transformComponent;
+void GameObject::TrackAddedComponent(GameObjectComponentBase* component)
+{
+	if (component->GetTypeID() == TransformComponent::StaticTypeID())
+	{
+		m_transformComponent = static_cast<TransformComponent*>(component);
+	}
 }
 
 void GameObject::OnAddToScene()
@@ -208,11 +221,6 @@ void GameObject::GetSubtree(std::vector<GameObject*>& outObjects)
 	{
 		child->GetSubtree(outObjects);
 	}
-}
-
-bool GameObject::IsRoot()
-{
-	return GetTransformComponent()->IsRoot();
 }
 
 bool GameObject::IsSelfOrAncestorOf(const GameObjectPtr& gameObject) const

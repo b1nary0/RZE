@@ -84,6 +84,13 @@ Things to know on this machine (2026-11-08):
   on an object: it bobs 1 m up and down every 2 s; untick Enabled, it goes back to where it was. Ctrl+Z, close without
   saving. Also new: Optick scopes in `ScenePanel::Draw`, `SceneViewPanel::PreRender` and `DrawObjectIcons`, covered by
   the builds.
+- **A19. GameObject keeps its TransformComponent.** `GetComponent<TransformComponent>` returns a pointer kept as the
+  component is added (an `if constexpr` branch in the `GameObject.h` template, with the search in its `else` so MSVC
+  doesn't warn C4702 for unreachable code), `IsRoot()` reads the object's own parent, and removing a TransformComponent
+  asserts and is refused. Run `GenerateSolutions.bat` first (new test file). 1: A1's three builds, no C4702 or other
+  warnings. 2: 446 test cases in Debug and Development, 438 in Retail (3 new, `-sf="*GameObjectTransform*"`). 3:
+  Development DrawLineTest, drag M4 onto NeckMech in the Scene panel: M4 goes under it and stays where it was in the
+  world; Ctrl+Z puts it back as a root. No asserts in the log, `close` gives `closed code=0`.
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 
