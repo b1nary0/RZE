@@ -68,6 +68,13 @@ Things to know on this machine (2026-11-08):
   builds cover the deleted header and PCH include (MSVC's PCH differs from clang's). 2: A2's counts match Linux:
   436 test cases in Debug and Development, 435 in Retail. 3: Development DrawLineTest shows the grid and axis lines
   (debug lines), and Retail `Game.exe -scene DrawLineTest.scene` runs with `closed code=0`.
+- **A17. The Scene panel draws only the rows in view.** `ScenePanel::Draw` walks the tree with an `ImGuiListClipper`
+  (ImGui's large-tree pattern); open parents scrolled off are `TreePush`ed by the walk, not drawn. Platform-neutral
+  ImGui code, so only a smoke test, in **Debug** (ImGui's asserts: ID stack, tree push/pop balance): 1: RenderPerfTest,
+  scroll the Scene panel to the bottom (last row is the last pillar) and back to the top: no assert, rows shaded
+  alternately throughout. 2: DrawLineTest, drag M4 onto NeckMech, expand NeckMech: M4 shows under it, indented one
+  level; scroll so NeckMech is just off the top if the panel allows, M4 stays indented; Ctrl+Z puts M4 back as a root.
+  `close` gives `closed code=0`.
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 

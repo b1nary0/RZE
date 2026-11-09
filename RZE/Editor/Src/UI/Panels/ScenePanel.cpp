@@ -17,6 +17,7 @@
 #include <imgui/imgui.h>
 
 #include <algorithm>
+#include <climits>
 #include <iterator>
 
 namespace
@@ -41,6 +42,91 @@ namespace
 				}
 			}));
 		return found;
+	}
+
+	const void* GetRowID(const GameObjectPtr& gameObject)
+	{
+		return reinterpret_cast<const void*>(static_cast<uintptr_t>(gameObject->GetGUID()));
+	}
+
+	// Where a row's open state is kept: under its GUID rather than its place in the ID stack, so the state of a row
+	// that's scrolled out of view, and isn't drawn, can still be read
+	ImGuiID GetOpenStateID(const GameObjectPtr& gameObject)
+	{
+		const ObjectGUID guid = gameObject->GetGUID();
+		return static_cast<ImGuiID>(guid ^ (guid >> 32));
+	}
+
+	// Steps through the rows the tree shows, top to bottom: each root, and the children of each open object, depth
+	// first. It can stop and go on later, as the clipper hands out the rows to draw a range at a time.
+	class RowWalk
+	{
+	public:
+		explicit RowWalk(const std::vector<GameObjectPtr>& roots);
+
+		bool IsDone() const { return m_levels.empty(); }
+		GameObjectPtr GetCurrent() const;
+
+		// On to the next row: the current one's first child if it's open. Each level is an ImGui tree level too,
+		// pushed and popped here, so the rows in it are indented whether or not its parent's row was drawn.
+		void Advance(bool isOpen);
+
+	private:
+		struct Level
+		{
+			// nullptr for the roots
+			GameObjectPtr Parent;
+			int NextIndex = 0;
+		};
+
+		int GetCount(const Level& level) const;
+		// Out of every level the walk has reached the end of
+		void PopFinishedLevels();
+
+		const std::vector<GameObjectPtr>& m_roots;
+		std::vector<Level> m_levels;
+	};
+
+	RowWalk::RowWalk(const std::vector<GameObjectPtr>& roots)
+		: m_roots(roots)
+	{
+		m_levels.push_back(Level());
+		PopFinishedLevels();
+	}
+
+	GameObjectPtr RowWalk::GetCurrent() const
+	{
+		const Level& level = m_levels.back();
+		return level.Parent != nullptr ? level.Parent->GetChildAtIndex(level.NextIndex) : m_roots[level.NextIndex];
+	}
+
+	void RowWalk::Advance(bool isOpen)
+	{
+		const GameObjectPtr current = GetCurrent();
+		++m_levels.back().NextIndex;
+		if (isOpen && current->HasChildren())
+		{
+			ImGui::TreePush(GetRowID(current));
+			m_levels.push_back({ current, 0 });
+		}
+		PopFinishedLevels();
+	}
+
+	int RowWalk::GetCount(const Level& level) const
+	{
+		return level.Parent != nullptr ? level.Parent->NumChildren() : static_cast<int>(m_roots.size());
+	}
+
+	void RowWalk::PopFinishedLevels()
+	{
+		while (!m_levels.empty() && m_levels.back().NextIndex >= GetCount(m_levels.back()))
+		{
+			if (m_levels.back().Parent != nullptr)
+			{
+				ImGui::TreePop();
+			}
+			m_levels.pop_back();
+		}
 	}
 }
 
@@ -119,22 +205,48 @@ namespace Editor
 		m_visibleRows.clear();
 		m_rangeClickTarget = nullptr;
 
+		// The scene keeps no list of its roots
+		m_roots.clear();
 		RZE().GetActiveScene().ForEachGameObject(
-			Functor<void, GameObjectPtr>([this, &context](GameObjectPtr gameObject)
+			Functor<void, GameObjectPtr>([this](GameObjectPtr gameObject)
 			{
-				if (gameObject->IsRoot())
+				// @NOTE Don't show the EditorComponent. Settings for this should go through
+				// editor preferences UI
+				if (gameObject->IsRoot() && gameObject->GetComponent<EditorCameraComponent>() == nullptr)
 				{
-					// @NOTE Don't show the EditorComponent. Settings for this should go through
-					// editor preferences UI
-					GameObjectComponentPtr<EditorCameraComponent> cameraComponent = gameObject->GetComponent<EditorCameraComponent>();
-					if (cameraComponent != nullptr)
-					{
-						return;
-					}
-
-					DisplayObject(context, gameObject);
+					m_roots.push_back(gameObject);
 				}
 			}));
+
+		// Only the rows in view are drawn: ImGui's own clipping skips drawing the rest, but only after laying each one
+		// out. The rows before them are walked to find where they start, as an open object's children are rows too.
+		RowWalk walk(m_roots);
+		ImGuiListClipper clipper;
+		clipper.Begin(INT_MAX);
+		const auto visitRow = [this, &context, &walk, &clipper]()
+		{
+			const GameObjectPtr gameObject = walk.GetCurrent();
+			const bool isInView = clipper.UserIndex >= clipper.DisplayStart && clipper.UserIndex < clipper.DisplayEnd;
+			const bool isOpen = isInView
+				? DisplayObject(context, gameObject)
+				: gameObject->HasChildren() && ImGui::TreeNodeGetOpen(GetOpenStateID(gameObject));
+			m_visibleRows.push_back(gameObject);
+			++clipper.UserIndex;
+			walk.Advance(isOpen);
+		};
+		while (clipper.Step())
+		{
+			while (clipper.UserIndex < clipper.DisplayEnd && !walk.IsDone())
+			{
+				visitRow();
+			}
+		}
+		// The rest too, nothing drawn: their count sizes the scrollbar, and a Shift+click range can reach them
+		while (!walk.IsDone())
+		{
+			visitRow();
+		}
+		clipper.SeekCursorForItem(clipper.UserIndex);
 
 		ImGui::EndTable();
 
@@ -144,12 +256,14 @@ namespace Editor
 		}
 	}
 
-	void ScenePanel::DisplayObject(EditorContext& context, GameObjectPtr gameObject)
+	bool ScenePanel::DisplayObject(EditorContext& context, GameObjectPtr gameObject)
 	{
 		EditorSelection& selection = context.GetSelection();
 
-		// Clicked anywhere across its row, not just on its name
-		int nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_SpanFullWidth;
+		// Clicked anywhere across its row, not just on its name. The node doesn't open a tree level of its own: the walk
+		// does (RowWalk::Advance), as it must for a row that isn't drawn
+		int nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_SpanFullWidth
+			| ImGuiTreeNodeFlags_NoTreePushOnOpen;
 		if (selection.IsSelected(gameObject))
 		{
 			nodeFlags |= ImGuiTreeNodeFlags_Selected;
@@ -161,7 +275,7 @@ namespace Editor
 		}
 
 		// Names aren't unique, so the row's IDs come from the GUID; the label is only displayed
-		ImGui::PushID(reinterpret_cast<const void*>(static_cast<uintptr_t>(gameObject->GetGUID())));
+		ImGui::PushID(GetRowID(gameObject));
 		// The row has no padding of its own: the tree node pads itself to fill it, so a click between two objects lands
 		// on one of them instead of on the panel, which would clear the selection
 		const ImGuiStyle& style = ImGui::GetStyle();
@@ -170,12 +284,10 @@ namespace Editor
 		ImGui::PopStyleVar();
 		ImGui::TableSetColumnIndex(0);
 
-		// The item code below runs whether or not the node is open, so a collapsed parent can be clicked, dragged and
-		// right-clicked too; only its children and TreePop depend on it being open
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(style.FramePadding.x, k_rowPaddingY));
+		ImGui::SetNextItemStorageID(GetOpenStateID(gameObject));
 		const bool isOpen = EditorUI::TreeNode("##GameObject", nodeFlags, "%s", gameObject->GetName().c_str());
 		ImGui::PopStyleVar();
-		m_visibleRows.push_back(gameObject);
 
 		if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
 		{
@@ -290,21 +402,9 @@ namespace Editor
 			ImGui::EndPopup();
 		}
 
-		if (isOpen)
-		{
-			if (gameObject->HasChildren())
-			{
-				for (int childIdx = 0; childIdx < gameObject->NumChildren(); ++childIdx)
-				{
-					GameObjectPtr child = gameObject->GetChildAtIndex(childIdx);
-					DisplayObject(context, child);
-				}
-			}
-
-			ImGui::TreePop();
-		}
-
 		ImGui::PopID();
+		// A leaf "opens" too, having nothing to collapse
+		return isOpen && gameObject->HasChildren();
 	}
 
 	void ScenePanel::SelectRange(EditorSelection& selection, GameObjectPtr target, bool addToSelection)
