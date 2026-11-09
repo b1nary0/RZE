@@ -50,6 +50,11 @@ Things to know on this machine (2026-11-08):
   settled 20 s: **0** `D3D11 (352)` "expects a Sampler to be set at Slot 0" lines (899 before), and none on RenderTest
   or DrawLineTest. 3: Debug Sponza: textured as before (compare with a shot from the commit before if it's in doubt),
   and the arches' textures still repeat across tiled surfaces. 4: `close` gives `closed code=0` and 0 live resources.
+- **D13. The render command arena is 64 MB a buffer** (`MEM_ARENA_SIZE`, `Renderer.cpp`, was 2048). D7 measured Sponza
+  settled 20 s at Debug working set 5320 MB / private 5280 MB, Development working set 1234 MB / private 5279 MB. 1:
+  the same measurement (Debug and Development, Sponza, 20 s): both should be about 3.9 GB lower in private bytes, and
+  Debug's working set too. 2: the status bar reads `/ 64.00 MB`, with a peak near Linux's 12090 KB (Sponza) and 3006
+  KB (RenderPerfTest). 3: no `arena was full` or `exceeds the arena` line in either log. 4: `closed code=0`, 0 live.
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 
@@ -141,5 +146,4 @@ All 2026-11-08 rows are at eaf66bf4, those marked "+ fix" with the D10 fix (b175
 
 | ID | Date | Commit | Result | Notes |
 |---|---|---|---|---|
-| D7 | 2026-11-08 | eaf66bf4 + fix | pass, with a Debug caveat | 1 MB arena (temporary, reverted and rebuilt), Debug Sponza: renders, `closed code=0`, no assert, 4 `arena was full` warnings (e.g. `11069 KB in 197 allocations went to the heap this frame (arena size 1024 KB)`; Linux had 47), 80 `exceeds the arena`. Real size: no `arena was full`. Memory, Sponza settled 20 s: **Debug** working set 5320 MB, private 5280 MB; **Development** working set 1234 MB, private 5279 MB. Development matches the expectation (working set about 4 GB under private bytes). Debug doesn't, because `MemArena.cpp:81` allocates with `new Byte[size]` and the Debug CRT fills every new block (0xCD), touching all 4 GB. |
 | A13 | 2026-11-08 | eaf66bf4 | pass | 1: see A1/A2. 2: without `__pragma(warning(disable : 4748))`, Development rebuilt `OptimizationSwitchTests.cpp` with **no C4748** (the suppression looks unneeded on x64); restored and rebuilt. 3: `Decode` wrapped (temporary): Retail fails with `Octahedral.cpp(37,1): error C2338: static assertion failed: 'RZE_DISABLE_OPTIMIZATION is still in this file: remove it and RZE_ENABLE_OPTIMIZATION'` at the macro's line; Development builds with no warning and passes `Directions come back*`; reverted and rebuilt. 4: the Development Game shows the Dear ImGui demo window over DrawLineTest. |

@@ -15,7 +15,10 @@
 
 #include <imgui/imgui.h>
 
-#define MEM_ARENA_SIZE MemoryUtils::Megabytes(2048)
+// Each of the arena's two buffers. A frame that needs more spills to the heap (MemArena::Alloc), so this only has to
+// cover what frames usually use: in 2026-11 that peaked at 12 MB (Sponza loading) and 3 MB (RenderPerfTest). Windows
+// commits all of it up front, and the Debug CRT writes to all of it, so it stays near need.
+#define MEM_ARENA_SIZE MemoryUtils::Megabytes(64)
 
 namespace Rendering
 {
