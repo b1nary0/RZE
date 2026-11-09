@@ -50,11 +50,13 @@ Things to know on this machine (2026-11-08):
   settled 20 s: **0** `D3D11 (352)` "expects a Sampler to be set at Slot 0" lines (899 before), and none on RenderTest
   or DrawLineTest. 3: Debug Sponza: textured as before (compare with a shot from the commit before if it's in doubt),
   and the arches' textures still repeat across tiled surfaces. 4: `close` gives `closed code=0` and 0 live resources.
-- **D13. The render command arena is 64 MB a buffer** (`MEM_ARENA_SIZE`, `Renderer.cpp`, was 2048). D7 measured Sponza
+- **D13. The render command arena is 256 MB a buffer** (`MEM_ARENA_SIZE`, `Renderer.cpp`, was 2048). D7 measured Sponza
   settled 20 s at Debug working set 5320 MB / private 5280 MB, Development working set 1234 MB / private 5279 MB. 1:
-  the same measurement (Debug and Development, Sponza, 20 s): both should be about 3.9 GB lower in private bytes, and
-  Debug's working set too. 2: the status bar reads `/ 64.00 MB`, with a peak near Linux's 12090 KB (Sponza) and 3006
-  KB (RenderPerfTest). 3: no `arena was full` or `exceeds the arena` line in either log. 4: `closed code=0`, 0 live.
+  the same measurement (Debug and Development, Sponza, 20 s): both should be about 3.5 GB lower in private bytes, and
+  Debug's working set too. 2: the status bar reads `/ 256.00 MB`, with a peak near Linux's 12090 KB on Sponza.
+  3: Debug `Mountain.scene` (its mesh is the largest single load step, 28821 KB peak on Linux) loads and shows the
+  terrain. 4: no `arena was full`, `exceeds the arena` or `too large to upload` line in any of these logs. 5:
+  `closed code=0`, 0 live.
 - **A15. No C4748 suppression.** `RZE_PRAGMA_OPTIMIZE_OFF/ON` (`Platform.h`) is now only `optimize("", off/on)`: A13
   saw no C4748 on x64 without the suppression, and Microsoft's current warning tables (MSVC 14.0 on) don't list it. 1:
   A1's Development build compiles `OptimizationSwitchTests.cpp` with no C4748 and passes `-tc="RZE_DISABLE*"`. 2:

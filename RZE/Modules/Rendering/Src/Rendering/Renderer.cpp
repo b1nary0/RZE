@@ -15,10 +15,11 @@
 
 #include <imgui/imgui.h>
 
-// Each of the arena's two buffers. A frame that needs more spills to the heap (MemArena::Alloc), so this only has to
-// cover what frames usually use: in 2026-11 that peaked at 12 MB (Sponza loading) and 3 MB (RenderPerfTest). Windows
-// commits all of it up front, and the Debug CRT writes to all of it, so it stays near need.
-#define MEM_ARENA_SIZE MemoryUtils::Megabytes(64)
+// Each of the arena's two buffers. A frame that needs more spills to the heap (MemArena::Alloc), but it also caps one
+// asset load step: AsyncFrameBudget::CanEverAfford fails a step needing more than this less 8 MB, and a mesh step
+// copies a whole submesh in. In 2026-11 frames peaked at 12 MB (Sponza loading) and the largest step was 29 MB
+// (Mountain). Windows commits all of it up front, and the Debug CRT writes to all of it, so it isn't larger.
+#define MEM_ARENA_SIZE MemoryUtils::Megabytes(256)
 
 namespace Rendering
 {
