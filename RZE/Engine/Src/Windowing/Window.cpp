@@ -372,7 +372,6 @@ void Window::CompileWindowMessages(EventHandler& eventHandler)
 			QueryClientSize();
 
 			const Vector2D& clientSize = GetClientSize();
-			// @todo this is a great example of why making a Vec2Di class is good. Or just impose usage on APIs to be in the w/h values
 			const int width = static_cast<int>(clientSize.X());
 			const int height = static_cast<int>(clientSize.Y());
 			if (width > 0 && height > 0)

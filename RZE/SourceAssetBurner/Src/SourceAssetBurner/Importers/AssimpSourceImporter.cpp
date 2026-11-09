@@ -291,8 +291,9 @@ bool AssimpSourceImporter::Import(const Filepath& filePath)
 
 	if (bAssimpNotLoaded)
 	{
-		// #TODO More informative error message.
-		RZE_LOG_ERROR_ARGS("Failed to load model from [%s].", filePath.GetRelativePath().c_str());
+		// Assimp sets no error string for a scene that loaded but is flagged incomplete
+		const char* const reason = AssimpScene ? "the scene is incomplete" : ModelImporter.GetErrorString();
+		RZE_LOG_ERROR_ARGS("Failed to load model from [%s]: %s", filePath.GetRelativePath().c_str(), reason);
 		return false;
 	}
 
@@ -550,9 +551,7 @@ void AssimpSourceImporter::ProcessMesh(const aiMesh& mesh, const aiScene& scene,
 		}
 
 
-		// #TODO
-		// Not entirely sure what would come in with > 0 of these texture types (though obviously its valid)
-		// so in the interest of being explicit of what RZE supports at the moment, only take the 0th texture data
+		// A material slot holds one texture, so only the first texture of each type is read
 		// glTF and other PBR sources fill BASE_COLOR and NORMAL_CAMERA instead of DIFFUSE and NORMALS
 		const aiTextureType albedoType = mat->GetTextureCount(aiTextureType_DIFFUSE) > 0 ? aiTextureType_DIFFUSE : aiTextureType_BASE_COLOR;
 		const aiTextureType normalType = mat->GetTextureCount(aiTextureType_NORMALS) > 0 ? aiTextureType_NORMALS : aiTextureType_NORMAL_CAMERA;

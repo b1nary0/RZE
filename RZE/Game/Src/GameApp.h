@@ -28,7 +28,7 @@ protected:
 	void CreateRenderTarget(const Vector2D& dimensions) override;
 
 private:
-	// #TODO Look into hiding this behind a debug ifdef or something?
-	// should really only be used in dev builds
+	// The scene to start in, from -scene (the Editor's Run passes it); without one, Initialize falls back to a fixed
+	// scene. A shipping game needs a start scene too, which Game.ini could own instead.
 	std::string m_startScene;
 };

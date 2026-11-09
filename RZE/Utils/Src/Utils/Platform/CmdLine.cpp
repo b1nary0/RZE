@@ -41,8 +41,9 @@ namespace CmdLine
 		m_arguments.reserve(argStrings.size());
 		m_arguments["-exe"] = argStrings[0];
 
-		// #TODO hacky here to check for file being sent in from windows when a file is double clicked...
-		// there must be a better, more standard way to handle this..
+		// A first argument that isn't a flag is a scene file: how the OS opens a file with the app (a Windows file
+		// association passes "app.exe <path>", a Linux .desktop entry's %f the same). Only the file name is kept and
+		// looked up in the scenes folder, so a scene outside it, or in a subfolder of it, isn't found.
 		int startIndex = 1;
 		if (count > 1 && !argStrings[1].empty() && argStrings[1][0] != '-')
 		{

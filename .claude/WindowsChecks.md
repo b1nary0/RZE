@@ -91,6 +91,11 @@ Things to know on this machine (2026-11-08):
   warnings. 2: 446 test cases in Debug and Development, 438 in Retail (3 new, `-sf="*GameObjectTransform*"`). 3:
   Development DrawLineTest, drag M4 onto NeckMech in the Scene panel: M4 goes under it and stays where it was in the
   world; Ctrl+Z puts it back as a root. No asserts in the log, `close` gives `closed code=0`.
+- **A20. Engine.h's "include-before issue" is gone.** The comment above `#include <Events/EventHandler.h>` in
+  `Engine/Src/EngineCore/Engine.h` was deleted after clang compiled `EventHandler.h` on its own and `Engine.h` with that
+  include moved to the top. Check MSVC the same way: temporarily move `#include <Events/EventHandler.h>` above
+  `#include <Utils/Platform/File.h>` in `Engine.h`, build Development (A1): no errors or warnings. Put the line back
+  (`git checkout -- RZE/Engine/Src/EngineCore/Engine.h` after `git status --short`, then `touch` it).
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 

@@ -31,10 +31,6 @@ public:
 	// For a reader that finds the data can't be right, e.g. a length longer than what's left
 	void Fail() { mHasFailed = true; }
 
-	// #TODO
-	// WriteToStream/FlushToFile type functions to flesh out this class.
-	// Then the File class can essentially just hold one of these
-
 	// The bytes at the cursor, which may not be aligned for any type: copy out of them (ReadBytes), don't cast them.
 	// Null at the end of the stream.
 	Byte* PeekBytes();

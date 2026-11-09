@@ -92,7 +92,6 @@ const std::string& Filepath::GetAbsolutePath() const
 
 const std::string& Filepath::GetRelativePath() const
 {
-	// #TODO(Josh) for now until we develop this class better
 	return m_relativePath;
 }
 
@@ -150,7 +149,6 @@ bool Filepath::IsInside(const Filepath& folder) const
 
 bool Filepath::IsValid() const
 {
-	// #TODO(This is an absolutely stupid but still relevant condition)
 	return !m_absolutePath.empty();
 }
 

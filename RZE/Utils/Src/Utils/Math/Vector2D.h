@@ -31,7 +31,6 @@ public:
 	// Operators
 	//
 public:
-	// #TODO(Josh::Fill these out to the same standard as 2D/4D)
 	Vector2D operator+(const Vector2D& other) const;
 	Vector2D operator-(const Vector2D& other) const;
 	Vector2D operator*(const float scalar) const;

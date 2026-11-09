@@ -68,7 +68,8 @@ private:
 	std::vector<MeshPlacement> m_placements;
 	// Geometry index -> its mirrored copy's index
 	std::unordered_map<U32, U32> m_mirroredGeometry;
-	std::unordered_map<std::string, MaterialData> m_materialTable; // #TODO this is just a quick way to prevent duplicates. need a better solution in the future
+	// Material asset path -> its data: the material assets to write once the mesh asset is written
+	std::unordered_map<std::string, MaterialData> m_materialTable;
 	// Assimp material index -> its material asset's path. Two materials can share a name, so they're told apart by index.
 	std::unordered_map<U32, std::string> m_materialPaths;
 	std::vector<Filepath> m_textures;
