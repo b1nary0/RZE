@@ -73,7 +73,7 @@ above it changing. In brief (details in
 |---|---|
 | Depth from 0 to 1; row 0 of a target is its top | `glClipControl(GL_UPPER_LEFT, GL_ZERO_TO_ONE)` for the engine's targets. The back buffer is drawn GL's way up and copied to the window as it is. |
 | Each stage binds its own `b`, `t`, `s` and `u` registers | Uniform blocks and texture units offset per stage, combined texture-sampler pairs bound at each draw, image units for `u` |
-| Three fixed samplers (`s0` wrap, `s1` shadow compare, `s2` clamp) | Three sampler objects with the same settings |
+| Four fixed samplers, owned by the device (`s0` linear wrap, `s1` shadow compare, `s2` linear clamp, `s3` point clamp) | Four sampler objects with the same settings |
 | HLSL source | Translated when the shader is created; the same files, the same edit-and-relaunch workflow |
 | A compute write is visible to the next read | A memory barrier after every dispatch |
 | D24S8 depth readback (depth low, stencil high) | GL's texels repacked into D3D's order |

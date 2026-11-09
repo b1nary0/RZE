@@ -126,7 +126,7 @@ Vector3D Octahedral::Decode(const Vector2D& point)
 RZE_ENABLE_OPTIMIZATION
 ```
 
-Each goes on a line of its own at file scope, without a semicolon. Between them the compiler doesn't optimize (`#pragma clang optimize off` on Linux, `#pragma optimize("", off)` with warning C4748 suppressed on Windows; `RZE_PRAGMA_OPTIMIZE_OFF/ON` in `Platform.h`), so each local has a fixed stack slot for the whole function and the debugger steps line by line, while the rest of the program stays optimized. **Never commit them:** in Retail, `RZE_DISABLE_OPTIMIZATION` is a `static_assert` that names itself, so a build that ships fails while one is in. `OptimizationSwitchTests` checks a wrapped function still computes the same.
+Each goes on a line of its own at file scope, without a semicolon. Between them the compiler doesn't optimize (`#pragma clang optimize off` on Linux, `#pragma optimize("", off)` on Windows; `RZE_PRAGMA_OPTIMIZE_OFF/ON` in `Platform.h`), so each local has a fixed stack slot for the whole function and the debugger steps line by line, while the rest of the program stays optimized. **Never commit them:** in Retail, `RZE_DISABLE_OPTIMIZATION` is a `static_assert` that names itself, so a build that ships fails while one is in. `OptimizationSwitchTests` checks a wrapped function still computes the same.
 
 ## Frame time capture
 

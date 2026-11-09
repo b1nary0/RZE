@@ -20,7 +20,7 @@ Its UI code is organised around an `EditorContext` that panels share, self-regis
 +---------------------------------------------------------------+-----------------+
 | Content Browser   Log      (the bottom dock area, auto-hidden)            [pin] |
 +---------------------------------------------------------------------------------+
-| Ready  MemArena: 4 KB / 2048 MB   16.7 ms ...   (o) [Rendering thumbnails  33%] |
+| Ready  MemArena: 4 KB / 256 MB    16.7 ms ...   (o) [Rendering thumbnails  33%] |
 +---------------------------------------------------------------------------------+
 ```
 

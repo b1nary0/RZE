@@ -11,12 +11,12 @@ RZE has two independent, unrelated pieces of custom memory management: a mostly-
 
 ## `Modules\Rendering\MemArena` — the one that actually matters
 
-A frame-scoped bump allocator over two 2048 MB buffers, backing every `RenderCommand` allocation in the low-level renderer. This is fully described in [Low-Level-Renderer-Module.md](../04-Rendering/Low-Level-Renderer-Module.md) — see that page for `AllocType<T>()`, `Cycle()`, how allocations are aligned and what happens when the arena is full ([Arena allocations](../04-Rendering/Low-Level-Renderer-Module.md#arena-allocations)), and the pressure-tracking (`PressureValue::LOW`/`MED`/`HIGH`) surfaced live in the Editor's status bar.
+A frame-scoped bump allocator over two 256 MB buffers, backing every `RenderCommand` allocation in the low-level renderer. This is fully described in [Low-Level-Renderer-Module.md](../04-Rendering/Low-Level-Renderer-Module.md) — see that page for `AllocType<T>()`, `Cycle()`, how allocations are aligned and what happens when the arena is full ([Arena allocations](../04-Rendering/Low-Level-Renderer-Module.md#arena-allocations)), and the pressure-tracking (`PressureValue::LOW`/`MED`/`HIGH`) surfaced live in the Editor's status bar.
 
 ## `Utils\Src\Utils\Memory\` — shared low-level helpers
 
 - `ByteStream.h/.cpp` — `ByteStream(name[, streamLength])`, `ReadFromFile(Filepath)`, cursor-based `PeekBytes()`/`PeekBytesAdvance(sizeBytes)`, `ReadBytes`/`WriteBytes`, `GetNumBytesWritten()`. Backs the binary mesh/material asset formats ([Asset-Burning-Pipeline.md](../05-AssetPipeline/Asset-Burning-Pipeline.md)).
-- `MemoryUtils.h/.cpp` — `Kilobytes`/`Megabytes`/`Gigabytes(size_t)` helpers (`Megabytes` sizes `MemArena`, 2048 MB a buffer), and `AlignSize(size_t size, size_t boundary)`, which rounds a size up to a power-of-2 boundary. It aligns `MemArena`'s allocations and constant-buffer sizes (`Rendering::Renderer::InternalUploadDataToBuffer`, `DX11ConstantBuffer::Allocate`, `GLConstantBuffer::Allocate`).
+- `MemoryUtils.h/.cpp` — `Kilobytes`/`Megabytes`/`Gigabytes(size_t)` helpers (`Megabytes` sizes `MemArena`, 256 MB a buffer), and `AlignSize(size_t size, size_t boundary)`, which rounds a size up to a power-of-2 boundary. It aligns `MemArena`'s allocations and constant-buffer sizes (`Rendering::Renderer::InternalUploadDataToBuffer`, `DX11ConstantBuffer::Allocate`, `GLConstantBuffer::Allocate`).
 
 ## Summary
 
