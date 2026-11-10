@@ -3,6 +3,7 @@
 #include <RZE.h>
 #include <UI/Framework/EditorContext.h>
 #include <UI/Framework/EditorSelection.h>
+#include <UI/Framework/EditorStyle.h>
 #include <UI/Framework/EditorUI.h>
 #include <UI/Framework/PanelRegistry.h>
 
@@ -13,8 +14,10 @@
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
 #include <Utils/DebugUtils/Debug.h>
+#include <Utils/StringUtils.h>
 
 #include <imgui/imgui.h>
+#include <imgui/imgui_internal.h> // ScrollToRect
 
 #include <Optick/optick.h>
 
@@ -136,6 +139,22 @@ namespace Editor
 {
 	REGISTER_EDITOR_PANEL(ScenePanel);
 
+	struct ScenePanel::ObjectRename
+	{
+		GameObjectPtr Object;
+		char Name[k_maxGameObjectNameSize] = {};
+		// Its place in the tree as of the last frame; -1 until the tree has been walked with it. The clipper draws that
+		// row wherever it's scrolled to, so the text box keeps the keyboard.
+		int RowIndex = -1;
+		// The text box takes the keyboard on its next draw, e.g. when it appears
+		bool FocusBox = true;
+		// Its row is scrolled into view on its next draw: a new object's is at the bottom
+		bool ScrollToRow = true;
+	};
+
+	ScenePanel::ScenePanel() = default;
+	ScenePanel::~ScenePanel() = default;
+
 	PanelDesc ScenePanel::Describe()
 	{
 		PanelDesc desc;
@@ -145,9 +164,19 @@ namespace Editor
 		return desc;
 	}
 
+	void ScenePanel::Initialize(EditorContext& context)
+	{
+		// The object made by Create GameObject is named in place. The command runs at the end of the UI frame, after
+		// this panel has drawn, so the object is only known here.
+		m_gameObjectCreated = context.GetEvents().Subscribe<GameObjectCreatedEvent>([this](const GameObjectCreatedEvent& event)
+			{
+				BeginRename(event.GameObject);
+			});
+	}
+
 	void ScenePanel::OnSceneReset()
 	{
-		m_isCreatingGameObject = false;
+		m_rename.reset();
 		m_rangeAnchor = nullptr;
 	}
 
@@ -164,36 +193,16 @@ namespace Editor
 		{
 			if (ImGui::MenuItem("Create GameObject"))
 			{
-				m_isCreatingGameObject = true;
+				context.GetCommands().Push<CreateGameObjectCommand>();
 			}
 
 			ImGui::EndPopup();
 		}
 
-		if (m_isCreatingGameObject)
+		if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) && !ImGui::IsAnyItemActive() && ImGui::IsKeyPressed(ImGuiKey_F2, false)
+			&& selection.GetPrimary() != nullptr)
 		{
-			ImGuiWindowFlags windowFlags =
-				ImGuiWindowFlags_AlwaysAutoResize
-			| ImGuiWindowFlags_NoResize
-			| ImGuiWindowFlags_NoMove
-			| ImGuiWindowFlags_NoCollapse;
-			// @TODO Figure out why GetCursorScreenPos() doesnt give the actual position (it gets drawn at the top)
-			ImGui::SetNextWindowPos(ImGui::GetCursorScreenPos());
-			if (ImGui::Begin("GameObjectNameCreate", &m_isCreatingGameObject, windowFlags))
-			{
-				char name[k_maxGameObjectNameSize] = { 0 };
-				if (ImGui::InputText("GameObject Name", name, k_maxGameObjectNameSize, ImGuiInputTextFlags_EnterReturnsTrue))
-				{
-					context.GetCommands().Push<CreateGameObjectCommand>(name);
-					m_isCreatingGameObject = false;
-				}
-
-				if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && ImGui::IsKeyPressed(ImGuiKey_Escape, false))
-				{
-					m_isCreatingGameObject = false;
-				}
-			}
-			ImGui::End();
+			BeginRename(selection.GetPrimary());
 		}
 
 		if (ImGui::IsAnyMouseDown() && (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) && !selection.IsEmpty())
@@ -228,6 +237,10 @@ namespace Editor
 		RowWalk walk(m_roots);
 		ImGuiListClipper clipper;
 		clipper.Begin(INT_MAX);
+		if (m_rename != nullptr && m_rename->RowIndex >= 0)
+		{
+			clipper.IncludeItemByIndex(m_rename->RowIndex);
+		}
 		const auto visitRow = [this, &context, &walk, &clipper]()
 		{
 			const GameObjectPtr gameObject = walk.GetCurrent();
@@ -254,6 +267,19 @@ namespace Editor
 		clipper.SeekCursorForItem(clipper.UserIndex);
 
 		ImGui::EndTable();
+
+		if (m_rename != nullptr)
+		{
+			const auto renamedRow = std::find(m_visibleRows.begin(), m_visibleRows.end(), m_rename->Object);
+			if (renamedRow == m_visibleRows.end())
+			{
+				m_rename.reset();
+			}
+			else
+			{
+				m_rename->RowIndex = static_cast<int>(std::distance(m_visibleRows.begin(), renamedRow));
+			}
+		}
 
 		if (m_rangeClickTarget != nullptr)
 		{
@@ -289,10 +315,17 @@ namespace Editor
 		ImGui::PopStyleVar();
 		ImGui::TableSetColumnIndex(0);
 
+		// The rename's text box goes over the row once it's drawn, in place of the name
+		const bool isRenaming = m_rename != nullptr && m_rename->Object == gameObject;
+
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(style.FramePadding.x, k_rowPaddingY));
+		// Where the node draws its name
+		const float labelX = ImGui::GetCursorScreenPos().x + ImGui::GetTreeNodeToLabelSpacing();
 		ImGui::SetNextItemStorageID(GetOpenStateID(gameObject));
-		const bool isOpen = EditorUI::TreeNode("##GameObject", nodeFlags, "%s", gameObject->GetName().c_str());
+		const bool isOpen = EditorUI::TreeNode("##GameObject", nodeFlags, "%s", isRenaming ? "" : gameObject->GetName().c_str());
 		ImGui::PopStyleVar();
+		const ImVec2 rowMin = ImGui::GetItemRectMin();
+		const ImVec2 rowMax = ImGui::GetItemRectMax();
 
 		if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
 		{
@@ -365,17 +398,12 @@ namespace Editor
 		if (ImGui::BeginPopupContextItem("GameObjectMenu"))
 		{
 			ImGui::TextUnformatted(gameObject->GetName().c_str());
-			if (ImGui::BeginPopupContextItem("Rename"))
-			{
-				char name[k_maxGameObjectNameSize];
-				memcpy(name, gameObject->GetName().c_str(), k_maxGameObjectNameSize);
-				if (ImGui::InputText("##gameObject_rename", name, k_maxGameObjectNameSize, ImGuiInputTextFlags_EnterReturnsTrue))
-				{
-					context.GetCommands().Push<RenameGameObjectCommand>(gameObject, name);
-				}
-				ImGui::EndPopup();
-			}
 			ImGui::Separator();
+
+			if (ImGui::MenuItem("Rename", "F2"))
+			{
+				BeginRename(gameObject);
+			}
 
 			if (ImGui::BeginMenu("Add Component"))
 			{
@@ -407,9 +435,75 @@ namespace Editor
 			ImGui::EndPopup();
 		}
 
+		if (isRenaming)
+		{
+			DrawRenameBox(context, rowMin, rowMax, labelX);
+		}
+
 		ImGui::PopID();
 		// A leaf "opens" too, having nothing to collapse
 		return isOpen && gameObject->HasChildren();
+	}
+
+	void ScenePanel::BeginRename(GameObjectPtr gameObject)
+	{
+		m_rename = std::make_unique<ObjectRename>();
+		m_rename->Object = gameObject;
+		StringUtils::CopyTruncated(m_rename->Name, gameObject->GetName());
+	}
+
+	void ScenePanel::DrawRenameBox(EditorContext& context, const ImVec2& rowMin, const ImVec2& rowMax, float labelX)
+	{
+		ObjectRename& rename = *m_rename;
+		if (rename.ScrollToRow)
+		{
+			// Only as far as it takes to show the whole row; nothing if it's in view
+			ImGui::ScrollToRect(ImGui::GetCurrentWindow(), ImRect(rowMin, rowMax), ImGuiScrollFlags_KeepVisibleEdgeY);
+			rename.ScrollToRow = false;
+		}
+
+		// Small enough padding that the box sits where the name was, centred in the row
+		const ImVec2 padding(3.0f, 1.0f);
+		const float boxHeight = ImGui::GetFontSize() + padding.y * 2.0f;
+		ImGui::SetCursorScreenPos(ImVec2(labelX - padding.x, rowMin.y + (rowMax.y - rowMin.y - boxHeight) * 0.5f));
+		ImGui::SetNextItemWidth(rowMax.x - labelX - ImGui::GetStyle().FramePadding.x);
+		if (rename.FocusBox)
+		{
+			ImGui::SetKeyboardFocusHere();
+			rename.FocusBox = false;
+		}
+
+		const bool isNameEmpty = rename.Name[0] == '\0';
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, padding);
+		ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+		ImGui::PushStyleColor(ImGuiCol_Border, isNameEmpty ? EditorStyle::k_errorColour : EditorStyle::k_accentColour);
+		const bool isEntered = ImGui::InputText("##Rename", rename.Name, sizeof(rename.Name), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
+		ImGui::PopStyleColor();
+		ImGui::PopStyleVar(2);
+
+		if (isNameEmpty && ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("A GameObject needs a name");
+		}
+
+		if (isEntered)
+		{
+			if (rename.Name[0] == '\0')
+			{
+				// Enter let go of the box; it keeps the keyboard until there's a name or the rename is cancelled
+				rename.FocusBox = true;
+				return;
+			}
+
+			// The command does nothing if the name is the same
+			context.GetCommands().Push<RenameGameObjectCommand>(rename.Object, std::string(rename.Name));
+			m_rename.reset();
+		}
+		else if (ImGui::IsItemDeactivated())
+		{
+			// Escape, or a click elsewhere
+			m_rename.reset();
+		}
 	}
 
 	void ScenePanel::SelectRange(EditorSelection& selection, GameObjectPtr target, bool addToSelection)

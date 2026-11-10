@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Game/World/GameObject/GameObjectDefinitions.h>
+
 #include <Utils/Platform/Filepath.h>
 #include <Utils/PrimitiveDefs.h>
 
@@ -22,6 +24,9 @@ namespace Editor
 	struct SceneModifiedEvent {};
 	// SceneDocument::IsModified changed
 	struct SceneModifiedStateChangedEvent { const SceneDocument& Document; };
+	// CreateGameObjectCommand made an empty object (Create GameObject), so the Scene panel puts it into rename. Not other
+	// ways of making objects (duplicating, pasting, dropping a mesh in) or undo and redo.
+	struct GameObjectCreatedEvent { const GameObjectPtr& GameObject; };
 	// Once per EditorSelection call that changed it
 	struct SelectionChangedEvent { const EditorSelection& Selection; };
 	// A thumbnail image was written again (ThumbnailRenderer), so anything showing it should reload it

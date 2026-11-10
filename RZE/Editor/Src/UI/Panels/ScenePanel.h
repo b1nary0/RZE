@@ -1,9 +1,11 @@
 #pragma once
 
+#include <UI/Framework/EditorEvents.h>
 #include <UI/Framework/EditorPanel.h>
 
 #include <Game/World/GameObject/GameObjectDefinitions.h>
 
+#include <memory>
 #include <vector>
 
 namespace Editor
@@ -11,13 +13,18 @@ namespace Editor
 	class EditorSelection;
 
 	// The scene's GameObject hierarchy: selection (click, Ctrl+click to toggle, Shift+click for a range), reparenting
-	// by drag and drop, and per-object actions (rename, add component, detach, delete) from the context menu
+	// by drag and drop, renaming in place (F2), and per-object actions (rename, add component, detach, delete) from the
+	// context menu
 	class ScenePanel : public EditorPanel
 	{
 	public:
 		static PanelDesc Describe();
 
+		ScenePanel();
+		~ScenePanel() override;
+
 	private:
+		void Initialize(EditorContext& context) override;
 		void Draw(EditorContext& context) override;
 		void OnSceneReset() override;
 
@@ -26,9 +33,18 @@ namespace Editor
 		// Selects the rows from the anchor to the Shift+clicked one, which becomes the primary
 		void SelectRange(EditorSelection& selection, GameObjectPtr target, bool addToSelection);
 
+		// Puts a text box with the object's name over its row. Enter renames it; Escape or a click elsewhere keeps the
+		// name it has. Ends if its row isn't in the tree any more (deleted, or under a collapsed parent).
+		void BeginRename(GameObjectPtr gameObject);
+		// The rename's text box, over the row from rowMin to rowMax, its name starting at labelX
+		void DrawRenameBox(EditorContext& context, const ImVec2& rowMin, const ImVec2& rowMax, float labelX);
+
 	private:
-		// Whether the name prompt for a new GameObject is showing
-		bool m_isCreatingGameObject = false;
+		// The rename in progress, if any
+		struct ObjectRename;
+		std::unique_ptr<ObjectRename> m_rename;
+		// Starts the rename of the object Create GameObject made
+		EventSubscription m_gameObjectCreated;
 
 		// Where a Shift+click range starts: the last object clicked without Shift
 		GameObjectPtr m_rangeAnchor;

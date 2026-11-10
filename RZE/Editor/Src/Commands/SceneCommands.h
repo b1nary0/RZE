@@ -15,16 +15,13 @@
 // Structural changes to the scene's GameObjects. Each does nothing if the object it targets has been destroyed.
 namespace Editor
 {
+	// Adds an empty object named "GameObject" ("GameObject (1)" if that's taken), selects it and publishes
+	// GameObjectCreatedEvent, so the Scene panel puts it into rename
 	class CreateGameObjectCommand : public EditorCommand
 	{
 	public:
-		explicit CreateGameObjectCommand(std::string name);
-
 		bool Execute(EditorContext& context) override;
 		const char* GetName() const override { return "Create GameObject"; }
-
-	private:
-		std::string m_name;
 	};
 
 	// Adds an object named after the mesh asset, showing it at position (world space), and selects it. The mesh loads
@@ -45,7 +42,7 @@ namespace Editor
 	class RenameGameObjectCommand : public EditorCommand
 	{
 	public:
-		RenameGameObjectCommand(GameObjectPtr gameObject, std::string name);
+		RenameGameObjectCommand(GameObjectPtr gameObject, const std::string& name);
 
 		bool Execute(EditorContext& context) override;
 		const char* GetName() const override { return "Rename GameObject"; }

@@ -263,15 +263,13 @@ namespace
 
 namespace Editor
 {
-	CreateGameObjectCommand::CreateGameObjectCommand(std::string name)
-		: m_name(std::move(name))
-	{
-	}
-
 	bool CreateGameObjectCommand::Execute(EditorContext& context)
 	{
-		const GameObjectPtr gameObject = RZE().GetActiveScene().AddGameObject(m_name);
+		const GameObjectPtr gameObject = RZE().GetActiveScene().AddGameObject(MakeUniqueName("GameObject"));
 		SetUndoRecord(std::make_unique<ParkRecord>("Create GameObject", std::vector<ParkedSubtree>{ ParkedSubtree(gameObject) }, false));
+
+		context.GetSelection().Select(gameObject);
+		context.GetEvents().Publish(GameObjectCreatedEvent{ gameObject });
 		return true;
 	}
 
@@ -297,9 +295,9 @@ namespace Editor
 		return true;
 	}
 
-	RenameGameObjectCommand::RenameGameObjectCommand(GameObjectPtr gameObject, std::string name)
+	RenameGameObjectCommand::RenameGameObjectCommand(GameObjectPtr gameObject, const std::string& name)
 		: m_gameObject(gameObject)
-		, m_name(std::move(name))
+		, m_name(name)
 	{
 	}
 

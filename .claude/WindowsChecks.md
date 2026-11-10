@@ -125,6 +125,14 @@ Things to know on this machine (2026-11-08):
   cases in Debug and Development, 444 in Retail (MSVC builds `EditorApp`/`GameApp` with the new override). 2:
   Development Editor, DrawLineTest.scene: the custom title bar, maximized, the Scene View draws the scene; the log has
   `RZE_Application::Initialize() called.` once. The Game: the scene draws and the window has the game's icon.
+- **A25. Scene panel: create and rename in place.** Create GameObject makes `GameObject` and puts a text box over
+  its row; F2 and the row menu's Rename open the same box. 1: 452 test cases in Debug and Development, 444 in Retail.
+  2: Development Editor, DrawLineTest.scene: right-click empty space in the Scene panel > Create GameObject: a
+  `GameObject` row with its name selected in a box; type `Crate`, Enter: renamed. Ctrl+Z gives `GameObject` back,
+  Ctrl+Z again removes it. A second create while `GameObject` exists is `GameObject (1)`. Escape, or a click
+  elsewhere, keeps the name; Backspace then Enter keeps the box open with a red border. Stress2500.scene: click the
+  first row, scroll the panel down a long way, F2: the panel scrolls back to it with the box focused. Undo
+  everything; `git status` shows the scenes unchanged.
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 
