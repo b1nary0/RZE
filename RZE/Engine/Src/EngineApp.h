@@ -19,14 +19,15 @@ namespace Rendering
 
 class RZE_Application
 {
-	// @note maybe review this connection later
-	friend class RZE_Engine;
-	
 public:
 	RZE_Application();
 	virtual ~RZE_Application();
 
 public:
+	// The engine calls it once its window exists, before Start: keeps the window, registers the engine's components,
+	// then OnInitialize
+	void Initialize(Window& window);
+
 	virtual void Run();
 	virtual void Start();
 	// The UI's step before ImGui's frame starts (and so before UpdateUI): gather what the UI shows. No ImGui calls:
@@ -75,7 +76,8 @@ public:
 	static void RegisterEngineComponents();
 	
 protected:
-	virtual void Initialize();
+	// The application's own start-up, once it has its window and the engine's components are registered
+	virtual void OnInitialize();
 
 	Window& InternalGetWindow();
 
@@ -87,8 +89,7 @@ protected:
 	std::unique_ptr<Rendering::RenderTargetTexture> m_renderTarget;
 
 private:
-	void SetWindow(Window* const window);
-	
+	// Null until Initialize
 	Window* mWindow;
 	bool bIsRunning;
 };

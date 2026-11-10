@@ -18,7 +18,6 @@ namespace Editor
 		EditorApp();
 		~EditorApp() override;
 
-		void Initialize() override;
 		void Start() override;
 		void PreUIUpdate() override;
 		void UpdateUI() override;
@@ -40,6 +39,7 @@ namespace Editor
 		bool IsReadyToShow() const override;
 
 	protected:
+		void OnInitialize() override;
 		void CreateRenderTarget(const Vector2D& dimensions) override;
 
 		// For an app built on the Editor (EditorHarness) to read the Editor's state

@@ -61,10 +61,8 @@ namespace Editor
 	{
 	}
 
-	void EditorApp::Initialize()
+	void EditorApp::OnInitialize()
 	{
-		RZE_Application::Initialize();
-
 		const bool isWithEditor = true;
 		RZE().GetRenderEngine().AddRenderStage<ImGuiRenderStage>(isWithEditor);
 

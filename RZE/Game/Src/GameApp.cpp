@@ -47,10 +47,8 @@ void GameApp::ParseArguments(char** arguments, int count)
 	}
 }
 
-void GameApp::Initialize()
+void GameApp::OnInitialize()
 {
-	RZE_Application::Initialize();
-
 	// The game's own icon, from Project Settings; without one the window keeps the executable's
 	GameConfig gameConfig;
 	gameConfig.Load(Filepath("Config/Game.ini"));

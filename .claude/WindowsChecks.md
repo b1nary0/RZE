@@ -120,6 +120,11 @@ Things to know on this machine (2026-11-08):
   on Windows only: delete the folder, open `DrawLineTest.scene` in another program that locks it (or set it
   read-only), Ctrl+S: `Couldn't save scene`, still `*`. Then unlock, Ctrl+S, Ctrl+Z, Ctrl+S: `git status` shows the
   scene unchanged.
+- **A24. No friend between the application and the engine.** `RZE_Application::Initialize(Window&)` is public and
+  calls the virtual `OnInitialize`, which `EditorApp` and `GameApp` now override instead of `Initialize`. 1: 452 test
+  cases in Debug and Development, 444 in Retail (MSVC builds `EditorApp`/`GameApp` with the new override). 2:
+  Development Editor, DrawLineTest.scene: the custom title bar, maximized, the Scene View draws the scene; the log has
+  `RZE_Application::Initialize() called.` once. The Game: the scene draws and the window has the game's icon.
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 

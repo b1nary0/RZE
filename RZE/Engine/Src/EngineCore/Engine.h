@@ -36,7 +36,7 @@ public:
 	[[nodiscard]]
 	const Vector2D& GetWindowSize() const;
 
-	// #TODO(Josh) Need to figure out this weird connection of accessing engine from application, and application from engine.
+	// The application the engine runs (Run). The application reaches the engine through RZE().
 	RZE_Application&			GetApplication();
 	ResourceHandler&			GetResourceHandler();
 	InputHandler&				GetInputHandler();

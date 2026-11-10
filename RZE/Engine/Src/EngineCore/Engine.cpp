@@ -414,8 +414,8 @@ void RZE_Engine::CreateAndInitializeRenderer()
 
 void RZE_Engine::InitializeApplication()
 {
-	m_application->SetWindow(m_window);
-	m_application->Initialize();
+	AssertNotNull(m_window);
+	m_application->Initialize(*m_window);
 	m_application->RegisterInputEvents(m_inputHandler);
 
 	// #IDEA

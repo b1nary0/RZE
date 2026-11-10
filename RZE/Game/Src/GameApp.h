@@ -13,7 +13,6 @@ public:
 
 	void ParseArguments(char** arguments, int count) override;
 
-	void Initialize() override;
 	void Start() override;
 	void UpdateUI() override;
 	void ShutDown() override;
@@ -25,6 +24,7 @@ public:
 	void OnWindowResize(const Vector2D& newSize) override;
 
 protected:
+	void OnInitialize() override;
 	void CreateRenderTarget(const Vector2D& dimensions) override;
 
 private:

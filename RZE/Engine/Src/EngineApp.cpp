@@ -90,11 +90,17 @@ void RZE_Application::RegisterInputEvents(InputHandler& inputHandler)
 {
 }
 
-void RZE_Application::Initialize()
+void RZE_Application::Initialize(Window& window)
 {
-	RZE_LOG("RZE_Application::Init() called.");
+	RZE_LOG("RZE_Application::Initialize() called.");
 
+	mWindow = &window;
 	RegisterEngineComponents();
+	OnInitialize();
+}
+
+void RZE_Application::OnInitialize()
+{
 }
 
 void RZE_Application::RegisterEngineComponents()
@@ -131,12 +137,6 @@ void RZE_Application::ShowWindow()
 {
 	AssertNotNull(mWindow);
 	mWindow->Show();
-}
-
-void RZE_Application::SetWindow(Window* const window)
-{
-	AssertNotNull(window);
-	mWindow = window;
 }
 
 Window* const RZE_Application::GetWindow() const
