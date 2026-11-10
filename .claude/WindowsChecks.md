@@ -179,6 +179,14 @@ Things to know on this machine (2026-11-08):
   23 bits, and the outline pass declares the mask's depth at t1). 3: A29's M4 and NeckMech checks look as they did:
   the Editor still puts the whole selection in shape 0, so nothing on screen changes yet. The mask depth read is
   checked with the next item.
+- **A32. Each selected object is outlined on its own, also inside or in front of another.** 1: A2's counts (3 test
+  cases are new: `-tc="*SelectionOutline*,*selected*"`). 2: `driver.ps1 launch -Harness -Scene Sponza.scene
+  -SettleSeconds 20 -AppArgs '-gfxvalidation'`: click Tank's row, then Sponza's with `-Mods ctrl`. Tank has its line
+  (before this change it had none): outside Tank against the floor, and on Tank's side along the green banner that's
+  in front of it, the same width (about 3 px) on both. The log has no D3D11 error or warning about a resource bound
+  as an input and as a depth target (the mask's depth is read at t1). 3: DrawLineTest, NeckMech's Position set to
+  (12.98, 9.77, -15.79) so it's in front of M4; click M4, then NeckMech with `-Mods ctrl`: NeckMech's edge over M4 has
+  a line, as on Linux. Undo the edits and close with nothing to save.
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 

@@ -16,6 +16,7 @@
 #include <Graphics/StaticMeshInstance.h>
 
 #include <algorithm>
+#include <map>
 #include <vector>
 
 using namespace Editor;
@@ -72,7 +73,20 @@ namespace
 		std::vector<U64> GetOutlinedIDs() const
 		{
 			REQUIRE(View.Frame.Outlines.size() == 1);
-			return GetLiveIDs(View.Frame.Outlines.front());
+			return Sorted(GetLiveIDs(View.Frame.Outlines.front()));
+		}
+
+		// Each object of the view's one outline, by live ID, with its shape
+		std::map<U64, U32> GetShapes() const
+		{
+			REQUIRE(View.Frame.Outlines.size() == 1);
+			std::map<U64, U32> shapes;
+			for (const RenderOutlineObject& object : View.Frame.Outlines.front().Objects)
+			{
+				CHECK(shapes.count(object.LiveID) == 0);
+				shapes[object.LiveID] = object.Shape;
+			}
+			return shapes;
 		}
 
 		static std::vector<U64> GetLiveIDs(const RenderOutline& outline)
@@ -143,7 +157,34 @@ TEST_CASE_FIXTURE(OutlineFixture, "A selected parent and its selected child are 
 
 	ApplySelectionOutline(Selection, View);
 
-	CHECK(GetOutlinedIDs() == Sorted({ GetLiveID(Parent), GetLiveID(Child), GetLiveID(Other) }));
+	CHECK(GetShapes() == std::map<U64, U32>{ { GetLiveID(Parent), 0 }, { GetLiveID(Child), 0 }, { GetLiveID(Other), 1 } });
+}
+
+TEST_CASE_FIXTURE(OutlineFixture, "Each selected object is a shape of its own with its descendants, in selection order")
+{
+	Selection.SetSelection({ Other, Parent });
+
+	ApplySelectionOutline(Selection, View);
+
+	CHECK(GetShapes() == std::map<U64, U32>{ { GetLiveID(Other), 0 }, { GetLiveID(Parent), 1 }, { GetLiveID(Child), 1 } });
+}
+
+TEST_CASE_FIXTURE(OutlineFixture, "A selected child is in its selected parent's shape, also when selected first")
+{
+	Selection.SetSelection({ Child, Parent });
+
+	ApplySelectionOutline(Selection, View);
+
+	CHECK(GetShapes() == std::map<U64, U32>{ { GetLiveID(Parent), 0 }, { GetLiveID(Child), 0 } });
+}
+
+TEST_CASE_FIXTURE(OutlineFixture, "A selected object with no mesh takes no shape number")
+{
+	Selection.SetSelection({ Empty, Other });
+
+	ApplySelectionOutline(Selection, View);
+
+	CHECK(GetShapes() == std::map<U64, U32>{ { GetLiveID(Other), 0 } });
 }
 
 TEST_CASE_FIXTURE(OutlineFixture, "A selected object that's been destroyed is skipped")
