@@ -11,10 +11,10 @@ Once you have the repo locally:
 
 
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/1e7ff76592894b2799776314e66f1f4d)](https://app.codacy.com/manual/b1nary0/RZE?utm_source=github.com&utm_medium=referral&utm_content=b1nary0/RZE&utm_campaign=Badge_Grade_Dashboard)
-[![Windows ](https://github.com/b1nary0/RZE/actions/workflows/Windows.yml/badge.svg)](https://github.com/b1nary0/RZE/actions/workflows/Windows.yml)
- 
- Claude 
- [![Windows-Claude](https://github.com/b1nary0/RZE/actions/workflows/Windows.yml/badge.svg?branch=look-what-claude-can-do)](https://github.com/b1nary0/RZE/actions/workflows/Windows.yml)
- 
- Claude
- [![Linux-Claude](https://github.com/b1nary0/RZE/actions/workflows/Linux.yml/badge.svg?branch=look-what-claude-can-do)](https://github.com/b1nary0/RZE/actions/workflows/Linux.yml)
+
+**Build status:**
+
+| Branch | Windows | Linux |
+| --- | --- | --- |
+| `master` | [![Windows (master)](https://github.com/b1nary0/RZE/actions/workflows/Windows.yml/badge.svg?branch=master)](https://github.com/b1nary0/RZE/actions/workflows/Windows.yml?query=branch%3Amaster) | |
+| `look-what-claude-can-do` | [![Windows (look-what-claude-can-do)](https://github.com/b1nary0/RZE/actions/workflows/Windows.yml/badge.svg?branch=look-what-claude-can-do)](https://github.com/b1nary0/RZE/actions/workflows/Windows.yml?query=branch%3Alook-what-claude-can-do) | [![Linux (look-what-claude-can-do)](https://github.com/b1nary0/RZE/actions/workflows/Linux.yml/badge.svg?branch=look-what-claude-can-do)](https://github.com/b1nary0/RZE/actions/workflows/Linux.yml?query=branch%3Alook-what-claude-can-do) |
