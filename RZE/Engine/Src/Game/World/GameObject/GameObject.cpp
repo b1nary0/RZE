@@ -351,7 +351,7 @@ void GameObject::RemoveChild(GameObject* child)
 	if (existingChild != m_children.end())
 	{
 		(*existingChild)->GetTransformComponent()->DetachFromParent();
-		// Keeps the order, which the Scene panel shows and scene files save
+		// Keeps the order, which the Object Browser shows and scene files save
 		m_children.erase(existingChild);
 		MarkHierarchyBoundsChanged();
 	}

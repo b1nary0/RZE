@@ -68,13 +68,13 @@ Things to know on this machine (2026-11-08):
   builds cover the deleted header and PCH include (MSVC's PCH differs from clang's). 2: A2's counts match Linux:
   436 test cases in Debug and Development, 435 in Retail. 3: Development DrawLineTest shows the grid and axis lines
   (debug lines), and Retail `Game.exe -scene DrawLineTest.scene` runs with `closed code=0`.
-- **A17. The Scene panel draws only the rows in view.** `ScenePanel::Draw` walks the tree with an `ImGuiListClipper`
-  (ImGui's large-tree pattern); open parents scrolled off are `TreePush`ed by the walk, not drawn. Platform-neutral
-  ImGui code, so only a smoke test, in **Debug** (ImGui's asserts: ID stack, tree push/pop balance): 1: RenderPerfTest,
-  scroll the Scene panel to the bottom (last row is the last pillar) and back to the top: no assert, rows shaded
-  alternately throughout. 2: DrawLineTest, drag M4 onto NeckMech, expand NeckMech: M4 shows under it, indented one
-  level; scroll so NeckMech is just off the top if the panel allows, M4 stays indented; Ctrl+Z puts M4 back as a root.
-  `close` gives `closed code=0`.
+- **A17. The Object Browser draws only the rows in view.** `ObjectBrowserPanel::Draw` walks the tree with an
+  `ImGuiListClipper` (ImGui's large-tree pattern); open parents scrolled off are `TreePush`ed by the walk, not drawn.
+  Platform-neutral ImGui code, so only a smoke test, in **Debug** (ImGui's asserts: ID stack, tree push/pop balance): 1:
+  RenderPerfTest, scroll the Object Browser to the bottom (last row is the last pillar) and back to the top: no assert,
+  rows shaded alternately throughout. 2: DrawLineTest, drag M4 onto NeckMech, expand NeckMech: M4 shows under it,
+  indented one level; scroll so NeckMech is just off the top if the panel allows, M4 stays indented; Ctrl+Z puts M4 back
+  as a root. `close` gives `closed code=0`.
 - **A18. OscillatorComponent, a development-only component.** New `Engine/Src/Game/World/GameObjectComponents/
   OscillatorComponent.{h,cpp}`, the whole file inside `#ifdef RZE_DEVEL`, registered in `EngineApp.cpp` the same way.
   Run `GenerateSolutions.bat` first (new files). 1: A1's three builds (MSVC compiles the empty Retail translation unit
@@ -82,14 +82,14 @@ Things to know on this machine (2026-11-08):
   435 in Retail. 3: Retail `Game.exe` has no `OscillatorComponent` (e.g. `findstr /m OscillatorComponent
   RZE\_build\retail\Game.exe` finds nothing). 4: Development Editor, open any scene, Add Component > OscillatorComponent
   on an object: it bobs 1 m up and down every 2 s; untick Enabled, it goes back to where it was. Ctrl+Z, close without
-  saving. Also new: Optick scopes in `ScenePanel::Draw`, `SceneViewPanel::PreRender` and `DrawObjectIcons`, covered by
-  the builds.
+  saving. Also new: Optick scopes in `ObjectBrowserPanel::Draw`, `SceneViewPanel::PreRender` and `DrawObjectIcons`,
+  covered by the builds.
 - **A19. GameObject keeps its TransformComponent.** `GetComponent<TransformComponent>` returns a pointer kept as the
   component is added (an `if constexpr` branch in the `GameObject.h` template, with the search in its `else` so MSVC
   doesn't warn C4702 for unreachable code), `IsRoot()` reads the object's own parent, and removing a TransformComponent
   asserts and is refused. Run `GenerateSolutions.bat` first (new test file). 1: A1's three builds, no C4702 or other
   warnings. 2: 446 test cases in Debug and Development, 438 in Retail (3 new, `-sf="*GameObjectTransform*"`). 3:
-  Development DrawLineTest, drag M4 onto NeckMech in the Scene panel: M4 goes under it and stays where it was in the
+  Development DrawLineTest, drag M4 onto NeckMech in the Object Browser: M4 goes under it and stays where it was in the
   world; Ctrl+Z puts it back as a root. No asserts in the log, `close` gives `closed code=0`.
 - **A20. Engine.h's "include-before issue" is gone.** The comment above `#include <Events/EventHandler.h>` in
   `Engine/Src/EngineCore/Engine.h` was deleted after clang compiled `EventHandler.h` on its own and `Engine.h` with that
@@ -125,14 +125,19 @@ Things to know on this machine (2026-11-08):
   cases in Debug and Development, 444 in Retail (MSVC builds `EditorApp`/`GameApp` with the new override). 2:
   Development Editor, DrawLineTest.scene: the custom title bar, maximized, the Scene View draws the scene; the log has
   `RZE_Application::Initialize() called.` once. The Game: the scene draws and the window has the game's icon.
-- **A25. Scene panel: create and rename in place.** Create GameObject makes `GameObject` and puts a text box over
+- **A25. Object Browser: create and rename in place.** Create GameObject makes `GameObject` and puts a text box over
   its row; F2 and the row menu's Rename open the same box. 1: 452 test cases in Debug and Development, 444 in Retail.
-  2: Development Editor, DrawLineTest.scene: right-click empty space in the Scene panel > Create GameObject: a
+  2: Development Editor, DrawLineTest.scene: right-click empty space in the Object Browser > Create GameObject: a
   `GameObject` row with its name selected in a box; type `Crate`, Enter: renamed. Ctrl+Z gives `GameObject` back,
   Ctrl+Z again removes it. A second create while `GameObject` exists is `GameObject (1)`. Escape, or a click
   elsewhere, keeps the name; Backspace then Enter keeps the box open with a red border. Stress2500.scene: click the
   first row, scroll the panel down a long way, F2: the panel scrolls back to it with the box focused. Undo
   everything; `git status` shows the scenes unchanged.
+- **A26. ScenePanel is now ObjectBrowserPanel ("Object Browser").** The files moved, so run `GenerateSolutions.bat`
+  first; the build must not still list `ScenePanel.cpp`. 1: 452 test cases in Debug and Development, 444 in Retail. 2:
+  Development Editor: the panel is titled "Object Browser" and View > Windows lists it. The committed
+  `RZE\Config\imgui.ini` still names it `[Window][Scene]`, so on this machine it opens floating once: dock it top-right
+  (above Object Inspector) and the layout keeps it.
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 

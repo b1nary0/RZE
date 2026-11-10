@@ -16,7 +16,7 @@
 namespace Editor
 {
 	// Adds an empty object named "GameObject" ("GameObject (1)" if that's taken), selects it and publishes
-	// GameObjectCreatedEvent, so the Scene panel puts it into rename
+	// GameObjectCreatedEvent, so the Object Browser puts it into rename
 	class CreateGameObjectCommand : public EditorCommand
 	{
 	public:

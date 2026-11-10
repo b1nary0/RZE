@@ -38,7 +38,7 @@ $msbuild = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere
 $d = '.\.claude\skills\run-rze\driver.ps1'
 & $d launch -Scene DrawLineTest.scene      # waits for the window title, then 5 s for assets to stream in
 & $d shot                                  # -> $env:TEMP\rze-shots\<timestamp>.png
-& $d click -X 60 -Y 95                     # select "NeckMech" in the Scene panel
+& $d click -X 60 -Y 95                     # select "NeckMech" in the Object Browser
 & $d click -X 2328 -Y 263                  # tick "Mesh Bounds" (Debug Draw) in Object Inspector
 & $d click -X 2372 -Y 143; & $d key -Keys '^a45{ENTER}'   # set Rotation Y = 45
 & $d shot -Out "$env:TEMP\rze-shots\flow.png"
@@ -61,7 +61,7 @@ the window the way a user would:
 | `launch [-Scene X.scene] [-Config debug\|development\|retail] [-SettleSeconds 5] [-KeepImguiIni] [-AppArgs '...']` | Starts `Editor.exe -scene X` with the working directory set to `RZE\_build\<config>` (`development` by default). `-AppArgs` is one string of more arguments for the app, after `-scene`, e.g. `-AppArgs '-gfxvalidation'`; quote it, or PowerShell takes the leading `-` for one of the driver's own parameters. Refuses to start if an editor is already running. Backs up `RZE\Config\imgui.ini` first (below); `-KeepImguiIni` keeps the layout the run leaves instead. |
 | `shot [-Out path.png]` | Captures the client area only. Defaults to `$env:TEMP\rze-shots\`. |
 | `click -X -Y` | Left click. |
-| `dblclick -X -Y` | Two left clicks close enough together to count as a double-click (two `click` calls are too far apart). Double-clicking an object in the Scene panel focuses the camera on it. |
+| `dblclick -X -Y` | Two left clicks close enough together to count as a double-click (two `click` calls are too far apart). Double-clicking an object in the Object Browser focuses the camera on it. |
 | `drag -X -Y -X2 -Y2` | Left-button drag in 10 steps. Verified on the translate gizmo's X arrow. |
 | `scroll -X -Y -Notches N` | N wheel notches at (X, Y); + is away from you (zooms the scene view in). |
 | `key -Keys '...'` | `SendKeys` syntax. `'^a<value>{ENTER}'` replaces an ImGui number field. |
@@ -138,7 +138,7 @@ screen, and `shot` includes the bar. Rows marked "(+16)" were moved down by the 
 |---|---|
 | Title bar: minimize / maximize (restore) / close buttons | (2445 / 2491 / 2537, 20) (+5). Close asks about unsaved changes, like `close` |
 | Title bar: empty part (moves the window; double-click maximizes) | e.g. (1500, 20) (+5) |
-| Scene panel rows (Camera, DirectionalLight, ...) | x≈38–60, y = 75 + 18·row (row 0 = Camera). M4 = row 3 → (38, 129); NeckMech = row 2 → (60, 111); Sponza in Sponza.scene → (51, 111) (+16) |
+| Object Browser rows (Camera, DirectionalLight, ...) | x≈38–60, y = 75 + 18·row (row 0 = Camera). M4 = row 3 → (38, 129); NeckMech = row 2 → (60, 111); Sponza in Sponza.scene → (51, 111) (+16) |
 | Object Inspector: Position X / Y / Z field | (2310 / 2372 / 2435, 118) (+16) |
 | Object Inspector: Rotation X / Y / Z field | (2310 / 2372 / 2435, 159) (+16) |
 | Object Inspector: Scale X / Y / Z field | (2310 / 2372 / 2435, 202) (+16) |
@@ -254,7 +254,7 @@ downscales a 2560-wide image to 2000, so multiply what you measure by 1.28.
 | `quit` | Kills the app, like `driver.ps1 quit`. |
 | `log [-n 40] [--grep TEXT] [--engine]` | The app's output. A Game launched from the Editor writes here too. `--engine` reads the newest `RZE/Logs/RZELOG_*.txt` instead. |
 | `clip get`, `clip set TEXT` | The system clipboard (wl-paste, wl-copy), to check ImGui's copy and paste. |
-| `optick [--seconds 2] [--out raw.bin] [--scopes A,B] [--subtract C] [--top N]` | Takes an Optick capture over the network, as Optick's viewer does, and counts what arrived. Debug and Development only. With `--scopes`, also decodes it: the main thread's frames (mean, median, p95, p99) and each scope's time a frame and share of the frame; `--subtract` takes those scopes' time off each frame first (e.g. `ScenePanel::Draw(`, whose cost grows with the scene); `--top` lists the costliest scopes. A name matches any scope containing it, as `OPTICK_EVENT()` names scopes by signature (`void GameScene::Update()`). Launch with `-- -vsync 0`, or a fast frame measures the display's refresh. A capture now and then arrives empty (only a handshake); take it again. |
+| `optick [--seconds 2] [--out raw.bin] [--scopes A,B] [--subtract C] [--top N]` | Takes an Optick capture over the network, as Optick's viewer does, and counts what arrived. Debug and Development only. With `--scopes`, also decodes it: the main thread's frames (mean, median, p95, p99) and each scope's time a frame and share of the frame; `--subtract` takes those scopes' time off each frame first (e.g. `ObjectBrowserPanel::Draw(`, whose cost grows with the scene); `--top` lists the costliest scopes. A name matches any scope containing it, as `OPTICK_EVENT()` names scopes by signature (`void GameScene::Update()`). Launch with `-- -vsync 0`, or a fast frame measures the display's refresh. A capture now and then arrives empty (only a handshake); take it again. |
 | `launch --renderdoc ...`, then `renderdoc-capture [--timeout 30]` | Runs the app under `renderdoccmd` (`sudo dnf install renderdoc`), then captures the next frame: presses RenderDoc's capture key (F12), waits for the `.rdc`, saves its thumbnail beside it and counts its draws, dispatches, debug groups and GL calls. Captures go to `$XDG_RUNTIME_DIR/rze-driver/renderdoc/`; open one with `qrenderdoc <file.rdc>`. |
 
 How it works, and what to know:
@@ -327,7 +327,7 @@ or with before/after `shot`s. Unmarked = measured from a `shot` only.
 
 | target | client coords |
 |---|---|
-| Scene panel rows (Camera, DirectionalLight, NeckMech, M4 in DrawLineTest) | x = 2317, y = 78 / 101 / 123 / 145 ✓ |
+| Object Browser rows (Camera, DirectionalLight, NeckMech, M4 in DrawLineTest) | x = 2317, y = 78 / 101 / 123 / 145 ✓ |
 | Object Inspector: X / Y / Z fields (after selecting an object) | x = 2372 / 2444 / 2517 ✓ |
 | Object Inspector: Position / Rotation / Scale rows | y = 780 / 803 / 827 ✓ |
 | RenderComponent "Mesh Bounds" / "Sub-Mesh Bounds" checkboxes (NeckMech) | (2404, 956) / (2404, 980) ✓ |

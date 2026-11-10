@@ -1,4 +1,4 @@
-#include <UI/Panels/ScenePanel.h>
+#include <UI/Panels/ObjectBrowserPanel.h>
 
 #include <RZE.h>
 #include <UI/Framework/EditorContext.h>
@@ -137,9 +137,9 @@ namespace
 
 namespace Editor
 {
-	REGISTER_EDITOR_PANEL(ScenePanel);
+	REGISTER_EDITOR_PANEL(ObjectBrowserPanel);
 
-	struct ScenePanel::ObjectRename
+	struct ObjectBrowserPanel::ObjectRename
 	{
 		GameObjectPtr Object;
 		char Name[k_maxGameObjectNameSize] = {};
@@ -152,19 +152,19 @@ namespace Editor
 		bool ScrollToRow = true;
 	};
 
-	ScenePanel::ScenePanel() = default;
-	ScenePanel::~ScenePanel() = default;
+	ObjectBrowserPanel::ObjectBrowserPanel() = default;
+	ObjectBrowserPanel::~ObjectBrowserPanel() = default;
 
-	PanelDesc ScenePanel::Describe()
+	PanelDesc ObjectBrowserPanel::Describe()
 	{
 		PanelDesc desc;
-		desc.Name = "Scene";
-		desc.MenuPath = "View/Windows/Scene";
+		desc.Name = "Object Browser";
+		desc.MenuPath = "View/Windows/Object Browser";
 		desc.DefaultDock = EPanelDock::RightTop;
 		return desc;
 	}
 
-	void ScenePanel::Initialize(EditorContext& context)
+	void ObjectBrowserPanel::Initialize(EditorContext& context)
 	{
 		// The object made by Create GameObject is named in place. The command runs at the end of the UI frame, after
 		// this panel has drawn, so the object is only known here.
@@ -174,13 +174,13 @@ namespace Editor
 			});
 	}
 
-	void ScenePanel::OnSceneReset()
+	void ObjectBrowserPanel::OnSceneReset()
 	{
 		m_rename.reset();
 		m_rangeAnchor = nullptr;
 	}
 
-	void ScenePanel::Draw(EditorContext& context)
+	void ObjectBrowserPanel::Draw(EditorContext& context)
 	{
 		// Its own scope, as it grows with the scene: a profile can take it off the frame to measure the scene itself
 		OPTICK_EVENT();
@@ -189,7 +189,7 @@ namespace Editor
 
 		// Only over empty space: a row opens its own menu (DisplayObject). Creating doesn't use the selection, so this
 		// opens whatever is selected
-		if (ImGui::BeginPopupContextWindow("SceneMenu", ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
+		if (ImGui::BeginPopupContextWindow("ObjectBrowserMenu", ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
 		{
 			if (ImGui::MenuItem("Create GameObject"))
 			{
@@ -287,7 +287,7 @@ namespace Editor
 		}
 	}
 
-	bool ScenePanel::DisplayObject(EditorContext& context, GameObjectPtr gameObject)
+	bool ObjectBrowserPanel::DisplayObject(EditorContext& context, GameObjectPtr gameObject)
 	{
 		EditorSelection& selection = context.GetSelection();
 
@@ -445,14 +445,14 @@ namespace Editor
 		return isOpen && gameObject->HasChildren();
 	}
 
-	void ScenePanel::BeginRename(GameObjectPtr gameObject)
+	void ObjectBrowserPanel::BeginRename(GameObjectPtr gameObject)
 	{
 		m_rename = std::make_unique<ObjectRename>();
 		m_rename->Object = gameObject;
 		StringUtils::CopyTruncated(m_rename->Name, gameObject->GetName());
 	}
 
-	void ScenePanel::DrawRenameBox(EditorContext& context, const ImVec2& rowMin, const ImVec2& rowMax, float labelX)
+	void ObjectBrowserPanel::DrawRenameBox(EditorContext& context, const ImVec2& rowMin, const ImVec2& rowMax, float labelX)
 	{
 		ObjectRename& rename = *m_rename;
 		if (rename.ScrollToRow)
@@ -506,7 +506,7 @@ namespace Editor
 		}
 	}
 
-	void ScenePanel::SelectRange(EditorSelection& selection, GameObjectPtr target, bool addToSelection)
+	void ObjectBrowserPanel::SelectRange(EditorSelection& selection, GameObjectPtr target, bool addToSelection)
 	{
 		// The anchor is stale once the selection is changed elsewhere (e.g. picked in the scene view); range from the
 		// primary then instead

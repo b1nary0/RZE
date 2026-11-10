@@ -273,7 +273,7 @@ namespace EditorHarness
 		{
 			if (!command.HasMember("name") || !command["name"].IsString())
 			{
-				m_channel.Reply(MakeReply(id, R"(object needs "name", as the Scene panel shows it)"));
+				m_channel.Reply(MakeReply(id, R"(object needs "name", as the Object Browser shows it)"));
 				return;
 			}
 			const std::string objectName = command["name"].GetString();

@@ -24,8 +24,8 @@ namespace Editor
 	struct SceneModifiedEvent {};
 	// SceneDocument::IsModified changed
 	struct SceneModifiedStateChangedEvent { const SceneDocument& Document; };
-	// CreateGameObjectCommand made an empty object (Create GameObject), so the Scene panel puts it into rename. Not other
-	// ways of making objects (duplicating, pasting, dropping a mesh in) or undo and redo.
+	// CreateGameObjectCommand made an empty object (Create GameObject), so the Object Browser puts it into rename. Not
+	// other ways of making objects (duplicating, pasting, dropping a mesh in) or undo and redo.
 	struct GameObjectCreatedEvent { const GameObjectPtr& GameObject; };
 	// Once per EditorSelection call that changed it
 	struct SelectionChangedEvent { const EditorSelection& Selection; };
@@ -73,7 +73,7 @@ namespace Editor
 	// EditorContext. Main thread only (Publish asserts it).
 	//
 	// Events are delivered synchronously, as they're published, which can be in the middle of drawing (e.g. a click
-	// in the Scene panel changing the selection), so listeners must not call ImGui. A listener subscribed during a
+	// in the Object Browser changing the selection), so listeners must not call ImGui. A listener subscribed during a
 	// publish gets the next event, not the current one; one unsubscribed during a publish isn't called again.
 	class EditorEvents
 	{

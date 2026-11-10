@@ -56,8 +56,8 @@ driving the editor are covered by the `run-rze` skill (`.claude/skills/run-rze/`
 - **Editor UI corners are rounded** with `EditorStyle::k_cornerRounding` (`UI/Framework/EditorStyle.h`):
   - use `EditorUI::TreeNode`, not `ImGui::TreeNodeEx`, which draws its highlight square;
   - hand-drawn highlights pass `k_cornerRounding` themselves;
-  - after an ImGui upgrade, check tree-node highlights (`EditorUI::TreeNode` uses ImGui internals) in the Scene panel,
-    the Content Browser tree, inspector arrays and Task History.
+  - after an ImGui upgrade, check tree-node highlights (`EditorUI::TreeNode` uses ImGui internals) in the Object
+    Browser, the Content Browser tree, inspector arrays and Task History.
 
 ## Repository
 

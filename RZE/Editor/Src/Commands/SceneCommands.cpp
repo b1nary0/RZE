@@ -15,7 +15,7 @@
 namespace
 {
 	// name, or "name (n)" with the lowest n that isn't in use. Cosmetic: names don't have to be unique, but
-	// numbered copies are easier to tell apart in the Scene panel.
+	// numbered copies are easier to tell apart in the Object Browser.
 	std::string MakeUniqueName(const std::string& name)
 	{
 		GameScene& scene = RZE().GetActiveScene();
