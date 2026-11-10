@@ -38,10 +38,12 @@ namespace Editor
 		// The file Save writes to. Only meaningful while HasFilePath() is true.
 		const Filepath& GetFilePath() const;
 
-		void Save();
-		void SaveAs(const Filepath& filepath);
+		// False if the file couldn't be written (logged); the scene stays modified then, and SaveAs keeps the file
+		// it had
+		bool Save();
+		bool SaveAs(const Filepath& filepath);
 		// Saves to the scene's file, or asks for one in the file browser first if it hasn't got one. onDone, if given,
-		// runs once: with true when the scene is saved (straight away if it has a file), or false if the browser is
+		// runs once: with whether the scene was saved (straight away if it has a file), false if the browser is
 		// cancelled.
 		void SaveWithPrompt(std::function<void(bool saved)> onDone = nullptr);
 

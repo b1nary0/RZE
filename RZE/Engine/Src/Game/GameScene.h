@@ -27,7 +27,9 @@ public:
 	void Initialize();
 
 	void NewScene();
-	void Serialize(const Filepath& filePath);
+	// Writes the scene to filePath, or to its current file if filePath is invalid. filePath becomes the current file
+	// only once it's written. False if it couldn't be written (logged), and the file there before is kept.
+	bool Serialize(const Filepath& filePath);
 	// Synchronous load. See SceneLoadOperation for the asynchronous equivalent.
 	void Deserialize(const Filepath& filePath);
 	// Destroys every object: all of them leave the scene, which empties the render scene, then all are uninitialized.

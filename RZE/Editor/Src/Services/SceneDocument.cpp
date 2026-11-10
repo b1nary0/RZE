@@ -82,31 +82,39 @@ namespace Editor
 		return RZE().GetActiveScene().GetCurrentScenePath();
 	}
 
-	void SceneDocument::Save()
+	bool SceneDocument::Save()
 	{
 		AssertMsg(HasFilePath(), "The scene has no file to save to; use SaveAs");
 
 		// An invalid path saves to the scene's current one
-		RZE().GetActiveScene().Serialize(Filepath());
+		if (!RZE().GetActiveScene().Serialize(Filepath()))
+		{
+			return false;
+		}
 		OnSaved();
+		return true;
 	}
 
-	void SceneDocument::SaveAs(const Filepath& filepath)
+	bool SceneDocument::SaveAs(const Filepath& filepath)
 	{
-		// Also makes filepath the scene's path for later Saves
-		RZE().GetActiveScene().Serialize(filepath);
+		// Also makes filepath the scene's path for later Saves, once it's written
+		if (!RZE().GetActiveScene().Serialize(filepath))
+		{
+			return false;
+		}
 		m_isUntitled = false;
 		OnSaved();
+		return true;
 	}
 
 	void SceneDocument::SaveWithPrompt(std::function<void(bool saved)> onDone)
 	{
 		if (HasFilePath())
 		{
-			Save();
+			const bool saved = Save();
 			if (onDone)
 			{
-				onDone(true);
+				onDone(saved);
 			}
 			return;
 		}
@@ -121,10 +129,10 @@ namespace Editor
 		m_context.GetThumbnails().AddToBrowser(request);
 		request.OnChosen = [this, onDone](const Filepath& file)
 			{
-				SaveAs(file);
+				const bool saved = SaveAs(file);
 				if (onDone)
 				{
-					onDone(true);
+					onDone(saved);
 				}
 			};
 		request.OnCancelled = [onDone]()

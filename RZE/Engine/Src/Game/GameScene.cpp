@@ -43,7 +43,7 @@ const Filepath& GameScene::GetDefaultScenePath()
 	return s_defaultScenePath;
 }
 
-void GameScene::Serialize(const Filepath& filePath)
+bool GameScene::Serialize(const Filepath& filePath)
 {
 	std::vector<GameObjectPtr> roots;
 	for (auto& gameObject : m_objectRegistry)
@@ -58,27 +58,28 @@ void GameScene::Serialize(const Filepath& filePath)
 	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buf);
 	SceneFormat::Write(writer, roots);
 	
-	if (filePath.IsValid())
-	{
-		m_currentScenePath = filePath;
-	}
+	const Filepath targetPath = filePath.IsValid() ? filePath : m_currentScenePath;
 
 	// Beside it first, then moved over it, so a load reading it meanwhile (e.g. a background thumbnail render) never
 	// gets half a scene
-	const Filepath temporaryPath = File::GetTemporaryPathFor(m_currentScenePath);
+	const Filepath temporaryPath = File::GetTemporaryPathFor(targetPath);
 	File sceneFile(temporaryPath);
 	if (!sceneFile.Open(File::EFileOpenMode::Write))
 	{
-		RZE_LOG_ERROR_ARGS("Couldn't save scene [%s]: [%s] couldn't be opened for writing.", m_currentScenePath.GetRelativePath().c_str(), temporaryPath.GetRelativePath().c_str());
-		return;
+		RZE_LOG_ERROR_ARGS("Couldn't save scene [%s]: [%s] couldn't be opened for writing.", targetPath.GetRelativePath().c_str(), temporaryPath.GetRelativePath().c_str());
+		return false;
 	}
 	sceneFile.Write(buf.GetString());
 	sceneFile.Close();
 
-	if (!File::MoveReplacing(temporaryPath, m_currentScenePath))
+	if (!File::MoveReplacing(temporaryPath, targetPath))
 	{
-		RZE_LOG_ERROR_ARGS("Couldn't save scene [%s].", m_currentScenePath.GetRelativePath().c_str());
+		RZE_LOG_ERROR_ARGS("Couldn't save scene [%s].", targetPath.GetRelativePath().c_str());
+		return false;
 	}
+
+	m_currentScenePath = targetPath;
+	return true;
 }
 
 void GameScene::BeginLoad(const Filepath& filePath)

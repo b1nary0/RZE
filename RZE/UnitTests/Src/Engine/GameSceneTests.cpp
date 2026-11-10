@@ -14,7 +14,11 @@
 #include <RapidJSON/stringbuffer.h>
 
 #include <Utils/DebugUtils/Debug.h>
+#include <Utils/Platform/File.h>
 
+#include <TestFolder.h>
+
+#include <filesystem>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -161,4 +165,39 @@ TEST_CASE("A component is named as its class is, which the Inspector shows")
 {
 	CHECK(std::string(LightComponent::GetComponentName()) == "LightComponent");
 	CHECK(std::string(TransformComponent::GetComponentName()) == "TransformComponent");
+}
+
+TEST_CASE("Serialize makes a path the scene's file only once it's written there, and says when it couldn't")
+{
+	const ScopedTestFolder folder("UnitTestsTemp_GameSceneSave");
+	GameScene scene;
+	scene.AddGameObject("Saved");
+
+	const Filepath first = folder.GetFile("First.scene");
+	REQUIRE(scene.Serialize(first));
+	CHECK(first.Exists());
+	CHECK(scene.GetCurrentScenePath() == first);
+	CHECK_FALSE(File::GetTemporaryPathFor(first).Exists());
+	// An invalid path saves to the current file
+	CHECK(scene.Serialize(Filepath()));
+
+	SUBCASE("Its temporary file can't be opened")
+	{
+		const Filepath blocked = folder.GetFile("Blocked.scene");
+		folder.AddFolder("Blocked.scene.tmp");
+		CHECK_FALSE(scene.Serialize(blocked));
+		CHECK_FALSE(blocked.Exists());
+	}
+
+	SUBCASE("It can't be moved over the file")
+	{
+		const Filepath blocked = folder.GetFile("Blocked.scene");
+		folder.AddFolder("Blocked.scene");
+		CHECK_FALSE(scene.Serialize(blocked));
+		CHECK(std::filesystem::is_directory(blocked.GetAbsolutePath()));
+		CHECK_FALSE(File::GetTemporaryPathFor(blocked).Exists());
+	}
+
+	CHECK(scene.GetCurrentScenePath() == first);
+	scene.Unload();
 }

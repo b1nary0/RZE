@@ -112,6 +112,14 @@ Things to know on this machine (2026-11-08):
   sources failed`. Clear Read-only and burn again: exit 0. 3: Development Editor, DrawLineTest.scene: change NeckMech's
   Rotation Y, Ctrl+S (the file has the new value, no `.tmp` left in `Assets\Scenes`), Ctrl+Z, Ctrl+S: `git status`
   shows the scene unchanged.
+- **A23. A failed scene save stays unsaved.** `GameScene::Serialize` returns bool and takes the new path only once it's
+  written; `SceneDocument::Save`/`SaveAs` mark it saved only then, and `SaveWithPrompt` passes the result on. 1: 452
+  test cases in Debug and Development, 444 in Retail. 2: Development Editor, DrawLineTest.scene, with a folder made
+  at `RZE\Assets\Scenes\DrawLineTest.scene.tmp`: change Rotation Y, Ctrl+S: `[Error] Couldn't save scene ...`, the
+  title keeps its `*`, the file is unchanged. Close the window, choose Save in the prompt: the Editor stays open. Also
+  on Windows only: delete the folder, open `DrawLineTest.scene` in another program that locks it (or set it
+  read-only), Ctrl+S: `Couldn't save scene`, still `*`. Then unlock, Ctrl+S, Ctrl+Z, Ctrl+S: `git status` shows the
+  scene unchanged.
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 
