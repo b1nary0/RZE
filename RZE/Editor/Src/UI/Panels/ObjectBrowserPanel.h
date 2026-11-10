@@ -14,7 +14,7 @@ namespace Editor
 
 	// The scene's GameObject hierarchy: selection (click, Ctrl+click to toggle, Shift+click for a range), reparenting
 	// by drag and drop, renaming in place (F2), and per-object actions (rename, add component, detach, delete) from the
-	// context menu
+	// context menu. Add GameObject is in its toolbar, and in the menu on its empty space.
 	class ObjectBrowserPanel : public EditorPanel
 	{
 	public:
@@ -25,6 +25,7 @@ namespace Editor
 
 	private:
 		void Initialize(EditorContext& context) override;
+		void DrawMenuBar(EditorContext& context) override;
 		void Draw(EditorContext& context) override;
 		void OnSceneReset() override;
 

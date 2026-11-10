@@ -138,6 +138,14 @@ Things to know on this machine (2026-11-08):
   Development Editor: the panel is titled "Object Browser" and View > Windows lists it. The committed
   `RZE\Config\imgui.ini` still names it `[Window][Scene]`, so on this machine it opens floating once: dock it top-right
   (above Object Inspector) and the layout keeps it.
+- **A27. Object Browser: Add GameObject button.** The panel has a toolbar (its menu bar) with an "Add GameObject" button
+  at its right end, in the same place with or without the scrollbar; the rows sit below it. 1: 452 test cases in Debug
+  and Development, 444 in Retail. 2: Development Editor, Stress2500.scene: click Camera, scroll the panel to the bottom:
+  the toolbar stays put. Click Add GameObject: a `GameObject` row at the bottom, scrolled into view, its name in a
+  focused box; type `Probe`, Enter. Ctrl+Z twice, Ctrl+Y twice: `GameObject`, gone, `GameObject`, `Probe`. Click the
+  toolbar to the left of the button: `Probe` stays selected. DrawLineTest.scene: a click on the empty space under the
+  rows clears the selection; a right-click there still opens Create GameObject. Undo everything and close with Don't
+  Save. The rows moved down, so re-measure the Object Browser coordinates in the run-rze skill's Windows table.
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 

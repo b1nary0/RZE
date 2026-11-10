@@ -161,6 +161,12 @@ namespace Editor
 		desc.Name = "Object Browser";
 		desc.MenuPath = "View/Windows/Object Browser";
 		desc.DefaultDock = EPanelDock::RightTop;
+		// The toolbar sits in the menu bar, so it isn't scrolled away with the rows. A scene that fills the panel leaves
+		// no empty space to right-click for Create GameObject.
+		desc.WindowFlags = ImGuiWindowFlags_MenuBar;
+		// The same space around its controls as the Log panel's and the scene view's toolbars
+		desc.MenuBarPadding = 6.0f;
+		desc.MenuBarSeparator = true;
 		return desc;
 	}
 
@@ -172,6 +178,24 @@ namespace Editor
 			{
 				BeginRename(event.GameObject);
 			});
+	}
+
+	void ObjectBrowserPanel::DrawMenuBar(EditorContext& context)
+	{
+		// At the bar's right edge, inset as far as its contents are on the left. Not the content region's: that stops at
+		// the scrollbar, so the button would move as the scene grows long enough to scroll.
+		const char* const addLabel = "Add GameObject";
+		const ImGuiWindow* const window = ImGui::GetCurrentWindow();
+		const float right = window->MenuBarRect().Max.x - window->DC.MenuBarOffset.x;
+		const float buttonWidth = ImGui::CalcTextSize(addLabel).x + ImGui::GetStyle().FramePadding.x * 2.0f;
+		ImGui::SetCursorScreenPos(ImVec2(right - buttonWidth, ImGui::GetCursorScreenPos().y));
+
+		// The new object is named in place, as from the menu (GameObjectCreatedEvent)
+		if (ImGui::Button(addLabel))
+		{
+			context.GetCommands().Push<CreateGameObjectCommand>();
+		}
+		EditorUI::ItemTooltip("Adds an empty GameObject at the top level of the scene and names it");
 	}
 
 	void ObjectBrowserPanel::OnSceneReset()
@@ -205,7 +229,10 @@ namespace Editor
 			BeginRename(selection.GetPrimary());
 		}
 
-		if (ImGui::IsAnyMouseDown() && (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) && !selection.IsEmpty())
+		// Only under the rows: not on the toolbar beside its button, or on a floating panel's title bar
+		const bool isOverEmptySpace = ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()
+			&& ImGui::GetCurrentWindow()->InnerRect.Contains(ImGui::GetMousePos());
+		if (ImGui::IsAnyMouseDown() && isOverEmptySpace && !selection.IsEmpty())
 		{
 			selection.Clear();
 		}

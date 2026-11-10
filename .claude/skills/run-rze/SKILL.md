@@ -138,7 +138,7 @@ screen, and `shot` includes the bar. Rows marked "(+16)" were moved down by the 
 |---|---|
 | Title bar: minimize / maximize (restore) / close buttons | (2445 / 2491 / 2537, 20) (+5). Close asks about unsaved changes, like `close` |
 | Title bar: empty part (moves the window; double-click maximizes) | e.g. (1500, 20) (+5) |
-| Object Browser rows (Camera, DirectionalLight, ...) | x≈38–60, y = 75 + 18·row (row 0 = Camera). M4 = row 3 → (38, 129); NeckMech = row 2 → (60, 111); Sponza in Sponza.scene → (51, 111) (+16) |
+| Object Browser rows (Camera, DirectionalLight, ...) | x≈38–60, y = 75 + 18·row (row 0 = Camera). M4 = row 3 → (38, 129); NeckMech = row 2 → (60, 111); Sponza in Sponza.scene → (51, 111) (+16). Its toolbar has since moved the rows down (33 px on Linux): measure again |
 | Object Inspector: Position X / Y / Z field | (2310 / 2372 / 2435, 118) (+16) |
 | Object Inspector: Rotation X / Y / Z field | (2310 / 2372 / 2435, 159) (+16) |
 | Object Inspector: Scale X / Y / Z field | (2310 / 2372 / 2435, 202) (+16) |
@@ -214,7 +214,7 @@ Snap Layouts, or RenderDoc's capture key.
 ```bash
 d=".claude/skills/run-rze/driver.py"
 $d launch --harness --nested --scene DrawLineTest.scene  # off-screen; waits until maximized, then 5 s for assets
-$d click 2317 123                                # select NeckMech (coordinates: the nested layout reference, below)
+$d click 2317 155                                # select NeckMech (coordinates: the nested layout reference, below)
 $d click 2444 803; $d key '^a45{ENTER}'          # Rotation Y = 45
 $d object NeckMech                               # "rotation": [0, 45, 0], components, parent, GUID
 $d state                                         # scene, modified, selection, undo, objects
@@ -227,7 +227,7 @@ The same commands without `--harness` use real input instead:
 ```bash
 $d launch --scene DrawLineTest.scene          # waits for "RZEStudio - ..." in the title, then 5 s for assets
 $d shot                                       # -> $TMPDIR/rze-shots/<timestamp>.png (usually /tmp), client area only
-$d click 2317 123                             # select NeckMech (on the desktop, panels sit where your layout has them:
+$d click 2317 155                             # select NeckMech (on the desktop, panels sit where your layout has them:
 $d click 2444 803; $d key '^a45{ENTER}'       #   check these against a `shot`) / Rotation Y = 45
 $d log --grep error                           # the Editor's output (stdout and stderr)
 $d close                                      # closes the window as a user would: "closed code=0"
@@ -327,7 +327,8 @@ or with before/after `shot`s. Unmarked = measured from a `shot` only.
 
 | target | client coords |
 |---|---|
-| Object Browser rows (Camera, DirectionalLight, NeckMech, M4 in DrawLineTest) | x = 2317, y = 78 / 101 / 123 / 145 ✓ |
+| Object Browser: Add GameObject button (its toolbar, at the right) | (2498, 76) ✓ |
+| Object Browser rows (Camera, DirectionalLight, NeckMech, M4 in DrawLineTest) | x = 2317, y = 111 / 133 / 155 / 177 ✓ |
 | Object Inspector: X / Y / Z fields (after selecting an object) | x = 2372 / 2444 / 2517 ✓ |
 | Object Inspector: Position / Rotation / Scale rows | y = 780 / 803 / 827 ✓ |
 | RenderComponent "Mesh Bounds" / "Sub-Mesh Bounds" checkboxes (NeckMech) | (2404, 956) / (2404, 980) ✓ |
