@@ -38,7 +38,9 @@ Things to know on this machine (2026-11-08):
 - **A1. Generate and build.** `GenerateSolutions.bat`, then build Debug, Development and Retail (`/W3 /WX`). Expect no
   errors or warnings.
 - **A2. Unit tests.** `UnitTests.exe` in `RZE\_build\debug`, `development` and `retail`: exit code 0. Afterwards
-  `RZE\_build\debug\ProjectData` and `RZE\_build\development\ProjectData` don't exist.
+  `RZE\_build\debug\ProjectData` and `RZE\_build\development\ProjectData` don't exist. Expected now: 451 test cases
+  in Debug and Development, 443 in Retail. Linux runs 9 more, in `Utils\Linux` and `Rendering\OpenGL`, which Windows
+  doesn't build. The counts in the checks below are Linux's from when each was written; this one is current.
 - **A3. Burn.** `RZE\_build\debug\SourceAssetBurner.exe`: exit code 0, no `[Error]` line.
 - **Smoke.** `driver.ps1 launch -Harness -Config debug -Scene Sponza.scene -SettleSeconds 20`, `shot`, `close`: the
   scene renders, `closed code=0`, the log has no `[Error]` line and ends "encountered 0 live resources". Shaders
@@ -155,6 +157,16 @@ Things to know on this machine (2026-11-08):
   Browser and Log as bottom tabs). `close`: `closed code=0 (harness); imgui.ini restored`, and there's no
   `RZE\Config\imgui.ini` and no `%TEMP%\rze-driver\imgui.ini.absent` afterwards. Copy `imgui.ini.mine` back, then
   `launch` and `close` again: the file is the same as `imgui.ini.mine` (`fc /b`).
+- **A29. Selected objects are outlined (OutlineRenderStage).** New files, so run `GenerateSolutions.bat` first. 1: A2's
+  counts (8 tests are new: `-sf="*SelectionOutline*,*RenderView*"` runs them). The shader translation tests aren't built
+  on Windows, so check the log has no shader compile error for `Pixel_OutlineMask` or `Pixel_Outline`. 2: Development
+  Editor, DrawLineTest.scene: the log's `Render pipeline:` line has `DebugDrawRenderStage -> OutlineRenderStage ->
+  ImGuiRenderStage`. Click M4: a yellow line about 3 px wide around its silhouette, and the Mesh Bounds checkbox stays
+  off (no wire box); the slots through its stock are traced too, as on Linux. Click empty space: no line. Drag M4 onto
+  NeckMech in the Object Browser, select NeckMech: both outlined. Undo that, set NeckMech's Position to the point 60% of
+  the way from the editor camera (`EditorCam`) to M4, select M4: where M4 is behind NeckMech its line is faint over
+  NeckMech, full elsewhere. Delete M4 from the row menu: the line goes; Ctrl+Z: it's back. Close with Don't Save. On
+  DX11 the depth comparison and the R32_UINT mask are the cross-API risks: compare against Linux's look.
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 

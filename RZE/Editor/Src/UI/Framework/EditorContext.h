@@ -13,7 +13,6 @@
 #include <Services/ProjectWatcher.h>
 #include <Services/SceneDocument.h>
 #include <Services/ThumbnailRenderer.h>
-#include <Services/SelectionBoundsDisplay.h>
 #include <Services/UndoHistory.h>
 
 #include <UI/Modals/FileBrowserModal.h>
@@ -55,8 +54,8 @@ namespace Editor
 
 		// Drops everything that refers to the current scene's objects (selection, editor camera, a pick in flight,
 		// pending commands, undo history), then publishes SceneUnloadingEvent so listeners drop theirs (e.g. each panel's
-		// EditorPanel::OnSceneReset). Call before the scene unloads, so cleanup that touches those objects (e.g.
-		// selection bounds) still can. UI state, like the SceneView's viewport, carries over.
+		// EditorPanel::OnSceneReset). Call before the scene unloads, so cleanup that touches those objects (e.g. a
+		// SelectionChangedEvent listener's) still can. UI state, like the SceneView's viewport, carries over.
 		void ResetSceneState();
 
 		EditorEvents& GetEvents() { return m_events; }
@@ -112,7 +111,6 @@ namespace Editor
 		EditorEvents m_events;
 		EditorSettings m_settings;
 		EditorSelection m_selection;
-		SelectionBoundsDisplay m_selectionBounds;
 		GameObjectPtr m_editorCamera;
 		SceneViewportState m_sceneViewport;
 		ScenePicker m_scenePicker;

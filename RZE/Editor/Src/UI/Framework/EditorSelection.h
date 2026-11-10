@@ -11,7 +11,7 @@ namespace Editor
 
 	// The editor's selected GameObjects, shared by every panel through EditorContext.
 	// In selection order; the last entry is the primary, which the gizmo and inspector act on.
-	// Each call that changes it publishes one SelectionChangedEvent (see SelectionBoundsDisplay).
+	// Each call that changes it publishes one SelectionChangedEvent.
 	class EditorSelection
 	{
 	public:

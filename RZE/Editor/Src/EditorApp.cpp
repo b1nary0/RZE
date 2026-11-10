@@ -1,6 +1,7 @@
 #include <EditorApp.h>
 
 #include <Services/AssetFiles.h>
+#include <Services/SelectionOutline.h>
 
 #include <UI/Framework/EditorStyle.h>
 #include <UI/Framework/EditorUI.h>
@@ -15,6 +16,7 @@
 
 #include <Graphics/RenderEngine.h>
 #include <Graphics/RenderStages/ImGuiRenderStage.h>
+#include <Graphics/RenderStages/OutlineRenderStage.h>
 
 #include <EngineCore/Async/AsyncOperationManager.h>
 #include <EngineCore/Input/ImGuiInput.h>
@@ -64,6 +66,8 @@ namespace Editor
 	void EditorApp::OnInitialize()
 	{
 		const bool isWithEditor = true;
+		// The selection's outline (ApplySelectionOutline), over the debug lines and under the UI
+		RZE().GetRenderEngine().AddRenderStage<OutlineRenderStage>();
 		RZE().GetRenderEngine().AddRenderStage<ImGuiRenderStage>(isWithEditor);
 
 		m_imguiConfigFilepath = Filepath("Config/imgui.ini");
@@ -139,6 +143,9 @@ namespace Editor
 		OPTICK_EVENT();
 
 		m_context.GetPanels().PreRenderAll(m_context);
+
+		// After the UI frame's commands have run, so what they selected is outlined in this frame's render
+		ApplySelectionOutline(m_context.GetSelection(), RZE().GetRenderEngine().GetMainView());
 	}
 
 	void EditorApp::UpdateUI()

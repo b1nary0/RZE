@@ -35,8 +35,8 @@ namespace Editor
 		m_mainCameraGUID = mainCamera != nullptr && std::find(subtree.begin(), subtree.end(), *mainCamera) != subtree.end()
 			? mainCamera->GetGUID() : ObjectGUIDs::k_invalid;
 
-		// While the objects are still in the scene, so whatever reacts to the selection (e.g. SelectionBoundsDisplay)
-		// can still reach them
+		// While the objects are still in the scene, so whatever reacts to the selection (SelectionChangedEvent) can still
+		// reach them
 		std::vector<GameObjectPtr> remaining;
 		for (const GameObjectPtr& selected : selection.GetAll())
 		{
