@@ -4,7 +4,7 @@ Every Editor window is an `EditorPanel` in `Editor\Src\UI\Panels\`, registered w
 
 | Panel (window name) | Class | Default dock | Menu | Closable |
 |---|---|---|---|---|
-| Scene | `ScenePanel` | RightTop | View > Windows > Scene | yes |
+| Object Browser | `ObjectBrowserPanel` | RightTop | View > Windows > Object Browser | yes |
 | SceneView | `SceneViewPanel` | Centre (nothing docks into it) | — | no |
 | Object Inspector | `InspectorPanel` | RightBottom | View > Windows > Object Inspector | yes |
 | Content Browser | `ContentBrowserPanel` | BottomLeft, in the [bottom dock area](Editor-Framework.md#the-bottom-dock-area) | View > Windows > Content Browser | yes |
@@ -18,10 +18,10 @@ Every Editor window is an `EditorPanel` in `Editor\Src\UI\Panels\`, registered w
 ```mermaid
 %%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart TD
-    Scene["Scene<br/>(tree)"] -->|"select"| Sel["EditorSelection<br/>(in EditorContext)"]
+    OB["Object Browser<br/>(tree)"] -->|"select"| Sel["EditorSelection<br/>(in EditorContext)"]
     SV["SceneView<br/>(3D viewport)"] -->|"select"| Sel
     Sel -->|"primary + shared components"| OI["Object Inspector"]
-    Scene -->|"commands"| Q["CommandQueue"]
+    OB -->|"commands"| Q["CommandQueue"]
     SV -->|"gizmo commands"| Q
     OI -->|"property commands"| Q
     Q -->|"once per frame"| GS["GameScene"]
@@ -31,7 +31,7 @@ flowchart TD
 
 The selection is `EditorSelection`, in the `EditorContext`, so every panel reads and changes the same one. It's an ordered list of GameObjects:
 
-- The **last** object is the **primary** selection. The transform gizmo is on it, the Object Inspector shows its values and the Scene panel's right-click menu acts on it.
+- The **last** object is the **primary** selection. The transform gizmo is on it, the Object Inspector shows its values and F2 in the Object Browser renames it.
 - `Select` / `SetSelection` replace the selection, `Toggle` / `AddToSelection` extend it, `Clear` empties it, `IsSelected` tests one object.
 - Each call that changes it publishes `SelectionChangedEvent`. `SelectionBoundsDisplay` listens and draws every selected object's **mesh bounds** in yellow, through its `RenderComponent`'s "Mesh Bounds" toggle (Debug Draw), so the inspector checkbox agrees.
 - **Escape** (with the SceneView hovered) clears it, and loading or creating a scene clears it.
@@ -45,16 +45,17 @@ flowchart TD
     D -->|"click empty space"| E["[ ]"]
 ```
 
-## Scene (`ScenePanel`)
+## Object Browser (`ObjectBrowserPanel`)
 
 A tree of the scene's objects (the editor camera is hidden).
 
 - **Click** selects; **Ctrl+click** adds an object to the selection or removes it.
-- **Shift+click** selects every row from the **anchor** to the clicked one, which becomes the primary; **Ctrl+Shift+click** adds that range to the selection. The anchor is the last row clicked without Shift and stays put, so further Shift+clicks re-range from it. Rows count in on-screen order, so a collapsed parent's children are left out. If the selection was changed elsewhere (e.g. picked in the SceneView), the range starts from the primary; if the anchor is hidden under a collapsed parent, Shift+click acts as a plain click. The range is applied after every row is drawn (`ScenePanel::SelectRange`), since it can end below the clicked row.
+- **Shift+click** selects every row from the **anchor** to the clicked one, which becomes the primary; **Ctrl+Shift+click** adds that range to the selection. The anchor is the last row clicked without Shift and stays put, so further Shift+clicks re-range from it. Rows count in on-screen order, so a collapsed parent's children are left out. If the selection was changed elsewhere (e.g. picked in the SceneView), the range starts from the primary; if the anchor is hidden under a collapsed parent, Shift+click acts as a plain click. The range is applied after every row is drawn (`ObjectBrowserPanel::SelectRange`), since it can end below the clicked row.
 - **Double-click** glides the editor camera to frame the object (`EditorCameraComponent::FocusOn`; see [Editor-Camera-And-Build-Launch.md](Editor-Camera-And-Build-Launch.md)).
 - **Drag and drop** one object onto another to parent it. It keeps its local transform, so it moves if the new parent isn't at the origin (see [10-KnownIssues](../10-KnownIssues/Architectural-Notes-And-TODOs.md)).
-- **Right-click** an object for its menu. The first line is its name: **right-click the name** to rename it (Enter to apply). Then Add Component (every registered type), DetachFromParent (child objects only) and Delete. All of them, and drag-and-drop parenting, can be undone; Delete removes the object's children too, and undo brings them all back in the same order.
-- **Right-click empty space** while nothing is selected: Create GameObject, which asks for a name.
+- **Right-click** an object for its menu. The first line is its name, then Rename (F2), Add Component (every registered type), DetachFromParent (child objects only) and Delete. All of them, and drag-and-drop parenting, can be undone; Delete removes the object's children too, and undo brings them all back in the same order.
+- **Right-click empty space**: Create GameObject. It adds an object named `GameObject` (`GameObject (1)`, `(2)`, ... if the name is taken), selects it and puts it straight into a rename. Creating and naming are two undo steps. Once a scene's rows fill the panel there's no empty space left to right-click; an "Add GameObject" button is planned for that.
+- **Rename in place:** **F2** (with the panel focused) renames the primary selection. A text box replaces the row's name, scrolled into view if it isn't. **Enter** applies the name (`RenameGameObjectCommand`); **Escape** or a click elsewhere cancels. An empty name can't be applied: the box gets a red border and the tooltip "A GameObject needs a name", and Enter keeps it open. The renamed row stays drawn while it's scrolled out of the list clipper's range, so the box keeps the keyboard; if its row stops being listed (the object deleted or undone, or its parent collapsed), the rename ends.
 - Clicking empty space in the panel clears the selection.
 - Collapsed parents can be clicked, dragged and right-clicked like any other row.
 
@@ -181,7 +182,7 @@ Every background task's history in full: a row per run, newest first, that opens
 
 ## Key files
 
-- `Editor\Src\UI\Panels\ScenePanel`, `SceneViewPanel`, `InspectorPanel`, `ContentBrowserPanel`, `LogPanel`, `ResourceMonitorPanel`, `ImGuiDemoPanel`, `SettingsPanel`, `ProjectSettingsPanel`, `TaskHistoryPanel` (`.h/.cpp`)
+- `Editor\Src\UI\Panels\ObjectBrowserPanel`, `SceneViewPanel`, `InspectorPanel`, `ContentBrowserPanel`, `LogPanel`, `ResourceMonitorPanel`, `ImGuiDemoPanel`, `SettingsPanel`, `ProjectSettingsPanel`, `TaskHistoryPanel` (`.h/.cpp`)
 - `Editor\Src\UI\Framework\EditorSelection.h/.cpp`, `ScenePicker.h/.cpp`
 - `Editor\Src\Commands\SceneCommands.h/.cpp` — `CreateMeshObjectCommand`
 - `Editor\Src\Services\SelectionBoundsDisplay.h/.cpp`

@@ -30,9 +30,10 @@ The offline and runtime halves share only the binary format, not code paths. Loa
 .\RZE\_build\development\SourceAssetBurner.exe <file>     # burn one source file
 ```
 
-It exits with 1 if any source fails to import, or if the one file given isn't there, so a build step (CI's Burn
-Assets) fails with it. A full burn ends with a summary line: `imported N sources`, or `N of M sources failed to
-import`. Retail builds compile logging out, so there it prints nothing, but the exit code is the same.
+It exits with 1 if any source fails to import (including an asset it couldn't write), or if the one file given isn't
+there, so a build step (CI's Burn Assets) fails with it. A model Assimp can't load logs Assimp's reason
+(`Failed to load model from [path]: <reason>`, or `the scene is incomplete` when Assimp flags it so). A full burn
+ends with a summary line: `imported N sources`, or `N of M sources failed to import`. Retail builds compile logging out, so there it prints nothing, but the exit code is the same.
 
 It takes about a minute for everything (most of it New Sponza's FBX). **`ProjectData/` isn't tracked in git**, so burn once after cloning, and again after pulling any change to the importer, such as the coordinate fix below. Burns are **deterministic**: burning the same source twice gives byte-identical files.
 
@@ -59,9 +60,9 @@ It takes about a minute for everything (most of it New Sponza's FBX). **`Project
 
     These flags decide the material's pixel shader at runtime ([Materials-Meshes-Shaders.md](../04-Rendering/Materials-Meshes-Shaders.md)).
 4. **Check the size**: if the model's largest dimension is under 1 cm or over 500 m, it logs a warning that the source probably isn't in metres. It still imports as-is; scale it per instance in the Editor, where the RenderComponent inspector shows the size in metres.
-5. **Write** the mesh (`MeshAssetWriter`) and each material (deduplicated by output path).
+5. **Write** the mesh (`MeshAssetWriter`) to `AssetPaths::GetMesh(name)` and each material (deduplicated by output path) to `AssetPaths::GetMaterial(meshName, materialName)`. `AssetWriter::Write()` returns false if the file couldn't be written (logged, naming the file), and the source then fails to import. A writer opens its file, which empties it, only once the data is complete and matches the size it counted, so a miscounted asset doesn't replace a good one. An embedded texture that can't be written is left out with a warning; the import goes on.
 
-Textures aren't converted: materials store paths back into `RZE\Assets\`, and `WriteTextureAsset()` is a stub.
+Textures aren't converted: materials store paths back into `RZE\Assets\`, and `WriteTextureAsset()` is a stub. Paths in both formats (a mesh's material paths, a material's texture paths) are written with `Filepath::GetSerializedPath()`, always `\`, so the paths are the same whichever platform burned; readers take either separator, so older files with `/` or native separators still load.
 
 ## Units and handedness
 

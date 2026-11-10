@@ -40,15 +40,17 @@ W/E/R/Q/X are ignored while RMB is held, because those keys fly the camera then.
 | **Drag** (over 4 px) | SceneView | Marquee: select everything in the rectangle, including hidden objects |
 | **Ctrl + drag** | SceneView | Marquee that adds to the selection |
 | **Escape** | SceneView hovered | Clear the selection |
-| **Click** | Scene panel | Select the object |
-| **Ctrl + click** | Scene panel | Add the object to the selection, or remove it |
-| **Shift + click** | Scene panel | Select the rows from the last row clicked without Shift to this one |
-| **Ctrl + Shift + click** | Scene panel | Add that range to the selection |
-| **Click empty space** | Scene panel | Clear the selection |
-| **Double-click** | Scene panel | Frame the object with the editor camera |
-| **Drag and drop** onto another object | Scene panel | Parent it to that object |
-| **Right-click** | Scene panel | Context menu: the object's name, Add Component, DetachFromParent, Delete (on empty space with nothing selected: Create GameObject) |
-| **Right-click the name** in that menu | Scene panel | Rename: type the new name, then Enter |
+| **Click** | Object Browser | Select the object |
+| **Ctrl + click** | Object Browser | Add the object to the selection, or remove it |
+| **Shift + click** | Object Browser | Select the rows from the last row clicked without Shift to this one |
+| **Ctrl + Shift + click** | Object Browser | Add that range to the selection |
+| **Click empty space** | Object Browser | Clear the selection |
+| **Double-click** | Object Browser | Frame the object with the editor camera |
+| **Drag and drop** onto another object | Object Browser | Parent it to that object |
+| **Right-click** | Object Browser | Context menu: the object's name, Rename, Add Component, DetachFromParent, Delete (on empty space: Create GameObject, which starts a rename of the new object) |
+| **F2** | Object Browser focused | Rename the primary selection in place |
+| **Enter** | Object Browser rename box | Apply the name (not while it's empty) |
+| **Escape** / click elsewhere | Object Browser rename box | Cancel the rename |
 
 Details: [Editor-Panels.md](Editor-Panels.md).
 
@@ -76,8 +78,6 @@ These work anywhere in the Editor, except that a focused text field keeps its ow
 
 | Shortcut | Where | Action |
 |---|---|---|
-| **Escape** | "Create GameObject" name box | Close it without creating |
-| **Enter** | "Create GameObject" name box | Create the object |
 | **Alt + F4** / window close button | anywhere | Exit, asking about unsaved changes first |
 | **Escape** | Unsaved Changes prompt | Cancel |
 | **Double-click** / **Enter** | File browser | Open the folder, or choose the file (Save mode: save to the typed name) |
@@ -104,7 +104,7 @@ Save Scene is the File menu's only shortcut, and the View and Help menus have no
 | Ctrl during a gizmo drag | `SceneViewPanel::Draw` → `GizmoSnapper::PrepareManipulate` (ImGui's `KeyCtrl`) |
 | Picking and marquee | `SceneViewPanel::HandleSelectionInput` |
 | Escape in the SceneView | `EditorApp::RegisterInputEvents` |
-| Scene panel | `ScenePanel::Draw` (ImGui item clicks) |
+| Object Browser | `ObjectBrowserPanel::Draw` (ImGui item clicks, F2); the rename box in `ObjectBrowserPanel::DrawRenameBox` |
 | Ctrl+S, Ctrl+Z/Y/Shift+Z, Ctrl+C/V/D | `MainMenuBar::HandleShortcuts` (`ImGui::Shortcut` with `ImGuiInputFlags_RouteGlobal`) |
 | Window close | `EditorApp::OnCloseRequested` |
 | File browser | `FileBrowserModal::HandleKeys` |

@@ -29,7 +29,7 @@ One sub-mesh's geometry: its name, object-space bounds, and GPU `VertexBuffer`/`
 Immutable once created, so every object drawing it shares one rather than copying it:
 
 - **Sub-meshes**: a `MeshGeometry` each, and the index of the slot it's drawn with.
-- **Slots**: one per material asset. Sub-meshes made with the same material share a slot, so changing the slot changes them all. Each has a `Name` (the material asset's file name, unique within the mesh), the shared `MaterialInstance`, and the `MaterialPath` it came from (invalid for a mesh made in code).
+- **Slots**: one per material asset. Sub-meshes made with the same material share a slot, so changing the slot changes them all. Each has a `Name` (the material asset's file name without the extension, read with `Filepath::GetStem` so a path stored with `\` gives the same name on Linux; unique within the mesh), the shared `MaterialInstance`, and the `MaterialPath` it came from (invalid for a mesh made in code).
 - **Placements**: each draws one sub-mesh at a local transform, and a sub-mesh can be placed more than once (instancing from FBX). A mesh made in code places each sub-mesh once, at the origin.
 - `BuildDraws(objectMatrices, materialSlots, outDraws)` makes one `MeshDraw` per placement. Draws for placements at the mesh's origin share the object's matrices.
 

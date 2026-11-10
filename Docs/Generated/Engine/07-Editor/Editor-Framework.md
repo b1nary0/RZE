@@ -35,7 +35,7 @@ flowchart TD
 | `GetSceneViewport()` → `SceneViewportState` | Whether the SceneView is hovered (editor input only reaches the scene then) and its size in pixels. |
 | `GetScenePicker()` → `ScenePicker` | GPU picking: `RequestPick(x, y, callback)` asks `PickRenderStage` what's at a pixel. A frame or two later the callback gets a `ScenePick`: the object (null for none), the world position of the surface there (unset where nothing is drawn) and the ray from the camera through the pixel. |
 | `GetPanels()` → `PanelManager` | Every registered panel. `Find<T>()` exists for rare cases; prefer sharing state through the context. |
-| `GetSceneDocument()` → `SceneDocument` | New, load, save and save-as for the scene, and whether it has unsaved changes (worked out from the undo history; see [Save point](#the-save-point-and-unsaved-changes)). `SaveWithPrompt(onDone)` saves straight away if the scene has a file; otherwise it opens the file browser in Save mode and calls `onDone(true)` once saved, or `onDone(false)` if the browser is cancelled. |
+| `GetSceneDocument()` → `SceneDocument` | New, load, save and save-as for the scene, and whether it has unsaved changes (worked out from the undo history; see [Save point](#the-save-point-and-unsaved-changes)). `Save` and `SaveAs` return false if the file couldn't be written (logged): the scene stays modified, `SaveAs` keeps the file it had, and no `SceneSavedEvent` is published. `SaveWithPrompt(onDone)` saves straight away if the scene has a file; otherwise it opens the file browser in Save mode. It calls `onDone` with whether the scene was saved, or `onDone(false)` if the browser is cancelled. |
 | `GetGameBuilder()` → `GameBuilder` | File > Build Game / Launch Game, on a worker thread. See [Editor-Camera-And-Build-Launch.md](Editor-Camera-And-Build-Launch.md). |
 | `GetClipboard()` → `GameObjectClipboard` | Copy and paste of GameObjects, held in memory as `GameObjectSnapshot`s (see [Editor-Overview.md](Editor-Overview.md#edit-copy-paste-and-duplicate)). |
 | `GetThumbnails()` → `ThumbnailRenderer` | Renders scene and mesh thumbnails in the background. `Request(asset, force)`, and `AddToBrowser(request)` to wire a file browser up to it. See [Thumbnails-And-File-Browser.md](Thumbnails-And-File-Browser.md). |
@@ -182,7 +182,7 @@ context.GetCommands().Push<DeleteGameObjectCommand>(gameObject);
 
 | Command | File | Does | Undo record |
 |---|---|---|---|
-| `CreateGameObjectCommand` | `SceneCommands` | Adds a named GameObject | parks / restores the new object |
+| `CreateGameObjectCommand` | `SceneCommands` | Adds a GameObject named `GameObject` (`GameObject (1)`, ... if taken), selects it and publishes `GameObjectCreatedEvent` | parks / restores the new object |
 | `RenameGameObjectCommand` | `SceneCommands` | Sets its name; names don't have to be unique | old and new name |
 | `DeleteGameObjectCommand` | `SceneCommands` | Parks it and its descendants, and takes them out of the selection | restores / parks them |
 | `AddComponentCommand` | `SceneCommands` | Adds a component by type ID | removes it (`RemoveComponentByID`) / adds a new one |
@@ -240,7 +240,7 @@ Records find their targets by **`ObjectGUID`** through `UndoTargets::FindObject`
 
 Deleting doesn't destroy anything. `ParkedSubtree` (`Commands\ParkedSubtree`) takes an object and its descendants **out of the scene** but keeps them alive, and undo puts back the very same objects:
 
-- **Park:** remembers the parent's GUID and the object's index among its children, takes the subtree out of the selection, detaches it, and calls `OnRemoveFromScene` on each object. The objects stay in the scene's list (so root order and GUIDs come back unchanged) but are out of it: lookups, saving, updates and the Scene panel skip them (see [Scene-And-GameObject-Model.md](../03-SceneAndGameObjects/Scene-And-GameObject-Model.md#in-the-scene-and-out-of-it)).
+- **Park:** remembers the parent's GUID and the object's index among its children, takes the subtree out of the selection, detaches it, and calls `OnRemoveFromScene` on each object. The objects stay in the scene's list (so root order and GUIDs come back unchanged) but are out of it: lookups, saving, updates and the Object Browser skip them (see [Scene-And-GameObject-Model.md](../03-SceneAndGameObjects/Scene-And-GameObject-Model.md#in-the-scene-and-out-of-it)).
 - **Restore:** reattaches at the same index under the same parent and calls `OnAddToScene`. Meshes and other resources were never released, so nothing reloads.
 - **Main camera:** if the scene's main camera was in the subtree, the scene hands the role to another camera while it's parked, and restoring gives it back.
 - **Destroy:** when the step is dropped (past the cap, or undone and replaced), `OnDropped` calls `GameScene::RemoveGameObject` on anything still parked.
@@ -252,6 +252,7 @@ Delete, Create (undone) and Paste (undone) all park. Adding a component is undon
 The history also keeps a **save point**: its position at the last save or load. `SceneDocument::IsModified()` is whether the history is somewhere else, rechecked after every flush, so undoing back to the save clears the title's `*`.
 
 - Saving closes the open step, so a drag that carries on past a save is a new change.
+- A save that fails moves nothing: the save point stays where it was, so the `*` stays.
 - The save point is lost (the scene stays modified until saved) when the saved state is in a redo branch that a new change replaces, when it's dropped past the cap, or when a command changes the scene **without** an undo record (`MarkUnrecordedChange`). Undo and redo don't count: they only move through the history (`EditorCommand::IsHistoryNavigation`). Nor do steps that don't change the scene: the save point survives undone file steps being replaced, or one being dropped past the cap.
 
 ### The unsaved-changes prompt
@@ -263,7 +264,7 @@ context.GetUnsavedChangesPrompt().Request(context, "loading another scene", [&sc
 ```
 
 - If the scene has no unsaved changes, the action runs straight away.
-- Otherwise a modal asks *"Sponza.scene has unsaved changes. Save them before loading another scene?"*: **Save** (then the action), **Don't Save** (the action), **Cancel** or Escape (nothing). Choosing Save on a new scene opens the file browser in Save mode (`SaveWithPrompt`); cancelling it cancels the action too, so the changes aren't lost. The prompt stays pending (`IsOpen()`) while the browser is up.
+- Otherwise a modal asks *"Sponza.scene has unsaved changes. Save them before loading another scene?"*: **Save** (then the action, only if the save worked), **Don't Save** (the action), **Cancel** or Escape (nothing). Choosing Save on a new scene opens the file browser in Save mode (`SaveWithPrompt`); cancelling it cancels the action too, so the changes aren't lost. So does a save that fails: Exit after a failed save leaves the Editor open. The prompt stays pending (`IsOpen()`) while the browser is up.
 - New, Load, Launch Game and Exit go through it, and so does closing the window: the engine turns the window's close button into `Window_CloseRequested`, and `EditorApp::OnCloseRequested()` returns false and opens the prompt while there are unsaved changes ([App-Shell-Pattern.md](../02-Architecture/App-Shell-Pattern.md)).
 
 ## Events
@@ -283,10 +284,11 @@ context.GetEvents().Publish(SceneModifiedEvent{});
 |---|---|---|
 | `SceneUnloadingEvent` | `EditorContext::ResetSceneState` | Before a scene unloads, while its objects can still be touched |
 | `SceneLoadedEvent { Document }` | `SceneDocument` | A load (or New) succeeded and the editor camera is in |
-| `SceneSavedEvent { Document }` | `SceneDocument` | After Save or Save As |
+| `SceneSavedEvent { Document }` | `SceneDocument` | After a Save or Save As that wrote the file |
 | `SceneModifiedEvent` | `CommandQueue::Flush` | A command in the flush changed the scene |
 | `SceneModifiedStateChangedEvent { Document }` | `SceneDocument` | `IsModified()` flipped |
 | `SelectionChangedEvent { Selection }` | `EditorSelection` | Once per call that actually changed it |
+| `GameObjectCreatedEvent { GameObject }` | `CreateGameObjectCommand` | Create GameObject added an object (not duplicate, paste, a dropped mesh, or undo and redo) |
 | `ThumbnailWrittenEvent { Image }` | `ThumbnailRenderJob` | A thumbnail PNG was written |
 | `AssetFileChangedEvent { From, To }` | `AssetFileCommands` and their undo/redo | The editor renamed, deleted (`To` empty) or made (`From` empty) a file or folder |
 | `ProjectFilesChangedEvent` | `ProjectWatcher` | Something under `Assets` or `ProjectData` changed on disk, from the editor or outside it; at most every 250 ms |
@@ -296,6 +298,7 @@ Current listeners:
 | Listener | Listens for | Does |
 |---|---|---|
 | `PanelManager` | Scene unloading | Calls each panel's `OnSceneReset()` |
+| `ObjectBrowserPanel` | GameObject created | Starts renaming the new object in place; it's drawn in the next frame, since commands run after the panels |
 | `SceneDocument` | Scene modified | Sets `IsModified()` from the undo history's save point |
 | `SelectionBoundsDisplay` | Selection changed | Turns mesh bounds on for newly selected objects and off for deselected ones, through `RenderComponent`'s own toggle so the inspector checkbox agrees |
 | `EditorApp` | Loaded, saved, modified state | Sets the window title: `RZEStudio - <file>`, `*` while there are unsaved changes, `Untitled` for a new scene |
@@ -308,7 +311,7 @@ Rules:
 
 - `Subscribe` returns an `EventSubscription`. It's move-only and unsubscribes when destroyed, so keep it as a member of whatever owns the listener. It's safe to destroy after the bus itself.
 - A listener added during a publish gets the next event, not the current one. One removed during a publish isn't called again.
-- Events can be published in the middle of drawing (a click in the Scene panel changes the selection), so **listeners must not call ImGui**.
+- Events can be published in the middle of drawing (a click in the Object Browser changes the selection), so **listeners must not call ImGui**.
 - `Publish` asserts it's on the main thread. `Subscribe` doesn't, because the context's members subscribe while it's constructed, before the engine has set up `MainThreadDispatcher`.
 
 ## Shared UI helpers (`EditorUI`)
@@ -338,7 +341,7 @@ Windows, popups, fields, buttons, checkboxes, images and highlights have slightl
 
 - **Tree nodes** use `EditorUI::TreeNode`, because ImGui always draws an unframed tree node's highlight square. It hides ImGui's highlight and draws a rounded one behind the node: in the table's background for a node across a table's columns, otherwise on a draw list channel of its own. A plain `ImGui::TreeNodeEx` still works, but its highlight looks out of place, and nothing catches it.
 - **Anything drawn by hand** that should match, such as the menu bar's highlights, uses `k_cornerRounding` itself.
-- **After an ImGui upgrade**, check tree nodes' highlights (the Scene panel, the Content Browser's folders, the inspector's arrays, Task History): `TreeNode` uses ImGui internals (`LastItemData.DisplayRect`, `TablePushBackgroundChannel`).
+- **After an ImGui upgrade**, check tree nodes' highlights (the Object Browser, the Content Browser's folders, the inspector's arrays, Task History): `TreeNode` uses ImGui internals (`LastItemData.DisplayRect`, `TablePushBackgroundChannel`).
 - **Not rounded:** the keyboard navigation outline on tree nodes, which ImGui draws square.
 - **Neighbouring selected rows** would look notched (ImGui's warning about `SelectableRounding`). Rows are apart today, so it doesn't show; a list whose selected rows touch would need square highlights.
 - **DPI:** the style's rounding isn't scaled with DPI, like the rest of the style. The menu bar's highlight is.

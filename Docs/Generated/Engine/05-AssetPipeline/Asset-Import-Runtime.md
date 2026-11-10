@@ -188,7 +188,7 @@ Components say what they need with a static `GatherResourceDependencies(componen
 ## Key files
 
 - `Engine\Src\EngineCore\Resources\ResourceHandler.h/.cpp`, `AsyncResourceBatch.h/.cpp`, `ResourceDependencyList.h`, `ResourcePreloadOperation.h/.cpp`, `PendingResource.h/.cpp`, `TypedResourceHandle.h`
-- `Engine\Src\Asset\AssetPaths.h/.cpp` — where each kind of asset lives, including shaders (`GetShader(name)`)
+- `Engine\Src\Asset\AssetPaths.h/.cpp` — where each kind of asset lives: shaders (`GetShader(name)`), mesh assets (`GetMesh(name)`) and material assets (`GetMaterial(meshName, materialName)`)
 - `Engine\Src\EngineCore\Async\` — `AsyncOperation`, `AsyncOperationManager`, `AsyncOperationFilter`, `AsyncOperationGroup`, `AsyncFrameBudget`, `JobAsyncOperation`, `WeightedProgress`
 - `Engine\Src\Game\CaptureBatchOperation.h/.cpp` — capturing a batch of items off-screen (thumbnails)
 - `Engine\Src\Game\SceneLoadOperation.h/.cpp`, `StaticMeshResource.h/.cpp`

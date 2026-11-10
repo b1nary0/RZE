@@ -76,7 +76,7 @@ on the frame as a user's input would.
 | `key` | `keys` | `SendKeys` syntax (`^a45{ENTER}`, `{TAB 3}`, `%f`), US layout (`HarnessKeys`). Printable keys also send their text, as a keyboard would. |
 | `shot` | `path` | Writes a PNG of the next presented frame: an absolute path, or one relative to the project |
 | `state` | | The scene, whether it's modified or loading, the selection, the undo and redo steps, and every object with its parent and whether it's saved |
-| `object` | `name` | One object, by the name the Scene panel shows: GUID, parent, components and transform |
+| `object` | `name` | One object, by the name the Object Browser shows: GUID, parent, components and transform |
 | `realinput` | `on` | Whether the real mouse and keyboard reach the Editor (blocked by default) |
 | `quit` | | As the window's close button: unsaved changes are asked about first |
 

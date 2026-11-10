@@ -80,7 +80,7 @@ Read during startup by the splash screen and `CreateAndInitializeWindow()` (`[Wi
 
 `class GameConfig final : public Config` — what the game itself is, as opposed to how the engine runs it. The Editor's [Project Settings](../07-Editor/Editor-Panels.md#project-settings-projectsettingspanel) change it and save it as they go; the Game reads it in `GameApp::Initialize` ([Game-App.md](../08-Game/Game-App.md#lifecycle)).
 
-- `[Game] Icon` (`GetIcon`/`SetIcon`): the image the game's window shows, a path relative to the project root. Empty (an invalid `Filepath`) keeps the executable's icon, the RZE mark ([Windowing.md](Windowing.md#icons)).
+- `[Game] Icon` (`GetIcon`/`SetIcon`): the image the game's window shows, a path relative to the project root, saved with `\` like every stored path (`Filepath::GetSerializedPath`). Empty (an invalid `Filepath`) keeps the executable's icon, the RZE mark ([Windowing.md](Windowing.md#icons)).
 - `Load` on a missing file leaves everything at its default, and `Save` creates it. `Save` writes over the file it was loaded from.
 
 Unlike `EngineConfig` it isn't loaded through the `ResourceHandler`, whose resources are read-only: the Editor's panel and `GameApp` each own one.
@@ -96,7 +96,7 @@ The checked-in file is in the layout SimpleINI writes (the blank line before a c
 
 ## `Config\imgui.ini`
 
-A standard Dear ImGui persisted window-layout file, auto-generated/updated by ImGui itself — not hand-authored, and not part of the `EngineConfig`/`Config` class hierarchy. The Editor points ImGui's `io.IniFilename` at this path during `EditorApp::Initialize()`. ImGui saves it a few seconds after a change, and again on exit when the render thread destroys its context ([Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md#shutdown)). Besides the windows and dock layout, it holds the Editor's own `[BottomDockArea][Area]` section ([Editor-Framework.md](../07-Editor/Editor-Framework.md#the-bottom-dock-area)).
+A standard Dear ImGui persisted window-layout file, auto-generated/updated by ImGui itself — not hand-authored, and not part of the `EngineConfig`/`Config` class hierarchy. The Editor points ImGui's `io.IniFilename` at this path during `EditorApp::OnInitialize()`. ImGui saves it a few seconds after a change, and again on exit when the render thread destroys its context ([Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md#shutdown)). Besides the windows and dock layout, it holds the Editor's own `[BottomDockArea][Area]` section ([Editor-Framework.md](../07-Editor/Editor-Framework.md#the-bottom-dock-area)).
 
 ## Where config lives in the build/asset flow
 

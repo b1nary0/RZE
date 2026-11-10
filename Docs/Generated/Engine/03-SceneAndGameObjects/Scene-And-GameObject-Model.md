@@ -4,7 +4,7 @@ RZE's world is a scene graph of `GameObject`s, each carrying a set of polymorphi
 
 ## `GameScene` (`Engine\Src\Game\GameScene.h` / `.cpp`)
 
-`GameScene` owns the entire world: `std::vector<std::unique_ptr<GameObject>> m_objectRegistry`, plus a deferred-removal list `m_objectsToRemove` (removals are queued and flushed at the top of the next `Update()`, not applied immediately, so it's safe to remove a GameObject while iterating the scene mid-frame). The registry's order is the scene's order: the Scene panel lists root objects in it and files save in it, and removing objects keeps the rest in order (all of a frame's removals are applied in one pass).
+`GameScene` owns the entire world: `std::vector<std::unique_ptr<GameObject>> m_objectRegistry`, plus a deferred-removal list `m_objectsToRemove` (removals are queued and flushed at the top of the next `Update()`, not applied immediately, so it's safe to remove a GameObject while iterating the scene mid-frame). The registry's order is the scene's order: the Object Browser lists root objects in it and files save in it, and removing objects keeps the rest in order (all of a frame's removals are applied in one pass).
 
 Key API:
 - `CreateGameObject()` — always attaches a `TransformComponent` first, since "all gameobjects have a spatial representation" (source comment). Use this instead of constructing `GameObject` directly.
@@ -15,7 +15,7 @@ Key API:
 - Adding an object asserts its GUID is free; the scene only creates objects with free GUIDs, so a clash means the same object was added twice.
 - `Update()` — replaces the main camera if it's gone (below), processes deferred removals, then calls `Update()` only on **root** GameObjects in the scene; children are updated transitively because `GameObject::Update()` recurses into its own children.
 - `GetMainCamera()` / `SetMainCamera(camera)` — see [The main camera](#the-main-camera).
-- `Serialize(Filepath)` / `Deserialize(Filepath)` / `NewScene()` — JSON scene persistence via RapidJSON; see [Scene files](#scene-files). `Deserialize` is the synchronous load; the editor uses the asynchronous `SceneLoadOperation`. Both start with `BeginLoad(path)`, which makes it the current scene path and logs `Loading scene [path].`, in the Game and the Editor alike; `EnableLogging(false)` turns that off (`HeadlessScene` does, so thumbnail renders don't fill the log). `Serialize` writes a temporary file beside the scene and then moves it over the old one (`File::MoveReplacing`), so a failed save never leaves half a file.
+- `Serialize(Filepath)` / `Deserialize(Filepath)` / `NewScene()` — JSON scene persistence via RapidJSON; see [Scene files](#scene-files). `Deserialize` is the synchronous load; the editor uses the asynchronous `SceneLoadOperation`. Both start with `BeginLoad(path)`, which makes it the current scene path and logs `Loading scene [path].`, in the Game and the Editor alike; `EnableLogging(false)` turns that off (`HeadlessScene` does, so thumbnail renders don't fill the log). `Serialize` writes to the given file, or to the current scene path if it's given an invalid `Filepath`. It writes a temporary file beside the scene and then moves it over the old one (`File::MoveReplacing`), so a failed save never leaves half a file. It returns false (and logs why) if either step fails; the given file becomes the current scene path only once it's written, so a failed Save As keeps the scene on its old file.
 - `GetRenderScene()` — the scene's own [`RenderScene`](../04-Rendering/Engine-Graphics-Layer.md#scene-data): everything its components draw. `RZE_Engine` points the main view at the active scene's; any other scene's is only drawn when something renders it into a view of its own.
 - `GetBounds()` — the world-space box around everything the scene draws (`RenderScene::GetBounds`, cached until something in it changes). Used to frame a scene thumbnail when the scene has no camera.
 - `Start()` / `ShutDown()` / `Unload()` — lifecycle hooks called by `RZE_Engine`.
@@ -63,7 +63,7 @@ classDiagram
         -vector~GameObjectPtr~ m_objectsToRemove
         +CreateGameObject() GameObjectPtr
         +Update()
-        +Serialize(Filepath)
+        +Serialize(Filepath) bool
         +Deserialize(Filepath)
     }
     class GameObject {
@@ -102,7 +102,7 @@ classDiagram
 
 ## Bounds
 
-`GameObject::GetHierarchyBounds()` is the world-space box around every mesh on an object and its descendants (empty if there are none). Double-click framing in the Scene panel uses it.
+`GameObject::GetHierarchyBounds()` is the world-space box around every mesh on an object and its descendants (empty if there are none). Double-click framing in the Object Browser uses it.
 
 - **Extents are kept in the object's own space** (`GetLocalHierarchyBounds`), built from each component's `GetLocalBounds()` (only `RenderComponent` has any) and each child's extents placed by the child's local matrix. Asking for the world box only places those extents with the object's world matrix (`BoundingBox::Transformed`), so **moving an object never rebuilds anything**.
 - **They're rebuilt only when what's under the object changes**: a mesh loads or changes, a component or child is added or removed, or a child moves within it. Each of those calls `MarkHierarchyBoundsChanged()`, which marks the object and walks up its ancestors. It stops at the first one that's already marked, since that one's ancestors were marked with it.

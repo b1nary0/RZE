@@ -72,7 +72,7 @@ populated via the `REGISTER_GAMEOBJECTCOMPONENT(ComponentType)` macro:
 
 (Simplified.) The last line stores the type's property description, if it has a `DescribeProperties`, under its type ID for the editor's inspector; types without one are skipped at compile time.
 
-This macro is invoked once per built-in component type inside `RZE_Application::RegisterEngineComponents()` (static; called by the base `Initialize()`, and by the unit tests, which run no application), and again by each app subclass for its own product-specific components (e.g. Editor registers `EditorCameraComponent`). This is what lets load code and the editor's "Add Component" menu call `GameObjectComponentRegistry::CreateComponentByID(id)` without knowing the concrete type at compile time.
+This macro is invoked once per built-in component type inside `RZE_Application::RegisterEngineComponents()` (static; called by `RZE_Application::Initialize(window)`, and by the unit tests, which run no application), and again by each app subclass for its own product-specific components (e.g. Editor registers `EditorCameraComponent`). This is what lets load code and the editor's "Add Component" menu call `GameObjectComponentRegistry::CreateComponentByID(id)` without knowing the concrete type at compile time.
 
 ## The documented inheritance bug
 

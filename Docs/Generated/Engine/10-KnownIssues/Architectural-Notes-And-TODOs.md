@@ -19,7 +19,7 @@ Rough edges the codebase is candid about (source comments, `#TODO`s), plus a few
 | 11 | `LogChannel::Debug`'s colour was out of range | Debug services | — | **Fixed** (10-21: log levels) |
 | 12 | Camera previews changed the camera temporarily | Components | — | **Fixed** (10-11: editor UI rework) |
 | 13 | An incremental build once missed a header change | Build | Low | Observed once |
-| 14 | Reparenting in the Scene panel keeps the local transform | Editor | Low | Open |
+| 14 | Reparenting in the Object Browser keeps the local transform | Editor | Low | Open |
 | 15 | No prompt about unsaved changes | Editor | — | **Fixed** (10-12: undo/redo) |
 | 16 | Undoing Add Component brings back a new component | Editor | Low | Open |
 | 17 | Duplicate's undo step is named "Paste" | Editor | Cosmetic | Open |
@@ -126,11 +126,11 @@ The old `CameraComponent::OnEditorInspect()` swapped the camera's aspect ratio t
 
 ## 13. An incremental build once missed a header change
 
-While adding multi-selection, `ScenePanel.h` changed layout but MSBuild didn't recompile `EditorApp.cpp`, which holds a `ScenePanel` by value. The Editor then crashed on start-up with an access violation in a `std::vector` call. Touching the `.cpp` fixed it. The cause wasn't found. If the Editor crashes oddly right after a header change, rebuild before debugging.
+While adding multi-selection, `ScenePanel.h` (now `ObjectBrowserPanel.h`) changed layout but MSBuild didn't recompile `EditorApp.cpp`, which held a `ScenePanel` by value. The Editor then crashed on start-up with an access violation in a `std::vector` call. Touching the `.cpp` fixed it. The cause wasn't found. If the Editor crashes oddly right after a header change, rebuild before debugging.
 
-## 14. Reparenting in the Scene panel keeps the local transform
+## 14. Reparenting in the Object Browser keeps the local transform
 
-Dragging an object onto another in the Scene panel (`AttachToParentCommand`) keeps its local position, rotation and scale, so it jumps if the new parent isn't at the origin with no rotation and unit scale. Keeping its world transform would mean converting the local values through the inverse of the parent's world matrix as it's attached (paste already does this for its offset).
+Dragging an object onto another in the Object Browser (`AttachToParentCommand`) keeps its local position, rotation and scale, so it jumps if the new parent isn't at the origin with no rotation and unit scale. Keeping its world transform would mean converting the local values through the inverse of the parent's world matrix as it's attached (paste already does this for its offset).
 
 ## 15. No prompt about unsaved changes (fixed)
 

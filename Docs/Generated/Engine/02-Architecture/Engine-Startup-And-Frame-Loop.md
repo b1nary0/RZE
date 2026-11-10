@@ -52,7 +52,7 @@ flowchart TD
     C6 --> C7["CreateAndInitializeRenderer<br/>(new RenderEngine, Initialize with the SDL window)"]
     C7 --> C8[Create + Initialize GameScene]
     C8 --> D[PostInit]
-    D --> D2["InitializeApplication:<br/>app.Initialize() (registers components),<br/>app.RegisterInputEvents(), app.Start()"]
+    D --> D2["InitializeApplication:<br/>app.Initialize(window):<br/>registers components,<br/>then OnInitialize,<br/>app.RegisterInputEvents(), app.Start()"]
     D2 --> D3[GameScene::Start]
     D3 --> W["WaitForStartupLoading:<br/>async operations with no frames,<br/>until app.IsReadyToShow()"]
     W --> F["Start the program timer,<br/>FrameTimeCapture::Initialize,<br/>InitializeFramePacing"]
@@ -73,7 +73,7 @@ flowchart TD
    - `m_resourceHandler.Init()`
    - `CreateAndInitializeRenderer()` — `new RenderEngine`, `Initialize(window.GetNativeHandle())` (the SDL window, which the graphics device draws into), then the main view's anti-aliasing and auto-exposure from Engine.ini's `[Rendering]`
    - Creates and initializes the `GameScene`
-3. **`PostInit()`**: gives the application its window, calls `app->Initialize()` (registers all built-in `GameObjectComponent` types via `RegisterEngineComponents()`), then `app->RegisterInputEvents()`, then `app->Start()`, then `m_activeScene->Start()`.
+3. **`PostInit()`**: calls `app->Initialize(*m_window)`, which keeps the window, registers all built-in `GameObjectComponent` types (`RegisterEngineComponents()`) and then runs the app's `OnInitialize()`, then `app->RegisterInputEvents()`, then `app->Start()`, then `m_activeScene->Start()`.
 4. **`WaitForStartupLoading()`**: see [loading before the window shows](#loading-before-the-window-shows).
 5. **Before the first frame**: the program timer starts, `FrameTimeCapture::Initialize()` reads the `-perf*` arguments, and `InitializeFramePacing()` reads the [frame settings](#settings), after the capture since a capture turns pacing off, and gives the `FramePacer` the monitor's refresh rate.
 6. **`DrawFirstFrames()`, then the reveal**: see [the first frames](#the-first-frames).

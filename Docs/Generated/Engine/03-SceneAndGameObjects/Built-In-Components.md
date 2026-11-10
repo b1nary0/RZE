@@ -1,6 +1,6 @@
 # Built-In Components Reference
 
-All built-in components live under `Engine\Src\Game\World\GameObjectComponents\` and are registered by the base `RZE_Application::Initialize()`. Each inherits `GameObjectComponent<Self>` (see [Component-System.md](Component-System.md)).
+All built-in components live under `Engine\Src\Game\World\GameObjectComponents\` and are registered by `RZE_Application::Initialize(window)`, before the app's own `OnInitialize()`. Each inherits `GameObjectComponent<Self>` (see [Component-System.md](Component-System.md)).
 
 ## `TransformComponent`
 
@@ -65,7 +65,7 @@ Documented in [07-Editor/Editor-Camera-And-Build-Launch.md](../07-Editor/Editor-
 | `LightComponent` | `RZE_Application::RegisterEngineComponents()` | Yes | `TransformComponent` (position, direction), `RenderScene` light objects |
 | `PlayerControllerComponent` | not registered | No — attached at runtime | `InputHandler`, `TransformComponent` |
 | `GifChatComponent` | `RZE_Application::RegisterEngineComponents()` | Yes | — |
-| `EditorCameraComponent` | `Editor::EditorApp::Initialize()` | No — excluded via `SetIncludeInSave(false)` | `CameraComponent` (inheritance — buggy ID), `RenderEngine`, `InputHandler` |
+| `EditorCameraComponent` | `Editor::EditorApp`'s constructor | No — excluded via `SetIncludeInSave(false)` | `CameraComponent` (inheritance — buggy ID), `RenderEngine`, `InputHandler` |
 
 ## Key files
 

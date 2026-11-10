@@ -53,7 +53,7 @@ On Windows the Editor is built as a windowed app, like the Game, with `main` kep
 flowchart TD
     App["EditorApp"] --> Ctx["EditorContext<br/>selection, settings, services"]
     App --> RT["Offscreen render target"]
-    Ctx --> Panels["Panels: Scene, SceneView,<br/>Object Inspector, Log, ..."]
+    Ctx --> Panels["Panels: Object Browser,<br/>SceneView,<br/>Object Inspector, Log, ..."]
     Ctx --> Doc["SceneDocument<br/>load, save"]
     Doc --> Cam["'EditorCam' GameObject<br/>+ EditorCameraComponent"]
     Cam -->|"fills the main view's camera"| RE["RenderEngine"]
@@ -65,7 +65,7 @@ flowchart TD
 
 - **Offscreen viewport.** `CreateRenderTarget()` makes a `RenderTargetTexture` the size of the window and sets it as the main view's `Target`. The scene renders into it, and `SceneViewPanel` shows it with `ImGui::Image`, cropping the UVs to the panel's size. The Editor never draws the scene straight to the back buffer; ImGui owns the back buffer.
 - **Render stages.** On top of the engine's stages, the Editor adds `ImGuiRenderStage(withEditor = true)`. The `PickRenderStage` that click selection uses is part of the engine and idle unless the Editor asks for a pick. See [Render-Stages.md](../04-Rendering/Render-Stages.md).
-- **Editor camera.** After each load, `SceneDocument::CreateEditorCamera()` adds an `"EditorCam"` object at `(-4, 10, 4)`, aimed at the scene's centre, and hands it to the context (`EditorContext::GetEditorCamera`). It's excluded from saves (`SetIncludeInSave(false)`), hidden from the Scene panel and never copied. It drives the viewport: the scene's main camera is told not to (`GameScene::SetMainCameraDrivesView(false)`), though its exposure still applies.
+- **Editor camera.** After each load, `SceneDocument::CreateEditorCamera()` adds an `"EditorCam"` object at `(-4, 10, 4)`, aimed at the scene's centre, and hands it to the context (`EditorContext::GetEditorCamera`). It's excluded from saves (`SetIncludeInSave(false)`), hidden from the Object Browser and never copied. It drives the viewport: the scene's main camera is told not to (`GameScene::SetMainCameraDrivesView(false)`), though its exposure still applies.
 - **Input.** `ProcessInput()` forwards mouse and keyboard to ImGui (`ImGuiInput::SubmitInput`, including the wheel and text input) and returns whether the scene view is hovered (`SceneViewportState::IsHovered`). Engine input actions, including the camera controls, only fire while it is, so typing in a panel doesn't fly the camera.
 - **Window title.** `RZEStudio - <scene file>`, with a `*` while the scene has unsaved changes, or `RZEStudio - Untitled` for a new scene. `EditorApp` keeps it up to date from the scene document's events. Undoing back to the last save clears the `*`. It's drawn in the [menu bar](#menu-bar), which is the window's title bar, and shown on the taskbar.
 - **Unsaved changes.** New, Load, Exit and closing the window ask Save / Don't Save / Cancel first while there are unsaved changes ([Editor-Framework.md](Editor-Framework.md#the-unsaved-changes-prompt)).
