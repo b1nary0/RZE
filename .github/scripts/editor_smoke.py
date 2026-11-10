@@ -226,7 +226,9 @@ def main():
 
     backup_dir = tempfile.mkdtemp(prefix="rze-smoke-")
     backup = os.path.join(backup_dir, "imgui.ini")
-    if os.path.exists(IMGUI_INI):
+    # It isn't tracked, so a checkout (CI's) has none, and the Editor builds the default layout
+    had_imgui_ini = os.path.exists(IMGUI_INI)
+    if had_imgui_ini:
         shutil.copyfile(IMGUI_INI, backup)
 
     log("EditorHarness (%s) on %s" % (args.config, args.scene))
@@ -241,8 +243,10 @@ def main():
         if harness is not None:
             harness.kill()
         # A copy, so the file gets a new timestamp
-        if os.path.exists(backup):
+        if had_imgui_ini:
             shutil.copyfile(backup, IMGUI_INI)
+        elif os.path.exists(IMGUI_INI):
+            os.remove(IMGUI_INI)
         shutil.rmtree(backup_dir, ignore_errors=True)
 
     if harness is not None:

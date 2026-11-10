@@ -297,6 +297,8 @@ __pycache__/
 # Generated locally: burned data, and the editor's rendered thumbnails
 RZE/ProjectData
 RZE/Logs
+# The Editor's layout, rewritten by every run: local to each machine. Without it, the Editor builds the default layout
+RZE/Config/imgui.ini
 # Build output, for every configuration (the generic rules above only catch debug/ and release/)
 RZE/_build/
 # The Linux solution makefiles (RZE.make, and the parallel build's Makefile); each project's .make is in its

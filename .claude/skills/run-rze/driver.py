@@ -38,6 +38,9 @@ HELPER_LOG = os.path.join(STATE_DIR, "helper.log")
 # the file it found. The backup outlives a session that died, and the next launch restores it first.
 IMGUI_INI = os.path.join(ENGINE_ROOT, "Config", "imgui.ini")
 IMGUI_INI_BACKUP = os.path.join(STATE_DIR, "imgui.ini.backup")
+# In place of the backup when there was no layout (it isn't tracked, so a fresh clone has none): putting that back
+# removes the one the session wrote, and the next Editor run builds the default layout again
+IMGUI_INI_ABSENT = os.path.join(STATE_DIR, "imgui.ini.absent")
 # The layout a nested session runs with, in place of the user's, so the coordinates SKILL.md gives for nested sessions
 # hold however the user has arranged the panels since. The user's file is backed up and put back as usual.
 NESTED_IMGUI_INI = os.path.join(os.path.dirname(os.path.abspath(__file__)), "nested-imgui.ini")
@@ -464,17 +467,25 @@ class NestedSession:
 # The helper: one per launched session
 
 def restore_imgui_ini():
-    """Puts back the layout a session found, if it has a backup. A copy, so the file gets a new timestamp."""
-    if not os.path.exists(IMGUI_INI_BACKUP):
-        return False
-    shutil.copyfile(IMGUI_INI_BACKUP, IMGUI_INI)
-    os.remove(IMGUI_INI_BACKUP)
-    return True
+    """Puts back the layout a session found, or that it found none, if it recorded either. A copy, so the file gets a new
+    timestamp."""
+    if os.path.exists(IMGUI_INI_BACKUP):
+        shutil.copyfile(IMGUI_INI_BACKUP, IMGUI_INI)
+        os.remove(IMGUI_INI_BACKUP)
+        return True
+    if os.path.exists(IMGUI_INI_ABSENT):
+        if os.path.exists(IMGUI_INI):
+            os.remove(IMGUI_INI)
+        os.remove(IMGUI_INI_ABSENT)
+        return True
+    return False
 
 
 def back_up_imgui_ini():
     if os.path.exists(IMGUI_INI):
         shutil.copyfile(IMGUI_INI, IMGUI_INI_BACKUP)
+    else:
+        open(IMGUI_INI_ABSENT, "w").close()
 
 
 class Helper:
@@ -486,7 +497,7 @@ class Helper:
         if not options.get("keep_imgui_ini"):
             back_up_imgui_ini()
             # Not with --keep-imgui-ini: that run is meant to change the user's layout, so it starts from it
-            if options.get("nested") and os.path.exists(IMGUI_INI_BACKUP):
+            if options.get("nested"):
                 shutil.copyfile(NESTED_IMGUI_INI, IMGUI_INI)
         self.lock = threading.Lock()
         self.exit_code = None

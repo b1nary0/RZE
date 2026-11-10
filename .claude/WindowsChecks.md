@@ -6,12 +6,14 @@ Claude runs them** when the user asks ("follow `.claude/WindowsChecks.md`").
 
 ## How to run this file (Windows Claude)
 
-1. `git pull`, then note the commit you're testing (`git log -1 --oneline`). If a check compares against the old build
+1. **If `git ls-files RZE/Config/imgui.ini` prints the file, copy `RZE\Config\imgui.ini` to `%TEMP%` first**, and
+   put it back after the pull: the pull that untracks it deletes it (or stops, if it has local changes). Then
+   `git pull`, then note the commit you're testing (`git log -1 --oneline`). If a check compares against the old build
    (e.g. a burn's hashes), do its "before" part now, with the binaries already in `_build`, before building.
 2. Do the checks in **To check**, in order. Use the `run-rze` skill (`driver.ps1`, `-Harness` where a check doesn't
-   need the real mouse) for anything in the Editor. `driver.ps1` backs up `RZE/Config/imgui.ini` at `launch` and puts
-   it back after the session; if you start the Editor any other way, back it up first and restore it at the end
-   (CLAUDE.md). Group checks that use the same scene and configuration into one session.
+   need the real mouse) for anything in the Editor. `driver.ps1` backs up `RZE/Config/imgui.ini` (local and untracked)
+   at `launch` and puts it back after the session; if you start the Editor any other way, back it up first and restore
+   it at the end (CLAUDE.md). Group checks that use the same scene and configuration into one session.
 3. Record each result in **Results**: the check's ID, the date, the commit, `pass` / `fail` / `skipped`, and what you
    saw. For a failure, give the exact error, the screenshot's path, or the log lines. Report failures; the user decides
    who fixes them.
@@ -135,9 +137,9 @@ Things to know on this machine (2026-11-08):
   everything; `git status` shows the scenes unchanged.
 - **A26. ScenePanel is now ObjectBrowserPanel ("Object Browser").** The files moved, so run `GenerateSolutions.bat`
   first; the build must not still list `ScenePanel.cpp`. 1: 452 test cases in Debug and Development, 444 in Retail. 2:
-  Development Editor: the panel is titled "Object Browser" and View > Windows lists it. The committed
-  `RZE\Config\imgui.ini` still names it `[Window][Scene]`, so on this machine it opens floating once: dock it top-right
-  (above Object Inspector) and the layout keeps it.
+  Development Editor: the panel is titled "Object Browser" and View > Windows lists it. If this machine's
+  `RZE\Config\imgui.ini` still names it `[Window][Scene]`, it opens floating once: dock it top-right (above Object
+  Inspector) and the layout keeps it. With no `imgui.ini`, the default layout docks it there.
 - **A27. Object Browser: Add GameObject button.** The panel has a toolbar (its menu bar) with an "Add GameObject" button
   at its right end, in the same place with or without the scrollbar; the rows sit below it. 1: 452 test cases in Debug
   and Development, 444 in Retail. 2: Development Editor, Stress2500.scene: click Camera, scroll the panel to the bottom:
@@ -146,6 +148,13 @@ Things to know on this machine (2026-11-08):
   toolbar to the left of the button: `Probe` stays selected. DrawLineTest.scene: a click on the empty space under the
   rows clears the selection; a right-click there still opens Create GameObject. Undo everything and close with Don't
   Save. The rows moved down, so re-measure the Object Browser coordinates in the run-rze skill's Windows table.
+- **A28. `imgui.ini` is untracked; the drivers handle there being none.** 1: after the pull (step 1 above),
+  `git status --short` doesn't list `RZE/Config/imgui.ini`, and `git check-ignore RZE/Config/imgui.ini` prints it. 2:
+  copy `RZE\Config\imgui.ini` to `%TEMP%\imgui.ini.mine` and delete it. `driver.ps1 launch -Harness -Scene
+  DrawLineTest.scene`: the default layout (Scene View, Object Browser top right, Object Inspector below it, Content
+  Browser and Log as bottom tabs). `close`: `closed code=0 (harness); imgui.ini restored`, and there's no
+  `RZE\Config\imgui.ini` and no `%TEMP%\rze-driver\imgui.ini.absent` afterwards. Copy `imgui.ini.mine` back, then
+  `launch` and `close` again: the file is the same as `imgui.ini.mine` (`fc /b`).
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 

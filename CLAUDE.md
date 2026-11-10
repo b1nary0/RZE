@@ -70,9 +70,9 @@ driving the editor are covered by the `run-rze` skill (`.claude/skills/run-rze/`
   in `Docs/Generated/Engine` are committed.
 - **Logs:** every Editor/Game run writes `RZE/Logs/RZELOG_<dd-mm-yyyy>_<hh-mm-ss>.txt`. For temporary instrumentation,
   use `RZE_LOG_ARGS` and read the newest file. Don't add ad-hoc file logging.
-- **`RZE/Config/imgui.ini` is rewritten by every editor run** and often holds an intended, uncommitted layout. Back it
-  up before a test launch and restore from that backup, not from git. `RZE/Editor/_project/Editor.args.json` also
-  holds uncommitted edits.
+- **`RZE/Config/imgui.ini` is the local Editor layout**: untracked, and without it the Editor builds the default
+  layout. Every editor run rewrites it, and it often holds a layout the user means to keep. Back it up before a test
+  launch and restore from that backup. `RZE/Editor/_project/Editor.args.json` also holds uncommitted edits.
 
 ## Git
 

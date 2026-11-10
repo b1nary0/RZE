@@ -65,21 +65,33 @@ $appArgsNote = if ($AppArgs) { " args='$AppArgs'" } else { '' }
 # process of its own; one a session left (it died before close or quit) is put back by the next launch.
 $imguiIni = Join-Path $repoRoot 'RZE\Config\imgui.ini'
 $imguiIniBackup = Join-Path $env:TEMP 'rze-driver\imgui.ini.backup'
+# In place of the backup when there was no layout (it isn't tracked, so a fresh clone has none): putting that back
+# removes the one the session wrote, and the next Editor run builds the default layout again
+$imguiIniAbsent = Join-Path $env:TEMP 'rze-driver\imgui.ini.absent'
 
 function Restore-ImguiIni {
-	if (-not (Test-Path $imguiIniBackup)) { return $false }
-	Copy-Item $imguiIniBackup $imguiIni -Force
-	# A copy keeps the backup's date; a new one, so nothing mistakes it for the old file
-	(Get-Item $imguiIni).LastWriteTime = Get-Date
-	Remove-Item $imguiIniBackup -Force
-	return $true
+	if (Test-Path $imguiIniBackup) {
+		Copy-Item $imguiIniBackup $imguiIni -Force
+		# A copy keeps the backup's date; a new one, so nothing mistakes it for the old file
+		(Get-Item $imguiIni).LastWriteTime = Get-Date
+		Remove-Item $imguiIniBackup -Force
+		return $true
+	}
+	if (Test-Path $imguiIniAbsent) {
+		if (Test-Path $imguiIni) { Remove-Item $imguiIni -Force }
+		Remove-Item $imguiIniAbsent -Force
+		return $true
+	}
+	return $false
 }
 
 function Backup-ImguiIni {
 	$restored = Restore-ImguiIni
+	New-Item -ItemType Directory -Force (Split-Path $imguiIniBackup) | Out-Null
 	if (Test-Path $imguiIni) {
-		New-Item -ItemType Directory -Force (Split-Path $imguiIniBackup) | Out-Null
 		Copy-Item $imguiIni $imguiIniBackup -Force
+	} else {
+		New-Item -ItemType File -Force $imguiIniAbsent | Out-Null
 	}
 	return $restored
 }

@@ -73,9 +73,10 @@ the window the way a user would:
 **`imgui.ini` is put back after every session**, as `driver.py` does. Each Editor run rewrites `RZE\Config\imgui.ini`,
 which often holds a layout the user means to keep (CLAUDE.md). `launch` copies it to
 `%TEMP%\rze-driver\imgui.ini.backup`; `close` and `quit` put it back once the Editor has exited (their output ends
-`; imgui.ini restored`). A `close` that stops at the unsaved-changes prompt leaves the backup, since the Editor rewrites
-the file as it exits: answer the prompt, then `quit` restores it. A backup a session left behind is put back by the
-next `launch`, which says so.
+`; imgui.ini restored`). The file isn't tracked, so a fresh clone has none: then the restore removes the file the run
+wrote, so the next Editor run builds the default layout again. A `close` that stops at the unsaved-changes prompt
+leaves the backup, since the Editor rewrites the file as it exits: answer the prompt, then `quit` restores it. A backup
+a session left behind is put back by the next `launch`, which says so.
 
 ### Harness sessions (`launch -Harness`)
 
@@ -261,10 +262,11 @@ How it works, and what to know:
 
 - **`imgui.ini` is put back after every session.** Each Editor run rewrites `RZE/Config/imgui.ini`, which often holds
   a layout the user means to keep (CLAUDE.md). `launch` copies it aside; `close` and `quit` restore it once the app has
-  exited (their output says `imgui.ini restored`), and so does the helper if the session ends any other way. If a
-  session died before it could, the next `launch` restores that backup first and says so. Pass `--keep-imgui-ini`
-  only when the run is meant to change the layout: nothing is backed up, and the layout the run leaves stays (a dead
-  session's backup is still restored first, at `launch`, as `driver.ps1` does).
+  exited (their output says `imgui.ini restored`), and so does the helper if the session ends any other way. The file
+  isn't tracked, so a fresh clone has none: then the restore removes the file the run wrote, and the Editor builds the
+  default layout next time. If a session died before it could, the next `launch` restores that backup first and says
+  so. Pass `--keep-imgui-ini` only when the run is meant to change the layout: nothing is backed up, and the layout the
+  run leaves stays (a dead session's backup is still restored first, at `launch`, as `driver.ps1` does).
 
 - **It moves the real pointer and takes focus**, like `driver.ps1`. Don't use the mouse while it's acting. Before any
   input it checks, through KWin, that the app's window is active and the point is inside it, so input can't land in
