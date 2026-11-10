@@ -386,8 +386,42 @@ namespace EditorHarness
 				}
 				return true;
 			};
+		// "mods", optional: the modifier keys held around a pointer command's buttons, e.g. ["ctrl"] to add to a selection
+		std::vector<SDL_Keycode> modifiers;
+		const auto takeModifiers = [&command, &modifiers, &outError]()
+			{
+				if (!command.HasMember("mods"))
+				{
+					return true;
+				}
+				const rapidjson::Value& mods = command["mods"];
+				if (!mods.IsArray())
+				{
+					outError = R"("mods" is an array of "ctrl", "shift" or "alt")";
+					return false;
+				}
+				for (const rapidjson::Value& mod : mods.GetArray())
+				{
+					const SDL_Keycode key = mod.IsString() ? ModifierKeyNamed(mod.GetString()) : SDLK_UNKNOWN;
+					if (key == SDLK_UNKNOWN)
+					{
+						outError = R"("mods" is an array of "ctrl", "shift" or "alt")";
+						return false;
+					}
+					modifiers.push_back(key);
+				}
+				return true;
+			};
 
 		std::vector<HarnessInput::Step> steps;
+		// A frame of its own, so only with modifiers to hold: a plain click keeps its frames
+		const auto holdModifiers = [this, &modifiers, &steps](bool isDown)
+			{
+				if (!modifiers.empty())
+				{
+					steps.push_back(m_input.Modifiers(modifiers, isDown));
+				}
+			};
 		float x = 0.0f;
 		float y = 0.0f;
 		if (name == "move")
@@ -400,7 +434,7 @@ namespace EditorHarness
 		}
 		else if (name == "click" || name == "dblclick")
 		{
-			if (!needPoint("x", "y", x, y))
+			if (!needPoint("x", "y", x, y) || !takeModifiers())
 			{
 				return false;
 			}
@@ -413,23 +447,26 @@ namespace EditorHarness
 			}
 			// A frame on each: ImGui finds what's under the mouse, then sees it pressed, then released
 			steps.push_back(m_input.Move(x, y));
+			holdModifiers(true);
 			const int clicks = name == "dblclick" ? 2 : 1;
 			for (int click = 1; click <= clicks; ++click)
 			{
 				steps.push_back(m_input.Button(button, true, x, y, static_cast<Uint8>(click)));
 				steps.push_back(m_input.Button(button, false, x, y, static_cast<Uint8>(click)));
 			}
+			holdModifiers(false);
 		}
 		else if (name == "drag")
 		{
 			float x2 = 0.0f;
 			float y2 = 0.0f;
-			if (!needPoint("x", "y", x, y) || !needPoint("x2", "y2", x2, y2))
+			if (!needPoint("x", "y", x, y) || !needPoint("x2", "y2", x2, y2) || !takeModifiers())
 			{
 				return false;
 			}
 			const int moves = 10;
 			steps.push_back(m_input.Move(x, y));
+			holdModifiers(true);
 			steps.push_back(m_input.Button(SDL_BUTTON_LEFT, true, x, y, 1));
 			for (int move = 1; move <= moves; ++move)
 			{
@@ -437,6 +474,7 @@ namespace EditorHarness
 				steps.push_back(m_input.Move(x + (x2 - x) * t, y + (y2 - y) * t));
 			}
 			steps.push_back(m_input.Button(SDL_BUTTON_LEFT, false, x2, y2, 1));
+			holdModifiers(false);
 		}
 		else if (name == "scroll")
 		{

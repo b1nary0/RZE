@@ -196,4 +196,17 @@ namespace EditorHarness
 		}
 		return true;
 	}
+
+	SDL_Keycode ModifierKeyNamed(const std::string& name)
+	{
+		if (name == "ctrl")
+		{
+			return SDLK_LCTRL;
+		}
+		if (name == "shift")
+		{
+			return SDLK_LSHIFT;
+		}
+		return name == "alt" ? SDLK_LALT : SDLK_UNKNOWN;
+	}
 }

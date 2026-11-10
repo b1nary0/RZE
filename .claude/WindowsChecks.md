@@ -167,6 +167,12 @@ Things to know on this machine (2026-11-08):
   the way from the editor camera (`EditorCam`) to M4, select M4: where M4 is behind NeckMech its line is faint over
   NeckMech, full elsewhere. Delete M4 from the row menu: the line goes; Ctrl+Z: it's back. Close with Don't Save. On
   DX11 the depth comparison and the R32_UINT mask are the cross-API risks: compare against Linux's look.
+- **A30. Harness clicks and drags can hold modifiers (`-Mods`).** `driver.ps1 launch -Harness -Scene
+  DrawLineTest.scene`, then click M4's row: `state` selection is `M4`. `click` NeckMech's row `-Mods ctrl`: the output
+  ends `with ctrl held (harness)` and the selection is `M4, NeckMech`. `click` Camera's row `-Mods shift`: a range from
+  NeckMech up to Camera. `-Mods ctrl,shift` is accepted as two (PowerShell's `string[]`, sent as a JSON array even with
+  one entry: `-Mods ctrl` must not reach the harness as a string, which it refuses with `"mods" is an array`). With no
+  session, `driver.ps1 click -X 1 -Y 1 -Mods ctrl` stops with `-Mods needs a harness session`. Close.
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 

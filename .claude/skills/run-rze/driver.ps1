@@ -9,6 +9,7 @@ One action per invocation; state lives in the running Editor.exe process.
   driver.ps1 shot   [-Out <path.png>]          # client-area screenshot; default $env:TEMP\rze-shots\<timestamp>.png
   driver.ps1 click  -X <int> -Y <int>          # client-area pixel coords (same space as screenshots)
   driver.ps1 drag   -X <int> -Y <int> -X2 <int> -Y2 <int>
+                    # click, dblclick and drag take -Mods ctrl,shift,alt (held around the buttons; harness only)
   driver.ps1 key    -Keys '<SendKeys string>'  # e.g. '^a45{ENTER}' to replace an ImGui float field
   driver.ps1 info                              # window title + client size
   driver.ps1 alive                             # running / responding?
@@ -46,6 +47,8 @@ param(
 	# helper only: -AppArgs, base64-encoded by launch -Harness
 	[string] $EncodedAppArgs,
 	[int] $Notches,
+	# click, dblclick, drag in a harness session: modifiers held around the press and release, e.g. -Mods ctrl
+	[ValidateSet('ctrl', 'shift', 'alt')] [string[]] $Mods,
 	[string] $Name,
 	[ValidateSet('on', 'off')] [string] $On
 )
@@ -440,12 +443,16 @@ if ($Action -eq 'launch' -and $Harness) {
 
 # While a harness session runs, every command goes through the harness
 $session = Get-HarnessSession
+# Held by the harness only: real input sends no modifier keys around a click
+if ($Mods -and -not $session) { throw '-Mods needs a harness session: launch -Harness' }
+$modsNote = if ($Mods) { " with $($Mods -join '+') held" } else { '' }
+function With-Mods([hashtable]$command) { if ($Mods) { $command.mods = @($Mods) }; return $command }
 if ($session) {
 	switch ($Action) {
 		'launch' { throw 'A harness session is running. Run: driver.ps1 close (or quit)' }
-		'click' { $reply = Invoke-Harness @{ cmd = 'click'; x = $X; y = $Y }; "clicked $X,$Y (harness$(Get-ExitNote $reply))" }
-		'dblclick' { $reply = Invoke-Harness @{ cmd = 'dblclick'; x = $X; y = $Y }; "double-clicked $X,$Y (harness$(Get-ExitNote $reply))" }
-		'drag' { $reply = Invoke-Harness @{ cmd = 'drag'; x = $X; y = $Y; x2 = $X2; y2 = $Y2 }; "dragged $X,$Y -> $X2,$Y2 (harness$(Get-ExitNote $reply))" }
+		'click' { $reply = Invoke-Harness (With-Mods @{ cmd = 'click'; x = $X; y = $Y }); "clicked $X,$Y$modsNote (harness$(Get-ExitNote $reply))" }
+		'dblclick' { $reply = Invoke-Harness (With-Mods @{ cmd = 'dblclick'; x = $X; y = $Y }); "double-clicked $X,$Y$modsNote (harness$(Get-ExitNote $reply))" }
+		'drag' { $reply = Invoke-Harness (With-Mods @{ cmd = 'drag'; x = $X; y = $Y; x2 = $X2; y2 = $Y2 }); "dragged $X,$Y -> $X2,$Y2$modsNote (harness$(Get-ExitNote $reply))" }
 		'scroll' { $reply = Invoke-Harness @{ cmd = 'scroll'; x = $X; y = $Y; notches = $Notches }; "scrolled $Notches at $X,$Y (harness$(Get-ExitNote $reply))" }
 		'key' { $reply = Invoke-Harness @{ cmd = 'key'; keys = $Keys }; "sent $Keys (harness$(Get-ExitNote $reply))" }
 		'shot' {

@@ -207,6 +207,20 @@ KEYS = {
 }
 KEY_LEFTCTRL, KEY_LEFTSHIFT, KEY_LEFTALT = 29, 42, 56
 MODIFIERS = {"^": KEY_LEFTCTRL, "+": KEY_LEFTSHIFT, "%": KEY_LEFTALT}
+# --mods on the pointer commands, by the names the harness takes
+MODIFIER_NAMES = {"ctrl": KEY_LEFTCTRL, "shift": KEY_LEFTSHIFT, "alt": KEY_LEFTALT}
+
+
+def mods_note(mods):
+    return " with %s held" % "+".join(mods) if mods else ""
+
+
+def parse_mods(text):
+    mods = [name.strip() for name in text.split(",") if name.strip()] if text else []
+    unknown = [name for name in mods if name not in MODIFIER_NAMES]
+    if unknown:
+        raise argparse.ArgumentTypeError("unknown modifier %s: use ctrl, shift or alt, comma-separated" % ", ".join(unknown))
+    return mods
 
 # A US layout's characters: (key code, needs Shift)
 CHARS = {}
@@ -627,33 +641,43 @@ class Helper:
         self.pointer.emit([(EV_KEY, BUTTONS[name], 1 if down else 0)])
         time.sleep(0.03)
 
+    def hold(self, mods, down):
+        # Modifiers held around a pointer command's buttons, let go in reverse order
+        for name in (mods if down else reversed(mods)):
+            self.keyboard.emit([(EV_KEY, MODIFIER_NAMES[name], 1 if down else 0)])
+            time.sleep(0.01)
+
     # Commands, each checked against the window just before its input, so input never lands outside the app
-    def cmd_click(self, x, y, button="left", count=1):
+    def cmd_click(self, x, y, button="left", count=1, mods=()):
         self._ready()
         window = self.focus()
         self.move_to(window, x, y)
+        self.hold(mods, True)
         for _ in range(count):
             self.button(button, True)
             self.button(button, False)
+        self.hold(mods, False)
         time.sleep(0.1)
-        return "clicked (%d, %d)" % (x, y)
+        return "clicked (%d, %d)%s" % (x, y, mods_note(mods))
 
     def cmd_move(self, x, y):
         self._ready()
         self.move_to(self.focus(), x, y)
         return "moved to (%d, %d)" % (x, y)
 
-    def cmd_drag(self, x, y, x2, y2, button="left", steps=10):
+    def cmd_drag(self, x, y, x2, y2, button="left", steps=10, mods=()):
         self._ready()
         window = self.focus()
         self._point(window, x2, y2)
         self.move_to(window, x, y)
+        self.hold(mods, True)
         self.button(button, True)
         for step in range(1, steps + 1):
             self.move_to(window, x + (x2 - x) * step / steps, y + (y2 - y) * step / steps)
         self.button(button, False)
+        self.hold(mods, False)
         time.sleep(0.1)
-        return "dragged (%d, %d) -> (%d, %d)" % (x, y, x2, y2)
+        return "dragged (%d, %d) -> (%d, %d)%s" % (x, y, x2, y2, mods_note(mods))
 
     def cmd_scroll(self, x, y, notches):
         self._ready()
@@ -867,19 +891,19 @@ class HarnessHelper(Helper):
                 return "%dx%d%s" % (info["width"], info["height"], "" if info["maximized"] else " (not maximized)")
             time.sleep(0.1)
 
-    def cmd_click(self, x, y, button="left", count=1):
-        self.request("dblclick" if count == 2 else "click", x=x, y=y, button=button)
-        return "clicked (%d, %d)" % (x, y)
+    def cmd_click(self, x, y, button="left", count=1, mods=()):
+        self.request("dblclick" if count == 2 else "click", x=x, y=y, button=button, mods=list(mods))
+        return "clicked (%d, %d)%s" % (x, y, mods_note(mods))
 
     def cmd_move(self, x, y):
         self.request("move", x=x, y=y)
         return "moved to (%d, %d)" % (x, y)
 
-    def cmd_drag(self, x, y, x2, y2, button="left", steps=10):
+    def cmd_drag(self, x, y, x2, y2, button="left", steps=10, mods=()):
         if button != "left":
             raise DriverError("The harness drags with the left button only")
-        self.request("drag", x=x, y=y, x2=x2, y2=y2)
-        return "dragged (%d, %d) -> (%d, %d)" % (x, y, x2, y2)
+        self.request("drag", x=x, y=y, x2=x2, y2=y2, mods=list(mods))
+        return "dragged (%d, %d) -> (%d, %d)%s" % (x, y, x2, y2, mods_note(mods))
 
     def cmd_scroll(self, x, y, notches):
         self.request("scroll", x=x, y=y, notches=notches)
@@ -1334,16 +1358,20 @@ def main():
 
     p = commands.add_parser("shot", help="screenshot the client area")
     p.add_argument("--out")
+    mods_help = "modifiers held around the press and release, comma-separated: ctrl, shift, alt (e.g. ctrl to add to a selection)"
     for name, extra in (("click", True), ("dblclick", False), ("move", False)):
         p = commands.add_parser(name)
         p.add_argument("x", type=int)
         p.add_argument("y", type=int)
         if extra:
             p.add_argument("--button", default="left", choices=list(BUTTONS))
+        if name != "move":
+            p.add_argument("--mods", type=parse_mods, default=[], help=mods_help)
     p = commands.add_parser("drag")
     for axis in ("x", "y", "x2", "y2"):
         p.add_argument(axis, type=int)
     p.add_argument("--button", default="left", choices=list(BUTTONS))
+    p.add_argument("--mods", type=parse_mods, default=[], help=mods_help)
     p = commands.add_parser("scroll", help="mouse wheel: + away from you, - towards")
     p.add_argument("x", type=int)
     p.add_argument("y", type=int)
@@ -1394,13 +1422,13 @@ def main():
         elif c == "shot":
             print(send("shot", out=os.path.abspath(args.out) if args.out else default_shot_path()))
         elif c == "click":
-            print(send("click", x=args.x, y=args.y, button=args.button))
+            print(send("click", x=args.x, y=args.y, button=args.button, mods=args.mods))
         elif c == "dblclick":
-            print(send("click", x=args.x, y=args.y, count=2))
+            print(send("click", x=args.x, y=args.y, count=2, mods=args.mods))
         elif c == "move":
             print(send("move", x=args.x, y=args.y))
         elif c == "drag":
-            print(send("drag", x=args.x, y=args.y, x2=args.x2, y2=args.y2, button=args.button))
+            print(send("drag", x=args.x, y=args.y, x2=args.x2, y2=args.y2, button=args.button, mods=args.mods))
         elif c == "scroll":
             print(send("scroll", x=args.x, y=args.y, notches=args.notches))
         elif c == "key":

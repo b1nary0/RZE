@@ -150,27 +150,11 @@ namespace EditorHarness
 	{
 		return [this, stroke, isDown]()
 			{
-				const auto pushKey = [this](SDL_Keycode key, bool down)
-					{
-						SDL_Event event = {};
-						event.type = down ? SDL_EVENT_KEY_DOWN : SDL_EVENT_KEY_UP;
-						event.key.windowID = m_windowID;
-						event.key.key = key;
-						event.key.scancode = SDL_GetScancodeFromKey(key, nullptr);
-						event.key.mod = m_modifiers;
-						event.key.down = down;
-						Push(event);
-					};
-
 				if (isDown)
 				{
 					// Modifiers first, as a hand holds them, then the key, and what it types
-					for (const SDL_Keycode modifier : stroke.Modifiers)
-					{
-						m_modifiers = static_cast<SDL_Keymod>(m_modifiers | ModifierFlag(modifier));
-						pushKey(modifier, true);
-					}
-					pushKey(stroke.Key, true);
+					PushModifiers(stroke.Modifiers, true);
+					PushKey(stroke.Key, true);
 					if (!stroke.Text.empty())
 					{
 						SDL_Event event = {};
@@ -182,14 +166,46 @@ namespace EditorHarness
 				}
 				else
 				{
-					pushKey(stroke.Key, false);
-					for (auto modifier = stroke.Modifiers.rbegin(); modifier != stroke.Modifiers.rend(); ++modifier)
-					{
-						m_modifiers = static_cast<SDL_Keymod>(m_modifiers & ~ModifierFlag(*modifier));
-						pushKey(*modifier, false);
-					}
+					PushKey(stroke.Key, false);
+					PushModifiers(stroke.Modifiers, false);
 				}
 			};
+	}
+
+	HarnessInput::Step HarnessInput::Modifiers(const std::vector<SDL_Keycode>& modifiers, bool isDown)
+	{
+		return [this, modifiers, isDown]() { PushModifiers(modifiers, isDown); };
+	}
+
+	void HarnessInput::PushKey(SDL_Keycode key, bool isDown)
+	{
+		SDL_Event event = {};
+		event.type = isDown ? SDL_EVENT_KEY_DOWN : SDL_EVENT_KEY_UP;
+		event.key.windowID = m_windowID;
+		event.key.key = key;
+		event.key.scancode = SDL_GetScancodeFromKey(key, nullptr);
+		event.key.mod = m_modifiers;
+		event.key.down = isDown;
+		Push(event);
+	}
+
+	void HarnessInput::PushModifiers(const std::vector<SDL_Keycode>& modifiers, bool isDown)
+	{
+		if (isDown)
+		{
+			for (const SDL_Keycode modifier : modifiers)
+			{
+				m_modifiers = static_cast<SDL_Keymod>(m_modifiers | ModifierFlag(modifier));
+				PushKey(modifier, true);
+			}
+			return;
+		}
+
+		for (auto modifier = modifiers.rbegin(); modifier != modifiers.rend(); ++modifier)
+		{
+			m_modifiers = static_cast<SDL_Keymod>(m_modifiers & ~ModifierFlag(*modifier));
+			PushKey(*modifier, false);
+		}
 	}
 
 	bool SDLCALL HarnessInput::Filter(void* self, SDL_Event* event)

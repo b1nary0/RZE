@@ -20,4 +20,8 @@ namespace EditorHarness
 	// {NAME} or {NAME n} for named keys, {+} {^} {%} {~} {(} {)} {{} {}} for those characters, ~ for Enter. A US
 	// layout's characters. False, with outError saying why, if keys can't be parsed.
 	bool ParseKeys(const std::string& keys, std::vector<KeyStroke>& outStrokes, std::string& outError);
+
+	// A modifier key by the drivers' name for it, as their pointer commands' "mods" take it: "ctrl", "shift" or "alt".
+	// SDLK_UNKNOWN for any other name.
+	SDL_Keycode ModifierKeyNamed(const std::string& name);
 }

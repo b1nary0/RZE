@@ -47,6 +47,8 @@ namespace EditorHarness
 		Step Button(Uint8 button, bool isDown, float x, float y, Uint8 clicks);
 		Step Wheel(float x, float y, float notches);
 		Step Keys(const KeyStroke& stroke, bool isDown);
+		// Modifier keys alone, held down or let go in reverse order, e.g. around a click
+		Step Modifiers(const std::vector<SDL_Keycode>& modifiers, bool isDown);
 
 	private:
 		struct Action
@@ -58,6 +60,10 @@ namespace EditorHarness
 
 		static bool SDLCALL Filter(void* self, SDL_Event* event);
 		void Push(SDL_Event& event);
+		// A key event, carrying the modifiers held
+		void PushKey(SDL_Keycode key, bool isDown);
+		// Each modifier pressed in order, or let go in reverse order, updating the modifiers held
+		void PushModifiers(const std::vector<SDL_Keycode>& modifiers, bool isDown);
 		// A copy SDL can point a text event at for as long as it's queued
 		const char* KeepText(const std::string& text);
 

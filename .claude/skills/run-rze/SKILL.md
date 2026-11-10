@@ -60,7 +60,7 @@ the window the way a user would:
 |---|---|
 | `launch [-Scene X.scene] [-Config debug\|development\|retail] [-SettleSeconds 5] [-KeepImguiIni] [-AppArgs '...']` | Starts `Editor.exe -scene X` with the working directory set to `RZE\_build\<config>` (`development` by default). `-AppArgs` is one string of more arguments for the app, after `-scene`, e.g. `-AppArgs '-gfxvalidation'`; quote it, or PowerShell takes the leading `-` for one of the driver's own parameters. Refuses to start if an editor is already running. Backs up `RZE\Config\imgui.ini` first (below); `-KeepImguiIni` keeps the layout the run leaves instead. |
 | `shot [-Out path.png]` | Captures the client area only. Defaults to `$env:TEMP\rze-shots\`. |
-| `click -X -Y` | Left click. |
+| `click -X -Y [-Mods ctrl,shift,alt]` | Left click. `-Mods` holds those keys around it, e.g. `-Mods ctrl` adds to the selection; harness sessions only (`dblclick` and `drag` take it too). |
 | `dblclick -X -Y` | Two left clicks close enough together to count as a double-click (two `click` calls are too far apart). Double-clicking an object in the Object Browser focuses the camera on it. |
 | `drag -X -Y -X2 -Y2` | Left-button drag in 10 steps. Verified on the translate gizmo's X arrow. |
 | `scroll -X -Y -Notches N` | N wheel notches at (X, Y); + is away from you (zooms the scene view in). |
@@ -244,8 +244,8 @@ downscales a 2560-wide image to 2000, so multiply what you measure by 1.28.
 | `outputs` | The monitors `launch --output` takes, by KWin's name: `DP-1\t2560,0 2560x1440`. |
 | `state`, `object NAME`, `realinput on\|off` | Harness sessions only: the Editor's state (scene, modified, selection, undo, objects); one object's GUID, parent, components and transform; whether the real mouse and keyboard reach the app. |
 | `shot [--out path.png]` | With `--harness`, the frame read back from the back buffer (about 1 s, as it's encoded). Otherwise, it focuses the app and captures its client area (spectacle). |
-| `click X Y [--button left\|right\|middle]`, `dblclick X Y`, `move X Y` | A click, a double-click, a hover. |
-| `drag X Y X2 Y2 [--button ...]` | A drag in 10 steps. |
+| `click X Y [--button left\|right\|middle] [--mods ctrl,shift,alt]`, `dblclick X Y [--mods ...]`, `move X Y` | A click, a double-click, a hover. `--mods` holds those keys around the press and release: `--mods ctrl` adds an object to the selection, `--mods shift` selects a range. |
+| `drag X Y X2 Y2 [--button ...] [--mods ...]` | A drag in 10 steps, the modifiers held from before the press to after the release. |
 | `scroll X Y N` | N wheel notches at (X, Y); + is away from you (zooms the scene view in). |
 | `key KEYS` | SendKeys syntax, as `driver.ps1` takes: `^` Ctrl, `+` Shift, `%` Alt, `{ENTER}` `{TAB 3}` `{F5}` `{ESC}`, `~` Enter, `{+}` for a literal +. US layout. |
 | `info`, `alive` | The window's title and client area; `running pid=N` or `not running`. |
