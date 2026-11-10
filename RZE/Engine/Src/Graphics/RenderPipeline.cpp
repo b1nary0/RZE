@@ -31,7 +31,7 @@ void RenderPipeline::Render(RenderView& view, RenderScene& scene, float deltaTim
 {
 	CompileIfDirty();
 
-	view.m_frame.BeginFrame();
+	view.m_frameBlackboard.BeginFrame();
 	RenderContext context(view, scene, deltaTime, frameIndex);
 
 	for (size_t stageIndex : m_compiled.ExecutionOrder)

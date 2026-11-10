@@ -11,6 +11,7 @@
 
 #include <memory>
 #include <optional>
+#include <vector>
 
 namespace Rendering
 {
@@ -31,6 +32,32 @@ struct RenderPickRequest
 
 	// A DepthResult's depth: 0 at the near plane, 1 at the far plane or where nothing is drawn
 	static float DecodeDepth(U64 texel);
+};
+
+// A line around the outer edge of some of the scene's objects, as one shape, drawn by OutlineRenderStage over the
+// view's finished image (e.g. the Editor's selection). Only the edge of the shape they make together is drawn, not
+// where they overlap.
+struct RenderOutline
+{
+	// After tonemapping, as debug lines' are
+	Vector3D Colour;
+	// In pixels, up to OutlineRenderStage::k_maxWidth
+	float Width = 2.0f;
+	// How opaque the line is where the objects are behind the scene; 0 hides those parts
+	float OccludedOpacity = 0.0f;
+	// The render objects it goes around, by RenderObject::GetLiveID, so one that's gone matches nothing
+	std::vector<U64> ObjectLiveIDs;
+};
+
+// What a view is asked for in its next render alone. Whoever renders the view clears them afterwards
+// (RenderView::ClearFrameRequests), so each frame's requests start empty and are added to.
+struct RenderFrameRequests
+{
+	// The object at one pixel, served by PickRenderStage in the main view
+	std::optional<RenderPickRequest> Pick;
+	// Drawn by OutlineRenderStage, where the app adds it. An object listed in more than one is outlined by the first.
+	// Up to OutlineRenderStage::k_maxOutlines.
+	std::vector<RenderOutline> Outlines;
 };
 
 // Uploaded as is as the shaders' CameraBuffer (Common/VertexResources.hlsli), which reads the members up to Position, so
@@ -87,6 +114,9 @@ public:
 	ERenderViewKind GetKind() const { return m_kind; }
 	bool IsMainView() const { return m_kind == ERenderViewKind::Main; }
 
+	// Once the view has rendered, by whoever rendered it
+	void ClearFrameRequests() { Frame = RenderFrameRequests(); }
+
 public:
 	RenderCamera Camera;
 	Vector2D ViewportSize;
@@ -108,13 +138,13 @@ public:
 	ERenderViewLighting Lighting = ERenderViewLighting::Scene;
 	// Debug lines (the editor's grid, camera frustums, bounds boxes); off for clean captures such as thumbnails
 	bool DrawsDebug = true;
-	// Served by the main view's next render, then cleared
-	std::optional<RenderPickRequest> Pick;
+	// For the next render only (RenderFrameRequests)
+	RenderFrameRequests Frame;
 
 private:
 	ERenderViewKind m_kind;
 	// Data contracts the stages publish while rendering this view; cleared at the start of each render
-	RenderBlackboard m_frame;
+	RenderBlackboard m_frameBlackboard;
 	// State a stage keeps for this view across frames
-	RenderBlackboard m_persistent;
+	RenderBlackboard m_persistentBlackboard;
 };

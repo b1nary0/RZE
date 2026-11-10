@@ -62,7 +62,7 @@ void PickRenderStage::Render(RenderContext& context)
 	OPTICK_EVENT();
 
 	const RenderView& view = context.View;
-	if (!view.Pick.has_value())
+	if (!view.Frame.Pick.has_value())
 	{
 		return;
 	}
@@ -70,7 +70,7 @@ void PickRenderStage::Render(RenderContext& context)
 	Rendering::Renderer::Begin("PickRenderStage");
 
 	// The requested pixel in NDC; screen y runs down, NDC y runs up
-	const RenderPickRequest& pick = *view.Pick;
+	const RenderPickRequest& pick = *view.Frame.Pick;
 	const float width = view.ViewportSize.X();
 	const float height = view.ViewportSize.Y();
 	const float ndcMinX = pick.X / width * 2.0f - 1.0f;

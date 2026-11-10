@@ -9,7 +9,7 @@
 class VertexShader;
 class PixelShader;
 
-// Finds the object drawn at one pixel of the main view (RenderView::Pick), for the editor's click selection.
+// Finds the object drawn at one pixel of the main view (RenderFrameRequests::Pick), for the editor's click selection.
 // Only runs on frames with a request. The requested pixel is stretched over a 1x1 ID target, so culling skips
 // almost everything and a single texel is read back, plus the depth texel if the request asks for it. Cutout pixels
 // are clipped as in the shadow pass, so clicks go through them.

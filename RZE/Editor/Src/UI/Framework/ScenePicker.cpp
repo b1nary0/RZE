@@ -47,7 +47,7 @@ namespace Editor
 		pickRequest.Y = y;
 		pickRequest.Result = m_pending->Result;
 		pickRequest.DepthResult = m_pending->Depth;
-		view.Pick = pickRequest;
+		view.Frame.Pick = pickRequest;
 	}
 
 	void ScenePicker::Update()

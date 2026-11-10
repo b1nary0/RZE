@@ -41,13 +41,13 @@ public:
 	const U64 FrameIndex;
 
 	// This view's state that lasts across frames. Each value should only be used by the stage that owns it.
-	RenderBlackboard& Persistent() { return m_view.m_persistent; }
+	RenderBlackboard& Persistent() { return m_view.m_persistentBlackboard; }
 	// The scene's state that lasts across frames, shared by every view that renders it (e.g. the shadow map). Each
 	// value should only be used by the stage that owns it.
 	RenderBlackboard& ScenePersistent() { return m_scene.m_persistent; }
 
 private:
-	RenderBlackboard& FrameData() const { return m_view.m_frame; }
+	RenderBlackboard& FrameData() const { return m_view.m_frameBlackboard; }
 
 private:
 	RenderView& m_view;

@@ -67,7 +67,7 @@ void RenderEngine::Render(const char* frameName)
 
 	// Secondary views rendered earlier this frame have drawn them too
 	GetMainScene().ClearDebugLines();
-	m_mainView.Pick.reset();
+	m_mainView.ClearFrameRequests();
 
 	Rendering::Renderer::EndFrame();
 
@@ -150,6 +150,7 @@ void RenderEngine::RenderSecondaryView(const char* frameName, RenderView& view, 
 	Rendering::Renderer::Begin(frameName);
 
 	m_pipeline->Render(view, scene, static_cast<float>(RZE().GetDeltaTime()), m_frameIndex);
+	view.ClearFrameRequests();
 
 	Rendering::Renderer::End();
 
