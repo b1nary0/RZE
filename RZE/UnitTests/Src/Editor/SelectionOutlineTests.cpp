@@ -72,7 +72,17 @@ namespace
 		std::vector<U64> GetOutlinedIDs() const
 		{
 			REQUIRE(View.Frame.Outlines.size() == 1);
-			return View.Frame.Outlines.front().ObjectLiveIDs;
+			return GetLiveIDs(View.Frame.Outlines.front());
+		}
+
+		static std::vector<U64> GetLiveIDs(const RenderOutline& outline)
+		{
+			std::vector<U64> ids;
+			for (const RenderOutlineObject& object : outline.Objects)
+			{
+				ids.push_back(object.LiveID);
+			}
+			return ids;
 		}
 
 		static std::vector<U64> Sorted(std::vector<U64> ids)
@@ -96,15 +106,15 @@ TEST_CASE_FIXTURE(OutlineFixture, "Nothing selected adds no outline, and leaves 
 TEST_CASE_FIXTURE(OutlineFixture, "The selection's outline is added after the view's others")
 {
 	RenderOutline other;
-	other.ObjectLiveIDs = { GetLiveID(Other) };
+	other.Objects = { { GetLiveID(Other), 0 } };
 	View.Frame.Outlines.push_back(other);
 	Selection.Select(Child);
 
 	ApplySelectionOutline(Selection, View);
 
 	REQUIRE(View.Frame.Outlines.size() == 2);
-	CHECK(View.Frame.Outlines[0].ObjectLiveIDs == std::vector<U64>{ GetLiveID(Other) });
-	CHECK(View.Frame.Outlines[1].ObjectLiveIDs == std::vector<U64>{ GetLiveID(Child) });
+	CHECK(GetLiveIDs(View.Frame.Outlines[0]) == std::vector<U64>{ GetLiveID(Other) });
+	CHECK(GetLiveIDs(View.Frame.Outlines[1]) == std::vector<U64>{ GetLiveID(Child) });
 }
 
 TEST_CASE_FIXTURE(OutlineFixture, "A selected object is outlined with its descendants, as one outline")

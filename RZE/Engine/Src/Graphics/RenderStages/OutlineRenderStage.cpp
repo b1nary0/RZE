@@ -6,6 +6,7 @@
 #include <Graphics/MaterialSlot.h>
 #include <Graphics/MeshGeometry.h>
 #include <Graphics/RenderEngine.h>
+#include <Graphics/RenderView.h>
 #include <Graphics/Shader.h>
 #include <Graphics/Texture2D.h>
 #include <Graphics/VertexBuffer.h>
@@ -20,12 +21,14 @@
 
 #include <algorithm>
 #include <cmath>
+#include <tuple>
 
 // HLSL's layouts: each style two registers, and the values after the array on a register of their own
 static_assert(sizeof(OutlineRenderStage::OutlineStyleLayout) == 32, "OutlineStyle is two registers in Pixel_Outline.hlsl");
 static_assert(sizeof(OutlineRenderStage::OutlineBufferLayout) == OutlineRenderStage::k_maxOutlines * 32 + 16, "OutlineBuffer in Pixel_Outline.hlsl");
-// The mask holds an outline's index + 1 in 8 bits (Common/Outline.hlsli)
+// The mask holds an outline's index + 1 in 8 bits, then a bit, then a shape's ID in the 23 left (Common/Outline.hlsli)
 static_assert(OutlineRenderStage::k_maxOutlines < 256, "An OutlineID must fit the mask's 8 bits");
+static_assert(OutlineRenderStage::k_maxShapes == 0xFFFFFFFFu >> 9, "A ShapeID must fit the mask's top 23 bits");
 
 namespace
 {
@@ -107,13 +110,19 @@ void OutlineRenderStage::Render(RenderContext& context)
 	}
 
 	const U32 outlineCount = std::min(static_cast<U32>(outlines.size()), k_maxOutlines);
-	const bool isOverLimits = outlines.size() > k_maxOutlines
+	const bool hasAllShapes = CollectOutlinedObjects(outlines, outlineCount, m_outlinedObjects);
+	const bool isOverLimits = !hasAllShapes || outlines.size() > k_maxOutlines
 		|| std::any_of(outlines.begin(), outlines.end(), [](const RenderOutline& outline) { return outline.Width > k_maxWidth; });
 	if (isOverLimits && !m_hasWarnedOfLimits)
 	{
-		RZE_LOG_WARNING_ARGS("A view has %zu outlines, or one wider than %.0f pixels: only the first %u are drawn, at most that wide.",
-			outlines.size(), k_maxWidth, k_maxOutlines);
+		RZE_LOG_WARNING_ARGS("A view has %zu outlines, one wider than %.0f pixels, or more than %u shapes: only the first %u "
+			"outlines are drawn, at most that wide, and the shapes past the last as one.",
+			outlines.size(), k_maxWidth, k_maxShapes, k_maxOutlines);
 		m_hasWarnedOfLimits = true;
+	}
+	if (m_outlinedObjects.empty())
+	{
+		return;
 	}
 
 	Rendering::Renderer::Begin("OutlineRenderStage");
@@ -129,42 +138,53 @@ void OutlineRenderStage::Render(RenderContext& context)
 		CreateMaskTextures(state);
 	}
 
-	if (DrawMask(context, outlineCount, state.Mask, state.Depth))
+	if (DrawMask(context, state.Mask, state.Depth))
 	{
-		DrawOutlines(context, outlineCount, state.Mask);
+		DrawOutlines(context, outlineCount, state.Mask, state.Depth);
 	}
 
 	Rendering::Renderer::End();
 }
 
-bool OutlineRenderStage::DrawMask(const RenderContext& context, U32 outlineCount, const Rendering::RenderTargetHandle& mask,
-	const Rendering::TextureBuffer2DHandle& maskDepth)
+bool OutlineRenderStage::CollectOutlinedObjects(const std::vector<RenderOutline>& outlines, U32 outlineCount,
+	std::vector<OutlinedObject>& outObjects)
 {
-	// Render returns earlier for a view without outlines
-	AssertExpr(outlineCount > 0);
+	AssertExpr(outlineCount <= outlines.size());
 
-	const RenderView& view = context.View;
-	const std::vector<RenderOutline>& outlines = view.Frame.Outlines;
-
-	// Each object once, in the first outline that lists it
-	m_outlinedObjects.clear();
+	outObjects.clear();
+	bool hasAllShapes = true;
+	// Each outline's shapes are numbered after the one before's. 64 bits, as a Shape can be any U32.
+	U64 firstShapeID = 1;
 	for (U32 outlineIndex = 0; outlineIndex < outlineCount; ++outlineIndex)
 	{
-		for (const U64 liveID : outlines[outlineIndex].ObjectLiveIDs)
+		U64 shapeCount = 0;
+		for (const RenderOutlineObject& object : outlines[outlineIndex].Objects)
 		{
-			m_outlinedObjects.push_back({ liveID, outlineIndex + 1 });
+			const U64 shapeID = firstShapeID + object.Shape;
+			hasAllShapes = hasAllShapes && shapeID <= k_maxShapes;
+			outObjects.push_back({ object.LiveID, outlineIndex + 1, static_cast<U32>(std::min<U64>(shapeID, k_maxShapes)) });
+			shapeCount = std::max<U64>(shapeCount, static_cast<U64>(object.Shape) + 1);
 		}
+		firstShapeID += shapeCount;
 	}
-	std::sort(m_outlinedObjects.begin(), m_outlinedObjects.end(), [](const OutlinedObject& a, const OutlinedObject& b)
+
+	// Each object once: in the first outline listing it, then the lowest shape it's listed in there
+	std::sort(outObjects.begin(), outObjects.end(), [](const OutlinedObject& a, const OutlinedObject& b)
 		{
-			return a.LiveID != b.LiveID ? a.LiveID < b.LiveID : a.OutlineID < b.OutlineID;
+			return std::tie(a.LiveID, a.OutlineID, a.ShapeID) < std::tie(b.LiveID, b.OutlineID, b.ShapeID);
 		});
-	m_outlinedObjects.erase(std::unique(m_outlinedObjects.begin(), m_outlinedObjects.end(),
-		[](const OutlinedObject& a, const OutlinedObject& b) { return a.LiveID == b.LiveID; }), m_outlinedObjects.end());
-	if (m_outlinedObjects.empty())
-	{
-		return false;
-	}
+	outObjects.erase(std::unique(outObjects.begin(), outObjects.end(),
+		[](const OutlinedObject& a, const OutlinedObject& b) { return a.LiveID == b.LiveID; }), outObjects.end());
+	return hasAllShapes;
+}
+
+bool OutlineRenderStage::DrawMask(const RenderContext& context, const Rendering::RenderTargetHandle& mask,
+	const Rendering::TextureBuffer2DHandle& maskDepth)
+{
+	// Render returns earlier for a view with nothing to outline
+	AssertExpr(!m_outlinedObjects.empty());
+
+	const RenderView& view = context.View;
 
 	// Its own depth, so where outlined objects overlap the nearest one's outline is drawn
 	Rendering::Renderer::SetColourTarget(mask, maskDepth);
@@ -201,7 +221,7 @@ bool OutlineRenderStage::DrawMask(const RenderContext& context, U32 outlineCount
 			continue;
 		}
 
-		const MaskBufferLayout maskData = { outlined->OutlineID, { 0, 0, 0 } };
+		const MaskBufferLayout maskData = { outlined->OutlineID, outlined->ShapeID, { 0, 0 } };
 		Rendering::Renderer::UploadDataToBuffer<MaskBufferLayout>(m_maskBuffer, &maskData);
 
 		for (const MeshDraw& draw : renderObject->GetDraws())
@@ -242,7 +262,8 @@ bool OutlineRenderStage::DrawMask(const RenderContext& context, U32 outlineCount
 	return hasDrawn;
 }
 
-void OutlineRenderStage::DrawOutlines(const RenderContext& context, U32 outlineCount, const Rendering::RenderTargetHandle& mask) const
+void OutlineRenderStage::DrawOutlines(const RenderContext& context, U32 outlineCount, const Rendering::RenderTargetHandle& mask,
+	const Rendering::TextureBuffer2DHandle& maskDepth) const
 {
 	const RenderView& view = context.View;
 	const std::vector<RenderOutline>& outlines = view.Frame.Outlines;
@@ -273,8 +294,8 @@ void OutlineRenderStage::DrawOutlines(const RenderContext& context, U32 outlineC
 	Rendering::Renderer::SetViewport({ view.ViewportSize.X(), view.ViewportSize.Y() });
 	Rendering::Renderer::SetColourTarget(m_displayColour.Get(context).Colour);
 
-	// The line's soft edge blends with the image under it
+	// The line's soft edge blends with the image under it. The mask's depth is free to read: the colour target has none.
 	Rendering::Renderer::SetBlendState(Rendering::EBlendState::AlphaBlend);
-	DrawFullScreenPass(m_outlineShader, { mask });
+	DrawFullScreenPass(m_outlineShader, { mask, maskDepth });
 	Rendering::Renderer::SetBlendState(Rendering::EBlendState::Opaque);
 }

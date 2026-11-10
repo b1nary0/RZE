@@ -173,6 +173,12 @@ Things to know on this machine (2026-11-08):
   NeckMech up to Camera. `-Mods ctrl,shift` is accepted as two (PowerShell's `string[]`, sent as a JSON array even with
   one entry: `-Mods ctrl` must not reach the harness as a string, which it refuses with `"mods" is an array`). With no
   session, `driver.ps1 click -X 1 -Y 1 -Mods ctrl` stops with `-Mods needs a harness session`. Close.
+- **A31. Outlines are made of shapes (`RenderOutlineObject::Shape`), each edged on its own.** A new test file, so run
+  `GenerateSolutions.bat` first. 1: A2's counts (7 test cases are new: `-tc="Outlined objects*"` runs them). 2: the
+  log has no shader compile error for `Pixel_OutlineMask` or `Pixel_Outline` (the mask now packs a shape ID in its top
+  23 bits, and the outline pass declares the mask's depth at t1). 3: A29's M4 and NeckMech checks look as they did:
+  the Editor still puts the whole selection in shape 0, so nothing on screen changes yet. The mask depth read is
+  checked with the next item.
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 

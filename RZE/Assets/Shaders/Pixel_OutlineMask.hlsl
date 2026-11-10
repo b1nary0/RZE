@@ -1,6 +1,6 @@
-// Outline mask (OutlineRenderStage): which outline's object is drawn at each pixel, and whether it's in front of the
-// scene there. Cutout pixels are clipped as in the shadow pass, so a leaf's outline follows its cut-out shape; so are a
-// blended mask's faint ones.
+// Outline mask (OutlineRenderStage): which outline's object is drawn at each pixel, which shape it's in, and whether
+// it's in front of the scene there. Cutout pixels are clipped as in the shadow pass, so a leaf's outline follows its
+// cut-out shape; so are a blended mask's faint ones.
 #include "Common/ForwardTypes.hlsli"
 #include "Common/Lighting.hlsli"
 #include "Common/Outline.hlsli"
@@ -9,6 +9,7 @@
 cbuffer OutlineMaskBuffer : register(b0)
 {
 	uint OutlineID;
+	uint ShapeID;
 };
 
 // The scene's depth (DepthPrepassStage), past the forward pass's textures
@@ -25,5 +26,5 @@ uint PSMain(VertexToPixel input) : SV_Target
 	// same but for the stored one's rounding to 24 bits
 	const float sceneDepth = SceneDepth.Load(int3(int2(input.Position.xy), 0));
 	const bool isInFront = input.Position.z <= sceneDepth + 2.0f * DepthStep;
-	return OutlineID | (isInFront ? OutlineInFrontBit : 0u);
+	return OutlineID | (isInFront ? OutlineInFrontBit : 0u) | (ShapeID << OutlineShapeShift);
 }

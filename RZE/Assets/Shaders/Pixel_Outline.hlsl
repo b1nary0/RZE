@@ -1,6 +1,8 @@
 // Outline lines (OutlineRenderStage), from the mask Pixel_OutlineMask drew, blended over the finished image. A pixel is
-// on an outline's line when a pixel within its width holds one of its objects and this pixel doesn't, so only the outer
-// edge of the shape its objects make together is drawn. Where several outlines reach a pixel, the most opaque is drawn.
+// on a shape's line when a pixel within its outline's width is in that shape and this pixel isn't, so only the outer
+// edge of the shape its objects make together is drawn. Where this pixel is in another shape, only a nearer shape's
+// line is drawn on it, so where two shapes touch the line goes on the farther one's side, as against the background.
+// Where several lines reach a pixel, the most opaque is drawn.
 #include "Common/FullScreenQuad.hlsli"
 #include "Common/Outline.hlsli"
 
@@ -31,12 +33,16 @@ cbuffer OutlineBuffer : register(b0)
 };
 
 Texture2D<uint> Mask : register(t0);
+// The mask's own depth: which of two touching shapes is nearer
+Texture2D<float> MaskDepth : register(t1);
 
 float4 PSMain(PS_IN input) : SV_TARGET
 {
 	const int2 pixel = int2(input.Position.xy);
 	const int2 lastPixel = int2(ViewportSize) - 1;
-	const uint ownID = Mask.Load(int3(pixel, 0)) & OutlineIDBits;
+	const uint ownShape = Mask.Load(int3(pixel, 0)) >> OutlineShapeShift;
+	// Only read where this pixel is in a shape, and then only to compare with a touching one's
+	const float ownDepth = ownShape != 0u ? MaskDepth.Load(int3(pixel, 0)) : 1.0f;
 
 	float alpha = 0.0f;
 	float3 colour = float3(0.0f, 0.0f, 0.0f);
@@ -44,13 +50,20 @@ float4 PSMain(PS_IN input) : SV_TARGET
 	{
 		for (int x = -SearchRadius; x <= SearchRadius; ++x)
 		{
-			const uint texel = Mask.Load(int3(clamp(pixel + int2(x, y), int2(0, 0), lastPixel), 0));
-			const uint id = texel & OutlineIDBits;
-			if (id == 0u || id == ownID)
+			const int3 neighbour = int3(clamp(pixel + int2(x, y), int2(0, 0), lastPixel), 0);
+			const uint texel = Mask.Load(neighbour);
+			const uint shape = texel >> OutlineShapeShift;
+			if (shape == 0u || shape == ownShape)
+			{
+				continue;
+			}
+			// Next to a farther shape, the line between them is on that one's side: this pixel's shape's, drawn there
+			if (ownShape != 0u && MaskDepth.Load(neighbour) > ownDepth)
 			{
 				continue;
 			}
 
+			const uint id = texel & OutlineIDBits;
 			const OutlineStyle style = Outlines[id - 1u];
 			// Solid within the width, fading out over the half pixel past it, so the line's edge is smooth
 			const float coverage = saturate(style.Width + 0.5f - length(float2(x, y)));

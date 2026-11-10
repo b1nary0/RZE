@@ -14,21 +14,26 @@
 
 class VertexShader;
 class PixelShader;
+struct RenderOutline;
 
 // Draws each of a view's RenderOutlines (RenderFrameRequests::Outlines) around the outer edge of its objects, over the finished
 // image. Not added by the engine: an app adds it if its views have outlines (the Editor, for its selection).
 // Two passes, only for a view with outlines:
 // - Mask: the outlined objects alone, into a mask the size of the view's target (OutlineMaskState, kept per view).
-//   Each pixel holds which outline's object is nearest there, and whether that object is in front of the scene's
-//   depth or behind it. Cutout pixels are clipped as in the shadow pass.
-// - Outline: a full-screen pass that draws each outline's colour on the pixels within its width of its objects that
-//   aren't its objects' own, so only the edge of the shape they make together is outlined. Fainter by the outline's
-//   OccludedOpacity where the objects there are behind the scene.
+//   Each pixel holds which outline and which of its shapes the nearest outlined object there is in, and whether that
+//   object is in front of the scene's depth or behind it. Cutout pixels are clipped as in the shadow pass.
+// - Outline: a full-screen pass that draws a shape's outline colour on the pixels within its width of it that aren't
+//   the shape's own, so only the edge of the shape its objects make together is outlined. Where two shapes touch, the
+//   line goes on the farther one's side (by the mask's depth), as against the background. Fainter by the outline's
+//   OccludedOpacity where the shape there is behind the scene.
 class OutlineRenderStage : public IRenderStage
 {
 public:
 	// How many outlines a view draws; more are ignored. The mask holds an outline's index in 8 bits.
 	static constexpr U32 k_maxOutlines = 8;
+	// How many shapes a view's outlines make together; the ones past it are drawn as one. The mask holds a shape's ID
+	// in its top 23 bits (Common/Outline.hlsli).
+	static constexpr U32 k_maxShapes = (1u << 23) - 1;
 	// Widest a line is drawn, in pixels; the outline pass searches this far around each pixel
 	static constexpr float k_maxWidth = 4.0f;
 
@@ -37,7 +42,9 @@ public:
 	{
 		// The outline's index + 1; 0 in the mask means no outlined object there
 		U32 OutlineID;
-		U32 _pad[3];
+		// OutlinedObject::ShapeID
+		U32 ShapeID;
+		U32 _pad[2];
 	};
 
 	// Mirrors OutlineStyle in Pixel_Outline.hlsl: a RenderOutline's look
@@ -60,6 +67,22 @@ public:
 		U32 _pad;
 	};
 
+	// One render object an outline goes around
+	struct OutlinedObject
+	{
+		U64 LiveID;
+		// MaskBufferLayout::OutlineID
+		U32 OutlineID;
+		// Its shape, numbered from 1 across the view's outlines, so no two outlines' shapes share one
+		U32 ShapeID;
+	};
+
+	// The objects of the first outlineCount outlines, sorted by LiveID, each once (RenderFrameRequests::Outlines), with
+	// their shapes numbered across the outlines. False if they make more than k_maxShapes shapes, the ones past it then
+	// taking the last ID.
+	static bool CollectOutlinedObjects(const std::vector<RenderOutline>& outlines, U32 outlineCount,
+		std::vector<OutlinedObject>& outObjects);
+
 public:
 	OutlineRenderStage() = default;
 	~OutlineRenderStage() override = default;
@@ -72,20 +95,12 @@ public:
 	void Render(RenderContext& context) override;
 
 private:
-	// One render object an outline goes around
-	struct OutlinedObject
-	{
-		U64 LiveID;
-		// MaskBufferLayout::OutlineID
-		U32 OutlineID;
-	};
-
-private:
-	// Draws the objects of the view's first outlineCount outlines into mask, over maskDepth; false if none is drawn
-	bool DrawMask(const RenderContext& context, U32 outlineCount, const Rendering::RenderTargetHandle& mask,
+	// Draws m_outlinedObjects into mask, over maskDepth; false if none is drawn
+	bool DrawMask(const RenderContext& context, const Rendering::RenderTargetHandle& mask,
 		const Rendering::TextureBuffer2DHandle& maskDepth);
-	// Draws the lines over the view's image, from the mask
-	void DrawOutlines(const RenderContext& context, U32 outlineCount, const Rendering::RenderTargetHandle& mask) const;
+	// Draws the lines over the view's image, from the mask and its depth
+	void DrawOutlines(const RenderContext& context, U32 outlineCount, const Rendering::RenderTargetHandle& mask,
+		const Rendering::TextureBuffer2DHandle& maskDepth) const;
 
 private:
 	RenderInput<SceneDepthData> m_sceneDepthInput;
@@ -100,10 +115,10 @@ private:
 	Rendering::ConstantBufferHandle m_maskBuffer;
 	Rendering::ConstantBufferHandle m_outlineBuffer;
 
-	// The objects of the view being drawn, by LiveID, to look each render object up in. Kept only so its memory is
-	// reused.
+	// The objects of the view being drawn (CollectOutlinedObjects), to look each render object up in. Kept only so its
+	// memory is reused.
 	std::vector<OutlinedObject> m_outlinedObjects;
 
-	// Logged once: a view asked for more outlines, or wider ones, than are drawn
+	// Logged once: a view asked for more outlines or shapes, or wider lines, than are drawn
 	bool m_hasWarnedOfLimits = false;
 };

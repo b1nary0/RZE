@@ -34,9 +34,19 @@ struct RenderPickRequest
 	static float DecodeDepth(U64 texel);
 };
 
-// A line around the outer edge of some of the scene's objects, as one shape, drawn by OutlineRenderStage over the
-// view's finished image (e.g. the Editor's selection). Only the edge of the shape they make together is drawn, not
-// where they overlap.
+// One render object a RenderOutline goes around
+struct RenderOutlineObject
+{
+	// RenderObject::GetLiveID, so one that's gone matches nothing
+	U64 LiveID = 0;
+	// Which of the outline's shapes it's part of, numbered from 0 in each outline
+	U32 Shape = 0;
+};
+
+// A line around the outer edge of some of the scene's objects, drawn by OutlineRenderStage over the view's finished
+// image (e.g. the Editor's selection). Its objects make shapes: the objects with the same Shape make one, and only its
+// outer edge is drawn, not where they overlap. Each shape's edge is drawn, also where it's in front of another of the
+// view's outlined shapes.
 struct RenderOutline
 {
 	// After tonemapping, as debug lines' are
@@ -45,8 +55,8 @@ struct RenderOutline
 	float Width = 2.0f;
 	// How opaque the line is where the objects are behind the scene; 0 hides those parts
 	float OccludedOpacity = 0.0f;
-	// The render objects it goes around, by RenderObject::GetLiveID, so one that's gone matches nothing
-	std::vector<U64> ObjectLiveIDs;
+	// The render objects it goes around, each in one of its shapes
+	std::vector<RenderOutlineObject> Objects;
 };
 
 // What a view is asked for in its next render alone. Whoever renders the view clears them afterwards
@@ -55,8 +65,8 @@ struct RenderFrameRequests
 {
 	// The object at one pixel, served by PickRenderStage in the main view
 	std::optional<RenderPickRequest> Pick;
-	// Drawn by OutlineRenderStage, where the app adds it. An object listed in more than one is outlined by the first.
-	// Up to OutlineRenderStage::k_maxOutlines.
+	// Drawn by OutlineRenderStage, where the app adds it. An object listed more than once is outlined by the first
+	// outline listing it, in the lowest of the shapes it's listed in there. Up to OutlineRenderStage::k_maxOutlines.
 	std::vector<RenderOutline> Outlines;
 };
 

@@ -52,16 +52,18 @@ namespace Editor
 				// No render object until it has a mesh
 				if (renderComponent != nullptr && renderComponent->GetRenderObject() != nullptr)
 				{
-					outline.ObjectLiveIDs.push_back(renderComponent->GetRenderObject()->GetLiveID());
+					outline.Objects.push_back({ renderComponent->GetRenderObject()->GetLiveID(), 0 });
 				}
 			}
 		}
 
 		// A selected object's selected descendants are in its subtree too
-		std::sort(outline.ObjectLiveIDs.begin(), outline.ObjectLiveIDs.end());
-		outline.ObjectLiveIDs.erase(std::unique(outline.ObjectLiveIDs.begin(), outline.ObjectLiveIDs.end()), outline.ObjectLiveIDs.end());
+		std::sort(outline.Objects.begin(), outline.Objects.end(),
+			[](const RenderOutlineObject& a, const RenderOutlineObject& b) { return a.LiveID < b.LiveID; });
+		outline.Objects.erase(std::unique(outline.Objects.begin(), outline.Objects.end(),
+			[](const RenderOutlineObject& a, const RenderOutlineObject& b) { return a.LiveID == b.LiveID; }), outline.Objects.end());
 
-		if (!outline.ObjectLiveIDs.empty())
+		if (!outline.Objects.empty())
 		{
 			view.Frame.Outlines.push_back(std::move(outline));
 		}
