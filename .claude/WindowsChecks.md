@@ -21,13 +21,13 @@ Claude runs them** when the user asks ("follow `.claude/WindowsChecks.md`").
 Checks marked **(person)** need someone at the machine (judging a picture, a GUI tool, a physical key, a debugger): do
 what you can, then list the rest for the user.
 
-Things to know on this machine (2026-11-08):
-- It's a VMware VM: the GPU is `VMware SVGA 3D`. "Real GPU" checks run on that virtual GPU, and its memory shows in
-  `\GPU Process Memory(...)\Local Usage`, not `Dedicated Usage` (always 0 here).
-- The Editor's client area is 2546x1205 (it was 1770x959 on another monitor). Measure coordinates from a `shot`.
+Things to know on this machine (2026-11-10):
+- The GPU is an **NVIDIA GeForce RTX 4070 Ti** (on 2026-11-08 it was a VMware VM with `VMware SVGA 3D`). Memory
+  figures from before 2026-11-10 came from the VM, whose driver kept textures in system memory, so they don't compare
+  with this machine's: measure a "before" here (e.g. a temporary revert) instead.
+- The Editor's harness client area is 2560x1392. Measure coordinates from a `shot`.
 - `driver.ps1` has no `move` command (`driver.py` has one). To hover the scene view without clicking, use
   `scroll -X <x> -Y <y> -Notches 0`. The Editor only takes keys (W/E/R, Esc) while the pointer is over the scene view.
-- `gh` isn't installed, so CI results have to be read on GitHub.
 
 ## To check
 
@@ -41,20 +41,6 @@ Things to know on this machine (2026-11-08):
 - **Smoke.** `driver.ps1 launch -Harness -Config debug -Scene Sponza.scene -SettleSeconds 20`, `shot`, `close`: the
   scene renders, `closed code=0`, the log has no `[Error]` line and ends "encountered 0 live resources". Shaders
   compile at start-up, so this is where an fxc failure shows.
-
-### Harness checks for new changes
-
-- **D12. One s0 sampler, owned by the device.** `DX11Device` now creates a linear-wrap sampler and binds it at s0
-  (pixel and compute) in `BeginDrawSet`, next to s1 to s3. `DX11TextureBuffer2D` no longer creates or binds one of its
-  own (the per-texture samplers were all the same linear-wrap). 1: A1's builds cover it. 2: Debug `RenderPerfTest.scene`,
-  settled 20 s: **0** `D3D11 (352)` "expects a Sampler to be set at Slot 0" lines (899 before), and none on RenderTest
-  or DrawLineTest. 3: Debug Sponza: textured as before (compare with a shot from the commit before if it's in doubt),
-  and the arches' textures still repeat across tiled surfaces. 4: `close` gives `closed code=0` and 0 live resources.
-- **D13. The render command arena is 64 MB a buffer** (`MEM_ARENA_SIZE`, `Renderer.cpp`, was 2048). D7 measured Sponza
-  settled 20 s at Debug working set 5320 MB / private 5280 MB, Development working set 1234 MB / private 5279 MB. 1:
-  the same measurement (Debug and Development, Sponza, 20 s): both should be about 3.9 GB lower in private bytes, and
-  Debug's working set too. 2: the status bar reads `/ 64.00 MB`, with a peak near Linux's 12090 KB (Sponza) and 3006
-  KB (RenderPerfTest). 3: no `arena was full` or `exceeds the arena` line in either log. 4: `closed code=0`, 0 live.
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 
@@ -73,7 +59,8 @@ One Visual Studio session covers these. Each temporary edit is reverted (`git st
   `<Utils/DebugUtils/Debug.h>`) in `RZE_DISABLE_OPTIMIZATION` / `RZE_ENABLE_OPTIMIZATION`, each on its own line, and
   build Development. Break in `Decode` (`UnitTests.exe -tc="Directions come back*"`): Locals shows `x`, `y`, `z`,
   `fold` and `point` with values at every line, while a breakpoint in `Encode` shows its locals optimized away. (The
-  Retail `static_assert` and the Development build passed 2026-11-08.)
+  Retail `static_assert` and the Development build passed 2026-11-08.) Development now inlines any function (`/Ob2`,
+  F2), so this macro is the only way to step one through.
 
 ### Hands-on session 2: the Game (person)
 
@@ -125,25 +112,21 @@ One Visual Studio session covers these. Each temporary edit is reverted (`git st
   `ReflectionProbeComponent` to an object in `Sponza.scene` (don't save): the reflections are the right way up and the
   sky is on top.
 
-### Other
-
-- **A11.4. CI (person, or a machine with `gh`).** The Windows job's `development` leg passed on the pushed commit.
-- **F2. What `/Ob1` costs Windows Development (measurement; ask before running).** `ConfigureRelease` sets
-  `Inline.OnlyInline` (`/Ob1`) over `AnySuitable` (`/Ob2`); on Linux the counterpart cost +38 % update time on
-  `RenderPerfTest.scene`. Its case was easier stepping in Development, which `RZE_DISABLE_OPTIMIZATION` now covers per
-  function. It costs two full rebuilds and six 50 s runs, so the user decides whether it's still worth measuring. Steps
-  as of ce15cced: copy `_build\development\Editor.exe` to `_build\perf-Ob1\`, switch to `AnySuitable`, regenerate,
-  `/t:Rebuild` Development, copy to `_build\perf-Ob2\`, revert and rebuild; run Ob1/Ob2 alternately three times each
-  with `-scene RenderPerfTest.scene -perfcapture <out>.csv -perfwarmup 20 -perfduration 30`, restoring `imgui.ini`
-  before each; report frame and update time (mean, median, p95, p99, spread, % change).
-
 ## Results
 
 Results already read by Linux Claude are removed from this table; they're in this file's git history (the last full
 table is at b17556af).
 
-All 2026-11-08 rows are at eaf66bf4, those marked "+ fix" with the D10 fix (b17556af) applied.
+All 2026-11-08 rows are at eaf66bf4, those marked "+ fix" with the D10 fix (b17556af) applied. The 2026-11-10 rows
+are at a979e2f1, on the RTX 4070 Ti (see "Things to know").
 
 | ID | Date | Commit | Result | Notes |
 |---|---|---|---|---|
+| A1 | 2026-11-10 | a979e2f1 | pass | `GenerateSolutions.bat` (only Sharpmake's regex-separator warnings), then Debug / Development / Retail: 0 warnings, 0 errors. |
+| A2 | 2026-11-10 | a979e2f1 | pass | Debug and Development 459 / 459 cases (22065 assertions), Retail 458 / 458 (22061); exit code 0 each. No `ProjectData` left in `_build\debug` or `_build\development`. |
+| A3 | 2026-11-10 | a979e2f1 | pass | Debug burner: exit code 0, 15 sources imported, no `[Error]`. |
+| Smoke | 2026-11-10 | a979e2f1 | pass | Debug Sponza, harness, 20 s: renders textured and shadowed, `closed code=0`, no `[Error]`, "encountered 0 live resources". |
+| D12 | 2026-11-10 | a979e2f1 | pass | Debug (validation on, info queue live: no "isn't available" warning), settled 20 s / 8 s: **0** `D3D11 (352)` lines, and no `D3D11 (` line at all, on RenderPerfTest, RenderTest, DrawLineTest and Sponza. Sponza textured, floor tiles and arch stone repeating across surfaces. Every run `closed code=0`, 0 live. |
+| D13 | 2026-11-10 | a979e2f1 | pass | D7's VM figures don't compare (other GPU), so "before" was measured here with `MEM_ARENA_SIZE` temporarily back at 2048 (reverted, rebuilt). Sponza settled 20 s, before → after: **Debug** private 5556 → 1586 MB (−3970), working set 4190 → 229 MB (−3961); **Development** private 5559 → 1579 MB (−3980), working set 98 → 101 MB. Expected −3968 MB (2 × 1984). Status bar `/ 64.00 MB`; peak **12090 KB** on Sponza (Linux's exactly), **2303 KB** on RenderPerfTest (Linux 3006; 947 KB last frame). No `arena was full` / `exceeds the arena` in any log; all `closed code=0`, 0 live. |
+| F2 | 2026-11-10 | a979e2f1 | measured | Development `/Ob1` (as committed) vs `/Ob2` (`ConfigureRelease` temporarily `AnySuitable`, regenerated, `/t:Rebuild`; reverted and rebuilt). `Editor.exe` 2953728 → 3076096 bytes. Editor on monitor 1, `RenderPerfTest.scene`, 20 s warm-up, 30 s capture, alternated 3 runs a side, `imgui.ini` restored before each; about 13100 frames a run. **Update ms**, Ob1 → Ob2: mean 1.055 → 0.956 (**−9.4 %**), median 1.027 → 0.962 (−6.4 %), p95 1.446 → 1.347 (−6.9 %), p99 1.594 → 1.485 (−6.8 %); run means Ob1 1.040 / 1.084 / 1.040, Ob2 0.947 / 0.956 / 0.963, so every Ob2 run beat every Ob1 run. **Frame ms**: mean 2.290 → 2.267 (−1.0 %), median −1.4 %, p95 −0.7 %, p99 3.577 → 3.491 (−2.4 %); spreads 0.007 / 0.006, so small but consistent. `/Ob1` costs Windows Development about +10 % update time (Linux: +38 %). **Acted on in f0da893d:** `ConfigureRelease` now sets `AnySuitable`, as clang's `-O2` already inlines on Linux (Vc options only, so Linux's Makefiles don't change); with it, Debug / Development / Retail build with 0 warnings, Development's tests pass and Sponza closes with code 0 and 0 live. |
 | A13 | 2026-11-08 | eaf66bf4 | pass | 1: see A1/A2. 2: without `__pragma(warning(disable : 4748))`, Development rebuilt `OptimizationSwitchTests.cpp` with **no C4748** (the suppression looks unneeded on x64); restored and rebuilt. 3: `Decode` wrapped (temporary): Retail fails with `Octahedral.cpp(37,1): error C2338: static assertion failed: 'RZE_DISABLE_OPTIMIZATION is still in this file: remove it and RZE_ENABLE_OPTIMIZATION'` at the macro's line; Development builds with no warning and passes `Directions come back*`; reverted and rebuilt. 4: the Development Game shows the Dear ImGui demo window over DrawLineTest. |
