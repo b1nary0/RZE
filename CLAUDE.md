@@ -102,5 +102,7 @@ driving the editor are covered by the `run-rze` skill (`.claude/skills/run-rze/`
 - **Performance:** after perf-relevant work, ask whether to A/B test and what; don't run it unasked. Use
   `Sponza.scene` (`RenderPerfTest.scene` for probe and shadow performance). A = the commit before, built in a separate
   worktree with the `-perfcapture <file> -perfwarmup <s> -perfduration <s>` flags. Alternate A and B runs, several per
-  side, in the same build configuration and `imgui.ini` layout. Report tables with a % delta column (mean, median, p95,
+  side, in the same build configuration and `imgui.ini` layout, on the desktop: never in a nested session
+  (`driver.py --nested`), so the numbers are full speed. The same goes for any baseline an A/B is later compared
+  against. Report tables with a % delta column (mean, median, p95,
   p99, spread), and say plainly when a difference is within noise.
