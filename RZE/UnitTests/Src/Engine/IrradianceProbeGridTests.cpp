@@ -78,3 +78,51 @@ TEST_CASE("Probe positions step by the spacing from the origin")
 	CHECK(position.Y() == doctest::Approx(grid.Origin.Y() + 3.0f * grid.Spacing));
 	CHECK(position.Z() == doctest::Approx(grid.Origin.Z() + 4.0f * grid.Spacing));
 }
+
+TEST_CASE("The probes within a box are those inside it, sides included, clamped to the grid")
+{
+	IrradianceProbeGrid grid;
+	grid.Origin = Vector3D(0.0f);
+	grid.Spacing = 2.0f;
+	grid.CountX = 5;
+	grid.CountY = 4;
+	grid.CountZ = 3;
+
+	// Probes 1 to 2 along x (2 m and 4 m), 0 to 1 along y (0 m on its side, 2 m), and 1 along z (2 m)
+	IrradianceProbeGrid::ProbeRange range = grid.GetProbesWithin(BoundingBox(Vector3D(1.0f, 0.0f, 1.5f), Vector3D(5.0f, 3.0f, 3.0f)));
+	REQUIRE_FALSE(range.IsEmpty);
+	CHECK(range.Min[0] == 1);
+	CHECK(range.Max[0] == 2);
+	CHECK(range.Min[1] == 0);
+	CHECK(range.Max[1] == 1);
+	CHECK(range.Min[2] == 1);
+	CHECK(range.Max[2] == 1);
+
+	// Past the grid on every side: all of it
+	range = grid.GetProbesWithin(BoundingBox(Vector3D(-100.0f), Vector3D(100.0f)));
+	REQUIRE_FALSE(range.IsEmpty);
+	CHECK(range.Min[0] == 0);
+	CHECK(range.Max[0] == 4);
+	CHECK(range.Max[1] == 3);
+	CHECK(range.Max[2] == 2);
+
+	// Between two probes, outside the grid, or empty: none
+	CHECK(grid.GetProbesWithin(BoundingBox(Vector3D(0.5f), Vector3D(1.5f))).IsEmpty);
+	CHECK(grid.GetProbesWithin(BoundingBox(Vector3D(20.0f), Vector3D(30.0f))).IsEmpty);
+	CHECK(grid.GetProbesWithin(BoundingBox(Vector3D(-30.0f), Vector3D(-20.0f))).IsEmpty);
+	CHECK(grid.GetProbesWithin(BoundingBox()).IsEmpty);
+	CHECK(IrradianceProbeGrid().GetProbesWithin(BoundingBox(Vector3D(-1.0f), Vector3D(1.0f))).IsEmpty);
+}
+
+TEST_CASE("A probe's position by index counts along x, then y, then z")
+{
+	IrradianceProbeGrid grid;
+	grid.Origin = Vector3D(1.0f, 2.0f, 3.0f);
+	grid.Spacing = 0.5f;
+	grid.CountX = 4;
+	grid.CountY = 3;
+	grid.CountZ = 2;
+
+	CHECK(grid.GetProbePosition(0) == grid.Origin);
+	CHECK(grid.GetProbePosition(1 + 4 * (2 + 3 * 1)) == grid.GetProbePosition(1, 2, 1));
+}

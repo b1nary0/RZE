@@ -50,6 +50,8 @@ namespace Rendering
 			// The vertex shader's inputs (its input layout's semantics) and outputs, and the pixel shader's inputs
 			std::vector<Varying> Inputs;
 			std::vector<Varying> Outputs;
+			// How many SV_ClipDistance values a vertex shader writes, which GL clips with only once enabled
+			U32 ClipDistanceCount = 0;
 		};
 
 		// Where a stage's constant buffer registers start among GL's uniform block bindings. D3D's stages each have

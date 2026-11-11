@@ -34,13 +34,16 @@ TEST_CASE("A bounding box grows to hold points and other boxes, but not empty on
 	CHECK(empty == before);
 }
 
-TEST_CASE("A bounding box's centre, size, radius and corners")
+TEST_CASE("A bounding box's centre, size, radius, surface area and corners")
 {
 	const BoundingBox box(Vector3D(-1.0f, 0.0f, 2.0f), Vector3D(3.0f, 2.0f, 6.0f));
 
 	CHECK(box.GetCentre() == Vector3D(1.0f, 1.0f, 4.0f));
 	CHECK(box.GetSize() == Vector3D(4.0f, 2.0f, 4.0f));
 	CHECK(box.GetRadius() == doctest::Approx(3.0f));
+	// 2 x (4 x 2 + 2 x 4 + 4 x 4)
+	CHECK(box.GetSurfaceArea() == doctest::Approx(64.0f));
+	CHECK(BoundingBox().GetSurfaceArea() == 0.0f);
 
 	const BoundingBox::Corners corners = box.GetCorners();
 	CHECK(corners[0] == box.GetMin());
@@ -115,4 +118,22 @@ TEST_CASE("Bounding boxes intersect when they overlap or touch, and never when e
 	CHECK_FALSE(box.Intersects(BoundingBox()));
 	CHECK_FALSE(BoundingBox().Intersects(box));
 	CHECK_FALSE(BoundingBox().Intersects(BoundingBox()));
+}
+
+TEST_CASE("A bounding box contains another only if all of it is inside, faces included, and never an empty one")
+{
+	const BoundingBox box(Vector3D(0.0f), Vector3D(2.0f));
+
+	CHECK(box.Contains(box));
+	CHECK(box.Contains(BoundingBox(Vector3D(0.5f), Vector3D(1.5f))));
+	// Touching its faces from inside
+	CHECK(box.Contains(BoundingBox(Vector3D(0.0f, 0.5f, 0.5f), Vector3D(2.0f, 1.5f, 1.5f))));
+	CHECK_FALSE(BoundingBox(Vector3D(0.5f), Vector3D(1.5f)).Contains(box));
+
+	// Out on one side of one axis is enough
+	CHECK_FALSE(box.Contains(BoundingBox(Vector3D(0.5f), Vector3D(1.5f, 2.5f, 1.5f))));
+	CHECK_FALSE(box.Contains(BoundingBox(Vector3D(-0.5f, 0.5f, 0.5f), Vector3D(1.5f))));
+
+	CHECK_FALSE(box.Contains(BoundingBox()));
+	CHECK_FALSE(BoundingBox().Contains(box));
 }

@@ -5,6 +5,7 @@
 #include <Graphics/RenderPipeline.h>
 #include <Graphics/RenderScene.h>
 #include <Graphics/RenderView.h>
+#include <Graphics/RenderWorkCounts.h>
 
 #include <Rendering/BufferHandle.h>
 
@@ -19,6 +20,7 @@
 namespace Rendering
 {
 	class RenderTargetTexture;
+	struct GFXDeviceOptions;
 }
 
 class IRenderStage;
@@ -33,6 +35,8 @@ struct RenderStats
 	std::vector<RenderStageTime> Stages;
 	// Per frame, not counting the UI's
 	double DrawCalls = 0.0;
+	// Per frame: the probe captures and relights and the shadow maps that scene changes caused
+	RenderWorkCounts Work;
 };
 
 class RenderEngine
@@ -45,8 +49,8 @@ public:
 
 public:
 	// windowHandle is the window's SDL_Window (Window::GetNativeHandle)
-	// validateGraphics: the device checks every call it's given (IGFXDevice::Initialize)
-	void Initialize(void* windowHandle, bool validateGraphics);
+	// deviceOptions: how the device is made (IGFXDevice::Initialize)
+	void Initialize(void* windowHandle, const Rendering::GFXDeviceOptions& deviceOptions);
 	// Renders the main view as one frame
 	void Render(const char* frameName);
 	// Finish() does all the work that the main render phase needs including device present
@@ -93,7 +97,7 @@ public:
 	// The view presented to the user. Its owner (the app and the active camera) fills in its inputs.
 	RenderView& GetMainView() { return m_mainView; }
 
-	// The irradiance probes' budgets, for every scene; read by IrradianceProbeStage each frame
+	// The probes' budgets, for every scene; read by IrradianceProbeStage and ReflectionProbeStage each frame
 	const GlobalIlluminationSettings& GetGlobalIlluminationSettings() const { return m_globalIlluminationSettings; }
 	void SetGlobalIlluminationSettings(const GlobalIlluminationSettings& settings) { m_globalIlluminationSettings = settings; }
 

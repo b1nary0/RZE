@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Graphics/GraphicsDefines.h>
 #include <Graphics/MeshDraw.h>
 #include <Graphics/StaticMeshInstance.h>
 
@@ -46,6 +47,10 @@ public:
 	// out when asked after the object moves or changes mesh; until then the draws, and pointers to them, stay valid.
 	const std::vector<MeshDraw>& GetDraws() const;
 
+	// Static by default. Changing it marks where the object is changed, for both kinds.
+	void SetMobility(ERenderMobility mobility);
+	ERenderMobility GetMobility() const { return m_mobility; }
+
 	// What PickRenderStage writes for this object's pixels; 0 means nothing pickable
 	void SetPickID(U64 pickID) { m_pickID = pickID; }
 	U64 GetPickID() const { return m_pickID; }
@@ -74,6 +79,7 @@ private:
 	mutable bool m_areDrawsStale = true;
 
 	U64 m_pickID = 0;
+	ERenderMobility m_mobility = ERenderMobility::Static;
 
 	// The scene this object is in
 	RenderScene* m_scene = nullptr;

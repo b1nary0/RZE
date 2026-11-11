@@ -151,7 +151,7 @@ namespace Rendering
 
 	void RenderThread::Execute(RenderCommand_GenerateMips& command)
 	{
-		m_device->GenerateMips(*command.texture.m_buffer);
+		m_device->GenerateMips(*command.texture.m_buffer, command.firstSlice, command.sliceCount);
 	}
 
 	void RenderThread::Execute(RenderCommand_CopyTexture& command)
@@ -163,6 +163,11 @@ namespace Rendering
 	{
 		m_device->CopyTextureRegion(*command.source.m_buffer, command.sourceX, command.sourceY, command.width, command.height,
 			*command.destination.m_buffer, command.destinationX, command.destinationY);
+	}
+
+	void RenderThread::Execute(RenderCommand_CopyTextureSlice& command)
+	{
+		m_device->CopyTextureSlice(*command.source.m_buffer, command.sourceSlice, *command.destination.m_buffer, command.destinationSlice);
 	}
 
 	void RenderThread::Execute(RenderCommand_ClearRenderTarget& command)
@@ -203,6 +208,7 @@ namespace Rendering
 	void RenderThread::Execute(RenderCommand_SetVertexShader& command)
 	{
 		command.shaderHandle.m_shader->SetActive();
+		m_vertexShaderBound = command.shaderHandle.m_shader->IsCreated();
 	}
 
 	void RenderThread::Execute(RenderCommand_SetPixelShader& command)
@@ -218,6 +224,7 @@ namespace Rendering
 	void RenderThread::Execute(RenderCommand_SetComputeShader& command)
 	{
 		command.shaderHandle.m_shader->SetActive();
+		m_computeShaderBound = command.shaderHandle.m_shader->IsCreated();
 	}
 
 	void RenderThread::Execute(RenderCommand_SetConstantBufferVS& command)
@@ -277,21 +284,51 @@ namespace Rendering
 
 	void RenderThread::Execute(RenderCommand_Draw& command)
 	{
+		if (!m_vertexShaderBound)
+		{
+			return;
+		}
+
 		m_device->Draw(static_cast<U32>(command.count));
 	}
 
 	void RenderThread::Execute(RenderCommand_DrawIndexed& command)
 	{
+		if (!m_vertexShaderBound)
+		{
+			return;
+		}
+
 		m_device->DrawIndexed(command.indexBuffer.m_buffer->GetIndexCount());
+	}
+
+	void RenderThread::Execute(RenderCommand_DrawIndexedInstanced& command)
+	{
+		if (!m_vertexShaderBound)
+		{
+			return;
+		}
+
+		m_device->DrawIndexedInstanced(command.indexBuffer.m_buffer->GetIndexCount(), command.instanceCount, command.startInstance);
 	}
 
 	void RenderThread::Execute(RenderCommand_DrawFullScreenQuad&)
 	{
+		if (!m_vertexShaderBound)
+		{
+			return;
+		}
+
 		m_device->Draw(4);
 	}
 
 	void RenderThread::Execute(RenderCommand_Dispatch& command)
 	{
+		if (!m_computeShaderBound)
+		{
+			return;
+		}
+
 		m_device->Dispatch(command.groupsX, command.groupsY, command.groupsZ);
 	}
 
@@ -302,11 +339,11 @@ namespace Rendering
 
 	void RenderThread::Execute(RenderCommand_ReadTexture& command)
 	{
-		m_device->ReadTexture(*command.texture.m_buffer, *command.result);
+		m_device->ReadTexture(*command.texture.m_buffer, command.result);
 	}
 
-	void RenderThread::Execute(RenderCommand_ReadBackBuffer& command)
-	{
-		m_device->ReadBackBuffer(*command.result);
+	void RenderThread::Execute(RenderCommand_ReadBackBuffer& command)
+	{
+		m_device->ReadBackBuffer(*command.result);
 	}
 }

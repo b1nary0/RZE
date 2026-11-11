@@ -52,6 +52,7 @@ namespace Rendering
 		GenerateMips,
 		CopyTexture,
 		CopyTextureRegion,
+		CopyTextureSlice,
 		ClearRenderTarget,
 		SetViewport,
 		SetInputLayout,
@@ -76,6 +77,7 @@ namespace Rendering
 		UnsetUnorderedAccess,
 		Draw,
 		DrawIndexed,
+		DrawIndexedInstanced,
 		DrawFullScreenQuad,
 		Dispatch,
 		ReadTexel,
@@ -291,6 +293,9 @@ namespace Rendering
 		RenderCommand_GenerateMips() { type = RenderCommandType::GenerateMips; }
 
 		TextureBuffer2DHandle texture;
+		// The slices to fill the mips of; 0 slices for all of them
+		U32 firstSlice = 0;
+		U32 sliceCount = 0;
 	};
 
 	struct RenderCommand_CopyTexture : RenderCommand
@@ -313,6 +318,16 @@ namespace Rendering
 		TextureBuffer2DHandle destination;
 		U32 destinationX = 0;
 		U32 destinationY = 0;
+	};
+
+	struct RenderCommand_CopyTextureSlice : RenderCommand
+	{
+		RenderCommand_CopyTextureSlice() { type = RenderCommandType::CopyTextureSlice; }
+
+		TextureBuffer2DHandle source;
+		U32 sourceSlice = 0;
+		TextureBuffer2DHandle destination;
+		U32 destinationSlice = 0;
 	};
 
 	struct RenderCommand_ReadTexel : RenderCommand
@@ -514,6 +529,15 @@ namespace Rendering
 		RenderCommand_DrawIndexed() { type = RenderCommandType::DrawIndexed; }
 
 		IndexBufferHandle indexBuffer;
+	};
+
+	struct RenderCommand_DrawIndexedInstanced : RenderCommand
+	{
+		RenderCommand_DrawIndexedInstanced() { type = RenderCommandType::DrawIndexedInstanced; }
+
+		IndexBufferHandle indexBuffer;
+		U32 instanceCount;
+		U32 startInstance;
 	};
 
 	struct RenderCommand_DrawFullScreenQuad : RenderCommand

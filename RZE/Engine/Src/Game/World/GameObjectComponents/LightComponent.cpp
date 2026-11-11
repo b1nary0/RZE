@@ -6,6 +6,9 @@
 
 #include <Graphics/RenderScene.h>
 
+#include <Utils/Math/Math.h>
+
+#include <cmath>
 #include <cstring>
 #include <iterator>
 
@@ -16,6 +19,12 @@ namespace
 
 	// How Serialize writes each ELightType, in the order of its values
 	constexpr const char* k_lightTypeNames[] = { "Directional", "Point" };
+
+	// The flicker's two waves, a few times a second and not multiples of each other, so it doesn't look regular; and
+	// how long until it repeats closely enough to wrap the time (10 s is a whole number of both waves' periods)
+	constexpr float k_flickerSlowHz = 5.3f;
+	constexpr float k_flickerFastHz = 11.7f;
+	constexpr double k_flickerRepeatSeconds = 10.0;
 }
 
 void LightComponent::Initialize()
@@ -49,7 +58,8 @@ void LightComponent::Update()
 		m_lightObject->SetDirection(direction);
 		m_lightObject->SetRange(m_range);
 		m_lightObject->SetColour(m_lightColour);
-		m_lightObject->SetStrength(m_lightStrength);
+		m_flickerTime = m_flicker > 0.0f ? std::fmod(m_flickerTime + RZE().GetDeltaTime(), k_flickerRepeatSeconds) : 0.0;
+		m_lightObject->SetStrength(CalculateFlickeringStrength());
 
 		if (m_lightType == ELightType::Directional)
 		{
@@ -57,6 +67,21 @@ void LightComponent::Update()
 			m_renderScene->DrawLine(position, position + direction * k_directionLineLength);
 		}
 	}
+}
+
+float LightComponent::CalculateFlickeringStrength() const
+{
+	if (m_flicker <= 0.0f)
+	{
+		return m_lightStrength;
+	}
+
+	const float time = static_cast<float>(m_flickerTime);
+	// From 0 to 1: how far down the flicker dips the light now
+	const float dip = 0.5f
+		+ 0.3f * std::sin(2.0f * MathUtils::Pi * k_flickerSlowHz * time)
+		+ 0.2f * std::sin(2.0f * MathUtils::Pi * k_flickerFastHz * time + 1.3f);
+	return m_lightStrength * (1.0f - m_flicker * dip);
 }
 
 void LightComponent::Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer)
@@ -72,6 +97,9 @@ void LightComponent::Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>&
 
 		writer.Key("LightStrength");
 		writer.Double(m_lightStrength);
+
+		writer.Key("Flicker");
+		writer.Double(m_flicker);
 
 		writer.Key("LightColour");
 		writer.StartArray();
@@ -107,6 +135,10 @@ void LightComponent::Deserialize(const rapidjson::Value& data)
 	}
 
 	m_lightStrength = data["LightStrength"].GetFloat();
+	if (data.HasMember("Flicker"))
+	{
+		m_flicker = data["Flicker"].GetFloat();
+	}
 	m_lightColour = Vector3D(
 		data["LightColour"][0].GetFloat(),
 		data["LightColour"][1].GetFloat(),
@@ -124,4 +156,7 @@ void LightComponent::DescribeProperties(PropertyBuilder<LightComponent>& propert
 	properties.Float("Range", &LightComponent::GetRange, &LightComponent::SetRange)
 		.Range(0.1f, 100.0f).StepSize(0.1f).DisplayFormat("%.1f m")
 		.EnabledIf<LightComponent>([](const LightComponent& light) { return light.GetLightType() == ELightType::Point; }, "Only point lights have a range");
+	properties.Float("Flicker", &LightComponent::GetFlicker, &LightComponent::SetFlicker)
+		.Range(0.0f, 1.0f).StepSize(0.01f).DisplayFormat("%.2f")
+		.ToolTip("How much the strength flickers, like a flame: 0 for steady, 1 to dip all the way to dark");
 }

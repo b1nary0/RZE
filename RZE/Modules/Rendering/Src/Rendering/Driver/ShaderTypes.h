@@ -17,16 +17,21 @@ namespace Rendering
 	public:
 		struct ShaderInputLayoutData
 		{
-			ShaderInputLayoutData(const std::string& name, EDataFormat dataFormat, EDataClassification dataClassification, size_t offset)
+			// inputSlot: the vertex buffer slot it's read from (Renderer::SetVertexBuffer), e.g. 1 for a second stream
+			// of per-instance data beside the vertices
+			ShaderInputLayoutData(const std::string& name, EDataFormat dataFormat, EDataClassification dataClassification, size_t offset, U32 inputSlot = 0)
 				: Name(name)
 				, DataFormat(dataFormat)
 				, DataClassification(dataClassification)
-				, Offset(offset) {}
+				, Offset(offset)
+				, InputSlot(inputSlot) {}
 
 			std::string Name;
 			EDataFormat DataFormat;
+			// PER_INSTANCE data steps on once per instance
 			EDataClassification DataClassification;
 			size_t Offset;
+			U32 InputSlot;
 		};
 
 	public:
@@ -57,6 +62,8 @@ namespace Rendering
 		virtual void Release() = 0;
 		virtual void SetActive() = 0;
 		virtual void SetInputLayout() = 0;
+		// False until created, and when it failed to compile
+		virtual bool IsCreated() const = 0;
 	};
 
 	// @TODO move into it's own file?
@@ -82,5 +89,7 @@ namespace Rendering
 		virtual void Release() = 0;
 
 		virtual void SetActive() = 0;
+		// False until created, and when it failed to compile
+		virtual bool IsCreated() const = 0;
 	};
 }

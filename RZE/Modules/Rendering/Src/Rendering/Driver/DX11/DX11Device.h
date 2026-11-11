@@ -5,9 +5,13 @@
 
 #include <Utils/PrimitiveDefs.h>
 
+#include <memory>
+#include <vector>
+
 struct ID3D11Device;
 struct ID3D11DeviceContext;
 struct ID3D11InfoQueue;
+struct ID3D11Debug;
 struct IDXGISwapChain2;
 struct ID3D11RenderTargetView;
 struct ID3D11RasterizerState;
@@ -34,7 +38,7 @@ namespace Rendering
 	// IGFXDevice interface
 	public:
 		void SetWindow(void* windowHandle) override;
-		void Initialize(bool validate) override;
+		void Initialize(const GFXDeviceOptions& options) override;
 		void Shutdown() override;
 
 		// D3D11 isn't tied to a thread
@@ -64,9 +68,10 @@ namespace Rendering
 		void SetRenderTargetBackBuffer() override;
 		void SetDepthTarget(ITextureBuffer2D& depthTexture, U32 slice) override;
 		void SetColourTarget(ITextureBuffer2D& colourTarget, ITextureBuffer2D* depthTexture) override;
-		void GenerateMips(ITextureBuffer2D& texture) override;
+		void GenerateMips(ITextureBuffer2D& texture, U32 firstSlice, U32 sliceCount) override;
 		void CopyTexture(ITextureBuffer2D& source, ITextureBuffer2D& destination) override;
 		void CopyTextureRegion(ITextureBuffer2D& source, U32 sourceX, U32 sourceY, U32 width, U32 height, ITextureBuffer2D& destination, U32 destinationX, U32 destinationY) override;
+		void CopyTextureSlice(ITextureBuffer2D& source, U32 sourceSlice, ITextureBuffer2D& destination, U32 destinationSlice) override;
 		void ClearRenderTarget(ITextureBuffer2D& renderTarget, const Vector4D& colour) override;
 
 		void SetViewport(const ViewportParams& params) override;
@@ -82,10 +87,12 @@ namespace Rendering
 
 		void Draw(U32 vertexCount) override;
 		void DrawIndexed(U32 indexCount) override;
+		void DrawIndexedInstanced(U32 indexCount, U32 instanceCount, U32 startInstance) override;
 		void Dispatch(U32 groupsX, U32 groupsY, U32 groupsZ) override;
 
 		void ReadTexel(ITextureBuffer2D& texture, U32 x, U32 y, TexelReadback& result) override;
-		void ReadTexture(ITextureBuffer2D& texture, TextureReadback& result) override;
+		void ReadTexture(ITextureBuffer2D& texture, const std::shared_ptr<TextureReadback>& result) override;
+		void FinishReadbacks() override;
 		void ReadBackBuffer(TextureReadback& result) override;
 
 	public:
@@ -144,6 +151,9 @@ namespace Rendering
 		// Logs what the debug layer has reported since the last call, and clears it. Does nothing without a debug
 		// device.
 		void ReportDebugMessages();
+		// Logs every D3D11 object still alive and how many there are (GFXDeviceOptions::ReportLiveObjects). For the end of
+		// Shutdown, once the device's own objects are released.
+		void ReportLiveObjects(ID3D11Debug& reporter);
 
 	private:
 		IDXGISwapChain2* mSwapChain;
@@ -161,5 +171,15 @@ namespace Rendering
 		U32 mSwapChainFlags = 0;
 		bool mIsTearingSupported = false;
 		bool mHasReportedDeviceLoss = false;
+		// GFXDeviceOptions::ReportLiveObjects, with a debug device to report them
+		bool mReportLiveObjects = false;
+
+		// A ReadTexture copy the GPU may not have made yet, and where it goes. Released by Shutdown if still waiting.
+		struct PendingTextureReadback
+		{
+			ID3D11Texture2D* Staging = nullptr;
+			std::shared_ptr<TextureReadback> Result;
+		};
+		std::vector<PendingTextureReadback> mPendingTextureReadbacks;
 	};
 }

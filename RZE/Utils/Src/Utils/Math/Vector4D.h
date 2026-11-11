@@ -44,6 +44,9 @@ public:
 	Vector4D operator+(const Vector4D& rhs) const;
 	Vector4D operator-(const Vector4D& rhs) const;
 
+	bool operator==(const Vector4D& rhs) const;
+	bool operator!=(const Vector4D& rhs) const;
+
 	float operator[](int index) const;
 	void operator=(const Vector3D& rhs);
 

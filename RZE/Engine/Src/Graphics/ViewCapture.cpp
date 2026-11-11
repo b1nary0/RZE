@@ -36,3 +36,10 @@ std::shared_ptr<AsyncOperation> ViewCapture::Capture(RenderScene& scene, const R
 
 	return TextureFile::SaveToPNG(m_target->GetTargetPlatformObject(), filepath);
 }
+
+void ViewCapture::Release()
+{
+	m_view.ReleaseStageState();
+	m_view.Target = nullptr;
+	m_target.reset();
+}
