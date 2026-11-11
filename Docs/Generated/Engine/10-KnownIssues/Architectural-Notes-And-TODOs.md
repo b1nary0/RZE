@@ -190,13 +190,15 @@ The first unit of work in any budget always runs, even when it's bigger than the
 
 ## 29. The D3D device leaked at exit (fixed)
 
-**Fixed (11-10, `9bad1239`).** The debug layer reported the device still alive as the process ended (`Process is terminating. Using simple reporting`), with a refcount of 60. `-gfxliveobjects` (`469f87db`), which logs what's alive once the device has shut down, listed 237 objects on DrawLineTest and 280 on Sponza. Four causes:
+**Fixed (11-10, `9bad1239`).** The debug layer reported the device still alive as the process ended (`Process is terminating. Using simple reporting`), with a refcount of 60. `-gfxliveobjects` (`469f87db`), which logs what's alive once the device has shut down, listed 237 objects on DrawLineTest and 280 on Sponza. Five causes:
 - `DX11ConstantBuffer` had no destructor, so a constant buffer whose handle went was never released.
 - Render commands pushed after the last frame, such as the shader releases from shutting the scene and stages down, stayed in the producer queue, never run or destroyed, holding their handles. `RenderThread::Shutdown` now runs them as one last batch.
 - The main view's stage state, its targets among them, lived until the render engine was deleted, after the device. `ReleaseRenderStages` now releases it with the main scene's.
 - The application's render target, and `Renderer`'s copy of the last UI frame with its textures, were let go after the device. `RZE_Application::ShutDown` and `Renderer::Shutdown` now release them first.
 
-Since then no object outlives shutdown on DrawLineTest, Sponza, RenderPerfTest, RenderTest, after New Scene, or in the Game, and the process-exit report is gone. The Debug smoke test runs with `-gfxliveobjects` and fails on Windows if any object is listed. See [Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md#shutdown).
+- The thumbnail renderer's `ViewCapture` kept its target and its view's stage state until the EditorApp was destroyed, after the device. Only a run that renders a thumbnail has them, and every local check above had its thumbnails cached, so CI's Debug smoke test, from a fresh checkout, was the first to see it: 169 objects. `ThumbnailRenderer::ShutDown` now calls `ViewCapture::Release` (fixed the same day).
+
+Since then no object outlives shutdown on DrawLineTest, Sponza, RenderPerfTest, RenderTest, after New Scene, in the Game, or in the Debug smoke test with no thumbnails cached, and the process-exit report is gone. The Debug smoke test runs with `-gfxliveobjects` and fails on Windows if any object is listed. A check of shutdown should include a run with the thumbnail folders (`ProjectData/MeshThumbnails`, `SceneThumbnails`) moved aside. See [Engine-Startup-And-Frame-Loop.md](../02-Architecture/Engine-Startup-And-Frame-Loop.md#shutdown).
 
 This entry used to say render targets leak too, with the Editor leaking its scene view target on every resize, because `RenderTargetTexture`'s destructor is empty. They don't: the target's handles hold `shared_ptr`s to the driver textures, and `~DX11TextureBuffer2D` calls `Release()`. On 11-08, 20 maximize/restore resizes of the Editor left its GPU memory at 488 MB, unchanged.
 

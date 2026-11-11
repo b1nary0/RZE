@@ -248,7 +248,7 @@ For each item:
 - Each thumbnail written publishes `ThumbnailWrittenEvent { Image }`, which reloads its tiles in the file browser and the Content Browser.
 - **What it reports:** "Sponza (3 of 12)" with the progress; a logged step per thumbnail ("Rendered Sponza"); a warning per one that couldn't be ("Couldn't render X: it has no camera and nothing to frame"), after which the run carries on; and at the end "11 rendered, 1 couldn't be". All of it lands in the status bar's history and [Task History](Status-Bar-And-Settings.md#task-history). The headless scene's loads and the PNG saves are `SubStep`s, shown only if Settings > Background Tasks asks for steps.
 - **Cancelling** (from the status bar) clears the queue. When a run ends, it unloads its headless scene, so nothing stays loaded between runs.
-- **Shutdown:** `EditorApp::ShutDown` calls `ThumbnailRenderer::ShutDown()`, which cancels the run and unloads the scene while the renderer is still up.
+- **Shutdown:** `EditorApp::ShutDown` calls `ThumbnailRenderer::ShutDown()`, which cancels the run, unloads the scene and releases the capture's target and view state (`ViewCapture::Release`) while the renderer is still up. The `ThumbnailRenderer` is the EditorApp's, which `main` destroys after the device has shut down, so what's left until then would outlive it.
 
 **Cost:** rendering every scene and mesh (7 + 12) from SpaceHangar, Release (now Development), took 4.7 s, against 6.6 s for the earlier blocking batch it replaced. The worst frame dropped from 962 ms to 167 ms, and frame time with nothing rendering was unchanged.
 

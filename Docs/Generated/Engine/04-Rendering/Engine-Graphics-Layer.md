@@ -172,6 +172,7 @@ flowchart TD
 - **No debug lines** (grid, frustums, bounds boxes): its view has `DrawsDebug` off.
 - Its view has `GlobalIllumination` off: one frame is too few for probes to capture and settle, so a capture lights with the hemisphere ambient, and the scene doesn't get probe textures it would only use once.
 - `ViewCaptureSettings` sets the view's `Lighting`, `AutoExposure` and `ExposureCompensation` for each capture. The defaults light and expose like any other view. Mesh thumbnails use `Uniform` lighting with auto-exposure off ([Thumbnails-And-File-Browser.md](../07-Editor/Thumbnails-And-File-Browser.md#a-run)).
+- **`Release()`** lets go of its target and what stages keep for its view; the next capture makes them again (the target is made on the first capture anyway). A capture that outlives the renderer calls it before the renderer shuts down, as `ThumbnailRenderer::ShutDown` does. A capture already queued keeps what it uses.
 - `TextureFile` (`Engine\Src\Graphics\TextureFile.h/.cpp`) wraps `stb_image_write`. `WritePNG(file, width, height, rgba)` is safe from any thread. It creates the folder, writes the PNG beside the file and moves it over the file (`File::MoveReplacing`), so readers only ever see a whole image. `SaveToPNG(texture, file)` is the GPU-to-file path above. Its operation is `Background | Hidden`, since whoever asked for the capture reports on it.
 
 ## Frame lifecycle
