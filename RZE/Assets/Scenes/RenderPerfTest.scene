@@ -97,12 +97,19 @@
                 },
                 "OscillatorComponent": {
                     "Enabled": false,
-                    "Offset": [
+                    "Axis": [
                         0.0,
                         0.0,
-                        4.0
+                        1.0
                     ],
-                    "Period": 6.0
+                    "Amplitude": 4.0,
+                    "Period": 6.0,
+                    "Phase": 0.0,
+                    "Origin": [
+                        8.0,
+                        4.0,
+                        0.0
+                    ]
                 }
             }
         },
@@ -31596,12 +31603,19 @@
                 },
                 "OscillatorComponent": {
                     "Enabled": false,
-                    "Offset": [
-                        2.0,
+                    "Axis": [
+                        1.0,
                         0.0,
                         0.0
                     ],
-                    "Period": 4.0
+                    "Amplitude": 2.0,
+                    "Period": 4.0,
+                    "Phase": 0.0,
+                    "Origin": [
+                        4.0,
+                        0.0,
+                        0.0
+                    ]
                 }
             }
         },

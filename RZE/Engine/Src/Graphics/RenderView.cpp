@@ -2,6 +2,6 @@
 
 void RenderView::ReleaseStageState()
 {
-	m_frame.Clear();
-	m_persistent.Clear();
+	m_frameBlackboard.Clear();
+	m_persistentBlackboard.Clear();
 }

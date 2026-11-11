@@ -126,7 +126,6 @@ void RZE_Application::RegisterEngineComponents()
 	REGISTER_GAMEOBJECTCOMPONENT(TransformComponent);
 	REGISTER_GAMEOBJECTCOMPONENT(LightComponent);
 	REGISTER_GAMEOBJECTCOMPONENT(ReflectionProbeComponent);
-	REGISTER_GAMEOBJECTCOMPONENT(OscillatorComponent);
 	REGISTER_GAMEOBJECTCOMPONENT(GifChatComponent);
 #ifdef RZE_DEVEL
 	REGISTER_GAMEOBJECTCOMPONENT(OscillatorComponent);
