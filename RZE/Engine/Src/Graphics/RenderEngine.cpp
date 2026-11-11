@@ -21,6 +21,24 @@
 
 #include "Rendering/Graphics/RenderTarget.h"
 
+namespace
+{
+	RenderWorkCounts PerFrame(const StatsWindow& window, const RenderWorkCounts& totals)
+	{
+		RenderWorkCounts perFrame;
+		perFrame.IrradianceProbesCaptured = window.PerFrame(totals.IrradianceProbesCaptured);
+		perFrame.IrradianceCaptureDraws = window.PerFrame(totals.IrradianceCaptureDraws);
+		perFrame.IrradianceProbesRelit = window.PerFrame(totals.IrradianceProbesRelit);
+		perFrame.ReflectionProbesCaptured = window.PerFrame(totals.ReflectionProbesCaptured);
+		perFrame.ReflectionCaptureDraws = window.PerFrame(totals.ReflectionCaptureDraws);
+		perFrame.ReflectionProbesRelit = window.PerFrame(totals.ReflectionProbesRelit);
+		perFrame.SunShadowMapsRendered = window.PerFrame(totals.SunShadowMapsRendered);
+		perFrame.PointShadowFacesRendered = window.PerFrame(totals.PointShadowFacesRendered);
+		perFrame.ShadowDraws = window.PerFrame(totals.ShadowDraws);
+		return perFrame;
+	}
+}
+
 RenderEngine::RenderEngine()
 	: m_pipeline(std::make_unique<RenderPipeline>())
 {
@@ -30,15 +48,15 @@ RenderEngine::~RenderEngine()
 {
 }
 
-void RenderEngine::Initialize(void* windowHandle, bool validateGraphics)
+void RenderEngine::Initialize(void* windowHandle, const Rendering::GFXDeviceOptions& deviceOptions)
 {
-	Rendering::Renderer::Initialize(windowHandle, validateGraphics);
+	Rendering::Renderer::Initialize(windowHandle, deviceOptions);
 	
 	AddRenderStage<ShadowRenderStage>();
 	AddRenderStage<DepthPrepassStage>();
 	AddRenderStage<AmbientOcclusionStage>();
 	AddRenderStage<IrradianceProbeStage>(&m_globalIlluminationSettings);
-	AddRenderStage<ReflectionProbeStage>();
+	AddRenderStage<ReflectionProbeStage>(&m_globalIlluminationSettings);
 	AddRenderStage<ForwardRenderStage>();
 	AddRenderStage<PostProcessRenderStage>();
 	AddRenderStage<AntiAliasingStage>();
@@ -109,6 +127,9 @@ void RenderEngine::WaitForPresentSlot()
 void RenderEngine::ReleaseRenderStages()
 {
 	m_pipeline->Clear();
+	// The main view and scene live until the render engine is destroyed, after the renderer has shut down, so what the
+	// stages keep in them goes now
+	m_mainView.ReleaseStageState();
 	if (m_mainScene != nullptr)
 	{
 		m_mainScene->ReleaseStageState();
@@ -172,6 +193,7 @@ void RenderEngine::UpdateStats(double now)
 	// The stage times and draw calls build up over the window, so they're taken once at its end
 	m_stats.RecordTimeMS = m_statsWindow.PerFrame(m_windowRecordTime) * 1000.0;
 	m_stats.DrawCalls = m_statsWindow.PerFrame(static_cast<double>(Rendering::Renderer::TakeDrawCallCount()));
+	m_stats.Work = PerFrame(m_statsWindow, m_pipeline->TakeWorkCounts());
 
 	m_stats.Stages.clear();
 	for (const RenderStageTime& stageTime : m_pipeline->TakeStageTimes())

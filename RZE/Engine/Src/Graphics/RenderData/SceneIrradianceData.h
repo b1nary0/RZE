@@ -18,4 +18,6 @@ struct SceneIrradianceData : RenderStageData<SceneIrradianceData>
 	Rendering::TextureBuffer2DHandle SHGreen;
 	Rendering::TextureBuffer2DHandle SHBlue;
 	Rendering::TextureBuffer2DHandle Visibility;
+	// Whether the probes were relit this frame, so their light is still changing (IrradianceProbeScheduler::IsSettling)
+	bool IsChanging = false;
 };

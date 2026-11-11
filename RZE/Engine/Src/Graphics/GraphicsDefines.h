@@ -7,6 +7,18 @@ class RenderObject;
 class LightObject;
 class ReflectionProbeObject;
 
+// Whether a render object is expected to move once the scene is running, which decides what's kept from it. Values are
+// saved by name (RenderComponent), so new ones go at the end.
+enum class ERenderMobility
+{
+	// Placed and left: captured into the probes. It can still be moved (e.g. in the editor, or a door), and what's
+	// kept from around it is made again.
+	Static,
+	// Moves while the scene runs (e.g. a character or a prop): lit by the probes and their reflections, but not
+	// captured into them, so moving it costs them nothing
+	Movable
+};
+
 // Which render objects and lights are alive, for their handles (UniqueLiveObjectPtr), whether they were destroyed
 // through the handle or not (e.g. RenderScene::ClearObjects, or the scene going away). Both kinds share one
 // LiveIDAllocator, and no ID is handed out twice, so a handle to a destroyed object stays invalid even if a new one

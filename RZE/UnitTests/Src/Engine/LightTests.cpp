@@ -8,6 +8,7 @@
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
 #include <Graphics/RenderScene.h>
+#include <Graphics/SceneChangeLog.h>
 
 #include <RapidJSON/document.h>
 #include <RapidJSON/prettywriter.h>
@@ -181,18 +182,26 @@ TEST_CASE("A wire sphere, as drawn for a point light's range, is closed circles 
 	scene.ClearDebugLines();
 }
 
-TEST_CASE("Only changes that move a light's shadows change the scene's revision")
+TEST_CASE("Only changes to how a light lights the scene change the scene's revision")
 {
 	RenderScene scene;
 	LightObjectPtr light = scene.CreateLightObject(ELightType::Point);
 
+	// A point light shines every way, so its direction changes nothing, and nor does setting what it already has
 	U64 revision = scene.GetRevision();
-	light->SetColour(Vector4D(0.5f));
-	light->SetStrength(4.0f);
-	// A point light shines every way, so its direction changes nothing
 	light->SetDirection(Vector3D(1.0f, 0.0f, 0.0f));
+	light->SetColour(light->GetColour());
+	light->SetStrength(light->GetStrength());
 	CHECK(scene.GetRevision() == revision);
 
+	light->SetColour(Vector4D(0.5f));
+	CHECK(scene.GetRevision() != revision);
+
+	revision = scene.GetRevision();
+	light->SetStrength(4.0f);
+	CHECK(scene.GetRevision() != revision);
+
+	revision = scene.GetRevision();
 	light->SetPosition(Vector3D(1.0f, 0.0f, 0.0f));
 	CHECK(scene.GetRevision() != revision);
 
@@ -214,6 +223,82 @@ TEST_CASE("Only changes that move a light's shadows change the scene's revision"
 	CHECK(scene.GetRevision() != revision);
 
 	scene.DestroyLightObject(light);
+}
+
+TEST_CASE("A light's lighting revision is the scene revision when it was made or last changed how it lights")
+{
+	RenderScene scene;
+	LightObjectPtr light = scene.CreateLightObject(ELightType::Point);
+	CHECK(light->GetLightingRevision() == scene.GetRevision());
+	CHECK(light->GetShadowRevision() == scene.GetRevision());
+
+	// Colour and strength change the light but not its shadows
+	light->SetStrength(3.0f);
+	CHECK(light->GetLightingRevision() == scene.GetRevision());
+	CHECK(light->GetShadowRevision() < light->GetLightingRevision());
+
+	// Moving changes both, at the same revision
+	light->SetPosition(Vector3D(1.0f, 0.0f, 0.0f));
+	CHECK(light->GetLightingRevision() == scene.GetRevision());
+	CHECK(light->GetShadowRevision() == light->GetLightingRevision());
+
+	scene.DestroyLightObject(light);
+}
+
+TEST_CASE("A point light logs where it reached and where it reaches when it changes")
+{
+	RenderScene scene;
+	LightObjectPtr light = scene.CreateLightObject(ELightType::Point);
+	light->SetRange(2.0f);
+
+	const SceneChangeLog& changes = scene.GetLightChanges();
+	const BoundingBox atOrigin(Vector3D(-0.5f), Vector3D(0.5f));
+	const BoundingBox atTen(Vector3D(9.5f, -0.5f, -0.5f), Vector3D(10.5f, 0.5f, 0.5f));
+	const BoundingBox between(Vector3D(4.5f, -0.5f, -0.5f), Vector3D(5.5f, 0.5f, 0.5f));
+
+	U64 revision = scene.GetRevision();
+	CHECK(light->GetReach() == BoundingBox(Vector3D(-2.0f), Vector3D(2.0f)));
+	light->SetPosition(Vector3D(10.0f, 0.0f, 0.0f));
+	CHECK(changes.HasChangedWithin(atOrigin, revision));
+	CHECK(changes.HasChangedWithin(atTen, revision));
+	// Logged apart, so what's between isn't marked
+	CHECK_FALSE(changes.HasChangedWithin(between, revision));
+
+	// A brighter light lights the same place differently
+	revision = scene.GetRevision();
+	light->SetStrength(8.0f);
+	CHECK(changes.HasChangedWithin(atTen, revision));
+	CHECK_FALSE(changes.HasChangedWithin(atOrigin, revision));
+
+	// Destroyed, it no longer lights where it reached
+	revision = scene.GetRevision();
+	scene.DestroyLightObject(light);
+	CHECK(changes.HasChangedWithin(atTen, revision));
+	CHECK_FALSE(changes.HasChangedWithin(atOrigin, revision));
+}
+
+TEST_CASE("A directional light changes the light everywhere")
+{
+	RenderScene scene;
+	LightObjectPtr sun = scene.CreateLightObject(ELightType::Directional);
+	CHECK(sun->GetReach().IsEmpty());
+
+	const SceneChangeLog& changes = scene.GetLightChanges();
+	const BoundingBox farAway(Vector3D(1000.0f), Vector3D(1001.0f));
+
+	const U64 revision = scene.GetRevision();
+	CHECK_FALSE(changes.HasChangedWithin(farAway, revision));
+
+	sun->SetColour(Vector4D(1.0f, 0.9f, 0.8f, 1.0f));
+	CHECK(changes.HasChangedWithin(farAway, revision));
+	CHECK_FALSE(changes.ForEachChangeSince(revision, [](const BoundingBox&) {}));
+
+	// Becoming a point light changes it everywhere too, as it no longer lights what's beyond its range
+	const U64 pointRevision = scene.GetRevision();
+	sun->SetType(ELightType::Point);
+	CHECK(changes.HasChangedWithin(farAway, pointRevision));
+
+	scene.DestroyLightObject(sun);
 }
 
 TEST_CASE("A light's shadow revision is the scene revision when it was made or its shadows last moved")

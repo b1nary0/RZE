@@ -44,7 +44,7 @@ namespace Rendering
 	// IGFXDevice interface
 	public:
 		void SetWindow(void* windowHandle) override;
-		void Initialize(bool validate) override;
+		void Initialize(const GFXDeviceOptions& options) override;
 		void Shutdown() override;
 
 		// The GL context is current on one thread at a time
@@ -76,9 +76,10 @@ namespace Rendering
 		void SetRenderTargetBackBuffer() override;
 		void SetDepthTarget(ITextureBuffer2D& depthTexture, U32 slice) override;
 		void SetColourTarget(ITextureBuffer2D& colourTarget, ITextureBuffer2D* depthTexture) override;
-		void GenerateMips(ITextureBuffer2D& texture) override;
+		void GenerateMips(ITextureBuffer2D& texture, U32 firstSlice, U32 sliceCount) override;
 		void CopyTexture(ITextureBuffer2D& source, ITextureBuffer2D& destination) override;
 		void CopyTextureRegion(ITextureBuffer2D& source, U32 sourceX, U32 sourceY, U32 width, U32 height, ITextureBuffer2D& destination, U32 destinationX, U32 destinationY) override;
+		void CopyTextureSlice(ITextureBuffer2D& source, U32 sourceSlice, ITextureBuffer2D& destination, U32 destinationSlice) override;
 		void ClearRenderTarget(ITextureBuffer2D& renderTarget, const Vector4D& colour) override;
 
 		void SetViewport(const ViewportParams& params) override;
@@ -94,10 +95,13 @@ namespace Rendering
 
 		void Draw(U32 vertexCount) override;
 		void DrawIndexed(U32 indexCount) override;
+		void DrawIndexedInstanced(U32 indexCount, U32 instanceCount, U32 startInstance) override;
 		void Dispatch(U32 groupsX, U32 groupsY, U32 groupsZ) override;
 
 		void ReadTexel(ITextureBuffer2D& texture, U32 x, U32 y, TexelReadback& result) override;
-		void ReadTexture(ITextureBuffer2D& texture, TextureReadback& result) override;
+		// Into a pixel buffer, which FinishReadbacks reads once a fence after the copy has passed
+		void ReadTexture(ITextureBuffer2D& texture, const std::shared_ptr<TextureReadback>& result) override;
+		void FinishReadbacks() override;
 		void ReadBackBuffer(TextureReadback& result) override;
 
 	public:
@@ -131,6 +135,10 @@ namespace Rendering
 	private:
 		// D3D's texture registers per stage
 		static constexpr U32 k_textureSlotCount = 16;
+		// D3D's vertex buffer slots, each a GL vertex buffer binding
+		static constexpr U32 k_vertexBufferSlotCount = 16;
+		// GL_CLIP_DISTANCEi that can be enabled: GL's minimum, as many as D3D11's SV_ClipDistance
+		static constexpr U32 k_clipDistanceCount = 8;
 		// The four samplers the shaders' s registers mean (GLDevice.cpp's ESampler)
 		static constexpr U32 k_samplerCount = 4;
 
@@ -150,8 +158,14 @@ namespace Rendering
 
 		// Binds stage's slots' textures and samplers where program reads them
 		void BindTextures(const GLShaderTranslator::Result& program, const std::array<U32, k_textureSlotCount>& slots);
-		// Before a draw: the graphics pipeline, its vertex input, and its textures
+		// Before a draw: the graphics pipeline, its vertex input, its textures, and the vertex shader's clip distances
 		void PrepareDraw();
+		// After a draw: the clip distances off again, for what draws without the pipeline (ImGui's renderer), whose shaders
+		// don't write them
+		void FinishDraw();
+		// Enables GL_CLIP_DISTANCE0 to count - 1 and disables the rest. D3D clips with what the vertex shader writes; GL
+		// only with the distances enabled.
+		void SetClipDistanceCount(U32 count);
 		// Once per vertex and pixel shader drawn together: logs if the pixel shader reads an input where the vertex shader
 		// doesn't write it, which D3D matches by semantic and GL by location
 		void CheckVaryings();
@@ -181,6 +195,9 @@ namespace Rendering
 		// The one vertex array, which the input layout and vertex and index buffers are set on
 		U32 m_vertexArray = 0;
 		U32 m_enabledAttributeMask = 0;
+		// The vertex buffer bindings stepped once per instance (glVertexArrayBindingDivisor 1) rather than per vertex
+		U32 m_instancedBindingMask = 0;
+		U32 m_enabledClipDistanceMask = 0;
 		U32 m_primitiveMode = 0;
 
 		std::array<U32, k_samplerCount> m_samplers = {};
@@ -193,5 +210,17 @@ namespace Rendering
 		U32 m_syncInterval = 0;
 		// Set on the window's context at the next Present, on the render thread
 		bool m_isSyncIntervalChanged = true;
+
+		// A ReadTexture copy the GPU may not have made yet, and where it goes. Deleted by Shutdown if still waiting.
+		struct PendingTextureReadback
+		{
+			U32 Buffer = 0;
+			// The GLsync after the copy; void* so this header needs no GL header
+			void* Fence = nullptr;
+			// D24S8, whose texels go into D3D's order (GLDevice.cpp's ToD3DDepthStencil)
+			bool IsDepth = false;
+			std::shared_ptr<TextureReadback> Result;
+		};
+		std::vector<PendingTextureReadback> m_pendingTextureReadbacks;
 	};
 }

@@ -1,8 +1,11 @@
 #pragma once
 
+#include <Utils/Math/BoundingBox.h>
 #include <Utils/Math/Vector3D.h>
 #include <Utils/Math/Vector4D.h>
 #include <Utils/PrimitiveDefs.h>
+
+class SceneChangeLog;
 
 // How a light shines, which decides how it's lit and shadowed. The shaders branch on the values (Light::Type in
 // Common/PixelResources.hlsli), so new types go at the end.
@@ -18,7 +21,7 @@ enum class ELightType
 // ShadowRenderStage puts all of a scene's lights into one buffer.
 class LightObject
 {
-	// Hands out m_sceneRevision
+	// Hands out m_sceneRevision and m_lightChanges, and marks a light changed as it's made and destroyed
 	friend class RenderScene;
 
 public:
@@ -32,7 +35,8 @@ public:
 	// Never handed out twice, to a light or a render object, so a LightObjectPtr can tell once this light is gone
 	U64 GetLiveID() const { return m_liveID; }
 
-	// The setters below mark the light's shadows changed when the value moves them (see MarkShadowsChanged)
+	// The setters below mark the light changed when the value changes how its type lights the scene, and its shadows
+	// too when the value moves them (see MarkChanged)
 	void SetType(ELightType type);
 	ELightType GetType() const { return m_type; }
 
@@ -55,21 +59,30 @@ public:
 	// than the ambient light does, so it's the main light there; 0 if it never does. Grows with strength, up to 1.
 	static float CalculateOutshinesAmbientRatio(float strength, const Vector4D& colour);
 
-	void SetStrength(float strength) { m_strength = strength; }
+	void SetStrength(float strength);
 	float GetStrength() const { return m_strength; }
 
 	// sRGB
-	void SetColour(const Vector4D& colour) { m_colour = colour; }
+	void SetColour(const Vector4D& colour);
 	const Vector4D& GetColour() const { return m_colour; }
 
+	// The world-space box a point light reaches: its range all round it. Empty for a directional light, which reaches
+	// everywhere.
+	BoundingBox GetReach() const;
+
+	// RenderScene::GetRevision when the light was created or last changed how it lights the scene, so anything lit
+	// with it at an older revision (e.g. a probe) is out of date. 0 for a light in no scene.
+	U64 GetLightingRevision() const { return m_lightingRevision; }
 	// RenderScene::GetRevision when the light was created or its shadows last moved, so a shadow map rendered at an
 	// older revision is out of date. 0 for a light in no scene.
 	U64 GetShadowRevision() const { return m_shadowRevision; }
 
 private:
-	// For changes that move the light's shadows, so its shadow map is made again: a new scene revision, which becomes
-	// the light's shadow revision. Colour and strength don't move them.
-	void MarkShadowsChanged();
+	// For a change to how the light lights the scene: a new scene revision, which becomes its lighting revision, and
+	// its shadow revision too if the change moves its shadows (not colour or strength). Logs where it changed the light
+	// (RenderScene::GetLightChanges): where it reached at its last change and where it reaches now, or everywhere for a
+	// directional light.
+	void MarkChanged(bool movesShadows);
 
 private:
 	ELightType m_type;
@@ -79,8 +92,12 @@ private:
 	float m_strength = 1.0f;
 	float m_range = 10.0f;
 
-	// RenderScene::GetRevision of the scene this light is in
+	// RenderScene::GetRevision of the scene this light is in, and its log of where lights changed
 	U64* m_sceneRevision = nullptr;
+	SceneChangeLog* m_lightChanges = nullptr;
+	U64 m_lightingRevision = 0;
+	// GetReach as of the last MarkChanged (or as made), so the next can log where the light reached before it
+	BoundingBox m_lastReach;
 	U64 m_shadowRevision = 0;
 
 	const U64 m_liveID;

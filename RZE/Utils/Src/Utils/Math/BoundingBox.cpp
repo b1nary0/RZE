@@ -49,6 +49,17 @@ float BoundingBox::GetRadius() const
 	return GetSize().Length() * 0.5f;
 }
 
+float BoundingBox::GetSurfaceArea() const
+{
+	if (IsEmpty())
+	{
+		return 0.0f;
+	}
+
+	const Vector3D size = GetSize();
+	return 2.0f * (size.X() * size.Y() + size.Y() * size.Z() + size.Z() * size.X());
+}
+
 BoundingBox::Corners BoundingBox::GetCorners() const
 {
 	Corners corners;
@@ -109,6 +120,23 @@ void BoundingBox::Grow(const BoundingBox& box)
 
 	m_min = VectorUtils::Min(m_min, box.m_min);
 	m_max = VectorUtils::Max(m_max, box.m_max);
+}
+
+bool BoundingBox::Contains(const BoundingBox& other) const
+{
+	if (IsEmpty() || other.IsEmpty())
+	{
+		return false;
+	}
+
+	for (int axis = 0; axis < 3; ++axis)
+	{
+		if (other.m_min[axis] < m_min[axis] || other.m_max[axis] > m_max[axis])
+		{
+			return false;
+		}
+	}
+	return true;
 }
 
 bool BoundingBox::Intersects(const BoundingBox& other) const

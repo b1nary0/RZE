@@ -83,7 +83,7 @@ docs and the CI files ever disagree, trust the CI files.
 |---|---|---|---|
 | For | Stepping through code the optimizer rearranges | Everyday work and testing | The build that ships |
 | Optimization, Linux | Off (`-O0`) | `-O2`, with frame pointers (`-fno-omit-frame-pointer`) | `-O3 -mavx2` |
-| Optimization, Windows | Off, no inlining | On, inlining only what's marked `inline` | Maximize speed, any inlining, AVX2 |
+| Optimization, Windows | Off, no inlining | On, any inlining (`/Ob2`) | Maximize speed, any inlining, AVX2 |
 | Windows CRT | Debug (`/MDd`) | Release (`/MD`) | Release (`/MD`) |
 | Symbols | ✓ | ✓ | ✓ |
 | Asserts, logging, the Game's ImGui, `START_TIMED_BLOCK`, `RZE_DISABLE_OPTIMIZATION` | ✓ | ✓ | — (`RZE_RETAIL`) |
@@ -177,7 +177,11 @@ on `Sponza.scene` and talks to it over its JSON protocol. It fails the job if:
   NeckMechWalker, Tank), or shows unsaved changes;
 - fewer than 10 frames follow the load (a hung render thread or main loop);
 - the shot fails, or its PNG isn't the client area's size;
-- the Editor doesn't exit with code 0 within 120 s of `quit`, which closes it as the close button does.
+- the Editor doesn't exit with code 0 within 120 s of `quit`, which closes it as the close button does;
+- in Debug on Windows, a D3D11 object outlives shutdown, or the report saying so never comes. Debug runs with
+  `-gfxliveobjects` ([objects alive at shutdown](../06-Platform-And-Infrastructure/Debug-Services-And-Logging.md#objects-alive-at-shutdown)),
+  and the run logs `no D3D11 objects outlived shutdown` when it passes. The report's line for each object is left out
+  of the warnings below. On Linux the flag only logs that OpenGL has no such report.
 
 Errors and warnings the Editor logs don't fail it: each distinct line is listed once with its count, and annotated on
 the run. Every run uploads `smoke-out` (`app.log`, the Editor's output, and `shot.png`, the frame) as an artifact, kept

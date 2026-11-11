@@ -46,6 +46,8 @@ namespace Rendering
 			EDataFormat Format = EDataFormat::R32G32B32_FLOAT;
 			U32 Offset = 0;
 			bool IsPerInstance = false;
+			// The vertex buffer slot (Renderer::SetVertexBuffer) it's read from
+			U32 InputSlot = 0;
 		};
 
 		explicit GLVertexShader(GLDevice& device);
@@ -56,6 +58,7 @@ namespace Rendering
 		void Release() override;
 		void SetActive() override;
 		void SetInputLayout() override;
+		bool IsCreated() const override { return m_program.GetProgram() != 0; }
 
 	public:
 		const GLShaderProgram& GetProgram() const { return m_program; }
@@ -96,6 +99,7 @@ namespace Rendering
 		void Create(const Filepath& filePath) override;
 		void Release() override;
 		void SetActive() override;
+		bool IsCreated() const override { return m_program.GetProgram() != 0; }
 
 	public:
 		const GLShaderProgram& GetProgram() const { return m_program; }

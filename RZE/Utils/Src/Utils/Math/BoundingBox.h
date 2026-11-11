@@ -31,6 +31,8 @@ public:
 	Vector3D GetSize() const;
 	// Half its diagonal: the radius of the sphere through its corners
 	float GetRadius() const;
+	// The area of its six sides; 0 for an empty box
+	float GetSurfaceArea() const;
 
 	Corners GetCorners() const;
 	// Its corners once transformed, e.g. from an object's own space to the world
@@ -45,6 +47,8 @@ public:
 
 	// Whether the two share any point, touching faces included; an empty box intersects nothing
 	bool Intersects(const BoundingBox& other) const;
+	// Whether every point of other is inside it, faces included; false if either is empty, as with Intersects
+	bool Contains(const BoundingBox& other) const;
 
 	bool operator==(const BoundingBox& other) const;
 	bool operator!=(const BoundingBox& other) const { return !(*this == other); }

@@ -19,7 +19,7 @@ namespace Rendering
 	{
 	}
 
-	void RenderThread::Initialize(void* windowHandle, bool validate)
+	void RenderThread::Initialize(void* windowHandle, const GFXDeviceOptions& deviceOptions)
 	{
 		AssertNotNull(windowHandle);
 
@@ -28,7 +28,7 @@ namespace Rendering
 
 		m_device = GFXDeviceFactory::CreateGFXDevice();
 		m_device->SetWindow(m_windowHandle);
-		m_device->Initialize(validate);
+		m_device->Initialize(deviceOptions);
 		m_imguiRenderer = GFXDeviceFactory::CreateImGuiRenderer(*m_device);
 
 		InitializeImGui();
@@ -54,6 +54,10 @@ namespace Rendering
 	{
 		AssertMsg(std::this_thread::get_id() == m_controllingThreadID,
 			"Shutdown must run on the thread that called Initialize");
+		// What was pushed since the last frame, such as the releases of shaders the scene and the render stages let go of
+		// while shutting down, runs as one last batch. Left in the queue, those commands would never run or be destroyed,
+		// and the handles they hold would keep their GPU objects alive.
+		SignalProcess();
 
 		{
 			// The flag is set with the signal, under the lock that Update reads it under, so the pass this wakes is the
@@ -203,6 +207,7 @@ namespace Rendering
 			case RenderCommandType::GenerateMips: Execute(static_cast<RenderCommand_GenerateMips&>(*command)); break;
 			case RenderCommandType::CopyTexture: Execute(static_cast<RenderCommand_CopyTexture&>(*command)); break;
 			case RenderCommandType::CopyTextureRegion: Execute(static_cast<RenderCommand_CopyTextureRegion&>(*command)); break;
+			case RenderCommandType::CopyTextureSlice: Execute(static_cast<RenderCommand_CopyTextureSlice&>(*command)); break;
 			case RenderCommandType::ClearRenderTarget: Execute(static_cast<RenderCommand_ClearRenderTarget&>(*command)); break;
 			case RenderCommandType::SetViewport: Execute(static_cast<RenderCommand_SetViewport&>(*command)); break;
 			case RenderCommandType::SetInputLayout: Execute(static_cast<RenderCommand_SetInputLayout&>(*command)); break;
@@ -227,6 +232,7 @@ namespace Rendering
 			case RenderCommandType::UnsetUnorderedAccess: Execute(static_cast<RenderCommand_UnsetUnorderedAccess&>(*command)); break;
 			case RenderCommandType::Draw: Execute(static_cast<RenderCommand_Draw&>(*command)); break;
 			case RenderCommandType::DrawIndexed: Execute(static_cast<RenderCommand_DrawIndexed&>(*command)); break;
+			case RenderCommandType::DrawIndexedInstanced: Execute(static_cast<RenderCommand_DrawIndexedInstanced&>(*command)); break;
 			case RenderCommandType::DrawFullScreenQuad: Execute(static_cast<RenderCommand_DrawFullScreenQuad&>(*command)); break;
 			case RenderCommandType::Dispatch: Execute(static_cast<RenderCommand_Dispatch&>(*command)); break;
 			case RenderCommandType::ReadTexel: Execute(static_cast<RenderCommand_ReadTexel&>(*command)); break;
@@ -245,6 +251,8 @@ namespace Rendering
 
 		// Keeps the capacity, so steady-state frames don't allocate
 		m_consumerQueue.clear();
+
+		m_device->FinishReadbacks();
 
 		UpdateStats(batchStart, hasPresented);
 	}

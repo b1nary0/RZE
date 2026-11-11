@@ -118,8 +118,10 @@ void EngineConfig::LoadRenderingSettings()
 	// At least 1 of each, so a misread value can't stop the probes from ever finishing
 	GlobalIlluminationSettings& probes = mGlobalIlluminationSettings;
 	probes.TargetProbeCount = static_cast<U32>(std::max(1L, mINIParser.GetLongValue("Rendering", "ProbeTargetCount", static_cast<long>(probes.TargetProbeCount))));
-	probes.CaptureDrawBudget = static_cast<U32>(std::max(1L, mINIParser.GetLongValue("Rendering", "ProbeCaptureDrawBudget", static_cast<long>(probes.CaptureDrawBudget))));
+	probes.CapturesPerFrame = static_cast<U32>(std::max(1L, mINIParser.GetLongValue("Rendering", "ProbeCapturesPerFrame", static_cast<long>(probes.CapturesPerFrame))));
 	probes.RelightBudget = static_cast<U32>(std::max(1L, mINIParser.GetLongValue("Rendering", "ProbeRelightBudget", static_cast<long>(probes.RelightBudget))));
+	probes.SettleRelights = static_cast<U32>(std::clamp(mINIParser.GetLongValue("Rendering", "ProbeSettleRelights", static_cast<long>(probes.SettleRelights)), 1L, 255L));
+	probes.RecaptureSettleFrames = static_cast<U32>(std::max(0L, mINIParser.GetLongValue("Rendering", "ProbeRecaptureSettleFrames", static_cast<long>(probes.RecaptureSettleFrames))));
 }
 
 size_t EngineConfig::ReadEnumSetting(const char* section, const char* key, const EnumNames& names, size_t current) const

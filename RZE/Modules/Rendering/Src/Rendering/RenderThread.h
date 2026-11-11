@@ -16,6 +16,7 @@ namespace Rendering
 {
 	class IGFXDevice;
 	class IImGuiRenderer;
+	struct GFXDeviceOptions;
 
 	// The render thread's frames, averaged over a StatsWindow, for display. A frame runs from one present to the next;
 	// the frame time itself is the main thread's (FrameStats).
@@ -34,7 +35,7 @@ namespace Rendering
 
 	public:
 		// The thread that calls Initialize controls this one: Shutdown and RunWhileIdle must be called from it
-		void Initialize(void* windowHandle, bool validate);
+		void Initialize(void* windowHandle, const GFXDeviceOptions& deviceOptions);
 		void Shutdown();
 
 		void PushCommand(RenderCommand* command);
@@ -103,6 +104,7 @@ namespace Rendering
 		void Execute(RenderCommand_GenerateMips& command);
 		void Execute(RenderCommand_CopyTexture& command);
 		void Execute(RenderCommand_CopyTextureRegion& command);
+		void Execute(RenderCommand_CopyTextureSlice& command);
 		void Execute(RenderCommand_ClearRenderTarget& command);
 
 		// Pipeline state
@@ -131,6 +133,7 @@ namespace Rendering
 		// Draws
 		void Execute(RenderCommand_Draw& command);
 		void Execute(RenderCommand_DrawIndexed& command);
+		void Execute(RenderCommand_DrawIndexedInstanced& command);
 		void Execute(RenderCommand_DrawFullScreenQuad& command);
 
 		// Compute
@@ -170,6 +173,11 @@ namespace Rendering
 
 		// Whether a profiler (e.g. PIX) is listening for markers; refreshed for each batch of commands
 		bool m_emitProfilerMarkers = false;
+
+		// Whether the bound vertex and compute shaders were created. A shader that failed to compile is empty
+		// (DX11ShaderTypes, GLShaderTypes), and draws and dispatches without one are skipped: drivers can hang on them.
+		bool m_vertexShaderBound = false;
+		bool m_computeShaderBound = false;
 
 		// The frame so far, on the render thread, since the last present
 		double m_frameBusyTime = 0.0;

@@ -3,17 +3,17 @@
 #include <Graphics/GlobalIllumination.h>
 #include <Graphics/GraphicsLayouts.h>
 #include <Graphics/IrradianceProbeGrid.h>
+#include <Graphics/IrradianceProbeScheduler.h>
 #include <Graphics/RenderEngine.h>
 #include <Graphics/Shader.h>
 
 #include <Rendering/Renderer.h>
+#include <Rendering/TextureReadback.h>
 #include <Rendering/Driver/GFXBuffer.h>
-
-#include <Utils/Math/BoundingBox.h>
 
 #include <algorithm>
 #include <cmath>
-#include <numeric>
+#include <memory>
 #include <vector>
 
 namespace
@@ -21,8 +21,9 @@ namespace
 	// Texels across a capture face: 6 x 64 = 384 samples a probe, about what DDGI traces per probe
 	constexpr U32 k_faceSize = 8;
 	constexpr U32 k_probeWidth = k_faceSize * ProbeCapture::k_faceCount;
-	// The most probes captured a frame, however few draws they take: what fits side by side in the scratch target
-	constexpr U32 k_maxCapturesPerFrame = 64;
+	// The most probes captured a frame: one batch's worth (ProbeCapture::k_maxBatchFaces), side by side in the scratch
+	// target
+	constexpr U32 k_maxCapturesPerFrame = ProbeCapture::k_maxBatchFaces / ProbeCapture::k_faceCount;
 	// The capture atlas has a row of probes per k_faceSize texels
 	constexpr U32 k_atlasProbesPerRow = 64;
 	constexpr U32 k_atlasWidth = k_atlasProbesPerRow * k_probeWidth;
@@ -38,10 +39,6 @@ namespace
 	// Distances in the visibility maps are clamped to this many spacings: further than any surface a probe lights
 	// (the far corner of its cell is about 1.7 spacings away), so what matters is told apart
 	constexpr float k_visibilityMaxDistanceSpacings = 2.0f;
-	// Probes within this many spacings of the camera along each axis are relit every frame
-	constexpr int k_nearProbes = 2;
-	// Probes within this many spacings of an object that changed are captured again
-	constexpr float k_recaptureRadiusSpacings = 5.0f;
 
 	// Must match the registers in the probe shaders and Common/LightResources.hlsli
 	constexpr U32 k_lightBufferSlot = 2;
@@ -53,42 +50,49 @@ namespace
 	constexpr U32 k_shRedSlot = 8;
 	constexpr U32 k_visibilitySlot = 11;
 	constexpr U32 k_captureAtlasSlot = 13;
+	// UAVs of Compute_ProbeVisibility
+	constexpr U32 k_visibilityOutput = 0;
+	constexpr U32 k_activeOutput = 1;
 
 	constexpr U64 k_neverFrame = ~0ull;
+
+	// Which of a frame's captures are active, as Compute_ProbeVisibility said (a texel each, in list order), on its way
+	// back from the GPU
+	struct ActivityReadback
+	{
+		std::shared_ptr<Rendering::TextureReadback> Readback;
+		U32 Count = 0;
+		U32 Probes[k_maxCapturesPerFrame] = {};
+	};
 
 	// A scene's probes, what they've captured and their light, kept in its ScenePersistent() blackboard
 	struct IrradianceProbeState : RenderStageData<IrradianceProbeState>
 	{
 		[[maybe_unused]] static constexpr const char* k_name = "IrradianceProbeState";
 
-		IrradianceProbeGrid Grid;
-		// What Grid was fitted to
-		BoundingBox FittedBounds;
+		// The grid, and which probes to capture and relight
+		IrradianceProbeScheduler Scheduler;
 		// Every probe's capture, at its index's place (k_atlasProbesPerRow to a row of k_faceSize texels)
 		Rendering::TextureBuffer2DHandle Atlas;
 		// One frame's captures, side by side, and their depth
 		Rendering::TextureBuffer2DHandle Scratch;
 		Rendering::TextureBuffer2DHandle ScratchDepth;
 		// The probes' spherical harmonics, a texture array per channel (red, green, blue), and last frame's, which the
-		// relighting reads while it writes these. Made for Grid, cleared to 0: black until relit.
+		// relighting reads while it writes these. Made for the scheduler's grid, cleared to 0: black until relit.
 		Rendering::TextureBuffer2DHandle SH[3];
 		Rendering::TextureBuffer2DHandle PreviousSH[3];
 		// Every probe's visibility map, at its index's place (k_visibilityProbesPerRow to a row). Cleared to 0 when the
 		// grid is fitted, so a probe reads as inactive until it's captured.
 		Rendering::TextureBuffer2DHandle Visibility;
+		// Compute_ProbeVisibility's word on which of the last captures are active (ActivityReadback), and those read
+		// back but not yet handed to the scheduler
+		Rendering::TextureBuffer2DHandle Activity;
+		std::vector<ActivityReadback> PendingActivity;
 
-		// Probes waiting to be captured, farthest from the camera first, so the nearest is taken off the back
-		std::vector<U32> CaptureQueue;
-		// By probe: whether it has a capture, whether it's in CaptureQueue, and the frame it was last relit
-		std::vector<bool> Captured;
-		std::vector<bool> Queued;
-		std::vector<U64> RelitFrame;
-		// The next probe to relight in turn
-		U32 NextRelight = 0;
-		// The scene's GetRevision when changed objects were last looked for
-		U64 CheckedRevision = 0;
-		// The frame the probes were last updated in (RenderContext::FrameIndex), so it's once a frame
+		// The frame the probes were last updated in (RenderContext::FrameIndex), so it's once a frame, and whether
+		// any were relit then
 		U64 UpdatedFrame = k_neverFrame;
+		bool WereRelit = false;
 		// Since the grid was fitted, for the log when every probe has been captured
 		U32 CaptureFrames = 0;
 		U64 CaptureDraws = 0;
@@ -136,6 +140,21 @@ namespace
 		return Rendering::Renderer::CreateTextureBuffer2D(params);
 	}
 
+	// A texel for each of a frame's captures, written by Compute_ProbeVisibility. A shader resource only because every
+	// texture has a view.
+	Rendering::TextureBuffer2DHandle CreateActivityTexture()
+	{
+		Rendering::GFXTextureBufferParams params = { 0 };
+		params.bIsShaderResource = true;
+		params.bIsUnorderedAccess = true;
+		params.Width = k_maxCapturesPerFrame;
+		params.Height = 1;
+		params.MipLevels = 1;
+		params.SampleCount = 1;
+		params.Format = Rendering::ETextureFormat::R32_UINT;
+		return Rendering::Renderer::CreateTextureBuffer2D(params);
+	}
+
 	// Mean and mean squared distance, written by Compute_ProbeVisibility and sampled with filtering. A render target
 	// too, only so it can be cleared.
 	Rendering::TextureBuffer2DHandle CreateVisibilityTexture(U32 width, U32 height)
@@ -159,15 +178,8 @@ namespace
 		state.Scratch = CreateCaptureTexture(k_maxCapturesPerFrame * k_probeWidth, k_faceSize, true);
 		state.ScratchDepth = CreateDepthTexture(k_maxCapturesPerFrame * k_probeWidth, k_faceSize);
 		state.Visibility = CreateVisibilityTexture(k_visibilityAtlasWidth, k_visibilityAtlasHeight);
+		state.Activity = CreateActivityTexture();
 		return state;
-	}
-
-	Vector3D GetProbePosition(const IrradianceProbeGrid& grid, U32 probe)
-	{
-		const U32 x = probe % grid.CountX;
-		const U32 y = (probe / grid.CountX) % grid.CountY;
-		const U32 z = probe / (grid.CountX * grid.CountY);
-		return grid.GetProbePosition(x, y, z);
 	}
 
 	GraphicsLayouts::IrradianceVolumeLayout MakeVolumeLayout(const IrradianceProbeGrid& grid, U32 validProbeCount)
@@ -187,109 +199,48 @@ namespace
 		return layout;
 	}
 
-	// Whether either corner moved by more than tolerance along any axis, or one is empty and the other isn't
-	bool HaveBoundsMoved(const BoundingBox& from, const BoundingBox& to, float tolerance)
+	// Every probe's textures for a newly fitted grid, cleared so nothing reads as lit or captured, and the capture log
+	// started over
+	void ResetForGrid(IrradianceProbeState& state)
 	{
-		if (from.IsEmpty() || to.IsEmpty())
-		{
-			return from.IsEmpty() != to.IsEmpty();
-		}
-
-		for (int axis = 0; axis < 3; ++axis)
-		{
-			if (std::abs(from.GetMin()[axis] - to.GetMin()[axis]) > tolerance || std::abs(from.GetMax()[axis] - to.GetMax()[axis]) > tolerance)
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-
-	void SortCaptureQueue(IrradianceProbeState& state, const Vector3D& cameraPosition)
-	{
-		std::vector<float> distances(state.Grid.GetProbeCount(), 0.0f);
-		for (U32 probe : state.CaptureQueue)
-		{
-			distances[probe] = (GetProbePosition(state.Grid, probe) - cameraPosition).Length();
-		}
-		std::sort(state.CaptureQueue.begin(), state.CaptureQueue.end(), [&distances](U32 a, U32 b) { return distances[a] > distances[b]; });
-	}
-
-	// A new grid over the scene's bounds, every probe waiting to be captured and nothing lit
-	void Refit(IrradianceProbeState& state, const RenderScene& scene, U32 targetProbeCount, const Vector3D& cameraPosition)
-	{
-		state.FittedBounds = scene.GetBounds();
-		state.Grid = IrradianceProbeGrid::Fit(state.FittedBounds, targetProbeCount);
-
-		const U32 probeCount = state.Grid.GetProbeCount();
-		state.Captured.assign(probeCount, false);
-		state.Queued.assign(probeCount, true);
-		state.RelitFrame.assign(probeCount, k_neverFrame);
-		state.CaptureQueue.resize(probeCount);
-		std::iota(state.CaptureQueue.begin(), state.CaptureQueue.end(), 0u);
-		SortCaptureQueue(state, cameraPosition);
-
-		state.NextRelight = 0;
-		state.CheckedRevision = scene.GetRevision();
+		const IrradianceProbeGrid& grid = state.Scheduler.GetGrid();
 		state.CaptureFrames = 0;
 		state.CaptureDraws = 0;
 		state.HasLoggedCaptures = false;
+		// About the old grid's probes
+		state.PendingActivity.clear();
 
 		const Vector4D zero(0.0f, 0.0f, 0.0f, 0.0f);
 		for (int channel = 0; channel < 3; ++channel)
 		{
-			if (probeCount == 0)
+			if (grid.IsEmpty())
 			{
 				state.SH[channel] = Rendering::TextureBuffer2DHandle();
 				state.PreviousSH[channel] = Rendering::TextureBuffer2DHandle();
 				continue;
 			}
-			state.SH[channel] = CreateSHTexture(state.Grid.CountX, state.Grid.CountY, state.Grid.CountZ);
-			state.PreviousSH[channel] = CreateSHTexture(state.Grid.CountX, state.Grid.CountY, state.Grid.CountZ);
+			state.SH[channel] = CreateSHTexture(grid.CountX, grid.CountY, grid.CountZ);
+			state.PreviousSH[channel] = CreateSHTexture(grid.CountX, grid.CountY, grid.CountZ);
 			Rendering::Renderer::ClearRenderTarget(state.SH[channel], zero);
 			Rendering::Renderer::ClearRenderTarget(state.PreviousSH[channel], zero);
 		}
 		Rendering::Renderer::ClearRenderTarget(state.Visibility, zero);
 	}
 
-	// Queues the captured probes within a few spacings of objects that changed since last time, nearest first. They
-	// keep their old captures until they're captured again.
-	void QueueChangedProbes(IrradianceProbeState& state, const RenderScene& scene, const Vector3D& cameraPosition)
+	// Hands the scheduler which of the earlier captures are active, those that have come back from the GPU
+	void TakeActivity(IrradianceProbeState& state)
 	{
-		if (scene.GetObjectsRevision() <= state.CheckedRevision)
+		std::vector<ActivityReadback>& pending = state.PendingActivity;
+		while (!pending.empty() && pending.front().Readback->IsReady.load(std::memory_order_acquire))
 		{
-			return;
-		}
-
-		const Vector3D reach(state.Grid.Spacing * k_recaptureRadiusSpacings);
-		bool hasQueued = false;
-		for (U32 probe = 0; probe < state.Grid.GetProbeCount(); ++probe)
-		{
-			if (!state.Captured[probe] || state.Queued[probe])
+			const ActivityReadback& activity = pending.front();
+			const U32* texels = reinterpret_cast<const U32*>(activity.Readback->Data.data());
+			for (U32 slot = 0; slot < activity.Count; ++slot)
 			{
-				continue;
+				state.Scheduler.SetActive(activity.Probes[slot], texels[slot] != 0);
 			}
-
-			const Vector3D position = GetProbePosition(state.Grid, probe);
-			if (scene.HaveObjectsChangedWithin(BoundingBox(position - reach, position + reach), state.CheckedRevision))
-			{
-				state.CaptureQueue.push_back(probe);
-				state.Queued[probe] = true;
-				hasQueued = true;
-			}
+			pending.erase(pending.begin());
 		}
-
-		state.CheckedRevision = scene.GetRevision();
-		if (hasQueued)
-		{
-			SortCaptureQueue(state, cameraPosition);
-		}
-	}
-
-	void AddToRelight(IrradianceProbeState& state, GraphicsLayouts::ProbeListLayout& list, U32 probe, U64 frameIndex)
-	{
-		list.Probes[list.Count++] = probe;
-		state.RelitFrame[probe] = frameIndex;
 	}
 }
 
@@ -342,39 +293,42 @@ void IrradianceProbeStage::Render(RenderContext& context)
 			state.UpdatedFrame = context.FrameIndex;
 			Rendering::Renderer::Begin("IrradianceProbeStage");
 
+			IrradianceProbeScheduler& scheduler = state.Scheduler;
 			const Vector3D& cameraPosition = view.Camera.Position;
-			if (HaveBoundsMoved(state.FittedBounds, scene.GetBounds(), state.Grid.Spacing))
+			if (scheduler.FitGrid(scene, settings.TargetProbeCount, cameraPosition))
 			{
-				Refit(state, scene, settings.TargetProbeCount, cameraPosition);
+				ResetForGrid(state);
 			}
-			QueueChangedProbes(state, scene, cameraPosition);
+			TakeActivity(state);
+			scheduler.QueueChangedProbes(scene, cameraPosition, context.FrameIndex, settings.RecaptureSettleFrames);
+			scheduler.QueueChangedLights(scene, cameraPosition, settings.SettleRelights);
 
-			const U32 probeCount = state.Grid.GetProbeCount();
+			const IrradianceProbeGrid& grid = scheduler.GetGrid();
+			const U32 probeCount = grid.GetProbeCount();
 
 			GraphicsLayouts::ProbeListLayout captured;
 			captured.FaceSize = k_faceSize;
 			captured.AtlasProbesPerRow = k_atlasProbesPerRow;
-			if (!state.CaptureQueue.empty())
+			if (scheduler.HasCaptureWaiting())
 			{
 				// Far enough to see across the whole grid from any probe in it
-				const float gridDiagonal = std::sqrt(static_cast<float>(state.Grid.CountX * state.Grid.CountX + state.Grid.CountY * state.Grid.CountY + state.Grid.CountZ * state.Grid.CountZ));
-				const float farDistance = (gridDiagonal + 1.0f) * state.Grid.Spacing;
+				const float gridDiagonal = std::sqrt(static_cast<float>(grid.CountX * grid.CountX + grid.CountY * grid.CountY + grid.CountZ * grid.CountZ));
+				const float farDistance = (gridDiagonal + 1.0f) * grid.Spacing;
 
 				Rendering::Renderer::SetColourTarget(state.Scratch, state.ScratchDepth);
 				Rendering::Renderer::ClearRenderTarget(state.Scratch, Vector4D(0.0f, 0.0f, 0.0f, 0.0f));
 				Rendering::Renderer::ClearDepthStencilBuffer(state.ScratchDepth);
 
-				// Nearest first, until the draws or the scratch target run out
-				U32 draws = 0;
-				while (!state.CaptureQueue.empty() && captured.Count < k_maxCapturesPerFrame && draws < settings.CaptureDrawBudget)
+				// Nearest first, all drawn together
+				const U32 capturesPerFrame = std::min(settings.CapturesPerFrame, k_maxCapturesPerFrame);
+				m_capture.BeginBatch(k_maxCapturesPerFrame * k_probeWidth, k_faceSize);
+				while (scheduler.HasCaptureWaiting() && captured.Count < capturesPerFrame)
 				{
-					const U32 probe = state.CaptureQueue.back();
-					state.CaptureQueue.pop_back();
-					state.Queued[probe] = false;
-
-					draws += m_capture.Capture(scene, GetProbePosition(state.Grid, probe), farDistance, captured.Count * k_probeWidth, 0);
+					const U32 probe = scheduler.TakeCapture();
+					m_capture.AddProbe(grid.GetProbePosition(probe), farDistance, captured.Count * k_probeWidth, 0);
 					captured.Probes[captured.Count++] = probe;
 				}
+				const U32 draws = m_capture.Flush(scene);
 
 				// Copied out of the scratch target, so it can't still be bound to be drawn into
 				Rendering::Renderer::ClearRenderTargets();
@@ -384,11 +338,12 @@ void IrradianceProbeStage::Render(RenderContext& context)
 					const U32 atlasX = (probe % k_atlasProbesPerRow) * k_probeWidth;
 					const U32 atlasY = (probe / k_atlasProbesPerRow) * k_faceSize;
 					Rendering::Renderer::CopyTextureRegion(state.Scratch, slot * k_probeWidth, 0, k_probeWidth, k_faceSize, state.Atlas, atlasX, atlasY);
-					state.Captured[probe] = true;
+					scheduler.MarkCaptured(probe);
 				}
 
-				// Their visibility maps, from what they just captured
-				const GraphicsLayouts::IrradianceVolumeLayout gridVolume = MakeVolumeLayout(state.Grid, probeCount);
+				// Their visibility maps, from what they just captured, and whether they're active, read back for the
+				// scheduler
+				const GraphicsLayouts::IrradianceVolumeLayout gridVolume = MakeVolumeLayout(grid, probeCount);
 				Rendering::Renderer::UploadDataToBuffer<GraphicsLayouts::IrradianceVolumeLayout>(m_volumeBuffer, &gridVolume);
 				Rendering::Renderer::UploadDataToBuffer<GraphicsLayouts::ProbeListLayout>(m_probeListBuffer, &captured);
 
@@ -396,65 +351,38 @@ void IrradianceProbeStage::Render(RenderContext& context)
 				Rendering::Renderer::SetConstantBufferCS(m_volumeBuffer, k_volumeBufferSlot);
 				Rendering::Renderer::SetConstantBufferCS(m_probeListBuffer, k_probeListSlot);
 				Rendering::Renderer::SetTextureResourceCS(state.Atlas, k_captureAtlasSlot);
-				Rendering::Renderer::SetUnorderedAccess(state.Visibility, 0);
+				Rendering::Renderer::SetUnorderedAccess(state.Visibility, k_visibilityOutput);
+				Rendering::Renderer::SetUnorderedAccess(state.Activity, k_activeOutput);
 				Rendering::Renderer::Dispatch(captured.Count);
-				Rendering::Renderer::UnsetUnorderedAccess(0);
+				Rendering::Renderer::UnsetUnorderedAccess(k_visibilityOutput);
+				Rendering::Renderer::UnsetUnorderedAccess(k_activeOutput);
 				Rendering::Renderer::UnsetTextureResourceCS(k_captureAtlasSlot);
 
+				ActivityReadback activity;
+				activity.Readback = std::make_shared<Rendering::TextureReadback>();
+				activity.Count = captured.Count;
+				std::copy(captured.Probes, captured.Probes + captured.Count, activity.Probes);
+				Rendering::Renderer::ReadTexture(state.Activity, activity.Readback);
+				state.PendingActivity.push_back(std::move(activity));
+
+				context.WorkCounts.IrradianceProbesCaptured += captured.Count;
+				context.WorkCounts.IrradianceCaptureDraws += draws;
 				state.CaptureDraws += draws;
 				++state.CaptureFrames;
-				if (state.CaptureQueue.empty() && !state.HasLoggedCaptures)
+				if (!scheduler.IsFilling() && !state.HasLoggedCaptures)
 				{
 					state.HasLoggedCaptures = true;
-					RZE_LOG_ARGS("Irradiance probes: captured %u (%u x %u x %u, %.2f m apart) over %u frames, %.1f draws a face",
-						probeCount, state.Grid.CountX, state.Grid.CountY, state.Grid.CountZ, state.Grid.Spacing, state.CaptureFrames,
-						static_cast<double>(state.CaptureDraws) / (static_cast<double>(probeCount) * ProbeCapture::k_faceCount));
+					RZE_LOG_ARGS("Irradiance probes: captured %u (%u x %u x %u, %.2f m apart) over %u frames, %.1f draws a frame",
+						probeCount, grid.CountX, grid.CountY, grid.CountZ, grid.Spacing, state.CaptureFrames,
+						static_cast<double>(state.CaptureDraws) / static_cast<double>(state.CaptureFrames));
 				}
 			}
 
-			// Relit: the probes just captured, then those near the camera, then the rest in turn, up to the budget
+			// Relit while their light is still changing: the probes just captured, then those around changed lights,
+			// those near the camera, then the rest in turn, up to the budget
 			GraphicsLayouts::ProbeListLayout relit = captured;
-			const U64 frameIndex = context.FrameIndex;
-			for (U32 slot = 0; slot < relit.Count; ++slot)
-			{
-				state.RelitFrame[relit.Probes[slot]] = frameIndex;
-			}
-			const U32 budget = std::max(std::min(settings.RelightBudget, GraphicsLayouts::ProbeListLayout::k_maxProbes), relit.Count);
-
-			if (probeCount > 0)
-			{
-				const Vector3D cameraCell = (cameraPosition - state.Grid.Origin) / state.Grid.Spacing;
-				const int counts[3] = { static_cast<int>(state.Grid.CountX), static_cast<int>(state.Grid.CountY), static_cast<int>(state.Grid.CountZ) };
-				int nearest[3];
-				for (int axis = 0; axis < 3; ++axis)
-				{
-					nearest[axis] = std::clamp(static_cast<int>(std::lround(cameraCell[axis])), 0, counts[axis] - 1);
-				}
-				for (int z = std::max(nearest[2] - k_nearProbes, 0); z <= std::min(nearest[2] + k_nearProbes, counts[2] - 1); ++z)
-				{
-					for (int y = std::max(nearest[1] - k_nearProbes, 0); y <= std::min(nearest[1] + k_nearProbes, counts[1] - 1); ++y)
-					{
-						for (int x = std::max(nearest[0] - k_nearProbes, 0); x <= std::min(nearest[0] + k_nearProbes, counts[0] - 1); ++x)
-						{
-							const U32 probe = static_cast<U32>(x + counts[0] * (y + counts[1] * z));
-							if (relit.Count < budget && state.Captured[probe] && state.RelitFrame[probe] != frameIndex)
-							{
-								AddToRelight(state, relit, probe, frameIndex);
-							}
-						}
-					}
-				}
-
-				for (U32 tried = 0; tried < probeCount && relit.Count < budget; ++tried)
-				{
-					const U32 probe = state.NextRelight;
-					state.NextRelight = (state.NextRelight + 1) % probeCount;
-					if (state.Captured[probe] && state.RelitFrame[probe] != frameIndex)
-					{
-						AddToRelight(state, relit, probe, frameIndex);
-					}
-				}
-			}
+			scheduler.ListRelights(settings.RelightBudget, settings.SettleRelights, cameraPosition, context.FrameIndex, relit);
+			state.WereRelit = relit.Count > 0;
 
 			if (relit.Count > 0)
 			{
@@ -466,7 +394,7 @@ void IrradianceProbeStage::Render(RenderContext& context)
 					Rendering::Renderer::CopyTexture(state.SH[channel], state.PreviousSH[channel]);
 				}
 
-				const GraphicsLayouts::IrradianceVolumeLayout previousVolume = MakeVolumeLayout(state.Grid, probeCount);
+				const GraphicsLayouts::IrradianceVolumeLayout previousVolume = MakeVolumeLayout(grid, probeCount);
 				Rendering::Renderer::UploadDataToBuffer<GraphicsLayouts::IrradianceVolumeLayout>(m_volumeBuffer, &previousVolume);
 				Rendering::Renderer::UploadDataToBuffer<GraphicsLayouts::ProbeListLayout>(m_probeListBuffer, &relit);
 
@@ -475,8 +403,8 @@ void IrradianceProbeStage::Render(RenderContext& context)
 				Rendering::Renderer::SetConstantBufferCS(sceneLighting.ShadowBuffer, k_shadowBufferSlot);
 				Rendering::Renderer::SetConstantBufferCS(m_volumeBuffer, k_volumeBufferSlot);
 				Rendering::Renderer::SetConstantBufferCS(m_probeListBuffer, k_probeListSlot);
-				Rendering::Renderer::SetTextureResourceCS(sceneLighting.DirectionalShadowMap, k_shadowMapSlot);
-				Rendering::Renderer::SetTextureResourceCS(sceneLighting.PointShadowCubes, k_pointShadowCubesSlot);
+				Rendering::Renderer::SetTextureResourceCS(sceneLighting.StaticDirectionalShadowMap, k_shadowMapSlot);
+				Rendering::Renderer::SetTextureResourceCS(sceneLighting.StaticPointShadowCubes, k_pointShadowCubesSlot);
 				for (U32 channel = 0; channel < 3; ++channel)
 				{
 					Rendering::Renderer::SetTextureResourceCS(state.PreviousSH[channel], k_shRedSlot + channel);
@@ -486,6 +414,7 @@ void IrradianceProbeStage::Render(RenderContext& context)
 				Rendering::Renderer::SetTextureResourceCS(state.Atlas, k_captureAtlasSlot);
 
 				Rendering::Renderer::Dispatch(relit.Count);
+				context.WorkCounts.IrradianceProbesRelit += relit.Count;
 
 				// The shadow maps are drawn into and the probes copied over next frame
 				for (U32 channel = 0; channel < 3; ++channel)
@@ -502,14 +431,16 @@ void IrradianceProbeStage::Render(RenderContext& context)
 			Rendering::Renderer::End();
 		}
 
-		if (!state.Grid.IsEmpty())
+		const IrradianceProbeGrid& grid = state.Scheduler.GetGrid();
+		if (!grid.IsEmpty())
 		{
 			// Every probe can be read: those not captured yet are inactive (their visibility maps are 0)
-			volume = MakeVolumeLayout(state.Grid, state.Grid.GetProbeCount());
+			volume = MakeVolumeLayout(grid, grid.GetProbeCount());
 			irradiance.SHRed = state.SH[0];
 			irradiance.SHGreen = state.SH[1];
 			irradiance.SHBlue = state.SH[2];
 			irradiance.Visibility = state.Visibility;
+			irradiance.IsChanging = state.WereRelit;
 		}
 	}
 
