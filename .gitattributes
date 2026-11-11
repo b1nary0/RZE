@@ -1,0 +1,44 @@
+# Line endings: stored as LF, and checked out as LF on every platform, so a file's endings don't depend on the editor
+# or the machine that last wrote it. Files git can tell are binary are left alone.
+* text=auto eol=lf
+
+# Always text, even when a stray lone CR would make git's guess call it binary
+*.h text
+*.hpp text
+*.inl text
+*.c text
+*.cpp text
+*.cs text
+*.hlsl text
+*.hlsli text
+
+# cmd reads batch files with LF endings wrongly (labels and goto break across lines)
+*.bat text eol=crlf
+
+# Never converted. Patterns match case on Linux, so the upper-case extensions in use are listed too.
+*.png binary
+*.PNG binary
+*.jpg binary
+*.JPG binary
+*.gif binary
+*.tga binary
+*.ico binary
+*.ttf binary
+*.otf binary
+*.blend binary
+*.dll binary
+*.exe binary
+*.lib binary
+*.msi binary
+*.zip binary
+*.rar binary
+*.gz binary
+Tools/Sharpmake/macOS/Sharpmake.Application binary
+
+# Vendored code and tools: never converted, kept byte for byte as they came. Last, so they override the rules above.
+RZE/Externals/** -text
+RZE/ThirdParty/** -text
+RZE/Assets/Shaders/Common/SMAA/SMAA.hlsl -text
+Tools/Assimp/** -text
+Tools/Optick/** -text
+Tools/Sharpmake/** -text

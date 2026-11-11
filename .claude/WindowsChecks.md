@@ -209,6 +209,15 @@ Things to know on this machine (2026-11-10):
   Tools\StressScene\GenerateStressScene.py 2500`), then two captures each of RenderPerfTest and Stress2500 as in 2
   (with `-framescene`), alternated, on the desktop: record each column's mean and p95, and the prepass/forward/shadow
   draws, record and GPU times.
+- **A35. Line endings from `.gitattributes`** (LF everywhere, CRLF for `.bat`). A **fresh clone** (not this working
+  copy: an existing checkout keeps its old endings until files are checked out again), whatever `core.autocrlf` is
+  set to: 1: `git status` is clean straight after cloning. 2: `git ls-files --eol` shows `w/lf` for sources (`.h`,
+  `.cpp`, `.hlsl`, `.cs`) and `w/crlf` for `RZE\BuildGame.bat`. Vendored paths (`RZE\Externals`, `RZE\ThirdParty`,
+  `SMAA.hlsl`, `Tools\Assimp`, `Optick`, `Sharpmake`) show `attr/-text` and keep their committed endings, so the four
+  SMAA files stay `w/crlf`; any other `w/crlf` is a fail.
+  3: `GenerateSolutions.bat` and `BuildGame.bat` run as before. 4: A1's three builds and A2's tests from that clone.
+  5: Open a `.cpp` in Visual Studio, edit and save it: `git diff` shows only that edit, not every line (VS keeps LF
+  files LF).
 
 ### Hands-on session 1: Visual Studio and the debugger (person)
 
