@@ -6,8 +6,9 @@ closes it the way the close button does, and checks it exits cleanly.
 
 Fails (exit code 1) if the harness doesn't get ready, the scene doesn't load or lacks an expected object, frames stop,
 the shot fails, or the Editor doesn't exit with code 0. Errors and warnings the Editor logs are listed, and annotated
-on GitHub, but don't fail it. Debug runs with -gfxliveobjects, so graphics objects left alive at shutdown are listed
-too, as their count. Writes the Editor's output (app.log) and the shot (shot.png) to --out.
+on GitHub, but don't fail it. Debug runs with -gfxliveobjects, and on Windows fails if any D3D11 object outlives
+shutdown, or the report doesn't come; app.log lists them. Writes the Editor's output (app.log) and the shot (shot.png)
+to --out.
 
 Needs a display: on Linux CI, run it under xvfb-run with SDL_VIDEO_DRIVER=x11. RZE/Config/imgui.ini, which every
 Editor run rewrites, is put back afterwards, so running it locally keeps your layout. Standard library only."""
@@ -32,6 +33,20 @@ ON_GITHUB = os.environ.get("GITHUB_ACTIONS") == "true"
 # -gfxliveobjects' report: a line for each D3D11 object still alive at shutdown, each at its own address. They stay in
 # app.log; the count the report ends with ("N D3D11 objects outlived shutdown ...") is what gets listed.
 LIVE_OBJECT_LINE = re.compile(r"^\[Warning\] D3D11 \(\d+\): \s*Live ")
+LIVE_OBJECT_COUNT = re.compile(r"^\[Warning\] (\d+) D3D11 objects outlived shutdown")
+NO_LIVE_OBJECTS = "No D3D11 objects outlived shutdown"
+# Only D3D11 has the report; OpenGL's device logs that the flag does nothing
+HAS_LIVE_OBJECT_REPORT = os.name == "nt"
+
+
+def live_object_count(line):
+    """How many D3D11 objects the report says outlived shutdown, from its last line; None for any other line."""
+    match = LIVE_OBJECT_COUNT.match(line)
+    if match:
+        return int(match.group(1))
+    if line.startswith("[Info] " + NO_LIVE_OBJECTS):
+        return 0
+    return None
 
 
 class SmokeFailure(Exception):
@@ -60,6 +75,8 @@ class Harness:
         self.app_log = open(app_log_path, "w", encoding="utf-8")
         self.errors = []
         self.warnings = []
+        # From -gfxliveobjects' report at shutdown; None until it comes
+        self.live_objects = None
         self.ready = False
         self.answers = {}
         self.next_id = 0
@@ -87,6 +104,9 @@ class Harness:
                 continue
             self.app_log.write(line + "\n")
             self.app_log.flush()
+            count = live_object_count(line)
+            if count is not None:
+                self.live_objects = count
             # Warnings are listed once each at the end, as a driver can repeat one every frame
             if line.startswith("[Error]"):
                 self.errors.append(line)
@@ -218,6 +238,15 @@ def run(args, harness):
     log("exited after %s with %s" % (elapsed(), describe_exit(code)))
     if code != 0:
         raise SmokeFailure("The Editor exited with %s" % describe_exit(code))
+
+    # Debug runs with -gfxliveobjects. Without the report, the check would pass whatever leaked.
+    if args.config == "debug" and HAS_LIVE_OBJECT_REPORT:
+        if harness.live_objects is None:
+            raise SmokeFailure("The Editor didn't report the D3D11 objects alive at shutdown (-gfxliveobjects)")
+        if harness.live_objects > 0:
+            raise SmokeFailure("%d D3D11 objects outlived shutdown: the engine never released them (app.log lists them)"
+                               % harness.live_objects)
+        log("no D3D11 objects outlived shutdown")
 
 
 def main():
