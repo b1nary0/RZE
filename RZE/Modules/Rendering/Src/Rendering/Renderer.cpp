@@ -42,11 +42,11 @@ namespace Rendering
 		return dst;
 	}
 
-	void Renderer::Initialize(void* windowHandle, bool validate)
+	void Renderer::Initialize(void* windowHandle, const GFXDeviceOptions& deviceOptions)
 	{
 		MemArena::InitializeArena(MEM_ARENA_SIZE);
 
-		m_renderThread.Initialize(windowHandle, validate);
+		m_renderThread.Initialize(windowHandle, deviceOptions);
 	}
 
 	void Renderer::Shutdown()

@@ -47,9 +47,9 @@ RenderEngine::~RenderEngine()
 {
 }
 
-void RenderEngine::Initialize(void* windowHandle, bool validateGraphics)
+void RenderEngine::Initialize(void* windowHandle, const Rendering::GFXDeviceOptions& deviceOptions)
 {
-	Rendering::Renderer::Initialize(windowHandle, validateGraphics);
+	Rendering::Renderer::Initialize(windowHandle, deviceOptions);
 	
 	AddRenderStage<ShadowRenderStage>();
 	AddRenderStage<DepthPrepassStage>();

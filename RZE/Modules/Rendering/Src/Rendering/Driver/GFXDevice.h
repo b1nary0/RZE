@@ -20,6 +20,17 @@ namespace Rendering
 	struct TexelReadback;
 	struct TextureReadback;
 
+	// How IGFXDevice::Initialize makes the device
+	struct GFXDeviceOptions
+	{
+		// The graphics API checks every call (the D3D11 debug layer, an OpenGL debug context) and the device logs what it
+		// reports, asserting on errors. It costs CPU time in every call.
+		bool Validate = false;
+		// At shutdown, once the device has released its own objects, it logs every API object still alive: what the
+		// engine never released. Needs Validate. D3D11 only: OpenGL has no such report.
+		bool ReportLiveObjects = false;
+	};
+
 	// A graphics API, as the render thread uses it: the device and what's bound to it. One per process, made by
 	// GFXDeviceFactory; each graphics API has its own (Driver/<API>/). What a resource does to itself (allocating,
 	// binding itself to a slot) is on the resource's interface (GFXBuffer.h, ShaderTypes.h) instead.
@@ -35,9 +46,7 @@ namespace Rendering
 	public:
 		// The window's SDL_Window, which the device presents to; before Initialize
 		virtual void SetWindow(void* windowHandle) = 0;
-		// validate: the graphics API checks every call (the D3D11 debug layer, an OpenGL debug context) and the device
-		// logs what it reports, asserting on errors. It costs CPU time in every call.
-		virtual void Initialize(bool validate) = 0;
+		virtual void Initialize(const GFXDeviceOptions& options) = 0;
 		virtual void Shutdown() = 0;
 
 		// The device can only be used from one thread at a time on some APIs (e.g. OpenGL's context): the thread that

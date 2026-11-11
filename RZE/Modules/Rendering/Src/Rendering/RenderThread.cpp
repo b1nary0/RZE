@@ -19,7 +19,7 @@ namespace Rendering
 	{
 	}
 
-	void RenderThread::Initialize(void* windowHandle, bool validate)
+	void RenderThread::Initialize(void* windowHandle, const GFXDeviceOptions& deviceOptions)
 	{
 		AssertNotNull(windowHandle);
 
@@ -28,7 +28,7 @@ namespace Rendering
 
 		m_device = GFXDeviceFactory::CreateGFXDevice();
 		m_device->SetWindow(m_windowHandle);
-		m_device->Initialize(validate);
+		m_device->Initialize(deviceOptions);
 		m_imguiRenderer = GFXDeviceFactory::CreateImGuiRenderer(*m_device);
 
 		InitializeImGui();

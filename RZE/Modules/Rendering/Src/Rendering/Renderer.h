@@ -23,6 +23,7 @@ namespace Rendering
 
 	class UIFrameData;
 
+	struct GFXDeviceOptions;
 	struct GFXTextureBufferParams;
 	struct TexelReadback;
 	struct TextureReadback;
@@ -35,8 +36,8 @@ namespace Rendering
 		Renderer() = delete;
 
 	public:
-		// mWindowHandle is the window's SDL_Window. validate: the device checks every call (IGFXDevice::Initialize).
-		static void Initialize(void* mWindowHandle, bool validate);
+		// windowHandle is the window's SDL_Window; deviceOptions say how the device is made (IGFXDevice::Initialize)
+		static void Initialize(void* windowHandle, const GFXDeviceOptions& deviceOptions);
 		static void Shutdown();
 
 		// What this build draws with, e.g. for the window, which SDL makes differently for OpenGL. Known before Initialize.

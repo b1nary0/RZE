@@ -16,6 +16,7 @@ namespace Rendering
 {
 	class IGFXDevice;
 	class IImGuiRenderer;
+	struct GFXDeviceOptions;
 
 	// The render thread's frames, averaged over a StatsWindow, for display. A frame runs from one present to the next;
 	// the frame time itself is the main thread's (FrameStats).
@@ -34,7 +35,7 @@ namespace Rendering
 
 	public:
 		// The thread that calls Initialize controls this one: Shutdown and RunWhileIdle must be called from it
-		void Initialize(void* windowHandle, bool validate);
+		void Initialize(void* windowHandle, const GFXDeviceOptions& deviceOptions);
 		void Shutdown();
 
 		void PushCommand(RenderCommand* command);

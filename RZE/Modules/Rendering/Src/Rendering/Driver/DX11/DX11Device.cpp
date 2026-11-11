@@ -115,13 +115,14 @@ namespace Rendering
 	const int kInitialWidth = 1600;
 	const int kInitialHeight = 900;
 
-	void DX11Device::Initialize(bool validate)
+	void DX11Device::Initialize(const GFXDeviceOptions& options)
 	{
 		// @TODO Need to move a bunch of this code out into RenderEngine
 		// and then do these operations via Rendering::Renderer calls. Really the only thing
 		// left for the device to do essentially is to create the swapchain and create a device, i think.
 		HRESULT hr;
 
+		const bool validate = options.Validate;
 		const D3D11_CREATE_DEVICE_FLAG deviceType = validate ? D3D11_CREATE_DEVICE_DEBUG : D3D11_CREATE_DEVICE_SINGLETHREADED;
 
 		hr = D3D11CreateDevice(
@@ -149,12 +150,18 @@ namespace Rendering
 				filter.DenyList.NumSeverities = static_cast<UINT>(std::size(ignoredSeverities));
 				filter.DenyList.pSeverityList = ignoredSeverities;
 				mInfoQueue->AddStorageFilterEntries(&filter);
+				// The report arrives in the queue, as warnings
+				mReportLiveObjects = options.ReportLiveObjects;
 			}
 			else
 			{
 				mInfoQueue = nullptr;
 				RZE_LOG_WARNING("The D3D11 debug layer's info queue isn't available, so its reports won't be logged.");
 			}
+		}
+		if (options.ReportLiveObjects && !mReportLiveObjects)
+		{
+			RZE_LOG_WARNING("Live D3D11 objects can't be reported: there's no debug layer info queue to log them from.");
 		}
 
 		CreateSwapChain();
@@ -462,12 +469,15 @@ namespace Rendering
 
 	void DX11Device::Shutdown()
 	{
-		// What's come in since the last present, then the queue goes with the device
+		// What's come in since the last present
 		ReportDebugMessages();
-		if (mInfoQueue != nullptr)
+
+		// Taken before the device's own references go, and kept to the end, so the report sees only what others still hold
+		ID3D11Debug* liveObjectReporter = nullptr;
+		if (mReportLiveObjects && FAILED(mDevice->QueryInterface(__uuidof(ID3D11Debug), reinterpret_cast<void**>(&liveObjectReporter))))
 		{
-			mInfoQueue->Release();
-			mInfoQueue = nullptr;
+			liveObjectReporter = nullptr;
+			RZE_LOG_WARNING("Live D3D11 objects can't be reported: the debug layer has no ID3D11Debug.");
 		}
 
 		if (mFrameLatencyWaitableObject != nullptr)
@@ -506,6 +516,41 @@ namespace Rendering
 		mShadowSamplerState->Release();
 		mLinearClampSamplerState->Release();
 		mPointClampSamplerState->Release();
+
+		if (liveObjectReporter != nullptr)
+		{
+			ReportLiveObjects(*liveObjectReporter);
+			liveObjectReporter->Release();
+		}
+
+		// The queue goes with the device
+		if (mInfoQueue != nullptr)
+		{
+			mInfoQueue->Release();
+			mInfoQueue = nullptr;
+		}
+	}
+
+	void DX11Device::ReportLiveObjects(ID3D11Debug& reporter)
+	{
+		// Once the queue is empty, with the render thread stopped, everything stored next is the report: one message for the
+		// device, then one for each object. The queue keeps 1024 by default, and a leak can be more.
+		ReportDebugMessages();
+		mInfoQueue->SetMessageCountLimit(static_cast<UINT64>(-1));
+		RZE_LOG("D3D11 objects still alive at shutdown (-gfxliveobjects). The device's refcount includes the two references this report holds:");
+		reporter.ReportLiveDeviceObjects(D3D11_RLDO_DETAIL | D3D11_RLDO_IGNORE_INTERNAL);
+		const UINT64 reportedCount = mInfoQueue->GetNumStoredMessages();
+		ReportDebugMessages();
+
+		const UINT64 liveObjectCount = reportedCount > 0 ? reportedCount - 1 : 0;
+		if (liveObjectCount == 0)
+		{
+			RZE_LOG("No D3D11 objects outlived shutdown besides the device.");
+		}
+		else
+		{
+			RZE_LOG_WARNING(liveObjectCount << " D3D11 objects outlived shutdown besides the device: the engine never released them.");
+		}
 	}
 
 	void DX11Device::SetSyncInterval(U32 interval)

@@ -11,6 +11,7 @@
 struct ID3D11Device;
 struct ID3D11DeviceContext;
 struct ID3D11InfoQueue;
+struct ID3D11Debug;
 struct IDXGISwapChain2;
 struct ID3D11RenderTargetView;
 struct ID3D11RasterizerState;
@@ -37,7 +38,7 @@ namespace Rendering
 	// IGFXDevice interface
 	public:
 		void SetWindow(void* windowHandle) override;
-		void Initialize(bool validate) override;
+		void Initialize(const GFXDeviceOptions& options) override;
 		void Shutdown() override;
 
 		// D3D11 isn't tied to a thread
@@ -150,6 +151,9 @@ namespace Rendering
 		// Logs what the debug layer has reported since the last call, and clears it. Does nothing without a debug
 		// device.
 		void ReportDebugMessages();
+		// Logs every D3D11 object still alive and how many there are (GFXDeviceOptions::ReportLiveObjects). For the end of
+		// Shutdown, once the device's own objects are released.
+		void ReportLiveObjects(ID3D11Debug& reporter);
 
 	private:
 		IDXGISwapChain2* mSwapChain;
@@ -167,6 +171,8 @@ namespace Rendering
 		U32 mSwapChainFlags = 0;
 		bool mIsTearingSupported = false;
 		bool mHasReportedDeviceLoss = false;
+		// GFXDeviceOptions::ReportLiveObjects, with a debug device to report them
+		bool mReportLiveObjects = false;
 
 		// A ReadTexture copy the GPU may not have made yet, and where it goes. Released by Shutdown if still waiting.
 		struct PendingTextureReadback

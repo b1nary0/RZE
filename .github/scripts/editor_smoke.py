@@ -6,13 +6,15 @@ closes it the way the close button does, and checks it exits cleanly.
 
 Fails (exit code 1) if the harness doesn't get ready, the scene doesn't load or lacks an expected object, frames stop,
 the shot fails, or the Editor doesn't exit with code 0. Errors and warnings the Editor logs are listed, and annotated
-on GitHub, but don't fail it. Writes the Editor's output (app.log) and the shot (shot.png) to --out.
+on GitHub, but don't fail it. Debug runs with -gfxliveobjects, so graphics objects left alive at shutdown are listed
+too, as their count. Writes the Editor's output (app.log) and the shot (shot.png) to --out.
 
 Needs a display: on Linux CI, run it under xvfb-run with SDL_VIDEO_DRIVER=x11. RZE/Config/imgui.ini, which every
 Editor run rewrites, is put back afterwards, so running it locally keeps your layout. Standard library only."""
 import argparse
 import json
 import os
+import re
 import shutil
 import struct
 import subprocess
@@ -27,6 +29,9 @@ IMGUI_INI = os.path.join(RZE_DIR, "Config", "imgui.ini")
 # HarnessChannel::k_replyPrefix: the harness's answers, among the Editor's log lines on stdout
 REPLY_PREFIX = "RZEHARNESS "
 ON_GITHUB = os.environ.get("GITHUB_ACTIONS") == "true"
+# -gfxliveobjects' report: a line for each D3D11 object still alive at shutdown, each at its own address. They stay in
+# app.log; the count the report ends with ("N D3D11 objects outlived shutdown ...") is what gets listed.
+LIVE_OBJECT_LINE = re.compile(r"^\[Warning\] D3D11 \(\d+\): \s*Live ")
 
 
 class SmokeFailure(Exception):
@@ -59,7 +64,11 @@ class Harness:
         self.answers = {}
         self.next_id = 0
         self.changed = threading.Condition()
-        self.process = subprocess.Popen([exe, "-scene", scene], cwd=build_dir, stdin=subprocess.PIPE,
+        command = [exe, "-scene", scene]
+        # Debug validates already, so the report of the graphics objects still alive at shutdown changes nothing else
+        if config == "debug":
+            command.append("-gfxliveobjects")
+        self.process = subprocess.Popen(command, cwd=build_dir, stdin=subprocess.PIPE,
                                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         self.reader = threading.Thread(target=self._read_output, daemon=True)
         self.reader.start()
@@ -82,7 +91,8 @@ class Harness:
             if line.startswith("[Error]"):
                 self.errors.append(line)
             elif line.startswith("[Warning]"):
-                self.warnings.append(line)
+                if not LIVE_OBJECT_LINE.match(line):
+                    self.warnings.append(line)
                 continue
             if line.strip() and not line.startswith("[Debug]"):
                 log("  | " + line)

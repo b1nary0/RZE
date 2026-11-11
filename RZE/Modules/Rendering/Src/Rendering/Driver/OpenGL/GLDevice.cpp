@@ -109,9 +109,15 @@ namespace Rendering
 		m_window = static_cast<SDL_Window*>(windowHandle);
 	}
 
-	void GLDevice::Initialize(bool validate)
+	void GLDevice::Initialize(const GFXDeviceOptions& options)
 	{
 		AssertNotNull(m_window);
+
+		const bool validate = options.Validate;
+		if (options.ReportLiveObjects)
+		{
+			RZE_LOG("-gfxliveobjects does nothing on OpenGL, which has no report of the objects still alive.");
+		}
 
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);

@@ -20,6 +20,7 @@
 namespace Rendering
 {
 	class RenderTargetTexture;
+	struct GFXDeviceOptions;
 }
 
 class IRenderStage;
@@ -48,8 +49,8 @@ public:
 
 public:
 	// windowHandle is the window's SDL_Window (Window::GetNativeHandle)
-	// validateGraphics: the device checks every call it's given (IGFXDevice::Initialize)
-	void Initialize(void* windowHandle, bool validateGraphics);
+	// deviceOptions: how the device is made (IGFXDevice::Initialize)
+	void Initialize(void* windowHandle, const Rendering::GFXDeviceOptions& deviceOptions);
 	// Renders the main view as one frame
 	void Render(const char* frameName);
 	// Finish() does all the work that the main render phase needs including device present

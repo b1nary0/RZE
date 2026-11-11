@@ -19,8 +19,9 @@
 #endif
 
 // The graphics API's validation (the D3D11 debug layer, an OpenGL debug context), which reports to the log and asserts
-// on errors (Engine.cpp's ShouldValidateGraphics). It costs CPU time in every API call, so only Debug has it on unless
-// -gfxvalidation says otherwise; in Development it's -gfxvalidation away. Retail has nothing to report to.
+// on errors (Engine.cpp's GetGraphicsDeviceOptions). It costs CPU time in every API call, so only Debug has it on
+// unless -gfxvalidation says otherwise; in Development it's -gfxvalidation away. -gfxliveobjects, which logs the
+// graphics objects still alive at shutdown, turns it on too. Retail has nothing to report to.
 #ifndef RZE_RETAIL
 #define RZE_GFX_VALIDATION_AVAILABLE
 #endif
