@@ -44,10 +44,6 @@ public:
 	// another Capture can follow straight away.
 	std::shared_ptr<AsyncOperation> Capture(RenderScene& scene, const RenderCamera& camera, const ViewCaptureSettings& settings, const Filepath& filepath);
 
-	// Lets go of its target and what stages keep for its view; the next capture makes them again. A capture that
-	// outlives the renderer has to, before it shuts down. A capture already queued keeps what it uses.
-	void Release();
-
 private:
 	Vector2D m_size;
 	// Made on the first capture, since a capture can be set up before the renderer is

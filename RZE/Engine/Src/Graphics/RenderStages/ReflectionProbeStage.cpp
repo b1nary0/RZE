@@ -1,9 +1,7 @@
 #include <Graphics/RenderStages/ReflectionProbeStage.h>
 
-#include <Graphics/GlobalIllumination.h>
 #include <Graphics/GraphicsLayouts.h>
 #include <Graphics/RenderEngine.h>
-#include <Graphics/SettlingRegions.h>
 #include <Graphics/Shader.h>
 
 #include <Rendering/Renderer.h>
@@ -23,9 +21,6 @@ namespace
 	constexpr U32 k_prefilteredMipCount = 6;
 	// Probes relit a frame, the one just captured among them
 	constexpr U32 k_relightsPerFrame = 2;
-	// While the irradiance probes are still settling, a probe is relit in turn every this many frames for the light
-	// bouncing into it, which changes slowly
-	constexpr U64 k_settlingRelightFrames = 4;
 	// A Blinn-Phong exponent treated as a mirror; mirrors MaxShininessLog2 (Common/Lighting.hlsli), which picks the mip
 	constexpr float k_maxShininessLog2 = 11.0f;
 
@@ -55,16 +50,11 @@ namespace
 		{
 			// The probe in the slot (ReflectionProbeObject::GetLiveID), 0 for none
 			U64 LiveID = 0;
-			// The probe's GetRevision when it was last seen moved or resized
-			U64 ProbeRevision = 0;
+			// The scene's GetRevision when it was captured
+			U64 CapturedRevision = 0;
 			bool IsCaptured = false;
-			// The faces a change has settled in front of since it was captured (a ProbeCapture face mask), captured
-			// again
-			U32 StaleFaces = 0;
-			// Whether its prefiltered cube has been made, so the forward pass can reflect it, and whether its light has
-			// changed since: it was captured, or a light changed in its box, or the irradiance probes finished settling
+			// Whether its prefiltered cube has been made, so the forward pass can reflect it
 			bool IsLit = false;
-			bool NeedsRelight = false;
 		};
 
 		// A probe a row of k_faceSize texels, its faces side by side
@@ -77,16 +67,8 @@ namespace
 		Rendering::TextureBuffer2DHandle Prefiltered;
 
 		std::array<Slot, k_maxProbes> Slots;
-		// The next slot to relight in turn while the irradiance probes are settling, and whether they were last frame
+		// The next slot to relight in turn
 		U32 NextRelight = 0;
-		bool WasIrradianceChanging = false;
-		// Where Static objects and the probes changed, until they've stayed still for long enough to capture again
-		// (GlobalIlluminationSettings::RecaptureSettleFrames)
-		SettlingRegions Unsettled;
-		// The scene's GetRevision when changed objects were last looked for; from when the state was made, as new
-		// probes are captured anyway
-		U64 CheckedRevision = 0;
-		bool HasCheckedChanges = false;
 		// The frame the probes were last updated in (RenderContext::FrameIndex), so it's once a frame
 		U64 UpdatedFrame = k_neverFrame;
 	};
@@ -145,96 +127,11 @@ namespace
 	{
 		return (value + divisor - 1) / divisor;
 	}
-
-	// Has the captured probes whose boxes a light changed in since checkedRevision relit, or all of them if the change
-	// was everywhere (a directional light) or the scene doesn't know where
-	void MarkRelitByLights(const RenderScene& scene, U64 checkedRevision, ReflectionProbeState& state)
-	{
-		const ReflectionProbeContainer& probes = scene.GetReflectionProbes();
-		const U32 probeCount = std::min(static_cast<U32>(probes.size()), k_maxProbes);
-
-		const bool isKnown = scene.GetLightChanges().ForEachChangeSince(checkedRevision, [&state, &probes, probeCount](const BoundingBox& changed)
-		{
-			for (U32 slot = 0; slot < probeCount; ++slot)
-			{
-				if (probes[slot]->GetBox().Intersects(changed))
-				{
-					state.Slots[slot].NeedsRelight = true;
-				}
-			}
-		});
-		if (!isKnown)
-		{
-			for (ReflectionProbeState::Slot& slotState : state.Slots)
-			{
-				slotState.NeedsRelight = true;
-			}
-		}
-	}
-
-	// Marks stale the faces of the captured probes that a change has settled in front of since last time: Static objects
-	// that changed in their boxes, or the probes themselves moved or resized, once nothing there has changed for
-	// settleFrames frames. capture says which faces see where. Has those whose boxes lights changed in relit
-	// (MarkRelitByLights).
-	void MarkStaleProbes(const RenderScene& scene, U64 frameIndex, U32 settleFrames, const ProbeCapture& capture, ReflectionProbeState& state)
-	{
-		const ReflectionProbeContainer& probes = scene.GetReflectionProbes();
-		const U32 probeCount = std::min(static_cast<U32>(probes.size()), k_maxProbes);
-
-		if (state.HasCheckedChanges)
-		{
-			MarkRelitByLights(scene, state.CheckedRevision, state);
-		}
-
-		// Static objects changing: Movable ones aren't captured
-		if (state.HasCheckedChanges && scene.GetStaticObjectsRevision() > state.CheckedRevision)
-		{
-			const auto touch = [&state, frameIndex](const BoundingBox& changedBounds) { state.Unsettled.Touch(changedBounds, frameIndex); };
-			// Where isn't known: every probe, at once
-			if (!scene.GetStaticChanges().ForEachChangeSince(state.CheckedRevision, touch))
-			{
-				state.Unsettled.Clear();
-				for (ReflectionProbeState::Slot& slotState : state.Slots)
-				{
-					slotState.StaleFaces = ProbeCapture::k_allFaces;
-				}
-			}
-		}
-		state.CheckedRevision = scene.GetRevision();
-		state.HasCheckedChanges = true;
-
-		// Probes moved or resized: where they are now
-		for (U32 slot = 0; slot < probeCount; ++slot)
-		{
-			ReflectionProbeState::Slot& slotState = state.Slots[slot];
-			const ReflectionProbeObject& probe = *probes[slot];
-			if (slotState.IsCaptured && probe.GetRevision() != slotState.ProbeRevision)
-			{
-				slotState.ProbeRevision = probe.GetRevision();
-				state.Unsettled.Touch(probe.GetBox(), frameIndex);
-			}
-		}
-
-		// Once still for long enough, the faces that see them of the probes whose boxes they're in
-		state.Unsettled.TakeSettled(frameIndex, settleFrames, [&state, &probes, probeCount, &capture](const BoundingBox& settled)
-		{
-			for (U32 slot = 0; slot < probeCount; ++slot)
-			{
-				const ReflectionProbeObject& probe = *probes[slot];
-				if (probe.GetBox().Intersects(settled))
-				{
-					state.Slots[slot].StaleFaces |= capture.GetFacesSeeing(probe.GetPosition(), settled);
-				}
-			}
-		});
-	}
 }
 
-ReflectionProbeStage::ReflectionProbeStage(const GlobalIlluminationSettings* settings)
-	: m_settings(settings)
-	, m_capture(k_faceSize, ProbeCapture::EProbeFaces::CubeMap)
+ReflectionProbeStage::ReflectionProbeStage()
+	: m_capture(k_faceSize, ProbeCapture::EProbeFaces::CubeMap)
 {
-	AssertNotNull(m_settings);
 }
 
 void ReflectionProbeStage::Initialize()
@@ -291,22 +188,22 @@ void ReflectionProbeStage::Render(RenderContext& context)
 				}
 			}
 
-			MarkStaleProbes(scene, context.FrameIndex, m_settings->RecaptureSettleFrames, m_capture, state);
-
 			GraphicsLayouts::ProbeListLayout relit;
 			relit.FaceSize = k_faceSize;
 			relit.AtlasProbesPerRow = 1;
 
-			// One capture a frame: the first probe that's new (every face), or has stale faces (only those)
+			// One capture a frame: the first probe that's new, moved or resized, or had an object change in its box
 			for (U32 slot = 0; slot < probeCount; ++slot)
 			{
 				ReflectionProbeState::Slot& slotState = state.Slots[slot];
 				const ReflectionProbeObject& probe = *probes[slot];
-				if (slotState.IsCaptured && slotState.StaleFaces == 0)
+				const bool isOutOfDate = !slotState.IsCaptured
+					|| probe.GetRevision() > slotState.CapturedRevision
+					|| scene.HaveObjectsChangedWithin(probe.GetBox(), slotState.CapturedRevision);
+				if (!isOutOfDate)
 				{
 					continue;
 				}
-				const U32 faceMask = slotState.IsCaptured ? slotState.StaleFaces : ProbeCapture::k_allFaces;
 
 				Rendering::Renderer::Begin("ReflectionProbeCapture");
 				Rendering::Renderer::SetColourTarget(state.Scratch, state.ScratchDepth);
@@ -314,52 +211,25 @@ void ReflectionProbeStage::Render(RenderContext& context)
 				Rendering::Renderer::ClearDepthStencilBuffer(state.ScratchDepth);
 				// Far enough to see across the whole scene from anywhere in it
 				const float farDistance = std::max(scene.GetBounds().GetRadius() * 2.0f, 1.0f);
-				m_capture.BeginBatch(k_probeWidth, k_faceSize);
-				m_capture.AddProbe(probe.GetPosition(), farDistance, 0, 0, faceMask);
-				context.WorkCounts.ReflectionCaptureDraws += m_capture.Flush(scene);
-				++context.WorkCounts.ReflectionProbesCaptured;
+				m_capture.Capture(scene, probe.GetPosition(), farDistance, 0, 0);
 				Rendering::Renderer::ClearRenderTargets();
-				// Only the faces captured: the others keep what they had
-				for (U32 face = 0; face < ProbeCapture::k_faceCount; ++face)
-				{
-					if ((faceMask & (1u << face)) != 0)
-					{
-						Rendering::Renderer::CopyTextureRegion(state.Scratch, face * k_faceSize, 0, k_faceSize, k_faceSize, state.Atlas, face * k_faceSize, slot * k_faceSize);
-					}
-				}
+				Rendering::Renderer::CopyTextureRegion(state.Scratch, 0, 0, k_probeWidth, k_faceSize, state.Atlas, 0, slot * k_faceSize);
 				Rendering::Renderer::End();
 
 				slotState.IsCaptured = true;
-				slotState.StaleFaces = 0;
-				slotState.ProbeRevision = probe.GetRevision();
-				slotState.NeedsRelight = true;
+				slotState.CapturedRevision = scene.GetRevision();
+				relit.Probes[relit.Count++] = slot;
 				break;
 			}
 
-			// The irradiance probes' light bounces into these probes: while it's settling, one is relit in turn now and
-			// then, and every one once it has settled
-			const SceneIrradianceData& irradiance = m_sceneIrradianceInput.Get(context);
-			if (state.WasIrradianceChanging && !irradiance.IsChanging)
+			// Then the others in turn
+			for (U32 tried = 0; tried < probeCount && relit.Count < k_relightsPerFrame; ++tried)
 			{
-				for (ReflectionProbeState::Slot& slotState : state.Slots)
-				{
-					slotState.NeedsRelight = true;
-				}
-			}
-			else if (irradiance.IsChanging && probeCount > 0 && context.FrameIndex % k_settlingRelightFrames == 0)
-			{
-				state.Slots[state.NextRelight % probeCount].NeedsRelight = true;
+				const U32 slot = state.NextRelight % probeCount;
 				state.NextRelight = (state.NextRelight + 1) % probeCount;
-			}
-			state.WasIrradianceChanging = irradiance.IsChanging;
-
-			// Those whose light changed, the rest next frame
-			for (U32 slot = 0; slot < probeCount && relit.Count < k_relightsPerFrame; ++slot)
-			{
-				ReflectionProbeState::Slot& slotState = state.Slots[slot];
-				if (slotState.IsCaptured && slotState.NeedsRelight)
+				const bool isListed = relit.Count > 0 && relit.Probes[0] == slot;
+				if (state.Slots[slot].IsCaptured && !isListed)
 				{
-					slotState.NeedsRelight = false;
 					relit.Probes[relit.Count++] = slot;
 				}
 			}
@@ -369,6 +239,7 @@ void ReflectionProbeStage::Render(RenderContext& context)
 				Rendering::Renderer::Begin("ReflectionProbeRelight");
 
 				const SceneLightingData& sceneLighting = m_sceneLightingInput.Get(context);
+				const SceneIrradianceData& irradiance = m_sceneIrradianceInput.Get(context);
 
 				RelightParamsLayout relightParams;
 				for (U32 slot = 0; slot < probeCount; ++slot)
@@ -388,8 +259,8 @@ void ReflectionProbeStage::Render(RenderContext& context)
 				Rendering::Renderer::SetConstantBufferCS(sceneLighting.ShadowBuffer, k_shadowBufferSlot);
 				Rendering::Renderer::SetConstantBufferCS(irradiance.VolumeBuffer, k_volumeBufferSlot);
 				Rendering::Renderer::SetConstantBufferCS(m_probeListBuffer, k_probeListSlot);
-				Rendering::Renderer::SetTextureResourceCS(sceneLighting.StaticDirectionalShadowMap, k_shadowMapSlot);
-				Rendering::Renderer::SetTextureResourceCS(sceneLighting.StaticPointShadowCubes, k_pointShadowCubesSlot);
+				Rendering::Renderer::SetTextureResourceCS(sceneLighting.DirectionalShadowMap, k_shadowMapSlot);
+				Rendering::Renderer::SetTextureResourceCS(sceneLighting.PointShadowCubes, k_pointShadowCubesSlot);
 				Rendering::Renderer::SetTextureResourceCS(irradiance.SHRed, k_shRedSlot);
 				Rendering::Renderer::SetTextureResourceCS(irradiance.SHGreen, k_shRedSlot + 1);
 				Rendering::Renderer::SetTextureResourceCS(irradiance.SHBlue, k_shRedSlot + 2);
@@ -397,19 +268,14 @@ void ReflectionProbeStage::Render(RenderContext& context)
 				Rendering::Renderer::SetTextureResourceCS(state.Atlas, k_captureAtlasSlot);
 				Rendering::Renderer::SetUnorderedAccess(state.Radiance, 0, 0);
 				Rendering::Renderer::Dispatch(DivideRoundingUp(k_faceSize, k_groupSize), DivideRoundingUp(k_faceSize, k_groupSize), relit.Count * ProbeCapture::k_faceCount);
-				context.WorkCounts.ReflectionProbesRelit += relit.Count;
 				Rendering::Renderer::UnsetUnorderedAccess(0);
 				for (U32 slot : { k_shadowMapSlot, k_pointShadowCubesSlot, k_shRedSlot, k_shRedSlot + 1, k_shRedSlot + 2, k_visibilitySlot, k_captureAtlasSlot })
 				{
 					Rendering::Renderer::UnsetTextureResourceCS(slot);
 				}
 
-				// Their mips, for the prefilter's wider lobes to read from: only the relit cubes', as the whole array
-				// takes about 0.6 ms
-				for (U32 listed = 0; listed < relit.Count; ++listed)
-				{
-					Rendering::Renderer::GenerateMips(state.Radiance, relit.Probes[listed] * ProbeCapture::k_faceCount, ProbeCapture::k_faceCount);
-				}
+				// Its mips, for the prefilter's wider lobes to read from
+				Rendering::Renderer::GenerateMips(state.Radiance);
 
 				// A mip of the prefiltered cubes per gloss, as the forward pass picks them: (1 - gloss) x the last mip
 				Rendering::Renderer::SetComputeShader(m_prefilterShader->GetPlatformObject());

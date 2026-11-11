@@ -3,19 +3,15 @@
 #include <Utils/Math/BoundingBox.h>
 #include <Utils/PrimitiveDefs.h>
 
-#include <functional>
-#include <vector>
+#include <deque>
 
 // Where a scene's render objects changed, and when (by RenderScene::GetRevision), so something cached from part of
-// the scene (e.g. a point light's shadow cube) can tell whether that part changed since it was made. It keeps at most
-// k_capacity changes: past that, two neighbouring changes become one box around both, at the newer revision, so what
-// changed is never lost, only told apart less finely. The pair merged is the one that marks the least as changed that
-// wasn't at the newer revision, so an object's old and new bounds merge first, and a box around much of the scene
-// (e.g. from loading it) is never given a new change's revision.
+// the scene (e.g. a point light's shadow cube) can tell whether that part changed since it was made. Only the latest
+// k_capacity changes are kept: asking about a revision from before them answers that it changed.
 class SceneChangeLog
 {
 public:
-	// A couple of hundred objects moving in a frame (each logs where it was and where it is) before any are merged
+	// Enough for a couple of hundred objects moving in a frame (each logs where it was and where it is)
 	static constexpr size_t k_capacity = 256;
 
 public:
@@ -27,22 +23,10 @@ public:
 
 	// Whether anything intersecting region changed after sinceRevision. True when the log doesn't go back that far.
 	bool HasChangedWithin(const BoundingBox& region, U64 sinceRevision) const;
-	// Calls visit with the bounds of each change after sinceRevision, newest first, so whatever cached part of the
-	// scene can find what's out of date. False, without calling it, when the log doesn't go back that far (everything
-	// changed since).
-	bool ForEachChangeSince(U64 sinceRevision, const std::function<void(const BoundingBox&)>& visit) const;
 
 private:
-	// Changes at or before this revision are forgotten (AddEverywhere), so asking about anything older answers that it
-	// changed
+	// Changes at or before this revision are forgotten, so asking about anything older answers that it changed
 	void Forget(U64 revision);
-	// Whether the log no longer tells what changed after sinceRevision
-	bool HasForgottenSince(U64 sinceRevision) const;
-	// Makes room for one more change: merges the neighbouring pair that costs least (CalculateMergeCost)
-	void MergeCheapestPair();
-	// What merging changes index and index + 1 marks as changed that wasn't at the newer one's revision: the surface
-	// area of the box around both, less the newer one's
-	float CalculateMergeCost(size_t index) const;
 
 private:
 	struct Change
@@ -52,8 +36,6 @@ private:
 	};
 
 	// Oldest first
-	std::vector<Change> m_changes;
-	// By pair of neighbours, CalculateMergeCost(index), kept so a merge only works out the pairs it changed
-	std::vector<float> m_mergeCosts;
+	std::deque<Change> m_changes;
 	U64 m_forgottenRevision = 0;
 };

@@ -2,7 +2,6 @@
 
 #include <Utils/PrimitiveDefs.h>
 
-class BoundingBox;
 class Matrix4x4;
 class Vector3D;
 
@@ -37,12 +36,4 @@ namespace CubeMap
 	// The direction to sample a cube texture with (TextureCube in HLSL) to read what was rendered towards
 	// worldDirection
 	Vector3D ToSampleDirection(const Vector3D& worldDirection);
-
-	// Whether a 90-degree view along faceForward (one of the axes, either way) might see something in relativeBox
-	// (relative to where it looks from): whether the box reaches into the view's pyramid. Conservative, as the pyramid
-	// is tested against the box's extent along each side axis apart.
-	bool IsInFaceView(const Vector3D& faceForward, const BoundingBox& relativeBox);
-	// The faces of a cube at position that might see something in box (world space), a bit each (1 << ECubeFace); 0
-	// for an empty box
-	U32 GetFacesSeeing(const Vector3D& position, const BoundingBox& box);
 }

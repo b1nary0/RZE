@@ -220,14 +220,12 @@ With `UIFrameRate` set, only some frames are UI frames. Everything else (the asy
 
 `BeginShutDown()`, in order:
 1. `AsyncOperationManager::ShutDown()` first, so no async work touches the scene, resources or renderer while they shut down (it cancels operations and waits for their worker jobs; completion callbacks don't fire);
-2. scene shutdown, then app shutdown. `RZE_Application::ShutDown()` releases the app's render target, after the main view stops pointing at it, so an app that overrides it calls the base last (the Editor does);
-3. the main scene's `ClearObjects()`, then `ReleaseRenderStages()` (must happen before resources are released): the stages, then what they keep in the main view and the main scene (`ReleaseStageState()`). What these release is destroyed as it goes;
-4. `RenderEngine::Shutdown()`. `Renderer::Shutdown()` drops its copy of the last UI frame, then the render thread runs what was queued since the last frame as one last batch (the releases from steps 2 and 3 among it), stops, shuts down ImGui's backends and destroys its context, and the device shuts down. Destroying the context saves `imgui.ini`, through what the application gave ImGui (the Editor's ini path and settings handlers). They're still there: the application isn't the engine's, and outlives all of this (step 7);
+2. scene shutdown, then app shutdown;
+3. the main scene's `ClearObjects()`, then `ReleaseRenderStages()` (must happen before resources are released). What these release is destroyed as it goes;
+4. `RenderEngine::Shutdown()`, which lets the render thread finish what it was given, then stops it, shuts down ImGui's backends and destroys its context. Destroying the context saves `imgui.ini`, through what the application gave ImGui (the Editor's ini path and settings handlers). They're still there: the application isn't the engine's, and outlives all of this (step 7);
 5. `JobScheduler::ShutDown()` (queued jobs are abandoned, running ones finish), clear the log sink, `MainThreadDispatcher::ShutDown()`;
 6. `InternalShutDown()` deletes the scene and renderer, releases the engine config, shuts down the `ResourceHandler`, and deletes the window.
-7. `RZE().Run()` returns, and the application is destroyed when `main` returns. Its destructors run after the renderer and the `ResourceHandler` have shut down, which is safe because what it held went in its `ShutDown()` (step 2).
-
-**Nothing that holds a GPU handle may outlive step 4.** A handle keeps its D3D11 object alive, so one let go after the device has shut down is a leak the debug layer reports as the process ends. The main view and scene, and the application, live past it, so what they hold goes in steps 2 and 3. A render command still queued at step 4 holds handles too, which is why the render thread runs the last batch rather than dropping it. `-gfxliveobjects` checks all of this: it lists what's still alive once the device is done ([Debug-Services-And-Logging.md](../06-Platform-And-Infrastructure/Debug-Services-And-Logging.md#objects-alive-at-shutdown)), and the Debug smoke test fails if anything is.
+7. `RZE().Run()` returns, and the application is destroyed when `main` returns. Its destructors run after the renderer and the `ResourceHandler` have shut down, which is safe: what it held is released in its `ShutDown()` (step 2), and a GPU handle can be let go after the device has shut down.
 
 ## Key files
 

@@ -34,18 +34,6 @@ void RenderObject::SetTransform(const Matrix4x4& transform)
 	}
 }
 
-void RenderObject::SetMobility(ERenderMobility mobility)
-{
-	if (mobility != m_mobility)
-	{
-		m_mobility = mobility;
-		if (m_scene != nullptr)
-		{
-			m_scene->OnRenderObjectMobilityChanged(GetBounds());
-		}
-	}
-}
-
 const BoundingBox& RenderObject::GetBounds() const
 {
 	if (m_isBoundsStale)
@@ -79,6 +67,6 @@ void RenderObject::MarkChanged(const BoundingBox& oldBounds)
 	m_areDrawsStale = true;
 	if (m_scene != nullptr)
 	{
-		m_scene->OnRenderObjectChanged(m_mobility, oldBounds, GetBounds());
+		m_scene->OnRenderObjectChanged(oldBounds, GetBounds());
 	}
 }

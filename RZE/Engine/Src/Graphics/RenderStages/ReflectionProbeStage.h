@@ -11,16 +11,13 @@
 #include <Rendering/BufferHandle.h>
 
 class ComputeShader;
-struct GlobalIlluminationSettings;
 
 // The scene's reflection probes (ReflectionProbeObject, Docs/Plans/SSAOAndGlobalIllumination.md, Part 4): the first
 // GraphicsLayouts::k_maxReflectionProbes the scene made, a slot each. Each frame:
-//   - At most one probe is captured (ProbeCapture, 128 texels a face, in CubeMap's layout): a new one, or one that
-//     moved or was resized, or whose box a Static object changed in, once that has stayed still for
-//     GlobalIlluminationSettings::RecaptureSettleFrames. Only the faces that see such a change are captured again.
-//   - Up to two are relit (Compute_ReflectionRelight), with the scene's lights and irradiance probes, into a radiance
-//     cube array, then the mips of their cubes alone: those just captured, or with a light changed in their boxes, one in turn
-//     every few frames while the irradiance probes are settling, and every one once they have. Otherwise none.
+//   - At most one probe is captured (ProbeCapture, 128 texels a face, in CubeMap's layout): a new one, one that moved
+//     or was resized, or one whose box an object changed in.
+//   - Up to two are relit, it and then the others in turn (Compute_ReflectionRelight), with the scene's lights and
+//     irradiance probes, into a radiance cube array, which then gets its mips.
 //   - Their prefiltered cubes are made from that (Compute_ReflectionPrefilter): a mip per gloss.
 // The forward pass reflects them (Common/ReflectionProbes.hlsli). As IrradianceProbeStage, the work is once a frame for
 // each scene, for views with global illumination; other views get no probes.
@@ -43,8 +40,7 @@ public:
 	};
 
 public:
-	// settings: RenderEngine's, read each frame
-	explicit ReflectionProbeStage(const GlobalIlluminationSettings* settings);
+	ReflectionProbeStage();
 	~ReflectionProbeStage() override = default;
 
 public:
@@ -55,8 +51,6 @@ public:
 	void Render(RenderContext& context) override;
 
 private:
-	const GlobalIlluminationSettings* m_settings;
-
 	RenderInput<SceneLightingData> m_sceneLightingInput;
 	RenderInput<SceneIrradianceData> m_sceneIrradianceInput;
 	RenderOutput<SceneReflectionData> m_sceneReflectionOutput;

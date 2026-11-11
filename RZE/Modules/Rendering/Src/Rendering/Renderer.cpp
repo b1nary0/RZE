@@ -43,19 +43,18 @@ namespace Rendering
 		return dst;
 	}
 
-	void Renderer::Initialize(void* windowHandle, const GFXDeviceOptions& deviceOptions)
+	void Renderer::Initialize(void* windowHandle, bool validate)
 	{
 		MemArena::InitializeArena(MEM_ARENA_SIZE);
 
-		m_renderThread.Initialize(windowHandle, deviceOptions);
+		m_renderThread.Initialize(windowHandle, validate);
 	}
 
 	void Renderer::Shutdown()
 	{
-		// Before the device goes. A UI command still waiting to run holds the frame data, and its textures, itself.
+		m_renderThread.Shutdown();
 		m_uiFrameData.reset();
 		m_uiTextures.clear();
-		m_renderThread.Shutdown();
 
 		MemArena::Shutdown();
 	}
@@ -436,17 +435,6 @@ namespace Rendering
 		m_renderThread.PushCommand(command);
 	}
 
-	void Renderer::GenerateMips(const TextureBuffer2DHandle& texture, U32 firstSlice, U32 sliceCount)
-	{
-		AssertExpr(sliceCount > 0);
-		RenderCommand_GenerateMips* command = MemArena::AllocType<RenderCommand_GenerateMips>();
-		command->texture = texture;
-		command->firstSlice = firstSlice;
-		command->sliceCount = sliceCount;
-
-		m_renderThread.PushCommand(command);
-	}
-
 	void Renderer::CopyTexture(const TextureBuffer2DHandle& source, const TextureBuffer2DHandle& destination)
 	{
 		RenderCommand_CopyTexture* command = MemArena::AllocType<RenderCommand_CopyTexture>();
@@ -468,17 +456,6 @@ namespace Rendering
 		command->destination = destination;
 		command->destinationX = destinationX;
 		command->destinationY = destinationY;
-
-		m_renderThread.PushCommand(command);
-	}
-
-	void Renderer::CopyTextureSlice(const TextureBuffer2DHandle& source, U32 sourceSlice, const TextureBuffer2DHandle& destination, U32 destinationSlice)
-	{
-		RenderCommand_CopyTextureSlice* command = MemArena::AllocType<RenderCommand_CopyTextureSlice>();
-		command->source = source;
-		command->sourceSlice = sourceSlice;
-		command->destination = destination;
-		command->destinationSlice = destinationSlice;
 
 		m_renderThread.PushCommand(command);
 	}
@@ -654,17 +631,6 @@ namespace Rendering
 	{
 		RenderCommand_DrawIndexed* command = MemArena::AllocType<RenderCommand_DrawIndexed>();
 		command->indexBuffer = indexBuffer;
-
-		m_renderThread.PushCommand(command);
-		++m_drawCallCount;
-	}
-
-	void Renderer::DrawIndexedInstanced(const IndexBufferHandle& indexBuffer, U32 instanceCount, U32 startInstance)
-	{
-		RenderCommand_DrawIndexedInstanced* command = MemArena::AllocType<RenderCommand_DrawIndexedInstanced>();
-		command->indexBuffer = indexBuffer;
-		command->instanceCount = instanceCount;
-		command->startInstance = startInstance;
 
 		m_renderThread.PushCommand(command);
 		++m_drawCallCount;

@@ -15,7 +15,7 @@ namespace Rendering
 		DX11ConstantBuffer(U32 alignment)
 			: m_alignment(alignment) {}
 
-		~DX11ConstantBuffer() override;
+		~DX11ConstantBuffer() = default;
 
 	// IGFXConstantBuffer interface
 	public:

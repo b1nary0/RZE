@@ -10,7 +10,6 @@ inline DXGI_FORMAT ConvertToDXGIFormat(Rendering::EDataFormat dataFormat)
 		case Rendering::EDataFormat::R32G32_FLOAT: return DXGI_FORMAT_R32G32_FLOAT;
 		case Rendering::EDataFormat::R32G32B32_FLOAT: return DXGI_FORMAT_R32G32B32_FLOAT;
 		case Rendering::EDataFormat::R32G32B32A32_FLOAT: return DXGI_FORMAT_R32G32B32A32_FLOAT;
-		case Rendering::EDataFormat::R32_UINT: return DXGI_FORMAT_R32_UINT;
 	}
 
 	return DXGI_FORMAT_UNKNOWN;

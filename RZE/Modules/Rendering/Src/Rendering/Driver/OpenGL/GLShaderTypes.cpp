@@ -119,7 +119,6 @@ namespace Rendering
 			attribute.Format = element.DataFormat;
 			attribute.Offset = static_cast<U32>(element.Offset);
 			attribute.IsPerInstance = element.DataClassification == EDataClassification::PER_INSTANCE;
-			attribute.InputSlot = element.InputSlot;
 			m_attributes.push_back(attribute);
 		}
 	}

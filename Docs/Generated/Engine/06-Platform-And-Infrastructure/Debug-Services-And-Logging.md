@@ -108,35 +108,10 @@ It costs CPU time in every API call, so Development leaves it off unless asked:
 |---|---|
 | `-gfxvalidation` | On (the default in Debug) |
 | `-gfxvalidation 0` | Off, e.g. to time a Debug build without it |
-| `-gfxliveobjects` | Logs the graphics objects still alive at shutdown ([below](#objects-alive-at-shutdown)), and turns validation on |
 
-`GetGraphicsDeviceOptions` in `Engine.cpp` decides, from `DebugConfig.h`'s `RZE_GFX_VALIDATION_BY_DEFAULT` (Debug) and the command line, and the Engine passes the answer, a `GFXDeviceOptions` (`Validate`, `ReportLiveObjects`), down through `RenderEngine::Initialize`, `Renderer::Initialize` and `RenderThread::Initialize` to `IGFXDevice::Initialize(options)`, so the Rendering module never reads the command line. When it's on, the log says `Graphics validation is on: the graphics API checks every call, which costs CPU time`. Retail never validates, whatever the command line says. The drivers pass it as `driver.ps1 launch -AppArgs '-gfxvalidation'` and `driver.py launch -- -gfxvalidation`.
+`ShouldValidateGraphics` in `Engine.cpp` decides, from `DebugConfig.h`'s `RZE_GFX_VALIDATION_BY_DEFAULT` (Debug) and the command line, and the Engine passes the answer down through `RenderEngine::Initialize`, `Renderer::Initialize` and `RenderThread::Initialize` to `IGFXDevice::Initialize(bool validate)`, so the Rendering module never reads the command line. When it's on, the log says `Graphics validation is on: the graphics API checks every call, which costs CPU time`. Retail never validates, whatever the command line says. The drivers pass it as `driver.ps1 launch -AppArgs '-gfxvalidation'` and `driver.py launch -- -gfxvalidation`.
 
 On Windows the debug layer needs the **Graphics Tools** optional feature; without it, creating a validating device fails.
-
-### Objects alive at shutdown
-
-`-gfxliveobjects` asks the debug layer which D3D11 objects are still alive once the device has let go of its own, the
-last thing `DX11Device::Shutdown` does. Anything listed then was never released: a handle that outlived
-`Renderer::Shutdown`, or a wrapper that never calls `Release`. The report needs the debug layer, so the flag turns
-validation on (the log says `-gfxliveobjects needs graphics validation, so it's on` when it had to). In Retail it does
-nothing.
-
-- `DX11Device::ReportLiveObjects` empties the info queue, lifts its 1024-message limit, then calls
-  `ID3D11Debug::ReportLiveDeviceObjects` with `D3D11_RLDO_DETAIL | D3D11_RLDO_IGNORE_INTERNAL`. The layer stores its
-  report in the info queue as warnings, so it reaches the log like any other message: one line for the device (its
-  refcount includes the two references the report holds), then one for each object, with its type, refcount and
-  debug name.
-- It ends with a summary line: `No D3D11 objects outlived shutdown besides the device.`, or the warning
-  `N D3D11 objects outlived shutdown besides the device: the engine never released them.`
-- On OpenGL it does nothing, and says so: GL has no such report.
-
-Without the flag, the debug layer still notices a leak, but later: as the process ends it prints
-`D3D11 WARNING: Process is terminating. Using simple reporting.` and its own list to the debugger's output, which only
-a debugger or a DebugView-style listener sees. The flag puts the same information in the log, at a point where the
-engine's shutdown is over, so it names what the engine itself forgot. The Debug [smoke
-test](../01-GettingStarted/Building-And-Running.md#editor-smoke-test) runs with it and fails on Windows if anything is
-listed.
 
 ## Reading an optimized function in the debugger
 
@@ -183,6 +158,5 @@ These work without `-perfcapture` too; see [Engine-Startup-And-Frame-Loop.md](..
 - `Editor\Src\UI\Panels\LogPanel.h/.cpp`, `LogFilter.h/.cpp` — the Log panel and its filter (see [Editor-Panels.md](../07-Editor/Editor-Panels.md#log-logpanel))
 - `Modules/Rendering/Src/Rendering/Driver/DX11/DX11ShaderTypes.cpp` — `LogCompileMessages`; `Driver/OpenGL/GLShaderTypes.cpp`
 - `Engine\Src\DebugUtils\FrameTimeCapture.h/.cpp`
-- `Modules/Rendering/Src/Rendering/Driver/GFXDevice.h` — `GFXDeviceOptions`; `Driver/DX11/DX11Device.cpp` — `ReportDebugMessages`, `ReportLiveObjects`
-- `Engine\Src\EngineCore\Engine.cpp` — `TraceLogLine`, the engine's log sink; `GetGraphicsDeviceOptions`
+- `Engine\Src\EngineCore\Engine.cpp` — `TraceLogLine`, the engine's log sink; `ShouldValidateGraphics`
 - `Utils\Src\Utils\Platform\Timers\HiResTimer.h/.cpp`

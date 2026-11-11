@@ -20,9 +20,6 @@
 
 #include "Graphics/Texture2D.h"
 
-#include <cstring>
-#include <iterator>
-
 namespace
 {
 	// Distinct so both are readable when drawn together
@@ -30,9 +27,6 @@ namespace
 	const Vector3D k_subMeshBoundsColour(0.0f, 0.8f, 1.0f);
 
 	constexpr char k_textureFilter[] = "*.png;*.jpg;*.jpeg;*.tga;*.bmp";
-
-	// How Serialize writes each ERenderMobility, in the order of its values
-	constexpr const char* k_mobilityNames[] = { "Static", "Movable" };
 
 	// Changes one of slot's overrides, leaving the rest as they are
 	template <typename TChange>
@@ -192,10 +186,6 @@ void RenderComponent::DescribeProperties(PropertyBuilder<RenderComponent>& prope
 		.Clearable();
 	properties.Vector3("Size", &RenderComponent::GetMeshSize)
 		.DisplayFormat("%.2f m").ToolTip("Along the object's own axes, including its scale");
-	properties.Enum<ERenderMobility>("Mobility", { k_mobilityNames[0], k_mobilityNames[1] },
-		[](const RenderComponent& renderComponent) { return renderComponent.GetMobility(); },
-		[](RenderComponent& renderComponent, ERenderMobility mobility) { renderComponent.SetMobility(mobility); })
-		.ToolTip("Static for what stays put, captured into the scene's light probes. Movable for what moves while the scene runs: lit by the probes, but not captured into them, so moving it costs them nothing.");
 	properties.Bool("Mesh Bounds", &RenderComponent::IsDrawingMeshBounds, &RenderComponent::SetDrawMeshBounds).EditorOnly()
 		.InGroup("Debug Draw");
 	properties.Bool("Sub-Mesh Bounds", &RenderComponent::IsDrawingSubMeshBounds, &RenderComponent::SetDrawSubMeshBounds).EditorOnly()
@@ -310,7 +300,6 @@ void RenderComponent::CreateRenderObject()
 
 		m_renderObject = m_renderScene->CreateRenderObject(m_meshInstance);
 		m_renderObject->SetTransform(transformComponent->GetWorldMatrix());
-		m_renderObject->SetMobility(m_mobility);
 		// Offset by one because IDs start at 0, which picking uses for "nothing"
 		m_renderObject->SetPickID(GetOwner()->GetID() + 1);
 		GetOwner()->MarkHierarchyBoundsChanged();
@@ -319,15 +308,6 @@ void RenderComponent::CreateRenderObject()
 	}
 
 	RZE_LOG_WARNING("RenderComponent already has a RenderObject when calling CreateRenderObject()");
-}
-
-void RenderComponent::SetMobility(ERenderMobility mobility)
-{
-	m_mobility = mobility;
-	if (m_renderObject != nullptr)
-	{
-		m_renderObject->SetMobility(mobility);
-	}
 }
 
 void RenderComponent::Initialize()
@@ -389,9 +369,6 @@ void RenderComponent::Serialize(rapidjson::PrettyWriter<rapidjson::StringBuffer>
 		writer.Key("ResourcePath");
 		writer.String(GetMeshPath().GetSerializedPath().c_str());
 
-		writer.Key("Mobility");
-		writer.String(k_mobilityNames[static_cast<int>(m_mobility)]);
-
 		// The mesh instance's material overrides: only what's overridden, by slot name
 		const MaterialOverridesByName overrides = m_meshInstance != nullptr ? m_meshInstance->GetOverrides() : MaterialOverridesByName();
 		if (!overrides.empty())
@@ -441,19 +418,6 @@ void RenderComponent::GatherResourceDependencies(const rapidjson::Value& compone
 
 void RenderComponent::Deserialize(const rapidjson::Value& data)
 {
-	// Without one (or with one it doesn't know), it stays Static
-	const rapidjson::Value::ConstMemberIterator mobilityData = data.FindMember("Mobility");
-	if (mobilityData != data.MemberEnd() && mobilityData->value.IsString())
-	{
-		for (int mobility = 0; mobility < static_cast<int>(std::size(k_mobilityNames)); ++mobility)
-		{
-			if (std::strcmp(mobilityData->value.GetString(), k_mobilityNames[mobility]) == 0)
-			{
-				m_mobility = static_cast<ERenderMobility>(mobility);
-			}
-		}
-	}
-
 	// Preloaded by GatherResourceDependencies during an async scene load, so this is normally a cache hit
 	LoadMesh(Filepath(data["ResourcePath"].GetString()));
 

@@ -219,10 +219,7 @@ public abstract class BaseProject : Project
     {
         conf.DefaultOption = Options.DefaultTarget.Release;
         conf.Options.Add(Options.Vc.Compiler.RuntimeLibrary.MultiThreadedDLL);
-        // Any function can be inlined (/Ob2), as clang's -O2 does on Linux. /Ob1 cost about 10% update time on
-        // RenderPerfTest (1.055 to 0.956 ms mean), and Linux's counterpart, -finline-hint-functions, 38%. To read one
-        // function's locals in a debugger, RZE_DISABLE_OPTIMIZATION (Utils/DebugUtils/Debug.h) turns it off there.
-        conf.Options.Add(Options.Vc.Compiler.Inline.AnySuitable);
+        conf.Options.Add(Options.Vc.Compiler.Inline.OnlyInline);
     }
 
 

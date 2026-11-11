@@ -94,15 +94,6 @@
                         0.45,
                         0.45
                     ]
-                },
-                "OscillatorComponent": {
-                    "Enabled": false,
-                    "Offset": [
-                        0.0,
-                        0.0,
-                        4.0
-                    ],
-                    "Period": 6.0
                 }
             }
         },
@@ -31574,8 +31565,7 @@
             "name": "Nanosuit_0",
             "components": {
                 "RenderComponent": {
-                    "ResourcePath": "ProjectData\\Mesh\\Nanosuit.meshasset",
-                    "Mobility": "Movable"
+                    "ResourcePath": "ProjectData\\Mesh\\Nanosuit.meshasset"
                 },
                 "TransformComponent": {
                     "Position": [
@@ -31593,15 +31583,6 @@
                         -90.0,
                         0.0
                     ]
-                },
-                "OscillatorComponent": {
-                    "Enabled": false,
-                    "Offset": [
-                        2.0,
-                        0.0,
-                        0.0
-                    ],
-                    "Period": 4.0
                 }
             }
         },
@@ -31810,37 +31791,6 @@
                         -410.0,
                         0.0
                     ]
-                }
-            }
-        },
-        {
-            "id": "5c3e73408641dc76",
-            "name": "ReflectionProbe",
-            "components": {
-                "TransformComponent": {
-                    "Position": [
-                        0.0,
-                        2.0,
-                        0.0
-                    ],
-                    "Scale": [
-                        1.0,
-                        1.0,
-                        1.0
-                    ],
-                    "Rotation": [
-                        0.0,
-                        0.0,
-                        0.0
-                    ]
-                },
-                "ReflectionProbeComponent": {
-                    "Size": [
-                        24.0,
-                        8.0,
-                        24.0
-                    ],
-                    "BlendDistance": 1.0
                 }
             }
         }

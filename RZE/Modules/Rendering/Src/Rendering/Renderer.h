@@ -23,7 +23,6 @@ namespace Rendering
 
 	class UIFrameData;
 
-	struct GFXDeviceOptions;
 	struct GFXTextureBufferParams;
 	struct TexelReadback;
 	struct TextureReadback;
@@ -36,8 +35,8 @@ namespace Rendering
 		Renderer() = delete;
 
 	public:
-		// windowHandle is the window's SDL_Window; deviceOptions say how the device is made (IGFXDevice::Initialize)
-		static void Initialize(void* windowHandle, const GFXDeviceOptions& deviceOptions);
+		// mWindowHandle is the window's SDL_Window. validate: the device checks every call (IGFXDevice::Initialize).
+		static void Initialize(void* mWindowHandle, bool validate);
 		static void Shutdown();
 
 		// What this build draws with, e.g. for the window, which SDL makes differently for OpenGL. Known before Initialize.
@@ -120,24 +119,17 @@ namespace Rendering
 
 		// Fills the texture's mip chain from mip 0
 		static void GenerateMips(const TextureBuffer2DHandle& texture);
-		// The same for sliceCount of its slices from firstSlice alone (e.g. one cube of a cube array, 6 slices): the
-		// work is by the slices done, so it's much cheaper than the whole of a big array
-		static void GenerateMips(const TextureBuffer2DHandle& texture, U32 firstSlice, U32 sliceCount);
 		// Copies every slice and mip of source into destination, which must have the same size, format, slices and mips
 		static void CopyTexture(const TextureBuffer2DHandle& source, const TextureBuffer2DHandle& destination);
 		// Copies a width x height rectangle of source's mip 0 (its first slice) to destination's, at destinationX,
 		// destinationY. The two must have the same format.
 		static void CopyTextureRegion(const TextureBuffer2DHandle& source, U32 sourceX, U32 sourceY, U32 width, U32 height,
 			const TextureBuffer2DHandle& destination, U32 destinationX, U32 destinationY);
-		// Copies the whole of one slice of source's mip 0 into one slice of destination's, which must have the same
-		// size and format. Works for depth textures, which D3D only copies whole (e.g. a cube face of shadow depth).
-		static void CopyTextureSlice(const TextureBuffer2DHandle& source, U32 sourceSlice, const TextureBuffer2DHandle& destination, U32 destinationSlice);
 		// Copies one texel of a 4-byte-per-texel texture back to the CPU once the GPU has drawn it. The render
 		// thread waits on the GPU for it, so keep it to occasional reads such as picking.
 		static void ReadTexel(const TextureBuffer2DHandle& texture, U32 x, U32 y, std::shared_ptr<TexelReadback> result);
-		// Copies the whole of a texture's most detailed mip back to the CPU once the GPU has drawn it: result is ready a
-		// frame or more later. Nothing waits for the GPU, but each read makes its own staging copy, so keep it to small
-		// textures or occasional reads.
+		// Copies the whole of a texture's most detailed mip back to the CPU once the GPU has drawn it. Like ReadTexel,
+		// the render thread waits on the GPU for it, so keep it to one-off reads such as saving a capture to a file.
 		static void ReadTexture(const TextureBuffer2DHandle& texture, std::shared_ptr<TextureReadback> result);
 		// Copies this frame back to the CPU as it will be presented, UI and all: RGBA8, rows top first. Read just
 		// before DevicePresent puts it on the window, so whatever this frame draws is in it. Main thread.
@@ -172,9 +164,6 @@ namespace Rendering
 
 		static void Draw(const VertexBufferHandle& vertexBuffer, size_t count);
 		static void DrawIndexed(const IndexBufferHandle& indexBuffer);
-		// instanceCount copies of the indexed geometry. Per-instance inputs (ShaderInputLayoutData's PER_INSTANCE) are
-		// read from startInstance on, so one instance buffer can hold many draws' instances.
-		static void DrawIndexedInstanced(const IndexBufferHandle& indexBuffer, U32 instanceCount, U32 startInstance);
 		static void DrawFullScreenQuad();
 
 	public:

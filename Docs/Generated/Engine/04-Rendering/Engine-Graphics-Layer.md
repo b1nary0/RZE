@@ -133,8 +133,6 @@ public:
 };
 ```
 
-`ReleaseStageState()` clears both blackboards: what stages keep for the view across frames and what the last frame published. They're made again the next time the view renders. A view that outlives the renderer must call it before the renderer shuts down, as `RenderEngine::ReleaseRenderStages()` does for the main view, which lives until the render engine is deleted.
-
 ```mermaid
 %%{init: {'flowchart': {'subGraphTitleMargin': {'top': 6, 'bottom': 10}}, 'themeCSS': '.labelBkg, .edgeLabel { background-color: var(--background-primary) !important; } .messageText, .labelText, .loopText { paint-order: stroke; stroke: var(--background-primary); stroke-width: 12px; stroke-linejoin: round; }'}}%%
 flowchart LR
@@ -174,7 +172,6 @@ flowchart TD
 - **No debug lines** (grid, frustums, bounds boxes): its view has `DrawsDebug` off.
 - Its view has `GlobalIllumination` off: one frame is too few for probes to capture and settle, so a capture lights with the hemisphere ambient, and the scene doesn't get probe textures it would only use once.
 - `ViewCaptureSettings` sets the view's `Lighting`, `AutoExposure` and `ExposureCompensation` for each capture. The defaults light and expose like any other view. Mesh thumbnails use `Uniform` lighting with auto-exposure off ([Thumbnails-And-File-Browser.md](../07-Editor/Thumbnails-And-File-Browser.md#a-run)).
-- **`Release()`** lets go of its target and what stages keep for its view; the next capture makes them again (the target is made on the first capture anyway). A capture that outlives the renderer calls it before the renderer shuts down, as `ThumbnailRenderer::ShutDown` does. A capture already queued keeps what it uses.
 - `TextureFile` (`Engine\Src\Graphics\TextureFile.h/.cpp`) wraps `stb_image_write`. `WritePNG(file, width, height, rgba)` is safe from any thread. It creates the folder, writes the PNG beside the file and moves it over the file (`File::MoveReplacing`), so readers only ever see a whole image. `SaveToPNG(texture, file)` is the GPU-to-file path above. Its operation is `Background | Hidden`, since whoever asked for the capture reports on it.
 
 ## Frame lifecycle
@@ -209,7 +206,7 @@ Every render gets the frame's index (`RenderContext::FrameIndex`), the same for 
 
 | Area | Calls |
 |---|---|
-| Lifetime | `Initialize(windowHandle)` (also adds the engine's stages), `Shutdown()`, `ReleaseRenderStages()` (must run before `ResourceHandler::ShutDown()` and `Shutdown()`: drops the stages, then the main view's and main scene's stage state) |
+| Lifetime | `Initialize(windowHandle)` (also adds the engine's stages), `Shutdown()`, `ReleaseRenderStages()` (must run before `ResourceHandler::ShutDown()`) |
 | Per frame | `Render(frameName)` (the main view, of the main scene), `Finish()`, `RenderSecondaryView(name, view, scene)` |
 | Scene | `SetMainScene(scene)` / `GetMainScene()`. Objects and lights are made in a [`RenderScene`](#scene-data). |
 | Debug drawing | Into the main scene: `DrawLine(start, end, colour, alpha = 1, fade = {})`, `DrawWireBox(box, transform, colour, alpha = 1)`, `DrawWireSphere(centre, radius, colour, alpha = 1, occludedAlpha = 0)` (three circles, one around each world axis). `alpha` makes lines semi-transparent; `fade` (`DebugLineFade { centre, start, end }`) fades a line out with each pixel's distance from `centre`, between the `start` and `end` radii (`end` = 0: no fade). The editor grid uses both. `occludedAlpha` (`DebugLine::occludedAlpha`) is how opaque a line's parts behind the scene are drawn, so e.g. a light's range still shows through the walls it passes behind; 0 hides them, as for every other line. |

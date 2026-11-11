@@ -42,9 +42,7 @@ The four per-frame hooks split each frame into a UI part (`PreUIUpdate`, `Update
 
 `GetSplashScreenImage()`, `GetWindowTitle()` and `IsReadyToShow()` shape start-up ([Engine-Startup-And-Frame-Loop.md](Engine-Startup-And-Frame-Loop.md#startup-sequence)). The engine takes the application at the start of `RZE_Engine::Run`, before anything is initialized, so it can ask for the splash screen's image. An invalid path, the default, means no splash screen; the Editor returns `logo.png`, and the Game has none. `GetWindowTitle()` is the title the splash screen and the window start with: the Editor's is "RZEStudio", while the Game returns nothing and so takes Engine.ini's `WindowTitle`. The two share Engine.ini, so the application is what tells them apart. `IsReadyToShow()` keeps the window off screen while the engine ticks start-up's async operations with no frames. The default is true; the Editor's is false until its start scene has loaded.
 
-`RZE_Application` owns the `Window*` (assigned by the engine after construction) and a `std::unique_ptr<RenderTargetTexture> m_renderTarget` that each subclass is responsible for creating via `CreateRenderTarget()`.
-
-The application is `main`'s object, not the engine's, so it's destroyed only after the engine has shut down. What it holds on the GPU must go in `ShutDown()`, while the renderer is still up: the base `ShutDown()` releases `m_renderTarget` (and stops the main view pointing at it), so a subclass that overrides it calls the base last, as `EditorApp::ShutDown` does. See [Engine-Startup-And-Frame-Loop.md](Engine-Startup-And-Frame-Loop.md#shutdown).
+`RZE_Application` owns the `Window*` (null until `Initialize(window)`) and a `RenderTargetTexture* m_renderTarget` that each subclass is responsible for creating via `CreateRenderTarget()`.
 
 ## Editor vs Game: what differs
 

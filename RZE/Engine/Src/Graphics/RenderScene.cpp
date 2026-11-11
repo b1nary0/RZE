@@ -68,60 +68,21 @@ const BoundingBox& RenderScene::GetBounds() const
 	return m_bounds;
 }
 
-const BoundingBox& RenderScene::GetStaticBounds() const
-{
-	if (m_isStaticBoundsStale)
-	{
-		m_staticBounds = BoundingBox();
-		for (const std::unique_ptr<RenderObject>& renderObject : m_renderObjects)
-		{
-			if (renderObject->GetMobility() == ERenderMobility::Static)
-			{
-				m_staticBounds.Grow(renderObject->GetBounds());
-			}
-		}
-		m_isStaticBoundsStale = false;
-	}
-	return m_staticBounds;
-}
-
-void RenderScene::OnRenderObjectChanged(ERenderMobility mobility, const BoundingBox& oldBounds, const BoundingBox& newBounds)
+void RenderScene::OnRenderObjectChanged(const BoundingBox& oldBounds, const BoundingBox& newBounds)
 {
 	m_objectsRevision = ++m_revision;
 	m_isBoundsStale = true;
 
 	// Logged apart, so an object that jumps across the scene doesn't mark everything between
-	if (mobility == ERenderMobility::Static)
-	{
-		m_staticObjectsRevision = m_revision;
-		m_isStaticBoundsStale = true;
-		m_staticChanges.Add(m_revision, oldBounds);
-		m_staticChanges.Add(m_revision, newBounds);
-	}
-	else
-	{
-		m_movableChanges.Add(m_revision, oldBounds);
-		m_movableChanges.Add(m_revision, newBounds);
-	}
-}
-
-void RenderScene::OnRenderObjectMobilityChanged(const BoundingBox& bounds)
-{
-	m_objectsRevision = ++m_revision;
-	m_staticObjectsRevision = m_revision;
-	m_isStaticBoundsStale = true;
-	m_staticChanges.Add(m_revision, bounds);
-	m_movableChanges.Add(m_revision, bounds);
+	m_changeLog.Add(m_revision, oldBounds);
+	m_changeLog.Add(m_revision, newBounds);
 }
 
 void RenderScene::OnAllRenderObjectsChanged()
 {
 	m_objectsRevision = ++m_revision;
-	m_staticObjectsRevision = m_revision;
 	m_isBoundsStale = true;
-	m_isStaticBoundsStale = true;
-	m_staticChanges.AddEverywhere(m_revision);
-	m_movableChanges.AddEverywhere(m_revision);
+	m_changeLog.AddEverywhere(m_revision);
 }
 
 RenderObjectPtr RenderScene::CreateRenderObject(const std::shared_ptr<const StaticMeshInstance>& meshInstance)
@@ -157,7 +118,6 @@ void RenderScene::DestroyRenderObject(RenderObjectPtr& renderObject)
 	if (iter != renderObjects.end())
 	{
 		const BoundingBox oldBounds = (*iter)->GetBounds();
-		const ERenderMobility mobility = (*iter)->GetMobility();
 
 		if (renderObjects.size() > 1)
 		{
@@ -170,7 +130,7 @@ void RenderScene::DestroyRenderObject(RenderObjectPtr& renderObject)
 		}
 
 		renderObject = RenderObjectPtr();
-		OnRenderObjectChanged(mobility, oldBounds, BoundingBox());
+		OnRenderObjectChanged(oldBounds, BoundingBox());
 	}
 }
 
@@ -207,9 +167,7 @@ LightObjectPtr RenderScene::CreateLightObject(ELightType type)
 {
 	std::unique_ptr<LightObject>& lightObjectPtr = m_lightObjects.emplace_back(std::make_unique<LightObject>(type));
 	lightObjectPtr->m_sceneRevision = &m_revision;
-	lightObjectPtr->m_lightChanges = &m_lightChanges;
-	// Lights where it reaches from now on
-	lightObjectPtr->MarkChanged(true);
+	lightObjectPtr->m_shadowRevision = ++m_revision;
 
 	return LightObjectPtr(lightObjectPtr.get());
 }
@@ -234,9 +192,6 @@ void RenderScene::DestroyLightObject(LightObjectPtr& lightObject)
 
 	if (iter != lightObjects.end())
 	{
-		// No longer lights where it reached
-		(*iter)->MarkChanged(true);
-
 		if (lightObjects.size() > 1)
 		{
 			std::iter_swap(iter, std::prev(lightObjects.end()));
@@ -248,6 +203,7 @@ void RenderScene::DestroyLightObject(LightObjectPtr& lightObject)
 		}
 
 		lightObject = LightObjectPtr();
+		++m_revision;
 	}
 }
 

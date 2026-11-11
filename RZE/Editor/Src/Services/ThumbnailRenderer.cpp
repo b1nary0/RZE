@@ -303,8 +303,6 @@ namespace Editor
 		}
 		m_queue.Clear();
 		m_scene.Unload();
-		// The capture is the editor's, which outlives the renderer, so its GPU objects go now
-		m_capture.Release();
 	}
 
 	void ThumbnailRenderer::StartIfNeeded()

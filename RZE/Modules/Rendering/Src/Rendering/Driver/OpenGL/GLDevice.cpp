@@ -16,7 +16,6 @@
 #include <algorithm>
 #include <cstring>
 #include <string>
-#include <vector>
 
 namespace Rendering
 {
@@ -47,7 +46,6 @@ namespace Rendering
 			case EDataFormat::R32G32_FLOAT: return 2;
 			case EDataFormat::R32G32B32_FLOAT: return 3;
 			case EDataFormat::R32G32B32A32_FLOAT: return 4;
-			case EDataFormat::R32_UINT: return 1;
 			}
 			return 4;
 		}
@@ -57,18 +55,6 @@ namespace Rendering
 		U32 ToD3DDepthStencil(U32 texel)
 		{
 			return (texel >> 8) | ((texel & 0xFFu) << 24);
-		}
-
-		// Every D24S8 texel of data, read back from GL, in D3D's order
-		void ToD3DDepthStencil(std::vector<U8>& data)
-		{
-			for (size_t offset = 0; offset + sizeof(U32) <= data.size(); offset += sizeof(U32))
-			{
-				U32 texel = 0;
-				memcpy(&texel, &data[offset], sizeof(texel));
-				texel = ToD3DDepthStencil(texel);
-				memcpy(&data[offset], &texel, sizeof(texel));
-			}
 		}
 
 		GLTextureBuffer2D& AsGL(ITextureBuffer2D& texture)
@@ -109,15 +95,9 @@ namespace Rendering
 		m_window = static_cast<SDL_Window*>(windowHandle);
 	}
 
-	void GLDevice::Initialize(const GFXDeviceOptions& options)
+	void GLDevice::Initialize(bool validate)
 	{
 		AssertNotNull(m_window);
-
-		const bool validate = options.Validate;
-		if (options.ReportLiveObjects)
-		{
-			RZE_LOG("-gfxliveobjects does nothing on OpenGL, which has no report of the objects still alive.");
-		}
 
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
@@ -207,14 +187,6 @@ namespace Rendering
 
 	void GLDevice::Shutdown()
 	{
-		// Never filled in: whoever asked sees them stay not ready
-		for (const PendingTextureReadback& pending : m_pendingTextureReadbacks)
-		{
-			glDeleteSync(static_cast<GLsync>(pending.Fence));
-			glDeleteBuffers(1, &pending.Buffer);
-		}
-		m_pendingTextureReadbacks.clear();
-
 		DeleteReleasedObjects();
 		for (const std::pair<const FramebufferKey, U32>& framebuffer : m_framebuffers)
 		{
@@ -362,39 +334,18 @@ namespace Rendering
 		}
 		m_enabledAttributeMask = 0;
 
-		// Each from its vertex buffer slot, which is its binding
-		U32 instancedBindingMask = 0;
+		// From vertex buffer slot 0, the one D3D's input layouts here read from
 		for (const GLVertexShader::Attribute& attribute : shader.GetAttributes())
 		{
-			AssertExpr(attribute.InputSlot < k_vertexBufferSlotCount);
 			glEnableVertexArrayAttrib(m_vertexArray, attribute.Location);
-			// Integers stay integers (a uint input), where the Format version would convert them to float
-			if (attribute.Format == EDataFormat::R32_UINT)
-			{
-				glVertexArrayAttribIFormat(m_vertexArray, attribute.Location, GetComponentCount(attribute.Format), GL_UNSIGNED_INT, attribute.Offset);
-			}
-			else
-			{
-				glVertexArrayAttribFormat(m_vertexArray, attribute.Location, GetComponentCount(attribute.Format), GL_FLOAT, GL_FALSE, attribute.Offset);
-			}
-			glVertexArrayAttribBinding(m_vertexArray, attribute.Location, attribute.InputSlot);
+			glVertexArrayAttribFormat(m_vertexArray, attribute.Location, GetComponentCount(attribute.Format), GL_FLOAT, GL_FALSE, attribute.Offset);
+			glVertexArrayAttribBinding(m_vertexArray, attribute.Location, 0);
 			m_enabledAttributeMask |= 1u << attribute.Location;
 			if (attribute.IsPerInstance)
 			{
-				instancedBindingMask |= 1u << attribute.InputSlot;
+				glVertexArrayBindingDivisor(m_vertexArray, 0, 1);
 			}
 		}
-
-		// D3D steps per instance by element and GL by binding, so a binding steps per instance while a layout reads it so
-		for (U32 binding = 0; binding < k_vertexBufferSlotCount; ++binding)
-		{
-			const U32 bit = 1u << binding;
-			if ((instancedBindingMask & bit) != (m_instancedBindingMask & bit))
-			{
-				glVertexArrayBindingDivisor(m_vertexArray, binding, (instancedBindingMask & bit) != 0 ? 1 : 0);
-			}
-		}
-		m_instancedBindingMask = instancedBindingMask;
 	}
 
 	void GLDevice::SetVertexBuffer(const GLVertexBuffer& buffer, U32 slot)
@@ -462,37 +413,6 @@ namespace Rendering
 			BindTextures(m_pixelShader->GetProgram().GetTranslation(), m_pixelTextures);
 		}
 		CheckVaryings();
-		SetClipDistanceCount(m_vertexShader != nullptr ? m_vertexShader->GetProgram().GetTranslation().ClipDistanceCount : 0);
-	}
-
-	void GLDevice::FinishDraw()
-	{
-		SetClipDistanceCount(0);
-	}
-
-	void GLDevice::SetClipDistanceCount(U32 count)
-	{
-		AssertExpr(count <= k_clipDistanceCount);
-		for (U32 index = 0; index < k_clipDistanceCount; ++index)
-		{
-			const U32 bit = 1u << index;
-			const bool isWanted = index < count;
-			if (isWanted == ((m_enabledClipDistanceMask & bit) != 0))
-			{
-				continue;
-			}
-
-			if (isWanted)
-			{
-				glEnable(GL_CLIP_DISTANCE0 + index);
-				m_enabledClipDistanceMask |= bit;
-			}
-			else
-			{
-				glDisable(GL_CLIP_DISTANCE0 + index);
-				m_enabledClipDistanceMask &= ~bit;
-			}
-		}
 	}
 
 	void GLDevice::CreateBackBuffer(U32 width, U32 height)
@@ -693,23 +613,9 @@ namespace Rendering
 		BindFramebuffer(FramebufferKey(AsGL(colourTarget).GetTexture(), depthTexture != nullptr ? AsGL(*depthTexture).GetTexture() : 0, -1));
 	}
 
-	void GLDevice::GenerateMips(ITextureBuffer2D& texture, U32 firstSlice, U32 sliceCount)
+	void GLDevice::GenerateMips(ITextureBuffer2D& texture)
 	{
-		const GLTextureBuffer2D& gl = AsGL(texture);
-		if (sliceCount == 0 || (firstSlice == 0 && sliceCount == gl.GetLayerCount()))
-		{
-			glGenerateTextureMipmap(gl.GetTexture());
-			return;
-		}
-
-		// As DX11Device's: a view of those slices alone, every mip, made for the call. A view needs a name that was never
-		// bound, so glGenTextures rather than glCreateTextures.
-		AssertExpr(firstSlice + sliceCount <= gl.GetLayerCount());
-		GLuint view = 0;
-		glGenTextures(1, &view);
-		glTextureView(view, GL_TEXTURE_2D_ARRAY, gl.GetTexture(), gl.GetFormat().InternalFormat, 0, gl.GetMipCount(), firstSlice, sliceCount);
-		glGenerateTextureMipmap(view);
-		glDeleteTextures(1, &view);
+		glGenerateTextureMipmap(AsGL(texture).GetTexture());
 	}
 
 	void GLDevice::CopyTexture(ITextureBuffer2D& source, ITextureBuffer2D& destination)
@@ -736,18 +642,6 @@ namespace Rendering
 		glCopyImageSubData(from.GetTexture(), from.GetTarget(), 0, static_cast<GLint>(sourceX), static_cast<GLint>(sourceY), 0,
 			to.GetTexture(), to.GetTarget(), 0, static_cast<GLint>(destinationX), static_cast<GLint>(destinationY), 0,
 			static_cast<GLsizei>(width), static_cast<GLsizei>(height), 1);
-	}
-
-	void GLDevice::CopyTextureSlice(ITextureBuffer2D& source, U32 sourceSlice, ITextureBuffer2D& destination, U32 destinationSlice)
-	{
-		// The first mip, as DX11Device's; slices are layers (a cube's faces among them)
-		const GLTextureBuffer2D& from = AsGL(source);
-		const GLTextureBuffer2D& to = AsGL(destination);
-		AssertExpr(sourceSlice < from.GetLayerCount() && destinationSlice < to.GetLayerCount());
-		const GFXTextureBufferParams& params = from.GetParams();
-		glCopyImageSubData(from.GetTexture(), from.GetTarget(), 0, 0, 0, static_cast<GLint>(sourceSlice),
-			to.GetTexture(), to.GetTarget(), 0, 0, 0, static_cast<GLint>(destinationSlice),
-			static_cast<GLsizei>(params.Width), static_cast<GLsizei>(params.Height), 1);
 	}
 
 	void GLDevice::ClearRenderTarget(ITextureBuffer2D& renderTarget, const Vector4D& colour)
@@ -899,23 +793,12 @@ namespace Rendering
 	{
 		PrepareDraw();
 		glDrawArrays(m_primitiveMode, 0, static_cast<GLsizei>(vertexCount));
-		FinishDraw();
 	}
 
 	void GLDevice::DrawIndexed(U32 indexCount)
 	{
 		PrepareDraw();
 		glDrawElements(m_primitiveMode, static_cast<GLsizei>(indexCount), GL_UNSIGNED_INT, nullptr);
-		FinishDraw();
-	}
-
-	void GLDevice::DrawIndexedInstanced(U32 indexCount, U32 instanceCount, U32 startInstance)
-	{
-		// The base instance offsets per-instance attributes as D3D's StartInstanceLocation does
-		PrepareDraw();
-		glDrawElementsInstancedBaseInstance(m_primitiveMode, static_cast<GLsizei>(indexCount), GL_UNSIGNED_INT, nullptr,
-			static_cast<GLsizei>(instanceCount), startInstance);
-		FinishDraw();
 	}
 
 	void GLDevice::Dispatch(U32 groupsX, U32 groupsY, U32 groupsZ)
@@ -951,59 +834,30 @@ namespace Rendering
 		result.IsReady.store(true, std::memory_order_release);
 	}
 
-	void GLDevice::ReadTexture(ITextureBuffer2D& texture, const std::shared_ptr<TextureReadback>& result)
+	void GLDevice::ReadTexture(ITextureBuffer2D& texture, TextureReadback& result)
 	{
 		// The first mip of the first slice, rows top first, as DX11Device's
 		const GLTextureBuffer2D& gl = AsGL(texture);
 		const GLTextureBuffer2D::Format& format = gl.GetFormat();
-		result->Width = gl.GetParams().Width;
-		result->Height = gl.GetParams().Height;
-		result->BytesPerTexel = format.BytesPerTexel;
-		const GLsizei size = static_cast<GLsizei>(static_cast<size_t>(result->Width) * result->Height * result->BytesPerTexel);
+		result.Width = gl.GetParams().Width;
+		result.Height = gl.GetParams().Height;
+		result.BytesPerTexel = format.BytesPerTexel;
+		result.Data.resize(static_cast<size_t>(result.Width) * result.Height * result.BytesPerTexel);
 
-		PendingTextureReadback pending;
-		pending.IsDepth = format.IsDepth;
-		pending.Result = result;
-		glCreateBuffers(1, &pending.Buffer);
-		glNamedBufferStorage(pending.Buffer, size, nullptr, 0);
-
-		// With a pixel pack buffer bound, the copy goes into it (at offset 0) when the GPU gets there, not to the CPU
-		glBindBuffer(GL_PIXEL_PACK_BUFFER, pending.Buffer);
-		glGetTextureSubImage(gl.GetTexture(), 0, 0, 0, 0, static_cast<GLsizei>(result->Width), static_cast<GLsizei>(result->Height), 1,
-			format.PixelFormat, format.PixelType, size, nullptr);
-		glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
-		pending.Fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-
-		m_pendingTextureReadbacks.push_back(std::move(pending));
-	}
-
-	void GLDevice::FinishReadbacks()
-	{
-		for (size_t index = 0; index < m_pendingTextureReadbacks.size();)
+		glGetTextureSubImage(gl.GetTexture(), 0, 0, 0, 0, static_cast<GLsizei>(result.Width), static_cast<GLsizei>(result.Height), 1,
+			format.PixelFormat, format.PixelType, static_cast<GLsizei>(result.Data.size()), result.Data.data());
+		if (format.IsDepth)
 		{
-			PendingTextureReadback& pending = m_pendingTextureReadbacks[index];
-			// Without waiting; the flush makes sure the fence reaches the GPU at all
-			const GLenum status = glClientWaitSync(static_cast<GLsync>(pending.Fence), GL_SYNC_FLUSH_COMMANDS_BIT, 0);
-			if (status == GL_TIMEOUT_EXPIRED)
+			for (size_t offset = 0; offset < result.Data.size(); offset += sizeof(U32))
 			{
-				++index;
-				continue;
+				U32 texel = 0;
+				memcpy(&texel, &result.Data[offset], sizeof(texel));
+				texel = ToD3DDepthStencil(texel);
+				memcpy(&result.Data[offset], &texel, sizeof(texel));
 			}
-			AssertExpr(status == GL_ALREADY_SIGNALED || status == GL_CONDITION_SATISFIED);
-
-			TextureReadback& result = *pending.Result;
-			result.Data.resize(static_cast<size_t>(result.Width) * result.Height * result.BytesPerTexel);
-			glGetNamedBufferSubData(pending.Buffer, 0, static_cast<GLsizeiptr>(result.Data.size()), result.Data.data());
-			if (pending.IsDepth)
-			{
-				ToD3DDepthStencil(result.Data);
-			}
-			glDeleteSync(static_cast<GLsync>(pending.Fence));
-			glDeleteBuffers(1, &pending.Buffer);
-			result.IsReady.store(true, std::memory_order_release);
-
-			m_pendingTextureReadbacks.erase(m_pendingTextureReadbacks.begin() + static_cast<std::ptrdiff_t>(index));
 		}
+
+		result.IsReady.store(true, std::memory_order_release);
 	}
 
 	void GLDevice::ReadBackBuffer(TextureReadback& result)

@@ -6,7 +6,6 @@
 #include <Graphics/MaterialSlot.h>
 #include <Graphics/MeshGeometry.h>
 #include <Graphics/RenderEngine.h>
-#include <Graphics/SceneChangeLog.h>
 #include <Graphics/Shader.h>
 #include <Graphics/Texture2D.h>
 #include <Graphics/VertexBuffer.h>
@@ -30,9 +29,6 @@ namespace
 	constexpr float k_normalOffsetTexels = 1.5f;
 	// Border kept around the scene so PCF taps at its edge stay inside the map
 	constexpr float k_edgePaddingTexels = 4.0f;
-	// Room the directional map leaves around its Static casters, as a share of their extent from the light on each
-	// side, so moving one a little doesn't fit the map again (which redraws all of it)
-	constexpr float k_fitRoom = 0.05f;
 
 	// A point light's cube faces are this many texels square
 	constexpr U32 k_pointShadowSize = 512;
@@ -78,24 +74,6 @@ namespace
 	float CalculatePointShadowFar(const LightObject& light)
 	{
 		return std::max(light.GetRange(), k_pointShadowNear * 2.0f);
-	}
-
-	// Every face of a point light's cube, a bit each (1 << ECubeFace)
-	constexpr U32 k_allCubeFaces = (1u << static_cast<U32>(ECubeFace::Count)) - 1;
-
-	// The faces of the cube at position, which sees out to seen, that changes in log after sinceRevision are in front
-	// of; every face if the log doesn't go back that far
-	U32 GetFacesChangedSince(const SceneChangeLog& log, U64 sinceRevision, const Vector3D& position, const BoundingBox& seen)
-	{
-		U32 faces = 0;
-		const bool isKnown = log.ForEachChangeSince(sinceRevision, [&faces, &position, &seen](const BoundingBox& changed)
-		{
-			if (changed.Intersects(seen))
-			{
-				faces |= CubeMap::GetFacesSeeing(position, changed);
-			}
-		});
-		return isKnown ? faces : k_allCubeFaces;
 	}
 
 	// The depth a projection stores for something distance metres in front of the view
@@ -146,12 +124,12 @@ void ShadowRenderStage::Render(RenderContext& context)
 	const bool needsMap = context.View.Lighting == ERenderViewLighting::Scene;
 	if (needsMap && (!state.HasCheckedMaps || state.CheckedRevision != scene.GetRevision()))
 	{
-		UpdateShadowMaps(scene, state, context.WorkCounts);
+		UpdateShadowMaps(scene, state);
 		state.CheckedRevision = scene.GetRevision();
 		state.HasCheckedMaps = true;
 	}
 
-	// Every view uploads it: it's small.
+	// Every view uploads it, since colours and strengths change without changing the revision. It's small.
 	UploadLights(scene, state);
 
 	// Published even without a light: an empty light buffer, and HasShadows = 0 tells the sampling shaders to skip
@@ -160,9 +138,7 @@ void ShadowRenderStage::Render(RenderContext& context)
 	sceneLightingData.LightBuffer = state.LightBuffer;
 	sceneLightingData.ShadowBuffer = state.ShadowBuffer;
 	sceneLightingData.DirectionalShadowMap = state.ShadowMap;
-	sceneLightingData.StaticDirectionalShadowMap = state.StaticShadowMap;
 	sceneLightingData.PointShadowCubes = state.PointShadowCubes;
-	sceneLightingData.StaticPointShadowCubes = state.StaticPointShadowCubes;
 	m_sceneLightingOutput.Publish(context, sceneLightingData);
 }
 
@@ -210,9 +186,7 @@ ShadowRenderStage::ShadowMapState ShadowRenderStage::CreateShadowMapState()
 	ShadowMapState state;
 	state.LightBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(GraphicsLayouts::LightBufferLayout), 16, 1);
 	state.ShadowMap = Rendering::Renderer::CreateTextureBuffer2D(shadowMapParams);
-	state.StaticShadowMap = Rendering::Renderer::CreateTextureBuffer2D(shadowMapParams);
 	state.PointShadowCubes = Rendering::Renderer::CreateTextureBuffer2D(pointShadowParams);
-	state.StaticPointShadowCubes = Rendering::Renderer::CreateTextureBuffer2D(pointShadowParams);
 	state.ShadowBuffer = Rendering::Renderer::CreateConstantBuffer(nullptr, sizeof(GraphicsLayouts::ShadowBufferLayout), 16, 1);
 
 	state.ShadowData.TexelSize = 1.0f / static_cast<float>(k_shadowMapSize);
@@ -220,7 +194,7 @@ ShadowRenderStage::ShadowMapState ShadowRenderStage::CreateShadowMapState()
 	return state;
 }
 
-void ShadowRenderStage::UpdateShadowMaps(const RenderScene& scene, ShadowMapState& state, RenderWorkCounts& workCounts)
+void ShadowRenderStage::UpdateShadowMaps(const RenderScene& scene, ShadowMapState& state)
 {
 	OPTICK_EVENT();
 
@@ -263,48 +237,14 @@ void ShadowRenderStage::UpdateShadowMaps(const RenderScene& scene, ShadowMapStat
 		{
 		case ELightType::Directional:
 		{
-			if (shadowIndex < 0)
-			{
-				break;
-			}
-
-			// Fitted again when the light turns, or a Static object changes outside the fit (or where isn't known);
-			// otherwise the Static map is redrawn if one changed within it, and copied again with the Movable casters
-			// if one of those did
+			// Fitted to every render object, so any of them changing can move it
 			CachedShadowMap& cache = state.DirectionalCache;
-			DirectionalFit& fit = state.Fit;
-			bool needsFit = !fit.IsFitted || isLightChanged(cache, light);
-			bool hasStaticChanged = false;
-			bool hasMovableChanged = false;
-			if (!needsFit)
-			{
-				const bool isStaticKnown = scene.GetStaticChanges().ForEachChangeSince(cache.RenderedRevision, [&fit, &needsFit, &hasStaticChanged](const BoundingBox& changed)
-				{
-					needsFit = needsFit || !fit.LightBounds.Contains(changed.Transformed(fit.View));
-					hasStaticChanged = true;
-				});
-				const bool isMovableKnown = scene.GetMovableChanges().ForEachChangeSince(cache.RenderedRevision, [&fit, &hasMovableChanged](const BoundingBox& changed)
-				{
-					hasMovableChanged = hasMovableChanged || fit.LightBounds.Intersects(changed.Transformed(fit.View));
-				});
-				needsFit = needsFit || !isStaticKnown;
-				hasMovableChanged = hasMovableChanged || !isMovableKnown;
-			}
-
-			if (needsFit)
+			if (shadowIndex >= 0 && (isLightChanged(cache, light) || scene.GetObjectsRevision() > cache.RenderedRevision))
 			{
 				beginOnce();
-				FitDirectionalShadow(scene, light.GetDirection(), fit);
-				state.ShadowData.HasShadows = fit.IsFitted ? 1.0f : 0.0f;
-				state.ShadowData.LightViewProjection = fit.ViewProjection;
-				state.ShadowData.NormalOffset = fit.WorldTexelSize * k_normalOffsetTexels;
+				state.ShadowData.HasShadows = RenderDirectionalShadow(scene, light, state, state.ShadowData) ? 1.0f : 0.0f;
+				markRendered(cache, light);
 			}
-			if (fit.IsFitted && (needsFit || hasStaticChanged || hasMovableChanged))
-			{
-				beginOnce();
-				RenderDirectionalShadow(scene, needsFit || hasStaticChanged, state, workCounts);
-			}
-			markRendered(cache, light);
 			break;
 		}
 
@@ -324,22 +264,13 @@ void ShadowRenderStage::UpdateShadowMaps(const RenderScene& scene, ShadowMapStat
 			const float farDistance = CalculatePointShadowFar(light);
 			const BoundingBox seen(light.GetPosition() - Vector3D(farDistance), light.GetPosition() + Vector3D(farDistance));
 
-			// Every face once the light changes; otherwise only those changes are in front of, by mobility
 			CachedShadowMap& cache = state.PointCaches[shadowIndex];
-			U32 staticFaces = k_allCubeFaces;
-			U32 movableFaces = 0;
-			if (!isLightChanged(cache, light))
-			{
-				staticFaces = GetFacesChangedSince(scene.GetStaticChanges(), cache.RenderedRevision, light.GetPosition(), seen);
-				movableFaces = GetFacesChangedSince(scene.GetMovableChanges(), cache.RenderedRevision, light.GetPosition(), seen);
-			}
-			if ((staticFaces | movableFaces) != 0)
+			if (isLightChanged(cache, light) || scene.HaveObjectsChangedWithin(seen, cache.RenderedRevision))
 			{
 				beginOnce();
-				RenderPointShadow(scene, light, static_cast<U32>(shadowIndex), staticFaces, movableFaces, state, state.ShadowData.PointShadows[shadowIndex], workCounts);
+				RenderPointShadow(scene, light, static_cast<U32>(shadowIndex), state, state.ShadowData.PointShadows[shadowIndex]);
+				markRendered(cache, light);
 			}
-			// Up to date either way, so the next check only looks at changes after this
-			markRendered(cache, light);
 			break;
 		}
 		}
@@ -367,60 +298,41 @@ void ShadowRenderStage::BeginShadowPass()
 	Rendering::Renderer::SetConstantBufferVS(m_vertexShader->GetWorldMatrixBuffer(), 1);
 }
 
-void ShadowRenderStage::RenderDirectionalShadow(const RenderScene& scene, bool redrawStatic, const ShadowMapState& state, RenderWorkCounts& workCounts)
+bool ShadowRenderStage::RenderDirectionalShadow(const RenderScene& scene, const LightObject& light, const ShadowMapState& state, GraphicsLayouts::ShadowBufferLayout& outShadowData)
 {
-	const Matrix4x4& viewProjection = state.Fit.ViewProjection;
-	const float size = static_cast<float>(k_shadowMapSize);
-	Rendering::Renderer::SetViewport({ size, size });
-	if (redrawStatic)
+	Matrix4x4 lightViewProjection;
+	float worldTexelSize = 0.0f;
+	if (!CalculateLightViewProjection(scene, light.GetDirection(), lightViewProjection, worldTexelSize))
 	{
-		Rendering::Renderer::ClearDepthStencilBuffer(state.StaticShadowMap);
-		Rendering::Renderer::SetDepthTarget(state.StaticShadowMap);
-		workCounts.ShadowDraws += DrawCasters(scene, viewProjection, ECasters::Static);
-		++workCounts.SunShadowMapsRendered;
+		return false;
 	}
 
-	// Unbound before it's copied out of: 64 MB, far cheaper than drawing the Static casters again
-	Rendering::Renderer::ClearRenderTargets();
-	Rendering::Renderer::CopyTextureSlice(state.StaticShadowMap, 0, state.ShadowMap, 0);
+	outShadowData.LightViewProjection = lightViewProjection;
+	outShadowData.NormalOffset = worldTexelSize * k_normalOffsetTexels;
+
+	const float size = static_cast<float>(k_shadowMapSize);
+	Rendering::Renderer::SetViewport({ size, size });
+	Rendering::Renderer::ClearDepthStencilBuffer(state.ShadowMap);
 	Rendering::Renderer::SetDepthTarget(state.ShadowMap);
-	workCounts.ShadowDraws += DrawCasters(scene, viewProjection, ECasters::Movable);
-	Rendering::Renderer::ClearRenderTargets();
+	DrawCasters(scene, lightViewProjection);
+	return true;
 }
 
-void ShadowRenderStage::RenderPointShadow(const RenderScene& scene, const LightObject& light, U32 cubeIndex, U32 staticFaces, U32 movableFaces, const ShadowMapState& state, GraphicsLayouts::PointShadowLayout& outShadow, RenderWorkCounts& workCounts)
+void ShadowRenderStage::RenderPointShadow(const RenderScene& scene, const LightObject& light, U32 cubeIndex, const ShadowMapState& state, GraphicsLayouts::PointShadowLayout& outShadow)
 {
 	const Matrix4x4 projection = Matrix4x4::CreatePerspectiveMatrixZeroToOne(90.0f, 1.0f, k_pointShadowNear, CalculatePointShadowFar(light));
 
 	const float size = static_cast<float>(k_pointShadowSize);
 	Rendering::Renderer::SetViewport({ size, size });
 
-	// Only this light's faces, and only those that changed: the others keep what they hold
+	// Only this light's faces: the other cubes keep what their lights cast
 	for (U32 face = 0; face < static_cast<U32>(ECubeFace::Count); ++face)
 	{
-		const U32 faceBit = 1u << face;
-		if (((staticFaces | movableFaces) & faceBit) == 0)
-		{
-			continue;
-		}
-
 		const U32 slice = cubeIndex * static_cast<U32>(ECubeFace::Count) + face;
-		const Matrix4x4 viewProjection = projection * CubeMap::CreateFaceView(light.GetPosition(), static_cast<ECubeFace>(face));
-		if ((staticFaces & faceBit) != 0)
-		{
-			Rendering::Renderer::ClearDepthStencilSlice(state.StaticPointShadowCubes, slice);
-			Rendering::Renderer::SetDepthTarget(state.StaticPointShadowCubes, slice);
-			workCounts.ShadowDraws += DrawCasters(scene, viewProjection, ECasters::Static);
-		}
-
-		// Unbound before it's copied out of. A slice is 1 MB, so it's copied even with no Movable casters in view.
-		Rendering::Renderer::ClearRenderTargets();
-		Rendering::Renderer::CopyTextureSlice(state.StaticPointShadowCubes, slice, state.PointShadowCubes, slice);
+		Rendering::Renderer::ClearDepthStencilSlice(state.PointShadowCubes, slice);
 		Rendering::Renderer::SetDepthTarget(state.PointShadowCubes, slice);
-		workCounts.ShadowDraws += DrawCasters(scene, viewProjection, ECasters::Movable);
-		++workCounts.PointShadowFacesRendered;
+		DrawCasters(scene, projection * CubeMap::CreateFaceView(light.GetPosition(), static_cast<ECubeFace>(face)));
 	}
-	Rendering::Renderer::ClearRenderTargets();
 
 	// The projection stores DepthAtInfinity + DepthDistanceScale / distance, so two distances pin both down
 	const float depthAtOne = ProjectDepth(projection, 1.0f);
@@ -432,7 +344,7 @@ void ShadowRenderStage::RenderPointShadow(const RenderScene& scene, const LightO
 	outShadow.NormalOffsetPerMetre = 2.0f / size * k_normalOffsetTexels;
 }
 
-U32 ShadowRenderStage::DrawCasters(const RenderScene& scene, const Matrix4x4& viewProjection, ECasters casters)
+void ShadowRenderStage::DrawCasters(const RenderScene& scene, const Matrix4x4& viewProjection)
 {
 	// Only ClipSpace is used by the caster shaders
 	RenderCamera lightCamera;
@@ -441,13 +353,10 @@ U32 ShadowRenderStage::DrawCasters(const RenderScene& scene, const Matrix4x4& vi
 
 	// Objects and draws entirely outside the view can't cast into it (e.g. behind a cube face)
 	const Frustum frustum(viewProjection);
-	U32 drawCount = 0;
 
 	for (const auto& renderObject : scene.GetRenderObjects())
 	{
-		const bool isWanted = casters == ECasters::All
-			|| (casters == ECasters::Static) == (renderObject->GetMobility() == ERenderMobility::Static);
-		if (!isWanted || !frustum.Intersects(renderObject->GetBounds()))
+		if (!frustum.Intersects(renderObject->GetBounds()))
 		{
 			continue;
 		}
@@ -487,17 +396,13 @@ U32 ShadowRenderStage::DrawCasters(const RenderScene& scene, const Matrix4x4& vi
 			Rendering::Renderer::SetIndexBuffer(indexBuffer);
 
 			Rendering::Renderer::DrawIndexed(indexBuffer);
-			++drawCount;
 		}
 	}
-
-	return drawCount;
 }
 
-bool ShadowRenderStage::FitDirectionalShadow(const RenderScene& scene, const Vector3D& lightDirection, DirectionalFit& outFit) const
+bool ShadowRenderStage::CalculateLightViewProjection(const RenderScene& scene, const Vector3D& lightDirection, Matrix4x4& outViewProjection, float& outWorldTexelSize) const
 {
-	outFit.IsFitted = false;
-	const BoundingBox& sceneBounds = scene.GetStaticBounds();
+	const BoundingBox& sceneBounds = scene.GetBounds();
 	if (sceneBounds.IsEmpty())
 	{
 		return false;
@@ -511,16 +416,11 @@ bool ShadowRenderStage::FitDirectionalShadow(const RenderScene& scene, const Vec
 	const Vector3D eye = sceneCenter - lightDirection * (sceneRadius + 1.0f);
 	const Matrix4x4 view = Matrix4x4::CreateViewMatrix(eye, sceneCenter, up);
 
-	// Tight bounds of the Static casters as seen from the light: the draws' transformed boxes, not their looser
+	// Tight bounds of the scene as seen from the light: the draws' transformed boxes, not their looser
 	// world-axis-aligned boxes
 	BoundingBox lightBounds;
 	for (const auto& renderObject : scene.GetRenderObjects())
 	{
-		if (renderObject->GetMobility() != ERenderMobility::Static)
-		{
-			continue;
-		}
-
 		for (const MeshDraw& draw : renderObject->GetDraws())
 		{
 			for (const Vector3D& corner : draw.Corners)
@@ -529,15 +429,6 @@ bool ShadowRenderStage::FitDirectionalShadow(const RenderScene& scene, const Vec
 			}
 		}
 	}
-	if (lightBounds.IsEmpty())
-	{
-		return false;
-	}
-
-	// Room to spare all round, so a Static object moving a little stays inside
-	const Vector3D size = lightBounds.GetSize();
-	const Vector3D room = Vector3D(std::max(size.X(), size.Y())) * k_fitRoom;
-	lightBounds = BoundingBox(lightBounds.GetMin() - room, lightBounds.GetMax() + room);
 	const Vector3D& lightMin = lightBounds.GetMin();
 	const Vector3D& lightMax = lightBounds.GetMax();
 
@@ -553,10 +444,7 @@ bool ShadowRenderStage::FitDirectionalShadow(const RenderScene& scene, const Vec
 		lightMin.Y() - padding, lightMax.Y() + padding,
 		nearDistance, farDistance);
 
-	outFit.IsFitted = true;
-	outFit.View = view;
-	outFit.LightBounds = lightBounds;
-	outFit.ViewProjection = projection * view;
-	outFit.WorldTexelSize = (extent + 2.0f * padding) / static_cast<float>(k_shadowMapSize);
+	outViewProjection = projection * view;
+	outWorldTexelSize = (extent + 2.0f * padding) / static_cast<float>(k_shadowMapSize);
 	return true;
 }

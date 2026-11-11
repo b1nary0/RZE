@@ -38,10 +38,11 @@ namespace Rendering
 			}
 		}
 
-		// Copies a box of a texture's most detailed mip into a new staging texture, once the GPU has drawn it, for the
-		// caller to map and release. Reads are occasional (a click, a capture, a few texels a frame), so the staging
-		// copy is made for each one rather than kept around.
-		ID3D11Texture2D* CopyToStaging(DX11Device& device, ID3D11Texture2D& texture, const D3D11_BOX& box)
+		// Copies a box of a texture's most detailed mip into a staging texture and maps it, waiting for the GPU to
+		// finish drawing it, then calls read(mapped) before unmapping. Reads are rare (a click, a capture), so the
+		// staging copy is made for each one rather than kept around.
+		template <typename ReadFunc>
+		void ReadBackRegion(DX11Device& device, ID3D11Texture2D& texture, const D3D11_BOX& box, ReadFunc&& read)
 		{
 			D3D11_TEXTURE2D_DESC stagingDesc;
 			texture.GetDesc(&stagingDesc);
@@ -59,20 +60,11 @@ namespace Rendering
 			HRESULT hr = device.GetHardwareDevice().CreateTexture2D(&stagingDesc, nullptr, &staging);
 			AssertExpr(hr == S_OK);
 
-			device.GetDeviceContext().CopySubresourceRegion(staging, 0, 0, 0, 0, &texture, 0, isWhole ? nullptr : &box);
-			return staging;
-		}
-
-		// CopyToStaging, then maps the copy, waiting for the GPU to finish drawing it, and calls read(mapped) before
-		// unmapping
-		template <typename ReadFunc>
-		void ReadBackRegion(DX11Device& device, ID3D11Texture2D& texture, const D3D11_BOX& box, ReadFunc&& read)
-		{
-			ID3D11Texture2D* staging = CopyToStaging(device, texture, box);
 			ID3D11DeviceContext& deviceContext = device.GetDeviceContext();
+			deviceContext.CopySubresourceRegion(staging, 0, 0, 0, 0, &texture, 0, isWhole ? nullptr : &box);
 
 			D3D11_MAPPED_SUBRESOURCE mapped;
-			const HRESULT hr = deviceContext.Map(staging, 0, D3D11_MAP_READ, 0, &mapped);
+			hr = deviceContext.Map(staging, 0, D3D11_MAP_READ, 0, &mapped);
 			AssertExpr(hr == S_OK);
 			read(mapped);
 			deviceContext.Unmap(staging, 0);
@@ -115,14 +107,13 @@ namespace Rendering
 	const int kInitialWidth = 1600;
 	const int kInitialHeight = 900;
 
-	void DX11Device::Initialize(const GFXDeviceOptions& options)
+	void DX11Device::Initialize(bool validate)
 	{
 		// @TODO Need to move a bunch of this code out into RenderEngine
 		// and then do these operations via Rendering::Renderer calls. Really the only thing
 		// left for the device to do essentially is to create the swapchain and create a device, i think.
 		HRESULT hr;
 
-		const bool validate = options.Validate;
 		const D3D11_CREATE_DEVICE_FLAG deviceType = validate ? D3D11_CREATE_DEVICE_DEBUG : D3D11_CREATE_DEVICE_SINGLETHREADED;
 
 		hr = D3D11CreateDevice(
@@ -150,18 +141,12 @@ namespace Rendering
 				filter.DenyList.NumSeverities = static_cast<UINT>(std::size(ignoredSeverities));
 				filter.DenyList.pSeverityList = ignoredSeverities;
 				mInfoQueue->AddStorageFilterEntries(&filter);
-				// The report arrives in the queue, as warnings
-				mReportLiveObjects = options.ReportLiveObjects;
 			}
 			else
 			{
 				mInfoQueue = nullptr;
 				RZE_LOG_WARNING("The D3D11 debug layer's info queue isn't available, so its reports won't be logged.");
 			}
-		}
-		if (options.ReportLiveObjects && !mReportLiveObjects)
-		{
-			RZE_LOG_WARNING("Live D3D11 objects can't be reported: there's no debug layer info queue to log them from.");
 		}
 
 		CreateSwapChain();
@@ -215,9 +200,6 @@ namespace Rendering
 			rasterDesc.CullMode = D3D11_CULL_NONE;
 			// As the default, so SV_IsFrontFace means the same
 			rasterDesc.FrontCounterClockwise = TRUE;
-			// Cut at the near and far planes before rasterizing, so a triangle reaching behind the camera is drawn and
-			// faces as it should even when the view is squeezed into part of the target (ProbeCapture's batches)
-			rasterDesc.DepthClipEnable = TRUE;
 
 			mDevice->CreateRasterizerState(&rasterDesc, &mNoCullRasterState);
 		}
@@ -469,15 +451,12 @@ namespace Rendering
 
 	void DX11Device::Shutdown()
 	{
-		// What's come in since the last present
+		// What's come in since the last present, then the queue goes with the device
 		ReportDebugMessages();
-
-		// Taken before the device's own references go, and kept to the end, so the report sees only what others still hold
-		ID3D11Debug* liveObjectReporter = nullptr;
-		if (mReportLiveObjects && FAILED(mDevice->QueryInterface(__uuidof(ID3D11Debug), reinterpret_cast<void**>(&liveObjectReporter))))
+		if (mInfoQueue != nullptr)
 		{
-			liveObjectReporter = nullptr;
-			RZE_LOG_WARNING("Live D3D11 objects can't be reported: the debug layer has no ID3D11Debug.");
+			mInfoQueue->Release();
+			mInfoQueue = nullptr;
 		}
 
 		if (mFrameLatencyWaitableObject != nullptr)
@@ -485,13 +464,6 @@ namespace Rendering
 			CloseHandle(mFrameLatencyWaitableObject);
 			mFrameLatencyWaitableObject = nullptr;
 		}
-
-		// Never filled in: whoever asked sees them stay not ready
-		for (PendingTextureReadback& pending : mPendingTextureReadbacks)
-		{
-			pending.Staging->Release();
-		}
-		mPendingTextureReadbacks.clear();
 
 		// Before the swap chain, whose back buffer it holds
 		mRenderTargetView->Release();
@@ -516,41 +488,6 @@ namespace Rendering
 		mShadowSamplerState->Release();
 		mLinearClampSamplerState->Release();
 		mPointClampSamplerState->Release();
-
-		if (liveObjectReporter != nullptr)
-		{
-			ReportLiveObjects(*liveObjectReporter);
-			liveObjectReporter->Release();
-		}
-
-		// The queue goes with the device
-		if (mInfoQueue != nullptr)
-		{
-			mInfoQueue->Release();
-			mInfoQueue = nullptr;
-		}
-	}
-
-	void DX11Device::ReportLiveObjects(ID3D11Debug& reporter)
-	{
-		// Once the queue is empty, with the render thread stopped, everything stored next is the report: one message for the
-		// device, then one for each object. The queue keeps 1024 by default, and a leak can be more.
-		ReportDebugMessages();
-		mInfoQueue->SetMessageCountLimit(static_cast<UINT64>(-1));
-		RZE_LOG("D3D11 objects still alive at shutdown (-gfxliveobjects). The device's refcount includes the two references this report holds:");
-		reporter.ReportLiveDeviceObjects(D3D11_RLDO_DETAIL | D3D11_RLDO_IGNORE_INTERNAL);
-		const UINT64 reportedCount = mInfoQueue->GetNumStoredMessages();
-		ReportDebugMessages();
-
-		const UINT64 liveObjectCount = reportedCount > 0 ? reportedCount - 1 : 0;
-		if (liveObjectCount == 0)
-		{
-			RZE_LOG("No D3D11 objects outlived shutdown besides the device.");
-		}
-		else
-		{
-			RZE_LOG_WARNING(liveObjectCount << " D3D11 objects outlived shutdown besides the device: the engine never released them.");
-		}
 	}
 
 	void DX11Device::SetSyncInterval(U32 interval)
@@ -697,37 +634,12 @@ namespace Rendering
 		deviceContext.OMSetRenderTargets(1, &rtv, dsv);
 	}
 
-	void DX11Device::GenerateMips(ITextureBuffer2D& texture, U32 firstSlice, U32 sliceCount)
+	void DX11Device::GenerateMips(ITextureBuffer2D& texture)
 	{
 		DX11TextureBuffer2D* texturePtr = &AsDX11(texture);
 
 		ID3D11DeviceContext& deviceContext = GetDeviceContext();
-		if (sliceCount == 0)
-		{
-			deviceContext.GenerateMips(&texturePtr->GetResourceView());
-			return;
-		}
-
-		// GenerateMips fills what its view covers, so a view of those slices alone, every mip. Made for the call:
-		// it's cheap, and slices change from call to call.
-		D3D11_TEXTURE2D_DESC desc;
-		texturePtr->GetHWResource()->GetDesc(&desc);
-		AssertExpr(firstSlice + sliceCount <= desc.ArraySize);
-
-		D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc;
-		ZeroMemory(&viewDesc, sizeof(viewDesc));
-		viewDesc.Format = desc.Format;
-		viewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-		viewDesc.Texture2DArray.MostDetailedMip = 0;
-		viewDesc.Texture2DArray.MipLevels = desc.MipLevels;
-		viewDesc.Texture2DArray.FirstArraySlice = firstSlice;
-		viewDesc.Texture2DArray.ArraySize = sliceCount;
-
-		ID3D11ShaderResourceView* view = nullptr;
-		const HRESULT hr = GetHardwareDevice().CreateShaderResourceView(texturePtr->GetHWResource(), &viewDesc, &view);
-		AssertExpr(hr == S_OK);
-		deviceContext.GenerateMips(view);
-		view->Release();
+		deviceContext.GenerateMips(&texturePtr->GetResourceView());
 	}
 
 	void DX11Device::CopyTexture(ITextureBuffer2D& source, ITextureBuffer2D& destination)
@@ -747,23 +659,6 @@ namespace Rendering
 		const D3D11_BOX box = { sourceX, sourceY, 0, sourceX + width, sourceY + height, 1 };
 		ID3D11DeviceContext& deviceContext = GetDeviceContext();
 		deviceContext.CopySubresourceRegion(destinationPtr->GetHWResource(), 0, destinationX, destinationY, 0, sourcePtr->GetHWResource(), 0, &box);
-	}
-
-	void DX11Device::CopyTextureSlice(ITextureBuffer2D& source, U32 sourceSlice, ITextureBuffer2D& destination, U32 destinationSlice)
-	{
-		DX11TextureBuffer2D* sourcePtr = &AsDX11(source);
-		DX11TextureBuffer2D* destinationPtr = &AsDX11(destination);
-
-		D3D11_TEXTURE2D_DESC sourceDesc;
-		sourcePtr->GetHWResource()->GetDesc(&sourceDesc);
-		D3D11_TEXTURE2D_DESC destinationDesc;
-		destinationPtr->GetHWResource()->GetDesc(&destinationDesc);
-		AssertExpr(sourceSlice < sourceDesc.ArraySize && destinationSlice < destinationDesc.ArraySize);
-
-		// Whole subresources, with no box, as depth textures need
-		ID3D11DeviceContext& deviceContext = GetDeviceContext();
-		deviceContext.CopySubresourceRegion(destinationPtr->GetHWResource(), D3D11CalcSubresource(0, destinationSlice, destinationDesc.MipLevels), 0, 0, 0,
-			sourcePtr->GetHWResource(), D3D11CalcSubresource(0, sourceSlice, sourceDesc.MipLevels), nullptr);
 	}
 
 	void DX11Device::ClearRenderTarget(ITextureBuffer2D& renderTarget, const Vector4D& colour)
@@ -864,12 +759,6 @@ namespace Rendering
 		deviceContext.DrawIndexed(indexCount, 0, 0);
 	}
 
-	void DX11Device::DrawIndexedInstanced(U32 indexCount, U32 instanceCount, U32 startInstance)
-	{
-		ID3D11DeviceContext& deviceContext = GetDeviceContext();
-		deviceContext.DrawIndexedInstanced(indexCount, instanceCount, 0, 0, startInstance);
-	}
-
 	void DX11Device::Dispatch(U32 groupsX, U32 groupsY, U32 groupsZ)
 	{
 		ID3D11DeviceContext& deviceContext = GetDeviceContext();
@@ -895,52 +784,32 @@ namespace Rendering
 		result.IsReady.store(true, std::memory_order_release);
 	}
 
-	void DX11Device::ReadTexture(ITextureBuffer2D& texture, const std::shared_ptr<TextureReadback>& result)
+	void DX11Device::ReadTexture(ITextureBuffer2D& texture, TextureReadback& result)
 	{
 		DX11TextureBuffer2D* texturePtr = &AsDX11(texture);
 
 		D3D11_TEXTURE2D_DESC desc;
 		texturePtr->GetHWResource()->GetDesc(&desc);
 
-		result->Width = desc.Width;
-		result->Height = desc.Height;
-		result->BytesPerTexel = GetBytesPerTexel(desc.Format);
+		result.Width = desc.Width;
+		result.Height = desc.Height;
+		result.BytesPerTexel = GetBytesPerTexel(desc.Format);
 
-		// Mapped once the GPU has made the copy (FinishReadbacks), so the render thread doesn't wait for it
+		const size_t rowSize = static_cast<size_t>(result.Width) * result.BytesPerTexel;
+		result.Data.resize(rowSize * result.Height);
+
 		const D3D11_BOX whole = { 0, 0, 0, desc.Width, desc.Height, 1 };
-		mPendingTextureReadbacks.push_back({ CopyToStaging(*this, *texturePtr->GetHWResource(), whole), result });
-	}
-
-	void DX11Device::FinishReadbacks()
-	{
-		ID3D11DeviceContext& deviceContext = GetDeviceContext();
-		for (size_t index = 0; index < mPendingTextureReadbacks.size();)
-		{
-			PendingTextureReadback& pending = mPendingTextureReadbacks[index];
-			D3D11_MAPPED_SUBRESOURCE mapped;
-			const HRESULT hr = deviceContext.Map(pending.Staging, 0, D3D11_MAP_READ, D3D11_MAP_FLAG_DO_NOT_WAIT, &mapped);
-			if (hr == DXGI_ERROR_WAS_STILL_DRAWING)
+		ReadBackRegion(*this, *texturePtr->GetHWResource(), whole, [&result, rowSize](const D3D11_MAPPED_SUBRESOURCE& mapped)
 			{
-				++index;
-				continue;
-			}
-			AssertExpr(hr == S_OK);
+				// Mapped rows can be padded past the texture's width
+				const U8* source = static_cast<const U8*>(mapped.pData);
+				for (U32 row = 0; row < result.Height; ++row)
+				{
+					memcpy(&result.Data[row * rowSize], source + static_cast<size_t>(row) * mapped.RowPitch, rowSize);
+				}
+			});
 
-			TextureReadback& result = *pending.Result;
-			const size_t rowSize = static_cast<size_t>(result.Width) * result.BytesPerTexel;
-			result.Data.resize(rowSize * result.Height);
-			// Mapped rows can be padded past the texture's width
-			const U8* source = static_cast<const U8*>(mapped.pData);
-			for (U32 row = 0; row < result.Height; ++row)
-			{
-				memcpy(&result.Data[row * rowSize], source + static_cast<size_t>(row) * mapped.RowPitch, rowSize);
-			}
-			deviceContext.Unmap(pending.Staging, 0);
-			pending.Staging->Release();
-			result.IsReady.store(true, std::memory_order_release);
-
-			mPendingTextureReadbacks.erase(mPendingTextureReadbacks.begin() + static_cast<std::ptrdiff_t>(index));
-		}
+		result.IsReady.store(true, std::memory_order_release);
 	}
 
 	void DX11Device::ReadBackBuffer(TextureReadback& result)

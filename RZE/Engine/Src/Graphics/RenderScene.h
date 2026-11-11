@@ -70,37 +70,26 @@ public:
 	const DebugLineContainer& GetDebugLines() const { return m_debugLines; }
 
 	// Changes whenever a render object is added, removed, moved or given a new mesh, a light is added, removed or
-	// changes how it lights the scene (LightObject::GetLightingRevision), or a reflection probe is added, removed,
-	// moved or resized. Lets stages skip work whose inputs haven't changed (e.g. ShadowRenderStage's shadow maps).
+	// changed in a way that moves its shadows (LightObject::GetShadowRevision), or a reflection probe is added, removed,
+	// moved or resized. Lets stages skip work whose inputs
+	// haven't changed (e.g. ShadowRenderStage's shadow maps).
 	U64 GetRevision() const { return m_revision; }
-	// GetRevision when a render object was last added, removed, moved, given a new mesh or a new mobility
+	// GetRevision when a render object was last added, removed, moved or given a new mesh
 	U64 GetObjectsRevision() const { return m_objectsRevision; }
-	// The same for Static render objects alone (ERenderMobility)
-	U64 GetStaticObjectsRevision() const { return m_staticObjectsRevision; }
-	// Where Static and Movable render objects were added, removed, moved or given a new mesh, by revision (both where
-	// each was and where it is), for anything kept from part of the scene that needs to find which part changed. An
-	// object changing mobility is in both.
-	const SceneChangeLog& GetStaticChanges() const { return m_staticChanges; }
-	const SceneChangeLog& GetMovableChanges() const { return m_movableChanges; }
-	// Where lights were added, removed or changed how they light the scene, by revision: where a point light reached
-	// before and after (LightObject::GetReach), or everywhere for a directional light. For anything lit with the
-	// lights that's kept (e.g. probes), so it can tell which part to light again.
-	const SceneChangeLog& GetLightChanges() const { return m_lightChanges; }
+	// Whether a render object was added, removed, moved or given a new mesh within region (world space) after
+	// sinceRevision (a GetRevision), counting both where it was and where it is. Can answer true for changes elsewhere
+	// once many objects have changed since (SceneChangeLog), never false for one within.
+	bool HaveObjectsChangedWithin(const BoundingBox& region, U64 sinceRevision) const { return m_changeLog.HasChangedWithin(region, sinceRevision); }
 
 	// Axis-aligned world-space box around every render object; empty without any. Kept until one is added, removed,
 	// moved or given a new mesh, then worked out again from the objects' boxes when next asked.
 	const BoundingBox& GetBounds() const;
-	// The same around the Static render objects alone, so what's fitted to it (the probe grid) doesn't follow what
-	// moves
-	const BoundingBox& GetStaticBounds() const;
 
 private:
 	friend class RenderObject;
-	// A render object of this mobility was added, removed, moved or given a new mesh: it was within oldBounds and is
-	// now within newBounds (either empty if it wasn't or isn't anywhere)
-	void OnRenderObjectChanged(ERenderMobility mobility, const BoundingBox& oldBounds, const BoundingBox& newBounds);
-	// A render object within bounds became Static or Movable, so it's gone from one kind and arrived in the other
-	void OnRenderObjectMobilityChanged(const BoundingBox& bounds);
+	// A render object was added, removed, moved or given a new mesh: it was within oldBounds and is now within
+	// newBounds (either empty if it wasn't or isn't anywhere)
+	void OnRenderObjectChanged(const BoundingBox& oldBounds, const BoundingBox& newBounds);
 	// Every render object changed (e.g. they were all removed)
 	void OnAllRenderObjectsChanged();
 
@@ -113,17 +102,11 @@ private:
 	DebugLineContainer m_debugLines;
 	U64 m_revision = 0;
 	U64 m_objectsRevision = 0;
-	U64 m_staticObjectsRevision = 0;
-	// Where Static and Movable render objects changed, by revision
-	SceneChangeLog m_staticChanges;
-	SceneChangeLog m_movableChanges;
-	// Where lights changed, by revision; each light logs its own changes into it
-	SceneChangeLog m_lightChanges;
+	// Where render objects changed, by revision
+	SceneChangeLog m_changeLog;
 
 	mutable BoundingBox m_bounds;
 	mutable bool m_isBoundsStale = true;
-	mutable BoundingBox m_staticBounds;
-	mutable bool m_isStaticBoundsStale = true;
 
 	// State a stage keeps for this scene across frames, whichever view renders it (e.g. the shadow map)
 	RenderBlackboard m_persistent;

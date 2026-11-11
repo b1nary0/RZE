@@ -75,10 +75,6 @@ public:
 	// Null without a mesh
 	const StaticMeshInstance* GetMesh() const { return m_meshInstance.get(); }
 
-	// Whether the object moves while the scene runs (ERenderMobility); Static by default. Its render object follows.
-	ERenderMobility GetMobility() const { return m_mobility; }
-	void SetMobility(ERenderMobility mobility);
-
 	bool IsDrawingMeshBounds() const { return m_drawMeshBounds; }
 	void SetDrawMeshBounds(bool draw);
 	bool IsDrawingSubMeshBounds() const { return m_drawSubMeshBounds; }
@@ -106,8 +102,6 @@ private:
 	// What it draws, with this object's material overrides; shared with m_renderObject. Holds the mesh asset's
 	// resource, keeping it loaded.
 	std::shared_ptr<StaticMeshInstance> m_meshInstance;
-
-	ERenderMobility m_mobility = ERenderMobility::Static;
 
 	// Editor debug toggles; not serialized
 	bool m_drawMeshBounds = false;

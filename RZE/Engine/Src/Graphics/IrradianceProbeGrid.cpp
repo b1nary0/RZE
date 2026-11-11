@@ -74,39 +74,3 @@ Vector3D IrradianceProbeGrid::GetProbePosition(U32 x, U32 y, U32 z) const
 {
 	return Origin + Vector3D(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)) * Spacing;
 }
-
-Vector3D IrradianceProbeGrid::GetProbePosition(U32 probe) const
-{
-	const U32 x = probe % CountX;
-	const U32 y = (probe / CountX) % CountY;
-	const U32 z = probe / (CountX * CountY);
-	return GetProbePosition(x, y, z);
-}
-
-IrradianceProbeGrid::ProbeRange IrradianceProbeGrid::GetProbesWithin(const BoundingBox& box) const
-{
-	ProbeRange range;
-	if (box.IsEmpty() || IsEmpty())
-	{
-		return range;
-	}
-
-	const U32 counts[3] = { CountX, CountY, CountZ };
-	for (int axis = 0; axis < 3; ++axis)
-	{
-		// The first probe at or past the box's near side and the last at or before its far side, clamped to the grid
-		const float first = std::ceil((box.GetMin()[axis] - Origin[axis]) / Spacing);
-		const float last = std::floor((box.GetMax()[axis] - Origin[axis]) / Spacing);
-		const float lastProbe = static_cast<float>(counts[axis] - 1);
-		if (last < 0.0f || first > lastProbe || first > last)
-		{
-			return range;
-		}
-
-		range.Min[axis] = static_cast<U32>(std::max(first, 0.0f));
-		range.Max[axis] = static_cast<U32>(std::min(last, lastProbe));
-	}
-
-	range.IsEmpty = false;
-	return range;
-}

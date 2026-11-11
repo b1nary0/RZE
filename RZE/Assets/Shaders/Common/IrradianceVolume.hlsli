@@ -30,7 +30,7 @@ Texture2DArray<float4> ProbeSHGreen : register(t9);
 Texture2DArray<float4> ProbeSHBlue  : register(t10);
 // Each probe's visibility: an octahedral map (Octahedral.h) of VISIBILITY_SIZE texels a side, mean distance in .r and
 // mean squared distance in .g, with a 1-texel border copied from across its edges so bilinear filtering wraps. All 0 for
-// an inactive probe: one inside geometry, or with no surface near enough for it to light.
+// an inactive probe, one inside geometry.
 Texture2D<float2> ProbeVisibility : register(t11);
 
 // Mirrors IrradianceProbeStage's k_visibilitySize
@@ -43,7 +43,7 @@ int2 ProbeVisibilityCorner(uint probe)
 	return int2(probe % VisibilityProbesPerRow, probe / VisibilityProbesPerRow) * VISIBILITY_STRIDE;
 }
 
-// Inside geometry, so it would only darken what's near it, or with nothing near it to light (Compute_ProbeVisibility.hlsl)
+// Inside geometry: it sees mostly back faces (Compute_ProbeVisibility.hlsl), so it would only darken what's near it
 bool IsProbeInactive(uint probe)
 {
 	return ProbeVisibility.Load(int3(ProbeVisibilityCorner(probe) + 1, 0)).r <= 0.0f;

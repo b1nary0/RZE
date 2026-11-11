@@ -20,17 +20,6 @@ namespace Rendering
 	struct TexelReadback;
 	struct TextureReadback;
 
-	// How IGFXDevice::Initialize makes the device
-	struct GFXDeviceOptions
-	{
-		// The graphics API checks every call (the D3D11 debug layer, an OpenGL debug context) and the device logs what it
-		// reports, asserting on errors. It costs CPU time in every call.
-		bool Validate = false;
-		// At shutdown, once the device has released its own objects, it logs every API object still alive: what the
-		// engine never released. Needs Validate. D3D11 only: OpenGL has no such report.
-		bool ReportLiveObjects = false;
-	};
-
 	// A graphics API, as the render thread uses it: the device and what's bound to it. One per process, made by
 	// GFXDeviceFactory; each graphics API has its own (Driver/<API>/). What a resource does to itself (allocating,
 	// binding itself to a slot) is on the resource's interface (GFXBuffer.h, ShaderTypes.h) instead.
@@ -46,7 +35,9 @@ namespace Rendering
 	public:
 		// The window's SDL_Window, which the device presents to; before Initialize
 		virtual void SetWindow(void* windowHandle) = 0;
-		virtual void Initialize(const GFXDeviceOptions& options) = 0;
+		// validate: the graphics API checks every call (the D3D11 debug layer, an OpenGL debug context) and the device
+		// logs what it reports, asserting on errors. It costs CPU time in every call.
+		virtual void Initialize(bool validate) = 0;
 		virtual void Shutdown() = 0;
 
 		// The device can only be used from one thread at a time on some APIs (e.g. OpenGL's context): the thread that
@@ -86,13 +77,9 @@ namespace Rendering
 		virtual void SetDepthTarget(ITextureBuffer2D& depthTexture, U32 slice) = 0;
 		// depthTexture may be null
 		virtual void SetColourTarget(ITextureBuffer2D& colourTarget, ITextureBuffer2D* depthTexture) = 0;
-		// Fills every mip of sliceCount slices from firstSlice from their most detailed one; 0 slices for every slice
-		virtual void GenerateMips(ITextureBuffer2D& texture, U32 firstSlice, U32 sliceCount) = 0;
+		virtual void GenerateMips(ITextureBuffer2D& texture) = 0;
 		virtual void CopyTexture(ITextureBuffer2D& source, ITextureBuffer2D& destination) = 0;
 		virtual void CopyTextureRegion(ITextureBuffer2D& source, U32 sourceX, U32 sourceY, U32 width, U32 height, ITextureBuffer2D& destination, U32 destinationX, U32 destinationY) = 0;
-		// The most detailed mip of one slice, whole, into a slice of a texture of the same size and format. Depth textures
-		// too, which can only be copied whole.
-		virtual void CopyTextureSlice(ITextureBuffer2D& source, U32 sourceSlice, ITextureBuffer2D& destination, U32 destinationSlice) = 0;
 		virtual void ClearRenderTarget(ITextureBuffer2D& renderTarget, const Vector4D& colour) = 0;
 
 		// Pipeline state
@@ -110,18 +97,11 @@ namespace Rendering
 		// Draws and compute
 		virtual void Draw(U32 vertexCount) = 0;
 		virtual void DrawIndexed(U32 indexCount) = 0;
-		// Per-instance vertex data (EDataClassification::PER_INSTANCE) is read from startInstance on
-		virtual void DrawIndexedInstanced(U32 indexCount, U32 instanceCount, U32 startInstance) = 0;
 		virtual void Dispatch(U32 groupsX, U32 groupsY, U32 groupsZ) = 0;
 
-		// Reading back. ReadTexel and ReadBackBuffer wait for the GPU, then fill result and mark it ready.
+		// Reading back: waits for the GPU, then fills result and marks it ready
 		virtual void ReadTexel(ITextureBuffer2D& texture, U32 x, U32 y, TexelReadback& result) = 0;
-		// The most detailed mip of the first slice, rows top first. Doesn't wait for the GPU: result is filled in and
-		// marked ready by a later FinishReadbacks, once the GPU has drawn the texture. Never, if the device shuts down first.
-		virtual void ReadTexture(ITextureBuffer2D& texture, const std::shared_ptr<TextureReadback>& result) = 0;
-		// Fills in the ReadTexture results the GPU has caught up with, without waiting for the others. After each batch of
-		// commands.
-		virtual void FinishReadbacks() = 0;
+		virtual void ReadTexture(ITextureBuffer2D& texture, TextureReadback& result) = 0;
 		// The frame as it will be presented (RGBA8, rows top first): before Present, which may discard it
 		virtual void ReadBackBuffer(TextureReadback& result) = 0;
 	};

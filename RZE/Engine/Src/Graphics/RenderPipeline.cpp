@@ -59,13 +59,6 @@ std::vector<RenderStageTime> RenderPipeline::TakeStageTimes()
 	return stageTimes;
 }
 
-RenderWorkCounts RenderPipeline::TakeWorkCounts()
-{
-	const RenderWorkCounts workCounts = m_workCounts;
-	m_workCounts = RenderWorkCounts();
-	return workCounts;
-}
-
 void RenderPipeline::CompileIfDirty()
 {
 	if (!m_isDirty)

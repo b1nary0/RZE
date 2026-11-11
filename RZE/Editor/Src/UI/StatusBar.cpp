@@ -307,15 +307,6 @@ namespace Editor
 				ImGui::BulletText("%.2f ms %s", stage.TimeMS, stage.Name.c_str());
 			}
 
-			// The scene's probe and shadow work: what objects and lights changing cost, and the probes' relighting
-			const RenderWorkCounts& work = renderStats.Work;
-			ImGui::Indent();
-			ImGui::SeparatorText("Scene updates, a frame");
-			ImGui::Text("Irradiance probes: %.1f captured (%.0f draws), %.0f relit", work.IrradianceProbesCaptured, work.IrradianceCaptureDraws, work.IrradianceProbesRelit);
-			ImGui::Text("Reflection probes: %.2f captured (%.0f draws), %.2f relit", work.ReflectionProbesCaptured, work.ReflectionCaptureDraws, work.ReflectionProbesRelit);
-			ImGui::Text("Shadows: %.2f sun maps, %.2f point light faces (%.0f draws)", work.SunShadowMapsRendered, work.PointShadowFacesRendered, work.ShadowDraws);
-			ImGui::Unindent();
-
 			// Part of rendering, so it sits under it
 			ImGui::Indent();
 			ImGui::SeparatorText("Render thread");

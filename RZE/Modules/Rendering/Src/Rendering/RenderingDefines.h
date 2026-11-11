@@ -13,7 +13,7 @@ namespace Rendering
 	{
 		Default,      // Back-face culling
 		ShadowCaster, // No culling (thin geometry still casts) + slope-scaled depth bias
-		NoCull        // No culling and no bias, clipped at the near and far planes, e.g. for probe captures, which tell back faces apart (SV_IsFrontFace)
+		NoCull        // No culling and no bias, e.g. for probe captures, which tell back faces apart (SV_IsFrontFace)
 	};
 
 	enum class EBlendState

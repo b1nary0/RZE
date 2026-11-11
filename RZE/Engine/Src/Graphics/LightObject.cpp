@@ -1,7 +1,6 @@
 #include <Graphics/LightObject.h>
 
 #include <Graphics/GraphicsDefines.h>
-#include <Graphics/SceneChangeLog.h>
 
 #include <algorithm>
 #include <cmath>
@@ -31,7 +30,6 @@ LightObject::LightObject(ELightType type)
 	: m_type(type)
 	, m_liveID(RenderSceneLifetime::Acquire())
 {
-	m_lastReach = GetReach();
 }
 
 LightObject::~LightObject()
@@ -44,7 +42,7 @@ void LightObject::SetType(ELightType type)
 	if (type != m_type)
 	{
 		m_type = type;
-		MarkChanged(true);
+		MarkShadowsChanged();
 	}
 }
 
@@ -55,7 +53,7 @@ void LightObject::SetPosition(const Vector3D& position)
 		m_position = position;
 		if (m_type == ELightType::Point)
 		{
-			MarkChanged(true);
+			MarkShadowsChanged();
 		}
 	}
 }
@@ -67,7 +65,7 @@ void LightObject::SetDirection(const Vector3D& direction)
 		m_direction = direction;
 		if (m_type == ELightType::Directional)
 		{
-			MarkChanged(true);
+			MarkShadowsChanged();
 		}
 	}
 }
@@ -112,65 +110,15 @@ void LightObject::SetRange(float range)
 		m_range = range;
 		if (m_type == ELightType::Point)
 		{
-			MarkChanged(true);
+			MarkShadowsChanged();
 		}
 	}
 }
 
-void LightObject::SetStrength(float strength)
+void LightObject::MarkShadowsChanged()
 {
-	if (strength != m_strength)
+	if (m_sceneRevision != nullptr)
 	{
-		m_strength = strength;
-		MarkChanged(false);
-	}
-}
-
-void LightObject::SetColour(const Vector4D& colour)
-{
-	if (colour != m_colour)
-	{
-		m_colour = colour;
-		MarkChanged(false);
-	}
-}
-
-BoundingBox LightObject::GetReach() const
-{
-	if (m_type == ELightType::Directional)
-	{
-		return BoundingBox();
-	}
-	return BoundingBox(m_position - Vector3D(m_range), m_position + Vector3D(m_range));
-}
-
-void LightObject::MarkChanged(bool movesShadows)
-{
-	const BoundingBox reachBefore = m_lastReach;
-	const BoundingBox reach = GetReach();
-	m_lastReach = reach;
-
-	if (m_sceneRevision == nullptr)
-	{
-		return;
-	}
-
-	m_lightingRevision = ++*m_sceneRevision;
-	if (movesShadows)
-	{
-		m_shadowRevision = m_lightingRevision;
-	}
-
-	// A directional light, before or after, changed the light everywhere
-	if (reachBefore.IsEmpty() || reach.IsEmpty())
-	{
-		m_lightChanges->AddEverywhere(m_lightingRevision);
-		return;
-	}
-
-	m_lightChanges->Add(m_lightingRevision, reachBefore);
-	if (reach != reachBefore)
-	{
-		m_lightChanges->Add(m_lightingRevision, reach);
+		m_shadowRevision = ++*m_sceneRevision;
 	}
 }

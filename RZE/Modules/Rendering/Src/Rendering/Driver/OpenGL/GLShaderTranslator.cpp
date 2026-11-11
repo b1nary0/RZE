@@ -252,16 +252,6 @@ namespace Rendering
 					outResult.Outputs.push_back({ compiler.get_decoration_string(output.id, spv::DecorationUserSemantic), compiler.get_decoration(output.id, spv::DecorationLocation) });
 				}
 
-				for (const spirv_cross::BuiltInResource& builtin : resources.builtin_outputs)
-				{
-					if (builtin.builtin == spv::BuiltInClipDistance)
-					{
-						// An array of floats, one a distance (a float4 SV_ClipDistance0 is 4)
-						const spirv_cross::SPIRType& type = compiler.get_type(builtin.value_type_id);
-						outResult.ClipDistanceCount = type.array.empty() ? 1u : static_cast<U32>(type.array[0]);
-					}
-				}
-
 				outResult.GLSL = compiler.compile();
 			}
 			catch (const spirv_cross::CompilerError& error)

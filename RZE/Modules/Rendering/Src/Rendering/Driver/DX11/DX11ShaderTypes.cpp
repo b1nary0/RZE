@@ -54,16 +54,11 @@ namespace Rendering
 
 	void DX11VertexShader::Create(const Filepath& filePath, const ShaderInputLayout& inputLayout)
 	{
+		HRESULT hr;
+		ID3D10Blob* error = nullptr;;
 		ID3D10Blob* vsBlob = nullptr;
-		ID3D10Blob* error = nullptr;
-
-		HRESULT hr = D3DCompileFromFile(
-			Conversions::StringToWString(filePath.GetAbsolutePath()).c_str(),
-			nullptr,
-			D3D_COMPILE_STANDARD_FILE_INCLUDE,
-			"VSMain", "vs_5_0",
-			0, 0,
-			&vsBlob, &error);
+		
+		hr = D3DCompileFromFile(Conversions::StringToWString(filePath.GetAbsolutePath()).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VSMain", "vs_5_0", 0, 0, &vsBlob, &error);
 		LogCompileMessages(hr, error, filePath);
 		if (error != nullptr)
 		{
@@ -74,37 +69,28 @@ namespace Rendering
 		{
 			return;
 		}
-
+		
 		hr = m_graphicsDevice->GetHardwareDevice().CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, &m_hwShader);
 		AssertExpr(hr == S_OK);
-
+		
 		// A shader without vertex inputs (a full-screen pass reading SV_VertexID) has no layout: binding none is valid
 		// for it, and creating one with 0 elements makes the debug layer warn
-		if (inputLayout.GetDataCount() == 0)
+		if (inputLayout.GetDataCount() > 0)
 		{
-			vsBlob->Release();
-			return;
+			std::vector<D3D11_INPUT_ELEMENT_DESC> inputLayoutStructure;
+			inputLayoutStructure.reserve(inputLayout.GetDataCount());
+			for (size_t i = 0; i < inputLayout.GetDataCount(); ++i)
+			{
+				const ShaderInputLayout::ShaderInputLayoutData& layoutData = inputLayout[i];
+				inputLayoutStructure.push_back({layoutData.Name.c_str(), 0, ConvertToDXGIFormat(layoutData.DataFormat), 0, static_cast<U32>(layoutData.Offset), ConvertToD3D11InputClassification(layoutData.DataClassification), 0});
+			}
+
+			hr = m_graphicsDevice->GetHardwareDevice().CreateInputLayout(inputLayoutStructure.data(), static_cast<UINT>(inputLayoutStructure.size()), vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &m_hwInputLayout);
+			AssertExpr(hr == S_OK);
 		}
 
-		std::vector<D3D11_INPUT_ELEMENT_DESC> inputElements;
-		inputElements.reserve(inputLayout.GetDataCount());
-		for (size_t i = 0; i < inputLayout.GetDataCount(); ++i)
-		{
-			const ShaderInputLayout::ShaderInputLayoutData& layoutData = inputLayout[i];
-			const bool isPerInstance = layoutData.DataClassification == EDataClassification::PER_INSTANCE;
-			inputElements.push_back({ layoutData.Name.c_str(), 0, ConvertToDXGIFormat(layoutData.DataFormat), layoutData.InputSlot, static_cast<U32>(layoutData.Offset),
-				ConvertToD3D11InputClassification(layoutData.DataClassification), isPerInstance ? 1u : 0u });
-		}
-
-		hr = m_graphicsDevice->GetHardwareDevice().CreateInputLayout(inputElements.data(), static_cast<UINT>(inputElements.size()), vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &m_hwInputLayout);
+		// Only now: the input layout is checked against the bytecode's input signature
 		vsBlob->Release();
-
-		// The shader's inputs don't match the layout the engine gives it, e.g. after editing them in the .hlsl
-		if (FAILED(hr))
-		{
-			RZE_LOG_ERROR("Shader [" << filePath.GetRelativePath() << "] doesn't take the vertex layout it's given");
-			Release();
-		}
 	}
 
 	void DX11VertexShader::Release()
@@ -154,7 +140,8 @@ namespace Rendering
 		ID3D10Blob* psBlob = nullptr;
 		ID3D10Blob* error = nullptr;
 
-		HRESULT hr = D3DCompileFromFile(
+		HRESULT hr;
+		hr = D3DCompileFromFile(
 			Conversions::StringToWString(filePath.GetAbsolutePath()).c_str(),
 			nullptr,
 			D3D_COMPILE_STANDARD_FILE_INCLUDE,
@@ -171,7 +158,7 @@ namespace Rendering
 		{
 			return;
 		}
-
+		
 		hr = m_graphicsDevice->GetHardwareDevice().CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), nullptr, &m_hwShader);
 		AssertExpr(hr == S_OK);
 		psBlob->Release();

@@ -45,15 +45,6 @@ public:
 	float GetRange() const { return m_range; }
 	void SetRange(float range) { m_range = range; }
 
-	// How much the strength flickers, like a flame: 0 for steady, up to 1 for dipping all the way to dark. The strength
-	// itself stays as set; only the light's is varied.
-	float GetFlicker() const { return m_flicker; }
-	void SetFlicker(float flicker) { m_flicker = flicker; }
-
-private:
-	// The strength to light with now: the set strength, dipped by the flicker
-	float CalculateFlickeringStrength() const;
-
 private:
 	// The owner's scene's; set in Initialize, once the component has an owner, and fixed from then on since objects
 	// never change scene
@@ -64,7 +55,4 @@ private:
 	float m_lightStrength = 5.0f;
 	float m_range = 10.0f;
 	Vector4D m_lightColour = Vector4D(1.0f);
-	float m_flicker = 0.0f;
-	// Seconds the light has flickered for, wrapped so it stays precise
-	double m_flickerTime = 0.0;
 };
