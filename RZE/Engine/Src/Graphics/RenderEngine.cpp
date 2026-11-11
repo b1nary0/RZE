@@ -127,6 +127,9 @@ void RenderEngine::WaitForPresentSlot()
 void RenderEngine::ReleaseRenderStages()
 {
 	m_pipeline->Clear();
+	// The main view and scene live until the render engine is destroyed, after the renderer has shut down, so what the
+	// stages keep in them goes now
+	m_mainView.ReleaseStageState();
 	if (m_mainScene != nullptr)
 	{
 		m_mainScene->ReleaseStageState();

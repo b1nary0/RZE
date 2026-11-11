@@ -231,6 +231,8 @@ namespace Editor
 		m_mainMenuBar.ShutDown();
 		// Undo can't restore deleted files once the editor closes
 		AssetFiles::EmptyTrash();
+
+		RZE_Application::ShutDown();
 	}
 
 	void EditorApp::RegisterInputEvents(InputHandler& inputHandler)

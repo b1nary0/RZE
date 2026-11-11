@@ -10,6 +10,9 @@
 #include <Game/World/GameObjectComponents/RenderComponent.h>
 #include <Game/World/GameObjectComponents/TransformComponent.h>
 
+#include <Graphics/RenderEngine.h>
+#include <Graphics/RenderView.h>
+
 #include <Windowing/Window.h>
 
 #include <Rendering/Graphics/RenderTarget.h>
@@ -63,7 +66,17 @@ void RZE_Application::PreRender()
 
 void RZE_Application::ShutDown()
 {
-
+	// The application lives past the engine's shutdown (it's main's), so its target goes while the renderer is still up.
+	// Nothing renders after this, and the main view stops pointing at it.
+	if (m_renderTarget != nullptr)
+	{
+		RenderView& mainView = RZE().GetRenderEngine().GetMainView();
+		if (mainView.Target == m_renderTarget.get())
+		{
+			mainView.Target = nullptr;
+		}
+		m_renderTarget.reset();
+	}
 }
 
 Filepath RZE_Application::GetSplashScreenImage() const

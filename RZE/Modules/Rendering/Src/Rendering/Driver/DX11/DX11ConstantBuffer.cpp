@@ -9,6 +9,10 @@
 
 namespace Rendering
 {
+	DX11ConstantBuffer::~DX11ConstantBuffer()
+	{
+		Release();
+	}
 
 	void DX11ConstantBuffer::Allocate(const void* data, size_t size, U32 count)
 	{
@@ -27,8 +31,12 @@ namespace Rendering
 
 	void DX11ConstantBuffer::Release()
 	{
-		AssertNotNull(m_buffer);
-		m_buffer->Release();
+		// Nothing if the render thread never made it, as a buffer dropped straight after it was asked for
+		if (m_buffer != nullptr)
+		{
+			m_buffer->Release();
+			m_buffer = nullptr;
+		}
 	}
 
 	void DX11ConstantBuffer::SetActiveVS(U32 bufferSlot)

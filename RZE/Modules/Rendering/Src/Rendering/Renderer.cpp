@@ -51,9 +51,10 @@ namespace Rendering
 
 	void Renderer::Shutdown()
 	{
-		m_renderThread.Shutdown();
+		// Before the device goes. A UI command still waiting to run holds the frame data, and its textures, itself.
 		m_uiFrameData.reset();
 		m_uiTextures.clear();
+		m_renderThread.Shutdown();
 
 		MemArena::Shutdown();
 	}

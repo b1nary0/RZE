@@ -87,6 +87,10 @@ public:
 	ERenderViewKind GetKind() const { return m_kind; }
 	bool IsMainView() const { return m_kind == ERenderViewKind::Main; }
 
+	// Destroys what stages keep for this view (e.g. its shadow maps and targets) and what the last frame published;
+	// they make them again the next time it's rendered. A view that outlives the renderer has to, before it shuts down.
+	void ReleaseStageState();
+
 public:
 	RenderCamera Camera;
 	Vector2D ViewportSize;

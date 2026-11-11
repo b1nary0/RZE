@@ -54,6 +54,10 @@ namespace Rendering
 	{
 		AssertMsg(std::this_thread::get_id() == m_controllingThreadID,
 			"Shutdown must run on the thread that called Initialize");
+		// What was pushed since the last frame, such as the releases of shaders the scene and the render stages let go of
+		// while shutting down, runs as one last batch. Left in the queue, those commands would never run or be destroyed,
+		// and the handles they hold would keep their GPU objects alive.
+		SignalProcess();
 
 		{
 			// The flag is set with the signal, under the lock that Update reads it under, so the pass this wakes is the
